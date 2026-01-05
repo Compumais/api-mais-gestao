@@ -1,0 +1,18 @@
+@baseUrl = http://localhost:3333
+
+# @name health
+GET {{baseUrl}}/health
+
+###
+
+# @name authentication
+POST {{baseUrl}}/api/auth/sign-up/email
+Content-Type: application/json
+
+{
+  "name": "John Doe",
+  "email": "john.doe@example.com",
+  "password": "12345678"
+}
+
+###
