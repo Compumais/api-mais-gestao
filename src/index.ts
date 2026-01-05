@@ -2,6 +2,7 @@ import cors from "@fastify/cors";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import Fastify from "fastify";
 import { authenticationRoute } from "./controllers/authentication.js";
+import { planoContasRotas } from "./controllers/plano-contas/rotas.js";
 
 export const app = Fastify({ logger: true });
 
@@ -27,6 +28,8 @@ app.route({
 		reply.status(200).send({ status: "Ok" });
 	},
 });
+
+app.register(planoContasRotas);
 
 app.listen({ port: 3333 }).then(() => {
 	console.log("HTTP server running on port 3333");

@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { app } from "../index.js";
-import { auth } from "../services/auth.js";
+import { auth } from "../lib/auth.js";
 
 export async function authenticationRoute(
 	request: FastifyRequest,
