@@ -1,5 +1,7 @@
 @baseUrl = http://localhost:3333
 
+@cookie = {{login.response.headers.set-cookie.[0]}}
+
 # @name health
 GET {{baseUrl}}/health
 
@@ -16,3 +18,27 @@ Content-Type: application/json
 }
 
 ###
+
+# @name login
+POST {{baseUrl}}/api/auth/sign-in/email
+Content-Type: application/json
+
+{
+  "email": "john.doe@example.com",
+  "password": "12345678"
+}
+
+###
+
+# @name criar_empresa
+POST {{baseUrl}}/empresas
+Content-Type: application/json
+Cookie: {{cookie}}
+
+{
+  "nome": "Empresa 1",
+  "cnpj": "12345678901234",
+  "telefone": "1234567890",
+  "email": "empresa1@example.com",
+  "endereco": "Rua Exemplo, 123"
+}
