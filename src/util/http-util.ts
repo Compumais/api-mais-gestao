@@ -1,0 +1,62 @@
+import type { HttpResponse } from "../model/http-model";
+
+export function httpCriacao<T>(body: T): HttpResponse<T> {
+	return {
+		success: true,
+		status: 201,
+		body,
+	};
+}
+
+export function httpNaoAutorizado() {
+	return {
+		success: false,
+		status: 401,
+		error: "Não autorizado",
+		code: "UNAUTHORIZED_ERROR",
+	};
+}
+
+export function httpNaoEncontrado() {
+	return {
+		success: false,
+		status: 404,
+		error: "Recurso não encontrado",
+		code: "NOT_FOUND_ERROR",
+	};
+}
+
+export function httpErroInterno() {
+	return {
+		success: false,
+		status: 500,
+		error: "Erro interno",
+		code: "INTERNAL_SERVER_ERROR",
+	};
+}
+
+export function httpRecursoExistente() {
+	return {
+		success: false,
+		status: 409,
+		error: "Recurso já existe",
+		code: "RESOURCE_ALREADY_EXISTS",
+	};
+}
+
+export function httpLimiteExcedido() {
+	return {
+		success: false,
+		status: 429,
+		error: "Limite excedido",
+		code: "LIMIT_EXCEEDED",
+	};
+}
+
+export function httpOk<T>(body: T): HttpResponse<T> {
+	return {
+		success: true,
+		status: 200,
+		body,
+	};
+}
