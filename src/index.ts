@@ -2,15 +2,18 @@ import cors from "@fastify/cors";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import Fastify from "fastify";
 import { authenticationRoute } from "./controllers/authentication.js";
+import { empresasRotas } from "./controllers/empresas/rotas.js";
 import { planoContasRotas } from "./controllers/plano-contas/rotas.js";
 
 export const app = Fastify({ logger: true });
 
 app.register(cors, {
+	// origin: process.env.CLIENT_ORIGIN || "http://localhost:3000",
 	origin: "*",
 	methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 	allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
 	credentials: true,
+	maxAge: 86400,
 });
 
 app.route({
@@ -30,6 +33,7 @@ app.route({
 });
 
 app.register(planoContasRotas);
+app.register(empresasRotas);
 
 app.listen({ port: 3333 }).then(() => {
 	console.log("HTTP server running on port 3333");
