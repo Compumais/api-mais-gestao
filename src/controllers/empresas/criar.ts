@@ -29,32 +29,41 @@ export async function criarEmpresa(
 		const dadosValidados = criarEmpresaSchema.parse(request.body);
 		const uuid = uuidv4();
 
-		const usuario = await buscarUsuarioPorIdService(usuarioId);
-		const empresasDoUsuario = await listarEmpresasService({
-			proprietarioId: usuarioId,
-		});
+	const usuario = await buscarUsuarioPorIdService(usuarioId);
 
-		if (
-			usuario.maxCompanies &&
-			usuario.maxCompanies >= empresasDoUsuario.length
-		) {
-			return reply.status(400).send({
-				error: "Usuário já atingiu o limite de empresas",
-				code: "MAX_COMPANIES_REACHED",
-			});
+	if (!usuario.success || !usuario.body) {
+		return reply.status(usuario.status).send(usuario);
+	}
+
+	const empresasDoUsuario = await listarEmpresasService({
+		proprietarioId: usuarioId,
+	});
+
+	if (!empresasDoUsuario.success || !empresasDoUsuario.body) {
+		return reply.status(empresasDoUsuario.status).send(empresasDoUsuario);
+	}
+
+	const dadosEmpresa = {
+		id: uuid,
+		proprietarioId: usuarioId,
+		nome: dadosValidados.nome,
+		cnpj: dadosValidados.cnpj,
+		telefone: dadosValidados.telefone,
+		atualizadoEm: new Date().toISOString(),
+		criadoEm: new Date().toISOString(),
+	}
+
+	const empresa = await criarEmpresaService({
+		dadosEmpresa,
+		proprietario: usuario.body,
+		quantidadeEmpresas: empresasDoUsuario.body?.length ?? 9999,
+	});
+
+		if (!empresa.success || !empresa.body) {
+			return reply.status(empresa.status).send(empresa);
 		}
 
-		const empresa = await criarEmpresaService({
-			id: uuid,
-			proprietarioId: usuarioId,
-			nome: dadosValidados.nome,
-			cnpj: dadosValidados.cnpj,
-			telefone: dadosValidados.telefone,
-			atualizadoEm: new Date().toISOString(),
-			criadoEm: new Date().toISOString(),
-		});
-
-		return reply.status(201).send(empresa);
+		return reply.status(empresa.status).send(empresa.body);
 	} catch (error) {
 		console.error(error);
 		return reply.status(500).send({

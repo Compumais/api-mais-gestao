@@ -1,4 +1,6 @@
-import { listarEmpresas } from "../../models/empresa-model";
+import type { HttpResponse } from "../../model/http-model";
+import { listarEmpresas, type Empresa } from "../../repositories/empresa-model";
+import { httpOk } from "../../util/http-util";
 
 type ListarEmpresasParametros = {
 	proprietarioId?: string | null;
@@ -6,10 +8,10 @@ type ListarEmpresasParametros = {
 
 export async function listarEmpresasService({
 	proprietarioId,
-}: ListarEmpresasParametros) {
+}: ListarEmpresasParametros): Promise<HttpResponse<Empresa[]>> {
 	const empresas = await listarEmpresas({
 		proprietarioId: proprietarioId ?? null,
 	});
 
-	return empresas;
+	return httpOk<Empresa[]>(empresas);
 }

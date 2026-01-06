@@ -1,11 +1,36 @@
-import { criarEmpresa, type NovaEmpresa } from "../../models/empresa-model";
+import type { Usuario } from "../../model/usuario-model";
+import {
+	criarEmpresa,
+	type NovaEmpresa,
+} from "../../repositories/empresa-model";
+import {
+	httpCriacao,
+	httpLimiteExcedido, 
+	httpRecursoExistente
+} from "../../util/http-util";
+import type { Empresa } from "../../model/empresa-model";
+import type { HttpResponse } from "../../model/http-model";
 
-export async function criarEmpresaService(dadosEmpresa: NovaEmpresa) {
-	const empresa = await criarEmpresa(dadosEmpresa);
+type CriarEmpresaParametros = {
+	dadosEmpresa: NovaEmpresa
+	proprietario: Usuario
+	quantidadeEmpresas: number
+}
 
-	if (!empresa) {
-		throw new Error("Erro ao criar empresa");
+export async function criarEmpresaService({
+	dadosEmpresa,
+	quantidadeEmpresas,
+	proprietario,
+}: CriarEmpresaParametros): Promise<HttpResponse<Empresa | null>> {
+	if (proprietario.maxCompanies && proprietario.maxCompanies >= quantidadeEmpresas) {
+		return httpLimiteExcedido();
 	}
 
-	return empresa;
+	const [empresa] = await criarEmpresa(dadosEmpresa);
+
+	if (!empresa) {
+		return httpRecursoExistente();
+	}
+
+	return httpCriacao<Empresa>(empresa);
 }
