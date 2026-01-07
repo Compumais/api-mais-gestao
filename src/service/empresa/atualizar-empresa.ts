@@ -1,10 +1,10 @@
-import type { HttpResponse } from "../../model/http-model";
+import type { HttpResponse } from "@/model/http-model";
 import {
 	atualizarEmpresa,
 	buscarEmpresaPorId,
 	type Empresa,
-} from "../../repositories/empresa-model";
-import { httpNaoEncontrado, httpOk } from "../../util/http-util";
+} from "@/repositories/empresa-model";
+import { httpNaoEncontrado, httpOk } from "@/util/http-util";
 
 type AtualizaEmpresaParametros = {
 	id: string;
