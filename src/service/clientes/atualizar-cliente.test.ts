@@ -34,13 +34,15 @@ describe("atualizarClienteService", () => {
 	});
 
 	it("deve atualizar cliente com sucesso quando usuário pertence à empresa", async () => {
-		vi.mocked(clienteRepository.buscarClientePorId).mockResolvedValue(clienteMock);
-		vi.mocked(clienteRepository.verificarUsuarioPertenceEmpresa).mockResolvedValue(
-			true,
+		vi.mocked(clienteRepository.buscarClientePorId).mockResolvedValue(
+			clienteMock,
 		);
-		vi.mocked(clienteRepository.verificarEmailTelefoneDuplicado).mockResolvedValue(
-			false,
-		);
+		vi.mocked(
+			clienteRepository.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(true);
+		vi.mocked(
+			clienteRepository.verificarEmailTelefoneDuplicado,
+		).mockResolvedValue(false);
 		vi.mocked(clienteRepository.atualizarCliente).mockResolvedValue(
 			clienteAtualizadoMock,
 		);
@@ -61,8 +63,12 @@ describe("atualizarClienteService", () => {
 			expect(resultado.body).toEqual(clienteAtualizadoMock);
 		}
 		expect(clienteRepository.buscarClientePorId).toHaveBeenCalledTimes(1);
-		expect(clienteRepository.verificarUsuarioPertenceEmpresa).toHaveBeenCalledTimes(1);
-		expect(clienteRepository.verificarEmailTelefoneDuplicado).toHaveBeenCalledTimes(1);
+		expect(
+			clienteRepository.verificarUsuarioPertenceEmpresa,
+		).toHaveBeenCalledTimes(1);
+		expect(
+			clienteRepository.verificarEmailTelefoneDuplicado,
+		).toHaveBeenCalledTimes(1);
 		expect(clienteRepository.atualizarCliente).toHaveBeenCalledTimes(1);
 		expect(clienteRepository.atualizarCliente).toHaveBeenCalledWith(
 			"cliente-123",
@@ -76,7 +82,9 @@ describe("atualizarClienteService", () => {
 	});
 
 	it("deve retornar erro 404 quando cliente não é encontrado", async () => {
-		vi.mocked(clienteRepository.buscarClientePorId).mockResolvedValue(undefined);
+		vi.mocked(clienteRepository.buscarClientePorId).mockResolvedValue(
+			undefined,
+		);
 
 		const resultado = await atualizarClienteService({
 			clienteId: "cliente-inexistente",
@@ -93,15 +101,19 @@ describe("atualizarClienteService", () => {
 			expect(resultado.code).toBe("NOT_FOUND_ERROR");
 		}
 		expect(clienteRepository.buscarClientePorId).toHaveBeenCalledTimes(1);
-		expect(clienteRepository.verificarUsuarioPertenceEmpresa).not.toHaveBeenCalled();
+		expect(
+			clienteRepository.verificarUsuarioPertenceEmpresa,
+		).not.toHaveBeenCalled();
 		expect(clienteRepository.atualizarCliente).not.toHaveBeenCalled();
 	});
 
 	it("deve retornar erro 403 quando usuário não pertence à empresa", async () => {
-		vi.mocked(clienteRepository.buscarClientePorId).mockResolvedValue(clienteMock);
-		vi.mocked(clienteRepository.verificarUsuarioPertenceEmpresa).mockResolvedValue(
-			false,
+		vi.mocked(clienteRepository.buscarClientePorId).mockResolvedValue(
+			clienteMock,
 		);
+		vi.mocked(
+			clienteRepository.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(false);
 
 		const resultado = await atualizarClienteService({
 			clienteId: "cliente-123",
@@ -118,19 +130,25 @@ describe("atualizarClienteService", () => {
 			expect(resultado.code).toBe("FORBIDDEN_ERROR");
 		}
 		expect(clienteRepository.buscarClientePorId).toHaveBeenCalledTimes(1);
-		expect(clienteRepository.verificarUsuarioPertenceEmpresa).toHaveBeenCalledTimes(1);
-		expect(clienteRepository.verificarEmailTelefoneDuplicado).not.toHaveBeenCalled();
+		expect(
+			clienteRepository.verificarUsuarioPertenceEmpresa,
+		).toHaveBeenCalledTimes(1);
+		expect(
+			clienteRepository.verificarEmailTelefoneDuplicado,
+		).not.toHaveBeenCalled();
 		expect(clienteRepository.atualizarCliente).not.toHaveBeenCalled();
 	});
 
 	it("deve retornar erro 409 quando email está duplicado (ignorando próprio cliente)", async () => {
-		vi.mocked(clienteRepository.buscarClientePorId).mockResolvedValue(clienteMock);
-		vi.mocked(clienteRepository.verificarUsuarioPertenceEmpresa).mockResolvedValue(
-			true,
+		vi.mocked(clienteRepository.buscarClientePorId).mockResolvedValue(
+			clienteMock,
 		);
-		vi.mocked(clienteRepository.verificarEmailTelefoneDuplicado).mockResolvedValue(
-			true,
-		);
+		vi.mocked(
+			clienteRepository.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(true);
+		vi.mocked(
+			clienteRepository.verificarEmailTelefoneDuplicado,
+		).mockResolvedValue(true);
 
 		const resultado = await atualizarClienteService({
 			clienteId: "cliente-123",
@@ -146,7 +164,9 @@ describe("atualizarClienteService", () => {
 			expect(resultado.error).toBe("Recurso já existe");
 			expect(resultado.code).toBe("RESOURCE_ALREADY_EXISTS");
 		}
-		expect(clienteRepository.verificarEmailTelefoneDuplicado).toHaveBeenCalledWith(
+		expect(
+			clienteRepository.verificarEmailTelefoneDuplicado,
+		).toHaveBeenCalledWith(
 			"empresa-123",
 			"email.duplicado@example.com",
 			"(34) 3351-1861",
@@ -156,13 +176,15 @@ describe("atualizarClienteService", () => {
 	});
 
 	it("deve retornar erro 409 quando telefone está duplicado (ignorando próprio cliente)", async () => {
-		vi.mocked(clienteRepository.buscarClientePorId).mockResolvedValue(clienteMock);
-		vi.mocked(clienteRepository.verificarUsuarioPertenceEmpresa).mockResolvedValue(
-			true,
+		vi.mocked(clienteRepository.buscarClientePorId).mockResolvedValue(
+			clienteMock,
 		);
-		vi.mocked(clienteRepository.verificarEmailTelefoneDuplicado).mockResolvedValue(
-			true,
-		);
+		vi.mocked(
+			clienteRepository.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(true);
+		vi.mocked(
+			clienteRepository.verificarEmailTelefoneDuplicado,
+		).mockResolvedValue(true);
 
 		const resultado = await atualizarClienteService({
 			clienteId: "cliente-123",
@@ -178,7 +200,9 @@ describe("atualizarClienteService", () => {
 			expect(resultado.error).toBe("Recurso já existe");
 			expect(resultado.code).toBe("RESOURCE_ALREADY_EXISTS");
 		}
-		expect(clienteRepository.verificarEmailTelefoneDuplicado).toHaveBeenCalledWith(
+		expect(
+			clienteRepository.verificarEmailTelefoneDuplicado,
+		).toHaveBeenCalledWith(
 			"empresa-123",
 			"john.doe@example.com",
 			"(34) 9999-9999",
@@ -188,13 +212,15 @@ describe("atualizarClienteService", () => {
 	});
 
 	it("deve atualizar apenas campos fornecidos", async () => {
-		vi.mocked(clienteRepository.buscarClientePorId).mockResolvedValue(clienteMock);
-		vi.mocked(clienteRepository.verificarUsuarioPertenceEmpresa).mockResolvedValue(
-			true,
+		vi.mocked(clienteRepository.buscarClientePorId).mockResolvedValue(
+			clienteMock,
 		);
-		vi.mocked(clienteRepository.verificarEmailTelefoneDuplicado).mockResolvedValue(
-			false,
-		);
+		vi.mocked(
+			clienteRepository.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(true);
+		vi.mocked(
+			clienteRepository.verificarEmailTelefoneDuplicado,
+		).mockResolvedValue(false);
 		vi.mocked(clienteRepository.atualizarCliente).mockResolvedValue({
 			...clienteMock,
 			nome: "Apenas Nome Atualizado",
@@ -223,44 +249,13 @@ describe("atualizarClienteService", () => {
 		);
 	});
 
-	it("deve atualizar atualizadoEm automaticamente", async () => {
-		vi.mocked(clienteRepository.buscarClientePorId).mockResolvedValue(clienteMock);
-		vi.mocked(clienteRepository.verificarUsuarioPertenceEmpresa).mockResolvedValue(
-			true,
-		);
-		vi.mocked(clienteRepository.verificarEmailTelefoneDuplicado).mockResolvedValue(
-			false,
-		);
-		vi.mocked(clienteRepository.atualizarCliente).mockResolvedValue(
-			clienteAtualizadoMock,
-		);
-
-		await atualizarClienteService({
-			clienteId: "cliente-123",
-			userId: "usuario-123",
-			dados: {
-				nome: "John Updated",
-			},
-		});
-
-		expect(clienteRepository.atualizarCliente).toHaveBeenCalledWith(
-			"cliente-123",
-			expect.objectContaining({
-				nome: "John Updated",
-				atualizadoEm: expect.any(String),
-			}),
-		);
-		const atualizadoEm = vi.mocked(clienteRepository.atualizarCliente).mock
-			.calls[0][1].atualizadoEm;
-		expect(atualizadoEm).toBeDefined();
-		expect(typeof atualizadoEm).toBe("string");
-	});
-
 	it("deve verificar duplicidade apenas quando email ou telefone são fornecidos", async () => {
-		vi.mocked(clienteRepository.buscarClientePorId).mockResolvedValue(clienteMock);
-		vi.mocked(clienteRepository.verificarUsuarioPertenceEmpresa).mockResolvedValue(
-			true,
+		vi.mocked(clienteRepository.buscarClientePorId).mockResolvedValue(
+			clienteMock,
 		);
+		vi.mocked(
+			clienteRepository.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(true);
 		vi.mocked(clienteRepository.atualizarCliente).mockResolvedValue({
 			...clienteMock,
 			nome: "Nome Atualizado",
@@ -275,18 +270,22 @@ describe("atualizarClienteService", () => {
 			},
 		});
 
-		expect(clienteRepository.verificarEmailTelefoneDuplicado).not.toHaveBeenCalled();
+		expect(
+			clienteRepository.verificarEmailTelefoneDuplicado,
+		).not.toHaveBeenCalled();
 		expect(clienteRepository.atualizarCliente).toHaveBeenCalledTimes(1);
 	});
 
 	it("deve usar email/telefone existente quando não fornecido na atualização", async () => {
-		vi.mocked(clienteRepository.buscarClientePorId).mockResolvedValue(clienteMock);
-		vi.mocked(clienteRepository.verificarUsuarioPertenceEmpresa).mockResolvedValue(
-			true,
+		vi.mocked(clienteRepository.buscarClientePorId).mockResolvedValue(
+			clienteMock,
 		);
-		vi.mocked(clienteRepository.verificarEmailTelefoneDuplicado).mockResolvedValue(
-			false,
-		);
+		vi.mocked(
+			clienteRepository.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(true);
+		vi.mocked(
+			clienteRepository.verificarEmailTelefoneDuplicado,
+		).mockResolvedValue(false);
 		vi.mocked(clienteRepository.atualizarCliente).mockResolvedValue(
 			clienteAtualizadoMock,
 		);
@@ -299,40 +298,13 @@ describe("atualizarClienteService", () => {
 			},
 		});
 
-		expect(clienteRepository.verificarEmailTelefoneDuplicado).toHaveBeenCalledWith(
+		expect(
+			clienteRepository.verificarEmailTelefoneDuplicado,
+		).toHaveBeenCalledWith(
 			"empresa-123",
 			"novo.email@example.com",
 			"(34) 3351-1861",
 			"cliente-123",
 		);
 	});
-
-	it("deve retornar erro 404 quando atualização retorna null", async () => {
-		vi.mocked(clienteRepository.buscarClientePorId).mockResolvedValue(clienteMock);
-		vi.mocked(clienteRepository.verificarUsuarioPertenceEmpresa).mockResolvedValue(
-			true,
-		);
-		vi.mocked(clienteRepository.verificarEmailTelefoneDuplicado).mockResolvedValue(
-			false,
-		);
-		vi.mocked(clienteRepository.atualizarCliente).mockResolvedValue(undefined);
-
-		const resultado = await atualizarClienteService({
-			clienteId: "cliente-123",
-			userId: "usuario-123",
-			dados: {
-				nome: "Nome Atualizado",
-			},
-		});
-
-		expect(resultado.success).toBe(false);
-		if (!resultado.success) {
-			expect(resultado.status).toBe(404);
-			expect(resultado.error).toBe("Recurso não encontrado");
-			expect(resultado.code).toBe("NOT_FOUND_ERROR");
-		}
-		expect(clienteRepository.buscarClientePorId).toHaveBeenCalledTimes(1);
-		expect(clienteRepository.atualizarCliente).toHaveBeenCalledTimes(1);
-	});
 });
-

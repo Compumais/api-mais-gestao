@@ -41,12 +41,12 @@ describe("criarClienteService", () => {
 	});
 
 	it("deve criar cliente com sucesso quando usuário pertence à empresa e não há duplicidade", async () => {
-		vi.mocked(clienteRepository.verificarUsuarioPertenceEmpresa).mockResolvedValue(
-			true,
-		);
-		vi.mocked(clienteRepository.verificarEmailTelefoneDuplicado).mockResolvedValue(
-			false,
-		);
+		vi.mocked(
+			clienteRepository.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(true);
+		vi.mocked(
+			clienteRepository.verificarEmailTelefoneDuplicado,
+		).mockResolvedValue(false);
 		vi.mocked(clienteRepository.criarCliente).mockResolvedValue(clienteMock);
 
 		const resultado = await criarClienteService({
@@ -59,24 +59,25 @@ describe("criarClienteService", () => {
 			expect(resultado.status).toBe(201);
 			expect(resultado.body).toEqual(clienteMock);
 		}
-		expect(clienteRepository.verificarUsuarioPertenceEmpresa).toHaveBeenCalledTimes(
-			1,
-		);
-		expect(clienteRepository.verificarUsuarioPertenceEmpresa).toHaveBeenCalledWith(
-			"usuario-123",
-			"empresa-123",
-		);
-		expect(clienteRepository.verificarEmailTelefoneDuplicado).toHaveBeenCalledTimes(
-			1,
-		);
+		expect(
+			clienteRepository.verificarUsuarioPertenceEmpresa,
+		).toHaveBeenCalledTimes(1);
+		expect(
+			clienteRepository.verificarUsuarioPertenceEmpresa,
+		).toHaveBeenCalledWith("usuario-123", "empresa-123");
+		expect(
+			clienteRepository.verificarEmailTelefoneDuplicado,
+		).toHaveBeenCalledTimes(1);
 		expect(clienteRepository.criarCliente).toHaveBeenCalledTimes(1);
-		expect(clienteRepository.criarCliente).toHaveBeenCalledWith(dadosClienteMock);
+		expect(clienteRepository.criarCliente).toHaveBeenCalledWith(
+			dadosClienteMock,
+		);
 	});
 
 	it("deve retornar erro 403 quando usuário não pertence à empresa", async () => {
-		vi.mocked(clienteRepository.verificarUsuarioPertenceEmpresa).mockResolvedValue(
-			false,
-		);
+		vi.mocked(
+			clienteRepository.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(false);
 
 		const resultado = await criarClienteService({
 			dadosCliente: dadosClienteMock,
@@ -89,20 +90,22 @@ describe("criarClienteService", () => {
 			expect(resultado.error).toBe("Acesso proibido");
 			expect(resultado.code).toBe("FORBIDDEN_ERROR");
 		}
-		expect(clienteRepository.verificarUsuarioPertenceEmpresa).toHaveBeenCalledTimes(
-			1,
-		);
-		expect(clienteRepository.verificarEmailTelefoneDuplicado).not.toHaveBeenCalled();
+		expect(
+			clienteRepository.verificarUsuarioPertenceEmpresa,
+		).toHaveBeenCalledTimes(1);
+		expect(
+			clienteRepository.verificarEmailTelefoneDuplicado,
+		).not.toHaveBeenCalled();
 		expect(clienteRepository.criarCliente).not.toHaveBeenCalled();
 	});
 
 	it("deve retornar erro 409 quando email está duplicado na empresa", async () => {
-		vi.mocked(clienteRepository.verificarUsuarioPertenceEmpresa).mockResolvedValue(
-			true,
-		);
-		vi.mocked(clienteRepository.verificarEmailTelefoneDuplicado).mockResolvedValue(
-			true,
-		);
+		vi.mocked(
+			clienteRepository.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(true);
+		vi.mocked(
+			clienteRepository.verificarEmailTelefoneDuplicado,
+		).mockResolvedValue(true);
 
 		const resultado = await criarClienteService({
 			dadosCliente: dadosClienteMock,
@@ -115,13 +118,15 @@ describe("criarClienteService", () => {
 			expect(resultado.error).toBe("Recurso já existe");
 			expect(resultado.code).toBe("RESOURCE_ALREADY_EXISTS");
 		}
-		expect(clienteRepository.verificarUsuarioPertenceEmpresa).toHaveBeenCalledTimes(
-			1,
-		);
-		expect(clienteRepository.verificarEmailTelefoneDuplicado).toHaveBeenCalledTimes(
-			1,
-		);
-		expect(clienteRepository.verificarEmailTelefoneDuplicado).toHaveBeenCalledWith(
+		expect(
+			clienteRepository.verificarUsuarioPertenceEmpresa,
+		).toHaveBeenCalledTimes(1);
+		expect(
+			clienteRepository.verificarEmailTelefoneDuplicado,
+		).toHaveBeenCalledTimes(1);
+		expect(
+			clienteRepository.verificarEmailTelefoneDuplicado,
+		).toHaveBeenCalledWith(
 			"empresa-123",
 			"john.doe@example.com",
 			"(34) 3351-1861",
@@ -130,12 +135,12 @@ describe("criarClienteService", () => {
 	});
 
 	it("deve retornar erro 409 quando telefone está duplicado na empresa", async () => {
-		vi.mocked(clienteRepository.verificarUsuarioPertenceEmpresa).mockResolvedValue(
-			true,
-		);
-		vi.mocked(clienteRepository.verificarEmailTelefoneDuplicado).mockResolvedValue(
-			true,
-		);
+		vi.mocked(
+			clienteRepository.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(true);
+		vi.mocked(
+			clienteRepository.verificarEmailTelefoneDuplicado,
+		).mockResolvedValue(true);
 
 		const dadosComTelefoneDuplicado = {
 			...dadosClienteMock,
@@ -154,21 +159,19 @@ describe("criarClienteService", () => {
 			expect(resultado.error).toBe("Recurso já existe");
 			expect(resultado.code).toBe("RESOURCE_ALREADY_EXISTS");
 		}
-		expect(clienteRepository.verificarEmailTelefoneDuplicado).toHaveBeenCalledWith(
-			"empresa-123",
-			null,
-			"(34) 3351-1861",
-		);
+		expect(
+			clienteRepository.verificarEmailTelefoneDuplicado,
+		).toHaveBeenCalledWith("empresa-123", null, "(34) 3351-1861");
 		expect(clienteRepository.criarCliente).not.toHaveBeenCalled();
 	});
 
 	it("deve retornar erro 400 quando criação falha (retorna null)", async () => {
-		vi.mocked(clienteRepository.verificarUsuarioPertenceEmpresa).mockResolvedValue(
-			true,
-		);
-		vi.mocked(clienteRepository.verificarEmailTelefoneDuplicado).mockResolvedValue(
-			false,
-		);
+		vi.mocked(
+			clienteRepository.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(true);
+		vi.mocked(
+			clienteRepository.verificarEmailTelefoneDuplicado,
+		).mockResolvedValue(false);
 		vi.mocked(clienteRepository.criarCliente).mockResolvedValue(null as any);
 
 		const resultado = await criarClienteService({
@@ -182,22 +185,22 @@ describe("criarClienteService", () => {
 			expect(resultado.error).toBe("Erro ao processar a requisição");
 			expect(resultado.code).toBe("BAD_REQUEST_ERROR");
 		}
-		expect(clienteRepository.verificarUsuarioPertenceEmpresa).toHaveBeenCalledTimes(
-			1,
-		);
-		expect(clienteRepository.verificarEmailTelefoneDuplicado).toHaveBeenCalledTimes(
-			1,
-		);
+		expect(
+			clienteRepository.verificarUsuarioPertenceEmpresa,
+		).toHaveBeenCalledTimes(1);
+		expect(
+			clienteRepository.verificarEmailTelefoneDuplicado,
+		).toHaveBeenCalledTimes(1);
 		expect(clienteRepository.criarCliente).toHaveBeenCalledTimes(1);
 	});
 
 	it("deve verificar permissão antes de verificar duplicidade", async () => {
-		vi.mocked(clienteRepository.verificarUsuarioPertenceEmpresa).mockResolvedValue(
-			true,
-		);
-		vi.mocked(clienteRepository.verificarEmailTelefoneDuplicado).mockResolvedValue(
-			false,
-		);
+		vi.mocked(
+			clienteRepository.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(true);
+		vi.mocked(
+			clienteRepository.verificarEmailTelefoneDuplicado,
+		).mockResolvedValue(false);
 		vi.mocked(clienteRepository.criarCliente).mockResolvedValue(clienteMock);
 
 		await criarClienteService({
@@ -215,4 +218,3 @@ describe("criarClienteService", () => {
 		expect(duplicidadeCalls.length).toBeGreaterThan(0);
 	});
 });
-
