@@ -1,0 +1,108 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { Empresa } from "@/model/empresa-model.js";
+import * as empresaRepository from "@/repositories/empresa-model.js";
+import { criarEmpresaService } from "./criar-empresa.js";
+
+vi.mock("@/repositories/empresa-model.js");
+
+describe("criarEmpresaService", () => {
+	const empresaMock: Empresa = {
+		id: "empresa-123",
+		nome: "Empresa Teste",
+		cnpj: "12.345.678/0001-90",
+		telefone: "(34) 99999-9999",
+		proprietarioId: "proprietario-1",
+		criadoEm: new Date().toISOString(),
+		atualizadoEm: new Date().toISOString(),
+	};
+
+	const proprietarioMock = {
+		id: "proprietario-1",
+		name: "Proprietário Teste",
+		email: "proprietario@example.com",
+		emailVerified: true,
+		role: "proprietario" as const,
+		createdAt: new Date().toISOString(),
+		updatedAt: new Date().toISOString(),
+		image: null,
+		maxCompanies: 5,
+	};
+
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it("deve criar uma empresa com sucesso quando dentro do limite", async () => {
+		vi.mocked(empresaRepository.criarEmpresa).mockResolvedValue([empresaMock]);
+
+		const resultado = await criarEmpresaService({
+			dadosEmpresa: {
+				id: "empresa-123",
+				cnpj: "12.345.678/0001-90",
+				nome: "Empresa Teste",
+				proprietarioId: "proprietario-1",
+				telefone: "(34) 99999-9999",
+				atualizadoEm: new Date().toISOString(),
+				criadoEm: new Date().toISOString(),
+			},
+			proprietario: proprietarioMock,
+			quantidadeEmpresas: 2, // Já tem 2 empresas, limite é 5, pode criar
+		});
+
+		expect(resultado.success).toBe(true);
+		if (resultado.success) {
+			expect(resultado.status).toBe(201);
+			expect(resultado.body).toEqual(empresaMock);
+		}
+		expect(empresaRepository.criarEmpresa).toHaveBeenCalledTimes(1);
+	});
+
+	it("deve retornar erro quando limite de empresas é excedido", async () => {
+		const resultado = await criarEmpresaService({
+			dadosEmpresa: {
+				id: "empresa-123",
+				cnpj: "12.345.678/0001-90",
+				nome: "Empresa Teste",
+				proprietarioId: "proprietario-1",
+				telefone: "(34) 99999-9999",
+				atualizadoEm: new Date().toISOString(),
+				criadoEm: new Date().toISOString(),
+			},
+			proprietario: { ...proprietarioMock, maxCompanies: 3 },
+			quantidadeEmpresas: 3, // Já tem 3 empresas, limite é 3, não pode criar mais
+		});
+
+		expect(resultado.success).toBe(false);
+		if (!resultado.success) {
+			expect(resultado.status).toBe(429);
+			expect(resultado.error).toBe("Limite excedido");
+			expect(resultado.code).toBe("LIMIT_EXCEEDED");
+		}
+		expect(empresaRepository.criarEmpresa).not.toHaveBeenCalled();
+	});
+
+	it("deve permitir criar empresa quando maxCompanies é null ou undefined", async () => {
+		vi.mocked(empresaRepository.criarEmpresa).mockResolvedValue([empresaMock]);
+
+		const resultado = await criarEmpresaService({
+			dadosEmpresa: {
+				id: "empresa-123",
+				cnpj: "12.345.678/0001-90",
+				nome: "Empresa Teste",
+				proprietarioId: "proprietario-1",
+				telefone: "(34) 99999-9999",
+				atualizadoEm: new Date().toISOString(),
+				criadoEm: new Date().toISOString(),
+			},
+			proprietario: { ...proprietarioMock, maxCompanies: null },
+			quantidadeEmpresas: 10, // Sem limite, pode criar
+		});
+
+		expect(resultado.success).toBe(true);
+		if (resultado.success) {
+			expect(resultado.status).toBe(201);
+			expect(resultado.body).toEqual(empresaMock);
+		}
+		expect(empresaRepository.criarEmpresa).toHaveBeenCalledTimes(1);
+	});
+});
