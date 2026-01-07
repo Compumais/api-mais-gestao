@@ -1,7 +1,9 @@
 import cors from "@fastify/cors";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import Fastify from "fastify";
+import { authRotas } from "./controllers/auth/rotas.js";
 import { authenticationRoute } from "./controllers/authentication.js";
+import { clientesRotas } from "./controllers/clientes/rotas.js";
 import { empresasRotas } from "./controllers/empresas/rotas.js";
 import { planoContasRotas } from "./controllers/plano-contas/rotas.js";
 
@@ -34,6 +36,8 @@ app.route({
 
 app.register(planoContasRotas);
 app.register(empresasRotas);
+app.register(clientesRotas);
+app.register(authRotas);
 
 app.listen({ port: 3333 }).then(() => {
 	console.log("HTTP server running on port 3333");

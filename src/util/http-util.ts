@@ -68,3 +68,21 @@ export function httpSemConteudo(): HttpResponse<null> {
 		body: null,
 	};
 }
+
+export function httpProibido() {
+	return {
+		success: false,
+		status: 403,
+		error: "Acesso proibido",
+		code: "FORBIDDEN_ERROR",
+	};
+}
+
+export function httpErro() {
+	return {
+		success: false,
+		status: 400,
+		error: "Erro ao processar a requisição",
+		code: "BAD_REQUEST_ERROR",
+	};
+}
