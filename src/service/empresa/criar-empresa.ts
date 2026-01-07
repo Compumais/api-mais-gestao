@@ -1,28 +1,31 @@
+import type { Empresa } from "../../model/empresa-model";
+import type { HttpResponse } from "../../model/http-model";
 import type { Usuario } from "../../model/usuario-model";
 import {
 	criarEmpresa,
 	type NovaEmpresa,
-} from "../../repositories/empresa-model";
+} from "../../repositories/empresa-repositories";
 import {
 	httpCriacao,
-	httpLimiteExcedido, 
-	httpRecursoExistente
+	httpLimiteExcedido,
+	httpRecursoExistente,
 } from "../../util/http-util";
-import type { Empresa } from "../../model/empresa-model";
-import type { HttpResponse } from "../../model/http-model";
 
 type CriarEmpresaParametros = {
-	dadosEmpresa: NovaEmpresa
-	proprietario: Usuario
-	quantidadeEmpresas: number
-}
+	dadosEmpresa: NovaEmpresa;
+	proprietario: Usuario;
+	quantidadeEmpresas: number;
+};
 
 export async function criarEmpresaService({
 	dadosEmpresa,
 	quantidadeEmpresas,
 	proprietario,
 }: CriarEmpresaParametros): Promise<HttpResponse<Empresa | null>> {
-	if (proprietario.maxCompanies && quantidadeEmpresas >= proprietario.maxCompanies) {
+	if (
+		proprietario.maxCompanies &&
+		quantidadeEmpresas >= proprietario.maxCompanies
+	) {
 		return httpLimiteExcedido();
 	}
 

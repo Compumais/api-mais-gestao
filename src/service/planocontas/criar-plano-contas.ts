@@ -1,7 +1,7 @@
 import {
 	criarPlanoContas,
 	type NovoPlanoContas,
-} from "../../repositories/plano-contas-model";
+} from "../../repositories/plano-contas-repositories";
 
 export async function criarPlanoContasService(
 	dadosPlanoContas: NovoPlanoContas,

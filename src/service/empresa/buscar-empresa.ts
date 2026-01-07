@@ -2,7 +2,7 @@ import type { HttpResponse } from "../../model/http-model";
 import {
 	buscarEmpresaPorId,
 	type Empresa,
-} from "../../repositories/empresa-model";
+} from "../../repositories/empresa-repositories";
 import { httpNaoEncontrado, httpOk } from "../../util/http-util";
 
 export async function buscarEmpresaService(

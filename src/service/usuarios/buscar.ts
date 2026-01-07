@@ -1,6 +1,6 @@
 import type { HttpResponse } from "../../model/http-model";
 import type { Usuario } from "../../model/usuario-model";
-import { buscarUsuarioPorId } from "../../repositories/usuarios-model";
+import { buscarUsuarioPorId } from "../../repositories/usuarios-repositories";
 import { httpCriacao, httpNaoEncontrado } from "../../util/http-util";
 
 export async function buscarUsuarioPorIdService(

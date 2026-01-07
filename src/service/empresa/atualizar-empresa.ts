@@ -3,7 +3,7 @@ import {
 	atualizarEmpresa,
 	buscarEmpresaPorId,
 	type Empresa,
-} from "@/repositories/empresa-model";
+} from "@/repositories/empresa-repositories";
 import { httpNaoEncontrado, httpOk } from "@/util/http-util";
 
 type AtualizaEmpresaParametros = {

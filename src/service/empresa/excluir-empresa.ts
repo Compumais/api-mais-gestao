@@ -4,7 +4,7 @@ import {
 	type Empresa,
 	excluirEmpresa,
 	verificarDadosAssociados,
-} from "../../repositories/empresa-model";
+} from "../../repositories/empresa-repositories";
 import { httpNaoEncontrado, httpSemConteudo } from "../../util/http-util";
 
 export async function excluirEmpresaService(

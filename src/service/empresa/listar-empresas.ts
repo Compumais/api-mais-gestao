@@ -1,5 +1,8 @@
 import type { HttpResponse } from "../../model/http-model";
-import { type Empresa, listarEmpresas } from "../../repositories/empresa-model";
+import {
+	type Empresa,
+	listarEmpresas,
+} from "../../repositories/empresa-repositories";
 import { httpOk } from "../../util/http-util";
 
 type ListarEmpresasParametros = {
