@@ -60,3 +60,11 @@ export function httpOk<T>(body: T): HttpResponse<T> {
 		body,
 	};
 }
+
+export function httpSemConteudo(): HttpResponse<null> {
+	return {
+		success: true,
+		status: 204,
+		body: null,
+	};
+}

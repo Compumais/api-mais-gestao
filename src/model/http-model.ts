@@ -2,7 +2,7 @@ export type HttpResponse<T> =
 	| {
 			success: true;
 			status: number;
-			body?: T;
+			body?: T | null;
 	  }
 	| {
 			success: false;
