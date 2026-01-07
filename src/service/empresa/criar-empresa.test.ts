@@ -3,7 +3,7 @@ import type { Empresa } from "@/model/empresa-model.js";
 import * as empresaRepository from "@/repositories/empresa-repositories.js";
 import { criarEmpresaService } from "./criar-empresa.js";
 
-vi.mock("@/repositories/empresa-model.js");
+vi.mock("@/repositories/empresa-repositories.js");
 
 describe("criarEmpresaService", () => {
 	const empresaMock: Empresa = {
