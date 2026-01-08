@@ -26,7 +26,6 @@ export async function criarPlanoContas(
 	reply: FastifyReply,
 ) {
 	try {
-		console.log("USUARIO:", request.user);
 		if (!request.user) {
 			return reply.status(401).send({
 				error: "Não autorizado",
@@ -63,12 +62,17 @@ export async function criarPlanoContas(
 			planoContasId: dadosValidados.planoContasId,
 		};
 
-		const planoContas = await criarPlanoContasService(
+		const resultado = await criarPlanoContasService(
 			dadosPlanoContas,
 			usuarioId,
+			request.user.roles,
 		);
 
-		return reply.status(201).send(planoContas);
+		if (!resultado.success) {
+			return reply.status(resultado.status).send(resultado);
+		}
+
+		return reply.status(resultado.status).send(resultado.body);
 	} catch (err) {
 		console.error(err);
 

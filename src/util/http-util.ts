@@ -2,7 +2,7 @@ import type { HttpResponse } from "../model/http-model";
 
 export function httpCriacao<T>(body: T): HttpResponse<T> {
 	return {
-		success: true,
+		success: true as const,
 		status: 201,
 		body,
 	};
@@ -55,7 +55,7 @@ export function httpLimiteExcedido() {
 
 export function httpOk<T>(body: T): HttpResponse<T> {
 	return {
-		success: true,
+		success: true as const,
 		status: 200,
 		body,
 	};
@@ -63,15 +63,15 @@ export function httpOk<T>(body: T): HttpResponse<T> {
 
 export function httpSemConteudo(): HttpResponse<null> {
 	return {
-		success: true,
+		success: true as const,
 		status: 204,
 		body: null,
 	};
 }
 
-export function httpProibido() {
+export function httpProibido(): HttpResponse<never> {
 	return {
-		success: false,
+		success: false as const,
 		status: 403,
 		error: "Acesso proibido",
 		code: "FORBIDDEN_ERROR",

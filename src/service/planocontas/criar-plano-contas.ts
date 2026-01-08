@@ -10,12 +10,20 @@ import {
 	type NovoPlanoContas,
 } from "@/repositories/plano-contas-repositories";
 import { httpCriacao, httpProibido } from "@/util/http-util";
+import { verificarPermissao } from "@/util/verificar-permissao";
 import { criarAuditoriaService } from "../auditoria/criar-auditoria";
 
 export async function criarPlanoContasService(
 	dadosPlanoContas: NovoPlanoContas,
 	usuarioId: string,
+	roles: string[] | undefined,
 ) {
+	const temPermissao = verificarPermissao(roles, ["proprietario", "financeiro"]);
+
+	if (!temPermissao) {
+		return httpProibido();
+	}
+
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
 		usuarioId,
 		dadosPlanoContas.empresaId,
@@ -32,15 +40,11 @@ export async function criarPlanoContasService(
 			dadosPlanoContas.planoContasId,
 		);
 
-		if (!planoPai) {
-			throw new Error("Plano de contas pai não encontrado");
-		}
-
-		if (planoPai.empresaId !== dadosPlanoContas.empresaId) {
+		if (planoPai?.empresaId !== dadosPlanoContas.empresaId) {
 			throw new Error("Plano de contas pai não pertence à mesma empresa");
 		}
 
-		const codigoPai = planoPai.codigo;
+		const codigoPai = planoPai?.codigo;
 		if (!codigoPai) {
 			throw new Error("Plano de contas pai não possui código");
 		}
