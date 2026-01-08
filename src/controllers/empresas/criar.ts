@@ -29,35 +29,35 @@ export async function criarEmpresa(
 		const dadosValidados = criarEmpresaSchema.parse(request.body);
 		const uuid = uuidv4();
 
-	const usuario = await buscarUsuarioPorIdService(usuarioId);
+		const usuario = await buscarUsuarioPorIdService(usuarioId);
 
-	if (!usuario.success || !usuario.body) {
-		return reply.status(usuario.status).send(usuario);
-	}
+		if (!usuario.success || !usuario.body) {
+			return reply.status(usuario.status).send(usuario);
+		}
 
-	const empresasDoUsuario = await listarEmpresasService({
-		proprietarioId: usuarioId,
-	});
+		const empresasDoUsuario = await listarEmpresasService({
+			proprietarioId: usuarioId,
+		});
 
-	if (!empresasDoUsuario.success || !empresasDoUsuario.body) {
-		return reply.status(empresasDoUsuario.status).send(empresasDoUsuario);
-	}
+		if (!empresasDoUsuario.success || !empresasDoUsuario.body) {
+			return reply.status(empresasDoUsuario.status).send(empresasDoUsuario);
+		}
 
-	const dadosEmpresa = {
-		id: uuid,
-		proprietarioId: usuarioId,
-		nome: dadosValidados.nome,
-		cnpj: dadosValidados.cnpj,
-		telefone: dadosValidados.telefone,
-		atualizadoEm: new Date().toISOString(),
-		criadoEm: new Date().toISOString(),
-	}
+		const dadosEmpresa = {
+			id: uuid,
+			proprietarioId: usuarioId,
+			nome: dadosValidados.nome,
+			cnpj: dadosValidados.cnpj,
+			telefone: dadosValidados.telefone,
+			atualizadoEm: new Date().toISOString(),
+			criadoEm: new Date().toISOString(),
+		};
 
-	const empresa = await criarEmpresaService({
-		dadosEmpresa,
-		proprietario: usuario.body,
-		quantidadeEmpresas: empresasDoUsuario.body?.length ?? 9999,
-	});
+		const empresa = await criarEmpresaService({
+			dadosEmpresa,
+			proprietario: usuario.body,
+			quantidadeEmpresas: empresasDoUsuario.body?.data?.length ?? 9999,
+		});
 
 		if (!empresa.success || !empresa.body) {
 			return reply.status(empresa.status).send(empresa);
