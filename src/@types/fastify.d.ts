@@ -6,6 +6,7 @@ declare module "fastify" {
 			id: string;
 			name: string;
 			email?: string;
+			roles: string[];
 			// Permite adicionar mais informações do usuário futuramente
 			[key: string]: unknown;
 		};

@@ -47,6 +47,7 @@ export async function verifyJwt(request: FastifyRequest, reply: FastifyReply) {
 			id: session.user.id,
 			name: session.user.name || "",
 			email: session.user.email,
+			roles: session.user.roles,
 			// Permite adicionar mais informações do usuário futuramente
 			// Adicione outros campos aqui conforme necessário
 		};

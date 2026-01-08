@@ -1,5 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { customSession } from "better-auth/plugins";
+import { eq } from "drizzle-orm";
 import * as schema from "../../drizzle/schema.js";
 import { db } from "../repositories/connection.js";
 
@@ -12,6 +14,7 @@ export const auth = betterAuth({
 	database: drizzleAdapter(db, {
 		provider: "pg",
 	}),
+
 	emailAndPassword: {
 		enabled: true,
 	},
@@ -20,8 +23,8 @@ export const auth = betterAuth({
 	},
 	session: {
 		modelName: "sessoes",
-		expiresIn: 60 * 60 * 24 * 7, // 7 days
-		updateAge: 60 * 60 * 24, // 1 day
+		expiresIn: 60 * 60 * 24 * 7, // 7 dias
+		updateAge: 60 * 60 * 24, // 1 dia
 	},
 	account: {
 		modelName: "contas",
@@ -41,5 +44,23 @@ export const auth = betterAuth({
 		appLocale: "pt-BR",
 		appTimezone: "America/Sao_Paulo",
 	},
-	plugins: [],
+	plugins: [
+		customSession(async ({ user, session }) => {
+			const roles = await db
+				.select({
+					role: schema.usuarios.role,
+				})
+				.from(schema.usuarios)
+				.where(eq(schema.usuarios.id, user.id))
+				.limit(1);
+
+			return {
+				user: {
+					...user,
+					roles: roles.map((role) => role.role),
+				},
+				session,
+			};
+		}),
+	],
 });
