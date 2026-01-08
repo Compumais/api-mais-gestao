@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { excluirClienteService } from "../../service/clientes/excluir-cliente";
+import { excluirClienteService } from "../../../service/clientes/excluir-cliente";
 
 const excluirClienteParamsSchema = z.object({
 	id: z.string().uuid(),
@@ -46,4 +46,3 @@ export async function excluirCliente(
 		});
 	}
 }
-

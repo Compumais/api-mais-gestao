@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { atualizarClienteService } from "../../service/clientes/atualizar-cliente";
+import { atualizarClienteService } from "../../../service/clientes/atualizar-cliente";
 
 const atualizarClienteParamsSchema = z.object({
 	id: z.string().uuid(),
@@ -59,4 +59,3 @@ export async function atualizarCliente(
 		});
 	}
 }
-

@@ -1,26 +1,24 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { atualizarEmpresaService } from "../../service/empresa/atualizar-empresa";
+import { listarEmpresasService } from "../../../service/empresa/listar-empresas";
 
-const atualizarEmpresaParamsSchema = z.object({
-	id: z.string().uuid(),
-});
-
-const atualizarEmpresaBodySchema = z.object({
+const listarEmpresasQuerySchema = z.object({
+	page: z.coerce.number().min(1).optional().default(1),
+	limit: z.coerce.number().min(1).max(100).optional().default(10),
+	proprietarioId: z.string().optional(),
 	nome: z.string().optional(),
 	cnpj: z.string().optional(),
 	telefone: z.string().optional(),
 });
 
-export async function atualizarEmpresa(
+export async function listarEmpresas(
 	request: FastifyRequest,
 	reply: FastifyReply,
 ) {
 	try {
-		const { id } = atualizarEmpresaParamsSchema.parse(request.params);
-		const dados = atualizarEmpresaBodySchema.parse(request.body);
+		const query = listarEmpresasQuerySchema.parse(request.query);
 
-		const resultado = await atualizarEmpresaService({ id, dados });
+		const resultado = await listarEmpresasService(query);
 
 		if (!resultado.success) {
 			return reply.status(resultado.status).send(resultado);
@@ -37,8 +35,8 @@ export async function atualizarEmpresa(
 			});
 		}
 		return reply.status(500).send({
-			error: "Erro ao atualizar empresa",
-			code: "UPDATE_EMPRESA_ERROR",
+			error: "Erro ao listar empresas",
+			code: "LIST_EMPRESA_ERROR",
 		});
 	}
 }

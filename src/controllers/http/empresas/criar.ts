@@ -1,9 +1,9 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { v4 as uuidv4 } from "uuid";
 import z from "zod";
-import { criarEmpresaService } from "../../service/empresa/criar-empresa";
-import { listarEmpresasService } from "../../service/empresa/listar-empresas";
-import { buscarUsuarioPorIdService } from "../../service/usuarios/buscar";
+import { criarEmpresaService } from "../../../service/empresa/criar-empresa";
+import { listarEmpresasService } from "../../../service/empresa/listar-empresas";
+import { buscarUsuarioPorIdService } from "../../../service/usuarios/buscar";
 
 const criarEmpresaSchema = z.object({
 	nome: z.string(),

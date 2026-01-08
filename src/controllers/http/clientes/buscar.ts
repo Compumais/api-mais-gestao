@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { buscarClienteService } from "../../service/clientes/buscar-cliente";
+import { buscarClienteService } from "../../../service/clientes/buscar-cliente";
 
 const buscarClienteParamsSchema = z.object({
 	id: z.string().uuid(),
@@ -46,4 +46,3 @@ export async function buscarCliente(
 		});
 	}
 }
-

@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { verifyJwt } from "../middleware/verify-jwt.js";
+import { verifyJwt } from "../../middleware/verify-jwt.js";
 import { atualizarEmpresa } from "./atualizar.js";
 import { buscarEmpresa } from "./buscar.js";
 import { criarEmpresa } from "./criar.js";

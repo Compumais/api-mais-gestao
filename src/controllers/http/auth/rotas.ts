@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { verifyJwt } from "../middleware/verify-jwt";
+import { verifyJwt } from "../../middleware/verify-jwt";
 import { perfil } from "./perfil";
 
 export async function authRotas(app: FastifyInstance) {

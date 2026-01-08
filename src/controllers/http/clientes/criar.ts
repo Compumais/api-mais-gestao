@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { v4 as uuidv4 } from "uuid";
 import z from "zod";
-import { criarClienteService } from "../../service/clientes/criar-cliente";
+import { criarClienteService } from "../../../service/clientes/criar-cliente";
 
 const criarClienteSchema = z.object({
 	nome: z.string().min(1),

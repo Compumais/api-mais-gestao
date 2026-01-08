@@ -1,11 +1,11 @@
 import cors from "@fastify/cors";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import Fastify from "fastify";
-import { authRotas } from "./controllers/auth/rotas.js";
 import { authenticationRoute } from "./controllers/authentication.js";
-import { clientesRotas } from "./controllers/clientes/rotas.js";
-import { empresasRotas } from "./controllers/empresas/rotas.js";
-import { planoContasRotas } from "./controllers/plano-contas/rotas.js";
+import { authRotas } from "./controllers/http/auth/rotas.js";
+import { clientesRotas } from "./controllers/http/clientes/rotas.js";
+import { empresasRotas } from "./controllers/http/empresas/rotas.js";
+import { planoContasRotas } from "./controllers/http/plano-contas/rotas.js";
 
 export const app = Fastify({ logger: true });
 
