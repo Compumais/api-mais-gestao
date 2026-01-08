@@ -1,15 +1,12 @@
 import type { HttpResponse } from "@/model/http-model";
 import type { PlanoContas } from "@/model/plano-contas-model";
-import {
-	buscarEmpresasDoUsuario,
-} from "@/repositories/clientes-repositories";
-import {
-	listarPlanoContasPorEmpresas,
-} from "@/repositories/plano-contas-repositories";
+import { buscarEmpresasDoUsuario } from "@/repositories/clientes-repositories";
+import { listarPlanoContasPorEmpresas } from "@/repositories/plano-contas-repositories";
 import { httpOk } from "@/util/http-util";
 
 type ListarPlanoContasParametros = {
 	userId: string;
+	planoContasId?: string | undefined;
 	page?: number;
 	limit?: number;
 };
@@ -26,9 +23,12 @@ type ListarPlanoContasResposta = {
 
 export async function listarPlanoContasService({
 	userId,
+	planoContasId,
 	page = 1,
 	limit = 10,
-}: ListarPlanoContasParametros): Promise<HttpResponse<ListarPlanoContasResposta>> {
+}: ListarPlanoContasParametros): Promise<
+	HttpResponse<ListarPlanoContasResposta>
+> {
 	const empresaIds = await buscarEmpresasDoUsuario(userId);
 
 	if (empresaIds.length === 0) {
@@ -45,6 +45,7 @@ export async function listarPlanoContasService({
 
 	const { planosContas, total } = await listarPlanoContasPorEmpresas({
 		empresaIds,
+		planoContasId,
 		page,
 		limit,
 	});
@@ -61,4 +62,3 @@ export async function listarPlanoContasService({
 		},
 	});
 }
-

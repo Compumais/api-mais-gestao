@@ -72,12 +72,14 @@ export async function buscarProximoCodigoComPai(
 
 export type ListarPlanoContasParametros = {
 	empresaIds: string[];
+	planoContasId?: string | undefined;
 	page?: number;
 	limit?: number;
 };
 
 export async function listarPlanoContasPorEmpresas({
 	empresaIds,
+	planoContasId,
 	page = 1,
 	limit = 10,
 }: ListarPlanoContasParametros) {
@@ -91,6 +93,12 @@ export async function listarPlanoContasPorEmpresas({
 	}
 
 	where.push(inArray(schema.planocontas.empresaId, empresaIds));
+
+	if (planoContasId) {
+		where.push(eq(schema.planocontas.planoContasId, planoContasId));
+	} else {
+		where.push(isNull(schema.planocontas.planoContasId));
+	}
 
 	const offset = (page - 1) * limit;
 
