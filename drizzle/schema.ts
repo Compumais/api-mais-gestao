@@ -112,6 +112,7 @@ export const auditLogs = pgTable(
 		recurso: text().notNull(),
 		recursoId: text(),
 		userId: text(),
+		empresaId: text(),
 		metadados: jsonb(),
 		criadoEm: timestamp({ precision: 3, mode: "string" })
 			.default(sql`CURRENT_TIMESTAMP`)
@@ -640,22 +641,35 @@ export const financeirolancamento = pgTable(
 	],
 );
 
-export const planocontas = pgTable("planocontas", {
-	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-	id: text().primaryKey().notNull(),
-	empresaId: text().notNull(),
-	codigo: varchar({ length: 30 }),
-	nome: varchar({ length: 40 }),
-	tipomovimento: varchar({ length: 1 }),
-	inativo: smallint(),
-	classe: varchar({ length: 2 }),
-	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-	currenttimemillis: bigint({ mode: "number" }),
-	centrocustoobrigatorio: smallint(),
-	tipoconta: integer(),
-	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-	idcontacontabilintegracao: bigint({ mode: "number" }),
-	exportaparacontabilidade: smallint(),
-	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-	idgrupodre: bigint({ mode: "number" }),
-});
+export const planocontas = pgTable(
+	"planocontas",
+	{
+		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
+		id: text().primaryKey().notNull(),
+		empresaId: text().notNull(),
+		codigo: varchar({ length: 30 }),
+		nome: varchar({ length: 40 }),
+		tipomovimento: varchar({ length: 1 }),
+		inativo: smallint(),
+		classe: varchar({ length: 2 }),
+		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
+		currenttimemillis: bigint({ mode: "number" }),
+		centrocustoobrigatorio: smallint(),
+		tipoconta: integer(),
+		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
+		idcontacontabilintegracao: bigint({ mode: "number" }),
+		exportaparacontabilidade: smallint(),
+		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
+		idgrupodre: bigint({ mode: "number" }),
+		planoContasId: text(),
+	},
+	(table) => [
+		foreignKey({
+			columns: [table.planoContasId],
+			foreignColumns: [table.id],
+			name: "planocontas_planocontasid_fkey",
+		})
+			.onUpdate("cascade")
+			.onDelete("restrict"),
+	],
+);
