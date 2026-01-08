@@ -48,9 +48,12 @@ A solução foi desenvolvida para ser escalável, segura e fácil de usar, permi
 {
   "@biomejs/biome": "2.3.8",
   "@types/pg": "^8.15.6",
+  "@vitest/coverage-v8": "^4.0.16",
+  "@vitest/ui": "^4.0.16",
   "drizzle-kit": "^0.31.7",
   "tsx": "^4.21.0",
-  "typescript": "^5.9.3"
+  "typescript": "^5.9.3",
+  "vitest": "^4.0.16"
 }
 ```
 
@@ -63,38 +66,79 @@ api-mais-gestao/
 │   │   └── fastify.d.ts
 │   ├── controllers/              # Controladores (rotas e handlers)
 │   │   ├── authentication.ts    # Rotas de autenticação
-│   │   ├── empresas/            # Controladores de empresas
-│   │   │   ├── criar.ts
-│   │   │   ├── listar-empresas.ts
-│   │   │   └── rotas.ts
-│   │   ├── middleware/          # Middlewares
-│   │   │   └── verify-jwt.ts
-│   │   └── plano-contas/        # Controladores de plano de contas
-│   │       ├── criar.ts
-│   │       └── rotas.ts
+│   │   ├── http/                # Controladores HTTP
+│   │   │   ├── auth/            # Controladores de autenticação
+│   │   │   │   ├── perfil.ts
+│   │   │   │   └── rotas.ts
+│   │   │   ├── clientes/        # Controladores de clientes
+│   │   │   │   ├── atualizar.ts
+│   │   │   │   ├── buscar.ts
+│   │   │   │   ├── criar.ts
+│   │   │   │   ├── excluir.ts
+│   │   │   │   ├── listar-clientes.ts
+│   │   │   │   └── rotas.ts
+│   │   │   ├── empresas/        # Controladores de empresas
+│   │   │   │   ├── atualizar.ts
+│   │   │   │   ├── buscar.ts
+│   │   │   │   ├── criar.ts
+│   │   │   │   ├── excluir.ts
+│   │   │   │   ├── listar-empresas.ts
+│   │   │   │   └── rotas.ts
+│   │   │   └── plano-contas/    # Controladores de plano de contas
+│   │   │       ├── atualizar.ts
+│   │   │       ├── buscar.ts
+│   │   │       ├── criar.ts
+│   │   │       ├── excluir.ts
+│   │   │       ├── listar.ts
+│   │   │       └── rotas.ts
+│   │   └── middleware/          # Middlewares
+│   │       └── verify-jwt.ts
 │   ├── lib/                      # Bibliotecas e utilitários
 │   │   └── auth.ts              # Configuração de autenticação
 │   ├── model/                    # Modelos de dados
+│   │   ├── auditoria-model.ts
+│   │   ├── cliente-model.ts
+│   │   ├── conta-corrente-model.ts
 │   │   ├── empresa-model.ts
 │   │   ├── http-model.ts
+│   │   ├── plano-contas-model.ts
 │   │   └── usuario-model.ts
 │   ├── repositories/             # Camada de acesso a dados
+│   │   ├── auditoria-repositories.ts
+│   │   ├── clientes-repositories.ts
 │   │   ├── connection.ts        # Conexão com banco de dados
-│   │   ├── empresa-model.ts
-│   │   ├── plano-contas-model.ts
-│   │   ├── usuarios-model.ts
+│   │   ├── conta-corrente-repositories.ts
+│   │   ├── empresa-repositories.ts
+│   │   ├── plano-contas-repositories.ts
+│   │   ├── usuarios-repositories.ts
 │   │   └── schema/
 │   │       └── index.ts
 │   ├── service/                  # Lógica de negócio
+│   │   ├── auditoria/
+│   │   │   └── criar-auditoria.ts
+│   │   ├── clientes/
+│   │   │   ├── atualizar-cliente.ts
+│   │   │   ├── buscar-cliente.ts
+│   │   │   ├── criar-cliente.ts
+│   │   │   ├── excluir-cliente.ts
+│   │   │   └── listar-clientes.ts
 │   │   ├── empresa/
+│   │   │   ├── atualizar-empresa.ts
+│   │   │   ├── buscar-empresa.ts
 │   │   │   ├── criar-empresa.ts
+│   │   │   ├── excluir-empresa.ts
 │   │   │   └── listar-empresas.ts
 │   │   ├── planocontas/
-│   │   │   └── criar-plano-contas.ts
+│   │   │   ├── atualizar-plano-contas.ts
+│   │   │   ├── buscar-plano-contas.ts
+│   │   │   ├── criar-plano-contas.ts
+│   │   │   ├── excluir-plano-contas.ts
+│   │   │   └── listar-plano-contas.ts
 │   │   └── usuarios/
 │   │       └── buscar.ts
 │   ├── util/                     # Utilitários
-│   │   └── http-util.ts
+│   │   ├── http-util.ts         # Utilitários para respostas HTTP
+│   │   └── verificar-permissao.ts # Utilitário para verificar permissões
 │   └── index.ts                  # Ponto de entrada da aplicação
 ├── drizzle/                      # Migrações e schema do banco
 │   ├── 0000_*.sql               # Arquivos de migração
@@ -104,6 +148,8 @@ api-mais-gestao/
 ├── docker-compose.yml           # Configuração do Docker Compose
 ├── drizzle.config.ts            # Configuração do Drizzle ORM
 ├── tsconfig.json                # Configuração do TypeScript
+├── vitest.config.ts             # Configuração do Vitest
+├── vitest.config.e2e.ts         # Configuração do Vitest para testes E2E
 ├── biome.json                   # Configuração do Biome (linter/formatter)
 ├── package.json                 # Dependências e scripts
 └── server.http                  # Arquivo para testes HTTP
@@ -209,7 +255,12 @@ Você deve receber uma resposta:
 ## 📝 Scripts Disponíveis
 
 - `npm run dev`: Inicia o servidor em modo de desenvolvimento com hot-reload
-- `npm test`: Executa os testes (quando implementados)
+- `npm test`: Executa todos os testes unitários
+- `npm run test:ui`: Executa os testes com interface gráfica (Vitest UI)
+- `npm run test:coverage`: Executa os testes e gera relatório de cobertura
+- `npm run test:unit`: Executa apenas os testes unitários
+- `npm run test:e2e`: Executa apenas os testes end-to-end
+- `npm run test:watch`: Executa os testes em modo watch (observa mudanças)
 
 ## 🔧 Configurações Adicionais
 
@@ -234,15 +285,32 @@ app.register(cors, {
 
 ## 📚 Endpoints Disponíveis
 
+**Nota**: Todos os endpoints, exceto `/health` e `/api/auth/*`, requerem autenticação via JWT no header `Authorization: Bearer <token>`.
+
 ### Autenticação
-- `POST /api/auth/*` - Rotas de autenticação do Better Auth
+- `POST /api/auth/*` - Rotas de autenticação do Better Auth (login, registro, etc.)
+- `GET /auth/perfil` - Busca o perfil do usuário autenticado
 
 ### Empresas
-- `GET /empresas` - Lista todas as empresas
+- `GET /empresas` - Lista todas as empresas do usuário autenticado
 - `POST /empresas` - Cria uma nova empresa
+- `GET /empresas/:id` - Busca uma empresa específica por ID
+- `PUT /empresas/:id` - Atualiza uma empresa específica
+- `DELETE /empresas/:id` - Exclui uma empresa específica
 
 ### Plano de Contas
+- `GET /plano-contas` - Lista todos os planos de contas da empresa do usuário
 - `POST /plano-contas` - Cria um novo plano de contas
+- `GET /plano-contas/:id` - Busca um plano de contas específico por ID
+- `PUT /plano-contas/:id` - Atualiza um plano de contas específico
+- `DELETE /plano-contas/:id` - Exclui um plano de contas específico
+
+### Clientes
+- `GET /clientes` - Lista todos os clientes da empresa do usuário
+- `POST /clientes` - Cria um novo cliente
+- `GET /clientes/:id` - Busca um cliente específico por ID
+- `PUT /clientes/:id` - Atualiza um cliente específico
+- `DELETE /clientes/:id` - Exclui um cliente específico
 
 ### Health Check
 - `GET /health` - Verifica o status da API
@@ -262,12 +330,40 @@ O projeto utiliza PostgreSQL com as seguintes tabelas principais:
 - `sessoes` - Sessões de autenticação
 - `audit_logs` - Logs de auditoria
 
+## 🧪 Testes
+
+O projeto utiliza **Vitest** para execução de testes. Os testes estão organizados junto aos arquivos de serviço, seguindo o padrão `*.test.ts`.
+
+### Estrutura de Testes
+
+- **Testes Unitários**: Testam a lógica de negócio nos services
+- **Testes de Integração**: Validam a integração entre camadas
+- **Cobertura**: Utilize `npm run test:coverage` para verificar a cobertura de código
+
+### Executando Testes
+
+```bash
+# Executar todos os testes
+npm test
+
+# Executar com interface gráfica
+npm run test:ui
+
+# Executar com cobertura
+npm run test:coverage
+
+# Executar em modo watch
+npm run test:watch
+```
+
 ## 🔐 Segurança
 
-- Autenticação implementada com Better Auth
-- Validação de dados com Zod
-- Middleware de verificação JWT para rotas protegidas
-- Logs de auditoria para rastreamento de ações
+- **Autenticação**: Implementada com Better Auth
+- **Autorização**: Sistema de roles e permissões (proprietario, financeiro)
+- **Validação**: Validação de dados com Zod em todas as entradas
+- **Middleware JWT**: Verificação automática de token para rotas protegidas
+- **Auditoria**: Logs de auditoria para rastreamento de ações importantes
+- **Validação de Propriedade**: Verificação de permissão do usuário sobre recursos (empresas, clientes, etc.)
 
 ## 🤝 Contribuindo
 
