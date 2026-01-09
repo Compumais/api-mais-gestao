@@ -62,7 +62,11 @@ export async function listarContaCorrentePorEmpresa({
 			.from(schema.contacorrente)
 			.where(and(...where)),
 		db
-			.select()
+			.select({
+				id: schema.contacorrente.id,
+				agencia: schema.contacorrente.agencia,
+				descricao: schema.contacorrente.descricao,
+			})
 			.from(schema.contacorrente)
 			.where(and(...where))
 			.orderBy(schema.contacorrente.idbanco)

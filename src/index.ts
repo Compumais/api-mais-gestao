@@ -4,6 +4,7 @@ import Fastify from "fastify";
 import { authenticationRoute } from "./controllers/authentication.js";
 import { authRotas } from "./controllers/http/auth/rotas.js";
 import { clientesRotas } from "./controllers/http/clientes/rotas.js";
+import { contaCorrenteRotas } from "./controllers/http/contacorrente/rotas.js";
 import { empresasRotas } from "./controllers/http/empresas/rotas.js";
 import { planoContasRotas } from "./controllers/http/plano-contas/rotas.js";
 
@@ -38,6 +39,7 @@ app.register(planoContasRotas);
 app.register(empresasRotas);
 app.register(clientesRotas);
 app.register(authRotas);
+app.register(contaCorrenteRotas);
 
 app.listen({ port: 3333 }).then(() => {
 	console.log("HTTP server running on port 3333");
