@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 import z from "zod";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria";
 import { criarContaCorrenteService } from "@/service/contacorrente/criar-conta-corrente";
+import { excluirContaCorrenteService } from "@/service/contacorrente/excluir";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util";
 
 const criarContaCorrenteBodySchema = z.object({
@@ -73,7 +74,12 @@ export async function criarContaCorrente(
 		});
 
 		if (!auditoria) {
-			// TODO: Excluir conta corrente
+			await excluirContaCorrenteService({
+				id: contaCorrente.body!.id!,
+				userId: request.user.id,
+			});
+
+			return reply.status(httpErroInterno().status).send(httpErroInterno());
 		}
 
 		return reply.status(contaCorrente.status).send(contaCorrente.body);

@@ -1,8 +1,8 @@
 import cors from "@fastify/cors";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import Fastify from "fastify";
-import { authenticationRoute } from "./controllers/authentication.js";
 import { authRotas } from "./controllers/http/auth/rotas.js";
+import { authenticationRoute } from "./controllers/http/authentication.js";
 import { clientesRotas } from "./controllers/http/clientes/rotas.js";
 import { contaCorrenteRotas } from "./controllers/http/contacorrente/rotas.js";
 import { empresasRotas } from "./controllers/http/empresas/rotas.js";

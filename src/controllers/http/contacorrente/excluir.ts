@@ -1,7 +1,9 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { v4 as uuidv4 } from "uuid";
 import z from "zod";
+import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria";
 import { excluirContaCorrenteService } from "@/service/contacorrente/excluir";
-import { httpNaoAutorizado } from "@/util/http-util";
+import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util";
 
 const excluirContaCorrenteParamsSchema = z.object({
 	id: z.string().uuid(),
@@ -18,6 +20,27 @@ export async function excluirContaCorrente(
 
 		const userId = request.user.id;
 		const { id } = excluirContaCorrenteParamsSchema.parse(request.params);
+
+		const auditoriaId = uuidv4();
+
+		const auditoria = await criarAuditoriaService({
+			id: auditoriaId,
+			userId: request.user.id,
+			acao: "excluir_conta_corrente",
+			recursoId: id,
+			recurso: "conta_corrente",
+			criadoEm: new Date().toISOString(),
+			metadados: {
+				usuario: request.user.name,
+				contaCorrenteId: id,
+			},
+		});
+
+		if (!auditoria) {
+			return reply
+				.status(httpErroInterno().status)
+				.send(httpErroInterno().error);
+		}
 
 		const resultado = await excluirContaCorrenteService({
 			id,
@@ -44,4 +67,3 @@ export async function excluirContaCorrente(
 		});
 	}
 }
-
