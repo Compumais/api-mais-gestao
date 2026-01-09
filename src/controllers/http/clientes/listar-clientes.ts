@@ -1,5 +1,6 @@
-import type { FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyReply, FastifyRequest, FastifySchema } from "fastify";
 import z from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
 import { listarClientesService } from "../../../service/clientes/listar-clientes";
 
 const listarClientesQuerySchema = z.object({

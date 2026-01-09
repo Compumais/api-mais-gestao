@@ -1,9 +1,10 @@
-import type { FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyReply, FastifyRequest, FastifySchema } from "fastify";
 import { v4 as uuidv4 } from "uuid";
 import z from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
 import { criarClienteService } from "../../../service/clientes/criar-cliente";
 
-const criarClienteSchema = z.object({
+const criarClienteBodySchema = z.object({
 	nome: z.string().min(1),
 	email: z.string().email().optional().nullable(),
 	telefone: z.string().optional().nullable(),
@@ -28,7 +29,7 @@ export async function criarCliente(
 		}
 
 		const userId = request.user.id;
-		const dadosValidados = criarClienteSchema.parse(request.body);
+		const dadosValidados = criarClienteBodySchema.parse(request.body);
 		const uuid = uuidv4();
 
 		const dadosCliente = {

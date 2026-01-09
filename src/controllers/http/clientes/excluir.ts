@@ -1,4 +1,4 @@
-import type { FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyReply, FastifyRequest, FastifySchema } from "fastify";
 import z from "zod";
 import { excluirClienteService } from "../../../service/clientes/excluir-cliente";
 
