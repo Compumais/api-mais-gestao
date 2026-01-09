@@ -1,4 +1,4 @@
-import { and, count, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, count, eq, inArray, isNull, like, sql } from "drizzle-orm";
 import * as schema from "../../drizzle/schema.js";
 import { db } from "./connection.js";
 
@@ -73,6 +73,7 @@ export async function buscarProximoCodigoComPai(
 export type ListarPlanoContasParametros = {
 	empresaIds: string[];
 	planoContasId?: string | undefined;
+	inativo?: string;
 	page?: number;
 	limit?: number;
 };
@@ -80,6 +81,7 @@ export type ListarPlanoContasParametros = {
 export async function listarPlanoContasPorEmpresas({
 	empresaIds,
 	planoContasId,
+	inativo,
 	page = 1,
 	limit = 10,
 }: ListarPlanoContasParametros) {
@@ -98,6 +100,10 @@ export async function listarPlanoContasPorEmpresas({
 		where.push(eq(schema.planocontas.planoContasId, planoContasId));
 	} else {
 		where.push(isNull(schema.planocontas.planoContasId));
+	}
+
+	if (inativo) {
+		where.push(like(schema.planocontas.inativo, inativo));
 	}
 
 	const offset = (page - 1) * limit;
