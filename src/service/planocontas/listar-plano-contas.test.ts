@@ -88,6 +88,8 @@ describe("listarPlanoContasService", () => {
 			planoContasRepository.listarPlanoContasPorEmpresas,
 		).toHaveBeenCalledWith({
 			empresaIds: ["empresa-123", "empresa-456"],
+			planoContasId: undefined,
+			inativo: "1",
 			page: 1,
 			limit: 10,
 		});
@@ -143,6 +145,8 @@ describe("listarPlanoContasService", () => {
 			planoContasRepository.listarPlanoContasPorEmpresas,
 		).toHaveBeenCalledWith({
 			empresaIds: ["empresa-123"],
+			planoContasId: undefined,
+			inativo: "1",
 			page: 2,
 			limit: 10,
 		});
@@ -172,6 +176,8 @@ describe("listarPlanoContasService", () => {
 			planoContasRepository.listarPlanoContasPorEmpresas,
 		).toHaveBeenCalledWith({
 			empresaIds: ["empresa-123"],
+			planoContasId: undefined,
+			inativo: "1",
 			page: 1,
 			limit: 10,
 		});

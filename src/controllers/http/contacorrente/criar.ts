@@ -6,7 +6,7 @@ import { criarContaCorrenteService } from "@/service/contacorrente/criar-conta-c
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util";
 
 const criarContaCorrenteBodySchema = z.object({
-	empresaId: z.string().uuid(),
+	empresaId: z.string(),
 	descricao: z.string().max(50).optional(),
 	agencia: z.string().max(25).optional(),
 	numeroconta: z.string().max(40).optional(),
