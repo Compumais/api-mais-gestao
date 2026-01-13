@@ -33,26 +33,26 @@ export async function buscarContaCorrentePorId({ id }: { id: string }) {
 }
 
 export type ListarContaCorrenteParametros = {
-	empresaIds: string[];
+	idempresas: string[];
 	page?: number;
 	limit?: number;
 };
 
 export async function listarContaCorrentePorEmpresa({
-	empresaIds,
+	idempresas,
 	page = 1,
 	limit = 10,
 }: ListarContaCorrenteParametros) {
 	const where = [];
 
-	if (empresaIds.length === 0) {
+	if (idempresas.length === 0) {
 		return {
 			contasCorrentes: [],
 			total: 0,
 		};
 	}
 
-	where.push(inArray(schema.contacorrente.empresaId, empresaIds));
+	where.push(inArray(schema.contacorrente.idempresa, idempresas));
 
 	const offset = (page - 1) * limit;
 

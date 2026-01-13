@@ -1,16 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { PlanoContas } from "@/model/plano-contas-model.js";
-import * as clienteRepository from "@/repositories/clientes-repositories.js";
+import * as entidadeRepository from "@/repositories/entidade-repositories.js";
 import * as planoContasRepository from "@/repositories/plano-contas-repositories.js";
 import { listarPlanoContasService } from "./listar-plano-contas.js";
 
-vi.mock("@/repositories/clientes-repositories.js");
+vi.mock("@/repositories/entidade-repositories.js");
 vi.mock("@/repositories/plano-contas-repositories.js");
 
 describe("listarPlanoContasService", () => {
 	const planoContasMock1: PlanoContas = {
 		id: "plano-1",
-		empresaId: "empresa-123",
+		idempresa: "empresa-123",
 		codigo: "1",
 		nome: "Plano de Contas 1",
 		tipomovimento: "D",
@@ -22,12 +22,12 @@ describe("listarPlanoContasService", () => {
 		idcontacontabilintegracao: null,
 		exportaparacontabilidade: null,
 		idgrupodre: null,
-		planoContasId: null,
+		idplanocontas: null,
 	};
 
 	const planoContasMock2: PlanoContas = {
 		id: "plano-2",
-		empresaId: "empresa-123",
+		idempresa: "empresa-123",
 		codigo: "2",
 		nome: "Plano de Contas 2",
 		tipomovimento: "C",
@@ -39,7 +39,7 @@ describe("listarPlanoContasService", () => {
 		idcontacontabilintegracao: null,
 		exportaparacontabilidade: null,
 		idgrupodre: null,
-		planoContasId: null,
+		idplanocontas: null,
 	};
 
 	beforeEach(() => {
@@ -47,7 +47,7 @@ describe("listarPlanoContasService", () => {
 	});
 
 	it("deve listar planos de contas com sucesso quando usuário tem empresas", async () => {
-		vi.mocked(clienteRepository.buscarEmpresasDoUsuario).mockResolvedValue([
+		vi.mocked(entidadeRepository.buscarEmpresasDoUsuario).mockResolvedValue([
 			"empresa-123",
 			"empresa-456",
 		]);
@@ -59,7 +59,7 @@ describe("listarPlanoContasService", () => {
 		});
 
 		const resultado = await listarPlanoContasService({
-			userId: "usuario-123",
+			idusuario: "usuario-123",
 			page: 1,
 			limit: 10,
 		});
@@ -77,8 +77,8 @@ describe("listarPlanoContasService", () => {
 			expect(resultado.body?.paginacao.limit).toBe(10);
 			expect(resultado.body?.paginacao.totalPages).toBe(1);
 		}
-		expect(clienteRepository.buscarEmpresasDoUsuario).toHaveBeenCalledTimes(1);
-		expect(clienteRepository.buscarEmpresasDoUsuario).toHaveBeenCalledWith(
+		expect(entidadeRepository.buscarEmpresasDoUsuario).toHaveBeenCalledTimes(1);
+		expect(entidadeRepository.buscarEmpresasDoUsuario).toHaveBeenCalledWith(
 			"usuario-123",
 		);
 		expect(
@@ -87,8 +87,8 @@ describe("listarPlanoContasService", () => {
 		expect(
 			planoContasRepository.listarPlanoContasPorEmpresas,
 		).toHaveBeenCalledWith({
-			empresaIds: ["empresa-123", "empresa-456"],
-			planoContasId: undefined,
+			idempresas: ["empresa-123", "empresa-456"],
+			idplanocontas: undefined,
 			inativo: "1",
 			page: 1,
 			limit: 10,
@@ -96,10 +96,10 @@ describe("listarPlanoContasService", () => {
 	});
 
 	it("deve retornar lista vazia quando usuário não tem empresas", async () => {
-		vi.mocked(clienteRepository.buscarEmpresasDoUsuario).mockResolvedValue([]);
+		vi.mocked(entidadeRepository.buscarEmpresasDoUsuario).mockResolvedValue([]);
 
 		const resultado = await listarPlanoContasService({
-			userId: "usuario-123",
+			idusuario: "usuario-123",
 			page: 1,
 			limit: 10,
 		});
@@ -111,14 +111,14 @@ describe("listarPlanoContasService", () => {
 			expect(resultado.body?.paginacao.total).toBe(0);
 			expect(resultado.body?.paginacao.totalPages).toBe(0);
 		}
-		expect(clienteRepository.buscarEmpresasDoUsuario).toHaveBeenCalledTimes(1);
+		expect(entidadeRepository.buscarEmpresasDoUsuario).toHaveBeenCalledTimes(1);
 		expect(
 			planoContasRepository.listarPlanoContasPorEmpresas,
 		).not.toHaveBeenCalled();
 	});
 
 	it("deve aplicar paginação corretamente", async () => {
-		vi.mocked(clienteRepository.buscarEmpresasDoUsuario).mockResolvedValue([
+		vi.mocked(entidadeRepository.buscarEmpresasDoUsuario).mockResolvedValue([
 			"empresa-123",
 		]);
 		vi.mocked(
@@ -129,7 +129,7 @@ describe("listarPlanoContasService", () => {
 		});
 
 		const resultado = await listarPlanoContasService({
-			userId: "usuario-123",
+			idusuario: "usuario-123",
 			page: 2,
 			limit: 10,
 		});
@@ -144,8 +144,8 @@ describe("listarPlanoContasService", () => {
 		expect(
 			planoContasRepository.listarPlanoContasPorEmpresas,
 		).toHaveBeenCalledWith({
-			empresaIds: ["empresa-123"],
-			planoContasId: undefined,
+			idempresas: ["empresa-123"],
+			idplanocontas: undefined,
 			inativo: "1",
 			page: 2,
 			limit: 10,
@@ -153,7 +153,7 @@ describe("listarPlanoContasService", () => {
 	});
 
 	it("deve usar valores padrão de paginação quando não fornecidos", async () => {
-		vi.mocked(clienteRepository.buscarEmpresasDoUsuario).mockResolvedValue([
+		vi.mocked(entidadeRepository.buscarEmpresasDoUsuario).mockResolvedValue([
 			"empresa-123",
 		]);
 		vi.mocked(
@@ -164,7 +164,7 @@ describe("listarPlanoContasService", () => {
 		});
 
 		const resultado = await listarPlanoContasService({
-			userId: "usuario-123",
+			idusuario: "usuario-123",
 		});
 
 		expect(resultado.success).toBe(true);
@@ -175,8 +175,8 @@ describe("listarPlanoContasService", () => {
 		expect(
 			planoContasRepository.listarPlanoContasPorEmpresas,
 		).toHaveBeenCalledWith({
-			empresaIds: ["empresa-123"],
-			planoContasId: undefined,
+			idempresas: ["empresa-123"],
+			idplanocontas: undefined,
 			inativo: "1",
 			page: 1,
 			limit: 10,

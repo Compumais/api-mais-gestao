@@ -10,8 +10,8 @@ export async function perfil(request: FastifyRequest, reply: FastifyReply) {
 			});
 		}
 
-		const userId = request.user.id;
-		const usuario = await buscarUsuarioPorIdService(userId);
+		const idusuario = request.user.id;
+		const usuario = await buscarUsuarioPorIdService(idusuario);
 
 		if (!usuario.success) {
 			return reply.status(usuario.status).send(usuario.error);
@@ -19,9 +19,9 @@ export async function perfil(request: FastifyRequest, reply: FastifyReply) {
 
 		return reply.status(usuario.status).send({
 			id: usuario.body?.id,
-			name: usuario.body?.name,
+			nome: usuario.body?.nome,
 			email: usuario.body?.email,
-			role: usuario.body?.role,
+			perfil: usuario.body?.perfil,
 		});
 	} catch (error) {
 		console.error(error);

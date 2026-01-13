@@ -1,9 +1,9 @@
 import type { HttpResponse } from "@/model/http-model";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/clientes-repositories";
 import {
 	buscarContaCorrentePorId,
 	excluirContaCorrente,
 } from "@/repositories/conta-corrente-repositories";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
 import {
 	httpNaoEncontrado,
 	httpProibido,
@@ -12,12 +12,12 @@ import {
 
 type ExcluirContaCorrenteParametros = {
 	id: string;
-	userId: string;
+	idusuario: string;
 };
 
 export async function excluirContaCorrenteService({
 	id,
-	userId,
+	idusuario,
 }: ExcluirContaCorrenteParametros): Promise<HttpResponse<void>> {
 	const contaCorrente = await buscarContaCorrentePorId({ id });
 
@@ -26,8 +26,8 @@ export async function excluirContaCorrenteService({
 	}
 
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
-		userId,
-		contaCorrente.empresaId,
+		idusuario,
+		contaCorrente.idempresa,
 	);
 
 	if (!usuarioPertenceEmpresa) {

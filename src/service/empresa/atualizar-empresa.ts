@@ -27,7 +27,7 @@ export async function atualizarEmpresaService({
 
 	const empresaAtualizada = await atualizarEmpresa(id, {
 		...dados,
-		atualizadoEm: new Date().toISOString(),
+		atualizadoem: new Date().toISOString(),
 	});
 
 	if (!empresaAtualizada) {

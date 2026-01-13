@@ -23,8 +23,8 @@ export async function criarEmpresaService({
 	proprietario,
 }: CriarEmpresaParametros): Promise<HttpResponse<Empresa | null>> {
 	if (
-		proprietario.maxCompanies &&
-		quantidadeEmpresas >= proprietario.maxCompanies
+		proprietario.maxempresas &&
+		quantidadeEmpresas >= proprietario.maxempresas
 	) {
 		return httpLimiteExcedido();
 	}

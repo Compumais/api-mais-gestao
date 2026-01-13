@@ -5,14 +5,14 @@ import { buscarUsuarioPorIdService } from "@/service/usuarios/buscar";
 import { criarPlanoContasService } from "../../../service/planocontas/criar-plano-contas";
 
 const criarPlanoContasSchema = z.object({
-	empresaId: z.string(),
+	idempresa: z.string(),
 	codigo: z.string().optional(),
 	nome: z.string(),
 	tipomovimento: z.string(),
 	inativo: z.boolean(),
 	classe: z.string().optional(),
 	natureza: z.string().optional(),
-	planoContasId: z.string().optional(),
+	idplanocontas: z.string().optional(),
 	idgrupodre: z.number().optional(),
 	currenttimemillis: z.number().optional(),
 	centrocustoobrigatorio: z.number().optional(),
@@ -48,7 +48,7 @@ export async function criarPlanoContas(
 
 		const dadosPlanoContas = {
 			id: randomUUID(),
-			empresaId: dadosValidados.empresaId,
+			idempresa: dadosValidados.idempresa,
 			nome: dadosValidados.nome,
 			tipomovimento: dadosValidados.tipomovimento,
 			inativo: dadosValidados.inativo ? 1 : 0,
@@ -59,7 +59,7 @@ export async function criarPlanoContas(
 			tipoconta: dadosValidados.tipoconta,
 			idcontacontabilintegracao: dadosValidados.idcontacontabilintegracao,
 			exportaparacontabilidade: dadosValidados.exportaparacontabilidade,
-			planoContasId: dadosValidados.planoContasId,
+			idplanocontas: dadosValidados.idplanocontas,
 		};
 
 		const resultado = await criarPlanoContasService(

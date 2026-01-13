@@ -11,16 +11,16 @@ describe("atualizarEmpresaService", () => {
 		nome: "Empresa Teste",
 		cnpj: "12.345.678/0001-90",
 		telefone: "(34) 99999-9999",
-		proprietarioId: "proprietario-1",
-		criadoEm: new Date().toISOString(),
-		atualizadoEm: new Date().toISOString(),
+		idproprietario: "proprietario-1",
+		criadoem: new Date().toISOString(),
+		atualizadoem: new Date().toISOString(),
 	};
 
 	const empresaAtualizadaMock: Empresa = {
 		...empresaMock,
 		nome: "Empresa Atualizada",
 		telefone: "(34) 88888-8888",
-		atualizadoEm: new Date().toISOString(),
+		atualizadoem: new Date().toISOString(),
 	};
 
 	beforeEach(() => {
@@ -58,7 +58,7 @@ describe("atualizarEmpresaService", () => {
 			expect.objectContaining({
 				nome: "Empresa Atualizada",
 				telefone: "(34) 88888-8888",
-				atualizadoEm: expect.any(String),
+				atualizadoem: expect.any(String),
 			}),
 		);
 	});
@@ -118,7 +118,7 @@ describe("atualizarEmpresaService", () => {
 		vi.mocked(empresaRepository.atualizarEmpresa).mockResolvedValue({
 			...empresaMock,
 			nome: "Apenas Nome Atualizado",
-			atualizadoEm: new Date().toISOString(),
+			atualizadoem: new Date().toISOString(),
 		});
 
 		const resultado = await atualizarEmpresaService({
@@ -137,7 +137,7 @@ describe("atualizarEmpresaService", () => {
 			"empresa-123",
 			expect.objectContaining({
 				nome: "Apenas Nome Atualizado",
-				atualizadoEm: expect.any(String),
+				atualizadoem: expect.any(String),
 			}),
 		);
 	});

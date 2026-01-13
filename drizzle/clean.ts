@@ -1,6 +1,6 @@
 import * as dotenv from "dotenv";
-import { drizzle } from "drizzle-orm/node-postgres";
 import { sql } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import * as relations from "./relations.js";
 import * as schema from "./schema.js";
@@ -29,8 +29,8 @@ async function clean() {
 		console.log("🗑️  Limpando financeiro...");
 		await db.delete(schema.financeiro);
 
-		console.log("🗑️  Limpando cliente...");
-		await db.delete(schema.cliente);
+		console.log("🗑️  Limpando entidade...");
+		await db.delete(schema.entidade);
 
 		console.log("🗑️  Limpando contacorrente...");
 		await db.delete(schema.contacorrente);
@@ -39,7 +39,7 @@ async function clean() {
 		console.log("🗑️  Limpando planocontas...");
 		// Primeiro limpar referências circulares
 		await db.execute(
-			sql`UPDATE planocontas SET "planoContasId" = NULL WHERE "planoContasId" IS NOT NULL`,
+			sql`UPDATE planocontas SET "idplanocontas" = NULL WHERE "idplanocontas" IS NOT NULL`,
 		);
 		await db.delete(schema.planocontas);
 
@@ -80,4 +80,3 @@ async function clean() {
 }
 
 clean();
-

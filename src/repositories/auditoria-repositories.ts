@@ -24,18 +24,18 @@ export async function excluirAuditoria({ id }: { id: string }) {
 type ListarAuditoriasParams = {
 	page?: number;
 	limit?: number;
-	empresaId?: string;
+	idempresa?: string;
 };
 
 export async function listarAuditorias({
-	empresaId,
+	idempresa,
 	limit = 100,
 	page = 1,
 }: ListarAuditoriasParams) {
 	const where = [];
 
-	if (empresaId) {
-		where.push(eq(schema.auditLogs.empresaId, empresaId));
+	if (idempresa) {
+		where.push(eq(schema.auditLogs.idempresa, idempresa));
 	}
 
 	const offset = (page - 1) * limit;
@@ -49,7 +49,7 @@ export async function listarAuditorias({
 			.select()
 			.from(schema.auditLogs)
 			.where(and(...where))
-			.orderBy(desc(schema.auditLogs.criadoEm))
+			.orderBy(desc(schema.auditLogs.criadoem))
 			.limit(limit)
 			.offset(offset),
 	]);

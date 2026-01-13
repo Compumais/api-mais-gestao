@@ -11,9 +11,9 @@ describe("buscarEmpresaService", () => {
 		nome: "Empresa Teste",
 		cnpj: "12.345.678/0001-90",
 		telefone: "(34) 99999-9999",
-		proprietarioId: "proprietario-1",
-		criadoEm: new Date().toISOString(),
-		atualizadoEm: new Date().toISOString(),
+		idproprietario: "proprietario-1",
+		criadoem: new Date().toISOString(),
+		atualizadoem: new Date().toISOString(),
 	};
 
 	beforeEach(() => {
@@ -79,9 +79,9 @@ describe("buscarEmpresaService", () => {
 			nome: "Outra Empresa",
 			cnpj: "98.765.432/0001-10",
 			telefone: "(11) 11111-1111",
-			proprietarioId: "proprietario-2",
-			criadoEm: "2024-01-01T00:00:00.000Z",
-			atualizadoEm: "2024-01-02T00:00:00.000Z",
+			idproprietario: "proprietario-2",
+			criadoem: "2024-01-01T00:00:00.000Z",
+			atualizadoem: "2024-01-02T00:00:00.000Z",
 		};
 
 		vi.mocked(empresaRepository.buscarEmpresaPorId).mockResolvedValue(

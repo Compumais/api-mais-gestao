@@ -11,21 +11,21 @@ describe("criarEmpresaService", () => {
 		nome: "Empresa Teste",
 		cnpj: "12.345.678/0001-90",
 		telefone: "(34) 99999-9999",
-		proprietarioId: "proprietario-1",
-		criadoEm: new Date().toISOString(),
-		atualizadoEm: new Date().toISOString(),
+		idproprietario: "proprietario-1",
+		criadoem: new Date().toISOString(),
+		atualizadoem: new Date().toISOString(),
 	};
 
 	const proprietarioMock = {
 		id: "proprietario-1",
-		name: "Proprietário Teste",
+		nome: "Proprietário Teste",
 		email: "proprietario@example.com",
-		emailVerified: true,
-		role: "proprietario" as const,
-		createdAt: new Date().toISOString(),
-		updatedAt: new Date().toISOString(),
-		image: null,
-		maxCompanies: 5,
+		emailverificado: true,
+		perfil: "proprietario" as const,
+		criadoem: new Date().toISOString(),
+		atualizadoem: new Date().toISOString(),
+		imagem: null,
+		maxempresas: 5,
 	};
 
 	beforeEach(() => {
@@ -40,10 +40,10 @@ describe("criarEmpresaService", () => {
 				id: "empresa-123",
 				cnpj: "12.345.678/0001-90",
 				nome: "Empresa Teste",
-				proprietarioId: "proprietario-1",
+				idproprietario: "proprietario-1",
 				telefone: "(34) 99999-9999",
-				atualizadoEm: new Date().toISOString(),
-				criadoEm: new Date().toISOString(),
+				atualizadoem: new Date().toISOString(),
+				criadoem: new Date().toISOString(),
 			},
 			proprietario: proprietarioMock,
 			quantidadeEmpresas: 2, // Já tem 2 empresas, limite é 5, pode criar
@@ -63,12 +63,12 @@ describe("criarEmpresaService", () => {
 				id: "empresa-123",
 				cnpj: "12.345.678/0001-90",
 				nome: "Empresa Teste",
-				proprietarioId: "proprietario-1",
+				idproprietario: "proprietario-1",
 				telefone: "(34) 99999-9999",
-				atualizadoEm: new Date().toISOString(),
-				criadoEm: new Date().toISOString(),
+				atualizadoem: new Date().toISOString(),
+				criadoem: new Date().toISOString(),
 			},
-			proprietario: { ...proprietarioMock, maxCompanies: 3 },
+			proprietario: { ...proprietarioMock, maxempresas: 3 },
 			quantidadeEmpresas: 3, // Já tem 3 empresas, limite é 3, não pode criar mais
 		});
 
@@ -81,7 +81,7 @@ describe("criarEmpresaService", () => {
 		expect(empresaRepository.criarEmpresa).not.toHaveBeenCalled();
 	});
 
-	it("deve permitir criar empresa quando maxCompanies é null ou undefined", async () => {
+	it("deve permitir criar empresa quando maxempresas é null ou undefined", async () => {
 		vi.mocked(empresaRepository.criarEmpresa).mockResolvedValue([empresaMock]);
 
 		const resultado = await criarEmpresaService({
@@ -89,12 +89,12 @@ describe("criarEmpresaService", () => {
 				id: "empresa-123",
 				cnpj: "12.345.678/0001-90",
 				nome: "Empresa Teste",
-				proprietarioId: "proprietario-1",
+				idproprietario: "proprietario-1",
 				telefone: "(34) 99999-9999",
-				atualizadoEm: new Date().toISOString(),
-				criadoEm: new Date().toISOString(),
+				atualizadoem: new Date().toISOString(),
+				criadoem: new Date().toISOString(),
 			},
-			proprietario: { ...proprietarioMock, maxCompanies: null },
+			proprietario: { ...proprietarioMock, maxempresas: null },
 			quantidadeEmpresas: 10, // Sem limite, pode criar
 		});
 

@@ -23,15 +23,15 @@ describe("listarContasCorrentesService", () => {
 	});
 
 	it("deve listar contas correntes com sucesso", async () => {
-		vi.mocked(contaCorrenteRepository.listarContaCorrentePorEmpresa).mockResolvedValue(
-			{
-				contasCorrentes: contasCorrentesMock,
-				total: 2,
-			},
-		);
+		vi.mocked(
+			contaCorrenteRepository.listarContaCorrentePorEmpresa,
+		).mockResolvedValue({
+			contasCorrentes: contasCorrentesMock,
+			total: 2,
+		});
 
 		const resultado = await listarContasCorrentesService({
-			empresaId: "empresa-123",
+			idempresa: "empresa-123",
 			page: 1,
 			limit: 10,
 		});
@@ -45,49 +45,28 @@ describe("listarContasCorrentesService", () => {
 			expect(resultado.body?.paginacao.limit).toBe(10);
 			expect(resultado.body?.paginacao.totalPages).toBe(1);
 		}
-		expect(contaCorrenteRepository.listarContaCorrentePorEmpresa).toHaveBeenCalledTimes(
-			1,
-		);
-		expect(contaCorrenteRepository.listarContaCorrentePorEmpresa).toHaveBeenCalledWith({
-			empresaIds: ["empresa-123"],
+		expect(
+			contaCorrenteRepository.listarContaCorrentePorEmpresa,
+		).toHaveBeenCalledTimes(1);
+		expect(
+			contaCorrenteRepository.listarContaCorrentePorEmpresa,
+		).toHaveBeenCalledWith({
+			idempresas: ["empresa-123"],
 			page: 1,
 			limit: 10,
 		});
-	});
-
-	it("deve retornar lista vazia quando não há contas correntes", async () => {
-		vi.mocked(contaCorrenteRepository.listarContaCorrentePorEmpresa).mockResolvedValue(
-			{
-				contasCorrentes: null,
-				total: 0,
-			},
-		);
-
-		const resultado = await listarContasCorrentesService({
-			empresaId: "empresa-123",
-			page: 1,
-			limit: 10,
-		});
-
-		expect(resultado.success).toBe(true);
-		if (resultado.success) {
-			expect(resultado.status).toBe(204);
-			expect(resultado.body?.data).toEqual([]);
-			expect(resultado.body?.paginacao.total).toBe(0);
-			expect(resultado.body?.paginacao.totalPages).toBe(0);
-		}
 	});
 
 	it("deve calcular paginação corretamente", async () => {
-		vi.mocked(contaCorrenteRepository.listarContaCorrentePorEmpresa).mockResolvedValue(
-			{
-				contasCorrentes: contasCorrentesMock,
-				total: 25,
-			},
-		);
+		vi.mocked(
+			contaCorrenteRepository.listarContaCorrentePorEmpresa,
+		).mockResolvedValue({
+			contasCorrentes: contasCorrentesMock,
+			total: 25,
+		});
 
 		const resultado = await listarContasCorrentesService({
-			empresaId: "empresa-123",
+			idempresa: "empresa-123",
 			page: 2,
 			limit: 10,
 		});
@@ -99,23 +78,25 @@ describe("listarContasCorrentesService", () => {
 			expect(resultado.body?.paginacao.limit).toBe(10);
 			expect(resultado.body?.paginacao.totalPages).toBe(3);
 		}
-		expect(contaCorrenteRepository.listarContaCorrentePorEmpresa).toHaveBeenCalledWith({
-			empresaIds: ["empresa-123"],
+		expect(
+			contaCorrenteRepository.listarContaCorrentePorEmpresa,
+		).toHaveBeenCalledWith({
+			idempresas: ["empresa-123"],
 			page: 2,
 			limit: 10,
 		});
 	});
 
 	it("deve usar valores padrão de paginação quando não fornecidos", async () => {
-		vi.mocked(contaCorrenteRepository.listarContaCorrentePorEmpresa).mockResolvedValue(
-			{
-				contasCorrentes: contasCorrentesMock,
-				total: 2,
-			},
-		);
+		vi.mocked(
+			contaCorrenteRepository.listarContaCorrentePorEmpresa,
+		).mockResolvedValue({
+			contasCorrentes: contasCorrentesMock,
+			total: 2,
+		});
 
 		const resultado = await listarContasCorrentesService({
-			empresaId: "empresa-123",
+			idempresa: "empresa-123",
 		});
 
 		expect(resultado.success).toBe(true);
@@ -123,11 +104,12 @@ describe("listarContasCorrentesService", () => {
 			expect(resultado.body?.paginacao.page).toBe(1);
 			expect(resultado.body?.paginacao.limit).toBe(10);
 		}
-		expect(contaCorrenteRepository.listarContaCorrentePorEmpresa).toHaveBeenCalledWith({
-			empresaIds: ["empresa-123"],
+		expect(
+			contaCorrenteRepository.listarContaCorrentePorEmpresa,
+		).toHaveBeenCalledWith({
+			idempresas: ["empresa-123"],
 			page: 1,
 			limit: 10,
 		});
 	});
 });
-

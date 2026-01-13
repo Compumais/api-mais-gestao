@@ -1,13 +1,13 @@
-import type { Cliente } from "@/model/cliente-model";
+import type { Entidade } from "@/model/entidade-model";
 import type { HttpResponse } from "@/model/http-model";
 import {
 	buscarEmpresasDoUsuario,
-	listarClientes,
-} from "@/repositories/clientes-repositories";
+	listarEntidades,
+} from "@/repositories/entidade-repositories";
 import { httpOk } from "@/util/http-util";
 
-type ListarClientesParametros = {
-	userId: string;
+type ListarEntidadesParametros = {
+	idusuario: string;
 	nome?: string | undefined;
 	email?: string | undefined;
 	telefone?: string | undefined;
@@ -15,8 +15,8 @@ type ListarClientesParametros = {
 	limit?: number;
 };
 
-type ListarClientesResposta = {
-	data: Cliente[];
+type ListarEntidadesResposta = {
+	data: Entidade[];
 	paginacao: {
 		page: number;
 		limit: number;
@@ -25,18 +25,18 @@ type ListarClientesResposta = {
 	};
 };
 
-export async function listarClientesService({
-	userId,
+export async function listarEntidadesService({
+	idusuario,
 	nome,
 	email,
 	telefone,
 	page = 1,
 	limit = 10,
-}: ListarClientesParametros): Promise<HttpResponse<ListarClientesResposta>> {
-	const empresaIds = await buscarEmpresasDoUsuario(userId);
+}: ListarEntidadesParametros): Promise<HttpResponse<ListarEntidadesResposta>> {
+	const idempresas = await buscarEmpresasDoUsuario(idusuario);
 
-	if (empresaIds.length === 0) {
-		return httpOk<ListarClientesResposta>({
+	if (idempresas.length === 0) {
+		return httpOk<ListarEntidadesResposta>({
 			data: [],
 			paginacao: {
 				page,
@@ -47,8 +47,8 @@ export async function listarClientesService({
 		});
 	}
 
-	const { clientes, total } = await listarClientes({
-		empresaIds,
+	const { entidades, total } = await listarEntidades({
+		idempresas,
 		nome,
 		email,
 		telefone,
@@ -58,8 +58,8 @@ export async function listarClientesService({
 
 	const totalPages = Math.ceil(total / limit);
 
-	return httpOk<ListarClientesResposta>({
-		data: clientes,
+	return httpOk<ListarEntidadesResposta>({
+		data: entidades,
 		paginacao: {
 			page,
 			limit,

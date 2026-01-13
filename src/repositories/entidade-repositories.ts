@@ -1,29 +1,27 @@
 import { and, count, desc, eq, ilike, inArray, ne, or } from "drizzle-orm";
-import type { NovoCliente } from "@/model/cliente-model";
+import type { NovaEntidade } from "@/model/entidade-model";
 import * as schema from "../../drizzle/schema.js";
 import { db } from "./connection.js";
 
-export type Cliente = typeof schema.cliente.$inferSelect;
-
-export async function criarCliente(dadosCliente: NovoCliente) {
-	const [cliente] = await db
-		.insert(schema.cliente)
-		.values(dadosCliente)
+export async function criarEntidade(dadosEntidade: NovaEntidade) {
+	const [entidade] = await db
+		.insert(schema.entidade)
+		.values(dadosEntidade)
 		.returning();
 
-	return cliente;
+	return entidade;
 }
 
-export async function buscarClientePorId(id: string) {
-	const [cliente] = await db
+export async function buscarEntidadePorId(id: string) {
+	const [entidade] = await db
 		.select()
-		.from(schema.cliente)
-		.where(eq(schema.cliente.id, id));
+		.from(schema.entidade)
+		.where(eq(schema.entidade.id, id));
 
-	return cliente;
+	return entidade;
 }
 
-export async function atualizarCliente(
+export async function atualizarEntidade(
 	id: string,
 	dados: {
 		nome?: string | undefined;
@@ -34,41 +32,41 @@ export async function atualizarCliente(
 		estado?: string | null | undefined;
 		cep?: string | null | undefined;
 		pais?: string | null | undefined;
-		atualizadoEm?: string | undefined;
+		atualizadoem?: string | undefined;
 	},
 ) {
-	const [cliente] = await db
-		.update(schema.cliente)
+	const [entidade] = await db
+		.update(schema.entidade)
 		.set(dados)
-		.where(eq(schema.cliente.id, id))
+		.where(eq(schema.entidade.id, id))
 		.returning();
 
-	return cliente;
+	return entidade;
 }
 
-export async function excluirCliente(id: string) {
-	const [cliente] = await db
-		.delete(schema.cliente)
-		.where(eq(schema.cliente.id, id))
+export async function excluirEntidade(id: string) {
+	const [entidade] = await db
+		.delete(schema.entidade)
+		.where(eq(schema.entidade.id, id))
 		.returning();
 
-	return cliente;
+	return entidade;
 }
 
 export async function verificarEmailTelefoneDuplicado(
-	empresaId: string,
+	idempresa: string,
 	email: string | null | undefined,
 	telefone: string | null | undefined,
-	excluirClienteId?: string,
+	excluirEntidadeId?: string,
 ) {
 	const conditions = [];
 
 	if (email) {
-		conditions.push(eq(schema.cliente.email, email));
+		conditions.push(eq(schema.entidade.email, email));
 	}
 
 	if (telefone) {
-		conditions.push(eq(schema.cliente.telefone, telefone));
+		conditions.push(eq(schema.entidade.telefone, telefone));
 	}
 
 	if (conditions.length === 0) {
@@ -76,25 +74,25 @@ export async function verificarEmailTelefoneDuplicado(
 	}
 
 	const whereConditions = [
-		eq(schema.cliente.empresaId, empresaId),
+		eq(schema.entidade.idempresa, idempresa),
 		or(...conditions),
 	];
 
-	if (excluirClienteId) {
-		whereConditions.push(ne(schema.cliente.id, excluirClienteId));
+	if (excluirEntidadeId) {
+		whereConditions.push(ne(schema.entidade.id, excluirEntidadeId));
 	}
 
 	const [resultado] = await db
 		.select({ value: count() })
-		.from(schema.cliente)
+		.from(schema.entidade)
 		.where(and(...whereConditions));
 
 	return (resultado?.value ?? 0) > 0;
 }
 
 export async function verificarUsuarioPertenceEmpresa(
-	userId: string,
-	empresaId: string,
+	idusuario: string,
+	idempresa: string,
 ): Promise<boolean> {
 	// Verifica se o usuário está na tabela usuarioEmpresa
 	const [resultadoUsuarioEmpresa] = await db
@@ -102,8 +100,8 @@ export async function verificarUsuarioPertenceEmpresa(
 		.from(schema.usuarioEmpresa)
 		.where(
 			and(
-				eq(schema.usuarioEmpresa.userId, userId),
-				eq(schema.usuarioEmpresa.empresaId, empresaId),
+				eq(schema.usuarioEmpresa.idusuario, idusuario),
+				eq(schema.usuarioEmpresa.idempresa, idempresa),
 			),
 		);
 
@@ -113,30 +111,30 @@ export async function verificarUsuarioPertenceEmpresa(
 
 	// Verifica se o usuário é o proprietário da empresa
 	const [empresa] = await db
-		.select({ proprietarioId: schema.empresa.proprietarioId })
+		.select({ idproprietario: schema.empresa.idproprietario })
 		.from(schema.empresa)
-		.where(eq(schema.empresa.id, empresaId));
+		.where(eq(schema.empresa.id, idempresa));
 
-	return empresa?.proprietarioId === userId;
+	return empresa?.idproprietario === idusuario;
 }
 
 export async function buscarEmpresasDoUsuario(
-	userId: string,
+	idusuario: string,
 ): Promise<string[]> {
 	// Busca empresas onde o usuário está na tabela usuarioEmpresa
 	const empresasUsuarioEmpresa = await db
-		.select({ empresaId: schema.usuarioEmpresa.empresaId })
+		.select({ idempresa: schema.usuarioEmpresa.idempresa })
 		.from(schema.usuarioEmpresa)
-		.where(eq(schema.usuarioEmpresa.userId, userId));
+		.where(eq(schema.usuarioEmpresa.idusuario, idusuario));
 
 	// Busca empresas onde o usuário é proprietário
 	const empresasProprietario = await db
 		.select({ id: schema.empresa.id })
 		.from(schema.empresa)
-		.where(eq(schema.empresa.proprietarioId, userId));
+		.where(eq(schema.empresa.idproprietario, idusuario));
 
 	// Combina os IDs únicos de ambas as fontes
-	const idsUsuarioEmpresa = empresasUsuarioEmpresa.map((e) => e.empresaId);
+	const idsUsuarioEmpresa = empresasUsuarioEmpresa.map((e) => e.idempresa);
 	const idsProprietario = empresasProprietario.map((e) => e.id);
 
 	// Remove duplicatas usando Set
@@ -145,8 +143,8 @@ export async function buscarEmpresasDoUsuario(
 	return todosIds;
 }
 
-export type ListarClientesParametros = {
-	empresaIds: string[];
+export type ListarEntidadesParametros = {
+	idempresas: string[];
 	nome?: string | undefined;
 	email?: string | undefined;
 	telefone?: string | undefined;
@@ -154,55 +152,55 @@ export type ListarClientesParametros = {
 	limit?: number;
 };
 
-export async function listarClientes({
-	empresaIds,
+export async function listarEntidades({
+	idempresas,
 	nome,
 	email,
 	telefone,
 	page = 1,
 	limit = 10,
-}: ListarClientesParametros) {
+}: ListarEntidadesParametros) {
 	const where = [];
 
-	if (empresaIds.length === 0) {
+	if (idempresas.length === 0) {
 		return {
-			clientes: [],
+			entidades: [],
 			total: 0,
 		};
 	}
 
-	where.push(inArray(schema.cliente.empresaId, empresaIds));
+	where.push(inArray(schema.entidade.idempresa, idempresas));
 
 	if (nome) {
-		where.push(ilike(schema.cliente.nome, `%${nome}%`));
+		where.push(ilike(schema.entidade.nome, `%${nome}%`));
 	}
 
 	if (email) {
-		where.push(ilike(schema.cliente.email, `%${email}%`));
+		where.push(ilike(schema.entidade.email, `%${email}%`));
 	}
 
 	if (telefone) {
-		where.push(ilike(schema.cliente.telefone, `%${telefone}%`));
+		where.push(ilike(schema.entidade.telefone, `%${telefone}%`));
 	}
 
 	const offset = (page - 1) * limit;
 
-	const [totalCount, clientes] = await Promise.all([
+	const [totalCount, entidades] = await Promise.all([
 		db
 			.select({ value: count() })
-			.from(schema.cliente)
+			.from(schema.entidade)
 			.where(and(...where)),
 		db
 			.select()
-			.from(schema.cliente)
+			.from(schema.entidade)
 			.where(and(...where))
-			.orderBy(desc(schema.cliente.criadoEm))
+			.orderBy(desc(schema.entidade.criadoem))
 			.limit(limit)
 			.offset(offset),
 	]);
 
 	return {
-		clientes,
+		entidades,
 		total: totalCount[0]?.value ?? 0,
 	};
 }

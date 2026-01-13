@@ -18,18 +18,18 @@ export async function excluirContaCorrente(
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
 		}
 
-		const userId = request.user.id;
+		const idusuario = request.user.id;
 		const { id } = excluirContaCorrenteParamsSchema.parse(request.params);
 
 		const auditoriaId = uuidv4();
 
 		const auditoria = await criarAuditoriaService({
 			id: auditoriaId,
-			userId: request.user.id,
+			idusuario: request.user.id,
 			acao: "excluir_conta_corrente",
 			recursoId: id,
 			recurso: "conta_corrente",
-			criadoEm: new Date().toISOString(),
+			criadoem: new Date().toISOString(),
 			metadados: {
 				usuario: request.user.name,
 				contaCorrenteId: id,
@@ -44,7 +44,7 @@ export async function excluirContaCorrente(
 
 		const resultado = await excluirContaCorrenteService({
 			id,
-			userId,
+			idusuario,
 		});
 
 		if (!resultado.success) {

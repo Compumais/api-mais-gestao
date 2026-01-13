@@ -8,14 +8,14 @@ vi.mock("@/repositories/usuarios-repositories.js");
 describe("buscarUsuarioPorIdService", () => {
 	const usuarioMock: Usuario = {
 		id: "usuario-123",
-		name: "João Silva",
+		nome: "João Silva",
 		email: "joao.silva@example.com",
-		emailVerified: true,
-		role: "user",
-		createdAt: new Date().toISOString(),
-		updatedAt: new Date().toISOString(),
-		image: null,
-		maxCompanies: null,
+		emailverificado: true,
+		perfil: "usuario",
+		criadoem: new Date().toISOString(),
+		atualizadoem: new Date().toISOString(),
+		imagem: null,
+		maxempresas: null,
 	};
 
 	beforeEach(() => {
@@ -23,7 +23,9 @@ describe("buscarUsuarioPorIdService", () => {
 	});
 
 	it("deve buscar usuário existente com sucesso", async () => {
-		vi.mocked(usuarioRepository.buscarUsuarioPorId).mockResolvedValue(usuarioMock);
+		vi.mocked(usuarioRepository.buscarUsuarioPorId).mockResolvedValue(
+			usuarioMock,
+		);
 
 		const resultado = await buscarUsuarioPorIdService("usuario-123");
 
@@ -33,11 +35,15 @@ describe("buscarUsuarioPorIdService", () => {
 			expect(resultado.body).toEqual(usuarioMock);
 		}
 		expect(usuarioRepository.buscarUsuarioPorId).toHaveBeenCalledTimes(1);
-		expect(usuarioRepository.buscarUsuarioPorId).toHaveBeenCalledWith("usuario-123");
+		expect(usuarioRepository.buscarUsuarioPorId).toHaveBeenCalledWith(
+			"usuario-123",
+		);
 	});
 
 	it("deve retornar erro 404 quando usuário não é encontrado", async () => {
-		vi.mocked(usuarioRepository.buscarUsuarioPorId).mockResolvedValue(undefined);
+		vi.mocked(usuarioRepository.buscarUsuarioPorId).mockResolvedValue(
+			undefined,
+		);
 
 		const resultado = await buscarUsuarioPorIdService("usuario-inexistente");
 
@@ -54,7 +60,9 @@ describe("buscarUsuarioPorIdService", () => {
 	});
 
 	it("deve retornar erro 404 quando usuário é null", async () => {
-		vi.mocked(usuarioRepository.buscarUsuarioPorId).mockResolvedValue(null as any);
+		vi.mocked(usuarioRepository.buscarUsuarioPorId).mockResolvedValue(
+			null as any,
+		);
 
 		const resultado = await buscarUsuarioPorIdService("usuario-null");
 
@@ -70,14 +78,14 @@ describe("buscarUsuarioPorIdService", () => {
 	it("deve retornar usuário correto quando encontrado", async () => {
 		const usuarioEspecifico: Usuario = {
 			id: "usuario-456",
-			name: "Maria Santos",
+			nome: "Maria Santos",
 			email: "maria.santos@example.com",
-			emailVerified: false,
-			role: "admin",
-			createdAt: "2024-01-01T00:00:00.000Z",
-			updatedAt: "2024-01-02T00:00:00.000Z",
-			image: "https://example.com/avatar.jpg",
-			maxCompanies: 5,
+			emailverificado: false,
+			perfil: "admin",
+			criadoem: "2024-01-01T00:00:00.000Z",
+			atualizadoem: "2024-01-02T00:00:00.000Z",
+			imagem: "https://example.com/avatar.jpg",
+			maxempresas: 5,
 		};
 
 		vi.mocked(usuarioRepository.buscarUsuarioPorId).mockResolvedValue(
@@ -90,13 +98,8 @@ describe("buscarUsuarioPorIdService", () => {
 		if (resultado.success) {
 			expect(resultado.body).toEqual(usuarioEspecifico);
 			expect(resultado.body?.id).toBe("usuario-456");
-			expect(resultado.body?.name).toBe("Maria Santos");
+			expect(resultado.body?.nome).toBe("Maria Santos");
 			expect(resultado.body?.email).toBe("maria.santos@example.com");
 		}
 	});
 });
-
-
-
-
-

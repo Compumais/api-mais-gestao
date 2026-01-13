@@ -9,7 +9,7 @@ export const criarContaCorrenteSchema: FastifySchema = {
 	body: {
 		type: "object",
 		properties: {
-			empresaId: {
+			idempresa: {
 				type: "string",
 				description: "ID da empresa proprietária da conta",
 			},
@@ -78,7 +78,7 @@ export const criarContaCorrenteSchema: FastifySchema = {
 				description: "ID do banco relacionado",
 			},
 		},
-		required: ["empresaId"],
+		required: ["idempresa"],
 	},
 	response: {
 		201: {
@@ -86,7 +86,7 @@ export const criarContaCorrenteSchema: FastifySchema = {
 			description: "Conta corrente criada com sucesso",
 			properties: {
 				id: { type: "string", description: "ID único da conta corrente" },
-				empresaId: {
+				idempresa: {
 					type: "string",
 					description: "ID da empresa proprietária",
 				},
@@ -153,7 +153,7 @@ export const buscarContaCorrenteSchema: FastifySchema = {
 			description: "Dados da conta corrente",
 			properties: {
 				id: { type: "string" },
-				empresaId: { type: "string" },
+				idempresa: { type: "string" },
 				descricao: { type: "string", nullable: true },
 				agencia: { type: "string", nullable: true },
 				numeroconta: { type: "string", nullable: true },
@@ -207,7 +207,7 @@ export const listarContasCorrentesSchema: FastifySchema = {
 	querystring: {
 		type: "object",
 		properties: {
-			empresaId: {
+			idempresa: {
 				type: "string",
 				description: "ID da empresa para filtrar as contas correntes",
 			},
@@ -222,7 +222,7 @@ export const listarContasCorrentesSchema: FastifySchema = {
 				default: 10,
 			},
 		},
-		required: ["empresaId"],
+		required: ["idempresa"],
 	},
 	response: {
 		200: {
@@ -369,7 +369,7 @@ export const atualizarContaCorrenteSchema: FastifySchema = {
 			description: "Conta corrente atualizada com sucesso",
 			properties: {
 				id: { type: "string" },
-				empresaId: { type: "string" },
+				idempresa: { type: "string" },
 				descricao: { type: "string", nullable: true },
 				agencia: { type: "string", nullable: true },
 				numeroconta: { type: "string", nullable: true },

@@ -6,7 +6,7 @@ import {
 import { httpOk } from "../../util/http-util";
 
 type ListarEmpresasParametros = {
-	proprietarioId?: string | undefined;
+	idproprietario?: string | undefined;
 	nome?: string | undefined;
 	cnpj?: string | undefined;
 	telefone?: string | undefined;
@@ -25,7 +25,7 @@ type ListarEmpresasResposta = {
 };
 
 export async function listarEmpresasService({
-	proprietarioId,
+	idproprietario,
 	nome,
 	cnpj,
 	telefone,
@@ -33,7 +33,7 @@ export async function listarEmpresasService({
 	limit = 10,
 }: ListarEmpresasParametros): Promise<HttpResponse<ListarEmpresasResposta>> {
 	const { empresas, total } = await listarEmpresas({
-		proprietarioId,
+		idproprietario,
 		nome,
 		cnpj,
 		telefone,

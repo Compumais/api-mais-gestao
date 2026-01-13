@@ -1,15 +1,15 @@
 import type { ContaCorrente } from "@/model/conta-corrente-model";
 import type { HttpResponse } from "@/model/http-model";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/clientes-repositories";
 import {
 	atualizaContaCorrente,
 	buscarContaCorrentePorId,
 } from "@/repositories/conta-corrente-repositories";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
 import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util";
 
 type AtualizarContaCorrenteParametros = {
 	contaCorrenteId: string;
-	userId: string;
+	idusuario: string;
 	dados: {
 		descricao?: string | null | undefined;
 		agencia?: string | null | undefined;
@@ -27,9 +27,11 @@ type AtualizarContaCorrenteParametros = {
 
 export async function atualizarContaCorrenteService({
 	contaCorrenteId,
-	userId,
+	idusuario,
 	dados,
-}: AtualizarContaCorrenteParametros): Promise<HttpResponse<ContaCorrente | null>> {
+}: AtualizarContaCorrenteParametros): Promise<
+	HttpResponse<ContaCorrente | null>
+> {
 	const contaCorrenteExistente = await buscarContaCorrentePorId({
 		id: contaCorrenteId,
 	});
@@ -39,8 +41,8 @@ export async function atualizarContaCorrenteService({
 	}
 
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
-		userId,
-		contaCorrenteExistente.empresaId,
+		idusuario,
+		contaCorrenteExistente.idempresa,
 	);
 
 	if (!usuarioPertenceEmpresa) {
@@ -58,4 +60,3 @@ export async function atualizarContaCorrenteService({
 
 	return httpOk<ContaCorrente>(contaCorrenteAtualizada);
 }
-

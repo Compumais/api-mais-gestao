@@ -33,7 +33,7 @@ export async function buscarPlanoContasPorId(id: string) {
 	return planoContas;
 }
 
-export async function buscarProximoCodigoSemPai(empresaId: string) {
+export async function buscarProximoCodigoSemPai(idempresa: string) {
 	const resultado = await db
 		.select({
 			count: sql<number>`count(*)::int`,
@@ -41,8 +41,8 @@ export async function buscarProximoCodigoSemPai(empresaId: string) {
 		.from(schema.planocontas)
 		.where(
 			and(
-				eq(schema.planocontas.empresaId, empresaId),
-				isNull(schema.planocontas.planoContasId),
+				eq(schema.planocontas.idempresa, idempresa),
+				isNull(schema.planocontas.idplanocontas),
 			),
 		);
 
@@ -51,8 +51,8 @@ export async function buscarProximoCodigoSemPai(empresaId: string) {
 }
 
 export async function buscarProximoCodigoComPai(
-	empresaId: string,
-	planoContasId: string,
+	idempresa: string,
+	idplanocontas: string,
 ) {
 	const resultado = await db
 		.select({
@@ -61,8 +61,8 @@ export async function buscarProximoCodigoComPai(
 		.from(schema.planocontas)
 		.where(
 			and(
-				eq(schema.planocontas.empresaId, empresaId),
-				eq(schema.planocontas.planoContasId, planoContasId),
+				eq(schema.planocontas.idempresa, idempresa),
+				eq(schema.planocontas.idplanocontas, idplanocontas),
 			),
 		);
 
@@ -71,35 +71,35 @@ export async function buscarProximoCodigoComPai(
 }
 
 export type ListarPlanoContasParametros = {
-	empresaIds: string[];
-	planoContasId?: string | undefined;
+	idempresas: string[];
+	idplanocontas?: string | undefined;
 	inativo?: string;
 	page?: number;
 	limit?: number;
 };
 
 export async function listarPlanoContasPorEmpresas({
-	empresaIds,
-	planoContasId,
+	idempresas,
+	idplanocontas,
 	inativo,
 	page = 1,
 	limit = 10,
 }: ListarPlanoContasParametros) {
 	const where = [];
 
-	if (empresaIds.length === 0) {
+	if (idempresas.length === 0) {
 		return {
 			planosContas: [],
 			total: 0,
 		};
 	}
 
-	where.push(inArray(schema.planocontas.empresaId, empresaIds));
+	where.push(inArray(schema.planocontas.idempresa, idempresas));
 
-	if (planoContasId) {
-		where.push(eq(schema.planocontas.planoContasId, planoContasId));
+	if (idplanocontas) {
+		where.push(eq(schema.planocontas.idplanocontas, idplanocontas));
 	} else {
-		where.push(isNull(schema.planocontas.planoContasId));
+		where.push(isNull(schema.planocontas.idplanocontas));
 	}
 
 	if (inativo) {
@@ -128,11 +128,11 @@ export async function listarPlanoContasPorEmpresas({
 	};
 }
 
-export async function buscarPlanosFilhos(planoContasId: string) {
+export async function buscarPlanosFilhos(idplanocontas: string) {
 	const planosFilhos = await db
 		.select()
 		.from(schema.planocontas)
-		.where(eq(schema.planocontas.planoContasId, planoContasId));
+		.where(eq(schema.planocontas.idplanocontas, idplanocontas));
 
 	return planosFilhos;
 }

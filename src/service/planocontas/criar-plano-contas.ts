@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import type { PlanoContas } from "@/model/plano-contas-model";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/clientes-repositories";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
 import {
 	buscarPlanoContasPorId,
 	buscarProximoCodigoComPai,
@@ -18,7 +18,10 @@ export async function criarPlanoContasService(
 	usuarioId: string,
 	roles: string[] | undefined,
 ) {
-	const temPermissao = verificarPermissao(roles, ["proprietario", "financeiro"]);
+	const temPermissao = verificarPermissao(roles, [
+		"proprietario",
+		"financeiro",
+	]);
 
 	if (!temPermissao) {
 		return httpProibido();
@@ -26,7 +29,7 @@ export async function criarPlanoContasService(
 
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
 		usuarioId,
-		dadosPlanoContas.empresaId,
+		dadosPlanoContas.idempresa,
 	);
 
 	if (!usuarioPertenceEmpresa) {
@@ -35,12 +38,12 @@ export async function criarPlanoContasService(
 
 	let codigo: string;
 
-	if (dadosPlanoContas.planoContasId) {
+	if (dadosPlanoContas.idplanocontas) {
 		const planoPai = await buscarPlanoContasPorId(
-			dadosPlanoContas.planoContasId,
+			dadosPlanoContas.idplanocontas,
 		);
 
-		if (planoPai?.empresaId !== dadosPlanoContas.empresaId) {
+		if (planoPai?.idempresa !== dadosPlanoContas.idempresa) {
 			throw new Error("Plano de contas pai não pertence à mesma empresa");
 		}
 
@@ -50,13 +53,13 @@ export async function criarPlanoContasService(
 		}
 
 		const proximoCodigoFilho = await buscarProximoCodigoComPai(
-			dadosPlanoContas.empresaId,
-			dadosPlanoContas.planoContasId,
+			dadosPlanoContas.idempresa,
+			dadosPlanoContas.idplanocontas,
 		);
 
 		codigo = `${codigoPai} ${proximoCodigoFilho}`;
 	} else {
-		codigo = await buscarProximoCodigoSemPai(dadosPlanoContas.empresaId);
+		codigo = await buscarProximoCodigoSemPai(dadosPlanoContas.idempresa);
 	}
 
 	const planoContas = await criarPlanoContas({
@@ -73,12 +76,12 @@ export async function criarPlanoContasService(
 	const auditoria = await criarAuditoriaService({
 		id: auditoriaId,
 		acao: "Criar Plano de Contas",
-		userId: usuarioId,
+		idusuario: usuarioId,
 		recurso: "Plano de Contas",
 		recursoId: planoContas.id,
-		criadoEm: new Date().toISOString(),
+		criadoem: new Date().toISOString(),
 		metadados: {
-			planoContasId: planoContas.id,
+			idplanocontas: planoContas.id,
 			nome: planoContas.nome,
 		},
 	});

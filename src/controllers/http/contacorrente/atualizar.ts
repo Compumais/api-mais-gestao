@@ -30,7 +30,7 @@ export async function atualizarContaCorrente(
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
 		}
 
-		const userId = request.user.id;
+		const idusuario = request.user.id;
 		const { id } = atualizarContaCorrenteParamsSchema.parse(request.params);
 		const dados = atualizarContaCorrenteBodySchema.parse(request.body);
 
@@ -52,7 +52,7 @@ export async function atualizarContaCorrente(
 
 		const resultado = await atualizarContaCorrenteService({
 			contaCorrenteId: id,
-			userId,
+			idusuario,
 			dados: dadosAtualizacao,
 		});
 
@@ -76,4 +76,3 @@ export async function atualizarContaCorrente(
 		});
 	}
 }
-

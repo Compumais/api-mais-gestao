@@ -29,7 +29,7 @@ export async function atualizarEmpresa(
 		nome?: string | undefined;
 		cnpj?: string | undefined;
 		telefone?: string | undefined;
-		atualizadoEm?: string | undefined;
+		atualizadoem?: string | undefined;
 	},
 ) {
 	const [empresa] = await db
@@ -50,10 +50,10 @@ export async function excluirEmpresa(id: string) {
 	return empresa;
 }
 
-export async function verificarDadosAssociados(empresaId: string) {
+export async function verificarDadosAssociados(idempresa: string) {
 	const [
 		resultadoUsuarios,
-		resultadoClientes,
+		resultadoEntidades,
 		resultadoContasCorrentes,
 		resultadoFinanceiro,
 		resultadoPlanoContas,
@@ -61,34 +61,34 @@ export async function verificarDadosAssociados(empresaId: string) {
 		db
 			.select({ value: count() })
 			.from(schema.usuarioEmpresa)
-			.where(eq(schema.usuarioEmpresa.empresaId, empresaId)),
+			.where(eq(schema.usuarioEmpresa.idempresa, idempresa)),
 		db
 			.select({ value: count() })
-			.from(schema.cliente)
-			.where(eq(schema.cliente.empresaId, empresaId)),
+			.from(schema.entidade)
+			.where(eq(schema.entidade.idempresa, idempresa)),
 		db
 			.select({ value: count() })
 			.from(schema.contacorrente)
-			.where(eq(schema.contacorrente.empresaId, empresaId)),
+			.where(eq(schema.contacorrente.idempresa, idempresa)),
 		db
 			.select({ value: count() })
 			.from(schema.financeiro)
-			.where(eq(schema.financeiro.empresaId, empresaId)),
+			.where(eq(schema.financeiro.idempresa, idempresa)),
 		db
 			.select({ value: count() })
 			.from(schema.planocontas)
-			.where(eq(schema.planocontas.empresaId, empresaId)),
+			.where(eq(schema.planocontas.idempresa, idempresa)),
 	]);
 
 	const usuarios = resultadoUsuarios[0];
-	const clientes = resultadoClientes[0];
+	const entidades = resultadoEntidades[0];
 	const contasCorrentes = resultadoContasCorrentes[0];
 	const financeiro = resultadoFinanceiro[0];
 	const planoContas = resultadoPlanoContas[0];
 
 	return (
 		(usuarios?.value ?? 0) > 0 ||
-		(clientes?.value ?? 0) > 0 ||
+		(entidades?.value ?? 0) > 0 ||
 		(contasCorrentes?.value ?? 0) > 0 ||
 		(financeiro?.value ?? 0) > 0 ||
 		(planoContas?.value ?? 0) > 0
@@ -96,7 +96,7 @@ export async function verificarDadosAssociados(empresaId: string) {
 }
 
 export type ListarEmpresasParametros = {
-	proprietarioId?: string | undefined;
+	idproprietario?: string | undefined;
 	nome?: string | undefined;
 	cnpj?: string | undefined;
 	telefone?: string | undefined;
@@ -105,7 +105,7 @@ export type ListarEmpresasParametros = {
 };
 
 export async function listarEmpresas({
-	proprietarioId,
+	idproprietario,
 	nome,
 	cnpj,
 	telefone,
@@ -113,8 +113,8 @@ export async function listarEmpresas({
 	limit = 10,
 }: ListarEmpresasParametros) {
 	const where = [];
-	if (proprietarioId) {
-		where.push(eq(schema.empresa.proprietarioId, proprietarioId));
+	if (idproprietario) {
+		where.push(eq(schema.empresa.idproprietario, idproprietario));
 	}
 	if (nome) {
 		where.push(ilike(schema.empresa.nome, `%${nome}%`));
@@ -137,7 +137,7 @@ export async function listarEmpresas({
 			.select()
 			.from(schema.empresa)
 			.where(and(...where))
-			.orderBy(desc(schema.empresa.criadoEm))
+			.orderBy(desc(schema.empresa.criadoem))
 			.limit(limit)
 			.offset(offset),
 	]);

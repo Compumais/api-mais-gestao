@@ -60,8 +60,8 @@ async function seed() {
 				idprovedor: "credential",
 				idusuario: usuarioAdminId,
 				password: senhaHash,
-				createdAt: agora,
-				updatedAt: agora,
+				criadoem: agora,
+				atualizadoem: agora,
 			},
 			{
 				id: uuidv4(),
@@ -69,8 +69,8 @@ async function seed() {
 				idprovedor: "credential",
 				idusuario: usuarioComumId,
 				password: senhaHash,
-				createdAt: agora,
-				updatedAt: agora,
+				criadoem: agora,
+				atualizadoem: agora,
 			},
 		]);
 
@@ -86,8 +86,8 @@ async function seed() {
 				cnpj: "12345678000190",
 				telefone: "(11) 99999-9999",
 				idproprietario: usuarioAdminId,
-				criadoEm: agora,
-				atualizadoEm: agora,
+				criadoem: agora,
+				atualizadoem: agora,
 			},
 			{
 				id: empresa2Id,
@@ -95,8 +95,8 @@ async function seed() {
 				cnpj: "98765432000111",
 				telefone: "(11) 88888-8888",
 				idproprietario: usuarioComumId,
-				criadoEm: agora,
-				atualizadoEm: agora,
+				criadoem: agora,
+				atualizadoem: agora,
 			},
 		]);
 
@@ -107,30 +107,30 @@ async function seed() {
 				id: uuidv4(),
 				idusuario: usuarioAdminId,
 				idempresa: empresa1Id,
-				criadoEm: agora,
-				atualizadoEm: agora,
+				criadoem: agora,
+				atualizadoem: agora,
 			},
 			{
 				id: uuidv4(),
 				idusuario: usuarioComumId,
 				idempresa: empresa2Id,
-				criadoEm: agora,
-				atualizadoEm: agora,
+				criadoem: agora,
+				atualizadoem: agora,
 			},
 		]);
 
-		// Criar entidades (clientes/fornecedores)
+		// Criar entidades (entidades/fornecedores)
 		console.log("👤 Criando entidades...");
 		await db.insert(schema.entidade).values([
 			{
 				id: uuidv4(),
-				nome: "Cliente Exemplo 1",
-				razaosocial: "Cliente Exemplo 1 LTDA",
+				nome: "Entidade Exemplo 1",
+				razaosocial: "Entidade Exemplo 1 LTDA",
 				tipopessoa: 1, // 1 = Pessoa Jurídica
 				cnpjcpf: "12345678000111",
 				inscricaoestadual: "123456789",
 				rg: "",
-				email: "cliente1@exemplo.com",
+				email: "entidade1@exemplo.com",
 				telefone: "(11) 77777-7777",
 				endereco: "Rua Exemplo",
 				numeroendereco: "123",
@@ -139,18 +139,18 @@ async function seed() {
 				cep: "012345",
 				pais: "Brasil",
 				idempresa: empresa1Id,
-				criadoEm: agora,
-				atualizadoEm: agora,
+				criadoem: agora,
+				atualizadoem: agora,
 			},
 			{
 				id: uuidv4(),
-				nome: "Cliente Exemplo 2",
-				razaosocial: "Cliente Exemplo 2 ME",
+				nome: "Entidade Exemplo 2",
+				razaosocial: "Entidade Exemplo 2 ME",
 				tipopessoa: 1, // 1 = Pessoa Jurídica
 				cnpjcpf: "98765432000122",
 				inscricaoestadual: "987654321",
 				rg: "",
-				email: "cliente2@exemplo.com",
+				email: "entidade2@exemplo.com",
 				telefone: "(11) 66666-6666",
 				endereco: "Av. Teste",
 				numeroendereco: "456",
@@ -159,8 +159,8 @@ async function seed() {
 				cep: "200000",
 				pais: "Brasil",
 				idempresa: empresa1Id,
-				criadoEm: agora,
-				atualizadoEm: agora,
+				criadoem: agora,
+				atualizadoem: agora,
 			},
 		]);
 
@@ -294,7 +294,7 @@ async function seed() {
 				.split("T")[0],
 			valor: "5000.00",
 			saldo: "5000.00",
-			historico: "Recebimento de cliente",
+			historico: "Recebimento de entidade",
 			documento: "REC-001",
 			currenttimemillis: timestampMillis,
 		});
@@ -345,7 +345,7 @@ async function seed() {
 				idusuario: usuarioAdminId,
 				idempresa: empresa1Id,
 				metadados: { nome: "Empresa Exemplo LTDA" },
-				criadoEm: agora,
+				criadoem: agora,
 			},
 			{
 				id: uuidv4(),
@@ -353,8 +353,8 @@ async function seed() {
 				recurso: "entidade",
 				idusuario: usuarioAdminId,
 				idempresa: empresa1Id,
-				metadados: { nome: "Cliente Exemplo 1" },
-				criadoEm: agora,
+				metadados: { nome: "Entidade Exemplo 1" },
+				criadoem: agora,
 			},
 		]);
 

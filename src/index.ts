@@ -5,7 +5,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import Fastify from "fastify";
 import { authRotas } from "./controllers/http/auth/rotas.js";
 import { authenticationRoute } from "./controllers/http/authentication.js";
-import { clientesRotas } from "./controllers/http/clientes/rotas.js";
+import { entidadesRotas } from "./controllers/http/entidades/rotas.js";
 import { contaCorrenteRotas } from "./controllers/http/contacorrente/rotas.js";
 import { empresasRotas } from "./controllers/http/empresas/rotas.js";
 import { planoContasRotas } from "./controllers/http/plano-contas/rotas.js";
@@ -45,7 +45,7 @@ await app.register(swagger, {
 		},
 		tags: [
 			{ name: "auth", description: "Operações de autenticação" },
-			{ name: "clientes", description: "Operações com clientes" },
+			{ name: "entidades", description: "Operações com entidades" },
 			{
 				name: "contas-correntes",
 				description: "Operações com contas correntes",
@@ -263,7 +263,7 @@ app.route({
 
 app.register(planoContasRotas);
 app.register(empresasRotas);
-app.register(clientesRotas);
+app.register(entidadesRotas);
 app.register(authRotas);
 app.register(contaCorrenteRotas);
 

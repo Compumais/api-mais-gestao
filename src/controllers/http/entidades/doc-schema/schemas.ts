@@ -1,9 +1,9 @@
 import type { FastifySchema } from "fastify";
 
-export const atualizarClienteSchema: FastifySchema = {
-	tags: ["clientes"],
-	summary: "Atualizar cliente",
-	description: "Atualiza os dados de um cliente existente",
+export const atualizarEntidadeSchema: FastifySchema = {
+	tags: ["entidades"],
+	summary: "Atualizar entidade",
+	description: "Atualiza os dados de um entidade existente",
 	security: [{ bearerAuth: [] }],
 	params: {
 		type: "object",
@@ -39,9 +39,9 @@ export const atualizarClienteSchema: FastifySchema = {
 				estado: { type: "string", nullable: true },
 				cep: { type: "string", nullable: true },
 				pais: { type: "string", nullable: true },
-				empresaId: { type: "string" },
-				criadoEm: { type: "string" },
-				atualizadoEm: { type: "string" },
+				idempresa: { type: "string" },
+				criadoem: { type: "string" },
+				atualizadoem: { type: "string" },
 			},
 		},
 		400: {
@@ -90,10 +90,10 @@ export const atualizarClienteSchema: FastifySchema = {
 	},
 };
 
-export const buscarClienteSchema: FastifySchema = {
-	tags: ["clientes"],
-	summary: "Buscar cliente por ID",
-	description: "Retorna os dados de um cliente específico",
+export const buscarEntidadeSchema: FastifySchema = {
+	tags: ["entidades"],
+	summary: "Buscar entidade por ID",
+	description: "Retorna os dados de um entidade específico",
 	security: [{ bearerAuth: [] }],
 	params: {
 		type: "object",
@@ -115,9 +115,9 @@ export const buscarClienteSchema: FastifySchema = {
 				estado: { type: "string", nullable: true },
 				cep: { type: "string", nullable: true },
 				pais: { type: "string", nullable: true },
-				empresaId: { type: "string" },
-				criadoEm: { type: "string" },
-				atualizadoEm: { type: "string" },
+				idempresa: { type: "string" },
+				criadoem: { type: "string" },
+				atualizadoem: { type: "string" },
 			},
 		},
 		400: {
@@ -159,10 +159,10 @@ export const buscarClienteSchema: FastifySchema = {
 	},
 };
 
-export const criarClienteSchema: FastifySchema = {
-	tags: ["clientes"],
-	summary: "Criar novo cliente",
-	description: "Cria um novo cliente na empresa do usuário autenticado",
+export const criarEntidadeSchema: FastifySchema = {
+	tags: ["entidades"],
+	summary: "Criar novo entidade",
+	description: "Cria um novo entidade na empresa do usuário autenticado",
 	security: [{ bearerAuth: [] }],
 	body: {
 		type: "object",
@@ -175,9 +175,9 @@ export const criarClienteSchema: FastifySchema = {
 			estado: { type: "string", nullable: true },
 			cep: { type: "string", nullable: true },
 			pais: { type: "string", nullable: true },
-			empresaId: { type: "string", format: "uuid" },
+			idempresa: { type: "string", format: "uuid" },
 		},
-		required: ["nome", "empresaId"],
+		required: ["nome", "idempresa"],
 	},
 	response: {
 		201: {
@@ -192,9 +192,9 @@ export const criarClienteSchema: FastifySchema = {
 				estado: { type: "string", nullable: true },
 				cep: { type: "string", nullable: true },
 				pais: { type: "string", nullable: true },
-				empresaId: { type: "string" },
-				criadoEm: { type: "string" },
-				atualizadoEm: { type: "string" },
+				idempresa: { type: "string" },
+				criadoem: { type: "string" },
+				atualizadoem: { type: "string" },
 			},
 		},
 		400: {
@@ -229,10 +229,10 @@ export const criarClienteSchema: FastifySchema = {
 	},
 };
 
-export const excluirClienteSchema: FastifySchema = {
-	tags: ["clientes"],
-	summary: "Excluir cliente",
-	description: "Exclui um cliente existente",
+export const excluirEntidadeSchema: FastifySchema = {
+	tags: ["entidades"],
+	summary: "Excluir entidade",
+	description: "Exclui um entidade existente",
 	security: [{ bearerAuth: [] }],
 	params: {
 		type: "object",
@@ -244,7 +244,7 @@ export const excluirClienteSchema: FastifySchema = {
 	response: {
 		204: {
 			type: "null",
-			description: "Cliente excluído com sucesso",
+			description: "Entidade excluído com sucesso",
 		},
 		400: {
 			type: "object",
@@ -285,11 +285,11 @@ export const excluirClienteSchema: FastifySchema = {
 	},
 };
 
-export const listarClientesSchema: FastifySchema = {
-	tags: ["clientes"],
-	summary: "Listar clientes",
+export const listarEntidadesSchema: FastifySchema = {
+	tags: ["entidades"],
+	summary: "Listar entidades",
 	description:
-		"Lista os clientes da empresa do usuário autenticado com paginação e filtros",
+		"Lista os entidades da empresa do usuário autenticado com paginação e filtros",
 	security: [{ bearerAuth: [] }],
 	querystring: {
 		type: "object",
@@ -320,9 +320,9 @@ export const listarClientesSchema: FastifySchema = {
 							estado: { type: "string", nullable: true },
 							cep: { type: "string", nullable: true },
 							pais: { type: "string", nullable: true },
-							empresaId: { type: "string" },
-							criadoEm: { type: "string" },
-							atualizadoEm: { type: "string" },
+							idempresa: { type: "string" },
+							criadoem: { type: "string" },
+							atualizadoem: { type: "string" },
 						},
 					},
 				},

@@ -1,6 +1,6 @@
 import type { HttpResponse } from "@/model/http-model";
 import type { PlanoContas } from "@/model/plano-contas-model";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/clientes-repositories";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
 import {
 	atualizarPlanoContas,
 	buscarPlanoContasPorId,
@@ -10,40 +10,43 @@ import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util";
 import { verificarPermissao } from "@/util/verificar-permissao";
 
 type AtualizarPlanoContasParametros = {
-	planoContasId: string;
-	userId: string;
+	idplanocontas: string;
+	idusuario: string;
 	roles: string[] | undefined;
 	dados: Partial<NovoPlanoContas>;
 };
 
 export async function atualizarPlanoContasService({
-	planoContasId,
-	userId,
+	idplanocontas,
+	idusuario,
 	roles,
 	dados,
 }: AtualizarPlanoContasParametros): Promise<HttpResponse<PlanoContas | null>> {
-	const temPermissao = verificarPermissao(roles, ["proprietario", "financeiro"]);
+	const temPermissao = verificarPermissao(roles, [
+		"proprietario",
+		"financeiro",
+	]);
 
 	if (!temPermissao) {
 		return httpProibido();
 	}
 
-	const planoExistente = await buscarPlanoContasPorId(planoContasId);
+	const planoExistente = await buscarPlanoContasPorId(idplanocontas);
 
 	if (!planoExistente) {
 		return httpNaoEncontrado();
 	}
 
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
-		userId,
-		planoExistente.empresaId,
+		idusuario,
+		planoExistente.idempresa,
 	);
 
 	if (!usuarioPertenceEmpresa) {
 		return httpProibido();
 	}
 
-	const planoAtualizado = await atualizarPlanoContas(planoContasId, dados);
+	const planoAtualizado = await atualizarPlanoContas(idplanocontas, dados);
 
 	if (!planoAtualizado) {
 		return httpNaoEncontrado();
@@ -51,4 +54,3 @@ export async function atualizarPlanoContasService({
 
 	return httpOk<PlanoContas>(planoAtualizado);
 }
-

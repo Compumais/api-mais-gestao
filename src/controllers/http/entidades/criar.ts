@@ -1,22 +1,22 @@
-import type { FastifyReply, FastifyRequest, FastifySchema } from "fastify";
+import type { FastifyReply, FastifyRequest } from "fastify";
 import { v4 as uuidv4 } from "uuid";
 import z from "zod";
-import { zodToJsonSchema } from "zod-to-json-schema";
-import { criarClienteService } from "../../../service/clientes/criar-cliente";
+import { criarEntidadeService } from "@/service/entidades/criar-entidade";
 
-const criarClienteBodySchema = z.object({
+const criarEntidadeBodySchema = z.object({
 	nome: z.string().min(1),
-	email: z.string().email().optional().nullable(),
+	cnpjcpf: z.string().min(20),
+	email: z.email().optional().nullable(),
 	telefone: z.string().optional().nullable(),
 	endereco: z.string().optional().nullable(),
 	cidade: z.string().optional().nullable(),
 	estado: z.string().optional().nullable(),
 	cep: z.string().optional().nullable(),
 	pais: z.string().optional().nullable(),
-	empresaId: z.string().uuid(),
+	idempresa: z.string().uuid(),
 });
 
-export async function criarCliente(
+export async function criarEntidade(
 	request: FastifyRequest,
 	reply: FastifyReply,
 ) {
@@ -28,20 +28,20 @@ export async function criarCliente(
 			});
 		}
 
-		const userId = request.user.id;
-		const dadosValidados = criarClienteBodySchema.parse(request.body);
+		const idusuario = request.user.id;
+		const dadosValidados = criarEntidadeBodySchema.parse(request.body);
 		const uuid = uuidv4();
 
-		const dadosCliente = {
+		const dadosEntidade = {
 			id: uuid,
 			...dadosValidados,
-			criadoEm: new Date().toISOString(),
-			atualizadoEm: new Date().toISOString(),
+			criadoem: new Date().toISOString(),
+			atualizadoem: new Date().toISOString(),
 		};
 
-		const resultado = await criarClienteService({
-			dadosCliente,
-			userId,
+		const resultado = await criarEntidadeService({
+			dadosEntidade,
+			idusuario,
 		});
 
 		if (!resultado.success) {
@@ -59,8 +59,8 @@ export async function criarCliente(
 			});
 		}
 		return reply.status(500).send({
-			error: "Erro ao criar cliente",
-			code: "CREATE_CLIENTE_ERROR",
+			error: "Erro ao criar entidade",
+			code: "CREATE_ENTIDADE_ERROR",
 		});
 	}
 }

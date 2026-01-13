@@ -18,12 +18,12 @@ export async function excluirPlanoContas(
 			});
 		}
 
-		const userId = request.user.id;
+		const idusuario = request.user.id;
 		const { id } = excluirPlanoContasParamsSchema.parse(request.params);
 
 		const resultado = await excluirPlanoContasService({
-			planoContasId: id,
-			userId,
+			idplanocontas: id,
+			idusuario,
 			roles: request.user.roles,
 		});
 
@@ -47,4 +47,3 @@ export async function excluirPlanoContas(
 		});
 	}
 }
-

@@ -4,7 +4,7 @@ import { listarContasCorrentesService } from "@/service/contacorrente/listar-con
 import { httpOk } from "@/util/http-util";
 
 const listarContasCorrentesQuerySchema = z.object({
-	empresaId: z.string(),
+	idempresa: z.string(),
 	page: z.number().optional().default(1),
 	limit: z.number().optional().default(10),
 });
@@ -17,7 +17,7 @@ export async function listarContasCorrentes(
 		const query = listarContasCorrentesQuerySchema.parse(request.query);
 
 		const response = await listarContasCorrentesService({
-			empresaId: query.empresaId,
+			idempresa: query.idempresa,
 			page: query.page,
 			limit: query.limit,
 		});

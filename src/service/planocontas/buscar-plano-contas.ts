@@ -1,14 +1,12 @@
 import type { HttpResponse } from "@/model/http-model";
 import type { PlanoContas } from "@/model/plano-contas-model";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/clientes-repositories";
-import {
-	buscarPlanoContasComFilhos,
-} from "@/repositories/plano-contas-repositories";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
+import { buscarPlanoContasComFilhos } from "@/repositories/plano-contas-repositories";
 import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util";
 
 type BuscarPlanoContasParametros = {
-	planoContasId: string;
-	userId: string;
+	idplanocontas: string;
+	idusuario: string;
 };
 
 type BuscarPlanoContasResposta = {
@@ -17,18 +15,20 @@ type BuscarPlanoContasResposta = {
 };
 
 export async function buscarPlanoContasService({
-	planoContasId,
-	userId,
-}: BuscarPlanoContasParametros): Promise<HttpResponse<BuscarPlanoContasResposta | null>> {
-	const { plano, filhos } = await buscarPlanoContasComFilhos(planoContasId);
+	idplanocontas,
+	idusuario,
+}: BuscarPlanoContasParametros): Promise<
+	HttpResponse<BuscarPlanoContasResposta | null>
+> {
+	const { plano, filhos } = await buscarPlanoContasComFilhos(idplanocontas);
 
 	if (!plano) {
 		return httpNaoEncontrado();
 	}
 
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
-		userId,
-		plano.empresaId,
+		idusuario,
+		plano.idempresa,
 	);
 
 	if (!usuarioPertenceEmpresa) {
@@ -40,4 +40,3 @@ export async function buscarPlanoContasService({
 		filhos,
 	});
 }
-

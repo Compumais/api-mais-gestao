@@ -4,7 +4,7 @@ import { listarAuditorias } from "@/repositories/auditoria-repositories";
 import { httpOk } from "@/util/http-util";
 
 interface ListarAuditoriasServiceParams {
-	empresaId?: string;
+	idempresa?: string;
 	page?: number;
 	limit?: number;
 }
@@ -20,7 +20,7 @@ interface ListarAuditoriasServiceResponta {
 }
 
 export async function ListarAuditoriasService({
-	empresaId,
+	idempresa,
 	limit = 100,
 	page = 1,
 }: ListarAuditoriasServiceParams): Promise<
@@ -29,14 +29,14 @@ export async function ListarAuditoriasService({
 	const params: {
 		limit: number;
 		page: number;
-		empresaId?: string;
+		idempresa?: string;
 	} = {
 		limit,
 		page,
 	};
 
-	if (empresaId !== undefined) {
-		params.empresaId = empresaId;
+	if (idempresa !== undefined) {
+		params.idempresa = idempresa;
 	}
 
 	const { auditorias, totalCount } = await listarAuditorias(params);

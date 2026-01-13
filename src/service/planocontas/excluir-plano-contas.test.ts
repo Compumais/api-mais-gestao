@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { PlanoContas } from "@/model/plano-contas-model.js";
-import * as clienteRepository from "@/repositories/clientes-repositories.js";
+import * as entidadeRepository from "@/repositories/entidade-repositories.js";
 import * as planoContasRepository from "@/repositories/plano-contas-repositories.js";
 import * as verificarPermissaoModule from "@/util/verificar-permissao.js";
 import { excluirPlanoContasService } from "./excluir-plano-contas.js";
 
-vi.mock("@/repositories/clientes-repositories.js");
+vi.mock("@/repositories/entidade-repositories.js");
 vi.mock("@/repositories/plano-contas-repositories.js");
 vi.mock("@/util/verificar-permissao.js", () => ({
 	verificarPermissao: vi.fn(),
@@ -14,7 +14,7 @@ vi.mock("@/util/verificar-permissao.js", () => ({
 describe("excluirPlanoContasService", () => {
 	const planoContasMock: PlanoContas = {
 		id: "plano-1",
-		empresaId: "empresa-123",
+		idempresa: "empresa-123",
 		codigo: "1",
 		nome: "Plano de Contas 1",
 		tipomovimento: "D",
@@ -26,7 +26,7 @@ describe("excluirPlanoContasService", () => {
 		idcontacontabilintegracao: null,
 		exportaparacontabilidade: null,
 		idgrupodre: null,
-		planoContasId: null,
+		idplanocontas: null,
 	};
 
 	beforeEach(() => {
@@ -41,7 +41,7 @@ describe("excluirPlanoContasService", () => {
 			planoContasMock,
 		);
 		vi.mocked(
-			clienteRepository.verificarUsuarioPertenceEmpresa,
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
 		).mockResolvedValue(true);
 		vi.mocked(planoContasRepository.buscarPlanosFilhos).mockResolvedValue([]);
 		vi.mocked(planoContasRepository.excluirPlanoContas).mockResolvedValue(
@@ -49,8 +49,8 @@ describe("excluirPlanoContasService", () => {
 		);
 
 		const resultado = await excluirPlanoContasService({
-			planoContasId: "plano-1",
-			userId: "usuario-123",
+			idplanocontas: "plano-1",
+			idusuario: "usuario-123",
 			roles: ["proprietario"],
 		});
 
@@ -66,7 +66,7 @@ describe("excluirPlanoContasService", () => {
 			1,
 		);
 		expect(
-			clienteRepository.verificarUsuarioPertenceEmpresa,
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
 		).toHaveBeenCalledTimes(1);
 		expect(planoContasRepository.buscarPlanosFilhos).toHaveBeenCalledTimes(1);
 		expect(planoContasRepository.excluirPlanoContas).toHaveBeenCalledTimes(1);
@@ -78,8 +78,8 @@ describe("excluirPlanoContasService", () => {
 		);
 
 		const resultado = await excluirPlanoContasService({
-			planoContasId: "plano-1",
-			userId: "usuario-123",
+			idplanocontas: "plano-1",
+			idusuario: "usuario-123",
 			roles: ["user"],
 		});
 
@@ -101,8 +101,8 @@ describe("excluirPlanoContasService", () => {
 		);
 
 		const resultado = await excluirPlanoContasService({
-			planoContasId: "plano-inexistente",
-			userId: "usuario-123",
+			idplanocontas: "plano-inexistente",
+			idusuario: "usuario-123",
 			roles: ["proprietario"],
 		});
 
@@ -113,7 +113,7 @@ describe("excluirPlanoContasService", () => {
 			expect(resultado.code).toBe("NOT_FOUND_ERROR");
 		}
 		expect(
-			clienteRepository.verificarUsuarioPertenceEmpresa,
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
 		).not.toHaveBeenCalled();
 	});
 
@@ -125,12 +125,12 @@ describe("excluirPlanoContasService", () => {
 			planoContasMock,
 		);
 		vi.mocked(
-			clienteRepository.verificarUsuarioPertenceEmpresa,
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
 		).mockResolvedValue(false);
 
 		const resultado = await excluirPlanoContasService({
-			planoContasId: "plano-1",
-			userId: "usuario-123",
+			idplanocontas: "plano-1",
+			idusuario: "usuario-123",
 			roles: ["proprietario"],
 		});
 
@@ -151,15 +151,15 @@ describe("excluirPlanoContasService", () => {
 			planoContasMock,
 		);
 		vi.mocked(
-			clienteRepository.verificarUsuarioPertenceEmpresa,
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
 		).mockResolvedValue(true);
 		vi.mocked(planoContasRepository.buscarPlanosFilhos).mockResolvedValue([
 			planoContasMock,
 		]);
 
 		const resultado = await excluirPlanoContasService({
-			planoContasId: "plano-1",
-			userId: "usuario-123",
+			idplanocontas: "plano-1",
+			idusuario: "usuario-123",
 			roles: ["proprietario"],
 		});
 
@@ -182,7 +182,7 @@ describe("excluirPlanoContasService", () => {
 			planoContasMock,
 		);
 		vi.mocked(
-			clienteRepository.verificarUsuarioPertenceEmpresa,
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
 		).mockResolvedValue(true);
 		vi.mocked(planoContasRepository.buscarPlanosFilhos).mockResolvedValue([]);
 		vi.mocked(planoContasRepository.excluirPlanoContas).mockResolvedValue(
@@ -190,8 +190,8 @@ describe("excluirPlanoContasService", () => {
 		);
 
 		const resultado = await excluirPlanoContasService({
-			planoContasId: "plano-1",
-			userId: "usuario-123",
+			idplanocontas: "plano-1",
+			idusuario: "usuario-123",
 			roles: ["financeiro"],
 		});
 

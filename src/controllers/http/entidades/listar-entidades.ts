@@ -1,9 +1,8 @@
-import type { FastifyReply, FastifyRequest, FastifySchema } from "fastify";
+import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { zodToJsonSchema } from "zod-to-json-schema";
-import { listarClientesService } from "../../../service/clientes/listar-clientes";
+import { listarEntidadesService } from "@/service/entidades/listar-entidades";
 
-const listarClientesQuerySchema = z.object({
+const listarEntidadesQuerySchema = z.object({
 	page: z.coerce.number().min(1).optional().default(1),
 	limit: z.coerce.number().min(1).max(100).optional().default(10),
 	nome: z.string().optional(),
@@ -11,7 +10,7 @@ const listarClientesQuerySchema = z.object({
 	telefone: z.string().optional(),
 });
 
-export async function listarClientes(
+export async function listarEntidades(
 	request: FastifyRequest,
 	reply: FastifyReply,
 ) {
@@ -23,11 +22,11 @@ export async function listarClientes(
 			});
 		}
 
-		const userId = request.user.id;
-		const query = listarClientesQuerySchema.parse(request.query);
+		const idusuario = request.user.id;
+		const query = listarEntidadesQuerySchema.parse(request.query);
 
-		const resultado = await listarClientesService({
-			userId,
+		const resultado = await listarEntidadesService({
+			idusuario,
 			...query,
 		});
 
@@ -46,8 +45,8 @@ export async function listarClientes(
 			});
 		}
 		return reply.status(500).send({
-			error: "Erro ao listar clientes",
-			code: "LIST_CLIENTE_ERROR",
+			error: "Erro ao listar entidades",
+			code: "LIST_ENTIDADE_ERROR",
 		});
 	}
 }

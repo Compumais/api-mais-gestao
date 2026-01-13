@@ -7,7 +7,7 @@
 - Gestão de empresas e usuários
 - Controle de plano de contas
 - Gestão financeira (contas a pagar e receber)
-- Controle de clientes
+- Controle de entidades
 - Contas correntes e lançamentos
 - Autenticação e autorização de usuários
 - Auditoria de ações
@@ -70,12 +70,12 @@ api-mais-gestao/
 │   │   │   ├── auth/            # Controladores de autenticação
 │   │   │   │   ├── perfil.ts
 │   │   │   │   └── rotas.ts
-│   │   │   ├── clientes/        # Controladores de clientes
+│   │   │   ├── entidades/        # Controladores de entidades
 │   │   │   │   ├── atualizar.ts
 │   │   │   │   ├── buscar.ts
 │   │   │   │   ├── criar.ts
 │   │   │   │   ├── excluir.ts
-│   │   │   │   ├── listar-clientes.ts
+│   │   │   │   ├── listar-entidades.ts
 │   │   │   │   └── rotas.ts
 │   │   │   ├── empresas/        # Controladores de empresas
 │   │   │   │   ├── atualizar.ts
@@ -97,7 +97,7 @@ api-mais-gestao/
 │   │   └── auth.ts              # Configuração de autenticação
 │   ├── model/                    # Modelos de dados
 │   │   ├── auditoria-model.ts
-│   │   ├── cliente-model.ts
+│   │   ├── entidade-model.ts
 │   │   ├── conta-corrente-model.ts
 │   │   ├── empresa-model.ts
 │   │   ├── http-model.ts
@@ -105,7 +105,7 @@ api-mais-gestao/
 │   │   └── usuario-model.ts
 │   ├── repositories/             # Camada de acesso a dados
 │   │   ├── auditoria-repositories.ts
-│   │   ├── clientes-repositories.ts
+│   │   ├── entidades-repositories.ts
 │   │   ├── connection.ts        # Conexão com banco de dados
 │   │   ├── conta-corrente-repositories.ts
 │   │   ├── empresa-repositories.ts
@@ -116,12 +116,12 @@ api-mais-gestao/
 │   ├── service/                  # Lógica de negócio
 │   │   ├── auditoria/
 │   │   │   └── criar-auditoria.ts
-│   │   ├── clientes/
-│   │   │   ├── atualizar-cliente.ts
-│   │   │   ├── buscar-cliente.ts
-│   │   │   ├── criar-cliente.ts
-│   │   │   ├── excluir-cliente.ts
-│   │   │   └── listar-clientes.ts
+│   │   ├── entidades/
+│   │   │   ├── atualizar-entidade.ts
+│   │   │   ├── buscar-entidade.ts
+│   │   │   ├── criar-entidade.ts
+│   │   │   ├── excluir-entidade.ts
+│   │   │   └── listar-entidades.ts
 │   │   ├── empresa/
 │   │   │   ├── atualizar-empresa.ts
 │   │   │   ├── buscar-empresa.ts
@@ -305,12 +305,12 @@ app.register(cors, {
 - `PUT /plano-contas/:id` - Atualiza um plano de contas específico
 - `DELETE /plano-contas/:id` - Exclui um plano de contas específico
 
-### Clientes
-- `GET /clientes` - Lista todos os clientes da empresa do usuário
-- `POST /clientes` - Cria um novo cliente
-- `GET /clientes/:id` - Busca um cliente específico por ID
-- `PUT /clientes/:id` - Atualiza um cliente específico
-- `DELETE /clientes/:id` - Exclui um cliente específico
+### Entidades
+- `GET /entidades` - Lista todos os entidades da empresa do usuário
+- `POST /entidades` - Cria um novo entidade
+- `GET /entidades/:id` - Busca um entidade específico por ID
+- `PUT /entidades/:id` - Atualiza um entidade específico
+- `DELETE /entidades/:id` - Exclui um entidade específico
 
 ### Health Check
 - `GET /health` - Verifica o status da API
@@ -324,7 +324,7 @@ O projeto utiliza PostgreSQL com as seguintes tabelas principais:
 - `usuario_empresas` - Relação entre usuários e empresas
 - `planocontas` - Plano de contas contábil
 - `financeiro` - Contas a pagar e receber
-- `clientes` - Cadastro de clientes
+- `entidades` - Cadastro de entidades
 - `contacorrente` - Contas correntes bancárias
 - `contacorrentelancamento` - Lançamentos em contas correntes
 - `sessoes` - Sessões de autenticação
@@ -363,7 +363,7 @@ npm run test:watch
 - **Validação**: Validação de dados com Zod em todas as entradas
 - **Middleware JWT**: Verificação automática de token para rotas protegidas
 - **Auditoria**: Logs de auditoria para rastreamento de ações importantes
-- **Validação de Propriedade**: Verificação de permissão do usuário sobre recursos (empresas, clientes, etc.)
+- **Validação de Propriedade**: Verificação de permissão do usuário sobre recursos (empresas, entidades, etc.)
 
 ## 🤝 Contribuindo
 

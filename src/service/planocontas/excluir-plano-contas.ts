@@ -1,6 +1,6 @@
 import type { HttpResponse } from "@/model/http-model";
 import type { PlanoContas } from "@/model/plano-contas-model";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/clientes-repositories";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
 import {
 	buscarPlanoContasPorId,
 	buscarPlanosFilhos,
@@ -14,14 +14,14 @@ import {
 import { verificarPermissao } from "@/util/verificar-permissao";
 
 type ExcluirPlanoContasParametros = {
-	planoContasId: string;
-	userId: string;
+	idplanocontas: string;
+	idusuario: string;
 	roles: string[] | undefined;
 };
 
 export async function excluirPlanoContasService({
-	planoContasId,
-	userId,
+	idplanocontas,
+	idusuario,
 	roles,
 }: ExcluirPlanoContasParametros): Promise<HttpResponse<PlanoContas | null>> {
 	const temPermissao = verificarPermissao(roles, [
@@ -33,15 +33,15 @@ export async function excluirPlanoContasService({
 		return httpProibido();
 	}
 
-	const planoExistente = await buscarPlanoContasPorId(planoContasId);
+	const planoExistente = await buscarPlanoContasPorId(idplanocontas);
 
 	if (!planoExistente) {
 		return httpNaoEncontrado();
 	}
 
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
-		userId,
-		planoExistente.empresaId,
+		idusuario,
+		planoExistente.idempresa,
 	);
 
 	if (!usuarioPertenceEmpresa) {
@@ -49,7 +49,7 @@ export async function excluirPlanoContasService({
 	}
 
 	// Verifica se o plano tem filhos
-	const filhos = await buscarPlanosFilhos(planoContasId);
+	const filhos = await buscarPlanosFilhos(idplanocontas);
 
 	if (filhos.length > 0) {
 		return {
@@ -60,7 +60,7 @@ export async function excluirPlanoContasService({
 		};
 	}
 
-	const planoExcluido = await excluirPlanoContas({ id: planoContasId });
+	const planoExcluido = await excluirPlanoContas({ id: idplanocontas });
 
 	if (!planoExcluido) {
 		return httpNaoEncontrado();

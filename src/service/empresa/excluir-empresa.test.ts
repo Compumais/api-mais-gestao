@@ -11,9 +11,9 @@ describe("excluirEmpresaService", () => {
 		nome: "Empresa Teste",
 		cnpj: "12.345.678/0001-90",
 		telefone: "(34) 99999-9999",
-		proprietarioId: "proprietario-1",
-		criadoEm: new Date().toISOString(),
-		atualizadoEm: new Date().toISOString(),
+		idproprietario: "proprietario-1",
+		criadoem: new Date().toISOString(),
+		atualizadoem: new Date().toISOString(),
 	};
 
 	beforeEach(() => {
@@ -85,7 +85,7 @@ describe("excluirEmpresaService", () => {
 		if (!resultado.success) {
 			expect(resultado.status).toBe(409);
 			expect(resultado.error).toBe(
-				"Não é possível excluir uma empresa com dados associados (usuários, clientes, contas ou lançamentos)",
+				"Não é possível excluir uma empresa com dados associados (usuários, entidades, contas ou lançamentos)",
 			);
 			expect(resultado.code).toBe("CONFLICT_ERROR");
 		}

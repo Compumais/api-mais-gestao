@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { PlanoContas } from "@/model/plano-contas-model.js";
-import * as clienteRepository from "@/repositories/clientes-repositories.js";
+import * as entidadeRepository from "@/repositories/entidade-repositories.js";
 import * as planoContasRepository from "@/repositories/plano-contas-repositories.js";
 import { atualizarPlanoContasService } from "./atualizar-plano-contas.js";
 
-vi.mock("@/repositories/clientes-repositories.js");
+vi.mock("@/repositories/entidade-repositories.js");
 vi.mock("@/repositories/plano-contas-repositories.js");
 vi.mock("@/util/verificar-permissao.js", () => ({
 	verificarPermissao: vi.fn(),
@@ -13,7 +13,7 @@ vi.mock("@/util/verificar-permissao.js", () => ({
 describe("atualizarPlanoContasService", () => {
 	const planoContasMock: PlanoContas = {
 		id: "plano-1",
-		empresaId: "empresa-123",
+		idempresa: "empresa-123",
 		codigo: "1",
 		nome: "Plano de Contas 1",
 		tipomovimento: "D",
@@ -25,7 +25,7 @@ describe("atualizarPlanoContasService", () => {
 		idcontacontabilintegracao: null,
 		exportaparacontabilidade: null,
 		idgrupodre: null,
-		planoContasId: null,
+		idplanocontas: null,
 	};
 
 	const planoContasAtualizadoMock: PlanoContas = {
@@ -46,15 +46,15 @@ describe("atualizarPlanoContasService", () => {
 			planoContasMock,
 		);
 		vi.mocked(
-			clienteRepository.verificarUsuarioPertenceEmpresa,
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
 		).mockResolvedValue(true);
 		vi.mocked(planoContasRepository.atualizarPlanoContas).mockResolvedValue(
 			planoContasAtualizadoMock,
 		);
 
 		const resultado = await atualizarPlanoContasService({
-			planoContasId: "plano-1",
-			userId: "usuario-123",
+			idplanocontas: "plano-1",
+			idusuario: "usuario-123",
 			roles: ["proprietario"],
 			dados: { nome: "Plano de Contas Atualizado" },
 		});
@@ -75,7 +75,7 @@ describe("atualizarPlanoContasService", () => {
 			"plano-1",
 		);
 		expect(
-			clienteRepository.verificarUsuarioPertenceEmpresa,
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
 		).toHaveBeenCalledTimes(1);
 		expect(planoContasRepository.atualizarPlanoContas).toHaveBeenCalledTimes(1);
 	});
@@ -87,8 +87,8 @@ describe("atualizarPlanoContasService", () => {
 		vi.mocked(verificarPermissao).mockReturnValue(false);
 
 		const resultado = await atualizarPlanoContasService({
-			planoContasId: "plano-1",
-			userId: "usuario-123",
+			idplanocontas: "plano-1",
+			idusuario: "usuario-123",
 			roles: ["user"],
 			dados: { nome: "Plano de Contas Atualizado" },
 		});
@@ -112,8 +112,8 @@ describe("atualizarPlanoContasService", () => {
 		);
 
 		const resultado = await atualizarPlanoContasService({
-			planoContasId: "plano-inexistente",
-			userId: "usuario-123",
+			idplanocontas: "plano-inexistente",
+			idusuario: "usuario-123",
 			roles: ["proprietario"],
 			dados: { nome: "Plano de Contas Atualizado" },
 		});
@@ -125,7 +125,7 @@ describe("atualizarPlanoContasService", () => {
 			expect(resultado.code).toBe("NOT_FOUND_ERROR");
 		}
 		expect(
-			clienteRepository.verificarUsuarioPertenceEmpresa,
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
 		).not.toHaveBeenCalled();
 	});
 
@@ -138,12 +138,12 @@ describe("atualizarPlanoContasService", () => {
 			planoContasMock,
 		);
 		vi.mocked(
-			clienteRepository.verificarUsuarioPertenceEmpresa,
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
 		).mockResolvedValue(false);
 
 		const resultado = await atualizarPlanoContasService({
-			planoContasId: "plano-1",
-			userId: "usuario-123",
+			idplanocontas: "plano-1",
+			idusuario: "usuario-123",
 			roles: ["proprietario"],
 			dados: { nome: "Plano de Contas Atualizado" },
 		});
@@ -166,15 +166,15 @@ describe("atualizarPlanoContasService", () => {
 			planoContasMock,
 		);
 		vi.mocked(
-			clienteRepository.verificarUsuarioPertenceEmpresa,
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
 		).mockResolvedValue(true);
 		vi.mocked(planoContasRepository.atualizarPlanoContas).mockResolvedValue(
 			planoContasAtualizadoMock,
 		);
 
 		const resultado = await atualizarPlanoContasService({
-			planoContasId: "plano-1",
-			userId: "usuario-123",
+			idplanocontas: "plano-1",
+			idusuario: "usuario-123",
 			roles: ["financeiro"],
 			dados: { nome: "Plano de Contas Atualizado" },
 		});

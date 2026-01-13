@@ -3,8 +3,8 @@ import type {
 	NovaContaCorrente,
 } from "@/model/conta-corrente-model";
 import type { HttpResponse } from "@/model/http-model";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/clientes-repositories";
 import { criarContaCorrente } from "@/repositories/conta-corrente-repositories";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
 import { httpCriacao, httpErroInterno, httpProibido } from "@/util/http-util";
 
 type CriarContaCorrenteParametros = {
@@ -18,7 +18,7 @@ export async function criarContaCorrenteService({
 }: CriarContaCorrenteParametros): Promise<HttpResponse<ContaCorrente>> {
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
 		usuarioId,
-		dadosContaCorrente.empresaId,
+		dadosContaCorrente.idempresa,
 	);
 
 	if (!usuarioPertenceEmpresa) {

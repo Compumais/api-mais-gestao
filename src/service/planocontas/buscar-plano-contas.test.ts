@@ -1,16 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { PlanoContas } from "@/model/plano-contas-model.js";
-import * as clienteRepository from "@/repositories/clientes-repositories.js";
+import * as entidadeRepository from "@/repositories/entidade-repositories.js";
 import * as planoContasRepository from "@/repositories/plano-contas-repositories.js";
 import { buscarPlanoContasService } from "./buscar-plano-contas.js";
 
-vi.mock("@/repositories/clientes-repositories.js");
+vi.mock("@/repositories/entidade-repositories.js");
 vi.mock("@/repositories/plano-contas-repositories.js");
 
 describe("buscarPlanoContasService", () => {
 	const planoContasMock: PlanoContas = {
 		id: "plano-1",
-		empresaId: "empresa-123",
+		idempresa: "empresa-123",
 		codigo: "1",
 		nome: "Plano de Contas 1",
 		tipomovimento: "D",
@@ -22,12 +22,12 @@ describe("buscarPlanoContasService", () => {
 		idcontacontabilintegracao: null,
 		exportaparacontabilidade: null,
 		idgrupodre: null,
-		planoContasId: null,
+		idplanocontas: null,
 	};
 
 	const filhoMock: PlanoContas = {
 		id: "plano-filho-1",
-		empresaId: "empresa-123",
+		idempresa: "empresa-123",
 		codigo: "1.1",
 		nome: "Plano Filho 1",
 		tipomovimento: "D",
@@ -39,7 +39,7 @@ describe("buscarPlanoContasService", () => {
 		idcontacontabilintegracao: null,
 		exportaparacontabilidade: null,
 		idgrupodre: null,
-		planoContasId: "plano-1",
+		idplanocontas: "plano-1",
 	};
 
 	beforeEach(() => {
@@ -54,12 +54,12 @@ describe("buscarPlanoContasService", () => {
 			filhos: [filhoMock],
 		});
 		vi.mocked(
-			clienteRepository.verificarUsuarioPertenceEmpresa,
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
 		).mockResolvedValue(true);
 
 		const resultado = await buscarPlanoContasService({
-			planoContasId: "plano-1",
-			userId: "usuario-123",
+			idplanocontas: "plano-1",
+			idusuario: "usuario-123",
 		});
 
 		expect(resultado.success).toBe(true);
@@ -75,10 +75,10 @@ describe("buscarPlanoContasService", () => {
 			planoContasRepository.buscarPlanoContasComFilhos,
 		).toHaveBeenCalledWith("plano-1");
 		expect(
-			clienteRepository.verificarUsuarioPertenceEmpresa,
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
 		).toHaveBeenCalledTimes(1);
 		expect(
-			clienteRepository.verificarUsuarioPertenceEmpresa,
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
 		).toHaveBeenCalledWith("usuario-123", "empresa-123");
 	});
 
@@ -91,8 +91,8 @@ describe("buscarPlanoContasService", () => {
 		});
 
 		const resultado = await buscarPlanoContasService({
-			planoContasId: "plano-inexistente",
-			userId: "usuario-123",
+			idplanocontas: "plano-inexistente",
+			idusuario: "usuario-123",
 		});
 
 		expect(resultado.success).toBe(false);
@@ -102,7 +102,7 @@ describe("buscarPlanoContasService", () => {
 			expect(resultado.code).toBe("NOT_FOUND_ERROR");
 		}
 		expect(
-			clienteRepository.verificarUsuarioPertenceEmpresa,
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
 		).not.toHaveBeenCalled();
 	});
 
@@ -114,12 +114,12 @@ describe("buscarPlanoContasService", () => {
 			filhos: [],
 		});
 		vi.mocked(
-			clienteRepository.verificarUsuarioPertenceEmpresa,
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
 		).mockResolvedValue(false);
 
 		const resultado = await buscarPlanoContasService({
-			planoContasId: "plano-1",
-			userId: "usuario-123",
+			idplanocontas: "plano-1",
+			idusuario: "usuario-123",
 		});
 
 		expect(resultado.success).toBe(false);
@@ -132,7 +132,7 @@ describe("buscarPlanoContasService", () => {
 			planoContasRepository.buscarPlanoContasComFilhos,
 		).toHaveBeenCalledTimes(1);
 		expect(
-			clienteRepository.verificarUsuarioPertenceEmpresa,
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
 		).toHaveBeenCalledTimes(1);
 	});
 
@@ -144,12 +144,12 @@ describe("buscarPlanoContasService", () => {
 			filhos: [],
 		});
 		vi.mocked(
-			clienteRepository.verificarUsuarioPertenceEmpresa,
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
 		).mockResolvedValue(true);
 
 		const resultado = await buscarPlanoContasService({
-			planoContasId: "plano-1",
-			userId: "usuario-123",
+			idplanocontas: "plano-1",
+			idusuario: "usuario-123",
 		});
 
 		expect(resultado.success).toBe(true);

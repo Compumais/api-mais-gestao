@@ -9,7 +9,7 @@ export const criarPlanoContasSchema: FastifySchema = {
 	body: {
 		type: "object",
 		properties: {
-			empresaId: {
+			idempresa: {
 				type: "string",
 				description: "ID da empresa proprietária do plano de contas",
 			},
@@ -40,7 +40,7 @@ export const criarPlanoContasSchema: FastifySchema = {
 				nullable: true,
 				description: "Natureza do plano de contas",
 			},
-			planoContasId: {
+			idplanocontas: {
 				type: "string",
 				nullable: true,
 				description: "ID do plano de contas pai (para hierarquia)",
@@ -76,7 +76,7 @@ export const criarPlanoContasSchema: FastifySchema = {
 				description: "Indica se deve exportar para contabilidade",
 			},
 		},
-		required: ["empresaId", "nome", "tipomovimento", "inativo"],
+		required: ["idempresa", "nome", "tipomovimento", "inativo"],
 	},
 	response: {
 		201: {
@@ -84,7 +84,7 @@ export const criarPlanoContasSchema: FastifySchema = {
 			description: "Plano de contas criado com sucesso",
 			properties: {
 				id: { type: "string", description: "ID único do plano de contas" },
-				empresaId: { type: "string", description: "ID da empresa" },
+				idempresa: { type: "string", description: "ID da empresa" },
 				codigo: { type: "string", nullable: true },
 				nome: { type: "string" },
 				tipomovimento: { type: "string" },
@@ -94,7 +94,7 @@ export const criarPlanoContasSchema: FastifySchema = {
 				},
 				classe: { type: "string", nullable: true },
 				natureza: { type: "string", nullable: true },
-				planoContasId: { type: "string", nullable: true },
+				idplanocontas: { type: "string", nullable: true },
 				idgrupodre: { type: "number", nullable: true },
 				currenttimemillis: { type: "number", nullable: true },
 				centrocustoobrigatorio: { type: "number", nullable: true },
@@ -157,14 +157,14 @@ export const buscarPlanoContasSchema: FastifySchema = {
 			description: "Dados do plano de contas",
 			properties: {
 				id: { type: "string" },
-				empresaId: { type: "string" },
+				idempresa: { type: "string" },
 				codigo: { type: "string", nullable: true },
 				nome: { type: "string" },
 				tipomovimento: { type: "string" },
 				inativo: { type: "number" },
 				classe: { type: "string", nullable: true },
 				natureza: { type: "string", nullable: true },
-				planoContasId: { type: "string", nullable: true },
+				idplanocontas: { type: "string", nullable: true },
 				idgrupodre: { type: "number", nullable: true },
 				currenttimemillis: { type: "number", nullable: true },
 				centrocustoobrigatorio: { type: "number", nullable: true },
@@ -221,7 +221,7 @@ export const listarPlanoContasSchema: FastifySchema = {
 	querystring: {
 		type: "object",
 		properties: {
-			planoContasId: {
+			idplanocontas: {
 				type: "string",
 				description: "Filtrar por ID do plano de contas pai",
 			},
@@ -257,14 +257,14 @@ export const listarPlanoContasSchema: FastifySchema = {
 						type: "object",
 						properties: {
 							id: { type: "string" },
-							empresaId: { type: "string" },
+							idempresa: { type: "string" },
 							codigo: { type: "string", nullable: true },
 							nome: { type: "string" },
 							tipomovimento: { type: "string" },
 							inativo: { type: "number" },
 							classe: { type: "string", nullable: true },
 							natureza: { type: "string", nullable: true },
-							planoContasId: { type: "string", nullable: true },
+							idplanocontas: { type: "string", nullable: true },
 							idgrupodre: { type: "number", nullable: true },
 							currenttimemillis: { type: "number", nullable: true },
 							centrocustoobrigatorio: { type: "number", nullable: true },
@@ -380,7 +380,7 @@ export const atualizarPlanoContasSchema: FastifySchema = {
 				nullable: true,
 				description: "Indica se deve exportar para contabilidade",
 			},
-			planoContasId: {
+			idplanocontas: {
 				type: "string",
 				nullable: true,
 				description: "ID do plano de contas pai (para hierarquia)",
@@ -394,14 +394,14 @@ export const atualizarPlanoContasSchema: FastifySchema = {
 			description: "Plano de contas atualizado com sucesso",
 			properties: {
 				id: { type: "string" },
-				empresaId: { type: "string" },
+				idempresa: { type: "string" },
 				codigo: { type: "string", nullable: true },
 				nome: { type: "string" },
 				tipomovimento: { type: "string" },
 				inativo: { type: "number" },
 				classe: { type: "string", nullable: true },
 				natureza: { type: "string", nullable: true },
-				planoContasId: { type: "string", nullable: true },
+				idplanocontas: { type: "string", nullable: true },
 				idgrupodre: { type: "number", nullable: true },
 				currenttimemillis: { type: "number", nullable: true },
 				centrocustoobrigatorio: { type: "number", nullable: true },

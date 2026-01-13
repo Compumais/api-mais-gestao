@@ -17,7 +17,7 @@ const atualizarPlanoContasBodySchema = z.object({
 	tipoconta: z.number().optional(),
 	idcontacontabilintegracao: z.number().optional(),
 	exportaparacontabilidade: z.number().optional(),
-	planoContasId: z.string().optional(),
+	idplanocontas: z.string().optional(),
 });
 
 export async function atualizarPlanoContas(
@@ -32,7 +32,7 @@ export async function atualizarPlanoContas(
 			});
 		}
 
-		const userId = request.user.id;
+		const idusuario = request.user.id;
 		const { id } = atualizarPlanoContasParamsSchema.parse(request.params);
 		const dados = atualizarPlanoContasBodySchema.parse(request.body);
 
@@ -42,8 +42,8 @@ export async function atualizarPlanoContas(
 		}
 
 		const resultado = await atualizarPlanoContasService({
-			planoContasId: id,
-			userId,
+			idplanocontas: id,
+			idusuario,
 			roles: request.user.roles,
 			dados: dadosAtualizacao,
 		});
@@ -68,4 +68,3 @@ export async function atualizarPlanoContas(
 		});
 	}
 }
-

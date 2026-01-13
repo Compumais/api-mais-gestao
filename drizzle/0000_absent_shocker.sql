@@ -6,7 +6,7 @@ CREATE TABLE "audit_logs" (
 	"idusuario" text,
 	"idempresa" text,
 	"metadados" jsonb,
-	"criadoEm" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL
+	"criadoem" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "contacorrente" (
@@ -173,34 +173,34 @@ CREATE TABLE "empresas" (
 	"cnpj" text NOT NULL,
 	"telefone" text NOT NULL,
 	"idproprietario" text NOT NULL,
-	"criadoEm" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
-	"atualizadoEm" timestamp(3) NOT NULL
+	"criadoem" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	"atualizadoem" timestamp(3) NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "entidade" (
 	"id" text PRIMARY KEY NOT NULL,
 	"nome" varchar(60) NOT NULL,
-	"razaosocial" varchar(60) NOT NULL,
+	"razaosocial" varchar(60),
 	"tipopessoa" smallint DEFAULT 0,
 	"cnpjcpf" varchar(20) NOT NULL,
-	"inscricaoestadual" varchar(20) NOT NULL,
-	"rg" varchar(20) NOT NULL,
-	"email" varchar(200) NOT NULL,
-	"telefone" varchar(40) NOT NULL,
-	"endereco" varchar(60) NOT NULL,
+	"inscricaoestadual" varchar(20),
+	"rg" varchar(20),
+	"email" varchar(200),
+	"telefone" varchar(40),
+	"endereco" varchar(60),
 	"numeroendereco" varchar(6),
-	"complemento" varchar(50) NOT NULL,
-	"bairro" varchar(50) NOT NULL,
+	"complemento" varchar(50),
+	"bairro" varchar(50),
 	"idcidade" text,
 	"idestado" text,
-	"cep" varchar(6) NOT NULL,
+	"cep" varchar(6),
 	"fax" varchar(40),
 	"nascimento" date,
 	"idplanocontas" text,
 	"pais" text,
 	"idempresa" text NOT NULL,
-	"criadoEm" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
-	"atualizadoEm" timestamp(3) NOT NULL
+	"criadoem" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	"atualizadoem" timestamp(3) NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "financeiro" (
@@ -431,20 +431,21 @@ CREATE TABLE "usuario_empresas" (
 	"id" text PRIMARY KEY NOT NULL,
 	"idusuario" text NOT NULL,
 	"idempresa" text NOT NULL,
-	"criadoEm" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
-	"atualizadoEm" timestamp(3) NOT NULL
+	"criadoem" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	"atualizadoem" timestamp(3) NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "usuarios" (
 	"id" text PRIMARY KEY NOT NULL,
-	"name" text NOT NULL,
+	"nome" text NOT NULL,
 	"email" text NOT NULL,
-	"emailVerified" boolean NOT NULL,
+	"emailverificado" boolean NOT NULL,
 	"perfil" text DEFAULT 'usuario' NOT NULL,
-	"createdAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
-	"updatedAt" timestamp(3) NOT NULL,
-	"image" text,
-	"maxempresas" integer
+	"criadoem" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	"atualizadoem" timestamp(3) NOT NULL,
+	"imagem" text,
+	"maxempresas" integer,
+	CONSTRAINT "usuarios_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
 CREATE TABLE "verificacoes" (
@@ -460,7 +461,7 @@ ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_idusuario_fkey" FOREIGN KEY 
 ALTER TABLE "contas" ADD CONSTRAINT "contas_idusuario_fkey" FOREIGN KEY ("idusuario") REFERENCES "public"."usuarios"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "empresas" ADD CONSTRAINT "empresas_idproprietario_fkey" FOREIGN KEY ("idproprietario") REFERENCES "public"."usuarios"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "entidade" ADD CONSTRAINT "entidades_idempresa_fkey" FOREIGN KEY ("idempresa") REFERENCES "public"."empresas"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "planocontas" ADD CONSTRAINT "planocontas_planocontasid_fkey" FOREIGN KEY ("idplanocontas") REFERENCES "public"."planocontas"("id") ON DELETE restrict ON UPDATE cascade;--> statement-breakpoint
+ALTER TABLE "planocontas" ADD CONSTRAINT "planocontas_idplanocontas_fkey" FOREIGN KEY ("idplanocontas") REFERENCES "public"."planocontas"("id") ON DELETE restrict ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "sessoes" ADD CONSTRAINT "sessoes_idusuario_fkey" FOREIGN KEY ("idusuario") REFERENCES "public"."usuarios"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "usuario_empresas" ADD CONSTRAINT "usuario_empresas_idusuario_fkey" FOREIGN KEY ("idusuario") REFERENCES "public"."usuarios"("id") ON DELETE restrict ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "usuario_empresas" ADD CONSTRAINT "usuario_empresas_idempresa_fkey" FOREIGN KEY ("idempresa") REFERENCES "public"."empresas"("id") ON DELETE restrict ON UPDATE cascade;--> statement-breakpoint
@@ -470,12 +471,12 @@ CREATE INDEX "entidades_idempresa_idx" ON "entidade" USING btree ("idempresa" te
 CREATE INDEX "entidades_email_idx" ON "entidade" USING btree ("email" text_ops);--> statement-breakpoint
 CREATE INDEX "idx_fin_entid_tipo_status" ON "financeiro" USING btree ("identidade" int8_ops,"tipo" bpchar_ops,"status" bpchar_ops);--> statement-breakpoint
 CREATE INDEX "idx_financeiro_emissao" ON "financeiro" USING btree ("emissao" date_ops);--> statement-breakpoint
-CREATE INDEX "idx_financeiro_idfilial" ON "financeiro" USING btree ("idempresa" int8_ops);--> statement-breakpoint
+CREATE INDEX "idx_financeiro_idfilial" ON "financeiro" USING btree ("idempresa" text_ops);--> statement-breakpoint
 CREATE INDEX "idx_financeiro_sped" ON "financeiro" USING btree ("idorigem" int8_ops,"tipoorigem" int2_ops);--> statement-breakpoint
 CREATE INDEX "idx_financeiro_status" ON "financeiro" USING btree ("status" bpchar_ops);--> statement-breakpoint
 CREATE INDEX "idx_financeiro_tipo" ON "financeiro" USING btree ("tipo" bpchar_ops);--> statement-breakpoint
 CREATE INDEX "idx_financeiro_vencimento" ON "financeiro" USING btree ("vencimento" date_ops);--> statement-breakpoint
 CREATE INDEX "idx_finlan_evento" ON "financeirolancamento" USING btree ("evento" int8_ops);--> statement-breakpoint
-CREATE INDEX "idx_finlan_idfinanceiro" ON "financeirolancamento" USING btree ("idfinanceiro" int8_ops);--> statement-breakpoint
+CREATE INDEX "idx_finlan_idfinanceiro" ON "financeirolancamento" USING btree ("idfinanceiro" text_ops);--> statement-breakpoint
 CREATE UNIQUE INDEX "sessoes_token_key" ON "sessoes" USING btree ("token" text_ops);--> statement-breakpoint
 CREATE UNIQUE INDEX "usuarios_email_key" ON "usuarios" USING btree ("email" text_ops);

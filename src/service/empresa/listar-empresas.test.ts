@@ -12,18 +12,18 @@ describe("listarEmpresasService", () => {
 			nome: "Empresa Um",
 			cnpj: "11.111.111/0001-11",
 			telefone: "(34) 11111-1111",
-			proprietarioId: "proprietario-1",
-			criadoEm: new Date().toISOString(),
-			atualizadoEm: new Date().toISOString(),
+			idproprietario: "proprietario-1",
+			criadoem: new Date().toISOString(),
+			atualizadoem: new Date().toISOString(),
 		},
 		{
 			id: "empresa-2",
 			nome: "Empresa Dois",
 			cnpj: "22.222.222/0001-22",
 			telefone: "(34) 22222-2222",
-			proprietarioId: "proprietario-1",
-			criadoEm: new Date().toISOString(),
-			atualizadoEm: new Date().toISOString(),
+			idproprietario: "proprietario-1",
+			criadoem: new Date().toISOString(),
+			atualizadoem: new Date().toISOString(),
 		},
 	];
 
@@ -50,7 +50,7 @@ describe("listarEmpresasService", () => {
 		}
 		expect(empresaRepository.listarEmpresas).toHaveBeenCalledTimes(1);
 		expect(empresaRepository.listarEmpresas).toHaveBeenCalledWith({
-			proprietarioId: undefined,
+			idproprietario: undefined,
 			nome: undefined,
 			cnpj: undefined,
 			telefone: undefined,
@@ -59,14 +59,14 @@ describe("listarEmpresasService", () => {
 		});
 	});
 
-	it("deve listar empresas com filtro de proprietarioId", async () => {
+	it("deve listar empresas com filtro de idproprietario", async () => {
 		vi.mocked(empresaRepository.listarEmpresas).mockResolvedValue({
 			empresas: empresasMock,
 			total: 2,
 		});
 
 		const resultado = await listarEmpresasService({
-			proprietarioId: "proprietario-1",
+			idproprietario: "proprietario-1",
 		});
 
 		expect(resultado.success).toBe(true);
@@ -75,7 +75,7 @@ describe("listarEmpresasService", () => {
 			expect(resultado.body?.data).toEqual(empresasMock);
 		}
 		expect(empresaRepository.listarEmpresas).toHaveBeenCalledWith({
-			proprietarioId: "proprietario-1",
+			idproprietario: "proprietario-1",
 			nome: undefined,
 			cnpj: undefined,
 			telefone: undefined,
@@ -100,7 +100,7 @@ describe("listarEmpresasService", () => {
 			expect(resultado.body?.data).toHaveLength(1);
 		}
 		expect(empresaRepository.listarEmpresas).toHaveBeenCalledWith({
-			proprietarioId: undefined,
+			idproprietario: undefined,
 			nome: "Empresa Um",
 			cnpj: undefined,
 			telefone: undefined,
@@ -124,7 +124,7 @@ describe("listarEmpresasService", () => {
 			expect(resultado.status).toBe(200);
 		}
 		expect(empresaRepository.listarEmpresas).toHaveBeenCalledWith({
-			proprietarioId: undefined,
+			idproprietario: undefined,
 			nome: undefined,
 			cnpj: "11.111.111/0001-11",
 			telefone: undefined,
@@ -148,7 +148,7 @@ describe("listarEmpresasService", () => {
 			expect(resultado.status).toBe(200);
 		}
 		expect(empresaRepository.listarEmpresas).toHaveBeenCalledWith({
-			proprietarioId: undefined,
+			idproprietario: undefined,
 			nome: undefined,
 			cnpj: undefined,
 			telefone: "11111",
@@ -164,7 +164,7 @@ describe("listarEmpresasService", () => {
 		});
 
 		const resultado = await listarEmpresasService({
-			proprietarioId: "proprietario-1",
+			idproprietario: "proprietario-1",
 			nome: "Empresa",
 			cnpj: "11.111.111/0001-11",
 			telefone: "11111",
@@ -175,7 +175,7 @@ describe("listarEmpresasService", () => {
 			expect(resultado.status).toBe(200);
 		}
 		expect(empresaRepository.listarEmpresas).toHaveBeenCalledWith({
-			proprietarioId: "proprietario-1",
+			idproprietario: "proprietario-1",
 			nome: "Empresa",
 			cnpj: "11.111.111/0001-11",
 			telefone: "11111",
@@ -204,7 +204,7 @@ describe("listarEmpresasService", () => {
 			expect(resultado.body?.paginacao.totalPages).toBe(3);
 		}
 		expect(empresaRepository.listarEmpresas).toHaveBeenCalledWith({
-			proprietarioId: undefined,
+			idproprietario: undefined,
 			nome: undefined,
 			cnpj: undefined,
 			telefone: undefined,

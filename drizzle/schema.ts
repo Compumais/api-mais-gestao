@@ -55,10 +55,10 @@ export const empresa = pgTable(
 		cnpj: text().notNull(),
 		telefone: text().notNull(),
 		idproprietario: text().notNull(),
-		criadoEm: timestamp({ precision: 3, mode: "string" })
+		criadoem: timestamp({ precision: 3, mode: "string" })
 			.default(sql`CURRENT_TIMESTAMP`)
 			.notNull(),
-		atualizadoEm: timestamp({ precision: 3, mode: "string" }).notNull(),
+		atualizadoem: timestamp({ precision: 3, mode: "string" }).notNull(),
 	},
 	(table) => [
 		uniqueIndex("empresas_cnpj_key").using(
@@ -81,10 +81,10 @@ export const usuarioEmpresa = pgTable(
 		id: text().primaryKey().notNull(),
 		idusuario: text().notNull(),
 		idempresa: text().notNull(),
-		criadoEm: timestamp({ precision: 3, mode: "string" })
+		criadoem: timestamp({ precision: 3, mode: "string" })
 			.default(sql`CURRENT_TIMESTAMP`)
 			.notNull(),
-		atualizadoEm: timestamp({ precision: 3, mode: "string" }).notNull(),
+		atualizadoem: timestamp({ precision: 3, mode: "string" }).notNull(),
 	},
 	(table) => [
 		foreignKey({
@@ -114,7 +114,7 @@ export const auditLogs = pgTable(
 		idusuario: text(),
 		idempresa: text(),
 		metadados: jsonb(),
-		criadoEm: timestamp({ precision: 3, mode: "string" })
+		criadoem: timestamp({ precision: 3, mode: "string" })
 			.default(sql`CURRENT_TIMESTAMP`)
 			.notNull(),
 	},
@@ -200,7 +200,7 @@ export const usuarios = pgTable(
 			.default(sql`CURRENT_TIMESTAMP`)
 			.notNull(),
 		atualizadoem: timestamp({ precision: 3, mode: "string" }).notNull(),
-		image: text(),
+		imagem: text(),
 		maxempresas: integer(),
 	},
 	(table) => [
@@ -216,29 +216,29 @@ export const entidade = pgTable(
 	{
 		id: text().primaryKey().notNull(),
 		nome: varchar({ length: 60 }).notNull(),
-		razaosocial: varchar({ length: 60 }).notNull(),
+		razaosocial: varchar({ length: 60 }),
 		tipopessoa: smallint().default(0),
 		cnpjcpf: varchar({ length: 20 }).notNull(),
-		inscricaoestadual: varchar({ length: 20 }).notNull(),
-		rg: varchar({ length: 20 }).notNull(),
-		email: varchar({ length: 200 }).notNull(),
-		telefone: varchar({ length: 40 }).notNull(),
-		endereco: varchar({ length: 60 }).notNull(),
+		inscricaoestadual: varchar({ length: 20 }),
+		rg: varchar({ length: 20 }),
+		email: varchar({ length: 200 }),
+		telefone: varchar({ length: 40 }),
+		endereco: varchar({ length: 60 }),
 		numeroendereco: varchar({ length: 6 }),
-		complemento: varchar({ length: 50 }).notNull(),
-		bairro: varchar({ length: 50 }).notNull(),
+		complemento: varchar({ length: 50 }),
+		bairro: varchar({ length: 50 }),
 		idcidade: text(),
 		idestado: text(),
-		cep: varchar({ length: 6 }).notNull(),
+		cep: varchar({ length: 6 }),
 		fax: varchar({ length: 40 }),
 		nascimento: date(),
 		idplanocontas: text(),
 		pais: text(),
 		idempresa: text().notNull(),
-		criadoEm: timestamp({ precision: 3, mode: "string" })
+		criadoem: timestamp({ precision: 3, mode: "string" })
 			.default(sql`CURRENT_TIMESTAMP`)
 			.notNull(),
-		atualizadoEm: timestamp({ precision: 3, mode: "string" }).notNull(),
+		atualizadoem: timestamp({ precision: 3, mode: "string" }).notNull(),
 	},
 	(table) => [
 		index("entidades_idempresa_idx").using(
@@ -677,7 +677,7 @@ export const planocontas = pgTable(
 		foreignKey({
 			columns: [table.idplanocontas],
 			foreignColumns: [table.id],
-			name: "planocontas_planocontasid_fkey",
+			name: "planocontas_idplanocontas_fkey",
 		})
 			.onUpdate("cascade")
 			.onDelete("restrict"),

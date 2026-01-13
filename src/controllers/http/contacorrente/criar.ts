@@ -7,7 +7,7 @@ import { excluirContaCorrenteService } from "@/service/contacorrente/excluir";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util";
 
 const criarContaCorrenteBodySchema = z.object({
-	empresaId: z.string(),
+	idempresa: z.string(),
 	descricao: z.string().max(50).optional(),
 	agencia: z.string().max(25).optional(),
 	numeroconta: z.string().max(40).optional(),
@@ -34,7 +34,7 @@ export async function criarContaCorrente(
 
 		const dadosContaCorrente = {
 			id: uuidv4(),
-			empresaId: dadosValidados.empresaId,
+			idempresa: dadosValidados.idempresa,
 			descricao: dadosValidados.descricao ?? null,
 			agencia: dadosValidados.agencia ?? null,
 			numeroconta: dadosValidados.numeroconta ?? null,
@@ -63,11 +63,11 @@ export async function criarContaCorrente(
 
 		const auditoria = await criarAuditoriaService({
 			id: auditoriaId,
-			userId: request.user.id,
+			idusuario: request.user.id,
 			acao: "criar_conta_corrente",
 			recursoId: contaCorrente.body?.id ?? "",
 			recurso: "conta_corrente",
-			criadoEm: new Date().toISOString(),
+			criadoem: new Date().toISOString(),
 			metadados: {
 				usuario: request.user.name,
 			},
@@ -76,7 +76,7 @@ export async function criarContaCorrente(
 		if (!auditoria) {
 			await excluirContaCorrenteService({
 				id: contaCorrente.body!.id!,
-				userId: request.user.id,
+				idusuario: request.user.id,
 			});
 
 			return reply.status(httpErroInterno().status).send(httpErroInterno());

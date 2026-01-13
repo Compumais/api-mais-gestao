@@ -1,5 +1,5 @@
 {
-  "id": "11b946ac-2ce2-41c4-a454-5fe63a156e10",
+  "id": "c9ac014b-4d2f-4496-aa68-360cf3d3e459",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -50,8 +50,8 @@
           "primaryKey": false,
           "notNull": false
         },
-        "criadoEm": {
-          "name": "criadoEm",
+        "criadoem": {
+          "name": "criadoem",
           "type": "timestamp(3)",
           "primaryKey": false,
           "notNull": true,
@@ -1082,15 +1082,15 @@
           "primaryKey": false,
           "notNull": true
         },
-        "criadoEm": {
-          "name": "criadoEm",
+        "criadoem": {
+          "name": "criadoem",
           "type": "timestamp(3)",
           "primaryKey": false,
           "notNull": true,
           "default": "CURRENT_TIMESTAMP"
         },
-        "atualizadoEm": {
-          "name": "atualizadoEm",
+        "atualizadoem": {
+          "name": "atualizadoem",
           "type": "timestamp(3)",
           "primaryKey": false,
           "notNull": true
@@ -1155,7 +1155,7 @@
           "name": "razaosocial",
           "type": "varchar(60)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "tipopessoa": {
           "name": "tipopessoa",
@@ -1174,31 +1174,31 @@
           "name": "inscricaoestadual",
           "type": "varchar(20)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "rg": {
           "name": "rg",
           "type": "varchar(20)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "email": {
           "name": "email",
           "type": "varchar(200)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "telefone": {
           "name": "telefone",
           "type": "varchar(40)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "endereco": {
           "name": "endereco",
           "type": "varchar(60)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "numeroendereco": {
           "name": "numeroendereco",
@@ -1210,13 +1210,13 @@
           "name": "complemento",
           "type": "varchar(50)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "bairro": {
           "name": "bairro",
           "type": "varchar(50)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "idcidade": {
           "name": "idcidade",
@@ -1234,7 +1234,7 @@
           "name": "cep",
           "type": "varchar(6)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "fax": {
           "name": "fax",
@@ -1266,15 +1266,15 @@
           "primaryKey": false,
           "notNull": true
         },
-        "criadoEm": {
-          "name": "criadoEm",
+        "criadoem": {
+          "name": "criadoem",
           "type": "timestamp(3)",
           "primaryKey": false,
           "notNull": true,
           "default": "CURRENT_TIMESTAMP"
         },
-        "atualizadoEm": {
-          "name": "atualizadoEm",
+        "atualizadoem": {
+          "name": "atualizadoem",
           "type": "timestamp(3)",
           "primaryKey": false,
           "notNull": true
@@ -2018,7 +2018,7 @@
               "isExpression": false,
               "asc": true,
               "nulls": "last",
-              "opclass": "int8_ops"
+              "opclass": "text_ops"
             }
           ],
           "isUnique": false,
@@ -2340,7 +2340,7 @@
               "isExpression": false,
               "asc": true,
               "nulls": "last",
-              "opclass": "int8_ops"
+              "opclass": "text_ops"
             }
           ],
           "isUnique": false,
@@ -2491,8 +2491,8 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "planocontas_planocontasid_fkey": {
-          "name": "planocontas_planocontasid_fkey",
+        "planocontas_idplanocontas_fkey": {
+          "name": "planocontas_idplanocontas_fkey",
           "tableFrom": "planocontas",
           "tableTo": "planocontas",
           "columnsFrom": [
@@ -2904,15 +2904,15 @@
           "primaryKey": false,
           "notNull": true
         },
-        "criadoEm": {
-          "name": "criadoEm",
+        "criadoem": {
+          "name": "criadoem",
           "type": "timestamp(3)",
           "primaryKey": false,
           "notNull": true,
           "default": "CURRENT_TIMESTAMP"
         },
-        "atualizadoEm": {
-          "name": "atualizadoEm",
+        "atualizadoem": {
+          "name": "atualizadoem",
           "type": "timestamp(3)",
           "primaryKey": false,
           "notNull": true
@@ -2963,8 +2963,8 @@
           "primaryKey": true,
           "notNull": true
         },
-        "name": {
-          "name": "name",
+        "nome": {
+          "name": "nome",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -2975,8 +2975,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "emailVerified": {
-          "name": "emailVerified",
+        "emailverificado": {
+          "name": "emailverificado",
           "type": "boolean",
           "primaryKey": false,
           "notNull": true
@@ -2988,21 +2988,21 @@
           "notNull": true,
           "default": "'usuario'"
         },
-        "createdAt": {
-          "name": "createdAt",
+        "criadoem": {
+          "name": "criadoem",
           "type": "timestamp(3)",
           "primaryKey": false,
           "notNull": true,
           "default": "CURRENT_TIMESTAMP"
         },
-        "updatedAt": {
-          "name": "updatedAt",
+        "atualizadoem": {
+          "name": "atualizadoem",
           "type": "timestamp(3)",
           "primaryKey": false,
           "notNull": true
         },
-        "image": {
-          "name": "image",
+        "imagem": {
+          "name": "imagem",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -3034,7 +3034,15 @@
       },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "usuarios_email_unique": {
+          "name": "usuarios_email_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "email"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

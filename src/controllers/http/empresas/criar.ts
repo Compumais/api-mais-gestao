@@ -36,7 +36,7 @@ export async function criarEmpresa(
 		}
 
 		const empresasDoUsuario = await listarEmpresasService({
-			proprietarioId: usuarioId,
+			idproprietario: usuarioId,
 		});
 
 		if (!empresasDoUsuario.success || !empresasDoUsuario.body) {
@@ -45,12 +45,12 @@ export async function criarEmpresa(
 
 		const dadosEmpresa = {
 			id: uuid,
-			proprietarioId: usuarioId,
+			idproprietario: usuarioId,
 			nome: dadosValidados.nome,
 			cnpj: dadosValidados.cnpj,
 			telefone: dadosValidados.telefone,
-			atualizadoEm: new Date().toISOString(),
-			criadoEm: new Date().toISOString(),
+			atualizadoem: new Date().toISOString(),
+			criadoem: new Date().toISOString(),
 		};
 
 		const empresa = await criarEmpresaService({

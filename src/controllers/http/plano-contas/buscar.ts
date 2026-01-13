@@ -18,12 +18,12 @@ export async function buscarPlanoContas(
 			});
 		}
 
-		const userId = request.user.id;
+		const idusuario = request.user.id;
 		const { id } = buscarPlanoContasParamsSchema.parse(request.params);
 
 		const resultado = await buscarPlanoContasService({
-			planoContasId: id,
-			userId,
+			idplanocontas: id,
+			idusuario,
 		});
 
 		if (!resultado.success) {
@@ -46,4 +46,3 @@ export async function buscarPlanoContas(
 		});
 	}
 }
-

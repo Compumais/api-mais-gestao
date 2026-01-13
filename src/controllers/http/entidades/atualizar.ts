@@ -1,14 +1,14 @@
-import type { FastifyReply, FastifyRequest, FastifySchema } from "fastify";
+import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { atualizarClienteService } from "../../../service/clientes/atualizar-cliente";
+import { atualizarEntidadeService } from "@/service/entidades/atualizar-entidade";
 
-const atualizarClienteParamsSchema = z.object({
+const atualizarEntidadeParamsSchema = z.object({
 	id: z.string().uuid(),
 });
 
-const atualizarClienteBodySchema = z.object({
+const atualizarEntidadeBodySchema = z.object({
 	nome: z.string().min(1).optional(),
-	email: z.string().email().optional().nullable(),
+	email: z.email().optional().nullable(),
 	telefone: z.string().optional().nullable(),
 	endereco: z.string().optional().nullable(),
 	cidade: z.string().optional().nullable(),
@@ -17,7 +17,7 @@ const atualizarClienteBodySchema = z.object({
 	pais: z.string().optional().nullable(),
 });
 
-export async function atualizarCliente(
+export async function atualizarEntidade(
 	request: FastifyRequest,
 	reply: FastifyReply,
 ) {
@@ -29,13 +29,13 @@ export async function atualizarCliente(
 			});
 		}
 
-		const userId = request.user.id;
-		const { id } = atualizarClienteParamsSchema.parse(request.params);
-		const dados = atualizarClienteBodySchema.parse(request.body);
+		const idusuario = request.user.id;
+		const { id } = atualizarEntidadeParamsSchema.parse(request.params);
+		const dados = atualizarEntidadeBodySchema.parse(request.body);
 
-		const resultado = await atualizarClienteService({
-			clienteId: id,
-			userId,
+		const resultado = await atualizarEntidadeService({
+			entidadeId: id,
+			idusuario,
 			dados,
 		});
 
@@ -54,8 +54,8 @@ export async function atualizarCliente(
 			});
 		}
 		return reply.status(500).send({
-			error: "Erro ao atualizar cliente",
-			code: "UPDATE_CLIENTE_ERROR",
+			error: "Erro ao atualizar entidade",
+			code: "UPDATE_ENTIDADE_ERROR",
 		});
 	}
 }

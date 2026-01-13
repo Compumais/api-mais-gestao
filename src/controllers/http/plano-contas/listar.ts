@@ -3,7 +3,7 @@ import z from "zod";
 import { listarPlanoContasService } from "../../../service/planocontas/listar-plano-contas";
 
 const listarPlanoContasQuerySchema = z.object({
-	planoContasId: z.string().optional(),
+	idplanocontas: z.string().optional(),
 	inativo: z.boolean().optional().default(false),
 	page: z.coerce.number().min(1).optional().default(1),
 	limit: z.coerce.number().min(1).max(100).optional().default(10),
@@ -21,11 +21,11 @@ export async function listarPlanoContas(
 			});
 		}
 
-		const userId = request.user.id;
+		const idusuario = request.user.id;
 		const query = listarPlanoContasQuerySchema.parse(request.query);
 
 		const resultado = await listarPlanoContasService({
-			userId,
+			idusuario,
 			...query,
 		});
 

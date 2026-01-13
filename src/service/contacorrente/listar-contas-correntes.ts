@@ -3,7 +3,7 @@ import { listarContaCorrentePorEmpresa } from "@/repositories/conta-corrente-rep
 import { httpOk } from "@/util/http-util";
 
 interface ListarContasCorrentesParametros {
-	empresaId: string;
+	idempresa: string;
 	page?: number;
 	limit?: number;
 }
@@ -23,14 +23,14 @@ interface ListarContasCorrentesResposta {
 }
 
 export async function listarContasCorrentesService({
-	empresaId,
+	idempresa,
 	page = 1,
 	limit = 10,
 }: ListarContasCorrentesParametros): Promise<
 	HttpResponse<ListarContasCorrentesResposta>
 > {
 	const { contasCorrentes, total } = await listarContaCorrentePorEmpresa({
-		empresaIds: [empresaId],
+		idempresas: [idempresa],
 		limit,
 		page,
 	});

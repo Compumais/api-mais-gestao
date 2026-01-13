@@ -23,7 +23,7 @@ export async function excluirEmpresaService(
 			success: false,
 			status: 409,
 			error:
-				"Não é possível excluir uma empresa com dados associados (usuários, clientes, contas ou lançamentos)",
+				"Não é possível excluir uma empresa com dados associados (usuários, entidades, contas ou lançamentos)",
 			code: "CONFLICT_ERROR",
 		};
 	}

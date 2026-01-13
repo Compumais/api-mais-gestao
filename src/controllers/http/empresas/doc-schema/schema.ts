@@ -39,19 +39,19 @@ export const criarEmpresaSchema: FastifySchema = {
 			description: "Empresa criada com sucesso",
 			properties: {
 				id: { type: "string", description: "ID único da empresa" },
-				proprietarioId: {
+				idproprietario: {
 					type: "string",
 					description: "ID do usuário proprietário",
 				},
 				nome: { type: "string", description: "Nome da empresa" },
 				cnpj: { type: "string", description: "CNPJ da empresa" },
 				telefone: { type: "string", description: "Telefone da empresa" },
-				criadoEm: {
+				criadoem: {
 					type: "string",
 					format: "date-time",
 					description: "Data de criação",
 				},
-				atualizadoEm: {
+				atualizadoem: {
 					type: "string",
 					format: "date-time",
 					description: "Data da última atualização",
@@ -104,12 +104,12 @@ export const buscarEmpresaSchema: FastifySchema = {
 			description: "Dados da empresa",
 			properties: {
 				id: { type: "string" },
-				proprietarioId: { type: "string" },
+				idproprietario: { type: "string" },
 				nome: { type: "string" },
 				cnpj: { type: "string" },
 				telefone: { type: "string" },
-				criadoEm: { type: "string", format: "date-time" },
-				atualizadoEm: { type: "string", format: "date-time" },
+				criadoem: { type: "string", format: "date-time" },
+				atualizadoem: { type: "string", format: "date-time" },
 			},
 		},
 		400: {
@@ -159,7 +159,7 @@ export const listarEmpresasSchema: FastifySchema = {
 				description: "Quantidade de itens por página (padrão: 10)",
 				default: 10,
 			},
-			proprietarioId: {
+			idproprietario: {
 				type: "string",
 				description: "Filtrar por ID do proprietário",
 			},
@@ -188,12 +188,12 @@ export const listarEmpresasSchema: FastifySchema = {
 						type: "object",
 						properties: {
 							id: { type: "string" },
-							proprietarioId: { type: "string" },
+							idproprietario: { type: "string" },
 							nome: { type: "string" },
 							cnpj: { type: "string" },
 							telefone: { type: "string" },
-							criadoEm: { type: "string", format: "date-time" },
-							atualizadoEm: { type: "string", format: "date-time" },
+							criadoem: { type: "string", format: "date-time" },
+							atualizadoem: { type: "string", format: "date-time" },
 						},
 					},
 				},
@@ -277,12 +277,12 @@ export const atualizarEmpresaSchema: FastifySchema = {
 			description: "Empresa atualizada com sucesso",
 			properties: {
 				id: { type: "string" },
-				proprietarioId: { type: "string" },
+				idproprietario: { type: "string" },
 				nome: { type: "string" },
 				cnpj: { type: "string" },
 				telefone: { type: "string" },
-				criadoEm: { type: "string", format: "date-time" },
-				atualizadoEm: { type: "string", format: "date-time" },
+				criadoem: { type: "string", format: "date-time" },
+				atualizadoem: { type: "string", format: "date-time" },
 			},
 		},
 		400: {
@@ -356,4 +356,3 @@ export const excluirEmpresaSchema: FastifySchema = {
 		},
 	},
 };
-
