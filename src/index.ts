@@ -21,7 +21,7 @@ app.register(cors, {
 	maxAge: 86400,
 });
 
-app.register(swagger, {
+await app.register(swagger, {
 	openapi: {
 		info: {
 			title: "API Mais Gestão",
@@ -56,7 +56,7 @@ app.register(swagger, {
 	},
 });
 
-app.register(swaggerUi, {
+await app.register(swaggerUi, {
 	routePrefix: "/docs",
 	uiConfig: {
 		docExpansion: "list",
@@ -67,7 +67,10 @@ app.register(swaggerUi, {
 });
 
 // Rotas específicas do Better Auth documentadas no Swagger
-app.post("/api/auth/sign-in/email", {
+// Devem ser definidas após o registro do Swagger para aparecerem na documentação
+app.route({
+	method: "POST",
+	url: "/api/auth/sign-in/email",
 	schema: {
 		tags: ["auth"],
 		summary: "Fazer login com email e senha",
@@ -154,7 +157,9 @@ app.post("/api/auth/sign-in/email", {
 	},
 });
 
-app.post("/api/auth/sign-up/email", {
+app.route({
+	method: "POST",
+	url: "/api/auth/sign-up/email",
 	schema: {
 		tags: ["auth"],
 		summary: "Criar conta com email e senha",
@@ -239,6 +244,7 @@ app.post("/api/auth/sign-up/email", {
 });
 
 // Rota catch-all para outras rotas do Better Auth
+// Deve ser definida por último para não interceptar as rotas específicas acima
 app.route({
 	method: ["GET", "POST", "PUT", "DELETE"],
 	url: "/api/auth/*",

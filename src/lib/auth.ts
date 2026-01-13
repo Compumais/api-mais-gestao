@@ -20,14 +20,28 @@ export const auth = betterAuth({
 	},
 	user: {
 		modelName: "usuarios",
+		fields: {
+			name: "nome",
+			emailVerified: "emailverificado",
+			createdAt: "criadoem",
+			updatedAt: "atualizadoem",
+		},
 	},
 	session: {
 		modelName: "sessoes",
 		expiresIn: 60 * 60 * 24 * 7, // 7 dias
 		updateAge: 60 * 60 * 24, // 1 dia
+		fields: {
+			userId: "idusuario",
+		},
 	},
 	account: {
 		modelName: "contas",
+		fields: {
+			userId: "idusuario",
+			accountId: "idconta",
+			providerId: "idprovedor",
+		},
 	},
 	verification: {
 		modelName: "verificacoes",
@@ -46,9 +60,9 @@ export const auth = betterAuth({
 	},
 	plugins: [
 		customSession(async ({ user, session }) => {
-			const roles = await db
+			const perfil = await db
 				.select({
-					role: schema.usuarios.role,
+					perfil: schema.usuarios.perfil,
 				})
 				.from(schema.usuarios)
 				.where(eq(schema.usuarios.id, user.id))
@@ -57,7 +71,7 @@ export const auth = betterAuth({
 			return {
 				user: {
 					...user,
-					roles: roles.map((role) => role.role),
+					perfil: perfil[0]?.perfil || "usuario",
 				},
 				session,
 			};

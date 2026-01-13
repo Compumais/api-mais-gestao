@@ -5,29 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1767630114245,
-      "tag": "0000_omniscient_meltdown",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1767639947360,
-      "tag": "0001_misty_secret_warriors",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1767640249633,
-      "tag": "0002_stale_white_queen",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1767877520097,
-      "tag": "0003_mighty_marvex",
+      "when": 1768305051263,
+      "tag": "0000_overconfident_scorpion",
       "breakpoints": true
     }
   ]

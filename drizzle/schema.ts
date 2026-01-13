@@ -54,7 +54,7 @@ export const empresa = pgTable(
 		nome: text().notNull(),
 		cnpj: text().notNull(),
 		telefone: text().notNull(),
-		proprietarioId: text().notNull(),
+		idproprietario: text().notNull(),
 		criadoEm: timestamp({ precision: 3, mode: "string" })
 			.default(sql`CURRENT_TIMESTAMP`)
 			.notNull(),
@@ -66,9 +66,9 @@ export const empresa = pgTable(
 			table.cnpj.asc().nullsLast().op("text_ops"),
 		),
 		foreignKey({
-			columns: [table.proprietarioId],
+			columns: [table.idproprietario],
 			foreignColumns: [usuarios.id],
-			name: "empresas_proprietarioId_fkey",
+			name: "empresas_idproprietario_fkey",
 		})
 			.onUpdate("cascade")
 			.onDelete("cascade"),
@@ -79,8 +79,8 @@ export const usuarioEmpresa = pgTable(
 	"usuario_empresas",
 	{
 		id: text().primaryKey().notNull(),
-		userId: text().notNull(),
-		empresaId: text().notNull(),
+		idusuario: text().notNull(),
+		idempresa: text().notNull(),
 		criadoEm: timestamp({ precision: 3, mode: "string" })
 			.default(sql`CURRENT_TIMESTAMP`)
 			.notNull(),
@@ -88,16 +88,16 @@ export const usuarioEmpresa = pgTable(
 	},
 	(table) => [
 		foreignKey({
-			columns: [table.userId],
+			columns: [table.idusuario],
 			foreignColumns: [usuarios.id],
-			name: "usuario_empresas_usuarioId_fkey",
+			name: "usuario_empresas_idusuario_fkey",
 		})
 			.onUpdate("cascade")
 			.onDelete("restrict"),
 		foreignKey({
-			columns: [table.empresaId],
+			columns: [table.idempresa],
 			foreignColumns: [empresa.id],
-			name: "usuario_empresas_empresaId_fkey",
+			name: "usuario_empresas_idempresa_fkey",
 		})
 			.onUpdate("cascade")
 			.onDelete("restrict"),
@@ -110,9 +110,9 @@ export const auditLogs = pgTable(
 		id: text().primaryKey().notNull(),
 		acao: text().notNull(),
 		recurso: text().notNull(),
-		recursoId: text(),
-		userId: text(),
-		empresaId: text(),
+		idrecurso: text(),
+		idusuario: text(),
+		idempresa: text(),
 		metadados: jsonb(),
 		criadoEm: timestamp({ precision: 3, mode: "string" })
 			.default(sql`CURRENT_TIMESTAMP`)
@@ -120,9 +120,9 @@ export const auditLogs = pgTable(
 	},
 	(table) => [
 		foreignKey({
-			columns: [table.userId],
+			columns: [table.idusuario],
 			foreignColumns: [usuarios.id],
-			name: "audit_logs_userId_fkey",
+			name: "audit_logs_idusuario_fkey",
 		})
 			.onUpdate("cascade")
 			.onDelete("set null"),
@@ -141,7 +141,7 @@ export const sessoes = pgTable(
 		updatedAt: timestamp({ precision: 3, mode: "string" }).notNull(),
 		ipAddress: text(),
 		userAgent: text(),
-		userId: text().notNull(),
+		idusuario: text().notNull(),
 	},
 	(table) => [
 		uniqueIndex("sessoes_token_key").using(
@@ -149,9 +149,9 @@ export const sessoes = pgTable(
 			table.token.asc().nullsLast().op("text_ops"),
 		),
 		foreignKey({
-			columns: [table.userId],
+			columns: [table.idusuario],
 			foreignColumns: [usuarios.id],
-			name: "sessoes_userId_fkey",
+			name: "sessoes_idusuario_fkey",
 		})
 			.onUpdate("cascade")
 			.onDelete("cascade"),
@@ -162,9 +162,9 @@ export const contas = pgTable(
 	"contas",
 	{
 		id: text().primaryKey().notNull(),
-		accountId: text().notNull(),
-		providerId: text().notNull(),
-		userId: text().notNull(),
+		idconta: text().notNull(),
+		idprovedor: text().notNull(),
+		idusuario: text().notNull(),
 		accessToken: text(),
 		refreshToken: text(),
 		idToken: text(),
@@ -179,9 +179,9 @@ export const contas = pgTable(
 	},
 	(table) => [
 		foreignKey({
-			columns: [table.userId],
+			columns: [table.idusuario],
 			foreignColumns: [usuarios.id],
-			name: "contas_userId_fkey",
+			name: "contas_idusuario_fkey",
 		})
 			.onUpdate("cascade")
 			.onDelete("cascade"),
@@ -192,16 +192,16 @@ export const usuarios = pgTable(
 	"usuarios",
 	{
 		id: text().primaryKey().notNull(),
-		name: text().notNull(),
-		email: text().notNull(),
-		emailVerified: boolean().notNull(),
-		role: text().default("user").notNull(),
-		createdAt: timestamp({ precision: 3, mode: "string" })
+		nome: text().notNull(),
+		email: text().unique().notNull(),
+		emailverificado: boolean().notNull(),
+		perfil: text().default("usuario").notNull(),
+		criadoem: timestamp({ precision: 3, mode: "string" })
 			.default(sql`CURRENT_TIMESTAMP`)
 			.notNull(),
-		updatedAt: timestamp({ precision: 3, mode: "string" }).notNull(),
+		atualizadoem: timestamp({ precision: 3, mode: "string" }).notNull(),
 		image: text(),
-		maxCompanies: integer(),
+		maxempresas: integer(),
 	},
 	(table) => [
 		uniqueIndex("usuarios_email_key").using(
@@ -211,37 +211,48 @@ export const usuarios = pgTable(
 	],
 );
 
-export const cliente = pgTable(
-	"clientes",
+export const entidade = pgTable(
+	"entidade",
 	{
 		id: text().primaryKey().notNull(),
-		nome: text().notNull(),
-		email: text(),
-		telefone: text(),
-		endereco: text(),
-		cidade: text(),
-		estado: text(),
-		cep: text(),
+		nome: varchar({ length: 60 }).notNull(),
+		razaosocial: varchar({ length: 60 }).notNull(),
+		tipopessoa: smallint().default(0),
+		cnpjcpf: varchar({ length: 20 }).notNull(),
+		inscricaoestadual: varchar({ length: 20 }).notNull(),
+		rg: varchar({ length: 20 }).notNull(),
+		email: varchar({ length: 200 }).notNull(),
+		telefone: varchar({ length: 40 }).notNull(),
+		endereco: varchar({ length: 60 }).notNull(),
+		numeroendereco: varchar({ length: 6 }),
+		complemento: varchar({ length: 50 }).notNull(),
+		bairro: varchar({ length: 50 }).notNull(),
+		idcidade: text(),
+		idestado: text(),
+		cep: varchar({ length: 6 }).notNull(),
+		fax: varchar({ length: 40 }),
+		nascimento: date(),
+		idplanocontas: text(),
 		pais: text(),
-		empresaId: text().notNull(),
+		idempresa: text().notNull(),
 		criadoEm: timestamp({ precision: 3, mode: "string" })
 			.default(sql`CURRENT_TIMESTAMP`)
 			.notNull(),
 		atualizadoEm: timestamp({ precision: 3, mode: "string" }).notNull(),
 	},
 	(table) => [
-		index("clients_companyId_idx").using(
+		index("entidades_idempresa_idx").using(
 			"btree",
-			table.empresaId.asc().nullsLast().op("text_ops"),
+			table.idempresa.asc().nullsLast().op("text_ops"),
 		),
-		index("clients_email_idx").using(
+		index("entidades_email_idx").using(
 			"btree",
 			table.email.asc().nullsLast().op("text_ops"),
 		),
 		foreignKey({
-			columns: [table.empresaId],
+			columns: [table.idempresa],
 			foreignColumns: [empresa.id],
-			name: "clientes_empresaId_fkey",
+			name: "entidades_idempresa_fkey",
 		})
 			.onUpdate("cascade")
 			.onDelete("cascade"),
@@ -252,7 +263,7 @@ export const contacorrente = pgTable("contacorrente", {
 	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 	id: text().primaryKey().notNull(),
 	descricao: varchar({ length: 50 }),
-	empresaId: text().notNull(),
+	idempresa: text().notNull(),
 	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 	codigo: bigint({ mode: "number" }),
 	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
@@ -339,7 +350,7 @@ export const contacorrente = pgTable("contacorrente", {
 	postobeneficiario: varchar({ length: 5 }),
 	tipoimpressaouboleto: smallint(),
 	tipoidentificacaobeneficiario: smallint(),
-	tipoidentificacaocliente: smallint(),
+	tipoidentificacaoentidade: smallint(),
 	caminhoimagemboleto: varchar({ length: 255 }),
 	redimensionarimagemboleto: smallint(),
 	localimpressaoinstrucaouboleto: smallint(),
@@ -393,7 +404,7 @@ export const contacorrentelancamento = pgTable(
 		saldoatual: numeric({ precision: 12, scale: 2 }),
 		historico: text(),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		idusuario: bigint({ mode: "number" }),
+		idusuario: text(),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 		idplanocontas: bigint({ mode: "number" }),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
@@ -409,7 +420,7 @@ export const contacorrentelancamento = pgTable(
 		idlancamentotransferencia: bigint({ mode: "number" }),
 		dataconciliacao: date(),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		idusuarioconciliacao: bigint({ mode: "number" }),
+		idusuarioconciliacao: text(),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 		idlancamentoestornado: bigint({ mode: "number" }),
 	},
@@ -426,9 +437,8 @@ export const financeiro = pgTable(
 	{
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 		id: text().primaryKey().notNull(),
-		empresaId: text().notNull(),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		idfilial: bigint({ mode: "number" }),
+		idempresa: text().notNull(),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 		identidade: bigint({ mode: "number" }),
 		tipo: char({ length: 1 }),
@@ -507,7 +517,7 @@ export const financeiro = pgTable(
 		idbandeira: bigint({ mode: "number" }),
 		ultimaocorrenciabancaria: text(),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		idusuariosupervisor: bigint({ mode: "number" }),
+		idusuariosupervisor: text(),
 		dataliberacaousuariosupervisor: timestamp({ precision: 6, mode: "string" }),
 		acaoprocessamentoretorno: varchar({ length: 50 }),
 		instrucaocobrancaboleto: smallint(),
@@ -563,7 +573,7 @@ export const financeiro = pgTable(
 		),
 		index("idx_financeiro_idfilial").using(
 			"btree",
-			table.idfilial.asc().nullsLast().op("int8_ops"),
+			table.idempresa.asc().nullsLast().op("text_ops"),
 		),
 		index("idx_financeiro_sped").using(
 			"btree",
@@ -636,7 +646,7 @@ export const financeirolancamento = pgTable(
 		),
 		index("idx_finlan_idfinanceiro").using(
 			"btree",
-			table.idfinanceiro.asc().nullsLast().op("int8_ops"),
+			table.idfinanceiro.asc().nullsLast().op("text_ops"),
 		),
 	],
 );
@@ -646,7 +656,7 @@ export const planocontas = pgTable(
 	{
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 		id: text().primaryKey().notNull(),
-		empresaId: text().notNull(),
+		idempresa: text().notNull(),
 		codigo: varchar({ length: 30 }),
 		nome: varchar({ length: 40 }),
 		tipomovimento: varchar({ length: 1 }),
@@ -661,11 +671,11 @@ export const planocontas = pgTable(
 		exportaparacontabilidade: smallint(),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 		idgrupodre: bigint({ mode: "number" }),
-		planoContasId: text(),
+		idplanocontas: text(),
 	},
 	(table) => [
 		foreignKey({
-			columns: [table.planoContasId],
+			columns: [table.idplanocontas],
 			foreignColumns: [table.id],
 			name: "planocontas_planocontasid_fkey",
 		})
@@ -673,3 +683,45 @@ export const planocontas = pgTable(
 			.onDelete("restrict"),
 	],
 );
+
+export const tipodocumentofinanceiro = pgTable("tipodocumentofinanceiro", {
+	id: text().primaryKey().notNull(),
+	descricao: varchar({ length: 50 }).notNull(),
+	acao: integer().notNull(),
+	saidafechamento: integer().default(0),
+	inativo: integer().default(0),
+	integracaixabanco: integer().default(0),
+	baixageracodigobanco: integer().default(0),
+	currenttimemillis: bigint({ mode: "number" }).notNull(),
+	permitegerarboleto: integer(),
+	idmotivobaixafinanceiro: text(),
+	utilizadoemnegociao: integer(),
+	enviamobile: integer(),
+	tipousuario: integer().default(0),
+	localusoboleto: integer().default(0),
+	resgatarboleto: integer().default(0),
+	calcularencargofinanceiro: integer(),
+	juros: integer().default(0),
+	multa: integer().default(0),
+	descontoantecipacao: integer().default(0),
+	desconsiderasabado: integer().default(0),
+	desconsideradependente: integer().default(0),
+	diasdeconsiderarjuros: integer().default(0),
+	diasdeconsiderarmulta: integer().default(0),
+	diasdesconsiderardesconto: integer().default(0),
+	tipocalculojuros: integer(),
+	consideraparainadimplencia: integer().default(0),
+	enviaecommerce: integer(),
+	formapagamentonfe: varchar(),
+	tipocobrancasaas: integer(),
+	codigomercos: integer(),
+	idempresa: text().notNull(),
+});
+
+export const motivobaixafinanceiro = pgTable("motivobaixafinanceiro", {
+	id: text().primaryKey().notNull(),
+	idempresa: text().notNull(),
+	descricao: varchar({ length: 50 }).notNull(),
+	inativo: integer().default(0),
+	currenttimemillis: bigint({ mode: "number" }).notNull(),
+});

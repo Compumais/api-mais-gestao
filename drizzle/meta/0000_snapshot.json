@@ -1,115 +1,9 @@
 {
-  "id": "22979c60-0ad9-48bd-9aec-03b10ad91d22",
+  "id": "11b946ac-2ce2-41c4-a454-5fe63a156e10",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "public.contas": {
-      "name": "contas",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "accountId": {
-          "name": "accountId",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "providerId": {
-          "name": "providerId",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "userId": {
-          "name": "userId",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "accessToken": {
-          "name": "accessToken",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "refreshToken": {
-          "name": "refreshToken",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "idToken": {
-          "name": "idToken",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "accessTokenExpiresAt": {
-          "name": "accessTokenExpiresAt",
-          "type": "timestamp(3)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "refreshTokenExpiresAt": {
-          "name": "refreshTokenExpiresAt",
-          "type": "timestamp(3)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "scope": {
-          "name": "scope",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "password": {
-          "name": "password",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "createdAt": {
-          "name": "createdAt",
-          "type": "timestamp(3)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "CURRENT_TIMESTAMP"
-        },
-        "updatedAt": {
-          "name": "updatedAt",
-          "type": "timestamp(3)",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "contas_userId_fkey": {
-          "name": "contas_userId_fkey",
-          "tableFrom": "contas",
-          "tableTo": "usuarios",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "cascade"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.audit_logs": {
       "name": "audit_logs",
       "schema": "",
@@ -132,14 +26,20 @@
           "primaryKey": false,
           "notNull": true
         },
-        "recursoId": {
-          "name": "recursoId",
+        "idrecurso": {
+          "name": "idrecurso",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "userId": {
-          "name": "userId",
+        "idusuario": {
+          "name": "idusuario",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "idempresa": {
+          "name": "idempresa",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -160,150 +60,17 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "audit_logs_userId_fkey": {
-          "name": "audit_logs_userId_fkey",
+        "audit_logs_idusuario_fkey": {
+          "name": "audit_logs_idusuario_fkey",
           "tableFrom": "audit_logs",
           "tableTo": "usuarios",
           "columnsFrom": [
-            "userId"
+            "idusuario"
           ],
           "columnsTo": [
             "id"
           ],
           "onDelete": "set null",
-          "onUpdate": "cascade"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.clientes": {
-      "name": "clientes",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "nome": {
-          "name": "nome",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "email": {
-          "name": "email",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "telefone": {
-          "name": "telefone",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "endereco": {
-          "name": "endereco",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "cidade": {
-          "name": "cidade",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "estado": {
-          "name": "estado",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "cep": {
-          "name": "cep",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "pais": {
-          "name": "pais",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "empresaId": {
-          "name": "empresaId",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "criadoEm": {
-          "name": "criadoEm",
-          "type": "timestamp(3)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "CURRENT_TIMESTAMP"
-        },
-        "atualizadoEm": {
-          "name": "atualizadoEm",
-          "type": "timestamp(3)",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {
-        "clients_companyId_idx": {
-          "name": "clients_companyId_idx",
-          "columns": [
-            {
-              "expression": "empresaId",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last",
-              "opclass": "text_ops"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "clients_email_idx": {
-          "name": "clients_email_idx",
-          "columns": [
-            {
-              "expression": "email",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last",
-              "opclass": "text_ops"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "clientes_empresaId_fkey": {
-          "name": "clientes_empresaId_fkey",
-          "tableFrom": "clientes",
-          "tableTo": "empresas",
-          "columnsFrom": [
-            "empresaId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
           "onUpdate": "cascade"
         }
       },
@@ -319,7 +86,7 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "bigint",
+          "type": "text",
           "primaryKey": true,
           "notNull": true
         },
@@ -328,6 +95,12 @@
           "type": "varchar(50)",
           "primaryKey": false,
           "notNull": false
+        },
+        "idempresa": {
+          "name": "idempresa",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
         },
         "codigo": {
           "name": "codigo",
@@ -806,8 +579,8 @@
           "primaryKey": false,
           "notNull": false
         },
-        "tipoidentificacaocliente": {
-          "name": "tipoidentificacaocliente",
+        "tipoidentificacaoentidade": {
+          "name": "tipoidentificacaoentidade",
           "type": "smallint",
           "primaryKey": false,
           "notNull": false
@@ -1019,13 +792,13 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "bigint",
+          "type": "text",
           "primaryKey": true,
           "notNull": true
         },
         "idcontacorrente": {
           "name": "idcontacorrente",
-          "type": "bigint",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
@@ -1067,7 +840,7 @@
         },
         "idusuario": {
           "name": "idusuario",
-          "type": "bigint",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
@@ -1133,7 +906,7 @@
         },
         "idusuarioconciliacao": {
           "name": "idusuarioconciliacao",
-          "type": "bigint",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
@@ -1169,6 +942,112 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.contas": {
+      "name": "contas",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "idconta": {
+          "name": "idconta",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "idprovedor": {
+          "name": "idprovedor",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "idusuario": {
+          "name": "idusuario",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "accessToken": {
+          "name": "accessToken",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "refreshToken": {
+          "name": "refreshToken",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "idToken": {
+          "name": "idToken",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "accessTokenExpiresAt": {
+          "name": "accessTokenExpiresAt",
+          "type": "timestamp(3)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "refreshTokenExpiresAt": {
+          "name": "refreshTokenExpiresAt",
+          "type": "timestamp(3)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "scope": {
+          "name": "scope",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "password": {
+          "name": "password",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp(3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp(3)",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "contas_idusuario_fkey": {
+          "name": "contas_idusuario_fkey",
+          "tableFrom": "contas",
+          "tableTo": "usuarios",
+          "columnsFrom": [
+            "idusuario"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.empresas": {
       "name": "empresas",
       "schema": "",
@@ -1197,8 +1076,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "proprietarioId": {
-          "name": "proprietarioId",
+        "idproprietario": {
+          "name": "idproprietario",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -1236,12 +1115,212 @@
         }
       },
       "foreignKeys": {
-        "empresas_proprietarioId_fkey": {
-          "name": "empresas_proprietarioId_fkey",
+        "empresas_idproprietario_fkey": {
+          "name": "empresas_idproprietario_fkey",
           "tableFrom": "empresas",
           "tableTo": "usuarios",
           "columnsFrom": [
-            "proprietarioId"
+            "idproprietario"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.entidade": {
+      "name": "entidade",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "nome": {
+          "name": "nome",
+          "type": "varchar(60)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "razaosocial": {
+          "name": "razaosocial",
+          "type": "varchar(60)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tipopessoa": {
+          "name": "tipopessoa",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "cnpjcpf": {
+          "name": "cnpjcpf",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "inscricaoestadual": {
+          "name": "inscricaoestadual",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rg": {
+          "name": "rg",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar(200)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "telefone": {
+          "name": "telefone",
+          "type": "varchar(40)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "endereco": {
+          "name": "endereco",
+          "type": "varchar(60)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "numeroendereco": {
+          "name": "numeroendereco",
+          "type": "varchar(6)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "complemento": {
+          "name": "complemento",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "bairro": {
+          "name": "bairro",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "idcidade": {
+          "name": "idcidade",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "idestado": {
+          "name": "idestado",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cep": {
+          "name": "cep",
+          "type": "varchar(6)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fax": {
+          "name": "fax",
+          "type": "varchar(40)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nascimento": {
+          "name": "nascimento",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "idplanocontas": {
+          "name": "idplanocontas",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pais": {
+          "name": "pais",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "idempresa": {
+          "name": "idempresa",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "criadoEm": {
+          "name": "criadoEm",
+          "type": "timestamp(3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "atualizadoEm": {
+          "name": "atualizadoEm",
+          "type": "timestamp(3)",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "entidades_idempresa_idx": {
+          "name": "entidades_idempresa_idx",
+          "columns": [
+            {
+              "expression": "idempresa",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "entidades_email_idx": {
+          "name": "entidades_email_idx",
+          "columns": [
+            {
+              "expression": "email",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "entidades_idempresa_fkey": {
+          "name": "entidades_idempresa_fkey",
+          "tableFrom": "entidade",
+          "tableTo": "empresas",
+          "columnsFrom": [
+            "idempresa"
           ],
           "columnsTo": [
             "id"
@@ -1262,15 +1341,15 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "bigint",
+          "type": "text",
           "primaryKey": true,
           "notNull": true
         },
-        "idfilial": {
-          "name": "idfilial",
-          "type": "bigint",
+        "idempresa": {
+          "name": "idempresa",
+          "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "identidade": {
           "name": "identidade",
@@ -1645,7 +1724,7 @@
         },
         "idusuariosupervisor": {
           "name": "idusuariosupervisor",
-          "type": "bigint",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
@@ -1893,7 +1972,7 @@
               "isExpression": false,
               "asc": true,
               "nulls": "last",
-              "opclass": "bpchar_ops"
+              "opclass": "int8_ops"
             },
             {
               "expression": "tipo",
@@ -1935,7 +2014,7 @@
           "name": "idx_financeiro_idfilial",
           "columns": [
             {
-              "expression": "idfilial",
+              "expression": "idempresa",
               "isExpression": false,
               "asc": true,
               "nulls": "last",
@@ -1955,7 +2034,7 @@
               "isExpression": false,
               "asc": true,
               "nulls": "last",
-              "opclass": "int2_ops"
+              "opclass": "int8_ops"
             },
             {
               "expression": "tipoorigem",
@@ -2030,9 +2109,15 @@
       "name": "financeirolancamento",
       "schema": "",
       "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
         "idfinanceiro": {
           "name": "idfinanceiro",
-          "type": "bigint",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
@@ -2101,12 +2186,6 @@
           "name": "evento",
           "type": "bigint",
           "primaryKey": false,
-          "notNull": true
-        },
-        "id": {
-          "name": "id",
-          "type": "bigint",
-          "primaryKey": true,
           "notNull": true
         },
         "historico": {
@@ -2277,13 +2356,63 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.motivobaixafinanceiro": {
+      "name": "motivobaixafinanceiro",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "idempresa": {
+          "name": "idempresa",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "descricao": {
+          "name": "descricao",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "inativo": {
+          "name": "inativo",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "currenttimemillis": {
+          "name": "currenttimemillis",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.planocontas": {
       "name": "planocontas",
       "schema": "",
       "columns": {
         "id": {
           "name": "id",
-          "type": "bigint",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "idempresa": {
+          "name": "idempresa",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
@@ -2352,10 +2481,30 @@
           "type": "bigint",
           "primaryKey": false,
           "notNull": false
+        },
+        "idplanocontas": {
+          "name": "idplanocontas",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "planocontas_planocontasid_fkey": {
+          "name": "planocontas_planocontasid_fkey",
+          "tableFrom": "planocontas",
+          "tableTo": "planocontas",
+          "columnsFrom": [
+            "idplanocontas"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "cascade"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -2472,8 +2621,8 @@
           "primaryKey": false,
           "notNull": false
         },
-        "userId": {
-          "name": "userId",
+        "idusuario": {
+          "name": "idusuario",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -2498,17 +2647,303 @@
         }
       },
       "foreignKeys": {
-        "sessoes_userId_fkey": {
-          "name": "sessoes_userId_fkey",
+        "sessoes_idusuario_fkey": {
+          "name": "sessoes_idusuario_fkey",
           "tableFrom": "sessoes",
           "tableTo": "usuarios",
           "columnsFrom": [
-            "userId"
+            "idusuario"
           ],
           "columnsTo": [
             "id"
           ],
           "onDelete": "cascade",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.tipodocumentofinanceiro": {
+      "name": "tipodocumentofinanceiro",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "descricao": {
+          "name": "descricao",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "acao": {
+          "name": "acao",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "saidafechamento": {
+          "name": "saidafechamento",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "inativo": {
+          "name": "inativo",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "integracaixabanco": {
+          "name": "integracaixabanco",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "baixageracodigobanco": {
+          "name": "baixageracodigobanco",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "currenttimemillis": {
+          "name": "currenttimemillis",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "permitegerarboleto": {
+          "name": "permitegerarboleto",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "idmotivobaixafinanceiro": {
+          "name": "idmotivobaixafinanceiro",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "utilizadoemnegociao": {
+          "name": "utilizadoemnegociao",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "enviamobile": {
+          "name": "enviamobile",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tipousuario": {
+          "name": "tipousuario",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "localusoboleto": {
+          "name": "localusoboleto",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "resgatarboleto": {
+          "name": "resgatarboleto",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "calcularencargofinanceiro": {
+          "name": "calcularencargofinanceiro",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "juros": {
+          "name": "juros",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "multa": {
+          "name": "multa",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "descontoantecipacao": {
+          "name": "descontoantecipacao",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "desconsiderasabado": {
+          "name": "desconsiderasabado",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "desconsideradependente": {
+          "name": "desconsideradependente",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "diasdeconsiderarjuros": {
+          "name": "diasdeconsiderarjuros",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "diasdeconsiderarmulta": {
+          "name": "diasdeconsiderarmulta",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "diasdesconsiderardesconto": {
+          "name": "diasdesconsiderardesconto",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "tipocalculojuros": {
+          "name": "tipocalculojuros",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "consideraparainadimplencia": {
+          "name": "consideraparainadimplencia",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "enviaecommerce": {
+          "name": "enviaecommerce",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "formapagamentonfe": {
+          "name": "formapagamentonfe",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tipocobrancasaas": {
+          "name": "tipocobrancasaas",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "codigomercos": {
+          "name": "codigomercos",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "idempresa": {
+          "name": "idempresa",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.usuario_empresas": {
+      "name": "usuario_empresas",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "idusuario": {
+          "name": "idusuario",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "idempresa": {
+          "name": "idempresa",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "criadoEm": {
+          "name": "criadoEm",
+          "type": "timestamp(3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "atualizadoEm": {
+          "name": "atualizadoEm",
+          "type": "timestamp(3)",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "usuario_empresas_idusuario_fkey": {
+          "name": "usuario_empresas_idusuario_fkey",
+          "tableFrom": "usuario_empresas",
+          "tableTo": "usuarios",
+          "columnsFrom": [
+            "idusuario"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "cascade"
+        },
+        "usuario_empresas_idempresa_fkey": {
+          "name": "usuario_empresas_idempresa_fkey",
+          "tableFrom": "usuario_empresas",
+          "tableTo": "empresas",
+          "columnsFrom": [
+            "idempresa"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
           "onUpdate": "cascade"
         }
       },
@@ -2546,12 +2981,12 @@
           "primaryKey": false,
           "notNull": true
         },
-        "role": {
-          "name": "role",
+        "perfil": {
+          "name": "perfil",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "'user'"
+          "default": "'usuario'"
         },
         "createdAt": {
           "name": "createdAt",
@@ -2572,12 +3007,11 @@
           "primaryKey": false,
           "notNull": false
         },
-        "maxCompanies": {
-          "name": "maxCompanies",
+        "maxempresas": {
+          "name": "maxempresas",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true,
-          "default": 1
+          "notNull": false
         }
       },
       "indexes": {
@@ -2599,77 +3033,6 @@
         }
       },
       "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.usuario_empresas": {
-      "name": "usuario_empresas",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "userId": {
-          "name": "userId",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "empresaId": {
-          "name": "empresaId",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "criadoEm": {
-          "name": "criadoEm",
-          "type": "timestamp(3)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "CURRENT_TIMESTAMP"
-        },
-        "atualizadoEm": {
-          "name": "atualizadoEm",
-          "type": "timestamp(3)",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "usuario_empresas_usuarioId_fkey": {
-          "name": "usuario_empresas_usuarioId_fkey",
-          "tableFrom": "usuario_empresas",
-          "tableTo": "usuarios",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "restrict",
-          "onUpdate": "cascade"
-        },
-        "usuario_empresas_empresaId_fkey": {
-          "name": "usuario_empresas_empresaId_fkey",
-          "tableFrom": "usuario_empresas",
-          "tableTo": "empresas",
-          "columnsFrom": [
-            "empresaId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "restrict",
-          "onUpdate": "cascade"
-        }
-      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
