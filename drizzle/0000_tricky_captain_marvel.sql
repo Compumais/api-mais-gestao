@@ -156,15 +156,15 @@ CREATE TABLE "contas" (
 	"idconta" text NOT NULL,
 	"idprovedor" text NOT NULL,
 	"idusuario" text NOT NULL,
-	"accessToken" text,
-	"refreshToken" text,
-	"idToken" text,
-	"accessTokenExpiresAt" timestamp(3),
-	"refreshTokenExpiresAt" timestamp(3),
-	"scope" text,
-	"password" text,
-	"createdAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
-	"updatedAt" timestamp(3) NOT NULL
+	"acessotoken" text,
+	"refreshtoken" text,
+	"idtoken" text,
+	"acessotokenexpiraem" timestamp,
+	"refreshtokenexpiraem" timestamp,
+	"escopo" text,
+	"senha" text,
+	"criadoem" timestamp DEFAULT now() NOT NULL,
+	"atualizadoem" timestamp NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "empresas" (
@@ -384,13 +384,14 @@ CREATE TABLE "_prisma_migrations" (
 --> statement-breakpoint
 CREATE TABLE "sessoes" (
 	"id" text PRIMARY KEY NOT NULL,
-	"expiresAt" timestamp(3) NOT NULL,
+	"expiraem" timestamp NOT NULL,
 	"token" text NOT NULL,
-	"createdAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
-	"updatedAt" timestamp(3) NOT NULL,
-	"ipAddress" text,
-	"userAgent" text,
-	"idusuario" text NOT NULL
+	"criadoem" timestamp DEFAULT now() NOT NULL,
+	"atualizadoem" timestamp NOT NULL,
+	"enderecoip" text,
+	"useragent" text,
+	"idusuario" text NOT NULL,
+	CONSTRAINT "sessoes_token_unique" UNIQUE("token")
 );
 --> statement-breakpoint
 CREATE TABLE "tipodocumentofinanceiro" (
@@ -438,34 +439,35 @@ CREATE TABLE "usuario_empresas" (
 CREATE TABLE "usuarios" (
 	"id" text PRIMARY KEY NOT NULL,
 	"nome" text NOT NULL,
-	"email" text NOT NULL,
-	"emailverificado" boolean NOT NULL,
 	"perfil" text DEFAULT 'usuario' NOT NULL,
-	"criadoem" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
-	"atualizadoem" timestamp(3) NOT NULL,
-	"imagem" text,
 	"maxempresas" integer,
+	"email" text NOT NULL,
+	"emailverificado" boolean DEFAULT false NOT NULL,
+	"imagem" text,
+	"criadoem" timestamp DEFAULT now() NOT NULL,
+	"atualizadoem" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "usuarios_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
 CREATE TABLE "verificacoes" (
 	"id" text PRIMARY KEY NOT NULL,
-	"identifier" text NOT NULL,
-	"value" text NOT NULL,
-	"expiresAt" timestamp(3) NOT NULL,
-	"createdAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
-	"updatedAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL
+	"identificador" text NOT NULL,
+	"valor" text NOT NULL,
+	"expiraem" timestamp NOT NULL,
+	"criadoem" timestamp DEFAULT now() NOT NULL,
+	"atualizadoem" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_idusuario_fkey" FOREIGN KEY ("idusuario") REFERENCES "public"."usuarios"("id") ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "contas" ADD CONSTRAINT "contas_idusuario_fkey" FOREIGN KEY ("idusuario") REFERENCES "public"."usuarios"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
+ALTER TABLE "contas" ADD CONSTRAINT "contas_idusuario_usuarios_id_fk" FOREIGN KEY ("idusuario") REFERENCES "public"."usuarios"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "empresas" ADD CONSTRAINT "empresas_idproprietario_fkey" FOREIGN KEY ("idproprietario") REFERENCES "public"."usuarios"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "entidade" ADD CONSTRAINT "entidades_idempresa_fkey" FOREIGN KEY ("idempresa") REFERENCES "public"."empresas"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "planocontas" ADD CONSTRAINT "planocontas_idplanocontas_fkey" FOREIGN KEY ("idplanocontas") REFERENCES "public"."planocontas"("id") ON DELETE restrict ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "sessoes" ADD CONSTRAINT "sessoes_idusuario_fkey" FOREIGN KEY ("idusuario") REFERENCES "public"."usuarios"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
+ALTER TABLE "sessoes" ADD CONSTRAINT "sessoes_idusuario_usuarios_id_fk" FOREIGN KEY ("idusuario") REFERENCES "public"."usuarios"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "usuario_empresas" ADD CONSTRAINT "usuario_empresas_idusuario_fkey" FOREIGN KEY ("idusuario") REFERENCES "public"."usuarios"("id") ON DELETE restrict ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "usuario_empresas" ADD CONSTRAINT "usuario_empresas_idempresa_fkey" FOREIGN KEY ("idempresa") REFERENCES "public"."empresas"("id") ON DELETE restrict ON UPDATE cascade;--> statement-breakpoint
 CREATE INDEX "idx_contacorrentelanc_evento" ON "contacorrentelancamento" USING btree ("evento" int8_ops);--> statement-breakpoint
+CREATE INDEX "contas_idusuario_idx" ON "contas" USING btree ("idusuario");--> statement-breakpoint
 CREATE UNIQUE INDEX "empresas_cnpj_key" ON "empresas" USING btree ("cnpj" text_ops);--> statement-breakpoint
 CREATE INDEX "entidades_idempresa_idx" ON "entidade" USING btree ("idempresa" text_ops);--> statement-breakpoint
 CREATE INDEX "entidades_email_idx" ON "entidade" USING btree ("email" text_ops);--> statement-breakpoint
@@ -478,5 +480,5 @@ CREATE INDEX "idx_financeiro_tipo" ON "financeiro" USING btree ("tipo" bpchar_op
 CREATE INDEX "idx_financeiro_vencimento" ON "financeiro" USING btree ("vencimento" date_ops);--> statement-breakpoint
 CREATE INDEX "idx_finlan_evento" ON "financeirolancamento" USING btree ("evento" int8_ops);--> statement-breakpoint
 CREATE INDEX "idx_finlan_idfinanceiro" ON "financeirolancamento" USING btree ("idfinanceiro" text_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "sessoes_token_key" ON "sessoes" USING btree ("token" text_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "usuarios_email_key" ON "usuarios" USING btree ("email" text_ops);
+CREATE INDEX "sessoes_idusuario_idx" ON "sessoes" USING btree ("idusuario");--> statement-breakpoint
+CREATE INDEX "verificacoes_identificador_idx" ON "verificacoes" USING btree ("identificador");

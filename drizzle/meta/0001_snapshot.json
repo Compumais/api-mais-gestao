@@ -1,6 +1,6 @@
 {
-  "id": "97744c62-14dc-42f2-b953-1ecbbac1f201",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "b630173b-2b5a-4a7c-b954-65a4f6a31a0d",
+  "prevId": "97744c62-14dc-42f2-b953-1ecbbac1f201",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1006,8 +1006,8 @@
           "primaryKey": false,
           "notNull": false
         },
-        "senha": {
-          "name": "senha",
+        "password": {
+          "name": "password",
           "type": "text",
           "primaryKey": false,
           "notNull": false

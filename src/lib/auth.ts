@@ -13,6 +13,13 @@ export const auth = betterAuth({
 	basePath: "/api/auth",
 	database: drizzleAdapter(db, {
 		provider: "pg",
+		schema: {
+			...schema,
+			user: schema.usuarios,
+			session: schema.sessoes,
+			account: schema.contas,
+			verification: schema.verificacoes,
+		},
 	}),
 
 	emailAndPassword: {
@@ -27,6 +34,19 @@ export const auth = betterAuth({
 			createdAt: "criadoem",
 			updatedAt: "atualizadoem",
 		},
+		additionalFields: {
+			perfil: {
+				type: "string",
+				required: false,
+				defaultValue: "usuario",
+				input: false,
+			},
+			maxempresas: {
+				type: "number",
+				required: false,
+				input: false,
+			},
+		},
 	},
 	session: {
 		modelName: "sessoes",
@@ -34,6 +54,12 @@ export const auth = betterAuth({
 		updateAge: 60 * 60 * 24, // 1 dia
 		fields: {
 			userId: "idusuario",
+			createdAt: "criadoem",
+			updatedAt: "atualizadoem",
+			expiresAt: "expiraem",
+			userAgent: "useragent",
+			ipAddress: "enderecoip",
+			token: "token",
 		},
 	},
 	account: {
@@ -42,10 +68,25 @@ export const auth = betterAuth({
 			userId: "idusuario",
 			accountId: "idconta",
 			providerId: "idprovedor",
+			createdAt: "criadoem",
+			updatedAt: "atualizadoem",
+			accessToken: "acessotoken",
+			refreshToken: "refreshtoken",
+			idToken: "idtoken",
+			accessTokenExpiresAt: "acessotokenexpiraem",
+			refreshTokenExpiresAt: "refreshtokenexpiraem",
+			scope: "escopo",
 		},
 	},
 	verification: {
 		modelName: "verificacoes",
+		fields: {
+			identifier: "identificador",
+			value: "valor",
+			expiresAt: "expiraem",
+			createdAt: "criadoem",
+			updatedAt: "atualizadoem",
+		},
 	},
 	advanced: {
 		disableOriginCheck: true,

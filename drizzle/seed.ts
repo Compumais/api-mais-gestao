@@ -1,18 +1,11 @@
-import bcrypt from "bcryptjs";
 import * as dotenv from "dotenv";
-import { drizzle } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
+import { eq } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
-import * as relations from "./relations.js";
+import { auth } from "../src/lib/auth.js";
+import { db } from "../src/repositories/connection.js";
 import * as schema from "./schema.js";
 
 dotenv.config();
-
-const pool = new Pool({
-	connectionString: process.env.DATABASE_URL,
-});
-
-const db = drizzle(pool, { schema, ...relations });
 
 async function seed() {
 	try {
@@ -21,58 +14,109 @@ async function seed() {
 		const agora = new Date().toISOString();
 		const timestampMillis = Date.now();
 
-		// Criar usuários
-		console.log("📝 Criando usuários...");
-		const usuarioAdminId = uuidv4();
-		const usuarioComumId = uuidv4();
+		// Criar usuários usando Better Auth
+		console.log("📝 Criando usuários com Better Auth...");
 
-		await db.insert(schema.usuarios).values([
-			{
-				id: usuarioAdminId,
-				nome: "Usuário Admin",
-				email: "admin@maisgestao.com",
-				emailverificado: true,
-				perfil: "proprietario",
-				criadoem: agora,
-				atualizadoem: agora,
-				maxempresas: 10,
-			},
-			{
-				id: usuarioComumId,
-				nome: "Usuário Comum",
-				email: "usuario@maisgestao.com",
-				emailverificado: true,
-				perfil: "usuario",
-				criadoem: agora,
-				atualizadoem: agora,
-				maxempresas: 5,
-			},
-		]);
+		let usuarioAdminId: string;
+		let usuarioComumId: string;
 
-		// Criar contas (Better Auth armazena senhas aqui)
-		console.log("🔐 Criando contas com senhas...");
-		const senhaHash = await bcrypt.hash("12345678", 10);
+		try {
+			// Criar usuário admin
+			const adminResult = await auth.api.signUpEmail({
+				body: {
+					name: "Usuário Admin",
+					email: "admin@maisgestao.com",
+					password: "12345678",
+				},
+			});
 
-		await db.insert(schema.contas).values([
-			{
-				id: uuidv4(),
-				idconta: usuarioAdminId,
-				idprovedor: "credential",
-				idusuario: usuarioAdminId,
-				password: senhaHash,
-				criadoem: agora,
-				atualizadoem: agora,
-			},
-			{
-				id: uuidv4(),
-				idconta: usuarioComumId,
-				idprovedor: "credential",
-				idusuario: usuarioComumId,
-				password: senhaHash,
-				criadoem: agora,
-				atualizadoem: agora,
-			},
-		]);
+			if (adminResult.user?.id) {
+				usuarioAdminId = adminResult.user.id;
+				// Atualizar perfil e maxempresas
+				await db
+					.update(schema.usuarios)
+					.set({
+						perfil: "proprietario",
+						maxempresas: 10,
+					})
+					.where(eq(schema.usuarios.id, usuarioAdminId));
+				console.log("  ✅ Usuário admin criado");
+			} else {
+				throw new Error("Falha ao criar usuário admin");
+			}
+		} catch (error: unknown) {
+			const errorMessage =
+				error instanceof Error ? error.message : String(error);
+			const errorCode =
+				error && typeof error === "object" && "code" in error
+					? String(error.code)
+					: "";
+
+			if (errorMessage.includes("already exists") || errorCode === "23505") {
+				console.log("  ⚠️  Usuário admin já existe, buscando ID...");
+				const [usuarioExistente] = await db
+					.select()
+					.from(schema.usuarios)
+					.where(eq(schema.usuarios.email, "admin@maisgestao.com"))
+					.limit(1);
+				if (usuarioExistente) {
+					usuarioAdminId = usuarioExistente.id;
+				} else {
+					throw error;
+				}
+			} else {
+				throw error;
+			}
+		}
+
+		try {
+			// Criar usuário comum
+			const comumResult = await auth.api.signUpEmail({
+				body: {
+					name: "Usuário Comum",
+					email: "usuario@maisgestao.com",
+					password: "12345678",
+				},
+			});
+
+			if (comumResult.user?.id) {
+				usuarioComumId = comumResult.user.id;
+				// Atualizar perfil e maxempresas
+				await db
+					.update(schema.usuarios)
+					.set({
+						perfil: "usuario",
+						maxempresas: 5,
+					})
+					.where(eq(schema.usuarios.id, usuarioComumId));
+				console.log("  ✅ Usuário comum criado");
+			} else {
+				throw new Error("Falha ao criar usuário comum");
+			}
+		} catch (error: unknown) {
+			const errorMessage =
+				error instanceof Error ? error.message : String(error);
+			const errorCode =
+				error && typeof error === "object" && "code" in error
+					? String(error.code)
+					: "";
+
+			if (errorMessage.includes("already exists") || errorCode === "23505") {
+				console.log("  ⚠️  Usuário comum já existe, buscando ID...");
+				const [usuarioExistente] = await db
+					.select()
+					.from(schema.usuarios)
+					.where(eq(schema.usuarios.email, "usuario@maisgestao.com"))
+					.limit(1);
+				if (usuarioExistente) {
+					usuarioComumId = usuarioExistente.id;
+				} else {
+					throw error;
+				}
+			} else {
+				throw error;
+			}
+		}
 
 		// Criar empresas
 		console.log("🏢 Criando empresas...");
@@ -358,24 +402,9 @@ async function seed() {
 			},
 		]);
 
-		// Criar verificações (Better Auth)
-		console.log("✅ Criando verificações...");
-		const dataExpiracao = new Date();
-		dataExpiracao.setDate(dataExpiracao.getDate() + 1); // Expira em 1 dia
-
-		await db.insert(schema.verificacoes).values({
-			id: uuidv4(),
-			identifier: usuarioAdminId,
-			value: "verification-token-example",
-			expiresAt: dataExpiracao.toISOString(),
-			createdAt: agora,
-			updatedAt: agora,
-		});
-
 		console.log("✅ Seed concluído com sucesso!");
 		console.log("\n📋 Resumo dos dados criados:");
-		console.log("  - 2 usuários (admin e comum)");
-		console.log("  - 2 contas com senha: 12345678");
+		console.log("  - 2 usuários (admin e comum) com senha: 12345678");
 		console.log("  - 2 empresas");
 		console.log("  - 2 relacionamentos usuário-empresa");
 		console.log("  - 2 entidades");
@@ -387,12 +416,9 @@ async function seed() {
 		console.log("  - 2 registros financeiros");
 		console.log("  - 2 lançamentos financeiros");
 		console.log("  - 2 logs de auditoria");
-		console.log("  - 1 verificação");
 	} catch (error) {
 		console.error("❌ Erro ao executar seed:", error);
 		throw error;
-	} finally {
-		await pool.end();
 	}
 }
 

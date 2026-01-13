@@ -34,18 +34,83 @@ export const prismaMigrations = pgTable("_prisma_migrations", {
 	appliedStepsCount: integer("applied_steps_count").default(0).notNull(),
 });
 
-export const verificacoes = pgTable("verificacoes", {
-	id: text().primaryKey().notNull(),
-	identifier: text().notNull(),
-	value: text().notNull(),
-	expiresAt: timestamp({ precision: 3, mode: "string" }).notNull(),
-	createdAt: timestamp({ precision: 3, mode: "string" })
-		.default(sql`CURRENT_TIMESTAMP`)
-		.notNull(),
-	updatedAt: timestamp({ precision: 3, mode: "string" })
-		.default(sql`CURRENT_TIMESTAMP`)
+// Tabelas do Better Auth
+
+export const sessoes = pgTable(
+	"sessoes",
+	{
+		id: text("id").primaryKey(),
+		expiraem: timestamp("expiraem").notNull(),
+		token: text("token").notNull().unique(),
+		criadoem: timestamp("criadoem").defaultNow().notNull(),
+		atualizadoem: timestamp("atualizadoem")
+			.$onUpdate(() => /* @__PURE__ */ new Date())
+			.notNull(),
+		enderecoip: text("enderecoip"),
+		useragent: text("useragent"),
+		idusuario: text("idusuario")
+			.notNull()
+			.references(() => usuarios.id, { onDelete: "cascade" }),
+	},
+	(table) => [index("sessoes_idusuario_idx").on(table.idusuario)],
+);
+
+export const contas = pgTable(
+	"contas",
+	{
+		id: text("id").primaryKey(),
+		idconta: text("idconta").notNull(),
+		idprovedor: text("idprovedor").notNull(),
+		idusuario: text("idusuario")
+			.notNull()
+			.references(() => usuarios.id, { onDelete: "cascade" }),
+		acessotoken: text("acessotoken"),
+		refreshtoken: text("refreshtoken"),
+		idtoken: text("idtoken"),
+		acessotokenexpiraem: timestamp("acessotokenexpiraem"),
+		refreshtokenexpiraem: timestamp("refreshtokenexpiraem"),
+		escopo: text("escopo"),
+		password: text("password"),
+		criadoem: timestamp("criadoem").defaultNow().notNull(),
+		atualizadoem: timestamp("atualizadoem")
+			.$onUpdate(() => /* @__PURE__ */ new Date())
+			.notNull(),
+	},
+	(table) => [index("contas_idusuario_idx").on(table.idusuario)],
+);
+
+export const verificacoes = pgTable(
+	"verificacoes",
+	{
+		id: text("id").primaryKey(),
+		identificador: text("identificador").notNull(),
+		valor: text("valor").notNull(),
+		expiraem: timestamp("expiraem").notNull(),
+		criadoem: timestamp("criadoem").defaultNow().notNull(),
+		atualizadoem: timestamp("atualizadoem")
+			.defaultNow()
+			.$onUpdate(() => /* @__PURE__ */ new Date())
+			.notNull(),
+	},
+	(table) => [index("verificacoes_identificador_idx").on(table.identificador)],
+);
+
+export const usuarios = pgTable("usuarios", {
+	id: text("id").primaryKey(),
+	nome: text("nome").notNull(),
+	perfil: text("perfil").default("usuario").notNull(),
+	maxempresas: integer("maxempresas"),
+	email: text("email").notNull().unique(),
+	emailverificado: boolean("emailverificado").default(false).notNull(),
+	imagem: text("imagem"),
+	criadoem: timestamp("criadoem").defaultNow().notNull(),
+	atualizadoem: timestamp("atualizadoem")
+		.defaultNow()
+		.$onUpdate(() => /* @__PURE__ */ new Date())
 		.notNull(),
 });
+
+// Tabelas do sistema
 
 export const empresa = pgTable(
 	"empresas",
@@ -126,88 +191,6 @@ export const auditLogs = pgTable(
 		})
 			.onUpdate("cascade")
 			.onDelete("set null"),
-	],
-);
-
-export const sessoes = pgTable(
-	"sessoes",
-	{
-		id: text().primaryKey().notNull(),
-		expiresAt: timestamp({ precision: 3, mode: "string" }).notNull(),
-		token: text().notNull(),
-		createdAt: timestamp({ precision: 3, mode: "string" })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull(),
-		updatedAt: timestamp({ precision: 3, mode: "string" }).notNull(),
-		ipAddress: text(),
-		userAgent: text(),
-		idusuario: text().notNull(),
-	},
-	(table) => [
-		uniqueIndex("sessoes_token_key").using(
-			"btree",
-			table.token.asc().nullsLast().op("text_ops"),
-		),
-		foreignKey({
-			columns: [table.idusuario],
-			foreignColumns: [usuarios.id],
-			name: "sessoes_idusuario_fkey",
-		})
-			.onUpdate("cascade")
-			.onDelete("cascade"),
-	],
-);
-
-export const contas = pgTable(
-	"contas",
-	{
-		id: text().primaryKey().notNull(),
-		idconta: text().notNull(),
-		idprovedor: text().notNull(),
-		idusuario: text().notNull(),
-		accessToken: text(),
-		refreshToken: text(),
-		idToken: text(),
-		accessTokenExpiresAt: timestamp({ precision: 3, mode: "string" }),
-		refreshTokenExpiresAt: timestamp({ precision: 3, mode: "string" }),
-		scope: text(),
-		password: text(),
-		createdAt: timestamp({ precision: 3, mode: "string" })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull(),
-		updatedAt: timestamp({ precision: 3, mode: "string" }).notNull(),
-	},
-	(table) => [
-		foreignKey({
-			columns: [table.idusuario],
-			foreignColumns: [usuarios.id],
-			name: "contas_idusuario_fkey",
-		})
-			.onUpdate("cascade")
-			.onDelete("cascade"),
-	],
-);
-
-export const usuarios = pgTable(
-	"usuarios",
-	{
-		id: text().primaryKey().notNull(),
-		nome: text().notNull(),
-		email: text().unique().notNull(),
-		emailverificado: boolean().notNull(),
-		perfil: text().default("usuario").notNull(),
-		criadoem: timestamp({ precision: 3, mode: "string" })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull(),
-		atualizadoem: timestamp({ precision: 3, mode: "string" }).notNull(),
-		imagem: text(),
-		maxempresas: integer(),
-	},
-	(table) => [
-		uniqueIndex("usuarios_email_key").using(
-			"btree",
-			table.email.asc().nullsLast().op("text_ops"),
-		),
 	],
 );
 

@@ -1,0 +1,1 @@
+ALTER TABLE "contas" RENAME COLUMN "senha" TO "password";
