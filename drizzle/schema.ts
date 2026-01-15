@@ -98,7 +98,7 @@ export const verificacoes = pgTable(
 export const usuarios = pgTable("usuarios", {
 	id: text("id").primaryKey(),
 	nome: text("nome").notNull(),
-	perfil: text("perfil").default("usuario").notNull(),
+	perfil: jsonb("perfil").$type<string[]>().default(sql`'[]'::jsonb`).notNull(),
 	maxempresas: integer("maxempresas"),
 	email: text("email").notNull().unique(),
 	emailverificado: boolean("emailverificado").default(false).notNull(),

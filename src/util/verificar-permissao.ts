@@ -1,5 +1,5 @@
 export function verificarPermissao(
-	roles: string[] | undefined,
+	roles: string | string[],
 	rolesPermitidas: string[],
 ): boolean {
 	if (!roles || roles.length === 0) {
@@ -8,4 +8,3 @@ export function verificarPermissao(
 
 	return rolesPermitidas.some((role) => roles.includes(role));
 }
-

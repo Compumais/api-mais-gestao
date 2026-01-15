@@ -162,7 +162,7 @@ CREATE TABLE "contas" (
 	"acessotokenexpiraem" timestamp,
 	"refreshtokenexpiraem" timestamp,
 	"escopo" text,
-	"senha" text,
+	"password" text,
 	"criadoem" timestamp DEFAULT now() NOT NULL,
 	"atualizadoem" timestamp NOT NULL
 );
@@ -439,7 +439,7 @@ CREATE TABLE "usuario_empresas" (
 CREATE TABLE "usuarios" (
 	"id" text PRIMARY KEY NOT NULL,
 	"nome" text NOT NULL,
-	"perfil" text DEFAULT 'usuario' NOT NULL,
+	"roles" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"maxempresas" integer,
 	"email" text NOT NULL,
 	"emailverificado" boolean DEFAULT false NOT NULL,

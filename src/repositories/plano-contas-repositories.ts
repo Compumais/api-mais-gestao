@@ -73,7 +73,7 @@ export async function buscarProximoCodigoComPai(
 export type ListarPlanoContasParametros = {
 	idempresas: string[];
 	idplanocontas?: string | undefined;
-	inativo?: string;
+	inativo?: number;
 	page?: number;
 	limit?: number;
 };
@@ -103,7 +103,7 @@ export async function listarPlanoContasPorEmpresas({
 	}
 
 	if (inativo) {
-		where.push(like(schema.planocontas.inativo, inativo));
+		where.push(eq(schema.planocontas.inativo, inativo));
 	}
 
 	const offset = (page - 1) * limit;

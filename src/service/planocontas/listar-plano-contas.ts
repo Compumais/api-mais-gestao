@@ -45,7 +45,7 @@ export async function listarPlanoContasService({
 		});
 	}
 
-	const inativoFiltro = inativo ? "0" : "1"; // 0 para ativo, 1 para inativo
+	const inativoFiltro = inativo ? 1 : 0; // 0 para ativo, 1 para inativo
 
 	const { planosContas, total } = await listarPlanoContasPorEmpresas({
 		idempresas,

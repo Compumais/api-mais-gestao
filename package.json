@@ -12,7 +12,8 @@
     "test:e2e": "vitest run --config vitest.config.e2e.ts",
     "test:watch": "vitest watch",
     "seed": "tsx drizzle/seed.ts",
-    "clean": "tsx drizzle/clean.ts"
+    "clean": "tsx drizzle/clean.ts",
+    "db:patch-roles": "tsx drizzle/patch-roles.ts"
   },
   "keywords": [],
   "author": "",

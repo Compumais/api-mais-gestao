@@ -26,6 +26,8 @@ export async function criarPlanoContas(
 	reply: FastifyReply,
 ) {
 	try {
+		console.log(request.user);
+
 		if (!request.user) {
 			return reply.status(401).send({
 				error: "Não autorizado",
@@ -61,6 +63,8 @@ export async function criarPlanoContas(
 			exportaparacontabilidade: dadosValidados.exportaparacontabilidade,
 			idplanocontas: dadosValidados.idplanocontas,
 		};
+
+		console.log(request.user);
 
 		const resultado = await criarPlanoContasService(
 			dadosPlanoContas,

@@ -16,7 +16,7 @@ import { verificarPermissao } from "@/util/verificar-permissao";
 type ExcluirPlanoContasParametros = {
 	idplanocontas: string;
 	idusuario: string;
-	roles: string[] | undefined;
+	roles: string | string[];
 };
 
 export async function excluirPlanoContasService({

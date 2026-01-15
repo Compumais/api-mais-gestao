@@ -12,7 +12,7 @@ import { verificarPermissao } from "@/util/verificar-permissao";
 type AtualizarPlanoContasParametros = {
 	idplanocontas: string;
 	idusuario: string;
-	roles: string[] | undefined;
+	roles: string | string[];
 	dados: Partial<NovoPlanoContas>;
 };
 

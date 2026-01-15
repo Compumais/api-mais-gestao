@@ -36,7 +36,7 @@ async function seed() {
 				await db
 					.update(schema.usuarios)
 					.set({
-						perfil: "proprietario",
+						perfil: ["proprietario"],
 						maxempresas: 10,
 					})
 					.where(eq(schema.usuarios.id, usuarioAdminId));
@@ -85,7 +85,7 @@ async function seed() {
 				await db
 					.update(schema.usuarios)
 					.set({
-						perfil: "usuario",
+						perfil: ["usuario"],
 						maxempresas: 5,
 					})
 					.where(eq(schema.usuarios.id, usuarioComumId));

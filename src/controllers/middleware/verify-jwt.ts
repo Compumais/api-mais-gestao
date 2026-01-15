@@ -8,16 +8,24 @@ function fastifyHeadersToWebHeaders(
 	fastifyHeaders: FastifyRequest["headers"],
 ): Headers {
 	const headers = new Headers();
-	for (const [key, value] of Object.entries(fastifyHeaders)) {
-		if (value) {
-			if (Array.isArray(value)) {
-				for (const v of value) {
-					headers.append(key, v);
+	if (!fastifyHeaders || typeof fastifyHeaders !== "object") {
+		return headers;
+	}
+	try {
+		for (const [key, value] of Object.entries(fastifyHeaders)) {
+			if (value) {
+				if (Array.isArray(value)) {
+					for (const v of value) {
+						headers.append(key, v);
+					}
+				} else {
+					headers.set(key, value.toString());
 				}
-			} else {
-				headers.set(key, value.toString());
 			}
 		}
+	} catch (error) {
+		// Se houver erro ao processar headers, retorna headers vazio
+		console.warn("Erro ao processar headers:", error);
 	}
 	return headers;
 }
@@ -34,7 +42,7 @@ export async function verifyJwt(request: FastifyRequest, reply: FastifyReply) {
 		// Verifica sessão usando cookies (padrão do Better Auth)
 		const session = await auth.api.getSession({ headers });
 
-		if (!session) {
+		if (!session?.user) {
 			return reply.status(401).send({
 				error: "Não autorizado",
 				code: "UNAUTHORIZED",
@@ -47,7 +55,7 @@ export async function verifyJwt(request: FastifyRequest, reply: FastifyReply) {
 			id: session.user.id,
 			name: session.user.name || "",
 			email: session.user.email,
-			roles: session.user.roles,
+			roles: session.user.perfil,
 			// Permite adicionar mais informações do usuário futuramente
 			// Adicione outros campos aqui conforme necessário
 		};

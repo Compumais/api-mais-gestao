@@ -16,12 +16,14 @@ import { criarAuditoriaService } from "../auditoria/criar-auditoria";
 export async function criarPlanoContasService(
 	dadosPlanoContas: NovoPlanoContas,
 	usuarioId: string,
-	roles: string[] | undefined,
+	roles: string | string[],
 ) {
 	const temPermissao = verificarPermissao(roles, [
 		"proprietario",
 		"financeiro",
 	]);
+
+	console.log(temPermissao, roles);
 
 	if (!temPermissao) {
 		return httpProibido();
@@ -31,6 +33,8 @@ export async function criarPlanoContasService(
 		usuarioId,
 		dadosPlanoContas.idempresa,
 	);
+
+	console.log(usuarioPertenceEmpresa);
 
 	if (!usuarioPertenceEmpresa) {
 		return httpProibido();
@@ -78,7 +82,7 @@ export async function criarPlanoContasService(
 		acao: "Criar Plano de Contas",
 		idusuario: usuarioId,
 		recurso: "Plano de Contas",
-		recursoId: planoContas.id,
+		idrecurso: planoContas.id,
 		criadoem: new Date().toISOString(),
 		metadados: {
 			idplanocontas: planoContas.id,

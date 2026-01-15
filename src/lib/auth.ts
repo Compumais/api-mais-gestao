@@ -102,7 +102,7 @@ export const auth = betterAuth({
 	},
 	plugins: [
 		customSession(async ({ user, session }) => {
-			const perfil = await db
+			const dadosUsuario = await db
 				.select({
 					perfil: schema.usuarios.perfil,
 				})
@@ -113,7 +113,7 @@ export const auth = betterAuth({
 			return {
 				user: {
 					...user,
-					perfil: perfil[0]?.perfil || "usuario",
+					perfil: dadosUsuario[0]?.perfil || "usuario",
 				},
 				session,
 			};

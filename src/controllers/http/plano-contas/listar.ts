@@ -24,6 +24,9 @@ export async function listarPlanoContas(
 		const idusuario = request.user.id;
 		const query = listarPlanoContasQuerySchema.parse(request.query);
 
+		console.log(idusuario);
+		console.log(query);
+
 		const resultado = await listarPlanoContasService({
 			idusuario,
 			...query,

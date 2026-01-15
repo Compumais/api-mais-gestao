@@ -97,3 +97,23 @@ export async function atualizaContaCorrente({
 
 	return contaCorrente;
 }
+
+export async function verificarContaCorrentePertenceEmpresa({
+	idcontacorrente,
+	idempresa,
+}: {
+	idcontacorrente: string;
+	idempresa: string;
+}) {
+	const [contaCorrente] = await db
+		.select()
+		.from(schema.contacorrente)
+		.where(
+			and(
+				eq(schema.contacorrente.id, idcontacorrente),
+				eq(schema.contacorrente.idempresa, idempresa),
+			),
+		);
+
+	return contaCorrente !== undefined;
+}

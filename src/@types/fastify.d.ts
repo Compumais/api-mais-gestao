@@ -4,9 +4,9 @@ declare module "fastify" {
 	interface FastifyRequest {
 		user?: {
 			id: string;
-			nome: string;
+			name: string;
 			email?: string;
-			perfil: string[];
+			roles: string | string[];
 			// Permite adicionar mais informações do usuário futuramente
 			[key: string]: unknown;
 		};

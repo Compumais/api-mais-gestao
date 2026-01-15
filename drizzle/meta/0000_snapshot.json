@@ -1,5 +1,5 @@
 {
-  "id": "97744c62-14dc-42f2-b953-1ecbbac1f201",
+  "id": "1e4b2ce5-7115-4f04-b4fe-43b78bc77ed0",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -1006,8 +1006,8 @@
           "primaryKey": false,
           "notNull": false
         },
-        "senha": {
-          "name": "senha",
+        "password": {
+          "name": "password",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -2992,12 +2992,12 @@
           "primaryKey": false,
           "notNull": true
         },
-        "perfil": {
-          "name": "perfil",
-          "type": "text",
+        "roles": {
+          "name": "roles",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": true,
-          "default": "'usuario'"
+          "default": "'[]'::jsonb"
         },
         "maxempresas": {
           "name": "maxempresas",
