@@ -65,7 +65,7 @@ export async function listarLancamentoContaCorrentePorEmpresa({
 	return lancamentos;
 }
 
-export async function excluirLancamentoContaCorrente({ id }: { id: string }) {
+export async function excluirContaCorrenteLancamento({ id }: { id: string }) {
 	await db
 		.delete(schema.contacorrentelancamento)
 		.where(eq(schema.contacorrentelancamento.id, id))
@@ -85,7 +85,7 @@ export async function buscarLancamentoContaCorrentePorId({
 	return lancamento;
 }
 
-export async function atualizarLancamentoContaCorrente({
+export async function atualizarContaCorrenteLancamento({
 	id,
 	dados,
 }: {

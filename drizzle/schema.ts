@@ -423,7 +423,7 @@ export const financeiro = pgTable(
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 		idempresa: text().notNull(),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		identidade: bigint({ mode: "number" }),
+		identidade: text(),
 		tipo: char({ length: 1 }),
 		tipoorigem: smallint(),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations

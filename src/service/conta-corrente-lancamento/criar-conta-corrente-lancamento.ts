@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from "uuid";
 import type {
 	ContaCorrenteLancamento,
 	NovaContaCorrenteLancamento,
@@ -6,12 +7,15 @@ import type { HttpResponse } from "@/model/http-model";
 import {
 	buscarUltimoLancamentoContaCorrente,
 	criarContaCorrenteLancamento,
+	excluirContaCorrenteLancamento,
 } from "@/repositories/conta-corrente-lancamento-repositories";
 import { verificarContaCorrentePertenceEmpresa } from "@/repositories/conta-corrente-repositories";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
+import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria";
 import {
 	httpCriacao,
 	httpErro,
+	httpErroInterno,
 	httpNaoAutorizado,
 	httpNaoEncontrado,
 } from "@/util/http-util";
@@ -74,6 +78,34 @@ export async function criarContaCorrenteLancamentoService(
 		saldoatual: saldoAtual.toString(),
 		...dados,
 	});
+
+	if (!contaCorrenteLancamento) {
+		return httpErro();
+	}
+
+	const auditoriaId = uuidv4();
+
+	const auditoria = await criarAuditoriaService({
+		id: auditoriaId,
+		acao: "criar_conta_corrente_lancamento",
+		idusuario: usuarioId,
+		recurso: "conta_corrente_lancamento",
+		idrecurso: contaCorrenteLancamento.id,
+		idempresa,
+		criadoem: new Date().toISOString(),
+		metadados: {
+			idcontacorrente: dados.idcontacorrente,
+			tipo: tipoLancamento,
+			valor: valorLancamento.toString(),
+			saldoanterior: saldoAnterior.toString(),
+			saldoatual: saldoAtual.toString(),
+		},
+	});
+
+	if (!auditoria || !auditoria.success) {
+		await excluirContaCorrenteLancamento({ id: contaCorrenteLancamento.id });
+		return httpErroInterno();
+	}
 
 	return httpCriacao(contaCorrenteLancamento);
 }

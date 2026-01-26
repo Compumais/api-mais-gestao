@@ -89,7 +89,7 @@ describe("listarPlanoContasService", () => {
 		).toHaveBeenCalledWith({
 			idempresas: ["empresa-123", "empresa-456"],
 			idplanocontas: undefined,
-			inativo: "1",
+			inativo: 0,
 			page: 1,
 			limit: 10,
 		});
@@ -146,7 +146,7 @@ describe("listarPlanoContasService", () => {
 		).toHaveBeenCalledWith({
 			idempresas: ["empresa-123"],
 			idplanocontas: undefined,
-			inativo: "1",
+			inativo: 0,
 			page: 2,
 			limit: 10,
 		});
@@ -177,7 +177,7 @@ describe("listarPlanoContasService", () => {
 		).toHaveBeenCalledWith({
 			idempresas: ["empresa-123"],
 			idplanocontas: undefined,
-			inativo: "1",
+			inativo: 0,
 			page: 1,
 			limit: 10,
 		});
