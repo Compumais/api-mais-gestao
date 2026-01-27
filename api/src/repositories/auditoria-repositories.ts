@@ -1,7 +1,7 @@
 import { and, count, desc, eq } from "drizzle-orm";
 import type { NovaAuditoria } from "@/model/auditoria-model";
 import * as schema from "../../drizzle/schema.js";
-import { db } from "./connection";
+import { db } from "./connection.js";
 
 export async function criarAuditoria(dadosAuditoria: NovaAuditoria) {
 	const [auditoria] = await db

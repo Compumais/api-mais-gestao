@@ -1,0 +1,190 @@
+---
+alwaysApply: true
+description: "Padrão para criação de controllers Fastify"
+globs:
+  - "**/controllers/**/*.ts"
+---
+
+## Objetivo
+Garantir consistência, clareza e trtamento correto de erros na criação de controllers Fastify.
+
+## Regra obrigatórias
+
+- Controllers devem ser funções `async` exportadas.
+- Tipar explicitamente os parâmentros como:
+  - `FastifyRequest`
+  - `FastifyReply`
+- Controllers **não devem conter regra de negócio**, apenas:
+  - Validação de autenticação
+  - Leitura de dados da request
+  - Chamada de service
+  - Mapeamento de reposta HTTP
+
+## Autenticação
+
+- Sempre validar `request.user` quando a rota exigir autenticação
+- Caso não exista, retornar:
+  - Status `401`
+  - Objeto `{ error, code }`
+
+Exemplo:
+```
+  if (!request.user) {
+    return reply.status(401).send({
+      error: "Não autorizado",
+      code: "UNAUTHORIZED",
+    });
+  }
+```
+
+## Chamada de service
+
+- Services devem ser importadas de `@/service/...`
+- O retorno do service deve seguir o padrão:
+  - success: boolean;
+  - status: number;
+  - body?;
+  - error?;
+- Sempre validar `success` antes de retornar resposta.
+
+Exemplo:
+```
+  const resultado = await algumService(param);
+
+  if (!resultado.success) {
+    return reply.status(resultado.status).send(resultado.error);
+  }
+```
+
+## Resposta HTTP
+
+- O controller deve mapear explicitamente os campos retornados.
+- Nunca retonar o objeto completo do service sem filtro.
+
+Exemplo:
+```
+  return reply.status(resultado.status).send({
+    id: resultado.body?.id,
+    nome: resultado.body?.nome,
+    email: resultado.body?.email,
+  });
+```
+
+## Tratamento de erros
+
+- Todo controller deve estar envolvido em `try/catch`.
+- Em caso de erro insesperado:
+  - Logar o erro com `console.error`;
+  - Não lançar erro sem tratamento;
+
+Exemplo:
+```
+  try {
+    // lógica
+  } catch (error) {
+    console.error(error);
+  }
+```
+
+## Convensões gerais
+
+- Controllers devem ter **única responsabilidade**.
+- Nomes de funções devem refletir a ação (ex: `perfil`, `listar`, `criar`).
+- Não acessar diretamente banco de dados.
+- Não realizar validações complexas dentro do controller.
+
+## Documentação de rotas
+
+- Tota documentação de rota criada deve permanecer dentro da pasta do controller criado com o nome `doc-schema`.
+- O nome do arquivo deve **obrigatóriamente** chamar `schema.ts`.
+- Documentações dos controller devem permanecer dentro de um **único** arquivo `schema.ts`.
+- A documentação deve seguir esse exemplo:
+```
+export const criarContaCorrenteSchema: FastifySchema = {
+	tags: ["contas-correntes"],
+	summary: "Criar nova conta corrente",
+	description:
+		"Cria uma nova conta corrente na empresa do usuário autenticado. Após a criação, uma auditoria é registrada automaticamente.",
+	security: [{ bearerAuth: [] }],
+	body: {
+		type: "object",
+		properties: {
+			idempresa: {
+				type: "string",
+				description: "ID da empresa proprietária da conta",
+			},
+			descricao: {
+				type: "string",
+				maxLength: 50,
+				nullable: true,
+				description: "Descrição da conta corrente",
+			},
+			agencia: {
+				type: "string",
+				maxLength: 25,
+				nullable: true,
+				description: "Número da agência bancária",
+			},
+		},
+		required: ["idempresa"],
+	},
+	response: {
+		201: {
+			type: "object",
+			description: "Conta corrente criada com sucesso",
+			properties: {
+				id: { type: "string", description: "ID único da conta corrente" },
+				idempresa: {
+					type: "string",
+					description: "ID da empresa proprietária",
+				},
+				descricao: { type: "string", nullable: true },
+				agencia: { type: "string", nullable: true },
+				numeroconta: { type: "string", nullable: true },
+			},
+		},
+		400: {
+			type: "object",
+			properties: {
+				error: { type: "string" },
+				code: { type: "string" },
+				details: { type: "array" },
+			},
+		},
+		401: {
+			type: "object",
+			properties: {
+				error: { type: "string" },
+				code: { type: "string" },
+			},
+		},
+		403: {
+			type: "object",
+			properties: {
+				error: { type: "string" },
+				code: { type: "string" },
+			},
+		},
+		500: {
+			type: "object",
+			properties: {
+				error: { type: "string" },
+				code: { type: "string" },
+			},
+		},
+	},
+};
+```
+
+## Rotas
+
+- Toda chamada de rotas devem ficar no arquivo `rota.ts`.
+- Cada pasta deve ter um arquivo `rota.ts` se possível
+- As rotas devem ser chamadas no arquivo `index.ts` da pasta `src` do projeto.
+
+## Middlewares
+
+- Middleware deve ser criado **somente** se fizer sentido para a aplicação.
+- Middleware criados devem ficar na pasta `middleware`.
+- O nome do middleware deve ser em português e semântico perante a funcionalidade do mesmo.
+- Os middlewares podem ser chamados no arquivo `rotas.ts`. 

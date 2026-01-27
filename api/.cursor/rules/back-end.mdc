@@ -35,6 +35,10 @@ Estrutura de pastas obrigatória:
 - repositories/
 - model/
 - drizzle/
+- test/
+- util/
+- lib/
+- @types/
 
 Padrões do projeto:
 - Utilize clean code

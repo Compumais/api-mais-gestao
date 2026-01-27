@@ -1,0 +1,436 @@
+---
+alwaysApply: true
+description: "Padrão para criação de repositories na camada de acesso a dados"
+globs:
+  - "**/repositories/**/*.ts"
+---
+
+## Objetivo
+Garantir consistência, clareza e uso correto do Drizzle ORM na criação de repositories. Os repositories são responsáveis por todas as operações de acesso ao banco de dados.
+
+## Regras obrigatórias
+
+- Repositories devem ser funções `async` exportadas.
+- Nome da função deve seguir o padrão: `{acao}{Entidade}` (ex: `criarEmpresa`, `buscarEmpresaPorId`, `listarEmpresas`).
+- Sempre usar Drizzle ORM para operações de banco de dados.
+- Nunca usar SQL raw, exceto quando absolutamente necessário (usar `sql` template tag do Drizzle).
+
+## Estrutura de arquivos
+
+- Cada entidade deve ter seu próprio arquivo: `{entidade}-repositories.ts`.
+- Arquivos devem seguir nomenclatura em kebab-case.
+- Um único arquivo pode conter múltiplas funções relacionadas à mesma entidade.
+
+## Imports
+
+- Sempre importar schema de uma das seguintes formas:
+  - `import * as schema from "../../drizzle/schema.js";` (caminho relativo)
+  - `import * as schema from "@/repositories/schema";` (alias @/)
+- Sempre importar `db` de `./connection.js`.
+- Importar operadores do Drizzle conforme necessário: `eq`, `and`, `or`, `ilike`, `inArray`, `count`, `desc`, `isNull`, etc.
+
+Exemplo:
+```
+import { and, count, desc, eq, ilike, inArray } from "drizzle-orm";
+import type { NovaEmpresa } from "@/model/empresa-model";
+import * as schema from "../../drizzle/schema.js";
+import { db } from "./connection.js";
+```
+
+## Exportação de tipos
+
+- Sempre exportar tipos derivados do schema usando `$inferSelect` e `$inferInsert`.
+- Padrão de nomenclatura:
+  - `{Entidade}` para tipo de seleção: `typeof schema.empresa.$inferSelect`
+  - `Nova{Entidade}` para tipo de inserção: `typeof schema.empresa.$inferInsert`
+
+Exemplo:
+```
+export type Empresa = typeof schema.empresa.$inferSelect;
+export type NovaEmpresa = typeof schema.empresa.$inferInsert;
+```
+
+## Operações CRUD
+
+### Criar
+
+- Usar `db.insert()` com `.values()` e `.returning()`.
+- Retornar o primeiro elemento do array quando usar `.returning()`.
+- Aceitar dados tipados (geralmente `Nova{Entidade}`).
+
+Exemplo:
+```
+export async function criarEmpresa(dadosEmpresa: NovaEmpresa) {
+	const empresa = await db
+		.insert(schema.empresa)
+		.values(dadosEmpresa)
+		.returning();
+
+	return empresa;
+}
+```
+
+Ou quando precisa retornar apenas o primeiro:
+```
+export async function criarContaCorrente(dadosContaCorrente: NovaContaCorrente) {
+	const contaCorrente = await db
+		.insert(schema.contacorrente)
+		.values(dadosContaCorrente)
+		.returning();
+
+	return contaCorrente[0];
+}
+```
+
+### Buscar por ID
+
+- Usar `db.select().from()` com `.where(eq())`.
+- Sempre usar desestruturação para pegar o primeiro resultado: `const [entidade] = await ...`.
+- Retornar `undefined` ou o objeto encontrado (não retornar array).
+
+Exemplo:
+```
+export async function buscarEmpresaPorId(id: string) {
+	const [empresa] = await db
+		.select()
+		.from(schema.empresa)
+		.where(eq(schema.empresa.id, id));
+
+	return empresa;
+}
+```
+
+### Listar
+
+- Sempre implementar paginação quando aplicável.
+- Usar `Promise.all()` para buscar contagem total e dados em paralelo.
+- Retornar objeto com estrutura: `{ entidades, total }` ou `{ entidades, totalCount }`.
+- Validar arrays vazios antes de usar `inArray()` para evitar erros.
+
+Exemplo:
+```
+export type ListarEmpresasParametros = {
+	idproprietario?: string | undefined;
+	nome?: string | undefined;
+	page?: number;
+	limit?: number;
+};
+
+export async function listarEmpresas({
+	idproprietario,
+	nome,
+	page = 1,
+	limit = 10,
+}: ListarEmpresasParametros) {
+	const where = [];
+	
+	if (idproprietario) {
+		where.push(eq(schema.empresa.idproprietario, idproprietario));
+	}
+	if (nome) {
+		where.push(ilike(schema.empresa.nome, `%${nome}%`));
+	}
+
+	const offset = (page - 1) * limit;
+
+	const [totalCount, empresas] = await Promise.all([
+		db
+			.select({ value: count() })
+			.from(schema.empresa)
+			.where(and(...where)),
+		db
+			.select()
+			.from(schema.empresa)
+			.where(and(...where))
+			.orderBy(desc(schema.empresa.criadoem))
+			.limit(limit)
+			.offset(offset),
+	]);
+
+	return {
+		empresas,
+		total: totalCount[0]?.value ?? 0,
+	};
+}
+```
+
+**Importante para listagem com arrays:**
+- Sempre validar se o array está vazio antes de usar `inArray()`.
+- Retornar resultado vazio imediatamente se o array estiver vazio.
+
+Exemplo:
+```
+if (idempresas.length === 0) {
+	return {
+		entidades: [],
+		total: 0,
+	};
+}
+
+where.push(inArray(schema.entidade.idempresa, idempresas));
+```
+
+### Atualizar
+
+- Usar `db.update()` com `.set()` e `.where()`.
+- Sempre usar `.returning()` para retornar o registro atualizado.
+- Aceitar dados parciais usando `Partial<>` ou objeto com campos opcionais.
+
+Exemplo:
+```
+export async function atualizarEmpresa(
+	id: string,
+	dados: {
+		nome?: string | undefined;
+		cnpj?: string | undefined;
+		atualizadoem?: string | undefined;
+	},
+) {
+	const [empresa] = await db
+		.update(schema.empresa)
+		.set(dados)
+		.where(eq(schema.empresa.id, id))
+		.returning();
+
+	return empresa;
+}
+```
+
+### Excluir
+
+- Usar `db.delete()` com `.where()`.
+- Sempre usar `.returning()` para retornar o registro excluído.
+- Retornar o primeiro elemento do array.
+
+Exemplo:
+```
+export async function excluirEmpresa(id: string) {
+	const [empresa] = await db
+		.delete(schema.empresa)
+		.where(eq(schema.empresa.id, id))
+		.returning();
+
+	return empresa;
+}
+```
+
+## Operadores Drizzle ORM
+
+### Comparação
+- `eq()` - igualdade
+- `ne()` - diferente
+- `gt()`, `gte()`, `lt()`, `lte()` - comparações numéricas
+
+### Lógica
+- `and(...conditions)` - E lógico
+- `or(...conditions)` - OU lógico
+- `not()` - negação
+
+### Busca
+- `ilike()` - busca case-insensitive (usar com `%texto%` para busca parcial)
+- `like()` - busca case-sensitive
+- `inArray()` - busca em array de valores
+
+### Nulos
+- `isNull()` - verificar se é null
+- `isNotNull()` - verificar se não é null
+
+### Agregação
+- `count()` - contagem
+- `sql` template tag - para SQL customizado quando necessário
+
+### Ordenação
+- `desc()` - ordem decrescente
+- `asc()` - ordem crescente (padrão)
+
+## Validações e verificações
+
+- Criar funções auxiliares para validações complexas.
+- Usar `count()` para verificar existência de registros.
+- Retornar `boolean` para funções de verificação.
+
+Exemplo:
+```
+export async function verificarUsuarioPertenceEmpresa(
+	idusuario: string,
+	idempresa: string,
+): Promise<boolean> {
+	const [resultado] = await db
+		.select({ value: count() })
+		.from(schema.usuarioEmpresa)
+		.where(
+			and(
+				eq(schema.usuarioEmpresa.idusuario, idusuario),
+				eq(schema.usuarioEmpresa.idempresa, idempresa),
+			),
+		);
+
+	return (resultado?.value ?? 0) > 0;
+}
+```
+
+## Paginação
+
+- Sempre usar `page` e `limit` com valores padrão.
+- Calcular `offset` como `(page - 1) * limit`.
+- Usar `Promise.all()` para buscar contagem e dados em paralelo.
+- Retornar `total` ou `totalCount` junto com os dados.
+
+## Ordenação
+
+- Sempre ordenar resultados de listagem.
+- Usar `desc()` para ordenar por data de criação (mais recentes primeiro).
+- Usar `orderBy()` antes de `limit()` e `offset()`.
+
+## Tipagem de parâmetros
+
+- Criar tipos exportados para parâmetros de funções complexas.
+- Usar `type` para tipos de parâmetros de listagem: `Listar{Entidades}Parametros`.
+- Campos opcionais devem ser explicitamente tipados como `| undefined`.
+
+Exemplo:
+```
+export type ListarEmpresasParametros = {
+	idproprietario?: string | undefined;
+	nome?: string | undefined;
+	page?: number;
+	limit?: number;
+};
+```
+
+## Seleção de campos específicos
+
+- Quando necessário, selecionar apenas campos específicos usando objeto no `.select()`.
+- Útil para otimização e quando não precisa de todos os campos.
+
+Exemplo:
+```
+db
+	.select({
+		id: schema.contacorrente.id,
+		agencia: schema.contacorrente.agencia,
+		descricao: schema.contacorrente.descricao,
+	})
+	.from(schema.contacorrente)
+```
+
+## Tratamento de resultados
+
+- Sempre usar desestruturação para pegar primeiro elemento: `const [entidade] = await ...`.
+- Usar optional chaining e nullish coalescing para valores seguros: `resultado?.value ?? 0`.
+- Retornar `undefined` quando registro não encontrado (não lançar erro).
+
+## Convenções gerais
+
+- Repositories devem ter **única responsabilidade** - uma entidade por arquivo.
+- Não conter lógica de negócio, apenas acesso a dados.
+- Funções devem ser puras e testáveis.
+- Usar nomes descritivos e semânticos.
+- Documentar funções complexas com comentários quando necessário.
+
+## Performance
+
+- Usar `Promise.all()` para operações paralelas.
+- Evitar múltiplas queries quando possível fazer em uma.
+- Usar índices apropriados (definidos no schema).
+- Limitar resultados com `limit()` sempre que aplicável.
+
+## Exemplo completo
+
+```
+import { and, count, desc, eq, ilike } from "drizzle-orm";
+import type { NovaEmpresa } from "@/model/empresa-model";
+import * as schema from "../../drizzle/schema.js";
+import { db } from "./connection.js";
+
+export type Empresa = typeof schema.empresa.$inferSelect;
+export type NovaEmpresa = typeof schema.empresa.$inferInsert;
+
+export async function criarEmpresa(dadosEmpresa: NovaEmpresa) {
+	const empresa = await db
+		.insert(schema.empresa)
+		.values(dadosEmpresa)
+		.returning();
+
+	return empresa;
+}
+
+export async function buscarEmpresaPorId(id: string) {
+	const [empresa] = await db
+		.select()
+		.from(schema.empresa)
+		.where(eq(schema.empresa.id, id));
+
+	return empresa;
+}
+
+export type ListarEmpresasParametros = {
+	idproprietario?: string | undefined;
+	nome?: string | undefined;
+	page?: number;
+	limit?: number;
+};
+
+export async function listarEmpresas({
+	idproprietario,
+	nome,
+	page = 1,
+	limit = 10,
+}: ListarEmpresasParametros) {
+	const where = [];
+	
+	if (idproprietario) {
+		where.push(eq(schema.empresa.idproprietario, idproprietario));
+	}
+	if (nome) {
+		where.push(ilike(schema.empresa.nome, `%${nome}%`));
+	}
+
+	const offset = (page - 1) * limit;
+
+	const [totalCount, empresas] = await Promise.all([
+		db
+			.select({ value: count() })
+			.from(schema.empresa)
+			.where(and(...where)),
+		db
+			.select()
+			.from(schema.empresa)
+			.where(and(...where))
+			.orderBy(desc(schema.empresa.criadoem))
+			.limit(limit)
+			.offset(offset),
+	]);
+
+	return {
+		empresas,
+		total: totalCount[0]?.value ?? 0,
+	};
+}
+
+export async function atualizarEmpresa(
+	id: string,
+	dados: {
+		nome?: string | undefined;
+		cnpj?: string | undefined;
+		atualizadoem?: string | undefined;
+	},
+) {
+	const [empresa] = await db
+		.update(schema.empresa)
+		.set(dados)
+		.where(eq(schema.empresa.id, id))
+		.returning();
+
+	return empresa;
+}
+
+export async function excluirEmpresa(id: string) {
+	const [empresa] = await db
+		.delete(schema.empresa)
+		.where(eq(schema.empresa.id, id))
+		.returning();
+
+	return empresa;
+}
+```

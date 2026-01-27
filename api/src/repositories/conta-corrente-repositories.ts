@@ -1,7 +1,7 @@
 import { and, count, eq, inArray } from "drizzle-orm";
 import type { NovaContaCorrente } from "@/model/conta-corrente-model";
 import * as schema from "../../drizzle/schema.js";
-import { db } from "./connection";
+import { db } from "./connection.js";
 
 export async function criarContaCorrente(
 	dadosContaCorrente: NovaContaCorrente,

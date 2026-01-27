@@ -1,0 +1,248 @@
+---
+alwaysApply: true
+description: "Padrão para criação de services na camada de serviço"
+globs:
+  - "**/service/**/*.ts"
+---
+
+## Objetivo
+Garantir consistência, clareza e tratamento correto de erros na criação de services. Os services contêm a lógica de negócio da aplicação e fazem a ponte entre controllers e repositories.
+
+## Regras obrigatórias
+
+- Services devem ser funções `async` exportadas.
+- Nome da função deve seguir o padrão: `{acao}{Entidade}Service` (ex: `criarEmpresaService`, `listarEmpresasService`).
+- Tipar explicitamente os parâmetros usando `type` ou `interface`.
+- Retorno sempre deve ser `Promise<HttpResponse<T>>` onde `T` é o tipo do dado retornado.
+
+## Estrutura de arquivos
+
+- Cada entidade deve ter sua própria pasta dentro de `service/`.
+- Arquivos devem seguir nomenclatura em kebab-case:
+  - `criar-{entidade}.ts`
+  - `listar-{entidades}.ts`
+  - `buscar-{entidade}.ts` ou `buscar-por-id.ts`
+  - `atualizar-{entidade}.ts`
+  - `excluir-{entidade}.ts`
+- Arquivos de teste devem seguir o padrão: `{acao}-{entidade}.test.ts`
+
+## Imports
+
+- Sempre usar alias `@/` para imports relativos.
+- Imports devem seguir esta ordem:
+  1. Tipos de models (`@/model/...`)
+  2. Tipos de repositories (`@/repositories/...`)
+  3. Funções utilitárias (`@/util/http-util`)
+  4. Outros services quando necessário (`@/service/...`)
+
+Exemplo:
+```
+import type { Empresa } from "@/model/empresa-model";
+import type { HttpResponse } from "@/model/http-model";
+import { criarEmpresa, type NovaEmpresa } from "@/repositories/empresa-repositories";
+import { httpCriacao, httpNaoEncontrado } from "@/util/http-util";
+```
+
+## Tipagem de parâmetros
+
+- Sempre criar um tipo específico para os parâmetros do service.
+- Usar `type` para tipos simples, `interface` para objetos complexos.
+- Tipos devem ter nomes descritivos: `{Acao}{Entidade}Parametros`
+
+Exemplo:
+```
+type CriarEmpresaParametros = {
+	dadosEmpresa: NovaEmpresa;
+	proprietario: Usuario;
+	quantidadeEmpresas: number;
+};
+```
+
+## Validações de negócio
+
+- Services devem conter toda a lógica de negócio.
+- Validações devem ser feitas antes de chamar repositories.
+- Sempre validar existência de recursos antes de operações de atualização/exclusão.
+- Validar permissões quando necessário (ex: verificar se usuário pertence à empresa).
+
+Exemplo:
+```
+const empresaExistente = await buscarEmpresaPorId(id);
+
+if (!empresaExistente) {
+	return httpNaoEncontrado();
+}
+```
+
+## Respostas HTTP
+
+- Sempre usar funções utilitárias de `@/util/http-util`:
+  - `httpOk<T>(body)` - Status 200
+  - `httpCriacao<T>(body)` - Status 201
+  - `httpSemConteudo()` - Status 204
+  - `httpNaoEncontrado()` - Status 404
+  - `httpNaoAutorizado()` - Status 401
+  - `httpProibido()` - Status 403
+  - `httpRecursoExistente()` - Status 409
+  - `httpLimiteExcedido()` - Status 429
+  - `httpErro()` - Status 400
+  - `httpErroInterno()` - Status 500
+
+- Nunca retornar objetos HTTP diretamente, sempre usar as funções utilitárias.
+- Tipar o retorno quando possível: `httpOk<Empresa>(empresa)`
+
+## Operações CRUD
+
+### Criar
+- Validar dados de entrada.
+- Verificar regras de negócio (ex: limites, duplicatas).
+- Chamar repository para criar.
+- Retornar `httpCriacao` em caso de sucesso.
+- Retornar erro apropriado em caso de falha.
+
+### Listar
+- Aceitar parâmetros de filtro e paginação.
+- Sempre incluir paginação na resposta quando aplicável.
+- Estrutura de resposta para listagem:
+```
+{
+  data: Entidade[],
+  paginacao: {
+    page: number,
+    limit: number,
+    total: number,
+    totalPages: number
+  }
+}
+```
+
+### Buscar por ID
+- Validar existência do recurso.
+- Retornar `httpNaoEncontrado()` se não existir.
+- Retornar `httpOk` com o recurso encontrado.
+
+### Atualizar
+- Validar existência do recurso antes de atualizar.
+- Atualizar campo `atualizadoem` com `new Date().toISOString()` quando aplicável.
+- Retornar `httpNaoEncontrado()` se recurso não existir.
+- Retornar `httpOk` com recurso atualizado.
+
+### Excluir
+- Validar existência do recurso.
+- Verificar dependências/associações antes de excluir.
+- Retornar erro apropriado se houver dependências.
+- Retornar `httpSemConteudo()` em caso de sucesso (204).
+
+## Chamadas a repositories
+
+- Services devem chamar apenas repositories, nunca acessar banco diretamente.
+- Sempre aguardar resultados de operações assíncronas com `await`.
+- Validar resultados de repositories antes de usar.
+
+Exemplo:
+```
+const empresa = await buscarEmpresaPorId(id);
+
+if (!empresa) {
+	return httpNaoEncontrado();
+}
+```
+
+## Tratamento de erros
+
+- Não lançar exceções sem tratamento.
+- Sempre retornar `HttpResponse` mesmo em caso de erro.
+- Usar códigos de erro apropriados através das funções utilitárias.
+- Para erros customizados, retornar objeto com estrutura:
+```
+{
+	success: false,
+	status: number,
+	error: string,
+	code: string
+}
+```
+
+## Testes
+
+- Todo service deve ter arquivo de teste correspondente.
+- Usar Vitest como framework de testes.
+- Mockar repositories usando `vi.mock()`.
+- Testar casos de sucesso e falha.
+- Usar `beforeEach` para limpar mocks.
+
+Exemplo:
+```
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import * as empresaRepository from "@/repositories/empresa-repositories.js";
+import { criarEmpresaService } from "./criar-empresa.js";
+
+vi.mock("@/repositories/empresa-repositories.js");
+
+describe("criarEmpresaService", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it("deve criar uma empresa com sucesso", async () => {
+		// teste
+	});
+});
+```
+
+## Convenções gerais
+
+- Services devem ter **única responsabilidade**.
+- Não acessar diretamente banco de dados.
+- Não realizar validações de formato de dados (isso deve ser feito no controller ou schema).
+- Services podem chamar outros services quando necessário (ex: criar auditoria após operações).
+- Manter lógica de negócio isolada e testável.
+
+## Auditoria
+
+- Quando necessário criar auditoria após operações, usar `criarAuditoriaService` de `@/service/auditoria/criar-auditoria`.
+- Auditoria deve ser criada após operações bem-sucedidas.
+
+## Exemplo completo
+
+```
+import type { Empresa } from "@/model/empresa-model";
+import type { HttpResponse } from "@/model/http-model";
+import type { Usuario } from "@/model/usuario-model";
+import {
+	criarEmpresa,
+	type NovaEmpresa,
+} from "@/repositories/empresa-repositories";
+import {
+	httpCriacao,
+	httpLimiteExcedido,
+	httpRecursoExistente,
+} from "@/util/http-util";
+
+type CriarEmpresaParametros = {
+	dadosEmpresa: NovaEmpresa;
+	proprietario: Usuario;
+	quantidadeEmpresas: number;
+};
+
+export async function criarEmpresaService({
+	dadosEmpresa,
+	quantidadeEmpresas,
+	proprietario,
+}: CriarEmpresaParametros): Promise<HttpResponse<Empresa | null>> {
+	if (
+		proprietario.maxempresas &&
+		quantidadeEmpresas >= proprietario.maxempresas
+	) {
+		return httpLimiteExcedido();
+	}
+
+	const [empresa] = await criarEmpresa(dadosEmpresa);
+
+	if (!empresa) {
+		return httpRecursoExistente();
+	}
+
+	return httpCriacao<Empresa>(empresa);
+}
+```
