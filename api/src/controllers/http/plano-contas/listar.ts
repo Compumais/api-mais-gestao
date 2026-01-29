@@ -3,6 +3,7 @@ import z from "zod";
 import { listarPlanoContasService } from "../../../service/planocontas/listar-plano-contas";
 
 const listarPlanoContasQuerySchema = z.object({
+	idempresa: z.uuid(),
 	idplanocontas: z.string().optional(),
 	inativo: z.boolean().optional().default(false),
 	page: z.coerce.number().min(1).optional().default(1),
@@ -23,9 +24,6 @@ export async function listarPlanoContas(
 
 		const idusuario = request.user.id;
 		const query = listarPlanoContasQuerySchema.parse(request.query);
-
-		console.log(idusuario);
-		console.log(query);
 
 		const resultado = await listarPlanoContasService({
 			idusuario,

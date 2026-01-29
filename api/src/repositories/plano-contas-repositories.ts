@@ -1,4 +1,4 @@
-import { and, count, eq, inArray, isNull, like, sql } from "drizzle-orm";
+import { and, count, eq, inArray, isNull, sql } from "drizzle-orm";
 import * as schema from "../../drizzle/schema.js";
 import { db } from "./connection.js";
 
@@ -27,8 +27,7 @@ export async function buscarPlanoContasPorId(id: string) {
 	const [planoContas] = await db
 		.select()
 		.from(schema.planocontas)
-		.where(eq(schema.planocontas.id, id))
-		.limit(1);
+		.where(eq(schema.planocontas.id, id));
 
 	return planoContas;
 }

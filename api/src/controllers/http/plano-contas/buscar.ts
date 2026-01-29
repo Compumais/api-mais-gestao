@@ -3,7 +3,7 @@ import z from "zod";
 import { buscarPlanoContasService } from "../../../service/planocontas/buscar-plano-contas";
 
 const buscarPlanoContasParamsSchema = z.object({
-	id: z.string().uuid(),
+	id: z.uuid(),
 });
 
 export async function buscarPlanoContas(
@@ -29,6 +29,8 @@ export async function buscarPlanoContas(
 		if (!resultado.success) {
 			return reply.status(resultado.status).send(resultado);
 		}
+
+		console.log(resultado.body);
 
 		return reply.status(resultado.status).send(resultado.body);
 	} catch (error) {

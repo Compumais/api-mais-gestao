@@ -24,11 +24,12 @@ export const criarPlanoContasSchema: FastifySchema = {
 			},
 			tipomovimento: {
 				type: "string",
-				description: "Tipo de movimento (D para Débito, C para Crédito)",
+				description: "Tipo de movimento (E para Entrada, S para Saída)",
 			},
 			inativo: {
-				type: "boolean",
-				description: "Indica se o plano de contas está inativo",
+				type: "number",
+				description:
+					"Indica se o plano de contas está inativo (0 para ativo, 1 para inativo)",
 			},
 			classe: {
 				type: "string",
@@ -156,21 +157,36 @@ export const buscarPlanoContasSchema: FastifySchema = {
 			type: "object",
 			description: "Dados do plano de contas",
 			properties: {
-				id: { type: "string" },
-				idempresa: { type: "string" },
-				codigo: { type: "string", nullable: true },
-				nome: { type: "string" },
-				tipomovimento: { type: "string" },
-				inativo: { type: "number" },
-				classe: { type: "string", nullable: true },
-				natureza: { type: "string", nullable: true },
-				idplanocontas: { type: "string", nullable: true },
-				idgrupodre: { type: "number", nullable: true },
-				currenttimemillis: { type: "number", nullable: true },
-				centrocustoobrigatorio: { type: "number", nullable: true },
-				tipoconta: { type: "number", nullable: true },
-				idcontacontabilintegracao: { type: "number", nullable: true },
-				exportaparacontabilidade: { type: "number", nullable: true },
+				plano: {
+					type: "object",
+					properties: {
+						id: { type: "string" },
+						idempresa: { type: "string" },
+						codigo: { type: "string", nullable: true },
+						nome: { type: "string" },
+						tipomovimento: { type: "string" },
+						inativo: { type: "number" },
+						classe: { type: "string", nullable: true },
+						natureza: { type: "string", nullable: true },
+						idplanocontas: { type: "string", nullable: true },
+						idgrupodre: { type: "number", nullable: true },
+						currenttimemillis: { type: "number", nullable: true },
+						centrocustoobrigatorio: { type: "number", nullable: true },
+						tipoconta: { type: "number", nullable: true },
+						idcontacontabilintegracao: { type: "number", nullable: true },
+						exportaparacontabilidade: { type: "number", nullable: true },
+					},
+				},
+				filhos: {
+					type: "array",
+					items: {
+						type: "object",
+						properties: {
+							id: { type: "string" },
+							codigo: { type: "string", nullable: true },
+						},
+					},
+				},
 			},
 		},
 		400: {
@@ -339,11 +355,12 @@ export const atualizarPlanoContasSchema: FastifySchema = {
 			},
 			tipomovimento: {
 				type: "string",
-				description: "Tipo de movimento (D para Débito, C para Crédito)",
+				description: "Tipo de movimento (E para Entrada, S para Saída)",
 			},
 			inativo: {
-				type: "boolean",
-				description: "Indica se o plano de contas está inativo",
+				type: "number",
+				description:
+					"Indica se o plano de contas está inativo (0 para ativo, 1 para inativo)",
 			},
 			classe: {
 				type: "string",

@@ -23,8 +23,6 @@ export async function criarPlanoContasService(
 		"financeiro",
 	]);
 
-	console.log(temPermissao, roles);
-
 	if (!temPermissao) {
 		return httpProibido();
 	}
@@ -33,8 +31,6 @@ export async function criarPlanoContasService(
 		usuarioId,
 		dadosPlanoContas.idempresa,
 	);
-
-	console.log(usuarioPertenceEmpresa);
 
 	if (!usuarioPertenceEmpresa) {
 		return httpProibido();

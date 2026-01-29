@@ -9,7 +9,7 @@ const atualizarPlanoContasParamsSchema = z.object({
 const atualizarPlanoContasBodySchema = z.object({
 	nome: z.string().optional(),
 	tipomovimento: z.string().optional(),
-	inativo: z.boolean().optional(),
+	inativo: z.number().min(0).max(1).optional(),
 	classe: z.string().optional(),
 	idgrupodre: z.number().optional(),
 	currenttimemillis: z.number().optional(),
@@ -37,10 +37,6 @@ export async function atualizarPlanoContas(
 		const dados = atualizarPlanoContasBodySchema.parse(request.body);
 
 		const dadosAtualizacao: Record<string, unknown> = { ...dados };
-		if (dados.inativo !== undefined) {
-			dadosAtualizacao.inativo = dados.inativo ? 1 : 0;
-		}
-
 		const resultado = await atualizarPlanoContasService({
 			idplanocontas: id,
 			idusuario,

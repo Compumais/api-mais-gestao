@@ -35,12 +35,6 @@ export const auth = betterAuth({
 			updatedAt: "atualizadoem",
 		},
 		additionalFields: {
-			perfil: {
-				type: "string",
-				required: false,
-				defaultValue: "usuario",
-				input: false,
-			},
 			maxempresas: {
 				type: "number",
 				required: false,
@@ -110,10 +104,24 @@ export const auth = betterAuth({
 				.where(eq(schema.usuarios.id, user.id))
 				.limit(1);
 
+			const perfilRaw: unknown = dadosUsuario[0]?.perfil;
+			let perfil = "usuario";
+
+			if (perfilRaw) {
+				if (Array.isArray(perfilRaw) && perfilRaw.length > 0) {
+					const firstElement = perfilRaw[0];
+					if (typeof firstElement === "string") {
+						perfil = firstElement;
+					}
+				} else if (typeof perfilRaw === "string") {
+					perfil = perfilRaw;
+				}
+			}
+
 			return {
 				user: {
 					...user,
-					perfil: dadosUsuario[0]?.perfil || "usuario",
+					perfil: perfil,
 				},
 				session,
 			};

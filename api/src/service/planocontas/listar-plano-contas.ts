@@ -7,6 +7,7 @@ import { httpOk } from "@/util/http-util";
 type ListarPlanoContasParametros = {
 	idusuario: string;
 	idplanocontas?: string | undefined;
+	idempresa: string;
 	inativo?: boolean;
 	page?: number;
 	limit?: number;
@@ -24,6 +25,7 @@ type ListarPlanoContasResposta = {
 
 export async function listarPlanoContasService({
 	idusuario,
+	idempresa,
 	idplanocontas,
 	inativo,
 	page = 1,
@@ -48,7 +50,7 @@ export async function listarPlanoContasService({
 	const inativoFiltro = inativo ? 1 : 0; // 0 para ativo, 1 para inativo
 
 	const { planosContas, total } = await listarPlanoContasPorEmpresas({
-		idempresas,
+		idempresas: [idempresa],
 		idplanocontas,
 		inativo: inativoFiltro,
 		page,

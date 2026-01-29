@@ -8,8 +8,8 @@ const criarPlanoContasSchema = z.object({
 	idempresa: z.string(),
 	codigo: z.string().optional(),
 	nome: z.string(),
-	tipomovimento: z.string(),
-	inativo: z.boolean(),
+	tipomovimento: z.enum(["E", "S"]),
+	inativo: z.number().min(0).max(1),
 	classe: z.string().optional(),
 	natureza: z.string().optional(),
 	idplanocontas: z.string().optional(),
@@ -26,14 +26,14 @@ export async function criarPlanoContas(
 	reply: FastifyReply,
 ) {
 	try {
-		console.log(request.user);
-
 		if (!request.user) {
 			return reply.status(401).send({
 				error: "Não autorizado",
 				code: "UNAUTHORIZED",
 			});
 		}
+
+		console.log(request.user);
 
 		const usuarioId = request.user.id;
 
@@ -53,7 +53,7 @@ export async function criarPlanoContas(
 			idempresa: dadosValidados.idempresa,
 			nome: dadosValidados.nome,
 			tipomovimento: dadosValidados.tipomovimento,
-			inativo: dadosValidados.inativo ? 1 : 0,
+			inativo: dadosValidados.inativo,
 			classe: dadosValidados.classe,
 			idgrupodre: dadosValidados.idgrupodre,
 			currenttimemillis: dadosValidados.currenttimemillis,
@@ -63,8 +63,6 @@ export async function criarPlanoContas(
 			exportaparacontabilidade: dadosValidados.exportaparacontabilidade,
 			idplanocontas: dadosValidados.idplanocontas,
 		};
-
-		console.log(request.user);
 
 		const resultado = await criarPlanoContasService(
 			dadosPlanoContas,
