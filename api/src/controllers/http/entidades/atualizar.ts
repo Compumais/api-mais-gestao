@@ -7,13 +7,24 @@ const atualizarEntidadeParamsSchema = z.object({
 });
 
 const atualizarEntidadeBodySchema = z.object({
-	nome: z.string().min(1).optional(),
-	email: z.email().optional().nullable(),
-	telefone: z.string().optional().nullable(),
-	endereco: z.string().optional().nullable(),
-	cidade: z.string().optional().nullable(),
-	estado: z.string().optional().nullable(),
-	cep: z.string().optional().nullable(),
+	nome: z.string().min(1).max(60).optional(),
+	cnpjcpf: z.string().min(1).max(20).optional(),
+	razaosocial: z.string().max(60).optional().nullable(),
+	tipopessoa: z.number().int().min(0).max(1).optional().nullable(),
+	inscricaoestadual: z.string().max(20).optional().nullable(),
+	rg: z.string().max(20).optional().nullable(),
+	email: z.string().email().max(200).optional().nullable(),
+	telefone: z.string().max(40).optional().nullable(),
+	endereco: z.string().max(60).optional().nullable(),
+	numeroendereco: z.string().max(6).optional().nullable(),
+	complemento: z.string().max(50).optional().nullable(),
+	bairro: z.string().max(50).optional().nullable(),
+	idcidade: z.string().optional().nullable(),
+	idestado: z.string().optional().nullable(),
+	cep: z.string().max(6).optional().nullable(),
+	fax: z.string().max(40).optional().nullable(),
+	nascimento: z.string().optional().nullable(),
+	idplanocontas: z.string().optional().nullable(),
 	pais: z.string().optional().nullable(),
 });
 

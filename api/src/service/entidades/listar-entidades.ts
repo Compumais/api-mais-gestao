@@ -3,6 +3,7 @@ import type { HttpResponse } from "@/model/http-model";
 import {
 	buscarEmpresasDoUsuario,
 	listarEntidades,
+	verificarUsuarioPertenceEmpresa,
 } from "@/repositories/entidade-repositories";
 import { httpOk } from "@/util/http-util";
 
@@ -13,6 +14,7 @@ type ListarEntidadesParametros = {
 	telefone?: string | undefined;
 	page?: number;
 	limit?: number;
+	idempresa: string;
 };
 
 type ListarEntidadesResposta = {
@@ -27,15 +29,19 @@ type ListarEntidadesResposta = {
 
 export async function listarEntidadesService({
 	idusuario,
+	idempresa,
 	nome,
 	email,
 	telefone,
 	page = 1,
 	limit = 10,
 }: ListarEntidadesParametros): Promise<HttpResponse<ListarEntidadesResposta>> {
-	const idempresas = await buscarEmpresasDoUsuario(idusuario);
+	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
+		idusuario,
+		idempresa,
+	);
 
-	if (idempresas.length === 0) {
+	if (!usuarioPertenceEmpresa) {
 		return httpOk<ListarEntidadesResposta>({
 			data: [],
 			paginacao: {
@@ -48,7 +54,7 @@ export async function listarEntidadesService({
 	}
 
 	const { entidades, total } = await listarEntidades({
-		idempresas,
+		idempresa,
 		nome,
 		email,
 		telefone,

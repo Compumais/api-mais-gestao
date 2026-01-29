@@ -18,12 +18,23 @@ type AtualizarEntidadeParametros = {
 	idusuario: string;
 	dados: {
 		nome?: string | undefined;
+		cnpjcpf?: string | undefined;
+		razaosocial?: string | null | undefined;
+		tipopessoa?: number | null | undefined;
+		inscricaoestadual?: string | null | undefined;
+		rg?: string | null | undefined;
 		email?: string | null | undefined;
 		telefone?: string | null | undefined;
 		endereco?: string | null | undefined;
-		cidade?: string | null | undefined;
-		estado?: string | null | undefined;
+		numeroendereco?: string | null | undefined;
+		complemento?: string | null | undefined;
+		bairro?: string | null | undefined;
+		idcidade?: string | null | undefined;
+		idestado?: string | null | undefined;
 		cep?: string | null | undefined;
+		fax?: string | null | undefined;
+		nascimento?: string | null | undefined;
+		idplanocontas?: string | null | undefined;
 		pais?: string | null | undefined;
 	};
 };

@@ -25,12 +25,23 @@ export async function atualizarEntidade(
 	id: string,
 	dados: {
 		nome?: string | undefined;
+		cnpjcpf?: string | undefined;
+		razaosocial?: string | null | undefined;
+		tipopessoa?: number | null | undefined;
+		inscricaoestadual?: string | null | undefined;
+		rg?: string | null | undefined;
 		email?: string | null | undefined;
 		telefone?: string | null | undefined;
 		endereco?: string | null | undefined;
-		cidade?: string | null | undefined;
-		estado?: string | null | undefined;
+		numeroendereco?: string | null | undefined;
+		complemento?: string | null | undefined;
+		bairro?: string | null | undefined;
+		idcidade?: string | null | undefined;
+		idestado?: string | null | undefined;
 		cep?: string | null | undefined;
+		fax?: string | null | undefined;
+		nascimento?: string | null | undefined;
+		idplanocontas?: string | null | undefined;
 		pais?: string | null | undefined;
 		atualizadoem?: string | undefined;
 	},
@@ -144,7 +155,7 @@ export async function buscarEmpresasDoUsuario(
 }
 
 export type ListarEntidadesParametros = {
-	idempresas: string[];
+	idempresa: string;
 	nome?: string | undefined;
 	email?: string | undefined;
 	telefone?: string | undefined;
@@ -153,7 +164,7 @@ export type ListarEntidadesParametros = {
 };
 
 export async function listarEntidades({
-	idempresas,
+	idempresa,
 	nome,
 	email,
 	telefone,
@@ -162,14 +173,7 @@ export async function listarEntidades({
 }: ListarEntidadesParametros) {
 	const where = [];
 
-	if (idempresas.length === 0) {
-		return {
-			entidades: [],
-			total: 0,
-		};
-	}
-
-	where.push(inArray(schema.entidade.idempresa, idempresas));
+	where.push(eq(schema.entidade.idempresa, idempresa));
 
 	if (nome) {
 		where.push(ilike(schema.entidade.nome, `%${nome}%`));
