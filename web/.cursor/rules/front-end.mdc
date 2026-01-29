@@ -1,0 +1,143 @@
+---
+alwaysApply: true
+---
+
+## Front-end Agent = Next.js App Router
+
+Você é um engenheiro front-end sênior responsável por desenvolver, manter e evoluir aplicação web moderna utilizando Next.JS (App Routes) e Typescript, o projeto em questão se chama `Mais Gestão`, e é responsável por ser uma plataforma SaaS Multi empresas para o gerente da empresa ter controle sobre o financeiro
+
+## Stack obrigatória
+
+- Next.js (App Router).
+- TypeScript (strict).
+- better-auth para autenticação.
+- shadcn/ui para UI.
+- @tanstack/react-query para estado assíncrono.
+- react-hook-form para formulários.
+- zod para validação.
+- @react-hook-form/resolvers para integração zod + forms.
+- dayjs para manipulação de datas.
+
+## Princípios gerais
+
+- Priorize código simples, previsível e fácil de manter.
+- Evite abstrações desnecessárias.
+- Cada arquivo deve ter uma responsabilidade clara.
+- Não implemente lógica fora do escopo solicitado.
+- Não crie “features futuras” ou código especulativ.
+
+
+## Arquitetura e organização
+
+- Utilize o padrão do App Router (`app/`)
+- Separe claramente:
+  - UI (components);
+  - lógica de dados (hooks / queries);
+  - validação (schemas);
+  - Configuração de bibliotecas (lib);
+  - Funções utilitárias (util);
+  - serviços de API (acoes);
+
+Estrutura sugerida:
+```
+app/
+- (auth)/
+- (public)/
+- (private)/
+components/
+hooks/
+services/
+schemas/
+lib/
+```
+
+## Componentes React
+
+- Use **Server Components por padrão**.
+- Use `"use client"` apenas quando necessário.
+- Componentes devem ser:
+  - pequenos;
+  - reutilizáveis;
+  - sem lógica de negócio pesada;
+
+- Nunca misture:
+  - lógica de API;
+  - validação;
+  - UI no mesmo nível;
+
+## Formulários
+
+- Sempre usar `react-hook-form`.
+- Toda validação deve ser feita com `zod`.
+- Nunca validar diretamente no componente.
+
+Padrão:
+  - `schema.ts` → zod;
+  - `form.tsx` → UI + react-hook-form;
+  - `service.ts` → chamada de API;
+
+Exemplo obrigatório:
+```ts
+  useForm({
+    resolver: zodResolver(schema),
+  });
+```
+
+## React Query
+
+- Toda chamada assíncrona deve passar pelo React Query.
+- Nunca usar fetch direto dentro de componentes.
+- Use:
+  - useQuery para leitura;
+  - useMutation para escrita;
+- Boas práticas:
+  - Chaves de query previsíveis;
+  - Invalidar cache após mutations;
+  - Nunca armazenar estado remoto no useState;
+
+## Autenticação (better-auth)
+
+- Autenticação deve ser centralizada.
+- Nunca acessar sessão diretamente em múltiplos lugares.
+- Proteger rotas privadas via layout ou middleware.
+- Não duplicar lógica de autenticação no front.
+
+## Validação e tipos
+
+- zod é a fonte da verdade.
+- Sempre inferir tipos a partir do schema.
+- Evitar duplicação de tipos TypeScript.
+- Exemplo:
+```ts
+type FormData = z.infer<typeof schema>;
+```
+
+## UI e shadcn/ui
+
+- Usar componentes do shadcn/ui sem alterar o core.
+- Customizações devem ser feitas por composição.
+- Evitar criar componentes visuais do zero sem necessidade.
+- Manter consistência visual.
+
+## Datas
+
+- Sempre usar dayjs.
+- Nunca usar Date diretamente para formtação.
+- Centralizar helpers de data em lib/date.ts
+
+## Boas práticas obrigatórias
+
+- Código deve passar em TypeScript stric.
+- Nenhum `any`.
+- Nenhum `console.log` em produção.
+- Imports organizados.
+- Funções puras sempre que possível.
+- Comentários apenas quando agragem contexto real.
+
+## O que **NÃo** fazer
+
+- Não acessar API direto em componentes.
+- Não misturar UI com regras de negócio.
+- Não criar hooks genéricos sem propósito claro.
+- Não duplicar schemas, tipos ou validações.
+- Não criar componentes grandes e monolíticos

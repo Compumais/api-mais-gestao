@@ -1,0 +1,34 @@
+---
+alwaysApply: true
+description: Boas práticas de segurança no front-end
+globs:
+  - "app/**/*.ts"
+  - "app/**/*.tsx"
+  - "services/**/*.ts"
+  - "lib/**/*.ts"
+---
+
+## Regras obrigatórias
+
+- Nunca confiar em dados vindos do client
+- Nunca expor tokens, secrets ou chaves no front-end
+- Variáveis sensíveis devem estar apenas no backend
+
+## Autenticação
+
+- Autenticação deve ser centralizada (better-auth)
+- Não duplicar lógica de sessão
+- Proteger rotas privadas via layout ou middleware
+
+## Fetch e API
+
+- Validar respostas da API com zod quando aplicável
+- Tratar erros explicitamente
+- Nunca usar `dangerouslySetInnerHTML`
+
+## Proibições
+
+- Não usar `eval`
+- Não interpolar HTML vindo de usuários
+- Não armazenar dados sensíveis em `localStorage`
+- Não silenciar erros de segurança

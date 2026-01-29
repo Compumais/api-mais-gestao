@@ -1,0 +1,35 @@
+---
+alwaysApply: true
+description: Boas práticas de SEO para Next.js App Router
+  - "app/**/*.ts"
+  - "app/**/*.tsx"
+---
+
+## Regras obrigatórias
+
+- Toda rota pública deve definir metadata usando a API do Next.js
+- Usar `generateMetadata` quando os dados forem dinâmicos
+- Definir obrigatoriamente:
+  - title
+  - description
+  - openGraph
+  - robots quando aplicável
+
+## Conteúdo
+
+- Usar corretamente tags semânticas:
+  - header, main, nav, section, article, footer
+- Usar apenas um `<h1>` por página
+- Hierarquia correta de headings (`h1` → `h6`)
+
+## Performance SEO
+
+- Priorizar Server Components
+- Evitar JavaScript desnecessário no client
+- Usar `Image` do Next.js para imagens
+
+## Proibições
+
+- Não usar `<div>` quando existir tag semântica adequada
+- Não gerar metadata manualmente via `<head>`
+- Não duplicar titles e descriptions entre páginas

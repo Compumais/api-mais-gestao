@@ -1,0 +1,25 @@
+---
+alwaysApply: true
+description: Padrões para componentes React
+globs:
+  - "components/**/*.tsx"
+---
+
+## Regras
+
+- Componentes devem ser pequenos e reutilizáveis.
+- Um componente = uma responsabilidade.
+- Preferir composição ao invés de herança.
+- Props sempre tipadas explicitamente.
+
+## UI
+
+- Priorizar shadcn/ui.
+- Customizar apenas por composição.
+- Não duplicar componentes existentes.
+
+## Proibições
+
+- Não chamar APIs
+- Não usar React Query
+- Não conter validações de formulário

@@ -1,0 +1,23 @@
+---
+alwaysApply: true
+description: Padrões para hooks customizados
+globs:
+  - "hooks/**/*.ts"
+  - "hooks/**/*.tsx"
+---
+
+## Regras
+
+- Todo hook deve começar com `use`.
+- Hooks devem encapsular lógica reutilizavél.
+- Retornar apenas o necessário (evitar overexposing).
+
+## React Query
+
+- Hooks de dados devem encapsular `useQuery` ou `useMutation`.
+- Nunca usar `fetch` direto fora de hooks.
+
+## Proibições
+
+- Não conter JSX.
+- Não acessar DOM diretamente.

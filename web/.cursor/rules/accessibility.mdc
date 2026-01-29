@@ -1,0 +1,38 @@
+---
+alwaysApply: true
+description: Boas práticas de acessibilidade (a11y)
+globs:
+  - "app/**/*.tsx"
+  - "components/**/*.tsx"
+---
+
+## Regras obrigatórias
+
+- Todo componente interativo deve ser acessível por teclado
+- Elementos clicáveis devem ser:
+  - `<button>`
+  - `<a>`
+  - ou ter role e tabindex apropriados
+
+## Imagens e mídia
+
+- Toda imagem deve conter `alt` descritivo
+- Ícones decorativos devem usar `aria-hidden="true"`
+
+## Formulários
+
+- Inputs devem ter `label` associado
+- Mensagens de erro devem ser acessíveis (aria-live)
+- Campos obrigatórios devem ser indicados semanticamente
+
+## Semântica e ARIA
+
+- Usar ARIA apenas quando HTML semântico não for suficiente
+- Não abusar de `role`
+- Garantir contraste adequado de cores
+
+## Proibições
+
+- Não usar `div` ou `span` como botão
+- Não remover outline de foco sem alternativa acessível
+- Não criar interações apenas com mouse

@@ -1,0 +1,23 @@
+---
+alwaysApply: true
+description: Regras para services e chamadas API
+globs:
+  - "services/**/*.ts"
+---
+
+## Regras
+
+- Um service por domínio
+- Usar `fetch` ou client HTTP centralizado.
+- Retornar dados crus, sem formtação de UI.
+
+## Padrão
+
+- Nada de try/catch silencioso.
+- Erros devem ser propagados corretamente.
+
+## Proibições
+
+- Não usar React.
+- Não usar React Query.
+- Não conter validação de formulário.
