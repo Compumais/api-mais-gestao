@@ -30,7 +30,7 @@ export function NavSecondary({
 
 	return (
 		<SidebarGroup {...props}>
-			<SidebarGroupLabel>{label}</SidebarGroupLabel>
+			<SidebarGroupLabel className="select-none">{label}</SidebarGroupLabel>
 			<SidebarGroupContent>
 				<SidebarMenu>
 					{items.map((item) => {

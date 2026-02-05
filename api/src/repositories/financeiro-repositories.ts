@@ -48,6 +48,7 @@ interface ListarFinanceiroParametros {
 	limit?: number;
 	saldo?: string | null | undefined;
 	emissao?: string | null | undefined;
+	tipo?: "P" | "R" | null | undefined;
 }
 
 export async function listarFinanceiro({
@@ -56,6 +57,7 @@ export async function listarFinanceiro({
 	limit = 10,
 	saldo,
 	emissao,
+	tipo,
 }: ListarFinanceiroParametros) {
 	const offset = (page - 1) * limit;
 
@@ -67,6 +69,10 @@ export async function listarFinanceiro({
 
 	if (emissao) {
 		where.push(ilike(schema.financeiro.emissao, emissao));
+	}
+
+	if (tipo) {
+		where.push(eq(schema.financeiro.tipo, tipo));
 	}
 
 	const [totalCount, financeiros] = await Promise.all([

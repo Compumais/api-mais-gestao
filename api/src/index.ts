@@ -6,6 +6,7 @@ import Fastify from "fastify";
 import { authRotas } from "./controllers/http/auth/rotas.js";
 import { authenticationRoute } from "./controllers/http/authentication.js";
 import { bancosRotas } from "./controllers/http/bancos/rotas.js";
+import { contaCorrenteLancamentoRotas } from "./controllers/http/conta-corrente-lancamento/rotas.js";
 import { contaCorrenteRotas } from "./controllers/http/contacorrente/rotas.js";
 import { empresasRotas } from "./controllers/http/empresas/rotas.js";
 import { entidadesRotas } from "./controllers/http/entidades/rotas.js";
@@ -62,6 +63,10 @@ await app.register(swagger, {
 			{
 				name: "financeiro-lancamentos",
 				description: "Operações com lançamentos financeiros",
+			},
+			{
+				name: "conta-corrente-lancamentos",
+				description: "Operações com lançamentos de contas correntes",
 			},
 			{ name: "bancos", description: "Operações com bancos" },
 		],
@@ -278,6 +283,7 @@ app.register(empresasRotas);
 app.register(entidadesRotas);
 app.register(authRotas);
 app.register(contaCorrenteRotas);
+app.register(contaCorrenteLancamentoRotas);
 app.register(financeiroRotas);
 app.register(financeiroLancamentoRotas);
 app.register(bancosRotas);

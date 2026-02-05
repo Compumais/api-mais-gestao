@@ -8,6 +8,7 @@ type ListarFinanceirosParametros = {
 	idusuario: string;
 	saldo?: string | null | undefined;
 	emissao?: string | null | undefined;
+	tipo?: "P" | "R" | null | undefined;
 	page?: number;
 	limit?: number;
 };
@@ -26,6 +27,7 @@ export async function listarFinanceirosService({
 	idusuario,
 	saldo,
 	emissao,
+	tipo,
 	page = 1,
 	limit = 10,
 }: ListarFinanceirosParametros): Promise<
@@ -49,6 +51,7 @@ export async function listarFinanceirosService({
 		idempresas,
 		saldo,
 		emissao,
+		tipo,
 		page,
 		limit,
 	});

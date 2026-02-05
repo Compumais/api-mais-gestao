@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { count, desc, eq, sql } from "drizzle-orm";
 import type { NovaContaCorrenteLancamento } from "@/model/conta-corrente-lancamento-model";
 import * as schema from "../../drizzle/schema.js";
 import { db } from "./connection.js";
@@ -20,11 +20,47 @@ export async function buscarContaCorrenteLancamentoPorId({
 	id: string;
 }) {
 	const [contaCorrenteLancamento] = await db
-		.select()
+		.select({
+			id: schema.contacorrentelancamento.id,
+			idcontacorrente: schema.contacorrentelancamento.idcontacorrente,
+			datahora: schema.contacorrentelancamento.datahora,
+			tipo: schema.contacorrentelancamento.tipo,
+			valor: schema.contacorrentelancamento.valor,
+			saldoanterior: schema.contacorrentelancamento.saldoanterior,
+			saldoatual: schema.contacorrentelancamento.saldoatual,
+			historico: schema.contacorrentelancamento.historico,
+			idusuario: schema.contacorrentelancamento.idusuario,
+			idplanocontas: schema.contacorrentelancamento.idplanocontas,
+			evento: schema.contacorrentelancamento.evento,
+			debito: schema.contacorrentelancamento.debito,
+			documento: schema.contacorrentelancamento.documento,
+			currenttimemillis: schema.contacorrentelancamento.currenttimemillis,
+			identificado: schema.contacorrentelancamento.identificado,
+			depositonaoidentificado:
+				schema.contacorrentelancamento.depositonaoidentificado,
+			tiporateiocentrocusto: schema.contacorrentelancamento.tiporateiocentrocusto,
+			idlancamentotransferencia:
+				schema.contacorrentelancamento.idlancamentotransferencia,
+			dataconciliacao: schema.contacorrentelancamento.dataconciliacao,
+			idusuarioconciliacao: schema.contacorrentelancamento.idusuarioconciliacao,
+			idlancamentoestornado: schema.contacorrentelancamento.idlancamentoestornado,
+			planocontas_nome: schema.planocontas.nome,
+			planocontas_codigo: schema.planocontas.codigo,
+			contacorrente_descricao: schema.contacorrente.descricao,
+			contacorrente_agencia: schema.contacorrente.agencia,
+		})
 		.from(schema.contacorrentelancamento)
+		.leftJoin(
+			schema.planocontas,
+			sql`${schema.contacorrentelancamento.idplanocontas}::text = ${schema.planocontas.id}`,
+		)
+		.leftJoin(
+			schema.contacorrente,
+			eq(schema.contacorrentelancamento.idcontacorrente, schema.contacorrente.id),
+		)
 		.where(eq(schema.contacorrentelancamento.id, id));
 
-	return contaCorrenteLancamento;
+	return contaCorrenteLancamento as LancamentoComRelacionamentos | undefined;
 }
 
 export async function buscarUltimoLancamentoContaCorrente({
@@ -45,6 +81,35 @@ export async function buscarUltimoLancamentoContaCorrente({
 	return ultimoLancamento;
 }
 
+export interface LancamentoComRelacionamentos {
+	id: string;
+	idcontacorrente: string;
+	datahora: string | null;
+	tipo: string | null;
+	valor: string | null;
+	saldoanterior: string | null;
+	saldoatual: string | null;
+	historico: string | null;
+	idusuario: string | null;
+	idplanocontas: number | null;
+	evento: number | null;
+	debito: string | null;
+	documento: string | null;
+	currenttimemillis: number | null;
+	identificado: number | null;
+	depositonaoidentificado: number | null;
+	tiporateiocentrocusto: number | null;
+	idlancamentotransferencia: number | null;
+	dataconciliacao: string | null;
+	idusuarioconciliacao: string | null;
+	idlancamentoestornado: number | null;
+	// Relacionamentos
+	planocontas_nome: string | null;
+	planocontas_codigo: string | null;
+	contacorrente_descricao: string | null;
+	contacorrente_agencia: string | null;
+}
+
 export async function listarLancamentoContaCorrentePorEmpresa({
 	idcontacorrente,
 	page = 1,
@@ -54,15 +119,68 @@ export async function listarLancamentoContaCorrentePorEmpresa({
 	page?: number;
 	limit?: number;
 }) {
-	const lancamentos = await db
-		.select()
-		.from(schema.contacorrentelancamento)
-		.where(eq(schema.contacorrentelancamento.idcontacorrente, idcontacorrente))
-		.orderBy(desc(schema.contacorrentelancamento.datahora))
-		.limit(limit)
-		.offset((page - 1) * limit);
+	const offset = (page - 1) * limit;
 
-	return lancamentos;
+	const [totalCount, lancamentos] = await Promise.all([
+		db
+			.select({ value: count() })
+			.from(schema.contacorrentelancamento)
+			.where(eq(schema.contacorrentelancamento.idcontacorrente, idcontacorrente)),
+		db
+			.select({
+				id: schema.contacorrentelancamento.id,
+				idcontacorrente: schema.contacorrentelancamento.idcontacorrente,
+				datahora: schema.contacorrentelancamento.datahora,
+				tipo: schema.contacorrentelancamento.tipo,
+				valor: schema.contacorrentelancamento.valor,
+				saldoanterior: schema.contacorrentelancamento.saldoanterior,
+				saldoatual: schema.contacorrentelancamento.saldoatual,
+				historico: schema.contacorrentelancamento.historico,
+				idusuario: schema.contacorrentelancamento.idusuario,
+				idplanocontas: schema.contacorrentelancamento.idplanocontas,
+				evento: schema.contacorrentelancamento.evento,
+				debito: schema.contacorrentelancamento.debito,
+				documento: schema.contacorrentelancamento.documento,
+				currenttimemillis: schema.contacorrentelancamento.currenttimemillis,
+				identificado: schema.contacorrentelancamento.identificado,
+				depositonaoidentificado:
+					schema.contacorrentelancamento.depositonaoidentificado,
+				tiporateiocentrocusto:
+					schema.contacorrentelancamento.tiporateiocentrocusto,
+				idlancamentotransferencia:
+					schema.contacorrentelancamento.idlancamentotransferencia,
+				dataconciliacao: schema.contacorrentelancamento.dataconciliacao,
+				idusuarioconciliacao:
+					schema.contacorrentelancamento.idusuarioconciliacao,
+				idlancamentoestornado:
+					schema.contacorrentelancamento.idlancamentoestornado,
+				planocontas_nome: schema.planocontas.nome,
+				planocontas_codigo: schema.planocontas.codigo,
+				contacorrente_descricao: schema.contacorrente.descricao,
+				contacorrente_agencia: schema.contacorrente.agencia,
+			})
+			.from(schema.contacorrentelancamento)
+			.leftJoin(
+				schema.planocontas,
+				sql`${schema.contacorrentelancamento.idplanocontas}::text = ${schema.planocontas.id}`,
+			)
+			.leftJoin(
+				schema.contacorrente,
+				eq(
+					schema.contacorrentelancamento.idcontacorrente,
+					schema.contacorrente.id,
+				),
+			)
+			.where(eq(schema.contacorrentelancamento.idcontacorrente, idcontacorrente))
+			.orderBy(desc(schema.contacorrentelancamento.datahora))
+			.limit(limit)
+			.offset(offset),
+	]);
+
+	return {
+		lancamentos: lancamentos as LancamentoComRelacionamentos[],
+		total: totalCount[0]?.value ?? 0,
+	};
 }
 
 export async function excluirContaCorrenteLancamento({ id }: { id: string }) {

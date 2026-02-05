@@ -9,6 +9,7 @@ import {
 	IconCreditCard,
 	IconDashboard,
 	IconHelp,
+	IconHistory,
 	IconListDetails,
 	IconMoneybag,
 	IconSearch,
@@ -103,6 +104,11 @@ const data = {
 			icon: IconSettings,
 		},
 		{
+			title: "Auditoria",
+			url: "/auditoria",
+			icon: IconHistory,
+		},
+		{
 			title: "Ajuda",
 			url: "#",
 			icon: IconHelp,
@@ -135,21 +141,64 @@ const data = {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const { user } = useAuth();
 
+	// Verificar se o usuário tem perfil "usuario"
+	const isUsuario = React.useMemo(() => {
+		if (!user?.perfil) return false;
+		// A API retorna o perfil como string (primeiro elemento do array)
+		return user.perfil === "usuario";
+	}, [user?.perfil]);
+
+	// Filtrar itens baseado no perfil
+	const navMainItems = React.useMemo(() => {
+		if (isUsuario) {
+			// Para usuário: apenas Dashboard e Clientes
+			return data.navMain.filter(
+				(item) => item.title === "Dashboard" || item.title === "Clientes",
+			);
+		}
+		return data.navMain;
+	}, [isUsuario]);
+
+	const navCloudsItems = React.useMemo(() => {
+		if (isUsuario) {
+			// Para usuário: apenas Movimentações
+			return data.navClouds.filter((item) => item.title === "Movimentações");
+		}
+		return data.navClouds;
+	}, [isUsuario]);
+
+	const navSecondaryItems = React.useMemo(() => {
+		if (isUsuario) {
+			// Para usuário: Configurações, Ajuda e Pesquisar (sem Auditoria)
+			return data.navSecondary.filter(
+				(item) =>
+					item.title === "Configurações" ||
+					item.title === "Ajuda" ||
+					item.title === "Pesquisar",
+			);
+		}
+		return data.navSecondary;
+	}, [isUsuario]);
+
 	return (
-		<Sidebar collapsible="offcanvas" {...props}>
+		<Sidebar collapsible="icon" {...props}>
 			<SidebarHeader>
 				<SidebarMenu className="flex flex-row items-center gap-1 select-none">
 					<CPlusIcon size={32} />
-					<h1 className="text-base font-semibold mb-0.5">Mais Gestão</h1>
+					<h1 className="text-base font-semibold mb-0.5 group-data-[collapsible=icon]:hidden">
+						Mais Gestão
+					</h1>
 				</SidebarMenu>
 			</SidebarHeader>
 			<SidebarContent>
-				<NavMain items={data.navMain} />
-				<NavSecondary label="Financeiro" items={data.navClouds} />
+				<NavMain items={navMainItems} />
+				{navCloudsItems.length > 0 && (
+					<NavSecondary label="Financeiro" items={navCloudsItems} />
+				)}
 				{/* <NavDocuments items={data.documents} /> */}
 				<NavSecondary
 					label="Outros"
-					items={data.navSecondary}
+					items={navSecondaryItems}
 					className="mt-auto"
 				/>
 			</SidebarContent>

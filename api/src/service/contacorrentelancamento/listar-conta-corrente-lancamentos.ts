@@ -1,6 +1,8 @@
-import type { ContaCorrenteLancamento } from "@/model/conta-corrente-lancamento-model";
 import type { HttpResponse } from "@/model/http-model";
-import { listarLancamentoContaCorrentePorEmpresa } from "@/repositories/conta-corrente-lancamento-repositories";
+import type { LancamentoComRelacionamentos } from "@/repositories/conta-corrente-lancamento-repositories";
+import {
+	listarLancamentoContaCorrentePorEmpresa,
+} from "@/repositories/conta-corrente-lancamento-repositories";
 import { httpOk } from "@/util/http-util";
 
 interface ListarContaCorrenteLancamentosParametros {
@@ -10,7 +12,7 @@ interface ListarContaCorrenteLancamentosParametros {
 }
 
 interface ListarContaCorrenteLancamentosResposta {
-	data: ContaCorrenteLancamento[];
+	data: LancamentoComRelacionamentos[];
 	paginacao: {
 		page: number;
 		limit: number;
@@ -26,13 +28,12 @@ export async function listarContaCorrenteLancamentosService({
 }: ListarContaCorrenteLancamentosParametros): Promise<
 	HttpResponse<ListarContaCorrenteLancamentosResposta>
 > {
-	const lancamentos = await listarLancamentoContaCorrentePorEmpresa({
+	const { lancamentos, total } = await listarLancamentoContaCorrentePorEmpresa({
 		idcontacorrente,
 		page,
 		limit,
 	});
 
-	const total = lancamentos.length;
 	const totalPages = Math.ceil(total / limit);
 
 	return httpOk<ListarContaCorrenteLancamentosResposta>({
