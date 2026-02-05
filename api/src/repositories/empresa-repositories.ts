@@ -1,4 +1,4 @@
-import { and, count, desc, eq, ilike } from "drizzle-orm";
+import { and, count, desc, eq, ilike, inArray } from "drizzle-orm";
 import * as schema from "../../drizzle/schema.js";
 import { db } from "./connection.js";
 
@@ -96,6 +96,7 @@ export async function verificarDadosAssociados(idempresa: string) {
 }
 
 export type ListarEmpresasParametros = {
+	idusuario?: string | undefined;
 	idproprietario?: string | undefined;
 	nome?: string | undefined;
 	cnpj?: string | undefined;
@@ -105,6 +106,7 @@ export type ListarEmpresasParametros = {
 };
 
 export async function listarEmpresas({
+	idusuario,
 	idproprietario,
 	nome,
 	cnpj,
@@ -113,6 +115,19 @@ export async function listarEmpresas({
 	limit = 10,
 }: ListarEmpresasParametros) {
 	const where = [];
+	if (idusuario) {
+		const empresasUsuarioEmpresa = await db
+			.select({ idempresa: schema.usuarioEmpresa.idempresa })
+			.from(schema.usuarioEmpresa)
+			.where(eq(schema.usuarioEmpresa.idusuario, idusuario));
+		where.push(
+			inArray(
+				schema.empresa.id,
+				empresasUsuarioEmpresa.map((e) => e.idempresa),
+			),
+		);
+	}
+
 	if (idproprietario) {
 		where.push(eq(schema.empresa.idproprietario, idproprietario));
 	}

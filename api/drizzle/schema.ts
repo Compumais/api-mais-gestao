@@ -250,7 +250,7 @@ export const contacorrente = pgTable("contacorrente", {
 	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 	codigo: bigint({ mode: "number" }),
 	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-	idbanco: bigint({ mode: "number" }),
+	idbanco: text(),
 	agencia: varchar({ length: 25 }),
 	abertura: date(),
 	numeroconta: varchar({ length: 40 }),
@@ -381,7 +381,7 @@ export const contacorrentelancamento = pgTable(
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 		idcontacorrente: text().notNull(),
 		datahora: date(),
-		tipo: char({ length: 1 }),
+		tipo: char({ length: 1 }), // E ou S
 		valor: numeric({ precision: 12, scale: 2 }),
 		saldoanterior: numeric({ precision: 12, scale: 2 }),
 		saldoatual: numeric({ precision: 12, scale: 2 }),
@@ -424,7 +424,7 @@ export const financeiro = pgTable(
 		idempresa: text().notNull(),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 		identidade: text(),
-		tipo: char({ length: 1 }),
+		tipo: char({ length: 1 }), // P ou R
 		tipoorigem: smallint(),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 		idorigem: bigint({ mode: "number" }),
@@ -708,3 +708,27 @@ export const motivobaixafinanceiro = pgTable("motivobaixafinanceiro", {
 	inativo: integer().default(0),
 	currenttimemillis: bigint({ mode: "number" }).notNull(),
 });
+
+export const banco = pgTable(
+	"banco",
+	{
+		id: text().primaryKey().notNull(),
+		codigo: varchar({ length: 6 }).notNull(),
+		nome: varchar({ length: 60 }).notNull(),
+		currenttimemillis: bigint({ mode: "number" }).notNull(),
+		idempresa: text()
+			.notNull()
+			.references(() => empresa.id, {
+				onDelete: "cascade",
+			}),
+	},
+	(table) => [
+		foreignKey({
+			columns: [table.idempresa],
+			foreignColumns: [empresa.id],
+			name: "banco_idempresa_fkey",
+		})
+			.onUpdate("cascade")
+			.onDelete("cascade"),
+	],
+);

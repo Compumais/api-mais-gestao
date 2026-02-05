@@ -8,6 +8,20 @@
       "when": 1768417524586,
       "tag": "0000_green_mac_gargan",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1769792829062,
+      "tag": "0001_daffy_triton",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1770222546653,
+      "tag": "0002_sad_doctor_spectrum",
+      "breakpoints": true
     }
   ]
 }

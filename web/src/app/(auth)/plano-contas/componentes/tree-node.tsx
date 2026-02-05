@@ -47,7 +47,7 @@ interface TreeNodeProps {
 }
 
 export function TreeNode({ node, level = 0 }: TreeNodeProps) {
-	const { empresa } = useEmpresa();
+	const { localStorageEmpresa: empresa } = useEmpresa();
 	const [isExpanded, setIsExpanded] = useState(false);
 	const [hasLoadedChildren, setHasLoadedChildren] = useState(false);
 	const [isEditing, setIsEditing] = useState(false);

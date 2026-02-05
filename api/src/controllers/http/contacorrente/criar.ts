@@ -18,7 +18,7 @@ const criarContaCorrenteBodySchema = z.object({
 	gerente: z.string().max(40).optional(),
 	telefonegerente: z.string().max(20).optional(),
 	codigo: z.number().int().positive().optional(),
-	idbanco: z.number().int().positive().optional(),
+	idbanco: z.string().uuid().optional(),
 });
 
 export async function criarContaCorrente(
@@ -65,7 +65,6 @@ export async function criarContaCorrente(
 			id: auditoriaId,
 			idusuario: request.user.id,
 			acao: "criar_conta_corrente",
-			recursoId: contaCorrente.body?.id ?? "",
 			recurso: "conta_corrente",
 			criadoem: new Date().toISOString(),
 			metadados: {

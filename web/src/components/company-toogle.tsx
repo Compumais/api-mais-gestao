@@ -1,5 +1,10 @@
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
 import { Building2Icon, CheckIcon, PlusIcon } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/hooks/use-auth";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { Button } from "./ui/button";
 import {
@@ -11,8 +16,56 @@ import {
 	DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 
+interface Empresa {
+	id: string;
+	idproprietario: string;
+	nome: string;
+}
+
 export function CompanyToogle() {
-	const { empresas, selecionarEmpresa, empresa } = useEmpresa();
+	const {
+		createCompany,
+		listarEmpresas,
+		localStorageEmpresa,
+		selecionarEmpresa,
+	} = useEmpresa();
+	const { user } = useAuth();
+
+	const [empresa, setEmpresa] = useState<Empresa | null>(null);
+
+	const { data: empresas } = useQuery({
+		queryKey: ["empresas", user?.id],
+		queryFn: () => listarEmpresas({ idusuario: user?.id }),
+	});
+
+	useEffect(() => {
+		if (empresas && empresas.length > 0) {
+			// Verifica se a empresa atual ainda existe na lista
+			const empresaAtualExiste = empresa
+				? empresas.some((e) => e.id === empresa.id)
+				: false;
+
+			// Se a empresa atual não existe mais na lista ou não há empresa definida
+			if (!empresaAtualExiste) {
+				// Verifica se a empresa do localStorage existe na lista de empresas
+				const empresaLocalStorage = localStorageEmpresa
+					? empresas.find((e) => e.id === localStorageEmpresa.id)
+					: null;
+
+				if (empresaLocalStorage) {
+					// Se a empresa do localStorage existe na lista, usa ela
+					setEmpresa(empresaLocalStorage);
+					// Garante que está salva no localStorage
+					selecionarEmpresa(empresaLocalStorage);
+				} else {
+					// Se não existe, usa a primeira empresa da lista
+					const primeiraEmpresa = empresas[0];
+					setEmpresa(primeiraEmpresa);
+					selecionarEmpresa(primeiraEmpresa);
+				}
+			}
+		}
+	}, [empresas, localStorageEmpresa, selecionarEmpresa, empresa]);
 
 	return (
 		<DropdownMenu>
@@ -24,10 +77,13 @@ export function CompanyToogle() {
 			</DropdownMenuTrigger>
 			<DropdownMenuContent>
 				<DropdownMenuLabel>Selecione uma empresa</DropdownMenuLabel>
-				{empresas.map((empresaItem) => (
+				{empresas?.map((empresaItem) => (
 					<DropdownMenuItem
 						key={empresaItem.id}
-						onClick={() => selecionarEmpresa(empresaItem.id)}
+						onClick={() => {
+							selecionarEmpresa(empresaItem);
+							setEmpresa(empresaItem);
+						}}
 					>
 						{empresaItem.nome}
 						{empresaItem.id === empresa?.id && <CheckIcon className="size-4" />}

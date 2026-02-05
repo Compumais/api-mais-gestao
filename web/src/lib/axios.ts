@@ -40,9 +40,9 @@ api.interceptors.response.use(
 		if (error.response?.status === 401) {
 			if (typeof window !== "undefined") {
 				const currentPath = window.location.pathname;
-				if (currentPath !== "/login") {
+				if (currentPath !== "/entrar") {
 					localStorage.removeItem("token:mais-gestao");
-					window.location.href = "/login";
+					window.location.href = "/entrar";
 				}
 			}
 		}

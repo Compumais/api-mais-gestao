@@ -159,6 +159,10 @@ export const listarEmpresasSchema: FastifySchema = {
 				description: "Quantidade de itens por página (padrão: 10)",
 				default: 10,
 			},
+			idusuario: {
+				type: "string",
+				description: "Filtrar por ID do usuário",
+			},
 			idproprietario: {
 				type: "string",
 				description: "Filtrar por ID do proprietário",

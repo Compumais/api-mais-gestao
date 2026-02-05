@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -21,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { authService } from "@/services/auth.service";
 import { GoogleIcon } from "./icons/google-icon";
+import { Badge } from "./ui/badge";
 
 const TOKEN_KEY = "token:mais-gestao";
 
@@ -99,12 +101,12 @@ export function LoginForm({
 							<Field data-invalid={!!errors.password}>
 								<div className="flex items-center">
 									<FieldLabel htmlFor="password">Senha</FieldLabel>
-									<a
+									<Link
 										href="#"
 										className="ml-auto text-sm underline-offset-2 hover:underline"
 									>
 										Esqueceu sua senha?
-									</a>
+									</Link>
 								</div>
 								<Input
 									id="password"
@@ -126,13 +128,21 @@ export function LoginForm({
 								Ou continue com
 							</FieldSeparator>
 							<Field className="grid grid-cols-1 gap-4">
-								<Button variant="outline" type="button" disabled>
+								<Button
+									className="relative"
+									variant="outline"
+									type="button"
+									disabled
+								>
+									<Badge className="absolute top-[-10px] right-[-10px]">
+										Em breve
+									</Badge>
 									<GoogleIcon />
 									<span className="sr-only">Login com Google</span>
 								</Button>
 							</Field>
 							<FieldDescription className="text-center">
-								Não tem uma conta? <a href="#">Cadastre-se</a>
+								Não tem uma conta? <Link href="/registrar">Cadastre-se</Link>
 							</FieldDescription>
 						</FieldGroup>
 					</form>
@@ -148,8 +158,9 @@ export function LoginForm({
 				</CardContent>
 			</Card>
 			<FieldDescription className="px-6 text-center">
-				Ao continuar, você concorda com nossos <a href="#">Termos de Serviço</a>{" "}
-				e <a href="#">Política de Privacidade</a>.
+				Ao continuar, você concorda com nossos{" "}
+				<Link href="#">Termos de Serviço</Link> e{" "}
+				<Link href="#">Política de Privacidade</Link>.
 			</FieldDescription>
 		</div>
 	);

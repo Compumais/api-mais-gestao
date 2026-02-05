@@ -1,8 +1,13 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { empresasService } from "@/services/empresas.service";
+
+interface Empresa {
+	id: string;
+	idproprietario: string;
+	nome: string;
+}
 
 interface CriarEmpresa {
 	nome: string;
@@ -11,78 +16,69 @@ interface CriarEmpresa {
 	idproprietario: string;
 }
 
-const EMPRESA_SELECIONADA_KEY = "empresa:mais-gestao";
-const EMPRESA_SELECIONADA_QUERY_KEY = ["empresa-selecionada"];
-
 export function useEmpresa() {
-	const queryClient = useQueryClient();
+	const EMPRESA_SELECIONADA_KEY = "empresa:mais-gestao";
+	const [empresa, setEmpresa] = useState<Empresa | null>(() => {
+		if (typeof window === "undefined") return null;
 
-	const { data: empresas } = useQuery({
-		queryKey: ["empresas"],
-		queryFn: () => empresasService.listar(),
-	});
+		try {
+			const localStorageEmpresa = localStorage.getItem(EMPRESA_SELECIONADA_KEY);
+			if (!localStorageEmpresa) return null;
 
-	const { data: empresaSelecionadaId } = useQuery({
-		queryKey: EMPRESA_SELECIONADA_QUERY_KEY,
-		queryFn: () => {
-			if (typeof window === "undefined") {
-				return null;
+			const parsed = JSON.parse(localStorageEmpresa);
+			// Verifica se o valor parseado é um objeto válido
+			if (parsed && typeof parsed === "object" && parsed.id) {
+				return parsed;
 			}
-			return localStorage.getItem(EMPRESA_SELECIONADA_KEY);
-		},
-		staleTime: Infinity,
-	});
-
-	const selecionarEmpresa = (id: string) => {
-		const novaEmpresa = empresas?.data.find((e) => e.id === id);
-		if (novaEmpresa) {
-			if (typeof window !== "undefined") {
-				localStorage.setItem(EMPRESA_SELECIONADA_KEY, id);
-			}
-			queryClient.setQueryData(EMPRESA_SELECIONADA_QUERY_KEY, id);
-			// Remove queries antigas - o React Query refaz automaticamente quando a query key muda
-			queryClient.removeQueries({ queryKey: ["plano-contas"] });
+			return null;
+		} catch {
+			// Se houver erro no parse, limpa o localStorage e retorna null
+			localStorage.removeItem(EMPRESA_SELECIONADA_KEY);
+			return null;
 		}
-	};
-
-	const { mutate: criarEmpresa } = useMutation({
-		mutationFn: (data: CriarEmpresa) => empresasService.criar(data),
 	});
+
+	async function listarEmpresas(params: {
+		idusuario?: string;
+		page?: number;
+		limit?: number;
+	}) {
+		const { idusuario, page, limit } = params;
+
+		const { data } = await empresasService.listar({
+			idusuario,
+			page,
+			limit,
+		});
+
+		return data;
+	}
+
+	const selecionarEmpresa = useCallback((empresa: Empresa) => {
+		localStorage.setItem(EMPRESA_SELECIONADA_KEY, JSON.stringify(empresa));
+		setEmpresa(empresa);
+	}, []);
+
+	function createCompany(data: CriarEmpresa) {
+		return empresasService.criar(data);
+	}
+
+	function clearEmpresa() {
+		localStorage.removeItem(EMPRESA_SELECIONADA_KEY);
+		setEmpresa(null);
+	}
 
 	useEffect(() => {
-		if (!empresas?.data || empresas.data.length === 0) {
-			return;
+		if (empresa) {
+			localStorage.setItem(EMPRESA_SELECIONADA_KEY, JSON.stringify(empresa));
 		}
-
-		const empresaValida = empresaSelecionadaId
-			? empresas.data.find((e) => e.id === empresaSelecionadaId)
-			: null;
-
-		const empresaFallback = empresaValida ?? empresas.data[0];
-		if (!empresaFallback) {
-			return;
-		}
-
-		if (empresaFallback.id !== empresaSelecionadaId) {
-			if (typeof window !== "undefined") {
-				localStorage.setItem(EMPRESA_SELECIONADA_KEY, empresaFallback.id);
-			}
-			queryClient.setQueryData(
-				EMPRESA_SELECIONADA_QUERY_KEY,
-				empresaFallback.id,
-			);
-		}
-	}, [empresas?.data, empresaSelecionadaId, queryClient]);
-
-	const empresaAtual =
-		empresas?.data.find((e) => e.id === empresaSelecionadaId) ??
-		empresas?.data[0] ??
-		null;
+	}, [empresa]);
 
 	return {
-		empresa: empresaAtual,
-		empresas: empresas?.data || [],
+		createCompany,
+		listarEmpresas,
 		selecionarEmpresa,
-		criarEmpresa,
+		clearEmpresa,
+		localStorageEmpresa: empresa,
 	};
 }

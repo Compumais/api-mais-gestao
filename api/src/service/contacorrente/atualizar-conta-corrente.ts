@@ -21,7 +21,7 @@ type AtualizarContaCorrenteParametros = {
 		gerente?: string | null | undefined;
 		telefonegerente?: string | null | undefined;
 		codigo?: number | null | undefined;
-		idbanco?: number | null | undefined;
+		idbanco?: string | null | undefined;
 	};
 };
 

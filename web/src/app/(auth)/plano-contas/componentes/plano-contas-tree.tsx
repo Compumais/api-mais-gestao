@@ -49,7 +49,7 @@ function RootDropZone() {
 }
 
 export function PlanoContasTree() {
-	const { empresa } = useEmpresa();
+	const { localStorageEmpresa: empresa } = useEmpresa();
 	const [activeId, setActiveId] = useState<string | null>(null);
 	const queryClient = useQueryClient();
 

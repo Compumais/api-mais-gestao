@@ -217,7 +217,10 @@ export default function ClientesPage() {
 									{table.getHeaderGroups().map((headerGroup) => (
 										<TableRow key={headerGroup.id}>
 											{headerGroup.headers.map((header) => (
-												<TableHead key={header.id}>
+												<TableHead
+													className={header.id === "acoes" ? "text-right" : ""}
+													key={header.id}
+												>
 													{header.isPlaceholder
 														? null
 														: flexRender(

@@ -6,6 +6,7 @@ const listarEmpresasQuerySchema = z.object({
 	page: z.coerce.number().min(1).optional().default(1),
 	limit: z.coerce.number().min(1).max(100).optional().default(10),
 	idproprietario: z.string().optional(),
+	idusuario: z.string().optional(),
 	nome: z.string().optional(),
 	cnpj: z.string().optional(),
 	telefone: z.string().optional(),

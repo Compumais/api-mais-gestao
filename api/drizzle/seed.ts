@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import { auth } from "../src/lib/auth.js";
 import { db } from "../src/repositories/connection.js";
+import { BANCOS_PADRAO } from "../src/util/bancos-padrao.js";
 import * as schema from "./schema.js";
 
 dotenv.config();
@@ -162,6 +163,31 @@ async function seed() {
 				atualizadoem: agora,
 			},
 		]);
+
+		// Criar bancos padrão para cada empresa
+		console.log("🏦 Criando bancos padrão...");
+		const bancosEmpresa1 = BANCOS_PADRAO.map((banco) => ({
+			id: uuidv4(),
+			idempresa: empresa1Id,
+			codigo: banco.codigo,
+			nome: banco.nome,
+			currenttimemillis: timestampMillis,
+		}));
+
+		const bancosEmpresa2 = BANCOS_PADRAO.map((banco) => ({
+			id: uuidv4(),
+			idempresa: empresa2Id,
+			codigo: banco.codigo,
+			nome: banco.nome,
+			currenttimemillis: timestampMillis,
+		}));
+
+		await db
+			.insert(schema.banco)
+			.values([...bancosEmpresa1, ...bancosEmpresa2]);
+		console.log(
+			`  ✅ ${bancosEmpresa1.length} bancos padrão criados para cada empresa (total: ${bancosEmpresa1.length + bancosEmpresa2.length})`,
+		);
 
 		// Criar entidades (entidades/fornecedores)
 		console.log("👤 Criando entidades...");
@@ -407,6 +433,9 @@ async function seed() {
 		console.log("  - 2 usuários (admin e comum) com senha: 12345678");
 		console.log("  - 2 empresas");
 		console.log("  - 2 relacionamentos usuário-empresa");
+		console.log(
+			`  - ${BANCOS_PADRAO.length * 2} bancos padrão (${BANCOS_PADRAO.length} por empresa)`,
+		);
 		console.log("  - 2 entidades");
 		console.log("  - 2 planos de contas");
 		console.log("  - 1 conta corrente");

@@ -25,6 +25,7 @@ interface ListarEmpresasResponse {
 
 export const empresasService = {
 	async listar(params?: {
+		idusuario?: string;
 		page?: number;
 		limit?: number;
 	}): Promise<ListarEmpresasResponse> {

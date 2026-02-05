@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { useEmpresa } from "@/hooks/use-empresa";
 
 interface ProtectedRouteProps {
 	children: React.ReactNode;
@@ -10,15 +11,18 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
 	const { isAuthenticated, isLoading } = useAuth();
+	const { localStorageEmpresa } = useEmpresa();
 	const router = useRouter();
-
-	console.log(isAuthenticated, isLoading);
 
 	useEffect(() => {
 		if (!isLoading && !isAuthenticated) {
-			router.push("/login");
+			router.push("/entrar");
 		}
-	}, [isAuthenticated, isLoading, router]);
+
+		if (!localStorageEmpresa) {
+			router.push("/empresas/nova");
+		}
+	}, [isAuthenticated, isLoading, router, localStorageEmpresa]);
 
 	if (isLoading) {
 		return (

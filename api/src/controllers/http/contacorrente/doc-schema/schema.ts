@@ -73,7 +73,8 @@ export const criarContaCorrenteSchema: FastifySchema = {
 				description: "Código interno da conta",
 			},
 			idbanco: {
-				type: "number",
+				type: "string",
+				format: "uuid",
 				nullable: true,
 				description: "ID do banco relacionado",
 			},
@@ -100,7 +101,7 @@ export const criarContaCorrenteSchema: FastifySchema = {
 				gerente: { type: "string", nullable: true },
 				telefonegerente: { type: "string", nullable: true },
 				codigo: { type: "number", nullable: true },
-				idbanco: { type: "number", nullable: true },
+				idbanco: { type: "string", format: "uuid", nullable: true },
 			},
 		},
 		400: {
@@ -164,7 +165,7 @@ export const buscarContaCorrenteSchema: FastifySchema = {
 				gerente: { type: "string", nullable: true },
 				telefonegerente: { type: "string", nullable: true },
 				codigo: { type: "number", nullable: true },
-				idbanco: { type: "number", nullable: true },
+				idbanco: { type: "string", format: "uuid", nullable: true },
 			},
 		},
 		400: {
@@ -356,7 +357,8 @@ export const atualizarContaCorrenteSchema: FastifySchema = {
 				description: "Código interno da conta",
 			},
 			idbanco: {
-				type: "number",
+				type: "string",
+				format: "uuid",
 				nullable: true,
 				description: "ID do banco relacionado",
 			},
@@ -380,7 +382,7 @@ export const atualizarContaCorrenteSchema: FastifySchema = {
 				gerente: { type: "string", nullable: true },
 				telefonegerente: { type: "string", nullable: true },
 				codigo: { type: "number", nullable: true },
-				idbanco: { type: "number", nullable: true },
+				idbanco: { type: "string", format: "uuid", nullable: true },
 			},
 		},
 		400: {

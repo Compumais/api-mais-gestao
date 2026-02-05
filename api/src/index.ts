@@ -5,10 +5,12 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import Fastify from "fastify";
 import { authRotas } from "./controllers/http/auth/rotas.js";
 import { authenticationRoute } from "./controllers/http/authentication.js";
+import { bancosRotas } from "./controllers/http/bancos/rotas.js";
 import { contaCorrenteRotas } from "./controllers/http/contacorrente/rotas.js";
 import { empresasRotas } from "./controllers/http/empresas/rotas.js";
 import { entidadesRotas } from "./controllers/http/entidades/rotas.js";
 import { financeiroRotas } from "./controllers/http/financeiro/rotas.js";
+import { financeiroLancamentoRotas } from "./controllers/http/financeirolancamento/rotas.js";
 import { planoContasRotas } from "./controllers/http/plano-contas/rotas.js";
 
 export const app = Fastify({ logger: true });
@@ -57,6 +59,11 @@ await app.register(swagger, {
 				name: "financeiro",
 				description: "Operações com registros financeiros",
 			},
+			{
+				name: "financeiro-lancamentos",
+				description: "Operações com lançamentos financeiros",
+			},
+			{ name: "bancos", description: "Operações com bancos" },
 		],
 	},
 });
@@ -272,6 +279,8 @@ app.register(entidadesRotas);
 app.register(authRotas);
 app.register(contaCorrenteRotas);
 app.register(financeiroRotas);
+app.register(financeiroLancamentoRotas);
+app.register(bancosRotas);
 
 app.listen({ port: 3333 }).then(() => {
 	console.log("HTTP server running on port 3333");

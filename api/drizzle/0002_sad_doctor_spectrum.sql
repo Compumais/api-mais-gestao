@@ -1,0 +1,1 @@
+ALTER TABLE "contacorrente" ALTER COLUMN "idbanco" SET DATA TYPE text;

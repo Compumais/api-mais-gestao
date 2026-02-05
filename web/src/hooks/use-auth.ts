@@ -34,7 +34,7 @@ export function useAuth() {
 				localStorage.removeItem(TOKEN_KEY);
 			}
 			setUser(null);
-			router.push("/login");
+			router.push("/entrar");
 		}
 	};
 

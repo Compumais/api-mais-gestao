@@ -1,26 +1,23 @@
 "use client";
 
 import {
-	IconCamera,
+	IconArrowsLeftRight,
+	IconBuildingBank,
+	IconCashBanknoteMinus,
+	IconCashBanknotePlus,
 	IconChartBar,
+	IconCreditCard,
 	IconDashboard,
-	IconDatabase,
-	IconFileAi,
-	IconFileDescription,
-	IconFileWord,
-	IconFolder,
 	IconHelp,
-	IconInnerShadowTop,
 	IconListDetails,
 	IconMoneybag,
-	IconReport,
 	IconSearch,
 	IconSettings,
+	IconUser,
 	IconUsers,
 } from "@tabler/icons-react";
 import * as React from "react";
 
-import { NavDocuments } from "@/components/nav-documents";
 import { NavMain } from "@/components/nav-main";
 import { NavSecondary } from "@/components/nav-secondary";
 import { NavUser } from "@/components/nav-user";
@@ -30,8 +27,6 @@ import {
 	SidebarFooter,
 	SidebarHeader,
 	SidebarMenu,
-	SidebarMenuButton,
-	SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/use-auth";
 import { CPlusIcon } from "./icons/c-plus";
@@ -48,68 +43,57 @@ const data = {
 			url: "/clientes",
 			icon: IconUsers,
 		},
+		// {
+		// 	title: "Fornecedores",
+		// 	url: "/fornecedores",
+		// 	icon: IconBuilding,
+		// },
+		{
+			title: "Usuários",
+			url: "/usuarios",
+			icon: IconUser,
+		},
+	],
+	navClouds: [
 		{
 			title: "Plano de contas",
 			url: "/plano-contas",
 			icon: IconListDetails,
 		},
 		{
+			title: "Bancos",
+			url: "/bancos",
+			icon: IconBuildingBank,
+		},
+		{
+			title: "Contas correntes",
+			url: "/contas-correntes",
+			icon: IconCreditCard,
+		},
+		{
 			title: "Movimentações",
 			url: "/movimentacoes",
-			icon: IconMoneybag,
+			icon: IconArrowsLeftRight,
 		},
+		{
+			title: "Contas a receber",
+			url: "/contas-a-receber",
+			icon: IconCashBanknotePlus,
+		},
+		{
+			title: "Contas a pagar",
+			url: "/contas-a-pagar",
+			icon: IconCashBanknoteMinus,
+		},
+		// {
+		// 	title: "Conciliação",
+		// 	url: "#",
+		// 	icon: IconArrowsLeftRight,
+		// },
 		{
 			title: "Relatórios",
 			url: "/relatorios",
 			icon: IconChartBar,
-		},
-	],
-	navClouds: [
-		{
-			title: "Capture",
-			icon: IconCamera,
-			isActive: true,
-			url: "#",
-			items: [
-				{
-					title: "Active Proposals",
-					url: "#",
-				},
-				{
-					title: "Archived",
-					url: "#",
-				},
-			],
-		},
-		{
-			title: "Proposal",
-			icon: IconFileDescription,
-			url: "#",
-			items: [
-				{
-					title: "Active Proposals",
-					url: "#",
-				},
-				{
-					title: "Archived",
-					url: "#",
-				},
-			],
-		},
-		{
-			title: "Prompts",
-			icon: IconFileAi,
-			url: "#",
-			items: [
-				{
-					title: "Active Proposals",
-					url: "#",
-				},
-				{
-					title: "Archived",
-					url: "#",
-				},
-			],
 		},
 	],
 	navSecondary: [
@@ -129,23 +113,23 @@ const data = {
 			icon: IconSearch,
 		},
 	],
-	documents: [
-		{
-			name: "Data Library",
-			url: "#",
-			icon: IconDatabase,
-		},
-		{
-			name: "Reports",
-			url: "#",
-			icon: IconReport,
-		},
-		{
-			name: "Word Assistant",
-			url: "#",
-			icon: IconFileWord,
-		},
-	],
+	// documents: [
+	// 	{
+	// 		name: "Data Library",
+	// 		url: "#",
+	// 		icon: IconDatabase,
+	// 	},
+	// 	{
+	// 		name: "Reports",
+	// 		url: "#",
+	// 		icon: IconReport,
+	// 	},
+	// 	{
+	// 		name: "Word Assistant",
+	// 		url: "#",
+	// 		icon: IconFileWord,
+	// 	},
+	// ],
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -161,8 +145,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 			</SidebarHeader>
 			<SidebarContent>
 				<NavMain items={data.navMain} />
-				<NavDocuments items={data.documents} />
-				<NavSecondary items={data.navSecondary} className="mt-auto" />
+				<NavSecondary label="Financeiro" items={data.navClouds} />
+				{/* <NavDocuments items={data.documents} /> */}
+				<NavSecondary
+					label="Outros"
+					items={data.navSecondary}
+					className="mt-auto"
+				/>
 			</SidebarContent>
 			<SidebarFooter>
 				<NavUser user={user} />
