@@ -110,7 +110,7 @@ const createColumns = ({
 export default function ClientesPage() {
 	const router = useRouter();
 	const queryClient = useQueryClient();
-	const { empresa } = useEmpresa();
+	const { localStorageEmpresa } = useEmpresa();
 	const [sorting, setSorting] = useState<SortingState>([]);
 	const [pagination, setPagination] = useState({
 		pageIndex: 0,
@@ -120,21 +120,21 @@ export default function ClientesPage() {
 	const { data, isLoading } = useQuery({
 		queryKey: [
 			"entidades",
-			empresa?.id,
+			localStorageEmpresa?.id,
 			pagination.pageIndex + 1,
 			pagination.pageSize,
 		],
 		queryFn: async () => {
-			if (!empresa) {
+			if (!localStorageEmpresa) {
 				throw new Error("Empresa não selecionada");
 			}
 			return await entidadesService.listar({
-				idempresa: empresa.id,
+				idempresa: localStorageEmpresa.id,
 				page: pagination.pageIndex + 1,
 				limit: pagination.pageSize,
 			});
 		},
-		enabled: !!empresa,
+		enabled: !!localStorageEmpresa,
 	});
 
 	const { mutate: deletarEntidade } = useMutation({
@@ -193,14 +193,14 @@ export default function ClientesPage() {
 					<Button
 						onClick={() => router.push("/clientes/novo")}
 						className="gap-2"
-						disabled={!empresa}
+						disabled={!localStorageEmpresa}
 					>
 						<IconPlus className="size-4" />
 						Cadastrar Novo Cliente
 					</Button>
 				</div>
 				<div className="rounded-lg border bg-card mx-4">
-					{!empresa ? (
+					{!localStorageEmpresa ? (
 						<div className="flex items-center justify-center py-8">
 							<p className="text-muted-foreground">
 								Selecione uma empresa para visualizar os clientes
