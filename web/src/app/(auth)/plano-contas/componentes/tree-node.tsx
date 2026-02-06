@@ -1,6 +1,5 @@
 "use client";
 
-import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
 	ChevronRight,
@@ -77,37 +76,6 @@ export function TreeNode({ node, level = 0 }: TreeNodeProps) {
 
 	const children = childrenData?.data || [];
 
-	const {
-		attributes,
-		listeners,
-		setNodeRef: setDragRef,
-		transform,
-		isDragging,
-	} = useDraggable({
-		id: node.id,
-		data: {
-			type: "plano-contas",
-			node,
-		},
-	});
-
-	const { setNodeRef: setDropRef, isOver } = useDroppable({
-		id: node.id,
-		data: {
-			type: "plano-contas",
-			node,
-			accepts: ["plano-contas"],
-		},
-	});
-
-	const style = transform
-		? {
-				transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-			}
-		: undefined;
-
-	const isDraggingOver = isOver && !isDragging;
-
 	const handleToggle = (e: React.MouseEvent) => {
 		e.stopPropagation();
 		setIsExpanded(!isExpanded);
@@ -118,11 +86,12 @@ export function TreeNode({ node, level = 0 }: TreeNodeProps) {
 	};
 
 	// Quando os filhos são carregados, marca como carregado
+	// Isso evita recarregamentos desnecessários, mas permite quando hasLoadedChildren é resetado
 	useEffect(() => {
-		if (isExpanded && childrenData && !hasLoadedChildren) {
+		if (isExpanded && childrenData) {
 			setHasLoadedChildren(true);
 		}
-	}, [isExpanded, childrenData, hasLoadedChildren]);
+	}, [isExpanded, childrenData]);
 
 	// Foca no input quando entrar em modo de edição
 	useEffect(() => {
@@ -137,11 +106,28 @@ export function TreeNode({ node, level = 0 }: TreeNodeProps) {
 		setEditedName(node.nome || "");
 	}, [node.nome]);
 
+	// Reseta hasLoadedChildren quando o status inativo do node mudar
+	// Isso força recarregamento dos filhos quando o pai é ativado/inativado
+	const nodeInativoRef = useRef<number | undefined>(node.inativo);
+	useEffect(() => {
+		if (nodeInativoRef.current !== node.inativo) {
+			nodeInativoRef.current = node.inativo;
+			// Se estava expandido, reseta para forçar recarregamento
+			// Quando hasLoadedChildren é resetado para false, a query será habilitada novamente
+			if (isExpanded && hasLoadedChildren) {
+				setHasLoadedChildren(false);
+			}
+		}
+	}, [node.inativo, isExpanded, hasLoadedChildren]);
+
 	const updateMutation = useMutation({
 		mutationFn: (data: { nome?: string; inativo?: 0 | 1 }) =>
 			planoContasService.atualizar(node.id, data),
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["plano-contas"] });
+		onSuccess: async () => {
+			// Invalida todas as queries de plano de contas para refletir mudanças em pai e filhos
+			await queryClient.invalidateQueries({ queryKey: ["plano-contas"] });
+			// Refaz todas as queries relacionadas para atualizar imediatamente em tela
+			await queryClient.refetchQueries({ queryKey: ["plano-contas"] });
 			toast.success("Plano de contas atualizado com sucesso");
 			setIsEditing(false);
 		},
@@ -152,8 +138,10 @@ export function TreeNode({ node, level = 0 }: TreeNodeProps) {
 
 	const deleteMutation = useMutation({
 		mutationFn: () => planoContasService.deletar(node.id),
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["plano-contas"] });
+		onSuccess: async () => {
+			// Invalida e refaz todas as queries de plano de contas para refletir a exclusão em tela
+			await queryClient.invalidateQueries({ queryKey: ["plano-contas"] });
+			await queryClient.refetchQueries({ queryKey: ["plano-contas"] });
 			toast.success("Plano de contas excluído com sucesso");
 			setShowDeleteDialog(false);
 		},
@@ -191,28 +179,151 @@ export function TreeNode({ node, level = 0 }: TreeNodeProps) {
 		}
 	};
 
-	const handleInativar = () => {
+	// Função auxiliar para inativar filhos recursivamente
+	const inativarFilhosRecursivo = async (nodeId: string): Promise<void> => {
+		try {
+			// Busca filhos diretos
+			const filhosResponse = await planoContasService.listar({
+				idempresa: empresa?.id,
+				idplanocontas: nodeId,
+				limit: 100,
+			});
+
+			const filhos = filhosResponse.data;
+
+			if (filhos.length === 0) {
+				return;
+			}
+
+			// Inativa todos os filhos em paralelo
+			await Promise.all(
+				filhos.map(async (filho) => {
+					// Inativa o filho
+					await planoContasService.atualizar(filho.id, { inativo: 1 });
+					// Inativa recursivamente os filhos deste filho
+					await inativarFilhosRecursivo(filho.id);
+				}),
+			);
+		} catch (error) {
+			console.error("Erro ao inativar filhos recursivamente:", error);
+			throw error;
+		}
+	};
+
+	// Função auxiliar para ativar filhos recursivamente
+	const ativarFilhosRecursivo = async (nodeId: string): Promise<void> => {
+		try {
+			// Busca filhos diretos
+			const filhosResponse = await planoContasService.listar({
+				idempresa: empresa?.id,
+				idplanocontas: nodeId,
+				limit: 100,
+			});
+
+			const filhos = filhosResponse.data;
+
+			if (filhos.length === 0) {
+				return;
+			}
+
+			// Ativa todos os filhos em paralelo
+			await Promise.all(
+				filhos.map(async (filho) => {
+					// Ativa o filho
+					await planoContasService.atualizar(filho.id, { inativo: 0 });
+					// Ativa recursivamente os filhos deste filho
+					await ativarFilhosRecursivo(filho.id);
+				}),
+			);
+		} catch (error) {
+			console.error("Erro ao ativar filhos recursivamente:", error);
+			throw error;
+		}
+	};
+
+	const handleInativar = async () => {
 		const novoStatus = node.inativo ? 0 : 1;
-		updateMutation.mutate({ inativo: novoStatus });
+
+		// Se está inativando (novoStatus === 1), inativa os filhos também
+		if (novoStatus === 1) {
+			try {
+				// Primeiro inativa o pai
+				await planoContasService.atualizar(node.id, { inativo: 1 });
+				// Depois inativa todos os filhos recursivamente
+				await inativarFilhosRecursivo(node.id);
+				// Invalida todas as queries relacionadas (incluindo queries específicas dos filhos)
+				await queryClient.invalidateQueries({ queryKey: ["plano-contas"] });
+				// Refaz todas as queries para atualizar imediatamente em tela
+				await queryClient.refetchQueries({ queryKey: ["plano-contas"] });
+				// Reseta hasLoadedChildren para forçar recarregamento dos filhos quando expandido
+				// Quando hasLoadedChildren é resetado para false, a query será habilitada novamente automaticamente
+				if (isExpanded && hasLoadedChildren) {
+					setHasLoadedChildren(false);
+				}
+				toast.success(
+					"Plano de contas e seus filhos foram inativados com sucesso",
+				);
+			} catch (error) {
+				toast.error(
+					error instanceof Error
+						? error.message
+						: "Erro ao inativar plano de contas e seus filhos",
+				);
+			}
+		} else {
+			// Se está ativando, ativa os filhos também
+			try {
+				// Primeiro ativa o pai
+				await planoContasService.atualizar(node.id, { inativo: 0 });
+				// Depois ativa todos os filhos recursivamente
+				await ativarFilhosRecursivo(node.id);
+				// Invalida todas as queries relacionadas (incluindo queries específicas dos filhos)
+				await queryClient.invalidateQueries({ queryKey: ["plano-contas"] });
+				// Refaz todas as queries para atualizar imediatamente em tela
+				await queryClient.refetchQueries({ queryKey: ["plano-contas"] });
+				// Reseta hasLoadedChildren para forçar recarregamento dos filhos quando expandido
+				// Quando hasLoadedChildren é resetado para false, a query será habilitada novamente automaticamente
+				if (isExpanded && hasLoadedChildren) {
+					setHasLoadedChildren(false);
+				}
+				toast.success(
+					"Plano de contas e seus filhos foram ativados com sucesso",
+				);
+			} catch (error) {
+				toast.error(
+					error instanceof Error
+						? error.message
+						: "Erro ao ativar plano de contas e seus filhos",
+				);
+			}
+		}
 	};
 
 	const handleDelete = () => {
 		setShowDeleteDialog(true);
 	};
 
+	// Determina a cor baseada no tipo de movimento e status
+	const getTextColorClass = () => {
+		// Se estiver inativo, sempre retorna cor muted
+		if (node.inativo === 1) {
+			return "text-muted-foreground/70";
+		}
+		// Se estiver ativo, retorna cor baseada no tipo de movimento
+		if (node.tipomovimento === "E") {
+			return "text-green-800 dark:text-green-500";
+		}
+		if (node.tipomovimento === "S") {
+			return "text-red-800 dark:text-red-500";
+		}
+		return "";
+	};
+
 	return (
 		<div>
 			<div
-				ref={(node) => {
-					setDragRef(node);
-					setDropRef(node);
-				}}
-				style={style}
 				className={cn(
-					"group relative flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors",
-					isDragging && "opacity-50",
-					isDraggingOver && "bg-primary/10 ring-2 ring-primary",
-					!isDragging && "hover:bg-muted/50",
+					"group relative flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-muted/50",
 				)}
 			>
 				<div
@@ -256,7 +367,7 @@ export function TreeNode({ node, level = 0 }: TreeNodeProps) {
 									onChange={(e) => setEditedName(e.target.value)}
 									onBlur={handleNameSave}
 									onKeyDown={handleNameKeyDown}
-									className="h-7 text-sm"
+									className={cn("h-7 text-sm", getTextColorClass())}
 									onClick={(e) => e.stopPropagation()}
 								/>
 								<button
@@ -284,7 +395,10 @@ export function TreeNode({ node, level = 0 }: TreeNodeProps) {
 							<button
 								type="button"
 								onClick={handleNameClick}
-								className="text-sm font-medium text-left hover:underline focus:outline-none focus:underline"
+								className={cn(
+									"text-sm font-medium text-left hover:underline focus:outline-none focus:underline",
+									getTextColorClass(),
+								)}
 							>
 								{node.nome || "Sem nome"}
 							</button>
@@ -318,18 +432,6 @@ export function TreeNode({ node, level = 0 }: TreeNodeProps) {
 							</DropdownMenuItem>
 						</DropdownMenuContent>
 					</DropdownMenu>
-
-					{/** biome-ignore lint/a11y/noStaticElementInteractions: False positive */}
-					<div
-						{...attributes}
-						{...listeners}
-						className="cursor-grab active:cursor-grabbing rounded p-1"
-						onClick={(e) => e.stopPropagation()}
-						onKeyDown={(e) => e.stopPropagation()}
-						onKeyUp={(e) => e.stopPropagation()}
-					>
-						<div className="h-4 w-4 rounded border-2 border-dashed border-muted-foreground/30" />
-					</div>
 				</div>
 			</div>
 
@@ -343,20 +445,22 @@ export function TreeNode({ node, level = 0 }: TreeNodeProps) {
 						</div>
 					)}
 
-					{/* Botão para adicionar novo plano */}
-					<button
-						onClick={() => navigateToNewPlan(node.id)}
-						type="button"
-						className="group/add flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-muted/50 w-full mt-1"
-						style={{ paddingLeft: `${(level + 1) * 1.5}rem` }}
-					>
-						<div className="h-5 w-5 flex items-center justify-center">
-							<Plus className="h-4 w-4 text-muted-foreground" />
-						</div>
-						<span className="text-sm text-muted-foreground">
-							Adicionar novo plano
-						</span>
-					</button>
+					{/* Botão para adicionar novo plano - só aparece se o pai estiver ativo */}
+					{node.inativo !== 1 && (
+						<button
+							onClick={() => navigateToNewPlan(node.id)}
+							type="button"
+							className="group/add flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-muted/50 w-full mt-1"
+							style={{ paddingLeft: `${(level + 1) * 1.5}rem` }}
+						>
+							<div className="h-5 w-5 flex items-center justify-center">
+								<Plus className="h-4 w-4 text-muted-foreground" />
+							</div>
+							<span className="text-sm text-muted-foreground">
+								Adicionar novo plano
+							</span>
+						</button>
+					)}
 				</>
 			)}
 

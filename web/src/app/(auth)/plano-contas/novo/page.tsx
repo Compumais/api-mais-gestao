@@ -14,7 +14,6 @@ import {
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
 	Select,
 	SelectContent,
@@ -33,14 +32,14 @@ export default function Page() {
 	const searchParams = useSearchParams();
 	const router = useRouter();
 	const queryClient = useQueryClient();
-	const { empresa } = useEmpresa();
+	const { localStorageEmpresa } = useEmpresa();
 
 	const idplanocontas = searchParams.get("idplanocontas");
 
 	const form = useForm<CriarPlanoContasFormData>({
 		resolver: zodResolver(criarPlanoContasSchema),
 		defaultValues: {
-			idempresa: empresa!.id,
+			idempresa: localStorageEmpresa?.id ?? "",
 			nome: "",
 			tipomovimento: "E",
 			inativo: 0,
@@ -68,6 +67,9 @@ export default function Page() {
 		enabled: !!idplanocontas,
 	});
 
+	// Verifica se o plano pai está inativo
+	const planoPaiInativo = planoContas?.plano?.inativo === 1;
+
 	const { mutate: criarPlanoContas, isPending } = useMutation({
 		mutationFn: planoContasService.criar,
 		onSuccess: () => {
@@ -81,8 +83,21 @@ export default function Page() {
 	});
 
 	const onSubmit = (data: CriarPlanoContasFormData) => {
+		// Valida se o plano pai está inativo
+		if (idplanocontas && planoPaiInativo) {
+			toast.error(
+				"Não é possível criar plano de contas filho para um plano de contas pai inativo",
+			);
+			return;
+		}
+
+		if (!localStorageEmpresa?.id) {
+			toast.error("Empresa não selecionada");
+			return;
+		}
+
 		const payload = {
-			idempresa: empresa!.id,
+			idempresa: localStorageEmpresa.id,
 			nome: data.nome,
 			tipomovimento: data.tipomovimento,
 			inativo: 0 as 0 | 1,
@@ -97,6 +112,32 @@ export default function Page() {
 			<PageContainer>
 				<div className="flex items-center justify-center py-8">
 					<div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+				</div>
+			</PageContainer>
+		);
+	}
+
+	// Se o plano pai estiver inativo, mostra mensagem de erro
+	if (idplanocontas && planoPaiInativo) {
+		return (
+			<PageContainer>
+				<div className="flex items-center justify-between p-4">
+					<h1 className="text-2xl font-bold">Novo plano de contas</h1>
+				</div>
+				<div className="rounded-lg border bg-card p-4 mx-4">
+					<div className="flex flex-col items-center justify-center py-8 gap-4">
+						<p className="text-destructive text-center">
+							Não é possível criar plano de contas filho para um plano de contas
+							pai inativo.
+						</p>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => router.back()}
+						>
+							Voltar
+						</Button>
+					</div>
 				</div>
 			</PageContainer>
 		);

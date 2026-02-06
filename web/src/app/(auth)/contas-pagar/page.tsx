@@ -1,5 +1,6 @@
 "use client";
 
+import { IconPlus } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import {
 	type ColumnDef,
@@ -10,6 +11,7 @@ import {
 	type SortingState,
 	useReactTable,
 } from "@tanstack/react-table";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -44,16 +46,25 @@ const formatDate = (date: string | null | undefined) => {
 
 const getStatusBadge = (status: string | null | undefined) => {
 	if (!status) return <Badge variant="outline">-</Badge>;
-	
-	const statusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-		"A": { label: "Aberto", variant: "default" },
-		"P": { label: "Pago", variant: "secondary" },
-		"C": { label: "Cancelado", variant: "destructive" },
-		"V": { label: "Vencido", variant: "destructive" },
+
+	const statusMap: Record<
+		string,
+		{
+			label: string;
+			variant: "default" | "secondary" | "destructive" | "outline";
+		}
+	> = {
+		A: { label: "Aberto", variant: "default" },
+		P: { label: "Pago", variant: "secondary" },
+		C: { label: "Cancelado", variant: "destructive" },
+		V: { label: "Vencido", variant: "destructive" },
 	};
 
-	const statusInfo = statusMap[status] || { label: status, variant: "outline" as const };
-	
+	const statusInfo = statusMap[status] || {
+		label: status,
+		variant: "outline" as const,
+	};
+
 	return <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>;
 };
 
@@ -68,9 +79,7 @@ const columns: ColumnDef<Financeiro>[] = [
 	{
 		accessorKey: "emitente",
 		header: "Nome",
-		cell: ({ row }) => (
-			<div>{row.getValue("emitente") || "-"}</div>
-		),
+		cell: ({ row }) => <div>{row.getValue("emitente") || "-"}</div>,
 	},
 	{
 		accessorKey: "status",
@@ -80,16 +89,12 @@ const columns: ColumnDef<Financeiro>[] = [
 	{
 		accessorKey: "emissao",
 		header: "Emissão",
-		cell: ({ row }) => (
-			<div>{formatDate(row.getValue("emissao"))}</div>
-		),
+		cell: ({ row }) => <div>{formatDate(row.getValue("emissao"))}</div>,
 	},
 	{
 		accessorKey: "vencimento",
 		header: "Vencimento",
-		cell: ({ row }) => (
-			<div>{formatDate(row.getValue("vencimento"))}</div>
-		),
+		cell: ({ row }) => <div>{formatDate(row.getValue("vencimento"))}</div>,
 	},
 	{
 		accessorKey: "valor",
@@ -97,9 +102,7 @@ const columns: ColumnDef<Financeiro>[] = [
 		cell: ({ row }) => {
 			const valor = row.getValue("valor") as string;
 			return (
-				<div className="text-right font-medium">
-					{formatCurrency(valor)}
-				</div>
+				<div className="text-right font-medium">{formatCurrency(valor)}</div>
 			);
 		},
 	},
@@ -109,9 +112,7 @@ const columns: ColumnDef<Financeiro>[] = [
 		cell: ({ row }) => {
 			const saldo = row.getValue("saldo") as string;
 			return (
-				<div className="text-right font-medium">
-					{formatCurrency(saldo)}
-				</div>
+				<div className="text-right font-medium">{formatCurrency(saldo)}</div>
 			);
 		},
 	},
@@ -130,7 +131,8 @@ const columns: ColumnDef<Financeiro>[] = [
 ];
 
 export default function ContasAPagarPage() {
-	const { empresa } = useEmpresa();
+	const router = useRouter();
+	const { localStorageEmpresa: empresa } = useEmpresa();
 	const [sorting, setSorting] = useState<SortingState>([]);
 	const [pagination, setPagination] = useState({
 		pageIndex: 0,
@@ -140,7 +142,7 @@ export default function ContasAPagarPage() {
 	const { data, isLoading } = useQuery({
 		queryKey: [
 			"financeiro",
-			"contas-a-pagar",
+			"contas-pagar",
 			empresa?.id,
 			pagination.pageIndex + 1,
 			pagination.pageSize,
@@ -174,11 +176,43 @@ export default function ContasAPagarPage() {
 		pageCount: data?.paginacao.totalPages ?? 0,
 	});
 
+	useEffect(() => {
+		const handleKeyDown = (event: KeyboardEvent) => {
+			// Verifica se não está digitando em um input
+			const isInputFocused =
+				event.target instanceof HTMLInputElement ||
+				event.target instanceof HTMLTextAreaElement ||
+				event.target instanceof HTMLSelectElement;
+
+			if (isInputFocused) return; // Ignora se e	ver digitando
+
+			// F2 - Redireciona para Inclusão
+			if (event.key === "F2") {
+				event.preventDefault();
+				router.push("/contas-pagar/novo");
+			}
+		};
+
+		window.addEventListener("keydown", handleKeyDown);
+
+		return () => {
+			window.removeEventListener("keydown", handleKeyDown);
+		};
+	}, [router]);
+
 	return (
 		<PageContainer>
 			<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
 				<div className="flex items-center justify-between px-4">
 					<h1 className="text-2xl font-bold">Contas a Pagar</h1>
+					<Button
+						disabled={!empresa}
+						onClick={() => router.push("/contas-correntes/novo")}
+						className="gap-2"
+					>
+						<IconPlus className="size-4" />
+						Incluir (F2)
+					</Button>
 				</div>
 				<div className="rounded-lg border bg-card mx-4">
 					{!empresa ? (
@@ -277,4 +311,3 @@ export default function ContasAPagarPage() {
 		</PageContainer>
 	);
 }
-

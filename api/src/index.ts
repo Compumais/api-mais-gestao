@@ -3,6 +3,7 @@ import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import Fastify from "fastify";
+import { auditoriaRotas } from "./controllers/http/auditoria/rotas.js";
 import { authRotas } from "./controllers/http/auth/rotas.js";
 import { authenticationRoute } from "./controllers/http/authentication.js";
 import { bancosRotas } from "./controllers/http/bancos/rotas.js";
@@ -69,6 +70,7 @@ await app.register(swagger, {
 				description: "Operações com lançamentos de contas correntes",
 			},
 			{ name: "bancos", description: "Operações com bancos" },
+			{ name: "auditoria", description: "Operações com logs de auditoria" },
 		],
 	},
 });
@@ -287,6 +289,7 @@ app.register(contaCorrenteLancamentoRotas);
 app.register(financeiroRotas);
 app.register(financeiroLancamentoRotas);
 app.register(bancosRotas);
+app.register(auditoriaRotas);
 
 app.listen({ port: 3333 }).then(() => {
 	console.log("HTTP server running on port 3333");

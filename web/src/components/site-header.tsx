@@ -2,6 +2,7 @@ import { BellIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { CompanyToogle } from "./company-toogle";
+import { RefreshButton } from "./refresh-button";
 import { ThemeToogle } from "./theme-toogle";
 
 export function SiteHeader() {
@@ -11,6 +12,7 @@ export function SiteHeader() {
 				<SidebarTrigger className="-ml-1" />
 				<div className="ml-auto flex items-center gap-2">
 					<CompanyToogle />
+					<RefreshButton />
 					<ThemeToogle />
 					<Button variant="secondary" size="sm">
 						<BellIcon className="size-4" />

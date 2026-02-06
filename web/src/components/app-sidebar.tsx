@@ -78,12 +78,12 @@ const data = {
 		},
 		{
 			title: "Contas a receber",
-			url: "/contas-a-receber",
+			url: "/contas-receber",
 			icon: IconCashBanknotePlus,
 		},
 		{
 			title: "Contas a pagar",
-			url: "/contas-a-pagar",
+			url: "/contas-pagar",
 			icon: IconCashBanknoteMinus,
 		},
 		// {

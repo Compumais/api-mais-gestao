@@ -37,7 +37,7 @@ type ClientFormProps = {
 export function ClientForm(props: ClientFormProps) {
 	const router = useRouter();
 	const queryClient = useQueryClient();
-	const { empresa } = useEmpresa();
+	const { localStorageEmpresa: empresa } = useEmpresa();
 
 	const modo = props.modo ?? "criar";
 	const isEdicao = modo === "editar";
@@ -229,7 +229,11 @@ export function ClientForm(props: ClientFormProps) {
 						<Field data-invalid={!!errors.tipopessoa}>
 							<FieldLabel htmlFor="tipopessoa">Tipo de Pessoa</FieldLabel>
 							<Select
-								value={tipopessoa?.toString() || ""}
+								value={
+									tipopessoa !== null && tipopessoa !== undefined
+										? tipopessoa.toString()
+										: undefined
+								}
 								onValueChange={(value) =>
 									setValue("tipopessoa", value ? Number(value) : null)
 								}
