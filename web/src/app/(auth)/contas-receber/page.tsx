@@ -1,7 +1,14 @@
 "use client";
 
-import { IconPlus } from "@tabler/icons-react";
-import { useQuery } from "@tanstack/react-query";
+import {
+	IconDotsVertical,
+	IconPencil,
+	IconTrash,
+	IconEye,
+	IconCheck,
+	IconPlus,
+} from "@tabler/icons-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	type ColumnDef,
 	flexRender,
@@ -13,8 +20,26 @@ import {
 } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
 	Table,
 	TableBody,
@@ -75,7 +100,19 @@ const calculateSaldoSemJurosMulta = (financeiro: Financeiro) => {
 	return saldo - juros - multa;
 };
 
-const columns: ColumnDef<Financeiro>[] = [
+type ColumnsProps = {
+	onEdit: (financeiro: Financeiro) => void;
+	onDelete: (id: string) => void;
+	onDarBaixa: (id: string) => void;
+	onVerDetalhes: (id: string) => void;
+};
+
+const createColumns = ({
+	onEdit,
+	onDelete,
+	onDarBaixa,
+	onVerDetalhes,
+}: ColumnsProps): ColumnDef<Financeiro>[] => [
 	{
 		accessorKey: "documento",
 		header: "Documento",
@@ -147,16 +184,79 @@ const columns: ColumnDef<Financeiro>[] = [
 			);
 		},
 	},
+	{
+		id: "acoes",
+		header: "Ações",
+		cell: ({ row }) => {
+			const financeiro = row.original;
+			const podeExcluir = financeiro.status === "A" && !financeiro.baixa;
+			const podeDarBaixa = financeiro.status === "A" && !financeiro.baixa;
+
+			return (
+				<div className="flex justify-end">
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button
+								variant="ghost"
+								size="icon"
+								className="h-8 w-8"
+								aria-label="Abrir menu de ações"
+							>
+								<IconDotsVertical className="size-4" />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end">
+							<DropdownMenuItem onClick={() => onVerDetalhes(financeiro.id)}>
+								<IconEye className="size-4 mr-2" />
+								Ver detalhes
+							</DropdownMenuItem>
+							<DropdownMenuItem onClick={() => onEdit(financeiro)}>
+								<IconPencil className="size-4 mr-2" />
+								Editar
+							</DropdownMenuItem>
+							{podeDarBaixa && (
+								<>
+									<DropdownMenuSeparator />
+									<DropdownMenuItem onClick={() => onDarBaixa(financeiro.id)}>
+										<IconCheck className="size-4 mr-2" />
+										Dar baixa
+									</DropdownMenuItem>
+								</>
+							)}
+							{podeExcluir && (
+								<>
+									<DropdownMenuSeparator />
+									<DropdownMenuItem
+										variant="destructive"
+										onClick={() => onDelete(financeiro.id)}
+									>
+										<IconTrash className="size-4 mr-2" />
+										Excluir
+									</DropdownMenuItem>
+								</>
+							)}
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</div>
+			);
+		},
+		enableHiding: false,
+	},
 ];
 
 export default function ContasAReceberPage() {
 	const router = useRouter();
+	const queryClient = useQueryClient();
 	const { localStorageEmpresa: empresa } = useEmpresa();
 	const [sorting, setSorting] = useState<SortingState>([]);
 	const [pagination, setPagination] = useState({
 		pageIndex: 0,
 		pageSize: 10,
 	});
+	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+	const [financeiroToDelete, setFinanceiroToDelete] = useState<string | null>(
+		null,
+	);
 
 	const { data, isLoading } = useQuery({
 		queryKey: [
@@ -177,6 +277,60 @@ export default function ContasAReceberPage() {
 			});
 		},
 		enabled: !!empresa,
+	});
+
+	const deleteMutation = useMutation({
+		mutationFn: financeiroService.deletar,
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["financeiro"] });
+			toast.success("Conta a receber excluída com sucesso!");
+			setDeleteDialogOpen(false);
+			setFinanceiroToDelete(null);
+		},
+		onError: (error: Error) => {
+			toast.error(error.message || "Erro ao excluir conta a receber");
+		},
+	});
+
+	const darBaixaMutation = useMutation({
+		mutationFn: financeiroService.darBaixa,
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["financeiro"] });
+			toast.success("Baixa realizada com sucesso!");
+		},
+		onError: (error: Error) => {
+			toast.error(error.message || "Erro ao dar baixa na conta a receber");
+		},
+	});
+
+	const handleEdit = (financeiro: Financeiro) => {
+		router.push(`/contas-receber/${financeiro.id}/editar`);
+	};
+
+	const handleDelete = (id: string) => {
+		setFinanceiroToDelete(id);
+		setDeleteDialogOpen(true);
+	};
+
+	const handleConfirmDelete = () => {
+		if (financeiroToDelete) {
+			deleteMutation.mutate(financeiroToDelete);
+		}
+	};
+
+	const handleDarBaixa = (id: string) => {
+		darBaixaMutation.mutate(id);
+	};
+
+	const handleVerDetalhes = (id: string) => {
+		router.push(`/contas-receber/${id}`);
+	};
+
+	const columns = createColumns({
+		onEdit: handleEdit,
+		onDelete: handleDelete,
+		onDarBaixa: handleDarBaixa,
+		onVerDetalhes: handleVerDetalhes,
 	});
 
 	const table = useReactTable({
@@ -226,7 +380,7 @@ export default function ContasAReceberPage() {
 					<h1 className="text-2xl font-bold">Contas a Receber</h1>
 					<Button
 						disabled={!empresa}
-						onClick={() => router.push("/contas-correntes/novo")}
+						onClick={() => router.push("/contas-receber/novo")}
 						className="gap-2"
 					>
 						<IconPlus className="size-4" />
@@ -257,7 +411,9 @@ export default function ContasAReceberPage() {
 														header.id === "saldo" ||
 														header.id === "saldoSemJurosMulta"
 															? "text-right"
-															: ""
+															: header.id === "acoes"
+																? "text-right"
+																: ""
 													}
 													key={header.id}
 												>
@@ -329,6 +485,27 @@ export default function ContasAReceberPage() {
 					)}
 				</div>
 			</div>
+
+			<AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Excluir conta a receber</AlertDialogTitle>
+						<AlertDialogDescription>
+							Tem certeza que deseja excluir esta conta a receber? Esta ação não
+							pode ser desfeita.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Cancelar</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={handleConfirmDelete}
+							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+						>
+							{deleteMutation.isPending ? "Excluindo..." : "Excluir"}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</PageContainer>
 	);
 }

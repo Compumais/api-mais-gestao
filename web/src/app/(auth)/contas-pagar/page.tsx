@@ -1,7 +1,13 @@
 "use client";
 
-import { IconPlus } from "@tabler/icons-react";
-import { useQuery } from "@tanstack/react-query";
+import {
+	IconDotsVertical,
+	IconEye,
+	IconPencil,
+	IconPlus,
+	IconTrash,
+} from "@tabler/icons-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	type ColumnDef,
 	flexRender,
@@ -12,9 +18,27 @@ import {
 	useReactTable,
 } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
 	Table,
 	TableBody,
@@ -68,7 +92,17 @@ const getStatusBadge = (status: string | null | undefined) => {
 	return <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>;
 };
 
-const columns: ColumnDef<Financeiro>[] = [
+type ColumnsProps = {
+	onEdit: (financeiro: Financeiro) => void;
+	onDelete: (id: string) => void;
+	onVerDetalhes: (id: string) => void;
+};
+
+const createColumns = ({
+	onEdit,
+	onDelete,
+	onVerDetalhes,
+}: ColumnsProps): ColumnDef<Financeiro>[] => [
 	{
 		accessorKey: "documento",
 		header: "Documento",
@@ -128,16 +162,71 @@ const columns: ColumnDef<Financeiro>[] = [
 			);
 		},
 	},
+	{
+		id: "acoes",
+		header: "Ações",
+		cell: ({ row }) => {
+			const financeiro = row.original;
+			// Para contas a pagar, só pode excluir se não foi pago pelo menos uma parcela
+			// Por enquanto, vamos verificar se status é "A" (Aberto) e não tem pagamento
+			const podeExcluir = financeiro.status === "A" && !financeiro.pagamento;
+
+			return (
+				<div className="flex justify-end">
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button
+								variant="ghost"
+								size="icon"
+								className="h-8 w-8"
+								aria-label="Abrir menu de ações"
+							>
+								<IconDotsVertical className="size-4" />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end">
+							<DropdownMenuItem onClick={() => onVerDetalhes(financeiro.id)}>
+								<IconEye className="size-4 mr-2" />
+								Ver detalhes
+							</DropdownMenuItem>
+							<DropdownMenuItem onClick={() => onEdit(financeiro)}>
+								<IconPencil className="size-4 mr-2" />
+								Editar
+							</DropdownMenuItem>
+							{podeExcluir && (
+								<>
+									<DropdownMenuSeparator />
+									<DropdownMenuItem
+										variant="destructive"
+										onClick={() => onDelete(financeiro.id)}
+									>
+										<IconTrash className="size-4 mr-2" />
+										Excluir
+									</DropdownMenuItem>
+								</>
+							)}
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</div>
+			);
+		},
+		enableHiding: false,
+	},
 ];
 
 export default function ContasAPagarPage() {
 	const router = useRouter();
+	const queryClient = useQueryClient();
 	const { localStorageEmpresa: empresa } = useEmpresa();
 	const [sorting, setSorting] = useState<SortingState>([]);
 	const [pagination, setPagination] = useState({
 		pageIndex: 0,
 		pageSize: 10,
 	});
+	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+	const [financeiroToDelete, setFinanceiroToDelete] = useState<string | null>(
+		null,
+	);
 
 	const { data, isLoading } = useQuery({
 		queryKey: [
@@ -158,6 +247,44 @@ export default function ContasAPagarPage() {
 			});
 		},
 		enabled: !!empresa,
+	});
+
+	const deleteMutation = useMutation({
+		mutationFn: financeiroService.deletar,
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["financeiro"] });
+			toast.success("Conta a pagar excluída com sucesso!");
+			setDeleteDialogOpen(false);
+			setFinanceiroToDelete(null);
+		},
+		onError: (error: Error) => {
+			toast.error(error.message || "Erro ao excluir conta a pagar");
+		},
+	});
+
+	const handleEdit = (financeiro: Financeiro) => {
+		router.push(`/contas-pagar/${financeiro.id}/editar`);
+	};
+
+	const handleDelete = (id: string) => {
+		setFinanceiroToDelete(id);
+		setDeleteDialogOpen(true);
+	};
+
+	const handleConfirmDelete = () => {
+		if (financeiroToDelete) {
+			deleteMutation.mutate(financeiroToDelete);
+		}
+	};
+
+	const handleVerDetalhes = (id: string) => {
+		router.push(`/contas-pagar/${id}`);
+	};
+
+	const columns = createColumns({
+		onEdit: handleEdit,
+		onDelete: handleDelete,
+		onVerDetalhes: handleVerDetalhes,
 	});
 
 	const table = useReactTable({
@@ -207,7 +334,7 @@ export default function ContasAPagarPage() {
 					<h1 className="text-2xl font-bold">Contas a Pagar</h1>
 					<Button
 						disabled={!empresa}
-						onClick={() => router.push("/contas-correntes/novo")}
+						onClick={() => router.push("/contas-pagar/novo")}
 						className="gap-2"
 					>
 						<IconPlus className="size-4" />
@@ -236,7 +363,9 @@ export default function ContasAPagarPage() {
 													className={
 														header.id === "valor" || header.id === "saldo"
 															? "text-right"
-															: ""
+															: header.id === "acoes"
+																? "text-right"
+																: ""
 													}
 													key={header.id}
 												>
@@ -308,6 +437,27 @@ export default function ContasAPagarPage() {
 					)}
 				</div>
 			</div>
+
+			<AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Excluir conta a pagar</AlertDialogTitle>
+						<AlertDialogDescription>
+							Tem certeza que deseja excluir esta conta a pagar? Esta ação não
+							pode ser desfeita.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Cancelar</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={handleConfirmDelete}
+							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+						>
+							{deleteMutation.isPending ? "Excluindo..." : "Excluir"}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</PageContainer>
 	);
 }

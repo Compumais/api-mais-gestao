@@ -124,6 +124,105 @@ export interface ListarFinanceirosParams {
 	tipo?: string | null; // P ou R
 }
 
+export interface CriarFinanceiroData {
+	idempresa: string;
+	identidade?: string | null;
+	tipo?: "P" | "R" | null;
+	tipoorigem?: number | null;
+	idorigem?: number | null;
+	parcela?: number | null;
+	documento?: string | null;
+	idtipodocumentofinanceiro?: number | null;
+	status?: string | null;
+	emissao?: string | null;
+	vencimento?: string | null;
+	vencimentooriginal?: string | null;
+	pagamento?: string | null;
+	baixa?: string | null;
+	valor?: string;
+	saldo?: string;
+	historico?: string | null;
+	idbanco?: number | null;
+	agencia?: string | null;
+	numerocontacorrente?: string | null;
+	cnpjcpfemitente?: string | null;
+	emitente?: string | null;
+	identidadedestino?: number | null;
+	idcodigocontabil?: number | null;
+	juros?: number;
+	multa?: number;
+	taxafinanciamento?: number;
+	evento?: number | null;
+	devolucaocodigo?: number | null;
+	devolucaodescricao?: string | null;
+	devolucaodata?: string | null;
+	protestodate?: string | null;
+	nossonumero?: string | null;
+	idcontageraboleto?: number | null;
+	numerocheque?: string | null;
+	remessagerada?: number | null;
+	boletoimpresso?: number | null;
+	currenttimemillis?: number | null;
+	idtipocobranca?: number | null;
+	entrada?: string | null;
+	datareferencia?: string | null;
+	idportador?: number | null;
+	iddependente?: number | null;
+	nomeadministradora?: string | null;
+	idadministradora?: number | null;
+	nomebandeira?: string | null;
+	idbandeira?: number | null;
+}
+
+export interface AtualizarFinanceiroData {
+	identidade?: string | null;
+	tipo?: "P" | "R" | null;
+	tipoorigem?: number | null;
+	idorigem?: number | null;
+	parcela?: number | null;
+	documento?: string | null;
+	idtipodocumentofinanceiro?: number | null;
+	status?: string | null;
+	emissao?: string | null;
+	vencimento?: string | null;
+	vencimentooriginal?: string | null;
+	pagamento?: string | null;
+	baixa?: string | null;
+	valor?: string;
+	saldo?: string;
+	historico?: string | null;
+	idbanco?: number | null;
+	agencia?: string | null;
+	numerocontacorrente?: string | null;
+	cnpjcpfemitente?: string | null;
+	emitente?: string | null;
+	identidadedestino?: number | null;
+	idcodigocontabil?: number | null;
+	juros?: number;
+	multa?: number;
+	taxafinanciamento?: number;
+	evento?: number | null;
+	devolucaocodigo?: number | null;
+	devolucaodescricao?: string | null;
+	devolucaodata?: string | null;
+	protestodate?: string | null;
+	nossonumero?: string | null;
+	idcontageraboleto?: number | null;
+	numerocheque?: string | null;
+	remessagerada?: number | null;
+	boletoimpresso?: number | null;
+	currenttimemillis?: number | null;
+	idtipocobranca?: number | null;
+	entrada?: string | null;
+	datareferencia?: string | null;
+	idportador?: number | null;
+	iddependente?: number | null;
+	nomeadministradora?: string | null;
+	idadministradora?: number | null;
+	nomebandeira?: string | null;
+	idbandeira?: number | null;
+}
+
 export const financeiroService = {
 	async listar(
 		params?: ListarFinanceirosParams,
@@ -136,6 +235,33 @@ export const financeiroService = {
 
 	async buscar(id: string): Promise<Financeiro> {
 		const { data } = await api.get<Financeiro>(`/financeiro/${id}`);
+		return data;
+	},
+
+	async criar(dados: CriarFinanceiroData): Promise<Financeiro> {
+		const { data } = await api.post<Financeiro>("/financeiro", dados);
+		return data;
+	},
+
+	async atualizar(
+		id: string,
+		dados: AtualizarFinanceiroData,
+	): Promise<Financeiro> {
+		const { data } = await api.put<Financeiro>(`/financeiro/${id}`, dados);
+		return data;
+	},
+
+	async deletar(id: string): Promise<void> {
+		await api.delete(`/financeiro/${id}`);
+	},
+
+	async darBaixa(id: string): Promise<Financeiro> {
+		// Dar baixa atualiza o status para "P" (Pago) e registra a data de baixa
+		const hoje = new Date().toISOString().split("T")[0];
+		const { data } = await api.put<Financeiro>(`/financeiro/${id}`, {
+			status: "P",
+			baixa: hoje,
+		});
 		return data;
 	},
 };

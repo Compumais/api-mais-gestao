@@ -7,8 +7,10 @@ import { auditoriaRotas } from "./controllers/http/auditoria/rotas.js";
 import { authRotas } from "./controllers/http/auth/rotas.js";
 import { authenticationRoute } from "./controllers/http/authentication.js";
 import { bancosRotas } from "./controllers/http/bancos/rotas.js";
+import { configuracaoRotas } from "./controllers/http/configuracao/rotas.js";
 import { contaCorrenteLancamentoRotas } from "./controllers/http/conta-corrente-lancamento/rotas.js";
 import { contaCorrenteRotas } from "./controllers/http/contacorrente/rotas.js";
+import { dashboardRotas } from "./controllers/http/dashboard/rotas.js";
 import { empresasRotas } from "./controllers/http/empresas/rotas.js";
 import { entidadesRotas } from "./controllers/http/entidades/rotas.js";
 import { financeiroRotas } from "./controllers/http/financeiro/rotas.js";
@@ -70,7 +72,12 @@ await app.register(swagger, {
 				description: "Operações com lançamentos de contas correntes",
 			},
 			{ name: "bancos", description: "Operações com bancos" },
+			{
+				name: "configuracoes",
+				description: "Operações com configurações da empresa",
+			},
 			{ name: "auditoria", description: "Operações com logs de auditoria" },
+			{ name: "dashboard", description: "Operações com dashboard" },
 		],
 	},
 });
@@ -289,7 +296,9 @@ app.register(contaCorrenteLancamentoRotas);
 app.register(financeiroRotas);
 app.register(financeiroLancamentoRotas);
 app.register(bancosRotas);
+app.register(configuracaoRotas);
 app.register(auditoriaRotas);
+app.register(dashboardRotas);
 
 app.listen({ port: 3333 }).then(() => {
 	console.log("HTTP server running on port 3333");
