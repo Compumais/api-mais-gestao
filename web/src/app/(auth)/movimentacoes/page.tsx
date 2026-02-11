@@ -48,6 +48,8 @@ export default function MovimentacoesPage() {
 		enabled: !!idcontacorrente,
 	});
 
+	console.log("movimentações", lancamentosData)
+
 	const handleNovaMovimentacao = () => {
 		setLancamentoEditando(null);
 		setModoForm("criar");

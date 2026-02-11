@@ -389,7 +389,7 @@ export const contacorrentelancamento = pgTable(
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 		idusuario: text(),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		idplanocontas: bigint({ mode: "number" }),
+		idplanocontas: text(),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 		evento: bigint({ mode: "number" }),
 		debito: numeric({ precision: 12, scale: 2 }),
@@ -442,7 +442,7 @@ export const financeiro = pgTable(
 		saldo: numeric({ precision: 12, scale: 2 }).default("0.00"),
 		historico: text(),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		idbanco: bigint({ mode: "number" }),
+		idbanco: text(),
 		agencia: varchar({ length: 15 }),
 		numerocontacorrente: varchar({ length: 40 }),
 		cnpjcpfemitente: varchar({ length: 30 }),
@@ -730,6 +730,45 @@ export const banco = pgTable(
 		})
 			.onUpdate("cascade")
 			.onDelete("cascade"),
+	],
+);
+
+export const clientesAsaas = pgTable(
+	"clientes_asaas",
+	{
+		id: text("id").primaryKey().notNull(),
+		idempresa: text("idempresa")
+			.notNull()
+			.references(() => empresa.id, { onDelete: "cascade" }),
+		idclienteasaas: text("idclienteasaas").notNull(),
+		criadoem: timestamp("criadoem").defaultNow().notNull(),
+	},
+	(table) => [index("clientes_asaas_idempresa_idx").on(table.idempresa)],
+);
+
+export const assinaturas = pgTable(
+	"assinaturas",
+	{
+		id: text("id").primaryKey().notNull(),
+		idempresa: text("idempresa")
+			.notNull()
+			.references(() => empresa.id, { onDelete: "cascade" }),
+		idassinaturaasaas: text("idassinaturaasaas").notNull(),
+		status: text("status").notNull(), // ACTIVE, EXPIRED, OVERDUE...
+		plano: text("plano").notNull(), // BASIC, PREMIUM
+		valor: numeric("valor", { precision: 12, scale: 2 }).notNull(),
+		ciclo: text("ciclo").notNull(), // MONTHLY
+		proximovencimento: date("proximovencimento"),
+		urlpagamento: text("urlpagamento"),
+		criadoem: timestamp("criadoem").defaultNow().notNull(),
+		atualizadoem: timestamp("atualizadoem")
+			.defaultNow()
+			.$onUpdate(() => new Date())
+			.notNull(),
+	},
+	(table) => [
+		index("assinaturas_idempresa_idx").on(table.idempresa),
+		index("assinaturas_idassinaturaasaas_idx").on(table.idassinaturaasaas),
 	],
 );
 

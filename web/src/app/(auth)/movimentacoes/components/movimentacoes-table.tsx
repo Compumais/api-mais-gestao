@@ -165,27 +165,13 @@ export function MovimentacoesTable({
 			),
 		},
 		{
-			accessorKey: "contacorrente_descricao",
-			header: "Descrição",
-			cell: ({ row }) => (
-				<div className="min-w-[150px]">
-					{row.getValue("contacorrente_descricao") || "-"}
-				</div>
-			),
-		},
-		{
-			accessorKey: "planocontas_nome",
+			accessorKey: "planocontasnome",
 			header: "Plano",
 			cell: ({ row }) => (
 				<div className="min-w-[150px]">
-					{row.getValue("planocontas_nome") || "-"}
+					{row.getValue("planocontasnome") || "-"}
 				</div>
 			),
-		},
-		{
-			id: "cliente",
-			header: "Cliente",
-			cell: () => <div>-</div>, // TODO: Adicionar quando houver relacionamento com cliente
 		},
 		{
 			id: "actions",
@@ -313,9 +299,9 @@ export function MovimentacoesTable({
 											{header.isPlaceholder
 												? null
 												: flexRender(
-														header.column.columnDef.header,
-														header.getContext(),
-													)}
+													header.column.columnDef.header,
+													header.getContext(),
+												)}
 										</TableHead>
 									);
 								})}

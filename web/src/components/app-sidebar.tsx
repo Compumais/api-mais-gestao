@@ -11,7 +11,6 @@ import {
 	IconHelp,
 	IconHistory,
 	IconListDetails,
-	IconMoneybag,
 	IconSearch,
 	IconSettings,
 	IconUser,
@@ -110,7 +109,7 @@ const data = {
 		},
 		{
 			title: "Ajuda",
-			url: "#",
+			url: "/ajuda",
 			icon: IconHelp,
 		},
 		{
@@ -141,12 +140,14 @@ const data = {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const { user } = useAuth();
 
+	console.log("usuario", user);
+
 	// Verificar se o usuário tem perfil "usuario"
 	const isUsuario = React.useMemo(() => {
-		if (!user?.perfil) return false;
+		if (!user || typeof user !== "object" || !("perfil" in user)) return false;
 		// A API retorna o perfil como string (primeiro elemento do array)
-		return user.perfil === "usuario";
-	}, [user?.perfil]);
+		return (user as { perfil?: string }).perfil === "usuario";
+	}, [user]);
 
 	// Filtrar itens baseado no perfil
 	const navMainItems = React.useMemo(() => {
@@ -161,8 +162,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
 	const navCloudsItems = React.useMemo(() => {
 		if (isUsuario) {
-			// Para usuário: apenas Movimentações
-			return data.navClouds.filter((item) => item.title === "Movimentações");
+			return data.navClouds.filter(
+				(item) => item.title === "Movimentações" || item.title === "Relatórios",
+			);
 		}
 		return data.navClouds;
 	}, [isUsuario]);
@@ -203,7 +205,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 				/>
 			</SidebarContent>
 			<SidebarFooter>
-				<NavUser user={user} />
+				<NavUser user={user as { nome: string; email: string } | null} />
 			</SidebarFooter>
 		</Sidebar>
 	);

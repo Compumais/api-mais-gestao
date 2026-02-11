@@ -60,12 +60,6 @@ export function PlanoContasTree() {
 
 	return (
 		<div className="space-y-4">
-			<Button className="w-full justify-start" variant="secondary" asChild>
-				<Link href="/plano-contas/novo">
-					<PlusIcon className="h-4 w-4" />
-					Adicionar plano de contas
-				</Link>
-			</Button>
 			<div className="space-y-1">
 				{rootItems.map((node) => (
 					<TreeNode key={node.id} node={node} />

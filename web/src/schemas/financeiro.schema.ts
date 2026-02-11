@@ -30,8 +30,8 @@ export const criarFinanceiroSchema = z
 		idempresa: z.string().uuid("ID da empresa inválido"),
 		documento: z.string().max(60, "Documento deve ter no máximo 60 caracteres").nullable().optional(),
 		pagamentoRecorrente: z.boolean().optional().default(false),
-		tipoDocumento: z.enum(TIPO_DOCUMENTO_OPTIONS as [string, ...string[]], {
-			required_error: "Tipo de documento é obrigatório",
+		tipoDocumento: z.enum([...TIPO_DOCUMENTO_OPTIONS], {
+			message: "Tipo de documento é obrigatório",
 		}),
 		meses: z.number().int().min(0).nullable().optional(),
 		tipoCobranca: z.number().int().nullable().optional(),
@@ -39,7 +39,7 @@ export const criarFinanceiroSchema = z
 		referencia: z.string().nullable().optional(),
 		emissao: z.string().min(1, "Data de emissão é obrigatória"),
 		vencimento: z.string().min(1, "Data de vencimento é obrigatória"),
-		idbanco: z.number().int().min(1, "Banco é obrigatório"),
+		idbanco: z.string().uuid("Banco é obrigatório"),
 		identidade: z.string().uuid("Cliente é obrigatório"),
 		idplanocontas: z.string().min(1, "Plano de contas é obrigatório"),
 		valor: z
@@ -105,14 +105,14 @@ export const atualizarFinanceiroSchema = z
 	.object({
 		documento: z.string().max(60).nullable().optional(),
 		pagamentoRecorrente: z.boolean().optional(),
-		tipoDocumento: z.enum(TIPO_DOCUMENTO_OPTIONS as [string, ...string[]]).optional(),
+		tipoDocumento: z.enum([...TIPO_DOCUMENTO_OPTIONS]).optional(),
 		meses: z.number().int().min(0).nullable().optional(),
 		tipoCobranca: z.number().int().nullable().optional(),
 		entrada: z.string().nullable().optional(),
 		referencia: z.string().nullable().optional(),
 		emissao: z.string().optional(),
 		vencimento: z.string().optional(),
-		idbanco: z.number().int().nullable().optional(),
+		idbanco: z.string().uuid().nullable().optional(),
 		identidade: z.string().uuid().nullable().optional(),
 		idplanocontas: z.string().nullable().optional(),
 		valor: z

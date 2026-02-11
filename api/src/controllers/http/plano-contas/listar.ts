@@ -7,7 +7,9 @@ const listarPlanoContasQuerySchema = z.object({
 	idplanocontas: z.string().optional(),
 	inativo: z.boolean().optional().default(false),
 	page: z.coerce.number().min(1).optional().default(1),
-	limit: z.coerce.number().min(1).max(100).optional().default(10),
+	limit: z.coerce.number().min(1).max(1000).optional().default(10),
+	listarTudo: z.coerce.boolean().optional().default(false),
+	tipomovimento: z.enum(["E", "S"]).optional(),
 });
 
 export async function listarPlanoContas(

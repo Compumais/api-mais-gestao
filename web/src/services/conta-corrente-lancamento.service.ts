@@ -10,16 +10,16 @@ export interface ContaCorrenteLancamento {
 	saldoatual?: string | null;
 	historico?: string | null;
 	idusuario?: string | null;
-	idplanocontas?: number | null;
+	idplanocontas?: string | null;
 	evento?: number | null;
 	debito?: string | null;
 	documento?: string | null;
 	dataconciliacao?: string | null;
 	// Relacionamentos
-	planocontas_nome?: string | null;
-	planocontas_codigo?: string | null;
-	contacorrente_descricao?: string | null;
-	contacorrente_agencia?: string | null;
+	planocontasnome?: string | null;
+	planocontascodigo?: string | null;
+	contacorrentedescricao?: string | null;
+	contacorrenteagencia?: string | null;
 }
 
 export interface ListarContaCorrenteLancamentosResponse {
@@ -38,7 +38,7 @@ export interface CriarContaCorrenteLancamentoData {
 	tipo?: "E" | "S" | "C" | "D";
 	valor: string;
 	historico?: string;
-	idplanocontas?: number;
+	idplanocontas?: string;
 	evento?: number;
 	debito?: string;
 	documento?: string;
@@ -50,7 +50,7 @@ export interface AtualizarContaCorrenteLancamentoData {
 	tipo?: "E" | "S" | "C" | "D";
 	valor?: string;
 	historico?: string;
-	idplanocontas?: number;
+	idplanocontas?: string;
 	evento?: number;
 	debito?: string;
 	documento?: string;

@@ -19,7 +19,7 @@ export interface Financeiro {
 	valor: string;
 	saldo: string;
 	historico: string | null;
-	idbanco: number | null;
+	idbanco: string | null;
 	agencia: string | null;
 	numerocontacorrente: string | null;
 	cnpjcpfemitente: string | null;
@@ -142,7 +142,7 @@ export interface CriarFinanceiroData {
 	valor?: string;
 	saldo?: string;
 	historico?: string | null;
-	idbanco?: number | null;
+	idbanco?: string | null;
 	agencia?: string | null;
 	numerocontacorrente?: string | null;
 	cnpjcpfemitente?: string | null;
@@ -191,7 +191,7 @@ export interface AtualizarFinanceiroData {
 	valor?: string;
 	saldo?: string;
 	historico?: string | null;
-	idbanco?: number | null;
+	idbanco?: string | null;
 	agencia?: string | null;
 	numerocontacorrente?: string | null;
 	cnpjcpfemitente?: string | null;

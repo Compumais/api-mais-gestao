@@ -1,0 +1,71 @@
+
+import { eq, desc } from "drizzle-orm";
+import { assinaturas, clientesAsaas } from "../../drizzle/schema";
+import type { Assinatura, ClienteAsaas, NovaAssinatura, NovoClienteAsaas } from "../model/assinatura-model";
+import { db } from "./connection";
+
+export async function buscarClienteAsaas(
+    idempresa: string
+): Promise<ClienteAsaas | undefined> {
+    const result = await db
+        .select()
+        .from(clientesAsaas)
+        .where(eq(clientesAsaas.idempresa, idempresa))
+        .limit(1);
+    return result[0];
+}
+
+export async function criarClienteAsaas(
+    cliente: NovoClienteAsaas
+): Promise<ClienteAsaas> {
+    const result = await db
+        .insert(clientesAsaas)
+        .values(cliente)
+        .returning();
+    return result[0];
+}
+
+export async function buscarAssinaturaPeloIdAsaas(
+    idassinaturaasaas: string
+): Promise<Assinatura | undefined> {
+    const result = await db
+        .select()
+        .from(assinaturas)
+        .where(eq(assinaturas.idassinaturaasaas, idassinaturaasaas))
+        .limit(1);
+    return result[0];
+}
+
+export async function criarAssinatura(
+    assinatura: NovaAssinatura
+): Promise<Assinatura> {
+    const result = await db
+        .insert(assinaturas)
+        .values(assinatura)
+        .returning();
+    return result[0];
+}
+
+export async function atualizarAssinatura(
+    id: string,
+    dados: Partial<Assinatura>
+): Promise<Assinatura | undefined> {
+    const result = await db
+        .update(assinaturas)
+        .set(dados)
+        .where(eq(assinaturas.id, id))
+        .returning();
+    return result[0];
+}
+
+export async function buscarAssinaturaPorEmpresa(
+    idempresa: string
+): Promise<Assinatura | undefined> {
+    const result = await db
+        .select()
+        .from(assinaturas)
+        .where(eq(assinaturas.idempresa, idempresa))
+        .orderBy(desc(assinaturas.criadoem))
+        .limit(1);
+    return result[0];
+}

@@ -13,6 +13,7 @@ export const api = axios.create({
 	headers: {
 		"Content-Type": "application/json",
 	},
+	withCredentials: true, // Permite enviar cookies nas requisições (necessário para Better Auth)
 });
 
 // Interceptor para adicionar o token em todas as requisições
@@ -46,6 +47,7 @@ api.interceptors.response.use(
 				}
 			}
 		}
+
 		const message =
 			error.response?.data?.message ||
 			error.response?.data?.error ||

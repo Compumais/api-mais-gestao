@@ -11,7 +11,7 @@ const criarContaCorrenteLancamentoBodySchema = z.object({
 	tipo: z.enum(["E", "S", "C", "D"]).optional(),
 	valor: z.string(),
 	historico: z.string().optional(),
-	idplanocontas: z.number().optional(),
+	idplanocontas: z.string().optional(),
 	evento: z.number().optional(),
 	debito: z.string().optional(),
 	documento: z.string().max(30).optional(),

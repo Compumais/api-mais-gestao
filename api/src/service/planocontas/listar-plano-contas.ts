@@ -11,6 +11,8 @@ type ListarPlanoContasParametros = {
 	inativo?: boolean;
 	page?: number;
 	limit?: number;
+	listarTudo?: boolean;
+	tipomovimento?: "E" | "S";
 };
 
 type ListarPlanoContasResposta = {
@@ -30,6 +32,8 @@ export async function listarPlanoContasService({
 	inativo,
 	page = 1,
 	limit = 10,
+	listarTudo = false,
+	tipomovimento,
 }: ListarPlanoContasParametros): Promise<
 	HttpResponse<ListarPlanoContasResposta>
 > {
@@ -55,6 +59,8 @@ export async function listarPlanoContasService({
 		inativo: inativoFiltro,
 		page,
 		limit,
+		listarTudo,
+		tipomovimento,
 	});
 
 	const totalPages = Math.ceil(total / limit);

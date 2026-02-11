@@ -22,6 +22,27 @@
       "when": 1770222546653,
       "tag": "0002_sad_doctor_spectrum",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1770811503367,
+      "tag": "0003_bent_ozymandias",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1770816415345,
+      "tag": "0004_worthless_rocket_racer",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1770830120605,
+      "tag": "0005_clean_paibok",
+      "breakpoints": true
     }
   ]
 }

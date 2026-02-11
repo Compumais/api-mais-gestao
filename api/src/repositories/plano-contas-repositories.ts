@@ -75,6 +75,8 @@ export type ListarPlanoContasParametros = {
 	inativo?: number;
 	page?: number;
 	limit?: number;
+	listarTudo?: boolean;
+	tipomovimento?: "E" | "S" | undefined;
 };
 
 export async function listarPlanoContasPorEmpresas({
@@ -83,6 +85,8 @@ export async function listarPlanoContasPorEmpresas({
 	inativo,
 	page = 1,
 	limit = 10,
+	listarTudo = false,
+	tipomovimento,
 }: ListarPlanoContasParametros) {
 	const where = [];
 
@@ -97,12 +101,16 @@ export async function listarPlanoContasPorEmpresas({
 
 	if (idplanocontas) {
 		where.push(eq(schema.planocontas.idplanocontas, idplanocontas));
-	} else {
+	} else if (!listarTudo) {
 		where.push(isNull(schema.planocontas.idplanocontas));
 	}
 
 	if (inativo) {
 		where.push(eq(schema.planocontas.inativo, inativo));
+	}
+
+	if (tipomovimento) {
+		where.push(eq(schema.planocontas.tipomovimento, tipomovimento));
 	}
 
 	const offset = (page - 1) * limit;

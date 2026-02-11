@@ -1,0 +1,1 @@
+ALTER TABLE "financeiro" ALTER COLUMN "idbanco" SET DATA TYPE text;

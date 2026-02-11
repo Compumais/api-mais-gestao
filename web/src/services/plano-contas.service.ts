@@ -61,6 +61,8 @@ export const planoContasService = {
 		inativo?: 0 | 1;
 		page?: number;
 		limit?: number;
+		listarTudo?: boolean;
+		tipomovimento?: "E" | "S";
 	}): Promise<ListarPlanoContasResponse> {
 		const { data } = await api.get<ListarPlanoContasResponse>("/plano-contas", {
 			params,

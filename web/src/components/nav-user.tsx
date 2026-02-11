@@ -7,7 +7,7 @@ import {
 	IconNotification,
 	IconUserCircle,
 } from "@tabler/icons-react";
-
+import Link from "next/link";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -55,7 +55,7 @@ export function NavUser({ user }: NavUserProps) {
 									{user?.nome ?? <Skeleton className="h-4 w-24" />}
 								</span>
 								<span className="text-muted-foreground truncate text-xs">
-									{user?.nome ?? <Skeleton className="h-4 w-24" />}
+									{user?.email ?? <Skeleton className="h-4 w-24" />}
 								</span>
 							</div>
 							<IconDotsVertical className="ml-auto size-4" />
@@ -85,18 +85,22 @@ export function NavUser({ user }: NavUserProps) {
 						</DropdownMenuLabel>
 						<DropdownMenuSeparator />
 						<DropdownMenuGroup>
-							<DropdownMenuItem>
-								<IconUserCircle />
-								Account
+							<DropdownMenuItem asChild>
+								<Link href="/minha-conta">
+									<IconUserCircle />
+									Minha conta
+								</Link>
 							</DropdownMenuItem>
-							<DropdownMenuItem>
-								<IconCreditCard />
-								Billing
+							<DropdownMenuItem asChild>
+								<Link href="/meus-planos">
+									<IconCreditCard />
+									Meus Planos
+								</Link>
 							</DropdownMenuItem>
-							<DropdownMenuItem>
+							{/* <DropdownMenuItem>
 								<IconNotification />
 								Notifications
-							</DropdownMenuItem>
+							</DropdownMenuItem> */}
 						</DropdownMenuGroup>
 						<DropdownMenuSeparator />
 						<DropdownMenuItem onClick={logout}>

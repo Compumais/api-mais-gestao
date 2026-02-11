@@ -1,0 +1,55 @@
+import type { FastifyReply, FastifyRequest } from "fastify";
+import z from "zod";
+import { excluirUsuarioService } from "@/service/usuarios/excluir-usuario";
+
+const excluirUsuarioParamsSchema = z.object({
+	id: z.string().uuid(),
+});
+
+const excluirUsuarioQuerySchema = z.object({
+	idempresa: z.string().uuid(),
+});
+
+export async function excluirUsuario(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
+	try {
+		if (!request.user) {
+			return reply.status(401).send({
+				error: "Não autorizado",
+				code: "UNAUTHORIZED",
+			});
+		}
+
+		const idusuario = request.user.id;
+		const params = excluirUsuarioParamsSchema.parse(request.params);
+		const query = excluirUsuarioQuerySchema.parse(request.query);
+
+		const resultado = await excluirUsuarioService({
+			idusuario,
+			idUsuarioExcluir: params.id,
+			idempresa: query.idempresa,
+		});
+
+		if (!resultado.success) {
+			return reply.status(resultado.status).send(resultado);
+		}
+
+		return reply.status(resultado.status).send(resultado.body);
+	} catch (error) {
+		console.error(error);
+		if (error instanceof z.ZodError) {
+			return reply.status(400).send({
+				error: "Erro de validação",
+				code: "VALIDATION_ERROR",
+				details: error.issues,
+			});
+		}
+		return reply.status(500).send({
+			error: "Erro ao excluir usuário",
+			code: "DELETE_USUARIO_ERROR",
+		});
+	}
+}
+

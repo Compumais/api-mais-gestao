@@ -40,6 +40,13 @@ export interface UserProfile {
 	perfil: string;
 }
 
+export interface UpdateProfileData {
+	nome: string;
+	email: string;
+	senhaAtual?: string;
+	senha?: string;
+}
+
 export const authService = {
 	async signUp(credentials: RegisterCredentials): Promise<RegisterResponse> {
 		const { data } = await api.post<RegisterResponse>(
@@ -58,8 +65,68 @@ export const authService = {
 	},
 
 	async getProfile(): Promise<UserProfile> {
-		const { data } = await api.get<UserProfile>("/auth/perfil");
-		return data;
+		const { data } = await api.get("/api/auth/get-session");
+
+		if (!data || !data.user) {
+			throw new Error("Não foi possível obter a sessão do usuário");
+		}
+
+		return {
+			id: data.user.id,
+			nome: data.user.name,
+			email: data.user.email,
+			perfil: data.user.perfil,
+		};
+	},
+
+	async updateProfile(profileData: UpdateProfileData): Promise<UserProfile> {
+		const { senha, senhaAtual, ...dadosPerfil } = profileData;
+		const erros: string[] = [];
+
+		// Atualizar apenas o nome via Better Auth
+		// O Better Auth não permite atualização direta de email por segurança
+		// O email deve ser alterado através de um fluxo de verificação separado
+		// O Better Auth usa 'name' ao invés de 'nome' na API
+		if (dadosPerfil.nome && dadosPerfil.nome.trim() !== "") {
+			try {
+				await api.post("/api/auth/update-user", {
+					name: dadosPerfil.nome,
+				});
+			} catch (error: unknown) {
+				const errorMessage =
+					error instanceof Error
+						? error.message
+						: "Erro desconhecido ao atualizar perfil";
+				erros.push(errorMessage);
+			}
+		}
+
+		// Atualizar senha se fornecida via Better Auth
+		// O Better Auth espera 'newPassword' e 'currentPassword' (obrigatório para segurança)
+		if (senha && senha.trim() !== "") {
+			if (!senhaAtual || senhaAtual.trim() === "") {
+				erros.push("Senha atual é obrigatória para alterar a senha");
+			} else {
+				try {
+					await api.post("/api/auth/change-password", {
+						currentPassword: senhaAtual,
+						newPassword: senha,
+					});
+				} catch (error: unknown) {
+					const errorMessage =
+						error instanceof Error ? error.message : "Erro ao atualizar senha";
+					erros.push(errorMessage);
+				}
+			}
+		}
+
+		// Se houver erros, lança exceção com todas as mensagens
+		if (erros.length > 0) {
+			throw new Error(erros.join("; "));
+		}
+
+		// Retornar perfil atualizado para garantir que o cache seja atualizado
+		return this.getProfile();
 	},
 
 	async logout(): Promise<void> {

@@ -23,7 +23,7 @@ const atualizarFinanceiroBodySchema = z.object({
 	valor: z.string().optional(),
 	saldo: z.string().optional(),
 	historico: z.string().optional().nullable(),
-	idbanco: z.number().optional().nullable(),
+	idbanco: z.string().optional().nullable(),
 	agencia: z.string().max(15).optional().nullable(),
 	numerocontacorrente: z.string().max(40).optional().nullable(),
 	cnpjcpfemitente: z.string().max(30).optional().nullable(),
