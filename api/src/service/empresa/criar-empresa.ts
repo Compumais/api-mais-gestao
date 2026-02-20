@@ -41,8 +41,47 @@ export async function criarEmpresaService({
 		await criarBancosPadrao(empresa.id);
 	} catch (error) {
 		console.error("Erro ao criar bancos padrão:", error);
-		// Não falha a criação da empresa se os bancos padrão não forem criados
-		// A empresa já foi criada com sucesso
+	}
+
+	// Vincular usuário à empresa criada
+	try {
+		const { db } = await import("../../repositories/connection");
+		const { usuarioEmpresa } = await import("../../../drizzle/schema");
+		const { v4: uuidv4 } = await import("uuid");
+
+		await db.insert(usuarioEmpresa).values({
+			id: uuidv4(),
+			idusuario: proprietario.id,
+			idempresa: empresa.id,
+			atualizadoem: new Date().toISOString(),
+			criadoem: new Date().toISOString(),
+		});
+	} catch (error) {
+		console.error("Erro ao vincular usuário à empresa:", error);
+		// Log erro mas não falha a criação da empresa, pois o vinculo principal é idproprietario
+	}
+
+	// Atualizar perfil do usuário para proprietário se ainda não for
+	try {
+		const { db } = await import("../../repositories/connection");
+		const { usuarios } = await import("../../../drizzle/schema");
+		const { eq } = await import("drizzle-orm");
+
+		const perfisAtuais = Array.isArray(proprietario.perfil)
+			? proprietario.perfil
+			: [proprietario.perfil];
+
+		if (!perfisAtuais.includes("proprietario")) {
+			await db
+				.update(usuarios)
+				.set({
+					perfil: [...perfisAtuais, "proprietario"],
+				})
+				.where(eq(usuarios.id, proprietario.id));
+		}
+	} catch (error) {
+		console.error("Erro ao atualizar perfil do usuário:", error);
+		// Não falha a criação da empresa, mas loga o erro
 	}
 
 	return httpCriacao<Empresa>(empresa);

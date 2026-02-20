@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { useAuth } from "@/hooks/use-auth";
 import { empresasService } from "@/services/empresas.service";
 import {
 	type CriarUsuarioFormData,
@@ -45,6 +46,7 @@ export function UsuarioForm(props: UsuarioFormProps) {
 	const router = useRouter();
 	const queryClient = useQueryClient();
 	const { localStorageEmpresa: empresa } = useEmpresa();
+	const { user } = useAuth();
 
 	const modo = props.modo ?? "criar";
 	const isEdicao = modo === "editar";
@@ -62,10 +64,11 @@ export function UsuarioForm(props: UsuarioFormProps) {
 		},
 	});
 
-	// Buscar empresas disponíveis
+	// Buscar empresas disponíveis (apenas onde o usuário autenticado é proprietário)
 	const { data: empresasData } = useQuery({
-		queryKey: ["empresas"],
-		queryFn: () => empresasService.listar(),
+		queryKey: ["empresas-proprietario-usuario-form", user?.id],
+		queryFn: () => empresasService.listar({ idproprietario: user?.id }),
+		enabled: !!user?.id,
 	});
 
 	// Buscar dados do usuário se estiver editando

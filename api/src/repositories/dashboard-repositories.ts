@@ -1,4 +1,4 @@
-import { and, eq, isNotNull, sql, sum } from "drizzle-orm";
+import { and, eq, isNotNull, sql, sum, desc } from "drizzle-orm";
 import * as schema from "../../drizzle/schema.js";
 import { db } from "./connection.js";
 
@@ -195,20 +195,20 @@ export async function buscarHistoricoFinanceiro({
 		const date = row.date as string | Date | null;
 		if (date) {
 			// Converter data para string no formato YYYY-MM-DD
-			const dateStr = typeof date === "string" 
-				? date.split("T")[0] 
-				: date instanceof Date 
-					? date.toISOString().split("T")[0] 
+			const dateStr = typeof date === "string"
+				? date.split("T")[0]
+				: date instanceof Date
+					? date.toISOString().split("T")[0]
 					: String(date).split("T")[0];
-			
+
 			if (!mapaDados.has(dateStr)) {
 				mapaDados.set(dateStr, { contasPagar: 0, contasReceber: 0 });
 			}
 			const dados = mapaDados.get(dateStr);
 			if (dados) {
 				// Converter total para número
-				const total = typeof row.total === "string" 
-					? parseFloat(row.total) || 0 
+				const total = typeof row.total === "string"
+					? parseFloat(row.total) || 0
 					: Number(row.total) || 0;
 				dados.contasPagar = total;
 			}
@@ -220,20 +220,20 @@ export async function buscarHistoricoFinanceiro({
 		const date = row.date as string | Date | null;
 		if (date) {
 			// Converter data para string no formato YYYY-MM-DD
-			const dateStr = typeof date === "string" 
-				? date.split("T")[0] 
-				: date instanceof Date 
-					? date.toISOString().split("T")[0] 
+			const dateStr = typeof date === "string"
+				? date.split("T")[0]
+				: date instanceof Date
+					? date.toISOString().split("T")[0]
 					: String(date).split("T")[0];
-			
+
 			if (!mapaDados.has(dateStr)) {
 				mapaDados.set(dateStr, { contasPagar: 0, contasReceber: 0 });
 			}
 			const dados = mapaDados.get(dateStr);
 			if (dados) {
 				// Converter total para número
-				const total = typeof row.total === "string" 
-					? parseFloat(row.total) || 0 
+				const total = typeof row.total === "string"
+					? parseFloat(row.total) || 0
 					: Number(row.total) || 0;
 				dados.contasReceber = total;
 			}
@@ -264,4 +264,134 @@ export async function buscarHistoricoFinanceiro({
 	}
 
 	return resultado;
+}
+
+export interface UltimaMovimentacao {
+	id: string;
+	descricao: string;
+	valor: string;
+	data: string;
+	status: string;
+	usuario: string;
+	tipo: "P" | "R" | "B";
+	natureza: "entrada" | "saida";
+}
+
+export interface UltimasMovimentacoes {
+	pagar: UltimaMovimentacao[];
+	receber: UltimaMovimentacao[];
+	bancarias: UltimaMovimentacao[];
+}
+
+export async function buscarUltimasMovimentacoes({
+	idempresa,
+}: {
+	idempresa: string;
+}): Promise<UltimasMovimentacoes> {
+	// Buscar últimas 5 contas a pagar (tipo="P")
+	const contasPagar = await db
+		.select({
+			id: schema.financeiro.id,
+			descricao: schema.entidade.nome, // Usando nome da entidade como descrição principal
+			valor: schema.financeiro.valor,
+			data: schema.financeiro.vencimento,
+			status: schema.financeiro.status,
+			usuario: sql<string>`COALESCE((SELECT usuario FROM financeirolancamento WHERE idfinanceiro = financeiro.id ORDER BY evento ASC LIMIT 1), 'Sistema')`,
+			documento: schema.financeiro.documento,
+		})
+		.from(schema.financeiro)
+		.leftJoin(schema.entidade, eq(schema.financeiro.identidade, schema.entidade.id))
+		.where(
+			and(
+				eq(schema.financeiro.idempresa, idempresa),
+				eq(schema.financeiro.tipo, "P"),
+			),
+		)
+		.orderBy(desc(schema.financeiro.registro))
+		.limit(5);
+
+	// Buscar últimas 5 contas a receber (tipo="R")
+	const contasReceber = await db
+		.select({
+			id: schema.financeiro.id,
+			descricao: schema.entidade.nome,
+			valor: schema.financeiro.valor,
+			data: schema.financeiro.vencimento,
+			status: schema.financeiro.status,
+			usuario: sql<string>`COALESCE((SELECT usuario FROM financeirolancamento WHERE idfinanceiro = financeiro.id ORDER BY evento ASC LIMIT 1), 'Sistema')`,
+			documento: schema.financeiro.documento,
+		})
+		.from(schema.financeiro)
+		.leftJoin(schema.entidade, eq(schema.financeiro.identidade, schema.entidade.id))
+		.where(
+			and(
+				eq(schema.financeiro.idempresa, idempresa),
+				eq(schema.financeiro.tipo, "R"),
+			),
+		)
+		.orderBy(desc(schema.financeiro.registro))
+		.limit(5);
+
+	// Buscar últimas 5 transações bancárias
+	const transacoesBancarias = await db
+		.select({
+			id: schema.contacorrentelancamento.id,
+			descricao: schema.contacorrentelancamento.historico,
+			valor: schema.contacorrentelancamento.valor,
+			data: schema.contacorrentelancamento.datahora,
+			status: sql<string>`'Conciliado'`, // Assumindo conciliado ou usar outro campo se houver
+			usuario: schema.usuarios.nome,
+			tipo: schema.contacorrentelancamento.tipo,
+		})
+		.from(schema.contacorrentelancamento)
+		.leftJoin(schema.contacorrente, eq(schema.contacorrentelancamento.idcontacorrente, schema.contacorrente.id))
+		.leftJoin(schema.usuarios, eq(schema.contacorrentelancamento.idusuario, schema.usuarios.id))
+		.where(eq(schema.contacorrente.idempresa, idempresa))
+		.orderBy(desc(schema.contacorrentelancamento.datahora), desc(schema.contacorrentelancamento.currenttimemillis))
+		.limit(5);
+
+	// Helper para formatar status do financeiro
+	const formatarStatus = (status: string | null) => {
+		if (!status) return "Pendente";
+		const map: Record<string, string> = {
+			'A': 'Aberto',
+			'Q': 'Quitado',
+			'P': 'Parcial',
+			'C': 'Cancelado'
+		};
+		return map[status] || status;
+	};
+
+	return {
+		pagar: contasPagar.map((c) => ({
+			id: c.id,
+			descricao: c.descricao || c.documento || "Sem descrição",
+			valor: c.valor || "0.00",
+			data: c.data ? (c.data instanceof Date ? c.data.toISOString() : c.data) : "",
+			status: formatarStatus(c.status),
+			usuario: c.usuario || "Sistema",
+			tipo: "P",
+			natureza: "saida",
+		})),
+		receber: contasReceber.map((c) => ({
+			id: c.id,
+			descricao: c.descricao || c.documento || "Sem descrição",
+			valor: c.valor || "0.00",
+			data: c.data ? (c.data instanceof Date ? c.data.toISOString() : c.data) : "",
+			status: formatarStatus(c.status),
+			usuario: c.usuario || "Sistema",
+			tipo: "R",
+			natureza: "entrada",
+		})),
+		bancarias: transacoesBancarias.map((c) => ({
+			id: c.id,
+			descricao: c.descricao || "Sem descrição",
+			valor: c.valor || "0.00",
+			data: c.data ? (c.data instanceof Date ? c.data.toISOString() : c.data) : "",
+			status: c.status,
+			usuario: c.usuario || "Sistema",
+			tipo: "B",
+			natureza: c.tipo === "E" ? "entrada" : "saida",
+		})),
+	};
 }

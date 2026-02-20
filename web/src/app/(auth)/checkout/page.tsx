@@ -13,8 +13,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/use-auth";
-import { useEmpresa } from "@/hooks/use-empresa";
-import { realizarCheckout } from "@/services/checkout.service";
+import { usePlano } from "@/hooks/use-plano";
+import { contratarPlano, upgradePlano, TipoPlano } from "@/services/planos.service";
+import { useQueryClient } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -25,7 +26,7 @@ import { z } from "zod";
 import { maskCep, maskCpfCnpj, maskCreditCard, maskPhone } from "@/lib/masks";
 
 const checkoutSchema = z.object({
-    plano: z.enum(["BASIC", "PREMIUM"]),
+    plano: z.enum(["BASIC", "PREMIUM", "ENTERPRISE"]),
     holderName: z.string().min(3, "Nome do titular é obrigatório"),
     cardNumber: z.string().min(16, "Número do cartão inválido"),
     expiryMonth: z.string().length(2, "Mês inválido (MM)"),
@@ -47,9 +48,11 @@ type CheckoutFormValues = z.infer<typeof checkoutSchema>;
 export default function CheckoutPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const { user } = useAuth();
-    const { localStorageEmpresa } = useEmpresa();
+    const { user, refetchUser } = useAuth();
+    const { plano } = usePlano();
+    const queryClient = useQueryClient();
     const [isLoading, setIsLoading] = useState(false);
+    const [isUpgrade, setIsUpgrade] = useState(false);
 
     const form = useForm<CheckoutFormValues>({
         resolver: zodResolver(checkoutSchema),
@@ -79,13 +82,22 @@ export default function CheckoutPage() {
         }
 
         const planParam = searchParams.get("plan");
+        const typeParam = searchParams.get("type");
+        
         if (planParam) {
             const upperPlan = planParam.toUpperCase();
-            if (upperPlan === "BASIC" || upperPlan === "PREMIUM") {
-                form.setValue("plano", upperPlan as "BASIC" | "PREMIUM");
+            if (upperPlan === "BASIC" || upperPlan === "PREMIUM" || upperPlan === "ENTERPRISE") {
+                form.setValue("plano", upperPlan as "BASIC" | "PREMIUM" | "ENTERPRISE");
             }
         }
-    }, [user, form, searchParams]);
+        
+        // Verificar se é upgrade
+        if (typeParam === "upgrade" && plano) {
+            setIsUpgrade(true);
+        } else if (!plano) {
+            setIsUpgrade(false);
+        }
+    }, [user, form, searchParams, plano]);
 
     const handleInputChange = (field: keyof CheckoutFormValues, maskFunction: (value: string) => string) => (e: React.ChangeEvent<HTMLInputElement>) => {
         const maskedValue = maskFunction(e.target.value);
@@ -93,61 +105,63 @@ export default function CheckoutPage() {
     };
 
     const onSubmit = async (data: CheckoutFormValues) => {
-        if (!localStorageEmpresa?.id) {
-            toast.error("Nenhuma empresa selecionada");
-            return;
-        }
-
         setIsLoading(true);
-
-        // Remove non-numeric characters before sending to API if needed (keeping masks for display)
-        // However, the backend might handle it or we should strip in onSubmit.
-        // The service logic likely expects clean numbers for some fields like card number, but potentially formatted for address.
-        // Let's clean card number, expiry, ccv for safety.
-        // The `checkout.service` passes `cardNumber` directly. Asaas usually takes clean numbers.
 
         const cleanCardNumber = data.cardNumber.replace(/\D/g, "");
         const cleanCpfCnpj = data.holderCpfCnpj.replace(/\D/g, "");
         const cleanPhone = data.holderPhone.replace(/\D/g, "");
         const cleanPostalCode = data.holderPostalCode?.replace(/\D/g, "") || undefined;
 
+        const creditCardData = {
+            holderName: data.holderName,
+            number: cleanCardNumber,
+            expiryMonth: data.expiryMonth,
+            expiryYear: data.expiryYear,
+            ccv: data.ccv,
+        };
+
+        const creditCardHolderInfo = {
+            name: data.holderName,
+            email: data.holderEmail,
+            cpfCnpj: cleanCpfCnpj,
+            postalCode: cleanPostalCode,
+            address: data.holderAddress || undefined,
+            addressNumber: data.holderAddressNumber || undefined,
+            complement: data.holderComplement || undefined,
+            province: data.holderProvince || undefined,
+            city: data.holderCity || undefined,
+            phone: cleanPhone,
+        };
+
         try {
-            const response = await realizarCheckout({
-                idempresa: localStorageEmpresa.id,
-                plano: data.plano,
-                ciclo: "MONTHLY",
-                creditCard: {
-                    holderName: data.holderName,
-                    number: cleanCardNumber,
-                    expiryMonth: data.expiryMonth,
-                    expiryYear: data.expiryYear,
-                    ccv: data.ccv,
-                },
-                creditCardHolderInfo: {
-                    name: data.holderName,
-                    email: data.holderEmail,
-                    cpfCnpj: cleanCpfCnpj,
-                    postalCode: cleanPostalCode,
-                    address: data.holderAddress || undefined,
-                    addressNumber: data.holderAddressNumber || undefined,
-                    complement: data.holderComplement || undefined,
-                    province: data.holderProvince || undefined,
-                    city: data.holderCity || undefined,
-                    phone: cleanPhone,
-                },
-            });
-
-            toast.success("Assinatura realizada com sucesso!");
-
-            if (response.urlpagamento) {
-                window.location.href = response.urlpagamento;
+            if (isUpgrade && plano) {
+                // Upgrade de plano
+                await upgradePlano({
+                    plano: data.plano as TipoPlano,
+                    creditCard: creditCardData,
+                    creditCardHolderInfo,
+                });
+                toast.success("Upgrade realizado com sucesso!");
             } else {
-                router.push("/dashboard");
+                // Primeira contratação
+                await contratarPlano({
+                    plano: data.plano as TipoPlano,
+                    ciclo: "MONTHLY",
+                    creditCard: creditCardData,
+                    creditCardHolderInfo,
+                });
+                toast.success("Plano contratado com sucesso!");
             }
 
+            // Invalidar cache e refetch
+            queryClient.invalidateQueries({ queryKey: ["perfil"] });
+            queryClient.invalidateQueries({ queryKey: ["meu-plano"] });
+            await refetchUser();
+
+            router.push("/dashboard");
         } catch (error: any) {
             console.error(error);
-            toast.error(error.message || "Erro ao processar assinatura");
+            toast.error(error.message || "Erro ao processar operação");
         } finally {
             setIsLoading(false);
         }
@@ -157,9 +171,11 @@ export default function CheckoutPage() {
         <div className="container mx-auto py-10 flex justify-center">
             <Card className="w-full max-w-2xl">
                 <CardHeader>
-                    <CardTitle>Assinar Plano</CardTitle>
+                    <CardTitle>{isUpgrade ? "Upgrade de Plano" : "Assinar Plano"}</CardTitle>
                     <CardDescription>
-                        Preencha os dados do cartão de crédito para realizar a assinatura.
+                        {isUpgrade 
+                            ? "Preencha os dados do cartão de crédito para realizar o upgrade. Você será cobrado apenas pela diferença proporcional."
+                            : "Preencha os dados do cartão de crédito para realizar a assinatura."}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -167,7 +183,7 @@ export default function CheckoutPage() {
 
                         <div className="space-y-4">
                             <Label className="text-lg font-semibold">Escolha o Plano</Label>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-3 gap-4">
                                 <div
                                     className={`border rounded-lg p-4 cursor-pointer hover:bg-accent/50 ${form.watch("plano") === "BASIC" ? "border-primary bg-accent" : ""}`}
                                     onClick={() => form.setValue("plano", "BASIC")}
@@ -181,6 +197,13 @@ export default function CheckoutPage() {
                                 >
                                     <div className="font-bold">Premium</div>
                                     <div className="text-xl">R$ 199,00 <span className="text-sm font-normal">/mês</span></div>
+                                </div>
+                                <div
+                                    className={`border rounded-lg p-4 cursor-pointer hover:bg-accent/50 ${form.watch("plano") === "ENTERPRISE" ? "border-primary bg-accent" : ""}`}
+                                    onClick={() => form.setValue("plano", "ENTERPRISE")}
+                                >
+                                    <div className="font-bold">Enterprise</div>
+                                    <div className="text-xl">R$ 399,00 <span className="text-sm font-normal">/mês</span></div>
                                 </div>
                             </div>
                         </div>
@@ -304,10 +327,11 @@ export default function CheckoutPage() {
                 <CardFooter className="flex justify-end">
                     <Button type="submit" form="checkout-form" disabled={isLoading}>
                         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Finalizar Assinatura
+                        {isUpgrade ? "Confirmar Upgrade" : "Finalizar Assinatura"}
                     </Button>
                 </CardFooter>
             </Card>
         </div>
     );
 }
+

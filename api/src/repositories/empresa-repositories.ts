@@ -1,4 +1,4 @@
-import { and, count, desc, eq, ilike, inArray } from "drizzle-orm";
+import { and, count, desc, eq, ilike, inArray, or } from "drizzle-orm";
 import * as schema from "../../drizzle/schema.js";
 import { db } from "./connection.js";
 
@@ -21,6 +21,20 @@ export async function buscarEmpresaPorId(id: string) {
 		.where(eq(schema.empresa.id, id));
 
 	return empresa;
+}
+
+/**
+ * Verifica se um usuário é proprietário de alguma empresa
+ */
+export async function verificarUsuarioEhProprietario(
+	idusuario: string,
+): Promise<boolean> {
+	const [resultado] = await db
+		.select({ value: count() })
+		.from(schema.empresa)
+		.where(eq(schema.empresa.idproprietario, idusuario));
+
+	return (resultado?.value ?? 0) > 0;
 }
 
 export async function atualizarEmpresa(
@@ -115,22 +129,36 @@ export async function listarEmpresas({
 	limit = 10,
 }: ListarEmpresasParametros) {
 	const where = [];
+	const orConditions = [];
+
+	// Se idusuario for passado, buscar empresas da tabela usuario_empresa
 	if (idusuario) {
 		const empresasUsuarioEmpresa = await db
 			.select({ idempresa: schema.usuarioEmpresa.idempresa })
 			.from(schema.usuarioEmpresa)
 			.where(eq(schema.usuarioEmpresa.idusuario, idusuario));
-		where.push(
-			inArray(
-				schema.empresa.id,
-				empresasUsuarioEmpresa.map((e) => e.idempresa),
-			),
-		);
+
+		const idsEmpresasUsuario = empresasUsuarioEmpresa.map((e) => e.idempresa);
+		if (idsEmpresasUsuario.length > 0) {
+			orConditions.push(inArray(schema.empresa.id, idsEmpresasUsuario));
+		}
 	}
 
+	// Se idproprietario for passado, buscar empresas onde é proprietário
 	if (idproprietario) {
-		where.push(eq(schema.empresa.idproprietario, idproprietario));
+		orConditions.push(eq(schema.empresa.idproprietario, idproprietario));
 	}
+
+	// Se houver condições OR (idusuario ou idproprietario), adicionar ao where
+	if (orConditions.length === 1) {
+		// Se houver apenas uma condição, adicionar diretamente (não precisa de OR)
+		where.push(orConditions[0]);
+	} else if (orConditions.length > 1) {
+		// Se houver múltiplas condições, usar OR
+		where.push(or(...orConditions));
+	}
+
+	// Filtros adicionais (nome, cnpj, telefone) são aplicados com AND
 	if (nome) {
 		where.push(ilike(schema.empresa.nome, `%${nome}%`));
 	}
@@ -147,11 +175,11 @@ export async function listarEmpresas({
 		db
 			.select({ value: count() })
 			.from(schema.empresa)
-			.where(and(...where)),
+			.where(where.length > 0 ? and(...where) : undefined),
 		db
 			.select()
 			.from(schema.empresa)
-			.where(and(...where))
+			.where(where.length > 0 ? and(...where) : undefined)
 			.orderBy(desc(schema.empresa.criadoem))
 			.limit(limit)
 			.offset(offset),

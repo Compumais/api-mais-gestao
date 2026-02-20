@@ -32,7 +32,7 @@ type BancoFormProps = {
 export function BancoForm(props: BancoFormProps) {
 	const router = useRouter();
 	const queryClient = useQueryClient();
-	const { empresa } = useEmpresa();
+	const { localStorageEmpresa: empresa } = useEmpresa();
 
 	const modo = props.modo ?? "criar";
 	const isEdicao = modo === "editar";
@@ -42,10 +42,10 @@ export function BancoForm(props: BancoFormProps) {
 		defaultValues: isEdicao
 			? {}
 			: {
-					idempresa: empresa?.id || "",
-					codigo: "",
-					nome: "",
-				},
+				idempresa: empresa?.id || "",
+				codigo: "",
+				nome: "",
+			},
 	});
 
 	const {

@@ -123,3 +123,62 @@ export async function buscarEmpresasDoUsuario(
 
 	return todosIds;
 }
+
+export type UsuarioPlano = {
+	plano: string | null;
+	plano_inicio_ciclo: Date | null;
+	plano_fim_ciclo: Date | null;
+	plano_proximo: string | null;
+};
+
+export async function buscarPlanoUsuario(id: string): Promise<UsuarioPlano | null> {
+	const [usuario] = await db
+		.select({
+			plano: schema.usuarios.plano,
+			plano_inicio_ciclo: schema.usuarios.plano_inicio_ciclo,
+			plano_fim_ciclo: schema.usuarios.plano_fim_ciclo,
+			plano_proximo: schema.usuarios.plano_proximo,
+		})
+		.from(schema.usuarios)
+		.where(eq(schema.usuarios.id, id))
+		.limit(1);
+
+	if (!usuario) {
+		return null;
+	}
+
+	return {
+		plano: usuario.plano,
+		plano_inicio_ciclo: usuario.plano_inicio_ciclo ? new Date(usuario.plano_inicio_ciclo) : null,
+		plano_fim_ciclo: usuario.plano_fim_ciclo ? new Date(usuario.plano_fim_ciclo) : null,
+		plano_proximo: usuario.plano_proximo,
+	};
+}
+
+export async function atualizarPlanoUsuario(
+	id: string,
+	dados: Partial<UsuarioPlano>
+): Promise<Usuario | null> {
+	const updateData: Record<string, unknown> = {};
+
+	if (dados.plano !== undefined) {
+		updateData.plano = dados.plano;
+	}
+	if (dados.plano_inicio_ciclo !== undefined) {
+		updateData.plano_inicio_ciclo = dados.plano_inicio_ciclo;
+	}
+	if (dados.plano_fim_ciclo !== undefined) {
+		updateData.plano_fim_ciclo = dados.plano_fim_ciclo;
+	}
+	if (dados.plano_proximo !== undefined) {
+		updateData.plano_proximo = dados.plano_proximo;
+	}
+
+	const [usuario] = await db
+		.update(schema.usuarios)
+		.set(updateData)
+		.where(eq(schema.usuarios.id, id))
+		.returning();
+
+	return usuario || null;
+}

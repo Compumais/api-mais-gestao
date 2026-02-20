@@ -7,24 +7,47 @@ export async function authenticationRoute(
 	reply: FastifyReply,
 ) {
 	try {
-		const url = new URL(request.url, `http://${request.headers.host}`);
+		const host = request.headers.host || "localhost:3333";
+		const protocol = request.protocol || "http";
+		const url = new URL(request.url, `${protocol}://${host}`);
 
 		const headers = new Headers();
-		Object.entries(request.headers).forEach(([key, value]) => {
-			if (value) headers.append(key, value.toString());
-		});
+		for (const [key, value] of Object.entries(request.headers)) {
+			if (Array.isArray(value)) {
+				for (const v of value) {
+					headers.append(key, v);
+				}
+			} else if (value) {
+				headers.append(key, value as string);
+			}
+		}
+
 		const req = new Request(url.toString(), {
-			method: request.method as string,
+			method: request.method,
 			headers,
-			body: request.body ? JSON.stringify(request.body) : null,
+			body: request.method === "GET" || request.method === "HEAD" ? null : (request.body ? JSON.stringify(request.body) : null),
 		});
+
 		// Process authentication request
 		const response = await auth.handler(req);
+
 		// Forward response to client
 		reply.status(response.status);
+
+		// Forward headers except Set-Cookie (handled below)
 		response.headers.forEach((value: string, key: string) => {
-			reply.header(key, value);
+			if (key.toLowerCase() !== "set-cookie") {
+				reply.header(key, value);
+			}
 		});
+
+		// Correctly handle multiple Set-Cookie headers to avoid concatenation
+		// This is critical for state/session cookies in social logins
+		const setCookies = response.headers.getSetCookie?.();
+		if (setCookies && setCookies.length > 0) {
+			reply.raw.setHeader("set-cookie", setCookies);
+		}
+
 		reply.send(response.body ? await response.text() : null);
 	} catch (error) {
 		app.log.error(error, "Authentication Error");

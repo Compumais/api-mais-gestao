@@ -3,7 +3,9 @@ import { api } from "@/lib/axios";
 interface CriarEmpresa {
 	nome: string;
 	cnpj: string;
+	email: string;
 	telefone: string;
+	endereco: string;
 	idproprietario: string;
 }
 
@@ -11,6 +13,8 @@ interface Empresa {
 	id: string;
 	idproprietario: string;
 	nome: string;
+	email: string;
+	endereco: string;
 }
 
 interface ListarEmpresasResponse {
@@ -26,6 +30,7 @@ interface ListarEmpresasResponse {
 export const empresasService = {
 	async listar(params?: {
 		idusuario?: string;
+		idproprietario?: string;
 		page?: number;
 		limit?: number;
 	}): Promise<ListarEmpresasResponse> {

@@ -31,17 +31,21 @@ import {
   ToggleGroupItem,
 } from "@/components/ui/toggle-group"
 import { dashboardService } from "@/services/dashboard.service"
+import { getMeuPlano } from "@/services/assinaturas.service"
+import { IconLock } from "@tabler/icons-react"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 export const description = "Gráfico de contas a pagar e receber"
 
 const chartConfig = {
   contasReceber: {
     label: "Contas a Receber",
-    color: "hsl(var(--chart-2))",
+    color: "#16a34a",
   },
   contasPagar: {
     label: "Contas a Pagar",
-    color: "hsl(var(--chart-1))",
+    color: "#ef4444",
   },
 } satisfies ChartConfig
 
@@ -67,6 +71,19 @@ export function ChartAreaInteractive() {
       }),
     enabled: !!empresa?.id,
   })
+
+  // Busca o plano da empresa
+  const { data: assinatura, isLoading: isLoadingPlano } = useQuery({
+    queryKey: ["meu-plano", empresa?.id],
+    queryFn: () => getMeuPlano(empresa!.id),
+    enabled: !!empresa?.id,
+    staleTime: 1000 * 60 * 30, // 30 minutos
+  })
+
+  const isPremium =
+    assinatura?.plan?.toUpperCase() === "PREMIUM" ||
+    assinatura?.plan?.toUpperCase() === "ENTERPRISE" ||
+    assinatura?.plan === "SISTEMA" // Caso especial para admin/donos do sistema se houver
 
   const filteredData = React.useMemo(() => {
     if (!chartData || !Array.isArray(chartData)) return []
@@ -186,10 +203,30 @@ export function ChartAreaInteractive() {
           </Select>
         </CardAction>
       </CardHeader>
-      <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
+      <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6 relative">
+        {(!isPremium && !isLoadingPlano) && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/5 backdrop-blur-sm rounded-lg border border-muted-foreground/10 m-2">
+            <div className="flex flex-col items-center gap-4 p-6 text-center max-w-sm">
+              <div className="p-3 bg-primary/10 rounded-full">
+                <IconLock className="w-8 h-8 text-primary" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="font-semibold text-lg">Recurso Premium</h3>
+                <p className="text-sm text-muted-foreground">
+                  A visualização detalhada do gráfico financeiro está disponível apenas nos planos Premium e Enterprise.
+                </p>
+              </div>
+              <Button asChild className="w-full">
+                <Link href="/meus-planos">
+                  Fazer Upgrade
+                </Link>
+              </Button>
+            </div>
+          </div>
+        )}
         <ChartContainer
           config={chartConfig}
-          className="aspect-auto h-[250px] w-full"
+          className={`aspect-auto h-[250px] w-full transition-all ${!isPremium && !isLoadingPlano ? 'opacity-20 blur-sm select-none pointer-events-none' : ''}`}
         >
           <AreaChart data={filteredData}>
             <defs>
@@ -259,14 +296,12 @@ export function ChartAreaInteractive() {
               type="natural"
               fill="url(#fillContasReceber)"
               stroke="var(--color-contasReceber)"
-              stackId="a"
             />
             <Area
               dataKey="contasPagar"
               type="natural"
               fill="url(#fillContasPagar)"
               stroke="var(--color-contasPagar)"
-              stackId="a"
             />
           </AreaChart>
         </ChartContainer>

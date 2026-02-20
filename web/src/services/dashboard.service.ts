@@ -44,5 +44,34 @@ export const dashboardService = {
 		);
 		return data;
 	},
+
+	async buscarUltimasMovimentacoes(
+		params?: BuscarDadosDashboardParams,
+	): Promise<UltimasMovimentacoes> {
+		const { data } = await api.get<UltimasMovimentacoes>(
+			"/dashboard/ultimas-movimentacoes",
+			{
+				params,
+			},
+		);
+		return data;
+	},
 };
+
+export interface UltimaMovimentacao {
+	id: string;
+	descricao: string;
+	valor: string;
+	data: string;
+	status: string;
+	usuario: string;
+	tipo: "P" | "R" | "B";
+	natureza: "entrada" | "saida";
+}
+
+export interface UltimasMovimentacoes {
+	pagar: UltimaMovimentacao[];
+	receber: UltimaMovimentacao[];
+	bancarias: UltimaMovimentacao[];
+}
 

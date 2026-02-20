@@ -4,6 +4,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { CompanyToogle } from "./company-toogle";
 import { RefreshButton } from "./refresh-button";
 import { ThemeToogle } from "./theme-toogle";
+import { SearchButton } from "./search-button";
 
 export function SiteHeader() {
 	return (
@@ -13,6 +14,7 @@ export function SiteHeader() {
 				<div className="ml-auto flex items-center gap-2">
 					<CompanyToogle />
 					<RefreshButton />
+					<SearchButton />
 					<ThemeToogle />
 					<Button variant="secondary" size="sm">
 						<BellIcon className="size-4" />

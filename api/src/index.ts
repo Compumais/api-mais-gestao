@@ -9,6 +9,7 @@ import { auditoriaRotas } from "./controllers/http/auditoria/rotas.js";
 import { authenticationRoute } from "./controllers/http/authentication.js";
 import { bancosRotas } from "./controllers/http/bancos/rotas.js";
 import { configuracaoRotas } from "./controllers/http/configuracao/rotas.js";
+import { contaContabilRotas } from "./controllers/http/conta-contabil/rotas.js";
 import { contaCorrenteLancamentoRotas } from "./controllers/http/conta-corrente-lancamento/rotas.js";
 import { contaCorrenteRotas } from "./controllers/http/contacorrente/rotas.js";
 import { dashboardRotas } from "./controllers/http/dashboard/rotas.js";
@@ -17,33 +18,27 @@ import { entidadesRotas } from "./controllers/http/entidades/rotas.js";
 import { financeiroRotas } from "./controllers/http/financeiro/rotas.js";
 import { financeiroLancamentoRotas } from "./controllers/http/financeirolancamento/rotas.js";
 import { planoContasRotas } from "./controllers/http/plano-contas/rotas.js";
+import { planosRotas } from "./controllers/http/planos/rotas.js";
 import { usuariosRotas } from "./controllers/http/usuarios/rotas.js";
 
 export const app = Fastify({ logger: true });
 
 app.register(cors, {
-    origin: (origin, callback) => {
-        // Permite requisições sem origem (ex: mobile apps, Postman)
+    origin: (origin, cb) => {
         if (!origin) {
-            return callback(null, true);
+            cb(null, true);
+            return;
         }
-        // Lista de origens permitidas
-        const allowedOrigins = [
-            process.env.CLIENT_ORIGIN || "http://localhost:3000",
-            "http://localhost:3000",
-            "http://127.0.0.1:3000",
-        ];
-        // Verifica se a origem está na lista de permitidas
-        if (allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            // Em desenvolvimento, permite qualquer origem localhost
-            if (origin.includes("localhost") || origin.includes("127.0.0.1")) {
-                callback(null, true);
-            } else {
-                callback(new Error("Not allowed by CORS"));
+        try {
+            const hostname = new URL(origin).hostname;
+            if (hostname === "localhost" || hostname === "127.0.0.1" || hostname.startsWith("192.168")) {
+                cb(null, true);
+                return;
             }
+        } catch (e) {
+            // Ignore invalid URLs
         }
+        cb(new Error("Not allowed"), false);
     },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
@@ -101,6 +96,10 @@ await app.register(swagger, {
             },
             { name: "auditoria", description: "Operações com logs de auditoria" },
             { name: "dashboard", description: "Operações com dashboard" },
+            {
+                name: "conta-contabil",
+                description: "Operações com contas contábeis",
+            },
         ],
     },
 });
@@ -374,6 +373,8 @@ app.register(auditoriaRotas);
 app.register(dashboardRotas);
 app.register(usuariosRotas);
 app.register(assinaturasRotas);
+app.register(planosRotas);
+app.register(contaContabilRotas);
 
 app.listen({ port: 3333 }).then(() => {
     console.log("HTTP server running on port 3333");

@@ -1,0 +1,35 @@
+[
+	{
+		"__TYPE__": "SharedSliceContent",
+		"variation": "default",
+		"primary": {
+			"title": {
+				"__TYPE__": "FieldContent",
+				"value": "magic",
+				"type": "Text"
+			},
+			"created_at": {
+				"__TYPE__": "FieldContent",
+				"type": "Date",
+				"value": "2022-03-04"
+			},
+			"author": {
+				"__TYPE__": "FieldContent",
+				"value": "saddle",
+				"type": "Text"
+			},
+			"content": {
+				"__TYPE__": "StructuredTextContent",
+				"value": [
+					{
+						"type": "paragraph",
+						"content": {
+							"text": "Velit incididunt labore adipisicing et. Id ea ad nostrud anim cillum eu veniam."
+						}
+					}
+				]
+			}
+		},
+		"items": []
+	}
+]

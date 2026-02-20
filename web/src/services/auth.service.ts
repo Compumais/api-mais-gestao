@@ -37,7 +37,8 @@ export interface UserProfile {
 	id: string;
 	nome: string;
 	email: string;
-	perfil: string;
+	perfil: string[];
+	plano?: string | null;
 }
 
 export interface UpdateProfileData {
@@ -76,6 +77,7 @@ export const authService = {
 			nome: data.user.name,
 			email: data.user.email,
 			perfil: data.user.perfil,
+			plano: data.user.plano || null,
 		};
 	},
 

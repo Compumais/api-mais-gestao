@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Building2Icon, CheckIcon, PlusIcon } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -23,19 +23,18 @@ interface Empresa {
 }
 
 export function CompanyToogle() {
-	const {
-		createCompany,
-		listarEmpresas,
-		localStorageEmpresa,
-		selecionarEmpresa,
-	} = useEmpresa();
+	const { listarEmpresas, localStorageEmpresa, selecionarEmpresa } =
+		useEmpresa();
 	const { user } = useAuth();
+	const queryClient = useQueryClient();
 
 	const [empresa, setEmpresa] = useState<Empresa | null>(null);
 
 	const { data: empresas } = useQuery({
 		queryKey: ["empresas", user?.id],
-		queryFn: () => listarEmpresas({ idusuario: user?.id }),
+		// Buscar empresas onde o usuário é proprietário OU está associado na tabela usuario_empresa
+		queryFn: () =>
+			listarEmpresas({ idusuario: user?.id, idproprietario: user?.id }),
 	});
 
 	useEffect(() => {

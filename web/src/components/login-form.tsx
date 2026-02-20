@@ -21,10 +21,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { authService } from "@/services/auth.service";
+import { authClient } from "@/lib/auth-client";
 import { GoogleIcon } from "./icons/google-icon";
-import { Badge } from "./ui/badge";
 
-const TOKEN_KEY = "token:mais-gestao";
 
 const loginSchema = z.object({
 	email: z
@@ -52,16 +51,9 @@ export function LoginForm({
 
 	const { mutate: signIn, isPending } = useMutation({
 		mutationFn: authService.signIn,
-		onSuccess: (data) => {
-			// O Better Auth retorna o token em session.token
-			const token = data.token || data.session?.token;
-			if (token) {
-				localStorage.setItem(TOKEN_KEY, token);
-				toast.success("Login realizado com sucesso!");
-				router.push("/dashboard");
-			} else {
-				toast.error("Token não recebido do servidor");
-			}
+		onSuccess: () => {
+			toast.success("Login realizado com sucesso!");
+			router.push("/dashboard");
 		},
 		onError: (error: Error) => {
 			toast.error(
@@ -132,13 +124,15 @@ export function LoginForm({
 									className="relative"
 									variant="outline"
 									type="button"
-									disabled
+									onClick={() => {
+										authClient.signIn.social({
+											provider: "google",
+											callbackURL: `${window.location.origin}/dashboard`,
+										});
+									}}
 								>
-									<Badge className="absolute top-[-10px] right-[-10px]">
-										Em breve
-									</Badge>
 									<GoogleIcon />
-									<span className="sr-only">Login com Google</span>
+									<span>Entrar com Google</span>
 								</Button>
 							</Field>
 							<FieldDescription className="text-center">

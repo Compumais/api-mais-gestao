@@ -51,6 +51,10 @@ export interface CriarPlanoContasData {
 	nome: string;
 	tipomovimento: "E" | "S";
 	inativo: 0 | 1;
+	classe?: string | null;
+	centrocustoobrigatorio?: number | null;
+	tipoconta?: number | null;
+	exportaparacontabilidade?: number | null;
 	idplanocontas?: string;
 }
 

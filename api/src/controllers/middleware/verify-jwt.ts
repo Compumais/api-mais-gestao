@@ -87,6 +87,7 @@ export async function verifyJwt(request: FastifyRequest, reply: FastifyReply) {
 								nome: schema.usuarios.nome,
 								email: schema.usuarios.email,
 								perfil: schema.usuarios.perfil,
+								plano: schema.usuarios.plano,
 							})
 							.from(schema.usuarios)
 							.where(eq(schema.usuarios.id, sessao.idusuario))
@@ -114,6 +115,7 @@ export async function verifyJwt(request: FastifyRequest, reply: FastifyReply) {
 								name: userData?.nome || "",
 								email: userData?.email,
 								roles: perfil,
+								plano: userData?.plano || null,
 							};
 							return; // Autenticação bem-sucedida
 						}
@@ -122,8 +124,29 @@ export async function verifyJwt(request: FastifyRequest, reply: FastifyReply) {
 			}
 		} else {
 			// Sessão encontrada via cookies
+			// Buscar dados completos do usuário incluindo plano
+			const usuario = await db
+				.select({
+					id: schema.usuarios.id,
+					nome: schema.usuarios.nome,
+					email: schema.usuarios.email,
+					perfil: schema.usuarios.perfil,
+					plano: schema.usuarios.plano,
+				})
+				.from(schema.usuarios)
+				.where(eq(schema.usuarios.id, session.user.id))
+				.limit(1);
+
+			const userData = usuario[0];
+			if (!userData) {
+				return reply.status(401).send({
+					error: "Usuário não encontrado",
+					code: "UNAUTHORIZED",
+				});
+			}
+
 			// perfil pode ser um array JSONB ou uma string
-			const perfilRaw: unknown = session.user.perfil;
+			const perfilRaw: unknown = userData.perfil;
 			let perfil = "usuario";
 
 			if (perfilRaw) {
@@ -138,10 +161,11 @@ export async function verifyJwt(request: FastifyRequest, reply: FastifyReply) {
 			}
 
 			request.user = {
-				id: session.user.id,
-				name: session.user.name || "",
-				email: session.user.email,
+				id: userData.id,
+				name: userData.nome || "",
+				email: userData.email,
 				roles: perfil,
+				plano: userData.plano || null,
 			};
 			return; // Autenticação bem-sucedida
 		}

@@ -49,6 +49,8 @@ export async function criarEmpresa(
 			nome: dadosValidados.nome,
 			cnpj: dadosValidados.cnpj,
 			telefone: dadosValidados.telefone,
+			email: dadosValidados.email,
+			endereco: dadosValidados.endereco,
 			atualizadoem: new Date().toISOString(),
 			criadoem: new Date().toISOString(),
 		};

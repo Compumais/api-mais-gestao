@@ -21,10 +21,29 @@ export const auth = betterAuth({
 			verification: schema.verificacoes,
 		},
 	}),
+	databaseHooks: {
+		user: {
+			create: {
+				before: async (user) => {
+					return {
+						...user,
+						perfil: ["proprietario"],
+					};
+				},
+			},
+		},
+	},
 
 	emailAndPassword: {
 		enabled: true,
 	},
+	socialProviders: {
+		google: {
+			clientId: process.env.GOOGLE_CLIENT_ID as string,
+			clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+		},
+	},
+	trustedOrigins: ["http://localhost:3000"],
 	user: {
 		modelName: "usuarios",
 		fields: {
@@ -37,6 +56,26 @@ export const auth = betterAuth({
 		additionalFields: {
 			maxempresas: {
 				type: "number",
+				required: false,
+				input: false,
+			},
+			plano: {
+				type: "string",
+				required: false,
+				input: false,
+			},
+			plano_inicio_ciclo: {
+				type: "date",
+				required: false,
+				input: false,
+			},
+			plano_fim_ciclo: {
+				type: "date",
+				required: false,
+				input: false,
+			},
+			plano_proximo: {
+				type: "string",
 				required: false,
 				input: false,
 			},
@@ -84,9 +123,11 @@ export const auth = betterAuth({
 	},
 	advanced: {
 		disableOriginCheck: true,
+		useSecureCookies: false, // Desabilitar para localhost sem HTTPS
+		cookiePrefix: "mais-gestao", // Evitar colisões no localhost
 		appName: "Mais Gestão",
 		appDescription: "Mais Gestão é um sistema de gestão de empresas",
-		appUrl: "https://maisgestao.com",
+		appUrl: "http://localhost:3000",
 		appIcon: "https://maisgestao.com/icon.png",
 		appColor: "#000000",
 		appTheme: "dark",
@@ -99,29 +140,28 @@ export const auth = betterAuth({
 			const dadosUsuario = await db
 				.select({
 					perfil: schema.usuarios.perfil,
+					plano: schema.usuarios.plano,
 				})
 				.from(schema.usuarios)
 				.where(eq(schema.usuarios.id, user.id))
 				.limit(1);
 
 			const perfilRaw: unknown = dadosUsuario[0]?.perfil;
-			let perfil = "usuario";
+			let perfil: string[] = ["usuario"];
 
 			if (perfilRaw) {
-				if (Array.isArray(perfilRaw) && perfilRaw.length > 0) {
-					const firstElement = perfilRaw[0];
-					if (typeof firstElement === "string") {
-						perfil = firstElement;
-					}
+				if (Array.isArray(perfilRaw)) {
+					perfil = perfilRaw.filter((p): p is string => typeof p === "string");
 				} else if (typeof perfilRaw === "string") {
-					perfil = perfilRaw;
+					perfil = [perfilRaw];
 				}
 			}
 
 			return {
 				user: {
 					...user,
-					perfil: perfil,
+					perfil,
+					plano: dadosUsuario[0]?.plano || null,
 				},
 				session,
 			};
