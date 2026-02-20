@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -45,6 +45,16 @@ import {
 	criarWebhookSchema,
 } from "@/schemas/configuracao.schema";
 import type { Configuracao } from "@/services/configuracao.service";
+import { useAuth } from "@/hooks/use-auth";
+import {
+	useConfiguracaoUsuario,
+	useAtualizarConfiguracaoUsuario,
+} from "@/hooks/use-configuracao-usuario";
+import {
+	atualizarConfiguracaoUsuarioSchema,
+	type AtualizarConfiguracaoUsuarioFormData,
+} from "@/schemas/configuracao-usuario.schema";
+import { Eye, EyeOff } from "lucide-react";
 
 interface IntegracaoFormProps {
 	configuracao: Configuracao | undefined;
@@ -55,6 +65,7 @@ export function IntegracaoForm({
 	configuracao,
 	idempresa,
 }: IntegracaoFormProps) {
+	const { user } = useAuth();
 	const atualizarMutation = useAtualizarSecaoConfiguracao();
 	const criarChaveApiMutation = useCriarChaveApi();
 	const deletarChaveApiMutation = useDeletarChaveApi();
@@ -66,6 +77,53 @@ export function IntegracaoForm({
 	const [mostrarDialogChave, setMostrarDialogChave] = useState(false);
 	const [mostrarDialogWebhook, setMostrarDialogWebhook] = useState(false);
 	const [webhookEditando, setWebhookEditando] = useState<string | null>(null);
+
+	// Configurações globais de integrações
+	const { data: configuracaoUsuario } = useConfiguracaoUsuario(idempresa);
+	const atualizarConfiguracaoUsuarioMutation = useAtualizarConfiguracaoUsuario();
+
+	// Verificar se usuário é proprietário
+	const isProprietario = user?.perfil?.includes("proprietario") ?? false;
+
+	// Estados para mostrar/ocultar senhas
+	const [mostrarGemini, setMostrarGemini] = useState(false);
+	const [mostrarOpenAI, setMostrarOpenAI] = useState(false);
+	const [mostrarOpenRouter, setMostrarOpenRouter] = useState(false);
+	const [mostrarAsaas, setMostrarAsaas] = useState(false);
+
+	const formIntegracoesGlobais = useForm<AtualizarConfiguracaoUsuarioFormData>({
+		resolver: zodResolver(atualizarConfiguracaoUsuarioSchema),
+		defaultValues: {
+			geminiApiKey: "",
+			openaiApiKey: "",
+			openrouterApiKey: "",
+			asaasToken: "",
+		},
+	});
+
+	// Atualizar valores do formulário quando configuração for carregada
+	useEffect(() => {
+		if (configuracaoUsuario?.integracoes) {
+			formIntegracoesGlobais.reset({
+				geminiApiKey: configuracaoUsuario.integracoes.geminiApiKey || "",
+				openaiApiKey: configuracaoUsuario.integracoes.openaiApiKey || "",
+				openrouterApiKey:
+					configuracaoUsuario.integracoes.openrouterApiKey || "",
+				asaasToken: configuracaoUsuario.integracoes.asaasToken || "",
+			});
+		}
+	}, [configuracaoUsuario, formIntegracoesGlobais]);
+
+	const handleAtualizarIntegracoesGlobais = (
+		data: AtualizarConfiguracaoUsuarioFormData,
+	) => {
+		if (!isProprietario) {
+			toast.error("Apenas o proprietário pode atualizar as configurações");
+			return;
+		}
+
+		atualizarConfiguracaoUsuarioMutation.mutate(data);
+	};
 
 	const formChaveApi = useForm<CriarChaveApiFormData>({
 		resolver: zodResolver(criarChaveApiSchema),
@@ -430,6 +488,211 @@ export function IntegracaoForm({
 						))
 					)}
 				</div>
+			</div>
+
+			{/* Integrações Globais */}
+			<div className="rounded-lg border bg-card p-6">
+				<div className="mb-4">
+					<h2 className="text-lg font-semibold mb-2">
+						Integrações Globais
+					</h2>
+					<p className="text-sm text-muted-foreground">
+						{isProprietario
+							? "Configure as chaves de API e tokens que serão compartilhados entre todas as suas empresas."
+							: "Estas são as configurações do proprietário da empresa. Você pode visualizar, mas não pode editar."}
+					</p>
+				</div>
+
+				<form
+					onSubmit={formIntegracoesGlobais.handleSubmit(
+						handleAtualizarIntegracoesGlobais,
+					)}
+					className="space-y-4"
+				>
+					<FieldGroup>
+						<Field>
+							<FieldLabel htmlFor="geminiApiKey">
+								Chave da API Gemini
+							</FieldLabel>
+							<div className="relative">
+								<Input
+									id="geminiApiKey"
+									type={mostrarGemini ? "text" : "password"}
+									readOnly={!isProprietario}
+									placeholder={
+										isProprietario
+											? "Digite a chave da API Gemini"
+											: "Configurada pelo proprietário"
+									}
+									{...formIntegracoesGlobais.register("geminiApiKey")}
+									className={!isProprietario ? "bg-muted" : ""}
+								/>
+								{isProprietario && (
+									<Button
+										type="button"
+										variant="ghost"
+										size="sm"
+										className="absolute right-0 top-0 h-full px-3"
+										onClick={() => setMostrarGemini(!mostrarGemini)}
+									>
+										{mostrarGemini ? (
+											<EyeOff className="h-4 w-4" />
+										) : (
+											<Eye className="h-4 w-4" />
+										)}
+									</Button>
+								)}
+							</div>
+							<FieldError
+								errors={
+									formIntegracoesGlobais.formState.errors.geminiApiKey
+										? [formIntegracoesGlobais.formState.errors.geminiApiKey]
+										: []
+								}
+							/>
+						</Field>
+
+						<Field>
+							<FieldLabel htmlFor="openaiApiKey">
+								Chave de API OpenAI
+							</FieldLabel>
+							<div className="relative">
+								<Input
+									id="openaiApiKey"
+									type={mostrarOpenAI ? "text" : "password"}
+									readOnly={!isProprietario}
+									placeholder={
+										isProprietario
+											? "Digite a chave da API OpenAI"
+											: "Configurada pelo proprietário"
+									}
+									{...formIntegracoesGlobais.register("openaiApiKey")}
+									className={!isProprietario ? "bg-muted" : ""}
+								/>
+								{isProprietario && (
+									<Button
+										type="button"
+										variant="ghost"
+										size="sm"
+										className="absolute right-0 top-0 h-full px-3"
+										onClick={() => setMostrarOpenAI(!mostrarOpenAI)}
+									>
+										{mostrarOpenAI ? (
+											<EyeOff className="h-4 w-4" />
+										) : (
+											<Eye className="h-4 w-4" />
+										)}
+									</Button>
+								)}
+							</div>
+							<FieldError
+								errors={
+									formIntegracoesGlobais.formState.errors.openaiApiKey
+										? [formIntegracoesGlobais.formState.errors.openaiApiKey]
+										: []
+								}
+							/>
+						</Field>
+
+						<Field>
+							<FieldLabel htmlFor="openrouterApiKey">
+								Chave de API OpenRouter
+							</FieldLabel>
+							<div className="relative">
+								<Input
+									id="openrouterApiKey"
+									type={mostrarOpenRouter ? "text" : "password"}
+									readOnly={!isProprietario}
+									placeholder={
+										isProprietario
+											? "Digite a chave da API OpenRouter"
+											: "Configurada pelo proprietário"
+									}
+									{...formIntegracoesGlobais.register("openrouterApiKey")}
+									className={!isProprietario ? "bg-muted" : ""}
+								/>
+								{isProprietario && (
+									<Button
+										type="button"
+										variant="ghost"
+										size="sm"
+										className="absolute right-0 top-0 h-full px-3"
+										onClick={() => setMostrarOpenRouter(!mostrarOpenRouter)}
+									>
+										{mostrarOpenRouter ? (
+											<EyeOff className="h-4 w-4" />
+										) : (
+											<Eye className="h-4 w-4" />
+										)}
+									</Button>
+								)}
+							</div>
+							<FieldError
+								errors={
+									formIntegracoesGlobais.formState.errors.openrouterApiKey
+										? [
+												formIntegracoesGlobais.formState.errors
+													.openrouterApiKey,
+											]
+										: []
+								}
+							/>
+						</Field>
+
+						<Field>
+							<FieldLabel htmlFor="asaasToken">Token Asaas</FieldLabel>
+							<div className="relative">
+								<Input
+									id="asaasToken"
+									type={mostrarAsaas ? "text" : "password"}
+									readOnly={!isProprietario}
+									placeholder={
+										isProprietario
+											? "Digite o token Asaas"
+											: "Configurado pelo proprietário"
+									}
+									{...formIntegracoesGlobais.register("asaasToken")}
+									className={!isProprietario ? "bg-muted" : ""}
+								/>
+								{isProprietario && (
+									<Button
+										type="button"
+										variant="ghost"
+										size="sm"
+										className="absolute right-0 top-0 h-full px-3"
+										onClick={() => setMostrarAsaas(!mostrarAsaas)}
+									>
+										{mostrarAsaas ? (
+											<EyeOff className="h-4 w-4" />
+										) : (
+											<Eye className="h-4 w-4" />
+										)}
+									</Button>
+								)}
+							</div>
+							<FieldError
+								errors={
+									formIntegracoesGlobais.formState.errors.asaasToken
+										? [formIntegracoesGlobais.formState.errors.asaasToken]
+										: []
+								}
+							/>
+						</Field>
+
+						{isProprietario && (
+							<div className="flex justify-end">
+								<Button
+									type="submit"
+									disabled={atualizarConfiguracaoUsuarioMutation.isPending}
+								>
+									{atualizarConfiguracaoUsuarioMutation.isPending
+										? "Salvando..."
+										: "Salvar Configurações"}
+								</Button>
+							</div>
+						)}
+					</FieldGroup>
+				</form>
 			</div>
 
 			{/* Integrações Bancárias */}

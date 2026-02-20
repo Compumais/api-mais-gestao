@@ -51,13 +51,15 @@ export default function AjudaPage() {
                 </p>
                 <div className="flex flex-wrap justify-center gap-4">
                     <a
-                        href="mailto:suporte@maisgestao.com.br"
+                        href="mailto:contato@compumais.com.br"
                         className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                     >
                         Enviar e-mail
                     </a>
                     <a
-                        href="#"
+                        href="https://wa.me/553433511861?text=Olá,%20gostaria%20de%20abrir%20um%20chamado%20sobre%20o%20Mais%20Gestão"
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 rounded-lg border bg-background px-6 py-3 font-medium transition-colors hover:bg-accent"
                     >
                         Abrir chamado

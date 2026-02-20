@@ -1,0 +1,53 @@
+import type { FastifyReply, FastifyRequest } from "fastify";
+import z from "zod";
+import { atualizarConfiguracaoUsuarioService } from "@/service/configuracao-usuario/atualizar-configuracao-usuario";
+import { httpNaoAutorizado, httpProibido } from "@/util/http-util";
+
+const atualizarConfiguracaoUsuarioBodySchema = z.object({
+	geminiApiKey: z.string().optional(),
+	openaiApiKey: z.string().optional(),
+	openrouterApiKey: z.string().optional(),
+	asaasToken: z.string().optional(),
+});
+
+export async function atualizarConfiguracaoUsuario(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
+	try {
+		if (!request.user) {
+			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
+		}
+
+		const dados = atualizarConfiguracaoUsuarioBodySchema.parse(request.body);
+
+		// Apenas o próprio usuário pode atualizar suas configurações
+		// O idusuario vem do token de autenticação (request.user.id)
+		// Não permitimos que um usuário atualize configurações de outro usuário
+
+		const resultado = await atualizarConfiguracaoUsuarioService({
+			idusuario: request.user.id,
+			dados,
+		});
+
+		if (!resultado.success) {
+			return reply.status(resultado.status).send(resultado);
+		}
+
+		return reply.status(resultado.status).send(resultado.body);
+	} catch (error) {
+		console.error(error);
+		if (error instanceof z.ZodError) {
+			return reply.status(400).send({
+				error: "Erro de validação",
+				code: "VALIDATION_ERROR",
+				details: error.issues,
+			});
+		}
+		return reply.status(500).send({
+			error: "Erro ao atualizar configurações do usuário",
+			code: "UPDATE_CONFIGURACAO_USUARIO_ERROR",
+		});
+	}
+}
+

@@ -9,6 +9,7 @@ import { auditoriaRotas } from "./controllers/http/auditoria/rotas.js";
 import { authenticationRoute } from "./controllers/http/authentication.js";
 import { bancosRotas } from "./controllers/http/bancos/rotas.js";
 import { configuracaoRotas } from "./controllers/http/configuracao/rotas.js";
+import { configuracaoUsuarioRotas } from "./controllers/http/configuracao-usuario/rotas.js";
 import { contaContabilRotas } from "./controllers/http/conta-contabil/rotas.js";
 import { contaCorrenteLancamentoRotas } from "./controllers/http/conta-corrente-lancamento/rotas.js";
 import { contaCorrenteRotas } from "./controllers/http/contacorrente/rotas.js";
@@ -93,6 +94,10 @@ await app.register(swagger, {
             {
                 name: "configuracoes",
                 description: "Operações com configurações da empresa",
+            },
+            {
+                name: "configuracoes-usuario",
+                description: "Operações com configurações globais do usuário",
             },
             { name: "auditoria", description: "Operações com logs de auditoria" },
             { name: "dashboard", description: "Operações com dashboard" },
@@ -369,6 +374,7 @@ app.register(financeiroRotas);
 app.register(financeiroLancamentoRotas);
 app.register(bancosRotas);
 app.register(configuracaoRotas);
+app.register(configuracaoUsuarioRotas);
 app.register(auditoriaRotas);
 app.register(dashboardRotas);
 app.register(usuariosRotas);
