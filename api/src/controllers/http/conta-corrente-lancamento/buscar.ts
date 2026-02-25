@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { buscarContaCorrenteLancamentoPorIdService } from "@/service/contacorrentelancamento/buscar-por-id";
-import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util";
+import { buscarContaCorrenteLancamentoPorIdService } from "@/service/contacorrentelancamento/buscar-por-id.js";
+import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
 const buscarContaCorrenteLancamentoParamsSchema = z.object({
 	id: z.string(),

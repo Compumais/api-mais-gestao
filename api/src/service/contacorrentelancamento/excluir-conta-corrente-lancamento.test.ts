@@ -3,11 +3,11 @@ import type { ContaCorrenteLancamento } from "@/model/conta-corrente-lancamento-
 import * as contaCorrenteLancamentoRepository from "@/repositories/conta-corrente-lancamento-repositories.js";
 import * as entidadeRepository from "@/repositories/entidade-repositories.js";
 import * as auditoriaService from "@/service/auditoria/criar-auditoria.js";
-import { excluirContaCorrenteLancamentoService } from "./excluir-conta-corrente-lancamento.js";
+import { excluirContaCorrenteLancamentoService } from "./excluir-conta-corrente-lancamento";
 
-vi.mock("@/repositories/entidade-repositories.js");
-vi.mock("@/repositories/conta-corrente-lancamento-repositories.js");
-vi.mock("@/service/auditoria/criar-auditoria.js");
+vi.mock("@/repositories/entidade-repositories");
+vi.mock("@/repositories/conta-corrente-lancamento-repositories");
+vi.mock("@/service/auditoria/criar-auditoria");
 
 describe("excluirContaCorrenteLancamentoService", () => {
 	const lancamentoMock: ContaCorrenteLancamento = {

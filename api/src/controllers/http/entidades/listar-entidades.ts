@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { listarEntidadesService } from "@/service/entidades/listar-entidades";
+import { listarEntidadesService } from "@/service/entidades/listar-entidades.js";
 
 const listarEntidadesQuerySchema = z.object({
 	page: z.coerce.number().min(1).optional().default(1),

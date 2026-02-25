@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { listarFinanceirosService } from "@/service/financeiro/listar-financeiros";
+import { listarFinanceirosService } from "@/service/financeiro/listar-financeiros.js";
 
 const listarFinanceirosQuerySchema = z.object({
 	page: z.coerce.number().min(1).optional().default(1),

@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { atualizarEntidadeService } from "@/service/entidades/atualizar-entidade";
+import { atualizarEntidadeService } from "@/service/entidades/atualizar-entidade.js";
 
 const atualizarEntidadeParamsSchema = z.object({
 	id: z.string().uuid(),

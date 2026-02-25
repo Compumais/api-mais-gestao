@@ -1,8 +1,8 @@
-import type { Financeiro } from "@/model/financeiro-model";
-import type { HttpResponse } from "@/model/http-model";
-import { buscarEmpresasDoUsuario } from "@/repositories/entidade-repositories";
-import { listarFinanceiro } from "@/repositories/financeiro-repositories";
-import { httpOk } from "@/util/http-util";
+import type { Financeiro } from "@/model/financeiro-model.js";
+import type { HttpResponse } from "@/model/http-model.js";
+import { buscarEmpresasDoUsuario } from "@/repositories/entidade-repositories.js";
+import { listarFinanceiro } from "@/repositories/financeiro-repositories.js";
+import { httpOk } from "@/util/http-util.js";
 
 type ListarFinanceirosParametros = {
 	idusuario: string;

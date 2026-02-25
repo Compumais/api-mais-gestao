@@ -1,13 +1,16 @@
-import { buscarUsuarioPorId, atualizarPlanoUsuario, buscarPlanoUsuario } from "@/repositories/usuarios-repositories";
-import { AsaasService } from "../asaas/asaas.service";
+import type { TipoPlano } from "@/constants/planos.js";
+
 import {
-	obterValorPlano,
-	isPlanoSuperior,
 	calcularDiasRestantesNoCiclo,
 	calcularDiasTotaisDoCiclo,
 	calcularValorProporcional,
-} from "@/constants/planos";
-import type { TipoPlano } from "@/constants/planos";
+	isPlanoSuperior,
+	obterValorPlano,
+} from "@/constants/planos.js";
+import {
+	atualizarPlanoUsuario,
+	buscarUsuarioPorId,
+} from "@/repositories/usuarios-repositories.js";
 
 interface UpgradePlanoParams {
 	idusuario: string;
@@ -37,9 +40,6 @@ interface UpgradePlanoParams {
 export async function upgradePlanoService({
 	idusuario,
 	planoNovo,
-	creditCard,
-	creditCardHolderInfo,
-	remoteIp,
 }: UpgradePlanoParams) {
 	// 1. Verificar se usuário existe e possui plano
 	const usuario = await buscarUsuarioPorId(idusuario);
@@ -48,14 +48,18 @@ export async function upgradePlanoService({
 	}
 
 	if (!usuario.plano) {
-		throw new Error("Usuário não possui plano ativo. Use a contratação inicial.");
+		throw new Error(
+			"Usuário não possui plano ativo. Use a contratação inicial.",
+		);
 	}
 
 	const planoAtual = usuario.plano as TipoPlano;
 
 	// 2. Validar que o novo plano é superior
 	if (!isPlanoSuperior(planoAtual, planoNovo)) {
-		throw new Error("O novo plano deve ser superior ao plano atual para realizar upgrade");
+		throw new Error(
+			"O novo plano deve ser superior ao plano atual para realizar upgrade",
+		);
 	}
 
 	// 3. Verificar se possui ciclo válido
@@ -68,7 +72,11 @@ export async function upgradePlanoService({
 	const hoje = new Date();
 
 	// 4. Calcular diferença proporcional
-	const diasRestantes = calcularDiasRestantesNoCiclo(inicioCiclo, fimCiclo, hoje);
+	const diasRestantes = calcularDiasRestantesNoCiclo(
+		inicioCiclo,
+		fimCiclo,
+		hoje,
+	);
 	const diasTotais = calcularDiasTotaisDoCiclo(inicioCiclo, fimCiclo);
 	const valorAtualMensal = obterValorPlano(planoAtual);
 	const valorNovoMensal = obterValorPlano(planoNovo);
@@ -76,7 +84,7 @@ export async function upgradePlanoService({
 		valorAtualMensal,
 		valorNovoMensal,
 		diasRestantes,
-		diasTotais
+		diasTotais,
 	);
 
 	// 5. Processar pagamento da diferença no Asaas
@@ -102,4 +110,3 @@ export async function upgradePlanoService({
 		proximoVencimento: fimCiclo,
 	};
 }
-

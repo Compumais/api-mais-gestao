@@ -1,10 +1,10 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
-import z from "zod";
-import { buscarHistoricoFinanceiroService } from "@/service/dashboard/buscar-dados-dashboard";
-import { httpNaoAutorizado } from "@/util/http-util";
+import z from "zod/v4";
+import { buscarHistoricoFinanceiroService } from "@/service/dashboard/buscar-dados-dashboard.js";
+import { httpNaoAutorizado } from "@/util/http-util.js";
 
 const buscarHistoricoFinanceiroQuerySchema = z.object({
-	idempresa: z.string().uuid().optional(),
+	idempresa: z.uuid(),
 	dias: z.coerce.number().min(1).max(365).default(90),
 });
 
@@ -45,4 +45,3 @@ export async function buscarHistoricoFinanceiro(
 		});
 	}
 }
-

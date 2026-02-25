@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { atualizarFinanceiroService } from "@/service/financeiro/atualizar-financeiro";
+import { atualizarFinanceiroService } from "@/service/financeiro/atualizar-financeiro.js";
 
 const atualizarFinanceiroParamsSchema = z.object({
 	id: z.string().uuid(),

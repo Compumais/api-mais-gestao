@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { buscarConfiguracaoService } from "@/service/configuracao/buscar-configuracao";
-import { httpNaoAutorizado } from "@/util/http-util";
+import { buscarConfiguracaoService } from "@/service/configuracao/buscar-configuracao.js";
+import { httpNaoAutorizado } from "@/util/http-util.js";
 
 const buscarConfiguracaoQuerySchema = z.object({
 	idempresa: z.string(),
@@ -43,4 +43,3 @@ export async function buscarConfiguracao(
 		});
 	}
 }
-

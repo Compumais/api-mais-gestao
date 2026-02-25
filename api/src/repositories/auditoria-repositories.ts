@@ -1,5 +1,5 @@
 import { and, count, desc, eq } from "drizzle-orm";
-import type { NovaAuditoria } from "@/model/auditoria-model";
+import type { NovaAuditoria } from "@/model/auditoria-model.js";
 import * as schema from "../../drizzle/schema.js";
 import { db } from "./connection.js";
 

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as contaCorrenteRepository from "@/repositories/conta-corrente-repositories.js";
 import { listarContasCorrentesService } from "./listar-contas-correntes.js";
 
-vi.mock("@/repositories/conta-corrente-repositories.js");
+vi.mock("@/repositories/conta-corrente-repositories");
 
 describe("listarContasCorrentesService", () => {
 	const contasCorrentesMock = [

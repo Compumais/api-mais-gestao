@@ -1,11 +1,11 @@
-import type { Entidade } from "@/model/entidade-model";
-import type { HttpResponse } from "@/model/http-model";
+import type { Entidade } from "@/model/entidade-model.js";
+import type { HttpResponse } from "@/model/http-model.js";
 import {
 	buscarEmpresasDoUsuario,
 	listarEntidades,
 	verificarUsuarioPertenceEmpresa,
-} from "@/repositories/entidade-repositories";
-import { httpOk } from "@/util/http-util";
+} from "@/repositories/entidade-repositories.js";
+import { httpOk } from "@/util/http-util.js";
 
 type ListarEntidadesParametros = {
 	idusuario: string;

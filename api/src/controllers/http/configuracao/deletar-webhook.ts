@@ -1,9 +1,16 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { buscarConfiguracaoPorEmpresa } from "@/repositories/configuracao-repositories";
-import { atualizarConfiguracaoParcial } from "@/repositories/configuracao-repositories";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
-import { httpNaoAutorizado, httpNaoEncontrado, httpProibido, httpOk } from "@/util/http-util";
+import {
+	atualizarConfiguracaoParcial,
+	buscarConfiguracaoPorEmpresa,
+} from "@/repositories/configuracao-repositories.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import {
+	httpNaoAutorizado,
+	httpNaoEncontrado,
+	httpOk,
+	httpProibido,
+} from "@/util/http-util.js";
 
 const deletarWebhookParamsSchema = z.object({
 	idempresa: z.string(),
@@ -39,13 +46,17 @@ export async function deletarWebhook(
 		}
 
 		const integracao = (configuracao.integracao as {
-			webhooks?: Array<{ id: string }>;
+			webhooks?: Array<{
+				id: string;
+				url: string;
+				eventos: string[];
+				ativo: boolean;
+				criadoEm: string;
+			}>;
 		}) || { webhooks: [] };
 
 		const webhooks = integracao.webhooks || [];
-		const webhooksFiltrados = webhooks.filter(
-			(w) => w.id !== params.webhookId,
-		);
+		const webhooksFiltrados = webhooks.filter((w) => w.id !== params.webhookId);
 
 		await atualizarConfiguracaoParcial({
 			idempresa: params.idempresa,
@@ -55,7 +66,9 @@ export async function deletarWebhook(
 			},
 		});
 
-		return reply.status(200).send(httpOk({ message: "Webhook deletado com sucesso" }));
+		return reply
+			.status(200)
+			.send(httpOk({ message: "Webhook deletado com sucesso" }));
 	} catch (error) {
 		console.error(error);
 		if (error instanceof z.ZodError) {
@@ -71,4 +84,3 @@ export async function deletarWebhook(
 		});
 	}
 }
-

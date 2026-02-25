@@ -9,6 +9,9 @@ import { SearchDialogProvider, useSearchDialog } from "@/hooks/use-search-dialog
 import { SearchDialog } from "@/components/search-dialog";
 import { MovimentacaoFormProvider, useMovimentacaoForm } from "@/hooks/use-movimentacao-form";
 import { MovimentacaoForm } from "@/app/(auth)/movimentacoes/components/movimentacao-form";
+import { AtenaChatProvider } from "@/hooks/use-atena-chat";
+import { AtenaChatButton } from "@/components/atena-chat-button";
+import { AtenaChatWindow } from "@/components/atena-chat-window";
 
 function SearchDialogWrapper() {
   const { open, setOpen } = useSearchDialog();
@@ -36,23 +39,27 @@ export default function AuthLayout({
     <ProtectedRoute>
       <SearchDialogProvider>
         <MovimentacaoFormProvider>
-          <SidebarProvider
-            style={
-              {
-                "--sidebar-width": "calc(var(--spacing) * 72)",
-                "--header-height": "calc(var(--spacing) * 12)",
-              } as React.CSSProperties
-            }
-          >
-            <AppSidebar variant="inset" />
-            <SidebarInset>
-              <SiteHeader />
-              {children}
-            </SidebarInset>
-            <SearchShortcut />
-            <SearchDialogWrapper />
-            <MovimentacaoFormWrapper />
-          </SidebarProvider>
+          <AtenaChatProvider>
+            <SidebarProvider
+              style={
+                {
+                  "--sidebar-width": "calc(var(--spacing) * 72)",
+                  "--header-height": "calc(var(--spacing) * 12)",
+                } as React.CSSProperties
+              }
+            >
+              <AppSidebar variant="inset" />
+              <SidebarInset>
+                <SiteHeader />
+                {children}
+              </SidebarInset>
+              <SearchShortcut />
+              <SearchDialogWrapper />
+              <MovimentacaoFormWrapper />
+              <AtenaChatButton />
+              <AtenaChatWindow />
+            </SidebarProvider>
+          </AtenaChatProvider>
         </MovimentacaoFormProvider>
       </SearchDialogProvider>
     </ProtectedRoute>

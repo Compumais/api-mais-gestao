@@ -1,15 +1,15 @@
-import type { ContaContabil } from "@/model/conta-contabil-model";
-import type { HttpResponse } from "@/model/http-model";
+import type { ContaContabil } from "@/model/conta-contabil-model.js";
+import type { HttpResponse } from "@/model/http-model.js";
 import {
     buscarContaContabilPorId,
     excluirContaContabil,
-} from "@/repositories/conta-contabil-repositories";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
+} from "@/repositories/conta-contabil-repositories.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
     httpNaoEncontrado,
     httpOk,
     httpProibido,
-} from "@/util/http-util";
+} from "@/util/http-util.js";
 
 type ExcluirContaContabilParametros = {
     id: string;

@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { buscarBancoPorIdService } from "@/service/bancos/buscar-por-id";
-import { httpNaoAutorizado } from "@/util/http-util";
+import { buscarBancoPorIdService } from "@/service/bancos/buscar-por-id.js";
+import { httpNaoAutorizado } from "@/util/http-util.js";
 
 const buscarBancoParamsSchema = z.object({
 	id: z.string(),

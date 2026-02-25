@@ -1,11 +1,11 @@
-import type { HttpResponse } from "../../model/http-model";
+import type { HttpResponse } from "../../model/http-model.js";
 import {
 	buscarEmpresaPorId,
 	type Empresa,
 	excluirEmpresa,
 	verificarDadosAssociados,
-} from "../../repositories/empresa-repositories";
-import { httpNaoEncontrado, httpSemConteudo } from "../../util/http-util";
+} from "../../repositories/empresa-repositories.js";
+import { httpNaoEncontrado, httpSemConteudo } from "../../util/http-util.js";
 
 export async function excluirEmpresaService(
 	id: string,

@@ -10,10 +10,10 @@ import * as entidadeRepository from "@/repositories/entidade-repositories.js";
 import * as auditoriaService from "@/service/auditoria/criar-auditoria.js";
 import { criarContaCorrenteLancamentoService } from "./criar-conta-corrente-lancamento.js";
 
-vi.mock("@/repositories/entidade-repositories.js");
-vi.mock("@/repositories/conta-corrente-repositories.js");
-vi.mock("@/repositories/conta-corrente-lancamento-repositories.js");
-vi.mock("@/service/auditoria/criar-auditoria.js");
+vi.mock("@/repositories/entidade-repositories");
+vi.mock("@/repositories/conta-corrente-repositories");
+vi.mock("@/repositories/conta-corrente-lancamento-repositories");
+vi.mock("@/service/auditoria/criar-auditoria");
 
 describe("criarContaCorrenteLancamentoService", () => {
 	const lancamentoMock: ContaCorrenteLancamento = {

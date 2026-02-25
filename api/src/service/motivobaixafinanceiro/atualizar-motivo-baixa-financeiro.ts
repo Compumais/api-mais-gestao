@@ -1,10 +1,10 @@
 import { v4 as uuidv4 } from "uuid";
-import type { HttpResponse } from "@/model/http-model";
-import type { MotivoBaixaFinanceiro } from "@/model/motivo-baixa-financeiro-model";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
-import { atualizarMotivoBaixaFinanceiro } from "@/repositories/motivo-baixa-financeiro-repositories";
-import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria";
-import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util";
+import type { HttpResponse } from "@/model/http-model.js";
+import type { MotivoBaixaFinanceiro } from "@/model/motivo-baixa-financeiro-model.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { atualizarMotivoBaixaFinanceiro } from "@/repositories/motivo-baixa-financeiro-repositories.js";
+import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
+import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
 
 interface AtualizarMotivoBaixaFinanceiroParametros {
 	id: string;

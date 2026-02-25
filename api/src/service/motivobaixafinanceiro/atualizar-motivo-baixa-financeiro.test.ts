@@ -5,9 +5,9 @@ import * as entidadeRepository from "@/repositories/entidade-repositories.js";
 import * as auditoriaService from "@/service/auditoria/criar-auditoria.js";
 import { atualizarMotivoBaixaFinanceiroService } from "./atualizar-motivo-baixa-financeiro.js";
 
-vi.mock("@/repositories/entidade-repositories.js");
-vi.mock("@/repositories/motivo-baixa-financeiro-repositories.js");
-vi.mock("@/service/auditoria/criar-auditoria.js");
+vi.mock("@/repositories/entidade-repositories");
+vi.mock("@/repositories/motivo-baixa-financeiro-repositories");
+vi.mock("@/service/auditoria/criar-auditoria");
 
 describe("atualizarMotivoBaixaFinanceiroService", () => {
 	const motivoMock: MotivoBaixaFinanceiro = {
@@ -164,5 +164,3 @@ describe("atualizarMotivoBaixaFinanceiroService", () => {
 		);
 	});
 });
-
-

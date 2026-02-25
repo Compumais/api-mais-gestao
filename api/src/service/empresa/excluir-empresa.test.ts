@@ -3,7 +3,7 @@ import type { Empresa } from "@/model/empresa-model.js";
 import * as empresaRepository from "@/repositories/empresa-repositories.js";
 import { excluirEmpresaService } from "./excluir-empresa.js";
 
-vi.mock("@/repositories/empresa-repositories.js");
+vi.mock("@/repositories/empresa-repositories");
 
 describe("excluirEmpresaService", () => {
 	const empresaMock: Empresa = {
@@ -11,9 +11,11 @@ describe("excluirEmpresaService", () => {
 		nome: "Empresa Teste",
 		cnpj: "12.345.678/0001-90",
 		telefone: "(34) 99999-9999",
-		idproprietario: "proprietario-1",
+		email: "empresa@example.com",
+		endereco: "Rua Exemplo, 123",
 		criadoem: new Date().toISOString(),
 		atualizadoem: new Date().toISOString(),
+		idproprietario: "proprietario-1",
 	};
 
 	beforeEach(() => {

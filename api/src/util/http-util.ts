@@ -1,4 +1,4 @@
-import type { HttpResponse } from "../model/http-model";
+import type { HttpResponse } from "../model/http-model.js";
 
 export function httpCriacao<T>(body: T): HttpResponse<T> {
 	return {
@@ -83,6 +83,19 @@ export function httpErro() {
 		success: false,
 		status: 400,
 		error: "Erro ao processar a requisição",
+		code: "BAD_REQUEST_ERROR",
+	};
+}
+
+export function httpBadRequest(error?: string | { error?: string }): HttpResponse<never> {
+	const errorMessage = typeof error === "string" 
+		? error 
+		: error?.error || "Requisição inválida";
+	
+	return {
+		success: false as const,
+		status: 400,
+		error: errorMessage,
 		code: "BAD_REQUEST_ERROR",
 	};
 }

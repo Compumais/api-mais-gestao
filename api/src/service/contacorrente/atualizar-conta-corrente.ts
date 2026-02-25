@@ -1,11 +1,11 @@
-import type { ContaCorrente } from "@/model/conta-corrente-model";
-import type { HttpResponse } from "@/model/http-model";
+import type { ContaCorrente } from "@/model/conta-corrente-model.js";
+import type { HttpResponse } from "@/model/http-model.js";
 import {
 	atualizaContaCorrente,
 	buscarContaCorrentePorId,
-} from "@/repositories/conta-corrente-repositories";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
-import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util";
+} from "@/repositories/conta-corrente-repositories.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
 
 type AtualizarContaCorrenteParametros = {
 	contaCorrenteId: string;

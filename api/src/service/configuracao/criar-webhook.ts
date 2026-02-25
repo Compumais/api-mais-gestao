@@ -1,12 +1,15 @@
 import { v4 as uuidv4 } from "uuid";
-import type { HttpResponse } from "@/model/http-model";
+import type { ConfiguracaoIntegracao } from "@/model/configuracao-model.js";
+import type { HttpResponse } from "@/model/http-model.js";
 import {
 	atualizarConfiguracaoParcial,
 	buscarConfiguracaoPorEmpresa,
 	criarConfiguracao,
-} from "@/repositories/configuracao-repositories";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
-import { httpOk, httpProibido } from "@/util/http-util";
+} from "@/repositories/configuracao-repositories.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { httpBadRequest, httpOk, httpProibido } from "@/util/http-util.js";
+
+type WebhookItem = ConfiguracaoIntegracao["webhooks"][number];
 
 interface CriarWebhookParametros {
 	idempresa: string;
@@ -34,17 +37,10 @@ export async function criarWebhookService({
 	try {
 		new URL(url);
 	} catch {
-		return {
-			success: false,
-			status: 400,
-			error: {
-				error: "URL inválida",
-				code: "INVALID_URL",
-			},
-		};
+		return httpBadRequest("URL inválida");
 	}
 
-	const novoWebhook = {
+	const novoWebhook: WebhookItem = {
 		id: uuidv4(),
 		url,
 		eventos,
@@ -84,11 +80,9 @@ export async function criarWebhookService({
 		});
 	} else {
 		// Adicionar webhook ao array existente
-		const integracaoAtual = (configuracao.integracao as {
-			webhooks?: unknown[];
-		}) || { webhooks: [] };
-
-		const webhooksExistentes = integracaoAtual.webhooks || [];
+		const integracaoAtual =
+			(configuracao.integracao as Partial<ConfiguracaoIntegracao>) ?? {};
+		const webhooksExistentes: WebhookItem[] = integracaoAtual.webhooks ?? [];
 
 		await atualizarConfiguracaoParcial({
 			idempresa,
@@ -101,4 +95,3 @@ export async function criarWebhookService({
 
 	return httpOk(novoWebhook);
 }
-

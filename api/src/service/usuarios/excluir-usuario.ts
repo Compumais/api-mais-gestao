@@ -1,9 +1,9 @@
-import type { HttpResponse } from "@/model/http-model";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
-import { buscarUsuarioPorId } from "@/repositories/usuarios-repositories";
-import { httpOk, httpErroInterno, httpNaoAutorizado, httpNaoEncontrado } from "@/util/http-util";
-import { db } from "@/repositories/connection";
-import * as schema from "../../../drizzle/schema";
+import type { HttpResponse } from "@/model/http-model.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { buscarUsuarioPorId } from "@/repositories/usuarios-repositories.js";
+import { httpOk, httpErroInterno, httpNaoAutorizado, httpNaoEncontrado } from "@/util/http-util.js";
+import { db } from "@/repositories/connection.js";
+import * as schema from "../../../drizzle/schema.js";
 import { eq } from "drizzle-orm";
 
 type ExcluirUsuarioParametros = {

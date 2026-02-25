@@ -1,11 +1,12 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Building2Icon, CheckIcon, PlusIcon } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { getMeuPlano } from "@/services/assinaturas.service";
 import { Button } from "./ui/button";
 import {
 	DropdownMenu,
@@ -22,12 +23,23 @@ interface Empresa {
 	nome: string;
 }
 
+function maxEmpresasPorPlano(plano: string) {
+	switch (plano) {
+		case "BASIC":
+			return 1;
+		case "PREMIUM":
+			return 2;
+		case "ENTERPRISE":
+			return 5;
+		default:
+			return 0;
+	}
+}
+
 export function CompanyToogle() {
 	const { listarEmpresas, localStorageEmpresa, selecionarEmpresa } =
 		useEmpresa();
 	const { user } = useAuth();
-	const queryClient = useQueryClient();
-
 	const [empresa, setEmpresa] = useState<Empresa | null>(null);
 
 	const { data: empresas } = useQuery({
@@ -35,6 +47,20 @@ export function CompanyToogle() {
 		// Buscar empresas onde o usuário é proprietário OU está associado na tabela usuario_empresa
 		queryFn: () =>
 			listarEmpresas({ idusuario: user?.id, idproprietario: user?.id }),
+	});
+
+	// Busca o plano da empresa
+	const { data: assinatura } = useQuery({
+		queryKey: ["meu-plano", localStorageEmpresa?.id],
+		queryFn: async () => {
+			if (!localStorageEmpresa?.id) {
+				return null;
+			}
+			return await getMeuPlano(localStorageEmpresa.id);
+		},
+		enabled: !!localStorageEmpresa?.id,
+		staleTime: 1000 * 60 * 30, // 30 minutos
+		retry: false, // Não tentar novamente se falhar
 	});
 
 	useEffect(() => {
@@ -66,9 +92,25 @@ export function CompanyToogle() {
 		}
 	}, [empresas, localStorageEmpresa, selecionarEmpresa, empresa]);
 
+	// Não exibir dropdown se plano for básico e tiver apenas uma empresa
+	// Se não há assinatura (null), trata como plano básico (limite de 1 empresa)
+	const isPlanoBasico =
+		assinatura === null ||
+		(assinatura?.plan ? maxEmpresasPorPlano(assinatura.plan) === 1 : false);
+	const temApenasUmaEmpresa = empresas && empresas.length === 1;
+
+	if (isPlanoBasico && temApenasUmaEmpresa) {
+		return (
+			<Button variant="secondary" size="sm" className="hidden sm:flex">
+				<Building2Icon className="size-4" />
+				<span>{empresa?.nome || "Selecionar uma empresa"}</span>
+			</Button>
+		);
+	}
+
 	return (
 		<DropdownMenu>
-			<DropdownMenuTrigger>
+			<DropdownMenuTrigger asChild>
 				<Button variant="secondary" size="sm" className="hidden sm:flex">
 					<Building2Icon className="size-4" />
 					<span>{empresa?.nome || "Selecionar uma empresa"}</span>
@@ -89,16 +131,22 @@ export function CompanyToogle() {
 					</DropdownMenuItem>
 				))}
 
-				<DropdownMenuSeparator />
-				<DropdownMenuItem asChild>
-					<Link
-						className="border-2 border-transparent hover:border-2 hover:border-dashed hover:border-border"
-						href="/empresas/nova"
-					>
-						<PlusIcon className="size-4" />
-						<span>Adicionar empresa</span>
-					</Link>
-				</DropdownMenuItem>
+				{assinatura?.plan &&
+					empresas &&
+					maxEmpresasPorPlano(assinatura.plan) > empresas.length && (
+						<>
+							<DropdownMenuSeparator />
+							<DropdownMenuItem asChild>
+								<Link
+									className="border-2 border-transparent hover:border-2 hover:border-dashed hover:border-border"
+									href="/empresas/nova"
+								>
+									<PlusIcon className="size-4" />
+									<span>Adicionar empresa</span>
+								</Link>
+							</DropdownMenuItem>
+						</>
+					)}
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);

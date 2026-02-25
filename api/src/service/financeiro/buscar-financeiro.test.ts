@@ -3,7 +3,7 @@ import type { Financeiro } from "@/model/financeiro-model.js";
 import * as financeiroRepository from "@/repositories/financeiro-repositories.js";
 import { buscarFinanceiroService } from "./buscar-financeiro.js";
 
-vi.mock("@/repositories/financeiro-repositories.js");
+vi.mock("@/repositories/financeiro-repositories");
 
 describe("buscarFinanceiroService", () => {
 	const financeiroMock: Financeiro = {

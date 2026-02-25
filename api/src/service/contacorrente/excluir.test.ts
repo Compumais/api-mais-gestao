@@ -4,8 +4,8 @@ import * as contaCorrenteRepository from "@/repositories/conta-corrente-reposito
 import * as entidadeRepository from "@/repositories/entidade-repositories.js";
 import { excluirContaCorrenteService } from "./excluir.js";
 
-vi.mock("@/repositories/entidade-repositories.js");
-vi.mock("@/repositories/conta-corrente-repositories.js");
+vi.mock("@/repositories/entidade-repositories");
+vi.mock("@/repositories/conta-corrente-repositories");
 
 describe("excluirContaCorrenteService", () => {
 	const contaCorrenteMock: ContaCorrente = {
@@ -22,7 +22,7 @@ describe("excluirContaCorrenteService", () => {
 		gerente: "João Silva",
 		telefonegerente: "(34) 9999-9999",
 		codigo: 1,
-		idbanco: 1,
+		idbanco: "1",
 		agenciadv: null,
 		contadv: null,
 		codigocedente: null,

@@ -36,7 +36,9 @@ function fastifyHeadersToWebHeaders(
 /**
  * Extrai o token do header Authorization
  */
-function extractTokenFromHeader(authHeader: string | undefined): string | null {
+function extractTokenFromHeader(
+	authHeader: string | undefined,
+): string | null | undefined {
 	if (!authHeader) return null;
 
 	const parts = authHeader.split(" ");
@@ -111,11 +113,11 @@ export async function verifyJwt(request: FastifyRequest, reply: FastifyReply) {
 							}
 
 							request.user = {
-								id: userData?.id,
-								name: userData?.nome || "",
-								email: userData?.email,
+								id: userData!.id,
+								name: userData!.nome || "",
+								email: userData!.email || "",
 								roles: perfil,
-								plano: userData?.plano || null,
+								plano: userData!.plano || null,
 							};
 							return; // Autenticação bem-sucedida
 						}

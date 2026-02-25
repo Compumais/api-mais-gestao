@@ -9,7 +9,7 @@ import { buscarPlanoUsuario } from "../../repositories/usuarios-repositories.js"
  */
 export async function verifyPlano(
 	request: FastifyRequest,
-	reply: FastifyReply
+	reply: FastifyReply,
 ) {
 	if (!request.user) {
 		return reply.status(401).send({
@@ -33,11 +33,11 @@ export async function verifyPlano(
 		return reply.status(403).send({
 			error: "Plano obrigatório",
 			code: "PLANO_REQUIRED",
-			message: "É necessário contratar um plano para acessar esta funcionalidade",
+			message:
+				"É necessário contratar um plano para acessar esta funcionalidade",
 		});
 	}
 
 	// Proprietário possui plano válido, continuar
 	return;
 }
-

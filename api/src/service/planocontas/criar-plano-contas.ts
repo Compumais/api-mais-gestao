@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
-import type { PlanoContas } from "@/model/plano-contas-model";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
+import type { PlanoContas } from "@/model/plano-contas-model.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	buscarPlanoContasPorId,
 	buscarProximoCodigoComPai,
@@ -8,10 +8,10 @@ import {
 	criarPlanoContas,
 	excluirPlanoContas,
 	type NovoPlanoContas,
-} from "@/repositories/plano-contas-repositories";
-import { httpCriacao, httpProibido } from "@/util/http-util";
-import { verificarPermissao } from "@/util/verificar-permissao";
-import { criarAuditoriaService } from "../auditoria/criar-auditoria";
+} from "@/repositories/plano-contas-repositories.js";
+import { httpCriacao, httpProibido } from "@/util/http-util.js";
+import { verificarPermissao } from "@/util/verificar-permissao.js";
+import { criarAuditoriaService } from "../auditoria/criar-auditoria.js";
 
 export async function criarPlanoContasService(
 	dadosPlanoContas: NovoPlanoContas,

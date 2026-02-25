@@ -1,7 +1,7 @@
-import type { Financeiro } from "@/model/financeiro-model";
-import type { HttpResponse } from "@/model/http-model";
-import { buscarFinanceiroPorId } from "@/repositories/financeiro-repositories";
-import { httpNaoEncontrado, httpOk } from "@/util/http-util";
+import type { Financeiro } from "@/model/financeiro-model.js";
+import type { HttpResponse } from "@/model/http-model.js";
+import { buscarFinanceiroPorId } from "@/repositories/financeiro-repositories.js";
+import { httpNaoEncontrado, httpOk } from "@/util/http-util.js";
 
 export async function buscarFinanceiroService(
 	id: string,

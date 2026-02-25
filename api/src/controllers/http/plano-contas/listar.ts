@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { listarPlanoContasService } from "../../../service/planocontas/listar-plano-contas";
+import { listarPlanoContasService } from "../../../service/planocontas/listar-plano-contas.js";
 
 const listarPlanoContasQuerySchema = z.object({
 	idempresa: z.uuid(),

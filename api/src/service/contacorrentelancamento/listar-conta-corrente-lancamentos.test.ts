@@ -1,14 +1,42 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ContaCorrenteLancamento } from "@/model/conta-corrente-lancamento-model.js";
+import type { LancamentoComRelacionamentos } from "@/repositories/conta-corrente-lancamento-repositories.js";
 import * as contaCorrenteLancamentoRepository from "@/repositories/conta-corrente-lancamento-repositories.js";
 import { listarContaCorrenteLancamentosService } from "./listar-conta-corrente-lancamentos.js";
 
-vi.mock("@/repositories/conta-corrente-lancamento-repositories.js");
+vi.mock("@/repositories/conta-corrente-lancamento-repositories");
+
+const baseLancamentoMock: LancamentoComRelacionamentos = {
+	id: "",
+	idcontacorrente: "conta-corrente-123",
+	datahora: null,
+	tipo: null,
+	valor: null,
+	saldoanterior: null,
+	saldoatual: null,
+	historico: null,
+	idusuario: null,
+	idplanocontas: null,
+	evento: null,
+	debito: null,
+	documento: null,
+	currenttimemillis: null,
+	identificado: null,
+	depositonaoidentificado: null,
+	tiporateiocentrocusto: null,
+	idlancamentotransferencia: null,
+	dataconciliacao: null,
+	idusuarioconciliacao: null,
+	idlancamentoestornado: null,
+	planocontasnome: null,
+	planocontascodigo: null,
+	contacorrentedescricao: null,
+	contacorrenteagencia: null,
+};
 
 describe("listarContaCorrenteLancamentosService", () => {
-	const lancamento1Mock: ContaCorrenteLancamento = {
+	const lancamento1Mock: LancamentoComRelacionamentos = {
+		...baseLancamentoMock,
 		id: "lancamento-1",
-		idcontacorrente: "conta-corrente-123",
 		datahora: "2024-01-15",
 		tipo: "C",
 		valor: "1000.00",
@@ -16,23 +44,11 @@ describe("listarContaCorrenteLancamentosService", () => {
 		saldoatual: "6000.00",
 		historico: "Depósito 1",
 		idusuario: "usuario-123",
-		idplanocontas: null,
-		evento: null,
-		debito: null,
-		documento: null,
-		currenttimemillis: null,
-		identificado: null,
-		depositonaoidentificado: null,
-		tiporateiocentrocusto: null,
-		idlancamentotransferencia: null,
-		dataconciliacao: null,
-		idusuarioconciliacao: null,
-		idlancamentoestornado: null,
 	};
 
-	const lancamento2Mock: ContaCorrenteLancamento = {
+	const lancamento2Mock: LancamentoComRelacionamentos = {
+		...baseLancamentoMock,
 		id: "lancamento-2",
-		idcontacorrente: "conta-corrente-123",
 		datahora: "2024-01-14",
 		tipo: "D",
 		valor: "500.00",
@@ -40,18 +56,6 @@ describe("listarContaCorrenteLancamentosService", () => {
 		saldoatual: "5000.00",
 		historico: "Saque",
 		idusuario: "usuario-123",
-		idplanocontas: null,
-		evento: null,
-		debito: null,
-		documento: null,
-		currenttimemillis: null,
-		identificado: null,
-		depositonaoidentificado: null,
-		tiporateiocentrocusto: null,
-		idlancamentotransferencia: null,
-		dataconciliacao: null,
-		idusuarioconciliacao: null,
-		idlancamentoestornado: null,
 	};
 
 	beforeEach(() => {
@@ -61,7 +65,10 @@ describe("listarContaCorrenteLancamentosService", () => {
 	it("deve listar lançamentos com sucesso", async () => {
 		vi.mocked(
 			contaCorrenteLancamentoRepository.listarLancamentoContaCorrentePorEmpresa,
-		).mockResolvedValue([lancamento1Mock, lancamento2Mock]);
+		).mockResolvedValue({
+			lancamentos: [lancamento1Mock, lancamento2Mock],
+			total: 2,
+		});
 
 		const resultado = await listarContaCorrenteLancamentosService({
 			idcontacorrente: "conta-corrente-123",
@@ -90,7 +97,7 @@ describe("listarContaCorrenteLancamentosService", () => {
 	it("deve usar valores padrão de paginação quando não fornecidos", async () => {
 		vi.mocked(
 			contaCorrenteLancamentoRepository.listarLancamentoContaCorrentePorEmpresa,
-		).mockResolvedValue([]);
+		).mockResolvedValue({ lancamentos: [], total: 0 });
 
 		await listarContaCorrenteLancamentosService({
 			idcontacorrente: "conta-corrente-123",
@@ -108,7 +115,7 @@ describe("listarContaCorrenteLancamentosService", () => {
 	it("deve usar valores customizados de paginação quando fornecidos", async () => {
 		vi.mocked(
 			contaCorrenteLancamentoRepository.listarLancamentoContaCorrentePorEmpresa,
-		).mockResolvedValue([lancamento1Mock]);
+		).mockResolvedValue({ lancamentos: [lancamento1Mock], total: 1 });
 
 		const resultado = await listarContaCorrenteLancamentosService({
 			idcontacorrente: "conta-corrente-123",
@@ -133,7 +140,7 @@ describe("listarContaCorrenteLancamentosService", () => {
 	it("deve retornar lista vazia quando não há lançamentos", async () => {
 		vi.mocked(
 			contaCorrenteLancamentoRepository.listarLancamentoContaCorrentePorEmpresa,
-		).mockResolvedValue([]);
+		).mockResolvedValue({ lancamentos: [], total: 0 });
 
 		const resultado = await listarContaCorrenteLancamentosService({
 			idcontacorrente: "conta-corrente-123",
@@ -155,7 +162,7 @@ describe("listarContaCorrenteLancamentosService", () => {
 
 		vi.mocked(
 			contaCorrenteLancamentoRepository.listarLancamentoContaCorrentePorEmpresa,
-		).mockResolvedValue(lancamentos);
+		).mockResolvedValue({ lancamentos, total: 25 });
 
 		const resultado = await listarContaCorrenteLancamentosService({
 			idcontacorrente: "conta-corrente-123",
@@ -173,16 +180,19 @@ describe("listarContaCorrenteLancamentosService", () => {
 	it("deve retornar lançamentos ordenados por data", async () => {
 		vi.mocked(
 			contaCorrenteLancamentoRepository.listarLancamentoContaCorrentePorEmpresa,
-		).mockResolvedValue([lancamento1Mock, lancamento2Mock]);
+		).mockResolvedValue({
+			lancamentos: [lancamento1Mock, lancamento2Mock],
+			total: 2,
+		});
 
 		const resultado = await listarContaCorrenteLancamentosService({
 			idcontacorrente: "conta-corrente-123",
 		});
 
 		expect(resultado.success).toBe(true);
-		if (resultado.success) {
-			expect(resultado.body?.data[0].datahora).toBe("2024-01-15");
-			expect(resultado.body?.data[1].datahora).toBe("2024-01-14");
+		if (resultado.success && resultado.body?.data) {
+			expect(resultado.body.data[0]?.datahora).toBe("2024-01-15");
+			expect(resultado.body.data[1]?.datahora).toBe("2024-01-14");
 		}
 	});
 });

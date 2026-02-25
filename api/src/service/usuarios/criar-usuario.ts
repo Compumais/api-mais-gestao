@@ -1,12 +1,16 @@
-import type { HttpResponse } from "@/model/http-model";
-import type { Usuario } from "@/model/usuario-model";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
-import { buscarUsuarioPorId } from "@/repositories/usuarios-repositories";
-import { httpCriacao, httpErroInterno, httpNaoAutorizado } from "@/util/http-util";
-import { auth } from "@/lib/auth";
-import { db } from "@/repositories/connection";
-import * as schema from "../../../drizzle/schema";
-import { eq, and } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
+import { auth } from "@/lib/auth.js";
+import type { HttpResponse } from "@/model/http-model.js";
+import type { Usuario } from "@/model/usuario-model.js";
+import { db } from "@/repositories/connection.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { buscarUsuarioPorId } from "@/repositories/usuarios-repositories.js";
+import {
+	httpCriacao,
+	httpErroInterno,
+	httpNaoAutorizado,
+} from "@/util/http-util.js";
+import * as schema from "../../../drizzle/schema.js";
 
 type CriarUsuarioParametros = {
 	idusuario: string; // Usuário que está criando
@@ -102,4 +106,3 @@ export async function criarUsuarioService({
 		return httpErroInterno();
 	}
 }
-

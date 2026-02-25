@@ -1,7 +1,8 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { v4 as uuidv4 } from "uuid";
 import z from "zod";
-import { criarFinanceiroService } from "@/service/financeiro/criar-financeiro";
+import { criarNotificacaoService } from "@/service/notificacoes/criar-notificacao.js";
+import { criarFinanceiroService } from "@/service/financeiro/criar-financeiro.js";
 
 const criarFinanceiroBodySchema = z.object({
 	idempresa: z.string().uuid(),
@@ -73,6 +74,25 @@ export async function criarFinanceiro(
 		if (!resultado.success || !resultado.body) {
 			return reply.status(resultado.status).send(resultado);
 		}
+
+		const perfilAutor = Array.isArray(request.user.roles)
+			? request.user.roles
+			: request.user.roles
+				? [request.user.roles]
+				: [];
+		await criarNotificacaoService({
+			tipo: "financeiro",
+			idempresa: dadosValidados.idempresa,
+			idrecurso: resultado.body.id,
+			titulo: "Nova conta a pagar/receber criada",
+			detalhes: {
+				valor: resultado.body.valor,
+				vencimento: resultado.body.vencimento,
+				emitente: resultado.body.emitente,
+			},
+			idusuarioAutor: usuarioId,
+			perfilAutor,
+		});
 
 		return reply.status(resultado.status).send(resultado.body);
 	} catch (error) {

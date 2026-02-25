@@ -1,10 +1,10 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { v4 as uuidv4 } from "uuid";
 import z from "zod";
-import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria";
-import { criarContaCorrenteService } from "@/service/contacorrente/criar-conta-corrente";
-import { excluirContaCorrenteService } from "@/service/contacorrente/excluir";
-import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util";
+import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
+import { criarContaCorrenteService } from "@/service/contacorrente/criar-conta-corrente.js";
+import { excluirContaCorrenteService } from "@/service/contacorrente/excluir.js";
+import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
 const criarContaCorrenteBodySchema = z.object({
 	idempresa: z.string(),

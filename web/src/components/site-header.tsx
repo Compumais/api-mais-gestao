@@ -1,10 +1,9 @@
-import { BellIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { CompanyToogle } from "./company-toogle";
+import { NotificationsBell } from "./notifications-bell";
 import { RefreshButton } from "./refresh-button";
-import { ThemeToogle } from "./theme-toogle";
 import { SearchButton } from "./search-button";
+import { ThemeToogle } from "./theme-toogle";
 
 export function SiteHeader() {
 	return (
@@ -16,9 +15,7 @@ export function SiteHeader() {
 					<RefreshButton />
 					<SearchButton />
 					<ThemeToogle />
-					<Button variant="secondary" size="sm">
-						<BellIcon className="size-4" />
-					</Button>
+					<NotificationsBell />
 				</div>
 			</div>
 		</header>

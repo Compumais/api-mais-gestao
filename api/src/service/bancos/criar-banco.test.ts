@@ -4,8 +4,8 @@ import * as bancoRepository from "@/repositories/banco-repositories.js";
 import * as entidadeRepository from "@/repositories/entidade-repositories.js";
 import { criarBancoService } from "./criar-banco.js";
 
-vi.mock("@/repositories/banco-repositories.js");
-vi.mock("@/repositories/entidade-repositories.js");
+vi.mock("@/repositories/banco-repositories");
+vi.mock("@/repositories/entidade-repositories");
 
 describe("criarBancoService", () => {
 	const bancoMock: Banco = {

@@ -3,7 +3,7 @@ import type { Entidade } from "@/model/entidade-model.js";
 import * as entidadeRepository from "@/repositories/entidade-repositories.js";
 import { atualizarEntidadeService } from "./atualizar-entidade.js";
 
-vi.mock("@/repositories/entidade-repositories.js");
+vi.mock("@/repositories/entidade-repositories");
 
 describe("atualizarEntidadeService", () => {
 	const entidadeMock: Entidade = {

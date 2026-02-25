@@ -1,8 +1,8 @@
-import type { Banco } from "@/model/banco-model";
-import type { HttpResponse } from "@/model/http-model";
-import { buscarBancoPorId } from "@/repositories/banco-repositories";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
-import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util";
+import type { Banco } from "@/model/banco-model.js";
+import type { HttpResponse } from "@/model/http-model.js";
+import { buscarBancoPorId } from "@/repositories/banco-repositories.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
 
 type BuscarBancoPorIdParametros = {
 	id: string;

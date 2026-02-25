@@ -1,5 +1,5 @@
 import { and, count, desc, eq, ilike, ne, or } from "drizzle-orm";
-import type { NovaEntidade } from "@/model/entidade-model";
+import type { NovaEntidade } from "@/model/entidade-model.js";
 import * as schema from "../../drizzle/schema.js";
 import { db } from "./connection.js";
 

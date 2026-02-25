@@ -1,10 +1,10 @@
-import type { HttpResponse } from "@/model/http-model";
+import type { HttpResponse } from "@/model/http-model.js";
 import {
-	criarOuAtualizarConfiguracaoUsuario,
 	type ConfiguracaoUsuario,
+	criarOuAtualizarConfiguracaoUsuario,
 	type IntegracoesUsuario,
-} from "@/repositories/configuracao-usuario-repositories";
-import { httpOk, httpProibido } from "@/util/http-util";
+} from "@/repositories/configuracao-usuario-repositories.js";
+import { httpNaoEncontrado, httpOk } from "@/util/http-util.js";
 
 interface AtualizarConfiguracaoUsuarioParametros {
 	idusuario: string;
@@ -26,6 +26,15 @@ export async function atualizarConfiguracaoUsuarioService({
 		dados,
 	);
 
-	return httpOk(configuracao);
-}
+	if (!configuracao) {
+		return httpNaoEncontrado();
+	}
 
+	return httpOk<ConfiguracaoUsuario>({
+		id: configuracao?.id,
+		idusuario: configuracao.idusuario,
+		integracoes: configuracao.integracoes ?? {},
+		criadoem: configuracao.criadoem ?? "",
+		atualizadoem: configuracao.atualizadoem ?? "",
+	});
+}

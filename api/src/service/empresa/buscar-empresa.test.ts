@@ -3,7 +3,7 @@ import type { Empresa } from "@/model/empresa-model.js";
 import * as empresaRepository from "@/repositories/empresa-repositories.js";
 import { buscarEmpresaService } from "./buscar-empresa.js";
 
-vi.mock("@/repositories/empresa-repositories.js");
+vi.mock("@/repositories/empresa-repositories");
 
 describe("buscarEmpresaService", () => {
 	const empresaMock: Empresa = {
@@ -11,6 +11,8 @@ describe("buscarEmpresaService", () => {
 		nome: "Empresa Teste",
 		cnpj: "12.345.678/0001-90",
 		telefone: "(34) 99999-9999",
+		email: "empresa@example.com",
+		endereco: "Rua Exemplo, 123",
 		idproprietario: "proprietario-1",
 		criadoem: new Date().toISOString(),
 		atualizadoem: new Date().toISOString(),
@@ -79,6 +81,8 @@ describe("buscarEmpresaService", () => {
 			nome: "Outra Empresa",
 			cnpj: "98.765.432/0001-10",
 			telefone: "(11) 11111-1111",
+			email: "outraempresa@example.com",
+			endereco: "Rua Exemplo, 456",
 			idproprietario: "proprietario-2",
 			criadoem: "2024-01-01T00:00:00.000Z",
 			atualizadoem: "2024-01-02T00:00:00.000Z",

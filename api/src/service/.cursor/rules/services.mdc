@@ -174,10 +174,10 @@ if (!empresa) {
 Exemplo:
 ```
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import * as empresaRepository from "@/repositories/empresa-repositories.js";
-import { criarEmpresaService } from "./criar-empresa.js";
+import * as empresaRepository from "@/repositories/empresa-repositories";
+import { criarEmpresaService } from "./criar-empresa";
 
-vi.mock("@/repositories/empresa-repositories.js");
+vi.mock("@/repositories/empresa-repositories");
 
 describe("criarEmpresaService", () => {
 	beforeEach(() => {

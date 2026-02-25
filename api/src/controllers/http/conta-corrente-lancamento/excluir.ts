@@ -1,9 +1,9 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { buscarLancamentoContaCorrentePorId } from "@/repositories/conta-corrente-lancamento-repositories";
-import { buscarContaCorrentePorId } from "@/repositories/conta-corrente-repositories";
-import { excluirContaCorrenteLancamentoService } from "@/service/contacorrentelancamento/excluir-conta-corrente-lancamento";
-import { httpNaoAutorizado, httpNaoEncontrado } from "@/util/http-util";
+import { buscarLancamentoContaCorrentePorId } from "@/repositories/conta-corrente-lancamento-repositories.js";
+import { buscarContaCorrentePorId } from "@/repositories/conta-corrente-repositories.js";
+import { excluirContaCorrenteLancamentoService } from "@/service/contacorrentelancamento/excluir-conta-corrente-lancamento.js";
+import { httpNaoAutorizado, httpNaoEncontrado } from "@/util/http-util.js";
 
 const excluirContaCorrenteLancamentoParamsSchema = z.object({
 	id: z.string(),
@@ -68,4 +68,3 @@ export async function excluirContaCorrenteLancamento(
 		});
 	}
 }
-

@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { upgradePlanoService } from "@/service/planos/upgrade-plano";
-import type { TipoPlano } from "@/constants/planos";
+import { upgradePlanoService } from "@/service/planos/upgrade-plano.js";
+import type { TipoPlano } from "@/constants/planos.js";
 
 const upgradeBodySchema = z.object({
 	plano: z.enum(["BASIC", "PREMIUM", "ENTERPRISE"]),
@@ -36,31 +36,46 @@ export async function upgradePlanoController(
 
 	const body = upgradeBodySchema.parse(request.body);
 
+	const h = body.creditCardHolderInfo;
+	const creditCardHolderInfo = {
+		name: h.name,
+		email: h.email,
+		cpfCnpj: h.cpfCnpj,
+		phone: h.phone,
+		...(h.postalCode !== undefined && { postalCode: h.postalCode }),
+		...(h.address !== undefined && { address: h.address }),
+		...(h.addressNumber !== undefined && { addressNumber: h.addressNumber }),
+		...(h.complement !== undefined && { complement: h.complement }),
+		...(h.province !== undefined && { province: h.province }),
+		...(h.city !== undefined && { city: h.city }),
+	};
+
 	try {
 		const resultado = await upgradePlanoService({
 			idusuario: request.user.id,
 			planoNovo: body.plano as TipoPlano,
 			creditCard: body.creditCard,
-			creditCardHolderInfo: body.creditCardHolderInfo,
+			creditCardHolderInfo,
 			remoteIp: request.ip || "0.0.0.0",
 		});
 
 		return reply.status(200).send(resultado);
-	} catch (error: any) {
-		if (error.message === "Usuário não encontrado") {
-			return reply.status(404).send({ message: error.message });
+	} catch (error: unknown) {
+		const message = error instanceof Error ? error.message : String(error);
+		if (message === "Usuário não encontrado") {
+			return reply.status(404).send({ message });
 		}
 		if (
-			error.message.includes("não possui plano") ||
-			error.message.includes("superior") ||
-			error.message.includes("Ciclo")
+			message.includes("não possui plano") ||
+			message.includes("superior") ||
+			message.includes("Ciclo")
 		) {
-			return reply.status(400).send({ message: error.message });
+			return reply.status(400).send({ message });
 		}
 		console.error("Erro ao fazer upgrade de plano:", error);
 		return reply.status(500).send({
 			message: "Erro ao processar upgrade de plano",
-			error: error.message,
+			error: message,
 		});
 	}
 }

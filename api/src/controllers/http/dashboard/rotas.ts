@@ -20,4 +20,3 @@ export async function dashboardRotas(app: FastifyInstance) {
 		handler: buscarUltimasMovimentacoes,
 	});
 }
-

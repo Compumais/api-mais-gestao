@@ -1,14 +1,14 @@
-import type { HttpResponse } from "@/model/http-model";
+import type { HttpResponse } from "@/model/http-model.js";
 import {
 	buscarBancoPorId,
 	excluirBanco,
-} from "@/repositories/banco-repositories";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
+} from "@/repositories/banco-repositories.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	httpNaoEncontrado,
 	httpProibido,
 	httpSemConteudo,
-} from "@/util/http-util";
+} from "@/util/http-util.js";
 
 type ExcluirBancoParametros = {
 	id: string;

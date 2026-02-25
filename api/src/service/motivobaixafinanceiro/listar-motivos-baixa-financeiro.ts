@@ -1,8 +1,8 @@
-import type { HttpResponse } from "@/model/http-model";
-import type { MotivoBaixaFinanceiro } from "@/model/motivo-baixa-financeiro-model";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
-import { listarMotivosBaixaFinanceiro } from "@/repositories/motivo-baixa-financeiro-repositories";
-import { httpOk, httpProibido } from "@/util/http-util";
+import type { HttpResponse } from "@/model/http-model.js";
+import type { MotivoBaixaFinanceiro } from "@/model/motivo-baixa-financeiro-model.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { listarMotivosBaixaFinanceiro } from "@/repositories/motivo-baixa-financeiro-repositories.js";
+import { httpOk, httpProibido } from "@/util/http-util.js";
 
 interface ListarMotivosBaixaFinanceiroParametros {
 	idusuario: string;

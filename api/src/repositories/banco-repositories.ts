@@ -37,11 +37,11 @@ export async function buscarBancoPorId(id: string) {
 }
 
 interface ListarBancosParametros {
-	idempresa?: string;
-	nome?: string;
-	codigo?: string;
-	page?: number;
-	limit?: number;
+	idempresa?: string | undefined;
+	nome?: string | undefined;
+	codigo?: string | undefined;
+	page?: number | undefined;
+	limit?: number | undefined;
 }
 
 export async function listarBancos({
@@ -87,7 +87,16 @@ export async function listarBancos({
 	};
 }
 
-export async function atualizarBanco(id: string, dados: Partial<NovoBanco>) {
+interface AtualizarBancoParametros {
+	id: string;
+	dados: {
+		codigo?: string | undefined;
+		nome?: string | undefined;
+		currenttimemillis?: number | undefined;
+	};
+}
+
+export async function atualizarBanco({ id, dados }: AtualizarBancoParametros) {
 	const [banco] = await db
 		.update(schema.banco)
 		.set(dados)

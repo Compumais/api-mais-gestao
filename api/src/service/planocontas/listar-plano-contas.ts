@@ -1,8 +1,8 @@
-import type { HttpResponse } from "@/model/http-model";
-import type { PlanoContas } from "@/model/plano-contas-model";
-import { buscarEmpresasDoUsuario } from "@/repositories/entidade-repositories";
-import { listarPlanoContasPorEmpresas } from "@/repositories/plano-contas-repositories";
-import { httpOk } from "@/util/http-util";
+import type { HttpResponse } from "@/model/http-model.js";
+import type { PlanoContas } from "@/model/plano-contas-model.js";
+import { buscarEmpresasDoUsuario } from "@/repositories/entidade-repositories.js";
+import { listarPlanoContasPorEmpresas } from "@/repositories/plano-contas-repositories.js";
+import { httpOk } from "@/util/http-util.js";
 
 type ListarPlanoContasParametros = {
 	idusuario: string;
@@ -12,7 +12,7 @@ type ListarPlanoContasParametros = {
 	page?: number;
 	limit?: number;
 	listarTudo?: boolean;
-	tipomovimento?: "E" | "S";
+	tipomovimento?: "E" | "S" | undefined;
 };
 
 type ListarPlanoContasResposta = {

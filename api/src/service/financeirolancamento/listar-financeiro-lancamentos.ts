@@ -1,7 +1,7 @@
-import type { FinanceiroLancamento } from "@/model/financeiro-lancamentos-model";
-import type { HttpResponse } from "@/model/http-model";
-import { listarFinanceiroLancamento } from "@/repositories/financeiro-lancamento-repositories";
-import { httpOk } from "@/util/http-util";
+import type { FinanceiroLancamento } from "@/model/financeiro-lancamentos-model.js";
+import type { HttpResponse } from "@/model/http-model.js";
+import { listarFinanceiroLancamento } from "@/repositories/financeiro-lancamento-repositories.js";
+import { httpOk } from "@/util/http-util.js";
 
 type ListarFinanceiroLancamentoParametros = {
 	idfinanceiro: string;

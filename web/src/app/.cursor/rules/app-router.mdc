@@ -1,6 +1,6 @@
 ---
 alwaysApply: true
-description: Regras para uso do Next.js App Router
+description: Regras para uso do Next App Router
 globs:
   - "app/**/*.ts"
   - "app/**/*.tsx"

@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { atualizarContaCorrenteService } from "@/service/contacorrente/atualizar-conta-corrente";
-import { httpNaoAutorizado } from "@/util/http-util";
+import { atualizarContaCorrenteService } from "@/service/contacorrente/atualizar-conta-corrente.js";
+import { httpNaoAutorizado } from "@/util/http-util.js";
 
 const atualizarContaCorrenteParamsSchema = z.object({
 	id: z.string().uuid(),

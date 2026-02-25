@@ -25,7 +25,12 @@ export async function authenticationRoute(
 		const req = new Request(url.toString(), {
 			method: request.method,
 			headers,
-			body: request.method === "GET" || request.method === "HEAD" ? null : (request.body ? JSON.stringify(request.body) : null),
+			body:
+				request.method === "GET" || request.method === "HEAD"
+					? null
+					: request.body
+						? JSON.stringify(request.body)
+						: null,
 		});
 
 		// Process authentication request

@@ -1,10 +1,10 @@
-import type { HttpResponse } from "../../model/http-model";
-import type { Usuario } from "../../model/usuario-model";
+import type { HttpResponse } from "../../model/http-model.js";
+import type { Usuario } from "../../model/usuario-model.js";
 import {
 	buscarUsuarioPorId,
 	buscarEmpresasDoUsuario,
-} from "../../repositories/usuarios-repositories";
-import { httpCriacao, httpNaoEncontrado } from "../../util/http-util";
+} from "../../repositories/usuarios-repositories.js";
+import { httpCriacao, httpNaoEncontrado } from "../../util/http-util.js";
 
 export type UsuarioComEmpresas = Usuario & {
 	empresasIds: string[];

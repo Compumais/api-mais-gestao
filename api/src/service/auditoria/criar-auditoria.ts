@@ -1,6 +1,6 @@
-import type { Auditoria, NovaAuditoria } from "@/model/auditoria-model";
-import { criarAuditoria } from "@/repositories/auditoria-repositories";
-import { httpCriacao } from "@/util/http-util";
+import type { Auditoria, NovaAuditoria } from "@/model/auditoria-model.js";
+import { criarAuditoria } from "@/repositories/auditoria-repositories.js";
+import { httpCriacao } from "@/util/http-util.js";
 
 export async function criarAuditoriaService(dadosAuditoria: NovaAuditoria) {
 	const auditoria = await criarAuditoria(dadosAuditoria);

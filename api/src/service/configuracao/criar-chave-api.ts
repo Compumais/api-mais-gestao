@@ -1,13 +1,16 @@
+import { createHash } from "node:crypto";
 import { v4 as uuidv4 } from "uuid";
-import type { HttpResponse } from "@/model/http-model";
+import type { ConfiguracaoIntegracao } from "@/model/configuracao-model.js";
+import type { HttpResponse } from "@/model/http-model.js";
 import {
 	atualizarConfiguracaoParcial,
 	buscarConfiguracaoPorEmpresa,
 	criarConfiguracao,
-} from "@/repositories/configuracao-repositories";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
-import { httpOk, httpProibido } from "@/util/http-util";
-import { createHash } from "crypto";
+} from "@/repositories/configuracao-repositories.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { httpOk, httpProibido } from "@/util/http-util.js";
+
+type ChaveApi = ConfiguracaoIntegracao["apis"]["chaves"][number];
 
 interface CriarChaveApiParametros {
 	idempresa: string;
@@ -37,7 +40,7 @@ export async function criarChaveApiService({
 	// Buscar configuração existente
 	let configuracao = await buscarConfiguracaoPorEmpresa({ idempresa });
 
-	const novaChave = {
+	const novaChave: ChaveApi = {
 		id: chaveId,
 		nome,
 		chave: chaveHash,
@@ -75,11 +78,9 @@ export async function criarChaveApiService({
 		});
 	} else {
 		// Adicionar chave ao array existente
-		const integracaoAtual = (configuracao.integracao as {
-			apis?: { chaves?: unknown[] };
-		}) || { apis: { chaves: [] } };
-
-		const chavesExistentes = integracaoAtual.apis?.chaves || [];
+		const integracaoAtual =
+			(configuracao.integracao as Partial<ConfiguracaoIntegracao>) ?? {};
+		const chavesExistentes: ChaveApi[] = integracaoAtual.apis?.chaves ?? [];
 
 		await atualizarConfiguracaoParcial({
 			idempresa,
@@ -95,4 +96,3 @@ export async function criarChaveApiService({
 	// Retornar a chave raw apenas uma vez (não armazenar)
 	return httpOk({ chave: chaveRaw });
 }
-

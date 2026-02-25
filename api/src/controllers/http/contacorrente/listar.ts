@@ -1,7 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { listarContasCorrentesService } from "@/service/contacorrente/listar-contas-correntes";
-import { httpOk } from "@/util/http-util";
+import { listarContasCorrentesService } from "@/service/contacorrente/listar-contas-correntes.js";
 
 const listarContasCorrentesQuerySchema = z.object({
 	idempresa: z.string(),

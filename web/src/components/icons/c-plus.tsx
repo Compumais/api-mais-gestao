@@ -17,8 +17,8 @@ export function CPlusIcon({ size = 64 }: CPlusIconProps) {
        C30 14 22 22 22 32
        C22 42 30 50 40 50"
 				stroke="currentColor"
-				stroke-width="6"
-				stroke-linecap="round"
+				strokeWidth="6"
+				strokeLinecap="round"
 				fill="none"
 			/>
 			<line
@@ -27,8 +27,8 @@ export function CPlusIcon({ size = 64 }: CPlusIconProps) {
 				x2="44"
 				y2="38"
 				stroke="currentColor"
-				stroke-width="5"
-				stroke-linecap="round"
+				strokeWidth="5"
+				strokeLinecap="round"
 			/>
 			<line
 				x1="38"
@@ -36,8 +36,8 @@ export function CPlusIcon({ size = 64 }: CPlusIconProps) {
 				x2="50"
 				y2="32"
 				stroke="currentColor"
-				stroke-width="5"
-				stroke-linecap="round"
+				strokeWidth="5"
+				strokeLinecap="round"
 			/>
 		</svg>
 	);

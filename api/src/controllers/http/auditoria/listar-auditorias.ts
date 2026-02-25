@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { ListarAuditoriasService } from "@/service/auditoria/listar-auditorias";
-import { httpNaoAutorizado } from "@/util/http-util";
+import { ListarAuditoriasService } from "@/service/auditoria/listar-auditorias.js";
+import { httpNaoAutorizado } from "@/util/http-util.js";
 
 const listarAuditoriasQuerySchema = z.object({
 	idempresa: z.string().uuid(),
@@ -46,4 +46,3 @@ export async function listarAuditorias(
 		});
 	}
 }
-

@@ -72,4 +72,3 @@ export async function auditoriaRotas(app: FastifyInstance) {
 		},
 	});
 }
-

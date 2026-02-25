@@ -24,10 +24,12 @@ export const auth = betterAuth({
 	databaseHooks: {
 		user: {
 			create: {
-				before: async (user) => {
+				before: async (user, _context) => {
 					return {
-						...user,
-						perfil: ["proprietario"],
+						data: {
+							...user,
+							perfil: ["proprietario"],
+						},
 					};
 				},
 			},

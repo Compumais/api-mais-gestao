@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { buscarContaCorrentePorIdService } from "@/service/contacorrente/buscar-por-id";
-import { httpNaoAutorizado } from "@/util/http-util";
+import { buscarContaCorrentePorIdService } from "@/service/contacorrente/buscar-por-id.js";
+import { httpNaoAutorizado } from "@/util/http-util.js";
 
 const buscarContaCorrenteParamsSchema = z.object({
 	id: z.string(),

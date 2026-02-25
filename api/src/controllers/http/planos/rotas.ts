@@ -1,9 +1,9 @@
 import type { FastifyInstance } from "fastify";
 import { verifyJwt } from "../../middleware/verify-jwt.js";
 import { contratarPlanoController } from "./contratar.js";
-import { upgradePlanoController } from "./upgrade.js";
 import { downgradePlanoController } from "./downgrade.js";
 import { getMeuPlanoController } from "./meu-plano.js";
+import { upgradePlanoController } from "./upgrade.js";
 
 export async function planosRotas(app: FastifyInstance) {
 	// Todas as rotas de planos requerem autenticação
@@ -29,4 +29,3 @@ export async function planosRotas(app: FastifyInstance) {
 		handler: getMeuPlanoController,
 	});
 }
-

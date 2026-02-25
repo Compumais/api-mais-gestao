@@ -1,17 +1,17 @@
-import type { Entidade } from "@/model/entidade-model";
-import type { HttpResponse } from "@/model/http-model";
+import type { Entidade } from "@/model/entidade-model.js";
+import type { HttpResponse } from "@/model/http-model.js";
 import {
 	atualizarEntidade,
 	buscarEntidadePorId,
 	verificarEmailTelefoneDuplicado,
 	verificarUsuarioPertenceEmpresa,
-} from "@/repositories/entidade-repositories";
+} from "@/repositories/entidade-repositories.js";
 import {
 	httpNaoEncontrado,
 	httpOk,
 	httpProibido,
 	httpRecursoExistente,
-} from "@/util/http-util";
+} from "@/util/http-util.js";
 
 type AtualizarEntidadeParametros = {
 	entidadeId: string;

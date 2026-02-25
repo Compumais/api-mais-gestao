@@ -4,8 +4,8 @@ import * as entidadeRepository from "@/repositories/entidade-repositories.js";
 import * as financeiroRepository from "@/repositories/financeiro-repositories.js";
 import { listarFinanceirosService } from "./listar-financeiros.js";
 
-vi.mock("@/repositories/entidade-repositories.js");
-vi.mock("@/repositories/financeiro-repositories.js");
+vi.mock("@/repositories/entidade-repositories");
+vi.mock("@/repositories/financeiro-repositories");
 
 describe("listarFinanceirosService", () => {
 	const financeirosMock: Financeiro[] = [

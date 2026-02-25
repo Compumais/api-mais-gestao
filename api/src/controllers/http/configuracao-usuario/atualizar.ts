@@ -1,13 +1,13 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { atualizarConfiguracaoUsuarioService } from "@/service/configuracao-usuario/atualizar-configuracao-usuario";
-import { httpNaoAutorizado, httpProibido } from "@/util/http-util";
+import { atualizarConfiguracaoUsuarioService } from "@/service/configuracao-usuario/atualizar-configuracao-usuario.js";
+import { httpNaoAutorizado } from "@/util/http-util.js";
 
 const atualizarConfiguracaoUsuarioBodySchema = z.object({
-	geminiApiKey: z.string().optional(),
-	openaiApiKey: z.string().optional(),
-	openrouterApiKey: z.string().optional(),
-	asaasToken: z.string().optional(),
+	geminiApiKey: z.string().nullable().optional(),
+	openaiApiKey: z.string().nullable().optional(),
+	openrouterApiKey: z.string().nullable().optional(),
+	asaasToken: z.string().nullable().optional(),
 });
 
 export async function atualizarConfiguracaoUsuario(
@@ -27,7 +27,12 @@ export async function atualizarConfiguracaoUsuario(
 
 		const resultado = await atualizarConfiguracaoUsuarioService({
 			idusuario: request.user.id,
-			dados,
+			dados: {
+				geminiApiKey: dados.geminiApiKey ?? null,
+				openaiApiKey: dados.openaiApiKey ?? null,
+				openrouterApiKey: dados.openrouterApiKey ?? null,
+				asaasToken: dados.asaasToken ?? null,
+			},
 		});
 
 		if (!resultado.success) {
@@ -50,4 +55,3 @@ export async function atualizarConfiguracaoUsuario(
 		});
 	}
 }
-

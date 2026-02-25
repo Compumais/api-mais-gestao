@@ -1,5 +1,13 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -12,16 +20,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/use-auth";
-import { contratarPlano, TipoPlano } from "@/services/planos.service";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2 } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-import { toast } from "sonner";
-import { z } from "zod";
 import { maskCep, maskCpfCnpj, maskCreditCard, maskPhone } from "@/lib/masks";
-import { useQueryClient } from "@tanstack/react-query";
+import { contratarPlano, type TipoPlano } from "@/services/planos.service";
 
 const assinaturaSchema = z.object({
 	plano: z.enum(["BASIC", "PREMIUM", "ENTERPRISE"]),
@@ -71,28 +71,15 @@ export default function AssinaturaPage() {
 		},
 	});
 
-	useEffect(() => {
-		if (user) {
-			form.setValue("holderName", user.nome || "");
-			form.setValue("holderEmail", user.email || "");
-		}
-
-		const planParam = searchParams.get("plan");
-		if (planParam) {
-			const upperPlan = planParam.toUpperCase();
-			if (upperPlan === "BASIC" || upperPlan === "PREMIUM" || upperPlan === "ENTERPRISE") {
-				form.setValue("plano", upperPlan as TipoPlano);
-			}
-		}
-	}, [user, form, searchParams]);
-
-	const handleInputChange = (
-		field: keyof AssinaturaFormValues,
-		maskFunction: (value: string) => string
-	) => (e: React.ChangeEvent<HTMLInputElement>) => {
-		const maskedValue = maskFunction(e.target.value);
-		form.setValue(field, maskedValue, { shouldValidate: true });
-	};
+	const handleInputChange =
+		(
+			field: keyof AssinaturaFormValues,
+			maskFunction: (value: string) => string,
+		) =>
+		(e: React.ChangeEvent<HTMLInputElement>) => {
+			const maskedValue = maskFunction(e.target.value);
+			form.setValue(field, maskedValue, { shouldValidate: true });
+		};
 
 	const onSubmit = async (data: AssinaturaFormValues) => {
 		setIsLoading(true);
@@ -100,7 +87,8 @@ export default function AssinaturaPage() {
 		const cleanCardNumber = data.cardNumber.replace(/\D/g, "");
 		const cleanCpfCnpj = data.holderCpfCnpj.replace(/\D/g, "");
 		const cleanPhone = data.holderPhone.replace(/\D/g, "");
-		const cleanPostalCode = data.holderPostalCode?.replace(/\D/g, "") || undefined;
+		const cleanPostalCode =
+			data.holderPostalCode?.replace(/\D/g, "") || undefined;
 
 		try {
 			await contratarPlano({
@@ -128,7 +116,7 @@ export default function AssinaturaPage() {
 			});
 
 			toast.success("Plano contratado com sucesso!");
-			
+
 			// Invalidar cache e refetch do usuário para atualizar o plano
 			queryClient.invalidateQueries({ queryKey: ["perfil"] });
 			queryClient.invalidateQueries({ queryKey: ["meu-plano"] });
@@ -143,25 +131,63 @@ export default function AssinaturaPage() {
 		}
 	};
 
+	useEffect(() => {
+		if (user) {
+			form.setValue("holderName", user.nome || "");
+			form.setValue("holderEmail", user.email || "");
+		}
+
+		const planParam = searchParams.get("plan");
+		if (planParam) {
+			const upperPlan = planParam.toUpperCase();
+			if (
+				upperPlan === "BASIC" ||
+				upperPlan === "PREMIUM" ||
+				upperPlan === "ENTERPRISE"
+			) {
+				form.setValue("plano", upperPlan as TipoPlano);
+			}
+		}
+	}, [user, form, searchParams]);
+
+	if (!user?.perfil.includes("proprietario")) {
+		router.replace("/dashboard");
+		return null;
+	}
+
 	return (
 		<div className="container mx-auto py-10 flex justify-center">
 			<Card className="w-full max-w-2xl">
 				<CardHeader>
 					<CardTitle>Contratar Plano</CardTitle>
 					<CardDescription>
-						Escolha um plano e preencha os dados do cartão de crédito para continuar.
+						Escolha um plano e preencha os dados do cartão de crédito para
+						continuar.
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<form id="assinatura-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+					<form
+						id="assinatura-form"
+						onSubmit={form.handleSubmit(onSubmit)}
+						className="space-y-6"
+					>
 						<div className="space-y-4">
 							<Label className="text-lg font-semibold">Escolha o Plano</Label>
 							<div className="grid grid-cols-3 gap-4">
 								<div
 									className={`border rounded-lg p-4 cursor-pointer hover:bg-accent/50 ${
-										form.watch("plano") === "BASIC" ? "border-primary bg-accent" : ""
+										form.watch("plano") === "BASIC"
+											? "border-primary bg-accent"
+											: ""
 									}`}
 									onClick={() => form.setValue("plano", "BASIC")}
+									onKeyDown={(e) => {
+										if (e.key === "Enter") {
+											form.setValue("plano", "BASIC");
+										}
+									}}
+									role="option"
+									tabIndex={0}
 								>
 									<div className="font-bold">Básico</div>
 									<div className="text-xl">
@@ -170,8 +196,17 @@ export default function AssinaturaPage() {
 								</div>
 								<div
 									className={`border rounded-lg p-4 cursor-pointer hover:bg-accent/50 ${
-										form.watch("plano") === "PREMIUM" ? "border-primary bg-accent" : ""
+										form.watch("plano") === "PREMIUM"
+											? "border-primary bg-accent"
+											: ""
 									}`}
+									onKeyDown={(e) => {
+										if (e.key === "Enter") {
+											form.setValue("plano", "PREMIUM");
+										}
+									}}
+									role="option"
+									tabIndex={0}
 									onClick={() => form.setValue("plano", "PREMIUM")}
 								>
 									<div className="font-bold">Premium</div>
@@ -181,8 +216,17 @@ export default function AssinaturaPage() {
 								</div>
 								<div
 									className={`border rounded-lg p-4 cursor-pointer hover:bg-accent/50 ${
-										form.watch("plano") === "ENTERPRISE" ? "border-primary bg-accent" : ""
+										form.watch("plano") === "ENTERPRISE"
+											? "border-primary bg-accent"
+											: ""
 									}`}
+									onKeyDown={(e) => {
+										if (e.key === "Enter") {
+											form.setValue("plano", "ENTERPRISE");
+										}
+									}}
+									role="option"
+									tabIndex={0}
 									onClick={() => form.setValue("plano", "ENTERPRISE")}
 								>
 									<div className="font-bold">Enterprise</div>
@@ -204,7 +248,9 @@ export default function AssinaturaPage() {
 										placeholder="Como impresso no cartão"
 									/>
 									{form.formState.errors.holderName && (
-										<p className="text-red-500 text-sm">{form.formState.errors.holderName.message}</p>
+										<p className="text-red-500 text-sm">
+											{form.formState.errors.holderName.message}
+										</p>
 									)}
 								</div>
 								<div className="grid gap-2">
@@ -217,7 +263,9 @@ export default function AssinaturaPage() {
 										maxLength={19}
 									/>
 									{form.formState.errors.cardNumber && (
-										<p className="text-red-500 text-sm">{form.formState.errors.cardNumber.message}</p>
+										<p className="text-red-500 text-sm">
+											{form.formState.errors.cardNumber.message}
+										</p>
 									)}
 								</div>
 								<div className="grid grid-cols-3 gap-4">
@@ -230,7 +278,9 @@ export default function AssinaturaPage() {
 											maxLength={2}
 										/>
 										{form.formState.errors.expiryMonth && (
-											<p className="text-red-500 text-sm">{form.formState.errors.expiryMonth.message}</p>
+											<p className="text-red-500 text-sm">
+												{form.formState.errors.expiryMonth.message}
+											</p>
 										)}
 									</div>
 									<div className="grid gap-2">
@@ -242,14 +292,23 @@ export default function AssinaturaPage() {
 											maxLength={4}
 										/>
 										{form.formState.errors.expiryYear && (
-											<p className="text-red-500 text-sm">{form.formState.errors.expiryYear.message}</p>
+											<p className="text-red-500 text-sm">
+												{form.formState.errors.expiryYear.message}
+											</p>
 										)}
 									</div>
 									<div className="grid gap-2">
 										<Label htmlFor="ccv">CCV</Label>
-										<Input id="ccv" {...form.register("ccv")} placeholder="123" maxLength={4} />
+										<Input
+											id="ccv"
+											{...form.register("ccv")}
+											placeholder="123"
+											maxLength={4}
+										/>
 										{form.formState.errors.ccv && (
-											<p className="text-red-500 text-sm">{form.formState.errors.ccv.message}</p>
+											<p className="text-red-500 text-sm">
+												{form.formState.errors.ccv.message}
+											</p>
 										)}
 									</div>
 								</div>
@@ -261,9 +320,15 @@ export default function AssinaturaPage() {
 							<div className="grid gap-4">
 								<div className="grid gap-2">
 									<Label htmlFor="holderEmail">Email</Label>
-									<Input id="holderEmail" {...form.register("holderEmail")} placeholder="email@exemplo.com" />
+									<Input
+										id="holderEmail"
+										{...form.register("holderEmail")}
+										placeholder="email@exemplo.com"
+									/>
 									{form.formState.errors.holderEmail && (
-										<p className="text-red-500 text-sm">{form.formState.errors.holderEmail.message}</p>
+										<p className="text-red-500 text-sm">
+											{form.formState.errors.holderEmail.message}
+										</p>
 									)}
 								</div>
 								<div className="grid grid-cols-2 gap-4">
@@ -277,7 +342,9 @@ export default function AssinaturaPage() {
 											maxLength={18}
 										/>
 										{form.formState.errors.holderCpfCnpj && (
-											<p className="text-red-500 text-sm">{form.formState.errors.holderCpfCnpj.message}</p>
+											<p className="text-red-500 text-sm">
+												{form.formState.errors.holderCpfCnpj.message}
+											</p>
 										)}
 									</div>
 									<div className="grid gap-2">
@@ -290,7 +357,9 @@ export default function AssinaturaPage() {
 											maxLength={15}
 										/>
 										{form.formState.errors.holderPhone && (
-											<p className="text-red-500 text-sm">{form.formState.errors.holderPhone.message}</p>
+											<p className="text-red-500 text-sm">
+												{form.formState.errors.holderPhone.message}
+											</p>
 										)}
 									</div>
 								</div>
@@ -306,7 +375,9 @@ export default function AssinaturaPage() {
 										/>
 									</div>
 									<div className="grid gap-2">
-										<Label htmlFor="holderAddressNumber">Número (opcional)</Label>
+										<Label htmlFor="holderAddressNumber">
+											Número (opcional)
+										</Label>
 										<Input
 											id="holderAddressNumber"
 											{...form.register("holderAddressNumber")}
@@ -316,20 +387,34 @@ export default function AssinaturaPage() {
 								</div>
 								<div className="grid gap-2">
 									<Label htmlFor="holderAddress">Rua (opcional)</Label>
-									<Input id="holderAddress" {...form.register("holderAddress")} placeholder="Rua exemplo" />
+									<Input
+										id="holderAddress"
+										{...form.register("holderAddress")}
+										placeholder="Rua exemplo"
+									/>
 								</div>
 								<div className="grid grid-cols-2 gap-4">
 									<div className="grid gap-2">
 										<Label htmlFor="holderProvince">Bairro (opcional)</Label>
-										<Input id="holderProvince" {...form.register("holderProvince")} placeholder="Centro" />
+										<Input
+											id="holderProvince"
+											{...form.register("holderProvince")}
+											placeholder="Centro"
+										/>
 									</div>
 									<div className="grid gap-2">
 										<Label htmlFor="holderCity">Cidade (opcional)</Label>
-										<Input id="holderCity" {...form.register("holderCity")} placeholder="São Paulo" />
+										<Input
+											id="holderCity"
+											{...form.register("holderCity")}
+											placeholder="São Paulo"
+										/>
 									</div>
 								</div>
 								<div className="grid gap-2">
-									<Label htmlFor="holderComplement">Complemento (opcional)</Label>
+									<Label htmlFor="holderComplement">
+										Complemento (opcional)
+									</Label>
 									<Input
 										id="holderComplement"
 										{...form.register("holderComplement")}
@@ -350,4 +435,3 @@ export default function AssinaturaPage() {
 		</div>
 	);
 }
-

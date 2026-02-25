@@ -1,16 +1,16 @@
-import type { Empresa } from "../../model/empresa-model";
-import type { HttpResponse } from "../../model/http-model";
-import type { Usuario } from "../../model/usuario-model";
-import { criarBancosPadrao } from "../../repositories/banco-repositories";
+import type { Empresa } from "../../model/empresa-model.js";
+import type { HttpResponse } from "../../model/http-model.js";
+import type { Usuario } from "../../model/usuario-model.js";
+import { criarBancosPadrao } from "../../repositories/banco-repositories.js";
 import {
 	criarEmpresa,
 	type NovaEmpresa,
-} from "../../repositories/empresa-repositories";
+} from "../../repositories/empresa-repositories.js";
 import {
 	httpCriacao,
 	httpLimiteExcedido,
 	httpRecursoExistente,
-} from "../../util/http-util";
+} from "../../util/http-util.js";
 
 type CriarEmpresaParametros = {
 	dadosEmpresa: NovaEmpresa;

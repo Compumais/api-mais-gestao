@@ -9,6 +9,7 @@ import {
 	financeiro,
 	financeirolancamento,
 	motivobaixafinanceiro,
+	notificacoes,
 	planocontas,
 	sessoes,
 	tipodocumentofinanceiro,
@@ -22,6 +23,7 @@ export const usuariosRelations = relations(usuarios, ({ many }) => ({
 	}),
 	usuarioEmpresas: many(usuarioEmpresa),
 	auditLogs: many(auditLogs),
+	notificacoes: many(notificacoes),
 	sessions: many(sessoes),
 	accounts: many(contas),
 }));
@@ -37,6 +39,7 @@ export const empresaRelations = relations(empresa, ({ one, many }) => ({
 	contacorrentes: many(contacorrente),
 	financeiros: many(financeiro),
 	planocontas: many(planocontas),
+	notificacoes: many(notificacoes),
 	tipodocumentofinanceiros: many(tipodocumentofinanceiro),
 	motivobaixafinanceiros: many(motivobaixafinanceiro),
 }));
@@ -147,3 +150,14 @@ export const motivobaixafinanceiroRelations = relations(
 		financeiros: many(tipodocumentofinanceiro),
 	}),
 );
+
+export const notificacoesRelations = relations(notificacoes, ({ one }) => ({
+	usuario: one(usuarios, {
+		fields: [notificacoes.idusuario],
+		references: [usuarios.id],
+	}),
+	empresa: one(empresa, {
+		fields: [notificacoes.idempresa],
+		references: [empresa.id],
+	}),
+}));

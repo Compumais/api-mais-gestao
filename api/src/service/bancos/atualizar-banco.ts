@@ -1,11 +1,11 @@
-import type { Banco } from "@/model/banco-model";
-import type { HttpResponse } from "@/model/http-model";
+import type { Banco } from "@/model/banco-model.js";
+import type { HttpResponse } from "@/model/http-model.js";
 import {
 	atualizarBanco,
 	buscarBancoPorId,
-} from "@/repositories/banco-repositories";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
-import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util";
+} from "@/repositories/banco-repositories.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
 
 type AtualizarBancoParametros = {
 	id: string;
@@ -36,9 +36,12 @@ export async function atualizarBancoService({
 		return httpProibido();
 	}
 
-	const bancoAtualizado = await atualizarBanco(id, {
-		...dados,
-		currenttimemillis: Date.now(),
+	const bancoAtualizado = await atualizarBanco({
+		id,
+		dados: {
+			...dados,
+			currenttimemillis: Date.now(),
+		},
 	});
 
 	if (!bancoAtualizado) {

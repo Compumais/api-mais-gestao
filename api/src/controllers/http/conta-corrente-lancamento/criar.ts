@@ -1,9 +1,14 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { v4 as uuidv4 } from "uuid";
 import z from "zod";
-import { buscarContaCorrentePorId } from "@/repositories/conta-corrente-repositories";
-import { criarContaCorrenteLancamentoService } from "@/service/contacorrentelancamento/criar-conta-corrente-lancamento";
-import { httpErroInterno, httpNaoAutorizado, httpNaoEncontrado } from "@/util/http-util";
+import { buscarContaCorrentePorId } from "@/repositories/conta-corrente-repositories.js";
+import { criarNotificacaoService } from "@/service/notificacoes/criar-notificacao.js";
+import { criarContaCorrenteLancamentoService } from "@/service/contacorrentelancamento/criar-conta-corrente-lancamento.js";
+import {
+	httpErroInterno,
+	httpNaoAutorizado,
+	httpNaoEncontrado,
+} from "@/util/http-util.js";
 
 const criarContaCorrenteLancamentoBodySchema = z.object({
 	idcontacorrente: z.string(),
@@ -54,7 +59,8 @@ export async function criarContaCorrenteLancamento(
 		const dadosLancamento = {
 			id: uuidv4(),
 			idcontacorrente: dadosValidados.idcontacorrente,
-			datahora: dadosValidados.datahora || new Date().toISOString().split("T")[0],
+			datahora:
+				dadosValidados.datahora || new Date().toISOString().split("T")[0],
 			tipo: tipoLancamento,
 			valor: dadosValidados.valor,
 			historico: dadosValidados.historico || null,
@@ -75,6 +81,25 @@ export async function criarContaCorrenteLancamento(
 			return reply.status(resultado.status).send(resultado);
 		}
 
+		const perfilAutor = Array.isArray(request.user.roles)
+			? request.user.roles
+			: request.user.roles
+				? [request.user.roles]
+				: [];
+		await criarNotificacaoService({
+			tipo: "conta_corrente_lancamento",
+			idempresa: contaCorrente.idempresa,
+			idrecurso: resultado.body?.id ?? null,
+			titulo: "Nova movimentação (conta corrente)",
+			detalhes: {
+				valor: dadosValidados.valor,
+				historico: dadosValidados.historico,
+				tipo: dadosLancamento.tipo,
+			},
+			idusuarioAutor: request.user.id,
+			perfilAutor,
+		});
+
 		return reply.status(resultado.status).send(resultado.body);
 	} catch (err) {
 		console.error(err);
@@ -90,4 +115,3 @@ export async function criarContaCorrenteLancamento(
 		return reply.status(httpErroInterno().status).send(httpErroInterno());
 	}
 }
-

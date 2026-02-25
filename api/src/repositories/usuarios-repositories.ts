@@ -1,6 +1,6 @@
 import { and, desc, eq, ilike, inArray, sql } from "drizzle-orm";
-import * as schema from "../../drizzle/schema";
-import { db } from "./connection";
+import * as schema from "../../drizzle/schema.js";
+import { db } from "./connection.js";
 
 type Usuario = typeof schema.usuarios.$inferSelect;
 
@@ -15,8 +15,8 @@ export async function buscarUsuarioPorId(id: string): Promise<Usuario | null> {
 
 export type ListarUsuariosParametros = {
 	idempresa: string;
-	nome?: string;
-	email?: string;
+	nome?: string | null | undefined;
+	email?: string | null | undefined;
 	page?: number;
 	limit?: number;
 };
@@ -124,6 +124,29 @@ export async function buscarEmpresasDoUsuario(
 	return todosIds;
 }
 
+/**
+ * Lista IDs de usuários com perfil "financeiro" vinculados à empresa (usuario_empresas).
+ */
+export async function listarIdsUsuariosFinanceirosPorEmpresa(
+	idempresa: string,
+): Promise<string[]> {
+	const rows = await db
+		.select({ idusuario: schema.usuarioEmpresa.idusuario })
+		.from(schema.usuarioEmpresa)
+		.innerJoin(
+			schema.usuarios,
+			eq(schema.usuarioEmpresa.idusuario, schema.usuarios.id),
+		)
+		.where(
+			and(
+				eq(schema.usuarioEmpresa.idempresa, idempresa),
+				sql`${schema.usuarios.perfil}::jsonb @> '["financeiro"]'::jsonb`,
+			),
+		);
+
+	return rows.map((r) => r.idusuario);
+}
+
 export type UsuarioPlano = {
 	plano: string | null;
 	plano_inicio_ciclo: Date | null;
@@ -131,7 +154,9 @@ export type UsuarioPlano = {
 	plano_proximo: string | null;
 };
 
-export async function buscarPlanoUsuario(id: string): Promise<UsuarioPlano | null> {
+export async function buscarPlanoUsuario(
+	id: string,
+): Promise<UsuarioPlano | null> {
 	const [usuario] = await db
 		.select({
 			plano: schema.usuarios.plano,
@@ -149,15 +174,19 @@ export async function buscarPlanoUsuario(id: string): Promise<UsuarioPlano | nul
 
 	return {
 		plano: usuario.plano,
-		plano_inicio_ciclo: usuario.plano_inicio_ciclo ? new Date(usuario.plano_inicio_ciclo) : null,
-		plano_fim_ciclo: usuario.plano_fim_ciclo ? new Date(usuario.plano_fim_ciclo) : null,
+		plano_inicio_ciclo: usuario.plano_inicio_ciclo
+			? new Date(usuario.plano_inicio_ciclo)
+			: null,
+		plano_fim_ciclo: usuario.plano_fim_ciclo
+			? new Date(usuario.plano_fim_ciclo)
+			: null,
 		plano_proximo: usuario.plano_proximo,
 	};
 }
 
 export async function atualizarPlanoUsuario(
 	id: string,
-	dados: Partial<UsuarioPlano>
+	dados: Partial<UsuarioPlano>,
 ): Promise<Usuario | null> {
 	const updateData: Record<string, unknown> = {};
 

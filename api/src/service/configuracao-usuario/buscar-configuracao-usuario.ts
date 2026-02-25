@@ -1,11 +1,11 @@
-import type { HttpResponse } from "@/model/http-model";
-import { buscarEmpresaPorId } from "@/repositories/empresa-repositories";
+import type { HttpResponse } from "@/model/http-model.js";
 import {
 	buscarConfiguracaoUsuario,
 	type ConfiguracaoUsuario,
-} from "@/repositories/configuracao-usuario-repositories";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
-import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util";
+} from "@/repositories/configuracao-usuario-repositories.js";
+import { buscarEmpresaPorId } from "@/repositories/empresa-repositories.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
 
 interface BuscarConfiguracaoUsuarioParametros {
 	idusuario: string;
@@ -47,6 +47,15 @@ export async function buscarConfiguracaoUsuarioService({
 	const configuracao = await buscarConfiguracaoUsuario(idusuarioParaBuscar);
 
 	// Retornar null se não existir (não é erro, apenas não configurado ainda)
-	return httpOk(configuracao || null);
-}
+	if (!configuracao) {
+		return httpOk<ConfiguracaoUsuario | null>(null);
+	}
 
+	return httpOk<ConfiguracaoUsuario>({
+		id: configuracao.id,
+		idusuario: configuracao.idusuario,
+		integracoes: configuracao.integracoes ?? {},
+		criadoem: configuracao.criadoem ?? "",
+		atualizadoem: configuracao.atualizadoem ?? "",
+	});
+}

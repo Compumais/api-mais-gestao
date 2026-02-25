@@ -1,5 +1,5 @@
 import { count, desc, eq, sql } from "drizzle-orm";
-import type { NovaContaCorrenteLancamento } from "@/model/conta-corrente-lancamento-model";
+import type { NovaContaCorrenteLancamento } from "@/model/conta-corrente-lancamento-model.js";
 import * as schema from "../../drizzle/schema.js";
 import { db } from "./connection.js";
 
@@ -43,8 +43,7 @@ export async function buscarContaCorrenteLancamentoPorId({
 			idlancamentotransferencia:
 				schema.contacorrentelancamento.idlancamentotransferencia,
 			dataconciliacao: schema.contacorrentelancamento.dataconciliacao,
-			idusuarioconciliacao:
-				schema.contacorrentelancamento.idusuarioconciliacao,
+			idusuarioconciliacao: schema.contacorrentelancamento.idusuarioconciliacao,
 			idlancamentoestornado:
 				schema.contacorrentelancamento.idlancamentoestornado,
 
@@ -76,24 +75,18 @@ export async function buscarContaCorrenteLancamentoPorId({
 				})
 				.from(schema.financeirolancamento)
 				.orderBy(schema.financeirolancamento.evento)
-				.as('fl'),
-			eq(schema.contacorrentelancamento.evento, sql`fl.evento`)
+				.as("fl"),
+			eq(schema.contacorrentelancamento.evento, sql`fl.evento`),
 		)
-		.leftJoin(
-			schema.financeiro,
-			eq(sql`fl.idfinanceiro`, schema.financeiro.id),
-		)
+		.leftJoin(schema.financeiro, eq(sql`fl.idfinanceiro`, schema.financeiro.id))
 		.leftJoin(
 			schema.entidade,
 			eq(schema.financeiro.identidade, schema.entidade.id),
 		)
 		.where(eq(schema.contacorrentelancamento.id, id));
 
-	return contaCorrenteLancamento as
-		| LancamentoComRelacionamentos
-		| undefined;
+	return contaCorrenteLancamento as LancamentoComRelacionamentos | undefined;
 }
-
 
 export async function buscarUltimoLancamentoContaCorrente({
 	idcontacorrente,
@@ -157,7 +150,9 @@ export async function listarLancamentoContaCorrentePorEmpresa({
 		db
 			.select({ value: count() })
 			.from(schema.contacorrentelancamento)
-			.where(eq(schema.contacorrentelancamento.idcontacorrente, idcontacorrente)),
+			.where(
+				eq(schema.contacorrentelancamento.idcontacorrente, idcontacorrente),
+			),
 		db
 			.select({
 				id: schema.contacorrentelancamento.id,
@@ -211,7 +206,7 @@ export async function listarLancamentoContaCorrentePorEmpresa({
 					})
 					.from(schema.financeirolancamento)
 					.orderBy(schema.financeirolancamento.evento)
-					.as('fl'),
+					.as("fl"),
 				eq(schema.contacorrentelancamento.evento, sql`fl.evento`),
 			)
 			.leftJoin(

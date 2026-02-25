@@ -6,24 +6,10 @@ import {
 	IconCreditCard,
 	IconLock,
 } from "@tabler/icons-react";
-import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardFooter,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getMeuPlano, downgradePlano, TipoPlano } from "@/services/planos.service";
-import { usePlano } from "@/hooks/use-plano";
-import { useAuth } from "@/hooks/use-auth";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import Link from "next/link";
 import { toast } from "sonner";
 import {
 	AlertDialog,
@@ -35,7 +21,25 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 	AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardFooter,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { useAuth } from "@/hooks/use-auth";
+import { usePlano } from "@/hooks/use-plano";
+import {
+	downgradePlano,
+	getMeuPlano,
+	type TipoPlano,
+} from "@/services/planos.service";
 
 const plans = [
 	{
@@ -91,7 +95,11 @@ const plans = [
 // Hierarquia dos planos (ordem de upgrade)
 const planHierarchy = ["BASIC", "PREMIUM", "ENTERPRISE"];
 
-function getButtonCta(planName: string, currentPlanName: string | null, isCurrentPlan: boolean): string {
+function getButtonCta(
+	planName: string,
+	currentPlanName: string | null,
+	isCurrentPlan: boolean,
+): string {
 	if (isCurrentPlan) {
 		return "Plano Atual";
 	}
@@ -105,12 +113,16 @@ function getButtonCta(planName: string, currentPlanName: string | null, isCurren
 
 	// Se o plano alvo está acima do atual (upgrade)
 	if (targetPlanIndex > currentPlanIndex) {
-		const plan = plans.find(p => p.name.toUpperCase() === planName.toUpperCase());
+		const plan = plans.find(
+			(p) => p.name.toUpperCase() === planName.toUpperCase(),
+		);
 		return `Upgrade para ${plan?.label || planName}`;
 	}
 
 	// Se o plano alvo está abaixo do atual (downgrade)
-	const plan = plans.find(p => p.name.toUpperCase() === planName.toUpperCase());
+	const plan = plans.find(
+		(p) => p.name.toUpperCase() === planName.toUpperCase(),
+	);
 	return `Mudar para ${plan?.label || planName}`;
 }
 
@@ -129,19 +141,29 @@ function transformarMetodoPagamento(metodoPagamento: string) {
 
 export default function MeusPlanosPage() {
 	const queryClient = useQueryClient();
-	const { plano, planoAgendado, fimCiclo, isLoading: isLoadingPlano, semPlano } = usePlano();
-	const { refetchUser } = useAuth();
+	const {
+		plano,
+		planoAgendado,
+		fimCiclo,
+		isLoading: isLoadingPlano,
+		semPlano,
+	} = usePlano();
+	const { refetchUser, user } = useAuth();
 
 	const downgradeMutation = useMutation({
 		mutationFn: (plano: TipoPlano) => downgradePlano({ plano }),
 		onSuccess: () => {
-			toast.success("Downgrade agendado com sucesso. A alteração será aplicada no fim do ciclo atual.");
+			toast.success(
+				"Downgrade agendado com sucesso. A alteração será aplicada no fim do ciclo atual.",
+			);
 			queryClient.invalidateQueries({ queryKey: ["meu-plano"] });
 			refetchUser();
 		},
 		onError: (error: Error) => {
-			toast.error(error.message || "Erro ao agendar downgrade. Tente novamente.");
-		}
+			toast.error(
+				error.message || "Erro ao agendar downgrade. Tente novamente.",
+			);
+		},
 	});
 
 	if (isLoadingPlano) {
@@ -169,7 +191,9 @@ export default function MeusPlanosPage() {
 				{semPlano ? (
 					<Card>
 						<CardContent className="py-6">
-							<p className="text-muted-foreground">Você ainda não possui um plano ativo.</p>
+							<p className="text-muted-foreground">
+								Você ainda não possui um plano ativo.
+							</p>
 						</CardContent>
 						<CardFooter>
 							<Button asChild>
@@ -184,7 +208,10 @@ export default function MeusPlanosPage() {
 								<div className="space-y-1">
 									<CardTitle className="text-xl flex items-center gap-2">
 										Plano {currentPlanName}
-										<Badge variant="default" className="bg-green-600 hover:bg-green-700">
+										<Badge
+											variant="default"
+											className="bg-green-600 hover:bg-green-700"
+										>
 											Ativo
 										</Badge>
 										{planoAgendado && (
@@ -195,7 +222,16 @@ export default function MeusPlanosPage() {
 									</CardTitle>
 									<CardDescription>
 										{fimCiclo && (
-											<>Próxima cobrança em: <span className="font-medium text-foreground">{format(new Date(fimCiclo), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</span></>
+											<>
+												Próxima cobrança em:{" "}
+												<span className="font-medium text-foreground">
+													{format(
+														new Date(fimCiclo),
+														"dd 'de' MMMM 'de' yyyy",
+														{ locale: ptBR },
+													)}
+												</span>
+											</>
 										)}
 									</CardDescription>
 								</div>
@@ -220,13 +256,20 @@ export default function MeusPlanosPage() {
 					{plans.map((plan) => {
 						const planNameUpper = plan.name.toUpperCase();
 						const isCurrentPlan = currentPlanName === planNameUpper && isActive;
-						const buttonCta = getButtonCta(plan.name, currentPlanName, isCurrentPlan);
-						
+						const buttonCta = getButtonCta(
+							plan.name,
+							currentPlanName,
+							isCurrentPlan,
+						);
+
 						// Determinar se é upgrade ou downgrade
-						const currentPlanIndex = currentPlanName ? planHierarchy.indexOf(currentPlanName) : -1;
+						const currentPlanIndex = currentPlanName
+							? planHierarchy.indexOf(currentPlanName)
+							: -1;
 						const targetPlanIndex = planHierarchy.indexOf(planNameUpper);
 						const isUpgrade = targetPlanIndex > currentPlanIndex;
-						const isDowngrade = targetPlanIndex < currentPlanIndex && currentPlanIndex >= 0;
+						const isDowngrade =
+							targetPlanIndex < currentPlanIndex && currentPlanIndex >= 0;
 
 						return (
 							<Card
@@ -240,7 +283,12 @@ export default function MeusPlanosPage() {
 								)}
 								{isCurrentPlan && (
 									<div className="absolute -top-3 left-1/2 -translate-x-1/2">
-										<Badge variant="secondary" className="bg-primary text-primary-foreground hover:bg-primary/90">Seu Plano Atual</Badge>
+										<Badge
+											variant="secondary"
+											className="bg-primary text-primary-foreground hover:bg-primary/90"
+										>
+											Seu Plano Atual
+										</Badge>
 									</div>
 								)}
 
@@ -268,45 +316,74 @@ export default function MeusPlanosPage() {
 									</ul>
 								</CardContent>
 
-								<CardFooter>
-									{isCurrentPlan ? (
-										<Button variant="outline" className="w-full" disabled>
-											<span className="cursor-default">{buttonCta}</span>
-										</Button>
-									) : isUpgrade ? (
-										<Button asChild variant="default" className="w-full">
-											<Link href={`/checkout?plan=${plan.name}&type=upgrade`}>{buttonCta}</Link>
-										</Button>
-									) : isDowngrade ? (
-										<AlertDialog>
-											<AlertDialogTrigger asChild>
-												<Button variant="outline" className="w-full" disabled={downgradeMutation.isPending}>
-													{downgradeMutation.isPending ? "Agendando..." : buttonCta}
-												</Button>
-											</AlertDialogTrigger>
-											<AlertDialogContent>
-												<AlertDialogHeader>
-													<AlertDialogTitle>Agendar Downgrade</AlertDialogTitle>
-													<AlertDialogDescription>
-														O downgrade será aplicado no fim do ciclo atual ({fimCiclo ? format(new Date(fimCiclo), "dd 'de' MMMM 'de' yyyy", { locale: ptBR }) : "data não disponível"}). Você manterá acesso ao plano atual até essa data.
-													</AlertDialogDescription>
-												</AlertDialogHeader>
-												<AlertDialogFooter>
-													<AlertDialogCancel>Cancelar</AlertDialogCancel>
-													<AlertDialogAction onClick={() => downgradeMutation.mutate(planNameUpper as TipoPlano)}>
-														Confirmar Downgrade
-													</AlertDialogAction>
-												</AlertDialogFooter>
-											</AlertDialogContent>
-										</AlertDialog>
-									) : (
-										<Button asChild variant="outline" className="w-full">
-											<Link href={`/assinatura?plan=${plan.name}`}>{buttonCta}</Link>
-										</Button>
-									)}
-								</CardFooter>
+								{user?.perfil.includes("proprietario") && (
+									<CardFooter>
+										{isCurrentPlan ? (
+											<Button variant="outline" className="w-full" disabled>
+												<span className="cursor-default">{buttonCta}</span>
+											</Button>
+										) : isUpgrade ? (
+											<Button asChild variant="default" className="w-full">
+												<Link href={`/checkout?plan=${plan.name}&type=upgrade`}>
+													{buttonCta}
+												</Link>
+											</Button>
+										) : isDowngrade ? (
+											<AlertDialog>
+												<AlertDialogTrigger asChild>
+													<Button
+														variant="outline"
+														className="w-full"
+														disabled={downgradeMutation.isPending}
+													>
+														{downgradeMutation.isPending
+															? "Agendando..."
+															: buttonCta}
+													</Button>
+												</AlertDialogTrigger>
+												<AlertDialogContent>
+													<AlertDialogHeader>
+														<AlertDialogTitle>
+															Agendar Downgrade
+														</AlertDialogTitle>
+														<AlertDialogDescription>
+															O downgrade será aplicado no fim do ciclo atual (
+															{fimCiclo
+																? format(
+																		new Date(fimCiclo),
+																		"dd 'de' MMMM 'de' yyyy",
+																		{ locale: ptBR },
+																	)
+																: "data não disponível"}
+															). Você manterá acesso ao plano atual até essa
+															data.
+														</AlertDialogDescription>
+													</AlertDialogHeader>
+													<AlertDialogFooter>
+														<AlertDialogCancel>Cancelar</AlertDialogCancel>
+														<AlertDialogAction
+															onClick={() =>
+																downgradeMutation.mutate(
+																	planNameUpper as TipoPlano,
+																)
+															}
+														>
+															Confirmar Downgrade
+														</AlertDialogAction>
+													</AlertDialogFooter>
+												</AlertDialogContent>
+											</AlertDialog>
+										) : (
+											<Button asChild variant="outline" className="w-full">
+												<Link href={`/assinatura?plan=${plan.name}`}>
+													{buttonCta}
+												</Link>
+											</Button>
+										)}
+									</CardFooter>
+								)}
 							</Card>
-						)
+						);
 					})}
 				</div>
 			</section>

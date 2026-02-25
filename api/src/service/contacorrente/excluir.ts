@@ -1,14 +1,14 @@
-import type { HttpResponse } from "@/model/http-model";
+import type { HttpResponse } from "@/model/http-model.js";
 import {
 	buscarContaCorrentePorId,
 	excluirContaCorrente,
-} from "@/repositories/conta-corrente-repositories";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
+} from "@/repositories/conta-corrente-repositories.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	httpNaoEncontrado,
 	httpProibido,
 	httpSemConteudo,
-} from "@/util/http-util";
+} from "@/util/http-util.js";
 
 type ExcluirContaCorrenteParametros = {
 	id: string;

@@ -1,16 +1,16 @@
 import { v4 as uuidv4 } from "uuid";
-import type { HttpResponse } from "@/model/http-model";
+import type { HttpResponse } from "@/model/http-model.js";
 import type {
 	MotivoBaixaFinanceiro,
 	NovoMotivoBaixaFinanceiro,
-} from "@/model/motivo-baixa-financeiro-model";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
+} from "@/model/motivo-baixa-financeiro-model.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	criarMotivoBaixaFinanceiro,
 	excluirMotivoBaixaFinanceiro,
-} from "@/repositories/motivo-baixa-financeiro-repositories";
-import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria";
-import { httpCriacao, httpErroInterno, httpProibido } from "@/util/http-util";
+} from "@/repositories/motivo-baixa-financeiro-repositories.js";
+import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
+import { httpCriacao, httpErroInterno, httpProibido } from "@/util/http-util.js";
 
 export async function criarMotivoBaixaFinanceiroService(
 	idusuario: string,

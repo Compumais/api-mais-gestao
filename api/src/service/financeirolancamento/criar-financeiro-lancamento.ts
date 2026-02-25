@@ -1,10 +1,10 @@
 import type {
 	FinanceiroLancamento,
 	NovoFinanceiroLancamento,
-} from "@/model/financeiro-lancamentos-model";
-import type { HttpResponse } from "@/model/http-model";
-import { criarFinanceiroLancamento } from "@/repositories/financeiro-lancamento-repositories";
-import { httpCriacao, httpErro } from "@/util/http-util";
+} from "@/model/financeiro-lancamentos-model.js";
+import type { HttpResponse } from "@/model/http-model.js";
+import { criarFinanceiroLancamento } from "@/repositories/financeiro-lancamento-repositories.js";
+import { httpCriacao, httpErro } from "@/util/http-util.js";
 
 interface CriarFinanceiroLancamentoParametros {
 	dadosFinanceiroLancamento: NovoFinanceiroLancamento;

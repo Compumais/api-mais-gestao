@@ -1,9 +1,9 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { v4 as uuidv4 } from "uuid";
 import z from "zod";
-import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria";
-import { excluirContaCorrenteService } from "@/service/contacorrente/excluir";
-import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util";
+import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
+import { excluirContaCorrenteService } from "@/service/contacorrente/excluir.js";
+import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
 const excluirContaCorrenteParamsSchema = z.object({
 	id: z.string().uuid(),
@@ -27,7 +27,7 @@ export async function excluirContaCorrente(
 			id: auditoriaId,
 			idusuario: request.user.id,
 			acao: "excluir_conta_corrente",
-			recursoId: id,
+			idrecurso: id,
 			recurso: "conta_corrente",
 			criadoem: new Date().toISOString(),
 			metadados: {

@@ -1,10 +1,10 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { buscarDadosDashboardService } from "@/service/dashboard/buscar-dados-dashboard";
-import { httpNaoAutorizado } from "@/util/http-util";
+import { buscarDadosDashboardService } from "@/service/dashboard/buscar-dados-dashboard.js";
+import { httpNaoAutorizado } from "@/util/http-util.js";
 
 const buscarDadosDashboardQuerySchema = z.object({
-	idempresa: z.string().uuid().optional(),
+	idempresa: z.uuid(),
 });
 
 export async function buscarDadosDashboard(
@@ -43,4 +43,3 @@ export async function buscarDadosDashboard(
 		});
 	}
 }
-

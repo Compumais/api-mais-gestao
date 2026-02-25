@@ -1,7 +1,7 @@
-import type { Auditoria } from "@/model/auditoria-model";
-import type { HttpResponse } from "@/model/http-model";
-import { listarAuditorias } from "@/repositories/auditoria-repositories";
-import { httpOk } from "@/util/http-util";
+import type { Auditoria } from "@/model/auditoria-model.js";
+import type { HttpResponse } from "@/model/http-model.js";
+import { listarAuditorias } from "@/repositories/auditoria-repositories.js";
+import { httpOk } from "@/util/http-util.js";
 
 interface ListarAuditoriasServiceParams {
 	idempresa?: string;

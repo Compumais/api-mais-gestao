@@ -31,4 +31,3 @@ export async function contaCorrenteLancamentoRotas(app: FastifyInstance) {
 		handler: excluirContaCorrenteLancamento,
 	});
 }
-

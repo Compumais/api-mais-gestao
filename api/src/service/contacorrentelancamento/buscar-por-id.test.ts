@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ContaCorrenteLancamento } from "@/model/conta-corrente-lancamento-model.js";
+import type { LancamentoComRelacionamentos } from "@/repositories/conta-corrente-lancamento-repositories.js";
 import * as contaCorrenteLancamentoRepository from "@/repositories/conta-corrente-lancamento-repositories.js";
 import { buscarContaCorrenteLancamentoPorIdService } from "./buscar-por-id.js";
 
-vi.mock("@/repositories/conta-corrente-lancamento-repositories.js");
+vi.mock("@/repositories/conta-corrente-lancamento-repositories");
 
 describe("buscarContaCorrenteLancamentoPorIdService", () => {
-	const lancamentoMock: ContaCorrenteLancamento = {
+	const lancamentoMock: LancamentoComRelacionamentos = {
 		id: "lancamento-123",
 		idcontacorrente: "conta-corrente-123",
 		datahora: "2024-01-15",
@@ -28,6 +28,10 @@ describe("buscarContaCorrenteLancamentoPorIdService", () => {
 		dataconciliacao: null,
 		idusuarioconciliacao: null,
 		idlancamentoestornado: null,
+		planocontasnome: null,
+		planocontascodigo: null,
+		contacorrentedescricao: null,
+		contacorrenteagencia: null,
 	};
 
 	beforeEach(() => {
@@ -76,9 +80,9 @@ describe("buscarContaCorrenteLancamentoPorIdService", () => {
 	});
 
 	it("deve retornar lançamento completo com todos os campos", async () => {
-		const lancamentoCompleto: ContaCorrenteLancamento = {
+		const lancamentoCompleto: LancamentoComRelacionamentos = {
 			...lancamentoMock,
-			idplanocontas: 1,
+			idplanocontas: "1",
 			evento: 100,
 			debito: "500.00",
 			documento: "DOC-123",
@@ -102,7 +106,7 @@ describe("buscarContaCorrenteLancamentoPorIdService", () => {
 		expect(resultado.success).toBe(true);
 		if (resultado.success) {
 			expect(resultado.body).toEqual(lancamentoCompleto);
-			expect(resultado.body?.idplanocontas).toBe(1);
+			expect(resultado.body?.idplanocontas).toBe("1");
 			expect(resultado.body?.evento).toBe(100);
 			expect(resultado.body?.documento).toBe("DOC-123");
 		}

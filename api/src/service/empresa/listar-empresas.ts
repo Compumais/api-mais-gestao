@@ -1,9 +1,9 @@
-import type { HttpResponse } from "../../model/http-model";
+import type { HttpResponse } from "../../model/http-model.js";
 import {
 	type Empresa,
 	listarEmpresas,
-} from "../../repositories/empresa-repositories";
-import { httpOk } from "../../util/http-util";
+} from "../../repositories/empresa-repositories.js";
+import { httpOk } from "../../util/http-util.js";
 
 type ListarEmpresasParametros = {
 	idusuario?: string | undefined;

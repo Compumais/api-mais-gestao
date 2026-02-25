@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { buscarEmpresaService } from "../../../service/empresa/buscar-empresa";
+import { buscarEmpresaService } from "../../../service/empresa/buscar-empresa.js";
 
 const buscarEmpresaParamsSchema = z.object({
 	id: z.string().uuid(),

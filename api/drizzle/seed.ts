@@ -821,7 +821,7 @@ async function seed() {
 			descricao: "Conta Corrente Principal",
 			idempresa: empresa1Id,
 			codigo: 1,
-			idbanco: 341,
+			idbanco: "341",
 			agencia: "1234",
 			numeroconta: "12345-6",
 			razaosocial: "Empresa Exemplo LTDA",

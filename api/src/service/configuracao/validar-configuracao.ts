@@ -3,7 +3,7 @@ import type {
 	ConfiguracaoIntegracao,
 	ConfiguracaoNotificacoes,
 	ConfiguracaoRelatorios,
-} from "@/model/configuracao-model";
+} from "@/model/configuracao-model.js";
 
 export function validarConfiguracaoNotificacoes(
 	dados: unknown,

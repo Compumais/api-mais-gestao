@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { buscarUsuarioPorIdService } from "@/service/usuarios/buscar";
+import { buscarUsuarioPorIdService } from "@/service/usuarios/buscar.js";
 
 const buscarUsuarioParamsSchema = z.object({
 	id: z.string().uuid(),

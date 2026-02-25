@@ -3,7 +3,7 @@ import type { Empresa } from "@/model/empresa-model.js";
 import * as empresaRepository from "@/repositories/empresa-repositories.js";
 import { listarEmpresasService } from "./listar-empresas.js";
 
-vi.mock("@/repositories/empresa-repositories.js");
+vi.mock("@/repositories/empresa-repositories");
 
 describe("listarEmpresasService", () => {
 	const empresasMock: Empresa[] = [
@@ -12,6 +12,8 @@ describe("listarEmpresasService", () => {
 			nome: "Empresa Um",
 			cnpj: "11.111.111/0001-11",
 			telefone: "(34) 11111-1111",
+			email: "empresa1@example.com",
+			endereco: "Rua Exemplo, 123",
 			idproprietario: "proprietario-1",
 			criadoem: new Date().toISOString(),
 			atualizadoem: new Date().toISOString(),
@@ -21,6 +23,8 @@ describe("listarEmpresasService", () => {
 			nome: "Empresa Dois",
 			cnpj: "22.222.222/0001-22",
 			telefone: "(34) 22222-2222",
+			email: "empresa2@example.com",
+			endereco: "Rua Exemplo, 456",
 			idproprietario: "proprietario-1",
 			criadoem: new Date().toISOString(),
 			atualizadoem: new Date().toISOString(),

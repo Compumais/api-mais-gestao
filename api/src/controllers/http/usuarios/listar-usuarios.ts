@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { listarUsuariosService } from "@/service/usuarios/listar-usuarios";
+import { listarUsuariosService } from "@/service/usuarios/listar-usuarios.js";
 
 const listarUsuariosQuerySchema = z.object({
 	page: z.coerce.number().min(1).optional().default(1),

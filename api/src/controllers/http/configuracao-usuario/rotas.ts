@@ -17,4 +17,3 @@ export async function configuracaoUsuarioRotas(app: FastifyInstance) {
 		handler: atualizarConfiguracaoUsuario,
 	});
 }
-

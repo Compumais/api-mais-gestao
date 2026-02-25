@@ -2,13 +2,13 @@
 alwaysApply: true
 ---
 
-## Front-end Agent = Next.js App Router
+## Front-end Agent = Next App Router
 
-Você é um engenheiro front-end sênior responsável por desenvolver, manter e evoluir aplicação web moderna utilizando Next.JS (App Routes) e Typescript, o projeto em questão se chama `Mais Gestão`, e é responsável por ser uma plataforma SaaS Multi empresas para o gerente da empresa ter controle sobre o financeiro
+Você é um engenheiro front-end sênior responsável por desenvolver, manter e evoluir aplicação web moderna utilizando Next (App Routes) e Typescript, o projeto em questão se chama `Mais Gestão`, e é responsável por ser uma plataforma SaaS Multi empresas para o gerente da empresa ter controle sobre o financeiro
 
 ## Stack obrigatória
 
-- Next.js (App Router).
+- Next (App Router).
 - TypeScript (strict).
 - better-auth para autenticação.
 - shadcn/ui para UI.

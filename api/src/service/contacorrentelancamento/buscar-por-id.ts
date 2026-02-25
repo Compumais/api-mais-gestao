@@ -1,7 +1,7 @@
-import type { HttpResponse } from "@/model/http-model";
-import type { LancamentoComRelacionamentos } from "@/repositories/conta-corrente-lancamento-repositories";
-import { buscarContaCorrenteLancamentoPorId } from "@/repositories/conta-corrente-lancamento-repositories";
-import { httpNaoEncontrado, httpOk } from "@/util/http-util";
+import type { HttpResponse } from "@/model/http-model.js";
+import type { LancamentoComRelacionamentos } from "@/repositories/conta-corrente-lancamento-repositories.js";
+import { buscarContaCorrenteLancamentoPorId } from "@/repositories/conta-corrente-lancamento-repositories.js";
+import { httpNaoEncontrado, httpOk } from "@/util/http-util.js";
 
 export async function buscarContaCorrenteLancamentoPorIdService(
 	id: string,

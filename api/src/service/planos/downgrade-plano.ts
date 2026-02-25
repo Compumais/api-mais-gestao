@@ -1,6 +1,6 @@
-import { buscarUsuarioPorId, atualizarPlanoUsuario } from "@/repositories/usuarios-repositories";
-import { isPlanoInferior } from "@/constants/planos";
-import type { TipoPlano } from "@/constants/planos";
+import { buscarUsuarioPorId, atualizarPlanoUsuario } from "@/repositories/usuarios-repositories.js";
+import { isPlanoInferior } from "@/constants/planos.js";
+import type { TipoPlano } from "@/constants/planos.js";
 
 interface DowngradePlanoParams {
 	idusuario: string;

@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { buscarEntidadeService } from "@/service/entidades/buscar-entidade";
+import { buscarEntidadeService } from "@/service/entidades/buscar-entidade.js";
 
 const buscarEntidadeParamsSchema = z.object({
 	id: z.string().uuid(),

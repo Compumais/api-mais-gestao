@@ -1,6 +1,6 @@
-import type { HttpResponse } from "@/model/http-model";
-import { listarContaCorrentePorEmpresa } from "@/repositories/conta-corrente-repositories";
-import { httpOk } from "@/util/http-util";
+import type { HttpResponse } from "@/model/http-model.js";
+import { listarContaCorrentePorEmpresa } from "@/repositories/conta-corrente-repositories.js";
+import { httpOk } from "@/util/http-util.js";
 
 interface ListarContasCorrentesParametros {
 	idempresa: string;

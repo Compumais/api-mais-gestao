@@ -3,7 +3,7 @@ import type { Entidade } from "@/model/entidade-model.js";
 import * as entidadeRepository from "@/repositories/entidade-repositories.js";
 import { listarEntidadesService } from "./listar-entidades.js";
 
-vi.mock("@/repositories/entidade-repositories.js");
+vi.mock("@/repositories/entidade-repositories");
 
 describe("listarEntidadesService", () => {
 	const entidadeMock1: Entidade = {
@@ -74,6 +74,7 @@ describe("listarEntidadesService", () => {
 
 		const resultado = await listarEntidadesService({
 			idusuario: "usuario-123",
+			idempresa: "empresa-123",
 			page: 1,
 			limit: 10,
 		});
@@ -98,6 +99,7 @@ describe("listarEntidadesService", () => {
 			nome: undefined,
 			email: undefined,
 			telefone: undefined,
+			idempresa: "empresa-123",
 			page: 1,
 			limit: 10,
 		});
@@ -108,6 +110,7 @@ describe("listarEntidadesService", () => {
 
 		const resultado = await listarEntidadesService({
 			idusuario: "usuario-123",
+			idempresa: "empresa-123",
 			page: 1,
 			limit: 10,
 		});
@@ -137,6 +140,7 @@ describe("listarEntidadesService", () => {
 			nome: "John",
 			email: "john",
 			telefone: "3351",
+			idempresa: "empresa-123",
 			page: 1,
 			limit: 10,
 		});
@@ -150,6 +154,7 @@ describe("listarEntidadesService", () => {
 			nome: "John",
 			email: "john",
 			telefone: "3351",
+			idempresa: "empresa-123",
 			page: 1,
 			limit: 10,
 		});
@@ -166,6 +171,7 @@ describe("listarEntidadesService", () => {
 
 		const resultado = await listarEntidadesService({
 			idusuario: "usuario-123",
+			idempresa: "empresa-123",
 			page: 2,
 			limit: 10,
 		});
@@ -182,6 +188,7 @@ describe("listarEntidadesService", () => {
 			nome: undefined,
 			email: undefined,
 			telefone: undefined,
+			idempresa: "empresa-123",
 			page: 2,
 			limit: 10,
 		});
@@ -198,6 +205,7 @@ describe("listarEntidadesService", () => {
 
 		const resultado = await listarEntidadesService({
 			idusuario: "usuario-123",
+			idempresa: "empresa-123",
 			page: 1,
 			limit: 10,
 		});
@@ -219,6 +227,7 @@ describe("listarEntidadesService", () => {
 
 		const resultado = await listarEntidadesService({
 			idusuario: "usuario-123",
+			idempresa: "empresa-123",
 		});
 
 		expect(resultado.success).toBe(true);
@@ -231,6 +240,7 @@ describe("listarEntidadesService", () => {
 			nome: undefined,
 			email: undefined,
 			telefone: undefined,
+			idempresa: "empresa-123",
 			page: 1,
 			limit: 10,
 		});

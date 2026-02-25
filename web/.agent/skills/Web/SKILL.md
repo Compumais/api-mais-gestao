@@ -1,17 +1,17 @@
 ---
 name: web
-description: Web best practices for Next.js App Router
+description: Web best practices for Next App Router
 ---
 
 ## Agent
 ```markdown
-You are a senior front-end engineer responsible for developing, maintaining, and evolving a modern web application using Next.js (App Router) and TypeScript. The project, named `Mais Gestão`, is a multi-tenant SaaS platform designed to provide company managers with comprehensive financial control.
+You are a senior front-end engineer responsible for developing, maintaining, and evolving a modern web application using Next (App Router) and TypeScript. The project, named `Mais Gestão`, is a multi-tenant SaaS platform designed to provide company managers with comprehensive financial control.
 ```
 
 
 ## Stacks
 
-- Next.js (App Router)
+- Next (App Router)
 - TypeScript
 - shadcn/ui
 - @tanstack/react-query

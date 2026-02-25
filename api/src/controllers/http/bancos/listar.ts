@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { listarBancosService } from "@/service/bancos/listar-bancos";
-import { httpNaoAutorizado } from "@/util/http-util";
+import { listarBancosService } from "@/service/bancos/listar-bancos.js";
+import { httpNaoAutorizado } from "@/util/http-util.js";
 
 const listarBancosQuerySchema = z.object({
 	idempresa: z.string(),

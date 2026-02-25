@@ -1,8 +1,8 @@
-import type { FinanceiroLancamento } from "@/model/financeiro-lancamentos-model";
-import type { HttpResponse } from "@/model/http-model";
-import { buscarFinanceiroLancamentoPorId } from "@/repositories/financeiro-lancamento-repositories";
+import type { FinanceiroLancamento } from "@/model/financeiro-lancamentos-model.js";
+import type { HttpResponse } from "@/model/http-model.js";
+import { buscarFinanceiroLancamentoPorId } from "@/repositories/financeiro-lancamento-repositories.js";
 
-import { httpNaoEncontrado, httpOk } from "@/util/http-util";
+import { httpNaoEncontrado, httpOk } from "@/util/http-util.js";
 
 export async function buscarFinanceiroLancamentoPorIdService(
 	id: string,

@@ -1,7 +1,7 @@
-import type { ContaCorrente } from "@/model/conta-corrente-model";
-import type { HttpResponse } from "@/model/http-model";
-import { buscarContaCorrentePorId } from "@/repositories/conta-corrente-repositories";
-import { httpNaoEncontrado, httpOk } from "@/util/http-util";
+import type { ContaCorrente } from "@/model/conta-corrente-model.js";
+import type { HttpResponse } from "@/model/http-model.js";
+import { buscarContaCorrentePorId } from "@/repositories/conta-corrente-repositories.js";
+import { httpNaoEncontrado, httpOk } from "@/util/http-util.js";
 
 export async function buscarContaCorrentePorIdService({
 	id,

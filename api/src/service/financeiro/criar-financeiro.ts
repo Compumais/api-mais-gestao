@@ -1,8 +1,8 @@
-import type { Financeiro, NovoFinanceiro } from "@/model/financeiro-model";
-import type { HttpResponse } from "@/model/http-model";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
-import { criarFinanceiro as criarFinanceiroRepository } from "@/repositories/financeiro-repositories";
-import { httpCriacao, httpErro, httpProibido } from "@/util/http-util";
+import type { Financeiro, NovoFinanceiro } from "@/model/financeiro-model.js";
+import type { HttpResponse } from "@/model/http-model.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { criarFinanceiro as criarFinanceiroRepository } from "@/repositories/financeiro-repositories.js";
+import { httpCriacao, httpErro, httpProibido } from "@/util/http-util.js";
 
 type CriarFinanceiroParametros = {
 	dadosFinanceiro: NovoFinanceiro;

@@ -5,7 +5,7 @@ description: Good SEO practices for web development. Use this skill in any compo
 
 # Rules
 
-- Every public route must define metadata using the Next.js Metadata API.
+- Every public route must define metadata using the Next Metadata API.
 - Use `generateMetadata` when the data is dynamic.
 - Define at least:
   - title
@@ -17,7 +17,7 @@ description: Good SEO practices for web development. Use this skill in any compo
 - Use the correct heading hierarchy: `h1` → `h6`.
 - Prioritize Server Components.
 - Avoid unnecessary JavaScript on the client.
-- Use `Image` from Next.js for images.
+- Use `Image` from Next for images.
 - Do not use `<div>` when a semantic tag is available.
 - Do not generate metadata manually via `<head>`.
 - Do not duplicate titles and descriptions between pages.
@@ -26,12 +26,12 @@ description: Good SEO practices for web development. Use this skill in any compo
 
 - Prioritize Server Components.
 - Avoid unnecessary JavaScript on the client.
-- Use `Image` from Next.js for images.
+- Use `Image` from Next for images.
 - Do not use `<div>` when a semantic tag is available.
 - Do not generate metadata manually via `<head>`.
 - Do not duplicate titles and descriptions between pages.
 - Use `alt` attribute for all images.
-- Use `Link` from Next.js for links.
+- Use `Link` from Next for links.
 
 ## Prohibitions
 

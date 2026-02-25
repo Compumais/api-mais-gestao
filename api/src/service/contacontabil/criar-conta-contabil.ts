@@ -1,8 +1,8 @@
-import type { ContaContabil, NovaContaContabil } from "@/model/conta-contabil-model";
-import type { HttpResponse } from "@/model/http-model";
-import { criarContaContabil } from "@/repositories/conta-contabil-repositories";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
-import { httpCriacao, httpErroInterno, httpProibido } from "@/util/http-util";
+import type { ContaContabil, NovaContaContabil } from "@/model/conta-contabil-model.js";
+import type { HttpResponse } from "@/model/http-model.js";
+import { criarContaContabil } from "@/repositories/conta-contabil-repositories.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { httpCriacao, httpErroInterno, httpProibido } from "@/util/http-util.js";
 
 type CriarContaContabilParametros = {
     idusuario: string;

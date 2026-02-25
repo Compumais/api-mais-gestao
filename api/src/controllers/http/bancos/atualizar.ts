@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { atualizarBancoService } from "@/service/bancos/atualizar-banco";
-import { httpNaoAutorizado } from "@/util/http-util";
+import { atualizarBancoService } from "@/service/bancos/atualizar-banco.js";
+import { httpNaoAutorizado } from "@/util/http-util.js";
 
 const atualizarBancoParamsSchema = z.object({
 	id: z.string(),

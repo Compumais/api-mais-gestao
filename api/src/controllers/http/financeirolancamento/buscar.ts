@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { buscarFinanceiroLancamentoPorIdService } from "@/service/financeirolancamento/buscar-financeirolancamento";
-import { httpNaoAutorizado } from "@/util/http-util";
+import { buscarFinanceiroLancamentoPorIdService } from "@/service/financeirolancamento/buscar-financeirolancamento.js";
+import { httpNaoAutorizado } from "@/util/http-util.js";
 
 const buscarFinanceiroLancamentoParamsSchema = z.object({
 	id: z.string(),

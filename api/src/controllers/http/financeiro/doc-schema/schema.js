@@ -310,4 +310,4 @@ export const excluirFinanceiroSchema = {
         },
     },
 };
-//# sourceMappingURL=schema.js.map
+//# sourceMappingURL=schema.map

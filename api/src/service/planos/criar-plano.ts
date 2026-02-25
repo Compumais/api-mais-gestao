@@ -1,12 +1,22 @@
 import { randomUUID } from "node:crypto";
-import { buscarUsuarioPorId, atualizarPlanoUsuario } from "@/repositories/usuarios-repositories";
-import { buscarClienteAsaas, criarClienteAsaas } from "@/repositories/assinatura-repositories";
-import { AsaasService } from "../asaas/asaas.service";
-import { obterValorPlano } from "@/constants/planos";
-import type { TipoPlano } from "@/constants/planos";
-import * as schema from "../../../drizzle/schema";
-import { db } from "@/repositories/connection";
 import { eq } from "drizzle-orm";
+import type { TipoPlano } from "@/constants/planos.js";
+import { obterValorPlano } from "@/constants/planos.js";
+import {
+	buscarClienteAsaas,
+	criarClienteAsaas,
+} from "@/repositories/assinatura-repositories.js";
+import { db } from "@/repositories/connection.js";
+import {
+	atualizarPlanoUsuario,
+	buscarUsuarioPorId,
+} from "@/repositories/usuarios-repositories.js";
+import * as schema from "../../../drizzle/schema.js";
+import {
+	createCustomer,
+	createSubscription,
+	getCustomerByEmail,
+} from "../asaas/asaas.service.js";
 
 interface CriarPlanoParams {
 	idusuario: string;
@@ -55,15 +65,15 @@ export async function criarPlanoService({
 	// 2. Buscar ou criar cliente no Asaas vinculado ao usuário
 	// Primeiro, tentar buscar cliente existente pelo email do usuário
 	let clienteAsaasId: string | null = null;
-	
+
 	// Verificar se já existe cliente Asaas para este usuário (buscar por email)
-	const asaasCustomer = await AsaasService.getCustomerByEmail(usuario.email);
-	
+	const asaasCustomer = await getCustomerByEmail(usuario.email);
+
 	if (asaasCustomer) {
 		clienteAsaasId = asaasCustomer.id;
 	} else {
 		// Criar novo cliente no Asaas
-		const novoCliente = await AsaasService.createCustomer({
+		const novoCliente = await createCustomer({
 			name: creditCardHolderInfo.name || usuario.nome,
 			email: creditCardHolderInfo.email || usuario.email,
 			cpfCnpj: creditCardHolderInfo.cpfCnpj,
@@ -82,11 +92,11 @@ export async function criarPlanoService({
 	fimCiclo.setMonth(fimCiclo.getMonth() + 1);
 
 	// 5. Criar Assinatura no Asaas
-	const asaasSubscription = await AsaasService.createSubscription({
+	const asaasSubscription = await createSubscription({
 		customer: clienteAsaasId,
 		billingType: "CREDIT_CARD",
 		value: valor,
-		nextDueDate: fimCiclo.toISOString().split("T")[0],
+		nextDueDate: fimCiclo.toISOString().split("T")[0]!,
 		cycle: "MONTHLY",
 		description: `Assinatura Plano ${plano} - Usuário`,
 		externalReference: idusuario,
@@ -116,4 +126,3 @@ export async function criarPlanoService({
 		urlpagamento: asaasSubscription.invoiceUrl,
 	};
 }
-

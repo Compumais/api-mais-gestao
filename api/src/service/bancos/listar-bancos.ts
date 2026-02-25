@@ -1,8 +1,8 @@
-import type { Banco } from "@/model/banco-model";
-import type { HttpResponse } from "@/model/http-model";
-import { listarBancos } from "@/repositories/banco-repositories";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
-import { httpOk } from "@/util/http-util";
+import type { Banco } from "@/model/banco-model.js";
+import type { HttpResponse } from "@/model/http-model.js";
+import { listarBancos } from "@/repositories/banco-repositories.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { httpOk } from "@/util/http-util.js";
 
 type ListarBancosParametros = {
 	idusuario: string;

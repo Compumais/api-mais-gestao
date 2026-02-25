@@ -3,7 +3,7 @@ import type { ContaCorrente } from "@/model/conta-corrente-model.js";
 import * as contaCorrenteRepository from "@/repositories/conta-corrente-repositories.js";
 import { buscarContaCorrentePorIdService } from "./buscar-por-id.js";
 
-vi.mock("@/repositories/conta-corrente-repositories.js");
+vi.mock("@/repositories/conta-corrente-repositories");
 
 describe("buscarContaCorrentePorIdService", () => {
 	const contaCorrenteMock: ContaCorrente = {
@@ -19,7 +19,7 @@ describe("buscarContaCorrentePorIdService", () => {
 		gerente: "João Silva",
 		telefonegerente: "(34) 9999-9999",
 		codigo: 1,
-		idbanco: 1,
+		idbanco: "1",
 		agenciadv: null,
 		contadv: null,
 		codigocedente: null,

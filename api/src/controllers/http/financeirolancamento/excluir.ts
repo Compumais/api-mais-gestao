@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { excluirFinanceiroLancamentoService } from "@/service/financeirolancamento/excluir-financeiro-lancamento";
-import { httpNaoAutorizado } from "@/util/http-util";
+import { excluirFinanceiroLancamentoService } from "@/service/financeirolancamento/excluir-financeiro-lancamento.js";
+import { httpNaoAutorizado } from "@/util/http-util.js";
 
 const excluirFinanceiroLancamentoParamsSchema = z.object({
 	id: z.string(),

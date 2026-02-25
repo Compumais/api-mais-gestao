@@ -78,14 +78,14 @@ export async function fetchUsers() {
     throw new Error("Failed to fetch users")
   }
 
-  const data = await res.json()
+  const data = await reson()
   return UserSchema.array().parse(data)
 }
 
 // Bad: Blindly trusting API response
 export async function fetchUsers() {
   const res = await fetch("https://api.example.com/users")
-  return res.json()
+  return reson()
 }
 
 // Good: User content rendered safely

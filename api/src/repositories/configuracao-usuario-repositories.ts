@@ -1,12 +1,29 @@
+import { randomUUID } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import * as schema from "../../drizzle/schema.js";
 import { db } from "./connection.js";
 
 export interface IntegracoesUsuario {
-	geminiApiKey?: string;
-	openaiApiKey?: string;
-	openrouterApiKey?: string;
-	asaasToken?: string;
+	geminiApiKey?: string | null;
+	openaiApiKey?: string | null;
+	openrouterApiKey?: string | null;
+	asaasToken?: string | null;
+}
+
+/** Objeto sem nulls para insert/update no schema (exactOptionalPropertyTypes). */
+function integracoesParaJsonb(dados: IntegracoesUsuario): Record<string, string> {
+	return Object.fromEntries(
+		(
+			[
+				"geminiApiKey",
+				"openaiApiKey",
+				"openrouterApiKey",
+				"asaasToken",
+			] as const
+		)
+			.filter((k) => dados[k] != null)
+			.map((k) => [k, dados[k] as string]),
+	);
 }
 
 export interface ConfiguracaoUsuario {
@@ -52,13 +69,13 @@ export async function criarOuAtualizarConfiguracaoUsuario(
 	const [configuracao] = await db
 		.insert(schema.configuracoesUsuario)
 		.values({
-			id: crypto.randomUUID(),
+			id: randomUUID(),
 			idusuario,
-			integracoes: dados,
+			criadoem: new Date().toISOString(),
+			integracoes: integracoesParaJsonb(dados),
 			atualizadoem: new Date().toISOString(),
 		})
 		.returning();
 
 	return configuracao;
 }
-

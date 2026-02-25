@@ -1,9 +1,9 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { v4 as uuidv4 } from "uuid";
 import z from "zod";
-import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria";
-import { excluirBancoService } from "@/service/bancos/excluir-banco";
-import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util";
+import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
+import { excluirBancoService } from "@/service/bancos/excluir-banco.js";
+import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
 const excluirBancoParamsSchema = z.object({
 	id: z.string(),

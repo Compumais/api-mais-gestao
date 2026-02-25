@@ -1,12 +1,12 @@
+import { randomUUID } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import type {
-	Configuracao,
 	ConfiguracaoImpressao,
 	ConfiguracaoIntegracao,
 	ConfiguracaoNotificacoes,
 	ConfiguracaoRelatorios,
 	NovaConfiguracao,
-} from "@/model/configuracao-model";
+} from "@/model/configuracao-model.js";
 import * as schema from "../../drizzle/schema.js";
 import { db } from "./connection.js";
 
@@ -28,14 +28,15 @@ export async function criarConfiguracao(dados: NovaConfiguracao) {
 	const [configuracao] = await db
 		.insert(schema.configuracoes)
 		.values({
-			id: crypto.randomUUID(),
+			id: randomUUID(),
 			idempresa: dados.idempresa,
-			notificacoes: dados.notificacoes || {},
-			integracao: dados.integracao || {},
-			relatorios: dados.relatorios || {},
-			impressao: dados.impressao || {},
+			criadoem: new Date().toISOString(),
 			atualizadoem: new Date().toISOString(),
-		})
+			notificacoes: dados.notificacoes ?? {},
+			integracao: dados.integracao ?? {},
+			relatorios: dados.relatorios ?? {},
+			impressao: dados.impressao ?? {},
+		} as typeof schema.configuracoes.$inferInsert)
 		.returning();
 
 	return configuracao;
@@ -104,4 +105,3 @@ export async function atualizarConfiguracaoParcial({
 
 	return configuracao;
 }
-

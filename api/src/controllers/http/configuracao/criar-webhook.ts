@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { criarWebhookService } from "@/service/configuracao/criar-webhook";
-import { httpNaoAutorizado } from "@/util/http-util";
+import { criarWebhookService } from "@/service/configuracao/criar-webhook.js";
+import { httpNaoAutorizado } from "@/util/http-util.js";
 
 const criarWebhookParamsSchema = z.object({
 	idempresa: z.string(),
@@ -51,4 +51,3 @@ export async function criarWebhook(
 		});
 	}
 }
-

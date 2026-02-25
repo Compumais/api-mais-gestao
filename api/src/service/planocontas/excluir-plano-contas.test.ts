@@ -5,9 +5,9 @@ import * as planoContasRepository from "@/repositories/plano-contas-repositories
 import * as verificarPermissaoModule from "@/util/verificar-permissao.js";
 import { excluirPlanoContasService } from "./excluir-plano-contas.js";
 
-vi.mock("@/repositories/entidade-repositories.js");
-vi.mock("@/repositories/plano-contas-repositories.js");
-vi.mock("@/util/verificar-permissao.js", () => ({
+vi.mock("@/repositories/entidade-repositories");
+vi.mock("@/repositories/plano-contas-repositories");
+vi.mock("@/util/verificar-permissao", () => ({
 	verificarPermissao: vi.fn(),
 }));
 

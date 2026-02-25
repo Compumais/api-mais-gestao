@@ -1,8 +1,8 @@
-import type { Banco, NovoBanco } from "@/model/banco-model";
-import type { HttpResponse } from "@/model/http-model";
-import { criarBanco } from "@/repositories/banco-repositories";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
-import { httpCriacao, httpErroInterno, httpProibido } from "@/util/http-util";
+import type { Banco, NovoBanco } from "@/model/banco-model.js";
+import type { HttpResponse } from "@/model/http-model.js";
+import { criarBanco } from "@/repositories/banco-repositories.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { httpCriacao, httpErroInterno, httpProibido } from "@/util/http-util.js";
 
 type CriarBancoParametros = {
 	idusuario: string;

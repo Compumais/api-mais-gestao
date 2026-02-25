@@ -1,8 +1,10 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { v4 as uuidv4 } from "uuid";
 import z from "zod";
-import { criarFinanceiroLancamentoService } from "@/service/financeirolancamento/criar-financeiro-lancamento";
-import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util";
+import { buscarFinanceiroPorId } from "@/repositories/financeiro-repositories.js";
+import { criarNotificacaoService } from "@/service/notificacoes/criar-notificacao.js";
+import { criarFinanceiroLancamentoService } from "@/service/financeirolancamento/criar-financeiro-lancamento.js";
+import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
 const criarFinanceiroLancamentoBodySchema = z.object({
 	idfinanceiro: z.string(),
@@ -60,6 +62,29 @@ export async function criarFinanceiroLancamento(
 
 		if (!resultado.success) {
 			return reply.status(resultado.status).send(resultado);
+		}
+
+		const financeiro = await buscarFinanceiroPorId(
+			dadosValidados.idfinanceiro,
+		);
+		if (financeiro?.idempresa && request.user) {
+			const perfilAutor = Array.isArray(request.user.roles)
+				? request.user.roles
+				: request.user.roles
+					? [request.user.roles]
+					: [];
+			await criarNotificacaoService({
+				tipo: "financeiro_lancamento",
+				idempresa: financeiro.idempresa,
+				idrecurso: resultado.body?.id ?? null,
+				titulo: "Novo lançamento financeiro",
+				detalhes: {
+					valor: dadosValidados.valor,
+					historico: dadosValidados.historico,
+				},
+				idusuarioAutor: request.user.id,
+				perfilAutor,
+			});
 		}
 
 		return reply.status(resultado.status).send(resultado.body);

@@ -1,12 +1,12 @@
-import type { HttpResponse } from "@/model/http-model";
-import type { NovaConfiguracao } from "@/model/configuracao-model";
+import type { HttpResponse } from "@/model/http-model.js";
+import type { NovaConfiguracao } from "@/model/configuracao-model.js";
 import {
 	atualizarConfiguracao,
 	buscarConfiguracaoPorEmpresa,
 	criarConfiguracao,
-} from "@/repositories/configuracao-repositories";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
-import { httpOk, httpProibido } from "@/util/http-util";
+} from "@/repositories/configuracao-repositories.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { httpOk, httpProibido } from "@/util/http-util.js";
 
 interface AtualizarConfiguracaoParametros {
 	idempresa: string;

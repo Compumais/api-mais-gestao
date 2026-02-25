@@ -1,15 +1,34 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { atualizarConfiguracaoService } from "@/service/configuracao/atualizar-configuracao";
-import { httpNaoAutorizado } from "@/util/http-util";
+import type { NovaConfiguracao } from "@/model/configuracao-model.js";
+import { atualizarConfiguracaoService } from "@/service/configuracao/atualizar-configuracao.js";
+import { httpNaoAutorizado } from "@/util/http-util.js";
+
+const CAMPOS_CONFIGURACAO = [
+	"notificacoes",
+	"integracao",
+	"relatorios",
+	"impressao",
+] as const satisfies (keyof NovaConfiguracao)[];
 
 const atualizarConfiguracaoBodySchema = z.object({
 	idempresa: z.string(),
-	notificacoes: z.record(z.unknown()).optional(),
-	integracao: z.record(z.unknown()).optional(),
-	relatorios: z.record(z.unknown()).optional(),
-	impressao: z.record(z.unknown()).optional(),
+	notificacoes: z.record(z.string(), z.unknown()).optional(),
+	integracao: z.record(z.string(), z.unknown()).optional(),
+	relatorios: z.record(z.string(), z.unknown()).optional(),
+	impressao: z.record(z.string(), z.unknown()).optional(),
 });
+
+function extrairDadosParciais(
+	validado: z.infer<typeof atualizarConfiguracaoBodySchema>,
+): Partial<NovaConfiguracao> {
+	return Object.fromEntries(
+		CAMPOS_CONFIGURACAO.filter((k) => validado[k] !== undefined).map((k) => [
+			k,
+			validado[k],
+		]),
+	) as Partial<NovaConfiguracao>;
+}
 
 export async function atualizarConfiguracao(
 	request: FastifyRequest,
@@ -20,19 +39,13 @@ export async function atualizarConfiguracao(
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
 		}
 
-		const dadosValidados = atualizarConfiguracaoBodySchema.parse(
-			request.body,
-		);
+		const dadosValidados = atualizarConfiguracaoBodySchema.parse(request.body);
+		const dados = extrairDadosParciais(dadosValidados);
 
 		const resultado = await atualizarConfiguracaoService({
 			idempresa: dadosValidados.idempresa,
 			idusuario: request.user.id,
-			dados: {
-				notificacoes: dadosValidados.notificacoes,
-				integracao: dadosValidados.integracao,
-				relatorios: dadosValidados.relatorios,
-				impressao: dadosValidados.impressao,
-			},
+			dados,
 		});
 
 		if (!resultado.success) {
@@ -55,4 +68,3 @@ export async function atualizarConfiguracao(
 		});
 	}
 }
-

@@ -1,7 +1,7 @@
 import { and, count, desc, eq, ilike, inArray } from "drizzle-orm";
-import type { NovoFinanceiro } from "@/model/financeiro-model";
-import * as schema from "@/repositories/schema";
-import { db } from "./connection";
+import type { NovoFinanceiro } from "@/model/financeiro-model.js";
+import * as schema from "@/repositories/schema/index.js";
+import { db } from "./connection.js";
 
 export async function criarFinanceiro(data: NovoFinanceiro) {
 	const [financeiro] = await db

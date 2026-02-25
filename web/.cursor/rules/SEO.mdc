@@ -1,13 +1,13 @@
 ---
 alwaysApply: true
-description: Boas práticas de SEO para Next.js App Router
+description: Boas práticas de SEO para Next App Router
   - "app/**/*.ts"
   - "app/**/*.tsx"
 ---
 
 ## Regras obrigatórias
 
-- Toda rota pública deve definir metadata usando a API do Next.js
+- Toda rota pública deve definir metadata usando a API do Next
 - Usar `generateMetadata` quando os dados forem dinâmicos
 - Definir obrigatoriamente:
   - title
@@ -26,7 +26,7 @@ description: Boas práticas de SEO para Next.js App Router
 
 - Priorizar Server Components
 - Evitar JavaScript desnecessário no client
-- Usar `Image` do Next.js para imagens
+- Usar `Image` do Next para imagens
 
 ## Proibições
 

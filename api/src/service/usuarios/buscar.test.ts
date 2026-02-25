@@ -3,7 +3,7 @@ import type { Usuario } from "@/model/usuario-model.js";
 import * as usuarioRepository from "@/repositories/usuarios-repositories.js";
 import { buscarUsuarioPorIdService } from "./buscar.js";
 
-vi.mock("@/repositories/usuarios-repositories.js");
+vi.mock("@/repositories/usuarios-repositories");
 
 describe("buscarUsuarioPorIdService", () => {
 	const usuarioMock: Usuario = {
@@ -11,11 +11,15 @@ describe("buscarUsuarioPorIdService", () => {
 		nome: "João Silva",
 		email: "joao.silva@example.com",
 		emailverificado: true,
-		perfil: "usuario",
-		criadoem: new Date().toISOString(),
-		atualizadoem: new Date().toISOString(),
-		imagem: null,
-		maxempresas: null,
+		perfil: ["usuario"],
+		imagem: "https://example.com/avatar.jpg",
+		maxempresas: 5,
+		plano: "BASIC",
+		plano_inicio_ciclo: new Date().toISOString(),
+		plano_fim_ciclo: new Date().toISOString(),
+		plano_proximo: "PREMIUM",
+		criadoem: new Date(),
+		atualizadoem: new Date(),
 	};
 
 	beforeEach(() => {
@@ -41,9 +45,7 @@ describe("buscarUsuarioPorIdService", () => {
 	});
 
 	it("deve retornar erro 404 quando usuário não é encontrado", async () => {
-		vi.mocked(usuarioRepository.buscarUsuarioPorId).mockResolvedValue(
-			undefined,
-		);
+		vi.mocked(usuarioRepository.buscarUsuarioPorId).mockResolvedValue(null);
 
 		const resultado = await buscarUsuarioPorIdService("usuario-inexistente");
 
@@ -81,11 +83,15 @@ describe("buscarUsuarioPorIdService", () => {
 			nome: "Maria Santos",
 			email: "maria.santos@example.com",
 			emailverificado: false,
-			perfil: "admin",
-			criadoem: "2024-01-01T00:00:00.000Z",
-			atualizadoem: "2024-01-02T00:00:00.000Z",
+			perfil: ["proprietario"],
+			criadoem: new Date(),
+			atualizadoem: new Date(),
 			imagem: "https://example.com/avatar.jpg",
 			maxempresas: 5,
+			plano: "ENTERPRISE",
+			plano_inicio_ciclo: new Date().toISOString(),
+			plano_fim_ciclo: new Date().toISOString(),
+			plano_proximo: null,
 		};
 
 		vi.mocked(usuarioRepository.buscarUsuarioPorId).mockResolvedValue(

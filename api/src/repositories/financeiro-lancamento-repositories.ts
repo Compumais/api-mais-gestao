@@ -1,7 +1,7 @@
 import { count, desc, eq } from "drizzle-orm";
-import type { NovoFinanceiroLancamento } from "@/model/financeiro-lancamentos-model";
+import type { NovoFinanceiroLancamento } from "@/model/financeiro-lancamentos-model.js";
 import * as schema from "../../drizzle/schema.js";
-import { db } from "./connection";
+import { db } from "./connection.js";
 
 export async function criarFinanceiroLancamento(
 	dados: NovoFinanceiroLancamento,

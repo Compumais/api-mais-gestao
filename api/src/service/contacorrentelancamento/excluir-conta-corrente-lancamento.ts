@@ -2,15 +2,15 @@ import { v4 as uuidv4 } from "uuid";
 import {
 	buscarLancamentoContaCorrentePorId,
 	excluirContaCorrenteLancamento,
-} from "@/repositories/conta-corrente-lancamento-repositories";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
-import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria";
+} from "@/repositories/conta-corrente-lancamento-repositories.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
 import {
 	httpErroInterno,
 	httpNaoEncontrado,
 	httpProibido,
 	httpSemConteudo,
-} from "@/util/http-util";
+} from "@/util/http-util.js";
 
 interface ExcluirContaCOrrenteLancamentoServiceParams {
 	id: string;

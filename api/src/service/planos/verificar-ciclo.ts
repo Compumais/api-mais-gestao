@@ -1,7 +1,7 @@
-import { eq, and, lte, isNotNull } from "drizzle-orm";
-import * as schema from "../../../drizzle/schema";
-import { db } from "@/repositories/connection";
-import { atualizarPlanoUsuario } from "@/repositories/usuarios-repositories";
+import { and, eq, isNotNull, isNull, lte } from "drizzle-orm";
+import { db } from "@/repositories/connection.js";
+import { atualizarPlanoUsuario } from "@/repositories/usuarios-repositories.js";
+import * as schema from "../../../drizzle/schema.js";
 
 /**
  * Job periódico para verificar ciclos vencidos e aplicar downgrades agendados
@@ -18,8 +18,8 @@ export async function verificarCiclosService() {
 		.where(
 			and(
 				isNotNull(schema.usuarios.plano_proximo),
-				lte(schema.usuarios.plano_fim_ciclo, hoje)
-			)
+				lte(schema.usuarios.plano_fim_ciclo, hoje.toISOString()),
+			),
 		);
 
 	const resultados = [];
@@ -71,9 +71,9 @@ export async function verificarCiclosService() {
 		.where(
 			and(
 				isNotNull(schema.usuarios.plano),
-				lte(schema.usuarios.plano_fim_ciclo, hoje),
-				eq(schema.usuarios.plano_proximo, null) // Sem downgrade agendado
-			)
+				lte(schema.usuarios.plano_fim_ciclo, hoje.toISOString()),
+				isNull(schema.usuarios.plano_proximo), // Sem downgrade agendado
+			),
 		);
 
 	// Para renovações, você pode querer notificar o usuário ou processar automaticamente
@@ -89,10 +89,11 @@ export async function verificarCiclosService() {
 	}
 
 	return {
-		downgradesAplicados: resultados.filter((r) => r.status === "aplicado").length,
-		ciclosVencidos: resultados.filter((r) => r.status === "ciclo_vencido").length,
+		downgradesAplicados: resultados.filter((r) => r.status === "aplicado")
+			.length,
+		ciclosVencidos: resultados.filter((r) => r.status === "ciclo_vencido")
+			.length,
 		erros: resultados.filter((r) => r.status === "erro").length,
 		resultados,
 	};
 }
-

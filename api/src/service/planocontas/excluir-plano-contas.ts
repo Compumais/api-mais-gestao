@@ -1,17 +1,17 @@
-import type { HttpResponse } from "@/model/http-model";
-import type { PlanoContas } from "@/model/plano-contas-model";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
+import type { HttpResponse } from "@/model/http-model.js";
+import type { PlanoContas } from "@/model/plano-contas-model.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	buscarPlanoContasPorId,
 	buscarPlanosFilhos,
 	excluirPlanoContas,
-} from "@/repositories/plano-contas-repositories";
+} from "@/repositories/plano-contas-repositories.js";
 import {
 	httpNaoEncontrado,
 	httpProibido,
 	httpSemConteudo,
-} from "@/util/http-util";
-import { verificarPermissao } from "@/util/verificar-permissao";
+} from "@/util/http-util.js";
+import { verificarPermissao } from "@/util/verificar-permissao.js";
 
 type ExcluirPlanoContasParametros = {
 	idplanocontas: string;

@@ -1,5 +1,5 @@
 
-import { buscarAssinaturaPeloIdAsaas, atualizarAssinatura } from "@/repositories/assinatura-repositories";
+import { buscarAssinaturaPeloIdAsaas, atualizarAssinatura } from "@/repositories/assinatura-repositories.js";
 
 interface AsaasWebhookEvent {
     event: "SUBSCRIPTION_CREATED" | "SUBSCRIPTION_UPDATED" | "SUBSCRIPTION_CANCELLED" | "PAYMENT_CONFIRMED" | "PAYMENT_OVERDUE" | string;

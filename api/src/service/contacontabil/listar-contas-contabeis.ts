@@ -1,8 +1,8 @@
-import type { ContaContabil } from "@/model/conta-contabil-model";
-import type { HttpResponse } from "@/model/http-model";
-import { listarContasContabeis } from "@/repositories/conta-contabil-repositories";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
-import { httpOk } from "@/util/http-util";
+import type { ContaContabil } from "@/model/conta-contabil-model.js";
+import type { HttpResponse } from "@/model/http-model.js";
+import { listarContasContabeis } from "@/repositories/conta-contabil-repositories.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { httpOk } from "@/util/http-util.js";
 
 type ListarContasContabeisParametros = {
     idusuario: string;

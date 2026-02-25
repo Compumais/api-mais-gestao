@@ -22,25 +22,24 @@ interface CriarEmpresa {
 
 export function useEmpresa() {
 	const EMPRESA_SELECIONADA_KEY = "empresa:mais-gestao";
-	const [empresa, setEmpresa] = useState<Empresa | null>(() => {
-		if (typeof window === "undefined") return null;
+	const [empresa, setEmpresa] = useState<Empresa | null>(null);
+
+	// Ler localStorage apenas após montagem no cliente para evitar hydration mismatch
+	useEffect(() => {
+		if (typeof window === "undefined") return;
 
 		try {
-			const localStorageEmpresa = localStorage.getItem(EMPRESA_SELECIONADA_KEY);
-			if (!localStorageEmpresa) return null;
+			const stored = localStorage.getItem(EMPRESA_SELECIONADA_KEY);
+			if (!stored) return;
 
-			const parsed = JSON.parse(localStorageEmpresa);
-			// Verifica se o valor parseado é um objeto válido
+			const parsed = JSON.parse(stored);
 			if (parsed && typeof parsed === "object" && parsed.id) {
-				return parsed;
+				setEmpresa(parsed);
 			}
-			return null;
 		} catch {
-			// Se houver erro no parse, limpa o localStorage e retorna null
 			localStorage.removeItem(EMPRESA_SELECIONADA_KEY);
-			return null;
 		}
-	});
+	}, []);
 
 	async function listarEmpresas(params: {
 		idusuario?: string;
@@ -62,7 +61,7 @@ export function useEmpresa() {
 
 	const selecionarEmpresa = useCallback((empresa: Empresa) => {
 		localStorage.setItem(EMPRESA_SELECIONADA_KEY, JSON.stringify(empresa));
-		setEmpresa((prev) => prev = empresa);
+		setEmpresa(empresa);
 	}, []);
 
 	function createCompany(data: CriarEmpresa) {
@@ -78,7 +77,7 @@ export function useEmpresa() {
 		if (empresa) {
 			localStorage.setItem(EMPRESA_SELECIONADA_KEY, JSON.stringify(empresa));
 		}
-	}, [empresa, setEmpresa]);
+	}, [empresa]);
 
 	return {
 		createCompany,

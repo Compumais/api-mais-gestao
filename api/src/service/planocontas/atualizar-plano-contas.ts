@@ -1,13 +1,13 @@
-import type { HttpResponse } from "@/model/http-model";
-import type { PlanoContas } from "@/model/plano-contas-model";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
+import type { HttpResponse } from "@/model/http-model.js";
+import type { PlanoContas } from "@/model/plano-contas-model.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	atualizarPlanoContas,
 	buscarPlanoContasPorId,
 	type NovoPlanoContas,
-} from "@/repositories/plano-contas-repositories";
-import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util";
-import { verificarPermissao } from "@/util/verificar-permissao";
+} from "@/repositories/plano-contas-repositories.js";
+import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
+import { verificarPermissao } from "@/util/verificar-permissao.js";
 
 type AtualizarPlanoContasParametros = {
 	idplanocontas: string;

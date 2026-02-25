@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { atualizarPlanoContasService } from "../../../service/planocontas/atualizar-plano-contas";
+import { atualizarPlanoContasService } from "../../../service/planocontas/atualizar-plano-contas.js";
 
 const atualizarPlanoContasParamsSchema = z.object({
 	id: z.string().uuid(),

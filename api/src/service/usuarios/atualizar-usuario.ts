@@ -1,18 +1,23 @@
-import type { HttpResponse } from "@/model/http-model";
-import type { Usuario } from "@/model/usuario-model";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
-import { buscarUsuarioPorId } from "@/repositories/usuarios-repositories";
-import { httpCriacao, httpErroInterno, httpNaoAutorizado, httpNaoEncontrado } from "@/util/http-util";
-import { db } from "@/repositories/connection";
-import * as schema from "../../../drizzle/schema";
-import { eq, and } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
+import type { HttpResponse } from "@/model/http-model.js";
+import type { Usuario } from "@/model/usuario-model.js";
+import { db } from "@/repositories/connection.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { buscarUsuarioPorId } from "@/repositories/usuarios-repositories.js";
+import {
+	httpCriacao,
+	httpErroInterno,
+	httpNaoAutorizado,
+	httpNaoEncontrado,
+} from "@/util/http-util.js";
+import * as schema from "../../../drizzle/schema.js";
 
 type AtualizarUsuarioParametros = {
 	idusuario: string; // Usuário que está atualizando
 	idUsuarioAtualizar: string; // ID do usuário a ser atualizado
 	idempresa: string; // Empresa atual
-	nome?: string;
-	perfil?: string | string[];
+	nome?: string | undefined;
+	perfil?: string | string[] | undefined;
 	empresasIds?: string[]; // IDs das empresas que o usuário pode ver
 };
 
@@ -90,4 +95,3 @@ export async function atualizarUsuarioService({
 		return httpErroInterno();
 	}
 }
-

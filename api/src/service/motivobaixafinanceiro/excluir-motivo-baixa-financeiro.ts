@@ -1,17 +1,17 @@
 import { v4 as uuidv4 } from "uuid";
-import type { HttpResponse } from "@/model/http-model";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
+import type { HttpResponse } from "@/model/http-model.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	buscarMotivoBaixaFinanceiroPorId,
 	excluirMotivoBaixaFinanceiro,
-} from "@/repositories/motivo-baixa-financeiro-repositories";
-import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria";
+} from "@/repositories/motivo-baixa-financeiro-repositories.js";
+import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
 import {
 	httpErroInterno,
 	httpNaoEncontrado,
 	httpProibido,
 	httpSemConteudo,
-} from "@/util/http-util";
+} from "@/util/http-util.js";
 
 interface ExcluirMotivoBaixaFinanceiroParametros {
 	id: string;

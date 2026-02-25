@@ -1,10 +1,10 @@
-import type { Entidade } from "@/model/entidade-model";
-import type { HttpResponse } from "@/model/http-model";
+import type { Entidade } from "@/model/entidade-model.js";
+import type { HttpResponse } from "@/model/http-model.js";
 import {
 	buscarEntidadePorId,
 	verificarUsuarioPertenceEmpresa,
-} from "@/repositories/entidade-repositories";
-import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util";
+} from "@/repositories/entidade-repositories.js";
+import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
 
 type BuscarEntidadeParametros = {
 	entidadeId: string;

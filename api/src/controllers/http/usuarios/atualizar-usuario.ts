@@ -1,12 +1,12 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
-import z from "zod";
-import { atualizarUsuarioService } from "@/service/usuarios/atualizar-usuario";
+import z from "zod/v4";
+import { atualizarUsuarioService } from "@/service/usuarios/atualizar-usuario.js";
 
 const atualizarUsuarioBodySchema = z.object({
 	nome: z.string().min(1).optional(),
 	perfil: z.union([z.string(), z.array(z.string())]).optional(),
-	empresasIds: z.array(z.string().uuid()).optional(),
-	idempresa: z.string().uuid(),
+	empresasIds: z.array(z.uuid()),
+	idempresa: z.uuid(),
 });
 
 const atualizarUsuarioParamsSchema = z.object({
@@ -58,4 +58,3 @@ export async function atualizarUsuario(
 		});
 	}
 }
-

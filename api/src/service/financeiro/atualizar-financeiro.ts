@@ -1,10 +1,10 @@
-import type { Financeiro, NovoFinanceiro } from "@/model/financeiro-model";
-import type { HttpResponse } from "@/model/http-model";
+import type { Financeiro, NovoFinanceiro } from "@/model/financeiro-model.js";
+import type { HttpResponse } from "@/model/http-model.js";
 import {
 	atualizarFinanceiro,
 	buscarFinanceiroPorId,
-} from "@/repositories/financeiro-repositories";
-import { httpNaoEncontrado, httpOk } from "@/util/http-util";
+} from "@/repositories/financeiro-repositories.js";
+import { httpNaoEncontrado, httpOk } from "@/util/http-util.js";
 
 type AtualizarFinanceiroParametros = {
 	id: string;

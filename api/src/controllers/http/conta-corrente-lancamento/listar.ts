@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { listarContaCorrenteLancamentosService } from "@/service/contacorrentelancamento/listar-conta-corrente-lancamentos";
-import { httpNaoAutorizado } from "@/util/http-util";
+import { listarContaCorrenteLancamentosService } from "@/service/contacorrentelancamento/listar-conta-corrente-lancamentos.js";
+import { httpNaoAutorizado } from "@/util/http-util.js";
 
 const listarContaCorrenteLancamentoQuerySchema = z.object({
 	idcontacorrente: z.string(),
@@ -46,4 +46,3 @@ export async function listarContaCorrenteLancamento(
 		});
 	}
 }
-

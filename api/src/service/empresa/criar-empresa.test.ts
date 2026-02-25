@@ -3,7 +3,7 @@ import type { Empresa } from "@/model/empresa-model.js";
 import * as empresaRepository from "@/repositories/empresa-repositories.js";
 import { criarEmpresaService } from "./criar-empresa.js";
 
-vi.mock("@/repositories/empresa-repositories.js");
+vi.mock("@/repositories/empresa-repositories");
 
 describe("criarEmpresaService", () => {
 	const empresaMock: Empresa = {
@@ -11,6 +11,8 @@ describe("criarEmpresaService", () => {
 		nome: "Empresa Teste",
 		cnpj: "12.345.678/0001-90",
 		telefone: "(34) 99999-9999",
+		email: "contato@empresa.com",
+		endereco: "Rua Exemplo, 123",
 		idproprietario: "proprietario-1",
 		criadoem: new Date().toISOString(),
 		atualizadoem: new Date().toISOString(),
@@ -21,11 +23,15 @@ describe("criarEmpresaService", () => {
 		nome: "Proprietário Teste",
 		email: "proprietario@example.com",
 		emailverificado: true,
-		perfil: "proprietario" as const,
-		criadoem: new Date().toISOString(),
-		atualizadoem: new Date().toISOString(),
-		imagem: null,
-		maxempresas: 5,
+		perfil: ["proprietario"] as string[],
+		criadoem: new Date(),
+		atualizadoem: new Date(),
+		imagem: null as string | null,
+		maxempresas: 5 as number | null,
+		plano: "plano-1" as string | null,
+		plano_inicio_ciclo: new Date().toISOString() as string | null,
+		plano_fim_ciclo: new Date().toISOString() as string | null,
+		plano_proximo: "plano-2" as string | null,
 	};
 
 	beforeEach(() => {
@@ -68,7 +74,14 @@ describe("criarEmpresaService", () => {
 				atualizadoem: new Date().toISOString(),
 				criadoem: new Date().toISOString(),
 			},
-			proprietario: { ...proprietarioMock, maxempresas: 3 },
+			proprietario: {
+				...proprietarioMock,
+				maxempresas: 3,
+				plano: "plano-1",
+				plano_inicio_ciclo: new Date().toISOString(),
+				plano_fim_ciclo: new Date().toISOString(),
+				plano_proximo: "plano-2",
+			},
 			quantidadeEmpresas: 3, // Já tem 3 empresas, limite é 3, não pode criar mais
 		});
 
@@ -94,7 +107,14 @@ describe("criarEmpresaService", () => {
 				atualizadoem: new Date().toISOString(),
 				criadoem: new Date().toISOString(),
 			},
-			proprietario: { ...proprietarioMock, maxempresas: null },
+			proprietario: {
+				...proprietarioMock,
+				maxempresas: null,
+				plano: "plano-1",
+				plano_inicio_ciclo: new Date().toISOString(),
+				plano_fim_ciclo: new Date().toISOString(),
+				plano_proximo: "plano-2",
+			},
 			quantidadeEmpresas: 10, // Sem limite, pode criar
 		});
 

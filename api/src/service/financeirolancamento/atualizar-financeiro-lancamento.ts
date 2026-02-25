@@ -1,14 +1,14 @@
 import type {
 	FinanceiroLancamento,
 	NovoFinanceiroLancamento,
-} from "@/model/financeiro-lancamentos-model";
-import type { HttpResponse } from "@/model/http-model";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
+} from "@/model/financeiro-lancamentos-model.js";
+import type { HttpResponse } from "@/model/http-model.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	atualizarFinanceiroLancamento,
 	buscarFinanceiroLancamentoPorId,
-} from "@/repositories/financeiro-lancamento-repositories";
-import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util";
+} from "@/repositories/financeiro-lancamento-repositories.js";
+import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
 
 interface AtualizarFinanceiroLancamentoParametros {
 	id: string;

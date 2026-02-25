@@ -4,8 +4,8 @@ import * as motivoBaixaFinanceiroRepository from "@/repositories/motivo-baixa-fi
 import * as entidadeRepository from "@/repositories/entidade-repositories.js";
 import { listarMotivosBaixaFinanceiroService } from "./listar-motivos-baixa-financeiro.js";
 
-vi.mock("@/repositories/entidade-repositories.js");
-vi.mock("@/repositories/motivo-baixa-financeiro-repositories.js");
+vi.mock("@/repositories/entidade-repositories");
+vi.mock("@/repositories/motivo-baixa-financeiro-repositories");
 
 describe("listarMotivosBaixaFinanceiroService", () => {
 	const motivo1Mock: MotivoBaixaFinanceiro = {
@@ -224,5 +224,3 @@ describe("listarMotivosBaixaFinanceiroService", () => {
 		});
 	});
 });
-
-

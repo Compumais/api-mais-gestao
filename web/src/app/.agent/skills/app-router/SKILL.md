@@ -1,6 +1,6 @@
 ---
 name: app-router
-description: Next.js App Router best practices. Use this skill when building a new or modifying a page, layout, loading, error, or template file.
+description: Next App Router best practices. Use this skill when building a new or modifying a page, layout, loading, error, or template file.
 ---
 
 ## Rukes

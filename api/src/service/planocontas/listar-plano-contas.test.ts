@@ -4,8 +4,8 @@ import * as entidadeRepository from "@/repositories/entidade-repositories.js";
 import * as planoContasRepository from "@/repositories/plano-contas-repositories.js";
 import { listarPlanoContasService } from "./listar-plano-contas.js";
 
-vi.mock("@/repositories/entidade-repositories.js");
-vi.mock("@/repositories/plano-contas-repositories.js");
+vi.mock("@/repositories/entidade-repositories");
+vi.mock("@/repositories/plano-contas-repositories");
 
 describe("listarPlanoContasService", () => {
 	const planoContasMock1: PlanoContas = {
@@ -60,6 +60,10 @@ describe("listarPlanoContasService", () => {
 
 		const resultado = await listarPlanoContasService({
 			idusuario: "usuario-123",
+			idempresa: "empresa-123",
+			inativo: false,
+			listarTudo: false,
+			tipomovimento: "E",
 			page: 1,
 			limit: 10,
 		});
@@ -100,6 +104,10 @@ describe("listarPlanoContasService", () => {
 
 		const resultado = await listarPlanoContasService({
 			idusuario: "usuario-123",
+			idempresa: "empresa-123",
+			inativo: false,
+			listarTudo: false,
+			tipomovimento: "E",
 			page: 1,
 			limit: 10,
 		});
@@ -129,9 +137,13 @@ describe("listarPlanoContasService", () => {
 		});
 
 		const resultado = await listarPlanoContasService({
+			idempresa: "empresa-123",
+			inativo: false,
+			listarTudo: false,
 			idusuario: "usuario-123",
 			page: 2,
 			limit: 10,
+			tipomovimento: "E",
 		});
 
 		expect(resultado.success).toBe(true);
@@ -149,6 +161,8 @@ describe("listarPlanoContasService", () => {
 			inativo: 0,
 			page: 2,
 			limit: 10,
+			listarTudo: false,
+			tipomovimento: "E",
 		});
 	});
 
@@ -165,6 +179,10 @@ describe("listarPlanoContasService", () => {
 
 		const resultado = await listarPlanoContasService({
 			idusuario: "usuario-123",
+			idempresa: "empresa-123",
+			inativo: false,
+			listarTudo: false,
+			tipomovimento: "E",
 		});
 
 		expect(resultado.success).toBe(true);
@@ -180,6 +198,8 @@ describe("listarPlanoContasService", () => {
 			inativo: 0,
 			page: 1,
 			limit: 10,
+			listarTudo: false,
+			tipomovimento: "E",
 		});
 	});
 });

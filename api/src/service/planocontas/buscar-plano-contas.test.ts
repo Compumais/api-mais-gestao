@@ -4,8 +4,8 @@ import * as entidadeRepository from "@/repositories/entidade-repositories.js";
 import * as planoContasRepository from "@/repositories/plano-contas-repositories.js";
 import { buscarPlanoContasService } from "./buscar-plano-contas.js";
 
-vi.mock("@/repositories/entidade-repositories.js");
-vi.mock("@/repositories/plano-contas-repositories.js");
+vi.mock("@/repositories/entidade-repositories");
+vi.mock("@/repositories/plano-contas-repositories");
 
 describe("buscarPlanoContasService", () => {
 	const planoContasMock: PlanoContas = {

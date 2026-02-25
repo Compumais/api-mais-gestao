@@ -24,17 +24,17 @@ Garantir consistência, clareza e uso correto do Drizzle ORM na criação de rep
 ## Imports
 
 - Sempre importar schema de uma das seguintes formas:
-  - `import * as schema from "../../drizzle/schema.js";` (caminho relativo)
+  - `import * as schema from "../../drizzle/schema";` (caminho relativo)
   - `import * as schema from "@/repositories/schema";` (alias @/)
-- Sempre importar `db` de `./connection.js`.
+- Sempre importar `db` de `./connection`.
 - Importar operadores do Drizzle conforme necessário: `eq`, `and`, `or`, `ilike`, `inArray`, `count`, `desc`, `isNull`, etc.
 
 Exemplo:
 ```
 import { and, count, desc, eq, ilike, inArray } from "drizzle-orm";
 import type { NovaEmpresa } from "@/model/empresa-model";
-import * as schema from "../../drizzle/schema.js";
-import { db } from "./connection.js";
+import * as schema from "../../drizzle/schema";
+import { db } from "./connection";
 ```
 
 ## Exportação de tipos
@@ -340,8 +340,8 @@ db
 ```
 import { and, count, desc, eq, ilike } from "drizzle-orm";
 import type { NovaEmpresa } from "@/model/empresa-model";
-import * as schema from "../../drizzle/schema.js";
-import { db } from "./connection.js";
+import * as schema from "../../drizzle/schema";
+import { db } from "./connection";
 
 export type Empresa = typeof schema.empresa.$inferSelect;
 export type NovaEmpresa = typeof schema.empresa.$inferInsert;

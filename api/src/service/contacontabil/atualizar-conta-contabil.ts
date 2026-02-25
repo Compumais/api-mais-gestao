@@ -1,16 +1,16 @@
-import type { ContaContabil, NovaContaContabil } from "@/model/conta-contabil-model";
-import type { HttpResponse } from "@/model/http-model";
+import type { ContaContabil, NovaContaContabil } from "@/model/conta-contabil-model.js";
+import type { HttpResponse } from "@/model/http-model.js";
 import {
     atualizarContaContabil,
     buscarContaContabilPorId,
-} from "@/repositories/conta-contabil-repositories";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
+} from "@/repositories/conta-contabil-repositories.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
     httpErroInterno,
     httpNaoEncontrado,
     httpOk,
     httpProibido,
-} from "@/util/http-util";
+} from "@/util/http-util.js";
 
 type AtualizarContaContabilParametros = {
     id: string;

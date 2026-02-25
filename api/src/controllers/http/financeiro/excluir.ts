@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { excluirFinanceiroService } from "@/service/financeiro/excluir-financeiro";
+import { excluirFinanceiroService } from "@/service/financeiro/excluir-financeiro.js";
 
 const excluirFinanceiroParamsSchema = z.object({
 	id: z.string().uuid(),

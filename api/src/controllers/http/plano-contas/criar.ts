@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { buscarUsuarioPorIdService } from "@/service/usuarios/buscar";
-import { criarPlanoContasService } from "../../../service/planocontas/criar-plano-contas";
+import { criarNotificacaoService } from "@/service/notificacoes/criar-notificacao.js";
+import { criarPlanoContasService } from "@/service/planocontas/criar-plano-contas.js";
+import { buscarUsuarioPorIdService } from "@/service/usuarios/buscar.js";
 
 const criarPlanoContasSchema = z.object({
 	idempresa: z.string(),
@@ -32,8 +33,6 @@ export async function criarPlanoContas(
 				code: "UNAUTHORIZED",
 			});
 		}
-
-		console.log(request.user);
 
 		const usuarioId = request.user.id;
 
@@ -73,6 +72,21 @@ export async function criarPlanoContas(
 		if (!resultado.success) {
 			return reply.status(resultado.status).send(resultado);
 		}
+
+		const perfilAutor = Array.isArray(request.user.roles)
+			? request.user.roles
+			: request.user.roles
+				? [request.user.roles]
+				: [];
+		await criarNotificacaoService({
+			tipo: "plano_contas",
+			idempresa: dadosValidados.idempresa,
+			idrecurso: resultado.body?.id ?? null,
+			titulo: "Novo plano de contas criado",
+			detalhes: { nome: dadosValidados.nome, codigo: resultado.body?.codigo },
+			idusuarioAutor: usuarioId,
+			perfilAutor,
+		});
 
 		return reply.status(resultado.status).send(resultado.body);
 	} catch (err) {

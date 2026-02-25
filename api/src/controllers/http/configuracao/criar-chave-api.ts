@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { criarChaveApiService } from "@/service/configuracao/criar-chave-api";
-import { httpNaoAutorizado } from "@/util/http-util";
+import { criarChaveApiService } from "@/service/configuracao/criar-chave-api.js";
+import { httpNaoAutorizado } from "@/util/http-util.js";
 
 const criarChaveApiParamsSchema = z.object({
 	idempresa: z.string(),
@@ -49,4 +49,3 @@ export async function criarChaveApi(
 		});
 	}
 }
-

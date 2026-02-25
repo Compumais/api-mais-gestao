@@ -1,8 +1,8 @@
-import type { HttpResponse } from "@/model/http-model";
-import type { PlanoContas } from "@/model/plano-contas-model";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
-import { buscarPlanoContasComFilhos } from "@/repositories/plano-contas-repositories";
-import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util";
+import type { HttpResponse } from "@/model/http-model.js";
+import type { PlanoContas } from "@/model/plano-contas-model.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { buscarPlanoContasComFilhos } from "@/repositories/plano-contas-repositories.js";
+import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
 
 type BuscarPlanoContasParametros = {
 	idplanocontas: string;

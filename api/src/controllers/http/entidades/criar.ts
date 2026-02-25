@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { v4 as uuidv4 } from "uuid";
 import z from "zod";
-import { criarEntidadeService } from "@/service/entidades/criar-entidade";
+import { criarEntidadeService } from "@/service/entidades/criar-entidade.js";
 
 const criarEntidadeBodySchema = z.object({
 	nome: z.string().min(1),

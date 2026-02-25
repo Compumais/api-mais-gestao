@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { buscarPlanoContasService } from "../../../service/planocontas/buscar-plano-contas";
+import { buscarPlanoContasService } from "../../../service/planocontas/buscar-plano-contas.js";
 
 const buscarPlanoContasParamsSchema = z.object({
 	id: z.uuid(),

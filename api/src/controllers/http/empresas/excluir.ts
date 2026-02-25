@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { excluirEmpresaService } from "../../../service/empresa/excluir-empresa";
+import { excluirEmpresaService } from "../../../service/empresa/excluir-empresa.js";
 
 const excluirEmpresaParamsSchema = z.object({
 	id: z.string().uuid(),

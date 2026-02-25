@@ -1,7 +1,7 @@
-import type { HttpResponse } from "@/model/http-model";
-import { buscarConfiguracaoPorEmpresa } from "@/repositories/configuracao-repositories";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
-import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util";
+import type { HttpResponse } from "@/model/http-model.js";
+import { buscarConfiguracaoPorEmpresa } from "@/repositories/configuracao-repositories.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
 
 interface BuscarConfiguracaoParametros {
 	idempresa: string;

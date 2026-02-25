@@ -3,7 +3,7 @@ import type { Entidade } from "@/model/entidade-model.js";
 import * as entidadeRepository from "@/repositories/entidade-repositories.js";
 import { criarEntidadeService } from "./criar-entidade.js";
 
-vi.mock("@/repositories/entidade-repositories.js");
+vi.mock("@/repositories/entidade-repositories");
 
 describe("criarEntidadeService", () => {
 	const entidadeMock: Entidade = {
@@ -44,6 +44,7 @@ describe("criarEntidadeService", () => {
 		cep: "38190-000",
 		pais: "Brasil",
 		idempresa: "empresa-123",
+		atualizadoem: new Date().toISOString(),
 	};
 
 	beforeEach(() => {

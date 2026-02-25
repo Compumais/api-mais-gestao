@@ -62,8 +62,11 @@ export interface DowngradePlanoParams {
 	plano: TipoPlano;
 }
 
-export async function getMeuPlano(): Promise<PlanoData> {
-	const response = await api.get<PlanoData>("/planos/meu-plano");
+export async function getMeuPlano(idempresa?: string): Promise<PlanoData> {
+	const url = idempresa
+		? `/planos/meu-plano?idempresa=${idempresa}`
+		: "/planos/meu-plano";
+	const response = await api.get<PlanoData>(url);
 	return response.data;
 }
 

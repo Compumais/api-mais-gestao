@@ -1,10 +1,10 @@
-import type { Financeiro } from "@/model/financeiro-model";
-import type { HttpResponse } from "@/model/http-model";
+import type { Financeiro } from "@/model/financeiro-model.js";
+import type { HttpResponse } from "@/model/http-model.js";
 import {
 	buscarFinanceiroPorId,
 	deletarFinanceiro,
-} from "@/repositories/financeiro-repositories";
-import { httpNaoEncontrado, httpSemConteudo } from "@/util/http-util";
+} from "@/repositories/financeiro-repositories.js";
+import { httpNaoEncontrado, httpSemConteudo } from "@/util/http-util.js";
 
 export async function excluirFinanceiroService(
 	id: string,

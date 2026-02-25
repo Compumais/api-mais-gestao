@@ -1,14 +1,14 @@
-import type { HttpResponse } from "@/model/http-model";
-import { buscarEmpresasDoUsuario } from "@/repositories/entidade-repositories";
+import type { HttpResponse } from "@/model/http-model.js";
 import {
 	buscarDadosDashboard,
 	buscarHistoricoFinanceiro,
-} from "@/repositories/dashboard-repositories";
-import { httpNaoAutorizado, httpOk } from "@/util/http-util";
+} from "@/repositories/dashboard-repositories.js";
+import { buscarEmpresasDoUsuario } from "@/repositories/entidade-repositories.js";
+import { httpNaoAutorizado, httpOk } from "@/util/http-util.js";
 
 type BuscarDadosDashboardParametros = {
 	idusuario: string;
-	idempresa?: string;
+	idempresa: string;
 };
 
 type DashboardResposta = {
@@ -22,9 +22,7 @@ type DashboardResposta = {
 export async function buscarDadosDashboardService({
 	idusuario,
 	idempresa,
-}: BuscarDadosDashboardParametros): Promise<
-	HttpResponse<DashboardResposta>
-> {
+}: BuscarDadosDashboardParametros): Promise<HttpResponse<DashboardResposta>> {
 	const idempresas = await buscarEmpresasDoUsuario(idusuario);
 
 	if (idempresas.length === 0) {
@@ -33,6 +31,10 @@ export async function buscarDadosDashboardService({
 
 	// Se idempresa foi fornecido, verificar se o usuário tem acesso
 	const empresaId = idempresa || idempresas[0];
+
+	if (!empresaId) {
+		return httpNaoAutorizado();
+	}
 
 	if (!idempresas.includes(empresaId)) {
 		return httpNaoAutorizado();
@@ -71,6 +73,10 @@ export async function buscarHistoricoFinanceiroService({
 	// Se idempresa foi fornecido, verificar se o usuário tem acesso
 	const empresaId = idempresa || idempresas[0];
 
+	if (!empresaId) {
+		return httpNaoAutorizado();
+	}
+
 	if (!idempresas.includes(empresaId)) {
 		return httpNaoAutorizado();
 	}
@@ -82,4 +88,3 @@ export async function buscarHistoricoFinanceiroService({
 
 	return httpOk<HistoricoFinanceiroResposta>(dados);
 }
-

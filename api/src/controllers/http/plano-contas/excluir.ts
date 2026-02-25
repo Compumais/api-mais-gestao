@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { excluirPlanoContasService } from "../../../service/planocontas/excluir-plano-contas";
+import { excluirPlanoContasService } from "../../../service/planocontas/excluir-plano-contas.js";
 
 const excluirPlanoContasParamsSchema = z.object({
 	id: z.string().uuid(),

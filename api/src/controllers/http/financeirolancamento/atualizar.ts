@@ -1,9 +1,10 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { buscarFinanceiroLancamentoPorId } from "@/repositories/financeiro-lancamento-repositories";
-import { buscarFinanceiroPorId } from "@/repositories/financeiro-repositories";
-import { atualizarFinanceiroLancamentoService } from "@/service/financeirolancamento/atualizar-financeiro-lancamento";
-import { httpNaoAutorizado, httpNaoEncontrado } from "@/util/http-util";
+import type { NovoFinanceiroLancamento } from "@/model/financeiro-lancamentos-model.js";
+import { buscarFinanceiroLancamentoPorId } from "@/repositories/financeiro-lancamento-repositories.js";
+import { buscarFinanceiroPorId } from "@/repositories/financeiro-repositories.js";
+import { atualizarFinanceiroLancamentoService } from "@/service/financeirolancamento/atualizar-financeiro-lancamento.js";
+import { httpNaoAutorizado, httpNaoEncontrado } from "@/util/http-util.js";
 
 const atualizarFinanceiroLancamentoParamsSchema = z.object({
 	id: z.string(),
@@ -40,7 +41,15 @@ export async function atualizarFinanceiroLancamento(
 		const { id } = atualizarFinanceiroLancamentoParamsSchema.parse(
 			request.params,
 		);
-		const dados = atualizarFinanceiroLancamentoBodySchema.parse(request.body);
+		const body = atualizarFinanceiroLancamentoBodySchema.parse(request.body);
+
+		// Incluir apenas propriedades definidas (compatível com exactOptionalPropertyTypes)
+		const dados = Object.fromEntries(
+			Object.entries(body).filter(
+				(entry): entry is [string, string | number] =>
+					entry[1] !== undefined,
+			),
+		) as Partial<NovoFinanceiroLancamento>;
 
 		// Buscar o lançamento para obter o idfinanceiro
 		const lancamento = await buscarFinanceiroLancamentoPorId(id);

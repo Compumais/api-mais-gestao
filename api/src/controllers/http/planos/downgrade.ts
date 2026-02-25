@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { downgradePlanoService } from "@/service/planos/downgrade-plano";
-import type { TipoPlano } from "@/constants/planos";
+import { downgradePlanoService } from "@/service/planos/downgrade-plano.js";
+import type { TipoPlano } from "@/constants/planos.js";
 
 const downgradeBodySchema = z.object({
 	plano: z.enum(["BASIC", "PREMIUM", "ENTERPRISE"]),

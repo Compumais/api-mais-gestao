@@ -4,9 +4,9 @@ import * as entidadeRepository from "@/repositories/entidade-repositories.js";
 import * as planoContasRepository from "@/repositories/plano-contas-repositories.js";
 import { atualizarPlanoContasService } from "./atualizar-plano-contas.js";
 
-vi.mock("@/repositories/entidade-repositories.js");
-vi.mock("@/repositories/plano-contas-repositories.js");
-vi.mock("@/util/verificar-permissao.js", () => ({
+vi.mock("@/repositories/entidade-repositories");
+vi.mock("@/repositories/plano-contas-repositories");
+vi.mock("@/util/verificar-permissao", () => ({
 	verificarPermissao: vi.fn(),
 }));
 
@@ -38,9 +38,7 @@ describe("atualizarPlanoContasService", () => {
 	});
 
 	it("deve atualizar plano de contas com sucesso quando usuário tem permissão", async () => {
-		const { verificarPermissao } = await import(
-			"@/util/verificar-permissao.js"
-		);
+		const { verificarPermissao } = await import("@/util/verificar-permissao");
 		vi.mocked(verificarPermissao).mockReturnValue(true);
 		vi.mocked(planoContasRepository.buscarPlanoContasPorId).mockResolvedValue(
 			planoContasMock,
@@ -81,9 +79,7 @@ describe("atualizarPlanoContasService", () => {
 	});
 
 	it("deve retornar erro 403 quando usuário não tem permissão", async () => {
-		const { verificarPermissao } = await import(
-			"@/util/verificar-permissao.js"
-		);
+		const { verificarPermissao } = await import("@/util/verificar-permissao");
 		vi.mocked(verificarPermissao).mockReturnValue(false);
 
 		const resultado = await atualizarPlanoContasService({
@@ -103,9 +99,7 @@ describe("atualizarPlanoContasService", () => {
 	});
 
 	it("deve retornar erro 404 quando plano não existe", async () => {
-		const { verificarPermissao } = await import(
-			"@/util/verificar-permissao.js"
-		);
+		const { verificarPermissao } = await import("@/util/verificar-permissao");
 		vi.mocked(verificarPermissao).mockReturnValue(true);
 		vi.mocked(planoContasRepository.buscarPlanoContasPorId).mockResolvedValue(
 			undefined,
@@ -130,9 +124,7 @@ describe("atualizarPlanoContasService", () => {
 	});
 
 	it("deve retornar erro 403 quando usuário não pertence à empresa", async () => {
-		const { verificarPermissao } = await import(
-			"@/util/verificar-permissao.js"
-		);
+		const { verificarPermissao } = await import("@/util/verificar-permissao");
 		vi.mocked(verificarPermissao).mockReturnValue(true);
 		vi.mocked(planoContasRepository.buscarPlanoContasPorId).mockResolvedValue(
 			planoContasMock,
@@ -158,9 +150,7 @@ describe("atualizarPlanoContasService", () => {
 	});
 
 	it("deve aceitar role financeiro", async () => {
-		const { verificarPermissao } = await import(
-			"@/util/verificar-permissao.js"
-		);
+		const { verificarPermissao } = await import("@/util/verificar-permissao");
 		vi.mocked(verificarPermissao).mockReturnValue(true);
 		vi.mocked(planoContasRepository.buscarPlanoContasPorId).mockResolvedValue(
 			planoContasMock,

@@ -1,9 +1,16 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { buscarConfiguracaoPorEmpresa } from "@/repositories/configuracao-repositories";
-import { atualizarConfiguracaoParcial } from "@/repositories/configuracao-repositories";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
-import { httpNaoAutorizado, httpNaoEncontrado, httpProibido, httpOk } from "@/util/http-util";
+import {
+	atualizarConfiguracaoParcial,
+	buscarConfiguracaoPorEmpresa,
+} from "@/repositories/configuracao-repositories.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import {
+	httpNaoAutorizado,
+	httpNaoEncontrado,
+	httpOk,
+	httpProibido,
+} from "@/util/http-util.js";
 
 const deletarChaveApiParamsSchema = z.object({
 	idempresa: z.string(),
@@ -39,7 +46,16 @@ export async function deletarChaveApi(
 		}
 
 		const integracao = (configuracao.integracao as {
-			apis?: { chaves?: Array<{ id: string }> };
+			apis?: {
+				chaves?: Array<{
+					id: string;
+					nome: string;
+					chave: string;
+					criadoEm: string;
+					ultimoUso: string | null;
+					ativo: boolean;
+				}>;
+			};
 		}) || { apis: { chaves: [] } };
 
 		const chaves = integracao.apis?.chaves || [];
@@ -57,7 +73,9 @@ export async function deletarChaveApi(
 			},
 		});
 
-		return reply.status(200).send(httpOk({ message: "Chave deletada com sucesso" }));
+		return reply
+			.status(200)
+			.send(httpOk({ message: "Chave deletada com sucesso" }));
 	} catch (error) {
 		console.error(error);
 		if (error instanceof z.ZodError) {
@@ -73,4 +91,3 @@ export async function deletarChaveApi(
 		});
 	}
 }
-

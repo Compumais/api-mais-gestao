@@ -1,5 +1,5 @@
 
-import type { assinaturas, clientesAsaas } from "../../drizzle/schema";
+import type { assinaturas, clientesAsaas } from "../../drizzle/schema.js";
 
 export type Assinatura = typeof assinaturas.$inferSelect;
 export type NovaAssinatura = typeof assinaturas.$inferInsert;

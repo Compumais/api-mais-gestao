@@ -1,14 +1,14 @@
-import type { Usuario } from "@/model/usuario-model";
-import type { HttpResponse } from "@/model/http-model";
-import { listarUsuariosPorEmpresa } from "@/repositories/usuarios-repositories";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories";
-import { httpOk } from "@/util/http-util";
+import type { HttpResponse } from "@/model/http-model.js";
+import type { Usuario } from "@/model/usuario-model.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { listarUsuariosPorEmpresa } from "@/repositories/usuarios-repositories.js";
+import { httpOk } from "@/util/http-util.js";
 
 type ListarUsuariosParametros = {
 	idusuario: string;
 	idempresa: string;
-	nome?: string;
-	email?: string;
+	nome?: string | null | undefined;
+	email?: string | null | undefined;
 	page?: number;
 	limit?: number;
 };
@@ -68,4 +68,3 @@ export async function listarUsuariosService({
 		},
 	});
 }
-
