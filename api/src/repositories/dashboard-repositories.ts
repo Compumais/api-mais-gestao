@@ -37,6 +37,18 @@ export interface UltimasMovimentacoes {
 	bancarias: UltimaMovimentacao[];
 }
 
+export interface TopPorCategoriaItem {
+	idplanocontas: string;
+	codigo: string | null;
+	nome: string | null;
+	total: number;
+}
+
+export interface TopPorCategoriaResposta {
+	itens: TopPorCategoriaItem[];
+	total: number;
+}
+
 /* -------------------------------------------------------------------------- */
 /*                                  HELPERS                                   */
 /* -------------------------------------------------------------------------- */
@@ -359,4 +371,108 @@ function mapearMovimentacoesBancarias(
 		tipo: "B",
 		natureza: m.tipo === "E" ? "entrada" : "saida",
 	}));
+}
+
+/* -------------------------------------------------------------------------- */
+/*                     TOP DESPESAS/RECEITAS POR CATEGORIA                    */
+/* -------------------------------------------------------------------------- */
+
+export async function buscarTopDespesasPorCategoria({
+	idempresa,
+	dias,
+}: {
+	idempresa: string;
+	dias: number;
+}): Promise<TopPorCategoriaResposta> {
+	const dataInicio = new Date();
+	dataInicio.setDate(dataInicio.getDate() - dias);
+	const dataInicioStr = toDateString(dataInicio);
+	const dataFimStr = toDateString(new Date());
+
+	const result = await db.execute(sql`
+		SELECT 
+			ccl.idplanocontas,
+			pc.codigo,
+			pc.nome,
+			SUM(ccl.valor::numeric) as total
+		FROM contacorrentelancamento ccl
+		JOIN contacorrente cc ON cc.id = ccl.idcontacorrente
+		LEFT JOIN planocontas pc ON pc.id = ccl.idplanocontas
+		WHERE cc.idempresa = ${idempresa}
+			AND TRIM(ccl.tipo) IN ('S', 'D')
+			AND ccl.idplanocontas IS NOT NULL
+			AND ccl.datahora >= ${dataInicioStr}::date
+			AND ccl.datahora <= ${dataFimStr}::date
+		GROUP BY ccl.idplanocontas, pc.codigo, pc.nome
+		ORDER BY total DESC
+		LIMIT 5
+	`);
+
+	const rows = (result.rows || result) as {
+		idplanocontas: string;
+		codigo: string | null;
+		nome: string | null;
+		total: string | number;
+	}[];
+
+	const itens: TopPorCategoriaItem[] = rows.map((row) => ({
+		idplanocontas: row.idplanocontas,
+		codigo: row.codigo,
+		nome: row.nome,
+		total: toNumber(row.total),
+	}));
+
+	const total = itens.reduce((acc, item) => acc + item.total, 0);
+
+	return { itens, total };
+}
+
+export async function buscarTopReceitasPorCategoria({
+	idempresa,
+	dias,
+}: {
+	idempresa: string;
+	dias: number;
+}): Promise<TopPorCategoriaResposta> {
+	const dataInicio = new Date();
+	dataInicio.setDate(dataInicio.getDate() - dias);
+	const dataInicioStr = toDateString(dataInicio);
+	const dataFimStr = toDateString(new Date());
+
+	const result = await db.execute(sql`
+		SELECT 
+			ccl.idplanocontas,
+			pc.codigo,
+			pc.nome,
+			SUM(ccl.valor::numeric) as total
+		FROM contacorrentelancamento ccl
+		JOIN contacorrente cc ON cc.id = ccl.idcontacorrente
+		LEFT JOIN planocontas pc ON pc.id = ccl.idplanocontas
+		WHERE cc.idempresa = ${idempresa}
+			AND TRIM(ccl.tipo) IN ('E', 'C')
+			AND ccl.idplanocontas IS NOT NULL
+			AND ccl.datahora >= ${dataInicioStr}::date
+			AND ccl.datahora <= ${dataFimStr}::date
+		GROUP BY ccl.idplanocontas, pc.codigo, pc.nome
+		ORDER BY total DESC
+		LIMIT 5
+	`);
+
+	const rows = (result.rows || result) as {
+		idplanocontas: string;
+		codigo: string | null;
+		nome: string | null;
+		total: string | number;
+	}[];
+
+	const itens: TopPorCategoriaItem[] = rows.map((row) => ({
+		idplanocontas: row.idplanocontas,
+		codigo: row.codigo,
+		nome: row.nome,
+		total: toNumber(row.total),
+	}));
+
+	const total = itens.reduce((acc, item) => acc + item.total, 0);
+
+	return { itens, total };
 }

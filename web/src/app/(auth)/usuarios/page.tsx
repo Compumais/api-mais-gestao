@@ -39,6 +39,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { type Usuario, usuariosService } from "@/services/usuarios.service";
 import { PageContainer } from "../components/page-container";
+import { TableSkeleton } from "@/components/table-skeleton";
 
 type ColumnsProps = {
 	onEdit: (usuario: Usuario) => void;
@@ -51,83 +52,83 @@ const createColumns = ({
 	onDelete,
 	usuarioAutenticadoId,
 }: ColumnsProps): ColumnDef<Usuario>[] => [
-	{
-		accessorKey: "nome",
-		header: "Nome",
-		cell: ({ row }) => <div>{row.getValue("nome")}</div>,
-	},
-	{
-		accessorKey: "email",
-		header: "Email",
-		cell: ({ row }) => <div>{row.getValue("email")}</div>,
-	},
-	{
-		accessorKey: "perfil",
-		header: "Perfil",
-		cell: ({ row }) => {
-			const perfil = row.getValue("perfil") as string | string[];
-			const perfilStr = Array.isArray(perfil)
-				? perfil[0] || "usuario"
-				: perfil || "usuario";
-			return <div className="capitalize">{perfilStr}</div>;
+		{
+			accessorKey: "nome",
+			header: "Nome",
+			cell: ({ row }) => <div>{row.getValue("nome")}</div>,
 		},
-	},
-	{
-		accessorKey: "emailverificado",
-		header: "Email Verificado",
-		cell: ({ row }) => {
-			const verificado = row.getValue("emailverificado") as boolean;
-			return (
-				<div className={verificado ? "text-green-600" : "text-red-600"}>
-					{verificado ? "Sim" : "Não"}
-				</div>
-			);
+		{
+			accessorKey: "email",
+			header: "Email",
+			cell: ({ row }) => <div>{row.getValue("email")}</div>,
 		},
-	},
-	{
-		id: "acoes",
-		header: "Ações",
-		cell: ({ row }) => {
-			const usuario = row.original;
-			const isUsuarioAutenticado = usuarioAutenticadoId === usuario.id;
-			return (
-				<div className="flex justify-end">
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon"
-								className="h-8 w-8"
-								aria-label="Abrir menu de ações"
-								disabled={isUsuarioAutenticado}
-							>
-								<IconDotsVertical className="size-4" />
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end">
-							<DropdownMenuItem
-								onClick={() => onEdit(usuario)}
-								disabled={isUsuarioAutenticado}
-							>
-								<IconPencil className="size-4" />
-								Editar
-							</DropdownMenuItem>
-							<DropdownMenuSeparator />
-							<DropdownMenuItem
-								variant="destructive"
-								onClick={() => onDelete(usuario.id)}
-								disabled={isUsuarioAutenticado}
-							>
-								<IconTrash className="size-4" />
-								Excluir
-							</DropdownMenuItem>
-						</DropdownMenuContent>
-					</DropdownMenu>
-				</div>
-			);
+		{
+			accessorKey: "perfil",
+			header: "Perfil",
+			cell: ({ row }) => {
+				const perfil = row.getValue("perfil") as string | string[];
+				const perfilStr = Array.isArray(perfil)
+					? perfil[0] || "usuario"
+					: perfil || "usuario";
+				return <div className="capitalize">{perfilStr}</div>;
+			},
 		},
-	},
-];
+		{
+			accessorKey: "emailverificado",
+			header: "Email Verificado",
+			cell: ({ row }) => {
+				const verificado = row.getValue("emailverificado") as boolean;
+				return (
+					<div className={verificado ? "text-green-600" : "text-red-600"}>
+						{verificado ? "Sim" : "Não"}
+					</div>
+				);
+			},
+		},
+		{
+			id: "acoes",
+			header: "Ações",
+			cell: ({ row }) => {
+				const usuario = row.original;
+				const isUsuarioAutenticado = usuarioAutenticadoId === usuario.id;
+				return (
+					<div className="flex justify-end">
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon"
+									className="h-8 w-8"
+									aria-label="Abrir menu de ações"
+									disabled={isUsuarioAutenticado}
+								>
+									<IconDotsVertical className="size-4" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="end">
+								<DropdownMenuItem
+									onClick={() => onEdit(usuario)}
+									disabled={isUsuarioAutenticado}
+								>
+									<IconPencil className="size-4" />
+									Editar
+								</DropdownMenuItem>
+								<DropdownMenuSeparator />
+								<DropdownMenuItem
+									variant="destructive"
+									onClick={() => onDelete(usuario.id)}
+									disabled={isUsuarioAutenticado}
+								>
+									<IconTrash className="size-4" />
+									Excluir
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
+					</div>
+				);
+			},
+		},
+	];
 
 export default function UsuariosPage() {
 	const router = useRouter();
@@ -235,9 +236,13 @@ export default function UsuariosPage() {
 							</p>
 						</div>
 					) : isLoading ? (
-						<div className="flex items-center justify-center py-8">
-							<div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-						</div>
+						<TableSkeleton rows={10} columns={5}>
+							<TableCell>Nome</TableCell>
+							<TableCell>Email</TableCell>
+							<TableCell className="w-28">Perfil</TableCell>
+							<TableCell className="w-[180px]">Email Verificado</TableCell>
+							<TableCell className="w-12">Ações</TableCell>
+						</TableSkeleton>
 					) : (
 						<>
 							<Table>
@@ -252,9 +257,9 @@ export default function UsuariosPage() {
 													{header.isPlaceholder
 														? null
 														: flexRender(
-																header.column.columnDef.header,
-																header.getContext(),
-															)}
+															header.column.columnDef.header,
+															header.getContext(),
+														)}
 												</TableHead>
 											))}
 										</TableRow>

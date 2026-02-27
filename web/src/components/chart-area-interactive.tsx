@@ -48,7 +48,7 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export function ChartAreaInteractive() {
-	const { isBasic, plano } = usePlano();
+	const { plano } = usePlano();
 	const isMobile = useIsMobile();
 	const { localStorageEmpresa: empresa } = useEmpresa();
 	const [timeRange, setTimeRange] = React.useState("90d");

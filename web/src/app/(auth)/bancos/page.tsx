@@ -42,6 +42,7 @@ import { useEmpresa } from "@/hooks/use-empresa";
 import { type Banco, bancosService } from "@/services/bancos.service";
 import { isBancoPadrao } from "@/util/bancos-padrao";
 import { PageContainer } from "../components/page-container";
+import { TableSkeleton } from "@/components/table-skeleton";
 
 type ColumnsProps = {
 	onEdit: (banco: Banco) => void;
@@ -262,9 +263,11 @@ export default function BancosPage() {
 								</div>
 							</div>
 							{isLoading ? (
-								<div className="flex items-center justify-center py-8">
-									<div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-								</div>
+								<TableSkeleton rows={10} columns={3}>
+									<TableCell className="w-32">Código</TableCell>
+									<TableCell>Nome</TableCell>
+									<TableCell className="w-12">Ações</TableCell>
+								</TableSkeleton>
 							) : (
 								<>
 									<Table>

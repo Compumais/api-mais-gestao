@@ -56,6 +56,26 @@ export const dashboardService = {
 		);
 		return data;
 	},
+
+	async buscarTopDespesasPorCategoria(
+		params?: BuscarTopPorCategoriaParams,
+	): Promise<TopPorCategoriaResposta> {
+		const { data } = await api.get<TopPorCategoriaResposta>(
+			"/dashboard/top-despesas-categoria",
+			{ params },
+		);
+		return data;
+	},
+
+	async buscarTopReceitasPorCategoria(
+		params?: BuscarTopPorCategoriaParams,
+	): Promise<TopPorCategoriaResposta> {
+		const { data } = await api.get<TopPorCategoriaResposta>(
+			"/dashboard/top-receitas-categoria",
+			{ params },
+		);
+		return data;
+	},
 };
 
 export interface UltimaMovimentacao {
@@ -73,5 +93,22 @@ export interface UltimasMovimentacoes {
 	pagar: UltimaMovimentacao[];
 	receber: UltimaMovimentacao[];
 	bancarias: UltimaMovimentacao[];
+}
+
+export interface TopPorCategoriaItem {
+	idplanocontas: string;
+	codigo: string | null;
+	nome: string | null;
+	total: number;
+}
+
+export interface TopPorCategoriaResposta {
+	itens: TopPorCategoriaItem[];
+	total: number;
+}
+
+export interface BuscarTopPorCategoriaParams {
+	idempresa?: string;
+	dias?: number;
 }
 

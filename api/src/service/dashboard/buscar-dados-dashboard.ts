@@ -2,6 +2,9 @@ import type { HttpResponse } from "@/model/http-model.js";
 import {
 	buscarDadosDashboard,
 	buscarHistoricoFinanceiro,
+	buscarTopDespesasPorCategoria,
+	buscarTopReceitasPorCategoria,
+	type TopPorCategoriaResposta,
 } from "@/repositories/dashboard-repositories.js";
 import { buscarEmpresasDoUsuario } from "@/repositories/entidade-repositories.js";
 import { httpNaoAutorizado, httpOk } from "@/util/http-util.js";
@@ -87,4 +90,78 @@ export async function buscarHistoricoFinanceiroService({
 	});
 
 	return httpOk<HistoricoFinanceiroResposta>(dados);
+}
+
+type BuscarTopDespesasPorCategoriaParametros = {
+	idusuario: string;
+	idempresa?: string;
+	dias?: number;
+};
+
+export async function buscarTopDespesasPorCategoriaService({
+	idusuario,
+	idempresa,
+	dias = 90,
+}: BuscarTopDespesasPorCategoriaParametros): Promise<
+	HttpResponse<TopPorCategoriaResposta>
+> {
+	const idempresas = await buscarEmpresasDoUsuario(idusuario);
+
+	if (idempresas.length === 0) {
+		return httpNaoAutorizado();
+	}
+
+	const empresaId = idempresa || idempresas[0];
+
+	if (!empresaId) {
+		return httpNaoAutorizado();
+	}
+
+	if (!idempresas.includes(empresaId)) {
+		return httpNaoAutorizado();
+	}
+
+	const dados = await buscarTopDespesasPorCategoria({
+		idempresa: empresaId,
+		dias,
+	});
+
+	return httpOk<TopPorCategoriaResposta>(dados);
+}
+
+type BuscarTopReceitasPorCategoriaParametros = {
+	idusuario: string;
+	idempresa?: string;
+	dias?: number;
+};
+
+export async function buscarTopReceitasPorCategoriaService({
+	idusuario,
+	idempresa,
+	dias = 90,
+}: BuscarTopReceitasPorCategoriaParametros): Promise<
+	HttpResponse<TopPorCategoriaResposta>
+> {
+	const idempresas = await buscarEmpresasDoUsuario(idusuario);
+
+	if (idempresas.length === 0) {
+		return httpNaoAutorizado();
+	}
+
+	const empresaId = idempresa || idempresas[0];
+
+	if (!empresaId) {
+		return httpNaoAutorizado();
+	}
+
+	if (!idempresas.includes(empresaId)) {
+		return httpNaoAutorizado();
+	}
+
+	const dados = await buscarTopReceitasPorCategoria({
+		idempresa: empresaId,
+		dias,
+	});
+
+	return httpOk<TopPorCategoriaResposta>(dados);
 }

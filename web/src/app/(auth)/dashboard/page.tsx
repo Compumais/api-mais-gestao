@@ -1,13 +1,14 @@
 "use client";
 
-import { AppSidebar } from "@/components/app-sidebar";
+import { useQuery } from "@tanstack/react-query";
 import { ChartAreaInteractive } from "@/components/chart-area-interactive";
+import { ChartPieDespesas } from "@/components/chart-pie-despesas";
+import { ChartPieReceitas } from "@/components/chart-pie-receitas";
 import { DashboardTable } from "@/components/dashboard-table";
 import { SectionCards } from "@/components/section-cards";
-import { PageContainer } from "../components/page-container";
-import { useQuery } from "@tanstack/react-query";
-import { dashboardService } from "@/services/dashboard.service";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { dashboardService } from "@/services/dashboard.service";
+import { PageContainer } from "../components/page-container";
 
 export default function Page() {
 	const { localStorageEmpresa: empresa } = useEmpresa();
@@ -25,6 +26,10 @@ export default function Page() {
 				<SectionCards />
 				<div className="px-4 lg:px-6">
 					<ChartAreaInteractive />
+				</div>
+				<div className="grid gap-4 px-4 lg:grid-cols-2 lg:px-6">
+					<ChartPieDespesas />
+					<ChartPieReceitas />
 				</div>
 				<div className="px-4 lg:px-6">
 					<DashboardTable data={ultimasMovimentacoes} isLoading={isLoading} />

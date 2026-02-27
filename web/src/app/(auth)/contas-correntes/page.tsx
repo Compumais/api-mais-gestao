@@ -43,6 +43,7 @@ import {
 	contasCorrentesService,
 } from "@/services/contas-correntes.service";
 import { PageContainer } from "../components/page-container";
+import { TableSkeleton } from "@/components/table-skeleton";
 
 type ColumnsProps = {
 	onEdit: (contaCorrente: ContaCorrenteListItem) => void;
@@ -53,55 +54,55 @@ const createColumns = ({
 	onEdit,
 	onDelete,
 }: ColumnsProps): ColumnDef<ContaCorrenteListItem>[] => [
-	{
-		accessorKey: "descricao",
-		header: "Descrição",
-		cell: ({ row }) => <div>{row.getValue("descricao") || "—"}</div>,
-	},
-	{
-		accessorKey: "agencia",
-		header: "Agência",
-		cell: ({ row }) => <div>{row.getValue("agencia") || "—"}</div>,
-	},
-	{
-		id: "acoes",
-		header: "Ações",
-		cell: ({ row }) => {
-			const contaCorrente = row.original;
-
-			return (
-				<div className="flex justify-end">
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon"
-								className="h-8 w-8"
-								aria-label="Abrir menu de ações"
-							>
-								<IconDotsVertical className="size-4" />
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end">
-							<DropdownMenuItem onClick={() => onEdit(contaCorrente)}>
-								<IconPencil className="size-4" />
-								Editar
-							</DropdownMenuItem>
-							<DropdownMenuSeparator />
-							<DropdownMenuItem
-								variant="destructive"
-								onClick={() => onDelete(contaCorrente.id)}
-							>
-								<IconTrash className="size-4" />
-								Excluir
-							</DropdownMenuItem>
-						</DropdownMenuContent>
-					</DropdownMenu>
-				</div>
-			);
+		{
+			accessorKey: "descricao",
+			header: "Descrição",
+			cell: ({ row }) => <div>{row.getValue("descricao") || "—"}</div>,
 		},
-	},
-];
+		{
+			accessorKey: "agencia",
+			header: "Agência",
+			cell: ({ row }) => <div>{row.getValue("agencia") || "—"}</div>,
+		},
+		{
+			id: "acoes",
+			header: "Ações",
+			cell: ({ row }) => {
+				const contaCorrente = row.original;
+
+				return (
+					<div className="flex justify-end">
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon"
+									className="h-8 w-8"
+									aria-label="Abrir menu de ações"
+								>
+									<IconDotsVertical className="size-4" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="end">
+								<DropdownMenuItem onClick={() => onEdit(contaCorrente)}>
+									<IconPencil className="size-4" />
+									Editar
+								</DropdownMenuItem>
+								<DropdownMenuSeparator />
+								<DropdownMenuItem
+									variant="destructive"
+									onClick={() => onDelete(contaCorrente.id)}
+								>
+									<IconTrash className="size-4" />
+									Excluir
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
+					</div>
+				);
+			},
+		},
+	];
 
 export default function ContasCorrentesPage() {
 	const router = useRouter();
@@ -244,9 +245,11 @@ export default function ContasCorrentesPage() {
 								</div>
 							</div>
 							{isLoading ? (
-								<div className="flex items-center justify-center py-8">
-									<div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-								</div>
+								<TableSkeleton rows={10} columns={3}>
+									<TableCell>Descrição</TableCell>
+									<TableCell>Agência</TableCell>
+									<TableCell className="w-10">Ações</TableCell>
+								</TableSkeleton>
 							) : (
 								<>
 									<Table>
@@ -263,9 +266,9 @@ export default function ContasCorrentesPage() {
 															{header.isPlaceholder
 																? null
 																: flexRender(
-																		header.column.columnDef.header,
-																		header.getContext(),
-																	)}
+																	header.column.columnDef.header,
+																	header.getContext(),
+																)}
 														</TableHead>
 													))}
 												</TableRow>

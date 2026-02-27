@@ -53,6 +53,7 @@ import {
 	financeiroService,
 } from "@/services/financeiro.service";
 import { PageContainer } from "../components/page-container";
+import { TableSkeleton } from "@/components/table-skeleton";
 
 const formatCurrency = (value: string | null | undefined) => {
 	if (!value) return "R$ 0,00";
@@ -103,116 +104,116 @@ const createColumns = ({
 	onDelete,
 	onVerDetalhes,
 }: ColumnsProps): ColumnDef<Financeiro>[] => [
-	{
-		accessorKey: "documento",
-		header: "Documento",
-		cell: ({ row }) => (
-			<div className="font-medium">{row.getValue("documento") || "-"}</div>
-		),
-	},
-	{
-		accessorKey: "emitente",
-		header: "Nome",
-		cell: ({ row }) => <div>{row.getValue("emitente") || "-"}</div>,
-	},
-	{
-		accessorKey: "status",
-		header: "Status",
-		cell: ({ row }) => getStatusBadge(row.getValue("status")),
-	},
-	{
-		accessorKey: "emissao",
-		header: "Emissão",
-		cell: ({ row }) => <div>{formatDate(row.getValue("emissao"))}</div>,
-	},
-	{
-		accessorKey: "vencimento",
-		header: "Vencimento",
-		cell: ({ row }) => <div>{formatDate(row.getValue("vencimento"))}</div>,
-	},
-	{
-		accessorKey: "valor",
-		header: () => <div className="text-right">Valor</div>,
-		cell: ({ row }) => {
-			const valor = row.getValue("valor") as string;
-			return (
-				<div className="text-right font-medium">{formatCurrency(valor)}</div>
-			);
+		{
+			accessorKey: "documento",
+			header: "Documento",
+			cell: ({ row }) => (
+				<div className="font-medium">{row.getValue("documento") || "-"}</div>
+			),
 		},
-	},
-	{
-		accessorKey: "saldo",
-		header: () => <div className="text-right">Saldo</div>,
-		cell: ({ row }) => {
-			const saldo = row.getValue("saldo") as string;
-			return (
-				<div className="text-right font-medium">{formatCurrency(saldo)}</div>
-			);
+		{
+			accessorKey: "emitente",
+			header: "Nome",
+			cell: ({ row }) => <div>{row.getValue("emitente") || "-"}</div>,
 		},
-	},
-	{
-		accessorKey: "tipo",
-		header: "Tipo",
-		cell: ({ row }) => {
-			const tipo = row.getValue("tipo") as string | null;
-			return (
-				<Badge variant="outline">
-					{tipo === "P" ? "Pagar" : tipo === "R" ? "Receber" : "-"}
-				</Badge>
-			);
+		{
+			accessorKey: "status",
+			header: "Status",
+			cell: ({ row }) => getStatusBadge(row.getValue("status")),
 		},
-	},
-	{
-		id: "acoes",
-		header: "Ações",
-		cell: ({ row }) => {
-			const financeiro = row.original;
-			// Para contas a pagar, só pode excluir se não foi pago pelo menos uma parcela
-			// Por enquanto, vamos verificar se status é "A" (Aberto) e não tem pagamento
-			const podeExcluir = financeiro.status === "A" && !financeiro.pagamento;
+		{
+			accessorKey: "emissao",
+			header: "Emissão",
+			cell: ({ row }) => <div>{formatDate(row.getValue("emissao"))}</div>,
+		},
+		{
+			accessorKey: "vencimento",
+			header: "Vencimento",
+			cell: ({ row }) => <div>{formatDate(row.getValue("vencimento"))}</div>,
+		},
+		{
+			accessorKey: "valor",
+			header: () => <div className="text-right">Valor</div>,
+			cell: ({ row }) => {
+				const valor = row.getValue("valor") as string;
+				return (
+					<div className="text-right font-medium">{formatCurrency(valor)}</div>
+				);
+			},
+		},
+		{
+			accessorKey: "saldo",
+			header: () => <div className="text-right">Saldo</div>,
+			cell: ({ row }) => {
+				const saldo = row.getValue("saldo") as string;
+				return (
+					<div className="text-right font-medium">{formatCurrency(saldo)}</div>
+				);
+			},
+		},
+		{
+			accessorKey: "tipo",
+			header: "Tipo",
+			cell: ({ row }) => {
+				const tipo = row.getValue("tipo") as string | null;
+				return (
+					<Badge variant="outline">
+						{tipo === "P" ? "Pagar" : tipo === "R" ? "Receber" : "-"}
+					</Badge>
+				);
+			},
+		},
+		{
+			id: "acoes",
+			header: "Ações",
+			cell: ({ row }) => {
+				const financeiro = row.original;
+				// Para contas a pagar, só pode excluir se não foi pago pelo menos uma parcela
+				// Por enquanto, vamos verificar se status é "A" (Aberto) e não tem pagamento
+				const podeExcluir = financeiro.status === "A" && !financeiro.pagamento;
 
-			return (
-				<div className="flex justify-end">
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon"
-								className="h-8 w-8"
-								aria-label="Abrir menu de ações"
-							>
-								<IconDotsVertical className="size-4" />
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end">
-							<DropdownMenuItem onClick={() => onVerDetalhes(financeiro.id)}>
-								<IconEye className="size-4 mr-2" />
-								Ver detalhes
-							</DropdownMenuItem>
-							<DropdownMenuItem onClick={() => onEdit(financeiro)}>
-								<IconPencil className="size-4 mr-2" />
-								Editar
-							</DropdownMenuItem>
-							{podeExcluir && (
-								<>
-									<DropdownMenuSeparator />
-									<DropdownMenuItem
-										variant="destructive"
-										onClick={() => onDelete(financeiro.id)}
-									>
-										<IconTrash className="size-4 mr-2" />
-										Excluir
-									</DropdownMenuItem>
-								</>
-							)}
-						</DropdownMenuContent>
-					</DropdownMenu>
-				</div>
-			);
+				return (
+					<div className="flex justify-end">
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon"
+									className="h-8 w-8"
+									aria-label="Abrir menu de ações"
+								>
+									<IconDotsVertical className="size-4" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="end">
+								<DropdownMenuItem onClick={() => onVerDetalhes(financeiro.id)}>
+									<IconEye className="size-4 mr-2" />
+									Ver detalhes
+								</DropdownMenuItem>
+								<DropdownMenuItem onClick={() => onEdit(financeiro)}>
+									<IconPencil className="size-4 mr-2" />
+									Editar
+								</DropdownMenuItem>
+								{podeExcluir && (
+									<>
+										<DropdownMenuSeparator />
+										<DropdownMenuItem
+											variant="destructive"
+											onClick={() => onDelete(financeiro.id)}
+										>
+											<IconTrash className="size-4 mr-2" />
+											Excluir
+										</DropdownMenuItem>
+									</>
+								)}
+							</DropdownMenuContent>
+						</DropdownMenu>
+					</div>
+				);
+			},
+			enableHiding: false,
 		},
-		enableHiding: false,
-	},
-];
+	];
 
 export default function ContasAPagarPage() {
 	const router = useRouter();
@@ -349,9 +350,18 @@ export default function ContasAPagarPage() {
 							</p>
 						</div>
 					) : isLoading ? (
-						<div className="flex items-center justify-center py-8">
-							<div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-						</div>
+						<TableSkeleton rows={10} columns={10}>
+							<TableCell>Documento</TableCell>
+							<TableCell>Nome</TableCell>
+							<TableCell>Status</TableCell>
+							<TableCell>Emissão</TableCell>
+							<TableCell>Vencimento</TableCell>
+							<TableCell>Valor</TableCell>
+							<TableCell>Saldo</TableCell>
+							<TableCell className="w-24 text-end">Saldo sem juros/multa</TableCell>
+							<TableCell>Tipo</TableCell>
+							<TableCell className="w-12">Ações</TableCell>
+						</TableSkeleton>
 					) : (
 						<>
 							<Table>
@@ -372,9 +382,9 @@ export default function ContasAPagarPage() {
 													{header.isPlaceholder
 														? null
 														: flexRender(
-																header.column.columnDef.header,
-																header.getContext(),
-															)}
+															header.column.columnDef.header,
+															header.getContext(),
+														)}
 												</TableHead>
 											))}
 										</TableRow>

@@ -36,6 +36,7 @@ import {
 	auditoriaService,
 } from "@/services/auditoria.service";
 import { PageContainer } from "../components/page-container";
+import { TableSkeleton } from "@/components/table-skeleton";
 
 dayjs.locale("pt-br");
 
@@ -46,60 +47,60 @@ type ColumnsProps = {
 const createColumns = ({
 	onViewDetails,
 }: ColumnsProps): ColumnDef<Auditoria>[] => [
-	{
-		accessorKey: "acao",
-		header: "Ação",
-		cell: ({ row }) => (
-			<div className="font-medium">{row.getValue("acao")}</div>
-		),
-	},
-	{
-		accessorKey: "recurso",
-		header: "Recurso",
-		cell: ({ row }) => <div>{row.getValue("recurso")}</div>,
-	},
-	{
-		accessorKey: "idrecurso",
-		header: "ID Recurso",
-		cell: ({ row }) => (
-			<div className="text-muted-foreground">
-				{row.getValue("idrecurso") || "-"}
-			</div>
-		),
-	},
-	{
-		accessorKey: "criadoem",
-		header: "Data/Hora",
-		cell: ({ row }) => {
-			const data = row.getValue("criadoem") as string;
-			return (
-				<div>
-					{dayjs(data).format("DD/MM/YYYY HH:mm:ss")}
-				</div>
-			);
+		{
+			accessorKey: "acao",
+			header: "Ação",
+			cell: ({ row }) => (
+				<div className="font-medium">{row.getValue("acao")}</div>
+			),
 		},
-	},
-	{
-		id: "acoes",
-		header: "Ações",
-		cell: ({ row }) => {
-			const auditoria = row.original;
-			return (
-				<div className="flex justify-end">
-					<Button
-						variant="ghost"
-						size="sm"
-						onClick={() => onViewDetails(auditoria)}
-						className="gap-2"
-					>
-						<IconEye className="size-4" />
-						Ver Detalhes
-					</Button>
-				</div>
-			);
+		{
+			accessorKey: "recurso",
+			header: "Recurso",
+			cell: ({ row }) => <div>{row.getValue("recurso")}</div>,
 		},
-	},
-];
+		{
+			accessorKey: "idrecurso",
+			header: "ID Recurso",
+			cell: ({ row }) => (
+				<div className="text-muted-foreground">
+					{row.getValue("idrecurso") || "-"}
+				</div>
+			),
+		},
+		{
+			accessorKey: "criadoem",
+			header: "Data/Hora",
+			cell: ({ row }) => {
+				const data = row.getValue("criadoem") as string;
+				return (
+					<div>
+						{dayjs(data).format("DD/MM/YYYY HH:mm:ss")}
+					</div>
+				);
+			},
+		},
+		{
+			id: "acoes",
+			header: "Ações",
+			cell: ({ row }) => {
+				const auditoria = row.original;
+				return (
+					<div className="flex justify-end">
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={() => onViewDetails(auditoria)}
+							className="gap-2"
+						>
+							<IconEye className="size-4" />
+							Ver Detalhes
+						</Button>
+					</div>
+				);
+			},
+		},
+	];
 
 export default function AuditoriaPage() {
 	const { localStorageEmpresa } = useEmpresa();
@@ -171,9 +172,13 @@ export default function AuditoriaPage() {
 							</p>
 						</div>
 					) : isLoading ? (
-						<div className="flex items-center justify-center py-8">
-							<div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-						</div>
+						<TableSkeleton rows={10} columns={5}>
+							<TableHead>Ação</TableHead>
+							<TableHead>Recurso</TableHead>
+							<TableHead>ID Recurso</TableHead>
+							<TableHead>Data/Hora</TableHead>
+							<TableHead className="w-36 text-end">Ações</TableHead>
+						</TableSkeleton>
 					) : (
 						<>
 							<Table>
@@ -190,9 +195,9 @@ export default function AuditoriaPage() {
 													{header.isPlaceholder
 														? null
 														: flexRender(
-																header.column.columnDef.header,
-																header.getContext(),
-															)}
+															header.column.columnDef.header,
+															header.getContext(),
+														)}
 												</TableHead>
 											))}
 										</TableRow>
