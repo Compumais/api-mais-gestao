@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+﻿import { and, eq } from "drizzle-orm";
 import { auth } from "@/lib/auth.js";
 import type { HttpResponse } from "@/model/http-model.js";
 import type { Usuario } from "@/model/usuario-model.js";
@@ -8,7 +8,7 @@ import { buscarUsuarioPorId } from "@/repositories/usuarios-repositories.js";
 import {
 	httpCriacao,
 	httpErroInterno,
-	httpNaoAutorizado,
+	httpProibido,
 } from "@/util/http-util.js";
 import * as schema from "../../../drizzle/schema.js";
 
@@ -22,6 +22,22 @@ type CriarUsuarioParametros = {
 	empresasIds?: string[]; // IDs das empresas que o usuário pode ver
 };
 
+async function rollbackCriacaoUsuario(novoUsuarioId: string) {
+	try {
+		await db
+			.delete(schema.usuarioEmpresa)
+			.where(eq(schema.usuarioEmpresa.idusuario, novoUsuarioId));
+	} catch (error) {
+		console.error("Erro ao remover vinculos usuario_empresa no rollback:", error);
+	}
+
+	try {
+		await db.delete(schema.usuarios).where(eq(schema.usuarios.id, novoUsuarioId));
+	} catch (error) {
+		console.error("Erro ao remover usuario no rollback:", error);
+	}
+}
+
 export async function criarUsuarioService({
 	idusuario,
 	idempresa,
@@ -31,18 +47,18 @@ export async function criarUsuarioService({
 	perfil,
 	empresasIds = [],
 }: CriarUsuarioParametros): Promise<HttpResponse<Usuario | null>> {
-	// Verificar se o usuário que está criando pertence à empresa
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
 		idusuario,
 		idempresa,
 	);
 
 	if (!usuarioPertenceEmpresa) {
-		return httpNaoAutorizado();
+		return httpProibido();
 	}
 
+	let novoUsuarioId: string | null = null;
+
 	try {
-		// Criar usuário usando Better Auth
 		const resultado = await auth.api.signUpEmail({
 			body: {
 				name: nome,
@@ -55,54 +71,56 @@ export async function criarUsuarioService({
 			return httpErroInterno();
 		}
 
-		const novoUsuarioId = resultado.user.id;
+		novoUsuarioId = resultado.user.id;
 
-		// Atualizar perfil do usuário
 		const perfilArray = Array.isArray(perfil) ? perfil : [perfil];
-		await db
-			.update(schema.usuarios)
-			.set({
-				perfil: perfilArray,
-			})
-			.where(eq(schema.usuarios.id, novoUsuarioId));
-
-		// Associar usuário às empresas (incluindo a empresa atual)
 		const empresasParaAssociar = [...new Set([idempresa, ...empresasIds])];
 
-		for (const empresaId of empresasParaAssociar) {
-			// Verificar se já existe associação
-			const [existe] = await db
-				.select()
-				.from(schema.usuarioEmpresa)
-				.where(
-					and(
-						eq(schema.usuarioEmpresa.idusuario, novoUsuarioId),
-						eq(schema.usuarioEmpresa.idempresa, empresaId),
-					),
-				)
-				.limit(1);
+		await db.transaction(async (tx) => {
+			await tx
+				.update(schema.usuarios)
+				.set({
+					perfil: perfilArray,
+				})
+				.where(eq(schema.usuarios.id, novoUsuarioId as string));
 
-			if (!existe) {
-				await db.insert(schema.usuarioEmpresa).values({
-					id: crypto.randomUUID(),
-					idusuario: novoUsuarioId,
-					idempresa: empresaId,
-					criadoem: new Date().toISOString(),
-					atualizadoem: new Date().toISOString(),
-				});
+			for (const empresaId of empresasParaAssociar) {
+				const [existe] = await tx
+					.select()
+					.from(schema.usuarioEmpresa)
+					.where(
+						and(
+							eq(schema.usuarioEmpresa.idusuario, novoUsuarioId as string),
+							eq(schema.usuarioEmpresa.idempresa, empresaId),
+						),
+					)
+					.limit(1);
+
+				if (!existe) {
+					await tx.insert(schema.usuarioEmpresa).values({
+						id: crypto.randomUUID(),
+						idusuario: novoUsuarioId as string,
+						idempresa: empresaId,
+						criadoem: new Date().toISOString(),
+						atualizadoem: new Date().toISOString(),
+					});
+				}
 			}
-		}
+		});
 
-		// Buscar usuário criado
 		const usuario = await buscarUsuarioPorId(novoUsuarioId);
 
 		if (!usuario) {
+			await rollbackCriacaoUsuario(novoUsuarioId);
 			return httpErroInterno();
 		}
 
 		return httpCriacao<Usuario>(usuario);
 	} catch (error) {
 		console.error("Erro ao criar usuário:", error);
+		if (novoUsuarioId) {
+			await rollbackCriacaoUsuario(novoUsuarioId);
+		}
 		return httpErroInterno();
 	}
 }
