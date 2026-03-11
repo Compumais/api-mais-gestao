@@ -1,4 +1,4 @@
-const ASAAS_API_URL =
+﻿const ASAAS_API_URL =
 	process.env.ASAAS_API_URL || "https://sandbox.asaas.com/api/v3";
 const ASAAS_API_KEY = process.env.ASAAS_API_KEY;
 
@@ -24,7 +24,17 @@ interface AsaasSubscription {
 	description?: string;
 	externalReference?: string;
 	status: string;
-	invoiceUrl?: string; // Sometimes returned
+	invoiceUrl?: string;
+}
+
+interface AsaasPayment {
+	id: string;
+	customer: string;
+	billingType: "CREDIT_CARD";
+	value: number;
+	dueDate: string;
+	status: string;
+	invoiceUrl?: string;
 }
 
 interface CreateCustomerDTO {
@@ -41,6 +51,35 @@ interface CreateSubscriptionDTO {
 	value: number;
 	nextDueDate: string;
 	cycle: "MONTHLY";
+	description?: string;
+	externalReference?: string;
+	creditCard?: {
+		holderName: string;
+		number: string;
+		expiryMonth: string;
+		expiryYear: string;
+		ccv: string;
+	};
+	creditCardHolderInfo?: {
+		name: string;
+		email: string;
+		cpfCnpj: string;
+		postalCode?: string;
+		address?: string;
+		addressNumber?: string;
+		complement?: string;
+		province?: string;
+		city?: string;
+		phone: string;
+	};
+	remoteIp?: string;
+}
+
+interface CreatePaymentDTO {
+	customer: string;
+	billingType: "CREDIT_CARD";
+	value: number;
+	dueDate: string;
 	description?: string;
 	externalReference?: string;
 	creditCard?: {
@@ -113,6 +152,10 @@ export async function createSubscription(
 	data: CreateSubscriptionDTO,
 ): Promise<AsaasSubscription> {
 	return asaasRequest<AsaasSubscription>("/subscriptions", "POST", data);
+}
+
+export async function createPayment(data: CreatePaymentDTO): Promise<AsaasPayment> {
+	return asaasRequest<AsaasPayment>("/payments", "POST", data);
 }
 
 export async function getSubscription(id: string): Promise<AsaasSubscription> {

@@ -1,4 +1,4 @@
-import { and, count, desc, eq, ilike, inArray, or } from "drizzle-orm";
+﻿import { and, asc, count, desc, eq, ilike, inArray, or } from "drizzle-orm";
 import * as schema from "../../drizzle/schema.js";
 import { db } from "./connection.js";
 
@@ -24,7 +24,7 @@ export async function buscarEmpresaPorId(id: string) {
 }
 
 /**
- * Verifica se um usuário é proprietário de alguma empresa
+ * Verifica se um usuÃ¡rio Ã© proprietÃ¡rio de alguma empresa
  */
 export async function verificarUsuarioEhProprietario(
 	idusuario: string,
@@ -35,6 +35,19 @@ export async function verificarUsuarioEhProprietario(
 		.where(eq(schema.empresa.idproprietario, idusuario));
 
 	return (resultado?.value ?? 0) > 0;
+}
+/**
+ * Retorna a empresa "âncora" de cobrança do proprietário (a mais antiga).
+ */
+export async function buscarEmpresaCobrancaDoProprietario(idusuario: string) {
+	const [empresa] = await db
+		.select()
+		.from(schema.empresa)
+		.where(eq(schema.empresa.idproprietario, idusuario))
+		.orderBy(asc(schema.empresa.criadoem))
+		.limit(1);
+
+	return empresa;
 }
 
 export async function atualizarEmpresa(
@@ -144,21 +157,21 @@ export async function listarEmpresas({
 		}
 	}
 
-	// Se idproprietario for passado, buscar empresas onde é proprietário
+	// Se idproprietario for passado, buscar empresas onde Ã© proprietÃ¡rio
 	if (idproprietario) {
 		orConditions.push(eq(schema.empresa.idproprietario, idproprietario));
 	}
 
-	// Se houver condições OR (idusuario ou idproprietario), adicionar ao where
+	// Se houver condiÃ§Ãµes OR (idusuario ou idproprietario), adicionar ao where
 	if (orConditions.length === 1) {
-		// Se houver apenas uma condição, adicionar diretamente (não precisa de OR)
+		// Se houver apenas uma condiÃ§Ã£o, adicionar diretamente (nÃ£o precisa de OR)
 		where.push(orConditions[0]);
 	} else if (orConditions.length > 1) {
-		// Se houver múltiplas condições, usar OR
+		// Se houver mÃºltiplas condiÃ§Ãµes, usar OR
 		where.push(or(...orConditions));
 	}
 
-	// Filtros adicionais (nome, cnpj, telefone) são aplicados com AND
+	// Filtros adicionais (nome, cnpj, telefone) sÃ£o aplicados com AND
 	if (nome) {
 		where.push(ilike(schema.empresa.nome, `%${nome}%`));
 	}
@@ -190,3 +203,4 @@ export async function listarEmpresas({
 		total: totalCount[0]?.value ?? 0,
 	};
 }
+
