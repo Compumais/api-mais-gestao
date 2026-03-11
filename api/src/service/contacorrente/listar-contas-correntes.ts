@@ -1,8 +1,10 @@
-import type { HttpResponse } from "@/model/http-model.js";
+﻿import type { HttpResponse } from "@/model/http-model.js";
 import { listarContaCorrentePorEmpresa } from "@/repositories/conta-corrente-repositories.js";
-import { httpOk } from "@/util/http-util.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { httpNaoEncontrado, httpOk } from "@/util/http-util.js";
 
 interface ListarContasCorrentesParametros {
+	idusuario: string;
 	idempresa: string;
 	page?: number;
 	limit?: number;
@@ -23,33 +25,27 @@ interface ListarContasCorrentesResposta {
 }
 
 export async function listarContasCorrentesService({
+	idusuario,
 	idempresa,
 	page = 1,
 	limit = 10,
 }: ListarContasCorrentesParametros): Promise<
 	HttpResponse<ListarContasCorrentesResposta>
 > {
+	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
+		idusuario,
+		idempresa,
+	);
+
+	if (!usuarioPertenceEmpresa) {
+		return httpNaoEncontrado();
+	}
+
 	const { contasCorrentes, total } = await listarContaCorrentePorEmpresa({
 		idempresas: [idempresa],
 		limit,
 		page,
 	});
-
-	if (!contasCorrentes) {
-		return {
-			success: true,
-			body: {
-				data: [],
-				paginacao: {
-					page,
-					limit,
-					total: 0,
-					totalPages: 0,
-				},
-			},
-			status: 204,
-		};
-	}
 
 	const totalPages = Math.ceil(total / limit);
 

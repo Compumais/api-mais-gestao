@@ -1,6 +1,7 @@
-import type { FastifyReply, FastifyRequest } from "fastify";
+﻿import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import { buscarEmpresaService } from "../../../service/empresa/buscar-empresa.js";
+import { httpNaoAutorizado } from "../../../util/http-util.js";
 
 const buscarEmpresaParamsSchema = z.object({
 	id: z.string().uuid(),
@@ -11,9 +12,16 @@ export async function buscarEmpresa(
 	reply: FastifyReply,
 ) {
 	try {
+		if (!request.user) {
+			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
+		}
+
 		const { id } = buscarEmpresaParamsSchema.parse(request.params);
 
-		const resultado = await buscarEmpresaService(id);
+		const resultado = await buscarEmpresaService({
+			idusuario: request.user.id,
+			id,
+		});
 
 		if (!resultado.success) {
 			return reply.status(resultado.status).send(resultado);

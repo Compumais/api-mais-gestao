@@ -1,4 +1,4 @@
-import type { FastifyReply, FastifyRequest } from "fastify";
+﻿import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import { buscarContaCorrenteLancamentoPorIdService } from "@/service/contacorrentelancamento/buscar-por-id.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
@@ -13,19 +13,18 @@ export async function buscarContaCorrenteLancamento(
 ) {
 	try {
 		if (!request.user) {
-			return reply
-				.status(httpNaoAutorizado().status)
-				.send(httpNaoAutorizado().error);
+			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
 		}
 
-		const { id } = buscarContaCorrenteLancamentoParamsSchema.parse(
-			request.params,
-		);
+		const { id } = buscarContaCorrenteLancamentoParamsSchema.parse(request.params);
 
-		const resultado = await buscarContaCorrenteLancamentoPorIdService(id);
+		const resultado = await buscarContaCorrenteLancamentoPorIdService({
+			idusuario: request.user.id,
+			id,
+		});
 
 		if (!resultado.success) {
-			return reply.status(resultado.status).send(resultado.error);
+			return reply.status(resultado.status).send(resultado);
 		}
 
 		return reply.status(resultado.status).send(resultado.body);
@@ -40,6 +39,6 @@ export async function buscarContaCorrenteLancamento(
 			});
 		}
 
-		return reply.status(httpErroInterno().status).send(httpErroInterno().error);
+		return reply.status(httpErroInterno().status).send(httpErroInterno());
 	}
 }

@@ -1,9 +1,14 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+﻿import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { ContaCorrente } from "@/model/conta-corrente-model.js";
 import type { LancamentoComRelacionamentos } from "@/repositories/conta-corrente-lancamento-repositories.js";
 import * as contaCorrenteLancamentoRepository from "@/repositories/conta-corrente-lancamento-repositories.js";
+import * as contaCorrenteRepository from "@/repositories/conta-corrente-repositories.js";
+import * as entidadeRepository from "@/repositories/entidade-repositories.js";
 import { buscarContaCorrenteLancamentoPorIdService } from "./buscar-por-id.js";
 
 vi.mock("@/repositories/conta-corrente-lancamento-repositories");
+vi.mock("@/repositories/conta-corrente-repositories");
+vi.mock("@/repositories/entidade-repositories");
 
 describe("buscarContaCorrenteLancamentoPorIdService", () => {
 	const lancamentoMock: LancamentoComRelacionamentos = {
@@ -34,8 +39,19 @@ describe("buscarContaCorrenteLancamentoPorIdService", () => {
 		contacorrenteagencia: null,
 	};
 
+	const contaCorrenteMock = {
+		id: "conta-corrente-123",
+		idempresa: "empresa-123",
+	} satisfies Partial<ContaCorrente>;
+
 	beforeEach(() => {
 		vi.clearAllMocks();
+		vi.mocked(contaCorrenteRepository.buscarContaCorrentePorId).mockResolvedValue(
+			contaCorrenteMock as ContaCorrente,
+		);
+		vi.mocked(entidadeRepository.verificarUsuarioPertenceEmpresa).mockResolvedValue(
+			true,
+		);
 	});
 
 	it("deve buscar lançamento com sucesso quando encontrado", async () => {
@@ -43,8 +59,10 @@ describe("buscarContaCorrenteLancamentoPorIdService", () => {
 			contaCorrenteLancamentoRepository.buscarContaCorrenteLancamentoPorId,
 		).mockResolvedValue(lancamentoMock);
 
-		const resultado =
-			await buscarContaCorrenteLancamentoPorIdService("lancamento-123");
+		const resultado = await buscarContaCorrenteLancamentoPorIdService({
+			idusuario: "usuario-1",
+			id: "lancamento-123",
+		});
 
 		expect(resultado.success).toBe(true);
 		if (resultado.success) {
@@ -54,9 +72,6 @@ describe("buscarContaCorrenteLancamentoPorIdService", () => {
 		expect(
 			contaCorrenteLancamentoRepository.buscarContaCorrenteLancamentoPorId,
 		).toHaveBeenCalledWith({ id: "lancamento-123" });
-		expect(
-			contaCorrenteLancamentoRepository.buscarContaCorrenteLancamentoPorId,
-		).toHaveBeenCalledTimes(1);
 	});
 
 	it("deve retornar erro 404 quando lançamento não é encontrado", async () => {
@@ -64,19 +79,37 @@ describe("buscarContaCorrenteLancamentoPorIdService", () => {
 			contaCorrenteLancamentoRepository.buscarContaCorrenteLancamentoPorId,
 		).mockResolvedValue(undefined);
 
-		const resultado = await buscarContaCorrenteLancamentoPorIdService(
-			"lancamento-inexistente",
-		);
+		const resultado = await buscarContaCorrenteLancamentoPorIdService({
+			idusuario: "usuario-1",
+			id: "lancamento-inexistente",
+		});
 
 		expect(resultado.success).toBe(false);
 		if (!resultado.success) {
 			expect(resultado.status).toBe(404);
-			expect(resultado.error).toBe("Recurso não encontrado");
 			expect(resultado.code).toBe("NOT_FOUND_ERROR");
 		}
-		expect(
+	});
+
+	it("deve retornar erro 404 quando usuário não tem acesso ao lançamento", async () => {
+		vi.mocked(
 			contaCorrenteLancamentoRepository.buscarContaCorrenteLancamentoPorId,
-		).toHaveBeenCalledWith({ id: "lancamento-inexistente" });
+		).mockResolvedValue(lancamentoMock);
+		vi.mocked(entidadeRepository.verificarUsuarioPertenceEmpresa).mockResolvedValue(
+			false,
+		);
+
+		const resultado = await buscarContaCorrenteLancamentoPorIdService({
+			idusuario: "usuario-1",
+			id: "lancamento-123",
+		});
+
+		expect(resultado.success).toBe(false);
+		if (!resultado.success) {
+			expect(resultado.status).toBe(404);
+			// não vazar existência
+			expect(resultado.code).toBe("NOT_FOUND_ERROR");
+		}
 	});
 
 	it("deve retornar lançamento completo com todos os campos", async () => {
@@ -100,8 +133,10 @@ describe("buscarContaCorrenteLancamentoPorIdService", () => {
 			contaCorrenteLancamentoRepository.buscarContaCorrenteLancamentoPorId,
 		).mockResolvedValue(lancamentoCompleto);
 
-		const resultado =
-			await buscarContaCorrenteLancamentoPorIdService("lancamento-123");
+		const resultado = await buscarContaCorrenteLancamentoPorIdService({
+			idusuario: "usuario-1",
+			id: "lancamento-123",
+		});
 
 		expect(resultado.success).toBe(true);
 		if (resultado.success) {

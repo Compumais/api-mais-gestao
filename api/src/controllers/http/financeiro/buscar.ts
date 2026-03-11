@@ -1,6 +1,7 @@
-import type { FastifyReply, FastifyRequest } from "fastify";
+﻿import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import { buscarFinanceiroService } from "@/service/financeiro/buscar-financeiro.js";
+import { httpNaoAutorizado } from "@/util/http-util.js";
 
 const buscarFinanceiroParamsSchema = z.object({
 	id: z.string().uuid(),
@@ -11,9 +12,16 @@ export async function buscarFinanceiro(
 	reply: FastifyReply,
 ) {
 	try {
+		if (!request.user) {
+			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
+		}
+
 		const { id } = buscarFinanceiroParamsSchema.parse(request.params);
 
-		const resultado = await buscarFinanceiroService(id);
+		const resultado = await buscarFinanceiroService({
+			idusuario: request.user.id,
+			id,
+		});
 
 		if (!resultado.success) {
 			return reply.status(resultado.status).send(resultado);

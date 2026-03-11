@@ -1,9 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+﻿import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ContaCorrente } from "@/model/conta-corrente-model.js";
 import * as contaCorrenteRepository from "@/repositories/conta-corrente-repositories.js";
+import * as entidadeRepository from "@/repositories/entidade-repositories.js";
 import { buscarContaCorrentePorIdService } from "./buscar-por-id.js";
 
 vi.mock("@/repositories/conta-corrente-repositories");
+vi.mock("@/repositories/entidade-repositories");
 
 describe("buscarContaCorrentePorIdService", () => {
 	const contaCorrenteMock: ContaCorrente = {
@@ -126,14 +128,18 @@ describe("buscarContaCorrentePorIdService", () => {
 
 	beforeEach(() => {
 		vi.clearAllMocks();
+		vi.mocked(entidadeRepository.verificarUsuarioPertenceEmpresa).mockResolvedValue(
+			true,
+		);
 	});
 
 	it("deve buscar conta corrente com sucesso quando existe", async () => {
-		vi.mocked(
-			contaCorrenteRepository.buscarContaCorrentePorId,
-		).mockResolvedValue(contaCorrenteMock);
+		vi.mocked(contaCorrenteRepository.buscarContaCorrentePorId).mockResolvedValue(
+			contaCorrenteMock,
+		);
 
 		const resultado = await buscarContaCorrentePorIdService({
+			idusuario: "usuario-1",
 			id: "conta-corrente-123",
 		});
 
@@ -142,55 +148,78 @@ describe("buscarContaCorrentePorIdService", () => {
 			expect(resultado.status).toBe(200);
 			expect(resultado.body).toEqual(contaCorrenteMock);
 		}
-		expect(
-			contaCorrenteRepository.buscarContaCorrentePorId,
-		).toHaveBeenCalledTimes(1);
-		expect(
-			contaCorrenteRepository.buscarContaCorrentePorId,
-		).toHaveBeenCalledWith({
-			id: "conta-corrente-123",
-		});
+		expect(contaCorrenteRepository.buscarContaCorrentePorId).toHaveBeenCalledTimes(
+			1,
+		);
+		expect(contaCorrenteRepository.buscarContaCorrentePorId).toHaveBeenCalledWith(
+			{
+				id: "conta-corrente-123",
+			},
+		);
 	});
 
 	it("deve retornar erro 404 quando conta corrente não existe", async () => {
-		vi.mocked(
-			contaCorrenteRepository.buscarContaCorrentePorId,
-		).mockResolvedValue(undefined);
+		vi.mocked(contaCorrenteRepository.buscarContaCorrentePorId).mockResolvedValue(
+			undefined,
+		);
 
 		const resultado = await buscarContaCorrentePorIdService({
+			idusuario: "usuario-1",
 			id: "conta-corrente-inexistente",
 		});
 
 		expect(resultado.success).toBe(false);
 		if (!resultado.success) {
 			expect(resultado.status).toBe(404);
-			expect(resultado.error).toBe("Recurso não encontrado");
+			expect(resultado.error).toBe("Recurso nÃ£o encontrado");
 			expect(resultado.code).toBe("NOT_FOUND_ERROR");
 		}
-		expect(
-			contaCorrenteRepository.buscarContaCorrentePorId,
-		).toHaveBeenCalledTimes(1);
-		expect(
-			contaCorrenteRepository.buscarContaCorrentePorId,
-		).toHaveBeenCalledWith({
-			id: "conta-corrente-inexistente",
+		expect(contaCorrenteRepository.buscarContaCorrentePorId).toHaveBeenCalledTimes(
+			1,
+		);
+		expect(contaCorrenteRepository.buscarContaCorrentePorId).toHaveBeenCalledWith(
+			{
+				id: "conta-corrente-inexistente",
+			},
+		);
+	});
+
+	it("deve retornar erro 404 quando usuário não tem acesso à conta corrente", async () => {
+		vi.mocked(contaCorrenteRepository.buscarContaCorrentePorId).mockResolvedValue(
+			contaCorrenteMock,
+		);
+		vi.mocked(entidadeRepository.verificarUsuarioPertenceEmpresa).mockResolvedValue(
+			false,
+		);
+
+		const resultado = await buscarContaCorrentePorIdService({
+			idusuario: "usuario-1",
+			id: "conta-corrente-123",
 		});
+
+		expect(resultado.success).toBe(false);
+		if (!resultado.success) {
+			expect(resultado.status).toBe(404);
+			expect(resultado.code).toBe("NOT_FOUND_ERROR");
+		}
 	});
 
 	it("deve retornar erro 404 quando conta corrente é null", async () => {
-		vi.mocked(
-			contaCorrenteRepository.buscarContaCorrentePorId,
-		).mockResolvedValue(null as any);
+		vi.mocked(contaCorrenteRepository.buscarContaCorrentePorId).mockResolvedValue(
+			null as any,
+		);
 
 		const resultado = await buscarContaCorrentePorIdService({
+			idusuario: "usuario-1",
 			id: "conta-corrente-null",
 		});
 
 		expect(resultado.success).toBe(false);
 		if (!resultado.success) {
 			expect(resultado.status).toBe(404);
-			expect(resultado.error).toBe("Recurso não encontrado");
+			expect(resultado.error).toBe("Recurso nÃ£o encontrado");
 			expect(resultado.code).toBe("NOT_FOUND_ERROR");
 		}
 	});
 });
+

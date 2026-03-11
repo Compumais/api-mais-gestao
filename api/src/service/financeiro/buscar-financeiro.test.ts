@@ -1,9 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+﻿import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Financeiro } from "@/model/financeiro-model.js";
+import * as entidadeRepository from "@/repositories/entidade-repositories.js";
 import * as financeiroRepository from "@/repositories/financeiro-repositories.js";
 import { buscarFinanceiroService } from "./buscar-financeiro.js";
 
 vi.mock("@/repositories/financeiro-repositories");
+vi.mock("@/repositories/entidade-repositories");
 
 describe("buscarFinanceiroService", () => {
 	const financeiroMock: Financeiro = {
@@ -114,6 +116,9 @@ describe("buscarFinanceiroService", () => {
 
 	beforeEach(() => {
 		vi.clearAllMocks();
+		vi.mocked(entidadeRepository.verificarUsuarioPertenceEmpresa).mockResolvedValue(
+			true,
+		);
 	});
 
 	it("deve buscar financeiro existente com sucesso", async () => {
@@ -121,7 +126,10 @@ describe("buscarFinanceiroService", () => {
 			financeiroMock,
 		);
 
-		const resultado = await buscarFinanceiroService("financeiro-123");
+		const resultado = await buscarFinanceiroService({
+			idusuario: "usuario-1",
+			id: "financeiro-123",
+		});
 
 		expect(resultado.success).toBe(true);
 		if (resultado.success) {
@@ -139,12 +147,15 @@ describe("buscarFinanceiroService", () => {
 			undefined,
 		);
 
-		const resultado = await buscarFinanceiroService("financeiro-inexistente");
+		const resultado = await buscarFinanceiroService({
+			idusuario: "usuario-1",
+			id: "financeiro-inexistente",
+		});
 
 		expect(resultado.success).toBe(false);
 		if (!resultado.success) {
 			expect(resultado.status).toBe(404);
-			expect(resultado.error).toBe("Recurso não encontrado");
+			expect(resultado.error).toBe("Recurso nÃ£o encontrado");
 			expect(resultado.code).toBe("NOT_FOUND_ERROR");
 		}
 		expect(financeiroRepository.buscarFinanceiroPorId).toHaveBeenCalledTimes(1);
@@ -153,17 +164,40 @@ describe("buscarFinanceiroService", () => {
 		);
 	});
 
+	it("deve retornar erro 404 quando usuário não tem acesso ao financeiro", async () => {
+		vi.mocked(financeiroRepository.buscarFinanceiroPorId).mockResolvedValue(
+			financeiroMock,
+		);
+		vi.mocked(entidadeRepository.verificarUsuarioPertenceEmpresa).mockResolvedValue(
+			false,
+		);
+
+		const resultado = await buscarFinanceiroService({
+			idusuario: "usuario-1",
+			id: "financeiro-123",
+		});
+
+		expect(resultado.success).toBe(false);
+		if (!resultado.success) {
+			expect(resultado.status).toBe(404);
+			expect(resultado.code).toBe("NOT_FOUND_ERROR");
+		}
+	});
+
 	it("deve retornar erro 404 quando financeiro é null", async () => {
 		vi.mocked(financeiroRepository.buscarFinanceiroPorId).mockResolvedValue(
 			null as any,
 		);
 
-		const resultado = await buscarFinanceiroService("financeiro-null");
+		const resultado = await buscarFinanceiroService({
+			idusuario: "usuario-1",
+			id: "financeiro-null",
+		});
 
 		expect(resultado.success).toBe(false);
 		if (!resultado.success) {
 			expect(resultado.status).toBe(404);
-			expect(resultado.error).toBe("Recurso não encontrado");
+			expect(resultado.error).toBe("Recurso nÃ£o encontrado");
 			expect(resultado.code).toBe("NOT_FOUND_ERROR");
 		}
 		expect(financeiroRepository.buscarFinanceiroPorId).toHaveBeenCalledTimes(1);
@@ -181,7 +215,10 @@ describe("buscarFinanceiroService", () => {
 			financeiroEspecifico,
 		);
 
-		const resultado = await buscarFinanceiroService("financeiro-456");
+		const resultado = await buscarFinanceiroService({
+			idusuario: "usuario-1",
+			id: "financeiro-456",
+		});
 
 		expect(resultado.success).toBe(true);
 		if (resultado.success) {
@@ -191,3 +228,4 @@ describe("buscarFinanceiroService", () => {
 		}
 	});
 });
+

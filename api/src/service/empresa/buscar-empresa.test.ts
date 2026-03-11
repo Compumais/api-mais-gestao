@@ -1,9 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+﻿import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Empresa } from "@/model/empresa-model.js";
+import * as entidadeRepository from "@/repositories/entidade-repositories.js";
 import * as empresaRepository from "@/repositories/empresa-repositories.js";
 import { buscarEmpresaService } from "./buscar-empresa.js";
 
 vi.mock("@/repositories/empresa-repositories");
+vi.mock("@/repositories/entidade-repositories");
 
 describe("buscarEmpresaService", () => {
 	const empresaMock: Empresa = {
@@ -20,14 +22,18 @@ describe("buscarEmpresaService", () => {
 
 	beforeEach(() => {
 		vi.clearAllMocks();
+		vi.mocked(entidadeRepository.verificarUsuarioPertenceEmpresa).mockResolvedValue(
+			true,
+		);
 	});
 
 	it("deve buscar uma empresa existente com sucesso", async () => {
-		vi.mocked(empresaRepository.buscarEmpresaPorId).mockResolvedValue(
-			empresaMock,
-		);
+		vi.mocked(empresaRepository.buscarEmpresaPorId).mockResolvedValue(empresaMock);
 
-		const resultado = await buscarEmpresaService("empresa-123");
+		const resultado = await buscarEmpresaService({
+			idusuario: "usuario-1",
+			id: "empresa-123",
+		});
 
 		expect(resultado.success).toBe(true);
 		if (resultado.success) {
@@ -35,41 +41,57 @@ describe("buscarEmpresaService", () => {
 			expect(resultado.body).toEqual(empresaMock);
 		}
 		expect(empresaRepository.buscarEmpresaPorId).toHaveBeenCalledTimes(1);
-		expect(empresaRepository.buscarEmpresaPorId).toHaveBeenCalledWith(
-			"empresa-123",
-		);
+		expect(empresaRepository.buscarEmpresaPorId).toHaveBeenCalledWith("empresa-123");
 	});
 
 	it("deve retornar erro 404 quando empresa não é encontrada", async () => {
-		vi.mocked(empresaRepository.buscarEmpresaPorId).mockResolvedValue(
-			undefined,
-		);
+		vi.mocked(empresaRepository.buscarEmpresaPorId).mockResolvedValue(undefined);
 
-		const resultado = await buscarEmpresaService("empresa-inexistente");
+		const resultado = await buscarEmpresaService({
+			idusuario: "usuario-1",
+			id: "empresa-inexistente",
+		});
 
 		expect(resultado.success).toBe(false);
 		if (!resultado.success) {
 			expect(resultado.status).toBe(404);
-			expect(resultado.error).toBe("Recurso não encontrado");
+			expect(resultado.error).toBe("Recurso nÃ£o encontrado");
 			expect(resultado.code).toBe("NOT_FOUND_ERROR");
 		}
 		expect(empresaRepository.buscarEmpresaPorId).toHaveBeenCalledTimes(1);
-		expect(empresaRepository.buscarEmpresaPorId).toHaveBeenCalledWith(
-			"empresa-inexistente",
-		);
+		expect(empresaRepository.buscarEmpresaPorId).toHaveBeenCalledWith("empresa-inexistente");
 	});
 
-	it("deve retornar erro 404 quando empresa é null", async () => {
-		vi.mocked(empresaRepository.buscarEmpresaPorId).mockResolvedValue(
-			null as any,
+	it("deve retornar erro 404 quando usuário não tem acesso à empresa", async () => {
+		vi.mocked(empresaRepository.buscarEmpresaPorId).mockResolvedValue(empresaMock);
+		vi.mocked(entidadeRepository.verificarUsuarioPertenceEmpresa).mockResolvedValue(
+			false,
 		);
 
-		const resultado = await buscarEmpresaService("empresa-null");
+		const resultado = await buscarEmpresaService({
+			idusuario: "usuario-1",
+			id: "empresa-123",
+		});
 
 		expect(resultado.success).toBe(false);
 		if (!resultado.success) {
 			expect(resultado.status).toBe(404);
-			expect(resultado.error).toBe("Recurso não encontrado");
+			expect(resultado.code).toBe("NOT_FOUND_ERROR");
+		}
+	});
+
+	it("deve retornar erro 404 quando empresa é null", async () => {
+		vi.mocked(empresaRepository.buscarEmpresaPorId).mockResolvedValue(null as any);
+
+		const resultado = await buscarEmpresaService({
+			idusuario: "usuario-1",
+			id: "empresa-null",
+		});
+
+		expect(resultado.success).toBe(false);
+		if (!resultado.success) {
+			expect(resultado.status).toBe(404);
+			expect(resultado.error).toBe("Recurso nÃ£o encontrado");
 			expect(resultado.code).toBe("NOT_FOUND_ERROR");
 		}
 		expect(empresaRepository.buscarEmpresaPorId).toHaveBeenCalledTimes(1);
@@ -88,11 +110,12 @@ describe("buscarEmpresaService", () => {
 			atualizadoem: "2024-01-02T00:00:00.000Z",
 		};
 
-		vi.mocked(empresaRepository.buscarEmpresaPorId).mockResolvedValue(
-			empresaEspecifica,
-		);
+		vi.mocked(empresaRepository.buscarEmpresaPorId).mockResolvedValue(empresaEspecifica);
 
-		const resultado = await buscarEmpresaService("empresa-456");
+		const resultado = await buscarEmpresaService({
+			idusuario: "usuario-1",
+			id: "empresa-456",
+		});
 
 		expect(resultado.success).toBe(true);
 		if (resultado.success) {
@@ -102,3 +125,4 @@ describe("buscarEmpresaService", () => {
 		}
 	});
 });
+
