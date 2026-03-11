@@ -1,18 +1,19 @@
-import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it } from "vitest";
 import {
 	httpCriacao,
 	httpErroInterno,
 	httpLimiteExcedido,
 	httpNaoAutorizado,
 	httpNaoEncontrado,
-	httpOk,
+\thttpBadGateway,
+\thttpOk,
 	httpRecursoExistente,
 	httpSemConteudo,
 } from "./http-util.js";
 
 describe("http-util", () => {
 	describe("httpCriacao", () => {
-		it("deve retornar resposta de criação com status 201 e body", () => {
+		it("deve retornar resposta de criaÃ§Ã£o com status 201 e body", () => {
 			const dados = { id: "123", nome: "Teste" };
 			const resultado = httpCriacao(dados);
 
@@ -23,7 +24,7 @@ describe("http-util", () => {
 			}
 		});
 
-		it("deve funcionar com tipos genéricos diferentes", () => {
+		it("deve funcionar com tipos genÃ©ricos diferentes", () => {
 			const resultadoString = httpCriacao("teste");
 			const resultadoNumber = httpCriacao(42);
 			const resultadoArray = httpCriacao([1, 2, 3]);
@@ -49,7 +50,7 @@ describe("http-util", () => {
 			}
 		});
 
-		it("deve funcionar com tipos genéricos diferentes", () => {
+		it("deve funcionar com tipos genÃ©ricos diferentes", () => {
 			const resultadoNull = httpOk(null);
 			const resultadoUndefined = httpOk(undefined);
 
@@ -79,7 +80,7 @@ describe("http-util", () => {
 			expect(resultado.success).toBe(false);
 			expect(resultado.status).toBe(401);
 			if (!resultado.success) {
-				expect(resultado.error).toBe("Não autorizado");
+				expect(resultado.error).toBe("NÃ£o autorizado");
 				expect(resultado.code).toBe("UNAUTHORIZED_ERROR");
 			}
 		});
@@ -92,7 +93,7 @@ describe("http-util", () => {
 			expect(resultado.success).toBe(false);
 			expect(resultado.status).toBe(404);
 			if (!resultado.success) {
-				expect(resultado.error).toBe("Recurso não encontrado");
+				expect(resultado.error).toBe("Recurso nÃ£o encontrado");
 				expect(resultado.code).toBe("NOT_FOUND_ERROR");
 			}
 		});
@@ -118,7 +119,7 @@ describe("http-util", () => {
 			expect(resultado.success).toBe(false);
 			expect(resultado.status).toBe(409);
 			if (!resultado.success) {
-				expect(resultado.error).toBe("Recurso já existe");
+				expect(resultado.error).toBe("Recurso jÃ¡ existe");
 				expect(resultado.code).toBe("RESOURCE_ALREADY_EXISTS");
 			}
 		});
@@ -133,6 +134,17 @@ describe("http-util", () => {
 			if (!resultado.success) {
 				expect(resultado.error).toBe("Limite excedido");
 				expect(resultado.code).toBe("LIMIT_EXCEEDED");
+			}
+		});
+	});
+	describe("httpBadGateway", () => {
+		it("deve retornar resposta de erro com status 502", () => {
+			const resultado = httpBadGateway();
+
+			expect(resultado.success).toBe(false);
+			expect(resultado.status).toBe(502);
+			if (!resultado.success) {
+				expect(resultado.code).toBe("BAD_GATEWAY_ERROR");
 			}
 		});
 	});

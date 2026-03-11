@@ -1,4 +1,4 @@
-import type { HttpResponse } from "@/model/http-model.js";
+﻿import type { HttpResponse } from "@/model/http-model.js";
 import { buscarEmpresaPorId } from "@/repositories/empresa-repositories.js";
 import { buscarConfiguracaoUsuarioService } from "@/service/configuracao-usuario/buscar-configuracao-usuario.js";
 import {
@@ -6,7 +6,7 @@ import {
 	buscarHistoricoFinanceiroService,
 } from "@/service/dashboard/buscar-dados-dashboard.js";
 import { buscarUltimasMovimentacoesService } from "@/service/dashboard/buscar-ultimas-movimentacoes.js";
-import { httpBadRequest, httpOk } from "@/util/http-util.js";
+import { httpBadGateway, httpBadRequest, httpOk } from "@/util/http-util.js";
 
 interface ChatComAtenaParametros {
 	idusuario: string;
@@ -19,7 +19,44 @@ interface RespostaIA {
 	resposta: string;
 }
 
-// Função para chamar OpenAI API
+const FETCH_TIMEOUT_MS = 15_000;
+const MAX_MESSAGE_CHARS = 2_000;
+const MAX_HISTORY_ITEMS = 20;
+const MAX_HISTORY_ITEM_CHARS = 1_000;
+const MAX_CONTEXT_CHARS = 10_000;
+
+async function fetchWithTimeout(
+	url: string,
+	init: RequestInit,
+	timeoutMs: number,
+): Promise<Response> {
+	const controller = new AbortController();
+	const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+	try {
+		return await fetch(url, { ...init, signal: controller.signal });
+	} finally {
+		clearTimeout(timeoutId);
+	}
+}
+
+function normalizarHistorico(
+	historico?: Array<{ role: "user" | "assistant"; content: string }>,
+) {
+	if (!historico || historico.length === 0) return undefined;
+
+	const sliced = historico.slice(-MAX_HISTORY_ITEMS);
+	return sliced.map((m) => ({
+		role: m.role,
+		content: (m.content || "").slice(0, MAX_HISTORY_ITEM_CHARS),
+	}));
+}
+
+function truncarContexto(contexto: string) {
+	if (contexto.length <= MAX_CONTEXT_CHARS) return contexto;
+	return `${contexto.slice(0, MAX_CONTEXT_CHARS)}\n...(contexto truncado)`;
+}
+
 async function chamarOpenAI(
 	apiKey: string,
 	mensagem: string,
@@ -38,27 +75,29 @@ Responda sempre em português brasileiro de forma profissional e amigável.`;
 		content: string;
 	}> = [{ role: "system", content: systemPrompt }];
 
-	// Adicionar histórico se fornecido
 	if (historico) {
 		messages.push(...historico);
 	}
 
-	// Adicionar mensagem atual
 	messages.push({ role: "user", content: mensagem });
 
-	const response = await fetch("https://api.openai.com/v1/chat/completions", {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/json",
-			Authorization: `Bearer ${apiKey}`,
+	const response = await fetchWithTimeout(
+		"https://api.openai.com/v1/chat/completions",
+		{
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${apiKey}`,
+			},
+			body: JSON.stringify({
+				model: "gpt-4o-mini",
+				messages,
+				temperature: 0.7,
+				max_tokens: 1000,
+			}),
 		},
-		body: JSON.stringify({
-			model: "gpt-4o-mini",
-			messages,
-			temperature: 0.7,
-			max_tokens: 1000,
-		}),
-	});
+		FETCH_TIMEOUT_MS,
+	);
 
 	if (!response.ok) {
 		const error = await response
@@ -70,13 +109,9 @@ Responda sempre em português brasileiro de forma profissional e amigável.`;
 	}
 
 	const data = await response.json();
-	return (
-		data.choices[0]?.message?.content ||
-		"Desculpe, não consegui gerar uma resposta."
-	);
+	return data.choices[0]?.message?.content || "Desculpe, não consegui gerar uma resposta.";
 }
 
-// Função para chamar Gemini API
 async function chamarGemini(
 	apiKey: string,
 	mensagem: string,
@@ -90,7 +125,6 @@ ${contexto}
 
 Responda sempre em português brasileiro de forma profissional e amigável.`;
 
-	// Construir histórico de conversa para Gemini
 	const conversationHistory: Array<{
 		role: "user" | "model";
 		parts: Array<{ text: string }>;
@@ -105,13 +139,12 @@ Responda sempre em português brasileiro de forma profissional e amigável.`;
 		}
 	}
 
-	// Adicionar mensagem atual
 	conversationHistory.push({
 		role: "user",
 		parts: [{ text: `${systemPrompt}\n\nPergunta do usuário: ${mensagem}` }],
 	});
 
-	const response = await fetch(
+	const response = await fetchWithTimeout(
 		`https://generativeai.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
 		{
 			method: "POST",
@@ -122,6 +155,7 @@ Responda sempre em português brasileiro de forma profissional e amigável.`;
 				contents: conversationHistory,
 			}),
 		},
+		FETCH_TIMEOUT_MS,
 	);
 
 	if (!response.ok) {
@@ -140,7 +174,6 @@ Responda sempre em português brasileiro de forma profissional e amigável.`;
 	);
 }
 
-// Função para chamar OpenRouter API
 async function chamarOpenRouter(
 	apiKey: string,
 	mensagem: string,
@@ -159,15 +192,13 @@ Responda sempre em português brasileiro de forma profissional e amigável.`;
 		content: string;
 	}> = [{ role: "system", content: systemPrompt }];
 
-	// Adicionar histórico se fornecido
 	if (historico) {
 		messages.push(...historico);
 	}
 
-	// Adicionar mensagem atual
 	messages.push({ role: "user", content: mensagem });
 
-	const response = await fetch(
+	const response = await fetchWithTimeout(
 		"https://openrouter.ai/api/v1/chat/completions",
 		{
 			method: "POST",
@@ -184,6 +215,7 @@ Responda sempre em português brasileiro de forma profissional e amigável.`;
 				max_tokens: 1000,
 			}),
 		},
+		FETCH_TIMEOUT_MS,
 	);
 
 	if (!response.ok) {
@@ -213,7 +245,14 @@ export async function chatComAtenaService({
 		return httpBadRequest({ error: "Mensagem é obrigatória" });
 	}
 
-	// Buscar configurações de IA do usuário/proprietário
+	if (mensagem.length > MAX_MESSAGE_CHARS) {
+		return httpBadRequest({
+			error: `Mensagem excede o limite de ${MAX_MESSAGE_CHARS} caracteres`,
+		});
+	}
+
+	const historicoNormalizado = normalizarHistorico(historico);
+
 	const configuracaoResult = await buscarConfiguracaoUsuarioService({
 		idusuario,
 		idempresa,
@@ -228,7 +267,6 @@ export async function chatComAtenaService({
 
 	const integracoes = configuracaoResult.body.integracoes;
 
-	// Selecionar API (prioridade: OpenAI > Gemini > OpenRouter)
 	let apiKey: string | undefined;
 	let apiTipo: "openai" | "gemini" | "openrouter" | null = null;
 
@@ -256,11 +294,9 @@ export async function chatComAtenaService({
 		});
 	}
 
-	// Buscar dados do dashboard para contexto
 	let contextoDashboard = "";
 
 	try {
-		// Buscar dados principais
 		const dadosResult = await buscarDadosDashboardService({
 			idusuario,
 			idempresa,
@@ -277,7 +313,6 @@ export async function chatComAtenaService({
 `;
 		}
 
-		// Buscar histórico financeiro (últimos 30 dias)
 		const historicoResult = await buscarHistoricoFinanceiroService({
 			idusuario,
 			idempresa,
@@ -285,16 +320,15 @@ export async function chatComAtenaService({
 		});
 
 		if (historicoResult.success && historicoResult.body) {
-			const historico = historicoResult.body;
-			if (historico.length > 0) {
-				contextoDashboard += `\nHistórico Financeiro (últimos 30 dias):\n`;
-				historico.slice(0, 10).forEach((item) => {
+			const historicoFinanceiro = historicoResult.body;
+			if (historicoFinanceiro.length > 0) {
+				contextoDashboard += "\nHistórico Financeiro (últimos 30 dias):\n";
+				historicoFinanceiro.slice(0, 10).forEach((item) => {
 					contextoDashboard += `- ${item.date}: Contas a Pagar R$ ${item.contasPagar.toFixed(2)}, Contas a Receber R$ ${item.contasReceber.toFixed(2)}\n`;
 				});
 			}
 		}
 
-		// Buscar últimas movimentações
 		const movimentacoesResult = await buscarUltimasMovimentacoesService({
 			idusuario,
 			idempresa,
@@ -302,24 +336,23 @@ export async function chatComAtenaService({
 
 		if (movimentacoesResult.success && movimentacoesResult.body) {
 			const movimentacoes = movimentacoesResult.body;
-			contextoDashboard += `\nÚltimas Movimentações:\n`;
+			contextoDashboard += "\nÚltimas Movimentações:\n";
 
 			if (movimentacoes.pagar.length > 0) {
-				contextoDashboard += `Contas a Pagar:\n`;
+				contextoDashboard += "Contas a Pagar:\n";
 				movimentacoes.pagar.slice(0, 5).forEach((item) => {
 					contextoDashboard += `- ${item.descricao}: R$ ${parseFloat(item.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${item.status})\n`;
 				});
 			}
 
 			if (movimentacoes.receber.length > 0) {
-				contextoDashboard += `Contas a Receber:\n`;
+				contextoDashboard += "Contas a Receber:\n";
 				movimentacoes.receber.slice(0, 5).forEach((item) => {
 					contextoDashboard += `- ${item.descricao}: R$ ${parseFloat(item.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${item.status})\n`;
 				});
 			}
 		}
 
-		// Adicionar informações da empresa se disponível
 		if (idempresa) {
 			const empresa = await buscarEmpresaPorId(idempresa);
 			if (empresa) {
@@ -328,10 +361,10 @@ export async function chatComAtenaService({
 		}
 	} catch (error) {
 		console.error("Erro ao buscar dados do dashboard:", error);
-		// Continuar mesmo se houver erro ao buscar dados
 	}
 
-	// Chamar API de IA selecionada
+	contextoDashboard = truncarContexto(contextoDashboard);
+
 	try {
 		let resposta: string;
 
@@ -341,7 +374,7 @@ export async function chatComAtenaService({
 					apiKey,
 					mensagem,
 					contextoDashboard,
-					historico,
+					historicoNormalizado,
 				);
 				break;
 			case "gemini":
@@ -349,7 +382,7 @@ export async function chatComAtenaService({
 					apiKey,
 					mensagem,
 					contextoDashboard,
-					historico,
+					historicoNormalizado,
 				);
 				break;
 			case "openrouter":
@@ -357,7 +390,7 @@ export async function chatComAtenaService({
 					apiKey,
 					mensagem,
 					contextoDashboard,
-					historico,
+					historicoNormalizado,
 				);
 				break;
 			default:
@@ -367,12 +400,6 @@ export async function chatComAtenaService({
 		return httpOk({ resposta });
 	} catch (error) {
 		console.error("Erro ao chamar API de IA:", error);
-		const errorMessage =
-			error instanceof Error
-				? error.message
-				: "Erro desconhecido ao processar mensagem";
-		return httpBadRequest({
-			error: `Erro ao processar mensagem: ${errorMessage}`,
-		});
+		return httpBadGateway("Serviço de IA indisponível");
 	}
 }
