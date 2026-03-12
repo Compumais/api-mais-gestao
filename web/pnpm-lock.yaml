@@ -22,7 +22,7 @@ importers:
         version: 3.2.2(react@19.2.3)
       '@hookform/resolvers':
         specifier: ^5.2.2
-        version: 5.2.2(react-hook-form@7.71.1(react@19.2.3))
+        version: 5.2.2(react-hook-form@7.71.2(react@19.2.3))
       '@prismicio/client':
         specifier: ^7.21.6
         version: 7.21.6
@@ -126,8 +126,8 @@ importers:
         specifier: 19.2.3
         version: 19.2.3(react@19.2.3)
       react-hook-form:
-        specifier: ^7.70.0
-        version: 7.71.1(react@19.2.3)
+        specifier: ^7.71.2
+        version: 7.71.2(react@19.2.3)
       recharts:
         specifier: 2.15.4
         version: 2.15.4(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -2000,7 +2000,7 @@ packages:
     resolution: {integrity: sha512-G7Cqgaelq68XHJNGlZ7lrNQyhZGsFqpwtGFexqUv4IQdjKoSYF7ipZ9UuTJZUSQXFj/XaoBLuEVIVqr8EJngEQ==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
 
-  decimal-light@2.5.1:
+  decimal.js-light@2.5.1:
     resolution: {integrity: sha512-qIMFpTMZmny+MMIitAB6D7iVPEorVw6YQRWkvarTkT4tBeSLLiHzcwj6q0MmYSFCiVpiqPJTJEYIrpcPzVEIvg==}
 
   define-lazy-prop@2.0.0:
@@ -2300,7 +2300,7 @@ packages:
     peerDependencies:
       fp-ts: ^2.5.0
 
-  ipaddr@1.9.1:
+  ipaddr.js@1.9.1:
     resolution: {integrity: sha512-0KI/607xoxSToH7GjN1FfSbLoU0+btTicjsQSWQlh/hZykN8KpmMf7uYwPW3R+akZ6R/w18ZlXSHBYXiYUPO3g==}
     engines: {node: '>= 0.10'}
 
@@ -2800,8 +2800,8 @@ packages:
     peerDependencies:
       react: ^19.2.3
 
-  react-hook-form@7.71.1:
-    resolution: {integrity: sha512-9SUJKCGKo8HUSsCO+y0CtqkqI5nNuaDqTxyqPsZPqIwudpj4rCrAz/jZV+jn57bx5gtZKOh3neQu94DXMc+w5w==}
+  react-hook-form@7.71.2:
+    resolution: {integrity: sha512-1CHvcDYzuRUNOflt4MOq3ZM46AronNJtQ1S7tnX6YN4y72qhgiUItpacZUAQ0TyWYci3yz1X+rXaSxiuEm86PA==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       react: ^16.8.0 || ^17 || ^18 || ^19
@@ -3328,10 +3328,10 @@ snapshots:
     dependencies:
       '@hapi/hoek': 9.3.0
 
-  '@hookform/resolvers@5.2.2(react-hook-form@7.71.1(react@19.2.3))':
+  '@hookform/resolvers@5.2.2(react-hook-form@7.71.2(react@19.2.3))':
     dependencies:
       '@standard-schema/utils': 0.3.0
-      react-hook-form: 7.71.1(react@19.2.3)
+      react-hook-form: 7.71.2(react@19.2.3)
 
   '@img/colour@1.0.0':
     optional: true
@@ -4923,7 +4923,7 @@ snapshots:
 
   decamelize@6.0.1: {}
 
-  decimal-light@2.5.1: {}
+  decimal.js-light@2.5.1: {}
 
   define-lazy-prop@2.0.0: {}
 
@@ -5245,7 +5245,7 @@ snapshots:
     dependencies:
       fp-ts: 2.16.11
 
-  ipaddr@1.9.1: {}
+  ipaddr.js@1.9.1: {}
 
   iron-webcrypto@1.2.1: {}
 
@@ -5623,7 +5623,7 @@ snapshots:
   proxy-addr@2.0.7:
     dependencies:
       forwarded: 0.2.0
-      ipaddr: 1.9.1
+      ipaddr.js: 1.9.1
 
   proxy-from-env@1.1.0: {}
 
@@ -5723,7 +5723,7 @@ snapshots:
       react: 19.2.3
       scheduler: 0.27.0
 
-  react-hook-form@7.71.1(react@19.2.3):
+  react-hook-form@7.71.2(react@19.2.3):
     dependencies:
       react: 19.2.3
 
@@ -5804,7 +5804,7 @@ snapshots:
 
   recharts-scale@0.4.5:
     dependencies:
-      decimal-light: 2.5.1
+      decimal.js-light: 2.5.1
 
   recharts@2.15.4(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
     dependencies:
