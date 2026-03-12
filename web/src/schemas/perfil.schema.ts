@@ -67,7 +67,7 @@ export const atualizarPerfilSchema = z
 			// Se a senha foi preenchida, deve ter no mínimo 6 caracteres
 			const senhaPreenchida = data.senha && data.senha.trim() !== "";
 			if (senhaPreenchida) {
-				return data.senha.length >= 6;
+				return (data.senha ?? "").length >= 6;
 			}
 			return true;
 		},
