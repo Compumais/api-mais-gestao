@@ -108,8 +108,8 @@ importers:
         specifier: ^1.11.19
         version: 1.11.19
       lucide-react:
-        specifier: ^0.562.0
-        version: 0.562.0(react@19.2.3)
+        specifier: ^0.577.0
+        version: 0.577.0(react@19.2.3)
       next:
         specifier: ^16.1.6
         version: 16.1.6(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -2000,7 +2000,7 @@ packages:
     resolution: {integrity: sha512-G7Cqgaelq68XHJNGlZ7lrNQyhZGsFqpwtGFexqUv4IQdjKoSYF7ipZ9UuTJZUSQXFj/XaoBLuEVIVqr8EJngEQ==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
 
-  decimal-light@2.5.1:
+  decimal.js-light@2.5.1:
     resolution: {integrity: sha512-qIMFpTMZmny+MMIitAB6D7iVPEorVw6YQRWkvarTkT4tBeSLLiHzcwj6q0MmYSFCiVpiqPJTJEYIrpcPzVEIvg==}
 
   define-lazy-prop@2.0.0:
@@ -2300,7 +2300,7 @@ packages:
     peerDependencies:
       fp-ts: ^2.5.0
 
-  ipaddr@1.9.1:
+  ipaddr.js@1.9.1:
     resolution: {integrity: sha512-0KI/607xoxSToH7GjN1FfSbLoU0+btTicjsQSWQlh/hZykN8KpmMf7uYwPW3R+akZ6R/w18ZlXSHBYXiYUPO3g==}
     engines: {node: '>= 0.10'}
 
@@ -2484,8 +2484,8 @@ packages:
     resolution: {integrity: sha512-jumlc0BIUrS3qJGgIkWZsyfAM7NCWiBcCDhnd+3NNM5KbBmLTgHVfWBcg6W+rLUsIpzpERPsvwUP7CckAQSOoA==}
     engines: {node: '>=12'}
 
-  lucide-react@0.562.0:
-    resolution: {integrity: sha512-82hOAu7y0dbVuFfmO4bYF1XEwYk/mEbM5E+b1jgci/udUBEE/R7LF5Ip0CCEmXe8AybRM8L+04eP+LGZeDvkiw==}
+  lucide-react@0.577.0:
+    resolution: {integrity: sha512-4LjoFv2eEPwYDPg/CUdBJQSDfPyzXCRrVW1X7jrx/trgxnxkHFjnVZINbzvzxjN70dxychOfg+FTYwBiS3pQ5A==}
     peerDependencies:
       react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
@@ -4923,7 +4923,7 @@ snapshots:
 
   decamelize@6.0.1: {}
 
-  decimal-light@2.5.1: {}
+  decimal.js-light@2.5.1: {}
 
   define-lazy-prop@2.0.0: {}
 
@@ -5245,7 +5245,7 @@ snapshots:
     dependencies:
       fp-ts: 2.16.11
 
-  ipaddr@1.9.1: {}
+  ipaddr.js@1.9.1: {}
 
   iron-webcrypto@1.2.1: {}
 
@@ -5382,7 +5382,7 @@ snapshots:
 
   lru-cache@7.18.3: {}
 
-  lucide-react@0.562.0(react@19.2.3):
+  lucide-react@0.577.0(react@19.2.3):
     dependencies:
       react: 19.2.3
 
@@ -5623,7 +5623,7 @@ snapshots:
   proxy-addr@2.0.7:
     dependencies:
       forwarded: 0.2.0
-      ipaddr: 1.9.1
+      ipaddr.js: 1.9.1
 
   proxy-from-env@1.1.0: {}
 
@@ -5804,7 +5804,7 @@ snapshots:
 
   recharts-scale@0.4.5:
     dependencies:
-      decimal-light: 2.5.1
+      decimal.js-light: 2.5.1
 
   recharts@2.15.4(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
     dependencies:
