@@ -14,9 +14,15 @@ export interface GerarRelatorioContasParams {
 	formato: "pdf" | "txt" | "html";
 }
 
+
+export interface GerarRelatorioCentroCustosParams {
+	idempresa: string;
+	formato: "pdf" | "txt" | "html";
+}
+
 async function downloadRelatorioBlob(
 	url: string,
-	params: { dataInicio: string; dataFim: string; formato: string },
+	params: unknown,
 	defaultFilename: string,
 ): Promise<void> {
 	const response = await api.post(url, params, { responseType: "blob" });
@@ -96,3 +102,101 @@ export async function gerarRelatorioContasReceber(
 	}
 }
 
+export async function gerarRelatorioCentroCustos(
+	params: GerarRelatorioCentroCustosParams,
+): Promise<void> {
+	try {
+		await downloadRelatorioBlob(
+			"/relatorios/centro-custos",
+			params,
+			`centro-custos.${params.formato}`,
+		);
+	} catch (error: unknown) {
+		console.error("Erro ao gerar relatorio centro de custos:", error);
+		const msg =
+			error && typeof error === "object" && "response" in error
+				? (error as { response?: { data?: { error?: string } } }).response?.data?.error
+				: undefined;
+		throw new Error(msg || "Erro ao gerar relatorio de centro de custos");
+	}
+}
+
+export async function gerarRelatorioDespesasPorCategoria(
+	params: GerarRelatorioContasParams,
+): Promise<void> {
+	try {
+		const ext = params.formato === "pdf" ? "html" : params.formato;
+		await downloadRelatorioBlob(
+			"/relatorios/despesas-por-categoria",
+			params,
+			`despesas-por-categoria-${params.dataInicio}-${params.dataFim}.${ext}`,
+		);
+	} catch (error: unknown) {
+		console.error("Erro ao gerar relatorio:", error);
+		const msg =
+			error && typeof error === "object" && "response" in error
+				? (error as { response?: { data?: { error?: string } } }).response?.data?.error
+				: undefined;
+		throw new Error(msg || "Erro ao gerar relatorio");
+	}
+}
+
+export async function gerarRelatorioFormasDePagamento(
+	params: GerarRelatorioContasParams,
+): Promise<void> {
+	try {
+		const ext = params.formato === "pdf" ? "html" : params.formato;
+		await downloadRelatorioBlob(
+			"/relatorios/formas-de-pagamento",
+			params,
+			`formas-de-pagamento-${params.dataInicio}-${params.dataFim}.${ext}`,
+		);
+	} catch (error: unknown) {
+		console.error("Erro ao gerar relatorio:", error);
+		const msg =
+			error && typeof error === "object" && "response" in error
+				? (error as { response?: { data?: { error?: string } } }).response?.data?.error
+				: undefined;
+		throw new Error(msg || "Erro ao gerar relatorio");
+	}
+}
+
+export async function gerarRelatorioInadimplencia(
+	params: GerarRelatorioContasParams,
+): Promise<void> {
+	try {
+		const ext = params.formato === "pdf" ? "html" : params.formato;
+		await downloadRelatorioBlob(
+			"/relatorios/inadimplencia",
+			params,
+			`inadimplencia-${params.dataInicio}-${params.dataFim}.${ext}`,
+		);
+	} catch (error: unknown) {
+		console.error("Erro ao gerar relatorio:", error);
+		const msg =
+			error && typeof error === "object" && "response" in error
+				? (error as { response?: { data?: { error?: string } } }).response?.data?.error
+				: undefined;
+		throw new Error(msg || "Erro ao gerar relatorio");
+	}
+}
+
+export async function gerarRelatorioReceitasPorCategoria(
+	params: GerarRelatorioContasParams,
+): Promise<void> {
+	try {
+		const ext = params.formato === "pdf" ? "html" : params.formato;
+		await downloadRelatorioBlob(
+			"/relatorios/receitas-por-categoria",
+			params,
+			`receitas-por-categoria-${params.dataInicio}-${params.dataFim}.${ext}`,
+		);
+	} catch (error: unknown) {
+		console.error("Erro ao gerar relatorio:", error);
+		const msg =
+			error && typeof error === "object" && "response" in error
+				? (error as { response?: { data?: { error?: string } } }).response?.data?.error
+				: undefined;
+		throw new Error(msg || "Erro ao gerar relatorio");
+	}
+}
