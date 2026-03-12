@@ -69,6 +69,19 @@ interface MovimentacaoFormProps {
   lancamento?: ContaCorrenteLancamento | null;
 }
 
+
+type MovimentacaoFormValues = {
+	idcontacorrente: string;
+	operacao: "entrada" | "saida" | "transferencia";
+	idcontacorrenteOrigem?: string;
+	idcontacorrenteDestino?: string;
+	data: string;
+	valor: string;
+	idplanocontas?: string;
+	dataconciliacao?: string;
+	historico?: string;
+};
+
 export function MovimentacaoForm({
   open,
   onOpenChange,
@@ -134,15 +147,12 @@ export function MovimentacaoForm({
     },
   });
 
-  const form = useForm<
-    | CriarContaCorrenteLancamentoFormData
-    | AtualizarContaCorrenteLancamentoFormData
-  >({
+  const form = useForm<MovimentacaoFormValues>({
     resolver: zodResolver(
       isEdicao
         ? atualizarContaCorrenteLancamentoSchema
         : criarContaCorrenteLancamentoSchema,
-    ),
+    ) as any,
     defaultValues: {
       idcontacorrente: "",
       operacao: "entrada",
@@ -250,9 +260,7 @@ export function MovimentacaoForm({
   }, [open, isEdicao, lancamento, reset]);
 
   const onSubmit = (
-    data:
-      | CriarContaCorrenteLancamentoFormData
-      | AtualizarContaCorrenteLancamentoFormData,
+    data: MovimentacaoFormValues,
   ) => {
     if (!empresa) {
       return;
