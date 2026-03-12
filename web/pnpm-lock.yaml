@@ -30,8 +30,8 @@ importers:
         specifier: ^2.2.1
         version: 2.2.1(@prismicio/client@7.21.6)(next@16.1.6(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react@19.2.3)
       '@prismicio/react':
-        specifier: ^3.3.0
-        version: 3.3.0(@prismicio/client@7.21.6)(react@19.2.3)
+        specifier: ^3.4.0
+        version: 3.4.0(@prismicio/client@7.21.6)(react@19.2.3)
       '@radix-ui/react-accordion':
         specifier: ^1.2.12
         version: 1.2.12(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -682,8 +682,8 @@ packages:
       next: ^13.4.5 || ^14 || ^15 || ^16
       react: ^18 || ^19
 
-  '@prismicio/react@3.3.0':
-    resolution: {integrity: sha512-M9u0iKkU/Ir1JCmEhTLYcUf86n6+o3fTWw74CGW91E+cPwJZ5UZDqqwWSSUU++ByaEfbjoYOhvvaxlPlBzuicg==}
+  '@prismicio/react@3.4.0':
+    resolution: {integrity: sha512-OYLAkIK2mYPTxV45cYfreZnvb+nimX92QhlRKdjAHyz3pPGLUWjFrJKMk3meaCIRk/Q1STCgezkF30XHEbWBNw==}
     engines: {node: '>=20'}
     peerDependencies:
       '@prismicio/client': ^7
@@ -2000,7 +2000,7 @@ packages:
     resolution: {integrity: sha512-G7Cqgaelq68XHJNGlZ7lrNQyhZGsFqpwtGFexqUv4IQdjKoSYF7ipZ9UuTJZUSQXFj/XaoBLuEVIVqr8EJngEQ==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
 
-  decimal-light@2.5.1:
+  decimal.js-light@2.5.1:
     resolution: {integrity: sha512-qIMFpTMZmny+MMIitAB6D7iVPEorVw6YQRWkvarTkT4tBeSLLiHzcwj6q0MmYSFCiVpiqPJTJEYIrpcPzVEIvg==}
 
   define-lazy-prop@2.0.0:
@@ -2300,7 +2300,7 @@ packages:
     peerDependencies:
       fp-ts: ^2.5.0
 
-  ipaddr@1.9.1:
+  ipaddr.js@1.9.1:
     resolution: {integrity: sha512-0KI/607xoxSToH7GjN1FfSbLoU0+btTicjsQSWQlh/hZykN8KpmMf7uYwPW3R+akZ6R/w18ZlXSHBYXiYUPO3g==}
     engines: {node: '>= 0.10'}
 
@@ -3589,7 +3589,7 @@ snapshots:
       next: 16.1.6(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       react: 19.2.3
 
-  '@prismicio/react@3.3.0(@prismicio/client@7.21.6)(react@19.2.3)':
+  '@prismicio/react@3.4.0(@prismicio/client@7.21.6)(react@19.2.3)':
     dependencies:
       '@prismicio/client': 7.21.6
       esm-env: 1.2.2
@@ -4923,7 +4923,7 @@ snapshots:
 
   decamelize@6.0.1: {}
 
-  decimal-light@2.5.1: {}
+  decimal.js-light@2.5.1: {}
 
   define-lazy-prop@2.0.0: {}
 
@@ -5245,7 +5245,7 @@ snapshots:
     dependencies:
       fp-ts: 2.16.11
 
-  ipaddr@1.9.1: {}
+  ipaddr.js@1.9.1: {}
 
   iron-webcrypto@1.2.1: {}
 
@@ -5623,7 +5623,7 @@ snapshots:
   proxy-addr@2.0.7:
     dependencies:
       forwarded: 0.2.0
-      ipaddr: 1.9.1
+      ipaddr.js: 1.9.1
 
   proxy-from-env@1.1.0: {}
 
@@ -5804,7 +5804,7 @@ snapshots:
 
   recharts-scale@0.4.5:
     dependencies:
-      decimal-light: 2.5.1
+      decimal.js-light: 2.5.1
 
   recharts@2.15.4(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
     dependencies:
