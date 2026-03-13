@@ -18,7 +18,7 @@
     "@hookform/resolvers": "^5.2.2",
     "@prismicio/client": "^7.21.6",
     "@prismicio/next": "^2.2.1",
-    "@prismicio/react": "^3.3.0",
+    "@prismicio/react": "^3.4.0",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-avatar": "^1.1.11",
