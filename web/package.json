@@ -61,7 +61,7 @@
     "@biomejs/biome": "2.2.0",
     "@slicemachine/adapter-next": "^0.3.95",
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@types/node": "^25",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "1.0.0",
