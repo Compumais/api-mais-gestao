@@ -43,8 +43,8 @@ export async function existeNotificacaoParaRecurso(
 
 export type ListarNotificacoesParams = {
 	idusuario: string;
-	idempresa?: string;
-	lida?: boolean;
+	idempresa?: string | undefined;
+	lida?: boolean | undefined;
 	limit?: number;
 	offset?: number;
 };

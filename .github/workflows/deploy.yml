@@ -1,0 +1,64 @@
+name: Deploy VPS
+
+on:
+  workflow_run:
+    workflows: ["API image"]
+    types: [completed]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-vps-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy-api:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Deploy API via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -e
+            cd /opt/mais-gestao
+            export GHCR_REPOSITORY_LOWER="$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')"
+            if [ -n "${{ secrets.GHCR_USERNAME }}" ] && [ -n "${{ secrets.GHCR_TOKEN }}" ]; then
+              echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
+            fi
+            docker compose -f /opt/mais-gestao/docker-compose.prod.yml pull api
+            docker compose -f /opt/mais-gestao/docker-compose.prod.yml up -d api
+            docker image prune -f
+
+  deploy-web:
+    needs: deploy-api
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Deploy Web (PM2) via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -e
+            cd /opt/mais-gestao/web
+            git fetch origin main
+            git checkout main
+            git reset --hard origin/main
+            pnpm install --frozen-lockfile
+            pnpm run build
+            pm2 restart mais-gestao-web

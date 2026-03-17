@@ -90,7 +90,7 @@ export default function NovaEmpresaPage() {
 			await refetchUser();
 
 			// Verificar se é a primeira empresa do usuário
-			const totalEmpresasAntes = empresasDoUsuario?.paginacao?.total ?? 0;
+			const totalEmpresasAntes = empresasDoUsuario?.length ?? 0;
 			const isPrimeiraEmpresa = totalEmpresasAntes === 0;
 
 			// Se for a primeira empresa e não tiver plano, redirecionar para página de assinatura

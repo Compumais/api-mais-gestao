@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { BellIcon, CheckIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -19,8 +19,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { Notificacao } from "@/services/notificacoes.service";
 import {
-	notificacoesService,
 	type ListarNotificacoesParams,
+	notificacoesService,
 } from "@/services/notificacoes.service";
 
 const NOTIFICACOES_COUNT_KEY = ["notificacoes", "nao-lidas", "count"] as const;
@@ -67,7 +67,11 @@ export function NotificationsBell() {
 
 	// Pedir permissão para notificação nativa ao abrir o dropdown
 	useEffect(() => {
-		if (dropdownOpen && typeof window !== "undefined" && "Notification" in window) {
+		if (
+			dropdownOpen &&
+			typeof window !== "undefined" &&
+			"Notification" in window
+		) {
 			if (Notification.permission === "default") {
 				Notification.requestPermission();
 			}
@@ -153,9 +157,7 @@ export function NotificationsBell() {
 											<div className="min-w-0 flex-1">
 												<p
 													className={
-														n.lida
-															? "text-muted-foreground"
-															: "font-medium"
+														n.lida ? "text-muted-foreground" : "font-medium"
 													}
 												>
 													{n.titulo}

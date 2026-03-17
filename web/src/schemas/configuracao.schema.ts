@@ -63,7 +63,7 @@ export const configuracaoIntegracaoSchema = z.object({
 	integracoesBancos: z.object({
 		habilitado: z.boolean(),
 		provedor: z.string().nullable(),
-		configuracoes: z.record(z.unknown()),
+		configuracoes: z.record(z.string(), z.unknown()),
 	}),
 	exportacao: z.object({
 		formatoPadrao: z.enum(["csv", "excel", "pdf"]),
@@ -85,13 +85,13 @@ export const configuracaoRelatoriosSchema = z.object({
 			id: z.string(),
 			nome: z.string(),
 			tipo: z.string(),
-			configuracoes: z.record(z.unknown()),
+			configuracoes: z.record(z.string(), z.unknown()),
 		}),
 	),
 	padroes: z.object({
 		periodo: z.enum(["mes", "trimestre", "semestre", "ano", "personalizado"]),
 		agrupamentos: z.array(z.string()),
-		filtros: z.record(z.unknown()),
+		filtros: z.record(z.string(), z.unknown()),
 	}),
 });
 
