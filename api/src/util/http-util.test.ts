@@ -1,12 +1,12 @@
 ﻿import { describe, expect, it } from "vitest";
 import {
+	httpBadGateway,
 	httpCriacao,
 	httpErroInterno,
 	httpLimiteExcedido,
 	httpNaoAutorizado,
 	httpNaoEncontrado,
-\thttpBadGateway,
-\thttpOk,
+	httpOk,
 	httpRecursoExistente,
 	httpSemConteudo,
 } from "./http-util.js";

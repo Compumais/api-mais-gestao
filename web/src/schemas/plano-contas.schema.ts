@@ -8,6 +8,7 @@ export const criarPlanoContasSchema = z.object({
 		.min(3, "Nome deve ter no mínimo 3 caracteres"),
 	tipomovimento: z.enum(["E", "S"]),
 	inativo: z.number().int().min(0).max(1),
+	classe: z.string().optional().nullable(),
 	centrocustoobrigatorio: z.number().int().min(0).max(1).optional().nullable(),
 	tipoconta: z.number().int().min(1).max(4).optional().nullable(),
 	exportaparacontabilidade: z.number().int().min(0).max(1).optional().nullable(),

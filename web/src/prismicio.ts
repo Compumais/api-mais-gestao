@@ -4,7 +4,8 @@ import {
 	type Route,
 } from "@prismicio/client";
 import { enableAutoPreviews } from "@prismicio/next";
-import sm from "../slicemachine.configon";
+
+import sm from "../slicemachine.config.json";
 
 /**
  * The project's Prismic repository name.

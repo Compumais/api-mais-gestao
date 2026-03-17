@@ -18,12 +18,12 @@ import { empresasRotas } from "./controllers/http/empresas/rotas.js";
 import { entidadesRotas } from "./controllers/http/entidades/rotas.js";
 import { financeiroRotas } from "./controllers/http/financeiro/rotas.js";
 import { financeiroLancamentoRotas } from "./controllers/http/financeirolancamento/rotas.js";
-import { planoContasRotas } from "./controllers/http/plano-contas/rotas.js";
-import { planosRotas } from "./controllers/http/planos/rotas.js";
-import { usuariosRotas } from "./controllers/http/usuarios/rotas.js";
 import { iaRotas } from "./controllers/http/ia/rotas.js";
 import { notificacoesRotas } from "./controllers/http/notificacoes/rotas.js";
+import { planoContasRotas } from "./controllers/http/plano-contas/rotas.js";
+import { planosRotas } from "./controllers/http/planos/rotas.js";
 import { relatoriosRotas } from "./controllers/http/relatorios/rotas.js";
+import { usuariosRotas } from "./controllers/http/usuarios/rotas.js";
 
 export const app = Fastify({ logger: true });
 

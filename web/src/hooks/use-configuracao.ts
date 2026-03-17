@@ -9,6 +9,8 @@ import type {
 	AtualizarWebhookData,
 } from "@/services/configuracao.service";
 
+type AtualizarConfiguracaoData = Parameters<typeof configuracaoService.atualizar>[1];
+
 export function useConfiguracao(idempresa: string | null) {
 	return useQuery({
 		queryKey: ["configuracao", idempresa],
@@ -32,12 +34,7 @@ export function useAtualizarConfiguracao() {
 			dados,
 		}: {
 			idempresa: string;
-			dados: Partial<{
-				notificacoes: unknown;
-				integracao: unknown;
-				relatorios: unknown;
-				impressao: unknown;
-			}>;
+			dados: AtualizarConfiguracaoData;
 		}) => configuracaoService.atualizar(idempresa, dados),
 		onSuccess: (_, variables) => {
 			queryClient.invalidateQueries({

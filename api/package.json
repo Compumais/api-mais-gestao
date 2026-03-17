@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node dist/src/index.js",
     "dev": "tsx watch src/index.ts",
-    "build": "tsc && npx tsc-alias -p tsconfig.json",
+    "build": "tsc && npx tsc-alias -p tsconfig.json && node -e \"console.log('\\nBuild da API concluído com sucesso.')\"",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",

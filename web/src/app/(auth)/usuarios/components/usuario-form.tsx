@@ -42,6 +42,16 @@ type UsuarioFormProps = {
 	valoresIniciais?: Partial<CriarUsuarioFormData | AtualizarUsuarioFormData>;
 };
 
+
+type UsuarioFormValues = {
+	idempresa: string;
+	nome: string;
+	email: string;
+	password: string;
+	perfil: string;
+	empresasIds: string[];
+};
+
 export function UsuarioForm(props: UsuarioFormProps) {
 	const router = useRouter();
 	const queryClient = useQueryClient();
@@ -52,8 +62,8 @@ export function UsuarioForm(props: UsuarioFormProps) {
 	const isEdicao = modo === "editar";
 
 	const schema = isEdicao ? atualizarUsuarioSchema : criarUsuarioSchema;
-	const form = useForm<CriarUsuarioFormData | AtualizarUsuarioFormData>({
-		resolver: zodResolver(schema),
+	const form = useForm<UsuarioFormValues>({
+		resolver: zodResolver(schema) as any,
 		defaultValues: {
 			idempresa: empresa?.id || "",
 			nome: "",
@@ -117,14 +127,27 @@ export function UsuarioForm(props: UsuarioFormProps) {
 		},
 	});
 
-	const onSubmit = (data: CriarUsuarioFormData | AtualizarUsuarioFormData) => {
+	const onSubmit = (data: UsuarioFormValues) => {
 		if (isEdicao) {
-			atualizarUsuario(data as AtualizarUsuarioFormData);
+			const payload: AtualizarUsuarioFormData = {
+				idempresa: data.idempresa,
+				nome: data.nome,
+				perfil: data.perfil,
+				empresasIds: data.empresasIds,
+			};
+			atualizarUsuario(payload);
 		} else {
-			criarUsuario(data as CriarUsuarioFormData);
+			const payload: CriarUsuarioFormData = {
+				idempresa: data.idempresa,
+				nome: data.nome,
+				email: data.email,
+				password: data.password,
+				perfil: data.perfil,
+				empresasIds: data.empresasIds,
+			};
+			criarUsuario(payload);
 		}
 	};
-
 	if (isEdicao && isLoadingUsuario) {
 		return (
 			<div className="flex items-center justify-center py-8">

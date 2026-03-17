@@ -7,12 +7,16 @@ import {
 	IconChartBar,
 	IconCreditCard,
 	IconDashboard,
+	IconFile,
+	IconFileInvoice,
 	IconHelp,
 	IconHistory,
 	IconListDetails,
+	IconPackage,
 	IconReportMoney,
 	IconSearch,
 	IconSettings,
+	IconTools,
 	IconUser,
 	IconUsers,
 } from "@tabler/icons-react";
@@ -24,68 +28,98 @@ export const DATA = {
 			url: "/dashboard",
 			icon: IconDashboard,
 		},
+	],
+	navRegistros: [
 		{
-			title: "Clientes",
-			url: "/clientes",
-			icon: IconUsers,
-		},
-		{
-			title: "Fornecedores",
-			url: "/fornecedores",
-			icon: IconBuilding,
-		},
-		{
-			title: "Usuários",
-			url: "/usuarios",
-			icon: IconUser,
+			title: "Cadastros",
+			icon: IconListDetails,
+			items: [
+				{
+					title: "Clientes",
+					url: "/clientes",
+				},
+				{
+					title: "Comissionados",
+					url: "/comissionados",
+				},
+				{
+					title: "Compradores",
+					url: "/compradores",
+				},
+				{
+					title: "Fornecedores",
+					url: "/fornecedores",
+				},
+				{
+					title: "Produtos",
+					url: "/produtos",
+				},
+				{
+					title: "Usuários",
+					url: "/usuarios",
+				},
+			],
 		},
 	],
-	navClouds: [
+	navNotaFiscal: [
 		{
-			title: "Plano de contas",
-			url: "/plano-contas",
-			icon: IconListDetails,
+			title: "Nota fiscal",
+			icon: IconFileInvoice,
+			items: [
+				{
+					title: "Nota fiscal de compra",
+					url: "/nota-fiscal-compra",
+				},
+				{
+					title: "Nota fiscal de venda",
+					url: "/nota-fiscal-venda",
+				},
+			],
 		},
+	],
+	navFinanceiro: [
 		{
-			title: "Bancos",
-			url: "/bancos",
-			icon: IconBuildingBank,
-		},
-		{
-			title: "Contas correntes",
-			url: "/contas-correntes",
-			icon: IconCreditCard,
-		},
-		{
-			title: "Movimentações",
-			url: "/movimentacoes",
-			icon: IconArrowsLeftRight,
-		},
-		{
-			title: "Contas a receber",
-			url: "/contas-receber",
-			icon: IconCashBanknotePlus,
-		},
-		{
-			title: "Contas a pagar",
-			url: "/contas-pagar",
-			icon: IconCashBanknoteMinus,
-		},
-		// {
-		// 	title: "Conciliação",
-		// 	url: "#",
-		// 	icon: IconArrowsLeftRight,
-		// },
-		{
-			title: "Relatórios",
-			url: "/relatorios",
-			icon: IconChartBar,
+			title: "Financeiro",
+			icon: IconReportMoney,
+			items: [
+				{
+					title: "Plano de contas",
+					url: "/plano-contas",
+				},
+				{
+					title: "Bancos",
+					url: "/bancos",
+				},
+				{
+					title: "Contas correntes",
+					url: "/contas-correntes",
+				},
+				{
+					title: "Movimentações",
+					url: "/movimentacoes",
+				},
+				{
+					title: "Contas a receber",
+					url: "/contas-receber",
+				},
+				{
+					title: "Contas a pagar",
+					url: "/contas-pagar",
+				},
+				{
+					title: "Conciliação",
+					url: "#",
+				},
+				{
+					title: "Relatórios",
+					url: "/relatorios",
+				},
+			],
 		},
 	],
 	others: [
 		{
 			title: "Contabilidade",
-			url: "#",
 			icon: IconReportMoney,
 			items: [
 				{
@@ -103,6 +137,30 @@ export const DATA = {
 				{
 					title: "Plano de contas contábeis",
 					url: "/conta-contabil",
+				},
+			],
+		},
+	],
+	navFerramentas: [
+		{
+			title: "Ferramentas",
+			icon: IconTools,
+			items: [
+				{
+					title: "Agendar tarefas",
+					url: "/agendamentos",
+				},
+				{
+					title: "Editor SQL",
+					url: "/editor-sql",
+				},
+				{
+					title: "Certificados digitais",
+					url: "/certificados-digitais",
+				},
+				{
+					title: "Envio de e-mails",
+					url: "/envio-emails",
 				},
 			],
 		},

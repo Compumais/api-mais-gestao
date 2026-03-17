@@ -1,0 +1,6 @@
+﻿display_name: Revisão de Código
+short_description: Checklist e workflow para revisar PRs com achados priorizados e sugestões acionáveis.
+default_prompt: >
+  Revise o código fornecido (diff, commits ou arquivos) e aponte problemas e melhorias com foco em corretude,
+  segurança, performance, legibilidade e testes. Liste achados priorizados (P0–P3), com confiança e referência
+  a arquivo/linha quando possível, e proponha patches pequenos quando estiver claro e seguro.

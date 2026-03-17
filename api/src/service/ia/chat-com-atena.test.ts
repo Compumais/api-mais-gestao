@@ -1,4 +1,4 @@
-﻿import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { chatComAtenaService } from "./chat-com-atena.js";
 
 vi.mock("@/service/configuracao-usuario/buscar-configuracao-usuario.js", () => ({
@@ -102,7 +102,7 @@ describe("chatComAtenaService", () => {
 		buscarUltimasMovimentacoesService.mockResolvedValue({
 			success: true,
 			status: 200,
-			body: { pagar: [], receber: [] },
+			body: { pagar: [], receber: [], bancarias: [] },
 		});
 
 		globalThis.fetch = vi.fn().mockRejectedValue(new Error("network")) as any;
