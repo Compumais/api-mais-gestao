@@ -1,4 +1,4 @@
-﻿import type { HttpResponse } from "@/model/http-model.js";
+import type { HttpResponse } from "@/model/http-model.js";
 import { buscarEmpresaPorId } from "@/repositories/empresa-repositories.js";
 import { buscarConfiguracaoUsuarioService } from "@/service/configuracao-usuario/buscar-configuracao-usuario.js";
 import {
@@ -7,6 +7,7 @@ import {
 } from "@/service/dashboard/buscar-dados-dashboard.js";
 import { buscarUltimasMovimentacoesService } from "@/service/dashboard/buscar-ultimas-movimentacoes.js";
 import { httpBadGateway, httpBadRequest, httpOk } from "@/util/http-util.js";
+import { getApiBaseUrl } from "@/util/base-url.js";
 
 interface ChatComAtenaParametros {
 	idusuario: string;
@@ -205,7 +206,7 @@ Responda sempre em português brasileiro de forma profissional e amigável.`;
 			headers: {
 				"Content-Type": "application/json",
 				Authorization: `Bearer ${apiKey}`,
-				"HTTP-Referer": process.env.API_URL || "http://localhost:3333",
+				"HTTP-Referer": getApiBaseUrl(),
 				"X-Title": "Mais Gestão - Atena",
 			},
 			body: JSON.stringify({
