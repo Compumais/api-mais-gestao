@@ -3,6 +3,7 @@ import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import Fastify from "fastify";
+import { getApiBaseUrl } from "./util/base-url.js";
 import { assinaturasRotas } from "./controllers/http/assinaturas/rotas.js";
 import { auditoriaRotas } from "./controllers/http/auditoria/rotas.js";
 // import { authRotas } from "./controllers/http/auth/rotas.js";
@@ -43,7 +44,7 @@ app.register(cors, {
 				cb(null, true);
 				return;
 			}
-		} catch (e) {
+		} catch {
 			// Ignore invalid URLs
 		}
 		cb(new Error("Not allowed"), false);
@@ -63,7 +64,7 @@ await app.register(swagger, {
 		},
 		servers: [
 			{
-				url: "http://localhost:3333",
+				url: getApiBaseUrl(),
 				description: "Servidor de desenvolvimento",
 			},
 		],
@@ -406,5 +407,5 @@ app.register(relatoriosRotas);
 
 app.listen({ port: 3333 }).then(() => {
 	console.log("HTTP server running on port 3333");
-	console.log("Swagger documentation available at http://localhost:3333/docs");
+	console.log(`Swagger documentation available at ${getApiBaseUrl()}/docs`);
 });
