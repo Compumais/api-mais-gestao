@@ -4,12 +4,10 @@ import { customSession } from "better-auth/plugins";
 import { eq } from "drizzle-orm";
 import * as schema from "../../drizzle/schema.js";
 import { db } from "../repositories/connection.js";
+import { getApiBaseUrl } from "../util/base-url.js";
 
 export const auth = betterAuth({
-	baseURL:
-		process.env.BETTER_AUTH_URL ||
-		process.env.API_URL ||
-		"http://localhost:3333",
+	baseURL: getApiBaseUrl(),
 	basePath: "/api/auth",
 	database: drizzleAdapter(db, {
 		provider: "pg",
