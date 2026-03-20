@@ -8,6 +8,7 @@ import {
 	IconChartBar,
 	IconCreditCard,
 	IconDashboard,
+	IconFileInvoice,
 	IconHelp,
 	IconHistory,
 	IconListDetails,
@@ -42,6 +43,20 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 		keywords: ["cliente", "clientes"],
 	},
 	{
+		title: "Comissionados",
+		url: "/comissionados",
+		category: "Principal",
+		icon: IconUser,
+		keywords: ["comissionado", "comissionados"],
+	},
+	{
+		title: "Compradores",
+		url: "/compradores",
+		category: "Principal",
+		icon: IconUsers,
+		keywords: ["comprador", "compradores"],
+	},
+	{
 		title: "Fornecedores",
 		url: "/fornecedores",
 		category: "Principal",
@@ -54,6 +69,20 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 		category: "Principal",
 		icon: IconUser,
 		keywords: ["usuário", "usuarios", "user"],
+	},
+	{
+		title: "Nota fiscal de compra",
+		url: "/nota-fiscal-compra",
+		category: "Financeiro",
+		icon: IconFileInvoice,
+		keywords: ["nota fiscal", "nota-fiscal", "compra", "entrada"],
+	},
+	{
+		title: "Nota fiscal de venda",
+		url: "/nota-fiscal-venda",
+		category: "Financeiro",
+		icon: IconFileInvoice,
+		keywords: ["nota fiscal", "nota-fiscal", "venda", "saída"],
 	},
 	// Financeiro
 	{
