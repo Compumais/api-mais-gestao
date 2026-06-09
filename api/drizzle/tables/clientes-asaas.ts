@@ -1,4 +1,4 @@
-import { index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { foreignKey, index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { empresa } from "./empresas";
 
 export const clientesasaas = pgTable(
@@ -11,5 +11,14 @@ export const clientesasaas = pgTable(
 		idclienteasaas: text("idclienteasaas").notNull(),
 		criadoem: timestamp("criadoem").defaultNow().notNull(),
 	},
-	(table) => [index("clientes_asaas_idempresa_idx").on(table.idempresa)],
+	(table) => [
+		index("clientes_asaas_idempresa_idx").on(table.idempresa),
+		foreignKey({
+			columns: [table.idempresa],
+			foreignColumns: [empresa.id],
+			name: "clientes_asaas_idempresa_fkey",
+		})
+			.onUpdate("cascade")
+			.onDelete("cascade"),
+	],
 );

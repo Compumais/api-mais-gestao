@@ -41,7 +41,7 @@ export const contacorrentelancamento = pgTable(
 		depositonaoidentificado: smallint(),
 		tiporateiocentrocusto: smallint(),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		idlancamentotransferencia: bigint({ mode: "number" }),
+		idlancamentotransferencia: text(),
 		dataconciliacao: date(),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 		idusuarioconciliacao: text(),

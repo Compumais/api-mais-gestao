@@ -2,6 +2,7 @@ import {
 	bigint,
 	date,
 	foreignKey,
+	index,
 	integer,
 	pgTable,
 	text,
@@ -41,6 +42,22 @@ export const contacontabil = pgTable(
 		tipocontacontabil: varchar({ length: 1 }),
 	},
 	(table) => [
+		index("contacontabil_idempresa_idx").using(
+			"btree",
+			table.idempresa.asc().nullsLast().op("text_ops"),
+		),
+		index("contacontabil_idcontapai_idx").using(
+			"btree",
+			table.idcontapai.asc().nullsLast().op("text_ops"),
+		),
+		index("contacontabil_idultimousuarioalteracao_idx").using(
+			"btree",
+			table.idultimousuarioalteracao.asc().nullsLast().op("text_ops"),
+		),
+		index("contacontabil_idusuariocadastro_idx").using(
+			"btree",
+			table.idusuariocadastro.asc().nullsLast().op("text_ops"),
+		),
 		foreignKey({
 			columns: [table.idempresa],
 			foreignColumns: [empresa.id],

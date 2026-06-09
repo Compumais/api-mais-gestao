@@ -28,11 +28,11 @@ export const financeiro = pgTable(
 		tipo: char({ length: 1 }), // P ou R
 		tipoorigem: smallint(),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		idorigem: bigint({ mode: "number" }),
+		idorigem: text(),
 		parcela: smallint(),
 		documento: varchar({ length: 60 }),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		idtipodocumentofinanceiro: bigint({ mode: "number" }),
+		idtipodocumentofinanceiro: text(),
 		status: char({ length: 1 }),
 		emissao: date(),
 		vencimento: date(),
@@ -63,14 +63,14 @@ export const financeiro = pgTable(
 		protestodate: date(),
 		nossonumero: varchar({ length: 25 }),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		idcontageraboleto: bigint({ mode: "number" }),
+		idcontageraboleto: text(),
 		numerocheque: varchar({ length: 10 }),
 		remessagerada: smallint(),
 		boletoimpresso: smallint(),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		idtipocobranca: bigint({ mode: "number" }),
+		idtipocobranca: text(),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		idrepresentante: bigint({ mode: "number" }),
+		idrepresentante: text(),
 		percentualcomissaofaturamento: numeric({ precision: 5, scale: 2 }),
 		percentualcomissaoquitacao: numeric({ precision: 12, scale: 3 }),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
@@ -87,18 +87,18 @@ export const financeiro = pgTable(
 		registro: timestamp({ precision: 6, mode: "string" }),
 		baixa2: date(),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		idportador: bigint({ mode: "number" }),
+		idportador: text(),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		idcarteirageradauboleto: bigint({ mode: "number" }),
+		idcarteirageradauboleto: text(),
 		tiporateiocentrocusto: smallint(),
 		nomeadministradora: varchar({ length: 50 }),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		iddependente: bigint({ mode: "number" }),
+		iddependente: text(),
 		dvnossonumero: varchar({ length: 3 }),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		idadministradora: bigint({ mode: "number" }),
+		idadministradora: text(),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		idbandeira: bigint({ mode: "number" }),
+		idbandeira: text(),
 		ultimaocorrenciabancaria: text(),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 		idusuariosupervisor: text(),
@@ -108,7 +108,7 @@ export const financeiro = pgTable(
 		diasinstrucaocobrancaboleto: smallint(),
 		observacaoboleto: text(),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		idrepresentante2: bigint({ mode: "number" }),
+		idrepresentante2: text(),
 		percentualcomissaoquitacao2: numeric({ precision: 12, scale: 3 }),
 		valororiginalcomissao2: numeric({ precision: 12, scale: 3 }),
 		saldocomissao2: numeric({ precision: 12, scale: 3 }),

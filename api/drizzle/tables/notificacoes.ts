@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
 	boolean,
+	foreignKey,
 	index,
 	jsonb,
 	pgTable,
@@ -33,5 +34,19 @@ export const notificacoes = pgTable(
 	(table) => [
 		index("notificacoes_idusuario_idx").on(table.idusuario),
 		index("notificacoes_idusuario_lida_idx").on(table.idusuario, table.lida),
+		foreignKey({
+			columns: [table.idusuario],
+			foreignColumns: [usuarios.id],
+			name: "notificacoes_idusuario_fkey",
+		})
+			.onUpdate("cascade")
+			.onDelete("cascade"),
+		foreignKey({
+			columns: [table.idempresa],
+			foreignColumns: [empresa.id],
+			name: "notificacoes_idempresa_fkey",
+		})
+			.onUpdate("cascade")
+			.onDelete("cascade"),
 	],
 );

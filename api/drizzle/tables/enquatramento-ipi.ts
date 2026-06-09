@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, timestamp, varchar } from "drizzle-orm/pg-core";
+import { foreignKey, index, pgTable, text, timestamp, varchar } from "drizzle-orm/pg-core";
+import { empresa } from "./empresas";
 
 export const enquatramentoipi = pgTable("enquatramentoipi", {
 	id: text().primaryKey().notNull(),
@@ -13,4 +14,16 @@ export const enquatramentoipi = pgTable("enquatramentoipi", {
 	dataultimaalteracao: timestamp({ precision: 3, mode: "string" })
 		.default(sql`CURRENT_TIMESTAMP`)
 		.notNull(),
-});
+}, (table) => [
+	index("enquatramentoipi_idempresa_idx").using(
+		"btree",
+		table.idempresa.asc().nullsLast().op("text_ops"),
+	),
+	foreignKey({
+		columns: [table.idempresa],
+		foreignColumns: [empresa.id],
+		name: "enquatramentoipi_idempresa_fkey",
+	})
+		.onUpdate("cascade")
+		.onDelete("cascade"),
+]);
