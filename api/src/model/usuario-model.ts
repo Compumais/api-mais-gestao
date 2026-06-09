@@ -1,3 +1,3 @@
-import type * as schema from "../../drizzle/schema.js";
+import type * as schema from "@/repositories/schema";
 
 export type Usuario = typeof schema.usuarios.$inferSelect;
