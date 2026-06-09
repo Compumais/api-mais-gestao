@@ -1,4 +1,6 @@
-import { bigint, integer, pgTable, text, varchar } from "drizzle-orm/pg-core";
+import { bigint, foreignKey, integer, pgTable, text, varchar } from "drizzle-orm/pg-core";
+import { empresa } from "./empresas";
+import { motivobaixafinanceiro } from "./motivo-baixa-financeiro";
 
 export const tipodocumentofinanceiro = pgTable("tipodocumentofinanceiro", {
 	id: text().primaryKey().notNull(),
@@ -32,4 +34,19 @@ export const tipodocumentofinanceiro = pgTable("tipodocumentofinanceiro", {
 	tipocobrancasaas: integer(),
 	codigomercos: integer(),
 	idempresa: text().notNull(),
-});
+}, (table) => [
+	foreignKey({
+		columns: [table.idempresa],
+		foreignColumns: [empresa.id],
+		name: "tipodocumentofinanceiro_idempresa_fkey",
+	})
+		.onUpdate("cascade")
+		.onDelete("cascade"),
+	foreignKey({
+		columns: [table.idmotivobaixafinanceiro],
+		foreignColumns: [motivobaixafinanceiro.id],
+		name: "tipodocumentofinanceiro_idmotivobaixafinanceiro_fkey",
+	})
+		.onUpdate("cascade")
+		.onDelete("cascade"),
+]);

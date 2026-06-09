@@ -1,4 +1,5 @@
 import {
+  foreignKey,
 	index,
 	pgTable,
 	text,
@@ -22,5 +23,14 @@ export const sessoes = pgTable(
 			.notNull()
 			.references(() => usuarios.id, { onDelete: "cascade" }),
 	},
-	(table) => [index("sessoes_idusuario_idx").on(table.idusuario)],
+	(table) => [
+		index("sessoes_idusuario_idx").on(table.idusuario),
+		foreignKey({
+			columns: [table.idusuario],
+			foreignColumns: [usuarios.id],
+			name: "sessoes_idusuario_fkey",
+		})
+			.onUpdate("cascade")
+			.onDelete("cascade"),
+	],
 );

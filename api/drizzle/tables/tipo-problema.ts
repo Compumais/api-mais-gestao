@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import { foreignKey, index, pgTable, smallint, text, timestamp, varchar } from "drizzle-orm/pg-core";
 import { empresa } from "./empresas";
+import { usuarios } from "./usuarios";
 
 export const tipoproblema = pgTable(
 	"tipoproblema",
@@ -28,6 +29,20 @@ export const tipoproblema = pgTable(
 			columns: [table.idempresa],
 			foreignColumns: [empresa.id],
 			name: "tipoproblema_idempresa_fkey",
+		})
+			.onUpdate("cascade")
+			.onDelete("cascade"),
+		foreignKey({
+			columns: [table.idultimousuarioalteracao],
+			foreignColumns: [usuarios.id],
+			name: "tipoproblema_idultimousuarioalteracao_fkey",
+		})
+			.onUpdate("cascade")
+			.onDelete("cascade"),
+		foreignKey({
+			columns: [table.idusuariocadastro],
+			foreignColumns: [usuarios.id],
+			name: "tipoproblema_idusuariocadastro_fkey",
 		})
 			.onUpdate("cascade")
 			.onDelete("cascade"),

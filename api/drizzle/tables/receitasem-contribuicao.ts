@@ -1,12 +1,14 @@
 import { sql } from "drizzle-orm";
 import {
 	date,
+	foreignKey,
 	numeric,
 	pgTable,
 	text,
 	timestamp,
 	varchar,
 } from "drizzle-orm/pg-core";
+import { empresa } from "./empresas";
 
 // Cadastro de receitas sem contribuição
 export const receitasemcontribuicao = pgTable("receitasemcontribuicao", {
@@ -29,4 +31,12 @@ export const receitasemcontribuicao = pgTable("receitasemcontribuicao", {
 	exipi: varchar({ length: 256 }),
 	ncm: varchar({ length: 256 }),
 	ncmex: varchar({ length: 256 }),
-});
+}, (table) => [
+	foreignKey({
+		columns: [table.idempresa],
+		foreignColumns: [empresa.id],
+		name: "receitasemcontribuicao_idempresa_fkey",
+	})
+		.onUpdate("cascade")
+		.onDelete("cascade"),
+]);

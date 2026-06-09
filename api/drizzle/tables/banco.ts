@@ -1,6 +1,7 @@
 import {
 	bigint,
 	foreignKey,
+	index,
 	pgTable,
 	text,
 	varchar,
@@ -21,6 +22,10 @@ export const banco = pgTable(
 			}),
 	},
 	(table) => [
+		index("banco_idempresa_idx").using(
+			"btree",
+			table.idempresa.asc().nullsLast().op("text_ops"),
+		),
 		foreignKey({
 			columns: [table.idempresa],
 			foreignColumns: [empresa.id],

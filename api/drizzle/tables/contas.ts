@@ -1,4 +1,5 @@
 import {
+    foreignKey,
 	index,
 	pgTable,
 	text,
@@ -27,5 +28,14 @@ export const contas = pgTable(
 			.$onUpdate(() => /* @__PURE__ */ new Date())
 			.notNull(),
 	},
-	(table) => [index("contas_idusuario_idx").on(table.idusuario)],
+	(table) => [
+		index("contas_idusuario_idx").on(table.idusuario),
+		foreignKey({
+			columns: [table.idusuario],
+			foreignColumns: [usuarios.id],
+			name: "contas_idusuario_fkey",
+		})
+			.onUpdate("cascade")
+			.onDelete("cascade"),
+	],
 );

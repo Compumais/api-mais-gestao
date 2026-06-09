@@ -8,7 +8,6 @@ import {
 	pgTable,
 	smallint,
 	text,
-	timestamp,
 	varchar,
 } from "drizzle-orm/pg-core";
 import { cest } from "./cest";

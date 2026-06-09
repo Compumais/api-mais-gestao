@@ -1,6 +1,7 @@
 import {
 	bigint,
 	foreignKey,
+	index,
 	pgTable,
 	text,
 } from "drizzle-orm/pg-core";
@@ -18,6 +19,10 @@ export const planocontascontacontabil = pgTable(
 		currenttimemillis: bigint({ mode: "number" }).notNull(),
 	},
 	(table) => [
+		index("planocontascontacontabil_idempresa_idx").using(
+			"btree",
+			table.idempresa.asc().nullsLast().op("text_ops"),
+		),
 		foreignKey({
 			columns: [table.idempresa],
 			foreignColumns: [empresa.id],

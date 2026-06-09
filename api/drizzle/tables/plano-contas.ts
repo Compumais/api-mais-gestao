@@ -1,6 +1,7 @@
 import {
 	bigint,
 	foreignKey,
+	index,
 	integer,
 	pgTable,
 	smallint,
@@ -25,13 +26,17 @@ export const planocontas = pgTable(
 		centrocustoobrigatorio: smallint(),
 		tipoconta: integer(), // 1 - Receita, 2 - Despesa, 3 - Investimento, 4 - Transferência
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		idcontacontabilintegracao: bigint({ mode: "number" }),
+		idcontacontabilintegracao: text(),
 		exportaparacontabilidade: smallint(),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		idgrupodre: bigint({ mode: "number" }),
+		idgrupodre: text(),
 		idplanocontas: text(),
 	},
 	(table) => [
+		index("planocontas_idempresa_idx").using(
+			"btree",
+			table.idempresa.asc().nullsLast().op("text_ops"),
+		),
 		foreignKey({
 			columns: [table.idplanocontas],
 			foreignColumns: [table.id],

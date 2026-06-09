@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
 	foreignKey,
+	index,
 	jsonb,
 	pgTable,
 	text,
@@ -23,6 +24,8 @@ export const auditLogs = pgTable(
 			.notNull(),
 	},
 	(table) => [
+		index("audit_logs_idusuario_idx").on(table.idusuario),
+		index("audit_logs_idempresa_idx").on(table.idempresa),
 		foreignKey({
 			columns: [table.idusuario],
 			foreignColumns: [usuarios.id],

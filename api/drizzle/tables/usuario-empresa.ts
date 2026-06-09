@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { foreignKey, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { foreignKey, index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { empresa } from "./empresas";
 import { usuarios } from "./usuarios";
 
@@ -15,6 +15,8 @@ export const usuarioEmpresa = pgTable(
 		atualizadoem: timestamp({ precision: 3, mode: "string" }).notNull(),
 	},
 	(table) => [
+		index("usuario_empresas_idusuario_idx").on(table.idusuario),
+		index("usuario_empresas_idempresa_idx").on(table.idempresa),
 		foreignKey({
 			columns: [table.idusuario],
 			foreignColumns: [usuarios.id],
