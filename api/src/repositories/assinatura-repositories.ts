@@ -1,5 +1,5 @@
 import { desc, eq } from "drizzle-orm";
-import { assinaturas, clientesAsaas } from "../../drizzle/schema.js";
+import { assinaturas, clientesasaas } from "../../drizzle/schema.js";
 import type {
 	Assinatura,
 	ClienteAsaas,
@@ -13,8 +13,8 @@ export async function buscarClienteAsaas(
 ): Promise<ClienteAsaas | undefined> {
 	const result = await db
 		.select()
-		.from(clientesAsaas)
-		.where(eq(clientesAsaas.idempresa, idempresa))
+		.from(clientesasaas)
+		.where(eq(clientesasaas.idempresa, idempresa))
 		.limit(1);
 	return result[0];
 }
@@ -22,7 +22,7 @@ export async function buscarClienteAsaas(
 export async function criarClienteAsaas(
 	cliente: NovoClienteAsaas,
 ): Promise<ClienteAsaas | undefined> {
-	const [result] = await db.insert(clientesAsaas).values(cliente).returning();
+	const [result] = await db.insert(clientesasaas).values(cliente).returning();
 
 	return result;
 }

@@ -1,4 +1,4 @@
-import type * as schema from "../../drizzle/schema.js";
+import type * as schema from "@/repositories/schema";
 
 export type ContaCorrenteLancamento =
 	typeof schema.contacorrentelancamento.$inferSelect;
