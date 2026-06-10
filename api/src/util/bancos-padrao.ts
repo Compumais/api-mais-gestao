@@ -128,4 +128,3 @@ export const BANCOS_PADRAO = [
 	{ codigo: "BKPR", nome: "BANCO BANKPAR S.A." },
 	{ codigo: "PRIN", nome: "BANCO PORTO REAL DE INVESTIMENTOS S.A." },
 ];
-

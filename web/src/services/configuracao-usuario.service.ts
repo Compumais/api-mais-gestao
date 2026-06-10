@@ -25,9 +25,7 @@ export const configuracaoUsuarioService = {
 		return data;
 	},
 
-	async atualizar(
-		dados: IntegracoesUsuario,
-	): Promise<ConfiguracaoUsuario> {
+	async atualizar(dados: IntegracoesUsuario): Promise<ConfiguracaoUsuario> {
 		const { data } = await api.put<ConfiguracaoUsuario>(
 			"/configuracoes-usuario",
 			dados,
@@ -35,4 +33,3 @@ export const configuracaoUsuarioService = {
 		return data;
 	},
 };
-

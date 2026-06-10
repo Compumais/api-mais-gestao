@@ -62,7 +62,8 @@ export const buscarConfiguracaoSchema: FastifySchema = {
 export const atualizarConfiguracaoSchema: FastifySchema = {
 	tags: ["configuracoes"],
 	summary: "Atualizar configurações da empresa",
-	description: "Atualiza as configurações da empresa. Se não existir, cria uma nova.",
+	description:
+		"Atualiza as configurações da empresa. Se não existir, cria uma nova.",
 	security: [{ bearerAuth: [] }],
 	body: {
 		type: "object",
@@ -531,4 +532,3 @@ export const deletarWebhookSchema: FastifySchema = {
 		},
 	},
 };
-

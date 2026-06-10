@@ -95,11 +95,14 @@ export function httpErro() {
 	};
 }
 
-export function httpBadRequest(error?: string | { error?: string }): HttpResponse<never> {
-	const errorMessage = typeof error === "string" 
-		? error 
-		: error?.error || "RequisiÃ§Ã£o invÃ¡lida";
-	
+export function httpBadRequest(
+	error?: string | { error?: string },
+): HttpResponse<never> {
+	const errorMessage =
+		typeof error === "string"
+			? error
+			: error?.error || "RequisiÃ§Ã£o invÃ¡lida";
+
 	return {
 		success: false as const,
 		status: 400,

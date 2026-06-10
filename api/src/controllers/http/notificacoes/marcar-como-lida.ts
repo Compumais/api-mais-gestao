@@ -25,10 +25,7 @@ export async function marcarComoLidaHandler(
 		});
 	}
 
-	const notificacao = await marcarComoLida(
-		params.data.id,
-		request.user.id,
-	);
+	const notificacao = await marcarComoLida(params.data.id, request.user.id);
 
 	if (!notificacao) {
 		return reply.status(404).send({

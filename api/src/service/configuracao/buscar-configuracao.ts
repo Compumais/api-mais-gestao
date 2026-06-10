@@ -29,4 +29,3 @@ export async function buscarConfiguracaoService({
 
 	return httpOk(configuracao);
 }
-

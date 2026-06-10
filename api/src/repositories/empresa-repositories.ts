@@ -203,4 +203,3 @@ export async function listarEmpresas({
 		total: totalCount[0]?.value ?? 0,
 	};
 }
-

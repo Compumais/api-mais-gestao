@@ -31,17 +31,13 @@ import {
 	criarUsuarioSchema,
 	atualizarUsuarioSchema,
 } from "@/schemas/usuarios.schema";
-import {
-	usuariosService,
-	type Usuario,
-} from "@/services/usuarios.service";
+import { usuariosService, type Usuario } from "@/services/usuarios.service";
 
 type UsuarioFormProps = {
 	modo?: "criar" | "editar";
 	usuarioId?: string;
 	valoresIniciais?: Partial<CriarUsuarioFormData | AtualizarUsuarioFormData>;
 };
-
 
 type UsuarioFormValues = {
 	idempresa: string;
@@ -174,9 +170,7 @@ export function UsuarioForm(props: UsuarioFormProps) {
 					/>
 					<FieldError
 						errors={
-							form.formState.errors.nome
-								? [form.formState.errors.nome]
-								: []
+							form.formState.errors.nome ? [form.formState.errors.nome] : []
 						}
 					/>
 				</Field>
@@ -196,9 +190,7 @@ export function UsuarioForm(props: UsuarioFormProps) {
 						/>
 						<FieldError
 							errors={
-								form.formState.errors.email
-									? [form.formState.errors.email]
-									: []
+								form.formState.errors.email ? [form.formState.errors.email] : []
 							}
 						/>
 					</Field>
@@ -244,9 +236,7 @@ export function UsuarioForm(props: UsuarioFormProps) {
 					</Select>
 					<FieldError
 						errors={
-							form.formState.errors.perfil
-								? [form.formState.errors.perfil]
-								: []
+							form.formState.errors.perfil ? [form.formState.errors.perfil] : []
 						}
 					/>
 				</Field>
@@ -258,9 +248,7 @@ export function UsuarioForm(props: UsuarioFormProps) {
 							<div key={emp.id} className="flex items-center space-x-2">
 								<Checkbox
 									id={`empresa-${emp.id}`}
-									checked={form
-										.watch("empresasIds")
-										?.includes(emp.id)}
+									checked={form.watch("empresasIds")?.includes(emp.id)}
 									onCheckedChange={(checked) => {
 										const currentIds = form.getValues("empresasIds") || [];
 										if (checked) {
@@ -304,4 +292,3 @@ export function UsuarioForm(props: UsuarioFormProps) {
 		</form>
 	);
 }
-

@@ -28,11 +28,16 @@ async function rollbackCriacaoUsuario(novoUsuarioId: string) {
 			.delete(schema.usuarioEmpresa)
 			.where(eq(schema.usuarioEmpresa.idusuario, novoUsuarioId));
 	} catch (error) {
-		console.error("Erro ao remover vinculos usuario_empresa no rollback:", error);
+		console.error(
+			"Erro ao remover vinculos usuario_empresa no rollback:",
+			error,
+		);
 	}
 
 	try {
-		await db.delete(schema.usuarios).where(eq(schema.usuarios.id, novoUsuarioId));
+		await db
+			.delete(schema.usuarios)
+			.where(eq(schema.usuarios.id, novoUsuarioId));
 	} catch (error) {
 		console.error("Erro ao remover usuario no rollback:", error);
 	}

@@ -12,11 +12,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import {
-	Field,
-	FieldGroup,
-	FieldLabel,
-} from "@/components/ui/field";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
 	Select,
@@ -26,7 +22,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { useEmpresa } from "@/provider/empresa-provider";
-import { gerarRelatorioContasPagar } from "@/services/relatorios.service";
+import { gerarRelatorioContasPagar } from "@/service/relatorios.service";
 
 interface ContasPagarReportDialogProps {
 	open: boolean;
@@ -123,7 +119,9 @@ export function ContasPagarReportDialog({
 						/>
 					</Field>
 					<Field>
-						<FieldLabel htmlFor="cap-formato">Formato do Relatório *</FieldLabel>
+						<FieldLabel htmlFor="cap-formato">
+							Formato do Relatório *
+						</FieldLabel>
 						<Select
 							value={formato}
 							onValueChange={(v) => setFormato(v as "pdf" | "txt" | "html")}
@@ -152,7 +150,9 @@ export function ContasPagarReportDialog({
 						onClick={handleGerar}
 						disabled={gerarRelatorioMutation.isPending}
 					>
-						{gerarRelatorioMutation.isPending ? "Gerando..." : "Gerar Relatório"}
+						{gerarRelatorioMutation.isPending
+							? "Gerando..."
+							: "Gerar Relatório"}
 					</Button>
 				</DialogFooter>
 			</DialogContent>

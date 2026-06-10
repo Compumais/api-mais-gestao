@@ -16,7 +16,9 @@ export async function buscarContaCorrenteLancamento(
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
 		}
 
-		const { id } = buscarContaCorrenteLancamentoParamsSchema.parse(request.params);
+		const { id } = buscarContaCorrenteLancamentoParamsSchema.parse(
+			request.params,
+		);
 
 		const resultado = await buscarContaCorrenteLancamentoPorIdService({
 			idusuario: request.user.id,

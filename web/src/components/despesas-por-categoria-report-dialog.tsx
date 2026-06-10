@@ -22,7 +22,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { useEmpresa } from "@/provider/empresa-provider";
-import { gerarRelatorioDespesasPorCategoria } from "@/services/relatorios.service";
+import { gerarRelatorioDespesasPorCategoria } from "@/service/relatorios.service";
 
 interface DespesasPorCategoriaReportDialogProps {
 	open: boolean;
@@ -119,7 +119,9 @@ export function DespesasPorCategoriaReportDialog({
 						/>
 					</Field>
 					<Field>
-						<FieldLabel htmlFor="dpc-formato">Formato do Relatório *</FieldLabel>
+						<FieldLabel htmlFor="dpc-formato">
+							Formato do Relatório *
+						</FieldLabel>
 						<Select
 							value={formato}
 							onValueChange={(v) => setFormato(v as "pdf" | "txt" | "html")}
@@ -148,7 +150,9 @@ export function DespesasPorCategoriaReportDialog({
 						onClick={handleGerar}
 						disabled={gerarRelatorioMutation.isPending}
 					>
-						{gerarRelatorioMutation.isPending ? "Gerando..." : "Gerar Relatório"}
+						{gerarRelatorioMutation.isPending
+							? "Gerando..."
+							: "Gerar Relatório"}
 					</Button>
 				</DialogFooter>
 			</DialogContent>

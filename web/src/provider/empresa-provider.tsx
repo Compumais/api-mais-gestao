@@ -43,7 +43,9 @@ export function EmpresaProvider({ children }: { children: React.ReactNode }) {
 	}
 
 	return (
-		<EmpresaContext.Provider value={{ empresa, selecionarEmpresa, clearEmpresa }}>
+		<EmpresaContext.Provider
+			value={{ empresa, selecionarEmpresa, clearEmpresa }}
+		>
 			{children}
 		</EmpresaContext.Provider>
 	);

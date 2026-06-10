@@ -94,7 +94,8 @@ export async function criarAssinaturaService({
 	else throw new Error("Plano inválido");
 
 	const nextDueDate =
-		new Date().toISOString().split("T")[0] ?? new Date().toISOString().slice(0, 10);
+		new Date().toISOString().split("T")[0] ??
+		new Date().toISOString().slice(0, 10);
 
 	// 4. Criar Assinatura no Asaas
 	const asaasSubscription = await createSubscription({

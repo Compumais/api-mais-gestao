@@ -12,7 +12,9 @@ export async function buscarUnidadeMedidaPorId(id: string) {
 	return registro;
 }
 
-export async function criarUnidadeMedida(dadosUnidadeMedida: NovoUnidadeMedida) {
+export async function criarUnidadeMedida(
+	dadosUnidadeMedida: NovoUnidadeMedida,
+) {
 	const [registro] = await db
 		.insert(unidademedida)
 		.values(dadosUnidadeMedida)

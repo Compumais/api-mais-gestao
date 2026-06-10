@@ -49,64 +49,64 @@ const createColumns = ({
 	onEdit,
 	onDelete,
 }: ColumnsProps): ColumnDef<Entidade>[] => [
-		{
-			accessorKey: "nome",
-			header: "Nome",
-			cell: ({ row }) => <div>{row.getValue("nome")}</div>,
+	{
+		accessorKey: "nome",
+		header: "Nome",
+		cell: ({ row }) => <div>{row.getValue("nome")}</div>,
+	},
+	{
+		accessorKey: "razaosocial",
+		header: "Razão Social",
+		cell: ({ row }) => <div>{row.getValue("razaosocial") || "-"}</div>,
+	},
+	{
+		accessorKey: "cnpjcpf",
+		header: "CNPJ/CPF",
+		cell: ({ row }) => <div>{row.getValue("cnpjcpf")}</div>,
+	},
+	{
+		accessorKey: "endereco",
+		header: "Endereço",
+		cell: ({ row }) => <div>{row.getValue("endereco") || "-"}</div>,
+	},
+	{
+		id: "acoes",
+		header: "Ações",
+		cell: ({ row }) => {
+			const entidade = row.original;
+			return (
+				<div className="flex justify-end">
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button
+								variant="ghost"
+								size="icon"
+								className="h-8 w-8"
+								aria-label="Abrir menu de ações"
+							>
+								<IconDotsVertical className="size-4" />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end">
+							<DropdownMenuItem onClick={() => onEdit(entidade)}>
+								<IconPencil className="size-4" />
+								Editar
+							</DropdownMenuItem>
+							<DropdownMenuSeparator />
+							<DropdownMenuItem
+								variant="destructive"
+								onClick={() => onDelete(entidade.id)}
+							>
+								<IconTrash className="size-4" />
+								Excluir
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</div>
+			);
 		},
-		{
-			accessorKey: "razaosocial",
-			header: "Razão Social",
-			cell: ({ row }) => <div>{row.getValue("razaosocial") || "-"}</div>,
-		},
-		{
-			accessorKey: "cnpjcpf",
-			header: "CNPJ/CPF",
-			cell: ({ row }) => <div>{row.getValue("cnpjcpf")}</div>,
-		},
-		{
-			accessorKey: "endereco",
-			header: "Endereço",
-			cell: ({ row }) => <div>{row.getValue("endereco") || "-"}</div>,
-		},
-		{
-			id: "acoes",
-			header: "Ações",
-			cell: ({ row }) => {
-				const entidade = row.original;
-				return (
-					<div className="flex justify-end">
-						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<Button
-									variant="ghost"
-									size="icon"
-									className="h-8 w-8"
-									aria-label="Abrir menu de ações"
-								>
-									<IconDotsVertical className="size-4" />
-								</Button>
-							</DropdownMenuTrigger>
-							<DropdownMenuContent align="end">
-								<DropdownMenuItem onClick={() => onEdit(entidade)}>
-									<IconPencil className="size-4" />
-									Editar
-								</DropdownMenuItem>
-								<DropdownMenuSeparator />
-								<DropdownMenuItem
-									variant="destructive"
-									onClick={() => onDelete(entidade.id)}
-								>
-									<IconTrash className="size-4" />
-									Excluir
-								</DropdownMenuItem>
-							</DropdownMenuContent>
-						</DropdownMenu>
-					</div>
-				);
-			},
-		},
-	];
+	},
+];
 
 export default function ClientesPage() {
 	const router = useRouter();
@@ -229,9 +229,9 @@ export default function ClientesPage() {
 													{header.isPlaceholder
 														? null
 														: flexRender(
-															header.column.columnDef.header,
-															header.getContext(),
-														)}
+																header.column.columnDef.header,
+																header.getContext(),
+															)}
 												</TableHead>
 											))}
 										</TableRow>

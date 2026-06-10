@@ -31,9 +31,13 @@ describe("upgradePlanoService", () => {
 	});
 
 	it("deve cobrar diferença (payment) e atualizar plano do usuário", async () => {
-		const usuariosRepo = await import("@/repositories/usuarios-repositories.js");
+		const usuariosRepo = await import(
+			"@/repositories/usuarios-repositories.js"
+		);
 		const empresaRepo = await import("@/repositories/empresa-repositories.js");
-		const assinaturaRepo = await import("@/repositories/assinatura-repositories.js");
+		const assinaturaRepo = await import(
+			"@/repositories/assinatura-repositories.js"
+		);
 		const asaas = await import("@/service/asaas/asaas.service.js");
 
 		vi.mocked(usuariosRepo.buscarUsuarioPorId).mockResolvedValue({
@@ -43,7 +47,9 @@ describe("upgradePlanoService", () => {
 			plano_fim_ciclo: "2026-03-31",
 		} as any);
 
-		vi.mocked(empresaRepo.buscarEmpresaCobrancaDoProprietario).mockResolvedValue({
+		vi.mocked(
+			empresaRepo.buscarEmpresaCobrancaDoProprietario,
+		).mockResolvedValue({
 			id: "empresa-1",
 		} as any);
 
@@ -106,9 +112,13 @@ describe("upgradePlanoService", () => {
 	});
 
 	it("não deve atualizar plano se pagamento falhar", async () => {
-		const usuariosRepo = await import("@/repositories/usuarios-repositories.js");
+		const usuariosRepo = await import(
+			"@/repositories/usuarios-repositories.js"
+		);
 		const empresaRepo = await import("@/repositories/empresa-repositories.js");
-		const assinaturaRepo = await import("@/repositories/assinatura-repositories.js");
+		const assinaturaRepo = await import(
+			"@/repositories/assinatura-repositories.js"
+		);
 		const asaas = await import("@/service/asaas/asaas.service.js");
 
 		vi.mocked(usuariosRepo.buscarUsuarioPorId).mockResolvedValue({
@@ -117,7 +127,9 @@ describe("upgradePlanoService", () => {
 			plano_inicio_ciclo: "2026-03-01",
 			plano_fim_ciclo: "2026-03-31",
 		} as any);
-		vi.mocked(empresaRepo.buscarEmpresaCobrancaDoProprietario).mockResolvedValue({
+		vi.mocked(
+			empresaRepo.buscarEmpresaCobrancaDoProprietario,
+		).mockResolvedValue({
 			id: "empresa-1",
 		} as any);
 		vi.mocked(assinaturaRepo.buscarClienteAsaas).mockResolvedValue({

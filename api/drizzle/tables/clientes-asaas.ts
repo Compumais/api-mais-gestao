@@ -1,4 +1,10 @@
-import { foreignKey, index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import {
+	foreignKey,
+	index,
+	pgTable,
+	text,
+	timestamp,
+} from "drizzle-orm/pg-core";
 import { empresa } from "./empresas";
 
 export const clientesasaas = pgTable(

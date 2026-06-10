@@ -9,7 +9,9 @@ import type {
 	AtualizarWebhookData,
 } from "@/services/configuracao.service";
 
-type AtualizarConfiguracaoData = Parameters<typeof configuracaoService.atualizar>[1];
+type AtualizarConfiguracaoData = Parameters<
+	typeof configuracaoService.atualizar
+>[1];
 
 export function useConfiguracao(idempresa: string | null) {
 	return useQuery({
@@ -190,4 +192,3 @@ export function useDeletarWebhook() {
 		},
 	});
 }
-

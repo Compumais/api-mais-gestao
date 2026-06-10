@@ -159,4 +159,3 @@ export type ConfiguracaoImpressaoFormData = z.infer<
 export type CriarChaveApiFormData = z.infer<typeof criarChaveApiSchema>;
 export type CriarWebhookFormData = z.infer<typeof criarWebhookSchema>;
 export type AtualizarWebhookFormData = z.infer<typeof atualizarWebhookSchema>;
-

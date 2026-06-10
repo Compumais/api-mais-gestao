@@ -5,68 +5,66 @@ import type * as prismic from "@prismicio/client";
 type Simplify<T> = { [KeyType in keyof T]: T[KeyType] };
 
 type PickContentRelationshipFieldData<
-  TRelationship extends
-    | prismic.CustomTypeModelFetchCustomTypeLevel1
-    | prismic.CustomTypeModelFetchCustomTypeLevel2
-    | prismic.CustomTypeModelFetchGroupLevel1
-    | prismic.CustomTypeModelFetchGroupLevel2,
-  TData extends Record<
-    string,
-    | prismic.AnyRegularField
-    | prismic.GroupField
-    | prismic.NestedGroupField
-    | prismic.SliceZone
-  >,
-  TLang extends string,
+	TRelationship extends
+		| prismic.CustomTypeModelFetchCustomTypeLevel1
+		| prismic.CustomTypeModelFetchCustomTypeLevel2
+		| prismic.CustomTypeModelFetchGroupLevel1
+		| prismic.CustomTypeModelFetchGroupLevel2,
+	TData extends Record<
+		string,
+		| prismic.AnyRegularField
+		| prismic.GroupField
+		| prismic.NestedGroupField
+		| prismic.SliceZone
+	>,
+	TLang extends string,
 > =
-  // Content relationship fields
-  {
-    [TSubRelationship in Extract<
-      TRelationship["fields"][number],
-      prismic.CustomTypeModelFetchContentRelationshipLevel1
-    > as TSubRelationship["id"]]: ContentRelationshipFieldWithData<
-      TSubRelationship["customtypes"],
-      TLang
-    >;
-  } & // Group
-  {
-    [TGroup in Extract<
-      TRelationship["fields"][number],
-      | prismic.CustomTypeModelFetchGroupLevel1
-      | prismic.CustomTypeModelFetchGroupLevel2
-    > as TGroup["id"]]: TData[TGroup["id"]] extends prismic.GroupField<
-      infer TGroupData
-    >
-      ? prismic.GroupField<
-          PickContentRelationshipFieldData<TGroup, TGroupData, TLang>
-        >
-      : never;
-  } & // Other fields
-  {
-    [TFieldKey in Extract<
-      TRelationship["fields"][number],
-      string
-    >]: TFieldKey extends keyof TData ? TData[TFieldKey] : never;
-  };
+	// Content relationship fields
+	{
+		[TSubRelationship in Extract<
+			TRelationship["fields"][number],
+			prismic.CustomTypeModelFetchContentRelationshipLevel1
+		> as TSubRelationship["id"]]: ContentRelationshipFieldWithData<
+			TSubRelationship["customtypes"],
+			TLang
+		>;
+	} & { // Group
+		[TGroup in Extract<
+			TRelationship["fields"][number],
+			| prismic.CustomTypeModelFetchGroupLevel1
+			| prismic.CustomTypeModelFetchGroupLevel2
+		> as TGroup["id"]]: TData[TGroup["id"]] extends prismic.GroupField<
+			infer TGroupData
+		>
+			? prismic.GroupField<
+					PickContentRelationshipFieldData<TGroup, TGroupData, TLang>
+				>
+			: never;
+	} & { // Other fields
+		[TFieldKey in Extract<
+			TRelationship["fields"][number],
+			string
+		>]: TFieldKey extends keyof TData ? TData[TFieldKey] : never;
+	};
 
 type ContentRelationshipFieldWithData<
-  TCustomType extends
-    | readonly (prismic.CustomTypeModelFetchCustomTypeLevel1 | string)[]
-    | readonly (prismic.CustomTypeModelFetchCustomTypeLevel2 | string)[],
-  TLang extends string = string,
+	TCustomType extends
+		| readonly (prismic.CustomTypeModelFetchCustomTypeLevel1 | string)[]
+		| readonly (prismic.CustomTypeModelFetchCustomTypeLevel2 | string)[],
+	TLang extends string = string,
 > = {
-  [ID in Exclude<
-    TCustomType[number],
-    string
-  >["id"]]: prismic.ContentRelationshipField<
-    ID,
-    TLang,
-    PickContentRelationshipFieldData<
-      Extract<TCustomType[number], { id: ID }>,
-      Extract<prismic.Content.AllDocumentTypes, { type: ID }>["data"],
-      TLang
-    >
-  >;
+	[ID in Exclude<
+		TCustomType[number],
+		string
+	>["id"]]: prismic.ContentRelationshipField<
+		ID,
+		TLang,
+		PickContentRelationshipFieldData<
+			Extract<TCustomType[number], { id: ID }>,
+			Extract<prismic.Content.AllDocumentTypes, { type: ID }>["data"],
+			TLang
+		>
+	>;
 }[Exclude<TCustomType[number], string>["id"]];
 
 type AjudaDocumentDataSlicesSlice = AjudaSlice;
@@ -75,47 +73,47 @@ type AjudaDocumentDataSlicesSlice = AjudaSlice;
  * Content for Mais Gestão/Ajuda documents
  */
 interface AjudaDocumentData {
-  /**
-   * Slice Zone field in *Mais Gestão/Ajuda*
-   *
-   * - **Field Type**: Slice Zone
-   * - **Placeholder**: *None*
-   * - **API ID Path**: ajuda.slices[]
-   * - **Tab**: Main
-   * - **Documentation**: https://prismic.io/docs/slices
-   */
-  slices: prismic.SliceZone<AjudaDocumentDataSlicesSlice>; /**
-   * Meta Title field in *Mais Gestão/Ajuda*
-   *
-   * - **Field Type**: Text
-   * - **Placeholder**: A title of the page used for social media and search engines
-   * - **API ID Path**: ajuda.meta_title
-   * - **Tab**: SEO & Metadata
-   * - **Documentation**: https://prismic.io/docs/fields/text
-   */
-  meta_title: prismic.KeyTextField;
+	/**
+	 * Slice Zone field in *Mais Gestão/Ajuda*
+	 *
+	 * - **Field Type**: Slice Zone
+	 * - **Placeholder**: *None*
+	 * - **API ID Path**: ajuda.slices[]
+	 * - **Tab**: Main
+	 * - **Documentation**: https://prismic.io/docs/slices
+	 */
+	slices: prismic.SliceZone<AjudaDocumentDataSlicesSlice> /**
+	 * Meta Title field in *Mais Gestão/Ajuda*
+	 *
+	 * - **Field Type**: Text
+	 * - **Placeholder**: A title of the page used for social media and search engines
+	 * - **API ID Path**: ajuda.meta_title
+	 * - **Tab**: SEO & Metadata
+	 * - **Documentation**: https://prismic.io/docs/fields/text
+	 */;
+	meta_title: prismic.KeyTextField;
 
-  /**
-   * Meta Description field in *Mais Gestão/Ajuda*
-   *
-   * - **Field Type**: Text
-   * - **Placeholder**: A brief summary of the page
-   * - **API ID Path**: ajuda.meta_description
-   * - **Tab**: SEO & Metadata
-   * - **Documentation**: https://prismic.io/docs/fields/text
-   */
-  meta_description: prismic.KeyTextField;
+	/**
+	 * Meta Description field in *Mais Gestão/Ajuda*
+	 *
+	 * - **Field Type**: Text
+	 * - **Placeholder**: A brief summary of the page
+	 * - **API ID Path**: ajuda.meta_description
+	 * - **Tab**: SEO & Metadata
+	 * - **Documentation**: https://prismic.io/docs/fields/text
+	 */
+	meta_description: prismic.KeyTextField;
 
-  /**
-   * Meta Image field in *Mais Gestão/Ajuda*
-   *
-   * - **Field Type**: Image
-   * - **Placeholder**: *None*
-   * - **API ID Path**: ajuda.meta_image
-   * - **Tab**: SEO & Metadata
-   * - **Documentation**: https://prismic.io/docs/fields/image
-   */
-  meta_image: prismic.ImageField<never>;
+	/**
+	 * Meta Image field in *Mais Gestão/Ajuda*
+	 *
+	 * - **Field Type**: Image
+	 * - **Placeholder**: *None*
+	 * - **API ID Path**: ajuda.meta_image
+	 * - **Tab**: SEO & Metadata
+	 * - **Documentation**: https://prismic.io/docs/fields/image
+	 */
+	meta_image: prismic.ImageField<never>;
 }
 
 /**
@@ -128,7 +126,7 @@ interface AjudaDocumentData {
  * @typeParam Lang - Language API ID of the document.
  */
 export type AjudaDocument<Lang extends string = string> =
-  prismic.PrismicDocumentWithoutUID<Simplify<AjudaDocumentData>, "ajuda", Lang>;
+	prismic.PrismicDocumentWithoutUID<Simplify<AjudaDocumentData>, "ajuda", Lang>;
 
 export type AllDocumentTypes = AjudaDocument;
 
@@ -136,45 +134,45 @@ export type AllDocumentTypes = AjudaDocument;
  * Primary content in *Ajuda → Default → Primary*
  */
 export interface AjudaSliceDefaultPrimary {
-  /**
-   * title field in *Ajuda → Default → Primary*
-   *
-   * - **Field Type**: Text
-   * - **Placeholder**: *None*
-   * - **API ID Path**: ajuda.default.primary.title
-   * - **Documentation**: https://prismic.io/docs/fields/text
-   */
-  title: prismic.KeyTextField;
+	/**
+	 * title field in *Ajuda → Default → Primary*
+	 *
+	 * - **Field Type**: Text
+	 * - **Placeholder**: *None*
+	 * - **API ID Path**: ajuda.default.primary.title
+	 * - **Documentation**: https://prismic.io/docs/fields/text
+	 */
+	title: prismic.KeyTextField;
 
-  /**
-   * created_at field in *Ajuda → Default → Primary*
-   *
-   * - **Field Type**: Date
-   * - **Placeholder**: *None*
-   * - **API ID Path**: ajuda.default.primary.created_at
-   * - **Documentation**: https://prismic.io/docs/fields/date
-   */
-  created_at: prismic.DateField;
+	/**
+	 * created_at field in *Ajuda → Default → Primary*
+	 *
+	 * - **Field Type**: Date
+	 * - **Placeholder**: *None*
+	 * - **API ID Path**: ajuda.default.primary.created_at
+	 * - **Documentation**: https://prismic.io/docs/fields/date
+	 */
+	created_at: prismic.DateField;
 
-  /**
-   * author field in *Ajuda → Default → Primary*
-   *
-   * - **Field Type**: Text
-   * - **Placeholder**: *None*
-   * - **API ID Path**: ajuda.default.primary.author
-   * - **Documentation**: https://prismic.io/docs/fields/text
-   */
-  author: prismic.KeyTextField;
+	/**
+	 * author field in *Ajuda → Default → Primary*
+	 *
+	 * - **Field Type**: Text
+	 * - **Placeholder**: *None*
+	 * - **API ID Path**: ajuda.default.primary.author
+	 * - **Documentation**: https://prismic.io/docs/fields/text
+	 */
+	author: prismic.KeyTextField;
 
-  /**
-   * content field in *Ajuda → Default → Primary*
-   *
-   * - **Field Type**: Rich Text
-   * - **Placeholder**: *None*
-   * - **API ID Path**: ajuda.default.primary.content
-   * - **Documentation**: https://prismic.io/docs/fields/rich-text
-   */
-  content: prismic.RichTextField;
+	/**
+	 * content field in *Ajuda → Default → Primary*
+	 *
+	 * - **Field Type**: Rich Text
+	 * - **Placeholder**: *None*
+	 * - **API ID Path**: ajuda.default.primary.content
+	 * - **Documentation**: https://prismic.io/docs/fields/rich-text
+	 */
+	content: prismic.RichTextField;
 }
 
 /**
@@ -185,9 +183,9 @@ export interface AjudaSliceDefaultPrimary {
  * - **Documentation**: https://prismic.io/docs/slices
  */
 export type AjudaSliceDefault = prismic.SharedSliceVariation<
-  "default",
-  Simplify<AjudaSliceDefaultPrimary>,
-  never
+	"default",
+	Simplify<AjudaSliceDefaultPrimary>,
+	never
 >;
 
 /**
@@ -212,9 +210,9 @@ export type AjudaSlice = prismic.SharedSlice<"ajuda", AjudaSliceVariation>;
  * - **Documentation**: https://prismic.io/docs/slices
  */
 export type TextBlcokSliceDefault = prismic.SharedSliceVariation<
-  "default",
-  Record<string, never>,
-  never
+	"default",
+	Record<string, never>,
+	never
 >;
 
 /**
@@ -230,42 +228,42 @@ type TextBlcokSliceVariation = TextBlcokSliceDefault;
  * - **Documentation**: https://prismic.io/docs/slices
  */
 export type TextBlcokSlice = prismic.SharedSlice<
-  "text_blcok",
-  TextBlcokSliceVariation
+	"text_blcok",
+	TextBlcokSliceVariation
 >;
 
 declare module "@prismicio/client" {
-  interface CreateClient {
-    (
-      repositoryNameOrEndpoint: string,
-      options?: prismic.ClientConfig,
-    ): prismic.Client<AllDocumentTypes>;
-  }
+	interface CreateClient {
+		(
+			repositoryNameOrEndpoint: string,
+			options?: prismic.ClientConfig,
+		): prismic.Client<AllDocumentTypes>;
+	}
 
-  interface CreateWriteClient {
-    (
-      repositoryNameOrEndpoint: string,
-      options: prismic.WriteClientConfig,
-    ): prismic.WriteClient<AllDocumentTypes>;
-  }
+	interface CreateWriteClient {
+		(
+			repositoryNameOrEndpoint: string,
+			options: prismic.WriteClientConfig,
+		): prismic.WriteClient<AllDocumentTypes>;
+	}
 
-  interface CreateMigration {
-    (): prismic.Migration<AllDocumentTypes>;
-  }
+	interface CreateMigration {
+		(): prismic.Migration<AllDocumentTypes>;
+	}
 
-  namespace Content {
-    export type {
-      AjudaDocument,
-      AjudaDocumentData,
-      AjudaDocumentDataSlicesSlice,
-      AllDocumentTypes,
-      AjudaSlice,
-      AjudaSliceDefaultPrimary,
-      AjudaSliceVariation,
-      AjudaSliceDefault,
-      TextBlcokSlice,
-      TextBlcokSliceVariation,
-      TextBlcokSliceDefault,
-    };
-  }
+	namespace Content {
+		export type {
+			AjudaDocument,
+			AjudaDocumentData,
+			AjudaDocumentDataSlicesSlice,
+			AllDocumentTypes,
+			AjudaSlice,
+			AjudaSliceDefaultPrimary,
+			AjudaSliceVariation,
+			AjudaSliceDefault,
+			TextBlcokSlice,
+			TextBlcokSliceVariation,
+			TextBlcokSliceDefault,
+		};
+	}
 }

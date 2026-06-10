@@ -76,15 +76,19 @@ export default function NovaEmpresaPage() {
 			if (empresa) {
 				selecionarEmpresa(empresa);
 				// Aguardar um pouco para garantir que o localStorage seja atualizado
-				await new Promise(resolve => setTimeout(resolve, 50));
+				await new Promise((resolve) => setTimeout(resolve, 50));
 			}
 
 			// Invalidar queries de empresas para forçar refetch
-			await queryClient.invalidateQueries({ queryKey: ["empresas-usuario", user?.id] });
-			await queryClient.invalidateQueries({ queryKey: ["empresas-proprietario", user?.id] });
-			
+			await queryClient.invalidateQueries({
+				queryKey: ["empresas-usuario", user?.id],
+			});
+			await queryClient.invalidateQueries({
+				queryKey: ["empresas-proprietario", user?.id],
+			});
+
 			// Aguardar um pouco mais para garantir que as queries sejam refetchadas
-			await new Promise(resolve => setTimeout(resolve, 100));
+			await new Promise((resolve) => setTimeout(resolve, 100));
 
 			// Atualizar o perfil do usuário para refletir a nova role
 			await refetchUser();
@@ -94,7 +98,10 @@ export default function NovaEmpresaPage() {
 			const isPrimeiraEmpresa = totalEmpresasAntes === 0;
 
 			// Se for a primeira empresa e não tiver plano, redirecionar para página de assinatura
-			if (isPrimeiraEmpresa && (user?.plano === null || user?.plano === undefined)) {
+			if (
+				isPrimeiraEmpresa &&
+				(user?.plano === null || user?.plano === undefined)
+			) {
 				router.push("/assinatura");
 			} else if (isPrimeiraEmpresa) {
 				// Se já tiver plano, ir para meus-planos
@@ -157,7 +164,9 @@ export default function NovaEmpresaPage() {
 											type="email"
 											placeholder="E-mail da empresa"
 											aria-invalid={!!errors.email}
-											aria-describedby={errors.email ? "email-error" : undefined}
+											aria-describedby={
+												errors.email ? "email-error" : undefined
+											}
 											{...register("email")}
 										/>
 										<FieldError errors={errors.email ? [errors.email] : []} />
@@ -169,23 +178,33 @@ export default function NovaEmpresaPage() {
 											id="telefone"
 											placeholder="Telefone da empresa"
 											aria-invalid={!!errors.telefone}
-											aria-describedby={errors.telefone ? "telefone-error" : undefined}
+											aria-describedby={
+												errors.telefone ? "telefone-error" : undefined
+											}
 											{...register("telefone")}
 										/>
-										<FieldError errors={errors.telefone ? [errors.telefone] : []} />
+										<FieldError
+											errors={errors.telefone ? [errors.telefone] : []}
+										/>
 									</Field>
 								</div>
 
 								<Field data-invalid={!!errors.endereco} className="w-full">
-									<FieldLabel htmlFor="endereco">Endereço Completo *</FieldLabel>
+									<FieldLabel htmlFor="endereco">
+										Endereço Completo *
+									</FieldLabel>
 									<Input
 										id="endereco"
 										placeholder="Endereço completo da empresa"
 										aria-invalid={!!errors.endereco}
-										aria-describedby={errors.endereco ? "endereco-error" : undefined}
+										aria-describedby={
+											errors.endereco ? "endereco-error" : undefined
+										}
 										{...register("endereco")}
 									/>
-									<FieldError errors={errors.endereco ? [errors.endereco] : []} />
+									<FieldError
+										errors={errors.endereco ? [errors.endereco] : []}
+									/>
 								</Field>
 							</div>
 

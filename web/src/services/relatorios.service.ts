@@ -14,7 +14,6 @@ export interface GerarRelatorioContasParams {
 	formato: "pdf" | "txt" | "html";
 }
 
-
 export interface GerarRelatorioCentroCustosParams {
 	idempresa: string;
 	formato: "pdf" | "txt" | "html";
@@ -58,7 +57,8 @@ export async function gerarRelatorioFluxoCaixa(
 		console.error("Erro ao gerar relatório:", error);
 		const msg =
 			error && typeof error === "object" && "response" in error
-				? (error as { response?: { data?: { error?: string } } }).response?.data?.error
+				? (error as { response?: { data?: { error?: string } } }).response?.data
+						?.error
 				: undefined;
 		throw new Error(msg || "Erro ao gerar relatório de fluxo de caixa");
 	}
@@ -77,7 +77,8 @@ export async function gerarRelatorioContasPagar(
 		console.error("Erro ao gerar relatório contas a pagar:", error);
 		const msg =
 			error && typeof error === "object" && "response" in error
-				? (error as { response?: { data?: { error?: string } } }).response?.data?.error
+				? (error as { response?: { data?: { error?: string } } }).response?.data
+						?.error
 				: undefined;
 		throw new Error(msg || "Erro ao gerar relatório de contas a pagar");
 	}
@@ -96,7 +97,8 @@ export async function gerarRelatorioContasReceber(
 		console.error("Erro ao gerar relatório contas a receber:", error);
 		const msg =
 			error && typeof error === "object" && "response" in error
-				? (error as { response?: { data?: { error?: string } } }).response?.data?.error
+				? (error as { response?: { data?: { error?: string } } }).response?.data
+						?.error
 				: undefined;
 		throw new Error(msg || "Erro ao gerar relatório de contas a receber");
 	}
@@ -115,7 +117,8 @@ export async function gerarRelatorioCentroCustos(
 		console.error("Erro ao gerar relatorio centro de custos:", error);
 		const msg =
 			error && typeof error === "object" && "response" in error
-				? (error as { response?: { data?: { error?: string } } }).response?.data?.error
+				? (error as { response?: { data?: { error?: string } } }).response?.data
+						?.error
 				: undefined;
 		throw new Error(msg || "Erro ao gerar relatorio de centro de custos");
 	}
@@ -135,7 +138,8 @@ export async function gerarRelatorioDespesasPorCategoria(
 		console.error("Erro ao gerar relatorio:", error);
 		const msg =
 			error && typeof error === "object" && "response" in error
-				? (error as { response?: { data?: { error?: string } } }).response?.data?.error
+				? (error as { response?: { data?: { error?: string } } }).response?.data
+						?.error
 				: undefined;
 		throw new Error(msg || "Erro ao gerar relatorio");
 	}
@@ -155,7 +159,8 @@ export async function gerarRelatorioFormasDePagamento(
 		console.error("Erro ao gerar relatorio:", error);
 		const msg =
 			error && typeof error === "object" && "response" in error
-				? (error as { response?: { data?: { error?: string } } }).response?.data?.error
+				? (error as { response?: { data?: { error?: string } } }).response?.data
+						?.error
 				: undefined;
 		throw new Error(msg || "Erro ao gerar relatorio");
 	}
@@ -175,7 +180,8 @@ export async function gerarRelatorioInadimplencia(
 		console.error("Erro ao gerar relatorio:", error);
 		const msg =
 			error && typeof error === "object" && "response" in error
-				? (error as { response?: { data?: { error?: string } } }).response?.data?.error
+				? (error as { response?: { data?: { error?: string } } }).response?.data
+						?.error
 				: undefined;
 		throw new Error(msg || "Erro ao gerar relatorio");
 	}
@@ -195,7 +201,8 @@ export async function gerarRelatorioReceitasPorCategoria(
 		console.error("Erro ao gerar relatorio:", error);
 		const msg =
 			error && typeof error === "object" && "response" in error
-				? (error as { response?: { data?: { error?: string } } }).response?.data?.error
+				? (error as { response?: { data?: { error?: string } } }).response?.data
+						?.error
 				: undefined;
 		throw new Error(msg || "Erro ao gerar relatorio");
 	}

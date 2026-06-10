@@ -42,10 +42,10 @@ export function BancoForm(props: BancoFormProps) {
 		defaultValues: isEdicao
 			? {}
 			: {
-				idempresa: empresa?.id || "",
-				codigo: "",
-				nome: "",
-			},
+					idempresa: empresa?.id || "",
+					codigo: "",
+					nome: "",
+				},
 	});
 
 	const {

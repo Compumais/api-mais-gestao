@@ -21,7 +21,8 @@ export const criarContaCorrenteLancamentoSchema: FastifySchema = {
 			tipo: {
 				type: "string",
 				enum: ["E", "S", "C", "D"],
-				description: "Tipo de operação: E=Entrada, S=Saída, C=Crédito, D=Débito",
+				description:
+					"Tipo de operação: E=Entrada, S=Saída, C=Crédito, D=Débito",
 			},
 			valor: {
 				type: "string",
@@ -306,7 +307,8 @@ export const atualizarContaCorrenteLancamentoSchema: FastifySchema = {
 			tipo: {
 				type: "string",
 				enum: ["E", "S", "C", "D"],
-				description: "Tipo de operação: E=Entrada, S=Saída, C=Crédito, D=Débito",
+				description:
+					"Tipo de operação: E=Entrada, S=Saída, C=Crédito, D=Débito",
 			},
 			valor: {
 				type: "string",
@@ -460,4 +462,3 @@ export const excluirContaCorrenteLancamentoSchema: FastifySchema = {
 		},
 	},
 };
-

@@ -67,11 +67,7 @@ export default function DetalhesContaReceberPage() {
 			<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
 				<div className="flex items-center justify-between px-4">
 					<div className="flex items-center gap-4">
-						<Button
-							variant="outline"
-							size="icon"
-							onClick={() => router.back()}
-						>
+						<Button variant="outline" size="icon" onClick={() => router.back()}>
 							<IconArrowLeft className="h-4 w-4" />
 						</Button>
 						<h1 className="text-2xl font-bold">Detalhes da Conta a Receber</h1>
@@ -176,4 +172,3 @@ export default function DetalhesContaReceberPage() {
 		</PageContainer>
 	);
 }
-

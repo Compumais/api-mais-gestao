@@ -29,7 +29,10 @@ export async function atualizarObjeto(
 }
 
 export async function excluirObjeto(id: string) {
-	const [registro] = await db.delete(objeto).where(eq(objeto.id, id)).returning();
+	const [registro] = await db
+		.delete(objeto)
+		.where(eq(objeto.id, id))
+		.returning();
 
 	return registro;
 }

@@ -27,7 +27,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { useEmpresa } from "@/provider/empresa-provider";
-import { gerarRelatorioFluxoCaixa } from "@/services/relatorios.service";
+import { gerarRelatorioFluxoCaixa } from "@/service/relatorios.service";
 
 interface FluxoCaixaReportDialogProps {
 	open: boolean;
@@ -182,4 +182,3 @@ export function FluxoCaixaReportDialog({
 		</Dialog>
 	);
 }
-

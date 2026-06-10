@@ -10,7 +10,11 @@ import {
 	excluirMotivoBaixaFinanceiro,
 } from "@/repositories/motivo-baixa-financeiro-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
-import { httpCriacao, httpErroInterno, httpProibido } from "@/util/http-util.js";
+import {
+	httpCriacao,
+	httpErroInterno,
+	httpProibido,
+} from "@/util/http-util.js";
 
 export async function criarMotivoBaixaFinanceiroService(
 	idusuario: string,

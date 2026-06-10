@@ -46,8 +46,7 @@ export async function atualizarFinanceiroLancamento(
 		// Incluir apenas propriedades definidas (compatível com exactOptionalPropertyTypes)
 		const dados = Object.fromEntries(
 			Object.entries(body).filter(
-				(entry): entry is [string, string | number] =>
-					entry[1] !== undefined,
+				(entry): entry is [string, string | number] => entry[1] !== undefined,
 			),
 		) as Partial<NovoFinanceiroLancamento>;
 

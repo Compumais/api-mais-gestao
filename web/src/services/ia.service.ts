@@ -21,5 +21,3 @@ export const iaService = {
 		return data;
 	},
 };
-
-

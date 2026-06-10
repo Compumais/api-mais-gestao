@@ -111,4 +111,3 @@ export interface BuscarTopPorCategoriaParams {
 	idempresa?: string;
 	dias?: number;
 }
-

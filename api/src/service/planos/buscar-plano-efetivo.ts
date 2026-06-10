@@ -27,7 +27,10 @@ export async function buscarPlanoEfetivoService({
 	idempresa,
 }: BuscarPlanoEfetivoParams): Promise<PlanoEfetivoResultado> {
 	if (idempresa) {
-		const pertence = await verificarUsuarioPertenceEmpresa(idusuario, idempresa);
+		const pertence = await verificarUsuarioPertenceEmpresa(
+			idusuario,
+			idempresa,
+		);
 		if (!pertence) {
 			// Usuário não pertence à empresa, fallback para plano do usuário
 			return obterPlanoDoUsuario(idusuario);
@@ -58,7 +61,9 @@ export async function buscarPlanoEfetivoService({
 		// Fallback: plano do proprietário da empresa (sistema legado)
 		const empresa = await buscarEmpresaPorId(idempresa);
 		if (empresa?.idproprietario) {
-			const planoProprietario = await buscarPlanoUsuario(empresa.idproprietario);
+			const planoProprietario = await buscarPlanoUsuario(
+				empresa.idproprietario,
+			);
 			if (planoProprietario?.plano) {
 				return {
 					plano: planoProprietario.plano,

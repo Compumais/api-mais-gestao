@@ -1,5 +1,11 @@
 import { sql } from "drizzle-orm";
-import { foreignKey, index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import {
+	foreignKey,
+	index,
+	pgTable,
+	text,
+	timestamp,
+} from "drizzle-orm/pg-core";
 import { empresa } from "./empresas";
 import { usuarios } from "./usuarios";
 

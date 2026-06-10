@@ -114,136 +114,136 @@ const createColumns = ({
 	onDarBaixa,
 	onVerDetalhes,
 }: ColumnsProps): ColumnDef<Financeiro>[] => [
-		{
-			accessorKey: "documento",
-			header: "Documento",
-			cell: ({ row }) => (
-				<div className="font-medium">{row.getValue("documento") || "-"}</div>
-			),
+	{
+		accessorKey: "documento",
+		header: "Documento",
+		cell: ({ row }) => (
+			<div className="font-medium">{row.getValue("documento") || "-"}</div>
+		),
+	},
+	{
+		accessorKey: "emitente",
+		header: "Nome",
+		cell: ({ row }) => <div>{row.getValue("emitente") || "-"}</div>,
+	},
+	{
+		accessorKey: "status",
+		header: "Status",
+		cell: ({ row }) => getStatusBadge(row.getValue("status")),
+	},
+	{
+		accessorKey: "emissao",
+		header: "Emissão",
+		cell: ({ row }) => <div>{formatDate(row.getValue("emissao"))}</div>,
+	},
+	{
+		accessorKey: "vencimento",
+		header: "Vencimento",
+		cell: ({ row }) => <div>{formatDate(row.getValue("vencimento"))}</div>,
+	},
+	{
+		accessorKey: "valor",
+		header: () => <div className="text-right">Valor</div>,
+		cell: ({ row }) => {
+			const valor = row.getValue("valor") as string;
+			return (
+				<div className="text-right font-medium">{formatCurrency(valor)}</div>
+			);
 		},
-		{
-			accessorKey: "emitente",
-			header: "Nome",
-			cell: ({ row }) => <div>{row.getValue("emitente") || "-"}</div>,
+	},
+	{
+		accessorKey: "saldo",
+		header: () => <div className="text-right">Saldo</div>,
+		cell: ({ row }) => {
+			const saldo = row.getValue("saldo") as string;
+			return (
+				<div className="text-right font-medium">{formatCurrency(saldo)}</div>
+			);
 		},
-		{
-			accessorKey: "status",
-			header: "Status",
-			cell: ({ row }) => getStatusBadge(row.getValue("status")),
+	},
+	{
+		id: "saldoSemJurosMulta",
+		header: () => <div className="text-right">Saldo sem juros/multa</div>,
+		cell: ({ row }) => {
+			const saldoSemJurosMulta = calculateSaldoSemJurosMulta(row.original);
+			return (
+				<div className="text-right font-medium">
+					{formatCurrency(saldoSemJurosMulta.toString())}
+				</div>
+			);
 		},
-		{
-			accessorKey: "emissao",
-			header: "Emissão",
-			cell: ({ row }) => <div>{formatDate(row.getValue("emissao"))}</div>,
+	},
+	{
+		accessorKey: "tipo",
+		header: "Tipo",
+		cell: ({ row }) => {
+			const tipo = row.getValue("tipo") as string | null;
+			return (
+				<Badge variant="outline">
+					{tipo === "P" ? "Pagar" : tipo === "R" ? "Receber" : "-"}
+				</Badge>
+			);
 		},
-		{
-			accessorKey: "vencimento",
-			header: "Vencimento",
-			cell: ({ row }) => <div>{formatDate(row.getValue("vencimento"))}</div>,
-		},
-		{
-			accessorKey: "valor",
-			header: () => <div className="text-right">Valor</div>,
-			cell: ({ row }) => {
-				const valor = row.getValue("valor") as string;
-				return (
-					<div className="text-right font-medium">{formatCurrency(valor)}</div>
-				);
-			},
-		},
-		{
-			accessorKey: "saldo",
-			header: () => <div className="text-right">Saldo</div>,
-			cell: ({ row }) => {
-				const saldo = row.getValue("saldo") as string;
-				return (
-					<div className="text-right font-medium">{formatCurrency(saldo)}</div>
-				);
-			},
-		},
-		{
-			id: "saldoSemJurosMulta",
-			header: () => <div className="text-right">Saldo sem juros/multa</div>,
-			cell: ({ row }) => {
-				const saldoSemJurosMulta = calculateSaldoSemJurosMulta(row.original);
-				return (
-					<div className="text-right font-medium">
-						{formatCurrency(saldoSemJurosMulta.toString())}
-					</div>
-				);
-			},
-		},
-		{
-			accessorKey: "tipo",
-			header: "Tipo",
-			cell: ({ row }) => {
-				const tipo = row.getValue("tipo") as string | null;
-				return (
-					<Badge variant="outline">
-						{tipo === "P" ? "Pagar" : tipo === "R" ? "Receber" : "-"}
-					</Badge>
-				);
-			},
-		},
-		{
-			id: "acoes",
-			header: "Ações",
-			cell: ({ row }) => {
-				const financeiro = row.original;
-				const podeExcluir = financeiro.status === "A" && !financeiro.baixa;
-				const podeDarBaixa = financeiro.status === "A" && !financeiro.baixa;
+	},
+	{
+		id: "acoes",
+		header: "Ações",
+		cell: ({ row }) => {
+			const financeiro = row.original;
+			const podeExcluir = financeiro.status === "A" && !financeiro.baixa;
+			const podeDarBaixa = financeiro.status === "A" && !financeiro.baixa;
 
-				return (
-					<div className="flex justify-end">
-						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<Button
-									variant="ghost"
-									size="icon"
-									className="h-8 w-8"
-									aria-label="Abrir menu de ações"
-								>
-									<IconDotsVertical className="size-4" />
-								</Button>
-							</DropdownMenuTrigger>
-							<DropdownMenuContent align="end">
-								<DropdownMenuItem onClick={() => onVerDetalhes(financeiro.id)}>
-									<IconEye className="size-4 mr-2" />
-									Ver detalhes
-								</DropdownMenuItem>
-								<DropdownMenuItem onClick={() => onEdit(financeiro)}>
-									<IconPencil className="size-4 mr-2" />
-									Editar
-								</DropdownMenuItem>
-								{podeDarBaixa && (
-									<>
-										<DropdownMenuSeparator />
-										<DropdownMenuItem onClick={() => onDarBaixa(financeiro.id)}>
-											<IconCheck className="size-4 mr-2" />
-											Dar baixa
-										</DropdownMenuItem>
-									</>
-								)}
-								{podeExcluir && (
-									<>
-										<DropdownMenuSeparator />
-										<DropdownMenuItem
-											variant="destructive"
-											onClick={() => onDelete(financeiro.id)}
-										>
-											<IconTrash className="size-4 mr-2" />
-											Excluir
-										</DropdownMenuItem>
-									</>
-								)}
-							</DropdownMenuContent>
-						</DropdownMenu>
-					</div>
-				);
-			},
-			enableHiding: false,
+			return (
+				<div className="flex justify-end">
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button
+								variant="ghost"
+								size="icon"
+								className="h-8 w-8"
+								aria-label="Abrir menu de ações"
+							>
+								<IconDotsVertical className="size-4" />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end">
+							<DropdownMenuItem onClick={() => onVerDetalhes(financeiro.id)}>
+								<IconEye className="size-4 mr-2" />
+								Ver detalhes
+							</DropdownMenuItem>
+							<DropdownMenuItem onClick={() => onEdit(financeiro)}>
+								<IconPencil className="size-4 mr-2" />
+								Editar
+							</DropdownMenuItem>
+							{podeDarBaixa && (
+								<>
+									<DropdownMenuSeparator />
+									<DropdownMenuItem onClick={() => onDarBaixa(financeiro.id)}>
+										<IconCheck className="size-4 mr-2" />
+										Dar baixa
+									</DropdownMenuItem>
+								</>
+							)}
+							{podeExcluir && (
+								<>
+									<DropdownMenuSeparator />
+									<DropdownMenuItem
+										variant="destructive"
+										onClick={() => onDelete(financeiro.id)}
+									>
+										<IconTrash className="size-4 mr-2" />
+										Excluir
+									</DropdownMenuItem>
+								</>
+							)}
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</div>
+			);
 		},
-	];
+		enableHiding: false,
+	},
+];
 
 export default function ContasAReceberPage() {
 	const router = useRouter();
@@ -404,7 +404,9 @@ export default function ContasAReceberPage() {
 							<TableCell>Vencimento</TableCell>
 							<TableCell>Valor</TableCell>
 							<TableCell>Saldo</TableCell>
-							<TableCell className="w-24 text-end">Saldo sem juros/multa</TableCell>
+							<TableCell className="w-24 text-end">
+								Saldo sem juros/multa
+							</TableCell>
 							<TableCell>Tipo</TableCell>
 							<TableCell className="w-12">Ações</TableCell>
 						</TableSkeleton>
@@ -418,8 +420,8 @@ export default function ContasAReceberPage() {
 												<TableHead
 													className={
 														header.id === "valor" ||
-															header.id === "saldo" ||
-															header.id === "saldoSemJurosMulta"
+														header.id === "saldo" ||
+														header.id === "saldoSemJurosMulta"
 															? "text-right"
 															: header.id === "acoes"
 																? "text-right"
@@ -430,9 +432,9 @@ export default function ContasAReceberPage() {
 													{header.isPlaceholder
 														? null
 														: flexRender(
-															header.column.columnDef.header,
-															header.getContext(),
-														)}
+																header.column.columnDef.header,
+																header.getContext(),
+															)}
 												</TableHead>
 											))}
 										</TableRow>

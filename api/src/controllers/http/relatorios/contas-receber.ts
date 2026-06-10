@@ -1,11 +1,15 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { gerarRelatorioContasReceber } from "@/services/relatorios/contas-receber.service.js";
+import { gerarRelatorioContasReceber } from "@/service/relatorios/contas-receber.service.js";
 
 const gerarRelatorioContasReceberSchema = z.object({
 	idempresa: z.string().uuid(),
-	dataInicio: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data deve estar no formato YYYY-MM-DD"),
-	dataFim: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data deve estar no formato YYYY-MM-DD"),
+	dataInicio: z
+		.string()
+		.regex(/^\d{4}-\d{2}-\d{2}$/, "Data deve estar no formato YYYY-MM-DD"),
+	dataFim: z
+		.string()
+		.regex(/^\d{4}-\d{2}-\d{2}$/, "Data deve estar no formato YYYY-MM-DD"),
 	formato: z.enum(["pdf", "txt", "html"]),
 });
 

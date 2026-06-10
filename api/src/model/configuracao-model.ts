@@ -102,4 +102,3 @@ export interface NovaConfiguracao {
 	relatorios?: Partial<ConfiguracaoRelatorios>;
 	impressao?: Partial<ConfiguracaoImpressao>;
 }
-

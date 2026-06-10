@@ -1,4 +1,7 @@
-import { buscarUsuarioPorId, atualizarPlanoUsuario } from "@/repositories/usuarios-repositories.js";
+import {
+	buscarUsuarioPorId,
+	atualizarPlanoUsuario,
+} from "@/repositories/usuarios-repositories.js";
 import { isPlanoInferior } from "@/constants/planos.js";
 import type { TipoPlano } from "@/constants/planos.js";
 
@@ -25,7 +28,9 @@ export async function downgradePlanoService({
 
 	// 2. Validar que o novo plano é inferior
 	if (!isPlanoInferior(planoAtual, planoNovo)) {
-		throw new Error("O novo plano deve ser inferior ao plano atual para realizar downgrade");
+		throw new Error(
+			"O novo plano deve ser inferior ao plano atual para realizar downgrade",
+		);
 	}
 
 	// 3. Verificar se ciclo atual está pago (verificar se fim do ciclo é no futuro)
@@ -54,4 +59,3 @@ export async function downgradePlanoService({
 		mensagem: `Downgrade agendado para ${fimCiclo.toLocaleDateString("pt-BR")}`,
 	};
 }
-

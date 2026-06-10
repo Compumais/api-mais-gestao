@@ -53,70 +53,69 @@ const createColumns = ({
 	onEdit,
 	onDelete,
 }: ColumnsProps): ColumnDef<Banco>[] => [
-		{
-			accessorKey: "codigo",
-			header: "Código",
-			cell: ({ row }) => <div>{row.getValue("codigo")}</div>,
-		},
-		{
-			accessorKey: "nome",
-			header: "Nome",
-			cell: ({ row }) => <div>{row.getValue("nome")}</div>,
-		},
-		{
-			id: "acoes",
-			header: "Ações",
-			cell: ({ row }) => {
-				const banco = row.original;
-				const isPadrao = isBancoPadrao(banco);
+	{
+		accessorKey: "codigo",
+		header: "Código",
+		cell: ({ row }) => <div>{row.getValue("codigo")}</div>,
+	},
+	{
+		accessorKey: "nome",
+		header: "Nome",
+		cell: ({ row }) => <div>{row.getValue("nome")}</div>,
+	},
+	{
+		id: "acoes",
+		header: "Ações",
+		cell: ({ row }) => {
+			const banco = row.original;
+			const isPadrao = isBancoPadrao(banco);
 
-				return (
-					<div className="flex justify-end">
-						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<Button
-									variant="ghost"
-									size="icon"
-									className="h-8 w-8"
-									aria-label="Abrir menu de ações"
+			return (
+				<div className="flex justify-end">
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button
+								variant="ghost"
+								size="icon"
+								className="h-8 w-8"
+								aria-label="Abrir menu de ações"
+							>
+								<IconDotsVertical className="size-4" />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end">
+							{!isPadrao && (
+								<>
+									<DropdownMenuItem onClick={() => onEdit(banco)}>
+										<IconPencil className="size-4" />
+										Editar
+									</DropdownMenuItem>
+									<DropdownMenuSeparator />
+								</>
+							)}
+							{!isPadrao && (
+								<DropdownMenuItem
+									variant="destructive"
+									onClick={() => onDelete(banco.id)}
 								>
-									<IconDotsVertical className="size-4" />
-								</Button>
-							</DropdownMenuTrigger>
-							<DropdownMenuContent align="end">
-								{!isPadrao && (
-									<>
-										<DropdownMenuItem onClick={() => onEdit(banco)}>
-											<IconPencil className="size-4" />
-											Editar
-										</DropdownMenuItem>
-										<DropdownMenuSeparator />
-									</>
-								)}
-								{!isPadrao && (
-									<DropdownMenuItem
-										variant="destructive"
-										onClick={() => onDelete(banco.id)}
-									>
-										<IconTrash className="size-4" />
-										Excluir
-									</DropdownMenuItem>
-								)}
-								{isPadrao && (
-									<DropdownMenuItem disabled>
-										<span className="text-muted-foreground text-sm">
-											Banco padrão (não editável)
-										</span>
-									</DropdownMenuItem>
-								)}
-							</DropdownMenuContent>
-						</DropdownMenu>
-					</div>
-				);
-			},
+									<IconTrash className="size-4" />
+									Excluir
+								</DropdownMenuItem>
+							)}
+							{isPadrao && (
+								<DropdownMenuItem disabled>
+									<span className="text-muted-foreground text-sm">
+										Banco padrão (não editável)
+									</span>
+								</DropdownMenuItem>
+							)}
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</div>
+			);
 		},
-	];
-
+	},
+];
 
 export default function BancosPage() {
 	const router = useRouter();
@@ -284,9 +283,9 @@ export default function BancosPage() {
 															{header.isPlaceholder
 																? null
 																: flexRender(
-																	header.column.columnDef.header,
-																	header.getContext(),
-																)}
+																		header.column.columnDef.header,
+																		header.getContext(),
+																	)}
 														</TableHead>
 													))}
 												</TableRow>

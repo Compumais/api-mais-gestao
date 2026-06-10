@@ -52,9 +52,7 @@ export const notificacoesService = {
 	},
 
 	async marcarComoLida(id: string): Promise<Notificacao> {
-		const { data } = await api.patch<Notificacao>(
-			`/notificacoes/${id}/lido`,
-		);
+		const { data } = await api.patch<Notificacao>(`/notificacoes/${id}/lido`);
 		return data;
 	},
 };

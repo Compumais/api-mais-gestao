@@ -46,12 +46,12 @@ describe("buscarContaCorrenteLancamentoPorIdService", () => {
 
 	beforeEach(() => {
 		vi.clearAllMocks();
-		vi.mocked(contaCorrenteRepository.buscarContaCorrentePorId).mockResolvedValue(
-			contaCorrenteMock as ContaCorrente,
-		);
-		vi.mocked(entidadeRepository.verificarUsuarioPertenceEmpresa).mockResolvedValue(
-			true,
-		);
+		vi.mocked(
+			contaCorrenteRepository.buscarContaCorrentePorId,
+		).mockResolvedValue(contaCorrenteMock as ContaCorrente);
+		vi.mocked(
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(true);
 	});
 
 	it("deve buscar lançamento com sucesso quando encontrado", async () => {
@@ -95,9 +95,9 @@ describe("buscarContaCorrenteLancamentoPorIdService", () => {
 		vi.mocked(
 			contaCorrenteLancamentoRepository.buscarContaCorrenteLancamentoPorId,
 		).mockResolvedValue(lancamentoMock);
-		vi.mocked(entidadeRepository.verificarUsuarioPertenceEmpresa).mockResolvedValue(
-			false,
-		);
+		vi.mocked(
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(false);
 
 		const resultado = await buscarContaCorrenteLancamentoPorIdService({
 			idusuario: "usuario-1",

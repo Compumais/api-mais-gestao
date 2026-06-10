@@ -28,7 +28,7 @@ const upgradeBodySchema = z.object({
 
 export async function upgradePlanoController(
 	request: FastifyRequest,
-	reply: FastifyReply
+	reply: FastifyReply,
 ) {
 	if (!request.user) {
 		return reply.status(401).send({ message: "Não autorizado" });
@@ -79,4 +79,3 @@ export async function upgradePlanoController(
 		});
 	}
 }
-

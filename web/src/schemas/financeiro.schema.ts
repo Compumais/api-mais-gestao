@@ -28,7 +28,11 @@ const TIPOS_DOCUMENTO_CARTAO = ["Cartão crédito", "Cartão débito"] as const;
 export const criarFinanceiroSchema = z
 	.object({
 		idempresa: z.string().uuid("ID da empresa inválido"),
-		documento: z.string().max(60, "Documento deve ter no máximo 60 caracteres").nullable().optional(),
+		documento: z
+			.string()
+			.max(60, "Documento deve ter no máximo 60 caracteres")
+			.nullable()
+			.optional(),
 		pagamentoRecorrente: z.boolean().optional().default(false),
 		tipoDocumento: z.enum([...TIPO_DOCUMENTO_OPTIONS], {
 			message: "Tipo de documento é obrigatório",
@@ -93,7 +97,8 @@ export const criarFinanceiroSchema = z
 			if (dataEmissao > dataVencimento) {
 				ctx.addIssue({
 					code: z.ZodIssueCode.custom,
-					message: "Data de emissão não pode ser posterior à data de vencimento",
+					message:
+						"Data de emissão não pode ser posterior à data de vencimento",
 					path: ["emissao"],
 				});
 			}
@@ -142,15 +147,24 @@ export const atualizarFinanceiroSchema = z
 	})
 	.superRefine((data, ctx) => {
 		// Validação para campos de cheque (se tipoDocumento estiver presente)
-		if (data.tipoDocumento && TIPOS_DOCUMENTO_CHEQUE.includes(data.tipoDocumento as any)) {
-			if (data.agencia !== undefined && (!data.agencia || data.agencia.trim() === "")) {
+		if (
+			data.tipoDocumento &&
+			TIPOS_DOCUMENTO_CHEQUE.includes(data.tipoDocumento as any)
+		) {
+			if (
+				data.agencia !== undefined &&
+				(!data.agencia || data.agencia.trim() === "")
+			) {
 				ctx.addIssue({
 					code: z.ZodIssueCode.custom,
 					message: "Agência é obrigatória para cheques",
 					path: ["agencia"],
 				});
 			}
-			if (data.conta !== undefined && (!data.conta || data.conta.trim() === "")) {
+			if (
+				data.conta !== undefined &&
+				(!data.conta || data.conta.trim() === "")
+			) {
 				ctx.addIssue({
 					code: z.ZodIssueCode.custom,
 					message: "Conta é obrigatória para cheques",
@@ -166,7 +180,8 @@ export const atualizarFinanceiroSchema = z
 			if (dataEmissao > dataVencimento) {
 				ctx.addIssue({
 					code: z.ZodIssueCode.custom,
-					message: "Data de emissão não pode ser posterior à data de vencimento",
+					message:
+						"Data de emissão não pode ser posterior à data de vencimento",
 					path: ["emissao"],
 				});
 			}
@@ -174,5 +189,6 @@ export const atualizarFinanceiroSchema = z
 	});
 
 export type CriarFinanceiroFormData = z.infer<typeof criarFinanceiroSchema>;
-export type AtualizarFinanceiroFormData = z.infer<typeof atualizarFinanceiroSchema>;
-
+export type AtualizarFinanceiroFormData = z.infer<
+	typeof atualizarFinanceiroSchema
+>;

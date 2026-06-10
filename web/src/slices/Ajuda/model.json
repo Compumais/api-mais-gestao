@@ -1,49 +1,49 @@
 {
-  "id": "ajuda",
-  "type": "SharedSlice",
-  "name": "Ajuda",
-  "description": "Ajuda",
-  "variations": [
-    {
-      "id": "default",
-      "name": "Default",
-      "docURL": "...",
-      "version": "initial",
-      "description": "Default",
-      "imageUrl": "",
-      "primary": {
-        "title": {
-          "type": "Text",
-          "config": {
-            "label": "title",
-            "placeholder": ""
-          }
-        },
-        "created_at": {
-          "type": "Date",
-          "config": {
-            "label": "created_at",
-            "placeholder": ""
-          }
-        },
-        "author": {
-          "type": "Text",
-          "config": {
-            "label": "author",
-            "placeholder": ""
-          }
-        },
-        "content": {
-          "type": "StructuredText",
-          "config": {
-            "label": "content",
-            "placeholder": "",
-            "allowTargetBlank": true,
-            "multi": "heading1,heading2,heading3,heading4,heading5,heading6,strong,em,hyperlink,image,embed,list-item,o-list-item,rtl,preformatted,paragraph"
-          }
-        }
-      },
-      "items": {}
-    }
-  ]
+	"id": "ajuda",
+	"type": "SharedSlice",
+	"name": "Ajuda",
+	"description": "Ajuda",
+	"variations": [
+		{
+			"id": "default",
+			"name": "Default",
+			"docURL": "...",
+			"version": "initial",
+			"description": "Default",
+			"imageUrl": "",
+			"primary": {
+				"title": {
+					"type": "Text",
+					"config": {
+						"label": "title",
+						"placeholder": ""
+					}
+				},
+				"created_at": {
+					"type": "Date",
+					"config": {
+						"label": "created_at",
+						"placeholder": ""
+					}
+				},
+				"author": {
+					"type": "Text",
+					"config": {
+						"label": "author",
+						"placeholder": ""
+					}
+				},
+				"content": {
+					"type": "StructuredText",
+					"config": {
+						"label": "content",
+						"placeholder": "",
+						"allowTargetBlank": true,
+						"multi": "heading1,heading2,heading3,heading4,heading5,heading6,strong,em,hyperlink,image,embed,list-item,o-list-item,rtl,preformatted,paragraph"
+					}
+				}
+			},
+			"items": {}
+		}
+	]
 }

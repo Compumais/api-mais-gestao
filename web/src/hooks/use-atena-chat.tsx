@@ -17,13 +17,11 @@ interface AtenaChatContextType {
 	limparMensagens: () => void;
 }
 
-const AtenaChatContext = React.createContext<AtenaChatContextType | undefined>(undefined);
+const AtenaChatContext = React.createContext<AtenaChatContextType | undefined>(
+	undefined,
+);
 
-export function AtenaChatProvider({
-	children,
-}: {
-	children: React.ReactNode;
-}) {
+export function AtenaChatProvider({ children }: { children: React.ReactNode }) {
 	const [isOpen, setIsOpen] = React.useState(false);
 	const [mensagens, setMensagens] = React.useState<MensagemChat[]>([]);
 
@@ -66,5 +64,3 @@ export function useAtenaChat() {
 	}
 	return context;
 }
-
-

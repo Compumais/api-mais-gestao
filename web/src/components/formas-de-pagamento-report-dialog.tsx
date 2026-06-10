@@ -22,7 +22,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { useEmpresa } from "@/provider/empresa-provider";
-import { gerarRelatorioFormasDePagamento } from "@/services/relatorios.service";
+import { gerarRelatorioFormasDePagamento } from "@/service/relatorios.service";
 
 interface FormasDePagamentoReportDialogProps {
 	open: boolean;
@@ -120,7 +120,9 @@ export function FormasDePagamentoReportDialog({
 						/>
 					</Field>
 					<Field>
-						<FieldLabel htmlFor="fdp-formato">Formato do Relatório *</FieldLabel>
+						<FieldLabel htmlFor="fdp-formato">
+							Formato do Relatório *
+						</FieldLabel>
 						<Select
 							value={formato}
 							onValueChange={(v) => setFormato(v as "pdf" | "txt" | "html")}
@@ -149,7 +151,9 @@ export function FormasDePagamentoReportDialog({
 						onClick={handleGerar}
 						disabled={gerarRelatorioMutation.isPending}
 					>
-						{gerarRelatorioMutation.isPending ? "Gerando..." : "Gerar Relatório"}
+						{gerarRelatorioMutation.isPending
+							? "Gerando..."
+							: "Gerar Relatório"}
 					</Button>
 				</DialogFooter>
 			</DialogContent>

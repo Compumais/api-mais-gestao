@@ -47,4 +47,3 @@ export async function atualizarConfiguracaoService({
 
 	return httpOk(configuracao);
 }
-
