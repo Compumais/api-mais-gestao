@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { gerarRelatorioCentroCustos } from "@/services/relatorios/centro-custos.service.js";
+import { gerarRelatorioCentroCustos } from "@/service/relatorios/centro-custos.service.js";
 
 const gerarRelatorioCentroCustosSchema = z.object({
 	idempresa: z.string().uuid(),

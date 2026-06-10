@@ -14,7 +14,10 @@ import {
 	criarClienteAsaas,
 } from "@/repositories/assinatura-repositories.js";
 import { buscarEmpresaCobrancaDoProprietario } from "@/repositories/empresa-repositories.js";
-import { buscarUsuarioPorId, atualizarPlanoUsuario } from "@/repositories/usuarios-repositories.js";
+import {
+	buscarUsuarioPorId,
+	atualizarPlanoUsuario,
+} from "@/repositories/usuarios-repositories.js";
 import {
 	createCustomer,
 	createPayment,
@@ -173,7 +176,10 @@ export async function upgradePlanoService({
 
 		asaasInvoiceUrl = asaasSubscription.invoiceUrl;
 	} else {
-		const valorParaCobrar = Math.max(0, Math.round(valorProporcional * 100) / 100);
+		const valorParaCobrar = Math.max(
+			0,
+			Math.round(valorProporcional * 100) / 100,
+		);
 
 		if (valorParaCobrar > 0) {
 			const pagamento = await createPayment({

@@ -1,4 +1,16 @@
-import { bigint, date, foreignKey, index, integer, numeric, pgTable, smallint, text, timestamp, varchar } from "drizzle-orm/pg-core";
+import {
+	bigint,
+	date,
+	foreignKey,
+	index,
+	integer,
+	numeric,
+	pgTable,
+	smallint,
+	text,
+	timestamp,
+	varchar,
+} from "drizzle-orm/pg-core";
 import { cfop } from "./cfop";
 import { condicaopagamento } from "./condicao-pagamento";
 import { contacorrente } from "./conta-corrente";

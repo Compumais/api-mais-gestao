@@ -1,4 +1,3 @@
-
 import type { assinaturas, clientesasaas } from "@/repositories/schema";
 
 export type Assinatura = typeof assinaturas.$inferSelect;

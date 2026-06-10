@@ -167,9 +167,10 @@ export const configuracaoService = {
 		idempresa: string,
 		dados: CriarWebhookData,
 	): Promise<ConfiguracaoIntegracao["webhooks"][0]> {
-		const { data } = await api.post<
-			ConfiguracaoIntegracao["webhooks"][0]
-		>(`/configuracoes/${idempresa}/webhooks`, dados);
+		const { data } = await api.post<ConfiguracaoIntegracao["webhooks"][0]>(
+			`/configuracoes/${idempresa}/webhooks`,
+			dados,
+		);
 		return data;
 	},
 
@@ -178,9 +179,10 @@ export const configuracaoService = {
 		webhookId: string,
 		dados: AtualizarWebhookData,
 	): Promise<ConfiguracaoIntegracao["webhooks"][0]> {
-		const { data } = await api.put<
-			ConfiguracaoIntegracao["webhooks"][0]
-		>(`/configuracoes/${idempresa}/webhooks/${webhookId}`, dados);
+		const { data } = await api.put<ConfiguracaoIntegracao["webhooks"][0]>(
+			`/configuracoes/${idempresa}/webhooks/${webhookId}`,
+			dados,
+		);
 		return data;
 	},
 
@@ -188,4 +190,3 @@ export const configuracaoService = {
 		await api.delete(`/configuracoes/${idempresa}/webhooks/${webhookId}`);
 	},
 };
-

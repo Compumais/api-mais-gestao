@@ -116,9 +116,9 @@ describe("buscarFinanceiroService", () => {
 
 	beforeEach(() => {
 		vi.clearAllMocks();
-		vi.mocked(entidadeRepository.verificarUsuarioPertenceEmpresa).mockResolvedValue(
-			true,
-		);
+		vi.mocked(
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(true);
 	});
 
 	it("deve buscar financeiro existente com sucesso", async () => {
@@ -168,9 +168,9 @@ describe("buscarFinanceiroService", () => {
 		vi.mocked(financeiroRepository.buscarFinanceiroPorId).mockResolvedValue(
 			financeiroMock,
 		);
-		vi.mocked(entidadeRepository.verificarUsuarioPertenceEmpresa).mockResolvedValue(
-			false,
-		);
+		vi.mocked(
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(false);
 
 		const resultado = await buscarFinanceiroService({
 			idusuario: "usuario-1",
@@ -228,4 +228,3 @@ describe("buscarFinanceiroService", () => {
 		}
 	});
 });
-

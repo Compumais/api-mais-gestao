@@ -23,18 +23,14 @@ export type CriarNotificacaoParams = {
 };
 
 function autorDeveNotificarProprietario(perfilAutor: string[]): boolean {
-	return (
-		perfilAutor.includes("user") || perfilAutor.includes("financeiro")
-	);
+	return perfilAutor.includes("user") || perfilAutor.includes("financeiro");
 }
 
 function autorDeveNotificarFinanceiros(
 	tipo: TipoNotificacao,
 	perfilAutor: string[],
 ): boolean {
-	return (
-		tipo === "conta_corrente_lancamento" && perfilAutor.includes("user")
-	);
+	return tipo === "conta_corrente_lancamento" && perfilAutor.includes("user");
 }
 
 export async function criarNotificacaoService(
@@ -57,7 +53,10 @@ export async function criarNotificacaoService(
 
 		if (autorDeveNotificarProprietario(perfil)) {
 			const empresa = await buscarEmpresaPorId(idempresa);
-			if (empresa?.idproprietario && empresa.idproprietario !== idusuarioAutor) {
+			if (
+				empresa?.idproprietario &&
+				empresa.idproprietario !== idusuarioAutor
+			) {
 				destinatarios.add(empresa.idproprietario);
 			}
 		}

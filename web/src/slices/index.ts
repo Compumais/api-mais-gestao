@@ -3,6 +3,6 @@
 import dynamic from "next/dynamic";
 
 export const components = {
-  ajuda: dynamic(() => import("./Ajuda")),
-  text_blcok: dynamic(() => import("./TextBlcok")),
+	ajuda: dynamic(() => import("./Ajuda")),
+	text_blcok: dynamic(() => import("./TextBlcok")),
 };

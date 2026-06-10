@@ -11,7 +11,13 @@ export const criarPlanoContasSchema = z.object({
 	classe: z.string().optional().nullable(),
 	centrocustoobrigatorio: z.number().int().min(0).max(1).optional().nullable(),
 	tipoconta: z.number().int().min(1).max(4).optional().nullable(),
-	exportaparacontabilidade: z.number().int().min(0).max(1).optional().nullable(),
+	exportaparacontabilidade: z
+		.number()
+		.int()
+		.min(0)
+		.max(1)
+		.optional()
+		.nullable(),
 	idplanocontas: z
 		.uuid("ID do plano de contas pai inválido")
 		.nullable()

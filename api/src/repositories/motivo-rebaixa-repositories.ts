@@ -12,7 +12,9 @@ export async function buscarMotivoRebaixaPorId(id: string) {
 	return registro;
 }
 
-export async function criarMotivoRebaixa(dadosMotivoRebaixa: NovoMotivoRebaixa) {
+export async function criarMotivoRebaixa(
+	dadosMotivoRebaixa: NovoMotivoRebaixa,
+) {
 	const [registro] = await db
 		.insert(motivorebaixa)
 		.values(dadosMotivoRebaixa)

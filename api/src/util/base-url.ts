@@ -8,4 +8,3 @@ export function getApiBaseUrl(): string {
 	const fromEnv = process.env.BETTER_AUTH_URL || process.env.API_URL;
 	return removerBarraFinal(fromEnv || DEFAULT_LOCAL_BASE_URL);
 }
-

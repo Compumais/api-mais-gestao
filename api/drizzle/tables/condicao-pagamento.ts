@@ -1,4 +1,13 @@
-import { bigint, foreignKey, index, numeric, pgTable, smallint, text, varchar } from "drizzle-orm/pg-core";
+import {
+	bigint,
+	foreignKey,
+	index,
+	numeric,
+	pgTable,
+	smallint,
+	text,
+	varchar,
+} from "drizzle-orm/pg-core";
 import { empresa } from "./empresas";
 
 export const condicaopagamento = pgTable(

@@ -1,6 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { sql } from "drizzle-orm";
-import { foreignKey, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import {
+	foreignKey,
+	jsonb,
+	pgTable,
+	text,
+	timestamp,
+	uniqueIndex,
+} from "drizzle-orm/pg-core";
 import { empresa } from "./empresas";
 
 export const configuracoes = pgTable(

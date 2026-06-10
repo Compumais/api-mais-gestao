@@ -10,4 +10,3 @@ export const atualizarConfiguracaoUsuarioSchema = z.object({
 export type AtualizarConfiguracaoUsuarioFormData = z.infer<
 	typeof atualizarConfiguracaoUsuarioSchema
 >;
-

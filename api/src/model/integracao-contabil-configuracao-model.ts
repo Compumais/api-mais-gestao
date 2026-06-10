@@ -1,4 +1,6 @@
-import type { integracaocontabilconfiguracao} from "@/repositories/schema";
+import type { integracaocontabilconfiguracao } from "@/repositories/schema";
 
-export type IntegracaoContabilConfiguracao = typeof integracaocontabilconfiguracao.$inferSelect;
-export type NovoIntegracaoContabilConfiguracao = typeof integracaocontabilconfiguracao.$inferInsert;
+export type IntegracaoContabilConfiguracao =
+	typeof integracaocontabilconfiguracao.$inferSelect;
+export type NovoIntegracaoContabilConfiguracao =
+	typeof integracaocontabilconfiguracao.$inferInsert;

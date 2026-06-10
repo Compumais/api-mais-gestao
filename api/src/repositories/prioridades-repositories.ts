@@ -35,54 +35,55 @@ export async function atualizarPrioridade(
 }
 
 export async function excluirPrioridade(id: string) {
-  const [prioridade] = await db
-    .delete(prioridadesTable)
-    .where(eq(prioridadesTable.id, id))
-    .returning();
+	const [prioridade] = await db
+		.delete(prioridadesTable)
+		.where(eq(prioridadesTable.id, id))
+		.returning();
 
-  return prioridade;
+	return prioridade;
 }
 
 export type ListarPrioridadesParametros = {
-  descricao?: string | undefined;
-  inativo?: number | undefined;
-  page?: number;
-  limit?: number;
-}
+	descricao?: string | undefined;
+	inativo?: number | undefined;
+	page?: number;
+	limit?: number;
+};
 
 export async function listarPrioridades({
-  descricao,
-  inativo,
-  limit = 10,
-  page = 1,
+	descricao,
+	inativo,
+	limit = 10,
+	page = 1,
 }: ListarPrioridadesParametros) {
-  const where = [];
+	const where = [];
 
-  if (descricao) {
-    where.push(ilike(prioridadesTable.descricao, `%${descricao}%`))
-  }
+	if (descricao) {
+		where.push(ilike(prioridadesTable.descricao, `%${descricao}%`));
+	}
 
-  if (inativo !== undefined) {
-    where.push(eq(prioridadesTable.inativo, inativo))
-  }
+	if (inativo !== undefined) {
+		where.push(eq(prioridadesTable.inativo, inativo));
+	}
 
-  const offset = (page - 1) * limit;
+	const offset = (page - 1) * limit;
 
-  const [totalCount, prioridades] = await Promise.all([
-    db.select({ value: count() })
-      .from(prioridadesTable)
-      .where(and(...where)),
-    db.select()
-      .from(prioridadesTable)
-      .where(and(...where))
-      .orderBy(desc(prioridadesTable.descricao))
-      .limit(limit)
-      .offset(offset),
-  ])
+	const [totalCount, prioridades] = await Promise.all([
+		db
+			.select({ value: count() })
+			.from(prioridadesTable)
+			.where(and(...where)),
+		db
+			.select()
+			.from(prioridadesTable)
+			.where(and(...where))
+			.orderBy(desc(prioridadesTable.descricao))
+			.limit(limit)
+			.offset(offset),
+	]);
 
-
-  return {
-    prioridades,
-    total: totalCount[0]?.value ?? 0,
-  }
+	return {
+		prioridades,
+		total: totalCount[0]?.value ?? 0,
+	};
 }

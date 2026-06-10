@@ -22,7 +22,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { useEmpresa } from "@/provider/empresa-provider";
-import { gerarRelatorioReceitasPorCategoria } from "@/services/relatorios.service";
+import { gerarRelatorioReceitasPorCategoria } from "@/service/relatorios.service";
 
 interface ReceitasPorCategoriaReportDialogProps {
 	open: boolean;
@@ -119,7 +119,9 @@ export function ReceitasPorCategoriaReportDialog({
 						/>
 					</Field>
 					<Field>
-						<FieldLabel htmlFor="rpc-formato">Formato do Relatório *</FieldLabel>
+						<FieldLabel htmlFor="rpc-formato">
+							Formato do Relatório *
+						</FieldLabel>
 						<Select
 							value={formato}
 							onValueChange={(v) => setFormato(v as "pdf" | "txt" | "html")}
@@ -148,7 +150,9 @@ export function ReceitasPorCategoriaReportDialog({
 						onClick={handleGerar}
 						disabled={gerarRelatorioMutation.isPending}
 					>
-						{gerarRelatorioMutation.isPending ? "Gerando..." : "Gerar Relatório"}
+						{gerarRelatorioMutation.isPending
+							? "Gerando..."
+							: "Gerar Relatório"}
 					</Button>
 				</DialogFooter>
 			</DialogContent>

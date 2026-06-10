@@ -1,9 +1,12 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { chatComAtenaService } from "./chat-com-atena.js";
 
-vi.mock("@/service/configuracao-usuario/buscar-configuracao-usuario.js", () => ({
-	buscarConfiguracaoUsuarioService: vi.fn(),
-}));
+vi.mock(
+	"@/service/configuracao-usuario/buscar-configuracao-usuario.js",
+	() => ({
+		buscarConfiguracaoUsuarioService: vi.fn(),
+	}),
+);
 
 vi.mock("@/service/dashboard/buscar-dados-dashboard.js", () => ({
 	buscarDadosDashboardService: vi.fn(),
@@ -19,7 +22,9 @@ vi.mock("@/repositories/empresa-repositories.js", () => ({
 }));
 
 const mockBuscarConfiguracaoUsuarioService = async () => {
-	const mod = await import("@/service/configuracao-usuario/buscar-configuracao-usuario.js");
+	const mod = await import(
+		"@/service/configuracao-usuario/buscar-configuracao-usuario.js"
+	);
 	return vi.mocked(mod.buscarConfiguracaoUsuarioService);
 };
 
@@ -34,7 +39,9 @@ const mockBuscarHistoricoFinanceiroService = async () => {
 };
 
 const mockBuscarUltimasMovimentacoesService = async () => {
-	const mod = await import("@/service/dashboard/buscar-ultimas-movimentacoes.js");
+	const mod = await import(
+		"@/service/dashboard/buscar-ultimas-movimentacoes.js"
+	);
 	return vi.mocked(mod.buscarUltimasMovimentacoesService);
 };
 
@@ -64,10 +71,13 @@ describe("chatComAtenaService", () => {
 	});
 
 	it("deve retornar 502 quando fetch falha (upstream)", async () => {
-		const buscarConfiguracaoUsuarioService = await mockBuscarConfiguracaoUsuarioService();
+		const buscarConfiguracaoUsuarioService =
+			await mockBuscarConfiguracaoUsuarioService();
 		const buscarDadosDashboardService = await mockBuscarDadosDashboardService();
-		const buscarHistoricoFinanceiroService = await mockBuscarHistoricoFinanceiroService();
-		const buscarUltimasMovimentacoesService = await mockBuscarUltimasMovimentacoesService();
+		const buscarHistoricoFinanceiroService =
+			await mockBuscarHistoricoFinanceiroService();
+		const buscarUltimasMovimentacoesService =
+			await mockBuscarUltimasMovimentacoesService();
 
 		buscarConfiguracaoUsuarioService.mockResolvedValue({
 			success: true,

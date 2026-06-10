@@ -11,7 +11,9 @@ export interface IntegracoesUsuario {
 }
 
 /** Objeto sem nulls para insert/update no schema (exactOptionalPropertyTypes). */
-function integracoesParaJsonb(dados: IntegracoesUsuario): Record<string, string> {
+function integracoesParaJsonb(
+	dados: IntegracoesUsuario,
+): Record<string, string> {
 	return Object.fromEntries(
 		(
 			[

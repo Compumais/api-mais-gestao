@@ -154,7 +154,9 @@ export async function createSubscription(
 	return asaasRequest<AsaasSubscription>("/subscriptions", "POST", data);
 }
 
-export async function createPayment(data: CreatePaymentDTO): Promise<AsaasPayment> {
+export async function createPayment(
+	data: CreatePaymentDTO,
+): Promise<AsaasPayment> {
 	return asaasRequest<AsaasPayment>("/payments", "POST", data);
 }
 

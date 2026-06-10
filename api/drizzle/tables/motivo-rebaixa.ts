@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
-    foreignKey,
+	foreignKey,
 	index,
 	pgTable,
 	smallint,

@@ -4,17 +4,17 @@ import { buscarContaContabilPorId } from "@/repositories/conta-contabil-reposito
 import { httpNaoEncontrado, httpOk } from "@/util/http-util.js";
 
 type BuscarContaContabilParametros = {
-    id: string;
+	id: string;
 };
 
 export async function buscarContaContabilService({
-    id,
+	id,
 }: BuscarContaContabilParametros): Promise<HttpResponse<ContaContabil>> {
-    const contaContabil = await buscarContaContabilPorId(id);
+	const contaContabil = await buscarContaContabilPorId(id);
 
-    if (!contaContabil) {
-        return httpNaoEncontrado();
-    }
+	if (!contaContabil) {
+		return httpNaoEncontrado();
+	}
 
-    return httpOk<ContaContabil>(contaContabil);
+	return httpOk<ContaContabil>(contaContabil);
 }

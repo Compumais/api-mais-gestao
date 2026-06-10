@@ -9,7 +9,7 @@ const downgradeBodySchema = z.object({
 
 export async function downgradePlanoController(
 	request: FastifyRequest,
-	reply: FastifyReply
+	reply: FastifyReply,
 ) {
 	if (!request.user) {
 		return reply.status(401).send({ message: "Não autorizado" });
@@ -42,4 +42,3 @@ export async function downgradePlanoController(
 		});
 	}
 }
-

@@ -44,12 +44,12 @@ export const planocontas = pgTable(
 		})
 			.onUpdate("cascade")
 			.onDelete("restrict"),
-    foreignKey({
-      columns: [table.idempresa],
-      foreignColumns: [empresa.id],
-      name: "planocontas_idempresa_fkey",
-    })
-      .onUpdate("cascade")
-      .onDelete("cascade"),
+		foreignKey({
+			columns: [table.idempresa],
+			foreignColumns: [empresa.id],
+			name: "planocontas_idempresa_fkey",
+		})
+			.onUpdate("cascade")
+			.onDelete("cascade"),
 	],
 );

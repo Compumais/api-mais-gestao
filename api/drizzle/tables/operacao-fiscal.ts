@@ -1,4 +1,12 @@
-import { bigint, foreignKey, index, pgTable, smallint, text, varchar } from "drizzle-orm/pg-core";
+import {
+	bigint,
+	foreignKey,
+	index,
+	pgTable,
+	smallint,
+	text,
+	varchar,
+} from "drizzle-orm/pg-core";
 import { empresa } from "./empresas";
 import { planocontas } from "./plano-contas";
 import { tipodocumentofinanceiro } from "./tipo-documento-financeiro";

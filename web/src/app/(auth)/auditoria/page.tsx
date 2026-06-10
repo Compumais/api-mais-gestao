@@ -31,10 +31,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { useEmpresa } from "@/hooks/use-empresa";
-import {
-	type Auditoria,
-	auditoriaService,
-} from "@/services/auditoria.service";
+import { type Auditoria, auditoriaService } from "@/services/auditoria.service";
 import { PageContainer } from "../components/page-container";
 import { TableSkeleton } from "@/components/table-skeleton";
 
@@ -47,60 +44,56 @@ type ColumnsProps = {
 const createColumns = ({
 	onViewDetails,
 }: ColumnsProps): ColumnDef<Auditoria>[] => [
-		{
-			accessorKey: "acao",
-			header: "Ação",
-			cell: ({ row }) => (
-				<div className="font-medium">{row.getValue("acao")}</div>
-			),
+	{
+		accessorKey: "acao",
+		header: "Ação",
+		cell: ({ row }) => (
+			<div className="font-medium">{row.getValue("acao")}</div>
+		),
+	},
+	{
+		accessorKey: "recurso",
+		header: "Recurso",
+		cell: ({ row }) => <div>{row.getValue("recurso")}</div>,
+	},
+	{
+		accessorKey: "idrecurso",
+		header: "ID Recurso",
+		cell: ({ row }) => (
+			<div className="text-muted-foreground">
+				{row.getValue("idrecurso") || "-"}
+			</div>
+		),
+	},
+	{
+		accessorKey: "criadoem",
+		header: "Data/Hora",
+		cell: ({ row }) => {
+			const data = row.getValue("criadoem") as string;
+			return <div>{dayjs(data).format("DD/MM/YYYY HH:mm:ss")}</div>;
 		},
-		{
-			accessorKey: "recurso",
-			header: "Recurso",
-			cell: ({ row }) => <div>{row.getValue("recurso")}</div>,
-		},
-		{
-			accessorKey: "idrecurso",
-			header: "ID Recurso",
-			cell: ({ row }) => (
-				<div className="text-muted-foreground">
-					{row.getValue("idrecurso") || "-"}
+	},
+	{
+		id: "acoes",
+		header: "Ações",
+		cell: ({ row }) => {
+			const auditoria = row.original;
+			return (
+				<div className="flex justify-end">
+					<Button
+						variant="ghost"
+						size="sm"
+						onClick={() => onViewDetails(auditoria)}
+						className="gap-2"
+					>
+						<IconEye className="size-4" />
+						Ver Detalhes
+					</Button>
 				</div>
-			),
+			);
 		},
-		{
-			accessorKey: "criadoem",
-			header: "Data/Hora",
-			cell: ({ row }) => {
-				const data = row.getValue("criadoem") as string;
-				return (
-					<div>
-						{dayjs(data).format("DD/MM/YYYY HH:mm:ss")}
-					</div>
-				);
-			},
-		},
-		{
-			id: "acoes",
-			header: "Ações",
-			cell: ({ row }) => {
-				const auditoria = row.original;
-				return (
-					<div className="flex justify-end">
-						<Button
-							variant="ghost"
-							size="sm"
-							onClick={() => onViewDetails(auditoria)}
-							className="gap-2"
-						>
-							<IconEye className="size-4" />
-							Ver Detalhes
-						</Button>
-					</div>
-				);
-			},
-		},
-	];
+	},
+];
 
 export default function AuditoriaPage() {
 	const { localStorageEmpresa } = useEmpresa();
@@ -109,8 +102,9 @@ export default function AuditoriaPage() {
 		pageIndex: 0,
 		pageSize: 10,
 	});
-	const [selectedAuditoria, setSelectedAuditoria] =
-		useState<Auditoria | null>(null);
+	const [selectedAuditoria, setSelectedAuditoria] = useState<Auditoria | null>(
+		null,
+	);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
 
 	const { data, isLoading } = useQuery({
@@ -187,17 +181,15 @@ export default function AuditoriaPage() {
 										<TableRow key={headerGroup.id}>
 											{headerGroup.headers.map((header) => (
 												<TableHead
-													className={
-														header.id === "acoes" ? "text-right" : ""
-													}
+													className={header.id === "acoes" ? "text-right" : ""}
 													key={header.id}
 												>
 													{header.isPlaceholder
 														? null
 														: flexRender(
-															header.column.columnDef.header,
-															header.getContext(),
-														)}
+																header.column.columnDef.header,
+																header.getContext(),
+															)}
 												</TableHead>
 											))}
 										</TableRow>
@@ -344,4 +336,3 @@ export default function AuditoriaPage() {
 		</PageContainer>
 	);
 }
-

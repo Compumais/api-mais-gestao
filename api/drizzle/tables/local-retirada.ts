@@ -1,4 +1,11 @@
-import { foreignKey, index, pgTable, smallint, text, varchar } from "drizzle-orm/pg-core";
+import {
+	foreignKey,
+	index,
+	pgTable,
+	smallint,
+	text,
+	varchar,
+} from "drizzle-orm/pg-core";
 import { empresa } from "./empresas";
 
 export const localretirada = pgTable(

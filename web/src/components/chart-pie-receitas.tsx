@@ -63,12 +63,7 @@ export function ChartPieReceitas() {
 		return "Últimos 3 meses";
 	};
 
-	const {
-		data,
-		isLoading,
-		isError,
-		error,
-	} = useQuery({
+	const { data, isLoading, isError, error } = useQuery({
 		queryKey: ["dashboard", "top-receitas-categoria", empresa?.id, dias],
 		queryFn: () =>
 			dashboardService.buscarTopReceitasPorCategoria({
@@ -192,7 +187,10 @@ export function ChartPieReceitas() {
 				</CardAction>
 			</CardHeader>
 			<CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-				<ChartContainer config={chartConfig} className="aspect-auto h-[250px] w-full">
+				<ChartContainer
+					config={chartConfig}
+					className="aspect-auto h-[250px] w-full"
+				>
 					<PieChart>
 						<Pie
 							data={chartData}

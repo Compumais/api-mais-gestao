@@ -21,7 +21,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { useEmpresa } from "@/provider/empresa-provider";
-import { gerarRelatorioCentroCustos } from "@/services/relatorios.service";
+import { gerarRelatorioCentroCustos } from "@/service/relatorios.service";
 
 interface CentroCustosReportDialogProps {
 	open: boolean;
@@ -94,7 +94,9 @@ export function CentroCustosReportDialog({
 						onClick={() => gerarRelatorioMutation.mutate()}
 						disabled={gerarRelatorioMutation.isPending}
 					>
-						{gerarRelatorioMutation.isPending ? "Gerando..." : "Gerar Relatório"}
+						{gerarRelatorioMutation.isPending
+							? "Gerando..."
+							: "Gerar Relatório"}
 					</Button>
 				</DialogFooter>
 			</DialogContent>

@@ -15,67 +15,66 @@ export async function criarNcm(dadosNcm: NovoNCM) {
 	return ncm;
 }
 
-export async function atualizarNcm(
-  id: string,
-  dadosNcm: Partial<NovoNCM>
-) {
-  const [ncm] = await db
-    .update(ncmTable)
-    .set(dadosNcm)
-    .where(eq(ncmTable.id, id))
-    .returning();
+export async function atualizarNcm(id: string, dadosNcm: Partial<NovoNCM>) {
+	const [ncm] = await db
+		.update(ncmTable)
+		.set(dadosNcm)
+		.where(eq(ncmTable.id, id))
+		.returning();
 
-  return ncm;
+	return ncm;
 }
 
 export async function excluirNcm(id: string) {
-  const [ncm] = await db
-    .delete(ncmTable)
-    .where(eq(ncmTable.id, id))
-    .returning();
+	const [ncm] = await db
+		.delete(ncmTable)
+		.where(eq(ncmTable.id, id))
+		.returning();
 
-  return ncm;
+	return ncm;
 }
 
 export type ListarNcmsParametros = {
-  descricao?: string | undefined;
-  inativo?: number | undefined;
-  page?: number;
-  limit?: number;
-}
+	descricao?: string | undefined;
+	inativo?: number | undefined;
+	page?: number;
+	limit?: number;
+};
 
 export async function listarNcms({
-  descricao,
-  inativo,
-  page = 1,
-  limit = 10,
+	descricao,
+	inativo,
+	page = 1,
+	limit = 10,
 }: ListarNcmsParametros) {
-  const where = [];
+	const where = [];
 
-  if (descricao) {
-    where.push(ilike(ncmTable.descricao, `%${descricao}%`))
-  }
+	if (descricao) {
+		where.push(ilike(ncmTable.descricao, `%${descricao}%`));
+	}
 
-  if (inativo !== undefined) {
-    where.push(eq(ncmTable.inativo, inativo))
-  }
+	if (inativo !== undefined) {
+		where.push(eq(ncmTable.inativo, inativo));
+	}
 
-  const offset = (page - 1) * limit;
+	const offset = (page - 1) * limit;
 
-  const [totalCount, ncms] = await Promise.all([
-    db.select({ value: count() })
-      .from(ncmTable)
-      .where(and(...where)),
-    db.select()
-      .from(ncmTable)
-      .where(and(...where))
-      .orderBy(desc(ncmTable.descricao))
-      .limit(limit)
-      .offset(offset),
-  ])
+	const [totalCount, ncms] = await Promise.all([
+		db
+			.select({ value: count() })
+			.from(ncmTable)
+			.where(and(...where)),
+		db
+			.select()
+			.from(ncmTable)
+			.where(and(...where))
+			.orderBy(desc(ncmTable.descricao))
+			.limit(limit)
+			.offset(offset),
+	]);
 
-  return {
-    ncms,
-    total: totalCount[0]?.value ?? 0,
-  }
+	return {
+		ncms,
+		total: totalCount[0]?.value ?? 0,
+	};
 }

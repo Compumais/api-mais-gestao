@@ -14,7 +14,9 @@ export default function ConfiguracoesPage() {
 	const { localStorageEmpresa: empresa } = useEmpresa();
 	const [tabAtiva, setTabAtiva] = useState("notificacoes");
 
-	const { data: configuracao, isLoading } = useConfiguracao(empresa?.id || null);
+	const { data: configuracao, isLoading } = useConfiguracao(
+		empresa?.id || null,
+	);
 
 	if (!empresa) {
 		return (
@@ -90,4 +92,3 @@ export default function ConfiguracoesPage() {
 		</PageContainer>
 	);
 }
-

@@ -1,8 +1,6 @@
 import type { HttpResponse } from "@/model/http-model.js";
 import type { LancamentoComRelacionamentos } from "@/repositories/conta-corrente-lancamento-repositories.js";
-import {
-	listarLancamentoContaCorrentePorEmpresa,
-} from "@/repositories/conta-corrente-lancamento-repositories.js";
+import { listarLancamentoContaCorrentePorEmpresa } from "@/repositories/conta-corrente-lancamento-repositories.js";
 import { httpOk } from "@/util/http-util.js";
 
 interface ListarContaCorrenteLancamentosParametros {

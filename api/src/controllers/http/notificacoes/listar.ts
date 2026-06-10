@@ -1,15 +1,15 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import {
-	listarNotificacoes,
-} from "@/repositories/notificacoes-repositories.js";
+import { listarNotificacoes } from "@/repositories/notificacoes-repositories.js";
 
 const listarNotificacoesQuerySchema = z.object({
 	idempresa: z.string().uuid().optional(),
 	lida: z
 		.enum(["true", "false"])
 		.optional()
-		.transform((v) => (v === "true" ? true : v === "false" ? false : undefined)),
+		.transform((v) =>
+			v === "true" ? true : v === "false" ? false : undefined,
+		),
 	limit: z.coerce.number().min(1).max(100).default(20),
 	offset: z.coerce.number().min(0).default(0),
 });

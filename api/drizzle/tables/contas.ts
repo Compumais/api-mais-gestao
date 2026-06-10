@@ -1,5 +1,5 @@
 import {
-    foreignKey,
+	foreignKey,
 	index,
 	pgTable,
 	text,

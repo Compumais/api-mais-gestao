@@ -22,13 +22,15 @@ describe("buscarEmpresaService", () => {
 
 	beforeEach(() => {
 		vi.clearAllMocks();
-		vi.mocked(entidadeRepository.verificarUsuarioPertenceEmpresa).mockResolvedValue(
-			true,
-		);
+		vi.mocked(
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(true);
 	});
 
 	it("deve buscar uma empresa existente com sucesso", async () => {
-		vi.mocked(empresaRepository.buscarEmpresaPorId).mockResolvedValue(empresaMock);
+		vi.mocked(empresaRepository.buscarEmpresaPorId).mockResolvedValue(
+			empresaMock,
+		);
 
 		const resultado = await buscarEmpresaService({
 			idusuario: "usuario-1",
@@ -41,11 +43,15 @@ describe("buscarEmpresaService", () => {
 			expect(resultado.body).toEqual(empresaMock);
 		}
 		expect(empresaRepository.buscarEmpresaPorId).toHaveBeenCalledTimes(1);
-		expect(empresaRepository.buscarEmpresaPorId).toHaveBeenCalledWith("empresa-123");
+		expect(empresaRepository.buscarEmpresaPorId).toHaveBeenCalledWith(
+			"empresa-123",
+		);
 	});
 
 	it("deve retornar erro 404 quando empresa não é encontrada", async () => {
-		vi.mocked(empresaRepository.buscarEmpresaPorId).mockResolvedValue(undefined);
+		vi.mocked(empresaRepository.buscarEmpresaPorId).mockResolvedValue(
+			undefined,
+		);
 
 		const resultado = await buscarEmpresaService({
 			idusuario: "usuario-1",
@@ -59,14 +65,18 @@ describe("buscarEmpresaService", () => {
 			expect(resultado.code).toBe("NOT_FOUND_ERROR");
 		}
 		expect(empresaRepository.buscarEmpresaPorId).toHaveBeenCalledTimes(1);
-		expect(empresaRepository.buscarEmpresaPorId).toHaveBeenCalledWith("empresa-inexistente");
+		expect(empresaRepository.buscarEmpresaPorId).toHaveBeenCalledWith(
+			"empresa-inexistente",
+		);
 	});
 
 	it("deve retornar erro 404 quando usuário não tem acesso à empresa", async () => {
-		vi.mocked(empresaRepository.buscarEmpresaPorId).mockResolvedValue(empresaMock);
-		vi.mocked(entidadeRepository.verificarUsuarioPertenceEmpresa).mockResolvedValue(
-			false,
+		vi.mocked(empresaRepository.buscarEmpresaPorId).mockResolvedValue(
+			empresaMock,
 		);
+		vi.mocked(
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(false);
 
 		const resultado = await buscarEmpresaService({
 			idusuario: "usuario-1",
@@ -81,7 +91,9 @@ describe("buscarEmpresaService", () => {
 	});
 
 	it("deve retornar erro 404 quando empresa é null", async () => {
-		vi.mocked(empresaRepository.buscarEmpresaPorId).mockResolvedValue(null as any);
+		vi.mocked(empresaRepository.buscarEmpresaPorId).mockResolvedValue(
+			null as any,
+		);
 
 		const resultado = await buscarEmpresaService({
 			idusuario: "usuario-1",
@@ -110,7 +122,9 @@ describe("buscarEmpresaService", () => {
 			atualizadoem: "2024-01-02T00:00:00.000Z",
 		};
 
-		vi.mocked(empresaRepository.buscarEmpresaPorId).mockResolvedValue(empresaEspecifica);
+		vi.mocked(empresaRepository.buscarEmpresaPorId).mockResolvedValue(
+			empresaEspecifica,
+		);
 
 		const resultado = await buscarEmpresaService({
 			idusuario: "usuario-1",
@@ -125,4 +139,3 @@ describe("buscarEmpresaService", () => {
 		}
 	});
 });
-

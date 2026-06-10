@@ -1,5 +1,12 @@
 import { sql } from "drizzle-orm";
-import { foreignKey, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import {
+	foreignKey,
+	jsonb,
+	pgTable,
+	text,
+	timestamp,
+	uniqueIndex,
+} from "drizzle-orm/pg-core";
 import { usuarios } from "./usuarios";
 
 export const configuracoesUsuario = pgTable(

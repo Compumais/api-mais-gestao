@@ -64,9 +64,7 @@ export async function criarFinanceiroLancamento(
 			return reply.status(resultado.status).send(resultado);
 		}
 
-		const financeiro = await buscarFinanceiroPorId(
-			dadosValidados.idfinanceiro,
-		);
+		const financeiro = await buscarFinanceiroPorId(dadosValidados.idfinanceiro);
 		if (financeiro?.idempresa && request.user) {
 			const perfilAutor = Array.isArray(request.user.roles)
 				? request.user.roles

@@ -1,16 +1,16 @@
 {
-  "id": "text_blcok",
-  "type": "SharedSlice",
-  "name": "TextBlcok",
-  "description": "TextBlcok",
-  "variations": [
-    {
-      "id": "default",
-      "name": "Default",
-      "docURL": "...",
-      "version": "initial",
-      "description": "Default",
-      "imageUrl": ""
-    }
-  ]
+	"id": "text_blcok",
+	"type": "SharedSlice",
+	"name": "TextBlcok",
+	"description": "TextBlcok",
+	"variations": [
+		{
+			"id": "default",
+			"name": "Default",
+			"docURL": "...",
+			"version": "initial",
+			"description": "Default",
+			"imageUrl": ""
+		}
+	]
 }

@@ -12,7 +12,9 @@ export async function buscarOperacaoFiscalPorId(id: string) {
 	return registro;
 }
 
-export async function criarOperacaoFiscal(dadosOperacaoFiscal: NovoOperacaoFiscal) {
+export async function criarOperacaoFiscal(
+	dadosOperacaoFiscal: NovoOperacaoFiscal,
+) {
 	const [registro] = await db
 		.insert(operacaofiscal)
 		.values(dadosOperacaoFiscal)

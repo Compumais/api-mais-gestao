@@ -1,7 +1,12 @@
 import type { HttpResponse } from "@/model/http-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { buscarUsuarioPorId } from "@/repositories/usuarios-repositories.js";
-import { httpOk, httpErroInterno, httpNaoAutorizado, httpNaoEncontrado } from "@/util/http-util.js";
+import {
+	httpOk,
+	httpErroInterno,
+	httpNaoAutorizado,
+	httpNaoEncontrado,
+} from "@/util/http-util.js";
 import { db } from "@/repositories/connection.js";
 import * as schema from "../../../drizzle/schema.js";
 import { eq } from "drizzle-orm";
@@ -57,13 +62,16 @@ export async function excluirUsuarioService({
 			return {
 				success: false,
 				status: 400,
-				error: "Não é possível excluir um usuário que é proprietário de uma empresa",
+				error:
+					"Não é possível excluir um usuário que é proprietário de uma empresa",
 				code: "CANNOT_DELETE_OWNER",
 			};
 		}
 
 		// Excluir o usuário
-		await db.delete(schema.usuarios).where(eq(schema.usuarios.id, idUsuarioExcluir));
+		await db
+			.delete(schema.usuarios)
+			.where(eq(schema.usuarios.id, idUsuarioExcluir));
 
 		return httpOk<null>(null);
 	} catch (error) {
@@ -71,4 +79,3 @@ export async function excluirUsuarioService({
 		return httpErroInterno();
 	}
 }
-

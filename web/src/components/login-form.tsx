@@ -24,7 +24,6 @@ import { authService } from "@/services/auth.service";
 import { authClient } from "@/lib/auth-client";
 import { GoogleIcon } from "./icons/google-icon";
 
-
 const loginSchema = z.object({
 	email: z
 		.email({ message: "Email inválido" })

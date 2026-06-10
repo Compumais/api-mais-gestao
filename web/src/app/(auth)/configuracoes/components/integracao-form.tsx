@@ -80,7 +80,8 @@ export function IntegracaoForm({
 
 	// Configurações globais de integrações
 	const { data: configuracaoUsuario } = useConfiguracaoUsuario(idempresa);
-	const atualizarConfiguracaoUsuarioMutation = useAtualizarConfiguracaoUsuario();
+	const atualizarConfiguracaoUsuarioMutation =
+		useAtualizarConfiguracaoUsuario();
 
 	// Verificar se usuário é proprietário
 	const isProprietario = user?.perfil?.includes("proprietario") ?? false;
@@ -493,9 +494,7 @@ export function IntegracaoForm({
 			{/* Integrações Globais */}
 			<div className="rounded-lg border bg-card p-6">
 				<div className="mb-4">
-					<h2 className="text-lg font-semibold mb-2">
-						Integrações Globais
-					</h2>
+					<h2 className="text-lg font-semibold mb-2">Integrações Globais</h2>
 					<p className="text-sm text-muted-foreground">
 						{isProprietario
 							? "Configure as chaves de API e tokens que serão compartilhados entre todas as suas empresas."
@@ -630,10 +629,7 @@ export function IntegracaoForm({
 							<FieldError
 								errors={
 									formIntegracoesGlobais.formState.errors.openrouterApiKey
-										? [
-												formIntegracoesGlobais.formState.errors
-													.openrouterApiKey,
-											]
+										? [formIntegracoesGlobais.formState.errors.openrouterApiKey]
 										: []
 								}
 							/>

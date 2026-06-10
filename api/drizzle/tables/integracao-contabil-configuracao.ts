@@ -1,9 +1,4 @@
-import {
-	bigint,
-	foreignKey,
-	pgTable,
-	text,
-} from "drizzle-orm/pg-core";
+import { bigint, foreignKey, pgTable, text } from "drizzle-orm/pg-core";
 import { contacontabil } from "./conta-contabil";
 import { empresa } from "./empresas";
 

@@ -110,7 +110,10 @@ Responda sempre em português brasileiro de forma profissional e amigável.`;
 	}
 
 	const data = await response.json();
-	return data.choices[0]?.message?.content || "Desculpe, não consegui gerar uma resposta.";
+	return (
+		data.choices[0]?.message?.content ||
+		"Desculpe, não consegui gerar uma resposta."
+	);
 }
 
 async function chamarGemini(

@@ -12,7 +12,9 @@ export async function buscarLocalRetiradaPorId(id: string) {
 	return registro;
 }
 
-export async function criarLocalRetirada(dadosLocalRetirada: NovoLocalRetirada) {
+export async function criarLocalRetirada(
+	dadosLocalRetirada: NovoLocalRetirada,
+) {
 	const [registro] = await db
 		.insert(localretirada)
 		.values(dadosLocalRetirada)
