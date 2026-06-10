@@ -1,12 +1,14 @@
-import { and, count, desc, eq, isNull, sql } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
+import { and, count, desc, eq, isNull } from "drizzle-orm";
 import * as schema from "../../drizzle/schema.js";
 import { db } from "./connection.js";
 
 export type Notificacao = typeof schema.notificacoes.$inferSelect;
 export type NovaNotificacao = typeof schema.notificacoes.$inferInsert;
 
-export async function criarNotificacao(dados: NovaNotificacao): Promise<Notificacao | undefined> {
+export async function criarNotificacao(
+	dados: NovaNotificacao,
+): Promise<Notificacao | undefined> {
 	const id = dados.id ?? randomUUID();
 	const [notificacao] = await db
 		.insert(schema.notificacoes)
