@@ -35,7 +35,7 @@ export function isPlanoInferior(
 }
 
 export function calcularDiasRestantesNoCiclo(
-	inicioCiclo: Date,
+	_inicioCiclo: Date,
 	fimCiclo: Date,
 	dataAtual: Date = new Date(),
 ): number {

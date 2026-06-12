@@ -1,69 +1,83 @@
 {
-	"version": "7",
-	"dialect": "postgresql",
-	"entries": [
-		{
-			"idx": 0,
-			"version": "7",
-			"when": 1768417524586,
-			"tag": "0000_green_mac_gargan",
-			"breakpoints": true
-		},
-		{
-			"idx": 1,
-			"version": "7",
-			"when": 1769792829062,
-			"tag": "0001_daffy_triton",
-			"breakpoints": true
-		},
-		{
-			"idx": 2,
-			"version": "7",
-			"when": 1770222546653,
-			"tag": "0002_sad_doctor_spectrum",
-			"breakpoints": true
-		},
-		{
-			"idx": 3,
-			"version": "7",
-			"when": 1770811503367,
-			"tag": "0003_bent_ozymandias",
-			"breakpoints": true
-		},
-		{
-			"idx": 4,
-			"version": "7",
-			"when": 1770816415345,
-			"tag": "0004_worthless_rocket_racer",
-			"breakpoints": true
-		},
-		{
-			"idx": 5,
-			"version": "7",
-			"when": 1770830120605,
-			"tag": "0005_clean_paibok",
-			"breakpoints": true
-		},
-		{
-			"idx": 6,
-			"version": "7",
-			"when": 1771442913345,
-			"tag": "0006_amazing_carnage",
-			"breakpoints": true
-		},
-		{
-			"idx": 7,
-			"version": "7",
-			"when": 1771593170051,
-			"tag": "0007_lazy_spencer_smythe",
-			"breakpoints": true
-		},
-		{
-			"idx": 8,
-			"version": "7",
-			"when": 1771960729331,
-			"tag": "0008_public_korvac",
-			"breakpoints": true
-		}
-	]
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1768417524586,
+      "tag": "0000_green_mac_gargan",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1769792829062,
+      "tag": "0001_daffy_triton",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1770222546653,
+      "tag": "0002_sad_doctor_spectrum",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1770811503367,
+      "tag": "0003_bent_ozymandias",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1770816415345,
+      "tag": "0004_worthless_rocket_racer",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1770830120605,
+      "tag": "0005_clean_paibok",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1771442913345,
+      "tag": "0006_amazing_carnage",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1771593170051,
+      "tag": "0007_lazy_spencer_smythe",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1771960729331,
+      "tag": "0008_public_korvac",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1781203435297,
+      "tag": "0009_produtos_novos_campos",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1781270235182,
+      "tag": "0010_redundant_miss_america",
+      "breakpoints": true
+    }
+  ]
 }

@@ -60,7 +60,7 @@ export async function atualizarFinanceiroLancamento(
 		// Buscar o financeiro para obter o idempresa
 		const financeiro = await buscarFinanceiroPorId(lancamento.idfinanceiro);
 
-		if (!financeiro || !financeiro.idempresa) {
+		if (!financeiro?.idempresa) {
 			return reply.status(httpNaoEncontrado().status).send({
 				error: "Financeiro não encontrado",
 				code: "FINANCEIRO_NOT_FOUND",

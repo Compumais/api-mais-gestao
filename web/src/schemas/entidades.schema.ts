@@ -66,7 +66,7 @@ export const criarEntidadeSchema = z.object({
 	idestado: z.string().nullable().optional(),
 	cep: z
 		.string()
-		.max(6, "CEP deve ter no máximo 6 caracteres")
+		.max(8, "CEP deve ter no máximo 6 caracteres")
 		.nullable()
 		.optional(),
 	fax: z
