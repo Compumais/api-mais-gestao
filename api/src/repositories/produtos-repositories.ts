@@ -1,4 +1,4 @@
-import { and, count, desc, eq, inArray } from "drizzle-orm";
+import { and, count, desc, eq, ilike, inArray } from "drizzle-orm";
 import type { NovoProduto } from "@/model/produto-model";
 import { produtos } from "@/repositories/schema";
 import { db } from "./connection";
@@ -21,12 +21,16 @@ export async function buscarProdutoPorId(id: string) {
 
 export type ListarProdutosPorEmpresaParametros = {
 	idempresas: string[];
+	nome?: string | undefined;
+	inativo?: number | undefined;
 	page?: number;
 	limit?: number;
 };
 
 export async function listarProdutosPorEmpresa({
 	idempresas,
+	nome,
+	inativo,
 	page = 1,
 	limit = 10,
 }: ListarProdutosPorEmpresaParametros) {
@@ -40,6 +44,14 @@ export async function listarProdutosPorEmpresa({
 	}
 
 	where.push(inArray(produtos.idempresa, idempresas));
+
+	if (nome) {
+		where.push(ilike(produtos.nome, `%${nome}%`));
+	}
+
+	if (inativo !== undefined) {
+		where.push(eq(produtos.inativo, inativo));
+	}
 
 	const offset = (page - 1) * limit;
 

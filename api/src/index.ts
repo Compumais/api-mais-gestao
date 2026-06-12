@@ -3,7 +3,6 @@ import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import Fastify from "fastify";
-import { getApiBaseUrl } from "./util/base-url.js";
 import { areasRotas } from "./controllers/http/area/rotas.js";
 import { assinaturasRotas } from "./controllers/http/assinaturas/rotas.js";
 import { auditoriaRotas } from "./controllers/http/auditoria/rotas.js";
@@ -20,21 +19,23 @@ import { configuracaoRotas } from "./controllers/http/configuracao/rotas.js";
 import { configuracaoUsuarioRotas } from "./controllers/http/configuracao-usuario/rotas.js";
 import { contaContabilRotas } from "./controllers/http/conta-contabil/rotas.js";
 import { contaCorrenteLancamentoRotas } from "./controllers/http/conta-corrente-lancamento/rotas.js";
+import { custosProdutoRotas } from "./controllers/http/custo-produto/rotas.js";
 import { contaCorrenteRotas } from "./controllers/http/contacorrente/rotas.js";
 import { dashboardRotas } from "./controllers/http/dashboard/rotas.js";
 import { davsRotas } from "./controllers/http/dav/rotas.js";
 import { departamentosRotas } from "./controllers/http/departamento/rotas.js";
 import { empresasRotas } from "./controllers/http/empresas/rotas.js";
+import { enquadramentosIpiRotas } from "./controllers/http/enquatramento-ipi/rotas.js";
 import { entidadesContaContabilRotas } from "./controllers/http/entidade-conta-contabil/rotas.js";
 import { entidadesRotas } from "./controllers/http/entidades/rotas.js";
-import { enquadramentosIpiRotas } from "./controllers/http/enquatramento-ipi/rotas.js";
 import { financeiroRotas } from "./controllers/http/financeiro/rotas.js";
-import { hierarquiasRotas } from "./controllers/http/hierarquia/rotas.js";
-import { integracoesContabilConfiguracaoRotas } from "./controllers/http/integracao-contabil-configuracao/rotas.js";
 import { financeiroLancamentoRotas } from "./controllers/http/financeirolancamento/rotas.js";
+import { hierarquiasRotas } from "./controllers/http/hierarquia/rotas.js";
 import { iaRotas } from "./controllers/http/ia/rotas.js";
+import { integracoesContabilConfiguracaoRotas } from "./controllers/http/integracao-contabil-configuracao/rotas.js";
 import { locaisRetiradaRotas } from "./controllers/http/local-retirada/rotas.js";
 import { motivosRebaixaRotas } from "./controllers/http/motivo-rebaixa/rotas.js";
+import { notasFiscaisRotas } from "./controllers/http/nota-fiscal/rotas.js";
 import { notificacoesRotas } from "./controllers/http/notificacoes/rotas.js";
 import { objetosRotas } from "./controllers/http/objeto/rotas.js";
 import { operacoesFiscaisRotas } from "./controllers/http/operacao-fiscal/rotas.js";
@@ -42,12 +43,14 @@ import { ordensServicoRotas } from "./controllers/http/ordem-servico/rotas.js";
 import { planoContasRotas } from "./controllers/http/plano-contas/rotas.js";
 import { planosContasContaContabilRotas } from "./controllers/http/plano-contas-conta-contabil/rotas.js";
 import { planosRotas } from "./controllers/http/planos/rotas.js";
+import { produtosRotas } from "./controllers/http/produtos/rotas.js";
 import { receitasSemContribuicaoRotas } from "./controllers/http/receita-sem-contribuicao/rotas.js";
 import { relatoriosRotas } from "./controllers/http/relatorios/rotas.js";
 import { tiposDocumentoFinanceiroRotas } from "./controllers/http/tipo-documento-financeiro/rotas.js";
 import { tiposProblemaRotas } from "./controllers/http/tipo-problema/rotas.js";
 import { unidadesMedidaRotas } from "./controllers/http/unidade-medida/rotas.js";
 import { usuariosRotas } from "./controllers/http/usuarios/rotas.js";
+import { getApiBaseUrl } from "./util/base-url.js";
 
 export const app = Fastify({ logger: true });
 
@@ -147,6 +150,15 @@ await app.register(swagger, {
 			{
 				name: "notificacoes",
 				description: "Operações com notificações do usuário",
+			},
+			{ name: "produtos", description: "Operações com produtos" },
+			{
+				name: "custo-produto",
+				description: "Operações com custos de produtos",
+			},
+			{
+				name: "nota-fiscal",
+				description: "Operações com notas fiscais de compra",
 			},
 		],
 	},
@@ -450,6 +462,9 @@ app.register(codigosReduzidosContaContabilRotas);
 app.register(entidadesContaContabilRotas);
 app.register(integracoesContabilConfiguracaoRotas);
 app.register(planosContasContaContabilRotas);
+app.register(produtosRotas);
+app.register(custosProdutoRotas);
+app.register(notasFiscaisRotas);
 
 app.listen({ port: 3333 }).then(() => {
 	console.log("HTTP server running on port 3333");

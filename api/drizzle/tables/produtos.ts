@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+	char,
 	date,
 	foreignKey,
 	integer,
@@ -13,10 +14,11 @@ import { cest } from "./cest";
 import { cfop } from "./cfop";
 import { empresa } from "./empresas";
 import { entidade } from "./entidade";
+import { hierarquia } from "./hierarquia";
 import { ncm } from "./ncm";
 import { planocontas } from "./plano-contas";
 import { receitasemcontribuicao } from "./receitasem-contribuicao";
-import { unidademedida } from "./unidademedida";
+import { unidademedida } from "./unidade-medida";
 
 export const produtos = pgTable(
 	"produtos",
@@ -100,6 +102,11 @@ export const produtos = pgTable(
 		idcfopentradatransfexterna: text(),
 		idcfopentradatransfinterna: text(),
 		idunidademedida: text(),
+		idgrupo: text(),
+		preco: numeric({ precision: 12, scale: 2 }),
+		iat: char({ length: 1 }), // A=Arredondamento, T=Truncamento
+		referencia: varchar({ length: 60 }),
+		inativo: integer().default(0), // 0=Ativo, 1=Inativo
 		idcfopsaida: text(),
 		idcfopsaidadevolucaoexterna: text(),
 		idcfopsaidadevolucaointerna: text(),
@@ -302,6 +309,13 @@ export const produtos = pgTable(
 			columns: [table.idunidademedida],
 			foreignColumns: [unidademedida.id],
 			name: "produtos_idunidademedida_fkey",
+		})
+			.onUpdate("cascade")
+			.onDelete("set null"),
+		foreignKey({
+			columns: [table.idgrupo],
+			foreignColumns: [hierarquia.id],
+			name: "produtos_idgrupo_fkey",
 		})
 			.onUpdate("cascade")
 			.onDelete("set null"),
