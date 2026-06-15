@@ -41,6 +41,7 @@ export * from "./tables/conta-corrente-lancamento";
 export * from "./tables/contas";
 export * from "./tables/custo-produto";
 export * from "./tables/dav";
+export * from "./tables/dav-item";
 export * from "./tables/departamento";
 export * from "./tables/empresas";
 export * from "./tables/enquatramento-ipi";

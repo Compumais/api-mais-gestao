@@ -64,6 +64,13 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 		keywords: ["fornecedor", "fornecedores"],
 	},
 	{
+		title: "Unidades de medida",
+		url: "/unidade-medida",
+		category: "Principal",
+		icon: IconListDetails,
+		keywords: ["unidade", "medida", "unidades", "kg", "litro"],
+	},
+	{
 		title: "Usuários",
 		url: "/usuarios",
 		category: "Principal",
