@@ -55,6 +55,10 @@ export const DATA = {
 					url: "/produtos",
 				},
 				{
+					title: "Unidades de medida",
+					url: "/unidade-medida",
+				},
+				{
 					title: "Usuários",
 					url: "/usuarios",
 				},
