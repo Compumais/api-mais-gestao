@@ -17,6 +17,8 @@ import { codigosReduzidosContaContabilRotas } from "./controllers/http/codigo-re
 import { condicoesPagamentoRotas } from "./controllers/http/condicao-pagamento/rotas.js";
 import { configuracaoRotas } from "./controllers/http/configuracao/rotas.js";
 import { configuracaoUsuarioRotas } from "./controllers/http/configuracao-usuario/rotas.js";
+import { contasMesaRotas } from "./controllers/http/conta-mesa/rotas.js";
+import { contasMesaItemRotas } from "./controllers/http/conta-mesa-item/rotas.js";
 import { contaContabilRotas } from "./controllers/http/conta-contabil/rotas.js";
 import { contaCorrenteLancamentoRotas } from "./controllers/http/conta-corrente-lancamento/rotas.js";
 import { custosProdutoRotas } from "./controllers/http/custo-produto/rotas.js";
@@ -50,6 +52,8 @@ import { tiposDocumentoFinanceiroRotas } from "./controllers/http/tipo-documento
 import { tiposProblemaRotas } from "./controllers/http/tipo-problema/rotas.js";
 import { unidadesMedidaRotas } from "./controllers/http/unidade-medida/rotas.js";
 import { usuariosRotas } from "./controllers/http/usuarios/rotas.js";
+import { vendasPdvGourmetRotas } from "./controllers/http/venda-pdv-gourmet/rotas.js";
+import { vendasPdvItemRotas } from "./controllers/http/venda-pdv-item/rotas.js";
 import { getApiBaseUrl } from "./util/base-url.js";
 
 export const app = Fastify({ logger: true });
@@ -465,6 +469,10 @@ app.register(planosContasContaContabilRotas);
 app.register(produtosRotas);
 app.register(custosProdutoRotas);
 app.register(notasFiscaisRotas);
+app.register(contasMesaRotas);
+app.register(contasMesaItemRotas);
+app.register(vendasPdvGourmetRotas);
+app.register(vendasPdvItemRotas);
 
 app.listen({ port: 3333 }).then(() => {
 	console.log("HTTP server running on port 3333");
