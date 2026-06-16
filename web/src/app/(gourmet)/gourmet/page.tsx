@@ -10,16 +10,32 @@ import { PdvHeader } from "./components/pdv-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { useCaixaPdv } from "@/hooks/use-caixa-pdv";
 import {
 	calcularTotalContaMesaItens,
 	STATUS_MESA,
 } from "@/lib/gourmet-utils";
 import { contaMesaItemService } from "@/services/conta-mesa-item.service";
 import { contaMesaService } from "@/services/conta-mesa.service";
+import { toast } from "sonner";
 
 export default function GourmetHubPage() {
 	const { localStorageEmpresa: empresa } = useEmpresa();
+	const { estaAberto } = useCaixaPdv();
 	const [dialogAberto, setDialogAberto] = useState(false);
+
+	const guardCaixa = () => {
+		if (!estaAberto) {
+			toast.error("Abra o caixa antes de realizar vendas");
+			return false;
+		}
+		return true;
+	};
+
+	const handleNovaMesa = () => {
+		if (!guardCaixa()) return;
+		setDialogAberto(true);
+	};
 
 	const { data: contasData, isLoading: isLoadingContas } = useQuery({
 		queryKey: ["contas-mesa", empresa?.id, { status: STATUS_MESA.ABERTO }],
@@ -83,12 +99,17 @@ export default function GourmetHubPage() {
 					</p>
 				</div>
 				<div className="flex flex-wrap gap-2">
-					<Button onClick={() => setDialogAberto(true)}>
+					<Button onClick={handleNovaMesa} disabled={!estaAberto}>
 						<IconPlus className="size-4" />
 						Nova mesa
 					</Button>
-					<Button variant="secondary" asChild>
-						<Link href="/gourmet/venda-rapida">
+					<Button variant="secondary" asChild disabled={!estaAberto}>
+						<Link href={estaAberto ? "/gourmet/venda-rapida" : "#"} onClick={(e) => {
+							if (!estaAberto) {
+								e.preventDefault();
+								guardCaixa();
+							}
+						}}>
 							<IconShoppingCart className="size-4" />
 							Venda rápida
 						</Link>
@@ -112,12 +133,17 @@ export default function GourmetHubPage() {
 						para atendimento no balcão.
 					</p>
 					<div className="flex gap-2">
-						<Button onClick={() => setDialogAberto(true)}>
+						<Button onClick={handleNovaMesa} disabled={!estaAberto}>
 							<IconPlus className="size-4" />
 							Abrir mesa
 						</Button>
-						<Button variant="secondary" asChild>
-							<Link href="/gourmet/venda-rapida">Venda rápida</Link>
+						<Button variant="secondary" asChild disabled={!estaAberto}>
+							<Link href={estaAberto ? "/gourmet/venda-rapida" : "#"} onClick={(e) => {
+								if (!estaAberto) {
+									e.preventDefault();
+									guardCaixa();
+								}
+							}}>Venda rápida</Link>
 						</Button>
 					</div>
 				</div>

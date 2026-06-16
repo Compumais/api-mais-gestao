@@ -1,6 +1,8 @@
 "use client";
 
 import { ProtectedRoute } from "@/components/protected-route";
+import { CaixaPdvProvider } from "@/hooks/use-caixa-pdv";
+import { CaixaBloqueioOverlay } from "./gourmet/components/caixa-bloqueio-overlay";
 
 export default function GourmetLayout({
 	children,
@@ -9,7 +11,12 @@ export default function GourmetLayout({
 }) {
 	return (
 		<ProtectedRoute>
-			<div className="flex h-svh flex-col bg-background">{children}</div>
+			<CaixaPdvProvider>
+				<div className="relative flex h-svh flex-col bg-background">
+					{children}
+					<CaixaBloqueioOverlay />
+				</div>
+			</CaixaPdvProvider>
 		</ProtectedRoute>
 	);
 }

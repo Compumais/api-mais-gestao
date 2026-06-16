@@ -8,6 +8,12 @@ export interface VendaPdvGourmet {
 	vendalocal: number | null;
 	numeropdv: number;
 	idvendaitem: string | null;
+	valordinheiro: string | null;
+	valorcartao: string | null;
+	valorpix: string | null;
+	valorprepago: string | null;
+	valortroco: string | null;
+	valortotal: string | null;
 	datacriacao: string | null;
 	dataalteracao: string | null;
 	usuarioquefechouvenda: string;
@@ -25,6 +31,12 @@ export interface CriarVendaPdvGourmetData {
 	idcontamesa?: string;
 	vendalocal?: number;
 	idvendaitem?: string;
+	valordinheiro?: string;
+	valorcartao?: string;
+	valorpix?: string;
+	valorprepago?: string;
+	valortroco?: string;
+	valortotal?: string;
 }
 
 export interface AtualizarVendaPdvGourmetData {
@@ -33,6 +45,12 @@ export interface AtualizarVendaPdvGourmetData {
 	numeropdv?: number;
 	idvendaitem?: string;
 	usuarioquefechouvenda?: string;
+	valordinheiro?: string;
+	valorcartao?: string;
+	valorpix?: string;
+	valorprepago?: string;
+	valortroco?: string;
+	valortotal?: string;
 }
 
 export const vendaPdvGourmetService = {
@@ -40,6 +58,8 @@ export const vendaPdvGourmetService = {
 		idempresa: string;
 		idcontamesa?: string;
 		numeropdv?: number;
+		dataInicio?: string;
+		dataFim?: string;
 		page?: number;
 		limit?: number;
 	}): Promise<ListarVendasPdvGourmetResponse> {

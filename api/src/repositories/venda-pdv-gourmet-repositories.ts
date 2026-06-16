@@ -1,4 +1,4 @@
-import { and, count, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq, gte, lte } from "drizzle-orm";
 import type { NovaVendaPdvGourmet } from "@/model/venda-pdv-gourmet-model";
 import { vendapdvgourmet } from "@/repositories/schema";
 import { db } from "./connection";
@@ -47,6 +47,8 @@ export type ListarVendasPdvGourmetParametros = {
 	idempresa: string;
 	idcontamesa?: string | undefined;
 	numeropdv?: number | undefined;
+	dataInicio?: string | undefined;
+	dataFim?: string | undefined;
 	page?: number;
 	limit?: number;
 };
@@ -55,6 +57,8 @@ export async function listarVendasPdvGourmet({
 	idempresa,
 	idcontamesa,
 	numeropdv,
+	dataInicio,
+	dataFim,
 	page = 1,
 	limit = 10,
 }: ListarVendasPdvGourmetParametros) {
@@ -66,6 +70,17 @@ export async function listarVendasPdvGourmet({
 
 	if (numeropdv !== undefined) {
 		where.push(eq(vendapdvgourmet.numeropdv, numeropdv));
+	}
+
+	if (dataInicio) {
+		const inicio = /^\d{4}-\d{2}-\d{2}$/.test(dataInicio)
+			? `${dataInicio} 00:00:00.000`
+			: dataInicio.replace("T", " ").replace(/Z$/, "");
+		where.push(gte(vendapdvgourmet.datacriacao, inicio));
+	}
+
+	if (dataFim) {
+		where.push(lte(vendapdvgourmet.datacriacao, `${dataFim} 23:59:59.999`));
 	}
 
 	const offset = (page - 1) * limit;

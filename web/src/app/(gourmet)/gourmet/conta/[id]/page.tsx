@@ -19,8 +19,10 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/hooks/use-auth";
+import { useCaixaPdv } from "@/hooks/use-caixa-pdv";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { useFecharVenda } from "@/hooks/use-fechar-venda";
+import { useSaldosEstoque } from "@/hooks/use-saldos-estoque";
 import {
 	buildContaMesaItemFromProduto,
 	calcularTotalContaMesaItens,
@@ -40,6 +42,8 @@ export default function ContaMesaPage() {
 	const { user } = useAuth();
 	const { localStorageEmpresa: empresa } = useEmpresa();
 	const { fecharConta } = useFecharVenda();
+	const { saldoPorCodigo } = useSaldosEstoque(empresa?.id);
+	const { estaAberto } = useCaixaPdv();
 
 	const [pagamentoDialogAberto, setPagamentoDialogAberto] = useState(false);
 	const [cancelarDialogAberto, setCancelarDialogAberto] = useState(false);
@@ -75,8 +79,20 @@ export default function ContaMesaPage() {
 
 	const { mutate: adicionarItem, isPending: isAdding } = useMutation({
 		mutationFn: async (produto: Produto) => {
+			if (!estaAberto) {
+				throw new Error("Abra o caixa antes de realizar vendas");
+			}
+
 			if (!user?.id || !contaId) {
 				throw new Error("Dados incompletos para adicionar item");
+			}
+
+			if (produto.codigo != null) {
+				const chave = String(produto.codigo);
+				const saldo = saldoPorCodigo[chave];
+				if (saldo !== undefined && saldo <= 0) {
+					throw new Error(`${produto.nome} está sem estoque disponível`);
+				}
 			}
 
 			return contaMesaItemService.criar(
@@ -149,6 +165,10 @@ export default function ContaMesaPage() {
 	});
 
 	const handleConfirmarVenda = async (pagamento: FecharContaFormData) => {
+		if (!estaAberto) {
+			throw new Error("Abra o caixa antes de realizar vendas");
+		}
+
 		if (!empresa?.id || !user?.id) {
 			throw new Error("Empresa ou usuário não selecionado");
 		}
@@ -209,6 +229,7 @@ export default function ContaMesaPage() {
 						isLoading={isLoadingProdutos}
 						onAdicionar={(produto) => adicionarItem(produto)}
 						isAdding={isAdding}
+						saldoPorCodigo={saldoPorCodigo}
 					/>
 				</div>
 				<div className="min-h-0 lg:w-2/5">
@@ -220,7 +241,13 @@ export default function ContaMesaPage() {
 							atualizarItem({ item, novaQuantidade: qty })
 						}
 						onRemover={(id) => removerItem(id)}
-						onFecharConta={() => setPagamentoDialogAberto(true)}
+						onFecharConta={() => {
+							if (!estaAberto) {
+								toast.error("Abra o caixa antes de realizar vendas");
+								return;
+							}
+							setPagamentoDialogAberto(true);
+						}}
 						onCancelarMesa={() => setCancelarDialogAberto(true)}
 						isUpdating={isUpdating || isAdding || fecharConta.isPending}
 					/>

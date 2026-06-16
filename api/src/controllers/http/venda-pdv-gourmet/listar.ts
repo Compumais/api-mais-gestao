@@ -7,6 +7,8 @@ const listarVendasPdvGourmetQuerySchema = z.object({
 	idempresa: z.string(),
 	idcontamesa: z.string().optional(),
 	numeropdv: z.coerce.number().int().optional(),
+	dataInicio: z.string().optional(),
+	dataFim: z.string().optional(),
 	page: z.coerce.number().min(1).optional().default(1),
 	limit: z.coerce.number().min(1).max(100).optional().default(10),
 });
@@ -27,6 +29,8 @@ export async function listarVendasPdvGourmet(
 			idempresa: query.idempresa,
 			idcontamesa: query.idcontamesa,
 			numeropdv: query.numeropdv,
+			dataInicio: query.dataInicio,
+			dataFim: query.dataFim,
 			page: query.page,
 			limit: query.limit,
 		});

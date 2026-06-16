@@ -17,6 +17,7 @@ import { contaMesaService } from "@/services/conta-mesa.service";
 import { vendaPdvGourmetService } from "@/services/venda-pdv-gourmet.service";
 import { vendaPdvItemService } from "@/services/venda-pdv-item.service";
 import type { FecharContaFormData } from "@/schemas/fechar-conta.schema";
+import { baixarEstoqueVenda } from "@/lib/estoque-venda";
 
 interface FecharContaParams {
 	idempresa: string;
@@ -108,6 +109,17 @@ export function useFecharVenda() {
 
 			await criarItensVenda(idempresa, venda.id, itens);
 
+			await baixarEstoqueVenda({
+				idempresa,
+				idvenda: venda.id,
+				itens: itens.map((item) => ({
+					idproduto: item.idproduto,
+					nomeproduto: item.nomeproduto ?? "",
+					quantidade: item.quantidade,
+					precounitario: item.precounitario,
+				})),
+			});
+
 			return venda;
 		},
 		onSuccess: (_, variables) => {
@@ -152,14 +164,34 @@ export function useFecharVenda() {
 				throw new Error("Valor pago é menor que o total da venda");
 			}
 
+			const valortroco = calcularTroco(valortotal, pagamento);
+
 			const venda = await vendaPdvGourmetService.criar({
 				idempresa,
 				numeropdv: getNumeropdv(),
 				usuarioquefechouvenda: userId,
 				vendalocal: 1,
+				valordinheiro: parseValor(pagamento.valordinheiro).toFixed(2),
+				valorcartao: parseValor(pagamento.valorcartao).toFixed(2),
+				valorpix: parseValor(pagamento.valorpix).toFixed(2),
+				valorprepago: parseValor(pagamento.valorprepago).toFixed(2),
+				valortroco: valortroco.toFixed(2),
+				valortotal: valortotal.toFixed(2),
 			});
 
 			await criarItensVenda(idempresa, venda.id, itens);
+
+			await baixarEstoqueVenda({
+				idempresa,
+				idvenda: venda.id,
+				itens: itens.map((item) => ({
+					idproduto: item.idproduto,
+					nomeproduto: item.nomeproduto,
+					quantidade: item.quantidade,
+					precounitario: item.precounitario,
+					codigo: item.codigo,
+				})),
+			});
 
 			return venda;
 		},

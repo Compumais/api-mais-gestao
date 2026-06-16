@@ -8,8 +8,10 @@ import { PagamentoPdvDialog } from "../components/pagamento-pdv-dialog";
 import { ProdutoTabela } from "../components/produto-tabela";
 import { PdvHeader } from "../components/pdv-header";
 import { useAuth } from "@/hooks/use-auth";
+import { useCaixaPdv } from "@/hooks/use-caixa-pdv";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { useFecharVenda } from "@/hooks/use-fechar-venda";
+import { useSaldosEstoque } from "@/hooks/use-saldos-estoque";
 import {
 	buildContaMesaItemFromProduto,
 	calcularSubtotalItens,
@@ -24,10 +26,13 @@ export default function VendaRapidaPage() {
 	const router = useRouter();
 	const { user } = useAuth();
 	const { localStorageEmpresa: empresa } = useEmpresa();
+	const { estaAberto } = useCaixaPdv();
 	const { fecharVendaRapida } = useFecharVenda();
 
 	const [carrinho, setCarrinho] = useState<CarrinhoLocalItem[]>([]);
 	const [pagamentoDialogAberto, setPagamentoDialogAberto] = useState(false);
+
+	const { saldoPorCodigo } = useSaldosEstoque(empresa?.id);
 
 	const { data: produtosData, isLoading: isLoadingProdutos } = useQuery({
 		queryKey: ["produtos", empresa?.id, { inativo: 0 }],
@@ -43,6 +48,20 @@ export default function VendaRapidaPage() {
 	const subtotal = calcularSubtotalItens(carrinho);
 
 	const adicionarProduto = useCallback((produto: Produto) => {
+		if (!estaAberto) {
+			toast.error("Abra o caixa antes de realizar vendas");
+			return;
+		}
+
+		if (produto.codigo != null) {
+			const chave = String(produto.codigo);
+			const saldo = saldoPorCodigo[chave];
+			if (saldo !== undefined && saldo <= 0) {
+				toast.error(`${produto.nome} está sem estoque disponível`);
+				return;
+			}
+		}
+
 		try {
 			const itemBase = buildContaMesaItemFromProduto({
 				produto,
@@ -79,7 +98,7 @@ export default function VendaRapidaPage() {
 				error instanceof Error ? error.message : "Erro ao adicionar item",
 			);
 		}
-	}, []);
+	}, [saldoPorCodigo, estaAberto]);
 
 	const atualizarQuantidade = useCallback((index: number, qty: number) => {
 		setCarrinho((prev) => {
@@ -97,6 +116,10 @@ export default function VendaRapidaPage() {
 	}, []);
 
 	const handleConfirmarVenda = async (pagamento: FecharContaFormData) => {
+		if (!estaAberto) {
+			throw new Error("Abra o caixa antes de realizar vendas");
+		}
+
 		if (!empresa?.id || !user?.id) {
 			throw new Error("Empresa ou usuário não selecionado");
 		}
@@ -130,6 +153,7 @@ export default function VendaRapidaPage() {
 						produtos={produtosData?.data ?? []}
 						isLoading={isLoadingProdutos}
 						onAdicionar={adicionarProduto}
+						saldoPorCodigo={saldoPorCodigo}
 					/>
 				</div>
 				<div className="min-h-0 lg:w-2/5">
@@ -137,7 +161,13 @@ export default function VendaRapidaPage() {
 						itens={carrinho}
 						onAtualizarQuantidade={atualizarQuantidade}
 						onRemover={removerItem}
-						onFinalizar={() => setPagamentoDialogAberto(true)}
+						onFinalizar={() => {
+							if (!estaAberto) {
+								toast.error("Abra o caixa antes de realizar vendas");
+								return;
+							}
+							setPagamentoDialogAberto(true);
+						}}
 					/>
 				</div>
 			</main>
