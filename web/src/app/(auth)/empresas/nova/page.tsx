@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/use-auth";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { EMPRESAS_USUARIO_QUERY_KEY } from "@/hooks/use-empresas-usuario";
 import { PageContainer } from "../../components/page-container";
 
 const criarEmpresaSchema = z.object({
@@ -81,7 +82,7 @@ export default function NovaEmpresaPage() {
 
 			// Invalidar queries de empresas para forçar refetch
 			await queryClient.invalidateQueries({
-				queryKey: ["empresas-usuario", user?.id],
+				queryKey: [EMPRESAS_USUARIO_QUERY_KEY, user?.id],
 			});
 			await queryClient.invalidateQueries({
 				queryKey: ["empresas-proprietario", user?.id],

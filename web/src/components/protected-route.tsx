@@ -1,12 +1,15 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { useRouter, usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CPlusIcon } from "@/components/icons/c-plus";
 import { useAuth } from "@/hooks/use-auth";
+import { useEmpresasUsuario } from "@/hooks/use-empresas-usuario";
 import { useEmpresa } from "@/hooks/use-empresa";
-import { empresasService } from "@/services/empresas.service";
+import {
+	EMPRESA_FORCAR_PRIMEIRA_KEY,
+	EMPRESA_SELECIONADA_KEY,
+} from "@/provider/empresa-provider";
 
 interface ProtectedRouteProps {
 	children: React.ReactNode;
@@ -18,62 +21,91 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 	const router = useRouter();
 	const pathname = usePathname();
 	const [isMounted, setIsMounted] = useState(false);
+	const empresaSelecionadaRef = useRef(false);
 
 	// Garantir que só executa no cliente
 	useEffect(() => {
 		setIsMounted(true);
 	}, []);
 
-	// Busca empresas do servidor apenas quando autenticado e sem empresa no localStorage
-	// Se já tiver empresa no localStorage, não precisa buscar
-	// IMPORTANTE: Usa idproprietario para buscar apenas empresas onde o usuário é proprietário
-	const { data: empresasData, isLoading: isLoadingEmpresas } = useQuery({
-		queryKey: ["empresas-usuario", user?.id],
-		queryFn: () =>
-			empresasService.listar({ idproprietario: user?.id, limit: 1 }),
-		enabled: !!user?.id && !localStorageEmpresa && isMounted,
-		retry: false,
-		staleTime: 1000 * 60 * 5, // 5 minutos
-	});
-
-	// Seleciona automaticamente a primeira empresa encontrada no servidor
-	// IMPORTANTE: Só executa se NÃO tiver empresa no localStorage
 	useEffect(() => {
-		// Se já tiver empresa no localStorage, não precisa fazer nada
-		if (localStorageEmpresa || !isMounted) return;
+		empresaSelecionadaRef.current = false;
+	}, [user?.id]);
 
-		// Se ainda está carregando empresas, aguardar
-		if (isLoadingEmpresas) return;
+	const {
+		data: empresas,
+		isSuccess: empresasCarregadas,
+		isError: empresasErro,
+		isFetching: empresasFetching,
+	} = useEmpresasUsuario();
 
-		// Se não tem dados ainda, aguardar
-		if (!empresasData) return;
+	const listaEmpresas = empresas ?? [];
 
-		if (empresasData.data.length > 0) {
-			// Tem empresa no banco → seleciona automaticamente
-			const primeiraEmpresa = empresasData.data[0];
+	const ehProprietarioDeEmpresa =
+		listaEmpresas.some((empresa) => empresa.idproprietario === user?.id) ??
+		false;
+
+	// Seleciona a primeira empresa associada ao usuário (único ponto de seleção automática)
+	useEffect(() => {
+		if (!isMounted || !user?.id) return;
+		if (!empresasCarregadas) return;
+		if (empresaSelecionadaRef.current) return;
+
+		if (listaEmpresas.length > 0) {
+			const forcarPrimeira =
+				typeof window !== "undefined" &&
+				sessionStorage.getItem(EMPRESA_FORCAR_PRIMEIRA_KEY) === "1";
+
+			if (forcarPrimeira) {
+				sessionStorage.removeItem(EMPRESA_FORCAR_PRIMEIRA_KEY);
+				const primeiraEmpresa = listaEmpresas[0];
+				if (primeiraEmpresa) {
+					empresaSelecionadaRef.current = true;
+					selecionarEmpresa(primeiraEmpresa);
+				}
+				return;
+			}
+
+			const empresaAtual = localStorageEmpresa
+				? listaEmpresas.find(
+						(empresa) => empresa.id === localStorageEmpresa.id,
+					)
+				: null;
+
+			if (empresaAtual) {
+				empresaSelecionadaRef.current = true;
+				if (!localStorage.getItem(EMPRESA_SELECIONADA_KEY)) {
+					selecionarEmpresa(empresaAtual);
+				}
+				return;
+			}
+
+			const primeiraEmpresa = listaEmpresas[0];
 			if (primeiraEmpresa) {
+				empresaSelecionadaRef.current = true;
 				selecionarEmpresa(primeiraEmpresa);
 			}
-		} else {
-			// Não tem empresa no banco → redireciona para criar
-			// Mas só se não estiver já na página de criação ou assinatura
-			// E só se realmente não tiver empresa no localStorage (pode ter sido criada mas a query ainda não atualizou)
-			if (
-				pathname !== "/empresas/nova" &&
-				pathname !== "/assinatura" &&
-				!localStorageEmpresa
-			) {
-				router.push("/empresas/nova");
-			}
+			return;
+		}
+
+		if (
+			listaEmpresas.length === 0 &&
+			user.perfil?.includes("proprietario") &&
+			pathname !== "/empresas/nova" &&
+			pathname !== "/assinatura"
+		) {
+			router.push("/empresas/nova");
 		}
 	}, [
-		empresasData,
+		listaEmpresas,
+		empresasCarregadas,
 		localStorageEmpresa,
 		selecionarEmpresa,
 		router,
 		pathname,
 		isMounted,
-		isLoadingEmpresas,
+		user?.id,
+		user?.perfil,
 	]);
 
 	useEffect(() => {
@@ -84,17 +116,12 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 			return;
 		}
 
-		// IMPORTANTE: Apenas usuários que são proprietários de empresas precisam ter plano
-		// Verificar se o usuário é proprietário (tem empresas como proprietário)
-		const ehProprietario = empresasData?.data && empresasData.data.length > 0;
-		const temEmpresa = localStorageEmpresa || ehProprietario;
-
-		// Se não for proprietário, não precisa verificar plano (pode acessar)
-		if (!ehProprietario) {
-			return; // Usuário não é proprietário, não precisa de plano
+		// Apenas proprietários de empresas precisam ter plano
+		if (!ehProprietarioDeEmpresa) {
+			return;
 		}
 
-		// Se for proprietário, verificar se tem plano
+		const temEmpresa = localStorageEmpresa || listaEmpresas.length > 0;
 		if (user && (user.plano === null || user.plano === undefined)) {
 			// Só redirecionar para assinatura se já tiver empresa e for proprietário
 			if (
@@ -113,7 +140,8 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 		pathname,
 		isMounted,
 		localStorageEmpresa,
-		empresasData,
+		listaEmpresas,
+		ehProprietarioDeEmpresa,
 	]);
 
 	// Mostra loading enquanto verifica autenticação ou carrega empresas do servidor
@@ -122,7 +150,10 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 	const isResolvendo =
 		!isMounted ||
 		isLoading ||
-		(isAuthenticated && !localStorageEmpresa && isLoadingEmpresas);
+		(isAuthenticated &&
+			!!user?.id &&
+			!localStorageEmpresa &&
+			(empresasFetching || (!empresasCarregadas && !empresasErro)));
 
 	if (isResolvendo) {
 		return (
@@ -156,15 +187,10 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 		return null;
 	}
 
-	// IMPORTANTE: Apenas usuários que são proprietários de empresas precisam ter plano
-	// Verificar se o usuário é proprietário (tem empresas como proprietário)
-	const ehProprietario = empresasData?.data && empresasData.data.length > 0;
-	const temEmpresa = localStorageEmpresa || ehProprietario;
+	const temEmpresa = localStorageEmpresa || listaEmpresas.length > 0;
 
-	// Se for proprietário e não tem plano, verificar se está na página de assinatura
-	// Se não estiver, não renderizar (aguardando redirecionamento)
 	if (
-		ehProprietario &&
+		ehProprietarioDeEmpresa &&
 		user &&
 		(user.plano === null || user.plano === undefined) &&
 		temEmpresa
