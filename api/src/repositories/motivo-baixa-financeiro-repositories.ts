@@ -1,6 +1,6 @@
 import { and, count, desc, eq, inArray } from "drizzle-orm";
 import type { NovoMotivoBaixaFinanceiro } from "@/model/motivo-baixa-financeiro-model.js";
-import * as schema from "@/repositories/schema/index.js";
+import * as schema from "@/repositories/schema.js";
 import { db } from "./connection.js";
 
 export async function criarMotivoBaixaFinanceiro(

@@ -7,8 +7,8 @@ import {
 	text,
 	varchar,
 } from "drizzle-orm/pg-core";
-import { empresa } from "./empresas";
-import { usuarios } from "./usuarios";
+import { empresa } from "./empresas.js";
+import { usuarios } from "./usuarios.js";
 
 export const centrocusto = pgTable(
 	"centrocusto",

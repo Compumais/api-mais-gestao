@@ -8,11 +8,11 @@ import {
 	text,
 	varchar,
 } from "drizzle-orm/pg-core";
-import { contamesa } from "./conta-mesa";
-import { entidade } from "./entidade";
-import { produtos } from "./produtos";
-import { unidademedida } from "./unidade-medida";
-import { usuarios } from "./usuarios";
+import { contamesa } from "./conta-mesa.js";
+import { entidade } from "./entidade.js";
+import { produtos } from "./produtos.js";
+import { unidademedida } from "./unidade-medida.js";
+import { usuarios } from "./usuarios.js";
 
 export const contamesaitem = pgTable(
 	"contamesaitem",

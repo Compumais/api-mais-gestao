@@ -12,9 +12,9 @@ import {
 	timestamp,
 	varchar,
 } from "drizzle-orm/pg-core";
-import { empresa } from "./empresas";
-import { entidade } from "./entidade";
-import { tipodocumentofinanceiro } from "./tipo-documento-financeiro";
+import { empresa } from "./empresas.js";
+import { entidade } from "./entidade.js";
+import { tipodocumentofinanceiro } from "./tipo-documento-financeiro.js";
 
 export const financeiro = pgTable(
 	"financeiro",

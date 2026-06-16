@@ -11,13 +11,13 @@ import {
 	timestamp,
 	varchar,
 } from "drizzle-orm/pg-core";
-import { cfop } from "./cfop";
-import { motivorebaixa } from "./motivo-rebaixa";
-import { ncm } from "./ncm";
-import { notafiscal } from "./nota-fiscal";
-import { produtos } from "./produtos";
-import { unidademedida } from "./unidade-medida";
-import { usuarios } from "./usuarios";
+import { cfop } from "./cfop.js";
+import { motivorebaixa } from "./motivo-rebaixa.js";
+import { ncm } from "./ncm.js";
+import { notafiscal } from "./nota-fiscal.js";
+import { produtos } from "./produtos.js";
+import { unidademedida } from "./unidade-medida.js";
+import { usuarios } from "./usuarios.js";
 
 const numeric122 = numeric({ precision: 12, scale: 2, mode: "string" });
 const numeric124 = numeric({ precision: 12, scale: 4, mode: "string" });

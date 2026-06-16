@@ -9,10 +9,10 @@ import {
 	text,
 	varchar,
 } from "drizzle-orm/pg-core";
-import { banco } from "./banco";
-import { contacontabil } from "./conta-contabil";
-import { empresa } from "./empresas";
-import { entidade } from "./entidade";
+import { banco } from "./banco.js";
+import { contacontabil } from "./conta-contabil.js";
+import { empresa } from "./empresas.js";
+import { entidade } from "./entidade.js";
 
 export const contacorrente = pgTable(
 	"contacorrente",

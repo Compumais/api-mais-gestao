@@ -1,5 +1,5 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { verificarUsuarioPertenceEmpresa } from "src/repositories/entidade-repositories";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import z from "zod";
 import { inativarProdutoService } from "@/service/produto/inativar-produto.js";
 import { httpErroInterno, httpNaoAutorizado, httpProibido } from "@/util/http-util.js";

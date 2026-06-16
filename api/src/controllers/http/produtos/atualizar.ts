@@ -1,5 +1,5 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { verificarUsuarioPertenceEmpresa } from "src/repositories/entidade-repositories";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import z from "zod";
 import type { NovoProduto } from "@/model/produto-model.js";
 import { atualizarProdutoService } from "@/service/produto/atualizar-produto.js";

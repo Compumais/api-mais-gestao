@@ -5,9 +5,9 @@ import {
 	smallint,
 	text,
 } from "drizzle-orm/pg-core";
-import { empresa } from "./empresas";
-import { produtos } from "./produtos";
-import { vendapdvgourmet } from "./vendas-pdv-gourmet";
+import { empresa } from "./empresas.js";
+import { produtos } from "./produtos.js";
+import { vendapdvgourmet } from "./vendas-pdv-gourmet.js";
 
 export const vendapdvitem = pgTable(
 	"vendapdvitem",

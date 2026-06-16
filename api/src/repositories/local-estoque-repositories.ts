@@ -1,6 +1,6 @@
 import { and, count, desc, eq, ilike } from "drizzle-orm";
 import type { NovoLocalEstoque } from "@/model/local-estoque-model";
-import { localestoque } from "@/repositories/schema";
+import { localestoque } from "@/repositories/schema.js";
 import { db } from "./connection";
 
 export async function criarLocalEstoque(dadosLocalEstoque: NovoLocalEstoque) {

@@ -1,6 +1,6 @@
 import { and, count, desc, eq, ilike } from "drizzle-orm";
 import type { NovoReceitaSemContribuicao } from "@/model/receita-sem-contribuicao-model";
-import { receitasemcontribuicao } from "@/repositories/schema";
+import { receitasemcontribuicao } from "@/repositories/schema.js";
 import { db } from "./connection";
 
 export async function buscarReceitaSemContribuicaoPorId(id: string) {

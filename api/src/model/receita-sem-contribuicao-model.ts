@@ -1,4 +1,4 @@
-import type { receitasemcontribuicao } from "@/repositories/schema";
+import type { receitasemcontribuicao } from "@/repositories/schema.js";
 
 export type ReceitaSemContribuicao = typeof receitasemcontribuicao.$inferSelect;
 export type NovoReceitaSemContribuicao =

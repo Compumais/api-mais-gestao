@@ -1,6 +1,6 @@
 import { and, count, desc, eq, ilike } from "drizzle-orm";
 import type { NovoEnquatramentoIPI } from "@/model/enquantramento-ipi-model";
-import { enquatramentoipi } from "@/repositories/schema";
+import { enquatramentoipi } from "@/repositories/schema.js";
 import { db } from "./connection";
 
 export async function buscarEnquatramentoIpiPorId(id: string) {

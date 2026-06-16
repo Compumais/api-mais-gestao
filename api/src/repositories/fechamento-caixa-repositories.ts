@@ -1,6 +1,6 @@
 import { and, count, desc, eq, ilike } from "drizzle-orm";
 import type { NovoFechamentoCaixa } from "@/model/fechamento-caixa-model";
-import { fechamentopdv } from "@/repositories/schema";
+import { fechamentopdv } from "@/repositories/schema.js";
 import { db } from "./connection";
 
 export type AtualizarFechamentoCaixaDados = {

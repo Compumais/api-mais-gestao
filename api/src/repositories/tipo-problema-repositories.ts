@@ -1,6 +1,6 @@
 import { and, count, desc, eq, ilike } from "drizzle-orm";
 import type { NovoTipoProblema } from "@/model/tipo-problema-model";
-import { tipoproblema } from "@/repositories/schema";
+import { tipoproblema } from "@/repositories/schema.js";
 import { db } from "./connection";
 
 export async function buscarTipoProblemaPorId(id: string) {

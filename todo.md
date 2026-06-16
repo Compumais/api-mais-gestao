@@ -1,7 +1,2 @@
-- [] Em contas-correntes deixar apenas os campos:
-  - Descrição
-  - Número da Conta
-  - Agência
-- [] Implementar funcionalidade financeiro, onde ela é o contas a receber e contas a pagar
-- [] Após dar baixa no contas a receber e contas a pagar deve incluir no financeirolancamento
-- [] Após dar 
+- [] Deixar Unidade Medida Global para todos usuários;
+- []

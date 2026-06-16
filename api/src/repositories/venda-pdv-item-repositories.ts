@@ -1,6 +1,6 @@
 import { and, count, desc, eq } from "drizzle-orm";
 import type { NovoVendaPdvItem } from "@/model/venda-pdv-item-model";
-import { vendapdvitem } from "@/repositories/schema";
+import { vendapdvitem } from "@/repositories/schema.js";
 import { db } from "./connection";
 
 export async function buscarVendaPdvItemPorId(id: string) {

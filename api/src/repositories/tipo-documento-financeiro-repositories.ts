@@ -1,6 +1,6 @@
 import { and, count, desc, eq, ilike } from "drizzle-orm";
 import type { NovoTipoDocumentoFinanceiro } from "@/model/tipo-documento-financeiro-model";
-import { tipodocumentofinanceiro } from "@/repositories/schema";
+import { tipodocumentofinanceiro } from "@/repositories/schema.js";
 import { db } from "./connection";
 
 export async function buscarTipoDocumentoFinanceiroPorId(id: string) {

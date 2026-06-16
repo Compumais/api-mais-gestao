@@ -1,4 +1,4 @@
-import type { entidadecontacontabil } from "@/repositories/schema";
+import type { entidadecontacontabil } from "@/repositories/schema.js";
 
 export type EntidadeContaContabil = typeof entidadecontacontabil.$inferSelect;
 export type NovoEntidadeContaContabil =

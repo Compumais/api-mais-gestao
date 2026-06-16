@@ -1,6 +1,6 @@
 import { and, count, desc, eq } from "drizzle-orm";
 import type { NovoOrdemServico } from "@/model/ordem-servico-model";
-import { ordemservico } from "@/repositories/schema";
+import { ordemservico } from "@/repositories/schema.js";
 import { db } from "./connection";
 
 export async function buscarOrdemServicoPorId(id: string) {

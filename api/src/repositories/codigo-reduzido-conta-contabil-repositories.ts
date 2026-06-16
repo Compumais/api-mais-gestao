@@ -1,6 +1,6 @@
 import { and, count, desc, eq } from "drizzle-orm";
 import type { NovoCodigoReduzidoContaContabil } from "@/model/codigo-reduzido-conta-contabil-model";
-import { codigoreduzidocontacontabil } from "@/repositories/schema";
+import { codigoreduzidocontacontabil } from "@/repositories/schema.js";
 import { db } from "./connection";
 
 export async function buscarCodigoReduzidoContaContabilPorId(id: string) {

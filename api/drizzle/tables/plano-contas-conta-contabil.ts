@@ -1,7 +1,7 @@
 import { bigint, foreignKey, index, pgTable, text } from "drizzle-orm/pg-core";
-import { contacontabil } from "./conta-contabil";
-import { empresa } from "./empresas";
-import { planocontas } from "./plano-contas";
+import { contacontabil } from "./conta-contabil.js";
+import { empresa } from "./empresas.js";
+import { planocontas } from "./plano-contas.js";
 
 export const planocontascontacontabil = pgTable(
 	"planocontascontacontabil",

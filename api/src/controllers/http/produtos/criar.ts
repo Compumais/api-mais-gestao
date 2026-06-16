@@ -1,5 +1,5 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { verificarUsuarioPertenceEmpresa } from "src/repositories/entidade-repositories";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { v4 as uuidv4 } from "uuid";
 import z from "zod";
 import { criarProdutoService } from "@/service/produto/criar-produto.js";

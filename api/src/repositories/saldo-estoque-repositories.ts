@@ -1,6 +1,6 @@
 import { and, count, desc, eq, ilike } from "drizzle-orm";
 import type { NovoSaldoEstoque } from "@/model/saldo-estoque-model";
-import { saldoestoque } from "@/repositories/schema";
+import { saldoestoque } from "@/repositories/schema.js";
 import { db } from "./connection";
 
 export async function criarSaldoEstoque(dadosSaldoEstoque: NovoSaldoEstoque) {

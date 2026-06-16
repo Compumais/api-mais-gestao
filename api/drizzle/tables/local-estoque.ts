@@ -1,5 +1,5 @@
 import { foreignKey, index, pgTable, smallint, text, varchar } from "drizzle-orm/pg-core";
-import { empresa } from "./empresas";
+import { empresa } from "./empresas.js";
 
 export const localestoque = pgTable(
   "localestoque",

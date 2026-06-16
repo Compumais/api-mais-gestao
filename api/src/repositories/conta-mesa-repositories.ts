@@ -1,6 +1,6 @@
 import { and, count, desc, eq } from "drizzle-orm";
 import type { NovaContaMesa } from "@/model/conta-mesa-model";
-import { contamesa } from "@/repositories/schema";
+import { contamesa } from "@/repositories/schema.js";
 import { db } from "./connection";
 
 export async function buscarContaMesaPorId(id: string) {

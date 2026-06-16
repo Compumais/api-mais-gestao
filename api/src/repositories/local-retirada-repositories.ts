@@ -1,6 +1,6 @@
 import { and, count, desc, eq, ilike } from "drizzle-orm";
 import type { NovoLocalRetirada } from "@/model/local-retirada-model";
-import { localretirada } from "@/repositories/schema";
+import { localretirada } from "@/repositories/schema.js";
 import { db } from "./connection";
 
 export async function buscarLocalRetiradaPorId(id: string) {

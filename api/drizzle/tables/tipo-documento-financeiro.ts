@@ -6,8 +6,8 @@ import {
 	text,
 	varchar,
 } from "drizzle-orm/pg-core";
-import { empresa } from "./empresas";
-import { motivobaixafinanceiro } from "./motivo-baixa-financeiro";
+import { empresa } from "./empresas.js";
+import { motivobaixafinanceiro } from "./motivo-baixa-financeiro.js";
 
 export const tipodocumentofinanceiro = pgTable(
 	"tipodocumentofinanceiro",

@@ -25,7 +25,7 @@ Garantir consistência, clareza e uso correto do Drizzle ORM na criação de rep
 
 - Sempre importar schema de uma das seguintes formas:
   - `import * as schema from "../../drizzle/schema";` (caminho relativo)
-  - `import * as schema from "@/repositories/schema";` (alias @/)
+  - `import * as schema from "@/repositories/schema.js";` (alias @/)
 - Sempre importar `db` de `./connection`.
 - Importar operadores do Drizzle conforme necessário: `eq`, `and`, `or`, `ilike`, `inArray`, `count`, `desc`, `isNull`, etc.
 

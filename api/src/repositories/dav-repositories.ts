@@ -1,6 +1,6 @@
 import { and, count, desc, eq } from "drizzle-orm";
 import type { NovoDAV } from "@/model/dav-model";
-import { dav } from "@/repositories/schema";
+import { dav } from "@/repositories/schema.js";
 import { db } from "./connection";
 
 export async function buscarDavPorId(id: string) {

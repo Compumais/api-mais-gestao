@@ -1,5 +1,5 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { verificarUsuarioPertenceEmpresa } from "src/repositories/entidade-repositories";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import z from "zod";
 import { criarNotaFiscalService } from "@/service/nota-fiscal/criar-nota-fiscal.js";
 import {

@@ -9,13 +9,13 @@ import {
 	text,
 	varchar,
 } from "drizzle-orm/pg-core";
-import { cfop } from "./cfop";
-import { dav } from "./dav";
-import { enquatramentoipi } from "./enquatramento-ipi";
-import { produtos } from "./produtos";
-import { receitasemcontribuicao } from "./receitasem-contribuicao";
-import { unidademedida } from "./unidade-medida";
-import { usuarios } from "./usuarios";
+import { cfop } from "./cfop.js";
+import { dav } from "./dav.js";
+import { enquatramentoipi } from "./enquatramento-ipi.js";
+import { produtos } from "./produtos.js";
+import { receitasemcontribuicao } from "./receitasem-contribuicao.js";
+import { unidademedida } from "./unidade-medida.js";
+import { usuarios } from "./usuarios.js";
 
 export const davitem = pgTable(
 	"davitem",

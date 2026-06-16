@@ -10,9 +10,9 @@ import {
 	text,
 	varchar,
 } from "drizzle-orm/pg-core";
-import { cest } from "./cest";
-import { empresa } from "./empresas";
-import { entidade } from "./entidade";
+import { cest } from "./cest.js";
+import { empresa } from "./empresas.js";
+import { entidade } from "./entidade.js";
 
 export const hierarquia = pgTable(
 	"hierarquia",

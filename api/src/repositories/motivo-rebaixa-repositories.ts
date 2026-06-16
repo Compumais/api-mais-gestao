@@ -1,6 +1,6 @@
 import { and, count, desc, eq, ilike } from "drizzle-orm";
 import type { NovoMotivoRebaixa } from "@/model/motivo-rebaixa-model";
-import { motivorebaixa } from "@/repositories/schema";
+import { motivorebaixa } from "@/repositories/schema.js";
 import { db } from "./connection";
 
 export async function buscarMotivoRebaixaPorId(id: string) {

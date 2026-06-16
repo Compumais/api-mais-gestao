@@ -1,4 +1,4 @@
-import type * as schema from "@/repositories/schema";
+import type * as schema from "@/repositories/schema.js";
 
 export type NovoMotivoBaixaFinanceiro =
 	typeof schema.motivobaixafinanceiro.$inferInsert;

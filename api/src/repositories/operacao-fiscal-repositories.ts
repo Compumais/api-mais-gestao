@@ -1,6 +1,6 @@
 import { and, count, desc, eq, ilike } from "drizzle-orm";
 import type { NovoOperacaoFiscal } from "@/model/operacao-fiscal-model";
-import { operacaofiscal } from "@/repositories/schema";
+import { operacaofiscal } from "@/repositories/schema.js";
 import { db } from "./connection";
 
 export async function buscarOperacaoFiscalPorId(id: string) {

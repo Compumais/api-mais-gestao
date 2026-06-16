@@ -1,4 +1,4 @@
-import type { assinaturas, clientesasaas } from "@/repositories/schema";
+import type { assinaturas, clientesasaas } from "@/repositories/schema.js";
 
 export type Assinatura = typeof assinaturas.$inferSelect;
 export type NovaAssinatura = typeof assinaturas.$inferInsert;

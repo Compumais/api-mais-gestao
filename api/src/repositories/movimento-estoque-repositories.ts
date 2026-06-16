@@ -1,6 +1,6 @@
 import { and, count, desc, eq, ilike } from "drizzle-orm";
 import type { NovoMovimentoEstoque } from "@/model/movimento-estoque-model";
-import { movimentoestoque } from "@/repositories/schema";
+import { movimentoestoque } from "@/repositories/schema.js";
 import { db } from "./connection";
 
 export async function criarMovimentoEstoque(dadosMovimentoEstoque: NovoMovimentoEstoque) {

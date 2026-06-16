@@ -11,11 +11,11 @@ import {
 	timestamp,
 	varchar,
 } from "drizzle-orm/pg-core";
-import { empresa } from "./empresas";
-import { entidade } from "./entidade";
-import { produtos } from "./produtos";
-import { tipodocumentofinanceiro } from "./tipo-documento-financeiro";
-import { usuarios } from "./usuarios";
+import { empresa } from "./empresas.js";
+import { entidade } from "./entidade.js";
+import { produtos } from "./produtos.js";
+import { tipodocumentofinanceiro } from "./tipo-documento-financeiro.js";
+import { usuarios } from "./usuarios.js";
 
 export const ordemservico = pgTable(
 	"ordemservico",

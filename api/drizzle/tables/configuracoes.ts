@@ -8,7 +8,7 @@ import {
 	timestamp,
 	uniqueIndex,
 } from "drizzle-orm/pg-core";
-import { empresa } from "./empresas";
+import { empresa } from "./empresas.js";
 
 export const configuracoes = pgTable(
 	"configuracoes",

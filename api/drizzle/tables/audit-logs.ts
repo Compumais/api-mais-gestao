@@ -7,7 +7,7 @@ import {
 	text,
 	timestamp,
 } from "drizzle-orm/pg-core";
-import { usuarios } from "./usuarios";
+import { usuarios } from "./usuarios.js";
 
 export const auditLogs = pgTable(
 	"audit_logs",

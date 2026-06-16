@@ -1,8 +1,8 @@
 import { sql } from "drizzle-orm";
 import { date, foreignKey, integer, numeric, pgTable, smallint, text, timestamp, varchar } from "drizzle-orm/pg-core";
-import { empresa } from "./empresas";
-import { entidade } from "./entidade";
-import { usuarios } from "./usuarios";
+import { empresa } from "./empresas.js";
+import { entidade } from "./entidade.js";
+import { usuarios } from "./usuarios.js";
 
 export const contamesa = pgTable(
   "contamesa",
