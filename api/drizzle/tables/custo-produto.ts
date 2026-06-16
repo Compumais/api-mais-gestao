@@ -8,9 +8,9 @@ import {
 	text,
 	timestamp,
 } from "drizzle-orm/pg-core";
-import { motivorebaixa } from "./motivo-rebaixa";
-import { produtos } from "./produtos";
-import { usuarios } from "./usuarios";
+import { motivorebaixa } from "./motivo-rebaixa.js";
+import { produtos } from "./produtos.js";
+import { usuarios } from "./usuarios.js";
 
 const numeric2110 = numeric({ precision: 21, scale: 10, mode: "string" });
 const numeric52 = numeric({ precision: 5, scale: 2, mode: "string" });

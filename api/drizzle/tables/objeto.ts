@@ -6,8 +6,8 @@ import {
 	text,
 	varchar,
 } from "drizzle-orm/pg-core";
-import { empresa } from "./empresas";
-import { entidade } from "./entidade";
+import { empresa } from "./empresas.js";
+import { entidade } from "./entidade.js";
 
 export const objeto = pgTable(
 	"objeto",

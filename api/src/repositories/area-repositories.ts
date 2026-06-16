@@ -1,6 +1,6 @@
 import { and, count, desc, eq, ilike } from "drizzle-orm";
 import type { NovoArea } from "@/model/area-model";
-import { area } from "@/repositories/schema";
+import { area } from "@/repositories/schema.js";
 import { db } from "./connection";
 
 export async function buscarAreaPorId(id: string) {

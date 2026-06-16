@@ -7,9 +7,9 @@ import {
 	text,
 	varchar,
 } from "drizzle-orm/pg-core";
-import { empresa } from "./empresas";
-import { planocontas } from "./plano-contas";
-import { tipodocumentofinanceiro } from "./tipo-documento-financeiro";
+import { empresa } from "./empresas.js";
+import { planocontas } from "./plano-contas.js";
+import { tipodocumentofinanceiro } from "./tipo-documento-financeiro.js";
 
 export const operacaofiscal = pgTable(
 	"operacaofiscal",

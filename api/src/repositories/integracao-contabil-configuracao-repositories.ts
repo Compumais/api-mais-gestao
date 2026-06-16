@@ -1,6 +1,6 @@
 import { and, count, desc, eq } from "drizzle-orm";
 import type { NovoIntegracaoContabilConfiguracao } from "@/model/integracao-contabil-configuracao-model";
-import { integracaocontabilconfiguracao } from "@/repositories/schema";
+import { integracaocontabilconfiguracao } from "@/repositories/schema.js";
 import { db } from "./connection";
 
 export async function buscarIntegracaoContabilConfiguracaoPorId(id: string) {

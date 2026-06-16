@@ -1,6 +1,6 @@
 import { and, count, desc, eq } from "drizzle-orm";
 import type { NovoEntidadeContaContabil } from "@/model/entidade-conta-contabil-model";
-import { entidadecontacontabil } from "@/repositories/schema";
+import { entidadecontacontabil } from "@/repositories/schema.js";
 import { db } from "./connection";
 
 export async function buscarEntidadeContaContabilPorId(id: string) {

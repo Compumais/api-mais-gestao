@@ -33,10 +33,10 @@ export interface ItemComPreco {
 }
 
 export interface PagamentosFechar {
-	valordinheiro?: string;
-	valorcartao?: string;
-	valorpix?: string;
-	valorprepago?: string;
+	valordinheiro?: string | null;
+	valorcartao?: string | null;
+	valorpix?: string | null;
+	valorprepago?: string | null;
 }
 
 export interface PagamentosResumo {

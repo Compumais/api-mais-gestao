@@ -10,15 +10,15 @@ import {
 	timestamp,
 	varchar,
 } from "drizzle-orm/pg-core";
-import { cest } from "./cest";
-import { cfop } from "./cfop";
-import { empresa } from "./empresas";
-import { entidade } from "./entidade";
-import { hierarquia } from "./hierarquia";
-import { ncm } from "./ncm";
-import { planocontas } from "./plano-contas";
-import { receitasemcontribuicao } from "./receitasem-contribuicao";
-import { unidademedida } from "./unidade-medida";
+import { cest } from "./cest.js";
+import { cfop } from "./cfop.js";
+import { empresa } from "./empresas.js";
+import { entidade } from "./entidade.js";
+import { hierarquia } from "./hierarquia.js";
+import { ncm } from "./ncm.js";
+import { planocontas } from "./plano-contas.js";
+import { receitasemcontribuicao } from "./receitasem-contribuicao.js";
+import { unidademedida } from "./unidade-medida.js";
 
 export const produtos = pgTable(
 	"produtos",

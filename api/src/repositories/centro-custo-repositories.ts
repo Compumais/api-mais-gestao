@@ -1,6 +1,6 @@
 import { and, count, desc, eq, ilike } from "drizzle-orm";
 import type { NovoCentroCusto } from "@/model/centro-custo-model";
-import { centrocusto } from "@/repositories/schema";
+import { centrocusto } from "@/repositories/schema.js";
 import { db } from "./connection";
 
 export async function buscarCentroCustoPorId(id: string) {

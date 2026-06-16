@@ -1,7 +1,7 @@
 import { and, count, desc, eq, ilike } from "drizzle-orm";
 import type { NovaNotaFiscal } from "@/model/nota-fiscal-model";
 import type { NovoNotaFiscalItem } from "@/model/nota-fiscal-item-model";
-import { notafiscal, notafiscalitem } from "@/repositories/schema";
+import { notafiscal, notafiscalitem } from "@/repositories/schema.js";
 import { db } from "./connection";
 
 export async function criarNotaFiscalComItens(

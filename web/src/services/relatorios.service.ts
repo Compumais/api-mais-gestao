@@ -27,12 +27,17 @@ async function downloadRelatorioBlob(
 	const response = await api.post(url, params, { responseType: "blob" });
 	const contentDisposition = response.headers["content-disposition"];
 	let filename = defaultFilename;
-	if (contentDisposition) {
+	if (typeof contentDisposition === "string") {
 		const filenameMatch = contentDisposition.match(/filename="(.+)"/);
 		if (filenameMatch) filename = filenameMatch[1];
 	}
+	const rawContentType = response.headers["content-type"];
+	const contentType =
+		typeof rawContentType === "string"
+			? rawContentType
+			: "application/octet-stream";
 	const blob = new Blob([response.data], {
-		type: response.headers["content-type"] || "application/octet-stream",
+		type: contentType,
 	});
 	const blobUrl = window.URL.createObjectURL(blob);
 	const link = document.createElement("a");

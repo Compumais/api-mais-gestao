@@ -12,9 +12,9 @@ import {
 	timestamp,
 	varchar,
 } from "drizzle-orm/pg-core";
-import { empresa } from "./empresas";
-import { localestoque } from "./local-estoque";
-import { produtos } from "./produtos";
+import { empresa } from "./empresas.js";
+import { localestoque } from "./local-estoque.js";
+import { produtos } from "./produtos.js";
 
 const numeric156 = numeric({ precision: 15, scale: 6, mode: "string" });
 const numeric122 = numeric({ precision: 12, scale: 2, mode: "string" });

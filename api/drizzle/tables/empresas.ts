@@ -6,7 +6,7 @@ import {
 	timestamp,
 	uniqueIndex,
 } from "drizzle-orm/pg-core";
-import { usuarios } from "./usuarios";
+import { usuarios } from "./usuarios.js";
 
 export const empresa = pgTable(
 	"empresas",

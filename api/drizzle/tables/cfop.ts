@@ -9,10 +9,10 @@ import {
 	text,
 	varchar,
 } from "drizzle-orm/pg-core";
-import { empresa } from "./empresas";
-import { operacaofiscal } from "./operacao-fiscal";
-import { planocontas } from "./plano-contas";
-import { tipodocumentofinanceiro } from "./tipo-documento-financeiro";
+import { empresa } from "./empresas.js";
+import { operacaofiscal } from "./operacao-fiscal.js";
+import { planocontas } from "./plano-contas.js";
+import { tipodocumentofinanceiro } from "./tipo-documento-financeiro.js";
 
 export const cfop = pgTable(
 	"cfop",

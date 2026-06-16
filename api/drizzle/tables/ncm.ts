@@ -8,7 +8,7 @@ import {
 	text,
 	varchar,
 } from "drizzle-orm/pg-core";
-import { empresa } from "./empresas";
+import { empresa } from "./empresas.js";
 
 // Cadastro de Nomenclatura Comum do Mercosul (NCM)
 export const ncm = pgTable(

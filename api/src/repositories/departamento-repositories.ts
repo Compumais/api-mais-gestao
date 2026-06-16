@@ -1,6 +1,6 @@
 import { and, count, desc, eq, ilike } from "drizzle-orm";
 import type { NovoDepartamento } from "@/model/departamento-model";
-import { departamento } from "@/repositories/schema";
+import { departamento } from "@/repositories/schema.js";
 import { db } from "./connection";
 
 export async function buscarDepartamentoPorId(id: string) {

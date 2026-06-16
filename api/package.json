@@ -6,7 +6,7 @@
 	"scripts": {
 		"start": "node dist/src/index.js",
 		"dev": "tsx watch src/index.ts",
-		"build": "tsc && npx tsc-alias -p tsconfig.json && node -e \"console.log('\\nBuild da API concluído com sucesso.')\"",
+		"build": "tsc && npx tsc-alias -p tsconfig.json && node scripts/fix-dist-esm-imports.mjs && node -e \"console.log('\\nBuild da API concluído com sucesso.')\"",
 		"test": "vitest",
 		"test:ui": "vitest --ui",
 		"test:coverage": "vitest run --coverage",
@@ -16,7 +16,15 @@
 		"seed": "tsx drizzle/seed.ts",
 		"clean": "tsx drizzle/clean.ts",
 		"db:patch-roles": "tsx drizzle/patch-roles.ts",
-		"db:studio": "drizzle-kit studio"
+		"db:studio": "drizzle-kit studio",
+		"db:migrate": "drizzle-kit migrate",
+		"db:migrate:undo": "drizzle-kit migrate:undo",
+		"db:migrate:latest": "drizzle-kit migrate:latest",
+		"db:migrate:rollback": "drizzle-kit migrate:rollback",
+		"db:migrate:status": "drizzle-kit migrate:status",
+		"db:migrate:reset": "drizzle-kit migrate:reset",
+		"db:migrate:force": "drizzle-kit migrate:force",
+		"db:migrate:revert": "drizzle-kit migrate:revert"
 	},
 	"keywords": [],
 	"author": "",

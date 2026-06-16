@@ -11,8 +11,8 @@ import {
 	timestamp,
 	varchar,
 } from "drizzle-orm/pg-core";
-import { financeiro } from "./financeiro";
-import { planocontas } from "./plano-contas";
+import { financeiro } from "./financeiro.js";
+import { planocontas } from "./plano-contas.js";
 
 export const financeirolancamento = pgTable(
 	"financeirolancamento",

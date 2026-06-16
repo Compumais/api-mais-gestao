@@ -13,16 +13,16 @@ import {
 	timestamp,
 	varchar,
 } from "drizzle-orm/pg-core";
-import { cfop } from "./cfop";
-import { condicaopagamento } from "./condicao-pagamento";
-import { contacorrente } from "./conta-corrente";
-import { empresa } from "./empresas";
-import { entidade } from "./entidade";
-import { localretirada } from "./local-retirada";
-import { operacaofiscal } from "./operacao-fiscal";
-import { planocontas } from "./plano-contas";
-import { tipodocumentofinanceiro } from "./tipo-documento-financeiro";
-import { usuarios } from "./usuarios";
+import { cfop } from "./cfop.js";
+import { condicaopagamento } from "./condicao-pagamento.js";
+import { contacorrente } from "./conta-corrente.js";
+import { empresa } from "./empresas.js";
+import { entidade } from "./entidade.js";
+import { localretirada } from "./local-retirada.js";
+import { operacaofiscal } from "./operacao-fiscal.js";
+import { planocontas } from "./plano-contas.js";
+import { tipodocumentofinanceiro } from "./tipo-documento-financeiro.js";
+import { usuarios } from "./usuarios.js";
 
 export const notafiscal = pgTable(
 	"notafiscal",

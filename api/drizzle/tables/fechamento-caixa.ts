@@ -1,7 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
 	bigint,
-	date,
 	foreignKey,
 	index,
 	numeric,
@@ -12,8 +11,8 @@ import {
 	timestamp,
 	varchar,
 } from "drizzle-orm/pg-core";
-import { empresa } from "./empresas";
-import { usuarios } from "./usuarios";
+import { empresa } from "./empresas.js";
+import { usuarios } from "./usuarios.js";
 
 const numeric152 = () => numeric({ precision: 15, scale: 2, mode: "string" });
 

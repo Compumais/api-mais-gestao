@@ -1,6 +1,6 @@
 import { and, count, desc, eq, ilike } from "drizzle-orm";
 import type { NovoHierarquia } from "@/model/hierarquia-model";
-import { hierarquia } from "@/repositories/schema";
+import { hierarquia } from "@/repositories/schema.js";
 import { db } from "./connection";
 
 export async function buscarHierarquiaPorId(id: string) {

@@ -7,8 +7,8 @@ import {
 	text,
 	timestamp,
 } from "drizzle-orm/pg-core";
-import { clientesasaas } from "./clientes-asaas";
-import { empresa } from "./empresas";
+import { clientesasaas } from "./clientes-asaas.js";
+import { empresa } from "./empresas.js";
 
 export const assinaturas = pgTable(
 	"assinaturas",

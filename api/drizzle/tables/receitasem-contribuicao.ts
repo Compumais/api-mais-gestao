@@ -8,7 +8,7 @@ import {
 	timestamp,
 	varchar,
 } from "drizzle-orm/pg-core";
-import { empresa } from "./empresas";
+import { empresa } from "./empresas.js";
 
 // Cadastro de receitas sem contribuição
 export const receitasemcontribuicao = pgTable(

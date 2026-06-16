@@ -8,9 +8,9 @@ import {
 	text,
 	timestamp,
 } from "drizzle-orm/pg-core";
-import { contamesa } from "./conta-mesa";
-import { empresa } from "./empresas";
-import { usuarios } from "./usuarios";
+import { contamesa } from "./conta-mesa.js";
+import { empresa } from "./empresas.js";
+import { usuarios } from "./usuarios.js";
 
 const numeric123 = () => numeric({ precision: 12, scale: 3, mode: "string" });
 

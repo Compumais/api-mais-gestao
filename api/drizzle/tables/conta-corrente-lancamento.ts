@@ -10,9 +10,9 @@ import {
 	text,
 	varchar,
 } from "drizzle-orm/pg-core";
-import { contacorrente } from "./conta-corrente";
-import { planocontas } from "./plano-contas";
-import { usuarios } from "./usuarios";
+import { contacorrente } from "./conta-corrente.js";
+import { planocontas } from "./plano-contas.js";
+import { usuarios } from "./usuarios.js";
 
 export const contacorrentelancamento = pgTable(
 	"contacorrentelancamento",

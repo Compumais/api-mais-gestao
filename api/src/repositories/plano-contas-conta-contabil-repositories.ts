@@ -1,6 +1,6 @@
 import { and, count, desc, eq } from "drizzle-orm";
 import type { NovoPlanoContasContaContabil } from "@/model/plano-contas-conta-contabil-model";
-import { planocontascontacontabil } from "@/repositories/schema";
+import { planocontascontacontabil } from "@/repositories/schema.js";
 import { db } from "./connection";
 
 export async function buscarPlanoContasContaContabilPorId(id: string) {

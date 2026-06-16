@@ -14,6 +14,28 @@ export async function criarPlanoContas(dadosPlanoContas: NovoPlanoContas) {
 	return planoContas[0];
 }
 
+export async function verificarEmpresaPossuiPlanoContas(
+	idempresa: string,
+): Promise<boolean> {
+	const [resultado] = await db
+		.select({ value: count() })
+		.from(schema.planocontas)
+		.where(eq(schema.planocontas.idempresa, idempresa));
+
+	return (resultado?.value ?? 0) > 0;
+}
+
+export async function criarPlanoContasEmLote(dadosPlanoContas: NovoPlanoContas[]) {
+	if (dadosPlanoContas.length === 0) {
+		return [];
+	}
+
+	return db
+		.insert(schema.planocontas)
+		.values(dadosPlanoContas)
+		.returning();
+}
+
 export async function excluirPlanoContas({ id }: { id: string }) {
 	const [planocontas] = await db
 		.delete(schema.planocontas)

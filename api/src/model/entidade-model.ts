@@ -1,4 +1,4 @@
-import type * as schema from "@/repositories/schema";
+import type * as schema from "@/repositories/schema.js";
 
 export type Entidade = typeof schema.entidade.$inferSelect;
 export type NovaEntidade = typeof schema.entidade.$inferInsert;

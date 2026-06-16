@@ -11,13 +11,13 @@ import {
 	timestamp,
 	varchar,
 } from "drizzle-orm/pg-core";
-import { cfop } from "./cfop";
-import { condicaopagamento } from "./condicao-pagamento";
-import { contacorrente } from "./conta-corrente";
-import { empresa } from "./empresas";
-import { entidade } from "./entidade";
-import { tipodocumentofinanceiro } from "./tipo-documento-financeiro";
-import { usuarios } from "./usuarios";
+import { cfop } from "./cfop.js";
+import { condicaopagamento } from "./condicao-pagamento.js";
+import { contacorrente } from "./conta-corrente.js";
+import { empresa } from "./empresas.js";
+import { entidade } from "./entidade.js";
+import { tipodocumentofinanceiro } from "./tipo-documento-financeiro.js";
+import { usuarios } from "./usuarios.js";
 
 export const dav = pgTable(
 	"dav",

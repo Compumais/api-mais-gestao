@@ -1,6 +1,6 @@
 import { and, count, desc, eq, ilike } from "drizzle-orm";
 import type { NovoUnidadeMedida } from "@/model/unidade-medida-model";
-import { unidademedida } from "@/repositories/schema";
+import { unidademedida } from "@/repositories/schema.js";
 import { db } from "./connection";
 
 export async function buscarUnidadeMedidaPorId(id: string) {

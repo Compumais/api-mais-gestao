@@ -1,4 +1,4 @@
-import type { codigoreduzidocontacontabil } from "@/repositories/schema";
+import type { codigoreduzidocontacontabil } from "@/repositories/schema.js";
 
 export type CodigoReduzidoContaContabil =
 	typeof codigoreduzidocontacontabil.$inferSelect;

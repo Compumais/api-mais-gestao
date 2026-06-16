@@ -1,6 +1,6 @@
 import { and, count, desc, eq, ilike } from "drizzle-orm";
 import type { NovoNCM } from "@/model/ncm-model";
-import { ncm as ncmTable } from "@/repositories/schema";
+import { ncm as ncmTable } from "@/repositories/schema.js";
 import { db } from "./connection";
 
 export async function buscarNcmPorId(id: string) {

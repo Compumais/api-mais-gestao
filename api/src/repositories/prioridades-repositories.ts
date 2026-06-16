@@ -1,6 +1,6 @@
 import { and, count, desc, eq, ilike } from "drizzle-orm";
 import type { NovoPrioridade } from "@/model/prioridade-model";
-import { prioridades as prioridadesTable } from "@/repositories/schema";
+import { prioridades as prioridadesTable } from "@/repositories/schema.js";
 import { db } from "./connection";
 
 export async function buscarPrioridadePorId(id: string) {

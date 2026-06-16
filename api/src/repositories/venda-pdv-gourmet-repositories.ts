@@ -1,6 +1,6 @@
 import { and, count, desc, eq, gte, lte } from "drizzle-orm";
 import type { NovaVendaPdvGourmet } from "@/model/venda-pdv-gourmet-model";
-import { vendapdvgourmet } from "@/repositories/schema";
+import { vendapdvgourmet } from "@/repositories/schema.js";
 import { db } from "./connection";
 
 export async function buscarVendaPdvGourmetPorId(id: string) {

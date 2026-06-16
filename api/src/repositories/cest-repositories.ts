@@ -1,6 +1,6 @@
 import { and, count, desc, eq, ilike } from "drizzle-orm";
 import type { NovoCEST } from "@/model/cest-mode";
-import { cest } from "@/repositories/schema";
+import { cest } from "@/repositories/schema.js";
 import { db } from "./connection";
 
 export async function buscarCestPorId(id: string) {
