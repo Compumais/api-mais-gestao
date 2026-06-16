@@ -16,7 +16,7 @@ const atualizarContaMesaItemBodySchema = z.object({
 	precopromocao: z.string().optional(),
 	precoalterado: z.string().optional(),
 	precounitario: z.string().optional(),
-	unidademedida: z.string().max(6).optional(),
+	unidademedida: z.string().optional(),
 	couverartistico: z.number().int().optional(),
 	observacao: z.string().optional(),
 	taxaservico: z.number().int().optional(),

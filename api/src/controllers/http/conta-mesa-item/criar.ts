@@ -13,7 +13,7 @@ const criarContaMesaItemBodySchema = z.object({
 	precopromocao: z.string(),
 	precoalterado: z.string(),
 	precounitario: z.string(),
-	unidademedida: z.string().max(6),
+	unidademedida: z.string(),
 	couverartistico: z.number().int().optional(),
 	observacao: z.string().optional(),
 	taxaservico: z.number().int().optional(),

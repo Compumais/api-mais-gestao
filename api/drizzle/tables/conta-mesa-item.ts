@@ -30,7 +30,7 @@ export const contamesaitem = pgTable(
 		precoalterado: numeric({ precision: 12, scale: 3 }).notNull(),
 		precounitario: numeric({ precision: 12, scale: 3 }).notNull(),
 		taxaservico: smallint().default(0), // 1=Sim, 0=Não
-		unidademedida: varchar({ length: 6 }).notNull(),
+		unidademedida: text().notNull(),
 	},
 	(table) => [
 		foreignKey({
