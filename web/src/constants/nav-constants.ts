@@ -43,6 +43,14 @@ export const DATA = {
 					title: "Venda rápida",
 					url: "/gourmet/venda-rapida",
 				},
+				{
+					title: "Histórico de vendas",
+					url: "/vendas-pdv",
+				},
+				{
+					title: "Fechamentos de caixa",
+					url: "/fechamentos-caixa",
+				},
 			],
 		},
 	],

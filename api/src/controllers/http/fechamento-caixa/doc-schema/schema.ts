@@ -48,9 +48,9 @@ const fechamentoCaixaProperties = {
 	datahora: { type: "string", nullable: true },
 	falta: { type: "string", nullable: true },
 	idoperacao: { type: "number", nullable: true },
-	idusuario: { type: "string", format: "uuid", nullable: true },
-	idusuariofechamento: { type: "string", format: "uuid", nullable: true },
-	idusuariosuprimento: { type: "string", format: "uuid", nullable: true },
+	idusuario: { type: "string", nullable: true },
+	idusuariofechamento: { type: "string", nullable: true },
+	idusuariosuprimento: { type: "string", nullable: true },
 	local: { type: "number", nullable: true },
 	novofechamento: { type: "number", nullable: true },
 	observacao: { type: "string", nullable: true },
@@ -63,37 +63,27 @@ const fechamentoCaixaProperties = {
 	suprimentoinicial: { type: "string", nullable: true },
 };
 
+const valorMonetarioNullable = { type: "string", nullable: true };
+
 const fechamentoCaixaBodyProperties = {
 	idempresa: { type: "string", format: "uuid" },
 	codigo: { type: "string", maxLength: 10, nullable: true },
 	datahora: { type: "string", nullable: true },
-	falta: { oneOf: [{ type: "string" }, { type: "number" }], nullable: true },
+	falta: valorMonetarioNullable,
 	idoperacao: { type: "number", nullable: true },
-	idusuario: { type: "string", format: "uuid", nullable: true },
-	idusuariofechamento: { type: "string", format: "uuid", nullable: true },
-	idusuariosuprimento: { type: "string", format: "uuid", nullable: true },
+	idusuario: { type: "string", nullable: true },
+	idusuariofechamento: { type: "string", nullable: true },
+	idusuariosuprimento: { type: "string", nullable: true },
 	local: { type: "number", nullable: true },
 	novofechamento: { type: "number", nullable: true },
 	observacao: { type: "string", nullable: true },
 	pdv: { type: "number", nullable: true },
-	saldoapurado: {
-		oneOf: [{ type: "string" }, { type: "number" }],
-		nullable: true,
-	},
-	saldoconferido: {
-		oneOf: [{ type: "string" }, { type: "number" }],
-		nullable: true,
-	},
-	saldoinformado: {
-		oneOf: [{ type: "string" }, { type: "number" }],
-		nullable: true,
-	},
-	sobra: { oneOf: [{ type: "string" }, { type: "number" }], nullable: true },
+	saldoapurado: valorMonetarioNullable,
+	saldoconferido: valorMonetarioNullable,
+	saldoinformado: valorMonetarioNullable,
+	sobra: valorMonetarioNullable,
 	status: { type: "number", nullable: true },
-	suprimentoinicial: {
-		oneOf: [{ type: "string" }, { type: "number" }],
-		nullable: true,
-	},
+	suprimentoinicial: valorMonetarioNullable,
 };
 
 const atualizarFechamentoCaixaBodyProperties = {
@@ -150,7 +140,7 @@ export const listarFechamentosCaixaSchema: FastifySchema = {
 			limit: { type: "number" },
 			idempresa: { type: "string", format: "uuid" },
 			codigo: { type: "string" },
-			idusuario: { type: "string", format: "uuid" },
+			idusuario: { type: "string" },
 			pdv: { type: "number" },
 			status: { type: "number" },
 		},

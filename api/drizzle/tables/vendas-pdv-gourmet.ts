@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
 	foreignKey,
 	integer,
+	numeric,
 	pgTable,
 	smallint,
 	text,
@@ -10,6 +11,8 @@ import {
 import { contamesa } from "./conta-mesa";
 import { empresa } from "./empresas";
 import { usuarios } from "./usuarios";
+
+const numeric123 = () => numeric({ precision: 12, scale: 3, mode: "string" });
 
 export const vendapdvgourmet = pgTable(
 	"vendapdvgourmet",
@@ -20,6 +23,12 @@ export const vendapdvgourmet = pgTable(
 		vendalocal: smallint().default(0), // 1=Sim, 0=Não
 		numeropdv: integer().notNull(),
 		idvendaitem: text(),
+		valordinheiro: numeric123(),
+		valorcartao: numeric123(),
+		valorpix: numeric123(),
+		valorprepago: numeric123(),
+		valortroco: numeric123(),
+		valortotal: numeric123(),
 		datacriacao: timestamp({ precision: 3, mode: "string" }).default(
 			sql`CURRENT_TIMESTAMP`,
 		),

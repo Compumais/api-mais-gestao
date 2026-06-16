@@ -9,6 +9,8 @@ type ListarVendasPdvGourmetParametros = {
 	idempresa: string;
 	idcontamesa?: string | undefined;
 	numeropdv?: number | undefined;
+	dataInicio?: string | undefined;
+	dataFim?: string | undefined;
 	page?: number;
 	limit?: number;
 };
@@ -28,6 +30,8 @@ export async function listarVendasPdvGourmetService({
 	idempresa,
 	idcontamesa,
 	numeropdv,
+	dataInicio,
+	dataFim,
 	page = 1,
 	limit = 10,
 }: ListarVendasPdvGourmetParametros): Promise<
@@ -46,6 +50,8 @@ export async function listarVendasPdvGourmetService({
 		idempresa,
 		idcontamesa,
 		numeropdv,
+		dataInicio,
+		dataFim,
 		page,
 		limit,
 	});

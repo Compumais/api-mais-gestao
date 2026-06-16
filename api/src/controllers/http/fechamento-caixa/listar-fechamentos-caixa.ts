@@ -7,7 +7,7 @@ const listarFechamentosCaixaQuerySchema = z.object({
 	limit: z.coerce.number().min(1).max(100).optional().default(10),
 	idempresa: z.string().uuid(),
 	codigo: z.string().optional(),
-	idusuario: z.string().uuid().optional(),
+	idusuario: z.string().optional(),
 	pdv: z.coerce.number().int().optional(),
 	status: z.coerce.number().int().optional(),
 });

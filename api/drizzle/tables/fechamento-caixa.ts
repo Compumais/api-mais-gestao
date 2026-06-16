@@ -15,7 +15,7 @@ import {
 import { empresa } from "./empresas";
 import { usuarios } from "./usuarios";
 
-const numeric152 = numeric({ precision: 15, scale: 2, mode: "string" });
+const numeric152 = () => numeric({ precision: 15, scale: 2, mode: "string" });
 
 export const fechamentopdv = pgTable(
 	"fechamentopdv",
@@ -26,7 +26,7 @@ export const fechamentopdv = pgTable(
 		datacriacao: timestamp().default(sql`CURRENT_TIMESTAMP`), // Time millis da alteração do registro
 		datamodificacao: timestamp().default(sql`CURRENT_TIMESTAMP`), // Time millis da alteração do registro
 		datahora: timestamp({ precision: 3, mode: "string" }), // Data hora de criação do registro
-		falta: numeric152, // Valor da falta de caixa
+		falta: numeric152(), // Valor da falta de caixa
 		idoperacao: bigint({ mode: "number" }), // ID da operação que fechou o caixa
 		idusuario: text(), // ID do usuário do caixa
 		idusuariofechamento: text(), // ID do usuário de conferência na tesouraria
@@ -35,12 +35,12 @@ export const fechamentopdv = pgTable(
 		novofechamento: smallint(), // Indica que a operação tem o ID do fechamento
 		observacao: text(), // Observação sobre o fechamento
 		pdv: smallint(), // Número do PDV
-		saldoapurado: numeric152, // Valor do saldo atual em caixa
-		saldoconferido: numeric152, // Valor conferido
-		saldoinformado: numeric152, // Valor do saldo informado no fechamento de caixa
-		sobra: numeric152, // Valor da sobra de caixa
+		saldoapurado: numeric152(), // Valor do saldo atual em caixa
+		saldoconferido: numeric152(), // Valor conferido
+		saldoinformado: numeric152(), // Valor do saldo informado no fechamento de caixa
+		sobra: numeric152(), // Valor da sobra de caixa
 		status: smallint(), // Status da movimentação
-		suprimentoinicial: numeric152, // Valor do suprimento inicial
+		suprimentoinicial: numeric152(), // Valor do suprimento inicial
 	},
 	(table) => [
 		index("fechamentopdv_idempresa_idx").using(

@@ -4,6 +4,11 @@ import z from "zod";
 import { criarVendaPdvGourmetService } from "@/service/venda-pdv-gourmet/criar-venda-pdv-gourmet.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
+const valorPagamentoOptional = z
+	.union([z.string(), z.number()])
+	.transform((value) => String(value))
+	.optional();
+
 const criarVendaPdvGourmetBodySchema = z.object({
 	idempresa: z.string(),
 	numeropdv: z.number().int(),
@@ -11,6 +16,12 @@ const criarVendaPdvGourmetBodySchema = z.object({
 	idcontamesa: z.string().optional(),
 	vendalocal: z.number().int().optional(),
 	idvendaitem: z.string().optional(),
+	valordinheiro: valorPagamentoOptional,
+	valorcartao: valorPagamentoOptional,
+	valorpix: valorPagamentoOptional,
+	valorprepago: valorPagamentoOptional,
+	valortroco: valorPagamentoOptional,
+	valortotal: valorPagamentoOptional,
 });
 
 export async function criarVendaPdvGourmet(

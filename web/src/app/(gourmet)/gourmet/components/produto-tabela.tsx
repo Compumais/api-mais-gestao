@@ -2,6 +2,7 @@
 
 import { IconPlus, IconSearch } from "@tabler/icons-react";
 import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,7 +14,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { formatCurrency, getEstoqueProduto } from "@/lib/gourmet-utils";
+import { formatCurrency } from "@/lib/gourmet-utils";
 import type { Produto } from "@/services/produtos.service";
 
 interface ProdutoTabelaProps {
@@ -21,6 +22,32 @@ interface ProdutoTabelaProps {
 	isLoading: boolean;
 	onAdicionar: (produto: Produto) => void;
 	isAdding?: boolean;
+	/** Mapa codigoProduto → quantidade em estoque vindo de saldoestoque */
+	saldoPorCodigo?: Record<string, number>;
+}
+
+function getSaldoInfo(
+	produto: Produto,
+	saldoPorCodigo?: Record<string, number>,
+): { quantidade: number | null; semEstoque: boolean; label: string } {
+	if (!saldoPorCodigo || produto.codigo == null) {
+		// Produto sem código ou sem dados de saldo: não gerenciado, venda livre
+		return { quantidade: null, semEstoque: false, label: "—" };
+	}
+
+	const chave = String(produto.codigo);
+	if (!(chave in saldoPorCodigo)) {
+		// Sem registro de saldo: produto não gerenciado no estoque
+		return { quantidade: null, semEstoque: false, label: "—" };
+	}
+
+	const quantidade = saldoPorCodigo[chave];
+	const semEstoque = quantidade <= 0;
+	return {
+		quantidade,
+		semEstoque,
+		label: quantidade.toLocaleString("pt-BR", { maximumFractionDigits: 3 }),
+	};
 }
 
 export function ProdutoTabela({
@@ -28,6 +55,7 @@ export function ProdutoTabela({
 	isLoading,
 	onAdicionar,
 	isAdding,
+	saldoPorCodigo,
 }: ProdutoTabelaProps) {
 	const [busca, setBusca] = useState("");
 
@@ -82,39 +110,72 @@ export function ProdutoTabela({
 									</TableCell>
 								</TableRow>
 							) : (
-								produtosFiltrados.map((produto) => (
-									<TableRow
-										key={produto.id}
-										className="cursor-pointer hover:bg-accent/40"
-										onClick={() => onAdicionar(produto)}
-									>
-										<TableCell className="font-mono text-sm">
-											{produto.codigo ?? "—"}
-										</TableCell>
-										<TableCell className="font-medium">{produto.nome}</TableCell>
-										<TableCell className="text-right text-muted-foreground">
-											{getEstoqueProduto(produto)}
-										</TableCell>
-										<TableCell className="text-right font-semibold text-primary">
-											{formatCurrency(produto.preco)}
-										</TableCell>
-										<TableCell className="text-right">
-											<Button
-												type="button"
-												size="icon-sm"
-												variant="ghost"
-												disabled={isAdding}
-												onClick={(e) => {
-													e.stopPropagation();
-													onAdicionar(produto);
-												}}
-												aria-label={`Adicionar ${produto.nome}`}
-											>
-												<IconPlus className="size-4" />
-											</Button>
-										</TableCell>
-									</TableRow>
-								))
+								produtosFiltrados.map((produto) => {
+									const saldo = getSaldoInfo(produto, saldoPorCodigo);
+									const bloqueado = saldo.semEstoque;
+
+									return (
+										<TableRow
+											key={produto.id}
+											data-bloqueado={bloqueado}
+											className={
+												bloqueado
+													? "cursor-not-allowed opacity-50"
+													: "cursor-pointer hover:bg-accent/40"
+											}
+											onClick={() => {
+												if (!bloqueado) onAdicionar(produto);
+											}}
+										>
+											<TableCell className="font-mono text-sm">
+												{produto.codigo ?? "—"}
+											</TableCell>
+											<TableCell className="font-medium">
+												{produto.nome}
+												{bloqueado && (
+													<Badge
+														variant="destructive"
+														className="ml-2 text-xs"
+													>
+														Sem estoque
+													</Badge>
+												)}
+											</TableCell>
+											<TableCell className="text-right text-muted-foreground">
+												{saldo.semEstoque ? (
+													<span className="font-semibold text-destructive">
+														{saldo.label}
+													</span>
+												) : (
+													saldo.label
+												)}
+											</TableCell>
+											<TableCell className="text-right font-semibold text-primary">
+												{formatCurrency(produto.preco)}
+											</TableCell>
+											<TableCell className="text-right">
+												<Button
+													type="button"
+													size="icon-sm"
+													variant="ghost"
+													disabled={isAdding || bloqueado}
+													title={
+														bloqueado
+															? "Produto sem estoque disponível"
+															: `Adicionar ${produto.nome}`
+													}
+													onClick={(e) => {
+														e.stopPropagation();
+														if (!bloqueado) onAdicionar(produto);
+													}}
+													aria-label={`Adicionar ${produto.nome}`}
+												>
+													<IconPlus className="size-4" />
+												</Button>
+											</TableCell>
+										</TableRow>
+									);
+								})
 							)}
 						</TableBody>
 					</Table>

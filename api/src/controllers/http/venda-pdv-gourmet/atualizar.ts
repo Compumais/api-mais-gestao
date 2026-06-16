@@ -7,6 +7,11 @@ const atualizarVendaPdvGourmetParamsSchema = z.object({
 	id: z.string(),
 });
 
+const valorPagamentoOptional = z
+	.union([z.string(), z.number()])
+	.transform((value) => String(value))
+	.optional();
+
 const atualizarVendaPdvGourmetBodySchema = z.object({
 	idempresa: z.string().optional(),
 	idcontamesa: z.string().optional(),
@@ -14,6 +19,12 @@ const atualizarVendaPdvGourmetBodySchema = z.object({
 	numeropdv: z.number().int().optional(),
 	idvendaitem: z.string().optional(),
 	usuarioquefechouvenda: z.string().optional(),
+	valordinheiro: valorPagamentoOptional,
+	valorcartao: valorPagamentoOptional,
+	valorpix: valorPagamentoOptional,
+	valorprepago: valorPagamentoOptional,
+	valortroco: valorPagamentoOptional,
+	valortotal: valorPagamentoOptional,
 });
 
 export async function atualizarVendaPdvGourmet(
