@@ -16,6 +16,8 @@ describe("excluirEmpresaService", () => {
 		criadoem: new Date().toISOString(),
 		atualizadoem: new Date().toISOString(),
 		idproprietario: "proprietario-1",
+		prazocartaocredito: 30,
+		prazocartaodebito: 1,
 	};
 
 	beforeEach(() => {

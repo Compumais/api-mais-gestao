@@ -10,6 +10,7 @@ import {
 	excluirVendaPdvGourmet,
 } from "@/repositories/venda-pdv-gourmet-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
+import { registrarRecebimentosVendaService } from "@/service/venda-pdv-gourmet/registrar-recebimentos-venda.js";
 import {
 	httpCriacao,
 	httpErro,
@@ -60,6 +61,21 @@ export async function criarVendaPdvGourmetService({
 	if (!auditoria || !auditoria.success) {
 		await excluirVendaPdvGourmet(registro.id);
 		return httpErroInterno();
+	}
+
+	const recebimentos = await registrarRecebimentosVendaService({
+		venda: registro,
+		idusuario,
+	});
+
+	if (!recebimentos.success) {
+		await excluirVendaPdvGourmet(registro.id);
+		return {
+			success: false,
+			status: 400,
+			error: recebimentos.mensagem,
+			code: "RECEBIMENTOS_VENDA_ERRO",
+		};
 	}
 
 	return httpCriacao<VendaPdvGourmet>(registro);

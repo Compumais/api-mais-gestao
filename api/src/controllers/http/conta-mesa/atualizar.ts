@@ -19,6 +19,8 @@ const atualizarContaMesaBodySchema = z.object({
 	telefone: z.string().max(20).optional(),
 	usuarioquefechouconta: z.string().optional(),
 	valorcartao: z.string().optional(),
+	valorcartaocredito: z.string().optional(),
+	valorcartaodebito: z.string().optional(),
 	valorcouverartistico: z.string().optional(),
 	valordinheiro: z.string().optional(),
 	valorpendente: z.string().optional(),

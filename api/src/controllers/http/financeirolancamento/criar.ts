@@ -58,6 +58,7 @@ export async function criarFinanceiroLancamento(
 
 		const resultado = await criarFinanceiroLancamentoService({
 			dadosFinanceiroLancamento,
+			idusuario: request.user.id,
 		});
 
 		if (!resultado.success) {

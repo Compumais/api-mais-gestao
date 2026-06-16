@@ -16,6 +16,8 @@ describe("atualizarEmpresaService", () => {
 		idproprietario: "proprietario-1",
 		criadoem: new Date().toISOString(),
 		atualizadoem: new Date().toISOString(),
+		prazocartaocredito: 30,
+		prazocartaodebito: 1,
 	};
 
 	const empresaAtualizadaMock: Empresa = {

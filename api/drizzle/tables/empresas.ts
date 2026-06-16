@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
 	foreignKey,
+	integer,
 	pgTable,
 	text,
 	timestamp,
@@ -22,6 +23,8 @@ export const empresa = pgTable(
 			.default(sql`CURRENT_TIMESTAMP`)
 			.notNull(),
 		atualizadoem: timestamp({ precision: 3, mode: "string" }).notNull(),
+		prazocartaocredito: integer().default(30).notNull(),
+		prazocartaodebito: integer().default(1).notNull(),
 	},
 	(table) => [
 		uniqueIndex("empresas_cnpj_key").using(

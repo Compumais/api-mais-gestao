@@ -48,6 +48,7 @@ export function montarPlanoContasPadrao(
 	const encargosSociaisId = uuidv4();
 	const beneficiosId = uuidv4();
 	const impostosDiretosId = uuidv4();
+	const vendasId = uuidv4();
 
 	const conta = (parametros: MontarContaParametros) =>
 		montarConta(idempresa, timestampMillis, parametros);
@@ -60,10 +61,41 @@ export function montarPlanoContasPadrao(
 			tipomovimento: "E",
 		}),
 		conta({
+			id: vendasId,
 			codigo: "1 1",
 			nome: "Vendas",
 			tipomovimento: "E",
 			idplanocontas: receitasId,
+		}),
+		conta({
+			codigo: "1 1 1",
+			nome: "Vendas em Dinheiro",
+			tipomovimento: "E",
+			idplanocontas: vendasId,
+		}),
+		conta({
+			codigo: "1 1 2",
+			nome: "Vendas Cartão de Crédito",
+			tipomovimento: "E",
+			idplanocontas: vendasId,
+		}),
+		conta({
+			codigo: "1 1 3",
+			nome: "Vendas Cartão de Débito",
+			tipomovimento: "E",
+			idplanocontas: vendasId,
+		}),
+		conta({
+			codigo: "1 1 4",
+			nome: "Vendas PIX",
+			tipomovimento: "E",
+			idplanocontas: vendasId,
+		}),
+		conta({
+			codigo: "1 1 5",
+			nome: "Vendas Pré-pago",
+			tipomovimento: "E",
+			idplanocontas: vendasId,
 		}),
 		conta({
 			codigo: "1 2",

@@ -54,6 +54,24 @@ export async function buscarPlanoContasPorId(id: string) {
 	return planoContas;
 }
 
+export async function buscarPlanoContasPorCodigo(
+	idempresa: string,
+	codigo: string,
+) {
+	const [planoContas] = await db
+		.select()
+		.from(schema.planocontas)
+		.where(
+			and(
+				eq(schema.planocontas.idempresa, idempresa),
+				eq(schema.planocontas.codigo, codigo),
+			),
+		)
+		.limit(1);
+
+	return planoContas;
+}
+
 export async function buscarProximoCodigoSemPai(idempresa: string) {
 	const resultado = await db
 		.select({
