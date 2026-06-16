@@ -2,6 +2,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import { atualizarEnquatramentoIpiService } from "@/service/enquatramento-ipi/atualizar-enquatramento-ipi.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
+import { removerUndefined } from "@/util/remover-undefined.js";
 
 const atualizarEnquatramentoIpiParamsSchema = z.object({
 	id: z.string(),
@@ -20,7 +21,9 @@ export async function atualizarEnquatramentoIpi(request: FastifyRequest, reply: 
 		}
 
 		const { id } = atualizarEnquatramentoIpiParamsSchema.parse(request.params);
-		const dados = atualizarEnquatramentoIpiBodySchema.parse(request.body);
+		const dados = removerUndefined(
+			atualizarEnquatramentoIpiBodySchema.parse(request.body),
+		);
 
 		const resultado = await atualizarEnquatramentoIpiService({
 			enquatramentoIpiId: id,

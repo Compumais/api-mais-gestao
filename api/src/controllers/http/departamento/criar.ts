@@ -22,6 +22,8 @@ export async function criarDepartamento(request: FastifyRequest, reply: FastifyR
 		const dadosDepartamento = {
 			id: uuidv4(),
 			...dadosValidados,
+			idusuariocadastro: request.user.id,
+			idultimousuarioalteracao: request.user.id,
 		};
 
 		const resultado = await criarDepartamentoService({

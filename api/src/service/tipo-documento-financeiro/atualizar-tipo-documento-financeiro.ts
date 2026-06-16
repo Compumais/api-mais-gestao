@@ -11,11 +11,12 @@ import {
 } from "@/repositories/tipo-documento-financeiro-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
 import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
+import type { AtualizacaoParcial } from "@/util/type-util.js";
 
 type AtualizarTipoDocumentoFinanceiroParametros = {
 	tipoDocumentoFinanceiroId: string;
 	idusuario: string;
-	dados: Partial<NovoTipoDocumentoFinanceiro>;
+	dados: AtualizacaoParcial<NovoTipoDocumentoFinanceiro>;
 };
 
 export async function atualizarTipoDocumentoFinanceiroService({

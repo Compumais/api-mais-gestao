@@ -2,6 +2,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import { atualizarCestService } from "@/service/cest/atualizar-cest.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
+import { removerUndefined } from "@/util/remover-undefined.js";
 
 const atualizarCestParamsSchema = z.object({
 	id: z.string(),
@@ -21,7 +22,9 @@ export async function atualizarCest(request: FastifyRequest, reply: FastifyReply
 		}
 
 		const { id } = atualizarCestParamsSchema.parse(request.params);
-		const dados = atualizarCestBodySchema.parse(request.body);
+		const dados = removerUndefined(
+			atualizarCestBodySchema.parse(request.body),
+		);
 
 		const resultado = await atualizarCestService({
 			cestId: id,

@@ -8,11 +8,12 @@ import {
 } from "@/repositories/objeto-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
 import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
+import type { AtualizacaoParcial } from "@/util/type-util.js";
 
 type AtualizarObjetoParametros = {
 	objetoId: string;
 	idusuario: string;
-	dados: Partial<NovoObjeto>;
+	dados: AtualizacaoParcial<NovoObjeto>;
 };
 
 export async function atualizarObjetoService({

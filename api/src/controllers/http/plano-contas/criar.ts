@@ -14,11 +14,16 @@ const criarPlanoContasSchema = z.object({
 	classe: z.string().optional(),
 	natureza: z.string().optional(),
 	idplanocontas: z.string().optional(),
-	idgrupodre: z.number().optional(),
+	idgrupodre: z
+		.union([z.string(), z.number()])
+		.optional()
+		.transform((valor) =>
+			valor === undefined || valor === null ? valor : String(valor),
+		),
 	currenttimemillis: z.number().optional(),
 	centrocustoobrigatorio: z.number().optional(),
 	tipoconta: z.number().optional(),
-	idcontacontabilintegracao: z.number().optional(),
+	idcontacontabilintegracao: z.string().optional(),
 	exportaparacontabilidade: z.number().optional(),
 });
 

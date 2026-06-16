@@ -2,6 +2,10 @@ import { and, count, desc, eq, ilike } from "drizzle-orm";
 import type { NovoObjeto } from "@/model/objeto-model";
 import { objeto } from "@/repositories/schema";
 import { db } from "./connection";
+import type { AtualizacaoParcial } from "@/util/type-util";
+
+type NovoObjetoDados = Pick<NovoObjeto, "id" | "idempresa"> &
+	AtualizacaoParcial<Omit<NovoObjeto, "id" | "idempresa">>;
 
 export async function buscarObjetoPorId(id: string) {
 	const [registro] = await db.select().from(objeto).where(eq(objeto.id, id));
@@ -9,7 +13,7 @@ export async function buscarObjetoPorId(id: string) {
 	return registro;
 }
 
-export async function criarObjeto(dadosObjeto: NovoObjeto) {
+export async function criarObjeto(dadosObjeto: NovoObjetoDados) {
 	const [registro] = await db.insert(objeto).values(dadosObjeto).returning();
 
 	return registro;

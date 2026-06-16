@@ -2,6 +2,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import { atualizarObjetoService } from "@/service/objeto/atualizar-objeto.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
+import { removerUndefined } from "@/util/remover-undefined.js";
 
 const atualizarObjetoParamsSchema = z.object({
 	id: z.string(),
@@ -20,7 +21,9 @@ export async function atualizarObjeto(request: FastifyRequest, reply: FastifyRep
 		}
 
 		const { id } = atualizarObjetoParamsSchema.parse(request.params);
-		const dados = atualizarObjetoBodySchema.parse(request.body);
+		const dados = removerUndefined(
+			atualizarObjetoBodySchema.parse(request.body),
+		);
 
 		const resultado = await atualizarObjetoService({
 			objetoId: id,

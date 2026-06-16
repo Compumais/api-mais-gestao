@@ -2,6 +2,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import { atualizarCentroCustoService } from "@/service/centro-custo/atualizar-centro-custo.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
+import { removerUndefined } from "@/util/remover-undefined.js";
 
 const atualizarCentroCustoParamsSchema = z.object({
 	id: z.string(),
@@ -23,7 +24,9 @@ export async function atualizarCentroCusto(request: FastifyRequest, reply: Fasti
 		}
 
 		const { id } = atualizarCentroCustoParamsSchema.parse(request.params);
-		const dados = atualizarCentroCustoBodySchema.parse(request.body);
+		const dados = removerUndefined(
+			atualizarCentroCustoBodySchema.parse(request.body),
+		);
 
 		const resultado = await atualizarCentroCustoService({
 			centroCustoId: id,
