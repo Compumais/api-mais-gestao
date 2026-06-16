@@ -49,7 +49,7 @@ export const criarContaMesaItemSchema: FastifySchema = {
 			precopromocao: { type: "string" },
 			precoalterado: { type: "string" },
 			precounitario: { type: "string" },
-			unidademedida: { type: "string", maxLength: 6 },
+			unidademedida: { type: "string" },
 			couverartistico: { type: "number", nullable: true },
 			observacao: { type: "string", nullable: true },
 			taxaservico: { type: "number", nullable: true },
