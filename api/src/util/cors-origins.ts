@@ -1,7 +1,9 @@
 const LOCAL_ORIGINS = [
 	"http://localhost:3000",
 	"http://127.0.0.1:3000",
-];
+] as const;
+
+const DEFAULT_CLIENT_ORIGIN = LOCAL_ORIGINS[0];
 
 function parseOriginsFromEnv(value: string | undefined): string[] {
 	if (!value?.trim()) return [];
@@ -23,7 +25,7 @@ export function getPrimaryClientOrigin(): string {
 	const configured = parseOriginsFromEnv(
 		process.env.CLIENT_ORIGIN || process.env.FRONTEND_URL,
 	);
-	return configured[0] ?? LOCAL_ORIGINS[0];
+	return configured[0] ?? DEFAULT_CLIENT_ORIGIN;
 }
 
 export function isOriginAllowed(origin: string): boolean {
