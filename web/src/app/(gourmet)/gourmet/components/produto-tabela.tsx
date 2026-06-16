@@ -57,7 +57,7 @@ export function ProdutoTabela({
 				{isLoading ? (
 					<div className="space-y-2 p-4">
 						{Array.from({ length: 8 }).map((_, i) => (
-							<Skeleton key={i} className="h-10 w-full" />
+							<Skeleton key={i.toString()} className="h-10 w-full" />
 						))}
 					</div>
 				) : (
