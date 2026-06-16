@@ -10,10 +10,16 @@ const atualizarFinanceiroBodySchema = z.object({
 	identidade: z.string().uuid().optional().nullable(),
 	tipo: z.string().length(1).optional().nullable(),
 	tipoorigem: z.number().optional().nullable(),
-	idorigem: z.number().optional().nullable(),
+	idorigem: z
+		.union([z.string(), z.number()])
+		.optional()
+		.nullable()
+		.transform((valor) =>
+			valor === null || valor === undefined ? valor : String(valor),
+		),
 	parcela: z.number().optional().nullable(),
 	documento: z.string().max(60).optional().nullable(),
-	idtipodocumentofinanceiro: z.number().optional().nullable(),
+	idtipodocumentofinanceiro: z.string().uuid().optional().nullable(),
 	status: z.string().length(1).optional().nullable(),
 	emissao: z.string().optional().nullable(),
 	vencimento: z.string().optional().nullable(),
@@ -39,7 +45,13 @@ const atualizarFinanceiroBodySchema = z.object({
 	devolucaodata: z.string().optional().nullable(),
 	protestodate: z.string().optional().nullable(),
 	nossonumero: z.string().max(25).optional().nullable(),
-	idcontageraboleto: z.number().optional().nullable(),
+	idcontageraboleto: z
+		.union([z.string(), z.number()])
+		.optional()
+		.nullable()
+		.transform((valor) =>
+			valor === null || valor === undefined ? valor : String(valor),
+		),
 	numerocheque: z.string().max(10).optional().nullable(),
 	remessagerada: z.number().optional().nullable(),
 	boletoimpresso: z.number().optional().nullable(),

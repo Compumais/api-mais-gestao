@@ -30,6 +30,10 @@ export async function excluirPlanoContasContaContabilService({
 		return httpNaoEncontrado();
 	}
 
+	if (!registro.idempresa) {
+		return httpNaoEncontrado();
+	}
+
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
 		idusuario,
 		registro.idempresa,

@@ -28,9 +28,15 @@ export async function criarPlanoContasContaContabilService({
 }: CriarPlanoContasContaContabilParametros): Promise<
 	HttpResponse<PlanoContasContaContabil | null>
 > {
+	const idempresa = dadosPlanoContasContaContabil.idempresa;
+
+	if (!idempresa) {
+		return httpErro();
+	}
+
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
 		idusuario,
-		dadosPlanoContasContaContabil.idempresa,
+		idempresa,
 	);
 
 	if (!usuarioPertenceEmpresa) {

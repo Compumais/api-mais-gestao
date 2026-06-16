@@ -33,6 +33,10 @@ export async function atualizarPlanoContasContaContabilService({
 		return httpNaoEncontrado();
 	}
 
+	if (!registroExistente.idempresa) {
+		return httpNaoEncontrado();
+	}
+
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
 		idusuario,
 		registroExistente.idempresa,

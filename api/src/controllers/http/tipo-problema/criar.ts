@@ -22,6 +22,8 @@ export async function criarTipoProblema(request: FastifyRequest, reply: FastifyR
 		const dadosTipoProblema = {
 			id: uuidv4(),
 			...dadosValidados,
+			idusuariocadastro: request.user.id,
+			idultimousuarioalteracao: request.user.id,
 		};
 
 		const resultado = await criarTipoProblemaService({

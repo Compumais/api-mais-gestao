@@ -861,7 +861,6 @@ async function seed() {
 		// Criar tipo documento financeiro
 		console.log("📄 Criando tipos de documento financeiro...");
 		const tipoDocFinId = uuidv4();
-		const tipoDocFinIdNumber = 1; // ID numérico para referência no financeiro
 
 		await db.insert(schema.tipodocumentofinanceiro).values({
 			id: tipoDocFinId,
@@ -924,7 +923,7 @@ async function seed() {
 			saldo: "2000.00",
 			historico: "Pagamento a fornecedor",
 			documento: "PAG-001",
-			idtipodocumentofinanceiro: tipoDocFinIdNumber,
+			idtipodocumentofinanceiro: tipoDocFinId,
 			currenttimemillis: timestampMillis,
 		});
 

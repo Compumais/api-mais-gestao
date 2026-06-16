@@ -2,6 +2,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import { atualizarCfopPadraoService } from "@/service/cfop-padrao/atualizar-cfop-padrao.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
+import { removerUndefined } from "@/util/remover-undefined.js";
 
 const atualizarCfopPadraoParamsSchema = z.object({
 	id: z.string(),
@@ -21,7 +22,9 @@ export async function atualizarCfopPadrao(request: FastifyRequest, reply: Fastif
 		}
 
 		const { id } = atualizarCfopPadraoParamsSchema.parse(request.params);
-		const dados = atualizarCfopPadraoBodySchema.parse(request.body);
+		const dados = removerUndefined(
+			atualizarCfopPadraoBodySchema.parse(request.body),
+		);
 
 		const resultado = await atualizarCfopPadraoService({
 			cfopPadraoId: id,

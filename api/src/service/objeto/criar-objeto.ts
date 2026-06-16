@@ -13,9 +13,13 @@ import {
 	httpErroInterno,
 	httpProibido,
 } from "@/util/http-util.js";
+import type { AtualizacaoParcial } from "@/util/type-util.js";
+
+type CriarObjetoDados = Pick<NovoObjeto, "id" | "idempresa"> &
+	AtualizacaoParcial<Omit<NovoObjeto, "id" | "idempresa">>;
 
 type CriarObjetoParametros = {
-	dadosObjeto: NovoObjeto;
+	dadosObjeto: CriarObjetoDados;
 	idusuario: string;
 };
 

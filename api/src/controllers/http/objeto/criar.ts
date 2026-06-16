@@ -21,7 +21,16 @@ export async function criarObjeto(request: FastifyRequest, reply: FastifyReply) 
 
 		const dadosObjeto = {
 			id: uuidv4(),
-			...dadosValidados,
+			idempresa: dadosValidados.idempresa,
+			...(dadosValidados.codigo !== undefined
+				? { codigo: dadosValidados.codigo }
+				: {}),
+			...(dadosValidados.descricao !== undefined
+				? { descricao: dadosValidados.descricao }
+				: {}),
+			...(dadosValidados.inativo !== undefined
+				? { inativo: dadosValidados.inativo }
+				: {}),
 		};
 
 		const resultado = await criarObjetoService({

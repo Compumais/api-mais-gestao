@@ -8,11 +8,12 @@ import {
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
 import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
+import type { AtualizacaoParcial } from "@/util/type-util.js";
 
 type AtualizarCfopPadraoParametros = {
 	cfopPadraoId: string;
 	idusuario: string;
-	dados: Partial<NovoCFOPPadrao>;
+	dados: AtualizacaoParcial<NovoCFOPPadrao>;
 };
 
 export async function atualizarCfopPadraoService({

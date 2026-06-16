@@ -11,11 +11,12 @@ import {
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
 import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
+import type { AtualizacaoParcial } from "@/util/type-util.js";
 
 type AtualizarEntidadeContaContabilParametros = {
 	entidadeContaContabilId: string;
 	idusuario: string;
-	dados: Partial<NovoEntidadeContaContabil>;
+	dados: AtualizacaoParcial<NovoEntidadeContaContabil>;
 };
 
 export async function atualizarEntidadeContaContabilService({

@@ -2,6 +2,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import { atualizarTipoDocumentoFinanceiroService } from "@/service/tipo-documento-financeiro/atualizar-tipo-documento-financeiro.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
+import { removerUndefined } from "@/util/remover-undefined.js";
 
 const atualizarTipoDocumentoFinanceiroParamsSchema = z.object({
 	id: z.string(),
@@ -20,7 +21,9 @@ export async function atualizarTipoDocumentoFinanceiro(request: FastifyRequest, 
 		}
 
 		const { id } = atualizarTipoDocumentoFinanceiroParamsSchema.parse(request.params);
-		const dados = atualizarTipoDocumentoFinanceiroBodySchema.parse(request.body);
+		const dados = removerUndefined(
+			atualizarTipoDocumentoFinanceiroBodySchema.parse(request.body),
+		);
 
 		const resultado = await atualizarTipoDocumentoFinanceiroService({
 			tipoDocumentoFinanceiroId: id,
