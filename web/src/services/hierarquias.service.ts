@@ -5,6 +5,10 @@ export interface Hierarquia {
 	idempresa: string;
 	codigo: string | null;
 	nome: string | null;
+	ncm: string | null;
+	classe: number | null;
+	origem: number | null;
+	comissao: string | null;
 }
 
 export interface ListarHierarquiasResponse {
@@ -15,6 +19,25 @@ export interface ListarHierarquiasResponse {
 		total: number;
 		totalPages: number;
 	};
+}
+
+export interface CriarHierarquiaData {
+	idempresa: string;
+	codigo?: string | null;
+	nome?: string | null;
+	ncm?: string | null;
+	classe?: number | null;
+	origem?: number | null;
+	comissao?: number | null;
+}
+
+export interface AtualizarHierarquiaData {
+	codigo?: string | null;
+	nome?: string | null;
+	ncm?: string | null;
+	classe?: number | null;
+	origem?: number | null;
+	comissao?: number | null;
 }
 
 export const hierarquiasService = {
@@ -28,5 +51,27 @@ export const hierarquiasService = {
 			params,
 		});
 		return data;
+	},
+
+	async buscar(id: string): Promise<Hierarquia> {
+		const { data } = await api.get<Hierarquia>(`/hierarquias/${id}`);
+		return data;
+	},
+
+	async criar(dados: CriarHierarquiaData): Promise<Hierarquia> {
+		const { data } = await api.post<Hierarquia>("/hierarquias", dados);
+		return data;
+	},
+
+	async atualizar(
+		id: string,
+		dados: AtualizarHierarquiaData,
+	): Promise<Hierarquia> {
+		const { data } = await api.put<Hierarquia>(`/hierarquias/${id}`, dados);
+		return data;
+	},
+
+	async deletar(id: string): Promise<void> {
+		await api.delete(`/hierarquias/${id}`);
 	},
 };

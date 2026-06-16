@@ -20,6 +20,7 @@ export interface Produto {
 	observacoes: string | null;
 	inativo: number | null;
 	datacadastro: string;
+	quantidadepadrao?: number | null;
 }
 
 export interface ListarProdutosResponse {

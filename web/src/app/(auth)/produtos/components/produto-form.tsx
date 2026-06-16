@@ -30,7 +30,7 @@ import {
 } from "@/schemas/produtos.schema";
 import { entidadesService } from "@/services/entidades.service";
 import { hierarquiasService } from "@/services/hierarquias.service";
-import { produtosService } from "@/services/produtos.service";
+import { produtosService, type CriarProdutoData } from "@/services/produtos.service";
 import { unidadesMedidaService } from "@/services/unidades-medida.service";
 
 type ProdutoFormProps = {
@@ -38,6 +38,46 @@ type ProdutoFormProps = {
 	produtoId?: string;
 	valoresIniciais?: Partial<ProdutoFormData>;
 };
+
+function buildProdutoPayload(
+	data: ProdutoFormData,
+): Omit<CriarProdutoData, "idempresa"> {
+	const payload: Omit<CriarProdutoData, "idempresa"> = {
+		codigo: data.codigo,
+		nome: data.nome.trim(),
+		idunidademedida: data.idunidademedida,
+		idgrupo: data.idgrupo,
+		preco: data.preco,
+		tipo: data.tipo,
+		ippt: data.ippt,
+		origem: data.origem,
+		ncm: data.ncm.trim(),
+	};
+
+	if (data.ean != null && !Number.isNaN(data.ean)) {
+		payload.ean = data.ean;
+	}
+
+	const referencia = data.referencia?.trim();
+	if (referencia) {
+		payload.referencia = referencia;
+	}
+
+	if (data.fornecedor) {
+		payload.fornecedor = data.fornecedor;
+	}
+
+	if (data.iat) {
+		payload.iat = data.iat;
+	}
+
+	const observacoes = data.observacoes?.trim();
+	if (observacoes) {
+		payload.observacoes = observacoes;
+	}
+
+	return payload;
+}
 
 export function ProdutoForm(props: ProdutoFormProps) {
 	const router = useRouter();
@@ -165,22 +205,7 @@ export function ProdutoForm(props: ProdutoFormProps) {
 			return;
 		}
 
-		const payloadBase = {
-			codigo: data.codigo,
-			ean: data.ean ?? null,
-			referencia: data.referencia || null,
-			nome: data.nome,
-			idunidademedida: data.idunidademedida,
-			fornecedor: data.fornecedor || null,
-			idgrupo: data.idgrupo,
-			preco: data.preco,
-			tipo: data.tipo,
-			iat: data.iat ?? null,
-			ippt: data.ippt,
-			origem: data.origem,
-			ncm: data.ncm,
-			observacoes: data.observacoes || null,
-		};
+		const payloadBase = buildProdutoPayload(data);
 
 		if (!isEdicao) {
 			criarProduto({
@@ -195,6 +220,14 @@ export function ProdutoForm(props: ProdutoFormProps) {
 
 	const isPending = isPendingCriar || isPendingAtualizar;
 
+	if (!empresa) {
+		return (
+			<div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+				Selecione uma empresa no menu superior para cadastrar produtos.
+			</div>
+		);
+	}
+
 	return (
 		<form onSubmit={handleSubmit(onSubmit)}>
 			<FieldGroup>
@@ -206,9 +239,14 @@ export function ProdutoForm(props: ProdutoFormProps) {
 							<Input
 								id="codigo"
 								type="number"
+								min={1}
 								placeholder="Código do produto"
 								aria-invalid={!!errors.codigo}
-								{...register("codigo", { valueAsNumber: true })}
+								{...register("codigo", {
+									valueAsNumber: true,
+									validate: (value) =>
+										!Number.isNaN(value) || "Código é obrigatório",
+								})}
 							/>
 							<FieldError errors={errors.codigo ? [errors.codigo] : []} />
 						</Field>

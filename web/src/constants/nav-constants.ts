@@ -19,6 +19,7 @@ import {
 	IconTools,
 	IconUser,
 	IconUsers,
+	IconToolsKitchen2,
 } from "@tabler/icons-react";
 
 export const DATA = {
@@ -27,6 +28,22 @@ export const DATA = {
 			title: "Dashboard",
 			url: "/dashboard",
 			icon: IconDashboard,
+		},
+	],
+	navGourmet: [
+		{
+			title: "PDV Gourmet",
+			icon: IconToolsKitchen2,
+			items: [
+				{
+					title: "Mesas",
+					url: "/gourmet",
+				},
+				{
+					title: "Venda rápida",
+					url: "/gourmet/venda-rapida",
+				},
+			],
 		},
 	],
 	navRegistros: [
@@ -53,6 +70,10 @@ export const DATA = {
 				{
 					title: "Produtos",
 					url: "/produtos",
+				},
+				{
+					title: "Hierarquias",
+					url: "/hierarquias",
 				},
 				{
 					title: "Unidades de medida",
