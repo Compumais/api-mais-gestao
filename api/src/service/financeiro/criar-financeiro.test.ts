@@ -112,6 +112,7 @@ describe("criarFinanceiroService", () => {
 		tipointegracao: null,
 		tiporateiocentrocusto: null,
 		ultimaocorrenciabancaria: null,
+		idplanocontas: null,
 	};
 
 	const dadosFinanceiroMock = {

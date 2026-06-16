@@ -112,6 +112,7 @@ describe("buscarFinanceiroService", () => {
 		tipointegracao: null,
 		tiporateiocentrocusto: null,
 		ultimaocorrenciabancaria: null,
+		idplanocontas: null,
 	};
 
 	beforeEach(() => {

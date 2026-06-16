@@ -25,6 +25,8 @@ export const vendapdvgourmet = pgTable(
 		idvendaitem: text(),
 		valordinheiro: numeric123(),
 		valorcartao: numeric123(),
+		valorcartaocredito: numeric123(),
+		valorcartaodebito: numeric123(),
 		valorpix: numeric123(),
 		valorprepago: numeric123(),
 		valortroco: numeric123(),

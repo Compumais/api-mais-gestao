@@ -14,6 +14,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { empresa } from "./empresas.js";
 import { entidade } from "./entidade.js";
+import { planocontas } from "./plano-contas.js";
 import { tipodocumentofinanceiro } from "./tipo-documento-financeiro.js";
 
 export const financeiro = pgTable(
@@ -143,6 +144,7 @@ export const financeiro = pgTable(
 		extra14: varchar({ length: 512 }),
 		extra15: varchar({ length: 512 }),
 		extra16: varchar({ length: 512 }),
+		idplanocontas: text(),
 	},
 	(table) => [
 		index("idx_fin_entid_tipo_status").using(
@@ -194,6 +196,13 @@ export const financeiro = pgTable(
 			columns: [table.idtipodocumentofinanceiro],
 			foreignColumns: [tipodocumentofinanceiro.id],
 			name: "financeiro_idtipodocumentofinanceiro_fkey",
+		})
+			.onUpdate("cascade")
+			.onDelete("set null"),
+		foreignKey({
+			columns: [table.idplanocontas],
+			foreignColumns: [planocontas.id],
+			name: "financeiro_idplanocontas_fkey",
 		})
 			.onUpdate("cascade")
 			.onDelete("set null"),

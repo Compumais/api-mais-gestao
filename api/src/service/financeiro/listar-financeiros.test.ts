@@ -113,6 +113,7 @@ describe("listarFinanceirosService", () => {
 			tipointegracao: null,
 			tiporateiocentrocusto: null,
 			ultimaocorrenciabancaria: null,
+			idplanocontas: null,
 		},
 		{
 			id: "financeiro-2",
@@ -218,6 +219,7 @@ describe("listarFinanceirosService", () => {
 			tipointegracao: null,
 			tiporateiocentrocusto: null,
 			ultimaocorrenciabancaria: null,
+			idplanocontas: null,
 		},
 	];
 

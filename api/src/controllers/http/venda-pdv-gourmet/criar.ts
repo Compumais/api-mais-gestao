@@ -18,6 +18,8 @@ const criarVendaPdvGourmetBodySchema = z.object({
 	idvendaitem: z.string().optional(),
 	valordinheiro: valorPagamentoOptional,
 	valorcartao: valorPagamentoOptional,
+	valorcartaocredito: valorPagamentoOptional,
+	valorcartaodebito: valorPagamentoOptional,
 	valorpix: valorPagamentoOptional,
 	valorprepago: valorPagamentoOptional,
 	valortroco: valorPagamentoOptional,

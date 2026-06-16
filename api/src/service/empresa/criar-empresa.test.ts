@@ -6,6 +6,9 @@ import { criarEmpresaService } from "./criar-empresa.js";
 
 vi.mock("@/repositories/empresa-repositories");
 vi.mock("../planocontas/criar-plano-contas-padrao.js");
+vi.mock("@/repositories/conta-corrente-repositories.js", () => ({
+	criarContaCorrenteCaixaPadrao: vi.fn().mockResolvedValue({ id: "caixa-1" }),
+}));
 
 describe("criarEmpresaService", () => {
 	const empresaMock: Empresa = {
@@ -18,6 +21,8 @@ describe("criarEmpresaService", () => {
 		idproprietario: "proprietario-1",
 		criadoem: new Date().toISOString(),
 		atualizadoem: new Date().toISOString(),
+		prazocartaocredito: 30,
+		prazocartaodebito: 1,
 	};
 
 	const proprietarioMock = {

@@ -7,6 +7,7 @@ import {
 	type NovaEmpresa,
 } from "../../repositories/empresa-repositories.js";
 import { criarPlanoContasPadraoService } from "../planocontas/criar-plano-contas-padrao.js";
+import { criarContaCorrenteCaixaPadrao } from "../../repositories/conta-corrente-repositories.js";
 import {
 	httpCriacao,
 	httpLimiteExcedido,
@@ -38,6 +39,8 @@ export async function criarEmpresaService({
 	}
 
 	await criarPlanoContasPadraoService(empresa.id);
+
+	await criarContaCorrenteCaixaPadrao(empresa.id);
 
 	// Criar bancos padrão para a nova empresa
 	try {

@@ -49,6 +49,8 @@ export const criarVendaPdvGourmetSchema: FastifySchema = {
 			idvendaitem: { type: "string", nullable: true },
 			valordinheiro: { type: "string", nullable: true },
 			valorcartao: { type: "string", nullable: true },
+			valorcartaocredito: { type: "string", nullable: true },
+			valorcartaodebito: { type: "string", nullable: true },
 			valorpix: { type: "string", nullable: true },
 			valorprepago: { type: "string", nullable: true },
 			valortroco: { type: "string", nullable: true },

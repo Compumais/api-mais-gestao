@@ -110,6 +110,7 @@ describe("atualizarFinanceiroService", () => {
 		tipointegracao: null,
 		tiporateiocentrocusto: null,
 		ultimaocorrenciabancaria: null,
+		idplanocontas: null,
 	};
 
 	const financeiroAtualizadoMock: Financeiro = {

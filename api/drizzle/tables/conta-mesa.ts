@@ -21,6 +21,8 @@ export const contamesa = pgTable(
     telefone: varchar({ length: 20 }), // Telefone do cliente,
     usuarioquefechouconta: text(),
     valorcartao: numeric({ precision: 12, scale: 3 }),
+    valorcartaocredito: numeric({ precision: 12, scale: 3 }),
+    valorcartaodebito: numeric({ precision: 12, scale: 3 }),
     valorcouverartistico: numeric({ precision: 12, scale: 3 }),
     valordinheiro: numeric({ precision: 12, scale: 3 }),
     valorpendente: numeric({ precision: 12, scale: 3 }),

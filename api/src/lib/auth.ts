@@ -1,4 +1,4 @@
-import { betterAuth, type Auth } from "better-auth";
+import { type Auth, betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { customSession } from "better-auth/plugins";
 import { eq } from "drizzle-orm";
@@ -43,7 +43,7 @@ export const auth = betterAuth({
 			clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
 		},
 	},
-	trustedOrigins: ["http://localhost:3000"],
+	trustedOrigins: [process.env.BETTER_AUTH_URL || "http://localhost:3000"],
 	user: {
 		modelName: "usuarios",
 		fields: {
@@ -127,7 +127,7 @@ export const auth = betterAuth({
 		cookiePrefix: "mais-gestao", // Evitar colisões no localhost
 		appName: "Mais Gestão",
 		appDescription: "Mais Gestão é um sistema de gestão de empresas",
-		appUrl: "http://localhost:3000",
+		appUrl:  process.env.BETTER_AUTH_URL || "http://localhost:3000",
 		appIcon: "https://maisgestao.com/icon.png",
 		appColor: "#000000",
 		appTheme: "dark",

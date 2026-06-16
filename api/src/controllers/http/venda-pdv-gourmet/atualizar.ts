@@ -21,6 +21,8 @@ const atualizarVendaPdvGourmetBodySchema = z.object({
 	usuarioquefechouvenda: z.string().optional(),
 	valordinheiro: valorPagamentoOptional,
 	valorcartao: valorPagamentoOptional,
+	valorcartaocredito: valorPagamentoOptional,
+	valorcartaodebito: valorPagamentoOptional,
 	valorpix: valorPagamentoOptional,
 	valorprepago: valorPagamentoOptional,
 	valortroco: valorPagamentoOptional,

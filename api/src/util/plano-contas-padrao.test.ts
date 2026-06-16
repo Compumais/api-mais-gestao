@@ -5,10 +5,10 @@ describe("montarPlanoContasPadrao", () => {
 	const idempresa = "empresa-teste-123";
 	const timestampMillis = 1_700_000_000_000;
 
-	it("deve montar 40 contas padrão para a empresa", () => {
+	it("deve montar 45 contas padrão para a empresa", () => {
 		const planos = montarPlanoContasPadrao(idempresa, timestampMillis);
 
-		expect(planos).toHaveLength(40);
+		expect(planos).toHaveLength(45);
 	});
 
 	it("deve vincular todas as contas à empresa informada", () => {
@@ -26,6 +26,17 @@ describe("montarPlanoContasPadrao", () => {
 		expect(codigos).toContain("3");
 		expect(codigos).toContain("4");
 		expect(codigos).toContain("5");
+	});
+
+	it("deve incluir subcontas de vendas por forma de pagamento", () => {
+		const planos = montarPlanoContasPadrao(idempresa, timestampMillis);
+		const codigos = planos.map((plano) => plano.codigo);
+
+		expect(codigos).toContain("1 1 1");
+		expect(codigos).toContain("1 1 2");
+		expect(codigos).toContain("1 1 3");
+		expect(codigos).toContain("1 1 4");
+		expect(codigos).toContain("1 1 5");
 	});
 
 	it("deve manter a hierarquia entre contas pai e filhas", () => {
