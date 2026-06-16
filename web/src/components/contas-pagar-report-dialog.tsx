@@ -22,7 +22,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { useEmpresa } from "@/provider/empresa-provider";
-import { gerarRelatorioContasPagar } from "@/service/relatorios.service";
+import { gerarRelatorioContasPagar } from "@/services/relatorios.service";
 
 interface ContasPagarReportDialogProps {
 	open: boolean;

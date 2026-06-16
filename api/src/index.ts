@@ -30,6 +30,7 @@ import { empresasRotas } from "./controllers/http/empresas/rotas.js";
 import { enquadramentosIpiRotas } from "./controllers/http/enquatramento-ipi/rotas.js";
 import { entidadesContaContabilRotas } from "./controllers/http/entidade-conta-contabil/rotas.js";
 import { entidadesRotas } from "./controllers/http/entidades/rotas.js";
+import { fechamentosCaixaRotas } from "./controllers/http/fechamento-caixa/rotas.js";
 import { financeiroRotas } from "./controllers/http/financeiro/rotas.js";
 import { financeiroLancamentoRotas } from "./controllers/http/financeirolancamento/rotas.js";
 import { hierarquiasRotas } from "./controllers/http/hierarquia/rotas.js";
@@ -166,6 +167,10 @@ await app.register(swagger, {
 			{
 				name: "nota-fiscal",
 				description: "Operações com notas fiscais de compra",
+			},
+			{
+				name: "fechamentos-caixa",
+				description: "Operações com fechamentos de caixa de PDV",
 			},
 		],
 	},
@@ -479,6 +484,7 @@ app.register(contasMesaRotas);
 app.register(contasMesaItemRotas);
 app.register(vendasPdvGourmetRotas);
 app.register(vendasPdvItemRotas);
+app.register(fechamentosCaixaRotas);
 
 app.listen({ port: 3333 }).then(() => {
 	console.log("HTTP server running on port 3333");
