@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -20,8 +20,11 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { authService } from "@/services/auth.service";
 import { authClient } from "@/lib/auth-client";
+import { limparEmpresaSelecionada, EMPRESA_FORCAR_PRIMEIRA_KEY, marcarSelecaoPrimeiraEmpresaNoLogin } from "@/provider/empresa-provider";
+import { authService } from "@/services/auth.service";
+import { empresasUsuarioQueryOptions } from "@/hooks/use-empresas-usuario";
+import { useEmpresa } from "@/hooks/use-empresa";
 import { GoogleIcon } from "./icons/google-icon";
 
 const loginSchema = z.object({
@@ -40,6 +43,8 @@ export function LoginForm({
 	...props
 }: React.ComponentProps<"div">) {
 	const router = useRouter();
+	const queryClient = useQueryClient();
+	const { selecionarEmpresa } = useEmpresa();
 	const {
 		register,
 		handleSubmit,
@@ -50,7 +55,27 @@ export function LoginForm({
 
 	const { mutate: signIn, isPending } = useMutation({
 		mutationFn: authService.signIn,
-		onSuccess: () => {
+		onSuccess: async () => {
+			marcarSelecaoPrimeiraEmpresaNoLogin();
+			limparEmpresaSelecionada();
+			const perfil = await queryClient.fetchQuery({
+				queryKey: ["perfil"],
+				queryFn: () => authService.getProfile(),
+			});
+			if (perfil?.id) {
+				try {
+					const empresas = await queryClient.fetchQuery(
+						empresasUsuarioQueryOptions(perfil.id),
+					);
+					const primeiraEmpresa = empresas[0];
+					if (primeiraEmpresa) {
+						selecionarEmpresa(primeiraEmpresa);
+						sessionStorage.removeItem(EMPRESA_FORCAR_PRIMEIRA_KEY);
+					}
+				} catch {
+					// ProtectedRoute tentará carregar novamente no dashboard
+				}
+			}
 			toast.success("Login realizado com sucesso!");
 			router.push("/dashboard");
 		},
