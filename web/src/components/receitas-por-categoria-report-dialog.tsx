@@ -22,7 +22,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { useEmpresa } from "@/provider/empresa-provider";
-import { gerarRelatorioReceitasPorCategoria } from "@/service/relatorios.service";
+import { gerarRelatorioReceitasPorCategoria } from "@/services/relatorios.service";
 
 interface ReceitasPorCategoriaReportDialogProps {
 	open: boolean;

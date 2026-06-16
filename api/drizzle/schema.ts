@@ -49,6 +49,7 @@ export * from "./tables/empresas";
 export * from "./tables/enquatramento-ipi";
 export * from "./tables/entidade";
 export * from "./tables/entidade-conta-contabil";
+export * from "./tables/fechamento-caixa";
 export * from "./tables/financeiro";
 export * from "./tables/financeiro-lancamento";
 export * from "./tables/hierarquia";

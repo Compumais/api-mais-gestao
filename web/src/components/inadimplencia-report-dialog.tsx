@@ -22,7 +22,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { useEmpresa } from "@/provider/empresa-provider";
-import { gerarRelatorioInadimplencia } from "@/service/relatorios.service";
+import { gerarRelatorioInadimplencia } from "@/services/relatorios.service";
 
 interface InadimplenciaReportDialogProps {
 	open: boolean;
