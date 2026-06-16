@@ -20,6 +20,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { TableSkeleton } from "@/components/table-skeleton";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -60,7 +61,19 @@ const createColumns = ({
 	{
 		accessorKey: "nome",
 		header: "Nome",
-		cell: ({ row }) => <div>{row.getValue("nome") || "-"}</div>,
+		cell: ({ row }) => {
+			const hierarquia = row.original;
+			return (
+				<div className="flex items-center gap-2">
+					<span>{row.getValue("nome") || "-"}</span>
+					{hierarquia.enviamobile === 1 && (
+						<Badge variant="secondary" className="text-xs">
+							Garçom
+						</Badge>
+					)}
+				</div>
+			);
+		},
 	},
 	{
 		accessorKey: "ncm",

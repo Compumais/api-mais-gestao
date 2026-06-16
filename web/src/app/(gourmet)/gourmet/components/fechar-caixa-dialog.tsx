@@ -53,8 +53,8 @@ export function FecharCaixaDialog({
 	}, [open, buscarResumoTurno]);
 
 	const saldoInformadoNum = parseValor(saldoinformado);
-	const saldoApurado = resumo?.saldoapurado ?? 0;
-	const diferenca = saldoInformadoNum - saldoApurado;
+	const saldoCaixaFisico = resumo?.saldoCaixaFisico ?? 0;
+	const diferenca = saldoInformadoNum - saldoCaixaFisico;
 	const sobra = Math.max(0, diferenca);
 	const falta = Math.max(0, -diferenca);
 
@@ -90,18 +90,19 @@ export function FecharCaixaDialog({
 					<div className="space-y-4">
 						<div className="rounded-lg border bg-muted/40 p-4 text-sm space-y-2">
 							<div className="flex justify-between">
-								<span className="text-muted-foreground">Suprimento inicial</span>
+								<span className="text-muted-foreground">Suprimento inicial (dinheiro)</span>
 								<span className="font-medium">
 									{formatCurrency(resumo.suprimento.toFixed(2))}
 								</span>
 							</div>
-							<div className="flex justify-between text-muted-foreground">
-								<span>
-									Vendas no turno ({resumo.qtdVendas}{" "}
-									{resumo.qtdVendas === 1 ? "venda" : "vendas"})
-								</span>
-								<span className="font-medium text-foreground">
-									{formatCurrency(resumo.pagamentos.total.toFixed(2))}
+							<div className="flex justify-between border-t pt-2">
+								<span className="font-medium">Total vendido no turno</span>
+								<span className="font-semibold">
+									{formatCurrency(resumo.saldoapurado.toFixed(2))}
+									<span className="ml-1 text-xs font-normal text-muted-foreground">
+										({resumo.qtdVendas}{" "}
+										{resumo.qtdVendas === 1 ? "venda" : "vendas"})
+									</span>
 								</span>
 							</div>
 							<div className="space-y-1 border-t pt-2 pl-2">
@@ -123,17 +124,17 @@ export function FecharCaixaDialog({
 								</div>
 							</div>
 							<div className="flex justify-between border-t pt-2">
-								<span className="font-medium">Saldo apurado (dinheiro)</span>
+								<span className="font-medium">Saldo em dinheiro (gaveta)</span>
 								<span className="font-semibold text-primary">
-									{formatCurrency(resumo.saldoapurado.toFixed(2))}
+									{formatCurrency(resumo.saldoCaixaFisico.toFixed(2))}
 								</span>
 							</div>
 						</div>
 
 						<p className="text-xs text-muted-foreground">
-							O saldo apurado é o suprimento inicial mais as vendas recebidas em
-							dinheiro (descontado o troco). Cartão, PIX e pré-pago aparecem apenas
-							como referência e não entram na contagem física do caixa.
+							O total vendido soma todas as formas de pagamento. O saldo em dinheiro
+							é o suprimento inicial mais as vendas recebidas em espécie (já
+							descontado o troco). Informe abaixo apenas a contagem física da gaveta.
 						</p>
 
 						<Field>
@@ -150,6 +151,9 @@ export function FecharCaixaDialog({
 
 						{saldoinformado && (
 							<div className="rounded-lg border p-3 text-sm space-y-1">
+								<p className="text-muted-foreground text-xs">
+									Conferência da gaveta (informado × esperado em dinheiro)
+								</p>
 								{diferenca === 0 ? (
 									<p className="text-green-600 font-medium">
 										Caixa conferido — sem diferença

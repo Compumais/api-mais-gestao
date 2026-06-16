@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Field,
 	FieldError,
@@ -14,6 +15,7 @@ import {
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { MoneyInput } from "@/components/ui/money-input";
 import {
 	Select,
@@ -76,6 +78,8 @@ function buildProdutoPayload(
 		payload.observacoes = observacoes;
 	}
 
+	payload.enviamobile = data.enviamobile ? 1 : 0;
+
 	return payload;
 }
 
@@ -104,6 +108,7 @@ export function ProdutoForm(props: ProdutoFormProps) {
 			origem: 0,
 			ncm: "",
 			observacoes: null,
+			enviamobile: false,
 		},
 	});
 
@@ -123,6 +128,7 @@ export function ProdutoForm(props: ProdutoFormProps) {
 	const ippt = watch("ippt");
 	const origem = watch("origem");
 	const preco = watch("preco");
+	const enviamobile = watch("enviamobile");
 
 	useEffect(() => {
 		if (!isEdicao) return;
@@ -476,6 +482,28 @@ export function ProdutoForm(props: ProdutoFormProps) {
 							errors={errors.observacoes ? [errors.observacoes] : []}
 						/>
 					</Field>
+				</div>
+
+				<div className="mt-6 space-y-4">
+					<h2 className="text-lg font-semibold">Garçom (mobile)</h2>
+					<div className="flex items-center gap-3 rounded-lg border p-4">
+						<Checkbox
+							id="enviamobile"
+							checked={!!enviamobile}
+							onCheckedChange={(checked) =>
+								setValue("enviamobile", checked === true, {
+									shouldValidate: true,
+								})
+							}
+						/>
+						<Label htmlFor="enviamobile" className="cursor-pointer font-normal">
+							Exibir no garçom (mobile)
+						</Label>
+					</div>
+					<p className="text-sm text-muted-foreground">
+						Produtos marcados aparecem na tela do garçom, desde que o grupo
+						também esteja habilitado.
+					</p>
 				</div>
 
 				<div className="flex justify-end gap-2 pt-4">

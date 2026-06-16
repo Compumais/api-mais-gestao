@@ -51,6 +51,7 @@ export function EditarProdutoClient({ id }: EditarProdutoClientProps) {
 				origem: data.origem ?? 0,
 				ncm: data.ncm ?? "",
 				observacoes: data.observacoes,
+				enviamobile: data.enviamobile === 1,
 			}}
 		/>
 	);

@@ -25,6 +25,7 @@ const criarProdutoBodySchema = z.object({
 	origem: z.number().int().min(0).max(2),
 	ncm: z.string().min(1).max(10),
 	observacoes: z.string().optional().nullable(),
+	enviamobile: z.number().int().min(0).max(1).optional(),
 });
 
 export async function criarProduto(
@@ -71,6 +72,7 @@ export async function criarProduto(
 			ncm: dadosValidados.ncm,
 			observacoes: dadosValidados.observacoes ?? null,
 			inativo: 0,
+			enviamobile: dadosValidados.enviamobile ?? 0,
 		};
 
 		const resultado = await criarProdutoService({

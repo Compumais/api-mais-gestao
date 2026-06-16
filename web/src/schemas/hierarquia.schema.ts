@@ -26,6 +26,7 @@ export const hierarquiaFormSchema = z.object({
 			},
 			{ message: "Comissão deve ser um percentual entre 0 e 100" },
 		),
+	enviamobile: z.boolean().optional(),
 });
 
 export type HierarquiaFormData = z.infer<typeof hierarquiaFormSchema>;

@@ -40,6 +40,10 @@ export const DATA = {
 					url: "/gourmet",
 				},
 				{
+					title: "Garçom",
+					url: "/garcom",
+				},
+				{
 					title: "Venda rápida",
 					url: "/gourmet/venda-rapida",
 				},

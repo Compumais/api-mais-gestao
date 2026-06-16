@@ -30,9 +30,13 @@ import { vendaPdvItemService } from "@/services/venda-pdv-item.service";
 export interface ResumoTurnoCaixa {
 	qtdVendas: number;
 	pagamentos: PagamentosResumo;
+	/** Total vendido no turno (todas as formas de pagamento). */
 	totalVendas: number;
 	suprimento: number;
+	/** Total apurado das vendas — persiste em saldoapurado. */
 	saldoapurado: number;
+	/** Suprimento + dinheiro líquido recebido — base da conferência física. */
+	saldoCaixaFisico: number;
 }
 
 async function somarItensVenda(idempresa: string, idvenda: string): Promise<number> {
@@ -158,7 +162,8 @@ async function calcularResumoTurno(
 	}
 
 	const suprimento = parseValor(caixa.suprimentoinicial);
-	const saldoapurado = suprimento + pagamentos.dinheiro;
+	const saldoapurado = pagamentos.total;
+	const saldoCaixaFisico = suprimento + pagamentos.dinheiro;
 
 	return {
 		qtdVendas: vendas.length,
@@ -166,6 +171,7 @@ async function calcularResumoTurno(
 		totalVendas: pagamentos.total,
 		suprimento,
 		saldoapurado,
+		saldoCaixaFisico,
 	};
 }
 
@@ -268,7 +274,7 @@ export function CaixaPdvProvider({ children }: { children: ReactNode }) {
 			);
 
 			const saldoInformadoNum = parseValor(saldoinformado);
-			const diferenca = saldoInformadoNum - resumo.saldoapurado;
+			const diferenca = saldoInformadoNum - resumo.saldoCaixaFisico;
 			const sobra = Math.max(0, diferenca);
 			const falta = Math.max(0, -diferenca);
 

@@ -42,6 +42,7 @@ export const produtoFormSchema = z.object({
 		.min(1, "NCM é obrigatório")
 		.max(10, "NCM deve ter no máximo 10 caracteres"),
 	observacoes: z.string().optional().nullable(),
+	enviamobile: z.boolean().optional(),
 });
 
 export type ProdutoFormData = z.infer<typeof produtoFormSchema>;

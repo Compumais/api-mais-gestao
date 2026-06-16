@@ -32,6 +32,7 @@ const atualizarProdutoBodySchema = z.object({
 	origem: z.number().int().min(0).max(2).optional(),
 	ncm: z.string().min(1).max(10).optional(),
 	observacoes: z.string().optional().nullable(),
+	enviamobile: z.number().int().min(0).max(1).optional(),
 });
 
 export async function atualizarProduto(
