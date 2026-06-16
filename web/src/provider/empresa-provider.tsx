@@ -42,7 +42,19 @@ interface EmpresaContextData {
 
 const EmpresaContext = createContext<EmpresaContextData | null>(null);
 
-const EMPRESA_SELECIONADA_KEY = "empresa:mais-gestao";
+export const EMPRESA_SELECIONADA_KEY = "empresa:mais-gestao";
+export const EMPRESA_FORCAR_PRIMEIRA_KEY = "empresa:forcar-primeira";
+
+export function limparEmpresaSelecionada() {
+	if (typeof window === "undefined") return;
+	localStorage.removeItem(EMPRESA_SELECIONADA_KEY);
+	window.dispatchEvent(new CustomEvent("empresa:limpar"));
+}
+
+export function marcarSelecaoPrimeiraEmpresaNoLogin() {
+	if (typeof window === "undefined") return;
+	sessionStorage.setItem(EMPRESA_FORCAR_PRIMEIRA_KEY, "1");
+}
 
 function lerEmpresaStorage(): Empresa | null {
 	if (typeof window === "undefined") return null;
@@ -74,8 +86,16 @@ export function EmpresaProvider({ children }: { children: React.ReactNode }) {
 			setEmpresa(lerEmpresaStorage());
 		};
 
+		const limparEmpresa = () => {
+			setEmpresa(null);
+		};
+
 		window.addEventListener("storage", sincronizarEmpresa);
-		return () => window.removeEventListener("storage", sincronizarEmpresa);
+		window.addEventListener("empresa:limpar", limparEmpresa);
+		return () => {
+			window.removeEventListener("storage", sincronizarEmpresa);
+			window.removeEventListener("empresa:limpar", limparEmpresa);
+		};
 	}, []);
 
 	const selecionarEmpresa = useCallback((novaEmpresa: Empresa) => {

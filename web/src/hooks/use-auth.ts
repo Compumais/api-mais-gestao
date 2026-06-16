@@ -3,6 +3,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { limparEmpresaSelecionada } from "@/provider/empresa-provider";
 import { authService } from "@/services/auth.service";
 
 export interface User {
@@ -41,7 +42,7 @@ export function useAuth() {
 		} catch (error) {
 			console.error("Erro ao fazer logout:", error);
 		} finally {
-			// Limpar o cache do React Query
+			limparEmpresaSelecionada();
 			queryClient.clear();
 			router.push("/entrar");
 		}
