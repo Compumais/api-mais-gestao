@@ -15,7 +15,8 @@
 		"test:watch": "vitest watch",
 		"seed": "tsx drizzle/seed.ts",
 		"clean": "tsx drizzle/clean.ts",
-		"db:patch-roles": "tsx drizzle/patch-roles.ts"
+		"db:patch-roles": "tsx drizzle/patch-roles.ts",
+		"db:studio": "drizzle-kit studio"
 	},
 	"keywords": [],
 	"author": "",

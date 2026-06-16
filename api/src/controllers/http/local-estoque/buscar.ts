@@ -1,0 +1,48 @@
+import type { FastifyReply, FastifyRequest } from "fastify";
+import z from "zod";
+import { buscarLocalEstoqueService } from "@/service/local-estoque/buscar-local-estoque.js";
+
+const buscarLocalEstoqueParamsSchema = z.object({
+	id: z.string().uuid(),
+});
+
+export async function buscarLocalEstoque(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
+	try {
+		if (!request.user) {
+			return reply.status(401).send({
+				error: "Não autorizado",
+				code: "UNAUTHORIZED",
+			});
+		}
+
+		const idusuario = request.user.id;
+		const { id } = buscarLocalEstoqueParamsSchema.parse(request.params);
+
+		const resultado = await buscarLocalEstoqueService({
+			localEstoqueId: id,
+			idusuario,
+		});
+
+		if (!resultado.success) {
+			return reply.status(resultado.status).send(resultado);
+		}
+
+		return reply.status(resultado.status).send(resultado.body);
+	} catch (error) {
+		console.error(error);
+		if (error instanceof z.ZodError) {
+			return reply.status(400).send({
+				error: "Erro de validação",
+				code: "VALIDATION_ERROR",
+				details: error.issues,
+			});
+		}
+		return reply.status(500).send({
+			error: "Erro ao buscar local de estoque",
+			code: "GET_LOCAL_ESTOQUE_ERROR",
+		});
+	}
+}
