@@ -36,6 +36,7 @@ Baseie-se em `api/.env.prod.example`:
 DATABASE_URL=postgresql://mais_gestao:<PASSWORD>@127.0.0.1:5432/mais_gestao
 BETTER_AUTH_SECRET=<GERAR_COM_openssl_rand_base64_32>
 BETTER_AUTH_URL=https://api.seudominio.com
+CLIENT_ORIGIN=https://app.seudominio.com
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 ```
@@ -45,6 +46,8 @@ GOOGLE_CLIENT_SECRET=
 ```env
 NEXT_PUBLIC_API_URL=https://api.seudominio.com
 ```
+
+`CLIENT_ORIGIN` deve ser a URL do **frontend** (`app.seudominio.com`), não da API. Sem isso, o login trava na tela de carregamento por bloqueio de CORS / Better Auth.
 
 ## 4) Configuração do Nginx
 

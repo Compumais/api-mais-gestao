@@ -59,27 +59,15 @@ import { usuariosRotas } from "./controllers/http/usuarios/rotas.js";
 import { vendasPdvGourmetRotas } from "./controllers/http/venda-pdv-gourmet/rotas.js";
 import { vendasPdvItemRotas } from "./controllers/http/venda-pdv-item/rotas.js";
 import { getApiBaseUrl } from "./util/base-url.js";
+import { isOriginAllowed } from "./util/cors-origins.js";
 
 export const app = Fastify({ logger: true });
 
 app.register(cors, {
 	origin: (origin, cb) => {
-		if (!origin) {
+		if (!origin || isOriginAllowed(origin)) {
 			cb(null, true);
 			return;
-		}
-		try {
-			const hostname = new URL(origin).hostname;
-			if (
-				hostname === "localhost" ||
-				hostname === "127.0.0.1" ||
-				hostname.startsWith("192.168")
-			) {
-				cb(null, true);
-				return;
-			}
-		} catch {
-			// Ignore invalid URLs
 		}
 		cb(new Error("Not allowed"), false);
 	},
