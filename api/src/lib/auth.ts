@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import * as schema from "../../drizzle/schema.js";
 import { db } from "../repositories/connection.js";
 import { getApiBaseUrl } from "../util/base-url.js";
+import { getClientOrigins, getPrimaryClientOrigin } from "../util/cors-origins.js";
 
 export const auth = betterAuth({
 	baseURL: getApiBaseUrl(),
@@ -43,7 +44,7 @@ export const auth = betterAuth({
 			clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
 		},
 	},
-	trustedOrigins: [process.env.BETTER_AUTH_URL || "http://localhost:3000"],
+	trustedOrigins: getClientOrigins(),
 	user: {
 		modelName: "usuarios",
 		fields: {
@@ -123,11 +124,11 @@ export const auth = betterAuth({
 	},
 	advanced: {
 		disableOriginCheck: true,
-		useSecureCookies: false, // Desabilitar para localhost sem HTTPS
-		cookiePrefix: "mais-gestao", // Evitar colisões no localhost
+		useSecureCookies: getPrimaryClientOrigin().startsWith("https://"),
+		cookiePrefix: "mais-gestao",
 		appName: "Mais Gestão",
 		appDescription: "Mais Gestão é um sistema de gestão de empresas",
-		appUrl:  process.env.BETTER_AUTH_URL || "http://localhost:3000",
+		appUrl: getPrimaryClientOrigin(),
 		appIcon: "https://maisgestao.com/icon.png",
 		appColor: "#000000",
 		appTheme: "dark",
