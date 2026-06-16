@@ -3,8 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Building2Icon, CheckIcon, PlusIcon } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { useAuth } from "@/hooks/use-auth";
+import { useEmpresasUsuario } from "@/hooks/use-empresas-usuario";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { getMeuPlano } from "@/services/assinaturas.service";
 import { Button } from "./ui/button";
@@ -16,12 +15,6 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-
-interface Empresa {
-	id: string;
-	idproprietario: string;
-	nome: string;
-}
 
 function maxEmpresasPorPlano(plano: string) {
 	switch (plano) {
@@ -37,19 +30,9 @@ function maxEmpresasPorPlano(plano: string) {
 }
 
 export function CompanyToogle() {
-	const { listarEmpresas, localStorageEmpresa, selecionarEmpresa } =
-		useEmpresa();
-	const { user } = useAuth();
-	const [empresa, setEmpresa] = useState<Empresa | null>(null);
+	const { localStorageEmpresa, selecionarEmpresa } = useEmpresa();
+	const { data: empresas, isSuccess: empresasCarregadas } = useEmpresasUsuario();
 
-	const { data: empresas } = useQuery({
-		queryKey: ["empresas", user?.id],
-		// Buscar empresas onde o usuário é proprietário OU está associado na tabela usuario_empresa
-		queryFn: () =>
-			listarEmpresas({ idusuario: user?.id, idproprietario: user?.id }),
-	});
-
-	// Busca o plano da empresa
 	const { data: assinatura } = useQuery({
 		queryKey: ["meu-plano", localStorageEmpresa?.id],
 		queryFn: async () => {
@@ -59,41 +42,14 @@ export function CompanyToogle() {
 			return await getMeuPlano(localStorageEmpresa.id);
 		},
 		enabled: !!localStorageEmpresa?.id,
-		staleTime: 1000 * 60 * 30, // 30 minutos
-		retry: false, // Não tentar novamente se falhar
+		staleTime: 1000 * 60 * 30,
+		retry: false,
 	});
 
-	useEffect(() => {
-		if (empresas && empresas.length > 0) {
-			// Verifica se a empresa atual ainda existe na lista
-			const empresaAtualExiste = empresa
-				? empresas.some((e) => e.id === empresa.id)
-				: false;
+	const nomeEmpresa =
+		localStorageEmpresa?.nome ||
+		(!empresasCarregadas ? "Carregando..." : "Selecionar uma empresa");
 
-			// Se a empresa atual não existe mais na lista ou não há empresa definida
-			if (!empresaAtualExiste) {
-				// Verifica se a empresa do localStorage existe na lista de empresas
-				const empresaLocalStorage = localStorageEmpresa
-					? empresas.find((e) => e.id === localStorageEmpresa.id)
-					: null;
-
-				if (empresaLocalStorage) {
-					// Se a empresa do localStorage existe na lista, usa ela
-					setEmpresa(empresaLocalStorage);
-					// Garante que está salva no localStorage
-					selecionarEmpresa(empresaLocalStorage);
-				} else {
-					// Se não existe, usa a primeira empresa da lista
-					const primeiraEmpresa = empresas[0];
-					setEmpresa(primeiraEmpresa);
-					selecionarEmpresa(primeiraEmpresa);
-				}
-			}
-		}
-	}, [empresas, localStorageEmpresa, selecionarEmpresa, empresa]);
-
-	// Não exibir dropdown se plano for básico e tiver apenas uma empresa
-	// Se não há assinatura (null), trata como plano básico (limite de 1 empresa)
 	const isPlanoBasico =
 		assinatura === null ||
 		(assinatura?.plan ? maxEmpresasPorPlano(assinatura.plan) === 1 : false);
@@ -103,7 +59,7 @@ export function CompanyToogle() {
 		return (
 			<Button variant="secondary" size="sm" className="hidden sm:flex">
 				<Building2Icon className="size-4" />
-				<span>{empresa?.nome || "Selecionar uma empresa"}</span>
+				<span>{nomeEmpresa}</span>
 			</Button>
 		);
 	}
@@ -113,7 +69,7 @@ export function CompanyToogle() {
 			<DropdownMenuTrigger asChild>
 				<Button variant="secondary" size="sm" className="hidden sm:flex">
 					<Building2Icon className="size-4" />
-					<span>{empresa?.nome || "Selecionar uma empresa"}</span>
+					<span>{nomeEmpresa}</span>
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent>
@@ -121,13 +77,12 @@ export function CompanyToogle() {
 				{empresas?.map((empresaItem) => (
 					<DropdownMenuItem
 						key={empresaItem.id}
-						onClick={() => {
-							selecionarEmpresa(empresaItem);
-							setEmpresa(empresaItem);
-						}}
+						onClick={() => selecionarEmpresa(empresaItem)}
 					>
 						{empresaItem.nome}
-						{empresaItem.id === empresa?.id && <CheckIcon className="size-4" />}
+						{empresaItem.id === localStorageEmpresa?.id && (
+							<CheckIcon className="size-4" />
+						)}
 					</DropdownMenuItem>
 				))}
 
