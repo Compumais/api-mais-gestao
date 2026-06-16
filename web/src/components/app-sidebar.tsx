@@ -75,6 +75,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 				{/* Seção principal */}
 				<NavMain items={navMainItems} />
 
+				{/* Seção PDV Gourmet */}
+				{!isUsuario && (
+					<NavDocuments label="PDV Gourmet" items={DATA.navGourmet} />
+				)}
+
 				{/* Seção de cadastros */}
 				<NavDocuments label="Cadastros" items={DATA.navRegistros} />
 

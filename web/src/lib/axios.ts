@@ -20,9 +20,19 @@ export const api = axios.create({
 api.interceptors.response.use(
 	(response) => response,
 	(error) => {
+		const data = error.response?.data;
 		const message =
-			error.response?.data?.message ||
-			error.response?.data?.error ||
+			(typeof data?.message === "string" && data.message) ||
+			(Array.isArray(data?.details) &&
+				data.details
+					.map((item: { message?: string; path?: string[] }) =>
+						item.path?.length
+							? `${item.path.join(".")}: ${item.message ?? "inválido"}`
+							: item.message,
+					)
+					.filter(Boolean)
+					.join("; ")) ||
+			data?.error ||
 			error.message ||
 			"Erro ao realizar a requisição";
 		return Promise.reject(new Error(message));

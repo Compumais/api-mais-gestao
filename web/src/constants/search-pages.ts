@@ -16,6 +16,7 @@ import {
 	IconSettings,
 	IconUser,
 	IconUsers,
+	IconToolsKitchen2,
 } from "@tabler/icons-react";
 
 export interface SearchablePage {
@@ -34,6 +35,20 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 		category: "Principal",
 		icon: IconDashboard,
 		keywords: ["início", "home", "painel"],
+	},
+	{
+		title: "PDV Gourmet — Mesas",
+		url: "/gourmet",
+		category: "PDV Gourmet",
+		icon: IconToolsKitchen2,
+		keywords: ["pdv", "gourmet", "mesa", "mesas", "comanda", "restaurante"],
+	},
+	{
+		title: "Venda rápida",
+		url: "/gourmet/venda-rapida",
+		category: "PDV Gourmet",
+		icon: IconToolsKitchen2,
+		keywords: ["pdv", "venda", "rápida", "balcão", "gourmet"],
 	},
 	{
 		title: "Clientes",
@@ -62,6 +77,20 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 		category: "Principal",
 		icon: IconBuilding,
 		keywords: ["fornecedor", "fornecedores"],
+	},
+	{
+		title: "Produtos",
+		url: "/produtos",
+		category: "Principal",
+		icon: IconListDetails,
+		keywords: ["produto", "produtos", "item"],
+	},
+	{
+		title: "Hierarquias",
+		url: "/hierarquias",
+		category: "Principal",
+		icon: IconListDetails,
+		keywords: ["hierarquia", "hierarquias", "grupo", "grupos", "produto"],
 	},
 	{
 		title: "Unidades de medida",
