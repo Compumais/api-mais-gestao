@@ -25,6 +25,7 @@ function mapHierarquiaToForm(data: Awaited<
 				? (String(data.origem) as HierarquiaFormData["origem"])
 				: undefined,
 		comissao: data.comissao ?? "",
+		enviamobile: data.enviamobile === 1,
 	};
 }
 

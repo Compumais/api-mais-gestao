@@ -107,6 +107,7 @@ export const produtos = pgTable(
 		iat: char({ length: 1 }), // A=Arredondamento, T=Truncamento
 		referencia: varchar({ length: 60 }),
 		inativo: integer().default(0), // 0=Ativo, 1=Inativo
+		enviamobile: integer().default(0), // 0=Não exibe no garçom, 1=Exibe no garçom
 		idcfopsaida: text(),
 		idcfopsaidadevolucaoexterna: text(),
 		idcfopsaidadevolucaointerna: text(),

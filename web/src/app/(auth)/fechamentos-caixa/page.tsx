@@ -215,7 +215,7 @@ export default function FechamentosCaixaPage() {
 		},
 		{
 			accessorKey: "saldoapurado",
-			header: () => <span className="text-right block">Saldo apurado</span>,
+			header: () => <span className="text-right block">Total vendido</span>,
 			cell: ({ row }) => (
 				<span className="text-right block">
 					{formatCurrency(row.getValue("saldoapurado"))}

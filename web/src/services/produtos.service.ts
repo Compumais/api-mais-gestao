@@ -19,6 +19,7 @@ export interface Produto {
 	ncm: string | null;
 	observacoes: string | null;
 	inativo: number | null;
+	enviamobile?: number | null;
 	datacadastro: string;
 	quantidadepadrao?: number | null;
 }
@@ -49,6 +50,7 @@ export interface CriarProdutoData {
 	origem: number;
 	ncm: string;
 	observacoes?: string | null;
+	enviamobile?: number | null;
 }
 
 export interface AtualizarProdutoData {
@@ -66,6 +68,7 @@ export interface AtualizarProdutoData {
 	origem?: number;
 	ncm?: string;
 	observacoes?: string | null;
+	enviamobile?: number | null;
 }
 
 export const produtosService = {

@@ -6,7 +6,9 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import {
 	Field,
 	FieldError,
@@ -76,6 +78,7 @@ export function HierarquiaForm(props: HierarquiaFormProps) {
 			classe: undefined,
 			origem: undefined,
 			comissao: "",
+			enviamobile: false,
 		},
 	});
 
@@ -89,6 +92,7 @@ export function HierarquiaForm(props: HierarquiaFormProps) {
 
 	const classe = watch("classe");
 	const origem = watch("origem");
+	const enviamobile = watch("enviamobile");
 
 	useEffect(() => {
 		if (!isEdicao) return;
@@ -144,6 +148,7 @@ export function HierarquiaForm(props: HierarquiaFormProps) {
 			classe: parseSelectNumber(data.classe),
 			origem: parseSelectNumber(data.origem),
 			comissao: parseComissao(data.comissao),
+			enviamobile: data.enviamobile ? 1 : 0,
 		};
 
 		if (!isEdicao) {
@@ -272,6 +277,28 @@ export function HierarquiaForm(props: HierarquiaFormProps) {
 							<FieldError errors={errors.origem ? [errors.origem] : []} />
 						</Field>
 					</div>
+				</div>
+
+				<div className="mt-6 space-y-4">
+					<h2 className="text-lg font-semibold">Garçom (mobile)</h2>
+					<div className="flex items-center gap-3 rounded-lg border p-4">
+						<Checkbox
+							id="enviamobile"
+							checked={!!enviamobile}
+							onCheckedChange={(checked) =>
+								setValue("enviamobile", checked === true, {
+									shouldValidate: true,
+								})
+							}
+						/>
+						<Label htmlFor="enviamobile" className="cursor-pointer font-normal">
+							Exibir no garçom (mobile)
+						</Label>
+					</div>
+					<p className="text-sm text-muted-foreground">
+						Grupos marcados aparecem na tela do garçom para lançamento de
+						pedidos.
+					</p>
 				</div>
 
 				<div className="mt-6 flex justify-end gap-2">

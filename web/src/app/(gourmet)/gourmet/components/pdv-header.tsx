@@ -93,9 +93,6 @@ export function PdvHeader({
 							<span className="hidden sm:inline">{voltarLabel}</span>
 						</Link>
 					</Button>
-					<Button variant="ghost" size="sm" asChild className="hidden sm:inline-flex">
-						<Link href="/dashboard">Voltar ao sistema</Link>
-					</Button>
 					<Button
 						variant="ghost"
 						size="icon-sm"

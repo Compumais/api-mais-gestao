@@ -44,6 +44,13 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 		keywords: ["pdv", "gourmet", "mesa", "mesas", "comanda", "restaurante"],
 	},
 	{
+		title: "Garçom",
+		url: "/garcom",
+		category: "PDV Gourmet",
+		icon: IconUser,
+		keywords: ["garçom", "garcom", "pedido", "comanda", "mobile", "mesa"],
+	},
+	{
 		title: "Venda rápida",
 		url: "/gourmet/venda-rapida",
 		category: "PDV Gourmet",
