@@ -138,6 +138,7 @@ gunzip -c /opt/backups/mais-gestao/backup-YYYYMMDD-HHMMSS.sql.gz | psql -h 127.0
 
 ## 9) Operação rápida
 
+- Health check: `curl -s https://api.seudominio.com/health` (200 = API e banco OK; 503 = banco indisponível)
 - Logs API: `docker logs -f mais-gestao-api`
 - Logs DB: `docker logs -f mais-gestao-db`
 - Status PM2: `pm2 status`
