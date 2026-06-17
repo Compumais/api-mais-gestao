@@ -26,16 +26,25 @@ export async function criarUnidadeMedidaService({
 	dadosUnidadeMedida,
 	idusuario,
 }: CriarUnidadeMedidaParametros): Promise<HttpResponse<UnidadeMedida | null>> {
+	if (!dadosUnidadeMedida.idempresa) {
+		return httpProibido();
+	}
+
+	const idempresa = dadosUnidadeMedida.idempresa;
+
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
 		idusuario,
-		dadosUnidadeMedida.idempresa,
+		idempresa,
 	);
 
 	if (!usuarioPertenceEmpresa) {
 		return httpProibido();
 	}
 
-	const registro = await criarUnidadeMedida(dadosUnidadeMedida);
+	const registro = await criarUnidadeMedida({
+		...dadosUnidadeMedida,
+		idempresa,
+	});
 
 	if (!registro) {
 		return httpErro();
@@ -49,7 +58,7 @@ export async function criarUnidadeMedidaService({
 		idusuario,
 		recurso: "unidade_medida",
 		idrecurso: registro.id,
-		idempresa: dadosUnidadeMedida.idempresa,
+		idempresa,
 		criadoem: new Date().toISOString(),
 		metadados: {
 			nome: registro.nome,

@@ -1,4 +1,4 @@
-import { and, count, desc, eq, ilike } from "drizzle-orm";
+import { and, asc, count, eq, ilike, isNull, or, sql } from "drizzle-orm";
 import type { NovoUnidadeMedida } from "@/model/unidade-medida-model";
 import { unidademedida } from "@/repositories/schema.js";
 import { db } from "./connection";
@@ -58,26 +58,27 @@ export async function listarUnidadesMedida({
 	page = 1,
 	limit = 10,
 }: ListarUnidadesMedidaParametros) {
-	const where = [];
-
-	where.push(eq(unidademedida.idempresa, idempresa));
+	const where = [
+		or(eq(unidademedida.idempresa, idempresa), isNull(unidademedida.idempresa)),
+	];
 
 	if (nome) {
 		where.push(ilike(unidademedida.nome, `%${nome}%`));
 	}
 
 	const offset = (page - 1) * limit;
+	const filtro = and(...where);
 
 	const [totalCount, unidadesmedida] = await Promise.all([
-		db
-			.select({ value: count() })
-			.from(unidademedida)
-			.where(and(...where)),
+		db.select({ value: count() }).from(unidademedida).where(filtro),
 		db
 			.select()
 			.from(unidademedida)
-			.where(and(...where))
-			.orderBy(desc(unidademedida.nome))
+			.where(filtro)
+			.orderBy(
+				asc(sql`CASE WHEN ${unidademedida.idempresa} IS NULL THEN 0 ELSE 1 END`),
+				asc(unidademedida.nome),
+			)
 			.limit(limit)
 			.offset(offset),
 	]);

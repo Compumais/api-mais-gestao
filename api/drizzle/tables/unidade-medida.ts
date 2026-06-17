@@ -13,7 +13,7 @@ export const unidademedida = pgTable(
 	"unidademedida",
 	{
 		id: text().primaryKey().notNull(), // ID da unidade de medida
-		idempresa: text().notNull(), // ID da empresa
+		idempresa: text(), // ID da empresa (null = unidade global do sistema)
 		casasdecimais: smallint(), // Casas decimais
 		codigo: varchar({ length: 6 }), // Código
 		currenttimemillis: bigint({ mode: "number" }), // Time millis da alteracao do registro

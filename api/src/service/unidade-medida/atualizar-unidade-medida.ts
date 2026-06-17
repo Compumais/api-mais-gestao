@@ -10,6 +10,7 @@ import {
 	atualizarUnidadeMedida,
 } from "@/repositories/unidade-medida-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
+import { isUnidadeMedidaGlobal } from "@/service/unidade-medida/validar-unidade-medida-empresa.js";
 import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
 
 type AtualizarUnidadeMedidaParametros = {
@@ -31,18 +32,30 @@ export async function atualizarUnidadeMedidaService({
 		return httpNaoEncontrado();
 	}
 
+	if (isUnidadeMedidaGlobal(registroExistente)) {
+		return httpProibido();
+	}
+
+	if (!registroExistente.idempresa) {
+		return httpProibido();
+	}
+
+	const idempresa = registroExistente.idempresa;
+
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
 		idusuario,
-		registroExistente.idempresa,
+		idempresa,
 	);
 
 	if (!usuarioPertenceEmpresa) {
 		return httpProibido();
 	}
 
+	const { idempresa: _idempresa, ...dadosAtualizacao } = dados;
+
 	const registroAtualizado = await atualizarUnidadeMedida(
 		unidadeMedidaId,
-		dados,
+		dadosAtualizacao,
 	);
 
 	if (!registroAtualizado) {
@@ -57,11 +70,11 @@ export async function atualizarUnidadeMedidaService({
 		idusuario,
 		recurso: "unidade_medida",
 		idrecurso: unidadeMedidaId,
-		idempresa: registroExistente.idempresa,
+		idempresa,
 		criadoem: new Date().toISOString(),
 		metadados: {
-			camposAlterados: Object.keys(dados),
-			valores: dados,
+			camposAlterados: Object.keys(dadosAtualizacao),
+			valores: dadosAtualizacao,
 		},
 	});
 

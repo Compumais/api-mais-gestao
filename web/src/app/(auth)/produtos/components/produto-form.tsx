@@ -20,7 +20,9 @@ import { MoneyInput } from "@/components/ui/money-input";
 import {
 	Select,
 	SelectContent,
+	SelectGroup,
 	SelectItem,
+	SelectLabel,
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
@@ -33,7 +35,10 @@ import {
 import { entidadesService } from "@/services/entidades.service";
 import { hierarquiasService } from "@/services/hierarquias.service";
 import { produtosService, type CriarProdutoData } from "@/services/produtos.service";
-import { unidadesMedidaService } from "@/services/unidades-medida.service";
+import {
+	isUnidadeMedidaGlobal,
+	unidadeMedidaService,
+} from "@/services/unidade-medida.service";
 
 type ProdutoFormProps = {
 	modo?: "criar" | "editar";
@@ -143,7 +148,7 @@ export function ProdutoForm(props: ProdutoFormProps) {
 		queryKey: ["unidades-medida", empresa?.id],
 		queryFn: async () => {
 			if (!empresa) throw new Error("Empresa não selecionada");
-			return await unidadesMedidaService.listar({
+			return await unidadeMedidaService.listar({
 				idempresa: empresa.id,
 				limit: 100,
 			});
@@ -223,6 +228,11 @@ export function ProdutoForm(props: ProdutoFormProps) {
 
 		atualizarProduto(payloadBase);
 	};
+
+	const unidadesGlobais =
+		unidadesData?.data.filter((unidade) => isUnidadeMedidaGlobal(unidade)) ?? [];
+	const unidadesEmpresa =
+		unidadesData?.data.filter((unidade) => !isUnidadeMedidaGlobal(unidade)) ?? [];
 
 	const isPending = isPendingCriar || isPendingAtualizar;
 
@@ -308,11 +318,26 @@ export function ProdutoForm(props: ProdutoFormProps) {
 									<SelectValue placeholder="Selecione a unidade" />
 								</SelectTrigger>
 								<SelectContent>
-									{unidadesData?.data.map((unidade) => (
-										<SelectItem key={unidade.id} value={unidade.id}>
-											{unidade.nome || unidade.codigo || unidade.id}
-										</SelectItem>
-									))}
+									{unidadesGlobais.length > 0 && (
+										<SelectGroup>
+											<SelectLabel>Padrão do sistema</SelectLabel>
+											{unidadesGlobais.map((unidade) => (
+												<SelectItem key={unidade.id} value={unidade.id}>
+													{unidade.nome || unidade.codigo || unidade.id}
+												</SelectItem>
+											))}
+										</SelectGroup>
+									)}
+									{unidadesEmpresa.length > 0 && (
+										<SelectGroup>
+											<SelectLabel>Da empresa</SelectLabel>
+											{unidadesEmpresa.map((unidade) => (
+												<SelectItem key={unidade.id} value={unidade.id}>
+													{unidade.nome || unidade.codigo || unidade.id}
+												</SelectItem>
+											))}
+										</SelectGroup>
+									)}
 								</SelectContent>
 							</Select>
 							<FieldError
