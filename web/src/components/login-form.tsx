@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -40,10 +40,10 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export function LoginForm({
 	className,
+	redirectTo = null,
 	...props
-}: React.ComponentProps<"div">) {
+}: React.ComponentProps<"div"> & { redirectTo?: string | null }) {
 	const router = useRouter();
-	const searchParams = useSearchParams();
 	const queryClient = useQueryClient();
 	const { selecionarEmpresa } = useEmpresa();
 	const {
@@ -80,12 +80,11 @@ export function LoginForm({
 				}
 			}
 			toast.success("Login realizado com sucesso!");
-			const redirectParam = searchParams.get("redirect");
 			const destino =
 				empresasCount === 0
 					? "/empresas/nova"
-					: redirectParam?.startsWith("/") && !redirectParam.startsWith("//")
-						? redirectParam
+					: redirectTo?.startsWith("/") && !redirectTo.startsWith("//")
+						? redirectTo
 						: "/dashboard";
 			router.push(destino);
 		},

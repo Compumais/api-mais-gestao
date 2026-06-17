@@ -1,46 +1,21 @@
-"use client";
+import { Suspense } from "react";
+import { LoginPageClient } from "./login-page-client";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
-import { LoginForm } from "@/components/login-form";
-import { useAuth } from "@/hooks/use-auth";
-
-export default function LoginPage() {
-	const router = useRouter();
-	const searchParams = useSearchParams();
-	const { isAuthenticated, isLoading } = useAuth();
-	const redirectTo = searchParams.get("redirect");
-
-	useEffect(() => {
-		if (!isLoading && isAuthenticated) {
-			const destino =
-				redirectTo?.startsWith("/") && !redirectTo.startsWith("//")
-					? redirectTo
-					: "/dashboard";
-			router.push(destino);
-		}
-	}, [isAuthenticated, isLoading, router, redirectTo]);
-
-	if (isLoading) {
-		return (
-			<div className="bg-muted flex min-h-svh flex-col items-center justify-center p-6 md:p-10">
-				<div className="flex flex-col items-center gap-4">
-					<div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-					<p className="text-muted-foreground">Carregando...</p>
-				</div>
-			</div>
-		);
-	}
-
-	if (isAuthenticated) {
-		return null;
-	}
-
+function LoginPageFallback() {
 	return (
 		<div className="bg-muted flex min-h-svh flex-col items-center justify-center p-6 md:p-10">
-			<div className="w-full max-w-sm md:max-w-4xl">
-				<LoginForm />
+			<div className="flex flex-col items-center gap-4">
+				<div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+				<p className="text-muted-foreground">Carregando...</p>
 			</div>
 		</div>
+	);
+}
+
+export default function LoginPage() {
+	return (
+		<Suspense fallback={<LoginPageFallback />}>
+			<LoginPageClient />
+		</Suspense>
 	);
 }
