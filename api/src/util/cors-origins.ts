@@ -19,23 +19,36 @@ function isRedeLocal(hostname: string): boolean {
 	);
 }
 
+function coletarOrigensDeEnv(): string[] {
+	const origens: string[] = [];
+
+	if (process.env.CORS_ORIGINS) {
+		origens.push(
+			...process.env.CORS_ORIGINS.split(",")
+				.map(normalizarOrigem)
+				.filter(Boolean),
+		);
+	}
+
+	for (const variavel of [process.env.FRONTEND_URL, process.env.CLIENT_ORIGIN]) {
+		if (variavel) {
+			origens.push(normalizarOrigem(variavel));
+		}
+	}
+
+	return [...new Set(origens)];
+}
+
 export function getFrontendUrl(): string {
-	const fromEnv = process.env.FRONTEND_URL || process.env.CORS_ORIGINS?.split(",")[0];
-	return normalizarOrigem(fromEnv || "http://localhost:3000");
+	const origens = coletarOrigensDeEnv();
+	return origens[0] ?? normalizarOrigem("http://localhost:3000");
 }
 
 export function getOrigensCorsPermitidas(): string[] {
-	const fromEnv =
-		process.env.CORS_ORIGINS?.split(",")
-			.map(normalizarOrigem)
-			.filter(Boolean) ?? [];
+	const origens = coletarOrigensDeEnv();
 
-	if (fromEnv.length > 0) {
-		return [...new Set(fromEnv)];
-	}
-
-	if (process.env.FRONTEND_URL) {
-		return [normalizarOrigem(process.env.FRONTEND_URL)];
+	if (origens.length > 0) {
+		return origens;
 	}
 
 	if (process.env.NODE_ENV !== "production") {

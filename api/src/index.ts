@@ -73,7 +73,13 @@ app.register(cors, {
 		cb(new Error("Not allowed by CORS"), false);
 	},
 	methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-	allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+	allowedHeaders: [
+		"Content-Type",
+		"Authorization",
+		"X-Requested-With",
+		"Accept",
+		"Origin",
+	],
 	credentials: true, // Necessário para cookies do Better Auth
 	maxAge: 86400,
 });
