@@ -9,7 +9,6 @@ import { criarPlanoContasPadraoService } from "../planocontas/criar-plano-contas
 import { criarContaCorrenteCaixaPadrao } from "../../repositories/conta-corrente-repositories.js";
 import {
 	httpCriacao,
-	httpLimiteExcedido,
 	httpRecursoExistente,
 } from "../../util/http-util.js";
 
@@ -21,16 +20,8 @@ type CriarEmpresaParametros = {
 
 export async function criarEmpresaService({
 	dadosEmpresa,
-	quantidadeEmpresas,
 	proprietario,
 }: CriarEmpresaParametros): Promise<HttpResponse<Empresa | null>> {
-	if (
-		proprietario.maxempresas &&
-		quantidadeEmpresas >= proprietario.maxempresas
-	) {
-		return httpLimiteExcedido();
-	}
-
 	const [empresa] = await criarEmpresa(dadosEmpresa);
 
 	if (!empresa) {
@@ -41,7 +32,6 @@ export async function criarEmpresaService({
 
 	await criarContaCorrenteCaixaPadrao(empresa.id);
 
-	// Vincular usuário à empresa criada
 	try {
 		const { db } = await import("../../repositories/connection");
 		const { usuarioEmpresa } = await import("../../../drizzle/schema");
@@ -55,11 +45,9 @@ export async function criarEmpresaService({
 			criadoem: new Date().toISOString(),
 		});
 	} catch (error) {
-		console.error("Erro ao vincular usuário à empresa:", error);
-		// Log erro mas não falha a criação da empresa, pois o vinculo principal é idproprietario
+		console.error("Erro ao vincular usu?rio ? empresa:", error);
 	}
 
-	// Atualizar perfil do usuário para proprietário se ainda não for
 	try {
 		const { db } = await import("../../repositories/connection");
 		const { usuarios } = await import("../../../drizzle/schema");
@@ -78,8 +66,7 @@ export async function criarEmpresaService({
 				.where(eq(usuarios.id, proprietario.id));
 		}
 	} catch (error) {
-		console.error("Erro ao atualizar perfil do usuário:", error);
-		// Não falha a criação da empresa, mas loga o erro
+		console.error("Erro ao atualizar perfil do usu?rio:", error);
 	}
 
 	return httpCriacao<Empresa>(empresa);

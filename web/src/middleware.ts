@@ -8,18 +8,11 @@ function hasSessionCookie(request: NextRequest) {
 	return request.cookies.getAll().some((cookie) => {
 		const normalizedName = cookie.name.toLowerCase();
 		return (
+			normalizedName.includes("mais-gestao") ||
 			normalizedName.includes("session_token") ||
-			normalizedName.includes("better-auth.session_token") ||
-			normalizedName.includes("mais-gestao.session_token")
+			normalizedName.includes("better-auth.session_token")
 		);
 	});
-}
-
-function resolveRedirectPath(redirect: string | null): string | null {
-	if (!redirect || !redirect.startsWith("/") || redirect.startsWith("//")) {
-		return null;
-	}
-	return redirect;
 }
 
 export function middleware(request: NextRequest) {
@@ -35,19 +28,12 @@ export function middleware(request: NextRequest) {
 	}
 
 	if (isAuthenticated && isAuthRoute) {
-		const redirect = resolveRedirectPath(
-			request.nextUrl.searchParams.get("redirect"),
-		);
-		return NextResponse.redirect(
-			new URL(redirect ?? "/dashboard", request.url),
-		);
+		return NextResponse.redirect(new URL("/dashboard", request.url));
 	}
 
 	return NextResponse.next();
 }
 
 export const config = {
-	matcher: [
-		"/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
-	],
+	matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };

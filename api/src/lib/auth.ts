@@ -4,18 +4,16 @@ import { customSession } from "better-auth/plugins";
 import { eq } from "drizzle-orm";
 import * as schema from "../../drizzle/schema.js";
 import { db } from "../repositories/connection.js";
+import { getApiBaseUrl } from "../util/base-url.js";
 import {
-	getFrontendUrl,
-	getOrigensCorsPermitidas,
+	getClientOrigins,
+	getCookieDomain,
+	getPrimaryClientOrigin,
 } from "../util/cors-origins.js";
-import { getApiBaseUrl, getCookieDomain } from "../util/base-url.js";
-
-const cookieDomain = getCookieDomain();
 
 export const auth = betterAuth({
 	baseURL: getApiBaseUrl(),
 	basePath: "/api/auth",
-	appName: "Mais Gestão",
 	database: drizzleAdapter(db, {
 		provider: "pg",
 		schema: {
@@ -29,11 +27,13 @@ export const auth = betterAuth({
 	databaseHooks: {
 		user: {
 			create: {
-				after: async (user) => {
-					await db
-						.update(schema.usuarios)
-						.set({ perfil: ["proprietario"] })
-						.where(eq(schema.usuarios.id, user.id));
+				before: async (user, _context) => {
+					return {
+						data: {
+							...user,
+							perfil: ["proprietario"],
+						},
+					};
 				},
 			},
 		},
@@ -48,10 +48,7 @@ export const auth = betterAuth({
 			clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
 		},
 	},
-	trustedOrigins:
-		getOrigensCorsPermitidas().length > 0
-			? getOrigensCorsPermitidas()
-			: [getFrontendUrl()],
+	trustedOrigins: getClientOrigins(),
 	user: {
 		modelName: "usuarios",
 		fields: {
@@ -131,14 +128,12 @@ export const auth = betterAuth({
 	},
 	advanced: {
 		disableOriginCheck: true,
-		useSecureCookies:
-			process.env.USE_SECURE_COOKIES === "true" ||
-			getApiBaseUrl().startsWith("https://"),
-		...(cookieDomain
+		useSecureCookies: getPrimaryClientOrigin().startsWith("https://"),
+		...(getCookieDomain()
 			? {
 					crossSubDomainCookies: {
 						enabled: true,
-						domain: cookieDomain,
+						domain: getCookieDomain() as string,
 					},
 				}
 			: {}),
@@ -161,9 +156,6 @@ export const auth = betterAuth({
 			if (perfilRaw) {
 				if (Array.isArray(perfilRaw)) {
 					perfil = perfilRaw.filter((p): p is string => typeof p === "string");
-					if (perfil.length === 0) {
-						perfil = ["proprietario"];
-					}
 				} else if (typeof perfilRaw === "string") {
 					perfil = [perfilRaw];
 				}

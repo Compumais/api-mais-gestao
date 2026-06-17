@@ -10,7 +10,6 @@ import {
 	IconChartPie,
 	IconCreditCard,
 	IconFileAnalytics,
-	IconLock,
 } from "@tabler/icons-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -24,7 +23,6 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { usePlano } from "@/hooks/use-plano";
 
 // ... (reports array remains)
 
@@ -104,13 +102,11 @@ const reports = [
 ];
 
 export default function RelatoriosPage() {
-	const { plano, isBasic } = usePlano();
 	const [isFluxoCaixaDialogOpen, setIsFluxoCaixaDialogOpen] = useState(false);
 	const [isContasPagarDialogOpen, setIsContasPagarDialogOpen] = useState(false);
 	const [isContasReceberDialogOpen, setIsContasReceberDialogOpen] =
 		useState(false);
 
-	console.log(plano, isBasic);
 
 	return (
 		<div className="space-y-6 p-6">
@@ -125,59 +121,35 @@ export default function RelatoriosPage() {
 
 			<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
 				{reports
-					.sort((a, b) => (a.premium === b.premium ? 0 : a.premium ? 1 : -1))
-					.map((report) => {
-						const isLocked = isBasic && report.premium;
 
+					.map((report) => {
 						const CardContent = (
 							<Card
-								className={`h-full transition-all duration-200 ${isLocked ? "opacity-80 border-dashed bg-muted/50" : "hover:border-primary hover:shadow-md"}`}
+								className="h-full transition-all duration-200 hover:border-primary hover:shadow-md"
 							>
 								<CardHeader>
 									<div className="flex items-center gap-4">
 										<div
-											className={`p-2 rounded-lg bg-muted ${!isLocked && "group-hover:bg-primary/10"} transition-colors ${report.color}`}
+											className={`p-2 rounded-lg bg-muted  transition-colors ${report.color}`}
 										>
 											<report.icon className="h-6 w-6" />
 										</div>
 										<div className="flex-1">
 											<div className="flex items-center justify-between">
 												<CardTitle
-													className={`text-lg ${!isLocked && "group-hover:text-primary"} transition-colors`}
+													className={`text-lg  transition-colors`}
 												>
 													{report.title}
 												</CardTitle>
-												{isLocked && (
-													<IconLock className="h-4 w-4 text-muted-foreground" />
-												)}
-											</div>
+</div>
 										</div>
 									</div>
 									<CardDescription className="mt-2 pt-2">
 										{report.description}
 									</CardDescription>
-									{isLocked && (
-										<div className="mt-4 pt-4 border-t">
-											<p className="text-xs text-muted-foreground flex items-center gap-1">
-												<IconLock className="h-3 w-3" />
-												Disponível no plano Premium
-											</p>
-										</div>
-									)}
-								</CardHeader>
+</CardHeader>
 							</Card>
 						);
-
-						if (isLocked) {
-							return (
-								<div
-									key={report.title}
-									className="relative group cursor-not-allowed"
-								>
-									{CardContent}
-								</div>
-							);
-						}
 
 						const reportButtonClass =
 							"group cursor-pointer w-full text-left border-0 bg-transparent p-0";
