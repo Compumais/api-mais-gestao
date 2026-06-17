@@ -23,7 +23,6 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 	const [isMounted, setIsMounted] = useState(false);
 	const empresaSelecionadaRef = useRef(false);
 
-	// Garantir que só executa no cliente
 	useEffect(() => {
 		setIsMounted(true);
 	}, []);
@@ -41,11 +40,6 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
 	const listaEmpresas = empresas ?? [];
 
-	const ehProprietarioDeEmpresa =
-		listaEmpresas.some((empresa) => empresa.idproprietario === user?.id) ??
-		false;
-
-	// Seleciona a primeira empresa associada ao usuário (único ponto de seleção automática)
 	useEffect(() => {
 		if (!isMounted || !user?.id) return;
 		if (!empresasCarregadas) return;
@@ -91,8 +85,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 		if (
 			listaEmpresas.length === 0 &&
 			user.perfil?.includes("proprietario") &&
-			pathname !== "/empresas/nova" &&
-			pathname !== "/assinatura"
+			pathname !== "/empresas/nova"
 		) {
 			router.push("/empresas/nova");
 		}
@@ -113,40 +106,9 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
 		if (!isAuthenticated) {
 			router.push("/entrar");
-			return;
 		}
+	}, [isAuthenticated, isLoading, router, isMounted]);
 
-		// Apenas proprietários de empresas precisam ter plano
-		if (!ehProprietarioDeEmpresa) {
-			return;
-		}
-
-		const temEmpresa = localStorageEmpresa || listaEmpresas.length > 0;
-		if (user && (user.plano === null || user.plano === undefined)) {
-			// Só redirecionar para assinatura se já tiver empresa e for proprietário
-			if (
-				temEmpresa &&
-				pathname !== "/assinatura" &&
-				pathname !== "/empresas/nova"
-			) {
-				router.push("/assinatura");
-			}
-		}
-	}, [
-		isAuthenticated,
-		isLoading,
-		user,
-		router,
-		pathname,
-		isMounted,
-		localStorageEmpresa,
-		listaEmpresas,
-		ehProprietarioDeEmpresa,
-	]);
-
-	// Mostra loading enquanto verifica autenticação ou carrega empresas do servidor
-	// Também mostra loading durante a montagem inicial para evitar mismatch de hidratação
-	// Só mostra loading para empresas se não tiver empresa no localStorage
 	const isResolvendo =
 		!isMounted ||
 		isLoading ||
@@ -168,9 +130,9 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 						</div>
 					</div>
 					<div className="flex flex-col items-center gap-2">
-						<h2 className="text-xl font-semibold">Mais Gestão</h2>
+						<h2 className="text-xl font-semibold">Mais Gest?o</h2>
 						<p className="text-sm text-muted-foreground">
-							Carregando sua área de trabalho
+							Carregando sua ?rea de trabalho
 							<span className="loading-dots">
 								<span className="dot">.</span>
 								<span className="dot">.</span>
@@ -185,19 +147,6 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
 	if (!isAuthenticated) {
 		return null;
-	}
-
-	const temEmpresa = localStorageEmpresa || listaEmpresas.length > 0;
-
-	if (
-		ehProprietarioDeEmpresa &&
-		user &&
-		(user.plano === null || user.plano === undefined) &&
-		temEmpresa
-	) {
-		if (pathname !== "/assinatura" && pathname !== "/empresas/nova") {
-			return null; // Aguardando redirecionamento
-		}
 	}
 
 	return <>{children}</>;

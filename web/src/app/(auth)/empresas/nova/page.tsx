@@ -103,10 +103,10 @@ export default function NovaEmpresaPage() {
 				isPrimeiraEmpresa &&
 				(user?.plano === null || user?.plano === undefined)
 			) {
-				router.push("/assinatura");
+				router.push("/dashboard");
 			} else if (isPrimeiraEmpresa) {
 				// Se já tiver plano, ir para meus-planos
-				router.push("/meus-planos");
+				router.push("/dashboard");
 			} else {
 				// Caso contrário, redirecionar para dashboard
 				router.push("/dashboard");

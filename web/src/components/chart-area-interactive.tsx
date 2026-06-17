@@ -1,11 +1,8 @@
 "use client";
 
-import { IconLock } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
-import Link from "next/link";
 import * as React from "react";
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
-import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardAction,
@@ -30,8 +27,6 @@ import {
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { usePlano } from "@/hooks/use-plano";
-import { getMeuPlano } from "@/services/assinaturas.service";
 import { dashboardService } from "@/services/dashboard.service";
 
 export const description = "Gráfico de contas a pagar e receber";
@@ -48,7 +43,6 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export function ChartAreaInteractive() {
-	const { plano } = usePlano();
 	const isMobile = useIsMobile();
 	const { localStorageEmpresa: empresa } = useEmpresa();
 	const [timeRange, setTimeRange] = React.useState("90d");
@@ -75,9 +69,6 @@ export function ChartAreaInteractive() {
 			}),
 		enabled: !!empresa?.id,
 	});
-
-	const isPremium =
-		plano?.toUpperCase() === "PREMIUM" || plano?.toUpperCase() === "ENTERPRISE";
 
 	const filteredData = React.useMemo(() => {
 		if (!chartData || !Array.isArray(chartData)) return [];
@@ -195,29 +186,10 @@ export function ChartAreaInteractive() {
 					</Select>
 				</CardAction>
 			</CardHeader>
-			<CardContent className="px-2 pt-4 sm:px-6 sm:pt-6 relative">
-				{!isPremium && (
-					<div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/5 backdrop-blur-sm rounded-lg border border-muted-foreground/10 m-2">
-						<div className="flex flex-col items-center gap-4 p-6 text-center max-w-sm">
-							<div className="p-3 bg-primary/10 rounded-full">
-								<IconLock className="w-8 h-8 text-primary" />
-							</div>
-							<div className="space-y-2">
-								<h3 className="font-semibold text-lg">Recurso Premium</h3>
-								<p className="text-sm text-muted-foreground">
-									A visualização detalhada do gráfico financeiro está disponível
-									apenas nos planos Premium e Enterprise.
-								</p>
-							</div>
-							<Button asChild className="w-full">
-								<Link href="/meus-planos">Fazer Upgrade</Link>
-							</Button>
-						</div>
-					</div>
-				)}
+			<CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
 				<ChartContainer
 					config={chartConfig}
-					className={`aspect-auto h-[250px] w-full transition-all ${!isPremium ? "opacity-20 blur-sm select-none pointer-events-none" : ""}`}
+					className={`aspect-auto h-[250px] w-full transition-all `}
 				>
 					<AreaChart data={filteredData}>
 						<defs>

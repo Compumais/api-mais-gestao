@@ -11,7 +11,7 @@ export async function getMeuPlanoController(
 	reply: FastifyReply,
 ) {
 	if (!request.user) {
-		return reply.status(401).send({ message: "Não autorizado" });
+		return reply.status(401).send({ message: "N?o autorizado" });
 	}
 
 	try {
@@ -23,17 +23,6 @@ export async function getMeuPlanoController(
 			...(idempresa && { idempresa }),
 		});
 
-		if (resultado.status === "SEM_PLANO") {
-			return reply.status(200).send({
-				plano: null,
-				planoAgendado: null,
-				inicioCiclo: null,
-				fimCiclo: null,
-				status: "SEM_PLANO",
-				mensagem: resultado.mensagem ?? "Usuário não possui plano ativo",
-			});
-		}
-
 		return reply.status(200).send({
 			plano: resultado.plano,
 			planoAgendado: resultado.planoAgendado,
@@ -43,7 +32,7 @@ export async function getMeuPlanoController(
 		});
 	} catch (error: unknown) {
 		const message = error instanceof Error ? error.message : String(error);
-		console.error("Erro ao buscar plano do usuário:", error);
+		console.error("Erro ao buscar plano do usu?rio:", error);
 		return reply.status(500).send({
 			message: "Erro ao buscar plano",
 			error: message,

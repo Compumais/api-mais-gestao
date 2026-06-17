@@ -1,84 +1,71 @@
-function normalizarOrigem(origem: string): string {
-	return origem.trim().replace(/\/$/, "");
-}
-
-const ORIGENS_DESENVOLVIMENTO = [
+const LOCAL_ORIGINS = [
 	"http://localhost:3000",
 	"http://127.0.0.1:3000",
-	"http://localhost:3333",
-	"http://127.0.0.1:3333",
-];
+] as const;
 
-function isRedeLocal(hostname: string): boolean {
-	return (
-		hostname === "localhost" ||
-		hostname === "127.0.0.1" ||
-		hostname.startsWith("192.168.") ||
-		hostname.startsWith("10.") ||
-		/^172\.(1[6-9]|2\d|3[01])\./.test(hostname)
+const DEFAULT_CLIENT_ORIGIN = LOCAL_ORIGINS[0];
+
+function parseOriginsFromEnv(value: string | undefined): string[] {
+	if (!value?.trim()) return [];
+	return value
+		.split(",")
+		.map((origin) => origin.trim())
+		.filter(Boolean);
+}
+
+/** Origens do frontend permitidas (CORS + Better Auth). */
+export function getClientOrigins(): string[] {
+	const fromEnv = parseOriginsFromEnv(
+		process.env.CLIENT_ORIGIN || process.env.FRONTEND_URL,
 	);
+	return [...new Set([...LOCAL_ORIGINS, ...fromEnv])];
 }
 
-function coletarOrigensDeEnv(): string[] {
-	const origens: string[] = [];
+export function getPrimaryClientOrigin(): string {
+	const configured = parseOriginsFromEnv(
+		process.env.CLIENT_ORIGIN || process.env.FRONTEND_URL,
+	);
+	return configured[0] ?? DEFAULT_CLIENT_ORIGIN;
+}
 
-	if (process.env.CORS_ORIGINS) {
-		origens.push(
-			...process.env.CORS_ORIGINS.split(",")
-				.map(normalizarOrigem)
-				.filter(Boolean),
-		);
-	}
+/** Domínio pai para compartilhar cookies entre subdomínios (ex: api.* e mais.*). */
+export function getCookieDomain(): string | undefined {
+	const fromEnv = process.env.COOKIE_DOMAIN?.trim();
+	if (fromEnv) return fromEnv;
 
-	for (const variavel of [process.env.FRONTEND_URL, process.env.CLIENT_ORIGIN]) {
-		if (variavel) {
-			origens.push(normalizarOrigem(variavel));
+	try {
+		const { hostname } = new URL(getPrimaryClientOrigin());
+		const partes = hostname.split(".");
+
+		if (partes.length >= 3) {
+			return partes.slice(-2).join(".");
 		}
+	} catch {
+		return undefined;
 	}
 
-	return [...new Set(origens)];
+	return undefined;
 }
 
-export function getFrontendUrl(): string {
-	const origens = coletarOrigensDeEnv();
-	return origens[0] ?? normalizarOrigem("http://localhost:3000");
-}
-
-export function getOrigensCorsPermitidas(): string[] {
-	const origens = coletarOrigensDeEnv();
-
-	if (origens.length > 0) {
-		return origens;
+export function isOriginAllowed(origin: string): boolean {
+	try {
+		const { hostname, origin: normalized } = new URL(origin);
+		if (
+			hostname === "localhost" ||
+			hostname === "127.0.0.1" ||
+			hostname.startsWith("192.168.")
+		) {
+			return true;
+		}
+		return getClientOrigins().includes(normalized);
+	} catch {
+		return false;
 	}
-
-	if (process.env.NODE_ENV !== "production") {
-		return ORIGENS_DESENVOLVIMENTO;
-	}
-
-	return [];
 }
 
-export function isOrigemCorsPermitida(origin: string | undefined): boolean {
+export function isOrigemCorsPermitida(origin?: string): boolean {
 	if (!origin) {
 		return true;
 	}
-
-	const origemNormalizada = normalizarOrigem(origin);
-
-	if (getOrigensCorsPermitidas().includes(origemNormalizada)) {
-		return true;
-	}
-
-	if (process.env.NODE_ENV !== "production") {
-		try {
-			const hostname = new URL(origin).hostname;
-			if (isRedeLocal(hostname)) {
-				return true;
-			}
-		} catch {
-			return false;
-		}
-	}
-
-	return false;
+	return isOriginAllowed(origin);
 }
