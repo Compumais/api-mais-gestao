@@ -4,6 +4,10 @@ import { customSession } from "better-auth/plugins";
 import { eq } from "drizzle-orm";
 import * as schema from "../../drizzle/schema.js";
 import { db } from "../repositories/connection.js";
+import {
+	getFrontendUrl,
+	getOrigensCorsPermitidas,
+} from "../util/cors-origins.js";
 import { getApiBaseUrl } from "../util/base-url.js";
 
 export const auth = betterAuth({
@@ -41,7 +45,10 @@ export const auth = betterAuth({
 			clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
 		},
 	},
-	trustedOrigins: [process.env.BETTER_AUTH_URL || "http://localhost:3000"],
+	trustedOrigins:
+		getOrigensCorsPermitidas().length > 0
+			? getOrigensCorsPermitidas()
+			: [getFrontendUrl()],
 	user: {
 		modelName: "usuarios",
 		fields: {
@@ -121,11 +128,13 @@ export const auth = betterAuth({
 	},
 	advanced: {
 		disableOriginCheck: true,
-		useSecureCookies: false, // Desabilitar para localhost sem HTTPS
-		cookiePrefix: "mais-gestao", // Evitar colisões no localhost
+		useSecureCookies:
+			process.env.USE_SECURE_COOKIES === "true" ||
+			getApiBaseUrl().startsWith("https://"),
+		cookiePrefix: "mais-gestao",
 		appName: "Mais Gestão",
 		appDescription: "Mais Gestão é um sistema de gestão de empresas",
-		appUrl:  process.env.BETTER_AUTH_URL || "http://localhost:3000",
+		appUrl: getFrontendUrl(),
 		appIcon: "https://maisgestao.com/icon.png",
 		appColor: "#000000",
 		appTheme: "dark",

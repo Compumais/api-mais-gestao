@@ -195,7 +195,15 @@ export default function ProdutosPage() {
 	});
 
 	const { mutate: deletarProduto } = useMutation({
-		mutationFn: produtosService.deletar,
+		mutationFn: async ({
+			id,
+			idempresa,
+		}: {
+			id: string;
+			idempresa: string;
+		}) => {
+			return await produtosService.deletar(id, idempresa);
+		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["produtos"] });
 			toast.success("Produto excluído com sucesso!");
@@ -209,11 +217,13 @@ export default function ProdutosPage() {
 		mutationFn: async ({
 			id,
 			inativo,
+			idempresa,
 		}: {
 			id: string;
 			inativo: number;
+			idempresa: string;
 		}) => {
-			return await produtosService.inativar(id, inativo);
+			return await produtosService.inativar(id, inativo, idempresa);
 		},
 		onSuccess: (_data, variables) => {
 			queryClient.invalidateQueries({ queryKey: ["produtos"] });
@@ -233,18 +243,29 @@ export default function ProdutosPage() {
 	};
 
 	const handleDelete = (id: string) => {
+		if (!localStorageEmpresa) {
+			toast.error("Empresa não selecionada");
+			return;
+		}
+
 		toast.message("Tem certeza que deseja excluir este produto?", {
 			position: "top-center",
 			duration: 3000,
 			action: {
 				label: "Excluir",
-				onClick: () => deletarProduto(id),
+				onClick: () =>
+					deletarProduto({ id, idempresa: localStorageEmpresa.id }),
 			},
 			description: "Esta ação não pode ser desfeita.",
 		});
 	};
 
 	const handleToggleInativo = (produto: Produto) => {
+		if (!localStorageEmpresa) {
+			toast.error("Empresa não selecionada");
+			return;
+		}
+
 		const novoInativo = produto.inativo === 1 ? 0 : 1;
 		const acao = novoInativo === 1 ? "inativar" : "reativar";
 
@@ -254,7 +275,11 @@ export default function ProdutosPage() {
 			action: {
 				label: novoInativo === 1 ? "Inativar" : "Reativar",
 				onClick: () =>
-					alterarSituacao({ id: produto.id, inativo: novoInativo }),
+					alterarSituacao({
+						id: produto.id,
+						inativo: novoInativo,
+						idempresa: localStorageEmpresa.id,
+					}),
 			},
 		});
 	};

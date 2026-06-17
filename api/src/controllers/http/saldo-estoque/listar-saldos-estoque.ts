@@ -4,7 +4,7 @@ import { listarSaldosEstoqueService } from "@/service/saldo-estoque/listar-saldo
 
 const listarSaldosEstoqueQuerySchema = z.object({
 	page: z.coerce.number().min(1).optional().default(1),
-	limit: z.coerce.number().min(1).max(100).optional().default(10),
+	limit: z.coerce.number().min(1).max(500).optional().default(10),
 	idempresa: z.uuid(),
 	nomeproduto: z.string().optional(),
 	codigoproduto: z.string().optional(),

@@ -1,0 +1,1 @@
+ALTER TABLE "banco" ALTER COLUMN "idempresa" DROP NOT NULL;

@@ -34,7 +34,7 @@ export const contacorrentelancamento = pgTable(
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 		evento: bigint({ mode: "number" }),
 		debito: numeric({ precision: 12, scale: 2 }),
-		documento: varchar({ length: 30 }),
+		documento: varchar({ length: 60 }),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 		currenttimemillis: bigint({ mode: "number" }),
 		identificado: smallint(),

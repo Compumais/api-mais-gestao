@@ -17,6 +17,10 @@ export async function criarBancoService({
 	idusuario,
 	dadosBanco,
 }: CriarBancoParametros): Promise<HttpResponse<Banco>> {
+	if (!dadosBanco.idempresa) {
+		return httpProibido();
+	}
+
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
 		idusuario,
 		dadosBanco.idempresa,

@@ -63,8 +63,17 @@ export async function criarMovimentoEstoque(
 				details: error.issues,
 			});
 		}
+
+		const mensagemDb =
+			error &&
+			typeof error === "object" &&
+			"code" in error &&
+			error.code === "23503"
+				? "Referência inválida ao criar movimento de estoque"
+				: "Erro ao criar movimento de estoque";
+
 		return reply.status(500).send({
-			error: "Erro ao criar movimento de estoque",
+			error: mensagemDb,
 			code: "CREATE_MOVIMENTO_ESTOQUE_ERROR",
 		});
 	}
