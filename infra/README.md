@@ -36,6 +36,7 @@ Baseie-se em `api/.env.prod.example`:
 DATABASE_URL=postgresql://mais_gestao:<PASSWORD>@127.0.0.1:5432/mais_gestao
 BETTER_AUTH_SECRET=<GERAR_COM_openssl_rand_base64_32>
 BETTER_AUTH_URL=https://api.seudominio.com
+CLIENT_ORIGIN=https://app.seudominio.com
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 ```
@@ -45,6 +46,8 @@ GOOGLE_CLIENT_SECRET=
 ```env
 NEXT_PUBLIC_API_URL=https://api.seudominio.com
 ```
+
+`CLIENT_ORIGIN` deve ser a URL do **frontend** (`app.seudominio.com`), não da API. Sem isso, o login trava na tela de carregamento por bloqueio de CORS / Better Auth.
 
 ## 4) Configuração do Nginx
 
@@ -135,6 +138,7 @@ gunzip -c /opt/backups/mais-gestao/backup-YYYYMMDD-HHMMSS.sql.gz | psql -h 127.0
 
 ## 9) Operação rápida
 
+- Health check: `curl -s https://api.seudominio.com/health` (200 = API e banco OK; 503 = banco indisponível)
 - Logs API: `docker logs -f mais-gestao-api`
 - Logs DB: `docker logs -f mais-gestao-db`
 - Status PM2: `pm2 status`

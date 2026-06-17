@@ -31,6 +31,7 @@ import { enquadramentosIpiRotas } from "./controllers/http/enquatramento-ipi/rot
 import { entidadesContaContabilRotas } from "./controllers/http/entidade-conta-contabil/rotas.js";
 import { entidadesRotas } from "./controllers/http/entidades/rotas.js";
 import { fechamentosCaixaRotas } from "./controllers/http/fechamento-caixa/rotas.js";
+import { healthRotas } from "./controllers/http/health/rotas.js";
 import { financeiroRotas } from "./controllers/http/financeiro/rotas.js";
 import { financeiroLancamentoRotas } from "./controllers/http/financeirolancamento/rotas.js";
 import { hierarquiasRotas } from "./controllers/http/hierarquia/rotas.js";
@@ -411,13 +412,7 @@ app.route({
 	},
 });
 
-app.route({
-	method: "GET",
-	url: "/health",
-	async handler(_request: FastifyRequest, reply: FastifyReply) {
-		reply.status(200).send({ status: "Ok" });
-	},
-});
+app.register(healthRotas);
 
 app.register(planoContasRotas);
 app.register(empresasRotas);
