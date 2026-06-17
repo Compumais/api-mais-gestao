@@ -40,6 +40,7 @@ export const fechamentopdv = pgTable(
 		sobra: numeric152(), // Valor da sobra de caixa
 		status: smallint(), // Status da movimentação
 		suprimentoinicial: numeric152(), // Valor do suprimento inicial
+		financeiroconsolidadoem: timestamp(), // Data/hora da consolidação financeira (dinheiro/PIX)
 	},
 	(table) => [
 		index("fechamentopdv_idempresa_idx").using(

@@ -104,3 +104,34 @@ export async function listarVendasPdvGourmet({
 		total: totalCount[0]?.value ?? 0,
 	};
 }
+
+export async function listarTodasVendasPdvGourmetTurno({
+	idempresa,
+	numeropdv,
+	dataInicio,
+}: {
+	idempresa: string;
+	numeropdv: number;
+	dataInicio?: string | Date | null;
+}) {
+	const where = [
+		eq(vendapdvgourmet.idempresa, idempresa),
+		eq(vendapdvgourmet.numeropdv, numeropdv),
+	];
+
+	if (dataInicio) {
+		const inicio =
+			dataInicio instanceof Date
+				? dataInicio.toISOString().replace("T", " ").replace(/Z$/, "")
+				: /^\d{4}-\d{2}-\d{2}$/.test(dataInicio)
+					? `${dataInicio} 00:00:00.000`
+					: dataInicio.replace("T", " ").replace(/Z$/, "");
+		where.push(gte(vendapdvgourmet.datacriacao, inicio));
+	}
+
+	return db
+		.select()
+		.from(vendapdvgourmet)
+		.where(and(...where))
+		.orderBy(desc(vendapdvgourmet.datacriacao));
+}
