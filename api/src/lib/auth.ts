@@ -8,7 +8,7 @@ import {
 	getFrontendUrl,
 	getOrigensCorsPermitidas,
 } from "../util/cors-origins.js";
-import { getApiBaseUrl } from "../util/base-url.js";
+import { getApiBaseUrl, getCookieDomain } from "../util/base-url.js";
 
 export const auth = betterAuth({
 	baseURL: getApiBaseUrl(),
@@ -131,6 +131,14 @@ export const auth = betterAuth({
 		useSecureCookies:
 			process.env.USE_SECURE_COOKIES === "true" ||
 			getApiBaseUrl().startsWith("https://"),
+		...(getCookieDomain()
+			? {
+					crossSubDomainCookies: {
+						enabled: true,
+						domain: getCookieDomain(),
+					},
+				}
+			: {}),
 		cookiePrefix: "mais-gestao",
 		appName: "Mais Gestão",
 		appDescription: "Mais Gestão é um sistema de gestão de empresas",

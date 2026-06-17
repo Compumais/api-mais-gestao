@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -43,6 +43,7 @@ export function LoginForm({
 	...props
 }: React.ComponentProps<"div">) {
 	const router = useRouter();
+	const searchParams = useSearchParams();
 	const queryClient = useQueryClient();
 	const { selecionarEmpresa } = useEmpresa();
 	const {
@@ -79,7 +80,14 @@ export function LoginForm({
 				}
 			}
 			toast.success("Login realizado com sucesso!");
-			router.push(empresasCount === 0 ? "/empresas/nova" : "/dashboard");
+			const redirectParam = searchParams.get("redirect");
+			const destino =
+				empresasCount === 0
+					? "/empresas/nova"
+					: redirectParam?.startsWith("/") && !redirectParam.startsWith("//")
+						? redirectParam
+						: "/dashboard";
+			router.push(destino);
 		},
 		onError: (error: Error) => {
 			toast.error(
