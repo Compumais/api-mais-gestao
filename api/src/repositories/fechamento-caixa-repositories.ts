@@ -22,6 +22,7 @@ export type AtualizarFechamentoCaixaDados = {
 	sobra?: string | null | undefined;
 	status?: number | null | undefined;
 	suprimentoinicial?: string | null | undefined;
+	financeiroconsolidadoem?: Date | null | undefined;
 };
 
 export async function criarFechamentoCaixa(

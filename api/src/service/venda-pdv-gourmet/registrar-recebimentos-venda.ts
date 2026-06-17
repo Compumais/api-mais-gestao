@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import type { VendaPdvGourmet } from "@/model/venda-pdv-gourmet-model.js";
 import {
@@ -12,14 +12,13 @@ import {
 	adicionarDias,
 	CODIGO_PLANO_VENDAS_CARTAO_CREDITO,
 	CODIGO_PLANO_VENDAS_CARTAO_DEBITO,
-	CODIGO_PLANO_VENDAS_DINHEIRO,
-	CODIGO_PLANO_VENDAS_PIX,
 	CODIGO_PLANO_VENDAS_PREPAGO,
 	formatarDataIso,
 	formatarValorMonetario,
 	parseValorMonetario,
 	TIPO_ORIGEM_VENDA_PDV,
 } from "@/util/recebimentos-venda-util.js";
+import { inserirLancamentoCaixa } from "@/service/conta-corrente/inserir-lancamento-caixa.js";
 import * as schema from "../../../drizzle/schema.js";
 
 type RegistrarRecebimentosVendaParametros = {
@@ -45,54 +44,6 @@ type TituloFuturo = {
 };
 
 type TransacaoDb = Parameters<Parameters<typeof db.transaction>[0]>[0];
-
-async function inserirLancamentoCaixa(
-	tx: TransacaoDb,
-	parametros: {
-		idcontacorrente: string;
-		idusuario: string;
-		idplanocontas: string;
-		valor: number;
-		historico: string;
-		documento: string;
-		datahora: string;
-	},
-): Promise<void> {
-	const [ultimoLancamento] = await tx
-		.select()
-		.from(schema.contacorrentelancamento)
-		.where(
-			eq(
-				schema.contacorrentelancamento.idcontacorrente,
-				parametros.idcontacorrente,
-			),
-		)
-		.orderBy(
-			desc(schema.contacorrentelancamento.datahora),
-			desc(schema.contacorrentelancamento.currenttimemillis),
-		)
-		.limit(1);
-
-	const saldoAnterior = ultimoLancamento?.saldoatual
-		? Number(ultimoLancamento.saldoatual)
-		: 0;
-	const saldoAtual = saldoAnterior + parametros.valor;
-
-	await tx.insert(schema.contacorrentelancamento).values({
-		id: uuidv4(),
-		idcontacorrente: parametros.idcontacorrente,
-		datahora: parametros.datahora,
-		tipo: "C",
-		valor: formatarValorMonetario(parametros.valor),
-		saldoanterior: formatarValorMonetario(saldoAnterior),
-		saldoatual: formatarValorMonetario(saldoAtual),
-		historico: parametros.historico,
-		idusuario: parametros.idusuario,
-		idplanocontas: parametros.idplanocontas,
-		documento: parametros.documento,
-		currenttimemillis: Date.now(),
-	});
-}
 
 async function inserirTituloReceber(
 	tx: TransacaoDb,
@@ -144,8 +95,6 @@ export async function registrarRecebimentosVendaService({
 		return { success: false, mensagem: "Conta corrente Caixa não encontrada" };
 	}
 
-	const valorDinheiro = parseValorMonetario(venda.valordinheiro);
-	const valorPix = parseValorMonetario(venda.valorpix);
 	const valorPrepago = parseValorMonetario(venda.valorprepago);
 	let valorCartaoCredito = parseValorMonetario(venda.valorcartaocredito);
 	let valorCartaoDebito = parseValorMonetario(venda.valorcartaodebito);
@@ -156,21 +105,7 @@ export async function registrarRecebimentosVendaService({
 
 	const lancamentosImediatos: LancamentoImediato[] = [];
 
-	if (valorDinheiro > 0) {
-		lancamentosImediatos.push({
-			valor: valorDinheiro,
-			codigoPlanoContas: CODIGO_PLANO_VENDAS_DINHEIRO,
-			historico: `Venda PDV #${venda.numeropdv} - Dinheiro`,
-		});
-	}
-
-	if (valorPix > 0) {
-		lancamentosImediatos.push({
-			valor: valorPix,
-			codigoPlanoContas: CODIGO_PLANO_VENDAS_PIX,
-			historico: `Venda PDV #${venda.numeropdv} - PIX`,
-		});
-	}
+	// Dinheiro e PIX são consolidados no fechamento do caixa (ver consolidar-recebimentos-fechamento.ts)
 
 	if (valorPrepago > 0) {
 		lancamentosImediatos.push({
