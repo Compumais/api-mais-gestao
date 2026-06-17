@@ -1,19 +1,25 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { LoginForm } from "@/components/login-form";
 import { useAuth } from "@/hooks/use-auth";
 
 export default function LoginPage() {
 	const router = useRouter();
+	const searchParams = useSearchParams();
 	const { isAuthenticated, isLoading } = useAuth();
+	const redirectTo = searchParams.get("redirect");
 
 	useEffect(() => {
 		if (!isLoading && isAuthenticated) {
-			router.push("/dashboard");
+			const destino =
+				redirectTo?.startsWith("/") && !redirectTo.startsWith("//")
+					? redirectTo
+					: "/dashboard";
+			router.push(destino);
 		}
-	}, [isAuthenticated, isLoading, router]);
+	}, [isAuthenticated, isLoading, router, redirectTo]);
 
 	if (isLoading) {
 		return (

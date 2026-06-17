@@ -9,9 +9,17 @@ function hasSessionCookie(request: NextRequest) {
 		const normalizedName = cookie.name.toLowerCase();
 		return (
 			normalizedName.includes("session_token") ||
-			normalizedName.includes("better-auth.session_token")
+			normalizedName.includes("better-auth.session_token") ||
+			normalizedName.includes("mais-gestao.session_token")
 		);
 	});
+}
+
+function resolveRedirectPath(redirect: string | null): string | null {
+	if (!redirect || !redirect.startsWith("/") || redirect.startsWith("//")) {
+		return null;
+	}
+	return redirect;
 }
 
 export function middleware(request: NextRequest) {
@@ -27,7 +35,12 @@ export function middleware(request: NextRequest) {
 	}
 
 	if (isAuthenticated && isAuthRoute) {
-		return NextResponse.redirect(new URL("/dashboard", request.url));
+		const redirect = resolveRedirectPath(
+			request.nextUrl.searchParams.get("redirect"),
+		);
+		return NextResponse.redirect(
+			new URL(redirect ?? "/dashboard", request.url),
+		);
 	}
 
 	return NextResponse.next();
