@@ -7,6 +7,7 @@ import {
 	buscarProdutoPorId,
 } from "@/repositories/produtos-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
+import { validarUnidadeMedidaParaEmpresa } from "@/service/unidade-medida/validar-unidade-medida-empresa.js";
 import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
 
 type AtualizarProdutoParametros = {
@@ -33,6 +34,17 @@ export async function atualizarProdutoService({
 
 	if (!usuarioPertenceEmpresa) {
 		return httpProibido();
+	}
+
+	if (dados.idunidademedida) {
+		const unidadeValida = await validarUnidadeMedidaParaEmpresa(
+			dados.idunidademedida,
+			registroExistente.idempresa,
+		);
+
+		if (!unidadeValida) {
+			return httpProibido();
+		}
 	}
 
 	const dadosAtualizacao = { ...dados };

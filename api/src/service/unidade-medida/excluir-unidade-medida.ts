@@ -6,6 +6,7 @@ import {
 	excluirUnidadeMedida,
 } from "@/repositories/unidade-medida-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
+import { isUnidadeMedidaGlobal } from "@/service/unidade-medida/validar-unidade-medida-empresa.js";
 import {
 	httpErroInterno,
 	httpNaoEncontrado,
@@ -26,6 +27,14 @@ export async function excluirUnidadeMedidaService({
 
 	if (!registro) {
 		return httpNaoEncontrado();
+	}
+
+	if (isUnidadeMedidaGlobal(registro)) {
+		return httpProibido();
+	}
+
+	if (!registro.idempresa) {
+		return httpProibido();
 	}
 
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(

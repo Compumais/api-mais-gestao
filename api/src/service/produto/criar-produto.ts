@@ -7,6 +7,7 @@ import {
 	excluirProduto,
 } from "@/repositories/produtos-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
+import { validarUnidadeMedidaParaEmpresa } from "@/service/unidade-medida/validar-unidade-medida-empresa.js";
 import {
 	httpCriacao,
 	httpErro,
@@ -29,6 +30,19 @@ export async function criarProdutoService({
 	);
 
 	if (!usuarioPertenceEmpresa) {
+		return httpProibido();
+	}
+
+	if (!dadosProduto.idunidademedida) {
+		return httpProibido();
+	}
+
+	const unidadeValida = await validarUnidadeMedidaParaEmpresa(
+		dadosProduto.idunidademedida,
+		dadosProduto.idempresa,
+	);
+
+	if (!unidadeValida) {
 		return httpProibido();
 	}
 

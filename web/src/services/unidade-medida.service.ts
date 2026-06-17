@@ -2,12 +2,16 @@ import { api } from "@/lib/axios";
 
 export interface UnidadeMedida {
 	id: string;
-	idempresa: string;
+	idempresa: string | null;
 	casasdecimais: number | null;
 	codigo: string | null;
 	currenttimemillis: number | null;
 	nome: string | null;
 	tipovalor: number | null;
+}
+
+export function isUnidadeMedidaGlobal(unidade: Pick<UnidadeMedida, "idempresa">) {
+	return unidade.idempresa === null;
 }
 
 export interface ListarUnidadeMedidasResponse {

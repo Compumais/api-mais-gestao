@@ -62,11 +62,13 @@ export function LoginForm({
 				queryKey: ["perfil"],
 				queryFn: () => authService.getProfile(),
 			});
+			let empresasCount = 0;
 			if (perfil?.id) {
 				try {
 					const empresas = await queryClient.fetchQuery(
 						empresasUsuarioQueryOptions(perfil.id),
 					);
+					empresasCount = empresas.length;
 					const primeiraEmpresa = empresas[0];
 					if (primeiraEmpresa) {
 						selecionarEmpresa(primeiraEmpresa);
@@ -77,7 +79,7 @@ export function LoginForm({
 				}
 			}
 			toast.success("Login realizado com sucesso!");
-			router.push("/dashboard");
+			router.push(empresasCount === 0 ? "/empresas/nova" : "/dashboard");
 		},
 		onError: (error: Error) => {
 			toast.error(

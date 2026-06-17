@@ -11,6 +11,7 @@ import {
 	excluirContaMesaItem,
 } from "@/repositories/conta-mesa-item-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
+import { validarUnidadeMedidaParaEmpresa } from "@/service/unidade-medida/validar-unidade-medida-empresa.js";
 import {
 	httpCriacao,
 	httpErro,
@@ -40,6 +41,15 @@ export async function criarContaMesaItemService({
 	);
 
 	if (!usuarioPertenceEmpresa) {
+		return httpProibido();
+	}
+
+	const unidadeValida = await validarUnidadeMedidaParaEmpresa(
+		dadosContaMesaItem.unidademedida,
+		contaMesa.idempresa,
+	);
+
+	if (!unidadeValida) {
 		return httpProibido();
 	}
 

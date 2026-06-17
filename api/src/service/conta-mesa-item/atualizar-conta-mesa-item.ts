@@ -11,6 +11,7 @@ import {
 	buscarContaMesaItemPorId,
 } from "@/repositories/conta-mesa-item-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
+import { validarUnidadeMedidaParaEmpresa } from "@/service/unidade-medida/validar-unidade-medida-empresa.js";
 import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
 
 type AtualizarContaMesaItemParametros = {
@@ -43,6 +44,17 @@ export async function atualizarContaMesaItemService({
 
 	if (!usuarioPertenceEmpresa) {
 		return httpProibido();
+	}
+
+	if (dados.unidademedida) {
+		const unidadeValida = await validarUnidadeMedidaParaEmpresa(
+			dados.unidademedida,
+			contaMesa.idempresa,
+		);
+
+		if (!unidadeValida) {
+			return httpProibido();
+		}
 	}
 
 	const registroAtualizado = await atualizarContaMesaItem(

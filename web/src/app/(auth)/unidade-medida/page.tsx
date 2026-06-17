@@ -20,6 +20,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { TableSkeleton } from "@/components/table-skeleton";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -39,6 +40,7 @@ import {
 import { useEmpresa } from "@/hooks/use-empresa";
 import {
 	type UnidadeMedida,
+	isUnidadeMedidaGlobal,
 	unidadeMedidaService,
 } from "@/services/unidade-medida.service";
 import { PageContainer } from "../components/page-container";
@@ -63,10 +65,32 @@ const createColumns = ({
 		cell: ({ row }) => <div>{row.getValue("nome") || "-"}</div>,
 	},
 	{
+		id: "origem",
+		header: "Origem",
+		cell: ({ row }) => {
+			const unidadeMedida = row.original;
+			return isUnidadeMedidaGlobal(unidadeMedida) ? (
+				<Badge variant="secondary">Sistema</Badge>
+			) : (
+				<Badge variant="outline">Empresa</Badge>
+			);
+		},
+	},
+	{
 		id: "acoes",
 		header: "Ações",
 		cell: ({ row }) => {
 			const unidadeMedida = row.original;
+			const isGlobal = isUnidadeMedidaGlobal(unidadeMedida);
+
+			if (isGlobal) {
+				return (
+					<div className="flex justify-end text-sm text-muted-foreground">
+						Somente leitura
+					</div>
+				);
+			}
+
 			return (
 				<div className="flex justify-end">
 					<DropdownMenu>
@@ -204,6 +228,7 @@ export default function UnidadeMedidaPage() {
 						<TableSkeleton rows={10}>
 							<TableHead className="w-[120px]">Código</TableHead>
 							<TableHead>Nome</TableHead>
+							<TableHead className="w-[120px]">Origem</TableHead>
 							<TableHead className="w-12 text-end">Ações</TableHead>
 						</TableSkeleton>
 					) : (

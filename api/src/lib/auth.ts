@@ -22,13 +22,11 @@ export const auth = betterAuth({
 	databaseHooks: {
 		user: {
 			create: {
-				before: async (user, _context) => {
-					return {
-						data: {
-							...user,
-							perfil: ["proprietario"],
-						},
-					};
+				after: async (user) => {
+					await db
+						.update(schema.usuarios)
+						.set({ perfil: ["proprietario"] })
+						.where(eq(schema.usuarios.id, user.id));
 				},
 			},
 		},
@@ -152,6 +150,9 @@ export const auth = betterAuth({
 			if (perfilRaw) {
 				if (Array.isArray(perfilRaw)) {
 					perfil = perfilRaw.filter((p): p is string => typeof p === "string");
+					if (perfil.length === 0) {
+						perfil = ["proprietario"];
+					}
 				} else if (typeof perfilRaw === "string") {
 					perfil = [perfilRaw];
 				}
