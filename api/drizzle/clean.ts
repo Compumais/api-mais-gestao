@@ -70,6 +70,12 @@ async function clean() {
 		console.log("🗑️  Limpando verificacoes...");
 		await db.delete(schema.verificacoes);
 
+		console.log("🗑️  Limpando unidades de medida...");
+		await db.delete(schema.unidademedida);
+
+		console.log("🗑️  Limpando bancos...");
+		await db.delete(schema.banco);
+
 		console.log("✅ Limpeza concluída com sucesso!");
 	} catch (error) {
 		console.error("❌ Erro ao executar limpeza:", error);

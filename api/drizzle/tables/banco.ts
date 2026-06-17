@@ -15,11 +15,9 @@ export const banco = pgTable(
 		codigo: varchar({ length: 6 }).notNull(),
 		nome: varchar({ length: 60 }).notNull(),
 		currenttimemillis: bigint({ mode: "number" }).notNull(),
-		idempresa: text()
-			.notNull()
-			.references(() => empresa.id, {
-				onDelete: "cascade",
-			}),
+		idempresa: text().references(() => empresa.id, {
+			onDelete: "cascade",
+		}), // null = banco global do sistema
 	},
 	(table) => [
 		index("banco_idempresa_idx").using(

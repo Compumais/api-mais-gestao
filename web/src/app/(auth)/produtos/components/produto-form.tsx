@@ -3,7 +3,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -114,6 +113,7 @@ export function ProdutoForm(props: ProdutoFormProps) {
 			ncm: "",
 			observacoes: null,
 			enviamobile: false,
+			...(isEdicao && props.valoresIniciais ? props.valoresIniciais : {}),
 		},
 	});
 
@@ -134,15 +134,6 @@ export function ProdutoForm(props: ProdutoFormProps) {
 	const origem = watch("origem");
 	const preco = watch("preco");
 	const enviamobile = watch("enviamobile");
-
-	useEffect(() => {
-		if (!isEdicao) return;
-		if (!props.valoresIniciais) return;
-		form.reset({
-			...form.getValues(),
-			...props.valoresIniciais,
-		});
-	}, [isEdicao, props.valoresIniciais, form]);
 
 	const { data: unidadesData } = useQuery({
 		queryKey: ["unidades-medida", empresa?.id],
@@ -194,11 +185,21 @@ export function ProdutoForm(props: ProdutoFormProps) {
 
 	const { mutate: atualizarProduto, isPending: isPendingAtualizar } =
 		useMutation({
-			mutationFn: async (dados: Parameters<typeof produtosService.atualizar>[1]) => {
+			mutationFn: async ({
+				idempresa,
+				dados,
+			}: {
+				idempresa: string;
+				dados: Parameters<typeof produtosService.atualizar>[1];
+			}) => {
 				if (!isEdicao || !props.produtoId) {
 					throw new Error("ID do produto é obrigatório para editar");
 				}
-				return await produtosService.atualizar(props.produtoId, dados);
+				return await produtosService.atualizar(
+					props.produtoId,
+					dados,
+					idempresa,
+				);
 			},
 			onSuccess: () => {
 				queryClient.invalidateQueries({ queryKey: ["produtos"] });
@@ -226,7 +227,7 @@ export function ProdutoForm(props: ProdutoFormProps) {
 			return;
 		}
 
-		atualizarProduto(payloadBase);
+		atualizarProduto({ idempresa: empresa.id, dados: payloadBase });
 	};
 
 	const unidadesGlobais =

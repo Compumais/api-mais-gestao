@@ -95,19 +95,32 @@ export const produtosService = {
 		return data;
 	},
 
-	async atualizar(id: string, dados: AtualizarProdutoData): Promise<Produto> {
-		const { data } = await api.put<Produto>(`/produtos/${id}`, dados);
-		return data;
-	},
-
-	async inativar(id: string, inativo: number): Promise<Produto> {
-		const { data } = await api.patch<Produto>(`/produtos/inativar/${id}`, {
-			inativo,
+	async atualizar(
+		id: string,
+		dados: AtualizarProdutoData,
+		idempresa: string,
+	): Promise<Produto> {
+		const { data } = await api.put<Produto>(`/produtos/${id}`, dados, {
+			params: { idempresa },
 		});
 		return data;
 	},
 
-	async deletar(id: string): Promise<void> {
-		await api.delete(`/produtos/${id}`);
+	async inativar(
+		id: string,
+		inativo: number,
+		idempresa: string,
+	): Promise<Produto> {
+		const { data } = await api.patch<Produto>(`/produtos/inativar/${id}`, {
+			inativo,
+			idempresa,
+		});
+		return data;
+	},
+
+	async deletar(id: string, idempresa: string): Promise<void> {
+		await api.delete(`/produtos/${id}`, {
+			params: { idempresa },
+		});
 	},
 };

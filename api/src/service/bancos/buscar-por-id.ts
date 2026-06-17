@@ -19,6 +19,10 @@ export async function buscarBancoPorIdService({
 		return httpNaoEncontrado();
 	}
 
+	if (banco.idempresa === null) {
+		return httpOk<Banco>(banco);
+	}
+
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
 		idusuario,
 		banco.idempresa,

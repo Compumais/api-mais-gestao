@@ -19,7 +19,7 @@ const criarContaCorrenteLancamentoBodySchema = z.object({
 	idplanocontas: z.string().optional(),
 	evento: z.number().optional(),
 	debito: z.string().optional(),
-	documento: z.string().max(30).optional(),
+	documento: z.string().max(60).optional(),
 	dataconciliacao: z.string().optional(),
 });
 

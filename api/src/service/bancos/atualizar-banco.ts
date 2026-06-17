@@ -27,6 +27,10 @@ export async function atualizarBancoService({
 		return httpNaoEncontrado();
 	}
 
+	if (bancoExistente.idempresa === null) {
+		return httpProibido();
+	}
+
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
 		idusuario,
 		bancoExistente.idempresa,

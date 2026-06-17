@@ -25,6 +25,10 @@ export async function excluirBancoService({
 		return httpNaoEncontrado();
 	}
 
+	if (banco.idempresa === null) {
+		return httpProibido();
+	}
+
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
 		idusuario,
 		banco.idempresa,

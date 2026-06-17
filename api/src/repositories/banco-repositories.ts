@@ -1,7 +1,5 @@
-import { and, asc, count, eq, ilike } from "drizzle-orm";
-import { v4 as uuidv4 } from "uuid";
+import { and, asc, count, eq, ilike, isNull, or } from "drizzle-orm";
 import type { NovoBanco } from "@/model/banco-model.js";
-import { BANCOS_PADRAO } from "@/util/bancos-padrao.js";
 import * as schema from "../../drizzle/schema.js";
 import { db } from "./connection.js";
 
@@ -9,22 +7,6 @@ export async function criarBanco(dadosBanco: NovoBanco) {
 	const [banco] = await db.insert(schema.banco).values(dadosBanco).returning();
 
 	return banco;
-}
-
-export async function criarBancosPadrao(idempresa: string) {
-	const currenttimemillis = Date.now();
-
-	const bancosParaInserir = BANCOS_PADRAO.map((banco) => ({
-		id: uuidv4(),
-		idempresa,
-		codigo: banco.codigo,
-		nome: banco.nome,
-		currenttimemillis,
-	}));
-
-	await db.insert(schema.banco).values(bancosParaInserir);
-
-	return bancosParaInserir;
 }
 
 export async function buscarBancoPorId(id: string) {
@@ -54,7 +36,9 @@ export async function listarBancos({
 	const where = [];
 
 	if (idempresa) {
-		where.push(eq(schema.banco.idempresa, idempresa));
+		where.push(
+			or(eq(schema.banco.idempresa, idempresa), isNull(schema.banco.idempresa)),
+		);
 	}
 
 	if (nome && nome.trim() !== "") {

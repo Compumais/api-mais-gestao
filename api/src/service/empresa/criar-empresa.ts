@@ -1,7 +1,6 @@
 import type { Empresa } from "../../model/empresa-model.js";
 import type { HttpResponse } from "../../model/http-model.js";
 import type { Usuario } from "../../model/usuario-model.js";
-import { criarBancosPadrao } from "../../repositories/banco-repositories.js";
 import {
 	criarEmpresa,
 	type NovaEmpresa,
@@ -41,13 +40,6 @@ export async function criarEmpresaService({
 	await criarPlanoContasPadraoService(empresa.id);
 
 	await criarContaCorrenteCaixaPadrao(empresa.id);
-
-	// Criar bancos padrão para a nova empresa
-	try {
-		await criarBancosPadrao(empresa.id);
-	} catch (error) {
-		console.error("Erro ao criar bancos padrão:", error);
-	}
 
 	// Vincular usuário à empresa criada
 	try {

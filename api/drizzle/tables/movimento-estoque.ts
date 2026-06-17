@@ -85,12 +85,5 @@ export const movimentoestoque = pgTable(
 		})
 			.onUpdate("cascade")
 			.onDelete("cascade"),
-		foreignKey({
-			columns: [table.idoriginal],
-			foreignColumns: [table.id],
-			name: "movimentoestoque_idoriginal_fkey",
-		})
-			.onUpdate("cascade")
-			.onDelete("cascade"),
 	],
 );

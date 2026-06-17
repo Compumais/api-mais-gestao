@@ -1,12 +1,40 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
+import type { ProdutoFormData } from "@/schemas/produtos.schema";
 import { produtosService } from "@/services/produtos.service";
 import { ProdutoForm } from "../../components/produto-form";
 
 type EditarProdutoClientProps = {
 	id: string;
 };
+
+function mapProdutoToForm(
+	data: Awaited<ReturnType<typeof produtosService.buscar>>,
+): Partial<ProdutoFormData> {
+	const tipo = data.tipo?.trim();
+	const iat = data.iat?.trim();
+	const ippt = data.ippt?.trim();
+
+	return {
+		codigo: data.codigo ?? undefined,
+		ean: data.ean,
+		referencia: data.referencia,
+		nome: data.nome,
+		idunidademedida: data.idunidademedida ?? "",
+		fornecedor: data.fornecedor,
+		idgrupo: data.idgrupo ?? "",
+		preco: data.preco ?? "",
+		tipo: tipo === "P" || tipo === "S" ? tipo : "P",
+		iat: iat === "A" || iat === "T" ? iat : null,
+		ippt: ippt === "P" || ippt === "T" ? ippt : "P",
+		origem: data.origem ?? 0,
+		ncm: data.ncm ?? "",
+		observacoes: data.observacoes,
+		enviamobile: data.enviamobile === 1,
+	};
+}
 
 export function EditarProdutoClient({ id }: EditarProdutoClientProps) {
 	const { data, isLoading } = useQuery({
@@ -16,6 +44,11 @@ export function EditarProdutoClient({ id }: EditarProdutoClientProps) {
 		},
 	});
 
+	const valoresIniciais = useMemo(
+		() => (data ? mapProdutoToForm(data) : undefined),
+		[data],
+	);
+
 	if (isLoading) {
 		return (
 			<div className="flex items-center justify-center py-8">
@@ -24,7 +57,7 @@ export function EditarProdutoClient({ id }: EditarProdutoClientProps) {
 		);
 	}
 
-	if (!data) {
+	if (!data || !valoresIniciais) {
 		return (
 			<div className="flex items-center justify-center py-8">
 				<p className="text-muted-foreground">Produto não encontrado.</p>
@@ -34,25 +67,10 @@ export function EditarProdutoClient({ id }: EditarProdutoClientProps) {
 
 	return (
 		<ProdutoForm
+			key={id}
 			modo="editar"
 			produtoId={id}
-			valoresIniciais={{
-				codigo: data.codigo ?? undefined,
-				ean: data.ean,
-				referencia: data.referencia,
-				nome: data.nome,
-				idunidademedida: data.idunidademedida ?? "",
-				fornecedor: data.fornecedor,
-				idgrupo: data.idgrupo ?? "",
-				preco: data.preco ?? "",
-				tipo: (data.tipo as "P" | "S") ?? "P",
-				iat: (data.iat as "A" | "T" | null) ?? null,
-				ippt: (data.ippt as "P" | "T") ?? "P",
-				origem: data.origem ?? 0,
-				ncm: data.ncm ?? "",
-				observacoes: data.observacoes,
-				enviamobile: data.enviamobile === 1,
-			}}
+			valoresIniciais={valoresIniciais}
 		/>
 	);
 }

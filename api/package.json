@@ -16,6 +16,8 @@
 		"seed": "tsx drizzle/seed.ts",
 		"clean": "tsx drizzle/clean.ts",
 		"db:patch-roles": "tsx drizzle/patch-roles.ts",
+		"db:push": "tsx node_modules/drizzle-kit/bin.cjs push",
+		"db:generate": "tsx node_modules/drizzle-kit/bin.cjs generate",
 		"db:studio": "tsx node_modules/drizzle-kit/bin.cjs studio",
 		"db:migrate": "tsx node_modules/drizzle-kit/bin.cjs migrate",
 		"db:migrate:undo": "tsx node_modules/drizzle-kit/bin.cjs migrate:undo",
