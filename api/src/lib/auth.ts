@@ -10,9 +10,12 @@ import {
 } from "../util/cors-origins.js";
 import { getApiBaseUrl, getCookieDomain } from "../util/base-url.js";
 
+const cookieDomain = getCookieDomain();
+
 export const auth = betterAuth({
 	baseURL: getApiBaseUrl(),
 	basePath: "/api/auth",
+	appName: "Mais Gestão",
 	database: drizzleAdapter(db, {
 		provider: "pg",
 		schema: {
@@ -131,24 +134,15 @@ export const auth = betterAuth({
 		useSecureCookies:
 			process.env.USE_SECURE_COOKIES === "true" ||
 			getApiBaseUrl().startsWith("https://"),
-		...(getCookieDomain()
+		...(cookieDomain
 			? {
 					crossSubDomainCookies: {
 						enabled: true,
-						domain: getCookieDomain(),
+						domain: cookieDomain,
 					},
 				}
 			: {}),
 		cookiePrefix: "mais-gestao",
-		appName: "Mais Gestão",
-		appDescription: "Mais Gestão é um sistema de gestão de empresas",
-		appUrl: getFrontendUrl(),
-		appIcon: "https://maisgestao.com/icon.png",
-		appColor: "#000000",
-		appTheme: "dark",
-		appLanguage: "pt-BR",
-		appLocale: "pt-BR",
-		appTimezone: "America/Sao_Paulo",
 	},
 	plugins: [
 		customSession(async ({ user, session }) => {
