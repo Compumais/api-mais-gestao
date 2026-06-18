@@ -1,6 +1,7 @@
-import { and, count, desc, eq, ilike, inArray } from "drizzle-orm";
+import { and, count, eq, ilike, inArray } from "drizzle-orm";
 import type { NovoProduto } from "@/model/produto-model";
 import { produtos } from "@/repositories/schema.js";
+import { ordenacaoCodigoNumericoAsc } from "./ordenacao-codigo.js";
 import { db } from "./connection";
 
 export async function criarProduto(dadosProduto: NovoProduto) {
@@ -64,7 +65,7 @@ export async function listarProdutosPorEmpresa({
 			.select()
 			.from(produtos)
 			.where(and(...where))
-			.orderBy(desc(produtos.descricao))
+			.orderBy(ordenacaoCodigoNumericoAsc(produtos.codigo))
 			.limit(limit)
 			.offset(offset),
 	]);

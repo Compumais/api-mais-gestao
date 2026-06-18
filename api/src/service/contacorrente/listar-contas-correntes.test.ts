@@ -12,11 +12,13 @@ describe("listarContasCorrentesService", () => {
 			id: "conta-corrente-1",
 			agencia: "1234",
 			descricao: "Conta Principal",
+			codigo: 1,
 		},
 		{
 			id: "conta-corrente-2",
 			agencia: "5678",
 			descricao: "Conta Secundária",
+			codigo: 2,
 		},
 	];
 

@@ -21,6 +21,7 @@ export interface ContaCorrenteListItem {
 	id: string;
 	agencia?: string | null;
 	descricao?: string | null;
+	codigo?: number | null;
 }
 
 export interface ListarContasCorrentesResponse {

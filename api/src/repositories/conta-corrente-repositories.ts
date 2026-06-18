@@ -2,6 +2,7 @@ import { and, count, eq, inArray } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import type { NovaContaCorrente } from "@/model/conta-corrente-model.js";
 import * as schema from "../../drizzle/schema.js";
+import { ordenacaoCodigoNumericoAsc } from "./ordenacao-codigo.js";
 import { db } from "./connection.js";
 
 export async function criarContaCorrente(
@@ -67,10 +68,11 @@ export async function listarContaCorrentePorEmpresa({
 				id: schema.contacorrente.id,
 				agencia: schema.contacorrente.agencia,
 				descricao: schema.contacorrente.descricao,
+				codigo: schema.contacorrente.codigo,
 			})
 			.from(schema.contacorrente)
 			.where(and(...where))
-			.orderBy(schema.contacorrente.idbanco)
+			.orderBy(ordenacaoCodigoNumericoAsc(schema.contacorrente.codigo))
 			.limit(limit)
 			.offset(offset),
 	]);
