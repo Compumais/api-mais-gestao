@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { AUTH_SESSION_COOKIE } from "@/lib/auth-session-cookie";
 
 const PUBLIC_ROUTES = new Set(["/", "/entrar", "/registrar"]);
 const AUTH_ROUTES = new Set(["/entrar", "/registrar"]);
 
 function hasSessionCookie(request: NextRequest) {
+	if (request.cookies.get(AUTH_SESSION_COOKIE)?.value === "1") {
+		return true;
+	}
+
 	return request.cookies.getAll().some((cookie) => {
 		const normalizedName = cookie.name.toLowerCase();
 		return (

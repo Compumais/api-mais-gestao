@@ -14,11 +14,13 @@ import {
 } from "@/components/ui/sidebar";
 import { DATA } from "@/constants/nav-constants";
 import { useAuth } from "@/hooks/use-auth";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { CPlusIcon } from "./icons/c-plus";
 import { NavDocuments } from "./nav-documents";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const { user } = useAuth();
+	const isMobile = useIsMobile();
 
 	const isUsuario = React.useMemo(() => {
 		if (!user?.perfil) return false;
@@ -49,6 +51,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 		return items;
 	}, [isUsuario]);
 
+	const navGourmetItems = React.useMemo(
+		() =>
+			DATA.navGourmet.map((group) => ({
+				...group,
+				items: group.items?.filter(
+					(subItem) => subItem.url !== "/garcom" || isMobile,
+				),
+			})),
+		[isMobile],
+	);
+
 	return (
 		<Sidebar collapsible="icon" {...props}>
 			<SidebarHeader>
@@ -63,7 +76,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 				<NavMain items={navMainItems} />
 
 				{!isUsuario && (
-					<NavDocuments label="PDV Gourmet" items={DATA.navGourmet} />
+					<NavDocuments label="PDV Gourmet" items={navGourmetItems} />
 				)}
 
 				<NavDocuments label="Cadastros" items={DATA.navRegistros} />

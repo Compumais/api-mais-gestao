@@ -102,10 +102,10 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 	useEffect(() => {
 		if (!isMounted || isLoading) return;
 
-		if (!isAuthenticated) {
+		if (!user) {
 			router.push("/entrar");
 		}
-	}, [isAuthenticated, isLoading, router, isMounted]);
+	}, [user, isLoading, router, isMounted]);
 
 	const isResolvendo =
 		!isMounted ||
@@ -143,7 +143,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 		);
 	}
 
-	if (!isAuthenticated) {
+	if (!user) {
 		return null;
 	}
 

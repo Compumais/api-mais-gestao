@@ -20,9 +20,14 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { marcarSessaoFrontend } from "@/lib/auth-session-cookie";
+import {
+	extractSessionTokenFromLoginResponse,
+	setSessionToken,
+} from "@/lib/auth-token";
 import { authClient } from "@/lib/auth-client";
 import { limparEmpresaSelecionada, EMPRESA_FORCAR_PRIMEIRA_KEY, marcarSelecaoPrimeiraEmpresaNoLogin } from "@/provider/empresa-provider";
-import { authService } from "@/services/auth.service";
+import { authService, type LoginResponse } from "@/services/auth.service";
 import { empresasUsuarioQueryOptions } from "@/hooks/use-empresas-usuario";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { GoogleIcon } from "./icons/google-icon";
@@ -56,19 +61,44 @@ export function LoginForm({
 
 	const { mutate: signIn, isPending } = useMutation({
 		mutationFn: authService.signIn,
-		onSuccess: async () => {
+		onSuccess: async (loginData: LoginResponse) => {
+			const sessionToken = extractSessionTokenFromLoginResponse(loginData);
+			if (sessionToken) {
+				setSessionToken(sessionToken);
+			}
+
 			marcarSelecaoPrimeiraEmpresaNoLogin();
 			limparEmpresaSelecionada();
-			const perfil = await queryClient.fetchQuery({
-				queryKey: ["perfil"],
-				queryFn: () => authService.getProfile(),
-			});
+			marcarSessaoFrontend();
+
+			let perfil = null;
+			try {
+				perfil = await queryClient.fetchQuery({
+					queryKey: ["perfil"],
+					queryFn: () => authService.getProfile(),
+					staleTime: 0,
+				});
+			} catch {
+				if (loginData.user) {
+					perfil = {
+						id: loginData.user.id,
+						nome: loginData.user.name,
+						email: loginData.user.email,
+						perfil: [],
+						plano: null,
+					};
+					queryClient.setQueryData(["perfil"], perfil);
+				}
+			}
+
 			let empresasCount = 0;
+			let empresasCarregadasComSucesso = false;
 			if (perfil?.id) {
 				try {
 					const empresas = await queryClient.fetchQuery(
 						empresasUsuarioQueryOptions(perfil.id),
 					);
+					empresasCarregadasComSucesso = true;
 					empresasCount = empresas.length;
 					const primeiraEmpresa = empresas[0];
 					if (primeiraEmpresa) {
@@ -81,7 +111,7 @@ export function LoginForm({
 			}
 			toast.success("Login realizado com sucesso!");
 			const destino =
-				empresasCount === 0
+				empresasCarregadasComSucesso && empresasCount === 0
 					? "/empresas/nova"
 					: redirectTo?.startsWith("/") && !redirectTo.startsWith("//")
 						? redirectTo
