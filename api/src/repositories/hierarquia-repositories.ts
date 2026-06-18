@@ -1,6 +1,7 @@
-import { and, count, desc, eq, ilike } from "drizzle-orm";
+import { and, count, eq, ilike } from "drizzle-orm";
 import type { NovoHierarquia } from "@/model/hierarquia-model";
 import { hierarquia } from "@/repositories/schema.js";
+import { ordenacaoCodigoVarcharAsc } from "./ordenacao-codigo.js";
 import { db } from "./connection";
 
 export async function buscarHierarquiaPorId(id: string) {
@@ -75,7 +76,7 @@ export async function listarHierarquias({
 			.select()
 			.from(hierarquia)
 			.where(and(...where))
-			.orderBy(desc(hierarquia.nome))
+			.orderBy(...ordenacaoCodigoVarcharAsc(hierarquia.codigo))
 			.limit(limit)
 			.offset(offset),
 	]);

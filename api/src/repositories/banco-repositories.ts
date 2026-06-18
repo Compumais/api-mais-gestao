@@ -1,6 +1,7 @@
-import { and, asc, count, eq, ilike, isNull, or } from "drizzle-orm";
+import { and, count, eq, ilike, isNull, or } from "drizzle-orm";
 import type { NovoBanco } from "@/model/banco-model.js";
 import * as schema from "../../drizzle/schema.js";
+import { ordenacaoCodigoVarcharAsc } from "./ordenacao-codigo.js";
 import { db } from "./connection.js";
 
 export async function criarBanco(dadosBanco: NovoBanco) {
@@ -60,7 +61,7 @@ export async function listarBancos({
 			.select()
 			.from(schema.banco)
 			.where(and(...where))
-			.orderBy(asc(schema.banco.codigo))
+			.orderBy(...ordenacaoCodigoVarcharAsc(schema.banco.codigo))
 			.limit(limit)
 			.offset(offset),
 	]);

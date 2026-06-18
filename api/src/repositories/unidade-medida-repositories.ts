@@ -1,6 +1,7 @@
-import { and, asc, count, eq, ilike, isNull, or, sql } from "drizzle-orm";
+import { and, count, eq, ilike, isNull, or } from "drizzle-orm";
 import type { NovoUnidadeMedida } from "@/model/unidade-medida-model";
 import { unidademedida } from "@/repositories/schema.js";
+import { ordenacaoCodigoVarcharAsc } from "./ordenacao-codigo.js";
 import { db } from "./connection";
 
 export async function buscarUnidadeMedidaPorId(id: string) {
@@ -75,10 +76,7 @@ export async function listarUnidadesMedida({
 			.select()
 			.from(unidademedida)
 			.where(filtro)
-			.orderBy(
-				asc(sql`CASE WHEN ${unidademedida.idempresa} IS NULL THEN 0 ELSE 1 END`),
-				asc(unidademedida.nome),
-			)
+			.orderBy(...ordenacaoCodigoVarcharAsc(unidademedida.codigo))
 			.limit(limit)
 			.offset(offset),
 	]);
