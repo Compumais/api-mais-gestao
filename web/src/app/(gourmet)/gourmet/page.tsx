@@ -1,23 +1,20 @@
 "use client";
 
+import { IconPlus, IconShoppingCart } from "@tabler/icons-react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { IconPlus, IconShoppingCart } from "@tabler/icons-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useCaixaPdv } from "@/hooks/use-caixa-pdv";
+import { useEmpresa } from "@/hooks/use-empresa";
+import { calcularTotalContaMesaItens, STATUS_MESA } from "@/lib/gourmet-utils";
+import { contaMesaService } from "@/services/conta-mesa.service";
+import { contaMesaItemService } from "@/services/conta-mesa-item.service";
 import { AbrirMesaDialog } from "./components/abrir-mesa-dialog";
 import { MesaCard } from "./components/mesa-card";
 import { PdvHeader } from "./components/pdv-header";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useEmpresa } from "@/hooks/use-empresa";
-import { useCaixaPdv } from "@/hooks/use-caixa-pdv";
-import {
-	calcularTotalContaMesaItens,
-	STATUS_MESA,
-} from "@/lib/gourmet-utils";
-import { contaMesaItemService } from "@/services/conta-mesa-item.service";
-import { contaMesaService } from "@/services/conta-mesa.service";
-import { toast } from "sonner";
 
 export default function GourmetHubPage() {
 	const { localStorageEmpresa: empresa } = useEmpresa();
@@ -76,11 +73,15 @@ export default function GourmetHubPage() {
 	if (!empresa) {
 		return (
 			<>
-				<PdvHeader titulo="PDV Gourmet — Mesas" voltarHref="/dashboard" voltarLabel="Voltar ao sistema" />
+				<PdvHeader
+					titulo="PDV Gourmet — Mesas"
+					voltarHref="/dashboard"
+					voltarLabel="Voltar ao sistema"
+				/>
 				<div className="flex flex-1 items-center justify-center p-8">
-				<p className="text-muted-foreground">
-					Selecione uma empresa para acessar o PDV Gourmet.
-				</p>
+					<p className="text-muted-foreground">
+						Selecione uma empresa para acessar o PDV Gourmet.
+					</p>
 				</div>
 			</>
 		);
@@ -88,86 +89,98 @@ export default function GourmetHubPage() {
 
 	return (
 		<>
-			<PdvHeader titulo="PDV Gourmet — Mesas" voltarHref="/dashboard" voltarLabel="Voltar ao sistema" />
+			<PdvHeader
+				titulo="PDV Gourmet — Mesas"
+				voltarHref="/dashboard"
+				voltarLabel="Voltar ao sistema"
+			/>
 			<div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4 md:p-6">
-			<div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-				<div>
-					<h2 className="text-2xl font-bold">Mesas abertas</h2>
-					<p className="text-sm text-muted-foreground">
-						{contasAbertas.length}{" "}
-						{contasAbertas.length === 1 ? "mesa aberta" : "mesas abertas"}
-					</p>
-				</div>
-				<div className="flex flex-wrap gap-2">
-					<Button onClick={handleNovaMesa} disabled={!estaAberto}>
-						<IconPlus className="size-4" />
-						Nova mesa
-					</Button>
-					<Button variant="secondary" asChild disabled={!estaAberto}>
-						<Link href={estaAberto ? "/gourmet/venda-rapida" : "#"} onClick={(e) => {
-							if (!estaAberto) {
-								e.preventDefault();
-								guardCaixa();
-							}
-						}}>
-							<IconShoppingCart className="size-4" />
-							Venda rápida
-						</Link>
-					</Button>
-				</div>
-			</div>
-
-			{(isLoadingContas || isLoadingItens) && (
-				<div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-					{Array.from({ length: 4 }).map((_, i) => (
-						<Skeleton key={i} className="h-40 rounded-xl" />
-					))}
-				</div>
-			)}
-
-			{!isLoadingContas && !isLoadingItens && mesasComTotais.length === 0 && (
-				<div className="flex flex-1 flex-col items-center justify-center gap-4 rounded-xl border border-dashed p-12 text-center">
-					<p className="text-lg font-medium">Nenhuma mesa aberta</p>
-					<p className="max-w-sm text-sm text-muted-foreground">
-						Abra uma nova mesa para iniciar uma comanda ou use a venda rápida
-						para atendimento no balcão.
-					</p>
-					<div className="flex gap-2">
+				<div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+					<div>
+						<h2 className="text-2xl font-bold">Mesas abertas</h2>
+						<p className="text-sm text-muted-foreground">
+							{contasAbertas.length}{" "}
+							{contasAbertas.length === 1 ? "mesa aberta" : "mesas abertas"}
+						</p>
+					</div>
+					<div className="flex flex-wrap gap-2">
 						<Button onClick={handleNovaMesa} disabled={!estaAberto}>
 							<IconPlus className="size-4" />
-							Abrir mesa
+							Nova mesa
 						</Button>
 						<Button variant="secondary" asChild disabled={!estaAberto}>
-							<Link href={estaAberto ? "/gourmet/venda-rapida" : "#"} onClick={(e) => {
-								if (!estaAberto) {
-									e.preventDefault();
-									guardCaixa();
-								}
-							}}>Venda rápida</Link>
+							<Link
+								href={estaAberto ? "/gourmet/venda-rapida" : "#"}
+								onClick={(e) => {
+									if (!estaAberto) {
+										e.preventDefault();
+										guardCaixa();
+									}
+								}}
+							>
+								<IconShoppingCart className="size-4" />
+								Venda rápida
+							</Link>
 						</Button>
 					</div>
 				</div>
-			)}
 
-			{!isLoadingContas && !isLoadingItens && mesasComTotais.length > 0 && (
-				<div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-					{mesasComTotais.map(({ conta, totalParcial, qtdItens }) => (
-						<MesaCard
-							key={conta.id}
-							conta={conta}
-							totalParcial={totalParcial}
-							qtdItens={qtdItens}
-						/>
-					))}
-				</div>
-			)}
+				{(isLoadingContas || isLoadingItens) && (
+					<div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+						{Array.from({ length: 4 }).map((_, i) => (
+							<Skeleton key={i.toString()} className="h-40 rounded-xl" />
+						))}
+					</div>
+				)}
 
-			<AbrirMesaDialog
-				open={dialogAberto}
-				onOpenChange={setDialogAberto}
-				mesasAbertas={mesasAbertasNumeros}
-			/>
-		</div>
+				{!isLoadingContas && !isLoadingItens && mesasComTotais.length === 0 && (
+					<div className="flex flex-1 flex-col items-center justify-center gap-4 rounded-xl border border-dashed p-12 text-center">
+						<p className="text-lg font-medium">Nenhuma mesa aberta</p>
+						<p className="max-w-sm text-sm text-muted-foreground">
+							Abra uma nova mesa para iniciar uma comanda ou use a venda rápida
+							para atendimento no balcão.
+						</p>
+						<div className="flex gap-2">
+							<Button onClick={handleNovaMesa} disabled={!estaAberto}>
+								<IconPlus className="size-4" />
+								Abrir mesa
+							</Button>
+							<Button variant="secondary" asChild disabled={!estaAberto}>
+								<Link
+									href={estaAberto ? "/gourmet/venda-rapida" : "#"}
+									onClick={(e) => {
+										if (!estaAberto) {
+											e.preventDefault();
+											guardCaixa();
+										}
+									}}
+								>
+									Venda rápida
+								</Link>
+							</Button>
+						</div>
+					</div>
+				)}
+
+				{!isLoadingContas && !isLoadingItens && mesasComTotais.length > 0 && (
+					<div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+						{mesasComTotais.map(({ conta, totalParcial, qtdItens }) => (
+							<MesaCard
+								key={conta.id}
+								conta={conta}
+								totalParcial={totalParcial}
+								qtdItens={qtdItens}
+							/>
+						))}
+					</div>
+				)}
+
+				<AbrirMesaDialog
+					open={dialogAberto}
+					onOpenChange={setDialogAberto}
+					mesasAbertas={mesasAbertasNumeros}
+				/>
+			</div>
 		</>
 	);
 }

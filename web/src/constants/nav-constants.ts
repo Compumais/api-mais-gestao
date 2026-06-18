@@ -21,7 +21,7 @@ export const DATA = {
 	],
 	navGourmet: [
 		{
-			title: "PDV Gourmet",
+			title: "PDV",
 			icon: IconToolsKitchen2,
 			items: [
 				{

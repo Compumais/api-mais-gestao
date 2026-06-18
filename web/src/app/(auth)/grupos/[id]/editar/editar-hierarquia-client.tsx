@@ -26,6 +26,7 @@ function mapHierarquiaToForm(data: Awaited<
 				: undefined,
 		comissao: data.comissao ?? "",
 		enviamobile: data.enviamobile === 1,
+		icone: data.icone ?? null,
 	};
 }
 

@@ -16,11 +16,11 @@ import {
 	type SortingState,
 	useReactTable,
 } from "@tanstack/react-table";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { TableSkeleton } from "@/components/table-skeleton";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -54,6 +54,25 @@ const createColumns = ({
 	onDelete,
 }: ColumnsProps): ColumnDef<Hierarquia>[] => [
 	{
+		id: "foto",
+		header: "Foto",
+		cell: ({ row }) => {
+			const icone = row.original.icone;
+			if (!icone) {
+				return <span className="text-muted-foreground">—</span>;
+			}
+			return (
+				<Image
+					width={64}
+					height={64}
+					src={icone}
+					alt=""
+					className="size-8 rounded-md border object-cover"
+				/>
+			);
+		},
+	},
+	{
 		accessorKey: "codigo",
 		header: "Código",
 		cell: ({ row }) => <div>{row.getValue("codigo") || "-"}</div>,
@@ -66,11 +85,6 @@ const createColumns = ({
 			return (
 				<div className="flex items-center gap-2">
 					<span>{row.getValue("nome") || "-"}</span>
-					{hierarquia.enviamobile === 1 && (
-						<Badge variant="secondary" className="text-xs">
-							Garçom
-						</Badge>
-					)}
 				</div>
 			);
 		},

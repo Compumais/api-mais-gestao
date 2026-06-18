@@ -76,7 +76,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 				<NavMain items={navMainItems} />
 
 				{!isUsuario && (
-					<NavDocuments label="PDV Gourmet" items={navGourmetItems} />
+					<NavDocuments label="PDV" items={navGourmetItems} />
 				)}
 
 				<NavDocuments label="Cadastros" items={DATA.navRegistros} />

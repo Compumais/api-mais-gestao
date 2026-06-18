@@ -14,6 +14,7 @@ import {
 import { formatCurrency } from "@/lib/gourmet-utils";
 import type { Produto } from "@/services/produtos.service";
 import { cn } from "@/lib/utils";
+import { GrupoImagem } from "./grupo-imagem";
 
 interface ProdutoCardsGrupoProps {
 	produtosPorGrupo: GrupoProdutos[];
@@ -54,10 +55,16 @@ export function ProdutoCardsGrupo({
 			.map((g) => ({
 				id: g.grupoId,
 				nome: g.nome,
+				icone: g.icone,
 				count: filtrarProdutosPorBusca(g.produtos, busca).length,
 			}))
 			.filter((g) => g.count > 0);
 	}, [produtosPorGrupo, busca]);
+
+	const grupoSelecionado =
+		grupoAtivo !== CHIP_TODOS
+			? gruposVisiveis.find((g) => g.grupoId === grupoAtivo)
+			: null;
 
 	return (
 		<div className="flex h-full flex-col">
@@ -92,12 +99,13 @@ export function ProdutoCardsGrupo({
 								type="button"
 								onClick={() => setGrupoAtivo(chip.id)}
 								className={cn(
-									"shrink-0 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
+									"flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
 									grupoAtivo === chip.id
 										? "border-primary bg-primary text-primary-foreground"
 										: "bg-muted/50 hover:bg-muted",
 								)}
 							>
+								<GrupoImagem src={chip.icone} nome={chip.nome} size="chip" />
 								{chip.nome}
 							</button>
 						))}
@@ -124,13 +132,31 @@ export function ProdutoCardsGrupo({
 					</div>
 				)}
 
+				{!isLoading && grupoSelecionado && (
+					<div className="mb-4 flex items-center gap-3 rounded-lg border bg-muted/30 p-3">
+						<GrupoImagem
+							src={grupoSelecionado.icone}
+							nome={grupoSelecionado.nome}
+							size="banner"
+						/>
+						<h2 className="text-base font-semibold">{grupoSelecionado.nome}</h2>
+					</div>
+				)}
+
 				{!isLoading &&
 					gruposVisiveis.map((grupo) => (
 						<section key={grupo.grupoId} className="mb-6">
 							{grupoAtivo === CHIP_TODOS && (
-								<h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-									{grupo.nome}
-								</h2>
+								<div className="mb-3 flex items-center gap-2">
+									<GrupoImagem
+										src={grupo.icone}
+										nome={grupo.nome}
+										size="header"
+									/>
+									<h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+										{grupo.nome}
+									</h2>
+								</div>
 							)}
 							<div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
 								{grupo.produtos.map((produto) => {

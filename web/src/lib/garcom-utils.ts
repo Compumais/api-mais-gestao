@@ -4,6 +4,7 @@ import type { Produto } from "@/services/produtos.service";
 export interface GrupoProdutos {
 	grupoId: string;
 	nome: string;
+	icone?: string | null;
 	produtos: Produto[];
 }
 
@@ -28,7 +29,13 @@ export function agruparProdutosPorGrupo(
 	hierarquias: Hierarquia[],
 ): GrupoProdutos[] {
 	const mapaGrupos = new Map(
-		hierarquias.map((h) => [h.id, h.nome?.trim() || "Sem nome"]),
+		hierarquias.map((h) => [
+			h.id,
+			{
+				nome: h.nome?.trim() || "Sem nome",
+				icone: h.icone ?? null,
+			},
+		]),
 	);
 
 	const porGrupo = new Map<string, Produto[]>();
@@ -42,13 +49,17 @@ export function agruparProdutosPorGrupo(
 
 	return hierarquias
 		.filter((h) => porGrupo.has(h.id))
-		.map((h) => ({
-			grupoId: h.id,
-			nome: mapaGrupos.get(h.id) ?? "Sem nome",
-			produtos: (porGrupo.get(h.id) ?? []).sort((a, b) =>
-				a.nome.localeCompare(b.nome, "pt-BR"),
-			),
-		}));
+		.map((h) => {
+			const info = mapaGrupos.get(h.id);
+			return {
+				grupoId: h.id,
+				nome: info?.nome ?? "Sem nome",
+				icone: info?.icone ?? null,
+				produtos: (porGrupo.get(h.id) ?? []).sort((a, b) =>
+					a.nome.localeCompare(b.nome, "pt-BR"),
+				),
+			};
+		});
 }
 
 export function filtrarProdutosPorBusca(
