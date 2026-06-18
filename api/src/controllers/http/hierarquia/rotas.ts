@@ -1,5 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { verifyJwt } from "../../middleware/verify-jwt.js";
+import { criarHandlerProximoCodigo } from "../shared/proximo-codigo-query.js";
+import { criarProximoCodigoSchema } from "../shared/proximo-codigo-schema.js";
 import { atualizarHierarquia } from "./atualizar.js";
 import { buscarHierarquia } from "./buscar.js";
 import { criarHierarquia } from "./criar.js";
@@ -17,6 +19,10 @@ export async function hierarquiasRotas(app: FastifyInstance) {
 	app.get("/hierarquias", {
 		schema: schema.listarHierarquiasSchema,
 		handler: listarHierarquias,
+	});
+	app.get("/hierarquias/proximo-codigo", {
+		schema: criarProximoCodigoSchema("hierarquias", "string"),
+		handler: criarHandlerProximoCodigo("hierarquia"),
 	});
 	app.get("/hierarquias/:id", {
 		schema: schema.buscarHierarquiaSchema,

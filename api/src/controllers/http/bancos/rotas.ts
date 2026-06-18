@@ -1,5 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { verifyJwt } from "../../middleware/verify-jwt.js";
+import { criarHandlerProximoCodigo } from "../shared/proximo-codigo-query.js";
+import { criarProximoCodigoSchema } from "../shared/proximo-codigo-schema.js";
 import { atualizarBanco } from "./atualizar.js";
 import { buscarBanco } from "./buscar.js";
 import { criarBanco } from "./criar.js";
@@ -17,6 +19,10 @@ export async function bancosRotas(app: FastifyInstance) {
 	app.get("/bancos", {
 		schema: schema.listarBancosSchema,
 		handler: listarBancos,
+	});
+	app.get("/bancos/proximo-codigo", {
+		schema: criarProximoCodigoSchema("bancos", "string"),
+		handler: criarHandlerProximoCodigo("banco"),
 	});
 	app.get("/bancos/:id", {
 		schema: schema.buscarBancoSchema,

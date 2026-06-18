@@ -80,4 +80,14 @@ export const hierarquiasService = {
 	async deletar(id: string): Promise<void> {
 		await api.delete(`/hierarquias/${id}`);
 	},
+
+	async buscarProximoCodigo(
+		idempresa: string,
+	): Promise<{ codigo: string }> {
+		const { data } = await api.get<{ codigo: string }>(
+			"/hierarquias/proximo-codigo",
+			{ params: { idempresa } },
+		);
+		return data;
+	},
 };

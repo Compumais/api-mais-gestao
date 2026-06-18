@@ -24,6 +24,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { useProximoCodigo } from "@/hooks/use-proximo-codigo";
 import {
 	type HierarquiaFormData,
 	FOTO_GRUPO_MAX_BYTES,
@@ -96,6 +97,15 @@ export function HierarquiaForm(props: HierarquiaFormProps) {
 	const origem = watch("origem");
 	const enviamobile = watch("enviamobile");
 	const icone = watch("icone");
+	const codigo = watch("codigo");
+
+	useProximoCodigo({
+		idempresa: empresa?.id,
+		enabled: !isEdicao,
+		fetchFn: hierarquiasService.buscarProximoCodigo,
+		setValue,
+		valorCodigoAtual: codigo,
+	});
 
 	const handleSelecionarFoto = (file: File | undefined) => {
 		if (!file) return;
@@ -216,6 +226,9 @@ export function HierarquiaForm(props: HierarquiaFormProps) {
 								aria-invalid={!!errors.codigo}
 								{...register("codigo")}
 							/>
+							<p className="text-sm text-muted-foreground">
+								Preenchido automaticamente; pode ser alterado.
+							</p>
 							<FieldError errors={errors.codigo ? [errors.codigo] : []} />
 						</Field>
 

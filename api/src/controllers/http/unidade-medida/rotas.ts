@@ -1,5 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { verifyJwt } from "../../middleware/verify-jwt.js";
+import { criarHandlerProximoCodigo } from "../shared/proximo-codigo-query.js";
+import { criarProximoCodigoSchema } from "../shared/proximo-codigo-schema.js";
 import { atualizarUnidadeMedida } from "./atualizar.js";
 import { buscarUnidadeMedida } from "./buscar.js";
 import { criarUnidadeMedida } from "./criar.js";
@@ -17,6 +19,10 @@ export async function unidadesMedidaRotas(app: FastifyInstance) {
 	app.get("/unidades-medida", {
 		schema: schema.listarUnidadeMedidasSchema,
 		handler: listarUnidadeMedidas,
+	});
+	app.get("/unidades-medida/proximo-codigo", {
+		schema: criarProximoCodigoSchema("unidades-medida", "string"),
+		handler: criarHandlerProximoCodigo("unidade-medida"),
 	});
 	app.get("/unidades-medida/:id", {
 		schema: schema.buscarUnidadeMedidaSchema,
