@@ -26,7 +26,9 @@ interface ComandaSheetProps {
 	numeromesa?: number;
 	onAtualizarQuantidade: (item: ContaMesaItem, novaQuantidade: number) => void;
 	onRemover: (itemId: string) => void;
+	onFecharMesa?: () => void;
 	isUpdating?: boolean;
+	isFechando?: boolean;
 }
 
 export function ComandaSheet({
@@ -37,7 +39,9 @@ export function ComandaSheet({
 	numeromesa,
 	onAtualizarQuantidade,
 	onRemover,
+	onFecharMesa,
 	isUpdating,
+	isFechando,
 }: ComandaSheetProps) {
 	const subtotal = calcularTotalContaMesaItens(itens);
 
@@ -143,10 +147,23 @@ export function ComandaSheet({
 						<span>Subtotal</span>
 						<span className="text-primary">{formatCurrency(subtotal)}</span>
 					</div>
-					<Separator className="my-3" />
-					<p className="text-center text-xs text-muted-foreground">
-						O fechamento e pagamento são feitos no PDV Gourmet.
-					</p>
+					{itens.length > 0 && onFecharMesa && (
+						<>
+							<Separator className="my-3" />
+							<Button
+								type="button"
+								size="lg"
+								className="h-12 w-full text-base"
+								onClick={() => {
+									onOpenChange(false);
+									onFecharMesa();
+								}}
+								disabled={isUpdating || isFechando}
+							>
+								{isFechando ? "Fechando mesa..." : "Fechar mesa"}
+							</Button>
+						</>
+					)}
 				</div>
 			</SheetContent>
 		</Sheet>

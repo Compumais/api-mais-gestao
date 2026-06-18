@@ -2,7 +2,10 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { authClient } from "@/lib/auth-client";
+import { limparSessaoFrontend, marcarSessaoFrontend } from "@/lib/auth-session-cookie";
+import { setSessionToken } from "@/lib/auth-token";
 import { limparEmpresaSelecionada } from "@/provider/empresa-provider";
 import { authService } from "@/services/auth.service";
 
@@ -34,6 +37,12 @@ export function useAuth() {
 		staleTime: 1000 * 60 * 5, // 5 minutos
 	});
 
+	useEffect(() => {
+		if (user && !isError) {
+			marcarSessaoFrontend();
+		}
+	}, [user, isError]);
+
 	const logout = async () => {
 		try {
 			// authClient.signOut() invalida o cookie de sessão para todos os provedores
@@ -42,6 +51,8 @@ export function useAuth() {
 		} catch (error) {
 			console.error("Erro ao fazer logout:", error);
 		} finally {
+			setSessionToken(null);
+			limparSessaoFrontend();
 			limparEmpresaSelecionada();
 			queryClient.clear();
 			router.push("/entrar");
@@ -49,7 +60,7 @@ export function useAuth() {
 	};
 
 	return {
-		isAuthenticated: !!user && !isError,
+		isAuthenticated: !!user,
 		user: user || null,
 		isLoading,
 		isError,

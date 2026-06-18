@@ -1,15 +1,17 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
+import { PagamentoPdvDialog } from "@/app/(gourmet)/gourmet/components/pagamento-pdv-dialog";
 import { ComandaSheet } from "../../components/comanda-sheet";
 import { GarcomHeader } from "../../components/garcom-header";
 import { ProdutoCardsGrupo } from "../../components/produto-cards-grupo";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { useFecharVenda } from "@/hooks/use-fechar-venda";
 import { useProdutosGarcom } from "@/hooks/use-produtos-garcom";
 import { useSaldosEstoque } from "@/hooks/use-saldos-estoque";
 import {
@@ -18,6 +20,7 @@ import {
 	formatCurrency,
 	STATUS_MESA,
 } from "@/lib/gourmet-utils";
+import type { FecharContaFormData } from "@/schemas/fechar-conta.schema";
 import { contaMesaItemService } from "@/services/conta-mesa-item.service";
 import type { ContaMesaItem } from "@/services/conta-mesa-item.service";
 import { contaMesaService } from "@/services/conta-mesa.service";
@@ -25,15 +28,18 @@ import type { Produto } from "@/services/produtos.service";
 
 export default function GarcomComandaPage() {
 	const params = useParams<{ id: string }>();
+	const router = useRouter();
 	const queryClient = useQueryClient();
 	const { user } = useAuth();
 	const { localStorageEmpresa: empresa } = useEmpresa();
+	const { fecharConta } = useFecharVenda();
 	const { saldoPorCodigo } = useSaldosEstoque(empresa?.id);
 	const { produtosPorGrupo, isLoading: isLoadingProdutos } = useProdutosGarcom(
 		empresa?.id,
 	);
 
 	const [comandaAberta, setComandaAberta] = useState(false);
+	const [pagamentoDialogAberto, setPagamentoDialogAberto] = useState(false);
 	const contaId = params.id;
 
 	const { data: conta, isLoading: isLoadingConta } = useQuery({
@@ -120,6 +126,37 @@ export default function GarcomComandaPage() {
 		},
 	});
 
+	const handleAbrirFecharMesa = () => {
+		if (itens.length === 0) {
+			toast.error("Adicione pelo menos um item antes de fechar a mesa");
+			return;
+		}
+
+		setPagamentoDialogAberto(true);
+	};
+
+	const handleConfirmarVenda = async (pagamento: FecharContaFormData) => {
+		if (!empresa?.id || !user?.id) {
+			throw new Error("Empresa ou usuário não selecionado");
+		}
+
+		const venda = await fecharConta.mutateAsync({
+			idempresa: empresa.id,
+			userId: user.id,
+			idcontamesa: contaId,
+			itens,
+			subtotal,
+			pagamento,
+		});
+
+		return { vendaId: venda.id };
+	};
+
+	const handleVendaConcluida = () => {
+		queryClient.invalidateQueries({ queryKey: ["contas-mesa"] });
+		router.push("/garcom");
+	};
+
 	if (isLoadingConta) {
 		return (
 			<>
@@ -203,7 +240,26 @@ export default function GarcomComandaPage() {
 					atualizarItem({ item, novaQuantidade: qty })
 				}
 				onRemover={(id) => removerItem(id)}
+				onFecharMesa={handleAbrirFecharMesa}
 				isUpdating={isUpdating || isAdding}
+				isFechando={fecharConta.isPending}
+			/>
+
+			<PagamentoPdvDialog
+				open={pagamentoDialogAberto}
+				onOpenChange={setPagamentoDialogAberto}
+				subtotal={subtotal}
+				itens={itens.map((item) => ({
+					nome: item.nomeproduto,
+					quantidade: item.quantidade,
+					precounitario: item.precounitario,
+				}))}
+				empresaNome={empresa?.nome ?? "Empresa"}
+				contexto={`Mesa ${conta.numeromesa}`}
+				titulo="Fechar mesa"
+				onConfirmarVenda={handleConfirmarVenda}
+				onVendaConcluida={handleVendaConcluida}
+				isPending={fecharConta.isPending}
 			/>
 		</>
 	);

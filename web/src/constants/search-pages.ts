@@ -25,6 +25,7 @@ export interface SearchablePage {
 	category: string;
 	icon?: Icon;
 	keywords?: string[];
+	mobileOnly?: boolean;
 }
 
 export const SEARCHABLE_PAGES: SearchablePage[] = [
@@ -49,6 +50,7 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 		category: "PDV Gourmet",
 		icon: IconUser,
 		keywords: ["garçom", "garcom", "pedido", "comanda", "mobile", "mesa"],
+		mobileOnly: true,
 	},
 	{
 		title: "Venda rápida",

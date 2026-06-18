@@ -1,12 +1,24 @@
 import { useState, useEffect, useMemo } from "react";
-import {
-	SEARCHABLE_PAGES,
-	type SearchablePage,
-} from "@/constants/search-pages";
+import { SEARCHABLE_PAGES } from "@/constants/search-pages";
+import { useIsMobile } from "@/hooks/use-mobile";
+
+function normalizeText(text: string): string {
+	return text
+		.toLowerCase()
+		.normalize("NFD")
+		.replace(/[\u0300-\u036f]/g, "");
+}
 
 export function useSearch() {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [debouncedQuery, setDebouncedQuery] = useState("");
+	const isMobile = useIsMobile();
+
+	const paginasDisponiveis = useMemo(
+		() =>
+			SEARCHABLE_PAGES.filter((page) => !page.mobileOnly || isMobile),
+		[isMobile],
+	);
 
 	// Debounce do termo de busca (300ms)
 	useEffect(() => {
@@ -17,23 +29,15 @@ export function useSearch() {
 		return () => clearTimeout(timer);
 	}, [searchQuery]);
 
-	// Normalizar texto para busca (remove acentos e converte para minúsculas)
-	const normalizeText = (text: string): string => {
-		return text
-			.toLowerCase()
-			.normalize("NFD")
-			.replace(/[\u0300-\u036f]/g, "");
-	};
-
 	// Filtrar páginas baseado no termo de busca
 	const results = useMemo(() => {
 		if (!debouncedQuery.trim()) {
-			return SEARCHABLE_PAGES;
+			return paginasDisponiveis;
 		}
 
 		const normalizedQuery = normalizeText(debouncedQuery);
 
-		const filtered = SEARCHABLE_PAGES.filter((page) => {
+		const filtered = paginasDisponiveis.filter((page) => {
 			const normalizedTitle = normalizeText(page.title);
 			const normalizedCategory = normalizeText(page.category);
 			const normalizedKeywords = page.keywords
@@ -65,7 +69,7 @@ export function useSearch() {
 
 			return a.title.localeCompare(b.title);
 		});
-	}, [debouncedQuery]);
+	}, [debouncedQuery, paginasDisponiveis]);
 
 	return {
 		searchQuery,
