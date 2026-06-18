@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { useProximoCodigo } from "@/hooks/use-proximo-codigo";
 import {
 	type UnidadeMedidaFormData,
 	unidadeMedidaFormSchema,
@@ -46,8 +47,20 @@ export function UnidadeMedidaForm(props: UnidadeMedidaFormProps) {
 	const {
 		register,
 		handleSubmit,
+		setValue,
+		watch,
 		formState: { errors },
 	} = form;
+
+	const codigo = watch("codigo");
+
+	useProximoCodigo({
+		idempresa: empresa?.id,
+		enabled: !isEdicao,
+		fetchFn: unidadeMedidaService.buscarProximoCodigo,
+		setValue,
+		valorCodigoAtual: codigo,
+	});
 
 	useEffect(() => {
 		if (!isEdicao) return;
@@ -135,6 +148,9 @@ export function UnidadeMedidaForm(props: UnidadeMedidaFormProps) {
 								}
 								{...register("codigo")}
 							/>
+							<p className="text-sm text-muted-foreground">
+								Preenchido automaticamente; pode ser alterado.
+							</p>
 							<FieldError errors={errors.codigo ? [errors.codigo] : []} />
 						</Field>
 

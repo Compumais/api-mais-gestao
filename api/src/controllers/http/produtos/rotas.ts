@@ -1,5 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { verifyJwt } from "../../middleware/verify-jwt.js";
+import { criarHandlerProximoCodigo } from "../shared/proximo-codigo-query.js";
+import { criarProximoCodigoSchema } from "../shared/proximo-codigo-schema.js";
 import { atualizarProduto } from "./atualizar.js";
 import { buscarProduto } from "./buscar.js";
 import { criarProduto } from "./criar.js";
@@ -18,6 +20,10 @@ export async function produtosRotas(app: FastifyInstance) {
 	app.get("/produtos", {
 		schema: schema.listarProdutosSchema,
 		handler: listarProdutos,
+	});
+	app.get("/produtos/proximo-codigo", {
+		schema: criarProximoCodigoSchema("produtos", "number"),
+		handler: criarHandlerProximoCodigo("produto"),
 	});
 	app.patch("/produtos/inativar/:id", {
 		schema: schema.inativarProdutoSchema,

@@ -101,4 +101,14 @@ export const contasCorrentesService = {
 	async deletar(id: string): Promise<void> {
 		await api.delete(`/contas-correntes/${id}`);
 	},
+
+	async buscarProximoCodigo(
+		idempresa: string,
+	): Promise<{ codigo: number }> {
+		const { data } = await api.get<{ codigo: number }>(
+			"/contas-correntes/proximo-codigo",
+			{ params: { idempresa } },
+		);
+		return data;
+	},
 };

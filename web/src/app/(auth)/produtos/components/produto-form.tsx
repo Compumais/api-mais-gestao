@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { useProximoCodigo } from "@/hooks/use-proximo-codigo";
 import {
 	type ProdutoFormData,
 	produtoFormSchema,
@@ -134,6 +135,15 @@ export function ProdutoForm(props: ProdutoFormProps) {
 	const origem = watch("origem");
 	const preco = watch("preco");
 	const enviamobile = watch("enviamobile");
+	const codigo = watch("codigo");
+
+	useProximoCodigo({
+		idempresa: empresa?.id,
+		enabled: !isEdicao,
+		fetchFn: produtosService.buscarProximoCodigo,
+		setValue,
+		valorCodigoAtual: codigo,
+	});
 
 	const { data: unidadesData } = useQuery({
 		queryKey: ["unidades-medida", empresa?.id],
@@ -265,6 +275,9 @@ export function ProdutoForm(props: ProdutoFormProps) {
 										!Number.isNaN(value) || "Código é obrigatório",
 								})}
 							/>
+							<p className="text-sm text-muted-foreground">
+								Preenchido automaticamente; pode ser alterado.
+							</p>
 							<FieldError errors={errors.codigo ? [errors.codigo] : []} />
 						</Field>
 

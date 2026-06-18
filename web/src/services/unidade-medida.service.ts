@@ -73,4 +73,14 @@ export const unidadeMedidaService = {
 	async deletar(id: string): Promise<void> {
 		await api.delete(`/unidades-medida/${id}`);
 	},
+
+	async buscarProximoCodigo(
+		idempresa: string,
+	): Promise<{ codigo: string }> {
+		const { data } = await api.get<{ codigo: string }>(
+			"/unidades-medida/proximo-codigo",
+			{ params: { idempresa } },
+		);
+		return data;
+	},
 };

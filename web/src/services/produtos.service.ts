@@ -123,4 +123,14 @@ export const produtosService = {
 			params: { idempresa },
 		});
 	},
+
+	async buscarProximoCodigo(
+		idempresa: string,
+	): Promise<{ codigo: number }> {
+		const { data } = await api.get<{ codigo: number }>(
+			"/produtos/proximo-codigo",
+			{ params: { idempresa } },
+		);
+		return data;
+	},
 };

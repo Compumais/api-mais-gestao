@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { useProximoCodigo } from "@/hooks/use-proximo-codigo";
 import {
 	type AtualizarBancoFormData,
 	atualizarBancoSchema,
@@ -51,8 +52,20 @@ export function BancoForm(props: BancoFormProps) {
 	const {
 		register,
 		handleSubmit,
+		setValue,
+		watch,
 		formState: { errors },
 	} = form;
+
+	const codigo = watch("codigo");
+
+	useProximoCodigo({
+		idempresa: empresa?.id,
+		enabled: !isEdicao,
+		fetchFn: bancosService.buscarProximoCodigo,
+		setValue,
+		valorCodigoAtual: codigo,
+	});
 
 	useEffect(() => {
 		if (!isEdicao) return;
@@ -130,6 +143,9 @@ export function BancoForm(props: BancoFormProps) {
 								aria-describedby={errors.codigo ? "codigo-error" : undefined}
 								{...register("codigo")}
 							/>
+							<p className="text-sm text-muted-foreground">
+								Preenchido automaticamente; pode ser alterado.
+							</p>
 							<FieldError errors={errors.codigo ? [errors.codigo] : []} />
 						</Field>
 

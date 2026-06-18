@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { useProximoCodigo } from "@/hooks/use-proximo-codigo";
 import {
 	type AtualizarContaCorrenteFormData,
 	atualizarContaCorrenteSchema,
@@ -86,6 +87,16 @@ export function ContaCorrenteForm(props: ContaCorrenteFormProps) {
 	} = form;
 
 	const idbanco = watch("idbanco");
+	const codigo = watch("codigo");
+
+	useProximoCodigo({
+		idempresa: empresa?.id,
+		enabled: !isEdicao,
+		fetchFn: contasCorrentesService.buscarProximoCodigo,
+		setValue,
+		valorCodigoAtual: codigo,
+	});
+
 	const [bancoSearch, setBancoSearch] = useState("");
 	const [showBancoSuggestions, setShowBancoSuggestions] = useState(false);
 	const bancoInputRef = useRef<HTMLInputElement>(null);
@@ -366,6 +377,9 @@ export function ContaCorrenteForm(props: ContaCorrenteFormProps) {
 								aria-describedby={errors.codigo ? "codigo-error" : undefined}
 								{...register("codigo", { valueAsNumber: true })}
 							/>
+							<p className="text-sm text-muted-foreground">
+								Preenchido automaticamente; pode ser alterado.
+							</p>
 							<FieldError errors={errors.codigo ? [errors.codigo] : []} />
 						</Field>
 
