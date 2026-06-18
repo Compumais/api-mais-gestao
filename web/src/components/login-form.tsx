@@ -30,6 +30,10 @@ import { limparEmpresaSelecionada, EMPRESA_FORCAR_PRIMEIRA_KEY, marcarSelecaoPri
 import { authService, type LoginResponse } from "@/services/auth.service";
 import { empresasUsuarioQueryOptions } from "@/hooks/use-empresas-usuario";
 import { useEmpresa } from "@/hooks/use-empresa";
+import {
+	hasPerfil,
+	resolveRedirectForUser,
+} from "@/lib/perfis";
 import { GoogleIcon } from "./icons/google-icon";
 
 const loginSchema = z.object({
@@ -110,12 +114,21 @@ export function LoginForm({
 				}
 			}
 			toast.success("Login realizado com sucesso!");
+			const perfilUsuario = perfil
+				? {
+						perfil: Array.isArray(perfil.perfil)
+							? perfil.perfil
+							: perfil.perfil
+								? [perfil.perfil]
+								: [],
+					}
+				: null;
 			const destino =
-				empresasCarregadasComSucesso && empresasCount === 0
+				empresasCarregadasComSucesso &&
+				empresasCount === 0 &&
+				hasPerfil(perfilUsuario?.perfil, "proprietario")
 					? "/empresas/nova"
-					: redirectTo?.startsWith("/") && !redirectTo.startsWith("//")
-						? redirectTo
-						: "/dashboard";
+					: resolveRedirectForUser(perfilUsuario, redirectTo);
 			router.push(destino);
 		},
 		onError: (error: Error) => {

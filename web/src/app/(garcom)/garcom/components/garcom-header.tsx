@@ -4,7 +4,9 @@ import Link from "next/link";
 import { IconArrowLeft } from "@tabler/icons-react";
 import { CPlusIcon } from "@/components/icons/c-plus";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/use-auth";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { getDefaultRouteForUser } from "@/lib/perfis";
 
 interface GarcomHeaderProps {
 	titulo?: string;
@@ -18,12 +20,14 @@ export function GarcomHeader({
 	voltarLabel = "Voltar",
 }: GarcomHeaderProps) {
 	const { localStorageEmpresa: empresa } = useEmpresa();
+	const { user } = useAuth();
+	const homeHref = getDefaultRouteForUser(user);
 
 	return (
 		<header className="relative z-50 flex h-14 shrink-0 items-center justify-between border-b bg-background px-3 sm:px-4">
 			<div className="flex min-w-0 items-center gap-2">
 				<Link
-					href="/dashboard"
+					href={homeHref}
 					className="flex shrink-0 items-center gap-1.5 text-primary"
 				>
 					<CPlusIcon size={24} />

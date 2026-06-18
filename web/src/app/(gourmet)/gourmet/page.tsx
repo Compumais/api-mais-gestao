@@ -8,7 +8,9 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCaixaPdv } from "@/hooks/use-caixa-pdv";
+import { useAuth } from "@/hooks/use-auth";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { isGarcom } from "@/lib/perfis";
 import { calcularTotalContaMesaItens, STATUS_MESA } from "@/lib/gourmet-utils";
 import { contaMesaService } from "@/services/conta-mesa.service";
 import { contaMesaItemService } from "@/services/conta-mesa-item.service";
@@ -18,7 +20,9 @@ import { PdvHeader } from "./components/pdv-header";
 
 export default function GourmetHubPage() {
 	const { localStorageEmpresa: empresa } = useEmpresa();
+	const { user } = useAuth();
 	const { estaAberto } = useCaixaPdv();
+	const isGarcomUser = isGarcom(user);
 	const [dialogAberto, setDialogAberto] = useState(false);
 
 	const guardCaixa = () => {
@@ -75,8 +79,8 @@ export default function GourmetHubPage() {
 			<>
 				<PdvHeader
 					titulo="PDV Gourmet — Mesas"
-					voltarHref="/dashboard"
-					voltarLabel="Voltar ao sistema"
+					voltarHref={isGarcomUser ? "/garcom" : "/dashboard"}
+					voltarLabel={isGarcomUser ? "Garçom" : "Voltar ao sistema"}
 				/>
 				<div className="flex flex-1 items-center justify-center p-8">
 					<p className="text-muted-foreground">
@@ -91,8 +95,8 @@ export default function GourmetHubPage() {
 		<>
 			<PdvHeader
 				titulo="PDV Gourmet — Mesas"
-				voltarHref="/dashboard"
-				voltarLabel="Voltar ao sistema"
+				voltarHref={isGarcomUser ? "/garcom" : "/dashboard"}
+				voltarLabel={isGarcomUser ? "Garçom" : "Voltar ao sistema"}
 			/>
 			<div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4 md:p-6">
 				<div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

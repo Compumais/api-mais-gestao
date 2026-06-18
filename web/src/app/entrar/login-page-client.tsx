@@ -4,25 +4,19 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { LoginForm } from "@/components/login-form";
 import { useAuth } from "@/hooks/use-auth";
-
-function resolveRedirectPath(redirect: string | null): string {
-	if (redirect?.startsWith("/") && !redirect.startsWith("//")) {
-		return redirect;
-	}
-	return "/dashboard";
-}
+import { resolveRedirectForUser } from "@/lib/perfis";
 
 export function LoginPageClient() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
-	const { isAuthenticated, isLoading } = useAuth();
+	const { isAuthenticated, isLoading, user } = useAuth();
 	const redirectTo = searchParams.get("redirect");
 
 	useEffect(() => {
-		if (!isLoading && isAuthenticated) {
-			router.push(resolveRedirectPath(redirectTo));
+		if (!isLoading && isAuthenticated && user) {
+			router.push(resolveRedirectForUser(user, redirectTo));
 		}
-	}, [isAuthenticated, isLoading, router, redirectTo]);
+	}, [isAuthenticated, isLoading, router, redirectTo, user]);
 
 	if (isLoading) {
 		return (

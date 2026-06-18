@@ -60,6 +60,20 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 		keywords: ["pdv", "venda", "rápida", "balcão", "gourmet"],
 	},
 	{
+		title: "Histórico de vendas",
+		url: "/vendas-pdv",
+		category: "PDV Gourmet",
+		icon: IconHistory,
+		keywords: ["pdv", "vendas", "histórico", "historico"],
+	},
+	{
+		title: "Fechamentos de caixa",
+		url: "/fechamentos-caixa",
+		category: "PDV Gourmet",
+		icon: IconHistory,
+		keywords: ["pdv", "caixa", "fechamento", "fechamentos"],
+	},
+	{
 		title: "Clientes",
 		url: "/clientes",
 		category: "Principal",

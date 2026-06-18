@@ -9,12 +9,16 @@ import { MesaCardGarcom } from "./components/mesa-card-garcom";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { useAuth } from "@/hooks/use-auth";
+import { isGarcom } from "@/lib/perfis";
 import { calcularTotalContaMesaItens, STATUS_MESA } from "@/lib/gourmet-utils";
 import { contaMesaItemService } from "@/services/conta-mesa-item.service";
 import { contaMesaService } from "@/services/conta-mesa.service";
 
 export default function GarcomPage() {
 	const { localStorageEmpresa: empresa } = useEmpresa();
+	const { user } = useAuth();
+	const isGarcomUser = isGarcom(user);
 	const [dialogAberto, setDialogAberto] = useState(false);
 
 	const { data: contasData, isLoading: isLoadingContas } = useQuery({
@@ -56,7 +60,7 @@ export default function GarcomPage() {
 	if (!empresa) {
 		return (
 			<>
-				<GarcomHeader titulo="Garçom" voltarHref="/dashboard" voltarLabel="Sistema" />
+				<GarcomHeader titulo="Garçom" />
 				<div className="flex flex-1 items-center justify-center p-8">
 					<p className="text-center text-muted-foreground">
 						Selecione uma empresa para acessar o garçom.
@@ -68,7 +72,11 @@ export default function GarcomPage() {
 
 	return (
 		<>
-			<GarcomHeader titulo="Garçom" voltarHref="/dashboard" voltarLabel="Sistema" />
+			<GarcomHeader
+				titulo="Garçom"
+				voltarHref={isGarcomUser ? undefined : "/dashboard"}
+				voltarLabel="Sistema"
+			/>
 
 			<div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4">
 				<div className="mb-4">

@@ -9,6 +9,10 @@ import { useEmpresasUsuario } from "@/hooks/use-empresas-usuario";
 import { AUTH_SESSION_COOKIE } from "@/lib/auth-session-cookie";
 import { getSessionToken } from "@/lib/auth-token";
 import {
+	isGarcom,
+	isRouteAllowedForGarcom,
+} from "@/lib/perfis";
+import {
 	EMPRESA_FORCAR_PRIMEIRA_KEY,
 	EMPRESA_SELECIONADA_KEY,
 } from "@/provider/empresa-provider";
@@ -54,6 +58,14 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 	} = useEmpresasUsuario();
 
 	const listaEmpresas = empresas ?? [];
+
+	useEffect(() => {
+		if (!isMounted || isLoading || !user) return;
+
+		if (isGarcom(user) && !isRouteAllowedForGarcom(pathname)) {
+			router.push("/garcom");
+		}
+	}, [isMounted, isLoading, user, pathname, router]);
 
 	useEffect(() => {
 		if (!isMounted || !user?.id) return;
@@ -166,6 +178,10 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 	);
 
 	if (isResolvendo || !user) {
+		return loadingScreen;
+	}
+
+	if (isGarcom(user) && !isRouteAllowedForGarcom(pathname)) {
 		return loadingScreen;
 	}
 

@@ -60,6 +60,7 @@ import { unidadesMedidaRotas } from "./controllers/http/unidade-medida/rotas.js"
 import { usuariosRotas } from "./controllers/http/usuarios/rotas.js";
 import { vendasPdvGourmetRotas } from "./controllers/http/venda-pdv-gourmet/rotas.js";
 import { vendasPdvItemRotas } from "./controllers/http/venda-pdv-item/rotas.js";
+import { verificarAcessoGarcom } from "./controllers/middleware/verificar-acesso-garcom.js";
 import { isOrigemCorsPermitida } from "./util/cors-origins.js";
 import { getApiBaseUrl } from "./util/base-url.js";
 
@@ -476,6 +477,8 @@ app.register(contasMesaItemRotas);
 app.register(vendasPdvGourmetRotas);
 app.register(vendasPdvItemRotas);
 app.register(fechamentosCaixaRotas);
+
+app.addHook("preHandler", verificarAcessoGarcom);
 
 app.listen({ port: 3333 }).then(() => {
 	console.log("HTTP server running on port 3333");

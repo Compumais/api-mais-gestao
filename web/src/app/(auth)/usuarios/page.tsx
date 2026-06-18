@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/table";
 import { useAuth } from "@/hooks/use-auth";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { formatarPerfilLabel } from "@/lib/perfis";
 import { type Usuario, usuariosService } from "@/services/usuarios.service";
 import { PageContainer } from "../components/page-container";
 
@@ -67,10 +68,7 @@ const createColumns = ({
 		header: "Perfil",
 		cell: ({ row }) => {
 			const perfil = row.getValue("perfil") as string | string[];
-			const perfilStr = Array.isArray(perfil)
-				? perfil[0] || "usuario"
-				: perfil || "usuario";
-			return <div className="capitalize">{perfilStr}</div>;
+			return <div>{formatarPerfilLabel(perfil)}</div>;
 		},
 	},
 	{
