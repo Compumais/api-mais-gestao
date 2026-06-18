@@ -26,6 +26,7 @@ import {
 import { useEmpresa } from "@/hooks/use-empresa";
 import {
 	type HierarquiaFormData,
+	FOTO_GRUPO_MAX_BYTES,
 	hierarquiaFormSchema,
 } from "@/schemas/hierarquia.schema";
 import { hierarquiasService } from "@/services/hierarquias.service";
@@ -79,6 +80,7 @@ export function HierarquiaForm(props: HierarquiaFormProps) {
 			origem: undefined,
 			comissao: "",
 			enviamobile: false,
+			icone: null,
 		},
 	});
 
@@ -93,6 +95,33 @@ export function HierarquiaForm(props: HierarquiaFormProps) {
 	const classe = watch("classe");
 	const origem = watch("origem");
 	const enviamobile = watch("enviamobile");
+	const icone = watch("icone");
+
+	const handleSelecionarFoto = (file: File | undefined) => {
+		if (!file) return;
+
+		if (!file.type.startsWith("image/")) {
+			toast.error("Selecione um arquivo de imagem válido.");
+			return;
+		}
+
+		if (file.size > FOTO_GRUPO_MAX_BYTES) {
+			toast.error("A foto deve ter no máximo 500 KB.");
+			return;
+		}
+
+		const reader = new FileReader();
+		reader.onloadend = () => {
+			const resultado = reader.result;
+			if (typeof resultado !== "string") return;
+			setValue("icone", resultado, { shouldValidate: true });
+		};
+		reader.readAsDataURL(file);
+	};
+
+	const handleRemoverFoto = () => {
+		setValue("icone", null, { shouldValidate: true });
+	};
 
 	useEffect(() => {
 		if (!isEdicao) return;
@@ -149,6 +178,7 @@ export function HierarquiaForm(props: HierarquiaFormProps) {
 			origem: parseSelectNumber(data.origem),
 			comissao: parseComissao(data.comissao),
 			enviamobile: data.enviamobile ? 1 : 0,
+			icone: data.icone ?? null,
 		};
 
 		if (!isEdicao) {
@@ -277,6 +307,45 @@ export function HierarquiaForm(props: HierarquiaFormProps) {
 							<FieldError errors={errors.origem ? [errors.origem] : []} />
 						</Field>
 					</div>
+				</div>
+
+				<div className="mt-6 space-y-4">
+					<h2 className="text-lg font-semibold">Foto do grupo</h2>
+					<Field data-invalid={!!errors.icone}>
+						<FieldLabel htmlFor="icone">Imagem (PDV Garçom)</FieldLabel>
+						<input
+							id="icone"
+							type="file"
+							accept="image/*"
+							onChange={(e) => {
+								handleSelecionarFoto(e.target.files?.[0]);
+								e.target.value = "";
+							}}
+							className="block w-full text-sm file:mr-4 file:rounded-md file:border-0 file:bg-primary file:px-4 file:py-2 file:text-sm file:font-medium file:text-primary-foreground hover:file:bg-primary/90"
+						/>
+						<p className="mt-1 text-sm text-muted-foreground">
+							Opcional. Formatos de imagem, até 500 KB. Exibida nos chips e
+							cabeçalhos do Garçom.
+						</p>
+						{icone && (
+							<div className="mt-3 flex items-center gap-4">
+								<img
+									src={icone}
+									alt="Preview da foto do grupo"
+									className="size-20 rounded-lg border object-cover"
+								/>
+								<Button
+									type="button"
+									variant="outline"
+									size="sm"
+									onClick={handleRemoverFoto}
+								>
+									Remover foto
+								</Button>
+							</div>
+						)}
+						<FieldError errors={errors.icone ? [errors.icone] : []} />
+					</Field>
 				</div>
 
 				<div className="mt-6 space-y-4">

@@ -3,11 +3,13 @@ import { v4 as uuidv4 } from "uuid";
 import z from "zod";
 import { criarHierarquiaService } from "@/service/hierarquia/criar-hierarquia.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
+import { hierarquiaIconeSchema } from "./schemas/icone.js";
 
 const criarHierarquiaBodySchema = z.looseObject({
 	idempresa: z.string(),
 	nome: z.string().max(40).optional(),
-	codigo: z.string().max(30).optional()
+	codigo: z.string().max(30).optional(),
+	icone: hierarquiaIconeSchema,
 });
 
 export async function criarHierarquia(request: FastifyRequest, reply: FastifyReply) {

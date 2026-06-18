@@ -73,15 +73,9 @@ const createColumns = ({
 		accessorKey: "nome",
 		header: "Nome",
 		cell: ({ row }) => {
-			const produto = row.original;
 			return (
 				<div className="flex items-center gap-2">
 					<span>{row.getValue("nome")}</span>
-					{produto.enviamobile === 1 && (
-						<Badge variant="secondary" className="text-xs">
-							Garçom
-						</Badge>
-					)}
 				</div>
 			);
 		},

@@ -2,6 +2,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import { atualizarHierarquiaService } from "@/service/hierarquia/atualizar-hierarquia.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
+import { hierarquiaIconeSchema } from "./schemas/icone.js";
 
 const atualizarHierarquiaParamsSchema = z.object({
 	id: z.string(),
@@ -9,7 +10,8 @@ const atualizarHierarquiaParamsSchema = z.object({
 
 const atualizarHierarquiaBodySchema = z.looseObject({
 	nome: z.string().max(40).optional(),
-	codigo: z.string().max(30).optional()
+	codigo: z.string().max(30).optional(),
+	icone: hierarquiaIconeSchema,
 });
 
 export async function atualizarHierarquia(request: FastifyRequest, reply: FastifyReply) {

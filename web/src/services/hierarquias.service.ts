@@ -10,6 +10,7 @@ export interface Hierarquia {
 	origem: number | null;
 	comissao: string | null;
 	enviamobile?: number | null;
+	icone?: string | null;
 }
 
 export interface ListarHierarquiasResponse {
@@ -31,6 +32,7 @@ export interface CriarHierarquiaData {
 	origem?: number | null;
 	comissao?: number | null;
 	enviamobile?: number | null;
+	icone?: string | null;
 }
 
 export interface AtualizarHierarquiaData {
@@ -41,6 +43,7 @@ export interface AtualizarHierarquiaData {
 	origem?: number | null;
 	comissao?: number | null;
 	enviamobile?: number | null;
+	icone?: string | null;
 }
 
 export const hierarquiasService = {

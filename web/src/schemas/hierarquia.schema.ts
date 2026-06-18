@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+const ICONE_MAX_LENGTH = 700_000;
+const FOTO_MAX_BYTES = 500 * 1024;
+
 export const hierarquiaFormSchema = z.object({
 	codigo: z
 		.string()
@@ -27,6 +30,24 @@ export const hierarquiaFormSchema = z.object({
 			{ message: "Comissão deve ser um percentual entre 0 e 100" },
 		),
 	enviamobile: z.boolean().optional(),
+	icone: z
+		.string()
+		.nullable()
+		.optional()
+		.refine(
+			(valor) => {
+				if (valor == null || valor === "") return true;
+				return (
+					valor.startsWith("data:image/") && valor.length <= ICONE_MAX_LENGTH
+				);
+			},
+			{
+				message:
+					"Foto inválida ou muito grande. Use uma imagem de até 500 KB.",
+			},
+		),
 });
+
+export const FOTO_GRUPO_MAX_BYTES = FOTO_MAX_BYTES;
 
 export type HierarquiaFormData = z.infer<typeof hierarquiaFormSchema>;

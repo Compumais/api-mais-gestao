@@ -11,7 +11,13 @@ export const criarHierarquiaSchema: FastifySchema = {
 			idempresa: { type: "string", description: "ID da empresa" },
 			nome: { type: "string" },
 			codigo: { type: "string" },
-			"...": { type: "string", description: "Demais campos da entidade" }
+			icone: {
+				type: "string",
+				nullable: true,
+				description:
+					"Foto do grupo em base64 (data:image/...;base64,...). Máximo ~500 KB.",
+			},
+			"...": { type: "string", description: "Demais campos da entidade" },
 		},
 		required: ["idempresa"],
 	},
@@ -177,7 +183,20 @@ export const atualizarHierarquiaSchema: FastifySchema = {
 		},
 		required: ["id"],
 	},
-	body: { type: "object", additionalProperties: true },
+	body: {
+		type: "object",
+		properties: {
+			nome: { type: "string" },
+			codigo: { type: "string" },
+			icone: {
+				type: "string",
+				nullable: true,
+				description:
+					"Foto do grupo em base64 (data:image/...;base64,...). Máximo ~500 KB.",
+			},
+		},
+		additionalProperties: true,
+	},
 	response: {
 		200: { type: "object", additionalProperties: true },
 		404: {
