@@ -6,9 +6,8 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Field,
 	FieldError,
@@ -16,6 +15,7 @@ import {
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
 	Select,
 	SelectContent,
@@ -108,7 +108,7 @@ export function HierarquiaForm(props: HierarquiaFormProps) {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["hierarquias"] });
 			toast.success("Hierarquia cadastrada com sucesso!");
-			router.push("/hierarquias");
+			router.push("/grupos");
 		},
 		onError: (error: Error) => {
 			toast.error(error.message || "Erro ao cadastrar hierarquia");
@@ -128,7 +128,7 @@ export function HierarquiaForm(props: HierarquiaFormProps) {
 			onSuccess: () => {
 				queryClient.invalidateQueries({ queryKey: ["hierarquias"] });
 				toast.success("Hierarquia atualizada com sucesso!");
-				router.push("/hierarquias");
+				router.push("/grupos");
 			},
 			onError: (error: Error) => {
 				toast.error(error.message || "Erro ao atualizar hierarquia");

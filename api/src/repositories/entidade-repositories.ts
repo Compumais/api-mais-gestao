@@ -44,6 +44,10 @@ export async function atualizarEntidade(
 		idplanocontas?: string | null | undefined;
 		pais?: string | null | undefined;
 		atualizadoem?: string | undefined;
+		cliente?: number | undefined;
+		fornecedor?: number | undefined;
+		transportador?: number | undefined;
+		representante?: number | undefined;
 	},
 ) {
 	const [entidade] = await db

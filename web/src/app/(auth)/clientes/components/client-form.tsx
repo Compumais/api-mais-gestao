@@ -1,12 +1,16 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
+import type { z } from "zod";
+import { AddressAutocompleteInput } from "@/components/address-autocomplete-input";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Combobox } from "@/components/ui/combobox";
 import {
 	Field,
 	FieldError,
@@ -22,11 +26,18 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { isGooglePlacesDisponivel } from "@/hooks/use-google-places";
+import { maskCep, maskCpfCnpj, maskPhone } from "@/lib/masks";
 import {
 	type CriarEntidadeFormData,
 	criarEntidadeSchema,
+	criarValoresPadraoEntidadeForm,
+	flagsEntidadeParaApi,
+	formatarCepParaEnvio,
 } from "@/schemas/entidades.schema";
 import { entidadesService } from "@/services/entidades.service";
+import { localidadesService } from "@/services/localidades.service";
+import { planoContasService } from "@/services/plano-contas.service";
 
 type ClientFormProps = {
 	modo?: "criar" | "editar";
@@ -38,55 +49,145 @@ export function ClientForm(props: ClientFormProps) {
 	const router = useRouter();
 	const queryClient = useQueryClient();
 	const { localStorageEmpresa: empresa } = useEmpresa();
-
 	const modo = props.modo ?? "criar";
 	const isEdicao = modo === "editar";
+	const [cepConsultado, setCepConsultado] = useState(() =>
+		Boolean(isEdicao && props.valoresIniciais?.cep),
+	);
+	const [buscandoCep, setBuscandoCep] = useState(false);
+	const ultimoCepBuscado = useRef<string | null>(
+		isEdicao && props.valoresIniciais?.cep
+			? props.valoresIniciais.cep.replace(/\D/g, "")
+			: null,
+	);
 
-	const form = useForm<CriarEntidadeFormData>({
+	const valoresFormulario = useMemo(
+		() =>
+			criarValoresPadraoEntidadeForm({
+				empresaId: empresa?.id,
+				valoresIniciais: props.valoresIniciais,
+				isEdicao,
+			}),
+		[empresa?.id, props.valoresIniciais, isEdicao],
+	);
+
+	const form = useForm<
+		z.input<typeof criarEntidadeSchema>,
+		unknown,
+		z.output<typeof criarEntidadeSchema>
+	>({
 		resolver: zodResolver(criarEntidadeSchema),
-		defaultValues: {
-			idempresa: empresa?.id || "",
-			nome: "",
-			cnpjcpf: "",
-			razaosocial: null,
-			tipopessoa: null,
-			inscricaoestadual: null,
-			rg: null,
-			email: null,
-			telefone: null,
-			endereco: null,
-			numeroendereco: null,
-			complemento: null,
-			bairro: null,
-			idcidade: null,
-			idestado: null,
-			cep: null,
-			fax: null,
-			nascimento: null,
-			idplanocontas: null,
-			pais: null,
-		},
+		defaultValues: criarValoresPadraoEntidadeForm({
+			empresaId: empresa?.id,
+		}),
+		values: isEdicao ? valoresFormulario : undefined,
 	});
 
 	const {
 		register,
 		handleSubmit,
 		setValue,
+		getValues,
 		watch,
+		control,
 		formState: { errors },
 	} = form;
 
-	const tipopessoa = watch("tipopessoa");
+	const idestado = watch("idestado");
+	const cep = watch("cep");
+	const endereco = watch("endereco");
+
+	const { data: estadosData, isLoading: carregandoEstados } = useQuery({
+		queryKey: ["localidades", "estados"],
+		queryFn: () => localidadesService.listarEstados(),
+		staleTime: 24 * 60 * 60 * 1000,
+	});
+
+	const { data: municipiosData, isLoading: carregandoMunicipios } = useQuery({
+		queryKey: ["localidades", "municipios", idestado],
+		queryFn: () => localidadesService.listarMunicipios(idestado as string),
+		enabled: Boolean(idestado),
+		staleTime: 24 * 60 * 60 * 1000,
+	});
+
+	const { data: planoContasData, isLoading: carregandoPlanoContas } = useQuery({
+		queryKey: ["plano-contas", "cliente-form", empresa?.id],
+		queryFn: () => {
+			if (!empresa?.id) {
+				throw new Error("Empresa não selecionada");
+			}
+			return planoContasService.listar({
+				idempresa: empresa.id,
+				page: 1,
+				limit: 1000,
+				listarTudo: true,
+				inativo: 0,
+			});
+		},
+		enabled: Boolean(empresa?.id),
+	});
 
 	useEffect(() => {
-		if (!isEdicao) return;
-		if (!props.valoresIniciais) return;
-		form.reset({
-			...form.getValues(),
-			...props.valoresIniciais,
-			idempresa: props.valoresIniciais.idempresa ?? empresa?.id ?? "",
-		});
-	}, [isEdicao, props.valoresIniciais, empresa?.id, form]);
+		if (!isEdicao || !props.valoresIniciais?.cep) return;
+
+		setCepConsultado(true);
+		ultimoCepBuscado.current = props.valoresIniciais.cep.replace(/\D/g, "");
+	}, [isEdicao, props.valoresIniciais?.cep]);
+
+	const buscarCep = useCallback(
+		async (valorCep: string) => {
+			const cepLimpo = valorCep.replace(/\D/g, "");
+			if (cepLimpo.length !== 8) return;
+			if (ultimoCepBuscado.current === cepLimpo) return;
+
+			try {
+				setBuscandoCep(true);
+				ultimoCepBuscado.current = cepLimpo;
+				const enderecoEncontrado =
+					await localidadesService.buscarEnderecoPorCep(cepLimpo);
+
+				if (enderecoEncontrado.endereco) {
+					setValue("endereco", enderecoEncontrado.endereco, {
+						shouldValidate: true,
+					});
+				}
+				if (enderecoEncontrado.bairro) {
+					setValue("bairro", enderecoEncontrado.bairro, {
+						shouldValidate: true,
+					});
+				}
+				if (enderecoEncontrado.idestado) {
+					setValue("idestado", enderecoEncontrado.idestado, {
+						shouldValidate: true,
+					});
+				}
+				if (enderecoEncontrado.idcidade) {
+					setValue("idcidade", enderecoEncontrado.idcidade, {
+						shouldValidate: true,
+					});
+				}
+				if (!getValues("pais")) {
+					setValue("pais", "Brasil");
+				}
+
+				setCepConsultado(true);
+			} catch {
+				toast.error("CEP não encontrado ou inválido");
+				setCepConsultado(true);
+				ultimoCepBuscado.current = null;
+			} finally {
+				setBuscandoCep(false);
+			}
+		},
+		[getValues, setValue],
+	);
+
+	useEffect(() => {
+		const cepLimpo = (cep ?? "").replace(/\D/g, "");
+		if (cepLimpo.length === 8) {
+			void buscarCep(cepLimpo);
+		}
+	}, [cep, buscarCep]);
 
 	const { mutate: criarEntidade, isPending: isPendingCriar } = useMutation({
 		mutationFn: entidadesService.criar,
@@ -120,6 +221,33 @@ export function ClientForm(props: ClientFormProps) {
 			},
 		});
 
+	const montarPayloadEndereco = (data: CriarEntidadeFormData) => ({
+		endereco: data.endereco || null,
+		numeroendereco: data.numeroendereco || null,
+		complemento: data.complemento || null,
+		bairro: data.bairro || null,
+		idcidade: data.idcidade || null,
+		idestado: data.idestado || null,
+		cep: formatarCepParaEnvio(data.cep),
+		pais: data.pais || null,
+	});
+
+	const montarPayloadComum = (data: CriarEntidadeFormData) => ({
+		nome: data.nome,
+		cnpjcpf: data.cnpjcpf.replace(/\D/g, ""),
+		razaosocial: data.razaosocial || null,
+		tipopessoa: data.tipopessoa ?? null,
+		inscricaoestadual: data.inscricaoestadual || null,
+		rg: data.rg || null,
+		email: data.email || null,
+		telefone: data.telefone?.replace(/\D/g, "") || null,
+		fax: data.fax?.replace(/\D/g, "") || null,
+		nascimento: data.nascimento || null,
+		idplanocontas: data.idplanocontas || null,
+		...montarPayloadEndereco(data),
+		...flagsEntidadeParaApi(data),
+	});
+
 	const onSubmit = (data: CriarEntidadeFormData) => {
 		if (!empresa) {
 			toast.error("Empresa não selecionada");
@@ -127,57 +255,31 @@ export function ClientForm(props: ClientFormProps) {
 		}
 
 		if (!isEdicao) {
-			const payload = {
+			criarEntidade({
 				idempresa: empresa.id,
-				nome: data.nome,
-				cnpjcpf: data.cnpjcpf,
-				razaosocial: data.razaosocial || null,
-				tipopessoa: data.tipopessoa || null,
-				inscricaoestadual: data.inscricaoestadual || null,
-				rg: data.rg || null,
-				email: data.email || null,
-				telefone: data.telefone || null,
-				endereco: data.endereco || null,
-				numeroendereco: data.numeroendereco || null,
-				complemento: data.complemento || null,
-				bairro: data.bairro || null,
-				idcidade: data.idcidade || null,
-				idestado: data.idestado || null,
-				cep: data.cep || null,
-				fax: data.fax || null,
-				nascimento: data.nascimento || null,
-				idplanocontas: data.idplanocontas || null,
-				pais: data.pais || null,
-			};
-
-			criarEntidade(payload);
+				...montarPayloadComum(data),
+			});
 			return;
 		}
 
-		const payloadAtualizacao = {
-			nome: data.nome,
-			cnpjcpf: data.cnpjcpf,
-			razaosocial: data.razaosocial || null,
-			tipopessoa: data.tipopessoa || null,
-			inscricaoestadual: data.inscricaoestadual || null,
-			rg: data.rg || null,
-			email: data.email || null,
-			telefone: data.telefone || null,
-			endereco: data.endereco || null,
-			numeroendereco: data.numeroendereco || null,
-			complemento: data.complemento || null,
-			bairro: data.bairro || null,
-			idcidade: data.idcidade || null,
-			idestado: data.idestado || null,
-			cep: data.cep || null,
-			fax: data.fax || null,
-			nascimento: data.nascimento || null,
-			idplanocontas: data.idplanocontas || null,
-			pais: data.pais || null,
-		} satisfies Parameters<typeof entidadesService.atualizar>[1];
-
-		atualizarEntidade(payloadAtualizacao);
+		atualizarEntidade(montarPayloadComum(data));
 	};
+
+	const municipioOptions =
+		municipiosData?.data.map((municipio) => ({
+			value: municipio.idcidade,
+			label: municipio.nome,
+		})) ?? [];
+
+	const planoContasOptions =
+		planoContasData?.data.map((plano) => {
+			const nivel = plano.codigo ? (plano.codigo.match(/\./g) || []).length : 0;
+			const prefix = "\u00A0\u00A0".repeat(nivel);
+			return {
+				value: plano.id,
+				label: `${prefix}${plano.codigo ? `${plano.codigo} - ` : ""}${plano.nome || plano.id}`,
+			};
+		}) ?? [];
 
 	return (
 		<form onSubmit={handleSubmit(onSubmit)}>
@@ -216,42 +318,59 @@ export function ClientForm(props: ClientFormProps) {
 
 						<Field data-invalid={!!errors.cnpjcpf}>
 							<FieldLabel htmlFor="cnpjcpf">CNPJ/CPF *</FieldLabel>
-							<Input
-								id="cnpjcpf"
-								placeholder="CNPJ ou CPF"
-								aria-invalid={!!errors.cnpjcpf}
-								aria-describedby={errors.cnpjcpf ? "cnpjcpf-error" : undefined}
-								{...register("cnpjcpf")}
+							<Controller
+								control={control}
+								name="cnpjcpf"
+								render={({ field }) => (
+									<Input
+										id="cnpjcpf"
+										placeholder="CNPJ ou CPF"
+										aria-invalid={!!errors.cnpjcpf}
+										aria-describedby={
+											errors.cnpjcpf ? "cnpjcpf-error" : undefined
+										}
+										value={field.value}
+										onChange={(event) =>
+											field.onChange(maskCpfCnpj(event.target.value))
+										}
+									/>
+								)}
 							/>
 							<FieldError errors={errors.cnpjcpf ? [errors.cnpjcpf] : []} />
 						</Field>
 
 						<Field data-invalid={!!errors.tipopessoa}>
 							<FieldLabel htmlFor="tipopessoa">Tipo de Pessoa</FieldLabel>
-							<Select
-								value={
-									tipopessoa !== null && tipopessoa !== undefined
-										? tipopessoa.toString()
-										: undefined
-								}
-								onValueChange={(value) =>
-									setValue("tipopessoa", value ? Number(value) : null)
-								}
-							>
-								<SelectTrigger
-									className="w-full"
-									aria-invalid={!!errors.tipopessoa}
-									aria-describedby={
-										errors.tipopessoa ? "tipopessoa-error" : undefined
-									}
-								>
-									<SelectValue placeholder="Selecione o tipo" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="0">Física</SelectItem>
-									<SelectItem value="1">Jurídica</SelectItem>
-								</SelectContent>
-							</Select>
+							<Controller
+								control={control}
+								name="tipopessoa"
+								render={({ field }) => (
+									<Select
+										value={
+											field.value !== null && field.value !== undefined
+												? field.value.toString()
+												: undefined
+										}
+										onValueChange={(value) =>
+											field.onChange(value ? Number(value) : null)
+										}
+									>
+										<SelectTrigger
+											className="w-full"
+											aria-invalid={!!errors.tipopessoa}
+											aria-describedby={
+												errors.tipopessoa ? "tipopessoa-error" : undefined
+											}
+										>
+											<SelectValue placeholder="Selecione o tipo" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="0">Física</SelectItem>
+											<SelectItem value="1">Jurídica</SelectItem>
+										</SelectContent>
+									</Select>
+								)}
+							/>
 							<FieldError
 								errors={errors.tipopessoa ? [errors.tipopessoa] : []}
 							/>
@@ -264,6 +383,7 @@ export function ClientForm(props: ClientFormProps) {
 							<Input
 								id="inscricaoestadual"
 								placeholder="Inscrição estadual"
+								disabled={form.watch("tipopessoa") !== 1}
 								aria-invalid={!!errors.inscricaoestadual}
 								aria-describedby={
 									errors.inscricaoestadual
@@ -312,26 +432,44 @@ export function ClientForm(props: ClientFormProps) {
 
 						<Field data-invalid={!!errors.telefone}>
 							<FieldLabel htmlFor="telefone">Telefone</FieldLabel>
-							<Input
-								id="telefone"
-								placeholder="(00) 00000-0000"
-								aria-invalid={!!errors.telefone}
-								aria-describedby={
-									errors.telefone ? "telefone-error" : undefined
-								}
-								{...register("telefone")}
+							<Controller
+								control={control}
+								name="telefone"
+								render={({ field }) => (
+									<Input
+										id="telefone"
+										placeholder="(00) 00000-0000"
+										aria-invalid={!!errors.telefone}
+										aria-describedby={
+											errors.telefone ? "telefone-error" : undefined
+										}
+										value={field.value ?? ""}
+										onChange={(event) =>
+											field.onChange(maskPhone(event.target.value))
+										}
+									/>
+								)}
 							/>
 							<FieldError errors={errors.telefone ? [errors.telefone] : []} />
 						</Field>
 
 						<Field data-invalid={!!errors.fax}>
 							<FieldLabel htmlFor="fax">Fax</FieldLabel>
-							<Input
-								id="fax"
-								placeholder="Fax"
-								aria-invalid={!!errors.fax}
-								aria-describedby={errors.fax ? "fax-error" : undefined}
-								{...register("fax")}
+							<Controller
+								control={control}
+								name="fax"
+								render={({ field }) => (
+									<Input
+										id="fax"
+										placeholder="Fax"
+										aria-invalid={!!errors.fax}
+										aria-describedby={errors.fax ? "fax-error" : undefined}
+										value={field.value ?? ""}
+										onChange={(event) =>
+											field.onChange(maskPhone(event.target.value))
+										}
+									/>
+								)}
 							/>
 							<FieldError errors={errors.fax ? [errors.fax] : []} />
 						</Field>
@@ -342,17 +480,142 @@ export function ClientForm(props: ClientFormProps) {
 				<div className="space-y-4">
 					<h2 className="text-lg font-semibold">Endereço</h2>
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<Field data-invalid={!!errors.cep}>
+							<FieldLabel htmlFor="cep">CEP</FieldLabel>
+							<Controller
+								control={control}
+								name="cep"
+								render={({ field }) => (
+									<Input
+										id="cep"
+										placeholder="00000-000"
+										aria-invalid={!!errors.cep}
+										aria-describedby={errors.cep ? "cep-error" : undefined}
+										value={field.value ?? ""}
+										onChange={(event) => {
+											const valor = maskCep(event.target.value);
+											field.onChange(valor);
+											if (valor.replace(/\D/g, "").length < 8) {
+												setCepConsultado(false);
+												ultimoCepBuscado.current = null;
+											}
+										}}
+										onBlur={() => {
+											if (field.value) {
+												void buscarCep(field.value);
+											}
+										}}
+									/>
+								)}
+							/>
+							{buscandoCep && (
+								<p className="text-xs text-muted-foreground mt-1">
+									Buscando CEP...
+								</p>
+							)}
+							<FieldError errors={errors.cep ? [errors.cep] : []} />
+						</Field>
+
+						<Field data-invalid={!!errors.idestado}>
+							<FieldLabel htmlFor="idestado">Estado</FieldLabel>
+							<Select
+								value={idestado ?? undefined}
+								onValueChange={(value) => {
+									setValue("idestado", value, { shouldValidate: true });
+									setValue("idcidade", null, { shouldValidate: true });
+								}}
+								disabled={carregandoEstados}
+							>
+								<SelectTrigger
+									className="w-full"
+									aria-invalid={!!errors.idestado}
+									aria-describedby={
+										errors.idestado ? "idestado-error" : undefined
+									}
+								>
+									<SelectValue placeholder="Selecione o estado" />
+								</SelectTrigger>
+								<SelectContent>
+									{estadosData?.data.map((estado) => (
+										<SelectItem key={estado.idestado} value={estado.idestado}>
+											{estado.nome} ({estado.idestado})
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+							<FieldError errors={errors.idestado ? [errors.idestado] : []} />
+						</Field>
+
+						<Field data-invalid={!!errors.idcidade}>
+							<FieldLabel htmlFor="idcidade">Cidade</FieldLabel>
+							<Controller
+								control={control}
+								name="idcidade"
+								render={({ field }) => (
+									<Combobox
+										options={municipioOptions}
+										value={field.value ?? ""}
+										onChange={field.onChange}
+										placeholder={
+											idestado
+												? carregandoMunicipios
+													? "Carregando cidades..."
+													: "Selecione a cidade"
+												: "Selecione o estado primeiro"
+										}
+										searchPlaceholder="Buscar cidade..."
+										emptyMessage="Nenhuma cidade encontrada."
+										disabled={!idestado || carregandoMunicipios}
+									/>
+								)}
+							/>
+							<FieldError errors={errors.idcidade ? [errors.idcidade] : []} />
+						</Field>
+
 						<Field data-invalid={!!errors.endereco}>
 							<FieldLabel htmlFor="endereco">Endereço</FieldLabel>
-							<Input
-								id="endereco"
-								placeholder="Rua, Avenida, etc."
-								aria-invalid={!!errors.endereco}
-								aria-describedby={
-									errors.endereco ? "endereco-error" : undefined
-								}
-								{...register("endereco")}
-							/>
+							{isGooglePlacesDisponivel() ? (
+								<AddressAutocompleteInput
+									id="endereco"
+									value={endereco ?? ""}
+									onChange={(valor) =>
+										setValue("endereco", valor, { shouldValidate: true })
+									}
+									onEnderecoSelecionado={(enderecoSelecionado) => {
+										if (enderecoSelecionado.bairro) {
+											setValue("bairro", enderecoSelecionado.bairro, {
+												shouldValidate: true,
+											});
+										}
+										if (enderecoSelecionado.idestado) {
+											setValue("idestado", enderecoSelecionado.idestado, {
+												shouldValidate: true,
+											});
+										}
+										if (enderecoSelecionado.cep) {
+											setValue("cep", maskCep(enderecoSelecionado.cep), {
+												shouldValidate: true,
+											});
+										}
+									}}
+									idestado={idestado}
+									cepConsultado={cepConsultado}
+									aria-invalid={!!errors.endereco}
+									aria-describedby={
+										errors.endereco ? "endereco-error" : undefined
+									}
+								/>
+							) : (
+								<Input
+									id="endereco"
+									placeholder="Rua, Avenida, etc."
+									aria-invalid={!!errors.endereco}
+									aria-describedby={
+										errors.endereco ? "endereco-error" : undefined
+									}
+									{...register("endereco")}
+								/>
+							)}
 							<FieldError errors={errors.endereco ? [errors.endereco] : []} />
 						</Field>
 
@@ -400,46 +663,6 @@ export function ClientForm(props: ClientFormProps) {
 							<FieldError errors={errors.bairro ? [errors.bairro] : []} />
 						</Field>
 
-						<Field data-invalid={!!errors.cep}>
-							<FieldLabel htmlFor="cep">CEP</FieldLabel>
-							<Input
-								id="cep"
-								placeholder="CEP"
-								aria-invalid={!!errors.cep}
-								aria-describedby={errors.cep ? "cep-error" : undefined}
-								{...register("cep")}
-							/>
-							<FieldError errors={errors.cep ? [errors.cep] : []} />
-						</Field>
-
-						<Field data-invalid={!!errors.idcidade}>
-							<FieldLabel htmlFor="idcidade">Cidade</FieldLabel>
-							<Input
-								id="idcidade"
-								placeholder="Cidade"
-								aria-invalid={!!errors.idcidade}
-								aria-describedby={
-									errors.idcidade ? "idcidade-error" : undefined
-								}
-								{...register("idcidade")}
-							/>
-							<FieldError errors={errors.idcidade ? [errors.idcidade] : []} />
-						</Field>
-
-						<Field data-invalid={!!errors.idestado}>
-							<FieldLabel htmlFor="idestado">Estado</FieldLabel>
-							<Input
-								id="idestado"
-								placeholder="Estado"
-								aria-invalid={!!errors.idestado}
-								aria-describedby={
-									errors.idestado ? "idestado-error" : undefined
-								}
-								{...register("idestado")}
-							/>
-							<FieldError errors={errors.idestado ? [errors.idestado] : []} />
-						</Field>
-
 						<Field data-invalid={!!errors.pais}>
 							<FieldLabel htmlFor="pais">País</FieldLabel>
 							<Input
@@ -451,6 +674,42 @@ export function ClientForm(props: ClientFormProps) {
 							/>
 							<FieldError errors={errors.pais ? [errors.pais] : []} />
 						</Field>
+					</div>
+				</div>
+
+				{/* Classificação */}
+				<div className="space-y-4">
+					<h2 className="text-lg font-semibold">Classificação</h2>
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						{(
+							[
+								["cliente", "Cliente"],
+								["fornecedor", "Fornecedor"],
+								["transportador", "Transportador"],
+								["representante", "Representante"],
+							] as const
+						).map(([campo, label]) => (
+							<Field key={campo}>
+								<div className="flex items-center gap-2">
+									<Controller
+										control={control}
+										name={campo}
+										render={({ field }) => (
+											<Checkbox
+												id={campo}
+												checked={field.value === true}
+												onCheckedChange={(checked) =>
+													field.onChange(checked === true)
+												}
+											/>
+										)}
+									/>
+									<FieldLabel htmlFor={campo} className="mb-0">
+										{label}
+									</FieldLabel>
+								</div>
+							</Field>
+						))}
 					</div>
 				</div>
 
@@ -475,17 +734,25 @@ export function ClientForm(props: ClientFormProps) {
 						</Field>
 
 						<Field data-invalid={!!errors.idplanocontas}>
-							<FieldLabel htmlFor="idplanocontas">
-								ID Plano de Contas
-							</FieldLabel>
-							<Input
-								id="idplanocontas"
-								placeholder="ID do plano de contas"
-								aria-invalid={!!errors.idplanocontas}
-								aria-describedby={
-									errors.idplanocontas ? "idplanocontas-error" : undefined
-								}
-								{...register("idplanocontas")}
+							<FieldLabel htmlFor="idplanocontas">Plano de Contas</FieldLabel>
+							<Controller
+								control={control}
+								name="idplanocontas"
+								render={({ field }) => (
+									<Combobox
+										options={planoContasOptions}
+										value={field.value ?? ""}
+										onChange={field.onChange}
+										placeholder={
+											carregandoPlanoContas
+												? "Carregando planos..."
+												: "Selecione o plano de contas"
+										}
+										searchPlaceholder="Buscar plano de contas..."
+										emptyMessage="Nenhum plano de contas encontrado."
+										disabled={carregandoPlanoContas}
+									/>
+								)}
 							/>
 							<FieldError
 								errors={errors.idplanocontas ? [errors.idplanocontas] : []}

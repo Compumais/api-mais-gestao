@@ -1,11 +1,11 @@
 "use client";
 
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { CPlusIcon } from "@/components/icons/c-plus";
 import { useAuth } from "@/hooks/use-auth";
-import { useEmpresasUsuario } from "@/hooks/use-empresas-usuario";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { useEmpresasUsuario } from "@/hooks/use-empresas-usuario";
 import {
 	EMPRESA_FORCAR_PRIMEIRA_KEY,
 	EMPRESA_SELECIONADA_KEY,
@@ -61,9 +61,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 			}
 
 			const empresaAtual = localStorageEmpresa
-				? listaEmpresas.find(
-						(empresa) => empresa.id === localStorageEmpresa.id,
-					)
+				? listaEmpresas.find((empresa) => empresa.id === localStorageEmpresa.id)
 				: null;
 
 			if (empresaAtual) {
@@ -130,7 +128,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 						</div>
 					</div>
 					<div className="flex flex-col items-center gap-2">
-						<h2 className="text-xl font-semibold">Mais Gest?o</h2>
+						<h2 className="text-xl font-semibold">Mais Gestão</h2>
 						<p className="text-sm text-muted-foreground">
 							Carregando sua ?rea de trabalho
 							<span className="loading-dots">

@@ -1,24 +1,13 @@
 import {
-	IconArrowsLeftRight,
-	IconBuilding,
-	IconBuildingBank,
-	IconCashBanknoteMinus,
-	IconCashBanknotePlus,
-	IconChartBar,
-	IconCreditCard,
 	IconDashboard,
-	IconFile,
 	IconFileInvoice,
 	IconHelp,
 	IconHistory,
 	IconListDetails,
-	IconPackage,
 	IconReportMoney,
 	IconSearch,
 	IconSettings,
 	IconTools,
-	IconUser,
-	IconUsers,
 	IconToolsKitchen2,
 } from "@tabler/icons-react";
 
@@ -67,14 +56,14 @@ export const DATA = {
 					title: "Clientes",
 					url: "/clientes",
 				},
-				{
-					title: "Comissionados",
-					url: "/comissionados",
-				},
-				{
-					title: "Compradores",
-					url: "/compradores",
-				},
+				// {
+				// 	title: "Comissionados",
+				// 	url: "/comissionados",
+				// },
+				// {
+				// 	title: "Compradores",
+				// 	url: "/compradores",
+				// },
 				{
 					title: "Fornecedores",
 					url: "/fornecedores",
@@ -84,8 +73,8 @@ export const DATA = {
 					url: "/produtos",
 				},
 				{
-					title: "Hierarquias",
-					url: "/hierarquias",
+					title: "Grupos",
+					url: "/grupos",
 				},
 				{
 					title: "Unidades de medida",

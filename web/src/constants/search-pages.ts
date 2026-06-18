@@ -14,9 +14,9 @@ import {
 	IconListDetails,
 	IconReportMoney,
 	IconSettings,
+	IconToolsKitchen2,
 	IconUser,
 	IconUsers,
-	IconToolsKitchen2,
 } from "@tabler/icons-react";
 
 export interface SearchablePage {
@@ -64,20 +64,20 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 		icon: IconUsers,
 		keywords: ["cliente", "clientes"],
 	},
-	{
-		title: "Comissionados",
-		url: "/comissionados",
-		category: "Principal",
-		icon: IconUser,
-		keywords: ["comissionado", "comissionados"],
-	},
-	{
-		title: "Compradores",
-		url: "/compradores",
-		category: "Principal",
-		icon: IconUsers,
-		keywords: ["comprador", "compradores"],
-	},
+	// {
+	// 	title: "Comissionados",
+	// 	url: "/comissionados",
+	// 	category: "Principal",
+	// 	icon: IconUser,
+	// 	keywords: ["comissionado", "comissionados"],
+	// },
+	// {
+	// 	title: "Compradores",
+	// 	url: "/compradores",
+	// 	category: "Principal",
+	// 	icon: IconUsers,
+	// 	keywords: ["comprador", "compradores"],
+	// },
 	{
 		title: "Fornecedores",
 		url: "/fornecedores",
@@ -93,8 +93,8 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 		keywords: ["produto", "produtos", "item"],
 	},
 	{
-		title: "Hierarquias",
-		url: "/hierarquias",
+		title: "Grupos",
+		url: "/grupos",
 		category: "Principal",
 		icon: IconListDetails,
 		keywords: ["hierarquia", "hierarquias", "grupo", "grupos", "produto"],

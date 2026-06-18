@@ -36,6 +36,10 @@ type AtualizarEntidadeParametros = {
 		nascimento?: string | null | undefined;
 		idplanocontas?: string | null | undefined;
 		pais?: string | null | undefined;
+		cliente?: number | undefined;
+		fornecedor?: number | undefined;
+		transportador?: number | undefined;
+		representante?: number | undefined;
 	};
 };
 
