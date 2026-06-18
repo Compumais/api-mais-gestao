@@ -22,6 +22,10 @@ export interface Entidade {
 	nascimento: string | null;
 	idplanocontas: string | null;
 	pais: string | null;
+	cliente: number | null;
+	fornecedor: number | null;
+	transportador: number | null;
+	representante: number | null;
 	criadoem: string;
 	atualizadoem: string;
 }
@@ -57,6 +61,10 @@ export interface CriarEntidadeData {
 	nascimento?: string | null;
 	idplanocontas?: string | null;
 	pais?: string | null;
+	cliente?: number;
+	fornecedor?: number;
+	transportador?: number;
+	representante?: number;
 }
 
 export interface AtualizarEntidadeData {
@@ -79,6 +87,10 @@ export interface AtualizarEntidadeData {
 	nascimento?: string | null;
 	idplanocontas?: string | null;
 	pais?: string | null;
+	cliente?: number;
+	fornecedor?: number;
+	transportador?: number;
+	representante?: number;
 }
 
 export const entidadesService = {

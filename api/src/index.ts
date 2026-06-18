@@ -37,6 +37,7 @@ import { financeiroLancamentoRotas } from "./controllers/http/financeirolancamen
 import { hierarquiasRotas } from "./controllers/http/hierarquia/rotas.js";
 import { iaRotas } from "./controllers/http/ia/rotas.js";
 import { integracoesContabilConfiguracaoRotas } from "./controllers/http/integracao-contabil-configuracao/rotas.js";
+import { localidadesRotas } from "./controllers/http/localidade/rotas.js";
 import { locaisEstoqueRotas } from "./controllers/http/local-estoque/rotas.js";
 import { locaisRetiradaRotas } from "./controllers/http/local-retirada/rotas.js";
 import { motivosRebaixaRotas } from "./controllers/http/motivo-rebaixa/rotas.js";
@@ -429,6 +430,7 @@ app.register(contaCorrenteLancamentoRotas);
 app.register(financeiroRotas);
 app.register(financeiroLancamentoRotas);
 app.register(bancosRotas);
+app.register(localidadesRotas);
 app.register(configuracaoRotas);
 app.register(configuracaoUsuarioRotas);
 app.register(auditoriaRotas);

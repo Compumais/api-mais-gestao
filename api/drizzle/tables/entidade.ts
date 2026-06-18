@@ -17,7 +17,7 @@ export const entidade = pgTable(
 		id: text().primaryKey().notNull(),
 		nome: varchar({ length: 60 }).notNull(),
 		razaosocial: varchar({ length: 60 }),
-		tipopessoa: smallint().default(0),
+		tipopessoa: smallint().default(0), // 0 - Pessoa Física, 1 - Pessoa Jurídica
 		cnpjcpf: varchar({ length: 20 }).notNull(),
 		inscricaoestadual: varchar({ length: 20 }),
 		rg: varchar({ length: 20 }),
@@ -27,9 +27,13 @@ export const entidade = pgTable(
 		numeroendereco: varchar({ length: 6 }),
 		complemento: varchar({ length: 50 }),
 		bairro: varchar({ length: 50 }),
+		fornecedor: smallint().default(0), // 0 - Não, 1 - Sim
+		cliente: smallint().default(0), // 0 - Não, 1 - Sim
+		transportador: smallint().default(0), // 0 - Não, 1 - Sim
+		representante: smallint().default(0), // 0 - Não, 1 - Sim
 		idcidade: text(),
 		idestado: text(),
-		cep: varchar({ length: 6 }),
+		cep: varchar({ length: 9 }),
 		fax: varchar({ length: 40 }),
 		nascimento: date(),
 		idplanocontas: text(),

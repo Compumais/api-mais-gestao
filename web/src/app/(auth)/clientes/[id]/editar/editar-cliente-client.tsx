@@ -1,6 +1,8 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
+import { mapEntidadeToForm } from "@/schemas/entidades.schema";
 import { entidadesService } from "@/services/entidades.service";
 import { ClientForm } from "../../components/client-form";
 
@@ -16,6 +18,11 @@ export function EditarClienteClient({ id }: EditarClienteClientProps) {
 		},
 	});
 
+	const valoresIniciais = useMemo(
+		() => (data ? mapEntidadeToForm(data) : undefined),
+		[data],
+	);
+
 	if (isLoading) {
 		return (
 			<div className="flex items-center justify-center py-8">
@@ -24,7 +31,7 @@ export function EditarClienteClient({ id }: EditarClienteClientProps) {
 		);
 	}
 
-	if (!data) {
+	if (!data || !valoresIniciais) {
 		return (
 			<div className="flex items-center justify-center py-8">
 				<p className="text-muted-foreground">Cliente não encontrado.</p>
@@ -34,30 +41,10 @@ export function EditarClienteClient({ id }: EditarClienteClientProps) {
 
 	return (
 		<ClientForm
+			key={`${id}-${data.atualizadoem}`}
 			modo="editar"
 			entidadeId={id}
-			valoresIniciais={{
-				idempresa: data.idempresa,
-				nome: data.nome,
-				cnpjcpf: data.cnpjcpf,
-				razaosocial: data.razaosocial,
-				tipopessoa: data.tipopessoa,
-				inscricaoestadual: data.inscricaoestadual,
-				rg: data.rg,
-				email: data.email,
-				telefone: data.telefone,
-				endereco: data.endereco,
-				numeroendereco: data.numeroendereco,
-				complemento: data.complemento,
-				bairro: data.bairro,
-				idcidade: data.idcidade,
-				idestado: data.idestado,
-				cep: data.cep,
-				fax: data.fax,
-				nascimento: data.nascimento,
-				idplanocontas: data.idplanocontas,
-				pais: data.pais,
-			}}
+			valoresIniciais={valoresIniciais}
 		/>
 	);
 }

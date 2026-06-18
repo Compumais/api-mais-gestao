@@ -1,4 +1,5 @@
-export const maskCep = (value: string) => {
+export const maskCep = (value?: string | null) => {
+	if (!value) return "";
 	return value
 		.replace(/\D/g, "")
 		.replace(/^(\d{5})(\d)/, "$1-$2")
@@ -20,7 +21,8 @@ export const maskExpirationDate = (value: string) => {
 		.slice(0, 5);
 };
 
-export const maskCpfCnpj = (value: string) => {
+export const maskCpfCnpj = (value?: string | null) => {
+	if (!value) return "";
 	const cleanValue = value.replace(/\D/g, "");
 
 	if (cleanValue.length <= 11) {
@@ -41,7 +43,8 @@ export const maskCpfCnpj = (value: string) => {
 	}
 };
 
-export const maskPhone = (value: string) => {
+export const maskPhone = (value?: string | null) => {
+	if (!value) return "";
 	return value
 		.replace(/\D/g, "")
 		.replace(/^(\d{2})(\d)/, "($1) $2")

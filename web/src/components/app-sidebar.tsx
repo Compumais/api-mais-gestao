@@ -55,7 +55,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 				<SidebarMenu className="flex flex-row items-center gap-1 select-none">
 					<CPlusIcon size={32} />
 					<h1 className="text-base font-semibold mb-0.5 group-data-[collapsible=icon]:hidden">
-						Mais Gest?o
+						Mais Gestão
 					</h1>
 				</SidebarMenu>
 			</SidebarHeader>

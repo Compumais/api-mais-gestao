@@ -18,11 +18,15 @@ const criarEntidadeBodySchema = z.object({
 	bairro: z.string().max(50).optional().nullable(),
 	idcidade: z.string().optional().nullable(),
 	idestado: z.string().optional().nullable(),
-	cep: z.string().max(6).optional().nullable(),
+	cep: z.string().max(9).optional().nullable(),
 	fax: z.string().max(40).optional().nullable(),
 	nascimento: z.string().optional().nullable(),
 	idplanocontas: z.string().optional().nullable(),
 	pais: z.string().optional().nullable(),
+	cliente: z.number().int().min(0).max(1).optional(),
+	fornecedor: z.number().int().min(0).max(1).optional(),
+	transportador: z.number().int().min(0).max(1).optional(),
+	representante: z.number().int().min(0).max(1).optional(),
 	idempresa: z.string().uuid(),
 });
 
