@@ -153,19 +153,19 @@ export default function HierarquiasPage() {
 		mutationFn: hierarquiasService.deletar,
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["hierarquias"] });
-			toast.success("Hierarquia excluída com sucesso!");
+			toast.success("Grupo excluído com sucesso!");
 		},
 		onError: (error: Error) => {
-			toast.error(error.message || "Erro ao excluir hierarquia");
+			toast.error(error.message || "Erro ao excluir grupo");
 		},
 	});
 
 	const handleEdit = (hierarquia: Hierarquia) => {
-		router.push(`/hierarquias/${hierarquia.id}/editar`);
+		router.push(`/grupos/${hierarquia.id}/editar`);
 	};
 
 	const handleDelete = (id: string) => {
-		toast.message("Tem certeza que deseja excluir esta hierarquia?", {
+		toast.message("Tem certeza que deseja excluir este grupo?", {
 			position: "top-center",
 			duration: 3000,
 			action: {
@@ -201,21 +201,21 @@ export default function HierarquiasPage() {
 		<PageContainer>
 			<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
 				<div className="flex items-center justify-between px-4">
-					<h1 className="text-2xl font-bold">Hierarquias</h1>
+					<h1 className="text-2xl font-bold">Grupos</h1>
 					<Button
-						onClick={() => router.push("/hierarquias/novo")}
+						onClick={() => router.push("/grupos/novo")}
 						className="gap-2"
 						disabled={!localStorageEmpresa}
 					>
 						<IconPlus className="size-4" />
-						Cadastrar Nova Hierarquia
+						Cadastrar Novo Grupo
 					</Button>
 				</div>
 				<div className="mx-4 rounded-lg border bg-card">
 					{!localStorageEmpresa ? (
 						<div className="flex items-center justify-center py-8">
 							<p className="text-muted-foreground">
-								Selecione uma empresa para visualizar as hierarquias
+								Selecione uma empresa para visualizar os grupos
 							</p>
 						</div>
 					) : isLoading ? (
@@ -267,7 +267,7 @@ export default function HierarquiasPage() {
 												colSpan={table.getAllColumns().length}
 												className="h-24 text-center"
 											>
-												Nenhuma hierarquia encontrada.
+												Nenhum grupo encontrado.
 											</TableCell>
 										</TableRow>
 									)}
