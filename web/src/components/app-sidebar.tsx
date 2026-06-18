@@ -15,12 +15,15 @@ import {
 import { DATA } from "@/constants/nav-constants";
 import { useAuth } from "@/hooks/use-auth";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { isGarcom } from "@/lib/perfis";
 import { CPlusIcon } from "./icons/c-plus";
 import { NavDocuments } from "./nav-documents";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const { user } = useAuth();
 	const isMobile = useIsMobile();
+
+	const isGarcomUser = React.useMemo(() => isGarcom(user), [user]);
 
 	const isUsuario = React.useMemo(() => {
 		if (!user?.perfil) return false;
@@ -56,10 +59,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 			DATA.navGourmet.map((group) => ({
 				...group,
 				items: group.items?.filter(
-					(subItem) => subItem.url !== "/garcom" || isMobile,
+					(subItem) =>
+						subItem.url !== "/garcom" || isMobile || isGarcomUser,
 				),
 			})),
-		[isMobile],
+		[isMobile, isGarcomUser],
 	);
 
 	return (
@@ -73,23 +77,29 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 				</SidebarMenu>
 			</SidebarHeader>
 			<SidebarContent>
-				<NavMain items={navMainItems} />
-
-				{!isUsuario && (
+				{isGarcomUser ? (
 					<NavDocuments label="PDV" items={navGourmetItems} />
+				) : (
+					<>
+						<NavMain items={navMainItems} />
+
+						{!isUsuario && (
+							<NavDocuments label="PDV" items={navGourmetItems} />
+						)}
+
+						<NavDocuments label="Cadastros" items={DATA.navRegistros} />
+						<NavDocuments label="Notas fiscais" items={DATA.navNotaFiscal} />
+						<NavDocuments label="Financeiro" items={DATA.navFinanceiro} />
+						<NavDocuments label="Painel do contador" items={DATA.others} />
+						<NavDocuments label="Ferramentas" items={DATA.navFerramentas} />
+
+						<NavSecondary
+							label="Outros"
+							items={navSecondaryItems}
+							className="mt-auto"
+						/>
+					</>
 				)}
-
-				<NavDocuments label="Cadastros" items={DATA.navRegistros} />
-				<NavDocuments label="Notas fiscais" items={DATA.navNotaFiscal} />
-				<NavDocuments label="Financeiro" items={DATA.navFinanceiro} />
-				<NavDocuments label="Painel do contador" items={DATA.others} />
-				<NavDocuments label="Ferramentas" items={DATA.navFerramentas} />
-
-				<NavSecondary
-					label="Outros"
-					items={navSecondaryItems}
-					className="mt-auto"
-				/>
 			</SidebarContent>
 
 			<SidebarFooter>

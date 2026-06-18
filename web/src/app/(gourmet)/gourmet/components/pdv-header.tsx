@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useCaixaPdv } from "@/hooks/use-caixa-pdv";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { getDefaultRouteForUser, isGarcom } from "@/lib/perfis";
 import { AbrirCaixaDialog } from "./abrir-caixa-dialog";
 import { FecharCaixaDialog } from "./fechar-caixa-dialog";
 
@@ -23,9 +24,11 @@ export function PdvHeader({
 	voltarHref = "/gourmet",
 	voltarLabel = "Mesas",
 }: PdvHeaderProps) {
-	const { logout } = useAuth();
+	const { logout, user } = useAuth();
 	const { localStorageEmpresa: empresa } = useEmpresa();
 	const { estaAberto, isLoading, numeropdv } = useCaixaPdv();
+	const homeHref = getDefaultRouteForUser(user);
+	const isGarcomUser = isGarcom(user);
 
 	const [abrirDialog, setAbrirDialog] = useState(false);
 	const [fecharDialog, setFecharDialog] = useState(false);
@@ -35,11 +38,13 @@ export function PdvHeader({
 			<header className="relative z-50 flex h-14 shrink-0 items-center justify-between border-b bg-background px-4">
 				<div className="flex items-center gap-3 min-w-0">
 					<Link
-						href="/dashboard"
+						href={homeHref}
 						className="flex items-center gap-2 text-primary shrink-0"
 					>
 						<CPlusIcon size={28} />
-						<span className="hidden font-semibold sm:inline">Mais Gestão</span>
+						{!isGarcomUser && (
+							<span className="hidden font-semibold sm:inline">Mais Gestão</span>
+						)}
 					</Link>
 					<span className="text-muted-foreground">/</span>
 					<h1 className="text-sm font-semibold sm:text-base truncate">

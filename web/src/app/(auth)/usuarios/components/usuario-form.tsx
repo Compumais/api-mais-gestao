@@ -232,6 +232,7 @@ export function UsuarioForm(props: UsuarioFormProps) {
 							<SelectItem value="usuario">Usuário</SelectItem>
 							<SelectItem value="admin">Administrador</SelectItem>
 							<SelectItem value="proprietario">Proprietário</SelectItem>
+							<SelectItem value="garcom">Garçom</SelectItem>
 						</SelectContent>
 					</Select>
 					<FieldError
