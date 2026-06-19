@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { PlusIcon } from "lucide-react";
 import Link from "next/link";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { ordenarPlanoContasPorCodigo } from "@/lib/plano-contas-utils";
 import { planoContasService } from "@/services/plano-contas.service";
 import { Button } from "../../../../components/ui/button";
 import { PlanoContasTreeEmpty } from "./empty";
@@ -56,7 +57,9 @@ export function PlanoContasTree() {
 	}
 
 	// Filtra apenas os itens raiz (sem pai)
-	const rootItems = data.data.filter((item) => !item.idplanocontas);
+	const rootItems = ordenarPlanoContasPorCodigo(
+		data.data.filter((item) => !item.idplanocontas),
+	);
 
 	return (
 		<div className="space-y-4">

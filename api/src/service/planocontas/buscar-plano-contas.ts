@@ -2,6 +2,7 @@ import type { HttpResponse } from "@/model/http-model.js";
 import type { PlanoContas } from "@/model/plano-contas-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { buscarPlanoContasComFilhos } from "@/repositories/plano-contas-repositories.js";
+import { compararCodigoHierarquico } from "@/util/comparar-codigo-hierarquico.js";
 import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
 
 type BuscarPlanoContasParametros = {
@@ -37,6 +38,8 @@ export async function buscarPlanoContasService({
 
 	return httpOk<BuscarPlanoContasResposta>({
 		plano,
-		filhos,
+		filhos: [...filhos].sort((a, b) =>
+			compararCodigoHierarquico(a.codigo, b.codigo),
+		),
 	});
 }
