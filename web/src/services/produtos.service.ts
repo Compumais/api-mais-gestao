@@ -77,6 +77,7 @@ export const produtosService = {
 		page?: number;
 		limit?: number;
 		nome?: string;
+		q?: string;
 		inativo?: number;
 	}): Promise<ListarProdutosResponse> {
 		const { data } = await api.get<ListarProdutosResponse>("/produtos", {

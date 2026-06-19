@@ -6,6 +6,7 @@ const listarEntidadesQuerySchema = z.object({
 	page: z.coerce.number().min(1).optional().default(1),
 	limit: z.coerce.number().min(1).max(100).optional().default(10),
 	nome: z.string().optional(),
+	q: z.string().optional(),
 	email: z.string().optional(),
 	telefone: z.string().optional(),
 	idempresa: z.uuid(),

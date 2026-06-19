@@ -6,6 +6,7 @@ import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 const listarHierarquiasQuerySchema = z.object({
 	idempresa: z.string(),
 	nome: z.string().optional(),
+	q: z.string().optional(),
 	page: z.coerce.number().min(1).optional().default(1),
 	limit: z.coerce.number().min(1).max(100).optional().default(10),
 });
@@ -22,6 +23,7 @@ export async function listarHierarquias(request: FastifyRequest, reply: FastifyR
 			idusuario: request.user.id,
 			idempresa: query.idempresa,
 			nome: query.nome,
+			q: query.q,
 			page: query.page,
 			limit: query.limit,
 		});

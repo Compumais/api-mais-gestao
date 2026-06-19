@@ -8,6 +8,7 @@ type ListarUnidadeMedidasParametros = {
 	idusuario: string;
 	idempresa: string;
 	nome?: string | undefined;
+	q?: string | undefined;
 	page?: number;
 	limit?: number;
 };
@@ -26,6 +27,7 @@ export async function listarUnidadeMedidasService({
 	idusuario,
 	idempresa,
 	nome,
+	q,
 	page = 1,
 	limit = 10,
 }: ListarUnidadeMedidasParametros): Promise<
@@ -43,6 +45,7 @@ export async function listarUnidadeMedidasService({
 	const resultado = await listarUnidadesMedida({
 		idempresa,
 		nome,
+		q,
 		page,
 		limit,
 	});

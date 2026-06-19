@@ -179,7 +179,7 @@ export const produtos = pgTable(
 		tipo: varchar({ length: 1 }), // P=Produto, S=Serviço
 		tipofatorconversaounidadeetq: integer(), // 1=Multiplcação, 2=Divisão
 		tipoporcao: integer(), // 0=Grama, 1=Militro, 2=Unidade
-		tipoproduto: varchar({ length: 2 }),
+		tipoproduto: varchar({ length: 2 }), // 01=Produto, 02=Serviço, 04=, 07=Material de uso e consumo, 99=Outros
 		tipoquantidade: integer(),
 		tributacao: varchar({ length: 7 }),
 		tributacaoespecial: varchar({ length: 7 }),

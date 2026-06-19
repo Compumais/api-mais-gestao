@@ -8,6 +8,7 @@ type ListarHierarquiasParametros = {
 	idusuario: string;
 	idempresa: string;
 	nome?: string | undefined;
+	q?: string | undefined;
 	page?: number;
 	limit?: number;
 };
@@ -26,6 +27,7 @@ export async function listarHierarquiasService({
 	idusuario,
 	idempresa,
 	nome,
+	q,
 	page = 1,
 	limit = 10,
 }: ListarHierarquiasParametros): Promise<
@@ -43,6 +45,7 @@ export async function listarHierarquiasService({
 	const resultado = await listarHierarquias({
 		idempresa,
 		nome,
+		q,
 		page,
 		limit,
 	});

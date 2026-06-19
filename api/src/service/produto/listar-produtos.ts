@@ -8,6 +8,7 @@ type ListarProdutosParametros = {
 	idusuario: string;
 	idempresa: string;
 	nome?: string | undefined;
+	q?: string | undefined;
 	inativo?: number | undefined;
 	page?: number;
 	limit?: number;
@@ -27,6 +28,7 @@ export async function listarProdutosService({
 	idusuario,
 	idempresa,
 	nome,
+	q,
 	inativo,
 	page = 1,
 	limit = 10,
@@ -43,6 +45,7 @@ export async function listarProdutosService({
 	const resultado = await listarProdutosPorEmpresa({
 		idempresas: [idempresa],
 		nome,
+		q,
 		inativo,
 		page,
 		limit,

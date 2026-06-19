@@ -111,6 +111,7 @@ export const listarUnidadeMedidasSchema: FastifySchema = {
 		properties: {
 			idempresa: { type: "string", description: "ID da empresa" },
 			nome: { type: "string", description: "Filtro opcional por nome" },
+			q: { type: "string", description: "Busca por nome ou código" },
 			page: { type: "number", default: 1 },
 			limit: { type: "number", default: 10 },
 		},

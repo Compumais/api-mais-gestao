@@ -99,6 +99,7 @@ export const entidadesService = {
 		page?: number;
 		limit?: number;
 		nome?: string;
+		q?: string;
 		email?: string;
 		telefone?: string;
 	}): Promise<ListarEntidadesResponse> {

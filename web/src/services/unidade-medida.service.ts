@@ -41,6 +41,7 @@ export const unidadeMedidaService = {
 		page?: number;
 		limit?: number;
 		nome?: string;
+		q?: string;
 	}): Promise<ListarUnidadeMedidasResponse> {
 		const { data } = await api.get<ListarUnidadeMedidasResponse>(
 			"/unidades-medida",

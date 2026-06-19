@@ -4,6 +4,7 @@ import {
 	IconDotsVertical,
 	IconPencil,
 	IconPlus,
+	IconSearch,
 	IconTrash,
 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -16,10 +17,11 @@ import {
 	type SortingState,
 	useReactTable,
 } from "@tanstack/react-table";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -110,18 +112,39 @@ const createColumns = ({
 
 export default function ClientesPage() {
 	const router = useRouter();
+	const searchParams = useSearchParams();
 	const queryClient = useQueryClient();
 	const { localStorageEmpresa } = useEmpresa();
+	const qAplicado = searchParams.get("q")?.trim() ?? "";
+	const [qInput, setQInput] = useState(qAplicado);
 	const [sorting, setSorting] = useState<SortingState>([]);
 	const [pagination, setPagination] = useState({
 		pageIndex: 0,
 		pageSize: 10,
 	});
 
+	useEffect(() => {
+		setQInput(qAplicado);
+	}, [qAplicado]);
+
+	const handleBuscar = () => {
+		const termo = qInput.trim();
+		setPagination((p) => ({ ...p, pageIndex: 0 }));
+
+		const params = new URLSearchParams();
+		if (termo) {
+			params.set("q", termo);
+		}
+
+		const query = params.toString();
+		router.replace(query ? `/clientes?${query}` : "/clientes");
+	};
+
 	const { data, isLoading } = useQuery({
 		queryKey: [
 			"entidades",
 			localStorageEmpresa?.id,
+			qAplicado,
 			pagination.pageIndex + 1,
 			pagination.pageSize,
 		],
@@ -133,6 +156,7 @@ export default function ClientesPage() {
 				idempresa: localStorageEmpresa.id,
 				page: pagination.pageIndex + 1,
 				limit: pagination.pageSize,
+				...(qAplicado ? { q: qAplicado } : {}),
 			});
 		},
 		enabled: !!localStorageEmpresa,
@@ -198,6 +222,28 @@ export default function ClientesPage() {
 					>
 						<IconPlus className="size-4" />
 						Cadastrar Novo Cliente
+					</Button>
+				</div>
+				<div className="flex gap-2 px-4">
+					<Input
+						value={qInput}
+						onChange={(event) => setQInput(event.target.value)}
+						onKeyDown={(event) => {
+							if (event.key === "Enter") {
+								handleBuscar();
+							}
+						}}
+						placeholder="Buscar por nome, razão social ou CNPJ/CPF..."
+						disabled={!localStorageEmpresa}
+						className="max-w-md"
+					/>
+					<Button
+						onClick={handleBuscar}
+						disabled={!localStorageEmpresa}
+						className="gap-2"
+					>
+						<IconSearch className="size-4" />
+						Buscar
 					</Button>
 				</div>
 				<div className="rounded-lg border bg-card mx-4">

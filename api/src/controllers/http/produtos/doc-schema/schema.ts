@@ -75,6 +75,7 @@ export const listarProdutosSchema: FastifySchema = {
 		properties: {
 			idempresa: { type: "string" },
 			nome: { type: "string" },
+			q: { type: "string" },
 			inativo: { type: "number" },
 			page: { type: "number", default: 1 },
 			limit: { type: "number", default: 10 },
