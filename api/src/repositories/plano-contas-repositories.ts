@@ -1,6 +1,7 @@
 import { and, count, eq, inArray, isNull, sql } from "drizzle-orm";
 import * as schema from "../../drizzle/schema.js";
 import { db } from "./connection.js";
+import { ordenacaoCodigoHierarquicoAsc } from "./ordenacao-codigo.js";
 
 export type PlanoContas = typeof schema.planocontas.$inferSelect;
 export type NovoPlanoContas = typeof schema.planocontas.$inferInsert;
@@ -164,7 +165,7 @@ export async function listarPlanoContasPorEmpresas({
 			.select()
 			.from(schema.planocontas)
 			.where(and(...where))
-			.orderBy(schema.planocontas.codigo)
+			.orderBy(...ordenacaoCodigoHierarquicoAsc(schema.planocontas.codigo))
 			.limit(limit)
 			.offset(offset),
 	]);
@@ -179,7 +180,8 @@ export async function buscarPlanosFilhos(idplanocontas: string) {
 	const planosFilhos = await db
 		.select()
 		.from(schema.planocontas)
-		.where(eq(schema.planocontas.idplanocontas, idplanocontas));
+		.where(eq(schema.planocontas.idplanocontas, idplanocontas))
+		.orderBy(...ordenacaoCodigoHierarquicoAsc(schema.planocontas.codigo));
 
 	return planosFilhos;
 }

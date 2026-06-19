@@ -34,6 +34,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { usePlanoContas } from "@/hooks/use-plano-contas";
+import { ordenarPlanoContasPorCodigo } from "@/lib/plano-contas-utils";
 import { cn } from "@/lib/utils";
 import {
 	type PlanoContas,
@@ -74,7 +75,7 @@ export function TreeNode({ node, level = 0 }: TreeNodeProps) {
 		enabled: isExpanded && !hasLoadedChildren && !!empresa?.id,
 	});
 
-	const children = childrenData?.data || [];
+	const children = ordenarPlanoContasPorCodigo(childrenData?.data ?? []);
 
 	const handleToggle = (e: React.MouseEvent) => {
 		e.stopPropagation();
