@@ -1,10 +1,30 @@
-import { and, count, desc, eq, ilike } from "drizzle-orm";
+import { and, count, desc, eq, ilike, or } from "drizzle-orm";
 import type { NovoNCM } from "@/model/ncm-model";
 import { ncm as ncmTable } from "@/repositories/schema.js";
 import { db } from "./connection";
 
 export async function buscarNcmPorId(id: string) {
 	const [ncm] = await db.select().from(ncmTable).where(eq(ncmTable.id, id));
+
+	return ncm;
+}
+
+export async function buscarNcmPorCodigo(
+	idempresa: string,
+	codigo: string,
+) {
+	const codigoNormalizado = codigo.replace(/\D/g, "");
+
+	const [ncm] = await db
+		.select()
+		.from(ncmTable)
+		.where(
+			and(
+				eq(ncmTable.idempresa, idempresa),
+				or(eq(ncmTable.codigo, codigoNormalizado), eq(ncmTable.codigo, codigo)),
+			),
+		)
+		.limit(1);
 
 	return ncm;
 }

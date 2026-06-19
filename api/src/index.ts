@@ -13,6 +13,7 @@ import { bancosRotas } from "./controllers/http/bancos/rotas.js";
 import { centrosCustoRotas } from "./controllers/http/centro-custo/rotas.js";
 import { cestsRotas } from "./controllers/http/cest/rotas.js";
 import { cfopsRotas } from "./controllers/http/cfop/rotas.js";
+import { cfopDeParaRotas } from "./controllers/http/cfop-depara/rotas.js";
 import { cfopsPadraoRotas } from "./controllers/http/cfop-padrao/rotas.js";
 import { codigosReduzidosContaContabilRotas } from "./controllers/http/codigo-reduzido-conta-contabil/rotas.js";
 import { condicoesPagamentoRotas } from "./controllers/http/condicao-pagamento/rotas.js";
@@ -76,7 +77,7 @@ app.register(cors, {
 		}
 		cb(new Error("Not allowed by CORS"), false);
 	},
-	methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+	methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
 	allowedHeaders: [
 		"Content-Type",
 		"Authorization",
@@ -482,6 +483,7 @@ app.register(areasRotas);
 app.register(centrosCustoRotas);
 app.register(cestsRotas);
 app.register(cfopsRotas);
+app.register(cfopDeParaRotas);
 app.register(cfopsPadraoRotas);
 app.register(condicoesPagamentoRotas);
 app.register(departamentosRotas);

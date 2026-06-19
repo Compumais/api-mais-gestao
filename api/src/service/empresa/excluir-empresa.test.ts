@@ -18,6 +18,7 @@ describe("excluirEmpresaService", () => {
 		idproprietario: "proprietario-1",
 		prazocartaocredito: 30,
 		prazocartaodebito: 1,
+		regimetributario: null,
 	};
 
 	beforeEach(() => {

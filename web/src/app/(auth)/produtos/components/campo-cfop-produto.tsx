@@ -1,0 +1,64 @@
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
+import { Combobox } from "@/components/ui/combobox";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+import { useEmpresa } from "@/hooks/use-empresa";
+import { type TipoMovimentoCfop, cfopService } from "@/services/cfop.service";
+
+type CampoCfopProdutoProps = {
+	id: string;
+	label: string;
+	value?: string | null;
+	tipomovimento: TipoMovimentoCfop;
+	onChange: (idcfop: string) => void;
+	erro?: string | undefined;
+};
+
+function formatarLabel(codigo: string | null, descricao: string | null) {
+	if (codigo && descricao) return `${codigo} - ${descricao}`;
+	return descricao ?? codigo ?? "Sem descrição";
+}
+
+export function CampoCfopProduto({
+	id,
+	label,
+	value,
+	tipomovimento,
+	onChange,
+	erro,
+}: CampoCfopProdutoProps) {
+	const { localStorageEmpresa: empresa } = useEmpresa();
+
+	const { data: cfops = [], isLoading } = useQuery({
+		queryKey: ["cfops", empresa?.id, tipomovimento, "produto"],
+		queryFn: async () => {
+			if (!empresa) throw new Error("Empresa não selecionada");
+			return cfopService.listarTodos({
+				idempresa: empresa.id,
+				tipomovimento,
+			});
+		},
+		enabled: !!empresa,
+	});
+
+	const opcoes = cfops.map((cfop) => ({
+		value: cfop.id,
+		label: formatarLabel(cfop.codigo, cfop.descricao),
+	}));
+
+	return (
+		<Field data-invalid={!!erro}>
+			<FieldLabel htmlFor={id}>{label}</FieldLabel>
+			<Combobox
+				options={opcoes}
+				value={value ?? ""}
+				onChange={onChange}
+				placeholder={isLoading ? "Carregando..." : "Selecione o CFOP"}
+				searchPlaceholder="Buscar CFOP..."
+				emptyMessage="Nenhum CFOP encontrado"
+			/>
+			<FieldError errors={erro ? [{ message: erro }] : []} />
+		</Field>
+	);
+}

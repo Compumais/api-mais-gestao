@@ -21,6 +21,29 @@ export async function buscarEntidadePorId(id: string) {
 	return entidade;
 }
 
+export async function buscarEntidadePorCnpj(
+	idempresa: string,
+	cnpj: string,
+) {
+	const cnpjNormalizado = cnpj.replace(/\D/g, "");
+
+	const [entidade] = await db
+		.select()
+		.from(schema.entidade)
+		.where(
+			and(
+				eq(schema.entidade.idempresa, idempresa),
+				or(
+					eq(schema.entidade.cnpjcpf, cnpjNormalizado),
+					eq(schema.entidade.cnpjcpf, cnpj),
+				),
+			),
+		)
+		.limit(1);
+
+	return entidade;
+}
+
 export async function atualizarEntidade(
 	id: string,
 	dados: {

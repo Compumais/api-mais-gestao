@@ -12,7 +12,8 @@ type RecursoProximoCodigo =
 	| "hierarquia"
 	| "banco"
 	| "unidade-medida"
-	| "conta-corrente";
+	| "conta-corrente"
+	| "condicao-pagamento";
 
 export function criarHandlerProximoCodigo(recurso: RecursoProximoCodigo) {
 	return async function handlerProximoCodigo(

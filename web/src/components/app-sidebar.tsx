@@ -95,6 +95,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
 						<NavDocuments label="Cadastros" items={DATA.navRegistros} />
 						<NavDocuments label="Notas fiscais" items={DATA.navNotaFiscal} />
+						<NavDocuments label="Tributos" items={DATA.navTributos} />
 						<NavDocuments label="Financeiro" items={DATA.navFinanceiro} />
 						<NavDocuments label="Painel do contador" items={DATA.others} />
 						<NavDocuments label="Ferramentas" items={DATA.navFerramentas} />

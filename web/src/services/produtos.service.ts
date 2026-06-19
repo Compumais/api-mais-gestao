@@ -22,6 +22,15 @@ export interface Produto {
 	enviamobile?: number | null;
 	datacadastro: string;
 	quantidadepadrao?: number | null;
+	idcfopentrada?: string | null;
+	idcfopsaida?: string | null;
+	idcest?: string | null;
+	situacaotributariasnentrada?: string | null;
+	situacaotributariasn?: string | null;
+	cstpisentrada?: string | number | null;
+	cstcofinsentrada?: string | number | null;
+	cstpis?: string | number | null;
+	cstcofins?: string | number | null;
 }
 
 export interface ListarProdutosResponse {
@@ -51,6 +60,15 @@ export interface CriarProdutoData {
 	ncm: string;
 	observacoes?: string | null;
 	enviamobile?: number | null;
+	idcfopentrada?: string | null;
+	idcfopsaida?: string | null;
+	idcest?: string | null;
+	situacaotributariasnentrada?: string | null;
+	situacaotributariasn?: string | null;
+	cstpisentrada?: string | null;
+	cstcofinsentrada?: string | null;
+	cstpis?: string | null;
+	cstcofins?: string | null;
 }
 
 export interface AtualizarProdutoData {
@@ -69,6 +87,15 @@ export interface AtualizarProdutoData {
 	ncm?: string;
 	observacoes?: string | null;
 	enviamobile?: number | null;
+	idcfopentrada?: string | null;
+	idcfopsaida?: string | null;
+	idcest?: string | null;
+	situacaotributariasnentrada?: string | null;
+	situacaotributariasn?: string | null;
+	cstpisentrada?: string | null;
+	cstcofinsentrada?: string | null;
+	cstpis?: string | null;
+	cstcofins?: string | null;
 }
 
 export const produtosService = {

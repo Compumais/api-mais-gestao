@@ -20,6 +20,7 @@ describe("buscarEmpresaService", () => {
 		atualizadoem: new Date().toISOString(),
 		prazocartaocredito: 30,
 		prazocartaodebito: 1,
+		regimetributario: null,
 	};
 
 	beforeEach(() => {
@@ -124,6 +125,7 @@ describe("buscarEmpresaService", () => {
 			atualizadoem: "2024-01-02T00:00:00.000Z",
 			prazocartaocredito: 30,
 			prazocartaodebito: 1,
+		regimetributario: null,
 		};
 
 		vi.mocked(empresaRepository.buscarEmpresaPorId).mockResolvedValue(

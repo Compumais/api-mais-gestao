@@ -6,6 +6,7 @@ import {
 	type NovaEmpresa,
 } from "../../repositories/empresa-repositories.js";
 import { criarPlanoContasPadraoService } from "../planocontas/criar-plano-contas-padrao.js";
+import { criarCfopsPadraoService } from "../cfop/criar-cfops-padrao.js";
 import { criarContaCorrenteCaixaPadrao } from "../../repositories/conta-corrente-repositories.js";
 import {
 	httpCriacao,
@@ -29,6 +30,8 @@ export async function criarEmpresaService({
 	}
 
 	await criarPlanoContasPadraoService(empresa.id);
+
+	await criarCfopsPadraoService(empresa.id);
 
 	await criarContaCorrenteCaixaPadrao(empresa.id);
 

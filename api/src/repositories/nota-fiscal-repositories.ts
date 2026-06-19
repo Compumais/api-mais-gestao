@@ -1,8 +1,69 @@
-import { and, count, desc, eq, ilike } from "drizzle-orm";
+import { and, count, desc, eq, gte, ilike, lte, ne } from "drizzle-orm";
 import type { NovaNotaFiscal } from "@/model/nota-fiscal-model";
-import type { NovoNotaFiscalItem } from "@/model/nota-fiscal-item-model";
+import type {
+	NotaFiscalItem,
+	NovoNotaFiscalItem,
+} from "@/model/nota-fiscal-item-model";
+import type { DadosImportacaoItem } from "@/model/nota-fiscal-importacao-model.js";
 import { notafiscal, notafiscalitem } from "@/repositories/schema.js";
+import { STATUS_RASCUNHO_IMPORTACAO } from "@/util/nota-fiscal-constants.js";
 import { db } from "./connection";
+
+const COLUNAS_ITEM_NF = [
+	"id",
+	"idnotafiscal",
+	"idproduto",
+	"descricao",
+	"quantidade",
+	"precounitario",
+	"total",
+	"desconto",
+	"idcfop",
+	"cfop",
+	"idncm",
+	"ncm",
+	"idunidademedida",
+	"unidade",
+	"situacaotributaria",
+	"cstpis",
+	"cstcofins",
+	"percentualicms",
+	"baseicms",
+	"icms",
+	"aliquotapis",
+	"aliquotacofins",
+	"pis",
+	"cofins",
+	"pisretido",
+	"cofinsretido",
+	"ipi",
+	"inss",
+	"frete",
+	"seguro",
+	"outrasdespesas",
+	"origem",
+	"custoaquisicao",
+	"referenciafornecedor",
+	"informacaoadicional",
+	"contador",
+	"tipo",
+	"currenttimemillis",
+	"dadosimportacao",
+] as const;
+
+function montarItemParaInsert(
+	item: NovoNotaFiscalItem,
+): Record<string, unknown> {
+	const dados: Record<string, unknown> = {};
+
+	for (const coluna of COLUNAS_ITEM_NF) {
+		if (item[coluna] !== undefined) {
+			dados[coluna] = item[coluna];
+		}
+	}
+
+	return dados;
+}
 
 export async function criarNotaFiscalComItens(
 	notaFiscal: NovaNotaFiscal,
@@ -18,10 +79,18 @@ export async function criarNotaFiscalComItens(
 			return { notaFiscal: null, itens: [] };
 		}
 
-		const itensCriados =
-			itens.length > 0
-				? await tx.insert(notafiscalitem).values(itens).returning()
-				: [];
+		const itensCriados: NotaFiscalItem[] = [];
+
+		for (const item of itens) {
+			const [itemCriado] = await tx
+				.insert(notafiscalitem)
+				.values(montarItemParaInsert(item) as NovoNotaFiscalItem)
+				.returning();
+
+			if (itemCriado) {
+				itensCriados.push(itemCriado);
+			}
+		}
 
 		return { notaFiscal: notaCriada, itens: itensCriados };
 	});
@@ -50,6 +119,12 @@ export type ListarNotasFiscaisPorEmpresaParametros = {
 	numero?: string | undefined;
 	identidade?: string | undefined;
 	status?: number | undefined;
+	tipoorigem?: number | undefined;
+	idcfop?: string | undefined;
+	dataInicio?: string | undefined;
+	dataFim?: string | undefined;
+	excluirRascunhos?: boolean | undefined;
+	somenteRascunhos?: boolean | undefined;
 	page?: number;
 	limit?: number;
 };
@@ -59,10 +134,22 @@ export async function listarNotasFiscaisPorEmpresa({
 	numero,
 	identidade,
 	status,
+	tipoorigem,
+	idcfop,
+	dataInicio,
+	dataFim,
+	excluirRascunhos = false,
+	somenteRascunhos = false,
 	page = 1,
 	limit = 10,
 }: ListarNotasFiscaisPorEmpresaParametros) {
 	const where = [eq(notafiscal.idempresa, idempresa)];
+
+	if (somenteRascunhos) {
+		where.push(eq(notafiscal.status, STATUS_RASCUNHO_IMPORTACAO));
+	} else if (excluirRascunhos) {
+		where.push(ne(notafiscal.status, STATUS_RASCUNHO_IMPORTACAO));
+	}
 
 	if (numero) {
 		where.push(ilike(notafiscal.numero, `%${numero}%`));
@@ -74,6 +161,22 @@ export async function listarNotasFiscaisPorEmpresa({
 
 	if (status !== undefined) {
 		where.push(eq(notafiscal.status, status));
+	}
+
+	if (tipoorigem !== undefined) {
+		where.push(eq(notafiscal.tipoorigem, tipoorigem));
+	}
+
+	if (idcfop) {
+		where.push(eq(notafiscal.idcfop, idcfop));
+	}
+
+	if (dataInicio) {
+		where.push(gte(notafiscal.emissao, dataInicio));
+	}
+
+	if (dataFim) {
+		where.push(lte(notafiscal.emissao, dataFim));
 	}
 
 	const offset = (page - 1) * limit;
@@ -118,4 +221,114 @@ export async function excluirNotaFiscal(id: string) {
 		.returning();
 
 	return registro;
+}
+
+export async function buscarNotaFiscalRascunhoPorId(
+	id: string,
+	idempresa: string,
+) {
+	const [registro] = await db
+		.select()
+		.from(notafiscal)
+		.where(
+			and(
+				eq(notafiscal.id, id),
+				eq(notafiscal.idempresa, idempresa),
+				eq(notafiscal.status, STATUS_RASCUNHO_IMPORTACAO),
+			),
+		)
+		.limit(1);
+
+	return registro;
+}
+
+export async function buscarNotaFiscalPorChaveNfe(
+	idempresa: string,
+	chavenfe: string,
+	excluirId?: string | undefined,
+) {
+	const where = [
+		eq(notafiscal.idempresa, idempresa),
+		eq(notafiscal.chavenfe, chavenfe),
+	];
+
+	if (excluirId) {
+		where.push(ne(notafiscal.id, excluirId));
+	}
+
+	const [registro] = await db
+		.select()
+		.from(notafiscal)
+		.where(and(...where))
+		.limit(1);
+
+	return registro;
+}
+
+export async function buscarItemNotaFiscalPorId(
+	id: string,
+	idnotafiscal: string,
+) {
+	const [registro] = await db
+		.select()
+		.from(notafiscalitem)
+		.where(
+			and(
+				eq(notafiscalitem.id, id),
+				eq(notafiscalitem.idnotafiscal, idnotafiscal),
+			),
+		)
+		.limit(1);
+
+	return registro;
+}
+
+export async function atualizarItemNotaFiscal(
+	id: string,
+	dados: Partial<NovoNotaFiscalItem> & {
+		dadosimportacao?: DadosImportacaoItem | null | undefined;
+	},
+) {
+	const [registro] = await db
+		.update(notafiscalitem)
+		.set(dados)
+		.where(eq(notafiscalitem.id, id))
+		.returning();
+
+	return registro;
+}
+
+export async function finalizarRascunhoNotaFiscal(
+	id: string,
+	dadosNota: Partial<NovaNotaFiscal>,
+	itens: Array<Partial<NovoNotaFiscalItem> & { id: string }>,
+) {
+	return db.transaction(async (tx) => {
+		const [notaAtualizada] = await tx
+			.update(notafiscal)
+			.set(dadosNota)
+			.where(eq(notafiscal.id, id))
+			.returning();
+
+		if (!notaAtualizada) {
+			return { notaFiscal: null, itens: [] as NotaFiscalItem[] };
+		}
+
+		const itensAtualizados: NotaFiscalItem[] = [];
+
+		for (const item of itens) {
+			const { id: idItem, ...dadosItem } = item;
+			const [itemAtualizado] = await tx
+				.update(notafiscalitem)
+				.set(dadosItem)
+				.where(eq(notafiscalitem.id, idItem))
+				.returning();
+
+			if (itemAtualizado) {
+				itensAtualizados.push(itemAtualizado);
+			}
+		}
+
+		return { notaFiscal: notaAtualizada, itens: itensAtualizados };
+	});
 }

@@ -8,6 +8,11 @@ const listarNotasFiscaisQuerySchema = z.object({
 	numero: z.string().optional(),
 	identidade: z.string().optional(),
 	status: z.coerce.number().int().optional(),
+	tipoorigem: z.coerce.number().int().optional(),
+	idcfop: z.string().optional(),
+	dataInicio: z.string().optional(),
+	dataFim: z.string().optional(),
+	rascunho: z.coerce.number().optional(),
 	page: z.coerce.number().min(1).optional().default(1),
 	limit: z.coerce.number().min(1).max(100).optional().default(10),
 });
@@ -29,6 +34,11 @@ export async function listarNotasFiscais(
 			numero: query.numero,
 			identidade: query.identidade,
 			status: query.status,
+			tipoorigem: query.tipoorigem,
+			idcfop: query.idcfop,
+			dataInicio: query.dataInicio,
+			dataFim: query.dataFim,
+			rascunho: query.rascunho === 1,
 			page: query.page,
 			limit: query.limit,
 		});

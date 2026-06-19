@@ -36,11 +36,44 @@ export const produtoFormSchema = z.object({
 		.number()
 		.int()
 		.min(0, "Origem inválida")
-		.max(2, "Origem inválida"),
+		.max(8, "Origem inválida"),
 	ncm: z
 		.string()
 		.min(1, "NCM é obrigatório")
 		.max(10, "NCM deve ter no máximo 10 caracteres"),
+	idcfopentrada: z.string().optional().nullable(),
+	idcfopsaida: z.string().optional().nullable(),
+	idcest: z.string().optional().nullable(),
+	situacaotributariasnentrada: z
+		.string()
+		.max(3, "CST deve ter no máximo 3 caracteres")
+		.optional()
+		.nullable(),
+	situacaotributariasn: z
+		.string()
+		.max(3, "CST deve ter no máximo 3 caracteres")
+		.optional()
+		.nullable(),
+	cstpisentrada: z
+		.string()
+		.max(2, "CST deve ter no máximo 2 caracteres")
+		.optional()
+		.nullable(),
+	cstcofinsentrada: z
+		.string()
+		.max(2, "CST deve ter no máximo 2 caracteres")
+		.optional()
+		.nullable(),
+	cstpis: z
+		.string()
+		.max(2, "CST deve ter no máximo 2 caracteres")
+		.optional()
+		.nullable(),
+	cstcofins: z
+		.string()
+		.max(2, "CST deve ter no máximo 2 caracteres")
+		.optional()
+		.nullable(),
 	observacoes: z.string().optional().nullable(),
 	enviamobile: z.boolean().optional(),
 });

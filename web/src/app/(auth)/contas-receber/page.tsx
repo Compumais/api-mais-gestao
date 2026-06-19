@@ -70,6 +70,17 @@ const formatDate = (date: string | null | undefined) => {
 	return new Date(date).toLocaleDateString("pt-BR");
 };
 
+const formatParcela = (
+	parcela: number | null | undefined,
+	totalParcelas: number | null | undefined,
+) => {
+	if (!parcela) return "-";
+	if (totalParcelas && totalParcelas > 1) {
+		return `${parcela}/${totalParcelas}`;
+	}
+	return String(parcela);
+};
+
 const getStatusBadge = (status: string | null | undefined) => {
 	if (!status) return <Badge variant="outline">-</Badge>;
 
@@ -124,7 +135,20 @@ const createColumns = ({
 	{
 		accessorKey: "emitente",
 		header: "Nome",
-		cell: ({ row }) => <div>{row.getValue("emitente") || "-"}</div>,
+		cell: ({ row }) => (
+			<div className="max-w-[220px] truncate">
+				{row.getValue("emitente") || "-"}
+			</div>
+		),
+	},
+	{
+		id: "parcela",
+		header: "Parcela",
+		cell: ({ row }) => (
+			<div>
+				{formatParcela(row.original.parcela, row.original.totalparcelas)}
+			</div>
+		),
 	},
 	{
 		accessorKey: "status",
@@ -396,9 +420,10 @@ export default function ContasAReceberPage() {
 							</p>
 						</div>
 					) : isLoading ? (
-						<TableSkeleton rows={10} columns={10}>
+						<TableSkeleton rows={10} columns={11}>
 							<TableCell>Documento</TableCell>
 							<TableCell>Nome</TableCell>
+							<TableCell>Parcela</TableCell>
 							<TableCell>Status</TableCell>
 							<TableCell>Emissão</TableCell>
 							<TableCell>Vencimento</TableCell>

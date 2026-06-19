@@ -8,7 +8,10 @@ const criarCondicaoPagamentoBodySchema = z.looseObject({
 	idempresa: z.string(),
 	codigo: z.string().max(10).optional(),
 	descricao: z.string().max(512).optional(),
-	inativo: z.number().int().optional()
+	parcelas: z.coerce.number().int().optional(),
+	prazos: z.string().max(512).optional(),
+	escopo: z.coerce.number().int().optional(),
+	inativo: z.coerce.number().int().optional(),
 });
 
 export async function criarCondicaoPagamento(request: FastifyRequest, reply: FastifyReply) {

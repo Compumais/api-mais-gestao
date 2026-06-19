@@ -11,7 +11,10 @@ export const criarCondicaoPagamentoSchema: FastifySchema = {
 			idempresa: { type: "string", description: "ID da empresa" },
 			codigo: { type: "string" },
 			descricao: { type: "string" },
-			inativo: { type: "string" },
+			parcelas: { type: "number" },
+			prazos: { type: "string" },
+			escopo: { type: "number" },
+			inativo: { type: "number" },
 			"...": { type: "string", description: "Demais campos da entidade" }
 		},
 		required: ["idempresa"],

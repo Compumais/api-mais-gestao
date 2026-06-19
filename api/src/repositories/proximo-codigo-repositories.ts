@@ -30,7 +30,8 @@ async function buscarProximoCodigoVarcharNumerico(
 	tabela:
 		| typeof schema.hierarquia
 		| typeof schema.banco
-		| typeof schema.unidademedida,
+		| typeof schema.unidademedida
+		| typeof schema.condicaopagamento,
 	idempresa: string,
 ): Promise<string> {
 	const [resultado] = await db
@@ -60,4 +61,10 @@ export async function buscarProximoCodigoUnidadeMedida(
 	idempresa: string,
 ): Promise<string> {
 	return buscarProximoCodigoVarcharNumerico(schema.unidademedida, idempresa);
+}
+
+export async function buscarProximoCodigoCondicaoPagamento(
+	idempresa: string,
+): Promise<string> {
+	return buscarProximoCodigoVarcharNumerico(schema.condicaopagamento, idempresa);
 }

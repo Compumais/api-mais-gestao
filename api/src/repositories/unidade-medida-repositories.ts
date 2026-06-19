@@ -13,6 +13,32 @@ export async function buscarUnidadeMedidaPorId(id: string) {
 	return registro;
 }
 
+export async function buscarUnidadeMedidaPorSigla(
+	idempresa: string,
+	sigla: string,
+) {
+	const siglaNormalizada = sigla.trim().toUpperCase();
+
+	const [registro] = await db
+		.select()
+		.from(unidademedida)
+		.where(
+			and(
+				or(
+					eq(unidademedida.idempresa, idempresa),
+					isNull(unidademedida.idempresa),
+				),
+				or(
+					eq(unidademedida.codigo, siglaNormalizada),
+					ilike(unidademedida.codigo, siglaNormalizada),
+				),
+			),
+		)
+		.limit(1);
+
+	return registro;
+}
+
 export async function criarUnidadeMedida(
 	dadosUnidadeMedida: NovoUnidadeMedida,
 ) {

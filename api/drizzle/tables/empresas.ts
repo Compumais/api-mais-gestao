@@ -6,6 +6,7 @@ import {
 	text,
 	timestamp,
 	uniqueIndex,
+	varchar,
 } from "drizzle-orm/pg-core";
 import { usuarios } from "./usuarios.js";
 
@@ -25,6 +26,7 @@ export const empresa = pgTable(
 		atualizadoem: timestamp({ precision: 3, mode: "string" }).notNull(),
 		prazocartaocredito: integer().default(30).notNull(),
 		prazocartaodebito: integer().default(1).notNull(),
+		regimetributario: varchar({ length: 2 }),
 	},
 	(table) => [
 		uniqueIndex("empresas_cnpj_key").using(

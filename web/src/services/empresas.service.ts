@@ -1,5 +1,18 @@
 import { api } from "@/lib/axios";
 
+export type RegimeTributarioEmpresa = "SN" | "LP" | "LR";
+
+export interface Empresa {
+	id: string;
+	idproprietario: string;
+	nome: string;
+	cnpj?: string | null;
+	telefone?: string | null;
+	email?: string;
+	endereco?: string;
+	regimetributario?: RegimeTributarioEmpresa | null;
+}
+
 interface CriarEmpresa {
 	nome: string;
 	cnpj: string;
@@ -9,12 +22,11 @@ interface CriarEmpresa {
 	idproprietario: string;
 }
 
-interface Empresa {
-	id: string;
-	idproprietario: string;
-	nome: string;
-	email: string;
-	endereco: string;
+export interface AtualizarEmpresaData {
+	nome?: string;
+	cnpj?: string;
+	telefone?: string;
+	regimetributario?: RegimeTributarioEmpresa | "" | null;
 }
 
 interface ListarEmpresasResponse {
@@ -40,8 +52,18 @@ export const empresasService = {
 		return data;
 	},
 
+	async buscar(id: string): Promise<Empresa> {
+		const { data } = await api.get<Empresa>(`/empresas/${id}`);
+		return data;
+	},
+
 	async criar(data: CriarEmpresa): Promise<Empresa> {
 		const { data: response } = await api.post<Empresa>("/empresas", data);
 		return response;
+	},
+
+	async atualizar(id: string, dados: AtualizarEmpresaData): Promise<Empresa> {
+		const { data } = await api.put<Empresa>(`/empresas/${id}`, dados);
+		return data;
 	},
 };

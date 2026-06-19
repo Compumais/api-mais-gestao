@@ -4,7 +4,8 @@ import {
 	buscarEmpresaPorId,
 	type Empresa,
 } from "@/repositories/empresa-repositories.js";
-import { httpNaoEncontrado, httpOk } from "@/util/http-util.js";
+import { httpBadRequest, httpNaoEncontrado, httpOk } from "@/util/http-util.js";
+import { normalizarRegimeTributario } from "@/util/regime-tributario-empresa.js";
 
 type AtualizaEmpresaParametros = {
 	id: string;
@@ -12,6 +13,7 @@ type AtualizaEmpresaParametros = {
 		nome?: string | undefined;
 		cnpj?: string | undefined;
 		telefone?: string | undefined;
+		regimetributario?: string | null | undefined;
 	};
 };
 
@@ -25,8 +27,27 @@ export async function atualizarEmpresaService({
 		return httpNaoEncontrado();
 	}
 
+	let regimetributario: string | null | undefined;
+
+	if (dados.regimetributario !== undefined) {
+		const regimeNormalizado = normalizarRegimeTributario(dados.regimetributario);
+
+		if (
+			dados.regimetributario !== null &&
+			dados.regimetributario !== "" &&
+			!regimeNormalizado
+		) {
+			return httpBadRequest("Regime tributário inválido. Use SN, LP ou LR.");
+		}
+
+		regimetributario = regimeNormalizado;
+	}
+
 	const empresaAtualizada = await atualizarEmpresa(id, {
-		...dados,
+		nome: dados.nome,
+		cnpj: dados.cnpj,
+		telefone: dados.telefone,
+		regimetributario,
 		atualizadoem: new Date().toISOString(),
 	});
 

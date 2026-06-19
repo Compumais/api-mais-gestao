@@ -9,6 +9,27 @@ export async function buscarCestPorId(id: string) {
 	return registro;
 }
 
+export async function buscarCestPorCodigo(
+	idempresa: string,
+	codigo: string,
+) {
+	const codigoNormalizado = codigo.replace(/\D/g, "");
+
+	const [registro] = await db
+		.select()
+		.from(cest)
+		.where(
+			and(
+				eq(cest.idempresa, idempresa),
+				eq(cest.codigo, codigoNormalizado),
+				eq(cest.inativo, 0),
+			),
+		)
+		.limit(1);
+
+	return registro;
+}
+
 export async function criarCest(dadosCest: NovoCEST) {
 	const [registro] = await db.insert(cest).values(dadosCest).returning();
 
