@@ -66,18 +66,25 @@ export const authService = {
 	},
 
 	async getProfile(): Promise<UserProfile> {
-		const { data } = await api.get("/api/auth/get-session");
+		const { data } = await api.get<UserProfile>("/api/auth/perfil");
 
-		if (!data || !data.user) {
+		if (!data?.id) {
 			throw new Error("Não foi possível obter a sessão do usuário");
 		}
 
+		const perfilRaw = data.perfil;
+		const perfil = Array.isArray(perfilRaw)
+			? perfilRaw
+			: perfilRaw
+				? [perfilRaw]
+				: [];
+
 		return {
-			id: data.user.id,
-			nome: data.user.name,
-			email: data.user.email,
-			perfil: data.user.perfil,
-			plano: data.user.plano || null,
+			id: data.id,
+			nome: data.nome,
+			email: data.email,
+			perfil,
+			plano: data.plano ?? null,
 		};
 	},
 

@@ -21,7 +21,7 @@ interface PdvHeaderProps {
 
 export function PdvHeader({
 	titulo = "PDV Gourmet",
-	voltarHref = "/gourmet",
+	voltarHref,
 	voltarLabel = "Mesas",
 }: PdvHeaderProps) {
 	const { logout, user } = useAuth();
@@ -92,12 +92,14 @@ export function PdvHeader({
 						</>
 					)}
 
-					<Button variant="outline" size="sm" asChild>
-						<Link href={voltarHref}>
-							<IconArrowLeft className="size-4" />
-							<span className="hidden sm:inline">{voltarLabel}</span>
-						</Link>
-					</Button>
+					{voltarHref && (
+						<Button variant="outline" size="sm" asChild>
+							<Link href={voltarHref}>
+								<IconArrowLeft className="size-4" />
+								<span className="hidden sm:inline">{voltarLabel}</span>
+							</Link>
+						</Button>
+					)}
 					<Button
 						variant="ghost"
 						size="icon-sm"

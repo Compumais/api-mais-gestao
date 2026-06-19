@@ -9,6 +9,7 @@ import { useEmpresasUsuario } from "@/hooks/use-empresas-usuario";
 import { AUTH_SESSION_COOKIE } from "@/lib/auth-session-cookie";
 import { getSessionToken } from "@/lib/auth-token";
 import {
+	getDefaultRouteForUser,
 	isGarcom,
 	isRouteAllowedForGarcom,
 } from "@/lib/perfis";
@@ -63,7 +64,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 		if (!isMounted || isLoading || !user) return;
 
 		if (isGarcom(user) && !isRouteAllowedForGarcom(pathname)) {
-			router.push("/garcom");
+			router.push(getDefaultRouteForUser(user));
 		}
 	}, [isMounted, isLoading, user, pathname, router]);
 

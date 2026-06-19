@@ -7,6 +7,7 @@ import { areasRotas } from "./controllers/http/area/rotas.js";
 import { assinaturasRotas } from "./controllers/http/assinaturas/rotas.js";
 import { auditoriaRotas } from "./controllers/http/auditoria/rotas.js";
 // import { authRotas } from "./controllers/http/auth/rotas.js";
+import { obterPerfil } from "./controllers/http/auth/obter-perfil.js";
 import { authenticationRoute } from "./controllers/http/authentication.js";
 import { bancosRotas } from "./controllers/http/bancos/rotas.js";
 import { centrosCustoRotas } from "./controllers/http/centro-custo/rotas.js";
@@ -31,15 +32,15 @@ import { enquadramentosIpiRotas } from "./controllers/http/enquatramento-ipi/rot
 import { entidadesContaContabilRotas } from "./controllers/http/entidade-conta-contabil/rotas.js";
 import { entidadesRotas } from "./controllers/http/entidades/rotas.js";
 import { fechamentosCaixaRotas } from "./controllers/http/fechamento-caixa/rotas.js";
-import { healthRotas } from "./controllers/http/health/rotas.js";
 import { financeiroRotas } from "./controllers/http/financeiro/rotas.js";
 import { financeiroLancamentoRotas } from "./controllers/http/financeirolancamento/rotas.js";
+import { healthRotas } from "./controllers/http/health/rotas.js";
 import { hierarquiasRotas } from "./controllers/http/hierarquia/rotas.js";
 import { iaRotas } from "./controllers/http/ia/rotas.js";
 import { integracoesContabilConfiguracaoRotas } from "./controllers/http/integracao-contabil-configuracao/rotas.js";
-import { localidadesRotas } from "./controllers/http/localidade/rotas.js";
 import { locaisEstoqueRotas } from "./controllers/http/local-estoque/rotas.js";
 import { locaisRetiradaRotas } from "./controllers/http/local-retirada/rotas.js";
+import { localidadesRotas } from "./controllers/http/localidade/rotas.js";
 import { motivosRebaixaRotas } from "./controllers/http/motivo-rebaixa/rotas.js";
 import { movimentosEstoqueRotas } from "./controllers/http/movimento-estoque/rotas.js";
 import { notasFiscaisRotas } from "./controllers/http/nota-fiscal/rotas.js";
@@ -61,8 +62,9 @@ import { usuariosRotas } from "./controllers/http/usuarios/rotas.js";
 import { vendasPdvGourmetRotas } from "./controllers/http/venda-pdv-gourmet/rotas.js";
 import { vendasPdvItemRotas } from "./controllers/http/venda-pdv-item/rotas.js";
 import { verificarAcessoGarcom } from "./controllers/middleware/verificar-acesso-garcom.js";
-import { isOrigemCorsPermitida } from "./util/cors-origins.js";
+import { verifyJwt } from "./controllers/middleware/verify-jwt.js";
 import { getApiBaseUrl } from "./util/base-url.js";
+import { isOrigemCorsPermitida } from "./util/cors-origins.js";
 
 export const app = Fastify({ logger: true });
 
@@ -94,6 +96,10 @@ await app.register(swagger, {
 			version: "1.0.0",
 		},
 		servers: [
+			{
+				url: "http://localhost:3333",
+				description: "Servidor de desenvolvimento",
+			},
 			{
 				url: getApiBaseUrl(),
 				description: "Servidor de desenvolvimento",
@@ -368,6 +374,35 @@ app.route({
 	async handler(request: FastifyRequest, reply: FastifyReply) {
 		await authenticationRoute(request, reply);
 	},
+});
+
+app.route({
+	method: "GET",
+	url: "/api/auth/perfil",
+	schema: {
+		tags: ["auth"],
+		summary: "Obter perfil do usuário autenticado",
+		description:
+			"Retorna dados do usuário com perfil completo. Aceita cookie de sessão ou Bearer token.",
+		security: [{ bearerAuth: [] }],
+		response: {
+			200: {
+				type: "object",
+				properties: {
+					id: { type: "string" },
+					nome: { type: "string" },
+					email: { type: "string" },
+					perfil: {
+						type: "array",
+						items: { type: "string" },
+					},
+					plano: { type: "string", nullable: true },
+				},
+			},
+		},
+	},
+	preHandler: verifyJwt,
+	handler: obterPerfil,
 });
 
 app.route({

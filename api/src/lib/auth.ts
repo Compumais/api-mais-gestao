@@ -10,6 +10,7 @@ import {
 	getCookieDomain,
 	getPrimaryClientOrigin,
 } from "../util/cors-origins.js";
+import { resolverPerfilNaCriacao } from "../util/usuario-perfil.js";
 
 export const auth = betterAuth({
 	baseURL: getApiBaseUrl(),
@@ -28,10 +29,11 @@ export const auth = betterAuth({
 		user: {
 			create: {
 				before: async (user, _context) => {
+					const userRecord = user as Record<string, unknown>;
 					return {
 						data: {
 							...user,
-							perfil: ["proprietario"],
+							perfil: resolverPerfilNaCriacao(userRecord),
 						},
 					};
 				},
@@ -59,6 +61,11 @@ export const auth = betterAuth({
 			updatedAt: "atualizadoem",
 		},
 		additionalFields: {
+			perfil: {
+				type: "json",
+				required: false,
+				input: true,
+			},
 			maxempresas: {
 				type: "number",
 				required: false,

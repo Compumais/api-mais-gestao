@@ -1,12 +1,13 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod/v4";
 import { criarUsuarioService } from "@/service/usuarios/criar-usuario.js";
+import { perfilUsuarioSchema } from "@/util/usuario-perfil.js";
 
 const criarUsuarioBodySchema = z.object({
 	nome: z.string().min(1, "Nome é obrigatório"),
 	email: z.email("Email inválido"),
 	password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
-	perfil: z.union([z.string(), z.array(z.string())]),
+	perfil: perfilUsuarioSchema,
 	empresasIds: z.array(z.uuid()),
 	idempresa: z.uuid(),
 });
