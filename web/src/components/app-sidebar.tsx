@@ -14,16 +14,19 @@ import {
 } from "@/components/ui/sidebar";
 import { DATA } from "@/constants/nav-constants";
 import { useAuth } from "@/hooks/use-auth";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { isGarcom } from "@/lib/perfis";
+import { hasPerfil, isGarcom } from "@/lib/perfis";
 import { CPlusIcon } from "./icons/c-plus";
 import { NavDocuments } from "./nav-documents";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const { user } = useAuth();
-	const isMobile = useIsMobile();
 
 	const isGarcomUser = React.useMemo(() => isGarcom(user), [user]);
+
+	const canAccessGarcomLink = React.useMemo(
+		() => isGarcomUser || hasPerfil(user?.perfil, "proprietario"),
+		[isGarcomUser, user?.perfil],
+	);
 
 	const isUsuario = React.useMemo(() => {
 		if (!user?.perfil) return false;
@@ -54,17 +57,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 		return items;
 	}, [isUsuario]);
 
-	const navGourmetItems = React.useMemo(
-		() =>
-			DATA.navGourmet.map((group) => ({
-				...group,
-				items: group.items?.filter(
-					(subItem) =>
-						subItem.url !== "/garcom" || isMobile || isGarcomUser,
-				),
-			})),
-		[isMobile, isGarcomUser],
-	);
+	const navGourmetItems = React.useMemo(() => {
+		return DATA.navGourmet.map((group) => ({
+			...group,
+			items: group.items?.filter((subItem) => {
+				if (subItem.url === "/garcom") {
+					return canAccessGarcomLink;
+				}
+				if (subItem.url === "/gourmet" && isGarcomUser) {
+					return false;
+				}
+				return true;
+			}),
+		}));
+	}, [canAccessGarcomLink, isGarcomUser]);
 
 	return (
 		<Sidebar collapsible="icon" {...props}>

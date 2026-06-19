@@ -1,10 +1,11 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod/v4";
 import { atualizarUsuarioService } from "@/service/usuarios/atualizar-usuario.js";
+import { perfilUsuarioSchema } from "@/util/usuario-perfil.js";
 
 const atualizarUsuarioBodySchema = z.object({
 	nome: z.string().min(1).optional(),
-	perfil: z.union([z.string(), z.array(z.string())]).optional(),
+	perfil: perfilUsuarioSchema.optional(),
 	empresasIds: z.array(z.uuid()),
 	idempresa: z.uuid(),
 });

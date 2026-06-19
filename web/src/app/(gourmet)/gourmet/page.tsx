@@ -79,8 +79,8 @@ export default function GourmetHubPage() {
 			<>
 				<PdvHeader
 					titulo="PDV Gourmet — Mesas"
-					voltarHref={isGarcomUser ? "/garcom" : "/dashboard"}
-					voltarLabel={isGarcomUser ? "Garçom" : "Voltar ao sistema"}
+					voltarHref={isGarcomUser ? undefined : "/dashboard"}
+					voltarLabel="Voltar ao sistema"
 				/>
 				<div className="flex flex-1 items-center justify-center p-8">
 					<p className="text-muted-foreground">
@@ -95,8 +95,8 @@ export default function GourmetHubPage() {
 		<>
 			<PdvHeader
 				titulo="PDV Gourmet — Mesas"
-				voltarHref={isGarcomUser ? "/garcom" : "/dashboard"}
-				voltarLabel={isGarcomUser ? "Garçom" : "Voltar ao sistema"}
+				voltarHref={isGarcomUser ? undefined : "/dashboard"}
+				voltarLabel="Voltar ao sistema"
 			/>
 			<div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4 md:p-6">
 				<div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

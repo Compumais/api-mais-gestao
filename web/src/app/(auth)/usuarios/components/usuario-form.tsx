@@ -30,6 +30,7 @@ import {
 	type AtualizarUsuarioFormData,
 	criarUsuarioSchema,
 	atualizarUsuarioSchema,
+	perfilUsuarioSchema,
 } from "@/schemas/usuarios.schema";
 import { usuariosService, type Usuario } from "@/services/usuarios.service";
 
@@ -44,7 +45,7 @@ type UsuarioFormValues = {
 	nome: string;
 	email: string;
 	password: string;
-	perfil: string;
+	perfil: CriarUsuarioFormData["perfil"];
 	empresasIds: string[];
 };
 
@@ -87,11 +88,14 @@ export function UsuarioForm(props: UsuarioFormProps) {
 	// Preencher formulário quando os dados chegarem
 	useEffect(() => {
 		if (isEdicao && usuarioData) {
+			const perfilRaw = Array.isArray(usuarioData.perfil)
+				? usuarioData.perfil[0] || "usuario"
+				: usuarioData.perfil || "usuario";
+			const perfilParsed = perfilUsuarioSchema.safeParse(perfilRaw);
+
 			form.reset({
 				nome: usuarioData.nome,
-				perfil: Array.isArray(usuarioData.perfil)
-					? usuarioData.perfil[0] || "usuario"
-					: usuarioData.perfil || "usuario",
+				perfil: perfilParsed.success ? perfilParsed.data : "usuario",
 				empresasIds: usuarioData.empresasIds || [],
 				idempresa: empresa?.id || "",
 			});
@@ -223,7 +227,12 @@ export function UsuarioForm(props: UsuarioFormProps) {
 					<FieldLabel htmlFor="perfil">Perfil *</FieldLabel>
 					<Select
 						value={form.watch("perfil") || "usuario"}
-						onValueChange={(value) => form.setValue("perfil", value)}
+						onValueChange={(value) =>
+							form.setValue("perfil", value as CriarUsuarioFormData["perfil"], {
+								shouldDirty: true,
+								shouldValidate: true,
+							})
+						}
 					>
 						<SelectTrigger>
 							<SelectValue placeholder="Selecione o perfil" />

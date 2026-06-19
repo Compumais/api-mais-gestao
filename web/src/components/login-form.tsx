@@ -64,13 +64,37 @@ export function LoginForm({
 	});
 
 	const { mutate: signIn, isPending } = useMutation({
-		mutationFn: authService.signIn,
-		onSuccess: async (loginData: LoginResponse) => {
-			const sessionToken = extractSessionTokenFromLoginResponse(loginData);
-			if (sessionToken) {
-				setSessionToken(sessionToken);
+		mutationFn: async (credentials: LoginFormData) => {
+			const resultado = await authClient.signIn.email({
+				email: credentials.email,
+				password: credentials.password,
+			});
+
+			if (resultado.error) {
+				throw new Error(
+					resultado.error.message ||
+						"Erro ao realizar login. Verifique suas credenciais.",
+				);
 			}
 
+			const loginData = (resultado.data ?? {}) as LoginResponse;
+			const sessionToken = extractSessionTokenFromLoginResponse(loginData);
+
+			if (sessionToken) {
+				setSessionToken(sessionToken);
+			} else {
+				const sessao = await authClient.getSession();
+				const tokenSessao = extractSessionTokenFromLoginResponse(
+					sessao.data ?? {},
+				);
+				if (tokenSessao) {
+					setSessionToken(tokenSessao);
+				}
+			}
+
+			return loginData;
+		},
+		onSuccess: async (loginData: LoginResponse) => {
 			marcarSelecaoPrimeiraEmpresaNoLogin();
 			limparEmpresaSelecionada();
 			marcarSessaoFrontend();
@@ -83,7 +107,38 @@ export function LoginForm({
 					staleTime: 0,
 				});
 			} catch {
-				if (loginData.user) {
+				try {
+					const sessao = await authClient.getSession();
+					const sessionUser = sessao.data?.user as
+						| {
+								id?: string;
+								name?: string;
+								email?: string;
+								perfil?: string | string[];
+								plano?: string | null;
+						  }
+						| undefined;
+
+					if (sessionUser?.id) {
+						const perfilSessao = Array.isArray(sessionUser.perfil)
+							? sessionUser.perfil
+							: sessionUser.perfil
+								? [sessionUser.perfil]
+								: [];
+
+						perfil = {
+							id: sessionUser.id,
+							nome: sessionUser.name ?? loginData.user?.name ?? "",
+							email: sessionUser.email ?? loginData.user?.email ?? "",
+							perfil: perfilSessao,
+							plano: sessionUser.plano ?? null,
+						};
+						queryClient.setQueryData(["perfil"], perfil);
+					}
+				} catch {
+					// ignora fallback secundário
+				}
+				if (!perfil && loginData.user) {
 					perfil = {
 						id: loginData.user.id,
 						nome: loginData.user.name,

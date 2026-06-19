@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { IconArrowLeft } from "@tabler/icons-react";
+import { IconArrowLeft, IconLogout } from "@tabler/icons-react";
 import { CPlusIcon } from "@/components/icons/c-plus";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
@@ -20,7 +20,7 @@ export function GarcomHeader({
 	voltarLabel = "Voltar",
 }: GarcomHeaderProps) {
 	const { localStorageEmpresa: empresa } = useEmpresa();
-	const { user } = useAuth();
+	const { user, logout } = useAuth();
 	const homeHref = getDefaultRouteForUser(user);
 
 	return (
@@ -42,14 +42,26 @@ export function GarcomHeader({
 				</div>
 			</div>
 
-			{voltarHref && (
-				<Button variant="outline" size="sm" asChild className="shrink-0">
-					<Link href={voltarHref}>
-						<IconArrowLeft className="size-4" />
-						<span className="hidden sm:inline">{voltarLabel}</span>
-					</Link>
+			<div className="flex shrink-0 items-center gap-2">
+				{voltarHref && (
+					<Button variant="outline" size="sm" asChild>
+						<Link href={voltarHref}>
+							<IconArrowLeft className="size-4" />
+							<span className="hidden sm:inline">{voltarLabel}</span>
+						</Link>
+					</Button>
+				)}
+				<Button
+					variant="ghost"
+					size="sm"
+					className="gap-1.5"
+					onClick={() => logout()}
+					aria-label="Sair do sistema"
+				>
+					<IconLogout className="size-4" />
+					<span className="hidden sm:inline">Sair</span>
 				</Button>
-			)}
+			</div>
 		</header>
 	);
 }

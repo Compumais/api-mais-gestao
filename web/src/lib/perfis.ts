@@ -1,8 +1,10 @@
 export const PERFIL_GARCOM = "garcom";
 
+/** Tela inicial do perfil garçom. */
+export const GARCOM_HOME_ROUTE = "/garcom";
+
 export const GARCOM_ALLOWED_ROUTES = [
 	"/garcom",
-	"/gourmet",
 	"/vendas-pdv",
 	"/fechamentos-caixa",
 ] as const;
@@ -42,15 +44,25 @@ export function formatarPerfilLabel(
 }
 
 export function isRouteAllowedForGarcom(pathname: string): boolean {
+	const path = pathname.split("?")[0] ?? pathname;
+
+	if (path === "/gourmet") {
+		return false;
+	}
+
+	if (path.startsWith("/gourmet/")) {
+		return true;
+	}
+
 	return GARCOM_ALLOWED_ROUTES.some(
-		(rota) => pathname === rota || pathname.startsWith(`${rota}/`),
+		(rota) => path === rota || path.startsWith(`${rota}/`),
 	);
 }
 
 export function getDefaultRouteForUser(
 	user: { perfil?: string | string[] } | null | undefined,
 ): string {
-	return isGarcom(user) ? "/garcom" : "/dashboard";
+	return isGarcom(user) ? GARCOM_HOME_ROUTE : "/dashboard";
 }
 
 export function resolveRedirectForUser(

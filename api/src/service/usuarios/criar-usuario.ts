@@ -10,6 +10,10 @@ import {
 	httpErroInterno,
 	httpProibido,
 } from "@/util/http-util.js";
+import {
+	perfisPersistidosIguais,
+	toPerfilArray,
+} from "@/util/usuario-perfil.js";
 import * as schema from "../../../drizzle/schema.js";
 
 type CriarUsuarioParametros = {
@@ -62,6 +66,7 @@ export async function criarUsuarioService({
 	}
 
 	let novoUsuarioId: string | null = null;
+	const perfilArray = toPerfilArray(perfil);
 
 	try {
 		const resultado = await auth.api.signUpEmail({
@@ -69,6 +74,12 @@ export async function criarUsuarioService({
 				name: nome,
 				email,
 				password,
+				perfil: perfilArray,
+			} as {
+				name: string;
+				email: string;
+				password: string;
+				perfil: string[];
 			},
 		});
 
@@ -78,16 +89,23 @@ export async function criarUsuarioService({
 
 		novoUsuarioId = resultado.user.id;
 
-		const perfilArray = Array.isArray(perfil) ? perfil : [perfil];
 		const empresasParaAssociar = [...new Set([idempresa, ...empresasIds])];
 
 		await db.transaction(async (tx) => {
-			await tx
+			const [usuarioAtualizado] = await tx
 				.update(schema.usuarios)
 				.set({
 					perfil: perfilArray,
 				})
-				.where(eq(schema.usuarios.id, novoUsuarioId as string));
+				.where(eq(schema.usuarios.id, novoUsuarioId as string))
+				.returning({ perfil: schema.usuarios.perfil });
+
+			if (
+				!usuarioAtualizado ||
+				!perfisPersistidosIguais(usuarioAtualizado.perfil, perfilArray)
+			) {
+				throw new Error("Falha ao persistir perfil do usuário");
+			}
 
 			for (const empresaId of empresasParaAssociar) {
 				const [existe] = await tx
@@ -115,7 +133,10 @@ export async function criarUsuarioService({
 
 		const usuario = await buscarUsuarioPorId(novoUsuarioId);
 
-		if (!usuario) {
+		if (
+			!usuario ||
+			!perfisPersistidosIguais(usuario.perfil, perfilArray)
+		) {
 			await rollbackCriacaoUsuario(novoUsuarioId);
 			return httpErroInterno();
 		}

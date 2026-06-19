@@ -10,6 +10,10 @@ import {
 	httpNaoAutorizado,
 	httpNaoEncontrado,
 } from "@/util/http-util.js";
+import {
+	perfisPersistidosIguais,
+	toPerfilArray,
+} from "@/util/usuario-perfil.js";
 import * as schema from "../../../drizzle/schema.js";
 
 type AtualizarUsuarioParametros = {
@@ -56,11 +60,19 @@ export async function atualizarUsuarioService({
 
 		// Atualizar perfil se fornecido
 		if (perfil !== undefined) {
-			const perfilArray = Array.isArray(perfil) ? perfil : [perfil];
-			await db
+			const perfilArray = toPerfilArray(perfil);
+			const [usuarioAtualizado] = await db
 				.update(schema.usuarios)
 				.set({ perfil: perfilArray })
-				.where(eq(schema.usuarios.id, idUsuarioAtualizar));
+				.where(eq(schema.usuarios.id, idUsuarioAtualizar))
+				.returning({ perfil: schema.usuarios.perfil });
+
+			if (
+				!usuarioAtualizado ||
+				!perfisPersistidosIguais(usuarioAtualizado.perfil, perfilArray)
+			) {
+				throw new Error("Falha ao persistir perfil do usuário");
+			}
 		}
 
 		// Atualizar empresas associadas se fornecido
@@ -86,6 +98,13 @@ export async function atualizarUsuarioService({
 		const usuario = await buscarUsuarioPorId(idUsuarioAtualizar);
 
 		if (!usuario) {
+			return httpErroInterno();
+		}
+
+		if (
+			perfil !== undefined &&
+			!perfisPersistidosIguais(usuario.perfil, toPerfilArray(perfil))
+		) {
 			return httpErroInterno();
 		}
 
