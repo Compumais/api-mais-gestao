@@ -4,6 +4,7 @@ import {
 	IconHelp,
 	IconHistory,
 	IconListDetails,
+	IconReceiptTax,
 	IconReportMoney,
 	IconSearch,
 	IconSettings,
@@ -81,6 +82,10 @@ export const DATA = {
 					url: "/unidade-medida",
 				},
 				{
+					title: "Meios de pagamento",
+					url: "/meios-pagamento",
+				},
+				{
 					title: "Usuários",
 					url: "/usuarios",
 				},
@@ -99,6 +104,26 @@ export const DATA = {
 				{
 					title: "Nota fiscal de venda",
 					url: "/nota-fiscal-venda",
+				},
+			],
+		},
+	],
+	navTributos: [
+		{
+			title: "Tributos",
+			icon: IconReceiptTax,
+			items: [
+				{
+					title: "Naturezas",
+					url: "/tributos/naturezas",
+				},
+				{
+					title: "Configuração fiscal",
+					url: "/tributos/configuracao-fiscal",
+				},
+				{
+					title: "CFOP de-para",
+					url: "/tributos/cfop-depara",
 				},
 			],
 		},

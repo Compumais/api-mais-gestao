@@ -19,6 +19,7 @@ describe("listarEmpresasService", () => {
 			atualizadoem: new Date().toISOString(),
 			prazocartaocredito: 30,
 			prazocartaodebito: 1,
+			regimetributario: null,
 		},
 		{
 			id: "empresa-2",
@@ -32,6 +33,7 @@ describe("listarEmpresasService", () => {
 			atualizadoem: new Date().toISOString(),
 			prazocartaocredito: 30,
 			prazocartaodebito: 1,
+			regimetributario: null,
 		},
 	];
 

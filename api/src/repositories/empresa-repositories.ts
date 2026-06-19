@@ -57,6 +57,7 @@ export async function atualizarEmpresa(
 		cnpj?: string | undefined;
 		telefone?: string | undefined;
 		atualizadoem?: string | undefined;
+		regimetributario?: string | null | undefined;
 	},
 ) {
 	const [empresa] = await db

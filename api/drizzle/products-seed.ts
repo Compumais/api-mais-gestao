@@ -16,7 +16,7 @@ const ARQUIVO_DADOS = join(
 type ProdutoPlanilha = {
 	codigo: number;
 	referencia: string | null;
-	ean: number | null;
+	ean: number | string | null;
 	nome: string;
 	unidademedida: string | null;
 	preco: number | null;
@@ -45,6 +45,13 @@ type ArquivoProductsSeed = {
 	skipped: Array<{ linha: number; motivo: string }>;
 	produtos: ProdutoPlanilha[];
 };
+
+function formatarEan(valor: number | string | null | undefined): string | null {
+	if (valor === null || valor === undefined) {
+		return null;
+	}
+	return String(valor);
+}
 
 function formatarNumerico(valor: number | null | undefined): string | null {
 	if (valor === null || valor === undefined) {
@@ -156,7 +163,7 @@ async function seedProducts() {
 			idempresa,
 			codigo: produto.codigo,
 			referencia: produto.referencia,
-			ean: produto.ean,
+			ean: formatarEan(produto.ean),
 			nome: produto.nome,
 			descricao: produto.nome.slice(0, 100),
 			unidademedida: produto.unidademedida,

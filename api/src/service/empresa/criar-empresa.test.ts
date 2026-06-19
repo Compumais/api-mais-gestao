@@ -2,10 +2,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Empresa } from "@/model/empresa-model.js";
 import * as empresaRepository from "@/repositories/empresa-repositories.js";
 import * as planoContasPadraoService from "../planocontas/criar-plano-contas-padrao.js";
+import * as cfopsPadraoService from "../cfop/criar-cfops-padrao.js";
 import { criarEmpresaService } from "./criar-empresa.js";
 
 vi.mock("@/repositories/empresa-repositories");
 vi.mock("../planocontas/criar-plano-contas-padrao.js");
+vi.mock("../cfop/criar-cfops-padrao.js");
 vi.mock("@/repositories/conta-corrente-repositories.js", () => ({
 	criarContaCorrenteCaixaPadrao: vi.fn().mockResolvedValue({ id: "caixa-1" }),
 }));
@@ -23,6 +25,7 @@ describe("criarEmpresaService", () => {
 		atualizadoem: new Date().toISOString(),
 		prazocartaocredito: 30,
 		prazocartaodebito: 1,
+		regimetributario: null,
 	};
 
 	const proprietarioMock = {
@@ -46,6 +49,7 @@ describe("criarEmpresaService", () => {
 		vi.mocked(
 			planoContasPadraoService.criarPlanoContasPadraoService,
 		).mockResolvedValue([]);
+		vi.mocked(cfopsPadraoService.criarCfopsPadraoService).mockResolvedValue([]);
 	});
 
 	it("deve criar uma empresa com sucesso quando dentro do limite", async () => {
@@ -74,6 +78,9 @@ describe("criarEmpresaService", () => {
 		expect(
 			planoContasPadraoService.criarPlanoContasPadraoService,
 		).toHaveBeenCalledWith("empresa-123");
+		expect(cfopsPadraoService.criarCfopsPadraoService).toHaveBeenCalledWith(
+			"empresa-123",
+		);
 	});
 
 	it("deve retornar erro quando limite de empresas é excedido", async () => {
@@ -140,5 +147,8 @@ describe("criarEmpresaService", () => {
 		expect(
 			planoContasPadraoService.criarPlanoContasPadraoService,
 		).toHaveBeenCalledWith("empresa-123");
+		expect(cfopsPadraoService.criarCfopsPadraoService).toHaveBeenCalledWith(
+			"empresa-123",
+		);
 	});
 });

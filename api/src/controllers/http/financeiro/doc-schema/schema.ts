@@ -1,5 +1,31 @@
 import type { FastifySchema } from "fastify";
 
+const financeiroItemResponseProperties = {
+	id: { type: "string" },
+	idempresa: { type: "string" },
+	identidade: { type: "string", nullable: true },
+	tipo: { type: "string", nullable: true },
+	tipoorigem: { type: "number", nullable: true },
+	idorigem: { type: "string", nullable: true },
+	parcela: { type: "number", nullable: true },
+	totalparcelas: { type: "number", nullable: true },
+	documento: { type: "string", nullable: true },
+	emitente: { type: "string", nullable: true },
+	status: { type: "string", nullable: true },
+	emissao: { type: "string", nullable: true },
+	vencimento: { type: "string", nullable: true },
+	vencimentooriginal: { type: "string", nullable: true },
+	pagamento: { type: "string", nullable: true },
+	baixa: { type: "string", nullable: true },
+	valor: { type: "string", nullable: true },
+	saldo: { type: "string", nullable: true },
+	historico: { type: "string", nullable: true },
+	idplanocontas: { type: "string", nullable: true },
+	cnpjcpfemitente: { type: "string", nullable: true },
+	extra1: { type: "string", nullable: true },
+	registro: { type: "string", nullable: true },
+} as const;
+
 export const criarFinanceiroSchema: FastifySchema = {
 	tags: ["financeiro"],
 	summary: "Criar novo registro financeiro",
@@ -29,17 +55,7 @@ export const criarFinanceiroSchema: FastifySchema = {
 		201: {
 			type: "object",
 			description: "Registro financeiro criado com sucesso",
-			properties: {
-				id: { type: "string", description: "ID único do registro financeiro" },
-				idempresa: {
-					type: "string",
-					description: "ID da empresa proprietária",
-				},
-				valor: { type: "string", nullable: true },
-				saldo: { type: "string", nullable: true },
-				emissao: { type: "string", nullable: true },
-				vencimento: { type: "string", nullable: true },
-			},
+			properties: financeiroItemResponseProperties,
 		},
 		400: {
 			type: "object",
@@ -90,17 +106,7 @@ export const buscarFinanceiroSchema: FastifySchema = {
 		200: {
 			type: "object",
 			description: "Registro financeiro encontrado",
-			properties: {
-				id: { type: "string", description: "ID único do registro financeiro" },
-				idempresa: {
-					type: "string",
-					description: "ID da empresa proprietária",
-				},
-				valor: { type: "string", nullable: true },
-				saldo: { type: "string", nullable: true },
-				emissao: { type: "string", nullable: true },
-				vencimento: { type: "string", nullable: true },
-			},
+			properties: financeiroItemResponseProperties,
 		},
 		404: {
 			type: "object",
@@ -159,6 +165,12 @@ export const listarFinanceirosSchema: FastifySchema = {
 				nullable: true,
 				description: "Filtro por data de emissão (busca parcial)",
 			},
+			tipo: {
+				type: "string",
+				enum: ["P", "R"],
+				nullable: true,
+				description: "Filtro por tipo: P (pagar) ou R (receber)",
+			},
 		},
 	},
 	response: {
@@ -170,14 +182,7 @@ export const listarFinanceirosSchema: FastifySchema = {
 					type: "array",
 					items: {
 						type: "object",
-						properties: {
-							id: { type: "string" },
-							idempresa: { type: "string" },
-							valor: { type: "string", nullable: true },
-							saldo: { type: "string", nullable: true },
-							emissao: { type: "string", nullable: true },
-							vencimento: { type: "string", nullable: true },
-						},
+						properties: financeiroItemResponseProperties,
 					},
 				},
 				paginacao: {
@@ -243,15 +248,7 @@ export const atualizarFinanceiroSchema: FastifySchema = {
 		200: {
 			type: "object",
 			description: "Registro financeiro atualizado com sucesso",
-			properties: {
-				id: { type: "string", description: "ID único do registro financeiro" },
-				idempresa: {
-					type: "string",
-					description: "ID da empresa proprietária",
-				},
-				valor: { type: "string", nullable: true },
-				saldo: { type: "string", nullable: true },
-			},
+			properties: financeiroItemResponseProperties,
 		},
 		404: {
 			type: "object",
