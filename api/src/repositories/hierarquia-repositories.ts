@@ -1,4 +1,4 @@
-import { and, count, eq, ilike } from "drizzle-orm";
+import { and, count, eq, ilike, or } from "drizzle-orm";
 import type { NovoHierarquia } from "@/model/hierarquia-model";
 import { hierarquia } from "@/repositories/schema.js";
 import { ordenacaoCodigoVarcharAsc } from "./ordenacao-codigo.js";
@@ -47,6 +47,7 @@ export async function excluirHierarquia(id: string) {
 export type ListarHierarquiasParametros = {
 	idempresa: string;
 	nome?: string | undefined;
+	q?: string | undefined;
 	page?: number;
 	limit?: number;
 };
@@ -54,6 +55,7 @@ export type ListarHierarquiasParametros = {
 export async function listarHierarquias({
 	idempresa,
 	nome,
+	q,
 	page = 1,
 	limit = 10,
 }: ListarHierarquiasParametros) {
@@ -63,6 +65,16 @@ export async function listarHierarquias({
 
 	if (nome) {
 		where.push(ilike(hierarquia.nome, `%${nome}%`));
+	}
+
+	if (q) {
+		const termo = `%${q}%`;
+		where.push(
+			or(
+				ilike(hierarquia.codigo, termo),
+				ilike(hierarquia.nome, termo),
+			),
+		);
 	}
 
 	const offset = (page - 1) * limit;

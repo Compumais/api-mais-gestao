@@ -373,6 +373,7 @@ export const listarEntidadesSchema: FastifySchema = {
 			limit: { type: "number" },
 			idempresa: { type: "string", format: "uuid" },
 			nome: { type: "string" },
+			q: { type: "string" },
 			email: { type: "string" },
 			telefone: { type: "string" },
 		},

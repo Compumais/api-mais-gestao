@@ -49,6 +49,7 @@ export async function excluirUnidadeMedida(id: string) {
 export type ListarUnidadesMedidaParametros = {
 	idempresa: string;
 	nome?: string | undefined;
+	q?: string | undefined;
 	page?: number;
 	limit?: number;
 };
@@ -56,6 +57,7 @@ export type ListarUnidadesMedidaParametros = {
 export async function listarUnidadesMedida({
 	idempresa,
 	nome,
+	q,
 	page = 1,
 	limit = 10,
 }: ListarUnidadesMedidaParametros) {
@@ -65,6 +67,16 @@ export async function listarUnidadesMedida({
 
 	if (nome) {
 		where.push(ilike(unidademedida.nome, `%${nome}%`));
+	}
+
+	if (q) {
+		const termo = `%${q}%`;
+		where.push(
+			or(
+				ilike(unidademedida.codigo, termo),
+				ilike(unidademedida.nome, termo),
+			),
+		);
 	}
 
 	const offset = (page - 1) * limit;

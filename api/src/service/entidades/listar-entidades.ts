@@ -10,6 +10,7 @@ import { httpOk } from "@/util/http-util.js";
 type ListarEntidadesParametros = {
 	idusuario: string;
 	nome?: string | undefined;
+	q?: string | undefined;
 	email?: string | undefined;
 	telefone?: string | undefined;
 	page?: number;
@@ -31,6 +32,7 @@ export async function listarEntidadesService({
 	idusuario,
 	idempresa,
 	nome,
+	q,
 	email,
 	telefone,
 	page = 1,

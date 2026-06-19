@@ -1,4 +1,4 @@
-import { and, count, eq, ilike, inArray } from "drizzle-orm";
+import { and, count, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import type { NovoProduto } from "@/model/produto-model";
 import { produtos } from "@/repositories/schema.js";
 import { ordenacaoCodigoNumericoAsc } from "./ordenacao-codigo.js";
@@ -23,6 +23,7 @@ export async function buscarProdutoPorId(id: string) {
 export type ListarProdutosPorEmpresaParametros = {
 	idempresas: string[];
 	nome?: string | undefined;
+	q?: string | undefined;
 	inativo?: number | undefined;
 	page?: number;
 	limit?: number;
@@ -31,6 +32,7 @@ export type ListarProdutosPorEmpresaParametros = {
 export async function listarProdutosPorEmpresa({
 	idempresas,
 	nome,
+	q,
 	inativo,
 	page = 1,
 	limit = 10,
@@ -48,6 +50,18 @@ export async function listarProdutosPorEmpresa({
 
 	if (nome) {
 		where.push(ilike(produtos.nome, `%${nome}%`));
+	}
+
+	if (q) {
+		const termo = `%${q}%`;
+		where.push(
+			or(
+				ilike(produtos.nome, termo),
+				ilike(sql`${produtos.codigo}::text`, termo),
+				ilike(sql`${produtos.ean}::text`, termo),
+				ilike(sql`${produtos.preco}::text`, termo),
+			),
+		);
 	}
 
 	if (inativo !== undefined) {

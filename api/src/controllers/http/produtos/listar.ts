@@ -6,6 +6,7 @@ import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 const listarProdutosQuerySchema = z.object({
 	idempresa: z.string(),
 	nome: z.string().optional(),
+	q: z.string().optional(),
 	inativo: z.coerce.number().int().min(0).max(1).optional(),
 	page: z.coerce.number().min(1).optional().default(1),
 	limit: z.coerce.number().min(1).max(100).optional().default(10),
@@ -26,6 +27,7 @@ export async function listarProdutos(
 			idusuario: request.user.id,
 			idempresa: query.idempresa,
 			nome: query.nome,
+			q: query.q,
 			inativo: query.inativo,
 			page: query.page,
 			limit: query.limit,

@@ -52,6 +52,7 @@ export const hierarquiasService = {
 		page?: number;
 		limit?: number;
 		nome?: string;
+		q?: string;
 	}): Promise<ListarHierarquiasResponse> {
 		const { data } = await api.get<ListarHierarquiasResponse>("/hierarquias", {
 			params,

@@ -161,6 +161,7 @@ export async function buscarEmpresasDoUsuario(
 export type ListarEntidadesParametros = {
 	idempresa: string;
 	nome?: string | undefined;
+	q?: string | undefined;
 	email?: string | undefined;
 	telefone?: string | undefined;
 	page?: number;
@@ -170,6 +171,7 @@ export type ListarEntidadesParametros = {
 export async function listarEntidades({
 	idempresa,
 	nome,
+	q,
 	email,
 	telefone,
 	page = 1,
@@ -181,6 +183,17 @@ export async function listarEntidades({
 
 	if (nome) {
 		where.push(ilike(schema.entidade.nome, `%${nome}%`));
+	}
+
+	if (q) {
+		const termo = `%${q}%`;
+		where.push(
+			or(
+				ilike(schema.entidade.nome, termo),
+				ilike(schema.entidade.razaosocial, termo),
+				ilike(schema.entidade.cnpjcpf, termo),
+			),
+		);
 	}
 
 	if (email) {
