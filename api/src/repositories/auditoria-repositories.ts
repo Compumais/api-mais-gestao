@@ -46,8 +46,27 @@ export async function listarAuditorias({
 			.from(schema.auditLogs)
 			.where(and(...where)),
 		db
-			.select()
+			.select({
+				id: schema.auditLogs.id,
+				acao: schema.auditLogs.acao,
+				recurso: schema.auditLogs.recurso,
+				idrecurso: schema.auditLogs.idrecurso,
+				idusuario: schema.auditLogs.idusuario,
+				idempresa: schema.auditLogs.idempresa,
+				metadados: schema.auditLogs.metadados,
+				criadoem: schema.auditLogs.criadoem,
+				nomeusuario: schema.usuarios.nome,
+				nomeempresa: schema.empresa.nome,
+			})
 			.from(schema.auditLogs)
+			.leftJoin(
+				schema.usuarios,
+				eq(schema.auditLogs.idusuario, schema.usuarios.id),
+			)
+			.leftJoin(
+				schema.empresa,
+				eq(schema.auditLogs.idempresa, schema.empresa.id),
+			)
 			.where(and(...where))
 			.orderBy(desc(schema.auditLogs.criadoem))
 			.limit(limit)
