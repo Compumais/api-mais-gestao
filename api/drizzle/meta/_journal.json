@@ -211,6 +211,13 @@
       "when": 1781714000000,
       "tag": "0029_remover_coluna_csv_produtos",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1781715000000,
+      "tag": "0030_sync_schema_baseline",
+      "breakpoints": true
     }
   ]
 }
