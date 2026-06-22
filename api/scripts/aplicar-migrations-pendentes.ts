@@ -1,15 +1,19 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import dotenv from "dotenv";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { readMigrationFiles } from "drizzle-orm/migrator";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { Pool } from "pg";
 
 dotenv.config();
 
 const migrationsFolder = join(process.cwd(), "drizzle");
-const TAG_MIGRATION_NF = "0023_notafiscalitem_campos_nf";
+const PRIMEIRA_MIGRATION_PENDENTE_PRODUCAO = "0028_controle_acesso";
+
+type Journal = {
+	entries: Array<{ tag: string; when: number }>;
+};
 
 async function garantirTabelaMigrations(pool: Pool) {
 	await pool.query(`CREATE SCHEMA IF NOT EXISTS drizzle`);
@@ -22,47 +26,91 @@ async function garantirTabelaMigrations(pool: Pool) {
 	`);
 }
 
-async function listarMigrationsAplicadas(pool: Pool) {
-	try {
-		const resultado = await pool.query(
-			`SELECT id, hash, created_at FROM drizzle.__drizzle_migrations ORDER BY created_at ASC`,
-		);
-		return resultado.rows as Array<{
-			id: number;
-			hash: string;
-			created_at: string;
-		}>;
-	} catch {
-		return [];
-	}
-}
-
-async function baselineMigrations(pool: Pool) {
-	await garantirTabelaMigrations(pool);
-
+async function carregarMigrations() {
 	const journal = JSON.parse(
 		readFileSync(join(migrationsFolder, "meta/_journal.json"), "utf8"),
-	) as { entries: Array<{ tag: string; when: number }> };
+	) as Journal;
+	const arquivos = readMigrationFiles({ migrationsFolder });
 
-	const migrations = readMigrationFiles({ migrationsFolder });
-	const aplicadas = await pool.query(`SELECT hash FROM drizzle.__drizzle_migrations`);
-	const hashesAplicados = new Set(
-		aplicadas.rows.map((row: { hash: string }) => row.hash),
+	return journal.entries.map((entrada, indice) => ({
+		entrada,
+		arquivo: arquivos[indice],
+	}));
+}
+
+async function listarHashesAplicados(pool: Pool) {
+	const aplicadas = await pool.query<{ hash: string }>(
+		`SELECT hash FROM drizzle.__drizzle_migrations`,
 	);
+	return new Set(aplicadas.rows.map((row) => row.hash));
+}
+
+async function bancoPareceProducao(pool: Pool) {
+	const resultado = await pool.query<{ existe: boolean }>(`
+		SELECT EXISTS (
+			SELECT 1
+			FROM information_schema.tables
+			WHERE table_schema = 'public' AND table_name = 'produtos'
+		) AS existe
+	`);
+	return resultado.rows[0]?.existe === true;
+}
+
+async function listarStatus(pool: Pool) {
+	await garantirTabelaMigrations(pool);
+	const migrations = await carregarMigrations();
+	const hashesAplicados = await listarHashesAplicados(pool);
+
+	console.log("Migrations no journal vs banco:\n");
+
+	let pendentes = 0;
+
+	for (const { entrada, arquivo } of migrations) {
+		if (!arquivo) {
+			console.log(`  ? ${entrada.tag} (arquivo não encontrado)`);
+			continue;
+		}
+
+		const aplicada = hashesAplicados.has(arquivo.hash);
+		console.log(`  ${aplicada ? "✓" : "○"} ${entrada.tag}`);
+		if (!aplicada) pendentes++;
+	}
+
+	console.log(`\nTotal pendente: ${pendentes}`);
+
+	if (pendentes > 0) {
+		const emProducao = await bancoPareceProducao(pool);
+		if (emProducao && pendentes > 2) {
+			console.log(
+				"\n⚠️  Banco já tem tabelas (provavelmente criado com db:push).",
+			);
+			console.log(
+				"   Execute: pnpm run db:migrate:producao",
+			);
+		}
+	}
+
+	return pendentes;
+}
+
+async function registrarMigrationsComoAplicadas(
+	pool: Pool,
+	ateTagExclusiva?: string,
+) {
+	await garantirTabelaMigrations(pool);
+	const migrations = await carregarMigrations();
+	const hashesAplicados = await listarHashesAplicados(pool);
 
 	let registradas = 0;
 
-	for (let i = 0; i < journal.entries.length; i++) {
-		const entrada = journal.entries[i];
-		const migration = migrations[i];
-
-		if (!entrada || !migration) continue;
-		if (entrada.tag === TAG_MIGRATION_NF) continue;
-		if (hashesAplicados.has(migration.hash)) continue;
+	for (const { entrada, arquivo } of migrations) {
+		if (!arquivo) continue;
+		if (ateTagExclusiva && entrada.tag === ateTagExclusiva) break;
+		if (hashesAplicados.has(arquivo.hash)) continue;
 
 		await pool.query(
 			`INSERT INTO drizzle.__drizzle_migrations (hash, created_at) VALUES ($1, $2)`,
-			[migration.hash, entrada.when],
+			[arquivo.hash, entrada.when],
 		);
 		console.log(`  ✓ baseline: ${entrada.tag}`);
 		registradas++;
@@ -74,6 +122,19 @@ async function baselineMigrations(pool: Pool) {
 async function executarDrizzleMigrate(pool: Pool) {
 	const db = drizzle(pool);
 	await migrate(db, { migrationsFolder });
+}
+
+function exibirErro(erro: unknown) {
+	console.error("\n--- Erro completo ---");
+	if (erro instanceof Error) {
+		console.error(erro.message);
+		if (erro.cause) {
+			console.error("Causa:", erro.cause);
+		}
+		console.error(erro.stack);
+	} else {
+		console.error(erro);
+	}
 }
 
 async function main() {
@@ -88,31 +149,78 @@ async function main() {
 
 	try {
 		if (comando === "status") {
-			console.log("Migrations registradas no banco:");
-			const aplicadas = await listarMigrationsAplicadas(pool);
-			if (aplicadas.length === 0) {
-				console.log(
-					"  (nenhuma — o banco provavelmente foi criado via push/seed sem registrar migrations)",
+			await listarStatus(pool);
+			return;
+		}
+
+		if (comando === "baseline-producao") {
+			if (!(await bancoPareceProducao(pool))) {
+				console.error(
+					"Tabela produtos não encontrada. Este baseline é só para banco já existente.",
 				);
-				console.log(
-					"\nExecute: pnpm run db:migrate:baseline",
+				process.exit(1);
+			}
+
+			console.log(
+				`Registrando migrations anteriores a ${PRIMEIRA_MIGRATION_PENDENTE_PRODUCAO}...`,
+			);
+			const total = await registrarMigrationsComoAplicadas(
+				pool,
+				PRIMEIRA_MIGRATION_PENDENTE_PRODUCAO,
+			);
+			console.log(`\n${total} migration(s) registrada(s).`);
+			console.log("\nPendentes agora:");
+			await listarStatus(pool);
+			return;
+		}
+
+		if (comando === "producao") {
+			console.log("1/3 — Status inicial");
+			const pendentesAntes = await listarStatus(pool);
+
+			if (pendentesAntes > 2) {
+				console.log("\n2/3 — Baseline de produção");
+				await registrarMigrationsComoAplicadas(
+					pool,
+					PRIMEIRA_MIGRATION_PENDENTE_PRODUCAO,
 				);
 			} else {
-				for (const row of aplicadas) {
-					console.log(`  - #${row.id} (${row.created_at})`);
-				}
+				console.log("\n2/3 — Baseline não necessário");
 			}
+
+			console.log("\n3/3 — Aplicando migrations pendentes");
+			await executarDrizzleMigrate(pool);
+			console.log("\n✅ Migrations concluídas.");
+
+			console.log("\nStatus final:");
+			await listarStatus(pool);
 			return;
 		}
 
 		if (comando === "baseline") {
-			console.log("Registrando migrations anteriores à 0022 como já aplicadas...");
-			const total = await baselineMigrations(pool);
-			console.log(`\n${total} migration(s) registrada(s) no baseline.`);
+			console.log("Registrando migrations anteriores à 0023 como já aplicadas...");
+			const migrations = await carregarMigrations();
+			await garantirTabelaMigrations(pool);
+			const hashesAplicados = await listarHashesAplicados(pool);
+			let registradas = 0;
 
-			console.log("\nAplicando migration 0022 (campos NF)...");
+			for (const { entrada, arquivo } of migrations) {
+				if (!arquivo) continue;
+				if (entrada.tag === "0023_notafiscalitem_campos_nf") continue;
+				if (hashesAplicados.has(arquivo.hash)) continue;
+
+				await pool.query(
+					`INSERT INTO drizzle.__drizzle_migrations (hash, created_at) VALUES ($1, $2)`,
+					[arquivo.hash, entrada.when],
+				);
+				console.log(`  ✓ baseline: ${entrada.tag}`);
+				registradas++;
+			}
+
+			console.log(`\n${registradas} migration(s) registrada(s) no baseline.`);
+			console.log("\nAplicando migrations pendentes...");
 			await executarDrizzleMigrate(pool);
-			console.log("\nConcluído. Agora pnpm run db:migrate deve funcionar normalmente.");
+			console.log("\nConcluído.");
 			return;
 		}
 
@@ -125,14 +233,16 @@ async function main() {
 
 		console.log("Comandos disponíveis:");
 		console.log("  pnpm run db:migrate:status");
-		console.log("  pnpm run db:migrate:baseline   → corrige histórico + aplica 0022");
-		console.log("  pnpm run db:migrate:diagnostico → tenta migrate e mostra erro");
+		console.log(
+			"  pnpm run db:migrate:producao     → baseline + aplica 0028/0029 (recomendado)",
+		);
+		console.log(
+			"  pnpm run db:migrate:baseline-producao → só registra histórico até 0027",
+		);
+		console.log("  pnpm run db:migrate:diagnostico  → migrate com log de erro");
+		console.log("  pnpm run db:migrate:baseline       → fluxo legado (0023)");
 	} catch (erro) {
-		console.error("\nFalha:");
-		console.error(erro instanceof Error ? erro.message : erro);
-		if (erro instanceof Error && erro.cause instanceof Error) {
-			console.error("Causa:", erro.cause.message);
-		}
+		exibirErro(erro);
 		process.exitCode = 1;
 	} finally {
 		await pool.end();
