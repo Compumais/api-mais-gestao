@@ -24,6 +24,7 @@
 		"db:migrate:status": "tsx scripts/aplicar-migrations-pendentes.ts status",
 		"db:migrate:baseline": "tsx scripts/aplicar-migrations-pendentes.ts baseline",
 		"db:migrate:diagnostico": "tsx scripts/aplicar-migrations-pendentes.ts drizzle",
+		"db:diagnostico:produtos-csv": "tsx scripts/diagnostico-produtos-coluna-csv.ts",
 		"popular-cfops-padrao": "tsx scripts/popular-cfops-padrao-empresas.ts",
 		"db:migrate:undo": "tsx node_modules/drizzle-kit/bin.cjs migrate:undo",
 		"db:migrate:latest": "tsx node_modules/drizzle-kit/bin.cjs migrate:latest",
