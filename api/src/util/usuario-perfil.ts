@@ -43,18 +43,9 @@ export function extrairPerfilInformadoNaCriacao(
 }
 
 export function resolverPerfilNaCriacao(
-	user: Record<string, unknown>,
+	_user: Record<string, unknown>,
 ): string[] {
-	const informado = extrairPerfilInformadoNaCriacao(user);
-	if (
-		informado &&
-		informado.every((p) =>
-			PERFIS_USUARIO.includes(p as PerfilUsuario),
-		)
-	) {
-		return informado;
-	}
-	return ["proprietario"];
+	return ["usuario"];
 }
 
 export function toPerfilArray(perfil: string | string[]): string[] {

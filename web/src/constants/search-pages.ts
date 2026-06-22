@@ -201,6 +201,13 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 		keywords: ["movimentação", "movimentacoes", "transação", "transações"],
 	},
 	{
+		title: "Importar OFX",
+		url: "/movimentacoes/importar-ofx",
+		category: "Financeiro",
+		icon: IconArrowsLeftRight,
+		keywords: ["ofx", "extrato", "importar", "banco", "movimentação"],
+	},
+	{
 		title: "Contas a receber",
 		url: "/contas-receber",
 		category: "Financeiro",

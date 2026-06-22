@@ -3,6 +3,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import * as schema from "../../../drizzle/schema.js";
 import { auth } from "../../lib/auth.js";
 import { db } from "../../repositories/connection.js";
+import { normalizarPerfilArray } from "../../util/usuario-perfil.js";
 
 /**
  * Converte headers do Fastify para Headers do Web API
@@ -97,26 +98,13 @@ export async function verifyJwt(request: FastifyRequest, reply: FastifyReply) {
 
 						if (usuario.length > 0) {
 							const userData = usuario[0];
-							// perfil pode ser um array JSONB ou uma string
-							const perfilRaw: unknown = userData?.perfil;
-							let perfil = "usuario";
-
-							if (perfilRaw) {
-								if (Array.isArray(perfilRaw) && perfilRaw.length > 0) {
-									const firstElement = perfilRaw[0];
-									if (typeof firstElement === "string") {
-										perfil = firstElement;
-									}
-								} else if (typeof perfilRaw === "string") {
-									perfil = perfilRaw;
-								}
-							}
+							const perfil = normalizarPerfilArray(userData?.perfil);
 
 							request.user = {
 								id: userData!.id,
 								name: userData!.nome || "",
 								email: userData!.email || "",
-								roles: perfil,
+								roles: perfil.length > 0 ? perfil : ["usuario"],
 								plano: userData!.plano || null,
 							};
 							return; // Autenticação bem-sucedida
@@ -147,26 +135,14 @@ export async function verifyJwt(request: FastifyRequest, reply: FastifyReply) {
 				});
 			}
 
-			// perfil pode ser um array JSONB ou uma string
-			const perfilRaw: unknown = userData.perfil;
-			let perfil = "usuario";
-
-			if (perfilRaw) {
-				if (Array.isArray(perfilRaw) && perfilRaw.length > 0) {
-					const firstElement = perfilRaw[0];
-					if (typeof firstElement === "string") {
-						perfil = firstElement;
-					}
-				} else if (typeof perfilRaw === "string") {
-					perfil = perfilRaw;
-				}
-			}
+			// perfil completo do usuário (array JSONB)
+			const perfil = normalizarPerfilArray(userData.perfil);
 
 			request.user = {
 				id: userData.id,
 				name: userData.nome || "",
 				email: userData.email,
-				roles: perfil,
+				roles: perfil.length > 0 ? perfil : ["usuario"],
 				plano: userData.plano || null,
 			};
 			return; // Autenticação bem-sucedida
