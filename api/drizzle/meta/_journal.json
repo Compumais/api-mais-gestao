@@ -197,6 +197,20 @@
       "when": 1781712000000,
       "tag": "0027_sped_nf_compra",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1781713000000,
+      "tag": "0028_controle_acesso",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1781714000000,
+      "tag": "0029_remover_coluna_csv_produtos",
+      "breakpoints": true
     }
   ]
 }
