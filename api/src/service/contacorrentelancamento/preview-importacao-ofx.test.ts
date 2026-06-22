@@ -58,14 +58,16 @@ describe("previewImportacaoOfxService", () => {
 		);
 
 		expect(resultado.success).toBe(true);
-		expect(resultado.body).toHaveLength(2);
-		expect(resultado.body?.[0]).toMatchObject({
-			documento: "fitid-existente",
-			status: "duplicada",
-		});
-		expect(resultado.body?.[1]).toMatchObject({
-			documento: "fitid-novo",
-			status: "pendente",
-		});
+		if (resultado.success && resultado.body) {
+			expect(resultado.body).toHaveLength(2);
+			expect(resultado.body[0]).toMatchObject({
+				documento: "fitid-existente",
+				status: "duplicada",
+			});
+			expect(resultado.body[1]).toMatchObject({
+				documento: "fitid-novo",
+				status: "pendente",
+			});
+		}
 	});
 });
