@@ -1,17 +1,19 @@
+import { eq } from "drizzle-orm";
+import { v4 as uuidv4 } from "uuid";
+import * as schema from "../../../drizzle/schema.js";
 import type { Empresa } from "../../model/empresa-model.js";
 import type { HttpResponse } from "../../model/http-model.js";
 import type { Usuario } from "../../model/usuario-model.js";
+import { criarContaCorrenteCaixaPadrao } from "../../repositories/conta-corrente-repositories.js";
+import { executarComControleAcessoPrivilegiado } from "../../repositories/controle-acesso-contexto.js";
 import {
 	criarEmpresa,
 	type NovaEmpresa,
 } from "../../repositories/empresa-repositories.js";
-import { criarPlanoContasPadraoService } from "../planocontas/criar-plano-contas-padrao.js";
+import { httpCriacao, httpRecursoExistente } from "../../util/http-util.js";
+import { normalizarPerfilArray } from "../../util/usuario-perfil.js";
 import { criarCfopsPadraoService } from "../cfop/criar-cfops-padrao.js";
-import { criarContaCorrenteCaixaPadrao } from "../../repositories/conta-corrente-repositories.js";
-import {
-	httpCriacao,
-	httpRecursoExistente,
-} from "../../util/http-util.js";
+import { criarPlanoContasPadraoService } from "../planocontas/criar-plano-contas-padrao.js";
 
 type CriarEmpresaParametros = {
 	dadosEmpresa: NovaEmpresa;
@@ -36,40 +38,31 @@ export async function criarEmpresaService({
 	await criarContaCorrenteCaixaPadrao(empresa.id);
 
 	try {
-		const { db } = await import("../../repositories/connection");
-		const { usuarioEmpresa } = await import("../../../drizzle/schema");
-		const { v4: uuidv4 } = await import("uuid");
+		await executarComControleAcessoPrivilegiado(async (tx) => {
+			await tx.insert(schema.usuarioEmpresa).values({
+				id: uuidv4(),
+				idusuario: proprietario.id,
+				idempresa: empresa.id,
+				atualizadoem: new Date().toISOString(),
+				criadoem: new Date().toISOString(),
+			});
 
-		await db.insert(usuarioEmpresa).values({
-			id: uuidv4(),
-			idusuario: proprietario.id,
-			idempresa: empresa.id,
-			atualizadoem: new Date().toISOString(),
-			criadoem: new Date().toISOString(),
+			const perfisAtuais = normalizarPerfilArray(proprietario.perfil);
+
+			if (!perfisAtuais.includes("proprietario")) {
+				await tx
+					.update(schema.usuarios)
+					.set({
+						perfil: [...perfisAtuais, "proprietario"],
+					})
+					.where(eq(schema.usuarios.id, proprietario.id));
+			}
 		});
 	} catch (error) {
-		console.error("Erro ao vincular usu?rio ? empresa:", error);
-	}
-
-	try {
-		const { db } = await import("../../repositories/connection");
-		const { usuarios } = await import("../../../drizzle/schema");
-		const { eq } = await import("drizzle-orm");
-
-		const perfisAtuais = Array.isArray(proprietario.perfil)
-			? proprietario.perfil
-			: [proprietario.perfil];
-
-		if (!perfisAtuais.includes("proprietario")) {
-			await db
-				.update(usuarios)
-				.set({
-					perfil: [...perfisAtuais, "proprietario"],
-				})
-				.where(eq(usuarios.id, proprietario.id));
-		}
-	} catch (error) {
-		console.error("Erro ao atualizar perfil do usu?rio:", error);
+		console.error(
+			"Erro ao vincular usuário à empresa ou atualizar perfil:",
+			error,
+		);
 	}
 
 	return httpCriacao<Empresa>(empresa);

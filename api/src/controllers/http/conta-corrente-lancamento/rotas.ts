@@ -6,6 +6,7 @@ import { criarContaCorrenteLancamento } from "./criar.js";
 import * as schema from "./doc-schema/schema.js";
 import { excluirContaCorrenteLancamento } from "./excluir.js";
 import { listarContaCorrenteLancamento } from "./listar.js";
+import { previewImportacaoOfx } from "./preview-importacao-ofx.js";
 
 export async function contaCorrenteLancamentoRotas(app: FastifyInstance) {
 	app.addHook("onRequest", verifyJwt);
@@ -13,6 +14,10 @@ export async function contaCorrenteLancamentoRotas(app: FastifyInstance) {
 	app.post("/conta-corrente-lancamentos", {
 		schema: schema.criarContaCorrenteLancamentoSchema,
 		handler: criarContaCorrenteLancamento,
+	});
+	app.post("/conta-corrente-lancamentos/importar-ofx/preview", {
+		schema: schema.previewImportacaoOfxSchema,
+		handler: previewImportacaoOfx,
 	});
 	app.get("/conta-corrente-lancamentos", {
 		schema: schema.listarContaCorrenteLancamentoSchema,

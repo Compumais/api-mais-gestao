@@ -1,15 +1,18 @@
+import { eq } from "drizzle-orm";
 import type { HttpResponse } from "@/model/http-model.js";
+import { db } from "@/repositories/connection.js";
+import { executarComControleAcessoPrivilegiado } from "@/repositories/controle-acesso-contexto.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { buscarUsuarioPorId } from "@/repositories/usuarios-repositories.js";
 import {
-	httpOk,
 	httpErroInterno,
 	httpNaoAutorizado,
 	httpNaoEncontrado,
+	httpOk,
+	httpProibido,
 } from "@/util/http-util.js";
-import { db } from "@/repositories/connection.js";
+import { verificarPodeGerenciarUsuarios } from "@/util/verificar-gestao-usuarios.js";
 import * as schema from "../../../drizzle/schema.js";
-import { eq } from "drizzle-orm";
 
 type ExcluirUsuarioParametros = {
 	idusuario: string; // Usuário que está excluindo
@@ -22,12 +25,10 @@ export async function excluirUsuarioService({
 	idUsuarioExcluir,
 	idempresa,
 }: ExcluirUsuarioParametros): Promise<HttpResponse<null>> {
-	// Não permitir que o usuário exclua a si mesmo
 	if (idusuario === idUsuarioExcluir) {
 		return httpNaoAutorizado();
 	}
 
-	// Verificar se o usuário que está excluindo pertence à empresa
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
 		idusuario,
 		idempresa,
@@ -37,20 +38,17 @@ export async function excluirUsuarioService({
 		return httpNaoAutorizado();
 	}
 
-	// Verificar se o usuário a ser excluído existe
+	const autor = await buscarUsuarioPorId(idusuario);
+	if (!autor || !verificarPodeGerenciarUsuarios(autor.perfil)) {
+		return httpProibido();
+	}
+
 	const usuarioExistente = await buscarUsuarioPorId(idUsuarioExcluir);
 	if (!usuarioExistente) {
 		return httpNaoEncontrado();
 	}
 
 	try {
-		// Remover todas as associações com empresas
-		await db
-			.delete(schema.usuarioEmpresa)
-			.where(eq(schema.usuarioEmpresa.idusuario, idUsuarioExcluir));
-
-		// Excluir o usuário (Better Auth gerencia isso via cascade)
-		// Mas precisamos verificar se o usuário é proprietário de alguma empresa
 		const empresasProprietario = await db
 			.select()
 			.from(schema.empresa)
@@ -58,7 +56,6 @@ export async function excluirUsuarioService({
 			.limit(1);
 
 		if (empresasProprietario.length > 0) {
-			// Não permitir excluir se for proprietário de empresa
 			return {
 				success: false,
 				status: 400,
@@ -68,7 +65,12 @@ export async function excluirUsuarioService({
 			};
 		}
 
-		// Excluir o usuário
+		await executarComControleAcessoPrivilegiado(async (tx) => {
+			await tx
+				.delete(schema.usuarioEmpresa)
+				.where(eq(schema.usuarioEmpresa.idusuario, idUsuarioExcluir));
+		});
+
 		await db
 			.delete(schema.usuarios)
 			.where(eq(schema.usuarios.id, idUsuarioExcluir));

@@ -1,8 +1,10 @@
 "use client";
 
-import { IconPlus } from "@tabler/icons-react";
+import { IconFileImport, IconPlus } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Select,
@@ -20,12 +22,22 @@ import { MovimentacaoForm } from "./components/movimentacao-form";
 import { MovimentacoesTable } from "./components/movimentacoes-table";
 
 export default function MovimentacoesPage() {
+	const searchParams = useSearchParams();
 	const { localStorageEmpresa: empresa } = useEmpresa();
-	const [idcontacorrente, setIdContaCorrente] = useState<string>("");
+	const [idcontacorrente, setIdContaCorrente] = useState<string>(
+		searchParams.get("idcontacorrente") ?? "",
+	);
 	const [openForm, setOpenForm] = useState(false);
 	const [lancamentoEditando, setLancamentoEditando] =
 		useState<ContaCorrenteLancamento | null>(null);
 	const [modoForm, setModoForm] = useState<"criar" | "editar">("criar");
+
+	useEffect(() => {
+		const idDaUrl = searchParams.get("idcontacorrente");
+		if (idDaUrl) {
+			setIdContaCorrente(idDaUrl);
+		}
+	}, [searchParams]);
 
 	// Buscar contas correntes para o select
 	const { data: contasCorrentesData } = useQuery({
@@ -70,10 +82,32 @@ export default function MovimentacoesPage() {
 			<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
 				<div className="flex items-center justify-between px-4">
 					<h1 className="text-2xl font-bold">Movimentações</h1>
-					<Button onClick={handleNovaMovimentacao} className="gap-2">
-						<IconPlus className="size-4" />
-						Nova movimentação
-					</Button>
+					<div className="flex items-center gap-2">
+						<Button
+							variant="outline"
+							className="gap-2"
+							disabled={!idcontacorrente}
+							asChild={!!idcontacorrente}
+						>
+							{idcontacorrente ? (
+								<Link
+									href={`/movimentacoes/importar-ofx?idcontacorrente=${idcontacorrente}`}
+								>
+									<IconFileImport className="size-4" />
+									Importar OFX
+								</Link>
+							) : (
+								<>
+									<IconFileImport className="size-4" />
+									Importar OFX
+								</>
+							)}
+						</Button>
+						<Button onClick={handleNovaMovimentacao} className="gap-2">
+							<IconPlus className="size-4" />
+							Nova movimentação
+						</Button>
+					</div>
 				</div>
 
 				{!empresa ? (

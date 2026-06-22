@@ -1,4 +1,4 @@
-import { count, desc, eq, sql } from "drizzle-orm";
+import { and, count, desc, eq, inArray, sql } from "drizzle-orm";
 import type { NovaContaCorrenteLancamento } from "@/model/conta-corrente-lancamento-model.js";
 import * as schema from "../../drizzle/schema.js";
 import { db } from "./connection.js";
@@ -261,4 +261,30 @@ export async function atualizarContaCorrenteLancamento({
 		.returning();
 
 	return lancamento;
+}
+
+export async function listarDocumentosExistentesPorConta({
+	idcontacorrente,
+	documentos,
+}: {
+	idcontacorrente: string;
+	documentos: string[];
+}) {
+	if (documentos.length === 0) {
+		return [];
+	}
+
+	const registros = await db
+		.select({ documento: schema.contacorrentelancamento.documento })
+		.from(schema.contacorrentelancamento)
+		.where(
+			and(
+				eq(schema.contacorrentelancamento.idcontacorrente, idcontacorrente),
+				inArray(schema.contacorrentelancamento.documento, documentos),
+			),
+		);
+
+	return registros
+		.map((registro) => registro.documento)
+		.filter((documento): documento is string => !!documento);
 }

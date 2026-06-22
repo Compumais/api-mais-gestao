@@ -64,7 +64,7 @@ export const auth = betterAuth({
 			perfil: {
 				type: "json",
 				required: false,
-				input: true,
+				input: false,
 			},
 			maxempresas: {
 				type: "number",
