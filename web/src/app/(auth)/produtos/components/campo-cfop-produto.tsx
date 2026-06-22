@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Combobox } from "@/components/ui/combobox";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { useEmpresa } from "@/hooks/use-empresa";
-import { type TipoMovimentoCfop, cfopService } from "@/services/cfop.service";
+import { cfopService, type TipoMovimentoCfop } from "@/services/cfop.service";
 
 type CampoCfopProdutoProps = {
 	id: string;

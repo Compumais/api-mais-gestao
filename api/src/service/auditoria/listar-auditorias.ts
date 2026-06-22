@@ -3,6 +3,11 @@ import type { HttpResponse } from "@/model/http-model.js";
 import { listarAuditorias } from "@/repositories/auditoria-repositories.js";
 import { httpOk } from "@/util/http-util.js";
 
+type AuditoriaListagem = Auditoria & {
+	nomeusuario: string | null;
+	nomeempresa: string | null;
+};
+
 interface ListarAuditoriasServiceParams {
 	idempresa?: string;
 	page?: number;
@@ -10,7 +15,7 @@ interface ListarAuditoriasServiceParams {
 }
 
 interface ListarAuditoriasServiceResponta {
-	data: Auditoria[];
+	data: AuditoriaListagem[];
 	paginacao: {
 		page: number;
 		limit: number;

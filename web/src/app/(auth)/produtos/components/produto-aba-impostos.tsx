@@ -173,6 +173,7 @@ export function ProdutoAbaImpostos({
 							<Input
 								id="situacaotributariasnentrada"
 								placeholder="Ex.: 102 ou 00"
+								type="number"
 								maxLength={3}
 								{...register("situacaotributariasnentrada")}
 							/>
@@ -192,6 +193,7 @@ export function ProdutoAbaImpostos({
 							<Input
 								id="situacaotributariasn"
 								placeholder="Ex.: 102 ou 00"
+								type="number"
 								maxLength={3}
 								{...register("situacaotributariasn")}
 							/>
@@ -214,6 +216,7 @@ export function ProdutoAbaImpostos({
 							<Input
 								id="cstpisentrada"
 								placeholder="Ex.: 01"
+								type="number"
 								maxLength={2}
 								{...register("cstpisentrada")}
 							/>
@@ -229,6 +232,7 @@ export function ProdutoAbaImpostos({
 							<Input
 								id="cstcofinsentrada"
 								placeholder="Ex.: 01"
+								type="number"
 								maxLength={2}
 								{...register("cstcofinsentrada")}
 							/>
@@ -244,6 +248,7 @@ export function ProdutoAbaImpostos({
 							<Input
 								id="cstpis"
 								placeholder="Ex.: 01"
+								type="number"
 								maxLength={2}
 								{...register("cstpis")}
 							/>
@@ -255,6 +260,7 @@ export function ProdutoAbaImpostos({
 							<Input
 								id="cstcofins"
 								placeholder="Ex.: 01"
+								type="number"
 								maxLength={2}
 								{...register("cstcofins")}
 							/>
