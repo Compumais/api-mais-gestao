@@ -15,6 +15,7 @@
 		"test:watch": "vitest watch",
 		"seed": "tsx drizzle/seed.ts",
 		"seed:products": "tsx drizzle/products-seed.ts",
+		"seed:financeiro-dashboard": "tsx drizzle/financeiro-dashboard-seed.ts",
 		"clean": "tsx drizzle/clean.ts",
 		"db:patch-roles": "tsx drizzle/patch-roles.ts",
 		"db:push": "tsx node_modules/drizzle-kit/bin.cjs push",
