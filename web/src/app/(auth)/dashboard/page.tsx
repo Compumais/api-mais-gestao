@@ -1,39 +1,50 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { ChartAreaInteractive } from "@/components/chart-area-interactive";
-import { ChartPieDespesas } from "@/components/chart-pie-despesas";
-import { ChartPieReceitas } from "@/components/chart-pie-receitas";
-import { DashboardTable } from "@/components/dashboard-table";
-import { SectionCards } from "@/components/section-cards";
-import { useEmpresa } from "@/hooks/use-empresa";
-import { dashboardService } from "@/services/dashboard.service";
+import * as React from "react";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { PageContainer } from "../components/page-container";
+import { ComparativoSection } from "./components/comparativo-section";
+import { ControleSection } from "./components/controle-section";
+import { DreSection } from "./components/dre-section";
+import { FinanceiroSection } from "./components/financeiro-section";
+import { VendasSection } from "./components/vendas-section";
+
+type DashboardTab =
+	| "vendas"
+	| "financeiro"
+	| "controle"
+	| "dre"
+	| "comparativo";
 
 export default function Page() {
-	const { localStorageEmpresa: empresa } = useEmpresa();
-
-	const { data: ultimasMovimentacoes, isLoading } = useQuery({
-		queryKey: ["dashboard-ultimas-movimentacoes", empresa?.id],
-		queryFn: () =>
-			dashboardService.buscarUltimasMovimentacoes({ idempresa: empresa?.id }),
-		enabled: !!empresa?.id,
-	});
+	const [activeTab, setActiveTab] = React.useState<DashboardTab>("financeiro");
 
 	return (
 		<PageContainer>
 			<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-				<SectionCards />
 				<div className="px-4 lg:px-6">
-					<ChartAreaInteractive />
+					<ToggleGroup
+						type="single"
+						value={activeTab}
+						onValueChange={(value) => {
+							if (value) setActiveTab(value as DashboardTab);
+						}}
+						variant="outline"
+						className="flex flex-wrap justify-start gap-1"
+					>
+						<ToggleGroupItem value="vendas">Vendas</ToggleGroupItem>
+						<ToggleGroupItem value="financeiro">Financeiro</ToggleGroupItem>
+						<ToggleGroupItem value="controle">Controle</ToggleGroupItem>
+						<ToggleGroupItem value="dre">DRE</ToggleGroupItem>
+						<ToggleGroupItem value="comparativo">Comparativo</ToggleGroupItem>
+					</ToggleGroup>
 				</div>
-				<div className="grid gap-4 px-4 lg:grid-cols-2 lg:px-6">
-					<ChartPieDespesas />
-					<ChartPieReceitas />
-				</div>
-				<div className="px-4 lg:px-6">
-					<DashboardTable data={ultimasMovimentacoes} isLoading={isLoading} />
-				</div>
+
+				{activeTab === "vendas" && <VendasSection />}
+				{activeTab === "financeiro" && <FinanceiroSection />}
+				{activeTab === "controle" && <ControleSection />}
+				{activeTab === "dre" && <DreSection />}
+				{activeTab === "comparativo" && <ComparativoSection />}
 			</div>
 		</PageContainer>
 	);

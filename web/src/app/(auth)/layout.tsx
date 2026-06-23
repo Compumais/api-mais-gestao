@@ -2,14 +2,14 @@
 
 import { MovimentacaoForm } from "@/app/(auth)/movimentacoes/components/movimentacao-form";
 import { AppSidebar } from "@/components/app-sidebar";
-import { AtenaChatButton } from "@/components/atena-chat-button";
-import { AtenaChatWindow } from "@/components/atena-chat-window";
+// import { AtenaChatButton } from "@/components/atena-chat-button";
+// import { AtenaChatWindow } from "@/components/atena-chat-window";
 import { ProtectedRoute } from "@/components/protected-route";
 import { SearchDialog } from "@/components/search-dialog";
 import { SearchShortcut } from "@/components/search-shortcut";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { AtenaChatProvider } from "@/hooks/use-atena-chat";
+// import { AtenaChatProvider } from "@/hooks/use-atena-chat";
 import {
 	MovimentacaoFormProvider,
 	useMovimentacaoForm,
@@ -45,7 +45,7 @@ export default function AuthLayout({
 		<ProtectedRoute>
 			<SearchDialogProvider>
 				<MovimentacaoFormProvider>
-					<AtenaChatProvider>
+					{/* <AtenaChatProvider> */}
 						<SidebarProvider
 							style={
 								{
@@ -62,10 +62,10 @@ export default function AuthLayout({
 							<SearchShortcut />
 							<SearchDialogWrapper />
 							<MovimentacaoFormWrapper />
-							<AtenaChatButton />
-							<AtenaChatWindow />
+							{/* <AtenaChatButton /> */}
+							{/* <AtenaChatWindow /> */}
 						</SidebarProvider>
-					</AtenaChatProvider>
+					{/* </AtenaChatProvider> */}
 				</MovimentacaoFormProvider>
 			</SearchDialogProvider>
 		</ProtectedRoute>
