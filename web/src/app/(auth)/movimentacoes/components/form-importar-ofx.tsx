@@ -51,6 +51,8 @@ export function FormImportarOfx({
 			const linhasComStatus: LinhaImportacaoOfx[] = linhas.map((linha) => ({
 				...linha,
 				status: linha.status,
+				idLancamentoExistente: linha.idLancamentoExistente,
+				idplanocontasSelecionado: linha.idplanocontasExistente ?? undefined,
 			}));
 			onPreview(linhasComStatus);
 			toast.success(`${linhasComStatus.length} transações carregadas`);

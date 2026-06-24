@@ -1,7 +1,16 @@
 import { and, count, desc, eq, inArray, sql } from "drizzle-orm";
 import type { NovaContaCorrenteLancamento } from "@/model/conta-corrente-lancamento-model.js";
+import type { ChaveLancamentoExistente } from "@/util/chave-lancamento-conta-corrente.js";
+import { montarChaveLancamentoExistente } from "@/util/chave-lancamento-conta-corrente.js";
 import * as schema from "../../drizzle/schema.js";
 import { db } from "./connection.js";
+
+export type { ChaveLancamentoExistente };
+
+export type LancamentoExistentePorChave = {
+	id: string;
+	idplanocontas: string | null;
+};
 
 export async function criarContaCorrenteLancamento(
 	dados: NovaContaCorrenteLancamento,
@@ -287,4 +296,59 @@ export async function listarDocumentosExistentesPorConta({
 	return registros
 		.map((registro) => registro.documento)
 		.filter((documento): documento is string => !!documento);
+}
+
+export async function buscarLancamentosExistentesPorChaves({
+	idcontacorrente,
+	chaves,
+}: {
+	idcontacorrente: string;
+	chaves: ChaveLancamentoExistente[];
+}): Promise<Map<string, LancamentoExistentePorChave>> {
+	const mapa = new Map<string, LancamentoExistentePorChave>();
+
+	if (chaves.length === 0) {
+		return mapa;
+	}
+
+	const datas = [...new Set(chaves.map((chave) => chave.data))];
+
+	const registros = await db
+		.select({
+			id: schema.contacorrentelancamento.id,
+			datahora: schema.contacorrentelancamento.datahora,
+			valor: schema.contacorrentelancamento.valor,
+			tipo: schema.contacorrentelancamento.tipo,
+			idplanocontas: schema.contacorrentelancamento.idplanocontas,
+			currenttimemillis: schema.contacorrentelancamento.currenttimemillis,
+		})
+		.from(schema.contacorrentelancamento)
+		.where(
+			and(
+				eq(schema.contacorrentelancamento.idcontacorrente, idcontacorrente),
+				inArray(schema.contacorrentelancamento.datahora, datas),
+			),
+		)
+		.orderBy(desc(schema.contacorrentelancamento.currenttimemillis));
+
+	for (const registro of registros) {
+		if (!registro.datahora || !registro.valor || !registro.tipo) {
+			continue;
+		}
+
+		const chave = montarChaveLancamentoExistente({
+			data: registro.datahora,
+			valor: registro.valor,
+			tipo: registro.tipo as "C" | "D",
+		});
+
+		if (!mapa.has(chave)) {
+			mapa.set(chave, {
+				id: registro.id,
+				idplanocontas: registro.idplanocontas,
+			});
+		}
+	}
+
+	return mapa;
 }

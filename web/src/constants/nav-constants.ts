@@ -1,4 +1,5 @@
 import {
+    IconCoins,
 	IconDashboard,
 	IconFileInvoice,
 	IconHelp,
@@ -131,7 +132,7 @@ export const DATA = {
 	navFinanceiro: [
 		{
 			title: "Financeiro",
-			icon: IconReportMoney,
+			icon: IconCoins,
 			items: [
 				{
 					title: "Plano de contas",

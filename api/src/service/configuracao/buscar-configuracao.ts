@@ -2,6 +2,7 @@ import type { HttpResponse } from "@/model/http-model.js";
 import { buscarConfiguracaoPorEmpresa } from "@/repositories/configuracao-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
+import { normalizarConfiguracaoNotificacoes } from "@/worker/util/configuracao-notificacoes.js";
 
 interface BuscarConfiguracaoParametros {
 	idempresa: string;
@@ -27,5 +28,8 @@ export async function buscarConfiguracaoService({
 		return httpNaoEncontrado();
 	}
 
-	return httpOk(configuracao);
+	return httpOk({
+		...configuracao,
+		notificacoes: normalizarConfiguracaoNotificacoes(configuracao.notificacoes),
+	});
 }

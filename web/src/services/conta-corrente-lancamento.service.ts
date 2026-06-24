@@ -64,7 +64,9 @@ export interface LinhaPreviewImportacaoOfx {
 	tipo: "C" | "D";
 	historico: string;
 	documento: string | null;
-	status: "pendente" | "duplicada";
+	status: "pendente" | "existente";
+	idLancamentoExistente?: string;
+	idplanocontasExistente?: string | null;
 }
 
 export const contaCorrenteLancamentoService = {

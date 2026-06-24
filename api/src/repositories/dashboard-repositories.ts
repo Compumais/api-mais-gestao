@@ -1168,7 +1168,7 @@ export async function buscarDre({
 		})),
 		{
 			id: "resultado-liquido",
-			nome: "LUCRO OU PREJUÃZO LÃQUIDO",
+			nome: "LUCRO OU PREJUÍZO LÍQUIDO",
 			tipo: "resultado",
 			nivel: 0,
 			meses: resultadoMeses,

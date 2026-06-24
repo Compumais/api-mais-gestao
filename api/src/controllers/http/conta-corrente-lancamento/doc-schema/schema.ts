@@ -467,7 +467,7 @@ export const previewImportacaoOfxSchema: FastifySchema = {
 	tags: ["conta-corrente-lancamentos"],
 	summary: "Prévia de importação OFX",
 	description:
-		"Analisa um arquivo OFX e retorna as transações com indicação de duplicatas na conta corrente.",
+		"Analisa um arquivo OFX e retorna as transações com indicação de lançamentos existentes na conta corrente (data, valor e tipo).",
 	security: [{ bearerAuth: [] }],
 	body: {
 		type: "object",
@@ -495,7 +495,9 @@ export const previewImportacaoOfxSchema: FastifySchema = {
 					tipo: { type: "string", enum: ["C", "D"] },
 					historico: { type: "string" },
 					documento: { type: "string", nullable: true },
-					status: { type: "string", enum: ["pendente", "duplicada"] },
+					status: { type: "string", enum: ["pendente", "existente"] },
+					idLancamentoExistente: { type: "string", nullable: true },
+					idplanocontasExistente: { type: "string", nullable: true },
 				},
 			},
 		},

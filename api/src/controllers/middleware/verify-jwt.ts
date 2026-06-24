@@ -4,6 +4,10 @@ import * as schema from "../../../drizzle/schema.js";
 import { auth } from "../../lib/auth.js";
 import { db } from "../../repositories/connection.js";
 import { normalizarPerfilArray } from "../../util/usuario-perfil.js";
+import { verificarUsuarioPodeAcessarPlataforma } from "../../util/verificar-acesso-plataforma.js";
+import { isSuper } from "../../util/verificar-super.js";
+
+const ROTAS_SEM_VERIFICACAO_ACESSO = ["/health", "/docs", "/api/auth"];
 
 /**
  * Converte headers do Fastify para Headers do Web API
@@ -51,6 +55,45 @@ function extractTokenFromHeader(
 	return parts[1];
 }
 
+function deveIgnorarVerificacaoAcesso(url: string): boolean {
+	const path = url.split("?")[0] ?? url;
+	return ROTAS_SEM_VERIFICACAO_ACESSO.some((prefixo) =>
+		path.startsWith(prefixo),
+	);
+}
+
+async function validarAcessoPlataforma(
+	request: FastifyRequest,
+	reply: FastifyReply,
+): Promise<boolean> {
+	if (deveIgnorarVerificacaoAcesso(request.url)) {
+		return true;
+	}
+
+	if (!request.user) {
+		return true;
+	}
+
+	if (isSuper(normalizarPerfilArray(request.user.roles))) {
+		return true;
+	}
+
+	const resultado = await verificarUsuarioPodeAcessarPlataforma(
+		request.user.id,
+		normalizarPerfilArray(request.user.roles),
+	);
+
+	if (!resultado.permitido) {
+		reply.status(403).send({
+			error: resultado.motivo ?? "Acesso bloqueado",
+			code: resultado.code ?? "ACCESS_DENIED",
+		});
+		return false;
+	}
+
+	return true;
+}
+
 /**
  * Middleware para verificar autenticação usando Better Auth
  * Aceita tanto cookies (padrão do Better Auth) quanto tokens JWT no header Authorization
@@ -91,6 +134,7 @@ export async function verifyJwt(request: FastifyRequest, reply: FastifyReply) {
 								email: schema.usuarios.email,
 								perfil: schema.usuarios.perfil,
 								plano: schema.usuarios.plano,
+								ativo: schema.usuarios.ativo,
 							})
 							.from(schema.usuarios)
 							.where(eq(schema.usuarios.id, sessao.idusuario))
@@ -107,6 +151,8 @@ export async function verifyJwt(request: FastifyRequest, reply: FastifyReply) {
 								roles: perfil.length > 0 ? perfil : ["usuario"],
 								plano: userData!.plano || null,
 							};
+							const permitido = await validarAcessoPlataforma(request, reply);
+							if (!permitido) return;
 							return; // Autenticação bem-sucedida
 						}
 					}
@@ -145,6 +191,10 @@ export async function verifyJwt(request: FastifyRequest, reply: FastifyReply) {
 				roles: perfil.length > 0 ? perfil : ["usuario"],
 				plano: userData.plano || null,
 			};
+
+			const permitido = await validarAcessoPlataforma(request, reply);
+			if (!permitido) return;
+
 			return; // Autenticação bem-sucedida
 		}
 

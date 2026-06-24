@@ -1,6 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import type { NovaConfiguracao } from "@/model/configuracao-model.js";
+import { configuracaoNotificacoesSchema } from "@/schemas/configuracao-notificacoes-schema.js";
 import { atualizarConfiguracaoService } from "@/service/configuracao/atualizar-configuracao.js";
 import { httpNaoAutorizado } from "@/util/http-util.js";
 
@@ -12,8 +13,8 @@ const CAMPOS_CONFIGURACAO = [
 ] as const satisfies (keyof NovaConfiguracao)[];
 
 const atualizarConfiguracaoBodySchema = z.object({
-	idempresa: z.string(),
-	notificacoes: z.record(z.string(), z.unknown()).optional(),
+	idempresa: z.string().uuid(),
+	notificacoes: configuracaoNotificacoesSchema.optional(),
 	integracao: z.record(z.string(), z.unknown()).optional(),
 	relatorios: z.record(z.string(), z.unknown()).optional(),
 	impressao: z.record(z.string(), z.unknown()).optional(),

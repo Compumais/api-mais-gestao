@@ -7,6 +7,8 @@ import {
 } from "@/repositories/configuracao-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { httpOk, httpProibido } from "@/util/http-util.js";
+import { validarEParsearConfiguracaoNotificacoes } from "./validar-configuracao.js";
+import { normalizarConfiguracaoNotificacoes } from "@/worker/util/configuracao-notificacoes.js";
 
 interface AtualizarConfiguracaoParametros {
 	idempresa: string;
@@ -28,6 +30,14 @@ export async function atualizarConfiguracaoService({
 		return httpProibido();
 	}
 
+	const dadosAtualizacao: Partial<NovaConfiguracao> = { ...dados };
+
+	if (dados.notificacoes !== undefined) {
+		dadosAtualizacao.notificacoes = validarEParsearConfiguracaoNotificacoes(
+			dados.notificacoes,
+		);
+	}
+
 	// Buscar configuração existente
 	let configuracao = await buscarConfiguracaoPorEmpresa({ idempresa });
 
@@ -35,13 +45,20 @@ export async function atualizarConfiguracaoService({
 	if (!configuracao) {
 		configuracao = await criarConfiguracao({
 			idempresa,
-			...dados,
+			...dadosAtualizacao,
 		});
 	} else {
 		// Atualizar existente
 		configuracao = await atualizarConfiguracao({
 			id: configuracao.id,
-			dados,
+			dados: dadosAtualizacao,
+		});
+	}
+
+	if (configuracao?.notificacoes) {
+		return httpOk({
+			...configuracao,
+			notificacoes: normalizarConfiguracaoNotificacoes(configuracao.notificacoes),
 		});
 	}
 

@@ -1,13 +1,13 @@
 import { v4 as uuidv4 } from "uuid";
-import type {
-	TipoProblema,
-	NovoTipoProblema,
-} from "@/model/tipo-problema-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
+import type {
+	NovoTipoProblema,
+	TipoProblema,
+} from "@/model/tipo-problema-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
-	buscarTipoProblemaPorId,
 	atualizarTipoProblema,
+	buscarTipoProblemaPorId,
 } from "@/repositories/tipo-problema-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
 import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";

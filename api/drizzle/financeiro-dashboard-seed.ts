@@ -1,7 +1,6 @@
 import * as dotenv from "dotenv";
 import { and, desc, eq, like, or, sql } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
-import * as schema from "./schema.js";
 import { db } from "../src/repositories/connection.js";
 import {
 	buscarContaCorrenteCaixaPadrao,
@@ -15,6 +14,7 @@ import {
 	CODIGO_PLANO_VENDAS_PIX,
 	formatarValorMonetario,
 } from "../src/util/recebimentos-venda-util.js";
+import * as schema from "./schema.js";
 
 dotenv.config();
 
@@ -43,7 +43,11 @@ function formatarData(data: Date): string {
 	return data.toISOString().slice(0, 10);
 }
 
-function valorDeterministico(base: number, indice: number, multiplicador: number) {
+function valorDeterministico(
+	base: number,
+	indice: number,
+	multiplicador: number,
+) {
 	return base + ((indice * 137) % multiplicador);
 }
 
@@ -172,11 +176,17 @@ function montarLancamentosMensais(): LancamentoSeed[] {
 	const hoje = new Date();
 
 	for (let mesesAtras = 13; mesesAtras >= 0; mesesAtras--) {
-		const dataBase = new Date(hoje.getFullYear(), hoje.getMonth() - mesesAtras, 5);
+		const dataBase = new Date(
+			hoje.getFullYear(),
+			hoje.getMonth() - mesesAtras,
+			5,
+		);
 		const indiceMes = 13 - mesesAtras;
 
 		lancamentos.push({
-			datahora: formatarData(new Date(dataBase.getFullYear(), dataBase.getMonth(), 5)),
+			datahora: formatarData(
+				new Date(dataBase.getFullYear(), dataBase.getMonth(), 5),
+			),
 			tipo: "C",
 			valor: valorDeterministico(8500, indiceMes, 4000),
 			codigoPlano: CODIGOS_RECEITA[indiceMes % CODIGOS_RECEITA.length]!,
@@ -185,7 +195,9 @@ function montarLancamentosMensais(): LancamentoSeed[] {
 		});
 
 		lancamentos.push({
-			datahora: formatarData(new Date(dataBase.getFullYear(), dataBase.getMonth(), 12)),
+			datahora: formatarData(
+				new Date(dataBase.getFullYear(), dataBase.getMonth(), 12),
+			),
 			tipo: "C",
 			valor: valorDeterministico(3200, indiceMes, 2500),
 			codigoPlano: CODIGOS_RECEITA[(indiceMes + 1) % CODIGOS_RECEITA.length]!,
@@ -194,7 +206,9 @@ function montarLancamentosMensais(): LancamentoSeed[] {
 		});
 
 		lancamentos.push({
-			datahora: formatarData(new Date(dataBase.getFullYear(), dataBase.getMonth(), 18)),
+			datahora: formatarData(
+				new Date(dataBase.getFullYear(), dataBase.getMonth(), 18),
+			),
 			tipo: "D",
 			valor: valorDeterministico(2800, indiceMes, 1800),
 			codigoPlano: CODIGOS_DESPESA[indiceMes % CODIGOS_DESPESA.length]!,
@@ -203,7 +217,9 @@ function montarLancamentosMensais(): LancamentoSeed[] {
 		});
 
 		lancamentos.push({
-			datahora: formatarData(new Date(dataBase.getFullYear(), dataBase.getMonth(), 22)),
+			datahora: formatarData(
+				new Date(dataBase.getFullYear(), dataBase.getMonth(), 22),
+			),
 			tipo: "D",
 			valor: valorDeterministico(1200, indiceMes, 900),
 			codigoPlano: CODIGOS_DESPESA[(indiceMes + 2) % CODIGOS_DESPESA.length]!,

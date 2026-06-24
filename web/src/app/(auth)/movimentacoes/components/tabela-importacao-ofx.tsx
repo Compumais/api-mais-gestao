@@ -14,7 +14,9 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { contaCorrenteLancamentoService } from "@/services/conta-corrente-lancamento.service";
+import {
+	contaCorrenteLancamentoService,
+} from "@/services/conta-corrente-lancamento.service";
 import type { PlanoContas } from "@/services/plano-contas.service";
 import {
 	classeStatusImportacaoOfx,
@@ -46,6 +48,35 @@ function opcoesPlanoContas(planos: PlanoContas[]) {
 	});
 }
 
+type DadosLancamentoOfx = {
+	datahora: string;
+	tipo: "E" | "S";
+	valor: string;
+	historico: string;
+	documento?: string;
+	idplanocontas: string;
+	dataconciliacao: string;
+};
+
+function montarDadosLancamento(
+	linha: LinhaImportacaoOfx,
+	idplanocontas: string,
+): DadosLancamentoOfx {
+	return {
+		datahora: linha.data,
+		tipo: linha.tipo === "C" ? "E" : "S",
+		valor: linha.valor,
+		historico: linha.historico,
+		documento: linha.documento || undefined,
+		idplanocontas,
+		dataconciliacao: linha.data,
+	};
+}
+
+function linhaPermiteAcao(status: LinhaImportacaoOfx["status"]): boolean {
+	return status === "pendente" || status === "existente";
+}
+
 export function TabelaImportacaoOfx({
 	idcontacorrente,
 	linhas,
@@ -54,7 +85,7 @@ export function TabelaImportacaoOfx({
 	planosSaida,
 }: TabelaImportacaoOfxProps) {
 	const queryClient = useQueryClient();
-	const [linhaConfirmando, setLinhaConfirmando] = useState<string | null>(null);
+	const [linhaProcessando, setLinhaProcessando] = useState<string | null>(null);
 
 	const opcoesPorTipo = useMemo(
 		() => ({
@@ -64,7 +95,30 @@ export function TabelaImportacaoOfx({
 		[planosEntrada, planosSaida],
 	);
 
-	const { mutate: confirmarLinha } = useMutation({
+	const invalidarListagem = () => {
+		queryClient.invalidateQueries({
+			queryKey: ["conta-corrente-lancamentos"],
+		});
+	};
+
+	const marcarLinhaImportada = (
+		linha: LinhaImportacaoOfx,
+		idLancamento: string,
+	) => {
+		onLinhasChange(
+			linhas.map((item) =>
+				item.idTemporario === linha.idTemporario
+					? {
+							...item,
+							status: "importada",
+							idLancamentoCriado: idLancamento,
+						}
+					: item,
+			),
+		);
+	};
+
+	const { mutate: realizarLancamento } = useMutation({
 		mutationFn: async ({
 			linha,
 			idplanocontas,
@@ -74,37 +128,49 @@ export function TabelaImportacaoOfx({
 		}) => {
 			return contaCorrenteLancamentoService.criar({
 				idcontacorrente,
-				datahora: linha.data,
-				tipo: linha.tipo === "C" ? "E" : "S",
-				valor: linha.valor,
-				historico: linha.historico,
-				documento: linha.documento || undefined,
-				idplanocontas,
-				dataconciliacao: linha.data,
+				...montarDadosLancamento(linha, idplanocontas),
 			});
 		},
 		onSuccess: (lancamento, { linha }) => {
-			onLinhasChange(
-				linhas.map((item) =>
-					item.idTemporario === linha.idTemporario
-						? {
-								...item,
-								status: "importada",
-								idLancamentoCriado: lancamento.id,
-							}
-						: item,
-				),
-			);
-			queryClient.invalidateQueries({
-				queryKey: ["conta-corrente-lancamentos"],
-			});
+			marcarLinhaImportada(linha, lancamento.id);
+			invalidarListagem();
 			toast.success("Movimentação importada com sucesso");
 		},
 		onError: (error: Error) => {
-			toast.error(error.message || "Erro ao confirmar importação");
+			toast.error(error.message || "Erro ao realizar lançamento");
 		},
 		onSettled: () => {
-			setLinhaConfirmando(null);
+			setLinhaProcessando(null);
+		},
+	});
+
+	const { mutate: atualizarLancamento } = useMutation({
+		mutationFn: async ({
+			linha,
+			idplanocontas,
+		}: {
+			linha: LinhaImportacaoOfx;
+			idplanocontas: string;
+		}) => {
+			if (!linha.idLancamentoExistente) {
+				throw new Error("Lançamento existente não identificado");
+			}
+
+			return contaCorrenteLancamentoService.atualizar(
+				linha.idLancamentoExistente,
+				montarDadosLancamento(linha, idplanocontas),
+			);
+		},
+		onSuccess: (lancamento, { linha }) => {
+			marcarLinhaImportada(linha, lancamento.id);
+			invalidarListagem();
+			toast.success("Movimentação atualizada com sucesso");
+		},
+		onError: (error: Error) => {
+			toast.error(error.message || "Erro ao atualizar lançamento");
+		},
+		onSettled: () => {
+			setLinhaProcessando(null);
 		},
 	});
 
@@ -128,16 +194,41 @@ export function TabelaImportacaoOfx({
 		);
 	};
 
-	const handleConfirmar = (linha: LinhaImportacaoOfx) => {
+	const validarPlanoSelecionado = (linha: LinhaImportacaoOfx): boolean => {
 		if (!linha.idplanocontasSelecionado) {
 			toast.error("Selecione um plano de contas");
+			return false;
+		}
+
+		return true;
+	};
+
+	const handleRealizarLancamento = (linha: LinhaImportacaoOfx) => {
+		if (!validarPlanoSelecionado(linha)) {
 			return;
 		}
 
-		setLinhaConfirmando(linha.idTemporario);
-		confirmarLinha({
+		setLinhaProcessando(linha.idTemporario);
+		realizarLancamento({
 			linha,
-			idplanocontas: linha.idplanocontasSelecionado,
+			idplanocontas: linha.idplanocontasSelecionado as string,
+		});
+	};
+
+	const handleAtualizar = (linha: LinhaImportacaoOfx) => {
+		if (!validarPlanoSelecionado(linha)) {
+			return;
+		}
+
+		if (!linha.idLancamentoExistente) {
+			toast.error("Lançamento existente não identificado");
+			return;
+		}
+
+		setLinhaProcessando(linha.idTemporario);
+		atualizarLancamento({
+			linha,
+			idplanocontas: linha.idplanocontasSelecionado as string,
 		});
 	};
 
@@ -166,9 +257,10 @@ export function TabelaImportacaoOfx({
 						{linhas.map((linha) => {
 							const tipomovimento = tipomovimentoPorTipoOfx(linha.tipo);
 							const opcoes = opcoesPorTipo[tipomovimento];
+							const permiteAcao = linhaPermiteAcao(linha.status);
 							const acaoDesabilitada =
-								linha.status !== "pendente" ||
-								linhaConfirmando === linha.idTemporario;
+								!permiteAcao || linhaProcessando === linha.idTemporario;
+							const processando = linhaProcessando === linha.idTemporario;
 
 							return (
 								<TableRow key={linha.idTemporario}>
@@ -201,7 +293,7 @@ export function TabelaImportacaoOfx({
 											placeholder="Selecione o plano"
 											searchPlaceholder="Buscar plano..."
 											emptyMessage="Nenhum plano encontrado."
-											disabled={linha.status !== "pendente"}
+											disabled={!permiteAcao}
 										/>
 									</TableCell>
 									<TableCell className="text-right">
@@ -219,15 +311,38 @@ export function TabelaImportacaoOfx({
 												<Button
 													type="button"
 													size="sm"
-													onClick={() => handleConfirmar(linha)}
+													onClick={() => handleRealizarLancamento(linha)}
 													disabled={
 														acaoDesabilitada ||
 														!linha.idplanocontasSelecionado
 													}
 												>
-													{linhaConfirmando === linha.idTemporario
-														? "Confirmando..."
-														: "Confirmar"}
+													{processando
+														? "Processando..."
+														: "Realizar lançamento"}
+												</Button>
+											</div>
+										) : linha.status === "existente" ? (
+											<div className="flex justify-end gap-2">
+												<Button
+													type="button"
+													variant="ghost"
+													size="sm"
+													onClick={() => ignorarLinha(linha.idTemporario)}
+													disabled={acaoDesabilitada}
+												>
+													Ignorar
+												</Button>
+												<Button
+													type="button"
+													size="sm"
+													onClick={() => handleAtualizar(linha)}
+													disabled={
+														acaoDesabilitada ||
+														!linha.idplanocontasSelecionado
+													}
+												>
+													{processando ? "Processando..." : "Atualizar"}
 												</Button>
 											</div>
 										) : (

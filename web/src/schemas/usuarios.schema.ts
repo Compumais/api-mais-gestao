@@ -5,6 +5,7 @@ export const PERFIS_USUARIO = [
 	"admin",
 	"proprietario",
 	"garcom",
+	"super",
 ] as const;
 
 export const perfilUsuarioSchema = z.enum(PERFIS_USUARIO);

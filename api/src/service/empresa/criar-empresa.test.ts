@@ -42,6 +42,7 @@ describe("criarEmpresaService", () => {
 		plano_inicio_ciclo: new Date().toISOString() as string | null,
 		plano_fim_ciclo: new Date().toISOString() as string | null,
 		plano_proximo: "plano-2" as string | null,
+		ativo: true,
 	};
 
 	beforeEach(() => {
