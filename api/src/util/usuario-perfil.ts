@@ -5,6 +5,7 @@ export const PERFIS_USUARIO = [
 	"admin",
 	"proprietario",
 	"garcom",
+	"super",
 ] as const;
 
 export type PerfilUsuario = (typeof PERFIS_USUARIO)[number];

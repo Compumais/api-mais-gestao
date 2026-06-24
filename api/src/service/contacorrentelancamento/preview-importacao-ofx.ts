@@ -1,7 +1,10 @@
 import type { HttpResponse } from "@/model/http-model.js";
-import { listarDocumentosExistentesPorConta } from "@/repositories/conta-corrente-lancamento-repositories.js";
+import {
+	buscarLancamentosExistentesPorChaves,
+} from "@/repositories/conta-corrente-lancamento-repositories.js";
 import { verificarContaCorrentePertenceEmpresa } from "@/repositories/conta-corrente-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { montarChaveLancamentoExistente } from "@/util/chave-lancamento-conta-corrente.js";
 import {
 	httpErro,
 	httpNaoAutorizado,
@@ -10,10 +13,12 @@ import {
 } from "@/util/http-util.js";
 import { parsearOfx, type TransacaoOfx } from "@/util/parse-ofx.js";
 
-export type StatusPreviewImportacaoOfx = "pendente" | "duplicada";
+export type StatusPreviewImportacaoOfx = "pendente" | "existente";
 
 export type LinhaPreviewImportacaoOfx = TransacaoOfx & {
 	status: StatusPreviewImportacaoOfx;
+	idLancamentoExistente?: string;
+	idplanocontasExistente?: string | null;
 };
 
 export async function previewImportacaoOfxService(
@@ -60,24 +65,39 @@ export async function previewImportacaoOfxService(
 		};
 	}
 
-	const documentos = transacoes
-		.map((transacao) => transacao.documento)
-		.filter((documento): documento is string => !!documento);
-
-	const documentosExistentes = new Set(
-		await listarDocumentosExistentesPorConta({
-			idcontacorrente,
-			documentos,
-		}),
-	);
-
-	const linhas: LinhaPreviewImportacaoOfx[] = transacoes.map((transacao) => ({
-		...transacao,
-		status:
-			transacao.documento && documentosExistentes.has(transacao.documento)
-				? "duplicada"
-				: "pendente",
+	const chaves = transacoes.map((transacao) => ({
+		data: transacao.data,
+		valor: transacao.valor,
+		tipo: transacao.tipo,
 	}));
+
+	const lancamentosExistentes = await buscarLancamentosExistentesPorChaves({
+		idcontacorrente,
+		chaves,
+	});
+
+	const linhas: LinhaPreviewImportacaoOfx[] = transacoes.map((transacao) => {
+		const chave = montarChaveLancamentoExistente({
+			data: transacao.data,
+			valor: transacao.valor,
+			tipo: transacao.tipo,
+		});
+		const existente = lancamentosExistentes.get(chave);
+
+		if (existente) {
+			return {
+				...transacao,
+				status: "existente",
+				idLancamentoExistente: existente.id,
+				idplanocontasExistente: existente.idplanocontas,
+			};
+		}
+
+		return {
+			...transacao,
+			status: "pendente",
+		};
+	});
 
 	return httpOk(linhas);
 }

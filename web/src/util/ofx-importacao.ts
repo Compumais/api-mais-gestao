@@ -1,7 +1,7 @@
 export type StatusImportacaoOfx =
 	| "pendente"
 	| "importada"
-	| "duplicada"
+	| "existente"
 	| "ignorada";
 
 export type TransacaoOfx = {
@@ -17,6 +17,7 @@ export type LinhaImportacaoOfx = TransacaoOfx & {
 	status: StatusImportacaoOfx;
 	idplanocontasSelecionado?: string;
 	idLancamentoCriado?: string;
+	idLancamentoExistente?: string;
 };
 
 export function tipomovimentoPorTipoOfx(tipo: "C" | "D"): "E" | "S" {
@@ -33,8 +34,8 @@ export function labelStatusImportacaoOfx(status: StatusImportacaoOfx): string {
 			return "Pendente";
 		case "importada":
 			return "Importada";
-		case "duplicada":
-			return "Duplicada";
+		case "existente":
+			return "Existente";
 		case "ignorada":
 			return "Ignorada";
 	}
@@ -46,7 +47,7 @@ export function classeStatusImportacaoOfx(status: StatusImportacaoOfx): string {
 			return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
 		case "importada":
 			return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
-		case "duplicada":
+		case "existente":
 			return "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400";
 		case "ignorada":
 			return "bg-muted text-muted-foreground";

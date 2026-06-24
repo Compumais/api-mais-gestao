@@ -1,5 +1,5 @@
-import type { UnidadeMedida } from "@/model/unidade-medida-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
+import type { UnidadeMedida } from "@/model/unidade-medida-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { listarUnidadesMedida } from "@/repositories/unidade-medida-repositories.js";
 import { httpOk, httpProibido } from "@/util/http-util.js";

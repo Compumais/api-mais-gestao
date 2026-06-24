@@ -22,6 +22,7 @@ export const usuarios = pgTable("usuarios", {
 	plano_fim_ciclo: date("plano_fim_ciclo"),
 	plano_proximo: text("plano_proximo"), // Plano agendado para downgrade
 	criadoem: timestamp("criadoem").defaultNow().notNull(),
+	ativo: boolean("ativo").default(true).notNull(),
 	atualizadoem: timestamp("atualizadoem")
 		.defaultNow()
 		.$onUpdate(() => /* @__PURE__ */ new Date())

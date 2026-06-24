@@ -1,15 +1,12 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
-import z from "zod";
-import { atualizarConfiguracaoParcial } from "@/repositories/configuracao-repositories.js";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { z } from "zod";
+import { atualizarSecaoConfiguracaoService } from "@/service/configuracao/atualizar-secao-configuracao.js";
 import { httpNaoAutorizado, httpProibido } from "@/util/http-util.js";
 
 const atualizarSecaoParamsSchema = z.object({
-	idempresa: z.string(),
+	idempresa: z.string().uuid(),
 	secao: z.enum(["notificacoes", "integracao", "relatorios", "impressao"]),
 });
-
-const atualizarSecaoBodySchema = z.object({});
 
 export async function atualizarSecaoConfiguracao(
 	request: FastifyRequest,
@@ -21,24 +18,19 @@ export async function atualizarSecaoConfiguracao(
 		}
 
 		const params = atualizarSecaoParamsSchema.parse(request.params);
-		const dados = atualizarSecaoBodySchema.parse(request.body);
 
-		const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
-			request.user.id,
-			params.idempresa,
-		);
-
-		if (!usuarioPertenceEmpresa) {
-			return reply.status(httpProibido().status).send(httpProibido());
-		}
-
-		const configuracao = await atualizarConfiguracaoParcial({
+		const resultado = await atualizarSecaoConfiguracaoService({
 			idempresa: params.idempresa,
+			idusuario: request.user.id,
 			secao: params.secao,
-			dados: dados as Record<string, unknown>,
+			dados: request.body,
 		});
 
-		return reply.status(200).send(configuracao);
+		if (!resultado.success) {
+			return reply.status(resultado.status).send(resultado);
+		}
+
+		return reply.status(resultado.status).send(resultado.body);
 	} catch (error) {
 		console.error(error);
 		if (error instanceof z.ZodError) {

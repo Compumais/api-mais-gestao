@@ -1,7 +1,16 @@
+export const PERFIL_SUPER = "super";
 export const PERFIL_GARCOM = "garcom";
 
-/** Tela inicial do perfil garçom. */
+export const SUPER_HOME_ROUTE = "/super/dashboard";
 export const GARCOM_HOME_ROUTE = "/garcom";
+
+export const SUPER_ALLOWED_ROUTES = [
+	"/super",
+	"/super/dashboard",
+	"/super/usuarios",
+	"/super/cadastro",
+	"/super/informativos",
+] as const;
 
 export const GARCOM_ALLOWED_ROUTES = [
 	"/garcom",
@@ -14,6 +23,7 @@ const PERFIS_LABEL: Record<string, string> = {
 	admin: "Administrador",
 	proprietario: "Proprietário",
 	garcom: "Garçom",
+	super: "Super Admin",
 };
 
 export function normalizePerfis(
@@ -28,6 +38,12 @@ export function hasPerfil(
 	alvo: string,
 ): boolean {
 	return normalizePerfis(perfil).includes(alvo);
+}
+
+export function isSuper(
+	user: { perfil?: string | string[] } | null | undefined,
+): boolean {
+	return hasPerfil(user?.perfil, PERFIL_SUPER);
 }
 
 export function isGarcom(
@@ -59,10 +75,19 @@ export function isRouteAllowedForGarcom(pathname: string): boolean {
 	);
 }
 
+export function isRouteAllowedForSuper(pathname: string): boolean {
+	const path = pathname.split("?")[0] ?? pathname;
+	return SUPER_ALLOWED_ROUTES.some(
+		(rota) => path === rota || path.startsWith(`${rota}/`),
+	);
+}
+
 export function getDefaultRouteForUser(
 	user: { perfil?: string | string[] } | null | undefined,
 ): string {
-	return isGarcom(user) ? GARCOM_HOME_ROUTE : "/dashboard";
+	if (isSuper(user)) return SUPER_HOME_ROUTE;
+	if (isGarcom(user)) return GARCOM_HOME_ROUTE;
+	return "/dashboard";
 }
 
 export function resolveRedirectForUser(
@@ -72,6 +97,10 @@ export function resolveRedirectForUser(
 	const destinoPadrao = getDefaultRouteForUser(user);
 
 	if (!redirectTo?.startsWith("/") || redirectTo.startsWith("//")) {
+		return destinoPadrao;
+	}
+
+	if (isSuper(user) && !isRouteAllowedForSuper(redirectTo)) {
 		return destinoPadrao;
 	}
 

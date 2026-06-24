@@ -218,6 +218,20 @@
       "when": 1781715000000,
       "tag": "0030_sync_schema_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1781716000000,
+      "tag": "0031_tarefa_execucao",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1781717000000,
+      "tag": "0032_super_admin",
+      "breakpoints": true
     }
   ]
 }

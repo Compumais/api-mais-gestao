@@ -1,9 +1,9 @@
 import { v4 as uuidv4 } from "uuid";
-import type {
-	UnidadeMedida,
-	NovoUnidadeMedida,
-} from "@/model/unidade-medida-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
+import type {
+	NovoUnidadeMedida,
+	UnidadeMedida,
+} from "@/model/unidade-medida-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	criarUnidadeMedida,

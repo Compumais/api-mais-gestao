@@ -18,6 +18,7 @@ describe("buscarUsuarioPorIdService", () => {
 		plano_inicio_ciclo: new Date().toISOString(),
 		plano_fim_ciclo: new Date().toISOString(),
 		plano_proximo: "PREMIUM",
+		ativo: true,
 		criadoem: new Date(),
 		atualizadoem: new Date(),
 	};
@@ -92,6 +93,7 @@ describe("buscarUsuarioPorIdService", () => {
 			plano_inicio_ciclo: new Date().toISOString(),
 			plano_fim_ciclo: new Date().toISOString(),
 			plano_proximo: null,
+			ativo: true,
 		};
 
 		vi.mocked(usuarioRepository.buscarUsuarioPorId).mockResolvedValue(

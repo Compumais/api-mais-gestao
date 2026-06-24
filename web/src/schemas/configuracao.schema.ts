@@ -1,41 +1,66 @@
 import { z } from "zod";
 
 // Schema para configurações de notificações
-export const configuracaoNotificacoesSchema = z.object({
-	alertasFinanceiros: z.object({
-		vencimentoContas: z.object({
-			habilitado: z.boolean(),
-			diasAntes: z.number().min(1).max(365),
+export const configuracaoNotificacoesSchema = z
+	.object({
+		alertasFinanceiros: z.object({
+			vencimentoContas: z.object({
+				habilitado: z.boolean(),
+				diasAntes: z.number().min(1).max(365),
+			}),
+			saldoBaixo: z.object({
+				habilitado: z.boolean(),
+				valorMinimo: z.string().min(1),
+			}),
+			transferenciasAcimaValor: z.object({
+				habilitado: z.boolean(),
+				valorLimite: z.string().min(1),
+			}),
+			conciliacoesPendentes: z.object({
+				habilitado: z.boolean(),
+				diasPendentes: z.number().min(1).max(365),
+			}),
 		}),
-		saldoBaixo: z.object({
-			habilitado: z.boolean(),
-			valorMinimo: z.string().min(1),
+		notificacoesEmail: z.object({
+			relatoriosAutomaticos: z.object({
+				habilitado: z.boolean(),
+				frequencia: z.enum(["diario", "semanal", "mensal"]).nullable(),
+				horario: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
+			}),
+			resumoMovimentacoes: z.object({
+				habilitado: z.boolean(),
+				frequencia: z.enum(["diario", "semanal", "mensal"]).nullable(),
+			}),
+			alertasVencimento: z.object({
+				habilitado: z.boolean(),
+				diasAntes: z.number().min(1).max(365),
+			}),
 		}),
-		transferenciasAcimaValor: z.object({
-			habilitado: z.boolean(),
-			valorLimite: z.string().min(1),
-		}),
-		conciliacoesPendentes: z.object({
-			habilitado: z.boolean(),
-			diasPendentes: z.number().min(1).max(365),
-		}),
-	}),
-	notificacoesEmail: z.object({
-		relatoriosAutomaticos: z.object({
-			habilitado: z.boolean(),
-			frequencia: z.enum(["diario", "semanal", "mensal"]).nullable(),
-			horario: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
-		}),
-		resumoMovimentacoes: z.object({
-			habilitado: z.boolean(),
-			frequencia: z.enum(["diario", "semanal", "mensal"]).nullable(),
-		}),
-		alertasVencimento: z.object({
-			habilitado: z.boolean(),
-			diasAntes: z.number().min(1).max(365),
-		}),
-	}),
-});
+	})
+	.superRefine((dados, ctx) => {
+		if (
+			dados.notificacoesEmail.relatoriosAutomaticos.habilitado &&
+			!dados.notificacoesEmail.relatoriosAutomaticos.frequencia
+		) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["notificacoesEmail", "relatoriosAutomaticos", "frequencia"],
+				message: "Frequência é obrigatória quando relatórios automáticos estão habilitados",
+			});
+		}
+
+		if (
+			dados.notificacoesEmail.resumoMovimentacoes.habilitado &&
+			!dados.notificacoesEmail.resumoMovimentacoes.frequencia
+		) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["notificacoesEmail", "resumoMovimentacoes", "frequencia"],
+				message:
+					"Frequência é obrigatória quando resumo de movimentações está habilitado",
+			});
+		}
+	});
 
 // Schema para configurações de integração
 export const configuracaoIntegracaoSchema = z.object({

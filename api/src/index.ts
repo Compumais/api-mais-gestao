@@ -3,7 +3,9 @@ import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import Fastify from "fastify";
+import { adminRotas } from "./controllers/http/admin/rotas.js";
 import { areasRotas } from "./controllers/http/area/rotas.js";
+import { informativosRotas } from "./controllers/http/informativos/rotas.js";
 import { assinaturasRotas } from "./controllers/http/assinaturas/rotas.js";
 import { auditoriaRotas } from "./controllers/http/auditoria/rotas.js";
 // import { authRotas } from "./controllers/http/auth/rotas.js";
@@ -56,6 +58,7 @@ import { produtosRotas } from "./controllers/http/produtos/rotas.js";
 import { receitasSemContribuicaoRotas } from "./controllers/http/receita-sem-contribuicao/rotas.js";
 import { relatoriosRotas } from "./controllers/http/relatorios/rotas.js";
 import { saldosEstoqueRotas } from "./controllers/http/saldo-estoque/rotas.js";
+import { tarefasRotas } from "./controllers/http/tarefas/rotas.js";
 import { tiposDocumentoFinanceiroRotas } from "./controllers/http/tipo-documento-financeiro/rotas.js";
 import { tiposProblemaRotas } from "./controllers/http/tipo-problema/rotas.js";
 import { unidadesMedidaRotas } from "./controllers/http/unidade-medida/rotas.js";
@@ -66,6 +69,7 @@ import { verificarAcessoGarcom } from "./controllers/middleware/verificar-acesso
 import { verifyJwt } from "./controllers/middleware/verify-jwt.js";
 import { getApiBaseUrl } from "./util/base-url.js";
 import { isOrigemCorsPermitida } from "./util/cors-origins.js";
+import { registrarAgendador } from "./worker/registrar-agendador.js";
 
 export const app = Fastify({ logger: true });
 
@@ -457,6 +461,8 @@ app.route({
 });
 
 app.register(healthRotas);
+app.register(adminRotas);
+app.register(informativosRotas);
 
 app.register(planoContasRotas);
 app.register(empresasRotas);
@@ -478,6 +484,7 @@ app.register(planosRotas);
 app.register(contaContabilRotas);
 app.register(iaRotas);
 app.register(notificacoesRotas);
+app.register(tarefasRotas);
 app.register(relatoriosRotas);
 app.register(areasRotas);
 app.register(centrosCustoRotas);
@@ -520,4 +527,5 @@ app.addHook("preHandler", verificarAcessoGarcom);
 app.listen({ port: 3333 }).then(() => {
 	console.log("HTTP server running on port 3333");
 	console.log(`Swagger documentation available at ${getApiBaseUrl()}/docs`);
+	registrarAgendador();
 });

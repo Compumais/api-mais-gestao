@@ -82,6 +82,7 @@ export async function atualizarConfiguracaoParcial({
 	idempresa,
 	secao,
 	dados,
+	substituir = false,
 }: {
 	idempresa: string;
 	secao: "notificacoes" | "integracao" | "relatorios" | "impressao";
@@ -90,14 +91,17 @@ export async function atualizarConfiguracaoParcial({
 		| Partial<ConfiguracaoIntegracao>
 		| Partial<ConfiguracaoRelatorios>
 		| Partial<ConfiguracaoImpressao>;
+	substituir?: boolean;
 }) {
 	const coluna = schema.configuracoes[secao];
+	const valorColuna = substituir
+		? dados
+		: sql`COALESCE(${coluna}, '{}'::jsonb) || ${JSON.stringify(dados)}::jsonb`;
+
 	const [configuracao] = await db
 		.update(schema.configuracoes)
 		.set({
-			[secao]: sql`COALESCE(${coluna}, '{}'::jsonb) || ${JSON.stringify(
-				dados,
-			)}::jsonb`,
+			[secao]: valorColuna,
 			atualizadoem: new Date().toISOString(),
 		})
 		.where(eq(schema.configuracoes.idempresa, idempresa))
