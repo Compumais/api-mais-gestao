@@ -2,7 +2,13 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { AUTH_SESSION_COOKIE } from "@/lib/auth-session-cookie";
 
-const PUBLIC_ROUTES = new Set(["/", "/entrar", "/registrar"]);
+const PUBLIC_ROUTES = new Set([
+	"/",
+	"/entrar",
+	"/registrar",
+	"/termos-de-servico",
+	"/politica-de-privacidade",
+]);
 const AUTH_ROUTES = new Set(["/entrar", "/registrar"]);
 
 function hasSessionCookie(request: NextRequest) {
