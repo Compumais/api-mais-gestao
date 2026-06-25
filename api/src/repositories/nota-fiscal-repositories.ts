@@ -10,6 +10,7 @@ import {
 	lte,
 	ne,
 	or,
+	sql,
 } from "drizzle-orm";
 import type { NovaNotaFiscal } from "@/model/nota-fiscal-model";
 import type {
@@ -17,8 +18,8 @@ import type {
 	NovoNotaFiscalItem,
 } from "@/model/nota-fiscal-item-model";
 import type { DadosImportacaoItem } from "@/model/nota-fiscal-importacao-model.js";
-import { notafiscal, notafiscalitem, vendapdvgourmet } from "@/repositories/schema.js";
-import { STATUS_RASCUNHO_IMPORTACAO } from "@/util/nota-fiscal-constants.js";
+import { notafiscal, notafiscalitem, vendapdvgourmet, cfop, entidade } from "@/repositories/schema.js";
+import { STATUS_RASCUNHO_IMPORTACAO, STATUS_NF_CONFIRMADA } from "@/util/nota-fiscal-constants.js";
 import { db } from "./connection";
 
 const COLUNAS_ITEM_NF = [
@@ -505,6 +506,139 @@ export async function listarNotasParaExportacaoXmlContabilidade({
 				or(
 					and(eq(notafiscal.modelo, "55"), eq(notafiscal.tipoorigem, 1)),
 					eq(notafiscal.modelo, "65"),
+				),
+			),
+		)
+		.orderBy(desc(notafiscal.emissao));
+}
+
+export type RelatorioFiscalNotaItem = {
+	id: string;
+	emissao: string | null;
+	numero: string | null;
+	numeronotafiscal: string | null;
+	chavenfe: string | null;
+	modelo: string | null;
+	tipoorigem: number | null;
+	valortotalnota: string | null;
+	baseicms: string | null;
+	icms: string | null;
+	pis: string | null;
+	cofins: string | null;
+	status: number | null;
+	parceiroNome: string | null;
+	cfopCodigo: string | null;
+	cfopDescricao: string | null;
+};
+
+export type ListarNotasRelatorioFiscalParametros = {
+	idempresa: string;
+	dataInicio: string;
+	dataFim: string;
+};
+
+const COLUNAS_RELATORIO_FISCAL = {
+	id: notafiscal.id,
+	emissao: notafiscal.emissao,
+	numero: notafiscal.numero,
+	numeronotafiscal: notafiscal.numeronotafiscal,
+	chavenfe: notafiscal.chavenfe,
+	modelo: notafiscal.modelo,
+	tipoorigem: notafiscal.tipoorigem,
+	valortotalnota: notafiscal.valortotalnota,
+	baseicms: notafiscal.baseicms,
+	icms: notafiscal.icms,
+	pis: notafiscal.pis,
+	cofins: notafiscal.cofins,
+	status: notafiscal.status,
+	parceiroNome: sql<string | null>`coalesce(${entidade.razaosocial}, ${entidade.nome})`,
+	cfopCodigo: cfop.codigo,
+	cfopDescricao: cfop.descricao,
+};
+
+function filtrosPeriodoRelatorio(
+	idempresa: string,
+	dataInicio: string,
+	dataFim: string,
+) {
+	return [
+		eq(notafiscal.idempresa, idempresa),
+		gte(notafiscal.emissao, dataInicio),
+		lte(notafiscal.emissao, dataFim),
+		ne(notafiscal.status, STATUS_RASCUNHO_IMPORTACAO),
+	];
+}
+
+export async function listarNotasRelatorioFiscalCompras({
+	idempresa,
+	dataInicio,
+	dataFim,
+}: ListarNotasRelatorioFiscalParametros): Promise<RelatorioFiscalNotaItem[]> {
+	return db
+		.select(COLUNAS_RELATORIO_FISCAL)
+		.from(notafiscal)
+		.leftJoin(entidade, eq(notafiscal.identidade, entidade.id))
+		.leftJoin(cfop, eq(notafiscal.idcfop, cfop.id))
+		.where(
+			and(
+				...filtrosPeriodoRelatorio(idempresa, dataInicio, dataFim),
+				eq(notafiscal.tipoorigem, 0),
+				eq(notafiscal.status, STATUS_NF_CONFIRMADA),
+			),
+		)
+		.orderBy(desc(notafiscal.emissao));
+}
+
+export async function listarNotasRelatorioFiscalVendas({
+	idempresa,
+	dataInicio,
+	dataFim,
+}: ListarNotasRelatorioFiscalParametros): Promise<RelatorioFiscalNotaItem[]> {
+	return db
+		.select(COLUNAS_RELATORIO_FISCAL)
+		.from(notafiscal)
+		.leftJoin(entidade, eq(notafiscal.identidade, entidade.id))
+		.leftJoin(cfop, eq(notafiscal.idcfop, cfop.id))
+		.where(
+			and(
+				...filtrosPeriodoRelatorio(idempresa, dataInicio, dataFim),
+				eq(notafiscal.status, STATUS_NFE_AUTORIZADA),
+				isNotNull(notafiscal.chavenfe),
+				or(eq(notafiscal.tipoorigem, 1), eq(notafiscal.modelo, "65")),
+			),
+		)
+		.orderBy(desc(notafiscal.emissao));
+}
+
+export async function listarNotasRelatorioFiscalContabilidade({
+	idempresa,
+	dataInicio,
+	dataFim,
+}: ListarNotasRelatorioFiscalParametros): Promise<RelatorioFiscalNotaItem[]> {
+	return db
+		.select(COLUNAS_RELATORIO_FISCAL)
+		.from(notafiscal)
+		.leftJoin(entidade, eq(notafiscal.identidade, entidade.id))
+		.leftJoin(cfop, eq(notafiscal.idcfop, cfop.id))
+		.where(
+			and(
+				...filtrosPeriodoRelatorio(idempresa, dataInicio, dataFim),
+				or(
+					and(
+						eq(notafiscal.tipoorigem, 0),
+						eq(notafiscal.status, STATUS_NF_CONFIRMADA),
+					),
+					and(
+						eq(notafiscal.status, STATUS_NFE_AUTORIZADA),
+						isNotNull(notafiscal.chavenfe),
+						or(
+							and(
+								eq(notafiscal.modelo, "55"),
+								eq(notafiscal.tipoorigem, 1),
+							),
+							eq(notafiscal.modelo, "65"),
+						),
+					),
 				),
 			),
 		)

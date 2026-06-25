@@ -79,7 +79,7 @@ export default function GourmetHubPage() {
 			<>
 				<PdvHeader
 					titulo="PDV Gourmet — Mesas"
-					voltarHref={isGarcomUser ? undefined : "/dashboard"}
+					voltarHref={isGarcomUser ? null : "/dashboard"}
 					voltarLabel="Voltar ao sistema"
 				/>
 				<div className="flex flex-1 items-center justify-center p-8">
@@ -95,7 +95,7 @@ export default function GourmetHubPage() {
 		<>
 			<PdvHeader
 				titulo="PDV Gourmet — Mesas"
-				voltarHref={isGarcomUser ? undefined : "/dashboard"}
+				voltarHref={isGarcomUser ? null : "/dashboard"}
 				voltarLabel="Voltar ao sistema"
 			/>
 			<div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4 md:p-6">
@@ -114,7 +114,7 @@ export default function GourmetHubPage() {
 						</Button>
 						<Button variant="secondary" asChild disabled={!estaAberto}>
 							<Link
-								href={estaAberto ? "/gourmet/venda-rapida" : "#"}
+								href={estaAberto ? "/pdv" : "#"}
 								onClick={(e) => {
 									if (!estaAberto) {
 										e.preventDefault();
@@ -151,7 +151,7 @@ export default function GourmetHubPage() {
 							</Button>
 							<Button variant="secondary" asChild disabled={!estaAberto}>
 								<Link
-									href={estaAberto ? "/gourmet/venda-rapida" : "#"}
+									href={estaAberto ? "/pdv" : "#"}
 									onClick={(e) => {
 										if (!estaAberto) {
 											e.preventDefault();

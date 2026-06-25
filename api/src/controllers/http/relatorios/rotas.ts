@@ -2,6 +2,9 @@ import type { FastifyInstance } from "fastify";
 import { verifyJwt } from "../../middleware/verify-jwt.js";
 import { gerarRelatorioContasPagarController } from "./contas-pagar.js";
 import { gerarRelatorioContasReceberController } from "./contas-receber.js";
+import { gerarRelatorioFiscalComprasController } from "./fiscal-compras.js";
+import { gerarRelatorioFiscalContabilidadeController } from "./fiscal-contabilidade.js";
+import { gerarRelatorioFiscalVendasController } from "./fiscal-vendas.js";
 import { gerarRelatorioFluxoCaixaController } from "./fluxo-caixa.js";
 
 export async function relatoriosRotas(app: FastifyInstance) {
@@ -156,5 +159,41 @@ export async function relatoriosRotas(app: FastifyInstance) {
 			response: relatorioResponseSchema,
 		},
 		handler: gerarRelatorioContasReceberController,
+	});
+
+	app.post("/relatorios/fiscal-compras", {
+		schema: {
+			tags: ["relatorios"],
+			summary: "Gerar relatório fiscal de compras",
+			description:
+				"Gera relatório analítico de NF-e de entrada no período (PDF, TXT ou HTML)",
+			body: relatorioBodySchema,
+			response: relatorioResponseSchema,
+		},
+		handler: gerarRelatorioFiscalComprasController,
+	});
+
+	app.post("/relatorios/fiscal-vendas", {
+		schema: {
+			tags: ["relatorios"],
+			summary: "Gerar relatório fiscal de vendas",
+			description:
+				"Gera relatório analítico de NF-e/NFC-e de saída no período (PDF, TXT ou HTML)",
+			body: relatorioBodySchema,
+			response: relatorioResponseSchema,
+		},
+		handler: gerarRelatorioFiscalVendasController,
+	});
+
+	app.post("/relatorios/fiscal-contabilidade", {
+		schema: {
+			tags: ["relatorios"],
+			summary: "Gerar relatório fiscal consolidado",
+			description:
+				"Gera relatório consolidado para contabilidade no período (PDF, TXT ou HTML)",
+			body: relatorioBodySchema,
+			response: relatorioResponseSchema,
+		},
+		handler: gerarRelatorioFiscalContabilidadeController,
 	});
 }

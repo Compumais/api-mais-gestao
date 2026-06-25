@@ -57,6 +57,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 		return items;
 	}, [isUsuario]);
 
+	const navPdvItems = React.useMemo(() => DATA.navPdv, []);
+
 	const navGourmetItems = React.useMemo(() => {
 		return DATA.navGourmet.map((group) => ({
 			...group,
@@ -84,13 +86,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 			</SidebarHeader>
 			<SidebarContent>
 				{isGarcomUser ? (
-					<NavDocuments label="PDV" items={navGourmetItems} />
+					<>
+						<NavDocuments label="PDV" items={navPdvItems} />
+						<NavDocuments label="Gourmet" items={navGourmetItems} />
+					</>
 				) : (
 					<>
 						<NavMain items={navMainItems} />
 
 						{!isUsuario && (
-							<NavDocuments label="PDV" items={navGourmetItems} />
+							<NavDocuments label="PDV" items={navPdvItems} />
+						)}
+
+						{!isUsuario && (
+							<NavDocuments label="Gourmet" items={navGourmetItems} />
 						)}
 
 						<NavDocuments label="Cadastros" items={DATA.navRegistros} />

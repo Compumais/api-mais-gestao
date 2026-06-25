@@ -1,5 +1,6 @@
 import {
-    IconCoins,
+    IconCashRegister,
+	IconCoins,
 	IconDashboard,
 	IconFileInvoice,
 	IconHelp,
@@ -21,9 +22,29 @@ export const DATA = {
 			icon: IconDashboard,
 		},
 	],
-	navGourmet: [
+	navPdv: [
 		{
 			title: "PDV",
+			icon: IconCashRegister,
+			items: [
+				{
+					title: "Venda rápida",
+					url: "/pdv",
+				},
+				{
+					title: "Histórico de vendas",
+					url: "/vendas-pdv",
+				},
+				{
+					title: "Fechamentos de caixa",
+					url: "/fechamentos-caixa",
+				},
+			],
+		},
+	],
+	navGourmet: [
+		{
+			title: "Gourmet",
 			icon: IconToolsKitchen2,
 			items: [
 				{
@@ -33,18 +54,6 @@ export const DATA = {
 				{
 					title: "Garçom",
 					url: "/garcom",
-				},
-				{
-					title: "Venda rápida",
-					url: "/gourmet/venda-rapida",
-				},
-				{
-					title: "Histórico de vendas",
-					url: "/vendas-pdv",
-				},
-				{
-					title: "Fechamentos de caixa",
-					url: "/fechamentos-caixa",
 				},
 			],
 		},
@@ -107,8 +116,16 @@ export const DATA = {
 					url: "/nota-fiscal-compra",
 				},
 				{
+					title: "Relatório de compras",
+					url: "/nota-fiscal-compra/relatorio",
+				},
+				{
 					title: "Nota fiscal de venda",
 					url: "/nota-fiscal-venda",
+				},
+				{
+					title: "Relatório de vendas",
+					url: "/nota-fiscal-venda/relatorio",
 				},
 				{
 					title: "NFC-e",
@@ -213,6 +230,10 @@ export const DATA = {
 				{
 					title: "Exportar XMLs fiscais",
 					url: "/contabilidade/exportar-xmls",
+				},
+				{
+					title: "Relatórios fiscais",
+					url: "/contabilidade/relatorios",
 				},
 			],
 		},

@@ -330,6 +330,13 @@
       "when": 1781731000000,
       "tag": "0046_movimentoestoque_colunas",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1781732000000,
+      "tag": "0047_entidade_papeis",
+      "breakpoints": true
     }
   ]
 }
