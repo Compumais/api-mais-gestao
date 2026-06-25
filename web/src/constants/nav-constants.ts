@@ -75,6 +75,10 @@ export const DATA = {
 					url: "/produtos",
 				},
 				{
+					title: "Estoque",
+					url: "/estoque",
+				},
+				{
 					title: "Grupos",
 					url: "/grupos",
 				},
@@ -105,6 +109,10 @@ export const DATA = {
 				{
 					title: "Nota fiscal de venda",
 					url: "/nota-fiscal-venda",
+				},
+				{
+					title: "NFC-e pendentes",
+					url: "/nfce-pendentes",
 				},
 				{
 					title: "Pedidos",

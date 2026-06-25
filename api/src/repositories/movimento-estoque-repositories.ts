@@ -51,6 +51,7 @@ export async function atualizarMovimentoEstoque(
 		quantidadeentrada?: string | null | undefined;
 		quantidadesaida?: string | null | undefined;
 		tipodocumento?: number | null | undefined;
+		tipoestoque?: number | null | undefined;
 		valortotal?: string | null | undefined;
 		variacao?: number | null | undefined;
 	},
@@ -78,6 +79,7 @@ export type ListarMovimentosEstoqueParametros = {
 	idproduto?: string | undefined;
 	idlocalestoque?: string | undefined;
 	tipodocumento?: number | undefined;
+	tipoestoque?: number | undefined;
 	observacao?: string | undefined;
 	page?: number;
 	limit?: number;
@@ -88,6 +90,7 @@ export async function listarMovimentosEstoque({
 	idproduto,
 	idlocalestoque,
 	tipodocumento,
+	tipoestoque,
 	observacao,
 	page = 1,
 	limit = 10,
@@ -104,6 +107,10 @@ export async function listarMovimentosEstoque({
 
 	if (tipodocumento !== undefined) {
 		where.push(eq(movimentoestoque.tipodocumento, tipodocumento));
+	}
+
+	if (tipoestoque !== undefined) {
+		where.push(eq(movimentoestoque.tipoestoque, tipoestoque));
 	}
 
 	if (observacao) {

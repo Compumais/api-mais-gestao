@@ -22,9 +22,11 @@ import { useAuth } from "@/hooks/use-auth";
 import { useCaixaPdv } from "@/hooks/use-caixa-pdv";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { useFecharVenda } from "@/hooks/use-fechar-venda";
+import { useNfceAmbientePdv } from "@/hooks/use-nfce-ambiente-pdv";
 import { useSaldosEstoque } from "@/hooks/use-saldos-estoque";
 import {
 	buildContaMesaItemFromProduto,
+	buildCupomNfceInfo,
 	calcularTotalContaMesaItens,
 	STATUS_MESA,
 } from "@/lib/gourmet-utils";
@@ -42,6 +44,7 @@ export default function ContaMesaPage() {
 	const { user } = useAuth();
 	const { localStorageEmpresa: empresa } = useEmpresa();
 	const { fecharConta } = useFecharVenda();
+	const { ambiente: ambienteNfce } = useNfceAmbientePdv();
 	const { saldoPorCodigo } = useSaldosEstoque(empresa?.id);
 	const { estaAberto } = useCaixaPdv();
 
@@ -172,7 +175,7 @@ export default function ContaMesaPage() {
 			throw new Error("Empresa ou usuário não selecionado");
 		}
 
-		const venda = await fecharConta.mutateAsync({
+		const resultado = await fecharConta.mutateAsync({
 			idempresa: empresa.id,
 			userId: user.id,
 			idcontamesa: contaId,
@@ -181,7 +184,10 @@ export default function ContaMesaPage() {
 			pagamento,
 		});
 
-		return { vendaId: venda.id };
+		return {
+			vendaId: resultado.venda.id,
+			nfce: buildCupomNfceInfo(resultado.baixa.emissaoNfce, ambienteNfce),
+		};
 	};
 
 	const handleVendaConcluida = () => {

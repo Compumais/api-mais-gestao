@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+	boolean,
 	foreignKey,
 	integer,
 	numeric,
@@ -31,6 +32,8 @@ export const vendapdvgourmet = pgTable(
 		valorprepago: numeric123(),
 		valortroco: numeric123(),
 		valortotal: numeric123(),
+		deveemitirnfce: boolean().default(false).notNull(),
+		idnotafiscalnfce: text(),
 		datacriacao: timestamp({ precision: 3, mode: "string" }).default(
 			sql`CURRENT_TIMESTAMP`,
 		),

@@ -64,6 +64,7 @@ export * from "./tables/motivo-rebaixa.js";
 export * from "./tables/movimento-estoque.js";
 export * from "./tables/ncm.js";
 export * from "./tables/nfe-configuracao.js";
+export * from "./tables/nfce-configuracao.js";
 export * from "./tables/nfe-serie.js";
 export * from "./tables/nota-fiscal.js";
 export * from "./tables/nota-fiscal-item.js";

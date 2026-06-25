@@ -1,8 +1,7 @@
+import { registrarMovimentoEstoque } from "@/service/estoque/registrar-movimento-estoque.js";
 import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
-import { criarMovimentoEstoque, listarMovimentosEstoquePorDocumento } from "@/repositories/movimento-estoque-repositories.js";
-
-/** tipodocumento: 1 = Nota Fiscal */
-const TIPO_DOCUMENTO_NOTA_FISCAL = 1;
+import { listarMovimentosEstoquePorDocumento } from "@/repositories/movimento-estoque-repositories.js";
+import { TIPO_DOCUMENTO_ESTOQUE, TIPO_ESTOQUE } from "@/util/tipo-estoque.js";
 
 export type ItemMovimentoEstoqueNf = {
 	iditem: string;
@@ -68,42 +67,44 @@ export async function registrarMovimentosEstoqueNf({
 			continue;
 		}
 
-		const qtd = parseFloat(item.quantidade);
+		const qtd = Number.parseFloat(item.quantidade);
 		if (Number.isNaN(qtd) || qtd <= 0) continue;
 
-		let custoUnitario = parseFloat(item.custoUnitario) || 0;
+		let custoUnitario = Number.parseFloat(item.custoUnitario) || 0;
 		if (custoUnitario <= 0) {
-			custoUnitario = parseFloat(await resolverCustoUnitarioProduto(item.idproduto)) || 0;
+			custoUnitario =
+				Number.parseFloat(await resolverCustoUnitarioProduto(item.idproduto)) || 0;
 		}
 
 		const custoTotal = (qtd * custoUnitario).toFixed(2);
-		const isSaida = sentido === "saida";
 
-		const movimento = await criarMovimentoEstoque({
-			idempresa,
-			idproduto: item.idproduto,
-			idlocalestoque,
-			idoriginal: idnotafiscal,
-			iditemoriginal: item.iditem,
-			idlote: item.idlote ?? null,
-			tipodocumento: TIPO_DOCUMENTO_NOTA_FISCAL,
-			quantidadeentrada: isSaida ? null : item.quantidade,
-			quantidadesaida: isSaida ? item.quantidade : null,
-			precocusto: custoUnitario.toFixed(2),
-			custoaquisicao: custoUnitario.toFixed(2),
-			customedio: custoUnitario.toFixed(2),
-			custototal: custoTotal,
-			valortotal: custoTotal,
-			precoultimacompra: custoUnitario.toFixed(2),
-			data: dataMovimento.substring(0, 10),
-			datahora,
-			cancelado: 0,
-			observacao: item.lote ? `Lote ${item.lote}`.slice(0, 50) : null,
-			currenttimemillis: Date.now(),
-		});
+		try {
+			const movimento = await registrarMovimentoEstoque({
+				idempresa,
+				idproduto: item.idproduto,
+				quantidade: item.quantidade,
+				sentido,
+				tipoestoque: TIPO_ESTOQUE.AMBOS,
+				tipodocumento: TIPO_DOCUMENTO_ESTOQUE.NOTA_FISCAL,
+				idlocalestoque,
+				idoriginal: idnotafiscal,
+				iditemoriginal: item.iditem,
+				idlote: item.idlote ?? null,
+				data: dataMovimento.substring(0, 10),
+				datahora,
+				valortotal: custoTotal,
+				custoaquisicao: custoUnitario.toFixed(2),
+				customedio: custoUnitario.toFixed(2),
+				custototal: custoTotal,
+				precocusto: custoUnitario.toFixed(2),
+				precoultimacompra: custoUnitario.toFixed(2),
+				observacao: item.lote ? `Lote ${item.lote}`.slice(0, 50) : null,
+			});
 
-		if (movimento) {
-			movimentosCriados++;
+			if (movimento) movimentosCriados++;
+		} catch (erro) {
+			console.error("Erro ao registrar movimento de estoque NF:", erro);
+			avisos.push(`Falha ao registrar estoque do item ${item.iditem}`);
 		}
 	}
 
