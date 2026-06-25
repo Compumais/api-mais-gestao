@@ -27,6 +27,8 @@ export type BaixaEstoqueVendaParametros = {
 	pagamentos: {
 		valordinheiro?: string | null;
 		valorcartao?: string | null;
+		valorcartaocredito?: string | null;
+		valorcartaodebito?: string | null;
 		valorpix?: string | null;
 		valorprepago?: string | null;
 		valortroco?: string | null;

@@ -42,7 +42,7 @@ final class NfeEmissaoService
 		$crt   = (int) ($emitente['crt'] ?? 3);
 		$finNFe = (int) ($ide['finNFe'] ?? 1);
 		$tpNF  = (int) ($ide['tpNF'] ?? 1);
-		$mod   = (int) ($ide['mod'] ?? 55);
+		$mod   = (int) ($ide['mod'] ?? $configJson['modelo'] ?? 55);
 		$tpImp = (int) ($ide['tpImp'] ?? ($mod === 65 ? 4 : 1));
 
 		// ── infNFe ─────────────────────────────────────────────────────────
@@ -234,11 +234,7 @@ final class NfeEmissaoService
 					$csosn = '102';
 				}
 
-				$mk->tagICMSSN((object) [
-					'item'  => $nItem,
-					'orig'  => $orig,
-					'CSOSN' => $csosn,
-				]);
+				$mk->tagICMSSN(self::montarTagIcmsSn($nItem, $orig, $csosn, $item, $vProd));
 			} else {
 				$cstIcms = !empty($cst) ? $cst : '00';
 				$vBC     = (float) ($item['baseIcms'] ?? $vProd);
@@ -403,6 +399,24 @@ final class NfeEmissaoService
 				$detPag['vPag'] = (float) ($pag['vPag'] ?? $vNF);
 			}
 
+			if (in_array($tPag, ['03', '04'], true)) {
+				$card = is_array($pag['card'] ?? null) ? $pag['card'] : [];
+				$tpIntegra = (int) ($card['tpIntegra'] ?? 2);
+				$detPag['tpIntegra'] = $tpIntegra;
+
+				if ($tpIntegra === 1) {
+					if (!empty($card['CNPJ'])) {
+						$detPag['CNPJ'] = preg_replace('/\D/', '', (string) $card['CNPJ']);
+					}
+					if (!empty($card['tBand'])) {
+						$detPag['tBand'] = (string) $card['tBand'];
+					}
+					if (!empty($card['cAut'])) {
+						$detPag['cAut'] = (string) $card['cAut'];
+					}
+				}
+			}
+
 			$mk->tagdetPag((object) $detPag);
 		}
 
@@ -418,7 +432,8 @@ final class NfeEmissaoService
 			throw new \RuntimeException('Erros ao montar XML: ' . implode('; ', $erros));
 		}
 
-		$tools      = SpedNfeFactory::criarTools($configJson, $pfxBase64, $senha);
+		$tools = SpedNfeFactory::criarTools($configJson, $pfxBase64, $senha);
+		$tools->model($mod);
 		$xmlAssinado = $tools->signNFe($xml);
 
 		$idLote  = str_pad((string) random_int(1, 99999999), 15, '0', STR_PAD_LEFT);
@@ -637,5 +652,87 @@ final class NfeEmissaoService
 		}
 
 		return $resultado;
+	}
+
+	/**
+	 * Monta os campos do ICMSSN conforme o CSOSN informado.
+	 *
+	 * @param array<string, mixed> $item
+	 */
+	private static function montarTagIcmsSn(
+		int $nItem,
+		int $orig,
+		string $csosn,
+		array $item,
+		float $vProd
+	): object {
+		$dados = [
+			'item'  => $nItem,
+			'orig'  => $orig,
+			'CSOSN' => $csosn,
+		];
+
+		$pCredSN = self::resolverNumeroItem($item, ['pCredSN', 'aliquotaCreditoSn', 'aliquotaIcms']);
+		$vCredICMSSN = self::resolverNumeroItem($item, ['vCredICMSSN', 'valorCreditoIcmsSn']);
+
+		if (in_array($csosn, ['101', '201'], true)) {
+			if ($pCredSN === null && $vCredICMSSN !== null && $vProd > 0) {
+				$pCredSN = round($vCredICMSSN / $vProd * 100, 4);
+			}
+			if ($pCredSN !== null && ($vCredICMSSN === null || $vCredICMSSN <= 0) && $vProd > 0) {
+				$vCredICMSSN = round($vProd * $pCredSN / 100, 2);
+			}
+			if ($pCredSN !== null) {
+				$dados['pCredSN'] = round($pCredSN, 4);
+			}
+			if ($vCredICMSSN !== null) {
+				$dados['vCredICMSSN'] = round($vCredICMSSN, 2);
+			}
+		}
+
+		if ($csosn === '500') {
+			$vBCSTRet = self::resolverNumeroItem($item, ['vBCSTRet', 'baseIcmsStRet']);
+			$vICMSSTRet = self::resolverNumeroItem($item, ['vICMSSTRet', 'valorIcmsStRet']);
+			if ($vBCSTRet !== null) {
+				$dados['vBCSTRet'] = round($vBCSTRet, 2);
+			}
+			if ($vICMSSTRet !== null) {
+				$dados['vICMSSTRet'] = round($vICMSSTRet, 2);
+			}
+		}
+
+		if (in_array($csosn, ['201', '202', '203'], true)) {
+			foreach ([
+				'modBCST' => ['modBCST'],
+				'pMVAST' => ['pMVAST', 'percentualMvaSt'],
+				'pRedBCST' => ['pRedBCST', 'percentualReducaoBcSt'],
+				'vBCST' => ['vBCST', 'baseIcmsSt'],
+				'pICMSST' => ['pICMSST', 'aliquotaIcmsSt'],
+				'vICMSST' => ['vICMSST', 'valorIcmsSt'],
+			] as $campoXml => $aliases) {
+				$valor = self::resolverNumeroItem($item, $aliases);
+				if ($valor !== null) {
+					$dados[$campoXml] = round($valor, $campoXml === 'modBCST' ? 0 : 2);
+				}
+			}
+		}
+
+		return (object) $dados;
+	}
+
+	/**
+	 * @param array<string, mixed> $item
+	 * @param list<string> $chaves
+	 */
+	private static function resolverNumeroItem(array $item, array $chaves): ?float
+	{
+		foreach ($chaves as $chave) {
+			if (!array_key_exists($chave, $item) || $item[$chave] === null || $item[$chave] === '') {
+				continue;
+			}
+			return (float) $item[$chave];
+		}
+
+		return null;
 	}
 }

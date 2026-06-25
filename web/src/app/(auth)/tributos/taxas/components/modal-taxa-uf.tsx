@@ -81,7 +81,8 @@ function mapRegistroParaForm(registro: TaxaUf): TaxaUfFormData {
 
 	for (const uf of UFS_BRASIL) {
 		const chave = `uf_${uf.toLowerCase()}` as keyof TaxaUfFormData;
-		form[chave] = (registro[chave as keyof TaxaUf] as string | null) ?? null;
+		(form as unknown as Record<string, string | null | undefined>)[chave] =
+			(registro[chave as keyof TaxaUf] as string | null) ?? null;
 	}
 
 	return form;
@@ -254,7 +255,10 @@ export function ModalTaxaUf({
 									return (
 										<Field key={uf}>
 											<FieldLabel htmlFor={campo}>{uf}</FieldLabel>
-											<Input id={campo} {...register(campo)} />
+											<Input
+												id={campo}
+												{...register(campo as keyof TaxaUfFormData)}
+											/>
 										</Field>
 									);
 								})}

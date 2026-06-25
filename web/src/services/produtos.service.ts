@@ -23,6 +23,9 @@ export interface Produto {
 	enviamobile?: number | null;
 	datacadastro: string;
 	quantidadepadrao?: number | null;
+	quantidademinima?: number | null;
+	quantidademaxima?: number | null;
+	estoque?: number | null;
 	idcfopentrada?: string | null;
 	idcfopsaida?: string | null;
 	idcfopsaidanfce?: string | null;
@@ -66,6 +69,10 @@ export interface CriarProdutoData {
 	ncm: string;
 	observacoes?: string | null;
 	enviamobile?: number | null;
+	quantidadepadrao?: number | null;
+	quantidademinima?: number | null;
+	quantidademaxima?: number | null;
+	estoque?: number | null;
 	idcfopentrada?: string | null;
 	idcfopsaida?: string | null;
 	idcfopsaidanfce?: string | null;
@@ -108,6 +115,10 @@ export interface AtualizarProdutoData {
 	ncm?: string;
 	observacoes?: string | null;
 	enviamobile?: number | null;
+	quantidadepadrao?: number | null;
+	quantidademinima?: number | null;
+	quantidademaxima?: number | null;
+	estoque?: number | null;
 	idcfopentrada?: string | null;
 	idcfopsaida?: string | null;
 	idcfopsaidanfce?: string | null;

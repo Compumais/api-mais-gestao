@@ -1,4 +1,16 @@
-import { and, count, desc, eq, gte, ilike, inArray, lte, ne } from "drizzle-orm";
+import {
+	and,
+	count,
+	desc,
+	eq,
+	gte,
+	ilike,
+	inArray,
+	isNotNull,
+	lte,
+	ne,
+	or,
+} from "drizzle-orm";
 import type { NovaNotaFiscal } from "@/model/nota-fiscal-model";
 import type {
 	NotaFiscalItem,
@@ -7,7 +19,6 @@ import type {
 import type { DadosImportacaoItem } from "@/model/nota-fiscal-importacao-model.js";
 import { notafiscal, notafiscalitem, vendapdvgourmet } from "@/repositories/schema.js";
 import { STATUS_RASCUNHO_IMPORTACAO } from "@/util/nota-fiscal-constants.js";
-import { NFE_STATUS } from "@/util/nfe-status.js";
 import { db } from "./connection";
 
 const COLUNAS_ITEM_NF = [
@@ -202,44 +213,49 @@ export async function listarNotasFiscaisPorEmpresa({
 	};
 }
 
-const STATUS_NFCE_PENDENTES = [
-	NFE_STATUS.PENDENTE,
-	NFE_STATUS.REJEITADA,
-	NFE_STATUS.DENEGADA,
-] as const;
-
-export type ListarNfcePendentesParametros = {
+export type ListarNfcePorEmpresaParametros = {
 	idempresa: string;
+	status?: number | undefined;
 	page?: number;
 	limit?: number;
 };
 
-export type NfcePendenteListagem = {
+export type NfceListagem = {
 	idnotafiscal: string;
 	idvenda: string | null;
 	numeronotafiscal: string | null;
 	serie: string | null;
 	chavenfe: string | null;
+	protocolonfe: string | null;
 	status: number | null;
 	valortotalnota: string | null;
 	emissao: string | null;
+	datahoraemissao: string | null;
 	datainclusao: string | null;
 	tipoambientenfe: number | null;
 	mensagemtransmissaonfe: string | null;
 	codigostatusprotocolonfe: number | null;
 };
 
-export async function listarNfcePendentesPorEmpresa({
+export type ListarNfcePendentesParametros = ListarNfcePorEmpresaParametros;
+
+export type NfcePendenteListagem = NfceListagem;
+
+export async function listarNfcePorEmpresa({
 	idempresa,
+	status,
 	page = 1,
 	limit = 20,
-}: ListarNfcePendentesParametros) {
+}: ListarNfcePorEmpresaParametros) {
 	const where = [
 		eq(notafiscal.idempresa, idempresa),
 		eq(notafiscal.modelo, "65"),
-		inArray(notafiscal.status, [...STATUS_NFCE_PENDENTES]),
 		ne(notafiscal.status, STATUS_RASCUNHO_IMPORTACAO),
 	];
+
+	if (status !== undefined) {
+		where.push(eq(notafiscal.status, status));
+	}
 
 	const offset = (page - 1) * limit;
 
@@ -255,9 +271,11 @@ export async function listarNfcePendentesPorEmpresa({
 				numeronotafiscal: notafiscal.numeronotafiscal,
 				serie: notafiscal.serie,
 				chavenfe: notafiscal.chavenfe,
+				protocolonfe: notafiscal.protocolonfe,
 				status: notafiscal.status,
 				valortotalnota: notafiscal.valortotalnota,
 				emissao: notafiscal.emissao,
+				datahoraemissao: notafiscal.datahoraemissao,
 				datainclusao: notafiscal.datainclusao,
 				tipoambientenfe: notafiscal.tipoambientenfe,
 				mensagemtransmissaonfe: notafiscal.mensagemtransmissaonfe,
@@ -275,7 +293,7 @@ export async function listarNfcePendentesPorEmpresa({
 	]);
 
 	return {
-		notas: registros as NfcePendenteListagem[],
+		notas: registros as NfceListagem[],
 		total: totalCount[0]?.value ?? 0,
 	};
 }
@@ -445,4 +463,50 @@ export async function contarNotasFiscaisPorSerie(idserie: string) {
 		.where(eq(notafiscal.idserie, idserie));
 
 	return resultado?.value ?? 0;
+}
+
+export type ListarNotasParaExportacaoXmlContabilidadeParametros = {
+	idempresa: string;
+	dataInicio: string;
+	dataFim: string;
+};
+
+export type NotaFiscalExportacaoXml = {
+	id: string;
+	modelo: string | null;
+	chavenfe: string | null;
+	emissao: string | null;
+};
+
+const STATUS_NFE_AUTORIZADA = 100;
+
+export async function listarNotasParaExportacaoXmlContabilidade({
+	idempresa,
+	dataInicio,
+	dataFim,
+}: ListarNotasParaExportacaoXmlContabilidadeParametros): Promise<
+	NotaFiscalExportacaoXml[]
+> {
+	return db
+		.select({
+			id: notafiscal.id,
+			modelo: notafiscal.modelo,
+			chavenfe: notafiscal.chavenfe,
+			emissao: notafiscal.emissao,
+		})
+		.from(notafiscal)
+		.where(
+			and(
+				eq(notafiscal.idempresa, idempresa),
+				eq(notafiscal.status, STATUS_NFE_AUTORIZADA),
+				gte(notafiscal.emissao, dataInicio),
+				lte(notafiscal.emissao, dataFim),
+				isNotNull(notafiscal.chavenfe),
+				or(
+					and(eq(notafiscal.modelo, "55"), eq(notafiscal.tipoorigem, 1)),
+					eq(notafiscal.modelo, "65"),
+				),
+			),
+		)
+		.orderBy(desc(notafiscal.emissao));
 }

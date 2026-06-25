@@ -111,8 +111,8 @@ export const DATA = {
 					url: "/nota-fiscal-venda",
 				},
 				{
-					title: "NFC-e pendentes",
-					url: "/nfce-pendentes",
+					title: "NFC-e",
+					url: "/nfce",
 				},
 				{
 					title: "Pedidos",
@@ -209,6 +209,10 @@ export const DATA = {
 				{
 					title: "Plano de contas contábeis",
 					url: "/conta-contabil",
+				},
+				{
+					title: "Exportar XMLs fiscais",
+					url: "/contabilidade/exportar-xmls",
 				},
 			],
 		},

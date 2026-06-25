@@ -4,6 +4,7 @@ import z from "zod";
 import type { NovoProduto } from "@/model/produto-model.js";
 import { atualizarProdutoService } from "@/service/produto/atualizar-produto.js";
 import { enriquecerCamposImpostosProduto } from "@/service/produto/enriquecer-campos-impostos-produto.js";
+import { sincronizarSaldoEstoqueProduto } from "@/service/produto/sincronizar-saldo-estoque-produto.js";
 import { camposImpostosProdutoSchema } from "@/util/campos-impostos-produto.js";
 import {
 	httpErroInterno,
@@ -43,6 +44,10 @@ const atualizarProdutoBodySchema = z.object({
 	ncm: z.string().min(1).max(10).optional(),
 	observacoes: z.string().optional().nullable(),
 	enviamobile: z.number().int().min(0).max(1).optional(),
+	quantidadepadrao: z.number().int().positive().optional().nullable(),
+	quantidademinima: z.number().int().min(0).optional().nullable(),
+	quantidademaxima: z.number().int().positive().optional().nullable(),
+	estoque: z.number().min(0).optional(),
 	...camposImpostosProdutoSchema,
 });
 
@@ -70,8 +75,8 @@ export async function atualizarProduto(
 
 		const dados = Object.fromEntries(
 			Object.entries(dadosValidados).filter(
-				(entry): entry is [string, string | number | null] =>
-					entry[1] !== undefined,
+				([chave, valor]) =>
+					valor !== undefined && chave !== "estoque",
 			),
 		) as Partial<NovoProduto>;
 
@@ -105,6 +110,14 @@ export async function atualizarProduto(
 
 		if (!resultado.success) {
 			return reply.status(resultado.status).send(resultado);
+		}
+
+		if (dadosValidados.estoque !== undefined && resultado.body) {
+			await sincronizarSaldoEstoqueProduto({
+				idempresa,
+				produto: resultado.body,
+				quantidade: dadosValidados.estoque,
+			});
 		}
 
 		return reply.status(resultado.status).send(resultado.body);

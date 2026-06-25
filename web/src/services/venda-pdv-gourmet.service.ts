@@ -10,6 +10,8 @@ export interface VendaPdvGourmet {
 	idvendaitem: string | null;
 	valordinheiro: string | null;
 	valorcartao: string | null;
+	valorcartaocredito?: string | null;
+	valorcartaodebito?: string | null;
 	valorpix: string | null;
 	valorprepago: string | null;
 	valortroco: string | null;
@@ -33,6 +35,8 @@ export interface CriarVendaPdvGourmetData {
 	idvendaitem?: string;
 	valordinheiro?: string;
 	valorcartao?: string;
+	valorcartaocredito?: string;
+	valorcartaodebito?: string;
 	valorpix?: string;
 	valorprepago?: string;
 	valortroco?: string;
@@ -47,6 +51,8 @@ export interface AtualizarVendaPdvGourmetData {
 	usuarioquefechouvenda?: string;
 	valordinheiro?: string;
 	valorcartao?: string;
+	valorcartaocredito?: string;
+	valorcartaodebito?: string;
 	valorpix?: string;
 	valorprepago?: string;
 	valortroco?: string;

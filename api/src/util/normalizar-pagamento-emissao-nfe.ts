@@ -1,4 +1,5 @@
 import type { PagamentoPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
+import { complementarCardPagamentoNfe } from "@/util/card-pagamento-nfce.js";
 import { FIN_NFE_DEVOLUCAO } from "@/util/cfop-devolucao-emissao-nfe.js";
 
 const TPAG_SEM_PAGAMENTO = "90";
@@ -26,11 +27,11 @@ export function normalizarPagamentoEmissaoNfe(
 				return { tPag: TPAG_SEM_PAGAMENTO, vPag: 0 };
 			}
 
-			return {
+			return complementarCardPagamentoNfe({
 				...forma,
 				tPag,
 				vPag: forma.vPag ?? valorNota,
-			};
+			});
 		}),
 	};
 }
