@@ -114,7 +114,9 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 			}),
 		onSuccess: () => {
 			toast.success("Dados fiscais salvos");
-			queryClient.invalidateQueries({ queryKey: ["empresa-fiscal", idempresa] });
+			queryClient.invalidateQueries({
+				queryKey: ["empresa-fiscal", idempresa],
+			});
 		},
 		onError: () => toast.error("Não foi possível salvar os dados fiscais"),
 	});
@@ -128,178 +130,211 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 	}
 
 	return (
-		<form
-			onSubmit={form.handleSubmit((dados) => salvarMutation.mutate(dados))}
-			className="max-w-3xl space-y-4"
-		>
+		<form onSubmit={form.handleSubmit((dados) => salvarMutation.mutate(dados))}>
 			<FieldGroup>
-				<div className="grid gap-4 md:grid-cols-2">
-					<Field>
-						<FieldLabel htmlFor="regimetributario">Regime tributário</FieldLabel>
-						<Select
-							value={form.watch("regimetributario") ?? ""}
-							onValueChange={(valor) => {
-								form.setValue(
-									"regimetributario",
-									valor === "none" ? "" : (valor as EmpresaFiscalConfigFormData["regimetributario"]),
-								);
-								const opcao = OPCOES_REGIME.find((o) => o.value === valor);
-								if (opcao) form.setValue("crt", opcao.crt);
-							}}
-						>
-							<SelectTrigger id="regimetributario">
-								<SelectValue placeholder="Selecione" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="none">Não informado</SelectItem>
-								{OPCOES_REGIME.map((o) => (
-									<SelectItem key={o.value} value={o.value}>
-										{o.label}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					</Field>
+				<div className="space-y-6 rounded-lg border bg-card p-6">
+					<div>
+						<h2 className="text-lg font-semibold mb-2">Dados fiscais</h2>
+						<p className="text-muted-foreground text-sm mb-4">
+							Informações tributárias e cadastrais utilizadas na emissão de
+							documentos fiscais.
+						</p>
+						<div className="grid gap-4 md:grid-cols-2">
+							<Field>
+								<FieldLabel htmlFor="regimetributario">
+									Regime tributário
+								</FieldLabel>
+								<Select
+									value={form.watch("regimetributario") ?? ""}
+									onValueChange={(valor) => {
+										form.setValue(
+											"regimetributario",
+											valor === "none"
+												? ""
+												: (valor as EmpresaFiscalConfigFormData["regimetributario"]),
+										);
+										const opcao = OPCOES_REGIME.find((o) => o.value === valor);
+										if (opcao) form.setValue("crt", opcao.crt);
+									}}
+								>
+									<SelectTrigger id="regimetributario">
+										<SelectValue placeholder="Selecione" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="none">Não informado</SelectItem>
+										{OPCOES_REGIME.map((o) => (
+											<SelectItem key={o.value} value={o.value}>
+												{o.label}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</Field>
 
-					<Field>
-						<FieldLabel htmlFor="crt">CRT (código regime tributário NF-e)</FieldLabel>
-						<Select
-							value={String(form.watch("crt") ?? "")}
-							onValueChange={(v) =>
-								form.setValue("crt", v ? Number(v) : undefined)
-							}
-						>
-							<SelectTrigger id="crt">
-								<SelectValue placeholder="CRT" />
-							</SelectTrigger>
-							<SelectContent>
-								{OPCOES_CRT.map((o) => (
-									<SelectItem key={o.value} value={o.value}>
-										{o.label}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					</Field>
-				</div>
+							<Field>
+								<FieldLabel htmlFor="crt">
+									CRT (código regime tributário NF-e)
+								</FieldLabel>
+								<Select
+									value={String(form.watch("crt") ?? "")}
+									onValueChange={(v) =>
+										form.setValue("crt", v ? Number(v) : undefined)
+									}
+								>
+									<SelectTrigger id="crt">
+										<SelectValue placeholder="CRT" />
+									</SelectTrigger>
+									<SelectContent>
+										{OPCOES_CRT.map((o) => (
+											<SelectItem key={o.value} value={o.value}>
+												{o.label}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</Field>
+						</div>
+					</div>
 
-				<div className="grid gap-4 md:grid-cols-2">
-					<Field>
-						<FieldLabel htmlFor="razaosocial">Razão social</FieldLabel>
-						<Input id="razaosocial" {...form.register("razaosocial")} />
-					</Field>
-					<Field>
-						<FieldLabel htmlFor="nomefantasia">Nome fantasia</FieldLabel>
-						<Input id="nomefantasia" {...form.register("nomefantasia")} />
-					</Field>
-				</div>
+					<div className="border-t pt-6">
+						<h2 className="text-lg font-semibold mb-4">Identificação</h2>
+						<div className="grid gap-4 md:grid-cols-2">
+							<Field>
+								<FieldLabel htmlFor="razaosocial">Razão social</FieldLabel>
+								<Input id="razaosocial" {...form.register("razaosocial")} />
+							</Field>
+							<Field>
+								<FieldLabel htmlFor="nomefantasia">Nome fantasia</FieldLabel>
+								<Input id="nomefantasia" {...form.register("nomefantasia")} />
+							</Field>
+						</div>
 
-				<div className="grid gap-4 md:grid-cols-3">
-					<Field>
-						<FieldLabel htmlFor="inscricaoestadual">Inscrição estadual</FieldLabel>
-						<Input id="inscricaoestadual" {...form.register("inscricaoestadual")} />
-					</Field>
-					<Field>
-						<FieldLabel htmlFor="inscricaomunicipal">Inscrição municipal</FieldLabel>
-						<Input id="inscricaomunicipal" {...form.register("inscricaomunicipal")} />
-					</Field>
-					<Field>
-						<FieldLabel htmlFor="cnae">CNAE principal</FieldLabel>
-						<Input id="cnae" {...form.register("cnae")} />
-					</Field>
-				</div>
+						<div className="grid gap-4 md:grid-cols-3">
+							<Field>
+								<FieldLabel htmlFor="inscricaoestadual">
+									Inscrição estadual
+								</FieldLabel>
+								<Input
+									id="inscricaoestadual"
+									{...form.register("inscricaoestadual")}
+								/>
+							</Field>
+							<Field>
+								<FieldLabel htmlFor="inscricaomunicipal">
+									Inscrição municipal
+								</FieldLabel>
+								<Input
+									id="inscricaomunicipal"
+									{...form.register("inscricaomunicipal")}
+								/>
+							</Field>
+							<Field>
+								<FieldLabel htmlFor="cnae">CNAE principal</FieldLabel>
+								<Input id="cnae" {...form.register("cnae")} />
+							</Field>
+						</div>
+					</div>
 
-				<div className="grid gap-4 md:grid-cols-3">
-					<Field>
-						<FieldLabel htmlFor="cep">CEP</FieldLabel>
-						<Input id="cep" {...form.register("cep")} />
-					</Field>
-					<Field>
-						<FieldLabel htmlFor="uf">UF</FieldLabel>
-						<Select
-							value={form.watch("uf") ?? ""}
-							onValueChange={(v) => {
-								form.setValue("uf", v);
-								form.setValue("codigomunicipioibge", "");
-							}}
-						>
-							<SelectTrigger id="uf">
-								<SelectValue placeholder="UF" />
-							</SelectTrigger>
-							<SelectContent>
-								{estadosData?.data.map((estado) => (
-									<SelectItem key={estado.idestado} value={estado.idestado}>
-										{estado.nome}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					</Field>
-					<Field>
-						<FieldLabel htmlFor="codigomunicipioibge">Município (IBGE)</FieldLabel>
-						<Select
-							value={form.watch("codigomunicipioibge") ?? ""}
-							onValueChange={(v) => form.setValue("codigomunicipioibge", v)}
-							disabled={!uf}
-						>
-							<SelectTrigger id="codigomunicipioibge">
-								<SelectValue placeholder="Município" />
-							</SelectTrigger>
-							<SelectContent>
-								{municipiosData?.data.map((m) => (
-									<SelectItem key={m.idcidade} value={m.idcidade}>
-										{m.nome}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					</Field>
-				</div>
+					<div className="border-t pt-6">
+						<h2 className="text-lg font-semibold mb-4">Endereço</h2>
+						<div className="grid gap-4 md:grid-cols-3">
+							<Field>
+								<FieldLabel htmlFor="cep">CEP</FieldLabel>
+								<Input id="cep" {...form.register("cep")} />
+							</Field>
+							<Field>
+								<FieldLabel htmlFor="uf">UF</FieldLabel>
+								<Select
+									value={form.watch("uf") ?? ""}
+									onValueChange={(v) => {
+										form.setValue("uf", v);
+										form.setValue("codigomunicipioibge", "");
+									}}
+								>
+									<SelectTrigger id="uf">
+										<SelectValue placeholder="UF" />
+									</SelectTrigger>
+									<SelectContent>
+										{estadosData?.data.map((estado) => (
+											<SelectItem key={estado.idestado} value={estado.idestado}>
+												{estado.nome}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</Field>
+							<Field>
+								<FieldLabel htmlFor="codigomunicipioibge">
+									Município (IBGE)
+								</FieldLabel>
+								<Select
+									value={form.watch("codigomunicipioibge") ?? ""}
+									onValueChange={(v) => form.setValue("codigomunicipioibge", v)}
+									disabled={!uf}
+								>
+									<SelectTrigger id="codigomunicipioibge">
+										<SelectValue placeholder="Município" />
+									</SelectTrigger>
+									<SelectContent>
+										{municipiosData?.data.map((m) => (
+											<SelectItem key={m.idcidade} value={m.idcidade}>
+												{m.nome}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</Field>
+						</div>
 
-				<div className="grid gap-4 md:grid-cols-2">
-					<Field>
-						<FieldLabel htmlFor="logradouro">Logradouro</FieldLabel>
-						<Input id="logradouro" {...form.register("logradouro")} />
-					</Field>
-					<Field>
-						<FieldLabel htmlFor="numero">Número</FieldLabel>
-						<Input id="numero" {...form.register("numero")} />
-					</Field>
-				</div>
+						<div className="grid gap-4 md:grid-cols-2">
+							<Field>
+								<FieldLabel htmlFor="logradouro">Logradouro</FieldLabel>
+								<Input id="logradouro" {...form.register("logradouro")} />
+							</Field>
+							<Field>
+								<FieldLabel htmlFor="numero">Número</FieldLabel>
+								<Input id="numero" {...form.register("numero")} />
+							</Field>
+						</div>
 
-				<div className="grid gap-4 md:grid-cols-2">
-					<Field>
-						<FieldLabel htmlFor="bairro">Bairro</FieldLabel>
-						<Input id="bairro" {...form.register("bairro")} />
-					</Field>
-					<Field>
-						<FieldLabel htmlFor="complemento">Complemento</FieldLabel>
-						<Input id="complemento" {...form.register("complemento")} />
-					</Field>
-				</div>
+						<div className="grid gap-4 md:grid-cols-2">
+							<Field>
+								<FieldLabel htmlFor="bairro">Bairro</FieldLabel>
+								<Input id="bairro" {...form.register("bairro")} />
+							</Field>
+							<Field>
+								<FieldLabel htmlFor="complemento">Complemento</FieldLabel>
+								<Input id="complemento" {...form.register("complemento")} />
+							</Field>
+						</div>
+					</div>
 
-				<div className="grid gap-4 md:grid-cols-2">
-					<Field>
-						<FieldLabel htmlFor="telefone">Telefone</FieldLabel>
-						<Input id="telefone" {...form.register("telefone")} />
-					</Field>
-					<Field data-invalid={!!form.formState.errors.email}>
-						<FieldLabel htmlFor="email">E-mail</FieldLabel>
-						<Input id="email" type="email" {...form.register("email")} />
-						<FieldError
-							errors={
-								form.formState.errors.email
-									? [form.formState.errors.email]
-									: []
-							}
-						/>
-					</Field>
-				</div>
+					<div className="border-t pt-6">
+						<h2 className="text-lg font-semibold mb-4">Contato</h2>
+						<div className="grid gap-4 md:grid-cols-2">
+							<Field>
+								<FieldLabel htmlFor="telefone">Telefone</FieldLabel>
+								<Input id="telefone" {...form.register("telefone")} />
+							</Field>
+							<Field data-invalid={!!form.formState.errors.email}>
+								<FieldLabel htmlFor="email">E-mail</FieldLabel>
+								<Input id="email" type="email" {...form.register("email")} />
+								<FieldError
+									errors={
+										form.formState.errors.email
+											? [form.formState.errors.email]
+											: []
+									}
+								/>
+							</Field>
+						</div>
+					</div>
 
-				<div className="flex justify-end pt-2">
-					<Button type="submit" disabled={salvarMutation.isPending}>
-						{salvarMutation.isPending ? "Salvando..." : "Salvar dados fiscais"}
-					</Button>
+					<div className="flex justify-end pt-4 border-t">
+						<Button type="submit" disabled={salvarMutation.isPending}>
+							{salvarMutation.isPending ? "Salvando..." : "Salvar"}
+						</Button>
+					</div>
 				</div>
 			</FieldGroup>
 		</form>

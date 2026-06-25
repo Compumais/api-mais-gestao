@@ -34,6 +34,7 @@ export async function atualizarSaldoEstoque(
 		ncm?: string | null | undefined;
 		nomeproduto?: string | null | undefined;
 		quantidade?: string | null | undefined;
+		quantidadefiscal?: string | null | undefined;
 		ultimaalteracao?: string | null | undefined;
 		unidademedida?: string | null | undefined;
 		variacao?: number | null | undefined;
@@ -114,4 +115,22 @@ export async function listarSaldosEstoque({
 		saldosEstoque,
 		total: totalCount[0]?.value ?? 0,
 	};
+}
+
+export async function buscarSaldoEstoquePorCodigoProduto(
+	idempresa: string,
+	codigoproduto: string,
+) {
+	const [registro] = await db
+		.select()
+		.from(saldoestoque)
+		.where(
+			and(
+				eq(saldoestoque.idempresa, idempresa),
+				eq(saldoestoque.codigoproduto, codigoproduto),
+			),
+		)
+		.limit(1);
+
+	return registro;
 }

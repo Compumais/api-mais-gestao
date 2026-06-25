@@ -10,7 +10,7 @@ import {
 	varchar,
 } from "drizzle-orm/pg-core";
 
-const numeric186 = numeric({ precision: 18, scale: 6, mode: "string" });
+const numeric186 = () => numeric({ precision: 18, scale: 6, mode: "string" });
 
 export const saldoestoque = pgTable(
 	"saldoestoque",
@@ -26,7 +26,8 @@ export const saldoestoque = pgTable(
 		idproduto: bigint({ mode: "number" }), // ID do produto
 		ncm: varchar({ length: 10 }), // Nomenclatura Comum do Mercosul
 		nomeproduto: varchar({ length: 120 }), // Nome do produto
-		quantidade: numeric186, // Quantidade em estoque
+		quantidade: numeric186(), // Quantidade em estoque
+		quantidadefiscal: numeric186().default("0").notNull(),
 		ultimaalteracao: date(), // Data do último movimento
 		unidademedida: varchar({ length: 6 }), // Unidade de medida
 		variacao: integer(), // Código da variação

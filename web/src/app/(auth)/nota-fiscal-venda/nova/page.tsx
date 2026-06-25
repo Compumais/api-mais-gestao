@@ -215,7 +215,7 @@ export default function NovaEmissaoNfePage() {
 
 	const { data: seriesData } = useQuery({
 		queryKey: ["nfe-series", empresa?.id],
-		queryFn: () => nfeConfiguracaoService.listarSeries(empresa?.id ?? ""),
+		queryFn: () => nfeConfiguracaoService.listarSeries(empresa?.id ?? "", "55"),
 		enabled: !!empresa,
 	});
 

@@ -1,0 +1,23 @@
+{
+	"name": "mais-gestao/nfe-gateway",
+	"description": "Gateway HTTP para emissão NF-e via sped-nfe",
+	"type": "project",
+	"require": {
+		"php": ">=8.1",
+		"nfephp-org/sped-da": "^1.1",
+		"nfephp-org/sped-nfe": "@dev"
+	},
+	"repositories": [
+		{
+			"type": "path",
+			"url": "../sped-nfe"
+		}
+	],
+	"autoload": {
+		"psr-4": {
+			"MaisGestao\\NfeGateway\\": "src/"
+		}
+	},
+	"minimum-stability": "dev",
+	"prefer-stable": true
+}

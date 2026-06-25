@@ -1,15 +1,20 @@
-import { and, eq } from "drizzle-orm";
+import { and, count, eq } from "drizzle-orm";
 import { nfeserie } from "@/repositories/schema.js";
 import { db } from "./connection";
 
 export type NfeSerie = typeof nfeserie.$inferSelect;
 export type NovaNfeSerie = typeof nfeserie.$inferInsert;
 
-export async function listarNfeSeriesPorEmpresa(idempresa: string) {
+export async function listarNfeSeriesPorEmpresa(idempresa: string, modelo?: string) {
+	const where = [eq(nfeserie.idempresa, idempresa)];
+	if (modelo) {
+		where.push(eq(nfeserie.modelo, modelo));
+	}
+
 	return db
 		.select()
 		.from(nfeserie)
-		.where(eq(nfeserie.idempresa, idempresa));
+		.where(and(...where));
 }
 
 export async function buscarNfeSeriePorId(id: string) {
@@ -50,6 +55,27 @@ export async function atualizarNfeSerie(id: string, dados: Partial<NovaNfeSerie>
 		.returning();
 
 	return registro;
+}
+
+export async function excluirNfeSerie(id: string) {
+	const [registro] = await db
+		.delete(nfeserie)
+		.where(eq(nfeserie.id, id))
+		.returning();
+
+	return registro;
+}
+
+export async function contarNfeSeriesPorEmpresaModelo(
+	idempresa: string,
+	modelo: string,
+) {
+	const [resultado] = await db
+		.select({ value: count() })
+		.from(nfeserie)
+		.where(and(eq(nfeserie.idempresa, idempresa), eq(nfeserie.modelo, modelo)));
+
+	return resultado?.value ?? 0;
 }
 
 export async function desmarcarSeriesPadrao(idempresa: string, modelo: string) {

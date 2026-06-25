@@ -3,12 +3,14 @@ import z from "zod";
 import {
 	atualizarNfeSerieService,
 	criarNfeSerieService,
+	excluirNfeSerieService,
 	listarNfeSeriesService,
 } from "@/service/nfe-serie/nfe-serie.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
 const queryEmpresaSchema = z.object({
 	idempresa: z.string().uuid(),
+	modelo: z.string().max(2).optional(),
 });
 
 const criarBodySchema = z.object({
@@ -34,11 +36,12 @@ export async function listarNfeSeries(
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
 		}
 
-		const { idempresa } = queryEmpresaSchema.parse(request.query);
+		const { idempresa, modelo } = queryEmpresaSchema.parse(request.query);
 
 		const resultado = await listarNfeSeriesService({
 			idempresa,
 			idusuario: request.user.id,
+			...(modelo ? { modelo } : {}),
 		});
 
 		if (!resultado.success) {
@@ -120,6 +123,44 @@ export async function atualizarNfeSerie(
 		}
 
 		return reply.status(resultado.status).send(resultado.body);
+	} catch (error) {
+		console.error(error);
+		if (error instanceof z.ZodError) {
+			return reply.status(400).send({
+				error: "Erro de validação",
+				code: "VALIDATION_ERROR",
+				details: error.issues,
+			});
+		}
+		return reply.status(httpErroInterno().status).send(httpErroInterno());
+	}
+}
+
+export async function excluirNfeSerie(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
+	try {
+		if (!request.user) {
+			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
+		}
+
+		const { id } = z.object({ id: z.string().uuid() }).parse(request.params);
+		const { idempresa } = queryEmpresaSchema
+			.pick({ idempresa: true })
+			.parse(request.query);
+
+		const resultado = await excluirNfeSerieService({
+			id,
+			idempresa,
+			idusuario: request.user.id,
+		});
+
+		if (!resultado.success) {
+			return reply.status(resultado.status).send(resultado);
+		}
+
+		return reply.status(resultado.status).send();
 	} catch (error) {
 		console.error(error);
 		if (error instanceof z.ZodError) {
