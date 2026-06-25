@@ -211,7 +211,14 @@ export default function EstoquePage() {
 			</div>
 
 			{isLoading ? (
-				<TableSkeleton columns={6} rows={8} />
+				<TableSkeleton columns={6} rows={8}>
+					<TableHead>Código</TableHead>
+					<TableHead>Produto</TableHead>
+					<TableHead>Operacional</TableHead>
+					<TableHead>Fiscal</TableHead>
+					<TableHead>Divergência</TableHead>
+					<TableHead className="w-12" />
+				</TableSkeleton>
 			) : (
 				<div className="rounded-lg border mx-4">
 					<Table>

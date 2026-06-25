@@ -43,11 +43,13 @@ export async function popularTiposDocumentoFinanceiroPadrao(
 			return reply.status(listagem.status).send(listagem);
 		}
 
-		return reply.status(httpOk().status).send({
+		const payload = {
 			criados: criados.length,
 			data: listagem.body?.data ?? [],
 			paginacao: listagem.body?.paginacao,
-		});
+		};
+
+		return reply.status(httpOk(payload).status).send(payload);
 	} catch (error) {
 		console.error(error);
 		return reply.status(httpErroInterno().status).send(httpErroInterno());

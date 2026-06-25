@@ -623,7 +623,7 @@ export async function emitirNfeVendaService(
 			return resolvido;
 		}
 
-		documentoReferenciado = resolvido.body;
+		documentoReferenciado = resolvido.body ?? undefined;
 	} else if (idnotafiscalReemissao) {
 		const notaExistenteRef = await buscarNotaFiscalPorId(idnotafiscalReemissao);
 		const chavePersistida = notaExistenteRef?.chavedocumentoreferenciado?.replace(/\D/g, "");

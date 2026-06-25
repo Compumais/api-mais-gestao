@@ -216,7 +216,17 @@ export default function NfcePendentesPage() {
 
 				<div className="px-4">
 			{isLoading ? (
-				<TableSkeleton columns={9} rows={8} />
+				<TableSkeleton columns={9} rows={8}>
+					<TableHead>Data</TableHead>
+					<TableHead>Número</TableHead>
+					<TableHead>Venda PDV</TableHead>
+					<TableHead>Valor</TableHead>
+					<TableHead>Status</TableHead>
+					<TableHead>Ambiente</TableHead>
+					<TableHead>Motivo SEFAZ</TableHead>
+					<TableHead>Chave</TableHead>
+					<TableHead className="w-12" />
+				</TableSkeleton>
 			) : (
 				<>
 					<div className="rounded-md border">

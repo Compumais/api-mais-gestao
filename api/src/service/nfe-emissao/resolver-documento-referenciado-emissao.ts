@@ -189,7 +189,9 @@ async function montarItensSugeridosDevolucaoCompra(
 				situacaotributaria: item.situacaotributaria ?? undefined,
 				cstpis: item.cstpis ?? undefined,
 				cstcofins: item.cstcofins ?? undefined,
-				...mapearTributacaoItemReferenciaDevolucaoCompra(item),
+				...mapearTributacaoItemReferenciaDevolucaoCompra(
+					item as Parameters<typeof mapearTributacaoItemReferenciaDevolucaoCompra>[0],
+				),
 			};
 		}),
 	);
@@ -220,7 +222,9 @@ async function montarItensSugeridosDevolucaoVenda(
 				situacaotributaria: item.situacaotributaria ?? undefined,
 				cstpis: item.cstpis ?? undefined,
 				cstcofins: item.cstcofins ?? undefined,
-				...mapearTributacaoItemReferencia(item),
+				...mapearTributacaoItemReferencia(
+					item as Parameters<typeof mapearTributacaoItemReferencia>[0],
+				),
 			};
 		}),
 	);

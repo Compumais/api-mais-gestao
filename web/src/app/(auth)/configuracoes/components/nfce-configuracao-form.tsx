@@ -6,6 +6,7 @@ import dayjs from "dayjs";
 import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import type { z } from "zod";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -51,7 +52,11 @@ export function NfceConfiguracaoForm({ idempresa }: NfceConfiguracaoFormProps) {
 		queryFn: () => nfceConfiguracaoService.listarCertificados(idempresa),
 	});
 
-	const form = useForm<NfceConfiguracaoFormData>({
+	const form = useForm<
+		z.input<typeof nfceConfiguracaoSchema>,
+		unknown,
+		z.output<typeof nfceConfiguracaoSchema>
+	>({
 		resolver: zodResolver(nfceConfiguracaoSchema),
 		values: config
 			? {

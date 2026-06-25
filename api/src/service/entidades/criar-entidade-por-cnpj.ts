@@ -5,7 +5,7 @@ import { buscarEntidadePorCnpj } from "@/repositories/entidade-repositories.js";
 import { criarEntidadeService } from "@/service/entidades/criar-entidade.js";
 import { obterConsultaCnpjEntidade } from "@/service/entidades/consultar-cnpj-entidade.js";
 import { normalizarCnpj } from "@/util/criptografia-certificado.js";
-import { httpRecursoExistente } from "@/util/http-util.js";
+import { httpRecursoExistente, httpNaoEncontrado } from "@/util/http-util.js";
 
 type CriarEntidadePorCnpjParametros = {
 	cnpj: string;
@@ -45,8 +45,12 @@ export async function criarEntidadePorCnpjService({
 		idempresa,
 	});
 
-	if (!consulta.success || !consulta.body) {
-		return consulta;
+	if (!consulta.success) {
+		return consulta as HttpResponse<Entidade | null>;
+	}
+
+	if (!consulta.body) {
+		return httpNaoEncontrado() as HttpResponse<Entidade | null>;
 	}
 
 	const { entidade, extras } = consulta.body;

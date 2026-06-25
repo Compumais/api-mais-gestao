@@ -130,7 +130,7 @@ export async function registrarMovimentoEstoque({
 	idlote,
 }: RegistrarMovimentoEstoqueParametros) {
 	const agora = new Date();
-	const dataIso = data ?? agora.toISOString().split("T")[0];
+	const dataIso = data ?? agora.toISOString().slice(0, 10);
 	const dataHoraIso =
 		datahora ?? agora.toISOString().replace("T", " ").replace("Z", "");
 	const qtd = parseQuantidade(quantidade);

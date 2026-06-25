@@ -114,7 +114,7 @@ export function validarInutilizacaoNfe(
 		};
 	}
 
-	if (nota.status === NFE_STATUS.AUTORIZADA || nota.protocolonfe?.trim()) {
+	if (nota.protocolonfe?.trim()) {
 		return {
 			ok: false,
 			mensagem:

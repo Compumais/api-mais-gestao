@@ -43,6 +43,7 @@ describe("gerarContasReceberNfService", () => {
 		});
 
 		expect(resultado.success).toBe(true);
+		if (!resultado.success) return;
 		expect(resultado.body?.parcelasGeradas).toBe(0);
 	});
 
@@ -68,6 +69,7 @@ describe("gerarContasReceberNfService", () => {
 		});
 
 		expect(resultado.success).toBe(true);
+		if (!resultado.success) return;
 		expect(resultado.body?.parcelasGeradas).toBe(2);
 		expect(financeiroRepository.criarFinanceiro).toHaveBeenCalledTimes(2);
 	});
@@ -98,6 +100,7 @@ describe("gerarContasReceberNfService", () => {
 		});
 
 		expect(resultado.success).toBe(true);
+		if (!resultado.success) return;
 		expect(resultado.body?.parcelasGeradas).toBe(1);
 	});
 });

@@ -42,7 +42,7 @@ export async function atualizarSaldoEstoque(
 ) {
 	const [registro] = await db
 		.update(saldoestoque)
-		.set(dados)
+		.set(dados as Partial<typeof saldoestoque.$inferInsert>)
 		.where(eq(saldoestoque.id, id))
 		.returning();
 
