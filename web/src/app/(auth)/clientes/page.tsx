@@ -21,7 +21,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -29,6 +28,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import {
 	Table,
 	TableBody,
@@ -39,8 +39,8 @@ import {
 } from "@/components/ui/table";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { type Entidade, entidadesService } from "@/services/entidades.service";
-import { PageContainer } from "../components/page-container";
 import { TableSkeleton } from "../../../components/table-skeleton";
+import { PageContainer } from "../components/page-container";
 
 type ColumnsProps = {
 	onEdit: (entidade: Entidade) => void;
@@ -154,6 +154,7 @@ export default function ClientesPage() {
 			}
 			return await entidadesService.listar({
 				idempresa: localStorageEmpresa.id,
+				cliente: 1,
 				page: pagination.pageIndex + 1,
 				limit: pagination.pageSize,
 				...(qAplicado ? { q: qAplicado } : {}),

@@ -1,11 +1,15 @@
 import { and, count, desc, eq, ilike, ne, or } from "drizzle-orm";
 import type { NovaEntidade } from "@/model/entidade-model.js";
-import * as schema from "../../drizzle/schema.js";
+import {
+	empresa as schemaEmpresa,
+	entidade as schemaEntidade,
+	usuarioEmpresa as schemaUsuarioEmpresa,
+} from "../../drizzle/schema.js";
 import { db } from "./connection.js";
 
 export async function criarEntidade(dadosEntidade: NovaEntidade) {
 	const [entidade] = await db
-		.insert(schema.entidade)
+		.insert(schemaEntidade)
 		.values(dadosEntidade)
 		.returning();
 
@@ -15,27 +19,24 @@ export async function criarEntidade(dadosEntidade: NovaEntidade) {
 export async function buscarEntidadePorId(id: string) {
 	const [entidade] = await db
 		.select()
-		.from(schema.entidade)
-		.where(eq(schema.entidade.id, id));
+		.from(schemaEntidade)
+		.where(eq(schemaEntidade.id, id));
 
 	return entidade;
 }
 
-export async function buscarEntidadePorCnpj(
-	idempresa: string,
-	cnpj: string,
-) {
+export async function buscarEntidadePorCnpj(idempresa: string, cnpj: string) {
 	const cnpjNormalizado = cnpj.replace(/\D/g, "");
 
 	const [entidade] = await db
 		.select()
-		.from(schema.entidade)
+		.from(schemaEntidade)
 		.where(
 			and(
-				eq(schema.entidade.idempresa, idempresa),
+				eq(schemaEntidade.idempresa, idempresa),
 				or(
-					eq(schema.entidade.cnpjcpf, cnpjNormalizado),
-					eq(schema.entidade.cnpjcpf, cnpj),
+					eq(schemaEntidade.cnpjcpf, cnpjNormalizado),
+					eq(schemaEntidade.cnpjcpf, cnpj),
 				),
 			),
 		)
@@ -74,9 +75,9 @@ export async function atualizarEntidade(
 	},
 ) {
 	const [entidade] = await db
-		.update(schema.entidade)
+		.update(schemaEntidade)
 		.set(dados)
-		.where(eq(schema.entidade.id, id))
+		.where(eq(schemaEntidade.id, id))
 		.returning();
 
 	return entidade;
@@ -84,8 +85,8 @@ export async function atualizarEntidade(
 
 export async function excluirEntidade(id: string) {
 	const [entidade] = await db
-		.delete(schema.entidade)
-		.where(eq(schema.entidade.id, id))
+		.delete(schemaEntidade)
+		.where(eq(schemaEntidade.id, id))
 		.returning();
 
 	return entidade;
@@ -100,11 +101,11 @@ export async function verificarEmailTelefoneDuplicado(
 	const conditions = [];
 
 	if (email) {
-		conditions.push(eq(schema.entidade.email, email));
+		conditions.push(eq(schemaEntidade.email, email));
 	}
 
 	if (telefone) {
-		conditions.push(eq(schema.entidade.telefone, telefone));
+		conditions.push(eq(schemaEntidade.telefone, telefone));
 	}
 
 	if (conditions.length === 0) {
@@ -112,17 +113,17 @@ export async function verificarEmailTelefoneDuplicado(
 	}
 
 	const whereConditions = [
-		eq(schema.entidade.idempresa, idempresa),
+		eq(schemaEntidade.idempresa, idempresa),
 		or(...conditions),
 	];
 
 	if (excluirEntidadeId) {
-		whereConditions.push(ne(schema.entidade.id, excluirEntidadeId));
+		whereConditions.push(ne(schemaEntidade.id, excluirEntidadeId));
 	}
 
 	const [resultado] = await db
 		.select({ value: count() })
-		.from(schema.entidade)
+		.from(schemaEntidade)
 		.where(and(...whereConditions));
 
 	return (resultado?.value ?? 0) > 0;
@@ -135,11 +136,11 @@ export async function verificarUsuarioPertenceEmpresa(
 	// Verifica se o usuário está na tabela usuarioEmpresa
 	const [resultadoUsuarioEmpresa] = await db
 		.select({ value: count() })
-		.from(schema.usuarioEmpresa)
+		.from(schemaUsuarioEmpresa)
 		.where(
 			and(
-				eq(schema.usuarioEmpresa.idusuario, idusuario),
-				eq(schema.usuarioEmpresa.idempresa, idempresa),
+				eq(schemaUsuarioEmpresa.idusuario, idusuario),
+				eq(schemaUsuarioEmpresa.idempresa, idempresa),
 			),
 		);
 
@@ -149,9 +150,9 @@ export async function verificarUsuarioPertenceEmpresa(
 
 	// Verifica se o usuário é o proprietário da empresa
 	const [empresa] = await db
-		.select({ idproprietario: schema.empresa.idproprietario })
-		.from(schema.empresa)
-		.where(eq(schema.empresa.id, idempresa));
+		.select({ idproprietario: schemaEmpresa.idproprietario })
+		.from(schemaEmpresa)
+		.where(eq(schemaEmpresa.id, idempresa));
 
 	return empresa?.idproprietario === idusuario;
 }
@@ -161,15 +162,15 @@ export async function buscarEmpresasDoUsuario(
 ): Promise<string[]> {
 	// Busca empresas onde o usuário está na tabela usuarioEmpresa
 	const empresasUsuarioEmpresa = await db
-		.select({ idempresa: schema.usuarioEmpresa.idempresa })
-		.from(schema.usuarioEmpresa)
-		.where(eq(schema.usuarioEmpresa.idusuario, idusuario));
+		.select({ idempresa: schemaUsuarioEmpresa.idempresa })
+		.from(schemaUsuarioEmpresa)
+		.where(eq(schemaUsuarioEmpresa.idusuario, idusuario));
 
 	// Busca empresas onde o usuário é proprietário
 	const empresasProprietario = await db
-		.select({ id: schema.empresa.id })
-		.from(schema.empresa)
-		.where(eq(schema.empresa.idproprietario, idusuario));
+		.select({ id: schemaEmpresa.id })
+		.from(schemaEmpresa)
+		.where(eq(schemaEmpresa.idproprietario, idusuario));
 
 	// Combina os IDs únicos de ambas as fontes
 	const idsUsuarioEmpresa = empresasUsuarioEmpresa.map((e) => e.idempresa);
@@ -187,6 +188,10 @@ export type ListarEntidadesParametros = {
 	q?: string | undefined;
 	email?: string | undefined;
 	telefone?: string | undefined;
+	fornecedor?: number | undefined;
+	cliente?: number | undefined;
+	transportador?: number | undefined;
+	representante?: number | undefined;
 	page?: number;
 	limit?: number;
 };
@@ -197,34 +202,54 @@ export async function listarEntidades({
 	q,
 	email,
 	telefone,
+	fornecedor,
+	cliente,
+	transportador,
+	representante,
 	page = 1,
 	limit = 10,
 }: ListarEntidadesParametros) {
 	const where = [];
 
-	where.push(eq(schema.entidade.idempresa, idempresa));
+	where.push(eq(schemaEntidade.idempresa, idempresa));
+
+	if (fornecedor) {
+		where.push(eq(schemaEntidade.fornecedor, fornecedor));
+	}
+
+	if (cliente) {
+		where.push(eq(schemaEntidade.cliente, cliente));
+	}
+
+	if (transportador) {
+		where.push(eq(schemaEntidade.transportador, transportador));
+	}
+
+	if (representante) {
+		where.push(eq(schemaEntidade.representante, representante));
+	}
 
 	if (nome) {
-		where.push(ilike(schema.entidade.nome, `%${nome}%`));
+		where.push(ilike(schemaEntidade.nome, `%${nome}%`));
 	}
 
 	if (q) {
 		const termo = `%${q}%`;
 		where.push(
 			or(
-				ilike(schema.entidade.nome, termo),
-				ilike(schema.entidade.razaosocial, termo),
-				ilike(schema.entidade.cnpjcpf, termo),
+				ilike(schemaEntidade.nome, termo),
+				ilike(schemaEntidade.razaosocial, termo),
+				ilike(schemaEntidade.cnpjcpf, termo),
 			),
 		);
 	}
 
 	if (email) {
-		where.push(ilike(schema.entidade.email, `%${email}%`));
+		where.push(ilike(schemaEntidade.email, `%${email}%`));
 	}
 
 	if (telefone) {
-		where.push(ilike(schema.entidade.telefone, `%${telefone}%`));
+		where.push(ilike(schemaEntidade.telefone, `%${telefone}%`));
 	}
 
 	const offset = (page - 1) * limit;
@@ -232,13 +257,13 @@ export async function listarEntidades({
 	const [totalCount, entidades] = await Promise.all([
 		db
 			.select({ value: count() })
-			.from(schema.entidade)
+			.from(schemaEntidade)
 			.where(and(...where)),
 		db
 			.select()
-			.from(schema.entidade)
+			.from(schemaEntidade)
 			.where(and(...where))
-			.orderBy(desc(schema.entidade.criadoem))
+			.orderBy(desc(schemaEntidade.criadoem))
 			.limit(limit)
 			.offset(offset),
 	]);

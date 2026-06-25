@@ -10,6 +10,10 @@ const listarEntidadesQuerySchema = z.object({
 	email: z.string().optional(),
 	telefone: z.string().optional(),
 	idempresa: z.uuid(),
+	fornecedor: z.coerce.number().int().min(0).max(1).optional(),
+	cliente: z.coerce.number().int().min(0).max(1).optional(),
+	transportador: z.coerce.number().int().min(0).max(1).optional(),
+	representante: z.coerce.number().int().min(0).max(1).optional(),
 });
 
 export async function listarEntidades(
