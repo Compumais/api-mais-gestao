@@ -11,6 +11,8 @@ export type PagamentosResumo = {
 export type PagamentosRegistro = {
 	valordinheiro?: string | null;
 	valorcartao?: string | null;
+	valorcartaocredito?: string | null;
+	valorcartaodebito?: string | null;
 	valorpix?: string | null;
 	valorprepago?: string | null;
 	valortroco?: string | null;
@@ -26,7 +28,10 @@ export function extrairPagamentosResumo(
 ): PagamentosResumo {
 	const dinheiroBruto = parseValorMonetario(registro.valordinheiro);
 	const troco = parseValorMonetario(registro.valortroco);
-	const cartao = parseValorMonetario(registro.valorcartao);
+	const cartao =
+		parseValorMonetario(registro.valorcartaocredito) +
+		parseValorMonetario(registro.valorcartaodebito) +
+		parseValorMonetario(registro.valorcartao);
 	const pix = parseValorMonetario(registro.valorpix);
 	const prepago = parseValorMonetario(registro.valorprepago);
 	const dinheiro = Math.max(0, dinheiroBruto - troco);

@@ -28,6 +28,13 @@ export async function listarMovimentosEstoquePorDocumento(idnotafiscal: string) 
 		.where(eq(movimentoestoque.idoriginal, idnotafiscal));
 }
 
+export async function listarMovimentosEstoquePorIdOriginal(idoriginal: string) {
+	return db
+		.select()
+		.from(movimentoestoque)
+		.where(eq(movimentoestoque.idoriginal, idoriginal));
+}
+
 export async function atualizarMovimentoEstoque(
 	id: number,
 	dados: {
@@ -58,7 +65,7 @@ export async function atualizarMovimentoEstoque(
 ) {
 	const [registro] = await db
 		.update(movimentoestoque)
-		.set(dados as Partial<typeof movimentoestoque.$inferInsert>)
+		.set(dados as Partial<NovoMovimentoEstoque>)
 		.where(eq(movimentoestoque.id, id))
 		.returning();
 

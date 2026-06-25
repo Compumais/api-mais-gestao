@@ -91,6 +91,18 @@ function buildProdutoPayload(
 	}
 
 	payload.enviamobile = data.enviamobile ? 1 : 0;
+	payload.quantidadepadrao = data.quantidadepadrao ?? 1;
+
+	if (data.estoque != null && !Number.isNaN(data.estoque)) {
+		payload.estoque = data.estoque;
+	}
+
+	if (data.quantidademinima != null) {
+		payload.quantidademinima = data.quantidademinima;
+	}
+	if (data.quantidademaxima != null) {
+		payload.quantidademaxima = data.quantidademaxima;
+	}
 
 	payload.idcfopentrada = data.idcfopentrada || null;
 	payload.idcfopsaida = data.idcfopsaida || null;
@@ -153,6 +165,10 @@ export function ProdutoForm(props: ProdutoFormProps) {
 			cstcofins: null,
 			observacoes: null,
 			enviamobile: false,
+			estoque: null,
+			quantidadepadrao: 1,
+			quantidademinima: null,
+			quantidademaxima: null,
 			...(isEdicao && props.valoresIniciais ? props.valoresIniciais : {}),
 		},
 	});
@@ -225,6 +241,7 @@ export function ProdutoForm(props: ProdutoFormProps) {
 		mutationFn: produtosService.criar,
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["produtos"] });
+			queryClient.invalidateQueries({ queryKey: ["saldos-estoque"] });
 			toast.success("Produto cadastrado com sucesso!");
 			router.push("/produtos");
 		},
@@ -253,6 +270,7 @@ export function ProdutoForm(props: ProdutoFormProps) {
 			},
 			onSuccess: (produto) => {
 				queryClient.invalidateQueries({ queryKey: ["produtos"] });
+				queryClient.invalidateQueries({ queryKey: ["saldos-estoque"] });
 				if (props.produtoId) {
 					queryClient.setQueryData(["produto", props.produtoId], produto);
 				}
@@ -538,6 +556,110 @@ export function ProdutoForm(props: ProdutoFormProps) {
 							errors={errors.observacoes ? [errors.observacoes] : []}
 						/>
 					</Field>
+				</div>
+
+				<div className="mt-6 space-y-4">
+					<div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+						<Field data-invalid={!!errors.estoque}>
+							<FieldLabel htmlFor="estoque">Estoque</FieldLabel>
+							<Input
+								id="estoque"
+								type="number"
+								min={0}
+								step="any"
+								placeholder="0"
+								aria-invalid={!!errors.estoque}
+								{...register("estoque", {
+									valueAsNumber: true,
+									setValueAs: (value) =>
+										value === "" || value === null || value === undefined
+											? null
+											: Number(value),
+								})}
+							/>
+							<FieldError
+								errors={errors.estoque ? [errors.estoque] : []}
+							/>
+						</Field>
+
+						<Field data-invalid={!!errors.quantidadepadrao}>
+							<FieldLabel htmlFor="quantidadepadrao">
+								Quantidade padrão
+							</FieldLabel>
+							<Input
+								id="quantidadepadrao"
+								type="number"
+								min={1}
+								step={1}
+								placeholder="1"
+								aria-invalid={!!errors.quantidadepadrao}
+								{...register("quantidadepadrao", {
+									valueAsNumber: true,
+									setValueAs: (value) =>
+										value === "" || value === null || value === undefined
+											? null
+											: Number(value),
+								})}
+							/>
+							<FieldError
+								errors={
+									errors.quantidadepadrao ? [errors.quantidadepadrao] : []
+								}
+							/>
+						</Field>
+
+						<Field data-invalid={!!errors.quantidademinima}>
+							<FieldLabel htmlFor="quantidademinima">
+								Quantidade mínima
+							</FieldLabel>
+							<Input
+								id="quantidademinima"
+								type="number"
+								min={0}
+								step={1}
+								placeholder="Opcional"
+								aria-invalid={!!errors.quantidademinima}
+								{...register("quantidademinima", {
+									valueAsNumber: true,
+									setValueAs: (value) =>
+										value === "" || value === null || value === undefined
+											? null
+											: Number(value),
+								})}
+							/>
+							<FieldError
+								errors={
+									errors.quantidademinima ? [errors.quantidademinima] : []
+								}
+							/>
+						</Field>
+
+						<Field data-invalid={!!errors.quantidademaxima}>
+							<FieldLabel htmlFor="quantidademaxima">
+								Quantidade máxima
+							</FieldLabel>
+							<Input
+								id="quantidademaxima"
+								type="number"
+								min={1}
+								step={1}
+								placeholder="Opcional"
+								aria-invalid={!!errors.quantidademaxima}
+								{...register("quantidademaxima", {
+									valueAsNumber: true,
+									setValueAs: (value) =>
+										value === "" || value === null || value === undefined
+											? null
+											: Number(value),
+								})}
+							/>
+							<FieldError
+								errors={
+									errors.quantidademaxima ? [errors.quantidademaxima] : []
+								}
+							/>
+						</Field>
+					</div>
 				</div>
 
 				<div className="mt-6 space-y-4">

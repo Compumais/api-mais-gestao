@@ -1,20 +1,21 @@
 import type { HttpResponse } from "@/model/http-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
-	listarNfcePendentesPorEmpresa,
-	type NfcePendenteListagem,
+	listarNfcePorEmpresa,
+	type NfceListagem,
 } from "@/repositories/nota-fiscal-repositories.js";
 import { httpOk, httpProibido } from "@/util/http-util.js";
 
 type ListarNfcePendentesParametros = {
 	idusuario: string;
 	idempresa: string;
+	status?: number | undefined;
 	page?: number;
 	limit?: number;
 };
 
 type ListarNfcePendentesResposta = {
-	data: NfcePendenteListagem[];
+	data: NfceListagem[];
 	paginacao: {
 		page: number;
 		limit: number;
@@ -26,6 +27,7 @@ type ListarNfcePendentesResposta = {
 export async function listarNfcePendentesService({
 	idusuario,
 	idempresa,
+	status,
 	page = 1,
 	limit = 20,
 }: ListarNfcePendentesParametros): Promise<
@@ -40,8 +42,9 @@ export async function listarNfcePendentesService({
 		return httpProibido();
 	}
 
-	const resultado = await listarNfcePendentesPorEmpresa({
+	const resultado = await listarNfcePorEmpresa({
 		idempresa,
+		status,
 		page,
 		limit,
 	});

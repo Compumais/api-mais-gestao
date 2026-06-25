@@ -48,6 +48,10 @@ function mapProdutoToForm(
 		cstcofins: formatarCstProduto(data.cstcofins) || null,
 		observacoes: data.observacoes,
 		enviamobile: data.enviamobile === 1,
+		estoque: data.estoque ?? null,
+		quantidadepadrao: data.quantidadepadrao ?? 1,
+		quantidademinima: data.quantidademinima ?? null,
+		quantidademaxima: data.quantidademaxima ?? null,
 	};
 }
 

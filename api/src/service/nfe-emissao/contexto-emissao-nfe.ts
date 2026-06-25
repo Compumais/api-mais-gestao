@@ -42,6 +42,8 @@ export type ItemPayloadNfe = {
 	valorIcmsDesonerado?: number;
 	valorIcmsMonoRet?: number;
 	valorIcmsMonoReten?: number;
+	pCredSN?: number;
+	vCredICMSSN?: number;
 };
 
 export type DestinatarioPayloadNfe = {
@@ -63,6 +65,12 @@ export type PagamentoPayloadNfe = {
 		tPag: string;
 		vPag: number;
 		indPag?: number;
+		card?: {
+			tpIntegra: 1 | 2;
+			CNPJ?: string;
+			tBand?: string;
+			cAut?: string;
+		};
 	}>;
 };
 

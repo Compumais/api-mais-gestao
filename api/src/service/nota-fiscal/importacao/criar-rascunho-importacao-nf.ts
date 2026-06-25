@@ -16,6 +16,7 @@ import { buscarProdutoParaNf } from "@/service/nota-fiscal/vincular-ou-criar-pro
 import {
 	httpBadRequest,
 	httpCriacao,
+	httpErroInterno,
 	httpProibido,
 } from "@/util/http-util.js";
 import { recalcularDadosConversao } from "@/util/calculo-importacao-nf.js";
@@ -138,6 +139,43 @@ function montarDadosImportacaoItem(
 }
 
 export async function criarRascunhoImportacaoNfService({
+	idusuario,
+	idempresa,
+	xml,
+	idplanocontas,
+	idcondicaopagto,
+	idtipodocumento,
+	idoperacaofiscal,
+}: CriarRascunhoImportacaoNfParametros): Promise<
+	HttpResponse<CriarRascunhoImportacaoNfResposta>
+> {
+	try {
+		return await executarCriarRascunhoImportacaoNf({
+			idusuario,
+			idempresa,
+			xml,
+			idplanocontas,
+			idcondicaopagto,
+			idtipodocumento,
+			idoperacaofiscal,
+		});
+	} catch (erro) {
+		console.error("Erro inesperado ao criar rascunho de importação:", erro);
+		const mensagem = extrairMensagemErroBanco(erro);
+
+		if (
+			mensagem.includes("does not exist") ||
+			mensagem.includes("não existe") ||
+			mensagem.includes("migration")
+		) {
+			return httpBadRequest(mensagem);
+		}
+
+		return httpErroInterno();
+	}
+}
+
+async function executarCriarRascunhoImportacaoNf({
 	idusuario,
 	idempresa,
 	xml,

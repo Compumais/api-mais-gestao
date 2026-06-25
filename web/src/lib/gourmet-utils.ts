@@ -35,6 +35,8 @@ export interface ItemComPreco {
 export interface PagamentosFechar {
 	valordinheiro?: string | null;
 	valorcartao?: string | null;
+	valorcartaocredito?: string | null;
+	valorcartaodebito?: string | null;
 	valorpix?: string | null;
 	valorprepago?: string | null;
 }
@@ -61,7 +63,10 @@ export function extrairPagamentosResumo(
 ): PagamentosResumo {
 	const dinheiroBruto = parseValor(registro.valordinheiro);
 	const troco = parseValor(registro.valortroco);
-	const cartao = parseValor(registro.valorcartao);
+	const cartao =
+		parseValor(registro.valorcartaocredito) +
+		parseValor(registro.valorcartaodebito) +
+		parseValor(registro.valorcartao);
 	const pix = parseValor(registro.valorpix);
 	const prepago = parseValor(registro.valorprepago);
 	const dinheiro = Math.max(0, dinheiroBruto - troco);
@@ -91,6 +96,15 @@ export function parseValor(value: string | null | undefined): number {
 	return Number.isNaN(parsed) ? 0 : parsed;
 }
 
+export function arredondarMoeda(valor: number): number {
+	if (!Number.isFinite(valor)) return 0;
+	return Math.round(valor * 100) / 100;
+}
+
+export function pagamentoCobreTotal(pago: number, total: number): boolean {
+	return arredondarMoeda(pago) >= arredondarMoeda(total);
+}
+
 export function formatCurrency(value: string | number | null | undefined): string {
 	const num =
 		typeof value === "string" ? parseValor(value) : (value ?? 0);
@@ -101,11 +115,12 @@ export function formatCurrency(value: string | number | null | undefined): strin
 }
 
 export function calcularSubtotalItens(itens: ItemComPreco[]): number {
-	return itens.reduce((acc, item) => {
+	const subtotal = itens.reduce((acc, item) => {
 		const qty = parseValor(item.quantidade);
 		const preco = parseValor(item.precounitario);
 		return acc + qty * preco;
 	}, 0);
+	return arredondarMoeda(subtotal);
 }
 
 export function calcularTotalComTaxas(
@@ -114,15 +129,19 @@ export function calcularTotalComTaxas(
 	taxaServico = 0,
 	couvert = 0,
 ): number {
-	return Math.max(0, subtotal - desconto + taxaServico + couvert);
+	return arredondarMoeda(
+		Math.max(0, subtotal - desconto + taxaServico + couvert),
+	);
 }
 
 export function calcularTotalPago(pagamentos: PagamentosFechar): number {
-	return (
+	return arredondarMoeda(
 		parseValor(pagamentos.valordinheiro) +
-		parseValor(pagamentos.valorcartao) +
-		parseValor(pagamentos.valorpix) +
-		parseValor(pagamentos.valorprepago)
+			parseValor(pagamentos.valorcartaocredito) +
+			parseValor(pagamentos.valorcartaodebito) +
+			parseValor(pagamentos.valorcartao) +
+			parseValor(pagamentos.valorpix) +
+			parseValor(pagamentos.valorprepago),
 	);
 }
 
@@ -219,7 +238,12 @@ export interface CarrinhoLocalItem {
 	codigo?: number | null;
 }
 
-export type MeioPagamentoPdv = "dinheiro" | "cartao" | "pix" | "prepago";
+export type MeioPagamentoPdv =
+	| "dinheiro"
+	| "cartao_credito"
+	| "cartao_debito"
+	| "pix"
+	| "prepago";
 
 export interface PagamentoParcialPdv {
 	meio: MeioPagamentoPdv;
@@ -239,6 +263,8 @@ export interface CupomNfceInfo {
 	chave: string;
 	protocolo?: string;
 	ambiente?: number;
+	qrCode?: string;
+	urlChave?: string;
 }
 
 export interface CupomNaoFiscalData {
@@ -268,6 +294,8 @@ export function buildCupomNfceInfo(
 		idnotafiscal?: string;
 		chave?: string;
 		protocolo?: string;
+		qrCode?: string;
+		urlChave?: string;
 	} | undefined,
 	ambiente?: number | null,
 ): CupomNfceInfo | undefined {
@@ -280,7 +308,13 @@ export function buildCupomNfceInfo(
 		chave: emissao.chave,
 		protocolo: emissao.protocolo,
 		ambiente: ambiente ?? undefined,
+		qrCode: emissao.qrCode,
+		urlChave: emissao.urlChave,
 	};
+}
+
+export function montarUrlImagemQrCodeNfce(conteudo: string, tamanho = 180): string {
+	return `https://api.qrserver.com/v1/create-qr-code/?size=${tamanho}x${tamanho}&data=${encodeURIComponent(conteudo)}`;
 }
 
 export const MEIOS_PAGAMENTO_PDV: Array<{
@@ -289,7 +323,8 @@ export const MEIOS_PAGAMENTO_PDV: Array<{
 	campo: keyof PagamentosFechar;
 }> = [
 	{ id: "dinheiro", label: "Dinheiro", campo: "valordinheiro" },
-	{ id: "cartao", label: "Cartão", campo: "valorcartao" },
+	{ id: "cartao_credito", label: "Cartão Crédito", campo: "valorcartaocredito" },
+	{ id: "cartao_debito", label: "Cartão Débito", campo: "valorcartaodebito" },
 	{ id: "pix", label: "PIX", campo: "valorpix" },
 	{ id: "prepago", label: "Pré-pago", campo: "valorprepago" },
 ];
@@ -313,6 +348,8 @@ export function pagamentosToFecharContaForm(
 
 	return {
 		valordinheiro: acumulado.valordinheiro ?? "",
+		valorcartaocredito: acumulado.valorcartaocredito ?? "",
+		valorcartaodebito: acumulado.valorcartaodebito ?? "",
 		valorcartao: acumulado.valorcartao ?? "",
 		valorpix: acumulado.valorpix ?? "",
 		valorprepago: acumulado.valorprepago ?? "",
@@ -322,8 +359,43 @@ export function pagamentosToFecharContaForm(
 	};
 }
 
+export function fecharContaFormToPagamentosParciais(
+	form: import("@/schemas/fechar-conta.schema").FecharContaFormData,
+): PagamentoParcialPdv[] {
+	const pagamentos: PagamentoParcialPdv[] = [];
+
+	for (const meio of MEIOS_PAGAMENTO_PDV) {
+		const valor = parseValor(form[meio.campo] ?? "");
+		if (valor > 0) {
+			pagamentos.push({
+				meio: meio.id,
+				valor,
+				label: meio.label,
+			});
+		}
+	}
+
+	return pagamentos;
+}
+
+export function vendaPagamentosToFecharContaForm(
+	registro: PagamentosRegistro,
+): import("@/schemas/fechar-conta.schema").FecharContaFormData {
+	return {
+		valordinheiro: registro.valordinheiro ?? "",
+		valorcartaocredito: registro.valorcartaocredito ?? "",
+		valorcartaodebito: registro.valorcartaodebito ?? "",
+		valorcartao: registro.valorcartao ?? "",
+		valorpix: registro.valorpix ?? "",
+		valorprepago: registro.valorprepago ?? "",
+		desconto: "",
+		valortaxaservico: "",
+		valorcouverartistico: "",
+	};
+}
+
 export function totalPagamentosParciais(pagamentos: PagamentoParcialPdv[]): number {
-	return pagamentos.reduce((acc, p) => acc + p.valor, 0);
+	return arredondarMoeda(pagamentos.reduce((acc, p) => acc + p.valor, 0));
 }
 
 export function getEstoqueProduto(produto: {

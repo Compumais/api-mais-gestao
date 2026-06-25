@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MaisGestao\NfeGateway\Services;
 
+use NFePHP\DA\NFe\Danfce;
 use NFePHP\DA\NFe\Danfe;
 
 final class DanfeService
@@ -15,15 +16,32 @@ final class DanfeService
 			throw new \InvalidArgumentException('XML da NF-e é obrigatório');
 		}
 
-		$danfe = new Danfe($xml);
-		$danfe->debugMode(false);
-		$danfe->exibirTextoFatura = false;
-		$danfe->creditsIntegratorFooter('Mais Gestão ERP');
+		$modelo = self::detectarModelo($xml);
 
-		$pdf = $danfe->render();
+		if ($modelo === 65) {
+			$danfce = new Danfce($xml);
+			$danfce->debugMode(false);
+			$pdf = $danfce->render();
+		} else {
+			$danfe = new Danfe($xml);
+			$danfe->debugMode(false);
+			$danfe->exibirTextoFatura = false;
+			$danfe->creditsIntegratorFooter('Mais Gestão ERP');
+			$pdf = $danfe->render();
+		}
 
 		return [
 			'pdfBase64' => base64_encode($pdf),
+			'modelo' => $modelo,
 		];
+	}
+
+	private static function detectarModelo(string $xml): int
+	{
+		if (preg_match('/<mod>(\d+)<\/mod>/', $xml, $matches)) {
+			return (int) $matches[1];
+		}
+
+		return 55;
 	}
 }

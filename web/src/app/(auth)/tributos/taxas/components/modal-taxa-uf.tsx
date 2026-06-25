@@ -253,7 +253,10 @@ export function ModalTaxaUf({
 									return (
 										<Field key={uf}>
 											<FieldLabel htmlFor={campo}>{uf}</FieldLabel>
-											<Input id={campo} {...register(campo)} />
+											<Input
+												id={campo}
+												{...register(campo as keyof TaxaUfFormData)}
+											/>
 										</Field>
 									);
 								})}

@@ -11,7 +11,7 @@ import {
 interface TableSkeletonProps {
 	rows?: number;
 	columns?: number;
-	children: ReactNode;
+	children?: ReactNode;
 }
 
 export function TableSkeleton({
@@ -21,9 +21,11 @@ export function TableSkeleton({
 }: TableSkeletonProps) {
 	return (
 		<Table>
-			<TableHeader>
-				<TableRow>{children}</TableRow>
-			</TableHeader>
+			{children ? (
+				<TableHeader>
+					<TableRow>{children}</TableRow>
+				</TableHeader>
+			) : null}
 			<TableBody>
 				{Array.from({ length: rows }).map((_, index) => (
 					<TableRow key={index}>
