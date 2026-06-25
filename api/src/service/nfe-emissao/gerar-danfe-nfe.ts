@@ -57,9 +57,10 @@ export async function gerarDanfeNfeService({
 	}
 
 	const chave = nota.chavenfe?.trim() || idnotafiscal;
+	const prefixo = nota.modelo === "65" ? "danfce" : "danfe";
 
 	return httpOk<GerarDanfeNfeResposta>({
 		pdf: Buffer.from(respostaGateway.pdfBase64, "base64"),
-		filename: `danfe-${chave}.pdf`,
+		filename: `${prefixo}-${chave}.pdf`,
 	});
 }

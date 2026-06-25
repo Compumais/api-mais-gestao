@@ -37,6 +37,8 @@ export interface ResultadoBaixaEstoqueVenda {
 		idnotafiscal?: string;
 		chave?: string;
 		protocolo?: string;
+		qrCode?: string;
+		urlChave?: string;
 		cStat?: string;
 		xMotivo?: string;
 		erro?: string;
@@ -86,6 +88,8 @@ export const estoqueGestaoService = {
 		pagamentos: {
 			valordinheiro?: string | null;
 			valorcartao?: string | null;
+			valorcartaocredito?: string | null;
+			valorcartaodebito?: string | null;
 			valorpix?: string | null;
 			valorprepago?: string | null;
 			valortroco?: string | null;

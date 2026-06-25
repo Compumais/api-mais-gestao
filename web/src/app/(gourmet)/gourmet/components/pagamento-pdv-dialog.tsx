@@ -31,8 +31,11 @@ import { MoneyInput } from "@/components/ui/money-input";
 import {
 	calcularTotalComTaxas,
 	calcularTroco,
+	arredondarMoeda,
+	fecharContaFormToPagamentosParciais,
 	formatCurrency,
 	MEIOS_PAGAMENTO_PDV,
+	pagamentoCobreTotal,
 	pagamentosToFecharContaForm,
 	parseValor,
 	totalPagamentosParciais,
@@ -49,7 +52,8 @@ import { CupomNaoFiscal } from "./cupom-nao-fiscal";
 
 const ICONES_MEIO: Record<MeioPagamentoPdv, typeof IconCash> = {
 	dinheiro: IconCash,
-	cartao: IconCreditCard,
+	cartao_credito: IconCreditCard,
+	cartao_debito: IconCreditCard,
 	pix: IconQrcode,
 	prepago: IconWallet,
 };
@@ -69,6 +73,7 @@ interface PagamentoPdvDialogProps {
 	) => Promise<ConfirmacaoVendaPdvResult | void>;
 	onVendaConcluida?: () => void;
 	isPending?: boolean;
+	pagamentoInicial?: FecharContaFormData;
 }
 
 export function PagamentoPdvDialog({
@@ -82,6 +87,7 @@ export function PagamentoPdvDialog({
 	onConfirmarVenda,
 	onVendaConcluida,
 	isPending,
+	pagamentoInicial,
 }: PagamentoPdvDialogProps) {
 	const [passo, setPasso] = useState<PassoPagamento>("selecao");
 	const [pagamentos, setPagamentos] = useState<PagamentoParcialPdv[]>([]);
@@ -107,7 +113,7 @@ export function PagamentoPdvDialog({
 		couvertNum,
 	);
 	const pago = totalPagamentosParciais(pagamentos);
-	const restante = Math.max(0, total - pago);
+	const restante = Math.max(0, arredondarMoeda(total - pago));
 
 	useEffect(() => {
 		if (!open) {
@@ -121,15 +127,29 @@ export function PagamentoPdvDialog({
 			setAjustesAbertos(false);
 			setCupomDados(null);
 			setFinalizando(false);
+			return;
 		}
-	}, [open]);
+
+		if (pagamentoInicial) {
+			setPasso("selecao");
+			setPagamentos(fecharContaFormToPagamentosParciais(pagamentoInicial));
+			setMeioSelecionado(null);
+			setValorParcial("");
+			setDesconto(pagamentoInicial.desconto ?? "");
+			setTaxaServico(pagamentoInicial.valortaxaservico ?? "");
+			setCouvert(pagamentoInicial.valorcouverartistico ?? "");
+			setAjustesAbertos(false);
+			setCupomDados(null);
+			setFinalizando(false);
+		}
+	}, [open, pagamentoInicial]);
 
 	const selecionarMeio = (meio: MeioPagamentoPdv) => {
 		const info = MEIOS_PAGAMENTO_PDV.find((m) => m.id === meio);
 		if (!info) return;
 
 		setMeioSelecionado(meio);
-		setValorParcial(restante > 0 ? restante.toFixed(2) : "");
+		setValorParcial(restante > 0 ? arredondarMoeda(restante).toFixed(2) : "");
 		setPasso("valor");
 	};
 
@@ -149,7 +169,7 @@ export function PagamentoPdvDialog({
 		];
 		const novoPago = totalPagamentosParciais(novosPagamentos);
 
-		if (novoPago >= total) {
+		if (pagamentoCobreTotal(novoPago, total)) {
 			setPagamentos(novosPagamentos);
 			void finalizarVenda(novosPagamentos);
 			return;
@@ -159,7 +179,9 @@ export function PagamentoPdvDialog({
 		setMeioSelecionado(null);
 		setValorParcial("");
 		setPasso("selecao");
-		toast.info(`Restam ${formatCurrency(total - novoPago)} para pagar`);
+		toast.info(
+			`Restam ${formatCurrency(arredondarMoeda(total - novoPago))} para pagar`,
+		);
 	};
 
 	const finalizarVenda = async (pagamentosFinais: PagamentoParcialPdv[]) => {

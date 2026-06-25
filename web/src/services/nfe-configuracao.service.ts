@@ -40,6 +40,7 @@ export interface NfeSerie {
 	numeroproximo: number;
 	padrao: boolean;
 	ativo: boolean;
+	descricao?: string | null;
 }
 
 export interface PendenciaNfe {

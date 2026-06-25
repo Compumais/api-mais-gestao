@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 import z from "zod";
 import { criarProdutoService } from "@/service/produto/criar-produto.js";
 import { enriquecerCamposImpostosProduto } from "@/service/produto/enriquecer-campos-impostos-produto.js";
+import { sincronizarSaldoEstoqueProduto } from "@/service/produto/sincronizar-saldo-estoque-produto.js";
 import {
 	camposImpostosProdutoSchema,
 	montarCamposImpostosProduto,
@@ -39,6 +40,10 @@ const criarProdutoBodySchema = z.object({
 	ncm: z.string().min(1).max(10),
 	observacoes: z.string().optional().nullable(),
 	enviamobile: z.number().int().min(0).max(1).optional(),
+	quantidadepadrao: z.number().int().positive().optional().nullable(),
+	quantidademinima: z.number().int().min(0).optional().nullable(),
+	quantidademaxima: z.number().int().positive().optional().nullable(),
+	estoque: z.number().min(0).optional(),
 	...camposImpostosProdutoSchema,
 });
 
@@ -89,6 +94,9 @@ export async function criarProduto(
 			observacoes: dadosValidados.observacoes ?? null,
 			inativo: 0,
 			enviamobile: dadosValidados.enviamobile ?? 0,
+			quantidadepadrao: dadosValidados.quantidadepadrao ?? 1,
+			quantidademinima: dadosValidados.quantidademinima ?? null,
+			quantidademaxima: dadosValidados.quantidademaxima ?? null,
 			...impostos,
 		};
 
@@ -99,6 +107,14 @@ export async function criarProduto(
 
 		if (!resultado.success) {
 			return reply.status(resultado.status).send(resultado);
+		}
+
+		if (dadosValidados.estoque !== undefined && resultado.body) {
+			await sincronizarSaldoEstoqueProduto({
+				idempresa: dadosValidados.idempresa,
+				produto: resultado.body,
+				quantidade: dadosValidados.estoque,
+			});
 		}
 
 		return reply.status(resultado.status).send(resultado.body);

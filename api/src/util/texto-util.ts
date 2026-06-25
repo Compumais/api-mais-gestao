@@ -89,7 +89,7 @@ export function extrairMensagemErroBanco(erro: unknown): string {
 	const mensagem = obterMensagemErroPostgres(erro);
 
 	if (mensagem.includes("does not exist")) {
-		return "Coluna inexistente no banco. Execute a migration 0023_notafiscalitem_campos_nf.sql";
+		return "Schema do banco desatualizado em relação à API. Na VPS, execute: cd api && pnpm run db:migrate:producao";
 	}
 
 	if (mensagem.includes("specified more than once")) {

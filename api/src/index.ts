@@ -20,6 +20,7 @@ import { cfopsRotas } from "./controllers/http/cfop/rotas.js";
 import { cfopDeParaRotas } from "./controllers/http/cfop-depara/rotas.js";
 import { cfopsPadraoRotas } from "./controllers/http/cfop-padrao/rotas.js";
 import { codigosReduzidosContaContabilRotas } from "./controllers/http/codigo-reduzido-conta-contabil/rotas.js";
+import { contabilidadeRotas } from "./controllers/http/contabilidade/rotas.js";
 import { condicoesPagamentoRotas } from "./controllers/http/condicao-pagamento/rotas.js";
 import { configuracaoRotas } from "./controllers/http/configuracao/rotas.js";
 import { configuracaoUsuarioRotas } from "./controllers/http/configuracao-usuario/rotas.js";
@@ -168,6 +169,10 @@ await app.register(swagger, {
 			{
 				name: "conta-contabil",
 				description: "Operações com contas contábeis",
+			},
+			{
+				name: "contabilidade",
+				description: "Operações de contabilidade e exportação fiscal",
 			},
 			{
 				name: "relatorios",
@@ -530,6 +535,7 @@ app.register(ordensServicoRotas);
 app.register(operacoesFiscaisRotas);
 app.register(davsRotas);
 app.register(codigosReduzidosContaContabilRotas);
+app.register(contabilidadeRotas);
 app.register(entidadesContaContabilRotas);
 app.register(integracoesContabilConfiguracaoRotas);
 app.register(planosContasContaContabilRotas);

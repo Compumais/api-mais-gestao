@@ -1,5 +1,21 @@
 import { z } from "zod";
 
+function numeroInteiroOpcional() {
+	return z.preprocess((valor) => {
+		if (valor === "" || valor === null || valor === undefined) return null;
+		if (typeof valor === "number" && Number.isNaN(valor)) return null;
+		return valor;
+	}, z.number().int().optional().nullable());
+}
+
+function numeroDecimalOpcional() {
+	return z.preprocess((valor) => {
+		if (valor === "" || valor === null || valor === undefined) return null;
+		if (typeof valor === "number" && Number.isNaN(valor)) return null;
+		return valor;
+	}, z.number().min(0).optional().nullable());
+}
+
 export const produtoFormSchema = z.object({
 	codigo: z
 		.number({ message: "Código é obrigatório" })
@@ -93,6 +109,19 @@ export const produtoFormSchema = z.object({
 		.nullable(),
 	observacoes: z.string().optional().nullable(),
 	enviamobile: z.boolean().optional(),
+	estoque: numeroDecimalOpcional(),
+	quantidadepadrao: numeroInteiroOpcional().refine(
+		(valor) => valor === null || valor === undefined || valor > 0,
+		"Quantidade padrão deve ser maior que zero",
+	),
+	quantidademinima: numeroInteiroOpcional().refine(
+		(valor) => valor === null || valor === undefined || valor >= 0,
+		"Quantidade mínima não pode ser negativa",
+	),
+	quantidademaxima: numeroInteiroOpcional().refine(
+		(valor) => valor === null || valor === undefined || valor > 0,
+		"Quantidade máxima deve ser maior que zero",
+	),
 });
 
 export type ProdutoFormData = z.infer<typeof produtoFormSchema>;

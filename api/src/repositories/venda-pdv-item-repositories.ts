@@ -58,6 +58,21 @@ export async function listarItensPorVendaPdv(idvenda: string) {
 		.orderBy(desc(vendapdvitem.id));
 }
 
+export async function substituirItensVendaPdv(
+	idvenda: string,
+	itens: NovoVendaPdvItem[],
+) {
+	return db.transaction(async (tx) => {
+		await tx.delete(vendapdvitem).where(eq(vendapdvitem.idvenda, idvenda));
+
+		if (itens.length === 0) {
+			return [];
+		}
+
+		return tx.insert(vendapdvitem).values(itens).returning();
+	});
+}
+
 export async function listarVendasPdvItem({
 	idempresa,
 	idvenda,

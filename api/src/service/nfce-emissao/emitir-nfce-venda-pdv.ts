@@ -46,6 +46,8 @@ import {
 } from "@/util/http-util.js";
 import { resolverNatOpEmissaoNfe } from "@/util/resolver-nat-op-emissao-nfe.js";
 import type { PagamentosRegistro } from "@/util/pagamentos-pdv-util.js";
+import { extrairQrCodeNfceXml } from "@/util/extrair-qr-code-nfce-xml.js";
+import { obterXmlAutorizadoNotaFiscal } from "@/util/obter-xml-nota-fiscal.js";
 
 export type EmitirNfceVendaPdvParametros = {
 	idusuario: string;
@@ -59,6 +61,8 @@ export type ResultadoEmissaoNfcePdv = {
 	idnotafiscal?: string;
 	chave?: string;
 	protocolo?: string;
+	qrCode?: string;
+	urlChave?: string;
 	cStat?: string;
 	xMotivo?: string;
 	pendencias?: Array<{ codigo: string; mensagem: string }>;
@@ -210,6 +214,12 @@ export async function emitirNfceVendaPdvService({
 			if (notaExistente.protocolonfe) {
 				resultadoExistente.protocolo = notaExistente.protocolonfe;
 			}
+
+			const xmlExistente = await obterXmlAutorizadoNotaFiscal(notaExistente.id);
+			const qrExtraido = extrairQrCodeNfceXml(xmlExistente);
+			if (qrExtraido.qrCode) resultadoExistente.qrCode = qrExtraido.qrCode;
+			if (qrExtraido.urlChave) resultadoExistente.urlChave = qrExtraido.urlChave;
+
 			return httpOk(resultadoExistente);
 		}
 	}
@@ -278,6 +288,8 @@ export async function emitirNfceVendaPdvService({
 			: {
 					valordinheiro: venda.valordinheiro,
 					valorcartao: venda.valorcartao,
+					valorcartaocredito: venda.valorcartaocredito,
+					valorcartaodebito: venda.valorcartaodebito,
 					valorpix: venda.valorpix,
 					valorprepago: venda.valorprepago,
 					valortroco: venda.valortroco,
@@ -459,6 +471,15 @@ export async function emitirNfceVendaPdvService({
 	if (!emitida && !cStat && respostaGateway.erro) {
 		resultado.erro = respostaGateway.erro;
 	}
+
+	const xmlQr =
+		respostaGateway.xmlRetorno ??
+		(statusPersistido === NFE_STATUS.AUTORIZADA
+			? respostaGateway.xmlEnviado
+			: undefined);
+	const qrExtraido = extrairQrCodeNfceXml(xmlQr);
+	if (qrExtraido.qrCode) resultado.qrCode = qrExtraido.qrCode;
+	if (qrExtraido.urlChave) resultado.urlChave = qrExtraido.urlChave;
 
 	return httpOk(resultado);
 }
