@@ -40,6 +40,7 @@ type AtualizarEntidadeParametros = {
 		fornecedor?: number | undefined;
 		transportador?: number | undefined;
 		representante?: number | undefined;
+		indiedest?: number | null | undefined;
 	};
 };
 

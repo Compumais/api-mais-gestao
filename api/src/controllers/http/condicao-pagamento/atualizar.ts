@@ -10,7 +10,10 @@ const atualizarCondicaoPagamentoParamsSchema = z.object({
 const atualizarCondicaoPagamentoBodySchema = z.looseObject({
 	codigo: z.string().max(10).optional(),
 	descricao: z.string().max(512).optional(),
-	inativo: z.number().int().optional()
+	parcelas: z.coerce.number().int().optional(),
+	prazos: z.string().max(512).optional(),
+	escopo: z.coerce.number().int().optional(),
+	inativo: z.coerce.number().int().optional(),
 });
 
 export async function atualizarCondicaoPagamento(request: FastifyRequest, reply: FastifyReply) {

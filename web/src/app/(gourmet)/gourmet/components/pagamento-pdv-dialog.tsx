@@ -36,12 +36,15 @@ import {
 	pagamentosToFecharContaForm,
 	parseValor,
 	totalPagamentosParciais,
+	type ConfirmacaoVendaPdvResult,
 	type CupomItemLinha,
 	type CupomNaoFiscalData,
 	type MeioPagamentoPdv,
 	type PagamentoParcialPdv,
 } from "@/lib/gourmet-utils";
 import type { FecharContaFormData } from "@/schemas/fechar-conta.schema";
+import { AvisoAmbienteNfe } from "@/app/(auth)/nota-fiscal-venda/components/aviso-ambiente-nfe";
+import { useNfceAmbientePdv } from "@/hooks/use-nfce-ambiente-pdv";
 import { CupomNaoFiscal } from "./cupom-nao-fiscal";
 
 const ICONES_MEIO: Record<MeioPagamentoPdv, typeof IconCash> = {
@@ -63,7 +66,7 @@ interface PagamentoPdvDialogProps {
 	titulo?: string;
 	onConfirmarVenda: (
 		pagamento: FecharContaFormData,
-	) => Promise<{ vendaId: string } | void>;
+	) => Promise<ConfirmacaoVendaPdvResult | void>;
 	onVendaConcluida?: () => void;
 	isPending?: boolean;
 }
@@ -92,6 +95,7 @@ export function PagamentoPdvDialog({
 	const [ajustesAbertos, setAjustesAbertos] = useState(false);
 	const [cupomDados, setCupomDados] = useState<CupomNaoFiscalData | null>(null);
 	const [finalizando, setFinalizando] = useState(false);
+	const { ambiente: ambienteNfce } = useNfceAmbientePdv();
 
 	const descontoNum = parseValor(desconto);
 	const taxaServicoNum = parseValor(taxaServico);
@@ -182,6 +186,12 @@ export function PagamentoPdvDialog({
 				pagamentos: pagamentosFinais,
 				troco,
 				contexto,
+				nfce: resultado?.nfce
+					? {
+							...resultado.nfce,
+							ambiente: resultado.nfce.ambiente ?? ambienteNfce ?? undefined,
+						}
+					: undefined,
 			});
 			setPasso("cupom");
 		} catch {
@@ -227,6 +237,8 @@ export function PagamentoPdvDialog({
 								Informe o valor recebido nesta forma de pagamento.
 							</DialogDescription>
 						</DialogHeader>
+
+						<AvisoAmbienteNfe ambiente={ambienteNfce} className="text-xs" />
 
 						<div className="rounded-lg bg-muted/50 p-4 text-center">
 							<p className="text-sm text-muted-foreground">Restante a pagar</p>
@@ -285,6 +297,8 @@ export function PagamentoPdvDialog({
 								Selecione a forma de pagamento e informe o valor.
 							</DialogDescription>
 						</DialogHeader>
+
+						<AvisoAmbienteNfe ambiente={ambienteNfce} className="text-xs" />
 
 						<div className="rounded-lg bg-muted/50 p-4 text-center">
 							<p className="text-sm text-muted-foreground">

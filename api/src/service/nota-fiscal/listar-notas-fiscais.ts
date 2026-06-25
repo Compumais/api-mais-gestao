@@ -10,6 +10,11 @@ type ListarNotasFiscaisParametros = {
 	numero?: string | undefined;
 	identidade?: string | undefined;
 	status?: number | undefined;
+	tipoorigem?: number | undefined;
+	idcfop?: string | undefined;
+	dataInicio?: string | undefined;
+	dataFim?: string | undefined;
+	rascunho?: boolean | undefined;
 	page?: number;
 	limit?: number;
 };
@@ -30,6 +35,11 @@ export async function listarNotasFiscaisService({
 	numero,
 	identidade,
 	status,
+	tipoorigem,
+	idcfop,
+	dataInicio,
+	dataFim,
+	rascunho = false,
 	page = 1,
 	limit = 10,
 }: ListarNotasFiscaisParametros): Promise<
@@ -49,6 +59,12 @@ export async function listarNotasFiscaisService({
 		numero,
 		identidade,
 		status,
+		tipoorigem,
+		idcfop,
+		dataInicio,
+		dataFim,
+		somenteRascunhos: rascunho,
+		excluirRascunhos: !rascunho,
 		page,
 		limit,
 	});

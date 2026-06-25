@@ -60,6 +60,33 @@ export const hierarquiasService = {
 		return data;
 	},
 
+	async listarTodos(params: {
+		idempresa: string;
+		nome?: string;
+	}): Promise<Hierarquia[]> {
+		const limite = 100;
+		let pagina = 1;
+		const registros: Hierarquia[] = [];
+
+		while (true) {
+			const resposta = await hierarquiasService.listar({
+				...params,
+				page: pagina,
+				limit: limite,
+			});
+
+			registros.push(...resposta.data);
+
+			if (pagina >= resposta.paginacao.totalPages) {
+				break;
+			}
+
+			pagina += 1;
+		}
+
+		return registros;
+	},
+
 	async buscar(id: string): Promise<Hierarquia> {
 		const { data } = await api.get<Hierarquia>(`/hierarquias/${id}`);
 		return data;

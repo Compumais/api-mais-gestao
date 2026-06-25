@@ -1,8 +1,70 @@
-import { and, count, desc, eq, ilike } from "drizzle-orm";
+import { and, count, desc, eq, gte, ilike, inArray, lte, ne } from "drizzle-orm";
 import type { NovaNotaFiscal } from "@/model/nota-fiscal-model";
-import type { NovoNotaFiscalItem } from "@/model/nota-fiscal-item-model";
-import { notafiscal, notafiscalitem } from "@/repositories/schema.js";
+import type {
+	NotaFiscalItem,
+	NovoNotaFiscalItem,
+} from "@/model/nota-fiscal-item-model";
+import type { DadosImportacaoItem } from "@/model/nota-fiscal-importacao-model.js";
+import { notafiscal, notafiscalitem, vendapdvgourmet } from "@/repositories/schema.js";
+import { STATUS_RASCUNHO_IMPORTACAO } from "@/util/nota-fiscal-constants.js";
+import { NFE_STATUS } from "@/util/nfe-status.js";
 import { db } from "./connection";
+
+const COLUNAS_ITEM_NF = [
+	"id",
+	"idnotafiscal",
+	"idproduto",
+	"descricao",
+	"quantidade",
+	"precounitario",
+	"total",
+	"desconto",
+	"idcfop",
+	"cfop",
+	"idncm",
+	"ncm",
+	"idunidademedida",
+	"unidade",
+	"situacaotributaria",
+	"cstpis",
+	"cstcofins",
+	"percentualicms",
+	"baseicms",
+	"icms",
+	"aliquotapis",
+	"aliquotacofins",
+	"pis",
+	"cofins",
+	"pisretido",
+	"cofinsretido",
+	"ipi",
+	"inss",
+	"frete",
+	"seguro",
+	"outrasdespesas",
+	"origem",
+	"custoaquisicao",
+	"referenciafornecedor",
+	"informacaoadicional",
+	"contador",
+	"tipo",
+	"currenttimemillis",
+	"dadosimportacao",
+] as const;
+
+function montarItemParaInsert(
+	item: NovoNotaFiscalItem,
+): Record<string, unknown> {
+	const dados: Record<string, unknown> = {};
+
+	for (const coluna of COLUNAS_ITEM_NF) {
+		if (item[coluna] !== undefined) {
+			dados[coluna] = item[coluna];
+		}
+	}
+
+	return dados;
+}
 
 export async function criarNotaFiscalComItens(
 	notaFiscal: NovaNotaFiscal,
@@ -18,10 +80,18 @@ export async function criarNotaFiscalComItens(
 			return { notaFiscal: null, itens: [] };
 		}
 
-		const itensCriados =
-			itens.length > 0
-				? await tx.insert(notafiscalitem).values(itens).returning()
-				: [];
+		const itensCriados: NotaFiscalItem[] = [];
+
+		for (const item of itens) {
+			const [itemCriado] = await tx
+				.insert(notafiscalitem)
+				.values(montarItemParaInsert(item) as NovoNotaFiscalItem)
+				.returning();
+
+			if (itemCriado) {
+				itensCriados.push(itemCriado);
+			}
+		}
 
 		return { notaFiscal: notaCriada, itens: itensCriados };
 	});
@@ -50,6 +120,12 @@ export type ListarNotasFiscaisPorEmpresaParametros = {
 	numero?: string | undefined;
 	identidade?: string | undefined;
 	status?: number | undefined;
+	tipoorigem?: number | undefined;
+	idcfop?: string | undefined;
+	dataInicio?: string | undefined;
+	dataFim?: string | undefined;
+	excluirRascunhos?: boolean | undefined;
+	somenteRascunhos?: boolean | undefined;
 	page?: number;
 	limit?: number;
 };
@@ -59,10 +135,22 @@ export async function listarNotasFiscaisPorEmpresa({
 	numero,
 	identidade,
 	status,
+	tipoorigem,
+	idcfop,
+	dataInicio,
+	dataFim,
+	excluirRascunhos = false,
+	somenteRascunhos = false,
 	page = 1,
 	limit = 10,
 }: ListarNotasFiscaisPorEmpresaParametros) {
 	const where = [eq(notafiscal.idempresa, idempresa)];
+
+	if (somenteRascunhos) {
+		where.push(eq(notafiscal.status, STATUS_RASCUNHO_IMPORTACAO));
+	} else if (excluirRascunhos) {
+		where.push(ne(notafiscal.status, STATUS_RASCUNHO_IMPORTACAO));
+	}
 
 	if (numero) {
 		where.push(ilike(notafiscal.numero, `%${numero}%`));
@@ -74,6 +162,22 @@ export async function listarNotasFiscaisPorEmpresa({
 
 	if (status !== undefined) {
 		where.push(eq(notafiscal.status, status));
+	}
+
+	if (tipoorigem !== undefined) {
+		where.push(eq(notafiscal.tipoorigem, tipoorigem));
+	}
+
+	if (idcfop) {
+		where.push(eq(notafiscal.idcfop, idcfop));
+	}
+
+	if (dataInicio) {
+		where.push(gte(notafiscal.emissao, dataInicio));
+	}
+
+	if (dataFim) {
+		where.push(lte(notafiscal.emissao, dataFim));
 	}
 
 	const offset = (page - 1) * limit;
@@ -98,6 +202,84 @@ export async function listarNotasFiscaisPorEmpresa({
 	};
 }
 
+const STATUS_NFCE_PENDENTES = [
+	NFE_STATUS.PENDENTE,
+	NFE_STATUS.REJEITADA,
+	NFE_STATUS.DENEGADA,
+] as const;
+
+export type ListarNfcePendentesParametros = {
+	idempresa: string;
+	page?: number;
+	limit?: number;
+};
+
+export type NfcePendenteListagem = {
+	idnotafiscal: string;
+	idvenda: string | null;
+	numeronotafiscal: string | null;
+	serie: string | null;
+	chavenfe: string | null;
+	status: number | null;
+	valortotalnota: string | null;
+	emissao: string | null;
+	datainclusao: string | null;
+	tipoambientenfe: number | null;
+	mensagemtransmissaonfe: string | null;
+	codigostatusprotocolonfe: number | null;
+};
+
+export async function listarNfcePendentesPorEmpresa({
+	idempresa,
+	page = 1,
+	limit = 20,
+}: ListarNfcePendentesParametros) {
+	const where = [
+		eq(notafiscal.idempresa, idempresa),
+		eq(notafiscal.modelo, "65"),
+		inArray(notafiscal.status, [...STATUS_NFCE_PENDENTES]),
+		ne(notafiscal.status, STATUS_RASCUNHO_IMPORTACAO),
+	];
+
+	const offset = (page - 1) * limit;
+
+	const [totalCount, registros] = await Promise.all([
+		db
+			.select({ value: count() })
+			.from(notafiscal)
+			.where(and(...where)),
+		db
+			.select({
+				idnotafiscal: notafiscal.id,
+				idvenda: vendapdvgourmet.id,
+				numeronotafiscal: notafiscal.numeronotafiscal,
+				serie: notafiscal.serie,
+				chavenfe: notafiscal.chavenfe,
+				status: notafiscal.status,
+				valortotalnota: notafiscal.valortotalnota,
+				emissao: notafiscal.emissao,
+				datainclusao: notafiscal.datainclusao,
+				tipoambientenfe: notafiscal.tipoambientenfe,
+				mensagemtransmissaonfe: notafiscal.mensagemtransmissaonfe,
+				codigostatusprotocolonfe: notafiscal.codigostatusprotocolonfe,
+			})
+			.from(notafiscal)
+			.leftJoin(
+				vendapdvgourmet,
+				eq(vendapdvgourmet.idnotafiscalnfce, notafiscal.id),
+			)
+			.where(and(...where))
+			.orderBy(desc(notafiscal.datainclusao))
+			.limit(limit)
+			.offset(offset),
+	]);
+
+	return {
+		notas: registros as NfcePendenteListagem[],
+		total: totalCount[0]?.value ?? 0,
+	};
+}
+
 export async function atualizarNotaFiscal(
 	id: string,
 	dados: Partial<NovaNotaFiscal>,
@@ -111,6 +293,32 @@ export async function atualizarNotaFiscal(
 	return registro;
 }
 
+export async function substituirItensNotaFiscal(
+	idnotafiscal: string,
+	itens: NovoNotaFiscalItem[],
+) {
+	return db.transaction(async (tx) => {
+		await tx
+			.delete(notafiscalitem)
+			.where(eq(notafiscalitem.idnotafiscal, idnotafiscal));
+
+		const itensCriados: NotaFiscalItem[] = [];
+
+		for (const item of itens) {
+			const [itemCriado] = await tx
+				.insert(notafiscalitem)
+				.values(montarItemParaInsert(item) as NovoNotaFiscalItem)
+				.returning();
+
+			if (itemCriado) {
+				itensCriados.push(itemCriado);
+			}
+		}
+
+		return itensCriados;
+	});
+}
+
 export async function excluirNotaFiscal(id: string) {
 	const [registro] = await db
 		.delete(notafiscal)
@@ -118,4 +326,123 @@ export async function excluirNotaFiscal(id: string) {
 		.returning();
 
 	return registro;
+}
+
+export async function buscarNotaFiscalRascunhoPorId(
+	id: string,
+	idempresa: string,
+) {
+	const [registro] = await db
+		.select()
+		.from(notafiscal)
+		.where(
+			and(
+				eq(notafiscal.id, id),
+				eq(notafiscal.idempresa, idempresa),
+				eq(notafiscal.status, STATUS_RASCUNHO_IMPORTACAO),
+			),
+		)
+		.limit(1);
+
+	return registro;
+}
+
+export async function buscarNotaFiscalPorChaveNfe(
+	idempresa: string,
+	chavenfe: string,
+	excluirId?: string | undefined,
+) {
+	const where = [
+		eq(notafiscal.idempresa, idempresa),
+		eq(notafiscal.chavenfe, chavenfe),
+	];
+
+	if (excluirId) {
+		where.push(ne(notafiscal.id, excluirId));
+	}
+
+	const [registro] = await db
+		.select()
+		.from(notafiscal)
+		.where(and(...where))
+		.limit(1);
+
+	return registro;
+}
+
+export async function buscarItemNotaFiscalPorId(
+	id: string,
+	idnotafiscal: string,
+) {
+	const [registro] = await db
+		.select()
+		.from(notafiscalitem)
+		.where(
+			and(
+				eq(notafiscalitem.id, id),
+				eq(notafiscalitem.idnotafiscal, idnotafiscal),
+			),
+		)
+		.limit(1);
+
+	return registro;
+}
+
+export async function atualizarItemNotaFiscal(
+	id: string,
+	dados: Partial<NovoNotaFiscalItem> & {
+		dadosimportacao?: DadosImportacaoItem | null | undefined;
+	},
+) {
+	const [registro] = await db
+		.update(notafiscalitem)
+		.set(dados)
+		.where(eq(notafiscalitem.id, id))
+		.returning();
+
+	return registro;
+}
+
+export async function finalizarRascunhoNotaFiscal(
+	id: string,
+	dadosNota: Partial<NovaNotaFiscal>,
+	itens: Array<Partial<NovoNotaFiscalItem> & { id: string }>,
+) {
+	return db.transaction(async (tx) => {
+		const [notaAtualizada] = await tx
+			.update(notafiscal)
+			.set(dadosNota)
+			.where(eq(notafiscal.id, id))
+			.returning();
+
+		if (!notaAtualizada) {
+			return { notaFiscal: null, itens: [] as NotaFiscalItem[] };
+		}
+
+		const itensAtualizados: NotaFiscalItem[] = [];
+
+		for (const item of itens) {
+			const { id: idItem, ...dadosItem } = item;
+			const [itemAtualizado] = await tx
+				.update(notafiscalitem)
+				.set(dadosItem)
+				.where(eq(notafiscalitem.id, idItem))
+				.returning();
+
+			if (itemAtualizado) {
+				itensAtualizados.push(itemAtualizado);
+			}
+		}
+
+		return { notaFiscal: notaAtualizada, itens: itensAtualizados };
+	});
+}
+
+export async function contarNotasFiscaisPorSerie(idserie: string) {
+	const [resultado] = await db
+		.select({ value: count() })
+		.from(notafiscal)
+		.where(eq(notafiscal.idserie, idserie));
+
+	return resultado?.value ?? 0;
 }

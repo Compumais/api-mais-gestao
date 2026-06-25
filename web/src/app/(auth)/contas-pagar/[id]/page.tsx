@@ -81,6 +81,30 @@ export default function DetalhesContaPagarPage() {
 						</div>
 						<div>
 							<Label
+								htmlFor="emitente"
+								className="text-sm font-medium text-muted-foreground"
+							>
+								Nome
+							</Label>
+							<p className="mt-1 text-sm">{financeiro.emitente || "-"}</p>
+						</div>
+						<div>
+							<Label
+								htmlFor="parcela"
+								className="text-sm font-medium text-muted-foreground"
+							>
+								Parcela
+							</Label>
+							<p className="mt-1 text-sm">
+								{financeiro.parcela
+									? financeiro.totalparcelas && financeiro.totalparcelas > 1
+										? `${financeiro.parcela}/${financeiro.totalparcelas}`
+										: financeiro.parcela
+									: "-"}
+							</p>
+						</div>
+						<div>
+							<Label
 								htmlFor="status"
 								className="text-sm font-medium text-muted-foreground"
 							>

@@ -3,7 +3,9 @@ import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import Fastify from "fastify";
+import { adminRotas } from "./controllers/http/admin/rotas.js";
 import { areasRotas } from "./controllers/http/area/rotas.js";
+import { informativosRotas } from "./controllers/http/informativos/rotas.js";
 import { assinaturasRotas } from "./controllers/http/assinaturas/rotas.js";
 import { auditoriaRotas } from "./controllers/http/auditoria/rotas.js";
 // import { authRotas } from "./controllers/http/auth/rotas.js";
@@ -11,8 +13,11 @@ import { obterPerfil } from "./controllers/http/auth/obter-perfil.js";
 import { authenticationRoute } from "./controllers/http/authentication.js";
 import { bancosRotas } from "./controllers/http/bancos/rotas.js";
 import { centrosCustoRotas } from "./controllers/http/centro-custo/rotas.js";
+import { certificadoDigitalRotas } from "./controllers/http/certificado-digital/rotas.js";
+import { empresaFiscalRotas } from "./controllers/http/empresa-fiscal/rotas.js";
 import { cestsRotas } from "./controllers/http/cest/rotas.js";
 import { cfopsRotas } from "./controllers/http/cfop/rotas.js";
+import { cfopDeParaRotas } from "./controllers/http/cfop-depara/rotas.js";
 import { cfopsPadraoRotas } from "./controllers/http/cfop-padrao/rotas.js";
 import { codigosReduzidosContaContabilRotas } from "./controllers/http/codigo-reduzido-conta-contabil/rotas.js";
 import { condicoesPagamentoRotas } from "./controllers/http/condicao-pagamento/rotas.js";
@@ -43,11 +48,19 @@ import { locaisRetiradaRotas } from "./controllers/http/local-retirada/rotas.js"
 import { localidadesRotas } from "./controllers/http/localidade/rotas.js";
 import { motivosRebaixaRotas } from "./controllers/http/motivo-rebaixa/rotas.js";
 import { movimentosEstoqueRotas } from "./controllers/http/movimento-estoque/rotas.js";
+import { nfeConfiguracaoRotas } from "./controllers/http/nfe-configuracao/rotas.js";
+import { nfceConfiguracaoRotas } from "./controllers/http/nfce-configuracao/rotas.js";
+import { nfceRotas } from "./controllers/http/nfce/rotas.js";
+import { estoqueRotas } from "./controllers/http/estoque/rotas.js";
+import { nfeEmissaoRotas } from "./controllers/http/nfe-emissao/rotas.js";
+import { nfeSerieRotas } from "./controllers/http/nfe-serie/rotas.js";
 import { notasFiscaisRotas } from "./controllers/http/nota-fiscal/rotas.js";
 import { notificacoesRotas } from "./controllers/http/notificacoes/rotas.js";
 import { objetosRotas } from "./controllers/http/objeto/rotas.js";
 import { operacoesFiscaisRotas } from "./controllers/http/operacao-fiscal/rotas.js";
 import { ordensServicoRotas } from "./controllers/http/ordem-servico/rotas.js";
+import { parametrizacaoTributosRotas } from "./controllers/http/parametrizacao-tributos/rotas.js";
+import { taxaUfRotas } from "./controllers/http/taxauf/rotas.js";
 import { planoContasRotas } from "./controllers/http/plano-contas/rotas.js";
 import { planosContasContaContabilRotas } from "./controllers/http/plano-contas-conta-contabil/rotas.js";
 import { planosRotas } from "./controllers/http/planos/rotas.js";
@@ -55,6 +68,7 @@ import { produtosRotas } from "./controllers/http/produtos/rotas.js";
 import { receitasSemContribuicaoRotas } from "./controllers/http/receita-sem-contribuicao/rotas.js";
 import { relatoriosRotas } from "./controllers/http/relatorios/rotas.js";
 import { saldosEstoqueRotas } from "./controllers/http/saldo-estoque/rotas.js";
+import { tarefasRotas } from "./controllers/http/tarefas/rotas.js";
 import { tiposDocumentoFinanceiroRotas } from "./controllers/http/tipo-documento-financeiro/rotas.js";
 import { tiposProblemaRotas } from "./controllers/http/tipo-problema/rotas.js";
 import { unidadesMedidaRotas } from "./controllers/http/unidade-medida/rotas.js";
@@ -65,6 +79,7 @@ import { verificarAcessoGarcom } from "./controllers/middleware/verificar-acesso
 import { verifyJwt } from "./controllers/middleware/verify-jwt.js";
 import { getApiBaseUrl } from "./util/base-url.js";
 import { isOrigemCorsPermitida } from "./util/cors-origins.js";
+import { registrarAgendador } from "./worker/registrar-agendador.js";
 
 export const app = Fastify({ logger: true });
 
@@ -76,7 +91,7 @@ app.register(cors, {
 		}
 		cb(new Error("Not allowed by CORS"), false);
 	},
-	methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+	methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
 	allowedHeaders: [
 		"Content-Type",
 		"Authorization",
@@ -456,6 +471,8 @@ app.route({
 });
 
 app.register(healthRotas);
+app.register(adminRotas);
+app.register(informativosRotas);
 
 app.register(planoContasRotas);
 app.register(empresasRotas);
@@ -477,11 +494,23 @@ app.register(planosRotas);
 app.register(contaContabilRotas);
 app.register(iaRotas);
 app.register(notificacoesRotas);
+app.register(tarefasRotas);
 app.register(relatoriosRotas);
 app.register(areasRotas);
 app.register(centrosCustoRotas);
 app.register(cestsRotas);
 app.register(cfopsRotas);
+app.register(cfopDeParaRotas);
+app.register(empresaFiscalRotas);
+app.register(certificadoDigitalRotas);
+app.register(nfeConfiguracaoRotas);
+app.register(nfceConfiguracaoRotas);
+app.register(nfceRotas);
+app.register(estoqueRotas);
+app.register(nfeSerieRotas);
+app.register(nfeEmissaoRotas);
+app.register(parametrizacaoTributosRotas);
+app.register(taxaUfRotas);
 app.register(cfopsPadraoRotas);
 app.register(condicoesPagamentoRotas);
 app.register(departamentosRotas);
@@ -518,4 +547,5 @@ app.addHook("preHandler", verificarAcessoGarcom);
 app.listen({ port: 3333 }).then(() => {
 	console.log("HTTP server running on port 3333");
 	console.log(`Swagger documentation available at ${getApiBaseUrl()}/docs`);
+	registrarAgendador();
 });

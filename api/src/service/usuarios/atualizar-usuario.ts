@@ -1,7 +1,8 @@
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import type { HttpResponse } from "@/model/http-model.js";
 import type { Usuario } from "@/model/usuario-model.js";
 import { db } from "@/repositories/connection.js";
+import { executarComControleAcessoPrivilegiado } from "@/repositories/controle-acesso-contexto.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { buscarUsuarioPorId } from "@/repositories/usuarios-repositories.js";
 import {
@@ -9,11 +10,13 @@ import {
 	httpErroInterno,
 	httpNaoAutorizado,
 	httpNaoEncontrado,
+	httpProibido,
 } from "@/util/http-util.js";
 import {
 	perfisPersistidosIguais,
 	toPerfilArray,
 } from "@/util/usuario-perfil.js";
+import { verificarPodeGerenciarUsuarios } from "@/util/verificar-gestao-usuarios.js";
 import * as schema from "../../../drizzle/schema.js";
 
 type AtualizarUsuarioParametros = {
@@ -33,7 +36,6 @@ export async function atualizarUsuarioService({
 	perfil,
 	empresasIds,
 }: AtualizarUsuarioParametros): Promise<HttpResponse<Usuario | null>> {
-	// Verificar se o usuário que está atualizando pertence à empresa
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
 		idusuario,
 		idempresa,
@@ -43,14 +45,17 @@ export async function atualizarUsuarioService({
 		return httpNaoAutorizado();
 	}
 
-	// Verificar se o usuário a ser atualizado existe
+	const autor = await buscarUsuarioPorId(idusuario);
+	if (!autor || !verificarPodeGerenciarUsuarios(autor.perfil)) {
+		return httpProibido();
+	}
+
 	const usuarioExistente = await buscarUsuarioPorId(idUsuarioAtualizar);
 	if (!usuarioExistente) {
 		return httpNaoEncontrado();
 	}
 
 	try {
-		// Atualizar nome se fornecido
 		if (nome !== undefined) {
 			await db
 				.update(schema.usuarios)
@@ -58,43 +63,42 @@ export async function atualizarUsuarioService({
 				.where(eq(schema.usuarios.id, idUsuarioAtualizar));
 		}
 
-		// Atualizar perfil se fornecido
 		if (perfil !== undefined) {
 			const perfilArray = toPerfilArray(perfil);
-			const [usuarioAtualizado] = await db
-				.update(schema.usuarios)
-				.set({ perfil: perfilArray })
-				.where(eq(schema.usuarios.id, idUsuarioAtualizar))
-				.returning({ perfil: schema.usuarios.perfil });
+			await executarComControleAcessoPrivilegiado(async (tx) => {
+				const [usuarioAtualizado] = await tx
+					.update(schema.usuarios)
+					.set({ perfil: perfilArray })
+					.where(eq(schema.usuarios.id, idUsuarioAtualizar))
+					.returning({ perfil: schema.usuarios.perfil });
 
-			if (
-				!usuarioAtualizado ||
-				!perfisPersistidosIguais(usuarioAtualizado.perfil, perfilArray)
-			) {
-				throw new Error("Falha ao persistir perfil do usuário");
-			}
+				if (
+					!usuarioAtualizado ||
+					!perfisPersistidosIguais(usuarioAtualizado.perfil, perfilArray)
+				) {
+					throw new Error("Falha ao persistir perfil do usuário");
+				}
+			});
 		}
 
-		// Atualizar empresas associadas se fornecido
 		if (empresasIds !== undefined) {
-			// Remover todas as associações existentes
-			await db
-				.delete(schema.usuarioEmpresa)
-				.where(eq(schema.usuarioEmpresa.idusuario, idUsuarioAtualizar));
+			await executarComControleAcessoPrivilegiado(async (tx) => {
+				await tx
+					.delete(schema.usuarioEmpresa)
+					.where(eq(schema.usuarioEmpresa.idusuario, idUsuarioAtualizar));
 
-			// Criar novas associações
-			for (const empresaId of empresasIds) {
-				await db.insert(schema.usuarioEmpresa).values({
-					id: crypto.randomUUID(),
-					idusuario: idUsuarioAtualizar,
-					idempresa: empresaId,
-					criadoem: new Date().toISOString(),
-					atualizadoem: new Date().toISOString(),
-				});
-			}
+				for (const empresaId of empresasIds) {
+					await tx.insert(schema.usuarioEmpresa).values({
+						id: crypto.randomUUID(),
+						idusuario: idUsuarioAtualizar,
+						idempresa: empresaId,
+						criadoem: new Date().toISOString(),
+						atualizadoem: new Date().toISOString(),
+					});
+				}
+			});
 		}
 
-		// Buscar usuário atualizado
 		const usuario = await buscarUsuarioPorId(idUsuarioAtualizar);
 
 		if (!usuario) {

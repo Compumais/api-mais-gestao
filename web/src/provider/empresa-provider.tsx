@@ -7,15 +7,12 @@ import {
 	useEffect,
 	useState,
 } from "react";
-import { empresasService } from "@/services/empresas.service";
+import {
+	empresasService,
+	type Empresa,
+} from "@/services/empresas.service";
 
-export interface Empresa {
-	id: string;
-	idproprietario: string;
-	nome: string;
-	email: string;
-	endereco: string;
-}
+export type { Empresa };
 
 interface CriarEmpresa {
 	nome: string;

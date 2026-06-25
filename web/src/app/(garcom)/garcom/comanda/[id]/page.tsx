@@ -12,10 +12,12 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { useFecharVenda } from "@/hooks/use-fechar-venda";
+import { useNfceAmbientePdv } from "@/hooks/use-nfce-ambiente-pdv";
 import { useProdutosGarcom } from "@/hooks/use-produtos-garcom";
 import { useSaldosEstoque } from "@/hooks/use-saldos-estoque";
 import {
 	buildContaMesaItemFromProduto,
+	buildCupomNfceInfo,
 	calcularTotalContaMesaItens,
 	formatCurrency,
 	STATUS_MESA,
@@ -33,6 +35,7 @@ export default function GarcomComandaPage() {
 	const { user } = useAuth();
 	const { localStorageEmpresa: empresa } = useEmpresa();
 	const { fecharConta } = useFecharVenda();
+	const { ambiente: ambienteNfce } = useNfceAmbientePdv();
 	const { saldoPorCodigo } = useSaldosEstoque(empresa?.id);
 	const { produtosPorGrupo, isLoading: isLoadingProdutos } = useProdutosGarcom(
 		empresa?.id,
@@ -140,7 +143,7 @@ export default function GarcomComandaPage() {
 			throw new Error("Empresa ou usuário não selecionado");
 		}
 
-		const venda = await fecharConta.mutateAsync({
+		const resultado = await fecharConta.mutateAsync({
 			idempresa: empresa.id,
 			userId: user.id,
 			idcontamesa: contaId,
@@ -149,7 +152,10 @@ export default function GarcomComandaPage() {
 			pagamento,
 		});
 
-		return { vendaId: venda.id };
+		return {
+			vendaId: resultado.venda.id,
+			nfce: buildCupomNfceInfo(resultado.baixa.emissaoNfce, ambienteNfce),
+		};
 	};
 
 	const handleVendaConcluida = () => {

@@ -113,6 +113,11 @@ export const listarCfopsSchema: FastifySchema = {
 			idempresa: { type: "string", description: "ID da empresa" },
 			descricao: { type: "string", description: "Filtro opcional por descricao" },
 			codigo: { type: "string", description: "Filtro opcional por codigo" },
+			tipomovimento: {
+				type: "string",
+				enum: ["E", "S"],
+				description: "Filtro opcional por tipo de movimento (entrada ou saída)",
+			},
 			page: { type: "number", default: 1 },
 			limit: { type: "number", default: 10 },
 		},

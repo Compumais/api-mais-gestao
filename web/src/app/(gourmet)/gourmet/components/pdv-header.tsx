@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useCaixaPdv } from "@/hooks/use-caixa-pdv";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { useNfceAmbientePdv } from "@/hooks/use-nfce-ambiente-pdv";
+import { NFE_AMBIENTE_LABELS } from "@/constants/nfe-status";
 import { getDefaultRouteForUser, isGarcom } from "@/lib/perfis";
 import { AbrirCaixaDialog } from "./abrir-caixa-dialog";
 import { FecharCaixaDialog } from "./fechar-caixa-dialog";
@@ -27,6 +29,7 @@ export function PdvHeader({
 	const { logout, user } = useAuth();
 	const { localStorageEmpresa: empresa } = useEmpresa();
 	const { estaAberto, isLoading, numeropdv } = useCaixaPdv();
+	const { ambiente: ambienteNfce } = useNfceAmbientePdv();
 	const homeHref = getDefaultRouteForUser(user);
 	const isGarcomUser = isGarcom(user);
 
@@ -58,6 +61,18 @@ export function PdvHeader({
 				</div>
 
 				<div className="flex items-center gap-2 shrink-0">
+					{ambienteNfce != null && (
+						<Badge
+							variant="outline"
+							className={
+								ambienteNfce === 2
+									? "hidden border-yellow-500 text-yellow-700 sm:inline-flex"
+									: "hidden border-red-500 text-red-700 sm:inline-flex"
+							}
+						>
+							{NFE_AMBIENTE_LABELS[ambienteNfce] ?? `Ambiente ${ambienteNfce}`}
+						</Badge>
+					)}
 					{!isLoading && (
 						<>
 							<Badge

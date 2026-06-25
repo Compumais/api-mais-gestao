@@ -18,7 +18,8 @@ export function getClientOrigins(): string[] {
 	const fromEnv = parseOriginsFromEnv(
 		process.env.CLIENT_ORIGIN || process.env.FRONTEND_URL,
 	);
-	return [...new Set([...LOCAL_ORIGINS, ...fromEnv])];
+	const corsOrigins = parseOriginsFromEnv(process.env.CORS_ORIGINS);
+	return [...new Set([...LOCAL_ORIGINS, ...fromEnv, ...corsOrigins])];
 }
 
 export function getPrimaryClientOrigin(): string {

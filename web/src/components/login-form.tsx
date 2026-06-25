@@ -19,21 +19,22 @@ import {
 	FieldSeparator,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { useEmpresa } from "@/hooks/use-empresa";
+import { empresasUsuarioQueryOptions } from "@/hooks/use-empresas-usuario";
+import { authClient } from "@/lib/auth-client";
 import { marcarSessaoFrontend } from "@/lib/auth-session-cookie";
 import {
 	extractSessionTokenFromLoginResponse,
 	setSessionToken,
 } from "@/lib/auth-token";
-import { authClient } from "@/lib/auth-client";
-import { limparEmpresaSelecionada, EMPRESA_FORCAR_PRIMEIRA_KEY, marcarSelecaoPrimeiraEmpresaNoLogin } from "@/provider/empresa-provider";
-import { authService, type LoginResponse } from "@/services/auth.service";
-import { empresasUsuarioQueryOptions } from "@/hooks/use-empresas-usuario";
-import { useEmpresa } from "@/hooks/use-empresa";
+import { hasPerfil, resolveRedirectForUser } from "@/lib/perfis";
+import { cn } from "@/lib/utils";
 import {
-	hasPerfil,
-	resolveRedirectForUser,
-} from "@/lib/perfis";
+	EMPRESA_FORCAR_PRIMEIRA_KEY,
+	limparEmpresaSelecionada,
+	marcarSelecaoPrimeiraEmpresaNoLogin,
+} from "@/provider/empresa-provider";
+import { authService, type LoginResponse } from "@/services/auth.service";
 import { GoogleIcon } from "./icons/google-icon";
 
 const loginSchema = z.object({
@@ -284,8 +285,8 @@ export function LoginForm({
 			</Card>
 			<FieldDescription className="px-6 text-center">
 				Ao continuar, você concorda com nossos{" "}
-				<Link href="#">Termos de Serviço</Link> e{" "}
-				<Link href="#">Política de Privacidade</Link>.
+				<Link href="/termos-de-servico">Termos de Serviço</Link> e{" "}
+				<Link href="/politica-de-privacidade">Política de Privacidade</Link>.
 			</FieldDescription>
 		</div>
 	);

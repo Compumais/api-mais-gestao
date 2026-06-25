@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth.js";
 import type { HttpResponse } from "@/model/http-model.js";
 import type { Usuario } from "@/model/usuario-model.js";
 import { db } from "@/repositories/connection.js";
+import { executarComControleAcessoPrivilegiado } from "@/repositories/controle-acesso-contexto.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { buscarUsuarioPorId } from "@/repositories/usuarios-repositories.js";
 import {
@@ -14,6 +15,7 @@ import {
 	perfisPersistidosIguais,
 	toPerfilArray,
 } from "@/util/usuario-perfil.js";
+import { verificarPodeGerenciarUsuarios } from "@/util/verificar-gestao-usuarios.js";
 import * as schema from "../../../drizzle/schema.js";
 
 type CriarUsuarioParametros = {
@@ -28,9 +30,11 @@ type CriarUsuarioParametros = {
 
 async function rollbackCriacaoUsuario(novoUsuarioId: string) {
 	try {
-		await db
-			.delete(schema.usuarioEmpresa)
-			.where(eq(schema.usuarioEmpresa.idusuario, novoUsuarioId));
+		await executarComControleAcessoPrivilegiado(async (tx) => {
+			await tx
+				.delete(schema.usuarioEmpresa)
+				.where(eq(schema.usuarioEmpresa.idusuario, novoUsuarioId));
+		});
 	} catch (error) {
 		console.error(
 			"Erro ao remover vinculos usuario_empresa no rollback:",
@@ -65,6 +69,11 @@ export async function criarUsuarioService({
 		return httpProibido();
 	}
 
+	const autor = await buscarUsuarioPorId(idusuario);
+	if (!autor || !verificarPodeGerenciarUsuarios(autor.perfil)) {
+		return httpProibido();
+	}
+
 	let novoUsuarioId: string | null = null;
 	const perfilArray = toPerfilArray(perfil);
 
@@ -74,12 +83,6 @@ export async function criarUsuarioService({
 				name: nome,
 				email,
 				password,
-				perfil: perfilArray,
-			} as {
-				name: string;
-				email: string;
-				password: string;
-				perfil: string[];
 			},
 		});
 
@@ -91,7 +94,7 @@ export async function criarUsuarioService({
 
 		const empresasParaAssociar = [...new Set([idempresa, ...empresasIds])];
 
-		await db.transaction(async (tx) => {
+		await executarComControleAcessoPrivilegiado(async (tx) => {
 			const [usuarioAtualizado] = await tx
 				.update(schema.usuarios)
 				.set({
@@ -133,10 +136,7 @@ export async function criarUsuarioService({
 
 		const usuario = await buscarUsuarioPorId(novoUsuarioId);
 
-		if (
-			!usuario ||
-			!perfisPersistidosIguais(usuario.perfil, perfilArray)
-		) {
+		if (!usuario || !perfisPersistidosIguais(usuario.perfil, perfilArray)) {
 			await rollbackCriacaoUsuario(novoUsuarioId);
 			return httpErroInterno();
 		}

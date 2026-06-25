@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import type { ProdutoFormData } from "@/schemas/produtos.schema";
 import { produtosService } from "@/services/produtos.service";
+import { formatarCstProduto } from "@/util/cst-produto-util";
 import { ProdutoForm } from "../../components/produto-form";
 
 type EditarProdutoClientProps = {
@@ -31,6 +32,20 @@ function mapProdutoToForm(
 		ippt: ippt === "P" || ippt === "T" ? ippt : "P",
 		origem: data.origem ?? 0,
 		ncm: data.ncm ?? "",
+		idcfopentrada: data.idcfopentrada ?? null,
+		idcfopsaida: data.idcfopsaida ?? null,
+		idcfopsaidanfce: data.idcfopsaidanfce ?? null,
+		idcest: data.idcest ?? null,
+		idtaxauf: data.idtaxauf ?? null,
+		situacaotributariasnentrada: data.situacaotributariasnentrada ?? null,
+		situacaotributaria: data.situacaotributaria ?? null,
+		situacaotributariasn: data.situacaotributariasn ?? null,
+		tributacaoespecial: data.tributacaoespecial ?? null,
+		tributacaosn: data.tributacaosn ?? null,
+		cstpisentrada: formatarCstProduto(data.cstpisentrada) || null,
+		cstcofinsentrada: formatarCstProduto(data.cstcofinsentrada) || null,
+		cstpis: formatarCstProduto(data.cstpis) || null,
+		cstcofins: formatarCstProduto(data.cstcofins) || null,
 		observacoes: data.observacoes,
 		enviamobile: data.enviamobile === 1,
 	};

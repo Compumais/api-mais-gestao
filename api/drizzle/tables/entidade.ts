@@ -38,6 +38,7 @@ export const entidade = pgTable(
 		nascimento: date(),
 		idplanocontas: text(),
 		pais: text(),
+		indiedest: smallint(), // 1 - Contribuinte ICMS | 2 - Contribuinte Isento | 9 - Não Contribuinte
 		idempresa: text().notNull(),
 		criadoem: timestamp({ precision: 3, mode: "string" })
 			.default(sql`CURRENT_TIMESTAMP`)

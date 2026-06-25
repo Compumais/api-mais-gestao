@@ -2,6 +2,7 @@ import type { HttpResponse } from "@/model/http-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	buscarProximoCodigoBanco,
+	buscarProximoCodigoCondicaoPagamento,
 	buscarProximoCodigoContaCorrente,
 	buscarProximoCodigoHierarquia,
 	buscarProximoCodigoProduto,
@@ -17,7 +18,8 @@ type BuscarProximoCodigoParametros = {
 		| "hierarquia"
 		| "banco"
 		| "unidade-medida"
-		| "conta-corrente";
+		| "conta-corrente"
+		| "condicao-pagamento";
 };
 
 type RespostaNumerica = { codigo: number };
@@ -58,6 +60,10 @@ export async function buscarProximoCodigoService({
 		}
 		case "conta-corrente": {
 			const codigo = await buscarProximoCodigoContaCorrente(idempresa);
+			return httpOk({ codigo });
+		}
+		case "condicao-pagamento": {
+			const codigo = await buscarProximoCodigoCondicaoPagamento(idempresa);
 			return httpOk({ codigo });
 		}
 		default:

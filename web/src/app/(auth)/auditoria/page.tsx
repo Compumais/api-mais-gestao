@@ -31,6 +31,10 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { useEmpresa } from "@/hooks/use-empresa";
+import {
+	formatarAcaoAuditoria,
+	formatarRecursoAuditoria,
+} from "@/lib/auditoria-utils";
 import { type Auditoria, auditoriaService } from "@/services/auditoria.service";
 import { PageContainer } from "../components/page-container";
 import { TableSkeleton } from "@/components/table-skeleton";
@@ -48,20 +52,24 @@ const createColumns = ({
 		accessorKey: "acao",
 		header: "Ação",
 		cell: ({ row }) => (
-			<div className="font-medium">{row.getValue("acao")}</div>
+			<div className="font-medium">
+				{formatarAcaoAuditoria(row.getValue("acao") as string)}
+			</div>
 		),
 	},
 	{
 		accessorKey: "recurso",
 		header: "Recurso",
-		cell: ({ row }) => <div>{row.getValue("recurso")}</div>,
+		cell: ({ row }) => (
+			<div>{formatarRecursoAuditoria(row.getValue("recurso") as string)}</div>
+		),
 	},
 	{
-		accessorKey: "idrecurso",
-		header: "ID Recurso",
+		accessorKey: "nomeusuario",
+		header: "Usuário",
 		cell: ({ row }) => (
 			<div className="text-muted-foreground">
-				{row.getValue("idrecurso") || "-"}
+				{row.getValue("nomeusuario") || "-"}
 			</div>
 		),
 	},
@@ -169,7 +177,7 @@ export default function AuditoriaPage() {
 						<TableSkeleton rows={10} columns={5}>
 							<TableHead>Ação</TableHead>
 							<TableHead>Recurso</TableHead>
-							<TableHead>ID Recurso</TableHead>
+							<TableHead>Usuário</TableHead>
 							<TableHead>Data/Hora</TableHead>
 							<TableHead className="w-36 text-end">Ações</TableHead>
 						</TableSkeleton>
@@ -274,14 +282,16 @@ export default function AuditoriaPage() {
 											Ação
 										</label>
 										<p className="text-sm font-medium">
-											{selectedAuditoria.acao}
+											{formatarAcaoAuditoria(selectedAuditoria.acao)}
 										</p>
 									</div>
 									<div>
 										<label className="text-sm font-medium text-muted-foreground">
 											Recurso
 										</label>
-										<p className="text-sm">{selectedAuditoria.recurso}</p>
+										<p className="text-sm">
+											{formatarRecursoAuditoria(selectedAuditoria.recurso)}
+										</p>
 									</div>
 									<div>
 										<label className="text-sm font-medium text-muted-foreground">
@@ -293,18 +303,18 @@ export default function AuditoriaPage() {
 									</div>
 									<div>
 										<label className="text-sm font-medium text-muted-foreground">
-											ID Usuário
+											Usuário
 										</label>
 										<p className="text-sm">
-											{selectedAuditoria.idusuario || "-"}
+											{selectedAuditoria.nomeusuario || "-"}
 										</p>
 									</div>
 									<div>
 										<label className="text-sm font-medium text-muted-foreground">
-											ID Empresa
+											Empresa
 										</label>
 										<p className="text-sm">
-											{selectedAuditoria.idempresa || "-"}
+											{selectedAuditoria.nomeempresa || "-"}
 										</p>
 									</div>
 									<div className="col-span-2">
@@ -317,7 +327,7 @@ export default function AuditoriaPage() {
 											)}
 										</p>
 									</div>
-									{selectedAuditoria.metadados && (
+									{selectedAuditoria.metadados ? (
 										<div className="col-span-2">
 											<label className="text-sm font-medium text-muted-foreground">
 												Metadados
@@ -325,6 +335,13 @@ export default function AuditoriaPage() {
 											<pre className="mt-2 rounded-md bg-muted p-4 text-xs overflow-x-auto">
 												{JSON.stringify(selectedAuditoria.metadados, null, 2)}
 											</pre>
+										</div>
+									) : (
+										<div className="col-span-2">
+											<label className="text-sm font-medium text-muted-foreground">
+												Metadados
+											</label>
+											<p className="text-sm">-</p>
 										</div>
 									)}
 								</div>

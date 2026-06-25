@@ -6,6 +6,7 @@ import { criarTipoDocumentoFinanceiro } from "./criar.js";
 import * as schema from "./doc-schema/schema.js";
 import { excluirTipoDocumentoFinanceiro } from "./excluir.js";
 import { listarTipoDocumentoFinanceiros } from "./listar.js";
+import { popularTiposDocumentoFinanceiroPadrao } from "./popular-padrao.js";
 
 export async function tiposDocumentoFinanceiroRotas(app: FastifyInstance) {
 	app.addHook("onRequest", verifyJwt);
@@ -17,6 +18,9 @@ export async function tiposDocumentoFinanceiroRotas(app: FastifyInstance) {
 	app.get("/tipos-documento-financeiro", {
 		schema: schema.listarTipoDocumentoFinanceirosSchema,
 		handler: listarTipoDocumentoFinanceiros,
+	});
+	app.post("/tipos-documento-financeiro/popular-padrao", {
+		handler: popularTiposDocumentoFinanceiroPadrao,
 	});
 	app.get("/tipos-documento-financeiro/:id", {
 		schema: schema.buscarTipoDocumentoFinanceiroSchema,

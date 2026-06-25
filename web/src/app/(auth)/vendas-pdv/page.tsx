@@ -232,14 +232,14 @@ export default function VendasPdvPage() {
 	const { data: produtosData } = useQuery({
 		queryKey: ["produtos-lista", empresa?.id],
 		queryFn: () =>
-			produtosService.listar({ idempresa: empresa!.id, limit: 500 }),
+			produtosService.listarTodos({ idempresa: empresa!.id, inativo: 0 }),
 		enabled: !!empresa,
 		staleTime: 60_000,
 	});
 
 	const produtosPorId = useMemo(() => {
 		const map: Record<string, string> = {};
-		for (const p of produtosData?.data ?? []) {
+		for (const p of produtosData ?? []) {
 			map[p.id] = p.nome;
 		}
 		return map;

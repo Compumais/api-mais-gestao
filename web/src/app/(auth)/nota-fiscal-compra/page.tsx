@@ -1,5 +1,6 @@
 "use client";
 
+import { IconPlus } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import {
 	type ColumnDef,
@@ -10,7 +11,9 @@ import {
 	type SortingState,
 	useReactTable,
 } from "@tanstack/react-table";
+import Link from "next/link";
 import { useState } from "react";
+import { RotateCcw } from "lucide-react";
 import { TableSkeleton } from "@/components/table-skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,14 +27,15 @@ import {
 } from "@/components/ui/table";
 import { useEmpresa } from "@/hooks/use-empresa";
 import {
-	type Financeiro,
-	financeiroService,
-} from "@/services/financeiro.service";
+	type NotaFiscal,
+	notaFiscalService,
+} from "@/services/nota-fiscal.service";
 import { PageContainer } from "../components/page-container";
 
 const formatCurrency = (value: string | null | undefined) => {
 	if (!value) return "R$ 0,00";
 	const num = parseFloat(value);
+	if (Number.isNaN(num)) return "R$ 0,00";
 	return new Intl.NumberFormat("pt-BR", {
 		style: "currency",
 		currency: "BRL",
@@ -43,54 +47,29 @@ const formatDate = (date: string | null | undefined) => {
 	return new Date(date).toLocaleDateString("pt-BR");
 };
 
-const getStatusBadge = (status: string | null | undefined) => {
-	if (!status) return <Badge variant="outline">-</Badge>;
-
-	const statusMap: Record<
-		string,
-		{
-			label: string;
-			variant: "default" | "secondary" | "destructive" | "outline";
-		}
-	> = {
-		A: { label: "Aberto", variant: "default" },
-		P: { label: "Pago", variant: "secondary" },
-		C: { label: "Cancelado", variant: "destructive" },
-		V: { label: "Vencido", variant: "destructive" },
-	};
-
-	const statusInfo = statusMap[status] || {
-		label: status,
-		variant: "outline" as const,
-	};
-
-	return <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>;
-};
-
-const getTipoBadge = (tipo: string | null | undefined) => {
-	if (!tipo) return <Badge variant="outline">-</Badge>;
-	if (tipo === "P") return <Badge variant="outline">Pagar</Badge>;
-	if (tipo === "R") return <Badge variant="outline">Receber</Badge>;
-	return <Badge variant="outline">{tipo}</Badge>;
-};
-
-const createColumns = (): ColumnDef<Financeiro>[] => [
+const createColumns = (): ColumnDef<NotaFiscal>[] => [
 	{
-		accessorKey: "documento",
-		header: "Documento",
+		accessorKey: "numero",
+		header: "Número",
 		cell: ({ row }) => (
-			<div className="font-medium">{row.getValue("documento") || "-"}</div>
+			<div className="font-medium">
+				{row.original.numero ?? row.original.numeronotafiscal ?? "-"}
+			</div>
 		),
 	},
 	{
-		accessorKey: "emitente",
-		header: "Nome",
-		cell: ({ row }) => <div>{row.getValue("emitente") || "-"}</div>,
+		accessorKey: "serie",
+		header: "Série",
+		cell: ({ row }) => <div>{row.getValue("serie") ?? "-"}</div>,
 	},
 	{
-		accessorKey: "status",
-		header: "Status",
-		cell: ({ row }) => getStatusBadge(row.getValue("status")),
+		accessorKey: "razaosocial",
+		header: "Fornecedor",
+		cell: ({ row }) => (
+			<div className="max-w-[200px] truncate">
+				{row.getValue("razaosocial") ?? "-"}
+			</div>
+		),
 	},
 	{
 		accessorKey: "emissao",
@@ -98,34 +77,65 @@ const createColumns = (): ColumnDef<Financeiro>[] => [
 		cell: ({ row }) => <div>{formatDate(row.getValue("emissao"))}</div>,
 	},
 	{
-		accessorKey: "vencimento",
-		header: "Vencimento",
-		cell: ({ row }) => <div>{formatDate(row.getValue("vencimento"))}</div>,
+		accessorKey: "entradasaida",
+		header: "Entrada",
+		cell: ({ row }) => (
+			<div>{formatDate(row.getValue("entradasaida"))}</div>
+		),
 	},
 	{
-		accessorKey: "valor",
-		header: () => <div className="text-right">Valor</div>,
+		accessorKey: "valortotalnota",
+		header: () => <div className="text-right">Valor total</div>,
+		cell: ({ row }) => (
+			<div className="text-right font-medium">
+				{formatCurrency(row.getValue("valortotalnota"))}
+			</div>
+		),
+	},
+	{
+		accessorKey: "chavenfe",
+		header: "Chave NF-e",
 		cell: ({ row }) => {
-			const valor = row.getValue("valor") as string;
+			const chave = row.getValue("chavenfe") as string | null;
+			if (!chave) return <div>-</div>;
 			return (
-				<div className="text-right font-medium">{formatCurrency(valor)}</div>
+				<div className="max-w-[120px] truncate text-xs text-muted-foreground">
+					{chave}
+				</div>
 			);
 		},
 	},
 	{
-		accessorKey: "saldo",
-		header: () => <div className="text-right">Saldo</div>,
+		accessorKey: "status",
+		header: "Status",
 		cell: ({ row }) => {
-			const saldo = row.getValue("saldo") as string;
-			return (
-				<div className="text-right font-medium">{formatCurrency(saldo)}</div>
-			);
+			const status = row.getValue("status") as number | null;
+			if (status === null || status === undefined) {
+				return <Badge variant="outline">-</Badge>;
+			}
+			return <Badge variant="secondary">{status}</Badge>;
 		},
 	},
 	{
-		accessorKey: "tipo",
-		header: "Tipo",
-		cell: ({ row }) => getTipoBadge(row.getValue("tipo")),
+		id: "acoes",
+		header: "",
+		cell: ({ row }) => {
+			const nota = row.original;
+			const podeDevolver = !!nota.chavenfe && nota.status !== 99;
+
+			return (
+				<div className="flex items-center gap-1">
+					{podeDevolver && (
+						<Button asChild size="sm" variant="outline" className="h-7 px-2 text-xs">
+							<Link href={`/nota-fiscal-venda/nova?devolverEntrada=${nota.id}`}>
+								<RotateCcw className="mr-1 size-3" />
+								Devolver
+							</Link>
+						</Button>
+					)}
+				</div>
+			);
+		},
 	},
 ];
 
@@ -139,8 +149,7 @@ export default function NotaFiscalCompraPage() {
 
 	const { data, isLoading } = useQuery({
 		queryKey: [
-			"financeiro",
-			"nota-fiscal-compra",
+			"notas-fiscais-compra",
 			empresa?.id,
 			pagination.pageIndex + 1,
 			pagination.pageSize,
@@ -149,10 +158,23 @@ export default function NotaFiscalCompraPage() {
 			if (!empresa) {
 				throw new Error("Empresa não selecionada");
 			}
-			return await financeiroService.listar({
-				tipo: "P",
+			return await notaFiscalService.listar({
+				idempresa: empresa.id,
+				tipoorigem: 0,
 				page: pagination.pageIndex + 1,
 				limit: pagination.pageSize,
+			});
+		},
+		enabled: !!empresa,
+	});
+
+	const { data: rascunhos } = useQuery({
+		queryKey: ["rascunhos-importacao-nf", empresa?.id],
+		queryFn: async () => {
+			if (!empresa) throw new Error("Empresa não selecionada");
+			return notaFiscalService.listarRascunhosImportacao({
+				idempresa: empresa.id,
+				limit: 5,
 			});
 		},
 		enabled: !!empresa,
@@ -176,9 +198,39 @@ export default function NotaFiscalCompraPage() {
 	return (
 		<PageContainer>
 			<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-				<div className="flex items-center justify-start px-4">
+				<div className="flex items-center justify-between px-4">
 					<h1 className="text-2xl font-bold">Nota fiscal de compra</h1>
+					<div className="flex gap-2">
+						<Button asChild variant="outline" disabled={!empresa}>
+							<Link href="/nota-fiscal-compra/importar">Importar XML</Link>
+						</Button>
+						<Button asChild disabled={!empresa}>
+							<Link href="/nota-fiscal-compra/nova">
+								<IconPlus className="size-4" />
+								Nova NF
+							</Link>
+						</Button>
+					</div>
 				</div>
+				{rascunhos && rascunhos.data.length > 0 ? (
+					<section className="mx-4 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/30">
+						<h2 className="font-semibold mb-2">Rascunhos pendentes</h2>
+						<ul className="flex flex-col gap-2">
+							{rascunhos.data.map((rascunho) => (
+								<li key={rascunho.id}>
+									<Link
+										href={`/nota-fiscal-compra/rascunho/${rascunho.id}`}
+										className="text-sm underline-offset-4 hover:underline"
+									>
+										NF {rascunho.numero ?? rascunho.numeronotafiscal ?? "-"}{" "}
+										— {rascunho.razaosocial ?? "Fornecedor"} (
+										{formatCurrency(rascunho.valortotalnota)})
+									</Link>
+								</li>
+							))}
+						</ul>
+					</section>
+				) : null}
 				<div className="rounded-lg border bg-card mx-4">
 					{!empresa ? (
 						<div className="flex items-center justify-center py-8">
@@ -188,14 +240,14 @@ export default function NotaFiscalCompraPage() {
 						</div>
 					) : isLoading ? (
 						<TableSkeleton rows={10} columns={8}>
-							<TableCell>Documento</TableCell>
-							<TableCell>Nome</TableCell>
-							<TableCell>Status</TableCell>
+							<TableCell>Número</TableCell>
+							<TableCell>Série</TableCell>
+							<TableCell>Fornecedor</TableCell>
 							<TableCell>Emissão</TableCell>
-							<TableCell>Vencimento</TableCell>
-							<TableCell className="text-right">Valor</TableCell>
-							<TableCell className="text-right">Saldo</TableCell>
-							<TableCell>Tipo</TableCell>
+							<TableCell>Entrada</TableCell>
+							<TableCell className="text-right">Valor total</TableCell>
+							<TableCell>Chave NF-e</TableCell>
+							<TableCell>Status</TableCell>
 						</TableSkeleton>
 					) : (
 						<>
@@ -205,7 +257,7 @@ export default function NotaFiscalCompraPage() {
 										<TableRow key={headerGroup.id}>
 											{headerGroup.headers.map((header) => {
 												const isRightAligned =
-													header.id === "valor" || header.id === "saldo";
+													header.id === "valortotalnota";
 												return (
 													<TableHead
 														key={header.id}
@@ -243,7 +295,17 @@ export default function NotaFiscalCompraPage() {
 												colSpan={table.getAllColumns().length}
 												className="h-24 text-center"
 											>
-												Nenhuma nota fiscal de compra encontrada.
+												<div className="flex flex-col items-center gap-3">
+													<p className="text-muted-foreground">
+														Nenhuma nota fiscal de compra encontrada.
+													</p>
+													<Button asChild variant="outline" size="sm">
+														<Link href="/nota-fiscal-compra/nova">
+															<IconPlus className="size-4" />
+															Incluir primeira NF
+														</Link>
+													</Button>
+												</div>
 											</TableCell>
 										</TableRow>
 									)}

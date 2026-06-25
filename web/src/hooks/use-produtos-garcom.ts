@@ -21,10 +21,9 @@ export function useProdutosGarcom(idempresa: string | undefined) {
 	const { data: produtosData, isLoading: isLoadingProdutos } = useQuery({
 		queryKey: ["garcom-produtos", idempresa],
 		queryFn: () =>
-			produtosService.listar({
+			produtosService.listarTodos({
 				idempresa: idempresa!,
 				inativo: 0,
-				limit: 100,
 			}),
 		enabled: !!idempresa,
 	});
@@ -36,7 +35,7 @@ export function useProdutosGarcom(idempresa: string | undefined) {
 
 	const produtosPorGrupo: GrupoProdutos[] = useMemo(() => {
 		const gruposIds = new Set(grupos.map((g) => g.id));
-		const produtos = filtrarProdutosGarcom(produtosData?.data ?? [], gruposIds);
+		const produtos = filtrarProdutosGarcom(produtosData ?? [], gruposIds);
 		return agruparProdutosPorGrupo(produtos, grupos);
 	}, [grupos, produtosData]);
 

@@ -51,6 +51,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { useDeletarContaCorrenteLancamento } from "@/hooks/use-conta-corrente-lancamento";
+import { formatDateOnlyDisplay } from "@/lib/date";
 import type { ContaCorrenteLancamento } from "@/services/conta-corrente-lancamento.service";
 import { MovimentacoesTableSkeleton } from "./movimentacoes-table-skeleton";
 
@@ -68,16 +69,6 @@ const formatCurrency = (value: string | null | undefined): string => {
 		style: "currency",
 		currency: "BRL",
 	}).format(num);
-};
-
-const formatDate = (date: string | null | undefined): string => {
-	if (!date) return "-";
-	try {
-		const d = new Date(date);
-		return d.toLocaleDateString("pt-BR");
-	} catch {
-		return "-";
-	}
 };
 
 export function MovimentacoesTable({
@@ -111,7 +102,7 @@ export function MovimentacoesTable({
 			header: "Data",
 			cell: ({ row }) => (
 				<div className="min-w-[100px]">
-					{formatDate(row.getValue("datahora"))}
+					{formatDateOnlyDisplay(row.getValue("datahora"))}
 				</div>
 			),
 		},

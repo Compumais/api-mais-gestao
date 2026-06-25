@@ -57,6 +57,18 @@ export interface AtualizarContaCorrenteLancamentoData {
 	dataconciliacao?: string;
 }
 
+export interface LinhaPreviewImportacaoOfx {
+	idTemporario: string;
+	data: string;
+	valor: string;
+	tipo: "C" | "D";
+	historico: string;
+	documento: string | null;
+	status: "pendente" | "existente";
+	idLancamentoExistente?: string;
+	idplanocontasExistente?: string | null;
+}
+
 export const contaCorrenteLancamentoService = {
 	async listar(params?: {
 		idcontacorrente: string;
@@ -102,5 +114,16 @@ export const contaCorrenteLancamentoService = {
 
 	async deletar(id: string): Promise<void> {
 		await api.delete(`/conta-corrente-lancamentos/${id}`);
+	},
+
+	async previewImportacaoOfx(dados: {
+		idcontacorrente: string;
+		conteudoOfx: string;
+	}): Promise<LinhaPreviewImportacaoOfx[]> {
+		const { data } = await api.post<LinhaPreviewImportacaoOfx[]>(
+			"/conta-corrente-lancamentos/importar-ofx/preview",
+			dados,
+		);
+		return data;
 	},
 };

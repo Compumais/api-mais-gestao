@@ -50,6 +50,33 @@ export const unidadeMedidaService = {
 		return data;
 	},
 
+	async listarTodos(params: {
+		idempresa: string;
+		nome?: string;
+	}): Promise<UnidadeMedida[]> {
+		const limite = 100;
+		let pagina = 1;
+		const registros: UnidadeMedida[] = [];
+
+		while (true) {
+			const resposta = await unidadeMedidaService.listar({
+				...params,
+				page: pagina,
+				limit: limite,
+			});
+
+			registros.push(...resposta.data);
+
+			if (pagina >= resposta.paginacao.totalPages) {
+				break;
+			}
+
+			pagina += 1;
+		}
+
+		return registros;
+	},
+
 	async buscar(id: string): Promise<UnidadeMedida> {
 		const { data } = await api.get<UnidadeMedida>(`/unidades-medida/${id}`);
 		return data;

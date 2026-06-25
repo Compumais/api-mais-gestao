@@ -47,20 +47,7 @@ import type { ContaCorrenteLancamento } from "@/services/conta-corrente-lancamen
 import { contasCorrentesService } from "@/services/contas-correntes.service";
 import { planoContasService } from "@/services/plano-contas.service";
 import { Combobox } from "@/components/ui/combobox";
-
-const formatDateForInput = (date?: string | null): string => {
-	if (!date) {
-		const today = new Date();
-		return today.toISOString().split("T")[0];
-	}
-	try {
-		const d = new Date(date);
-		return d.toISOString().split("T")[0];
-	} catch {
-		const today = new Date();
-		return today.toISOString().split("T")[0];
-	}
-};
+import { formatDateOnlyForInput, todayDateOnly } from "@/lib/date";
 
 interface MovimentacaoFormProps {
 	open: boolean;
@@ -157,7 +144,7 @@ export function MovimentacaoForm({
 			operacao: "entrada",
 			idcontacorrenteOrigem: undefined,
 			idcontacorrenteDestino: undefined,
-			data: formatDateForInput(),
+			data: todayDateOnly(),
 			valor: "",
 			idplanocontas: undefined,
 			dataconciliacao: undefined,
@@ -234,11 +221,11 @@ export function MovimentacaoForm({
 
 				reset({
 					operacao: operacaoValue,
-					data: formatDateForInput(lancamento.datahora),
+					data: formatDateOnlyForInput(lancamento.datahora),
 					valor: lancamento.valor ?? "",
 					idplanocontas: lancamento.idplanocontas ?? undefined,
 					dataconciliacao: lancamento.dataconciliacao
-						? formatDateForInput(lancamento.dataconciliacao)
+						? formatDateOnlyForInput(lancamento.dataconciliacao)
 						: undefined,
 					historico: lancamento.historico ?? undefined,
 				});
@@ -248,7 +235,7 @@ export function MovimentacaoForm({
 					operacao: "entrada",
 					idcontacorrenteOrigem: undefined,
 					idcontacorrenteDestino: undefined,
-					data: formatDateForInput(),
+					data: todayDateOnly(),
 					valor: "",
 					idplanocontas: undefined,
 					dataconciliacao: undefined,

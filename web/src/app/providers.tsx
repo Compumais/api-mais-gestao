@@ -11,7 +11,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 			<ReactQueryProvider>
 				<EmpresaProvider>
 					{children}
-					<Toaster />
+					<Toaster duration={3000} position="top-right" />
 				</EmpresaProvider>
 			</ReactQueryProvider>
 		</ThemeProvider>

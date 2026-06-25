@@ -9,6 +9,8 @@ export interface Auditoria {
 	idempresa: string | null;
 	metadados: Record<string, unknown> | null;
 	criadoem: string;
+	nomeusuario: string | null;
+	nomeempresa: string | null;
 }
 
 export interface ListarAuditoriasResponse {

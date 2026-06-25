@@ -27,6 +27,10 @@ export async function atualizarCestService({
 		return httpNaoEncontrado();
 	}
 
+	if (!registroExistente.idempresa) {
+		return httpProibido();
+	}
+
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
 		idusuario,
 		registroExistente.idempresa,

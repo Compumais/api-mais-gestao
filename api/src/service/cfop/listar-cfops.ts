@@ -4,11 +4,14 @@ import { listarCfops } from "@/repositories/cfop-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { httpOk, httpProibido } from "@/util/http-util.js";
 
+import type { TipoMovimentoCfop } from "@/util/cfop-padrao.js";
+
 type ListarCfopsParametros = {
 	idusuario: string;
 	idempresa: string;
 	descricao?: string | undefined;
 	codigo?: string | undefined;
+	tipomovimento?: TipoMovimentoCfop | undefined;
 	page?: number;
 	limit?: number;
 };
@@ -28,6 +31,7 @@ export async function listarCfopsService({
 	idempresa,
 	descricao,
 	codigo,
+	tipomovimento,
 	page = 1,
 	limit = 10,
 }: ListarCfopsParametros): Promise<HttpResponse<ListarCfopsResposta>> {
@@ -44,6 +48,7 @@ export async function listarCfopsService({
 		idempresa,
 		descricao,
 		codigo,
+		tipomovimento,
 		page,
 		limit,
 	});

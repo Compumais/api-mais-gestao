@@ -1,13 +1,13 @@
-import { eq } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import type { VendaPdvGourmet } from "@/model/venda-pdv-gourmet-model.js";
+import { db } from "@/repositories/connection.js";
 import {
 	buscarContaCorrenteCaixaPadrao,
 	criarContaCorrenteCaixaPadrao,
 } from "@/repositories/conta-corrente-repositories.js";
-import { db } from "@/repositories/connection.js";
 import { buscarEmpresaPorId } from "@/repositories/empresa-repositories.js";
 import { buscarPlanoContasPorCodigo } from "@/repositories/plano-contas-repositories.js";
+import { inserirLancamentoCaixa } from "@/service/conta-corrente/inserir-lancamento-caixa.js";
 import {
 	adicionarDias,
 	CODIGO_PLANO_VENDAS_CARTAO_CREDITO,
@@ -18,7 +18,6 @@ import {
 	parseValorMonetario,
 	TIPO_ORIGEM_VENDA_PDV,
 } from "@/util/recebimentos-venda-util.js";
-import { inserirLancamentoCaixa } from "@/service/conta-corrente/inserir-lancamento-caixa.js";
 import * as schema from "../../../drizzle/schema.js";
 
 type RegistrarRecebimentosVendaParametros = {
@@ -97,7 +96,7 @@ export async function registrarRecebimentosVendaService({
 
 	const valorPrepago = parseValorMonetario(venda.valorprepago);
 	let valorCartaoCredito = parseValorMonetario(venda.valorcartaocredito);
-	let valorCartaoDebito = parseValorMonetario(venda.valorcartaodebito);
+	const valorCartaoDebito = parseValorMonetario(venda.valorcartaodebito);
 
 	if (valorCartaoCredito === 0 && valorCartaoDebito === 0) {
 		valorCartaoCredito = parseValorMonetario(venda.valorcartao);

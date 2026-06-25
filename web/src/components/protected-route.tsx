@@ -12,6 +12,7 @@ import {
 	getDefaultRouteForUser,
 	isGarcom,
 	isRouteAllowedForGarcom,
+	isSuper,
 } from "@/lib/perfis";
 import {
 	EMPRESA_FORCAR_PRIMEIRA_KEY,
@@ -47,6 +48,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 		setSessionHint(temIndicadorSessao());
 	}, []);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: user?.id é uma dependência necessária para o useEffect
 	useEffect(() => {
 		empresaSelecionadaRef.current = false;
 	}, [user?.id]);
@@ -62,6 +64,11 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
 	useEffect(() => {
 		if (!isMounted || isLoading || !user) return;
+
+		if (isSuper(user) && pathname.startsWith("/super") === false) {
+			router.push(getDefaultRouteForUser(user));
+			return;
+		}
 
 		if (isGarcom(user) && !isRouteAllowedForGarcom(pathname)) {
 			router.push(getDefaultRouteForUser(user));
