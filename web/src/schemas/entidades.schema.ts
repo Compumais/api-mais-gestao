@@ -175,6 +175,32 @@ export function flagsEntidadeParaForm(entidade: {
 	};
 }
 
+function normalizarTipopessoaParaForm(
+	tipopessoa: number | string | null | undefined,
+	cnpjcpf: string,
+): number | null {
+	if (tipopessoa !== null && tipopessoa !== undefined && tipopessoa !== "") {
+		const valor = Number(tipopessoa);
+		if (!Number.isNaN(valor) && (valor === 0 || valor === 1)) {
+			return valor;
+		}
+	}
+
+	const digitos = cnpjcpf.replace(/\D/g, "");
+	if (digitos.length === 14) return 1;
+	if (digitos.length === 11) return 0;
+
+	return null;
+}
+
+function normalizarIdLocalidade(
+	valor: string | null | undefined,
+): string | null {
+	if (!valor) return null;
+	const normalizado = valor.trim();
+	return normalizado.length > 0 ? normalizado : null;
+}
+
 export function mapEntidadeToForm(
 	entidade: Entidade,
 ): Partial<CriarEntidadeFormData> {
@@ -183,7 +209,10 @@ export function mapEntidadeToForm(
 		nome: entidade.nome,
 		cnpjcpf: maskCpfCnpj(entidade.cnpjcpf),
 		razaosocial: entidade.razaosocial,
-		tipopessoa: entidade.tipopessoa,
+		tipopessoa: normalizarTipopessoaParaForm(
+			entidade.tipopessoa,
+			entidade.cnpjcpf,
+		),
 		inscricaoestadual: entidade.inscricaoestadual,
 		rg: entidade.rg,
 		email: entidade.email,
@@ -192,8 +221,8 @@ export function mapEntidadeToForm(
 		numeroendereco: entidade.numeroendereco,
 		complemento: entidade.complemento,
 		bairro: entidade.bairro,
-		idcidade: entidade.idcidade,
-		idestado: entidade.idestado,
+		idcidade: normalizarIdLocalidade(entidade.idcidade),
+		idestado: normalizarIdLocalidade(entidade.idestado)?.toUpperCase() ?? null,
 		cep: entidade.cep ? maskCep(entidade.cep) : null,
 		fax: entidade.fax ? maskPhone(entidade.fax) : null,
 		nascimento: entidade.nascimento ? entidade.nascimento.slice(0, 10) : null,
