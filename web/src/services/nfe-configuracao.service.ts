@@ -123,21 +123,24 @@ export const nfeConfiguracaoService = {
 		});
 	},
 
-	async listarSeries(idempresa: string): Promise<NfeSerie[]> {
+	async listarSeries(idempresa: string, modelo?: string): Promise<NfeSerie[]> {
 		const { data } = await api.get<{ data: NfeSerie[] }>("/nfe-series", {
-			params: { idempresa },
+			params: {
+				idempresa,
+				...(modelo ? { modelo } : {}),
+			},
 		});
 		return data.data;
 	},
 
 	async criarSerie(
-		dados: Omit<NfeSerie, "id" | "idempresa" | "modelo"> & {
+		dados: Omit<NfeSerie, "id" | "idempresa"> & {
 			idempresa: string;
 			modelo?: string;
 		},
 	): Promise<NfeSerie> {
 		const { data } = await api.post<NfeSerie>("/nfe-series", {
-			modelo: "55",
+			modelo: dados.modelo ?? "55",
 			...dados,
 		});
 		return data;
@@ -149,6 +152,12 @@ export const nfeConfiguracaoService = {
 	): Promise<NfeSerie> {
 		const { data } = await api.put<NfeSerie>(`/nfe-series/${id}`, dados);
 		return data;
+	},
+
+	async excluirSerie(id: string, idempresa: string): Promise<void> {
+		await api.delete(`/nfe-series/${id}`, {
+			params: { idempresa },
+		});
 	},
 
 	async testarStatusSefaz(idempresa: string): Promise<ResultadoSefaz> {

@@ -18,6 +18,7 @@ import { vendaPdvGourmetService } from "@/services/venda-pdv-gourmet.service";
 import { vendaPdvItemService } from "@/services/venda-pdv-item.service";
 import type { FecharContaFormData } from "@/schemas/fechar-conta.schema";
 import { baixarEstoqueVenda } from "@/lib/estoque-venda";
+import { BaixaEstoqueVendaError } from "@/lib/avaliar-resultado-baixa-estoque";
 
 interface FecharContaParams {
 	idempresa: string;
@@ -109,7 +110,7 @@ export function useFecharVenda() {
 
 			await criarItensVenda(idempresa, venda.id, itens);
 
-			await baixarEstoqueVenda({
+			const baixa = await baixarEstoqueVenda({
 				idempresa,
 				idvenda: venda.id,
 				itens: itens.map((item) => ({
@@ -118,11 +119,19 @@ export function useFecharVenda() {
 					quantidade: item.quantidade,
 					precounitario: item.precounitario,
 				})),
+				pagamentos: {
+					valordinheiro: pagamento.valordinheiro,
+					valorcartao: pagamento.valorcartao,
+					valorpix: pagamento.valorpix,
+					valorprepago: pagamento.valorprepago,
+					valortroco: valortroco.toFixed(2),
+					valortotal: valortotal.toFixed(2),
+				},
 			});
 
-			return venda;
+			return { venda, baixa };
 		},
-		onSuccess: (_, variables) => {
+		onSuccess: (resultado, variables) => {
 			queryClient.invalidateQueries({ queryKey: ["contas-mesa"] });
 			queryClient.invalidateQueries({
 				queryKey: ["conta-mesa", variables.idcontamesa],
@@ -130,9 +139,14 @@ export function useFecharVenda() {
 			queryClient.invalidateQueries({
 				queryKey: ["conta-mesa-itens", variables.idcontamesa],
 			});
-			toast.success("Conta fechada com sucesso!");
+			if (resultado.baixa?.emissaoNfce?.emitida) {
+				toast.success("Conta fechada e NFC-e emitida!");
+			} else if (!resultado.baixa?.deveEmitirNfce) {
+				toast.success("Conta fechada com sucesso!");
+			}
 		},
 		onError: (error: Error) => {
+			if (error instanceof BaixaEstoqueVendaError) return;
 			toast.error(error.message || "Erro ao fechar conta");
 		},
 	});
@@ -181,7 +195,7 @@ export function useFecharVenda() {
 
 			await criarItensVenda(idempresa, venda.id, itens);
 
-			await baixarEstoqueVenda({
+			const baixa = await baixarEstoqueVenda({
 				idempresa,
 				idvenda: venda.id,
 				itens: itens.map((item) => ({
@@ -191,14 +205,27 @@ export function useFecharVenda() {
 					precounitario: item.precounitario,
 					codigo: item.codigo,
 				})),
+				pagamentos: {
+					valordinheiro: pagamento.valordinheiro,
+					valorcartao: pagamento.valorcartao,
+					valorpix: pagamento.valorpix,
+					valorprepago: pagamento.valorprepago,
+					valortroco: valortroco.toFixed(2),
+					valortotal: valortotal.toFixed(2),
+				},
 			});
 
-			return venda;
+			return { venda, baixa };
 		},
-		onSuccess: () => {
-			toast.success("Venda finalizada com sucesso!");
+		onSuccess: (resultado) => {
+			if (resultado.baixa?.emissaoNfce?.emitida) {
+				toast.success("Venda finalizada e NFC-e emitida!");
+			} else if (!resultado.baixa?.deveEmitirNfce) {
+				toast.success("Venda finalizada com sucesso!");
+			}
 		},
 		onError: (error: Error) => {
+			if (error instanceof BaixaEstoqueVendaError) return;
 			toast.error(error.message || "Erro ao finalizar venda");
 		},
 	});

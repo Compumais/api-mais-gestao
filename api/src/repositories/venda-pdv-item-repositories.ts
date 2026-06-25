@@ -50,6 +50,14 @@ export type ListarVendasPdvItemParametros = {
 	limit?: number;
 };
 
+export async function listarItensPorVendaPdv(idvenda: string) {
+	return db
+		.select()
+		.from(vendapdvitem)
+		.where(eq(vendapdvitem.idvenda, idvenda))
+		.orderBy(desc(vendapdvitem.id));
+}
+
 export async function listarVendasPdvItem({
 	idempresa,
 	idvenda,
