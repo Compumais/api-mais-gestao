@@ -99,6 +99,237 @@
       "when": 1781626000000,
       "tag": "0013_vendapdvgourmet_pagamentos",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1781700000000,
+      "tag": "0014_produtos_enviamobile",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1781701000000,
+      "tag": "0015_integracao_vendas_plano_contas",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1781702000000,
+      "tag": "0016_unidades_medida_globais",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1781703000000,
+      "tag": "0017_bancos_globais",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1781704000000,
+      "tag": "0018_movimentoestoque_idoriginal_sem_fk",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1781705000000,
+      "tag": "0019_contacorrentelancamento_documento_60",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1781706000000,
+      "tag": "0020_fechamentopdv_financeiro_consolidado",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1781707000000,
+      "tag": "0021_entidade_cep_varchar9",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1781707500000,
+      "tag": "0022_produtos_estoque",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1781708000000,
+      "tag": "0023_notafiscalitem_campos_nf",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1781709000000,
+      "tag": "0024_notafiscal_rascunho_importacao",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1781710000000,
+      "tag": "0025_produtos_ean_varchar",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1781711000000,
+      "tag": "0026_fiscal_nf_compra",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1781712000000,
+      "tag": "0027_sped_nf_compra",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1781713000000,
+      "tag": "0028_controle_acesso",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1781714000000,
+      "tag": "0029_remover_coluna_csv_produtos",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1781715000000,
+      "tag": "0030_sync_schema_baseline",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1781716000000,
+      "tag": "0031_tarefa_execucao",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1781717000000,
+      "tag": "0032_super_admin",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1781718000000,
+      "tag": "0033_produtos_situacaotributaria",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1781719000000,
+      "tag": "0034_parametrizacao_tributos",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1781720000000,
+      "tag": "0035_cest_globais",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1781721000000,
+      "tag": "0036_taxauf",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1781722000000,
+      "tag": "0037_nfe_emissao_fundacao",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1781723000000,
+      "tag": "0038_nfe_xml_caminho",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1781724000000,
+      "tag": "0039_entidade_indiedest",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1781725000000,
+      "tag": "0040_nfe_config_ultima_emissao",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1781726000000,
+      "tag": "0041_tipodoc_financeiro_venda",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1781727000000,
+      "tag": "0042_nfce_configuracao",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1781728000000,
+      "tag": "0043_nfce_meios_pagamento",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1781729000000,
+      "tag": "0044_estoque_dual",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1781730000000,
+      "tag": "0045_vendapdv_nfce",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1781731000000,
+      "tag": "0046_movimentoestoque_colunas",
+      "breakpoints": true
     }
   ]
 }

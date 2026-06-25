@@ -22,9 +22,11 @@ import { useAuth } from "@/hooks/use-auth";
 import { useCaixaPdv } from "@/hooks/use-caixa-pdv";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { useFecharVenda } from "@/hooks/use-fechar-venda";
+import { useNfceAmbientePdv } from "@/hooks/use-nfce-ambiente-pdv";
 import { useSaldosEstoque } from "@/hooks/use-saldos-estoque";
 import {
 	buildContaMesaItemFromProduto,
+	buildCupomNfceInfo,
 	calcularTotalContaMesaItens,
 	STATUS_MESA,
 } from "@/lib/gourmet-utils";
@@ -42,6 +44,7 @@ export default function ContaMesaPage() {
 	const { user } = useAuth();
 	const { localStorageEmpresa: empresa } = useEmpresa();
 	const { fecharConta } = useFecharVenda();
+	const { ambiente: ambienteNfce } = useNfceAmbientePdv();
 	const { saldoPorCodigo } = useSaldosEstoque(empresa?.id);
 	const { estaAberto } = useCaixaPdv();
 
@@ -66,10 +69,9 @@ export default function ContaMesaPage() {
 	const { data: produtosData, isLoading: isLoadingProdutos } = useQuery({
 		queryKey: ["produtos", empresa?.id, { inativo: 0 }],
 		queryFn: () =>
-			produtosService.listar({
+			produtosService.listarTodos({
 				idempresa: empresa!.id,
 				inativo: 0,
-				limit: 100,
 			}),
 		enabled: !!empresa?.id,
 	});
@@ -173,7 +175,7 @@ export default function ContaMesaPage() {
 			throw new Error("Empresa ou usuário não selecionado");
 		}
 
-		const venda = await fecharConta.mutateAsync({
+		const resultado = await fecharConta.mutateAsync({
 			idempresa: empresa.id,
 			userId: user.id,
 			idcontamesa: contaId,
@@ -182,7 +184,10 @@ export default function ContaMesaPage() {
 			pagamento,
 		});
 
-		return { vendaId: venda.id };
+		return {
+			vendaId: resultado.venda.id,
+			nfce: buildCupomNfceInfo(resultado.baixa.emissaoNfce, ambienteNfce),
+		};
 	};
 
 	const handleVendaConcluida = () => {
@@ -225,7 +230,7 @@ export default function ContaMesaPage() {
 			<main className="flex min-h-0 flex-1 flex-col lg:flex-row">
 				<div className="min-h-0 flex-1 lg:w-3/5">
 					<ProdutoTabela
-						produtos={produtosData?.data ?? []}
+						produtos={produtosData ?? []}
 						isLoading={isLoadingProdutos}
 						onAdicionar={(produto) => adicionarItem(produto)}
 						isAdding={isAdding}

@@ -13,9 +13,7 @@ export function CPlusIcon({ size = 64 }: CPlusIconProps) {
 		>
 			<title>C+ (C Plus)</title>
 			<path
-				d="M40 14
-       C30 14 22 22 22 32
-       C22 42 30 50 40 50"
+				d="M40 14 C30 14 22 22 22 32 C22 42 30 50 40 50"
 				stroke="currentColor"
 				strokeWidth="6"
 				strokeLinecap="round"

@@ -1,5 +1,5 @@
-import type { VendaPdvGourmet } from "@/model/venda-pdv-gourmet-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
+import type { VendaPdvGourmet } from "@/model/venda-pdv-gourmet-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { buscarVendaPdvGourmetPorId } from "@/repositories/venda-pdv-gourmet-repositories.js";
 import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
@@ -12,7 +12,9 @@ type BuscarVendaPdvGourmetParametros = {
 export async function buscarVendaPdvGourmetService({
 	vendaPdvGourmetId,
 	idusuario,
-}: BuscarVendaPdvGourmetParametros): Promise<HttpResponse<VendaPdvGourmet | null>> {
+}: BuscarVendaPdvGourmetParametros): Promise<
+	HttpResponse<VendaPdvGourmet | null>
+> {
 	const registro = await buscarVendaPdvGourmetPorId(vendaPdvGourmetId);
 
 	if (!registro) {

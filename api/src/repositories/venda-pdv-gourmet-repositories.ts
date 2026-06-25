@@ -12,6 +12,18 @@ export async function buscarVendaPdvGourmetPorId(id: string) {
 	return registro;
 }
 
+export async function buscarVendaPdvGourmetPorNotaFiscalNfce(
+	idnotafiscal: string,
+) {
+	const [registro] = await db
+		.select()
+		.from(vendapdvgourmet)
+		.where(eq(vendapdvgourmet.idnotafiscalnfce, idnotafiscal))
+		.limit(1);
+
+	return registro;
+}
+
 export async function criarVendaPdvGourmet(dadosVendaPdvGourmet: NovaVendaPdvGourmet) {
 	const [registro] = await db
 		.insert(vendapdvgourmet)

@@ -3,6 +3,11 @@ import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-reposit
 import { v4 as uuidv4 } from "uuid";
 import z from "zod";
 import { criarProdutoService } from "@/service/produto/criar-produto.js";
+import { enriquecerCamposImpostosProduto } from "@/service/produto/enriquecer-campos-impostos-produto.js";
+import {
+	camposImpostosProdutoSchema,
+	montarCamposImpostosProduto,
+} from "@/util/campos-impostos-produto.js";
 import {
 	httpErroInterno,
 	httpNaoAutorizado,
@@ -12,7 +17,15 @@ import {
 const criarProdutoBodySchema = z.object({
 	idempresa: z.string(),
 	codigo: z.number().int().positive(),
-	ean: z.number().int().optional().nullable(),
+	ean: z
+		.union([z.string(), z.number()])
+		.optional()
+		.nullable()
+		.transform((valor) => {
+			if (valor === null || valor === undefined) return null;
+			const digitos = String(valor).replace(/\D/g, "");
+			return digitos.length > 0 ? digitos : null;
+		}),
 	referencia: z.string().max(60).optional().nullable(),
 	nome: z.string().min(1).max(120),
 	idunidademedida: z.string(),
@@ -22,10 +35,11 @@ const criarProdutoBodySchema = z.object({
 	tipo: z.enum(["P", "S"]).default("P"),
 	iat: z.enum(["A", "T"]).optional().nullable(),
 	ippt: z.enum(["P", "T"]),
-	origem: z.number().int().min(0).max(2),
+	origem: z.number().int().min(0).max(8),
 	ncm: z.string().min(1).max(10),
 	observacoes: z.string().optional().nullable(),
 	enviamobile: z.number().int().min(0).max(1).optional(),
+	...camposImpostosProdutoSchema,
 });
 
 export async function criarProduto(
@@ -53,6 +67,8 @@ export async function criarProduto(
 				? dadosValidados.preco.toFixed(2)
 				: dadosValidados.preco;
 
+		const impostos = await enriquecerCamposImpostosProduto(dadosValidados);
+
 		const dadosProduto = {
 			id: uuidv4(),
 			idempresa: dadosValidados.idempresa,
@@ -73,6 +89,7 @@ export async function criarProduto(
 			observacoes: dadosValidados.observacoes ?? null,
 			inativo: 0,
 			enviamobile: dadosValidados.enviamobile ?? 0,
+			...impostos,
 		};
 
 		const resultado = await criarProdutoService({

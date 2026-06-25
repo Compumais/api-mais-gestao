@@ -290,7 +290,7 @@ export default function Home() {
 								{/* Duplicar a lista para criar loop infinito */}
 								{[...clients, ...clients].map((client, index) => (
 									<div
-										key={`${client.name}-${index}`}
+										key={`${client.name}-${index.toString()}`}
 										className="flex shrink-0 items-center justify-center"
 									>
 										<div className="flex h-20 w-32 items-center justify-center rounded-lg border bg-card px-4 transition-all duration-300 hover:scale-105 hover:shadow-md md:h-24 md:w-40">
@@ -524,31 +524,31 @@ export default function Home() {
 							</ul>
 						</div>
 						<div>
-							<h3 className="mb-4 font-semibold">Suporte</h3>
+							<h3 className="mb-4 font-semibold">Institucional</h3>
 							<ul className="space-y-2 text-sm">
 								<li>
 									<Link
-										href="#"
+										href="/termos-de-servico"
 										className="text-muted-foreground transition-colors hover:text-foreground"
 									>
-										Documentação
+										Termos de Serviço
 									</Link>
 								</li>
 								<li>
 									<Link
-										href="#"
+										href="/politica-de-privacidade"
 										className="text-muted-foreground transition-colors hover:text-foreground"
 									>
-										Central de Ajuda
+										Política de Privacidade
 									</Link>
 								</li>
 								<li>
-									<Link
-										href="#"
+									<a
+										href="mailto:contato@compumais.com"
 										className="text-muted-foreground transition-colors hover:text-foreground"
 									>
 										Contato
-									</Link>
+									</a>
 								</li>
 							</ul>
 						</div>

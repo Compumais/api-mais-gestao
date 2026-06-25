@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,20 @@ import {
 	configuracaoNotificacoesSchema,
 } from "@/schemas/configuracao.schema";
 import type { Configuracao } from "@/services/configuracao.service";
+import { tarefasService } from "@/services/tarefas.service";
+
+function formatarTempoDesde(iso: string): string {
+	const diffMs = Date.now() - new Date(iso).getTime();
+	const minutos = Math.floor(diffMs / 60_000);
+
+	if (minutos < 1) return "agora há pouco";
+	if (minutos < 60) return `há ${minutos} min`;
+
+	const horas = Math.floor(minutos / 60);
+	if (horas < 24) return `há ${horas} h`;
+
+	return `há ${Math.floor(horas / 24)} dias`;
+}
 
 interface NotificacoesFormProps {
 	configuracao: Configuracao | undefined;
@@ -150,10 +165,31 @@ export function NotificacoesForm({
 		"notificacoesEmail.alertasVencimento.habilitado",
 	);
 
+	const { data: historicoAlertas } = useQuery({
+		queryKey: ["tarefas-execucoes", "alerta_vencimento", idempresa],
+		queryFn: () =>
+			tarefasService.listarExecucoes({
+				idempresa,
+				tipo: "alerta_vencimento",
+				limit: 1,
+			}),
+		enabled: !!idempresa,
+		staleTime: 60_000,
+	});
+
+	const ultimaExecucaoAlertas = historicoAlertas?.execucoes[0];
+
 	return (
 		<form onSubmit={handleSubmit(onSubmit)}>
 			<FieldGroup>
 				<div className="space-y-6 rounded-lg border bg-card p-6">
+					{ultimaExecucaoAlertas?.iniciadoem && (
+						<p className="text-sm text-muted-foreground">
+							Última execução dos alertas:{" "}
+							{formatarTempoDesde(ultimaExecucaoAlertas.iniciadoem)}
+							{ultimaExecucaoAlertas.status === "erro" ? " (com erro)" : ""}
+						</p>
+					)}
 					<div>
 						<h2 className="text-lg font-semibold mb-4">Alertas Financeiros</h2>
 						<div className="space-y-4">

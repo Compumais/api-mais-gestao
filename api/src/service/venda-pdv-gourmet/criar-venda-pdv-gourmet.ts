@@ -1,9 +1,9 @@
 import { v4 as uuidv4 } from "uuid";
+import type { HttpResponse } from "@/model/http-model.js";
 import type {
 	NovaVendaPdvGourmet,
 	VendaPdvGourmet,
 } from "@/model/venda-pdv-gourmet-model.js";
-import type { HttpResponse } from "@/model/http-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	criarVendaPdvGourmet,
@@ -26,7 +26,9 @@ type CriarVendaPdvGourmetParametros = {
 export async function criarVendaPdvGourmetService({
 	dadosVendaPdvGourmet,
 	idusuario,
-}: CriarVendaPdvGourmetParametros): Promise<HttpResponse<VendaPdvGourmet | null>> {
+}: CriarVendaPdvGourmetParametros): Promise<
+	HttpResponse<VendaPdvGourmet | null>
+> {
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
 		idusuario,
 		dadosVendaPdvGourmet.idempresa,

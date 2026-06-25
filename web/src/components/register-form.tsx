@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -166,8 +167,9 @@ export function RegisterForm({
 				</CardContent>
 			</Card>
 			<FieldDescription className="px-6 text-center">
-				Ao continuar, você concorda com nossos <a href="#">Termos de Serviço</a>{" "}
-				e <a href="#">Política de Privacidade</a>.
+				Ao continuar, você concorda com nossos{" "}
+				<Link href="/termos-de-servico">Termos de Serviço</Link> e{" "}
+				<Link href="/politica-de-privacidade">Política de Privacidade</Link>.
 			</FieldDescription>
 		</div>
 	);

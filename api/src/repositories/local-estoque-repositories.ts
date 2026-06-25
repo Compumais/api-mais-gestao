@@ -21,6 +21,19 @@ export async function buscarLocalEstoquePorId(id: string) {
 	return registro;
 }
 
+export async function buscarPrimeiroLocalEstoqueEmpresa(idempresa: string) {
+	const [registro] = await db
+		.select()
+		.from(localestoque)
+		.where(
+			and(eq(localestoque.idempresa, idempresa), eq(localestoque.inativo, 0)),
+		)
+		.orderBy(desc(localestoque.descricao))
+		.limit(1);
+
+	return registro;
+}
+
 export async function atualizarLocalEstoque(
 	id: string,
 	dados: {

@@ -1,7 +1,8 @@
 import { z } from "zod";
 import {
+	somenteDigitos,
 	validarCpfCnpj,
-	validarInscricaoEstadual,
+	validarFormatoInscricaoEstadual,
 	validarTelefone,
 } from "@/lib/documentos-brasil";
 import { maskCep, maskCpfCnpj, maskPhone } from "@/lib/masks";
@@ -91,6 +92,7 @@ export const criarEntidadeSchema = z
 		fornecedor: flagEntidadeSchema,
 		transportador: flagEntidadeSchema,
 		representante: flagEntidadeSchema,
+		indiedest: z.number().int().nullable().optional(), // 1=Contribuinte | 2=Isento | 9=Não Contribuinte
 	})
 	.superRefine((data, ctx) => {
 		if (!validarCpfCnpj(data.cnpjcpf)) {
@@ -117,13 +119,23 @@ export const criarEntidadeSchema = z
 			});
 		}
 
-		if (
-			!validarInscricaoEstadual(data.inscricaoestadual, data.idestado ?? null)
-		) {
+		const ieNumerica = somenteDigitos(data.inscricaoestadual ?? "");
+		const exigeIeContribuinte =
+			data.tipopessoa === 1 && data.indiedest === 1 && ieNumerica.length > 0;
+
+		if (exigeIeContribuinte && !data.idestado) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["idestado"],
+				message: "Selecione o estado do contribuinte ICMS",
+			});
+		}
+
+		if (!validarFormatoInscricaoEstadual(data.inscricaoestadual, data.indiedest)) {
 			ctx.addIssue({
 				code: "custom",
 				path: ["inscricaoestadual"],
-				message: "Inscrição estadual inválida para a UF selecionada",
+				message: "Inscrição estadual inválida",
 			});
 		}
 
@@ -139,6 +151,7 @@ export const criarEntidadeSchema = z
 
 export type CriarEntidadeFormInput = z.input<typeof criarEntidadeSchema>;
 export type CriarEntidadeFormData = z.output<typeof criarEntidadeSchema>;
+export type TipoEntidadePrincipal = "cliente" | "fornecedor";
 
 export function formatarCepParaEnvio(
 	cep: string | null | undefined,
@@ -174,16 +187,47 @@ export function flagsEntidadeParaForm(entidade: {
 	};
 }
 
+function normalizarTipopessoaParaForm(
+	tipopessoa: number | string | null | undefined,
+	cnpjcpf: string,
+): number | null {
+	if (tipopessoa !== null && tipopessoa !== undefined && tipopessoa !== "") {
+		const valor = Number(tipopessoa);
+		if (!Number.isNaN(valor) && (valor === 0 || valor === 1)) {
+			return valor;
+		}
+	}
+
+	const digitos = cnpjcpf.replace(/\D/g, "");
+	if (digitos.length === 14) return 1;
+	if (digitos.length === 11) return 0;
+
+	return null;
+}
+
+function normalizarIdLocalidade(
+	valor: string | null | undefined,
+): string | null {
+	if (!valor) return null;
+	const normalizado = valor.trim();
+	return normalizado.length > 0 ? normalizado : null;
+}
+
 export function mapEntidadeToForm(
 	entidade: Entidade,
 ): Partial<CriarEntidadeFormData> {
+	const indiedest = entidade.indiedest ?? null;
+
 	return {
 		idempresa: entidade.idempresa,
 		nome: entidade.nome,
 		cnpjcpf: maskCpfCnpj(entidade.cnpjcpf),
 		razaosocial: entidade.razaosocial,
-		tipopessoa: entidade.tipopessoa,
-		inscricaoestadual: entidade.inscricaoestadual,
+		tipopessoa: normalizarTipopessoaParaForm(
+			entidade.tipopessoa,
+			entidade.cnpjcpf,
+		),
+		inscricaoestadual: indiedest === 9 ? null : entidade.inscricaoestadual,
 		rg: entidade.rg,
 		email: entidade.email,
 		telefone: entidade.telefone ? maskPhone(entidade.telefone) : null,
@@ -191,14 +235,15 @@ export function mapEntidadeToForm(
 		numeroendereco: entidade.numeroendereco,
 		complemento: entidade.complemento,
 		bairro: entidade.bairro,
-		idcidade: entidade.idcidade,
-		idestado: entidade.idestado,
+		idcidade: normalizarIdLocalidade(entidade.idcidade),
+		idestado: normalizarIdLocalidade(entidade.idestado)?.toUpperCase() ?? null,
 		cep: entidade.cep ? maskCep(entidade.cep) : null,
 		fax: entidade.fax ? maskPhone(entidade.fax) : null,
 		nascimento: entidade.nascimento ? entidade.nascimento.slice(0, 10) : null,
 		idplanocontas: entidade.idplanocontas,
 		pais: entidade.pais ?? "Brasil",
 		...flagsEntidadeParaForm(entidade),
+		indiedest,
 	};
 }
 
@@ -206,10 +251,12 @@ export function criarValoresPadraoEntidadeForm({
 	empresaId,
 	valoresIniciais,
 	isEdicao = false,
+	tipoPrincipal = "cliente",
 }: {
 	empresaId?: string;
 	valoresIniciais?: Partial<CriarEntidadeFormData>;
 	isEdicao?: boolean;
+	tipoPrincipal?: TipoEntidadePrincipal;
 }): CriarEntidadeFormData {
 	const base: CriarEntidadeFormData = {
 		idempresa: empresaId || "",
@@ -232,10 +279,11 @@ export function criarValoresPadraoEntidadeForm({
 		nascimento: null,
 		idplanocontas: null,
 		pais: "Brasil",
-		cliente: true,
-		fornecedor: false,
+		cliente: tipoPrincipal === "cliente",
+		fornecedor: tipoPrincipal === "fornecedor",
 		transportador: false,
 		representante: false,
+		indiedest: null,
 	};
 
 	if (!isEdicao || !valoresIniciais) {

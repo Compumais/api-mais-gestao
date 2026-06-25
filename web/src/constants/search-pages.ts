@@ -123,6 +123,34 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 		keywords: ["unidade", "medida", "unidades", "kg", "litro"],
 	},
 	{
+		title: "Naturezas de operação",
+		url: "/tributos/naturezas",
+		category: "Tributos",
+		icon: IconListDetails,
+		keywords: ["cfop", "fiscal", "entrada", "saída", "natureza", "tributos"],
+	},
+	{
+		title: "Configuração fiscal",
+		url: "/tributos/configuracao-fiscal",
+		category: "Tributos",
+		icon: IconListDetails,
+		keywords: ["regime", "simples", "lucro", "tributário", "fiscal"],
+	},
+	{
+		title: "CFOP de-para",
+		url: "/tributos/cfop-depara",
+		category: "Tributos",
+		icon: IconListDetails,
+		keywords: ["cfop", "de-para", "entrada", "saída", "mapeamento"],
+	},
+	{
+		title: "Tributos",
+		url: "/tributos",
+		category: "Tributos",
+		icon: IconListDetails,
+		keywords: ["tributos", "fiscal", "impostos"],
+	},
+	{
 		title: "Usuários",
 		url: "/usuarios",
 		category: "Principal",
@@ -171,6 +199,13 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 		category: "Financeiro",
 		icon: IconArrowsLeftRight,
 		keywords: ["movimentação", "movimentacoes", "transação", "transações"],
+	},
+	{
+		title: "Importar OFX",
+		url: "/movimentacoes/importar-ofx",
+		category: "Financeiro",
+		icon: IconArrowsLeftRight,
+		keywords: ["ofx", "extrato", "importar", "banco", "movimentação"],
 	},
 	{
 		title: "Contas a receber",

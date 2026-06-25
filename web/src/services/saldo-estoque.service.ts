@@ -14,6 +14,7 @@ export interface SaldoEstoque {
 	ncm: string | null;
 	nomeproduto: string | null;
 	quantidade: string | null;
+	quantidadefiscal: string | null;
 	ultimaalteracao: string | null;
 	unidademedida: string | null;
 	variacao: number | null;
@@ -36,6 +37,7 @@ export interface CriarSaldoEstoqueData {
 	ncm?: string | null;
 	nomeproduto?: string | null;
 	quantidade?: string | null;
+	quantidadefiscal?: string | null;
 	ultimaalteracao?: string | null;
 	unidademedida?: string | null;
 	variacao?: number | null;
@@ -52,6 +54,7 @@ export interface AtualizarSaldoEstoqueData {
 	ncm?: string | null;
 	nomeproduto?: string | null;
 	quantidade?: string | null;
+	quantidadefiscal?: string | null;
 	ultimaalteracao?: string | null;
 	unidademedida?: string | null;
 	variacao?: number | null;

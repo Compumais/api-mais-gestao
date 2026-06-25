@@ -1,7 +1,6 @@
 import type { Entidade } from "@/model/entidade-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
 import {
-	buscarEmpresasDoUsuario,
 	listarEntidades,
 	verificarUsuarioPertenceEmpresa,
 } from "@/repositories/entidade-repositories.js";
@@ -13,6 +12,10 @@ type ListarEntidadesParametros = {
 	q?: string | undefined;
 	email?: string | undefined;
 	telefone?: string | undefined;
+	fornecedor?: number | undefined;
+	cliente?: number | undefined;
+	transportador?: number | undefined;
+	representante?: number | undefined;
 	page?: number;
 	limit?: number;
 	idempresa: string;
@@ -35,6 +38,10 @@ export async function listarEntidadesService({
 	q,
 	email,
 	telefone,
+	fornecedor,
+	cliente,
+	transportador,
+	representante,
 	page = 1,
 	limit = 10,
 }: ListarEntidadesParametros): Promise<HttpResponse<ListarEntidadesResposta>> {
@@ -60,6 +67,10 @@ export async function listarEntidadesService({
 		nome,
 		email,
 		telefone,
+		fornecedor,
+		cliente,
+		transportador,
+		representante,
 		page,
 		limit,
 	});

@@ -1,0 +1,6343 @@
+{
+"cfoppadrao": [
+	{
+		"id" : 1779,
+		"codigo" : 1101,
+		"nome" : "Compra para industrialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814657,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1780,
+		"codigo" : 1102,
+		"nome" : "Compra para comercialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814658,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1781,
+		"codigo" : 1111,
+		"nome" : "Compra para industrialização de mercadoria recebida anteriormente em consignação industrial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814658,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1782,
+		"codigo" : 1113,
+		"nome" : "Compra para comercialização, de mercadoria recebida anteriormente em consignação mercantil",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814658,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1783,
+		"codigo" : 1116,
+		"nome" : "Compra para industrialização originada de encomenda para recebimento futuro",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814659,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1784,
+		"codigo" : 1117,
+		"nome" : "Compra para comercialização originada de encomenda para recebimento futuro",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814659,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1785,
+		"codigo" : 1118,
+		"nome" : "Compra de mercadoria para comercialização pelo adquirente originário, entregue pelo vendedor remetente ao destinatário, em venda à ordem",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814659,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1786,
+		"codigo" : 1120,
+		"nome" : "Compra para industrialização, em venda à ordem, já recebida do vendedor remetente",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814659,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1787,
+		"codigo" : 1121,
+		"nome" : "Compra para comercialização, em venda à ordem, já recebida do vendedor remetente",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814659,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1788,
+		"codigo" : 1122,
+		"nome" : "Compra para industrialização em que a mercadoria foi remetida pelo fornecedor ao industrializador sem transitar pelo estabelecimento adquirente",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814660,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1789,
+		"codigo" : 1124,
+		"nome" : "Industrialização efetuada por outra empresa",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814660,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1790,
+		"codigo" : 1125,
+		"nome" : "Industrialização efetuada por outra empresa quando a mercadoria remetida para utilização no processo de industrialização não transitou pelo estabelecimento adquirente da mercadoria",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814660,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1791,
+		"codigo" : 1126,
+		"nome" : "Compra para utilização na prestação de serviço",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814660,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1792,
+		"codigo" : 1151,
+		"nome" : "Transferência para industrialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814660,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1793,
+		"codigo" : 1152,
+		"nome" : "Transferência para comercialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814661,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1794,
+		"codigo" : 1153,
+		"nome" : "Transferência de energia elétrica para distribuição",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814662,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1795,
+		"codigo" : 1154,
+		"nome" : "Transferência para utilização na prestação de serviço",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814662,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1796,
+		"codigo" : 1159,
+		"nome" : "Entrada decorrente do fornecimento de produto ou mercadoria de ato cooperativo",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814662,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1797,
+		"codigo" : 1201,
+		"nome" : "Devolução de venda de produção do estabelecimento",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814662,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1798,
+		"codigo" : 1202,
+		"nome" : "Devolução de venda de mercadoria adquirida ou recebida de terceiros",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814662,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1799,
+		"codigo" : 1203,
+		"nome" : "Devolução de venda de produção do estabelecimento, destinada à Zona Franca de Manaus ou Áreas de Livre Comércio",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814663,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1800,
+		"codigo" : 1204,
+		"nome" : "Devolução de venda de mercadoria adquirida ou recebida de terceiros, destinada à Zona Franca de Manaus ou Áreas de Livre Comércio",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814663,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1801,
+		"codigo" : 1205,
+		"nome" : "Anulação de valor relativo à prestação de serviço de comunicação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814663,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1802,
+		"codigo" : 1206,
+		"nome" : "Anulação de valor relativo à prestação de serviço de transporte",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814663,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1803,
+		"codigo" : 1207,
+		"nome" : "Anulação de valor relativo à venda de energia elétrica",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814663,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1804,
+		"codigo" : 1208,
+		"nome" : "Devolução de produção do estabelecimento, remetida em transferência",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814663,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1805,
+		"codigo" : 1209,
+		"nome" : "Devolução de mercadoria adquirida ou recebida de terceiros, remetida em transferência",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814663,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1806,
+		"codigo" : 1251,
+		"nome" : "Compra de energia elétrica para distribuição ou comercialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814664,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1807,
+		"codigo" : 1252,
+		"nome" : "Compra de energia elétrica por estabelecimento industrial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814664,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1808,
+		"codigo" : 1253,
+		"nome" : "Compra de energia elétrica por estabelecimento comercial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814664,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1809,
+		"codigo" : 1254,
+		"nome" : "Compra de energia elétrica por estabelecimento prestador de serviço de transporte",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814664,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1810,
+		"codigo" : 1255,
+		"nome" : "Compra de energia elétrica por estabelecimento prestador de serviço de comunicação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814664,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1811,
+		"codigo" : 1256,
+		"nome" : "Compra de energia elétrica por estabelecimento de produtor rural",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814664,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1812,
+		"codigo" : 1257,
+		"nome" : "Compra de energia elétrica para consumo por demanda contratada",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814664,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1813,
+		"codigo" : 1301,
+		"nome" : "Aquisição de serviço de comunicação para execução de serviço da mesma natureza",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814664,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1814,
+		"codigo" : 1302,
+		"nome" : "Aquisição de serviço de comunicação por estabelecimento industrial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814665,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1815,
+		"codigo" : 1303,
+		"nome" : "Aquisição de serviço de comunicação por estabelecimento comercial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814665,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1816,
+		"codigo" : 1304,
+		"nome" : "Aquisição de serviço de comunicação por estabelecimento de prestador de serviço de transporte",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814665,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1817,
+		"codigo" : 1305,
+		"nome" : "Aquisição de serviço de comunicação por estabelecimento de geradora ou de distribuidora de energia elétrica",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814665,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1818,
+		"codigo" : 1306,
+		"nome" : "Aquisição de serviço de comunicação por estabelecimento de produtor rural",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814665,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1819,
+		"codigo" : 1351,
+		"nome" : "Aquisição de serviço de transporte para execução de serviço da mesma natureza",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814665,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1820,
+		"codigo" : 1352,
+		"nome" : "Aquisição de serviço de transporte por estabelecimento industrial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814665,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1821,
+		"codigo" : 1353,
+		"nome" : "Aquisição de serviço de transporte por estabelecimento comercial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814665,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1822,
+		"codigo" : 1354,
+		"nome" : "Aquisição de serviço de transporte por estabelecimento de prestador de serviço de comunicação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814666,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1823,
+		"codigo" : 1355,
+		"nome" : "Aquisição de serviço de transporte por estabelecimento de geradora ou de distribuidora de energia elétrica",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814666,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1824,
+		"codigo" : 1356,
+		"nome" : "Aquisição de serviço de transporte por estabelecimento de produtor rural",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814666,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1825,
+		"codigo" : 1360,
+		"nome" : "Aquisição de serviço de transporte por contribuinte substituto em relação ao serviço de transporte.",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814666,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1826,
+		"codigo" : 1401,
+		"nome" : "Compra para industrialização em operação com mercadoria sujeita ao regime de substituição tributária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814666,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1827,
+		"codigo" : 1403,
+		"nome" : "Compra para comercialização em operação com mercadoria sujeita ao regime de substituição tributária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814666,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1828,
+		"codigo" : 1406,
+		"nome" : "Compra de bem para o ativo imobilizado cuja mercadoria está sujeita ao regime de substituição tributária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814666,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1829,
+		"codigo" : 1407,
+		"nome" : "Compra de mercadoria para uso ou consumo cuja mercadoria está sujeita ao regime de substituição tributária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814666,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1830,
+		"codigo" : 1408,
+		"nome" : "Transferência para industrialização em operação com mercadoria sujeita ao regime de substituição tributária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814667,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1831,
+		"codigo" : 1409,
+		"nome" : "Transferência para comercialização em operação com mercadoria sujeita ao regime de substituição tributária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814667,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1832,
+		"codigo" : 1410,
+		"nome" : "Devolução de venda de produção do estabelecimento em operação com produto sujeito ao regime de substituição tributária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814667,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1833,
+		"codigo" : 1411,
+		"nome" : "Devolução de venda de mercadoria adquirida ou recebida de terceiros em operação com mercadoria sujeita ao regime de substituição tributária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814667,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1834,
+		"codigo" : 1414,
+		"nome" : "Retorno de produção do estabelecimento, remetida para venda fora do estabelecimento em operação com produto sujeito ao regime de substituição tributária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814669,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1835,
+		"codigo" : 1415,
+		"nome" : "Retorno de mercadoria adquirida ou recebida de terceiros, remetida para venda fora do estabelecimento em operação com mercadoria sujeita ao regime de substituição tributária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814669,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1836,
+		"codigo" : 1451,
+		"nome" : "Retorno de animal do estabelecimento produtor",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814669,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1837,
+		"codigo" : 1451,
+		"nome" : "Entrada de animal - Sistema de Integração e Parceria Rural",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814670,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1838,
+		"codigo" : 1452,
+		"nome" : "Retorno de insumo não utilizado na produção",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814670,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1839,
+		"codigo" : 1452,
+		"nome" : "Entrada de insumo - Sistema de Integração e Parceria Rural",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814670,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1840,
+		"codigo" : 1453,
+		"nome" : "Retorno do animal ou da produção - Sistema de Integração e Parceria Rural",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814670,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1841,
+		"codigo" : 1454,
+		"nome" : "Retorno simbólico do animal ou da produção - Sistema de Integração e Parceria Rural",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814670,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1842,
+		"codigo" : 1455,
+		"nome" : "Retorno de insumo não utilizado na produção - Sistema de Integração e Parceria Rural",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814671,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1843,
+		"codigo" : 1456,
+		"nome" : "Entrada referente a remuneração do produtor no Sistema de Integração e Parceria Rural",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814671,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1844,
+		"codigo" : 1501,
+		"nome" : "Entrada de mercadoria recebida com fim específico de exportação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814671,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1845,
+		"codigo" : 1503,
+		"nome" : "Entrada decorrente de devolução de produto remetido com fim específico de exportação, de produção do estabelecimento",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814671,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1846,
+		"codigo" : 1504,
+		"nome" : "Entrada decorrente de devolução de mercadoria remetida com fim específico de exportação, adquirida ou recebida de terceiros",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814672,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1847,
+		"codigo" : 1505,
+		"nome" : "Entrada decorrente de devolução simbólica de mercadorias remetidas para formação de lote de exportação, de produtos industrializados ou produzidos pelo próprio estabelecimento.",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814672,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1848,
+		"codigo" : 1505,
+		"nome" : "Entrada decorrente de devolução de mercadorias remetidas para formação de lote de exportação, de produtos industrializados ou produzidos pelo próprio estabelecimento.",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814672,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1849,
+		"codigo" : 1506,
+		"nome" : "Entrada decorrente de devolução simbólica de mercadorias, adquiridas ou recebidas de terceiros, remetidas para formação de lote de exportação.",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814672,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1850,
+		"codigo" : 1506,
+		"nome" : "Entrada decorrente de devolução de mercadorias, adquiridas ou recebidas de terceiros, remetidas para formação de lote de exportação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814672,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1851,
+		"codigo" : 1551,
+		"nome" : "Compra de bem para o ativo imobilizado",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814673,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1852,
+		"codigo" : 1552,
+		"nome" : "Transferência de bem do ativo imobilizado",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814673,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1853,
+		"codigo" : 1553,
+		"nome" : "Devolução de venda de bem do ativo imobilizado",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814673,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1854,
+		"codigo" : 1554,
+		"nome" : "Retorno de bem do ativo imobilizado remetido para uso fora do estabelecimento",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814673,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1855,
+		"codigo" : 1555,
+		"nome" : "Entrada de bem do ativo imobilizado de terceiro, remetido para uso no estabelecimento",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814673,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1856,
+		"codigo" : 1556,
+		"nome" : "Compra de material para uso ou consumo",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814674,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1857,
+		"codigo" : 1557,
+		"nome" : "Transferência de material para uso ou consumo",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814674,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1858,
+		"codigo" : 1601,
+		"nome" : "Recebimento, por transferência, de crédito de ICMS",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814674,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1859,
+		"codigo" : 1602,
+		"nome" : "Recebimento, por transferência, de saldo credor de ICMS de outro estabelecimento da mesma empresa, para compensação de saldo devedor de ICMS",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814674,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1860,
+		"codigo" : 1603,
+		"nome" : "Ressarcimento de ICMS retido por substituição tributária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814674,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1861,
+		"codigo" : 1604,
+		"nome" : "Lançamento do crédito relativo à compra de bem para o ativo imobilizado",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814674,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1862,
+		"codigo" : 1605,
+		"nome" : "Recebimento, por transferência, de saldo devedor de ICMS de outro estabelecimento da mesma empresa.",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814674,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1863,
+		"codigo" : 1651,
+		"nome" : "Compra de combustível ou lubrificante para industrialização subseqüente",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814675,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1864,
+		"codigo" : 1652,
+		"nome" : "Compra de combustível ou lubrificante para comercialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814675,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1865,
+		"codigo" : 1653,
+		"nome" : "Compra de combustível ou lubrificante por consumidor ou usuário final",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814675,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1866,
+		"codigo" : 1657,
+		"nome" : "Retorno de remessa de combustível ou lubrificante para venda fora do estabelecimento",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814675,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1867,
+		"codigo" : 1658,
+		"nome" : "Transferência de combustível e lubrificante para industrialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814675,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1868,
+		"codigo" : 1659,
+		"nome" : "Transferência de combustível e lubrificante para comercialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814675,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1869,
+		"codigo" : 1660,
+		"nome" : "Devolução de venda de combustível ou lubrificante destinado à industrialização subseqüente",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814675,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1870,
+		"codigo" : 1661,
+		"nome" : "Devolução de venda de combustível ou lubrificante destinado à comercialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814676,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1871,
+		"codigo" : 1662,
+		"nome" : "Devolução de venda de combustível ou lubrificante destinado a consumidor ou usuário final",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814676,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1872,
+		"codigo" : 1663,
+		"nome" : "Entrada de combustível ou lubrificante para armazenagem",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814676,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1873,
+		"codigo" : 1664,
+		"nome" : "Retorno de combustível ou lubrificante remetido para armazenagem",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814676,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1874,
+		"codigo" : 1901,
+		"nome" : "Entrada para industrialização por encomenda",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814676,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1875,
+		"codigo" : 1902,
+		"nome" : "Retorno de mercadoria remetida para industrialização por encomenda",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814676,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1876,
+		"codigo" : 1903,
+		"nome" : "Entrada de mercadoria remetida para industrialização e não aplicada no referido processo",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814677,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1877,
+		"codigo" : 1904,
+		"nome" : "Retorno de remessa para venda fora do estabelecimento",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814677,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1878,
+		"codigo" : 1905,
+		"nome" : "Entrada de mercadoria recebida para depósito em depósito fechado ou armazém geral",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814677,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1879,
+		"codigo" : 1906,
+		"nome" : "Retorno de mercadoria remetida para depósito fechado ou armazém geral",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814677,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1880,
+		"codigo" : 1907,
+		"nome" : "Retorno simbólico de mercadoria remetida para depósito fechado ou armazém geral",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814677,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1881,
+		"codigo" : 1908,
+		"nome" : "Entrada de bem por conta de contrato de comodato",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814677,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1882,
+		"codigo" : 1908,
+		"nome" : "Entrada de bem por conta de contrato de comodato ou locação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814678,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1883,
+		"codigo" : 1909,
+		"nome" : "Retorno de bem remetido por conta de contrato de comodato",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814678,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1884,
+		"codigo" : 1909,
+		"nome" : "Retorno de bem remetido por conta de contrato de comodato ou locação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814678,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1885,
+		"codigo" : 1910,
+		"nome" : "Entrada de bonificação, doação ou brinde",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814678,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1886,
+		"codigo" : 1911,
+		"nome" : "Entrada de amostra grátis",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814678,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1887,
+		"codigo" : 1912,
+		"nome" : "Entrada de mercadoria ou bem recebido para demonstração",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814678,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1888,
+		"codigo" : 1913,
+		"nome" : "Retorno de mercadoria ou bem remetido para demonstração",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814678,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1889,
+		"codigo" : 1914,
+		"nome" : "Retorno de mercadoria ou bem remetido para exposição ou feira",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814679,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1890,
+		"codigo" : 1915,
+		"nome" : "Entrada de mercadoria ou bem recebido para conserto ou reparo",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814679,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1891,
+		"codigo" : 1916,
+		"nome" : "Retorno de mercadoria ou bem remetido para conserto ou reparo",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814679,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1892,
+		"codigo" : 1917,
+		"nome" : "Entrada de mercadoria recebida em consignação mercantil ou industrial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814679,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1893,
+		"codigo" : 1918,
+		"nome" : "Devolução de mercadoria remetida em consignação mercantil ou industrial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814679,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1894,
+		"codigo" : 1919,
+		"nome" : "Devolução simbólica de mercadoria vendida ou utilizada em processo industrial, remetida anteriormente em consignação mercantil ou industrial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814679,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1895,
+		"codigo" : 1920,
+		"nome" : "Entrada de vasilhame ou sacaria",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814679,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1896,
+		"codigo" : 1921,
+		"nome" : "Retorno de vasilhame ou sacaria",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814679,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1897,
+		"codigo" : 1922,
+		"nome" : "Lançamento efetuado a título de simples faturamento decorrente de compra para recebimento futuro",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814680,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1898,
+		"codigo" : 1923,
+		"nome" : "Entrada de mercadoria recebida do vendedor remetente, em venda à ordem",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814680,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1899,
+		"codigo" : 1924,
+		"nome" : "Entrada para industrialização por conta e ordem do adquirente da mercadoria, quando esta não transitar pelo estabelecimento do adquirente",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814680,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1900,
+		"codigo" : 1925,
+		"nome" : "Retorno de mercadoria remetida para industrialização por conta e ordem do adquirente da mercadoria, quando esta não transitar pelo estabelecimento do adquirente",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814680,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1901,
+		"codigo" : 1926,
+		"nome" : "Lançamento efetuado a título de reclassificação de mercadoria decorrente de formação de kit ou de sua desagregação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814680,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1902,
+		"codigo" : 1931,
+		"nome" : "Lançamento efetuado pelo tomador do serviço de transporte quando a responsabilidade de retenção do imposto for atribuída ao remetente ou alienante da mercadoria, pelo serviço de transporte realizado por transportador autônomo ou por transportador não inscrito na unidade da Federação onde iniciado o serviço. (Ajuste SINIEF 03\/04)",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814680,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1903,
+		"codigo" : 1932,
+		"nome" : "Aquisição de serviço de transporte iniciado em unidade da Federação diversa daquela onde inscrito o prestador. (ajuste sinief 03\/04)",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814680,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1904,
+		"codigo" : 1933,
+		"nome" : "Aquisição de serviço tributado pelo ISSQN.(ajuste sinief 03\/04)",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814680,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1905,
+		"codigo" : 1949,
+		"nome" : "Outra entrada de mercadoria ou prestação de serviço não especificada",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814681,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1906,
+		"codigo" : 2101,
+		"nome" : "Compra para industrialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814681,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1907,
+		"codigo" : 2102,
+		"nome" : "Compra para comercialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814681,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1908,
+		"codigo" : 2111,
+		"nome" : "Compra para industrialização de mercadoria recebida anteriormente em consignação industrial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814681,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1909,
+		"codigo" : 2113,
+		"nome" : "Compra para comercialização, de mercadoria recebida anteriormente em consignação mercantil",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814681,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1910,
+		"codigo" : 2116,
+		"nome" : "Compra para industrialização originada de encomenda para recebimento futuro",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814681,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1911,
+		"codigo" : 2117,
+		"nome" : "Compra para comercialização originada de encomenda para recebimento futuro",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814682,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1912,
+		"codigo" : 2118,
+		"nome" : "Compra de mercadoria para comercialização pelo adquirente originário, entregue pelo vendedor remetente ao destinatário, em venda à ordem",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814682,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1913,
+		"codigo" : 2120,
+		"nome" : "Compra para industrialização, em venda à ordem, já recebida do vendedor remetente",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814682,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1914,
+		"codigo" : 2121,
+		"nome" : "Compra para comercialização, em venda à ordem, já recebida do vendedor remetente",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814682,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1915,
+		"codigo" : 2122,
+		"nome" : "Compra para industrialização em que a mercadoria foi remetida pelo fornecedor ao industrializador sem transitar pelo estabelecimento adquirente",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814682,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1916,
+		"codigo" : 2124,
+		"nome" : "Industrialização efetuada por outra empresa",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814682,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1917,
+		"codigo" : 2125,
+		"nome" : "Industrialização efetuada por outra empresa quando a mercadoria remetida para utilização no processo de industrialização não transitou pelo estabelecimento adquirente da mercadoria",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814682,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1918,
+		"codigo" : 2126,
+		"nome" : "Compra para utilização na prestação de serviço",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814683,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1919,
+		"codigo" : 2151,
+		"nome" : "Transferência para industrialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814683,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1920,
+		"codigo" : 2152,
+		"nome" : "Transferência para comercialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814683,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1921,
+		"codigo" : 2153,
+		"nome" : "Transferência de energia elétrica para distribuição",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814683,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1922,
+		"codigo" : 2154,
+		"nome" : "Transferência para utilização na prestação de serviço",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814683,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1923,
+		"codigo" : 2159,
+		"nome" : "Entrada decorrente do fornecimento de produto ou mercadoria de ato cooperativo",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814683,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1924,
+		"codigo" : 2201,
+		"nome" : "Devolução de venda de produção do estabelecimento",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814683,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1925,
+		"codigo" : 2202,
+		"nome" : "Devolução de venda de mercadoria adquirida ou recebida de terceiros",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814683,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1926,
+		"codigo" : 2203,
+		"nome" : "Devolução de venda de produção do estabelecimento, destinada à Zona Franca de Manaus ou Áreas de Livre Comércio",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814684,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1927,
+		"codigo" : 2204,
+		"nome" : "Devolução de venda de mercadoria adquirida ou recebida de terceiros, destinada à Zona Franca de Manaus ou Áreas de Livre Comércio",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814684,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1928,
+		"codigo" : 2205,
+		"nome" : "Anulação de valor relativo à prestação de serviço de comunicação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814684,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1929,
+		"codigo" : 2206,
+		"nome" : "Anulação de valor relativo à prestação de serviço de transporte",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814684,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1930,
+		"codigo" : 2207,
+		"nome" : "Anulação de valor relativo à venda de energia elétrica",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814684,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1931,
+		"codigo" : 2208,
+		"nome" : "Devolução de produção do estabelecimento, remetida em transferência",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814684,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1932,
+		"codigo" : 2209,
+		"nome" : "Devolução de mercadoria adquirida ou recebida de terceiros, remetida em transferência",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814684,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1933,
+		"codigo" : 2251,
+		"nome" : "Compra de energia elétrica para distribuição ou comercialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814684,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1934,
+		"codigo" : 2252,
+		"nome" : "Compra de energia elétrica por estabelecimento industrial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814685,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1935,
+		"codigo" : 2253,
+		"nome" : "Compra de energia elétrica por estabelecimento comercial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814685,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1936,
+		"codigo" : 2254,
+		"nome" : "Compra de energia elétrica por estabelecimento prestador de serviço de transporte",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814685,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1937,
+		"codigo" : 2255,
+		"nome" : "Compra de energia elétrica por estabelecimento prestador de serviço de comunicação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814685,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1938,
+		"codigo" : 2256,
+		"nome" : "Compra de energia elétrica por estabelecimento de produtor rural",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814685,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1939,
+		"codigo" : 2257,
+		"nome" : "Compra de energia elétrica para consumo por demanda contratada",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814685,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1940,
+		"codigo" : 2301,
+		"nome" : "Aquisição de serviço de comunicação para execução de serviço da mesma natureza",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814685,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1941,
+		"codigo" : 2302,
+		"nome" : "Aquisição de serviço de comunicação por estabelecimento industrial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814686,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1942,
+		"codigo" : 2303,
+		"nome" : "Aquisição de serviço de comunicação por estabelecimento comercial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814686,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1943,
+		"codigo" : 2304,
+		"nome" : "Aquisição de serviço de comunicação por estabelecimento de prestador de serviço de transporte",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814686,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1944,
+		"codigo" : 2305,
+		"nome" : "Aquisição de serviço de comunicação por estabelecimento de geradora ou de distribuidora de energia elétrica",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814686,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1945,
+		"codigo" : 2306,
+		"nome" : "Aquisição de serviço de comunicação por estabelecimento de produtor rural",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814686,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1946,
+		"codigo" : 2351,
+		"nome" : "Aquisição de serviço de transporte para execução de serviço da mesma natureza",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814686,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1947,
+		"codigo" : 2352,
+		"nome" : "Aquisição de serviço de transporte por estabelecimento industrial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814687,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1948,
+		"codigo" : 2353,
+		"nome" : "Aquisição de serviço de transporte por estabelecimento comercial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814687,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1949,
+		"codigo" : 2354,
+		"nome" : "Aquisição de serviço de transporte por estabelecimento de prestador de serviço de comunicação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814687,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1950,
+		"codigo" : 2355,
+		"nome" : "Aquisição de serviço de transporte por estabelecimento de geradora ou de distribuidora de energia elétrica",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814687,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1951,
+		"codigo" : 2356,
+		"nome" : "Aquisição de serviço de transporte por estabelecimento de produtor rural",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814687,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1952,
+		"codigo" : 2401,
+		"nome" : "Compra para industrialização em operação com mercadoria sujeita ao regime de substituição tributária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814687,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1953,
+		"codigo" : 2403,
+		"nome" : "Compra para comercialização em operação com mercadoria sujeita ao regime de substituição tributária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814687,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1954,
+		"codigo" : 2406,
+		"nome" : "Compra de bem para o ativo imobilizado cuja mercadoria está sujeita ao regime de substituição tributária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814687,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1955,
+		"codigo" : 2407,
+		"nome" : "Compra de mercadoria para uso ou consumo cuja mercadoria está sujeita ao regime de substituição tributária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814688,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1956,
+		"codigo" : 2408,
+		"nome" : "Transferência para industrialização em operação com mercadoria sujeita ao regime de substituição tributária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814688,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1957,
+		"codigo" : 2409,
+		"nome" : "Transferência para comercialização em operação com mercadoria sujeita ao regime de substituição tributária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814688,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1958,
+		"codigo" : 2410,
+		"nome" : "Devolução de venda de produção do estabelecimento em operação com produto sujeito ao regime de substituição tributária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814688,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1959,
+		"codigo" : 2411,
+		"nome" : "Devolução de venda de mercadoria adquirida ou recebida de terceiros em operação com mercadoria sujeita ao regime de substituição tributária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814688,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1960,
+		"codigo" : 2414,
+		"nome" : "Retorno de produção do estabelecimento, remetida para venda fora do estabelecimento em operação com produto sujeito ao regime de substituição tributária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814688,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1961,
+		"codigo" : 2415,
+		"nome" : "Retorno de mercadoria adquirida ou recebida de terceiros, remetida para venda fora do estabelecimento em operação com mercadoria sujeita ao regime de substituição tributária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814688,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1962,
+		"codigo" : 2451,
+		"nome" : "Entrada de animal - Sistema de Integração e Parceria Rural",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814689,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1963,
+		"codigo" : 2452,
+		"nome" : "Entrada de insumo - Sistema de Integração e Parceria Rural",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814689,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1964,
+		"codigo" : 2453,
+		"nome" : "Retorno do animal ou da produção - Sistema de Integração e Parceria Rural",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814689,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1965,
+		"codigo" : 2454,
+		"nome" : "Retorno simbólico do animal ou da produção - Sistema de Integração e Parceria Rural",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814689,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1966,
+		"codigo" : 2455,
+		"nome" : "Retorno de insumo não utilizado na produção - Sistema de Integração e Parceria Rural",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814689,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1967,
+		"codigo" : 2456,
+		"nome" : "Entrada referente a remuneração do produtor no Sistema de Integração e Parceria Rural",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814689,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1968,
+		"codigo" : 2501,
+		"nome" : "Entrada de mercadoria recebida com fim específico de exportação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814689,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1969,
+		"codigo" : 2503,
+		"nome" : "Entrada decorrente de devolução de produto remetido com fim específico de exportação, de produção do estabelecimento",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814689,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1970,
+		"codigo" : 2504,
+		"nome" : "Entrada decorrente de devolução de mercadoria remetida com fim específico de exportação, adquirida ou recebida de terceiros",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814690,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1971,
+		"codigo" : 2505,
+		"nome" : "Entrada decorrente de devolução simbólica de mercadorias remetidas para formação de lote de exportação, de produtos industrializados ou produzidos pelo próprio estabelecimento.",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814690,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1972,
+		"codigo" : 2505,
+		"nome" : "Entrada decorrente de devolução de mercadorias remetidas para formação de lote de exportação, de produtos industrializados ou produzidos pelo próprio estabelecimento",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814690,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1973,
+		"codigo" : 2506,
+		"nome" : "Entrada decorrente de devolução simbólica de mercadorias, adquiridas ou recebidas de terceiros, remetidas para formação de lote de exportação.",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814690,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1974,
+		"codigo" : 2506,
+		"nome" : "Entrada decorrente de devolução de mercadorias, adquiridas ou recebidas de terceiros, remetidas para formação de lote de exportação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814690,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1975,
+		"codigo" : 2551,
+		"nome" : "Compra de bem para o ativo imobilizado",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814690,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1976,
+		"codigo" : 2552,
+		"nome" : "Transferência de bem do ativo imobilizado",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814690,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1977,
+		"codigo" : 2553,
+		"nome" : "Devolução de venda de bem do ativo imobilizado",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814691,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1978,
+		"codigo" : 2554,
+		"nome" : "Retorno de bem do ativo imobilizado remetido para uso fora do estabelecimento",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814691,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1979,
+		"codigo" : 2555,
+		"nome" : "Entrada de bem do ativo imobilizado de terceiro, remetido para uso no estabelecimento",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814691,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1980,
+		"codigo" : 2556,
+		"nome" : "Compra de material para uso ou consumo",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814691,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1981,
+		"codigo" : 2557,
+		"nome" : "Transferência de material para uso ou consumo",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814691,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1982,
+		"codigo" : 2603,
+		"nome" : "Ressarcimento de ICMS retido por substituição tributária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814691,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1983,
+		"codigo" : 2651,
+		"nome" : "Compra de combustível ou lubrificante para industrialização subseqüente",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814691,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1984,
+		"codigo" : 2652,
+		"nome" : "Compra de combustível ou lubrificante para comercialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814691,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1985,
+		"codigo" : 2653,
+		"nome" : "Compra de combustível ou lubrificante por consumidor ou usuário final",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814692,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1986,
+		"codigo" : 2657,
+		"nome" : "Retorno de remessa de combustível ou lubrificante para venda fora do estabelecimento",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814692,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1987,
+		"codigo" : 2658,
+		"nome" : "Transferência de combustível e lubrificante para industrialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814692,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1988,
+		"codigo" : 2659,
+		"nome" : "Transferência de combustível e lubrificante para comercialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814692,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1989,
+		"codigo" : 2660,
+		"nome" : "Devolução de venda de combustível ou lubrificante destinado à industrialização subseqüente",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814692,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1990,
+		"codigo" : 2661,
+		"nome" : "Devolução de venda de combustível ou lubrificante destinado à comercialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814692,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1991,
+		"codigo" : 2662,
+		"nome" : "Devolução de venda de combustível ou lubrificante destinado a consumidor ou usuário final",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814692,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1992,
+		"codigo" : 2663,
+		"nome" : "Entrada de combustível ou lubrificante para armazenagem",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814692,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1993,
+		"codigo" : 2664,
+		"nome" : "Retorno de combustível ou lubrificante remetido para armazenagem",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814693,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1994,
+		"codigo" : 2901,
+		"nome" : "Entrada para industrialização por encomenda",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814693,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1995,
+		"codigo" : 2902,
+		"nome" : "Retorno de mercadoria remetida para industrialização por encomenda",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814693,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1996,
+		"codigo" : 2903,
+		"nome" : "Entrada de mercadoria remetida para industrialização e não aplicada no referido processo",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814693,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1997,
+		"codigo" : 2904,
+		"nome" : "Retorno de remessa para venda fora do estabelecimento",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814693,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1998,
+		"codigo" : 2905,
+		"nome" : "Entrada de mercadoria recebida para depósito em depósito fechado ou armazém geral",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814693,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 1999,
+		"codigo" : 2906,
+		"nome" : "Retorno de mercadoria remetida para depósito fechado ou armazém geral",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814694,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2000,
+		"codigo" : 2907,
+		"nome" : "Retorno simbólico de mercadoria remetida para depósito fechado ou armazém geral",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814694,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2001,
+		"codigo" : 2908,
+		"nome" : "Entrada de bem por conta de contrato de comodato",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814694,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2002,
+		"codigo" : 2908,
+		"nome" : "Entrada de bem por conta de contrato de comodato ou locação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814694,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2003,
+		"codigo" : 2909,
+		"nome" : "Retorno de bem remetido por conta de contrato de comodato",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814694,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2004,
+		"codigo" : 2909,
+		"nome" : "Retorno de bem remetido por conta de contrato de comodato ou locação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814694,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2005,
+		"codigo" : 2910,
+		"nome" : "Entrada de bonificação, doação ou brinde",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814694,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2006,
+		"codigo" : 2911,
+		"nome" : "Entrada de amostra grátis",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814695,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2007,
+		"codigo" : 2912,
+		"nome" : "Entrada de mercadoria ou bem recebido para demonstração",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814695,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2008,
+		"codigo" : 2913,
+		"nome" : "Retorno de mercadoria ou bem remetido para demonstração",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814695,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2009,
+		"codigo" : 2914,
+		"nome" : "Retorno de mercadoria ou bem remetido para exposição ou feira",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814695,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2010,
+		"codigo" : 2915,
+		"nome" : "Entrada de mercadoria ou bem recebido para conserto ou reparo",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814695,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2011,
+		"codigo" : 2916,
+		"nome" : "Retorno de mercadoria ou bem remetido para conserto ou reparo",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814695,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2012,
+		"codigo" : 2917,
+		"nome" : "Entrada de mercadoria recebida em consignação mercantil ou industrial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814695,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2013,
+		"codigo" : 2918,
+		"nome" : "Devolução de mercadoria remetida em consignação mercantil ou industrial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814695,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2014,
+		"codigo" : 2919,
+		"nome" : "Devolução simbólica de mercadoria vendida ou utilizada em processo industrial, remetida anteriormente em consignação mercantil ou industrial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814696,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2015,
+		"codigo" : 2920,
+		"nome" : "Entrada de vasilhame ou sacaria",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814696,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2016,
+		"codigo" : 2921,
+		"nome" : "Retorno de vasilhame ou sacaria",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814696,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2017,
+		"codigo" : 2922,
+		"nome" : "Lançamento efetuado a título de simples faturamento decorrente de compra para recebimento futuro",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814696,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2018,
+		"codigo" : 2923,
+		"nome" : "Entrada de mercadoria recebida do vendedor remetente, em venda à ordem",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814696,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2019,
+		"codigo" : 2924,
+		"nome" : "Entrada para industrialização por conta e ordem do adquirente da mercadoria, quando esta não transitar pelo estabelecimento do adquirente",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814696,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2020,
+		"codigo" : 2925,
+		"nome" : "Retorno de mercadoria remetida para industrialização por conta e ordem do adquirente da mercadoria, quando esta não transitar pelo estabelecimento do adquirente",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814696,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2021,
+		"codigo" : 2931,
+		"nome" : "Lançamento efetuado pelo tomador do serviço de transporte quando a responsabilidade de retenção do imposto for atribuída ao remetente ou alienante da mercadoria, pelo serviço de transporte realizado por transportador autônomo ou por transportador não inscrito na unidade da Federação onde iniciado o serviço. (ajuste sinief 03\/04)",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814696,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2022,
+		"codigo" : 2932,
+		"nome" : "Aquisição de serviço de transporte iniciado em unidade da Federação diversa daquela onde inscrito o prestador. (ajuste sinief 03\/04)",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814697,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2023,
+		"codigo" : 2933,
+		"nome" : "Aquisição de serviço tributado pelo ISSQN. (ajuste sinief 03\/04)",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814697,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2024,
+		"codigo" : 2949,
+		"nome" : "Outra entrada de mercadoria ou prestação de serviço não especificado",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814697,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2025,
+		"codigo" : 3101,
+		"nome" : "Compra para industrialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814697,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2026,
+		"codigo" : 3102,
+		"nome" : "Compra para comercialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814697,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2027,
+		"codigo" : 3126,
+		"nome" : "Compra para utilização na prestação de serviço",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814697,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2028,
+		"codigo" : 3127,
+		"nome" : "Compra para industrialização sob o regime de drawback",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814697,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2029,
+		"codigo" : 3201,
+		"nome" : "Devolução de venda de produção do estabelecimento",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814697,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2030,
+		"codigo" : 3202,
+		"nome" : "Devolução de venda de mercadoria adquirida ou recebida de terceiros",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814698,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2031,
+		"codigo" : 3205,
+		"nome" : "Anulação de valor relativo à prestação de serviço de comunicação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814698,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2032,
+		"codigo" : 3206,
+		"nome" : "Anulação de valor relativo à prestação de serviço de transporte",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814698,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2033,
+		"codigo" : 3207,
+		"nome" : "Anulação de valor relativo à venda de energia elétrica",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814698,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2034,
+		"codigo" : 3211,
+		"nome" : "Devolução de venda de produção do estabelecimento sob o regime de drawback",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814698,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2035,
+		"codigo" : 3217,
+		"nome" : "Compra para industrialização sob o regime de \"drawback\"",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814698,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2036,
+		"codigo" : 3251,
+		"nome" : "Compra de energia elétrica para distribuição ou comercialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814698,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2037,
+		"codigo" : 3301,
+		"nome" : "Aquisição de serviço de comunicação para execução de serviço da mesma natureza",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814699,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2038,
+		"codigo" : 3351,
+		"nome" : "Aquisição de serviço de transporte para execução de serviço da mesma natureza",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814699,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2039,
+		"codigo" : 3352,
+		"nome" : "Aquisição de serviço de transporte por estabelecimento industrial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814699,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2040,
+		"codigo" : 3353,
+		"nome" : "Aquisição de serviço de transporte por estabelecimento comercial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814699,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2041,
+		"codigo" : 3354,
+		"nome" : "Aquisição de serviço de transporte por estabelecimento de prestador de serviço de comunicação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814699,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2042,
+		"codigo" : 3355,
+		"nome" : "Aquisição de serviço de transporte por estabelecimento de geradora ou de distribuidora de energia elétrica",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814699,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2043,
+		"codigo" : 3356,
+		"nome" : "Aquisição de serviço de transporte por estabelecimento de produtor rural",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814699,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2044,
+		"codigo" : 3503,
+		"nome" : "Devolução de mercadoria exportada que tenha sido recebida com fim específico de exportação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814699,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2045,
+		"codigo" : 3551,
+		"nome" : "Compra de bem para o ativo imobilizado",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814700,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2046,
+		"codigo" : 3553,
+		"nome" : "Devolução de venda de bem do ativo imobilizado",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814700,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2047,
+		"codigo" : 3556,
+		"nome" : "Compra de material para uso ou consumo",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814700,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2048,
+		"codigo" : 3651,
+		"nome" : "Compra de combustível ou lubrificante para industrialização subseqüente",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814700,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2049,
+		"codigo" : 3652,
+		"nome" : "Compra de combustível ou lubrificante para comercialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814700,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2050,
+		"codigo" : 3653,
+		"nome" : "Compra de combustível ou lubrificante por consumidor ou usuário final",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814700,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2051,
+		"codigo" : 3930,
+		"nome" : "Lançamento efetuado a título de entrada de bem sob amparo de regime especial aduaneiro de admissão temporária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814701,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2052,
+		"codigo" : 3949,
+		"nome" : "Outra entrada de mercadoria ou prestação de serviço não especificado",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814701,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2053,
+		"codigo" : 5101,
+		"nome" : "Venda de produção do estabelecimento",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814701,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2054,
+		"codigo" : 5102,
+		"nome" : "Venda de mercadoria adquirida ou recebida de terceiros",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814701,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2055,
+		"codigo" : 5103,
+		"nome" : "Venda de produção do estabelecimento, efetuada fora do estabelecimento",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814701,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2056,
+		"codigo" : 5104,
+		"nome" : "Venda de mercadoria adquirida ou recebida de terceiros, efetuada fora do estabelecimento",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814701,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2057,
+		"codigo" : 5105,
+		"nome" : "Venda de produção do estabelecimento que não deva por ele transitar",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814702,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2058,
+		"codigo" : 5106,
+		"nome" : "Venda de mercadoria adquirida ou recebida de terceiros, que não deva por ele transitar",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814702,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2059,
+		"codigo" : 5109,
+		"nome" : "Venda de produção do estabelecimento, destinada à Zona Franca de Manaus ou Áreas de Livre Comércio",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814702,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2060,
+		"codigo" : 5110,
+		"nome" : "Venda de mercadoria adquirida ou recebida de terceiros, destinada à Zona Franca de Manaus ou Áreas de Livre Comércio",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814702,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2061,
+		"codigo" : 5111,
+		"nome" : "Venda de produção do estabelecimento remetida anteriormente em consignação industrial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814703,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2062,
+		"codigo" : 5112,
+		"nome" : "Venda de mercadoria adquirida ou recebida de terceiros remetida anteriormente em consignação industrial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814703,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2063,
+		"codigo" : 5113,
+		"nome" : "Venda de produção do estabelecimento remetida anteriormente em consignação mercantil",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814703,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2064,
+		"codigo" : 5114,
+		"nome" : "Venda de mercadoria adquirida ou recebida de terceiros remetida anteriormente em consignação mercantil",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814703,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2065,
+		"codigo" : 5115,
+		"nome" : "Venda de mercadoria adquirida ou recebida de terceiros, recebida anteriormente em consignação mercantil",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814703,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2066,
+		"codigo" : 5116,
+		"nome" : "Venda de produção do estabelecimento originada de encomenda para entrega futura",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814704,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2067,
+		"codigo" : 5117,
+		"nome" : "Venda de mercadoria adquirida ou recebida de terceiros, originada de encomenda para entrega futura",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814704,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2068,
+		"codigo" : 5118,
+		"nome" : "Venda de produção do estabelecimento entregue ao destinatário por conta e ordem do adquirente originário, em venda à ordem",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814704,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2069,
+		"codigo" : 5119,
+		"nome" : "Venda de mercadoria adquirida ou recebida de terceiros entregue ao destinatário por conta e ordem do adquirente originário, em venda à ordem",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814704,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2070,
+		"codigo" : 5120,
+		"nome" : "Venda de mercadoria adquirida ou recebida de terceiros entregue ao destinatário pelo vendedor remetente, em venda à ordem",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814704,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2071,
+		"codigo" : 5122,
+		"nome" : "Venda de produção do estabelecimento remetida para industrialização, por conta e ordem do adquirente, sem transitar pelo estabelecimento do adquirente",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814704,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2072,
+		"codigo" : 5123,
+		"nome" : "Venda de mercadoria adquirida ou recebida de terceiros remetida para industrialização, por conta e ordem do adquirente, sem transitar pelo estabelecimento do adquirente",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814704,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2073,
+		"codigo" : 5124,
+		"nome" : "Industrialização efetuada para outra empresa",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814704,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2074,
+		"codigo" : 5125,
+		"nome" : "Industrialização efetuada para outra empresa quando a mercadoria recebida para utilização no processo de industrialização não transitar pelo estabelecimento adquirente da mercadoria",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814705,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2075,
+		"codigo" : 5151,
+		"nome" : "Transferência de produção do estabelecimento",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814705,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2076,
+		"codigo" : 5152,
+		"nome" : "Transferência de mercadoria adquirida ou recebida de terceiros",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814705,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2077,
+		"codigo" : 5153,
+		"nome" : "Transferência de energia elétrica",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814705,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2078,
+		"codigo" : 5155,
+		"nome" : "Transferência de produção do estabelecimento, que não deva por ele transitar",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814705,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2079,
+		"codigo" : 5156,
+		"nome" : "Transferência de mercadoria adquirida ou recebida de terceiros, que não deva por ele transitar",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814705,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2080,
+		"codigo" : 5159,
+		"nome" : "Fornecimento de produção do estabelecimento de ato cooperativo",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814705,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2081,
+		"codigo" : 5160,
+		"nome" : "Fornecimento de mercadoria adquirida ou recebida de terceiros de ato cooperativo",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814706,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2082,
+		"codigo" : 5201,
+		"nome" : "Devolução de compra para industrialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814706,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2083,
+		"codigo" : 5202,
+		"nome" : "Devolução de compra para comercialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814706,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2084,
+		"codigo" : 5205,
+		"nome" : "Anulação de valor relativo a aquisição de serviço de comunicação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814706,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2085,
+		"codigo" : 5206,
+		"nome" : "Anulação de valor relativo a aquisição de serviço de transporte",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814706,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2086,
+		"codigo" : 5207,
+		"nome" : "Anulação de valor relativo à compra de energia elétrica",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814706,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2087,
+		"codigo" : 5208,
+		"nome" : "Devolução de mercadoria recebida em transferência para industrialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814706,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2088,
+		"codigo" : 5209,
+		"nome" : "Devolução de mercadoria recebida em transferência para comercialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814706,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2089,
+		"codigo" : 5210,
+		"nome" : "Devolução de compra para utilização na prestação de serviço",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814707,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2090,
+		"codigo" : 5251,
+		"nome" : "Venda de energia elétrica para distribuição ou comercialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814707,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2091,
+		"codigo" : 5252,
+		"nome" : "Venda de energia elétrica para estabelecimento industrial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814707,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2092,
+		"codigo" : 5253,
+		"nome" : "Venda de energia elétrica para estabelecimento comercial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814707,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2093,
+		"codigo" : 5254,
+		"nome" : "Venda de energia elétrica para estabelecimento prestador de serviço de transporte",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814707,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2094,
+		"codigo" : 5255,
+		"nome" : "Venda de energia elétrica para estabelecimento prestador de serviço de comunicação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814707,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2095,
+		"codigo" : 5256,
+		"nome" : "Venda de energia elétrica para estabelecimento de produtor rural",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814707,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2096,
+		"codigo" : 5257,
+		"nome" : "Venda de energia elétrica para consumo por demanda contratada",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814708,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2097,
+		"codigo" : 5258,
+		"nome" : "Venda de energia elétrica a não contribuinte",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814708,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2098,
+		"codigo" : 5301,
+		"nome" : "Prestação de serviço de comunicação para execução de serviço da mesma natureza",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814708,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2099,
+		"codigo" : 5302,
+		"nome" : "Prestação de serviço de comunicação a estabelecimento industrial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814708,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2100,
+		"codigo" : 5303,
+		"nome" : "Prestação de serviço de comunicação a estabelecimento comercial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814708,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2101,
+		"codigo" : 5304,
+		"nome" : "Prestação de serviço de comunicação a estabelecimento de prestador de serviço de transporte",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814708,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2102,
+		"codigo" : 5305,
+		"nome" : "Prestação de serviço de comunicação a estabelecimento de geradora ou de distribuidora de energia elétrica",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814708,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2103,
+		"codigo" : 5306,
+		"nome" : "Prestação de serviço de comunicação a estabelecimento de produtor rural",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814708,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2104,
+		"codigo" : 5307,
+		"nome" : "Prestação de serviço de comunicação a não contribuinte",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814709,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2105,
+		"codigo" : 5351,
+		"nome" : "Prestação de serviço de transporte para execução de serviço da mesma natureza",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814709,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2106,
+		"codigo" : 5352,
+		"nome" : "Prestação de serviço de transporte a estabelecimento industrial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814709,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2107,
+		"codigo" : 5353,
+		"nome" : "Prestação de serviço de transporte a estabelecimento comercial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814709,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2108,
+		"codigo" : 5354,
+		"nome" : "Prestação de serviço de transporte a estabelecimento de prestador de serviço de comunicação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814709,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2109,
+		"codigo" : 5355,
+		"nome" : "Prestação de serviço de transporte a estabelecimento de geradora ou de distribuidora de energia elétrica",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814709,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2110,
+		"codigo" : 5356,
+		"nome" : "Prestação de serviço de transporte a estabelecimento de produtor rural",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814709,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2111,
+		"codigo" : 5357,
+		"nome" : "Prestação de serviço de transporte a não contribuinte",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814710,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2112,
+		"codigo" : 5359,
+		"nome" : "Prestação de serviço de transporte a contribuinte ou a não contribuinte quando a mercadoria transportada está dispensada de emissão de nota fiscal. (ajuste sinief 03\/04)",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814710,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2113,
+		"codigo" : 5360,
+		"nome" : "Prestação de serviço de transporte a contribuinte substituto em relação ao serviço de transporte.",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814710,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2114,
+		"codigo" : 5401,
+		"nome" : "Venda de produção do estabelecimento em operação com produto sujeito ao regime de substituição tributária, na condição de contribuinte substituto",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814710,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2115,
+		"codigo" : 5402,
+		"nome" : "Venda de produção do estabelecimento de produto sujeito ao regime de substituição tributária, em operação entre contribuintes substitutos do mesmo produto",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814710,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2116,
+		"codigo" : 5403,
+		"nome" : "Venda de mercadoria, adquirida ou recebida de terceiros, sujeita ao regime de substituição tributária, na condição de contribuinte-substituto",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814710,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2117,
+		"codigo" : 5405,
+		"nome" : "Venda de mercadoria, adquirida ou recebida de terceiros, sujeita ao regime de substituição tributária, na condição de contribuinte-substituído",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814711,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2118,
+		"codigo" : 5408,
+		"nome" : "Transferência de produção do estabelecimento em operação com produto sujeito ao regime de substituição tributária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814711,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2119,
+		"codigo" : 5409,
+		"nome" : "Transferência de mercadoria adquirida ou recebida de terceiros em operação com mercadoria sujeita ao regime de substituição tributária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814711,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2120,
+		"codigo" : 5410,
+		"nome" : "Devolução de compra para industrialização em operação com mercadoria sujeita ao regime de substituição tributária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814711,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2121,
+		"codigo" : 5411,
+		"nome" : "Devolução de compra para comercialização em operação com mercadoria sujeita ao regime de substituição tributária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814711,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2122,
+		"codigo" : 5412,
+		"nome" : "Devolução de bem do ativo imobilizado, em operação com mercadoria sujeita ao regime de substituição tributária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814711,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2123,
+		"codigo" : 5413,
+		"nome" : "Devolução de mercadoria destinada ao uso ou consumo, em operação com mercadoria sujeita ao regime de substituição tributária.",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814711,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2124,
+		"codigo" : 5414,
+		"nome" : "Remessa de produção do estabelecimento para venda fora do estabelecimento em operação com produto sujeito ao regime de substituição tributária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814712,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2125,
+		"codigo" : 5415,
+		"nome" : "Remessa de mercadoria adquirida ou recebida de terceiros para venda fora do estabelecimento, em operação com mercadoria sujeita ao regime de substituição tributária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814712,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2126,
+		"codigo" : 5451,
+		"nome" : "Remessa de animal e de insumo para estabelecimento produtor",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814712,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2127,
+		"codigo" : 5451,
+		"nome" : "Remessa de animal - Sistema de Integração e Parceria Rural",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814712,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2128,
+		"codigo" : 5452,
+		"nome" : "Remessa de insumo - Sistema de Integração e Parceria Rural",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814712,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2129,
+		"codigo" : 5453,
+		"nome" : "Retorno de animal ou da produção - Sistema de Integração e Parceria Rural",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814712,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2130,
+		"codigo" : 5454,
+		"nome" : "Retorno simbólico de animal ou da produção - Sistema de Integração e Parceria Rural",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814712,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2131,
+		"codigo" : 5455,
+		"nome" : "Retorno de insumos não utilizados na produção - Sistema de Integração e Parceria Rural",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814712,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2132,
+		"codigo" : 5456,
+		"nome" : "Saída referente a remuneração do produtor - Sistema de Integração e Parceria Rural",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814713,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2133,
+		"codigo" : 5501,
+		"nome" : "Remessa de produção do estabelecimento, com fim específico de exportação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814713,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2134,
+		"codigo" : 5502,
+		"nome" : "Remessa de mercadoria adquirida ou recebida de terceiros, com fim específico de exportação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814713,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2135,
+		"codigo" : 5503,
+		"nome" : "Devolução de mercadoria recebida com fim específico de exportação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814713,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2136,
+		"codigo" : 5504,
+		"nome" : "Remessa de mercadorias para formação de lote de exportação, de produtos industrializados ou produzidos pelo próprio estabelecimento.",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814713,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2137,
+		"codigo" : 5505,
+		"nome" : "Remessa de mercadorias, adquiridas ou recebidas de terceiros, para formação de lote de exportação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814713,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2138,
+		"codigo" : 5551,
+		"nome" : "Venda de bem do ativo imobilizado",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814713,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2139,
+		"codigo" : 5552,
+		"nome" : "Transferência de bem do ativo imobilizado",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814713,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2140,
+		"codigo" : 5553,
+		"nome" : "Devolução de compra de bem para o ativo imobilizado",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814714,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2141,
+		"codigo" : 5554,
+		"nome" : "Remessa de bem do ativo imobilizado para uso fora do estabelecimento",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814714,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2142,
+		"codigo" : 5555,
+		"nome" : "Devolução de bem do ativo imobilizado de terceiro, recebido para uso no estabelecimento",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814714,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2143,
+		"codigo" : 5556,
+		"nome" : "Devolução de compra de material de uso ou consumo",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814714,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2144,
+		"codigo" : 5557,
+		"nome" : "Transferência de material de uso ou consumo",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814714,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2145,
+		"codigo" : 5601,
+		"nome" : "Transferência de crédito de ICMS acumulado",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814714,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2146,
+		"codigo" : 5602,
+		"nome" : "Transferência de saldo credor de ICMS para outro estabelecimento da mesma empresa, destinado à compensação de saldo devedor de ICMS",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814714,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2147,
+		"codigo" : 5603,
+		"nome" : "Ressarcimento de ICMS retido por substituição tributária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814714,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2148,
+		"codigo" : 5605,
+		"nome" : "Transferência de saldo devedor de ICMS de outro estabelecimento da mesma empresa. (ajuste sinief 03\/04)",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814715,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2149,
+		"codigo" : 5606,
+		"nome" : "Utilização de saldo credor de ICMS para extinção por compensação de débitos fiscais.",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814715,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2150,
+		"codigo" : 5651,
+		"nome" : "Venda de combustível ou lubrificante de produção do estabelecimento destinado à industrialização subseqüente",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814715,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2151,
+		"codigo" : 5652,
+		"nome" : "Venda de combustível ou lubrificante de produção do estabelecimento destinado à comercialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814715,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2152,
+		"codigo" : 5653,
+		"nome" : "Venda de combustível ou lubrificante de produção do estabelecimento destinado a consumidor ou usuário final",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814715,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2153,
+		"codigo" : 5654,
+		"nome" : "Venda de combustível ou lubrificante adquirido ou recebido de terceiros destinado à industrialização subseqüente",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814715,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2208,
+		"codigo" : 6107,
+		"nome" : "Venda de produção do estabelecimento, destinada a não contribuinte",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814723,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2154,
+		"codigo" : 5655,
+		"nome" : "Venda de combustível ou lubrificante adquirido ou recebido de terceiros destinado à comercialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814715,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2155,
+		"codigo" : 5656,
+		"nome" : "Venda de combustível ou lubrificante adquirido ou recebido de terceiros destinado a consumidor ou usuário final",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814716,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2156,
+		"codigo" : 5657,
+		"nome" : "Remessa de combustível ou lubrificante adquirido ou recebido de terceiros para venda fora do estabelecimento",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814716,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2157,
+		"codigo" : 5658,
+		"nome" : "Transferência de combustível ou lubrificante de produção do estabelecimento",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814716,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2158,
+		"codigo" : 5659,
+		"nome" : "Transferência de combustível ou lubrificante adquirido ou recebido de terceiro",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814716,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2159,
+		"codigo" : 5660,
+		"nome" : "Devolução de compra de combustível ou lubrificante adquirido para industrialização subseqüente",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814716,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2160,
+		"codigo" : 5661,
+		"nome" : "Devolução de compra de combustível ou lubrificante adquirido para comercialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814716,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2161,
+		"codigo" : 5662,
+		"nome" : "Devolução de compra de combustível ou lubrificante adquirido por consumidor ou usuário final",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814716,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2162,
+		"codigo" : 5663,
+		"nome" : "Remessa para armazenagem de combustível ou lubrificante",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814717,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2163,
+		"codigo" : 5664,
+		"nome" : "Retorno de combustível ou lubrificante recebido para armazenagem",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814717,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2164,
+		"codigo" : 5665,
+		"nome" : "Retorno simbólico de combustível ou lubrificante recebido para armazenagem",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814717,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2165,
+		"codigo" : 5666,
+		"nome" : "Remessa por conta e ordem de terceiros de combustível ou lubrificante recebido para armazenagem",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814717,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2166,
+		"codigo" : 5667,
+		"nome" : "Venda de combustível ou lubrificante a consumidor ou usuário final estabelecido em outra unidade da Federação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814717,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2167,
+		"codigo" : 5901,
+		"nome" : "Remessa para industrialização por encomenda",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814717,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2168,
+		"codigo" : 5902,
+		"nome" : "Retorno de mercadoria utilizada na industrialização por encomenda",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814717,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2169,
+		"codigo" : 5903,
+		"nome" : "Retorno de mercadoria recebida para industrialização e não aplicada no referido processo",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814718,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2170,
+		"codigo" : 5904,
+		"nome" : "Remessa para venda fora do estabelecimento",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814718,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2171,
+		"codigo" : 5905,
+		"nome" : "Remessa para depósito fechado ou armazém geral",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814718,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2172,
+		"codigo" : 5906,
+		"nome" : "Retorno de mercadoria depositada em depósito fechado ou armazém geral",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814718,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2173,
+		"codigo" : 5907,
+		"nome" : "Retorno simbólico de mercadoria depositada em depósito fechado ou armazém geral",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814718,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2174,
+		"codigo" : 5908,
+		"nome" : "Remessa de bem por conta de contrato de comodato",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814718,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2175,
+		"codigo" : 5908,
+		"nome" : "Remessa de bem por conta de contrato de comodato ou locação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814718,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2176,
+		"codigo" : 5909,
+		"nome" : "Retorno de bem recebido por conta de contrato de comodato",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814718,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2177,
+		"codigo" : 5909,
+		"nome" : "Retorno de bem recebido por conta de contrato de comodato ou locação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814719,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2178,
+		"codigo" : 5910,
+		"nome" : "Remessa em bonificação, doação ou brinde",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814719,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2179,
+		"codigo" : 5911,
+		"nome" : "Remessa de amostra grátis",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814719,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2180,
+		"codigo" : 5912,
+		"nome" : "Remessa de mercadoria ou bem para demonstração",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814719,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2181,
+		"codigo" : 5913,
+		"nome" : "Retorno de mercadoria ou bem recebido para demonstração",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814719,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2182,
+		"codigo" : 5914,
+		"nome" : "Remessa de mercadoria ou bem para exposição ou feira",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814719,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2183,
+		"codigo" : 5915,
+		"nome" : "Remessa de mercadoria ou bem para conserto ou reparo",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814720,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2184,
+		"codigo" : 5916,
+		"nome" : "Retorno de mercadoria ou bem recebido para conserto ou reparo",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814720,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2185,
+		"codigo" : 5917,
+		"nome" : "Remessa de mercadoria em consignação mercantil ou industrial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814720,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2186,
+		"codigo" : 5918,
+		"nome" : "Devolução de mercadoria recebida em consignação mercantil ou industrial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814720,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2187,
+		"codigo" : 5919,
+		"nome" : "Devolução simbólica de mercadoria vendida ou utilizada em processo industrial, recebida anteriormente em consignação mercantil ou industrial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814721,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2188,
+		"codigo" : 5920,
+		"nome" : "Remessa de vasilhame ou sacaria",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814721,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2189,
+		"codigo" : 5921,
+		"nome" : "Devolução de vasilhame ou sacaria",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814721,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2190,
+		"codigo" : 5922,
+		"nome" : "Lançamento efetuado a título de simples faturamento decorrente de venda para entrega futura",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814721,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2191,
+		"codigo" : 5923,
+		"nome" : "Remessa de mercadoria por conta e ordem de terceiros, em venda à ordem",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814721,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2192,
+		"codigo" : 5924,
+		"nome" : "Remessa para industrialização por conta e ordem do adquirente da mercadoria, quando esta não transitar pelo estabelecimento do adquirente",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814721,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2193,
+		"codigo" : 5925,
+		"nome" : "Retorno de mercadoria recebida para industrialização por conta e ordem do adquirente da mercadoria, quando aquela não transitar pelo estabelecimento do adquirente",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814722,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2194,
+		"codigo" : 5926,
+		"nome" : "Lançamento efetuado a título de reclassificação de mercadoria decorrente de formação de kit ou de sua desagregação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814722,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2195,
+		"codigo" : 5927,
+		"nome" : "Lançamento efetuado a título de baixa de estoque decorrente de perda, roubo ou deterioração",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814722,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2196,
+		"codigo" : 5928,
+		"nome" : "Lançamento efetuado a título de baixa de estoque decorrente do encerramento da atividade da empresa",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814722,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2197,
+		"codigo" : 5929,
+		"nome" : "Lançamento efetuado em decorrência de emissão de documento fiscal relativo a operação ou prestação também registrada em equipamento Emissor de Cupom Fiscal - ECF",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814722,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2198,
+		"codigo" : 5931,
+		"nome" : "Lançamento efetuado em decorrência da responsabilidade de retenção do imposto por substituição tributária, atribuída ao remetente ou alienante da mercadoria, pelo serviço de transporte realizado por transportador autônomo ou por transportador não inscrito na unidade da Federação onde iniciado o serviço",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814722,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2199,
+		"codigo" : 5932,
+		"nome" : "Prestação de serviço de transporte iniciada em unidade da Federação diversa daquela onde inscrito o prestador",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814722,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2200,
+		"codigo" : 5933,
+		"nome" : "Prestação de serviço tributado pelo ISSQN. (ajuste sinief 03\/04)",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814722,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2201,
+		"codigo" : 5949,
+		"nome" : "Outra saída de mercadoria ou prestação de serviço não especificado",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814723,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2202,
+		"codigo" : 6101,
+		"nome" : "Venda de produção do estabelecimento",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814723,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2203,
+		"codigo" : 6102,
+		"nome" : "Venda de mercadoria adquirida ou recebida de terceiros",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814723,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2204,
+		"codigo" : 6103,
+		"nome" : "Venda de produção do estabelecimento, efetuada fora do estabelecimento",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814723,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2205,
+		"codigo" : 6104,
+		"nome" : "Venda de mercadoria adquirida ou recebida de terceiros, efetuada fora do estabelecimento",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814723,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2206,
+		"codigo" : 6105,
+		"nome" : "Venda de produção do estabelecimento que não deva por ele transitar",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814723,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2207,
+		"codigo" : 6106,
+		"nome" : "Venda de mercadoria adquirida ou recebida de terceiros, que não deva por ele transitar",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814723,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2209,
+		"codigo" : 6108,
+		"nome" : "Venda de mercadoria adquirida ou recebida de terceiros, destinada a não contribuinte",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814724,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2210,
+		"codigo" : 6109,
+		"nome" : "Venda de produção do estabelecimento, destinada à Zona Franca de Manaus ou Áreas de Livre Comércio",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814724,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2211,
+		"codigo" : 6110,
+		"nome" : "Venda de mercadoria adquirida ou recebida de terceiros, destinada à Zona Franca de Manaus ou Áreas de Livre Comércio",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814724,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2212,
+		"codigo" : 6111,
+		"nome" : "Venda de produção do estabelecimento remetida anteriormente em consignação industrial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814724,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2213,
+		"codigo" : 6112,
+		"nome" : "Venda de mercadoria adquirida ou recebida de Terceiros remetida anteriormente em consignação industrial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814724,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2214,
+		"codigo" : 6113,
+		"nome" : "Venda de produção do estabelecimento remetida anteriormente em consignação mercantil",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814724,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2215,
+		"codigo" : 6114,
+		"nome" : "Venda de mercadoria adquirida ou recebida de terceiros remetida anteriormente em consignação mercantil",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814724,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2216,
+		"codigo" : 6115,
+		"nome" : "Venda de mercadoria adquirida ou recebida de terceiros, recebida anteriormente em consignação mercantil",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814724,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2217,
+		"codigo" : 6116,
+		"nome" : "Venda de produção do estabelecimento originada de encomenda para entrega futura",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814725,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2218,
+		"codigo" : 6117,
+		"nome" : "Venda de mercadoria adquirida ou recebida de terceiros, originada de encomenda para entrega futura",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814725,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2219,
+		"codigo" : 6118,
+		"nome" : "Venda de produção do estabelecimento entregue ao destinatário por conta e ordem do adquirente originário, em venda à ordem",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814725,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2220,
+		"codigo" : 6119,
+		"nome" : "Venda de mercadoria adquirida ou recebida de terceiros entregue ao destinatário por conta e ordem do adquirente originário, em venda à ordem",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814725,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2221,
+		"codigo" : 6120,
+		"nome" : "Venda de mercadoria adquirida ou recebida de terceiros entregue ao destinatário pelo vendedor remetente, em venda à ordem",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814725,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2222,
+		"codigo" : 6122,
+		"nome" : "Venda de produção do estabelecimento remetida para industrialização, por conta e ordem do adquirente, sem transitar pelo estabelecimento do adquirente",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814725,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2223,
+		"codigo" : 6123,
+		"nome" : "Venda de mercadoria adquirida ou recebida de terceiros remetida para industrialização, por conta e ordem do adquirente, sem transitar pelo estabelecimento do adquirente",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814725,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2224,
+		"codigo" : 6124,
+		"nome" : "Industrialização efetuada para outra empresa",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814725,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2225,
+		"codigo" : 6125,
+		"nome" : "Industrialização efetuada para outra empresa quando a mercadoria recebida para utilização no processo de industrialização não transitar pelo estabelecimento adquirente da mercadoria",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814726,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2226,
+		"codigo" : 6151,
+		"nome" : "Transferência de produção do estabelecimento",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814726,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2227,
+		"codigo" : 6152,
+		"nome" : "Transferência de mercadoria adquirida ou recebida de terceiros",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814726,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2228,
+		"codigo" : 6153,
+		"nome" : "Transferência de energia elétrica",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814726,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2229,
+		"codigo" : 6155,
+		"nome" : "Transferência de produção do estabelecimento, que não deva por ele transitar",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814726,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2230,
+		"codigo" : 6156,
+		"nome" : "Transferência de mercadoria adquirida ou recebida de terceiros, que não deva por ele transitar",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814726,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2231,
+		"codigo" : 6159,
+		"nome" : "Fornecimento de produção do estabelecimento de ato cooperativo",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814726,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2232,
+		"codigo" : 6160,
+		"nome" : "Fornecimento de mercadoria adquirida ou recebida de terceiros de ato cooperativo",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814726,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2233,
+		"codigo" : 6201,
+		"nome" : "Devolução de compra para industrialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814727,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2234,
+		"codigo" : 6202,
+		"nome" : "Devolução de compra para comercialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814727,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2235,
+		"codigo" : 6205,
+		"nome" : "Anulação de valor relativo a aquisição de serviço de comunicação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814727,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2236,
+		"codigo" : 6206,
+		"nome" : "Anulação de valor relativo a aquisição de serviço de transporte",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814727,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2237,
+		"codigo" : 6207,
+		"nome" : "Anulação de valor relativo à compra de energia elétrica",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814728,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2238,
+		"codigo" : 6208,
+		"nome" : "Devolução de mercadoria recebida em transferência para industrialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814728,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2239,
+		"codigo" : 6209,
+		"nome" : "Devolução de mercadoria recebida em transferência para comercialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814728,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2240,
+		"codigo" : 6210,
+		"nome" : "Devolução de compra para utilização na prestação de serviço",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814728,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2241,
+		"codigo" : 6251,
+		"nome" : "Venda de energia elétrica para distribuição ou comercialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814728,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2242,
+		"codigo" : 6252,
+		"nome" : "Venda de energia elétrica para estabelecimento industrial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814729,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2243,
+		"codigo" : 6253,
+		"nome" : "Venda de energia elétrica para estabelecimento comercial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814729,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2244,
+		"codigo" : 6254,
+		"nome" : "Venda de energia elétrica para estabelecimento prestador de serviço de transporte",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814729,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2245,
+		"codigo" : 6255,
+		"nome" : "Venda de energia elétrica para estabelecimento prestador de serviço de comunicação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814729,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2246,
+		"codigo" : 6256,
+		"nome" : "Venda de energia elétrica para estabelecimento de produtor rural",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814729,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2247,
+		"codigo" : 6257,
+		"nome" : "Venda de energia elétrica para consumo por demanda contratada",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814729,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2248,
+		"codigo" : 6258,
+		"nome" : "Venda de energia elétrica a não contribuinte",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814730,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2249,
+		"codigo" : 6301,
+		"nome" : "Prestação de serviço de comunicação para execução de serviço da mesma natureza",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814730,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2250,
+		"codigo" : 6302,
+		"nome" : "Prestação de serviço de comunicação a estabelecimento industrial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814730,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2251,
+		"codigo" : 6303,
+		"nome" : "Prestação de serviço de comunicação a estabelecimento comercial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814730,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2252,
+		"codigo" : 6304,
+		"nome" : "Prestação de serviço de comunicação a estabelecimento de prestador de serviço de transporte",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814730,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2253,
+		"codigo" : 6305,
+		"nome" : "Prestação de serviço de comunicação a estabelecimento de geradora ou de distribuidora de energia elétrica",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814730,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2254,
+		"codigo" : 6306,
+		"nome" : "Prestação de serviço de comunicação a estabelecimento de produtor rural",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814730,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2255,
+		"codigo" : 6307,
+		"nome" : "Prestação de serviço de comunicação a não contribuinte",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814731,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2256,
+		"codigo" : 6351,
+		"nome" : "Prestação de serviço de transporte para execução de serviço da mesma natureza",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814731,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2257,
+		"codigo" : 6352,
+		"nome" : "Prestação de serviço de transporte a estabelecimento industrial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814731,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2258,
+		"codigo" : 6353,
+		"nome" : "Prestação de serviço de transporte a estabelecimento comercial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814731,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2259,
+		"codigo" : 6354,
+		"nome" : "Prestação de serviço de transporte a estabelecimento de prestador de serviço de comunicação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814731,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2260,
+		"codigo" : 6355,
+		"nome" : "Prestação de serviço de transporte a estabelecimento de geradora ou de distribuidora de energia elétrica",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814731,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2261,
+		"codigo" : 6356,
+		"nome" : "Prestação de serviço de transporte a estabelecimento de produtor rural",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814731,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2262,
+		"codigo" : 6357,
+		"nome" : "Prestação de serviço de transporte a não contribuinte",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814732,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2263,
+		"codigo" : 6359,
+		"nome" : "Prestação de serviço de transporte a contribuinte ou a não contribuinte quando a mercadoria transportada está dispensada de emissão de nota fiscal. (ajuste sinief 03\/04)",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814732,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2264,
+		"codigo" : 6360,
+		"nome" : "Prestação de serviço de transporte a contribuinte substituto em relação ao serviço de transporte",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814732,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2265,
+		"codigo" : 6401,
+		"nome" : "Venda de produção do estabelecimento em operação com produto sujeito ao regime de substituição tributária, na condição de contribuinte substituto",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814732,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2266,
+		"codigo" : 6402,
+		"nome" : "Venda de produção do estabelecimento de produto sujeito ao regime de substituição tributária, em operação entre contribuintes substitutos do mesmo produto",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814732,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2267,
+		"codigo" : 6403,
+		"nome" : "Venda de mercadoria adquirida ou recebida de terceiros em operação com mercadoria sujeita ao regime de substituição tributária, na condição de contribuinte substituto",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814732,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2268,
+		"codigo" : 6404,
+		"nome" : "Venda de mercadoria sujeita ao regime de substituição tributária, cujo imposto já tenha sido retido anteriormente",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814733,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2269,
+		"codigo" : 6408,
+		"nome" : "Transferência de produção do estabelecimento em operação com produto sujeito ao regime de substituição tributária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814733,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2270,
+		"codigo" : 6409,
+		"nome" : "Transferência de mercadoria adquirida ou recebida de terceiros em operação com mercadoria sujeita ao regime de substituição tributária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814733,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2271,
+		"codigo" : 6410,
+		"nome" : "Devolução de compra para industrialização em operação com mercadoria sujeita ao regime de substituição tributária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814733,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2272,
+		"codigo" : 6411,
+		"nome" : "Devolução de compra para comercialização em operação com mercadoria sujeita ao regime de substituição tributária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814733,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2273,
+		"codigo" : 6412,
+		"nome" : "Devolução de bem do ativo imobilizado, em operação com mercadoria sujeita ao regime de substituição tributária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814733,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2274,
+		"codigo" : 6413,
+		"nome" : "Devolução de mercadoria destinada ao uso ou consumo, em operação com mercadoria sujeita ao regime de substituição tributária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814733,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2275,
+		"codigo" : 6414,
+		"nome" : "Remessa de produção do estabelecimento para venda fora do estabelecimento em operação com produto sujeito ao regime de substituição tributária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814734,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2276,
+		"codigo" : 6415,
+		"nome" : "Remessa de mercadoria adquirida ou recebida de terceiros para venda fora do estabelecimento, em operação com mercadoria sujeita ao regime de substituição tributária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814734,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2277,
+		"codigo" : 6451,
+		"nome" : "Remessa de animal - Sistema de Integração e Parceria Rural",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814734,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2278,
+		"codigo" : 6452,
+		"nome" : "Remessa de insumo - Sistema de Integração e Parceria Rural",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814734,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2279,
+		"codigo" : 6453,
+		"nome" : "Retorno de animal ou da produção - Sistema de Integração e Parceria Rural",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814734,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2280,
+		"codigo" : 6454,
+		"nome" : "Retorno simbólico de animal ou da produção - Sistema de Integração e Parceria Rural",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814734,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2281,
+		"codigo" : 6455,
+		"nome" : "Retorno de insumos não utilizados na produção - Sistema de Integração e Parceria Rural",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814734,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2282,
+		"codigo" : 6456,
+		"nome" : "Saída referente a remuneração do produtor - Sistema de Integração e Parceria Rural",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814734,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2283,
+		"codigo" : 6501,
+		"nome" : "Remessa de produção do estabelecimento, com fim específico de exportação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814735,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2284,
+		"codigo" : 6502,
+		"nome" : "Remessa de mercadoria adquirida ou recebida de terceiros, com fim específico de exportação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814735,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2285,
+		"codigo" : 6503,
+		"nome" : "Devolução de mercadoria recebida com fim específico de exportação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814735,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2286,
+		"codigo" : 6504,
+		"nome" : "Remessa de mercadorias para formação de lote de exportação, de produtos industrializados ou produzidos pelo próprio estabelecimento.",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814735,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2287,
+		"codigo" : 6505,
+		"nome" : "Remessa de mercadorias, adquiridas ou recebidas de terceiros, para formação de lote de exportação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814735,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2288,
+		"codigo" : 6551,
+		"nome" : "Venda de bem do ativo imobilizado",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814735,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2289,
+		"codigo" : 6552,
+		"nome" : "Transferência de bem do ativo imobilizado",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814735,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2290,
+		"codigo" : 6553,
+		"nome" : "Devolução de compra de bem para o ativo imobilizado",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814736,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2291,
+		"codigo" : 6554,
+		"nome" : "Remessa de bem do ativo imobilizado para uso fora do estabelecimento",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814736,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2292,
+		"codigo" : 6555,
+		"nome" : "Devolução de bem do ativo imobilizado de terceiro, recebido para uso no estabelecimento",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814736,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2293,
+		"codigo" : 6556,
+		"nome" : "Devolução de compra de material de uso ou consumo",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814736,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2294,
+		"codigo" : 6557,
+		"nome" : "Transferência de material de uso ou consumo",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814736,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2295,
+		"codigo" : 6603,
+		"nome" : "Ressarcimento de ICMS retido por substituição tributária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814736,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2296,
+		"codigo" : 6651,
+		"nome" : "Venda de combustível ou lubrificante de produção do estabelecimento destinado à industrialização subseqüente",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814736,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2297,
+		"codigo" : 6652,
+		"nome" : "Venda de combustível ou lubrificante de produção do estabelecimento destinado à comercialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814736,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2298,
+		"codigo" : 6653,
+		"nome" : "Venda de combustível ou lubrificante de produção do estabelecimento destinado a consumidor ou usuário final",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814737,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2299,
+		"codigo" : 6654,
+		"nome" : "Venda de combustível ou lubrificante adquirido ou recebido de terceiros destinado à industrialização subseqüente",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814737,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2300,
+		"codigo" : 6655,
+		"nome" : "Venda de combustível ou lubrificante adquirido ou recebido de terceiros destinado à comercialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814737,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2301,
+		"codigo" : 6656,
+		"nome" : "Venda de combustível ou lubrificante adquirido ou recebido de terceiros destinado a consumidor ou usuário final",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814737,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2302,
+		"codigo" : 6657,
+		"nome" : "Remessa de combustível ou lubrificante adquirido ou recebido de terceiros para venda fora do estabelecimento",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814737,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2303,
+		"codigo" : 6658,
+		"nome" : "Transferência de combustível ou lubrificante de produção do estabelecimento",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814737,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2304,
+		"codigo" : 6659,
+		"nome" : "Transferência de combustível ou lubrificante adquirido ou recebido de terceiro",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814737,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2305,
+		"codigo" : 6660,
+		"nome" : "Devolução de compra de combustível ou lubrificante adquirido para industrialização subseqüente",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814738,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2306,
+		"codigo" : 6661,
+		"nome" : "Devolução de compra de combustível ou lubrificante adquirido para comercialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814738,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2307,
+		"codigo" : 6662,
+		"nome" : "Devolução de compra de combustível ou lubrificante adquirido por consumidor ou usuário final",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814738,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2308,
+		"codigo" : 6663,
+		"nome" : "Remessa para armazenagem de combustível ou lubrificante",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814738,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2309,
+		"codigo" : 6664,
+		"nome" : "Retorno de combustível ou lubrificante recebido para armazenagem",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814738,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2310,
+		"codigo" : 6665,
+		"nome" : "Retorno simbólico de combustível ou lubrificante recebido para armazenagem",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814738,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2311,
+		"codigo" : 6666,
+		"nome" : "Remessa por conta e ordem de terceiros de combustível ou lubrificante recebido para armazenagem",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814738,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2312,
+		"codigo" : 6667,
+		"nome" : "Venda de combustível ou lubrificante a consumidor ou usuário final estabelecido em outra unidade da Federação diferente a da que ocorrer o consumo",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814738,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2313,
+		"codigo" : 6901,
+		"nome" : "Remessa para industrialização por encomenda",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814739,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2314,
+		"codigo" : 6902,
+		"nome" : "Retorno de mercadoria utilizada na industrialização por encomenda",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814739,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2315,
+		"codigo" : 6903,
+		"nome" : "Retorno de mercadoria recebida para industrialização e não aplicada no referido processo",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814739,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2316,
+		"codigo" : 6904,
+		"nome" : "Remessa para venda fora do estabelecimento",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814739,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2317,
+		"codigo" : 6905,
+		"nome" : "Remessa para depósito fechado ou armazém geral",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814739,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2318,
+		"codigo" : 6906,
+		"nome" : "Retorno de mercadoria depositada em depósito fechado ou armazém geral",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814739,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2319,
+		"codigo" : 6907,
+		"nome" : "Retorno simbólico de mercadoria depositada em depósito fechado ou armazém geral",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814739,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2320,
+		"codigo" : 6908,
+		"nome" : "Remessa de bem por conta de contrato de comodato",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814739,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2321,
+		"codigo" : 6908,
+		"nome" : "Remessa de bem por conta de contrato de comodato ou locação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814740,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2322,
+		"codigo" : 6909,
+		"nome" : "Retorno de bem recebido por conta de contrato de comodato",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814740,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2323,
+		"codigo" : 6909,
+		"nome" : "Retorno de bem recebido por conta de contrato de comodato ou locação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814740,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2324,
+		"codigo" : 6910,
+		"nome" : "Remessa em bonificação, doação ou brinde",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814740,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2325,
+		"codigo" : 6911,
+		"nome" : "Remessa de amostra grátis",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814740,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2326,
+		"codigo" : 6912,
+		"nome" : "Remessa de mercadoria ou bem para demonstração",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814740,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2327,
+		"codigo" : 6913,
+		"nome" : "Retorno de mercadoria ou bem recebido para demonstração",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814740,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2328,
+		"codigo" : 6914,
+		"nome" : "Remessa de mercadoria ou bem para exposição ou feira",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814740,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2329,
+		"codigo" : 6915,
+		"nome" : "Remessa de mercadoria ou bem para conserto ou reparo",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814741,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2330,
+		"codigo" : 6916,
+		"nome" : "Retorno de mercadoria ou bem recebido para conserto ou reparo",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814741,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2331,
+		"codigo" : 6917,
+		"nome" : "Remessa de mercadoria em consignação mercantil ou industrial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814741,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2332,
+		"codigo" : 6918,
+		"nome" : "Devolução de mercadoria recebida em consignação mercantil ou industrial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814741,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2333,
+		"codigo" : 6919,
+		"nome" : "Devolução simbólica de mercadoria vendida ou utilizada em processo industrial, recebida anteriormente em consignação mercantil ou industrial",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814741,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2334,
+		"codigo" : 6920,
+		"nome" : "Remessa de vasilhame ou sacaria",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814741,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2335,
+		"codigo" : 6921,
+		"nome" : "Devolução de vasilhame ou sacaria",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814741,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2336,
+		"codigo" : 6922,
+		"nome" : "Lançamento efetuado a título de simples faturamento decorrente de venda para entrega futura",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814742,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2337,
+		"codigo" : 6923,
+		"nome" : "Remessa de mercadoria por conta e ordem de terceiros, em venda à ordem",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814742,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2338,
+		"codigo" : 6924,
+		"nome" : "Remessa para industrialização por conta e ordem do adquirente da mercadoria, quando esta não transitar pelo estabelecimento do adquirente",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814742,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2339,
+		"codigo" : 6925,
+		"nome" : "Retorno de mercadoria recebida para industrialização por conta e ordem do adquirente da mercadoria, quando aquela não transitar pelo estabelecimento do adquirente",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814742,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2340,
+		"codigo" : 6929,
+		"nome" : "Lançamento efetuado em decorrência de emissão de documento fiscal relativo a operação ou prestação também registrada em equipamento Emissor de Cupom Fiscal - ECF",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814742,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2341,
+		"codigo" : 6931,
+		"nome" : "Lançamento efetuado em decorrência da responsabilidade de retenção do imposto por substituição tributária, atribuída ao remetente ou alienante da mercadoria, pelo serviço de transporte realizado por transportador autônomo ou por transportador não inscrito na unidade da Federação onde iniciado o serviço",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814742,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2342,
+		"codigo" : 6932,
+		"nome" : "Prestação de serviço de transporte iniciada em unidade da Federação diversa daquela onde inscrito o prestador",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814743,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2343,
+		"codigo" : 6933,
+		"nome" : "Prestação de serviço tributado pelo ISSQN (ajuste sinief 03\/04)",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814743,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2344,
+		"codigo" : 6949,
+		"nome" : "Outra saída de mercadoria ou prestação de serviço não especificado",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814743,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2345,
+		"codigo" : 7101,
+		"nome" : "Venda de produção do estabelecimento",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814743,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2346,
+		"codigo" : 7102,
+		"nome" : "Venda de mercadoria adquirida ou recebida de terceiros",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814743,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2347,
+		"codigo" : 7105,
+		"nome" : "Venda de produção do estabelecimento, que não deva por ele transitar",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814743,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2348,
+		"codigo" : 7106,
+		"nome" : "Venda de mercadoria adquirida ou recebida de terceiros, que não deva por ele transitar",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814744,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2349,
+		"codigo" : 7127,
+		"nome" : "Venda de produção do estabelecimento sob o regime de drawback",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814744,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2350,
+		"codigo" : 7201,
+		"nome" : "Devolução de compra para industrialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814744,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2351,
+		"codigo" : 7202,
+		"nome" : "Devolução de compra para comercialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814744,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2352,
+		"codigo" : 7205,
+		"nome" : "Anulação de valor relativo à aquisição de serviço de comunicação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814744,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2353,
+		"codigo" : 7206,
+		"nome" : "Anulação de valor relativo a aquisição de serviço de transporte",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814744,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2354,
+		"codigo" : 7207,
+		"nome" : "Anulação de valor relativo à compra de energia elétrica",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814745,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2355,
+		"codigo" : 7210,
+		"nome" : "Devolução de compra para utilização na prestação de serviço",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814745,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2356,
+		"codigo" : 7211,
+		"nome" : "Devolução de compras para industrialização sob o regime de drawback",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814745,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2357,
+		"codigo" : 7251,
+		"nome" : "Venda de energia elétrica para o exterior",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814745,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2358,
+		"codigo" : 7301,
+		"nome" : "Prestação de serviço de comunicação para execução de serviço da mesma natureza",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814745,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2359,
+		"codigo" : 7358,
+		"nome" : "Prestação de serviço de transporte",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814745,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2360,
+		"codigo" : 7501,
+		"nome" : "Exportação de mercadorias recebidas com fim específico de exportação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814745,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2361,
+		"codigo" : 7504,
+		"nome" : "Exportação de mercadoria que foi objeto de formação de lote de exportação",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814745,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2362,
+		"codigo" : 7551,
+		"nome" : "Venda de bem do ativo imobilizado",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814746,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2363,
+		"codigo" : 7553,
+		"nome" : "Devolução de compra de bem para o ativo imobilizado",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814746,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2364,
+		"codigo" : 7556,
+		"nome" : "Devolução de compra de material de uso ou consumo",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814746,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2365,
+		"codigo" : 7651,
+		"nome" : "Venda de combustível ou lubrificante de produção do estabelecimento destinado à industrialização subseqüente",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814746,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2366,
+		"codigo" : 7654,
+		"nome" : "Venda de combustível ou lubrificante adquirido ou recebido de terceiros destinado à industrialização subseqüente",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814746,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2367,
+		"codigo" : 7667,
+		"nome" : "Venda de combustível ou lubrificante a consumidor ou usuário final",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814746,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2368,
+		"codigo" : 7930,
+		"nome" : "Lançamento efetuado a título de devolução de bem cuja entrada tenha ocorrido sob amparo de regime especial aduaneiro de admissão temporária",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814747,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2369,
+		"codigo" : 7949,
+		"nome" : "Outra saída de mercadoria ou prestação de serviço não especificado",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814747,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2370,
+		"codigo" : 1934,
+		"nome" : "Entrada simbólica de mercadoria recebida para depósito fechado ou armazém geral",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814747,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2371,
+		"codigo" : 2934,
+		"nome" : "Entrada simbólica de mercadoria recebida para depósito fechado ou armazém geral",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814747,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2372,
+		"codigo" : 5923,
+		"nome" : "Remessa de mercadoria por conta e ordem de terceiros, em venda à ordem ou em operações com armazém geral ou depósito fechado",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814747,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2373,
+		"codigo" : 5934,
+		"nome" : "Remessa simbólica de mercadoria depositada em armazém geral ou depósito fechado",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814747,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2374,
+		"codigo" : 6923,
+		"nome" : "Remessa de mercadoria por conta e ordem de terceiros, em venda à ordem ou em operações com armazém geral ou depósito fechado",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814747,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2375,
+		"codigo" : 6934,
+		"nome" : "Remessa simbólica de mercadoria depositada em armazém geral ou depósito fechado",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814748,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2376,
+		"codigo" : 1128,
+		"nome" : "Compra para utilização na prestação de serviço sujeita ao ISSQN",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814748,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2377,
+		"codigo" : 2128,
+		"nome" : "Compra para utilização na prestação de serviço sujeita ao ISSQN",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814748,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2378,
+		"codigo" : 3128,
+		"nome" : "Compra para utilização na prestação de serviço sujeita ao ISSQN",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814748,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2379,
+		"codigo" : 1212,
+		"nome" : "Devolução de venda no mercado interno de mercadoria industrializada e insumo importado sob o Regime Aduaneiro Especial de Entreposto Industrial sob Controle Informatizado do Sistema Público de Escrituração Digital (Recof-Sped)",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814748,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2380,
+		"codigo" : 2212,
+		"nome" : "Devolução de venda no mercado interno de mercadoria industrializada e insumo importado sob o Regime Aduaneiro Especial de Entreposto Industrial sob Controle Informatizado do Sistema Público de Escrituração Digital (Recof-Sped)",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814748,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2381,
+		"codigo" : 3129,
+		"nome" : "Compra para industrialização sob o Regime Aduaneiro Especial de Entreposto Industrial sob Controle Informatizado do Sistema Público de Escrituração Digital (Recof-Sped)",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814749,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2382,
+		"codigo" : 3212,
+		"nome" : "Devolução de venda no mercado externo de mercadoria industrializada sob o Regime Aduaneiro Especial de Entreposto Industrial sob Controle Informatizado do Sistema Público de Escrituração Digital (Recof-Sped)",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814749,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2383,
+		"codigo" : 5129,
+		"nome" : "Venda de insumo importado e de mercadoria industrializada sob o amparo do Regime Aduaneiro Especial de Entreposto Industrial sob Controle Informatizado do Sistema Público de Escrituração Digital (Recof-Sped",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814749,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2384,
+		"codigo" : 6129,
+		"nome" : "Venda de insumo importado e de mercadoria industrializada sob o amparo do Regime Aduaneiro Especial de Entreposto Industrial sob Controle Informatizado do Sistema Público de Escrituração Digital (Recof-Sped)",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814749,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2385,
+		"codigo" : 7129,
+		"nome" : "Venda de produção do estabelecimento ao mercado externo de mercadoria industrializada sob o amparo do Regime Aduaneiro Especial de Entreposto Industrial sob Controle Informatizado do Sistema Público de Escrituração Digital (Recof-Sped)",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814749,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2386,
+		"codigo" : 7212,
+		"nome" : "Devolução de compras para industrialização sob o regime de Regime Aduaneiro Especial de Entreposto Industrial sob Controle Informatizado do Sistema Público de Escrituração Digital (Recof-Sped)",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814749,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2387,
+		"codigo" : 1131,
+		"nome" : "Entrada de mercadoria com previsão de posterior ajuste ou fixação de preço, decorrente de operação de ato cooperativo.",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814749,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2388,
+		"codigo" : 1132,
+		"nome" : "Fixação de preço de produção do estabelecimento produtor, inclusive quando remetidas anteriormente com previsão de posterior ajuste ou fixação de preço, em ato cooperativo, para comercialização",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814749,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2389,
+		"codigo" : 1135,
+		"nome" : "Fixação de preço de produção do estabelecimento produtor, inclusive quando remetidas anteriormente com previsão de posterior ajuste ou fixação de preço, em ato cooperativo, para industrialização.",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814750,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2390,
+		"codigo" : 1213,
+		"nome" : "Devolução de remessa de produção do estabelecimento com previsão de posterior ajuste ou fixação de preço, em ato cooperativo.",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814750,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2391,
+		"codigo" : 1214,
+		"nome" : "Devolução de fixação de preço de produção do estabelecimento produtor, de ato cooperativo.",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814750,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2392,
+		"codigo" : 2131,
+		"nome" : "Entrada de mercadoria com previsão de posterior ajuste ou fixação de preço, decorrente de operação de ato cooperativo.",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814750,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2393,
+		"codigo" : 2132,
+		"nome" : "Fixação de preço de produção do estabelecimento produtor, inclusive quando remetidas anteriormente com previsão de posterior ajuste ou fixação de preço, em ato cooperativo, para comercialização.",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814751,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2394,
+		"codigo" : 2135,
+		"nome" : "Fixação de preço de produção do estabelecimento produtor, inclusive quando remetidas anteriormente com previsão de posterior ajuste ou fixação de preço, em ato cooperativo, para industrialização.",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814751,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2395,
+		"codigo" : 2213,
+		"nome" : "Devolução de remessa de produção do estabelecimento com previsão de posterior ajuste ou fixação de preço, em ato cooperativo.",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814751,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2396,
+		"codigo" : 2214,
+		"nome" : "Devolução de fixação de preço de produção do estabelecimento produtor, de ato cooperativo.",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814751,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2397,
+		"codigo" : 5131,
+		"nome" : "Remessa de produção do estabelecimento, com previsão de posterior ajuste ou fixação de preço, de ato cooperativo.",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814751,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2398,
+		"codigo" : 5132,
+		"nome" : "Fixação de preço de produção do estabelecimento, inclusive quando remetidas anteriormente com previsão de posterior ajuste ou fixação de preço de ato cooperativo.",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814751,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2399,
+		"codigo" : 5213,
+		"nome" : "Devolução de entrada de mercadoria com previsão de posterior ajuste ou fixação de preço, em ato cooperativo.",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814751,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2400,
+		"codigo" : 5214,
+		"nome" : "Devolução de fixação de preço de produção do estabelecimento produtor, inclusive quando remetidas anteriormente com previsão de posterior ajuste ou fixação de preço, de ato cooperativo, para comercialização.",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814751,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2401,
+		"codigo" : 5215,
+		"nome" : "Devolução de fixação de preço de produção do estabelecimento produtor, inclusive quando remetidas anteriormente com previsão de posterior ajuste ou fixação de preço, de ato cooperativo, para industrialização.",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814752,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2402,
+		"codigo" : 6131,
+		"nome" : "Remessa de produção de estabelecimento, com previsão de posterior ajuste ou fixação de preço de ato cooperativo.",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814752,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2403,
+		"codigo" : 6132,
+		"nome" : "Fixação de preço de produção do estabelecimento, inclusive quando remetidas anteriormente com previsão de posterior ajuste ou fixação de preço ou fixação de preço de ato cooperativo.",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814752,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2404,
+		"codigo" : 6213,
+		"nome" : "Devolução de entrada de mercadoria com previsão de posterior ajuste ou fixação de preço, em ato cooperativo.",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814752,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2405,
+		"codigo" : 6214,
+		"nome" : "Devolução de fixação de preço de produção do estabelecimento produtor, inclusive quando remetidas anteriormente com previsão de posterior ajuste ou fixação de preço, de ato cooperativo, para comercialização.",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814752,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2406,
+		"codigo" : 6215,
+		"nome" : "Devolução de fixação de preço de produção do estabelecimento produtor, inclusive quando remetidas anteriormente com previsão de posterior ajuste ou fixação de preço, de ato cooperativo para industrialização.",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814752,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2407,
+		"codigo" : 1215,
+		"nome" : "Devolução de fornecimento de produção do estabelecimento de ato cooperativo",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814752,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2408,
+		"codigo" : 1216,
+		"nome" : "Devolução de fornecimento de mercadoria adquirida ou recebida de terceiros de ato cooperativo",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814753,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2409,
+		"codigo" : 2215,
+		"nome" : "Devolução de fornecimento de produção do estabelecimento de ato cooperativo",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814753,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2410,
+		"codigo" : 2216,
+		"nome" : "Devolução de fornecimento de mercadoria adquirida ou recebida de terceiros de ato cooperativo",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814753,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2411,
+		"codigo" : 5216,
+		"nome" : "Devolução de entrada decorrente do fornecimento de produto ou mercadoria de ato cooperativo",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814753,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	},
+	{
+		"id" : 2412,
+		"codigo" : 6216,
+		"nome" : "Devolução de entrada decorrente do fornecimento de produto ou mercadoria de ato cooperativo",
+		"finalidade" : "",
+		"currenttimemillis" : 1676570814753,
+		"inativo" : 0,
+		"cstsicms" : null,
+		"csosnicms" : null
+	}
+]}

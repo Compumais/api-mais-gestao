@@ -16,8 +16,8 @@ import { empresa } from "./empresas.js";
 import { localestoque } from "./local-estoque.js";
 import { produtos } from "./produtos.js";
 
-const numeric156 = numeric({ precision: 15, scale: 6, mode: "string" });
-const numeric122 = numeric({ precision: 12, scale: 2, mode: "string" });
+const numeric156 = () => numeric({ precision: 15, scale: 6, mode: "string" });
+const numeric122 = () => numeric({ precision: 12, scale: 2, mode: "string" });
 
 export const movimentoestoque = pgTable(
 	"movimentoestoque",
@@ -26,9 +26,9 @@ export const movimentoestoque = pgTable(
 		idempresa: text().notNull(),
 		cancelado: smallint(), // Identifica se o movimento esta cancelado
 		currenttimemillis: bigint({ mode: "number" }), // Time millis da alteracao do registro
-		custoaquisicao: numeric156, // Custo de aquisição
-		customedio: numeric156, // Custo médio do produto
-		custototal: numeric122, // Custo total da movimentação
+		custoaquisicao: numeric156(), // Custo de aquisição
+		customedio: numeric156(), // Custo médio do produto
+		custototal: numeric122(), // Custo total da movimentação
 		data: date(), // Data do movimento
 		datahora: timestamp({ precision: 3, mode: "string" }), // Data hora da movimentação
 		// idfilial: bigint({ mode: "number" }), // ID da filial
@@ -38,13 +38,14 @@ export const movimentoestoque = pgTable(
 		idoriginal: text(), // ID da operação original
 		idproduto: text(), // ID do produto
 		observacao: varchar({ length: 50 }), // Observação da movimentação
-		pontoequilibrio: numeric156, // Ponto de equilíbrio
-		precocusto: numeric156, // Custo do produto
-		precoultimacompra: numeric122, // Valor do preço na última compra
-		quantidadeentrada: numeric156, // Quantidade entrada
-		quantidadesaida: numeric156, // Quantidade saída
+		pontoequilibrio: numeric156(), // Ponto de equilíbrio
+		precocusto: numeric156(), // Custo do produto
+		precoultimacompra: numeric122(), // Valor do preço na última compra
+		quantidadeentrada: numeric156(), // Quantidade entrada
+		quantidadesaida: numeric156(), // Quantidade saída
 		tipodocumento: smallint(), // Tipo de documento: 0=Pdv 1=NotaFiscal 2=Acerto
-		valortotal: numeric122, // Valor total da movimentação
+		tipoestoque: smallint().default(0).notNull(), // 0=operacional 1=fiscal 2=ambos
+		valortotal: numeric122(), // Valor total da movimentação
 		variacao: integer(), // Código da variação
 	},
 	(table) => [

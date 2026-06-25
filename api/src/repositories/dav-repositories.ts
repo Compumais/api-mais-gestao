@@ -67,3 +67,12 @@ export async function listarDavs({
 		total: totalCount[0]?.value ?? 0,
 	};
 }
+
+export async function buscarDavPorNotaFiscal(idnotafiscal: string) {
+	const [registro] = await db
+		.select()
+		.from(dav)
+		.where(eq(dav.idnotafiscal, idnotafiscal));
+
+	return registro;
+}

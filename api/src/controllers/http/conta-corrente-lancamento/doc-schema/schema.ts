@@ -462,3 +462,72 @@ export const excluirContaCorrenteLancamentoSchema: FastifySchema = {
 		},
 	},
 };
+
+export const previewImportacaoOfxSchema: FastifySchema = {
+	tags: ["conta-corrente-lancamentos"],
+	summary: "Prévia de importação OFX",
+	description:
+		"Analisa um arquivo OFX e retorna as transações com indicação de lançamentos existentes na conta corrente (data, valor e tipo).",
+	security: [{ bearerAuth: [] }],
+	body: {
+		type: "object",
+		properties: {
+			idcontacorrente: {
+				type: "string",
+				description: "ID da conta corrente",
+			},
+			conteudoOfx: {
+				type: "string",
+				description: "Conteúdo textual do arquivo OFX",
+			},
+		},
+		required: ["idcontacorrente", "conteudoOfx"],
+	},
+	response: {
+		200: {
+			type: "array",
+			items: {
+				type: "object",
+				properties: {
+					idTemporario: { type: "string" },
+					data: { type: "string" },
+					valor: { type: "string" },
+					tipo: { type: "string", enum: ["C", "D"] },
+					historico: { type: "string" },
+					documento: { type: "string", nullable: true },
+					status: { type: "string", enum: ["pendente", "existente"] },
+					idLancamentoExistente: { type: "string", nullable: true },
+					idplanocontasExistente: { type: "string", nullable: true },
+				},
+			},
+		},
+		400: {
+			type: "object",
+			properties: {
+				error: { type: "string" },
+				code: { type: "string" },
+			},
+		},
+		401: {
+			type: "object",
+			properties: {
+				error: { type: "string" },
+				code: { type: "string" },
+			},
+		},
+		404: {
+			type: "object",
+			properties: {
+				error: { type: "string" },
+				code: { type: "string" },
+			},
+		},
+		500: {
+			type: "object",
+			properties: {
+				error: { type: "string" },
+				code: { type: "string" },
+			},
+		},
+	},
+};

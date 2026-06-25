@@ -1,9 +1,9 @@
 import { v4 as uuidv4 } from "uuid";
-import type {
-	TipoProblema,
-	NovoTipoProblema,
-} from "@/model/tipo-problema-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
+import type {
+	NovoTipoProblema,
+	TipoProblema,
+} from "@/model/tipo-problema-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	criarTipoProblema,

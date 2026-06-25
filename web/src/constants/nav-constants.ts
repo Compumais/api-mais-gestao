@@ -1,9 +1,11 @@
 import {
+    IconCoins,
 	IconDashboard,
 	IconFileInvoice,
 	IconHelp,
 	IconHistory,
 	IconListDetails,
+	IconReceiptTax,
 	IconReportMoney,
 	IconSearch,
 	IconSettings,
@@ -73,12 +75,20 @@ export const DATA = {
 					url: "/produtos",
 				},
 				{
+					title: "Estoque",
+					url: "/estoque",
+				},
+				{
 					title: "Grupos",
 					url: "/grupos",
 				},
 				{
 					title: "Unidades de medida",
 					url: "/unidade-medida",
+				},
+				{
+					title: "Meios de pagamento",
+					url: "/meios-pagamento",
 				},
 				{
 					title: "Usuários",
@@ -100,13 +110,49 @@ export const DATA = {
 					title: "Nota fiscal de venda",
 					url: "/nota-fiscal-venda",
 				},
+				{
+					title: "NFC-e pendentes",
+					url: "/nfce-pendentes",
+				},
+				{
+					title: "Pedidos",
+					url: "/pedidos",
+				},
+			],
+		},
+	],
+	navTributos: [
+		{
+			title: "Tributos",
+			icon: IconReceiptTax,
+			items: [
+				{
+					title: "Naturezas",
+					url: "/tributos/naturezas",
+				},
+				{
+					title: "Configuração fiscal",
+					url: "/tributos/configuracao-fiscal",
+				},
+				{
+					title: "Mapeamento CFOP",
+					url: "/tributos/cfop-depara",
+				},
+				{
+					title: "Parametrização de tributos",
+					url: "/tributos/parametrizacao",
+				},
+				{
+					title: "Taxas por UF",
+					url: "/tributos/taxas",
+				},
 			],
 		},
 	],
 	navFinanceiro: [
 		{
 			title: "Financeiro",
-			icon: IconReportMoney,
+			icon: IconCoins,
 			items: [
 				{
 					title: "Plano de contas",

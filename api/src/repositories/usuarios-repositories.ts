@@ -1,4 +1,4 @@
-import { and, desc, eq, ilike, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, inArray, isNotNull, lte, ne, sql } from "drizzle-orm";
 import * as schema from "../../drizzle/schema.js";
 import { db } from "./connection.js";
 
@@ -11,6 +11,136 @@ export async function buscarUsuarioPorId(id: string): Promise<Usuario | null> {
 		.where(eq(schema.usuarios.id, id));
 
 	return usuario || null;
+}
+
+export async function buscarUsuarioPorEmail(email: string): Promise<Usuario | null> {
+	const [usuario] = await db
+		.select()
+		.from(schema.usuarios)
+		.where(eq(schema.usuarios.email, email))
+		.limit(1);
+
+	return usuario || null;
+}
+
+export async function emailJaUtilizado(
+	email: string,
+	ignorarId?: string,
+): Promise<boolean> {
+	const conditions = [eq(schema.usuarios.email, email)];
+	if (ignorarId) {
+		conditions.push(ne(schema.usuarios.id, ignorarId));
+	}
+
+	const [row] = await db
+		.select({ value: sql<number>`COUNT(*)::int` })
+		.from(schema.usuarios)
+		.where(and(...conditions));
+
+	return (row?.value ?? 0) > 0;
+}
+
+export type ListarUsuariosGlobalParametros = {
+	nome?: string;
+	email?: string;
+	ativo?: boolean;
+	page?: number;
+	limit?: number;
+};
+
+export async function listarUsuariosGlobal({
+	nome,
+	email,
+	ativo,
+	page = 1,
+	limit = 20,
+}: ListarUsuariosGlobalParametros) {
+	const offset = (page - 1) * limit;
+	const conditions = [];
+
+	if (nome) {
+		conditions.push(ilike(schema.usuarios.nome, `%${nome}%`));
+	}
+	if (email) {
+		conditions.push(ilike(schema.usuarios.email, `%${email}%`));
+	}
+	if (ativo !== undefined) {
+		conditions.push(eq(schema.usuarios.ativo, ativo));
+	}
+
+	const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+	const [usuarios, totalRow] = await Promise.all([
+		db
+			.select()
+			.from(schema.usuarios)
+			.where(whereClause)
+			.orderBy(desc(schema.usuarios.criadoem))
+			.limit(limit)
+			.offset(offset),
+		db
+			.select({ value: sql<number>`COUNT(*)::int` })
+			.from(schema.usuarios)
+			.where(whereClause),
+	]);
+
+	return {
+		usuarios,
+		total: totalRow[0]?.value ?? 0,
+	};
+}
+
+export async function atualizarUsuarioAdmin(
+	id: string,
+	dados: Partial<{
+		nome: string;
+		email: string;
+		perfil: string[];
+		ativo: boolean;
+		plano: string | null;
+	}>,
+): Promise<Usuario | null> {
+	const updateData: Record<string, unknown> = {
+		atualizadoem: new Date().toISOString(),
+	};
+
+	if (dados.nome !== undefined) updateData.nome = dados.nome;
+	if (dados.email !== undefined) updateData.email = dados.email;
+	if (dados.perfil !== undefined) updateData.perfil = dados.perfil;
+	if (dados.ativo !== undefined) updateData.ativo = dados.ativo;
+	if (dados.plano !== undefined) updateData.plano = dados.plano;
+
+	const [usuario] = await db
+		.update(schema.usuarios)
+		.set(updateData)
+		.where(eq(schema.usuarios.id, id))
+		.returning();
+
+	return usuario || null;
+}
+
+export async function atualizarSenhaContaUsuario(
+	idusuario: string,
+	senhaHash: string,
+): Promise<void> {
+	await db
+		.update(schema.contas)
+		.set({
+			password: senhaHash,
+			atualizadoem: new Date(),
+		})
+		.where(
+			and(
+				eq(schema.contas.idusuario, idusuario),
+				eq(schema.contas.idprovedor, "credential"),
+			),
+		);
+}
+
+export async function inativarSessoesUsuario(idusuario: string): Promise<void> {
+	await db
+		.delete(schema.sessoes)
+		.where(eq(schema.sessoes.idusuario, idusuario));
 }
 
 export type ListarUsuariosParametros = {
@@ -145,6 +275,26 @@ export async function listarIdsUsuariosFinanceirosPorEmpresa(
 		);
 
 	return rows.map((r) => r.idusuario);
+}
+
+export async function listarUsuariosComPlanoProximoVencido(dataReferencia: Date) {
+	const dataStr = dataReferencia.toISOString().slice(0, 10);
+
+	return db
+		.select({
+			id: schema.usuarios.id,
+			plano: schema.usuarios.plano,
+			plano_proximo: schema.usuarios.plano_proximo,
+			plano_fim_ciclo: schema.usuarios.plano_fim_ciclo,
+		})
+		.from(schema.usuarios)
+		.where(
+			and(
+				isNotNull(schema.usuarios.plano_proximo),
+				isNotNull(schema.usuarios.plano_fim_ciclo),
+				lte(schema.usuarios.plano_fim_ciclo, dataStr),
+			),
+		);
 }
 
 export type UsuarioPlano = {

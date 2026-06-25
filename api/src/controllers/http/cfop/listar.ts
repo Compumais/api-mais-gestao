@@ -7,6 +7,7 @@ const listarCfopsQuerySchema = z.object({
 	idempresa: z.string(),
 	descricao: z.string().optional(),
 	codigo: z.string().optional(),
+	tipomovimento: z.enum(["E", "S"]).optional(),
 	page: z.coerce.number().min(1).optional().default(1),
 	limit: z.coerce.number().min(1).max(100).optional().default(10),
 });
@@ -24,6 +25,7 @@ export async function listarCfops(request: FastifyRequest, reply: FastifyReply) 
 			idempresa: query.idempresa,
 			descricao: query.descricao,
 			codigo: query.codigo,
+			tipomovimento: query.tipomovimento,
 			page: query.page,
 			limit: query.limit,
 		});

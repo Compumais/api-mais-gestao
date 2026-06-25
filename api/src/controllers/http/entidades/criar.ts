@@ -27,6 +27,7 @@ const criarEntidadeBodySchema = z.object({
 	fornecedor: z.number().int().min(0).max(1).optional(),
 	transportador: z.number().int().min(0).max(1).optional(),
 	representante: z.number().int().min(0).max(1).optional(),
+	indiedest: z.number().int().refine((v) => [1, 2, 9].includes(v)).optional().nullable(),
 	idempresa: z.string().uuid(),
 });
 

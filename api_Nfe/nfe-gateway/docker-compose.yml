@@ -1,0 +1,15 @@
+services:
+  nfe-gateway:
+    build:
+      context: ..
+      dockerfile: nfe-gateway/Dockerfile
+    container_name: mais-gestao-nfe-gateway
+    ports:
+      - "8088:8088"
+    environment:
+      NFE_GATEWAY_SECRET: ${NFE_GATEWAY_SECRET:-dev-secret-change-me}
+    # DNS do Docker Desktop às vezes não resolve hnfe.fazenda.mg.gov.br (homologação MG).
+    dns:
+      - 1.1.1.1
+      - 1.0.0.1
+    restart: unless-stopped

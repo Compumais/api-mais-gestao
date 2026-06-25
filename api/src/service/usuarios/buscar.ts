@@ -1,8 +1,8 @@
 import type { HttpResponse } from "../../model/http-model.js";
 import type { Usuario } from "../../model/usuario-model.js";
 import {
-	buscarUsuarioPorId,
 	buscarEmpresasDoUsuario,
+	buscarUsuarioPorId,
 } from "../../repositories/usuarios-repositories.js";
 import { httpCriacao, httpNaoEncontrado } from "../../util/http-util.js";
 

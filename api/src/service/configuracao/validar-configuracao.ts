@@ -4,26 +4,29 @@ import type {
 	ConfiguracaoNotificacoes,
 	ConfiguracaoRelatorios,
 } from "@/model/configuracao-model.js";
+import { parseConfiguracaoNotificacoes } from "@/schemas/configuracao-notificacoes-schema.js";
+
+export type SecaoConfiguracao =
+	| "notificacoes"
+	| "integracao"
+	| "relatorios"
+	| "impressao";
 
 export function validarConfiguracaoNotificacoes(
 	dados: unknown,
-): dados is Partial<ConfiguracaoNotificacoes> {
-	if (!dados || typeof dados !== "object") {
+): dados is ConfiguracaoNotificacoes {
+	try {
+		parseConfiguracaoNotificacoes(dados);
+		return true;
+	} catch {
 		return false;
 	}
+}
 
-	const obj = dados as Record<string, unknown>;
-
-	// Validar estrutura básica
-	if (obj.alertasFinanceiros && typeof obj.alertasFinanceiros !== "object") {
-		return false;
-	}
-
-	if (obj.notificacoesEmail && typeof obj.notificacoesEmail !== "object") {
-		return false;
-	}
-
-	return true;
+export function validarEParsearConfiguracaoNotificacoes(
+	dados: unknown,
+): ConfiguracaoNotificacoes {
+	return parseConfiguracaoNotificacoes(dados);
 }
 
 export function validarConfiguracaoIntegracao(
@@ -74,4 +77,33 @@ export function validarConfiguracaoImpressao(
 	}
 
 	return true;
+}
+
+export function validarDadosSecaoConfiguracao(
+	secao: SecaoConfiguracao,
+	dados: unknown,
+):
+	| ConfiguracaoNotificacoes
+	| Partial<ConfiguracaoIntegracao>
+	| Partial<ConfiguracaoRelatorios>
+	| Partial<ConfiguracaoImpressao> {
+	switch (secao) {
+		case "notificacoes":
+			return parseConfiguracaoNotificacoes(dados);
+		case "integracao":
+			if (!validarConfiguracaoIntegracao(dados)) {
+				throw new Error("Dados de integração inválidos");
+			}
+			return dados;
+		case "relatorios":
+			if (!validarConfiguracaoRelatorios(dados)) {
+				throw new Error("Dados de relatórios inválidos");
+			}
+			return dados;
+		case "impressao":
+			if (!validarConfiguracaoImpressao(dados)) {
+				throw new Error("Dados de impressão inválidos");
+			}
+			return dados;
+	}
 }

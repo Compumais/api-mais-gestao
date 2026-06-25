@@ -5,7 +5,13 @@ import { buscarDav } from "./buscar.js";
 import { criarDav } from "./criar.js";
 import * as schema from "./doc-schema/schema.js";
 import { excluirDav } from "./excluir.js";
+import { faturarDavNfe } from "./faturar-nfe.js";
+import { contextoEmissaoNfePedido } from "./contexto-emissao-nfe.js";
 import { listarDavs } from "./listar.js";
+import { criarDavItem } from "./itens/criar.js";
+import { listarDavItens } from "./itens/listar.js";
+import { atualizarDavItem } from "./itens/atualizar.js";
+import { excluirDavItem } from "./itens/excluir.js";
 
 export async function davsRotas(app: FastifyInstance) {
 	app.addHook("onRequest", verifyJwt);
@@ -29,5 +35,23 @@ export async function davsRotas(app: FastifyInstance) {
 	app.delete("/davs/:id", {
 		schema: schema.excluirDavSchema,
 		handler: excluirDav,
+	});
+	app.post("/davs/:id/faturar-nfe", {
+		handler: faturarDavNfe,
+	});
+	app.get("/davs/:id/contexto-emissao-nfe", {
+		handler: contextoEmissaoNfePedido,
+	});
+	app.get("/davs/:id/itens", {
+		handler: listarDavItens,
+	});
+	app.post("/davs/:id/itens", {
+		handler: criarDavItem,
+	});
+	app.put("/davs/:id/itens/:iditem", {
+		handler: atualizarDavItem,
+	});
+	app.delete("/davs/:id/itens/:iditem", {
+		handler: excluirDavItem,
 	});
 }

@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, type Resolver } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -26,6 +26,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { useProximoCodigo } from "@/hooks/use-proximo-codigo";
 import {
@@ -39,12 +40,18 @@ import {
 	isUnidadeMedidaGlobal,
 	unidadeMedidaService,
 } from "@/services/unidade-medida.service";
+import { ProdutoAbaImpostos } from "./produto-aba-impostos";
 
 type ProdutoFormProps = {
 	modo?: "criar" | "editar";
 	produtoId?: string;
 	valoresIniciais?: Partial<ProdutoFormData>;
 };
+
+function textoOuNulo(valor: string | null | undefined): string | null {
+	const texto = valor?.trim();
+	return texto ? texto : null;
+}
 
 function buildProdutoPayload(
 	data: ProdutoFormData,
@@ -85,6 +92,23 @@ function buildProdutoPayload(
 
 	payload.enviamobile = data.enviamobile ? 1 : 0;
 
+	payload.idcfopentrada = data.idcfopentrada || null;
+	payload.idcfopsaida = data.idcfopsaida || null;
+	payload.idcfopsaidanfce = data.idcfopsaidanfce || null;
+	payload.idcest = data.idcest || null;
+	payload.idtaxauf = data.idtaxauf || null;
+	payload.situacaotributariasnentrada = textoOuNulo(
+		data.situacaotributariasnentrada,
+	);
+	payload.situacaotributaria = textoOuNulo(data.situacaotributaria);
+	payload.situacaotributariasn = textoOuNulo(data.situacaotributariasn);
+	payload.tributacaoespecial = textoOuNulo(data.tributacaoespecial);
+	payload.tributacaosn = textoOuNulo(data.tributacaosn);
+	payload.cstpisentrada = textoOuNulo(data.cstpisentrada);
+	payload.cstcofinsentrada = textoOuNulo(data.cstcofinsentrada);
+	payload.cstpis = textoOuNulo(data.cstpis);
+	payload.cstcofins = textoOuNulo(data.cstcofins);
+
 	return payload;
 }
 
@@ -97,7 +121,8 @@ export function ProdutoForm(props: ProdutoFormProps) {
 	const isEdicao = modo === "editar";
 
 	const form = useForm<ProdutoFormData>({
-		resolver: zodResolver(produtoFormSchema),
+		resolver: zodResolver(produtoFormSchema) as Resolver<ProdutoFormData>,
+		shouldUnregister: false,
 		defaultValues: {
 			codigo: undefined,
 			ean: null,
@@ -112,6 +137,20 @@ export function ProdutoForm(props: ProdutoFormProps) {
 			ippt: "P",
 			origem: 0,
 			ncm: "",
+			idcfopentrada: null,
+			idcfopsaida: null,
+			idcfopsaidanfce: null,
+			idcest: null,
+			idtaxauf: null,
+			situacaotributariasnentrada: null,
+			situacaotributaria: null,
+			situacaotributariasn: null,
+			tributacaoespecial: null,
+			tributacaosn: null,
+			cstpisentrada: null,
+			cstcofinsentrada: null,
+			cstpis: null,
+			cstcofins: null,
 			observacoes: null,
 			enviamobile: false,
 			...(isEdicao && props.valoresIniciais ? props.valoresIniciais : {}),
@@ -123,6 +162,8 @@ export function ProdutoForm(props: ProdutoFormProps) {
 		handleSubmit,
 		setValue,
 		watch,
+		getValues,
+		control,
 		formState: { errors },
 	} = form;
 
@@ -132,7 +173,6 @@ export function ProdutoForm(props: ProdutoFormProps) {
 	const tipo = watch("tipo");
 	const iat = watch("iat");
 	const ippt = watch("ippt");
-	const origem = watch("origem");
 	const preco = watch("preco");
 	const enviamobile = watch("enviamobile");
 	const codigo = watch("codigo");
@@ -211,8 +251,11 @@ export function ProdutoForm(props: ProdutoFormProps) {
 					idempresa,
 				);
 			},
-			onSuccess: () => {
+			onSuccess: (produto) => {
 				queryClient.invalidateQueries({ queryKey: ["produtos"] });
+				if (props.produtoId) {
+					queryClient.setQueryData(["produto", props.produtoId], produto);
+				}
 				toast.success("Produto atualizado com sucesso!");
 				router.push("/produtos");
 			},
@@ -221,13 +264,13 @@ export function ProdutoForm(props: ProdutoFormProps) {
 			},
 		});
 
-	const onSubmit = (data: ProdutoFormData) => {
+	const onSubmit = () => {
 		if (!empresa) {
 			toast.error("Empresa não selecionada");
 			return;
 		}
 
-		const payloadBase = buildProdutoPayload(data);
+		const payloadBase = buildProdutoPayload(getValues());
 
 		if (!isEdicao) {
 			criarProduto({
@@ -257,7 +300,14 @@ export function ProdutoForm(props: ProdutoFormProps) {
 
 	return (
 		<form onSubmit={handleSubmit(onSubmit)}>
-			<FieldGroup>
+			<Tabs defaultValue="geral" className="w-full">
+				<TabsList className="mb-6">
+					<TabsTrigger value="geral">Geral</TabsTrigger>
+					<TabsTrigger value="impostos">Impostos</TabsTrigger>
+				</TabsList>
+
+				<TabsContent value="geral">
+					<FieldGroup>
 				<div className="space-y-4">
 					<h2 className="text-lg font-semibold">Dados do Produto</h2>
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -474,39 +524,6 @@ export function ProdutoForm(props: ProdutoFormProps) {
 							</Select>
 							<FieldError errors={errors.ippt ? [errors.ippt] : []} />
 						</Field>
-
-						<Field data-invalid={!!errors.origem}>
-							<FieldLabel htmlFor="origem">Origem *</FieldLabel>
-							<Select
-								value={origem?.toString()}
-								onValueChange={(value) => setValue("origem", Number(value))}
-							>
-								<SelectTrigger className="w-full">
-									<SelectValue placeholder="Selecione a origem" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="0">Nacional</SelectItem>
-									<SelectItem value="1">
-										Estrangeira - Importação direta
-									</SelectItem>
-									<SelectItem value="2">
-										Estrangeira - Mercado interno
-									</SelectItem>
-								</SelectContent>
-							</Select>
-							<FieldError errors={errors.origem ? [errors.origem] : []} />
-						</Field>
-
-						<Field data-invalid={!!errors.ncm}>
-							<FieldLabel htmlFor="ncm">NCM *</FieldLabel>
-							<Input
-								id="ncm"
-								placeholder="Código NCM"
-								aria-invalid={!!errors.ncm}
-								{...register("ncm")}
-							/>
-							<FieldError errors={errors.ncm ? [errors.ncm] : []} />
-						</Field>
 					</div>
 
 					<Field data-invalid={!!errors.observacoes}>
@@ -544,8 +561,25 @@ export function ProdutoForm(props: ProdutoFormProps) {
 						também esteja habilitado.
 					</p>
 				</div>
+					</FieldGroup>
+				</TabsContent>
 
-				<div className="flex justify-end gap-2 pt-4">
+				<TabsContent
+					value="impostos"
+					forceMount
+					className="data-[state=inactive]:hidden"
+				>
+					<ProdutoAbaImpostos
+						control={control}
+						register={register}
+						setValue={setValue}
+						watch={watch}
+						errors={errors}
+					/>
+				</TabsContent>
+			</Tabs>
+
+			<div className="flex justify-end gap-2 pt-4">
 					<Button
 						type="button"
 						variant="outline"
@@ -560,8 +594,7 @@ export function ProdutoForm(props: ProdutoFormProps) {
 								? "Salvar alterações"
 								: "Cadastrar produto"}
 					</Button>
-				</div>
-			</FieldGroup>
+			</div>
 		</form>
 	);
 }

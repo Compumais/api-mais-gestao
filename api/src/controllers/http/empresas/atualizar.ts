@@ -10,6 +10,9 @@ const atualizarEmpresaBodySchema = z.object({
 	nome: z.string().optional(),
 	cnpj: z.string().optional(),
 	telefone: z.string().optional(),
+	regimetributario: z
+		.union([z.enum(["SN", "LP", "LR"]), z.literal(""), z.null()])
+		.optional(),
 });
 
 export async function atualizarEmpresa(

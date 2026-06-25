@@ -11,9 +11,11 @@ import { useAuth } from "@/hooks/use-auth";
 import { useCaixaPdv } from "@/hooks/use-caixa-pdv";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { useFecharVenda } from "@/hooks/use-fechar-venda";
+import { useNfceAmbientePdv } from "@/hooks/use-nfce-ambiente-pdv";
 import { useSaldosEstoque } from "@/hooks/use-saldos-estoque";
 import {
 	buildContaMesaItemFromProduto,
+	buildCupomNfceInfo,
 	calcularSubtotalItens,
 	type CarrinhoLocalItem,
 } from "@/lib/gourmet-utils";
@@ -28,6 +30,7 @@ export default function VendaRapidaPage() {
 	const { localStorageEmpresa: empresa } = useEmpresa();
 	const { estaAberto } = useCaixaPdv();
 	const { fecharVendaRapida } = useFecharVenda();
+	const { ambiente: ambienteNfce } = useNfceAmbientePdv();
 
 	const [carrinho, setCarrinho] = useState<CarrinhoLocalItem[]>([]);
 	const [pagamentoDialogAberto, setPagamentoDialogAberto] = useState(false);
@@ -37,10 +40,9 @@ export default function VendaRapidaPage() {
 	const { data: produtosData, isLoading: isLoadingProdutos } = useQuery({
 		queryKey: ["produtos", empresa?.id, { inativo: 0 }],
 		queryFn: () =>
-			produtosService.listar({
+			produtosService.listarTodos({
 				idempresa: empresa!.id,
 				inativo: 0,
-				limit: 100,
 			}),
 		enabled: !!empresa?.id,
 	});
@@ -124,7 +126,7 @@ export default function VendaRapidaPage() {
 			throw new Error("Empresa ou usuário não selecionado");
 		}
 
-		const venda = await fecharVendaRapida.mutateAsync({
+		const resultado = await fecharVendaRapida.mutateAsync({
 			idempresa: empresa.id,
 			userId: user.id,
 			itens: carrinho,
@@ -132,7 +134,10 @@ export default function VendaRapidaPage() {
 			pagamento,
 		});
 
-		return { vendaId: venda.id };
+		return {
+			vendaId: resultado.venda.id,
+			nfce: buildCupomNfceInfo(resultado.baixa.emissaoNfce, ambienteNfce),
+		};
 	};
 
 	const handleVendaConcluida = () => {
@@ -150,7 +155,7 @@ export default function VendaRapidaPage() {
 			<main className="flex min-h-0 flex-1 flex-col lg:flex-row">
 				<div className="min-h-0 flex-1 lg:w-3/5">
 					<ProdutoTabela
-						produtos={produtosData?.data ?? []}
+						produtos={produtosData ?? []}
 						isLoading={isLoadingProdutos}
 						onAdicionar={adicionarProduto}
 						saldoPorCodigo={saldoPorCodigo}

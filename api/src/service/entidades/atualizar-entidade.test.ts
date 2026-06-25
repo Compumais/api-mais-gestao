@@ -31,6 +31,7 @@ describe("atualizarEntidadeService", () => {
 		fornecedor: 0,
 		transportador: 0,
 		representante: 0,
+		indiedest: null,
 		idempresa: "empresa-123",
 		criadoem: new Date().toISOString(),
 		atualizadoem: new Date().toISOString(),
