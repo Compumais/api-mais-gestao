@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-import { PagamentoPdvDialog } from "@/app/(gourmet)/gourmet/components/pagamento-pdv-dialog";
+import { PagamentoPdvDialog } from "@/components/pdv/pagamento-pdv-dialog";
 import { ComandaSheet } from "../../components/comanda-sheet";
 import { GarcomHeader } from "../../components/garcom-header";
 import { ProdutoCardsGrupo } from "../../components/produto-cards-grupo";

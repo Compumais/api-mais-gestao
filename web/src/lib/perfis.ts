@@ -13,6 +13,7 @@ export const SUPER_ALLOWED_ROUTES = [
 ] as const;
 
 export const GARCOM_ALLOWED_ROUTES = [
+	"/pdv",
 	"/garcom",
 	"/vendas-pdv",
 	"/fechamentos-caixa",

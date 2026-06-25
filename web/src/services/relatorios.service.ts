@@ -14,6 +14,8 @@ export interface GerarRelatorioContasParams {
 	formato: "pdf" | "txt" | "html";
 }
 
+export interface GerarRelatorioFiscalParams extends GerarRelatorioContasParams {}
+
 export interface GerarRelatorioCentroCustosParams {
 	idempresa: string;
 	formato: "pdf" | "txt" | "html";
@@ -210,5 +212,65 @@ export async function gerarRelatorioReceitasPorCategoria(
 						?.error
 				: undefined;
 		throw new Error(msg || "Erro ao gerar relatorio");
+	}
+}
+
+export async function gerarRelatorioFiscalCompras(
+	params: GerarRelatorioFiscalParams,
+): Promise<void> {
+	try {
+		await downloadRelatorioBlob(
+			"/relatorios/fiscal-compras",
+			params,
+			`fiscal-compras-${params.dataInicio}-${params.dataFim}.${params.formato}`,
+		);
+	} catch (error: unknown) {
+		console.error("Erro ao gerar relatório fiscal de compras:", error);
+		const msg =
+			error && typeof error === "object" && "response" in error
+				? (error as { response?: { data?: { error?: string } } }).response?.data
+						?.error
+				: undefined;
+		throw new Error(msg || "Erro ao gerar relatório de compras");
+	}
+}
+
+export async function gerarRelatorioFiscalVendas(
+	params: GerarRelatorioFiscalParams,
+): Promise<void> {
+	try {
+		await downloadRelatorioBlob(
+			"/relatorios/fiscal-vendas",
+			params,
+			`fiscal-vendas-${params.dataInicio}-${params.dataFim}.${params.formato}`,
+		);
+	} catch (error: unknown) {
+		console.error("Erro ao gerar relatório fiscal de vendas:", error);
+		const msg =
+			error && typeof error === "object" && "response" in error
+				? (error as { response?: { data?: { error?: string } } }).response?.data
+						?.error
+				: undefined;
+		throw new Error(msg || "Erro ao gerar relatório de vendas");
+	}
+}
+
+export async function gerarRelatorioFiscalContabilidade(
+	params: GerarRelatorioFiscalParams,
+): Promise<void> {
+	try {
+		await downloadRelatorioBlob(
+			"/relatorios/fiscal-contabilidade",
+			params,
+			`fiscal-contabilidade-${params.dataInicio}-${params.dataFim}.${params.formato}`,
+		);
+	} catch (error: unknown) {
+		console.error("Erro ao gerar relatório fiscal contabilidade:", error);
+		const msg =
+			error && typeof error === "object" && "response" in error
+				? (error as { response?: { data?: { error?: string } } }).response?.data
+						?.error
+				: undefined;
+		throw new Error(msg || "Erro ao gerar relatório contábil");
 	}
 }

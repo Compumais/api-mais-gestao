@@ -18,6 +18,15 @@ const nextConfig: NextConfig = {
 	},
 	allowedDevOrigins: origensDevPermitidas,
 	reactCompiler: true,
+	async redirects() {
+		return [
+			{
+				source: "/gourmet/venda-rapida",
+				destination: "/pdv",
+				permanent: true,
+			},
+		];
+	},
 };
 
 export default nextConfig;

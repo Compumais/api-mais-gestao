@@ -2,7 +2,7 @@
 
 import { ProtectedRoute } from "@/components/protected-route";
 import { CaixaPdvProvider } from "@/hooks/use-caixa-pdv";
-import { CaixaBloqueioOverlay } from "./gourmet/components/caixa-bloqueio-overlay";
+import { CaixaBloqueioOverlay } from "@/components/pdv/caixa-bloqueio-overlay";
 
 export default function GourmetLayout({
 	children,

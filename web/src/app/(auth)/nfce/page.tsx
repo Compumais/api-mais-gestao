@@ -13,7 +13,7 @@ import { Ban, FileX2 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { CupomNaoFiscal } from "@/app/(gourmet)/gourmet/components/cupom-nao-fiscal";
+import { CupomNaoFiscal } from "@/components/pdv/cupom-nao-fiscal";
 import { TableSkeleton } from "@/components/table-skeleton";
 import { Button } from "@/components/ui/button";
 import {
