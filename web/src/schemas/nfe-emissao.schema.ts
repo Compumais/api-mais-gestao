@@ -10,10 +10,10 @@ export const itemNfeSchema = z.object({
 	cfop: z.string().min(4, "CFOP obrigatório"),
 	unidade: z.string().min(1, "Unidade obrigatória"),
 	quantidade: z.coerce
-		.number({ invalid_type_error: "Quantidade inválida" })
+		.number({ error: "Quantidade inválida" })
 		.positive("Quantidade deve ser positiva"),
 	valorUnitario: z.coerce
-		.number({ invalid_type_error: "Valor inválido" })
+		.number({ error: "Valor inválido" })
 		.positive("Valor deve ser positivo"),
 	cst: z.string().optional(),
 	csosn: z.string().optional(),

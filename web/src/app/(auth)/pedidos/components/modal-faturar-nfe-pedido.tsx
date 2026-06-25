@@ -96,7 +96,7 @@ export function ModalFaturarNfePedido({
 								{seriesAtivas.map((serie) => (
 									<SelectItem key={serie.id} value={serie.id}>
 										Série {serie.serie}
-										{serie.descricao ? ` — ${serie.descricao}` : ""}
+										{serie.padrao ? " — Padrão" : ""}
 									</SelectItem>
 								))}
 							</SelectContent>
