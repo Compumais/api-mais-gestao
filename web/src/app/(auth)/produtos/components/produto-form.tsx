@@ -92,13 +92,18 @@ function buildProdutoPayload(
 
 	payload.enviamobile = data.enviamobile ? 1 : 0;
 
-	payload.idcfopentrada = data.idcfopentrada ?? null;
-	payload.idcfopsaida = data.idcfopsaida ?? null;
-	payload.idcest = data.idcest ?? null;
+	payload.idcfopentrada = data.idcfopentrada || null;
+	payload.idcfopsaida = data.idcfopsaida || null;
+	payload.idcfopsaidanfce = data.idcfopsaidanfce || null;
+	payload.idcest = data.idcest || null;
+	payload.idtaxauf = data.idtaxauf || null;
 	payload.situacaotributariasnentrada = textoOuNulo(
 		data.situacaotributariasnentrada,
 	);
+	payload.situacaotributaria = textoOuNulo(data.situacaotributaria);
 	payload.situacaotributariasn = textoOuNulo(data.situacaotributariasn);
+	payload.tributacaoespecial = textoOuNulo(data.tributacaoespecial);
+	payload.tributacaosn = textoOuNulo(data.tributacaosn);
 	payload.cstpisentrada = textoOuNulo(data.cstpisentrada);
 	payload.cstcofinsentrada = textoOuNulo(data.cstcofinsentrada);
 	payload.cstpis = textoOuNulo(data.cstpis);
@@ -117,6 +122,7 @@ export function ProdutoForm(props: ProdutoFormProps) {
 
 	const form = useForm<ProdutoFormData>({
 		resolver: zodResolver(produtoFormSchema) as Resolver<ProdutoFormData>,
+		shouldUnregister: false,
 		defaultValues: {
 			codigo: undefined,
 			ean: null,
@@ -133,9 +139,14 @@ export function ProdutoForm(props: ProdutoFormProps) {
 			ncm: "",
 			idcfopentrada: null,
 			idcfopsaida: null,
+			idcfopsaidanfce: null,
 			idcest: null,
+			idtaxauf: null,
 			situacaotributariasnentrada: null,
+			situacaotributaria: null,
 			situacaotributariasn: null,
+			tributacaoespecial: null,
+			tributacaosn: null,
 			cstpisentrada: null,
 			cstcofinsentrada: null,
 			cstpis: null,
@@ -151,6 +162,8 @@ export function ProdutoForm(props: ProdutoFormProps) {
 		handleSubmit,
 		setValue,
 		watch,
+		getValues,
+		control,
 		formState: { errors },
 	} = form;
 
@@ -238,8 +251,11 @@ export function ProdutoForm(props: ProdutoFormProps) {
 					idempresa,
 				);
 			},
-			onSuccess: () => {
+			onSuccess: (produto) => {
 				queryClient.invalidateQueries({ queryKey: ["produtos"] });
+				if (props.produtoId) {
+					queryClient.setQueryData(["produto", props.produtoId], produto);
+				}
 				toast.success("Produto atualizado com sucesso!");
 				router.push("/produtos");
 			},
@@ -248,13 +264,13 @@ export function ProdutoForm(props: ProdutoFormProps) {
 			},
 		});
 
-	const onSubmit = (data: ProdutoFormData) => {
+	const onSubmit = () => {
 		if (!empresa) {
 			toast.error("Empresa não selecionada");
 			return;
 		}
 
-		const payloadBase = buildProdutoPayload(data);
+		const payloadBase = buildProdutoPayload(getValues());
 
 		if (!isEdicao) {
 			criarProduto({
@@ -548,8 +564,13 @@ export function ProdutoForm(props: ProdutoFormProps) {
 					</FieldGroup>
 				</TabsContent>
 
-				<TabsContent value="impostos">
+				<TabsContent
+					value="impostos"
+					forceMount
+					className="data-[state=inactive]:hidden"
+				>
 					<ProdutoAbaImpostos
+						control={control}
 						register={register}
 						setValue={setValue}
 						watch={watch}

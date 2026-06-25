@@ -99,6 +99,47 @@ export const criarCfopDeParaSchema: FastifySchema = {
 	},
 };
 
+export const atualizarCfopDeParaSchema: FastifySchema = {
+	tags: ["cfop-depara"],
+	summary: "Atualizar mapeamento CFOP entrada → saída",
+	security: [{ bearerAuth: [] }],
+	params: {
+		type: "object",
+		properties: {
+			id: { type: "string", format: "uuid" },
+		},
+		required: ["id"],
+	},
+	body: {
+		type: "object",
+		properties: {
+			idempresa: { type: "string", format: "uuid" },
+			idcfopentrada: { type: "string", format: "uuid" },
+			idcfopsaida: { type: "string", format: "uuid" },
+			uf: { type: "string", maxLength: 2, nullable: true },
+		},
+		required: ["idempresa", "idcfopentrada", "idcfopsaida"],
+	},
+	response: {
+		200: {
+			type: "object",
+			properties: propriedadesCfopDePara,
+		},
+		400: {
+			type: "object",
+			properties: {
+				error: { type: "string" },
+				code: { type: "string" },
+				details: { type: "array" },
+			},
+		},
+		401: respostaErro,
+		403: respostaErro,
+		404: respostaErro,
+		500: respostaErro,
+	},
+};
+
 export const excluirCfopDeParaSchema: FastifySchema = {
 	tags: ["cfop-depara"],
 	summary: "Excluir mapeamento CFOP de-para",

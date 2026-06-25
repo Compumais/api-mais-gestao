@@ -56,6 +56,34 @@ export const condicaoPagamentoService = {
 		return data;
 	},
 
+	async listarTodos(params: {
+		idempresa: string;
+		descricao?: string;
+		inativo?: number;
+	}): Promise<CondicaoPagamento[]> {
+		const limite = 100;
+		let pagina = 1;
+		const registros: CondicaoPagamento[] = [];
+
+		while (true) {
+			const resposta = await condicaoPagamentoService.listar({
+				...params,
+				page: pagina,
+				limit: limite,
+			});
+
+			registros.push(...resposta.data);
+
+			if (pagina >= resposta.paginacao.totalPages) {
+				break;
+			}
+
+			pagina += 1;
+		}
+
+		return registros;
+	},
+
 	async buscar(id: string): Promise<CondicaoPagamento> {
 		const { data } = await api.get<CondicaoPagamento>(
 			`/condicoes-pagamento/${id}`,

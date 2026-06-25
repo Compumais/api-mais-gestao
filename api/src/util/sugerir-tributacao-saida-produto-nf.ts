@@ -3,7 +3,13 @@ import type { ConfigRegimeImportacaoNf } from "@/util/regime-tributario-empresa.
 import { truncarTexto } from "@/util/texto-util.js";
 
 export type SugestaoTributacaoSaidaProduto = {
+	idcfopsaida?: string | undefined;
+	idcfopsaidanfce?: string | undefined;
+	cfopvendaecf?: number | undefined;
+	situacaotributaria?: string | undefined;
 	situacaotributariasn?: string | undefined;
+	tributacaoespecial?: string | undefined;
+	tributacaosn?: string | undefined;
 	cstpis?: string | undefined;
 	cstcofins?: string | undefined;
 };
@@ -15,7 +21,13 @@ const CST_PIS_COFINS_SAIDA_PADRAO = "01";
 function ehCsosn(codigo?: string): boolean {
 	if (!codigo) return false;
 	const valor = codigo.trim();
-	return valor.length === 3 && (valor.startsWith("1") || valor.startsWith("2") || valor.startsWith("5") || valor.startsWith("9"));
+	return (
+		valor.length === 3 &&
+		(valor.startsWith("1") ||
+			valor.startsWith("2") ||
+			valor.startsWith("5") ||
+			valor.startsWith("9"))
+	);
 }
 
 function mapearCsosnEntradaParaSaida(csosnEntrada: string): string {
@@ -51,6 +63,7 @@ export function sugerirTributacaoSaidaProdutoNf(
 ): SugestaoTributacaoSaidaProduto {
 	const situacaoEntrada = tributacao.situacaotributaria?.trim();
 
+	let situacaotributaria: string | undefined;
 	let situacaotributariasn: string | undefined;
 
 	if (config.usarCsosn) {
@@ -60,9 +73,9 @@ export function sugerirTributacaoSaidaProdutoNf(
 			situacaotributariasn = CSOSN_SAIDA_PADRAO_SN;
 		}
 	} else if (situacaoEntrada) {
-		situacaotributariasn = mapearCstIcmsEntradaParaSaida(situacaoEntrada);
+		situacaotributaria = mapearCstIcmsEntradaParaSaida(situacaoEntrada);
 	} else {
-		situacaotributariasn = CST_SAIDA_PADRAO_LP_LR;
+		situacaotributaria = CST_SAIDA_PADRAO_LP_LR;
 	}
 
 	const cstpis =
@@ -70,8 +83,14 @@ export function sugerirTributacaoSaidaProdutoNf(
 	const cstcofins =
 		truncarTexto(tributacao.cstcofins, 2) ?? CST_PIS_COFINS_SAIDA_PADRAO;
 
+	const csosnNaoContrib = situacaotributariasn ?? CSOSN_SAIDA_PADRAO_SN;
+	const cstNaoContrib = situacaotributaria ?? CST_SAIDA_PADRAO_LP_LR;
+
 	return {
+		situacaotributaria: truncarTexto(situacaotributaria, 3) ?? undefined,
 		situacaotributariasn: truncarTexto(situacaotributariasn, 3) ?? undefined,
+		tributacaoespecial: truncarTexto(cstNaoContrib, 7) ?? undefined,
+		tributacaosn: truncarTexto(csosnNaoContrib, 3) ?? undefined,
 		cstpis,
 		cstcofins,
 	};
@@ -79,24 +98,45 @@ export function sugerirTributacaoSaidaProdutoNf(
 
 export function mesclarSugestaoTributacaoSaidaProduto(
 	produtoAtual: {
+		situacaotributaria?: string | null | undefined;
 		situacaotributariasn?: string | null | undefined;
+		tributacaoespecial?: string | null | undefined;
+		tributacaosn?: string | null | undefined;
 		cstpis?: string | null | undefined;
 		cstcofins?: string | null | undefined;
 	},
 	sugestao: SugestaoTributacaoSaidaProduto,
 ): Partial<{
+	situacaotributaria: string;
 	situacaotributariasn: string;
+	tributacaoespecial: string;
+	tributacaosn: string;
 	cstpis: string;
 	cstcofins: string;
 }> {
 	const resultado: Partial<{
+		situacaotributaria: string;
 		situacaotributariasn: string;
+		tributacaoespecial: string;
+		tributacaosn: string;
 		cstpis: string;
 		cstcofins: string;
 	}> = {};
 
+	if (!produtoAtual.situacaotributaria?.trim() && sugestao.situacaotributaria) {
+		resultado.situacaotributaria = sugestao.situacaotributaria;
+	}
+
 	if (!produtoAtual.situacaotributariasn?.trim() && sugestao.situacaotributariasn) {
 		resultado.situacaotributariasn = sugestao.situacaotributariasn;
+	}
+
+	if (!produtoAtual.tributacaoespecial?.trim() && sugestao.tributacaoespecial) {
+		resultado.tributacaoespecial = sugestao.tributacaoespecial;
+	}
+
+	if (!produtoAtual.tributacaosn?.trim() && sugestao.tributacaosn) {
+		resultado.tributacaosn = sugestao.tributacaosn;
 	}
 
 	if (!produtoAtual.cstpis?.toString().trim() && sugestao.cstpis) {

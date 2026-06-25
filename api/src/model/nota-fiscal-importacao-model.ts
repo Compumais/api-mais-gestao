@@ -42,6 +42,11 @@ export type RastroImportacaoItem = {
 	codigoAgregacao?: string | undefined;
 };
 
+export type RastroTributacaoSaidaImportacao = {
+	origem: "parametrizacao" | "cfop-depara" | "heuristica";
+	idparametrizacaotributos?: string | undefined;
+};
+
 export type DadosImportacaoItem = {
 	codigoFornecedor?: string | undefined;
 	descricaoFornecedor: string;
@@ -73,6 +78,7 @@ export type DadosImportacaoItem = {
 	rastrosXml?: RastroImportacaoItem[] | undefined;
 	rateio?: RateioCustoImportacaoItem | undefined;
 	custoContabilCalculado?: string | undefined;
+	rastroTributacaoSaida?: RastroTributacaoSaidaImportacao | undefined;
 };
 
 /** Snapshot imutável gravado na confirmação da NF */
@@ -97,6 +103,12 @@ export type DuplicataImportacaoNf = {
 };
 
 export type DadosImportacaoNota = {
+	ufemitente?: string | undefined;
+	cfopOperacaoXml?: string | undefined;
+	natOpXml?: string | undefined;
+	finNFe?: number | undefined;
+	chaveReferenciadaXml?: string | undefined;
+	ipiDevolvidoXml?: string | undefined;
 	duplicatas?: DuplicataImportacaoNf[] | undefined;
 	finalizadoEm?: string | undefined;
 	versao?: number | undefined;

@@ -1,18 +1,23 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { useConfiguracao } from "@/hooks/use-configuracao";
 import { PageContainer } from "../components/page-container";
+import { EmpresaFiscalForm } from "./components/empresa-fiscal-form";
 import { ImpressaoForm } from "./components/impressao-form";
 import { IntegracaoForm } from "./components/integracao-form";
+import { NfeConfiguracaoForm } from "./components/nfe-configuracao-form";
 import { NotificacoesForm } from "./components/notificacoes-form";
 import { RelatoriosForm } from "./components/relatorios-form";
 
 export default function ConfiguracoesPage() {
 	const { localStorageEmpresa: empresa } = useEmpresa();
-	const [tabAtiva, setTabAtiva] = useState("notificacoes");
+	const searchParams = useSearchParams();
+	const tabInicial = searchParams.get("tab") ?? "notificacoes";
+	const [tabAtiva, setTabAtiva] = useState(tabInicial);
 
 	const { data: configuracao, isLoading } = useConfiguracao(
 		empresa?.id || null,
@@ -54,6 +59,8 @@ export default function ConfiguracoesPage() {
 					<Tabs value={tabAtiva} onValueChange={setTabAtiva}>
 						<TabsList>
 							<TabsTrigger value="notificacoes">Notificações</TabsTrigger>
+							<TabsTrigger value="empresa-fiscal">Empresa fiscal</TabsTrigger>
+							<TabsTrigger value="nfe">NF-e</TabsTrigger>
 							<TabsTrigger value="integracao">Integrações</TabsTrigger>
 							<TabsTrigger value="relatorios">Relatórios</TabsTrigger>
 							<TabsTrigger value="impressao">Impressão</TabsTrigger>
@@ -64,6 +71,14 @@ export default function ConfiguracoesPage() {
 								configuracao={configuracao}
 								idempresa={empresa.id}
 							/>
+						</TabsContent>
+
+						<TabsContent value="empresa-fiscal" className="mt-4">
+							<EmpresaFiscalForm idempresa={empresa.id} />
+						</TabsContent>
+
+						<TabsContent value="nfe" className="mt-4">
+							<NfeConfiguracaoForm idempresa={empresa.id} />
 						</TabsContent>
 
 						<TabsContent value="integracao" className="mt-4">

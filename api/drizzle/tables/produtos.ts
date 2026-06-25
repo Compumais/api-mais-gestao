@@ -18,6 +18,7 @@ import { hierarquia } from "./hierarquia.js";
 import { ncm } from "./ncm.js";
 import { planocontas } from "./plano-contas.js";
 import { receitasemcontribuicao } from "./receitasem-contribuicao.js";
+import { taxauf } from "./taxauf.js";
 import { unidademedida } from "./unidade-medida.js";
 
 export const produtos = pgTable(
@@ -94,6 +95,7 @@ export const produtos = pgTable(
 		idbeneficiofiscalnf: text(),
 		idbeneficiofiscaloperacao: text(),
 		idcest: text(),
+		idtaxauf: text(),
 		idcfopcontroleperda: text(),
 		idcfopentrada: text(),
 		idcfopentradadevolucaoexterna: text(),
@@ -174,6 +176,7 @@ export const produtos = pgTable(
 		quantidademaxima: integer(),
 		quantidademinima: integer(),
 		quantidadepadrao: integer(),
+		situacaotributaria: varchar({ length: 3 }),
 		situacaotributariasn: varchar({ length: 3 }),
 		situacaotributariasnentrada: varchar({ length: 3 }),
 		tipo: varchar({ length: 1 }), // P=Produto, S=Serviço
@@ -303,6 +306,13 @@ export const produtos = pgTable(
 			columns: [table.idcest],
 			foreignColumns: [cest.id],
 			name: "produtos_idcest_fkey",
+		})
+			.onUpdate("cascade")
+			.onDelete("set null"),
+		foreignKey({
+			columns: [table.idtaxauf],
+			foreignColumns: [taxauf.id],
+			name: "produtos_idtaxauf_fkey",
 		})
 			.onUpdate("cascade")
 			.onDelete("set null"),

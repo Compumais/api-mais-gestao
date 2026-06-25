@@ -59,9 +59,14 @@ export async function resolverCfopSaidaDeEntrada(
 	idempresa: string,
 	idcfopentrada?: string | undefined,
 	codigoEntrada?: string | undefined,
+	uf?: string | undefined,
 ) {
 	if (idcfopentrada) {
-		const dePara = await buscarCfopSaidaPorEntrada(idempresa, idcfopentrada);
+		const dePara = await buscarCfopSaidaPorEntrada(
+			idempresa,
+			idcfopentrada,
+			uf,
+		);
 
 		if (dePara?.idcfopsaida) {
 			return { id: dePara.idcfopsaida, codigo: dePara.codigosaida ?? undefined };

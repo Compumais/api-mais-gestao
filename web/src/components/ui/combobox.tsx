@@ -76,7 +76,7 @@ export function Combobox({
 			</div>
 
 			{open && (
-				<div className="absolute top-full left-0 z-50 mt-1 w-full rounded-md border bg-popover text-popover-foreground shadow-md">
+				<div className="absolute top-full left-0 z-[100] mt-1 w-full rounded-md border bg-popover text-popover-foreground shadow-md">
 					<div
 						className="flex items-center border-b px-3"
 						onClick={(e) => e.stopPropagation()}

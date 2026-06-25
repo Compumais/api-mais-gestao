@@ -11,7 +11,11 @@ const atualizarTipoDocumentoFinanceiroParamsSchema = z.object({
 const atualizarTipoDocumentoFinanceiroBodySchema = z.object({
 	descricao: z.string().max(50).optional(),
 	acao: z.number().int().optional(),
-	inativo: z.number().int().optional()
+	inativo: z.number().int().optional(),
+	formapagamentonfe: z.string().optional().nullable(),
+	idplanocontas: z.string().uuid().optional().nullable(),
+	aprazo: z.number().int().min(0).max(1).optional(),
+	prazodias: z.number().int().min(0).optional().nullable(),
 });
 
 export async function atualizarTipoDocumentoFinanceiro(request: FastifyRequest, reply: FastifyReply) {

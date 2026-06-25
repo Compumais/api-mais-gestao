@@ -1,0 +1,46 @@
+CREATE TABLE "taxauf" (
+	"id" text PRIMARY KEY NOT NULL,
+	"idempresa" text NOT NULL,
+	"codigo" varchar(4) NOT NULL,
+	"descricao" text NOT NULL,
+	"baseicms" numeric(12, 4),
+	"baseicmsfe" numeric(12, 4),
+	"baseicmsst" numeric(12, 4),
+	"uf_ac" numeric(12, 4),
+	"uf_al" numeric(12, 4),
+	"uf_am" numeric(12, 4),
+	"uf_ap" numeric(12, 4),
+	"uf_ba" numeric(12, 4),
+	"uf_ce" numeric(12, 4),
+	"uf_df" numeric(12, 4),
+	"uf_es" numeric(12, 4),
+	"uf_go" numeric(12, 4),
+	"uf_ma" numeric(12, 4),
+	"uf_mg" numeric(12, 4),
+	"uf_ms" numeric(12, 4),
+	"uf_mt" numeric(12, 4),
+	"uf_pa" numeric(12, 4),
+	"uf_pb" numeric(12, 4),
+	"uf_pe" numeric(12, 4),
+	"uf_pi" numeric(12, 4),
+	"uf_pr" numeric(12, 4),
+	"uf_rj" numeric(12, 4),
+	"uf_rn" numeric(12, 4),
+	"uf_ro" numeric(12, 4),
+	"uf_rr" numeric(12, 4),
+	"uf_rs" numeric(12, 4),
+	"uf_sc" numeric(12, 4),
+	"uf_se" numeric(12, 4),
+	"uf_sp" numeric(12, 4),
+	"uf_to" numeric(12, 4),
+	"baseiss" numeric(12, 4),
+	"iss" numeric(12, 4),
+	"pordif" numeric(12, 4) DEFAULT 0,
+	"bcporuf" char(1) DEFAULT 'N',
+	"inativo" integer DEFAULT 0
+);--> statement-breakpoint
+ALTER TABLE "produtos" ADD COLUMN "idtaxauf" text;--> statement-breakpoint
+ALTER TABLE "taxauf" ADD CONSTRAINT "taxauf_idempresa_fkey" FOREIGN KEY ("idempresa") REFERENCES "public"."empresas"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
+ALTER TABLE "produtos" ADD CONSTRAINT "produtos_idtaxauf_fkey" FOREIGN KEY ("idtaxauf") REFERENCES "public"."taxauf"("id") ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
+CREATE INDEX "taxauf_idempresa_idx" ON "taxauf" USING btree ("idempresa" text_ops);--> statement-breakpoint
+CREATE UNIQUE INDEX "taxauf_idempresa_codigo_uidx" ON "taxauf" USING btree ("idempresa" text_ops,"codigo" text_ops);
