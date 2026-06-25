@@ -8,11 +8,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Field,
-	FieldGroup,
-	FieldLabel,
-} from "@/components/ui/field";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
 	Select,
@@ -31,6 +27,7 @@ import {
 	type ResultadoEmissaoTeste,
 	type ResultadoSefaz,
 } from "@/services/nfe-configuracao.service";
+import { NfeSeriesSection } from "./nfe-series-section";
 
 interface NfeConfiguracaoFormProps {
 	idempresa: string;
@@ -46,11 +43,6 @@ export function NfeConfiguracaoForm({ idempresa }: NfeConfiguracaoFormProps) {
 	);
 	const [resultadoEmissao, setResultadoEmissao] =
 		useState<ResultadoEmissaoTeste | null>(null);
-	const [novaSerie, setNovaSerie] = useState({
-		serie: "1",
-		numeroproximo: 1,
-		padrao: true,
-	});
 
 	const { data: config, isLoading } = useQuery({
 		queryKey: ["nfe-configuracao", idempresa],
@@ -60,11 +52,6 @@ export function NfeConfiguracaoForm({ idempresa }: NfeConfiguracaoFormProps) {
 	const { data: certificados = [] } = useQuery({
 		queryKey: ["certificados-digitais", idempresa],
 		queryFn: () => nfeConfiguracaoService.listarCertificados(idempresa),
-	});
-
-	const { data: series = [] } = useQuery({
-		queryKey: ["nfe-series", idempresa],
-		queryFn: () => nfeConfiguracaoService.listarSeries(idempresa),
 	});
 
 	const form = useForm<NfeConfiguracaoFormData>({
@@ -104,9 +91,7 @@ export function NfeConfiguracaoForm({ idempresa }: NfeConfiguracaoFormProps) {
 			if (!apelidoCert) throw new Error("Informe um apelido");
 
 			const buffer = await arquivo.arrayBuffer();
-			const base64 = btoa(
-				String.fromCharCode(...new Uint8Array(buffer)),
-			);
+			const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
 
 			return nfeConfiguracaoService.enviarCertificado({
 				idempresa,
@@ -150,22 +135,6 @@ export function NfeConfiguracaoForm({ idempresa }: NfeConfiguracaoFormProps) {
 		},
 	});
 
-	const criarSerieMutation = useMutation({
-		mutationFn: () =>
-			nfeConfiguracaoService.criarSerie({
-				idempresa,
-				serie: novaSerie.serie,
-				numeroproximo: novaSerie.numeroproximo,
-				padrao: novaSerie.padrao,
-				ativo: true,
-			}),
-		onSuccess: () => {
-			toast.success("Série cadastrada");
-			queryClient.invalidateQueries({ queryKey: ["nfe-series", idempresa] });
-		},
-		onError: () => toast.error("Erro ao cadastrar série"),
-	});
-
 	const testarSefazMutation = useMutation({
 		mutationFn: () => nfeConfiguracaoService.testarStatusSefaz(idempresa),
 		onSuccess: (data) => {
@@ -180,8 +149,7 @@ export function NfeConfiguracaoForm({ idempresa }: NfeConfiguracaoFormProps) {
 	});
 
 	const emitirTesteMutation = useMutation({
-		mutationFn: () =>
-			nfeConfiguracaoService.emitirTesteHomologacao(idempresa),
+		mutationFn: () => nfeConfiguracaoService.emitirTesteHomologacao(idempresa),
 		onSuccess: (data) => {
 			setResultadoEmissao(data);
 			if (data.pendencias?.length) {
@@ -209,27 +177,26 @@ export function NfeConfiguracaoForm({ idempresa }: NfeConfiguracaoFormProps) {
 	const ambiente = form.watch("ambiente");
 
 	return (
-		<div className="max-w-3xl space-y-8">
+		<div className="space-y-6">
 			<form
 				onSubmit={form.handleSubmit((dados) => salvarMutation.mutate(dados))}
 			>
-				<FieldGroup className="space-y-4">
-					<h2 className="text-lg font-semibold">Parâmetros NF-e</h2>
+				<div className="rounded-lg border bg-card p-6">
+					<h2 className="text-lg font-semibold mb-4">Parâmetros NF-e</h2>
 
 					{ambiente === 1 && (
-						<p className="rounded-md border border-amber-500/50 bg-amber-500/10 px-3 py-2 text-sm text-amber-800 dark:text-amber-200">
-							Atenção: ambiente de produção ativo. Emissões terão validade fiscal.
+						<p className="mb-4 rounded-md border border-amber-500/50 bg-amber-500/10 px-3 py-2 text-sm text-amber-800 dark:text-amber-200">
+							Atenção: ambiente de produção ativo. Emissões terão validade
+							fiscal.
 						</p>
 					)}
 
-					<div className="grid gap-4 md:grid-cols-1">
+					<FieldGroup className="space-y-4">
 						<Field>
 							<FieldLabel>Ambiente</FieldLabel>
 							<Select
 								value={String(ambiente)}
-								onValueChange={(v) =>
-									form.setValue("ambiente", Number(v))
-								}
+								onValueChange={(v) => form.setValue("ambiente", Number(v))}
 							>
 								<SelectTrigger>
 									<SelectValue />
@@ -240,45 +207,59 @@ export function NfeConfiguracaoForm({ idempresa }: NfeConfiguracaoFormProps) {
 								</SelectContent>
 							</Select>
 						</Field>
+
+						<p className="text-muted-foreground text-sm">
+							Leiaute fiscal: {NFE_CONFIG_PADRAO_LABEL} (configurado
+							automaticamente pelo sistema).
+						</p>
+					</FieldGroup>
+
+					<div className="border-t pt-6">
+						<h2 className="text-lg font-semibold mb-4">Responsável técnico</h2>
+						<div className="grid gap-4 md:grid-cols-2">
+							<Field>
+								<FieldLabel htmlFor="infresptec_cnpj">CNPJ</FieldLabel>
+								<Input
+									id="infresptec_cnpj"
+									{...form.register("infresptec_cnpj")}
+								/>
+							</Field>
+							<Field>
+								<FieldLabel htmlFor="infresptec_nome">Nome</FieldLabel>
+								<Input
+									id="infresptec_nome"
+									{...form.register("infresptec_nome")}
+								/>
+							</Field>
+							<Field>
+								<FieldLabel htmlFor="infresptec_email">E-mail</FieldLabel>
+								<Input
+									id="infresptec_email"
+									{...form.register("infresptec_email")}
+								/>
+							</Field>
+							<Field>
+								<FieldLabel htmlFor="infresptec_fone">Telefone</FieldLabel>
+								<Input
+									id="infresptec_fone"
+									{...form.register("infresptec_fone")}
+								/>
+							</Field>
+						</div>
 					</div>
 
-					<p className="text-muted-foreground text-sm">
-						Leiaute fiscal: {NFE_CONFIG_PADRAO_LABEL} (configurado automaticamente
-						pelo sistema).
-					</p>
-
-					<h3 className="pt-2 font-medium">Responsável técnico</h3>
-					<div className="grid gap-4 md:grid-cols-2">
-						<Field>
-							<FieldLabel htmlFor="infresptec_cnpj">CNPJ</FieldLabel>
-							<Input id="infresptec_cnpj" {...form.register("infresptec_cnpj")} />
-						</Field>
-						<Field>
-							<FieldLabel htmlFor="infresptec_nome">Nome</FieldLabel>
-							<Input id="infresptec_nome" {...form.register("infresptec_nome")} />
-						</Field>
-						<Field>
-							<FieldLabel htmlFor="infresptec_email">E-mail</FieldLabel>
-							<Input id="infresptec_email" {...form.register("infresptec_email")} />
-						</Field>
-						<Field>
-							<FieldLabel htmlFor="infresptec_fone">Telefone</FieldLabel>
-							<Input id="infresptec_fone" {...form.register("infresptec_fone")} />
-						</Field>
-					</div>
-
-					<div className="flex justify-end">
+					<div className="flex justify-end pt-4 border-t">
 						<Button type="submit" disabled={salvarMutation.isPending}>
-							{salvarMutation.isPending ? "Salvando..." : "Salvar configuração"}
+							{salvarMutation.isPending ? "Salvando..." : "Salvar"}
 						</Button>
 					</div>
-				</FieldGroup>
+				</div>
 			</form>
 
-			<section className="space-y-4 border-t pt-6">
-				<h2 className="text-lg font-semibold">Certificado digital A1</h2>
+			<div className="rounded-lg border bg-card p-6">
+				<h2 className="text-lg font-semibold mb-4">Certificado digital A1</h2>
 
-				<div className="grid gap-3 md:grid-cols-2">
+				<div className="grid gap-4 md:grid-cols-2">
 					<Field>
 						<FieldLabel htmlFor="apelido-cert">Apelido</FieldLabel>
 						<Input
@@ -310,11 +291,11 @@ export function NfeConfiguracaoForm({ idempresa }: NfeConfiguracaoFormProps) {
 					Enviar certificado
 				</Button>
 
-				<ul className="space-y-2">
+				<ul className="mt-4 space-y-2">
 					{certificados.map((cert) => (
 						<li
 							key={cert.id}
-							className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-3 text-sm"
+							className="flex flex-wrap items-center justify-between gap-2 rounded border p-3 text-sm"
 						>
 							<div>
 								<p className="font-medium">{cert.apelido}</p>
@@ -348,61 +329,17 @@ export function NfeConfiguracaoForm({ idempresa }: NfeConfiguracaoFormProps) {
 						</li>
 					))}
 				</ul>
-			</section>
+			</div>
 
-			<section className="space-y-4 border-t pt-6">
-				<h2 className="text-lg font-semibold">Série modelo 55</h2>
-				<div className="grid gap-3 md:grid-cols-3">
-					<Field>
-						<FieldLabel>Série</FieldLabel>
-						<Input
-							value={novaSerie.serie}
-							onChange={(e) =>
-								setNovaSerie((s) => ({ ...s, serie: e.target.value }))
-							}
-						/>
-					</Field>
-					<Field>
-						<FieldLabel>Próximo número</FieldLabel>
-						<Input
-							type="number"
-							min={1}
-							value={novaSerie.numeroproximo}
-							onChange={(e) =>
-								setNovaSerie((s) => ({
-									...s,
-									numeroproximo: Number(e.target.value),
-								}))
-							}
-						/>
-					</Field>
-					<div className="flex items-end">
-						<Button
-							type="button"
-							onClick={() => criarSerieMutation.mutate()}
-							disabled={criarSerieMutation.isPending}
-						>
-							Adicionar série
-						</Button>
-					</div>
-				</div>
+			<NfeSeriesSection
+				idempresa={idempresa}
+				modelo="55"
+				titulo="Série modelo 55"
+				queryKey="nfe-series"
+			/>
 
-				<ul className="space-y-2 text-sm">
-					{series.map((s) => (
-						<li key={s.id} className="rounded-md border p-3">
-							Série {s.serie} — próximo nº {s.numeroproximo}
-							{s.padrao && (
-								<Badge className="ml-2" variant="secondary">
-									Padrão
-								</Badge>
-							)}
-						</li>
-					))}
-				</ul>
-			</section>
-
-			<section className="space-y-4 border-t pt-6">
-				<h2 className="text-lg font-semibold">Testes SEFAZ</h2>
+			<div className="rounded-lg border bg-card p-6">
+				<h2 className="text-lg font-semibold mb-4">Testes SEFAZ</h2>
 				<div className="flex flex-wrap gap-2">
 					<Button
 						type="button"
@@ -415,32 +352,30 @@ export function NfeConfiguracaoForm({ idempresa }: NfeConfiguracaoFormProps) {
 					<Button
 						type="button"
 						onClick={() => emitirTesteMutation.mutate()}
-						disabled={
-							emitirTesteMutation.isPending || ambiente !== 2
-						}
+						disabled={emitirTesteMutation.isPending || ambiente !== 2}
 					>
 						Emitir NF teste homologação
 					</Button>
 				</div>
 
 				{resultadoSefaz?.pendencias?.map((p) => (
-					<p key={p.codigo} className="text-sm text-amber-600">
+					<p key={p.codigo} className="mt-4 text-sm text-amber-600">
 						{p.mensagem}
 					</p>
 				))}
 				{resultadoSefaz?.cStat && (
-					<p className="text-sm text-muted-foreground">
+					<p className="mt-4 text-sm text-muted-foreground">
 						Status: {resultadoSefaz.cStat} — {resultadoSefaz.xMotivo}
 					</p>
 				)}
 
 				{resultadoEmissao?.pendencias?.map((p) => (
-					<p key={p.codigo} className="text-sm text-amber-600">
+					<p key={p.codigo} className="mt-4 text-sm text-amber-600">
 						{p.mensagem}
 					</p>
 				))}
 				{resultadoEmissao?.chave && (
-					<p className="text-sm break-all">
+					<p className="mt-4 text-sm break-all">
 						Chave: {resultadoEmissao.chave}
 						<br />
 						Protocolo: {resultadoEmissao.protocolo ?? "—"}
@@ -448,7 +383,7 @@ export function NfeConfiguracaoForm({ idempresa }: NfeConfiguracaoFormProps) {
 						{resultadoEmissao.cStat} — {resultadoEmissao.xMotivo}
 					</p>
 				)}
-			</section>
+			</div>
 		</div>
 	);
 }

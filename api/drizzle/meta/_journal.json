@@ -295,6 +295,41 @@
       "when": 1781726000000,
       "tag": "0041_tipodoc_financeiro_venda",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1781727000000,
+      "tag": "0042_nfce_configuracao",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1781728000000,
+      "tag": "0043_nfce_meios_pagamento",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1781729000000,
+      "tag": "0044_estoque_dual",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1781730000000,
+      "tag": "0045_vendapdv_nfce",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1781731000000,
+      "tag": "0046_movimentoestoque_colunas",
+      "breakpoints": true
     }
   ]
 }

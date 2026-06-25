@@ -234,6 +234,13 @@ export interface CupomItemLinha {
 	precounitario: string;
 }
 
+export interface CupomNfceInfo {
+	idnotafiscal: string;
+	chave: string;
+	protocolo?: string;
+	ambiente?: number;
+}
+
 export interface CupomNaoFiscalData {
 	vendaId?: string;
 	empresaNome: string;
@@ -247,6 +254,33 @@ export interface CupomNaoFiscalData {
 	pagamentos: PagamentoParcialPdv[];
 	troco: number;
 	contexto?: string;
+	nfce?: CupomNfceInfo;
+}
+
+export interface ConfirmacaoVendaPdvResult {
+	vendaId: string;
+	nfce?: CupomNfceInfo;
+}
+
+export function buildCupomNfceInfo(
+	emissao: {
+		emitida?: boolean;
+		idnotafiscal?: string;
+		chave?: string;
+		protocolo?: string;
+	} | undefined,
+	ambiente?: number | null,
+): CupomNfceInfo | undefined {
+	if (!emissao?.emitida || !emissao.chave || !emissao.idnotafiscal) {
+		return undefined;
+	}
+
+	return {
+		idnotafiscal: emissao.idnotafiscal,
+		chave: emissao.chave,
+		protocolo: emissao.protocolo,
+		ambiente: ambiente ?? undefined,
+	};
 }
 
 export const MEIOS_PAGAMENTO_PDV: Array<{
