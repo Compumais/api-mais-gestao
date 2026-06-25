@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import type { z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
 	Field,
@@ -57,7 +58,11 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 		queryFn: () => localidadesService.listarEstados(),
 	});
 
-	const form = useForm<EmpresaFiscalConfigFormData>({
+	const form = useForm<
+		z.input<typeof empresaFiscalConfigSchema>,
+		unknown,
+		z.output<typeof empresaFiscalConfigSchema>
+	>({
 		resolver: zodResolver(empresaFiscalConfigSchema),
 		defaultValues: {
 			regimetributario: "",

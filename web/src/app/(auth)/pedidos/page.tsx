@@ -200,7 +200,14 @@ export default function PedidosPage() {
 				</div>
 
 				{isLoading ? (
-					<TableSkeleton columns={6} rows={8} />
+					<TableSkeleton columns={6} rows={8}>
+						<TableHead>Código</TableHead>
+						<TableHead>Cliente</TableHead>
+						<TableHead>Data</TableHead>
+						<TableHead>Valor</TableHead>
+						<TableHead>Status</TableHead>
+						<TableHead className="w-12" />
+					</TableSkeleton>
 				) : (
 					<div className="rounded-md border">
 						<Table>

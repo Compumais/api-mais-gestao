@@ -220,11 +220,17 @@ export function SecaoDocumentoReferenciado({
 						<SelectContent>
 							{notasDisponiveis.map((nota) => (
 								<SelectItem key={nota.id} value={nota.id}>
-									Nº {nota.numeronotafiscal ?? nota.numero ?? "—"} —{" "}
+									Nº{" "}
+									{nota.numeronotafiscal ??
+										("numero" in nota ? nota.numero : null) ??
+										"—"}{" "}
+									—{" "}
 									{nota.razaosocial ??
-										(tipoDevolucao === "venda"
+										(tipoDevolucao === "venda" && "cnpjcpf" in nota
 											? nota.cnpjcpf
-											: nota.cnpjemissor) ??
+											: "cnpjemissor" in nota
+												? nota.cnpjemissor
+												: null) ??
 										"—"}{" "}
 									— {nota.chavenfe?.slice(-8)}
 								</SelectItem>

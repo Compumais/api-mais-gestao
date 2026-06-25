@@ -6,6 +6,7 @@ import dayjs from "dayjs";
 import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import type { z } from "zod";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -67,7 +68,11 @@ export function NfeConfiguracaoForm({ idempresa }: NfeConfiguracaoFormProps) {
 		queryFn: () => nfeConfiguracaoService.listarSeries(idempresa),
 	});
 
-	const form = useForm<NfeConfiguracaoFormData>({
+	const form = useForm<
+		z.input<typeof nfeConfiguracaoSchema>,
+		unknown,
+		z.output<typeof nfeConfiguracaoSchema>
+	>({
 		resolver: zodResolver(nfeConfiguracaoSchema),
 		values: config
 			? {

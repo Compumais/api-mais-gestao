@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useForm, Controller, type FieldErrors } from "react-hook-form";
+import { useForm, Controller, type FieldErrors, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Pencil, Plus, Send, Trash2 } from "lucide-react";
@@ -247,7 +247,7 @@ export default function NovaEmissaoNfePage() {
 	});
 
 	const form = useForm<EmissaoNfeFormData>({
-		resolver: zodResolver(emissaoNfeFormSchema),
+		resolver: zodResolver(emissaoNfeFormSchema) as Resolver<EmissaoNfeFormData>,
 		defaultValues: {
 			idempresa: empresa?.id ?? "",
 			idnotafiscal: undefined,

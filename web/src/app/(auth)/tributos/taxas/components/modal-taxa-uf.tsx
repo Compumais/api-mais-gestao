@@ -66,7 +66,7 @@ function textoOuNulo(valor?: string | null): string | null {
 }
 
 function mapRegistroParaForm(registro: TaxaUf): TaxaUfFormData {
-	const form: TaxaUfFormData = {
+	return {
 		codigo: registro.codigo ?? "",
 		descricao: registro.descricao ?? "",
 		baseicms: registro.baseicms,
@@ -77,14 +77,13 @@ function mapRegistroParaForm(registro: TaxaUf): TaxaUfFormData {
 		pordif: registro.pordif,
 		bcporuf: registro.bcporuf === "S" ? "S" : "N",
 		inativo: registro.inativo ?? 0,
-	};
-
-	for (const uf of UFS_BRASIL) {
-		const chave = `uf_${uf.toLowerCase()}` as keyof TaxaUfFormData;
-		form[chave] = (registro[chave as keyof TaxaUf] as string | null) ?? null;
-	}
-
-	return form;
+		...Object.fromEntries(
+			UFS_BRASIL.map((uf) => {
+				const chave = `uf_${uf.toLowerCase()}` as keyof TaxaUf;
+				return [`uf_${uf.toLowerCase()}`, registro[chave] ?? null];
+			}),
+		),
+	} as TaxaUfFormData;
 }
 
 function mapFormParaPayload(dados: TaxaUfFormData, idempresa: string) {
@@ -250,7 +249,7 @@ export function ModalTaxaUf({
 							<h3 className="text-sm font-semibold">Alíquota ICMS por UF (%)</h3>
 							<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
 								{UFS_BRASIL.map((uf) => {
-									const campo = `uf_${uf.toLowerCase()}` as const;
+									const campo = `uf_${uf.toLowerCase()}` as keyof TaxaUfFormData;
 									return (
 										<Field key={uf}>
 											<FieldLabel htmlFor={campo}>{uf}</FieldLabel>

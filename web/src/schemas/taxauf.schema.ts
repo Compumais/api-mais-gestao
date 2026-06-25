@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { UFS_BRASIL } from "@/util/ufs-brasil";
+import { type UfBrasil, UFS_BRASIL } from "@/util/ufs-brasil";
 
 const campoNumericoOpcional = z
 	.string()
@@ -14,11 +14,13 @@ const campoNumericoOpcional = z
 		{ message: "Informe um valor numérico válido" },
 	);
 
+type ChaveCampoUf = `uf_${Lowercase<UfBrasil>}`;
+
 const camposUf = Object.fromEntries(
 	UFS_BRASIL.map((uf) => [`uf_${uf.toLowerCase()}`, campoNumericoOpcional]),
-);
+) as Record<ChaveCampoUf, typeof campoNumericoOpcional>;
 
-export const taxaUfFormSchema = z.object({
+const taxaUfBaseSchema = z.object({
 	codigo: z
 		.string()
 		.min(1, "Código é obrigatório")
@@ -32,7 +34,8 @@ export const taxaUfFormSchema = z.object({
 	pordif: campoNumericoOpcional,
 	bcporuf: z.enum(["S", "N"]).optional().nullable(),
 	inativo: z.number().int().optional(),
-	...camposUf,
 });
+
+export const taxaUfFormSchema = taxaUfBaseSchema.extend(camposUf);
 
 export type TaxaUfFormData = z.infer<typeof taxaUfFormSchema>;
