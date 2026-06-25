@@ -102,7 +102,6 @@ export function EntidadeForm({
 			empresaId: empresa?.id,
 			tipoPrincipal: config.tipoPrincipal,
 		}),
-		values: isEdicao ? valoresFormulario : undefined,
 	});
 
 	const {
@@ -112,6 +111,7 @@ export function EntidadeForm({
 		getValues,
 		watch,
 		control,
+		reset,
 		formState: { errors },
 	} = form;
 
@@ -119,11 +119,40 @@ export function EntidadeForm({
 	const cep = watch("cep");
 	const endereco = watch("endereco");
 
+	useEffect(() => {
+		if (!isEdicao || !valoresIniciais) return;
+		reset(valoresFormulario);
+	}, [isEdicao, valoresIniciais, valoresFormulario, reset]);
+
 	const { data: estadosData, isLoading: carregandoEstados } = useQuery({
 		queryKey: ["localidades", "estados"],
 		queryFn: () => localidadesService.listarEstados(),
 		staleTime: 24 * 60 * 60 * 1000,
 	});
+
+	useEffect(() => {
+		if (!isEdicao || carregandoEstados || !estadosData?.data.length) {
+			return;
+		}
+
+		const estadoSalvo = valoresFormulario.idestado;
+		if (!estadoSalvo) return;
+
+		const estadoExiste = estadosData.data.some(
+			(estado) => estado.idestado === estadoSalvo,
+		);
+
+		if (estadoExiste && getValues("idestado") !== estadoSalvo) {
+			setValue("idestado", estadoSalvo, { shouldValidate: true });
+		}
+	}, [
+		isEdicao,
+		carregandoEstados,
+		estadosData,
+		valoresFormulario.idestado,
+		getValues,
+		setValue,
+	]);
 
 	const { data: municipiosData, isLoading: carregandoMunicipios } = useQuery({
 		queryKey: ["localidades", "municipios", idestado],
@@ -131,6 +160,30 @@ export function EntidadeForm({
 		enabled: Boolean(idestado),
 		staleTime: 24 * 60 * 60 * 1000,
 	});
+
+	useEffect(() => {
+		if (!isEdicao || carregandoMunicipios || !municipiosData?.data.length) {
+			return;
+		}
+
+		const cidadeSalva = valoresFormulario.idcidade;
+		if (!cidadeSalva) return;
+
+		const cidadeExiste = municipiosData.data.some(
+			(municipio) => municipio.idcidade === cidadeSalva,
+		);
+
+		if (cidadeExiste && getValues("idcidade") !== cidadeSalva) {
+			setValue("idcidade", cidadeSalva, { shouldValidate: true });
+		}
+	}, [
+		isEdicao,
+		carregandoMunicipios,
+		municipiosData,
+		valoresFormulario.idcidade,
+		getValues,
+		setValue,
+	]);
 
 	const { data: planoContasData, isLoading: carregandoPlanoContas } = useQuery({
 		queryKey: ["plano-contas", config.queryKeyListagem, empresa?.id],
@@ -372,9 +425,10 @@ export function EntidadeForm({
 								name="tipopessoa"
 								render={({ field }) => (
 									<Select
+										key={`tipopessoa-${field.value ?? "vazio"}`}
 										value={
 											field.value !== null && field.value !== undefined
-												? field.value.toString()
+												? String(field.value)
 												: undefined
 										}
 										onValueChange={(value) =>
@@ -542,31 +596,43 @@ export function EntidadeForm({
 
 						<Field data-invalid={!!errors.idestado}>
 							<FieldLabel htmlFor="idestado">Estado</FieldLabel>
-							<Select
-								value={idestado ?? undefined}
-								onValueChange={(value) => {
-									setValue("idestado", value, { shouldValidate: true });
-									setValue("idcidade", null, { shouldValidate: true });
-								}}
-								disabled={carregandoEstados}
-							>
-								<SelectTrigger
-									className="w-full"
-									aria-invalid={!!errors.idestado}
-									aria-describedby={
-										errors.idestado ? "idestado-error" : undefined
-									}
-								>
-									<SelectValue placeholder="Selecione o estado" />
-								</SelectTrigger>
-								<SelectContent>
-									{estadosData?.data.map((estado) => (
-										<SelectItem key={estado.idestado} value={estado.idestado}>
-											{estado.nome} ({estado.idestado})
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
+							<Controller
+								control={control}
+								name="idestado"
+								render={({ field }) => (
+									<Select
+										key={`idestado-${field.value ?? "vazio"}-${estadosData?.data.length ?? 0}`}
+										value={field.value ?? undefined}
+										onValueChange={(value) => {
+											field.onChange(value);
+											if (value !== field.value) {
+												setValue("idcidade", null, { shouldValidate: true });
+											}
+										}}
+										disabled={carregandoEstados}
+									>
+										<SelectTrigger
+											className="w-full"
+											aria-invalid={!!errors.idestado}
+											aria-describedby={
+												errors.idestado ? "idestado-error" : undefined
+											}
+										>
+											<SelectValue placeholder="Selecione o estado" />
+										</SelectTrigger>
+										<SelectContent>
+											{estadosData?.data.map((estado) => (
+												<SelectItem
+													key={estado.idestado}
+													value={estado.idestado}
+												>
+													{estado.nome} ({estado.idestado})
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								)}
+							/>
 							<FieldError errors={errors.idestado ? [errors.idestado] : []} />
 						</Field>
 
@@ -577,6 +643,7 @@ export function EntidadeForm({
 								name="idcidade"
 								render={({ field }) => (
 									<Combobox
+										key={`idcidade-${idestado ?? "vazio"}-${municipiosData?.data.length ?? 0}-${field.value ?? "vazio"}`}
 										options={municipioOptions}
 										value={field.value ?? ""}
 										onChange={field.onChange}
