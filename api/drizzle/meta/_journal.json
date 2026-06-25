@@ -232,6 +232,69 @@
       "when": 1781717000000,
       "tag": "0032_super_admin",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1781718000000,
+      "tag": "0033_produtos_situacaotributaria",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1781719000000,
+      "tag": "0034_parametrizacao_tributos",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1781720000000,
+      "tag": "0035_cest_globais",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1781721000000,
+      "tag": "0036_taxauf",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1781722000000,
+      "tag": "0037_nfe_emissao_fundacao",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1781723000000,
+      "tag": "0038_nfe_xml_caminho",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1781724000000,
+      "tag": "0039_entidade_indiedest",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1781725000000,
+      "tag": "0040_nfe_config_ultima_emissao",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1781726000000,
+      "tag": "0041_tipodoc_financeiro_venda",
+      "breakpoints": true
     }
   ]
 }

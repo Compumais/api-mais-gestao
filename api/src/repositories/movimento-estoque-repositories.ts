@@ -21,6 +21,13 @@ export async function buscarMovimentoEstoquePorId(id: number) {
 	return registro;
 }
 
+export async function listarMovimentosEstoquePorDocumento(idnotafiscal: string) {
+	return db
+		.select()
+		.from(movimentoestoque)
+		.where(eq(movimentoestoque.idoriginal, idnotafiscal));
+}
+
 export async function atualizarMovimentoEstoque(
 	id: number,
 	dados: {

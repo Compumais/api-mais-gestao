@@ -32,3 +32,10 @@ export async function arquivarNotaFiscalXmlSeNaoExistir(dados: NovaNotaFiscalXml
 
 	return criarNotaFiscalXml(dados);
 }
+
+export async function listarXmlsPorEmpresa(idempresa: string) {
+	return db
+		.select()
+		.from(notafiscalxml)
+		.where(eq(notafiscalxml.idempresa, idempresa));
+}

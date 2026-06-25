@@ -181,21 +181,112 @@ const validadoresIePorUf: Record<string, (ie: string) => boolean> = {
 	},
 };
 
-export function validarInscricaoEstadual(
+const TAMANHO_IE_POR_UF: Record<string, number> = {
+	AC: 13,
+	AL: 9,
+	AP: 9,
+	AM: 9,
+	BA: 8,
+	CE: 9,
+	DF: 13,
+	ES: 9,
+	GO: 9,
+	MA: 9,
+	MG: 13,
+	MS: 9,
+	MT: 11,
+	PA: 9,
+	PB: 9,
+	PR: 10,
+	PE: 9,
+	PI: 9,
+	RJ: 8,
+	RN: 9,
+	RO: 14,
+	RR: 9,
+	RS: 10,
+	SC: 9,
+	SE: 9,
+	SP: 12,
+	TO: 9,
+};
+
+/**
+ * Remove pontuação da IE para persistência e NF-e.
+ * Não preenche zeros à esquerda: a SEFAZ valida a IE exatamente como cadastrada
+ * no CNPJ do destinatário (rejeição quando há divergência).
+ */
+export function normalizarInscricaoEstadualDigitos(
 	ie: string | null | undefined,
-	uf: string | null | undefined,
+	_uf?: string | null | undefined,
+): string | null {
+	if (!ie?.trim()) return null;
+
+	const normalizada = ie.trim().toUpperCase();
+	if (normalizada === "ISENTO" || normalizada === "ISENTA") {
+		return normalizada;
+	}
+
+	const digitos = somenteDigitos(ie);
+	return digitos || null;
+}
+
+export function validarFormatoInscricaoEstadual(
+	ie: string | null | undefined,
+	indiedest?: number | null,
 ): boolean {
 	if (!ie || ie.trim() === "") return true;
+
 	const normalizada = ie.trim().toUpperCase();
 	if (normalizada === "ISENTO" || normalizada === "ISENTA") return true;
 
-	if (!uf) return false;
+	if (indiedest === 9) return true;
+
+	if (indiedest === 2) {
+		return normalizada === "ISENTO" || normalizada === "ISENTA";
+	}
+
+	const digitos = somenteDigitos(ie);
+	return digitos.length >= 2 && digitos.length <= 14;
+}
+
+export function validarInscricaoEstadual(
+	ie: string | null | undefined,
+	uf: string | null | undefined,
+	indiedest?: number | null,
+): boolean {
+	if (!ie || ie.trim() === "") return true;
+
+	const normalizada = ie.trim().toUpperCase();
+	if (normalizada === "ISENTO" || normalizada === "ISENTA") return true;
+
+	if (indiedest === 9) return true;
+
+	if (indiedest === 2) {
+		return normalizada === "ISENTO" || normalizada === "ISENTA";
+	}
+
+	if (!uf) return true;
+
 	const numeros = somenteDigitos(ie);
 	if (!numeros) return false;
 
-	const validador = validadoresIePorUf[uf.toUpperCase()];
+	const ufNormalizada = uf.toUpperCase();
+	const validador = validadoresIePorUf[ufNormalizada];
 	if (!validador) return numeros.length >= 8 && numeros.length <= 14;
-	return validador(numeros);
+
+	if (validador(numeros)) return true;
+
+	const tamanhoEsperado = TAMANHO_IE_POR_UF[ufNormalizada];
+	if (
+		tamanhoEsperado &&
+		numeros.length > 0 &&
+		numeros.length < tamanhoEsperado
+	) {
+		return validador(numeros.padStart(tamanhoEsperado, "0"));
+	}
+
+	return false;
 }
 
 export function validarTelefone(telefone: string | null | undefined): boolean {

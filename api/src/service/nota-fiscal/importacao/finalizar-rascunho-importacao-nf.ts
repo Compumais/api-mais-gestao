@@ -3,6 +3,7 @@ import type { HttpResponse } from "@/model/http-model.js";
 import type {
 	DadosImportacaoItem,
 	DadosImportacaoNota,
+	RastroTributacaoSaidaImportacao,
 } from "@/model/nota-fiscal-importacao-model.js";
 import type { NotaFiscal } from "@/model/nota-fiscal-model.js";
 import type { NotaFiscalItem } from "@/model/nota-fiscal-item-model.js";
@@ -31,6 +32,7 @@ import {
 	montarAtualizacaoProdutoNf,
 } from "@/service/nota-fiscal/vincular-ou-criar-produto.js";
 import { resolverCfopSaidaDeEntrada } from "@/service/nota-fiscal/importacao/resolver-referencias-importacao.js";
+import { resolverParametrizacaoTributosImportacao } from "@/service/nota-fiscal/importacao/resolver-parametrizacao-tributos-importacao.js";
 import {
 	calcularCustoContabilItem,
 	calcularRateioItensImportacaoNf,
@@ -243,29 +245,51 @@ export async function finalizarRascunhoImportacaoNfService({
 	}
 
 	const produtosResolvidos = new Map<string, string>();
+	const rastroTributacaoPorItem = new Map<string, RastroTributacaoSaidaImportacao>();
 
 	for (const item of itensComDados) {
 		const dados = item.dadosimportacao;
 		if (!dados) continue;
 
-		const cfopSaida = await resolverCfopSaidaDeEntrada(
+		const parametrizacao = await resolverParametrizacaoTributosImportacao({
 			idempresa,
-			dados.idcfop,
-			dados.cfopXml,
-		);
+			dados,
+			ufemitente: dadosNotaImportacao.ufemitente,
+		});
+
+		const cfopSaida = parametrizacao?.sugestao.idcfopsaida
+			? {
+					id: parametrizacao.sugestao.idcfopsaida,
+					codigo: undefined,
+				}
+			: await resolverCfopSaidaDeEntrada(
+					idempresa,
+					dados.idcfop,
+					dados.cfopXml,
+					dadosNotaImportacao.ufemitente,
+				);
+
+		const sugestaoSaida =
+			parametrizacao?.sugestao ??
+			sugerirTributacaoSaidaProdutoNf(configRegime, dados.tributacao);
+
+		rastroTributacaoPorItem.set(item.id, {
+			origem: parametrizacao
+				? "parametrizacao"
+				: cfopSaida?.id
+					? "cfop-depara"
+					: "heuristica",
+			idparametrizacaotributos: parametrizacao?.regra.id,
+		});
 
 		const opcoesProduto = {
 			idfornecedor: identidadeFornecedor ?? undefined,
-			idcfopsaida: cfopSaida?.id,
+			idcfopsaida: cfopSaida?.id ?? parametrizacao?.sugestao.idcfopsaida,
 			configRegime,
 		};
 
 		if (dados.statusVinculo === "vinculado" && dados.idproduto) {
 			const produtoAtual = await buscarProdutoPorId(dados.idproduto);
-			const sugestaoSaida = sugerirTributacaoSaidaProdutoNf(
-				configRegime,
-				dados.tributacao,
-			);
 			const dadosProduto = montarDadosProdutoNfImportacao(
 				dados,
 				idempresa,
@@ -273,7 +297,13 @@ export async function finalizarRascunhoImportacaoNfService({
 			);
 
 			await atualizarProduto(dados.idproduto, {
-				...montarAtualizacaoProdutoNf(dadosProduto),
+				...montarAtualizacaoProdutoNf({
+					...dadosProduto,
+					...sugestaoSaida,
+					idcfopsaidanfce:
+						sugestaoSaida.idcfopsaidanfce ?? dadosProduto.idcfopsaidanfce,
+					cfopvendaecf: sugestaoSaida.cfopvendaecf,
+				}),
 				...(produtoAtual
 					? mesclarSugestaoTributacaoSaidaProduto(produtoAtual, sugestaoSaida)
 					: sugestaoSaida),
@@ -306,10 +336,6 @@ export async function finalizarRascunhoImportacaoNfService({
 				);
 			}
 
-			const sugestaoSaida = sugerirTributacaoSaidaProdutoNf(
-				configRegime,
-				dados.tributacao,
-			);
 			const dadosProduto = montarDadosProdutoNfImportacao(
 				dados,
 				idempresa,
@@ -319,6 +345,9 @@ export async function finalizarRascunhoImportacaoNfService({
 			const novoProduto = await criarProdutoParaNf({
 				...dadosProduto,
 				...sugestaoSaida,
+				idcfopsaidanfce:
+					sugestaoSaida.idcfopsaidanfce ?? dadosProduto.idcfopsaidanfce,
+				cfopvendaecf: sugestaoSaida.cfopvendaecf,
 			});
 
 			if (!novoProduto) {
@@ -405,7 +434,13 @@ export async function finalizarRascunhoImportacaoNfService({
 				dados.custoContabilCalculado ?? dados.precounitarioEstoque,
 			gerarcreditoipi: flagsCredito.gerarcreditoipi,
 			gerarcreditoicmsst: flagsCredito.gerarcreditoicmsst,
-			dadosimportacao: montarSnapshotImportacaoItem(dados, finalizadoEm),
+			dadosimportacao: montarSnapshotImportacaoItem(
+				{
+					...dados,
+					rastroTributacaoSaida: rastroTributacaoPorItem.get(item.id),
+				},
+				finalizadoEm,
+			),
 		};
 	});
 
@@ -474,7 +509,8 @@ export async function finalizarRascunhoImportacaoNfService({
 			idempresa,
 			idnotafiscal: idRascunho,
 			idlocalestoque: localEstoque?.id ?? nota.idlocalestoque ?? undefined,
-			dataEntrada: nota.emissao ?? finalizadoEm,
+			dataMovimento: nota.emissao ?? finalizadoEm,
+			sentido: "entrada",
 			itens: itensComDados
 				.filter((item) => produtosResolvidos.has(item.id))
 				.map((item) => {

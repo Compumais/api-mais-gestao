@@ -13,6 +13,7 @@ import {
 } from "@tanstack/react-table";
 import Link from "next/link";
 import { useState } from "react";
+import { RotateCcw } from "lucide-react";
 import { TableSkeleton } from "@/components/table-skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -113,6 +114,27 @@ const createColumns = (): ColumnDef<NotaFiscal>[] => [
 				return <Badge variant="outline">-</Badge>;
 			}
 			return <Badge variant="secondary">{status}</Badge>;
+		},
+	},
+	{
+		id: "acoes",
+		header: "",
+		cell: ({ row }) => {
+			const nota = row.original;
+			const podeDevolver = !!nota.chavenfe && nota.status !== 99;
+
+			return (
+				<div className="flex items-center gap-1">
+					{podeDevolver && (
+						<Button asChild size="sm" variant="outline" className="h-7 px-2 text-xs">
+							<Link href={`/nota-fiscal-venda/nova?devolverEntrada=${nota.id}`}>
+								<RotateCcw className="mr-1 size-3" />
+								Devolver
+							</Link>
+						</Button>
+					)}
+				</div>
+			);
 		},
 	},
 ];

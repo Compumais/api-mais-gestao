@@ -184,7 +184,10 @@ export async function criarRascunhoImportacaoNfService({
 		encontrado: !!entidadeFornecedor,
 	};
 
-	const cfopCabecalho = await resolverCfopImportacao(idempresa, dadosXml.cfop);
+	const cfopCabecalho = await resolverCfopImportacao(
+		idempresa,
+		dadosXml.cfopOperacao ?? dadosXml.cfop,
+	);
 
 	const duplicatasNota: DuplicataImportacaoNf[] | undefined =
 		dadosXml.duplicatas && dadosXml.duplicatas.length > 0
@@ -234,9 +237,22 @@ export async function criarRascunhoImportacaoNfService({
 		idtipodocumento: idOpcionalOuNulo(idtipodocumento) ?? null,
 		idoperacaofiscal: idOpcionalOuNulo(idoperacaofiscal) ?? null,
 		arquivoxmlnotaoriginal: xml,
-		dadosimportacao: duplicatasNota
-			? { duplicatas: duplicatasNota, versao: 1 }
-			: null,
+		dadosimportacao: {
+			versao: 1,
+			...(dadosXml.ufemitente ? { ufemitente: dadosXml.ufemitente } : {}),
+			...(dadosXml.cfopOperacao
+				? { cfopOperacaoXml: dadosXml.cfopOperacao }
+				: {}),
+			...(dadosXml.natOp ? { natOpXml: dadosXml.natOp } : {}),
+			...(dadosXml.finNFe !== undefined ? { finNFe: dadosXml.finNFe } : {}),
+			...(dadosXml.chaveReferenciada
+				? { chaveReferenciadaXml: dadosXml.chaveReferenciada }
+				: {}),
+			...(dadosXml.ipiDevolvido
+				? { ipiDevolvidoXml: dadosXml.ipiDevolvido }
+				: {}),
+			...(duplicatasNota ? { duplicatas: duplicatasNota } : {}),
+		},
 		tipoorigem: 0,
 		status: STATUS_RASCUNHO_IMPORTACAO,
 		idusuarioinclusao: idusuario,

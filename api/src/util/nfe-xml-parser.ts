@@ -31,6 +31,7 @@ export type ItemNFeXml = {
 	aliquotacofins?: string | undefined;
 	cofins?: string | undefined;
 	ipi?: string | undefined;
+	ipiDevolvido?: string | undefined;
 	cstipi?: string | undefined;
 	enquadramentoipi?: string | undefined;
 	origem?: number | undefined;
@@ -65,9 +66,14 @@ export type NFeXmlParsed = {
 	datahoraentradasaida?: string | undefined;
 	tipodocumento?: string | undefined;
 	cnpjemissor?: string | undefined;
+	ufemitente?: string | undefined;
 	razaosocial?: string | undefined;
 	inscricaoestadual?: string | undefined;
 	cfop?: string | undefined;
+	cfopOperacao?: string | undefined;
+	natOp?: string | undefined;
+	finNFe?: number | undefined;
+	chaveReferenciada?: string | undefined;
 	totalproduto?: string | undefined;
 	valortotalnota?: string | undefined;
 	frete?: string | undefined;
@@ -77,6 +83,7 @@ export type NFeXmlParsed = {
 	baseicms?: string | undefined;
 	icms?: string | undefined;
 	ipi?: string | undefined;
+	ipiDevolvido?: string | undefined;
 	pis?: string | undefined;
 	cofins?: string | undefined;
 	pesobruto?: string | undefined;
@@ -303,6 +310,17 @@ function extrairIpiItem(imposto: Record<string, unknown>): {
 			};
 }
 
+function extrairIpiDevolItem(det: Record<string, unknown>): {
+	ipiDevolvido?: string | undefined;
+} {
+	const impostoDevol = det.impostoDevol as Record<string, unknown> | undefined;
+	if (!impostoDevol) return {};
+
+	const ipiDevol = impostoDevol.IPI as Record<string, unknown> | undefined;
+	const valor = paraStr(ipiDevol?.vIPIDevol);
+	return valor ? { ipiDevolvido: valor } : {};
+}
+
 function formatarDataHora(dhEmi: unknown): {
 	dataISO?: string;
 	dataHoraISO?: string;
@@ -329,6 +347,46 @@ function formatarDataHora(dhEmi: unknown): {
 	return { dataISO };
 }
 
+function resolverCfopOperacaoXml(itens: ItemNFeXml[]): string | undefined {
+	const contagem = new Map<string, number>();
+
+	for (const item of itens) {
+		const cfop = item.cfop?.trim();
+		if (!cfop) continue;
+		contagem.set(cfop, (contagem.get(cfop) ?? 0) + 1);
+	}
+
+	let maior = 0;
+	let modal: string | undefined;
+
+	for (const [cfop, total] of contagem) {
+		if (total > maior) {
+			maior = total;
+			modal = cfop;
+		}
+	}
+
+	return modal ?? itens[0]?.cfop;
+}
+
+function extrairChaveReferenciadaXml(
+	ide: Record<string, unknown> | undefined,
+): string | undefined {
+	const nfRef = ide?.NFref;
+	if (!nfRef) return undefined;
+
+	const refs = Array.isArray(nfRef) ? nfRef : [nfRef];
+	for (const ref of refs) {
+		const registro = ref as Record<string, unknown>;
+		const chave = paraStr(registro.refNFe);
+		if (chave?.replace(/\D/g, "").length === 44) {
+			return chave.replace(/\D/g, "");
+		}
+	}
+
+	return undefined;
+}
+
 export function parseNFeXml(xmlString: string): NFeXmlParsed {
 	const parsed = xmlParser.parse(xmlString) as Record<string, unknown>;
 
@@ -346,6 +404,7 @@ export function parseNFeXml(xmlString: string): NFeXmlParsed {
 
 	const ide = infNFe.ide as Record<string, unknown>;
 	const emit = infNFe.emit as Record<string, unknown>;
+	const enderEmit = emit?.enderEmit as Record<string, unknown> | undefined;
 	const total = infNFe.total as Record<string, unknown>;
 	const icmsTot = total?.ICMSTot as Record<string, unknown> | undefined;
 	const transp = infNFe.transp as Record<string, unknown> | undefined;
@@ -373,6 +432,7 @@ export function parseNFeXml(xmlString: string): NFeXmlParsed {
 		const pisItem = extrairPisItem(imposto);
 		const cofinsItem = extrairCofinsItem(imposto);
 		const ipiItem = extrairIpiItem(imposto);
+		const ipiDevolItem = extrairIpiDevolItem(det);
 
 		const eanBruto = paraStr(prod.cEAN);
 		const ean =
@@ -406,6 +466,7 @@ export function parseNFeXml(xmlString: string): NFeXmlParsed {
 			...pisItem,
 			...cofinsItem,
 			...ipiItem,
+			...ipiDevolItem,
 		};
 	});
 
@@ -430,6 +491,15 @@ export function parseNFeXml(xmlString: string): NFeXmlParsed {
 	const chaveDoAttr =
 		typeof idAttr === "string" ? idAttr.replace(/^NFe/, "") : undefined;
 
+	const cfopOperacao = resolverCfopOperacaoXml(itens);
+	const natOp = paraStr(ide?.natOp);
+	const finNFeRaw = ide?.finNFe;
+	const finNFe =
+		finNFeRaw !== undefined && finNFeRaw !== null
+			? Number(finNFeRaw)
+			: undefined;
+	const chaveReferenciada = extrairChaveReferenciadaXml(ide);
+
 	return {
 		chavenfe: paraStr(infProt?.chNFe ?? chaveDoAttr),
 		protocolonfe: paraStr(infProt?.nProt),
@@ -443,13 +513,14 @@ export function parseNFeXml(xmlString: string): NFeXmlParsed {
 		datahoraentradasaida: dhEntrada,
 		tipodocumento: paraStr(ide?.mod),
 		cnpjemissor: paraStr(emit?.CNPJ ?? emit?.CPF),
+		ufemitente: paraStr(enderEmit?.UF)?.toUpperCase(),
 		razaosocial: paraStr(emit?.xNome),
 		inscricaoestadual: paraStr(emit?.IE),
-		cfop: paraStr(
-			detNormalizado[0]?.prod
-				? (detNormalizado[0].prod as Record<string, unknown>).CFOP
-				: undefined,
-		),
+		cfop: cfopOperacao,
+		cfopOperacao,
+		natOp,
+		finNFe: Number.isFinite(finNFe) ? finNFe : undefined,
+		chaveReferenciada,
 		totalproduto: paraStr(icmsTot?.vProd),
 		frete: paraStr(icmsTot?.vFrete),
 		seguro: paraStr(icmsTot?.vSeg),
@@ -458,6 +529,7 @@ export function parseNFeXml(xmlString: string): NFeXmlParsed {
 		baseicms: valorIcmsTotOuSomaItens(icmsTot, "vBC", itens, "baseicms"),
 		icms: valorIcmsTotOuSomaItens(icmsTot, "vICMS", itens, "icms"),
 		ipi: valorIcmsTotOuSomaItens(icmsTot, "vIPI", itens, "ipi"),
+		ipiDevolvido: paraStr(icmsTot?.vIPIDevol),
 		pis: valorIcmsTotOuSomaItens(icmsTot, "vPIS", itens, "pis"),
 		cofins: valorIcmsTotOuSomaItens(icmsTot, "vCOFINS", itens, "cofins"),
 		valortotalnota: paraStr(icmsTot?.vNF),

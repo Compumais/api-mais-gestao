@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import * as dotenv from "dotenv";
 import { db } from "../src/repositories/connection.js";
 import { BANCOS_PADRAO } from "../src/util/bancos-padrao.js";
@@ -5,6 +7,16 @@ import { UNIDADES_MEDIDA_PADRAO } from "../src/util/unidades-medida-padrao.js";
 import * as schema from "./schema.js";
 
 dotenv.config();
+
+const ARQUIVO_CEST = join(process.cwd(), "drizzle/seeds/cest-seed.data.json");
+const TAMANHO_LOTE_CEST = 200;
+
+type CestSeedItem = {
+	codigo: string;
+	descricao: string;
+	descricaoncm: string;
+	inativo: number;
+};
 
 function gerarIdGlobal(prefixo: string, indice: number): string {
 	const sufixo = String(indice).padStart(12, "0");
@@ -53,9 +65,36 @@ async function seedBancosPadrao() {
 	console.log(`  ✅ ${registros.length} bancos processados`);
 }
 
+async function seedCestGlobais() {
+	console.log("📦 Inserindo CEST globais...");
+
+	const conteudo = readFileSync(ARQUIVO_CEST, "utf-8");
+	const dados = JSON.parse(conteudo) as { cest: CestSeedItem[] };
+
+	const registros = dados.cest.map((item, indice) => ({
+		id: gerarIdGlobal("c", indice + 1),
+		idempresa: null,
+		codigo: item.codigo.replace(/\D/g, ""),
+		descricao: item.descricao.trim(),
+		descricaoncm: item.descricaoncm.trim(),
+		inativo: item.inativo ?? 0,
+	}));
+
+	for (let inicio = 0; inicio < registros.length; inicio += TAMANHO_LOTE_CEST) {
+		const lote = registros.slice(inicio, inicio + TAMANHO_LOTE_CEST);
+		await db
+			.insert(schema.cest)
+			.values(lote)
+			.onConflictDoNothing({ target: schema.cest.id });
+	}
+
+	console.log(`  ✅ ${registros.length} registros CEST processados`);
+}
+
 const seedsGlobais = [
 	{ nome: "unidades de medida", executar: seedUnidadesMedidaPadrao },
 	{ nome: "bancos", executar: seedBancosPadrao },
+	{ nome: "CEST", executar: seedCestGlobais },
 ] as const;
 
 async function seed() {
@@ -70,6 +109,7 @@ async function seed() {
 		console.log("\n📋 Resumo:");
 		console.log(`  - ${UNIDADES_MEDIDA_PADRAO.length} unidades de medida padrão`);
 		console.log(`  - ${BANCOS_PADRAO.length} bancos padrão`);
+		console.log(`  - CEST globais (arquivo oficial)`);
 	} catch (error) {
 		console.error("❌ Erro ao executar seed:", error);
 		throw error;

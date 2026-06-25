@@ -19,13 +19,15 @@ export async function buscarCestService({
 		return httpNaoEncontrado();
 	}
 
-	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
-		idusuario,
-		registro.idempresa,
-	);
+	if (registro.idempresa) {
+		const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
+			idusuario,
+			registro.idempresa,
+		);
 
-	if (!usuarioPertenceEmpresa) {
-		return httpProibido();
+		if (!usuarioPertenceEmpresa) {
+			return httpProibido();
+		}
 	}
 
 	return httpOk<CEST>(registro);

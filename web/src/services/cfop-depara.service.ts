@@ -28,6 +28,13 @@ export interface CriarCfopDeParaData {
 	uf?: string | null;
 }
 
+export interface AtualizarCfopDeParaData {
+	idempresa: string;
+	idcfopentrada: string;
+	idcfopsaida: string;
+	uf?: string | null;
+}
+
 export const cfopDeParaService = {
 	async listar(params: {
 		idempresa: string;
@@ -42,6 +49,14 @@ export const cfopDeParaService = {
 
 	async criar(dados: CriarCfopDeParaData): Promise<CfopDePara> {
 		const { data } = await api.post<CfopDePara>("/cfop-depara", dados);
+		return data;
+	},
+
+	async atualizar(
+		id: string,
+		dados: AtualizarCfopDeParaData,
+	): Promise<CfopDePara> {
+		const { data } = await api.patch<CfopDePara>(`/cfop-depara/${id}`, dados);
 		return data;
 	},
 

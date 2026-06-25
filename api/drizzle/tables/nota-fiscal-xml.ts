@@ -20,6 +20,8 @@ export const notafiscalxml = pgTable(
 		protocolonfe: varchar({ length: 18 }),
 		hashsha256: varchar({ length: 64 }),
 		tamanhobytes: integer(),
+		caminhoanexo: text(),
+		tipoxml: varchar({ length: 20 }),
 		criadoem: timestamp({ precision: 3, mode: "string" }).notNull(),
 	},
 	(table) => [

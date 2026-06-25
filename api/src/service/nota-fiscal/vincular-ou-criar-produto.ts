@@ -23,6 +23,8 @@ export type DadosProdutoNF = {
 	idunidademedida?: string | undefined;
 	idcfopentrada?: string | undefined;
 	idcfopsaida?: string | undefined;
+	idcfopsaidanfce?: string | undefined;
+	cfopvendaecf?: number | undefined;
 	idcest?: string | undefined;
 	idfornecedor?: string | undefined;
 	idgrupo?: string | undefined;
@@ -31,9 +33,12 @@ export type DadosProdutoNF = {
 	fatorconversao?: string | undefined;
 	origem?: number | undefined;
 	situacaotributariaentrada?: string | undefined;
+	situacaotributaria?: string | undefined;
+	situacaotributariasn?: string | undefined;
+	tributacaoespecial?: string | undefined;
+	tributacaosn?: string | undefined;
 	cstpisentrada?: string | undefined;
 	cstcofinsentrada?: string | undefined;
-	situacaotributariasn?: string | undefined;
 	cstpis?: string | undefined;
 	cstcofins?: string | undefined;
 };
@@ -113,6 +118,8 @@ export async function criarProdutoParaNf(
 			idunidademedida: dados.idunidademedida ?? null,
 			idcfopentrada: dados.idcfopentrada ?? null,
 			idcfopsaida: dados.idcfopsaida ?? null,
+			idcfopsaidanfce: dados.idcfopsaidanfce ?? dados.idcfopsaida ?? null,
+			cfopvendaecf: dados.cfopvendaecf ?? null,
 			idcest: dados.idcest ?? null,
 			idfornecedor: dados.idfornecedor ?? null,
 			idgrupo: dados.idgrupo ?? null,
@@ -121,9 +128,12 @@ export async function criarProdutoParaNf(
 			fatorconversao: dados.fatorconversao ?? "1",
 			origem: dados.origem ?? null,
 			situacaotributariasnentrada: dados.situacaotributariaentrada ?? null,
+			situacaotributaria: dados.situacaotributaria ?? null,
+			situacaotributariasn: dados.situacaotributariasn ?? null,
+			tributacaoespecial: dados.tributacaoespecial ?? null,
+			tributacaosn: dados.tributacaosn ?? null,
 			cstpisentrada: dados.cstpisentrada ?? null,
 			cstcofinsentrada: dados.cstcofinsentrada ?? null,
-			situacaotributariasn: dados.situacaotributariasn ?? null,
 			cstpis: dados.cstpis ?? null,
 			cstcofins: dados.cstcofins ?? null,
 			tipo: "P",
@@ -144,6 +154,8 @@ export function montarAtualizacaoProdutoNf(
 		custoaquisicao: dados.custoaquisicao,
 		idcfopentrada: dados.idcfopentrada ?? undefined,
 		idcfopsaida: dados.idcfopsaida ?? undefined,
+		idcfopsaidanfce: dados.idcfopsaidanfce ?? dados.idcfopsaida ?? undefined,
+		cfopvendaecf: dados.cfopvendaecf ?? undefined,
 		idcest: dados.idcest ?? undefined,
 		idunidademedida: dados.idunidademedida ?? undefined,
 		idgrupo: dados.idgrupo ?? undefined,
@@ -153,9 +165,12 @@ export function montarAtualizacaoProdutoNf(
 		ncm: dados.ncm ?? undefined,
 		origem: dados.origem ?? undefined,
 		situacaotributariasnentrada: dados.situacaotributariaentrada ?? undefined,
+		situacaotributaria: dados.situacaotributaria ?? undefined,
+		situacaotributariasn: dados.situacaotributariasn ?? undefined,
+		tributacaoespecial: dados.tributacaoespecial ?? undefined,
+		tributacaosn: dados.tributacaosn ?? undefined,
 		cstpisentrada: dados.cstpisentrada ?? undefined,
 		cstcofinsentrada: dados.cstcofinsentrada ?? undefined,
-		situacaotributariasn: dados.situacaotributariasn ?? undefined,
 		cstpis: dados.cstpis ?? undefined,
 		cstcofins: dados.cstcofins ?? undefined,
 	};
