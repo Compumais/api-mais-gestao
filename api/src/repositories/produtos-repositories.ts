@@ -1,5 +1,6 @@
 import { and, count, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import type { NovoProduto } from "@/model/produto-model";
+import { filtroRegistroAtivo } from "@/util/filtro-registro-ativo.js";
 import { inteiroValidoParaPostgres } from "@/util/texto-util.js";
 import { produtos } from "@/repositories/schema.js";
 import { ordenacaoCodigoNumericoAsc } from "./ordenacao-codigo.js";
@@ -65,8 +66,9 @@ export async function listarProdutosPorEmpresa({
 		);
 	}
 
-	if (inativo !== undefined) {
-		where.push(eq(produtos.inativo, inativo));
+	const filtroInativo = filtroRegistroAtivo(produtos.inativo, inativo);
+	if (filtroInativo) {
+		where.push(filtroInativo);
 	}
 
 	const offset = (page - 1) * limit;

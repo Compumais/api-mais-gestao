@@ -12,7 +12,7 @@ export const cest = pgTable(
 	"cest",
 	{
 		id: text().primaryKey().notNull(),
-		idempresa: text().notNull(),
+		idempresa: text(), // null = CEST global do sistema (tabela oficial)
 		inativo: integer().default(0), // 0=Ativo, 1=Inativo
 		descricao: text().notNull(),
 		descricaoncm: text().notNull(),
@@ -22,6 +22,10 @@ export const cest = pgTable(
 		index("cest_idempresa_idx").using(
 			"btree",
 			table.idempresa.asc().nullsLast().op("text_ops"),
+		),
+		index("cest_codigo_idx").using(
+			"btree",
+			table.codigo.asc().nullsLast().op("text_ops"),
 		),
 		foreignKey({
 			columns: [table.idempresa],

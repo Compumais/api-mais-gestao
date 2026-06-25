@@ -20,6 +20,10 @@ export async function criarCestService({
 	dadosCest,
 	idusuario,
 }: CriarCestParametros): Promise<HttpResponse<CEST | null>> {
+	if (!dadosCest.idempresa) {
+		return httpProibido();
+	}
+
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
 		idusuario,
 		dadosCest.idempresa,

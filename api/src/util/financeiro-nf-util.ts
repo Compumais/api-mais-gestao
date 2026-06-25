@@ -4,6 +4,8 @@ type MontarIdentificacaoFinanceiroNfParametros = {
 	parcela: number;
 	totalParcelas: number;
 	nomeFornecedor?: string | null | undefined;
+	nomeCliente?: string | null | undefined;
+	tipo?: "compra" | "venda";
 };
 
 function truncarTexto(texto: string, maximo: number): string {
@@ -17,6 +19,8 @@ export function montarIdentificacaoFinanceiroNf({
 	parcela,
 	totalParcelas,
 	nomeFornecedor,
+	nomeCliente,
+	tipo = "compra",
 }: MontarIdentificacaoFinanceiroNfParametros): {
 	documento: string;
 	emitente: string;
@@ -27,7 +31,11 @@ export function montarIdentificacaoFinanceiroNf({
 	const serieParte = serieTexto ? `/${serieTexto}` : "";
 	const parcelaTexto =
 		totalParcelas > 1 ? ` Parc. ${parcela}/${totalParcelas}` : "";
-	const fornecedorTexto = nomeFornecedor?.trim();
+	const entidadeTexto =
+		tipo === "venda"
+			? nomeCliente?.trim()
+			: nomeFornecedor?.trim();
+	const rotuloNf = tipo === "venda" ? "NF Venda" : "NF Compra";
 
 	const documento = truncarTexto(
 		`NF ${numeroExibicao}${serieParte}${parcelaTexto}`.trim(),
@@ -35,15 +43,17 @@ export function montarIdentificacaoFinanceiroNf({
 	);
 
 	const emitente = truncarTexto(
-		fornecedorTexto
-			? `NF ${numeroExibicao} - ${fornecedorTexto}`
+		entidadeTexto
+			? `NF ${numeroExibicao} - ${entidadeTexto}`
 			: `NF ${numeroExibicao}${serieParte}`,
 		60,
 	);
 
 	const partesHistorico = [
-		`NF Compra nº ${numeroExibicao}${serieParte}`,
-		fornecedorTexto ? `Fornecedor: ${fornecedorTexto}` : null,
+		`${rotuloNf} nº ${numeroExibicao}${serieParte}`,
+		entidadeTexto
+			? `${tipo === "venda" ? "Cliente" : "Fornecedor"}: ${entidadeTexto}`
+			: null,
 		totalParcelas > 1 ? `Parcela ${parcela} de ${totalParcelas}` : null,
 	];
 

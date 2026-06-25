@@ -1,7 +1,8 @@
 import { z } from "zod";
 import {
+	somenteDigitos,
 	validarCpfCnpj,
-	validarInscricaoEstadual,
+	validarFormatoInscricaoEstadual,
 	validarTelefone,
 } from "@/lib/documentos-brasil";
 import { maskCep, maskCpfCnpj, maskPhone } from "@/lib/masks";
@@ -91,6 +92,7 @@ export const criarEntidadeSchema = z
 		fornecedor: flagEntidadeSchema,
 		transportador: flagEntidadeSchema,
 		representante: flagEntidadeSchema,
+		indiedest: z.number().int().nullable().optional(), // 1=Contribuinte | 2=Isento | 9=Não Contribuinte
 	})
 	.superRefine((data, ctx) => {
 		if (!validarCpfCnpj(data.cnpjcpf)) {
@@ -117,13 +119,23 @@ export const criarEntidadeSchema = z
 			});
 		}
 
-		if (
-			!validarInscricaoEstadual(data.inscricaoestadual, data.idestado ?? null)
-		) {
+		const ieNumerica = somenteDigitos(data.inscricaoestadual ?? "");
+		const exigeIeContribuinte =
+			data.tipopessoa === 1 && data.indiedest === 1 && ieNumerica.length > 0;
+
+		if (exigeIeContribuinte && !data.idestado) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["idestado"],
+				message: "Selecione o estado do contribuinte ICMS",
+			});
+		}
+
+		if (!validarFormatoInscricaoEstadual(data.inscricaoestadual, data.indiedest)) {
 			ctx.addIssue({
 				code: "custom",
 				path: ["inscricaoestadual"],
-				message: "Inscrição estadual inválida para a UF selecionada",
+				message: "Inscrição estadual inválida",
 			});
 		}
 
@@ -178,13 +190,16 @@ export function flagsEntidadeParaForm(entidade: {
 export function mapEntidadeToForm(
 	entidade: Entidade,
 ): Partial<CriarEntidadeFormData> {
+	const indiedest = entidade.indiedest ?? null;
+
 	return {
 		idempresa: entidade.idempresa,
 		nome: entidade.nome,
 		cnpjcpf: maskCpfCnpj(entidade.cnpjcpf),
 		razaosocial: entidade.razaosocial,
 		tipopessoa: entidade.tipopessoa,
-		inscricaoestadual: entidade.inscricaoestadual,
+		inscricaoestadual:
+			indiedest === 9 ? null : entidade.inscricaoestadual,
 		rg: entidade.rg,
 		email: entidade.email,
 		telefone: entidade.telefone ? maskPhone(entidade.telefone) : null,
@@ -200,6 +215,7 @@ export function mapEntidadeToForm(
 		idplanocontas: entidade.idplanocontas,
 		pais: entidade.pais ?? "Brasil",
 		...flagsEntidadeParaForm(entidade),
+		indiedest,
 	};
 }
 
@@ -239,6 +255,7 @@ export function criarValoresPadraoEntidadeForm({
 		fornecedor: tipoPrincipal === "fornecedor",
 		transportador: false,
 		representante: false,
+		indiedest: null,
 	};
 
 	if (!isEdicao || !valoresIniciais) {

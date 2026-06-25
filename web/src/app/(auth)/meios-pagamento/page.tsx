@@ -45,6 +45,8 @@ import {
 	condicaoPagamentoService,
 } from "@/services/condicao-pagamento.service";
 import { PageContainer } from "../components/page-container";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FormasErpTab } from "./components/formas-erp-tab";
 
 const ROTA_BASE = "/meios-pagamento";
 
@@ -220,19 +222,33 @@ export default function MeiosPagamentoPage() {
 	return (
 		<PageContainer>
 			<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-				<div className="flex flex-col gap-4 px-4 sm:flex-row sm:items-center sm:justify-between">
+				<div className="px-4">
 					<h1 className="text-2xl font-bold">Meios de pagamento</h1>
+					<p className="text-sm text-muted-foreground mt-1">
+						Condições de parcelamento e formas usadas na NF-e e no financeiro.
+					</p>
+				</div>
+
+				<Tabs defaultValue="condicoes" className="px-4">
+					<TabsList>
+						<TabsTrigger value="condicoes">Condições de pagamento</TabsTrigger>
+						<TabsTrigger value="formas-erp">Formas ERP (NF-e)</TabsTrigger>
+					</TabsList>
+
+					<TabsContent value="condicoes" className="mt-4 space-y-4">
+				<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+					<h2 className="text-lg font-semibold">Condições de pagamento</h2>
 					<Button
 						onClick={() => router.push(`${ROTA_BASE}/novo`)}
 						className="gap-2"
 						disabled={!localStorageEmpresa}
 					>
 						<IconPlus className="size-4" />
-						Cadastrar novo
+						Cadastrar condição
 					</Button>
 				</div>
 
-				<div className="px-4">
+				<div className="px-0">
 					<Input
 						placeholder="Buscar por descrição..."
 						value={busca}
@@ -245,7 +261,7 @@ export default function MeiosPagamentoPage() {
 					/>
 				</div>
 
-				<div className="rounded-lg border bg-card mx-4">
+				<div className="rounded-lg border bg-card">
 					{!localStorageEmpresa ? (
 						<div className="flex items-center justify-center py-8">
 							<p className="text-muted-foreground">
@@ -340,6 +356,12 @@ export default function MeiosPagamentoPage() {
 						</>
 					)}
 				</div>
+					</TabsContent>
+
+					<TabsContent value="formas-erp" className="mt-4">
+						<FormasErpTab />
+					</TabsContent>
+				</Tabs>
 			</div>
 		</PageContainer>
 	);

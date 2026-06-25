@@ -1,4 +1,4 @@
-import { and, count, desc, eq, ilike } from "drizzle-orm";
+import { and, count, desc, eq, ilike, isNull, or } from "drizzle-orm";
 import type { NovoCEST } from "@/model/cest-mode";
 import { cest } from "@/repositories/schema.js";
 import { db } from "./connection";
@@ -15,7 +15,7 @@ export async function buscarCestPorCodigo(
 ) {
 	const codigoNormalizado = codigo.replace(/\D/g, "");
 
-	const [registro] = await db
+	const [registroEmpresa] = await db
 		.select()
 		.from(cest)
 		.where(
@@ -27,7 +27,21 @@ export async function buscarCestPorCodigo(
 		)
 		.limit(1);
 
-	return registro;
+	if (registroEmpresa) return registroEmpresa;
+
+	const [registroGlobal] = await db
+		.select()
+		.from(cest)
+		.where(
+			and(
+				isNull(cest.idempresa),
+				eq(cest.codigo, codigoNormalizado),
+				eq(cest.inativo, 0),
+			),
+		)
+		.limit(1);
+
+	return registroGlobal;
 }
 
 export async function criarCest(dadosCest: NovoCEST) {
@@ -67,9 +81,9 @@ export async function listarCests({
 	page = 1,
 	limit = 10,
 }: ListarCestsParametros) {
-	const where = [];
-
-	where.push(eq(cest.idempresa, idempresa));
+	const where = [
+		or(eq(cest.idempresa, idempresa), isNull(cest.idempresa)),
+	];
 
 	if (descricao) {
 		where.push(ilike(cest.descricao, `%${descricao}%`));
@@ -80,16 +94,14 @@ export async function listarCests({
 	}
 
 	const offset = (page - 1) * limit;
+	const filtro = and(...where);
 
 	const [totalCount, cests] = await Promise.all([
-		db
-			.select({ value: count() })
-			.from(cest)
-			.where(and(...where)),
+		db.select({ value: count() }).from(cest).where(filtro),
 		db
 			.select()
 			.from(cest)
-			.where(and(...where))
+			.where(filtro)
 			.orderBy(desc(cest.descricao))
 			.limit(limit)
 			.offset(offset),

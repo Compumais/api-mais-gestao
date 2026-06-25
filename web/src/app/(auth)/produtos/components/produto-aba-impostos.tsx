@@ -1,8 +1,17 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import type { FieldErrors, UseFormRegister, UseFormSetValue, UseFormWatch } from "react-hook-form";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import {
+	Controller,
+	type Control,
+	type FieldErrors,
+	type UseFormRegister,
+	type UseFormSetValue,
+	type UseFormWatch,
+} from "react-hook-form";
+import { toast } from "sonner";
 import { Combobox } from "@/components/ui/combobox";
+import { Button } from "@/components/ui/button";
 import {
 	Field,
 	FieldError,
@@ -20,16 +29,68 @@ import {
 import { useEmpresa } from "@/hooks/use-empresa";
 import type { ProdutoFormData } from "@/schemas/produtos.schema";
 import { cestService } from "@/services/cest.service";
+import { taxaUfService } from "@/services/taxauf.service";
+import { produtosService } from "@/services/produtos.service";
+import {
+	OPCOES_CSOSN,
+	OPCOES_CST_ICMS,
+	type OpcaoCst,
+} from "@/util/cst-produto-util";
 import { CampoCfopProduto } from "./campo-cfop-produto";
 
 type ProdutoAbaImpostosProps = {
+	control: Control<ProdutoFormData>;
 	register: UseFormRegister<ProdutoFormData>;
 	setValue: UseFormSetValue<ProdutoFormData>;
 	watch: UseFormWatch<ProdutoFormData>;
 	errors: FieldErrors<ProdutoFormData>;
 };
 
+type CampoCstSelectProps = {
+	id: string;
+	label: string;
+	value?: string | null;
+	opcoes: OpcaoCst[];
+	onChange: (valor: string | null) => void;
+	erro?: string;
+};
+
+function CampoCstSelect({
+	id,
+	label,
+	value,
+	opcoes,
+	onChange,
+	erro,
+}: CampoCstSelectProps) {
+	return (
+		<Field data-invalid={!!erro}>
+			<FieldLabel htmlFor={id}>{label}</FieldLabel>
+			<Select
+				value={value ?? "none"}
+				onValueChange={(valor) =>
+					onChange(valor === "none" ? null : valor)
+				}
+			>
+				<SelectTrigger id={id} className="w-full">
+					<SelectValue placeholder="Selecione" />
+				</SelectTrigger>
+				<SelectContent>
+					<SelectItem value="none">Nenhum</SelectItem>
+					{opcoes.map((opcao) => (
+						<SelectItem key={opcao.value} value={opcao.value}>
+							{opcao.label}
+						</SelectItem>
+					))}
+				</SelectContent>
+			</Select>
+			<FieldError errors={erro ? [{ message: erro }] : []} />
+		</Field>
+	);
+}
+
 export function ProdutoAbaImpostos({
+	control,
 	register,
 	setValue,
 	watch,
@@ -37,10 +98,7 @@ export function ProdutoAbaImpostos({
 }: ProdutoAbaImpostosProps) {
 	const { localStorageEmpresa: empresa } = useEmpresa();
 
-	const origem = watch("origem");
-	const idcfopentrada = watch("idcfopentrada");
 	const idcfopsaida = watch("idcfopsaida");
-	const idcest = watch("idcest");
 
 	const { data: cests = [], isLoading: carregandoCests } = useQuery({
 		queryKey: ["cests", empresa?.id, "produto"],
@@ -51,9 +109,47 @@ export function ProdutoAbaImpostos({
 		enabled: !!empresa,
 	});
 
+	const { data: taxas = [], isLoading: carregandoTaxas } = useQuery({
+		queryKey: ["taxas-uf", empresa?.id, "produto"],
+		queryFn: async () => {
+			if (!empresa) throw new Error("Empresa não selecionada");
+			return taxaUfService.listarTodos({ idempresa: empresa.id });
+		},
+		enabled: !!empresa,
+	});
+
+	const preencherTributacaoMutation = useMutation({
+		mutationFn: async () => {
+			if (!empresa || !idcfopsaida) {
+				throw new Error("CFOP de saída não selecionado");
+			}
+			return produtosService.tributacaoPorCfop(empresa.id, idcfopsaida);
+		},
+		onSuccess: (tributacao) => {
+			const opcoes = { shouldDirty: true, shouldValidate: true };
+			if (tributacao.idcfopsaida) {
+				setValue("idcfopsaida", tributacao.idcfopsaida, opcoes);
+			}
+			setValue("idcfopsaidanfce", tributacao.idcfopsaidanfce ?? null, opcoes);
+			setValue("situacaotributaria", tributacao.situacaotributaria ?? null, opcoes);
+			setValue("situacaotributariasn", tributacao.situacaotributariasn ?? null, opcoes);
+			setValue("tributacaoespecial", tributacao.tributacaoespecial ?? null, opcoes);
+			setValue("tributacaosn", tributacao.tributacaosn ?? null, opcoes);
+			toast.success("Tributação preenchida automaticamente");
+		},
+		onError: () => {
+			toast.error("Não foi possível obter tributação para o CFOP selecionado");
+		},
+	});
+
 	const opcoesCest = cests.map((cest) => ({
 		value: cest.id,
 		label: `${cest.codigo} - ${cest.descricao}`,
+	}));
+
+	const opcoesTaxa = taxas.map((taxa) => ({
+		value: taxa.id,
+		label: `${taxa.codigo} - ${taxa.descricao}`,
 	}));
 
 	return (
@@ -74,98 +170,114 @@ export function ProdutoAbaImpostos({
 							<FieldError errors={errors.ncm ? [errors.ncm] : []} />
 						</Field>
 
-						<Field data-invalid={!!errors.origem}>
-							<FieldLabel htmlFor="origem">Origem da mercadoria *</FieldLabel>
-							<Select
-								value={origem?.toString()}
-								onValueChange={(value) => setValue("origem", Number(value))}
-							>
-								<SelectTrigger className="w-full">
-									<SelectValue placeholder="Selecione a origem" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="0">0 - Nacional</SelectItem>
-									<SelectItem value="1">
-										1 - Estrangeira (importação direta)
-									</SelectItem>
-									<SelectItem value="2">
-										2 - Estrangeira (adquirida no mercado interno)
-									</SelectItem>
-									<SelectItem value="3">
-										3 - Nacional (conteúdo importação {'>'} 40%)
-									</SelectItem>
-									<SelectItem value="4">
-										4 - Nacional (processos produtivos básicos)
-									</SelectItem>
-									<SelectItem value="5">
-										5 - Nacional (conteúdo importação ≤ 40%)
-									</SelectItem>
-									<SelectItem value="6">
-										6 - Estrangeira (importação direta, sem similar)
-									</SelectItem>
-									<SelectItem value="7">
-										7 - Estrangeira (mercado interno, sem similar)
-									</SelectItem>
-									<SelectItem value="8">
-										8 - Nacional (conteúdo importação {'>'} 70%)
-									</SelectItem>
-								</SelectContent>
-							</Select>
-							<FieldError errors={errors.origem ? [errors.origem] : []} />
-						</Field>
+						<Controller
+							name="origem"
+							control={control}
+							render={({ field }) => (
+								<Field data-invalid={!!errors.origem}>
+									<FieldLabel htmlFor="origem">Origem da mercadoria *</FieldLabel>
+									<Select
+										value={field.value?.toString()}
+										onValueChange={(value) => field.onChange(Number(value))}
+									>
+										<SelectTrigger className="w-full">
+											<SelectValue placeholder="Selecione a origem" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="0">0 - Nacional</SelectItem>
+											<SelectItem value="1">
+												1 - Estrangeira (importação direta)
+											</SelectItem>
+											<SelectItem value="2">
+												2 - Estrangeira (adquirida no mercado interno)
+											</SelectItem>
+											<SelectItem value="3">
+												3 - Nacional (conteúdo importação {'>'} 40%)
+											</SelectItem>
+											<SelectItem value="4">
+												4 - Nacional (processos produtivos básicos)
+											</SelectItem>
+											<SelectItem value="5">
+												5 - Nacional (conteúdo importação ≤ 40%)
+											</SelectItem>
+											<SelectItem value="6">
+												6 - Estrangeira (importação direta, sem similar)
+											</SelectItem>
+											<SelectItem value="7">
+												7 - Estrangeira (mercado interno, sem similar)
+											</SelectItem>
+											<SelectItem value="8">
+												8 - Nacional (conteúdo importação {'>'} 70%)
+											</SelectItem>
+										</SelectContent>
+									</Select>
+									<FieldError errors={errors.origem ? [errors.origem] : []} />
+								</Field>
+							)}
+						/>
 
-						<Field data-invalid={!!errors.idcest}>
-							<FieldLabel htmlFor="idcest">CEST</FieldLabel>
-							<Combobox
-								options={opcoesCest}
-								value={idcest ?? ""}
-								onChange={(valor) =>
-									setValue("idcest", valor || null, { shouldValidate: true })
-								}
-								placeholder={
-									carregandoCests ? "Carregando..." : "Selecione o CEST"
-								}
-								searchPlaceholder="Buscar CEST..."
-								emptyMessage="Nenhum CEST encontrado"
-							/>
-							<FieldError errors={errors.idcest ? [errors.idcest] : []} />
-						</Field>
+						<Controller
+							name="idcest"
+							control={control}
+							render={({ field }) => (
+								<Field data-invalid={!!errors.idcest}>
+									<FieldLabel htmlFor="idcest">CEST</FieldLabel>
+									<Combobox
+										options={opcoesCest}
+										value={field.value ?? ""}
+										onChange={(valor) => field.onChange(valor || null)}
+										placeholder={
+											carregandoCests ? "Carregando..." : "Selecione o CEST"
+										}
+										searchPlaceholder="Buscar CEST..."
+										emptyMessage="Nenhum CEST encontrado"
+									/>
+									<FieldError errors={errors.idcest ? [errors.idcest] : []} />
+								</Field>
+							)}
+						/>
+
+						<Controller
+							name="idtaxauf"
+							control={control}
+							render={({ field }) => (
+								<Field data-invalid={!!errors.idtaxauf}>
+									<FieldLabel htmlFor="idtaxauf">Taxa (ECF/PDV)</FieldLabel>
+									<Combobox
+										options={opcoesTaxa}
+										value={field.value ?? ""}
+										onChange={(valor) => field.onChange(valor || null)}
+										placeholder={
+											carregandoTaxas ? "Carregando..." : "Selecione a taxa"
+										}
+										searchPlaceholder="Buscar taxa..."
+										emptyMessage="Nenhuma taxa encontrada"
+									/>
+									<FieldError errors={errors.idtaxauf ? [errors.idtaxauf] : []} />
+								</Field>
+							)}
+						/>
 					</div>
 				</section>
 
 				<section className="space-y-4">
-					<h3 className="text-base font-semibold">CFOP</h3>
+					<h3 className="text-base font-semibold">CFOP de entrada</h3>
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-						<CampoCfopProduto
-							id="idcfopentrada"
-							label="CFOP de entrada"
-							value={idcfopentrada}
-							tipomovimento="E"
-							onChange={(valor) =>
-								setValue("idcfopentrada", valor || null, {
-									shouldValidate: true,
-								})
-							}
-							erro={errors.idcfopentrada?.message}
+						<Controller
+							name="idcfopentrada"
+							control={control}
+							render={({ field }) => (
+								<CampoCfopProduto
+									id="idcfopentrada"
+									label="CFOP de entrada"
+									value={field.value}
+									tipomovimento="E"
+									onChange={(valor) => field.onChange(valor || null)}
+									erro={errors.idcfopentrada?.message}
+								/>
+							)}
 						/>
-						<CampoCfopProduto
-							id="idcfopsaida"
-							label="CFOP de saída"
-							value={idcfopsaida}
-							tipomovimento="S"
-							onChange={(valor) =>
-								setValue("idcfopsaida", valor || null, {
-									shouldValidate: true,
-								})
-							}
-							erro={errors.idcfopsaida?.message}
-						/>
-					</div>
-				</section>
 
-				<section className="space-y-4">
-					<h3 className="text-base font-semibold">ICMS</h3>
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 						<Field data-invalid={!!errors.situacaotributariasnentrada}>
 							<FieldLabel htmlFor="situacaotributariasnentrada">
 								CST/CSOSN entrada
@@ -185,26 +297,129 @@ export function ProdutoAbaImpostos({
 								}
 							/>
 						</Field>
+					</div>
+				</section>
 
-						<Field data-invalid={!!errors.situacaotributariasn}>
-							<FieldLabel htmlFor="situacaotributariasn">
-								CST/CSOSN saída
-							</FieldLabel>
-							<Input
-								id="situacaotributariasn"
-								placeholder="Ex.: 102 ou 00"
-								type="number"
-								maxLength={3}
-								{...register("situacaotributariasn")}
-							/>
-							<FieldError
-								errors={
-									errors.situacaotributariasn
-										? [errors.situacaotributariasn]
-										: []
-								}
-							/>
 						</Field>
+					</div>
+				</section>
+
+				<section className="space-y-4">
+					<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+						<h3 className="text-base font-semibold">CFOP de emissão</h3>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							disabled={!idcfopsaida || preencherTributacaoMutation.isPending}
+							onClick={() => preencherTributacaoMutation.mutate()}
+						>
+							{preencherTributacaoMutation.isPending
+								? "Preenchendo..."
+								: "Preencher tributação automaticamente"}
+						</Button>
+					</div>
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<Controller
+							name="idcfopsaida"
+							control={control}
+							render={({ field }) => (
+								<CampoCfopProduto
+									id="idcfopsaida"
+									label="CFOP NF (saída)"
+									value={field.value}
+									tipomovimento="S"
+									onChange={(valor) => field.onChange(valor || null)}
+									erro={errors.idcfopsaida?.message}
+								/>
+							)}
+						/>
+						<Controller
+							name="idcfopsaidanfce"
+							control={control}
+							render={({ field }) => (
+								<CampoCfopProduto
+									id="idcfopsaidanfce"
+									label="CFOP ECF (NFC-e)"
+									value={field.value}
+									tipomovimento="S"
+									onChange={(valor) => field.onChange(valor || null)}
+									erro={errors.idcfopsaidanfce?.message}
+								/>
+							)}
+						/>
+					</div>
+				</section>
+
+				<section className="space-y-4">
+					<h3 className="text-base font-semibold">
+						ICMS contribuinte (NFe)
+					</h3>
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<Controller
+							name="situacaotributaria"
+							control={control}
+							render={({ field }) => (
+								<CampoCstSelect
+									id="situacaotributaria"
+									label="CST"
+									value={field.value}
+									opcoes={OPCOES_CST_ICMS}
+									onChange={field.onChange}
+									erro={errors.situacaotributaria?.message}
+								/>
+							)}
+						/>
+						<Controller
+							name="situacaotributariasn"
+							control={control}
+							render={({ field }) => (
+								<CampoCstSelect
+									id="situacaotributariasn"
+									label="CSOSN"
+									value={field.value}
+									opcoes={OPCOES_CSOSN}
+									onChange={field.onChange}
+									erro={errors.situacaotributariasn?.message}
+								/>
+							)}
+						/>
+					</div>
+				</section>
+
+				<section className="space-y-4">
+					<h3 className="text-base font-semibold">
+						ICMS não contribuinte (CFe)
+					</h3>
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<Controller
+							name="tributacaoespecial"
+							control={control}
+							render={({ field }) => (
+								<CampoCstSelect
+									id="tributacaoespecial"
+									label="CST"
+									value={field.value}
+									opcoes={OPCOES_CST_ICMS}
+									onChange={field.onChange}
+									erro={errors.tributacaoespecial?.message}
+								/>
+							)}
+						/>
+						<Controller
+							name="tributacaosn"
+							control={control}
+							render={({ field }) => (
+								<CampoCstSelect
+									id="tributacaosn"
+									label="CSOSN"
+									value={field.value}
+									opcoes={OPCOES_CSOSN}
+									onChange={field.onChange}
+									erro={errors.tributacaosn?.message}
+								/>
+							)}
+						/>
 					</div>
 				</section>
 

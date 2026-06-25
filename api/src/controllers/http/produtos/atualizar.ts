@@ -3,6 +3,7 @@ import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-reposit
 import z from "zod";
 import type { NovoProduto } from "@/model/produto-model.js";
 import { atualizarProdutoService } from "@/service/produto/atualizar-produto.js";
+import { enriquecerCamposImpostosProduto } from "@/service/produto/enriquecer-campos-impostos-produto.js";
 import { camposImpostosProdutoSchema } from "@/util/campos-impostos-produto.js";
 import {
 	httpErroInterno,
@@ -83,6 +84,17 @@ export async function atualizarProduto(
 
 		if (dadosValidados.nome !== undefined) {
 			dados.descricao = dadosValidados.nome.slice(0, 100);
+		}
+
+		const camposImpostosInformados = Object.keys(camposImpostosProdutoSchema).some(
+			(campo) =>
+				campo in dadosValidados &&
+				dadosValidados[campo as keyof typeof dadosValidados] !== undefined,
+		);
+
+		if (camposImpostosInformados) {
+			const impostos = await enriquecerCamposImpostosProduto(dadosValidados);
+			Object.assign(dados, impostos);
 		}
 
 		const resultado = await atualizarProdutoService({

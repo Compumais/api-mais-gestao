@@ -3,6 +3,7 @@ import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-reposit
 import { v4 as uuidv4 } from "uuid";
 import z from "zod";
 import { criarProdutoService } from "@/service/produto/criar-produto.js";
+import { enriquecerCamposImpostosProduto } from "@/service/produto/enriquecer-campos-impostos-produto.js";
 import {
 	camposImpostosProdutoSchema,
 	montarCamposImpostosProduto,
@@ -66,6 +67,8 @@ export async function criarProduto(
 				? dadosValidados.preco.toFixed(2)
 				: dadosValidados.preco;
 
+		const impostos = await enriquecerCamposImpostosProduto(dadosValidados);
+
 		const dadosProduto = {
 			id: uuidv4(),
 			idempresa: dadosValidados.idempresa,
@@ -86,7 +89,7 @@ export async function criarProduto(
 			observacoes: dadosValidados.observacoes ?? null,
 			inativo: 0,
 			enviamobile: dadosValidados.enviamobile ?? 0,
-			...montarCamposImpostosProduto(dadosValidados),
+			...impostos,
 		};
 
 		const resultado = await criarProdutoService({

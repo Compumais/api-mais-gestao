@@ -27,6 +27,13 @@ export interface NotaFiscal {
 	ipi: string | null;
 	pis: string | null;
 	cofins: string | null;
+	dadosimportacao?: {
+		cfopOperacaoXml?: string;
+		natOpXml?: string;
+		finNFe?: number;
+		chaveReferenciadaXml?: string;
+		ipiDevolvidoXml?: string;
+	} | null;
 }
 
 export interface NotaFiscalItem {

@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,12 +23,17 @@ import {
 	type CfopDeParaFormData,
 	cfopDeParaFormSchema,
 } from "@/schemas/cfop-depara.schema";
-import { cfopDeParaService } from "@/services/cfop-depara.service";
+import {
+	type CfopDePara,
+	cfopDeParaService,
+} from "@/services/cfop-depara.service";
 import { CampoCfopProduto } from "@/app/(auth)/produtos/components/campo-cfop-produto";
 
 type ModalCfopDeParaProps = {
 	aberto: boolean;
 	idempresa: string;
+	id?: string;
+	registro?: CfopDePara | null;
 	onFechar: () => void;
 	onSucesso: () => void;
 };
@@ -35,9 +41,13 @@ type ModalCfopDeParaProps = {
 export function ModalCfopDePara({
 	aberto,
 	idempresa,
+	id,
+	registro,
 	onFechar,
 	onSucesso,
 }: ModalCfopDeParaProps) {
+	const isEdicao = !!id;
+
 	const form = useForm<CfopDeParaFormData>({
 		resolver: zodResolver(cfopDeParaFormSchema),
 		defaultValues: {
@@ -51,15 +61,40 @@ export function ModalCfopDePara({
 	const idcfopentrada = watch("idcfopentrada");
 	const idcfopsaida = watch("idcfopsaida");
 
-	const criarMutation = useMutation({
+	useEffect(() => {
+		if (!aberto) return;
+
+		if (registro) {
+			reset({
+				idcfopentrada: registro.idcfopentrada ?? "",
+				idcfopsaida: registro.idcfopsaida ?? "",
+				uf: registro.uf ?? null,
+			});
+			return;
+		}
+
+		reset({
+			idcfopentrada: "",
+			idcfopsaida: "",
+			uf: null,
+		});
+	}, [aberto, registro, reset]);
+
+	const salvarMutation = useMutation({
 		mutationFn: async (dados: CfopDeParaFormData) => {
 			const uf = dados.uf?.trim().toUpperCase();
-			return cfopDeParaService.criar({
+			const payload = {
 				idempresa,
 				idcfopentrada: dados.idcfopentrada,
 				idcfopsaida: dados.idcfopsaida,
 				uf: uf || null,
-			});
+			};
+
+			if (isEdicao && id) {
+				return cfopDeParaService.atualizar(id, payload);
+			}
+
+			return cfopDeParaService.criar(payload);
 		},
 		onSuccess: () => {
 			reset();
@@ -69,7 +104,7 @@ export function ModalCfopDePara({
 	});
 
 	const onSubmit = (dados: CfopDeParaFormData) => {
-		criarMutation.mutate(dados);
+		salvarMutation.mutate(dados);
 	};
 
 	const handleOpenChange = (open: boolean) => {
@@ -83,14 +118,20 @@ export function ModalCfopDePara({
 		<Dialog open={aberto} onOpenChange={handleOpenChange}>
 			<DialogContent className="max-w-lg">
 				<DialogHeader>
-					<DialogTitle>Novo CFOP de-para</DialogTitle>
+					<DialogTitle>
+						{isEdicao ? "Editar mapeamento CFOP" : "Novo mapeamento CFOP"}
+					</DialogTitle>
+					<p className="text-muted-foreground text-sm">
+						Informe o CFOP que aparece na NF de compra e o CFOP de saída que o
+						produto deve receber nas vendas futuras.
+					</p>
 				</DialogHeader>
 
 				<form onSubmit={handleSubmit(onSubmit)}>
 					<FieldGroup>
 						<CampoCfopProduto
 							id="idcfopentrada"
-							label="CFOP de entrada *"
+							label="CFOP da NF de compra (entrada) *"
 							value={idcfopentrada}
 							tipomovimento="E"
 							onChange={(valor) =>
@@ -101,7 +142,7 @@ export function ModalCfopDePara({
 
 						<CampoCfopProduto
 							id="idcfopsaida"
-							label="CFOP de saída *"
+							label="CFOP de saída do produto *"
 							value={idcfopsaida}
 							tipomovimento="S"
 							onChange={(valor) =>
@@ -131,8 +172,8 @@ export function ModalCfopDePara({
 						<Button type="button" variant="outline" onClick={onFechar}>
 							Cancelar
 						</Button>
-						<Button type="submit" disabled={criarMutation.isPending}>
-							{criarMutation.isPending ? "Salvando..." : "Salvar"}
+						<Button type="submit" disabled={salvarMutation.isPending}>
+							{salvarMutation.isPending ? "Salvando..." : "Salvar"}
 						</Button>
 					</DialogFooter>
 				</form>

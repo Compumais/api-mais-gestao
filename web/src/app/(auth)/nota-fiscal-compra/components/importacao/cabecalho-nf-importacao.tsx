@@ -16,6 +16,9 @@ type CabecalhoNfImportacaoProps = {
 	nota: NotaFiscal;
 	fornecedor: FornecedorSugeridoImportacao;
 	cfopXmlOperacao?: string | undefined;
+	natOpXml?: string | undefined;
+	finNFe?: number | undefined;
+	ipiDevolvidoXml?: string | undefined;
 };
 
 const formatDate = (date: string | null | undefined) => {
@@ -43,6 +46,9 @@ export function CabecalhoNfImportacao({
 	nota,
 	fornecedor,
 	cfopXmlOperacao,
+	natOpXml,
+	finNFe,
+	ipiDevolvidoXml,
 }: CabecalhoNfImportacaoProps) {
 	const queryClient = useQueryClient();
 
@@ -63,7 +69,14 @@ export function CabecalhoNfImportacao({
 
 	return (
 		<section className="rounded-lg border bg-card p-4">
-			<h2 className="text-lg font-semibold mb-4">Cabeçalho da NF-e</h2>
+			<div className="flex items-center gap-2 mb-4">
+				<h2 className="text-lg font-semibold">Cabeçalho da NF-e</h2>
+				{finNFe === 4 && (
+					<Badge variant="outline" className="border-amber-500 text-amber-700">
+						Devolução
+					</Badge>
+				)}
+			</div>
 			<div className="grid gap-4 lg:grid-cols-2">
 				<div className="grid gap-3 sm:grid-cols-2 text-sm">
 					<div>
@@ -107,6 +120,12 @@ export function CabecalhoNfImportacao({
 						<span className="text-muted-foreground">Total produtos</span>
 						<p className="font-medium">{formatCurrency(nota.totalproduto)}</p>
 					</div>
+					{natOpXml && (
+						<div className="sm:col-span-2">
+							<span className="text-muted-foreground">Natureza da operação (XML)</span>
+							<p className="font-medium">{natOpXml}</p>
+						</div>
+					)}
 				</div>
 
 				<div className="flex flex-col gap-4">
@@ -135,6 +154,17 @@ export function CabecalhoNfImportacao({
 								<span className="text-muted-foreground">IPI</span>
 								<p>{formatCurrency(nota.ipi)}</p>
 							</div>
+							{(ipiDevolvidoXml || nota.dadosimportacao?.ipiDevolvidoXml) && (
+								<div>
+									<span className="text-muted-foreground">IPI Devolvido</span>
+									<p>
+										{formatCurrency(
+											ipiDevolvidoXml ??
+												nota.dadosimportacao?.ipiDevolvidoXml,
+										)}
+									</p>
+								</div>
+							)}
 							<div>
 								<span className="text-muted-foreground">PIS</span>
 								<p>{formatCurrency(nota.pis)}</p>
