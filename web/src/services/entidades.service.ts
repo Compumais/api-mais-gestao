@@ -99,6 +99,10 @@ export const entidadesService = {
 		page?: number;
 		limit?: number;
 		nome?: string;
+		fornecedor?: number;
+		cliente?: number;
+		transportador?: number;
+		representante?: number;
 		q?: string;
 		email?: string;
 		telefone?: string;

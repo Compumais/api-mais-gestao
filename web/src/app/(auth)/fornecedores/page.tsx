@@ -1,7 +1,13 @@
 "use client";
 
-import { IconSearch } from "@tabler/icons-react";
-import { useQuery } from "@tanstack/react-query";
+import {
+	IconDotsVertical,
+	IconPencil,
+	IconPlus,
+	IconSearch,
+	IconTrash,
+} from "@tabler/icons-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	type ColumnDef,
 	flexRender,
@@ -13,8 +19,16 @@ import {
 } from "@tanstack/react-table";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { TableSkeleton } from "@/components/table-skeleton";
 import { Button } from "@/components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
 	Table,
@@ -28,7 +42,15 @@ import { useEmpresa } from "@/hooks/use-empresa";
 import { type Entidade, entidadesService } from "@/services/entidades.service";
 import { PageContainer } from "../components/page-container";
 
-const createColumns = (): ColumnDef<Entidade>[] => [
+type ColumnsProps = {
+	onEdit: (entidade: Entidade) => void;
+	onDelete: (id: string) => void;
+};
+
+const createColumns = ({
+	onEdit,
+	onDelete,
+}: ColumnsProps): ColumnDef<Entidade>[] => [
 	{
 		accessorKey: "nome",
 		header: "Nome",
@@ -49,11 +71,49 @@ const createColumns = (): ColumnDef<Entidade>[] => [
 		header: "Endereço",
 		cell: ({ row }) => <div>{row.getValue("endereco") || "-"}</div>,
 	},
+	{
+		id: "acoes",
+		header: "Ações",
+		cell: ({ row }) => {
+			const entidade = row.original;
+			return (
+				<div className="flex justify-end">
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button
+								variant="ghost"
+								size="icon"
+								className="h-8 w-8"
+								aria-label="Abrir menu de ações"
+							>
+								<IconDotsVertical className="size-4" />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end">
+							<DropdownMenuItem onClick={() => onEdit(entidade)}>
+								<IconPencil className="size-4" />
+								Editar
+							</DropdownMenuItem>
+							<DropdownMenuSeparator />
+							<DropdownMenuItem
+								variant="destructive"
+								onClick={() => onDelete(entidade.id)}
+							>
+								<IconTrash className="size-4" />
+								Excluir
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</div>
+			);
+		},
+	},
 ];
 
 export default function FornecedoresPage() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
+	const queryClient = useQueryClient();
 	const { localStorageEmpresa } = useEmpresa();
 	const qAplicado = searchParams.get("q")?.trim() ?? "";
 	const [qInput, setQInput] = useState(qAplicado);
@@ -94,6 +154,7 @@ export default function FornecedoresPage() {
 			}
 			return await entidadesService.listar({
 				idempresa: localStorageEmpresa.id,
+				fornecedor: 1,
 				page: pagination.pageIndex + 1,
 				limit: pagination.pageSize,
 				...(qAplicado ? { q: qAplicado } : {}),
@@ -102,7 +163,38 @@ export default function FornecedoresPage() {
 		enabled: !!localStorageEmpresa,
 	});
 
-	const columns = createColumns();
+	const { mutate: deletarEntidade } = useMutation({
+		mutationFn: entidadesService.deletar,
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["fornecedores"] });
+			queryClient.invalidateQueries({ queryKey: ["entidades"] });
+			toast.success("Fornecedor excluído com sucesso!");
+		},
+		onError: (error: Error) => {
+			toast.error(error.message || "Erro ao excluir fornecedor");
+		},
+	});
+
+	const handleEdit = (entidade: Entidade) => {
+		router.push(`/fornecedores/${entidade.id}/editar`);
+	};
+
+	const handleDelete = (id: string) => {
+		toast.message("Tem certeza que deseja excluir este fornecedor?", {
+			position: "top-center",
+			duration: 3000,
+			action: {
+				label: "Excluir",
+				onClick: () => deletarEntidade(id),
+			},
+			description: "Esta ação não pode ser desfeita.",
+		});
+	};
+
+	const columns = createColumns({
+		onEdit: handleEdit,
+		onDelete: handleDelete,
+	});
 
 	const table = useReactTable({
 		data: data?.data || [],
@@ -123,8 +215,16 @@ export default function FornecedoresPage() {
 	return (
 		<PageContainer>
 			<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-				<div className="flex items-center justify-start px-4">
+				<div className="flex items-center justify-between px-4">
 					<h1 className="text-2xl font-bold">Fornecedores</h1>
+					<Button
+						onClick={() => router.push("/fornecedores/novo")}
+						className="gap-2"
+						disabled={!localStorageEmpresa}
+					>
+						<IconPlus className="size-4" />
+						Cadastrar Novo Fornecedor
+					</Button>
 				</div>
 				<div className="flex gap-2 px-4">
 					<Input
@@ -156,11 +256,12 @@ export default function FornecedoresPage() {
 							</p>
 						</div>
 					) : isLoading ? (
-						<TableSkeleton rows={10} columns={4}>
+						<TableSkeleton rows={10}>
 							<TableHead>Nome</TableHead>
 							<TableHead>Razão Social</TableHead>
 							<TableHead className="w-[180px]">CNPJ/CPF</TableHead>
 							<TableHead className="w-[180px]">Endereço</TableHead>
+							<TableHead className="w-12 text-end">Ações</TableHead>
 						</TableSkeleton>
 					) : (
 						<>
@@ -169,7 +270,10 @@ export default function FornecedoresPage() {
 									{table.getHeaderGroups().map((headerGroup) => (
 										<TableRow key={headerGroup.id}>
 											{headerGroup.headers.map((header) => (
-												<TableHead key={header.id}>
+												<TableHead
+													className={header.id === "acoes" ? "text-right" : ""}
+													key={header.id}
+												>
 													{header.isPlaceholder
 														? null
 														: flexRender(

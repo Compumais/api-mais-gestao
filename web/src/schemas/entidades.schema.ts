@@ -139,6 +139,7 @@ export const criarEntidadeSchema = z
 
 export type CriarEntidadeFormInput = z.input<typeof criarEntidadeSchema>;
 export type CriarEntidadeFormData = z.output<typeof criarEntidadeSchema>;
+export type TipoEntidadePrincipal = "cliente" | "fornecedor";
 
 export function formatarCepParaEnvio(
 	cep: string | null | undefined,
@@ -206,10 +207,12 @@ export function criarValoresPadraoEntidadeForm({
 	empresaId,
 	valoresIniciais,
 	isEdicao = false,
+	tipoPrincipal = "cliente",
 }: {
 	empresaId?: string;
 	valoresIniciais?: Partial<CriarEntidadeFormData>;
 	isEdicao?: boolean;
+	tipoPrincipal?: TipoEntidadePrincipal;
 }): CriarEntidadeFormData {
 	const base: CriarEntidadeFormData = {
 		idempresa: empresaId || "",
@@ -232,8 +235,8 @@ export function criarValoresPadraoEntidadeForm({
 		nascimento: null,
 		idplanocontas: null,
 		pais: "Brasil",
-		cliente: true,
-		fornecedor: false,
+		cliente: tipoPrincipal === "cliente",
+		fornecedor: tipoPrincipal === "fornecedor",
 		transportador: false,
 		representante: false,
 	};
