@@ -37,4 +37,14 @@ describe("pagamentos-pdv-util", () => {
 		expect(total.dinheiro).toBe(75);
 		expect(total.pix).toBe(30);
 	});
+
+	it("soma cartão crédito, débito e legado no resumo", () => {
+		const resumo = extrairPagamentosResumo({
+			valorcartaocredito: "50.14",
+			valorcartaodebito: "10.00",
+			valorcartao: "5.00",
+		});
+
+		expect(resumo.cartao).toBe(65.14);
+	});
 });

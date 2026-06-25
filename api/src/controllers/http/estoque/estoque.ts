@@ -6,6 +6,7 @@ import {
 	listarSaldosEstoqueGestaoService,
 } from "@/service/estoque/listar-estoque-gestao.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
+import { removerUndefined } from "@/util/remover-undefined.js";
 
 const querySaldosSchema = z.object({
 	idempresa: z.string().uuid(),
@@ -41,6 +42,8 @@ const bodyBaixaSchema = z.object({
 	pagamentos: z.object({
 		valordinheiro: z.string().nullable().optional(),
 		valorcartao: z.string().nullable().optional(),
+		valorcartaocredito: z.string().nullable().optional(),
+		valorcartaodebito: z.string().nullable().optional(),
 		valorpix: z.string().nullable().optional(),
 		valorprepago: z.string().nullable().optional(),
 		valortroco: z.string().nullable().optional(),
@@ -59,8 +62,12 @@ export async function listarSaldosEstoqueGestao(
 
 		const query = querySaldosSchema.parse(request.query);
 		const resultado = await listarSaldosEstoqueGestaoService({
-			...query,
 			idusuario: request.user.id,
+			idempresa: query.idempresa,
+			somenteDivergencia: query.somenteDivergencia,
+			...(query.busca !== undefined ? { busca: query.busca } : {}),
+			...(query.page !== undefined ? { page: query.page } : {}),
+			...(query.limit !== undefined ? { limit: query.limit } : {}),
 		});
 
 		if (!resultado.success) {
@@ -85,8 +92,13 @@ export async function listarMovimentosEstoqueGestao(
 
 		const query = queryMovimentosSchema.parse(request.query);
 		const resultado = await listarMovimentosEstoqueGestaoService({
-			...query,
 			idusuario: request.user.id,
+			idempresa: query.idempresa,
+			...(query.idproduto !== undefined ? { idproduto: query.idproduto } : {}),
+			...(query.codigoproduto !== undefined ? { codigoproduto: query.codigoproduto } : {}),
+			...(query.tipoestoque !== undefined ? { tipoestoque: query.tipoestoque } : {}),
+			...(query.page !== undefined ? { page: query.page } : {}),
+			...(query.limit !== undefined ? { limit: query.limit } : {}),
 		});
 
 		if (!resultado.success) {
@@ -111,8 +123,16 @@ export async function baixaEstoqueVenda(
 
 		const body = bodyBaixaSchema.parse(request.body);
 		const resultado = await baixaEstoqueVendaService({
-			...body,
 			idusuario: request.user.id,
+			idempresa: body.idempresa,
+			idvenda: body.idvenda,
+			itens: body.itens.map((item) => ({
+				idproduto: item.idproduto,
+				quantidade: item.quantidade,
+				precounitario: item.precounitario,
+				...(item.nomeproduto !== undefined ? { nomeproduto: item.nomeproduto } : {}),
+			})),
+			pagamentos: removerUndefined(body.pagamentos),
 		});
 
 		if (!resultado.success) {

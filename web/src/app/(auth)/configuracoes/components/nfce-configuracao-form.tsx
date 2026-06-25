@@ -20,8 +20,10 @@ import {
 } from "@/components/ui/select";
 import { NFCE_CONFIG_PADRAO_LABEL } from "@/constants/nfce-config-padrao";
 import {
+	atualizarMeioPagamentoNfce,
 	MEIOS_PAGAMENTO_NFCE_PADRAO,
 	normalizarMeiosPagamentoNfce,
+	resolverValorMeioPagamentoNfce,
 } from "@/constants/meios-pagamento-nfce";
 import { MEIOS_PAGAMENTO_PDV } from "@/lib/gourmet-utils";
 import {
@@ -253,9 +255,10 @@ export function NfceConfiguracaoForm({ idempresa }: NfceConfiguracaoFormProps) {
 						</p>
 						<div className="grid gap-3 sm:grid-cols-2">
 							{MEIOS_PAGAMENTO_PDV.map((meio) => {
-								const checked =
-									meiospagamentonfce?.[meio.id] ??
-									MEIOS_PAGAMENTO_NFCE_PADRAO[meio.id];
+								const checked = resolverValorMeioPagamentoNfce(
+									meiospagamentonfce,
+									meio.id,
+								);
 								return (
 									<Field key={meio.id}>
 										<div className="flex items-center gap-3">
@@ -263,13 +266,14 @@ export function NfceConfiguracaoForm({ idempresa }: NfceConfiguracaoFormProps) {
 												id={`meio-nfce-${meio.id}`}
 												checked={checked}
 												onCheckedChange={(valor) => {
-													const atual = normalizarMeiosPagamentoNfce(
-														meiospagamentonfce,
+													form.setValue(
+														"meiospagamentonfce",
+														atualizarMeioPagamentoNfce(
+															meiospagamentonfce,
+															meio.id,
+															valor === true,
+														),
 													);
-													form.setValue("meiospagamentonfce", {
-														...atual,
-														[meio.id]: valor === true,
-													});
 												}}
 											/>
 											<FieldLabel

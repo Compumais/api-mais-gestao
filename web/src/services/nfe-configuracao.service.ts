@@ -40,6 +40,7 @@ export interface NfeSerie {
 	numeroproximo: number;
 	padrao: boolean;
 	ativo: boolean;
+	descricao?: string | null;
 }
 
 export interface PendenciaNfe {
@@ -140,8 +141,8 @@ export const nfeConfiguracaoService = {
 		},
 	): Promise<NfeSerie> {
 		const { data } = await api.post<NfeSerie>("/nfe-series", {
-			modelo: dados.modelo ?? "55",
 			...dados,
+			modelo: dados.modelo ?? "55",
 		});
 		return data;
 	},

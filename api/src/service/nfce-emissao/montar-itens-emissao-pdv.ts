@@ -3,6 +3,7 @@ import { buscarNcmPorId } from "@/repositories/ncm-repositories.js";
 import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
 import { listarItensPorVendaPdv } from "@/repositories/venda-pdv-item-repositories.js";
 import type { ItemPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
+import { resolverCreditoIcmsSnItem } from "@/util/resolver-credito-icms-sn-item.js";
 
 async function resolverCodigoCfop(
 	ids: Array<string | null | undefined>,
@@ -90,7 +91,20 @@ export async function montarItensEmissaoPdv(
 		}
 
 		const cst = formatarSituacaoTributaria(produto.situacaotributaria);
-		const csosn = formatarSituacaoTributaria(produto.situacaotributariasn);
+		const csosn =
+			formatarSituacaoTributaria(produto.tributacaosn) ??
+			formatarSituacaoTributaria(produto.situacaotributariasn);
+
+		const valorProduto = quantidade * valorUnitario;
+		const creditoSn = resolverCreditoIcmsSnItem({
+			...(csosn != null ? { csosn } : {}),
+			valorProduto,
+			aliquotaIcmsInterna: produto.aliquotaicmsinterna,
+		});
+
+		if (creditoSn.pendencia) {
+			pendencias.push(`${rotulo}: ${creditoSn.pendencia}`);
+		}
 
 		itens.push({
 			idproduto: produto.id,
@@ -105,6 +119,10 @@ export async function montarItensEmissaoPdv(
 			valorUnitario,
 			...(cst ? { cst } : {}),
 			...(csosn ? { csosn } : {}),
+			...(creditoSn.pCredSN != null ? { pCredSN: creditoSn.pCredSN } : {}),
+			...(creditoSn.vCredICMSSN != null
+				? { vCredICMSSN: creditoSn.vCredICMSSN }
+				: {}),
 			orig: produto.origem ?? 0,
 		});
 	}

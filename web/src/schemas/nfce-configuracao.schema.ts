@@ -8,7 +8,7 @@ const meiosPagamentoNfceSchema = z.object({
 });
 
 export const nfceConfiguracaoSchema = z.object({
-	ambiente: z.coerce.number().int().min(1).max(2),
+	ambiente: z.number().int().min(1).max(2),
 	idcertificadoativo: z.string().uuid().nullable().optional(),
 	idcsc_homologacao: z.string().max(6).nullable().optional(),
 	csctoken_homologacao: z.string().max(36).nullable().optional(),

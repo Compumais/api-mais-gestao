@@ -109,6 +109,10 @@ const propriedadesProdutoResposta = {
 	observacoes: { anyOf: [{ type: "string" }, { type: "null" }] },
 	inativo: { type: "number", enum: [0, 1], nullable: true },
 	enviamobile: { type: "number", enum: [0, 1], nullable: true },
+	quantidadepadrao: { type: "number", nullable: true },
+	quantidademinima: { type: "number", nullable: true },
+	quantidademaxima: { type: "number", nullable: true },
+	estoque: { type: "number", nullable: true },
 	...propriedadesImpostosProdutoResposta,
 };
 
@@ -146,6 +150,10 @@ export const criarProdutoSchema: FastifySchema = {
 			ncm: { type: "string" },
 			observacoes: { anyOf: [{ type: "string" }, { type: "null" }] },
 			enviamobile: { type: "number", enum: [0, 1] },
+			quantidadepadrao: { type: "number" },
+			quantidademinima: { anyOf: [{ type: "number" }, { type: "null" }] },
+			quantidademaxima: { anyOf: [{ type: "number" }, { type: "null" }] },
+			estoque: { type: "number", minimum: 0 },
 			...propriedadesImpostosProdutoBody,
 		},
 		required: [
@@ -278,6 +286,10 @@ export const atualizarProdutoSchema: FastifySchema = {
 			ncm: { type: "string" },
 			observacoes: { anyOf: [{ type: "string" }, { type: "null" }] },
 			enviamobile: { type: "number", enum: [0, 1] },
+			quantidadepadrao: { type: "number" },
+			quantidademinima: { anyOf: [{ type: "number" }, { type: "null" }] },
+			quantidademaxima: { anyOf: [{ type: "number" }, { type: "null" }] },
+			estoque: { type: "number", minimum: 0 },
 			...propriedadesImpostosProdutoBody,
 		},
 	},

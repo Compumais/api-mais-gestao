@@ -1,8 +1,8 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 import { CarrinhoVendaRapida } from "../components/carrinho-venda-rapida";
 import { PagamentoPdvDialog } from "../components/pagamento-pdv-dialog";
 import { ProdutoTabela } from "../components/produto-tabela";
@@ -26,6 +26,8 @@ import { toast } from "sonner";
 
 export default function VendaRapidaPage() {
 	const router = useRouter();
+	const searchParams = useSearchParams();
+	const editarNfceId = searchParams.get("editarNfce");
 	const { user } = useAuth();
 	const { localStorageEmpresa: empresa } = useEmpresa();
 	const { estaAberto } = useCaixaPdv();
@@ -37,6 +39,12 @@ export default function VendaRapidaPage() {
 
 	const { saldoPorCodigo } = useSaldosEstoque(empresa?.id);
 
+	useEffect(() => {
+		if (editarNfceId) {
+			router.replace(`/nfce/editar?editarNfce=${editarNfceId}`);
+		}
+	}, [editarNfceId, router]);
+
 	const { data: produtosData, isLoading: isLoadingProdutos } = useQuery({
 		queryKey: ["produtos", empresa?.id, { inativo: 0 }],
 		queryFn: () =>
@@ -44,7 +52,7 @@ export default function VendaRapidaPage() {
 				idempresa: empresa!.id,
 				inativo: 0,
 			}),
-		enabled: !!empresa?.id,
+		enabled: !!empresa?.id && !editarNfceId,
 	});
 
 	const subtotal = calcularSubtotalItens(carrinho);
@@ -144,6 +152,17 @@ export default function VendaRapidaPage() {
 		setCarrinho([]);
 		router.push("/gourmet");
 	};
+
+	if (editarNfceId) {
+		return (
+			<>
+				<PdvHeader titulo="Venda rápida" voltarHref="/gourmet" voltarLabel="Mesas" />
+				<main className="flex flex-1 items-center justify-center p-8">
+					<p className="text-muted-foreground">Redirecionando para edição da NFC-e...</p>
+				</main>
+			</>
+		);
+	}
 
 	return (
 		<>

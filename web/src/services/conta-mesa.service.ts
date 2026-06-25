@@ -52,6 +52,8 @@ export interface CriarContaMesaData {
 	telefone?: string;
 	usuarioquefechouconta?: string;
 	valorcartao?: string;
+	valorcartaocredito?: string;
+	valorcartaodebito?: string;
 	valorcouverartistico?: string;
 	valordinheiro?: string;
 	valorpendente?: string;
@@ -72,6 +74,8 @@ export interface AtualizarContaMesaData {
 	telefone?: string;
 	usuarioquefechouconta?: string;
 	valorcartao?: string;
+	valorcartaocredito?: string;
+	valorcartaodebito?: string;
 	valorcouverartistico?: string;
 	valordinheiro?: string;
 	valorpendente?: string;

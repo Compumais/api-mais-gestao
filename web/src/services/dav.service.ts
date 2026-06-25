@@ -65,6 +65,7 @@ export interface CriarPedidoData {
 
 export interface AtualizarPedidoData extends Partial<CriarPedidoData> {
 	descontosubtotal?: string;
+	valor?: string;
 }
 
 export interface CriarPedidoItemData {

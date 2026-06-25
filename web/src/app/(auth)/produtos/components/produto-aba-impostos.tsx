@@ -300,10 +300,6 @@ export function ProdutoAbaImpostos({
 					</div>
 				</section>
 
-						</Field>
-					</div>
-				</section>
-
 				<section className="space-y-4">
 					<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 						<h3 className="text-base font-semibold">CFOP de emissão</h3>

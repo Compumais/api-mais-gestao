@@ -5,7 +5,11 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { authClient } from "@/lib/auth-client";
 import { limparSessaoFrontend, marcarSessaoFrontend } from "@/lib/auth-session-cookie";
-import { setSessionToken } from "@/lib/auth-token";
+import {
+	extractSessionTokenFromLoginResponse,
+	getSessionToken,
+	setSessionToken,
+} from "@/lib/auth-token";
 import { limparEmpresaSelecionada } from "@/provider/empresa-provider";
 import { authService } from "@/services/auth.service";
 
@@ -41,6 +45,15 @@ export function useAuth() {
 		if (user && !isError) {
 			marcarSessaoFrontend();
 		}
+	}, [user, isError]);
+
+	useEffect(() => {
+		if (!user || isError || getSessionToken()) return;
+
+		void authClient.getSession().then((sessao) => {
+			const token = extractSessionTokenFromLoginResponse(sessao.data ?? {});
+			if (token) setSessionToken(token);
+		});
 	}, [user, isError]);
 
 	const logout = async () => {

@@ -257,6 +257,21 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 		icon: IconReportMoney,
 		keywords: ["plano contas contábeis", "contábeis", "contabeis"],
 	},
+	{
+		title: "Exportar XMLs fiscais",
+		url: "/contabilidade/exportar-xmls",
+		category: "Contabilidade",
+		icon: IconReportMoney,
+		keywords: [
+			"xml",
+			"xmls",
+			"nf-e",
+			"nfce",
+			"exportar",
+			"contabilidade",
+			"zip",
+		],
+	},
 	// Outros
 	{
 		title: "Configurações",

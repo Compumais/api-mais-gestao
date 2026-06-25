@@ -9,6 +9,7 @@ import { NFE_AMBIENTE_LABELS } from "@/constants/nfe-status";
 import {
 	calcularPrecoTotalItem,
 	formatCurrency,
+	montarUrlImagemQrCodeNfce,
 	parseValor,
 	type CupomNaoFiscalData,
 } from "@/lib/gourmet-utils";
@@ -178,18 +179,36 @@ export function CupomNaoFiscal({ dados, onFechar }: CupomNaoFiscalProps) {
 					{dados.nfce && (
 						<div className="mt-3 space-y-1 border-t border-dashed border-black pt-3 text-[10px]">
 							<p className="text-center font-semibold">DADOS DA NFC-e</p>
+							{dados.nfce.qrCode && (
+								<div className="flex justify-center py-2">
+									<img
+										src={montarUrlImagemQrCodeNfce(dados.nfce.qrCode)}
+										alt="QR Code NFC-e"
+										width={160}
+										height={160}
+										className="size-40"
+									/>
+								</div>
+							)}
 							<p className="break-all leading-relaxed">
 								Chave: {formatarChaveNfce(dados.nfce.chave)}
 							</p>
 							{dados.nfce.protocolo && (
 								<p>Protocolo: {dados.nfce.protocolo}</p>
 							)}
+							{dados.nfce.urlChave && (
+								<p className="break-all text-gray-600">
+									Consulta: {dados.nfce.urlChave}
+								</p>
+							)}
 						</div>
 					)}
 
 					<p className="mt-4 text-center text-[10px] text-gray-500">
 						{ehNfce
-							? "Consulte a NFC-e pelo QR Code no DANFE — Mais Gestão PDV Gourmet"
+							? dados.nfce?.qrCode
+								? "Consulte a NFC-e pelo QR Code acima — Mais Gestão PDV Gourmet"
+								: "Consulte a NFC-e pelo QR Code no DANFC-e — Mais Gestão PDV Gourmet"
 							: "Documento sem valor fiscal — Mais Gestão PDV Gourmet"}
 					</p>
 				</div>
@@ -206,7 +225,7 @@ export function CupomNaoFiscal({ dados, onFechar }: CupomNaoFiscalProps) {
 							onClick={() => void handleAbrirDanfe()}
 						>
 							<IconFileTypePdf className="size-4" />
-							{abrindoDanfe ? "Abrindo..." : "DANFE"}
+							{abrindoDanfe ? "Abrindo..." : "DANFC-e"}
 						</Button>
 					)}
 					<Button type="button" onClick={handlePrint}>

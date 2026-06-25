@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const nfeConfiguracaoSchema = z.object({
-	ambiente: z.coerce.number().int().min(1).max(2),
+	ambiente: z.number().int().min(1).max(2),
 	idcertificadoativo: z.string().uuid().nullable().optional(),
 	tokenibpt: z.string().max(100).nullable().optional(),
 	emailenvioxml: z.string().email().max(200).nullable().optional().or(z.literal("")),
@@ -16,7 +16,7 @@ export type NfeConfiguracaoFormData = z.infer<typeof nfeConfiguracaoSchema>;
 
 export const nfeSerieSchema = z.object({
 	serie: z.string().min(1).max(3),
-	numeroproximo: z.coerce.number().int().min(1),
+	numeroproximo: z.number().int().min(1),
 	padrao: z.boolean(),
 	ativo: z.boolean(),
 });

@@ -10,6 +10,7 @@ import {
 	type CarrinhoLocalItem,
 	getNumeropdv,
 	parseValor,
+	pagamentoCobreTotal,
 	STATUS_MESA,
 } from "@/lib/gourmet-utils";
 import type { ContaMesaItem } from "@/services/conta-mesa-item.service";
@@ -92,6 +93,8 @@ export function useFecharVenda() {
 				valorcouverartistico: couvert.toFixed(2),
 				valortotal: valortotal.toFixed(2),
 				valordinheiro: parseValor(pagamento.valordinheiro).toFixed(2),
+				valorcartaocredito: parseValor(pagamento.valorcartaocredito).toFixed(2),
+				valorcartaodebito: parseValor(pagamento.valorcartaodebito).toFixed(2),
 				valorcartao: parseValor(pagamento.valorcartao).toFixed(2),
 				valorpix: parseValor(pagamento.valorpix).toFixed(2),
 				valorprepago: parseValor(pagamento.valorprepago).toFixed(2),
@@ -121,6 +124,8 @@ export function useFecharVenda() {
 				})),
 				pagamentos: {
 					valordinheiro: pagamento.valordinheiro,
+					valorcartaocredito: pagamento.valorcartaocredito,
+					valorcartaodebito: pagamento.valorcartaodebito,
 					valorcartao: pagamento.valorcartao,
 					valorpix: pagamento.valorpix,
 					valorprepago: pagamento.valorprepago,
@@ -139,10 +144,17 @@ export function useFecharVenda() {
 			queryClient.invalidateQueries({
 				queryKey: ["conta-mesa-itens", variables.idcontamesa],
 			});
+			queryClient.invalidateQueries({ queryKey: ["nfce", variables.idempresa] });
 			if (resultado.baixa?.emissaoNfce?.emitida) {
 				toast.success("Conta fechada e NFC-e emitida!");
 			} else if (!resultado.baixa?.deveEmitirNfce) {
-				toast.success("Conta fechada com sucesso!");
+				if (resultado.baixa.meiosUtilizados.length > 0) {
+					toast.info(
+						"Conta fechada sem NFC-e: meio de pagamento não habilitado na configuração fiscal.",
+					);
+				} else {
+					toast.success("Conta fechada com sucesso!");
+				}
 			}
 		},
 		onError: (error: Error) => {
@@ -174,7 +186,7 @@ export function useFecharVenda() {
 			);
 			const pago = calcularTotalPago(pagamento);
 
-			if (pago < valortotal) {
+			if (!pagamentoCobreTotal(pago, valortotal)) {
 				throw new Error("Valor pago é menor que o total da venda");
 			}
 
@@ -186,6 +198,8 @@ export function useFecharVenda() {
 				usuarioquefechouvenda: userId,
 				vendalocal: 1,
 				valordinheiro: parseValor(pagamento.valordinheiro).toFixed(2),
+				valorcartaocredito: parseValor(pagamento.valorcartaocredito).toFixed(2),
+				valorcartaodebito: parseValor(pagamento.valorcartaodebito).toFixed(2),
 				valorcartao: parseValor(pagamento.valorcartao).toFixed(2),
 				valorpix: parseValor(pagamento.valorpix).toFixed(2),
 				valorprepago: parseValor(pagamento.valorprepago).toFixed(2),
@@ -207,6 +221,8 @@ export function useFecharVenda() {
 				})),
 				pagamentos: {
 					valordinheiro: pagamento.valordinheiro,
+					valorcartaocredito: pagamento.valorcartaocredito,
+					valorcartaodebito: pagamento.valorcartaodebito,
 					valorcartao: pagamento.valorcartao,
 					valorpix: pagamento.valorpix,
 					valorprepago: pagamento.valorprepago,
@@ -217,11 +233,18 @@ export function useFecharVenda() {
 
 			return { venda, baixa };
 		},
-		onSuccess: (resultado) => {
+		onSuccess: (resultado, variables) => {
+			queryClient.invalidateQueries({ queryKey: ["nfce", variables.idempresa] });
 			if (resultado.baixa?.emissaoNfce?.emitida) {
 				toast.success("Venda finalizada e NFC-e emitida!");
 			} else if (!resultado.baixa?.deveEmitirNfce) {
-				toast.success("Venda finalizada com sucesso!");
+				if (resultado.baixa.meiosUtilizados.length > 0) {
+					toast.info(
+						"Venda finalizada sem NFC-e: meio de pagamento não habilitado na configuração fiscal.",
+					);
+				} else {
+					toast.success("Venda finalizada com sucesso!");
+				}
 			}
 		},
 		onError: (error: Error) => {
