@@ -214,6 +214,32 @@ export async function atualizarNotaFiscal(
 	return registro;
 }
 
+export async function substituirItensNotaFiscal(
+	idnotafiscal: string,
+	itens: NovoNotaFiscalItem[],
+) {
+	return db.transaction(async (tx) => {
+		await tx
+			.delete(notafiscalitem)
+			.where(eq(notafiscalitem.idnotafiscal, idnotafiscal));
+
+		const itensCriados: NotaFiscalItem[] = [];
+
+		for (const item of itens) {
+			const [itemCriado] = await tx
+				.insert(notafiscalitem)
+				.values(montarItemParaInsert(item) as NovoNotaFiscalItem)
+				.returning();
+
+			if (itemCriado) {
+				itensCriados.push(itemCriado);
+			}
+		}
+
+		return itensCriados;
+	});
+}
+
 export async function excluirNotaFiscal(id: string) {
 	const [registro] = await db
 		.delete(notafiscal)

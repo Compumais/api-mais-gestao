@@ -28,6 +28,10 @@ export async function excluirCestService({
 		return httpNaoEncontrado();
 	}
 
+	if (!registro.idempresa) {
+		return httpProibido();
+	}
+
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
 		idusuario,
 		registro.idempresa,

@@ -70,10 +70,13 @@ export default function RascunhoImportacaoPage() {
 								nota={data.nota}
 								fornecedor={data.fornecedor}
 								cfopXmlOperacao={
+									data.nota.dadosimportacao?.cfopOperacaoXml ??
 									data.itens[0]?.dadosimportacao?.cfopXml ??
-									data.itens[0]?.cfop ??
 									undefined
 								}
+								natOpXml={data.nota.dadosimportacao?.natOpXml}
+								finNFe={data.nota.dadosimportacao?.finNFe}
+								ipiDevolvidoXml={data.nota.dadosimportacao?.ipiDevolvidoXml}
 							/>
 
 							<section className="rounded-lg border bg-card p-4">

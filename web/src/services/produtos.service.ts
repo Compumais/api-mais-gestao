@@ -5,6 +5,7 @@ export interface Produto {
 	idempresa: string;
 	codigo: number | null;
 	ean: number | null;
+	eantributavel?: string | null;
 	referencia: string | null;
 	nome: string;
 	descricao: string;
@@ -24,9 +25,14 @@ export interface Produto {
 	quantidadepadrao?: number | null;
 	idcfopentrada?: string | null;
 	idcfopsaida?: string | null;
+	idcfopsaidanfce?: string | null;
 	idcest?: string | null;
+	idtaxauf?: string | null;
 	situacaotributariasnentrada?: string | null;
+	situacaotributaria?: string | null;
 	situacaotributariasn?: string | null;
+	tributacaoespecial?: string | null;
+	tributacaosn?: string | null;
 	cstpisentrada?: string | number | null;
 	cstcofinsentrada?: string | number | null;
 	cstpis?: string | number | null;
@@ -62,13 +68,28 @@ export interface CriarProdutoData {
 	enviamobile?: number | null;
 	idcfopentrada?: string | null;
 	idcfopsaida?: string | null;
+	idcfopsaidanfce?: string | null;
 	idcest?: string | null;
+	idtaxauf?: string | null;
 	situacaotributariasnentrada?: string | null;
+	situacaotributaria?: string | null;
 	situacaotributariasn?: string | null;
+	tributacaoespecial?: string | null;
+	tributacaosn?: string | null;
 	cstpisentrada?: string | null;
 	cstcofinsentrada?: string | null;
 	cstpis?: string | null;
 	cstcofins?: string | null;
+}
+
+export interface TributacaoPorCfopResponse {
+	idcfopsaida?: string | null;
+	idcfopsaidanfce?: string | null;
+	situacaotributaria?: string | null;
+	situacaotributariasn?: string | null;
+	tributacaoespecial?: string | null;
+	tributacaosn?: string | null;
+	cfopvendaecf?: number | null;
 }
 
 export interface AtualizarProdutoData {
@@ -89,9 +110,14 @@ export interface AtualizarProdutoData {
 	enviamobile?: number | null;
 	idcfopentrada?: string | null;
 	idcfopsaida?: string | null;
+	idcfopsaidanfce?: string | null;
 	idcest?: string | null;
+	idtaxauf?: string | null;
 	situacaotributariasnentrada?: string | null;
+	situacaotributaria?: string | null;
 	situacaotributariasn?: string | null;
+	tributacaoespecial?: string | null;
+	tributacaosn?: string | null;
 	cstpisentrada?: string | null;
 	cstcofinsentrada?: string | null;
 	cstpis?: string | null;
@@ -111,6 +137,35 @@ export const produtosService = {
 			params,
 		});
 		return data;
+	},
+
+	async listarTodos(params: {
+		idempresa: string;
+		nome?: string;
+		q?: string;
+		inativo?: number;
+	}): Promise<Produto[]> {
+		const limite = 100;
+		let pagina = 1;
+		const registros: Produto[] = [];
+
+		while (true) {
+			const resposta = await produtosService.listar({
+				...params,
+				page: pagina,
+				limit: limite,
+			});
+
+			registros.push(...resposta.data);
+
+			if (pagina >= resposta.paginacao.totalPages) {
+				break;
+			}
+
+			pagina += 1;
+		}
+
+		return registros;
 	},
 
 	async buscar(id: string): Promise<Produto> {
@@ -158,6 +213,17 @@ export const produtosService = {
 		const { data } = await api.get<{ codigo: number }>(
 			"/produtos/proximo-codigo",
 			{ params: { idempresa } },
+		);
+		return data;
+	},
+
+	async tributacaoPorCfop(
+		idempresa: string,
+		idcfop: string,
+	): Promise<TributacaoPorCfopResponse> {
+		const { data } = await api.get<TributacaoPorCfopResponse>(
+			"/produtos/tributacao-por-cfop",
+			{ params: { idempresa, idcfop } },
 		);
 		return data;
 	},

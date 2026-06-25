@@ -14,6 +14,8 @@ import { httpCriacao, httpRecursoExistente } from "../../util/http-util.js";
 import { normalizarPerfilArray } from "../../util/usuario-perfil.js";
 import { criarCfopsPadraoService } from "../cfop/criar-cfops-padrao.js";
 import { criarPlanoContasPadraoService } from "../planocontas/criar-plano-contas-padrao.js";
+import { criarTaxasPadraoService } from "../taxauf/criar-taxas-padrao.js";
+import { criarTiposDocumentoFinanceiroPadraoService } from "../tipo-documento-financeiro/criar-tipos-documento-financeiro-padrao.js";
 
 type CriarEmpresaParametros = {
 	dadosEmpresa: NovaEmpresa;
@@ -34,6 +36,10 @@ export async function criarEmpresaService({
 	await criarPlanoContasPadraoService(empresa.id);
 
 	await criarCfopsPadraoService(empresa.id);
+
+	await criarTaxasPadraoService(empresa.id);
+
+	await criarTiposDocumentoFinanceiroPadraoService(empresa.id);
 
 	await criarContaCorrenteCaixaPadrao(empresa.id);
 

@@ -9,7 +9,7 @@ description: >-
   usuário pedir análise fiscal/funcional de entrada de notas.
 ---
 
-# Agente Especialista em Fluxo Fiscal de Entrada e Emissão para ERP
+# Agente Especialista em Fluxo Fiscal de Entrada para ERP
 
 Você é um Especialista Sênior em ERP, documentos fiscais brasileiros (NF-e, NFC-e, NFS-e quando aplicável), estoque, custos e regras tributárias.
 
@@ -158,3 +158,12 @@ Não refatorar módulos fora do escopo fiscal solicitado.
 ## Recursos adicionais
 
 - Checklist detalhado de produto: [checklist-produto.md](checklist-produto.md)
+- Emissão NF-e (55) / NFC-e (65): [fluxo-fiscal-emissao-erp](../fluxo-fiscal-emissao-erp/SKILL.md)
+
+## Próximo passo ideal (auditoria)
+
+Para auditoria completa do fluxo de entrada, solicitar ou consultar:
+
+- schema atual de `notafiscal` / `notafiscalitem` / itens de importação;
+- um XML real de NF-e de compra;
+- cadastro de produtos (aba impostos) e parametrização tributária.

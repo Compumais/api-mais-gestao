@@ -15,19 +15,39 @@ const propriedadesImpostosProdutoBody = {
 	},
 	idcfopsaida: {
 		anyOf: [{ type: "string", format: "uuid" }, { type: "null" }],
-		description: "ID do CFOP padrão de saída do produto",
+		description: "ID do CFOP de saída NF do produto",
+	},
+	idcfopsaidanfce: {
+		anyOf: [{ type: "string", format: "uuid" }, { type: "null" }],
+		description: "ID do CFOP de saída ECF/NFC-e do produto",
 	},
 	idcest: {
 		anyOf: [{ type: "string", format: "uuid" }, { type: "null" }],
 		description: "ID do CEST vinculado ao produto",
 	},
+	idtaxauf: {
+		anyOf: [{ type: "string", format: "uuid" }, { type: "null" }],
+		description: "ID da taxa por UF vinculada ao produto (ECF/PDV)",
+	},
 	situacaotributariasnentrada: {
 		anyOf: [{ type: "string", maxLength: 3 }, { type: "null" }],
 		description: "CST/CSOSN de ICMS na entrada",
 	},
+	situacaotributaria: {
+		anyOf: [{ type: "string", maxLength: 3 }, { type: "null" }],
+		description: "CST ICMS na saída NFe (contribuinte)",
+	},
 	situacaotributariasn: {
 		anyOf: [{ type: "string", maxLength: 3 }, { type: "null" }],
-		description: "CST/CSOSN de ICMS na saída",
+		description: "CSOSN ICMS na saída NFe (contribuinte)",
+	},
+	tributacaoespecial: {
+		anyOf: [{ type: "string", maxLength: 7 }, { type: "null" }],
+		description: "CST ICMS na saída CFe/NFC-e (não contribuinte)",
+	},
+	tributacaosn: {
+		anyOf: [{ type: "string", maxLength: 3 }, { type: "null" }],
+		description: "CSOSN ICMS na saída CFe/NFC-e (não contribuinte)",
 	},
 	cstpisentrada: {
 		anyOf: [{ type: "string", maxLength: 2 }, { type: "null" }],
@@ -298,6 +318,40 @@ export const inativarProdutoSchema: FastifySchema = {
 		404: respostaErro,
 		401: respostaErro,
 		403: respostaErro,
+		500: respostaErro,
+	},
+};
+
+export const tributacaoPorCfopSchema: FastifySchema = {
+	tags: ["produtos"],
+	summary: "Sugerir tributação de saída por CFOP",
+	description:
+		"Retorna CST/CSOSN e CFOP ECF sugeridos a partir do cadastro do CFOP de saída.",
+	security: [{ bearerAuth: [] }],
+	querystring: {
+		type: "object",
+		properties: {
+			idempresa: { type: "string", format: "uuid" },
+			idcfop: { type: "string", format: "uuid" },
+		},
+		required: ["idempresa", "idcfop"],
+	},
+	response: {
+		200: {
+			type: "object",
+			properties: {
+				idcfopsaida: { type: "string", format: "uuid", nullable: true },
+				idcfopsaidanfce: { type: "string", format: "uuid", nullable: true },
+				situacaotributaria: { type: "string", nullable: true },
+				situacaotributariasn: { type: "string", nullable: true },
+				tributacaoespecial: { type: "string", nullable: true },
+				tributacaosn: { type: "string", nullable: true },
+				cfopvendaecf: { type: "number", nullable: true },
+			},
+		},
+		401: respostaErro,
+		403: respostaErro,
+		404: respostaErro,
 		500: respostaErro,
 	},
 };

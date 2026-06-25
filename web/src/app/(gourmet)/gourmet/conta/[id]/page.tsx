@@ -66,10 +66,9 @@ export default function ContaMesaPage() {
 	const { data: produtosData, isLoading: isLoadingProdutos } = useQuery({
 		queryKey: ["produtos", empresa?.id, { inativo: 0 }],
 		queryFn: () =>
-			produtosService.listar({
+			produtosService.listarTodos({
 				idempresa: empresa!.id,
 				inativo: 0,
-				limit: 100,
 			}),
 		enabled: !!empresa?.id,
 	});
@@ -225,7 +224,7 @@ export default function ContaMesaPage() {
 			<main className="flex min-h-0 flex-1 flex-col lg:flex-row">
 				<div className="min-h-0 flex-1 lg:w-3/5">
 					<ProdutoTabela
-						produtos={produtosData?.data ?? []}
+						produtos={produtosData ?? []}
 						isLoading={isLoadingProdutos}
 						onAdicionar={(produto) => adicionarItem(produto)}
 						isAdding={isAdding}

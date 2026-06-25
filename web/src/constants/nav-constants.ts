@@ -106,6 +106,10 @@ export const DATA = {
 					title: "Nota fiscal de venda",
 					url: "/nota-fiscal-venda",
 				},
+				{
+					title: "Pedidos",
+					url: "/pedidos",
+				},
 			],
 		},
 	],
@@ -123,8 +127,16 @@ export const DATA = {
 					url: "/tributos/configuracao-fiscal",
 				},
 				{
-					title: "CFOP de-para",
+					title: "Mapeamento CFOP",
 					url: "/tributos/cfop-depara",
+				},
+				{
+					title: "Parametrização de tributos",
+					url: "/tributos/parametrizacao",
+				},
+				{
+					title: "Taxas por UF",
+					url: "/tributos/taxas",
 				},
 			],
 		},

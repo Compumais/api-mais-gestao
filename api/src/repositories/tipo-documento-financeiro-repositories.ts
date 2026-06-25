@@ -1,6 +1,7 @@
 import { and, count, desc, eq, ilike } from "drizzle-orm";
 import type { NovoTipoDocumentoFinanceiro } from "@/model/tipo-documento-financeiro-model";
 import { tipodocumentofinanceiro } from "@/repositories/schema.js";
+import { filtroRegistroAtivo } from "@/util/filtro-registro-ativo.js";
 import { db } from "./connection";
 
 export async function buscarTipoDocumentoFinanceiroPorId(id: string) {
@@ -69,7 +70,13 @@ export async function listarTiposDocumentoFinanceiro({
 	}
 
 	if (inativo !== undefined) {
-		where.push(eq(tipodocumentofinanceiro.inativo, inativo));
+		const filtroInativo = filtroRegistroAtivo(
+			tipodocumentofinanceiro.inativo,
+			inativo,
+		);
+		if (filtroInativo) {
+			where.push(filtroInativo);
+		}
 	}
 
 	const offset = (page - 1) * limit;
@@ -92,4 +99,25 @@ export async function listarTiposDocumentoFinanceiro({
 		tiposdocumentofinanceiro,
 		total: totalCount[0]?.value ?? 0,
 	};
+}
+
+export async function verificarEmpresaPossuiTiposDocumentoFinanceiro(
+	idempresa: string,
+) {
+	const [resultado] = await db
+		.select({ value: count() })
+		.from(tipodocumentofinanceiro)
+		.where(eq(tipodocumentofinanceiro.idempresa, idempresa));
+
+	return (resultado?.value ?? 0) > 0;
+}
+
+export async function criarTiposDocumentoFinanceiroEmLote(
+	registros: NovoTipoDocumentoFinanceiro[],
+) {
+	if (registros.length === 0) {
+		return [];
+	}
+
+	return db.insert(tipodocumentofinanceiro).values(registros).returning();
 }

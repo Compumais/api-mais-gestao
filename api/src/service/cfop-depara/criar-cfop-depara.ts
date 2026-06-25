@@ -3,6 +3,7 @@ import {
 	buscarCfopPorId,
 } from "@/repositories/cfop-repositories.js";
 import {
+	buscarCfopDeParaDuplicado,
 	criarCfopDePara,
 	type CfopDePara,
 	type NovoCfopDePara,
@@ -12,6 +13,7 @@ import {
 	httpCriacao,
 	httpErro,
 	httpProibido,
+	httpRecursoExistente,
 } from "@/util/http-util.js";
 
 type CriarCfopDeParaParametros = {
@@ -48,6 +50,17 @@ export async function criarCfopDeParaService({
 		cfopSaida.idempresa !== dados.idempresa
 	) {
 		return httpErro();
+	}
+
+	const ufNormalizada = dados.uf?.trim().toUpperCase() || null;
+	const duplicado = await buscarCfopDeParaDuplicado(
+		dados.idempresa,
+		dados.idcfopentrada,
+		ufNormalizada,
+	);
+
+	if (duplicado) {
+		return httpRecursoExistente();
 	}
 
 	const registro = await criarCfopDePara({

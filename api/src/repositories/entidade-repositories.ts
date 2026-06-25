@@ -72,6 +72,7 @@ export async function atualizarEntidade(
 		fornecedor?: number | undefined;
 		transportador?: number | undefined;
 		representante?: number | undefined;
+		indiedest?: number | null | undefined;
 	},
 ) {
 	const [entidade] = await db

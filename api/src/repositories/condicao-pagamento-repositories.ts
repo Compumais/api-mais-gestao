@@ -1,6 +1,7 @@
 import { and, count, desc, eq, ilike } from "drizzle-orm";
 import type { NovoCondicaoPagamento } from "@/model/condicao-pagamento-model";
 import { condicaopagamento } from "@/repositories/schema.js";
+import { filtroRegistroAtivo } from "@/util/filtro-registro-ativo.js";
 import { db } from "./connection";
 
 export async function buscarCondicaoPagamentoPorId(id: string) {
@@ -69,7 +70,10 @@ export async function listarCondicoesPagamento({
 	}
 
 	if (inativo !== undefined) {
-		where.push(eq(condicaopagamento.inativo, inativo));
+		const filtroInativo = filtroRegistroAtivo(condicaopagamento.inativo, inativo);
+		if (filtroInativo) {
+			where.push(filtroInativo);
+		}
 	}
 
 	const offset = (page - 1) * limit;

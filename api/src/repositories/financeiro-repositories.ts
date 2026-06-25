@@ -42,6 +42,23 @@ export async function atualizarFinanceiro(
 	return financeiro;
 }
 
+export async function buscarFinanceirosPorOrigem(
+	idempresa: string,
+	tipoorigem: number,
+	idorigem: string,
+) {
+	return db
+		.select()
+		.from(schema.financeiro)
+		.where(
+			and(
+				eq(schema.financeiro.idempresa, idempresa),
+				eq(schema.financeiro.tipoorigem, tipoorigem),
+				eq(schema.financeiro.idorigem, idorigem),
+			),
+		);
+}
+
 interface ListarFinanceiroParametros {
 	idempresas: string[];
 	page?: number;
