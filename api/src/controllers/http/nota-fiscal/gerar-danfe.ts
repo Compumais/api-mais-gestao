@@ -23,17 +23,19 @@ export async function gerarDanfeNotaFiscal(
 			idnotafiscal: id,
 		});
 
-		if (!resultado.success) {
+		if (!resultado.success || !resultado.body) {
 			return reply.status(resultado.status).send(resultado);
 		}
+
+		const { filename, pdf } = resultado.body;
 
 		reply.header("Content-Type", "application/pdf");
 		reply.header(
 			"Content-Disposition",
-			`inline; filename="${resultado.body.filename}"`,
+			`inline; filename="${filename}"`,
 		);
 
-		return reply.status(200).send(resultado.body.pdf);
+		return reply.status(200).send(pdf);
 	} catch (error) {
 		console.error(error);
 		if (error instanceof z.ZodError) {

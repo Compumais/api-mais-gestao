@@ -75,6 +75,7 @@ describe("integrarNotaFiscalVendaAutorizadaService", () => {
 		});
 
 		expect(resultado.success).toBe(true);
+		if (!resultado.success) return;
 		expect(resultado.body?.movimentosGerados).toBe(1);
 		expect(resultado.body?.parcelasGeradas).toBe(1);
 	});

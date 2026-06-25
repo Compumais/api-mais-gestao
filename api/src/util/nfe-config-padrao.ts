@@ -5,13 +5,9 @@ export const NFE_CONFIG_PADRAO = {
 	verproc: "MaisGestao 1.0.0",
 } as const;
 
-export function aplicarPadroesTecnicosNfe<
-	T extends {
-		versaoleiaute?: string;
-		schema?: string;
-		verproc?: string | null;
-	},
->(dados: T): T & typeof NFE_CONFIG_PADRAO {
+export function aplicarPadroesTecnicosNfe<T extends Record<string, unknown>>(
+	dados: T,
+): T & typeof NFE_CONFIG_PADRAO {
 	return {
 		...dados,
 		versaoleiaute: NFE_CONFIG_PADRAO.versaoleiaute,

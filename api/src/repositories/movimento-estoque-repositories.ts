@@ -58,7 +58,7 @@ export async function atualizarMovimentoEstoque(
 ) {
 	const [registro] = await db
 		.update(movimentoestoque)
-		.set(dados)
+		.set(dados as Partial<typeof movimentoestoque.$inferInsert>)
 		.where(eq(movimentoestoque.id, id))
 		.returning();
 

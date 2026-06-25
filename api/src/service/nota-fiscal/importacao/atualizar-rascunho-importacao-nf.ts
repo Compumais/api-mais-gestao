@@ -78,7 +78,7 @@ export async function atualizarCabecalhoRascunhoImportacaoNfService({
 	const validacao = await validarAcessoRascunho(idusuario, idempresa, idRascunho);
 
 	if ("erro" in validacao) {
-		return validacao.erro;
+		return validacao.erro as HttpResponse<NotaFiscal>;
 	}
 
 	const notaAtualizada = await atualizarNotaFiscal(idRascunho, {
@@ -111,7 +111,9 @@ export async function atualizarItemRascunhoImportacaoNfService({
 	const validacao = await validarAcessoRascunho(idusuario, idempresa, idRascunho);
 
 	if ("erro" in validacao) {
-		return validacao.erro;
+		return validacao.erro as HttpResponse<
+			NotaFiscalItem & { dadosimportacao: DadosImportacaoItem | null }
+		>;
 	}
 
 	const item = await buscarItemNotaFiscalPorId(idItem, idRascunho);

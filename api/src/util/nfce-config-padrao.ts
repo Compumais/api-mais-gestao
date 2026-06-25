@@ -28,13 +28,9 @@ export function normalizarMeiosPagamentoNfce(
 	};
 }
 
-export function aplicarPadroesTecnicosNfce<
-	T extends {
-		versaoleiaute?: string;
-		schema?: string;
-		verproc?: string | null;
-	},
->(dados: T): T & typeof NFCE_CONFIG_PADRAO {
+export function aplicarPadroesTecnicosNfce<T extends Record<string, unknown>>(
+	dados: T,
+): T & typeof NFCE_CONFIG_PADRAO {
 	return {
 		...dados,
 		versaoleiaute: NFCE_CONFIG_PADRAO.versaoleiaute,
