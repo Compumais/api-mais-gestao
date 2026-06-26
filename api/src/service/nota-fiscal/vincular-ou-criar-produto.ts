@@ -29,6 +29,7 @@ export type DadosProdutoNF = {
 	idfornecedor?: string | undefined;
 	idgrupo?: string | undefined;
 	custoaquisicao?: string | undefined;
+	quantidadepadrao?: number | undefined;
 	preco?: string | undefined;
 	fatorconversao?: string | undefined;
 	origem?: number | undefined;
@@ -128,6 +129,7 @@ export async function criarProdutoParaNf(
 			idfornecedor: dados.idfornecedor ?? null,
 			idgrupo: dados.idgrupo ?? null,
 			custoaquisicao: dados.custoaquisicao ?? null,
+			quantidadepadrao: dados.quantidadepadrao ?? null,
 			preco: dados.preco ?? null,
 			fatorconversao: dados.fatorconversao ?? "1",
 			origem: dados.origem ?? null,
@@ -160,6 +162,7 @@ export function montarAtualizacaoProdutoNf(
 		preco: dados.preco ?? undefined,
 		fatorconversao: dados.fatorconversao,
 		custoaquisicao: dados.custoaquisicao,
+		quantidadepadrao: dados.quantidadepadrao,
 		idcfopentrada: dados.idcfopentrada ?? undefined,
 		idcfopsaida: dados.idcfopsaida ?? undefined,
 		idcfopsaidanfce: dados.idcfopsaidanfce ?? dados.idcfopsaida ?? undefined,

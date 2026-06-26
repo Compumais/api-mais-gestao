@@ -27,6 +27,7 @@ function mapProdutoToForm(
 		fornecedor: data.fornecedor,
 		idgrupo: data.idgrupo ?? "",
 		preco: data.preco ?? "",
+		custoaquisicao: data.custoaquisicao ?? "",
 		tipo: tipo === "P" || tipo === "S" ? tipo : "P",
 		iat: iat === "A" || iat === "T" ? iat : null,
 		ippt: ippt === "P" || ippt === "T" ? ippt : "P",
@@ -50,8 +51,7 @@ function mapProdutoToForm(
 		cstipisaida: data.cstipisaida ?? null,
 		observacoes: data.observacoes,
 		enviamobile: data.enviamobile === 1,
-		estoque: data.estoque ?? null,
-		quantidadepadrao: data.quantidadepadrao ?? 1,
+		quantidadepadrao: data.quantidadepadrao ?? 0,
 		quantidademinima: data.quantidademinima ?? null,
 		quantidademaxima: data.quantidademaxima ?? null,
 	};

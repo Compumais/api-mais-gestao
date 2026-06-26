@@ -8,14 +8,6 @@ function numeroInteiroOpcional() {
 	}, z.number().int().optional().nullable());
 }
 
-function numeroDecimalOpcional() {
-	return z.preprocess((valor) => {
-		if (valor === "" || valor === null || valor === undefined) return null;
-		if (typeof valor === "number" && Number.isNaN(valor)) return null;
-		return valor;
-	}, z.number().min(0).optional().nullable());
-}
-
 export const produtoFormSchema = z.object({
 	codigo: z
 		.number({ message: "Código é obrigatório" })
@@ -45,6 +37,15 @@ export const produtoFormSchema = z.object({
 			const numero = Number.parseFloat(valor);
 			return !Number.isNaN(numero) && numero > 0;
 		}, "Preço deve ser maior que zero"),
+	custoaquisicao: z
+		.string()
+		.optional()
+		.nullable()
+		.refine((valor) => {
+			if (!valor || valor.trim() === "") return true;
+			const numero = Number.parseFloat(valor);
+			return !Number.isNaN(numero) && numero >= 0;
+		}, "Preço de custo inválido"),
 	tipo: z.enum(["P", "S"], { message: "Tipo de produto inválido" }),
 	iat: z.enum(["A", "T"]).optional().nullable(),
 	ippt: z.enum(["P", "T"], { message: "IPPT é obrigatório" }),
@@ -119,10 +120,9 @@ export const produtoFormSchema = z.object({
 		.nullable(),
 	observacoes: z.string().optional().nullable(),
 	enviamobile: z.boolean().optional(),
-	estoque: numeroDecimalOpcional(),
 	quantidadepadrao: numeroInteiroOpcional().refine(
-		(valor) => valor === null || valor === undefined || valor > 0,
-		"Quantidade padrão deve ser maior que zero",
+		(valor) => valor === null || valor === undefined || valor >= 0,
+		"Saldo em estoque não pode ser negativo",
 	),
 	quantidademinima: numeroInteiroOpcional().refine(
 		(valor) => valor === null || valor === undefined || valor >= 0,

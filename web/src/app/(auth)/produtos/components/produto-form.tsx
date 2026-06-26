@@ -91,10 +91,11 @@ function buildProdutoPayload(
 	}
 
 	payload.enviamobile = data.enviamobile ? 1 : 0;
-	payload.quantidadepadrao = data.quantidadepadrao ?? 1;
+	payload.quantidadepadrao = data.quantidadepadrao ?? 0;
 
-	if (data.estoque != null && !Number.isNaN(data.estoque)) {
-		payload.estoque = data.estoque;
+	const custoaquisicao = data.custoaquisicao?.trim();
+	if (custoaquisicao) {
+		payload.custoaquisicao = custoaquisicao;
 	}
 
 	if (data.quantidademinima != null) {
@@ -146,6 +147,7 @@ export function ProdutoForm(props: ProdutoFormProps) {
 			fornecedor: null,
 			idgrupo: "",
 			preco: "",
+			custoaquisicao: "",
 			tipo: "P",
 			iat: null,
 			ippt: "P",
@@ -169,8 +171,7 @@ export function ProdutoForm(props: ProdutoFormProps) {
 			cstipisaida: null,
 			observacoes: null,
 			enviamobile: false,
-			estoque: null,
-			quantidadepadrao: 1,
+			quantidadepadrao: 0,
 			quantidademinima: null,
 			quantidademaxima: null,
 			...(isEdicao && props.valoresIniciais ? props.valoresIniciais : {}),
@@ -194,6 +195,7 @@ export function ProdutoForm(props: ProdutoFormProps) {
 	const iat = watch("iat");
 	const ippt = watch("ippt");
 	const preco = watch("preco");
+	const custoaquisicao = watch("custoaquisicao");
 	const enviamobile = watch("enviamobile");
 	const codigo = watch("codigo");
 
@@ -479,7 +481,7 @@ export function ProdutoForm(props: ProdutoFormProps) {
 						</Field>
 
 						<Field data-invalid={!!errors.preco}>
-							<FieldLabel htmlFor="preco">Preço *</FieldLabel>
+							<FieldLabel htmlFor="preco">Preço de venda *</FieldLabel>
 							<MoneyInput
 								id="preco"
 								value={preco}
@@ -487,6 +489,21 @@ export function ProdutoForm(props: ProdutoFormProps) {
 								aria-invalid={!!errors.preco}
 							/>
 							<FieldError errors={errors.preco ? [errors.preco] : []} />
+						</Field>
+
+						<Field data-invalid={!!errors.custoaquisicao}>
+							<FieldLabel htmlFor="custoaquisicao">Preço de custo</FieldLabel>
+							<MoneyInput
+								id="custoaquisicao"
+								value={custoaquisicao ?? ""}
+								onChange={(value) =>
+									setValue("custoaquisicao", value, { shouldValidate: true })
+								}
+								aria-invalid={!!errors.custoaquisicao}
+							/>
+							<FieldError
+								errors={errors.custoaquisicao ? [errors.custoaquisicao] : []}
+							/>
 						</Field>
 
 						<Field data-invalid={!!errors.tipo}>
@@ -563,39 +580,17 @@ export function ProdutoForm(props: ProdutoFormProps) {
 				</div>
 
 				<div className="mt-6 space-y-4">
-					<div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-						<Field data-invalid={!!errors.estoque}>
-							<FieldLabel htmlFor="estoque">Estoque</FieldLabel>
-							<Input
-								id="estoque"
-								type="number"
-								min={0}
-								step="any"
-								placeholder="0"
-								aria-invalid={!!errors.estoque}
-								{...register("estoque", {
-									valueAsNumber: true,
-									setValueAs: (value) =>
-										value === "" || value === null || value === undefined
-											? null
-											: Number(value),
-								})}
-							/>
-							<FieldError
-								errors={errors.estoque ? [errors.estoque] : []}
-							/>
-						</Field>
-
+					<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 						<Field data-invalid={!!errors.quantidadepadrao}>
 							<FieldLabel htmlFor="quantidadepadrao">
-								Quantidade padrão
+								Saldo em estoque
 							</FieldLabel>
 							<Input
 								id="quantidadepadrao"
 								type="number"
-								min={1}
+								min={0}
 								step={1}
-								placeholder="1"
+								placeholder="0"
 								aria-invalid={!!errors.quantidadepadrao}
 								{...register("quantidadepadrao", {
 									valueAsNumber: true,

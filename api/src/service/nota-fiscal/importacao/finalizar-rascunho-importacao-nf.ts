@@ -23,7 +23,10 @@ import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
 import { registrarCustosNfService } from "@/service/custo-produto/registrar-custos-nf.js";
 import { arquivarXmlNotaFiscal } from "@/service/nota-fiscal/arquivar-xml-nota-fiscal.js";
 import { gerarContasPagarNfService } from "@/service/nota-fiscal/gerar-contas-pagar-nf.js";
-import { montarDadosProdutoNfImportacao } from "@/service/nota-fiscal/montar-dados-produto-nf-importacao.js";
+import {
+	montarDadosProdutoNfImportacao,
+	parseQuantidadePadraoImportacao,
+} from "@/service/nota-fiscal/montar-dados-produto-nf-importacao.js";
 import { registrarMovimentosEstoqueNf } from "@/service/nota-fiscal/registrar-movimentos-estoque-nf.js";
 import { validarEanProdutoNf } from "@/service/nota-fiscal/validar-ean-produto-nf.js";
 import { vincularOuCriarFornecedorNf } from "@/service/nota-fiscal/vincular-ou-criar-fornecedor-nf.js";
@@ -296,6 +299,10 @@ export async function finalizarRascunhoImportacaoNfService({
 				opcoesProduto,
 			);
 
+			const quantidadeImportada = parseQuantidadePadraoImportacao(
+				dados.quantidadeEstoque,
+			);
+
 			await atualizarProduto(dados.idproduto, {
 				...montarAtualizacaoProdutoNf({
 					...dadosProduto,
@@ -304,6 +311,8 @@ export async function finalizarRascunhoImportacaoNfService({
 						sugestaoSaida.idcfopsaidanfce ?? dadosProduto.idcfopsaidanfce,
 					cfopvendaecf: sugestaoSaida.cfopvendaecf,
 				}),
+				quantidadepadrao:
+					(produtoAtual?.quantidadepadrao ?? 0) + quantidadeImportada,
 				...(produtoAtual
 					? mesclarSugestaoTributacaoSaidaProduto(produtoAtual, sugestaoSaida)
 					: sugestaoSaida),

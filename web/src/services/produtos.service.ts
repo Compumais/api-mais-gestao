@@ -13,6 +13,7 @@ export interface Produto {
 	fornecedor: string | null;
 	idgrupo: string | null;
 	preco: string | null;
+	custoaquisicao?: string | null;
 	tipo: string | null;
 	iat: string | null;
 	ippt: string | null;
@@ -25,7 +26,6 @@ export interface Produto {
 	quantidadepadrao?: number | null;
 	quantidademinima?: number | null;
 	quantidademaxima?: number | null;
-	estoque?: number | null;
 	idcfopentrada?: string | null;
 	idcfopsaida?: string | null;
 	idcfopsaidanfce?: string | null;
@@ -64,6 +64,7 @@ export interface CriarProdutoData {
 	fornecedor?: string | null;
 	idgrupo: string;
 	preco: string;
+	custoaquisicao?: string | null;
 	tipo?: string;
 	iat?: string | null;
 	ippt: string;
@@ -74,7 +75,6 @@ export interface CriarProdutoData {
 	quantidadepadrao?: number | null;
 	quantidademinima?: number | null;
 	quantidademaxima?: number | null;
-	estoque?: number | null;
 	idcfopentrada?: string | null;
 	idcfopsaida?: string | null;
 	idcfopsaidanfce?: string | null;
@@ -112,6 +112,7 @@ export interface AtualizarProdutoData {
 	fornecedor?: string | null;
 	idgrupo?: string;
 	preco?: string;
+	custoaquisicao?: string | null;
 	tipo?: string;
 	iat?: string | null;
 	ippt?: string;
@@ -122,7 +123,6 @@ export interface AtualizarProdutoData {
 	quantidadepadrao?: number | null;
 	quantidademinima?: number | null;
 	quantidademaxima?: number | null;
-	estoque?: number | null;
 	idcfopentrada?: string | null;
 	idcfopsaida?: string | null;
 	idcfopsaidanfce?: string | null;
