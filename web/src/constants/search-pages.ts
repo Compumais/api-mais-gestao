@@ -165,25 +165,11 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 		keywords: ["nota fiscal", "nota-fiscal", "compra", "entrada"],
 	},
 	{
-		title: "Relatório de compras",
-		url: "/nota-fiscal-compra/relatorio",
-		category: "Financeiro",
-		icon: IconFileInvoice,
-		keywords: ["relatório", "relatorio", "compras", "nf-e entrada", "pdf"],
-	},
-	{
 		title: "Nota fiscal de venda",
 		url: "/nota-fiscal-venda",
 		category: "Financeiro",
 		icon: IconFileInvoice,
 		keywords: ["nota fiscal", "nota-fiscal", "venda", "saída"],
-	},
-	{
-		title: "Relatório de vendas",
-		url: "/nota-fiscal-venda/relatorio",
-		category: "Financeiro",
-		icon: IconFileInvoice,
-		keywords: ["relatório", "relatorio", "vendas", "nf-e", "nfce", "pdf"],
 	},
 	// Financeiro
 	{
@@ -299,6 +285,20 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 			"pdf",
 			"consolidado",
 		],
+	},
+	{
+		title: "Relatório de compras",
+		url: "/contabilidade/relatorios/compras",
+		category: "Contabilidade",
+		icon: IconReportMoney,
+		keywords: ["relatório", "relatorio", "compras", "nf-e entrada", "pdf"],
+	},
+	{
+		title: "Relatório de vendas",
+		url: "/contabilidade/relatorios/vendas",
+		category: "Contabilidade",
+		icon: IconReportMoney,
+		keywords: ["relatório", "relatorio", "vendas", "nf-e", "nfce", "pdf"],
 	},
 	// Outros
 	{

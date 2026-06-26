@@ -25,6 +25,16 @@ const nextConfig: NextConfig = {
 				destination: "/pdv",
 				permanent: true,
 			},
+			{
+				source: "/nota-fiscal-compra/relatorio",
+				destination: "/contabilidade/relatorios/compras",
+				permanent: true,
+			},
+			{
+				source: "/nota-fiscal-venda/relatorio",
+				destination: "/contabilidade/relatorios/vendas",
+				permanent: true,
+			},
 		];
 	},
 };
