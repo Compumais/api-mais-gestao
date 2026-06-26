@@ -116,16 +116,8 @@ export const DATA = {
 					url: "/nota-fiscal-compra",
 				},
 				{
-					title: "Relatório de compras",
-					url: "/nota-fiscal-compra/relatorio",
-				},
-				{
 					title: "Nota fiscal de venda",
 					url: "/nota-fiscal-venda",
-				},
-				{
-					title: "Relatório de vendas",
-					url: "/nota-fiscal-venda/relatorio",
 				},
 				{
 					title: "NFC-e",
@@ -234,6 +226,14 @@ export const DATA = {
 				{
 					title: "Relatórios fiscais",
 					url: "/contabilidade/relatorios",
+				},
+				{
+					title: "Relatório de compras",
+					url: "/contabilidade/relatorios/compras",
+				},
+				{
+					title: "Relatório de vendas",
+					url: "/contabilidade/relatorios/vendas",
 				},
 			],
 		},
