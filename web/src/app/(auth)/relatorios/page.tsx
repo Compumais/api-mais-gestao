@@ -10,6 +10,9 @@ import {
 	IconChartPie,
 	IconCreditCard,
 	IconFileAnalytics,
+	IconFileInvoice,
+	IconReceiptTax,
+	IconShoppingCart,
 } from "@tabler/icons-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -98,6 +101,30 @@ const reports = [
 		icon: IconCashBanknotePlus,
 		href: "#",
 		color: "text-green-500",
+	},
+	{
+		title: "Relatórios fiscais",
+		description:
+			"Consolidado de NF-e de compra, NF-e de venda e NFC-e autorizadas no período.",
+		icon: IconReceiptTax,
+		href: "/relatorios/fiscais",
+		color: "text-amber-600",
+	},
+	{
+		title: "Relatório de compras",
+		description:
+			"Notas fiscais de entrada confirmadas no período, com fornecedor, CFOP e impostos.",
+		icon: IconShoppingCart,
+		href: "/relatorios/fiscais/compras",
+		color: "text-sky-600",
+	},
+	{
+		title: "Relatório de vendas",
+		description:
+			"NF-e de saída e NFC-e autorizadas no período, com subtotais por modelo.",
+		icon: IconFileInvoice,
+		href: "/relatorios/fiscais/vendas",
+		color: "text-violet-600",
 	},
 ];
 

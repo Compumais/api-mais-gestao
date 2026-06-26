@@ -404,6 +404,48 @@ export const criarRascunhoImportacaoXmlSchema: FastifySchema = {
 	},
 };
 
+export const importarNotaFiscalPorChaveSchema: FastifySchema = {
+	tags: ["nota-fiscal"],
+	summary: "Importar NF-e de compra por chave de acesso",
+	description:
+		"Consulta a SEFAZ (consChNFe) pelo certificado da empresa, obtém o XML procNFe e cria rascunho de importação.",
+	security: [{ bearerAuth: [] }],
+	body: {
+		type: "object",
+		additionalProperties: false,
+		properties: {
+			idempresa: { type: "string", description: "ID da empresa destino." },
+			chaveNfe: {
+				type: "string",
+				description: "Chave de acesso NF-e com 44 dígitos.",
+			},
+			idplanocontas: {
+				type: ["string", "null"],
+				description: "Plano de contas para lançamentos financeiros.",
+			},
+			idcondicaopagto: {
+				type: ["string", "null"],
+				description: "Condição de pagamento para contas a pagar.",
+			},
+		},
+		required: ["idempresa", "chaveNfe"],
+	},
+	response: {
+		201: {
+			type: "object",
+			properties: {
+				idRascunho: { type: "string" },
+				urlRascunho: { type: "string" },
+				chavenfe: { type: "string" },
+			},
+		},
+		400: respostaErro,
+		401: respostaErro,
+		403: respostaErro,
+		500: respostaErro,
+	},
+};
+
 export const buscarRascunhoImportacaoSchema: FastifySchema = {
 	tags: ["nota-fiscal"],
 	summary: "Buscar rascunho de importação",

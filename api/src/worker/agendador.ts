@@ -4,12 +4,13 @@ import { executarConciliacaoPendente } from "./jobs/conciliacao-pendente.js";
 import { executarRelatoriosAutomaticos } from "./jobs/relatorios-automaticos.js";
 import { executarSaldoBaixo } from "./jobs/saldo-baixo.js";
 import { executarVerificarCiclosPlano } from "./jobs/verificar-ciclos-plano.js";
+import { executarSyncInboundInvoices } from "./jobs/sync-inbound-invoices.js";
 import { executarJob } from "./executar-job.js";
 import {
 	liberarLockAgendador,
 	tentarAdquirirLockAgendador,
 } from "@/repositories/tarefa-execucao-repositories.js";
-import { LOCK_AGENDADOR_PRINCIPAL } from "./types.js";
+import { LOCK_AGENDADOR_INBOUND_NFE, LOCK_AGENDADOR_PRINCIPAL } from "./types.js";
 
 let tarefasAgendadas: ScheduledTask[] = [];
 
@@ -55,6 +56,29 @@ async function executarCicloPlanos() {
 	}
 }
 
+async function executarCicloInboundNfe() {
+	const adquiriu = await tentarAdquirirLockAgendador(LOCK_AGENDADOR_INBOUND_NFE);
+	if (!adquiriu) {
+		return;
+	}
+
+	const contexto = { agora: new Date() };
+
+	try {
+		await executarJob(
+			"sync_inbound_nfe",
+			executarSyncInboundInvoices,
+			contexto,
+			null,
+			300_000,
+		);
+	} catch (error) {
+		console.error("[agendador] Erro no ciclo inbound NF-e:", error);
+	} finally {
+		await liberarLockAgendador(LOCK_AGENDADOR_INBOUND_NFE);
+	}
+}
+
 export function iniciarAgendador() {
 	if (tarefasAgendadas.length > 0) {
 		return;
@@ -68,9 +92,13 @@ export function iniciarAgendador() {
 		void executarCicloPlanos();
 	});
 
-	tarefasAgendadas = [cronAlertas, cronPlanos];
+	const cronInboundNfe = cron.schedule("*/10 * * * *", () => {
+		void executarCicloInboundNfe();
+	});
+
+	tarefasAgendadas = [cronAlertas, cronPlanos, cronInboundNfe];
 	console.log(
-		"[agendador] Iniciado — alertas a cada 5 min, ciclos de plano às 06:00",
+		"[agendador] Iniciado — alertas a cada 5 min, ciclos de plano às 06:00, inbound NF-e a cada 10 min",
 	);
 }
 
@@ -107,6 +135,14 @@ export const JOBS_DISPONIVEIS = {
 			"verificar_ciclos_plano",
 			executarVerificarCiclosPlano,
 			{ agora: new Date() },
+		),
+	syncInboundInvoices: () =>
+		executarJob(
+			"sync_inbound_nfe",
+			executarSyncInboundInvoices,
+			{ agora: new Date() },
+			null,
+			300_000,
 		),
 } as const;
 

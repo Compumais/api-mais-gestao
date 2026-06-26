@@ -274,9 +274,9 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 	},
 	{
 		title: "Relatórios fiscais",
-		url: "/contabilidade/relatorios",
-		category: "Contabilidade",
-		icon: IconReportMoney,
+		url: "/relatorios/fiscais",
+		category: "Relatórios",
+		icon: IconChartBar,
 		keywords: [
 			"relatório",
 			"relatorio",
@@ -288,16 +288,16 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 	},
 	{
 		title: "Relatório de compras",
-		url: "/contabilidade/relatorios/compras",
-		category: "Contabilidade",
-		icon: IconReportMoney,
+		url: "/relatorios/fiscais/compras",
+		category: "Relatórios",
+		icon: IconChartBar,
 		keywords: ["relatório", "relatorio", "compras", "nf-e entrada", "pdf"],
 	},
 	{
 		title: "Relatório de vendas",
-		url: "/contabilidade/relatorios/vendas",
-		category: "Contabilidade",
-		icon: IconReportMoney,
+		url: "/relatorios/fiscais/vendas",
+		category: "Relatórios",
+		icon: IconChartBar,
 		keywords: ["relatório", "relatorio", "vendas", "nf-e", "nfce", "pdf"],
 	},
 	// Outros

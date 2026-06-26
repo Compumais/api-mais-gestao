@@ -4,13 +4,14 @@ import {
 } from "@/repositories/tarefa-execucao-repositories.js";
 import type { JobHandler, JobResult, TipoTarefaExecucao } from "./types.js";
 
-const TIMEOUT_JOB_MS = 120_000;
+const TIMEOUT_JOB_PADRAO_MS = 120_000;
 
 export async function executarJob(
 	tipo: TipoTarefaExecucao,
 	handler: JobHandler,
 	contexto: { agora: Date },
 	idempresa?: string | null,
+	timeoutMs: number = TIMEOUT_JOB_PADRAO_MS,
 ): Promise<JobResult> {
 	const idExecucao = await registrarInicioExecucao({
 		tipo,
@@ -22,8 +23,8 @@ export async function executarJob(
 			handler(contexto),
 			new Promise<never>((_, reject) => {
 				setTimeout(
-					() => reject(new Error(`Timeout do job ${tipo} após ${TIMEOUT_JOB_MS}ms`)),
-					TIMEOUT_JOB_MS,
+					() => reject(new Error(`Timeout do job ${tipo} após ${timeoutMs}ms`)),
+					timeoutMs,
 				);
 			}),
 		]);

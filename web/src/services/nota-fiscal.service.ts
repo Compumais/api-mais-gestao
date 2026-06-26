@@ -120,6 +120,20 @@ export interface ImportarXmlNfPayload {
 	gerarFinanceiro?: boolean;
 }
 
+export interface ImportarChaveNfPayload {
+	idempresa: string;
+	chaveNfe: string;
+	idplanocontas?: string | null;
+	idcondicaopagto?: string | null;
+	xmlOpcional?: string;
+}
+
+export interface ImportarChaveNfResponse {
+	idRascunho: string;
+	urlRascunho: string;
+	chavenfe: string;
+}
+
 export type StatusVinculoImportacao = "pendente" | "vinculado" | "novo";
 
 export interface TributacaoImportacaoItem {
@@ -252,6 +266,16 @@ export const notaFiscalService = {
 	): Promise<CriarRascunhoImportacaoResponse> {
 		const { data } = await api.post<CriarRascunhoImportacaoResponse>(
 			"/notas-fiscais/importar-xml/rascunho",
+			payload,
+		);
+		return data;
+	},
+
+	async importarNotaPorChave(
+		payload: ImportarChaveNfPayload,
+	): Promise<ImportarChaveNfResponse> {
+		const { data } = await api.post<ImportarChaveNfResponse>(
+			"/notas-fiscais/importar-xml/chave",
 			payload,
 		);
 		return data;

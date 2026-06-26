@@ -24,6 +24,8 @@ import { buscarProdutoParaNF } from "./buscar-produto.js";
 
 import { criarRascunhoImportacaoXml } from "./criar-rascunho-xml.js";
 
+import { importarNotaFiscalPorChave } from "./importar-por-chave.js";
+
 import { criarNotaFiscal } from "./criar.js";
 
 import * as schema from "./doc-schema/schema.js";
@@ -65,6 +67,14 @@ export async function notasFiscaisRotas(app: FastifyInstance) {
 		schema: schema.criarRascunhoImportacaoXmlSchema,
 
 		handler: criarRascunhoImportacaoXml,
+
+	});
+
+	app.post("/notas-fiscais/importar-xml/chave", {
+
+		schema: schema.importarNotaFiscalPorChaveSchema,
+
+		handler: importarNotaFiscalPorChave,
 
 	});
 
