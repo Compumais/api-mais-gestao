@@ -10,6 +10,13 @@ vi.mock("@/repositories/nota-fiscal-repositories.js");
 vi.mock("@/repositories/local-estoque-repositories.js");
 vi.mock("@/service/nota-fiscal/gerar-contas-receber-nf.js");
 vi.mock("@/service/nota-fiscal/registrar-movimentos-estoque-nf.js");
+vi.mock("@/service/nota-fiscal/registrar-venda-dashboard-nf-venda.js", () => ({
+	registrarVendaDashboardNfVenda: vi.fn().mockResolvedValue({
+		idvenda: "venda-dashboard-1",
+		criada: true,
+		avisos: [],
+	}),
+}));
 vi.mock("@/service/auditoria/criar-auditoria.js", () => ({
 	criarAuditoriaService: vi.fn().mockResolvedValue({ success: true }),
 }));
@@ -78,6 +85,7 @@ describe("integrarNotaFiscalVendaAutorizadaService", () => {
 		if (!resultado.success) return;
 		expect(resultado.body?.movimentosGerados).toBe(1);
 		expect(resultado.body?.parcelasGeradas).toBe(1);
+		expect(resultado.body?.idvendaDashboard).toBe("venda-dashboard-1");
 	});
 
 	it("deve respeitar flag gerarEstoque desligada", async () => {

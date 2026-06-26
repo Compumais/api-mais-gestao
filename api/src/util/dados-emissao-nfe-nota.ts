@@ -77,6 +77,8 @@ export type DadosEmissaoNfeSalvos = {
 		parcelasGeradas?: number;
 		lancamentosCaixa?: number;
 		movimentosGerados?: number;
+		idvendaDashboard?: string;
+		vendaDashboardGeradaEm?: string;
 		avisos?: string[];
 	};
 	transporte?: {

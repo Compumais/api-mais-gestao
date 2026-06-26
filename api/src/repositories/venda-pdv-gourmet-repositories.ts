@@ -1,6 +1,7 @@
 import { and, count, desc, eq, gte, lte } from "drizzle-orm";
 import type { NovaVendaPdvGourmet } from "@/model/venda-pdv-gourmet-model";
-import { vendapdvgourmet } from "@/repositories/schema.js";
+import type { NovoVendaPdvItem } from "@/model/venda-pdv-item-model";
+import { vendapdvitem, vendapdvgourmet } from "@/repositories/schema.js";
 import { db } from "./connection";
 
 export async function buscarVendaPdvGourmetPorId(id: string) {
@@ -31,6 +32,28 @@ export async function criarVendaPdvGourmet(dadosVendaPdvGourmet: NovaVendaPdvGou
 		.returning();
 
 	return registro;
+}
+
+export async function criarVendaPdvGourmetComItens(
+	dadosVendaPdvGourmet: NovaVendaPdvGourmet,
+	itens: NovoVendaPdvItem[],
+) {
+	return db.transaction(async (tx) => {
+		const [venda] = await tx
+			.insert(vendapdvgourmet)
+			.values(dadosVendaPdvGourmet)
+			.returning();
+
+		if (!venda) {
+			return null;
+		}
+
+		if (itens.length > 0) {
+			await tx.insert(vendapdvitem).values(itens);
+		}
+
+		return venda;
+	});
 }
 
 export async function atualizarVendaPdvGourmet(
