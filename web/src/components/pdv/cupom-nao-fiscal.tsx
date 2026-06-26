@@ -163,7 +163,7 @@ export function CupomNaoFiscal({ dados, onFechar }: CupomNaoFiscalProps) {
 					<div className="mt-3 space-y-1 border-t border-dashed border-black pt-3 text-xs">
 						<p className="font-semibold">Pagamentos</p>
 						{dados.pagamentos.map((p, i) => (
-							<div key={`${p.meio}-${i}`} className="flex justify-between">
+							<div key={`${p.tipo}-${p.label}-${i}`} className="flex justify-between">
 								<span>{p.label}</span>
 								<span>{formatCurrency(p.valor)}</span>
 							</div>

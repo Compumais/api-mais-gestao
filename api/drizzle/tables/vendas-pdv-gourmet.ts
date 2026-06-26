@@ -9,7 +9,9 @@ import {
 	text,
 	timestamp,
 } from "drizzle-orm/pg-core";
+import { condicaopagamento } from "./condicao-pagamento.js";
 import { contamesa } from "./conta-mesa.js";
+import { entidade } from "./entidade.js";
 import { empresa } from "./empresas.js";
 import { usuarios } from "./usuarios.js";
 
@@ -34,6 +36,8 @@ export const vendapdvgourmet = pgTable(
 		valortotal: numeric123(),
 		deveemitirnfce: boolean().default(false).notNull(),
 		idnotafiscalnfce: text(),
+		identidade: text(),
+		idcondicaopagto: text(),
 		datacriacao: timestamp({ precision: 3, mode: "string" }).default(
 			sql`CURRENT_TIMESTAMP`,
 		),
@@ -64,5 +68,19 @@ export const vendapdvgourmet = pgTable(
 		})
 			.onUpdate("cascade")
 			.onDelete("cascade"),
+		foreignKey({
+			columns: [table.identidade],
+			foreignColumns: [entidade.id],
+			name: "vendapdvgourmet_identidade_fkey",
+		})
+			.onUpdate("cascade")
+			.onDelete("set null"),
+		foreignKey({
+			columns: [table.idcondicaopagto],
+			foreignColumns: [condicaopagamento.id],
+			name: "vendapdvgourmet_idcondicaopagto_fkey",
+		})
+			.onUpdate("cascade")
+			.onDelete("set null"),
 	],
 );

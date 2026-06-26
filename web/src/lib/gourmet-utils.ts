@@ -245,10 +245,48 @@ export type MeioPagamentoPdv =
 	| "pix"
 	| "prepago";
 
-export interface PagamentoParcialPdv {
-	meio: MeioPagamentoPdv;
-	valor: number;
-	label: string;
+export type PagamentoParcialPdv =
+	| {
+			tipo: "meio";
+			meio: MeioPagamentoPdv;
+			valor: number;
+			label: string;
+	  }
+	| {
+			tipo: "erp";
+			idtipodocumentofinanceiro: string;
+			valor: number;
+			label: string;
+			aprazo: boolean;
+	  };
+
+export function isPagamentoMeioPdv(
+	pagamento: PagamentoParcialPdv,
+): pagamento is Extract<PagamentoParcialPdv, { tipo: "meio" }> {
+	return pagamento.tipo === "meio";
+}
+
+export function isPagamentoErpPdv(
+	pagamento: PagamentoParcialPdv,
+): pagamento is Extract<PagamentoParcialPdv, { tipo: "erp" }> {
+	return pagamento.tipo === "erp";
+}
+
+export function pagamentoPdvExigeCliente(
+	pagamentos: PagamentoParcialPdv[],
+): boolean {
+	return pagamentos.some((p) => isPagamentoErpPdv(p) && p.aprazo);
+}
+
+export function extrairPagamentosErpForm(
+	pagamentos: PagamentoParcialPdv[],
+): { idtipodocumentofinanceiro: string; valor: string }[] {
+	return pagamentos
+		.filter(isPagamentoErpPdv)
+		.map((p) => ({
+			idtipodocumentofinanceiro: p.idtipodocumentofinanceiro,
+			valor: p.valor.toFixed(2),
+		}));
 }
 
 export interface CupomItemLinha {
@@ -340,6 +378,7 @@ export function pagamentosToFecharContaForm(
 	const acumulado: PagamentosFechar = {};
 
 	for (const p of pagamentos) {
+		if (!isPagamentoMeioPdv(p)) continue;
 		const meio = MEIOS_PAGAMENTO_PDV.find((m) => m.id === p.meio);
 		if (!meio) continue;
 		const atual = acumulado[meio.campo] ?? "0";
@@ -368,6 +407,7 @@ export function fecharContaFormToPagamentosParciais(
 		const valor = parseValor(form[meio.campo] ?? "");
 		if (valor > 0) {
 			pagamentos.push({
+				tipo: "meio",
 				meio: meio.id,
 				valor,
 				label: meio.label,

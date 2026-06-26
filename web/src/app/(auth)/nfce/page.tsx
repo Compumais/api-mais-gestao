@@ -44,6 +44,7 @@ import { useEmpresa } from "@/hooks/use-empresa";
 import {
 	formatCurrency,
 	type CupomNaoFiscalData,
+	type MeioPagamentoPdv,
 	type PagamentoParcialPdv,
 } from "@/lib/gourmet-utils";
 import {
@@ -116,11 +117,14 @@ function mapearCupomApi(dados: DadosCupomNfceApi): CupomNaoFiscalData {
 		taxaServico: dados.taxaServico,
 		couvert: dados.couvert,
 		total: dados.total,
-		pagamentos: dados.pagamentos.map((pagamento) => ({
-			meio: pagamento.meio as PagamentoParcialPdv["meio"],
-			label: pagamento.label,
-			valor: pagamento.valor,
-		})),
+		pagamentos: dados.pagamentos.map(
+			(pagamento): PagamentoParcialPdv => ({
+				tipo: "meio",
+				meio: pagamento.meio as MeioPagamentoPdv,
+				label: pagamento.label,
+				valor: pagamento.valor,
+			}),
+		),
 		troco: dados.troco,
 		nfce: dados.nfce,
 	};

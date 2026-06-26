@@ -19,6 +19,8 @@ export interface VendaPdvGourmet {
 	datacriacao: string | null;
 	dataalteracao: string | null;
 	usuarioquefechouvenda: string;
+	identidade?: string | null;
+	idcondicaopagto?: string | null;
 }
 
 export interface ListarVendasPdvGourmetResponse {
@@ -41,6 +43,12 @@ export interface CriarVendaPdvGourmetData {
 	valorprepago?: string;
 	valortroco?: string;
 	valortotal?: string;
+	identidade?: string;
+	idcondicaopagto?: string;
+	pagamentosErp?: Array<{
+		idtipodocumentofinanceiro: string;
+		valor: string | number;
+	}>;
 }
 
 export interface AtualizarVendaPdvGourmetData {
