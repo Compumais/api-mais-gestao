@@ -64,7 +64,8 @@ export function CampoCfopImportacao({
 			/>
 			{codigoXml ? (
 				<p className="text-xs text-muted-foreground mt-1">
-					CFOP no XML: <strong>{codigoXml}</strong>
+					CFOP no XML: <span className="font-mono font-medium">{codigoXml}</span>
+					{value ? " — selecione outro CFOP acima para substituir" : null}
 				</p>
 			) : null}
 		</Field>
