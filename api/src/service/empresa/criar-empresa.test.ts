@@ -4,12 +4,14 @@ import * as empresaRepository from "@/repositories/empresa-repositories.js";
 import * as planoContasPadraoService from "../planocontas/criar-plano-contas-padrao.js";
 import * as cfopsPadraoService from "../cfop/criar-cfops-padrao.js";
 import * as taxasPadraoService from "../taxauf/criar-taxas-padrao.js";
+import * as parametrizacaoPadraoService from "../parametrizacao-tributos/criar-parametrizacao-tributos-padrao.js";
 import { criarEmpresaService } from "./criar-empresa.js";
 
 vi.mock("@/repositories/empresa-repositories");
 vi.mock("../planocontas/criar-plano-contas-padrao.js");
 vi.mock("../cfop/criar-cfops-padrao.js");
 vi.mock("../taxauf/criar-taxas-padrao.js");
+vi.mock("../parametrizacao-tributos/criar-parametrizacao-tributos-padrao.js");
 vi.mock("@/repositories/conta-corrente-repositories.js", () => ({
 	criarContaCorrenteCaixaPadrao: vi.fn().mockResolvedValue({ id: "caixa-1" }),
 }));
@@ -54,6 +56,9 @@ describe("criarEmpresaService", () => {
 		).mockResolvedValue([]);
 		vi.mocked(cfopsPadraoService.criarCfopsPadraoService).mockResolvedValue([]);
 		vi.mocked(taxasPadraoService.criarTaxasPadraoService).mockResolvedValue([]);
+		vi.mocked(
+			parametrizacaoPadraoService.criarParametrizacaoTributosPadraoService,
+		).mockResolvedValue([]);
 	});
 
 	it("deve criar uma empresa com sucesso quando dentro do limite", async () => {

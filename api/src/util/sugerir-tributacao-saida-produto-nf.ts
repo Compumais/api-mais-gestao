@@ -12,6 +12,10 @@ export type SugestaoTributacaoSaidaProduto = {
 	tributacaosn?: string | undefined;
 	cstpis?: string | undefined;
 	cstcofins?: string | undefined;
+	idtaxauf?: string | undefined;
+	cstipientrada?: string | undefined;
+	cstipisaida?: string | undefined;
+	idenquadramentoipi?: string | undefined;
 };
 
 const CSOSN_SAIDA_PADRAO_SN = "102";
@@ -104,6 +108,10 @@ export function mesclarSugestaoTributacaoSaidaProduto(
 		tributacaosn?: string | null | undefined;
 		cstpis?: string | null | undefined;
 		cstcofins?: string | null | undefined;
+		idtaxauf?: string | null | undefined;
+		cstipientrada?: string | null | undefined;
+		cstipisaida?: string | null | undefined;
+		idenquadramentoipi?: string | null | undefined;
 	},
 	sugestao: SugestaoTributacaoSaidaProduto,
 ): Partial<{
@@ -113,6 +121,10 @@ export function mesclarSugestaoTributacaoSaidaProduto(
 	tributacaosn: string;
 	cstpis: string;
 	cstcofins: string;
+	idtaxauf: string;
+	cstipientrada: string;
+	cstipisaida: string;
+	idenquadramentoipi: string;
 }> {
 	const resultado: Partial<{
 		situacaotributaria: string;
@@ -121,6 +133,10 @@ export function mesclarSugestaoTributacaoSaidaProduto(
 		tributacaosn: string;
 		cstpis: string;
 		cstcofins: string;
+		idtaxauf: string;
+		cstipientrada: string;
+		cstipisaida: string;
+		idenquadramentoipi: string;
 	}> = {};
 
 	if (!produtoAtual.situacaotributaria?.trim() && sugestao.situacaotributaria) {
@@ -145,6 +161,22 @@ export function mesclarSugestaoTributacaoSaidaProduto(
 
 	if (!produtoAtual.cstcofins?.toString().trim() && sugestao.cstcofins) {
 		resultado.cstcofins = sugestao.cstcofins;
+	}
+
+	if (!produtoAtual.idtaxauf?.trim() && sugestao.idtaxauf) {
+		resultado.idtaxauf = sugestao.idtaxauf;
+	}
+
+	if (!produtoAtual.cstipientrada?.trim() && sugestao.cstipientrada) {
+		resultado.cstipientrada = sugestao.cstipientrada;
+	}
+
+	if (!produtoAtual.cstipisaida?.trim() && sugestao.cstipisaida) {
+		resultado.cstipisaida = sugestao.cstipisaida;
+	}
+
+	if (!produtoAtual.idenquadramentoipi?.trim() && sugestao.idenquadramentoipi) {
+		resultado.idenquadramentoipi = sugestao.idenquadramentoipi;
 	}
 
 	return resultado;

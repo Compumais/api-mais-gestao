@@ -1,0 +1,103 @@
+{
+	"regras": [
+		{
+			"codigocfopentrada": "5101",
+			"codigocfopsaidanfe": "5102",
+			"cstnfe": "0",
+			"csosnnfe": "101",
+			"taxaicmsnfe": "SSS",
+			"codigocfopsaidanfce": "5102",
+			"cstnfce": "0",
+			"csosnnfce": "102",
+			"taxaicmsnfce": "SSS"
+		},
+		{
+			"codigocfopentrada": "5102",
+			"codigocfopsaidanfe": "5102",
+			"cstnfe": "0",
+			"csosnnfe": "101",
+			"taxaicmsnfe": "SSS",
+			"codigocfopsaidanfce": "5102",
+			"cstnfce": "0",
+			"csosnnfce": "102",
+			"taxaicmsnfce": "SSS"
+		},
+		{
+			"codigocfopentrada": "5400",
+			"codigocfopsaidanfe": "5405",
+			"cstnfe": "60",
+			"csosnnfe": "500",
+			"taxaicmsnfe": "FFF",
+			"codigocfopsaidanfce": "5405",
+			"cstnfce": "60",
+			"csosnnfce": "500",
+			"taxaicmsnfce": "FFF"
+		},
+		{
+			"codigocfopentrada": "5401",
+			"codigocfopsaidanfe": "5405",
+			"cstnfe": "60",
+			"csosnnfe": "500",
+			"taxaicmsnfe": "FFF",
+			"codigocfopsaidanfce": "5405",
+			"cstnfce": "60",
+			"csosnnfce": "500",
+			"taxaicmsnfce": "FFF"
+		},
+		{
+			"codigocfopentrada": "5403",
+			"codigocfopsaidanfe": "5405",
+			"cstnfe": "60",
+			"csosnnfe": "500",
+			"taxaicmsnfe": "FFF",
+			"codigocfopsaidanfce": "5405",
+			"cstnfce": "60",
+			"csosnnfce": "500",
+			"taxaicmsnfce": "FFF"
+		},
+		{
+			"codigocfopentrada": "6101",
+			"codigocfopsaidanfe": "5102",
+			"cstnfe": "0",
+			"csosnnfe": "101",
+			"taxaicmsnfe": "SSS",
+			"codigocfopsaidanfce": "5102",
+			"cstnfce": "0",
+			"csosnnfce": "102",
+			"taxaicmsnfce": "SSS"
+		},
+		{
+			"codigocfopentrada": "6102",
+			"codigocfopsaidanfe": "5102",
+			"cstnfe": "0",
+			"csosnnfe": "101",
+			"taxaicmsnfe": "SSS",
+			"codigocfopsaidanfce": "5102",
+			"cstnfce": "0",
+			"csosnnfce": "102",
+			"taxaicmsnfce": "SSS"
+		},
+		{
+			"codigocfopentrada": "6401",
+			"codigocfopsaidanfe": "5405",
+			"cstnfe": "60",
+			"csosnnfe": "500",
+			"taxaicmsnfe": "FFF",
+			"codigocfopsaidanfce": "5405",
+			"cstnfce": "60",
+			"csosnnfce": "500",
+			"taxaicmsnfce": "FFF"
+		},
+		{
+			"codigocfopentrada": "6403",
+			"codigocfopsaidanfe": "5405",
+			"cstnfe": "60",
+			"csosnnfe": "500",
+			"taxaicmsnfe": "FFF",
+			"codigocfopsaidanfce": "5405",
+			"cstnfce": "60",
+			"csosnnfce": "500",
+			"taxaicmsnfce": "FFF"
+		}
+	]
+}

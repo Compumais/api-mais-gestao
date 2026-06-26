@@ -100,7 +100,7 @@ export function ProdutoAbaImpostos({
 
 	const idcfopsaida = watch("idcfopsaida");
 
-	const { data: cests = [], isLoading: carregandoCests } = useQuery({
+	const { data: cests = [], isLoading: carregandoCests, isError: erroCests } = useQuery({
 		queryKey: ["cests", empresa?.id, "produto"],
 		queryFn: async () => {
 			if (!empresa) throw new Error("Empresa não selecionada");
@@ -227,8 +227,13 @@ export function ProdutoAbaImpostos({
 										value={field.value ?? ""}
 										onChange={(valor) => field.onChange(valor || null)}
 										placeholder={
-											carregandoCests ? "Carregando..." : "Selecione o CEST"
+											carregandoCests
+												? "Carregando..."
+												: erroCests
+													? "Erro ao carregar CEST"
+													: "Selecione o CEST"
 										}
+										disabled={carregandoCests || erroCests}
 										searchPlaceholder="Buscar CEST..."
 										emptyMessage="Nenhum CEST encontrado"
 									/>
@@ -416,6 +421,37 @@ export function ProdutoAbaImpostos({
 								/>
 							)}
 						/>
+					</div>
+				</section>
+
+				<section className="space-y-4">
+					<h3 className="text-base font-semibold">IPI</h3>
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<Field data-invalid={!!errors.cstipientrada}>
+							<FieldLabel htmlFor="cstipientrada">CST IPI entrada</FieldLabel>
+							<Input
+								id="cstipientrada"
+								placeholder="Ex.: 50"
+								maxLength={3}
+								{...register("cstipientrada")}
+							/>
+							<FieldError
+								errors={errors.cstipientrada ? [errors.cstipientrada] : []}
+							/>
+						</Field>
+
+						<Field data-invalid={!!errors.cstipisaida}>
+							<FieldLabel htmlFor="cstipisaida">CST IPI saída</FieldLabel>
+							<Input
+								id="cstipisaida"
+								placeholder="Ex.: 50"
+								maxLength={3}
+								{...register("cstipisaida")}
+							/>
+							<FieldError
+								errors={errors.cstipisaida ? [errors.cstipisaida] : []}
+							/>
+						</Field>
 					</div>
 				</section>
 

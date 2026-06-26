@@ -56,6 +56,8 @@ export const produtos = pgTable(
 		comissaoprazo: numeric({ precision: 12, scale: 2 }),
 		cstcofins: numeric({ precision: 12, scale: 2 }),
 		cstcofinsentrada: numeric({ precision: 12, scale: 2 }),
+		cstipientrada: varchar({ length: 3 }),
+		cstipisaida: varchar({ length: 3 }),
 		cstpis: numeric({ precision: 12, scale: 2 }),
 		cstpisentrada: numeric({ precision: 12, scale: 2 }),
 		cstservico: numeric({ precision: 12, scale: 2 }),

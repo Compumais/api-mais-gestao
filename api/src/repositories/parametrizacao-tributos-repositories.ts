@@ -165,6 +165,17 @@ export async function buscarParametrizacaoTributosPorId(id: string) {
 	return registro;
 }
 
+export async function verificarEmpresaPossuiParametrizacaoTributos(
+	idempresa: string,
+): Promise<boolean> {
+	const [resultado] = await db
+		.select({ value: count() })
+		.from(parametrizacaotributos)
+		.where(eq(parametrizacaotributos.idempresa, idempresa));
+
+	return (resultado?.value ?? 0) > 0;
+}
+
 export async function criarParametrizacaoTributos(dados: NovaParametrizacaoTributos) {
 	const [registro] = await db
 		.insert(parametrizacaotributos)
@@ -172,6 +183,33 @@ export async function criarParametrizacaoTributos(dados: NovaParametrizacaoTribu
 		.returning();
 
 	return registro;
+}
+
+const TAMANHO_LOTE_PARAMETRIZACAO = 50;
+
+export async function criarParametrizacaoTributosEmLote(
+	dados: NovaParametrizacaoTributos[],
+) {
+	if (dados.length === 0) {
+		return [];
+	}
+
+	const registrosCriados = [];
+
+	for (
+		let indice = 0;
+		indice < dados.length;
+		indice += TAMANHO_LOTE_PARAMETRIZACAO
+	) {
+		const lote = dados.slice(indice, indice + TAMANHO_LOTE_PARAMETRIZACAO);
+		const registros = await db
+			.insert(parametrizacaotributos)
+			.values(lote)
+			.returning();
+		registrosCriados.push(...registros);
+	}
+
+	return registrosCriados;
 }
 
 export async function atualizarParametrizacaoTributos(

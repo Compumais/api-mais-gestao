@@ -120,6 +120,8 @@ function buildProdutoPayload(
 	payload.cstcofinsentrada = textoOuNulo(data.cstcofinsentrada);
 	payload.cstpis = textoOuNulo(data.cstpis);
 	payload.cstcofins = textoOuNulo(data.cstcofins);
+	payload.cstipientrada = textoOuNulo(data.cstipientrada);
+	payload.cstipisaida = textoOuNulo(data.cstipisaida);
 
 	return payload;
 }
@@ -163,6 +165,8 @@ export function ProdutoForm(props: ProdutoFormProps) {
 			cstcofinsentrada: null,
 			cstpis: null,
 			cstcofins: null,
+			cstipientrada: null,
+			cstipisaida: null,
 			observacoes: null,
 			enviamobile: false,
 			estoque: null,
