@@ -35,7 +35,7 @@ try {
 				console.error(erro);
 			}
 			process.exitCode = 1;
-			return;
+			break;
 		}
 	}
 	console.log(`Migration ${file} aplicada com sucesso.`);

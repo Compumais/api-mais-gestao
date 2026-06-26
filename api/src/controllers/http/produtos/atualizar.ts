@@ -125,7 +125,7 @@ export async function atualizarProduto(
 		const quantidadeSaldo =
 			dadosValidados.estoque ?? dadosValidados.quantidadepadrao;
 
-		if (quantidadeSaldo !== undefined && resultado.body) {
+		if (quantidadeSaldo != null && resultado.body) {
 			await sincronizarSaldoEstoqueProduto({
 				idempresa,
 				produto: resultado.body,
