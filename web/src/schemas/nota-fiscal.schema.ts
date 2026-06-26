@@ -42,6 +42,20 @@ export const importarXmlNfSchema = z.object({
 
 export type ImportarXmlNfFormData = z.infer<typeof importarXmlNfSchema>;
 
+export const importarChaveNfSchema = z.object({
+	chaveNfe: z
+		.string()
+		.min(1, "Informe a chave NF-e")
+		.transform((valor) => valor.replace(/\D/g, ""))
+		.refine((valor) => valor.length === 44, {
+			message: "A chave NF-e deve conter 44 dígitos",
+		}),
+	idplanocontas: z.string().optional(),
+	idcondicaopagto: z.string().optional(),
+});
+
+export type ImportarChaveNfFormData = z.infer<typeof importarChaveNfSchema>;
+
 export const finalizarRascunhoSchema = z.object({
 	gerarCustos: z.boolean(),
 	gerarFinanceiro: z.boolean(),

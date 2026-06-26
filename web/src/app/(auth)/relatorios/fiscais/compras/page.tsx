@@ -4,7 +4,7 @@ import { FiscalReportPage } from "@/components/fiscal-report-page";
 import { gerarRelatorioFiscalCompras } from "@/services/relatorios.service";
 import { PageContainer } from "../../../components/page-container";
 
-export default function RelatorioComprasContabilidadePage() {
+export default function RelatorioFiscalComprasPage() {
 	return (
 		<PageContainer>
 			<FiscalReportPage

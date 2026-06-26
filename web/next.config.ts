@@ -27,12 +27,27 @@ const nextConfig: NextConfig = {
 			},
 			{
 				source: "/nota-fiscal-compra/relatorio",
-				destination: "/contabilidade/relatorios/compras",
+				destination: "/relatorios/fiscais/compras",
 				permanent: true,
 			},
 			{
 				source: "/nota-fiscal-venda/relatorio",
-				destination: "/contabilidade/relatorios/vendas",
+				destination: "/relatorios/fiscais/vendas",
+				permanent: true,
+			},
+			{
+				source: "/contabilidade/relatorios",
+				destination: "/relatorios/fiscais",
+				permanent: true,
+			},
+			{
+				source: "/contabilidade/relatorios/compras",
+				destination: "/relatorios/fiscais/compras",
+				permanent: true,
+			},
+			{
+				source: "/contabilidade/relatorios/vendas",
+				destination: "/relatorios/fiscais/vendas",
 				permanent: true,
 			},
 		];

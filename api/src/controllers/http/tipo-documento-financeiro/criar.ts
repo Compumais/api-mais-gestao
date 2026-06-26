@@ -7,13 +7,14 @@ import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 const criarTipoDocumentoFinanceiroBodySchema = z.object({
 	idempresa: z.string(),
 	descricao: z.string().max(50),
-	acao: z.number().int(),
-	inativo: z.number().int().optional(),
+	acao: z.coerce.number().int(),
+	inativo: z.coerce.number().int().optional(),
 	formapagamentonfe: z.string().optional().nullable(),
 	idplanocontas: z.string().uuid().optional().nullable(),
-	aprazo: z.number().int().min(0).max(1).optional(),
-	prazodias: z.number().int().min(0).optional().nullable(),
-	currenttimemillis: z.number().int().optional(),
+	aprazo: z.coerce.number().int().min(0).max(1).optional(),
+	prazodias: z.coerce.number().int().min(0).optional().nullable(),
+	integracaixabanco: z.coerce.number().int().min(0).max(1).optional(),
+	currenttimemillis: z.coerce.number().int().optional(),
 });
 
 export async function criarTipoDocumentoFinanceiro(request: FastifyRequest, reply: FastifyReply) {

@@ -116,6 +116,10 @@ export const DATA = {
 					url: "/nota-fiscal-compra",
 				},
 				{
+					title: "Captura SEFAZ",
+					url: "/nota-fiscal-compra/captura-sefaz",
+				},
+				{
 					title: "Nota fiscal de venda",
 					url: "/nota-fiscal-venda",
 				},
@@ -220,20 +224,12 @@ export const DATA = {
 					url: "/conta-contabil",
 				},
 				{
+					title: "Gerar SINTEGRA",
+					url: "/contabilidade/sintegra",
+				},
+				{
 					title: "Exportar XMLs fiscais",
 					url: "/contabilidade/exportar-xmls",
-				},
-				{
-					title: "Relatórios fiscais",
-					url: "/contabilidade/relatorios",
-				},
-				{
-					title: "Relatório de compras",
-					url: "/contabilidade/relatorios/compras",
-				},
-				{
-					title: "Relatório de vendas",
-					url: "/contabilidade/relatorios/vendas",
 				},
 			],
 		},

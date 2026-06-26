@@ -2,11 +2,13 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import type { z } from "zod";
+import { ConsultaCnpjPainel } from "@/app/(auth)/components/consulta-cnpj-painel";
 import { AddressAutocompleteInput } from "@/components/address-autocomplete-input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -25,6 +27,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { useConsultaCnpjEntidade } from "@/hooks/use-consulta-cnpj-entidade";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { isGooglePlacesDisponivel } from "@/hooks/use-google-places";
 import { maskCep, maskCpfCnpj, maskPhone } from "@/lib/masks";
@@ -36,9 +39,13 @@ import {
 	formatarCepParaEnvio,
 	type TipoEntidadePrincipal,
 } from "@/schemas/entidades.schema";
-import { entidadesService } from "@/services/entidades.service";
+import {
+	entidadesService,
+	type ConsultaCnpjEntidadeResposta,
+} from "@/services/entidades.service";
 import { localidadesService } from "@/services/localidades.service";
 import { planoContasService } from "@/services/plano-contas.service";
+import { preencherEntidadeConsultaCnpj } from "@/util/preencher-entidade-consulta-cnpj";
 
 export type EntidadeFormConfig = {
 	tipoPrincipal: TipoEntidadePrincipal;
@@ -75,11 +82,24 @@ export function EntidadeForm({
 		Boolean(isEdicao && valoresIniciais?.cep),
 	);
 	const [buscandoCep, setBuscandoCep] = useState(false);
+	const [extrasConsulta, setExtrasConsulta] = useState<
+		ConsultaCnpjEntidadeResposta["extras"] | null
+	>(null);
+	const [jaCadastradaConsulta, setJaCadastradaConsulta] = useState<{
+		id: string;
+	} | null>(null);
 	const ultimoCepBuscado = useRef<string | null>(
 		isEdicao && valoresIniciais?.cep
 			? valoresIniciais.cep.replace(/\D/g, "")
 			: null,
 	);
+	const ultimoCnpjBuscado = useRef<string | null>(
+		isEdicao && valoresIniciais?.cnpjcpf
+			? valoresIniciais.cnpjcpf.replace(/\D/g, "")
+			: null,
+	);
+	const { consultar: consultarCnpj, isPending: buscandoCnpj } =
+		useConsultaCnpjEntidade();
 
 	const valoresFormulario = useMemo(
 		() =>
@@ -117,6 +137,7 @@ export function EntidadeForm({
 
 	const idestado = watch("idestado");
 	const cep = watch("cep");
+	const cnpjcpf = watch("cnpjcpf");
 	const endereco = watch("endereco");
 
 	useEffect(() => {
@@ -208,6 +229,92 @@ export function EntidadeForm({
 		setCepConsultado(true);
 		ultimoCepBuscado.current = valoresIniciais.cep.replace(/\D/g, "");
 	}, [isEdicao, valoresIniciais?.cep]);
+
+	useEffect(() => {
+		if (!isEdicao || !valoresIniciais?.cnpjcpf) return;
+
+		ultimoCnpjBuscado.current = valoresIniciais.cnpjcpf.replace(/\D/g, "");
+	}, [isEdicao, valoresIniciais?.cnpjcpf]);
+
+	const limparConsultaCnpj = useCallback(() => {
+		setExtrasConsulta(null);
+		setJaCadastradaConsulta(null);
+	}, []);
+
+	const buscarCnpj = useCallback(
+		async (valorCnpj: string, forcar = false) => {
+			const cnpjLimpo = valorCnpj.replace(/\D/g, "");
+			if (cnpjLimpo.length !== 14) return;
+			if (!forcar && ultimoCnpjBuscado.current === cnpjLimpo) return;
+			if (!empresa?.id) {
+				toast.error("Empresa não selecionada");
+				return;
+			}
+
+			try {
+				ultimoCnpjBuscado.current = cnpjLimpo;
+				const resposta = await consultarCnpj({
+					cnpj: cnpjLimpo,
+					idempresa: empresa.id,
+				});
+
+				preencherEntidadeConsultaCnpj({
+					entidade: resposta.entidade,
+					setValue,
+					getValues,
+					onCepPreenchido: (cepLimpo) => {
+						ultimoCepBuscado.current = cepLimpo;
+						setCepConsultado(true);
+					},
+				});
+
+				setExtrasConsulta(resposta.extras);
+				setJaCadastradaConsulta(resposta.jaCadastrada);
+				toast.success("Dados do CNPJ carregados");
+
+				if (
+					resposta.extras.situacaoCadastral.trim().toLowerCase() !== "ativa"
+				) {
+					toast.warning(
+						`Situação cadastral: ${resposta.extras.situacaoCadastral}`,
+					);
+				}
+
+				if (!isEdicao && resposta.jaCadastrada) {
+					toast.warning("Este CNPJ já está cadastrado nesta empresa");
+				}
+			} catch (error) {
+				ultimoCnpjBuscado.current = null;
+				limparConsultaCnpj();
+				toast.error(
+					error instanceof Error
+						? error.message
+						: "Não foi possível consultar CNPJ",
+				);
+			}
+		},
+		[
+			consultarCnpj,
+			empresa?.id,
+			getValues,
+			isEdicao,
+			limparConsultaCnpj,
+			setValue,
+		],
+	);
+
+	useEffect(() => {
+		const cnpjLimpo = (cnpjcpf ?? "").replace(/\D/g, "");
+		if (cnpjLimpo.length < 14) {
+			limparConsultaCnpj();
+			if (cnpjLimpo.length === 0) {
+				ultimoCnpjBuscado.current = null;
+			}
+			return;
+		}
+
+		void buscarCnpj(cnpjLimpo);
+	}, [cnpjcpf, buscarCnpj, limparConsultaCnpj]);
 
 	const buscarCep = useCallback(
 		async (valorCep: string) => {
@@ -397,26 +504,71 @@ export function EntidadeForm({
 
 						<Field data-invalid={!!errors.cnpjcpf}>
 							<FieldLabel htmlFor="cnpjcpf">CNPJ/CPF *</FieldLabel>
-							<Controller
-								control={control}
-								name="cnpjcpf"
-								render={({ field }) => (
-									<Input
-										id="cnpjcpf"
-										placeholder="CNPJ ou CPF"
-										aria-invalid={!!errors.cnpjcpf}
-										aria-describedby={
-											errors.cnpjcpf ? "cnpjcpf-error" : undefined
+							<div className="flex gap-2">
+								<Controller
+									control={control}
+									name="cnpjcpf"
+									render={({ field }) => (
+										<Input
+											id="cnpjcpf"
+											className="flex-1"
+											placeholder="CNPJ ou CPF"
+											aria-invalid={!!errors.cnpjcpf}
+											aria-describedby={
+												errors.cnpjcpf ? "cnpjcpf-error" : undefined
+											}
+											value={field.value}
+											onChange={(event) => {
+												const valor = maskCpfCnpj(event.target.value);
+												field.onChange(valor);
+												const digitos = valor.replace(/\D/g, "");
+												if (digitos.length < 14) {
+													limparConsultaCnpj();
+													if (digitos.length === 0) {
+														ultimoCnpjBuscado.current = null;
+													}
+												}
+											}}
+											onBlur={() => {
+												if (field.value) {
+													void buscarCnpj(field.value);
+												}
+											}}
+										/>
+									)}
+								/>
+								<Button
+									type="button"
+									variant="outline"
+									disabled={
+										buscandoCnpj ||
+										(cnpjcpf ?? "").replace(/\D/g, "").length !== 14
+									}
+									onClick={() => {
+										if (cnpjcpf) {
+											void buscarCnpj(cnpjcpf, true);
 										}
-										value={field.value}
-										onChange={(event) =>
-											field.onChange(maskCpfCnpj(event.target.value))
-										}
-									/>
-								)}
-							/>
+									}}
+									aria-label="Consultar CNPJ"
+								>
+									<Search className="size-4" aria-hidden="true" />
+									Consultar
+								</Button>
+							</div>
+							{buscandoCnpj ? (
+								<p className="text-xs text-muted-foreground mt-1">
+									Buscando CNPJ...
+								</p>
+							) : null}
 							<FieldError errors={errors.cnpjcpf ? [errors.cnpjcpf] : []} />
 						</Field>
+
+						{extrasConsulta ? (
+							<ConsultaCnpjPainel
+								extras={extrasConsulta}
+								jaCadastrada={jaCadastradaConsulta}
+							/>
+						) : null}
 
 						<Field data-invalid={!!errors.tipopessoa}>
 							<FieldLabel htmlFor="tipopessoa">Tipo de Pessoa</FieldLabel>
