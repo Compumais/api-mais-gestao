@@ -40,6 +40,8 @@ export interface Produto {
 	cstcofinsentrada?: string | number | null;
 	cstpis?: string | number | null;
 	cstcofins?: string | number | null;
+	cstipientrada?: string | null;
+	cstipisaida?: string | null;
 }
 
 export interface ListarProdutosResponse {
@@ -87,6 +89,8 @@ export interface CriarProdutoData {
 	cstcofinsentrada?: string | null;
 	cstpis?: string | null;
 	cstcofins?: string | null;
+	cstipientrada?: string | null;
+	cstipisaida?: string | null;
 }
 
 export interface TributacaoPorCfopResponse {
@@ -133,6 +137,8 @@ export interface AtualizarProdutoData {
 	cstcofinsentrada?: string | null;
 	cstpis?: string | null;
 	cstcofins?: string | null;
+	cstipientrada?: string | null;
+	cstipisaida?: string | null;
 }
 
 export const produtosService = {

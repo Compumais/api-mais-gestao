@@ -107,6 +107,16 @@ export const produtoFormSchema = z.object({
 		.max(2, "CST deve ter no máximo 2 caracteres")
 		.optional()
 		.nullable(),
+	cstipientrada: z
+		.string()
+		.max(3, "CST IPI deve ter no máximo 3 caracteres")
+		.optional()
+		.nullable(),
+	cstipisaida: z
+		.string()
+		.max(3, "CST IPI deve ter no máximo 3 caracteres")
+		.optional()
+		.nullable(),
 	observacoes: z.string().optional().nullable(),
 	enviamobile: z.boolean().optional(),
 	estoque: numeroDecimalOpcional(),

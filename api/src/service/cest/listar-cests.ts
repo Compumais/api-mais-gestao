@@ -2,6 +2,7 @@ import type { CEST } from "@/model/cest-mode.js";
 import type { HttpResponse } from "@/model/http-model.js";
 import { listarCests } from "@/repositories/cest-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { garantirCestsGlobais } from "@/util/cest-globais.js";
 import { httpOk, httpProibido } from "@/util/http-util.js";
 
 type ListarCestsParametros = {
@@ -39,6 +40,8 @@ export async function listarCestsService({
 	if (!usuarioPertenceEmpresa) {
 		return httpProibido();
 	}
+
+	await garantirCestsGlobais();
 
 	const resultado = await listarCests({
 		idempresa,

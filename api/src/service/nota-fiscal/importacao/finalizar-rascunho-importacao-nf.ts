@@ -32,7 +32,7 @@ import {
 	montarAtualizacaoProdutoNf,
 } from "@/service/nota-fiscal/vincular-ou-criar-produto.js";
 import { resolverCfopSaidaDeEntrada } from "@/service/nota-fiscal/importacao/resolver-referencias-importacao.js";
-import { resolverParametrizacaoTributosImportacao } from "@/service/nota-fiscal/importacao/resolver-parametrizacao-tributos-importacao.js";
+import { aplicarParametrizacaoTributosProduto } from "@/service/parametrizacao-tributos/aplicar-parametrizacao-tributos-produto.js";
 import {
 	calcularCustoContabilItem,
 	calcularRateioItensImportacaoNf,
@@ -251,7 +251,7 @@ export async function finalizarRascunhoImportacaoNfService({
 		const dados = item.dadosimportacao;
 		if (!dados) continue;
 
-		const parametrizacao = await resolverParametrizacaoTributosImportacao({
+		const parametrizacao = await aplicarParametrizacaoTributosProduto({
 			idempresa,
 			dados,
 			ufemitente: dadosNotaImportacao.ufemitente,

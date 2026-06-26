@@ -45,6 +45,24 @@ export const camposImpostosProdutoSchema = {
 	cstcofinsentrada: campoCstPisCofinsOpcional,
 	cstpis: campoCstPisCofinsOpcional,
 	cstcofins: campoCstPisCofinsOpcional,
+	cstipientrada: z
+		.string()
+		.max(3)
+		.optional()
+		.nullable()
+		.transform((valor) => {
+			const texto = valor?.trim();
+			return texto ? texto : null;
+		}),
+	cstipisaida: z
+		.string()
+		.max(3)
+		.optional()
+		.nullable()
+		.transform((valor) => {
+			const texto = valor?.trim();
+			return texto ? texto : null;
+		}),
 };
 
 export type CamposImpostosProduto = {
@@ -62,6 +80,8 @@ export type CamposImpostosProduto = {
 	cstcofinsentrada?: string | null | undefined;
 	cstpis?: string | null | undefined;
 	cstcofins?: string | null | undefined;
+	cstipientrada?: string | null | undefined;
+	cstipisaida?: string | null | undefined;
 	cfopvendaecf?: number | null | undefined;
 };
 
@@ -83,6 +103,8 @@ export function montarCamposImpostosProduto(
 		cstcofinsentrada: dados.cstcofinsentrada ?? null,
 		cstpis: dados.cstpis ?? null,
 		cstcofins: dados.cstcofins ?? null,
+		cstipientrada: dados.cstipientrada ?? null,
+		cstipisaida: dados.cstipisaida ?? null,
 		cfopvendaecf: dados.cfopvendaecf ?? null,
 	};
 }

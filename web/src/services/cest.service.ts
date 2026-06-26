@@ -2,7 +2,7 @@ import { api } from "@/lib/axios";
 
 export interface Cest {
 	id: string;
-	idempresa: string;
+	idempresa: string | null;
 	codigo: string;
 	descricao: string;
 	descricaoncm: string;
@@ -47,9 +47,12 @@ export const cestService = {
 				inativo: 0,
 			});
 
-			registros.push(...resposta.data);
+			registros.push(...(resposta.data ?? []));
 
-			if (pagina >= resposta.paginacao.totalPages) {
+			if (
+				!resposta.paginacao?.totalPages ||
+				pagina >= resposta.paginacao.totalPages
+			) {
 				break;
 			}
 

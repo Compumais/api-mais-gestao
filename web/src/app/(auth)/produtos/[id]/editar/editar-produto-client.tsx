@@ -46,6 +46,8 @@ function mapProdutoToForm(
 		cstcofinsentrada: formatarCstProduto(data.cstcofinsentrada) || null,
 		cstpis: formatarCstProduto(data.cstpis) || null,
 		cstcofins: formatarCstProduto(data.cstcofins) || null,
+		cstipientrada: data.cstipientrada ?? null,
+		cstipisaida: data.cstipisaida ?? null,
 		observacoes: data.observacoes,
 		enviamobile: data.enviamobile === 1,
 		estoque: data.estoque ?? null,

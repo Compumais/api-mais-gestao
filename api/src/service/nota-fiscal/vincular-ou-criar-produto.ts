@@ -41,6 +41,10 @@ export type DadosProdutoNF = {
 	cstcofinsentrada?: string | undefined;
 	cstpis?: string | undefined;
 	cstcofins?: string | undefined;
+	idtaxauf?: string | undefined;
+	cstipientrada?: string | undefined;
+	cstipisaida?: string | undefined;
+	idenquadramentoipi?: string | undefined;
 };
 
 type VincularOuCriarProdutoResultado =
@@ -136,6 +140,10 @@ export async function criarProdutoParaNf(
 			cstcofinsentrada: dados.cstcofinsentrada ?? null,
 			cstpis: dados.cstpis ?? null,
 			cstcofins: dados.cstcofins ?? null,
+			idtaxauf: dados.idtaxauf ?? null,
+			cstipientrada: dados.cstipientrada ?? null,
+			cstipisaida: dados.cstipisaida ?? null,
+			idenquadramentoipisaida: dados.idenquadramentoipi ?? null,
 			tipo: "P",
 			inativo: 0,
 			datacadastro: new Date().toISOString(),
@@ -173,6 +181,10 @@ export function montarAtualizacaoProdutoNf(
 		cstcofinsentrada: dados.cstcofinsentrada ?? undefined,
 		cstpis: dados.cstpis ?? undefined,
 		cstcofins: dados.cstcofins ?? undefined,
+		idtaxauf: dados.idtaxauf ?? undefined,
+		cstipientrada: dados.cstipientrada ?? undefined,
+		cstipisaida: dados.cstipisaida ?? undefined,
+		idenquadramentoipisaida: dados.idenquadramentoipi ?? undefined,
 	};
 }
 

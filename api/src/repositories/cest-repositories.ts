@@ -22,7 +22,7 @@ export async function buscarCestPorCodigo(
 			and(
 				eq(cest.idempresa, idempresa),
 				eq(cest.codigo, codigoNormalizado),
-				eq(cest.inativo, 0),
+				or(eq(cest.inativo, 0), isNull(cest.inativo)),
 			),
 		)
 		.limit(1);
@@ -36,7 +36,7 @@ export async function buscarCestPorCodigo(
 			and(
 				isNull(cest.idempresa),
 				eq(cest.codigo, codigoNormalizado),
-				eq(cest.inativo, 0),
+				or(eq(cest.inativo, 0), isNull(cest.inativo)),
 			),
 		)
 		.limit(1);
@@ -48,6 +48,37 @@ export async function criarCest(dadosCest: NovoCEST) {
 	const [registro] = await db.insert(cest).values(dadosCest).returning();
 
 	return registro;
+}
+
+const TAMANHO_LOTE_CEST = 200;
+
+export async function criarCestsEmLote(dadosCests: NovoCEST[]) {
+	if (dadosCests.length === 0) {
+		return [];
+	}
+
+	const registrosCriados = [];
+
+	for (let indice = 0; indice < dadosCests.length; indice += TAMANHO_LOTE_CEST) {
+		const lote = dadosCests.slice(indice, indice + TAMANHO_LOTE_CEST);
+		const registros = await db
+			.insert(cest)
+			.values(lote)
+			.onConflictDoNothing({ target: cest.id })
+			.returning();
+		registrosCriados.push(...registros);
+	}
+
+	return registrosCriados;
+}
+
+export async function contarCestsGlobais(): Promise<number> {
+	const [resultado] = await db
+		.select({ value: count() })
+		.from(cest)
+		.where(isNull(cest.idempresa));
+
+	return resultado?.value ?? 0;
 }
 
 export async function atualizarCest(id: string, dadosCest: Partial<NovoCEST>) {
@@ -90,7 +121,11 @@ export async function listarCests({
 	}
 
 	if (inativo !== undefined) {
-		where.push(eq(cest.inativo, inativo));
+		where.push(
+			inativo === 0
+				? or(eq(cest.inativo, 0), isNull(cest.inativo))
+				: eq(cest.inativo, inativo),
+		);
 	}
 
 	const offset = (page - 1) * limit;
