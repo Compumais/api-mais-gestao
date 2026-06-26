@@ -12,6 +12,7 @@ import {
 	type FormaPagamentoNfVenda,
 } from "@/service/nota-fiscal/gerar-contas-receber-nf.js";
 import { registrarMovimentosEstoqueNf } from "@/service/nota-fiscal/registrar-movimentos-estoque-nf.js";
+import { registrarVendaDashboardNfVenda } from "@/service/nota-fiscal/registrar-venda-dashboard-nf-venda.js";
 import {
 	FIN_NFE_DEVOLUCAO,
 	resolverTipoDevolucaoEmissao,
@@ -31,6 +32,7 @@ export type ResultadoIntegracaoNotaFiscalVenda = {
 	parcelasGeradas: number;
 	lancamentosCaixa: number;
 	movimentosGerados: number;
+	idvendaDashboard?: string;
 	avisos: string[];
 };
 
@@ -64,9 +66,28 @@ export async function integrarNotaFiscalVendaAutorizadaService({
 	let parcelasGeradas = 0;
 	let lancamentosCaixa = 0;
 	let movimentosGerados = 0;
+	let idvendaDashboard: string | undefined;
 	const agora = new Date().toISOString();
 
 	const itens = await listarItensPorNotaFiscal(idnotafiscal);
+
+	try {
+		const resultadoVendaDashboard = await registrarVendaDashboardNfVenda({
+			nota,
+			itens,
+			emissaoSalva,
+			idusuario,
+		});
+
+		avisos.push(...resultadoVendaDashboard.avisos);
+
+		if (resultadoVendaDashboard.idvenda) {
+			idvendaDashboard = resultadoVendaDashboard.idvenda;
+		}
+	} catch (erro) {
+		console.error("Erro ao registrar venda do dashboard da NF venda:", erro);
+		avisos.push("Falha ao registrar venda no dashboard");
+	}
 
 	if (gerarEstoque) {
 		const localEstoque =
@@ -160,6 +181,8 @@ export async function integrarNotaFiscalVendaAutorizadaService({
 		parcelasGeradas,
 		lancamentosCaixa,
 		movimentosGerados,
+		idvendaDashboard,
+		vendaDashboardGeradaEm: idvendaDashboard ? agora : undefined,
 		avisos: avisos.length > 0 ? avisos : undefined,
 	};
 
@@ -203,6 +226,7 @@ export async function integrarNotaFiscalVendaAutorizadaService({
 		parcelasGeradas,
 		lancamentosCaixa,
 		movimentosGerados,
+		...(idvendaDashboard ? { idvendaDashboard } : {}),
 		avisos,
 	});
 }
