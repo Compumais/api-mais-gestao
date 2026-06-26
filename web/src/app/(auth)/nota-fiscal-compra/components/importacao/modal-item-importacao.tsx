@@ -464,48 +464,25 @@ export function ModalItemImportacao({
 									}}
 								/>
 								<CampoCfopImportacao
-
 									id="idcfop-item"
-
 									label="CFOP de entrada"
-
 									value={watch("idcfop")}
-
 									codigoXml={watch("cfopXml")}
-
 									onChange={(idcfop, codigo) => {
-
-										setValue("idcfop", idcfop);
-
-										if (codigo) setValue("cfopXml", codigo);
-
+										setValue("idcfop", idcfop, { shouldDirty: true });
+										if (codigo) {
+											setValue("cfopXml", codigo, { shouldDirty: true });
+										}
 									}}
-
 								/>
-
-								<div className="grid grid-cols-2 gap-3">
-
-									<Field>
-
-										<FieldLabel htmlFor="ncmXml">NCM</FieldLabel>
-
-										<Input id="ncmXml" {...register("ncmXml")} />
-
-									</Field>
-
-									<Field>
-
-										<FieldLabel htmlFor="cfopXmlManual">
-
-											CFOP (código manual)
-
-										</FieldLabel>
-
-										<Input id="cfopXmlManual" {...register("cfopXml")} />
-
-									</Field>
-
-								</div>
+								<p className="text-xs text-muted-foreground -mt-2">
+									Pré-preenchido com o CFOP do XML. Você pode alterar conforme a
+									parametrização fiscal da empresa.
+								</p>
+								<Field>
+									<FieldLabel htmlFor="ncmXml">NCM</FieldLabel>
+									<Input id="ncmXml" {...register("ncmXml")} />
+								</Field>
 							</FieldGroup>
 
 						</TabsContent>

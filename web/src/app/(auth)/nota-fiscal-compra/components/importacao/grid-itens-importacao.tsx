@@ -1,10 +1,18 @@
 "use client";
 
+import { IconDotsVertical, IconLink, IconLinkOff, IconPencil } from "@tabler/icons-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
 	Table,
 	TableBody,
@@ -16,8 +24,10 @@ import {
 import {
 	notaFiscalService,
 	type BuscarRascunhoImportacaoResponse,
+	type DadosImportacaoItem,
 	type NotaFiscalItemImportacao,
 } from "@/services/nota-fiscal.service";
+import { CelulaCfopEntradaImportacao } from "./celula-cfop-entrada-importacao";
 import { LocalizarProdutoDialog } from "./localizar-produto-dialog";
 import { ModalItemImportacao } from "./modal-item-importacao";
 
@@ -46,6 +56,37 @@ function statusBadge(item: NotaFiscalItemImportacao) {
 		return <Badge variant="secondary">Novo</Badge>;
 	}
 	return <Badge variant="destructive">Pendente</Badge>;
+}
+
+function podeDesvincular(dados: DadosImportacaoItem): boolean {
+	return Boolean(dados.idproduto) || dados.statusVinculo === "vinculado";
+}
+
+function exibirProdutoCadastro(dados: DadosImportacaoItem) {
+	if (dados.produtoEncontrado) {
+		return (
+			<div className="min-w-[140px] max-w-[220px]">
+				<p className="truncate text-sm font-medium">{dados.produtoEncontrado.nome}</p>
+				{dados.produtoEncontrado.codigo != null ? (
+					<p className="text-xs text-muted-foreground">
+						Cód. {dados.produtoEncontrado.codigo}
+					</p>
+				) : null}
+			</div>
+		);
+	}
+
+	if (dados.statusVinculo === "novo") {
+		return (
+			<span className="text-sm font-medium text-amber-700 dark:text-amber-400">
+				Cadastrar na finalização
+			</span>
+		);
+	}
+
+	return (
+		<span className="text-sm italic text-muted-foreground">Não vinculado</span>
+	);
 }
 
 const formatCurrency = (value: string | null | undefined) => {
@@ -90,116 +131,218 @@ export function GridItensImportacao({
 		onError: (error: Error) => toast.error(error.message),
 	});
 
+	const marcarCadastro = (item: NotaFiscalItemImportacao) => {
+		atualizarItem(
+			{
+				idItem: item.id,
+				dados: {
+					idempresa,
+					statusVinculo: "novo",
+				},
+			},
+			{
+				onSuccess: () =>
+					toast.success("Produto marcado para cadastro na finalização"),
+			},
+		);
+	};
+
+	const desvincular = (item: NotaFiscalItemImportacao) => {
+		atualizarItem(
+			{
+				idItem: item.id,
+				dados: {
+					idempresa,
+					statusVinculo: "pendente",
+				},
+			},
+			{
+				onSuccess: () => toast.success("Vínculo removido"),
+			},
+		);
+	};
+
+	const atualizarCfop = (
+		item: NotaFiscalItemImportacao,
+		idcfop: string,
+		codigo?: string,
+	) => {
+		atualizarItem({
+			idItem: item.id,
+			dados: {
+				idempresa,
+				idcfop: idcfop || undefined,
+				cfopXml: codigo ?? item.dadosimportacao?.cfopXml,
+			},
+		});
+	};
+
 	return (
 		<>
-			<Table>
-				<TableHeader>
-					<TableRow>
-						<TableHead>Cód. fornec.</TableHead>
-						<TableHead>Descrição fornecedor</TableHead>
-						<TableHead>EAN</TableHead>
-						<TableHead>Produto cadastro</TableHead>
-						<TableHead>CFOP</TableHead>
-						<TableHead>NCM</TableHead>
-						<TableHead>Qtd</TableHead>
-						<TableHead>Unit.</TableHead>
-						<TableHead>Total</TableHead>
-						<TableHead>Status</TableHead>
-						<TableHead className="text-right">Ações</TableHead>
-					</TableRow>
-				</TableHeader>
-				<TableBody>
-					{itens.map((item) => {
-						const dados = item.dadosimportacao;
-						return (
-							<TableRow key={item.id} className={statusCor(item)}>
-								<TableCell>{dados?.codigoFornecedor ?? "-"}</TableCell>
-								<TableCell className="max-w-[200px] truncate">
-									{dados?.descricaoFornecedor ?? item.descricao}
-								</TableCell>
-								<TableCell className="font-mono text-xs">
-									{dados?.eanXml ?? "-"}
-								</TableCell>
-								<TableCell className="max-w-[180px] truncate">
-									{dados?.produtoEncontrado?.nome ??
-										(dados?.statusVinculo === "novo"
-											? "(cadastrar novo)"
-											: "-")}
-								</TableCell>
-								<TableCell>{dados?.cfopXml ?? item.cfop ?? "-"}</TableCell>
-								<TableCell>{dados?.ncmXml ?? item.ncm ?? "-"}</TableCell>
-								<TableCell>{dados?.quantidadeXml ?? item.quantidade}</TableCell>
-								<TableCell>
-									{formatCurrency(dados?.precounitarioXml ?? item.precounitario)}
-								</TableCell>
-								<TableCell>{formatCurrency(item.total)}</TableCell>
-								<TableCell>{statusBadge(item)}</TableCell>
-								<TableCell>
-									<div className="flex flex-wrap justify-end gap-1">
-										<Button
-											type="button"
-											size="sm"
-											variant="outline"
-											onClick={() => setItemLocalizar(item)}
-										>
-											Localizar
-										</Button>
-										<Button
-											type="button"
-											size="sm"
-											variant="outline"
+			<div className="overflow-x-auto rounded-md border">
+				<Table>
+					<TableHeader>
+						<TableRow>
+							<TableHead className="w-10">#</TableHead>
+							<TableHead>Produto (fornecedor)</TableHead>
+							<TableHead>Produto estoque</TableHead>
+							<TableHead>CFOP entrada</TableHead>
+							<TableHead className="hidden md:table-cell">NCM</TableHead>
+							<TableHead>Qtd</TableHead>
+							<TableHead>Unit.</TableHead>
+							<TableHead className="hidden sm:table-cell">Total</TableHead>
+							<TableHead>Status</TableHead>
+							<TableHead className="min-w-[180px] text-right">Ações</TableHead>
+						</TableRow>
+					</TableHeader>
+					<TableBody>
+						{itens.map((item) => {
+							const dados = item.dadosimportacao;
+							if (!dados) {
+								return (
+									<TableRow key={item.id}>
+										<TableCell>{item.contador}</TableCell>
+										<TableCell colSpan={9}>
+											<span className="text-destructive text-sm">
+												Sem dados de importação
+											</span>
+										</TableCell>
+									</TableRow>
+								);
+							}
+
+							const pendente = dados.statusVinculo === "pendente";
+							const mostrarDesvincular = podeDesvincular(dados);
+
+							return (
+								<TableRow key={item.id} className={statusCor(item)}>
+									<TableCell className="text-muted-foreground text-xs">
+										{item.contador}
+									</TableCell>
+									<TableCell>
+										<div className="min-w-[160px] max-w-[260px] space-y-0.5">
+											<p className="truncate text-sm font-medium">
+												{dados.descricaoFornecedor ?? item.descricao}
+											</p>
+											<div className="flex flex-wrap gap-x-2 text-xs text-muted-foreground">
+												{dados.codigoFornecedor ? (
+													<span>Cód. {dados.codigoFornecedor}</span>
+												) : null}
+												{dados.eanXml ? (
+													<span className="font-mono">EAN {dados.eanXml}</span>
+												) : null}
+											</div>
+										</div>
+									</TableCell>
+									<TableCell>{exibirProdutoCadastro(dados)}</TableCell>
+									<TableCell>
+										<CelulaCfopEntradaImportacao
+											idempresa={idempresa}
+											idcfop={dados.idcfop}
+											cfopXml={dados.cfopXml ?? item.cfop ?? undefined}
 											disabled={isPending}
-											onClick={() =>
-												atualizarItem(
-													{
-														idItem: item.id,
-														dados: {
-															idempresa,
-															statusVinculo: "novo",
-														},
-													},
-													{
-														onSuccess: () =>
-															toast.success(
-																"Produto marcado para cadastro na finalização",
-															),
-													},
-												)
+											onChange={(idcfop, codigo) =>
+												atualizarCfop(item, idcfop, codigo)
 											}
-										>
-											Cadastrar
-										</Button>
-										<Button
-											type="button"
-											size="sm"
-											variant="ghost"
-											disabled={isPending}
-											onClick={() =>
-												atualizarItem({
-													idItem: item.id,
-													dados: {
-														idempresa,
-														statusVinculo: "pendente",
-													},
-												})
-											}
-										>
-											Desvincular
-										</Button>
-										<Button
-											type="button"
-											size="sm"
-											onClick={() => setItemModal(item)}
-										>
-											Editar
-										</Button>
-									</div>
-								</TableCell>
-							</TableRow>
-						);
-					})}
-				</TableBody>
-			</Table>
+										/>
+									</TableCell>
+									<TableCell className="hidden md:table-cell">
+										{dados.ncmXml ?? item.ncm ?? "-"}
+									</TableCell>
+									<TableCell>{dados.quantidadeXml ?? item.quantidade}</TableCell>
+									<TableCell className="whitespace-nowrap">
+										{formatCurrency(dados.precounitarioXml ?? item.precounitario)}
+									</TableCell>
+									<TableCell className="hidden whitespace-nowrap sm:table-cell">
+										{formatCurrency(item.total)}
+									</TableCell>
+									<TableCell>{statusBadge(item)}</TableCell>
+									<TableCell>
+										<div className="flex items-center justify-end gap-1">
+											{pendente ? (
+												<>
+													<Button
+														type="button"
+														size="sm"
+														variant="default"
+														disabled={isPending}
+														onClick={() => setItemLocalizar(item)}
+													>
+														<IconLink className="mr-1 size-3.5" />
+														Localizar
+													</Button>
+													<Button
+														type="button"
+														size="sm"
+														variant="outline"
+														disabled={isPending}
+														onClick={() => marcarCadastro(item)}
+													>
+														Cadastrar
+													</Button>
+												</>
+											) : (
+												<Button
+													type="button"
+													size="sm"
+													variant="outline"
+													onClick={() => setItemModal(item)}
+												>
+													<IconPencil className="mr-1 size-3.5" />
+													Editar
+												</Button>
+											)}
+
+											<DropdownMenu>
+												<DropdownMenuTrigger asChild>
+													<Button
+														type="button"
+														variant="ghost"
+														size="icon"
+														className="size-8 shrink-0"
+														aria-label="Mais ações do item"
+														disabled={isPending}
+													>
+														<IconDotsVertical className="size-4" />
+													</Button>
+												</DropdownMenuTrigger>
+												<DropdownMenuContent align="end">
+													{pendente ? (
+														<DropdownMenuItem onClick={() => setItemModal(item)}>
+															<IconPencil className="mr-2 size-4" />
+															Editar detalhes
+														</DropdownMenuItem>
+													) : null}
+													{!pendente ? (
+														<DropdownMenuItem
+															onClick={() => setItemLocalizar(item)}
+														>
+															<IconLink className="mr-2 size-4" />
+															Trocar vínculo
+														</DropdownMenuItem>
+													) : null}
+													{mostrarDesvincular ? (
+														<>
+															<DropdownMenuSeparator />
+															<DropdownMenuItem
+																variant="destructive"
+																onClick={() => desvincular(item)}
+															>
+																<IconLinkOff className="mr-2 size-4" />
+																Desvincular
+															</DropdownMenuItem>
+														</>
+													) : null}
+												</DropdownMenuContent>
+											</DropdownMenu>
+										</div>
+									</TableCell>
+								</TableRow>
+							);
+						})}
+					</TableBody>
+				</Table>
+			</div>
 
 			{itemLocalizar ? (
 				<LocalizarProdutoDialog

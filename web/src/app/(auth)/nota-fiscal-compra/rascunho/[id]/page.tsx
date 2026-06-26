@@ -80,10 +80,17 @@ export default function RascunhoImportacaoPage() {
 							/>
 
 							<section className="rounded-lg border bg-card p-4">
-								<h2 className="text-lg font-semibold mb-4">Itens da nota</h2>
+								<h2 className="text-lg font-semibold mb-2">Itens da nota</h2>
 								<p className="text-sm text-muted-foreground mb-4">
-									Linhas verdes: vinculado | vermelhas: pendente | amarelas: novo
-									produto
+									Vincule ou cadastre cada produto, ajuste o CFOP de entrada (pré-preenchido
+									do XML) e revise tributos antes de confirmar.{" "}
+									<span className="inline-flex flex-wrap gap-x-2 gap-y-1">
+										<span className="text-green-700 dark:text-green-400">Verde: vinculado</span>
+										<span>·</span>
+										<span className="text-red-700 dark:text-red-400">Vermelho: pendente</span>
+										<span>·</span>
+										<span className="text-amber-700 dark:text-amber-400">Amarelo: novo</span>
+									</span>
 								</p>
 								<GridItensImportacao
 									idempresa={empresa.id}
