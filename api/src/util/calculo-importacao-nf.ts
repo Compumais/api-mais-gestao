@@ -40,3 +40,22 @@ export function recalcularDadosConversao(
 		),
 	};
 }
+
+/** Total comercial do item na NF (vProd ou qCom × vUnCom) — nunca preço de venda. */
+export function calcularTotalItemXmlImportacao(
+	quantidadeXml: string,
+	precounitarioXml: string,
+	totalXml?: string | null,
+): string {
+	const totalInformado = totalXml?.trim();
+	if (totalInformado) {
+		const total = paraNumero(totalInformado);
+		if (total > 0) {
+			return total.toFixed(2);
+		}
+	}
+
+	const qtd = paraNumero(quantidadeXml);
+	const preco = paraNumero(precounitarioXml);
+	return (qtd * preco).toFixed(2);
+}

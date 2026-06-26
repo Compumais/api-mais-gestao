@@ -47,6 +47,8 @@ const itemBodySchema = z.object({
 	fatorConversao: z.string().optional(),
 	quantidadeXml: z.string().optional(),
 	precounitarioXml: z.string().optional(),
+	quantidadeEstoque: z.string().optional(),
+	precounitarioEstoque: z.string().optional(),
 	precoVenda: z.string().optional(),
 	idcfop: z.string().optional(),
 	cfopXml: z.string().optional(),
@@ -131,6 +133,12 @@ export async function atualizarItemRascunhoImportacao(
 				}),
 				...(dados.precounitarioXml !== undefined && {
 					precounitarioXml: dados.precounitarioXml,
+				}),
+				...(dados.quantidadeEstoque !== undefined && {
+					quantidadeEstoque: dados.quantidadeEstoque,
+				}),
+				...(dados.precounitarioEstoque !== undefined && {
+					precounitarioEstoque: dados.precounitarioEstoque,
 				}),
 				...(dados.precoVenda !== undefined && { precoVenda: dados.precoVenda }),
 				...(dados.idcfop !== undefined && { idcfop: dados.idcfop }),
