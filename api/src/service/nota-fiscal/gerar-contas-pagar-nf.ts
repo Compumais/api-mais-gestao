@@ -7,6 +7,7 @@ import { criarFinanceiro } from "@/repositories/financeiro-repositories.js";
 import { montarIdentificacaoFinanceiroNf } from "@/util/financeiro-nf-util.js";
 import { httpBadRequest, httpOk } from "@/util/http-util.js";
 import { TIPO_ORIGEM_FINANCEIRO_NF_COMPRA } from "@/util/nota-fiscal-constants.js";
+import { resolverParcelasCondicaoPagamento } from "@/util/resolver-parcelas-condicao-pagamento.js";
 
 type GerarContasPagarNfParametros = {
 	idempresa: string;
@@ -189,28 +190,17 @@ export async function gerarContasPagarNfService({
 		return httpBadRequest("Condição de pagamento não encontrada");
 	}
 
-	const totalParcelas = condicao.parcelas ?? 1;
-	const prazosStr = condicao.prazos ?? "0";
-	const prazos = prazosStr
-		.split(",")
-		.map((p) => parseInt(p.trim(), 10))
-		.filter((p) => !Number.isNaN(p));
-
-	const prazosFinal =
-		prazos.length >= totalParcelas
-			? prazos.slice(0, totalParcelas)
-			: Array.from({ length: totalParcelas }, (_, i) =>
-					prazos[i] !== undefined ? prazos[i] : (i + 1) * 30,
-				);
+	const { totalParcelas: parcelasResolvidas, prazosDias: prazosFinal } =
+		resolverParcelasCondicaoPagamento(condicao);
 
 	const valorTotal = parseFloat(valortotalnota);
-	const valores = distribuirValor(valorTotal, totalParcelas);
+	const valores = distribuirValor(valorTotal, parcelasResolvidas);
 	const dataAtual = emissao.substring(0, 10);
 	const dataRegistro = new Date().toISOString();
 
 	let parcelasGeradas = 0;
 
-	for (let i = 0; i < totalParcelas; i++) {
+	for (let i = 0; i < parcelasResolvidas; i++) {
 		const parcelaAtual = i + 1;
 		const vencimento = calcularVencimento(dataAtual, prazosFinal[i] ?? 0);
 		const valorParcela = valores[i] ?? 0;
@@ -219,7 +209,7 @@ export async function gerarContasPagarNfService({
 			numero,
 			serie,
 			parcela: parcelaAtual,
-			totalParcelas,
+			totalParcelas: parcelasResolvidas,
 			nomeFornecedor,
 		});
 
@@ -231,7 +221,7 @@ export async function gerarContasPagarNfService({
 			tipoorigem: TIPO_ORIGEM_FINANCEIRO_NF_COMPRA,
 			idorigem: idnotafiscal,
 			parcela: parcelaAtual,
-			totalparcelas: totalParcelas,
+			totalparcelas: parcelasResolvidas,
 			documento: identificacao.documento,
 			emitente: identificacao.emitente,
 			cnpjcpfemitente: fornecedor?.cnpjcpf ?? null,
@@ -255,7 +245,7 @@ export async function gerarContasPagarNfService({
 	}
 
 	return httpOk<GerarContasPagarNfResposta>({
-		totalParcelas,
+		totalParcelas: parcelasResolvidas,
 		parcelasGeradas,
 	});
 }

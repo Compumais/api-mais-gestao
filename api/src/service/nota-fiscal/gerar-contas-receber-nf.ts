@@ -21,6 +21,7 @@ import {
 	formatarDataIso,
 	formatarValorMonetario,
 } from "@/util/recebimentos-venda-util.js";
+import { resolverParcelasCondicaoPagamento } from "@/util/resolver-parcelas-condicao-pagamento.js";
 import {
 	resolverDestinoFinanceiroFormaPagamento,
 	resolverPrazoDiasTipoDocumento,
@@ -96,19 +97,8 @@ async function gerarParcelasPorCondicao(
 		return 0;
 	}
 
-	const totalParcelas = condicao.parcelas ?? 1;
-	const prazosStr = condicao.prazos ?? "0";
-	const prazos = prazosStr
-		.split(",")
-		.map((p) => parseInt(p.trim(), 10))
-		.filter((p) => !Number.isNaN(p));
-
-	const prazosFinal =
-		prazos.length >= totalParcelas
-			? prazos.slice(0, totalParcelas)
-			: Array.from({ length: totalParcelas }, (_, i) =>
-					prazos[i] !== undefined ? prazos[i] : (i + 1) * 30,
-				);
+	const { totalParcelas, prazosDias: prazosFinal } =
+		resolverParcelasCondicaoPagamento(condicao);
 
 	const valores = distribuirValor(valorTotal, totalParcelas);
 	const dataAtual = parametros.emissao.substring(0, 10);
@@ -206,6 +196,39 @@ export async function gerarContasReceberNfService(
 
 	const formas =
 		parametros.formasPagamento?.filter((f) => f.valor > 0) ?? [];
+
+	if (parametros.idcondicaopagto) {
+		const condicao = await buscarCondicaoPagamentoPorId(
+			parametros.idcondicaopagto,
+		);
+
+		if (condicao && (condicao.parcelas ?? 1) > 1) {
+			let idplanocontas = parametros.idplanocontas ?? null;
+			if (parametros.idtipodocumento) {
+				const tipoDoc = await buscarTipoDocumentoFinanceiroPorId(
+					parametros.idtipodocumento,
+				);
+				if (tipoDoc?.idplanocontas) {
+					idplanocontas = tipoDoc.idplanocontas;
+				}
+			}
+
+			const geradas = await gerarParcelasPorCondicao(
+				parametros,
+				valorTotal,
+				nomeCliente,
+				cliente?.cnpjcpf ?? null,
+				idplanocontas,
+				parametros.idtipodocumento ?? null,
+			);
+
+			return httpOk({
+				totalParcelas: geradas,
+				parcelasGeradas: geradas,
+				lancamentosCaixa: 0,
+			});
+		}
+	}
 
 	if (formas.length > 0) {
 		const caixa = await resolverCaixaPadrao(parametros.idempresa);
