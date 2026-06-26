@@ -239,7 +239,9 @@ async function main() {
 		console.log(
 			"  pnpm run db:migrate:baseline-producao → só registra histórico até 0027",
 		);
-		console.log("  pnpm run db:migrate:diagnostico  → migrate com log de erro");
+		console.log(
+			"  pnpm run db:migrate:diagnostico  → alias de db:migrate (log de erro)",
+		);
 		console.log("  pnpm run db:migrate:baseline       → fluxo legado (0023)");
 	} catch (erro) {
 		exibirErro(erro);
