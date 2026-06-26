@@ -34,7 +34,7 @@ SELECT
 	0
 FROM "empresas" e
 LEFT JOIN "cfop" cnfe ON cnfe."idempresa" = e.id AND regexp_replace(cnfe."codigo", '[^0-9]', '', 'g') = '5102'
-LEFT JOIN "cfop" cnfce ON cnfce."idempresa" = e.id AND regexp_replace(cnfcfe."codigo", '[^0-9]', '', 'g') = '5102'
+LEFT JOIN "cfop" cnfce ON cnfce."idempresa" = e.id AND regexp_replace(cnfce."codigo", '[^0-9]', '', 'g') = '5102'
 WHERE NOT EXISTS (
 	SELECT 1 FROM "parametrizacaotributos" p
 	WHERE p."idempresa" = e.id AND p."codigocfopentrada" = '5101'
@@ -59,7 +59,7 @@ SELECT
 	0
 FROM "empresas" e
 LEFT JOIN "cfop" cnfe ON cnfe."idempresa" = e.id AND regexp_replace(cnfe."codigo", '[^0-9]', '', 'g') = '5102'
-LEFT JOIN "cfop" cnfce ON cnfce."idempresa" = e.id AND regexp_replace(cnfcfe."codigo", '[^0-9]', '', 'g') = '5102'
+LEFT JOIN "cfop" cnfce ON cnfce."idempresa" = e.id AND regexp_replace(cnfce."codigo", '[^0-9]', '', 'g') = '5102'
 WHERE NOT EXISTS (
 	SELECT 1 FROM "parametrizacaotributos" p
 	WHERE p."idempresa" = e.id AND p."codigocfopentrada" = '5102'
@@ -84,7 +84,7 @@ SELECT
 	0
 FROM "empresas" e
 LEFT JOIN "cfop" cnfe ON cnfe."idempresa" = e.id AND regexp_replace(cnfe."codigo", '[^0-9]', '', 'g') = '5405'
-LEFT JOIN "cfop" cnfce ON cnfce."idempresa" = e.id AND regexp_replace(cnfcfe."codigo", '[^0-9]', '', 'g') = '5405'
+LEFT JOIN "cfop" cnfce ON cnfce."idempresa" = e.id AND regexp_replace(cnfce."codigo", '[^0-9]', '', 'g') = '5405'
 WHERE NOT EXISTS (
 	SELECT 1 FROM "parametrizacaotributos" p
 	WHERE p."idempresa" = e.id AND p."codigocfopentrada" = '5400'
@@ -109,7 +109,7 @@ SELECT
 	0
 FROM "empresas" e
 LEFT JOIN "cfop" cnfe ON cnfe."idempresa" = e.id AND regexp_replace(cnfe."codigo", '[^0-9]', '', 'g') = '5405'
-LEFT JOIN "cfop" cnfce ON cnfce."idempresa" = e.id AND regexp_replace(cnfcfe."codigo", '[^0-9]', '', 'g') = '5405'
+LEFT JOIN "cfop" cnfce ON cnfce."idempresa" = e.id AND regexp_replace(cnfce."codigo", '[^0-9]', '', 'g') = '5405'
 WHERE NOT EXISTS (
 	SELECT 1 FROM "parametrizacaotributos" p
 	WHERE p."idempresa" = e.id AND p."codigocfopentrada" = '5401'
@@ -134,7 +134,7 @@ SELECT
 	0
 FROM "empresas" e
 LEFT JOIN "cfop" cnfe ON cnfe."idempresa" = e.id AND regexp_replace(cnfe."codigo", '[^0-9]', '', 'g') = '5405'
-LEFT JOIN "cfop" cnfce ON cnfce."idempresa" = e.id AND regexp_replace(cnfcfe."codigo", '[^0-9]', '', 'g') = '5405'
+LEFT JOIN "cfop" cnfce ON cnfce."idempresa" = e.id AND regexp_replace(cnfce."codigo", '[^0-9]', '', 'g') = '5405'
 WHERE NOT EXISTS (
 	SELECT 1 FROM "parametrizacaotributos" p
 	WHERE p."idempresa" = e.id AND p."codigocfopentrada" = '5403'
@@ -159,7 +159,7 @@ SELECT
 	0
 FROM "empresas" e
 LEFT JOIN "cfop" cnfe ON cnfe."idempresa" = e.id AND regexp_replace(cnfe."codigo", '[^0-9]', '', 'g') = '5102'
-LEFT JOIN "cfop" cnfce ON cnfce."idempresa" = e.id AND regexp_replace(cnfcfe."codigo", '[^0-9]', '', 'g') = '5102'
+LEFT JOIN "cfop" cnfce ON cnfce."idempresa" = e.id AND regexp_replace(cnfce."codigo", '[^0-9]', '', 'g') = '5102'
 WHERE NOT EXISTS (
 	SELECT 1 FROM "parametrizacaotributos" p
 	WHERE p."idempresa" = e.id AND p."codigocfopentrada" = '6101'
@@ -184,7 +184,7 @@ SELECT
 	0
 FROM "empresas" e
 LEFT JOIN "cfop" cnfe ON cnfe."idempresa" = e.id AND regexp_replace(cnfe."codigo", '[^0-9]', '', 'g') = '5102'
-LEFT JOIN "cfop" cnfce ON cnfce."idempresa" = e.id AND regexp_replace(cnfcfe."codigo", '[^0-9]', '', 'g') = '5102'
+LEFT JOIN "cfop" cnfce ON cnfce."idempresa" = e.id AND regexp_replace(cnfce."codigo", '[^0-9]', '', 'g') = '5102'
 WHERE NOT EXISTS (
 	SELECT 1 FROM "parametrizacaotributos" p
 	WHERE p."idempresa" = e.id AND p."codigocfopentrada" = '6102'
@@ -209,7 +209,7 @@ SELECT
 	0
 FROM "empresas" e
 LEFT JOIN "cfop" cnfe ON cnfe."idempresa" = e.id AND regexp_replace(cnfe."codigo", '[^0-9]', '', 'g') = '5405'
-LEFT JOIN "cfop" cnfce ON cnfce."idempresa" = e.id AND regexp_replace(cnfcfe."codigo", '[^0-9]', '', 'g') = '5405'
+LEFT JOIN "cfop" cnfce ON cnfce."idempresa" = e.id AND regexp_replace(cnfce."codigo", '[^0-9]', '', 'g') = '5405'
 WHERE NOT EXISTS (
 	SELECT 1 FROM "parametrizacaotributos" p
 	WHERE p."idempresa" = e.id AND p."codigocfopentrada" = '6401'
@@ -234,7 +234,7 @@ SELECT
 	0
 FROM "empresas" e
 LEFT JOIN "cfop" cnfe ON cnfe."idempresa" = e.id AND regexp_replace(cnfe."codigo", '[^0-9]', '', 'g') = '5405'
-LEFT JOIN "cfop" cnfce ON cnfce."idempresa" = e.id AND regexp_replace(cnfcfe."codigo", '[^0-9]', '', 'g') = '5405'
+LEFT JOIN "cfop" cnfce ON cnfce."idempresa" = e.id AND regexp_replace(cnfce."codigo", '[^0-9]', '', 'g') = '5405'
 WHERE NOT EXISTS (
 	SELECT 1 FROM "parametrizacaotributos" p
 	WHERE p."idempresa" = e.id AND p."codigocfopentrada" = '6403'
