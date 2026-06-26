@@ -74,6 +74,73 @@ describe("gerarContasReceberNfService", () => {
 		expect(financeiroRepository.criarFinanceiro).toHaveBeenCalledTimes(2);
 	});
 
+	it("deve respeitar parcelas da condição mesmo com prazos excedentes", async () => {
+		vi.mocked(condicaoPagamentoRepository.buscarCondicaoPagamentoPorId).mockResolvedValue(
+			{
+				id: "cond-1",
+				parcelas: 3,
+				prazos: "0,30,60,90",
+			} as never,
+		);
+		vi.mocked(financeiroRepository.criarFinanceiro).mockResolvedValue({
+			id: "fin-novo",
+		} as never);
+
+		const resultado = await gerarContasReceberNfService({
+			idempresa: "emp-1",
+			idnotafiscal: "nf-1",
+			idusuario: "user-1",
+			idcondicaopagto: "cond-1",
+			valortotalnota: "300.00",
+			emissao: "2026-06-24",
+		});
+
+		expect(resultado.success).toBe(true);
+		if (!resultado.success) return;
+		expect(resultado.body?.parcelasGeradas).toBe(3);
+		expect(financeiroRepository.criarFinanceiro).toHaveBeenCalledTimes(3);
+	});
+
+	it("deve priorizar condição parcelada em vez de forma de pagamento única", async () => {
+		vi.mocked(condicaoPagamentoRepository.buscarCondicaoPagamentoPorId).mockResolvedValue(
+			{
+				id: "cond-1",
+				parcelas: 3,
+				prazos: "30,60,90",
+			} as never,
+		);
+		vi.mocked(tipoDocumentoRepository.buscarTipoDocumentoFinanceiroPorId).mockResolvedValue(
+			{
+				id: "tipo-1",
+				aprazo: 1,
+				integracaixabanco: 0,
+				prazodias: 30,
+				idplanocontas: "plano-1",
+			} as never,
+		);
+		vi.mocked(financeiroRepository.criarFinanceiro).mockResolvedValue({
+			id: "fin-novo",
+		} as never);
+
+		const resultado = await gerarContasReceberNfService({
+			idempresa: "emp-1",
+			idnotafiscal: "nf-1",
+			idusuario: "user-1",
+			idcondicaopagto: "cond-1",
+			idtipodocumento: "tipo-1",
+			valortotalnota: "300.00",
+			emissao: "2026-06-24",
+			formasPagamento: [
+				{ idtipodocumentofinanceiro: "tipo-1", valor: 300, indPag: 1 },
+			],
+		});
+
+		expect(resultado.success).toBe(true);
+		if (!resultado.success) return;
+		expect(resultado.body?.parcelasGeradas).toBe(3);
+		expect(financeiroRepository.criarFinanceiro).toHaveBeenCalledTimes(3);
+	});
+
 	it("deve gerar título a prazo por forma de pagamento", async () => {
 		vi.mocked(tipoDocumentoRepository.buscarTipoDocumentoFinanceiroPorId).mockResolvedValue(
 			{

@@ -136,7 +136,7 @@ function montarPayloadIntegracaoEmissao(
 	}
 
 	if (!isOperacaoDevolucao && gerarFinanceiro) {
-		if (dados.idtipodocumento) {
+		if (dados.idtipodocumento && !dados.idcondicaopagto) {
 			payload.idtipodocumento = dados.idtipodocumento;
 			payload.formasPagamento = [
 				{
@@ -144,6 +144,8 @@ function montarPayloadIntegracaoEmissao(
 					valor: totalNF,
 				},
 			];
+		} else if (dados.idtipodocumento) {
+			payload.idtipodocumento = dados.idtipodocumento;
 		}
 		if (dados.idcondicaopagto) {
 			payload.idcondicaopagto = dados.idcondicaopagto;
