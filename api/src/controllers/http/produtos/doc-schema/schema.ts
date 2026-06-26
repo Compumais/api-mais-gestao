@@ -93,6 +93,14 @@ const propriedadesImpostosProdutoResposta = {
 		anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
 		description: "CST COFINS na saída",
 	},
+	cstipientrada: {
+		anyOf: [{ type: "string" }, { type: "null" }],
+		description: "CST IPI na entrada",
+	},
+	cstipisaida: {
+		anyOf: [{ type: "string" }, { type: "null" }],
+		description: "CST IPI na saída",
+	},
 };
 
 const propriedadesProdutoResposta = {
