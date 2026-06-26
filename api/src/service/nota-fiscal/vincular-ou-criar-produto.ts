@@ -48,6 +48,15 @@ export type DadosProdutoNF = {
 	idenquadramentoipi?: string | undefined;
 };
 
+function precoVendaInformado(preco?: string | null): preco is string {
+	if (!preco?.trim()) {
+		return false;
+	}
+
+	const numero = Number.parseFloat(preco.replace(",", "."));
+	return !Number.isNaN(numero) && numero > 0;
+}
+
 type VincularOuCriarProdutoResultado =
 	| { encontrado: true; produto: Produto }
 	| { encontrado: false; produto: Produto; criado: true }
@@ -130,7 +139,7 @@ export async function criarProdutoParaNf(
 			idgrupo: dados.idgrupo ?? null,
 			custoaquisicao: dados.custoaquisicao ?? null,
 			quantidadepadrao: dados.quantidadepadrao ?? null,
-			preco: dados.preco ?? null,
+			preco: precoVendaInformado(dados.preco) ? dados.preco : null,
 			fatorconversao: dados.fatorconversao ?? "1",
 			origem: dados.origem ?? null,
 			situacaotributariasnentrada: dados.situacaotributariaentrada ?? null,
@@ -159,7 +168,7 @@ export function montarAtualizacaoProdutoNf(
 	const ean = normalizarCodigoBarras(dados.ean);
 
 	return {
-		preco: dados.preco ?? undefined,
+		...(precoVendaInformado(dados.preco) ? { preco: dados.preco } : {}),
 		fatorconversao: dados.fatorconversao,
 		custoaquisicao: dados.custoaquisicao,
 		quantidadepadrao: dados.quantidadepadrao,

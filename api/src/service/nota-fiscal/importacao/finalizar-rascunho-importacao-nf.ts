@@ -36,6 +36,7 @@ import {
 } from "@/service/nota-fiscal/vincular-ou-criar-produto.js";
 import { resolverCfopSaidaDeEntrada } from "@/service/nota-fiscal/importacao/resolver-referencias-importacao.js";
 import { aplicarParametrizacaoTributosProduto } from "@/service/parametrizacao-tributos/aplicar-parametrizacao-tributos-produto.js";
+import { calcularTotalItemXmlImportacao } from "@/util/calculo-importacao-nf.js";
 import {
 	calcularCustoContabilItem,
 	calcularRateioItensImportacaoNf,
@@ -390,13 +391,11 @@ export async function finalizarRascunhoImportacaoNfService({
 			throw new Error("Item inconsistente na finalização");
 		}
 
-		const total =
-			dados.quantidadeEstoque && dados.precounitarioEstoque
-				? (
-						parseFloat(dados.quantidadeEstoque) *
-						parseFloat(dados.precounitarioEstoque)
-					).toFixed(2)
-				: item.total;
+		const total = calcularTotalItemXmlImportacao(
+			dados.quantidadeXml,
+			dados.precounitarioXml,
+			item.total,
+		);
 
 		const flagsCredito = obterFlagsCreditoItemImportacao(
 			configRegime,
@@ -412,8 +411,8 @@ export async function finalizarRascunhoImportacaoNfService({
 			id: item.id,
 			idproduto,
 			descricao: dados.descricaoFornecedor,
-			quantidade: dados.quantidadeEstoque,
-			precounitario: dados.precounitarioEstoque,
+			quantidade: dados.quantidadeXml,
+			precounitario: dados.precounitarioXml,
 			total,
 			idcfop: dados.idcfop ?? null,
 			cfop: dados.cfopXml ?? null,
@@ -468,6 +467,8 @@ export async function finalizarRascunhoImportacaoNfService({
 		{
 			status: STATUS_NF_CONFIRMADA,
 			identidade: identidadeFornecedor ?? nota.identidade,
+			totalproduto: nota.totalproduto,
+			valortotalnota: nota.valortotalnota,
 			dadosimportacao: {
 				duplicatas: dadosNotaImportacao.duplicatas,
 				finalizadoEm,

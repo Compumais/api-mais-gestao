@@ -160,6 +160,9 @@ export async function atualizarItemRascunhoImportacaoNfService({
 				codigo: produto.codigo ?? undefined,
 			},
 			confirmarCadastro: false,
+			precoVenda:
+				dadosMesclados.precoVenda?.trim() ||
+				(produto.preco?.trim() ? produto.preco : undefined),
 		};
 	}
 
@@ -198,6 +201,19 @@ export async function atualizarItemRascunhoImportacaoNfService({
 			...dadosMesclados,
 			quantidadeEstoque,
 			precounitarioEstoque,
+		};
+	} else if (
+		dados.quantidadeEstoque !== undefined ||
+		dados.precounitarioEstoque !== undefined
+	) {
+		dadosMesclados = {
+			...dadosMesclados,
+			...(dados.quantidadeEstoque !== undefined && {
+				quantidadeEstoque: dados.quantidadeEstoque,
+			}),
+			...(dados.precounitarioEstoque !== undefined && {
+				precounitarioEstoque: dados.precounitarioEstoque,
+			}),
 		};
 	}
 
