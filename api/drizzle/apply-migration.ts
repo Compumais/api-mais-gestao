@@ -24,7 +24,19 @@ const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 try {
 	for (const statement of statements) {
 		console.log(`Executando: ${statement.slice(0, 80)}...`);
-		await pool.query(statement);
+		try {
+			await pool.query(statement);
+		} catch (erro) {
+			console.error("\n--- Erro ao executar statement ---");
+			console.error(statement);
+			if (erro instanceof Error) {
+				console.error(erro.message);
+			} else {
+				console.error(erro);
+			}
+			process.exitCode = 1;
+			return;
+		}
 	}
 	console.log(`Migration ${file} aplicada com sucesso.`);
 } finally {
