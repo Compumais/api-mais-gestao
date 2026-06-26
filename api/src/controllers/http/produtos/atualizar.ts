@@ -44,9 +44,10 @@ const atualizarProdutoBodySchema = z.object({
 	ncm: z.string().min(1).max(10).optional(),
 	observacoes: z.string().optional().nullable(),
 	enviamobile: z.number().int().min(0).max(1).optional(),
-	quantidadepadrao: z.number().int().positive().optional().nullable(),
+	quantidadepadrao: z.number().int().min(0).optional().nullable(),
 	quantidademinima: z.number().int().min(0).optional().nullable(),
 	quantidademaxima: z.number().int().positive().optional().nullable(),
+	custoaquisicao: z.union([z.string(), z.number()]).optional().nullable(),
 	estoque: z.number().min(0).optional(),
 	...camposImpostosProdutoSchema,
 });
@@ -87,6 +88,15 @@ export async function atualizarProduto(
 					: dadosValidados.preco;
 		}
 
+		if (dadosValidados.custoaquisicao !== undefined) {
+			dados.custoaquisicao =
+				dadosValidados.custoaquisicao == null
+					? null
+					: typeof dadosValidados.custoaquisicao === "number"
+						? dadosValidados.custoaquisicao.toFixed(2)
+						: dadosValidados.custoaquisicao;
+		}
+
 		if (dadosValidados.nome !== undefined) {
 			dados.descricao = dadosValidados.nome.slice(0, 100);
 		}
@@ -112,11 +122,14 @@ export async function atualizarProduto(
 			return reply.status(resultado.status).send(resultado);
 		}
 
-		if (dadosValidados.estoque !== undefined && resultado.body) {
+		const quantidadeSaldo =
+			dadosValidados.estoque ?? dadosValidados.quantidadepadrao;
+
+		if (quantidadeSaldo !== undefined && resultado.body) {
 			await sincronizarSaldoEstoqueProduto({
 				idempresa,
 				produto: resultado.body,
-				quantidade: dadosValidados.estoque,
+				quantidade: quantidadeSaldo,
 			});
 		}
 

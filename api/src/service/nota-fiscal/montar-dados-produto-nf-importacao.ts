@@ -3,6 +3,13 @@ import type { DadosProdutoNF } from "@/service/nota-fiscal/vincular-ou-criar-pro
 import type { ConfigRegimeImportacaoNf } from "@/util/regime-tributario-empresa.js";
 import { normalizarCodigoBarras, truncarTexto } from "@/util/texto-util.js";
 
+export function parseQuantidadePadraoImportacao(
+	quantidadeEstoque: string | undefined,
+): number {
+	const qtd = Math.round(Number.parseFloat(quantidadeEstoque ?? "0"));
+	return Number.isNaN(qtd) || qtd < 0 ? 0 : qtd;
+}
+
 type MontarDadosProdutoNfImportacaoOpcoes = {
 	idfornecedor?: string | undefined;
 	idcfopsaida?: string | undefined;
@@ -41,6 +48,7 @@ export function montarDadosProdutoNfImportacao(
 		idfornecedor: opcoes.idfornecedor,
 		idgrupo: dados.idgrupo,
 		custoaquisicao: dados.custoContabilCalculado ?? dados.precounitarioEstoque,
+		quantidadepadrao: parseQuantidadePadraoImportacao(dados.quantidadeEstoque),
 		preco: dados.precoVenda,
 		fatorconversao: dados.fatorConversao,
 		origem: trib.origem,
