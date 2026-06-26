@@ -351,6 +351,13 @@
       "when": 1781734000000,
       "tag": "0049_parametrizacao_tributos_seed",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1781735000000,
+      "tag": "0050_vendapdvgourmet_cliente_prazo",
+      "breakpoints": true
     }
   ]
 }

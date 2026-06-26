@@ -157,6 +157,10 @@ export const entidadesService = {
 		idempresa: string;
 		nome?: string;
 		q?: string;
+		fornecedor?: number;
+		cliente?: number;
+		transportador?: number;
+		representante?: number;
 	}): Promise<Entidade[]> {
 		const limite = 100;
 		let pagina = 1;

@@ -4,10 +4,12 @@ import {
 	IconArrowLeft,
 	IconCash,
 	IconCreditCard,
+	IconFileInvoice,
 	IconQrcode,
 	IconWallet,
 } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,7 +30,19 @@ import {
 	FieldLabel,
 } from "@/components/ui/field";
 import { MoneyInput } from "@/components/ui/money-input";
+import { Combobox } from "@/components/ui/combobox";
 import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import { useEmpresa } from "@/hooks/use-empresa";
+import {
+	extrairPagamentosErpForm,
+	isPagamentoMeioPdv,
+	pagamentoPdvExigeCliente,
 	calcularTotalComTaxas,
 	calcularTroco,
 	arredondarMoeda,
@@ -45,7 +59,14 @@ import {
 	type MeioPagamentoPdv,
 	type PagamentoParcialPdv,
 } from "@/lib/gourmet-utils";
+import { ESCOPO_CONDICAO_PAGAMENTO } from "@/schemas/condicao-pagamento.schema";
 import type { FecharContaFormData } from "@/schemas/fechar-conta.schema";
+import { condicaoPagamentoService } from "@/services/condicao-pagamento.service";
+import { entidadesService } from "@/services/entidades.service";
+import {
+	tipoDocumentoFinanceiroService,
+	type TipoDocumentoFinanceiro,
+} from "@/services/tipo-documento-financeiro.service";
 import { AvisoAmbienteNfe } from "@/app/(auth)/nota-fiscal-venda/components/aviso-ambiente-nfe";
 import { useNfceAmbientePdv } from "@/hooks/use-nfce-ambiente-pdv";
 import { CupomNaoFiscal } from "./cupom-nao-fiscal";
@@ -94,6 +115,10 @@ export function PagamentoPdvDialog({
 	const [meioSelecionado, setMeioSelecionado] = useState<MeioPagamentoPdv | null>(
 		null,
 	);
+	const [formaErpSelecionada, setFormaErpSelecionada] =
+		useState<TipoDocumentoFinanceiro | null>(null);
+	const [identidade, setIdentidade] = useState("");
+	const [idcondicaopagto, setIdcondicaopagto] = useState("");
 	const [valorParcial, setValorParcial] = useState("");
 	const [desconto, setDesconto] = useState("");
 	const [taxaServico, setTaxaServico] = useState("");
@@ -102,6 +127,68 @@ export function PagamentoPdvDialog({
 	const [cupomDados, setCupomDados] = useState<CupomNaoFiscalData | null>(null);
 	const [finalizando, setFinalizando] = useState(false);
 	const { ambiente: ambienteNfce } = useNfceAmbientePdv();
+	const { localStorageEmpresa: empresa } = useEmpresa();
+
+	const { data: formasErpAprazo = [] } = useQuery({
+		queryKey: ["tipos-documento-financeiro-pdv-aprazo", empresa?.id],
+		queryFn: async () => {
+			if (!empresa) return [];
+			const formas = await tipoDocumentoFinanceiroService.listarTodos({
+				idempresa: empresa.id,
+				inativo: 0,
+			});
+			return formas.filter((f) => f.aprazo === 1 && f.inativo !== 1);
+		},
+		enabled: open && !!empresa?.id,
+	});
+
+	const { data: clientes = [] } = useQuery({
+		queryKey: ["entidades-clientes-pdv", empresa?.id],
+		queryFn: async () => {
+			if (!empresa) return [];
+			return entidadesService.listarTodos({
+				idempresa: empresa.id,
+				cliente: 1,
+			});
+		},
+		enabled: open && !!empresa?.id,
+	});
+
+	const { data: condicoesPagamento = [] } = useQuery({
+		queryKey: ["condicoes-pagamento-pdv", empresa?.id],
+		queryFn: async () => {
+			if (!empresa) return [];
+			const condicoes = await condicaoPagamentoService.listarTodos({
+				idempresa: empresa.id,
+				inativo: 0,
+			});
+			return condicoes.filter(
+				(c) =>
+					c.inativo !== 1 &&
+					(c.escopo === null ||
+						c.escopo === ESCOPO_CONDICAO_PAGAMENTO.COMPRA_E_VENDA ||
+						c.escopo === ESCOPO_CONDICAO_PAGAMENTO.VENDAS),
+			);
+		},
+		enabled: open && !!empresa?.id,
+	});
+
+	const opcoesClientes = useMemo(
+		() =>
+			clientes.map((c) => ({
+				value: c.id,
+				label:
+					c.razaosocial?.trim() ||
+					c.nome?.trim() ||
+					c.cnpjcpf?.trim() ||
+					"Cliente sem nome",
+			})),
+		[clientes],
+	);
+
+	const exigeCliente =
+		pagamentoPdvExigeCliente(pagamentos) ||
+		(formaErpSelecionada?.aprazo === 1 && passo === "valor");
 
 	const descontoNum = parseValor(desconto);
 	const taxaServicoNum = parseValor(taxaServico);
@@ -120,6 +207,9 @@ export function PagamentoPdvDialog({
 			setPasso("selecao");
 			setPagamentos([]);
 			setMeioSelecionado(null);
+			setFormaErpSelecionada(null);
+			setIdentidade("");
+			setIdcondicaopagto("");
 			setValorParcial("");
 			setDesconto("");
 			setTaxaServico("");
@@ -134,6 +224,9 @@ export function PagamentoPdvDialog({
 			setPasso("selecao");
 			setPagamentos(fecharContaFormToPagamentosParciais(pagamentoInicial));
 			setMeioSelecionado(null);
+			setFormaErpSelecionada(null);
+			setIdentidade("");
+			setIdcondicaopagto("");
 			setValorParcial("");
 			setDesconto(pagamentoInicial.desconto ?? "");
 			setTaxaServico(pagamentoInicial.valortaxaservico ?? "");
@@ -148,9 +241,40 @@ export function PagamentoPdvDialog({
 		const info = MEIOS_PAGAMENTO_PDV.find((m) => m.id === meio);
 		if (!info) return;
 
+		setFormaErpSelecionada(null);
 		setMeioSelecionado(meio);
 		setValorParcial(restante > 0 ? arredondarMoeda(restante).toFixed(2) : "");
 		setPasso("valor");
+	};
+
+	const selecionarFormaErp = (forma: TipoDocumentoFinanceiro) => {
+		setMeioSelecionado(null);
+		setFormaErpSelecionada(forma);
+		setValorParcial(restante > 0 ? arredondarMoeda(restante).toFixed(2) : "");
+		setPasso("valor");
+	};
+
+	const tentarAvancarPagamentos = (novosPagamentos: PagamentoParcialPdv[]) => {
+		const novoPago = totalPagamentosParciais(novosPagamentos);
+
+		if (pagamentoCobreTotal(novoPago, total)) {
+			if (pagamentoPdvExigeCliente(novosPagamentos) && !identidade.trim()) {
+				toast.error("Selecione o cliente para pagamento a prazo");
+				return;
+			}
+			setPagamentos(novosPagamentos);
+			void finalizarVenda(novosPagamentos);
+			return;
+		}
+
+		setPagamentos(novosPagamentos);
+		setMeioSelecionado(null);
+		setFormaErpSelecionada(null);
+		setValorParcial("");
+		setPasso("selecao");
+		toast.info(
+			`Restam ${formatCurrency(arredondarMoeda(total - novoPago))} para pagar`,
+		);
 	};
 
 	const confirmarValorParcial = () => {
@@ -160,36 +284,60 @@ export function PagamentoPdvDialog({
 			return;
 		}
 
+		if (formaErpSelecionada) {
+			if (formaErpSelecionada.aprazo === 1 && !identidade.trim()) {
+				toast.error("Selecione o cliente para pagamento a prazo");
+				return;
+			}
+
+			const novosPagamentos: PagamentoParcialPdv[] = [
+				...pagamentos,
+				{
+					tipo: "erp",
+					idtipodocumentofinanceiro: formaErpSelecionada.id,
+					valor,
+					label: formaErpSelecionada.descricao,
+					aprazo: formaErpSelecionada.aprazo === 1,
+				},
+			];
+			tentarAvancarPagamentos(novosPagamentos);
+			return;
+		}
+
 		const info = MEIOS_PAGAMENTO_PDV.find((m) => m.id === meioSelecionado);
 		if (!info) return;
 
 		const novosPagamentos: PagamentoParcialPdv[] = [
 			...pagamentos,
-			{ meio: info.id, valor, label: info.label },
+			{
+				tipo: "meio",
+				meio: info.id,
+				valor,
+				label: info.label,
+			},
 		];
-		const novoPago = totalPagamentosParciais(novosPagamentos);
-
-		if (pagamentoCobreTotal(novoPago, total)) {
-			setPagamentos(novosPagamentos);
-			void finalizarVenda(novosPagamentos);
-			return;
-		}
-
-		setPagamentos(novosPagamentos);
-		setMeioSelecionado(null);
-		setValorParcial("");
-		setPasso("selecao");
-		toast.info(
-			`Restam ${formatCurrency(arredondarMoeda(total - novoPago))} para pagar`,
-		);
+		tentarAvancarPagamentos(novosPagamentos);
 	};
 
 	const finalizarVenda = async (pagamentosFinais: PagamentoParcialPdv[]) => {
-		const formData = pagamentosToFecharContaForm(pagamentosFinais, {
-			desconto: descontoNum,
-			taxaServico: taxaServicoNum,
-			couvert: couvertNum,
-		});
+		if (pagamentoPdvExigeCliente(pagamentosFinais) && !identidade.trim()) {
+			toast.error("Selecione o cliente para pagamento a prazo");
+			return;
+		}
+
+		const pagamentosMeio = pagamentosFinais.filter(isPagamentoMeioPdv);
+		const formData: FecharContaFormData = {
+			...pagamentosToFecharContaForm(pagamentosMeio, {
+				desconto: descontoNum,
+				taxaServico: taxaServicoNum,
+				couvert: couvertNum,
+			}),
+			...(identidade.trim() ? { identidade: identidade.trim() } : {}),
+			...(idcondicaopagto.trim() ? { idcondicaopagto: idcondicaopagto.trim() } : {}),
+			...(extrairPagamentosErpForm(pagamentosFinais).length > 0
+				? { pagamentosErp: extrairPagamentosErpForm(pagamentosFinais) }
+				: {}),
+		};
 		const troco = calcularTroco(total, formData);
 
 		setFinalizando(true);
@@ -230,6 +378,8 @@ export function PagamentoPdvDialog({
 
 	const processando = isPending || finalizando;
 	const meioAtual = MEIOS_PAGAMENTO_PDV.find((m) => m.id === meioSelecionado);
+	const labelPagamentoAtual =
+		meioAtual?.label ?? formaErpSelecionada?.descricao ?? "Pagamento";
 
 	return (
 		<Dialog
@@ -251,16 +401,57 @@ export function PagamentoPdvDialog({
 			>
 				{passo === "cupom" && cupomDados ? (
 					<CupomNaoFiscal dados={cupomDados} onFechar={handleFecharCupom} />
-				) : passo === "valor" && meioAtual ? (
+				) : passo === "valor" && (meioAtual || formaErpSelecionada) ? (
 					<>
 						<DialogHeader>
-							<DialogTitle>Pagamento — {meioAtual.label}</DialogTitle>
+							<DialogTitle>Pagamento — {labelPagamentoAtual}</DialogTitle>
 							<DialogDescription>
 								Informe o valor recebido nesta forma de pagamento.
 							</DialogDescription>
 						</DialogHeader>
 
 						<AvisoAmbienteNfe ambiente={ambienteNfce} className="text-xs" />
+
+						{formaErpSelecionada?.aprazo === 1 && (
+							<FieldGroup className="gap-3">
+								<Field>
+									<FieldLabel>Cliente *</FieldLabel>
+									<Combobox
+										options={opcoesClientes}
+										value={identidade}
+										onChange={setIdentidade}
+										placeholder="Selecionar cliente..."
+										searchPlaceholder="Buscar cliente..."
+										emptyMessage="Nenhum cliente encontrado."
+										disabled={processando}
+									/>
+								</Field>
+								<Field>
+									<FieldLabel>Condição de pagamento</FieldLabel>
+									<Select
+										value={idcondicaopagto || "none"}
+										onValueChange={(v) =>
+											setIdcondicaopagto(v === "none" ? "" : v)
+										}
+										disabled={processando}
+									>
+										<SelectTrigger>
+											<SelectValue placeholder="À vista (1 parcela)" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="none">À vista (1 parcela)</SelectItem>
+											{condicoesPagamento.map((condicao) => (
+												<SelectItem key={condicao.id} value={condicao.id}>
+													{condicao.codigo
+														? `${condicao.codigo} - ${condicao.descricao}`
+														: condicao.descricao}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</Field>
+							</FieldGroup>
+						)}
 
 						<div className="rounded-lg bg-muted/50 p-4 text-center">
 							<p className="text-sm text-muted-foreground">Restante a pagar</p>
@@ -276,7 +467,7 @@ export function PagamentoPdvDialog({
 
 						<FieldGroup>
 							<Field>
-								<FieldLabel>Valor — {meioAtual.label}</FieldLabel>
+								<FieldLabel>Valor — {labelPagamentoAtual}</FieldLabel>
 								<MoneyInput
 									value={valorParcial}
 									onChange={setValorParcial}
@@ -294,6 +485,7 @@ export function PagamentoPdvDialog({
 								disabled={processando}
 								onClick={() => {
 									setMeioSelecionado(null);
+									setFormaErpSelecionada(null);
 									setValorParcial("");
 									setPasso("selecao");
 								}}
@@ -347,12 +539,59 @@ export function PagamentoPdvDialog({
 									Pagamentos registrados
 								</p>
 								{pagamentos.map((p, i) => (
-									<div key={`${p.meio}-${i}`} className="flex justify-between">
+									<div
+										key={`${p.tipo}-${p.label}-${i}`}
+										className="flex justify-between"
+									>
 										<span>{p.label}</span>
 										<span>{formatCurrency(p.valor)}</span>
 									</div>
 								))}
 							</div>
+						)}
+
+						{exigeCliente && passo === "selecao" && (
+							<FieldGroup className="gap-3 rounded-lg border border-amber-200 bg-amber-50/50 p-3 dark:border-amber-900 dark:bg-amber-950/20">
+								<Field>
+									<FieldLabel>Cliente *</FieldLabel>
+									<Combobox
+										options={opcoesClientes}
+										value={identidade}
+										onChange={setIdentidade}
+										placeholder="Selecionar cliente..."
+										searchPlaceholder="Buscar cliente..."
+										emptyMessage="Nenhum cliente encontrado."
+										disabled={processando}
+									/>
+									<p className="text-xs text-muted-foreground">
+										Obrigatório para gerar contas a receber do pagamento a prazo.
+									</p>
+								</Field>
+								<Field>
+									<FieldLabel>Condição de pagamento</FieldLabel>
+									<Select
+										value={idcondicaopagto || "none"}
+										onValueChange={(v) =>
+											setIdcondicaopagto(v === "none" ? "" : v)
+										}
+										disabled={processando}
+									>
+										<SelectTrigger>
+											<SelectValue placeholder="À vista (1 parcela)" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="none">À vista (1 parcela)</SelectItem>
+											{condicoesPagamento.map((condicao) => (
+												<SelectItem key={condicao.id} value={condicao.id}>
+													{condicao.codigo
+														? `${condicao.codigo} - ${condicao.descricao}`
+														: condicao.descricao}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</Field>
+							</FieldGroup>
 						)}
 
 						<Collapsible open={ajustesAbertos} onOpenChange={setAjustesAbertos}>
@@ -408,6 +647,30 @@ export function PagamentoPdvDialog({
 								);
 							})}
 						</div>
+
+						{formasErpAprazo.length > 0 && (
+							<div className="space-y-2">
+								<p className="text-sm font-medium text-muted-foreground">
+									A prazo (ERP)
+								</p>
+								<div className="grid grid-cols-2 gap-3">
+									{formasErpAprazo.map((forma) => (
+										<button
+											key={forma.id}
+											type="button"
+											disabled={processando || restante <= 0}
+											onClick={() => selecionarFormaErp(forma)}
+											className="flex flex-col items-center gap-2 rounded-xl border-2 border-border bg-card p-4 transition-colors hover:border-primary hover:bg-accent/50 disabled:cursor-not-allowed disabled:opacity-50"
+										>
+											<IconFileInvoice className="size-8 text-primary" />
+											<span className="text-center text-sm font-medium">
+												{forma.descricao}
+											</span>
+										</button>
+									))}
+								</div>
+							</div>
+						)}
 
 						<Button
 							type="button"

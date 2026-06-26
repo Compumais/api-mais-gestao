@@ -24,6 +24,16 @@ const criarVendaPdvGourmetBodySchema = z.object({
 	valorprepago: valorPagamentoOptional,
 	valortroco: valorPagamentoOptional,
 	valortotal: valorPagamentoOptional,
+	identidade: z.string().uuid().optional(),
+	idcondicaopagto: z.string().uuid().optional(),
+	pagamentosErp: z
+		.array(
+			z.object({
+				idtipodocumentofinanceiro: z.string().uuid(),
+				valor: z.union([z.string(), z.number()]),
+			}),
+		)
+		.optional(),
 });
 
 export async function criarVendaPdvGourmet(
@@ -37,9 +47,20 @@ export async function criarVendaPdvGourmet(
 
 		const dadosValidados = criarVendaPdvGourmetBodySchema.parse(request.body);
 
+		const { pagamentosErp, ...dadosVenda } = dadosValidados;
+
+		const pagamentosErpNormalizados = pagamentosErp?.map((forma) => ({
+			idtipodocumentofinanceiro: forma.idtipodocumentofinanceiro,
+			valor:
+				typeof forma.valor === "number"
+					? forma.valor
+					: Number.parseFloat(String(forma.valor).replace(",", ".")) || 0,
+		}));
+
 		const resultado = await criarVendaPdvGourmetService({
-			dadosVendaPdvGourmet: { id: uuidv4(), ...dadosValidados },
+			dadosVendaPdvGourmet: { id: uuidv4(), ...dadosVenda },
 			idusuario: request.user.id,
+			pagamentosErp: pagamentosErpNormalizados,
 		});
 
 		if (!resultado.success) {

@@ -109,6 +109,23 @@ export function useFecharVenda() {
 				numeropdv: getNumeropdv(),
 				usuarioquefechouvenda: userId,
 				vendalocal: 1,
+				valordinheiro: parseValor(pagamento.valordinheiro).toFixed(2),
+				valorcartaocredito: parseValor(pagamento.valorcartaocredito).toFixed(2),
+				valorcartaodebito: parseValor(pagamento.valorcartaodebito).toFixed(2),
+				valorcartao: parseValor(pagamento.valorcartao).toFixed(2),
+				valorpix: parseValor(pagamento.valorpix).toFixed(2),
+				valorprepago: parseValor(pagamento.valorprepago).toFixed(2),
+				valortroco: valortroco.toFixed(2),
+				valortotal: valortotal.toFixed(2),
+				...(pagamento.identidade
+					? { identidade: pagamento.identidade }
+					: {}),
+				...(pagamento.idcondicaopagto
+					? { idcondicaopagto: pagamento.idcondicaopagto }
+					: {}),
+				...(pagamento.pagamentosErp?.length
+					? { pagamentosErp: pagamento.pagamentosErp }
+					: {}),
 			});
 
 			await criarItensVenda(idempresa, venda.id, itens);
@@ -205,6 +222,15 @@ export function useFecharVenda() {
 				valorprepago: parseValor(pagamento.valorprepago).toFixed(2),
 				valortroco: valortroco.toFixed(2),
 				valortotal: valortotal.toFixed(2),
+				...(pagamento.identidade
+					? { identidade: pagamento.identidade }
+					: {}),
+				...(pagamento.idcondicaopagto
+					? { idcondicaopagto: pagamento.idcondicaopagto }
+					: {}),
+				...(pagamento.pagamentosErp?.length
+					? { pagamentosErp: pagamento.pagamentosErp }
+					: {}),
 			});
 
 			await criarItensVenda(idempresa, venda.id, itens);
