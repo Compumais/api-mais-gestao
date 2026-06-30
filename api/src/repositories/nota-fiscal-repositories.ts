@@ -414,7 +414,7 @@ export async function buscarNotasFiscaisPorChavesNfe(
 
 	const mapa = new Map<string, { id: string; status: number }>();
 	for (const registro of registros) {
-		if (registro.chavenfe) {
+		if (registro.chavenfe && registro.status !== null) {
 			mapa.set(registro.chavenfe, {
 				id: registro.id,
 				status: registro.status,

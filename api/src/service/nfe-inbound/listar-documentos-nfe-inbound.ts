@@ -2,6 +2,9 @@ import type { HttpResponse } from "@/model/http-model.js";
 import type {
 	EmpresaNfeSync,
 	NfeInboundDocumentoListagem,
+	StatusImportacaoInbound,
+	StatusManifestacaoInbound,
+	TipoDocumentoInbound,
 } from "@/model/nfe-inbound-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
@@ -10,8 +13,6 @@ import {
 	atualizarNfeInboundDocumento,
 } from "@/repositories/nfe-inbound-repositories.js";
 import { buscarNotasFiscaisPorChavesNfe } from "@/repositories/nota-fiscal-repositories.js";
-import type { StatusImportacaoInbound } from "@/model/nfe-inbound-model.js";
-import type { StatusManifestacaoInbound } from "@/model/nfe-inbound-model.js";
 import {
 	httpOk,
 	httpProibido,
@@ -54,6 +55,9 @@ async function enriquecerDocumentosInbound(
 
 			return {
 				...documentoSemXml,
+				tipodocumento: documento.tipodocumento as TipoDocumentoInbound,
+				statusmanifestacao:
+					documento.statusmanifestacao as StatusManifestacaoInbound,
 				statusimportacao,
 				jaImportada,
 				idnotafiscal: notaImportada?.id ?? null,
