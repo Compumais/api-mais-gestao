@@ -1,8 +1,9 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { IconKey, IconUpload } from "@tabler/icons-react";
+import { IconKey, IconSearch, IconUpload } from "@tabler/icons-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
@@ -21,14 +22,55 @@ import {
 	type ImportarChaveNfFormData,
 	importarChaveNfSchema,
 } from "@/schemas/nota-fiscal.schema";
+import { diagnosticarChaveNfeInbound } from "@/services/nfe-inbound.service";
 import { notaFiscalService } from "@/services/nota-fiscal.service";
 import {
 	CampoCondicaoPagamentoCompra,
 	CampoPlanoContasDespesa,
 } from "./campos-financeiros-nf-compra";
 
-function mensagemIndicaErro217(mensagem: string): boolean {
-	return mensagem.includes("[217]") || mensagem.includes("Distribuição DF-e");
+type ConsultaSituacaoErro = {
+	cStat?: string;
+	xMotivo?: string;
+};
+
+type ErroImportarChaveDetalhe = {
+	mensagem: string;
+	cStat?: string;
+	codigoErro?: string;
+	consultaSituacao?: ConsultaSituacaoErro | null;
+};
+
+function extrairErroImportarChave(error: unknown): ErroImportarChaveDetalhe {
+	if (axios.isAxiosError(error) && error.response?.data) {
+		const data = error.response.data as {
+			error?: string;
+			cStat?: string;
+			codigoErro?: string;
+			consultaSituacao?: ConsultaSituacaoErro | null;
+		};
+
+		return {
+			mensagem: data.error ?? "Erro ao importar por chave",
+			cStat: data.cStat,
+			codigoErro: data.codigoErro,
+			consultaSituacao: data.consultaSituacao ?? null,
+		};
+	}
+
+	if (error instanceof Error) {
+		return { mensagem: error.message };
+	}
+
+	return { mensagem: "Erro ao importar por chave" };
+}
+
+function mensagemIndicaErroDistribuicaoDfe(mensagem: string): boolean {
+	return (
+		/\[(137|217|632|640)\]/.test(mensagem) ||
+		mensagem.includes("Distribuição DF-e") ||
+		mensagem.includes("Distribuicao DF-e")
+	);
 }
 
 export function FormImportarChaveNotaFiscalCompra() {
@@ -38,7 +80,9 @@ export function FormImportarChaveNotaFiscalCompra() {
 	const inputXmlRef = useRef<HTMLInputElement>(null);
 	const [xmlOpcional, setXmlOpcional] = useState<string | undefined>();
 	const [nomeArquivoXml, setNomeArquivoXml] = useState<string | null>(null);
-	const [ultimoErro, setUltimoErro] = useState<string | null>(null);
+	const [ultimoErro, setUltimoErro] = useState<ErroImportarChaveDetalhe | null>(
+		null,
+	);
 
 	const form = useForm<ImportarChaveNfFormData>({
 		resolver: zodResolver(importarChaveNfSchema),
@@ -47,7 +91,7 @@ export function FormImportarChaveNotaFiscalCompra() {
 		},
 	});
 
-	const { handleSubmit, setValue, watch, register, formState } = form;
+	const { handleSubmit, setValue, watch, register, formState, getValues } = form;
 	const idplanocontas = watch("idplanocontas");
 	const idcondicaopagto = watch("idcondicaopagto");
 
@@ -70,9 +114,46 @@ export function FormImportarChaveNotaFiscalCompra() {
 			queryClient.invalidateQueries({ queryKey: ["rascunhos-importacao-nf"] });
 			router.push(`/nota-fiscal-compra/rascunho/${data.idRascunho}`);
 		},
-		onError: (error: Error) => {
-			setUltimoErro(error.message || "Erro ao importar por chave");
-			toast.error(error.message || "Erro ao importar por chave");
+		onError: (error: unknown) => {
+			const detalhe = extrairErroImportarChave(error);
+			setUltimoErro(detalhe);
+			toast.error(detalhe.mensagem);
+		},
+	});
+
+	const { mutate: diagnosticarChave, isPending: diagnosticando } = useMutation({
+		mutationFn: async () => {
+			if (!empresa) throw new Error("Empresa não selecionada");
+
+			const chave = getValues("chaveNfe");
+			return diagnosticarChaveNfeInbound({
+				idempresa: empresa.id,
+				chave,
+				xml: xmlOpcional,
+				consultarSefaz: true,
+			});
+		},
+		onSuccess: (resultado) => {
+			const partes = [
+				`Ambiente: ${resultado.empresa.ambienteDescricao ?? "não configurado"}`,
+				resultado.sefaz?.consultado
+					? `DF-e [${resultado.sefaz.cStat ?? "?"}]: ${resultado.sefaz.xMotivo ?? "—"} (${resultado.sefaz.quantidadeDocumentos ?? 0} doc(s))`
+					: `DF-e: ${resultado.sefaz?.xMotivo ?? "não consultado"}`,
+			];
+
+			if (!resultado.preConsulta.ok) {
+				const erros = resultado.preConsulta.inconsistencias
+					.filter((item) => item.severidade === "erro")
+					.map((item) => item.mensagem)
+					.join(" ");
+				toast.warning(`Pré-consulta: ${erros || "inconsistências encontradas"}`);
+			} else {
+				toast.info(partes.join(" · "));
+			}
+		},
+		onError: (error: unknown) => {
+			const detalhe = extrairErroImportarChave(error);
+			toast.error(detalhe.mensagem);
 		},
 	});
 
@@ -95,6 +176,9 @@ export function FormImportarChaveNotaFiscalCompra() {
 			</p>
 		);
 	}
+
+	const notaAutorizadaNaSefaz =
+		ultimoErro?.consultaSituacao?.cStat === "100";
 
 	return (
 		<form
@@ -156,6 +240,15 @@ export function FormImportarChaveNotaFiscalCompra() {
 							<IconUpload className="size-4" />
 							Selecionar XML
 						</Button>
+						<Button
+							type="button"
+							variant="outline"
+							disabled={diagnosticando || isPending}
+							onClick={() => diagnosticarChave()}
+						>
+							<IconSearch className="size-4" />
+							{diagnosticando ? "Diagnosticando..." : "Diagnosticar chave"}
+						</Button>
 						{nomeArquivoXml ? (
 							<span className="text-sm text-muted-foreground">{nomeArquivoXml}</span>
 						) : (
@@ -167,12 +260,24 @@ export function FormImportarChaveNotaFiscalCompra() {
 				</Field>
 			</FieldGroup>
 
-			{ultimoErro && mensagemIndicaErro217(ultimoErro) ? (
+			{ultimoErro && mensagemIndicaErroDistribuicaoDfe(ultimoErro.mensagem) ? (
 				<div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-4 text-sm">
-					<p className="font-medium text-amber-900 dark:text-amber-100">
-						A SEFAZ não disponibilizou esta NF-e para o CNPJ consultado
-					</p>
-					<p className="mt-2 text-muted-foreground">{ultimoErro}</p>
+					{notaAutorizadaNaSefaz ? (
+						<p className="font-medium text-green-800 dark:text-green-200">
+							A nota existe e está autorizada na SEFAZ (situação 100)
+						</p>
+					) : (
+						<p className="font-medium text-amber-900 dark:text-amber-100">
+							A SEFAZ não disponibilizou o XML desta NF-e na Distribuição DF-e
+						</p>
+					)}
+					<p className="mt-2 text-muted-foreground">{ultimoErro.mensagem}</p>
+					{ultimoErro.consultaSituacao?.xMotivo ? (
+						<p className="mt-2 text-muted-foreground text-xs">
+							Consulta de situação: [{ultimoErro.consultaSituacao.cStat}]{" "}
+							{ultimoErro.consultaSituacao.xMotivo}
+						</p>
+					) : null}
 					<p className="mt-3">
 						Se você já possui o arquivo do fornecedor,{" "}
 						<Link

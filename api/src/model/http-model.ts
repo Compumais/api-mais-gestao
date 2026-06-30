@@ -9,4 +9,10 @@ export type HttpResponse<T> =
 			status: number;
 			error: string;
 			code: string;
+			cStat?: string;
+			codigoErro?: string;
+			consultaSituacao?: {
+				cStat?: string;
+				xMotivo?: string;
+			} | null;
 	  };

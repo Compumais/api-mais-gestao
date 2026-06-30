@@ -6,6 +6,7 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 use MaisGestao\NfeGateway\Middleware\AuthMiddleware;
 use MaisGestao\NfeGateway\Services\CertificadoService;
+use MaisGestao\NfeGateway\Services\ConsultaChaveService;
 use MaisGestao\NfeGateway\Services\DanfeService;
 use MaisGestao\NfeGateway\Services\DistDfeService;
 use MaisGestao\NfeGateway\Services\HomologacaoNfeService;
@@ -114,6 +115,25 @@ try {
             $senha,
             $chaveNfe,
             $cUFAutor,
+        );
+
+        jsonResponse([
+            'sucesso' => (bool) ($resultado['sucesso'] ?? false),
+            ...$resultado,
+        ]);
+    }
+
+    if ($method === 'POST' && $path === '/sefaz/consulta-chave') {
+        $configJson = $body['configJson'] ?? [];
+        $pfxBase64 = (string) ($body['pfxBase64'] ?? '');
+        $senha = (string) ($body['senha'] ?? '');
+        $chaveNfe = (string) ($body['chaveNfe'] ?? '');
+
+        $resultado = ConsultaChaveService::consultarPorChave(
+            is_array($configJson) ? $configJson : [],
+            $pfxBase64,
+            $senha,
+            $chaveNfe,
         );
 
         jsonResponse([

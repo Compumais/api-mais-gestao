@@ -35,6 +35,13 @@ export async function importarNotaFiscalPorChave(
 			return reply.status(resultado.status).send({
 				error: resultado.error,
 				code: resultado.code,
+				...(resultado.cStat !== undefined && { cStat: resultado.cStat }),
+				...(resultado.codigoErro !== undefined && {
+					codigoErro: resultado.codigoErro,
+				}),
+				...(resultado.consultaSituacao !== undefined && {
+					consultaSituacao: resultado.consultaSituacao,
+				}),
 			});
 		}
 

@@ -38,52 +38,7 @@ final class DistDfeService
         $ultNSURet = (string) ($retorno['ultNSU'] ?? str_pad((string) $ultNSUNumerico, 15, '0', STR_PAD_LEFT));
         $maxNSU = (string) ($retorno['maxNSU'] ?? $ultNSURet);
 
-        $docZipLista = [];
-        $lote = $retorno['loteDistDFeInt'] ?? null;
-
-        if (is_array($lote) && isset($lote['docZip'])) {
-            $docZips = $lote['docZip'];
-            if (!isset($docZips[0])) {
-                $docZips = [$docZips];
-            }
-
-            foreach ($docZips as $docZip) {
-                if (!is_array($docZip)) {
-                    continue;
-                }
-
-                $atributos = $docZip['@attributes'] ?? [];
-                $nsu = (string) ($atributos['NSU'] ?? '');
-                $schema = (string) ($atributos['schema'] ?? '');
-                $content = '';
-
-                if (isset($docZip['$value'])) {
-                    $content = (string) $docZip['$value'];
-                } elseif (isset($docZip[0])) {
-                    $content = (string) $docZip[0];
-                } else {
-                    foreach ($docZip as $chave => $valor) {
-                        if ($chave === '@attributes') {
-                            continue;
-                        }
-                        if (is_string($valor)) {
-                            $content = $valor;
-                            break;
-                        }
-                    }
-                }
-
-                if ($content === '') {
-                    continue;
-                }
-
-                $docZipLista[] = [
-                    'nsu' => $nsu,
-                    'schema' => $schema,
-                    'content' => $content,
-                ];
-            }
-        }
+        $docZipLista = self::extrairDocZipLista($retorno, $xml);
 
         return [
             'sucesso' => in_array($cStat, ['137', '138'], true),
@@ -131,52 +86,7 @@ final class DistDfeService
         $ultNSURet = (string) ($retorno['ultNSU'] ?? '0');
         $maxNSU = (string) ($retorno['maxNSU'] ?? $ultNSURet);
 
-        $docZipLista = [];
-        $lote = $retorno['loteDistDFeInt'] ?? null;
-
-        if (is_array($lote) && isset($lote['docZip'])) {
-            $docZips = $lote['docZip'];
-            if (!isset($docZips[0])) {
-                $docZips = [$docZips];
-            }
-
-            foreach ($docZips as $docZip) {
-                if (!is_array($docZip)) {
-                    continue;
-                }
-
-                $atributos = $docZip['@attributes'] ?? [];
-                $nsu = (string) ($atributos['NSU'] ?? '');
-                $schema = (string) ($atributos['schema'] ?? '');
-                $content = '';
-
-                if (isset($docZip['$value'])) {
-                    $content = (string) $docZip['$value'];
-                } elseif (isset($docZip[0])) {
-                    $content = (string) $docZip[0];
-                } else {
-                    foreach ($docZip as $chaveDoc => $valor) {
-                        if ($chaveDoc === '@attributes') {
-                            continue;
-                        }
-                        if (is_string($valor)) {
-                            $content = $valor;
-                            break;
-                        }
-                    }
-                }
-
-                if ($content === '') {
-                    continue;
-                }
-
-                $docZipLista[] = [
-                    'nsu' => $nsu,
-                    'schema' => $schema,
-                    'content' => $content,
-                ];
-            }
-        }
+        $docZipLista = self::extrairDocZipLista($retorno, $xml);
 
         return [
             'sucesso' => in_array($cStat, ['137', '138'], true),
@@ -189,5 +99,161 @@ final class DistDfeService
             'chaveNfe' => $chave,
             'cUFAutor' => $cUFAutor,
         ];
+    }
+
+    /**
+     * Extrai docZip do retorno da Distribuição DF-e.
+     *
+     * Com um único documento, o NFePHP Standardize::toArray() devolve o conteúdo
+     * base64 como string em loteDistDFeInt.docZip (não como array com @attributes).
+     *
+     * @param array<string, mixed> $retorno
+     * @return list<array{nsu: string, schema: string, content: string}>
+     */
+    private static function extrairDocZipLista(array $retorno, string $xml): array
+    {
+        $docZipsRaw = null;
+
+        $lote = $retorno['loteDistDFeInt'] ?? null;
+        if (is_array($lote) && array_key_exists('docZip', $lote)) {
+            $docZipsRaw = $lote['docZip'];
+        } elseif (array_key_exists('docZip', $retorno)) {
+            $docZipsRaw = $retorno['docZip'];
+        }
+
+        if ($docZipsRaw === null || $docZipsRaw === '') {
+            return [];
+        }
+
+        if (is_string($docZipsRaw)) {
+            $atributos = self::extrairAtributosDocZipDoXml($xml, 0);
+
+            return [[
+                'nsu' => $atributos['nsu'],
+                'schema' => $atributos['schema'],
+                'content' => $docZipsRaw,
+            ]];
+        }
+
+        if (!is_array($docZipsRaw)) {
+            return [];
+        }
+
+        $docZips = self::normalizarListaDocZip($docZipsRaw);
+        $docZipLista = [];
+        $indice = 0;
+
+        foreach ($docZips as $docZip) {
+            if (is_string($docZip)) {
+                $atributos = self::extrairAtributosDocZipDoXml($xml, $indice);
+                $docZipLista[] = [
+                    'nsu' => $atributos['nsu'],
+                    'schema' => $atributos['schema'],
+                    'content' => $docZip,
+                ];
+                $indice++;
+                continue;
+            }
+
+            if (!is_array($docZip)) {
+                continue;
+            }
+
+            $atributos = $docZip['@attributes'] ?? [];
+            $nsu = (string) ($atributos['NSU'] ?? '');
+            $schema = (string) ($atributos['schema'] ?? '');
+            $content = self::extrairConteudoDocZip($docZip);
+
+            if ($content === '') {
+                $indice++;
+                continue;
+            }
+
+            if ($nsu === '' && $schema === '') {
+                $atributosXml = self::extrairAtributosDocZipDoXml($xml, $indice);
+                $nsu = $atributosXml['nsu'];
+                $schema = $atributosXml['schema'];
+            }
+
+            $docZipLista[] = [
+                'nsu' => $nsu,
+                'schema' => $schema,
+                'content' => $content,
+            ];
+            $indice++;
+        }
+
+        return $docZipLista;
+    }
+
+    /**
+     * @param array<int|string, mixed> $docZipsRaw
+     * @return list<mixed>
+     */
+    private static function normalizarListaDocZip(array $docZipsRaw): array
+    {
+        if (isset($docZipsRaw[0])) {
+            return array_values($docZipsRaw);
+        }
+
+        if (isset($docZipsRaw['@attributes']) || isset($docZipsRaw['$value'])) {
+            return [$docZipsRaw];
+        }
+
+        return [$docZipsRaw];
+    }
+
+    /**
+     * @param array<string, mixed> $docZip
+     */
+    private static function extrairConteudoDocZip(array $docZip): string
+    {
+        if (isset($docZip['$value'])) {
+            return (string) $docZip['$value'];
+        }
+
+        if (isset($docZip[0]) && is_string($docZip[0])) {
+            return (string) $docZip[0];
+        }
+
+        foreach ($docZip as $chave => $valor) {
+            if ($chave === '@attributes') {
+                continue;
+            }
+            if (is_string($valor)) {
+                return $valor;
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * @return array{nsu: string, schema: string}
+     */
+    private static function extrairAtributosDocZipDoXml(string $xml, int $indice): array
+    {
+        if (!preg_match_all(
+            '/<docZip\b([^>]*)>([^<]*)<\/docZip>/i',
+            $xml,
+            $matches,
+            PREG_SET_ORDER,
+        )) {
+            return ['nsu' => '', 'schema' => ''];
+        }
+
+        $match = $matches[$indice] ?? $matches[0];
+        $attrs = (string) ($match[1] ?? '');
+        $nsu = '';
+        $schema = '';
+
+        if (preg_match('/\bNSU="([^"]*)"/i', $attrs, $m)) {
+            $nsu = $m[1];
+        }
+        if (preg_match('/\bschema="([^"]*)"/i', $attrs, $m)) {
+            $schema = $m[1];
+        }
+
+        return ['nsu' => $nsu, 'schema' => $schema];
     }
 }

@@ -62,6 +62,14 @@ export type NfeGatewayManifestacaoResposta = NfeGatewayRespostaBase & {
 	tpEvento?: string;
 };
 
+export type NfeGatewayConsultaChaveResposta = NfeGatewayRespostaBase & {
+	cStat?: string;
+	xMotivo?: string;
+	chNFe?: string;
+	protNFe?: unknown;
+	xml?: string;
+};
+
 type PayloadGateway = {
 	configJson: Record<string, unknown>;
 	pfxBase64: string;
@@ -281,6 +289,18 @@ export async function consultarDistribuicaoDfePorChaveGateway(payload: {
 	cUFAutor?: number;
 }): Promise<NfeGatewayDistDfeResposta> {
 	return chamarNfeGateway<NfeGatewayDistDfeResposta>("/sefaz/dist-dfe/chave", payload);
+}
+
+export async function consultarSituacaoChaveSefazGateway(payload: {
+	configJson: Record<string, unknown>;
+	pfxBase64: string;
+	senha: string;
+	chaveNfe: string;
+}): Promise<NfeGatewayConsultaChaveResposta> {
+	return chamarNfeGateway<NfeGatewayConsultaChaveResposta>(
+		"/sefaz/consulta-chave",
+		payload,
+	);
 }
 
 export async function manifestarCienciaOperacaoGateway(payload: {
