@@ -8,7 +8,10 @@ import {
 	atualizarNotaFiscal,
 	buscarItemNotaFiscalPorId,
 	buscarNotaFiscalRascunhoPorId,
+	listarItensPorNotaFiscal,
 } from "@/repositories/nota-fiscal-repositories.js";
+import { buscarHierarquiaPorId } from "@/repositories/hierarquia-repositories.js";
+import type { DadosImportacaoNota } from "@/model/nota-fiscal-importacao-model.js";
 import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
 import { recalcularDadosConversao } from "@/util/calculo-importacao-nf.js";
 import {
@@ -296,5 +299,79 @@ export async function atualizarItemRascunhoImportacaoNfService({
 	return httpOk({
 		...itemAtualizado,
 		dadosimportacao: dadosMesclados,
+	});
+}
+
+type AplicarGrupoPadraoRascunhoParametros = {
+	idusuario: string;
+	idempresa: string;
+	idRascunho: string;
+	idgrupo: string;
+};
+
+export type AplicarGrupoPadraoRascunhoResposta = {
+	idgrupoPadrao: string;
+	quantidadeItens: number;
+};
+
+export async function aplicarGrupoPadraoRascunhoImportacaoNfService({
+	idusuario,
+	idempresa,
+	idRascunho,
+	idgrupo,
+}: AplicarGrupoPadraoRascunhoParametros): Promise<
+	HttpResponse<AplicarGrupoPadraoRascunhoResposta>
+> {
+	const validacao = await validarAcessoRascunho(idusuario, idempresa, idRascunho);
+
+	if ("erro" in validacao) {
+		return validacao.erro as HttpResponse<AplicarGrupoPadraoRascunhoResposta>;
+	}
+
+	const grupo = await buscarHierarquiaPorId(idgrupo);
+
+	if (!grupo || grupo.idempresa !== idempresa) {
+		return httpBadRequest("Grupo não encontrado para esta empresa");
+	}
+
+	const itens = await listarItensPorNotaFiscal(idRascunho);
+	const dadosNotaAtual =
+		(validacao.nota.dadosimportacao as DadosImportacaoNota | null) ?? {};
+
+	const notaAtualizada = await atualizarNotaFiscal(idRascunho, {
+		dadosimportacao: {
+			...dadosNotaAtual,
+			idgrupoPadrao: idgrupo,
+		},
+	});
+
+	if (!notaAtualizada) {
+		return httpNaoEncontrado();
+	}
+
+	for (const item of itens) {
+		const dadosAtuais = (item.dadosimportacao as DadosImportacaoItem | null) ?? {
+			descricaoFornecedor: item.descricao ?? "",
+			statusVinculo: "pendente" as const,
+			confirmarCadastro: false,
+			fatorConversao: "1",
+			quantidadeXml: item.quantidade ?? "0",
+			quantidadeEstoque: item.quantidade ?? "0",
+			precounitarioXml: item.precounitario ?? "0",
+			precounitarioEstoque: item.precounitario ?? "0",
+			tributacao: {},
+		};
+
+		await atualizarItemNotaFiscal(item.id, {
+			dadosimportacao: {
+				...dadosAtuais,
+				idgrupo,
+			},
+		});
+	}
+
+	return httpOk({
+		idgrupoPadrao: idgrupo,
+		quantidadeItens: itens.length,
 	});
 }

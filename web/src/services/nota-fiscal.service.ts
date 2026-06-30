@@ -33,6 +33,7 @@ export interface NotaFiscal {
 		finNFe?: number;
 		chaveReferenciadaXml?: string;
 		ipiDevolvidoXml?: string;
+		idgrupoPadrao?: string;
 	} | null;
 }
 
@@ -332,6 +333,17 @@ export const notaFiscalService = {
 			`/notas-fiscais/rascunhos/${id}/itens/${idItem}`,
 			payload,
 		);
+		return data;
+	},
+
+	async aplicarGrupoPadraoRascunhoImportacao(
+		id: string,
+		payload: { idempresa: string; idgrupo: string },
+	): Promise<{ idgrupoPadrao: string; quantidadeItens: number }> {
+		const { data } = await api.post<{
+			idgrupoPadrao: string;
+			quantidadeItens: number;
+		}>(`/notas-fiscais/rascunhos/${id}/grupo-padrao`, payload);
 		return data;
 	},
 

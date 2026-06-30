@@ -73,6 +73,23 @@ function formatarMoeda(valor: string | null | undefined) {
 	}).format(num);
 }
 
+function podeImportarDocumento(doc: NfeInboundDocumento): boolean {
+	return (
+		doc.tipodocumento === "procNFe" &&
+		!(doc.jaImportada ?? false) &&
+		doc.statusimportacao === "disponivel"
+	);
+}
+
+function podeContinuarRascunho(doc: NfeInboundDocumento): boolean {
+	return (
+		doc.tipodocumento === "procNFe" &&
+		!(doc.jaImportada ?? false) &&
+		Boolean(doc.idrascunho) &&
+		doc.statusimportacao === "rascunho_criado"
+	);
+}
+
 export default function CapturaSefazPage() {
 	const { localStorageEmpresa: empresa } = useEmpresa();
 	const router = useRouter();
@@ -144,6 +161,11 @@ export default function CapturaSefazPage() {
 		},
 		onError: (error: Error) => {
 			toast.error(error.message || "Erro ao importar documento");
+			if (error.message.includes("já foi importada")) {
+				void queryClient.invalidateQueries({
+					queryKey: ["nfe-inbound-documentos"],
+				});
+			}
 		},
 		onSettled: () => setAcaoId(null),
 	});
@@ -291,17 +313,23 @@ export default function CapturaSefazPage() {
 												<TableCell>
 													<Badge
 														variant={
-															doc.statusimportacao === "disponivel"
-																? "default"
-																: "secondary"
+															doc.jaImportada ||
+															doc.statusimportacao === "importado"
+																? "secondary"
+																: doc.statusimportacao === "disponivel"
+																	? "default"
+																	: "secondary"
 														}
 													>
-														{LABEL_STATUS_IMPORTACAO[doc.statusimportacao] ??
-															doc.statusimportacao}
+														{doc.jaImportada ||
+														doc.statusimportacao === "importado"
+															? "Já importada"
+															: (LABEL_STATUS_IMPORTACAO[doc.statusimportacao] ??
+																doc.statusimportacao)}
 													</Badge>
 												</TableCell>
 												<TableCell className="text-right">
-													<div className="flex justify-end gap-1">
+													<div className="flex flex-wrap justify-end gap-1">
 														{doc.tipodocumento === "resNFe" &&
 															doc.statusmanifestacao === "sem_manifestacao" && (
 																<Button
@@ -320,31 +348,31 @@ export default function CapturaSefazPage() {
 																	<ShieldCheckIcon className="size-4" />
 																</Button>
 															)}
-														{doc.tipodocumento === "procNFe" &&
-															doc.statusimportacao === "disponivel" && (
-																<Button
-																	size="sm"
-																	variant="outline"
-																	disabled={
-																		acaoId === doc.id ||
-																		importarMutation.isPending
-																	}
-																	onClick={() => {
-																		setAcaoId(doc.id);
-																		importarMutation.mutate(doc.id);
-																	}}
-																	title="Importar"
-																>
-																	<FileInputIcon className="size-4" />
-																</Button>
-															)}
-														{doc.idrascunho && (
+														{podeContinuarRascunho(doc) && (
 															<Button size="sm" variant="outline" asChild>
 																<Link
 																	href={`/nota-fiscal-compra/rascunho/${doc.idrascunho}`}
 																>
-																	Rascunho
+																	<FileInputIcon className="mr-1 size-4" />
+																	Continuar
 																</Link>
+															</Button>
+														)}
+														{podeImportarDocumento(doc) && (
+															<Button
+																size="sm"
+																variant="default"
+																disabled={
+																	acaoId === doc.id ||
+																	importarMutation.isPending
+																}
+																onClick={() => {
+																	setAcaoId(doc.id);
+																	importarMutation.mutate(doc.id);
+																}}
+															>
+																<FileInputIcon className="mr-1 size-4" />
+																Importar
 															</Button>
 														)}
 														{(doc.tipodocumento === "procNFe" ||

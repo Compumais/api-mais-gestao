@@ -1,11 +1,13 @@
 import { v4 as uuidv4 } from "uuid";
 import type { StatusImportacaoInbound } from "@/model/nfe-inbound-model.js";
 import type { StatusManifestacaoInbound } from "@/model/nfe-inbound-model.js";
+import { buscarNotaFiscalPorChaveNfe } from "@/repositories/nota-fiscal-repositories.js";
 import {
 	buscarNfeInboundDocumentoPorChave,
 	upsertNfeInboundDocumento,
 	atualizarStatusManifestacaoPorChave,
 } from "@/repositories/nfe-inbound-repositories.js";
+import { STATUS_RASCUNHO_IMPORTACAO } from "@/util/nota-fiscal-constants.js";
 import type { DocumentoXmlClassificado } from "./classificar-xml-dfe.js";
 
 export async function persistirDocumentoInbound({
@@ -45,7 +47,14 @@ export async function persistirDocumentoInbound({
 		"sem_manifestacao";
 
 	if (classificado.tipo === "procNFe") {
-		statusimportacao = "disponivel";
+		const notaExistente = await buscarNotaFiscalPorChaveNfe(
+			idempresa,
+			classificado.metadados.chavenfe,
+		);
+		statusimportacao =
+			notaExistente && notaExistente.status !== STATUS_RASCUNHO_IMPORTACAO
+				? "importado"
+				: "disponivel";
 	} else if (classificado.tipo === "resNFe") {
 		statusimportacao = "aguardando_xml";
 	}

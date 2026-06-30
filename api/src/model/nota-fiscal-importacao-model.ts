@@ -110,6 +110,7 @@ export type DadosImportacaoNota = {
 	chaveReferenciadaXml?: string | undefined;
 	ipiDevolvidoXml?: string | undefined;
 	duplicatas?: DuplicataImportacaoNf[] | undefined;
+	idgrupoPadrao?: string | undefined;
 	finalizadoEm?: string | undefined;
 	versao?: number | undefined;
 	xmlArquivado?: {

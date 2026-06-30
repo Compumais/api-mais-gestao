@@ -70,6 +70,11 @@ export async function importPurchaseInvoiceService({
 	);
 
 	if (notaExistente && notaExistente.status !== 99) {
+		const agora = new Date().toISOString();
+		await atualizarNfeInboundDocumento(documento.id, {
+			statusimportacao: "importado",
+			atualizadoem: agora,
+		});
 		return httpBadRequest("Esta NF-e já foi importada no sistema");
 	}
 

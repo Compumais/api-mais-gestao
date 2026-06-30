@@ -1,10 +1,15 @@
 import type { HttpResponse } from "@/model/http-model.js";
-import type { EmpresaNfeSync } from "@/model/nfe-inbound-model.js";
+import type {
+	EmpresaNfeSync,
+	NfeInboundDocumentoListagem,
+} from "@/model/nfe-inbound-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	listarNfeInboundDocumentos,
 	obterOuCriarEmpresaNfeSync,
+	atualizarNfeInboundDocumento,
 } from "@/repositories/nfe-inbound-repositories.js";
+import { buscarNotasFiscaisPorChavesNfe } from "@/repositories/nota-fiscal-repositories.js";
 import type { StatusImportacaoInbound } from "@/model/nfe-inbound-model.js";
 import type { StatusManifestacaoInbound } from "@/model/nfe-inbound-model.js";
 import {
@@ -15,6 +20,47 @@ import {
 	obterIdUsuarioAutoImport,
 	sincronizarEmpresaNfeInboundService,
 } from "./nfe-inbound-sync.service.js";
+
+async function enriquecerDocumentosInbound(
+	idempresa: string,
+	documentos: Awaited<
+		ReturnType<typeof listarNfeInboundDocumentos>
+	>["documentos"],
+): Promise<NfeInboundDocumentoListagem[]> {
+	const chaves = documentos.map((documento) => documento.chavenfe);
+	const notasPorChave = await buscarNotasFiscaisPorChavesNfe(idempresa, chaves);
+	const agora = new Date().toISOString();
+
+	return Promise.all(
+		documentos.map(async (documento) => {
+			const notaImportada = notasPorChave.get(documento.chavenfe);
+			const jaImportada = Boolean(notaImportada);
+			let statusimportacao =
+				documento.statusimportacao as StatusImportacaoInbound;
+
+			if (
+				jaImportada &&
+				statusimportacao !== "importado" &&
+				statusimportacao !== "rascunho_criado"
+			) {
+				await atualizarNfeInboundDocumento(documento.id, {
+					statusimportacao: "importado",
+					atualizadoem: agora,
+				});
+				statusimportacao = "importado";
+			}
+
+			const { xml: _xml, ...documentoSemXml } = documento;
+
+			return {
+				...documentoSemXml,
+				statusimportacao,
+				jaImportada,
+				idnotafiscal: notaImportada?.id ?? null,
+			};
+		}),
+	);
+}
 
 export async function obterStatusSyncNfeInboundService({
 	idempresa,
@@ -89,8 +135,10 @@ export async function listarDocumentosNfeInboundService({
 		limit,
 	});
 
+	const data = await enriquecerDocumentosInbound(idempresa, documentos);
+
 	return httpOk({
-		data: documentos,
+		data,
 		paginacao: {
 			page: page ?? 1,
 			limit: limit ?? 20,

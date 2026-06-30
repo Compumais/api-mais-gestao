@@ -42,6 +42,8 @@ export type NfeInboundDocumento = {
 	statusmanifestacao: StatusManifestacaoInbound;
 	statusimportacao: StatusImportacaoInbound;
 	idrascunho: string | null;
+	jaImportada: boolean;
+	idnotafiscal: string | null;
 	criadoem: string;
 	atualizadoem: string;
 };

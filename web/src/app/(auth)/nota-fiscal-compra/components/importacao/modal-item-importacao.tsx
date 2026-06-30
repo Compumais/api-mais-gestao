@@ -95,6 +95,8 @@ function montarDefaultValues(
 	const trib = dados.tributacao;
 
 	return {
+		descricaoFornecedor:
+			dados.descricaoFornecedor ?? item.descricao ?? "",
 		fatorConversao: dados.fatorConversao ?? "1",
 		quantidadeEstoque: dados.quantidadeEstoque ?? item.quantidade ?? "0",
 		precounitarioEstoque:
@@ -172,7 +174,14 @@ export function ModalItemImportacao({
 
 
 
-	const { register, handleSubmit, watch, setValue, reset } = form;
+	const {
+		register,
+		handleSubmit,
+		watch,
+		setValue,
+		reset,
+		formState: { errors },
+	} = form;
 	const fatorConversao = watch("fatorConversao");
 	const statusVinculo = dados?.statusVinculo;
 	const precisaDadosProduto =
@@ -250,6 +259,7 @@ export function ModalItemImportacao({
 
 
 			const payload: Partial<DadosImportacaoItem> = {
+				descricaoFornecedor: formData.descricaoFornecedor.trim(),
 				fatorConversao: formData.fatorConversao,
 				quantidadeEstoque: formData.quantidadeEstoque,
 				precounitarioEstoque: formData.precounitarioEstoque,
@@ -350,7 +360,26 @@ export function ModalItemImportacao({
 
 				>
 
-					<p className="text-sm font-medium">{dados.descricaoFornecedor}</p>
+					<Field data-invalid={!!errors.descricaoFornecedor}>
+						<FieldLabel htmlFor="descricaoFornecedor">Nome do produto</FieldLabel>
+						<Input
+							id="descricaoFornecedor"
+							maxLength={120}
+							placeholder="Nome que será cadastrado no estoque"
+							{...register("descricaoFornecedor")}
+						/>
+						{dados.descricaoFornecedor &&
+						watch("descricaoFornecedor") !== dados.descricaoFornecedor ? (
+							<p className="text-xs text-muted-foreground mt-1">
+								Original na NF: {dados.descricaoFornecedor}
+							</p>
+						) : null}
+						{errors.descricaoFornecedor ? (
+							<p className="text-xs text-destructive mt-1">
+								{errors.descricaoFornecedor.message}
+							</p>
+						) : null}
+					</Field>
 					{dados.eanXml ? (
 						<p className="text-sm text-muted-foreground">
 							Código de barras (XML): <span className="font-mono">{dados.eanXml}</span>
