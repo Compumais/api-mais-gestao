@@ -41,6 +41,7 @@ const tributacaoSchema = z
 
 const itemBodySchema = z.object({
 	idempresa: z.string(),
+	descricaoFornecedor: z.string().min(1).optional(),
 	statusVinculo: z.enum(["pendente", "vinculado", "novo"]).optional(),
 	idproduto: z.string().optional(),
 	confirmarCadastro: z.boolean().optional(),
@@ -118,6 +119,9 @@ export async function atualizarItemRascunhoImportacao(
 			idRascunho: id,
 			idItem,
 			dados: {
+				...(dados.descricaoFornecedor !== undefined && {
+					descricaoFornecedor: dados.descricaoFornecedor,
+				}),
 				...(dados.statusVinculo !== undefined && {
 					statusVinculo: dados.statusVinculo,
 				}),

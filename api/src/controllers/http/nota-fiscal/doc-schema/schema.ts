@@ -500,6 +500,29 @@ export const atualizarItemRascunhoImportacaoSchema: FastifySchema = {
 	},
 };
 
+export const aplicarGrupoPadraoRascunhoImportacaoSchema: FastifySchema = {
+	tags: ["nota-fiscal"],
+	summary: "Aplicar grupo padrão aos itens do rascunho",
+	security: [{ bearerAuth: [] }],
+	params: { type: "object", properties: { id: { type: "string" } }, required: ["id"] },
+	body: {
+		type: "object",
+		properties: {
+			idempresa: { type: "string" },
+			idgrupo: { type: "string" },
+		},
+		required: ["idempresa", "idgrupo"],
+	},
+	response: {
+		200: { type: "object", additionalProperties: true },
+		400: respostaErro,
+		404: respostaErro,
+		401: respostaErro,
+		403: respostaErro,
+		500: respostaErro,
+	},
+};
+
 export const finalizarRascunhoImportacaoSchema: FastifySchema = {
 	tags: ["nota-fiscal"],
 	summary: "Finalizar rascunho de importação",

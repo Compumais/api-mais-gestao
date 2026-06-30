@@ -389,6 +389,42 @@ export async function buscarNotaFiscalPorChaveNfe(
 	return registro;
 }
 
+export async function buscarNotasFiscaisPorChavesNfe(
+	idempresa: string,
+	chaves: string[],
+): Promise<Map<string, { id: string; status: number }>> {
+	if (chaves.length === 0) {
+		return new Map();
+	}
+
+	const registros = await db
+		.select({
+			id: notafiscal.id,
+			chavenfe: notafiscal.chavenfe,
+			status: notafiscal.status,
+		})
+		.from(notafiscal)
+		.where(
+			and(
+				eq(notafiscal.idempresa, idempresa),
+				inArray(notafiscal.chavenfe, chaves),
+				ne(notafiscal.status, STATUS_RASCUNHO_IMPORTACAO),
+			),
+		);
+
+	const mapa = new Map<string, { id: string; status: number }>();
+	for (const registro of registros) {
+		if (registro.chavenfe) {
+			mapa.set(registro.chavenfe, {
+				id: registro.id,
+				status: registro.status,
+			});
+		}
+	}
+
+	return mapa;
+}
+
 export async function buscarItemNotaFiscalPorId(
 	id: string,
 	idnotafiscal: string,

@@ -65,6 +65,10 @@ export const finalizarRascunhoSchema = z.object({
 export type FinalizarRascunhoFormData = z.infer<typeof finalizarRascunhoSchema>;
 
 export const itemImportacaoSchema = z.object({
+	descricaoFornecedor: z
+		.string()
+		.min(1, "Informe o nome do produto")
+		.max(120, "Nome do produto deve ter no máximo 120 caracteres"),
 	fatorConversao: z
 		.string()
 		.min(1, "Informe o fator de conversão")

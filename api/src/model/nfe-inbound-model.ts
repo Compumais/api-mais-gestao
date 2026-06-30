@@ -39,6 +39,11 @@ export type NfeInboundDocumento = {
 	atualizadoem: string;
 };
 
+export type NfeInboundDocumentoListagem = Omit<NfeInboundDocumento, "xml"> & {
+	jaImportada: boolean;
+	idnotafiscal: string | null;
+};
+
 export type EmpresaNfeSync = {
 	idempresa: string;
 	ultimonsu: string;

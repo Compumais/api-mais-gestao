@@ -12,6 +12,7 @@ import { notaFiscalService } from "@/services/nota-fiscal.service";
 import { PageContainer } from "@/app/(auth)/components/page-container";
 import { BarraFinalizarImportacao } from "../../components/importacao/barra-finalizar-importacao";
 import { CabecalhoNfImportacao } from "../../components/importacao/cabecalho-nf-importacao";
+import { CampoGrupoPadraoImportacao } from "../../components/importacao/campo-grupo-padrao-importacao";
 import { GridItensImportacao } from "../../components/importacao/grid-itens-importacao";
 
 export default function RascunhoImportacaoPage() {
@@ -92,6 +93,13 @@ export default function RascunhoImportacaoPage() {
 										<span className="text-amber-700 dark:text-amber-400">Amarelo: novo</span>
 									</span>
 								</p>
+								<div className="mb-4">
+									<CampoGrupoPadraoImportacao
+										idempresa={empresa.id}
+										idRascunho={idRascunho}
+										idgrupoPadrao={data.nota.dadosimportacao?.idgrupoPadrao}
+									/>
+								</div>
 								<GridItensImportacao
 									idempresa={empresa.id}
 									idRascunho={idRascunho}

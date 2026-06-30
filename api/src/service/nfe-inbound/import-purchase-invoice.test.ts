@@ -63,6 +63,9 @@ describe("importPurchaseInvoiceService", () => {
 			id: "nf-1",
 			status: 1,
 		} as never);
+		vi.mocked(nfeInboundRepo.atualizarNfeInboundDocumento).mockResolvedValue(
+			{} as never,
+		);
 
 		const resultado = await importPurchaseInvoiceService({
 			idDocumento: "doc-1",
@@ -72,5 +75,9 @@ describe("importPurchaseInvoiceService", () => {
 
 		expect(resultado.success).toBe(false);
 		expect(resultado.status).toBe(400);
+		expect(nfeInboundRepo.atualizarNfeInboundDocumento).toHaveBeenCalledWith(
+			"doc-1",
+			expect.objectContaining({ statusimportacao: "importado" }),
+		);
 	});
 });
