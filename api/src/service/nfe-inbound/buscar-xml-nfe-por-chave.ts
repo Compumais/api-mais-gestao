@@ -195,7 +195,7 @@ export async function buscarXmlNfePorChave({
 	}
 
 	if (tratamento.acao === "parar_nao_distribuido") {
-		await lancarErroNaoDistribuido(
+		return await lancarErroNaoDistribuido(
 			credenciais,
 			validacao.chave,
 			resposta.cStat,
@@ -204,7 +204,7 @@ export async function buscarXmlNfePorChave({
 	}
 
 	if (tratamento.acao === "parar_sucesso") {
-		await lancarErroNaoDistribuido(
+		return await lancarErroNaoDistribuido(
 			credenciais,
 			validacao.chave,
 			resposta.cStat,
@@ -256,7 +256,7 @@ export async function buscarXmlNfePorChave({
 		);
 	}
 
-	await lancarErroNaoDistribuido(
+	return await lancarErroNaoDistribuido(
 		credenciais,
 		validacao.chave,
 		resposta.cStat,
