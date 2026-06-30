@@ -6,19 +6,26 @@ export type AcaoErroSefazDfe =
 	| "parar_nao_distribuido"
 	| "erro";
 
-const MENSAGEM_ERRO_217 = [
+export const MENSAGEM_ERRO_137 = [
+	"[137] Nenhum documento localizado na Distribuição DF-e para o CNPJ e ambiente consultados.",
+	"Isso não significa que a nota não existe — ela pode constar na base da SEFAZ sem estar disponível para download nesta fila.",
+	"Verifique: (1) CNPJ destinatário no XML vs empresa logada; (2) ambiente Produção/Homologação na configuração NF-e; (3) chave com 44 dígitos corretos.",
+	"Se você já possui o XML do fornecedor, use a aba Importar XML em vez da consulta por chave.",
+].join(" ");
+
+export const MENSAGEM_ERRO_217 = [
 	"[217] A NF-e não está disponível na Distribuição DF-e para o CNPJ e ambiente consultados.",
 	"Isso não significa que a nota não existe — ela pode ter sido recebida do fornecedor sem entrar na fila da SEFAZ para este CNPJ.",
 	"Verifique: (1) CNPJ destinatário no XML vs empresa logada; (2) ambiente Produção/Homologação na configuração NF-e; (3) chave com 44 dígitos corretos.",
 	"Se você já possui o XML do fornecedor, use a aba Importar XML em vez da consulta por chave.",
 ].join(" ");
 
-const MENSAGEM_ERRO_632 = [
+export const MENSAGEM_ERRO_632 = [
 	"[632] A NF-e não está mais disponível para download na SEFAZ (prazo de 90 dias).",
 	"Use o XML recebido do fornecedor na aba Importar XML.",
 ].join(" ");
 
-const MENSAGEM_ERRO_640 = [
+export const MENSAGEM_ERRO_640 = [
 	"[640] O CNPJ consultado não tem permissão para baixar esta NF-e na Distribuição DF-e.",
 	"Confirme se a empresa logada é o destinatário, transportador ou terceiro (autXML) da nota.",
 ].join(" ");

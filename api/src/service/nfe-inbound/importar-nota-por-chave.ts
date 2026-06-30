@@ -1,7 +1,7 @@
-import type { HttpResponse } from "@/model/http-model.js";
 import { manifestarCienciaOperacaoGateway } from "@/lib/nfe-gateway-client.js";
-import { buscarNotaFiscalPorChaveNfe } from "@/repositories/nota-fiscal-repositories.js";
+import type { HttpResponse } from "@/model/http-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { buscarNotaFiscalPorChaveNfe } from "@/repositories/nota-fiscal-repositories.js";
 import { montarCredenciaisGatewayNfe } from "@/service/nfe-emissao/montar-credenciais-gateway-nfe.js";
 import { criarRascunhoImportacaoNfService } from "@/service/nota-fiscal/importacao/criar-rascunho-importacao-nf.js";
 import {
@@ -32,12 +32,6 @@ export type ImportarNotaPorChaveParametros = {
 	idplanocontas?: string;
 	idcondicaopagto?: string;
 	xmlOpcional?: string;
-};
-
-export type ImportarNotaPorChaveResposta = {
-	idRascunho: string;
-	urlRascunho: string;
-	chavenfe: string;
 };
 
 async function tentarObterProcNFe(
@@ -83,7 +77,11 @@ async function manifestarCienciaERetentar(
 		);
 	}
 
-	for (let tentativa = 1; tentativa <= MAX_TENTATIVAS_APOS_MANIFESTACAO; tentativa++) {
+	for (
+		let tentativa = 1;
+		tentativa <= MAX_TENTATIVAS_APOS_MANIFESTACAO;
+		tentativa++
+	) {
 		await aguardar(INTERVALO_RETRY_MS);
 
 		try {
@@ -104,6 +102,22 @@ async function manifestarCienciaERetentar(
 		"Ciência registrada, mas o XML completo ainda não está disponível na SEFAZ. Aguarde alguns minutos e tente novamente.",
 		"RESUMO_APENAS",
 	);
+}
+
+export type ImportarNotaPorChaveResposta = {
+	idRascunho: string;
+	urlRascunho: string;
+	chavenfe: string;
+};
+
+function respostaErroBuscaXml(
+	erro: ErroBuscaXmlNfePorChave,
+): HttpResponse<never> {
+	return httpBadRequest(erro.message, {
+		cStat: erro.cStat,
+		codigoErro: erro.codigo,
+		consultaSituacao: erro.consultaSituacao ?? null,
+	});
 }
 
 export async function importarNotaPorChaveService({
@@ -143,7 +157,11 @@ export async function importarNotaPorChaveService({
 	let xmlProcNFe: string;
 
 	try {
-		xmlProcNFe = await tentarObterProcNFe(idempresa, validacao.chave, xmlOpcional);
+		xmlProcNFe = await tentarObterProcNFe(
+			idempresa,
+			validacao.chave,
+			xmlOpcional,
+		);
 	} catch (erro) {
 		if (
 			erro instanceof ErroBuscaXmlNfePorChave &&
@@ -156,12 +174,12 @@ export async function importarNotaPorChaveService({
 				);
 			} catch (erroManifestacao) {
 				if (erroManifestacao instanceof ErroBuscaXmlNfePorChave) {
-					return httpBadRequest(erroManifestacao.message);
+					return respostaErroBuscaXml(erroManifestacao);
 				}
 				throw erroManifestacao;
 			}
 		} else if (erro instanceof ErroBuscaXmlNfePorChave) {
-			return httpBadRequest(erro.message);
+			return respostaErroBuscaXml(erro);
 		} else {
 			throw erro;
 		}

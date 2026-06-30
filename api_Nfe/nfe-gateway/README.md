@@ -51,6 +51,9 @@ NFE_GATEWAY_SECRET=dev-secret-change-me php -S 127.0.0.1:8088 -t public
 | GET | `/health` | Healthcheck (sem auth) |
 | POST | `/certificado/info` | Metadados do certificado A1 |
 | POST | `/sefaz/status` | Status do serviço SEFAZ |
+| POST | `/sefaz/dist-dfe` | Distribuição DF-e por NSU |
+| POST | `/sefaz/dist-dfe/chave` | Distribuição DF-e por chave (`consChNFe`) |
+| POST | `/sefaz/consulta-chave` | Consulta situação da NF-e na SEFAZ (`consSitNFe`) |
 | POST | `/nfe/homologacao/emitir` | NF-e teste homologação |
 | POST | `/nfe/emissao` | Emissão NF-e de venda |
 | POST | `/nfe/cancelar` | Cancelamento de NF-e autorizada |

@@ -1,16 +1,34 @@
-import { consultarDistribuicaoDfePorChaveGateway } from "@/lib/nfe-gateway-client.js";
+import {
+	consultarDistribuicaoDfePorChaveGateway,
+	consultarSituacaoChaveSefazGateway,
+	type NfeGatewayConsultaChaveResposta,
+} from "@/lib/nfe-gateway-client.js";
 import { buscarEmpresaFiscalPorEmpresa } from "@/repositories/empresa-fiscal-repositories.js";
 import { montarCredenciaisGatewayNfe } from "@/service/nfe-emissao/montar-credenciais-gateway-nfe.js";
+import { validarEstruturaChaveNfe } from "@/util/decodificar-chave-nfe.js";
 import { obterCodigoUfIbge } from "@/util/montar-config-sped-nfe.js";
 import { validarChaveNfe } from "@/util/validar-chave-nfe.js";
-import { validarEstruturaChaveNfe } from "@/util/decodificar-chave-nfe.js";
 import { classificarXmlDfe } from "./classificar-xml-dfe.js";
+import {
+	type ConsultaSituacaoChaveNfe,
+	deveConsultarSituacaoFallback,
+	MENSAGEM_ERRO_138_SEM_DOC,
+	montarMensagemConsultaChaveSefaz,
+} from "./montar-mensagem-consulta-chave-sefaz.js";
 import { processarDocZip } from "./processar-doc-zip.js";
-import { tratarErroSefazDfe } from "./tratar-erros-sefaz-dfe.js";
+import {
+	MENSAGEM_ERRO_137,
+	tratarErroSefazDfe,
+} from "./tratar-erros-sefaz-dfe.js";
 import {
 	montarMensagemPreConsultaChaveNfe,
 	validarPreConsultaChaveNfe,
 } from "./validar-pre-consulta-chave-nfe.js";
+
+type CredenciaisGatewayOk = Extract<
+	Awaited<ReturnType<typeof montarCredenciaisGatewayNfe>>,
+	{ ok: true }
+>;
 
 export class ErroBuscaXmlNfePorChave extends Error {
 	constructor(
@@ -23,6 +41,7 @@ export class ErroBuscaXmlNfePorChave extends Error {
 			| "NAO_ENCONTRADO"
 			| "RESUMO_APENAS",
 		public readonly cStat?: string,
+		public readonly consultaSituacao?: ConsultaSituacaoChaveNfe | null,
 	) {
 		super(message);
 		this.name = "ErroBuscaXmlNfePorChave";
@@ -34,6 +53,68 @@ export type ResultadoBuscaXmlNfePorChave = {
 	tipo: "procNFe" | "resNFe";
 	xml: string;
 };
+
+async function consultarSituacaoFallback(
+	credenciais: CredenciaisGatewayOk,
+	chave: string,
+): Promise<ConsultaSituacaoChaveNfe | null> {
+	try {
+		const resposta: NfeGatewayConsultaChaveResposta =
+			await consultarSituacaoChaveSefazGateway({
+				configJson: credenciais.configJson,
+				pfxBase64: credenciais.pfxBase64,
+				senha: credenciais.senha,
+				chaveNfe: chave,
+			});
+
+		if (!resposta.sucesso && resposta.erro) {
+			return null;
+		}
+
+		return {
+			cStat: resposta.cStat,
+			xMotivo: resposta.xMotivo,
+		};
+	} catch {
+		return null;
+	}
+}
+
+async function lancarErroNaoDistribuido(
+	credenciais: CredenciaisGatewayOk,
+	chave: string,
+	cStatDfe?: string,
+	mensagemBase?: string,
+): Promise<never> {
+	const consultaSituacao = deveConsultarSituacaoFallback(cStatDfe)
+		? await consultarSituacaoFallback(credenciais, chave)
+		: null;
+
+	const situacaoEnriqueceMensagem =
+		consultaSituacao?.cStat === "100" ||
+		consultaSituacao?.cStat === "217" ||
+		consultaSituacao?.cStat === "236";
+
+	const mensagem = situacaoEnriqueceMensagem
+		? montarMensagemConsultaChaveSefaz({
+				cStatDfe,
+				consultaSituacao,
+				tpAmb: credenciais.nfeConfiguracao.ambiente,
+			})
+		: (mensagemBase ??
+			montarMensagemConsultaChaveSefaz({
+				cStatDfe,
+				consultaSituacao,
+				tpAmb: credenciais.nfeConfiguracao.ambiente,
+			}));
+
+	throw new ErroBuscaXmlNfePorChave(
+		mensagem,
+		"NAO_ENCONTRADO",
+		cStatDfe,
+		consultaSituacao,
+	);
+}
 
 export async function buscarXmlNfePorChave({
 	idempresa,
@@ -98,31 +179,45 @@ export async function buscarXmlNfePorChave({
 	const tratamento = tratarErroSefazDfe(resposta.cStat, resposta.xMotivo);
 
 	if (tratamento.acao === "parar_certificado") {
-		throw new ErroBuscaXmlNfePorChave(tratamento.mensagem, "CERTIFICADO", resposta.cStat);
+		throw new ErroBuscaXmlNfePorChave(
+			tratamento.mensagem,
+			"CERTIFICADO",
+			resposta.cStat,
+		);
 	}
 
 	if (tratamento.acao === "parar_backoff") {
-		throw new ErroBuscaXmlNfePorChave(tratamento.mensagem, "SEFAZ", resposta.cStat);
+		throw new ErroBuscaXmlNfePorChave(
+			tratamento.mensagem,
+			"SEFAZ",
+			resposta.cStat,
+		);
 	}
 
 	if (tratamento.acao === "parar_nao_distribuido") {
-		throw new ErroBuscaXmlNfePorChave(
-			tratamento.mensagem,
-			"NAO_ENCONTRADO",
+		await lancarErroNaoDistribuido(
+			credenciais,
+			validacao.chave,
 			resposta.cStat,
+			tratamento.mensagem,
 		);
 	}
 
 	if (tratamento.acao === "parar_sucesso") {
-		throw new ErroBuscaXmlNfePorChave(
-			"NF-e não encontrada na SEFAZ para este destinatário. Verifique a chave e se a nota foi emitida para o CNPJ da empresa.",
-			"NAO_ENCONTRADO",
+		await lancarErroNaoDistribuido(
+			credenciais,
+			validacao.chave,
 			resposta.cStat,
+			MENSAGEM_ERRO_137,
 		);
 	}
 
 	if (tratamento.acao === "erro") {
-		throw new ErroBuscaXmlNfePorChave(tratamento.mensagem, "SEFAZ", resposta.cStat);
+		throw new ErroBuscaXmlNfePorChave(
+			tratamento.mensagem,
+			"SEFAZ",
+			resposta.cStat,
+		);
 	}
 
 	let resNFe: ResultadoBuscaXmlNfePorChave | null = null;
@@ -151,9 +246,7 @@ export async function buscarXmlNfePorChave({
 					xml: classificado.xml,
 				};
 			}
-		} catch {
-			continue;
-		}
+		} catch {}
 	}
 
 	if (resNFe) {
@@ -163,9 +256,10 @@ export async function buscarXmlNfePorChave({
 		);
 	}
 
-	throw new ErroBuscaXmlNfePorChave(
-		"NF-e não encontrada na resposta da SEFAZ para a chave informada.",
-		"NAO_ENCONTRADO",
+	await lancarErroNaoDistribuido(
+		credenciais,
+		validacao.chave,
 		resposta.cStat,
+		resposta.cStat === "138" ? MENSAGEM_ERRO_138_SEM_DOC : undefined,
 	);
 }

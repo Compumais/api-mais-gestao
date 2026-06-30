@@ -97,6 +97,11 @@ export function httpErro() {
 
 export function httpBadRequest(
 	error?: string | { error?: string },
+	meta?: {
+		cStat?: string;
+		codigoErro?: string;
+		consultaSituacao?: { cStat?: string; xMotivo?: string } | null;
+	},
 ): HttpResponse<never> {
 	const errorMessage =
 		typeof error === "string"
@@ -108,5 +113,10 @@ export function httpBadRequest(
 		status: 400,
 		error: errorMessage,
 		code: "BAD_REQUEST_ERROR",
+		...(meta?.cStat !== undefined && { cStat: meta.cStat }),
+		...(meta?.codigoErro !== undefined && { codigoErro: meta.codigoErro }),
+		...(meta?.consultaSituacao !== undefined && {
+			consultaSituacao: meta.consultaSituacao,
+		}),
 	};
 }

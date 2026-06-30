@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
 	calcularProximoBackoffMs,
+	MENSAGEM_ERRO_137,
 	tratarErroSefazDfe,
 } from "./tratar-erros-sefaz-dfe.js";
 
@@ -8,6 +9,12 @@ describe("tratarErroSefazDfe", () => {
 	it("deve tratar cStat 137 como parada com sucesso", () => {
 		const resultado = tratarErroSefazDfe("137");
 		expect(resultado.acao).toBe("parar_sucesso");
+	});
+
+	it("deve expor MENSAGEM_ERRO_137 com orientação de distribuição DF-e", () => {
+		expect(MENSAGEM_ERRO_137).toContain("[137]");
+		expect(MENSAGEM_ERRO_137).toContain("não significa que a nota não existe");
+		expect(MENSAGEM_ERRO_137).toContain("Importar XML");
 	});
 
 	it("deve tratar cStat 138 como continuar", () => {
