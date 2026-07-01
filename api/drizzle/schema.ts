@@ -91,6 +91,7 @@ export * from "./tables/informativos.js";
 export * from "./tables/tipo-documento-financeiro.js";
 export * from "./tables/tipo-problema.js";
 export * from "./tables/unidade-medida.js";
+export * from "./tables/fator-conversao.js";
 export * from "./tables/usuario-empresa.js";
 export * from "./tables/usuarios.js";
 export * from "./tables/venda-pdv-item.js";

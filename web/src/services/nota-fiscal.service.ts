@@ -150,6 +150,17 @@ export interface TributacaoImportacaoItem {
 	cofins?: string;
 	ipi?: string;
 	origem?: number;
+	baseicmsst?: string;
+	icmsst?: string;
+	fcpst?: string;
+	percentualdifericms?: string;
+}
+
+export interface RateioCustoImportacaoItem {
+	frete?: string;
+	seguro?: string;
+	outras?: string;
+	desconto?: string;
 }
 
 export interface DadosImportacaoItem {
@@ -175,6 +186,7 @@ export interface DadosImportacaoItem {
 	ncmXml?: string;
 	idncm?: string;
 	tributacao: TributacaoImportacaoItem;
+	rateio?: RateioCustoImportacaoItem;
 }
 
 export interface FornecedorSugeridoImportacao {

@@ -96,6 +96,10 @@ export const DATA = {
 					url: "/unidade-medida",
 				},
 				{
+					title: "Fatores de conversão",
+					url: "/fator-conversao",
+				},
+				{
 					title: "Meios de pagamento",
 					url: "/meios-pagamento",
 				},

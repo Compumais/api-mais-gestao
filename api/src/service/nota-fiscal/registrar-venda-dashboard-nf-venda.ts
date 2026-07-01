@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
-import type { NotaFiscal } from "@/model/nota-fiscal-model.js";
 import type { NotaFiscalItem } from "@/model/nota-fiscal-item-model.js";
+import type { NotaFiscal } from "@/model/nota-fiscal-model.js";
 import { buscarTipoDocumentoFinanceiroPorId } from "@/repositories/tipo-documento-financeiro-repositories.js";
 import {
 	buscarVendaPdvGourmetPorNotaFiscalNfce,
@@ -70,8 +70,7 @@ function montarItensVendaPdv(
 			const qty = parseValorMonetario(quantidade);
 			const preco = parseValorMonetario(precounitario);
 			const precototal =
-				item.total ??
-				(qty > 0 && preco > 0 ? (qty * preco).toFixed(2) : "0");
+				item.total ?? (qty > 0 && preco > 0 ? (qty * preco).toFixed(2) : "0");
 
 			return {
 				id: uuidv4(),
@@ -117,7 +116,8 @@ export async function registrarVendaDashboardNfVenda({
 
 	const pagamentos = await resolverPagamentosVendaPdv(emissaoSalva, valorTotal);
 	const idvenda = uuidv4();
-	const dataVenda = nota.datahoraemissao ?? nota.emissao ?? new Date().toISOString();
+	const dataVenda =
+		nota.datahoraemissao ?? nota.emissao ?? new Date().toISOString();
 	const itensVenda = montarItensVendaPdv(idvenda, nota.idempresa, itens);
 
 	try {

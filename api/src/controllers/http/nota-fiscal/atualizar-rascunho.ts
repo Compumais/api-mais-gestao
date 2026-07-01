@@ -36,6 +36,10 @@ const tributacaoSchema = z
 		cofins: z.string().optional(),
 		ipi: z.string().optional(),
 		origem: z.number().int().optional(),
+		baseicmsst: z.string().optional(),
+		icmsst: z.string().optional(),
+		fcpst: z.string().optional(),
+		percentualdifericms: z.string().optional(),
 	})
 	.optional();
 
