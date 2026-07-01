@@ -1,11 +1,11 @@
 import { v4 as uuidv4 } from "uuid";
 import type { HttpResponse } from "@/model/http-model.js";
+import { buscarCondicaoPagamentoPorId } from "@/repositories/condicao-pagamento-repositories.js";
+import { db } from "@/repositories/connection.js";
 import {
 	buscarContaCorrenteCaixaPadrao,
 	criarContaCorrenteCaixaPadrao,
 } from "@/repositories/conta-corrente-repositories.js";
-import { buscarCondicaoPagamentoPorId } from "@/repositories/condicao-pagamento-repositories.js";
-import { db } from "@/repositories/connection.js";
 import { buscarEntidadePorId } from "@/repositories/entidade-repositories.js";
 import {
 	buscarFinanceirosPorOrigem,
@@ -21,11 +21,11 @@ import {
 	formatarDataIso,
 	formatarValorMonetario,
 } from "@/util/recebimentos-venda-util.js";
-import { resolverParcelasCondicaoPagamento } from "@/util/resolver-parcelas-condicao-pagamento.js";
 import {
 	resolverDestinoFinanceiroFormaPagamento,
 	resolverPrazoDiasTipoDocumento,
 } from "@/util/resolver-financeiro-emissao-nfe.js";
+import { resolverParcelasCondicaoPagamento } from "@/util/resolver-parcelas-condicao-pagamento.js";
 
 export type FormaPagamentoNfVenda = {
 	idtipodocumentofinanceiro: string;
@@ -194,8 +194,7 @@ export async function gerarContasReceberNfService(
 	let parcelasGeradas = 0;
 	let lancamentosCaixa = 0;
 
-	const formas =
-		parametros.formasPagamento?.filter((f) => f.valor > 0) ?? [];
+	const formas = parametros.formasPagamento?.filter((f) => f.valor > 0) ?? [];
 
 	if (parametros.idcondicaopagto) {
 		const condicao = await buscarCondicaoPagamentoPorId(

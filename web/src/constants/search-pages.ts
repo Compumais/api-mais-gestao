@@ -123,6 +123,13 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 		keywords: ["unidade", "medida", "unidades", "kg", "litro"],
 	},
 	{
+		title: "Fatores de conversão",
+		url: "/fator-conversao",
+		category: "Principal",
+		icon: IconListDetails,
+		keywords: ["fator", "conversão", "conversao", "unidade", "quantidade"],
+	},
+	{
 		title: "Naturezas de operação",
 		url: "/tributos/naturezas",
 		category: "Tributos",

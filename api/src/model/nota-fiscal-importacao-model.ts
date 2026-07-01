@@ -19,6 +19,7 @@ export type TributacaoImportacaoItem = {
 	icmsst?: string | undefined;
 	mvaicmsst?: string | undefined;
 	fcpst?: string | undefined;
+	percentualdifericms?: string | undefined;
 };
 
 export type RateioCustoImportacaoItem = {

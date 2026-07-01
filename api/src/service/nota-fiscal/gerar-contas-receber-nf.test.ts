@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as condicaoPagamentoRepository from "@/repositories/condicao-pagamento-repositories.js";
-import * as entidadeRepository from "@/repositories/entidade-repositories.js";
 import * as financeiroRepository from "@/repositories/financeiro-repositories.js";
 import * as tipoDocumentoRepository from "@/repositories/tipo-documento-financeiro-repositories.js";
 import { gerarContasReceberNfService } from "@/service/nota-fiscal/gerar-contas-receber-nf.js";

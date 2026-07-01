@@ -1,9 +1,10 @@
 import { v4 as uuidv4 } from "uuid";
 import type { HttpResponse } from "@/model/http-model.js";
-import type { NotaFiscal } from "@/model/nota-fiscal-model.js";
-import type { NotaFiscalItem } from "@/model/nota-fiscal-item-model.js";
-import type { NovaNotaFiscal } from "@/model/nota-fiscal-model.js";
-import type { NovoNotaFiscalItem } from "@/model/nota-fiscal-item-model.js";
+import type {
+	NotaFiscalItem,
+	NovoNotaFiscalItem,
+} from "@/model/nota-fiscal-item-model.js";
+import type { NotaFiscal, NovaNotaFiscal } from "@/model/nota-fiscal-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { criarNotaFiscalComItens } from "@/repositories/nota-fiscal-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
@@ -11,8 +12,8 @@ import { registrarCustosNfService } from "@/service/custo-produto/registrar-cust
 import { gerarContasPagarNfService } from "@/service/nota-fiscal/gerar-contas-pagar-nf.js";
 import { vincularOuCriarFornecedorNf } from "@/service/nota-fiscal/vincular-ou-criar-fornecedor-nf.js";
 import {
-	vincularOuCriarProdutoService,
 	type DadosProdutoNF,
+	vincularOuCriarProdutoService,
 } from "@/service/nota-fiscal/vincular-ou-criar-produto.js";
 import {
 	httpBadRequest,
@@ -113,7 +114,9 @@ function sanitizarDadosNotaFiscal(
 	};
 }
 
-function sanitizarItemNotaFiscal(item: ItemNotaFiscalEntrada): ItemNotaFiscalEntrada {
+function sanitizarItemNotaFiscal(
+	item: ItemNotaFiscalEntrada,
+): ItemNotaFiscalEntrada {
 	const descricao =
 		truncarTexto(item.descricao ?? item.descricaoproduto, 120) ?? undefined;
 
@@ -171,16 +174,20 @@ export async function criarNotaFiscalService({
 		dadosSanitizados.identidade = identidadeFornecedor;
 	}
 
-	const produtosResolvidos: Array<{ idproduto: string; item: ItemNotaFiscalEntrada }> = [];
+	const produtosResolvidos: Array<{
+		idproduto: string;
+		item: ItemNotaFiscalEntrada;
+	}> = [];
 
 	for (const item of itensSanitizados) {
 		const dadosProduto: DadosProdutoNF = {
 			idempresa: dadosSanitizados.idempresa,
 			idproduto: item.idproduto,
 			codigoproduto: item.codigoproduto,
-			ean: normalizarCodigoBarras(
-				typeof item.ean === "number" ? String(item.ean) : item.ean,
-			) ?? undefined,
+			ean:
+				normalizarCodigoBarras(
+					typeof item.ean === "number" ? String(item.ean) : item.ean,
+				) ?? undefined,
 			descricaoproduto: item.descricaoproduto ?? item.descricao,
 			idncm: item.idncm,
 			idunidademedida: item.idunidademedida,

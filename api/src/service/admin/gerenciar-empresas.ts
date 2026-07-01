@@ -1,16 +1,17 @@
 import { randomUUID } from "node:crypto";
 import { desc, eq } from "drizzle-orm";
 import type { HttpResponse } from "@/model/http-model.js";
-import { criarContaCorrenteCaixaPadrao } from "@/repositories/conta-corrente-repositories.js";
 import { db } from "@/repositories/connection.js";
+import { criarContaCorrenteCaixaPadrao } from "@/repositories/conta-corrente-repositories.js";
 import { executarComControleAcessoPrivilegiado } from "@/repositories/controle-acesso-contexto.js";
 import { criarEmpresa } from "@/repositories/empresa-repositories.js";
 import { buscarUsuarioPorId } from "@/repositories/usuarios-repositories.js";
-import * as schema from "../../../drizzle/schema.js";
 import { criarCfopsPadraoService } from "@/service/cfop/criar-cfops-padrao.js";
+import { criarFatoresConversaoPadraoService } from "@/service/fator-conversao/criar-fatores-conversao-padrao.js";
 import { criarPlanoContasPadraoService } from "@/service/planocontas/criar-plano-contas-padrao.js";
 import { httpNaoEncontrado, httpOk } from "@/util/http-util.js";
 import { normalizarPerfilArray } from "@/util/usuario-perfil.js";
+import * as schema from "../../../drizzle/schema.js";
 
 type CriarEmpresaAdminParams = {
 	nome: string;
@@ -28,7 +29,9 @@ export async function criarEmpresaAdminService(
 	params: CriarEmpresaAdminParams,
 ): Promise<HttpResponse<unknown>> {
 	const idproprietario =
-		params.idproprietario ?? params.idusuarioAssociado ?? params.idSuperFallback;
+		params.idproprietario ??
+		params.idusuarioAssociado ??
+		params.idSuperFallback;
 
 	const proprietario = await buscarUsuarioPorId(idproprietario);
 	if (!proprietario) {
@@ -55,6 +58,7 @@ export async function criarEmpresaAdminService(
 	await criarPlanoContasPadraoService(empresa.id);
 	await criarCfopsPadraoService(empresa.id);
 	await criarContaCorrenteCaixaPadrao(empresa.id);
+	await criarFatoresConversaoPadraoService(empresa.id);
 
 	const usuariosParaVincular = new Set<string>([idproprietario]);
 	if (params.idusuarioAssociado) {
@@ -109,7 +113,9 @@ export async function criarEmpresaAdminService(
 	return httpOk(empresa);
 }
 
-export async function listarEmpresasAdminService(): Promise<HttpResponse<unknown>> {
+export async function listarEmpresasAdminService(): Promise<
+	HttpResponse<unknown>
+> {
 	const empresas = await db
 		.select({
 			id: schema.empresa.id,

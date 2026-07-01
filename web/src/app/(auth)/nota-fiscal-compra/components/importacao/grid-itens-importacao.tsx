@@ -1,6 +1,13 @@
 "use client";
 
-import { IconDotsVertical, IconLink, IconLinkOff, IconPencil } from "@tabler/icons-react";
+import {
+	IconCalculator,
+	IconDotsVertical,
+	IconLink,
+	IconLinkOff,
+	IconPencil,
+    IconPlus,
+} from "@tabler/icons-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -22,13 +29,15 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import {
-	notaFiscalService,
 	type BuscarRascunhoImportacaoResponse,
 	type DadosImportacaoItem,
 	type NotaFiscalItemImportacao,
+	notaFiscalService,
 } from "@/services/nota-fiscal.service";
 import { CelulaCfopEntradaImportacao } from "./celula-cfop-entrada-importacao";
+import { CelulaFatorConversaoImportacao } from "./celula-fator-conversao-importacao";
 import { LocalizarProdutoDialog } from "./localizar-produto-dialog";
+import { ModalComposicaoPrecoImportacao } from "./modal-composicao-preco-importacao";
 import { ModalItemImportacao } from "./modal-item-importacao";
 
 type GridItensImportacaoProps = {
@@ -66,7 +75,9 @@ function exibirProdutoCadastro(dados: DadosImportacaoItem) {
 	if (dados.produtoEncontrado) {
 		return (
 			<div className="min-w-[140px] max-w-[220px]">
-				<p className="truncate text-sm font-medium">{dados.produtoEncontrado.nome}</p>
+				<p className="truncate text-sm font-medium">
+					{dados.produtoEncontrado.nome}
+				</p>
 				{dados.produtoEncontrado.codigo != null ? (
 					<p className="text-xs text-muted-foreground">
 						Cód. {dados.produtoEncontrado.codigo}
@@ -110,6 +121,8 @@ export function GridItensImportacao({
 	const [itemModal, setItemModal] = useState<NotaFiscalItemImportacao | null>(
 		null,
 	);
+	const [itemComposicao, setItemComposicao] =
+		useState<NotaFiscalItemImportacao | null>(null);
 
 	const { mutate: atualizarItem, isPending } = useMutation({
 		mutationFn: (params: {
@@ -188,11 +201,12 @@ export function GridItensImportacao({
 							<TableHead>Produto estoque</TableHead>
 							<TableHead>CFOP entrada</TableHead>
 							<TableHead className="hidden md:table-cell">NCM</TableHead>
-							<TableHead>Qtd</TableHead>
-							<TableHead>Unit.</TableHead>
+							<TableHead>Qtd NF</TableHead>
+							<TableHead className="w-24">Fator</TableHead>
+							<TableHead>Unit. estoque</TableHead>
 							<TableHead className="hidden sm:table-cell">Total</TableHead>
 							<TableHead>Status</TableHead>
-							<TableHead className="min-w-[180px] text-right">Ações</TableHead>
+							<TableHead className="w-14 text-right">Ações</TableHead>
 						</TableRow>
 					</TableHeader>
 					<TableBody>
@@ -202,7 +216,7 @@ export function GridItensImportacao({
 								return (
 									<TableRow key={item.id}>
 										<TableCell>{item.contador}</TableCell>
-										<TableCell colSpan={9}>
+										<TableCell colSpan={10}>
 											<span className="text-destructive text-sm">
 												Sem dados de importação
 											</span>
@@ -249,9 +263,34 @@ export function GridItensImportacao({
 									<TableCell className="hidden md:table-cell">
 										{dados.ncmXml ?? item.ncm ?? "-"}
 									</TableCell>
-									<TableCell>{dados.quantidadeXml ?? item.quantidade}</TableCell>
+									<TableCell>
+										{dados.quantidadeXml ?? item.quantidade}
+									</TableCell>
+									<TableCell>
+										<CelulaFatorConversaoImportacao
+											idempresa={idempresa}
+											idRascunho={idRascunho}
+											idItem={item.id}
+											fatorAtual={dados.fatorConversao ?? "1"}
+											disabled={isPending}
+										/>
+									</TableCell>
 									<TableCell className="whitespace-nowrap">
-										{formatCurrency(dados.precounitarioXml ?? item.precounitario)}
+										<p>
+											{formatCurrency(
+												dados.precounitarioEstoque ??
+													dados.precounitarioXml ??
+													item.precounitario,
+											)}
+										</p>
+										{dados.fatorConversao !== "1" ? (
+											<p className="text-xs text-muted-foreground">
+												NF:{" "}
+												{formatCurrency(
+													dados.precounitarioXml ?? item.precounitario,
+												)}
+											</p>
+										) : null}
 									</TableCell>
 									<TableCell className="hidden whitespace-nowrap sm:table-cell">
 										{formatCurrency(item.total)}
@@ -259,29 +298,7 @@ export function GridItensImportacao({
 									<TableCell>{statusBadge(item)}</TableCell>
 									<TableCell>
 										<div className="flex items-center justify-end gap-1">
-											{pendente ? (
-												<>
-													<Button
-														type="button"
-														size="sm"
-														variant="default"
-														disabled={isPending}
-														onClick={() => setItemLocalizar(item)}
-													>
-														<IconLink className="mr-1 size-3.5" />
-														Localizar
-													</Button>
-													<Button
-														type="button"
-														size="sm"
-														variant="outline"
-														disabled={isPending}
-														onClick={() => marcarCadastro(item)}
-													>
-														Cadastrar
-													</Button>
-												</>
-											) : (
+											{!pendente ? (
 												<Button
 													type="button"
 													size="sm"
@@ -291,7 +308,7 @@ export function GridItensImportacao({
 													<IconPencil className="mr-1 size-3.5" />
 													Editar
 												</Button>
-											)}
+											) : null}
 
 											<DropdownMenu>
 												<DropdownMenuTrigger asChild>
@@ -307,20 +324,42 @@ export function GridItensImportacao({
 													</Button>
 												</DropdownMenuTrigger>
 												<DropdownMenuContent align="end">
+													<DropdownMenuItem
+														onClick={() => setItemComposicao(item)}
+													>
+														<IconCalculator className="mr-2 size-4" />
+														Composição de preço
+													</DropdownMenuItem>
 													{pendente ? (
-														<DropdownMenuItem onClick={() => setItemModal(item)}>
-															<IconPencil className="mr-2 size-4" />
-															Editar detalhes
-														</DropdownMenuItem>
-													) : null}
-													{!pendente ? (
+														<>
+															<DropdownMenuItem
+																onClick={() => setItemLocalizar(item)}
+															>
+																<IconLink className="mr-2 size-4" />
+																Localizar produto
+															</DropdownMenuItem>
+															<DropdownMenuItem
+																onClick={() => marcarCadastro(item)}
+															>
+															  <IconPlus className="mr-2 size-4" />
+																Cadastrar produto
+															</DropdownMenuItem>
+															<DropdownMenuSeparator />
+															<DropdownMenuItem
+																onClick={() => setItemModal(item)}
+															>
+																<IconPencil className="mr-2 size-4" />
+																Editar detalhes
+															</DropdownMenuItem>
+														</>
+													) : (
 														<DropdownMenuItem
 															onClick={() => setItemLocalizar(item)}
 														>
 															<IconLink className="mr-2 size-4" />
 															Trocar vínculo
 														</DropdownMenuItem>
-													) : null}
+													)}
 													{mostrarDesvincular ? (
 														<>
 															<DropdownMenuSeparator />
@@ -351,6 +390,16 @@ export function GridItensImportacao({
 					item={itemLocalizar}
 					aberto={!!itemLocalizar}
 					onAbertoChange={(aberto) => !aberto && setItemLocalizar(null)}
+				/>
+			) : null}
+
+			{itemComposicao ? (
+				<ModalComposicaoPrecoImportacao
+					idempresa={idempresa}
+					idRascunho={idRascunho}
+					item={itemComposicao}
+					aberto={!!itemComposicao}
+					onAbertoChange={(aberto) => !aberto && setItemComposicao(null)}
 				/>
 			) : null}
 

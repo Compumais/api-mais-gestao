@@ -1,6 +1,6 @@
 import type { HttpResponse } from "@/model/http-model.js";
-import type { NotaFiscal } from "@/model/nota-fiscal-model.js";
 import type { NotaFiscalItem } from "@/model/nota-fiscal-item-model.js";
+import type { NotaFiscal } from "@/model/nota-fiscal-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	buscarNotaFiscalPorId,
@@ -21,7 +21,9 @@ type BuscarNotaFiscalResposta = {
 export async function buscarNotaFiscalService({
 	notaFiscalId,
 	idusuario,
-}: BuscarNotaFiscalParametros): Promise<HttpResponse<BuscarNotaFiscalResposta>> {
+}: BuscarNotaFiscalParametros): Promise<
+	HttpResponse<BuscarNotaFiscalResposta>
+> {
 	const registro = await buscarNotaFiscalPorId(notaFiscalId);
 
 	if (!registro) {
