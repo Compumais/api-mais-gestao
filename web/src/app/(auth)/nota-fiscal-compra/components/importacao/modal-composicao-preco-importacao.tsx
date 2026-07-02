@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Percent } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -30,12 +30,14 @@ import {
 	type NotaFiscalItemImportacao,
 	notaFiscalService,
 } from "@/services/nota-fiscal.service";
+import { custoProdutoService } from "@/services/custo-produto.service";
 import {
 	calcularComposicaoPreco,
 	formatarNumeroComposicao,
 	parseNumeroComposicao,
 	produtoTemSubstituicaoTributaria,
 } from "@/util/calcular-composicao-preco";
+import { ModalHistoricoComposicao } from "./modal-historico-composicao";
 
 type ModalComposicaoPrecoImportacaoProps = {
 	idempresa: string;
@@ -178,6 +180,11 @@ function formatarMoeda(valor: string | number | null | undefined): string {
 	}).format(numero);
 }
 
+function formatarDataHistorico(data: string | null | undefined): string {
+	if (!data) return "—";
+	return new Date(data).toLocaleDateString("pt-BR");
+}
+
 export function ModalComposicaoPrecoImportacao({
 	idempresa,
 	idRascunho,
@@ -187,12 +194,27 @@ export function ModalComposicaoPrecoImportacao({
 }: ModalComposicaoPrecoImportacaoProps) {
 	const queryClient = useQueryClient();
 	const dados = item.dadosimportacao;
+	const idproduto = dados?.idproduto;
 
 	const [estado, setEstado] = useState(() =>
 		dados
 			? montarEstadoInicial(dados)
 			: montarEstadoInicial({} as DadosImportacaoItem),
 	);
+	const [historicoAberto, setHistoricoAberto] = useState(false);
+
+	const { data: ultimaComposicaoData } = useQuery({
+		queryKey: ["ultima-composicao-produto", idproduto],
+		queryFn: () =>
+			custoProdutoService.listarHistoricoComposicao({
+				idproduto: idproduto ?? "",
+				page: 1,
+				limit: 1,
+			}),
+		enabled: aberto && !!idproduto,
+	});
+
+	const ultimaComposicao = ultimaComposicaoData?.data[0];
 
 	useEffect(() => {
 		if (aberto && dados) {
@@ -312,6 +334,14 @@ export function ModalComposicaoPrecoImportacao({
 		aplicarPreco();
 	}, [aplicarPreco, resultados.novoPreco]);
 
+	const handleAbrirHistorico = useCallback(() => {
+		if (!idproduto) {
+			toast.error("Vincule um produto para consultar o histórico");
+			return;
+		}
+		setHistoricoAberto(true);
+	}, [idproduto]);
+
 	useEffect(() => {
 		if (!aberto) return;
 
@@ -326,13 +356,13 @@ export function ModalComposicaoPrecoImportacao({
 			}
 			if (event.key === "F3") {
 				event.preventDefault();
-				toast.info("Em breve");
+				handleAbrirHistorico();
 			}
 		};
 
 		window.addEventListener("keydown", onKeyDown);
 		return () => window.removeEventListener("keydown", onKeyDown);
-	}, [aberto, handleAplicarPreco]);
+	}, [aberto, handleAbrirHistorico, handleAplicarPreco]);
 
 	if (!dados) {
 		return null;
@@ -350,6 +380,7 @@ export function ModalComposicaoPrecoImportacao({
 	const totalItem = item.total;
 
 	return (
+		<>
 		<Dialog open={aberto} onOpenChange={onAbertoChange}>
 			<DialogContent className="flex max-h-[95vh] max-w-6xl flex-col gap-0 overflow-hidden p-0">
 				<DialogHeader className="space-y-2 border-b px-6 py-4">
@@ -384,13 +415,29 @@ export function ModalComposicaoPrecoImportacao({
 							label="Origem do custo"
 							valor="Nota fiscal de compra"
 						/>
-						<CampoLeitura label="Última composição" valor="—" />
-						<CampoLeitura label="Última compra" valor="—" />
+						<CampoLeitura
+							label="Última composição"
+							valor={formatarDataHistorico(ultimaComposicao?.datahora)}
+						/>
+						<CampoLeitura
+							label="Última compra"
+							valor={formatarDataHistorico(
+								ultimaComposicao?.datahoraemissao ??
+									(ultimaComposicao?.origem === 0
+										? ultimaComposicao?.datahora
+										: null),
+							)}
+						/>
 						<CampoLeitura
 							label="Custo última compra"
-							valor={formatarMoeda(dados.precounitarioEstoque)}
+							valor={formatarMoeda(
+								ultimaComposicao?.precocompra ?? dados.precounitarioEstoque,
+							)}
 						/>
-						<CampoLeitura label="Custo médio" valor="—" />
+						<CampoLeitura
+							label="Custo médio"
+							valor={formatarMoeda(ultimaComposicao?.customedio)}
+						/>
 						<CampoLeitura
 							label="Preço de venda atual"
 							valor={formatarMoeda(dados.precoVenda)}
@@ -715,8 +762,13 @@ export function ModalComposicaoPrecoImportacao({
 						<Button
 							type="button"
 							variant="secondary"
-							disabled={isPending}
-							onClick={() => toast.info("Em breve")}
+							disabled={isPending || !idproduto}
+							title={
+								!idproduto
+									? "Vincule um produto para consultar o histórico"
+									: undefined
+							}
+							onClick={handleAbrirHistorico}
 						>
 							Histórico do produto (F3)
 						</Button>
@@ -741,5 +793,14 @@ export function ModalComposicaoPrecoImportacao({
 				</DialogFooter>
 			</DialogContent>
 		</Dialog>
+		{idproduto ? (
+			<ModalHistoricoComposicao
+				idproduto={idproduto}
+				nomeProduto={nomeProduto}
+				aberto={historicoAberto}
+				onAbertoChange={setHistoricoAberto}
+			/>
+		) : null}
+	</>
 	);
 }

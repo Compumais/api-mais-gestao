@@ -68,6 +68,30 @@ export const listarCustosProdutoSchema: FastifySchema = {
 	},
 };
 
+export const listarHistoricoComposicaoSchema: FastifySchema = {
+	tags: ["custo-produto"],
+	summary: "Listar histórico de composição de um produto",
+	description:
+		"Lista o histórico de composição de custo de um produto com dados enriquecidos da nota fiscal de compra.",
+	security: [{ bearerAuth: [] }],
+	querystring: {
+		type: "object",
+		properties: {
+			idproduto: { type: "string" },
+			page: { type: "number", default: 1 },
+			limit: { type: "number", default: 10 },
+		},
+		required: ["idproduto"],
+	},
+	response: {
+		200: { type: "object", additionalProperties: true },
+		401: respostaErro,
+		403: respostaErro,
+		404: respostaErro,
+		500: respostaErro,
+	},
+};
+
 export const buscarCustoProdutoSchema: FastifySchema = {
 	tags: ["custo-produto"],
 	summary: "Buscar custo de produto por ID",
