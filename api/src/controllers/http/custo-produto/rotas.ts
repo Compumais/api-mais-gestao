@@ -4,6 +4,7 @@ import { buscarCustoProduto } from "./buscar.js";
 import { criarCustoProduto } from "./criar.js";
 import * as schema from "./doc-schema/schema.js";
 import { excluirCustoProduto } from "./excluir.js";
+import { listarHistoricoComposicao } from "./historico.js";
 import { listarCustosProduto } from "./listar.js";
 import { registrarCustosNf } from "./registrar-nf.js";
 
@@ -21,6 +22,10 @@ export async function custosProdutoRotas(app: FastifyInstance) {
 	app.get("/custos-produto", {
 		schema: schema.listarCustosProdutoSchema,
 		handler: listarCustosProduto,
+	});
+	app.get("/custos-produto/historico", {
+		schema: schema.listarHistoricoComposicaoSchema,
+		handler: listarHistoricoComposicao,
 	});
 	app.get("/custos-produto/:id", {
 		schema: schema.buscarCustoProdutoSchema,
