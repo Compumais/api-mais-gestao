@@ -237,6 +237,11 @@ export const listarPlanoContasSchema: FastifySchema = {
 	querystring: {
 		type: "object",
 		properties: {
+			idempresa: {
+				type: "string",
+				format: "uuid",
+				description: "ID da empresa",
+			},
 			idplanocontas: {
 				type: "string",
 				description: "Filtrar por ID do plano de contas pai",
@@ -256,11 +261,23 @@ export const listarPlanoContasSchema: FastifySchema = {
 			limit: {
 				type: "number",
 				minimum: 1,
-				maximum: 100,
-				description: "Quantidade de itens por página (padrão: 10)",
+				maximum: 1000,
+				description: "Quantidade de itens por página (padrão: 10, máx: 1000)",
 				default: 10,
 			},
+			listarTudo: {
+				type: "boolean",
+				description:
+					"Quando true, retorna todos os níveis hierárquicos (não apenas raízes)",
+				default: false,
+			},
+			tipomovimento: {
+				type: "string",
+				enum: ["E", "S"],
+				description: "Filtrar por tipo de movimento",
+			},
 		},
+		required: ["idempresa"],
 	},
 	response: {
 		200: {
@@ -463,6 +480,211 @@ export const atualizarPlanoContasSchema: FastifySchema = {
 				code: { type: "string" },
 			},
 		},
+	},
+};
+
+const respostaErroPadrao = {
+	type: "object",
+	properties: {
+		error: { type: "string" },
+		code: { type: "string" },
+	},
+} as const;
+
+export const previewImportacaoPlanoContasSchema: FastifySchema = {
+	tags: ["plano-contas"],
+	summary: "Preview da importação de plano de contas",
+	description:
+		"Valida um arquivo CSV ou XLSX de plano de contas e retorna a estrutura encontrada, erros de validação por linha e vínculos existentes no plano atual, sem persistir nada.",
+	security: [{ bearerAuth: [] }],
+	body: {
+		type: "object",
+		properties: {
+			idempresa: {
+				type: "string",
+				format: "uuid",
+				description: "ID da empresa",
+			},
+			formato: {
+				type: "string",
+				enum: ["csv", "xlsx"],
+				description: "Formato do arquivo",
+			},
+			conteudo: {
+				type: "string",
+				description: "Conteúdo do arquivo: texto para CSV ou base64 para XLSX",
+			},
+			nomeArquivo: {
+				type: "string",
+				nullable: true,
+				description: "Nome do arquivo original (para validar a extensão)",
+			},
+		},
+		required: ["idempresa", "formato", "conteudo"],
+	},
+	response: {
+		200: {
+			type: "object",
+			description: "Resultado da validação do arquivo",
+			properties: {
+				totalContas: { type: "number" },
+				totalErros: { type: "number" },
+				errosGerais: { type: "array", items: { type: "string" } },
+				contas: {
+					type: "array",
+					items: {
+						type: "object",
+						properties: {
+							linha: { type: "number" },
+							codigo: { type: "string" },
+							nome: { type: "string" },
+							tipomovimento: { type: "string", nullable: true },
+							inativo: { type: "number" },
+							nivel: { type: "number" },
+							codigoPai: { type: "string", nullable: true },
+							erros: { type: "array", items: { type: "string" } },
+						},
+					},
+				},
+				vinculos: {
+					type: "object",
+					properties: {
+						possui: { type: "boolean" },
+						detalhes: {
+							type: "array",
+							items: {
+								type: "object",
+								properties: {
+									tabela: { type: "string" },
+									quantidade: { type: "number" },
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		400: respostaErroPadrao,
+		401: respostaErroPadrao,
+		403: respostaErroPadrao,
+		500: respostaErroPadrao,
+	},
+};
+
+export const importarPlanoContasSchema: FastifySchema = {
+	tags: ["plano-contas"],
+	summary: "Importar plano de contas",
+	description:
+		"Substitui completamente o plano de contas da empresa pelo plano do arquivo CSV/XLSX. A operação é transacional: remove todas as contas atuais e insere as novas em lote. É bloqueada se existirem registros vinculados às contas atuais.",
+	security: [{ bearerAuth: [] }],
+	body: {
+		type: "object",
+		properties: {
+			idempresa: {
+				type: "string",
+				format: "uuid",
+				description: "ID da empresa",
+			},
+			formato: {
+				type: "string",
+				enum: ["csv", "xlsx"],
+				description: "Formato do arquivo",
+			},
+			conteudo: {
+				type: "string",
+				description: "Conteúdo do arquivo: texto para CSV ou base64 para XLSX",
+			},
+			nomeArquivo: {
+				type: "string",
+				nullable: true,
+				description: "Nome do arquivo original (para validar a extensão)",
+			},
+		},
+		required: ["idempresa", "formato", "conteudo"],
+	},
+	response: {
+		200: {
+			type: "object",
+			description: "Plano de contas importado com sucesso",
+			properties: {
+				totalImportadas: { type: "number" },
+				totalRemovidas: { type: "number" },
+			},
+		},
+		400: respostaErroPadrao,
+		401: respostaErroPadrao,
+		403: respostaErroPadrao,
+		409: respostaErroPadrao,
+		500: respostaErroPadrao,
+	},
+};
+
+export const templatePlanoContasSchema: FastifySchema = {
+	tags: ["plano-contas"],
+	summary: "Baixar modelo de importação do plano de contas",
+	description:
+		"Retorna um arquivo modelo (CSV ou XLSX) com as colunas Código, Descrição, Tipo e Ativo e linhas de exemplo para a importação do plano de contas.",
+	security: [{ bearerAuth: [] }],
+	querystring: {
+		type: "object",
+		properties: {
+			formato: {
+				type: "string",
+				enum: ["csv", "xlsx"],
+				default: "csv",
+				description: "Formato do arquivo modelo",
+			},
+		},
+	},
+	response: {
+		401: respostaErroPadrao,
+		500: respostaErroPadrao,
+	},
+};
+
+export const moverPlanoContasSchema: FastifySchema = {
+	tags: ["plano-contas"],
+	summary: "Mover plano de contas na hierarquia",
+	description:
+		"Move um plano de contas para outro pai (ou para a raiz quando destino é null), regenerando os códigos hierárquicos de toda a árvore da empresa em uma transação. Impede ciclos e movimentações inválidas.",
+	security: [{ bearerAuth: [] }],
+	body: {
+		type: "object",
+		properties: {
+			id: {
+				type: "string",
+				format: "uuid",
+				description: "ID do plano de contas a ser movido",
+			},
+			idplanocontasdestino: {
+				type: "string",
+				format: "uuid",
+				nullable: true,
+				description:
+					"ID do novo plano de contas pai, ou null para mover para a raiz",
+			},
+		},
+		required: ["id", "idplanocontasdestino"],
+	},
+	response: {
+		200: {
+			type: "object",
+			description: "Plano de contas movido com sucesso",
+			properties: {
+				id: { type: "string" },
+				idempresa: { type: "string" },
+				codigo: { type: "string", nullable: true },
+				nome: { type: "string" },
+				tipomovimento: { type: "string" },
+				inativo: { type: "number" },
+				idplanocontas: { type: "string", nullable: true },
+			},
+		},
+		400: respostaErroPadrao,
+		401: respostaErroPadrao,
+		403: respostaErroPadrao,
+		404: respostaErroPadrao,
+		500: respostaErroPadrao,
 	},
 };
 

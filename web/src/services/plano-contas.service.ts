@@ -58,6 +58,52 @@ export interface CriarPlanoContasData {
 	idplanocontas?: string;
 }
 
+export type FormatoImportacaoPlanoContas = "csv" | "xlsx";
+
+export interface ImportacaoPlanoContasData {
+	idempresa: string;
+	formato: FormatoImportacaoPlanoContas;
+	conteudo: string;
+	nomeArquivo?: string;
+}
+
+export interface ContaPreviewImportacao {
+	linha: number;
+	codigo: string;
+	nome: string;
+	tipomovimento: "E" | "S" | null;
+	inativo: number;
+	nivel: number;
+	codigoPai: string | null;
+	erros: string[];
+}
+
+export interface VinculoPlanoContas {
+	tabela: string;
+	quantidade: number;
+}
+
+export interface PreviewImportacaoResponse {
+	totalContas: number;
+	totalErros: number;
+	errosGerais: string[];
+	contas: ContaPreviewImportacao[];
+	vinculos: {
+		possui: boolean;
+		detalhes: VinculoPlanoContas[];
+	};
+}
+
+export interface ImportarPlanoContasResponse {
+	totalImportadas: number;
+	totalRemovidas: number;
+}
+
+export interface MoverPlanoContasData {
+	id: string;
+	idplanocontasdestino: string | null;
+}
+
 export const planoContasService = {
 	async listar(params?: {
 		idempresa?: string;
@@ -96,5 +142,46 @@ export const planoContasService = {
 
 	async deletar(id: string): Promise<void> {
 		await api.delete(`/plano-contas/${id}`);
+	},
+
+	async previewImportacao(
+		dados: ImportacaoPlanoContasData,
+	): Promise<PreviewImportacaoResponse> {
+		const { data } = await api.post<PreviewImportacaoResponse>(
+			"/plano-contas/importar/preview",
+			dados,
+		);
+		return data;
+	},
+
+	async importar(
+		dados: ImportacaoPlanoContasData,
+		onUploadProgress?: (percentual: number) => void,
+	): Promise<ImportarPlanoContasResponse> {
+		const { data } = await api.post<ImportarPlanoContasResponse>(
+			"/plano-contas/importar",
+			dados,
+			{
+				onUploadProgress: (evento) => {
+					if (onUploadProgress && evento.total) {
+						onUploadProgress(Math.round((evento.loaded / evento.total) * 100));
+					}
+				},
+			},
+		);
+		return data;
+	},
+
+	async baixarTemplate(formato: FormatoImportacaoPlanoContas): Promise<Blob> {
+		const { data } = await api.get<Blob>("/plano-contas/template", {
+			params: { formato },
+			responseType: "blob",
+		});
+		return data;
+	},
+
+	async mover(dados: MoverPlanoContasData): Promise<PlanoContas> {
+		const { data } = await api.put<PlanoContas>("/plano-contas/mover", dados);
+		return data;
 	},
 };

@@ -1,11 +1,12 @@
 "use client";
 
+import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
 	ChevronRight,
 	Folder,
 	FolderOpen,
-	Loader2,
+	GripVertical,
 	MoreVertical,
 	Plus,
 	Trash2,
@@ -33,49 +34,51 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { useEmpresa } from "@/hooks/use-empresa";
-import { usePlanoContas } from "@/hooks/use-plano-contas";
-import { ordenarPlanoContasPorCodigo } from "@/lib/plano-contas-utils";
 import { cn } from "@/lib/utils";
-import {
-	type PlanoContas,
-	planoContasService,
-} from "@/services/plano-contas.service";
+import { planoContasService } from "@/services/plano-contas.service";
+import type { PlanoContasNode } from "./plano-contas-tree";
 
 interface TreeNodeProps {
-	node: PlanoContas;
+	node: PlanoContasNode;
 	level?: number;
+	idArrastando?: string | null;
+	movendo?: boolean;
+	dentroDoArrastado?: boolean;
 }
 
-export function TreeNode({ node, level = 0 }: TreeNodeProps) {
+export function TreeNode({
+	node,
+	level = 0,
+	idArrastando = null,
+	movendo = false,
+	dentroDoArrastado = false,
+}: TreeNodeProps) {
 	const { localStorageEmpresa: empresa } = useEmpresa();
 	const [isExpanded, setIsExpanded] = useState(false);
-	const [hasLoadedChildren, setHasLoadedChildren] = useState(false);
 	const [isEditing, setIsEditing] = useState(false);
 	const [editedName, setEditedName] = useState(node.nome || "");
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 	const router = useRouter();
 	const queryClient = useQueryClient();
-	const empresaIdRef = useRef<string | undefined>(empresa?.id);
 	const inputRef = useRef<HTMLInputElement>(null);
 
-	// Reseta o estado quando a empresa muda para forçar recarregamento
-	useEffect(() => {
-		if (empresaIdRef.current !== empresa?.id) {
-			empresaIdRef.current = empresa?.id;
-			setHasLoadedChildren(false);
-			setIsExpanded(false);
-		}
-	}, [empresa?.id]);
+	const estaArrastandoEste = idArrastando === node.id;
+	const dropDesabilitado =
+		estaArrastandoEste || dentroDoArrastado || node.inativo === 1;
 
-	// Carrega filhos quando expandir
-	const { data: childrenData, isLoading: isLoadingChildren } = usePlanoContas({
-		idempresa: empresa?.id,
-		idplanocontas: node.id,
-		limit: 100,
-		enabled: isExpanded && !hasLoadedChildren && !!empresa?.id,
+	const {
+		attributes,
+		listeners,
+		setNodeRef: setDragRef,
+		isDragging,
+	} = useDraggable({ id: node.id, disabled: movendo });
+
+	const { setNodeRef: setDropRef, isOver } = useDroppable({
+		id: node.id,
+		disabled: dropDesabilitado,
 	});
 
-	const children = ordenarPlanoContasPorCodigo(childrenData?.data ?? []);
+	const children = node.filhos;
 
 	const handleToggle = (e: React.MouseEvent) => {
 		e.stopPropagation();
@@ -85,14 +88,6 @@ export function TreeNode({ node, level = 0 }: TreeNodeProps) {
 	const navigateToNewPlan = (planId: string) => {
 		router.push(`/plano-contas/novo?idplanocontas=${planId}`);
 	};
-
-	// Quando os filhos são carregados, marca como carregado
-	// Isso evita recarregamentos desnecessários, mas permite quando hasLoadedChildren é resetado
-	useEffect(() => {
-		if (isExpanded && childrenData) {
-			setHasLoadedChildren(true);
-		}
-	}, [isExpanded, childrenData]);
 
 	// Foca no input quando entrar em modo de edição
 	useEffect(() => {
@@ -107,27 +102,12 @@ export function TreeNode({ node, level = 0 }: TreeNodeProps) {
 		setEditedName(node.nome || "");
 	}, [node.nome]);
 
-	// Reseta hasLoadedChildren quando o status inativo do node mudar
-	// Isso força recarregamento dos filhos quando o pai é ativado/inativado
-	const nodeInativoRef = useRef<number | undefined>(node.inativo);
-	useEffect(() => {
-		if (nodeInativoRef.current !== node.inativo) {
-			nodeInativoRef.current = node.inativo;
-			// Se estava expandido, reseta para forçar recarregamento
-			// Quando hasLoadedChildren é resetado para false, a query será habilitada novamente
-			if (isExpanded && hasLoadedChildren) {
-				setHasLoadedChildren(false);
-			}
-		}
-	}, [node.inativo, isExpanded, hasLoadedChildren]);
-
 	const updateMutation = useMutation({
 		mutationFn: (data: { nome?: string; inativo?: 0 | 1 }) =>
 			planoContasService.atualizar(node.id, data),
 		onSuccess: async () => {
 			// Invalida todas as queries de plano de contas para refletir mudanças em pai e filhos
 			await queryClient.invalidateQueries({ queryKey: ["plano-contas"] });
-			// Refaz todas as queries relacionadas para atualizar imediatamente em tela
 			await queryClient.refetchQueries({ queryKey: ["plano-contas"] });
 			toast.success("Plano de contas atualizado com sucesso");
 			setIsEditing(false);
@@ -140,7 +120,6 @@ export function TreeNode({ node, level = 0 }: TreeNodeProps) {
 	const deleteMutation = useMutation({
 		mutationFn: () => planoContasService.deletar(node.id),
 		onSuccess: async () => {
-			// Invalida e refaz todas as queries de plano de contas para refletir a exclusão em tela
 			await queryClient.invalidateQueries({ queryKey: ["plano-contas"] });
 			await queryClient.refetchQueries({ queryKey: ["plano-contas"] });
 			toast.success("Plano de contas excluído com sucesso");
@@ -183,7 +162,6 @@ export function TreeNode({ node, level = 0 }: TreeNodeProps) {
 	// Função auxiliar para inativar filhos recursivamente
 	const inativarFilhosRecursivo = async (nodeId: string): Promise<void> => {
 		try {
-			// Busca filhos diretos
 			const filhosResponse = await planoContasService.listar({
 				idempresa: empresa?.id,
 				idplanocontas: nodeId,
@@ -196,12 +174,9 @@ export function TreeNode({ node, level = 0 }: TreeNodeProps) {
 				return;
 			}
 
-			// Inativa todos os filhos em paralelo
 			await Promise.all(
 				filhos.map(async (filho) => {
-					// Inativa o filho
 					await planoContasService.atualizar(filho.id, { inativo: 1 });
-					// Inativa recursivamente os filhos deste filho
 					await inativarFilhosRecursivo(filho.id);
 				}),
 			);
@@ -214,7 +189,6 @@ export function TreeNode({ node, level = 0 }: TreeNodeProps) {
 	// Função auxiliar para ativar filhos recursivamente
 	const ativarFilhosRecursivo = async (nodeId: string): Promise<void> => {
 		try {
-			// Busca filhos diretos
 			const filhosResponse = await planoContasService.listar({
 				idempresa: empresa?.id,
 				idplanocontas: nodeId,
@@ -227,12 +201,9 @@ export function TreeNode({ node, level = 0 }: TreeNodeProps) {
 				return;
 			}
 
-			// Ativa todos os filhos em paralelo
 			await Promise.all(
 				filhos.map(async (filho) => {
-					// Ativa o filho
 					await planoContasService.atualizar(filho.id, { inativo: 0 });
-					// Ativa recursivamente os filhos deste filho
 					await ativarFilhosRecursivo(filho.id);
 				}),
 			);
@@ -245,22 +216,12 @@ export function TreeNode({ node, level = 0 }: TreeNodeProps) {
 	const handleInativar = async () => {
 		const novoStatus = node.inativo ? 0 : 1;
 
-		// Se está inativando (novoStatus === 1), inativa os filhos também
 		if (novoStatus === 1) {
 			try {
-				// Primeiro inativa o pai
 				await planoContasService.atualizar(node.id, { inativo: 1 });
-				// Depois inativa todos os filhos recursivamente
 				await inativarFilhosRecursivo(node.id);
-				// Invalida todas as queries relacionadas (incluindo queries específicas dos filhos)
 				await queryClient.invalidateQueries({ queryKey: ["plano-contas"] });
-				// Refaz todas as queries para atualizar imediatamente em tela
 				await queryClient.refetchQueries({ queryKey: ["plano-contas"] });
-				// Reseta hasLoadedChildren para forçar recarregamento dos filhos quando expandido
-				// Quando hasLoadedChildren é resetado para false, a query será habilitada novamente automaticamente
-				if (isExpanded && hasLoadedChildren) {
-					setHasLoadedChildren(false);
-				}
 				toast.success(
 					"Plano de contas e seus filhos foram inativados com sucesso",
 				);
@@ -272,21 +233,11 @@ export function TreeNode({ node, level = 0 }: TreeNodeProps) {
 				);
 			}
 		} else {
-			// Se está ativando, ativa os filhos também
 			try {
-				// Primeiro ativa o pai
 				await planoContasService.atualizar(node.id, { inativo: 0 });
-				// Depois ativa todos os filhos recursivamente
 				await ativarFilhosRecursivo(node.id);
-				// Invalida todas as queries relacionadas (incluindo queries específicas dos filhos)
 				await queryClient.invalidateQueries({ queryKey: ["plano-contas"] });
-				// Refaz todas as queries para atualizar imediatamente em tela
 				await queryClient.refetchQueries({ queryKey: ["plano-contas"] });
-				// Reseta hasLoadedChildren para forçar recarregamento dos filhos quando expandido
-				// Quando hasLoadedChildren é resetado para false, a query será habilitada novamente automaticamente
-				if (isExpanded && hasLoadedChildren) {
-					setHasLoadedChildren(false);
-				}
 				toast.success(
 					"Plano de contas e seus filhos foram ativados com sucesso",
 				);
@@ -306,11 +257,9 @@ export function TreeNode({ node, level = 0 }: TreeNodeProps) {
 
 	// Determina a cor baseada no tipo de movimento e status
 	const getTextColorClass = () => {
-		// Se estiver inativo, sempre retorna cor muted
 		if (node.inativo === 1) {
 			return "text-muted-foreground/70";
 		}
-		// Se estiver ativo, retorna cor baseada no tipo de movimento
 		if (node.tipomovimento === "E") {
 			return "text-green-800 dark:text-green-500";
 		}
@@ -323,8 +272,16 @@ export function TreeNode({ node, level = 0 }: TreeNodeProps) {
 	return (
 		<div>
 			<div
+				ref={(elemento) => {
+					setDragRef(elemento);
+					setDropRef(elemento);
+				}}
 				className={cn(
 					"group relative flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-muted/50",
+					isDragging && "opacity-40",
+					isOver &&
+						!dropDesabilitado &&
+						"bg-primary/10 outline-2 outline-primary/50",
 				)}
 			>
 				<div
@@ -333,25 +290,33 @@ export function TreeNode({ node, level = 0 }: TreeNodeProps) {
 				>
 					<button
 						type="button"
+						{...attributes}
+						{...listeners}
+						aria-label={`Mover ${node.nome || "plano de contas"}`}
+						className="flex h-5 w-5 cursor-grab items-center justify-center rounded-sm text-muted-foreground opacity-0 transition-opacity hover:bg-muted group-hover:opacity-100 active:cursor-grabbing"
+					>
+						<GripVertical className="h-4 w-4" aria-hidden="true" />
+					</button>
+
+					<button
+						type="button"
 						onClick={handleToggle}
+						aria-label={isExpanded ? "Recolher" : "Expandir"}
 						className="flex h-5 w-5 items-center justify-center rounded-sm transition-colors hover:bg-muted"
 					>
-						{isLoadingChildren ? (
-							<Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-						) : (
-							<ChevronRight
-								className={cn(
-									"h-4 w-4 transition-transform",
-									isExpanded && "rotate-90",
-								)}
-							/>
-						)}
+						<ChevronRight
+							className={cn(
+								"h-4 w-4 transition-transform",
+								isExpanded && "rotate-90",
+							)}
+							aria-hidden="true"
+						/>
 					</button>
 
 					{isExpanded ? (
-						<FolderOpen className="h-4 w-4 text-primary" />
+						<FolderOpen className="h-4 w-4 text-primary" aria-hidden="true" />
 					) : (
-						<Folder className="h-4 w-4 text-primary" />
+						<Folder className="h-4 w-4 text-primary" aria-hidden="true" />
 					)}
 
 					<div className="flex-1 flex items-center gap-2">
@@ -438,10 +403,17 @@ export function TreeNode({ node, level = 0 }: TreeNodeProps) {
 
 			{isExpanded && (
 				<>
-					{hasLoadedChildren && children.length > 0 && (
+					{children.length > 0 && (
 						<div className="mt-1 space-y-0.5">
 							{children.map((child) => (
-								<TreeNode key={child.id} node={child} level={level + 1} />
+								<TreeNode
+									key={child.id}
+									node={child}
+									level={level + 1}
+									idArrastando={idArrastando}
+									movendo={movendo}
+									dentroDoArrastado={dentroDoArrastado || estaArrastandoEste}
+								/>
 							))}
 						</div>
 					)}
