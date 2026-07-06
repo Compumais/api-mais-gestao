@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isIndPresNfeValido } from "@/constants/ind-pres-nfe";
 
 export const itemNfeSchema = z.object({
 	idproduto: z.string().uuid().optional(),
@@ -79,6 +80,11 @@ export const emissaoNfeFormSchema = z.object({
 	idserienfe: z.string().uuid().optional(),
 	confirmarProducao: z.boolean().default(false),
 	natOp: z.string().max(60).optional(),
+	indPres: z.coerce
+		.number()
+		.int()
+		.refine((valor) => isIndPresNfeValido(valor), "indPres inválido")
+		.default(1),
 	itens: z.array(itemNfeSchema).min(1, "Informe ao menos um item"),
 	totais: totaisNfeSchema.optional(),
 	pagamento: pagamentoNfeSchema.optional(),

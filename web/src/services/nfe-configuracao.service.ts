@@ -18,6 +18,7 @@ export interface NfeConfiguracao {
 	ultimacfopsaida?: string | null;
 	ultimanatop?: string | null;
 	ultimaidserie?: string | null;
+	ultimoindpres?: number | null;
 }
 
 export interface CertificadoDigitalResumo {

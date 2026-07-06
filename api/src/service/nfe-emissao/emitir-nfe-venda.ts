@@ -68,6 +68,7 @@ import {
 import { buscarTipoDocumentoFinanceiroPorId } from "@/repositories/tipo-documento-financeiro-repositories.js";
 import { integrarNotaFiscalVendaAutorizadaService } from "@/service/nota-fiscal/integrar-nota-fiscal-venda-autorizada.js";
 import type { FormaPagamentoNfVenda } from "@/service/nota-fiscal/gerar-contas-receber-nf.js";
+import { resolverIdeEmissaoNfe } from "@/util/resolver-ide-emissao-nfe.js";
 
 export type EmitirNfeVendaParametros = {
 	idusuario: string;
@@ -77,6 +78,7 @@ export type EmitirNfeVendaParametros = {
 	idserienfe?: string;
 	confirmarProducao?: boolean;
 	natOp?: string;
+	indPres?: number;
 	itens: ItemPayloadNfe[];
 	totais?: TotaisPayloadNfe;
 	pagamento?: PagamentoPayloadNfe;
@@ -212,6 +214,8 @@ function montarDadosNotaPersistencia(params: {
 	transporte?: TransportePayloadNfe;
 	totaisComerciais?: TotaisPayloadNfe;
 	tipoDevolucao?: TipoDevolucaoNfe;
+	indPres?: number;
+	idDest?: number;
 	idserie?: string;
 	idplanocontas?: string;
 	idcondicaopagto?: string;
@@ -252,6 +256,8 @@ function montarDadosNotaPersistencia(params: {
 		transporte,
 		totaisComerciais,
 		tipoDevolucao,
+		indPres,
+		idDest,
 		idplanocontas,
 		idcondicaopagto,
 		idlocalestoque,
@@ -344,6 +350,8 @@ function montarDadosNotaPersistencia(params: {
 		tiponotadocumentoreferenciado: documentoReferenciado ? "NFE" : null,
 		dadosimportacao: montarSnapshotEmissaoNfe({
 			natOp,
+			indPres,
+			idDest,
 			idserienfe: idserie,
 			iddav,
 			formasPagamento: formasPagamento?.map((forma) => ({
@@ -482,6 +490,7 @@ export async function emitirNfeVendaService(
 		idserienfe,
 		confirmarProducao = false,
 		natOp,
+		indPres,
 		itens,
 		totais,
 		pagamento,
@@ -548,9 +557,11 @@ export async function emitirNfeVendaService(
 	let gerarEstoqueResolvido = gerarEstoque;
 	let iddavResolvido = iddav;
 
+	let emissaoSalvaReemissao: ReturnType<typeof extrairDadosEmissaoNfeSalvos> | undefined;
+
 	if (reemissao && idnotafiscalReemissao) {
 		const notaReemissao = await buscarNotaFiscalPorId(idnotafiscalReemissao);
-		const emissaoReemissao = notaReemissao
+		emissaoSalvaReemissao = notaReemissao
 			? extrairDadosEmissaoNfeSalvos(notaReemissao.dadosimportacao)
 			: undefined;
 
@@ -558,10 +569,10 @@ export async function emitirNfeVendaService(
 		idcondicaopagtoResolvido ??= notaReemissao?.idcondicaopagto ?? undefined;
 		idlocalestoqueResolvido ??= notaReemissao?.idlocalestoque ?? undefined;
 		idtipodocumentoResolvido ??= notaReemissao?.idtipodocumento ?? undefined;
-		formasPagamentoResolvidas ??= emissaoReemissao?.formasPagamento;
-		gerarFinanceiroResolvido ??= emissaoReemissao?.gerarFinanceiro;
-		gerarEstoqueResolvido ??= emissaoReemissao?.gerarEstoque;
-		iddavResolvido ??= emissaoReemissao?.iddav;
+		formasPagamentoResolvidas ??= emissaoSalvaReemissao?.formasPagamento;
+		gerarFinanceiroResolvido ??= emissaoSalvaReemissao?.gerarFinanceiro;
+		gerarEstoqueResolvido ??= emissaoSalvaReemissao?.gerarEstoque;
+		iddavResolvido ??= emissaoSalvaReemissao?.iddav;
 	}
 
 	const freteComercial = totais?.frete ?? 0;
@@ -588,6 +599,7 @@ export async function emitirNfeVendaService(
 				cep: entidade.cep ?? undefined,
 				estado: entidade.idestado ?? undefined,
 				codigomunicipioibge: entidade.idcidade ?? undefined,
+				pais: entidade.pais ?? undefined,
 				indIEDest,
 			};
 		}
@@ -696,6 +708,17 @@ export async function emitirNfeVendaService(
 		valorNota: totaisFiscaisPrevia.totalNota,
 	});
 
+	const ideEmissao = resolverIdeEmissaoNfe({
+		ufEmitente: empresaFiscal.uf,
+		ufDestinatario: destinatario?.estado,
+		paisDestinatario: destinatario?.pais,
+		indPres:
+			indPres ??
+			emissaoSalvaReemissao?.indPres ??
+			nfeConfiguracao.ultimoindpres,
+		finNFe,
+	});
+
 	const payload = montarPayloadGatewayEmissaoItens({
 		empresa,
 		empresaFiscal,
@@ -713,6 +736,7 @@ export async function emitirNfeVendaService(
 		finNFe,
 		tpNF,
 		documentosReferenciados: documentoReferenciado ? [documentoReferenciado] : [],
+		indPres: ideEmissao.indPres,
 	});
 
 	const respostaGateway = await emitirNfeGateway(payload);
@@ -772,6 +796,8 @@ export async function emitirNfeVendaService(
 		dataEmissao,
 		totaisFiscais,
 		natOp: natOpResolvida,
+		indPres: ideEmissao.indPres,
+		idDest: ideEmissao.idDest,
 		pagamento: pagamentoNormalizado,
 		transporte: transporteAjustado,
 		totaisComerciais: totais,
@@ -831,6 +857,7 @@ export async function emitirNfeVendaService(
 		cfop: itens[0]?.cfop,
 		natOp: natOpResolvida,
 		idserie,
+		indPres: ideEmissao.indPres,
 	}).catch(console.error);
 
 	const corpo: ResultadoEmissaoNfeVenda = { idnotafiscal, ambiente, reemissao };
