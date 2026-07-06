@@ -107,6 +107,7 @@ export async function transmitirNfeVendaService({
 		gerarEstoque: emissaoSalva?.gerarEstoque,
 		confirmarProducao,
 		natOp: emissaoSalva?.natOp,
+		indPres: emissaoSalva?.indPres,
 		itens,
 		totais: {
 			frete: Number(nota.frete ?? emissaoSalva?.totais?.frete ?? 0),

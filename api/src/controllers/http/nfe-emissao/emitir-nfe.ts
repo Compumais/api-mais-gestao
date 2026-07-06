@@ -1,5 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
+import { isIndPresNfeValido } from "@/constants/ind-pres-nfe.js";
 import { emitirNfeVendaService } from "@/service/nfe-emissao/emitir-nfe-venda.js";
 import { listarNotasFiscaisService } from "@/service/nota-fiscal/listar-notas-fiscais.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
@@ -45,6 +46,12 @@ const documentoReferenciadoSchema = z
 	})
 	.optional();
 
+const indPresNfeSchema = z
+	.number()
+	.int()
+	.refine((valor) => isIndPresNfeValido(valor), "indPres inválido")
+	.optional();
+
 const emitirNfeBodySchema = z.object({
 	idempresa: z.string().uuid(),
 	idnotafiscal: z.string().uuid().optional(),
@@ -52,6 +59,7 @@ const emitirNfeBodySchema = z.object({
 	idserienfe: z.string().uuid().optional(),
 	confirmarProducao: z.boolean().default(false),
 	natOp: z.string().max(60).optional(),
+	indPres: indPresNfeSchema,
 	itens: z.array(itemNfeSchema).min(1),
 	totais: z
 		.object({
@@ -121,6 +129,7 @@ export async function emitirNfe(
 			idserienfe: dados.idserienfe,
 			confirmarProducao: dados.confirmarProducao,
 			natOp: dados.natOp,
+			indPres: dados.indPres,
 			itens: dados.itens,
 			totais: dados.totais,
 			pagamento: dados.pagamento,

@@ -10,6 +10,7 @@ import {
 } from "@/util/montar-config-sped-nfe.js";
 import { NFE_CONFIG_PADRAO } from "@/util/nfe-config-padrao.js";
 import { montarIeEmitenteNfe, ajustarDestinatarioAmbienteNfe } from "@/util/normalizar-ie-nfe.js";
+import { resolverIdeEmissaoNfe } from "@/util/resolver-ide-emissao-nfe.js";
 import { validarPreRequisitosEmissaoNfe } from "@/util/validar-pre-requisitos-emissao-nfe.js";
 
 export type ItemPayloadNfe = {
@@ -58,6 +59,7 @@ export type DestinatarioPayloadNfe = {
 	estado?: string;
 	codigomunicipioibge?: string;
 	indIEDest?: number;
+	pais?: string;
 };
 
 export type PagamentoPayloadNfe = {
@@ -232,6 +234,7 @@ export function montarPayloadGatewayEmissaoItens({
 	finNFe,
 	tpNF,
 	documentosReferenciados,
+	indPres,
 }: {
 	empresa: NonNullable<Awaited<ReturnType<typeof buscarEmpresaPorId>>>;
 	empresaFiscal: NonNullable<Awaited<ReturnType<typeof buscarEmpresaFiscalPorEmpresa>>>;
@@ -249,9 +252,17 @@ export function montarPayloadGatewayEmissaoItens({
 	finNFe?: number;
 	tpNF?: number;
 	documentosReferenciados?: DocumentoReferenciadoPayloadNfe[];
+	indPres?: number;
 }) {
 	const configJson = montarConfigJsonSpedNfe({ empresa, empresaFiscal, nfeConfiguracao });
 	const credenciais = descriptografarCredenciaisCertificado(certificadoAtivo);
+	const ide = resolverIdeEmissaoNfe({
+		ufEmitente: empresaFiscal.uf,
+		ufDestinatario: destinatario?.estado,
+		paisDestinatario: destinatario?.pais,
+		indPres,
+		finNFe,
+	});
 
 	return {
 		configJson,
@@ -282,9 +293,9 @@ export function montarPayloadGatewayEmissaoItens({
 				nNF: numeroNf,
 				tpAmb: nfeConfiguracao.ambiente,
 				verProc: NFE_CONFIG_PADRAO.verproc,
-				idDest: destinatario?.cnpjcpf ? 1 : 1,
-				indFinal: 1,
-				indPres: 1,
+				idDest: ide.idDest,
+				indFinal: ide.indFinal,
+				indPres: ide.indPres,
 				finNFe: finNFe ?? 1,
 				tpNF: tpNF ?? 1,
 			},

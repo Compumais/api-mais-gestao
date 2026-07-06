@@ -48,6 +48,12 @@ import {
 	type NfeSerie,
 } from "@/services/nfe-configuracao.service";
 import { empresaFiscalService } from "@/services/empresa-fiscal.service";
+import {
+	IND_PRES_NFE_PADRAO,
+	isIndPresNfeValido,
+	OPCOES_IND_PRES_NFE,
+	resolverIdDestNfePreview,
+} from "@/constants/ind-pres-nfe";
 import { NFE_STATUS, NFE_AMBIENTE_LABELS, emissaoFoiAutorizada } from "@/constants/nfe-status";
 import { obterCodigoRejeicaoNota, obterMotivoRejeicaoNota } from "@/util/nfe-rejeicao-util";
 import { AvisoAmbienteNfe } from "../components/aviso-ambiente-nfe";
@@ -255,6 +261,7 @@ export default function NovaEmissaoNfePage() {
 			idnotafiscal: undefined,
 			confirmarProducao: false,
 			natOp: "",
+			indPres: IND_PRES_NFE_PADRAO,
 			itens: [],
 			totais: { frete: 0, seguro: 0, desconto: 0, outrasDespesas: 0 },
 			gerarFinanceiro: true,
@@ -364,8 +371,8 @@ export default function NovaEmissaoNfePage() {
 		if (carregandoNfeConfig || !nfeConfiguracao) return;
 		if (!cfopsSaida?.length || seriesData === undefined) return;
 
-		const { ultimacfopsaida, ultimanatop, ultimaidserie } = nfeConfiguracao;
-		if (!ultimacfopsaida && !ultimanatop && !ultimaidserie) return;
+		const { ultimacfopsaida, ultimanatop, ultimaidserie, ultimoindpres } = nfeConfiguracao;
+		if (!ultimacfopsaida && !ultimanatop && !ultimaidserie && ultimoindpres == null) return;
 
 		ultimaPreferenciaAplicadaRef.current = true;
 
@@ -395,6 +402,10 @@ export default function NovaEmissaoNfePage() {
 		if (ultimaidserie && seriesAtivas.some((s) => s.id === ultimaidserie)) {
 			form.setValue("idserienfe", ultimaidserie, { shouldValidate: true });
 		}
+
+		if (ultimoindpres != null && isIndPresNfeValido(ultimoindpres)) {
+			form.setValue("indPres", ultimoindpres, { shouldValidate: true });
+		}
 	}, [
 		reemitirId,
 		pedidoId,
@@ -411,6 +422,16 @@ export default function NovaEmissaoNfePage() {
 	const entidadeSelecionada = useMemo(
 		() => entidades.find((e) => e.id === idDestinatario),
 		[entidades, idDestinatario],
+	);
+
+	const idDestPreview = useMemo(
+		() =>
+			resolverIdDestNfePreview({
+				ufEmitente: empresaFiscal?.uf,
+				ufDestinatario: entidadeSelecionada?.idestado,
+				paisDestinatario: entidadeSelecionada?.pais,
+			}),
+		[empresaFiscal?.uf, entidadeSelecionada?.idestado, entidadeSelecionada?.pais],
 	);
 
 	const serieSelecionada = useMemo(
@@ -532,6 +553,11 @@ export default function NovaEmissaoNfePage() {
 			idserienfe: serieEncontrada?.id ?? contextoReemissao.idserienfe ?? undefined,
 			confirmarProducao: false,
 			natOp: natOpReemissao,
+			indPres:
+				contextoReemissao.indPres != null &&
+				isIndPresNfeValido(contextoReemissao.indPres)
+					? contextoReemissao.indPres
+					: IND_PRES_NFE_PADRAO,
 			itens: itensForm,
 			totais: contextoReemissao.totais,
 			transporte: contextoReemissao.transporte,
@@ -638,6 +664,11 @@ export default function NovaEmissaoNfePage() {
 			iddestinatario: contextoPedido.iddestinatario,
 			confirmarProducao: false,
 			natOp: form.getValues("natOp"),
+			indPres:
+				nfeConfiguracao?.ultimoindpres != null &&
+				isIndPresNfeValido(nfeConfiguracao.ultimoindpres)
+					? nfeConfiguracao.ultimoindpres
+					: IND_PRES_NFE_PADRAO,
 			itens: itensForm,
 			totais: {
 				frete: 0,
@@ -1300,6 +1331,54 @@ export default function NovaEmissaoNfePage() {
 										</p>
 									)}
 								</Field>
+							</div>
+
+							<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+								<Field>
+									<FieldLabel>Forma de realização da venda (indPres)</FieldLabel>
+									<Controller
+										control={form.control}
+										name="indPres"
+										render={({ field }) => (
+											<Select
+												value={String(field.value ?? IND_PRES_NFE_PADRAO)}
+												onValueChange={(valor) =>
+													field.onChange(Number(valor))
+												}
+											>
+												<SelectTrigger>
+													<SelectValue placeholder="Selecionar forma da venda" />
+												</SelectTrigger>
+												<SelectContent>
+													{OPCOES_IND_PRES_NFE.map((opcao) => (
+														<SelectItem key={opcao.value} value={opcao.value}>
+															{opcao.label}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+										)}
+									/>
+									<p className="text-xs text-muted-foreground mt-1">
+										Indica como a venda ocorreu (balcão, internet, telefone etc.).
+										É diferente da localização fiscal (idDest), calculada pela UF
+										do emitente e do destinatário.
+									</p>
+								</Field>
+
+								{idDestPreview && (
+									<Field>
+										<FieldLabel>Localização fiscal (idDest)</FieldLabel>
+										<div className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
+											<span className="font-medium">{idDestPreview.idDest}</span>
+											{" — "}
+											{idDestPreview.label}
+										</div>
+										<p className="text-xs text-muted-foreground mt-1">
+											Calculado automaticamente com base no destinatário selecionado.
+										</p>
+									</Field>
+								)}
 							</div>
 						</FieldSet>
 					</FieldGroup>

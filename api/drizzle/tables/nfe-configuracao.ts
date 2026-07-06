@@ -36,6 +36,7 @@ export const nfeconfiguracao = pgTable(
 		ultimacfopsaida: varchar({ length: 5 }),
 		ultimanatop: varchar({ length: 60 }),
 		ultimaidserie: text(),
+		ultimoindpres: smallint(),
 		criadoem: timestamp({ precision: 3, mode: "string" })
 			.default(sql`CURRENT_TIMESTAMP`)
 			.notNull(),

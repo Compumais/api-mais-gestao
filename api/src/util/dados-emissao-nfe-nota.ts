@@ -61,6 +61,8 @@ export function extrairTributacaoItemEmissaoNfe(
 
 export type DadosEmissaoNfeSalvos = {
 	natOp?: string;
+	indPres?: number;
+	idDest?: number;
 	formaPagamento?: string;
 	idserienfe?: string;
 	iddav?: string;
@@ -103,6 +105,8 @@ export type DadosImportacaoEmissaoNfe = {
 
 export function montarSnapshotEmissaoNfe(params: {
 	natOp?: string;
+	indPres?: number;
+	idDest?: number;
 	idserienfe?: string;
 	iddav?: string;
 	formasPagamento?: Array<{
@@ -134,6 +138,8 @@ export function montarSnapshotEmissaoNfe(params: {
 	return {
 		emissao: {
 			natOp: params.natOp?.trim() || undefined,
+			indPres: params.indPres,
+			idDest: params.idDest,
 			idserienfe: params.idserienfe,
 			iddav: params.iddav,
 			formasPagamento: params.formasPagamento,
