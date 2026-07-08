@@ -1,0 +1,33 @@
+# Trechos para mesclar em /etc/datadog-agent/datadog.yaml na VPS.
+# Após editar: sudo datadog-agent configcheck && sudo systemctl restart datadog-agent
+
+api_key: <SUA_API_KEY>
+site: us5.datadoghq.com
+hostname: srv1534149
+env: prod
+
+# Logs
+logs_enabled: true
+log_level: info
+
+# Coleta logs de todos os containers Docker (complementa labels no compose)
+logs_config:
+  container_collect_all: true
+  container_include:
+    - name: mais-gestao-api
+    - name: mais-gestao-db
+  container_exclude: []
+
+# APM — necessário quando a API usar dd-trace (porta padrão do Agent)
+apm_config:
+  enabled: true
+  apm_non_local_traffic: true
+
+# Process monitoring (PM2 + containers)
+process_config:
+  enabled: true
+
+# Tags globais aplicadas a métricas, logs e traces
+tags:
+  - env:prod
+  - project:mais-gestao

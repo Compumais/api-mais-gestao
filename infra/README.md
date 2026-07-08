@@ -143,3 +143,33 @@ gunzip -c /opt/backups/mais-gestao/backup-YYYYMMDD-HHMMSS.sql.gz | psql -h 127.0
 - Logs DB: `docker logs -f mais-gestao-db`
 - Status PM2: `pm2 status`
 - Logs Web PM2: `pm2 logs mais-gestao-web`
+
+## 10) Datadog (monitoramento)
+
+Guia completo: [`datadog/README.md`](./datadog/README.md).
+
+Resumo na VPS:
+
+1. **Instalar Agent no host** (não no compose — PM2 roda fora do Docker):
+
+```bash
+export DD_API_KEY="<SUA_API_KEY>"
+export DD_SITE="us5.datadoghq.com"
+export DD_ENV="prod"
+bash -c "$(curl -L https://install.datadoghq.com/scripts/install_script_agent7.sh)"
+```
+
+2. **Copiar configs** de `infra/datadog/conf.d/` para `/etc/datadog-agent/conf.d/` e mesclar `datadog.yaml.snippet`.
+
+3. **Docker Compose** — o `docker-compose.prod.yml` traz labels Datadog nos serviços `api` e `postgres`. Recrie os containers após atualizar o arquivo:
+
+```bash
+cd /opt/mais-gestao
+docker compose -f docker-compose.prod.yml up -d
+```
+
+4. **PM2** — use `infra/datadog/ecosystem.config.cjs` e `conf.d/pm2.d/conf.yaml` para enviar logs da Web ao Datadog.
+
+5. **Postgres** — crie usuário `datadog` com `pg_monitor` (detalhes no README do Datadog).
+
+Verificação: `sudo datadog-agent status`

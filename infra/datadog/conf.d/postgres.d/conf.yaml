@@ -1,0 +1,16 @@
+# Copie para /etc/datadog-agent/conf.d/postgres.d/conf.yaml na VPS.
+# Crie o usuário de monitoramento no Postgres antes (ver infra/datadog/README.md).
+
+init_config:
+
+instances:
+  - dbm: true
+    host: 127.0.0.1
+    port: 5432
+    username: datadog
+    password: "<SENHA_DATADOG>"
+    dbname: postgres
+    tags:
+      - env:prod
+      - service:mais-gestao-db
+      - db:mais_gestao

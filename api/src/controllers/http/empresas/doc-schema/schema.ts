@@ -72,6 +72,14 @@ export const criarEmpresaSchema: FastifySchema = {
 				code: { type: "string" },
 			},
 		},
+		409: {
+			type: "object",
+			description: "CNPJ já cadastrado",
+			properties: {
+				error: { type: "string" },
+				code: { type: "string" },
+			},
+		},
 		500: {
 			type: "object",
 			properties: {

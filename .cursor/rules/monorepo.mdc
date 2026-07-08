@@ -1,3 +1,39 @@
 ---
-alwaysApply: false
+description: Estrutura do monorepo Mais Gestão, pacotes, comandos e convenções transversais
+alwaysApply: true
 ---
+
+# Monorepo Mais Gestão
+
+Plataforma SaaS multi-empresa para controle financeiro e fiscal. O repositório agrupa pacotes independentes com deploy e CI separados.
+
+## Pacotes
+
+| Pacote | Caminho | Stack | Regras locais |
+|--------|---------|-------|---------------|
+| API | `api/` | Node.js, Fastify, Drizzle, PostgreSQL, Better Auth, Zod | `api/.cursor/rules/` |
+| Web | `web/` | Next.js (App Router), React Query, shadcn/ui, Zod | `web/.cursor/rules/` |
+| NFe Gateway | `api_Nfe/nfe-gateway/` | PHP, integração SEFAZ | — |
+| Infra | `infra/` | Deploy VPS, Docker, PM2, Nginx | — |
+
+## Comandos
+
+- Instalar e executar sempre **dentro do pacote** (`cd api` ou `cd web`).
+- Lint/format na raiz: `npm run check` / `npm run format` (Biome via `biome.json`).
+- CI em `.github/workflows/ci.yml` roda lint/build/test por pacote conforme paths alterados.
+
+## Convenções transversais
+
+- Respeite a arquitetura e regras do pacote em que estiver trabalhando; não misture padrões de `api/` e `web/`.
+- `web/` consome a API via services/hooks — não acesse banco ou lógica de negócio do backend no front.
+- Não duplique código entre pacotes; não crie pacote compartilhado sem solicitação explícita.
+- Use caminhos relativos ao referenciar arquivos dentro do monorepo.
+- Skills fiscais e resoluções complexas ficam em `.cursor/skills/` na raiz.
+- Alterações em fluxos fiscais (NF-e/NFC-e, entrada de notas) podem impactar `api/`, `web/` e `api_Nfe/` — considere o ciclo completo.
+
+## Escopo de alterações
+
+- Backend (rotas, services, migrations): `api/`
+- Telas, componentes, hooks: `web/`
+- Emissão SEFAZ via gateway PHP: `api_Nfe/nfe-gateway/`
+- Deploy e operação: `infra/`

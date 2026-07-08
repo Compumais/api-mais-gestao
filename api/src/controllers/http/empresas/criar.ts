@@ -62,7 +62,10 @@ export async function criarEmpresa(
 		});
 
 		if (!empresa.success || !empresa.body) {
-			return reply.status(empresa.status).send(empresa);
+			return reply.status(empresa.status).send({
+				error: empresa.error,
+				code: empresa.code,
+			});
 		}
 
 		return reply.status(empresa.status).send(empresa.body);

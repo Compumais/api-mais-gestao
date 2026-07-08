@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { PageContainer } from "@/app/(auth)/components/page-container";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Field,
 	FieldError,
@@ -21,7 +22,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useEmpresa } from "@/hooks/use-empresa";
 import {
 	type CriarPlanoContasFormData,

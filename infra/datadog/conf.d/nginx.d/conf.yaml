@@ -1,0 +1,10 @@
+# Opcional — copie para /etc/datadog-agent/conf.d/nginx.d/conf.yaml na VPS.
+# Requer stub_status habilitado no Nginx (ver infra/datadog/README.md).
+
+init_config:
+
+instances:
+  - nginx_status_url: http://127.0.0.1:8081/nginx_status/
+    tags:
+      - env:prod
+      - service:nginx

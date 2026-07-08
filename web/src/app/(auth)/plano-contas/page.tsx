@@ -1,7 +1,13 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { Download, FileSpreadsheet, FileText, PlusIcon } from "lucide-react";
+import {
+	Download,
+	FileDown,
+	FileSpreadsheet,
+	FileText,
+	PlusIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -15,28 +21,39 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useEmpresa } from "@/hooks/use-empresa";
 import {
 	type FormatoImportacaoPlanoContas,
 	planoContasService,
 } from "@/services/plano-contas.service";
 import { PageContainer } from "../components/page-container";
 
+function baixarArquivo(blob: Blob, nomeArquivo: string) {
+	const url = URL.createObjectURL(blob);
+	const link = document.createElement("a");
+	link.href = url;
+	link.download = nomeArquivo;
+	document.body.appendChild(link);
+	link.click();
+	link.remove();
+	URL.revokeObjectURL(url);
+}
+
 export default function PlanoContasPage() {
 	const router = useRouter();
+	const { localStorageEmpresa: empresa } = useEmpresa();
 	const [formatoImportacao, setFormatoImportacao] =
 		useState<FormatoImportacaoPlanoContas | null>(null);
 
 	useEffect(() => {
 		const handleKeyDown = (event: KeyboardEvent) => {
-			// Verifica se não está digitando em um input
 			const isInputFocused =
 				event.target instanceof HTMLInputElement ||
 				event.target instanceof HTMLTextAreaElement ||
 				event.target instanceof HTMLSelectElement;
 
-			if (isInputFocused) return; // Ignora se e	ver digitando
+			if (isInputFocused) return;
 
-			// F2 - Redireciona para Inclusão
 			if (event.key === "F2") {
 				event.preventDefault();
 				router.push("/plano-contas/novo");
@@ -56,20 +73,38 @@ export default function PlanoContasPage() {
 			return { blob, formato };
 		},
 		onSuccess: ({ blob, formato }) => {
-			const url = URL.createObjectURL(blob);
-			const link = document.createElement("a");
-			link.href = url;
-			link.download = `modelo-plano-de-contas.${formato}`;
-			document.body.appendChild(link);
-			link.click();
-			link.remove();
-			URL.revokeObjectURL(url);
+			baixarArquivo(blob, `modelo-plano-de-contas.${formato}`);
 			toast.success("Modelo baixado com sucesso");
 		},
 		onError: (error: Error) => {
 			toast.error(error.message || "Erro ao baixar modelo");
 		},
 	});
+
+	const exportarPlanoMutation = useMutation({
+		mutationFn: async (formato: FormatoImportacaoPlanoContas) => {
+			if (!empresa?.id) {
+				throw new Error(
+					"Selecione uma empresa para exportar o plano de contas",
+				);
+			}
+
+			const blob = await planoContasService.exportar(empresa.id, formato);
+			return { blob, formato };
+		},
+		onSuccess: ({ blob, formato }) => {
+			baixarArquivo(blob, `plano-de-contas.${formato}`);
+			toast.success("Plano de contas exportado com sucesso");
+		},
+		onError: (error: Error) => {
+			toast.error(error.message || "Erro ao exportar plano de contas");
+		},
+	});
+
+	const exportacaoDesabilitada =
+		!empresa?.id ||
+		exportarPlanoMutation.isPending ||
+		baixarModeloMutation.isPending;
 
 	return (
 		<PageContainer>
@@ -99,7 +134,7 @@ export default function PlanoContasPage() {
 								<DropdownMenuTrigger asChild>
 									<Button
 										variant="outline"
-										className="rounded-l-none"
+										className="rounded-none"
 										disabled={baixarModeloMutation.isPending}
 									>
 										<Download className="h-4 w-4" aria-hidden="true" />
@@ -116,6 +151,30 @@ export default function PlanoContasPage() {
 										onClick={() => baixarModeloMutation.mutate("xlsx")}
 									>
 										Modelo XLSX
+									</DropdownMenuItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<Button
+										variant="outline"
+										className="rounded-l-none"
+										disabled={exportacaoDesabilitada}
+									>
+										<FileDown className="h-4 w-4" aria-hidden="true" />
+										Exportar
+									</Button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent align="end">
+									<DropdownMenuItem
+										onClick={() => exportarPlanoMutation.mutate("csv")}
+									>
+										Exportar CSV
+									</DropdownMenuItem>
+									<DropdownMenuItem
+										onClick={() => exportarPlanoMutation.mutate("xlsx")}
+									>
+										Exportar XLSX
 									</DropdownMenuItem>
 								</DropdownMenuContent>
 							</DropdownMenu>

@@ -642,6 +642,36 @@ export const templatePlanoContasSchema: FastifySchema = {
 	},
 };
 
+export const exportarPlanoContasSchema: FastifySchema = {
+	tags: ["plano-contas"],
+	summary: "Exportar plano de contas atual",
+	description:
+		"Exporta o plano de contas da empresa em CSV ou XLSX com as colunas Código, Descrição, Tipo e Ativo, ordenado hierarquicamente por código.",
+	security: [{ bearerAuth: [] }],
+	querystring: {
+		type: "object",
+		properties: {
+			idempresa: {
+				type: "string",
+				format: "uuid",
+				description: "ID da empresa",
+			},
+			formato: {
+				type: "string",
+				enum: ["csv", "xlsx"],
+				default: "csv",
+				description: "Formato do arquivo de exportação",
+			},
+		},
+		required: ["idempresa"],
+	},
+	response: {
+		401: respostaErroPadrao,
+		403: respostaErroPadrao,
+		500: respostaErroPadrao,
+	},
+};
+
 export const moverPlanoContasSchema: FastifySchema = {
 	tags: ["plano-contas"],
 	summary: "Mover plano de contas na hierarquia",
