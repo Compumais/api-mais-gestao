@@ -1,81 +1,18 @@
 "use client";
 
-import { useMemo, useState, useEffect, useRef } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useForm, Controller, type FieldErrors, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Pencil, Plus, Send, Trash2 } from "lucide-react";
+import { ArrowLeft, Eye, Pencil, Plus, Send, Trash2 } from "lucide-react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+	Controller,
+	type FieldErrors,
+	type Resolver,
+	useForm,
+} from "react-hook-form";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import { Combobox } from "@/components/ui/combobox";
-import { MoneyInput } from "@/components/ui/money-input";
-import {
-	Field,
-	FieldError,
-	FieldGroup,
-	FieldLabel,
-	FieldLegend,
-	FieldSet,
-} from "@/components/ui/field";
-import { useEmpresa } from "@/hooks/use-empresa";
-import { useNfeConfiguracao } from "@/hooks/use-nfe-configuracao";
-import {
-	emissaoNfeFormSchema,
-	type EmissaoNfeFormData,
-} from "@/schemas/nfe-emissao.schema";
-import {
-	detectarTipoDevolucaoPorCfop,
-	LABEL_TIPO_DEVOLUCAO,
-	type TipoDevolucaoNfe,
-} from "@/util/cfop-devolucao-util";
-import { emitirNfe, abrirDanfeNfe, buscarNfeEmitidaComItens, resolverReferenciaEmissao } from "@/services/nfe-emissao.service";
-import { davService } from "@/services/dav.service";
-import { entidadesService } from "@/services/entidades.service";
-import { cfopService } from "@/services/cfop.service";
-import {
-	nfeConfiguracaoService,
-	type NfeSerie,
-} from "@/services/nfe-configuracao.service";
-import { empresaFiscalService } from "@/services/empresa-fiscal.service";
-import {
-	IND_PRES_NFE_PADRAO,
-	isIndPresNfeValido,
-	OPCOES_IND_PRES_NFE,
-	resolverIdDestNfePreview,
-} from "@/constants/ind-pres-nfe";
-import { NFE_STATUS, NFE_AMBIENTE_LABELS, emissaoFoiAutorizada } from "@/constants/nfe-status";
-import { obterCodigoRejeicaoNota, obterMotivoRejeicaoNota } from "@/util/nfe-rejeicao-util";
-import { AvisoAmbienteNfe } from "../components/aviso-ambiente-nfe";
-import { ModalItemEmissao } from "../components/modal-item-emissao";
-import { PainelCalculoImpostosEmissao } from "../components/painel-calculo-impostos-emissao";
-import { ResumoDestinatarioNfe } from "../components/resumo-destinatario-nfe";
-import { ModalConfirmacaoProducao } from "../components/modal-confirmacao-producao";
-import { SecaoDocumentoReferenciado } from "../components/secao-documento-referenciado";
-import { CamposIntegracaoNfVenda } from "../components/campos-integracao-nf-venda";
-import type { DocumentoReferenciadoResolvido } from "@/services/nfe-emissao.service";
-import {
-	calcularTotaisFiscaisEmissaoNfe,
-	calcularIcmsItemEmissao,
-} from "@/util/calcular-totais-fiscais-emissao-nfe";
-import {
-	empresaUsaCsosn,
-	mapearItemNotaReemissaoParaForm,
-	prepararItemEmissaoFormulario,
-} from "@/util/mapear-produto-item-nfe";
-import { extrairPrimeiraMensagemErroForm } from "@/util/extrair-mensagem-erro-form";
-import { montarPagamentoEmissaoNfe } from "@/util/normalizar-pagamento-emissao-nfe";
-import { resolverContextoReemissaoNfe } from "@/util/resolver-contexto-reemissao-nfe";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -86,6 +23,88 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Combobox } from "@/components/ui/combobox";
+import {
+	Field,
+	FieldError,
+	FieldGroup,
+	FieldLabel,
+	FieldLegend,
+	FieldSet,
+} from "@/components/ui/field";
+import { MoneyInput } from "@/components/ui/money-input";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
+import {
+	IND_PRES_NFE_PADRAO,
+	isIndPresNfeValido,
+	OPCOES_IND_PRES_NFE,
+	resolverIdDestNfePreview,
+} from "@/constants/ind-pres-nfe";
+import {
+	emissaoFoiAutorizada,
+	NFE_AMBIENTE_LABELS,
+	NFE_STATUS,
+} from "@/constants/nfe-status";
+import { useEmpresa } from "@/hooks/use-empresa";
+import { useNfeConfiguracao } from "@/hooks/use-nfe-configuracao";
+import {
+	type EmissaoNfeFormData,
+	emissaoNfeFormSchema,
+} from "@/schemas/nfe-emissao.schema";
+import { cfopService } from "@/services/cfop.service";
+import { davService } from "@/services/dav.service";
+import { empresaFiscalService } from "@/services/empresa-fiscal.service";
+import { entidadesService } from "@/services/entidades.service";
+import {
+	type NfeSerie,
+	nfeConfiguracaoService,
+} from "@/services/nfe-configuracao.service";
+import type { DocumentoReferenciadoResolvido } from "@/services/nfe-emissao.service";
+import {
+	abrirDanfeNfe,
+	buscarNfeEmitidaComItens,
+	emitirNfe,
+	previewDanfeNfe,
+	resolverReferenciaEmissao,
+} from "@/services/nfe-emissao.service";
+import {
+	calcularIcmsItemEmissao,
+	calcularTotaisFiscaisEmissaoNfe,
+} from "@/util/calcular-totais-fiscais-emissao-nfe";
+import {
+	detectarTipoDevolucaoPorCfop,
+	LABEL_TIPO_DEVOLUCAO,
+	type TipoDevolucaoNfe,
+} from "@/util/cfop-devolucao-util";
+import { extrairPrimeiraMensagemErroForm } from "@/util/extrair-mensagem-erro-form";
+import {
+	empresaUsaCsosn,
+	mapearItemNotaReemissaoParaForm,
+	prepararItemEmissaoFormulario,
+} from "@/util/mapear-produto-item-nfe";
+import {
+	obterCodigoRejeicaoNota,
+	obterMotivoRejeicaoNota,
+} from "@/util/nfe-rejeicao-util";
+import { montarPagamentoEmissaoNfe } from "@/util/normalizar-pagamento-emissao-nfe";
+import { resolverContextoReemissaoNfe } from "@/util/resolver-contexto-reemissao-nfe";
+import { AvisoAmbienteNfe } from "../components/aviso-ambiente-nfe";
+import { CamposIntegracaoNfVenda } from "../components/campos-integracao-nf-venda";
+import { ModalConfirmacaoProducao } from "../components/modal-confirmacao-producao";
+import { ModalItemEmissao } from "../components/modal-item-emissao";
+import { ModalPreviewDanfeNfe } from "../components/modal-preview-danfe-nfe";
+import { PainelCalculoImpostosEmissao } from "../components/painel-calculo-impostos-emissao";
+import { ResumoDestinatarioNfe } from "../components/resumo-destinatario-nfe";
+import { SecaoDocumentoReferenciado } from "../components/secao-documento-referenciado";
 
 const FORMAS_PAGAMENTO = [
 	{ codigo: "01", descricao: "Dinheiro" },
@@ -102,7 +121,9 @@ const FORMAS_PAGAMENTO = [
 ];
 
 const formatarMoeda = (v: number) =>
-	new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
+	new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
+		v,
+	);
 
 function montarPayloadIntegracaoEmissao(
 	dados: EmissaoNfeFormData,
@@ -173,7 +194,8 @@ export default function NovaEmissaoNfePage() {
 	const devolverVendaId = searchParams.get("devolverVenda");
 	const queryClient = useQueryClient();
 	const { localStorageEmpresa: empresa } = useEmpresa();
-	const { nfeConfiguracao, carregando: carregandoNfeConfig } = useNfeConfiguracao(empresa?.id);
+	const { nfeConfiguracao, carregando: carregandoNfeConfig } =
+		useNfeConfiguracao(empresa?.id);
 
 	const { data: empresaFiscal } = useQuery({
 		queryKey: ["empresa-fiscal", empresa?.id],
@@ -181,8 +203,12 @@ export default function NovaEmissaoNfePage() {
 		enabled: !!empresa?.id,
 	});
 	const [modalConfirmacaoAberto, setModalConfirmacaoAberto] = useState(false);
+	const [modalPreviewAberto, setModalPreviewAberto] = useState(false);
+	const [pdfPreview, setPdfPreview] = useState<Blob | null>(null);
 	const [modalItemAberto, setModalItemAberto] = useState(false);
-	const [itemEditando, setItemEditando] = useState<{ index: number } | null>(null);
+	const [itemEditando, setItemEditando] = useState<{ index: number } | null>(
+		null,
+	);
 	const [formaPagamento, setFormaPagamento] = useState("01");
 	const [cfopSaida, setCfopSaida] = useState("");
 	const [cfopDialogAberto, setCfopDialogAberto] = useState(false);
@@ -240,7 +266,11 @@ export default function NovaEmissaoNfePage() {
 		refetchOnMount: "always",
 	});
 
-	const { data: contextoPedido, isLoading: carregandoPedido, isError: erroContextoPedido } = useQuery({
+	const {
+		data: contextoPedido,
+		isLoading: carregandoPedido,
+		isError: erroContextoPedido,
+	} = useQuery({
 		queryKey: ["pedido-contexto-emissao", pedidoId, empresa?.id],
 		queryFn: async () => {
 			if (!pedidoId || !empresa) {
@@ -269,7 +299,9 @@ export default function NovaEmissaoNfePage() {
 		},
 	});
 
-	const { formState: { errors } } = form;
+	const {
+		formState: { errors },
+	} = form;
 	const itensValue = form.watch("itens");
 	const [freteWatch, seguroWatch, descontoWatch, outrasDespesasWatch] =
 		form.watch([
@@ -320,9 +352,15 @@ export default function NovaEmissaoNfePage() {
 			if (detectado) return detectado;
 		}
 		return documentoReferenciado?.tipoDevolucao ?? null;
-	}, [tipoDevolucaoForcado, cfopSaida, itensValue, documentoReferenciado?.tipoDevolucao]);
+	}, [
+		tipoDevolucaoForcado,
+		cfopSaida,
+		itensValue,
+		documentoReferenciado?.tipoDevolucao,
+	]);
 
-	const isOperacaoDevolucao = tipoDevolucao !== null || tipoDevolucaoForcado !== null;
+	const isOperacaoDevolucao =
+		tipoDevolucao !== null || tipoDevolucaoForcado !== null;
 	const isDevolucaoVenda = (tipoDevolucao ?? tipoDevolucaoForcado) === "venda";
 	const tipoDevolucaoAtivo = tipoDevolucao ?? tipoDevolucaoForcado;
 
@@ -344,7 +382,8 @@ export default function NovaEmissaoNfePage() {
 		[entidadesLista, isOperacaoDevolucao, isDevolucaoVenda],
 	);
 	const seriesAtivas = useMemo(
-		() => (seriesData ?? []).filter((s: NfeSerie) => s.ativo && s.modelo === "55"),
+		() =>
+			(seriesData ?? []).filter((s: NfeSerie) => s.ativo && s.modelo === "55"),
 		[seriesData],
 	);
 
@@ -371,21 +410,31 @@ export default function NovaEmissaoNfePage() {
 		if (carregandoNfeConfig || !nfeConfiguracao) return;
 		if (!cfopsSaida?.length || seriesData === undefined) return;
 
-		const { ultimacfopsaida, ultimanatop, ultimaidserie, ultimoindpres } = nfeConfiguracao;
-		if (!ultimacfopsaida && !ultimanatop && !ultimaidserie && ultimoindpres == null) return;
+		const { ultimacfopsaida, ultimanatop, ultimaidserie, ultimoindpres } =
+			nfeConfiguracao;
+		if (
+			!ultimacfopsaida &&
+			!ultimanatop &&
+			!ultimaidserie &&
+			ultimoindpres == null
+		)
+			return;
 
 		ultimaPreferenciaAplicadaRef.current = true;
 
 		if (ultimacfopsaida) {
-			const cfopCadastrado = cfopsSaida.find((c) => c.codigo === ultimacfopsaida);
+			const cfopCadastrado = cfopsSaida.find(
+				(c) => c.codigo === ultimacfopsaida,
+			);
 			if (cfopCadastrado) {
 				setCfopSaida(ultimacfopsaida);
 				form.setValue(
 					"natOp",
-					(ultimanatop?.trim() || cfopCadastrado.descricao || ultimacfopsaida).slice(
-						0,
-						60,
-					),
+					(
+						ultimanatop?.trim() ||
+						cfopCadastrado.descricao ||
+						ultimacfopsaida
+					).slice(0, 60),
 					{ shouldValidate: true },
 				);
 			} else if (ultimanatop?.trim()) {
@@ -431,11 +480,17 @@ export default function NovaEmissaoNfePage() {
 				ufDestinatario: entidadeSelecionada?.idestado,
 				paisDestinatario: entidadeSelecionada?.pais,
 			}),
-		[empresaFiscal?.uf, entidadeSelecionada?.idestado, entidadeSelecionada?.pais],
+		[
+			empresaFiscal?.uf,
+			entidadeSelecionada?.idestado,
+			entidadeSelecionada?.pais,
+		],
 	);
 
 	const serieSelecionada = useMemo(
-		() => seriesAtivas.find((s) => s.id === idSerie) ?? seriesAtivas.find((s) => s.padrao),
+		() =>
+			seriesAtivas.find((s) => s.id === idSerie) ??
+			seriesAtivas.find((s) => s.padrao),
 		[seriesAtivas, idSerie],
 	);
 
@@ -531,7 +586,9 @@ export default function NovaEmissaoNfePage() {
 
 		const serieEncontrada =
 			(contextoReemissao.idserienfe
-				? seriesAtivasReemissao.find((s) => s.id === contextoReemissao.idserienfe)
+				? seriesAtivasReemissao.find(
+						(s) => s.id === contextoReemissao.idserienfe,
+					)
 				: undefined) ??
 			seriesAtivasReemissao.find((s) => {
 				if (s.serie === notaFiscal.serie) return true;
@@ -550,7 +607,8 @@ export default function NovaEmissaoNfePage() {
 			idempresa: empresa.id,
 			idnotafiscal: notaFiscal.id,
 			iddestinatario: notaFiscal.identidade ?? undefined,
-			idserienfe: serieEncontrada?.id ?? contextoReemissao.idserienfe ?? undefined,
+			idserienfe:
+				serieEncontrada?.id ?? contextoReemissao.idserienfe ?? undefined,
 			confirmarProducao: false,
 			natOp: natOpReemissao,
 			indPres:
@@ -709,11 +767,9 @@ export default function NovaEmissaoNfePage() {
 	function aplicarCfopNatureza(codigo: string, propagarItens: boolean) {
 		setCfopSaida(codigo);
 		const cfop = cfopsOperacao?.find((c) => c.codigo === codigo);
-		form.setValue(
-			"natOp",
-			(cfop?.descricao ?? codigo).slice(0, 60),
-			{ shouldValidate: true },
-		);
+		form.setValue("natOp", (cfop?.descricao ?? codigo).slice(0, 60), {
+			shouldValidate: true,
+		});
 		if (tipoDevolucao) {
 			form.setValue("documentoReferenciado", {
 				...form.getValues("documentoReferenciado"),
@@ -833,12 +889,15 @@ export default function NovaEmissaoNfePage() {
 			})
 			.catch((erro) => {
 				toast.error("Erro ao carregar nota para devolução", {
-					description: erro instanceof Error ? erro.message : "Erro desconhecido",
+					description:
+						erro instanceof Error ? erro.message : "Erro desconhecido",
 				});
 			});
 	}, [devolverEntradaId, devolverVendaId, empresa?.id, form]);
 
-	function adicionarItem(novoItem: import("@/schemas/nfe-emissao.schema").ItemNfe) {
+	function adicionarItem(
+		novoItem: import("@/schemas/nfe-emissao.schema").ItemNfe,
+	) {
 		if (itemEditando !== null) {
 			const novosItens = itensValue.map((it, i) =>
 				i === itemEditando.index ? novoItem : it,
@@ -927,6 +986,20 @@ export default function NovaEmissaoNfePage() {
 	const totalDesconto = totaisFiscais.desconto;
 	const totalNF = totaisFiscais.totalNota;
 
+	const { mutate: gerarPreview, isPending: isPreviewPending } = useMutation({
+		mutationFn: previewDanfeNfe,
+		onSuccess: (blob) => {
+			setPdfPreview(blob);
+			setModalPreviewAberto(true);
+		},
+		onError: (erro: Error) => {
+			toast.error("Não foi possível gerar a pré-visualização", {
+				description:
+					erro.message || "Verifique os dados da nota e tente novamente.",
+			});
+		},
+	});
+
 	const { mutate: emitir, isPending } = useMutation({
 		mutationFn: emitirNfe,
 		onSuccess: (resultado) => {
@@ -953,14 +1026,17 @@ export default function NovaEmissaoNfePage() {
 			if (pedidoId) {
 				void queryClient.invalidateQueries({ queryKey: ["pedido", pedidoId] });
 				void queryClient.invalidateQueries({ queryKey: ["pedidos"] });
-				void queryClient.invalidateQueries({ queryKey: ["pedido-itens", pedidoId] });
+				void queryClient.invalidateQueries({
+					queryKey: ["pedido-itens", pedidoId],
+				});
 			}
 
 			if (!emissaoFoiAutorizada(resultado)) {
 				toast.error(
 					`NF-e rejeitada${resultado.cStat ? ` (código ${resultado.cStat})` : ""}`,
 					{
-						description: resultado.xMotivo ?? "Verifique os dados e tente novamente.",
+						description:
+							resultado.xMotivo ?? "Verifique os dados e tente novamente.",
 					},
 				);
 				router.push(`/nota-fiscal-venda/${resultado.idnotafiscal}`);
@@ -968,9 +1044,7 @@ export default function NovaEmissaoNfePage() {
 			}
 
 			toast.success("NF-e emitida com sucesso!", {
-				description: resultado.chave
-					? `Chave: ${resultado.chave}`
-					: undefined,
+				description: resultado.chave ? `Chave: ${resultado.chave}` : undefined,
 			});
 
 			if (resultado.integracao) {
@@ -1023,15 +1097,17 @@ export default function NovaEmissaoNfePage() {
 		});
 	}
 
-	function handleSubmit(dados: EmissaoNfeFormData) {
+	function montarDadosEmissaoFormulario(
+		dados: EmissaoNfeFormData,
+	): EmissaoNfeFormData | null {
 		if (!cfopSaida) {
 			toast.error("Selecione o CFOP de saída (natureza da operação).");
-			return;
+			return null;
 		}
 
 		if (!empresa?.id) {
 			toast.error("Selecione uma empresa para emitir a NF-e.");
-			return;
+			return null;
 		}
 
 		const usaCsosn = empresaUsaCsosn(empresaFiscal?.crt ?? 3);
@@ -1039,7 +1115,7 @@ export default function NovaEmissaoNfePage() {
 			...dados,
 			idempresa: empresa.id,
 			idnotafiscal: reemitirId
-				? dados.idnotafiscal ?? reemitirId
+				? (dados.idnotafiscal ?? reemitirId)
 				: dados.idnotafiscal,
 			itens: dados.itens.map((item) =>
 				prepararItemEmissaoFormulario(item, usaCsosn),
@@ -1059,7 +1135,7 @@ export default function NovaEmissaoNfePage() {
 						LABEL_TIPO_DEVOLUCAO[tipoDevolucaoAtivo ?? "compra"]
 					} exige referência à NF-e original. Valide a nota, chave ou XML.`,
 				);
-				return;
+				return null;
 			}
 		}
 
@@ -1069,7 +1145,7 @@ export default function NovaEmissaoNfePage() {
 			cfopSelecionado?.descricao?.trim()?.slice(0, 60) ||
 			`Venda CFOP ${cfopSaida}`.slice(0, 60);
 
-		const dadosComPagamento = {
+		return {
 			...dadosNormalizados,
 			natOp,
 			documentoReferenciado: isOperacaoDevolucao
@@ -1087,6 +1163,21 @@ export default function NovaEmissaoNfePage() {
 				isOperacaoDevolucao,
 			),
 		};
+	}
+
+	function handlePreview() {
+		const dados = montarDadosEmissaoFormulario(form.getValues());
+		if (!dados) return;
+		if ((dados.itens?.length ?? 0) === 0) {
+			toast.error("Adicione ao menos um item para pré-visualizar.");
+			return;
+		}
+		gerarPreview(dados);
+	}
+
+	function handleSubmit(dados: EmissaoNfeFormData) {
+		const dadosComPagamento = montarDadosEmissaoFormulario(dados);
+		if (!dadosComPagamento) return;
 
 		if (
 			!isOperacaoDevolucao &&
@@ -1100,7 +1191,10 @@ export default function NovaEmissaoNfePage() {
 			return;
 		}
 
-		if (nfeConfiguracao?.ambiente === 1 && !dadosNormalizados.confirmarProducao) {
+		if (
+			nfeConfiguracao?.ambiente === 1 &&
+			!dadosComPagamento.confirmarProducao
+		) {
 			setModalConfirmacaoAberto(true);
 			return;
 		}
@@ -1122,7 +1216,7 @@ export default function NovaEmissaoNfePage() {
 			...dados,
 			idempresa: empresa?.id ?? dados.idempresa,
 			idnotafiscal: reemitirId
-				? dados.idnotafiscal ?? reemitirId
+				? (dados.idnotafiscal ?? reemitirId)
 				: dados.idnotafiscal,
 			itens: (dados.itens ?? []).map((item) =>
 				prepararItemEmissaoFormulario(item, usaCsosn),
@@ -1152,10 +1246,9 @@ export default function NovaEmissaoNfePage() {
 		);
 	}
 
-	const ambienteLabel =
-		nfeConfiguracao?.ambiente
-			? NFE_AMBIENTE_LABELS[nfeConfiguracao.ambiente] ?? "—"
-			: "Configuração pendente";
+	const ambienteLabel = nfeConfiguracao?.ambiente
+		? (NFE_AMBIENTE_LABELS[nfeConfiguracao.ambiente] ?? "—")
+		: "Configuração pendente";
 
 	return (
 		<div className="flex flex-1 flex-col">
@@ -1180,8 +1273,8 @@ export default function NovaEmissaoNfePage() {
 							: pedidoId
 								? `Pedido ${pedidoId.slice(0, 8)} · revise e transmita a NF-e`
 								: serieSelecionada
-								? `Série ${serieSelecionada.serie} · Próximo nº ${serieSelecionada.numeroproximo}`
-								: "Nenhuma série selecionada"}
+									? `Série ${serieSelecionada.serie} · Próximo nº ${serieSelecionada.numeroproximo}`
+									: "Nenhuma série selecionada"}
 						{" · "}
 						<span
 							className={
@@ -1201,7 +1294,8 @@ export default function NovaEmissaoNfePage() {
 				{pedidoId && (
 					<div
 						className={`mb-6 rounded-lg border p-4 text-sm space-y-2 ${
-							erroContextoPedido || (!carregandoPedido && contextoPedido?.itens.length === 0)
+							erroContextoPedido ||
+							(!carregandoPedido && contextoPedido?.itens.length === 0)
 								? "border-destructive/40 bg-destructive/5 text-destructive"
 								: "border-blue-200 bg-blue-50 text-blue-950"
 						}`}
@@ -1222,8 +1316,8 @@ export default function NovaEmissaoNfePage() {
 							</p>
 						)}
 						{!carregandoPedido &&
-							!erroContextoPedido &&
-							contextoPedido?.pendencias.length ? (
+						!erroContextoPedido &&
+						contextoPedido?.pendencias.length ? (
 							<p className="text-destructive">
 								{contextoPedido.pendencias.join("; ")}
 							</p>
@@ -1231,11 +1325,11 @@ export default function NovaEmissaoNfePage() {
 						{!carregandoPedido &&
 							!erroContextoPedido &&
 							(contextoPedido?.itens.length ?? 0) > 0 && (
-							<p className="text-blue-800">
-								Revise cliente, itens, pagamento e tributação antes de emitir.
-								Ao autorizar, o pedido será vinculado à NF-e.
-							</p>
-						)}
+								<p className="text-blue-800">
+									Revise cliente, itens, pagamento e tributação antes de emitir.
+									Ao autorizar, o pedido será vinculado à NF-e.
+								</p>
+							)}
 					</div>
 				)}
 				{reemitirId && (
@@ -1245,17 +1339,18 @@ export default function NovaEmissaoNfePage() {
 								? "Carregando dados da NF-e para reemissão..."
 								: "Você está corrigindo e reemitindo a mesma NF-e. A numeração será mantida."}
 						</p>
-						{!carregandoReemissao && (codigoRejeicaoAnterior || motivoRejeicaoAnterior) && (
-							<div className="text-xs leading-relaxed">
-								{codigoRejeicaoAnterior && (
-									<p>
-										<span className="font-medium">Rejeição anterior:</span>{" "}
-										código {codigoRejeicaoAnterior}
-									</p>
-								)}
-								{motivoRejeicaoAnterior && <p>{motivoRejeicaoAnterior}</p>}
-							</div>
-						)}
+						{!carregandoReemissao &&
+							(codigoRejeicaoAnterior || motivoRejeicaoAnterior) && (
+								<div className="text-xs leading-relaxed">
+									{codigoRejeicaoAnterior && (
+										<p>
+											<span className="font-medium">Rejeição anterior:</span>{" "}
+											código {codigoRejeicaoAnterior}
+										</p>
+									)}
+									{motivoRejeicaoAnterior && <p>{motivoRejeicaoAnterior}</p>}
+								</div>
+							)}
 					</div>
 				)}
 				{nfeConfiguracao && (
@@ -1284,14 +1379,18 @@ export default function NovaEmissaoNfePage() {
 											<Select
 												value={field.value ?? "_padrao"}
 												onValueChange={(valor) =>
-													field.onChange(valor === "_padrao" ? undefined : valor)
+													field.onChange(
+														valor === "_padrao" ? undefined : valor,
+													)
 												}
 											>
 												<SelectTrigger>
 													<SelectValue placeholder="Usar série padrão" />
 												</SelectTrigger>
 												<SelectContent>
-													<SelectItem value="_padrao">Usar série padrão</SelectItem>
+													<SelectItem value="_padrao">
+														Usar série padrão
+													</SelectItem>
 													{seriesAtivas.map((s) => (
 														<SelectItem key={s.id} value={s.id}>
 															Série {s.serie}
@@ -1327,7 +1426,8 @@ export default function NovaEmissaoNfePage() {
 									)}
 									{!cfopSaida && (
 										<p className="text-xs text-destructive mt-1">
-											Selecione o CFOP de saída para definir a natureza da operação.
+											Selecione o CFOP de saída para definir a natureza da
+											operação.
 										</p>
 									)}
 								</Field>
@@ -1335,16 +1435,16 @@ export default function NovaEmissaoNfePage() {
 
 							<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
 								<Field>
-									<FieldLabel>Forma de realização da venda (indPres)</FieldLabel>
+									<FieldLabel>
+										Forma de realização da venda (indPres)
+									</FieldLabel>
 									<Controller
 										control={form.control}
 										name="indPres"
 										render={({ field }) => (
 											<Select
 												value={String(field.value ?? IND_PRES_NFE_PADRAO)}
-												onValueChange={(valor) =>
-													field.onChange(Number(valor))
-												}
+												onValueChange={(valor) => field.onChange(Number(valor))}
 											>
 												<SelectTrigger>
 													<SelectValue placeholder="Selecionar forma da venda" />
@@ -1360,9 +1460,9 @@ export default function NovaEmissaoNfePage() {
 										)}
 									/>
 									<p className="text-xs text-muted-foreground mt-1">
-										Indica como a venda ocorreu (balcão, internet, telefone etc.).
-										É diferente da localização fiscal (idDest), calculada pela UF
-										do emitente e do destinatário.
+										Indica como a venda ocorreu (balcão, internet, telefone
+										etc.). É diferente da localização fiscal (idDest), calculada
+										pela UF do emitente e do destinatário.
 									</p>
 								</Field>
 
@@ -1370,12 +1470,15 @@ export default function NovaEmissaoNfePage() {
 									<Field>
 										<FieldLabel>Localização fiscal (idDest)</FieldLabel>
 										<div className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
-											<span className="font-medium">{idDestPreview.idDest}</span>
+											<span className="font-medium">
+												{idDestPreview.idDest}
+											</span>
 											{" — "}
 											{idDestPreview.label}
 										</div>
 										<p className="text-xs text-muted-foreground mt-1">
-											Calculado automaticamente com base no destinatário selecionado.
+											Calculado automaticamente com base no destinatário
+											selecionado.
 										</p>
 									</Field>
 								)}
@@ -1389,7 +1492,9 @@ export default function NovaEmissaoNfePage() {
 							<SecaoDocumentoReferenciado
 								idempresa={empresa.id}
 								tipoDevolucao={tipoDevolucaoAtivo}
-								notaReferenciadaInicial={devolverEntradaId ?? devolverVendaId ?? undefined}
+								notaReferenciadaInicial={
+									devolverEntradaId ?? devolverVendaId ?? undefined
+								}
 								valor={documentoReferenciado}
 								onChange={(valor) =>
 									form.setValue("documentoReferenciado", valor)
@@ -1625,9 +1730,7 @@ export default function NovaEmissaoNfePage() {
 										render={({ field }) => (
 											<MoneyInput
 												value={String(field.value ?? 0)}
-												onChange={(v) =>
-													field.onChange(v ? parseFloat(v) : 0)
-												}
+												onChange={(v) => field.onChange(v ? parseFloat(v) : 0)}
 											/>
 										)}
 									/>
@@ -1640,9 +1743,7 @@ export default function NovaEmissaoNfePage() {
 										render={({ field }) => (
 											<MoneyInput
 												value={String(field.value ?? 0)}
-												onChange={(v) =>
-													field.onChange(v ? parseFloat(v) : 0)
-												}
+												onChange={(v) => field.onChange(v ? parseFloat(v) : 0)}
 											/>
 										)}
 									/>
@@ -1655,9 +1756,7 @@ export default function NovaEmissaoNfePage() {
 										render={({ field }) => (
 											<MoneyInput
 												value={String(field.value ?? 0)}
-												onChange={(v) =>
-													field.onChange(v ? parseFloat(v) : 0)
-												}
+												onChange={(v) => field.onChange(v ? parseFloat(v) : 0)}
 											/>
 										)}
 									/>
@@ -1670,9 +1769,7 @@ export default function NovaEmissaoNfePage() {
 										render={({ field }) => (
 											<MoneyInput
 												value={String(field.value ?? 0)}
-												onChange={(v) =>
-													field.onChange(v ? parseFloat(v) : 0)
-												}
+												onChange={(v) => field.onChange(v ? parseFloat(v) : 0)}
 											/>
 										)}
 									/>
@@ -1869,8 +1966,7 @@ export default function NovaEmissaoNfePage() {
 							<>
 								<span className="text-foreground font-semibold text-base">
 									{formatarMoeda(totalNF)}
-								</span>
-								{" "}
+								</span>{" "}
 								<span className="hidden sm:inline">
 									({itensValue.length}{" "}
 									{itensValue.length === 1 ? "item" : "itens"})
@@ -1885,10 +1981,24 @@ export default function NovaEmissaoNfePage() {
 							<Link href="/nota-fiscal-venda">Cancelar</Link>
 						</Button>
 						<Button
+							type="button"
+							variant="outline"
+							className="gap-2"
+							disabled={
+								isPending || isPreviewPending || itensValue.length === 0
+							}
+							onClick={handlePreview}
+						>
+							<Eye className="h-4 w-4" />
+							{isPreviewPending ? "Gerando..." : "Pré-visualizar"}
+						</Button>
+						<Button
 							type="submit"
 							form="form-emissao-nfe"
 							className="gap-2"
-							disabled={isPending || itensValue.length === 0}
+							disabled={
+								isPending || isPreviewPending || itensValue.length === 0
+							}
 						>
 							<Send className="h-4 w-4" />
 							{isPending ? "Emitindo..." : "Emitir NF-e"}
@@ -1930,20 +2040,29 @@ export default function NovaEmissaoNfePage() {
 				carregando={isPending}
 			/>
 
+			<ModalPreviewDanfeNfe
+				open={modalPreviewAberto}
+				onClose={() => {
+					setModalPreviewAberto(false);
+					setPdfPreview(null);
+				}}
+				pdfBlob={pdfPreview}
+			/>
+
 			<AlertDialog open={cfopDialogAberto} onOpenChange={setCfopDialogAberto}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>Aplicar CFOP da natureza aos itens?</AlertDialogTitle>
+						<AlertDialogTitle>
+							Aplicar CFOP da natureza aos itens?
+						</AlertDialogTitle>
 						<AlertDialogDescription>
 							Os itens possuem CFOP diferente do selecionado na natureza da
-							operação ({cfopPendente}). Deseja atualizar o CFOP de todos os itens
-							para coincidir com a natureza?
+							operação ({cfopPendente}). Deseja atualizar o CFOP de todos os
+							itens para coincidir com a natureza?
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel
-							onClick={() => confirmarPropagacaoCfop(false)}
-						>
+						<AlertDialogCancel onClick={() => confirmarPropagacaoCfop(false)}>
 							Não, manter CFOP dos itens
 						</AlertDialogCancel>
 						<AlertDialogAction onClick={() => confirmarPropagacaoCfop(true)}>

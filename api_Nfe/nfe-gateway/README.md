@@ -56,6 +56,7 @@ NFE_GATEWAY_SECRET=dev-secret-change-me php -S 127.0.0.1:8088 -t public
 | POST | `/sefaz/consulta-chave` | Consulta situação da NF-e na SEFAZ (`consSitNFe`) |
 | POST | `/nfe/homologacao/emitir` | NF-e teste homologação |
 | POST | `/nfe/emissao` | Emissão NF-e de venda |
+| POST | `/nfe/emissao/preview-danfe` | Pré-visualização DANFE (monta/assina XML sem transmitir) |
 | POST | `/nfe/cancelar` | Cancelamento de NF-e autorizada |
 | POST | `/nfe/inutilizar` | Inutilização de numeração não utilizada |
 

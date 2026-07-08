@@ -229,19 +229,39 @@ export async function downloadDanfeNfe(id: string): Promise<Blob> {
 	return data;
 }
 
+async function lerErroBlobPdf(blob: Blob, fallback: string): Promise<string> {
+	if (blob.type && blob.type.includes("pdf")) {
+		return fallback;
+	}
+
+	const texto = await blob.text();
+	try {
+		const erro = JSON.parse(texto) as { error?: string; message?: string };
+		return erro.error ?? erro.message ?? fallback;
+	} catch {
+		return texto || fallback;
+	}
+}
+
+export async function previewDanfeNfe(
+	dados: EmissaoNfeFormData,
+): Promise<Blob> {
+	const { data } = await api.post<Blob>("/nfe/emissao/preview-danfe", dados, {
+		responseType: "blob",
+	});
+
+	if (data.type && !data.type.includes("pdf")) {
+		throw new Error(await lerErroBlobPdf(data, "Erro ao gerar pré-visualização"));
+	}
+
+	return data;
+}
+
 export async function abrirDanfeNfe(id: string): Promise<void> {
 	const blob = await downloadDanfeNfe(id);
 
 	if (blob.type && !blob.type.includes("pdf")) {
-		const texto = await blob.text();
-		let mensagem = "Erro ao gerar DANFE";
-		try {
-			const erro = JSON.parse(texto) as { error?: string; message?: string };
-			mensagem = erro.error ?? erro.message ?? mensagem;
-		} catch {
-			if (texto) mensagem = texto;
-		}
-		throw new Error(mensagem);
+		throw new Error(await lerErroBlobPdf(blob, "Erro ao gerar DANFE"));
 	}
 
 	const url = URL.createObjectURL(blob);

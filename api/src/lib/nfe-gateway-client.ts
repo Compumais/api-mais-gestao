@@ -271,6 +271,18 @@ export async function gerarDanfeGateway(
 	return chamarNfeGateway<NfeGatewayDanfeResposta>("/nfe/danfe", { xml });
 }
 
+export async function previewDanfeNfeGateway(payload: {
+	configJson: Record<string, unknown>;
+	pfxBase64: string;
+	senha: string;
+	payloadNfe: Record<string, unknown>;
+}): Promise<NfeGatewayDanfeResposta> {
+	return chamarNfeGateway<NfeGatewayDanfeResposta>(
+		"/nfe/emissao/preview-danfe",
+		payload,
+	);
+}
+
 export async function consultarDistribuicaoDfeGateway(payload: {
 	configJson: Record<string, unknown>;
 	pfxBase64: string;

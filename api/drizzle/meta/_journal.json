@@ -379,6 +379,13 @@
       "when": 1781738000000,
       "tag": "0053_fator_conversao",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1781739000000,
+      "tag": "0054_nfe_config_ultimo_indpres",
+      "breakpoints": true
     }
   ]
 }

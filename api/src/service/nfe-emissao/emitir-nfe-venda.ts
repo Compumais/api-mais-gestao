@@ -1,104 +1,49 @@
 import { v4 as uuidv4 } from "uuid";
-import type { HttpResponse } from "@/model/http-model.js";
-import type { NovaNotaFiscal } from "@/model/nota-fiscal-model.js";
-import type { NovoNotaFiscalItem } from "@/model/nota-fiscal-item-model.js";
 import { emitirNfeGateway } from "@/lib/nfe-gateway-client.js";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import type { HttpResponse } from "@/model/http-model.js";
+import type { NovoNotaFiscalItem } from "@/model/nota-fiscal-item-model.js";
+import type { NovaNotaFiscal } from "@/model/nota-fiscal-model.js";
+import { atualizarDav } from "@/repositories/dav-repositories.js";
 import {
 	atualizarNotaFiscal,
-	buscarNotaFiscalPorId,
 	criarNotaFiscalComItens,
 	substituirItensNotaFiscal,
 } from "@/repositories/nota-fiscal-repositories.js";
-import {
-	buscarNfeSeriePorId,
-	buscarNfeSeriePorNumeroSerie,
-	reservarProximoNumeroSerie,
-} from "@/repositories/nfe-serie-repositories.js";
-import { buscarEntidadePorId } from "@/repositories/entidade-repositories.js";
-import { atualizarDav } from "@/repositories/dav-repositories.js";
-import { arquivarXmlNotaFiscal } from "@/service/nota-fiscal/arquivar-xml-nota-fiscal.js";
 import { salvarUltimaPreferenciaEmissaoNfe } from "@/service/nfe-configuracao/salvar-ultima-preferencia-emissao-nfe.js";
-import {
-	carregarContextoEmissaoNfe,
-	montarPayloadGatewayEmissaoItens,
-	type DestinatarioPayloadNfe,
-	type DocumentoReferenciadoPayloadNfe,
-	type ItemPayloadNfe,
-	type PagamentoPayloadNfe,
-	type TotaisPayloadNfe,
-	type TransportePayloadNfe,
+import type {
+	DestinatarioPayloadNfe,
+	DocumentoReferenciadoPayloadNfe,
+	ItemPayloadNfe,
+	PagamentoPayloadNfe,
+	TotaisPayloadNfe,
+	TransportePayloadNfe,
 } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
-import { resolverDocumentoReferenciadoEmissao } from "@/service/nfe-emissao/resolver-documento-referenciado-emissao.js";
 import {
-	emissaoRequerDocumentoReferenciado,
-	FIN_NFE_DEVOLUCAO,
+	type PayloadEmissaoNfeVendaPreparado,
+	type PrepararPayloadEmissaoNfeVendaParams,
+	prepararPayloadEmissaoNfeVenda,
+} from "@/service/nfe-emissao/preparar-payload-emissao-nfe-venda.js";
+import { arquivarXmlNotaFiscal } from "@/service/nota-fiscal/arquivar-xml-nota-fiscal.js";
+import type { FormaPagamentoNfVenda } from "@/service/nota-fiscal/gerar-contas-receber-nf.js";
+import { integrarNotaFiscalVendaAutorizadaService } from "@/service/nota-fiscal/integrar-nota-fiscal-venda-autorizada.js";
+import type { calcularTotaisFiscaisEmissaoNfe } from "@/util/calcular-totais-fiscais-emissao-nfe.js";
+import {
 	FIN_NFE_NORMAL,
-	resolverTipoDevolucaoEmissao,
-	resolverTpNfDevolucao,
 	type TipoDevolucaoNfe,
 } from "@/util/cfop-devolucao-emissao-nfe.js";
-import { NFE_STATUS } from "@/util/nfe-status.js";
-import {
-	normalizarCStatGateway,
-	normalizarCodigoStatusNfe,
-	resolverStatusPersistenciaEmissao,
-} from "@/util/resolver-status-emissao-nfe.js";
-import {
-	httpBadRequest,
-	httpNaoEncontrado,
-	httpOk,
-	httpProibido,
-} from "@/util/http-util.js";
-import { resolverNatOpEmissaoNfe } from "@/util/resolver-nat-op-emissao-nfe.js";
-import {
-	normalizarIeParaNfe,
-	resolverIndIeDestNfe,
-} from "@/util/normalizar-ie-nfe.js";
-import { normalizarGtinItensEmissao } from "@/util/normalizar-gtin-item-emissao-nfe.js";
-import { normalizarItensEmissaoNfe } from "@/util/normalizar-tributacao-item-emissao-nfe.js";
-import { enriquecerItensEmissaoComProduto } from "@/service/nfe-emissao/enriquecer-itens-emissao-produto.js";
-import { calcularTotaisFiscaisEmissaoNfe } from "@/util/calcular-totais-fiscais-emissao-nfe.js";
-import { normalizarPagamentoEmissaoNfe } from "@/util/normalizar-pagamento-emissao-nfe.js";
 import {
 	montarDadosImportacaoItemEmissaoNfe,
 	montarSnapshotEmissaoNfe,
-	extrairDadosEmissaoNfeSalvos,
 } from "@/util/dados-emissao-nfe-nota.js";
-import { buscarTipoDocumentoFinanceiroPorId } from "@/repositories/tipo-documento-financeiro-repositories.js";
-import { integrarNotaFiscalVendaAutorizadaService } from "@/service/nota-fiscal/integrar-nota-fiscal-venda-autorizada.js";
-import type { FormaPagamentoNfVenda } from "@/service/nota-fiscal/gerar-contas-receber-nf.js";
-import { resolverIdeEmissaoNfe } from "@/util/resolver-ide-emissao-nfe.js";
+import { httpOk } from "@/util/http-util.js";
+import { NFE_STATUS } from "@/util/nfe-status.js";
+import {
+	normalizarCodigoStatusNfe,
+	normalizarCStatGateway,
+	resolverStatusPersistenciaEmissao,
+} from "@/util/resolver-status-emissao-nfe.js";
 
-export type EmitirNfeVendaParametros = {
-	idusuario: string;
-	idempresa: string;
-	idnotafiscal?: string;
-	iddestinatario?: string;
-	idserienfe?: string;
-	confirmarProducao?: boolean;
-	natOp?: string;
-	indPres?: number;
-	itens: ItemPayloadNfe[];
-	totais?: TotaisPayloadNfe;
-	pagamento?: PagamentoPayloadNfe;
-	transporte?: TransportePayloadNfe;
-	informacoesAdicionais?: string;
-	documentoReferenciado?: {
-		tipoDevolucao?: TipoDevolucaoNfe;
-		idnotafiscalReferenciada?: string;
-		chaveNfe?: string;
-		xml?: string;
-	};
-	idplanocontas?: string;
-	idcondicaopagto?: string;
-	idlocalestoque?: string;
-	idtipodocumento?: string;
-	iddav?: string;
-	formasPagamento?: FormaPagamentoNfVenda[];
-	gerarFinanceiro?: boolean;
-	gerarEstoque?: boolean;
-};
+export type EmitirNfeVendaParametros = PrepararPayloadEmissaoNfeVendaParams;
 
 export type ResultadoEmissaoNfeVenda = {
 	idnotafiscal: string;
@@ -116,33 +61,6 @@ export type ResultadoEmissaoNfeVenda = {
 		avisos: string[];
 	};
 };
-
-type NumeracaoEmissao = {
-	numeroNf: number;
-	serie: string;
-	idserie: string;
-	idnotafiscal: string;
-	reemissao: boolean;
-};
-
-function ajustarTransporteComFrete(
-	transporte: TransportePayloadNfe | undefined,
-	frete: number,
-): TransportePayloadNfe | undefined {
-	if (frete <= 0) {
-		return transporte;
-	}
-
-	const modFrete = transporte?.modFrete;
-	if (modFrete !== undefined && modFrete !== 9) {
-		return transporte;
-	}
-
-	return {
-		...transporte,
-		modFrete: 0,
-	};
-}
 
 function montarItensPersistencia(
 	idnotafiscal: string,
@@ -162,8 +80,7 @@ function montarItensPersistencia(
 		situacaotributaria: item.cst ?? item.csosn ?? null,
 		cstpis: item.cstPis ?? null,
 		cstcofins: item.cstCofins ?? null,
-		aliquotapis:
-			item.aliquotaPis != null ? String(item.aliquotaPis) : null,
+		aliquotapis: item.aliquotaPis != null ? String(item.aliquotaPis) : null,
 		aliquotacofins:
 			item.aliquotaCofins != null ? String(item.aliquotaCofins) : null,
 		baseicms: item.baseIcms != null ? String(item.baseIcms) : null,
@@ -385,361 +302,75 @@ function montarDadosNotaPersistencia(params: {
 	};
 }
 
-async function resolverNumeracaoEmissao(params: {
-	idempresa: string;
-	idnotafiscal?: string;
-	idserienfe?: string;
-	seriePadrao?: Awaited<
-		ReturnType<typeof carregarContextoEmissaoNfe>
-	>["seriePadrao"];
-}): Promise<HttpResponse<NumeracaoEmissao>> {
-	const { idempresa, idnotafiscal, idserienfe, seriePadrao } = params;
-
-	if (idnotafiscal) {
-		const notaExistente = await buscarNotaFiscalPorId(idnotafiscal);
-
-		if (!notaExistente) {
-			return httpNaoEncontrado();
-		}
-
-		if (notaExistente.idempresa !== idempresa) {
-			return httpProibido();
-		}
-
-		if (notaExistente.tipoorigem !== 1) {
-			return httpBadRequest("Somente NF-e de venda podem ser reemitidas");
-		}
-
-		if (notaExistente.status === NFE_STATUS.AUTORIZADA) {
-			return httpBadRequest("NF-e já autorizada não pode ser reemitida");
-		}
-
-		if (
-			notaExistente.status !== NFE_STATUS.REJEITADA &&
-			notaExistente.status !== NFE_STATUS.PENDENTE
-		) {
-			return httpBadRequest(
-				"Somente NF-e rejeitadas ou pendentes podem ser reemitidas",
-			);
-		}
-
-		if (!notaExistente.numeronotafiscal || !notaExistente.serie) {
-			return httpBadRequest("NF-e sem numeração para reemissão");
-		}
-
-		const numeroNf = Number(notaExistente.numeronotafiscal);
-		if (!Number.isFinite(numeroNf) || numeroNf <= 0) {
-			return httpBadRequest("Numeração da NF-e inválida para reemissão");
-		}
-
-		let idserie = notaExistente.idserie ?? undefined;
-		if (!idserie) {
-			const serieRegistrada = await buscarNfeSeriePorNumeroSerie(
-				idempresa,
-				"55",
-				notaExistente.serie,
-			);
-			idserie = serieRegistrada?.id;
-		}
-
-		if (!idserie) {
-			return httpBadRequest("Série da NF-e não encontrada para reemissão");
-		}
-
-		return httpOk({
-			numeroNf,
-			serie: notaExistente.serie,
-			idserie,
-			idnotafiscal: notaExistente.id,
-			reemissao: true,
-		});
-	}
-
-	let serieParaUsar = seriePadrao;
-	if (idserienfe) {
-		const serieBuscada = await buscarNfeSeriePorId(idserienfe);
-		if (serieBuscada) serieParaUsar = serieBuscada;
-	}
-
-	if (!serieParaUsar) {
-		return httpBadRequest("Nenhuma série NF-e disponível");
-	}
-
-	const reserva = await reservarProximoNumeroSerie(serieParaUsar.id);
-	if (!reserva) {
-		return httpBadRequest("Não foi possível reservar numeração da série");
-	}
-
-	return httpOk({
-		numeroNf: reserva.numeroReservado,
-		serie: reserva.serie,
-		idserie: serieParaUsar.id,
-		idnotafiscal: uuidv4(),
-		reemissao: false,
-	});
-}
-
 export async function emitirNfeVendaService(
 	params: EmitirNfeVendaParametros,
 ): Promise<HttpResponse<ResultadoEmissaoNfeVenda>> {
-	const {
-		idusuario,
-		idempresa,
-		idnotafiscal: idnotafiscalReemissao,
-		iddestinatario,
-		idserienfe,
-		confirmarProducao = false,
-		natOp,
-		indPres,
-		itens,
-		totais,
-		pagamento,
-		transporte,
-		informacoesAdicionais,
-		documentoReferenciado: documentoReferenciadoInput,
-		idplanocontas,
-		idcondicaopagto,
-		idlocalestoque,
-		idtipodocumento,
-		iddav,
-		formasPagamento,
-		gerarFinanceiro,
-		gerarEstoque,
-	} = params;
-
-	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
-		idusuario,
-		idempresa,
-	);
-	if (!usuarioPertenceEmpresa) return httpProibido();
-
-	if (!itens || itens.length === 0) {
-		return httpBadRequest("Informe ao menos um item na nota fiscal");
-	}
-
-	const contexto = await carregarContextoEmissaoNfe(idempresa);
-
-	if (contexto.pendencias.length > 0) {
-		return httpOk({ idnotafiscal: "", pendencias: contexto.pendencias });
-	}
-
-	const { empresa, empresaFiscal, nfeConfiguracao, certificadoAtivo } = contexto;
-	if (!empresa || !empresaFiscal || !nfeConfiguracao || !certificadoAtivo) {
-		return httpBadRequest("Contexto de emissão incompleto. Verifique os pré-requisitos.");
-	}
-	const ambiente = nfeConfiguracao.ambiente;
-
-	if (ambiente === 1 && !confirmarProducao) {
-		return httpBadRequest(
-			"Emissão em produção requer confirmação explícita (confirmarProducao: true)",
-		);
-	}
-
-	const numeracao = await resolverNumeracaoEmissao({
-		idempresa,
-		idnotafiscal: idnotafiscalReemissao,
-		idserienfe,
-		seriePadrao: contexto.seriePadrao,
+	const preparado = await prepararPayloadEmissaoNfeVenda(params, {
+		modo: "emitir",
 	});
 
-	if (!numeracao.success || !numeracao.body) {
-		return numeracao;
+	if (!preparado.success) {
+		return {
+			success: false,
+			status: preparado.status,
+			error: preparado.error,
+			code: preparado.code,
+		};
 	}
 
-	const { numeroNf, serie, idserie, idnotafiscal, reemissao } = numeracao.body;
-
-	let idplanocontasResolvido = idplanocontas;
-	let idcondicaopagtoResolvido = idcondicaopagto;
-	let idlocalestoqueResolvido = idlocalestoque;
-	let idtipodocumentoResolvido = idtipodocumento;
-	let formasPagamentoResolvidas = formasPagamento;
-	let gerarFinanceiroResolvido = gerarFinanceiro;
-	let gerarEstoqueResolvido = gerarEstoque;
-	let iddavResolvido = iddav;
-
-	let emissaoSalvaReemissao: ReturnType<typeof extrairDadosEmissaoNfeSalvos> | undefined;
-
-	if (reemissao && idnotafiscalReemissao) {
-		const notaReemissao = await buscarNotaFiscalPorId(idnotafiscalReemissao);
-		emissaoSalvaReemissao = notaReemissao
-			? extrairDadosEmissaoNfeSalvos(notaReemissao.dadosimportacao)
-			: undefined;
-
-		idplanocontasResolvido ??= notaReemissao?.idplanocontas ?? undefined;
-		idcondicaopagtoResolvido ??= notaReemissao?.idcondicaopagto ?? undefined;
-		idlocalestoqueResolvido ??= notaReemissao?.idlocalestoque ?? undefined;
-		idtipodocumentoResolvido ??= notaReemissao?.idtipodocumento ?? undefined;
-		formasPagamentoResolvidas ??= emissaoSalvaReemissao?.formasPagamento;
-		gerarFinanceiroResolvido ??= emissaoSalvaReemissao?.gerarFinanceiro;
-		gerarEstoqueResolvido ??= emissaoSalvaReemissao?.gerarEstoque;
-		iddavResolvido ??= emissaoSalvaReemissao?.iddav;
+	if (!preparado.body) {
+		return {
+			success: false,
+			status: preparado.status,
+			error: "Falha ao preparar emissão",
+			code: "PREPARACAO_EMISSAO",
+		};
 	}
 
-	const freteComercial = totais?.frete ?? 0;
-	const transporteAjustado = ajustarTransporteComFrete(transporte, freteComercial);
-
-	let destinatario: DestinatarioPayloadNfe | undefined;
-	let identidade: string | undefined;
-	if (iddestinatario) {
-		const entidade = await buscarEntidadePorId(iddestinatario);
-		if (entidade) {
-			identidade = entidade.id;
-			const indIEDest = resolverIndIeDestNfe({
-				inscricaoestadual: entidade.inscricaoestadual,
-				indiedest: entidade.indiedest,
-				cnpjcpf: entidade.cnpjcpf,
-			});
-			destinatario = {
-				cnpjcpf: entidade.cnpjcpf ?? undefined,
-				razaosocial: entidade.razaosocial ?? entidade.nome,
-				ie: normalizarIeParaNfe(entidade.inscricaoestadual, indIEDest),
-				logradouro: entidade.endereco ?? undefined,
-				numero: entidade.numeroendereco ?? undefined,
-				bairro: entidade.bairro ?? undefined,
-				cep: entidade.cep ?? undefined,
-				estado: entidade.idestado ?? undefined,
-				codigomunicipioibge: entidade.idcidade ?? undefined,
-				pais: entidade.pais ?? undefined,
-				indIEDest,
-			};
-		}
-	}
-
-	const natOpResolvida = await resolverNatOpEmissaoNfe({
-		idempresa,
-		natOp,
-		cfopItem: itens[0]?.cfop,
-	});
-
-	const requerReferencia = await emissaoRequerDocumentoReferenciado(
-		idempresa,
-		itens.map((item) => item.cfop),
-	);
-
-	const tipoDevolucao = await resolverTipoDevolucaoEmissao(
-		idempresa,
-		itens.map((item) => item.cfop),
-		documentoReferenciadoInput?.tipoDevolucao,
-	);
-
-	let documentoReferenciado: DocumentoReferenciadoPayloadNfe | undefined;
-	if (documentoReferenciadoInput) {
-		const resolvido = await resolverDocumentoReferenciadoEmissao(idempresa, {
-			tipoDevolucao: documentoReferenciadoInput.tipoDevolucao ?? tipoDevolucao ?? "compra",
-			idnotafiscalReferenciada: documentoReferenciadoInput.idnotafiscalReferenciada,
-			chaveNfe: documentoReferenciadoInput.chaveNfe,
-			xml: documentoReferenciadoInput.xml,
+	if ("idnotafiscal" in preparado.body && preparado.body.idnotafiscal === "") {
+		return httpOk({
+			idnotafiscal: "",
+			pendencias: preparado.body.pendencias,
 		});
-
-		if (!resolvido.success) {
-			return resolvido;
-		}
-
-		documentoReferenciado = resolvido.body ?? undefined;
-	} else if (idnotafiscalReemissao) {
-		const notaExistenteRef = await buscarNotaFiscalPorId(idnotafiscalReemissao);
-		const chavePersistida = notaExistenteRef?.chavedocumentoreferenciado?.replace(/\D/g, "");
-		if (chavePersistida?.length === 44) {
-			documentoReferenciado = {
-				chave: chavePersistida,
-				modelo: notaExistenteRef?.modelodocumentoreferenciado ?? "55",
-				serie: notaExistenteRef?.seriedocumentoreferenciado ?? undefined,
-				numero: notaExistenteRef?.numerodocumentoreferenciado ?? undefined,
-				dataEmissao: notaExistenteRef?.datadocumentoreferenciado ?? undefined,
-			};
-		}
 	}
 
-	if (requerReferencia && !documentoReferenciado?.chave) {
-		const mensagem =
-			tipoDevolucao === "venda"
-				? "CFOP de devolução de venda exige referência à NF-e de saída. Informe a nota de venda ou a chave/XML."
-				: "CFOP de devolução de compra exige referência à NF-e de entrada. Informe a nota de compra ou a chave/XML.";
-		return httpBadRequest(mensagem);
-	}
+	const prep = preparado.body as PayloadEmissaoNfeVendaPreparado;
 
-	const finNFe = requerReferencia ? FIN_NFE_DEVOLUCAO : FIN_NFE_NORMAL;
-	const tpNF =
-		requerReferencia && tipoDevolucao
-			? resolverTpNfDevolucao(tipoDevolucao)
-			: 1;
+	const { idusuario, idempresa, itens } = params;
 
-	const crt = empresaFiscal.crt ?? 3;
-	const itensEnriquecidos = await enriquecerItensEmissaoComProduto(itens);
-	const itensNormalizados = normalizarGtinItensEmissao(
-		normalizarItensEmissaoNfe(crt, itensEnriquecidos),
-	);
-
-	const vProd = itens.reduce(
-		(acc, item) => acc + item.quantidade * item.valorUnitario,
-		0,
-	);
-	const vFrete = totais?.frete ?? 0;
-	const vDesc = totais?.desconto ?? 0;
-	const totaisFiscaisPrevia = calcularTotaisFiscaisEmissaoNfe(
-		crt,
-		itensNormalizados,
-		totais ?? {},
-	);
-
-	let pagamentoResolvido = pagamento;
-	if (
-		(!pagamento?.formas || pagamento.formas.length === 0) &&
-		idtipodocumentoResolvido
-	) {
-		const tipoDoc = await buscarTipoDocumentoFinanceiroPorId(
-			idtipodocumentoResolvido,
-		);
-		if (tipoDoc?.formapagamentonfe) {
-			pagamentoResolvido = {
-				formas: [
-					{
-						tPag: tipoDoc.formapagamentonfe,
-						vPag: totaisFiscaisPrevia.totalNota,
-						indPag: tipoDoc.aprazo === 1 ? 1 : 0,
-					},
-				],
-			};
-		}
-	}
-
-	const pagamentoNormalizado = normalizarPagamentoEmissaoNfe(pagamentoResolvido, {
-		finNFe,
-		valorNota: totaisFiscaisPrevia.totalNota,
-	});
-
-	const ideEmissao = resolverIdeEmissaoNfe({
-		ufEmitente: empresaFiscal.uf,
-		ufDestinatario: destinatario?.estado,
-		paisDestinatario: destinatario?.pais,
-		indPres:
-			indPres ??
-			emissaoSalvaReemissao?.indPres ??
-			nfeConfiguracao.ultimoindpres,
-		finNFe,
-	});
-
-	const payload = montarPayloadGatewayEmissaoItens({
-		empresa,
-		empresaFiscal,
-		nfeConfiguracao,
-		certificadoAtivo,
-		numeroNf,
-		serie,
+	const {
+		numeracao,
+		ambiente,
 		destinatario,
-		itens: itensNormalizados,
-		totais,
-		pagamento: pagamentoNormalizado,
-		transporte: transporteAjustado,
-		natOp: natOpResolvida,
-		informacoesAdicionais,
+		identidade,
+		itensNormalizados,
+		transporteAjustado,
+		natOpResolvida,
+		pagamentoNormalizado,
+		documentoReferenciado,
 		finNFe,
-		tpNF,
-		documentosReferenciados: documentoReferenciado ? [documentoReferenciado] : [],
-		indPres: ideEmissao.indPres,
-	});
+		ideEmissao,
+		totaisFiscais,
+		vProd,
+		vFrete,
+		vDesc,
+		payloadGateway,
+		idplanocontasResolvido,
+		idcondicaopagtoResolvido,
+		idlocalestoqueResolvido,
+		idtipodocumentoResolvido,
+		formasPagamentoResolvidas,
+		gerarFinanceiroResolvido,
+		gerarEstoqueResolvido,
+		iddavResolvido,
+		informacoesAdicionais,
+		totais,
+		tipoDevolucao,
+	} = prep;
 
-	const respostaGateway = await emitirNfeGateway(payload);
+	const { numeroNf, serie, idserie, idnotafiscal, reemissao } = numeracao;
+
+	const respostaGateway = await emitirNfeGateway(payloadGateway);
 
 	const cStat = normalizarCStatGateway(respostaGateway.cStat);
 	const cStatLote = normalizarCStatGateway(respostaGateway.cStatLote);
@@ -762,7 +393,6 @@ export async function emitirNfeVendaService(
 	const agora = new Date().toISOString();
 	const dataEmissao = agora.slice(0, 10);
 
-	const totaisFiscais = totaisFiscaisPrevia;
 	const valortotalnota = totaisFiscais.totalNota.toFixed(2);
 
 	const dadosNota = montarDadosNotaPersistencia({
@@ -813,10 +443,14 @@ export async function emitirNfeVendaService(
 		gerarEstoque: gerarEstoqueResolvido,
 	});
 
-	const itensPersistencia = montarItensPersistencia(idnotafiscal, itensNormalizados);
+	const itensPersistencia = montarItensPersistencia(
+		idnotafiscal,
+		itensNormalizados,
+	);
 
 	if (reemissao) {
-		const { id, datainclusao, idusuarioinclusao, ...dadosAtualizacao } = dadosNota;
+		const { id, datainclusao, idusuarioinclusao, ...dadosAtualizacao } =
+			dadosNota;
 		void id;
 		void datainclusao;
 		void idusuarioinclusao;

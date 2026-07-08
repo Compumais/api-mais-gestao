@@ -190,6 +190,25 @@ try {
         ]);
     }
 
+    if ($method === 'POST' && $path === '/nfe/emissao/preview-danfe') {
+        $configJson = $body['configJson'] ?? [];
+        $pfxBase64  = (string) ($body['pfxBase64'] ?? '');
+        $senha      = (string) ($body['senha'] ?? '');
+        $payloadNfe = $body['payloadNfe'] ?? [];
+
+        $resultado = NfeEmissaoService::previewDanfe(
+            $configJson,
+            $pfxBase64,
+            $senha,
+            is_array($payloadNfe) ? $payloadNfe : []
+        );
+
+        jsonResponse([
+            'sucesso' => true,
+            ...$resultado,
+        ]);
+    }
+
     if ($method === 'POST' && $path === '/nfe/emissao') {
         $configJson = $body['configJson'] ?? [];
         $pfxBase64  = (string) ($body['pfxBase64'] ?? '');
