@@ -1,14 +1,15 @@
 import type { FastifyInstance } from "fastify";
 import { verifyJwt } from "../../middleware/verify-jwt.js";
+import { cancelarNfe } from "./cancelar-nfe.js";
+import { emitirNfe, listarNfesEmitidas } from "./emitir-nfe.js";
+import { inutilizarNfe } from "./inutilizar-nfe.js";
 import {
 	consultarStatusSefaz,
 	emitirNfeHomologacaoTeste,
 } from "./nfe-emissao.js";
-import { emitirNfe, listarNfesEmitidas } from "./emitir-nfe.js";
-import { transmitirNfe } from "./transmitir-nfe.js";
-import { cancelarNfe } from "./cancelar-nfe.js";
-import { inutilizarNfe } from "./inutilizar-nfe.js";
+import { previewDanfeNfe } from "./preview-danfe.js";
 import { resolverReferenciaEmissao } from "./resolver-referencia.js";
+import { transmitirNfe } from "./transmitir-nfe.js";
 
 export async function nfeEmissaoRotas(app: FastifyInstance) {
 	app.addHook("onRequest", verifyJwt);
@@ -20,6 +21,7 @@ export async function nfeEmissaoRotas(app: FastifyInstance) {
 	app.post("/nfe/emissao/resolver-referencia", {
 		handler: resolverReferenciaEmissao,
 	});
+	app.post("/nfe/emissao/preview-danfe", { handler: previewDanfeNfe });
 	app.post("/nfe/emissao", { handler: emitirNfe });
 	app.post("/nfe/emissao/:id/transmitir", { handler: transmitirNfe });
 	app.post("/nfe/emissao/:id/cancelar", { handler: cancelarNfe });

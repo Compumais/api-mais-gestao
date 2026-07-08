@@ -11,6 +11,8 @@ export type DadosTributacaoItemEmissaoNfe = {
 	valorIcmsDesonerado?: string;
 	valorIcmsMonoRet?: string;
 	valorIcmsMonoReten?: string;
+	pCredSN?: string;
+	vCredICMSSN?: string;
 };
 
 export type DadosImportacaoItemEmissaoNfe = {
@@ -35,6 +37,8 @@ export function montarDadosImportacaoItemEmissaoNfe(
 		valorIcmsDesonerado: paraStringOpcional(item.valorIcmsDesonerado),
 		valorIcmsMonoRet: paraStringOpcional(item.valorIcmsMonoRet),
 		valorIcmsMonoReten: paraStringOpcional(item.valorIcmsMonoReten),
+		pCredSN: paraStringOpcional(item.pCredSN),
+		vCredICMSSN: paraStringOpcional(item.vCredICMSSN),
 	};
 
 	const possuiDados = Object.values(emissao).some(

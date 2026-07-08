@@ -11,14 +11,13 @@ use NFePHP\NFe\Make;
 final class NfeEmissaoService
 {
 	/**
-	 * Emite uma NF-e com N itens reais (emissão de venda).
+	 * Monta e assina o XML da NF-e sem transmitir à SEFAZ.
 	 *
-	 * @param array $configJson  Configuração sped-nfe (ambiente, UF, razão social, etc.)
-	 * @param string $pfxBase64  Certificado A1 em base64
-	 * @param string $senha      Senha do certificado
-	 * @param array  $payloadNfe Payload completo: emitente, ide, destinatario, itens[], totais, pagamento
+	 * @param array<string, mixed> $configJson
+	 * @param array<string, mixed> $payloadNfe
+	 * @return array{xmlAssinado: string, mod: int}
 	 */
-	public static function emitir(
+	public static function montarXmlAssinado(
 		array $configJson,
 		string $pfxBase64,
 		string $senha,
@@ -435,6 +434,56 @@ final class NfeEmissaoService
 		$tools = SpedNfeFactory::criarTools($configJson, $pfxBase64, $senha);
 		$tools->model($mod);
 		$xmlAssinado = $tools->signNFe($xml);
+
+		return [
+			'xmlAssinado' => $xmlAssinado,
+			'mod' => $mod,
+		];
+	}
+
+	/**
+	 * Gera PDF do DANFE a partir dos dados da NF-e, sem transmitir à SEFAZ.
+	 *
+	 * @param array<string, mixed> $configJson
+	 * @param array<string, mixed> $payloadNfe
+	 * @return array{pdfBase64: string, modelo: int}
+	 */
+	public static function previewDanfe(
+		array $configJson,
+		string $pfxBase64,
+		string $senha,
+		array $payloadNfe
+	): array {
+		$montagem = self::montarXmlAssinado($configJson, $pfxBase64, $senha, $payloadNfe);
+		$danfe = DanfeService::gerar($montagem['xmlAssinado']);
+
+		return [
+			'pdfBase64' => $danfe['pdfBase64'],
+			'modelo' => $danfe['modelo'] ?? $montagem['mod'],
+		];
+	}
+
+	/**
+	 * Emite uma NF-e com N itens reais (emissão de venda).
+	 *
+	 * @param array $configJson  Configuração sped-nfe (ambiente, UF, razão social, etc.)
+	 * @param string $pfxBase64  Certificado A1 em base64
+	 * @param string $senha      Senha do certificado
+	 * @param array  $payloadNfe Payload completo: emitente, ide, destinatario, itens[], totais, pagamento
+	 */
+	public static function emitir(
+		array $configJson,
+		string $pfxBase64,
+		string $senha,
+		array $payloadNfe
+	): array {
+		$montagem = self::montarXmlAssinado($configJson, $pfxBase64, $senha, $payloadNfe);
+		$xmlAssinado = $montagem['xmlAssinado'];
+		$mod = $montagem['mod'];
+
+		$tools = SpedNfeFactory::criarTools($configJson, $pfxBase64, $senha);
+		$tools->model($mod);
+
 
 		$idLote  = str_pad((string) random_int(1, 99999999), 15, '0', STR_PAD_LEFT);
 		$retorno = $tools->sefazEnviaLote([$xmlAssinado], $idLote, 1);

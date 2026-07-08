@@ -61,10 +61,17 @@ export async function criarEmpresa(
 			quantidadeEmpresas: empresasDoUsuario.body?.data?.length ?? 9999,
 		});
 
-		if (!empresa.success || !empresa.body) {
+		if (!empresa.success) {
 			return reply.status(empresa.status).send({
 				error: empresa.error,
 				code: empresa.code,
+			});
+		}
+
+		if (!empresa.body) {
+			return reply.status(500).send({
+				error: "Erro ao criar empresa",
+				code: "CREATE_EMPRESA_ERROR",
 			});
 		}
 

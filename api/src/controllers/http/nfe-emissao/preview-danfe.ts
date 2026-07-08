@@ -1,18 +1,13 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { emitirNfeVendaService } from "@/service/nfe-emissao/emitir-nfe-venda.js";
-import { listarNotasFiscaisService } from "@/service/nota-fiscal/listar-notas-fiscais.js";
+import { previewDanfeNfeVendaService } from "@/service/nfe-emissao/preview-danfe-nfe-venda.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 import { emitirNfeBodySchema } from "./emissao-nfe-body-schema.js";
 
-const listarNfeQuerySchema = z.object({
-	idempresa: z.string().uuid(),
-	status: z.coerce.number().optional(),
-	page: z.coerce.number().default(1),
-	limit: z.coerce.number().default(20),
-});
-
-export async function emitirNfe(request: FastifyRequest, reply: FastifyReply) {
+export async function previewDanfeNfe(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
@@ -20,7 +15,7 @@ export async function emitirNfe(request: FastifyRequest, reply: FastifyReply) {
 
 		const dados = emitirNfeBodySchema.parse(request.body);
 
-		const resultado = await emitirNfeVendaService({
+		const resultado = await previewDanfeNfeVendaService({
 			idusuario: request.user.id,
 			idempresa: dados.idempresa,
 			idnotafiscal: dados.idnotafiscal,
@@ -45,11 +40,16 @@ export async function emitirNfe(request: FastifyRequest, reply: FastifyReply) {
 			gerarEstoque: dados.gerarEstoque,
 		});
 
-		if (!resultado.success) {
+		if (!resultado.success || !resultado.body) {
 			return reply.status(resultado.status).send(resultado);
 		}
 
-		return reply.status(resultado.status).send(resultado.body);
+		const { filename, pdf } = resultado.body;
+
+		reply.header("Content-Type", "application/pdf");
+		reply.header("Content-Disposition", `inline; filename="${filename}"`);
+
+		return reply.status(200).send(pdf);
 	} catch (error) {
 		console.error(error);
 		if (error instanceof z.ZodError) {
@@ -59,40 +59,6 @@ export async function emitirNfe(request: FastifyRequest, reply: FastifyReply) {
 				details: error.issues,
 			});
 		}
-		return reply.status(httpErroInterno().status).send(httpErroInterno());
-	}
-}
-
-export async function listarNfesEmitidas(
-	request: FastifyRequest,
-	reply: FastifyReply,
-) {
-	try {
-		if (!request.user) {
-			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
-		}
-
-		const { idempresa, status, page, limit } = listarNfeQuerySchema.parse(
-			request.query,
-		);
-
-		const resultado = await listarNotasFiscaisService({
-			idusuario: request.user.id,
-			idempresa,
-			status,
-			tipoorigem: 1,
-			page,
-			limit,
-			rascunho: false,
-		});
-
-		if (!resultado.success) {
-			return reply.status(resultado.status).send(resultado);
-		}
-
-		return reply.status(resultado.status).send(resultado.body);
-	} catch (error) {
-		console.error(error);
 		return reply.status(httpErroInterno().status).send(httpErroInterno());
 	}
 }

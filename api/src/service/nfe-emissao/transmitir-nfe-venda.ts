@@ -9,18 +9,18 @@ import {
 	type ResultadoEmissaoNfeVenda,
 } from "@/service/nfe-emissao/emitir-nfe-venda.js";
 import { mapearItensNotaParaEmissao } from "@/service/nfe-emissao/mapear-itens-nota-para-emissao.js";
-import { normalizarPagamentoEmissaoNfe } from "@/util/normalizar-pagamento-emissao-nfe.js";
 import {
 	FIN_NFE_DEVOLUCAO,
 	resolverTipoDevolucaoEmissao,
 } from "@/util/cfop-devolucao-emissao-nfe.js";
 import { extrairDadosEmissaoNfeSalvos } from "@/util/dados-emissao-nfe-nota.js";
-import { NFE_STATUS } from "@/util/nfe-status.js";
 import {
 	httpBadRequest,
 	httpNaoEncontrado,
 	httpProibido,
 } from "@/util/http-util.js";
+import { NFE_STATUS } from "@/util/nfe-status.js";
+import { normalizarPagamentoEmissaoNfe } from "@/util/normalizar-pagamento-emissao-nfe.js";
 
 type TransmitirNfeVendaParametros = {
 	idusuario: string;
@@ -55,7 +55,9 @@ export async function transmitirNfeVendaService({
 	}
 
 	if (nota.status === NFE_STATUS.AUTORIZADA) {
-		return httpBadRequest("NF-e já autorizada não pode ser transmitida novamente");
+		return httpBadRequest(
+			"NF-e já autorizada não pode ser transmitida novamente",
+		);
 	}
 
 	if (
@@ -85,9 +87,9 @@ export async function transmitirNfeVendaService({
 
 	const finNFe =
 		nota.finalidadeemissaonfe === FIN_NFE_DEVOLUCAO ||
-		!!documentoSalvo?.chaveNfe ||
-		!!documentoSalvo?.idnotafiscalReferenciada ||
-		!!nota.chavedocumentoreferenciado
+		documentoSalvo?.chaveNfe ||
+		documentoSalvo?.idnotafiscalReferenciada ||
+		nota.chavedocumentoreferenciado
 			? FIN_NFE_DEVOLUCAO
 			: undefined;
 
@@ -141,10 +143,11 @@ export async function transmitirNfeVendaService({
 				? {
 						tipoDevolucao:
 							documentoSalvo?.tipoDevolucao ?? tipoDevolucao ?? undefined,
-						idnotafiscalReferenciada:
-							documentoSalvo?.idnotafiscalReferenciada,
+						idnotafiscalReferenciada: documentoSalvo?.idnotafiscalReferenciada,
 						chaveNfe:
-							documentoSalvo?.chaveNfe ?? nota.chavedocumentoreferenciado ?? undefined,
+							documentoSalvo?.chaveNfe ??
+							nota.chavedocumentoreferenciado ??
+							undefined,
 					}
 				: undefined,
 	});

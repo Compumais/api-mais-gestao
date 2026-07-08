@@ -1,5 +1,6 @@
 import type { NotaFiscalItem } from "@/model/nota-fiscal-item-model.js";
 import type { ItemPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
+import { extrairTributacaoItemEmissaoNfe } from "@/util/dados-emissao-nfe-nota.js";
 
 function mapearSituacaoTributaria(
 	situacao: string | null | undefined,
@@ -16,6 +17,12 @@ function mapearSituacaoTributaria(
 	return { cst: codigo };
 }
 
+function paraNumero(valor: string | number | null | undefined): number | undefined {
+	if (valor == null || valor === "") return undefined;
+	const numero = typeof valor === "number" ? valor : Number.parseFloat(String(valor));
+	return Number.isFinite(numero) ? numero : undefined;
+}
+
 export function mapearItensNotaParaEmissao(
 	itens: NotaFiscalItem[],
 ): ItemPayloadNfe[] {
@@ -23,6 +30,11 @@ export function mapearItensNotaParaEmissao(
 		const quantidade = Number(item.quantidade ?? 0);
 		const valorUnitario = Number(item.precounitario ?? 0);
 		const tributacao = mapearSituacaoTributaria(item.situacaotributaria);
+		const tributacaoSalva = extrairTributacaoItemEmissaoNfe(item.dadosimportacao);
+		const pCredSN = paraNumero(tributacaoSalva?.pCredSN);
+		const vCredICMSSN = paraNumero(tributacaoSalva?.vCredICMSSN);
+		const aliquotaIcms =
+			paraNumero(item.percentualicms) ?? pCredSN;
 
 		return {
 			idproduto: item.idproduto ?? undefined,
@@ -37,9 +49,9 @@ export function mapearItensNotaParaEmissao(
 			cstPis: item.cstpis ?? undefined,
 			cstCofins: item.cstcofins ?? undefined,
 			baseIcms: item.baseicms ? Number(item.baseicms) : undefined,
-			aliquotaIcms: item.percentualicms
-				? Number(item.percentualicms)
-				: undefined,
+			...(aliquotaIcms != null ? { aliquotaIcms } : {}),
+			...(pCredSN != null ? { pCredSN } : {}),
+			...(vCredICMSSN != null ? { vCredICMSSN } : {}),
 		};
 	});
 }
