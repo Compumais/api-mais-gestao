@@ -19,7 +19,6 @@ import { ChartAreaInteractive } from "@/components/chart-area-interactive";
 import { ChartPieDespesas } from "@/components/chart-pie-despesas";
 import { ChartPieReceitas } from "@/components/chart-pie-receitas";
 import { DashboardTable } from "@/components/dashboard-table";
-import { Badge } from "@/components/ui/badge";
 import {
 	Card,
 	CardAction,
@@ -171,10 +170,7 @@ export function FinanceiroSection() {
 							)}
 						</CardTitle>
 						<CardAction>
-							<Badge variant="outline" className="text-green-600">
-								<IconTrendingUp className="size-3" />
-								Receitas
-							</Badge>
+							<IconTrendingUp className="size-6 text-green-600" />
 						</CardAction>
 					</CardHeader>
 					<CardFooter className="text-xs">Entradas no período</CardFooter>
@@ -191,10 +187,7 @@ export function FinanceiroSection() {
 							)}
 						</CardTitle>
 						<CardAction>
-							<Badge variant="outline" className="text-destructive">
-								<IconTrendingDown className="size-3" />
-								Despesas
-							</Badge>
+							<IconTrendingDown className="size-6 text-destructive" />
 						</CardAction>
 					</CardHeader>
 					<CardFooter className="text-xs">Saídas no período</CardFooter>
@@ -213,10 +206,7 @@ export function FinanceiroSection() {
 							)}
 						</CardTitle>
 						<CardAction>
-							<Badge variant="outline">
-								<IconWallet className="size-3" />
-								Saldo
-							</Badge>
+							<IconWallet className="size-6" />
 						</CardAction>
 					</CardHeader>
 					<CardFooter className="text-xs">Receitas menos despesas</CardFooter>
@@ -235,10 +225,7 @@ export function FinanceiroSection() {
 							)}
 						</CardTitle>
 						<CardAction>
-							<Badge variant="outline">
-								<IconReceipt className="size-3" />
-								Lançamentos
-							</Badge>
+							<IconReceipt className="size-5" />
 						</CardAction>
 					</CardHeader>
 					<CardFooter className="text-xs">Financeiro + bancário</CardFooter>
