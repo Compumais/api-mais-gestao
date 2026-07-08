@@ -1,4 +1,4 @@
-﻿import { and, asc, count, desc, eq, ilike, inArray, or } from "drizzle-orm";
+import { and, asc, count, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import * as schema from "../../drizzle/schema.js";
 import { db } from "./connection.js";
 
@@ -19,6 +19,20 @@ export async function buscarEmpresaPorId(id: string) {
 		.select()
 		.from(schema.empresa)
 		.where(eq(schema.empresa.id, id));
+
+	return empresa;
+}
+
+export async function buscarEmpresaPorCnpj(cnpj: string) {
+	const cnpjNormalizado = cnpj.replace(/\D/g, "");
+
+	const [empresa] = await db
+		.select()
+		.from(schema.empresa)
+		.where(
+			sql`regexp_replace(${schema.empresa.cnpj}, '[^0-9]', '', 'g') = ${cnpjNormalizado}`,
+		)
+		.limit(1);
 
 	return empresa;
 }

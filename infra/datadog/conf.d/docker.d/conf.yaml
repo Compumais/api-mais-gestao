@@ -1,0 +1,19 @@
+# Copie para /etc/datadog-agent/conf.d/docker.d/conf.yaml na VPS.
+# Requer Agent instalado no host com acesso ao socket Docker.
+
+init_config:
+
+instances:
+  - url: unix://var/run/docker.sock
+    collect_events: true
+    collect_container_size: true
+    collect_images_stats: true
+    collect_disk_stats: true
+    collect_volume_stats: true
+    tags:
+      - env:prod
+
+logs:
+  - type: docker
+    service: docker
+    source: docker

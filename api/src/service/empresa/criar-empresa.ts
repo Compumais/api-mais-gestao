@@ -9,8 +9,10 @@ import { executarComControleAcessoPrivilegiado } from "../../repositories/contro
 import {
 	criarEmpresa,
 	type NovaEmpresa,
+	buscarEmpresaPorCnpj,
 } from "../../repositories/empresa-repositories.js";
 import { httpCriacao, httpRecursoExistente } from "../../util/http-util.js";
+import { normalizarCnpj } from "../../util/criptografia-certificado.js";
 import { normalizarPerfilArray } from "../../util/usuario-perfil.js";
 import { criarCfopsPadraoService } from "../cfop/criar-cfops-padrao.js";
 import { criarFatoresConversaoPadraoService } from "../fator-conversao/criar-fatores-conversao-padrao.js";
@@ -29,10 +31,22 @@ export async function criarEmpresaService({
 	dadosEmpresa,
 	proprietario,
 }: CriarEmpresaParametros): Promise<HttpResponse<Empresa | null>> {
-	const [empresa] = await criarEmpresa(dadosEmpresa);
+	const cnpjNormalizado = normalizarCnpj(dadosEmpresa.cnpj);
+	const empresaExistente = await buscarEmpresaPorCnpj(cnpjNormalizado);
+
+	if (empresaExistente) {
+		return httpRecursoExistente("CNPJ já cadastrado");
+	}
+
+	const dadosEmpresaNormalizados: NovaEmpresa = {
+		...dadosEmpresa,
+		cnpj: cnpjNormalizado,
+	};
+
+	const [empresa] = await criarEmpresa(dadosEmpresaNormalizados);
 
 	if (!empresa) {
-		return httpRecursoExistente();
+		return httpRecursoExistente("CNPJ já cadastrado");
 	}
 
 	await criarPlanoContasPadraoService(empresa.id);

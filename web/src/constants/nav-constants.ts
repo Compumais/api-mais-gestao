@@ -120,19 +120,19 @@ export const DATA = {
 					url: "/nota-fiscal-compra",
 				},
 				{
-					title: "Captura SEFAZ",
-					url: "/nota-fiscal-compra/captura-sefaz",
-				},
-				{
 					title: "Nota fiscal de venda",
 					url: "/nota-fiscal-venda",
 				},
 				{
-					title: "NFC-e",
+					title: "Captura SEFAZ",
+					url: "/nota-fiscal-compra/captura-sefaz",
+				},
+				{
+					title: "Consulta NFC-e",
 					url: "/nfce",
 				},
 				{
-					title: "Pedidos",
+					title: "Pedidos (DAV)",
 					url: "/pedidos",
 				},
 			],

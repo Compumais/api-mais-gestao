@@ -1,0 +1,19 @@
+# Copie para /etc/datadog-agent/conf.d/pm2.d/conf.yaml na VPS.
+# Ajuste os caminhos se o usuário deploy não for o dono do PM2.
+
+logs:
+  - type: file
+    path: /home/deploy/.pm2/logs/mais-gestao-web-out.log
+    service: web-mais-gestao
+    source: nodejs
+    tags:
+      - env:prod
+      - component:stdout
+
+  - type: file
+    path: /home/deploy/.pm2/logs/mais-gestao-web-error.log
+    service: web-mais-gestao
+    source: nodejs
+    tags:
+      - env:prod
+      - component:stderr

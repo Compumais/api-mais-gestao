@@ -198,7 +198,7 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 
 					<div className="border-t pt-6">
 						<h2 className="text-lg font-semibold mb-4">Identificação</h2>
-						<div className="grid gap-4 md:grid-cols-2">
+						<div className="grid gap-4 md:grid-cols-2 mb-4">
 							<Field>
 								<FieldLabel htmlFor="razaosocial">Razão social</FieldLabel>
 								<Input id="razaosocial" {...form.register("razaosocial")} />
@@ -237,7 +237,7 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 
 					<div className="border-t pt-6">
 						<h2 className="text-lg font-semibold mb-4">Endereço</h2>
-						<div className="grid gap-4 md:grid-cols-3">
+						<div className="grid gap-4 md:grid-cols-3 mb-4">
 							<Field>
 								<FieldLabel htmlFor="cep">CEP</FieldLabel>
 								<Input id="cep" {...form.register("cep")} />
@@ -286,7 +286,7 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 							</Field>
 						</div>
 
-						<div className="grid gap-4 md:grid-cols-2">
+						<div className="grid gap-4 md:grid-cols-2 mb-4">
 							<Field>
 								<FieldLabel htmlFor="logradouro">Logradouro</FieldLabel>
 								<Input id="logradouro" {...form.register("logradouro")} />

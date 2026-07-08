@@ -4,12 +4,13 @@ import type { HttpResponse } from "@/model/http-model.js";
 import { db } from "@/repositories/connection.js";
 import { criarContaCorrenteCaixaPadrao } from "@/repositories/conta-corrente-repositories.js";
 import { executarComControleAcessoPrivilegiado } from "@/repositories/controle-acesso-contexto.js";
-import { criarEmpresa } from "@/repositories/empresa-repositories.js";
+import { criarEmpresa, buscarEmpresaPorCnpj } from "@/repositories/empresa-repositories.js";
 import { buscarUsuarioPorId } from "@/repositories/usuarios-repositories.js";
 import { criarCfopsPadraoService } from "@/service/cfop/criar-cfops-padrao.js";
 import { criarFatoresConversaoPadraoService } from "@/service/fator-conversao/criar-fatores-conversao-padrao.js";
 import { criarPlanoContasPadraoService } from "@/service/planocontas/criar-plano-contas-padrao.js";
-import { httpNaoEncontrado, httpOk } from "@/util/http-util.js";
+import { httpNaoEncontrado, httpOk, httpRecursoExistente } from "@/util/http-util.js";
+import { normalizarCnpj } from "@/util/criptografia-certificado.js";
 import { normalizarPerfilArray } from "@/util/usuario-perfil.js";
 import * as schema from "../../../drizzle/schema.js";
 
@@ -38,11 +39,18 @@ export async function criarEmpresaAdminService(
 		return httpNaoEncontrado();
 	}
 
+	const cnpjNormalizado = normalizarCnpj(params.cnpj);
+	const empresaExistente = await buscarEmpresaPorCnpj(cnpjNormalizado);
+
+	if (empresaExistente) {
+		return httpRecursoExistente("CNPJ já cadastrado");
+	}
+
 	const agora = new Date().toISOString();
 	const [empresa] = await criarEmpresa({
 		id: randomUUID(),
 		nome: params.nome,
-		cnpj: params.cnpj,
+		cnpj: cnpjNormalizado,
 		telefone: params.telefone,
 		email: params.email ?? "",
 		endereco: params.endereco ?? "",

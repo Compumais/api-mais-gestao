@@ -1,4 +1,4 @@
-﻿import type { HttpResponse } from "../model/http-model.js";
+import type { HttpResponse } from "../model/http-model.js";
 
 export function httpCriacao<T>(body: T): HttpResponse<T> {
 	return {
@@ -43,11 +43,11 @@ export function httpErroInterno() {
 	};
 }
 
-export function httpRecursoExistente() {
+export function httpRecursoExistente(error = "Recurso jÃ¡ existe") {
 	return {
 		success: false,
 		status: 409,
-		error: "Recurso jÃ¡ existe",
+		error,
 		code: "RESOURCE_ALREADY_EXISTS",
 	};
 }

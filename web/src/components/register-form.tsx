@@ -8,7 +8,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -21,25 +20,9 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { type RegisterFormData, registerSchema } from "@/schemas/auth.schema";
 import { authService } from "@/services/auth.service";
 import { GoogleIcon } from "./icons/google-icon";
-
-const registerSchema = z.object({
-	name: z
-		.string({ message: "Nome é obrigatório" })
-		.min(1, { message: "Nome é obrigatório" }),
-	email: z
-		.email({ message: "Email inválido" })
-		.min(1, { message: "Email é obrigatório" }),
-	password: z
-		.string({ message: "Senha é obrigatória" })
-		.min(1, { message: "Senha é obrigatória" }),
-	confirmPassword: z
-		.string({ message: "Confirmação de senha é obrigatória" })
-		.min(1, { message: "Confirmação de senha é obrigatória" }),
-});
-
-type RegisterFormData = z.infer<typeof registerSchema>;
 
 export function RegisterForm({
 	className,
@@ -65,8 +48,8 @@ export function RegisterForm({
 		},
 	});
 
-	const onSubmit = (data: RegisterFormData) => {
-		signUp(data);
+	const onSubmit = ({ name, email, password }: RegisterFormData) => {
+		signUp({ name, email, password });
 	};
 
 	return (

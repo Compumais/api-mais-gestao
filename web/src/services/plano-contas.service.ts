@@ -180,6 +180,17 @@ export const planoContasService = {
 		return data;
 	},
 
+	async exportar(
+		idempresa: string,
+		formato: FormatoImportacaoPlanoContas,
+	): Promise<Blob> {
+		const { data } = await api.get<Blob>("/plano-contas/exportar", {
+			params: { idempresa, formato },
+			responseType: "blob",
+		});
+		return data;
+	},
+
 	async mover(dados: MoverPlanoContasData): Promise<PlanoContas> {
 		const { data } = await api.put<PlanoContas>("/plano-contas/mover", dados);
 		return data;

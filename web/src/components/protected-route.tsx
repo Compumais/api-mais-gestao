@@ -173,7 +173,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 				<div className="flex flex-col items-center gap-2">
 					<h2 className="text-xl font-semibold">Mais Gestão</h2>
 					<p className="text-sm text-muted-foreground">
-						Carregando sua ?rea de trabalho
+						Carregando sua área de trabalho
 						<span className="loading-dots">
 							<span className="dot">.</span>
 							<span className="dot">.</span>

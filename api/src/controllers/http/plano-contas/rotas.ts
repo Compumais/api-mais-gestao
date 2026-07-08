@@ -5,6 +5,7 @@ import { buscarPlanoContas } from "./buscar.js";
 import { criarPlanoContas } from "./criar.js";
 import * as schema from "./doc-schema/schema.js";
 import { excluirPlanoContas } from "./excluir.js";
+import { exportarPlanoContas } from "./exportar.js";
 import { importarPlanoContas } from "./importar.js";
 import { previewImportacaoPlanoContas } from "./importar-preview.js";
 import { listarPlanoContas } from "./listar.js";
@@ -41,6 +42,11 @@ export function planoContasRotas(app: FastifyInstance) {
 	app.get("/plano-contas/template", {
 		schema: schema.templatePlanoContasSchema,
 		handler: templatePlanoContas,
+	});
+
+	app.get("/plano-contas/exportar", {
+		schema: schema.exportarPlanoContasSchema,
+		handler: exportarPlanoContas,
 	});
 
 	app.put("/plano-contas/mover", {
