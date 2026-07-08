@@ -1,17 +1,21 @@
 "use client";
 
-import { use, useState, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft, AlertTriangle, Download, Printer, Send, Ban, FileX2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-	Card,
-	CardContent,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+	AlertTriangle,
+	ArrowLeft,
+	Ban,
+	Download,
+	FileX2,
+	Printer,
+	Send,
+} from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { use, useMemo, useState } from "react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	Table,
 	TableBody,
@@ -20,32 +24,38 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { Separator } from "@/components/ui/separator";
-import { NFE_STATUS, NFE_AMBIENTE_LABELS, emissaoFoiAutorizada } from "@/constants/nfe-status";
 import { obterInfoRejeicao } from "@/constants/nfe-rejeicoes";
 import {
-	buscarNfeEmitidaPorId,
-	downloadXmlNfe,
-	abrirDanfeNfe,
-	transmitirNfe,
-	cancelarNfe,
-	inutilizarNfe,
-} from "@/services/nfe-emissao.service";
-import { entidadesService } from "@/services/entidades.service";
-import { obterCodigoRejeicaoNota, obterMotivoRejeicaoNota } from "@/util/nfe-rejeicao-util";
-import { toast } from "sonner";
-import { api } from "@/lib/axios";
+	emissaoFoiAutorizada,
+	NFE_AMBIENTE_LABELS,
+	NFE_STATUS,
+} from "@/constants/nfe-status";
 import { useNfeConfiguracao } from "@/hooks/use-nfe-configuracao";
-import { AvisoAmbienteNfe } from "../components/aviso-ambiente-nfe";
-import { StatusNfeBadge } from "../components/status-nfe-badge";
-import { ResumoDestinatarioNfe } from "../components/resumo-destinatario-nfe";
-import { ModalConfirmacaoProducao } from "../components/modal-confirmacao-producao";
-import { ModalEventoNfe } from "../components/modal-evento-nfe";
-import { PageContainer } from "../../components/page-container";
+import { api } from "@/lib/axios";
+import { entidadesService } from "@/services/entidades.service";
+import {
+	abrirDanfeNfe,
+	buscarNfeEmitidaPorId,
+	cancelarNfe,
+	downloadXmlNfe,
+	inutilizarNfe,
+	transmitirNfe,
+} from "@/services/nfe-emissao.service";
+import {
+	obterCodigoRejeicaoNota,
+	obterMotivoRejeicaoNota,
+} from "@/util/nfe-rejeicao-util";
 import {
 	notaPodeSerCancelada,
 	notaPodeSerInutilizada,
 } from "@/util/validar-eventos-nfe";
+import { PageContainer } from "../../components/page-container";
+import { AvisoAmbienteNfe } from "../components/aviso-ambiente-nfe";
+import { CardErroNfe } from "../components/card-erro-nfe";
+import { ModalConfirmacaoProducao } from "../components/modal-confirmacao-producao";
+import { ModalEventoNfe } from "../components/modal-evento-nfe";
+import { ResumoDestinatarioNfe } from "../components/resumo-destinatario-nfe";
+import { StatusNfeBadge } from "../components/status-nfe-badge";
 
 const formatCurrency = (value: string | null | undefined) => {
 	if (!value) return "R$ 0,00";
@@ -101,9 +111,9 @@ export default function DetalheNfePage({
 	const router = useRouter();
 	const queryClient = useQueryClient();
 	const [modalConfirmacaoAberto, setModalConfirmacaoAberto] = useState(false);
-	const [modalEvento, setModalEvento] = useState<"cancelar" | "inutilizar" | null>(
-		null,
-	);
+	const [modalEvento, setModalEvento] = useState<
+		"cancelar" | "inutilizar" | null
+	>(null);
 
 	const { data: nf, isLoading } = useQuery({
 		queryKey: ["nfe-detalhe", id],
@@ -287,7 +297,8 @@ export default function DetalheNfePage({
 					</Link>
 					<div className="flex-1">
 						<h1 className="text-xl font-bold">
-							NF-e {nf.serie && nf.numeronotafiscal
+							NF-e{" "}
+							{nf.serie && nf.numeronotafiscal
 								? `${nf.serie}-${nf.numeronotafiscal}`
 								: "Detalhe"}
 						</h1>
@@ -309,7 +320,9 @@ export default function DetalheNfePage({
 					<div className="rounded-lg border border-amber-300 bg-amber-50 p-4 space-y-2">
 						<div className="flex items-center gap-2 text-amber-900">
 							<AlertTriangle className="h-5 w-5" />
-							<span className="font-semibold">NF-e pendente de transmissão</span>
+							<span className="font-semibold">
+								NF-e pendente de transmissão
+							</span>
 						</div>
 						<p className="text-sm text-amber-900">
 							Esta nota foi salva, mas ainda não foi enviada à SEFAZ. Use{" "}
@@ -322,53 +335,23 @@ export default function DetalheNfePage({
 					</div>
 				)}
 
-				{/* Card de rejeição */}
 				{ehRejeitada && (
-					<div className="rounded-lg border border-red-300 bg-red-50 p-4 space-y-3">
-						<div className="flex items-center gap-2 text-red-800">
-							<AlertTriangle className="h-5 w-5" />
-							<span className="font-semibold">NF-e Rejeitada pela SEFAZ</span>
-						</div>
-
-						<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-							<div>
-								<p className="text-xs text-red-600 font-medium uppercase tracking-wide">
-									Código
-								</p>
-								<p className="text-sm font-mono text-red-800">
-									{codigoRejeicao ?? "—"}
-								</p>
-							</div>
-							<div>
-								<p className="text-xs text-red-600 font-medium uppercase tracking-wide">
-									Motivo
-								</p>
-								<p className="text-sm text-red-800">
-									{motivoRejeicao ?? "—"}
-								</p>
-							</div>
-						</div>
-
-						{rejeicaoInfo && (
-							<>
-								<Separator className="border-red-200" />
-								<div>
-									<p className="text-xs text-red-600 font-medium uppercase tracking-wide mb-1">
-										Como corrigir
-									</p>
-									<p className="text-sm text-red-700">{rejeicaoInfo.instrucao}</p>
-								</div>
-							</>
-						)}
-					</div>
+					<CardErroNfe
+						titulo="NF-e Rejeitada pela SEFAZ"
+						motivo={motivoRejeicao ?? "—"}
+						codigo={codigoRejeicao}
+						instrucao={rejeicaoInfo?.instrucao}
+					/>
 				)}
 
-				{ehAutorizada && !regraCancelamento.permitido && regraCancelamento.motivo && (
-					<div className="rounded-lg border border-muted bg-muted/30 p-4 text-sm text-muted-foreground">
-						<strong className="text-foreground">Cancelamento:</strong>{" "}
-						{regraCancelamento.motivo}
-					</div>
-				)}
+				{ehAutorizada &&
+					!regraCancelamento.permitido &&
+					regraCancelamento.motivo && (
+						<div className="rounded-lg border border-muted bg-muted/30 p-4 text-sm text-muted-foreground">
+							<strong className="text-foreground">Cancelamento:</strong>{" "}
+							{regraCancelamento.motivo}
+						</div>
+					)}
 
 				{(ehCancelada || ehInutilizada) && nf.justificativacancelamentonfe && (
 					<div className="rounded-lg border bg-muted/30 p-4 text-sm space-y-1">
@@ -393,29 +376,52 @@ export default function DetalheNfePage({
 					</CardHeader>
 					<CardContent className="grid grid-cols-2 gap-4 sm:grid-cols-3 text-sm">
 						<div>
-							<p className="text-muted-foreground text-xs font-medium uppercase">Série / Número</p>
-							<p className="font-medium">{nf.serie ?? "—"} / {nf.numeronotafiscal ?? "—"}</p>
+							<p className="text-muted-foreground text-xs font-medium uppercase">
+								Série / Número
+							</p>
+							<p className="font-medium">
+								{nf.serie ?? "—"} / {nf.numeronotafiscal ?? "—"}
+							</p>
 						</div>
 						<div>
-							<p className="text-muted-foreground text-xs font-medium uppercase">Modelo</p>
+							<p className="text-muted-foreground text-xs font-medium uppercase">
+								Modelo
+							</p>
 							<p>{nf.modelo ?? "55"}</p>
 						</div>
 						<div>
-							<p className="text-muted-foreground text-xs font-medium uppercase">Ambiente</p>
-							<p>{nf.tipoambientenfe ? (NFE_AMBIENTE_LABELS[nf.tipoambientenfe] ?? nf.tipoambientenfe) : "—"}</p>
+							<p className="text-muted-foreground text-xs font-medium uppercase">
+								Ambiente
+							</p>
+							<p>
+								{nf.tipoambientenfe
+									? (NFE_AMBIENTE_LABELS[nf.tipoambientenfe] ??
+										nf.tipoambientenfe)
+									: "—"}
+							</p>
 						</div>
 						<div>
-							<p className="text-muted-foreground text-xs font-medium uppercase">Protocolo</p>
+							<p className="text-muted-foreground text-xs font-medium uppercase">
+								Protocolo
+							</p>
 							<p className="font-mono text-xs">{nf.protocolonfe ?? "—"}</p>
 						</div>
 						<div className="col-span-2 sm:col-span-3">
-							<p className="text-muted-foreground text-xs font-medium uppercase">Chave de Acesso</p>
+							<p className="text-muted-foreground text-xs font-medium uppercase">
+								Chave de Acesso
+							</p>
 							<div className="flex items-center gap-2">
 								<p
 									className="font-mono text-xs break-all cursor-pointer hover:text-primary"
 									title="Clique para copiar"
-									onClick={() => nf.chavenfe && copiarParaClipboard(nf.chavenfe)}
-							onKeyDown={(e) => e.key === "Enter" && nf.chavenfe && copiarParaClipboard(nf.chavenfe)}
+									onClick={() =>
+										nf.chavenfe && copiarParaClipboard(nf.chavenfe)
+									}
+									onKeyDown={(e) =>
+										e.key === "Enter" &&
+										nf.chavenfe &&
+										copiarParaClipboard(nf.chavenfe)
+									}
 								>
 									{nf.chavenfe ?? "—"}
 								</p>
@@ -456,27 +462,29 @@ export default function DetalheNfePage({
 									</TableRow>
 								</TableHeader>
 								<TableBody>
-									{(itensData as Array<Record<string, unknown>>).map((item, index) => (
-										<TableRow key={String(item.id ?? index)}>
-											<TableCell className="text-muted-foreground text-sm">
-												{Number(item.contador ?? index + 1)}
-											</TableCell>
-											<TableCell>{String(item.descricao ?? "—")}</TableCell>
-											<TableCell>{String(item.unidade ?? "UN")}</TableCell>
-											<TableCell className="text-right">
-												{String(item.quantidade ?? "0")}
-											</TableCell>
-											<TableCell className="text-right">
-												{formatCurrency(String(item.precounitario ?? "0"))}
-											</TableCell>
-											<TableCell className="text-right font-medium">
-												{formatCurrency(String(item.total ?? "0"))}
-											</TableCell>
-											<TableCell className="text-muted-foreground text-sm">
-												{String(item.cfop ?? "—")}
-											</TableCell>
-										</TableRow>
-									))}
+									{(itensData as Array<Record<string, unknown>>).map(
+										(item, index) => (
+											<TableRow key={String(item.id ?? index)}>
+												<TableCell className="text-muted-foreground text-sm">
+													{Number(item.contador ?? index + 1)}
+												</TableCell>
+												<TableCell>{String(item.descricao ?? "—")}</TableCell>
+												<TableCell>{String(item.unidade ?? "UN")}</TableCell>
+												<TableCell className="text-right">
+													{String(item.quantidade ?? "0")}
+												</TableCell>
+												<TableCell className="text-right">
+													{formatCurrency(String(item.precounitario ?? "0"))}
+												</TableCell>
+												<TableCell className="text-right font-medium">
+													{formatCurrency(String(item.total ?? "0"))}
+												</TableCell>
+												<TableCell className="text-muted-foreground text-sm">
+													{String(item.cfop ?? "—")}
+												</TableCell>
+											</TableRow>
+										),
+									)}
 								</TableBody>
 							</Table>
 						</CardContent>
@@ -513,7 +521,9 @@ export default function DetalheNfePage({
 					{podeTransmitir && (
 						<Link href={`/nota-fiscal-venda/nova?reemitir=${id}`}>
 							<Button variant="outline">
-								{ehRejeitada ? "Corrigir e reemitir" : "Editar antes de transmitir"}
+								{ehRejeitada
+									? "Corrigir e reemitir"
+									: "Editar antes de transmitir"}
 							</Button>
 						</Link>
 					)}
