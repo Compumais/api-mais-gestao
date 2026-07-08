@@ -95,10 +95,13 @@ import {
 	obterCodigoRejeicaoNota,
 	obterMotivoRejeicaoNota,
 } from "@/util/nfe-rejeicao-util";
+import type { CardErroOperacaoNfe } from "@/util/normalizar-erro-operacao-nfe";
+import { normalizarErroOperacaoNfe } from "@/util/normalizar-erro-operacao-nfe";
 import { montarPagamentoEmissaoNfe } from "@/util/normalizar-pagamento-emissao-nfe";
 import { resolverContextoReemissaoNfe } from "@/util/resolver-contexto-reemissao-nfe";
 import { AvisoAmbienteNfe } from "../components/aviso-ambiente-nfe";
 import { CamposIntegracaoNfVenda } from "../components/campos-integracao-nf-venda";
+import { CardErroNfe } from "../components/card-erro-nfe";
 import { ModalConfirmacaoProducao } from "../components/modal-confirmacao-producao";
 import { ModalItemEmissao } from "../components/modal-item-emissao";
 import { ModalPreviewDanfeNfe } from "../components/modal-preview-danfe-nfe";
@@ -205,6 +208,9 @@ export default function NovaEmissaoNfePage() {
 	const [modalConfirmacaoAberto, setModalConfirmacaoAberto] = useState(false);
 	const [modalPreviewAberto, setModalPreviewAberto] = useState(false);
 	const [pdfPreview, setPdfPreview] = useState<Blob | null>(null);
+	const [erroPreview, setErroPreview] = useState<CardErroOperacaoNfe | null>(
+		null,
+	);
 	const [modalItemAberto, setModalItemAberto] = useState(false);
 	const [itemEditando, setItemEditando] = useState<{ index: number } | null>(
 		null,
@@ -989,13 +995,15 @@ export default function NovaEmissaoNfePage() {
 	const { mutate: gerarPreview, isPending: isPreviewPending } = useMutation({
 		mutationFn: previewDanfeNfe,
 		onSuccess: (blob) => {
+			setErroPreview(null);
 			setPdfPreview(blob);
 			setModalPreviewAberto(true);
 		},
 		onError: (erro: Error) => {
-			toast.error("Não foi possível gerar a pré-visualização", {
-				description:
-					erro.message || "Verifique os dados da nota e tente novamente.",
+			const normalizado = normalizarErroOperacaoNfe(erro.message, "preview");
+			setErroPreview(normalizado.card);
+			toast.error(normalizado.tituloToast, {
+				description: normalizado.descricaoToast,
 			});
 		},
 	});
@@ -1172,6 +1180,7 @@ export default function NovaEmissaoNfePage() {
 			toast.error("Adicione ao menos um item para pré-visualizar.");
 			return;
 		}
+		setErroPreview(null);
 		gerarPreview(dados);
 	}
 
@@ -1356,6 +1365,16 @@ export default function NovaEmissaoNfePage() {
 				{nfeConfiguracao && (
 					<AvisoAmbienteNfe
 						ambiente={nfeConfiguracao.ambiente}
+						className="mb-6"
+					/>
+				)}
+
+				{erroPreview && (
+					<CardErroNfe
+						titulo={erroPreview.titulo}
+						motivo={erroPreview.motivo}
+						codigo={erroPreview.codigo}
+						instrucao={erroPreview.instrucao}
 						className="mb-6"
 					/>
 				)}
