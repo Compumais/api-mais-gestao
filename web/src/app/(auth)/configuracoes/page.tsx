@@ -3,14 +3,15 @@
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useEmpresa } from "@/hooks/use-empresa";
 import { useConfiguracao } from "@/hooks/use-configuracao";
+import { useEmpresa } from "@/hooks/use-empresa";
 import { PageContainer } from "../components/page-container";
 import { EmpresaFiscalForm } from "./components/empresa-fiscal-form";
 import { ImpressaoForm } from "./components/impressao-form";
 import { IntegracaoForm } from "./components/integracao-form";
-import { NfeConfiguracaoForm } from "./components/nfe-configuracao-form";
 import { NfceConfiguracaoForm } from "./components/nfce-configuracao-form";
+import { NfeConfiguracaoForm } from "./components/nfe-configuracao-form";
+import { NfseConfiguracaoForm } from "./components/nfse-configuracao-form";
 import { NotificacoesForm } from "./components/notificacoes-form";
 import { RelatoriosForm } from "./components/relatorios-form";
 
@@ -63,6 +64,7 @@ export default function ConfiguracoesPage() {
 							<TabsTrigger value="empresa-fiscal">Empresa fiscal</TabsTrigger>
 							<TabsTrigger value="nfe">NF-e</TabsTrigger>
 							<TabsTrigger value="nfce">NFC-e</TabsTrigger>
+							<TabsTrigger value="nfse">NFS-e</TabsTrigger>
 							<TabsTrigger value="integracao">Integrações</TabsTrigger>
 							<TabsTrigger value="relatorios">Relatórios</TabsTrigger>
 							<TabsTrigger value="impressao">Impressão</TabsTrigger>
@@ -85,6 +87,10 @@ export default function ConfiguracoesPage() {
 
 						<TabsContent value="nfce" className="mt-4">
 							<NfceConfiguracaoForm idempresa={empresa.id} />
+						</TabsContent>
+
+						<TabsContent value="nfse" className="mt-4">
+							<NfseConfiguracaoForm idempresa={empresa.id} />
 						</TabsContent>
 
 						<TabsContent value="integracao" className="mt-4">

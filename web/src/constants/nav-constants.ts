@@ -124,6 +124,10 @@ export const DATA = {
 					url: "/nota-fiscal-venda",
 				},
 				{
+					title: "Nota fiscal de serviço",
+					url: "/nota-fiscal-servico",
+				},
+				{
 					title: "Captura SEFAZ",
 					url: "/nota-fiscal-compra/captura-sefaz",
 				},

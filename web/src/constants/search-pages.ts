@@ -178,6 +178,13 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 		icon: IconFileInvoice,
 		keywords: ["nota fiscal", "nota-fiscal", "venda", "saída"],
 	},
+	{
+		title: "Nota fiscal de serviço",
+		url: "/nota-fiscal-servico",
+		category: "Financeiro",
+		icon: IconFileInvoice,
+		keywords: ["nfse", "nfs-e", "serviço", "rps"],
+	},
 	// Financeiro
 	{
 		title: "Plano de contas",
