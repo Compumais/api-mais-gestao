@@ -1,0 +1,16 @@
+{
+	"name": "mais-gestao/nfse-gateway",
+	"description": "Gateway HTTP para emissão NFS-e multi-provedor (ABRASF, ISSNet, GINFES, IPM)",
+	"type": "project",
+	"require": {
+		"php": ">=8.1",
+		"nfephp-org/sped-common": "^5.1"
+	},
+	"autoload": {
+		"psr-4": {
+			"MaisGestao\\NfseGateway\\": "src/"
+		}
+	},
+	"minimum-stability": "stable",
+	"prefer-stable": true
+}
