@@ -80,6 +80,15 @@ export async function resolverContextoEmissaoNfePedidoService({
 
 	const desconto = parseFloat(dav.descontosubtotal ?? dav.desconto ?? "0");
 
+	const identificadorDav =
+		dav.codigo != null ? String(dav.codigo) : dav.id.slice(0, 8);
+	const partesInfo: string[] = [];
+	if (dav.observacao?.trim()) {
+		partesInfo.push(dav.observacao.trim());
+	}
+	partesInfo.push(`DAV(s): ${identificadorDav}`);
+	const informacoesAdicionais = partesInfo.join("\n").trim();
+
 	return httpOk<ContextoEmissaoNfePedido>({
 		iddav,
 		pendencias,
@@ -92,9 +101,7 @@ export async function resolverContextoEmissaoNfePedidoService({
 			: {}),
 		...(dav.idlocalestoque ? { idlocalestoque: dav.idlocalestoque } : {}),
 		...(formaPagamentoNfe ? { formaPagamentoNfe } : {}),
-		...(dav.observacao?.trim()
-			? { informacoesAdicionais: dav.observacao.trim() }
-			: {}),
+		informacoesAdicionais,
 		...(desconto > 0 ? { totais: { desconto } } : {}),
 		itens,
 		gerarFinanceiro: true,

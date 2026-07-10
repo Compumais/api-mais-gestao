@@ -139,6 +139,8 @@ function montarDadosNotaPersistencia(params: {
 	idlocalestoque?: string;
 	idtipodocumento?: string;
 	iddav?: string;
+	iddavs?: string[];
+	codigosPedidos?: number[];
 	formasPagamento?: FormaPagamentoNfVenda[];
 	gerarFinanceiro?: boolean;
 	gerarEstoque?: boolean;
@@ -180,6 +182,8 @@ function montarDadosNotaPersistencia(params: {
 		idlocalestoque,
 		idtipodocumento,
 		iddav,
+		iddavs,
+		codigosPedidos,
 		formasPagamento,
 		gerarFinanceiro,
 		gerarEstoque,
@@ -271,6 +275,8 @@ function montarDadosNotaPersistencia(params: {
 			idDest,
 			idserienfe: idserie,
 			iddav,
+			iddavs,
+			codigosPedidos,
 			formasPagamento: formasPagamento?.map((forma) => ({
 				idtipodocumentofinanceiro: forma.idtipodocumentofinanceiro,
 				valor: forma.valor,
@@ -363,6 +369,8 @@ export async function emitirNfeVendaService(
 		gerarFinanceiroResolvido,
 		gerarEstoqueResolvido,
 		iddavResolvido,
+		iddavsResolvidos,
+		codigosPedidosResolvidos,
 		informacoesAdicionais,
 		totais,
 		tipoDevolucao,
@@ -438,6 +446,8 @@ export async function emitirNfeVendaService(
 		idlocalestoque: idlocalestoqueResolvido,
 		idtipodocumento: idtipodocumentoResolvido,
 		iddav: iddavResolvido,
+		iddavs: iddavsResolvidos,
+		codigosPedidos: codigosPedidosResolvidos,
 		formasPagamento: formasPagamentoResolvidas,
 		gerarFinanceiro: gerarFinanceiroResolvido,
 		gerarEstoque: gerarEstoqueResolvido,
@@ -501,11 +511,19 @@ export async function emitirNfeVendaService(
 	if (xMotivo) corpo.xMotivo = xMotivo;
 
 	if (statusPersistido === NFE_STATUS.AUTORIZADA) {
-		if (iddavResolvido) {
-			await atualizarDav(iddavResolvido, {
+		const idsDavParaAtualizar =
+			iddavsResolvidos && iddavsResolvidos.length > 0
+				? iddavsResolvidos
+				: iddavResolvido
+					? [iddavResolvido]
+					: [];
+
+		for (const idDav of idsDavParaAtualizar) {
+			await atualizarDav(idDav, {
 				idnotafiscal,
 				datahorafaturamento: agora,
 				idusuariofaturamento: idusuario,
+				status: 4,
 			}).catch(console.error);
 		}
 

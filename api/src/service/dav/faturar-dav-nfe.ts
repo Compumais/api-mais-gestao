@@ -135,6 +135,15 @@ export async function faturarDavNfeService({
 		Math.max(valorTotalItens - desconto, 0),
 	);
 
+	const partesInfo: string[] = [];
+	if (dav.observacao?.trim()) {
+		partesInfo.push(dav.observacao.trim());
+	}
+	const identificadorDav =
+		dav.codigo != null ? String(dav.codigo) : dav.id.slice(0, 8);
+	partesInfo.push(`DAV(s): ${identificadorDav}`);
+	const informacoesAdicionais = partesInfo.join("\n").trim() || undefined;
+
 	const resultado = await emitirNfeVendaService({
 		idusuario,
 		idempresa,
@@ -144,12 +153,14 @@ export async function faturarDavNfeService({
 		itens,
 		...(desconto > 0 ? { totais: { desconto } } : {}),
 		...(pagamento ? { pagamento } : {}),
+		...(informacoesAdicionais ? { informacoesAdicionais } : {}),
 		...(dav.idcondicaopagamento ? { idcondicaopagto: dav.idcondicaopagamento } : {}),
 		...(dav.idlocalestoque ? { idlocalestoque: dav.idlocalestoque } : {}),
 		...(dav.idtipodocumentofinanceiro
 			? { idtipodocumento: dav.idtipodocumentofinanceiro }
 			: {}),
 		iddav,
+		...(dav.codigo != null ? { codigosPedidos: [dav.codigo] } : {}),
 		...(formasPagamento ? { formasPagamento } : {}),
 		gerarFinanceiro,
 		gerarEstoque,
@@ -165,6 +176,7 @@ export async function faturarDavNfeService({
 		idnotafiscal: resultado.body.idnotafiscal,
 		datahorafaturamento: agora,
 		idusuariofaturamento: idusuario,
+		status: 4,
 	});
 
 	return resultado;

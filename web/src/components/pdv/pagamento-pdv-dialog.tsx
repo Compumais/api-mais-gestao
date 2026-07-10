@@ -6,6 +6,7 @@ import {
 	IconCreditCard,
 	IconFileInvoice,
 	IconQrcode,
+	IconTrash,
 	IconWallet,
 } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
@@ -319,6 +320,30 @@ export function PagamentoPdvDialog({
 		tentarAvancarPagamentos(novosPagamentos);
 	};
 
+	const removerPagamento = (indice: number) => {
+		setPagamentos((atual) => atual.filter((_, i) => i !== indice));
+		setMeioSelecionado(null);
+		setFormaErpSelecionada(null);
+		setValorParcial("");
+		setPasso("selecao");
+	};
+
+	const limparPagamentos = () => {
+		setPagamentos([]);
+		setMeioSelecionado(null);
+		setFormaErpSelecionada(null);
+		setValorParcial("");
+		setPasso("selecao");
+	};
+
+	const confirmarPagamentosAtuais = () => {
+		if (!pagamentoCobreTotal(pago, total)) {
+			toast.error("O valor pago ainda não cobre o total");
+			return;
+		}
+		void finalizarVenda(pagamentos);
+	};
+
 	const finalizarVenda = async (pagamentosFinais: PagamentoParcialPdv[]) => {
 		if (pagamentoPdvExigeCliente(pagamentosFinais) && !identidade.trim()) {
 			toast.error("Selecione o cliente para pagamento a prazo");
@@ -534,17 +559,42 @@ export function PagamentoPdvDialog({
 						</div>
 
 						{pagamentos.length > 0 && (
-							<div className="space-y-1 rounded-lg border p-3 text-sm">
-								<p className="font-medium text-muted-foreground">
-									Pagamentos registrados
-								</p>
+							<div className="space-y-2 rounded-lg border p-3 text-sm">
+								<div className="flex items-center justify-between gap-2">
+									<p className="font-medium text-muted-foreground">
+										Pagamentos registrados
+									</p>
+									<Button
+										type="button"
+										variant="ghost"
+										size="sm"
+										className="h-7 px-2 text-xs"
+										disabled={processando}
+										onClick={limparPagamentos}
+									>
+										Limpar tudo
+									</Button>
+								</div>
 								{pagamentos.map((p, i) => (
 									<div
 										key={`${p.tipo}-${p.label}-${i}`}
-										className="flex justify-between"
+										className="flex items-center justify-between gap-2"
 									>
 										<span>{p.label}</span>
-										<span>{formatCurrency(p.valor)}</span>
+										<div className="flex items-center gap-2">
+											<span>{formatCurrency(p.valor)}</span>
+											<Button
+												type="button"
+												variant="ghost"
+												size="icon"
+												className="size-7 text-destructive hover:text-destructive"
+												disabled={processando}
+												aria-label={`Remover pagamento ${p.label}`}
+												onClick={() => removerPagamento(i)}
+											>
+												<IconTrash className="size-4" />
+											</Button>
+										</div>
 									</div>
 								))}
 							</div>
@@ -670,6 +720,21 @@ export function PagamentoPdvDialog({
 									))}
 								</div>
 							</div>
+						)}
+
+						{pagamentoCobreTotal(pago, total) && (
+							<Button
+								type="button"
+								className="w-full"
+								disabled={processando || (exigeCliente && !identidade.trim())}
+								onClick={confirmarPagamentosAtuais}
+							>
+								{processando
+									? "Processando..."
+									: pagamentoInicial
+										? "Confirmar reemissão"
+										: "Finalizar venda"}
+							</Button>
 						)}
 
 						<Button

@@ -48,6 +48,7 @@ type GerarContasReceberNfParametros = {
 	chavenfe?: string | undefined;
 	razaosocial?: string | undefined;
 	formasPagamento?: FormaPagamentoNfVenda[] | undefined;
+	codigosPedidos?: number[] | undefined;
 };
 
 type GerarContasReceberNfResposta = {
@@ -118,6 +119,7 @@ async function gerarParcelasPorCondicao(
 			totalParcelas,
 			nomeCliente,
 			tipo: "venda",
+			codigosPedidos: parametros.codigosPedidos,
 		});
 
 		const financeiro = await criarFinanceiro({
@@ -253,6 +255,7 @@ export async function gerarContasReceberNfService(
 				totalParcelas: 1,
 				nomeCliente,
 				tipo: "venda",
+				codigosPedidos: parametros.codigosPedidos,
 			});
 
 			if (destino === "caixa_imediato" && caixa && idplanocontas) {

@@ -46,6 +46,19 @@ export interface ListarPedidosResponse {
 	};
 }
 
+export interface ListarPedidosParams {
+	idempresa: string;
+	page?: number;
+	limit?: number;
+	dataInicio?: string;
+	dataFim?: string;
+	idcliente?: string;
+	status?: number;
+	faturado?: boolean;
+	codigo?: number;
+	busca?: string;
+}
+
 export interface CriarPedidoData {
 	idempresa: string;
 	codigo?: number;
@@ -123,13 +136,38 @@ export interface ContextoEmissaoNfePedido {
 	gerarEstoque: boolean;
 }
 
+export interface ContextoEmissaoNfeLote {
+	iddavs: string[];
+	codigosPedidos: number[];
+	pendencias: string[];
+	iddestinatario?: string;
+	idtipodocumento?: string;
+	idcondicaopagto?: string;
+	idlocalestoque?: string;
+	formaPagamentoNfe?: string;
+	informacoesAdicionais?: string;
+	totais?: {
+		desconto?: number;
+	};
+	itens: ContextoEmissaoNfePedidoItem[];
+	gerarFinanceiro: boolean;
+	gerarEstoque: boolean;
+	avisos?: string[];
+}
+
 export const davService = {
-	async listar(params: {
-		idempresa: string;
-		page?: number;
-		limit?: number;
-	}): Promise<ListarPedidosResponse> {
-		const { data } = await api.get<ListarPedidosResponse>("/davs", { params });
+	async listar(params: ListarPedidosParams): Promise<ListarPedidosResponse> {
+		const { data } = await api.get<ListarPedidosResponse>("/davs", {
+			params: {
+				...params,
+				faturado:
+					params.faturado === undefined
+						? undefined
+						: params.faturado
+							? "true"
+							: "false",
+			},
+		});
 		return data;
 	},
 
@@ -150,6 +188,13 @@ export const davService = {
 
 	async excluir(id: string): Promise<void> {
 		await api.delete(`/davs/${id}`);
+	},
+
+	async cancelar(id: string, idempresa: string): Promise<PedidoDav> {
+		const { data } = await api.post<PedidoDav>(`/davs/${id}/cancelar`, {
+			idempresa,
+		});
+		return data;
 	},
 
 	async listarItens(iddav: string): Promise<PedidoDavItem[]> {
@@ -202,6 +247,22 @@ export const davService = {
 		const { data } = await api.get<ContextoEmissaoNfePedido>(
 			`/davs/${iddav}/contexto-emissao-nfe`,
 			{ params: { idempresa } },
+		);
+		return data;
+	},
+
+	async resolverContextoEmissaoNfeLote(
+		iddavs: string[],
+		idempresa: string,
+	): Promise<ContextoEmissaoNfeLote> {
+		const { data } = await api.get<ContextoEmissaoNfeLote>(
+			"/davs/contexto-emissao-nfe-lote",
+			{
+				params: {
+					idempresa,
+					iddavs: iddavs.join(","),
+				},
+			},
 		);
 		return data;
 	},

@@ -140,7 +140,7 @@ export function ModalItemPedido({
 
 	return (
 		<Dialog open={open} onOpenChange={(aberto) => !aberto && onClose()}>
-			<DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto overflow-x-visible">
+			<DialogContent className="max-w-2xl gap-4 overflow-x-hidden sm:max-w-2xl">
 				<DialogHeader>
 					<DialogTitle>
 						{itemParaEditar ? "Editar item do pedido" : "Adicionar item ao pedido"}
@@ -179,18 +179,18 @@ export function ModalItemPedido({
 						)}
 
 						{mostrarSugestoes && (
-							<div className="max-h-40 overflow-y-auto rounded-md border bg-popover text-popover-foreground shadow-md">
+							<div className="max-h-72 overflow-y-auto rounded-md border bg-popover text-popover-foreground shadow-md">
 								{produtos.map((produto) => (
 									<button
 										key={produto.id}
 										type="button"
-										className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+										className="flex w-full items-start justify-between gap-3 px-3 py-2.5 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
 										onClick={() => void selecionarProduto(produto.id)}
 									>
-										<span className="truncate font-medium">
+										<span className="min-w-0 flex-1 break-words font-medium">
 											{formatarLabelProduto(produto)}
 										</span>
-										<span className="shrink-0 text-xs text-muted-foreground">
+										<span className="shrink-0 pt-0.5 text-xs text-muted-foreground">
 											{produto.preco ? formatarMoeda(produto.preco) : "—"}
 										</span>
 									</button>

@@ -680,3 +680,33 @@ export async function listarNotasRelatorioFiscalContabilidade({
 		)
 		.orderBy(desc(notafiscal.emissao));
 }
+
+const STATUS_NFCE_PENDENTE_CORRECAO = [90, 110, 301] as const;
+
+export type ContarNfcePendentesPeriodoParametros = {
+	idempresa: string;
+	dataInicio: string;
+	dataFim: string;
+};
+
+/** NFC-e (modelo 65) pendente/rejeitada/denegada no período de emissão. */
+export async function contarNfcePendentesNoPeriodo({
+	idempresa,
+	dataInicio,
+	dataFim,
+}: ContarNfcePendentesPeriodoParametros): Promise<number> {
+	const [resultado] = await db
+		.select({ value: count() })
+		.from(notafiscal)
+		.where(
+			and(
+				eq(notafiscal.idempresa, idempresa),
+				eq(notafiscal.modelo, "65"),
+				inArray(notafiscal.status, [...STATUS_NFCE_PENDENTE_CORRECAO]),
+				gte(notafiscal.emissao, dataInicio),
+				lte(notafiscal.emissao, dataFim),
+			),
+		);
+
+	return resultado?.value ?? 0;
+}

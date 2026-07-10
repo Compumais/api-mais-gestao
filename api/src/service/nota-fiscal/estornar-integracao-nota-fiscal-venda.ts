@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import type { HttpResponse } from "@/model/http-model.js";
-import { atualizarDav, buscarDavPorNotaFiscal } from "@/repositories/dav-repositories.js";
+import { atualizarDav, listarDavsPorNotaFiscal } from "@/repositories/dav-repositories.js";
 import {
 	atualizarFinanceiro,
 	buscarFinanceirosPorOrigem,
@@ -98,12 +98,13 @@ export async function estornarIntegracaoNotaFiscalVendaService({
 		movimentosEstornados++;
 	}
 
-	const dav = await buscarDavPorNotaFiscal(idnotafiscal);
-	if (dav) {
+	const davs = await listarDavsPorNotaFiscal(idnotafiscal);
+	for (const dav of davs) {
 		await atualizarDav(dav.id, {
 			idnotafiscal: null,
 			datahorafaturamento: null,
 			idusuariofaturamento: null,
+			status: 0,
 		});
 	}
 
