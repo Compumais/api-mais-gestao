@@ -9,6 +9,13 @@ type ListarDavsParametros = {
 	idempresa: string;
 	page?: number;
 	limit?: number;
+	dataInicio?: string | undefined;
+	dataFim?: string | undefined;
+	idcliente?: string | undefined;
+	status?: number | undefined;
+	faturado?: boolean | undefined;
+	codigo?: number | undefined;
+	busca?: string | undefined;
 };
 
 type ListarDavsResposta = {
@@ -26,6 +33,13 @@ export async function listarDavsService({
 	idempresa,
 	page = 1,
 	limit = 10,
+	dataInicio,
+	dataFim,
+	idcliente,
+	status,
+	faturado,
+	codigo,
+	busca,
 }: ListarDavsParametros): Promise<HttpResponse<ListarDavsResposta>> {
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
 		idusuario,
@@ -40,6 +54,13 @@ export async function listarDavsService({
 		idempresa,
 		page,
 		limit,
+		dataInicio,
+		dataFim,
+		idcliente,
+		status,
+		faturado,
+		codigo,
+		busca,
 	});
 
 	const total = resultado.total ?? 0;

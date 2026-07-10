@@ -35,6 +35,8 @@ export async function previewDanfeNfe(
 			idlocalestoque: dados.idlocalestoque,
 			idtipodocumento: dados.idtipodocumento,
 			iddav: dados.iddav,
+			iddavs: dados.iddavs,
+			codigosPedidos: dados.codigosPedidos,
 			formasPagamento: dados.formasPagamento,
 			gerarFinanceiro: dados.gerarFinanceiro,
 			gerarEstoque: dados.gerarEstoque,

@@ -6,6 +6,7 @@ type MontarIdentificacaoFinanceiroNfParametros = {
 	nomeFornecedor?: string | null | undefined;
 	nomeCliente?: string | null | undefined;
 	tipo?: "compra" | "venda";
+	codigosPedidos?: number[] | undefined;
 };
 
 function truncarTexto(texto: string, maximo: number): string {
@@ -21,6 +22,7 @@ export function montarIdentificacaoFinanceiroNf({
 	nomeFornecedor,
 	nomeCliente,
 	tipo = "compra",
+	codigosPedidos,
 }: MontarIdentificacaoFinanceiroNfParametros): {
 	documento: string;
 	emitente: string;
@@ -36,6 +38,10 @@ export function montarIdentificacaoFinanceiroNf({
 			? nomeCliente?.trim()
 			: nomeFornecedor?.trim();
 	const rotuloNf = tipo === "venda" ? "NF Venda" : "NF Compra";
+	const pedidosTexto =
+		codigosPedidos && codigosPedidos.length > 0
+			? `DAV(s): ${codigosPedidos.join(", ")}`
+			: null;
 
 	const documento = truncarTexto(
 		`NF ${numeroExibicao}${serieParte}${parcelaTexto}`.trim(),
@@ -55,6 +61,7 @@ export function montarIdentificacaoFinanceiroNf({
 			? `${tipo === "venda" ? "Cliente" : "Fornecedor"}: ${entidadeTexto}`
 			: null,
 		totalParcelas > 1 ? `Parcela ${parcela} de ${totalParcelas}` : null,
+		pedidosTexto,
 	];
 
 	return {

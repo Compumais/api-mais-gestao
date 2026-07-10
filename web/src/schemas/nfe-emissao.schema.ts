@@ -99,6 +99,8 @@ export const emissaoNfeFormSchema = z.object({
 	gerarFinanceiro: z.boolean().optional().default(true),
 	gerarEstoque: z.boolean().optional().default(true),
 	iddav: z.string().uuid().optional(),
+	iddavs: z.array(z.string().uuid()).min(1).optional(),
+	codigosPedidos: z.array(z.number().int()).optional(),
 });
 
 export type EmissaoNfeFormData = z.infer<typeof emissaoNfeFormSchema>;

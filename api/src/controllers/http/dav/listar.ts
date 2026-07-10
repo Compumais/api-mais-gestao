@@ -7,6 +7,16 @@ const listarDavsQuerySchema = z.object({
 	idempresa: z.string(),
 	page: z.coerce.number().min(1).optional().default(1),
 	limit: z.coerce.number().min(1).max(100).optional().default(10),
+	dataInicio: z.string().optional(),
+	dataFim: z.string().optional(),
+	idcliente: z.string().uuid().optional(),
+	status: z.coerce.number().int().optional(),
+	faturado: z
+		.enum(["true", "false"])
+		.optional()
+		.transform((v) => (v === undefined ? undefined : v === "true")),
+	codigo: z.coerce.number().int().optional(),
+	busca: z.string().optional(),
 });
 
 export async function listarDavs(request: FastifyRequest, reply: FastifyReply) {
@@ -22,6 +32,13 @@ export async function listarDavs(request: FastifyRequest, reply: FastifyReply) {
 			idempresa: query.idempresa,
 			page: query.page,
 			limit: query.limit,
+			dataInicio: query.dataInicio,
+			dataFim: query.dataFim,
+			idcliente: query.idcliente,
+			status: query.status,
+			faturado: query.faturado,
+			codigo: query.codigo,
+			busca: query.busca,
 		});
 
 		if (!resultado.success) {

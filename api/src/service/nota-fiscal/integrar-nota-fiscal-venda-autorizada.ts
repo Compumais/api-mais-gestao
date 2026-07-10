@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import type { HttpResponse } from "@/model/http-model.js";
+import { buscarDavsPorIds } from "@/repositories/dav-repositories.js";
 import { buscarPrimeiroLocalEstoqueEmpresa } from "@/repositories/local-estoque-repositories.js";
 import {
 	atualizarNotaFiscal,
@@ -146,6 +147,22 @@ export async function integrarNotaFiscalVendaAutorizadaService({
 					indPag: forma.indPag,
 				}));
 
+			let codigosPedidos = emissaoSalva?.codigosPedidos;
+			if (!codigosPedidos?.length) {
+				const idsDav =
+					emissaoSalva?.iddavs && emissaoSalva.iddavs.length > 0
+						? emissaoSalva.iddavs
+						: emissaoSalva?.iddav
+							? [emissaoSalva.iddav]
+							: [];
+				if (idsDav.length > 0) {
+					const davs = await buscarDavsPorIds(idsDav);
+					codigosPedidos = davs
+						.map((d) => d.codigo)
+						.filter((c): c is number => c != null);
+				}
+			}
+
 			const resultadoFinanceiro = await gerarContasReceberNfService({
 				idempresa: nota.idempresa,
 				idnotafiscal,
@@ -161,6 +178,7 @@ export async function integrarNotaFiscalVendaAutorizadaService({
 				chavenfe: nota.chavenfe ?? undefined,
 				razaosocial: nota.razaosocial ?? undefined,
 				formasPagamento,
+				codigosPedidos,
 			});
 
 			if (resultadoFinanceiro.success && resultadoFinanceiro.body) {

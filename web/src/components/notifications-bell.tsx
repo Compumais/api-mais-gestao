@@ -148,36 +148,37 @@ export function NotificationsBell() {
 						) : (
 							<ul className="space-y-0">
 								{listData.notificacoes.map((n) => (
-									<li key={n.id}>
+									<li
+										key={n.id}
+										className="flex items-start gap-1 rounded-sm hover:bg-accent"
+									>
 										<button
 											type="button"
-											className="flex w-full items-start gap-2 rounded-sm px-2 py-2 text-left text-sm hover:bg-accent"
+											className="min-w-0 flex-1 px-2 py-2 text-left text-sm"
 											onClick={() => handleClickNotificacao(n)}
 										>
-											<div className="min-w-0 flex-1">
-												<p
-													className={
-														n.lida ? "text-muted-foreground" : "font-medium"
-													}
-												>
-													{n.titulo}
-												</p>
-												<p className="text-xs text-muted-foreground">
-													{dayjs(n.criadoem).format("DD/MM/YYYY HH:mm")}
-												</p>
-											</div>
-											{!n.lida && (
-												<button
-													type="button"
-													className="shrink-0 rounded p-1 hover:bg-background"
-													onClick={(e) => handleMarcarLido(e, n.id)}
-													title="Marcar como lido"
-													aria-label="Marcar como lido"
-												>
-													<CheckIcon className="size-4" />
-												</button>
-											)}
+											<p
+												className={
+													n.lida ? "text-muted-foreground" : "font-medium"
+												}
+											>
+												{n.titulo}
+											</p>
+											<p className="text-xs text-muted-foreground">
+												{dayjs(n.criadoem).format("DD/MM/YYYY HH:mm")}
+											</p>
 										</button>
+										{!n.lida && (
+											<button
+												type="button"
+												className="mt-2 mr-1 shrink-0 rounded p-1 hover:bg-background"
+												onClick={(e) => handleMarcarLido(e, n.id)}
+												title="Marcar como lido"
+												aria-label="Marcar como lido"
+											>
+												<CheckIcon className="size-4" />
+											</button>
+										)}
 									</li>
 								))}
 							</ul>
