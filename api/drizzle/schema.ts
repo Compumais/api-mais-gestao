@@ -88,6 +88,7 @@ export * from "./tables/produto-fornecedor.js";
 export * from "./tables/produtos.js";
 export * from "./tables/receita-sem-contribuicao.js";
 export * from "./tables/saldo-estoque.js";
+export * from "./tables/servicos-nfse.js";
 export * from "./tables/sessoes.js";
 export * from "./tables/tarefa-execucao.js";
 export * from "./tables/taxauf.js";

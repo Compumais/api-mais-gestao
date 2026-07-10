@@ -1,5 +1,4 @@
 import type { Empresa } from "@/model/empresa-model.js";
-import type { NfseConfiguracao } from "@/model/nfse-emissao-model.js";
 import type { EmpresaFiscal } from "@/repositories/empresa-fiscal-repositories.js";
 import type { NfseConfiguracao as NfseConfigDb } from "@/repositories/nfse-configuracao-repositories.js";
 import { descriptografarCredenciaisCertificado } from "@/util/montar-config-sped-nfe.js";

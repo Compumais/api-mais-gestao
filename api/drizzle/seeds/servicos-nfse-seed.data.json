@@ -1,0 +1,7157 @@
+{
+"TB_EST_SERVICO_SIS": [
+	{
+		"COD_LST" : "1",
+		"DESCRICAO" : "Serviços de informática e congêneres",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "1.01",
+		"DESCRICAO" : "Análise e desenvolvimento de sistemas",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "1.02",
+		"DESCRICAO" : "Programação",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "1.03",
+		"DESCRICAO" : "Processamento de dados e congêneres",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "1.04",
+		"DESCRICAO" : "Elaboração de programas de computadores",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "1.05",
+		"DESCRICAO" : "Licenciamento ou cessão de direito de uso de programas de computação",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "1.06",
+		"DESCRICAO" : "Assessoria e consultoria em informática",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "1.07",
+		"DESCRICAO" : "Suporte técnico em informática",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "1.08",
+		"DESCRICAO" : "Planejamento",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "10",
+		"DESCRICAO" : "Serviços de intermediação e congêneres",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "10.01",
+		"DESCRICAO" : "Agenciamento",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "10.02",
+		"DESCRICAO" : "Agenciamento",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "10.03",
+		"DESCRICAO" : "Agenciamento",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "10.04",
+		"DESCRICAO" : "Agenciamento",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "10.05",
+		"DESCRICAO" : "Agenciamento",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "10.06",
+		"DESCRICAO" : "Agenciamento marítimo",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "10.07",
+		"DESCRICAO" : "Agenciamento de notícias",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "10.08",
+		"DESCRICAO" : "Agenciamento de publicidade e propaganda",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "10.09",
+		"DESCRICAO" : "Representação de qualquer natureza",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "10.10",
+		"DESCRICAO" : "Distribuição de bens de terceiros",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "11",
+		"DESCRICAO" : "Serviços de guarda",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "11.01",
+		"DESCRICAO" : "Guarda e estacionamento de veículos terrestres automotores",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "11.02",
+		"DESCRICAO" : "Vigilância",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "11.03",
+		"DESCRICAO" : "Escolta",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "11.04",
+		"DESCRICAO" : "Armazenamento",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "12",
+		"DESCRICAO" : "Serviços de diversões",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "12.01",
+		"DESCRICAO" : "Espetáculos teatrais",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "12.02",
+		"DESCRICAO" : "Exibições cinematográficas",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "12.03",
+		"DESCRICAO" : "Espetáculos circenses",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "12.04",
+		"DESCRICAO" : "Programas de auditório",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "12.05",
+		"DESCRICAO" : "Parques de diversões",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "12.06",
+		"DESCRICAO" : "Boates",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "12.07",
+		"DESCRICAO" : "Shows",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "12.08",
+		"DESCRICAO" : "Feiras",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "12.09",
+		"DESCRICAO" : "Bilhares",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "12.10",
+		"DESCRICAO" : "Corridas e competições de animais",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "12.11",
+		"DESCRICAO" : "Competições esportivas ou de destreza física ou intelectual",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "12.12",
+		"DESCRICAO" : "Execução de música",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "12.13",
+		"DESCRICAO" : "Produção",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "12.14",
+		"DESCRICAO" : "Fornecimento de música para ambientes fechados ou não",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "12.15",
+		"DESCRICAO" : "Desfiles de blocos carnavalescos ou folclóricos",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "12.16",
+		"DESCRICAO" : "Exibição de filmes",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "12.17",
+		"DESCRICAO" : "Recreação e animação",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "13",
+		"DESCRICAO" : "Serviços relativos a fonografia",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "13.01",
+		"DESCRICAO" : "(VETADO)",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "13.02",
+		"DESCRICAO" : "Fonografia ou gravação de sons",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "13.03",
+		"DESCRICAO" : "Fotografia e cinematografia",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "13.04",
+		"DESCRICAO" : "Reprografia",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "13.05",
+		"DESCRICAO" : "Composição gráfica",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "14",
+		"DESCRICAO" : "Serviços relativos a bens de terceiros",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "14.01",
+		"DESCRICAO" : "Lubrificação",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "14.02",
+		"DESCRICAO" : "Assistência técnica",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "14.03",
+		"DESCRICAO" : "Recondicionamento de motores (exceto peças e partes empregadas)",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "14.04",
+		"DESCRICAO" : "Recauchutagem ou regeneração de pneus",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "14.05",
+		"DESCRICAO" : "Restauração",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "14.06",
+		"DESCRICAO" : "Instalação e montagem de aparelhos",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "14.07",
+		"DESCRICAO" : "Colocação de molduras e congêneres",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "14.08",
+		"DESCRICAO" : "Encadernação",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "14.09",
+		"DESCRICAO" : "Alfaiataria e costura",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "14.10",
+		"DESCRICAO" : "Tinturaria e lavanderia",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "14.11",
+		"DESCRICAO" : "Tapeçaria e reforma de estofamentos em geral",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "14.12",
+		"DESCRICAO" : "Funilaria e lanternagem",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "14.13",
+		"DESCRICAO" : "Carpintaria e serralheria",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "15",
+		"DESCRICAO" : "Serviços relacionados ao setor bancário ou financeiro",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "15.01",
+		"DESCRICAO" : "Administração de fundos quaisquer",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "15.02",
+		"DESCRICAO" : "Abertura de contas em geral",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "15.03",
+		"DESCRICAO" : "Locação e manutenção de cofres particulares",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "15.04",
+		"DESCRICAO" : "Fornecimento ou emissão de atestados em geral",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "15.05",
+		"DESCRICAO" : "Cadastro",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "15.06",
+		"DESCRICAO" : "Emissão",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "15.07",
+		"DESCRICAO" : "Acesso",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "15.08",
+		"DESCRICAO" : "Emissão",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "15.09",
+		"DESCRICAO" : "Arrendamento mercantil (leasing) de quaisquer bens",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "15.10",
+		"DESCRICAO" : "Serviços relacionados a cobranças",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "15.11",
+		"DESCRICAO" : "Devolução de títulos",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "15.12",
+		"DESCRICAO" : "Custódia em geral",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "15.13",
+		"DESCRICAO" : "Serviços relacionados a operações de câmbio em geral",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "15.14",
+		"DESCRICAO" : "Fornecimento",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "15.15",
+		"DESCRICAO" : "Compensação de cheques e títulos quaisquer; serviços relacionados a depósito",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "15.16",
+		"DESCRICAO" : "Emissão",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "15.17",
+		"DESCRICAO" : "Emissão",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "15.18",
+		"DESCRICAO" : "Serviços relacionados a crédito imobiliário",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "16",
+		"DESCRICAO" : "Serviços de transporte de natureza municipal",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "16.01",
+		"DESCRICAO" : "Serviços de transporte de natureza municipal",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "17",
+		"DESCRICAO" : "Serviços de apoio técnico",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "17.01",
+		"DESCRICAO" : "Assessoria ou consultoria de qualquer natureza",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "17.02",
+		"DESCRICAO" : "Datilografia",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "17.03",
+		"DESCRICAO" : "Planejamento",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "17.04",
+		"DESCRICAO" : "Recrutamento",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "17.05",
+		"DESCRICAO" : "Fornecimento de mão-de-obra",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "17.06",
+		"DESCRICAO" : "Propaganda e publicidade",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "17.07",
+		"DESCRICAO" : "(VETADO)",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "17.08",
+		"DESCRICAO" : "Franquia (franchising)",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "17.09",
+		"DESCRICAO" : "Perícias",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "17.10",
+		"DESCRICAO" : "Planejamento",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "17.11",
+		"DESCRICAO" : "Organização de festas e recepções; bufê (exceto o fornecimento de alimentação e bebidas",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "17.12",
+		"DESCRICAO" : "Administração em geral",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "17.13",
+		"DESCRICAO" : "Leilão e congêneres",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "17.14",
+		"DESCRICAO" : "Advocacia",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "17.15",
+		"DESCRICAO" : "Arbitragem de qualquer espécie",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "17.16",
+		"DESCRICAO" : "Auditoria",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "17.17",
+		"DESCRICAO" : "Análise de Organização e Métodos",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "17.18",
+		"DESCRICAO" : "Atuária e cálculos técnicos de qualquer natureza",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "17.19",
+		"DESCRICAO" : "Contabilidade",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "17.20",
+		"DESCRICAO" : "Consultoria e assessoria econômica ou financeira",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "17.21",
+		"DESCRICAO" : "Estatística",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "17.22",
+		"DESCRICAO" : "Cobrança em geral",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "17.23",
+		"DESCRICAO" : "Assessoria",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "17.24",
+		"DESCRICAO" : "Apresentação de palestras",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "18",
+		"DESCRICAO" : "Serviços de regulação de sinistros vinculados a contratos de seguros; inspeção e avaliação de riscos para cobertura de contratos de seguros; prevenção e gerência de riscos seguráveis e congêneres",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "18.01",
+		"DESCRICAO" : "Serviços de regulação de sinistros vinculados a contratos de seguros; inspeção e avaliação de riscos para cobertura de contratos de seguros; prevenção e gerência de riscos seguráveis e congêneres",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "19",
+		"DESCRICAO" : "Serviços de distribuição e venda de bilhetes e demais produtos de loteria",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "19.01",
+		"DESCRICAO" : "Serviços de distribuição e venda de bilhetes e demais produtos de loteria",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "2",
+		"DESCRICAO" : "Serviços de pesquisas e desenvolvimento de qualquer natureza",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "2.01",
+		"DESCRICAO" : "Serviços de pesquisas e desenvolvimento de qualquer natureza",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "20",
+		"DESCRICAO" : "Serviços portuários",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "20.01",
+		"DESCRICAO" : "Serviços portuários",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "20.02",
+		"DESCRICAO" : "Serviços aeroportuários",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "20.03",
+		"DESCRICAO" : "Serviços de terminais rodoviários",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "21",
+		"DESCRICAO" : "Serviços de registros públicos",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "21.01",
+		"DESCRICAO" : "Serviços de registros públicos",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "22",
+		"DESCRICAO" : "Serviços de exploração de rodovia",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "22.01",
+		"DESCRICAO" : "Serviços de exploração de rodovia mediante cobrança de preço ou pedágio dos usuários",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "23",
+		"DESCRICAO" : "Serviços de programação e comunicação visual",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "23.01",
+		"DESCRICAO" : "Serviços de programação e comunicação visual",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "24",
+		"DESCRICAO" : "Serviços de chaveiros",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "24.01",
+		"DESCRICAO" : "Serviços de chaveiros",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "25",
+		"DESCRICAO" : "Serviços funerários",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "25.01",
+		"DESCRICAO" : "Funerais",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "25.02",
+		"DESCRICAO" : "Cremação de corpos e partes de corpos cadavéricos",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "25.03",
+		"DESCRICAO" : "Planos ou convênio funerários",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "25.04",
+		"DESCRICAO" : "Manutenção e conservação de jazigos e cemitérios",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "26",
+		"DESCRICAO" : "Serviços de coleta",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "26.01",
+		"DESCRICAO" : "Serviços de coleta",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "27",
+		"DESCRICAO" : "Serviços de assistência social",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "27.01",
+		"DESCRICAO" : "Serviços de assistência social",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "28",
+		"DESCRICAO" : "Serviços de avaliação de bens e serviços de qualquer natureza",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "28.01",
+		"DESCRICAO" : "Serviços de avaliação de bens e serviços de qualquer natureza",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "29",
+		"DESCRICAO" : "Serviços de biblioteconomia",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "29.01",
+		"DESCRICAO" : "Serviços de biblioteconomia",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "3",
+		"DESCRICAO" : "Serviços prestados mediante locação",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "3.01",
+		"DESCRICAO" : "(VETADO)",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "3.02",
+		"DESCRICAO" : "Cessão de direito de uso de marcas e de sinais de propaganda",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "3.03",
+		"DESCRICAO" : "Exploração de salões de festas",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "3.04",
+		"DESCRICAO" : "Locação",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "3.05",
+		"DESCRICAO" : "Cessão de andaimes",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "30",
+		"DESCRICAO" : "Serviços de biologia",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "30.01",
+		"DESCRICAO" : "Serviços de biologia",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "31",
+		"DESCRICAO" : "Serviços técnicos em edificações",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "31.01",
+		"DESCRICAO" : "Serviços técnicos em edificações",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "32",
+		"DESCRICAO" : "Serviços de desenhos técnicos",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "32.01",
+		"DESCRICAO" : "Serviços de desenhos técnicos",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "33",
+		"DESCRICAO" : "Serviços de desembaraço aduaneiro",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "33.01",
+		"DESCRICAO" : "Serviços de desembaraço aduaneiro",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "34",
+		"DESCRICAO" : "Serviços de investigações particulares",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "34.01",
+		"DESCRICAO" : "Serviços de investigações particulares",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "35",
+		"DESCRICAO" : "Serviços de reportagem",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "35.01",
+		"DESCRICAO" : "Serviços de reportagem",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "36",
+		"DESCRICAO" : "Serviços de meteorologia",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "36.01",
+		"DESCRICAO" : "Serviços de meteorologia",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "37",
+		"DESCRICAO" : "Serviços de artistas",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "37.01",
+		"DESCRICAO" : "Serviços de artistas",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "38",
+		"DESCRICAO" : "Serviços de museologia",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "38.01",
+		"DESCRICAO" : "Serviços de museologia",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "39",
+		"DESCRICAO" : "Serviços de ourivesaria e lapidação",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "39.01",
+		"DESCRICAO" : "Serviços de ourivesaria e lapidação (quando o material for fornecido pelo tomador do serviço)",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "4",
+		"DESCRICAO" : "Serviços de saúde",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "4.01",
+		"DESCRICAO" : "Medicina e biomedicina",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "4.02",
+		"DESCRICAO" : "Análises clínicas",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "4.03",
+		"DESCRICAO" : "Hospitais",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "4.04",
+		"DESCRICAO" : "Instrumentação cirúrgica",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "4.05",
+		"DESCRICAO" : "Acupuntura",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "4.06",
+		"DESCRICAO" : "Enfermagem",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "4.07",
+		"DESCRICAO" : "Serviços farmacêuticos",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "4.08",
+		"DESCRICAO" : "Terapia ocupacional",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "4.09",
+		"DESCRICAO" : "Terapias de qualquer espécie destinadas ao tratamento físico",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "4.10",
+		"DESCRICAO" : "Nutrição",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "4.11",
+		"DESCRICAO" : "Obstetrícia",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "4.12",
+		"DESCRICAO" : "Odontologia",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "4.13",
+		"DESCRICAO" : "Ortóptica",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "4.14",
+		"DESCRICAO" : "Próteses sob encomenda",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "4.15",
+		"DESCRICAO" : "Psicanálise",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "4.16",
+		"DESCRICAO" : "Psicologia",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "4.17",
+		"DESCRICAO" : "Casas de repouso e de recuperação",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "4.18",
+		"DESCRICAO" : "Inseminação artificial",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "4.19",
+		"DESCRICAO" : "Bancos de sangue",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "4.20",
+		"DESCRICAO" : "Coleta de sangue",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "4.21",
+		"DESCRICAO" : "Unidade de atendimento",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "4.22",
+		"DESCRICAO" : "Planos de medicina de grupo ou individual e convênios para prestação de assistência médica",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "4.23",
+		"DESCRICAO" : "Outros planos de saúde que se cumpram através de serviços de terceiros contratados",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "40",
+		"DESCRICAO" : "Serviços relativos a obras de arte sob encomenda",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "40.01",
+		"DESCRICAO" : "Obras de arte sob encomenda",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "5",
+		"DESCRICAO" : "Serviços de medicina e assistência veterinária e congêneres",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "5.01",
+		"DESCRICAO" : "Medicina veterinária e zootecnia",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "5.02",
+		"DESCRICAO" : "Hospitais",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "5.03",
+		"DESCRICAO" : "Laboratórios de análise na área veterinária",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "5.04",
+		"DESCRICAO" : "Inseminação artificial",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "5.05",
+		"DESCRICAO" : "Bancos de sangue e de órgãos e congêneres",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "5.06",
+		"DESCRICAO" : "Coleta de sangue",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "5.07",
+		"DESCRICAO" : "Unidade de atendimento",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "5.08",
+		"DESCRICAO" : "Guarda",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "5.09",
+		"DESCRICAO" : "Planos de atendimento e assistência médico-veterinária",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "6",
+		"DESCRICAO" : "Serviços de cuidados pessoais",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "6.01",
+		"DESCRICAO" : "Barbearia",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "6.02",
+		"DESCRICAO" : "Esteticistas",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "6.03",
+		"DESCRICAO" : "Banhos",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "6.04",
+		"DESCRICAO" : "Ginástica",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "6.05",
+		"DESCRICAO" : "Centros de emagrecimento",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "7",
+		"DESCRICAO" : "Serviços relativos a engenharia",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "7.01",
+		"DESCRICAO" : "Engenharia",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "7.02",
+		"DESCRICAO" : "Execução",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "7.03",
+		"DESCRICAO" : "Elaboração de planos diretores",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "7.04",
+		"DESCRICAO" : "Demolição",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "7.05",
+		"DESCRICAO" : "Reparação",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "7.06",
+		"DESCRICAO" : "Colocação e instalação de tapetes",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "7.07",
+		"DESCRICAO" : "Recuperação",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "7.08",
+		"DESCRICAO" : "Calafetação",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "7.09",
+		"DESCRICAO" : "Varrição",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "7.10",
+		"DESCRICAO" : "Limpeza",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "7.11",
+		"DESCRICAO" : "Decoração e jardinagem",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "7.12",
+		"DESCRICAO" : "Controle e tratamento de efluentes de qualquer natureza e de agentes físicos",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "7.13",
+		"DESCRICAO" : "Dedetização",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "7.14",
+		"DESCRICAO" : "(VETADO)",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "7.15",
+		"DESCRICAO" : "(VETADO)",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "7.16",
+		"DESCRICAO" : "Florestamento",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "7.17",
+		"DESCRICAO" : "Escoramento",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "7.18",
+		"DESCRICAO" : "Limpeza e dragagem de rios",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "7.19",
+		"DESCRICAO" : "Acompanhamento e fiscalização da execução de obras de engenharia",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "7.20",
+		"DESCRICAO" : "Aerofotogrametria (inclusive interpretação)",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "7.21",
+		"DESCRICAO" : "Pesquisa",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "7.22",
+		"DESCRICAO" : "Nucleação e bombardeamento de nuvens e congêneres",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "8",
+		"DESCRICAO" : "Serviços de educação",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "8.01",
+		"DESCRICAO" : "Ensino regular pré-escolar",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "8.02",
+		"DESCRICAO" : "Instrução",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9",
+		"DESCRICAO" : "Serviços relativos a hospedagem",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9.01",
+		"DESCRICAO" : "Hospedagem de qualquer natureza em hotéis",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9.02",
+		"DESCRICAO" : "Agenciamento",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9.03",
+		"DESCRICAO" : "Guias de turismo",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01015",
+		"DESCRICAO" : "Execução, por administração, empreitada ou subempreitada, de obra hidráulica e de outras obras semelhantes.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01023",
+		"DESCRICAO" : "Execução, por administração, empreitada ou subempreitada, de obras de construção civil, elétrica e de outras obras semelhantes.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01024",
+		"DESCRICAO" : "\"(NOTA 17)  Execução, por administração, empreitada ou subempreitada, de obras de construção civil, elétrica e de outras obras semelhantes.\"",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01031",
+		"DESCRICAO" : "Demolição.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01032",
+		"DESCRICAO" : "\"(NOTA 17)  Demolição. Exclusivo para o ISS – “Habite-se”.\"",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01058",
+		"DESCRICAO" : "Reparação, conservação e reforma de edifícios, estradas, pontes, portos e congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01059",
+		"DESCRICAO" : "\"(NOTA 17)  Reparação, conservação e reforma de edifícios, estradas, pontes, portos e congêneres.\"",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01090",
+		"DESCRICAO" : "Escoramento, contenção de encostas e serviços congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01104",
+		"DESCRICAO" : "Carpintaria e serralheria.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01105",
+		"DESCRICAO" : "\"(NOTA 19)  Carpintaria e serralheria (profissional autônomo).\"",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01112",
+		"DESCRICAO" : "Prestação de serviço do grupo Construção Civil, prestado por profissional autônomo.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01113",
+		"DESCRICAO" : "\"(NOTA 10)  Execução, por administração, empreitada ou subempreitada, de obra hidráulica.\"",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01114",
+		"DESCRICAO" : "\"(NOTA 10)  Execução, por administração, empreitada ou subempreitada, de obras de construção civil.\"",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01115",
+		"DESCRICAO" : "\"(NOTA 10)  Demolição, no caso de serviços prestados na construção do Estádio sede da abertura da Copa do Mundo FIFA 2014.\"",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01116",
+		"DESCRICAO" : "\"(NOTA 10)  Reparação, conservação e reforma de edifícios, estradas, pontes, portos e congêneres.\"",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01117",
+		"DESCRICAO" : "\"(NOTA 10)  Escoramento, contenção de encostas e serviços congêneres, no caso de serviços prestados na construção do Estádio.\"",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01118",
+		"DESCRICAO" : "\"(NOTA 10)  Carpintaria e serralheria, no caso de serviços prestados na construção do Estádio sede da abertura da Copa do Mundo FIFA 2014.\"",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01119",
+		"DESCRICAO" : "\"(NOTA 10)  Acompanhamento e fiscalização da execução de obras de engenharia, arquitetura e urbanismo.\"",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01121",
+		"DESCRICAO" : "\"(NOTA 10)  Aerofotogrametria.\"",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01139",
+		"DESCRICAO" : "Jardinagem, inclusive corte e poda de árvores (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01210",
+		"DESCRICAO" : "Paisagismo.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01228",
+		"DESCRICAO" : "Colocação e instalação de tapetes, carpetes, assoalhos.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01236",
+		"DESCRICAO" : "Recuperação, raspagem, polimento e lustração de pisos e congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01244",
+		"DESCRICAO" : "Calafetação.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01325",
+		"DESCRICAO" : "Varrição, coleta, remoção, incineração, tratamento, reciclagem, separação e destinação final de lixo, rejeitos e outros resíduos quaisquer.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01384",
+		"DESCRICAO" : "Limpeza, manutenção e conservação de vias e logradouros públicos, parques, jardins e congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01406",
+		"DESCRICAO" : "Limpeza, manutenção e conservação de imóveis, chaminés, piscinas e congêneres, inclusive fossas.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01422",
+		"DESCRICAO" : "Limpeza, manutenção e conservação de imóveis, chaminés, piscinas e congêneres, inclusive fossas, prestados por profissional autônomo.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01430",
+		"DESCRICAO" : "Decoração.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01449",
+		"DESCRICAO" : "Jardinagem, inclusive corte e poda de árvores.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01465",
+		"DESCRICAO" : "Dedetização, desinfecção, desinsetização, imunização, higienização, desratização, pulverização e congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01473",
+		"DESCRICAO" : "Limpeza e dragagem de rios, portos, canais, baías, lagos, lagoas, represas, açudes e congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01481",
+		"DESCRICAO" : "Serviços de exploração de rodovia mediante cobrança de preço ou pedágio dos usuários.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01503",
+		"DESCRICAO" : "Prestação de serviço não referenciado em outro código do grupo Manutenção e Decoração de Imóveis, prestado por profissional autônomo.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01520",
+		"DESCRICAO" : "Engenharia, agronomia, arquitetura, urbanismo e congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01538",
+		"DESCRICAO" : "Engenheiro, agrônomo, arquiteto, urbanista e congêneres (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01546",
+		"DESCRICAO" : "Engenharia, agronomia, arquitetura, urbanismo e congêneres (regime especial - sociedade).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01589",
+		"DESCRICAO" : "Agrimensura, geologia e congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01600",
+		"DESCRICAO" : "Agrimensor, geólogo e congêneres (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01627",
+		"DESCRICAO" : "Agrimensura, geologia e congêneres (regime especial - sociedade).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01694",
+		"DESCRICAO" : "Elaboração de planos diretores, estudos de viabilidade, estudos organizacionais e outros.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01724",
+		"DESCRICAO" : "Controle e tratamento de efluentes de qualquer natureza e de agentes físicos, químicos e biológicos.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01740",
+		"DESCRICAO" : "Florestamento, reflorestamento, semeadura, adubação e congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01805",
+		"DESCRICAO" : "Acompanhamento e fiscalização da execução de obras de engenharia, arquitetura e urbanismo.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01821",
+		"DESCRICAO" : "Aerofotogrametria.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01848",
+		"DESCRICAO" : "Cartógrafo, geógrafo, profissional de geodésia e geofísico (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01856",
+		"DESCRICAO" : "Topógrafo (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01864",
+		"DESCRICAO" : "Pesquisa, perfuração, cimentação, mergulho, perfilagem, concretação, testemunhagem.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01872",
+		"DESCRICAO" : "Nucleação e bombardeamento de nuvens e congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01880",
+		"DESCRICAO" : "Assistência técnica.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01899",
+		"DESCRICAO" : "Planejamento, coordenação, programação ou organização técnica, financeira ou administrativa.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01902",
+		"DESCRICAO" : "Perícias, laudos, exames técnicos e análises técnicas, inclusive institutos psicotécnicos.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "01903",
+		"DESCRICAO" : "Inspeção ambiental veicular",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02020",
+		"DESCRICAO" : "Perícias, laudos, exames técnicos e análises técnicas, sem exigência de formação em nível superior (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02038",
+		"DESCRICAO" : "Análise de Organização e Métodos.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02054",
+		"DESCRICAO" : "Desenho industrial.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02062",
+		"DESCRICAO" : "Desenhista industrial (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02097",
+		"DESCRICAO" : "Serviços de assistência social.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02100",
+		"DESCRICAO" : "Assistente social (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02119",
+		"DESCRICAO" : "Serviços de avaliação de bens e serviços de qualquer natureza.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02135",
+		"DESCRICAO" : "Avaliador (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02143",
+		"DESCRICAO" : "Serviços de biologia, biotecnologia e química.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02151",
+		"DESCRICAO" : "Serviços técnicos em edificações, eletrônica, eletrotécnica, mecânica, telecomunicações e congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02186",
+		"DESCRICAO" : "Serviços de desenhos técnicos.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02194",
+		"DESCRICAO" : "Desenhista técnico (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02216",
+		"DESCRICAO" : "Serviços de meteorologia.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02224",
+		"DESCRICAO" : "Serviços de museologia.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02232",
+		"DESCRICAO" : "Prestação de serviço não referenciado em outro código do grupo Técnico-Científico, prestado por profissional autônomo.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02321",
+		"DESCRICAO" : "Transporte público de passageiros, realizado pela Companhia do Metropolitano de São Paulo – METRÔ.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02330",
+		"DESCRICAO" : "Transporte por ônibus (concessionária e permissionárias).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02348",
+		"DESCRICAO" : "Transporte por táxi (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02364",
+		"DESCRICAO" : "Transporte por táxi, explorado por pessoa jurídica.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02402",
+		"DESCRICAO" : "Transporte de escolares.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02410",
+		"DESCRICAO" : "Transporte de escolares  (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02429",
+		"DESCRICAO" : "Transporte de pessoas, por qualquer meio, dentro do território do município.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02445",
+		"DESCRICAO" : "Transporte de bens ou valores, dentro do território do Município (inclusive auto-socorro e transporte de veículos).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02453",
+		"DESCRICAO" : "Serviços de coleta, remessa ou entrega de correspondências.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02461",
+		"DESCRICAO" : "Serviços de coleta, remessa ou entrega de correspondências, realizados inclusive por courrier e congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02488",
+		"DESCRICAO" : "Prestação de serviço não referenciado em outro código do grupo  Transporte Municipal, prestado por profissional autônomo.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02496",
+		"DESCRICAO" : "Propaganda e publicidade, inclusive promoção de vendas, planejamento de campanhas ou sistemas de publicidade.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02500",
+		"DESCRICAO" : "Serviços de programação visual, comunicação visual e congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02526",
+		"DESCRICAO" : "Repórter, assessor de imprensa, jornalista e relações públicas (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02534",
+		"DESCRICAO" : "Serviços de reportagem, assessoria de imprensa, jornalismo e relações públicas.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02542",
+		"DESCRICAO" : "Prestação de serviço não referenciado em outro código do grupo Mercadologia e Comunicação, prestado por profissional autônomo.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02658",
+		"DESCRICAO" : "Análise e desenvolvimento de sistemas.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02666",
+		"DESCRICAO" : "Programação.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02682",
+		"DESCRICAO" : "Processamento de dados, outros serviços de informática não referenciados em outro código do grupo Jurídicos.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02683",
+		"DESCRICAO" : "\"(NOTA 19)  Outros serviços de informática não referenciados em outro código do grupo Jurídicos.\"",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02690",
+		"DESCRICAO" : "Elaboração de programas de computadores (software), inclusive de jogos eletrônicos.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02691",
+		"DESCRICAO" : "\"(NOTA 19)  Elaboração de programas de computadores (software).\"",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02798",
+		"DESCRICAO" : "Licenciamento ou cessão de direito de uso de programas de computação, inclusive distribuição.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02836",
+		"DESCRICAO" : "Serviços de pesquisas e desenvolvimento de qualquer natureza (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02879",
+		"DESCRICAO" : "Assessoria e consultoria em informática.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02917",
+		"DESCRICAO" : "Suporte técnico em informática.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02918",
+		"DESCRICAO" : "Suporte técnico em informática,(profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "02933",
+		"DESCRICAO" : "Planejamento, confecção, manutenção e atualização de páginas eletrônicas.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "03085",
+		"DESCRICAO" : "Serviços de pesquisas e desenvolvimento de qualquer natureza.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "03093",
+		"DESCRICAO" : "Análise, exame, pesquisa, coleta, compilação e fornecimento de dados.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "03115",
+		"DESCRICAO" : "Assessoria ou consultoria de qualquer natureza, não contida em outros itens desta lista.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "03123",
+		"DESCRICAO" : "Tradução e interpretação.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "03131",
+		"DESCRICAO" : "Tradutor e intérprete (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "03158",
+		"DESCRICAO" : "Datilografia, digitação, estenografia, expediente, secretaria em geral.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "03159",
+		"DESCRICAO" : "\"(NOTA 19)  Resposta audível (centrais de “call center” e telemarketing).\"",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "03166",
+		"DESCRICAO" : "Datilógrafo, digitador, estenógrafo, expediente, secretaria em geral.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "03167",
+		"DESCRICAO" : "\"(NOTA 19)  Resposta audível (centrais de “call center” e telemarketing) - profissional autônomo.\"",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "03174",
+		"DESCRICAO" : "Datilógrafo, não estabelecido (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "03204",
+		"DESCRICAO" : "Administração em geral, inclusive de bens e negócios de terceiros, exceto imóveis.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "03205",
+		"DESCRICAO" : "\"(NOTA 21)  Fornecimento e administração de vales-refeição.\"",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "03212",
+		"DESCRICAO" : "Administração de imóveis.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "03220",
+		"DESCRICAO" : "Advocacia.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "03239",
+		"DESCRICAO" : "Advogado (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "03379",
+		"DESCRICAO" : "Advocacia (regime especial - sociedade).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "03387",
+		"DESCRICAO" : "Arbitragem de qualquer espécie, inclusive jurídica.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "03395",
+		"DESCRICAO" : "Auditoria.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "03425",
+		"DESCRICAO" : "Auditor (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "03433",
+		"DESCRICAO" : "Auditoria (regime especial - sociedade).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "03450",
+		"DESCRICAO" : "Atuária e cálculos técnicos de qualquer natureza.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "03468",
+		"DESCRICAO" : "Atuário e calculista técnico (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "03476",
+		"DESCRICAO" : "Contabilidade, inclusive serviços técnicos e auxiliares.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "03611",
+		"DESCRICAO" : "Contador e congêneres, com nível superior (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "03620",
+		"DESCRICAO" : "Contador, técnico em contabilidade, guarda-livros e congêneres (regime especial - sociedade).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "03638",
+		"DESCRICAO" : "Técnico em contabilidade, guarda-livros e congêneres (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "03654",
+		"DESCRICAO" : "Consultoria e assessoria econômica ou financeira.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "03670",
+		"DESCRICAO" : "Economista (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "03700",
+		"DESCRICAO" : "Economistas (regime especial - sociedade).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "03719",
+		"DESCRICAO" : "Estatística.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "03743",
+		"DESCRICAO" : "Assessoria, análise, avaliação, atendimento, consulta, cadastro, seleção, gerenciamento de informações.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "03877",
+		"DESCRICAO" : "Serviços de registros públicos, cartorários e notariais, exceto autenticação de documentos.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "03878",
+		"DESCRICAO" : "Autenticação de documentos, reconhecimento de firmas e prestação de informações.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "03956",
+		"DESCRICAO" : "Serviços de biblioteconomia.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "03980",
+		"DESCRICAO" : "Prestação de serviço não referenciado em outro código do grupo Jurídicos, prestado por profissional autônomo.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04030",
+		"DESCRICAO" : "Medicina e biomedicina.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04073",
+		"DESCRICAO" : "Médico e biomédico (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04111",
+		"DESCRICAO" : "Medicina e biomedicina (regime especial - sociedade).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04139",
+		"DESCRICAO" : "\"(NOTA 12)  Análises clínicas.\"",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04140",
+		"DESCRICAO" : "\"(NOTA 12)  Radioterapia, quimioterapia, ultra-sonografia, ressonância magnética, radiologia, tomografia e congêneres.\"",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04146",
+		"DESCRICAO" : "Análises clínicas, (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04154",
+		"DESCRICAO" : "Análises clínicas, (regime especial - sociedade).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04170",
+		"DESCRICAO" : "Laboratórios.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04189",
+		"DESCRICAO" : "Hospitais.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04197",
+		"DESCRICAO" : "Clínicas e casas de saúde.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04219",
+		"DESCRICAO" : "Ambulatórios e prontos socorros.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04235",
+		"DESCRICAO" : "Sanatórios, manicômios e congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04251",
+		"DESCRICAO" : "Instrumentação cirúrgica.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04260",
+		"DESCRICAO" : "Acupuntura.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04278",
+		"DESCRICAO" : "Acupunturista (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04316",
+		"DESCRICAO" : "Enfermagem, inclusive serviços auxiliares.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04340",
+		"DESCRICAO" : "Enfermeiro (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04359",
+		"DESCRICAO" : "Enfermagem, inclusive serviços auxiliares (regime especial - sociedade).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04375",
+		"DESCRICAO" : "Técnico em enfermagem, inclusive serviços auxiliares (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04383",
+		"DESCRICAO" : "Serviços farmacêuticos.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04391",
+		"DESCRICAO" : "Fisioterapia.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04421",
+		"DESCRICAO" : "Fisioterapeuta (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04430",
+		"DESCRICAO" : "Fisioterapia (regime especial - sociedade).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04472",
+		"DESCRICAO" : "Fonoaudiologia.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04499",
+		"DESCRICAO" : "Fonoaudiólogo (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04502",
+		"DESCRICAO" : "Fonoaudiologia (regime especial - sociedade).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04510",
+		"DESCRICAO" : "Terapia ocupacional.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04545",
+		"DESCRICAO" : "Terapeuta ocupacional (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04553",
+		"DESCRICAO" : "Terapia ocupacional (regime especial - sociedade).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04588",
+		"DESCRICAO" : "Terapias de qualquer espécie destinadas ao tratamento físico, orgânico e mental, inclusive massoterapia, naturologia e naturopatia.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04596",
+		"DESCRICAO" : "Terapeuta de qualquer espécie,(profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04626",
+		"DESCRICAO" : "Nutrição.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04634",
+		"DESCRICAO" : "Obstetrícia.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04650",
+		"DESCRICAO" : "Obstetra (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04677",
+		"DESCRICAO" : "Obstetrícia (regime especial - sociedade).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04693",
+		"DESCRICAO" : "Odontologia.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04723",
+		"DESCRICAO" : "Dentista (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04731",
+		"DESCRICAO" : "Odontologia (regime especial - sociedade).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04774",
+		"DESCRICAO" : "Ortóptica.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04871",
+		"DESCRICAO" : "Ortóptico (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "04901",
+		"DESCRICAO" : "Ortóptica (regime especial - sociedade).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05037",
+		"DESCRICAO" : "Próteses sob encomenda.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05053",
+		"DESCRICAO" : "Protético (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05096",
+		"DESCRICAO" : "Próteses sob encomenda  (regime especial - sociedade).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05100",
+		"DESCRICAO" : "Psicanálise.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05118",
+		"DESCRICAO" : "Psicologia.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05134",
+		"DESCRICAO" : "Psicólogo, clínico ou não (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05142",
+		"DESCRICAO" : "Psicologia, clínica ou não (regime especial - sociedade).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05150",
+		"DESCRICAO" : "Casas de repouso e congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05177",
+		"DESCRICAO" : "Creches.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05185",
+		"DESCRICAO" : "Asilos.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05193",
+		"DESCRICAO" : "Inseminação artificial, fertilização \"in vitro\" e congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05223",
+		"DESCRICAO" : "Bancos de sangue, leite, pele, olhos, óvulos, sêmen e congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05231",
+		"DESCRICAO" : "Coleta de sangue, leite, tecidos, sêmen, órgãos e materiais biológicos de qualquer espécie.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05266",
+		"DESCRICAO" : "Unidade de atendimento, assistência ou tratamento móvel e congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05274",
+		"DESCRICAO" : "Planos de medicina de grupo ou individual e convênios",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05312",
+		"DESCRICAO" : "Outros planos de saúde que se cumpram através de serviços.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05380",
+		"DESCRICAO" : "Medicina veterinária e zootecnia.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05398",
+		"DESCRICAO" : "Médico veterinário e zootécnico (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05410",
+		"DESCRICAO" : "Medicina veterinária e zootecnia (regime especial - sociedade).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05428",
+		"DESCRICAO" : "Hospitais, clínicas, ambulatórios, prontos-socorros e congêneres, na área veterinária.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05436",
+		"DESCRICAO" : "Laboratórios de análise na área veterinária.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05460",
+		"DESCRICAO" : "Inseminação artificial, fertilização \"in vitro\" e congêneres, na área veterinária.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05479",
+		"DESCRICAO" : "Bancos de sangue e de órgãos e congêneres, na área veterinária.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05495",
+		"DESCRICAO" : "Coleta de sangue, leite, tecidos, sêmen, órgãos e materiais biológicos de qualquer espécie, na área veterinária.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05517",
+		"DESCRICAO" : "Unidade de atendimento, assistência ou tratamento móvel e congêneres, na área veterinária.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05533",
+		"DESCRICAO" : "Planos de atendimento e assistência médico-veterinária.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05539",
+		"DESCRICAO" : "\"(NOTA 14)  Farmacêutico (profissional autônomo).\"",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05540",
+		"DESCRICAO" : "\"(NOTA 14)  Nutricionista (profissional autônomo).\"",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05542",
+		"DESCRICAO" : "\"(NOTA 12)  Prestação de serviço não referenciado em outro código do grupo Saúde, prestado por profissional autônomo.\"",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05543",
+		"DESCRICAO" : "\"(NOTA 12)  Prestação de serviço não referenciado em outro código do grupo Saúde, prestado por profissional autônomo.\"",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05576",
+		"DESCRICAO" : "Patologia e eletricidade médica.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05584",
+		"DESCRICAO" : "Casas de recuperação.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05657",
+		"DESCRICAO" : "Ginástica, dança, esportes, natação, artes marciais e demais atividades físicas.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05665",
+		"DESCRICAO" : "Instrutor de ginástica, dança, esportes, natação, artes marciais e demais atividades físicas (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05673",
+		"DESCRICAO" : "Ensino regular pré-escolar, fundamental e médio, inclusive cursos profissionalizantes.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05681",
+		"DESCRICAO" : "Professor de ensino regular pré-escolar, fundamental e médio, (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05690",
+		"DESCRICAO" : "Ensino superior, cursos de graduação e demais cursos seqüenciais.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05711",
+		"DESCRICAO" : "Ensino superior, cursos de pós-graduação, mestrado, doutorado, pós-doutorado.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05720",
+		"DESCRICAO" : "Professor de ensino superior, (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05738",
+		"DESCRICAO" : "Auto-escolas, moto-escolas e congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05754",
+		"DESCRICAO" : "Outros serviços de instrução, treinamento, orientação pedagógica e educacional.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05762",
+		"DESCRICAO" : "Outros serviços de instrução, avaliação de conhecimentos de qualquer natureza.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05771",
+		"DESCRICAO" : "Administração de fundos quaisquer.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05800",
+		"DESCRICAO" : "Organização e administração de consórcios.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05820",
+		"DESCRICAO" : "Administração de cartão de crédito ou débito e congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05836",
+		"DESCRICAO" : "Administração de carteira de clientes.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05837",
+		"DESCRICAO" : "Administração de cheques pré-datados e congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05851",
+		"DESCRICAO" : "Arrendamento mercantil (\"leasing\") de quaisquer bens.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05878",
+		"DESCRICAO" : "Abertura de contas em geral, inclusive conta-corrente.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05870",
+		"DESCRICAO" : "Locação e manutenção de cofres particulares, de terminais eletrônicos.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05871",
+		"DESCRICAO" : "Fornecimento ou emissão de atestados em geral, inclusive atestado de idoneidade.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05872",
+		"DESCRICAO" : "Cadastro, elaboração de ficha cadastral, renovação cadastral e congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05873",
+		"DESCRICAO" : "Emissão, reemissão e fornecimento de avisos, comprovantes e documentos em geral.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05874",
+		"DESCRICAO" : "Acesso, movimentação, atendimento e consulta a contas em geral.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05875",
+		"DESCRICAO" : "Emissão, reemissão, alteração, cessão, substituição, cancelamento e registro de contrato de crédito.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05876",
+		"DESCRICAO" : "Serviços relacionados a cobranças e recebimentos em geral.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05877",
+		"DESCRICAO" : "Serviços relacionados a pagamentos em geral.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05879",
+		"DESCRICAO" : "Devolução de títulos, protesto de títulos, sustação de protesto.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05881",
+		"DESCRICAO" : "Serviços relacionados a operações de câmbio em geral.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05885",
+		"DESCRICAO" : "Emissão, fornecimento, devolução, sustação, cancelamento e oposição de cheques quaisquer, avulso ou por talão.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05886",
+		"DESCRICAO" : "Serviços relacionados a crédito imobiliário.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05887",
+		"DESCRICAO" : "Fornecimento, emissão, reemissão, renovação e manutenção de cartão magnético.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05888",
+		"DESCRICAO" : "Custódia em geral, inclusive de títulos e valores mobiliários, realizada pela Bolsa de Valores.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05889",
+		"DESCRICAO" : "Custódia em geral, inclusive de títulos e valores mobiliários.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05890",
+		"DESCRICAO" : "Compensação de títulos quaisquer.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05891",
+		"DESCRICAO" : "Compensação de cheques e títulos quaisquer.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05892",
+		"DESCRICAO" : "Emissão, reemissão, liquidação, alteração, cancelamento e baixa de ordens de pagamento.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05893",
+		"DESCRICAO" : "Emissão, reemissão, liquidação, de ordens de crédito e similares, por qualquer meio ou processo.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05894",
+		"DESCRICAO" : "Administração de distribuição de co-seguros.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05895",
+		"DESCRICAO" : "\"(NOTA 21)  Serviços relacionados a pagamentos.\"",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05916",
+		"DESCRICAO" : "Serviços de regulação de sinistros vinculados a contratos de seguros.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "05991",
+		"DESCRICAO" : "Representante de qualquer natureza, inclusive comercial (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06009",
+		"DESCRICAO" : "Representação de qualquer natureza, inclusive comercial.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06017",
+		"DESCRICAO" : "Distribuidor de bens de terceiros (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06041",
+		"DESCRICAO" : "Distribuição de bens de terceiros.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06050",
+		"DESCRICAO" : "Agenciamento, corretagem ou intermediação de planos de previdência privada.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06076",
+		"DESCRICAO" : "Agenciamento, corretagem ou intermediação de câmbio.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06084",
+		"DESCRICAO" : "Agenciamento ou intermediação de seguros.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06092",
+		"DESCRICAO" : "Agenciamento, corretagem ou intermediação de cartões de crédito.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06114",
+		"DESCRICAO" : "Agenciamento, corretagem ou intermediação de planos de saúde.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06122",
+		"DESCRICAO" : "Agente, corretor ou intermediário de câmbio, de seguros, de cartões de crédito.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06130",
+		"DESCRICAO" : "Corretagem de seguros.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06149",
+		"DESCRICAO" : "Corretor de seguros (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06157",
+		"DESCRICAO" : "Agenciamento, corretagem ou intermediação de títulos em geral.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06165",
+		"DESCRICAO" : "Agente, corretor ou intermediário de títulos em geral.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06173",
+		"DESCRICAO" : "Agenciamento, corretagem ou intermediação de direitos de propriedade industria.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06181",
+		"DESCRICAO" : "Agente, corretor ou intermediário de direitos de propriedade industrial.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06190",
+		"DESCRICAO" : "Agenciamento, corretagem ou intermediação de contratos de arrendamento mercantil (\"leasing\").",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06220",
+		"DESCRICAO" : "Agenciamento, corretagem ou intermediação de contratos de franquia (\"franchising\").",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06238",
+		"DESCRICAO" : "Agenciamento, corretagem ou intermediação de contratos de faturização (\"factoring\").",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06262",
+		"DESCRICAO" : "Agente, corretor ou intermediário de contratos de arrendamento mercantil.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06270",
+		"DESCRICAO" : "Agenciamento, corretagem ou intermediação de bens.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06297",
+		"DESCRICAO" : "Agenciamento, corretagem ou intermediação de bens imóveis.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06298",
+		"DESCRICAO" : "\"(NOTA 19)  Agenciamento, corretagem ou intermediação de bens móveis.\"",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06319",
+		"DESCRICAO" : "Agente, corretor ou intermediário de bens imóveis, não abrangidos em outros itens ou subitens.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06320",
+		"DESCRICAO" : "\"(NOTA 19)  Agente, corretor ou intermediário de bens móveis,(profissional autônomo).\"",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06335",
+		"DESCRICAO" : "Agenciamento marítimo.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06343",
+		"DESCRICAO" : "Agente marítimo (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06351",
+		"DESCRICAO" : "Agenciamento de notícias.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06386",
+		"DESCRICAO" : "Agente de notícias (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06394",
+		"DESCRICAO" : "Agenciamento de publicidade e propaganda, inclusive o agenciamento de veiculação por quaisquer meios.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06432",
+		"DESCRICAO" : "Agente de publicidade e propaganda, inclusive o de veiculação por quaisquer meios (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06475",
+		"DESCRICAO" : "Recrutamento, agenciamento, seleção e colocação de mão-de-obra.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06491",
+		"DESCRICAO" : "Fornecimento de mão-de-obra, mesmo em caráter temporário.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06513",
+		"DESCRICAO" : "Fornecimento de mão-de-obra, mesmo em caráter temporário,(profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06521",
+		"DESCRICAO" : "Franquia (\"franchising\").",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06530",
+		"DESCRICAO" : "Leilão e congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06556",
+		"DESCRICAO" : "Leiloeiro e congêneres (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06564",
+		"DESCRICAO" : "Cobranças e recebimentos por conta de terceiros.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06572",
+		"DESCRICAO" : "Funerais, inclusive fornecimento de caixão, urna ou esquifes",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06599",
+		"DESCRICAO" : "Cremação de corpos e partes de corpos cadavéricos.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06602",
+		"DESCRICAO" : "Planos ou convênio funerários.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06610",
+		"DESCRICAO" : "Manutenção e conservação de jazigos e cemitérios.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06637",
+		"DESCRICAO" : "Serviços de desembaraço aduaneiro, comissários, despachantes e congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06645",
+		"DESCRICAO" : "Serviços de desembaraço aduaneiro, comissários, despachantes e congêneres (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06653",
+		"DESCRICAO" : "Prestação de serviço não referenciado em outro código do grupo Agenciamento prestado por profissional autônomo.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06777",
+		"DESCRICAO" : "Produção, mediante ou sem encomenda prévia.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06793",
+		"DESCRICAO" : "Fonografia ou gravação de sons, inclusive trucagem, dublagem, mixagem e congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06807",
+		"DESCRICAO" : "Fotografia e cinematografia.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06815",
+		"DESCRICAO" : "Reprografia, microfilmagem e digitalização.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06816",
+		"DESCRICAO" : "\"(NOTA 16)  Reprografia, microfilmagem e digitalização,  prestados por notários, oficiais de registro ou seus prepostos.\"",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06831",
+		"DESCRICAO" : "Colocação de molduras e congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06840",
+		"DESCRICAO" : "Colocador de molduras e congêneres (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06858",
+		"DESCRICAO" : "Encadernação, gravação e douração de livros, revistas e congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06890",
+		"DESCRICAO" : "Encadernador, gravador e dourador de livros, revistas e congêneres (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06912",
+		"DESCRICAO" : "Artes gráficas, tipografia, diagramação, paginação e gravação.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06920",
+		"DESCRICAO" : "Artes gráficas, tipografia, diagramação, paginação e gravação (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06939",
+		"DESCRICAO" : "Composição gráfica.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06955",
+		"DESCRICAO" : "Composição gráfica,(profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06963",
+		"DESCRICAO" : "Serviços de chaveiros.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "06971",
+		"DESCRICAO" : "Prestação de serviço não referenciado em outro código do grupo Fotográficos.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07005",
+		"DESCRICAO" : "Hospedagem em hotéis e hotelaria marítima.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07013",
+		"DESCRICAO" : "Hospedagem em pensões, albergues, pousadas, hospedarias,  ocupação por temporada com fornecimento de serviços e congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07056",
+		"DESCRICAO" : "Hospedagem em motéis.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07099",
+		"DESCRICAO" : "Hospedagem em apart-service condominiais, flat, apart-hotéis, hotéis residência, residence-service, suite service e congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07100",
+		"DESCRICAO" : "\"(NOTA 19)  Hospedagem de qualquer natureza em hotéis.\"",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07110",
+		"DESCRICAO" : "Agente, organizador, promotor, intermediário e executor de programas de turismo, (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07129",
+		"DESCRICAO" : "Agenciamento, organização, promoção, intermediação e execução de programas de turismo.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07137",
+		"DESCRICAO" : "Guias de turismo.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07153",
+		"DESCRICAO" : "Guia de turismo (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07161",
+		"DESCRICAO" : "Planejamento, organização e administração de feiras, exposições, congressos e congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07170",
+		"DESCRICAO" : "Planejamento, organização e administração de feiras, exposições, congressos e congêneres (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07196",
+		"DESCRICAO" : "Organização de festas e recepções; bufê (exceto o fornecimento de alimentação e bebidas, que fica sujeito ao ICMS).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07218",
+		"DESCRICAO" : "Recreação e animação, inclusive em festas e eventos de qualquer natureza.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07234",
+		"DESCRICAO" : "Prestação de serviço não referenciado em outro código do grupo Turismo prestado  por profissional autônomo.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07285",
+		"DESCRICAO" : "Instalação e montagem de aparelhos, máquinas e equipamentos.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07315",
+		"DESCRICAO" : "Instalação e montagem industrial, prestada ao usuário final, exclusivamente com material por ele fornecido.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07323",
+		"DESCRICAO" : "Prestação de serviço do grupo Instalação, Colocação e Montagem de Bens, prestado por profissional autônomo.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07331",
+		"DESCRICAO" : "Lustração de bens móveis.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07366",
+		"DESCRICAO" : "Lubrificação, lavagem e limpeza não automáticas de veículos, exceto em postos de gasolina.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07390",
+		"DESCRICAO" : "Lubrificação, lavagem e limpeza de veículos, inclusive automáticas, em postos de gasolina.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07412",
+		"DESCRICAO" : "Lubrificação, lavagem e limpeza automáticas de veículos, exceto em postos de gasolina.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07439",
+		"DESCRICAO" : "Lubrificação, limpeza, revisão de máquinas, aparelhos, equipamentos.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07447",
+		"DESCRICAO" : "Carga e recarga de aparelhos, equipamentos e objetos de quaisquer natureza.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07455",
+		"DESCRICAO" : "Conserto, restauração, manutenção, conservação e pintura de veículos.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07471",
+		"DESCRICAO" : "Conserto, restauração, manutenção, conservação e pintura de veículos executados por concessionária.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07498",
+		"DESCRICAO" : "Conserto, restauração, manutenção e conservação de máquinas, aparelhos, equipamentos, motores.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07510",
+		"DESCRICAO" : "Blindagem .",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07528",
+		"DESCRICAO" : "Sapateiro remendão (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07536",
+		"DESCRICAO" : "Afiador de utensílios domésticos e afinador de instrumentos musicais, não estabelecidos (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07552",
+		"DESCRICAO" : "Retífica e recondicionamento de motores (exceto peças e partes empregadas, que ficam sujeitas ao ICMS).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07560",
+		"DESCRICAO" : "Recauchutagem ou regeneração de pneus, borracharia.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07579",
+		"DESCRICAO" : "Restauração, recondicionamento, acondicionamento, pintura, beneficiamento de objetos quaisquer.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07595",
+		"DESCRICAO" : "Alfaiataria, costura e congêneres, quando o material for fornecido pelo usuário final, exceto aviamento.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07609",
+		"DESCRICAO" : "Alfaiataria, costura e congêneres, quando o material for fornecido pelo usuário final, exceto aviamento (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07617",
+		"DESCRICAO" : "Tinturaria e lavanderia.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07633",
+		"DESCRICAO" : "Tintureiro individual.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07641",
+		"DESCRICAO" : "Tapeçaria e reforma de estofamentos em geral.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07676",
+		"DESCRICAO" : "Funilaria e lanternagem, incluindo a pintura.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07684",
+		"DESCRICAO" : "Retífica e recondicionamento de motores.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07685",
+		"DESCRICAO" : "\"(NOTA 19)  Prestação de serviço não referenciado em outro código do grupo Conservação e Limpeza.\"",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07692",
+		"DESCRICAO" : "Engraxate (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07765",
+		"DESCRICAO" : "Cessão de direito de uso de marcas e de sinais de propaganda.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07773",
+		"DESCRICAO" : "Exploração de salões de festas.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07774",
+		"DESCRICAO" : "\"(NOTA 21)  Exploração de \"\"stands\"\" e centros de convenções para a promoção de feiras, exposições, congressos e congêneres.\"",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07790",
+		"DESCRICAO" : "Locação, sublocação, arrendamento, direito de passagem ou permissão de uso.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07803",
+		"DESCRICAO" : "Cessão de andaimes, palcos, coberturas e outras estruturas de uso temporário.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07811",
+		"DESCRICAO" : "Guarda e estacionamento de veículos terrestres automotores.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07838",
+		"DESCRICAO" : "Guarda e estacionamento de veículos terrestres automotores, em postos de gasolina.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07846",
+		"DESCRICAO" : "Guarda e estacionamento de veículos terrestres automotores, do tipo \"valet service\".",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07854",
+		"DESCRICAO" : "Guarda e estacionamento de aeronaves e de embarcações.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07870",
+		"DESCRICAO" : "Vigilância, segurança ou monitoramento de bens e pessoas.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07889",
+		"DESCRICAO" : "Vigilância, segurança ou monitoramento de bens e pessoas (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07897",
+		"DESCRICAO" : "Escolta, inclusive de veículos e cargas.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07919",
+		"DESCRICAO" : "Escolta, inclusive de veículos e cargas (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07927",
+		"DESCRICAO" : "Armazenamento, depósito, carga, descarga, arrumação e guarda de bens de qualquer espécie.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07951",
+		"DESCRICAO" : "Serviços portuários, ferroportuários.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07960",
+		"DESCRICAO" : "Serviços aeroportuários, utilização de aeroporto.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "07978",
+		"DESCRICAO" : "Serviços de terminais rodoviários, ferroviários, metroviários.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08036",
+		"DESCRICAO" : "Prestação de serviço não referenciado em outro código do grupo Guarda e Locação.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08037",
+		"DESCRICAO" : "\"(NOTA 21)  Exploração de “stands” e centros de convenções para a promoção de feiras.\"",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08044",
+		"DESCRICAO" : "Prestação de serviço não referenciado em outro código do grupo Diversões Públicas.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08045",
+		"DESCRICAO" : "Prestação de serviços relacionados a espetáculos teatrais.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08052",
+		"DESCRICAO" : "Espetáculos teatrais.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08079",
+		"DESCRICAO" : "Exibições cinematográficas.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08080",
+		"DESCRICAO" : "\"(NOTA 19)  Exibições cinematográficas (profissional autônomo).\"",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08087",
+		"DESCRICAO" : "Espetáculos circenses.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08095",
+		"DESCRICAO" : "Programas de auditório.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08117",
+		"DESCRICAO" : "Parques de diversões, centros de lazer e congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08125",
+		"DESCRICAO" : "Boates, taxi-dancing, night-club, cabaré, danceteria, casas noturnas.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08133",
+		"DESCRICAO" : "Shows, bailes, desfiles, festivais e congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08168",
+		"DESCRICAO" : "Óperas, ballet, danças, concertos, recitais e congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08176",
+		"DESCRICAO" : "Feiras, exposições, congressos e congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08192",
+		"DESCRICAO" : "Corridas e competições de animais.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08206",
+		"DESCRICAO" : "Competições esportivas ou de destreza física ou intelectual, com ou sem a participação do espectador.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08214",
+		"DESCRICAO" : "Desfiles de blocos carnavalescos ou folclóricos, trios elétricos e congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08257",
+		"DESCRICAO" : "Parques de diversões, centros de lazer e congêneres (contribuinte não estabelecido no Município de São Paulo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08273",
+		"DESCRICAO" : "Prestação de serviço de Diversões Públicas, prestado por contribuinte não estabelecido no Município de São Paulo.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08274",
+		"DESCRICAO" : "Espetáculos teatrais e espetáculos circenses, óperas, ballet, danças.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08281",
+		"DESCRICAO" : "Competições esportivas - Grande Prêmio Brasil de Fórmula 1.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08290",
+		"DESCRICAO" : "Competições esportivas - Grande Prêmio Brasil de Fórmula 1.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08230",
+		"DESCRICAO" : "Exibição de filmes, entrevistas, musicais, espetáculos, shows.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08320",
+		"DESCRICAO" : "Boliche.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08338",
+		"DESCRICAO" : "Divertimento eletrônico.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08354",
+		"DESCRICAO" : "Divertimento eletrônico, instalados em shopping centers e parques de diversões.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08362",
+		"DESCRICAO" : "Máquina Eletronicamente Programável.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08370",
+		"DESCRICAO" : "Máquina Eletronicamente Programável.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08397",
+		"DESCRICAO" : "Carteado, dominó, víspora.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08400",
+		"DESCRICAO" : "Execução de música, individualmente ou por conjunto.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08419",
+		"DESCRICAO" : "Fornecimento de música para ambientes fechados ou não.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08478",
+		"DESCRICAO" : "Distribuição e venda de cartelas, sorteios ou prêmios em bingos, telebingos e assemelhados.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08486",
+		"DESCRICAO" : "Serviços de distribuição e venda de bilhetes.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08494",
+		"DESCRICAO" : "Barbearia, cabeleireiros, manicuros, pedicuros e congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08516",
+		"DESCRICAO" : "Esteticistas, tratamento de pele, depilação e congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08532",
+		"DESCRICAO" : "Banhos, duchas, sauna, massagens e congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08567",
+		"DESCRICAO" : "Centros de emagrecimento, \"spa\" e congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08575",
+		"DESCRICAO" : "Prestação de serviço do grupo Higiene, e Apresentação Pessoal, prestado por profissional autônomo.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08648",
+		"DESCRICAO" : "Guarda, tratamento, amestramento, embelezamento, alojamento e congêneres, relativos a animais.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08656",
+		"DESCRICAO" : "Guardador, tratador, amestrador, embelezador, alojador e congêneres, relativos a animais (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08664",
+		"DESCRICAO" : "Detetive particular (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08672",
+		"DESCRICAO" : "Serviços de investigações particulares, detetives e congêneres.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08770",
+		"DESCRICAO" : "Artista circense e músico, não estabelecido (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08842",
+		"DESCRICAO" : "Serviços de artistas, atletas, modelos e manequins.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08850",
+		"DESCRICAO" : "Artistas, atletas, modelos e manequins (profissional autônomo).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08885",
+		"DESCRICAO" : "Serviços de ourivesaria e lapidação (quando o material for fornecido pelo tomador do serviço).",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08893",
+		"DESCRICAO" : "Serviços relativos a obras de arte sob encomenda.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "08899",
+		"DESCRICAO" : "Prestação de serviço não referenciado em outro código do grupo Diversos, prestado por profissional autônomo.",
+		"RESTRITO" : "SP",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9000",
+		"DESCRICAO" : "Entradas, no estabelecimento",
+		"RESTRITO" : "FL",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9001",
+		"DESCRICAO" : "De materiais e mercadorias para assistência técnica",
+		"RESTRITO" : "FL",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9002",
+		"DESCRICAO" : "De bens de qualquer espécie para armazenamento, depósito, carga descarga, arrumação e guarda",
+		"RESTRITO" : "FL",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9003",
+		"DESCRICAO" : "De máquinas, veículos, aparelhos e equipamentos para lubrificação, limpeza e revisão",
+		"RESTRITO" : "FL",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9004",
+		"DESCRICAO" : "De máquinas, veículos, motores, elevadores ou quaisquer objetos para conserto, reparação, conservação ou manutenção",
+		"RESTRITO" : "FL",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9005",
+		"DESCRICAO" : "De veículos para recondicionamento de motores ou somente de motores",
+		"RESTRITO" : "FL",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9006",
+		"DESCRICAO" : "De quaisquer objetos para recondicionamento, acondicionamento, pintura, beneficiamento, lavagem, secagem, tingimento, galvanoplastia, anodização, corte, recorte, polimento, plastificação e congêneres",
+		"RESTRITO" : "FL",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9007",
+		"DESCRICAO" : "De aparelhos, máquinas e equipamentos para instalação e montagem",
+		"RESTRITO" : "FL",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9100",
+		"DESCRICAO" : "Saídas, no estabelecimento",
+		"RESTRITO" : "FL",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9101",
+		"DESCRICAO" : "De materiais e mercadorias para assistência técnica",
+		"RESTRITO" : "FL",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9102",
+		"DESCRICAO" : "De bens de qualquer espécie para armazenamento, depósito, carga descarga, arrumação e guarda",
+		"RESTRITO" : "FL",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9103",
+		"DESCRICAO" : "De máquinas, veículos, aparelhos e equipamentos para lubrificação, limpeza e revisão",
+		"RESTRITO" : "FL",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9104",
+		"DESCRICAO" : "De máquinas, veículos, motores, elevadores ou quaisquer objetos para conserto, reparação, conservação ou manutenção",
+		"RESTRITO" : "FL",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9105",
+		"DESCRICAO" : "De veículos para recondicionamento de motores ou somente de motores",
+		"RESTRITO" : "FL",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9106",
+		"DESCRICAO" : "De quaisquer objetos para recondicionamento, acondicionamento, pintura, beneficiamento, lavagem, secagem, tingimento, galvanoplastia, anodização, corte, recorte, polimento, plastificação e congêneres",
+		"RESTRITO" : "FL",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9107",
+		"DESCRICAO" : "De aparelhos, máquinas e equipamentos para instalação e montagem",
+		"RESTRITO" : "FL",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9200",
+		"DESCRICAO" : "Prestações de Serviço realizadas",
+		"RESTRITO" : "FL",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9201",
+		"DESCRICAO" : "Para Tomador ou Destinatário estabelecido ou domiciliado no município",
+		"RESTRITO" : "FL",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9202",
+		"DESCRICAO" : "Para Tomador ou Destinatário estabelecido ou domiciliado fora do município",
+		"RESTRITO" : "FL",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9203",
+		"DESCRICAO" : "Para Tomador ou Destinatário estabelecido ou domiciliado em outro estado da federação",
+		"RESTRITO" : "FL",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9204",
+		"DESCRICAO" : "Para Tomador ou Destinatário estabelecido ou domiciliado no exterior",
+		"RESTRITO" : "FL",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9205",
+		"DESCRICAO" : "Fora do Município para Tomador ou Destinatário estabelecido ou domiciliado no estado de Santa Catarina",
+		"RESTRITO" : "FL",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9206",
+		"DESCRICAO" : "Fora do Município para Tomador ou Destinatário estabelecido ou domiciliado em outro Estado da Federação",
+		"RESTRITO" : "FL",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9207",
+		"DESCRICAO" : "Fora do Município para Tomador ou Destinatário estabelecido ou domiciliado no exterior",
+		"RESTRITO" : "FL",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9208",
+		"DESCRICAO" : "Em bens de terceiros por conta de Tomador ou Destinatário estabelecido ou domiciliado no Município",
+		"RESTRITO" : "FL",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9209",
+		"DESCRICAO" : "Em bens de terceiros por conta de Tomador ou Destinatário estabelecido ou domiciliado fora do município",
+		"RESTRITO" : "FL",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9210",
+		"DESCRICAO" : "Em bens de terceiros por conta de Tomador ou Destinatário estabelecido ou domiciliado em outro estado da federação",
+		"RESTRITO" : "FL",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9211",
+		"DESCRICAO" : "Em bens de terceiros por conta de Tomador ou Destinatário estabelecido ou domiciliado no exterior",
+		"RESTRITO" : "FL",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9300",
+		"DESCRICAO" : "Prestações de serviços realizadas no Município e contratadas",
+		"RESTRITO" : "FL",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9301",
+		"DESCRICAO" : "De Prestador  estabelecido ou domiciliado no Município",
+		"RESTRITO" : "FL",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9302",
+		"DESCRICAO" : "De Prestador  estabelecido ou domiciliado fora do Município",
+		"RESTRITO" : "FL",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9303",
+		"DESCRICAO" : "De Prestador  estabelecido ou domiciliado em outro estado da federação",
+		"RESTRITO" : "FL",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9304",
+		"DESCRICAO" : "De Prestador  estabelecido ou domiciliado no exterior",
+		"RESTRITO" : "FL",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9400",
+		"DESCRICAO" : "Prestação de Serviços realizadas fora do Município e contratadas",
+		"RESTRITO" : "FL",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9402",
+		"DESCRICAO" : "De Prestador estabelecido ou domiciliado fora do Município",
+		"RESTRITO" : "FL",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9403",
+		"DESCRICAO" : "De Prestador estabelecido ou domiciliado em outro estado da federação",
+		"RESTRITO" : "FL",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "9404",
+		"DESCRICAO" : "De Prestador estabelecido ou domiciliado no exterior",
+		"RESTRITO" : "FL",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "010101",
+		"DESCRICAO" : "Análise e desenvolvimento de sistemas.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "010201",
+		"DESCRICAO" : "Programação.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "010301",
+		"DESCRICAO" : "Processamento de dados, textos, imagens, vídeos, páginas eletrônicas, aplicativos e sistemas de informação, entre outros formatos, e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "010302",
+		"DESCRICAO" : "Armazenamento ou hospedagem de dados, textos, imagens, vídeos, páginas eletrônicas, aplicativos e sistemas de informação, entre outros formatos, e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "010401",
+		"DESCRICAO" : "Elaboração de programas de computadores, inclusive de jogos eletrônicos, independentemente da arquitetura construtiva da máquina em que o programa será executado, incluindo tablets, smartphones e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "010501",
+		"DESCRICAO" : "Licenciamento ou cessão de direito de uso de programas de computação.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "010601",
+		"DESCRICAO" : "Assessoria e consultoria em informática.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "010701",
+		"DESCRICAO" : "Suporte técnico em informática, inclusive instalação, configuração e manutenção de programas de computação e bancos de dados.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "010801",
+		"DESCRICAO" : "Planejamento, confecção, manutenção e atualização de páginas eletrônicas.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "010901",
+		"DESCRICAO" : "Disponibilização, sem cessão definitiva, de conteúdos de áudio por meio da internet (exceto a distribuição de conteúdos pelas prestadoras de Serviço de Acesso Condicionado, de que trata a Lei nº 12.485, de 12 de setembro de 2011, sujeita ao ICMS).",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "010902",
+		"DESCRICAO" : "Disponibilização, sem cessão definitiva, de conteúdos de vídeo, imagem e texto por meio da internet, respeitada a imunidade de livros, jornais e periódicos (exceto a distribuição de conteúdos pelas prestadoras de Serviço de Acesso Condicionado, de que trata a Lei nº 12.485, de 12 de setembro de 2011, sujeita ao ICMS).",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "020101",
+		"DESCRICAO" : "Serviços de pesquisas e desenvolvimento de qualquer natureza.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "030201",
+		"DESCRICAO" : "Cessão de direito de uso de marcas e de sinais de propaganda.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "030301",
+		"DESCRICAO" : "Exploração de salões de festas, centro de convenções, stands e congêneres, para realização de eventos ou negócios de qualquer natureza.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "030302",
+		"DESCRICAO" : "Exploração de escritórios virtuais e congêneres, para realização de eventos ou negócios de qualquer natureza.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "030303",
+		"DESCRICAO" : "Exploração de quadras esportivas, estádios, ginásios, canchas e congêneres, para realização de eventos ou negócios de qualquer natureza.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "030304",
+		"DESCRICAO" : "Exploração de auditórios, casas de espetáculos e congêneres, para realização de eventos ou negócios de qualquer natureza.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "030305",
+		"DESCRICAO" : "Exploração de parques de diversões e congêneres, para realização de eventos ou negócios de qualquer natureza.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "030401",
+		"DESCRICAO" : "Locação, sublocação, arrendamento, direito de passagem ou permissão de uso, compartilhado ou não, de ferrovia.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "030402",
+		"DESCRICAO" : "Locação, sublocação, arrendamento, direito de passagem ou permissão de uso, compartilhado ou não, de rodovia.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "030403",
+		"DESCRICAO" : "Locação, sublocação, arrendamento, direito de passagem ou permissão de uso, compartilhado ou não, de postes, cabos, dutos e condutos de qualquer natureza.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "030501",
+		"DESCRICAO" : "Cessão de andaimes, palcos, coberturas e outras estruturas de uso temporário.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "040101",
+		"DESCRICAO" : "Medicina.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "040102",
+		"DESCRICAO" : "Biomedicina.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "040201",
+		"DESCRICAO" : "Análises clínicas e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "040202",
+		"DESCRICAO" : "Patologia e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "040203",
+		"DESCRICAO" : "Eletricidade médica (eletroestimulação de nervos e musculos, cardioversão, etc) e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "040204",
+		"DESCRICAO" : "Radioterapia, quimioterapia e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "040205",
+		"DESCRICAO" : "Ultra-sonografia, ressonância magnética, radiologia, tomografia e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "040301",
+		"DESCRICAO" : "Hospitais e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "040302",
+		"DESCRICAO" : "Laboratórios e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "040303",
+		"DESCRICAO" : "Clínicas, sanatórios, manicômios, casas de saúde, prontos-socorros, ambulatórios e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "040401",
+		"DESCRICAO" : "Instrumentação cirúrgica.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "040501",
+		"DESCRICAO" : "Acupuntura.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "040601",
+		"DESCRICAO" : "Enfermagem, inclusive serviços auxiliares.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "040701",
+		"DESCRICAO" : "Serviços farmacêuticos.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "040801",
+		"DESCRICAO" : "Terapia ocupacional.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "040802",
+		"DESCRICAO" : "Fisioterapia.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "040803",
+		"DESCRICAO" : "Fonoaudiologia.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "040901",
+		"DESCRICAO" : "Terapias de qualquer espécie destinadas ao tratamento físico, orgânico e mental.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "041001",
+		"DESCRICAO" : "Nutrição.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "041101",
+		"DESCRICAO" : "Obstetrícia.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "041201",
+		"DESCRICAO" : "Odontologia.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "041301",
+		"DESCRICAO" : "Ortóptica.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "041401",
+		"DESCRICAO" : "Próteses sob encomenda.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "041501",
+		"DESCRICAO" : "Psicanálise.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "041601",
+		"DESCRICAO" : "Psicologia.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "041701",
+		"DESCRICAO" : "Casas de repouso e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "041702",
+		"DESCRICAO" : "Casas de recuperação e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "041703",
+		"DESCRICAO" : "Creches e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "041704",
+		"DESCRICAO" : "Asilos e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "041801",
+		"DESCRICAO" : "Inseminação artificial, fertilização in vitro e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "041901",
+		"DESCRICAO" : "Bancos de sangue, leite, pele, olhos, óvulos, sêmen e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "042001",
+		"DESCRICAO" : "Coleta de sangue, leite, tecidos, sêmen, órgãos e materiais biológicos de qualquer espécie.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "042101",
+		"DESCRICAO" : "Unidade de atendimento, assistência ou tratamento móvel e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "042201",
+		"DESCRICAO" : "Planos de medicina de grupo ou individual e convênios para prestação de assistência médica, hospitalar, odontológica e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "042301",
+		"DESCRICAO" : "Outros planos de saúde que se cumpram através de serviços de terceiros contratados, credenciados, cooperados ou apenas pagos pelo operador do plano mediante indicação do beneficiário.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "050101",
+		"DESCRICAO" : "Medicina veterinária",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "050102",
+		"DESCRICAO" : "Zootecnia.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "050201",
+		"DESCRICAO" : "Hospitais e congêneres, na área veterinária.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "050202",
+		"DESCRICAO" : "Clínicas, ambulatórios, prontos-socorros e congêneres, na área veterinária.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "050301",
+		"DESCRICAO" : "Laboratórios de análise na área veterinária.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "050401",
+		"DESCRICAO" : "Inseminação artificial, fertilização in vitro e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "050501",
+		"DESCRICAO" : "Bancos de sangue e de órgãos e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "050601",
+		"DESCRICAO" : "Coleta de sangue, leite, tecidos, sêmen, órgãos e materiais biológicos de qualquer espécie.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "050701",
+		"DESCRICAO" : "Unidade de atendimento, assistência ou tratamento móvel e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "050801",
+		"DESCRICAO" : "Guarda, tratamento, amestramento, embelezamento, alojamento e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "050901",
+		"DESCRICAO" : "Planos de atendimento e assistência médico-veterinária.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "060101",
+		"DESCRICAO" : "Barbearia, cabeleireiros, manicuros, pedicuros e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "060201",
+		"DESCRICAO" : "Esteticistas, tratamento de pele, depilação e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "060301",
+		"DESCRICAO" : "Banhos, duchas, sauna, massagens e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "060401",
+		"DESCRICAO" : "Ginástica, dança, esportes, natação, artes marciais e demais atividades físicas.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "060501",
+		"DESCRICAO" : "Centros de emagrecimento, spa e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "060601",
+		"DESCRICAO" : "Aplicação de tatuagens, piercings e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "070101",
+		"DESCRICAO" : "Engenharia e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "070102",
+		"DESCRICAO" : "Agronomia e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "070103",
+		"DESCRICAO" : "Agrimensura e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "070104",
+		"DESCRICAO" : "Arquitetura, urbanismo e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "070105",
+		"DESCRICAO" : "Geologia e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "070106",
+		"DESCRICAO" : "Paisagismo e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "070201",
+		"DESCRICAO" : "Execução, por administração, de obras de construção civil, hidráulica ou elétrica e de outras obras semelhantes, inclusive sondagem, perfuração de poços, escavação, drenagem e irrigação, terraplanagem, pavimentação, concretagem e a instalação e montagem de produtos, peças e equipamentos (exceto o fornecimento de mercadorias produzidas pelo prestador de serviços fora do local da prestação dos serviços, que fica sujeito ao ICMS).",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "070202",
+		"DESCRICAO" : "Execução, por empreitada ou subempreitada, de obras de construção civil, hidráulica ou elétrica e de outras obras semelhantes, inclusive sondagem, perfuração de poços, escavação, drenagem e irrigação, terraplanagem, pavimentação, concretagem e a instalação e montagem de produtos, peças e equipamentos (exceto o fornecimento de mercadorias produzidas pelo prestador de serviços fora do local da prestação dos serviços, que fica sujeito ao ICMS).",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "070301",
+		"DESCRICAO" : "Elaboração de planos diretores, estudos de viabilidade, estudos organizacionais e outros, relacionados com obras e serviços de engenharia.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "070302",
+		"DESCRICAO" : "Elaboração de anteprojetos, projetos básicos e projetos executivos para trabalhos de engenharia.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "070401",
+		"DESCRICAO" : "Demolição.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "070501",
+		"DESCRICAO" : "Reparação, conservação e reforma de edifícios e congêneres (exceto o fornecimento de mercadorias produzidas pelo prestador dos serviços, fora do local da prestação dos serviços, que fica sujeito ao ICMS).",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "070502",
+		"DESCRICAO" : "Reparação, conservação e reforma de estradas, pontes, portos e congêneres (exceto o fornecimento de mercadorias produzidas pelo prestador dos serviços, fora do local da prestação dos serviços, que fica sujeito ao ICMS).",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "070601",
+		"DESCRICAO" : "Colocação e instalação de tapetes, carpetes, cortinas e congêneres, com material fornecido pelo tomador do serviço.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "070602",
+		"DESCRICAO" : "Colocação e instalação de assoalhos, revestimentos de parede, vidros, divisórias, placas de gesso e congêneres, com material fornecido pelo tomador do serviço.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "070701",
+		"DESCRICAO" : "Recuperação, raspagem, polimento e lustração de pisos e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "070801",
+		"DESCRICAO" : "Calafetação.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "070901",
+		"DESCRICAO" : "Varrição, coleta e remoção de lixo, rejeitos e outros resíduos quaisquer.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "070902",
+		"DESCRICAO" : "Incineração, tratamento, reciclagem, separação e destinação final de lixo, rejeitos e outros resíduos quaisquer.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "071001",
+		"DESCRICAO" : "Limpeza, manutenção e conservação de vias e logradouros públicos, parques, jardins e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "071002",
+		"DESCRICAO" : "Limpeza, manutenção e conservação de imóveis, chaminés, piscinas e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "071101",
+		"DESCRICAO" : "Decoração.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "071102",
+		"DESCRICAO" : "Jardinagem, inclusive corte e poda de árvores.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "071201",
+		"DESCRICAO" : "Controle e tratamento de efluentes de qualquer natureza e de agentes físicos, químicos e biológicos.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "071301",
+		"DESCRICAO" : "Dedetização, desinfecção, desinsetização, imunização, higienização, desratização, pulverização e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "071601",
+		"DESCRICAO" : "Florestamento, reflorestamento, semeadura, adubação, reparação de solo, plantio, silagem, colheita, corte e descascamento de árvores, silvicultura, exploração florestal e dos serviços congêneres indissociáveis da formação, manutenção e colheita de florestas, para quaisquer fins e por quaisquer meios.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "071701",
+		"DESCRICAO" : "Escoramento, contenção de encostas e serviços congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "071801",
+		"DESCRICAO" : "Limpeza e dragagem de rios, portos, canais, baías, lagos, lagoas, represas, açudes e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "071901",
+		"DESCRICAO" : "Acompanhamento e fiscalização da execução de obras de engenharia, arquitetura e urbanismo.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "072001",
+		"DESCRICAO" : "Aerofotogrametria (inclusive interpretação), cartografia, mapeamento e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "072002",
+		"DESCRICAO" : "Levantamentos batimétricos, geográficos, geodésicos, geológicos, geofísicos e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "072003",
+		"DESCRICAO" : "Levantamentos topográficos e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "072101",
+		"DESCRICAO" : "Pesquisa, perfuração, cimentação, mergulho, perfilagem, concretação, testemunhagem, pescaria, estimulação e outros serviços relacionados com a exploração e explotação de petróleo, gás natural e de outros recursos minerais.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "072201",
+		"DESCRICAO" : "Nucleação e bombardeamento de nuvens e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "080101",
+		"DESCRICAO" : "Ensino regular pré-escolar, fundamental e médio.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "080102",
+		"DESCRICAO" : "Ensino regular superior.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "080201",
+		"DESCRICAO" : "Instrução, treinamento, orientação pedagógica e educacional, avaliação de conhecimentos de qualquer natureza.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "090101",
+		"DESCRICAO" : "Hospedagem em hotéis, hotelaria marítima e congêneres (o valor da alimentação e gorjeta, quando incluído no preço da diária, fica sujeito ao Imposto Sobre Serviços).",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "090102",
+		"DESCRICAO" : "Hospedagem em pensões, albergues, pousadas, hospedarias, ocupação por temporada com fornecimento de serviços e congêneres (o valor da alimentação e gorjeta, quando incluído no preço da diária, fica sujeito ao Imposto Sobre Serviços).",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "090103",
+		"DESCRICAO" : "Hospedagem em motéis e congêneres (o valor da alimentação e gorjeta, quando incluído no preço da diária, fica sujeito ao Imposto Sobre Serviços).",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "090104",
+		"DESCRICAO" : "Hospedagem em apart-service condominiais, flat, apart-hotéis, hotéis residência, residence-service, suite service e congêneres (o valor da alimentação e gorjeta, quando incluído no preço da diária, fica sujeito ao Imposto Sobre Serviços).",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "090201",
+		"DESCRICAO" : "Agenciamento e intermediação de programas de turismo, passeios, viagens, excursões, hospedagens e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "90202",
+		"DESCRICAO" : "Organização, promoção e execução de programas de turismo, passeios, viagens, excursões, hospedagens e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "90301",
+		"DESCRICAO" : "Guias de turismo.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "100101",
+		"DESCRICAO" : "Agenciamento, corretagem ou intermediação de câmbio.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "100102",
+		"DESCRICAO" : "Agenciamento, corretagem ou intermediação de seguros.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "100103",
+		"DESCRICAO" : "Agenciamento, corretagem ou intermediação de cartões de crédito.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "100104",
+		"DESCRICAO" : "Agenciamento, corretagem ou intermediação de planos de saúde.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "100105",
+		"DESCRICAO" : "Agenciamento, corretagem ou intermediação de planos de previdência privada.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "100201",
+		"DESCRICAO" : "Agenciamento, corretagem ou intermediação de títulos em geral e valores mobiliários.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "100202",
+		"DESCRICAO" : "Agenciamento, corretagem ou intermediação de contratos quaisquer.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "100301",
+		"DESCRICAO" : "Agenciamento, corretagem ou intermediação de direitos de propriedade industrial, artística ou literária.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "100401",
+		"DESCRICAO" : "Agenciamento, corretagem ou intermediação de contratos de arrendamento mercantil (leasing).",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "100402",
+		"DESCRICAO" : "Agenciamento, corretagem ou intermediação de contratos de franquia (franchising).",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "100403",
+		"DESCRICAO" : "Agenciamento, corretagem ou intermediação de faturização (factoring).",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "100501",
+		"DESCRICAO" : "Agenciamento, corretagem ou intermediação de bens móveis ou imóveis, não abrangidos em outros itens ou subitens, por quaisquer meios.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "100502",
+		"DESCRICAO" : "Agenciamento, corretagem ou intermediação de bens móveis ou imóveis realizados no âmbito de Bolsas de Mercadorias e Futuros, por quaisquer meios.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "100601",
+		"DESCRICAO" : "Agenciamento marítimo.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "100701",
+		"DESCRICAO" : "Agenciamento de notícias.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "100801",
+		"DESCRICAO" : "Agenciamento de publicidade e propaganda, inclusive o agenciamento de veiculação por quaisquer meios.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "100901",
+		"DESCRICAO" : "Representação de qualquer natureza, inclusive comercial.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "101001",
+		"DESCRICAO" : "Distribuição de bens de terceiros.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "110101",
+		"DESCRICAO" : "Guarda e estacionamento de veículos terrestres automotores.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "110102",
+		"DESCRICAO" : "Guarda e estacionamento de aeronaves e de embarcações.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "110201",
+		"DESCRICAO" : "Vigilância, segurança ou monitoramento de bens, pessoas e semoventes.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "110301",
+		"DESCRICAO" : "Escolta, inclusive de veículos e cargas.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "110401",
+		"DESCRICAO" : "Armazenamento, depósito, guarda de bens de qualquer espécie.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "110402",
+		"DESCRICAO" : "Carga, descarga, arrumação de bens de qualquer espécie.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "120101",
+		"DESCRICAO" : "Espetáculos teatrais.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "120201",
+		"DESCRICAO" : "Exibições cinematográficas.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "120301",
+		"DESCRICAO" : "Espetáculos circenses.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "120401",
+		"DESCRICAO" : "Programas de auditório.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "120501",
+		"DESCRICAO" : "Parques de diversões, centros de lazer e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "120601",
+		"DESCRICAO" : "Boates, taxi-dancing e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "120701",
+		"DESCRICAO" : "Shows, ballet, danças, desfiles, bailes, óperas, concertos, recitais, festivais e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "120801",
+		"DESCRICAO" : "Feiras, exposições, congressos e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "120901",
+		"DESCRICAO" : "Bilhares.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "120902",
+		"DESCRICAO" : "Boliches.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "120903",
+		"DESCRICAO" : "Diversões eletrônicas ou não.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "121001",
+		"DESCRICAO" : "Corridas e competições de animais.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "121101",
+		"DESCRICAO" : "Competições esportivas ou de destreza física ou intelectual, com ou sem a participação do espectador.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "121201",
+		"DESCRICAO" : "Execução de música.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "121301",
+		"DESCRICAO" : "Produção, mediante ou sem encomenda prévia, de eventos, espetáculos, entrevistas, shows, ballet, danças, desfiles, bailes, teatros, óperas, concertos, recitais, festivais e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "121401",
+		"DESCRICAO" : "Fornecimento de música para ambientes fechados ou não, mediante transmissão por qualquer processo.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "121501",
+		"DESCRICAO" : "Desfiles de blocos carnavalescos ou folclóricos, trios elétricos e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "121601",
+		"DESCRICAO" : "Exibição de filmes, entrevistas, musicais, espetáculos, shows, concertos, desfiles, óperas, competições esportivas, de destreza intelectual ou congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "121701",
+		"DESCRICAO" : "Recreação e animação, inclusive em festas e eventos de qualquer natureza.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "130201",
+		"DESCRICAO" : "Fonografia ou gravação de sons, inclusive trucagem, dublagem, mixagem e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "130301",
+		"DESCRICAO" : "Fotografia e cinematografia, inclusive revelação, ampliação, cópia, reprodução, trucagem e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "130401",
+		"DESCRICAO" : "Reprografia, microfilmagem e digitalização.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "130501",
+		"DESCRICAO" : "Composição gráfica, inclusive confecção de impressos gráficos, fotocomposição, clicheria, zincografia, litografia e fotolitografia, exceto se destinados a posterior operação de comercialização ou industrialização, ainda que incorporados, de qualquer forma, a outra mercadoria que deva ser objeto de posterior circulação, tais como bulas, rótulos, etiquetas, caixas, cartuchos, embalagens e manuais técnicos e de instrução, quando ficarão sujeitos ao ICMS.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "140101",
+		"DESCRICAO" : "Lubrificação, limpeza, lustração, revisão, carga e recarga, conserto, restauração, blindagem, manutenção e conservação de máquinas, veículos, aparelhos, equipamentos, motores, elevadores ou de qualquer objeto (exceto peças e partes empregadas, que ficam sujeitas ao ICMS).",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "140201",
+		"DESCRICAO" : "Assistência técnica.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "140301",
+		"DESCRICAO" : "Recondicionamento de motores (exceto peças e partes empregadas, que ficam sujeitas ao ICMS).",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "140401",
+		"DESCRICAO" : "Recauchutagem ou regeneração de pneus.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "140501",
+		"DESCRICAO" : "Restauração, recondicionamento, acondicionamento, pintura, beneficiamento, lavagem, secagem, tingimento, galvanoplastia, anodização, corte, recorte, plastificação, costura, acabamento, polimento e congêneres de objetos quaisquer.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "140601",
+		"DESCRICAO" : "Instalação e montagem de aparelhos, máquinas e equipamentos, inclusive montagem industrial, prestados ao usuário final, exclusivamente com material por ele fornecido.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "140701",
+		"DESCRICAO" : "Colocação de molduras e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "140801",
+		"DESCRICAO" : "Encadernação, gravação e douração de livros, revistas e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "140901",
+		"DESCRICAO" : "Alfaiataria e costura, quando o material for fornecido pelo usuário final, exceto aviamento.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "141301",
+		"DESCRICAO" : "Carpintaria.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "141302",
+		"DESCRICAO" : "Serralheria.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "141401",
+		"DESCRICAO" : "Guincho intramunicipal.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "141402",
+		"DESCRICAO" : "Guindaste e içamento.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150101",
+		"DESCRICAO" : "Administração de fundos quaisquer e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150102",
+		"DESCRICAO" : "Administração de consórcio e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150103",
+		"DESCRICAO" : "Administração de cartão de crédito ou débito e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150104",
+		"DESCRICAO" : "Administração de carteira de clientes e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150105",
+		"DESCRICAO" : "Administração de cheques pré-datados e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150201",
+		"DESCRICAO" : "Abertura de conta-corrente no País, bem como a manutenção da referida conta ativa e inativa.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150202",
+		"DESCRICAO" : "Abertura de conta-corrente no exterior, bem como a manutenção da referida conta ativa e inativa.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150203",
+		"DESCRICAO" : "Abertura de conta de investimentos e aplicação no País, bem como a manutenção da referida conta ativa e inativa.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150204",
+		"DESCRICAO" : "Abertura de conta de investimentos e aplicação no exterior, bem como a manutenção da referida conta ativa e inativa.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150205",
+		"DESCRICAO" : "Abertura de caderneta de poupança no País, bem como a manutenção da referida conta ativa e inativa.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150206",
+		"DESCRICAO" : "Abertura de caderneta de poupança no exterior, bem como a manutenção da referida conta ativa e inativa.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150207",
+		"DESCRICAO" : "Abertura de contas em geral no País, não abrangida em outro subitem, bem como a manutenção das referidas contas ativas e inativas.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150208",
+		"DESCRICAO" : "Abertura de contas em geral no exterior, não abrangida em outro subitem, bem como a manutenção das referidas contas ativas e inativas.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150301",
+		"DESCRICAO" : "Locação de cofres particulares.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150302",
+		"DESCRICAO" : "Manutenção de cofres particulares.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150303",
+		"DESCRICAO" : "Locação de terminais eletrônicos.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150304",
+		"DESCRICAO" : "Manutenção de terminais eletrônicos.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150305",
+		"DESCRICAO" : "Locação de terminais de atendimento.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150306",
+		"DESCRICAO" : "Manutenção de terminais de atendimento.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150307",
+		"DESCRICAO" : "Locação de bens e equipamentos em geral.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150308",
+		"DESCRICAO" : "Manutenção de bens e equipamentos em geral.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150401",
+		"DESCRICAO" : "Fornecimento ou emissão de atestados em geral, inclusive atestado de idoneidade, atestado de capacidade financeira e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150501",
+		"DESCRICAO" : "Cadastro, elaboração de ficha cadastral, renovação cadastral e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150502",
+		"DESCRICAO" : "Inclusão no Cadastro de Emitentes de Cheques sem Fundos - CCF.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150503",
+		"DESCRICAO" : "Exclusão no Cadastro de Emitentes de Cheques sem Fundos - CCF.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150504",
+		"DESCRICAO" : "Inclusão em quaisquer outros bancos cadastrais.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150505",
+		"DESCRICAO" : "Exclusão em quaisquer outros bancos cadastrais.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150601",
+		"DESCRICAO" : "Emissão, reemissão e fornecimento de avisos, comprovantes e documentos em geral",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150602",
+		"DESCRICAO" : "Abono de firmas.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150603",
+		"DESCRICAO" : "Coleta e entrega de documentos, bens e valores.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150604",
+		"DESCRICAO" : "Comunicação com outra agência ou com a administração central.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150605",
+		"DESCRICAO" : "Licenciamento eletrônico de veículos.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150606",
+		"DESCRICAO" : "Transferência de veículos.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150607",
+		"DESCRICAO" : "Agenciamento fiduciário ou depositário.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150608",
+		"DESCRICAO" : "Devolução de bens em custódia.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150701",
+		"DESCRICAO" : "Acesso, movimentação, atendimento e consulta a contas em geral, por qualquer meio ou processo, inclusive por telefone, fac-símile, internet e telex.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150702",
+		"DESCRICAO" : "Acesso a terminais de atendimento, inclusive vinte e quatro horas.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150703",
+		"DESCRICAO" : "Acesso a outro banco e à rede compartilhada.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150704",
+		"DESCRICAO" : "Fornecimento de saldo, extrato e demais informações relativas a contas em geral, por qualquer meio ou processo.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150801",
+		"DESCRICAO" : "Emissão, reemissão, alteração, cessão, substituição, cancelamento e registro de contrato de crédito.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150802",
+		"DESCRICAO" : "Estudo, análise e avaliação de operações de crédito.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150803",
+		"DESCRICAO" : "Emissão, concessão, alteração ou contratação de aval, fiança, anuência e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150804",
+		"DESCRICAO" : "Serviços relativos à abertura de crédito, para quaisquer fins.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "150901",
+		"DESCRICAO" : "Arrendamento mercantil (leasing) de quaisquer bens, inclusive cessão de direitos e obrigações, substituição de garantia, alteração, cancelamento e registro de contrato, e demais serviços relacionados ao arrendamento mercantil (leasing).",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "151001",
+		"DESCRICAO" : "Serviços relacionados a cobranças em geral, de títulos quaisquer, de contas ou carnês, de câmbio, de tributos e por conta de terceiros, inclusive os efetuados por meio eletrônico, automático ou por máquinas de atendimento.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "151002",
+		"DESCRICAO" : "Serviços relacionados a recebimentos em geral, de títulos quaisquer, de contas ou carnês, de câmbio, de tributos e por conta de terceiros, inclusive os efetuados por meio eletrônico, automático ou por máquinas de atendimento.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "151003",
+		"DESCRICAO" : "Serviços relacionados a pagamentos em geral, de títulos quaisquer, de contas ou carnês, de câmbio, de tributos e por conta de terceiros, inclusive os efetuados por meio eletrônico, automático ou por máquinas de atendimento.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "151004",
+		"DESCRICAO" : "Serviços relacionados a fornecimento de posição de cobrança, recebimento ou pagamento.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "151005",
+		"DESCRICAO" : "Serviços relacionados a emissão de carnês, fichas de compensação, impressos e documentos em geral.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "151101",
+		"DESCRICAO" : "Devolução de títulos, protesto de títulos, sustação de protesto, manutenção de títulos, reapresentação de títulos, e demais serviços a eles relacionados.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "151201",
+		"DESCRICAO" : "Custódia em geral, inclusive de títulos e valores mobiliários.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "151301",
+		"DESCRICAO" : "Serviços relacionados a operações de câmbio em geral, edição, alteração, prorrogação, cancelamento e baixa de contrato de câmbio.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "151302",
+		"DESCRICAO" : "Serviços relacionados a emissão de registro de exportação ou de crédito.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "151303",
+		"DESCRICAO" : "Serviços relacionados a cobrança ou depósito no exterior.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "151304",
+		"DESCRICAO" : "Serviços relacionados a emissão, fornecimento e cancelamento de cheques de viagem.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "151305",
+		"DESCRICAO" : "Serviços relacionados a fornecimento, transferência, cancelamento e demais serviços relativos a carta de crédito de importação, exportação e garantias recebidas.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "151306",
+		"DESCRICAO" : "Serviços relacionados a envio e recebimento de mensagens em geral relacionadas a operações de câmbio.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "151401",
+		"DESCRICAO" : "Fornecimento, emissão, reemissão de cartão magnético, cartão de crédito, cartão de débito, cartão salário e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "151402",
+		"DESCRICAO" : "Renovação de cartão magnético, cartão de crédito, cartão de débito, cartão salário e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "151403",
+		"DESCRICAO" : "Manutenção de cartão magnético, cartão de crédito, cartão de débito, cartão salário e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "151501",
+		"DESCRICAO" : "Compensação de cheques e títulos quaisquer.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "151502",
+		"DESCRICAO" : "Serviços relacionados a depósito, inclusive depósito identificado, a saque de contas quaisquer, por qualquer meio ou processo, inclusive em terminais eletrônicos e de atendimento.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "151601",
+		"DESCRICAO" : "Emissão, reemissão, liquidação, alteração, cancelamento e baixa de ordens de pagamento, ordens de crédito e similares, por qualquer meio ou processo.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "151602",
+		"DESCRICAO" : "Serviços relacionados à transferência de valores, dados, fundos, pagamentos e similares, inclusive entre contas em geral.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "151701",
+		"DESCRICAO" : "Emissão e fornecimento de cheques quaisquer, avulso ou por talão.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "151702",
+		"DESCRICAO" : "Devolução de cheques quaisquer, avulso ou por talão.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "151703",
+		"DESCRICAO" : "Sustação, cancelamento e oposição de cheques quaisquer, avulso ou por talão.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "151801",
+		"DESCRICAO" : "Serviços relacionados a crédito imobiliário, de avaliação e vistoria de imóvel ou obra.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "151802",
+		"DESCRICAO" : "Serviços relacionados a crédito imobiliário, de análise técnica e jurídica.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "151803",
+		"DESCRICAO" : "Serviços relacionados a crédito imobiliário, de emissão, reemissão, alteração, transferência e renegociação de contrato.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "151804",
+		"DESCRICAO" : "Serviços relacionados a crédito imobiliário, de emissão e reemissão do termo de quitação.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "151805",
+		"DESCRICAO" : "Demais serviços relacionados a crédito imobiliário.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "160101",
+		"DESCRICAO" : "Serviços de transporte coletivo municipal rodoviário de passageiros.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "160102",
+		"DESCRICAO" : "Serviços de transporte coletivo municipal metroviário de passageiros.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "160103",
+		"DESCRICAO" : "Serviços de transporte coletivo municipal ferroviário de passageiros.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "160104",
+		"DESCRICAO" : "Serviços de transporte coletivo municipal aquaviário de passageiros.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "160201",
+		"DESCRICAO" : "Outros serviços de transporte de natureza municipal.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "170101",
+		"DESCRICAO" : "Assessoria ou consultoria de qualquer natureza, não contida em outros itens desta lista.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "170102",
+		"DESCRICAO" : "Análise, exame, pesquisa, coleta, compilação e fornecimento de dados e informações de qualquer natureza, inclusive cadastro e similares.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "170201",
+		"DESCRICAO" : "Datilografia, digitação, estenografia e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "170202",
+		"DESCRICAO" : "Expediente, secretaria em geral, apoio e infra-estrutura administrativa e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "170203",
+		"DESCRICAO" : "Resposta audível e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "170204",
+		"DESCRICAO" : "Redação, edição, revisão e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "170205",
+		"DESCRICAO" : "Interpretação, tradução e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "170301",
+		"DESCRICAO" : "Planejamento, coordenação, programação ou organização técnica.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "170302",
+		"DESCRICAO" : "Planejamento, coordenação, programação ou organização financeira.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "170303",
+		"DESCRICAO" : "Planejamento, coordenação, programação ou organização administrativa.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "170401",
+		"DESCRICAO" : "Recrutamento, agenciamento, seleção e colocação de mão-de-obra.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "170501",
+		"DESCRICAO" : "Fornecimento de mão-de-obra, mesmo em caráter temporário, inclusive de empregados ou trabalhadores, avulsos ou temporários, contratados pelo prestador de serviço.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "170601",
+		"DESCRICAO" : "Propaganda e publicidade, inclusive promoção de vendas, planejamento de campanhas ou sistemas de publicidade, elaboração de desenhos, textos e demais materiais publicitários.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "170801",
+		"DESCRICAO" : "Franquia (franchising).",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "170901",
+		"DESCRICAO" : "Perícias, laudos, exames técnicos e análises técnicas.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "171001",
+		"DESCRICAO" : "Planejamento, organização e administração de feiras, exposições, e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "171002",
+		"DESCRICAO" : "Planejamento, organização e administração de congressos e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "171101",
+		"DESCRICAO" : "Organização de festas e recepções.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "171102",
+		"DESCRICAO" : "Bufê (exceto o fornecimento de alimentação e bebidas, que fica sujeito ao ICMS).",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "171201",
+		"DESCRICAO" : "Administração em geral, inclusive de bens e negócios de terceiros.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "171301",
+		"DESCRICAO" : "Leilão e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "171401",
+		"DESCRICAO" : "Advocacia",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "171501",
+		"DESCRICAO" : "Arbitragem de qualquer espécie, inclusive jurídica.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "171601",
+		"DESCRICAO" : "Auditoria.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "171701",
+		"DESCRICAO" : "Análise de Organização e Métodos.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "171801",
+		"DESCRICAO" : "Atuária e cálculos técnicos de qualquer natureza.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "171901",
+		"DESCRICAO" : "Contabilidade, inclusive serviços técnicos e auxiliares.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "172001",
+		"DESCRICAO" : "Consultoria e assessoria econômica ou financeira.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "172101",
+		"DESCRICAO" : "Estatística.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "172201",
+		"DESCRICAO" : "Cobrança em geral.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "172301",
+		"DESCRICAO" : "Assessoria, análise, avaliação, atendimento, consulta, cadastro, seleção, gerenciamento de informações, administração de contas a receber ou a pagar e em geral, relacionados a operações de faturização (factoring).",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "172401",
+		"DESCRICAO" : "Apresentação de palestras, conferências, seminários e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "172501",
+		"DESCRICAO" : "Inserção de textos, desenhos e outros materiais de propaganda e publicidade, em qualquer meio (exceto em livros, jornais, periódicos e nas modalidades de serviços de radiodifusão sonora e de sons e imagens de recepção livre e gratuita).",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "180101",
+		"DESCRICAO" : "Serviços de regulação de sinistros vinculados a contratos de seguros e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "180102",
+		"DESCRICAO" : "Serviços de inspeção e avaliação de riscos para cobertura de contratos de seguros e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "180103",
+		"DESCRICAO" : "Serviços de prevenção e gerência de riscos seguráveis e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "190101",
+		"DESCRICAO" : "Serviços de distribuição e venda de bilhetes e demais produtos de loteria, cartões, pules ou cupons de apostas, sorteios, prêmios, inclusive os decorrentes de títulos de capitalização e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "190102",
+		"DESCRICAO" : "Serviços de distribuição e venda de bingos e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "200101",
+		"DESCRICAO" : "Serviços portuários, ferroportuários, utilização de porto, movimentação de passageiros, reboque de embarcações, rebocador escoteiro, atracação, desatracação, serviços de praticagem, capatazia, armazenagem de qualquer natureza, serviços acessórios, movimentação de mercadorias, serviços de apoio marítimo, de movimentação ao largo, serviços de armadores, estiva, conferência, logística e congêneres. (prestado em terra)",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "200102",
+		"DESCRICAO" : "Serviços portuários, ferroportuários, utilização de porto, movimentação de passageiros, reboque de embarcações, rebocador escoteiro, atracação, desatracação, serviços de praticagem, capatazia, armazenagem de qualquer natureza, serviços acessórios, movimentação de mercadorias, serviços de apoio marítimo, de movimentação ao largo, serviços de armadores, estiva, conferência, logística e congêneres. (prestado em águas marinhas)",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "200201",
+		"DESCRICAO" : "Serviços aeroportuários, utilização de aeroporto, movimentação de passageiros, armazenagem de qualquer natureza, capatazia, movimentação de aeronaves, serviços de apoio aeroportuários, serviços acessórios, movimentação de mercadorias, logística e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "200301",
+		"DESCRICAO" : "Serviços de terminais rodoviários, ferroviários, metroviários, movimentação de passageiros, mercadorias, inclusive suas operações, logística e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "210101",
+		"DESCRICAO" : "Serviços de registros públicos, cartorários e notariais.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "220101",
+		"DESCRICAO" : "Serviços de exploração de rodovia mediante cobrança de preço ou pedágio dos usuários, envolvendo execução de serviços de conservação, manutenção, melhoramentos para adequação de capacidade e segurança de trânsito, operação, monitoração, assistência aos usuários e outros serviços definidos em contratos, atos de concessão ou de permissão ou em normas oficiais.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "230101",
+		"DESCRICAO" : "Serviços de programação e comunicação visual e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "230102",
+		"DESCRICAO" : "Serviços de desenho industrial e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "240101",
+		"DESCRICAO" : "Serviços de chaveiros, confecção de carimbos e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "240102",
+		"DESCRICAO" : "Serviços de placas, sinalização visual, banners, adesivos e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "250101",
+		"DESCRICAO" : "Funerais, inclusive fornecimento de caixão, urna ou esquifes; aluguel de capela; transporte do corpo cadavérico; fornecimento de flores, coroas e outros paramentos; desembaraço de certidão de óbito; fornecimento de véu, essa e outros adornos; embalsamento, embelezamento, conservação ou restauração de cadáveres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "250201",
+		"DESCRICAO" : "Translado intramunicipal de corpos e partes de corpos cadavéricos.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "250202",
+		"DESCRICAO" : "Cremação de corpos e partes de corpos cadavéricos.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "250301",
+		"DESCRICAO" : "Planos ou convênio funerários.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "250401",
+		"DESCRICAO" : "Manutenção e conservação de jazigos e cemitérios.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "250501",
+		"DESCRICAO" : "Cessão de uso de espaços em cemitérios para sepultamento.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "260101",
+		"DESCRICAO" : "Serviços de coleta, remessa ou entrega de correspondências, documentos, objetos, bens ou valores, inclusive pelos correios e suas agências franqueadas.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "260102",
+		"DESCRICAO" : "Serviços de courrier e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "270101",
+		"DESCRICAO" : "Serviços de assistência social.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "280101",
+		"DESCRICAO" : "Serviços de avaliação de bens e serviços de qualquer natureza.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "290101",
+		"DESCRICAO" : "Serviços de biblioteconomia.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "300101",
+		"DESCRICAO" : "Serviços de biologia e biotecnologia.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "300102",
+		"DESCRICAO" : "Serviços de química.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "310101",
+		"DESCRICAO" : "Serviços técnicos em edificações e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "310102",
+		"DESCRICAO" : "Serviços técnicos em eletrônica, eletrotécnica e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "310103",
+		"DESCRICAO" : "Serviços técnicos em mecânica e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "310104",
+		"DESCRICAO" : "Serviços técnicos em telecomunicações e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "320101",
+		"DESCRICAO" : "Serviços de desenhos técnicos.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "330101",
+		"DESCRICAO" : "Serviços de desembaraço aduaneiro, comissários, despachantes e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "340101",
+		"DESCRICAO" : "Serviços de investigações particulares, detetives e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "350101",
+		"DESCRICAO" : "Serviços de reportagem e jornalismo.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "350102",
+		"DESCRICAO" : "Serviços de assessoria de imprensa.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "350103",
+		"DESCRICAO" : "Serviços de relações públicas.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "360101",
+		"DESCRICAO" : "Serviços de meteorologia.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "370101",
+		"DESCRICAO" : "Serviços de artistas, atletas, modelos e manequins.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "380101",
+		"DESCRICAO" : "Serviços de museologia.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "390101",
+		"DESCRICAO" : "Serviços de ourivesaria e lapidação (quando o material for fornecido pelo tomador do serviço).",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "400101",
+		"DESCRICAO" : "Obras de arte sob encomenda.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "990101",
+		"DESCRICAO" : "Serviços sem a incidência de ISSQN e ICMS",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "090202",
+		"DESCRICAO" : "Organização, promoção e execução de programas de turismo, passeios, viagens, excursões, hospedagens e congêneres.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "090301",
+		"DESCRICAO" : "Guias de turismo.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "141001",
+		"DESCRICAO" : "Tinturaria e lavanderia.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "141101",
+		"DESCRICAO" : "Tapeçaria e reforma de estofamentos em geral.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "141201",
+		"DESCRICAO" : "Funilaria e lanternagem.",
+		"RESTRITO" : "BR",
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	},
+	{
+		"COD_LST" : "16.02",
+		"DESCRICAO" : "Serviços de transporte de natureza municipal",
+		"RESTRITO" : null,
+		"COD_TRIBUTACAO" : null,
+		"COD_LST_EXTRA" : null
+	}
+]}

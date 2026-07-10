@@ -15,6 +15,7 @@
 		"test:watch": "vitest watch",
 		"seed": "tsx drizzle/seed.ts",
 		"seed:cest": "tsx drizzle/cest-seed.ts",
+		"seed:servicos-nfse": "tsx drizzle/servicos-nfse-seed.ts",
 		"seed:products": "tsx drizzle/products-seed.ts",
 		"seed:financeiro-dashboard": "tsx drizzle/financeiro-dashboard-seed.ts",
 		"worker:run": "tsx scripts/worker-run.ts",

@@ -85,7 +85,6 @@ export async function consultarNfseService({
 		);
 	}
 
-	const agora = new Date().toISOString();
 	const atualizacao: Partial<
 		import("@/model/nota-fiscal-model.js").NovaNotaFiscal
 	> = {};

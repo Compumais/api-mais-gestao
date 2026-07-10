@@ -9,7 +9,12 @@ import * as schema from "./schema.js";
 dotenv.config();
 
 const ARQUIVO_CEST = join(process.cwd(), "drizzle/seeds/cest-seed.data.json");
+const ARQUIVO_SERVICOS_NFSE = join(
+	process.cwd(),
+	"drizzle/seeds/servicos-nfse-seed.data.json",
+);
 const TAMANHO_LOTE_CEST = 200;
+const TAMANHO_LOTE_SERVICOS_NFSE = 200;
 
 type CestSeedItem = {
 	codigo: string;
@@ -91,10 +96,62 @@ async function seedCestGlobais() {
 	console.log(`  ✅ ${registros.length} registros CEST processados`);
 }
 
+type ServicoNfseSeedItem = {
+	COD_LST: string;
+	DESCRICAO: string;
+	RESTRITO: string | null;
+	COD_TRIBUTACAO: string | null;
+	COD_LST_EXTRA: string | null;
+};
+
+async function seedServicosNfseGlobais() {
+	console.log("📋 Inserindo serviços NFS-e (LC 116) globais...");
+
+	const conteudo = readFileSync(ARQUIVO_SERVICOS_NFSE, "utf-8");
+	const dados = JSON.parse(conteudo) as {
+		TB_EST_SERVICO_SIS: ServicoNfseSeedItem[];
+	};
+
+	if (
+		!Array.isArray(dados.TB_EST_SERVICO_SIS) ||
+		dados.TB_EST_SERVICO_SIS.length === 0
+	) {
+		throw new Error("Arquivo de seed serviços NFS-e inválido ou vazio");
+	}
+
+	const agora = new Date().toISOString();
+	const registros = dados.TB_EST_SERVICO_SIS.map((item, indice) => ({
+		id: gerarIdGlobal("s", indice + 1),
+		idempresa: null,
+		codigo: item.COD_LST.trim(),
+		descricao: item.DESCRICAO.trim(),
+		restrito: item.RESTRITO?.trim() ?? null,
+		codigotributacao: item.COD_TRIBUTACAO?.trim() ?? null,
+		codigoextra: item.COD_LST_EXTRA?.trim() ?? null,
+		inativo: 0,
+		atualizadoem: agora,
+	}));
+
+	for (
+		let inicio = 0;
+		inicio < registros.length;
+		inicio += TAMANHO_LOTE_SERVICOS_NFSE
+	) {
+		const lote = registros.slice(inicio, inicio + TAMANHO_LOTE_SERVICOS_NFSE);
+		await db
+			.insert(schema.servicosnfse)
+			.values(lote)
+			.onConflictDoNothing({ target: schema.servicosnfse.id });
+	}
+
+	console.log(`  ✅ ${registros.length} serviços NFS-e processados`);
+}
+
 const seedsGlobais = [
 	{ nome: "unidades de medida", executar: seedUnidadesMedidaPadrao },
 	{ nome: "bancos", executar: seedBancosPadrao },
 	{ nome: "CEST", executar: seedCestGlobais },
+	{ nome: "serviços NFS-e", executar: seedServicosNfseGlobais },
 ] as const;
 
 async function seed() {
@@ -110,6 +167,7 @@ async function seed() {
 		console.log(`  - ${UNIDADES_MEDIDA_PADRAO.length} unidades de medida padrão`);
 		console.log(`  - ${BANCOS_PADRAO.length} bancos padrão`);
 		console.log(`  - CEST globais (arquivo oficial)`);
+		console.log(`  - Serviços NFS-e LC 116 (arquivo oficial)`);
 	} catch (error) {
 		console.error("❌ Erro ao executar seed:", error);
 		throw error;

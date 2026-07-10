@@ -393,6 +393,13 @@
       "when": 1781740000000,
       "tag": "0055_nfse_config_serie",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1781741000000,
+      "tag": "0056_servicos_nfse",
+      "breakpoints": true
     }
   ]
 }
