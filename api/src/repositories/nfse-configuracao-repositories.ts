@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { nfseconfiguracao } from "@/repositories/schema.js";
 import { db } from "./connection";
 

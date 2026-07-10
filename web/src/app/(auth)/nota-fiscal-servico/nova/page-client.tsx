@@ -23,6 +23,7 @@ import { emissaoNfseSchema } from "@/schemas/nfse-emissao.schema";
 import { nfseConfiguracaoService } from "@/services/nfse-configuracao.service";
 import { emitirNfse } from "@/services/nfse-emissao.service";
 import { PageContainer } from "../../components/page-container";
+import { CampoItemLc116Nfse } from "../components/campo-item-lc116-nfse";
 import { CampoTomadorNfse } from "../components/campo-tomador-nfse";
 import { CardErroNfse } from "../components/card-erro-nfse";
 
@@ -137,11 +138,23 @@ export default function NovaNfsePage() {
 
 						<FieldSet>
 							<FieldLegend>2. Serviço prestado</FieldLegend>
-							<Field>
+							<Field data-invalid={!!errors.itemListaServico}>
 								<FieldLabel htmlFor="itemListaServico">Item LC 116</FieldLabel>
-								<Input
-									id="itemListaServico"
-									{...form.register("itemListaServico")}
+								<Controller
+									control={form.control}
+									name="itemListaServico"
+									render={({ field }) => (
+										<CampoItemLc116Nfse
+											value={field.value}
+											onChange={field.onChange}
+											onDescricaoSugerida={(descricao) => {
+												if (!form.getValues("discriminacao")) {
+													form.setValue("discriminacao", descricao);
+												}
+											}}
+											error={errors.itemListaServico}
+										/>
+									)}
 								/>
 							</Field>
 

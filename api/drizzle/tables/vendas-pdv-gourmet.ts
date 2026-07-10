@@ -11,8 +11,8 @@ import {
 } from "drizzle-orm/pg-core";
 import { condicaopagamento } from "./condicao-pagamento.js";
 import { contamesa } from "./conta-mesa.js";
-import { entidade } from "./entidade.js";
 import { empresa } from "./empresas.js";
+import { entidade } from "./entidade.js";
 import { usuarios } from "./usuarios.js";
 
 const numeric123 = () => numeric({ precision: 12, scale: 3, mode: "string" });
