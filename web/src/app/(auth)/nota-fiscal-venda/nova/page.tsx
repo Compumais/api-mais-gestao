@@ -103,6 +103,7 @@ import { AvisoAmbienteNfe } from "../components/aviso-ambiente-nfe";
 import { CamposIntegracaoNfVenda } from "../components/campos-integracao-nf-venda";
 import { CardErroNfe } from "../components/card-erro-nfe";
 import { ModalConfirmacaoProducao } from "../components/modal-confirmacao-producao";
+import { ModalEnviarEmailNfe } from "../components/modal-enviar-email-nfe";
 import { ModalItemEmissao } from "../components/modal-item-emissao";
 import { ModalPreviewDanfeNfe } from "../components/modal-preview-danfe-nfe";
 import { PainelCalculoImpostosEmissao } from "../components/painel-calculo-impostos-emissao";
@@ -193,6 +194,16 @@ export default function NovaEmissaoNfePage() {
 	const searchParams = useSearchParams();
 	const reemitirId = searchParams.get("reemitir");
 	const pedidoId = searchParams.get("pedido");
+	const pedidosParam = searchParams.get("pedidos");
+	const pedidosIds = useMemo(
+		() =>
+			pedidosParam
+				?.split(",")
+				.map((id) => id.trim())
+				.filter(Boolean) ?? [],
+		[pedidosParam],
+	);
+	const isLotePedidos = pedidosIds.length > 0;
 	const devolverEntradaId = searchParams.get("devolverEntrada");
 	const devolverVendaId = searchParams.get("devolverVenda");
 	const queryClient = useQueryClient();
@@ -211,6 +222,11 @@ export default function NovaEmissaoNfePage() {
 	const [erroPreview, setErroPreview] = useState<CardErroOperacaoNfe | null>(
 		null,
 	);
+	const [modalEmailAberto, setModalEmailAberto] = useState(false);
+	const [notaEmitidaId, setNotaEmitidaId] = useState<string | null>(null);
+	const [emailClientePosEmissao, setEmailClientePosEmissao] = useState<
+		string | null
+	>(null);
 	const [modalItemAberto, setModalItemAberto] = useState(false);
 	const [itemEditando, setItemEditando] = useState<{ index: number } | null>(
 		null,
@@ -284,7 +300,29 @@ export default function NovaEmissaoNfePage() {
 			}
 			return davService.resolverContextoEmissaoNfe(pedidoId, empresa.id);
 		},
-		enabled: !!pedidoId && !!empresa?.id,
+		enabled: !!pedidoId && !isLotePedidos && !!empresa?.id,
+		staleTime: 0,
+		refetchOnMount: "always",
+		retry: false,
+	});
+
+	const {
+		data: contextoLote,
+		isLoading: carregandoLote,
+		isError: erroContextoLote,
+	} = useQuery({
+		queryKey: [
+			"pedido-contexto-emissao-lote",
+			pedidosIds.join(","),
+			empresa?.id,
+		],
+		queryFn: async () => {
+			if (pedidosIds.length === 0 || !empresa) {
+				throw new Error("Pedidos não informados");
+			}
+			return davService.resolverContextoEmissaoNfeLote(pedidosIds, empresa.id);
+		},
+		enabled: isLotePedidos && !!empresa?.id,
 		staleTime: 0,
 		refetchOnMount: "always",
 		retry: false,
@@ -411,7 +449,14 @@ export default function NovaEmissaoNfePage() {
 	}, [cfopsSaida, cfopsEntrada, isDevolucaoVenda]);
 
 	useEffect(() => {
-		if (reemitirId || pedidoId || devolverEntradaId || devolverVendaId) return;
+		if (
+			reemitirId ||
+			pedidoId ||
+			isLotePedidos ||
+			devolverEntradaId ||
+			devolverVendaId
+		)
+			return;
 		if (ultimaPreferenciaAplicadaRef.current) return;
 		if (carregandoNfeConfig || !nfeConfiguracao) return;
 		if (!cfopsSaida?.length || seriesData === undefined) return;
@@ -464,6 +509,7 @@ export default function NovaEmissaoNfePage() {
 	}, [
 		reemitirId,
 		pedidoId,
+		isLotePedidos,
 		devolverEntradaId,
 		devolverVendaId,
 		carregandoNfeConfig,
@@ -725,6 +771,7 @@ export default function NovaEmissaoNfePage() {
 		form.reset({
 			idempresa: empresa.id,
 			iddav: contextoPedido.iddav,
+			iddavs: [contextoPedido.iddav],
 			iddestinatario: contextoPedido.iddestinatario,
 			confirmarProducao: false,
 			natOp: form.getValues("natOp"),
@@ -740,15 +787,142 @@ export default function NovaEmissaoNfePage() {
 				desconto: contextoPedido.totais?.desconto ?? 0,
 				outrasDespesas: 0,
 			},
-			informacoesAdicionais: contextoPedido.informacoesAdicionais,
+			informacoesAdicionais: contextoPedido.informacoesAdicionais ?? "",
 			idtipodocumento: contextoPedido.idtipodocumento,
 			idcondicaopagto: contextoPedido.idcondicaopagto,
 			idlocalestoque: contextoPedido.idlocalestoque,
 			gerarFinanceiro: contextoPedido.gerarFinanceiro,
 			gerarEstoque: contextoPedido.gerarEstoque,
 		});
+		form.setValue(
+			"informacoesAdicionais",
+			contextoPedido.informacoesAdicionais ?? "",
+			{ shouldDirty: false },
+		);
 		// eslint-disable-next-line react-hooks/exhaustive-deps -- chave estável evita reexecução em refetch.
 	}, [pedidoProntoKey]);
+
+	const loteProntoKey = useMemo(() => {
+		if (
+			!isLotePedidos ||
+			!contextoLote?.iddavs?.length ||
+			!empresa?.id ||
+			!empresaFiscal ||
+			cfopsSaida === undefined
+		) {
+			return null;
+		}
+
+		return [
+			contextoLote.iddavs.join(","),
+			empresa.id,
+			contextoLote.itens.length,
+			contextoLote.pendencias.join("|"),
+		].join(":");
+	}, [
+		isLotePedidos,
+		contextoLote?.iddavs,
+		contextoLote?.itens.length,
+		contextoLote?.pendencias,
+		empresa?.id,
+		empresaFiscal,
+		cfopsSaida,
+	]);
+
+	useEffect(() => {
+		if (!loteProntoKey || !contextoLote || !empresa || !empresaFiscal) {
+			return;
+		}
+
+		if (pedidoAplicadoRef.current === loteProntoKey) return;
+
+		if (contextoLote.pendencias.length > 0) {
+			toast.error("Pedidos com pendências para emissão", {
+				description: contextoLote.pendencias.join("; "),
+			});
+		}
+
+		if (contextoLote.avisos && contextoLote.avisos.length > 0) {
+			toast.warning("Atenção nos pedidos selecionados", {
+				description: contextoLote.avisos.join("; "),
+			});
+		}
+
+		if (contextoLote.itens.length === 0) {
+			return;
+		}
+
+		const usaCsosn = empresaUsaCsosn(empresaFiscal.crt);
+		const itensForm = contextoLote.itens.map((item) =>
+			prepararItemEmissaoFormulario(
+				{
+					idproduto: item.idproduto,
+					codigoProduto: item.codigoProduto,
+					descricao: item.descricao,
+					ncm: item.ncm,
+					cfop: item.cfop,
+					unidade: item.unidade,
+					quantidade: item.quantidade,
+					valorUnitario: item.valorUnitario,
+					cst: item.cst,
+					csosn: item.csosn,
+					orig: item.orig ?? 0,
+				},
+				usaCsosn,
+			),
+		);
+
+		const primeiroCfop = itensForm[0]?.cfop;
+		if (primeiroCfop) {
+			setCfopSaida(primeiroCfop);
+			const cfop = cfopsSaida?.find((c) => c.codigo === primeiroCfop);
+			form.setValue(
+				"natOp",
+				(cfop?.descricao?.trim() || `Venda CFOP ${primeiroCfop}`).slice(0, 60),
+				{ shouldValidate: true },
+			);
+		}
+
+		if (contextoLote.formaPagamentoNfe) {
+			setFormaPagamento(contextoLote.formaPagamentoNfe);
+		}
+
+		pedidoAplicadoRef.current = loteProntoKey;
+
+		form.reset({
+			idempresa: empresa.id,
+			iddav: contextoLote.iddavs[0],
+			iddavs: contextoLote.iddavs,
+			codigosPedidos: contextoLote.codigosPedidos,
+			iddestinatario: contextoLote.iddestinatario,
+			confirmarProducao: false,
+			natOp: form.getValues("natOp"),
+			indPres:
+				nfeConfiguracao?.ultimoindpres != null &&
+				isIndPresNfeValido(nfeConfiguracao.ultimoindpres)
+					? nfeConfiguracao.ultimoindpres
+					: IND_PRES_NFE_PADRAO,
+			itens: itensForm,
+			totais: {
+				frete: 0,
+				seguro: 0,
+				desconto: contextoLote.totais?.desconto ?? 0,
+				outrasDespesas: 0,
+			},
+			informacoesAdicionais: contextoLote.informacoesAdicionais ?? "",
+			idtipodocumento: contextoLote.idtipodocumento,
+			idcondicaopagto: contextoLote.idcondicaopagto,
+			idlocalestoque: contextoLote.idlocalestoque,
+			gerarFinanceiro: contextoLote.gerarFinanceiro,
+			gerarEstoque: contextoLote.gerarEstoque,
+		});
+		form.setValue(
+			"informacoesAdicionais",
+			contextoLote.informacoesAdicionais ?? "",
+			{ shouldDirty: false },
+		);
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- chave estável evita reexecução em refetch.
+	}, [loteProntoKey]);
 
 	const cfopsOperacao = isDevolucaoVenda ? cfopsEntrada : cfopsSaida;
 
@@ -1038,6 +1212,15 @@ export default function NovaEmissaoNfePage() {
 					queryKey: ["pedido-itens", pedidoId],
 				});
 			}
+			if (isLotePedidos) {
+				void queryClient.invalidateQueries({ queryKey: ["pedidos"] });
+				for (const id of pedidosIds) {
+					void queryClient.invalidateQueries({ queryKey: ["pedido", id] });
+					void queryClient.invalidateQueries({
+						queryKey: ["pedido-itens", id],
+					});
+				}
+			}
 
 			if (!emissaoFoiAutorizada(resultado)) {
 				toast.error(
@@ -1087,7 +1270,23 @@ export default function NovaEmissaoNfePage() {
 				});
 			});
 
-			router.push(`/nota-fiscal-venda/${resultado.idnotafiscal}`);
+			const idDest = form.getValues("iddestinatario");
+			setNotaEmitidaId(resultado.idnotafiscal);
+			setEmailClientePosEmissao(null);
+
+			if (idDest) {
+				void entidadesService
+					.buscar(idDest)
+					.then((entidade) => {
+						setEmailClientePosEmissao(entidade.email?.trim() || null);
+						setModalEmailAberto(true);
+					})
+					.catch(() => {
+						setModalEmailAberto(true);
+					});
+			} else {
+				setModalEmailAberto(true);
+			}
 		},
 		onError: (erro) => {
 			toast.error("Erro ao emitir NF-e", {
@@ -1264,7 +1463,15 @@ export default function NovaEmissaoNfePage() {
 			{/* ── Cabeçalho da página ─────────────────────────────────────────── */}
 			<div className="border-b bg-background px-4 sm:px-6 py-4 flex items-center gap-3">
 				<Button variant="ghost" size="icon" asChild>
-					<Link href={pedidoId ? `/pedidos/${pedidoId}` : "/nota-fiscal-venda"}>
+					<Link
+						href={
+							pedidoId
+								? `/pedidos/${pedidoId}`
+								: isLotePedidos
+									? "/pedidos"
+									: "/nota-fiscal-venda"
+						}
+					>
 						<ArrowLeft className="h-5 w-5" />
 					</Link>
 				</Button>
@@ -1272,18 +1479,24 @@ export default function NovaEmissaoNfePage() {
 					<h1 className="text-lg font-semibold leading-tight">
 						{reemitirId && notaReemitir
 							? `Reemitir NF-e ${notaReemitir.serie}-${notaReemitir.numeronotafiscal}`
-							: pedidoId
-								? "Emitir NF-e do pedido"
-								: "Nova NF-e — Modelo 55"}
+							: isLotePedidos
+								? `Emitir NF-e de ${pedidosIds.length} pedidos`
+								: pedidoId
+									? "Emitir NF-e do pedido"
+									: "Nova NF-e — Modelo 55"}
 					</h1>
 					<p className="text-xs text-muted-foreground truncate">
 						{reemitirId && notaReemitir
 							? `Mesma numeração: série ${notaReemitir.serie}, nº ${notaReemitir.numeronotafiscal}`
-							: pedidoId
-								? `Pedido ${pedidoId.slice(0, 8)} · revise e transmita a NF-e`
-								: serieSelecionada
-									? `Série ${serieSelecionada.serie} · Próximo nº ${serieSelecionada.numeroproximo}`
-									: "Nenhuma série selecionada"}
+							: isLotePedidos
+								? contextoLote?.codigosPedidos?.length
+									? `Pedidos ${contextoLote.codigosPedidos.join(", ")} · revise e transmita a NF-e`
+									: `${pedidosIds.length} pedidos · revise e transmita a NF-e`
+								: pedidoId
+									? `Pedido ${pedidoId.slice(0, 8)} · revise e transmita a NF-e`
+									: serieSelecionada
+										? `Série ${serieSelecionada.serie} · Próximo nº ${serieSelecionada.numeroproximo}`
+										: "Nenhuma série selecionada"}
 						{" · "}
 						<span
 							className={
@@ -1300,45 +1513,90 @@ export default function NovaEmissaoNfePage() {
 
 			{/* ── Conteúdo rolável ────────────────────────────────────────────── */}
 			<div className="flex-1 max-w-3xl mx-auto w-full px-4 sm:px-6 py-6 pb-24 space-y-0">
-				{pedidoId && (
+				{(pedidoId || isLotePedidos) && (
 					<div
 						className={`mb-6 rounded-lg border p-4 text-sm space-y-2 ${
-							erroContextoPedido ||
-							(!carregandoPedido && contextoPedido?.itens.length === 0)
+							(pedidoId &&
+								(erroContextoPedido ||
+									(!carregandoPedido &&
+										contextoPedido?.itens.length === 0))) ||
+							(isLotePedidos &&
+								(erroContextoLote ||
+									(!carregandoLote && contextoLote?.itens.length === 0)))
 								? "border-destructive/40 bg-destructive/5 text-destructive"
 								: "border-blue-200 bg-blue-50 text-blue-950"
 						}`}
 					>
 						<p className="font-medium">
-							{carregandoPedido
-								? "Carregando dados do pedido..."
-								: erroContextoPedido
-									? "Não foi possível carregar o pedido"
-									: contextoPedido?.itens.length === 0
-										? "Pedido sem itens válidos para emissão"
-										: "Dados importados do pedido"}
+							{pedidoId
+								? carregandoPedido
+									? "Carregando dados do pedido..."
+									: erroContextoPedido
+										? "Não foi possível carregar o pedido"
+										: contextoPedido?.itens.length === 0
+											? "Pedido sem itens válidos para emissão"
+											: "Dados importados do pedido"
+								: carregandoLote
+									? "Carregando dados dos pedidos..."
+									: erroContextoLote
+										? "Não foi possível carregar os pedidos"
+										: contextoLote?.itens.length === 0
+											? "Pedidos sem itens válidos para emissão"
+											: `Dados importados de ${pedidosIds.length} pedidos`}
 						</p>
-						{!carregandoPedido && erroContextoPedido && (
+						{pedidoId && !carregandoPedido && erroContextoPedido && (
 							<p>
 								Verifique se o pedido está salvo e tente novamente pelo botão
 								Faturar.
 							</p>
 						)}
-						{!carregandoPedido &&
+						{isLotePedidos && !carregandoLote && erroContextoLote && (
+							<p>
+								Verifique se os pedidos pertencem ao mesmo cliente, não estão
+								cancelados/faturados e tente novamente.
+							</p>
+						)}
+						{pedidoId &&
+						!carregandoPedido &&
 						!erroContextoPedido &&
 						contextoPedido?.pendencias.length ? (
 							<p className="text-destructive">
 								{contextoPedido.pendencias.join("; ")}
 							</p>
 						) : null}
-						{!carregandoPedido &&
+						{isLotePedidos &&
+						!carregandoLote &&
+						!erroContextoLote &&
+						contextoLote?.pendencias.length ? (
+							<p className="text-destructive">
+								{contextoLote.pendencias.join("; ")}
+							</p>
+						) : null}
+						{isLotePedidos &&
+							!carregandoLote &&
+							!erroContextoLote &&
+							contextoLote?.codigosPedidos?.length ? (
+							<p>
+								Pedidos: {contextoLote.codigosPedidos.join(", ")}. Os códigos
+								serão anexados nas observações da NF-e e no contas a receber.
+							</p>
+						) : null}
+						{((pedidoId &&
+							!carregandoPedido &&
 							!erroContextoPedido &&
-							(contextoPedido?.itens.length ?? 0) > 0 && (
-								<p className="text-blue-800">
-									Revise cliente, itens, pagamento e tributação antes de emitir.
-									Ao autorizar, o pedido será vinculado à NF-e.
-								</p>
-							)}
+							(contextoPedido?.itens.length ?? 0) > 0) ||
+							(isLotePedidos &&
+								!carregandoLote &&
+								!erroContextoLote &&
+								(contextoLote?.itens.length ?? 0) > 0)) && (
+							<p className="text-blue-800">
+								Revise cliente, itens, pagamento e tributação antes de emitir.
+								Ao autorizar,{" "}
+								{isLotePedidos
+									? "os pedidos serão vinculados à NF-e."
+									: "o pedido será vinculado à NF-e."}
+							</p>
+						)}
 					</div>
 				)}
 				{reemitirId && (
@@ -1971,6 +2229,12 @@ export default function NovaEmissaoNfePage() {
 									maxLength={2000}
 									{...form.register("informacoesAdicionais")}
 								/>
+								{(pedidoId || isLotePedidos) && (
+									<p className="text-xs text-muted-foreground">
+										Pré-preenchido com o(s) DAV(s) de origem da NF-e. Você pode
+										editar antes de emitir.
+									</p>
+								)}
 							</Field>
 						</FieldSet>
 					</FieldGroup>
@@ -2058,6 +2322,19 @@ export default function NovaEmissaoNfePage() {
 				onConfirmar={handleConfirmarProducao}
 				carregando={isPending}
 			/>
+
+			{notaEmitidaId && empresa && (
+				<ModalEnviarEmailNfe
+					open={modalEmailAberto}
+					idempresa={empresa.id}
+					idnotafiscal={notaEmitidaId}
+					emailInicial={emailClientePosEmissao}
+					onConcluir={() => {
+						setModalEmailAberto(false);
+						router.push(`/nota-fiscal-venda/${notaEmitidaId}`);
+					}}
+				/>
+			)}
 
 			<ModalPreviewDanfeNfe
 				open={modalPreviewAberto}

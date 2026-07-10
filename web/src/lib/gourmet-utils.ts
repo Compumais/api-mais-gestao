@@ -415,6 +415,20 @@ export function fecharContaFormToPagamentosParciais(
 		}
 	}
 
+	// Legado: valorcartao sem crédito/débito separados → exibir como crédito
+	const valorCartaoLegado = parseValor(form.valorcartao ?? "");
+	const jaTemCredito = pagamentos.some(
+		(p) => isPagamentoMeioPdv(p) && p.meio === "cartao_credito",
+	);
+	if (valorCartaoLegado > 0 && !jaTemCredito) {
+		pagamentos.push({
+			tipo: "meio",
+			meio: "cartao_credito",
+			valor: valorCartaoLegado,
+			label: "Cartão Crédito",
+		});
+	}
+
 	return pagamentos;
 }
 

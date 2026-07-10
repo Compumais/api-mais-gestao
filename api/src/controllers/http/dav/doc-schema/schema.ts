@@ -110,9 +110,31 @@ export const listarDavsSchema: FastifySchema = {
 		type: "object",
 		properties: {
 			idempresa: { type: "string", description: "ID da empresa" },
-
 			page: { type: "number", default: 1 },
 			limit: { type: "number", default: 10 },
+			dataInicio: {
+				type: "string",
+				description: "Data inicial (YYYY-MM-DD) do pedido",
+			},
+			dataFim: {
+				type: "string",
+				description: "Data final (YYYY-MM-DD) do pedido",
+			},
+			idcliente: { type: "string", description: "ID do cliente" },
+			status: {
+				type: "number",
+				description: "Status do DAV (0=Aberto, 1=Fechado, 2=Caixa, 3=Cancelado)",
+			},
+			faturado: {
+				type: "string",
+				enum: ["true", "false"],
+				description: "Filtrar por pedidos com/sem NF-e",
+			},
+			codigo: { type: "number", description: "Código do pedido" },
+			busca: {
+				type: "string",
+				description: "Busca parcial pelo nome do cliente",
+			},
 		},
 		required: ["idempresa"],
 	},

@@ -22,6 +22,8 @@ import { baixarXmlNotaFiscal } from "./baixar-xml.js";
 
 import { gerarDanfeNotaFiscal } from "./gerar-danfe.js";
 
+import { enviarEmailNotaFiscal } from "./enviar-email.js";
+
 import { buscarProdutoParaNF } from "./buscar-produto.js";
 
 import { criarRascunhoImportacaoXml } from "./criar-rascunho-xml.js";
@@ -177,6 +179,12 @@ export async function notasFiscaisRotas(app: FastifyInstance) {
 	app.get("/notas-fiscais/:id/xml", {
 
 		handler: baixarXmlNotaFiscal,
+
+	});
+
+	app.post("/notas-fiscais/:id/enviar-email", {
+
+		handler: enviarEmailNotaFiscal,
 
 	});
 

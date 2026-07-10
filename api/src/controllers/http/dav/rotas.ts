@@ -2,11 +2,13 @@ import type { FastifyInstance } from "fastify";
 import { verifyJwt } from "../../middleware/verify-jwt.js";
 import { atualizarDav } from "./atualizar.js";
 import { buscarDav } from "./buscar.js";
+import { cancelarDav } from "./cancelar.js";
 import { criarDav } from "./criar.js";
 import * as schema from "./doc-schema/schema.js";
 import { excluirDav } from "./excluir.js";
 import { faturarDavNfe } from "./faturar-nfe.js";
 import { contextoEmissaoNfePedido } from "./contexto-emissao-nfe.js";
+import { contextoEmissaoNfeLote } from "./contexto-emissao-nfe-lote.js";
 import { listarDavs } from "./listar.js";
 import { criarDavItem } from "./itens/criar.js";
 import { listarDavItens } from "./itens/listar.js";
@@ -24,6 +26,9 @@ export async function davsRotas(app: FastifyInstance) {
 		schema: schema.listarDavsSchema,
 		handler: listarDavs,
 	});
+	app.get("/davs/contexto-emissao-nfe-lote", {
+		handler: contextoEmissaoNfeLote,
+	});
 	app.get("/davs/:id", {
 		schema: schema.buscarDavSchema,
 		handler: buscarDav,
@@ -35,6 +40,9 @@ export async function davsRotas(app: FastifyInstance) {
 	app.delete("/davs/:id", {
 		schema: schema.excluirDavSchema,
 		handler: excluirDav,
+	});
+	app.post("/davs/:id/cancelar", {
+		handler: cancelarDav,
 	});
 	app.post("/davs/:id/faturar-nfe", {
 		handler: faturarDavNfe,

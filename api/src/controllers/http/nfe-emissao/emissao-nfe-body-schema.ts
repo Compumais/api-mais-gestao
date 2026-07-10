@@ -86,6 +86,8 @@ export const emitirNfeBodySchema = z.object({
 	idlocalestoque: z.string().uuid().optional(),
 	idtipodocumento: z.string().uuid().optional(),
 	iddav: z.string().uuid().optional(),
+	iddavs: z.array(z.string().uuid()).min(1).optional(),
+	codigosPedidos: z.array(z.number().int()).optional(),
 	formasPagamento: z
 		.array(
 			z.object({

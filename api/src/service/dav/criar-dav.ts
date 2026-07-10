@@ -3,6 +3,7 @@ import type { DAV, NovoDAV } from "@/model/dav-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
 import { criarDav, excluirDav } from "@/repositories/dav-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { buscarProximoCodigoDav } from "@/repositories/proximo-codigo-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
 import {
 	httpCriacao,
@@ -29,7 +30,15 @@ export async function criarDavService({
 		return httpProibido();
 	}
 
-	const registro = await criarDav(dadosDav);
+	const codigo =
+		dadosDav.codigo != null && Number.isFinite(dadosDav.codigo)
+			? dadosDav.codigo
+			: await buscarProximoCodigoDav(dadosDav.idempresa);
+
+	const registro = await criarDav({
+		...dadosDav,
+		codigo,
+	});
 
 	if (!registro) {
 		return httpErro();

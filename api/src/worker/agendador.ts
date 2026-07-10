@@ -1,6 +1,7 @@
 import cron, { type ScheduledTask } from "node-cron";
 import { executarAlertasVencimento } from "./jobs/alertas-vencimento.js";
 import { executarConciliacaoPendente } from "./jobs/conciliacao-pendente.js";
+import { executarProcessarAutomacoes } from "./jobs/processar-automacoes.js";
 import { executarRelatoriosAutomaticos } from "./jobs/relatorios-automaticos.js";
 import { executarSaldoBaixo } from "./jobs/saldo-baixo.js";
 import { executarVerificarCiclosPlano } from "./jobs/verificar-ciclos-plano.js";
@@ -10,7 +11,11 @@ import {
 	liberarLockAgendador,
 	tentarAdquirirLockAgendador,
 } from "@/repositories/tarefa-execucao-repositories.js";
-import { LOCK_AGENDADOR_INBOUND_NFE, LOCK_AGENDADOR_PRINCIPAL } from "./types.js";
+import {
+	LOCK_AGENDADOR_AUTOMACOES,
+	LOCK_AGENDADOR_INBOUND_NFE,
+	LOCK_AGENDADOR_PRINCIPAL,
+} from "./types.js";
 
 let tarefasAgendadas: ScheduledTask[] = [];
 
@@ -79,6 +84,29 @@ async function executarCicloInboundNfe() {
 	}
 }
 
+async function executarCicloAutomacoes() {
+	const adquiriu = await tentarAdquirirLockAgendador(LOCK_AGENDADOR_AUTOMACOES);
+	if (!adquiriu) {
+		return;
+	}
+
+	const contexto = { agora: new Date() };
+
+	try {
+		await executarJob(
+			"processar_automacoes",
+			executarProcessarAutomacoes,
+			contexto,
+			null,
+			900_000,
+		);
+	} catch (error) {
+		console.error("[agendador] Erro no ciclo de automações:", error);
+	} finally {
+		await liberarLockAgendador(LOCK_AGENDADOR_AUTOMACOES);
+	}
+}
+
 export function iniciarAgendador() {
 	if (tarefasAgendadas.length > 0) {
 		return;
@@ -96,9 +124,13 @@ export function iniciarAgendador() {
 		void executarCicloInboundNfe();
 	});
 
-	tarefasAgendadas = [cronAlertas, cronPlanos, cronInboundNfe];
+	const cronAutomacoes = cron.schedule("*/5 * * * *", () => {
+		void executarCicloAutomacoes();
+	});
+
+	tarefasAgendadas = [cronAlertas, cronPlanos, cronInboundNfe, cronAutomacoes];
 	console.log(
-		"[agendador] Iniciado — alertas a cada 5 min, ciclos de plano às 06:00, inbound NF-e a cada 10 min",
+		"[agendador] Iniciado — alertas/automações a cada 5 min, ciclos de plano às 06:00, inbound NF-e a cada 10 min",
 	);
 }
 
@@ -143,6 +175,14 @@ export const JOBS_DISPONIVEIS = {
 			{ agora: new Date() },
 			null,
 			300_000,
+		),
+	processarAutomacoes: () =>
+		executarJob(
+			"processar_automacoes",
+			executarProcessarAutomacoes,
+			{ agora: new Date() },
+			null,
+			900_000,
 		),
 } as const;
 

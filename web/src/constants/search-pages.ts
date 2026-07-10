@@ -316,6 +316,28 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 	},
 	// Outros
 	{
+		title: "Agendar tarefas",
+		url: "/agendamentos",
+		category: "Ferramentas",
+		icon: IconSettings,
+		keywords: [
+			"agendar",
+			"agendamento",
+			"agendamentos",
+			"automação",
+			"automacao",
+			"tarefa",
+			"sintegra",
+		],
+	},
+	{
+		title: "Envio de e-mails",
+		url: "/envio-emails",
+		category: "Ferramentas",
+		icon: IconSettings,
+		keywords: ["email", "e-mail", "smtp", "envio"],
+	},
+	{
 		title: "Configurações",
 		url: "/configuracoes",
 		category: "Outros",
