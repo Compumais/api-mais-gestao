@@ -36,7 +36,11 @@ export * from "./tables/clientes-asaas.js";
 export * from "./tables/codigo-reduzido-conta-contabil.js";
 export * from "./tables/condicao-pagamento.js";
 export * from "./tables/configuracoes.js";
+export * from "./tables/configuracao-email-smtp.js";
+export * from "./tables/contabilidade-empresa.js";
+export * from "./tables/automacao.js";
 export * from "./tables/configuracoes-usuario.js";
+
 export * from "./tables/conta-contabil.js";
 export * from "./tables/conta-corrente.js";
 export * from "./tables/conta-corrente-lancamento.js";

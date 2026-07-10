@@ -12,8 +12,19 @@ import {
 	Save,
 	Send,
 	Trash2,
+	XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
@@ -36,7 +47,10 @@ import {
 	FieldSet,
 } from "@/components/ui/field";
 import { useEmpresa } from "@/hooks/use-empresa";
-import { pedidoPodeFaturarNfe } from "@/constants/dav-status";
+import {
+	DAV_STATUS,
+	pedidoPodeFaturarNfe,
+} from "@/constants/dav-status";
 import { entidadesService } from "@/services/entidades.service";
 import {
 	davService,
@@ -85,6 +99,7 @@ export default function PedidoDetalhePage({
 	const [modalItemAberto, setModalItemAberto] = useState(false);
 	const [itemEditando, setItemEditando] = useState<PedidoDavItem | null>(null);
 	const [indoParaEmissao, setIndoParaEmissao] = useState(false);
+	const [confirmandoCancelamento, setConfirmandoCancelamento] = useState(false);
 
 	const { data: pedido, isLoading: carregandoPedido } = useQuery({
 		queryKey: ["pedido", id],
@@ -140,6 +155,8 @@ export default function PedidoDetalhePage({
 	const descontoNumero = parseFloat(desconto.replace(",", ".")) || 0;
 	const totalPedido = Math.max(totalItens - descontoNumero, 0);
 	const pedidoFaturado = !!pedido?.idnotafiscal;
+	const pedidoCancelado = pedido?.status === DAV_STATUS.CANCELADO;
+	const podeCancelar = !!pedido && !pedidoFaturado && !pedidoCancelado;
 	const podeFaturar =
 		!!pedido &&
 		pedidoPodeFaturarNfe(pedido) &&
@@ -211,6 +228,24 @@ export default function PedidoDetalhePage({
 		},
 		onError: (erro) => {
 			toast.error("Erro ao remover item", {
+				description: erro instanceof Error ? erro.message : "Erro desconhecido",
+			});
+		},
+	});
+
+	const { mutate: cancelarPedido, isPending: cancelando } = useMutation({
+		mutationFn: async () => {
+			if (!empresa) throw new Error("Empresa não selecionada");
+			return davService.cancelar(id, empresa.id);
+		},
+		onSuccess: () => {
+			void queryClient.invalidateQueries({ queryKey: ["pedido", id] });
+			void queryClient.invalidateQueries({ queryKey: ["pedidos"] });
+			setConfirmandoCancelamento(false);
+			toast.success("Pedido cancelado");
+		},
+		onError: (erro) => {
+			toast.error("Erro ao cancelar pedido", {
 				description: erro instanceof Error ? erro.message : "Erro desconhecido",
 			});
 		},
@@ -307,6 +342,8 @@ export default function PedidoDetalhePage({
 							</h1>
 							{pedidoFaturado ? (
 								<Badge>NF-e emitida</Badge>
+							) : pedidoCancelado ? (
+								<Badge variant="destructive">Cancelado</Badge>
 							) : (
 								<Badge variant="secondary">Aberto</Badge>
 							)}
@@ -322,17 +359,32 @@ export default function PedidoDetalhePage({
 					</div>
 
 					<div className="flex flex-wrap gap-2">
+						{podeCancelar && (
+							<Button
+								variant="outline"
+								onClick={() => setConfirmandoCancelamento(true)}
+								disabled={cancelando}
+							>
+								<XCircle className="h-4 w-4" />
+								Cancelar pedido
+							</Button>
+						)}
 						<Button
 							variant="outline"
 							onClick={() => salvarPedido()}
-							disabled={salvandoPedido || pedidoFaturado}
+							disabled={salvandoPedido || pedidoFaturado || pedidoCancelado}
 						>
 							<Save className="h-4 w-4" />
 							{salvandoPedido ? "Salvando..." : "Salvar"}
 						</Button>
 						<Button
 							onClick={() => void irParaEmissaoNfe()}
-							disabled={!podeFaturar || indoParaEmissao || pedidoFaturado}
+							disabled={
+								!podeFaturar ||
+								indoParaEmissao ||
+								pedidoFaturado ||
+								pedidoCancelado
+							}
 						>
 							<Send className="h-4 w-4" />
 							{indoParaEmissao ? "Abrindo emissão..." : "Faturar NF-e"}
@@ -536,6 +588,30 @@ export default function PedidoDetalhePage({
 				itemParaEditar={itemEditando}
 				carregando={salvandoItem}
 			/>
+
+			<AlertDialog
+				open={confirmandoCancelamento}
+				onOpenChange={setConfirmandoCancelamento}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Cancelar pedido?</AlertDialogTitle>
+						<AlertDialogDescription>
+							O pedido {pedido.codigo ?? ""} será marcado como cancelado e não
+							poderá ser faturado. Esta ação não remove o registro.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel disabled={cancelando}>Voltar</AlertDialogCancel>
+						<AlertDialogAction
+							disabled={cancelando}
+							onClick={() => cancelarPedido()}
+						>
+							{cancelando ? "Cancelando..." : "Confirmar cancelamento"}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</PageContainer>
 	);
 }

@@ -80,6 +80,8 @@ export type PrepararPayloadEmissaoNfeVendaParams = {
 	idlocalestoque?: string;
 	idtipodocumento?: string;
 	iddav?: string;
+	iddavs?: string[];
+	codigosPedidos?: number[];
 	formasPagamento?: FormaPagamentoNfVenda[];
 	gerarFinanceiro?: boolean;
 	gerarEstoque?: boolean;
@@ -133,6 +135,8 @@ export type PayloadEmissaoNfeVendaPreparado = {
 	gerarFinanceiroResolvido?: boolean;
 	gerarEstoqueResolvido?: boolean;
 	iddavResolvido?: string;
+	iddavsResolvidos?: string[];
+	codigosPedidosResolvidos?: number[];
 	informacoesAdicionais?: string;
 	totais?: TotaisPayloadNfe;
 };
@@ -304,6 +308,8 @@ export async function prepararPayloadEmissaoNfeVenda(
 		idlocalestoque,
 		idtipodocumento,
 		iddav,
+		iddavs,
+		codigosPedidos,
 		formasPagamento,
 		gerarFinanceiro,
 		gerarEstoque,
@@ -371,6 +377,8 @@ export async function prepararPayloadEmissaoNfeVenda(
 	let gerarFinanceiroResolvido = gerarFinanceiro;
 	let gerarEstoqueResolvido = gerarEstoque;
 	let iddavResolvido = iddav;
+	let iddavsResolvidos = iddavs;
+	let codigosPedidosResolvidos = codigosPedidos;
 
 	let emissaoSalvaReemissao:
 		| ReturnType<typeof extrairDadosEmissaoNfeSalvos>
@@ -390,6 +398,23 @@ export async function prepararPayloadEmissaoNfeVenda(
 		gerarFinanceiroResolvido ??= emissaoSalvaReemissao?.gerarFinanceiro;
 		gerarEstoqueResolvido ??= emissaoSalvaReemissao?.gerarEstoque;
 		iddavResolvido ??= emissaoSalvaReemissao?.iddav;
+		iddavsResolvidos ??= emissaoSalvaReemissao?.iddavs;
+		codigosPedidosResolvidos ??= emissaoSalvaReemissao?.codigosPedidos;
+	}
+
+	if (
+		(!iddavsResolvidos || iddavsResolvidos.length === 0) &&
+		iddavResolvido
+	) {
+		iddavsResolvidos = [iddavResolvido];
+	}
+
+	if (
+		iddavsResolvidos &&
+		iddavsResolvidos.length > 0 &&
+		!iddavResolvido
+	) {
+		iddavResolvido = iddavsResolvidos[0];
 	}
 
 	const freteComercial = totais?.frete ?? 0;
@@ -620,6 +645,8 @@ export async function prepararPayloadEmissaoNfeVenda(
 		gerarFinanceiroResolvido,
 		gerarEstoqueResolvido,
 		iddavResolvido,
+		iddavsResolvidos,
+		codigosPedidosResolvidos,
 		informacoesAdicionais: infoAdic,
 		totais,
 	});

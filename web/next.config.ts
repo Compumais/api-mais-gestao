@@ -21,6 +21,11 @@ const nextConfig: NextConfig = {
 	async redirects() {
 		return [
 			{
+				source: "/agendamento",
+				destination: "/agendamentos",
+				permanent: false,
+			},
+			{
 				source: "/gourmet/venda-rapida",
 				destination: "/pdv",
 				permanent: true,
