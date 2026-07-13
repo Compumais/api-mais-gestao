@@ -257,6 +257,64 @@ export const notaFiscalService = {
 		return data;
 	},
 
+	async atualizarCompra(
+		id: string,
+		payload: {
+			idempresa: string;
+			identidade?: string | null;
+			numero?: string | null;
+			serie?: string | null;
+			modelo?: string | null;
+			chavenfe?: string | null;
+			emissao?: string | null;
+			entradasaida?: string | null;
+			idplanocontas?: string | null;
+			idcondicaopagto?: string | null;
+			valortotalnota?: string | null;
+			observacao?: string | null;
+			itens?: Array<{
+				id: string;
+				descricao?: string | null;
+				quantidade?: string | null;
+				precounitario?: string | null;
+				total?: string | null;
+				cfop?: string | null;
+				ncm?: string | null;
+				unidade?: string | null;
+			}>;
+			reintegrarEstoqueFinanceiro?: boolean;
+		},
+	): Promise<{
+		notaFiscal: NotaFiscal;
+		itens: NotaFiscalItem[];
+		avisos: string[];
+	}> {
+		const { data } = await api.put<{
+			notaFiscal: NotaFiscal;
+			itens: NotaFiscalItem[];
+			avisos: string[];
+		}>(`/notas-fiscais/${id}/compra`, payload);
+		return data;
+	},
+
+	async cancelarCompra(
+		id: string,
+		payload: { idempresa: string; motivo?: string },
+	): Promise<{
+		notaFiscal: NotaFiscal;
+		titulosCancelados: number;
+		movimentosEstornados: number;
+		avisos: string[];
+	}> {
+		const { data } = await api.post<{
+			notaFiscal: NotaFiscal;
+			titulosCancelados: number;
+			movimentosEstornados: number;
+			avisos: string[];
+		}>(`/notas-fiscais/${id}/cancelar`, payload);
+		return data;
+	},
+
 	async criar(payload: CriarNotaFiscalPayload): Promise<CriarNotaFiscalResponse> {
 		const { data } = await api.post<CriarNotaFiscalResponse>(
 			"/notas-fiscais",
@@ -327,6 +385,7 @@ export const notaFiscalService = {
 			idcondicaopagto?: string | null;
 			observacao?: string | null;
 			entradasaida?: string | null;
+			aplicarCfopItens?: boolean;
 		},
 	): Promise<NotaFiscal> {
 		const { data } = await api.patch<NotaFiscal>(

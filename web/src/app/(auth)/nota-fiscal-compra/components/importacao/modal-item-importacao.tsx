@@ -103,7 +103,7 @@ function montarDefaultValues(
 			dados.precounitarioEstoque ?? item.precounitario ?? "0",
 		precoVenda: dados.precoVenda ?? "",
 		idcfop: dados.idcfop ?? "",
-		cfopXml: dados.cfopXml ?? item.cfop ?? "",
+		cfopXml: dados.cfopXml ?? "",
 		ncmXml: dados.ncmXml ?? item.ncm ?? "",
 		idncm: dados.idncm ?? "",
 		eanXml: dados.eanXml ?? "",
@@ -265,7 +265,6 @@ export function ModalItemImportacao({
 				precounitarioEstoque: formData.precounitarioEstoque,
 				precoVenda: formData.precoVenda,
 				idcfop: formData.idcfop || undefined,
-				cfopXml: formData.cfopXml,
 				ncmXml: formData.ncmXml,
 				idncm: formData.idncm || undefined,
 				eanXml: formData.eanXml || dados.eanXml,
@@ -496,17 +495,15 @@ export function ModalItemImportacao({
 									id="idcfop-item"
 									label="CFOP de entrada"
 									value={watch("idcfop")}
-									codigoXml={watch("cfopXml")}
-									onChange={(idcfop, codigo) => {
+									codigoXml={dados.cfopXml}
+									onChange={(idcfop) => {
 										setValue("idcfop", idcfop, { shouldDirty: true });
-										if (codigo) {
-											setValue("cfopXml", codigo, { shouldDirty: true });
-										}
 									}}
 								/>
 								<p className="text-xs text-muted-foreground -mt-2">
-									Pré-preenchido com o CFOP do XML. Você pode alterar conforme a
-									parametrização fiscal da empresa.
+									Pré-sugerido pela planilha de depara (CFOP do XML → entrada de
+									revenda). Ajuste se a finalidade for uso/consumo ou ativo. O CFOP
+									do XML permanece só como histórico.
 								</p>
 								<Field>
 									<FieldLabel htmlFor="ncmXml">NCM</FieldLabel>

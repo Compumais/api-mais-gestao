@@ -496,7 +496,7 @@ export default function AgendamentosPage() {
 										type="number"
 										min={1}
 										max={28}
-										{...form.register("diames")}
+										{...form.register("diames", { valueAsNumber: true })}
 									/>
 								</Field>
 							)}
