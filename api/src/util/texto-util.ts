@@ -101,7 +101,10 @@ export function extrairMensagemErroBanco(erro: unknown): string {
 	}
 
 	if (mensagem.includes("value too long")) {
-		return "Um ou mais campos excedem o tamanho permitido no banco de dados";
+		const limite = mensagem.match(/varying\((\d+)\)/i)?.[1];
+		return limite
+			? `Um ou mais campos excedem o tamanho permitido no banco de dados (limite: ${limite} caracteres)`
+			: "Um ou mais campos excedem o tamanho permitido no banco de dados";
 	}
 
 	if (mensagem.includes("violates foreign key constraint")) {

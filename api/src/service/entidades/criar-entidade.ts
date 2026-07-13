@@ -33,21 +33,29 @@ function normalizarDataNascimento(
 	return match?.[1] ?? null;
 }
 
-function sanitizarDadosEntidade(dados: NovaEntidade): NovaEntidade {
+/** CEP só com dígitos (máx. 8) — evita estouro com máscara 12345-678. */
+function normalizarCep(valor: string | null | undefined): string | null {
+	if (valor === undefined || valor === null) return null;
+	const digitos = valor.replace(/\D/g, "");
+	if (!digitos) return null;
+	return digitos.slice(0, 8);
+}
+
+export function sanitizarDadosEntidade(dados: NovaEntidade): NovaEntidade {
 	return {
 		...dados,
-		nome: truncarTexto(dados.nome, 60) ?? dados.nome.slice(0, 60),
-		razaosocial: truncarTexto(dados.razaosocial, 60),
+		nome: truncarTexto(dados.nome, 120) ?? dados.nome.slice(0, 120),
+		razaosocial: truncarTexto(dados.razaosocial, 120),
 		cnpjcpf: truncarTexto(dados.cnpjcpf, 20) ?? dados.cnpjcpf.slice(0, 20),
 		inscricaoestadual: truncarTexto(dados.inscricaoestadual, 20),
 		rg: truncarTexto(dados.rg, 20),
 		email: truncarTexto(dados.email, 200),
 		telefone: truncarTexto(dados.telefone, 40),
-		endereco: truncarTexto(dados.endereco, 60),
-		numeroendereco: truncarTexto(dados.numeroendereco, 6),
-		complemento: truncarTexto(dados.complemento, 50),
-		bairro: truncarTexto(dados.bairro, 50),
-		cep: truncarTexto(dados.cep, 9),
+		endereco: truncarTexto(dados.endereco, 120),
+		numeroendereco: truncarTexto(dados.numeroendereco, 20),
+		complemento: truncarTexto(dados.complemento, 60),
+		bairro: truncarTexto(dados.bairro, 60),
+		cep: normalizarCep(dados.cep),
 		fax: truncarTexto(dados.fax, 40),
 		nascimento: normalizarDataNascimento(dados.nascimento),
 		idplanocontas: idOpcionalOuNulo(dados.idplanocontas) ?? null,
