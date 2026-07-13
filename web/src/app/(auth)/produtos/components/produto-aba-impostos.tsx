@@ -293,7 +293,7 @@ export function ProdutoAbaImpostos({
 
 						<Field data-invalid={!!errors.tipoproduto}>
 							<FieldLabel htmlFor="tipoproduto">
-								Tipo de produto (SPED)
+								Tipo de produto
 							</FieldLabel>
 							<Controller
 								name="tipoproduto"

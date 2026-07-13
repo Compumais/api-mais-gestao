@@ -158,7 +158,7 @@ export function NaturezaForm(props: NaturezaFormProps) {
 					</Field>
 
 					<Field data-invalid={!!errors.tipoproduto}>
-						<FieldLabel htmlFor="tipoproduto">Tipo de produto (SPED)</FieldLabel>
+						<FieldLabel htmlFor="tipoproduto">Tipo de produto</FieldLabel>
 						<Controller
 							name="tipoproduto"
 							control={control}
