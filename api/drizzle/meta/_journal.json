@@ -414,6 +414,13 @@
       "when": 1783700000000,
       "tag": "0058_automacao_contabilidade",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1783960000000,
+      "tag": "0059_entidade_campos_maiores",
+      "breakpoints": true
     }
   ]
 }
