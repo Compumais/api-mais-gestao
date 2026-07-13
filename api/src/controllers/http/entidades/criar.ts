@@ -10,7 +10,10 @@ const criarEntidadeBodySchema = z.object({
 	tipopessoa: z.number().int().min(0).max(1).optional().nullable(),
 	inscricaoestadual: z.string().max(20).optional().nullable(),
 	rg: z.string().max(20).optional().nullable(),
-	email: z.string().email().max(200).optional().nullable(),
+	email: z
+		.union([z.string().email().max(200), z.literal(""), z.null()])
+		.optional()
+		.transform((v) => (v === "" || v === undefined ? null : v)),
 	telefone: z.string().max(40).optional().nullable(),
 	endereco: z.string().max(60).optional().nullable(),
 	numeroendereco: z.string().max(6).optional().nullable(),
@@ -20,8 +23,20 @@ const criarEntidadeBodySchema = z.object({
 	idestado: z.string().optional().nullable(),
 	cep: z.string().max(9).optional().nullable(),
 	fax: z.string().max(40).optional().nullable(),
-	nascimento: z.string().optional().nullable(),
-	idplanocontas: z.string().optional().nullable(),
+	nascimento: z
+		.string()
+		.optional()
+		.nullable()
+		.transform((v) => {
+			if (!v) return null;
+			const match = v.trim().match(/^(\d{4}-\d{2}-\d{2})/);
+			return match?.[1] ?? null;
+		}),
+	idplanocontas: z
+		.string()
+		.optional()
+		.nullable()
+		.transform((v) => (v === "" || v === undefined ? null : v)),
 	pais: z.string().optional().nullable(),
 	cliente: z.number().int().min(0).max(1).optional(),
 	fornecedor: z.number().int().min(0).max(1).optional(),

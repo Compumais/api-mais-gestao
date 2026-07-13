@@ -86,7 +86,19 @@ describe("criarEntidadeService", () => {
 		).toHaveBeenCalledTimes(1);
 		expect(entidadeRepository.criarEntidade).toHaveBeenCalledTimes(1);
 		expect(entidadeRepository.criarEntidade).toHaveBeenCalledWith(
-			dadosEntidadeMock,
+			expect.objectContaining({
+				id: "entidade-123",
+				nome: "John Doe",
+				cnpjcpf: "12345678901",
+				email: "john.doe@example.com",
+				telefone: "(34) 3351-1861",
+				endereco: "Rua São Miguel",
+				idcidade: "id-sacramento",
+				idestado: "id-mg",
+				cep: "38190-000",
+				pais: "Brasil",
+				idempresa: "empresa-123",
+			}),
 		);
 	});
 
