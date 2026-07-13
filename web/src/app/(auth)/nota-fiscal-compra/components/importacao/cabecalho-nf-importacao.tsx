@@ -125,10 +125,40 @@ export function CabecalhoNfImportacao({
 						</p>
 					</div>
 					<div>
-						<span className="text-muted-foreground">Emissão / Entrada</span>
-						<p className="font-medium">
-							{formatDate(nota.emissao)} / {formatDate(nota.entradasaida)}
-						</p>
+						<span className="text-muted-foreground">Emissão</span>
+						<p className="font-medium">{formatDate(nota.emissao)}</p>
+					</div>
+					<div>
+						<label
+							htmlFor="entradasaida-rascunho"
+							className="text-muted-foreground text-sm"
+						>
+							Data de entrada
+						</label>
+						<input
+							id="entradasaida-rascunho"
+							type="date"
+							className="mt-1 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs"
+							defaultValue={nota.entradasaida?.substring(0, 10) ?? ""}
+							onBlur={(evento) => {
+								const valor = evento.target.value;
+								if (!valor || valor === nota.entradasaida?.substring(0, 10)) {
+									return;
+								}
+								void notaFiscalService
+									.atualizarRascunhoImportacao(idRascunho, {
+										idempresa,
+										entradasaida: valor,
+									})
+									.then(() => {
+										toast.success("Data de entrada atualizada");
+										void queryClient.invalidateQueries({
+											queryKey: ["rascunho-importacao-nf", idRascunho],
+										});
+									})
+									.catch((erro: Error) => toast.error(erro.message));
+							}}
+						/>
 					</div>
 					<div className="sm:col-span-2">
 						<span className="text-muted-foreground">Chave NF-e</span>

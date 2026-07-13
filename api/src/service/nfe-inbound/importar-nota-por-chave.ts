@@ -31,6 +31,7 @@ export type ImportarNotaPorChaveParametros = {
 	chaveNfe: string;
 	idplanocontas?: string;
 	idcondicaopagto?: string;
+	idtipodocumento?: string;
 	xmlOpcional?: string;
 };
 
@@ -126,6 +127,7 @@ export async function importarNotaPorChaveService({
 	chaveNfe,
 	idplanocontas,
 	idcondicaopagto,
+	idtipodocumento,
 	xmlOpcional,
 }: ImportarNotaPorChaveParametros): Promise<
 	HttpResponse<ImportarNotaPorChaveResposta>
@@ -191,6 +193,7 @@ export async function importarNotaPorChaveService({
 		xml: xmlProcNFe,
 		idplanocontas,
 		idcondicaopagto,
+		idtipodocumento,
 	});
 
 	if (!resultadoRascunho.success || !resultadoRascunho.body) {

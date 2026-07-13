@@ -26,6 +26,7 @@ import { diagnosticarChaveNfeInbound } from "@/services/nfe-inbound.service";
 import { notaFiscalService } from "@/services/nota-fiscal.service";
 import {
 	CampoCondicaoPagamentoCompra,
+	CampoFormaPagamentoCompra,
 	CampoPlanoContasDespesa,
 } from "./campos-financeiros-nf-compra";
 
@@ -94,6 +95,7 @@ export function FormImportarChaveNotaFiscalCompra() {
 	const { handleSubmit, setValue, watch, register, formState, getValues } = form;
 	const idplanocontas = watch("idplanocontas");
 	const idcondicaopagto = watch("idcondicaopagto");
+	const idtipodocumento = watch("idtipodocumento");
 
 	const { mutate: importarPorChave, isPending } = useMutation({
 		mutationFn: async (dados: ImportarChaveNfFormData) => {
@@ -104,6 +106,7 @@ export function FormImportarChaveNotaFiscalCompra() {
 				chaveNfe: dados.chaveNfe,
 				idplanocontas: dados.idplanocontas || null,
 				idcondicaopagto: dados.idcondicaopagto || null,
+				idtipodocumento: dados.idtipodocumento || null,
 				xmlOpcional,
 			});
 		},
@@ -298,6 +301,11 @@ export function FormImportarChaveNotaFiscalCompra() {
 						id="idplanocontas-chave"
 						value={idplanocontas}
 						onChange={(value) => setValue("idplanocontas", value)}
+					/>
+					<CampoFormaPagamentoCompra
+						id="idtipodocumento-chave"
+						value={idtipodocumento}
+						onChange={(value) => setValue("idtipodocumento", value)}
 					/>
 					<CampoCondicaoPagamentoCompra
 						id="idcondicaopagto-chave"

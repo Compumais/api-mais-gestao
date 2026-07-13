@@ -23,6 +23,7 @@ export const notaFiscalManualSchema = z.object({
 	entradasaida: z.string().optional(),
 	idplanocontas: z.string().optional(),
 	idcondicaopagto: z.string().optional(),
+	idtipodocumento: z.string().optional(),
 	valortotalnota: z.string().optional(),
 	observacao: z.string().optional(),
 	gerarCustos: z.boolean(),
@@ -54,6 +55,7 @@ export const notaFiscalCompraEdicaoSchema = z.object({
 	entradasaida: z.string().optional().nullable(),
 	idplanocontas: z.string().optional().nullable(),
 	idcondicaopagto: z.string().optional().nullable(),
+	idtipodocumento: z.string().optional().nullable(),
 	valortotalnota: z.string().optional().nullable(),
 	observacao: z.string().optional().nullable(),
 	itens: z.array(itemNotaFiscalEdicaoSchema).min(1),
@@ -66,6 +68,7 @@ export type NotaFiscalCompraEdicaoFormData = z.infer<
 export const importarXmlNfSchema = z.object({
 	idplanocontas: z.string().optional(),
 	idcondicaopagto: z.string().optional(),
+	idtipodocumento: z.string().optional(),
 	gerarCustos: z.boolean(),
 	gerarFinanceiro: z.boolean(),
 });
@@ -82,6 +85,7 @@ export const importarChaveNfSchema = z.object({
 		}),
 	idplanocontas: z.string().optional(),
 	idcondicaopagto: z.string().optional(),
+	idtipodocumento: z.string().optional(),
 });
 
 export type ImportarChaveNfFormData = z.infer<typeof importarChaveNfSchema>;
@@ -90,6 +94,8 @@ export const finalizarRascunhoSchema = z.object({
 	gerarCustos: z.boolean(),
 	gerarFinanceiro: z.boolean(),
 	idcondicaopagto: z.string().optional(),
+	idplanocontas: z.string().optional(),
+	idtipodocumento: z.string().optional(),
 });
 
 export type FinalizarRascunhoFormData = z.infer<typeof finalizarRascunhoSchema>;
@@ -116,6 +122,7 @@ export const itemImportacaoSchema = z.object({
 	eanXml: z.string().optional(),
 	idgrupo: z.string().optional(),
 	idunidademedida: z.string().optional(),
+	tipoproduto: z.string().optional().nullable(),
 	unidadeEstoque: z.string().optional(),
 	origem: z.string().optional(),
 	situacaotributaria: z.string().optional(),

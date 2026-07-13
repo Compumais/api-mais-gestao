@@ -21,6 +21,7 @@ export interface NotaFiscal {
 	observacao: string | null;
 	idplanocontas: string | null;
 	idcondicaopagto: string | null;
+	idtipodocumento?: string | null;
 	idcfop: string | null;
 	baseicms: string | null;
 	icms: string | null;
@@ -126,6 +127,7 @@ export interface ImportarChaveNfPayload {
 	chaveNfe: string;
 	idplanocontas?: string | null;
 	idcondicaopagto?: string | null;
+	idtipodocumento?: string | null;
 	xmlOpcional?: string;
 }
 
@@ -175,6 +177,7 @@ export interface DadosImportacaoItem {
 	unidadeXml?: string;
 	unidadeEstoque?: string;
 	idunidademedida?: string;
+	tipoproduto?: string;
 	fatorConversao: string;
 	quantidadeXml: string;
 	quantidadeEstoque: string;
@@ -270,6 +273,7 @@ export const notaFiscalService = {
 			entradasaida?: string | null;
 			idplanocontas?: string | null;
 			idcondicaopagto?: string | null;
+			idtipodocumento?: string | null;
 			valortotalnota?: string | null;
 			observacao?: string | null;
 			itens?: Array<{
@@ -383,6 +387,7 @@ export const notaFiscalService = {
 			idcfop?: string | null;
 			idplanocontas?: string | null;
 			idcondicaopagto?: string | null;
+			idtipodocumento?: string | null;
 			observacao?: string | null;
 			entradasaida?: string | null;
 			aplicarCfopItens?: boolean;

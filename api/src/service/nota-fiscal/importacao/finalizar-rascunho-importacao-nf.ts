@@ -325,9 +325,11 @@ export async function finalizarRascunhoImportacaoNfService({
 				opcoesProduto,
 			);
 
-			const tipoprodutoCfop = !produtoAtual?.tipoproduto
-				? await resolverTipoprodutoPorCfopEntrada(dadosProduto.idcfopentrada)
-				: undefined;
+			const tipoprodutoResolvido =
+				dados.tipoproduto?.trim() ||
+				(!produtoAtual?.tipoproduto
+					? await resolverTipoprodutoPorCfopEntrada(dadosProduto.idcfopentrada)
+					: undefined);
 
 			const quantidadeImportada = parseQuantidadePadraoImportacao(
 				dados.quantidadeEstoque,
@@ -340,7 +342,9 @@ export async function finalizarRascunhoImportacaoNfService({
 					idcfopsaidanfce:
 						sugestaoSaida.idcfopsaidanfce ?? dadosProduto.idcfopsaidanfce,
 					cfopvendaecf: sugestaoSaida.cfopvendaecf,
-					...(tipoprodutoCfop ? { tipoproduto: tipoprodutoCfop } : {}),
+					...(tipoprodutoResolvido
+						? { tipoproduto: tipoprodutoResolvido }
+						: {}),
 				}),
 				quantidadepadrao:
 					(produtoAtual?.quantidadepadrao ?? 0) + quantidadeImportada,
@@ -382,9 +386,9 @@ export async function finalizarRascunhoImportacaoNfService({
 				opcoesProduto,
 			);
 
-			const tipoprodutoCfop = await resolverTipoprodutoPorCfopEntrada(
-				dadosProduto.idcfopentrada,
-			);
+			const tipoprodutoResolvido =
+				dados.tipoproduto?.trim() ||
+				(await resolverTipoprodutoPorCfopEntrada(dadosProduto.idcfopentrada));
 
 			const novoProduto = await criarProdutoParaNf({
 				...dadosProduto,
@@ -392,7 +396,9 @@ export async function finalizarRascunhoImportacaoNfService({
 				idcfopsaidanfce:
 					sugestaoSaida.idcfopsaidanfce ?? dadosProduto.idcfopsaidanfce,
 				cfopvendaecf: sugestaoSaida.cfopvendaecf,
-				...(tipoprodutoCfop ? { tipoproduto: tipoprodutoCfop } : {}),
+				...(tipoprodutoResolvido
+					? { tipoproduto: tipoprodutoResolvido }
+					: {}),
 			});
 
 			if (!novoProduto) {
@@ -512,6 +518,7 @@ export async function finalizarRascunhoImportacaoNfService({
 			identidade: identidadeFornecedor ?? nota.identidade,
 			totalproduto: nota.totalproduto,
 			valortotalnota: nota.valortotalnota,
+			datainclusao: finalizadoEm,
 			dadosimportacao: {
 				duplicatas: dadosNotaImportacao.duplicatas,
 				finalizadoEm,

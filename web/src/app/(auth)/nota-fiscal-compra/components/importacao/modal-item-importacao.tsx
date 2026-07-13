@@ -4,7 +4,8 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { Plus } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { OPCOES_TIPO_PRODUTO } from "@/constants/tipo-produto";
 import {
 	type ItemImportacaoFormData,
 	itemImportacaoSchema,
@@ -35,6 +37,7 @@ import {
 	type DadosImportacaoItem,
 	type NotaFiscalItemImportacao,
 } from "@/services/nota-fiscal.service";
+import { DialogCriarGrupoRapido } from "../dialog-criar-grupo-rapido";
 import { CampoCfopImportacao } from "./campo-cfop-importacao";
 import { CampoUnidadeMedidaImportacao } from "./campo-unidade-medida-importacao";
 
@@ -109,6 +112,7 @@ function montarDefaultValues(
 		eanXml: dados.eanXml ?? "",
 		idgrupo: dados.idgrupo ?? "",
 		idunidademedida: dados.idunidademedida ?? "",
+		tipoproduto: dados.tipoproduto ?? "",
 		unidadeEstoque: dados.unidadeEstoque ?? "",
 		origem: trib.origem !== undefined ? String(trib.origem) : "",
 
@@ -155,7 +159,7 @@ export function ModalItemImportacao({
 }: ModalItemImportacaoProps) {
 
 	const queryClient = useQueryClient();
-
+	const [dialogGrupoAberto, setDialogGrupoAberto] = useState(false);
 	const dados = item.dadosimportacao;
 
 
@@ -270,6 +274,7 @@ export function ModalItemImportacao({
 				eanXml: formData.eanXml || dados.eanXml,
 				idgrupo: formData.idgrupo || undefined,
 				idunidademedida: formData.idunidademedida || undefined,
+				tipoproduto: formData.tipoproduto || undefined,
 				unidadeEstoque: formData.unidadeEstoque || undefined,
 				tributacao: {
 
@@ -340,7 +345,7 @@ export function ModalItemImportacao({
 
 
 	return (
-
+		<>
 		<Dialog open={aberto} onOpenChange={onAbertoChange}>
 
 			<DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -441,10 +446,26 @@ export function ModalItemImportacao({
 									<Input id="precoVenda" {...register("precoVenda")} />
 								</Field>
 								<Field>
-									<FieldLabel htmlFor="idgrupo">Grupo do produto{precisaDadosProduto ? " *" : ""}</FieldLabel>
+									<div className="mb-2 flex items-center justify-between gap-2">
+										<FieldLabel htmlFor="idgrupo">
+											Grupo do produto{precisaDadosProduto ? " *" : ""}
+										</FieldLabel>
+										<Button
+											type="button"
+											variant="ghost"
+											size="sm"
+											className="h-8 gap-1 px-2"
+											onClick={() => setDialogGrupoAberto(true)}
+										>
+											<Plus className="size-3.5" aria-hidden="true" />
+											Cadastrar
+										</Button>
+									</div>
 									<Select
 										value={watch("idgrupo") || undefined}
-										onValueChange={(value) => setValue("idgrupo", value, { shouldDirty: true })}
+										onValueChange={(value) =>
+											setValue("idgrupo", value, { shouldDirty: true })
+										}
 										disabled={carregandoGrupos}
 									>
 										<SelectTrigger id="idgrupo" className="w-full">
@@ -473,7 +494,7 @@ export function ModalItemImportacao({
 										</SelectContent>
 									</Select>
 									{precisaDadosProduto && statusVinculo === "pendente" ? (
-										<p className="text-xs text-muted-foreground mt-1">
+										<p className="mt-1 text-xs text-muted-foreground">
 											Obrigatório ao marcar o item como cadastro novo.
 										</p>
 									) : null}
@@ -491,13 +512,45 @@ export function ModalItemImportacao({
 										}
 									}}
 								/>
+								<Field>
+									<FieldLabel htmlFor="tipoproduto-item">
+										Tipo de produto
+									</FieldLabel>
+									<Select
+										value={watch("tipoproduto") || "none"}
+										onValueChange={(valor) =>
+											setValue(
+												"tipoproduto",
+												valor === "none" ? "" : valor,
+												{ shouldDirty: true },
+											)
+										}
+									>
+										<SelectTrigger id="tipoproduto-item" className="w-full">
+											<SelectValue placeholder="Selecione o tipo" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="none">Não informado</SelectItem>
+											{OPCOES_TIPO_PRODUTO.map((opcao) => (
+												<SelectItem key={opcao.value} value={opcao.value}>
+													{opcao.label}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</Field>
 								<CampoCfopImportacao
 									id="idcfop-item"
 									label="CFOP de entrada"
 									value={watch("idcfop")}
 									codigoXml={dados.cfopXml}
-									onChange={(idcfop) => {
+									onChange={(idcfop, _codigo, tipoprodutoCfop) => {
 										setValue("idcfop", idcfop, { shouldDirty: true });
+										if (tipoprodutoCfop) {
+											setValue("tipoproduto", tipoprodutoCfop, {
+												shouldDirty: true,
+											});
+										}
 									}}
 								/>
 								<p className="text-xs text-muted-foreground -mt-2">
@@ -694,7 +747,17 @@ export function ModalItemImportacao({
 			</DialogContent>
 
 		</Dialog>
-
+		<DialogCriarGrupoRapido
+			aberto={dialogGrupoAberto}
+			onAbertoChange={setDialogGrupoAberto}
+			onCriado={(id) => {
+				void queryClient.invalidateQueries({
+					queryKey: ["hierarquias", idempresa],
+				});
+				setValue("idgrupo", id, { shouldDirty: true });
+			}}
+		/>
+		</>
 	);
 
 }

@@ -9,6 +9,7 @@ import {
 } from "@/service/automacao/crud-automacao.js";
 import { executarAutomacaoManualService } from "@/service/automacao/executar-automacao.js";
 import { FUNCAO_ENVIO_FISCAL_CONTABILIDADE } from "@/service/automacao/funcoes/envio-fiscal-contabilidade.js";
+import { FUNCAO_ALERTA_PENDENCIAS_NF } from "@/service/automacao/funcoes/alerta-pendencias-nf.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
 const queryListarSchema = z.object({
@@ -24,6 +25,8 @@ const parametrosSchema = z
 		incluirSintegra: z.boolean().optional(),
 		incluirXml: z.boolean().optional(),
 		finalidadeSintegra: z.enum(["1", "2", "3", "5"]).optional(),
+		incluirNfe: z.boolean().optional(),
+		incluirNfce: z.boolean().optional(),
 	})
 	.nullable()
 	.optional();
@@ -31,7 +34,10 @@ const parametrosSchema = z
 const bodyCriarSchema = z.object({
 	idempresa: z.string().uuid(),
 	nome: z.string().min(1).max(120),
-	funcao: z.literal(FUNCAO_ENVIO_FISCAL_CONTABILIDADE),
+	funcao: z.enum([
+		FUNCAO_ENVIO_FISCAL_CONTABILIDADE,
+		FUNCAO_ALERTA_PENDENCIAS_NF,
+	]),
 	ativo: z.boolean().optional(),
 	recorrencia: z.enum(["unica", "diaria", "semanal", "mensal"]),
 	horario: z.string().regex(/^\d{2}:\d{2}$/),

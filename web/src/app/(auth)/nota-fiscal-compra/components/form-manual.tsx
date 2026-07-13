@@ -33,6 +33,7 @@ import { entidadesService } from "@/services/entidades.service";
 import { notaFiscalService } from "@/services/nota-fiscal.service";
 import {
 	CampoCondicaoPagamentoCompra,
+	CampoFormaPagamentoCompra,
 	CampoPlanoContasDespesa,
 } from "./campos-financeiros-nf-compra";
 
@@ -88,6 +89,7 @@ export function FormManualNotaFiscalCompra() {
 	const identidade = watch("identidade");
 	const idplanocontas = watch("idplanocontas");
 	const idcondicaopagto = watch("idcondicaopagto");
+	const idtipodocumento = watch("idtipodocumento");
 	const gerarCustos = watch("gerarCustos");
 	const gerarFinanceiro = watch("gerarFinanceiro");
 
@@ -139,6 +141,7 @@ export function FormManualNotaFiscalCompra() {
 				entradasaida: dados.entradasaida || null,
 				idplanocontas: dados.idplanocontas || null,
 				idcondicaopagto: dados.idcondicaopagto || null,
+				idtipodocumento: dados.idtipodocumento || null,
 				valortotalnota: dados.valortotalnota || totalCalculado.toFixed(2),
 				observacao: dados.observacao || null,
 				gerarCustos: dados.gerarCustos,
@@ -333,6 +336,10 @@ export function FormManualNotaFiscalCompra() {
 					<CampoPlanoContasDespesa
 						value={idplanocontas}
 						onChange={(value) => setValue("idplanocontas", value)}
+					/>
+					<CampoFormaPagamentoCompra
+						value={idtipodocumento}
+						onChange={(value) => setValue("idtipodocumento", value)}
 					/>
 					<CampoCondicaoPagamentoCompra
 						value={idcondicaopagto}

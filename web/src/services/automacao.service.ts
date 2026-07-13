@@ -1,9 +1,12 @@
 import { api } from "@/lib/axios";
+import type { FuncaoAutomacao } from "@/schemas/automacao.schema";
 
 export type AutomacaoParametros = {
 	incluirSintegra?: boolean;
 	incluirXml?: boolean;
 	finalidadeSintegra?: "1" | "2" | "3" | "5";
+	incluirNfe?: boolean;
+	incluirNfce?: boolean;
 };
 
 export type Automacao = {
@@ -27,7 +30,7 @@ export type Automacao = {
 export type CriarAutomacaoData = {
 	idempresa: string;
 	nome: string;
-	funcao: "envio_fiscal_contabilidade";
+	funcao: FuncaoAutomacao;
 	ativo?: boolean;
 	recorrencia: Automacao["recorrencia"];
 	horario: string;

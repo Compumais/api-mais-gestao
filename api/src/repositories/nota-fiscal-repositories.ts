@@ -681,7 +681,7 @@ export async function listarNotasRelatorioFiscalContabilidade({
 		.orderBy(desc(notafiscal.emissao));
 }
 
-const STATUS_NFCE_PENDENTE_CORRECAO = [90, 110, 301] as const;
+const STATUS_NOTA_PENDENTE_CORRECAO = [90, 110, 301] as const;
 
 export type ContarNfcePendentesPeriodoParametros = {
 	idempresa: string;
@@ -689,24 +689,80 @@ export type ContarNfcePendentesPeriodoParametros = {
 	dataFim: string;
 };
 
+export type ContarNotasPendentesCorrecaoParametros = {
+	idempresa: string;
+	incluirNfe?: boolean;
+	incluirNfce?: boolean;
+	dataInicio?: string;
+	dataFim?: string;
+};
+
+export type ContagemNotasPendentesCorrecao = {
+	nfe: number;
+	nfce: number;
+	total: number;
+};
+
+/** NF-e (55) e/ou NFC-e (65) pendente/rejeitada/denegada. */
+export async function contarNotasFiscaisPendentesCorrecao({
+	idempresa,
+	incluirNfe = true,
+	incluirNfce = true,
+	dataInicio,
+	dataFim,
+}: ContarNotasPendentesCorrecaoParametros): Promise<ContagemNotasPendentesCorrecao> {
+	const modelos: string[] = [];
+	if (incluirNfe) modelos.push("55");
+	if (incluirNfce) modelos.push("65");
+
+	if (modelos.length === 0) {
+		return { nfe: 0, nfce: 0, total: 0 };
+	}
+
+	const condicoes = [
+		eq(notafiscal.idempresa, idempresa),
+		inArray(notafiscal.modelo, modelos),
+		inArray(notafiscal.status, [...STATUS_NOTA_PENDENTE_CORRECAO]),
+	];
+
+	if (dataInicio) {
+		condicoes.push(gte(notafiscal.emissao, dataInicio));
+	}
+	if (dataFim) {
+		condicoes.push(lte(notafiscal.emissao, dataFim));
+	}
+
+	const linhas = await db
+		.select({
+			modelo: notafiscal.modelo,
+			value: count(),
+		})
+		.from(notafiscal)
+		.where(and(...condicoes))
+		.groupBy(notafiscal.modelo);
+
+	let nfe = 0;
+	let nfce = 0;
+	for (const linha of linhas) {
+		if (linha.modelo === "55") nfe = linha.value;
+		if (linha.modelo === "65") nfce = linha.value;
+	}
+
+	return { nfe, nfce, total: nfe + nfce };
+}
+
 /** NFC-e (modelo 65) pendente/rejeitada/denegada no período de emissão. */
 export async function contarNfcePendentesNoPeriodo({
 	idempresa,
 	dataInicio,
 	dataFim,
 }: ContarNfcePendentesPeriodoParametros): Promise<number> {
-	const [resultado] = await db
-		.select({ value: count() })
-		.from(notafiscal)
-		.where(
-			and(
-				eq(notafiscal.idempresa, idempresa),
-				eq(notafiscal.modelo, "65"),
-				inArray(notafiscal.status, [...STATUS_NFCE_PENDENTE_CORRECAO]),
-				gte(notafiscal.emissao, dataInicio),
-				lte(notafiscal.emissao, dataFim),
-			),
-		);
-
-	return resultado?.value ?? 0;
+	const resultado = await contarNotasFiscaisPendentesCorrecao({
+		idempresa,
+		incluirNfe: false,
+		incluirNfce: true,
+		dataInicio,
+		dataFim,
+	});
+	return resultado.nfce;
 }
