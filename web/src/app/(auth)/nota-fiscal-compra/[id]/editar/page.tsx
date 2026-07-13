@@ -28,6 +28,7 @@ import {
 import { notaFiscalService } from "@/services/nota-fiscal.service";
 import {
 	CampoCondicaoPagamentoCompra,
+	CampoFormaPagamentoCompra,
 	CampoPlanoContasDespesa,
 } from "../../components/campos-financeiros-nf-compra";
 
@@ -58,6 +59,7 @@ export default function EditarNotaFiscalCompraPage() {
 			entradasaida: "",
 			idplanocontas: "",
 			idcondicaopagto: "",
+			idtipodocumento: "",
 			valortotalnota: "",
 			observacao: "",
 			itens: [],
@@ -92,6 +94,7 @@ export default function EditarNotaFiscalCompraPage() {
 			entradasaida: nota.entradasaida?.substring(0, 10) ?? "",
 			idplanocontas: nota.idplanocontas ?? "",
 			idcondicaopagto: nota.idcondicaopagto ?? "",
+			idtipodocumento: nota.idtipodocumento ?? "",
 			valortotalnota: nota.valortotalnota ?? "",
 			observacao: nota.observacao ?? "",
 			itens: data.itens.map((item) => ({
@@ -134,6 +137,7 @@ export default function EditarNotaFiscalCompraPage() {
 				entradasaida: dados.entradasaida || null,
 				idplanocontas: dados.idplanocontas || null,
 				idcondicaopagto: dados.idcondicaopagto || null,
+				idtipodocumento: dados.idtipodocumento || null,
 				valortotalnota: dados.valortotalnota || totalCalculado.toFixed(2),
 				observacao: dados.observacao || null,
 				itens,
@@ -261,6 +265,12 @@ export default function EditarNotaFiscalCompraPage() {
 								value={watch("idplanocontas") ?? ""}
 								onChange={(valor) =>
 									setValue("idplanocontas", valor, { shouldDirty: true })
+								}
+							/>
+							<CampoFormaPagamentoCompra
+								value={watch("idtipodocumento") ?? ""}
+								onChange={(valor) =>
+									setValue("idtipodocumento", valor, { shouldDirty: true })
 								}
 							/>
 							<CampoCondicaoPagamentoCompra

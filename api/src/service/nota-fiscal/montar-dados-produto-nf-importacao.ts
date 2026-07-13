@@ -60,6 +60,7 @@ export function montarDadosProdutoNfImportacao(
 		idcfopsaidanfce: opcoes.idcfopsaida,
 		idfornecedor: opcoes.idfornecedor,
 		idgrupo: dados.idgrupo,
+		tipoproduto: dados.tipoproduto,
 		custoaquisicao: dados.custoContabilCalculado ?? dados.precounitarioEstoque,
 		quantidadepadrao: parseQuantidadePadraoImportacao(dados.quantidadeEstoque),
 		preco: dados.precoVenda,

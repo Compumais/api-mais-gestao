@@ -15,6 +15,8 @@ export type AutomacaoParametros = {
 	incluirSintegra?: boolean;
 	incluirXml?: boolean;
 	finalidadeSintegra?: "1" | "2" | "3" | "5";
+	incluirNfe?: boolean;
+	incluirNfce?: boolean;
 };
 
 export const automacao = pgTable(

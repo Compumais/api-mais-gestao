@@ -12,7 +12,8 @@ export type TipoNotificacaoAgendada =
 	| "alerta_saldo_baixo"
 	| "alerta_conciliacao"
 	| "relatorio_automatico"
-	| "alerta_cupom_pendente_periodo";
+	| "alerta_cupom_pendente_periodo"
+	| "alerta_pendencias_nf";
 
 export type CriarNotificacaoAgendadaParams = {
 	tipo: TipoNotificacaoAgendada;

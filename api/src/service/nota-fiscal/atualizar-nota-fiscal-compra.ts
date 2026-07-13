@@ -60,6 +60,7 @@ type AtualizarNotaFiscalCompraParametros = {
 		idcfop?: string | null | undefined;
 		idplanocontas?: string | null | undefined;
 		idcondicaopagto?: string | null | undefined;
+		idtipodocumento?: string | null | undefined;
 		valortotalnota?: string | null | undefined;
 		totalproduto?: string | null | undefined;
 		frete?: string | null | undefined;
@@ -130,6 +131,7 @@ export async function atualizarNotaFiscalCompraService({
 		idcfop: idOpcionalOuNulo(dados.idcfop) ?? undefined,
 		idplanocontas: idOpcionalOuNulo(dados.idplanocontas) ?? undefined,
 		idcondicaopagto: idOpcionalOuNulo(dados.idcondicaopagto) ?? undefined,
+		idtipodocumento: idOpcionalOuNulo(dados.idtipodocumento) ?? undefined,
 		valortotalnota: numeroOpcionalOuNulo(dados.valortotalnota) ?? undefined,
 		totalproduto: numeroOpcionalOuNulo(dados.totalproduto) ?? undefined,
 		frete: numeroOpcionalOuNulo(dados.frete) ?? undefined,
