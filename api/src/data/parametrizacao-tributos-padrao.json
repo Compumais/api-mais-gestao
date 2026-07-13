@@ -3,22 +3,22 @@
 		{
 			"codigocfopentrada": "5101",
 			"codigocfopsaidanfe": "5102",
-			"cstnfe": "0",
+			"cstnfe": "00",
 			"csosnnfe": "101",
 			"taxaicmsnfe": "SSS",
 			"codigocfopsaidanfce": "5102",
-			"cstnfce": "0",
+			"cstnfce": "00",
 			"csosnnfce": "102",
 			"taxaicmsnfce": "SSS"
 		},
 		{
 			"codigocfopentrada": "5102",
 			"codigocfopsaidanfe": "5102",
-			"cstnfe": "0",
+			"cstnfe": "00",
 			"csosnnfe": "101",
 			"taxaicmsnfe": "SSS",
 			"codigocfopsaidanfce": "5102",
-			"cstnfce": "0",
+			"cstnfce": "00",
 			"csosnnfce": "102",
 			"taxaicmsnfce": "SSS"
 		},
@@ -58,22 +58,22 @@
 		{
 			"codigocfopentrada": "6101",
 			"codigocfopsaidanfe": "5102",
-			"cstnfe": "0",
+			"cstnfe": "00",
 			"csosnnfe": "101",
 			"taxaicmsnfe": "SSS",
 			"codigocfopsaidanfce": "5102",
-			"cstnfce": "0",
+			"cstnfce": "00",
 			"csosnnfce": "102",
 			"taxaicmsnfce": "SSS"
 		},
 		{
 			"codigocfopentrada": "6102",
 			"codigocfopsaidanfe": "5102",
-			"cstnfe": "0",
+			"cstnfe": "00",
 			"csosnnfe": "101",
 			"taxaicmsnfe": "SSS",
 			"codigocfopsaidanfce": "5102",
-			"cstnfce": "0",
+			"cstnfce": "00",
 			"csosnnfce": "102",
 			"taxaicmsnfce": "SSS"
 		},

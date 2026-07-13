@@ -305,15 +305,15 @@ export const notaFiscalService = {
 		id: string,
 		payload: { idempresa: string; motivo?: string },
 	): Promise<{
-		notaFiscal: NotaFiscal;
-		titulosCancelados: number;
+		titulosEstornados: number;
 		movimentosEstornados: number;
+		custosRemovidos: number;
 		avisos: string[];
 	}> {
 		const { data } = await api.post<{
-			notaFiscal: NotaFiscal;
-			titulosCancelados: number;
+			titulosEstornados: number;
 			movimentosEstornados: number;
+			custosRemovidos: number;
 			avisos: string[];
 		}>(`/notas-fiscais/${id}/cancelar`, payload);
 		return data;

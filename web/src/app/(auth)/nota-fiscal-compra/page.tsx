@@ -247,7 +247,7 @@ export default function NotaFiscalCompraPage() {
 		},
 		onSuccess: (resultado) => {
 			toast.success(
-				`Nota cancelada. Estoque: ${resultado.movimentosEstornados} movimento(s), financeiro: ${resultado.titulosCancelados} título(s).`,
+				`Nota cancelada e removida. Estoque: ${resultado.movimentosEstornados} movimento(s), financeiro: ${resultado.titulosEstornados} título(s), custos: ${resultado.custosRemovidos}.`,
 			);
 			for (const aviso of resultado.avisos ?? []) {
 				toast.warning(aviso);
@@ -438,11 +438,11 @@ export default function NotaFiscalCompraPage() {
 			>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>Cancelar nota de compra?</AlertDialogTitle>
+						<AlertDialogTitle>Cancelar e apagar nota de compra?</AlertDialogTitle>
 						<AlertDialogDescription>
-							A nota será marcada como cancelada. O estoque de entrada será
-							estornado e os títulos a pagar sem baixa serão cancelados. Esta
-							ação não pode ser desfeita facilmente.
+							O estoque de entrada será estornado, os títulos a pagar sem baixa e
+							os custos vinculados à nota serão removidos, e a nota será
+							excluída permanentemente. Esta ação não pode ser desfeita.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
@@ -454,7 +454,7 @@ export default function NotaFiscalCompraPage() {
 								if (notaCancelar) cancelarNota(notaCancelar);
 							}}
 						>
-							{cancelando ? "Cancelando..." : "Confirmar cancelamento"}
+							{cancelando ? "Cancelando..." : "Confirmar e apagar"}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>

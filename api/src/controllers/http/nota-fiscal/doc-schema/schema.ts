@@ -244,9 +244,9 @@ export const atualizarNotaFiscalSchema: FastifySchema = {
 
 export const cancelarNotaFiscalCompraSchema: FastifySchema = {
 	tags: ["nota-fiscal"],
-	summary: "Cancelar nota fiscal de compra",
+	summary: "Cancelar e apagar nota fiscal de compra",
 	description:
-		"Cancela a NF de compra (status 2), estorna estoque e cancela títulos a pagar sem baixa parcial.",
+		"Estorna estoque e títulos a pagar sem baixa parcial, remove custos da nota e exclui fisicamente a NF de compra (itens/XML em cascade).",
 	security: [{ bearerAuth: [] }],
 	params: {
 		type: "object",
