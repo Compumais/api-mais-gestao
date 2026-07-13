@@ -27,6 +27,7 @@ import { gerarContasPagarNfService } from "@/service/nota-fiscal/gerar-contas-pa
 import {
 	montarDadosProdutoNfImportacao,
 	parseQuantidadePadraoImportacao,
+	resolverTipoprodutoPorCfopEntrada,
 } from "@/service/nota-fiscal/montar-dados-produto-nf-importacao.js";
 import { registrarMovimentosEstoqueNf } from "@/service/nota-fiscal/registrar-movimentos-estoque-nf.js";
 import { validarEanProdutoNf } from "@/service/nota-fiscal/validar-ean-produto-nf.js";
@@ -324,6 +325,10 @@ export async function finalizarRascunhoImportacaoNfService({
 				opcoesProduto,
 			);
 
+			const tipoprodutoCfop = !produtoAtual?.tipoproduto
+				? await resolverTipoprodutoPorCfopEntrada(dadosProduto.idcfopentrada)
+				: undefined;
+
 			const quantidadeImportada = parseQuantidadePadraoImportacao(
 				dados.quantidadeEstoque,
 			);
@@ -335,6 +340,7 @@ export async function finalizarRascunhoImportacaoNfService({
 					idcfopsaidanfce:
 						sugestaoSaida.idcfopsaidanfce ?? dadosProduto.idcfopsaidanfce,
 					cfopvendaecf: sugestaoSaida.cfopvendaecf,
+					...(tipoprodutoCfop ? { tipoproduto: tipoprodutoCfop } : {}),
 				}),
 				quantidadepadrao:
 					(produtoAtual?.quantidadepadrao ?? 0) + quantidadeImportada,
@@ -376,12 +382,17 @@ export async function finalizarRascunhoImportacaoNfService({
 				opcoesProduto,
 			);
 
+			const tipoprodutoCfop = await resolverTipoprodutoPorCfopEntrada(
+				dadosProduto.idcfopentrada,
+			);
+
 			const novoProduto = await criarProdutoParaNf({
 				...dadosProduto,
 				...sugestaoSaida,
 				idcfopsaidanfce:
 					sugestaoSaida.idcfopsaidanfce ?? dadosProduto.idcfopsaidanfce,
 				cfopvendaecf: sugestaoSaida.cfopvendaecf,
+				...(tipoprodutoCfop ? { tipoproduto: tipoprodutoCfop } : {}),
 			});
 
 			if (!novoProduto) {

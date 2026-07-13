@@ -42,6 +42,7 @@ const atualizarProdutoBodySchema = z.object({
 	ippt: z.enum(["P", "T"]).optional(),
 	origem: z.number().int().min(0).max(8).optional(),
 	ncm: z.string().min(1).max(10).optional(),
+	tipoproduto: z.string().max(2).optional().nullable(),
 	observacoes: z.string().optional().nullable(),
 	enviamobile: z.number().int().min(0).max(1).optional(),
 	quantidadepadrao: z.number().int().min(0).optional().nullable(),

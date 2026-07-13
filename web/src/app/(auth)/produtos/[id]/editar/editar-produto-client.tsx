@@ -33,6 +33,7 @@ function mapProdutoToForm(
 		ippt: ippt === "P" || ippt === "T" ? ippt : "P",
 		origem: data.origem ?? 0,
 		ncm: data.ncm ?? "",
+		tipoproduto: data.tipoproduto ?? null,
 		idcfopentrada: data.idcfopentrada ?? null,
 		idcfopsaida: data.idcfopsaida ?? null,
 		idcfopsaidanfce: data.idcfopsaidanfce ?? null,

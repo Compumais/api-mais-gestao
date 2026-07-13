@@ -11,7 +11,13 @@ export const criarCfopSchema: FastifySchema = {
 			idempresa: { type: "string", description: "ID da empresa" },
 			codigo: { type: "string" },
 			descricao: { type: "string" },
-			"...": { type: "string", description: "Demais campos da entidade" }
+			tipoproduto: {
+				type: "string",
+				maxLength: 2,
+				nullable: true,
+				description: "Tipo de produto SPED 0200 associado à natureza",
+			},
+			"...": { type: "string", description: "Demais campos da entidade" },
 		},
 		required: ["idempresa"],
 	},
