@@ -1,4 +1,8 @@
 import type { ParametrizacaoTributos } from "@/repositories/parametrizacao-tributos-repositories.js";
+import {
+	normalizarCsosnSaida,
+	normalizarCstSaida,
+} from "@/util/parametrizacao-tributos-matching.js";
 import type { SugestaoTributacaoSaidaProduto } from "@/util/sugerir-tributacao-saida-produto-nf.js";
 import { codigoCfopParaInteiro } from "@/util/preencher-tributacao-produto-cfop.js";
 import { truncarTexto } from "@/util/texto-util.js";
@@ -20,6 +24,12 @@ export function aplicarParametrizacaoTributosImportacao(
 	codigoCfopSaidaNfce?: string | null,
 ): ResultadoParametrizacaoImportacao {
 	const cfopNfe = codigoCfopSaidaNfe ?? codigoCfopSaidaNfce;
+	const situacaotributaria = normalizarCstSaida(regra.cstnfe);
+	const situacaotributariasn = normalizarCsosnSaida(regra.csosnnfe);
+	const tributacaoespecial =
+		normalizarCstSaida(regra.cstnfce) ?? situacaotributaria;
+	const tributacaosn =
+		normalizarCsosnSaida(regra.csosnnfce) ?? situacaotributariasn;
 
 	return {
 		regra,
@@ -27,10 +37,10 @@ export function aplicarParametrizacaoTributosImportacao(
 			idcfopsaida: regra.idcfopsaidanfe ?? undefined,
 			idcfopsaidanfce: regra.idcfopsaidanfce ?? regra.idcfopsaidanfe ?? undefined,
 			cfopvendaecf: codigoCfopParaInteiro(cfopNfe) ?? undefined,
-			situacaotributaria: truncarTexto(regra.cstnfe, 3) ?? undefined,
-			situacaotributariasn: truncarTexto(regra.csosnnfe, 3) ?? undefined,
-			tributacaoespecial: truncarTexto(regra.cstnfce, 7) ?? undefined,
-			tributacaosn: truncarTexto(regra.csosnnfce, 3) ?? undefined,
+			situacaotributaria,
+			situacaotributariasn,
+			tributacaoespecial: truncarTexto(tributacaoespecial, 7) ?? undefined,
+			tributacaosn,
 			cstpis: truncarTexto(regra.cstpis, 2) ?? undefined,
 			cstcofins: truncarTexto(regra.cstcofins, 2) ?? undefined,
 		},

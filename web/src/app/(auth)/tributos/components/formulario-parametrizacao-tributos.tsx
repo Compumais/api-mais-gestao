@@ -60,13 +60,23 @@ export function FormularioParametrizacaoTributos({
 					<h3 className="text-base font-semibold">Entrada</h3>
 					<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 						<Field data-invalid={!!errors.codigocfopentrada}>
-							<FieldLabel htmlFor="codigocfopentrada">CFOP entrada *</FieldLabel>
+							<FieldLabel htmlFor="codigocfopentrada">
+								CFOP do XML (fornecedor) *
+							</FieldLabel>
 							<Input
 								id="codigocfopentrada"
-								placeholder="Ex.: 1102"
+								placeholder="Ex.: 5102"
 								maxLength={10}
+								aria-describedby="codigocfopentrada-ajuda"
 								{...register("codigocfopentrada")}
 							/>
+							<p
+								id="codigocfopentrada-ajuda"
+								className="text-muted-foreground text-xs"
+							>
+								Use o CFOP que vem no XML da nota do fornecedor (geralmente
+								5xxx/6xxx), não o CFOP operacional de entrada (1xxx).
+							</p>
 							<FieldError
 								errors={
 									errors.codigocfopentrada ? [errors.codigocfopentrada] : []

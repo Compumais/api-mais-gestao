@@ -7,11 +7,16 @@ import {
 } from "@/repositories/nota-fiscal-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
 import {
+	httpBadRequest,
 	httpErroInterno,
 	httpNaoEncontrado,
 	httpProibido,
 	httpSemConteudo,
 } from "@/util/http-util.js";
+import {
+	STATUS_NF_COMPRA_CANCELADA,
+	STATUS_RASCUNHO_IMPORTACAO,
+} from "@/util/nota-fiscal-constants.js";
 
 type ExcluirNotaFiscalParametros = {
 	notaFiscalId: string;
@@ -37,6 +42,23 @@ export async function excluirNotaFiscalService({
 		return httpProibido();
 	}
 
+	const ehCompra =
+		registro.tipoorigem === 0 || registro.tipoorigem === null;
+	const ehRascunho = registro.status === STATUS_RASCUNHO_IMPORTACAO;
+	const ehCancelada = registro.status === STATUS_NF_COMPRA_CANCELADA;
+
+	if (ehCompra && !ehRascunho && !ehCancelada) {
+		return httpBadRequest(
+			"Nota de compra confirmada deve ser cancelada via POST /notas-fiscais/:id/cancelar (estorna estoque/financeiro e apaga a nota)",
+		);
+	}
+
+	if (ehRascunho) {
+		return httpBadRequest(
+			"Rascunho de importação deve ser excluído em DELETE /notas-fiscais/rascunhos/:id",
+		);
+	}
+
 	const auditoriaId = uuidv4();
 
 	const auditoria = await criarAuditoriaService({
@@ -49,6 +71,7 @@ export async function excluirNotaFiscalService({
 		criadoem: new Date().toISOString(),
 		metadados: {
 			numero: registro.numero,
+			status: registro.status,
 		},
 	});
 
