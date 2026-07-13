@@ -42,6 +42,7 @@ export function EditarNaturezaClient({ id }: EditarNaturezaClientProps) {
 					valoresIniciais={{
 						codigo: data.codigo ?? "",
 						descricao: data.descricao ?? "",
+						tipoproduto: data.tipoproduto ?? null,
 					}}
 				/>
 			</div>

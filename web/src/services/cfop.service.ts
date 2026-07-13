@@ -7,6 +7,7 @@ export interface Cfop {
 	idempresa: string;
 	codigo: string | null;
 	descricao: string | null;
+	tipoproduto?: string | null;
 	currenttimemillis?: number | null;
 }
 
@@ -24,11 +25,13 @@ export interface CriarCfopData {
 	idempresa: string;
 	codigo: string;
 	descricao: string;
+	tipoproduto?: string | null;
 }
 
 export interface AtualizarCfopData {
 	codigo?: string;
 	descricao?: string;
+	tipoproduto?: string | null;
 }
 
 export function inferirTipoMovimentoCfop(

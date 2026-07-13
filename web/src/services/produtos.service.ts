@@ -19,6 +19,7 @@ export interface Produto {
 	ippt: string | null;
 	origem: number | null;
 	ncm: string | null;
+	tipoproduto?: string | null;
 	observacoes: string | null;
 	inativo: number | null;
 	enviamobile?: number | null;
@@ -70,6 +71,7 @@ export interface CriarProdutoData {
 	ippt: string;
 	origem: number;
 	ncm: string;
+	tipoproduto?: string | null;
 	observacoes?: string | null;
 	enviamobile?: number | null;
 	quantidadepadrao?: number | null;
@@ -118,6 +120,7 @@ export interface AtualizarProdutoData {
 	ippt?: string;
 	origem?: number;
 	ncm?: string;
+	tipoproduto?: string | null;
 	observacoes?: string | null;
 	enviamobile?: number | null;
 	quantidadepadrao?: number | null;

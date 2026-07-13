@@ -58,6 +58,11 @@ export const produtoFormSchema = z.object({
 		.string()
 		.min(1, "NCM é obrigatório")
 		.max(10, "NCM deve ter no máximo 10 caracteres"),
+	tipoproduto: z
+		.string()
+		.max(2, "Tipo de produto deve ter no máximo 2 caracteres")
+		.optional()
+		.nullable(),
 	idcfopentrada: z.string().optional().nullable(),
 	idcfopsaida: z.string().optional().nullable(),
 	idcfopsaidanfce: z.string().optional().nullable(),

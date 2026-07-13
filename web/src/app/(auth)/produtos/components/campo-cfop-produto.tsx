@@ -4,14 +4,18 @@ import { useQuery } from "@tanstack/react-query";
 import { Combobox } from "@/components/ui/combobox";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { useEmpresa } from "@/hooks/use-empresa";
-import { cfopService, type TipoMovimentoCfop } from "@/services/cfop.service";
+import {
+	cfopService,
+	type Cfop,
+	type TipoMovimentoCfop,
+} from "@/services/cfop.service";
 
 type CampoCfopProdutoProps = {
 	id: string;
 	label: string;
 	value?: string | null;
 	tipomovimento: TipoMovimentoCfop;
-	onChange: (idcfop: string) => void;
+	onChange: (idcfop: string, cfop?: Cfop | null) => void;
 	erro?: string | undefined;
 };
 
@@ -53,7 +57,11 @@ export function CampoCfopProduto({
 			<Combobox
 				options={opcoes}
 				value={value ?? ""}
-				onChange={onChange}
+				onChange={(idSelecionado) => {
+					const cfop =
+						cfops.find((item) => item.id === idSelecionado) ?? null;
+					onChange(idSelecionado, cfop);
+				}}
 				placeholder={isLoading ? "Carregando..." : "Selecione o CFOP"}
 				searchPlaceholder="Buscar CFOP..."
 				emptyMessage="Nenhum CFOP encontrado"

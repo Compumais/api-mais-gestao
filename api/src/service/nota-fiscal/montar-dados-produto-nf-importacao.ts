@@ -1,4 +1,5 @@
 import type { DadosImportacaoItem } from "@/model/nota-fiscal-importacao-model.js";
+import { buscarCfopPorId } from "@/repositories/cfop-repositories.js";
 import type { DadosProdutoNF } from "@/service/nota-fiscal/vincular-ou-criar-produto.js";
 import type { ConfigRegimeImportacaoNf } from "@/util/regime-tributario-empresa.js";
 import { normalizarCodigoBarras, truncarTexto } from "@/util/texto-util.js";
@@ -15,6 +16,18 @@ type MontarDadosProdutoNfImportacaoOpcoes = {
 	idcfopsaida?: string | undefined;
 	configRegime?: ConfigRegimeImportacaoNf | undefined;
 };
+
+export async function resolverTipoprodutoPorCfopEntrada(
+	idcfopentrada: string | null | undefined,
+): Promise<string | undefined> {
+	if (!idcfopentrada) {
+		return undefined;
+	}
+
+	const cfop = await buscarCfopPorId(idcfopentrada);
+	const tipoproduto = cfop?.tipoproduto?.trim();
+	return tipoproduto || undefined;
+}
 
 export function montarDadosProdutoNfImportacao(
 	dados: DadosImportacaoItem,
