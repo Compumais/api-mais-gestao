@@ -33,6 +33,36 @@ export const notaFiscalManualSchema = z.object({
 export type NotaFiscalManualFormData = z.infer<typeof notaFiscalManualSchema>;
 export type ItemNotaFiscalFormData = z.infer<typeof itemNotaFiscalSchema>;
 
+export const itemNotaFiscalEdicaoSchema = z.object({
+	id: z.string().uuid(),
+	descricao: z.string().min(1, "Informe a descrição"),
+	quantidade: z.string().min(1, "Informe a quantidade"),
+	precounitario: z.string().min(1, "Informe o preço unitário"),
+	total: z.string().optional(),
+	cfop: z.string().optional(),
+	ncm: z.string().optional(),
+	unidade: z.string().optional(),
+});
+
+export const notaFiscalCompraEdicaoSchema = z.object({
+	identidade: z.string().optional().nullable(),
+	numero: z.string().optional().nullable(),
+	serie: z.string().optional().nullable(),
+	modelo: z.string().optional().nullable(),
+	chavenfe: z.string().optional().nullable(),
+	emissao: z.string().optional().nullable(),
+	entradasaida: z.string().optional().nullable(),
+	idplanocontas: z.string().optional().nullable(),
+	idcondicaopagto: z.string().optional().nullable(),
+	valortotalnota: z.string().optional().nullable(),
+	observacao: z.string().optional().nullable(),
+	itens: z.array(itemNotaFiscalEdicaoSchema).min(1),
+});
+
+export type NotaFiscalCompraEdicaoFormData = z.infer<
+	typeof notaFiscalCompraEdicaoSchema
+>;
+
 export const importarXmlNfSchema = z.object({
 	idplanocontas: z.string().optional(),
 	idcondicaopagto: z.string().optional(),

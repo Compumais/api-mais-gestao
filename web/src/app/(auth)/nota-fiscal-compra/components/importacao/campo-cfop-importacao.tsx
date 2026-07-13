@@ -58,14 +58,14 @@ export function CampoCfopImportacao({
 					const cfopSelecionado = cfops.find((c) => c.id === novoValor);
 					onChange(novoValor, cfopSelecionado?.codigo ?? undefined);
 				}}
-				placeholder={isLoading ? "Carregando..." : "Selecione o CFOP"}
+				placeholder={isLoading ? "Carregando..." : "Selecione CFOP de entrada"}
 				searchPlaceholder="Buscar CFOP..."
 				emptyMessage="Nenhum CFOP encontrado"
 			/>
 			{codigoXml ? (
 				<p className="text-xs text-muted-foreground mt-1">
-					CFOP no XML: <span className="font-mono font-medium">{codigoXml}</span>
-					{value ? " — selecione outro CFOP acima para substituir" : null}
+					CFOP no XML (histórico):{" "}
+					<span className="font-mono font-medium">{codigoXml}</span>
 				</p>
 			) : null}
 		</Field>

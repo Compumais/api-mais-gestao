@@ -1,7 +1,7 @@
 "use client";
 
 import { IconPlus } from "@tabler/icons-react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	type ColumnDef,
 	flexRender,
@@ -11,10 +11,21 @@ import {
 	type SortingState,
 	useReactTable,
 } from "@tanstack/react-table";
+import { Ban, Pencil, RotateCcw } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
-import { RotateCcw } from "lucide-react";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { TableSkeleton } from "@/components/table-skeleton";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,6 +43,10 @@ import {
 } from "@/services/nota-fiscal.service";
 import { PageContainer } from "../components/page-container";
 
+const STATUS_CONFIRMADA = 1;
+const STATUS_CANCELADA = 2;
+const STATUS_RASCUNHO = 99;
+
 const formatCurrency = (value: string | null | undefined) => {
 	if (!value) return "R$ 0,00";
 	const num = parseFloat(value);
@@ -47,7 +62,31 @@ const formatDate = (date: string | null | undefined) => {
 	return new Date(date).toLocaleDateString("pt-BR");
 };
 
-const createColumns = (): ColumnDef<NotaFiscal>[] => [
+function statusBadge(status: number | null | undefined) {
+	if (status === STATUS_CANCELADA) {
+		return <Badge variant="destructive">Cancelada</Badge>;
+	}
+	if (status === STATUS_CONFIRMADA) {
+		return <Badge className="bg-green-600">Confirmada</Badge>;
+	}
+	if (status === STATUS_RASCUNHO) {
+		return <Badge variant="outline">Rascunho</Badge>;
+	}
+	if (status === null || status === undefined) {
+		return <Badge variant="secondary">Registrada</Badge>;
+	}
+	return <Badge variant="secondary">{status}</Badge>;
+}
+
+type ColunasParams = {
+	onCancelar: (nota: NotaFiscal) => void;
+	cancelandoId?: string | null;
+};
+
+const createColumns = ({
+	onCancelar,
+	cancelandoId,
+}: ColunasParams): ColumnDef<NotaFiscal>[] => [
 	{
 		accessorKey: "numero",
 		header: "Número",
@@ -79,9 +118,7 @@ const createColumns = (): ColumnDef<NotaFiscal>[] => [
 	{
 		accessorKey: "entradasaida",
 		header: "Entrada",
-		cell: ({ row }) => (
-			<div>{formatDate(row.getValue("entradasaida"))}</div>
-		),
+		cell: ({ row }) => <div>{formatDate(row.getValue("entradasaida"))}</div>,
 	},
 	{
 		accessorKey: "valortotalnota",
@@ -108,23 +145,41 @@ const createColumns = (): ColumnDef<NotaFiscal>[] => [
 	{
 		accessorKey: "status",
 		header: "Status",
-		cell: ({ row }) => {
-			const status = row.getValue("status") as number | null;
-			if (status === null || status === undefined) {
-				return <Badge variant="outline">-</Badge>;
-			}
-			return <Badge variant="secondary">{status}</Badge>;
-		},
+		cell: ({ row }) => statusBadge(row.getValue("status") as number | null),
 	},
 	{
 		id: "acoes",
 		header: "",
 		cell: ({ row }) => {
 			const nota = row.original;
-			const podeDevolver = !!nota.chavenfe && nota.status !== 99;
+			const cancelada = nota.status === STATUS_CANCELADA;
+			const podeEditar = !cancelada && nota.status !== STATUS_RASCUNHO;
+			const podeCancelar = !cancelada && nota.status !== STATUS_RASCUNHO;
+			const podeDevolver =
+				!!nota.chavenfe && !cancelada && nota.status !== STATUS_RASCUNHO;
 
 			return (
-				<div className="flex items-center gap-1">
+				<div className="flex items-center justify-end gap-1">
+					{podeEditar && (
+						<Button asChild size="sm" variant="outline" className="h-7 px-2 text-xs">
+							<Link href={`/nota-fiscal-compra/${nota.id}/editar`}>
+								<Pencil className="mr-1 size-3" />
+								Editar
+							</Link>
+						</Button>
+					)}
+					{podeCancelar && (
+						<Button
+							size="sm"
+							variant="outline"
+							className="h-7 px-2 text-xs text-destructive border-destructive/30"
+							disabled={cancelandoId === nota.id}
+							onClick={() => onCancelar(nota)}
+						>
+							<Ban className="mr-1 size-3" />
+							Cancelar
+						</Button>
+					)}
 					{podeDevolver && (
 						<Button asChild size="sm" variant="outline" className="h-7 px-2 text-xs">
 							<Link href={`/nota-fiscal-venda/nova?devolverEntrada=${nota.id}`}>
@@ -141,11 +196,13 @@ const createColumns = (): ColumnDef<NotaFiscal>[] => [
 
 export default function NotaFiscalCompraPage() {
 	const { localStorageEmpresa: empresa } = useEmpresa();
+	const queryClient = useQueryClient();
 	const [sorting, setSorting] = useState<SortingState>([]);
 	const [pagination, setPagination] = useState({
 		pageIndex: 0,
 		pageSize: 10,
 	});
+	const [notaCancelar, setNotaCancelar] = useState<NotaFiscal | null>(null);
 
 	const { data, isLoading } = useQuery({
 		queryKey: [
@@ -180,7 +237,37 @@ export default function NotaFiscalCompraPage() {
 		enabled: !!empresa,
 	});
 
-	const columns = createColumns();
+	const { mutate: cancelarNota, isPending: cancelando } = useMutation({
+		mutationFn: async (nota: NotaFiscal) => {
+			if (!empresa) throw new Error("Empresa não selecionada");
+			return notaFiscalService.cancelarCompra(nota.id, {
+				idempresa: empresa.id,
+				motivo: "Cancelamento interno da nota de compra",
+			});
+		},
+		onSuccess: (resultado) => {
+			toast.success(
+				`Nota cancelada. Estoque: ${resultado.movimentosEstornados} movimento(s), financeiro: ${resultado.titulosCancelados} título(s).`,
+			);
+			for (const aviso of resultado.avisos ?? []) {
+				toast.warning(aviso);
+			}
+			queryClient.invalidateQueries({ queryKey: ["notas-fiscais-compra"] });
+			setNotaCancelar(null);
+		},
+		onError: (error: Error) => {
+			toast.error(error.message || "Erro ao cancelar nota fiscal");
+		},
+	});
+
+	const columns = useMemo(
+		() =>
+			createColumns({
+				onCancelar: setNotaCancelar,
+				cancelandoId: cancelando ? notaCancelar?.id : null,
+			}),
+		[cancelando, notaCancelar?.id],
+	);
 
 	const table = useReactTable({
 		data: data?.data || [],
@@ -342,6 +429,36 @@ export default function NotaFiscalCompraPage() {
 					)}
 				</div>
 			</div>
+
+			<AlertDialog
+				open={!!notaCancelar}
+				onOpenChange={(aberto) => {
+					if (!aberto) setNotaCancelar(null);
+				}}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Cancelar nota de compra?</AlertDialogTitle>
+						<AlertDialogDescription>
+							A nota será marcada como cancelada. O estoque de entrada será
+							estornado e os títulos a pagar sem baixa serão cancelados. Esta
+							ação não pode ser desfeita facilmente.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel disabled={cancelando}>Voltar</AlertDialogCancel>
+						<AlertDialogAction
+							disabled={cancelando || !notaCancelar}
+							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+							onClick={() => {
+								if (notaCancelar) cancelarNota(notaCancelar);
+							}}
+						>
+							{cancelando ? "Cancelando..." : "Confirmar cancelamento"}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</PageContainer>
 	);
 }

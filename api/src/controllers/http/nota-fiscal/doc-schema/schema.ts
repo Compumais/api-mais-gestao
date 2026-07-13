@@ -242,6 +242,61 @@ export const atualizarNotaFiscalSchema: FastifySchema = {
 	},
 };
 
+export const cancelarNotaFiscalCompraSchema: FastifySchema = {
+	tags: ["nota-fiscal"],
+	summary: "Cancelar nota fiscal de compra",
+	description:
+		"Cancela a NF de compra (status 2), estorna estoque e cancela títulos a pagar sem baixa parcial.",
+	security: [{ bearerAuth: [] }],
+	params: {
+		type: "object",
+		properties: { id: { type: "string", format: "uuid" } },
+		required: ["id"],
+	},
+	body: {
+		type: "object",
+		required: ["idempresa"],
+		properties: {
+			idempresa: { type: "string", format: "uuid" },
+			motivo: { type: "string", maxLength: 255 },
+		},
+	},
+	response: {
+		200: { type: "object", additionalProperties: true },
+		400: respostaErro,
+		404: respostaErro,
+		401: respostaErro,
+		403: respostaErro,
+		500: respostaErro,
+	},
+};
+
+export const atualizarNotaFiscalCompraSchema: FastifySchema = {
+	tags: ["nota-fiscal"],
+	summary: "Atualizar nota fiscal de compra confirmada",
+	description:
+		"Atualiza cabeçalho e itens; reintegra estoque e financeiro quando aplicável.",
+	security: [{ bearerAuth: [] }],
+	params: {
+		type: "object",
+		properties: { id: { type: "string", format: "uuid" } },
+		required: ["id"],
+	},
+	body: {
+		type: "object",
+		additionalProperties: true,
+		required: ["idempresa"],
+	},
+	response: {
+		200: { type: "object", additionalProperties: true },
+		400: respostaErro,
+		404: respostaErro,
+		401: respostaErro,
+		403: respostaErro,
+		500: respostaErro,
+	},
+};
+
 export const excluirNotaFiscalSchema: FastifySchema = {
 	tags: ["nota-fiscal"],
 	summary: "Excluir nota fiscal de compra",

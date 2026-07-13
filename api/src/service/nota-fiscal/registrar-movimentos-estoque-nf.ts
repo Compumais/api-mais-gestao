@@ -54,7 +54,8 @@ export async function registrarMovimentosEstoqueNf({
 	}
 
 	const existentes = await listarMovimentosEstoquePorDocumento(idnotafiscal);
-	if (existentes.length > 0) {
+	const ativos = existentes.filter((movimento) => movimento.cancelado !== 1);
+	if (ativos.length > 0) {
 		return { movimentosCriados: 0, avisos };
 	}
 
