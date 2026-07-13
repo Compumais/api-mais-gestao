@@ -116,6 +116,10 @@ export function extrairMensagemErroBanco(erro: unknown): string {
 		return "Data/hora de emissão inválida no XML";
 	}
 
+	if (mensagem.includes("invalid input syntax for type date")) {
+		return "Data inválida";
+	}
+
 	return mensagem || "Erro ao salvar nota fiscal no banco de dados";
 }
 
