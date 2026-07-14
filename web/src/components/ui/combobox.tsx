@@ -52,7 +52,9 @@ export function Combobox({
 		option.label.toLowerCase().includes(search.toLowerCase()),
 	);
 
-	const selectedLabel = options.find((option) => option.value === value)?.label;
+	const selectedLabel =
+		options.find((option) => option.value === value)?.label ??
+		(value ? value : undefined);
 
 	return (
 		<div className={cn("relative w-full", className)} ref={containerRef}>

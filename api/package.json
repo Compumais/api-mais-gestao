@@ -34,6 +34,7 @@
 		"popular-cfops-padrao": "tsx scripts/popular-cfops-padrao-empresas.ts",
 		"popular-fatores-conversao-padrao": "tsx scripts/popular-fatores-conversao-padrao-empresas.ts",
 		"popular-taxas-padrao": "tsx scripts/popular-taxas-padrao-empresas.ts",
+		"popular-parametrizacao-tributos-padrao": "tsx scripts/popular-parametrizacao-tributos-padrao-empresas.ts",
 		"db:migrate:undo": "tsx node_modules/drizzle-kit/bin.cjs migrate:undo",
 		"db:migrate:latest": "tsx node_modules/drizzle-kit/bin.cjs migrate:latest",
 		"db:migrate:rollback": "tsx node_modules/drizzle-kit/bin.cjs migrate:rollback",

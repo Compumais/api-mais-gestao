@@ -26,6 +26,7 @@ export interface ParametrizacaoTributos {
 	idenquadramentoipi: string | null;
 	percentualmva: string | null;
 	percentualirrf: string | null;
+	tipoproduto: string | null;
 	inativo: number | null;
 }
 
@@ -64,6 +65,7 @@ export interface CriarParametrizacaoTributosData {
 	idenquadramentoipi?: string | null;
 	percentualmva?: string | null;
 	percentualirrf?: string | null;
+	tipoproduto?: string | null;
 }
 
 export type AtualizarParametrizacaoTributosData = Omit<

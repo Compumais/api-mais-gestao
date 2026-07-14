@@ -2,6 +2,7 @@ import type { DadosImportacaoItem } from "@/model/nota-fiscal-importacao-model.j
 import { buscarCfopPorId } from "@/repositories/cfop-repositories.js";
 import type { DadosProdutoNF } from "@/service/nota-fiscal/vincular-ou-criar-produto.js";
 import type { ConfigRegimeImportacaoNf } from "@/util/regime-tributario-empresa.js";
+import { sugerirTipoprodutoPorCodigoCfop } from "@/util/tipo-produto.js";
 import { normalizarCodigoBarras, truncarTexto } from "@/util/texto-util.js";
 
 export function parseQuantidadePadraoImportacao(
@@ -17,16 +18,24 @@ type MontarDadosProdutoNfImportacaoOpcoes = {
 	configRegime?: ConfigRegimeImportacaoNf | undefined;
 };
 
+/**
+ * Resolve tipoproduto a partir do CFOP de entrada (natureza).
+ * Ordem: tipoproduto da natureza → sugestão pelo código → fallback 00.
+ */
 export async function resolverTipoprodutoPorCfopEntrada(
 	idcfopentrada: string | null | undefined,
-): Promise<string | undefined> {
+): Promise<string> {
 	if (!idcfopentrada) {
-		return undefined;
+		return sugerirTipoprodutoPorCodigoCfop(undefined);
 	}
 
 	const cfop = await buscarCfopPorId(idcfopentrada);
-	const tipoproduto = cfop?.tipoproduto?.trim();
-	return tipoproduto || undefined;
+	const tipoprodutoNatureza = cfop?.tipoproduto?.trim();
+	if (tipoprodutoNatureza) {
+		return tipoprodutoNatureza;
+	}
+
+	return sugerirTipoprodutoPorCodigoCfop(cfop?.codigo);
 }
 
 export function montarDadosProdutoNfImportacao(

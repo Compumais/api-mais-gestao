@@ -26,7 +26,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { OPCOES_TIPO_PRODUTO } from "@/constants/tipo-produto";
+import { OPCOES_TIPO_PRODUTO, sugerirTipoprodutoPorCodigoCfop } from "@/constants/tipo-produto";
 import {
 	type ItemImportacaoFormData,
 	itemImportacaoSchema,
@@ -544,13 +544,14 @@ export function ModalItemImportacao({
 									label="CFOP de entrada"
 									value={watch("idcfop")}
 									codigoXml={dados.cfopXml}
-									onChange={(idcfop, _codigo, tipoprodutoCfop) => {
+									onChange={(idcfop, codigo, tipoprodutoCfop) => {
 										setValue("idcfop", idcfop, { shouldDirty: true });
-										if (tipoprodutoCfop) {
-											setValue("tipoproduto", tipoprodutoCfop, {
-												shouldDirty: true,
-											});
-										}
+										const tipoproduto =
+											tipoprodutoCfop?.trim() ||
+											sugerirTipoprodutoPorCodigoCfop(codigo);
+										setValue("tipoproduto", tipoproduto, {
+											shouldDirty: true,
+										});
 									}}
 								/>
 								<p className="text-xs text-muted-foreground -mt-2">
