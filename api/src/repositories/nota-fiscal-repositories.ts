@@ -6,9 +6,11 @@ import {
 	gte,
 	ilike,
 	inArray,
+	isNull,
 	isNotNull,
 	lte,
 	ne,
+	notInArray,
 	or,
 	sql,
 } from "drizzle-orm";
@@ -19,7 +21,11 @@ import type {
 } from "@/model/nota-fiscal-item-model";
 import type { DadosImportacaoItem } from "@/model/nota-fiscal-importacao-model.js";
 import { notafiscal, notafiscalitem, vendapdvgourmet, cfop, entidade } from "@/repositories/schema.js";
-import { STATUS_RASCUNHO_IMPORTACAO, STATUS_NF_CONFIRMADA } from "@/util/nota-fiscal-constants.js";
+import {
+	STATUS_RASCUNHO_IMPORTACAO,
+	STATUS_NF_CONFIRMADA,
+	STATUS_NF_QUE_NAO_BLOQUEIAM_CHAVE,
+} from "@/util/nota-fiscal-constants.js";
 import { db } from "./connection";
 
 const COLUNAS_ITEM_NF = [
@@ -366,6 +372,10 @@ export async function buscarNotaFiscalRascunhoPorId(
 	return registro;
 }
 
+/**
+ * Busca nota pela chave NF-e que ainda bloqueia reentrada
+ * (ignora rascunho de importaÃ§Ã£o e compra cancelada).
+ */
 export async function buscarNotaFiscalPorChaveNfe(
 	idempresa: string,
 	chavenfe: string,
@@ -374,6 +384,10 @@ export async function buscarNotaFiscalPorChaveNfe(
 	const where = [
 		eq(notafiscal.idempresa, idempresa),
 		eq(notafiscal.chavenfe, chavenfe),
+		or(
+			isNull(notafiscal.status),
+			notInArray(notafiscal.status, [...STATUS_NF_QUE_NAO_BLOQUEIAM_CHAVE]),
+		),
 	];
 
 	if (excluirId) {
@@ -408,7 +422,10 @@ export async function buscarNotasFiscaisPorChavesNfe(
 			and(
 				eq(notafiscal.idempresa, idempresa),
 				inArray(notafiscal.chavenfe, chaves),
-				ne(notafiscal.status, STATUS_RASCUNHO_IMPORTACAO),
+				or(
+					isNull(notafiscal.status),
+					notInArray(notafiscal.status, [...STATUS_NF_QUE_NAO_BLOQUEIAM_CHAVE]),
+				),
 			),
 		);
 
@@ -751,7 +768,7 @@ export async function contarNotasFiscaisPendentesCorrecao({
 	return { nfe, nfce, total: nfe + nfce };
 }
 
-/** NFC-e (modelo 65) pendente/rejeitada/denegada no período de emissão. */
+/** NFC-e (modelo 65) pendente/rejeitada/denegada no perï¿½odo de emissï¿½o. */
 export async function contarNfcePendentesNoPeriodo({
 	idempresa,
 	dataInicio,

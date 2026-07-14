@@ -3,6 +3,7 @@ import { cancelarNotaFiscalCompraService } from "./cancelar-nota-fiscal-compra.j
 
 vi.mock("@/repositories/entidade-repositories.js");
 vi.mock("@/repositories/nota-fiscal-repositories.js");
+vi.mock("@/repositories/nfe-inbound-repositories.js");
 vi.mock("@/repositories/financeiro-repositories.js");
 vi.mock("@/repositories/custo-produto-repositories.js");
 vi.mock("@/repositories/movimento-estoque-repositories.js");
@@ -14,6 +15,7 @@ import * as custoRepositories from "@/repositories/custo-produto-repositories.js
 import * as entidadeRepositories from "@/repositories/entidade-repositories.js";
 import * as financeiroRepositories from "@/repositories/financeiro-repositories.js";
 import * as movimentoRepositories from "@/repositories/movimento-estoque-repositories.js";
+import * as nfeInboundRepositories from "@/repositories/nfe-inbound-repositories.js";
 import * as notaRepositories from "@/repositories/nota-fiscal-repositories.js";
 import * as produtoRepositories from "@/repositories/produtos-repositories.js";
 import * as auditoriaService from "@/service/auditoria/criar-auditoria.js";
@@ -25,6 +27,7 @@ const notaConfirmada = {
 	tipoorigem: 0,
 	status: 1,
 	numero: "123",
+	chavenfe: "35240112345678000190550010000000011123456789",
 };
 
 describe("cancelarNotaFiscalCompraService", () => {
@@ -79,6 +82,9 @@ describe("cancelarNotaFiscalCompraService", () => {
 		vi.mocked(notaRepositories.excluirNotaFiscal).mockResolvedValue(
 			notaConfirmada as never,
 		);
+		vi.mocked(
+			nfeInboundRepositories.liberarNfeInboundDocumentoParaReimportacao,
+		).mockResolvedValue({} as never);
 
 		const resultado = await cancelarNotaFiscalCompraService({
 			notaFiscalId: "nota-1",
@@ -102,6 +108,12 @@ describe("cancelarNotaFiscalCompraService", () => {
 			bloquearBaixaParcial: true,
 		});
 		expect(notaRepositories.excluirNotaFiscal).toHaveBeenCalledWith("nota-1");
+		expect(
+			nfeInboundRepositories.liberarNfeInboundDocumentoParaReimportacao,
+		).toHaveBeenCalledWith(
+			"empresa-1",
+			"35240112345678000190550010000000011123456789",
+		);
 		expect(produtoRepositories.atualizarProduto).toHaveBeenCalled();
 	});
 

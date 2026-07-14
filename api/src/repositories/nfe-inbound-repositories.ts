@@ -283,6 +283,29 @@ export async function atualizarNfeInboundDocumento(
 	return atualizado;
 }
 
+/** Libera o documento inbound para nova importação após cancelar a NF de compra. */
+export async function liberarNfeInboundDocumentoParaReimportacao(
+	idempresa: string,
+	chavenfe: string,
+): Promise<NfeInboundDocumentoRow | undefined> {
+	const documento = await buscarNfeInboundDocumentoPorChave(idempresa, chavenfe);
+
+	if (!documento) {
+		return undefined;
+	}
+
+	const statusimportacao: StatusImportacaoInbound =
+		documento.tipodocumento === "procNFe" && documento.xml
+			? "disponivel"
+			: "aguardando_xml";
+
+	return atualizarNfeInboundDocumento(documento.id, {
+		statusimportacao,
+		idrascunho: null,
+		atualizadoem: new Date().toISOString(),
+	});
+}
+
 export async function listarEmpresasComSyncInboundHabilitado(): Promise<
 	string[]
 > {
