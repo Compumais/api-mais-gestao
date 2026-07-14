@@ -37,7 +37,10 @@ import {
 	type OpcaoCst,
 } from "@/util/cst-produto-util";
 import { CampoCfopProduto } from "./campo-cfop-produto";
-import { OPCOES_TIPO_PRODUTO } from "@/constants/tipo-produto";
+import {
+	OPCOES_TIPO_PRODUTO,
+	sugerirTipoprodutoPorCodigoCfop,
+} from "@/constants/tipo-produto";
 
 type ProdutoAbaImpostosProps = {
 	control: Control<ProdutoFormData>;
@@ -280,11 +283,12 @@ export function ProdutoAbaImpostos({
 									tipomovimento="E"
 									onChange={(valor, cfop) => {
 										field.onChange(valor || null);
-										if (cfop?.tipoproduto) {
-											setValue("tipoproduto", cfop.tipoproduto, {
-												shouldValidate: true,
-											});
-										}
+										const tipoproduto =
+											cfop?.tipoproduto?.trim() ||
+											sugerirTipoprodutoPorCodigoCfop(cfop?.codigo);
+										setValue("tipoproduto", tipoproduto, {
+											shouldValidate: true,
+										});
 									}}
 									erro={errors.idcfopentrada?.message}
 								/>

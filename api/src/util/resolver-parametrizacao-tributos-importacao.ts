@@ -43,6 +43,7 @@ export function aplicarParametrizacaoTributosImportacao(
 			tributacaosn,
 			cstpis: truncarTexto(regra.cstpis, 2) ?? undefined,
 			cstcofins: truncarTexto(regra.cstcofins, 2) ?? undefined,
+			tipoproduto: truncarTexto(regra.tipoproduto, 2) ?? undefined,
 		},
 	};
 }

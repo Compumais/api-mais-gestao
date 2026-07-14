@@ -26,16 +26,16 @@ export const TIPOS_PRODUTO_SPED_MAP: Record<string, string> =
 	);
 
 /**
- * Sugestão de tipoproduto ao criar natureza (CFOP).
- * Não substitui o valor já gravado na natureza.
+ * Sugestão de tipoproduto ao criar natureza (CFOP) ou ao selecionar CFOP de entrada.
+ * Fallback padrão: 00 (mercadoria para revenda).
  */
 export function sugerirTipoprodutoPorCodigoCfop(
 	codigo: string | null | undefined,
-): CodigoTipoProdutoSped | null {
-	if (!codigo) return null;
+): CodigoTipoProdutoSped {
+	if (!codigo) return "00";
 
 	const digits = codigo.replace(/\D/g, "");
-	if (!digits) return null;
+	if (!digits) return "00";
 
 	if (digits === "1101" || digits === "2101") return "01";
 	if (
@@ -49,9 +49,6 @@ export function sugerirTipoprodutoPorCodigoCfop(
 	if (digits === "1556" || digits === "1407" || digits === "2556") {
 		return "07";
 	}
-	if (digits.startsWith("1") || digits.startsWith("2") || digits.startsWith("3")) {
-		return "99";
-	}
 
-	return null;
+	return "00";
 }

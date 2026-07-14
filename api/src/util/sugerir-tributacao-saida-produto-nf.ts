@@ -17,6 +17,7 @@ export type SugestaoTributacaoSaidaProduto = {
 	cstipientrada?: string | undefined;
 	cstipisaida?: string | undefined;
 	idenquadramentoipi?: string | undefined;
+	tipoproduto?: string | undefined;
 };
 
 const CSOSN_SAIDA_PADRAO_SN = "102";

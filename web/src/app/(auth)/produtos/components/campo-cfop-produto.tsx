@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
 import { Combobox } from "@/components/ui/combobox";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { useEmpresa } from "@/hooks/use-empresa";
@@ -33,6 +34,9 @@ export function CampoCfopProduto({
 	erro,
 }: CampoCfopProdutoProps) {
 	const { localStorageEmpresa: empresa } = useEmpresa();
+	const [rotuloSelecionado, setRotuloSelecionado] = useState<string | null>(
+		null,
+	);
 
 	const { data: cfops = [], isLoading } = useQuery({
 		queryKey: ["cfops", empresa?.id, tipomovimento, "produto"],
@@ -46,10 +50,30 @@ export function CampoCfopProduto({
 		enabled: !!empresa,
 	});
 
-	const opcoes = cfops.map((cfop) => ({
-		value: cfop.id,
-		label: formatarLabel(cfop.codigo, cfop.descricao),
-	}));
+	useEffect(() => {
+		if (!value) {
+			setRotuloSelecionado(null);
+			return;
+		}
+
+		const cfop = cfops.find((item) => item.id === value);
+		if (cfop) {
+			setRotuloSelecionado(formatarLabel(cfop.codigo, cfop.descricao));
+		}
+	}, [value, cfops]);
+
+	const opcoes = useMemo(() => {
+		const base = cfops.map((cfop) => ({
+			value: cfop.id,
+			label: formatarLabel(cfop.codigo, cfop.descricao),
+		}));
+
+		if (value && rotuloSelecionado && !base.some((o) => o.value === value)) {
+			return [{ value, label: rotuloSelecionado }, ...base];
+		}
+
+		return base;
+	}, [cfops, value, rotuloSelecionado]);
 
 	return (
 		<Field data-invalid={!!erro}>
@@ -60,6 +84,13 @@ export function CampoCfopProduto({
 				onChange={(idSelecionado) => {
 					const cfop =
 						cfops.find((item) => item.id === idSelecionado) ?? null;
+					if (cfop) {
+						setRotuloSelecionado(
+							formatarLabel(cfop.codigo, cfop.descricao),
+						);
+					} else if (!idSelecionado) {
+						setRotuloSelecionado(null);
+					}
 					onChange(idSelecionado, cfop);
 				}}
 				placeholder={isLoading ? "Carregando..." : "Selecione o CFOP"}

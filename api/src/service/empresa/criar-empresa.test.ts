@@ -113,6 +113,9 @@ describe("criarEmpresaService", () => {
 		expect(cfopsPadraoService.criarCfopsPadraoService).toHaveBeenCalledWith(
 			"empresa-123",
 		);
+		expect(
+			parametrizacaoPadraoService.criarParametrizacaoTributosPadraoService,
+		).toHaveBeenCalledWith("empresa-123");
 	});
 
 	it("deve retornar erro quando CNPJ já estiver cadastrado", async () => {
@@ -215,5 +218,8 @@ describe("criarEmpresaService", () => {
 		expect(cfopsPadraoService.criarCfopsPadraoService).toHaveBeenCalledWith(
 			"empresa-123",
 		);
+		expect(
+			parametrizacaoPadraoService.criarParametrizacaoTributosPadraoService,
+		).toHaveBeenCalledWith("empresa-123");
 	});
 });

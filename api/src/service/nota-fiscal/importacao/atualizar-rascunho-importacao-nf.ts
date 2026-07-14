@@ -27,6 +27,7 @@ import {
 } from "@/util/http-util.js";
 import { idOpcionalOuNulo, numeroOpcionalOuNulo } from "@/util/texto-util.js";
 import { buscarUnidadeMedidaPorId } from "@/repositories/unidade-medida-repositories.js";
+import { resolverTipoprodutoPorCfopEntrada } from "@/service/nota-fiscal/montar-dados-produto-nf-importacao.js";
 import { validarEanProdutoNf } from "@/service/nota-fiscal/validar-ean-produto-nf.js";
 import { resolverNcmImportacao } from "./resolver-referencias-importacao.js";
 
@@ -144,6 +145,8 @@ export async function atualizarCabecalhoRascunhoImportacaoNfService({
 	if (dados.aplicarCfopItens && dados.idcfop) {
 		const idcfop = idOpcionalOuNulo(dados.idcfop);
 		if (idcfop && codigoCfopEntrada) {
+			const tipoproduto =
+				await resolverTipoprodutoPorCfopEntrada(idcfop);
 			const itens = await listarItensPorNotaFiscal(idRascunho);
 			for (const item of itens) {
 				const dadosAtuais =
@@ -165,6 +168,7 @@ export async function atualizarCabecalhoRascunhoImportacaoNfService({
 					dadosimportacao: {
 						...dadosAtuais,
 						idcfop,
+						tipoproduto,
 						cfopXml: dadosAtuais.cfopXml,
 					},
 				});
@@ -349,6 +353,15 @@ export async function atualizarItemRascunhoImportacaoNfService({
 			idcfop: cfopResolvido.idcfop ?? undefined,
 		};
 		codigoCfopEntrada = cfopResolvido.codigo;
+
+		if (dados.tipoproduto === undefined && cfopResolvido.idcfop) {
+			dadosMesclados = {
+				...dadosMesclados,
+				tipoproduto: await resolverTipoprodutoPorCfopEntrada(
+					cfopResolvido.idcfop,
+				),
+			};
+		}
 	} else if (dadosMesclados.idcfop && !codigoCfopEntrada) {
 		const cfopResolvido = await resolverCfopEntradaPorId(dadosMesclados.idcfop);
 		if (cfopResolvido.ok && cfopResolvido.codigo) {

@@ -327,6 +327,7 @@ export async function finalizarRascunhoImportacaoNfService({
 
 			const tipoprodutoResolvido =
 				dados.tipoproduto?.trim() ||
+				parametrizacao?.sugestao.tipoproduto?.trim() ||
 				(!produtoAtual?.tipoproduto
 					? await resolverTipoprodutoPorCfopEntrada(dadosProduto.idcfopentrada)
 					: undefined);
@@ -388,6 +389,7 @@ export async function finalizarRascunhoImportacaoNfService({
 
 			const tipoprodutoResolvido =
 				dados.tipoproduto?.trim() ||
+				parametrizacao?.sugestao.tipoproduto?.trim() ||
 				(await resolverTipoprodutoPorCfopEntrada(dadosProduto.idcfopentrada));
 
 			const novoProduto = await criarProdutoParaNf({

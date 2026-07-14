@@ -13,6 +13,7 @@ import { buscarEntidadePorCnpj } from "@/repositories/entidade-repositories.js";
 import { criarNotaFiscalComItens } from "@/repositories/nota-fiscal-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { buscarCfopPorId } from "@/repositories/cfop-repositories.js";
+import { resolverTipoprodutoPorCfopEntrada } from "@/service/nota-fiscal/montar-dados-produto-nf-importacao.js";
 import { buscarProdutoParaNf } from "@/service/nota-fiscal/vincular-ou-criar-produto.js";
 import {
 	httpBadRequest,
@@ -115,6 +116,10 @@ async function montarDadosImportacaoItem(
 		}
 	}
 
+	const tipoprodutoResolvido =
+		produtoEncontrado?.tipoproduto?.trim() ||
+		(await resolverTipoprodutoPorCfopEntrada(idcfopEntrada));
+
 	return {
 		dados: {
 			codigoFornecedor:
@@ -144,6 +149,7 @@ async function montarDadosImportacaoItem(
 			precounitarioEstoque,
 			cfopXml: itemXml.cfop,
 			idcfop: idcfopEntrada,
+			tipoproduto: tipoprodutoResolvido,
 			ncmXml: itemXml.ncm,
 			idncm: ncm?.id,
 			cestXml: itemXml.cest,
