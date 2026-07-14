@@ -152,7 +152,7 @@ export async function importarNotaPorChaveService({
 		validacao.chave,
 	);
 
-	if (notaExistente && notaExistente.status !== 99) {
+	if (notaExistente) {
 		return httpBadRequest("Esta NF-e já foi importada no sistema");
 	}
 

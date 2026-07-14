@@ -11,6 +11,7 @@ import {
 	buscarNotaFiscalPorId,
 	excluirNotaFiscal,
 } from "@/repositories/nota-fiscal-repositories.js";
+import { liberarNfeInboundDocumentoParaReimportacao } from "@/repositories/nfe-inbound-repositories.js";
 import { atualizarProduto } from "@/repositories/produtos-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
 import { estornarIntegracaoNotaFiscalCompraService } from "@/service/nota-fiscal/estornar-integracao-nota-fiscal-compra.js";
@@ -141,7 +142,23 @@ export async function cancelarNotaFiscalCompraService({
 	const movimentosRemovidosEstorno =
 		await excluirMovimentosEstoquePorIdOriginal(`${notaFiscalId}-estorno`);
 
+	const chavenfe = nota.chavenfe?.trim() || null;
+
 	await excluirNotaFiscal(notaFiscalId);
+
+	if (chavenfe) {
+		try {
+			await liberarNfeInboundDocumentoParaReimportacao(idempresa, chavenfe);
+		} catch (erro) {
+			console.error(
+				"Erro ao liberar documento inbound após cancelar NF compra:",
+				erro,
+			);
+			avisos.push(
+				"Nota cancelada, mas o documento da captura SEFAZ não foi liberado automaticamente. Tente sincronizar novamente.",
+			);
+		}
+	}
 
 	const agora = new Date().toISOString();
 

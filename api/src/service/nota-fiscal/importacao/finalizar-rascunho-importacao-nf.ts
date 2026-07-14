@@ -67,7 +67,6 @@ import {
 } from "@/util/sugerir-tributacao-saida-produto-nf.js";
 import {
 	STATUS_NF_CONFIRMADA,
-	STATUS_RASCUNHO_IMPORTACAO,
 } from "@/util/nota-fiscal-constants.js";
 import { obterConfigRegimeImportacaoNf } from "@/util/regime-tributario-empresa.js";
 
@@ -226,7 +225,7 @@ export async function finalizarRascunhoImportacaoNfService({
 			idRascunho,
 		);
 
-		if (duplicada && duplicada.status !== STATUS_RASCUNHO_IMPORTACAO) {
+		if (duplicada) {
 			return httpBadRequest("Já existe uma nota fiscal com esta chave NF-e");
 		}
 	}

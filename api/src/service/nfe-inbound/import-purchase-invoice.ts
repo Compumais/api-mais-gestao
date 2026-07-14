@@ -1,5 +1,8 @@
 import type { HttpResponse } from "@/model/http-model.js";
-import { buscarNotaFiscalPorChaveNfe } from "@/repositories/nota-fiscal-repositories.js";
+import {
+	buscarNotaFiscalPorChaveNfe,
+	buscarNotaFiscalRascunhoPorId,
+} from "@/repositories/nota-fiscal-repositories.js";
 import {
 	atualizarNfeInboundDocumento,
 	buscarNfeInboundDocumentoPorId,
@@ -58,9 +61,22 @@ export async function importPurchaseInvoiceService({
 	}
 
 	if (documento.idrascunho) {
-		return httpOk({
-			idRascunho: documento.idrascunho,
-			urlRascunho: `/nota-fiscal-compra/rascunho/${documento.idrascunho}`,
+		const rascunhoValido = await buscarNotaFiscalRascunhoPorId(
+			documento.idrascunho,
+			idempresa,
+		);
+
+		if (rascunhoValido) {
+			return httpOk({
+				idRascunho: documento.idrascunho,
+				urlRascunho: `/nota-fiscal-compra/rascunho/${documento.idrascunho}`,
+			});
+		}
+
+		await atualizarNfeInboundDocumento(documento.id, {
+			idrascunho: null,
+			statusimportacao: "disponivel",
+			atualizadoem: new Date().toISOString(),
 		});
 	}
 
@@ -69,7 +85,7 @@ export async function importPurchaseInvoiceService({
 		documento.chavenfe,
 	);
 
-	if (notaExistente && notaExistente.status !== 99) {
+	if (notaExistente) {
 		const agora = new Date().toISOString();
 		await atualizarNfeInboundDocumento(documento.id, {
 			statusimportacao: "importado",
