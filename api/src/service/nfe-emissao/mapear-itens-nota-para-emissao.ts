@@ -33,8 +33,16 @@ export function mapearItensNotaParaEmissao(
 		const tributacaoSalva = extrairTributacaoItemEmissaoNfe(item.dadosimportacao);
 		const pCredSN = paraNumero(tributacaoSalva?.pCredSN);
 		const vCredICMSSN = paraNumero(tributacaoSalva?.vCredICMSSN);
-		const aliquotaIcms =
-			paraNumero(item.percentualicms) ?? pCredSN;
+		const usaCsosn = Boolean(tributacao.csosn);
+		// No Simples, percentualicms/pCredSN não viram aliquotaIcms (crédito fica só em pCredSN).
+		const aliquotaIcms = usaCsosn
+			? undefined
+			: paraNumero(item.percentualicms);
+		const baseIcms = usaCsosn
+			? undefined
+			: item.baseicms
+				? Number(item.baseicms)
+				: undefined;
 
 		return {
 			idproduto: item.idproduto ?? undefined,
@@ -48,7 +56,7 @@ export function mapearItensNotaParaEmissao(
 			orig: item.origem ?? 0,
 			cstPis: item.cstpis ?? undefined,
 			cstCofins: item.cstcofins ?? undefined,
-			baseIcms: item.baseicms ? Number(item.baseicms) : undefined,
+			...(baseIcms != null ? { baseIcms } : {}),
 			...(aliquotaIcms != null ? { aliquotaIcms } : {}),
 			...(pCredSN != null ? { pCredSN } : {}),
 			...(vCredICMSSN != null ? { vCredICMSSN } : {}),

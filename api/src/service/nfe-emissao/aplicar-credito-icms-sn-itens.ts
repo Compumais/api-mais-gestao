@@ -43,12 +43,7 @@ export async function aplicarCreditoIcmsSnItensEmissao(
 
 		itensResultado.push({
 			...item,
-			...(credito.pCredSN != null
-				? {
-						pCredSN: credito.pCredSN,
-						aliquotaIcms: item.aliquotaIcms ?? credito.pCredSN,
-					}
-				: {}),
+			...(credito.pCredSN != null ? { pCredSN: credito.pCredSN } : {}),
 			...(credito.vCredICMSSN != null
 				? { vCredICMSSN: credito.vCredICMSSN }
 				: {}),

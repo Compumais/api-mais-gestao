@@ -67,22 +67,15 @@ function valorProdutoItem(item: ItemTributacaoEmissaoNfe): number {
 	return round2(item.quantidade * item.valorUnitario);
 }
 
-function itemTemIcmsInformado(item: ItemTributacaoEmissaoNfe): boolean {
-	return (
-		item.baseIcms !== undefined ||
-		item.valorIcms !== undefined ||
-		(item.aliquotaIcms !== undefined && item.aliquotaIcms > 0)
-	);
-}
-
 function calcularIcmsItem(
 	crt: number,
 	item: ItemTributacaoEmissaoNfe,
 ): { base: number; valor: number } {
 	const crtNumero = Number(crt);
-	const informado = itemTemIcmsInformado(item);
 
-	if ([1, 2, 4].includes(crtNumero) && !informado) {
+	// Simples Nacional (CRT 1/2/4): ICMS próprio não é destacado (vBC/vICMS = 0).
+	// Crédito SN e ST usam campos próprios e não passam por este cálculo.
+	if ([1, 2, 4].includes(crtNumero)) {
 		return { base: 0, valor: 0 };
 	}
 
