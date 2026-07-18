@@ -57,6 +57,7 @@ export interface ListarPedidosParams {
 	faturado?: boolean;
 	codigo?: number;
 	busca?: string;
+	origem?: string;
 }
 
 export interface CriarPedidoData {

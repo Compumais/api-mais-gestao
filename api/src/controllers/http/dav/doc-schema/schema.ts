@@ -135,6 +135,10 @@ export const listarDavsSchema: FastifySchema = {
 				type: "string",
 				description: "Busca parcial pelo nome do cliente",
 			},
+			origem: {
+				type: "string",
+				description: "Origem do pedido (ex.: POS via campo extra1)",
+			},
 		},
 		required: ["idempresa"],
 	},

@@ -1,0 +1,10 @@
+<resources>
+    <style name="Base.Theme.POSmaisgestao" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryDark">@color/primary_dark</item>
+        <item name="colorSecondary">@color/accent</item>
+        <item name="colorOnPrimary">@color/primary_foreground</item>
+        <item name="android:statusBarColor">@color/primary_dark</item>
+        <item name="android:windowBackground">@color/surface</item>
+    </style>
+</resources>

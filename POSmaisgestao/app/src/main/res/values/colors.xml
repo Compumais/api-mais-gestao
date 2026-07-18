@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="primary">#4271F0</color>
+    <color name="primary_dark">#0B42DA</color>
+    <color name="primary_foreground">#F1F2F4</color>
+    <color name="foreground">#090A0B</color>
+    <color name="background">#FFFFFF</color>
+    <color name="surface">#F2F4F7</color>
+    <color name="muted_foreground">#506395</color>
+    <color name="accent">#D0D9F1</color>
+    <color name="border">#D2D7E4</color>
+    <color name="danger">#E5010C</color>
+    <color name="dinheiro">#16A34A</color>
+    <color name="pix">#0284C7</color>
+    <color name="cartao">#7C3AED</color>
+    <color name="ic_launcher_background">#4271F0</color>
+</resources>

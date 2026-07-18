@@ -45,6 +45,8 @@ const bodySchema = z.object({
 		})
 		.optional(),
 
+	emitirnfcepos: z.boolean().optional(),
+
 });
 
 

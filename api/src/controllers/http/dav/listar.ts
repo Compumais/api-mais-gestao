@@ -17,6 +17,7 @@ const listarDavsQuerySchema = z.object({
 		.transform((v) => (v === undefined ? undefined : v === "true")),
 	codigo: z.coerce.number().int().optional(),
 	busca: z.string().optional(),
+	origem: z.string().optional(),
 });
 
 export async function listarDavs(request: FastifyRequest, reply: FastifyReply) {
@@ -39,6 +40,7 @@ export async function listarDavs(request: FastifyRequest, reply: FastifyReply) {
 			faturado: query.faturado,
 			codigo: query.codigo,
 			busca: query.busca,
+			origem: query.origem,
 		});
 
 		if (!resultado.success) {
