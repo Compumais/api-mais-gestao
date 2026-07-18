@@ -36,6 +36,10 @@ export const DATA = {
 					url: "/vendas-pdv",
 				},
 				{
+					title: "Pedidos da maquininha",
+					url: "/pedidos?origem=POS",
+				},
+				{
 					title: "Fechamentos de caixa",
 					url: "/fechamentos-caixa",
 				},

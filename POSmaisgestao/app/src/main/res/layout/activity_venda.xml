@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbarVenda"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/primary"
+        android:theme="@style/ThemeOverlay.Material3.Dark.ActionBar"
+        app:navigationIcon="?attr/homeAsUpIndicator"
+        app:titleTextColor="@color/white"
+        app:navigationIconTint="@color/white" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="12dp"
+        android:hint="@string/buscar_produto">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/inputBusca"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:imeOptions="actionSearch"
+            android:inputType="text"
+            android:minHeight="56dp" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <TextView
+        android:id="@+id/lblSecao"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="16dp"
+        android:paddingBottom="4dp"
+        android:text="@string/atalhos"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/listaProdutos"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:paddingHorizontal="8dp"
+        android:clipToPadding="false" />
+
+    <TextView
+        android:id="@+id/txtVazio"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:padding="16dp"
+        android:text="@string/sem_atalhos"
+        android:visibility="gone" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnCarregarMais"
+        style="@style/Widget.Material3.Button.TextButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/carregar_mais"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/white"
+        android:elevation="8dp"
+        android:orientation="vertical"
+        android:padding="12dp">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/listaCarrinho"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxHeight="160dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnPagar"
+            style="@style/PosBigButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/pagar" />
+    </LinearLayout>
+</LinearLayout>

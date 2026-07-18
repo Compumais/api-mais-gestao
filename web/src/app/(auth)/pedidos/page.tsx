@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	type ColumnDef,
@@ -114,6 +114,9 @@ function filtrosAtivos(filtros: FiltrosState): boolean {
 
 export default function PedidosPage() {
 	const router = useRouter();
+	const searchParams = useSearchParams();
+	const origemPos = searchParams.get("origem")?.trim() || undefined;
+	const filtrarOrigemPos = origemPos?.toUpperCase() === "POS";
 	const { localStorageEmpresa: empresa } = useEmpresa();
 	const queryClient = useQueryClient();
 	const [sorting, setSorting] = useState<SortingState>([]);
@@ -148,7 +151,7 @@ export default function PedidosPage() {
 	);
 
 	const { data, isLoading } = useQuery({
-		queryKey: ["pedidos", empresa?.id, page, filtrosAplicados],
+		queryKey: ["pedidos", empresa?.id, page, filtrosAplicados, origemPos],
 		queryFn: () => {
 			if (!empresa) throw new Error("Empresa não selecionada");
 
@@ -179,6 +182,7 @@ export default function PedidosPage() {
 					? Number(filtrosAplicados.codigo)
 					: undefined,
 				busca: filtrosAplicados.busca || undefined,
+				origem: origemPos,
 			});
 		},
 		enabled: !!empresa?.id,
@@ -419,9 +423,18 @@ export default function PedidosPage() {
 			<div className="flex flex-col gap-4 p-4 md:p-6">
 				<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 					<div>
-						<h1 className="text-2xl font-semibold tracking-tight">Pedidos</h1>
+						<div className="flex flex-wrap items-center gap-2">
+							<h1 className="text-2xl font-semibold tracking-tight">
+								{filtrarOrigemPos ? "Pedidos da maquininha" : "Pedidos"}
+							</h1>
+							{filtrarOrigemPos && (
+								<Badge variant="secondary">Origem POS</Badge>
+							)}
+						</div>
 						<p className="text-sm text-muted-foreground">
-							Gerencie pedidos (DAV) e fature em NF-e de venda.
+							{filtrarOrigemPos
+								? "Pedidos (DAV) criados pelo app POS quando a emissão de NFC-e está desabilitada."
+								: "Gerencie pedidos (DAV) e fature em NF-e de venda."}
 						</p>
 					</div>
 					<div className="flex flex-wrap gap-2">

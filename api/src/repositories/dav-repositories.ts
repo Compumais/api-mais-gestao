@@ -53,6 +53,7 @@ export type ListarDavsParametros = {
 	faturado?: boolean | undefined;
 	codigo?: number | undefined;
 	busca?: string | undefined;
+	origem?: string | undefined;
 };
 
 export async function listarDavs({
@@ -66,6 +67,7 @@ export async function listarDavs({
 	faturado,
 	codigo,
 	busca,
+	origem,
 }: ListarDavsParametros) {
 	const where = [];
 
@@ -99,6 +101,10 @@ export async function listarDavs({
 
 	if (busca?.trim()) {
 		where.push(ilike(dav.nomecliente, `%${busca.trim()}%`));
+	}
+
+	if (origem?.trim()) {
+		where.push(eq(dav.extra1, origem.trim()));
 	}
 
 	const offset = (page - 1) * limit;

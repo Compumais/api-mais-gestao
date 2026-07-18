@@ -6,6 +6,7 @@ import Fastify from "fastify";
 import { adminRotas } from "./controllers/http/admin/rotas.js";
 import { areasRotas } from "./controllers/http/area/rotas.js";
 import { assinaturasRotas } from "./controllers/http/assinaturas/rotas.js";
+import { atalhosPdvRotas } from "./controllers/http/atalho-pdv/rotas.js";
 import { auditoriaRotas } from "./controllers/http/auditoria/rotas.js";
 // import { authRotas } from "./controllers/http/auth/rotas.js";
 import { obterPerfil } from "./controllers/http/auth/obter-perfil.js";
@@ -565,6 +566,7 @@ app.register(contasMesaItemRotas);
 app.register(vendasPdvGourmetRotas);
 app.register(vendasPdvItemRotas);
 app.register(fechamentosCaixaRotas);
+app.register(atalhosPdvRotas);
 
 app.addHook("preHandler", verificarAcessoGarcom);
 

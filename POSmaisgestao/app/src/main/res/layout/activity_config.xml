@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:text="@string/configuracoes"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:hint="@string/url_api">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/inputUrlApi"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textUri"
+                android:minHeight="56dp" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:hint="@string/numero_pdv">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/inputNumeroPdv"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="number"
+                android:minHeight="56dp" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:hint="@string/quantidade_mesas">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/inputQuantidadeMesas"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="number"
+                android:minHeight="56dp" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="4dp"
+            android:text="@string/modo_venda_titulo"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="@string/modo_venda_ajuda"
+            android:textColor="@color/muted_foreground"
+            android:textSize="13sp" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchEmitirNfcePos"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:minHeight="56dp"
+            android:text="@string/emitir_nfce_pos" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSalvarConfig"
+            style="@style/PosBigButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:text="@string/salvar" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnGerenciarAtalhos"
+            style="@style/PosBigButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:text="@string/gerenciar_atalhos" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnLogout"
+            style="@style/PosBigButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/danger"
+            android:text="@string/logout" />
+    </LinearLayout>
+</ScrollView>

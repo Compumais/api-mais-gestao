@@ -24,6 +24,7 @@ export const prismaMigrations = pgTable("_prisma_migrations", {
 
 export * from "./tables/area.js";
 export * from "./tables/assinaturas.js";
+export * from "./tables/atalho-pdv.js";
 export * from "./tables/audit-logs.js";
 export * from "./tables/banco.js";
 export * from "./tables/centro-custo.js";
