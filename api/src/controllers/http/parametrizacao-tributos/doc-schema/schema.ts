@@ -34,6 +34,7 @@ const propriedadesParametrizacao = {
 	idenquadramentoipi: { type: "string", format: "uuid", nullable: true },
 	percentualmva: { type: "string", nullable: true },
 	percentualirrf: { type: "string", nullable: true },
+	tipoproduto: { type: "string", nullable: true },
 	inativo: { type: "number", nullable: true },
 };
 
@@ -64,6 +65,7 @@ const bodyParametrizacao = {
 		idenquadramentoipi: { type: "string", format: "uuid", nullable: true },
 		percentualmva: { type: "string", nullable: true },
 		percentualirrf: { type: "string", nullable: true },
+		tipoproduto: { type: "string", maxLength: 2, nullable: true },
 	},
 	required: ["idempresa", "codigocfopentrada"],
 };

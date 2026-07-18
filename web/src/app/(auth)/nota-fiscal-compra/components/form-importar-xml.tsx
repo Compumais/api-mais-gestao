@@ -19,6 +19,7 @@ import {
 import { notaFiscalService } from "@/services/nota-fiscal.service";
 import {
 	CampoCondicaoPagamentoCompra,
+	CampoFormaPagamentoCompra,
 	CampoPlanoContasDespesa,
 } from "./campos-financeiros-nf-compra";
 
@@ -41,6 +42,7 @@ export function FormImportarXmlNotaFiscalCompra() {
 	const { handleSubmit, setValue, watch } = form;
 	const idplanocontas = watch("idplanocontas");
 	const idcondicaopagto = watch("idcondicaopagto");
+	const idtipodocumento = watch("idtipodocumento");
 
 	const { mutate: importarXml, isPending } = useMutation({
 		mutationFn: async (dados: ImportarXmlNfFormData) => {
@@ -52,6 +54,7 @@ export function FormImportarXmlNotaFiscalCompra() {
 				xml: conteudoXml,
 				idplanocontas: dados.idplanocontas || null,
 				idcondicaopagto: dados.idcondicaopagto || null,
+				idtipodocumento: dados.idtipodocumento || null,
 			});
 		},
 		onSuccess: (data) => {
@@ -137,6 +140,11 @@ export function FormImportarXmlNotaFiscalCompra() {
 						id="idplanocontas-xml"
 						value={idplanocontas}
 						onChange={(value) => setValue("idplanocontas", value)}
+					/>
+					<CampoFormaPagamentoCompra
+						id="idtipodocumento-xml"
+						value={idtipodocumento}
+						onChange={(value) => setValue("idtipodocumento", value)}
 					/>
 					<CampoCondicaoPagamentoCompra
 						id="idcondicaopagto-xml"

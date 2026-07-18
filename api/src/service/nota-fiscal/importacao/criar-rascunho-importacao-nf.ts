@@ -12,6 +12,8 @@ import type { NovoNotaFiscalItem } from "@/model/nota-fiscal-item-model.js";
 import { buscarEntidadePorCnpj } from "@/repositories/entidade-repositories.js";
 import { criarNotaFiscalComItens } from "@/repositories/nota-fiscal-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { buscarCfopPorId } from "@/repositories/cfop-repositories.js";
+import { resolverTipoprodutoPorCfopEntrada } from "@/service/nota-fiscal/montar-dados-produto-nf-importacao.js";
 import { buscarProdutoParaNf } from "@/service/nota-fiscal/vincular-ou-criar-produto.js";
 import {
 	httpBadRequest,
@@ -19,6 +21,7 @@ import {
 	httpErroInterno,
 	httpProibido,
 } from "@/util/http-util.js";
+import { isCfopEntrada } from "@/util/cfop-entrada-validacao.js";
 import { recalcularDadosConversao } from "@/util/calculo-importacao-nf.js";
 import { STATUS_RASCUNHO_IMPORTACAO } from "@/util/nota-fiscal-constants.js";
 import { parseNFeXml } from "@/util/nfe-xml-parser.js";
@@ -30,8 +33,8 @@ import {
 	truncarTexto,
 } from "@/util/texto-util.js";
 import {
-	resolverCfopImportacao,
 	resolverCestImportacao,
+	resolverCfopEntradaPorCfopXml,
 	resolverNcmImportacao,
 	resolverUnidadeImportacao,
 } from "./resolver-referencias-importacao.js";
@@ -53,37 +56,74 @@ type CriarRascunhoImportacaoNfResposta = {
 	fornecedor: FornecedorSugeridoImportacao;
 };
 
-function montarDadosImportacaoItem(
+type ItemMontadoImportacao = {
+	dados: DadosImportacaoItem;
+	codigoCfopEntrada?: string;
+};
+
+async function montarDadosImportacaoItem(
 	itemXml: ReturnType<typeof parseNFeXml>["itens"][number],
 	idempresa: string,
-	identidade?: string | undefined,
-): Promise<DadosImportacaoItem> {
-	return (async () => {
-		const fatorConversao = "1";
-		const quantidadeXml = itemXml.quantidade ?? "0";
-		const precounitarioXml = itemXml.precounitario ?? "0";
-		const { quantidadeEstoque, precounitarioEstoque } = recalcularDadosConversao(
-			quantidadeXml,
-			precounitarioXml,
-			fatorConversao,
-		);
+	_identidade?: string | undefined,
+	ufEmitente?: string | undefined,
+): Promise<ItemMontadoImportacao> {
+	const fatorConversao = "1";
+	const quantidadeXml = itemXml.quantidade ?? "0";
+	const precounitarioXml = itemXml.precounitario ?? "0";
+	const { quantidadeEstoque, precounitarioEstoque } = recalcularDadosConversao(
+		quantidadeXml,
+		precounitarioXml,
+		fatorConversao,
+	);
 
-		const produtoEncontrado = await buscarProdutoParaNf({
+	const produtoEncontrado = await buscarProdutoParaNf({
+		idempresa,
+		codigoproduto: itemXml.codigoproduto,
+		ean: itemXml.ean,
+		descricaoproduto: itemXml.descricaoproduto,
+	});
+
+	const ncm = await resolverNcmImportacao(idempresa, itemXml.ncm);
+	const cest = await resolverCestImportacao(idempresa, itemXml.cest);
+	const unidade = await resolverUnidadeImportacao(idempresa, itemXml.unidade);
+
+	const statusVinculo = produtoEncontrado ? "vinculado" : "pendente";
+
+	// Prioridade CFOP de entrada:
+	// 1) cadastro do produto (idcfopentrada)
+	// 2) depara planilha / cadastro (CFOP XML saída → entrada)
+	// Cabeçalho da nota permanece sem CFOP — usuário escolhe.
+	let idcfopEntrada: string | undefined;
+	let codigoCfopEntrada: string | undefined;
+
+	if (produtoEncontrado?.idcfopentrada) {
+		const cfopProduto = await buscarCfopPorId(produtoEncontrado.idcfopentrada);
+		if (cfopProduto?.codigo && isCfopEntrada(cfopProduto.codigo)) {
+			idcfopEntrada = produtoEncontrado.idcfopentrada;
+			codigoCfopEntrada = cfopProduto.codigo;
+		}
+	}
+
+	if (!idcfopEntrada && itemXml.cfop) {
+		const cfopDepara = await resolverCfopEntradaPorCfopXml(
 			idempresa,
-			codigoproduto: itemXml.codigoproduto,
-			ean: itemXml.ean,
-			descricaoproduto: itemXml.descricaoproduto,
-		});
+			itemXml.cfop,
+			ufEmitente,
+		);
+		if (cfopDepara) {
+			idcfopEntrada = cfopDepara.id;
+			codigoCfopEntrada = cfopDepara.codigo;
+		}
+	}
 
-		const cfop = await resolverCfopImportacao(idempresa, itemXml.cfop);
-		const ncm = await resolverNcmImportacao(idempresa, itemXml.ncm);
-		const cest = await resolverCestImportacao(idempresa, itemXml.cest);
-		const unidade = await resolverUnidadeImportacao(idempresa, itemXml.unidade);
+	const tipoprodutoResolvido =
+		produtoEncontrado?.tipoproduto?.trim() ||
+		(await resolverTipoprodutoPorCfopEntrada(idcfopEntrada));
 
-		const statusVinculo = produtoEncontrado ? "vinculado" : "pendente";
-
-		return {
-			codigoFornecedor: itemXml.referenciafornecedor ?? itemXml.codigoproduto?.toString(),
+	return {
+		dados: {
+			codigoFornecedor:
+				itemXml.referenciafornecedor ?? itemXml.codigoproduto?.toString(),
 			descricaoFornecedor: itemXml.descricaoproduto,
 			eanXml: itemXml.ean,
 			statusVinculo,
@@ -108,7 +148,8 @@ function montarDadosImportacaoItem(
 			precounitarioXml,
 			precounitarioEstoque,
 			cfopXml: itemXml.cfop,
-			idcfop: cfop?.id,
+			idcfop: idcfopEntrada,
+			tipoproduto: tipoprodutoResolvido,
 			ncmXml: itemXml.ncm,
 			idncm: ncm?.id,
 			cestXml: itemXml.cest,
@@ -134,8 +175,9 @@ function montarDadosImportacaoItem(
 				enquadramentoipi: itemXml.enquadramentoipi,
 				origem: smallintValidoParaPostgres(itemXml.origem),
 			},
-		} satisfies DadosImportacaoItem;
-	})();
+		},
+		...(codigoCfopEntrada ? { codigoCfopEntrada } : {}),
+	};
 }
 
 export async function criarRascunhoImportacaoNfService({
@@ -222,11 +264,6 @@ async function executarCriarRascunhoImportacaoNf({
 		encontrado: !!entidadeFornecedor,
 	};
 
-	const cfopCabecalho = await resolverCfopImportacao(
-		idempresa,
-		dadosXml.cfopOperacao ?? dadosXml.cfop,
-	);
-
 	const duplicatasNota: DuplicataImportacaoNf[] | undefined =
 		dadosXml.duplicatas && dadosXml.duplicatas.length > 0
 			? dadosXml.duplicatas
@@ -269,7 +306,8 @@ async function executarCriarRascunhoImportacaoNf({
 		pesoliquido: dadosXml.pesoliquido ?? null,
 		observacao: dadosXml.observacao ?? null,
 		protocolonfe: truncarTexto(dadosXml.protocolonfe, 18),
-		idcfop: cfopCabecalho?.id ?? null,
+		// CFOP do XML é do emitente (saída) — cabeçalho de entrada inicia vazio
+		idcfop: null,
 		idplanocontas: idOpcionalOuNulo(idplanocontas) ?? null,
 		idcondicaopagto: idOpcionalOuNulo(idcondicaopagto) ?? null,
 		idtipodocumento: idOpcionalOuNulo(idtipodocumento) ?? null,
@@ -298,12 +336,17 @@ async function executarCriarRascunhoImportacaoNf({
 		currenttimemillis: Date.now(),
 	};
 
-	let dadosImportacaoItens: DadosImportacaoItem[];
+	let itensMontados: ItemMontadoImportacao[];
 
 	try {
-		dadosImportacaoItens = await Promise.all(
+		itensMontados = await Promise.all(
 			dadosXml.itens.map((item) =>
-				montarDadosImportacaoItem(item, idempresa, entidadeFornecedor?.id),
+				montarDadosImportacaoItem(
+					item,
+					idempresa,
+					entidadeFornecedor?.id,
+					dadosXml.ufemitente,
+				),
 			),
 		);
 	} catch (erro) {
@@ -311,8 +354,8 @@ async function executarCriarRascunhoImportacaoNf({
 		return httpBadRequest(extrairMensagemErroBanco(erro));
 	}
 
-	const itensParaInserir: NovoNotaFiscalItem[] = dadosImportacaoItens.map(
-		(dadosImportacao, index) => {
+	const itensParaInserir: NovoNotaFiscalItem[] = itensMontados.map(
+		({ dados: dadosImportacao, codigoCfopEntrada }, index) => {
 			const itemXml = dadosXml.itens[index];
 			if (!itemXml) {
 				throw new Error("Item XML não encontrado");
@@ -328,7 +371,8 @@ async function executarCriarRascunhoImportacaoNf({
 				total: itemXml.total ?? null,
 				desconto: itemXml.desconto ?? null,
 				idcfop: dadosImportacao.idcfop ?? null,
-				cfop: itemXml.cfop ?? null,
+				// Campo textual do item = CFOP de entrada (não o do XML do emitente)
+				cfop: codigoCfopEntrada ?? null,
 				idncm: dadosImportacao.idncm ?? null,
 				ncm: itemXml.ncm ?? null,
 				idunidademedida: dadosImportacao.idunidademedida ?? null,

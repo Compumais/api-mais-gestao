@@ -1,26 +1,28 @@
-{
+﻿{
 	"regras": [
 		{
 			"codigocfopentrada": "5101",
 			"codigocfopsaidanfe": "5102",
-			"cstnfe": "0",
+			"cstnfe": "00",
 			"csosnnfe": "101",
 			"taxaicmsnfe": "SSS",
 			"codigocfopsaidanfce": "5102",
-			"cstnfce": "0",
+			"cstnfce": "00",
 			"csosnnfce": "102",
-			"taxaicmsnfce": "SSS"
+			"taxaicmsnfce": "SSS",
+			"tipoproduto": "00"
 		},
 		{
 			"codigocfopentrada": "5102",
 			"codigocfopsaidanfe": "5102",
-			"cstnfe": "0",
+			"cstnfe": "00",
 			"csosnnfe": "101",
 			"taxaicmsnfe": "SSS",
 			"codigocfopsaidanfce": "5102",
-			"cstnfce": "0",
+			"cstnfce": "00",
 			"csosnnfce": "102",
-			"taxaicmsnfce": "SSS"
+			"taxaicmsnfce": "SSS",
+			"tipoproduto": "00"
 		},
 		{
 			"codigocfopentrada": "5400",
@@ -31,7 +33,8 @@
 			"codigocfopsaidanfce": "5405",
 			"cstnfce": "60",
 			"csosnnfce": "500",
-			"taxaicmsnfce": "FFF"
+			"taxaicmsnfce": "FFF",
+			"tipoproduto": "00"
 		},
 		{
 			"codigocfopentrada": "5401",
@@ -42,7 +45,8 @@
 			"codigocfopsaidanfce": "5405",
 			"cstnfce": "60",
 			"csosnnfce": "500",
-			"taxaicmsnfce": "FFF"
+			"taxaicmsnfce": "FFF",
+			"tipoproduto": "00"
 		},
 		{
 			"codigocfopentrada": "5403",
@@ -53,29 +57,32 @@
 			"codigocfopsaidanfce": "5405",
 			"cstnfce": "60",
 			"csosnnfce": "500",
-			"taxaicmsnfce": "FFF"
+			"taxaicmsnfce": "FFF",
+			"tipoproduto": "00"
 		},
 		{
 			"codigocfopentrada": "6101",
 			"codigocfopsaidanfe": "5102",
-			"cstnfe": "0",
+			"cstnfe": "00",
 			"csosnnfe": "101",
 			"taxaicmsnfe": "SSS",
 			"codigocfopsaidanfce": "5102",
-			"cstnfce": "0",
+			"cstnfce": "00",
 			"csosnnfce": "102",
-			"taxaicmsnfce": "SSS"
+			"taxaicmsnfce": "SSS",
+			"tipoproduto": "00"
 		},
 		{
 			"codigocfopentrada": "6102",
 			"codigocfopsaidanfe": "5102",
-			"cstnfe": "0",
+			"cstnfe": "00",
 			"csosnnfe": "101",
 			"taxaicmsnfe": "SSS",
 			"codigocfopsaidanfce": "5102",
-			"cstnfce": "0",
+			"cstnfce": "00",
 			"csosnnfce": "102",
-			"taxaicmsnfce": "SSS"
+			"taxaicmsnfce": "SSS",
+			"tipoproduto": "00"
 		},
 		{
 			"codigocfopentrada": "6401",
@@ -86,7 +93,8 @@
 			"codigocfopsaidanfce": "5405",
 			"cstnfce": "60",
 			"csosnnfce": "500",
-			"taxaicmsnfce": "FFF"
+			"taxaicmsnfce": "FFF",
+			"tipoproduto": "00"
 		},
 		{
 			"codigocfopentrada": "6403",
@@ -97,7 +105,8 @@
 			"codigocfopsaidanfce": "5405",
 			"cstnfce": "60",
 			"csosnnfce": "500",
-			"taxaicmsnfce": "FFF"
+			"taxaicmsnfce": "FFF",
+			"tipoproduto": "00"
 		}
 	]
 }

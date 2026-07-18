@@ -37,6 +37,10 @@ import {
 	type OpcaoCst,
 } from "@/util/cst-produto-util";
 import { CampoCfopProduto } from "./campo-cfop-produto";
+import {
+	OPCOES_TIPO_PRODUTO,
+	sugerirTipoprodutoPorCodigoCfop,
+} from "@/constants/tipo-produto";
 
 type ProdutoAbaImpostosProps = {
 	control: Control<ProdutoFormData>;
@@ -277,11 +281,52 @@ export function ProdutoAbaImpostos({
 									label="CFOP de entrada"
 									value={field.value}
 									tipomovimento="E"
-									onChange={(valor) => field.onChange(valor || null)}
+									onChange={(valor, cfop) => {
+										field.onChange(valor || null);
+										const tipoproduto =
+											cfop?.tipoproduto?.trim() ||
+											sugerirTipoprodutoPorCodigoCfop(cfop?.codigo);
+										setValue("tipoproduto", tipoproduto, {
+											shouldValidate: true,
+										});
+									}}
 									erro={errors.idcfopentrada?.message}
 								/>
 							)}
 						/>
+
+						<Field data-invalid={!!errors.tipoproduto}>
+							<FieldLabel htmlFor="tipoproduto">
+								Tipo de produto
+							</FieldLabel>
+							<Controller
+								name="tipoproduto"
+								control={control}
+								render={({ field }) => (
+									<Select
+										value={field.value ?? "none"}
+										onValueChange={(valor) =>
+											field.onChange(valor === "none" ? null : valor)
+										}
+									>
+										<SelectTrigger id="tipoproduto" className="w-full">
+											<SelectValue placeholder="Selecione o tipo" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="none">Não informado</SelectItem>
+											{OPCOES_TIPO_PRODUTO.map((opcao) => (
+												<SelectItem key={opcao.value} value={opcao.value}>
+													{opcao.label}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								)}
+							/>
+							<FieldError
+								errors={errors.tipoproduto ? [errors.tipoproduto] : []}
+							/>
+						</Field>
 
 						<Field data-invalid={!!errors.situacaotributariasnentrada}>
 							<FieldLabel htmlFor="situacaotributariasnentrada">

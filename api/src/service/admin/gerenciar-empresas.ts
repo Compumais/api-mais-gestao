@@ -2,14 +2,18 @@ import { randomUUID } from "node:crypto";
 import { desc, eq } from "drizzle-orm";
 import type { HttpResponse } from "@/model/http-model.js";
 import { db } from "@/repositories/connection.js";
-import { criarContaCorrenteCaixaPadrao } from "@/repositories/conta-corrente-repositories.js";
 import { executarComControleAcessoPrivilegiado } from "@/repositories/controle-acesso-contexto.js";
-import { criarEmpresa, buscarEmpresaPorCnpj } from "@/repositories/empresa-repositories.js";
+import {
+	criarEmpresa,
+	buscarEmpresaPorCnpj,
+} from "@/repositories/empresa-repositories.js";
 import { buscarUsuarioPorId } from "@/repositories/usuarios-repositories.js";
-import { criarCfopsPadraoService } from "@/service/cfop/criar-cfops-padrao.js";
-import { criarFatoresConversaoPadraoService } from "@/service/fator-conversao/criar-fatores-conversao-padrao.js";
-import { criarPlanoContasPadraoService } from "@/service/planocontas/criar-plano-contas-padrao.js";
-import { httpNaoEncontrado, httpOk, httpRecursoExistente } from "@/util/http-util.js";
+import { popularDadosPadraoEmpresa } from "@/service/empresa/popular-dados-padrao-empresa.js";
+import {
+	httpNaoEncontrado,
+	httpOk,
+	httpRecursoExistente,
+} from "@/util/http-util.js";
 import { normalizarCnpj } from "@/util/criptografia-certificado.js";
 import { normalizarPerfilArray } from "@/util/usuario-perfil.js";
 import * as schema from "../../../drizzle/schema.js";
@@ -63,10 +67,7 @@ export async function criarEmpresaAdminService(
 		throw new Error("Falha ao criar empresa");
 	}
 
-	await criarPlanoContasPadraoService(empresa.id);
-	await criarCfopsPadraoService(empresa.id);
-	await criarContaCorrenteCaixaPadrao(empresa.id);
-	await criarFatoresConversaoPadraoService(empresa.id);
+	await popularDadosPadraoEmpresa(empresa.id);
 
 	const usuariosParaVincular = new Set<string>([idproprietario]);
 	if (params.idusuarioAssociado) {

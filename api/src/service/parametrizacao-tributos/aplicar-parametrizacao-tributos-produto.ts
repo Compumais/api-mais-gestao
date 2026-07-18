@@ -3,6 +3,10 @@ import { buscarCfopPorId } from "@/repositories/cfop-repositories.js";
 import { buscarParametrizacaoTributosImportacao } from "@/repositories/parametrizacao-tributos-repositories.js";
 import { buscarTaxaUfPorCodigo } from "@/repositories/taxauf-repositories.js";
 import {
+	extrairCstOuCsosn,
+	normalizarCodigoCfop,
+} from "@/util/parametrizacao-tributos-matching.js";
+import {
 	aplicarParametrizacaoTributosImportacao,
 	type ResultadoParametrizacaoImportacao,
 } from "@/util/resolver-parametrizacao-tributos-importacao.js";
@@ -30,28 +34,7 @@ type AplicarParametrizacaoTributosProdutoParametros = {
 	ufemitente?: string | undefined;
 };
 
-function extrairCstOuCsosn(situacao?: string | undefined) {
-	if (!situacao) return { cst: undefined, csosn: undefined };
-	const valor = situacao.trim();
-	if (!valor) return { cst: undefined, csosn: undefined };
-
-	if (
-		valor.length === 3 &&
-		(valor.startsWith("1") ||
-			valor.startsWith("2") ||
-			valor.startsWith("5") ||
-			valor.startsWith("9"))
-	) {
-		return { cst: undefined, csosn: valor };
-	}
-
-	return { cst: valor, csosn: undefined };
-}
-
-async function resolverIdTaxaUf(
-	idempresa: string,
-	codigo?: string | null,
-) {
+async function resolverIdTaxaUf(idempresa: string, codigo?: string | null) {
 	const codigoNormalizado = codigo?.trim().toUpperCase();
 	if (!codigoNormalizado) return undefined;
 
@@ -66,13 +49,14 @@ export async function aplicarParametrizacaoTributosProduto({
 }: AplicarParametrizacaoTributosProdutoParametros): Promise<
 	ResultadoAplicacaoParametrizacaoProduto | undefined
 > {
-	if (!dados.cfopXml) return undefined;
+	const cfopXml = normalizarCodigoCfop(dados.cfopXml);
+	if (!cfopXml) return undefined;
 
 	const { cst, csosn } = extrairCstOuCsosn(dados.tributacao.situacaotributaria);
 
 	const regra = await buscarParametrizacaoTributosImportacao({
 		idempresa,
-		codigocfopentrada: dados.cfopXml,
+		codigocfopentrada: cfopXml,
 		cstentrada: cst,
 		csosnentrada: csosn,
 		ncm: dados.ncmXml,

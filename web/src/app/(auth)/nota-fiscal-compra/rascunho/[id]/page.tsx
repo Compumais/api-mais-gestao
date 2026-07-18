@@ -70,6 +70,7 @@ export default function RascunhoImportacaoPage() {
 								idRascunho={idRascunho}
 								nota={data.nota}
 								fornecedor={data.fornecedor}
+								quantidadeItens={data.itens.length}
 								cfopXmlOperacao={
 									data.nota.dadosimportacao?.cfopOperacaoXml ??
 									data.itens[0]?.dadosimportacao?.cfopXml ??
@@ -83,8 +84,9 @@ export default function RascunhoImportacaoPage() {
 							<section className="rounded-lg border bg-card p-4">
 								<h2 className="text-lg font-semibold mb-2">Itens da nota</h2>
 								<p className="text-sm text-muted-foreground mb-4">
-									Vincule ou cadastre cada produto, ajuste o CFOP de entrada (pré-preenchido
-									do XML) e revise tributos antes de confirmar.{" "}
+									Vincule ou cadastre cada produto e revise o CFOP de entrada
+									pré-sugerido pela planilha (CFOP do XML → entrada). O CFOP do
+									cabeçalho deve ser escolhido manualmente.{" "}
 									<span className="inline-flex flex-wrap gap-x-2 gap-y-1">
 										<span className="text-green-700 dark:text-green-400">Verde: vinculado</span>
 										<span>·</span>

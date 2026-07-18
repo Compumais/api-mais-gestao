@@ -3,7 +3,7 @@ import { buscarNcmPorId } from "@/repositories/ncm-repositories.js";
 import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
 import { listarItensPorVendaPdv } from "@/repositories/venda-pdv-item-repositories.js";
 import type { ItemPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
-import { resolverCreditoIcmsSnItem } from "@/util/resolver-credito-icms-sn-item.js";
+import { empresaUsaCsosn } from "@/util/normalizar-tributacao-item-emissao-nfe.js";
 
 async function resolverCodigoCfop(
 	ids: Array<string | null | undefined>,
@@ -41,10 +41,12 @@ function formatarSituacaoTributaria(
 
 export async function montarItensEmissaoPdv(
 	idvenda: string,
+	crt?: number | null,
 ): Promise<{ itens: ItemPayloadNfe[]; pendencias: string[] }> {
 	const itensVenda = await listarItensPorVendaPdv(idvenda);
 	const pendencias: string[] = [];
 	const itens: ItemPayloadNfe[] = [];
+	const usaCsosn = empresaUsaCsosn(crt);
 
 	for (const [index, itemVenda] of itensVenda.entries()) {
 		const rotulo = `Item ${index + 1}`;
@@ -95,17 +97,7 @@ export async function montarItensEmissaoPdv(
 			formatarSituacaoTributaria(produto.tributacaosn) ??
 			formatarSituacaoTributaria(produto.situacaotributariasn);
 
-		const valorProduto = quantidade * valorUnitario;
-		const creditoSn = resolverCreditoIcmsSnItem({
-			...(csosn != null ? { csosn } : {}),
-			valorProduto,
-			aliquotaIcmsInterna: produto.aliquotaicmsinterna,
-		});
-
-		if (creditoSn.pendencia) {
-			pendencias.push(`${rotulo}: ${creditoSn.pendencia}`);
-		}
-
+		// ICMS próprio não entra no payload NFC-e; crédito SN é aplicado depois da normalização.
 		itens.push({
 			idproduto: produto.id,
 			...(produto.codigo != null
@@ -117,12 +109,16 @@ export async function montarItensEmissaoPdv(
 			unidade: produto.unidademedida ?? "UN",
 			quantidade,
 			valorUnitario,
-			...(cst ? { cst } : {}),
-			...(csosn ? { csosn } : {}),
-			...(creditoSn.pCredSN != null ? { pCredSN: creditoSn.pCredSN } : {}),
-			...(creditoSn.vCredICMSSN != null
-				? { vCredICMSSN: creditoSn.vCredICMSSN }
-				: {}),
+			...(usaCsosn
+				? csosn
+					? { csosn }
+					: cst
+						? { csosn: cst }
+						: {}
+				: {
+						...(cst ? { cst } : {}),
+						...(csosn ? { csosn } : {}),
+					}),
 			orig: produto.origem ?? 0,
 		});
 	}

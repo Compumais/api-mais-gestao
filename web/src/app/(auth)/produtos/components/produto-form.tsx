@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { useForm, type Resolver } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -108,6 +109,7 @@ function buildProdutoPayload(
 	payload.idcfopentrada = data.idcfopentrada || null;
 	payload.idcfopsaida = data.idcfopsaida || null;
 	payload.idcfopsaidanfce = data.idcfopsaidanfce || null;
+	payload.tipoproduto = data.tipoproduto || null;
 	payload.idcest = data.idcest || null;
 	payload.idtaxauf = data.idtaxauf || null;
 	payload.situacaotributariasnentrada = textoOuNulo(
@@ -153,6 +155,7 @@ export function ProdutoForm(props: ProdutoFormProps) {
 			ippt: "P",
 			origem: 0,
 			ncm: "",
+			tipoproduto: null,
 			idcfopentrada: null,
 			idcfopsaida: null,
 			idcfopsaidanfce: null,
@@ -192,6 +195,7 @@ export function ProdutoForm(props: ProdutoFormProps) {
 	const fornecedor = watch("fornecedor");
 	const idgrupo = watch("idgrupo");
 	const tipo = watch("tipo");
+	const tipoproduto = watch("tipoproduto");
 	const iat = watch("iat");
 	const ippt = watch("ippt");
 	const preco = watch("preco");
@@ -206,6 +210,12 @@ export function ProdutoForm(props: ProdutoFormProps) {
 		setValue,
 		valorCodigoAtual: codigo,
 	});
+
+	useEffect(() => {
+		if (tipo === "S" && !tipoproduto) {
+			setValue("tipoproduto", "09", { shouldValidate: true });
+		}
+	}, [tipo, tipoproduto, setValue]);
 
 	const { data: unidadesData } = useQuery({
 		queryKey: ["unidades-medida", empresa?.id],

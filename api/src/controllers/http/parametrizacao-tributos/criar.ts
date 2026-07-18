@@ -55,6 +55,7 @@ export const parametrizacaoTributosBodySchema = z.object({
 	idenquadramentoipi: z.string().uuid().optional().nullable(),
 	percentualmva: campoNumericoOpcional,
 	percentualirrf: campoNumericoOpcional,
+	tipoproduto: campoTextoOpcional(2),
 });
 
 export async function criarParametrizacaoTributos(

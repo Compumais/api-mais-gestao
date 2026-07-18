@@ -43,6 +43,48 @@ export async function buscarCfopSaidaPorEntrada(
 	return semUf;
 }
 
+/** Resolve CFOP de entrada a partir do código de saída (XML do emitente). */
+export async function buscarCfopEntradaPorCodigoSaida(
+	idempresa: string,
+	codigoSaida: string,
+	uf?: string | undefined,
+) {
+	const codigo = codigoSaida.replace(/\D/g, "");
+	if (!codigo) return undefined;
+
+	if (uf) {
+		const [comUf] = await db
+			.select()
+			.from(cfopdepara)
+			.where(
+				and(
+					eq(cfopdepara.idempresa, idempresa),
+					eq(cfopdepara.codigosaida, codigo),
+					eq(cfopdepara.inativo, 0),
+					eq(cfopdepara.uf, uf.toUpperCase()),
+				),
+			)
+			.limit(1);
+
+		if (comUf) return comUf;
+	}
+
+	const [semUf] = await db
+		.select()
+		.from(cfopdepara)
+		.where(
+			and(
+				eq(cfopdepara.idempresa, idempresa),
+				eq(cfopdepara.codigosaida, codigo),
+				eq(cfopdepara.inativo, 0),
+				or(isNull(cfopdepara.uf), eq(cfopdepara.uf, "")),
+			),
+		)
+		.limit(1);
+
+	return semUf;
+}
+
 export type ListarCfopDeParaParametros = {
 	idempresa: string;
 	page?: number;

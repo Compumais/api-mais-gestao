@@ -5,6 +5,8 @@
 	"scripts": {
 		"dev": "next dev",
 		"build": "next build",
+		"build:live": "node scripts/zero-downtime-build.js",
+		"build:rollback": "node scripts/rollback-build.js",
 		"start": "next start",
 		"lint": "biome check",
 		"format": "biome format --write",

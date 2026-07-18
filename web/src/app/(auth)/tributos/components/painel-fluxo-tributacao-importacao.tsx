@@ -66,15 +66,20 @@ export function PainelFluxoTributacaoImportacao({
 			<AlertDescription>
 				<p>
 					Define regras completas de <strong>tributação de saída</strong> com
-					base no perfil fiscal do item na NF de compra: CFOP, CST/CSOSN, NCM e
-					UF de entrada. Na finalização da importação, o sistema aplica CFOP de
-					saída (NFe e NFC-e), CSTs, PIS/COFINS e demais campos configurados no
-					cadastro do produto.
+					base no perfil fiscal do item no XML da NF de compra: CFOP do
+					fornecedor, CST/CSOSN, NCM e UF. Na finalização da importação, o
+					sistema aplica CFOP de saída (NFe e NFC-e), CST/CSOSN e demais campos
+					no cadastro do produto.
 				</p>
 				<p className="mt-2">
-					<strong>Critérios de entrada:</strong> CFOP é obrigatório; CST, CSOSN,
-					NCM e UF refinam a regra. Quanto mais campos preenchidos, mais
-					específica é a regra e maior a prioridade no matching.
+					<strong>CFOP do critério:</strong> deve ser o CFOP do XML do fornecedor
+					(ex.: 5102, 6102), não o CFOP operacional de entrada (1xxx/2xxx) usado
+					no estoque.
+				</p>
+				<p className="mt-2">
+					<strong>Critérios:</strong> CFOP é obrigatório; CST, CSOSN, NCM e UF
+					refinam a regra. Quanto mais campos preenchidos, mais específica é a
+					regra e maior a prioridade no matching.
 				</p>
 				<p className="mt-2">
 					<strong>Ordem de prioridade na importação:</strong>
@@ -98,7 +103,8 @@ export function PainelFluxoTributacaoImportacao({
 				<p className="mt-2 text-muted-foreground">
 					Marque &quot;Ignorar primeiro dígito do CST&quot; quando o XML trouxer
 					CST com origem (ex.: 000) e a regra estiver cadastrada só com os dois
-					últimos dígitos (ex.: 00).
+					últimos dígitos (ex.: 00). O sistema também compara os últimos 2
+					dígitos quando os comprimentos diferem.
 				</p>
 			</AlertDescription>
 		</Alert>

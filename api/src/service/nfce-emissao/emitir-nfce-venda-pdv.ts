@@ -25,6 +25,7 @@ import {
 	carregarContextoEmissaoNfce,
 	montarPayloadGatewayEmissaoNfce,
 } from "@/service/nfce-emissao/contexto-emissao-nfce.js";
+import { aplicarCreditoIcmsSnItensEmissao } from "@/service/nfe-emissao/aplicar-credito-icms-sn-itens.js";
 import { montarItensEmissaoPdv } from "@/service/nfce-emissao/montar-itens-emissao-pdv.js";
 import { calcularTotaisFiscaisEmissaoNfe } from "@/util/calcular-totais-fiscais-emissao-nfe.js";
 import { montarDadosImportacaoItemEmissaoNfe } from "@/util/dados-emissao-nfe-nota.js";
@@ -252,8 +253,9 @@ export async function emitirNfceVendaPdvService({
 		});
 	}
 
+	const crt = empresaFiscal.crt ?? 3;
 	const { itens: itensBrutos, pendencias: pendenciasItens } =
-		await montarItensEmissaoPdv(idvenda);
+		await montarItensEmissaoPdv(idvenda, crt);
 
 	if (itensBrutos.length === 0) {
 		return httpBadRequest("A venda PDV não possui itens para emissão da NFC-e");
@@ -275,11 +277,19 @@ export async function emitirNfceVendaPdvService({
 		return httpBadRequest("Não foi possível reservar numeração da série NFC-e");
 	}
 
-	const crt = empresaFiscal.crt ?? 3;
 	const itensEnriquecidos = await enriquecerItensEmissaoComProduto(itensBrutos);
-	const itensNormalizados = normalizarGtinItensEmissao(
+	const itensTributacao = normalizarGtinItensEmissao(
 		normalizarItensEmissaoNfe(crt, itensEnriquecidos),
 	);
+	const { itens: itensNormalizados, pendencias: pendenciasCreditoSn } =
+		await aplicarCreditoIcmsSnItensEmissao(itensTributacao);
+
+	if (pendenciasCreditoSn.length > 0) {
+		return httpOk({
+			emitida: false,
+			erro: pendenciasCreditoSn.join("; "),
+		});
+	}
 
 	const valorTotalVenda = Number.parseFloat(venda.valortotal ?? "0");
 	const pagamentoBruto = montarPagamentosPdvParaNfce(

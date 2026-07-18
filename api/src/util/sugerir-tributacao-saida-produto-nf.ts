@@ -1,4 +1,5 @@
 import type { TributacaoImportacaoItem } from "@/model/nota-fiscal-importacao-model.js";
+import { campoTributacaoAusenteOuInvalido } from "@/util/parametrizacao-tributos-matching.js";
 import type { ConfigRegimeImportacaoNf } from "@/util/regime-tributario-empresa.js";
 import { truncarTexto } from "@/util/texto-util.js";
 
@@ -16,6 +17,7 @@ export type SugestaoTributacaoSaidaProduto = {
 	cstipientrada?: string | undefined;
 	cstipisaida?: string | undefined;
 	idenquadramentoipi?: string | undefined;
+	tipoproduto?: string | undefined;
 };
 
 const CSOSN_SAIDA_PADRAO_SN = "102";
@@ -139,27 +141,45 @@ export function mesclarSugestaoTributacaoSaidaProduto(
 		idenquadramentoipi: string;
 	}> = {};
 
-	if (!produtoAtual.situacaotributaria?.trim() && sugestao.situacaotributaria) {
+	if (
+		campoTributacaoAusenteOuInvalido(produtoAtual.situacaotributaria) &&
+		sugestao.situacaotributaria
+	) {
 		resultado.situacaotributaria = sugestao.situacaotributaria;
 	}
 
-	if (!produtoAtual.situacaotributariasn?.trim() && sugestao.situacaotributariasn) {
+	if (
+		campoTributacaoAusenteOuInvalido(produtoAtual.situacaotributariasn) &&
+		sugestao.situacaotributariasn
+	) {
 		resultado.situacaotributariasn = sugestao.situacaotributariasn;
 	}
 
-	if (!produtoAtual.tributacaoespecial?.trim() && sugestao.tributacaoespecial) {
+	if (
+		campoTributacaoAusenteOuInvalido(produtoAtual.tributacaoespecial) &&
+		sugestao.tributacaoespecial
+	) {
 		resultado.tributacaoespecial = sugestao.tributacaoespecial;
 	}
 
-	if (!produtoAtual.tributacaosn?.trim() && sugestao.tributacaosn) {
+	if (
+		campoTributacaoAusenteOuInvalido(produtoAtual.tributacaosn) &&
+		sugestao.tributacaosn
+	) {
 		resultado.tributacaosn = sugestao.tributacaosn;
 	}
 
-	if (!produtoAtual.cstpis?.toString().trim() && sugestao.cstpis) {
+	if (
+		campoTributacaoAusenteOuInvalido(produtoAtual.cstpis?.toString()) &&
+		sugestao.cstpis
+	) {
 		resultado.cstpis = sugestao.cstpis;
 	}
 
-	if (!produtoAtual.cstcofins?.toString().trim() && sugestao.cstcofins) {
+	if (
+		campoTributacaoAusenteOuInvalido(produtoAtual.cstcofins?.toString()) &&
+		sugestao.cstcofins
+	) {
 		resultado.cstcofins = sugestao.cstcofins;
 	}
 

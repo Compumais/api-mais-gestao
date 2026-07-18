@@ -177,7 +177,7 @@ export default function EnvioEmailsPage() {
 										<Input
 											id="smtp-porta"
 											type="number"
-											{...form.register("porta")}
+											{...form.register("porta", { valueAsNumber: true })}
 										/>
 										{form.formState.errors.porta && (
 											<p className="text-xs text-destructive">

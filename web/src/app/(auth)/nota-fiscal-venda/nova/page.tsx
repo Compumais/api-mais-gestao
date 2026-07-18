@@ -1853,14 +1853,24 @@ export default function NovaEmissaoNfePage() {
 
 							{/* Cabeçalho da tabela */}
 							{itensValue.length > 0 && (
-								<div className="hidden lg:grid grid-cols-[2rem_minmax(0,1fr)_3rem_4rem_5rem_5rem_5rem_5rem_4.5rem] gap-2 px-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+								<div
+									className={
+										empresaUsaCsosn(empresaFiscal?.crt)
+											? "hidden lg:grid grid-cols-[2rem_minmax(0,1fr)_3rem_4rem_5rem_5rem_4.5rem] gap-2 px-3 text-xs font-medium text-muted-foreground uppercase tracking-wide"
+											: "hidden lg:grid grid-cols-[2rem_minmax(0,1fr)_3rem_4rem_5rem_5rem_5rem_5rem_4.5rem] gap-2 px-3 text-xs font-medium text-muted-foreground uppercase tracking-wide"
+									}
+								>
 									<span>#</span>
 									<span>Produto</span>
 									<span className="text-center">UN</span>
 									<span className="text-right">Qtd</span>
 									<span className="text-right">Vlr Unit.</span>
-									<span className="text-right">BC ICMS</span>
-									<span className="text-right">ICMS</span>
+									{!empresaUsaCsosn(empresaFiscal?.crt) && (
+										<>
+											<span className="text-right">BC ICMS</span>
+											<span className="text-right">ICMS</span>
+										</>
+									)}
 									<span className="text-right">Total</span>
 									<span />
 								</div>
@@ -1884,6 +1894,7 @@ export default function NovaEmissaoNfePage() {
 								{itensValue.map((item, index) => {
 									const total =
 										(item.quantidade || 0) * (item.valorUnitario || 0);
+									const usaCsosn = empresaUsaCsosn(empresaFiscal?.crt);
 									const icms = calcularIcmsItemEmissao(
 										empresaFiscal?.crt ?? 3,
 										item,
@@ -1892,7 +1903,11 @@ export default function NovaEmissaoNfePage() {
 										<div
 											// biome-ignore lint/suspicious/noArrayIndexKey: itens não têm id estável
 											key={index}
-											className="grid grid-cols-[2rem_minmax(0,1fr)_3rem_4rem_5rem_5rem_5rem_5rem_4.5rem] gap-2 items-center rounded-lg border bg-card px-3 py-2"
+											className={
+												usaCsosn
+													? "grid grid-cols-[2rem_minmax(0,1fr)_3rem_4rem_5rem_5rem_4.5rem] gap-2 items-center rounded-lg border bg-card px-3 py-2"
+													: "grid grid-cols-[2rem_minmax(0,1fr)_3rem_4rem_5rem_5rem_5rem_5rem_4.5rem] gap-2 items-center rounded-lg border bg-card px-3 py-2"
+											}
 										>
 											<span className="text-xs text-muted-foreground font-medium text-center">
 												{index + 1}
@@ -1917,12 +1932,16 @@ export default function NovaEmissaoNfePage() {
 											<span className="text-sm text-right">
 												{formatarMoeda(item.valorUnitario)}
 											</span>
-											<span className="text-sm text-right text-muted-foreground">
-												{formatarMoeda(icms.base)}
-											</span>
-											<span className="text-sm text-right text-muted-foreground">
-												{formatarMoeda(icms.valor)}
-											</span>
+											{!usaCsosn && (
+												<>
+													<span className="text-sm text-right text-muted-foreground">
+														{formatarMoeda(icms.base)}
+													</span>
+													<span className="text-sm text-right text-muted-foreground">
+														{formatarMoeda(icms.valor)}
+													</span>
+												</>
+											)}
 											<span className="text-sm font-semibold text-right">
 												{formatarMoeda(total)}
 											</span>
@@ -1990,7 +2009,10 @@ export default function NovaEmissaoNfePage() {
 					{/* ── 4. CÁLCULO DOS IMPOSTOS ─────────────────────────────────────── */}
 					{itensValue.length > 0 && (
 						<div className="mb-6">
-							<PainelCalculoImpostosEmissao totaisFiscais={totaisFiscais} />
+							<PainelCalculoImpostosEmissao
+								totaisFiscais={totaisFiscais}
+								ocultarIcmsProprio={empresaUsaCsosn(empresaFiscal?.crt)}
+							/>
 						</div>
 					)}
 
