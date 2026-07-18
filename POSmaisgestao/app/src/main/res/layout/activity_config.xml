@@ -85,6 +85,44 @@
             android:minHeight="56dp"
             android:text="@string/emitir_nfce_pos" />
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="4dp"
+            android:text="@string/impressoras_titulo"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="@string/impressoras_ajuda"
+            android:textColor="@color/muted_foreground"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/txtImpressoraSelecionada"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:textSize="14sp" />
+
+        <LinearLayout
+            android:id="@+id/listaImpressoras"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="8dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnAtualizarImpressoras"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:text="@string/atualizar_impressoras" />
+
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSalvarConfig"
             style="@style/PosBigButton"
