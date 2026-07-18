@@ -7,7 +7,6 @@ import {
 	upsertNfeInboundDocumento,
 	atualizarStatusManifestacaoPorChave,
 } from "@/repositories/nfe-inbound-repositories.js";
-import { STATUS_RASCUNHO_IMPORTACAO } from "@/util/nota-fiscal-constants.js";
 import type { DocumentoXmlClassificado } from "./classificar-xml-dfe.js";
 
 export async function persistirDocumentoInbound({
@@ -51,10 +50,7 @@ export async function persistirDocumentoInbound({
 			idempresa,
 			classificado.metadados.chavenfe,
 		);
-		statusimportacao =
-			notaExistente && notaExistente.status !== STATUS_RASCUNHO_IMPORTACAO
-				? "importado"
-				: "disponivel";
+		statusimportacao = notaExistente ? "importado" : "disponivel";
 	} else if (classificado.tipo === "resNFe") {
 		statusimportacao = "aguardando_xml";
 	}

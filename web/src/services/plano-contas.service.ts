@@ -114,8 +114,15 @@ export const planoContasService = {
 		listarTudo?: boolean;
 		tipomovimento?: "E" | "S";
 	}): Promise<ListarPlanoContasResponse> {
+		const { inativo, ...rest } = params ?? {};
+		// Omitir inativo=0: a API defaulta para ativos. Enviar "0" quebrava validação Zod (400).
+		const query: Record<string, unknown> = { ...rest };
+		if (inativo === 1) {
+			query.inativo = true;
+		}
+
 		const { data } = await api.get<ListarPlanoContasResponse>("/plano-contas", {
-			params,
+			params: query,
 		});
 		return data;
 	},

@@ -254,15 +254,22 @@ export function ModalItemEmissao({
 		const gtin = normalizarGtinItemFormulario({ ...item, ...tributacao });
 		const itemFinal = { ...item, ...tributacao, ...gtin };
 
-		if (itemFinal.baseIcms == null) {
-			itemFinal.baseIcms = totalItem;
-		}
-		if (itemFinal.valorIcms == null && itemFinal.aliquotaIcms != null) {
-			itemFinal.valorIcms =
-				Math.round(
-					((itemFinal.baseIcms ?? totalItem) * itemFinal.aliquotaIcms) / 100 *
-						100,
-				) / 100;
+		if (!usaCsosn) {
+			if (itemFinal.baseIcms == null) {
+				itemFinal.baseIcms = totalItem;
+			}
+			if (itemFinal.valorIcms == null && itemFinal.aliquotaIcms != null) {
+				itemFinal.valorIcms =
+					Math.round(
+						((itemFinal.baseIcms ?? totalItem) * itemFinal.aliquotaIcms) /
+							100 *
+							100,
+					) / 100;
+			}
+		} else {
+			itemFinal.baseIcms = undefined;
+			itemFinal.valorIcms = undefined;
+			itemFinal.aliquotaIcms = undefined;
 		}
 
 		onConfirmar(itemFinal);
@@ -640,8 +647,12 @@ export function ModalItemEmissao({
 							<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
 								{(
 									[
-										["baseIcms", "Base de cálculo ICMS (R$)"],
-										["valorIcms", "Valor ICMS (R$)"],
+										...(!usaCsosn
+											? ([
+													["baseIcms", "Base de cálculo ICMS (R$)"],
+													["valorIcms", "Valor ICMS (R$)"],
+												] as const)
+											: []),
 										["valorIpi", "Valor IPI (R$)"],
 										...(devolucaoCompra
 											? ([["valorIpiDevol", "IPI Devolvido (R$)"]] as const)

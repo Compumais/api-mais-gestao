@@ -38,6 +38,7 @@ export const parametrizacaotributos = pgTable(
 		idenquadramentoipi: text(),
 		percentualmva: numeric({ precision: 12, scale: 4 }),
 		percentualirrf: numeric({ precision: 12, scale: 4 }),
+		tipoproduto: varchar({ length: 2 }),
 		inativo: smallint().default(0),
 	},
 	(table) => [

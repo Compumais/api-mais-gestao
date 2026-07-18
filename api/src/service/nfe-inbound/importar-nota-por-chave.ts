@@ -31,6 +31,7 @@ export type ImportarNotaPorChaveParametros = {
 	chaveNfe: string;
 	idplanocontas?: string;
 	idcondicaopagto?: string;
+	idtipodocumento?: string;
 	xmlOpcional?: string;
 };
 
@@ -126,6 +127,7 @@ export async function importarNotaPorChaveService({
 	chaveNfe,
 	idplanocontas,
 	idcondicaopagto,
+	idtipodocumento,
 	xmlOpcional,
 }: ImportarNotaPorChaveParametros): Promise<
 	HttpResponse<ImportarNotaPorChaveResposta>
@@ -150,7 +152,7 @@ export async function importarNotaPorChaveService({
 		validacao.chave,
 	);
 
-	if (notaExistente && notaExistente.status !== 99) {
+	if (notaExistente) {
 		return httpBadRequest("Esta NF-e já foi importada no sistema");
 	}
 
@@ -191,6 +193,7 @@ export async function importarNotaPorChaveService({
 		xml: xmlProcNFe,
 		idplanocontas,
 		idcondicaopagto,
+		idtipodocumento,
 	});
 
 	if (!resultadoRascunho.success || !resultadoRascunho.body) {

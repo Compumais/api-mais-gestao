@@ -63,6 +63,7 @@ export type DadosImportacaoItem = {
 	quantidadeTributavelXml?: string | undefined;
 	precounitarioTributavelXml?: string | undefined;
 	idunidademedida?: string | undefined;
+	tipoproduto?: string | undefined;
 	fatorConversao: string;
 	quantidadeXml: string;
 	quantidadeEstoque: string;

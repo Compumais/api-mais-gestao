@@ -1,9 +1,10 @@
 "use client";
 
-import type { UseFormReturn } from "react-hook-form";
+import { Controller, type UseFormReturn } from "react-hook-form";
 import { CampoCfopProduto } from "@/app/(auth)/produtos/components/campo-cfop-produto";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Combobox } from "@/components/ui/combobox";
 import {
 	Field,
 	FieldError,
@@ -12,15 +13,12 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import type { ParametrizacaoTributosFormData } from "@/schemas/parametrizacao-tributos.schema";
-import { OPCOES_CSOSN, OPCOES_CST_ICMS } from "@/util/cst-produto-util";
+import { OPCOES_TIPO_PRODUTO } from "@/constants/tipo-produto";
+import {
+	OPCOES_CSOSN,
+	OPCOES_CST_ICMS,
+} from "@/util/cst-produto-util";
 
 type FormularioParametrizacaoTributosProps = {
 	form: UseFormReturn<ParametrizacaoTributosFormData>;
@@ -31,6 +29,45 @@ type FormularioParametrizacaoTributosProps = {
 	onCancel?: () => void;
 	cancelLabel?: string;
 };
+
+const OPCAO_NENHUM = { value: "none", label: "Nenhum" } as const;
+
+function opcoesComNenhum(opcoes: Array<{ value: string; label: string }>) {
+	return [OPCAO_NENHUM, ...opcoes];
+}
+
+function CampoCstCombobox({
+	id,
+	label,
+	value,
+	opcoes,
+	onChange,
+	erro,
+}: {
+	id: string;
+	label: string;
+	value?: string | null;
+	opcoes: Array<{ value: string; label: string }>;
+	onChange: (valor: string | null) => void;
+	erro?: string;
+}) {
+	return (
+		<Field data-invalid={!!erro}>
+			<FieldLabel htmlFor={id}>{label}</FieldLabel>
+			<Combobox
+				options={opcoesComNenhum(opcoes)}
+				value={value ?? "none"}
+				onChange={(selecionado) =>
+					onChange(selecionado === "none" || !selecionado ? null : selecionado)
+				}
+				placeholder="Selecione"
+				searchPlaceholder="Buscar..."
+				emptyMessage="Nenhuma opção encontrada"
+			/>
+			<FieldError errors={erro ? [{ message: erro }] : []} />
+		</Field>
+	);
+}
 
 export function FormularioParametrizacaoTributos({
 	form,
@@ -44,13 +81,12 @@ export function FormularioParametrizacaoTributos({
 	const {
 		register,
 		handleSubmit,
+		control,
 		setValue,
 		watch,
 		formState: { errors },
 	} = form;
 
-	const idcfopsaidanfe = watch("idcfopsaidanfe");
-	const idcfopsaidanfce = watch("idcfopsaidanfce");
 	const ignorarprimeirodigitocst = watch("ignorarprimeirodigitocst");
 
 	return (
@@ -60,13 +96,23 @@ export function FormularioParametrizacaoTributos({
 					<h3 className="text-base font-semibold">Entrada</h3>
 					<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 						<Field data-invalid={!!errors.codigocfopentrada}>
-							<FieldLabel htmlFor="codigocfopentrada">CFOP entrada *</FieldLabel>
+							<FieldLabel htmlFor="codigocfopentrada">
+								CFOP do XML (fornecedor) *
+							</FieldLabel>
 							<Input
 								id="codigocfopentrada"
-								placeholder="Ex.: 1102"
+								placeholder="Ex.: 5102"
 								maxLength={10}
+								aria-describedby="codigocfopentrada-ajuda"
 								{...register("codigocfopentrada")}
 							/>
+							<p
+								id="codigocfopentrada-ajuda"
+								className="text-muted-foreground text-xs"
+							>
+								Use o CFOP que vem no XML da nota do fornecedor (geralmente
+								5xxx/6xxx), não o CFOP operacional de entrada (1xxx).
+							</p>
 							<FieldError
 								errors={
 									errors.codigocfopentrada ? [errors.codigocfopentrada] : []
@@ -74,53 +120,35 @@ export function FormularioParametrizacaoTributos({
 							/>
 						</Field>
 
-						<Field data-invalid={!!errors.cstentrada}>
-							<FieldLabel htmlFor="cstentrada">CST entrada</FieldLabel>
-							<Select
-								value={watch("cstentrada") ?? "none"}
-								onValueChange={(valor) =>
-									setValue("cstentrada", valor === "none" ? null : valor, {
-										shouldValidate: true,
-									})
-								}
-							>
-								<SelectTrigger id="cstentrada" className="w-full">
-									<SelectValue placeholder="Selecione" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="none">Nenhum</SelectItem>
-									{OPCOES_CST_ICMS.map((opcao) => (
-										<SelectItem key={opcao.value} value={opcao.value}>
-											{opcao.label}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</Field>
+						<Controller
+							name="cstentrada"
+							control={control}
+							render={({ field }) => (
+								<CampoCstCombobox
+									id="cstentrada"
+									label="CST entrada"
+									value={field.value}
+									opcoes={OPCOES_CST_ICMS}
+									onChange={field.onChange}
+									erro={errors.cstentrada?.message}
+								/>
+							)}
+						/>
 
-						<Field data-invalid={!!errors.csosnentrada}>
-							<FieldLabel htmlFor="csosnentrada">CSOSN entrada</FieldLabel>
-							<Select
-								value={watch("csosnentrada") ?? "none"}
-								onValueChange={(valor) =>
-									setValue("csosnentrada", valor === "none" ? null : valor, {
-										shouldValidate: true,
-									})
-								}
-							>
-								<SelectTrigger id="csosnentrada" className="w-full">
-									<SelectValue placeholder="Selecione" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="none">Nenhum</SelectItem>
-									{OPCOES_CSOSN.map((opcao) => (
-										<SelectItem key={opcao.value} value={opcao.value}>
-											{opcao.label}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</Field>
+						<Controller
+							name="csosnentrada"
+							control={control}
+							render={({ field }) => (
+								<CampoCstCombobox
+									id="csosnentrada"
+									label="CSOSN entrada"
+									value={field.value}
+									opcoes={OPCOES_CSOSN}
+									onChange={field.onChange}
+									erro={errors.csosnentrada?.message}
+								/>
+							)}
+						/>
 
 						<Field data-invalid={!!errors.ncm}>
 							<FieldLabel htmlFor="ncm">NCM</FieldLabel>
@@ -152,6 +180,26 @@ export function FormularioParametrizacaoTributos({
 								{...register("uf")}
 							/>
 						</Field>
+
+						<Controller
+							name="tipoproduto"
+							control={control}
+							render={({ field }) => (
+								<CampoCstCombobox
+									id="tipoproduto"
+									label="Tipo de produto"
+									value={field.value}
+									opcoes={OPCOES_TIPO_PRODUTO}
+									onChange={field.onChange}
+									erro={errors.tipoproduto?.message}
+								/>
+							)}
+						/>
+						<p className="text-muted-foreground text-xs -mt-2 md:col-span-3">
+							Tipo SPED 0200 aplicado ao produto na finalização da NF de
+							entrada. Sem valor (ou sem match de regra), usa 00 —
+							mercadoria para revenda.
+						</p>
 					</div>
 
 					<div className="flex items-center gap-3">
@@ -161,6 +209,7 @@ export function FormularioParametrizacaoTributos({
 							onCheckedChange={(checked) =>
 								setValue("ignorarprimeirodigitocst", checked === true, {
 									shouldValidate: true,
+									shouldDirty: true,
 								})
 							}
 						/>
@@ -176,66 +225,50 @@ export function FormularioParametrizacaoTributos({
 				<div className="space-y-4">
 					<h3 className="text-base font-semibold">Saída NFe</h3>
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-						<CampoCfopProduto
-							id="idcfopsaidanfe"
-							label="CFOP saída NFe"
-							value={idcfopsaidanfe}
-							tipomovimento="S"
-							onChange={(valor) =>
-								setValue("idcfopsaidanfe", valor || null, {
-									shouldValidate: true,
-								})
-							}
-							erro={errors.idcfopsaidanfe?.message}
+						<Controller
+							name="idcfopsaidanfe"
+							control={control}
+							render={({ field }) => (
+								<CampoCfopProduto
+									id="idcfopsaidanfe"
+									label="CFOP saída NFe"
+									value={field.value}
+									tipomovimento="S"
+									onChange={(valor) => field.onChange(valor || null)}
+									erro={errors.idcfopsaidanfe?.message}
+								/>
+							)}
 						/>
 
-						<Field data-invalid={!!errors.cstnfe}>
-							<FieldLabel htmlFor="cstnfe">CST NFe</FieldLabel>
-							<Select
-								value={watch("cstnfe") ?? "none"}
-								onValueChange={(valor) =>
-									setValue("cstnfe", valor === "none" ? null : valor, {
-										shouldValidate: true,
-									})
-								}
-							>
-								<SelectTrigger id="cstnfe" className="w-full">
-									<SelectValue placeholder="Selecione" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="none">Nenhum</SelectItem>
-									{OPCOES_CST_ICMS.map((opcao) => (
-										<SelectItem key={opcao.value} value={opcao.value}>
-											{opcao.label}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</Field>
+						<Controller
+							name="cstnfe"
+							control={control}
+							render={({ field }) => (
+								<CampoCstCombobox
+									id="cstnfe"
+									label="CST NFe"
+									value={field.value}
+									opcoes={OPCOES_CST_ICMS}
+									onChange={field.onChange}
+									erro={errors.cstnfe?.message}
+								/>
+							)}
+						/>
 
-						<Field data-invalid={!!errors.csosnnfe}>
-							<FieldLabel htmlFor="csosnnfe">CSOSN NFe</FieldLabel>
-							<Select
-								value={watch("csosnnfe") ?? "none"}
-								onValueChange={(valor) =>
-									setValue("csosnnfe", valor === "none" ? null : valor, {
-										shouldValidate: true,
-									})
-								}
-							>
-								<SelectTrigger id="csosnnfe" className="w-full">
-									<SelectValue placeholder="Selecione" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="none">Nenhum</SelectItem>
-									{OPCOES_CSOSN.map((opcao) => (
-										<SelectItem key={opcao.value} value={opcao.value}>
-											{opcao.label}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</Field>
+						<Controller
+							name="csosnnfe"
+							control={control}
+							render={({ field }) => (
+								<CampoCstCombobox
+									id="csosnnfe"
+									label="CSOSN NFe"
+									value={field.value}
+									opcoes={OPCOES_CSOSN}
+									onChange={field.onChange}
+									erro={errors.csosnnfe?.message}
+								/>
+							)}
+						/>
 
 						<Field data-invalid={!!errors.taxaicmsnfe}>
 							<FieldLabel htmlFor="taxaicmsnfe">Alíquota ICMS NFe (%)</FieldLabel>
@@ -251,66 +284,50 @@ export function FormularioParametrizacaoTributos({
 				<div className="space-y-4">
 					<h3 className="text-base font-semibold">Saída NFC-e / CFe</h3>
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-						<CampoCfopProduto
-							id="idcfopsaidanfce"
-							label="CFOP saída NFC-e"
-							value={idcfopsaidanfce}
-							tipomovimento="S"
-							onChange={(valor) =>
-								setValue("idcfopsaidanfce", valor || null, {
-									shouldValidate: true,
-								})
-							}
-							erro={errors.idcfopsaidanfce?.message}
+						<Controller
+							name="idcfopsaidanfce"
+							control={control}
+							render={({ field }) => (
+								<CampoCfopProduto
+									id="idcfopsaidanfce"
+									label="CFOP saída NFC-e"
+									value={field.value}
+									tipomovimento="S"
+									onChange={(valor) => field.onChange(valor || null)}
+									erro={errors.idcfopsaidanfce?.message}
+								/>
+							)}
 						/>
 
-						<Field data-invalid={!!errors.cstnfce}>
-							<FieldLabel htmlFor="cstnfce">CST NFC-e</FieldLabel>
-							<Select
-								value={watch("cstnfce") ?? "none"}
-								onValueChange={(valor) =>
-									setValue("cstnfce", valor === "none" ? null : valor, {
-										shouldValidate: true,
-									})
-								}
-							>
-								<SelectTrigger id="cstnfce" className="w-full">
-									<SelectValue placeholder="Selecione" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="none">Nenhum</SelectItem>
-									{OPCOES_CST_ICMS.map((opcao) => (
-										<SelectItem key={opcao.value} value={opcao.value}>
-											{opcao.label}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</Field>
+						<Controller
+							name="cstnfce"
+							control={control}
+							render={({ field }) => (
+								<CampoCstCombobox
+									id="cstnfce"
+									label="CST NFC-e"
+									value={field.value}
+									opcoes={OPCOES_CST_ICMS}
+									onChange={field.onChange}
+									erro={errors.cstnfce?.message}
+								/>
+							)}
+						/>
 
-						<Field data-invalid={!!errors.csosnnfce}>
-							<FieldLabel htmlFor="csosnnfce">CSOSN NFC-e</FieldLabel>
-							<Select
-								value={watch("csosnnfce") ?? "none"}
-								onValueChange={(valor) =>
-									setValue("csosnnfce", valor === "none" ? null : valor, {
-										shouldValidate: true,
-									})
-								}
-							>
-								<SelectTrigger id="csosnnfce" className="w-full">
-									<SelectValue placeholder="Selecione" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="none">Nenhum</SelectItem>
-									{OPCOES_CSOSN.map((opcao) => (
-										<SelectItem key={opcao.value} value={opcao.value}>
-											{opcao.label}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</Field>
+						<Controller
+							name="csosnnfce"
+							control={control}
+							render={({ field }) => (
+								<CampoCstCombobox
+									id="csosnnfce"
+									label="CSOSN NFC-e"
+									value={field.value}
+									opcoes={OPCOES_CSOSN}
+									onChange={field.onChange}
+									erro={errors.csosnnfce?.message}
+								/>
+							)}
+						/>
 
 						<Field data-invalid={!!errors.taxaicmsnfce}>
 							<FieldLabel htmlFor="taxaicmsnfce">

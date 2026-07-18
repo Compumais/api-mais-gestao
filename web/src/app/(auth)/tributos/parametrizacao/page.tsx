@@ -42,8 +42,17 @@ import {
 	type ParametrizacaoTributos,
 	parametrizacaoTributosService,
 } from "@/services/parametrizacao-tributos.service";
+import { formatarCstProduto } from "@/util/cst-produto-util";
 import { FormularioParametrizacaoTributos } from "../components/formulario-parametrizacao-tributos";
 import { PainelFluxoTributacaoImportacao } from "../components/painel-fluxo-tributacao-importacao";
+
+function normalizarCstOuCsosn(
+	valor: string | null | undefined,
+	tamanho: number,
+): string | null {
+	const formatado = formatarCstProduto(valor, tamanho);
+	return formatado || null;
+}
 
 const VALORES_PADRAO: ParametrizacaoTributosFormData = {
 	codigocfopentrada: "",
@@ -69,6 +78,7 @@ const VALORES_PADRAO: ParametrizacaoTributosFormData = {
 	idenquadramentoipi: null,
 	percentualmva: null,
 	percentualirrf: null,
+	tipoproduto: "00",
 };
 
 function textoOuNulo(valor?: string | null): string | null {
@@ -81,28 +91,29 @@ function mapRegistroParaForm(
 ): ParametrizacaoTributosFormData {
 	return {
 		codigocfopentrada: registro.codigocfopentrada ?? "",
-		cstentrada: registro.cstentrada,
-		csosnentrada: registro.csosnentrada,
+		cstentrada: normalizarCstOuCsosn(registro.cstentrada, 2),
+		csosnentrada: normalizarCstOuCsosn(registro.csosnentrada, 3),
 		ncm: registro.ncm,
 		taxaicmsentrada: registro.taxaicmsentrada,
 		uf: registro.uf,
 		ignorarprimeirodigitocst: registro.ignorarprimeirodigitocst === 1,
 		idcfopsaidanfe: registro.idcfopsaidanfe,
-		cstnfe: registro.cstnfe,
-		csosnnfe: registro.csosnnfe,
+		cstnfe: normalizarCstOuCsosn(registro.cstnfe, 2),
+		csosnnfe: normalizarCstOuCsosn(registro.csosnnfe, 3),
 		taxaicmsnfe: registro.taxaicmsnfe,
 		idcfopsaidanfce: registro.idcfopsaidanfce,
-		cstnfce: registro.cstnfce,
-		csosnnfce: registro.csosnnfce,
+		cstnfce: normalizarCstOuCsosn(registro.cstnfce, 2),
+		csosnnfce: normalizarCstOuCsosn(registro.csosnnfce, 3),
 		taxaicmsnfce: registro.taxaicmsnfce,
 		aliquotapis: registro.aliquotapis,
-		cstpis: registro.cstpis,
+		cstpis: normalizarCstOuCsosn(registro.cstpis, 2),
 		aliquotacofins: registro.aliquotacofins,
-		cstcofins: registro.cstcofins,
-		cstipi: registro.cstipi,
+		cstcofins: normalizarCstOuCsosn(registro.cstcofins, 2),
+		cstipi: normalizarCstOuCsosn(registro.cstipi, 2),
 		idenquadramentoipi: registro.idenquadramentoipi,
 		percentualmva: registro.percentualmva,
 		percentualirrf: registro.percentualirrf,
+		tipoproduto: registro.tipoproduto ?? "00",
 	};
 }
 
@@ -135,6 +146,7 @@ function mapFormParaPayload(
 		idenquadramentoipi: dados.idenquadramentoipi ?? null,
 		percentualmva: textoOuNulo(dados.percentualmva),
 		percentualirrf: textoOuNulo(dados.percentualirrf),
+		tipoproduto: textoOuNulo(dados.tipoproduto) ?? "00",
 	};
 }
 
@@ -399,7 +411,23 @@ export default function ParametrizacaoTributosPage() {
 					if (!aberto) fecharDialogFormulario();
 				}}
 			>
-				<DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
+				<DialogContent
+					className="max-h-[90vh] max-w-3xl overflow-y-auto"
+					onOpenAutoFocus={(evento) => evento.preventDefault()}
+					onCloseAutoFocus={(evento) => evento.preventDefault()}
+					onPointerDownOutside={(evento) => {
+						const alvo = evento.target as HTMLElement | null;
+						if (alvo?.closest?.("[data-slot='select-content']")) {
+							evento.preventDefault();
+						}
+					}}
+					onInteractOutside={(evento) => {
+						const alvo = evento.target as HTMLElement | null;
+						if (alvo?.closest?.("[data-slot='select-content']")) {
+							evento.preventDefault();
+						}
+					}}
+				>
 					<DialogHeader>
 						<DialogTitle>
 							{modoFormulario === "edicao" ? "Editar regra" : "Nova regra"}

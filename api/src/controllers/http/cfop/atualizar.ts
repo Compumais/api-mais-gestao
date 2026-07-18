@@ -9,7 +9,8 @@ const atualizarCfopParamsSchema = z.object({
 
 const atualizarCfopBodySchema = z.looseObject({
 	codigo: z.string().max(20).optional(),
-	descricao: z.string().max(1024).optional()
+	descricao: z.string().max(1024).optional(),
+	tipoproduto: z.string().max(2).optional().nullable(),
 });
 
 export async function atualizarCfop(request: FastifyRequest, reply: FastifyReply) {

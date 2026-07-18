@@ -7,6 +7,7 @@ import type {
 } from "@/model/nota-fiscal-importacao-model.js";
 import type { NotaFiscal } from "@/model/nota-fiscal-model.js";
 import type { NotaFiscalItem } from "@/model/nota-fiscal-item-model.js";
+import { buscarCfopPorId } from "@/repositories/cfop-repositories.js";
 import { buscarEmpresaPorId } from "@/repositories/empresa-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { buscarPrimeiroLocalEstoqueEmpresa } from "@/repositories/local-estoque-repositories.js";
@@ -26,6 +27,7 @@ import { gerarContasPagarNfService } from "@/service/nota-fiscal/gerar-contas-pa
 import {
 	montarDadosProdutoNfImportacao,
 	parseQuantidadePadraoImportacao,
+	resolverTipoprodutoPorCfopEntrada,
 } from "@/service/nota-fiscal/montar-dados-produto-nf-importacao.js";
 import { registrarMovimentosEstoqueNf } from "@/service/nota-fiscal/registrar-movimentos-estoque-nf.js";
 import { validarEanProdutoNf } from "@/service/nota-fiscal/validar-ean-produto-nf.js";
@@ -44,6 +46,10 @@ import {
 } from "@/util/calcular-rateio-custo-nf.js";
 import { obterFlagsCreditoItemImportacao } from "@/util/cfop-depara-util.js";
 import {
+	mensagemInconsistenciaCfopEntrada,
+	validarCoerenciaCfopEntradaItem,
+} from "@/util/cfop-entrada-validacao.js";
+import {
 	httpBadRequest,
 	httpNaoEncontrado,
 	httpOk,
@@ -61,7 +67,6 @@ import {
 } from "@/util/sugerir-tributacao-saida-produto-nf.js";
 import {
 	STATUS_NF_CONFIRMADA,
-	STATUS_RASCUNHO_IMPORTACAO,
 } from "@/util/nota-fiscal-constants.js";
 import { obterConfigRegimeImportacaoNf } from "@/util/regime-tributario-empresa.js";
 
@@ -90,9 +95,14 @@ function itemResolvido(dados: DadosImportacaoItem): boolean {
 	return false;
 }
 
-function validarItensRascunho(
-	itens: Array<{ dadosimportacao: DadosImportacaoItem | null; contador: number | null }>,
-): string[] {
+async function validarItensRascunho(
+	itens: Array<{
+		dadosimportacao: DadosImportacaoItem | null;
+		contador: number | null;
+		cfop: string | null;
+		idcfop?: string | null;
+	}>,
+): Promise<string[]> {
 	const pendencias: string[] = [];
 
 	for (const item of itens) {
@@ -124,8 +134,22 @@ function validarItensRascunho(
 			);
 		}
 
-		if (!dados.idcfop && !dados.cfopXml) {
-			pendencias.push(`Item ${item.contador ?? "?"}: CFOP não informado`);
+		let codigoCfopEntrada = item.cfop;
+		if (dados.idcfop && !codigoCfopEntrada) {
+			const cfop = await buscarCfopPorId(dados.idcfop);
+			codigoCfopEntrada = cfop?.codigo ?? null;
+		}
+
+		const inconsistenciaCfop = validarCoerenciaCfopEntradaItem({
+			idcfop: dados.idcfop,
+			codigoCfopEntrada,
+			tributacao: dados.tributacao,
+		});
+
+		if (inconsistenciaCfop) {
+			pendencias.push(
+				`Item ${item.contador ?? "?"} (${dados.descricaoFornecedor}): ${mensagemInconsistenciaCfopEntrada(inconsistenciaCfop)}`,
+			);
 		}
 
 		if (dados.statusVinculo === "novo" && !dados.idgrupo) {
@@ -175,7 +199,7 @@ export async function finalizarRascunhoImportacaoNfService({
 		dadosimportacao: item.dadosimportacao as DadosImportacaoItem | null,
 	}));
 
-	const pendencias = validarItensRascunho(itensComDados);
+	const pendencias = await validarItensRascunho(itensComDados);
 
 	if (pendencias.length > 0) {
 		return httpBadRequest(pendencias.join("; "));
@@ -201,7 +225,7 @@ export async function finalizarRascunhoImportacaoNfService({
 			idRascunho,
 		);
 
-		if (duplicada && duplicada.status !== STATUS_RASCUNHO_IMPORTACAO) {
+		if (duplicada) {
 			return httpBadRequest("Já existe uma nota fiscal com esta chave NF-e");
 		}
 	}
@@ -300,6 +324,13 @@ export async function finalizarRascunhoImportacaoNfService({
 				opcoesProduto,
 			);
 
+			const tipoprodutoResolvido =
+				dados.tipoproduto?.trim() ||
+				parametrizacao?.sugestao.tipoproduto?.trim() ||
+				(!produtoAtual?.tipoproduto
+					? await resolverTipoprodutoPorCfopEntrada(dadosProduto.idcfopentrada)
+					: undefined);
+
 			const quantidadeImportada = parseQuantidadePadraoImportacao(
 				dados.quantidadeEstoque,
 			);
@@ -311,6 +342,9 @@ export async function finalizarRascunhoImportacaoNfService({
 					idcfopsaidanfce:
 						sugestaoSaida.idcfopsaidanfce ?? dadosProduto.idcfopsaidanfce,
 					cfopvendaecf: sugestaoSaida.cfopvendaecf,
+					...(tipoprodutoResolvido
+						? { tipoproduto: tipoprodutoResolvido }
+						: {}),
 				}),
 				quantidadepadrao:
 					(produtoAtual?.quantidadepadrao ?? 0) + quantidadeImportada,
@@ -352,12 +386,20 @@ export async function finalizarRascunhoImportacaoNfService({
 				opcoesProduto,
 			);
 
+			const tipoprodutoResolvido =
+				dados.tipoproduto?.trim() ||
+				parametrizacao?.sugestao.tipoproduto?.trim() ||
+				(await resolverTipoprodutoPorCfopEntrada(dadosProduto.idcfopentrada));
+
 			const novoProduto = await criarProdutoParaNf({
 				...dadosProduto,
 				...sugestaoSaida,
 				idcfopsaidanfce:
 					sugestaoSaida.idcfopsaidanfce ?? dadosProduto.idcfopsaidanfce,
 				cfopvendaecf: sugestaoSaida.cfopvendaecf,
+				...(tipoprodutoResolvido
+					? { tipoproduto: tipoprodutoResolvido }
+					: {}),
 			});
 
 			if (!novoProduto) {
@@ -383,74 +425,82 @@ export async function finalizarRascunhoImportacaoNfService({
 		}
 	}
 
-	const itensFinalizados = itensComDados.map((item) => {
-		const dados = item.dadosimportacao;
-		const idproduto = produtosResolvidos.get(item.id);
+	const itensFinalizados = await Promise.all(
+		itensComDados.map(async (item) => {
+			const dados = item.dadosimportacao;
+			const idproduto = produtosResolvidos.get(item.id);
 
-		if (!dados || !idproduto) {
-			throw new Error("Item inconsistente na finalização");
-		}
+			if (!dados || !idproduto) {
+				throw new Error("Item inconsistente na finalização");
+			}
 
-		const total = calcularTotalItemXmlImportacao(
-			dados.quantidadeXml,
-			dados.precounitarioXml,
-			item.total,
-		);
+			const total = calcularTotalItemXmlImportacao(
+				dados.quantidadeXml,
+				dados.precounitarioXml,
+				item.total,
+			);
 
-		const flagsCredito = obterFlagsCreditoItemImportacao(
-			configRegime,
-			dados.tributacao,
-		);
+			const flagsCredito = obterFlagsCreditoItemImportacao(
+				configRegime,
+				dados.tributacao,
+			);
 
-		const lotePrincipal = obterLotePrincipalItem(dados.rastrosXml);
-		const loteNumero = truncarTexto(lotePrincipal?.numeroLote, 30);
-		const dataFabricacao = normalizarDataRastro(lotePrincipal?.dataFabricacao);
-		const dataValidade = normalizarDataRastro(lotePrincipal?.dataValidade);
+			const lotePrincipal = obterLotePrincipalItem(dados.rastrosXml);
+			const loteNumero = truncarTexto(lotePrincipal?.numeroLote, 30);
+			const dataFabricacao = normalizarDataRastro(lotePrincipal?.dataFabricacao);
+			const dataValidade = normalizarDataRastro(lotePrincipal?.dataValidade);
 
-		return {
-			id: item.id,
-			idproduto,
-			descricao: dados.descricaoFornecedor,
-			quantidade: dados.quantidadeXml,
-			precounitario: dados.precounitarioXml,
-			total,
-			idcfop: dados.idcfop ?? null,
-			cfop: dados.cfopXml ?? null,
-			idncm: dados.idncm ?? null,
-			ncm: dados.ncmXml ?? null,
-			idunidademedida: dados.idunidademedida ?? null,
-			unidade: dados.unidadeEstoque ?? dados.unidadeXml ?? null,
-			lote: loteNumero ?? null,
-			datalote: dataFabricacao,
-			datavalidade: dataValidade,
-			idlote: loteNumero ? `${item.id}-${loteNumero}` : null,
-			situacaotributaria: dados.tributacao.situacaotributaria ?? null,
-			cstpis: dados.tributacao.cstpis ?? null,
-			cstcofins: dados.tributacao.cstcofins ?? null,
-			baseicms: numeroOpcionalOuNulo(dados.tributacao.baseicms) ?? null,
-			percentualicms:
-				numeroOpcionalOuNulo(dados.tributacao.percentualicms) ?? null,
-			icms: numeroOpcionalOuNulo(dados.tributacao.icms) ?? null,
-			aliquotapis: numeroOpcionalOuNulo(dados.tributacao.aliquotapis) ?? null,
-			aliquotacofins:
-				numeroOpcionalOuNulo(dados.tributacao.aliquotacofins) ?? null,
-			pis: numeroOpcionalOuNulo(dados.tributacao.pis) ?? null,
-			cofins: numeroOpcionalOuNulo(dados.tributacao.cofins) ?? null,
-			ipi: numeroOpcionalOuNulo(dados.tributacao.ipi) ?? null,
-			origem: dados.tributacao.origem ?? 0,
-			custoaquisicao:
-				dados.custoContabilCalculado ?? dados.precounitarioEstoque,
-			gerarcreditoipi: flagsCredito.gerarcreditoipi,
-			gerarcreditoicmsst: flagsCredito.gerarcreditoicmsst,
-			dadosimportacao: montarSnapshotImportacaoItem(
-				{
-					...dados,
-					rastroTributacaoSaida: rastroTributacaoPorItem.get(item.id),
-				},
-				finalizadoEm,
-			),
-		};
-	});
+			let codigoCfopEntrada = item.cfop ?? null;
+			if (dados.idcfop && !codigoCfopEntrada) {
+				const cfop = await buscarCfopPorId(dados.idcfop);
+				codigoCfopEntrada = cfop?.codigo ?? null;
+			}
+
+			return {
+				id: item.id,
+				idproduto,
+				descricao: dados.descricaoFornecedor,
+				quantidade: dados.quantidadeXml,
+				precounitario: dados.precounitarioXml,
+				total,
+				idcfop: dados.idcfop ?? null,
+				cfop: codigoCfopEntrada,
+				idncm: dados.idncm ?? null,
+				ncm: dados.ncmXml ?? null,
+				idunidademedida: dados.idunidademedida ?? null,
+				unidade: dados.unidadeEstoque ?? dados.unidadeXml ?? null,
+				lote: loteNumero ?? null,
+				datalote: dataFabricacao,
+				datavalidade: dataValidade,
+				idlote: loteNumero ? `${item.id}-${loteNumero}` : null,
+				situacaotributaria: dados.tributacao.situacaotributaria ?? null,
+				cstpis: dados.tributacao.cstpis ?? null,
+				cstcofins: dados.tributacao.cstcofins ?? null,
+				baseicms: numeroOpcionalOuNulo(dados.tributacao.baseicms) ?? null,
+				percentualicms:
+					numeroOpcionalOuNulo(dados.tributacao.percentualicms) ?? null,
+				icms: numeroOpcionalOuNulo(dados.tributacao.icms) ?? null,
+				aliquotapis: numeroOpcionalOuNulo(dados.tributacao.aliquotapis) ?? null,
+				aliquotacofins:
+					numeroOpcionalOuNulo(dados.tributacao.aliquotacofins) ?? null,
+				pis: numeroOpcionalOuNulo(dados.tributacao.pis) ?? null,
+				cofins: numeroOpcionalOuNulo(dados.tributacao.cofins) ?? null,
+				ipi: numeroOpcionalOuNulo(dados.tributacao.ipi) ?? null,
+				origem: dados.tributacao.origem ?? 0,
+				custoaquisicao:
+					dados.custoContabilCalculado ?? dados.precounitarioEstoque,
+				gerarcreditoipi: flagsCredito.gerarcreditoipi,
+				gerarcreditoicmsst: flagsCredito.gerarcreditoicmsst,
+				dadosimportacao: montarSnapshotImportacaoItem(
+					{
+						...dados,
+						rastroTributacaoSaida: rastroTributacaoPorItem.get(item.id),
+					},
+					finalizadoEm,
+				),
+			};
+		}),
+	);
 
 	const xmlArquivado = nota.arquivoxmlnotaoriginal
 		? await arquivarXmlNotaFiscal({
@@ -469,6 +519,7 @@ export async function finalizarRascunhoImportacaoNfService({
 			identidade: identidadeFornecedor ?? nota.identidade,
 			totalproduto: nota.totalproduto,
 			valortotalnota: nota.valortotalnota,
+			datainclusao: finalizadoEm,
 			dadosimportacao: {
 				duplicatas: dadosNotaImportacao.duplicatas,
 				finalizadoEm,

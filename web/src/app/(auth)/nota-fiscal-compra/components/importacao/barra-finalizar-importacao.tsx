@@ -20,6 +20,7 @@ import {
 import { listarItensSemPrecoVenda } from "@/util/preco-venda-importacao-nf";
 import {
 	CampoCondicaoPagamentoCompra,
+	CampoFormaPagamentoCompra,
 	CampoPlanoContasDespesa,
 } from "../campos-financeiros-nf-compra";
 import { contarPendenciasItens } from "./grid-itens-importacao";
@@ -53,14 +54,17 @@ export function BarraFinalizarImportacao({
 			gerarCustos: true,
 			gerarFinanceiro: !!dados.nota.idcondicaopagto,
 			idcondicaopagto: dados.nota.idcondicaopagto ?? undefined,
+			idplanocontas: dados.nota.idplanocontas ?? undefined,
+			idtipodocumento: dados.nota.idtipodocumento ?? undefined,
 		},
 	});
 
 	const { watch, setValue, handleSubmit } = form;
 	const gerarCustos = watch("gerarCustos");
 	const gerarFinanceiro = watch("gerarFinanceiro");
-	const idplanocontas = dados.nota.idplanocontas ?? undefined;
+	const idplanocontas = watch("idplanocontas");
 	const idcondicaopagto = watch("idcondicaopagto");
+	const idtipodocumento = watch("idtipodocumento");
 
 	const { mutate: salvarCabecalho } = useMutation({
 		mutationFn: () =>
@@ -68,6 +72,7 @@ export function BarraFinalizarImportacao({
 				idempresa,
 				idplanocontas: idplanocontas ?? null,
 				idcondicaopagto: idcondicaopagto ?? null,
+				idtipodocumento: idtipodocumento ?? null,
 			}),
 	});
 
@@ -116,7 +121,8 @@ export function BarraFinalizarImportacao({
 	});
 
 	const { mutate: excluir, isPending: excluindo } = useMutation({
-		mutationFn: () => notaFiscalService.excluirRascunhoImportacao(idRascunho, idempresa),
+		mutationFn: () =>
+			notaFiscalService.excluirRascunhoImportacao(idRascunho, idempresa),
 		onSuccess: () => {
 			toast.success("Rascunho descartado");
 			router.push("/nota-fiscal-compra");
@@ -126,98 +132,113 @@ export function BarraFinalizarImportacao({
 
 	return (
 		<>
-		<ModalPrecoVendaImportacao
-			idempresa={idempresa}
-			idRascunho={idRascunho}
-			itens={itensSemPrecoVenda}
-			aberto={modalPrecoVendaAberto}
-			onAbertoChange={setModalPrecoVendaAberto}
-			onConfirmado={() => {
-				if (formDataPendente) {
-					executarFinalizacao(formDataPendente);
-					setFormDataPendente(null);
-				}
-			}}
-		/>
-		<section className="rounded-lg border bg-card p-4">
-			<h2 className="text-lg font-semibold mb-4">Financeiro e finalização</h2>
-
-			<div className="grid gap-4 md:grid-cols-2 mb-4">
-				<CampoPlanoContasDespesa
-					id="idplanocontas-rascunho"
-					value={idplanocontas}
-					onChange={(value) =>
-						notaFiscalService.atualizarRascunhoImportacao(idRascunho, {
-							idempresa,
-							idplanocontas: value || null,
-						})
+			<ModalPrecoVendaImportacao
+				idempresa={idempresa}
+				idRascunho={idRascunho}
+				itens={itensSemPrecoVenda}
+				aberto={modalPrecoVendaAberto}
+				onAbertoChange={setModalPrecoVendaAberto}
+				onConfirmado={() => {
+					if (formDataPendente) {
+						executarFinalizacao(formDataPendente);
+						setFormDataPendente(null);
 					}
-				/>
-				<CampoCondicaoPagamentoCompra
-					id="idcondicaopagto-rascunho"
-					value={idcondicaopagto}
-					onChange={(value) => setValue("idcondicaopagto", value)}
-				/>
-			</div>
+				}}
+			/>
+			<section className="rounded-lg border bg-card p-4">
+				<h2 className="mb-4 text-lg font-semibold">Financeiro e finalização</h2>
 
-			<div className="flex flex-col gap-3 sm:flex-row sm:gap-6 mb-4">
-				<div className="flex items-center gap-2">
-					<Checkbox
-						id="gerarCustos-rascunho"
-						checked={gerarCustos}
-						onCheckedChange={(checked) =>
-							setValue("gerarCustos", checked === true)
-						}
+				<div className="mb-4 grid gap-4 md:grid-cols-2">
+					<CampoPlanoContasDespesa
+						id="idplanocontas-rascunho"
+						value={idplanocontas}
+						onChange={(value) => {
+							setValue("idplanocontas", value);
+							void notaFiscalService.atualizarRascunhoImportacao(idRascunho, {
+								idempresa,
+								idplanocontas: value || null,
+							});
+						}}
 					/>
-					<Label htmlFor="gerarCustos-rascunho">Registrar custos dos produtos</Label>
-				</div>
-				<div className="flex items-center gap-2">
-					<Checkbox
-						id="gerarFinanceiro-rascunho"
-						checked={gerarFinanceiro}
-						onCheckedChange={(checked) =>
-							setValue("gerarFinanceiro", checked === true)
-						}
+					<CampoFormaPagamentoCompra
+						id="idtipodocumento-rascunho"
+						value={idtipodocumento}
+						onChange={(value) => {
+							setValue("idtipodocumento", value);
+							void notaFiscalService.atualizarRascunhoImportacao(idRascunho, {
+								idempresa,
+								idtipodocumento: value || null,
+							});
+						}}
 					/>
-					<Label htmlFor="gerarFinanceiro-rascunho">
-						Gerar contas a pagar automaticamente
-					</Label>
+					<CampoCondicaoPagamentoCompra
+						id="idcondicaopagto-rascunho"
+						value={idcondicaopagto}
+						onChange={(value) => setValue("idcondicaopagto", value)}
+					/>
 				</div>
-			</div>
 
-			{pendencias.length > 0 ? (
-				<p className="text-sm text-destructive mb-4">
-					{pendencias.length} pendência(s) nos itens. Resolva antes de finalizar.
-				</p>
-			) : itensSemPrecoVenda.length > 0 ? (
-				<p className="text-sm text-amber-700 dark:text-amber-400 mb-4">
-					{itensSemPrecoVenda.length} produto(s) sem preço de venda. Ao finalizar,
-					você poderá informar os valores ou aplicar uma margem.
-				</p>
-			) : (
-				<p className="text-sm text-green-700 dark:text-green-400 mb-4">
-					Todos os itens estão prontos para finalização.
-				</p>
-			)}
+				<div className="mb-4 flex flex-col gap-3 sm:flex-row sm:gap-6">
+					<div className="flex items-center gap-2">
+						<Checkbox
+							id="gerarCustos-rascunho"
+							checked={gerarCustos}
+							onCheckedChange={(checked) =>
+								setValue("gerarCustos", checked === true)
+							}
+						/>
+						<Label htmlFor="gerarCustos-rascunho">
+							Registrar custos dos produtos
+						</Label>
+					</div>
+					<div className="flex items-center gap-2">
+						<Checkbox
+							id="gerarFinanceiro-rascunho"
+							checked={gerarFinanceiro}
+							onCheckedChange={(checked) =>
+								setValue("gerarFinanceiro", checked === true)
+							}
+						/>
+						<Label htmlFor="gerarFinanceiro-rascunho">
+							Gerar contas a pagar automaticamente
+						</Label>
+					</div>
+				</div>
 
-			<div className="flex flex-wrap gap-3 justify-end">
-				<Button
-					type="button"
-					variant="outline"
-					disabled={excluindo}
-					onClick={() => excluir()}
-				>
-					Descartar rascunho
-				</Button>
-				<Button
-					type="button"
-					disabled={isPending || pendencias.length > 0}
-					onClick={onFinalizar}
-				>
-					{isPending ? "Finalizando..." : "Finalizar importação"}
-				</Button>
-			</div>
-		</section>
+				{pendencias.length > 0 ? (
+					<p className="mb-4 text-sm text-destructive">
+						{pendencias.length} pendência(s) nos itens. Resolva antes de
+						finalizar.
+					</p>
+				) : itensSemPrecoVenda.length > 0 ? (
+					<p className="mb-4 text-sm text-amber-700 dark:text-amber-400">
+						{itensSemPrecoVenda.length} produto(s) sem preço de venda. Ao
+						finalizar, você poderá informar os valores ou aplicar uma margem.
+					</p>
+				) : (
+					<p className="mb-4 text-sm text-green-700 dark:text-green-400">
+						Todos os itens estão prontos para finalização.
+					</p>
+				)}
+
+				<div className="flex flex-wrap justify-end gap-3">
+					<Button
+						type="button"
+						variant="outline"
+						disabled={excluindo}
+						onClick={() => excluir()}
+					>
+						Descartar rascunho
+					</Button>
+					<Button
+						type="button"
+						disabled={isPending || pendencias.length > 0}
+						onClick={onFinalizar}
+					>
+						{isPending ? "Finalizando..." : "Finalizar importação"}
+					</Button>
+				</div>
+			</section>
 		</>
 	);
 }

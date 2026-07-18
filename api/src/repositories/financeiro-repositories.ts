@@ -59,6 +59,25 @@ export async function buscarFinanceirosPorOrigem(
 		);
 }
 
+export async function excluirFinanceirosPorOrigem(
+	idempresa: string,
+	tipoorigem: number,
+	idorigem: string,
+) {
+	const removidos = await db
+		.delete(schema.financeiro)
+		.where(
+			and(
+				eq(schema.financeiro.idempresa, idempresa),
+				eq(schema.financeiro.tipoorigem, tipoorigem),
+				eq(schema.financeiro.idorigem, idorigem),
+			),
+		)
+		.returning({ id: schema.financeiro.id });
+
+	return removidos.length;
+}
+
 interface ListarFinanceiroParametros {
 	idempresas: string[];
 	page?: number;

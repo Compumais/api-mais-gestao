@@ -20,6 +20,7 @@ const cabecalhoBodySchema = z.object({
 	idoperacaofiscal: z.string().optional().nullable(),
 	observacao: z.string().optional().nullable(),
 	entradasaida: z.string().optional().nullable(),
+	aplicarCfopItens: z.boolean().optional(),
 });
 
 const tributacaoSchema = z

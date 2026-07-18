@@ -5,6 +5,14 @@
  *   pm2 start /opt/mais-gestao/web/ecosystem.config.cjs
  *   pm2 save
  *
+ * Deploy atômico (na pasta web):
+ *   pnpm run build:live
+ *   pm2 reload mais-gestao-web --update-env
+ *
+ * Rollback:
+ *   pnpm run build:rollback
+ *   pm2 reload mais-gestao-web --update-env
+ *
  * Os nomes dos arquivos de log devem bater com infra/datadog/conf.d/pm2.d/conf.yaml.
  */
 module.exports = {
