@@ -22,6 +22,12 @@
     <string name="modo_venda_titulo">Modo de venda</string>
     <string name="modo_venda_ajuda">Se desabilitado, a venda rápida cria um pedido (DAV) com origem POS para faturar na retaguarda, sem emitir NFC-e.</string>
     <string name="emitir_nfce_pos">Emitir NFC-e na venda</string>
+    <string name="impressoras_titulo">Impressoras do dispositivo</string>
+    <string name="impressoras_ajuda">Pareie a impressora Bluetooth nas configurações do Android e selecione-a aqui. USB aparece quando conectada.</string>
+    <string name="atualizar_impressoras">Atualizar lista de impressoras</string>
+    <string name="impressora_selecionada">Selecionada: %1$s</string>
+    <string name="impressora_nenhuma">Nenhuma impressora selecionada</string>
+    <string name="permissao_bluetooth_negada">Permissão Bluetooth necessária para listar impressoras</string>
     <string name="carregar_mais">Carregar mais</string>
     <string name="mesa_livre">Livre</string>
     <string name="mesa_ocupada">Ocupada</string>

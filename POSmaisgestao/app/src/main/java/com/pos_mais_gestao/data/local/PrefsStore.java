@@ -22,6 +22,9 @@ public class PrefsStore {
     private static final String KEY_ATALHOS = "atalhos_json";
     private static final String KEY_EMITIR_NFCE_POS = "emitir_nfce_pos";
     private static final String KEY_QUANTIDADE_MESAS = "quantidade_mesas";
+    private static final String KEY_IMPRESSORA_ID = "impressora_id";
+    private static final String KEY_IMPRESSORA_NOME = "impressora_nome";
+    private static final String KEY_IMPRESSORA_TIPO = "impressora_tipo";
     private static final String DEFAULT_BASE_URL = "http://10.0.2.2:3333";
     private static final int DEFAULT_QUANTIDADE_MESAS = 20;
 
@@ -98,6 +101,26 @@ public class PrefsStore {
 
     public void setQuantidadeMesas(int quantidade) {
         prefs.edit().putInt(KEY_QUANTIDADE_MESAS, Math.max(1, Math.min(100, quantidade))).apply();
+    }
+
+    public String getImpressoraId() {
+        return prefs.getString(KEY_IMPRESSORA_ID, "");
+    }
+
+    public String getImpressoraNome() {
+        return prefs.getString(KEY_IMPRESSORA_NOME, null);
+    }
+
+    public String getImpressoraTipo() {
+        return prefs.getString(KEY_IMPRESSORA_TIPO, "nenhuma");
+    }
+
+    public void setImpressora(String id, String nome, String tipo) {
+        prefs.edit()
+                .putString(KEY_IMPRESSORA_ID, id == null ? "" : id)
+                .putString(KEY_IMPRESSORA_NOME, nome)
+                .putString(KEY_IMPRESSORA_TIPO, tipo == null ? "nenhuma" : tipo)
+                .apply();
     }
 
     public boolean isLoggedIn() {
