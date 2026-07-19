@@ -86,7 +86,7 @@
     <string name="tef_indisponivel">TEF nativo indisponível neste aparelho</string>
     <string name="nfce_rejeitada_titulo">NFC-e não autorizada</string>
     <string name="nfce_rejeitada_motivo_padrao">Não foi possível emitir a NFC-e.</string>
-    <string name="nfce_rejeitada_ajuda">A venda foi registrada, mas a SEFAZ não autorizou a nota.\nCorrija e reemita em Consulta NFC-e na retaguarda.\nNenhum cupom fiscal foi impresso.</string>
+    <string name="nfce_rejeitada_ajuda">A venda foi registrada, mas a SEFAZ não autorizou a nota.\nFoi impresso um comprovante NÃO FISCAL.\nCorrija e reemita em Consulta NFC-e na retaguarda.</string>
     <string name="nfce_cstat">Status SEFAZ: %1$s</string>
 </resources>
 

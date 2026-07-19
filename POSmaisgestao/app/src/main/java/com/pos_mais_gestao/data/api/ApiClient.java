@@ -420,7 +420,9 @@ public class ApiClient {
                 if (resultado.mensagemNfce == null || resultado.mensagemNfce.isEmpty()) {
                     resultado.mensagemNfce = "NFC-e não autorizada";
                 }
-                resultado.comprovanteTexto = null;
+                resultado.cupomFiscal = false;
+                resultado.comprovanteTexto =
+                        montarComprovanteNaoFiscal(itens, totalStr, meio, resultado);
             } else {
                 resultado.mensagemNfce = "Venda registrada (sem emissão NFC-e para este pagamento)";
                 resultado.comprovanteTexto = montarComprovanteNaoFiscal(itens, totalStr, meio, resultado);
@@ -431,7 +433,8 @@ public class ApiClient {
             if (resultado.mensagemNfce == null || resultado.mensagemNfce.isEmpty()) {
                 resultado.mensagemNfce = "NFC-e não autorizada";
             }
-            resultado.comprovanteTexto = null;
+            resultado.cupomFiscal = false;
+            resultado.comprovanteTexto = montarComprovanteNaoFiscal(itens, totalStr, meio, resultado);
         } else {
             resultado.mensagemNfce = "Venda registrada";
             resultado.comprovanteTexto = montarComprovanteNaoFiscal(itens, totalStr, meio, resultado);
@@ -688,6 +691,9 @@ public class ApiClient {
         StringBuilder sb = new StringBuilder();
         sb.append("MAIS GESTAO - POS\n");
         sb.append("COMPROVANTE NAO FISCAL\n");
+        if (resultado.deveEmitirNfce && !resultado.nfceEmitida) {
+            sb.append("NFC-e NAO TRANSMITIDA\n");
+        }
         sb.append("----------------\n");
         for (ItemCarrinho item : itens) {
             sb.append(item.getQuantidade().toPlainString())
@@ -703,8 +709,14 @@ public class ApiClient {
         if (resultado.codigo != null) {
             sb.append("VENDA: ").append(resultado.codigo).append("\n");
         }
+        if (resultado.cStat != null && !resultado.cStat.isEmpty()) {
+            sb.append("SEFAZ cStat: ").append(resultado.cStat).append("\n");
+        }
         if (resultado.mensagemNfce != null) {
             sb.append(resultado.mensagemNfce).append("\n");
+        }
+        if (resultado.deveEmitirNfce && !resultado.nfceEmitida) {
+            sb.append("Reemitir em Consulta NFC-e\n");
         }
         return sb.toString();
     }
