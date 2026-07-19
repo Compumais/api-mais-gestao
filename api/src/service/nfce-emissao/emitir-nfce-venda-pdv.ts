@@ -28,6 +28,10 @@ import {
 import { aplicarCreditoIcmsSnItensEmissao } from "@/service/nfe-emissao/aplicar-credito-icms-sn-itens.js";
 import { montarItensEmissaoPdv } from "@/service/nfce-emissao/montar-itens-emissao-pdv.js";
 import { calcularTotaisFiscaisEmissaoNfe } from "@/util/calcular-totais-fiscais-emissao-nfe.js";
+import {
+	agoraBrasiliaIsoOffset,
+	hojeBrasiliaIsoDate,
+} from "@/util/data-hora-brasilia.js";
 import { montarDadosImportacaoItemEmissaoNfe } from "@/util/dados-emissao-nfe-nota.js";
 import { montarPagamentosPdvParaNfce } from "@/util/montar-pagamentos-pdv-nfce.js";
 import { normalizarGtinItensEmissao } from "@/util/normalizar-gtin-item-emissao-nfe.js";
@@ -353,8 +357,8 @@ export async function emitirNfceVendaPdvService({
 		...(erroTransmissao ? { erroTransmissao } : {}),
 	});
 
-	const agora = new Date().toISOString();
-	const dataEmissao = agora.slice(0, 10);
+	const agora = agoraBrasiliaIsoOffset();
+	const dataEmissao = hojeBrasiliaIsoDate();
 	const valortotalnota = totaisFiscais.totalNota.toFixed(2);
 
 	const dadosNota: NovaNotaFiscal = {

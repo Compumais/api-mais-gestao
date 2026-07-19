@@ -28,6 +28,10 @@ import type { FormaPagamentoNfVenda } from "@/service/nota-fiscal/gerar-contas-r
 import { integrarNotaFiscalVendaAutorizadaService } from "@/service/nota-fiscal/integrar-nota-fiscal-venda-autorizada.js";
 import type { calcularTotaisFiscaisEmissaoNfe } from "@/util/calcular-totais-fiscais-emissao-nfe.js";
 import {
+	agoraBrasiliaIsoOffset,
+	hojeBrasiliaIsoDate,
+} from "@/util/data-hora-brasilia.js";
+import {
 	FIN_NFE_NORMAL,
 	type TipoDevolucaoNfe,
 } from "@/util/cfop-devolucao-emissao-nfe.js";
@@ -398,8 +402,8 @@ export async function emitirNfeVendaService(
 	const cStatProtocolo = normalizarCodigoStatusNfe(cStat);
 	const cStatTransmissao = normalizarCodigoStatusNfe(cStatLote ?? cStat);
 
-	const agora = new Date().toISOString();
-	const dataEmissao = agora.slice(0, 10);
+	const agora = agoraBrasiliaIsoOffset();
+	const dataEmissao = hojeBrasiliaIsoDate();
 
 	const valortotalnota = totaisFiscais.totalNota.toFixed(2);
 

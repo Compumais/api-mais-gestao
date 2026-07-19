@@ -12,6 +12,7 @@ import { NFE_CONFIG_PADRAO } from "@/util/nfe-config-padrao.js";
 import { montarIeEmitenteNfe, ajustarDestinatarioAmbienteNfe } from "@/util/normalizar-ie-nfe.js";
 import { resolverIdeEmissaoNfe } from "@/util/resolver-ide-emissao-nfe.js";
 import { validarPreRequisitosEmissaoNfe } from "@/util/validar-pre-requisitos-emissao-nfe.js";
+import { agoraBrasiliaIsoOffset } from "@/util/data-hora-brasilia.js";
 
 export type ItemPayloadNfe = {
 	idproduto?: string;
@@ -194,6 +195,7 @@ export function montarPayloadGatewayEmissao({
 				cUF: obterCodigoUfIbge(empresaFiscal.uf ?? ""),
 				serie: Number(serie),
 				nNF: numeroNf,
+				dhEmi: agoraBrasiliaIsoOffset(),
 				tpAmb: nfeConfiguracao.ambiente,
 				verProc: NFE_CONFIG_PADRAO.verproc,
 			},
@@ -291,6 +293,7 @@ export function montarPayloadGatewayEmissaoItens({
 				natOp: natOp?.trim() || "VENDA",
 				serie: Number(serie),
 				nNF: numeroNf,
+				dhEmi: agoraBrasiliaIsoOffset(),
 				tpAmb: nfeConfiguracao.ambiente,
 				verProc: NFE_CONFIG_PADRAO.verproc,
 				idDest: ide.idDest,
