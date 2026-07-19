@@ -1,10 +1,18 @@
 <resources>
-    <style name="Base.Theme.POSmaisgestao" parent="Theme.Material3.DayNight.NoActionBar">
+    <!-- Mantém o mesmo tema claro no modo noturno do sistema -->
+    <style name="Base.Theme.POSmaisgestao" parent="Theme.Material3.Light.NoActionBar">
         <item name="colorPrimary">@color/primary</item>
         <item name="colorPrimaryDark">@color/primary_dark</item>
         <item name="colorSecondary">@color/accent</item>
         <item name="colorOnPrimary">@color/primary_foreground</item>
+        <item name="colorOnSurface">@color/foreground</item>
+        <item name="colorOnBackground">@color/foreground</item>
         <item name="android:statusBarColor">@color/primary_dark</item>
         <item name="android:windowBackground">@color/surface</item>
+        <item name="android:colorBackground">@color/background</item>
+        <item name="android:textColorPrimary">@color/foreground</item>
+        <item name="android:textColorSecondary">@color/muted_foreground</item>
+        <item name="android:textColor">@color/foreground</item>
+        <item name="android:textColorHint">@color/muted_foreground</item>
     </style>
 </resources>

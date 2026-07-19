@@ -37,6 +37,7 @@ public class ConfigActivity extends AppCompatActivity {
     private SwitchMaterial switchEmitirNfce;
     private LinearLayout listaImpressoras;
     private TextView txtImpressoraSelecionada;
+    private TextView txtSemImpressoras;
     private final List<ImpressoraInfo> impressoras = new ArrayList<>();
     private String impressoraIdSelecionada = "";
     private String impressoraNomeSelecionada;
@@ -64,6 +65,7 @@ public class ConfigActivity extends AppCompatActivity {
         switchEmitirNfce = findViewById(R.id.switchEmitirNfcePos);
         listaImpressoras = findViewById(R.id.listaImpressoras);
         txtImpressoraSelecionada = findViewById(R.id.txtImpressoraSelecionada);
+        txtSemImpressoras = findViewById(R.id.txtSemImpressoras);
         MaterialButton btnSalvar = findViewById(R.id.btnSalvarConfig);
         MaterialButton btnAtalhos = findViewById(R.id.btnGerenciarAtalhos);
         MaterialButton btnLogout = findViewById(R.id.btnLogout);
@@ -109,19 +111,26 @@ public class ConfigActivity extends AppCompatActivity {
         impressoras.addAll(ImpressoraDiscovery.listar(this));
         listaImpressoras.removeAllViews();
         LayoutInflater inflater = LayoutInflater.from(this);
+        int dispositivosReais = 0;
         for (ImpressoraInfo info : impressoras) {
+            if (!ImpressoraInfo.TIPO_NENHUMA.equals(info.tipo)) {
+                dispositivosReais++;
+            }
             View item = inflater.inflate(R.layout.item_impressora, listaImpressoras, false);
             RadioButton radio = item.findViewById(R.id.radioImpressora);
             TextView txtNome = item.findViewById(R.id.txtNomeImpressora);
             TextView txtDetalhe = item.findViewById(R.id.txtDetalheImpressora);
             txtNome.setText(info.nome);
+            txtNome.setTextColor(ContextCompat.getColor(this, R.color.foreground));
             txtDetalhe.setText(detalheTipo(info));
+            txtDetalhe.setTextColor(ContextCompat.getColor(this, R.color.muted_foreground));
             boolean selecionada = idsIguais(info.id, impressoraIdSelecionada)
                     && tiposIguais(info.tipo, impressoraTipoSelecionada);
             radio.setChecked(selecionada);
             item.setOnClickListener(v -> selecionarImpressora(info));
             listaImpressoras.addView(item);
         }
+        txtSemImpressoras.setVisibility(dispositivosReais == 0 ? View.VISIBLE : View.GONE);
         sincronizarRadios();
     }
 

@@ -27,6 +27,7 @@
     <string name="atualizar_impressoras">Atualizar lista de impressoras</string>
     <string name="impressora_selecionada">Selecionada: %1$s</string>
     <string name="impressora_nenhuma">Nenhuma impressora selecionada</string>
+    <string name="sem_impressoras_encontradas">Nenhuma impressora Bluetooth/USB encontrada. Pareie no Android e toque em Atualizar.</string>
     <string name="permissao_bluetooth_negada">Permissão Bluetooth necessária para listar impressoras</string>
     <string name="carregar_mais">Carregar mais</string>
     <string name="mesa_livre">Livre</string>
