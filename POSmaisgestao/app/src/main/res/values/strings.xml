@@ -20,7 +20,7 @@
     <string name="numero_pdv">Número do PDV</string>
     <string name="quantidade_mesas">Quantidade de mesas (grade)</string>
     <string name="modo_venda_titulo">Modo de venda</string>
-    <string name="modo_venda_ajuda">Se desabilitado, a venda rápida cria um pedido (DAV) com origem POS para faturar na retaguarda, sem emitir NFC-e.</string>
+    <string name="modo_venda_ajuda">Ligado: emite NFC-e na venda rápida e imprime o cupom fiscal (DANFC-e); as notas ficam em Consulta NFC-e na retaguarda.\nDesligado: cria um pedido (DAV) com origem POS, sem NFC-e; veja em Pedidos da maquininha.</string>
     <string name="emitir_nfce_pos">Emitir NFC-e na venda</string>
     <string name="impressoras_titulo">Impressoras do dispositivo</string>
     <string name="impressoras_ajuda">Pareie a impressora Bluetooth nas configurações do Android e selecione-a aqui. USB aparece quando conectada.</string>
@@ -40,8 +40,10 @@
     <string name="adicionar_atalho">Adicionar aos atalhos</string>
     <string name="remover">Remover</string>
     <string name="carrinho_vazio">Adicione um produto para pagar</string>
-    <string name="venda_enviada">Pedido enviado!</string>
-    <string name="codigo_pedido">Código do pedido: %1$s</string>
+    <string name="venda_enviada">Venda registrada!</string>
+    <string name="pedido_enviado">Pedido enviado!</string>
+    <string name="nfce_autorizada_titulo">NFC-e autorizada!</string>
+    <string name="codigo_pedido">Código: %1$s</string>
     <string name="total">Total: %1$s</string>
     <string name="como_pagou">Como o cliente pagou?</string>
     <string name="enviando">Enviando…</string>
@@ -74,8 +76,17 @@
     <string name="observacao_opcional">Observação (opcional)</string>
     <string name="abra_caixa_para_vender">Abra o caixa para vender</string>
     <string name="imprimir_comprovante">Imprimir comprovante</string>
+    <string name="reimprimir_danfce">Reimprimir DANFC-e</string>
+    <string name="danfce_enviado">DANFC-e enviado à impressora</string>
+    <string name="comprovante_enviado">Comprovante enviado à impressora</string>
+    <string name="sem_comprovante">Sem comprovante para imprimir</string>
     <string name="sync_pendente">Pendências de sync: %1$d</string>
     <string name="venda_offline">Sem rede — venda enfileirada para sync</string>
+    <string name="venda_offline_ajuda">Sem NFC-e offline. A emissão ocorrerá ao sincronizar (se o modo NFC-e estiver ligado).</string>
     <string name="tef_indisponivel">TEF nativo indisponível neste aparelho</string>
+    <string name="nfce_rejeitada_titulo">NFC-e não autorizada</string>
+    <string name="nfce_rejeitada_motivo_padrao">Não foi possível emitir a NFC-e.</string>
+    <string name="nfce_rejeitada_ajuda">A venda foi registrada, mas a SEFAZ não autorizou a nota.\nCorrija e reemita em Consulta NFC-e na retaguarda.\nNenhum cupom fiscal foi impresso.</string>
+    <string name="nfce_cstat">Status SEFAZ: %1$s</string>
 </resources>
 

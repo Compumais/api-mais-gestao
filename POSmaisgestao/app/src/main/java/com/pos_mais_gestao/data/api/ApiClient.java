@@ -347,23 +347,254 @@ public class ApiClient {
         if (resultado.codigo == null && vendaJson.has("codigo") && !vendaJson.get("codigo").isJsonNull()) {
             resultado.codigo = String.valueOf(vendaJson.get("codigo").getAsLong());
         }
+        resultado.pedidoDav = false;
+        aplicarResultadoEmissaoNfce(resultado, baixaJson, itens, totalStr, meio);
+        return resultado;
+    }
+
+    private void aplicarResultadoEmissaoNfce(
+            VendaResultadoDto resultado,
+            JsonObject baixaJson,
+            List<ItemCarrinho> itens,
+            String totalStr,
+            MeioPagamento meio) {
+        boolean deveEmitir = baixaJson.has("deveEmitirNfce")
+                && !baixaJson.get("deveEmitirNfce").isJsonNull()
+                && baixaJson.get("deveEmitirNfce").getAsBoolean();
+        resultado.deveEmitirNfce = deveEmitir;
         resultado.nfceEmitida = false;
-        resultado.mensagemNfce = "Venda registrada";
+        resultado.cupomFiscal = false;
+        resultado.sucessoFiscalCompleto = !deveEmitir;
+
+        JsonArray avisos = baixaJson.has("avisos") && baixaJson.get("avisos").isJsonArray()
+                ? baixaJson.getAsJsonArray("avisos")
+                : null;
+
         if (baixaJson.has("emissaoNfce") && baixaJson.get("emissaoNfce").isJsonObject()) {
             JsonObject nfce = baixaJson.getAsJsonObject("emissaoNfce");
-            resultado.nfceEmitida = nfce.has("emitida") && nfce.get("emitida").getAsBoolean();
+            resultado.nfceEmitida = nfce.has("emitida") && !nfce.get("emitida").isJsonNull()
+                    && nfce.get("emitida").getAsBoolean();
             resultado.chaveNfce = texto(nfce, "chave");
-            String motivo = texto(nfce, "motivo");
+            resultado.idNotaFiscal = texto(nfce, "idnotafiscal");
+            resultado.protocolo = texto(nfce, "protocolo");
+            resultado.qrCode = texto(nfce, "qrCode");
+            resultado.urlChave = texto(nfce, "urlChave");
+            resultado.cStat = texto(nfce, "cStat");
+            resultado.mensagemNfce = montarMotivoFalhaNfce(nfce, avisos);
+
             if (resultado.nfceEmitida) {
-                resultado.mensagemNfce = "NFC-e emitida";
-            } else if (motivo != null) {
-                resultado.mensagemNfce = motivo;
+                resultado.sucessoFiscalCompleto = true;
+                resultado.mensagemNfce = "NFC-e autorizada — disponível em Consulta NFC-e";
+                resultado.cupomFiscal = resultado.chaveNfce != null && !resultado.chaveNfce.isEmpty();
+                String qr = resultado.qrCode != null && !resultado.qrCode.isEmpty()
+                        ? resultado.qrCode
+                        : resultado.urlChave;
+                resultado.qrParaImpressao = qr;
+                resultado.comprovanteTexto = montarDanfceTexto(resultado, itens, totalStr, meio);
+                if (resultado.idNotaFiscal != null) {
+                    try {
+                        JsonObject cupom = getJson("/nfce/" + resultado.idNotaFiscal + "/cupom");
+                        if (cupom.has("data") && cupom.get("data").isJsonObject()) {
+                            cupom = cupom.getAsJsonObject("data");
+                        }
+                        String doCupom = montarDanfceTextoDoCupom(cupom);
+                        if (doCupom != null && !doCupom.isEmpty()) {
+                            resultado.comprovanteTexto = doCupom;
+                        }
+                        if (cupom.has("nfce") && cupom.get("nfce").isJsonObject()) {
+                            JsonObject nfceCupom = cupom.getAsJsonObject("nfce");
+                            String qrCupom = texto(nfceCupom, "qrCode");
+                            if (qrCupom == null || qrCupom.isEmpty()) {
+                                qrCupom = texto(nfceCupom, "urlChave");
+                            }
+                            if (qrCupom != null && !qrCupom.isEmpty()) {
+                                resultado.qrParaImpressao = qrCupom;
+                            }
+                        }
+                    } catch (ApiException ignored) {
+                        // fallback já montado acima
+                    }
+                }
+            } else if (deveEmitir) {
+                resultado.sucessoFiscalCompleto = false;
+                if (resultado.mensagemNfce == null || resultado.mensagemNfce.isEmpty()) {
+                    resultado.mensagemNfce = "NFC-e não autorizada";
+                }
+                resultado.comprovanteTexto = null;
             } else {
-                resultado.mensagemNfce = "NFC-e não emitida";
+                resultado.mensagemNfce = "Venda registrada (sem emissão NFC-e para este pagamento)";
+                resultado.comprovanteTexto = montarComprovanteNaoFiscal(itens, totalStr, meio, resultado);
+            }
+        } else if (deveEmitir) {
+            resultado.sucessoFiscalCompleto = false;
+            resultado.mensagemNfce = montarMotivoFalhaNfce(null, avisos);
+            if (resultado.mensagemNfce == null || resultado.mensagemNfce.isEmpty()) {
+                resultado.mensagemNfce = "NFC-e não autorizada";
+            }
+            resultado.comprovanteTexto = null;
+        } else {
+            resultado.mensagemNfce = "Venda registrada";
+            resultado.comprovanteTexto = montarComprovanteNaoFiscal(itens, totalStr, meio, resultado);
+        }
+    }
+
+    private static String montarMotivoFalhaNfce(JsonObject nfce, JsonArray avisos) {
+        if (nfce != null) {
+            String erro = texto(nfce, "erro");
+            if (erro != null && !erro.isEmpty()) {
+                return erro;
+            }
+            String xMotivo = texto(nfce, "xMotivo");
+            if (xMotivo != null && !xMotivo.isEmpty()) {
+                return xMotivo;
+            }
+            if (nfce.has("pendencias") && nfce.get("pendencias").isJsonArray()) {
+                JsonArray pendencias = nfce.getAsJsonArray("pendencias");
+                StringBuilder sb = new StringBuilder();
+                for (JsonElement el : pendencias) {
+                    if (!el.isJsonObject()) {
+                        continue;
+                    }
+                    String msg = texto(el.getAsJsonObject(), "mensagem");
+                    if (msg == null || msg.isEmpty()) {
+                        continue;
+                    }
+                    if (sb.length() > 0) {
+                        sb.append("; ");
+                    }
+                    sb.append(msg);
+                }
+                if (sb.length() > 0) {
+                    return sb.toString();
+                }
             }
         }
-        resultado.comprovanteTexto = montarComprovante(itens, totalStr, meio, resultado);
-        return resultado;
+        if (avisos != null) {
+            for (JsonElement el : avisos) {
+                if (el.isJsonNull()) {
+                    continue;
+                }
+                String a = el.getAsString();
+                if (a != null && a.matches("(?i).*(nfc|sefaz|cfop|duplicidade|emiss[aã]o).*")) {
+                    return a;
+                }
+            }
+            if (avisos.size() > 0 && !avisos.get(0).isJsonNull()) {
+                return avisos.get(0).getAsString();
+            }
+        }
+        return null;
+    }
+
+    private String montarDanfceTextoDoCupom(JsonObject cupom) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("DOCUMENTO AUXILIAR DA NFC-e\n");
+        String empresa = texto(cupom, "empresaNome");
+        if (empresa == null) {
+            empresa = prefsStore.getEmpresaNome();
+        }
+        if (empresa != null) {
+            sb.append(empresa).append("\n");
+        }
+        String dataHora = texto(cupom, "dataHora");
+        if (dataHora != null) {
+            sb.append(dataHora).append("\n");
+        }
+        sb.append("--------------------------------\n");
+        if (cupom.has("itens") && cupom.get("itens").isJsonArray()) {
+            for (JsonElement el : cupom.getAsJsonArray("itens")) {
+                if (!el.isJsonObject()) {
+                    continue;
+                }
+                JsonObject item = el.getAsJsonObject();
+                String nome = texto(item, "nome");
+                String qty = texto(item, "quantidade");
+                String preco = texto(item, "precounitario");
+                sb.append(qty != null ? qty : "?")
+                        .append("x ")
+                        .append(nome != null ? nome : "Item")
+                        .append(" ")
+                        .append(preco != null ? preco : "")
+                        .append("\n");
+            }
+        }
+        sb.append("--------------------------------\n");
+        if (cupom.has("total") && !cupom.get("total").isJsonNull()) {
+            sb.append("TOTAL R$ ").append(cupom.get("total").getAsString()).append("\n");
+        }
+        if (cupom.has("pagamentos") && cupom.get("pagamentos").isJsonArray()) {
+            for (JsonElement el : cupom.getAsJsonArray("pagamentos")) {
+                if (!el.isJsonObject()) {
+                    continue;
+                }
+                JsonObject pag = el.getAsJsonObject();
+                String label = texto(pag, "label");
+                if (label == null) {
+                    label = texto(pag, "meio");
+                }
+                String valor = "";
+                if (pag.has("valor") && !pag.get("valor").isJsonNull()) {
+                    valor = pag.get("valor").isJsonPrimitive()
+                            ? pag.get("valor").getAsString()
+                            : String.valueOf(pag.get("valor"));
+                }
+                sb.append(label != null ? label : "Pagamento").append(": ").append(valor).append("\n");
+            }
+        }
+        sb.append("--------------------------------\n");
+        sb.append("CHAVE DE ACESSO\n");
+        if (cupom.has("nfce") && cupom.get("nfce").isJsonObject()) {
+            JsonObject nfce = cupom.getAsJsonObject("nfce");
+            String chave = texto(nfce, "chave");
+            if (chave != null) {
+                sb.append(com.pos_mais_gestao.hardware.DanfceEscPos.formatarChave(chave)).append("\n");
+            }
+            String protocolo = texto(nfce, "protocolo");
+            if (protocolo != null) {
+                sb.append("Protocolo: ").append(protocolo).append("\n");
+            }
+        }
+        return sb.toString();
+    }
+
+    private String montarDanfceTexto(
+            VendaResultadoDto resultado,
+            List<ItemCarrinho> itens,
+            String total,
+            MeioPagamento meio) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("DOCUMENTO AUXILIAR DA NFC-e\n");
+        String empresa = prefsStore.getEmpresaNome();
+        if (empresa != null && !empresa.isEmpty()) {
+            sb.append(empresa).append("\n");
+        }
+        SimpleDateFormat fmt = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
+        sb.append(fmt.format(new Date())).append("\n");
+        sb.append("--------------------------------\n");
+        for (ItemCarrinho item : itens) {
+            sb.append(item.getQuantidade().toPlainString())
+                    .append("x ")
+                    .append(item.getProduto().getDescricao())
+                    .append(" ")
+                    .append(item.getSubtotal().toPlainString())
+                    .append("\n");
+        }
+        sb.append("--------------------------------\n");
+        sb.append("TOTAL R$ ").append(total).append("\n");
+        sb.append("Pagamento: ").append(meio.name()).append("\n");
+        sb.append("--------------------------------\n");
+        sb.append("CHAVE DE ACESSO\n");
+        if (resultado.chaveNfce != null) {
+            sb.append(com.pos_mais_gestao.hardware.DanfceEscPos.formatarChave(resultado.chaveNfce))
+                    .append("\n");
+        }
+        if (resultado.protocolo != null) {
+            sb.append("Protocolo: ").append(resultado.protocolo).append("\n");
+        }
+        if (resultado.codigo != null) {
+            sb.append("Venda: ").append(resultado.codigo).append("\n");
+        }
+        return sb.toString();
     }
 
     public VendaResultadoDto criarPedidoDavPos(List<ItemCarrinho> itens, MeioPagamento meio)
@@ -417,9 +648,13 @@ public class ApiClient {
         if (resultado.codigo == null && davJson.has("codigo") && !davJson.get("codigo").isJsonNull()) {
             resultado.codigo = String.valueOf(davJson.get("codigo").getAsLong());
         }
+        resultado.pedidoDav = true;
         resultado.nfceEmitida = false;
+        resultado.deveEmitirNfce = false;
+        resultado.sucessoFiscalCompleto = true;
+        resultado.cupomFiscal = false;
         resultado.mensagemNfce = "Pedido #" + (resultado.codigo != null ? resultado.codigo : "—")
-                + " — retaguarda";
+                + " — veja em Pedidos da maquininha";
         resultado.comprovanteTexto = montarComprovanteDav(itens, totalStr, meio, resultado);
         return resultado;
     }
@@ -428,7 +663,7 @@ public class ApiClient {
             List<ItemCarrinho> itens, String total, MeioPagamento meio, VendaResultadoDto resultado) {
         StringBuilder sb = new StringBuilder();
         sb.append("MAIS GESTAO - POS\n");
-        sb.append("PEDIDO (DAV)\n");
+        sb.append("PEDIDO (DAV) - NAO FISCAL\n");
         sb.append("----------------\n");
         for (ItemCarrinho item : itens) {
             sb.append(item.getQuantidade().toPlainString())
@@ -444,14 +679,15 @@ public class ApiClient {
         if (resultado.codigo != null) {
             sb.append("PEDIDO: ").append(resultado.codigo).append("\n");
         }
-        sb.append(resultado.mensagemNfce).append("\n");
+        sb.append("Retaguarda: Pedidos da maquininha\n");
         return sb.toString();
     }
 
-    private String montarComprovante(
+    private String montarComprovanteNaoFiscal(
             List<ItemCarrinho> itens, String total, MeioPagamento meio, VendaResultadoDto resultado) {
         StringBuilder sb = new StringBuilder();
         sb.append("MAIS GESTAO - POS\n");
+        sb.append("COMPROVANTE NAO FISCAL\n");
         sb.append("----------------\n");
         for (ItemCarrinho item : itens) {
             sb.append(item.getQuantidade().toPlainString())
@@ -467,10 +703,9 @@ public class ApiClient {
         if (resultado.codigo != null) {
             sb.append("VENDA: ").append(resultado.codigo).append("\n");
         }
-        if (resultado.chaveNfce != null) {
-            sb.append("CHAVE: ").append(resultado.chaveNfce).append("\n");
+        if (resultado.mensagemNfce != null) {
+            sb.append(resultado.mensagemNfce).append("\n");
         }
-        sb.append(resultado.mensagemNfce).append("\n");
         return sb.toString();
     }
 
@@ -671,7 +906,11 @@ public class ApiClient {
         if (obj == null || !obj.has(key) || obj.get(key).isJsonNull()) {
             return null;
         }
-        return obj.get(key).getAsString();
+        JsonElement el = obj.get(key);
+        if (el.isJsonPrimitive()) {
+            return el.getAsString();
+        }
+        return el.toString();
     }
 
     private static BigDecimal decimal(JsonObject obj, String key) {
