@@ -352,6 +352,158 @@ public class ApiClient {
         return resultado;
     }
 
+    /**
+     * Fecha conta de mesa no mesmo fluxo do Gourmet: PUT status fechado → venda PDV → itens → baixa/NFC-e.
+     */
+    public VendaResultadoDto fecharContaMesa(String idConta, MeioPagamento meio) throws ApiException {
+        if (idConta == null || idConta.isEmpty()) {
+            throw new ApiException("Conta da mesa inválida");
+        }
+        String empresaId = prefsStore.getEmpresaId();
+        String userId = prefsStore.getUserId();
+        if (empresaId == null || userId == null) {
+            throw new ApiException("Sessão ou empresa inválida");
+        }
+
+        List<ContaMesaItemDto> itensMesa = listarItensMesa(idConta);
+        if (itensMesa == null || itensMesa.isEmpty()) {
+            throw new ApiException("Comanda vazia — lance itens antes de fechar");
+        }
+
+        List<ItemCarrinho> itens = converterItensMesa(itensMesa);
+        if (itens.isEmpty()) {
+            throw new ApiException("Comanda sem itens válidos");
+        }
+
+        BigDecimal total = BigDecimal.ZERO;
+        for (ItemCarrinho item : itens) {
+            total = total.add(item.getSubtotal());
+        }
+        String totalStr = total.toPlainString();
+        String zero = "0";
+
+        JsonObject contaBody = new JsonObject();
+        contaBody.addProperty("status", 2);
+        contaBody.addProperty("desconto", zero);
+        contaBody.addProperty("valortaxaservico", zero);
+        contaBody.addProperty("valorcouverartistico", zero);
+        contaBody.addProperty("valortotal", totalStr);
+        contaBody.addProperty("valortroco", zero);
+        contaBody.addProperty("valorpendente", zero);
+        contaBody.addProperty("valordinheiro", meio == MeioPagamento.DINHEIRO ? totalStr : zero);
+        contaBody.addProperty("valorpix", meio == MeioPagamento.PIX ? totalStr : zero);
+        contaBody.addProperty("valorcartaocredito", meio == MeioPagamento.CARTAO ? totalStr : zero);
+        contaBody.addProperty("valorcartaodebito", zero);
+        contaBody.addProperty("valorcartao", zero);
+        contaBody.addProperty("valorprepago", zero);
+        contaBody.addProperty("usuarioquefechouconta", userId);
+        putJson("/contas-mesa/" + idConta, contaBody.toString());
+
+        JsonObject vendaBody = new JsonObject();
+        vendaBody.addProperty("idempresa", empresaId);
+        vendaBody.addProperty("idcontamesa", idConta);
+        vendaBody.addProperty("numeropdv", prefsStore.getNumeroPdv());
+        vendaBody.addProperty("usuarioquefechouvenda", userId);
+        vendaBody.addProperty("vendalocal", 1);
+        vendaBody.addProperty("valortotal", totalStr);
+        vendaBody.addProperty("valortroco", zero);
+        vendaBody.addProperty("valordinheiro", meio == MeioPagamento.DINHEIRO ? totalStr : zero);
+        vendaBody.addProperty("valorpix", meio == MeioPagamento.PIX ? totalStr : zero);
+        vendaBody.addProperty("valorcartaocredito", meio == MeioPagamento.CARTAO ? totalStr : zero);
+        vendaBody.addProperty("valorcartaodebito", zero);
+        vendaBody.addProperty("valorcartao", zero);
+        vendaBody.addProperty("valorprepago", zero);
+
+        JsonObject vendaJson = postJson("/vendas-pdv-gourmet", vendaBody.toString(), true);
+        String idVenda = texto(vendaJson, "id");
+        if (idVenda == null) {
+            throw new ApiException("Venda criada sem ID");
+        }
+
+        for (ItemCarrinho item : itens) {
+            JsonObject itemBody = new JsonObject();
+            itemBody.addProperty("idempresa", empresaId);
+            itemBody.addProperty("idvenda", idVenda);
+            itemBody.addProperty("idproduto", item.getProduto().getId());
+            itemBody.addProperty("quantidade", item.getQuantidade().toPlainString());
+            itemBody.addProperty("precounitario", item.getProduto().getPreco().toPlainString());
+            itemBody.addProperty("precototal", item.getSubtotal().toPlainString());
+            itemBody.addProperty("precopromocao", "0");
+            itemBody.addProperty("precoalterado", "0");
+            postJson("/vendas-pdv-item", itemBody.toString(), true);
+        }
+
+        JsonObject baixaBody = new JsonObject();
+        baixaBody.addProperty("idempresa", empresaId);
+        baixaBody.addProperty("idvenda", idVenda);
+        JsonArray itensBaixa = new JsonArray();
+        for (ItemCarrinho item : itens) {
+            JsonObject i = new JsonObject();
+            i.addProperty("idproduto", item.getProduto().getId());
+            i.addProperty("quantidade", item.getQuantidade().toPlainString());
+            i.addProperty("precounitario", item.getProduto().getPreco().toPlainString());
+            i.addProperty("nomeproduto", item.getProduto().getDescricao());
+            itensBaixa.add(i);
+        }
+        baixaBody.add("itens", itensBaixa);
+        JsonObject pags = new JsonObject();
+        pags.addProperty("valortotal", totalStr);
+        pags.addProperty("valortroco", zero);
+        pags.addProperty("valordinheiro", meio == MeioPagamento.DINHEIRO ? totalStr : zero);
+        pags.addProperty("valorpix", meio == MeioPagamento.PIX ? totalStr : zero);
+        pags.addProperty("valorcartaocredito", meio == MeioPagamento.CARTAO ? totalStr : zero);
+        pags.addProperty("valorcartaodebito", zero);
+        pags.addProperty("valorcartao", zero);
+        pags.addProperty("valorprepago", zero);
+        baixaBody.add("pagamentos", pags);
+
+        JsonObject baixaJson = postJson("/estoque/baixa-venda", baixaBody.toString(), true);
+
+        VendaResultadoDto resultado = new VendaResultadoDto();
+        resultado.idVenda = idVenda;
+        resultado.codigo = texto(vendaJson, "codigo");
+        if (resultado.codigo == null && vendaJson.has("codigo") && !vendaJson.get("codigo").isJsonNull()) {
+            resultado.codigo = String.valueOf(vendaJson.get("codigo").getAsLong());
+        }
+        resultado.pedidoDav = false;
+        aplicarResultadoEmissaoNfce(resultado, baixaJson, itens, totalStr, meio);
+        if (resultado.sucessoFiscalCompleto && !resultado.cupomFiscal
+                && (resultado.mensagemNfce == null
+                        || resultado.mensagemNfce.equals("Venda registrada")
+                        || resultado.mensagemNfce.startsWith("Venda registrada ("))) {
+            resultado.mensagemNfce = "Mesa fechada";
+        }
+        return resultado;
+    }
+
+    private static List<ItemCarrinho> converterItensMesa(List<ContaMesaItemDto> itensMesa) {
+        List<ItemCarrinho> itens = new ArrayList<>();
+        for (ContaMesaItemDto dto : itensMesa) {
+            if (dto.idproduto == null || dto.idproduto.isEmpty()) {
+                continue;
+            }
+            BigDecimal preco;
+            BigDecimal qty;
+            try {
+                preco = new BigDecimal(dto.precounitario != null ? dto.precounitario : "0");
+            } catch (Exception e) {
+                preco = BigDecimal.ZERO;
+            }
+            try {
+                qty = new BigDecimal(dto.quantidade != null ? dto.quantidade : "0");
+            } catch (Exception e) {
+                qty = BigDecimal.ZERO;
+            }
+            if (qty.compareTo(BigDecimal.ZERO) <= 0) {
+                continue;
+            }
+            String nome = dto.nomeproduto != null ? dto.nomeproduto : "Item";
+            Produto produto = new Produto(dto.idproduto, nome, preco, "UN", null, null);
+            itens.add(new ItemCarrinho(produto, qty));
+        }
+        return itens;
+    }
+
     private void aplicarResultadoEmissaoNfce(
             VendaResultadoDto resultado,
             JsonObject baixaJson,

@@ -1,5 +1,6 @@
 package com.pos_mais_gestao.ui.mesas;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -21,6 +22,7 @@ import com.pos_mais_gestao.data.api.ApiException;
 import com.pos_mais_gestao.data.api.ContaMesaItemDto;
 import com.pos_mais_gestao.data.local.PrefsStore;
 import com.pos_mais_gestao.domain.Produto;
+import com.pos_mais_gestao.ui.pagamento.PagamentoActivity;
 import com.pos_mais_gestao.ui.venda.ProdutoAdapter;
 import com.pos_mais_gestao.util.MoneyFormat;
 import com.pos_mais_gestao.util.ProdutoBuscaHelper;
@@ -37,12 +39,15 @@ public class ContaMesaActivity extends AppCompatActivity {
     private PrefsStore prefs;
     private ApiClient api;
     private String idConta;
+    private int numeroMesa;
     private ProdutoAdapter produtoAdapter;
     private ContaItemAdapter itemAdapter;
     private ProdutoBuscaHelper buscaHelper;
     private ProgressBar progress;
     private TextView lblSecao;
     private TextView txtTotalConta;
+    private MaterialButton btnFecharConta;
+    private BigDecimal totalAtual = BigDecimal.ZERO;
     private int quantidadeSelecionada = 1;
 
     @Override
@@ -55,7 +60,7 @@ public class ContaMesaActivity extends AppCompatActivity {
         api = app.getApiClient();
 
         idConta = getIntent().getStringExtra(EXTRA_ID_CONTA);
-        int numero = getIntent().getIntExtra(EXTRA_NUMERO_MESA, 0);
+        numeroMesa = getIntent().getIntExtra(EXTRA_NUMERO_MESA, 0);
         if (idConta == null) {
             finish();
             return;
@@ -63,12 +68,14 @@ public class ContaMesaActivity extends AppCompatActivity {
 
         MaterialToolbar toolbar = findViewById(R.id.toolbarConta);
         setSupportActionBar(toolbar);
-        toolbar.setTitle(getString(R.string.mesa_n, numero));
+        toolbar.setTitle(getString(R.string.mesa_n, numeroMesa));
         toolbar.setNavigationOnClickListener(v -> finish());
 
         progress = findViewById(R.id.progressConta);
         lblSecao = findViewById(R.id.lblSecaoConta);
         txtTotalConta = findViewById(R.id.txtTotalConta);
+        btnFecharConta = findViewById(R.id.btnFecharConta);
+        btnFecharConta.setOnClickListener(v -> irParaPagamento());
         TextInputEditText inputBusca = findViewById(R.id.inputBuscaConta);
         MaterialButton btnQty1 = findViewById(R.id.btnQty1);
         MaterialButton btnQty2 = findViewById(R.id.btnQty2);
@@ -189,7 +196,22 @@ public class ContaMesaActivity extends AppCompatActivity {
                 }
             }
         }
+        totalAtual = total;
         txtTotalConta.setText(getString(R.string.total, MoneyFormat.format(total)));
+        btnFecharConta.setEnabled(total.compareTo(BigDecimal.ZERO) > 0);
+    }
+
+    private void irParaPagamento() {
+        if (totalAtual.compareTo(BigDecimal.ZERO) <= 0) {
+            Toast.makeText(this, R.string.comanda_vazia, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Intent intent = new Intent(this, PagamentoActivity.class);
+        intent.putExtra(PagamentoActivity.EXTRA_MODO_MESA, true);
+        intent.putExtra(PagamentoActivity.EXTRA_ID_CONTA, idConta);
+        intent.putExtra(PagamentoActivity.EXTRA_NUMERO_MESA, numeroMesa);
+        intent.putExtra(PagamentoActivity.EXTRA_TOTAL_MESA, totalAtual.toPlainString());
+        startActivity(intent);
     }
 
     private void removerItem(ContaMesaItemDto item) {

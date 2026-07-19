@@ -11,6 +11,7 @@ import com.pos_mais_gestao.PosApplication;
 import com.pos_mais_gestao.R;
 import com.pos_mais_gestao.hardware.ImpressoraPos;
 import com.pos_mais_gestao.ui.home.HomeActivity;
+import com.pos_mais_gestao.ui.mesas.MesasActivity;
 import com.pos_mais_gestao.ui.venda.VendaActivity;
 
 public class FalhaNfceActivity extends AppCompatActivity {
@@ -18,8 +19,10 @@ public class FalhaNfceActivity extends AppCompatActivity {
     public static final String EXTRA_CSTAT = "cstat";
     public static final String EXTRA_CODIGO = "codigo";
     public static final String EXTRA_COMPROVANTE = "comprovante";
+    public static final String EXTRA_VOLTAR_MESAS = "voltar_mesas";
 
     private String comprovante;
+    private boolean voltarMesas;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,6 +33,7 @@ public class FalhaNfceActivity extends AppCompatActivity {
         String cStat = getIntent().getStringExtra(EXTRA_CSTAT);
         String codigo = getIntent().getStringExtra(EXTRA_CODIGO);
         comprovante = getIntent().getStringExtra(EXTRA_COMPROVANTE);
+        voltarMesas = getIntent().getBooleanExtra(EXTRA_VOLTAR_MESAS, false);
 
         TextView txtCstat = findViewById(R.id.txtCstat);
         if (cStat != null && !cStat.isEmpty()) {
@@ -58,7 +62,8 @@ public class FalhaNfceActivity extends AppCompatActivity {
         }
 
         MaterialButton btnNova = findViewById(R.id.btnNovaVendaFalha);
-        btnNova.setOnClickListener(v -> irParaVenda());
+        btnNova.setText(voltarMesas ? R.string.voltar_mesas : R.string.nova_venda);
+        btnNova.setOnClickListener(v -> irAdiante());
 
         MaterialButton btnInicio = findViewById(R.id.btnInicioFalha);
         btnInicio.setOnClickListener(v -> irParaInicio());
@@ -66,7 +71,7 @@ public class FalhaNfceActivity extends AppCompatActivity {
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
-                irParaVenda();
+                irAdiante();
             }
         });
 
@@ -89,8 +94,10 @@ public class FalhaNfceActivity extends AppCompatActivity {
         }
     }
 
-    private void irParaVenda() {
-        Intent intent = new Intent(this, VendaActivity.class);
+    private void irAdiante() {
+        Intent intent = voltarMesas
+                ? new Intent(this, MesasActivity.class)
+                : new Intent(this, VendaActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         startActivity(intent);
         finish();

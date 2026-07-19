@@ -16,22 +16,24 @@
         app:titleTextColor="@color/white" />
 
     <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingHorizontal="16dp"
-        android:paddingTop="8dp"
-        android:text="@string/fechar_na_retaguarda"
-        android:textColor="@color/muted_foreground"
-        android:textSize="12sp" />
-
-    <TextView
         android:id="@+id/txtTotalConta"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingHorizontal="16dp"
-        android:paddingTop="4dp"
+        android:paddingTop="8dp"
+        android:textColor="@color/foreground"
         android:textStyle="bold"
         android:textSize="18sp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnFecharConta"
+        style="@style/PosBigButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="12dp"
+        android:layout_marginTop="8dp"
+        android:backgroundTint="@color/dinheiro"
+        android:text="@string/fechar_conta" />
 
     <LinearLayout
         android:layout_width="match_parent"
