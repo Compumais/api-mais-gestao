@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/surface"
     android:fillViewport="true">
 
     <LinearLayout
@@ -15,6 +17,7 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
             android:text="@string/configuracoes"
+            android:textColor="@color/foreground"
             android:textSize="22sp"
             android:textStyle="bold" />
 
@@ -22,106 +25,168 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
-            android:hint="@string/url_api">
+            android:hint="@string/url_api"
+            app:hintTextColor="@color/muted_foreground"
+            app:boxStrokeColor="@color/primary">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/inputUrlApi"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="textUri"
-                android:minHeight="56dp" />
+                android:minHeight="56dp"
+                android:textColor="@color/foreground"
+                android:textColorHint="@color/muted_foreground" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:hint="@string/numero_pdv">
+            android:layout_marginBottom="12dp"
+            android:hint="@string/numero_pdv"
+            app:hintTextColor="@color/muted_foreground"
+            app:boxStrokeColor="@color/primary">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/inputNumeroPdv"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="number"
-                android:minHeight="56dp" />
+                android:minHeight="56dp"
+                android:textColor="@color/foreground"
+                android:textColorHint="@color/muted_foreground" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
-            android:hint="@string/quantidade_mesas">
+            android:layout_marginBottom="16dp"
+            android:hint="@string/quantidade_mesas"
+            app:hintTextColor="@color/muted_foreground"
+            app:boxStrokeColor="@color/primary">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/inputQuantidadeMesas"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="number"
-                android:minHeight="56dp" />
+                android:minHeight="56dp"
+                android:textColor="@color/foreground"
+                android:textColorHint="@color/muted_foreground" />
         </com.google.android.material.textfield.TextInputLayout>
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="4dp"
-            android:text="@string/modo_venda_titulo"
-            android:textSize="16sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
-            android:text="@string/modo_venda_ajuda"
-            android:textColor="@color/muted_foreground"
-            android:textSize="13sp" />
-
-        <com.google.android.material.switchmaterial.SwitchMaterial
-            android:id="@+id/switchEmitirNfcePos"
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
-            android:minHeight="56dp"
-            android:text="@string/emitir_nfce_pos" />
+            app:cardBackgroundColor="@color/card"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            app:strokeColor="@color/border"
+            app:strokeWidth="1dp">
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="4dp"
-            android:text="@string/impressoras_titulo"
-            android:textSize="16sp"
-            android:textStyle="bold" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
-            android:text="@string/impressoras_ajuda"
-            android:textColor="@color/muted_foreground"
-            android:textSize="13sp" />
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="4dp"
+                    android:text="@string/impressoras_titulo"
+                    android:textColor="@color/foreground"
+                    android:textSize="17sp"
+                    android:textStyle="bold" />
 
-        <TextView
-            android:id="@+id/txtImpressoraSelecionada"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
-            android:textSize="14sp" />
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:text="@string/impressoras_ajuda"
+                    android:textColor="@color/muted_foreground"
+                    android:textSize="13sp" />
 
-        <LinearLayout
-            android:id="@+id/listaImpressoras"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_marginBottom="8dp" />
+                <TextView
+                    android:id="@+id/txtImpressoraSelecionada"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:textColor="@color/primary_dark"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnAtualizarImpressoras"
-            style="@style/Widget.Material3.Button.OutlinedButton"
+                <LinearLayout
+                    android:id="@+id/listaImpressoras"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:id="@+id/txtSemImpressoras"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:text="@string/sem_impressoras_encontradas"
+                    android:textColor="@color/muted_foreground"
+                    android:textSize="13sp"
+                    android:visibility="gone" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAtualizarImpressoras"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/atualizar_impressoras"
+                    android:textColor="@color/primary_dark"
+                    app:strokeColor="@color/primary" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
-            android:text="@string/atualizar_impressoras" />
+            app:cardBackgroundColor="@color/card"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            app:strokeColor="@color/border"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="4dp"
+                    android:text="@string/modo_venda_titulo"
+                    android:textColor="@color/foreground"
+                    android:textSize="17sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:text="@string/modo_venda_ajuda"
+                    android:textColor="@color/muted_foreground"
+                    android:textSize="13sp" />
+
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/switchEmitirNfcePos"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="56dp"
+                    android:text="@string/emitir_nfce_pos"
+                    android:textColor="@color/foreground" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSalvarConfig"
