@@ -16,8 +16,13 @@ public class SucessoActivity extends AppCompatActivity {
     public static final String EXTRA_CODIGO = "codigo_pedido";
     public static final String EXTRA_NFCE = "nfce_status";
     public static final String EXTRA_COMPROVANTE = "comprovante";
+    public static final String EXTRA_CUPOM_FISCAL = "cupom_fiscal";
+    public static final String EXTRA_QR = "qr_conteudo";
+    public static final String EXTRA_TITULO = "titulo";
 
     private String comprovante;
+    private String qrConteudo;
+    private boolean cupomFiscal;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,7 +31,15 @@ public class SucessoActivity extends AppCompatActivity {
 
         String codigo = getIntent().getStringExtra(EXTRA_CODIGO);
         String nfce = getIntent().getStringExtra(EXTRA_NFCE);
+        String titulo = getIntent().getStringExtra(EXTRA_TITULO);
         comprovante = getIntent().getStringExtra(EXTRA_COMPROVANTE);
+        qrConteudo = getIntent().getStringExtra(EXTRA_QR);
+        cupomFiscal = getIntent().getBooleanExtra(EXTRA_CUPOM_FISCAL, false);
+
+        TextView txtTitulo = findViewById(R.id.txtTituloSucesso);
+        if (titulo != null && !titulo.isEmpty()) {
+            txtTitulo.setText(titulo);
+        }
 
         TextView txtCodigo = findViewById(R.id.txtCodigoPedido);
         txtCodigo.setText(getString(R.string.codigo_pedido, codigo != null ? codigo : "—"));
@@ -35,7 +48,13 @@ public class SucessoActivity extends AppCompatActivity {
         txtNfce.setText(nfce != null ? nfce : "");
 
         MaterialButton btnImprimir = findViewById(R.id.btnImprimir);
+        btnImprimir.setText(cupomFiscal
+                ? R.string.reimprimir_danfce
+                : R.string.imprimir_comprovante);
         btnImprimir.setOnClickListener(v -> imprimir());
+        if (comprovante == null || comprovante.isEmpty()) {
+            btnImprimir.setEnabled(false);
+        }
 
         MaterialButton btnNova = findViewById(R.id.btnNovaVenda);
         btnNova.setOnClickListener(v -> irParaVenda());
@@ -54,13 +73,18 @@ public class SucessoActivity extends AppCompatActivity {
 
     private void imprimir() {
         if (comprovante == null || comprovante.isEmpty()) {
-            Toast.makeText(this, "Sem comprovante", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.sem_comprovante, Toast.LENGTH_SHORT).show();
             return;
         }
         try {
             ImpressoraPos impressora = ((PosApplication) getApplication()).getImpressoraPos();
-            impressora.imprimirTexto(comprovante);
-            Toast.makeText(this, "Comprovante enviado à impressora", Toast.LENGTH_SHORT).show();
+            if (cupomFiscal) {
+                impressora.imprimirDanfce(comprovante, qrConteudo);
+                Toast.makeText(this, R.string.danfce_enviado, Toast.LENGTH_SHORT).show();
+            } else {
+                impressora.imprimirTexto(comprovante);
+                Toast.makeText(this, R.string.comprovante_enviado, Toast.LENGTH_SHORT).show();
+            }
         } catch (Exception e) {
             Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
         }

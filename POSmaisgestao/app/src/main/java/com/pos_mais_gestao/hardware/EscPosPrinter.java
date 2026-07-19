@@ -50,6 +50,12 @@ public class EscPosPrinter implements ImpressoraPos {
         enviar(full);
     }
 
+    @Override
+    public void imprimirDanfce(String texto, String qrConteudo) throws Exception {
+        byte[] dados = DanfceEscPos.montarTextoComQr(texto, qrConteudo);
+        enviar(dados);
+    }
+
     protected void enviar(byte[] dados) throws Exception {
         String tipo = prefs.getImpressoraTipo();
         String id = prefs.getImpressoraId();
@@ -57,10 +63,8 @@ public class EscPosPrinter implements ImpressoraPos {
             enviarBluetooth(id, dados);
             return;
         }
-        Log.i(TAG, "Comprovante ESC/POS (" + dados.length + " bytes)"
-                + (prefs.getImpressoraNome() != null ? " [" + prefs.getImpressoraNome() + "]" : "")
-                + ":\n"
-                + new String(dados, Charset.forName("IBM437")));
+        Log.i(TAG, "Cupom ESC/POS (" + dados.length + " bytes)"
+                + (prefs.getImpressoraNome() != null ? " [" + prefs.getImpressoraNome() + "]" : ""));
         if (ImpressoraInfo.TIPO_USB.equals(tipo)) {
             throw new Exception("Impressora USB selecionada: conecte o driver do fabricante ou use Bluetooth.");
         }

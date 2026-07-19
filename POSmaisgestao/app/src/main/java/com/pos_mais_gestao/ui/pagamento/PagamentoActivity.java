@@ -18,6 +18,7 @@ import com.pos_mais_gestao.domain.Carrinho;
 import com.pos_mais_gestao.domain.ItemCarrinho;
 import com.pos_mais_gestao.domain.MeioPagamento;
 import com.pos_mais_gestao.hardware.PagamentoHardware;
+import com.pos_mais_gestao.ui.falha.FalhaNfceActivity;
 import com.pos_mais_gestao.ui.sucesso.SucessoActivity;
 import com.pos_mais_gestao.util.MoneyFormat;
 import java.util.ArrayList;
@@ -86,8 +87,9 @@ public class PagamentoActivity extends AppCompatActivity {
                         Toast.makeText(this, R.string.venda_offline, Toast.LENGTH_LONG).show();
                         Intent intent = new Intent(this, SucessoActivity.class);
                         intent.putExtra(SucessoActivity.EXTRA_CODIGO, "OFFLINE");
-                        intent.putExtra(SucessoActivity.EXTRA_NFCE, getString(R.string.venda_offline));
-                        intent.putExtra(SucessoActivity.EXTRA_COMPROVANTE, "Venda enfileirada offline\n");
+                        intent.putExtra(SucessoActivity.EXTRA_NFCE, getString(R.string.venda_offline_ajuda));
+                        intent.putExtra(SucessoActivity.EXTRA_COMPROVANTE, "Venda enfileirada offline\nNAO FISCAL — sem NFC-e\n");
+                        intent.putExtra(SucessoActivity.EXTRA_CUPOM_FISCAL, false);
                         startActivity(intent);
                         finish();
                     });
@@ -98,12 +100,33 @@ public class PagamentoActivity extends AppCompatActivity {
                 runOnUiThread(() -> {
                     setLoading(false);
                     Carrinho.getInstance().limpar();
+                    if (!resultado.sucessoFiscalCompleto) {
+                        Intent falha = new Intent(this, FalhaNfceActivity.class);
+                        falha.putExtra(FalhaNfceActivity.EXTRA_MOTIVO, resultado.mensagemNfce);
+                        falha.putExtra(FalhaNfceActivity.EXTRA_CSTAT, resultado.cStat);
+                        falha.putExtra(
+                                FalhaNfceActivity.EXTRA_CODIGO,
+                                resultado.codigo != null ? resultado.codigo : "—");
+                        falha.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                        startActivity(falha);
+                        finish();
+                        return;
+                    }
                     Intent intent = new Intent(this, SucessoActivity.class);
                     intent.putExtra(
                             SucessoActivity.EXTRA_CODIGO,
                             resultado.codigo != null ? resultado.codigo : "—");
                     intent.putExtra(SucessoActivity.EXTRA_NFCE, resultado.mensagemNfce);
                     intent.putExtra(SucessoActivity.EXTRA_COMPROVANTE, resultado.comprovanteTexto);
+                    intent.putExtra(SucessoActivity.EXTRA_CUPOM_FISCAL, resultado.cupomFiscal);
+                    intent.putExtra(SucessoActivity.EXTRA_QR, resultado.qrParaImpressao);
+                    intent.putExtra(
+                            SucessoActivity.EXTRA_TITULO,
+                            resultado.pedidoDav
+                                    ? getString(R.string.pedido_enviado)
+                                    : resultado.cupomFiscal
+                                            ? getString(R.string.nfce_autorizada_titulo)
+                                            : getString(R.string.venda_enviada));
                     intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                     startActivity(intent);
                     finish();
@@ -127,9 +150,6 @@ public class PagamentoActivity extends AppCompatActivity {
         btnDinheiro.setEnabled(!loading);
         btnPix.setEnabled(!loading);
         btnCartao.setEnabled(!loading);
-        if (loading) {
-            Toast.makeText(this, R.string.enviando, Toast.LENGTH_SHORT).show();
-        }
     }
 
     @Override
