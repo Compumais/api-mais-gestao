@@ -28,6 +28,7 @@ import com.pos_mais_gestao.ui.config.ConfigActivity;
 import com.pos_mais_gestao.ui.login.LoginActivity;
 import com.pos_mais_gestao.ui.mesas.MesasActivity;
 import com.pos_mais_gestao.ui.venda.VendaActivity;
+import com.pos_mais_gestao.ui.vendas.VendasActivity;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -66,6 +67,7 @@ public class HomeActivity extends AppCompatActivity {
         txtSyncPendente = findViewById(R.id.txtSyncPendente);
         btnVenda = findViewById(R.id.btnVendaRapida);
         btnMesas = findViewById(R.id.btnMesas);
+        MaterialButton btnVendas = findViewById(R.id.btnVendas);
 
         btnVenda.setOnClickListener(v -> {
             if (caixaAberto == null) {
@@ -76,6 +78,7 @@ public class HomeActivity extends AppCompatActivity {
             startActivity(new Intent(this, VendaActivity.class));
         });
         btnMesas.setOnClickListener(v -> startActivity(new Intent(this, MesasActivity.class)));
+        btnVendas.setOnClickListener(v -> startActivity(new Intent(this, VendasActivity.class)));
     }
 
     @Override

@@ -9,6 +9,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
@@ -26,6 +27,7 @@ import com.pos_mais_gestao.hardware.ImpressoraDiscovery;
 import com.pos_mais_gestao.hardware.ImpressoraInfo;
 import com.pos_mais_gestao.ui.atalhos.AtalhosActivity;
 import com.pos_mais_gestao.ui.login.LoginActivity;
+import com.pos_mais_gestao.util.ThemeHelper;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,6 +37,8 @@ public class ConfigActivity extends AppCompatActivity {
     private TextInputEditText inputPdv;
     private TextInputEditText inputMesas;
     private SwitchMaterial switchEmitirNfce;
+    private SwitchMaterial switchFichasEvento;
+    private RadioGroup radioGrupoTema;
     private LinearLayout listaImpressoras;
     private TextView txtImpressoraSelecionada;
     private TextView txtSemImpressoras;
@@ -63,6 +67,8 @@ public class ConfigActivity extends AppCompatActivity {
         inputPdv = findViewById(R.id.inputNumeroPdv);
         inputMesas = findViewById(R.id.inputQuantidadeMesas);
         switchEmitirNfce = findViewById(R.id.switchEmitirNfcePos);
+        switchFichasEvento = findViewById(R.id.switchFichasEvento);
+        radioGrupoTema = findViewById(R.id.radioGrupoTema);
         listaImpressoras = findViewById(R.id.listaImpressoras);
         txtImpressoraSelecionada = findViewById(R.id.txtImpressoraSelecionada);
         txtSemImpressoras = findViewById(R.id.txtSemImpressoras);
@@ -75,6 +81,8 @@ public class ConfigActivity extends AppCompatActivity {
         inputPdv.setText(String.valueOf(prefs.getNumeroPdv()));
         inputMesas.setText(String.valueOf(prefs.getQuantidadeMesas()));
         switchEmitirNfce.setChecked(prefs.isEmitirNfcePos());
+        switchFichasEvento.setChecked(prefs.isImprimirFichasEvento());
+        selecionarRadioTema(ThemeHelper.normalizar(prefs.getTema()));
         impressoraIdSelecionada = prefs.getImpressoraId() != null ? prefs.getImpressoraId() : "";
         impressoraNomeSelecionada = prefs.getImpressoraNome();
         impressoraTipoSelecionada = prefs.getImpressoraTipo();
@@ -206,8 +214,33 @@ public class ConfigActivity extends AppCompatActivity {
         prefs.setNumeroPdv(pdv);
         prefs.setQuantidadeMesas(mesas);
         prefs.setEmitirNfcePos(switchEmitirNfce.isChecked());
+        prefs.setImprimirFichasEvento(switchFichasEvento.isChecked());
         prefs.setImpressora(impressoraIdSelecionada, impressoraNomeSelecionada, impressoraTipoSelecionada);
+        String tema = lerTemaSelecionado();
+        prefs.setTema(tema);
+        ThemeHelper.aplicar(tema);
         Toast.makeText(this, "Configurações salvas", Toast.LENGTH_SHORT).show();
         finish();
+    }
+
+    private void selecionarRadioTema(String tema) {
+        if (ThemeHelper.DARK.equals(tema)) {
+            radioGrupoTema.check(R.id.radioTemaEscuro);
+        } else if (ThemeHelper.SYSTEM.equals(tema)) {
+            radioGrupoTema.check(R.id.radioTemaSistema);
+        } else {
+            radioGrupoTema.check(R.id.radioTemaClaro);
+        }
+    }
+
+    private String lerTemaSelecionado() {
+        int id = radioGrupoTema.getCheckedRadioButtonId();
+        if (id == R.id.radioTemaEscuro) {
+            return ThemeHelper.DARK;
+        }
+        if (id == R.id.radioTemaSistema) {
+            return ThemeHelper.SYSTEM;
+        }
+        return ThemeHelper.LIGHT;
     }
 }

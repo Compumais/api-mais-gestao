@@ -1,6 +1,5 @@
 <resources>
-    <!-- Mantém o mesmo tema claro no modo noturno do sistema -->
-    <style name="Base.Theme.POSmaisgestao" parent="Theme.Material3.Light.NoActionBar">
+    <style name="Base.Theme.POSmaisgestao" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/primary</item>
         <item name="colorPrimaryDark">@color/primary_dark</item>
         <item name="colorSecondary">@color/accent</item>

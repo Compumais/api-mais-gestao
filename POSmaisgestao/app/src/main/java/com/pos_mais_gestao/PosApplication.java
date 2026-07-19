@@ -8,6 +8,7 @@ import com.pos_mais_gestao.hardware.EscPosPrinter;
 import com.pos_mais_gestao.hardware.ImpressoraPos;
 import com.pos_mais_gestao.hardware.PagamentoHardware;
 import com.pos_mais_gestao.hardware.StubPagamentoHardware;
+import com.pos_mais_gestao.util.ThemeHelper;
 
 public class PosApplication extends Application {
     private PrefsStore prefsStore;
@@ -20,6 +21,7 @@ public class PosApplication extends Application {
     public void onCreate() {
         super.onCreate();
         prefsStore = new PrefsStore(this);
+        ThemeHelper.aplicar(ThemeHelper.normalizar(prefsStore.getTema()));
         apiClient = new ApiClient(prefsStore);
         outboxSync = new OutboxSync(this, apiClient);
         impressoraPos = new EscPosPrinter(this);

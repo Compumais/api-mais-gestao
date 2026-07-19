@@ -12,15 +12,19 @@ import com.pos_mais_gestao.PosApplication;
 import com.pos_mais_gestao.R;
 import com.pos_mais_gestao.data.api.ApiClient;
 import com.pos_mais_gestao.data.api.ApiException;
+import com.pos_mais_gestao.data.api.ContaMesaItemDto;
 import com.pos_mais_gestao.data.api.VendaResultadoDto;
+import com.pos_mais_gestao.data.local.PrefsStore;
 import com.pos_mais_gestao.data.sync.OutboxSync;
 import com.pos_mais_gestao.domain.Carrinho;
 import com.pos_mais_gestao.domain.ItemCarrinho;
+import com.pos_mais_gestao.domain.ItemFicha;
 import com.pos_mais_gestao.domain.MeioPagamento;
 import com.pos_mais_gestao.hardware.PagamentoHardware;
 import com.pos_mais_gestao.ui.falha.FalhaNfceActivity;
 import com.pos_mais_gestao.ui.sucesso.SucessoActivity;
 import com.pos_mais_gestao.util.MoneyFormat;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,6 +39,7 @@ public class PagamentoActivity extends AppCompatActivity {
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private ApiClient api;
+    private PrefsStore prefs;
     private OutboxSync outboxSync;
     private PagamentoHardware pagamentoHardware;
     private ProgressBar progress;
@@ -53,6 +58,7 @@ public class PagamentoActivity extends AppCompatActivity {
 
         PosApplication app = (PosApplication) getApplication();
         api = app.getApiClient();
+        prefs = app.getPrefsStore();
         outboxSync = app.getOutboxSync();
         pagamentoHardware = app.getPagamentoHardware();
 
@@ -103,6 +109,7 @@ public class PagamentoActivity extends AppCompatActivity {
         List<ItemCarrinho> snapshot =
                 modoMesa ? null : new ArrayList<>(Carrinho.getInstance().getItens());
         BigDecimal totalPagamento = modoMesa ? totalMesa : Carrinho.getInstance().getTotal();
+        boolean imprimirFichas = prefs.isImprimirFichasEvento();
 
         executor.execute(() -> {
             try {
@@ -115,11 +122,22 @@ public class PagamentoActivity extends AppCompatActivity {
                     }
                 }
 
+                ArrayList<ItemFicha> fichas = new ArrayList<>();
+                if (imprimirFichas) {
+                    if (modoMesa) {
+                        List<ContaMesaItemDto> itensMesa = api.listarItensMesa(idConta);
+                        fichas.addAll(ItemFicha.deItensMesa(itensMesa));
+                    } else if (snapshot != null) {
+                        fichas.addAll(ItemFicha.deCarrinho(snapshot));
+                    }
+                }
+
                 if (!outboxSync.temRede()) {
                     if (modoMesa) {
                         throw new ApiException(getString(R.string.fechar_mesa_requer_rede));
                     }
                     outboxSync.enfileirarVenda(snapshot, meio);
+                    ArrayList<ItemFicha> fichasOffline = fichas;
                     runOnUiThread(() -> {
                         setLoading(false);
                         Carrinho.getInstance().limpar();
@@ -131,6 +149,7 @@ public class PagamentoActivity extends AppCompatActivity {
                                 SucessoActivity.EXTRA_COMPROVANTE,
                                 "Venda enfileirada offline\nNAO FISCAL — sem NFC-e\n");
                         intent.putExtra(SucessoActivity.EXTRA_CUPOM_FISCAL, false);
+                        anexarFichas(intent, fichasOffline);
                         startActivity(intent);
                         finish();
                     });
@@ -141,12 +160,13 @@ public class PagamentoActivity extends AppCompatActivity {
                         ? api.fecharContaMesa(idConta, meio)
                         : api.criarVendaPdvRapida(snapshot, meio);
 
+                ArrayList<ItemFicha> fichasFinais = fichas;
                 runOnUiThread(() -> {
                     setLoading(false);
                     if (!modoMesa) {
                         Carrinho.getInstance().limpar();
                     }
-                    abrirResultado(resultado);
+                    abrirResultado(resultado, fichasFinais);
                 });
             } catch (ApiException e) {
                 runOnUiThread(() -> {
@@ -162,7 +182,14 @@ public class PagamentoActivity extends AppCompatActivity {
         });
     }
 
-    private void abrirResultado(VendaResultadoDto resultado) {
+    private void anexarFichas(Intent intent, ArrayList<ItemFicha> fichas) {
+        if (fichas != null && !fichas.isEmpty()) {
+            intent.putExtra(SucessoActivity.EXTRA_FICHAS, (Serializable) fichas);
+            intent.putExtra(SucessoActivity.EXTRA_EMPRESA_NOME, prefs.getEmpresaNome());
+        }
+    }
+
+    private void abrirResultado(VendaResultadoDto resultado, ArrayList<ItemFicha> fichas) {
         if (!resultado.sucessoFiscalCompleto) {
             Intent falha = new Intent(this, FalhaNfceActivity.class);
             falha.putExtra(FalhaNfceActivity.EXTRA_MOTIVO, resultado.mensagemNfce);
@@ -173,6 +200,10 @@ public class PagamentoActivity extends AppCompatActivity {
             falha.putExtra(FalhaNfceActivity.EXTRA_COMPROVANTE, resultado.comprovanteTexto);
             if (modoMesa) {
                 falha.putExtra(FalhaNfceActivity.EXTRA_VOLTAR_MESAS, true);
+            }
+            if (fichas != null && !fichas.isEmpty()) {
+                falha.putExtra(FalhaNfceActivity.EXTRA_FICHAS, (Serializable) fichas);
+                falha.putExtra(FalhaNfceActivity.EXTRA_EMPRESA_NOME, prefs.getEmpresaNome());
             }
             falha.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
             startActivity(falha);
@@ -187,6 +218,7 @@ public class PagamentoActivity extends AppCompatActivity {
         intent.putExtra(SucessoActivity.EXTRA_COMPROVANTE, resultado.comprovanteTexto);
         intent.putExtra(SucessoActivity.EXTRA_CUPOM_FISCAL, resultado.cupomFiscal);
         intent.putExtra(SucessoActivity.EXTRA_QR, resultado.qrParaImpressao);
+        anexarFichas(intent, fichas);
         if (modoMesa) {
             intent.putExtra(SucessoActivity.EXTRA_VOLTAR_MESAS, true);
             intent.putExtra(SucessoActivity.EXTRA_TITULO, getString(R.string.mesa_fechada_titulo));

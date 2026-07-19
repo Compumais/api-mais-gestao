@@ -8,6 +8,7 @@ import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.activity.result.ActivityResultLauncher;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -15,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
+import com.journeyapps.barcodescanner.ScanOptions;
 import com.pos_mais_gestao.PosApplication;
 import com.pos_mais_gestao.R;
 import com.pos_mais_gestao.data.api.ApiClient;
@@ -24,6 +26,7 @@ import com.pos_mais_gestao.data.local.PrefsStore;
 import com.pos_mais_gestao.domain.Produto;
 import com.pos_mais_gestao.ui.pagamento.PagamentoActivity;
 import com.pos_mais_gestao.ui.venda.ProdutoAdapter;
+import com.pos_mais_gestao.util.CodigoScanHelper;
 import com.pos_mais_gestao.util.MoneyFormat;
 import com.pos_mais_gestao.util.ProdutoBuscaHelper;
 import java.math.BigDecimal;
@@ -43,12 +46,23 @@ public class ContaMesaActivity extends AppCompatActivity {
     private ProdutoAdapter produtoAdapter;
     private ContaItemAdapter itemAdapter;
     private ProdutoBuscaHelper buscaHelper;
+    private CodigoScanHelper scanHelper;
     private ProgressBar progress;
     private TextView lblSecao;
     private TextView txtTotalConta;
+    private TextInputEditText inputBusca;
     private MaterialButton btnFecharConta;
     private BigDecimal totalAtual = BigDecimal.ZERO;
     private int quantidadeSelecionada = 1;
+
+    private final ActivityResultLauncher<ScanOptions> scanLauncher =
+            CodigoScanHelper.registrarScan(this, this::aoCodigoEscaneado);
+    private final ActivityResultLauncher<String> cameraPermissionLauncher =
+            CodigoScanHelper.registrarPermissao(this, () -> {
+                if (scanHelper != null) {
+                    scanHelper.abrirCamera();
+                }
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,6 +72,7 @@ public class ContaMesaActivity extends AppCompatActivity {
         PosApplication app = (PosApplication) getApplication();
         prefs = app.getPrefsStore();
         api = app.getApiClient();
+        scanHelper = new CodigoScanHelper(this, scanLauncher, cameraPermissionLauncher, this::aoCodigoEscaneado);
 
         idConta = getIntent().getStringExtra(EXTRA_ID_CONTA);
         numeroMesa = getIntent().getIntExtra(EXTRA_NUMERO_MESA, 0);
@@ -76,7 +91,9 @@ public class ContaMesaActivity extends AppCompatActivity {
         txtTotalConta = findViewById(R.id.txtTotalConta);
         btnFecharConta = findViewById(R.id.btnFecharConta);
         btnFecharConta.setOnClickListener(v -> irParaPagamento());
-        TextInputEditText inputBusca = findViewById(R.id.inputBuscaConta);
+        inputBusca = findViewById(R.id.inputBuscaConta);
+        MaterialButton btnEscanear = findViewById(R.id.btnEscanearConta);
+        btnEscanear.setOnClickListener(v -> scanHelper.iniciar());
         MaterialButton btnQty1 = findViewById(R.id.btnQty1);
         MaterialButton btnQty2 = findViewById(R.id.btnQty2);
         MaterialButton btnQty5 = findViewById(R.id.btnQty5);
@@ -132,6 +149,32 @@ public class ContaMesaActivity extends AppCompatActivity {
 
         buscaHelper.mostrarAtalhos();
         carregarItens();
+    }
+
+    private void aoCodigoEscaneado(String codigo) {
+        inputBusca.setText(codigo);
+        inputBusca.setSelection(codigo.length());
+        executor.execute(() -> {
+            try {
+                List<Produto> produtos = api.buscarProdutos(codigo);
+                runOnUiThread(() -> {
+                    if (produtos == null || produtos.isEmpty()) {
+                        Toast.makeText(this, R.string.produto_nao_encontrado_scan, Toast.LENGTH_LONG).show();
+                        buscaHelper.onTextoAlterado(codigo);
+                        return;
+                    }
+                    if (produtos.size() == 1) {
+                        lancarProduto(produtos.get(0));
+                        inputBusca.setText("");
+                        buscaHelper.mostrarAtalhos();
+                    } else {
+                        buscaHelper.onTextoAlterado(codigo);
+                    }
+                });
+            } catch (ApiException e) {
+                runOnUiThread(() -> Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show());
+            }
+        });
     }
 
     private void selecionarQty(int qty, MaterialButton... botoes) {

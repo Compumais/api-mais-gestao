@@ -93,5 +93,38 @@
     <string name="nfce_rejeitada_motivo_padrao">Não foi possível emitir a NFC-e.</string>
     <string name="nfce_rejeitada_ajuda">A venda foi registrada, mas a SEFAZ não autorizou a nota.\nFoi impresso um comprovante NÃO FISCAL.\nCorrija e reemita em Consulta NFC-e na retaguarda.</string>
     <string name="nfce_cstat">Status SEFAZ: %1$s</string>
+    <string name="tema_titulo">Tema do aplicativo</string>
+    <string name="tema_ajuda">Escolha o visual do POS. O padrão é claro para melhor contraste.</string>
+    <string name="tema_claro">Claro</string>
+    <string name="tema_escuro">Escuro</string>
+    <string name="tema_sistema">Seguir o sistema</string>
+    <string name="escanear">Escanear</string>
+    <string name="escanear_codigo">Aponte para o código de barras ou QR do produto</string>
+    <string name="permissao_camera_negada">Permissão de câmera necessária para escanear</string>
+    <string name="produto_adicionado_scan">Produto adicionado</string>
+    <string name="produto_nao_encontrado_scan">Nenhum produto encontrado para este código</string>
+    <string name="fichas_evento_titulo">Fichas de evento</string>
+    <string name="fichas_evento_ajuda">Se ligado, após a venda imprime uma ficha por unidade de cada produto (ex.: 5x cerveja = 5 fichas destacáveis).</string>
+    <string name="imprimir_fichas_evento">Imprimir fichas de evento</string>
+    <string name="reimprimir_fichas">Reimprimir fichas</string>
+    <string name="fichas_enviadas">Fichas enviadas à impressora</string>
+    <string name="sem_fichas">Sem fichas para imprimir</string>
+    <string name="vendas_efetuadas">Vendas efetuadas</string>
+    <string name="detalhe_venda">Detalhe da venda</string>
+    <string name="filtrar">Filtrar</string>
+    <string name="filtro_hoje">Hoje</string>
+    <string name="filtro_ontem">Ontem</string>
+    <string name="filtro_vendas_pdv">Vendas PDV</string>
+    <string name="filtro_pedidos_pos">Pedidos POS</string>
+    <string name="somente_este_pdv">Só este PDV</string>
+    <string name="data_inicio_label">De %1$s</string>
+    <string name="data_fim_label">Até %1$s</string>
+    <string name="sem_vendas">Nenhuma venda neste período</string>
+    <string name="itens_venda">Itens</string>
+    <string name="sem_itens_venda">Nenhum item encontrado</string>
+    <string name="tipo_venda_balcao">Balcão</string>
+    <string name="tipo_venda_mesa">Mesa</string>
+    <string name="tipo_pedido_pos">Pedido POS</string>
+    <string name="reimprimir_comprovante">Reimprimir comprovante</string>
+    <string name="venda_invalida">Venda inválida</string>
 </resources>
-
