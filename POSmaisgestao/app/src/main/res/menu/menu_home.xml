@@ -18,6 +18,10 @@
         android:title="@string/configuracoes"
         app:showAsAction="never" />
     <item
+        android:id="@+id/action_trocar_empresa"
+        android:title="@string/trocar_empresa"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/action_logout"
         android:title="@string/sair"
         app:showAsAction="never" />

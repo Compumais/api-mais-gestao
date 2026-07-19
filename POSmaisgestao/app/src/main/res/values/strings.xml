@@ -36,6 +36,7 @@
     <string name="qty_mais_2">+2</string>
     <string name="qty_mais_5">+5</string>
     <string name="sair">Sair</string>
+    <string name="trocar_empresa">Trocar empresa</string>
     <string name="gerenciar_atalhos">Gerenciar atalhos</string>
     <string name="adicionar_atalho">Adicionar aos atalhos</string>
     <string name="remover">Remover</string>
@@ -100,11 +101,13 @@
     <string name="tema_sistema">Seguir o sistema</string>
     <string name="escanear">Escanear</string>
     <string name="escanear_codigo">Aponte para o código de barras ou QR do produto</string>
+    <string name="flash_ligar">Ligar flash</string>
+    <string name="flash_desligar">Desligar flash</string>
     <string name="permissao_camera_negada">Permissão de câmera necessária para escanear</string>
     <string name="produto_adicionado_scan">Produto adicionado</string>
     <string name="produto_nao_encontrado_scan">Nenhum produto encontrado para este código</string>
     <string name="fichas_evento_titulo">Fichas de evento</string>
-    <string name="fichas_evento_ajuda">Se ligado, após a venda imprime uma ficha por unidade de cada produto (ex.: 5x cerveja = 5 fichas destacáveis).</string>
+    <string name="fichas_evento_ajuda">Se ligado, após a venda rápida imprime uma ficha por unidade de cada produto (ex.: 5x cerveja = 5 fichas destacáveis). Não imprime ao fechar mesa.</string>
     <string name="imprimir_fichas_evento">Imprimir fichas de evento</string>
     <string name="reimprimir_fichas">Reimprimir fichas</string>
     <string name="fichas_enviadas">Fichas enviadas à impressora</string>
@@ -122,7 +125,7 @@
     <string name="sem_vendas">Nenhuma venda neste período</string>
     <string name="itens_venda">Itens</string>
     <string name="sem_itens_venda">Nenhum item encontrado</string>
-    <string name="tipo_venda_balcao">Balcão</string>
+    <string name="tipo_venda_pos">POS</string>
     <string name="tipo_venda_mesa">Mesa</string>
     <string name="tipo_pedido_pos">Pedido POS</string>
     <string name="reimprimir_comprovante">Reimprimir comprovante</string>

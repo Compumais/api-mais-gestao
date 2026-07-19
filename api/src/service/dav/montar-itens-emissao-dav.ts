@@ -38,13 +38,20 @@ function formatarSituacaoTributaria(
 	return texto || undefined;
 }
 
+export type MontarItensEmissaoDavOpcoes = {
+	/** Prioriza CFOP de NFC-e (`idcfopsaidanfce`) — pedidos POS. */
+	prioridadeNfce?: boolean;
+};
+
 export async function montarItensEmissaoDav(
 	idempresa: string,
 	iddav: string,
+	opcoes: MontarItensEmissaoDavOpcoes = {},
 ): Promise<{ itens: ItemPayloadNfe[]; pendencias: string[] }> {
 	const itensDav = await listarItensPorDav(iddav);
 	const pendencias: string[] = [];
 	const itens: ItemPayloadNfe[] = [];
+	const prioridadeNfce = opcoes.prioridadeNfce === true;
 
 	for (const [index, itemDav] of itensDav.entries()) {
 		const rotulo = `Item ${index + 1}`;
@@ -60,15 +67,28 @@ export async function montarItensEmissaoDav(
 			continue;
 		}
 
-		const codigoCfop = await resolverCodigoCfop([
-			itemDav.idcfop,
-			produto.idcfopsaida,
-			produto.idcfopsaidaexterna,
-			produto.idcfopsaidanfce,
-		]);
+		const codigoCfop = await resolverCodigoCfop(
+			prioridadeNfce
+				? [
+						itemDav.idcfop,
+						produto.idcfopsaidanfce,
+						produto.idcfopsaida,
+						produto.idcfopsaidaexterna,
+					]
+				: [
+						itemDav.idcfop,
+						produto.idcfopsaida,
+						produto.idcfopsaidaexterna,
+						produto.idcfopsaidanfce,
+					],
+		);
 
 		if (!codigoCfop) {
-			pendencias.push(`${rotulo}: CFOP de saída não configurado`);
+			pendencias.push(
+				prioridadeNfce
+					? `${rotulo}: CFOP NFC-e não configurado no produto`
+					: `${rotulo}: CFOP de saída não configurado`,
+			);
 		}
 
 		const quantidade = parseFloat(itemDav.quantidade ?? "0");
@@ -92,7 +112,9 @@ export async function montarItensEmissaoDav(
 		}
 
 		const cst = formatarSituacaoTributaria(produto.situacaotributaria);
-		const csosn = formatarSituacaoTributaria(produto.situacaotributariasn);
+		const csosn =
+			formatarSituacaoTributaria(produto.tributacaosn) ??
+			formatarSituacaoTributaria(produto.situacaotributariasn);
 
 		itens.push({
 			idproduto: produto.id,

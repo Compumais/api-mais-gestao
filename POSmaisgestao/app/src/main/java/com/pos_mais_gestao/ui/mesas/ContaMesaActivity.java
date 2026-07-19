@@ -29,6 +29,7 @@ import com.pos_mais_gestao.ui.venda.ProdutoAdapter;
 import com.pos_mais_gestao.util.CodigoScanHelper;
 import com.pos_mais_gestao.util.MoneyFormat;
 import com.pos_mais_gestao.util.ProdutoBuscaHelper;
+import com.pos_mais_gestao.util.SoftInputHelper;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -68,6 +69,7 @@ public class ContaMesaActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_conta_mesa);
+        SoftInputHelper.hideOnStart(this);
 
         PosApplication app = (PosApplication) getApplication();
         prefs = app.getPrefsStore();
@@ -151,9 +153,16 @@ public class ContaMesaActivity extends AppCompatActivity {
         carregarItens();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        SoftInputHelper.hideOnStart(this);
+    }
+
     private void aoCodigoEscaneado(String codigo) {
+        SoftInputHelper.hideKeyboard(this);
         inputBusca.setText(codigo);
-        inputBusca.setSelection(codigo.length());
+        SoftInputHelper.hideKeyboard(this);
         executor.execute(() -> {
             try {
                 List<Produto> produtos = api.buscarProdutos(codigo);
@@ -166,6 +175,7 @@ public class ContaMesaActivity extends AppCompatActivity {
                     if (produtos.size() == 1) {
                         lancarProduto(produtos.get(0));
                         inputBusca.setText("");
+                        SoftInputHelper.hideKeyboard(this);
                         buscaHelper.mostrarAtalhos();
                     } else {
                         buscaHelper.onTextoAlterado(codigo);

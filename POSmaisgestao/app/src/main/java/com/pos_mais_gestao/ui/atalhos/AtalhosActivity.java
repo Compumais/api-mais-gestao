@@ -19,6 +19,7 @@ import com.pos_mais_gestao.data.api.ApiException;
 import com.pos_mais_gestao.data.local.PrefsStore;
 import com.pos_mais_gestao.data.sync.OutboxSync;
 import com.pos_mais_gestao.domain.Produto;
+import com.pos_mais_gestao.util.SoftInputHelper;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -39,6 +40,7 @@ public class AtalhosActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_atalhos);
+        SoftInputHelper.hideOnStart(this);
 
         PosApplication app = (PosApplication) getApplication();
         prefs = app.getPrefsStore();

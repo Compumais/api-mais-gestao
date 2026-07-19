@@ -14,6 +14,7 @@ import com.pos_mais_gestao.data.api.ApiClient;
 import com.pos_mais_gestao.data.api.ApiException;
 import com.pos_mais_gestao.data.local.PrefsStore;
 import com.pos_mais_gestao.ui.empresa.EmpresaActivity;
+import com.pos_mais_gestao.util.SoftInputHelper;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -31,6 +32,7 @@ public class LoginActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+        SoftInputHelper.hideOnStart(this);
 
         PosApplication app = (PosApplication) getApplication();
         prefs = app.getPrefsStore();
@@ -43,6 +45,7 @@ public class LoginActivity extends AppCompatActivity {
         progressLogin = findViewById(R.id.progressLogin);
 
         inputUrlApi.setText(prefs.getBaseUrl());
+        SoftInputHelper.hideOnStart(this);
         btnEntrar.setOnClickListener(v -> entrar());
     }
 

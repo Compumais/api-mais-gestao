@@ -25,6 +25,7 @@ import com.pos_mais_gestao.domain.Carrinho;
 import com.pos_mais_gestao.domain.Produto;
 import com.pos_mais_gestao.ui.atalhos.AtalhosActivity;
 import com.pos_mais_gestao.ui.config.ConfigActivity;
+import com.pos_mais_gestao.ui.empresa.EmpresaActivity;
 import com.pos_mais_gestao.ui.login.LoginActivity;
 import com.pos_mais_gestao.ui.mesas.MesasActivity;
 import com.pos_mais_gestao.ui.venda.VendaActivity;
@@ -242,6 +243,15 @@ public class HomeActivity extends AppCompatActivity {
         }
         if (id == R.id.action_config) {
             startActivity(new Intent(this, ConfigActivity.class));
+            return true;
+        }
+        if (id == R.id.action_trocar_empresa) {
+            Carrinho.getInstance().limpar();
+            prefs.clearEmpresa();
+            Intent intent = new Intent(this, EmpresaActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
             return true;
         }
         if (id == R.id.action_logout) {
