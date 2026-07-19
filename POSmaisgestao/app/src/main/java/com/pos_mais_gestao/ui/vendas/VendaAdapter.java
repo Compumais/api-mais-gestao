@@ -55,9 +55,11 @@ public class VendaAdapter extends RecyclerView.Adapter<VendaAdapter.VH> {
         boolean pdv = venda.tipo == VendaResumoDto.Tipo.PDV;
         String tipo;
         if (pdv) {
-            tipo = venda.mesa
-                    ? holder.itemView.getContext().getString(R.string.tipo_venda_mesa)
-                    : holder.itemView.getContext().getString(R.string.tipo_venda_balcao);
+            if (venda.mesa) {
+                tipo = holder.itemView.getContext().getString(R.string.tipo_venda_mesa);
+            } else {
+                tipo = holder.itemView.getContext().getString(R.string.tipo_venda_pos);
+            }
             if (venda.numeropdv != null) {
                 tipo = tipo + " · PDV " + venda.numeropdv;
             }

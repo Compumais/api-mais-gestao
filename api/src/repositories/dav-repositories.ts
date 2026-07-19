@@ -9,6 +9,8 @@ import {
 	isNotNull,
 	isNull,
 	lte,
+	or,
+	sql,
 } from "drizzle-orm";
 import type { NovoDAV } from "@/model/dav-model";
 import { dav } from "@/repositories/schema.js";
@@ -90,9 +92,12 @@ export async function listarDavs({
 	}
 
 	if (faturado === true) {
-		where.push(isNotNull(dav.idnotafiscal));
+		where.push(
+			or(isNotNull(dav.idnotafiscal), isNotNull(dav.idnfce)) ??
+				sql`false`,
+		);
 	} else if (faturado === false) {
-		where.push(isNull(dav.idnotafiscal));
+		where.push(and(isNull(dav.idnotafiscal), isNull(dav.idnfce)) ?? sql`true`);
 	}
 
 	if (codigo !== undefined) {

@@ -4,6 +4,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/surface"
+    android:descendantFocusability="beforeDescendants"
+    android:focusableInTouchMode="true"
     android:orientation="vertical">
 
     <com.google.android.material.appbar.MaterialToolbar
@@ -15,133 +17,153 @@
         app:navigationIcon="?attr/homeAsUpIndicator"
         app:titleTextColor="@color/white" />
 
-    <TextView
-        android:id="@+id/txtTotalConta"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingHorizontal="16dp"
-        android:paddingTop="8dp"
-        android:textColor="@color/foreground"
-        android:textStyle="bold"
-        android:textSize="18sp" />
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnFecharConta"
-        style="@style/PosBigButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="12dp"
-        android:layout_marginTop="8dp"
-        android:backgroundTint="@color/dinheiro"
-        android:text="@string/fechar_conta" />
-
+    <!-- Área superior: adicionar produtos -->
     <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:orientation="horizontal"
-        android:paddingHorizontal="12dp"
-        android:paddingTop="8dp">
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnQty1"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="6dp"
-            android:layout_weight="1"
-            android:text="@string/qty_mais_1" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnQty2"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="6dp"
-            android:layout_weight="1"
-            android:text="@string/qty_mais_2" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnQty5"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/qty_mais_5" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingStart="0dp"
-        android:paddingEnd="0dp">
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_marginTop="12dp"
-            android:layout_marginBottom="12dp"
-            android:layout_weight="1"
-            android:hint="@string/buscar_produto">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/inputBuscaConta"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:imeOptions="actionSearch"
-                android:inputType="text"
-                android:minHeight="56dp" />
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnEscanearConta"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginEnd="12dp"
-            android:minHeight="56dp"
-            android:text="@string/escanear" />
-    </LinearLayout>
-
-    <TextView
-        android:id="@+id/lblSecaoConta"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingHorizontal="16dp"
-        android:text="@string/atalhos"
-        android:textStyle="bold" />
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/listaProdutosConta"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:clipToPadding="false"
-        android:paddingHorizontal="8dp" />
+        android:orientation="vertical">
 
-    <TextView
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingHorizontal="12dp"
+            android:paddingTop="8dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnQty1"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="6dp"
+                android:layout_weight="1"
+                android:minHeight="44dp"
+                android:text="@string/qty_mais_1" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnQty2"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="6dp"
+                android:layout_weight="1"
+                android:minHeight="44dp"
+                android:text="@string/qty_mais_2" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnQty5"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:minHeight="44dp"
+                android:text="@string/qty_mais_5" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="12dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp">
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="@string/buscar_produto">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/inputBuscaConta"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:imeOptions="actionSearch"
+                    android:inputType="text"
+                    android:minHeight="52dp" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnEscanearConta"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:minHeight="52dp"
+                android:text="@string/escanear" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/lblSecaoConta"
+            style="@style/PosSectionTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="16dp"
+            android:paddingBottom="4dp"
+            android:text="@string/atalhos" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/listaProdutosConta"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clipToPadding="false"
+            android:paddingHorizontal="8dp" />
+    </LinearLayout>
+
+    <!-- Barra inferior fixa: comanda + fechar conta -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingHorizontal="16dp"
+        android:background="@color/card"
+        android:elevation="8dp"
+        android:orientation="vertical"
+        android:paddingHorizontal="12dp"
         android:paddingTop="8dp"
-        android:text="@string/itens_comanda"
-        android:textStyle="bold" />
+        android:paddingBottom="12dp">
 
-    <ProgressBar
-        android:id="@+id/progressConta"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:visibility="gone" />
+        <TextView
+            style="@style/PosSectionTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/itens_comanda" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/listaItensConta"
-        android:layout_width="match_parent"
-        android:layout_height="160dp"
-        android:background="@color/background"
-        android:padding="8dp" />
+        <ProgressBar
+            android:id="@+id/progressConta"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:visibility="gone" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/listaItensConta"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:background="@color/background"
+            android:maxHeight="140dp"
+            android:minHeight="48dp"
+            android:padding="4dp" />
+
+        <TextView
+            android:id="@+id/txtTotalConta"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="8dp"
+            android:paddingBottom="4dp"
+            android:textColor="@color/foreground"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnFecharConta"
+            style="@style/PosBigButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/dinheiro"
+            android:text="@string/fechar_conta" />
+    </LinearLayout>
 </LinearLayout>

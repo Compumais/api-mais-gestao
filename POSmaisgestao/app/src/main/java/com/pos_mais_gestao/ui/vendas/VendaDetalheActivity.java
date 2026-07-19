@@ -70,7 +70,7 @@ public class VendaDetalheActivity extends AppCompatActivity {
         if (pdv) {
             String tipo = venda.mesa
                     ? getString(R.string.tipo_venda_mesa)
-                    : getString(R.string.tipo_venda_balcao);
+                    : getString(R.string.tipo_venda_pos);
             if (venda.numeropdv != null) {
                 tipo = tipo + " · PDV " + venda.numeropdv;
             }

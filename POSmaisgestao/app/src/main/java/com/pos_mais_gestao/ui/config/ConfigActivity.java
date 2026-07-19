@@ -26,7 +26,9 @@ import com.pos_mais_gestao.domain.Carrinho;
 import com.pos_mais_gestao.hardware.ImpressoraDiscovery;
 import com.pos_mais_gestao.hardware.ImpressoraInfo;
 import com.pos_mais_gestao.ui.atalhos.AtalhosActivity;
+import com.pos_mais_gestao.ui.empresa.EmpresaActivity;
 import com.pos_mais_gestao.ui.login.LoginActivity;
+import com.pos_mais_gestao.util.SoftInputHelper;
 import com.pos_mais_gestao.util.ThemeHelper;
 import java.util.ArrayList;
 import java.util.List;
@@ -61,6 +63,7 @@ public class ConfigActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_config);
+        SoftInputHelper.hideOnStart(this);
 
         prefs = ((PosApplication) getApplication()).getPrefsStore();
         inputUrl = findViewById(R.id.inputUrlApi);
@@ -74,6 +77,7 @@ public class ConfigActivity extends AppCompatActivity {
         txtSemImpressoras = findViewById(R.id.txtSemImpressoras);
         MaterialButton btnSalvar = findViewById(R.id.btnSalvarConfig);
         MaterialButton btnAtalhos = findViewById(R.id.btnGerenciarAtalhos);
+        MaterialButton btnTrocarEmpresa = findViewById(R.id.btnTrocarEmpresa);
         MaterialButton btnLogout = findViewById(R.id.btnLogout);
         MaterialButton btnAtualizarImpressoras = findViewById(R.id.btnAtualizarImpressoras);
 
@@ -87,10 +91,12 @@ public class ConfigActivity extends AppCompatActivity {
         impressoraNomeSelecionada = prefs.getImpressoraNome();
         impressoraTipoSelecionada = prefs.getImpressoraTipo();
         atualizarTextoImpressoraSelecionada();
+        SoftInputHelper.hideOnStart(this);
 
         btnSalvar.setOnClickListener(v -> salvar());
         btnAtalhos.setOnClickListener(v -> startActivity(new Intent(this, AtalhosActivity.class)));
         btnAtualizarImpressoras.setOnClickListener(v -> solicitarPermissaoECarregar());
+        btnTrocarEmpresa.setOnClickListener(v -> trocarEmpresa());
         btnLogout.setOnClickListener(v -> {
             prefs.logout();
             Carrinho.getInstance().limpar();
@@ -101,6 +107,15 @@ public class ConfigActivity extends AppCompatActivity {
         });
 
         solicitarPermissaoECarregar();
+    }
+
+    private void trocarEmpresa() {
+        Carrinho.getInstance().limpar();
+        prefs.clearEmpresa();
+        Intent intent = new Intent(this, EmpresaActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
 
     private void solicitarPermissaoECarregar() {

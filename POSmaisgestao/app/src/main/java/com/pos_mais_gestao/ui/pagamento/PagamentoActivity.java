@@ -12,7 +12,6 @@ import com.pos_mais_gestao.PosApplication;
 import com.pos_mais_gestao.R;
 import com.pos_mais_gestao.data.api.ApiClient;
 import com.pos_mais_gestao.data.api.ApiException;
-import com.pos_mais_gestao.data.api.ContaMesaItemDto;
 import com.pos_mais_gestao.data.api.VendaResultadoDto;
 import com.pos_mais_gestao.data.local.PrefsStore;
 import com.pos_mais_gestao.data.sync.OutboxSync;
@@ -123,13 +122,9 @@ public class PagamentoActivity extends AppCompatActivity {
                 }
 
                 ArrayList<ItemFicha> fichas = new ArrayList<>();
-                if (imprimirFichas) {
-                    if (modoMesa) {
-                        List<ContaMesaItemDto> itensMesa = api.listarItensMesa(idConta);
-                        fichas.addAll(ItemFicha.deItensMesa(itensMesa));
-                    } else if (snapshot != null) {
-                        fichas.addAll(ItemFicha.deCarrinho(snapshot));
-                    }
+                // Fichas de evento só na venda rápida — não imprimir ao fechar mesa
+                if (imprimirFichas && !modoMesa && snapshot != null) {
+                    fichas.addAll(ItemFicha.deCarrinho(snapshot));
                 }
 
                 if (!outboxSync.temRede()) {

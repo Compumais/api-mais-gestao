@@ -18,6 +18,8 @@ public class VendaResumoDto implements Serializable {
     public String pagamentosResumo;
     public Integer numeropdv;
     public boolean mesa;
+    /** Venda criada pelo app POS (não balcão web/gourmet). */
+    public boolean origemPos;
     public String idNotaFiscal;
     public Integer statusDav;
     public String nomeCliente;

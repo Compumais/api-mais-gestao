@@ -34,6 +34,7 @@ import com.pos_mais_gestao.ui.pagamento.PagamentoActivity;
 import com.pos_mais_gestao.util.CodigoScanHelper;
 import com.pos_mais_gestao.util.MoneyFormat;
 import com.pos_mais_gestao.util.ProdutoBuscaHelper;
+import com.pos_mais_gestao.util.SoftInputHelper;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -67,6 +68,7 @@ public class VendaActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_venda);
+        SoftInputHelper.hideOnStart(this);
 
         PosApplication app = (PosApplication) getApplication();
         prefs = app.getPrefsStore();
@@ -161,9 +163,20 @@ public class VendaActivity extends AppCompatActivity {
         });
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        SoftInputHelper.hideOnStart(this);
+        atualizarCarrinho();
+        if (!mostrandoBusca) {
+            buscaHelper.mostrarAtalhos();
+        }
+    }
+
     private void aoCodigoEscaneado(String codigo) {
+        SoftInputHelper.hideKeyboard(this);
         inputBusca.setText(codigo);
-        inputBusca.setSelection(codigo.length());
+        SoftInputHelper.hideKeyboard(this);
         executor.execute(() -> {
             try {
                 List<Produto> produtos = api.buscarProdutos(codigo);
@@ -178,6 +191,7 @@ public class VendaActivity extends AppCompatActivity {
                         adicionarProduto(escolhido);
                         Toast.makeText(this, R.string.produto_adicionado_scan, Toast.LENGTH_SHORT).show();
                         inputBusca.setText("");
+                        SoftInputHelper.hideKeyboard(this);
                         buscaHelper.mostrarAtalhos();
                     } else {
                         buscaHelper.onTextoAlterado(codigo);
@@ -187,15 +201,6 @@ public class VendaActivity extends AppCompatActivity {
                 runOnUiThread(() -> Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show());
             }
         });
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (!mostrandoBusca) {
-            buscaHelper.mostrarAtalhos();
-        }
-        atualizarCarrinho();
     }
 
     private void adicionarProduto(Produto produto) {

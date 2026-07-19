@@ -51,6 +51,8 @@ import {
 import {
 	DAV_STATUS,
 	DAV_STATUS_LABELS,
+	pedidoJaFaturado,
+	pedidoPodeEmitirNfce,
 	pedidoPodeFaturarNfe,
 } from "@/constants/dav-status";
 import { useEmpresa } from "@/hooks/use-empresa";
@@ -76,6 +78,7 @@ const formatarData = (data: string | null | undefined) => {
 };
 
 function obterStatusPedido(pedido: PedidoDav) {
+	if (pedido.idnfce) return "NFC-e emitida";
 	if (pedido.idnotafiscal) return "NF-e emitida";
 	if (pedido.status != null && DAV_STATUS_LABELS[pedido.status]) {
 		return DAV_STATUS_LABELS[pedido.status];
@@ -230,8 +233,23 @@ export default function PedidosPage() {
 		},
 	});
 
+	const { mutateAsync: emitirNfcePedido, isPending: emitindoNfce } = useMutation({
+		mutationFn: async (pedido: PedidoDav) => {
+			if (!empresa) throw new Error("Empresa não selecionada");
+			return davService.faturarNfce(pedido.id, {
+				idempresa: empresa.id,
+				gerarFinanceiro: true,
+				gerarEstoque: true,
+			});
+		},
+	});
+
 	const pedidos = data?.data ?? [];
 	const totalPages = data?.paginacao.totalPages ?? 1;
+
+	const podeSelecionar = filtrarOrigemPos
+		? pedidoPodeEmitirNfce
+		: pedidoPodeFaturarNfe;
 
 	const colunas = useMemo<ColumnDef<PedidoDav>[]>(
 		() => [
@@ -291,7 +309,7 @@ export default function PedidosPage() {
 				header: "Status",
 				cell: ({ row }) => {
 					const label = obterStatusPedido(row.original);
-					const faturado = !!row.original.idnotafiscal;
+					const faturado = pedidoJaFaturado(row.original);
 					const cancelado = row.original.status === DAV_STATUS.CANCELADO;
 					return (
 						<Badge
@@ -310,9 +328,18 @@ export default function PedidosPage() {
 				cell: ({ row }) => {
 					const pedido = row.original;
 					const podeCancelar =
-						!pedido.idnotafiscal && pedido.status !== DAV_STATUS.CANCELADO;
+						!pedidoJaFaturado(pedido) &&
+						pedido.status !== DAV_STATUS.CANCELADO;
 					return (
 						<div className="flex justify-end gap-2">
+							{pedido.idnfce && (
+								<Button variant="ghost" size="sm" asChild>
+									<Link href={`/nfce`}>
+										<ExternalLink className="h-4 w-4" />
+										NFC-e
+									</Link>
+								</Button>
+							)}
 							{pedido.idnotafiscal && (
 								<Button variant="ghost" size="sm" asChild>
 									<Link href={`/nota-fiscal-venda/${pedido.idnotafiscal}`}>
@@ -332,14 +359,22 @@ export default function PedidosPage() {
 								</Button>
 							)}
 							<Button variant="outline" size="sm" asChild>
-								<Link href={`/pedidos/${pedido.id}`}>Abrir</Link>
+								<Link
+									href={
+										filtrarOrigemPos
+											? `/pedidos/${pedido.id}?origem=POS`
+											: `/pedidos/${pedido.id}`
+									}
+								>
+									Abrir
+								</Link>
 							</Button>
 						</div>
 					);
 				},
 			},
 		],
-		[],
+		[filtrarOrigemPos],
 	);
 
 	const tabela = useReactTable({
@@ -351,7 +386,7 @@ export default function PedidosPage() {
 			const next =
 				typeof updater === "function" ? updater(rowSelection) : updater;
 			const idsSelecionados = Object.keys(next).filter((k) => next[k]);
-			if (idsSelecionados.length > 1) {
+			if (!filtrarOrigemPos && idsSelecionados.length > 1) {
 				const pedidosSelecionados = idsSelecionados
 					.map((id) => pedidos.find((p) => p.id === id))
 					.filter(Boolean) as PedidoDav[];
@@ -370,7 +405,7 @@ export default function PedidosPage() {
 		},
 		getCoreRowModel: getCoreRowModel(),
 		getSortedRowModel: getSortedRowModel(),
-		enableRowSelection: (row) => pedidoPodeFaturarNfe(row.original),
+		enableRowSelection: (row) => podeSelecionar(row.original),
 		getRowId: (row) => row.id,
 	});
 
@@ -391,11 +426,54 @@ export default function PedidosPage() {
 		setRowSelection({});
 	}
 
-	function faturarSelecionados() {
+	async function faturarSelecionados() {
 		if (pedidosSelecionados.length === 0) {
 			toast.error("Selecione ao menos um pedido");
 			return;
 		}
+
+		if (filtrarOrigemPos) {
+			let ok = 0;
+			let falhas = 0;
+			for (const pedido of pedidosSelecionados) {
+				try {
+					const resultado = await emitirNfcePedido(pedido);
+					if (resultado.emitida) {
+						ok += 1;
+					} else {
+						falhas += 1;
+						const motivo =
+							resultado.erro ||
+							resultado.xMotivo ||
+							resultado.pendencias?.map((p) => p.mensagem).join("; ") ||
+							"NFC-e não autorizada";
+						toast.error(`Pedido ${pedido.codigo ?? pedido.id.slice(0, 8)}`, {
+							description: motivo,
+						});
+					}
+				} catch (erro) {
+					falhas += 1;
+					toast.error(`Pedido ${pedido.codigo ?? pedido.id.slice(0, 8)}`, {
+						description:
+							erro instanceof Error ? erro.message : "Erro ao emitir NFC-e",
+					});
+				}
+			}
+			void queryClient.invalidateQueries({ queryKey: ["pedidos"] });
+			setRowSelection({});
+			if (ok > 0) {
+				toast.success(
+					ok === 1
+						? "NFC-e autorizada"
+						: `${ok} NFC-e autorizadas`,
+				);
+			}
+			if (falhas === 0 && ok === 0) {
+				toast.message("Nenhuma NFC-e emitida");
+			}
+			return;
+		}
+
 		const ids = pedidosSelecionados.map((p) => p.id);
 		if (ids.length === 1) {
 			router.push(`/nota-fiscal-venda/nova?pedido=${ids[0]}`);
@@ -433,21 +511,30 @@ export default function PedidosPage() {
 						</div>
 						<p className="text-sm text-muted-foreground">
 							{filtrarOrigemPos
-								? "Pedidos (DAV) criados pelo app POS quando a emissão de NFC-e está desabilitada."
+								? "Pedidos do app POS. Emita NFC-e (modelo 65) a partir desta tela."
 								: "Gerencie pedidos (DAV) e fature em NF-e de venda."}
 						</p>
 					</div>
 					<div className="flex flex-wrap gap-2">
 						{pedidosSelecionados.length > 0 && (
-							<Button onClick={faturarSelecionados}>
+							<Button
+								onClick={() => void faturarSelecionados()}
+								disabled={emitindoNfce}
+							>
 								<Send className="h-4 w-4" />
-								Faturar NF-e ({pedidosSelecionados.length})
+								{filtrarOrigemPos
+									? emitindoNfce
+										? "Emitindo NFC-e..."
+										: `Emitir NFC-e (${pedidosSelecionados.length})`
+									: `Faturar NF-e (${pedidosSelecionados.length})`}
 							</Button>
 						)}
-						<Button onClick={() => criarPedido()} disabled={criandoPedido}>
-							<Plus className="h-4 w-4" />
-							{criandoPedido ? "Criando..." : "Novo pedido"}
-						</Button>
+						{!filtrarOrigemPos && (
+							<Button onClick={() => criarPedido()} disabled={criandoPedido}>
+								<Plus className="h-4 w-4" />
+								{criandoPedido ? "Criando..." : "Novo pedido"}
+							</Button>
+						)}
 					</div>
 				</div>
 
@@ -507,8 +594,12 @@ export default function PedidosPage() {
 								<SelectItem value="1">Fechado</SelectItem>
 								<SelectItem value="2">Passou pelo caixa</SelectItem>
 								<SelectItem value="3">Cancelado</SelectItem>
-								<SelectItem value="faturado">NF-e emitida</SelectItem>
-								<SelectItem value="nao_faturado">Sem NF-e</SelectItem>
+								<SelectItem value="faturado">
+									{filtrarOrigemPos ? "NFC-e emitida" : "NF-e emitida"}
+								</SelectItem>
+								<SelectItem value="nao_faturado">
+									{filtrarOrigemPos ? "Sem NFC-e" : "Sem NF-e"}
+								</SelectItem>
 							</SelectContent>
 						</Select>
 					</div>

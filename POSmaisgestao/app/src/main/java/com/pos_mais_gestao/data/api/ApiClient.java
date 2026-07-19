@@ -286,7 +286,8 @@ public class ApiClient {
         vendaBody.addProperty("idempresa", empresaId);
         vendaBody.addProperty("numeropdv", prefsStore.getNumeroPdv());
         vendaBody.addProperty("usuarioquefechouvenda", userId);
-        vendaBody.addProperty("vendalocal", 1);
+        // 2 = origem POS (app); 1 = balcão web/gourmet; 0 = não local
+        vendaBody.addProperty("vendalocal", 2);
         vendaBody.addProperty("valortotal", totalStr);
         vendaBody.addProperty("valortroco", zero);
         vendaBody.addProperty("valordinheiro", meio == MeioPagamento.DINHEIRO ? totalStr : zero);
@@ -404,7 +405,8 @@ public class ApiClient {
         vendaBody.addProperty("idcontamesa", idConta);
         vendaBody.addProperty("numeropdv", prefsStore.getNumeroPdv());
         vendaBody.addProperty("usuarioquefechouvenda", userId);
-        vendaBody.addProperty("vendalocal", 1);
+        // 2 = origem POS (app); 1 = balcão web/gourmet; 0 = não local
+        vendaBody.addProperty("vendalocal", 2);
         vendaBody.addProperty("valortotal", totalStr);
         vendaBody.addProperty("valortroco", zero);
         vendaBody.addProperty("valordinheiro", meio == MeioPagamento.DINHEIRO ? totalStr : zero);
@@ -779,6 +781,13 @@ public class ApiClient {
         davBody.addProperty("currenttimemillis", agora);
         davBody.addProperty("extra1", "POS");
         davBody.addProperty("valor", totalStr);
+        if (meio == MeioPagamento.DINHEIRO) {
+            davBody.addProperty("dinheiro", totalStr);
+        } else if (meio == MeioPagamento.PIX) {
+            davBody.addProperty("pix", totalStr);
+        } else if (meio == MeioPagamento.CARTAO) {
+            davBody.addProperty("posavista", totalStr);
+        }
 
         JsonObject davJson = postJson("/davs", davBody.toString(), true);
         String idDav = texto(davJson, "id");
@@ -1191,6 +1200,9 @@ public class ApiClient {
         venda.mesa = obj.has("idcontamesa")
                 && !obj.get("idcontamesa").isJsonNull()
                 && !texto(obj, "idcontamesa").isEmpty();
+        Integer vendalocal = inteiro(obj, "vendalocal");
+        // 2 = POS; vendas antigas do app (vendalocal=1 sem mesa) também tratamos como POS na listagem do aparelho
+        venda.origemPos = (vendalocal != null && vendalocal == 2) || !venda.mesa;
         venda.idNotaFiscal = texto(obj, "idnotafiscalnfce");
         venda.pagamentosResumo = resumirPagamentosPdv(obj);
         venda.meioPagamentoLabel = venda.pagamentosResumo;

@@ -73,6 +73,15 @@ public class PrefsStore {
         prefs.edit().putString(KEY_EMPRESA_ID, id).putString(KEY_EMPRESA_NOME, nome).apply();
     }
 
+    /** Remove só a empresa selecionada; mantém token/usuário para trocar de empresa. */
+    public void clearEmpresa() {
+        prefs.edit()
+                .remove(KEY_EMPRESA_ID)
+                .remove(KEY_EMPRESA_NOME)
+                .putString(KEY_ATALHOS, "[]")
+                .apply();
+    }
+
     public String getEmpresaId() {
         return prefs.getString(KEY_EMPRESA_ID, null);
     }
