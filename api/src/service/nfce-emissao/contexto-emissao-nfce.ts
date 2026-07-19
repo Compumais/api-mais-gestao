@@ -4,6 +4,7 @@ import { buscarCertificadoAtivoPorEmpresa } from "@/repositories/certificado-dig
 import { buscarNfceConfiguracaoPorEmpresa } from "@/repositories/nfce-configuracao-repositories.js";
 import { buscarNfeSeriePadrao } from "@/repositories/nfe-serie-repositories.js";
 import type {
+	DestinatarioPayloadNfe,
 	ItemPayloadNfe,
 	PagamentoPayloadNfe,
 	TotaisPayloadNfe,
@@ -13,7 +14,10 @@ import {
 	obterCodigoUfIbge,
 } from "@/util/montar-config-sped-nfe.js";
 import { montarConfigJsonSpedNfce } from "@/util/montar-config-sped-nfce.js";
-import { montarIeEmitenteNfe } from "@/util/normalizar-ie-nfe.js";
+import {
+	ajustarDestinatarioAmbienteNfe,
+	montarIeEmitenteNfe,
+} from "@/util/normalizar-ie-nfe.js";
 import { validarPreRequisitosEmissaoNfce } from "@/util/validar-pre-requisitos-emissao-nfce.js";
 import { agoraBrasiliaIsoOffset } from "@/util/data-hora-brasilia.js";
 
@@ -66,6 +70,7 @@ export function montarPayloadGatewayEmissaoNfce({
 	itens,
 	totais,
 	pagamento,
+	destinatario,
 	natOp,
 	informacoesAdicionais,
 }: {
@@ -84,6 +89,7 @@ export function montarPayloadGatewayEmissaoNfce({
 	itens: ItemPayloadNfe[];
 	totais?: TotaisPayloadNfe;
 	pagamento?: PagamentoPayloadNfe;
+	destinatario?: DestinatarioPayloadNfe;
 	natOp?: string;
 	informacoesAdicionais?: string;
 }) {
@@ -133,7 +139,11 @@ export function montarPayloadGatewayEmissaoNfce({
 				finNFe: 1,
 				tpNF: 1,
 			},
-			destinatario: {},
+			destinatario:
+				ajustarDestinatarioAmbienteNfe(
+					destinatario,
+					nfceConfiguracao.ambiente,
+				) ?? {},
 			itens,
 			totais: totais ?? {},
 			pagamento: pagamento ?? {},

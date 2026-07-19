@@ -401,8 +401,11 @@ final class NfeEmissaoService
 		// ── pagamento ────────────────────────────────────────────────────────
 		$mk->tagpag((object) []);
 		$formasPag = $pagamento['formas'] ?? [['tPag' => '01', 'vPag' => $vNF]];
+		// YA04 (card) obrigatório para cartão e meios eletrônicos (NT 2015.002 / 2023.004 / 2024.003)
+		$tPagsComCard = ['03', '04', '15', '17'];
 		foreach ($formasPag as $pag) {
-			$tPag = (string) ($pag['tPag'] ?? '01');
+			$tPagRaw = preg_replace('/\D/', '', (string) ($pag['tPag'] ?? '01'));
+			$tPag = str_pad(substr((string) $tPagRaw, -2), 2, '0', STR_PAD_LEFT);
 			$detPag = ['tPag' => $tPag];
 
 			if ($tPag === '90') {
@@ -412,10 +415,18 @@ final class NfeEmissaoService
 				$detPag['vPag'] = (float) ($pag['vPag'] ?? $vNF);
 			}
 
-			if (in_array($tPag, ['03', '04'], true)) {
-				$card = is_array($pag['card'] ?? null) ? $pag['card'] : [];
+			if (in_array($tPag, $tPagsComCard, true)) {
+				$cardRaw = $pag['card'] ?? null;
+				if (is_object($cardRaw)) {
+					$cardRaw = (array) $cardRaw;
+				}
+				$card = is_array($cardRaw) ? $cardRaw : [];
 				$tpIntegra = (int) ($card['tpIntegra'] ?? 2);
-				$detPag['tpIntegra'] = $tpIntegra;
+				if ($tpIntegra !== 1) {
+					$tpIntegra = 2;
+				}
+				// NFePHP só cria <card> se !empty(tpIntegra); string evita edge cases
+				$detPag['tpIntegra'] = (string) $tpIntegra;
 
 				if ($tpIntegra === 1) {
 					if (!empty($card['CNPJ'])) {

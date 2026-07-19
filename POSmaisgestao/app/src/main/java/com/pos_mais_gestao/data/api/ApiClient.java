@@ -159,6 +159,41 @@ public class ApiClient {
         return new PaginaProdutos(produtos, total, pagina, lim);
     }
 
+    public List<ClienteDto> buscarClientes(String termo, int page, int limit) throws ApiException {
+        String empresaId = prefsStore.getEmpresaId();
+        if (empresaId == null) {
+            throw new ApiException("Empresa não selecionada");
+        }
+        int pagina = Math.max(1, page);
+        int lim = Math.max(1, Math.min(100, limit));
+        StringBuilder path = new StringBuilder("/entidades?idempresa=")
+                .append(empresaId)
+                .append("&cliente=1&page=")
+                .append(pagina)
+                .append("&limit=")
+                .append(lim);
+        if (termo != null && !termo.trim().isEmpty()) {
+            path.append("&q=").append(encode(termo.trim()));
+        }
+        JsonObject response = getJson(path.toString());
+        List<ClienteDto> clientes = new ArrayList<>();
+        JsonArray data = response.getAsJsonArray("data");
+        if (data != null) {
+            for (JsonElement element : data) {
+                JsonObject obj = element.getAsJsonObject();
+                ClienteDto cliente = new ClienteDto();
+                cliente.id = texto(obj, "id");
+                cliente.nome = texto(obj, "nome");
+                cliente.razaosocial = texto(obj, "razaosocial");
+                cliente.cnpjcpf = texto(obj, "cnpjcpf");
+                if (cliente.id != null) {
+                    clientes.add(cliente);
+                }
+            }
+        }
+        return clientes;
+    }
+
     public FechamentoCaixaDto buscarCaixaAberto() throws ApiException {
         String empresaId = prefsStore.getEmpresaId();
         if (empresaId == null) {
@@ -263,11 +298,26 @@ public class ApiClient {
 
     public VendaResultadoDto criarVendaPdvRapida(List<ItemCarrinho> itens, MeioPagamento meio)
             throws ApiException {
+        return criarVendaPdvRapida(itens, meio, null, null, null);
+    }
+
+    public VendaResultadoDto criarVendaPdvRapida(
+            List<ItemCarrinho> itens, MeioPagamento meio, String identidade) throws ApiException {
+        return criarVendaPdvRapida(itens, meio, identidade, null, null);
+    }
+
+    public VendaResultadoDto criarVendaPdvRapida(
+            List<ItemCarrinho> itens,
+            MeioPagamento meio,
+            String identidade,
+            String nomeCliente,
+            String cnpjCpfCliente)
+            throws ApiException {
         if (itens == null || itens.isEmpty()) {
             throw new ApiException("Carrinho vazio");
         }
         if (!prefsStore.isEmitirNfcePos()) {
-            return criarPedidoDavPos(itens, meio);
+            return criarPedidoDavPos(itens, meio, identidade, nomeCliente, cnpjCpfCliente);
         }
         String empresaId = prefsStore.getEmpresaId();
         String userId = prefsStore.getUserId();
@@ -296,6 +346,9 @@ public class ApiClient {
         vendaBody.addProperty("valorcartaodebito", zero);
         vendaBody.addProperty("valorcartao", zero);
         vendaBody.addProperty("valorprepago", zero);
+        if (identidade != null && !identidade.trim().isEmpty()) {
+            vendaBody.addProperty("identidade", identidade.trim());
+        }
 
         JsonObject vendaJson = postJson("/vendas-pdv-gourmet", vendaBody.toString(), true);
         String idVenda = texto(vendaJson, "id");
@@ -357,6 +410,11 @@ public class ApiClient {
      * Fecha conta de mesa no mesmo fluxo do Gourmet: PUT status fechado → venda PDV → itens → baixa/NFC-e.
      */
     public VendaResultadoDto fecharContaMesa(String idConta, MeioPagamento meio) throws ApiException {
+        return fecharContaMesa(idConta, meio, null);
+    }
+
+    public VendaResultadoDto fecharContaMesa(String idConta, MeioPagamento meio, String identidade)
+            throws ApiException {
         if (idConta == null || idConta.isEmpty()) {
             throw new ApiException("Conta da mesa inválida");
         }
@@ -398,6 +456,9 @@ public class ApiClient {
         contaBody.addProperty("valorcartao", zero);
         contaBody.addProperty("valorprepago", zero);
         contaBody.addProperty("usuarioquefechouconta", userId);
+        if (identidade != null && !identidade.trim().isEmpty()) {
+            contaBody.addProperty("idcliente", identidade.trim());
+        }
         putJson("/contas-mesa/" + idConta, contaBody.toString());
 
         JsonObject vendaBody = new JsonObject();
@@ -415,6 +476,9 @@ public class ApiClient {
         vendaBody.addProperty("valorcartaodebito", zero);
         vendaBody.addProperty("valorcartao", zero);
         vendaBody.addProperty("valorprepago", zero);
+        if (identidade != null && !identidade.trim().isEmpty()) {
+            vendaBody.addProperty("identidade", identidade.trim());
+        }
 
         JsonObject vendaJson = postJson("/vendas-pdv-gourmet", vendaBody.toString(), true);
         String idVenda = texto(vendaJson, "id");
@@ -756,6 +820,16 @@ public class ApiClient {
 
     public VendaResultadoDto criarPedidoDavPos(List<ItemCarrinho> itens, MeioPagamento meio)
             throws ApiException {
+        return criarPedidoDavPos(itens, meio, null, null, null);
+    }
+
+    public VendaResultadoDto criarPedidoDavPos(
+            List<ItemCarrinho> itens,
+            MeioPagamento meio,
+            String identidade,
+            String nomeCliente,
+            String cnpjCpfCliente)
+            throws ApiException {
         String empresaId = prefsStore.getEmpresaId();
         if (empresaId == null) {
             throw new ApiException("Empresa não selecionada");
@@ -787,6 +861,15 @@ public class ApiClient {
             davBody.addProperty("pix", totalStr);
         } else if (meio == MeioPagamento.CARTAO) {
             davBody.addProperty("posavista", totalStr);
+        }
+        if (identidade != null && !identidade.trim().isEmpty()) {
+            davBody.addProperty("idcliente", identidade.trim());
+        }
+        if (nomeCliente != null && !nomeCliente.trim().isEmpty()) {
+            davBody.addProperty("nomecliente", nomeCliente.trim());
+        }
+        if (cnpjCpfCliente != null && !cnpjCpfCliente.trim().isEmpty()) {
+            davBody.addProperty("cnpjcpfcliente", cnpjCpfCliente.trim());
         }
 
         JsonObject davJson = postJson("/davs", davBody.toString(), true);

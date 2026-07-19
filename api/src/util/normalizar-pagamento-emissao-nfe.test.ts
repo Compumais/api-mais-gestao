@@ -20,12 +20,16 @@ describe("normalizarPagamentoEmissaoNfe", () => {
 		expect(resultado.formas[0]).toEqual({ tPag: "90", vPag: 0 });
 	});
 
-	it("mantém vPag em venda normal", () => {
+	it("mantém vPag em venda normal e complementa card no PIX", () => {
 		const resultado = normalizarPagamentoEmissaoNfe(
 			{ formas: [{ tPag: "17", vPag: 99.9 }] },
 			{ valorNota: 99.9 },
 		);
 
-		expect(resultado.formas[0]).toEqual({ tPag: "17", vPag: 99.9 });
+		expect(resultado.formas[0]).toEqual({
+			tPag: "17",
+			vPag: 99.9,
+			card: { tpIntegra: 2 },
+		});
 	});
 });

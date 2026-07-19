@@ -40,6 +40,20 @@ describe("montarPagamentosPdvParaNfce", () => {
 			card: { tpIntegra: 2 },
 		});
 	});
+
+	it("inclui grupo card com tpIntegra 2 para PIX (NT 2023.004/2024.003)", () => {
+		const pagamento = montarPagamentosPdvParaNfce(
+			{ valorpix: "25.00", valortotal: "25.00" },
+			25,
+		);
+
+		expect(pagamento.formas).toHaveLength(1);
+		expect(pagamento.formas[0]).toMatchObject({
+			tPag: "17",
+			vPag: 25,
+			card: { tpIntegra: 2 },
+		});
+	});
 });
 
 describe("normalizarPagamentoEmissaoNfe", () => {
@@ -52,5 +66,18 @@ describe("normalizarPagamentoEmissaoNfe", () => {
 		expect(pagamento.formas[0]).toEqual(
 			complementarCardPagamentoNfe({ tPag: "04", vPag: 10 }),
 		);
+	});
+
+	it("normaliza tPag sem zero à esquerda e complementa card", () => {
+		const pagamento = normalizarPagamentoEmissaoNfe(
+			{ formas: [{ tPag: "3", vPag: 10 }] },
+			{ valorNota: 10 },
+		);
+
+		expect(pagamento.formas[0]).toMatchObject({
+			tPag: "03",
+			vPag: 10,
+			card: { tpIntegra: 2 },
+		});
 	});
 });

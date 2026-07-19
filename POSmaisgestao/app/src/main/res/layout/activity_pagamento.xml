@@ -15,6 +15,23 @@
         android:textStyle="bold"
         android:textColor="@color/primary" />
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnInformarCliente"
+        style="@style/Widget.Material3.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:text="@string/informar_cliente" />
+
+    <TextView
+        android:id="@+id/txtClienteSelecionado"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:gravity="center"
+        android:text="@string/cliente_nao_informado"
+        android:textSize="14sp" />
+
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

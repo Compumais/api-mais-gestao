@@ -6,6 +6,8 @@ import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.button.MaterialButton;
 import com.pos_mais_gestao.PosApplication;
@@ -20,6 +22,7 @@ import com.pos_mais_gestao.domain.ItemCarrinho;
 import com.pos_mais_gestao.domain.ItemFicha;
 import com.pos_mais_gestao.domain.MeioPagamento;
 import com.pos_mais_gestao.hardware.PagamentoHardware;
+import com.pos_mais_gestao.ui.cliente.SelecionarClienteActivity;
 import com.pos_mais_gestao.ui.falha.FalhaNfceActivity;
 import com.pos_mais_gestao.ui.sucesso.SucessoActivity;
 import com.pos_mais_gestao.util.MoneyFormat;
@@ -35,6 +38,8 @@ public class PagamentoActivity extends AppCompatActivity {
     public static final String EXTRA_ID_CONTA = "id_conta";
     public static final String EXTRA_TOTAL_MESA = "total_mesa";
     public static final String EXTRA_NUMERO_MESA = "numero_mesa";
+    public static final String EXTRA_ID_CLIENTE = "id_cliente";
+    public static final String EXTRA_NOME_CLIENTE = "nome_cliente";
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private ApiClient api;
@@ -45,10 +50,36 @@ public class PagamentoActivity extends AppCompatActivity {
     private MaterialButton btnDinheiro;
     private MaterialButton btnPix;
     private MaterialButton btnCartao;
+    private MaterialButton btnInformarCliente;
+    private TextView txtClienteSelecionado;
 
     private boolean modoMesa;
     private String idConta;
     private BigDecimal totalMesa = BigDecimal.ZERO;
+    private String identidadeCliente;
+    private String nomeCliente;
+    private String docCliente;
+
+    private final ActivityResultLauncher<Intent> selecionarClienteLauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+                if (result.getResultCode() != RESULT_OK || result.getData() == null) {
+                    return;
+                }
+                Intent data = result.getData();
+                String id = data.getStringExtra(SelecionarClienteActivity.EXTRA_CLIENTE_ID);
+                String nome = data.getStringExtra(SelecionarClienteActivity.EXTRA_CLIENTE_NOME);
+                String doc = data.getStringExtra(SelecionarClienteActivity.EXTRA_CLIENTE_DOC);
+                if (id == null || id.trim().isEmpty()) {
+                    identidadeCliente = null;
+                    nomeCliente = null;
+                    docCliente = null;
+                } else {
+                    identidadeCliente = id.trim();
+                    nomeCliente = nome;
+                    docCliente = doc;
+                }
+                atualizarLabelCliente();
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +94,8 @@ public class PagamentoActivity extends AppCompatActivity {
 
         modoMesa = getIntent().getBooleanExtra(EXTRA_MODO_MESA, false);
         idConta = getIntent().getStringExtra(EXTRA_ID_CONTA);
+        identidadeCliente = getIntent().getStringExtra(EXTRA_ID_CLIENTE);
+        nomeCliente = getIntent().getStringExtra(EXTRA_NOME_CLIENTE);
         String totalExtra = getIntent().getStringExtra(EXTRA_TOTAL_MESA);
         if (totalExtra != null) {
             try {
@@ -77,13 +110,37 @@ public class PagamentoActivity extends AppCompatActivity {
         btnDinheiro = findViewById(R.id.btnDinheiro);
         btnPix = findViewById(R.id.btnPix);
         btnCartao = findViewById(R.id.btnCartao);
+        btnInformarCliente = findViewById(R.id.btnInformarCliente);
+        txtClienteSelecionado = findViewById(R.id.txtClienteSelecionado);
 
         BigDecimal totalExibir = modoMesa ? totalMesa : Carrinho.getInstance().getTotal();
         txtTotal.setText(getString(R.string.total, MoneyFormat.format(totalExibir)));
+        atualizarLabelCliente();
 
+        btnInformarCliente.setOnClickListener(v ->
+                selecionarClienteLauncher.launch(new Intent(this, SelecionarClienteActivity.class)));
         btnDinheiro.setOnClickListener(v -> confirmar(MeioPagamento.DINHEIRO));
         btnPix.setOnClickListener(v -> confirmar(MeioPagamento.PIX));
         btnCartao.setOnClickListener(v -> confirmar(MeioPagamento.CARTAO));
+    }
+
+    private void atualizarLabelCliente() {
+        if (identidadeCliente == null || identidadeCliente.isEmpty()) {
+            txtClienteSelecionado.setText(R.string.cliente_nao_informado);
+            btnInformarCliente.setText(R.string.informar_cliente);
+            return;
+        }
+        StringBuilder sb = new StringBuilder();
+        if (nomeCliente != null && !nomeCliente.isEmpty()) {
+            sb.append(nomeCliente);
+        } else {
+            sb.append(getString(R.string.cliente_selecionado));
+        }
+        if (docCliente != null && !docCliente.isEmpty()) {
+            sb.append("\n").append(docCliente);
+        }
+        txtClienteSelecionado.setText(sb.toString());
+        btnInformarCliente.setText(R.string.trocar_cliente);
     }
 
     private void confirmar(MeioPagamento meio) {
@@ -109,6 +166,9 @@ public class PagamentoActivity extends AppCompatActivity {
                 modoMesa ? null : new ArrayList<>(Carrinho.getInstance().getItens());
         BigDecimal totalPagamento = modoMesa ? totalMesa : Carrinho.getInstance().getTotal();
         boolean imprimirFichas = prefs.isImprimirFichasEvento();
+        final String idClienteVenda = identidadeCliente;
+        final String nomeClienteVenda = nomeCliente;
+        final String docClienteVenda = docCliente;
 
         executor.execute(() -> {
             try {
@@ -152,8 +212,9 @@ public class PagamentoActivity extends AppCompatActivity {
                 }
 
                 VendaResultadoDto resultado = modoMesa
-                        ? api.fecharContaMesa(idConta, meio)
-                        : api.criarVendaPdvRapida(snapshot, meio);
+                        ? api.fecharContaMesa(idConta, meio, idClienteVenda)
+                        : api.criarVendaPdvRapida(
+                                snapshot, meio, idClienteVenda, nomeClienteVenda, docClienteVenda);
 
                 ArrayList<ItemFicha> fichasFinais = fichas;
                 runOnUiThread(() -> {
@@ -236,6 +297,7 @@ public class PagamentoActivity extends AppCompatActivity {
         btnDinheiro.setEnabled(!loading);
         btnPix.setEnabled(!loading);
         btnCartao.setEnabled(!loading);
+        btnInformarCliente.setEnabled(!loading);
     }
 
     @Override
