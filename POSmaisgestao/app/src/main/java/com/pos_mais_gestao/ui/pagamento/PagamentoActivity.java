@@ -107,6 +107,8 @@ public class PagamentoActivity extends AppCompatActivity {
                         falha.putExtra(
                                 FalhaNfceActivity.EXTRA_CODIGO,
                                 resultado.codigo != null ? resultado.codigo : "—");
+                        falha.putExtra(
+                                FalhaNfceActivity.EXTRA_COMPROVANTE, resultado.comprovanteTexto);
                         falha.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                         startActivity(falha);
                         finish();
