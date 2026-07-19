@@ -10,6 +10,7 @@ import com.google.android.material.button.MaterialButton;
 import com.pos_mais_gestao.PosApplication;
 import com.pos_mais_gestao.R;
 import com.pos_mais_gestao.hardware.ImpressoraPos;
+import com.pos_mais_gestao.ui.mesas.MesasActivity;
 import com.pos_mais_gestao.ui.venda.VendaActivity;
 
 public class SucessoActivity extends AppCompatActivity {
@@ -19,10 +20,12 @@ public class SucessoActivity extends AppCompatActivity {
     public static final String EXTRA_CUPOM_FISCAL = "cupom_fiscal";
     public static final String EXTRA_QR = "qr_conteudo";
     public static final String EXTRA_TITULO = "titulo";
+    public static final String EXTRA_VOLTAR_MESAS = "voltar_mesas";
 
     private String comprovante;
     private String qrConteudo;
     private boolean cupomFiscal;
+    private boolean voltarMesas;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,6 +38,7 @@ public class SucessoActivity extends AppCompatActivity {
         comprovante = getIntent().getStringExtra(EXTRA_COMPROVANTE);
         qrConteudo = getIntent().getStringExtra(EXTRA_QR);
         cupomFiscal = getIntent().getBooleanExtra(EXTRA_CUPOM_FISCAL, false);
+        voltarMesas = getIntent().getBooleanExtra(EXTRA_VOLTAR_MESAS, false);
 
         TextView txtTitulo = findViewById(R.id.txtTituloSucesso);
         if (titulo != null && !titulo.isEmpty()) {
@@ -57,12 +61,13 @@ public class SucessoActivity extends AppCompatActivity {
         }
 
         MaterialButton btnNova = findViewById(R.id.btnNovaVenda);
-        btnNova.setOnClickListener(v -> irParaVenda());
+        btnNova.setText(voltarMesas ? R.string.voltar_mesas : R.string.nova_venda);
+        btnNova.setOnClickListener(v -> irAdiante());
 
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
-                irParaVenda();
+                irAdiante();
             }
         });
 
@@ -90,8 +95,10 @@ public class SucessoActivity extends AppCompatActivity {
         }
     }
 
-    private void irParaVenda() {
-        Intent intent = new Intent(this, VendaActivity.class);
+    private void irAdiante() {
+        Intent intent = voltarMesas
+                ? new Intent(this, MesasActivity.class)
+                : new Intent(this, VendaActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         startActivity(intent);
         finish();

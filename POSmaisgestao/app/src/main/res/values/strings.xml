@@ -67,6 +67,11 @@
     <string name="comanda_vazia">Nenhum item nesta mesa</string>
     <string name="voltar_inicio">Início</string>
     <string name="fechar_na_retaguarda">Pagamento na retaguarda (Gourmet)</string>
+    <string name="fechar_conta">Fechar conta</string>
+    <string name="mesa_fechada_titulo">Mesa fechada!</string>
+    <string name="voltar_mesas">Voltar às mesas</string>
+    <string name="conta_mesa_invalida">Conta da mesa inválida</string>
+    <string name="fechar_mesa_requer_rede">É necessário estar online para fechar a mesa</string>
     <string name="abrir_caixa">Abrir caixa</string>
     <string name="fechar_caixa">Fechar caixa</string>
     <string name="caixa_fechado">Caixa fechado</string>
