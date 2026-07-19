@@ -120,6 +120,9 @@ public class MesasActivity extends AppCompatActivity {
         Intent intent = new Intent(this, ContaMesaActivity.class);
         intent.putExtra(ContaMesaActivity.EXTRA_ID_CONTA, mesa.id);
         intent.putExtra(ContaMesaActivity.EXTRA_NUMERO_MESA, mesa.numeromesa != null ? mesa.numeromesa : 0);
+        if (mesa.idcliente != null && !mesa.idcliente.isEmpty()) {
+            intent.putExtra(ContaMesaActivity.EXTRA_ID_CLIENTE, mesa.idcliente);
+        }
         startActivity(intent);
     }
 

@@ -34,6 +34,7 @@ import {
 } from "@/util/data-hora-brasilia.js";
 import { montarDadosImportacaoItemEmissaoNfe } from "@/util/dados-emissao-nfe-nota.js";
 import { montarPagamentosPdvParaNfce } from "@/util/montar-pagamentos-pdv-nfce.js";
+import { montarDestinatarioPorIdentidade } from "@/util/montar-destinatario-entidade-nfe.js";
 import { normalizarGtinItensEmissao } from "@/util/normalizar-gtin-item-emissao-nfe.js";
 import { normalizarPagamentoEmissaoNfe } from "@/util/normalizar-pagamento-emissao-nfe.js";
 import { normalizarItensEmissaoNfe } from "@/util/normalizar-tributacao-item-emissao-nfe.js";
@@ -57,6 +58,7 @@ import {
 	complementarCardPagamentoNfe,
 	exigeGrupoCard,
 	montarCardPagamentoNfce,
+	normalizarTPag,
 } from "@/util/card-pagamento-nfce.js";
 
 type FaturarDavNfceParametros = {
@@ -200,8 +202,9 @@ async function montarPagamentoDavParaNfce(
 		const tipoDoc = await buscarTipoDocumentoFinanceiroPorId(
 			dav.idtipodocumentofinanceiro,
 		);
-		const tPag = tipoDoc?.formapagamentonfe?.replace(/\D/g, "").padStart(2, "0");
-		if (tPag && valorTotal > 0) {
+		const formapagamentonfe = tipoDoc?.formapagamentonfe?.trim();
+		if (formapagamentonfe && valorTotal > 0) {
+			const tPag = normalizarTPag(formapagamentonfe);
 			const forma: PagamentoPayloadNfe["formas"][number] = {
 				tPag,
 				vPag: valorTotal,
@@ -377,6 +380,19 @@ export async function faturarDavNfceService({
 			: {}),
 	});
 
+	const destinatarioResolvido = await montarDestinatarioPorIdentidade(
+		dav.idcliente,
+	);
+	const destinatario =
+		destinatarioResolvido?.destinatario ??
+		(dav.cnpjcpfcliente
+			? {
+					cnpjcpf: dav.cnpjcpfcliente,
+					razaosocial: dav.nomecliente?.trim() || "CONSUMIDOR",
+					indIEDest: 9 as const,
+				}
+			: undefined);
+
 	const idnotafiscal = reserva.idnotafiscal;
 	const ambiente = nfceConfiguracao.ambiente;
 
@@ -390,6 +406,7 @@ export async function faturarDavNfceService({
 		itens: itensNormalizados,
 		pagamento: pagamentoNormalizado,
 		natOp,
+		...(destinatario ? { destinatario } : {}),
 		...(dav.observacao?.trim()
 			? { informacoesAdicionais: dav.observacao.trim() }
 			: {}),
@@ -438,15 +455,16 @@ export async function faturarDavNfceService({
 		tipoambientenfe: ambiente,
 		tipoorigem: 1,
 		status: statusPersistido,
-		razaosocial: dav.nomecliente ?? null,
-		cnpjcpf: dav.cnpjcpfcliente ?? null,
-		inscricaoestadual: null,
-		endereco: null,
-		numeroendereco: null,
-		bairro: null,
-		cep: null,
-		cidade: null,
-		estado: null,
+		razaosocial:
+			destinatario?.razaosocial ?? dav.nomecliente ?? null,
+		cnpjcpf: destinatario?.cnpjcpf ?? dav.cnpjcpfcliente ?? null,
+		inscricaoestadual: destinatario?.ie ?? null,
+		endereco: destinatario?.logradouro ?? null,
+		numeroendereco: destinatario?.numero ?? null,
+		bairro: destinatario?.bairro ?? null,
+		cep: destinatario?.cep ?? null,
+		cidade: destinatario?.cidade ?? null,
+		estado: destinatario?.estado ?? null,
 		valortotalnota,
 		totalproduto: totaisFiscais.totalProdutos.toFixed(2),
 		frete: null,

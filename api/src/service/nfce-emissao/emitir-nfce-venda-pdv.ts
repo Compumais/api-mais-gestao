@@ -34,6 +34,7 @@ import {
 } from "@/util/data-hora-brasilia.js";
 import { montarDadosImportacaoItemEmissaoNfe } from "@/util/dados-emissao-nfe-nota.js";
 import { montarPagamentosPdvParaNfce } from "@/util/montar-pagamentos-pdv-nfce.js";
+import { montarDestinatarioPorIdentidade } from "@/util/montar-destinatario-entidade-nfe.js";
 import { normalizarGtinItensEmissao } from "@/util/normalizar-gtin-item-emissao-nfe.js";
 import { normalizarPagamentoEmissaoNfe } from "@/util/normalizar-pagamento-emissao-nfe.js";
 import { normalizarItensEmissaoNfe } from "@/util/normalizar-tributacao-item-emissao-nfe.js";
@@ -325,6 +326,10 @@ export async function emitirNfceVendaPdvService({
 			: {}),
 	});
 
+	const destinatarioResolvido = await montarDestinatarioPorIdentidade(
+		venda.identidade,
+	);
+
 	const idnotafiscal = reserva.idnotafiscal;
 	const ambiente = nfceConfiguracao.ambiente;
 
@@ -338,6 +343,9 @@ export async function emitirNfceVendaPdvService({
 		itens: itensNormalizados,
 		pagamento: pagamentoNormalizado,
 		natOp,
+		...(destinatarioResolvido?.destinatario
+			? { destinatario: destinatarioResolvido.destinatario }
+			: {}),
 	});
 
 	const respostaGateway = await emitirNfeGateway(payload);
@@ -364,7 +372,7 @@ export async function emitirNfceVendaPdvService({
 	const dadosNota: NovaNotaFiscal = {
 		id: idnotafiscal,
 		idempresa,
-		identidade: null,
+		identidade: destinatarioResolvido?.identidade ?? venda.identidade ?? null,
 		idplanocontas: null,
 		idcondicaopagto: null,
 		idlocalestoque: null,
@@ -383,15 +391,15 @@ export async function emitirNfceVendaPdvService({
 		tipoambientenfe: ambiente,
 		tipoorigem: 1,
 		status: statusPersistido,
-		razaosocial: null,
-		cnpjcpf: null,
-		inscricaoestadual: null,
-		endereco: null,
-		numeroendereco: null,
-		bairro: null,
-		cep: null,
-		cidade: null,
-		estado: null,
+		razaosocial: destinatarioResolvido?.destinatario?.razaosocial ?? null,
+		cnpjcpf: destinatarioResolvido?.destinatario?.cnpjcpf ?? null,
+		inscricaoestadual: destinatarioResolvido?.destinatario?.ie ?? null,
+		endereco: destinatarioResolvido?.destinatario?.logradouro ?? null,
+		numeroendereco: destinatarioResolvido?.destinatario?.numero ?? null,
+		bairro: destinatarioResolvido?.destinatario?.bairro ?? null,
+		cep: destinatarioResolvido?.destinatario?.cep ?? null,
+		cidade: destinatarioResolvido?.destinatario?.cidade ?? null,
+		estado: destinatarioResolvido?.destinatario?.estado ?? null,
 		valortotalnota,
 		totalproduto: totaisFiscais.totalProdutos.toFixed(2),
 		frete: null,

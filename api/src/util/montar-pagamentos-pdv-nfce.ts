@@ -3,12 +3,12 @@ import {
 	montarCardPagamentoNfce,
 	TPAG_CARTAO_CREDITO,
 	TPAG_CARTAO_DEBITO,
+	TPAG_PIX,
 } from "@/util/card-pagamento-nfce.js";
 import { extrairPagamentosResumo, type PagamentosRegistro } from "@/util/pagamentos-pdv-util.js";
 import type { PagamentoPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
 
 const TPAG_DINHEIRO = "01";
-const TPAG_PIX = "17";
 const TPAG_OUTROS = "99";
 
 function parseValorPagamento(valor: string | null | undefined): number {
@@ -17,7 +17,7 @@ function parseValorPagamento(valor: string | null | undefined): number {
 	return Number.isNaN(numero) ? 0 : numero;
 }
 
-function adicionarCartao(
+function adicionarFormaComCardSeNecessario(
 	formas: PagamentoPayloadNfe["formas"],
 	tPag: string,
 	valor: number,
@@ -50,17 +50,17 @@ export function montarPagamentosPdvParaNfce(
 	}
 
 	if (credito > 0) {
-		adicionarCartao(formas, TPAG_CARTAO_CREDITO, credito);
+		adicionarFormaComCardSeNecessario(formas, TPAG_CARTAO_CREDITO, credito);
 	} else if (cartaoLegado > 0) {
-		adicionarCartao(formas, TPAG_CARTAO_CREDITO, cartaoLegado);
+		adicionarFormaComCardSeNecessario(formas, TPAG_CARTAO_CREDITO, cartaoLegado);
 	}
 
 	if (debito > 0) {
-		adicionarCartao(formas, TPAG_CARTAO_DEBITO, debito);
+		adicionarFormaComCardSeNecessario(formas, TPAG_CARTAO_DEBITO, debito);
 	}
 
 	if (resumo.pix > 0) {
-		formas.push({ tPag: TPAG_PIX, vPag: resumo.pix });
+		adicionarFormaComCardSeNecessario(formas, TPAG_PIX, resumo.pix);
 	}
 	if (resumo.prepago > 0) {
 		formas.push({ tPag: TPAG_OUTROS, vPag: resumo.prepago });

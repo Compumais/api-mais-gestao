@@ -38,11 +38,13 @@ import java.util.concurrent.Executors;
 public class ContaMesaActivity extends AppCompatActivity {
     public static final String EXTRA_ID_CONTA = "id_conta";
     public static final String EXTRA_NUMERO_MESA = "numero_mesa";
+    public static final String EXTRA_ID_CLIENTE = "id_cliente";
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private PrefsStore prefs;
     private ApiClient api;
     private String idConta;
+    private String idCliente;
     private int numeroMesa;
     private ProdutoAdapter produtoAdapter;
     private ContaItemAdapter itemAdapter;
@@ -77,6 +79,7 @@ public class ContaMesaActivity extends AppCompatActivity {
         scanHelper = new CodigoScanHelper(this, scanLauncher, cameraPermissionLauncher, this::aoCodigoEscaneado);
 
         idConta = getIntent().getStringExtra(EXTRA_ID_CONTA);
+        idCliente = getIntent().getStringExtra(EXTRA_ID_CLIENTE);
         numeroMesa = getIntent().getIntExtra(EXTRA_NUMERO_MESA, 0);
         if (idConta == null) {
             finish();
@@ -264,6 +267,9 @@ public class ContaMesaActivity extends AppCompatActivity {
         intent.putExtra(PagamentoActivity.EXTRA_ID_CONTA, idConta);
         intent.putExtra(PagamentoActivity.EXTRA_NUMERO_MESA, numeroMesa);
         intent.putExtra(PagamentoActivity.EXTRA_TOTAL_MESA, totalAtual.toPlainString());
+        if (idCliente != null && !idCliente.isEmpty()) {
+            intent.putExtra(PagamentoActivity.EXTRA_ID_CLIENTE, idCliente);
+        }
         startActivity(intent);
     }
 

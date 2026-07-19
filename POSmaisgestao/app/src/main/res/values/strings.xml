@@ -47,6 +47,15 @@
     <string name="codigo_pedido">Código: %1$s</string>
     <string name="total">Total: %1$s</string>
     <string name="como_pagou">Como o cliente pagou?</string>
+    <string name="informar_cliente">Informar cliente</string>
+    <string name="trocar_cliente">Trocar cliente</string>
+    <string name="cliente_nao_informado">Cliente não informado (opcional)</string>
+    <string name="cliente_selecionado">Cliente selecionado</string>
+    <string name="selecionar_cliente">Selecionar cliente</string>
+    <string name="buscar_cliente">Buscar por nome ou CPF/CNPJ</string>
+    <string name="buscar">Buscar</string>
+    <string name="sem_cliente">Sem cliente / consumidor</string>
+    <string name="nenhum_cliente">Nenhum cliente encontrado</string>
     <string name="enviando">Enviando…</string>
     <string name="sem_atalhos">Nenhum atalho. Toque em Gerenciar atalhos para adicionar.</string>
     <string name="logout">Sair da conta</string>
