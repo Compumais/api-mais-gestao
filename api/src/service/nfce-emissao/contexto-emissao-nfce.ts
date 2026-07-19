@@ -15,6 +15,7 @@ import {
 import { montarConfigJsonSpedNfce } from "@/util/montar-config-sped-nfce.js";
 import { montarIeEmitenteNfe } from "@/util/normalizar-ie-nfe.js";
 import { validarPreRequisitosEmissaoNfce } from "@/util/validar-pre-requisitos-emissao-nfce.js";
+import { agoraBrasiliaIsoOffset } from "@/util/data-hora-brasilia.js";
 
 export async function carregarContextoEmissaoNfce(idempresa: string) {
 	const empresa = await buscarEmpresaPorId(idempresa);
@@ -123,6 +124,7 @@ export function montarPayloadGatewayEmissaoNfce({
 				tpImp: 4,
 				serie: Number(serie),
 				nNF: numeroNf,
+				dhEmi: agoraBrasiliaIsoOffset(),
 				tpAmb: nfceConfiguracao.ambiente,
 				verProc,
 				idDest: 1,

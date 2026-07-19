@@ -18,6 +18,8 @@ use MaisGestao\NfeGateway\Services\SefazService;
 
 header('Content-Type: application/json; charset=utf-8');
 
+date_default_timezone_set('America/Sao_Paulo');
+
 ini_set('display_errors', '0');
 ini_set('html_errors', '0');
 

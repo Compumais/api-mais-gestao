@@ -49,6 +49,12 @@ final class NfeEmissaoService
 		$mod   = (int) ($ide['mod'] ?? $configJson['modelo'] ?? 55);
 		$tpImp = (int) ($ide['tpImp'] ?? ($mod === 65 ? 4 : 1));
 
+		$dhEmi = trim((string) ($ide['dhEmi'] ?? ''));
+		if ($dhEmi === '') {
+			$tz = new \DateTimeZone('America/Sao_Paulo');
+			$dhEmi = (new \DateTimeImmutable('now', $tz))->format('c');
+		}
+
 		// ── infNFe ─────────────────────────────────────────────────────────
 		$mk->taginfNFe((object) ['versao' => $configJson['versao'] ?? '4.00']);
 
@@ -59,7 +65,7 @@ final class NfeEmissaoService
 			'mod'    => $mod,
 			'serie'  => (int) ($ide['serie'] ?? 1),
 			'nNF'    => (int) ($ide['nNF'] ?? 1),
-			'dhEmi'  => date('c'),
+			'dhEmi'  => $dhEmi,
 			'tpNF'   => $tpNF,
 			'idDest' => (int) ($ide['idDest'] ?? 1),
 			'cMunFG' => (int) ($emitente['codigoMunicipio'] ?? 3550308),
