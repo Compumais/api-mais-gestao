@@ -12,8 +12,8 @@ function parte(
 }
 
 /**
- * Instantâneo atual em Brasília no formato ISO com offset: `2026-07-18T21:00:00.000-03:00`.
- * Adequado para `dhEmi` / `datahoraemissao`.
+ * Instantâneo atual em Brasília no formato exigido pelo XSD do `dhEmi` (NF-e/NFC-e):
+ * `2026-07-18T21:00:00-03:00` — **sem milissegundos**.
  */
 export function agoraBrasiliaIsoOffset(agora: Date = new Date()): string {
 	const fmt = new Intl.DateTimeFormat("en-CA", {
@@ -33,8 +33,7 @@ export function agoraBrasiliaIsoOffset(agora: Date = new Date()): string {
 	const h = parte(parts, "hour");
 	const min = parte(parts, "minute");
 	const s = parte(parts, "second");
-	const ms = String(agora.getMilliseconds()).padStart(3, "0");
-	return `${y}-${m}-${d}T${h}:${min}:${s}.${ms}-03:00`;
+	return `${y}-${m}-${d}T${h}:${min}:${s}-03:00`;
 }
 
 /**

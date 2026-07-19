@@ -29,7 +29,9 @@ final class HomologacaoNfeService
         $dhEmi = trim((string) ($ide['dhEmi'] ?? ''));
         if ($dhEmi === '') {
             $tz = new \DateTimeZone('America/Sao_Paulo');
-            $dhEmi = (new \DateTimeImmutable('now', $tz))->format('c');
+            $dhEmi = (new \DateTimeImmutable('now', $tz))->format('Y-m-d\TH:i:sP');
+        } else {
+            $dhEmi = preg_replace('/\.\d+(?=[+-]\d{2}:\d{2}$)/', '', $dhEmi) ?? $dhEmi;
         }
 
         $mk->tagide((object) [
