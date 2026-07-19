@@ -1,6 +1,5 @@
 <resources>
-    <!-- Tema claro fixo: POS precisa de contraste alto em telas pequenas -->
-    <style name="Base.Theme.POSmaisgestao" parent="Theme.Material3.Light.NoActionBar">
+    <style name="Base.Theme.POSmaisgestao" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/primary</item>
         <item name="colorPrimaryDark">@color/primary_dark</item>
         <item name="colorSecondary">@color/accent</item>

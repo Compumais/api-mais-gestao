@@ -25,6 +25,8 @@ public class PrefsStore {
     private static final String KEY_IMPRESSORA_ID = "impressora_id";
     private static final String KEY_IMPRESSORA_NOME = "impressora_nome";
     private static final String KEY_IMPRESSORA_TIPO = "impressora_tipo";
+    private static final String KEY_TEMA = "tema";
+    private static final String KEY_IMPRIMIR_FICHAS_EVENTO = "imprimir_fichas_evento";
     private static final String DEFAULT_BASE_URL = "http://10.0.2.2:3333";
     private static final int DEFAULT_QUANTIDADE_MESAS = 20;
 
@@ -121,6 +123,22 @@ public class PrefsStore {
                 .putString(KEY_IMPRESSORA_NOME, nome)
                 .putString(KEY_IMPRESSORA_TIPO, tipo == null ? "nenhuma" : tipo)
                 .apply();
+    }
+
+    public String getTema() {
+        return prefs.getString(KEY_TEMA, "light");
+    }
+
+    public void setTema(String tema) {
+        prefs.edit().putString(KEY_TEMA, tema == null ? "light" : tema).apply();
+    }
+
+    public boolean isImprimirFichasEvento() {
+        return prefs.getBoolean(KEY_IMPRIMIR_FICHAS_EVENTO, false);
+    }
+
+    public void setImprimirFichasEvento(boolean imprimir) {
+        prefs.edit().putBoolean(KEY_IMPRIMIR_FICHAS_EVENTO, imprimir).apply();
     }
 
     public boolean isLoggedIn() {

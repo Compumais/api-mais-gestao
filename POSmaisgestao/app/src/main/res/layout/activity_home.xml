@@ -33,53 +33,67 @@
         android:textColor="@color/muted_foreground"
         android:visibility="gone" />
 
-    <LinearLayout
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:padding="24dp">
+        android:fillViewport="true">
 
-        <ImageView
-            android:layout_width="64dp"
-            android:layout_height="64dp"
-            android:contentDescription="@string/brand_name"
-            android:src="@drawable/ic_c_plus_brand" />
-
-        <TextView
-            android:id="@+id/txtEmpresaHome"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
             android:gravity="center"
-            android:textColor="@color/muted_foreground"
-            android:textSize="14sp" />
+            android:orientation="vertical"
+            android:padding="24dp">
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:layout_marginBottom="20dp"
-            android:gravity="center"
-            android:text="@string/home_titulo"
-            android:textColor="@color/foreground"
-            android:textSize="22sp"
-            android:textStyle="bold" />
+            <ImageView
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:contentDescription="@string/brand_name"
+                android:src="@drawable/ic_c_plus_brand" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnVendaRapida"
-            style="@style/PosHubButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:text="@string/venda_rapida" />
+            <TextView
+                android:id="@+id/txtEmpresaHome"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:textColor="@color/muted_foreground"
+                android:textSize="14sp" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnMesas"
-            style="@style/PosHubButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/mesas" />
-    </LinearLayout>
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="20dp"
+                android:gravity="center"
+                android:text="@string/home_titulo"
+                android:textColor="@color/foreground"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnVendaRapida"
+                style="@style/PosHubButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:text="@string/venda_rapida" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnMesas"
+                style="@style/PosHubButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:text="@string/mesas" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnVendas"
+                style="@style/PosHubButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/vendas_efetuadas" />
+        </LinearLayout>
+    </ScrollView>
 </LinearLayout>

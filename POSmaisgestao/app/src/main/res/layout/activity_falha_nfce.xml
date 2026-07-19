@@ -66,6 +66,15 @@
             android:text="@string/imprimir_comprovante" />
 
         <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnImprimirFichasFalha"
+            style="@style/PosBigButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="@string/reimprimir_fichas"
+            android:visibility="gone" />
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnNovaVendaFalha"
             style="@style/PosBigButton"
             android:layout_width="match_parent"

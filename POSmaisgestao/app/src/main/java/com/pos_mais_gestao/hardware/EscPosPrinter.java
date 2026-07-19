@@ -6,8 +6,10 @@ import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.util.Log;
 import com.pos_mais_gestao.data.local.PrefsStore;
+import com.pos_mais_gestao.domain.ItemFicha;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -53,6 +55,19 @@ public class EscPosPrinter implements ImpressoraPos {
     @Override
     public void imprimirDanfce(String texto, String qrConteudo) throws Exception {
         byte[] dados = DanfceEscPos.montarTextoComQr(texto, qrConteudo);
+        enviar(dados);
+    }
+
+    @Override
+    public void imprimirFichasEvento(String empresaNome, String codigoVenda, List<ItemFicha> itens)
+            throws Exception {
+        if (itens == null || itens.isEmpty()) {
+            return;
+        }
+        byte[] dados = FichasEventoEscPos.montar(empresaNome, codigoVenda, itens);
+        if (dados.length == 0) {
+            return;
+        }
         enviar(dados);
     }
 

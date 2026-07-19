@@ -14,8 +14,8 @@ android {
         applicationId = "com.pos_mais_gestao"
         minSdk = 24
         targetSdk = 36
-        versionCode = 5
-        versionName = "1.3"
+        versionCode = 8
+        versionName = "1.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -41,6 +41,7 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.gson)
     implementation(libs.recyclerview)
+    implementation(libs.zxing.android.embedded)
     testImplementation(libs.junit)
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(libs.ext.junit)

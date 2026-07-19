@@ -969,6 +969,336 @@ public class ApiClient {
         deleteJson("/contas-mesa-item/" + idItem);
     }
 
+    public PaginaVendas listarVendasPdv(
+            String dataInicio, String dataFim, Integer numeropdv, int page, int limit)
+            throws ApiException {
+        String empresaId = prefsStore.getEmpresaId();
+        if (empresaId == null) {
+            throw new ApiException("Empresa não selecionada");
+        }
+        int pagina = Math.max(1, page);
+        int lim = Math.max(1, Math.min(100, limit));
+        StringBuilder path = new StringBuilder("/vendas-pdv-gourmet?idempresa=")
+                .append(empresaId)
+                .append("&page=")
+                .append(pagina)
+                .append("&limit=")
+                .append(lim);
+        if (dataInicio != null && !dataInicio.isEmpty()) {
+            path.append("&dataInicio=").append(encode(dataInicio));
+        }
+        if (dataFim != null && !dataFim.isEmpty()) {
+            path.append("&dataFim=").append(encode(dataFim));
+        }
+        if (numeropdv != null) {
+            path.append("&numeropdv=").append(numeropdv);
+        }
+        JsonObject response = getJson(path.toString());
+        List<VendaResumoDto> vendas = new ArrayList<>();
+        JsonArray data = response.getAsJsonArray("data");
+        if (data != null) {
+            for (JsonElement element : data) {
+                if (!element.isJsonObject()) {
+                    continue;
+                }
+                VendaResumoDto venda = mapearVendaPdv(element.getAsJsonObject());
+                if (venda != null) {
+                    vendas.add(venda);
+                }
+            }
+        }
+        return mapearPaginacao(vendas, response, pagina, lim);
+    }
+
+    public PaginaVendas listarDavsPos(
+            String dataInicio, String dataFim, Integer status, int page, int limit)
+            throws ApiException {
+        String empresaId = prefsStore.getEmpresaId();
+        if (empresaId == null) {
+            throw new ApiException("Empresa não selecionada");
+        }
+        int pagina = Math.max(1, page);
+        int lim = Math.max(1, Math.min(100, limit));
+        StringBuilder path = new StringBuilder("/davs?idempresa=")
+                .append(empresaId)
+                .append("&origem=POS")
+                .append("&page=")
+                .append(pagina)
+                .append("&limit=")
+                .append(lim);
+        if (dataInicio != null && !dataInicio.isEmpty()) {
+            path.append("&dataInicio=").append(encode(dataInicio));
+        }
+        if (dataFim != null && !dataFim.isEmpty()) {
+            path.append("&dataFim=").append(encode(dataFim));
+        }
+        if (status != null) {
+            path.append("&status=").append(status);
+        }
+        JsonObject response = getJson(path.toString());
+        List<VendaResumoDto> vendas = new ArrayList<>();
+        JsonArray data = response.getAsJsonArray("data");
+        if (data != null) {
+            for (JsonElement element : data) {
+                if (!element.isJsonObject()) {
+                    continue;
+                }
+                VendaResumoDto venda = mapearDavPos(element.getAsJsonObject());
+                if (venda != null) {
+                    vendas.add(venda);
+                }
+            }
+        }
+        return mapearPaginacao(vendas, response, pagina, lim);
+    }
+
+    public List<VendaItemDetalheDto> listarItensVendaPdv(String idVenda) throws ApiException {
+        String empresaId = prefsStore.getEmpresaId();
+        if (empresaId == null) {
+            throw new ApiException("Empresa não selecionada");
+        }
+        if (idVenda == null || idVenda.isEmpty()) {
+            throw new ApiException("Venda inválida");
+        }
+        String path = "/vendas-pdv-item?idempresa="
+                + empresaId
+                + "&idvenda="
+                + encode(idVenda)
+                + "&page=1&limit=100";
+        JsonObject response = getJson(path);
+        List<VendaItemDetalheDto> itens = new ArrayList<>();
+        JsonArray data = response.getAsJsonArray("data");
+        if (data == null) {
+            return itens;
+        }
+        for (JsonElement element : data) {
+            if (!element.isJsonObject()) {
+                continue;
+            }
+            JsonObject obj = element.getAsJsonObject();
+            VendaItemDetalheDto item = new VendaItemDetalheDto();
+            item.id = texto(obj, "id");
+            item.idproduto = texto(obj, "idproduto");
+            item.quantidade = textoOuNumero(obj, "quantidade");
+            item.precounitario = textoOuNumero(obj, "precounitario");
+            item.precototal = textoOuNumero(obj, "precototal");
+            item.nome = resolverNomeProduto(item.idproduto);
+            itens.add(item);
+        }
+        return itens;
+    }
+
+    public List<VendaItemDetalheDto> listarItensDav(String idDav) throws ApiException {
+        if (idDav == null || idDav.isEmpty()) {
+            throw new ApiException("Pedido inválido");
+        }
+        JsonObject response = getJson("/davs/" + idDav + "/itens");
+        List<VendaItemDetalheDto> itens = new ArrayList<>();
+        JsonArray data = response.getAsJsonArray("data");
+        if (data == null) {
+            return itens;
+        }
+        for (JsonElement element : data) {
+            if (!element.isJsonObject()) {
+                continue;
+            }
+            JsonObject obj = element.getAsJsonObject();
+            VendaItemDetalheDto item = new VendaItemDetalheDto();
+            item.id = texto(obj, "id");
+            item.idproduto = texto(obj, "idproduto");
+            item.nome = texto(obj, "nomeproduto");
+            if (item.nome == null || item.nome.isEmpty()) {
+                item.nome = "Item";
+            }
+            item.quantidade = textoOuNumero(obj, "quantidade");
+            item.precounitario = textoOuNumero(obj, "preco");
+            if (item.precounitario == null) {
+                item.precounitario = textoOuNumero(obj, "precounitario");
+            }
+            item.precototal = textoOuNumero(obj, "total");
+            if (item.precototal == null) {
+                item.precototal = textoOuNumero(obj, "precototal");
+            }
+            itens.add(item);
+        }
+        return itens;
+    }
+
+    public String buscarTextoCupomNfce(String idNotaFiscal) throws ApiException {
+        if (idNotaFiscal == null || idNotaFiscal.isEmpty()) {
+            throw new ApiException("Nota fiscal inválida");
+        }
+        JsonObject cupom = getJson("/nfce/" + idNotaFiscal + "/cupom");
+        if (cupom.has("data") && cupom.get("data").isJsonObject()) {
+            cupom = cupom.getAsJsonObject("data");
+        }
+        String textoCupom = montarDanfceTextoDoCupom(cupom);
+        if (textoCupom == null || textoCupom.isEmpty()) {
+            throw new ApiException("Cupom NFC-e indisponível");
+        }
+        return textoCupom;
+    }
+
+    private String resolverNomeProduto(String idProduto) {
+        if (idProduto == null || idProduto.isEmpty()) {
+            return "Produto";
+        }
+        try {
+            JsonObject response = getJson("/produtos/" + idProduto);
+            JsonObject produto = response;
+            if (response.has("data") && response.get("data").isJsonObject()) {
+                produto = response.getAsJsonObject("data");
+            }
+            String descricao = texto(produto, "descricao");
+            if (descricao != null && !descricao.isEmpty()) {
+                return descricao;
+            }
+        } catch (ApiException ignored) {
+        }
+        return "Produto";
+    }
+
+    private PaginaVendas mapearPaginacao(
+            List<VendaResumoDto> vendas, JsonObject response, int pagina, int lim) {
+        int total = vendas.size();
+        int totalPages = 1;
+        if (response.has("paginacao") && response.get("paginacao").isJsonObject()) {
+            JsonObject pag = response.getAsJsonObject("paginacao");
+            if (pag.has("total") && !pag.get("total").isJsonNull()) {
+                total = pag.get("total").getAsInt();
+            }
+            if (pag.has("totalPages") && !pag.get("totalPages").isJsonNull()) {
+                totalPages = pag.get("totalPages").getAsInt();
+            } else if (lim > 0) {
+                totalPages = Math.max(1, (int) Math.ceil(total / (double) lim));
+            }
+        }
+        return new PaginaVendas(vendas, pagina, lim, total, totalPages);
+    }
+
+    private VendaResumoDto mapearVendaPdv(JsonObject obj) {
+        String id = texto(obj, "id");
+        if (id == null) {
+            return null;
+        }
+        VendaResumoDto venda = new VendaResumoDto();
+        venda.tipo = VendaResumoDto.Tipo.PDV;
+        venda.id = id;
+        venda.codigo = id.length() > 8 ? id.substring(0, 8).toUpperCase(Locale.ROOT) : id.toUpperCase(Locale.ROOT);
+        venda.dataHora = texto(obj, "datacriacao");
+        venda.valorTotal = textoOuNumero(obj, "valortotal");
+        venda.numeropdv = inteiro(obj, "numeropdv");
+        venda.mesa = obj.has("idcontamesa")
+                && !obj.get("idcontamesa").isJsonNull()
+                && !texto(obj, "idcontamesa").isEmpty();
+        venda.idNotaFiscal = texto(obj, "idnotafiscalnfce");
+        venda.pagamentosResumo = resumirPagamentosPdv(obj);
+        venda.meioPagamentoLabel = venda.pagamentosResumo;
+        return venda;
+    }
+
+    private VendaResumoDto mapearDavPos(JsonObject obj) {
+        String id = texto(obj, "id");
+        if (id == null) {
+            return null;
+        }
+        VendaResumoDto venda = new VendaResumoDto();
+        venda.tipo = VendaResumoDto.Tipo.DAV;
+        venda.id = id;
+        Integer codigo = inteiro(obj, "codigo");
+        venda.codigo = codigo != null ? String.valueOf(codigo) : (id.length() > 8 ? id.substring(0, 8) : id);
+        venda.dataHora = texto(obj, "data");
+        if (venda.dataHora == null) {
+            venda.dataHora = texto(obj, "datainclusao");
+        }
+        venda.valorTotal = textoOuNumero(obj, "valor");
+        venda.nomeCliente = texto(obj, "nomecliente");
+        venda.statusDav = inteiro(obj, "status");
+        venda.idNotaFiscal = texto(obj, "idnfce");
+        if (venda.idNotaFiscal == null) {
+            venda.idNotaFiscal = texto(obj, "idnotafiscal");
+        }
+        venda.pagamentosResumo = resumirPagamentosDav(obj);
+        venda.meioPagamentoLabel = venda.pagamentosResumo;
+        venda.mesa = false;
+        return venda;
+    }
+
+    private static String resumirPagamentosPdv(JsonObject obj) {
+        List<String> partes = new ArrayList<>();
+        adicionarPagamentoSePositivo(partes, "Dinheiro", obj, "valordinheiro");
+        adicionarPagamentoSePositivo(partes, "PIX", obj, "valorpix");
+        adicionarPagamentoSePositivo(partes, "Cartão", obj, "valorcartao");
+        adicionarPagamentoSePositivo(partes, "Crédito", obj, "valorcartaocredito");
+        adicionarPagamentoSePositivo(partes, "Débito", obj, "valorcartaodebito");
+        adicionarPagamentoSePositivo(partes, "Pré-pago", obj, "valorprepago");
+        if (partes.isEmpty()) {
+            return "—";
+        }
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < partes.size(); i++) {
+            if (i > 0) {
+                sb.append(" · ");
+            }
+            sb.append(partes.get(i));
+        }
+        return sb.toString();
+    }
+
+    private static String resumirPagamentosDav(JsonObject obj) {
+        List<String> partes = new ArrayList<>();
+        adicionarPagamentoSePositivo(partes, "Dinheiro", obj, "dinheiro");
+        adicionarPagamentoSePositivo(partes, "PIX", obj, "pix");
+        adicionarPagamentoSePositivo(partes, "À vista", obj, "avista");
+        adicionarPagamentoSePositivo(partes, "A prazo", obj, "aprazo");
+        adicionarPagamentoSePositivo(partes, "POS", obj, "posavista");
+        if (partes.isEmpty()) {
+            return "Pedido POS";
+        }
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < partes.size(); i++) {
+            if (i > 0) {
+                sb.append(" · ");
+            }
+            sb.append(partes.get(i));
+        }
+        return sb.toString();
+    }
+
+    private static void adicionarPagamentoSePositivo(
+            List<String> partes, String label, JsonObject obj, String key) {
+        BigDecimal valor = decimal(obj, key);
+        if (valor.compareTo(BigDecimal.ZERO) > 0) {
+            partes.add(label);
+        }
+    }
+
+    private static String textoOuNumero(JsonObject obj, String key) {
+        if (obj == null || !obj.has(key) || obj.get(key).isJsonNull()) {
+            return null;
+        }
+        JsonElement el = obj.get(key);
+        if (el.isJsonPrimitive()) {
+            return el.getAsString();
+        }
+        return el.toString();
+    }
+
+    private static Integer inteiro(JsonObject obj, String key) {
+        if (obj == null || !obj.has(key) || obj.get(key).isJsonNull()) {
+            return null;
+        }
+        try {
+            return obj.get(key).getAsInt();
+        } catch (Exception e) {
+            try {
+                return Integer.parseInt(obj.get(key).getAsString());
+            } catch (Exception ignored) {
+                return null;
+            }
+        }
+    }
+
     private void deleteJson(String path) throws ApiException {
         Request.Builder builder = new Request.Builder().url(prefsStore.getBaseUrl() + path).delete();
         String token = prefsStore.getToken();

@@ -9,6 +9,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.activity.result.ActivityResultLauncher;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
@@ -17,9 +18,11 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
+import com.journeyapps.barcodescanner.ScanOptions;
 import com.pos_mais_gestao.PosApplication;
 import com.pos_mais_gestao.R;
 import com.pos_mais_gestao.data.api.ApiClient;
+import com.pos_mais_gestao.data.api.ApiException;
 import com.pos_mais_gestao.data.local.PrefsStore;
 import com.pos_mais_gestao.domain.Carrinho;
 import com.pos_mais_gestao.domain.ItemCarrinho;
@@ -28,6 +31,7 @@ import com.pos_mais_gestao.ui.atalhos.AtalhosActivity;
 import com.pos_mais_gestao.ui.config.ConfigActivity;
 import com.pos_mais_gestao.ui.login.LoginActivity;
 import com.pos_mais_gestao.ui.pagamento.PagamentoActivity;
+import com.pos_mais_gestao.util.CodigoScanHelper;
 import com.pos_mais_gestao.util.MoneyFormat;
 import com.pos_mais_gestao.util.ProdutoBuscaHelper;
 import java.util.List;
@@ -41,12 +45,23 @@ public class VendaActivity extends AppCompatActivity {
     private ProdutoAdapter produtoAdapter;
     private CarrinhoAdapter carrinhoAdapter;
     private ProdutoBuscaHelper buscaHelper;
+    private CodigoScanHelper scanHelper;
     private RecyclerView listaProdutos;
     private TextView lblSecao;
     private TextView txtVazio;
+    private TextInputEditText inputBusca;
     private MaterialButton btnPagar;
     private MaterialButton btnCarregarMais;
     private boolean mostrandoBusca;
+
+    private final ActivityResultLauncher<ScanOptions> scanLauncher =
+            CodigoScanHelper.registrarScan(this, this::aoCodigoEscaneado);
+    private final ActivityResultLauncher<String> cameraPermissionLauncher =
+            CodigoScanHelper.registrarPermissao(this, () -> {
+                if (scanHelper != null) {
+                    scanHelper.abrirCamera();
+                }
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,6 +71,7 @@ public class VendaActivity extends AppCompatActivity {
         PosApplication app = (PosApplication) getApplication();
         prefs = app.getPrefsStore();
         api = app.getApiClient();
+        scanHelper = new CodigoScanHelper(this, scanLauncher, cameraPermissionLauncher, this::aoCodigoEscaneado);
 
         MaterialToolbar toolbar = findViewById(R.id.toolbarVenda);
         setSupportActionBar(toolbar);
@@ -66,7 +82,9 @@ public class VendaActivity extends AppCompatActivity {
         txtVazio = findViewById(R.id.txtVazio);
         btnPagar = findViewById(R.id.btnPagar);
         btnCarregarMais = findViewById(R.id.btnCarregarMais);
-        TextInputEditText inputBusca = findViewById(R.id.inputBusca);
+        inputBusca = findViewById(R.id.inputBusca);
+        MaterialButton btnEscanear = findViewById(R.id.btnEscanear);
+        btnEscanear.setOnClickListener(v -> scanHelper.iniciar());
 
         produtoAdapter = new ProdutoAdapter(this::adicionarProduto);
         listaProdutos = findViewById(R.id.listaProdutos);
@@ -140,6 +158,34 @@ public class VendaActivity extends AppCompatActivity {
 
             @Override
             public void afterTextChanged(Editable s) {}
+        });
+    }
+
+    private void aoCodigoEscaneado(String codigo) {
+        inputBusca.setText(codigo);
+        inputBusca.setSelection(codigo.length());
+        executor.execute(() -> {
+            try {
+                List<Produto> produtos = api.buscarProdutos(codigo);
+                runOnUiThread(() -> {
+                    if (produtos == null || produtos.isEmpty()) {
+                        Toast.makeText(this, R.string.produto_nao_encontrado_scan, Toast.LENGTH_LONG).show();
+                        buscaHelper.onTextoAlterado(codigo);
+                        return;
+                    }
+                    Produto escolhido = produtos.get(0);
+                    if (produtos.size() == 1) {
+                        adicionarProduto(escolhido);
+                        Toast.makeText(this, R.string.produto_adicionado_scan, Toast.LENGTH_SHORT).show();
+                        inputBusca.setText("");
+                        buscaHelper.mostrarAtalhos();
+                    } else {
+                        buscaHelper.onTextoAlterado(codigo);
+                    }
+                });
+            } catch (ApiException e) {
+                runOnUiThread(() -> Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show());
+            }
         });
     }
 
