@@ -51,13 +51,15 @@ export async function buscarProdutoService({
 	}
 
 	let cestCodigo: string | null = null;
-	const cestLegado = normalizarCodigoCest(registro.cest);
-	if (cestLegado?.length === 7) {
-		cestCodigo = cestLegado;
-	} else if (registro.idcest) {
+	// Preferir idcest (cadastro atual); campo integer `cest` é legado e costuma ser 0.
+	if (registro.idcest) {
 		const cest = await buscarCestPorId(registro.idcest);
 		const codigo = normalizarCodigoCest(cest?.codigo);
 		cestCodigo = codigo?.length === 7 ? codigo : null;
+	}
+	if (!cestCodigo) {
+		const cestLegado = normalizarCodigoCest(registro.cest);
+		cestCodigo = cestLegado?.length === 7 ? cestLegado : null;
 	}
 
 	return httpOk<ProdutoComEstoque>({ ...registro, estoque, cestCodigo });

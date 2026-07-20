@@ -35,18 +35,14 @@ async function resolverNcmProduto(
 async function resolverCestProduto(
 	produto: NonNullable<Awaited<ReturnType<typeof buscarProdutoPorId>>>,
 ): Promise<string | undefined> {
+	if (produto.idcest) {
+		const cest = await buscarCestPorId(produto.idcest);
+		const codigo = normalizarCodigoCest(cest?.codigo);
+		if (codigo?.length === 7) return codigo;
+	}
+
 	const cestLegado = normalizarCodigoCest(produto.cest);
-	if (cestLegado?.length === 7) {
-		return cestLegado;
-	}
-
-	if (!produto.idcest) {
-		return undefined;
-	}
-
-	const cest = await buscarCestPorId(produto.idcest);
-	const codigo = normalizarCodigoCest(cest?.codigo);
-	return codigo?.length === 7 ? codigo : undefined;
+	return cestLegado?.length === 7 ? cestLegado : undefined;
 }
 
 function formatarSituacaoTributaria(

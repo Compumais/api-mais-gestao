@@ -9,14 +9,17 @@ export function normalizarCodigoCest(
 ): string | undefined {
 	if (valor == null) return undefined;
 	const digitos = String(valor).replace(/\D/g, "");
+	if (!digitos || /^0+$/.test(digitos)) return undefined;
 	if (digitos.length === 7) return digitos;
 	// Campo legado numérico no produto pode perder zeros à esquerda.
 	if (
 		typeof valor === "number" &&
+		valor > 0 &&
 		digitos.length > 0 &&
 		digitos.length < 7
 	) {
-		return digitos.padStart(7, "0");
+		const padded = digitos.padStart(7, "0");
+		return /^0+$/.test(padded) ? undefined : padded;
 	}
 	return undefined;
 }
