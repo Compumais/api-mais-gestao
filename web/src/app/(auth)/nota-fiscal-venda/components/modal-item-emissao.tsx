@@ -33,6 +33,7 @@ import { produtosService } from "@/services/produtos.service";
 import {
 	empresaUsaCsosn,
 	itemEmissaoPodeSerConfirmado,
+	itemEmissaoRequerCest,
 	mapearProdutoParaItemNfe,
 	mapearTributacaoCfopParaItem,
 	normalizarTributacaoItemFormulario,
@@ -458,6 +459,32 @@ export function ModalItemEmissao({
 							/>
 						</div>
 
+						<div className="space-y-1 min-w-0">
+							<span className="text-sm font-medium text-muted-foreground block">
+								CEST
+								{itemEmissaoRequerCest(item) && (
+									<span className="text-destructive"> *</span>
+								)}
+							</span>
+							<Input
+								value={item.cest ?? ""}
+								maxLength={7}
+								placeholder="0000000"
+								onChange={(e) => {
+									const digitos = e.target.value.replace(/\D/g, "").slice(0, 7);
+									atualizarCampo("cest", digitos || undefined);
+								}}
+							/>
+							{itemEmissaoRequerCest(item) &&
+								(item.cest?.replace(/\D/g, "").length ?? 0) !== 7 && (
+									<p className="text-xs text-destructive">
+										Obrigatório em operação com ICMS-ST (7 dígitos).
+									</p>
+								)}
+						</div>
+					</div>
+
+					<div className="grid grid-cols-1 gap-3">
 						<div className="space-y-1 min-w-0">
 							<span className="text-sm font-medium text-muted-foreground block">
 								CFOP

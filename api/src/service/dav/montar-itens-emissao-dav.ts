@@ -1,8 +1,10 @@
 import { buscarCfopPorId } from "@/repositories/cfop-repositories.js";
 import { listarItensPorDav } from "@/repositories/dav-item-repositories.js";
+import { buscarCestPorId } from "@/repositories/cest-repositories.js";
 import { buscarNcmPorId } from "@/repositories/ncm-repositories.js";
 import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
 import type { ItemPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
+import { normalizarCodigoCest } from "@/util/validar-cest-item-emissao-nfe.js";
 
 async function resolverCodigoCfop(
 	ids: Array<string | null | undefined>,
@@ -28,6 +30,23 @@ async function resolverNcmProduto(
 	}
 
 	return "";
+}
+
+async function resolverCestProduto(
+	produto: NonNullable<Awaited<ReturnType<typeof buscarProdutoPorId>>>,
+): Promise<string | undefined> {
+	const cestLegado = normalizarCodigoCest(produto.cest);
+	if (cestLegado?.length === 7) {
+		return cestLegado;
+	}
+
+	if (!produto.idcest) {
+		return undefined;
+	}
+
+	const cest = await buscarCestPorId(produto.idcest);
+	const codigo = normalizarCodigoCest(cest?.codigo);
+	return codigo?.length === 7 ? codigo : undefined;
 }
 
 function formatarSituacaoTributaria(
@@ -111,6 +130,8 @@ export async function montarItensEmissaoDav(
 			pendencias.push(`${rotulo}: NCM do produto ausente`);
 		}
 
+		const cest = await resolverCestProduto(produto);
+
 		const cst = formatarSituacaoTributaria(produto.situacaotributaria);
 		const csosn =
 			formatarSituacaoTributaria(produto.tributacaosn) ??
@@ -123,6 +144,7 @@ export async function montarItensEmissaoDav(
 				: {}),
 			descricao: produto.descricao ?? `Produto ${produto.codigo ?? ""}`.trim(),
 			ncm,
+			...(cest ? { cest } : {}),
 			cfop: codigoCfop ?? "",
 			unidade: itemDav.unidademedida ?? produto.unidademedida ?? "UN",
 			quantidade,

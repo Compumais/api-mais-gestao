@@ -51,6 +51,7 @@ import { normalizarPagamentoEmissaoNfe } from "@/util/normalizar-pagamento-emiss
 import { normalizarItensEmissaoNfe } from "@/util/normalizar-tributacao-item-emissao-nfe.js";
 import { resolverIdeEmissaoNfe } from "@/util/resolver-ide-emissao-nfe.js";
 import { resolverNatOpEmissaoNfe } from "@/util/resolver-nat-op-emissao-nfe.js";
+import { validarCestItensEmissaoNfe } from "@/util/validar-cest-item-emissao-nfe.js";
 
 export const AVISO_PREVIEW_DANFE =
 	"*** PRÉ-VISUALIZAÇÃO - DOCUMENTO SEM VALOR FISCAL ***";
@@ -527,6 +528,11 @@ export async function prepararPayloadEmissaoNfeVenda(
 
 	if (pendenciasCreditoSn.length > 0) {
 		return httpBadRequest(pendenciasCreditoSn.join("; "));
+	}
+
+	const pendenciasCest = validarCestItensEmissaoNfe(itensNormalizados);
+	if (pendenciasCest.length > 0) {
+		return httpBadRequest(pendenciasCest.join("; "));
 	}
 
 	const vProd = itens.reduce(

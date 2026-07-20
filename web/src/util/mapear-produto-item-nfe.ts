@@ -183,6 +183,12 @@ export function mapearItemNotaReemissaoParaForm(
 			cst: item.situacaotributaria
 				? String(item.situacaotributaria).trim()
 				: undefined,
+			cest: (() => {
+				const cestSalvo = tributacaoSalva?.cest
+					? String(tributacaoSalva.cest).replace(/\D/g, "")
+					: "";
+				return cestSalvo.length === 7 ? cestSalvo : undefined;
+			})(),
 			orig: Number(item.origem ?? 0) || 0,
 			cstPis: item.cstpis ? String(item.cstpis).trim() : undefined,
 			cstCofins: item.cstcofins ? String(item.cstcofins).trim() : undefined,
@@ -237,6 +243,7 @@ export function prepararItemEmissaoFormulario(
 		...tributacao,
 		descricao: String(item.descricao ?? ""),
 		ncm: String(item.ncm ?? ""),
+		cest: item.cest?.replace(/\D/g, "").slice(0, 7) || undefined,
 		cfop: String(item.cfop ?? ""),
 		unidade: String(item.unidade ?? "UN"),
 		quantidade: Number(item.quantidade) || 0,
@@ -271,12 +278,27 @@ export function prepararItemEmissaoFormulario(
 	};
 }
 
+const CST_COM_ST = new Set(["10", "30", "60", "70"]);
+const CSOSN_COM_ST = new Set(["201", "202", "203", "500"]);
+
+export function itemEmissaoRequerCest(item: ItemNfe): boolean {
+	const cst = item.cst?.replace(/\D/g, "") ?? "";
+	const csosn = item.csosn?.replace(/\D/g, "") ?? "";
+	if (CST_COM_ST.has(cst) || CSOSN_COM_ST.has(csosn)) {
+		return true;
+	}
+	return (item.baseIcmsSt ?? 0) > 0 || (item.valorIcmsSt ?? 0) > 0;
+}
+
 export function itemEmissaoPodeSerConfirmado(
 	item: ItemNfe,
 	usaCsosn: boolean,
 ): boolean {
 	const preparado = prepararItemEmissaoFormulario(item, usaCsosn);
 	const tributacao = normalizarTributacaoItemFormulario(preparado, usaCsosn);
+	const cestOk =
+		!itemEmissaoRequerCest({ ...preparado, ...tributacao }) ||
+		Boolean(preparado.cest?.replace(/\D/g, "").length === 7);
 
 	return (
 		preparado.descricao.trim() !== "" &&
@@ -286,7 +308,8 @@ export function itemEmissaoPodeSerConfirmado(
 		preparado.valorUnitario > 0 &&
 		(usaCsosn
 			? Boolean(tributacao.csosn?.trim())
-			: Boolean(tributacao.cst?.trim()))
+			: Boolean(tributacao.cst?.trim())) &&
+		cestOk
 	);
 }
 
@@ -315,6 +338,8 @@ export function mapearProdutoParaItemNfe(
 		eantributavel?: string | null;
 		nome: string;
 		ncm?: string | null;
+		cestCodigo?: string | null;
+		cest?: string | number | null;
 		preco?: string | null;
 		origem?: number | null;
 		situacaotributaria?: string | null;
@@ -337,6 +362,20 @@ export function mapearProdutoParaItemNfe(
 		produto.eantributavel?.trim() ||
 		(ean && ean.length >= 8 ? ean : undefined);
 
+	const rawCest = produto.cestCodigo ?? produto.cest;
+	const digitosCest =
+		rawCest != null && String(rawCest).trim() !== ""
+			? String(rawCest).replace(/\D/g, "")
+			: "";
+	const cest =
+		digitosCest.length === 7
+			? digitosCest
+			: typeof produto.cest === "number" &&
+					digitosCest.length > 0 &&
+					digitosCest.length < 7
+				? digitosCest.padStart(7, "0")
+				: undefined;
+
 	return {
 		idproduto: produto.id,
 		codigoProduto:
@@ -345,6 +384,7 @@ export function mapearProdutoParaItemNfe(
 		eanTributavel,
 		descricao: produto.nome,
 		ncm: produto.ncm ?? "",
+		...(cest ? { cest } : {}),
 		cfop: cfop ?? "",
 		unidade: "UN",
 		quantidade: 1,
