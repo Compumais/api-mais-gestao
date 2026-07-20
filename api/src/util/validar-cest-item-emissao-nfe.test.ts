@@ -11,6 +11,8 @@ describe("validar-cest-item-emissao-nfe", () => {
 		expect(normalizarCodigoCest("123")).toBeUndefined();
 		expect(normalizarCodigoCest(1705600)).toBe("1705600");
 		expect(normalizarCodigoCest(105600)).toBe("0105600");
+		expect(normalizarCodigoCest(0)).toBeUndefined();
+		expect(normalizarCodigoCest("0000000")).toBeUndefined();
 	});
 
 	it("identifica operação ST por CST/CSOSN ou valores", () => {

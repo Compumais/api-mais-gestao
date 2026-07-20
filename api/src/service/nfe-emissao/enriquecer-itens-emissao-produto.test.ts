@@ -17,14 +17,14 @@ describe("enriquecerItensEmissaoComProduto", () => {
 			idempresa: "emp-1",
 			codigo: 10,
 			idcest: "cest-1",
-			cest: null,
-			ean: null,
+			cest: 0,
+			ean: "17898380412250",
 			eantributavel: null,
 		} as Awaited<ReturnType<typeof produtosRepositories.buscarProdutoPorId>>);
 
 		vi.mocked(cestRepositories.buscarCestPorId).mockResolvedValue({
 			id: "cest-1",
-			codigo: "1705600",
+			codigo: "1703200",
 		} as Awaited<ReturnType<typeof cestRepositories.buscarCestPorId>>);
 
 		const itens = await enriquecerItensEmissaoComProduto([
@@ -32,6 +32,7 @@ describe("enriquecerItensEmissaoComProduto", () => {
 				idproduto: "prod-1",
 				descricao: "Produto ST",
 				ncm: "22021000",
+				cest: "0000000",
 				cfop: "5405",
 				unidade: "UN",
 				quantidade: 1,
@@ -40,7 +41,8 @@ describe("enriquecerItensEmissaoComProduto", () => {
 			},
 		]);
 
-		expect(itens[0]?.cest).toBe("1705600");
+		expect(itens[0]?.cest).toBe("1703200");
+		expect(itens[0]?.ean).toBe("17898380412250");
 		expect(itens[0]?.codigoProduto).toBe("10");
 	});
 

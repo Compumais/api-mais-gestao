@@ -243,7 +243,11 @@ export function prepararItemEmissaoFormulario(
 		...tributacao,
 		descricao: String(item.descricao ?? ""),
 		ncm: String(item.ncm ?? ""),
-		cest: item.cest?.replace(/\D/g, "").slice(0, 7) || undefined,
+		cest: (() => {
+			const digitos = item.cest?.replace(/\D/g, "").slice(0, 7) ?? "";
+			if (!digitos || /^0+$/.test(digitos)) return undefined;
+			return digitos;
+		})(),
 		cfop: String(item.cfop ?? ""),
 		unidade: String(item.unidade ?? "UN"),
 		quantidade: Number(item.quantidade) || 0,
@@ -296,9 +300,10 @@ export function itemEmissaoPodeSerConfirmado(
 ): boolean {
 	const preparado = prepararItemEmissaoFormulario(item, usaCsosn);
 	const tributacao = normalizarTributacaoItemFormulario(preparado, usaCsosn);
+	const cestDigitos = preparado.cest?.replace(/\D/g, "") ?? "";
 	const cestOk =
 		!itemEmissaoRequerCest({ ...preparado, ...tributacao }) ||
-		Boolean(preparado.cest?.replace(/\D/g, "").length === 7);
+		(cestDigitos.length === 7 && !/^0+$/.test(cestDigitos));
 
 	return (
 		preparado.descricao.trim() !== "" &&
@@ -340,6 +345,7 @@ export function mapearProdutoParaItemNfe(
 		ncm?: string | null;
 		cestCodigo?: string | null;
 		cest?: string | number | null;
+		unidademedida?: string | null;
 		preco?: string | null;
 		origem?: number | null;
 		situacaotributaria?: string | null;
@@ -354,27 +360,20 @@ export function mapearProdutoParaItemNfe(
 ): ItemNfe {
 	const tributacao = resolverTributacaoIcms(produto, usaCsosn);
 
-	const ean =
+	const eanDigitos =
 		produto.ean != null && String(produto.ean).trim() !== ""
 			? String(produto.ean).replace(/\D/g, "")
-			: undefined;
-	const eanTributavel =
-		produto.eantributavel?.trim() ||
-		(ean && ean.length >= 8 ? ean : undefined);
-
-	const rawCest = produto.cestCodigo ?? produto.cest;
-	const digitosCest =
-		rawCest != null && String(rawCest).trim() !== ""
-			? String(rawCest).replace(/\D/g, "")
 			: "";
+	const ean = eanDigitos.length >= 8 ? eanDigitos : undefined;
+	const eanTributavelDigitos = produto.eantributavel?.replace(/\D/g, "") ?? "";
+	const eanTributavel =
+		eanTributavelDigitos.length >= 8
+			? eanTributavelDigitos
+			: ean;
+
 	const cest =
-		digitosCest.length === 7
-			? digitosCest
-			: typeof produto.cest === "number" &&
-					digitosCest.length > 0 &&
-					digitosCest.length < 7
-				? digitosCest.padStart(7, "0")
-				: undefined;
+		normalizarCodigoCestFront(produto.cestCodigo) ??
+		normalizarCodigoCestFront(produto.cest);
 
 	return {
 		idproduto: produto.id,
@@ -386,7 +385,7 @@ export function mapearProdutoParaItemNfe(
 		ncm: produto.ncm ?? "",
 		...(cest ? { cest } : {}),
 		cfop: cfop ?? "",
-		unidade: "UN",
+		unidade: (produto.unidademedida?.trim() || "UN").slice(0, 6),
 		quantidade: 1,
 		valorUnitario: produto.preco ? parseFloat(produto.preco) : 0,
 		orig: produto.origem ?? 0,
@@ -400,4 +399,23 @@ export function mapearProdutoParaItemNfe(
 				? formatarCstProduto(produto.cstcofins, 2)
 				: undefined,
 	};
+}
+
+function normalizarCodigoCestFront(
+	valor?: string | number | null,
+): string | undefined {
+	if (valor == null) return undefined;
+	const digitos = String(valor).replace(/\D/g, "");
+	if (!digitos || /^0+$/.test(digitos)) return undefined;
+	if (digitos.length === 7) return digitos;
+	if (
+		typeof valor === "number" &&
+		valor > 0 &&
+		digitos.length > 0 &&
+		digitos.length < 7
+	) {
+		const padded = digitos.padStart(7, "0");
+		return /^0+$/.test(padded) ? undefined : padded;
+	}
+	return undefined;
 }

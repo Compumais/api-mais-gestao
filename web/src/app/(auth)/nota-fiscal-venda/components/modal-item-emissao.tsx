@@ -165,7 +165,11 @@ export function ModalItemEmissao({
 	}, [cfopOpcoes]);
 
 	useEffect(() => {
-		if (open) {
+		if (!open) return;
+
+		let cancelado = false;
+
+		async function carregarItem() {
 			if (itemParaEditar) {
 				const itemNormalizado = prepararItemEmissaoFormulario(
 					itemParaEditar,
@@ -173,12 +177,59 @@ export function ModalItemEmissao({
 				);
 				setItem(itemNormalizado);
 				setBusca(itemNormalizado.descricao ?? "");
+
+				const cestInvalido =
+					!itemNormalizado.cest ||
+					/^0+$/.test(itemNormalizado.cest.replace(/\D/g, ""));
+				const precisaHidratacao =
+					Boolean(itemNormalizado.idproduto) &&
+					(!itemNormalizado.ean || cestInvalido);
+
+				if (precisaHidratacao && itemNormalizado.idproduto) {
+					setCarregandoProduto(true);
+					try {
+						const produto = await produtosService.buscar(
+							itemNormalizado.idproduto,
+						);
+						if (cancelado) return;
+						const doCadastro = mapearProdutoParaItemNfe(
+							produto,
+							itemNormalizado.cfop || cfopSaidaPadrao,
+							usaCsosn,
+						);
+						setItem(
+							prepararItemEmissaoFormulario(
+								{
+									...itemNormalizado,
+									ean: itemNormalizado.ean || doCadastro.ean,
+									eanTributavel:
+										itemNormalizado.eanTributavel || doCadastro.eanTributavel,
+									cest: cestInvalido ? doCadastro.cest : itemNormalizado.cest,
+									unidade:
+										itemNormalizado.unidade !== "UN"
+											? itemNormalizado.unidade
+											: doCadastro.unidade || itemNormalizado.unidade,
+								},
+								usaCsosn,
+							),
+						);
+					} catch {
+						// Mantém o item já carregado se o cadastro não estiver disponível.
+					} finally {
+						if (!cancelado) setCarregandoProduto(false);
+					}
+				}
 			} else {
 				setItem({ ...ITEM_NOVO, cfop: cfopSaidaPadrao });
 				setBusca("");
 			}
 			setTimeout(() => searchRef.current?.focus(), 100);
 		}
+
+		void carregarItem();
+		return () => {
+			cancelado = true;
+		};
 	}, [open, itemParaEditar, cfopSaidaPadrao, usaCsosn]);
 
 	async function selecionarProduto(idproduto: string) {

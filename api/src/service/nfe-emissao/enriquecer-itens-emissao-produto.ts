@@ -49,17 +49,13 @@ function aplicarGtinNoItem(
 async function resolverCestProduto(
 	produto: NonNullable<Awaited<ReturnType<typeof buscarProdutoPorId>>>,
 ): Promise<string | undefined> {
-	const cestLegado = normalizarCodigoCest(produto.cest);
-	if (cestLegado?.length === 7) {
-		return cestLegado;
+	if (produto.idcest) {
+		const cest = await buscarCestPorId(produto.idcest);
+		const codigo = normalizarCodigoCest(cest?.codigo);
+		if (codigo) return codigo;
 	}
 
-	if (!produto.idcest) {
-		return undefined;
-	}
-
-	const cest = await buscarCestPorId(produto.idcest);
-	return normalizarCodigoCest(cest?.codigo);
+	return normalizarCodigoCest(produto.cest);
 }
 
 export async function enriquecerItensEmissaoComProduto(
@@ -69,7 +65,7 @@ export async function enriquecerItensEmissaoComProduto(
 		itens.map(async (item) => {
 			let resultado: ItemPayloadNfe = {
 				...item,
-				cest: normalizarCodigoCest(item.cest) ?? item.cest,
+				cest: normalizarCodigoCest(item.cest),
 			};
 
 			if (resultado.ean) {
