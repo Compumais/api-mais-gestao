@@ -39,6 +39,7 @@ import { normalizarGtinItensEmissao } from "@/util/normalizar-gtin-item-emissao-
 import { normalizarPagamentoEmissaoNfe } from "@/util/normalizar-pagamento-emissao-nfe.js";
 import { normalizarItensEmissaoNfe } from "@/util/normalizar-tributacao-item-emissao-nfe.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
+import { validarCestItensEmissaoNfe } from "@/util/validar-cest-item-emissao-nfe.js";
 import {
 	normalizarCStatGateway,
 	normalizarCodigoStatusNfe,
@@ -293,6 +294,14 @@ export async function emitirNfceVendaPdvService({
 		return httpOk({
 			emitida: false,
 			erro: pendenciasCreditoSn.join("; "),
+		});
+	}
+
+	const pendenciasCest = validarCestItensEmissaoNfe(itensNormalizados);
+	if (pendenciasCest.length > 0) {
+		return httpOk({
+			emitida: false,
+			erro: pendenciasCest.join("; "),
 		});
 	}
 

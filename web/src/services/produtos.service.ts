@@ -31,6 +31,7 @@ export interface Produto {
 	idcfopsaida?: string | null;
 	idcfopsaidanfce?: string | null;
 	idcest?: string | null;
+	cestCodigo?: string | null;
 	idtaxauf?: string | null;
 	situacaotributariasnentrada?: string | null;
 	situacaotributaria?: string | null;

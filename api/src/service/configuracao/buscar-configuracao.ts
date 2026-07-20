@@ -1,7 +1,10 @@
 import type { HttpResponse } from "@/model/http-model.js";
-import { buscarConfiguracaoPorEmpresa } from "@/repositories/configuracao-repositories.js";
+import {
+	buscarConfiguracaoPorEmpresa,
+	criarConfiguracao,
+} from "@/repositories/configuracao-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
-import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
+import { httpOk, httpProibido } from "@/util/http-util.js";
 import { normalizarConfiguracaoNotificacoes } from "@/worker/util/configuracao-notificacoes.js";
 
 interface BuscarConfiguracaoParametros {
@@ -22,10 +25,10 @@ export async function buscarConfiguracaoService({
 		return httpProibido();
 	}
 
-	const configuracao = await buscarConfiguracaoPorEmpresa({ idempresa });
+	let configuracao = await buscarConfiguracaoPorEmpresa({ idempresa });
 
 	if (!configuracao) {
-		return httpNaoEncontrado();
+		configuracao = await criarConfiguracao({ idempresa });
 	}
 
 	return httpOk({

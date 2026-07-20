@@ -21,6 +21,7 @@ export type ItemPayloadNfe = {
 	eanTributavel?: string;
 	descricao: string;
 	ncm: string;
+	cest?: string;
 	cfop: string;
 	unidade: string;
 	quantidade: number;

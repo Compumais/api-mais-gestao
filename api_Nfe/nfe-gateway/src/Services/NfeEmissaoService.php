@@ -225,6 +225,10 @@ final class NfeEmissaoService
 				'vUnTrib' => $vUnCom,
 				'indTot' => 1,
 			];
+			$cestDigitos = preg_replace('/\D/', '', (string) ($item['cest'] ?? ''));
+			if (is_string($cestDigitos) && strlen($cestDigitos) === 7) {
+				$prod->CEST = $cestDigitos;
+			}
 			$mk->tagprod(self::anexarValoresComerciaisProd(
 				$prod,
 				$vFreteItem,

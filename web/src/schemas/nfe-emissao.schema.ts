@@ -8,6 +8,10 @@ export const itemNfeSchema = z.object({
 	eanTributavel: z.string().optional(),
 	descricao: z.string().min(1, "Descrição obrigatória"),
 	ncm: z.string().min(1, "NCM obrigatório"),
+	cest: z
+		.string()
+		.regex(/^\d{7}$/, "CEST deve ter 7 dígitos")
+		.optional(),
 	cfop: z.string().min(4, "CFOP obrigatório"),
 	unidade: z.string().min(1, "Unidade obrigatória"),
 	quantidade: z.coerce

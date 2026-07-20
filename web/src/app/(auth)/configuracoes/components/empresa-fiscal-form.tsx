@@ -28,17 +28,17 @@ import {
 import { empresaFiscalService } from "@/services/empresa-fiscal.service";
 import { localidadesService } from "@/services/localidades.service";
 
-const OPCOES_REGIME = [
-	{ value: "SN", label: "Simples Nacional", crt: 1 },
-	{ value: "LP", label: "Lucro Presumido", crt: 3 },
-	{ value: "LR", label: "Lucro Real", crt: 3 },
-] as const;
-
 const OPCOES_CRT = [
 	{ value: "1", label: "1 - Simples Nacional" },
 	{ value: "2", label: "2 - Simples excesso sublimite" },
 	{ value: "3", label: "3 - Regime Normal" },
 	{ value: "4", label: "4 - MEI" },
+];
+
+const OPCOES_INDICADOR_IE = [
+	{ value: "1", label: "1 - Contribuinte ICMS" },
+	{ value: "2", label: "2 - Contribuinte isento" },
+	{ value: "9", label: "9 - Não contribuinte" },
 ];
 
 interface EmpresaFiscalFormProps {
@@ -65,13 +65,14 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 	>({
 		resolver: zodResolver(empresaFiscalConfigSchema),
 		defaultValues: {
-			regimetributario: "",
 			indicadorie: 1,
 			codigopais: "1058",
+			crt: undefined,
 		},
 	});
 
 	const uf = form.watch("uf");
+	const errors = form.formState.errors;
 
 	const { data: municipiosData } = useQuery({
 		queryKey: ["localidades", "municipios", uf],
@@ -99,26 +100,20 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 			codigopais: fiscal.codigopais ?? "1058",
 			telefone: fiscal.telefone ?? "",
 			email: fiscal.email ?? "",
-			regimetributario: fiscal.regimetributario ?? "",
 		});
 	}, [fiscal, form]);
 
 	const salvarMutation = useMutation({
 		mutationFn: (dados: EmpresaFiscalConfigFormData) =>
-			empresaFiscalService.atualizar(idempresa, {
-				...dados,
-				regimetributario:
-					dados.regimetributario === ""
-						? null
-						: (dados.regimetributario as "SN" | "LP" | "LR"),
-			}),
+			empresaFiscalService.atualizar(idempresa, dados),
 		onSuccess: () => {
 			toast.success("Dados fiscais salvos");
 			queryClient.invalidateQueries({
 				queryKey: ["empresa-fiscal", idempresa],
 			});
 		},
-		onError: () => toast.error("Não foi possível salvar os dados fiscais"),
+		onError: (error: Error) =>
+			toast.error(error.message || "Não foi possível salvar os dados fiscais"),
 	});
 
 	if (isLoading) {
@@ -130,59 +125,40 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 	}
 
 	return (
-		<form onSubmit={form.handleSubmit((dados) => salvarMutation.mutate(dados))}>
+		<form
+			onSubmit={form.handleSubmit(
+				(dados) => salvarMutation.mutate(dados),
+				() =>
+					toast.error(
+						"Revise os campos destacados antes de salvar os dados fiscais.",
+					),
+			)}
+		>
 			<FieldGroup>
 				<div className="space-y-6 rounded-lg border bg-card p-6">
 					<div>
 						<h2 className="text-lg font-semibold mb-2">Dados fiscais</h2>
 						<p className="text-muted-foreground text-sm mb-4">
 							Informações tributárias e cadastrais utilizadas na emissão de
-							documentos fiscais.
+							documentos fiscais. O CRT define o regime na NF-e.
 						</p>
 						<div className="grid gap-4 md:grid-cols-2">
-							<Field>
-								<FieldLabel htmlFor="regimetributario">
-									Regime tributário
-								</FieldLabel>
-								<Select
-									value={form.watch("regimetributario") ?? ""}
-									onValueChange={(valor) => {
-										form.setValue(
-											"regimetributario",
-											valor === "none"
-												? ""
-												: (valor as EmpresaFiscalConfigFormData["regimetributario"]),
-										);
-										const opcao = OPCOES_REGIME.find((o) => o.value === valor);
-										if (opcao) form.setValue("crt", opcao.crt);
-									}}
-								>
-									<SelectTrigger id="regimetributario">
-										<SelectValue placeholder="Selecione" />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="none">Não informado</SelectItem>
-										{OPCOES_REGIME.map((o) => (
-											<SelectItem key={o.value} value={o.value}>
-												{o.label}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</Field>
-
-							<Field>
+							<Field data-invalid={!!errors.crt}>
 								<FieldLabel htmlFor="crt">
 									CRT (código regime tributário NF-e)
 								</FieldLabel>
 								<Select
-									value={String(form.watch("crt") ?? "")}
+									value={
+										form.watch("crt") != null
+											? String(form.watch("crt"))
+											: undefined
+									}
 									onValueChange={(v) =>
-										form.setValue("crt", v ? Number(v) : undefined)
+										form.setValue("crt", Number(v), { shouldValidate: true })
 									}
 								>
 									<SelectTrigger id="crt">
-										<SelectValue placeholder="CRT" />
+										<SelectValue placeholder="Selecione o CRT" />
 									</SelectTrigger>
 									<SelectContent>
 										{OPCOES_CRT.map((o) => (
@@ -192,6 +168,35 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 										))}
 									</SelectContent>
 								</Select>
+								<FieldError errors={errors.crt ? [errors.crt] : []} />
+							</Field>
+
+							<Field data-invalid={!!errors.indicadorie}>
+								<FieldLabel htmlFor="indicadorie">
+									Indicador de IE do emitente
+								</FieldLabel>
+								<Select
+									value={String(form.watch("indicadorie") ?? 1)}
+									onValueChange={(v) =>
+										form.setValue("indicadorie", Number(v), {
+											shouldValidate: true,
+										})
+									}
+								>
+									<SelectTrigger id="indicadorie">
+										<SelectValue placeholder="Indicador IE" />
+									</SelectTrigger>
+									<SelectContent>
+										{OPCOES_INDICADOR_IE.map((o) => (
+											<SelectItem key={o.value} value={o.value}>
+												{o.label}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+								<FieldError
+									errors={errors.indicadorie ? [errors.indicadorie] : []}
+								/>
 							</Field>
 						</div>
 					</div>
@@ -199,9 +204,12 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 					<div className="border-t pt-6">
 						<h2 className="text-lg font-semibold mb-4">Identificação</h2>
 						<div className="grid gap-4 md:grid-cols-2 mb-4">
-							<Field>
+							<Field data-invalid={!!errors.razaosocial}>
 								<FieldLabel htmlFor="razaosocial">Razão social</FieldLabel>
 								<Input id="razaosocial" {...form.register("razaosocial")} />
+								<FieldError
+									errors={errors.razaosocial ? [errors.razaosocial] : []}
+								/>
 							</Field>
 							<Field>
 								<FieldLabel htmlFor="nomefantasia">Nome fantasia</FieldLabel>
@@ -242,12 +250,12 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 								<FieldLabel htmlFor="cep">CEP</FieldLabel>
 								<Input id="cep" {...form.register("cep")} />
 							</Field>
-							<Field>
+							<Field data-invalid={!!errors.uf}>
 								<FieldLabel htmlFor="uf">UF</FieldLabel>
 								<Select
-									value={form.watch("uf") ?? ""}
+									value={form.watch("uf") ?? undefined}
 									onValueChange={(v) => {
-										form.setValue("uf", v);
+										form.setValue("uf", v, { shouldValidate: true });
 										form.setValue("codigomunicipioibge", "");
 									}}
 								>
@@ -262,13 +270,14 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 										))}
 									</SelectContent>
 								</Select>
+								<FieldError errors={errors.uf ? [errors.uf] : []} />
 							</Field>
 							<Field>
 								<FieldLabel htmlFor="codigomunicipioibge">
 									Município (IBGE)
 								</FieldLabel>
 								<Select
-									value={form.watch("codigomunicipioibge") ?? ""}
+									value={form.watch("codigomunicipioibge") ?? undefined}
 									onValueChange={(v) => form.setValue("codigomunicipioibge", v)}
 									disabled={!uf}
 								>
@@ -316,16 +325,10 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 								<FieldLabel htmlFor="telefone">Telefone</FieldLabel>
 								<Input id="telefone" {...form.register("telefone")} />
 							</Field>
-							<Field data-invalid={!!form.formState.errors.email}>
+							<Field data-invalid={!!errors.email}>
 								<FieldLabel htmlFor="email">E-mail</FieldLabel>
 								<Input id="email" type="email" {...form.register("email")} />
-								<FieldError
-									errors={
-										form.formState.errors.email
-											? [form.formState.errors.email]
-											: []
-									}
-								/>
+								<FieldError errors={errors.email ? [errors.email] : []} />
 							</Field>
 						</div>
 					</div>
