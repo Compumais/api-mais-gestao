@@ -20,6 +20,11 @@ export interface ListarCestsResponse {
 }
 
 export const cestService = {
+	async buscar(id: string): Promise<Cest> {
+		const { data } = await api.get<Cest>(`/cests/${id}`);
+		return data;
+	},
+
 	async listar(params: {
 		idempresa: string;
 		page?: number;

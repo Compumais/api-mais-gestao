@@ -30,6 +30,7 @@ import {
 import { ChevronDown } from "lucide-react";
 import type { ItemNfe } from "@/schemas/nfe-emissao.schema";
 import { produtosService } from "@/services/produtos.service";
+import { cestService } from "@/services/cest.service";
 import {
 	empresaUsaCsosn,
 	itemEmissaoPodeSerConfirmado,
@@ -46,6 +47,36 @@ import {
 	OPCOES_CSOSN,
 	OPCOES_CST_ICMS,
 } from "@/util/cst-produto-util";
+
+async function resolverCestCodigoProduto(produto: {
+	cestCodigo?: string | null;
+	idcest?: string | null;
+	cest?: string | number | null;
+}): Promise<string | undefined> {
+	const direto = produto.cestCodigo?.replace(/\D/g, "");
+	if (direto && direto.length === 7 && !/^0+$/.test(direto)) {
+		return direto;
+	}
+
+	if (produto.idcest) {
+		try {
+			const cest = await cestService.buscar(produto.idcest);
+			const codigo = cest.codigo?.replace(/\D/g, "") ?? "";
+			if (codigo.length === 7 && !/^0+$/.test(codigo)) {
+				return codigo;
+			}
+		} catch {
+			// Continua tentando o campo legado abaixo.
+		}
+	}
+
+	const legado = String(produto.cest ?? "").replace(/\D/g, "");
+	if (legado.length === 7 && !/^0+$/.test(legado)) {
+		return legado;
+	}
+
+	return undefined;
+}
 
 const OPCOES_CST_PIS_COFINS = [
 	{ value: "01", label: "01 - Operação tributável (alíquota básica)" },
@@ -192,8 +223,10 @@ export function ModalItemEmissao({
 							itemNormalizado.idproduto,
 						);
 						if (cancelado) return;
+						const cestCodigo = await resolverCestCodigoProduto(produto);
+						if (cancelado) return;
 						const doCadastro = mapearProdutoParaItemNfe(
-							produto,
+							{ ...produto, cestCodigo: cestCodigo ?? produto.cestCodigo },
 							itemNormalizado.cfop || cfopSaidaPadrao,
 							usaCsosn,
 						);
@@ -236,8 +269,13 @@ export function ModalItemEmissao({
 		setCarregandoProduto(true);
 		try {
 			const produto = await produtosService.buscar(idproduto);
+			const cestCodigo = await resolverCestCodigoProduto(produto);
 			const cfop = cfopSaidaPadrao || item.cfop;
-			let itemMapeado = mapearProdutoParaItemNfe(produto, cfop, usaCsosn);
+			let itemMapeado = mapearProdutoParaItemNfe(
+				{ ...produto, cestCodigo: cestCodigo ?? produto.cestCodigo },
+				cfop,
+				usaCsosn,
+			);
 
 			if (!itemMapeado.cst && !itemMapeado.csosn && idCfopReferencia) {
 				try {

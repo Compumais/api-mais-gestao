@@ -129,6 +129,11 @@ const propriedadesProdutoResposta = {
 	quantidademinima: { type: "number", nullable: true },
 	quantidademaxima: { type: "number", nullable: true },
 	estoque: { type: "number", nullable: true },
+	cestCodigo: {
+		anyOf: [{ type: "string", pattern: "^\\d{7}$" }, { type: "null" }],
+		description: "Código CEST (7 dígitos) resolvido a partir de idcest",
+	},
+	unidademedida: { anyOf: [{ type: "string" }, { type: "null" }] },
 	...propriedadesImpostosProdutoResposta,
 };
 
