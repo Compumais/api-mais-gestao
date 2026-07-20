@@ -127,7 +127,7 @@ export type PayloadEmissaoNfeVendaPreparado = {
 	vProd: number;
 	vFrete: number;
 	vDesc: number;
-	payloadGateway: ReturnType<typeof montarPayloadGatewayEmissaoItens>;
+	payloadGateway: Awaited<ReturnType<typeof montarPayloadGatewayEmissaoItens>>;
 	idplanocontasResolvido?: string;
 	idcondicaopagtoResolvido?: string;
 	idlocalestoqueResolvido?: string;
@@ -592,7 +592,7 @@ export async function prepararPayloadEmissaoNfeVenda(
 			? anexarAvisoPreview(informacoesAdicionais)
 			: informacoesAdicionais;
 
-	const payloadGateway = montarPayloadGatewayEmissaoItens({
+	const payloadGateway = await montarPayloadGatewayEmissaoItens({
 		empresa,
 		empresaFiscal,
 		nfeConfiguracao,
