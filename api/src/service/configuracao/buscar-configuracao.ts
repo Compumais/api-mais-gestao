@@ -4,7 +4,7 @@ import {
 	criarConfiguracao,
 } from "@/repositories/configuracao-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
-import { httpOk, httpProibido } from "@/util/http-util.js";
+import { httpErroInterno, httpOk, httpProibido } from "@/util/http-util.js";
 import { normalizarConfiguracaoNotificacoes } from "@/worker/util/configuracao-notificacoes.js";
 
 interface BuscarConfiguracaoParametros {
@@ -29,6 +29,10 @@ export async function buscarConfiguracaoService({
 
 	if (!configuracao) {
 		configuracao = await criarConfiguracao({ idempresa });
+	}
+
+	if (!configuracao) {
+		return httpErroInterno();
 	}
 
 	return httpOk({

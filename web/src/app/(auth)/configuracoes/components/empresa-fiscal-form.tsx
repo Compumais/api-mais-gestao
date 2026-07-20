@@ -71,12 +71,16 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 		},
 	});
 
-	const uf = form.watch("uf");
+	const ufRaw = form.watch("uf");
+	const uf = typeof ufRaw === "string" ? ufRaw : "";
+	const municipioRaw = form.watch("codigomunicipioibge");
+	const municipioIbge =
+		typeof municipioRaw === "string" ? municipioRaw : "";
 	const errors = form.formState.errors;
 
 	const { data: municipiosData } = useQuery({
 		queryKey: ["localidades", "municipios", uf],
-		queryFn: () => localidadesService.listarMunicipios(uf as string),
+		queryFn: () => localidadesService.listarMunicipios(uf),
 		enabled: !!uf,
 	});
 
@@ -253,7 +257,7 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 							<Field data-invalid={!!errors.uf}>
 								<FieldLabel htmlFor="uf">UF</FieldLabel>
 								<Select
-									value={form.watch("uf") ?? undefined}
+									value={uf || undefined}
 									onValueChange={(v) => {
 										form.setValue("uf", v, { shouldValidate: true });
 										form.setValue("codigomunicipioibge", "");
@@ -277,7 +281,7 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 									Município (IBGE)
 								</FieldLabel>
 								<Select
-									value={form.watch("codigomunicipioibge") ?? undefined}
+									value={municipioIbge || undefined}
 									onValueChange={(v) => form.setValue("codigomunicipioibge", v)}
 									disabled={!uf}
 								>
