@@ -59,7 +59,7 @@ export async function emitirNfeHomologacaoTesteService({
 		return httpBadRequest("Não foi possível reservar numeração da série");
 	}
 
-	const payload = montarPayloadGatewayEmissao({
+	const payload = await montarPayloadGatewayEmissao({
 		empresa: contexto.empresa!,
 		empresaFiscal: contexto.empresaFiscal!,
 		nfeConfiguracao: contexto.nfeConfiguracao!,

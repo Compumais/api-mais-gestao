@@ -73,7 +73,7 @@ export async function consultarStatusSefazService({
 		seriePadrao,
 	} = contexto;
 
-	const payload = montarPayloadGatewayEmissao({
+	const payload = await montarPayloadGatewayEmissao({
 		empresa: empresa!,
 		empresaFiscal: empresaFiscal!,
 		nfeConfiguracao: nfeConfiguracao!,

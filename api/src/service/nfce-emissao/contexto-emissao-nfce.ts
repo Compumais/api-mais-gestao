@@ -20,6 +20,7 @@ import {
 } from "@/util/normalizar-ie-nfe.js";
 import { validarPreRequisitosEmissaoNfce } from "@/util/validar-pre-requisitos-emissao-nfce.js";
 import { agoraBrasiliaIsoOffset } from "@/util/data-hora-brasilia.js";
+import { resolverNomeMunicipioIbge } from "@/util/resolver-nome-municipio-ibge.js";
 
 export async function carregarContextoEmissaoNfce(idempresa: string) {
 	const empresa = await buscarEmpresaPorId(idempresa);
@@ -60,7 +61,7 @@ export async function carregarContextoEmissaoNfce(idempresa: string) {
 	};
 }
 
-export function montarPayloadGatewayEmissaoNfce({
+export async function montarPayloadGatewayEmissaoNfce({
 	empresa,
 	empresaFiscal,
 	nfceConfiguracao,
@@ -101,6 +102,27 @@ export function montarPayloadGatewayEmissaoNfce({
 	const credenciais = descriptografarCredenciaisCertificado(certificadoAtivo);
 	const verProc = nfceConfiguracao.verproc ?? "MaisGestao 1.0.0";
 
+	const [nomeMunicipioEmitente, nomeMunicipioDestinatario] = await Promise.all([
+		resolverNomeMunicipioIbge(
+			empresaFiscal.codigomunicipioibge,
+			empresaFiscal.uf,
+		),
+		resolverNomeMunicipioIbge(
+			destinatario?.codigomunicipioibge,
+			destinatario?.estado,
+		),
+	]);
+
+	const destinatarioComMunicipio = destinatario
+		? {
+				...destinatario,
+				cidade:
+					destinatario.cidade ||
+					nomeMunicipioDestinatario ||
+					destinatario.codigomunicipioibge,
+			}
+		: undefined;
+
 	return {
 		configJson,
 		pfxBase64: credenciais.pfxBase64,
@@ -117,7 +139,8 @@ export function montarPayloadGatewayEmissaoNfce({
 				complemento: empresaFiscal.complemento ?? "",
 				bairro: empresaFiscal.bairro,
 				codigoMunicipio: empresaFiscal.codigomunicipioibge,
-				municipio: empresaFiscal.codigomunicipioibge,
+				municipio:
+					nomeMunicipioEmitente ?? empresaFiscal.codigomunicipioibge,
 				uf: empresaFiscal.uf,
 				cep: empresaFiscal.cep?.replace(/\D/g, ""),
 				telefone: empresaFiscal.telefone ?? "",
@@ -141,7 +164,7 @@ export function montarPayloadGatewayEmissaoNfce({
 			},
 			destinatario:
 				ajustarDestinatarioAmbienteNfe(
-					destinatario,
+					destinatarioComMunicipio,
 					nfceConfiguracao.ambiente,
 				) ?? {},
 			itens,

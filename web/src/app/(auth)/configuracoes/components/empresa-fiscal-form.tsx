@@ -78,10 +78,11 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 		typeof municipioRaw === "string" ? municipioRaw : "";
 	const errors = form.formState.errors;
 
-	const { data: municipiosData } = useQuery({
+	const { data: municipiosData, isLoading: carregandoMunicipios } = useQuery({
 		queryKey: ["localidades", "municipios", uf],
 		queryFn: () => localidadesService.listarMunicipios(uf),
 		enabled: !!uf,
+		staleTime: 24 * 60 * 60 * 1000,
 	});
 
 	useEffect(() => {
@@ -106,6 +107,20 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 			email: fiscal.email ?? "",
 		});
 	}, [fiscal, form]);
+
+	// Radix Select só exibe o label depois que as options existem; remonta e
+	// reafirma o valor salvo quando a lista de municípios da UF carrega.
+	useEffect(() => {
+		if (carregandoMunicipios || !municipiosData?.data.length) return;
+		const municipioSalvo = form.getValues("codigomunicipioibge");
+		if (!municipioSalvo || typeof municipioSalvo !== "string") return;
+		const existe = municipiosData.data.some((m) => m.idcidade === municipioSalvo);
+		if (existe) {
+			form.setValue("codigomunicipioibge", municipioSalvo, {
+				shouldValidate: true,
+			});
+		}
+	}, [carregandoMunicipios, municipiosData, form]);
 
 	const salvarMutation = useMutation({
 		mutationFn: (dados: EmpresaFiscalConfigFormData) =>
@@ -281,12 +296,23 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 									Município (IBGE)
 								</FieldLabel>
 								<Select
+									key={`municipio-${uf || "vazio"}-${municipiosData?.data.length ?? 0}-${municipioIbge || "vazio"}`}
 									value={municipioIbge || undefined}
-									onValueChange={(v) => form.setValue("codigomunicipioibge", v)}
-									disabled={!uf}
+									onValueChange={(v) =>
+										form.setValue("codigomunicipioibge", v, {
+											shouldValidate: true,
+										})
+									}
+									disabled={!uf || carregandoMunicipios}
 								>
 									<SelectTrigger id="codigomunicipioibge">
-										<SelectValue placeholder="Município" />
+										<SelectValue
+											placeholder={
+												carregandoMunicipios
+													? "Carregando municípios..."
+													: "Município"
+											}
+										/>
 									</SelectTrigger>
 									<SelectContent>
 										{municipiosData?.data.map((m) => (

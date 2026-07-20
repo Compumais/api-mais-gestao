@@ -342,7 +342,7 @@ export async function emitirNfceVendaPdvService({
 	const idnotafiscal = reserva.idnotafiscal;
 	const ambiente = nfceConfiguracao.ambiente;
 
-	const payload = montarPayloadGatewayEmissaoNfce({
+	const payload = await montarPayloadGatewayEmissaoNfce({
 		empresa,
 		empresaFiscal,
 		nfceConfiguracao,
