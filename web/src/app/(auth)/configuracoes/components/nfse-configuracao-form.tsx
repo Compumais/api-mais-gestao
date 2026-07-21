@@ -15,7 +15,12 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { NFSE_PROVEDORES } from "@/constants/nfse-emissao";
+import {
+	BETHA_DPS_WSDL,
+	isLayoutNfseDps,
+	NFSE_LAYOUTS,
+	NFSE_PROVEDORES,
+} from "@/constants/nfse-emissao";
 import { nfseConfiguracaoSchema } from "@/schemas/nfse-configuracao.schema";
 import { nfseConfiguracaoService } from "@/services/nfse-configuracao.service";
 import { NfseSeriesSection } from "./nfse-series-section";
@@ -55,6 +60,11 @@ export function NfseConfiguracaoForm({ idempresa }: NfseConfiguracaoFormProps) {
 					codigomunicipioibge: config.codigomunicipioibge ?? "",
 					versaolayout: config.versaolayout,
 					urlwsdl: config.urlwsdl ?? "",
+					urlsoperacao: {
+						emissao: config.urlsoperacao?.emissao ?? "",
+						consulta: config.urlsoperacao?.consulta ?? "",
+						cancelamento: config.urlsoperacao?.cancelamento ?? "",
+					},
 					usarlotesincrono: config.usarlotesincrono,
 					idcertificadoativo: config.idcertificadoativo ?? null,
 					ultimaidserie: config.ultimaidserie ?? null,
@@ -63,8 +73,28 @@ export function NfseConfiguracaoForm({ idempresa }: NfseConfiguracaoFormProps) {
 	});
 
 	const salvarMutation = useMutation({
-		mutationFn: (dados: z.output<typeof nfseConfiguracaoSchema>) =>
-			nfseConfiguracaoService.atualizar(idempresa, dados),
+		mutationFn: (dados: z.output<typeof nfseConfiguracaoSchema>) => {
+			const modoDps =
+				dados.provedor === "betha" && isLayoutNfseDps(dados.versaolayout);
+			const urls = dados.urlsoperacao;
+			const urlsoperacao =
+				dados.provedor === "betha" && !modoDps && urls
+					? {
+							emissao: urls.emissao?.trim() || null,
+							consulta: urls.consulta?.trim() || null,
+							cancelamento: urls.cancelamento?.trim() || null,
+						}
+					: null;
+
+			return nfseConfiguracaoService.atualizar(idempresa, {
+				...dados,
+				urlwsdl: modoDps
+					? (dados.urlwsdl?.trim() || BETHA_DPS_WSDL)
+					: dados.urlwsdl,
+				usarlotesincrono: modoDps ? false : dados.usarlotesincrono,
+				urlsoperacao,
+			});
+		},
 		onSuccess: () => {
 			toast.success("Configuração NFS-e salva");
 			queryClient.invalidateQueries({
@@ -73,6 +103,11 @@ export function NfseConfiguracaoForm({ idempresa }: NfseConfiguracaoFormProps) {
 		},
 		onError: () => toast.error("Erro ao salvar configuração NFS-e"),
 	});
+
+	const provedorAtual = form.watch("provedor");
+	const layoutAtual = form.watch("versaolayout");
+	const modoDps =
+		provedorAtual === "betha" && isLayoutNfseDps(layoutAtual);
 
 	if (isLoading) {
 		return <p className="text-muted-foreground">Carregando...</p>;
@@ -122,10 +157,111 @@ export function NfseConfiguracaoForm({ idempresa }: NfseConfiguracaoFormProps) {
 						</Field>
 					</div>
 
+					{provedorAtual === "betha" ? (
+						<Field>
+							<FieldLabel htmlFor="versaolayout">Layout / modo</FieldLabel>
+							<Select
+								value={layoutAtual || "2.02"}
+								onValueChange={(v) => {
+									form.setValue("versaolayout", v);
+									if (isLayoutNfseDps(v)) {
+										form.setValue("urlwsdl", BETHA_DPS_WSDL);
+										form.setValue("usarlotesincrono", false);
+										form.setValue("urlsoperacao", {
+											emissao: "",
+											consulta: "",
+											cancelamento: "",
+										});
+									}
+								}}
+							>
+								<SelectTrigger id="versaolayout">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									{NFSE_LAYOUTS.map((layout) => (
+										<SelectItem key={layout.value} value={layout.value}>
+											{layout.label}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+							<p className="text-muted-foreground text-xs mt-1">
+								{modoDps
+									? "Nota Nacional (DPS): emissão assíncrona via protocolo Betha cloud."
+									: "RPS e-gov (ABRASF 2.02): GerarNfse / lote no ambiente municipal Betha."}
+							</p>
+						</Field>
+					) : null}
+
 					<Field>
 						<FieldLabel htmlFor="urlwsdl">URL / WSDL do provedor</FieldLabel>
-						<Input id="urlwsdl" {...form.register("urlwsdl")} />
+						<Input
+							id="urlwsdl"
+							placeholder={modoDps ? BETHA_DPS_WSDL : undefined}
+							{...form.register("urlwsdl")}
+						/>
+						{provedorAtual === "betha" ? (
+							<p className="text-muted-foreground text-xs mt-1">
+								{modoDps
+									? "WSDL único DPS: nota-eletronica.betha.cloud/dps/ws/service.wsdl"
+									: "Betha RPS usa WSDL por operação. Informe a URL base (ex.: gerarNfse?wsdl) e, se necessário, complete as URLs abaixo."}
+							</p>
+						) : null}
 					</Field>
+
+					{provedorAtual === "betha" && !modoDps ? (
+						<div className="space-y-3 rounded-md border p-4">
+							<p className="text-sm font-medium">URLs WSDL por operação (Betha)</p>
+							<p className="text-muted-foreground text-xs">
+								Homologação: https://e-gov.betha.com.br/e-nota-contribuinte-test-ws/
+								gerarNfse?wsdl
+							</p>
+							<Field>
+								<FieldLabel htmlFor="urlsoperacao-emissao">
+									WSDL emissão
+								</FieldLabel>
+								<Input
+									id="urlsoperacao-emissao"
+									placeholder=".../gerarNfse?wsdl"
+									{...form.register("urlsoperacao.emissao")}
+								/>
+							</Field>
+							<Field>
+								<FieldLabel htmlFor="urlsoperacao-consulta">
+									WSDL consulta por RPS
+								</FieldLabel>
+								<Input
+									id="urlsoperacao-consulta"
+									placeholder=".../consultarNfsePorRps?wsdl"
+									{...form.register("urlsoperacao.consulta")}
+								/>
+							</Field>
+							<Field>
+								<FieldLabel htmlFor="urlsoperacao-cancelamento">
+									WSDL cancelamento (opcional)
+								</FieldLabel>
+								<Input
+									id="urlsoperacao-cancelamento"
+									placeholder=".../cancelarNfseV02?wsdl"
+									{...form.register("urlsoperacao.cancelamento")}
+								/>
+							</Field>
+						</div>
+					) : null}
+
+					{modoDps ? (
+						<div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+							<p className="font-medium text-foreground mb-1">
+								Modo DPS (Nota Nacional)
+							</p>
+							<p>
+								Emissão via <code>RecepcionarDps</code>; o retorno traz
+								protocolo. Use &quot;Consultar status DPS&quot; no detalhe da
+								nota para obter o número da NFS-e após o processamento.
+							</p>
+						</div>
+					) : null}
 
 					<Field>
 						<FieldLabel htmlFor="codigomunicipioibge">

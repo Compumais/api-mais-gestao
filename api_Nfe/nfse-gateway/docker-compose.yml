@@ -6,6 +6,8 @@ services:
     container_name: mais-gestao-nfse-gateway
     ports:
       - "8089:8089"
+    env_file:
+      - .env
     environment:
       NFSE_GATEWAY_SECRET: ${NFSE_GATEWAY_SECRET:-dev-secret-change-me}
     dns:

@@ -1,27 +1,54 @@
 import { z } from "zod";
 
-export const empresaFiscalConfigSchema = z.object({
-	razaosocial: z.string().max(60).optional().nullable(),
-	nomefantasia: z.string().max(60).optional().nullable(),
-	inscricaoestadual: z.string().max(20).optional().nullable(),
-	inscricaomunicipal: z.string().max(20).optional().nullable(),
-	crt: z.number().int().min(1).max(4).optional().nullable(),
-	cnae: z.string().max(7).optional().nullable(),
-	indicadorie: z.number().int().optional().nullable(),
-	logradouro: z.string().max(60).optional().nullable(),
-	numero: z.string().max(10).optional().nullable(),
-	complemento: z.string().max(60).optional().nullable(),
-	bairro: z.string().max(60).optional().nullable(),
-	cep: z.string().max(9).optional().nullable(),
-	codigomunicipioibge: z.string().max(7).optional().nullable(),
-	uf: z.string().length(2).optional().nullable(),
-	codigopais: z.string().max(4).optional().nullable(),
-	telefone: z.string().max(40).optional().nullable(),
-	email: z.string().email().max(200).optional().nullable().or(z.literal("")),
-	regimetributario: z
-		.enum(["SN", "LP", "LR", ""])
+/** Aceita string vazia no formulário e normaliza para null na saída. */
+function textoOpcional(max: number, mensagem?: string) {
+	return z
+		.union([z.string().max(max, mensagem), z.literal(""), z.null()])
 		.optional()
-		.nullable(),
+		.transform((valor) => (valor === "" || valor === undefined ? null : valor));
+}
+
+function ufOpcional() {
+	return z
+		.union([
+			z.string().length(2, "UF deve ter 2 caracteres"),
+			z.literal(""),
+			z.null(),
+		])
+		.optional()
+		.transform((valor) => (valor === "" || valor === undefined ? null : valor));
+}
+
+function emailOpcional() {
+	return z
+		.union([
+			z.string().email("E-mail inválido").max(200),
+			z.literal(""),
+			z.null(),
+		])
+		.optional()
+		.transform((valor) => (valor === "" || valor === undefined ? null : valor));
+}
+
+export const empresaFiscalConfigSchema = z.object({
+	razaosocial: textoOpcional(60),
+	nomefantasia: textoOpcional(60),
+	inscricaoestadual: textoOpcional(20),
+	inscricaomunicipal: textoOpcional(20),
+	crt: z.number().int().min(1).max(4).optional().nullable(),
+	cnae: textoOpcional(7),
+	indicadorie: z.number().int().optional().nullable(),
+	logradouro: textoOpcional(60),
+	numero: textoOpcional(10),
+	complemento: textoOpcional(60),
+	bairro: textoOpcional(60),
+	cep: textoOpcional(9),
+	codigomunicipioibge: textoOpcional(7),
+	uf: ufOpcional(),
+	codigopais: textoOpcional(4),
+	telefone: textoOpcional(40),
+	email: emailOpcional(),
+	regimetributario: z.enum(["SN", "LP", "LR", ""]).optional().nullable(),
 });
 
 export type EmpresaFiscalConfigFormData = z.infer<

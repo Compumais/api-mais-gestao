@@ -9,6 +9,19 @@ export type PendenciaNfse = {
 	mensagem: string;
 };
 
+export function isLayoutNfseDps(versaolayout?: string | null): boolean {
+	const v = (versaolayout ?? "").toLowerCase();
+	return v.includes("dps") || v.includes("nacional");
+}
+
+function urlPareceDps(url?: string | null): boolean {
+	const u = (url ?? "").toLowerCase();
+	return (
+		u.includes("/dps/") ||
+		(u.includes("nota-eletronica.betha.cloud") && u.includes("service.wsdl"))
+	);
+}
+
 export function validarPreRequisitosEmissaoNfse({
 	empresa,
 	empresaFiscal,
@@ -57,11 +70,47 @@ export function validarPreRequisitosEmissaoNfse({
 			codigo: "NFSE_CONFIG",
 			mensagem: "Configuração NFS-e não encontrada",
 		});
-	} else if (!nfseConfiguracao.urlwsdl) {
-		pendencias.push({
-			codigo: "NFSE_WSDL",
-			mensagem: "URL/WSDL do provedor NFS-e não configurada",
-		});
+	} else {
+		const urlsOperacao = nfseConfiguracao.urlsoperacao;
+		const temUrlBase = Boolean(nfseConfiguracao.urlwsdl?.trim());
+		const temUrlConsulta = Boolean(urlsOperacao?.consulta?.trim());
+		const temUrlEmissao = Boolean(urlsOperacao?.emissao?.trim());
+		const provedor = String(nfseConfiguracao.provedor ?? "").toLowerCase();
+		const modoDps = isLayoutNfseDps(nfseConfiguracao.versaolayout);
+		const urlDps =
+			urlPareceDps(nfseConfiguracao.urlwsdl) ||
+			urlPareceDps(urlsOperacao?.emissao);
+
+		if (provedor === "betha" && modoDps) {
+			if (!temUrlBase && !temUrlEmissao) {
+				pendencias.push({
+					codigo: "NFSE_WSDL_DPS",
+					mensagem:
+						"Betha DPS: informe a URL/WSDL da Nota Nacional (ex.: nota-eletronica.betha.cloud/dps/ws/service.wsdl)",
+				});
+			} else if (!urlDps && temUrlBase) {
+				pendencias.push({
+					codigo: "NFSE_WSDL_DPS_INVALIDO",
+					mensagem:
+						"Betha DPS: a URL configurada não parece ser o WSDL DPS (/dps/ws/service.wsdl)",
+				});
+			}
+		} else {
+			if (!temUrlBase && !temUrlEmissao && !temUrlConsulta) {
+				pendencias.push({
+					codigo: "NFSE_WSDL",
+					mensagem: "URL/WSDL do provedor NFS-e não configurada",
+				});
+			}
+
+			if (provedor === "betha" && !temUrlBase && !temUrlConsulta) {
+				pendencias.push({
+					codigo: "NFSE_WSDL_CONSULTA",
+					mensagem:
+						"Betha: informe a URL/WSDL base ou a URL de consulta (consultarNfsePorRps?wsdl)",
+				});
+			}
+		}
 	}
 
 	if (!certificadoAtivo) {

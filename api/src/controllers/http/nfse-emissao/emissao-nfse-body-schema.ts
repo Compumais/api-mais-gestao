@@ -37,6 +37,7 @@ export const emitirNfseBodySchema = z.object({
 			cnpjCpf: z.string().optional(),
 			razaoSocial: z.string().optional(),
 			email: z.string().optional(),
+			telefone: z.string().optional(),
 			endereco: enderecoSchema,
 		})
 		.optional(),
@@ -45,10 +46,29 @@ export const emitirNfseBodySchema = z.object({
 		discriminacao: z.string().min(1),
 		codigoCnae: z.string().optional(),
 		codigoTributacaoMunicipio: z.string().optional(),
+		codigoTributacaoNacional: z
+			.string()
+			.regex(/^\d{6}$/, "cTribNac deve ter 6 dígitos")
+			.optional(),
+		codigoNbs: z
+			.string()
+			.regex(/^\d{9}$/, "cNBS deve ter 9 dígitos")
+			.optional(),
 		codigoMunicipioIncidencia: z.string().optional(),
 		exigibilidadeIss: z.string().optional(),
 		issRetido: z.string().optional(),
 		valores: valoresServicoSchema,
+		ibsCbs: z
+			.object({
+				finNFSe: z.number().int().optional(),
+				indFinal: z.number().int().optional(),
+				cIndOp: z.string().optional(),
+				tpOper: z.number().int().optional(),
+				indDest: z.number().int().optional(),
+				cst: z.string().optional(),
+				cClassTrib: z.string().optional(),
+			})
+			.optional(),
 	}),
 	itens: z
 		.array(

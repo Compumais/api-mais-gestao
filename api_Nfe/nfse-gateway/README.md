@@ -8,7 +8,16 @@ Gateway HTTP PHP para emissão municipal de NFS-e com arquitetura multi-adapter.
 
 ## Variáveis
 
-- `NFSE_GATEWAY_SECRET` — mesmo valor em API (`NFSE_GATEWAY_SECRET`) e container
+- `NFSE_GATEWAY_SECRET` — **mesmo valor** em `api/.env` (`NFSE_GATEWAY_SECRET`) e neste `.env`
+- `NFSE_GATEWAY_URL` — na API, normalmente `http://127.0.0.1:8089`
+
+Após alterar o secret, recrie o container:
+
+```bash
+docker compose up -d --force-recreate
+```
+
+E reinicie a API para recarregar o `.env`.
 
 ## Rotas
 

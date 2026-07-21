@@ -30,6 +30,14 @@ Slot preparado. Overrides esperados:
 - Autenticação adicional IPM
 - Campos extras no RPS
 
+## betha
+
+Implementado em `AdapterBetha`. Ver [betha.md](./betha.md).
+
+- WSDL por operação
+- Métodos SOAP camelCase
+- Derivação automática de URL a partir de `urlwsdl`
+
 ## Adicionar novo provedor
 
 1. Criar `src/Adapters/Adapter{Nome}.php` implementando `NfseProvedorAdapter`

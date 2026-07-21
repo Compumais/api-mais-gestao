@@ -9,6 +9,11 @@ export interface NfseConfiguracao {
 	codigomunicipioibge: string | null;
 	versaolayout: string;
 	urlwsdl: string | null;
+	urlsoperacao?: {
+		emissao?: string | null;
+		consulta?: string | null;
+		cancelamento?: string | null;
+	} | null;
 	usarlotesincrono: boolean;
 	idcertificadoativo: string | null;
 	ultimaidserie: string | null;
@@ -53,6 +58,20 @@ export const nfseConfiguracaoService = {
 		padrao?: boolean;
 	}) {
 		const { data } = await api.post<NfseSerie>("/nfse-series", payload);
+		return data;
+	},
+
+	async atualizarSerie(
+		id: string,
+		payload: {
+			idempresa: string;
+			serie?: string;
+			numeroproximo?: number;
+			padrao?: boolean;
+			ativo?: boolean;
+		},
+	) {
+		const { data } = await api.put<NfseSerie>(`/nfse-series/${id}`, payload);
 		return data;
 	},
 
