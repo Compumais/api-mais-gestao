@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
 	boolean,
 	foreignKey,
+	jsonb,
 	pgTable,
 	smallint,
 	text,
@@ -11,6 +12,12 @@ import {
 } from "drizzle-orm/pg-core";
 import { certificadodigital } from "./certificado-digital.js";
 import { empresa } from "./empresas.js";
+
+export type NfseUrlsOperacao = {
+	emissao?: string | null;
+	consulta?: string | null;
+	cancelamento?: string | null;
+};
 
 export const nfseconfiguracao = pgTable(
 	"nfseconfiguracao",
@@ -22,6 +29,7 @@ export const nfseconfiguracao = pgTable(
 		codigomunicipioibge: varchar({ length: 7 }),
 		versaolayout: varchar({ length: 10 }).default("2.02").notNull(),
 		urlwsdl: varchar({ length: 500 }),
+		urlsoperacao: jsonb("urlsoperacao").$type<NfseUrlsOperacao | null>(),
 		usarlotesincrono: boolean().default(true).notNull(),
 		idcertificadoativo: text(),
 		ultimaidserie: text(),

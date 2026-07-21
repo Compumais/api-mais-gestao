@@ -8,6 +8,11 @@ export type NfseConfiguracao = {
 	codigomunicipioibge: string | null;
 	versaolayout: string;
 	urlwsdl: string | null;
+	urlsoperacao?: {
+		emissao?: string | null;
+		consulta?: string | null;
+		cancelamento?: string | null;
+	} | null;
 	usarlotesincrono: boolean;
 	idcertificadoativo: string | null;
 	ultimaidserie: string | null;
@@ -41,14 +46,22 @@ export type PrestadorPayloadNfse = {
 	im: string;
 	municipioIbge: string;
 	razaoSocial?: string;
+	/** ABRASF: 1=optante SN, 2=não. Também aceita mei/4 para MEI. */
 	optanteSimplesNacional?: string;
+	/** DPS: 1=não optante, 2=MEI, 3=ME/EPP */
+	opSimpNac?: string;
+	/** DPS: regime apuração SN (1–3), só quando opSimpNac=3 */
+	regApTribSN?: string;
 	incentivoFiscal?: string;
+	telefone?: string;
+	email?: string;
 };
 
 export type TomadorPayloadNfse = {
 	cnpjCpf?: string;
 	razaoSocial?: string;
 	email?: string;
+	telefone?: string;
 	endereco?: EnderecoPayloadNfse;
 };
 
@@ -75,15 +88,30 @@ export type ValoresServicoPayloadNfse = {
 	descontoCondicionado?: number;
 };
 
+export type IbsCbsPayloadNfse = {
+	finNFSe?: number;
+	indFinal?: number;
+	cIndOp?: string;
+	tpOper?: number;
+	indDest?: number;
+	cst?: string;
+	cClassTrib?: string;
+};
+
 export type ServicoPayloadNfse = {
 	itemListaServico: string;
 	discriminacao: string;
 	codigoCnae?: string;
 	codigoTributacaoMunicipio?: string;
+	/** Código de tributação nacional (cTribNac) — 6 dígitos. */
+	codigoTributacaoNacional?: string;
+	/** Código NBS (cNBS) — 9 dígitos, obrigatório no DPS Nota Nacional. */
+	codigoNbs?: string;
 	codigoMunicipioIncidencia?: string;
 	exigibilidadeIss?: string;
 	issRetido?: string;
 	valores: ValoresServicoPayloadNfse;
+	ibsCbs?: IbsCbsPayloadNfse;
 };
 
 export type ItemPayloadNfse = {
@@ -120,6 +148,10 @@ export type NfseGatewayEmissaoResposta = NfseGatewayRespostaBase & {
 	xmlEnviado?: string | null;
 	erros?: NfseGatewayErro[];
 	provedor?: string;
+	versaolayout?: string;
+	modo?: "dps" | "rps" | "rps-gerar" | string;
+	pendente?: boolean;
+	statusProcessamento?: string | null;
 };
 
 export type NfseGatewayCancelamentoResposta = NfseGatewayEmissaoResposta;
@@ -138,4 +170,8 @@ export type DadosEmissaoNfseSalvos = {
 		indPag?: number;
 	}>;
 	payload?: PayloadNfse;
+	protocolo?: string | null;
+	protocoloCancelamento?: string | null;
+	protocoloSubstituicao?: string | null;
+	modo?: "dps" | "rps" | "rps-gerar";
 };

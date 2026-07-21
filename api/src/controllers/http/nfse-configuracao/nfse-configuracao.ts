@@ -10,12 +10,22 @@ const paramsEmpresaSchema = z.object({
 	id: z.string().uuid(),
 });
 
+const urlsOperacaoSchema = z
+	.object({
+		emissao: z.string().nullable().optional(),
+		consulta: z.string().nullable().optional(),
+		cancelamento: z.string().nullable().optional(),
+	})
+	.nullable()
+	.optional();
+
 const atualizarBodySchema = z.object({
 	ambiente: z.number().int().min(1).max(2).optional(),
 	provedor: z.string().optional(),
 	codigomunicipioibge: z.string().nullable().optional(),
 	versaolayout: z.string().optional(),
 	urlwsdl: z.string().nullable().optional(),
+	urlsoperacao: urlsOperacaoSchema,
 	usarlotesincrono: z.boolean().optional(),
 	idcertificadoativo: z.string().uuid().nullable().optional(),
 	ultimaidserie: z.string().uuid().nullable().optional(),

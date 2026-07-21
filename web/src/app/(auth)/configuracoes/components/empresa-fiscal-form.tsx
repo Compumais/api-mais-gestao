@@ -129,8 +129,18 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 		);
 	}
 
+	const erros = form.formState.errors;
+
 	return (
-		<form onSubmit={form.handleSubmit((dados) => salvarMutation.mutate(dados))}>
+		<form
+			onSubmit={form.handleSubmit(
+				(dados) => salvarMutation.mutate(dados),
+				() =>
+					toast.error(
+						"Não foi possível salvar. Verifique os campos destacados.",
+					),
+			)}
+		>
 			<FieldGroup>
 				<div className="space-y-6 rounded-lg border bg-card p-6">
 					<div>
@@ -140,21 +150,24 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 							documentos fiscais.
 						</p>
 						<div className="grid gap-4 md:grid-cols-2">
-							<Field>
+							<Field data-invalid={!!erros.regimetributario}>
 								<FieldLabel htmlFor="regimetributario">
 									Regime tributário
 								</FieldLabel>
 								<Select
-									value={form.watch("regimetributario") ?? ""}
+									value={form.watch("regimetributario") || "none"}
 									onValueChange={(valor) => {
 										form.setValue(
 											"regimetributario",
 											valor === "none"
 												? ""
 												: (valor as EmpresaFiscalConfigFormData["regimetributario"]),
+											{ shouldValidate: true },
 										);
 										const opcao = OPCOES_REGIME.find((o) => o.value === valor);
-										if (opcao) form.setValue("crt", opcao.crt);
+										if (opcao) {
+											form.setValue("crt", opcao.crt, { shouldValidate: true });
+										}
 									}}
 								>
 									<SelectTrigger id="regimetributario">
@@ -169,16 +182,25 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 										))}
 									</SelectContent>
 								</Select>
+								<FieldError
+									errors={
+										erros.regimetributario ? [erros.regimetributario] : []
+									}
+								/>
 							</Field>
 
-							<Field>
+							<Field data-invalid={!!erros.crt}>
 								<FieldLabel htmlFor="crt">
 									CRT (código regime tributário NF-e)
 								</FieldLabel>
 								<Select
-									value={String(form.watch("crt") ?? "")}
+									value={
+										form.watch("crt") != null
+											? String(form.watch("crt"))
+											: undefined
+									}
 									onValueChange={(v) =>
-										form.setValue("crt", v ? Number(v) : undefined)
+										form.setValue("crt", Number(v), { shouldValidate: true })
 									}
 								>
 									<SelectTrigger id="crt">
@@ -192,6 +214,7 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 										))}
 									</SelectContent>
 								</Select>
+								<FieldError errors={erros.crt ? [erros.crt] : []} />
 							</Field>
 						</div>
 					</div>
@@ -238,17 +261,20 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 					<div className="border-t pt-6">
 						<h2 className="text-lg font-semibold mb-4">Endereço</h2>
 						<div className="grid gap-4 md:grid-cols-3 mb-4">
-							<Field>
+							<Field data-invalid={!!erros.cep}>
 								<FieldLabel htmlFor="cep">CEP</FieldLabel>
 								<Input id="cep" {...form.register("cep")} />
+								<FieldError errors={erros.cep ? [erros.cep] : []} />
 							</Field>
-							<Field>
+							<Field data-invalid={!!erros.uf}>
 								<FieldLabel htmlFor="uf">UF</FieldLabel>
 								<Select
-									value={form.watch("uf") ?? ""}
+									value={form.watch("uf") || undefined}
 									onValueChange={(v) => {
-										form.setValue("uf", v);
-										form.setValue("codigomunicipioibge", "");
+										form.setValue("uf", v, { shouldValidate: true });
+										form.setValue("codigomunicipioibge", "", {
+											shouldValidate: true,
+										});
 									}}
 								>
 									<SelectTrigger id="uf">
@@ -262,14 +288,19 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 										))}
 									</SelectContent>
 								</Select>
+								<FieldError errors={erros.uf ? [erros.uf] : []} />
 							</Field>
-							<Field>
+							<Field data-invalid={!!erros.codigomunicipioibge}>
 								<FieldLabel htmlFor="codigomunicipioibge">
 									Município (IBGE)
 								</FieldLabel>
 								<Select
-									value={form.watch("codigomunicipioibge") ?? ""}
-									onValueChange={(v) => form.setValue("codigomunicipioibge", v)}
+									value={form.watch("codigomunicipioibge") || undefined}
+									onValueChange={(v) =>
+										form.setValue("codigomunicipioibge", v, {
+											shouldValidate: true,
+										})
+									}
 									disabled={!uf}
 								>
 									<SelectTrigger id="codigomunicipioibge">
@@ -283,6 +314,13 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 										))}
 									</SelectContent>
 								</Select>
+								<FieldError
+									errors={
+										erros.codigomunicipioibge
+											? [erros.codigomunicipioibge]
+											: []
+									}
+								/>
 							</Field>
 						</div>
 
@@ -316,16 +354,10 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 								<FieldLabel htmlFor="telefone">Telefone</FieldLabel>
 								<Input id="telefone" {...form.register("telefone")} />
 							</Field>
-							<Field data-invalid={!!form.formState.errors.email}>
+							<Field data-invalid={!!erros.email}>
 								<FieldLabel htmlFor="email">E-mail</FieldLabel>
 								<Input id="email" type="email" {...form.register("email")} />
-								<FieldError
-									errors={
-										form.formState.errors.email
-											? [form.formState.errors.email]
-											: []
-									}
-								/>
+								<FieldError errors={erros.email ? [erros.email] : []} />
 							</Field>
 						</div>
 					</div>
