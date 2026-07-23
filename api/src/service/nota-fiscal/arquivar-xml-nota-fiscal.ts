@@ -1,7 +1,10 @@
 import { createHash } from "node:crypto";
 import { v4 as uuidv4 } from "uuid";
 import { arquivarNotaFiscalXmlSeNaoExistir } from "@/repositories/nota-fiscal-xml-repositories.js";
-import { salvarXmlEmDisco, type TipoXmlNfe } from "@/util/xml-storage.js";
+import {
+	salvarXmlEventoEmDisco,
+	type TipoXmlNfe,
+} from "@/util/xml-storage.js";
 
 export type ArquivarXmlNotaFiscalParametros = {
 	idnotafiscal: string;
@@ -22,15 +25,19 @@ export async function arquivarXmlNotaFiscal({
 }: ArquivarXmlNotaFiscalParametros) {
 	const hashsha256 = createHash("sha256").update(xml, "utf8").digest("hex");
 	const tamanhobytes = Buffer.byteLength(xml, "utf8");
+	const identificador = chavenfe?.trim() || idnotafiscal;
 
 	let caminhoanexo: string | null = null;
 
-	if (chavenfe?.trim()) {
-		try {
-			caminhoanexo = await salvarXmlEmDisco(idempresa, chavenfe.trim(), tipo, xml);
-		} catch (erro) {
-			console.error("Falha ao salvar XML em disco:", erro);
-		}
+	try {
+		caminhoanexo = await salvarXmlEventoEmDisco(
+			idempresa,
+			identificador,
+			tipo,
+			xml,
+		);
+	} catch (erro) {
+		console.error("Falha ao salvar XML em disco:", erro);
 	}
 
 	return arquivarNotaFiscalXmlSeNaoExistir({

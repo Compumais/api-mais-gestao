@@ -19,6 +19,27 @@ export const emissaoNfseSchema = z.object({
 	discriminacao: z.string().min(1, "Discriminação obrigatória"),
 	codigoCnae: z.string().optional(),
 	codigoTributacaoMunicipio: z.string().optional(),
+	codigoTributacaoNacional: z
+		.string()
+		.optional()
+		.refine(
+			(v) => !v || /^\d{6}$/.test(v),
+			"Código de tributação nacional (cTribNac) deve ter 6 dígitos",
+		),
+	codigoNbs: z
+		.string()
+		.optional()
+		.refine(
+			(v) => !v || /^\d{9}$/.test(v),
+			"Código NBS (cNBS) deve ter 9 dígitos",
+		),
+	codigoIndicadorOperacao: z
+		.string()
+		.optional()
+		.refine(
+			(v) => !v || /^\d{6}$/.test(v),
+			"Indicador da operação (cIndOp) deve ter 6 dígitos",
+		),
 	exigibilidadeIss: z.string().default("1"),
 	issRetido: z.string().default("2"),
 	valores: valoresServicoSchema,

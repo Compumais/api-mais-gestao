@@ -12,6 +12,19 @@ export function montarConfigJsonNfseGateway({
 	empresaFiscal: EmpresaFiscal;
 	nfseConfiguracao: NfseConfigDb;
 }): Record<string, unknown> {
+	const urlsOperacao = nfseConfiguracao.urlsoperacao ?? null;
+	const urlsWsdl =
+		urlsOperacao &&
+		(urlsOperacao.emissao ||
+			urlsOperacao.consulta ||
+			urlsOperacao.cancelamento)
+			? {
+					emissao: urlsOperacao.emissao ?? undefined,
+					consulta: urlsOperacao.consulta ?? undefined,
+					cancelamento: urlsOperacao.cancelamento ?? undefined,
+				}
+			: undefined;
+
 	return {
 		ambiente: nfseConfiguracao.ambiente,
 		provedor: nfseConfiguracao.provedor,
@@ -19,6 +32,7 @@ export function montarConfigJsonNfseGateway({
 			nfseConfiguracao.codigomunicipioibge ?? empresaFiscal.codigomunicipioibge,
 		versaolayout: nfseConfiguracao.versaolayout,
 		urlwsdl: nfseConfiguracao.urlwsdl,
+		...(urlsWsdl ? { urlsWsdl } : {}),
 		usarlotesincrono: nfseConfiguracao.usarlotesincrono,
 		cnpj: empresa.cnpj.replace(/\D/g, ""),
 		im: empresaFiscal.inscricaomunicipal?.replace(/\D/g, "") ?? "",

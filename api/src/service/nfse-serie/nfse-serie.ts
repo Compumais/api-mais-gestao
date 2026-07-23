@@ -14,7 +14,6 @@ import {
 	httpErro,
 	httpOk,
 	httpProibido,
-	httpRecursoExistente,
 } from "@/util/http-util.js";
 
 type ParametrosBase = {
@@ -62,12 +61,38 @@ export async function criarNfseSerieService({
 		return httpProibido();
 	}
 
-	const duplicado = await buscarNfseSeriePorNumeroSerie(idempresa, dados.serie);
-	if (duplicado) {
-		return httpRecursoExistente();
-	}
-
 	const agora = new Date().toISOString();
+	const existente = await buscarNfseSeriePorNumeroSerie(idempresa, dados.serie);
+
+	// Mesma série já cadastrada: atualiza numeração (e flags) em vez de 409.
+	if (existente) {
+		if (dados.padrao) {
+			const series = await listarNfseSeriesPorEmpresa(idempresa);
+			for (const serie of series) {
+				if (serie.padrao && serie.id !== existente.id) {
+					await atualizarNfseSerie(serie.id, {
+						padrao: false,
+						atualizadoem: agora,
+					});
+				}
+			}
+		}
+
+		const atualizado = await atualizarNfseSerie(existente.id, {
+			...(dados.numeroproximo !== undefined
+				? { numeroproximo: dados.numeroproximo }
+				: {}),
+			...(dados.padrao !== undefined ? { padrao: dados.padrao } : {}),
+			...(dados.ativo !== undefined ? { ativo: dados.ativo } : {}),
+			atualizadoem: agora,
+		});
+
+		if (!atualizado) {
+			return httpErro();
+		}
+
+		return httpOk<NfseSerie>(atualizado);
+	}
 
 	if (dados.padrao) {
 		const series = await listarNfseSeriesPorEmpresa(idempresa);

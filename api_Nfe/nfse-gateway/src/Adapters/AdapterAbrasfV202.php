@@ -26,7 +26,7 @@ final class AdapterAbrasfV202 extends AbstractAbrasfAdapter implements NfseProve
         $tagLoteId = 'Lote' . $numeroRps;
         $xmlAssinado = $this->assinarXml($xmlLote, $certificate, $tagLoteId);
 
-        $soap = $this->enviarSoap($wsdl, 'RecepcionarLoteRpsSincrono', $xmlAssinado);
+        $soap = $this->enviarSoapOperacao(self::OPERACAO_EMISSAO, $configJson, $xmlAssinado, $wsdl);
         $resultado = $this->parseRespostaEmissao((string) ($soap['xmlRetorno'] ?? ''));
 
         return [
@@ -43,7 +43,7 @@ final class AdapterAbrasfV202 extends AbstractAbrasfAdapter implements NfseProve
         string $senha,
         array $dados,
     ): array {
-        $wsdl = $this->obterUrlWsdl($configJson);
+        $wsdl = $this->obterUrlWsdlOperacao($configJson, self::OPERACAO_CANCELAMENTO);
         $certificate = CertificadoService::lerCertificado($pfxBase64, $senha);
 
         $numeroNfse = (string) ($dados['numeroNfse'] ?? '');
@@ -72,7 +72,7 @@ final class AdapterAbrasfV202 extends AbstractAbrasfAdapter implements NfseProve
         $xml->appendChild($cancelamento);
 
         $xmlAssinado = $this->assinarXml($xml->saveXML() ?: '', $certificate, 'Cancelamento' . $numeroNfse);
-        $soap = $this->enviarSoap($wsdl, 'CancelarNfse', $xmlAssinado);
+        $soap = $this->enviarSoapOperacao(self::OPERACAO_CANCELAMENTO, $configJson, $xmlAssinado, $wsdl);
         $resultado = $this->parseRespostaEmissao((string) ($soap['xmlRetorno'] ?? ''));
 
         return [
@@ -92,7 +92,6 @@ final class AdapterAbrasfV202 extends AbstractAbrasfAdapter implements NfseProve
         string $senha,
         array $dados,
     ): array {
-        $wsdl = $this->obterUrlWsdl($configJson);
         CertificadoService::lerCertificado($pfxBase64, $senha);
 
         $prestador = is_array($dados['prestador'] ?? null) ? $dados['prestador'] : [];
@@ -115,8 +114,12 @@ final class AdapterAbrasfV202 extends AbstractAbrasfAdapter implements NfseProve
         $consulta->appendChild($prestadorNode);
         $xml->appendChild($consulta);
 
-        $soap = $this->enviarSoap($wsdl, 'ConsultarNfsePorRps', $xml->saveXML() ?: '');
-        $resultado = $this->parseRespostaEmissao((string) ($soap['xmlRetorno'] ?? ''));
+        $soap = $this->enviarSoapOperacao(
+            self::OPERACAO_CONSULTA,
+            $configJson,
+            $xml->saveXML() ?: '',
+        );
+        $resultado = $this->parseRespostaConsulta((string) ($soap['xmlRetorno'] ?? ''));
 
         return [
             ...$resultado,

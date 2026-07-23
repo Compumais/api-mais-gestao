@@ -6,6 +6,8 @@ import {
 	consultarNfse,
 	emitirNfse,
 	listarNfsesEmitidas,
+	retransmitirNfse,
+	substituirNfse,
 } from "./emitir-nfse.js";
 
 export async function nfseEmissaoRotas(app: FastifyInstance) {
@@ -15,5 +17,7 @@ export async function nfseEmissaoRotas(app: FastifyInstance) {
 	app.get("/nfse/emissao", { handler: listarNfsesEmitidas });
 	app.get("/nfse/emissao/:id", { handler: buscarNfsePorId });
 	app.post("/nfse/emissao/:id/cancelar", { handler: cancelarNfse });
+	app.post("/nfse/emissao/:id/substituir", { handler: substituirNfse });
 	app.post("/nfse/emissao/:id/consultar", { handler: consultarNfse });
+	app.post("/nfse/emissao/:id/retransmitir", { handler: retransmitirNfse });
 }

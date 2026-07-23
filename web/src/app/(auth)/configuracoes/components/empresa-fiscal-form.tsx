@@ -143,6 +143,8 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 		);
 	}
 
+	const erros = form.formState.errors;
+
 	return (
 		<form
 			onSubmit={form.handleSubmit(
@@ -265,9 +267,10 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 					<div className="border-t pt-6">
 						<h2 className="text-lg font-semibold mb-4">Endereço</h2>
 						<div className="grid gap-4 md:grid-cols-3 mb-4">
-							<Field>
+							<Field data-invalid={!!erros.cep}>
 								<FieldLabel htmlFor="cep">CEP</FieldLabel>
 								<Input id="cep" {...form.register("cep")} />
+								<FieldError errors={erros.cep ? [erros.cep] : []} />
 							</Field>
 							<Field data-invalid={!!errors.uf}>
 								<FieldLabel htmlFor="uf">UF</FieldLabel>
@@ -291,7 +294,7 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 								</Select>
 								<FieldError errors={errors.uf ? [errors.uf] : []} />
 							</Field>
-							<Field>
+							<Field data-invalid={!!erros.codigomunicipioibge}>
 								<FieldLabel htmlFor="codigomunicipioibge">
 									Município (IBGE)
 								</FieldLabel>
@@ -322,6 +325,13 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 										))}
 									</SelectContent>
 								</Select>
+								<FieldError
+									errors={
+										erros.codigomunicipioibge
+											? [erros.codigomunicipioibge]
+											: []
+									}
+								/>
 							</Field>
 						</div>
 
