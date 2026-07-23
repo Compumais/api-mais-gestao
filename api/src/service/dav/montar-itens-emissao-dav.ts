@@ -1,8 +1,10 @@
 import { buscarCfopPorId } from "@/repositories/cfop-repositories.js";
 import { listarItensPorDav } from "@/repositories/dav-item-repositories.js";
+import { buscarCestPorId } from "@/repositories/cest-repositories.js";
 import { buscarNcmPorId } from "@/repositories/ncm-repositories.js";
 import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
 import type { ItemPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
+import { normalizarCodigoCest } from "@/util/validar-cest-item-emissao-nfe.js";
 
 async function resolverCodigoCfop(
 	ids: Array<string | null | undefined>,
@@ -30,6 +32,19 @@ async function resolverNcmProduto(
 	return "";
 }
 
+async function resolverCestProduto(
+	produto: NonNullable<Awaited<ReturnType<typeof buscarProdutoPorId>>>,
+): Promise<string | undefined> {
+	if (produto.idcest) {
+		const cest = await buscarCestPorId(produto.idcest);
+		const codigo = normalizarCodigoCest(cest?.codigo);
+		if (codigo?.length === 7) return codigo;
+	}
+
+	const cestLegado = normalizarCodigoCest(produto.cest);
+	return cestLegado?.length === 7 ? cestLegado : undefined;
+}
+
 function formatarSituacaoTributaria(
 	valor: string | number | null | undefined,
 ): string | undefined {
@@ -38,13 +53,20 @@ function formatarSituacaoTributaria(
 	return texto || undefined;
 }
 
+export type MontarItensEmissaoDavOpcoes = {
+	/** Prioriza CFOP de NFC-e (`idcfopsaidanfce`) — pedidos POS. */
+	prioridadeNfce?: boolean;
+};
+
 export async function montarItensEmissaoDav(
 	idempresa: string,
 	iddav: string,
+	opcoes: MontarItensEmissaoDavOpcoes = {},
 ): Promise<{ itens: ItemPayloadNfe[]; pendencias: string[] }> {
 	const itensDav = await listarItensPorDav(iddav);
 	const pendencias: string[] = [];
 	const itens: ItemPayloadNfe[] = [];
+	const prioridadeNfce = opcoes.prioridadeNfce === true;
 
 	for (const [index, itemDav] of itensDav.entries()) {
 		const rotulo = `Item ${index + 1}`;
@@ -60,15 +82,28 @@ export async function montarItensEmissaoDav(
 			continue;
 		}
 
-		const codigoCfop = await resolverCodigoCfop([
-			itemDav.idcfop,
-			produto.idcfopsaida,
-			produto.idcfopsaidaexterna,
-			produto.idcfopsaidanfce,
-		]);
+		const codigoCfop = await resolverCodigoCfop(
+			prioridadeNfce
+				? [
+						itemDav.idcfop,
+						produto.idcfopsaidanfce,
+						produto.idcfopsaida,
+						produto.idcfopsaidaexterna,
+					]
+				: [
+						itemDav.idcfop,
+						produto.idcfopsaida,
+						produto.idcfopsaidaexterna,
+						produto.idcfopsaidanfce,
+					],
+		);
 
 		if (!codigoCfop) {
-			pendencias.push(`${rotulo}: CFOP de saída não configurado`);
+			pendencias.push(
+				prioridadeNfce
+					? `${rotulo}: CFOP NFC-e não configurado no produto`
+					: `${rotulo}: CFOP de saída não configurado`,
+			);
 		}
 
 		const quantidade = parseFloat(itemDav.quantidade ?? "0");
@@ -91,8 +126,12 @@ export async function montarItensEmissaoDav(
 			pendencias.push(`${rotulo}: NCM do produto ausente`);
 		}
 
+		const cest = await resolverCestProduto(produto);
+
 		const cst = formatarSituacaoTributaria(produto.situacaotributaria);
-		const csosn = formatarSituacaoTributaria(produto.situacaotributariasn);
+		const csosn =
+			formatarSituacaoTributaria(produto.tributacaosn) ??
+			formatarSituacaoTributaria(produto.situacaotributariasn);
 
 		itens.push({
 			idproduto: produto.id,
@@ -101,6 +140,7 @@ export async function montarItensEmissaoDav(
 				: {}),
 			descricao: produto.descricao ?? `Produto ${produto.codigo ?? ""}`.trim(),
 			ncm,
+			...(cest ? { cest } : {}),
 			cfop: codigoCfop ?? "",
 			unidade: itemDav.unidademedida ?? produto.unidademedida ?? "UN",
 			quantidade,

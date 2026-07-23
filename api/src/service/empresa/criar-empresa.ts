@@ -4,7 +4,6 @@ import * as schema from "../../../drizzle/schema.js";
 import type { Empresa } from "../../model/empresa-model.js";
 import type { HttpResponse } from "../../model/http-model.js";
 import type { Usuario } from "../../model/usuario-model.js";
-import { criarContaCorrenteCaixaPadrao } from "../../repositories/conta-corrente-repositories.js";
 import { executarComControleAcessoPrivilegiado } from "../../repositories/controle-acesso-contexto.js";
 import {
 	criarEmpresa,
@@ -14,12 +13,7 @@ import {
 import { httpCriacao, httpRecursoExistente } from "../../util/http-util.js";
 import { normalizarCnpj } from "../../util/criptografia-certificado.js";
 import { normalizarPerfilArray } from "../../util/usuario-perfil.js";
-import { criarCfopsPadraoService } from "../cfop/criar-cfops-padrao.js";
-import { criarFatoresConversaoPadraoService } from "../fator-conversao/criar-fatores-conversao-padrao.js";
-import { criarParametrizacaoTributosPadraoService } from "../parametrizacao-tributos/criar-parametrizacao-tributos-padrao.js";
-import { criarPlanoContasPadraoService } from "../planocontas/criar-plano-contas-padrao.js";
-import { criarTaxasPadraoService } from "../taxauf/criar-taxas-padrao.js";
-import { criarTiposDocumentoFinanceiroPadraoService } from "../tipo-documento-financeiro/criar-tipos-documento-financeiro-padrao.js";
+import { popularDadosPadraoEmpresa } from "./popular-dados-padrao-empresa.js";
 
 type CriarEmpresaParametros = {
 	dadosEmpresa: NovaEmpresa;
@@ -49,19 +43,7 @@ export async function criarEmpresaService({
 		return httpRecursoExistente("CNPJ já cadastrado");
 	}
 
-	await criarPlanoContasPadraoService(empresa.id);
-
-	await criarCfopsPadraoService(empresa.id);
-
-	await criarTaxasPadraoService(empresa.id);
-
-	await criarParametrizacaoTributosPadraoService(empresa.id);
-
-	await criarTiposDocumentoFinanceiroPadraoService(empresa.id);
-
-	await criarContaCorrenteCaixaPadrao(empresa.id);
-
-	await criarFatoresConversaoPadraoService(empresa.id);
+	await popularDadosPadraoEmpresa(empresa.id);
 
 	try {
 		await executarComControleAcessoPrivilegiado(async (tx) => {

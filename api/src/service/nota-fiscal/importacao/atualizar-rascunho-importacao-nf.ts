@@ -12,8 +12,13 @@ import {
 } from "@/repositories/nota-fiscal-repositories.js";
 import { buscarHierarquiaPorId } from "@/repositories/hierarquia-repositories.js";
 import type { DadosImportacaoNota } from "@/model/nota-fiscal-importacao-model.js";
+import { buscarCfopPorId } from "@/repositories/cfop-repositories.js";
 import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
 import { recalcularDadosConversao } from "@/util/calculo-importacao-nf.js";
+import {
+	isCfopEntrada,
+	mensagemInconsistenciaCfopEntrada,
+} from "@/util/cfop-entrada-validacao.js";
 import {
 	httpBadRequest,
 	httpNaoEncontrado,
@@ -22,6 +27,7 @@ import {
 } from "@/util/http-util.js";
 import { idOpcionalOuNulo, numeroOpcionalOuNulo } from "@/util/texto-util.js";
 import { buscarUnidadeMedidaPorId } from "@/repositories/unidade-medida-repositories.js";
+import { resolverTipoprodutoPorCfopEntrada } from "@/service/nota-fiscal/montar-dados-produto-nf-importacao.js";
 import { validarEanProdutoNf } from "@/service/nota-fiscal/validar-ean-produto-nf.js";
 import { resolverNcmImportacao } from "./resolver-referencias-importacao.js";
 
@@ -38,6 +44,7 @@ type AtualizarCabecalhoRascunhoParametros = {
 		idoperacaofiscal?: string | null | undefined;
 		observacao?: string | null | undefined;
 		entradasaida?: string | null | undefined;
+		aplicarCfopItens?: boolean | undefined;
 	};
 };
 
@@ -72,6 +79,30 @@ async function validarAcessoRascunho(
 	return { nota } as const;
 }
 
+async function resolverCfopEntradaPorId(idcfop: string | null | undefined): Promise<
+	| { ok: true; idcfop: string; codigo: string }
+	| { ok: false; erro: string }
+	| { ok: true; idcfop: null; codigo: null }
+> {
+	if (!idcfop) {
+		return { ok: true, idcfop: null, codigo: null };
+	}
+
+	const cfop = await buscarCfopPorId(idcfop);
+	if (!cfop?.codigo) {
+		return { ok: false, erro: "CFOP não encontrado" };
+	}
+
+	if (!isCfopEntrada(cfop.codigo)) {
+		return {
+			ok: false,
+			erro: mensagemInconsistenciaCfopEntrada("cfop_nao_entrada"),
+		};
+	}
+
+	return { ok: true, idcfop: cfop.id, codigo: cfop.codigo };
+}
+
 export async function atualizarCabecalhoRascunhoImportacaoNfService({
 	idusuario,
 	idempresa,
@@ -82,6 +113,18 @@ export async function atualizarCabecalhoRascunhoImportacaoNfService({
 
 	if ("erro" in validacao) {
 		return validacao.erro as HttpResponse<NotaFiscal>;
+	}
+
+	let codigoCfopEntrada: string | null = null;
+
+	if (dados.idcfop !== undefined) {
+		const cfopResolvido = await resolverCfopEntradaPorId(
+			idOpcionalOuNulo(dados.idcfop),
+		);
+		if (!cfopResolvido.ok) {
+			return httpBadRequest(cfopResolvido.erro);
+		}
+		codigoCfopEntrada = cfopResolvido.codigo;
 	}
 
 	const notaAtualizada = await atualizarNotaFiscal(idRascunho, {
@@ -97,6 +140,40 @@ export async function atualizarCabecalhoRascunhoImportacaoNfService({
 
 	if (!notaAtualizada) {
 		return httpNaoEncontrado();
+	}
+
+	if (dados.aplicarCfopItens && dados.idcfop) {
+		const idcfop = idOpcionalOuNulo(dados.idcfop);
+		if (idcfop && codigoCfopEntrada) {
+			const tipoproduto =
+				await resolverTipoprodutoPorCfopEntrada(idcfop);
+			const itens = await listarItensPorNotaFiscal(idRascunho);
+			for (const item of itens) {
+				const dadosAtuais =
+					(item.dadosimportacao as DadosImportacaoItem | null) ?? {
+						descricaoFornecedor: item.descricao ?? "",
+						statusVinculo: "pendente" as const,
+						confirmarCadastro: false,
+						fatorConversao: "1",
+						quantidadeXml: item.quantidade ?? "0",
+						quantidadeEstoque: item.quantidade ?? "0",
+						precounitarioXml: item.precounitario ?? "0",
+						precounitarioEstoque: item.precounitario ?? "0",
+						tributacao: {},
+					};
+
+				await atualizarItemNotaFiscal(item.id, {
+					idcfop,
+					cfop: codigoCfopEntrada,
+					dadosimportacao: {
+						...dadosAtuais,
+						idcfop,
+						tipoproduto,
+						cfopXml: dadosAtuais.cfopXml,
+					},
+				});
+			}
+		}
 	}
 
 	return httpOk<NotaFiscal>(notaAtualizada);
@@ -137,14 +214,20 @@ export async function atualizarItemRascunhoImportacaoNfService({
 		tributacao: {},
 	};
 
+	// Nunca sobrescrever cfopXml com o CFOP operacional selecionado no combobox
+	const { cfopXml: _cfopXmlIgnorado, ...dadosSemCfopXml } = dados;
+
 	let dadosMesclados: DadosImportacaoItem = {
 		...dadosAtuais,
-		...dados,
+		...dadosSemCfopXml,
+		cfopXml: dadosAtuais.cfopXml,
 		tributacao: {
 			...dadosAtuais.tributacao,
 			...dados.tributacao,
 		},
 	};
+
+	let codigoCfopEntrada: string | null = item.cfop ?? null;
 
 	if (dados.statusVinculo === "vinculado" && dados.idproduto) {
 		const produto = await buscarProdutoPorId(dados.idproduto);
@@ -167,6 +250,17 @@ export async function atualizarItemRascunhoImportacaoNfService({
 				dadosMesclados.precoVenda?.trim() ||
 				(produto.preco?.trim() ? produto.preco : undefined),
 		};
+
+		if (!dadosMesclados.idcfop && produto.idcfopentrada) {
+			const cfopProduto = await resolverCfopEntradaPorId(produto.idcfopentrada);
+			if (cfopProduto.ok && cfopProduto.idcfop) {
+				dadosMesclados = {
+					...dadosMesclados,
+					idcfop: cfopProduto.idcfop,
+				};
+				codigoCfopEntrada = cfopProduto.codigo;
+			}
+		}
 	}
 
 	if (dados.statusVinculo === "novo") {
@@ -247,6 +341,34 @@ export async function atualizarItemRascunhoImportacaoNfService({
 		}
 	}
 
+	if (dados.idcfop !== undefined) {
+		const cfopResolvido = await resolverCfopEntradaPorId(
+			idOpcionalOuNulo(dados.idcfop),
+		);
+		if (!cfopResolvido.ok) {
+			return httpBadRequest(cfopResolvido.erro);
+		}
+		dadosMesclados = {
+			...dadosMesclados,
+			idcfop: cfopResolvido.idcfop ?? undefined,
+		};
+		codigoCfopEntrada = cfopResolvido.codigo;
+
+		if (dados.tipoproduto === undefined && cfopResolvido.idcfop) {
+			dadosMesclados = {
+				...dadosMesclados,
+				tipoproduto: await resolverTipoprodutoPorCfopEntrada(
+					cfopResolvido.idcfop,
+				),
+			};
+		}
+	} else if (dadosMesclados.idcfop && !codigoCfopEntrada) {
+		const cfopResolvido = await resolverCfopEntradaPorId(dadosMesclados.idcfop);
+		if (cfopResolvido.ok && cfopResolvido.codigo) {
+			codigoCfopEntrada = cfopResolvido.codigo;
+		}
+	}
+
 	if (
 		dadosMesclados.statusVinculo === "novo" ||
 		dadosMesclados.statusVinculo === "vinculado"
@@ -270,12 +392,13 @@ export async function atualizarItemRascunhoImportacaoNfService({
 		quantidade: numeroOpcionalOuNulo(dadosMesclados.quantidadeXml) ?? null,
 		precounitario: numeroOpcionalOuNulo(dadosMesclados.precounitarioXml) ?? null,
 		idcfop: idOpcionalOuNulo(dadosMesclados.idcfop) ?? null,
-		cfop: idOpcionalOuNulo(dadosMesclados.cfopXml) ?? null,
+		cfop: codigoCfopEntrada,
 		idncm: idOpcionalOuNulo(dadosMesclados.idncm) ?? null,
 		ncm: idOpcionalOuNulo(dadosMesclados.ncmXml) ?? null,
 		idunidademedida: idOpcionalOuNulo(dadosMesclados.idunidademedida) ?? null,
 		unidade: dadosMesclados.unidadeEstoque ?? dadosMesclados.unidadeXml ?? null,
-		situacaotributaria: idOpcionalOuNulo(dadosMesclados.tributacao.situacaotributaria) ?? null,
+		situacaotributaria:
+			idOpcionalOuNulo(dadosMesclados.tributacao.situacaotributaria) ?? null,
 		cstpis: idOpcionalOuNulo(dadosMesclados.tributacao.cstpis) ?? null,
 		cstcofins: idOpcionalOuNulo(dadosMesclados.tributacao.cstcofins) ?? null,
 		baseicms: numeroOpcionalOuNulo(dadosMesclados.tributacao.baseicms) ?? null,

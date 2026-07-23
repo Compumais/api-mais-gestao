@@ -12,6 +12,8 @@ import { NFE_CONFIG_PADRAO } from "@/util/nfe-config-padrao.js";
 import { montarIeEmitenteNfe, ajustarDestinatarioAmbienteNfe } from "@/util/normalizar-ie-nfe.js";
 import { resolverIdeEmissaoNfe } from "@/util/resolver-ide-emissao-nfe.js";
 import { validarPreRequisitosEmissaoNfe } from "@/util/validar-pre-requisitos-emissao-nfe.js";
+import { agoraBrasiliaIsoOffset } from "@/util/data-hora-brasilia.js";
+import { resolverNomeMunicipioIbge } from "@/util/resolver-nome-municipio-ibge.js";
 
 export type ItemPayloadNfe = {
 	idproduto?: string;
@@ -20,6 +22,7 @@ export type ItemPayloadNfe = {
 	eanTributavel?: string;
 	descricao: string;
 	ncm: string;
+	cest?: string;
 	cfop: string;
 	unidade: string;
 	quantidade: number;
@@ -135,7 +138,7 @@ export async function carregarContextoEmissaoNfe(idempresa: string) {
 	};
 }
 
-export function montarPayloadGatewayEmissao({
+export async function montarPayloadGatewayEmissao({
 	empresa,
 	empresaFiscal,
 	nfeConfiguracao,
@@ -167,6 +170,11 @@ export function montarPayloadGatewayEmissao({
 	const crt = empresaFiscal.crt ?? 3;
 	const csosn = crt === 1 || crt === 2 || crt === 4 ? "102" : undefined;
 	const cst = crt === 3 ? "00" : undefined;
+	const nomeMunicipioEmitente =
+		(await resolverNomeMunicipioIbge(
+			empresaFiscal.codigomunicipioibge,
+			empresaFiscal.uf,
+		)) ?? empresaFiscal.codigomunicipioibge;
 
 	return {
 		configJson,
@@ -184,7 +192,7 @@ export function montarPayloadGatewayEmissao({
 				complemento: empresaFiscal.complemento ?? "",
 				bairro: empresaFiscal.bairro,
 				codigoMunicipio: empresaFiscal.codigomunicipioibge,
-				municipio: empresaFiscal.codigomunicipioibge,
+				municipio: nomeMunicipioEmitente,
 				uf: empresaFiscal.uf,
 				cep: empresaFiscal.cep?.replace(/\D/g, ""),
 				telefone: empresaFiscal.telefone ?? "",
@@ -194,6 +202,7 @@ export function montarPayloadGatewayEmissao({
 				cUF: obterCodigoUfIbge(empresaFiscal.uf ?? ""),
 				serie: Number(serie),
 				nNF: numeroNf,
+				dhEmi: agoraBrasiliaIsoOffset(),
 				tpAmb: nfeConfiguracao.ambiente,
 				verProc: NFE_CONFIG_PADRAO.verproc,
 			},
@@ -217,7 +226,7 @@ export function montarPayloadGatewayEmissao({
 	};
 }
 
-export function montarPayloadGatewayEmissaoItens({
+export async function montarPayloadGatewayEmissaoItens({
 	empresa,
 	empresaFiscal,
 	nfeConfiguracao,
@@ -264,6 +273,27 @@ export function montarPayloadGatewayEmissaoItens({
 		finNFe,
 	});
 
+	const [nomeMunicipioEmitente, nomeMunicipioDestinatario] = await Promise.all([
+		resolverNomeMunicipioIbge(
+			empresaFiscal.codigomunicipioibge,
+			empresaFiscal.uf,
+		),
+		resolverNomeMunicipioIbge(
+			destinatario?.codigomunicipioibge,
+			destinatario?.estado,
+		),
+	]);
+
+	const destinatarioComMunicipio = destinatario
+		? {
+				...destinatario,
+				cidade:
+					destinatario.cidade ||
+					nomeMunicipioDestinatario ||
+					destinatario.codigomunicipioibge,
+			}
+		: undefined;
+
 	return {
 		configJson,
 		pfxBase64: credenciais.pfxBase64,
@@ -280,7 +310,8 @@ export function montarPayloadGatewayEmissaoItens({
 				complemento: empresaFiscal.complemento ?? "",
 				bairro: empresaFiscal.bairro,
 				codigoMunicipio: empresaFiscal.codigomunicipioibge,
-				municipio: empresaFiscal.codigomunicipioibge,
+				municipio:
+					nomeMunicipioEmitente ?? empresaFiscal.codigomunicipioibge,
 				uf: empresaFiscal.uf,
 				cep: empresaFiscal.cep?.replace(/\D/g, ""),
 				telefone: empresaFiscal.telefone ?? "",
@@ -291,6 +322,7 @@ export function montarPayloadGatewayEmissaoItens({
 				natOp: natOp?.trim() || "VENDA",
 				serie: Number(serie),
 				nNF: numeroNf,
+				dhEmi: agoraBrasiliaIsoOffset(),
 				tpAmb: nfeConfiguracao.ambiente,
 				verProc: NFE_CONFIG_PADRAO.verproc,
 				idDest: ide.idDest,
@@ -303,7 +335,7 @@ export function montarPayloadGatewayEmissaoItens({
 				refNFe: doc.chave.replace(/\D/g, ""),
 			})),
 			destinatario: ajustarDestinatarioAmbienteNfe(
-				destinatario,
+				destinatarioComMunicipio,
 				nfeConfiguracao.ambiente,
 			) ?? {},
 			itens,

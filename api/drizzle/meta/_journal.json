@@ -423,10 +423,31 @@
       "breakpoints": true
     },
     {
+      "idx": 59,
+      "version": "7",
+      "when": 1783960000000,
+      "tag": "0059_entidade_campos_maiores",
+      "breakpoints": true
+    },
+    {
       "idx": 60,
       "version": "7",
+      "when": 1784010000000,
+      "tag": "0060_parametrizacao_tributos_tipoproduto",
+      "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1784410000000,
+      "tag": "0061_atalho_pdv_emitirnfcepos",
+      "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
       "when": 1783900000000,
-      "tag": "0059_nfse_urls_operacao",
+      "tag": "0062_nfse_urls_operacao",
       "breakpoints": true
     }
   ]

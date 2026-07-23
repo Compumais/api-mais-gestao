@@ -15,18 +15,18 @@ export const entidade = pgTable(
 	"entidade",
 	{
 		id: text().primaryKey().notNull(),
-		nome: varchar({ length: 60 }).notNull(),
-		razaosocial: varchar({ length: 60 }),
+		nome: varchar({ length: 120 }).notNull(),
+		razaosocial: varchar({ length: 120 }),
 		tipopessoa: smallint().default(0), // 0 - Pessoa Física, 1 - Pessoa Jurídica
 		cnpjcpf: varchar({ length: 20 }).notNull(),
 		inscricaoestadual: varchar({ length: 20 }),
 		rg: varchar({ length: 20 }),
 		email: varchar({ length: 200 }),
 		telefone: varchar({ length: 40 }),
-		endereco: varchar({ length: 60 }),
-		numeroendereco: varchar({ length: 6 }),
-		complemento: varchar({ length: 50 }),
-		bairro: varchar({ length: 50 }),
+		endereco: varchar({ length: 120 }),
+		numeroendereco: varchar({ length: 20 }),
+		complemento: varchar({ length: 60 }),
+		bairro: varchar({ length: 60 }),
 		fornecedor: smallint().default(0), // 0 - Não, 1 - Sim
 		cliente: smallint().default(0), // 0 - Não, 1 - Sim
 		transportador: smallint().default(0), // 0 - Não, 1 - Sim

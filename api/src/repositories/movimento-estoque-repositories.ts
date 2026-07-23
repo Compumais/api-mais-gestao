@@ -35,6 +35,15 @@ export async function listarMovimentosEstoquePorIdOriginal(idoriginal: string) {
 		.where(eq(movimentoestoque.idoriginal, idoriginal));
 }
 
+export async function excluirMovimentosEstoquePorIdOriginal(idoriginal: string) {
+	const removidos = await db
+		.delete(movimentoestoque)
+		.where(eq(movimentoestoque.idoriginal, idoriginal))
+		.returning({ id: movimentoestoque.id });
+
+	return removidos.length;
+}
+
 export async function atualizarMovimentoEstoque(
 	id: number,
 	dados: {

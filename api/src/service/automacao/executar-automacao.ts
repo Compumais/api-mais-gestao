@@ -16,6 +16,10 @@ import {
 	FUNCAO_ENVIO_FISCAL_CONTABILIDADE,
 	type ResultadoFuncaoAutomacao,
 } from "@/service/automacao/funcoes/envio-fiscal-contabilidade.js";
+import {
+	executarAlertaPendenciasNf,
+	FUNCAO_ALERTA_PENDENCIAS_NF,
+} from "@/service/automacao/funcoes/alerta-pendencias-nf.js";
 import { criarNotificacaoAgendadaService } from "@/service/notificacoes/criar-notificacao-agendada.js";
 import type { HttpResponse } from "@/model/http-model.js";
 import {
@@ -33,6 +37,10 @@ async function despacharFuncao(
 ): Promise<HttpResponse<ResultadoFuncaoAutomacao>> {
 	if (automacao.funcao === FUNCAO_ENVIO_FISCAL_CONTABILIDADE) {
 		return executarEnvioFiscalContabilidade(automacao, referencia);
+	}
+
+	if (automacao.funcao === FUNCAO_ALERTA_PENDENCIAS_NF) {
+		return executarAlertaPendenciasNf(automacao, referencia);
 	}
 
 	return httpOk<ResultadoFuncaoAutomacao>({

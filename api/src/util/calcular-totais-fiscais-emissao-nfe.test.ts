@@ -65,7 +65,7 @@ describe("calcularTotaisFiscaisEmissaoNfe", () => {
 		expect(totais.valorIcms).toBe(12.5);
 	});
 
-	it("soma ICMS informado no item mesmo para Simples Nacional", () => {
+	it("não destaca ICMS próprio no Simples Nacional mesmo com valores informados", () => {
 		const totais = calcularTotaisFiscaisEmissaoNfe(
 			1,
 			[
@@ -74,24 +74,8 @@ describe("calcularTotaisFiscaisEmissaoNfe", () => {
 					valorUnitario: 100,
 					csosn: "102",
 					baseIcms: 100,
+					aliquotaIcms: 18,
 					valorIcms: 18,
-				},
-			],
-			{},
-		);
-
-		expect(totais.baseIcms).toBe(100);
-		expect(totais.valorIcms).toBe(18);
-	});
-
-	it("ignora BC ICMS para Simples Nacional sem valores informados no item", () => {
-		const totais = calcularTotaisFiscaisEmissaoNfe(
-			1,
-			[
-				{
-					quantidade: 1,
-					valorUnitario: 50,
-					csosn: "102",
 				},
 			],
 			{},
@@ -99,6 +83,53 @@ describe("calcularTotaisFiscaisEmissaoNfe", () => {
 
 		expect(totais.baseIcms).toBe(0);
 		expect(totais.valorIcms).toBe(0);
+		expect(totais.totalProdutos).toBe(100);
+	});
+
+	it("mantém ST no Simples Nacional sem destacar ICMS próprio", () => {
+		const totais = calcularTotaisFiscaisEmissaoNfe(
+			1,
+			[
+				{
+					quantidade: 1,
+					valorUnitario: 50,
+					csosn: "202",
+					baseIcms: 50,
+					valorIcms: 9,
+					baseIcmsSt: 60,
+					valorIcmsSt: 12,
+				},
+			],
+			{},
+		);
+
+		expect(totais.baseIcms).toBe(0);
+		expect(totais.valorIcms).toBe(0);
+		expect(totais.baseIcmsSt).toBe(60);
+		expect(totais.valorIcmsSt).toBe(12);
 		expect(totais.totalProdutos).toBe(50);
+		expect(totais.totalNota).toBe(62);
+	});
+
+	it("NFC-e (mesmo totalizador) no Simples não destaca ICMS próprio", () => {
+		const totais = calcularTotaisFiscaisEmissaoNfe(
+			1,
+			[
+				{
+					quantidade: 2,
+					valorUnitario: 25.5,
+					csosn: "102",
+					baseIcms: 51,
+					aliquotaIcms: 18,
+					valorIcms: 9.18,
+				},
+			],
+			{},
+		);
+
+		expect(totais.baseIcms).toBe(0);
+		expect(totais.valorIcms).toBe(0);
+		expect(totais.totalProdutos).toBe(51);
+		expect(totais.totalNota).toBe(51);
 	});
 });

@@ -1,54 +1,36 @@
 import { z } from "zod";
 
-/** Aceita string vazia no formulário e normaliza para null na saída. */
-function textoOpcional(max: number, mensagem?: string) {
-	return z
-		.union([z.string().max(max, mensagem), z.literal(""), z.null()])
-		.optional()
-		.transform((valor) => (valor === "" || valor === undefined ? null : valor));
-}
-
-function ufOpcional() {
-	return z
-		.union([
-			z.string().length(2, "UF deve ter 2 caracteres"),
-			z.literal(""),
-			z.null(),
-		])
-		.optional()
-		.transform((valor) => (valor === "" || valor === undefined ? null : valor));
-}
-
-function emailOpcional() {
-	return z
-		.union([
-			z.string().email("E-mail inválido").max(200),
-			z.literal(""),
-			z.null(),
-		])
-		.optional()
-		.transform((valor) => (valor === "" || valor === undefined ? null : valor));
+function vazioParaNull(valor: unknown): string | null {
+	if (valor == null) return null;
+	const texto = String(valor).trim();
+	return texto === "" ? null : texto;
 }
 
 export const empresaFiscalConfigSchema = z.object({
-	razaosocial: textoOpcional(60),
-	nomefantasia: textoOpcional(60),
-	inscricaoestadual: textoOpcional(20),
-	inscricaomunicipal: textoOpcional(20),
-	crt: z.number().int().min(1).max(4).optional().nullable(),
-	cnae: textoOpcional(7),
-	indicadorie: z.number().int().optional().nullable(),
-	logradouro: textoOpcional(60),
-	numero: textoOpcional(10),
-	complemento: textoOpcional(60),
-	bairro: textoOpcional(60),
-	cep: textoOpcional(9),
-	codigomunicipioibge: textoOpcional(7),
-	uf: ufOpcional(),
-	codigopais: textoOpcional(4),
-	telefone: textoOpcional(40),
-	email: emailOpcional(),
-	regimetributario: z.enum(["SN", "LP", "LR", ""]).optional().nullable(),
+	razaosocial: z.preprocess(vazioParaNull, z.string().max(60).nullable()),
+	nomefantasia: z.preprocess(vazioParaNull, z.string().max(60).nullable()),
+	inscricaoestadual: z.preprocess(vazioParaNull, z.string().max(20).nullable()),
+	inscricaomunicipal: z.preprocess(vazioParaNull, z.string().max(20).nullable()),
+	crt: z.coerce
+		.number({ error: "CRT obrigatório" })
+		.int()
+		.min(1, "CRT inválido")
+		.max(4, "CRT inválido"),
+	cnae: z.preprocess(vazioParaNull, z.string().max(7).nullable()),
+	indicadorie: z.coerce.number().int().min(1).max(9).optional().nullable(),
+	logradouro: z.preprocess(vazioParaNull, z.string().max(60).nullable()),
+	numero: z.preprocess(vazioParaNull, z.string().max(10).nullable()),
+	complemento: z.preprocess(vazioParaNull, z.string().max(60).nullable()),
+	bairro: z.preprocess(vazioParaNull, z.string().max(60).nullable()),
+	cep: z.preprocess(vazioParaNull, z.string().max(9).nullable()),
+	codigomunicipioibge: z.preprocess(vazioParaNull, z.string().max(7).nullable()),
+	uf: z.preprocess(vazioParaNull, z.string().length(2, "UF inválida").nullable()),
+	codigopais: z.preprocess(vazioParaNull, z.string().max(4).nullable()),
+	telefone: z.preprocess(vazioParaNull, z.string().max(40).nullable()),
+	email: z.preprocess(
+		vazioParaNull,
+		z.string().email("E-mail inválido").max(200).nullable(),
+	),
 });
 
 export type EmpresaFiscalConfigFormData = z.infer<

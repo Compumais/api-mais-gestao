@@ -9,8 +9,17 @@ import {
 } from "@/repositories/empresa-fiscal-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { atualizarEmpresa } from "@/repositories/empresa-repositories.js";
-import { httpBadRequest, httpErro, httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
-import { normalizarRegimeTributario } from "@/util/regime-tributario-empresa.js";
+import {
+	httpBadRequest,
+	httpErro,
+	httpNaoEncontrado,
+	httpOk,
+	httpProibido,
+} from "@/util/http-util.js";
+import {
+	derivarRegimeTributarioDoCrt,
+	normalizarRegimeTributario,
+} from "@/util/regime-tributario-empresa.js";
 
 export type EmpresaFiscalBody = {
 	razaosocial?: string | null;
@@ -44,6 +53,30 @@ type AtualizarEmpresaFiscalParametros = {
 	dados: EmpresaFiscalBody;
 };
 
+function hidratarFiscalComEmpresa(
+	fiscal: EmpresaFiscal,
+	empresa: NonNullable<Awaited<ReturnType<typeof buscarEmpresaPorId>>>,
+): EmpresaFiscal {
+	return {
+		...fiscal,
+		razaosocial: fiscal.razaosocial || empresa.nome || null,
+		telefone: fiscal.telefone || empresa.telefone || null,
+		email: fiscal.email || empresa.email || null,
+		logradouro: fiscal.logradouro || empresa.endereco || null,
+		regimetributario:
+			fiscal.regimetributario ||
+			empresa.regimetributario ||
+			derivarRegimeTributarioDoCrt(fiscal.crt),
+		crt:
+			fiscal.crt ??
+			(empresa.regimetributario === "SN"
+				? 1
+				: empresa.regimetributario
+					? 3
+					: null),
+	};
+}
+
 export async function buscarEmpresaFiscalService({
 	idempresa,
 	idusuario,
@@ -66,16 +99,24 @@ export async function buscarEmpresaFiscalService({
 
 	if (!fiscal) {
 		const agora = new Date().toISOString();
+		const crtPadrao = empresa.regimetributario === "SN" ? 1 : 3;
 		fiscal = await criarEmpresaFiscal({
 			id: uuidv4(),
 			idempresa,
 			regimetributario: empresa.regimetributario,
+			razaosocial: empresa.nome,
+			telefone: empresa.telefone,
+			email: empresa.email,
+			logradouro: empresa.endereco,
+			crt: empresa.regimetributario ? crtPadrao : null,
 			criadoem: agora,
 			atualizadoem: agora,
 		});
 	}
 
-	return httpOk<EmpresaFiscal | null>(fiscal ?? null);
+	return httpOk<EmpresaFiscal | null>(
+		fiscal ? hidratarFiscalComEmpresa(fiscal, empresa) : null,
+	);
 }
 
 export async function atualizarEmpresaFiscalService({
@@ -97,19 +138,31 @@ export async function atualizarEmpresaFiscalService({
 		return httpNaoEncontrado();
 	}
 
-	let regimetributario = dados.regimetributario;
-	if (regimetributario !== undefined) {
-		const normalizado = normalizarRegimeTributario(regimetributario);
-		if (
-			regimetributario !== null &&
-			regimetributario !== "" &&
-			!normalizado
-		) {
-			return httpBadRequest("Regime tributário inválido. Use SN, LP ou LR.");
-		}
-		regimetributario = normalizado;
+	if (dados.crt != null && (dados.crt < 1 || dados.crt > 4)) {
+		return httpBadRequest("CRT inválido. Informe um valor entre 1 e 4.");
+	}
+
+	// CRT é a fonte da verdade; regime legado é derivado para outros módulos.
+	const regimeDerivado =
+		dados.crt !== undefined
+			? derivarRegimeTributarioDoCrt(dados.crt)
+			: dados.regimetributario !== undefined
+				? normalizarRegimeTributario(dados.regimetributario)
+				: undefined;
+
+	if (
+		dados.regimetributario !== undefined &&
+		dados.crt === undefined &&
+		dados.regimetributario !== null &&
+		dados.regimetributario !== "" &&
+		!regimeDerivado
+	) {
+		return httpBadRequest("Regime tributário inválido. Use SN, LP ou LR.");
+	}
+
+	if (regimeDerivado !== undefined) {
 		await atualizarEmpresa(idempresa, {
-			regimetributario: normalizado,
+			regimetributario: regimeDerivado,
 			atualizadoem: new Date().toISOString(),
 		});
 	}
@@ -119,7 +172,8 @@ export async function atualizarEmpresaFiscalService({
 
 	const payload = {
 		...dados,
-		regimetributario,
+		regimetributario:
+			regimeDerivado !== undefined ? regimeDerivado : dados.regimetributario,
 		atualizadoem: agora,
 	};
 
@@ -138,5 +192,5 @@ export async function atualizarEmpresaFiscalService({
 		return httpErro();
 	}
 
-	return httpOk<EmpresaFiscal>(fiscal);
+	return httpOk<EmpresaFiscal>(hidratarFiscalComEmpresa(fiscal, empresa));
 }

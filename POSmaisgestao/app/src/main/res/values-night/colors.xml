@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="primary">#5B8AFF</color>
+    <color name="primary_dark">#3B6AE0</color>
+    <color name="primary_foreground">#FFFFFF</color>
+    <color name="foreground">#F3F4F6</color>
+    <color name="background">#0F172A</color>
+    <color name="surface">#1E293B</color>
+    <color name="muted_foreground">#CBD5E1</color>
+    <color name="accent">#334155</color>
+    <color name="border">#475569</color>
+    <color name="card">#1E293B</color>
+    <color name="danger">#F87171</color>
+    <color name="dinheiro">#22C55E</color>
+    <color name="pix">#38BDF8</color>
+    <color name="cartao">#A78BFA</color>
+    <color name="ic_launcher_background">#4271F0</color>
+</resources>

@@ -17,10 +17,10 @@ export const criarEntidadeSchema = z
 			.string()
 			.min(1, "Nome é obrigatório")
 			.min(3, "Nome deve ter no mínimo 3 caracteres")
-			.max(60, "Nome deve ter no máximo 60 caracteres"),
+			.max(120, "Nome deve ter no máximo 120 caracteres"),
 		razaosocial: z
 			.string()
-			.max(60, "Razão social deve ter no máximo 60 caracteres")
+			.max(120, "Razão social deve ter no máximo 120 caracteres")
 			.nullable()
 			.optional(),
 		tipopessoa: z.number().int().min(0).max(1).nullable().optional(),
@@ -55,22 +55,22 @@ export const criarEntidadeSchema = z
 			.optional(),
 		endereco: z
 			.string()
-			.max(60, "Endereço deve ter no máximo 60 caracteres")
+			.max(120, "Endereço deve ter no máximo 120 caracteres")
 			.nullable()
 			.optional(),
 		numeroendereco: z
 			.string()
-			.max(6, "Número do endereço deve ter no máximo 6 caracteres")
+			.max(20, "Número do endereço deve ter no máximo 20 caracteres")
 			.nullable()
 			.optional(),
 		complemento: z
 			.string()
-			.max(50, "Complemento deve ter no máximo 50 caracteres")
+			.max(60, "Complemento deve ter no máximo 60 caracteres")
 			.nullable()
 			.optional(),
 		bairro: z
 			.string()
-			.max(50, "Bairro deve ter no máximo 50 caracteres")
+			.max(60, "Bairro deve ter no máximo 60 caracteres")
 			.nullable()
 			.optional(),
 		idcidade: z.string().nullable().optional(),
@@ -159,7 +159,7 @@ export function formatarCepParaEnvio(
 	if (!cep) return null;
 	const limpo = cep.replace(/\D/g, "");
 	if (!limpo) return null;
-	return maskCep(limpo);
+	return limpo.slice(0, 8);
 }
 
 export function flagsEntidadeParaApi(data: CriarEntidadeFormData) {

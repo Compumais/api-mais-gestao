@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <TextView
+        android:id="@+id/txtTotalPagamento"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:paddingVertical="16dp"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        android:textColor="@color/primary" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnInformarCliente"
+        style="@style/Widget.Material3.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:text="@string/informar_cliente" />
+
+    <TextView
+        android:id="@+id/txtClienteSelecionado"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:gravity="center"
+        android:text="@string/cliente_nao_informado"
+        android:textSize="14sp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="20dp"
+        android:gravity="center"
+        android:text="@string/como_pagou"
+        android:textSize="18sp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnDinheiro"
+        style="@style/PosBigButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:backgroundTint="@color/dinheiro"
+        android:text="@string/dinheiro" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnPix"
+        style="@style/PosBigButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:backgroundTint="@color/pix"
+        android:text="@string/pix" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnCartao"
+        style="@style/PosBigButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:backgroundTint="@color/cartao"
+        android:text="@string/cartao" />
+
+    <ProgressBar
+        android:id="@+id/progressPagamento"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="24dp"
+        android:visibility="gone" />
+</LinearLayout>

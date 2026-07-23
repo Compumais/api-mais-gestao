@@ -34,6 +34,11 @@ import { useEmpresa } from "@/hooks/use-empresa";
 import {
 	type AutomacaoFormData,
 	automacaoFormSchema,
+	FUNCAO_ALERTA_PENDENCIAS_NF,
+	FUNCAO_ENVIO_FISCAL_CONTABILIDADE,
+	FUNCOES_AUTOMACAO,
+	LABELS_FUNCAO_AUTOMACAO,
+	type FuncaoAutomacao,
 } from "@/schemas/automacao.schema";
 import {
 	type Automacao,
@@ -59,6 +64,49 @@ const DIAS_SEMANA = [
 	"Sexta",
 	"Sábado",
 ];
+
+const DEFAULTS_FORM: AutomacaoFormData = {
+	nome: "Envio fiscal mensal à contabilidade",
+	funcao: FUNCAO_ENVIO_FISCAL_CONTABILIDADE,
+	recorrencia: "mensal",
+	horario: "08:00",
+	diames: 5,
+	diasemana: 1,
+	incluirSintegra: true,
+	incluirXml: true,
+	incluirNfe: true,
+	incluirNfce: true,
+	ativo: true,
+};
+
+function defaultsPorFuncao(funcao: FuncaoAutomacao): Partial<AutomacaoFormData> {
+	if (funcao === FUNCAO_ALERTA_PENDENCIAS_NF) {
+		return {
+			nome: "Alerta de pendências NF-e / NFC-e",
+			funcao,
+			recorrencia: "diaria",
+			horario: "08:00",
+			incluirNfe: true,
+			incluirNfce: true,
+		};
+	}
+	return {
+		nome: "Envio fiscal mensal à contabilidade",
+		funcao,
+		recorrencia: "mensal",
+		horario: "08:00",
+		diames: 5,
+		incluirSintegra: true,
+		incluirXml: true,
+	};
+}
+
+function labelFuncao(funcao: string): string {
+	if (funcao in LABELS_FUNCAO_AUTOMACAO) {
+		return LABELS_FUNCAO_AUTOMACAO[funcao as FuncaoAutomacao];
+	}
+	return funcao;
+}
 
 function formatarStatus(status: string | null) {
 	if (!status) return "—";
@@ -113,45 +161,36 @@ export default function AgendamentosPage() {
 
 	const form = useForm<AutomacaoFormData>({
 		resolver: zodResolver(automacaoFormSchema),
-		defaultValues: {
-			nome: "Envio fiscal mensal à contabilidade",
-			recorrencia: "mensal",
-			horario: "08:00",
-			diames: 5,
-			diasemana: 1,
-			incluirSintegra: true,
-			incluirXml: true,
-			ativo: true,
-		},
+		defaultValues: DEFAULTS_FORM,
 	});
 
 	const recorrencia = form.watch("recorrencia");
+	const funcao = form.watch("funcao");
 
 	function abrirCriar() {
 		setEditando(null);
-		form.reset({
-			nome: "Envio fiscal mensal à contabilidade",
-			recorrencia: "mensal",
-			horario: "08:00",
-			diames: 5,
-			diasemana: 1,
-			incluirSintegra: true,
-			incluirXml: true,
-			ativo: true,
-		});
+		form.reset(DEFAULTS_FORM);
 		setDialogAberto(true);
 	}
 
 	function abrirEditar(item: Automacao) {
 		setEditando(item);
+		const funcaoItem = (
+			FUNCOES_AUTOMACAO.includes(item.funcao as FuncaoAutomacao)
+				? item.funcao
+				: FUNCAO_ENVIO_FISCAL_CONTABILIDADE
+		) as FuncaoAutomacao;
 		form.reset({
 			nome: item.nome,
+			funcao: funcaoItem,
 			recorrencia: item.recorrencia,
 			horario: item.horario,
 			diames: item.diames ?? 5,
 			diasemana: item.diasemana ?? 1,
 			incluirSintegra: item.parametros?.incluirSintegra !== false,
 			incluirXml: item.parametros?.incluirXml !== false,
+			incluirNfe: item.parametros?.incluirNfe !== false,
+			incluirNfce: item.parametros?.incluirNfce !== false,
 			ativo: item.ativo,
 		});
 		setDialogAberto(true);
@@ -160,19 +199,26 @@ export default function AgendamentosPage() {
 	const { mutate: salvar, isPending: salvando } = useMutation({
 		mutationFn: async (dados: AutomacaoFormData) => {
 			if (!empresa) throw new Error("Empresa não selecionada");
+			const parametros =
+				dados.funcao === FUNCAO_ALERTA_PENDENCIAS_NF
+					? {
+							incluirNfe: dados.incluirNfe,
+							incluirNfce: dados.incluirNfce,
+						}
+					: {
+							incluirSintegra: dados.incluirSintegra,
+							incluirXml: dados.incluirXml,
+							finalidadeSintegra: "1" as const,
+						};
 			const payload = {
 				nome: dados.nome,
-				funcao: "envio_fiscal_contabilidade" as const,
+				funcao: dados.funcao,
 				recorrencia: dados.recorrencia,
 				horario: dados.horario,
 				diames: dados.recorrencia === "mensal" ? dados.diames : null,
 				diasemana: dados.recorrencia === "semanal" ? dados.diasemana : null,
 				ativo: dados.ativo,
-				parametros: {
-					incluirSintegra: dados.incluirSintegra,
-					incluirXml: dados.incluirXml,
-					finalidadeSintegra: "1" as const,
-				},
+				parametros,
 			};
 			if (editando) {
 				return automacaoService.atualizar(editando.id, payload);
@@ -274,8 +320,8 @@ export default function AgendamentosPage() {
 							Agendar tarefas
 						</h1>
 						<p className="text-sm text-muted-foreground">
-							Automações recorrentes ou únicas (ex.: envio mensal de SINTEGRA e
-							XMLs à contabilidade).
+							Automações recorrentes ou únicas: envio fiscal à contabilidade e
+							alerta de pendências de NF-e / NFC-e.
 						</p>
 					</div>
 					<Button type="button" onClick={abrirCriar}>
@@ -340,7 +386,7 @@ export default function AgendamentosPage() {
 										<td className="p-3">
 											<div className="font-medium">{item.nome}</div>
 											<div className="text-xs text-muted-foreground">
-												Envio fiscal (SINTEGRA / XMLs)
+												{labelFuncao(item.funcao)}
 											</div>
 										</td>
 										<td className="p-3">
@@ -449,10 +495,43 @@ export default function AgendamentosPage() {
 							</Field>
 							<Field>
 								<FieldLabel>Função</FieldLabel>
-								<Input
-									value="Envio fiscal à contabilidade (SINTEGRA + XMLs)"
-									disabled
-									readOnly
+								<Controller
+									control={form.control}
+									name="funcao"
+									render={({ field }) => (
+										<Select
+											value={field.value}
+											disabled={!!editando}
+											onValueChange={(valor) => {
+												const nova = valor as FuncaoAutomacao;
+												field.onChange(nova);
+												if (!editando) {
+													const sugestao = defaultsPorFuncao(nova);
+													form.setValue("nome", sugestao.nome ?? "");
+													if (sugestao.recorrencia) {
+														form.setValue("recorrencia", sugestao.recorrencia);
+													}
+													if (sugestao.horario) {
+														form.setValue("horario", sugestao.horario);
+													}
+													if (sugestao.diames != null) {
+														form.setValue("diames", sugestao.diames);
+													}
+												}
+											}}
+										>
+											<SelectTrigger>
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent>
+												{FUNCOES_AUTOMACAO.map((codigo) => (
+													<SelectItem key={codigo} value={codigo}>
+														{LABELS_FUNCAO_AUTOMACAO[codigo]}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									)}
 								/>
 							</Field>
 							<div className="grid grid-cols-2 gap-3">
@@ -496,7 +575,7 @@ export default function AgendamentosPage() {
 										type="number"
 										min={1}
 										max={28}
-										{...form.register("diames")}
+										{...form.register("diames", { valueAsNumber: true })}
 									/>
 								</Field>
 							)}
@@ -527,38 +606,81 @@ export default function AgendamentosPage() {
 								</Field>
 							)}
 							<div className="flex flex-col gap-2">
-								<div className="flex items-center gap-2">
-									<Controller
-										control={form.control}
-										name="incluirSintegra"
-										render={({ field }) => (
-											<Checkbox
-												id="auto-sintegra"
-												checked={field.value}
-												onCheckedChange={(v) => field.onChange(!!v)}
+								{funcao === FUNCAO_ENVIO_FISCAL_CONTABILIDADE && (
+									<>
+										<div className="flex items-center gap-2">
+											<Controller
+												control={form.control}
+												name="incluirSintegra"
+												render={({ field }) => (
+													<Checkbox
+														id="auto-sintegra"
+														checked={field.value}
+														onCheckedChange={(v) => field.onChange(!!v)}
+													/>
+												)}
 											/>
-										)}
-									/>
-									<FieldLabel htmlFor="auto-sintegra" className="font-normal">
-										Anexar SINTEGRA
-									</FieldLabel>
-								</div>
-								<div className="flex items-center gap-2">
-									<Controller
-										control={form.control}
-										name="incluirXml"
-										render={({ field }) => (
-											<Checkbox
-												id="auto-xml"
-												checked={field.value}
-												onCheckedChange={(v) => field.onChange(!!v)}
+											<FieldLabel
+												htmlFor="auto-sintegra"
+												className="font-normal"
+											>
+												Anexar SINTEGRA
+											</FieldLabel>
+										</div>
+										<div className="flex items-center gap-2">
+											<Controller
+												control={form.control}
+												name="incluirXml"
+												render={({ field }) => (
+													<Checkbox
+														id="auto-xml"
+														checked={field.value}
+														onCheckedChange={(v) => field.onChange(!!v)}
+													/>
+												)}
 											/>
-										)}
-									/>
-									<FieldLabel htmlFor="auto-xml" className="font-normal">
-										Anexar ZIP de XMLs
-									</FieldLabel>
-								</div>
+											<FieldLabel htmlFor="auto-xml" className="font-normal">
+												Anexar ZIP de XMLs
+											</FieldLabel>
+										</div>
+									</>
+								)}
+								{funcao === FUNCAO_ALERTA_PENDENCIAS_NF && (
+									<>
+										<div className="flex items-center gap-2">
+											<Controller
+												control={form.control}
+												name="incluirNfe"
+												render={({ field }) => (
+													<Checkbox
+														id="auto-nfe"
+														checked={field.value}
+														onCheckedChange={(v) => field.onChange(!!v)}
+													/>
+												)}
+											/>
+											<FieldLabel htmlFor="auto-nfe" className="font-normal">
+												Monitorar NF-e (modelo 55)
+											</FieldLabel>
+										</div>
+										<div className="flex items-center gap-2">
+											<Controller
+												control={form.control}
+												name="incluirNfce"
+												render={({ field }) => (
+													<Checkbox
+														id="auto-nfce"
+														checked={field.value}
+														onCheckedChange={(v) => field.onChange(!!v)}
+													/>
+												)}
+											/>
+											<FieldLabel htmlFor="auto-nfce" className="font-normal">
+												Monitorar NFC-e (modelo 65)
+											</FieldLabel>
+										</div>
+									</>
+								)}
 								<div className="flex items-center gap-2">
 									<Controller
 										control={form.control}
@@ -576,11 +698,19 @@ export default function AgendamentosPage() {
 									</FieldLabel>
 								</div>
 							</div>
-							<p className="text-xs text-muted-foreground">
-								Período padrão: mês civil anterior à execução. Se houver NFC-e
-								pendente no período, a automação notifica e tenta novamente em
-								6h.
-							</p>
+							{funcao === FUNCAO_ENVIO_FISCAL_CONTABILIDADE ? (
+								<p className="text-xs text-muted-foreground">
+									Período padrão: mês civil anterior à execução. Se houver
+									NFC-e pendente no período, a automação notifica e tenta
+									novamente em 6h.
+								</p>
+							) : (
+								<p className="text-xs text-muted-foreground">
+									Consulta NF-e e NFC-e com status pendente, rejeitada ou
+									denegada e envia notificação no sistema (proprietário e
+									usuários financeiros). No máximo um alerta por dia.
+								</p>
+							)}
 						</FieldGroup>
 						<DialogFooter>
 							<Button

@@ -70,7 +70,10 @@ const filtrosVazios: FiltrosState = {
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
 function tipoVenda(venda: VendaPdvGourmet) {
-	return venda.idcontamesa ? "Mesa" : "Balcão";
+	if (venda.idcontamesa) return "Mesa";
+	// vendalocal: 2 = app POS; 1 = balcão web/gourmet; 0/null = legado
+	if (venda.vendalocal === 2) return "POS";
+	return "Balcão";
 }
 
 function calcularTotal(itens: VendaPdvItem[]): number {

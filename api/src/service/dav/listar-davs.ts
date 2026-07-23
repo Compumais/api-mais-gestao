@@ -16,6 +16,7 @@ type ListarDavsParametros = {
 	faturado?: boolean | undefined;
 	codigo?: number | undefined;
 	busca?: string | undefined;
+	origem?: string | undefined;
 };
 
 type ListarDavsResposta = {
@@ -40,6 +41,7 @@ export async function listarDavsService({
 	faturado,
 	codigo,
 	busca,
+	origem,
 }: ListarDavsParametros): Promise<HttpResponse<ListarDavsResposta>> {
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
 		idusuario,
@@ -61,6 +63,7 @@ export async function listarDavsService({
 		faturado,
 		codigo,
 		busca,
+		origem,
 	});
 
 	const total = resultado.total ?? 0;

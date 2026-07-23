@@ -178,14 +178,13 @@ export function GridItensImportacao({
 	const atualizarCfop = (
 		item: NotaFiscalItemImportacao,
 		idcfop: string,
-		codigo?: string,
+		_codigo?: string,
 	) => {
 		atualizarItem({
 			idItem: item.id,
 			dados: {
 				idempresa,
 				idcfop: idcfop || undefined,
-				cfopXml: codigo ?? item.dadosimportacao?.cfopXml,
 			},
 		});
 	};
@@ -253,8 +252,8 @@ export function GridItensImportacao({
 										<CelulaCfopEntradaImportacao
 											idempresa={idempresa}
 											idcfop={dados.idcfop}
-											cfopXml={dados.cfopXml ?? item.cfop ?? undefined}
 											disabled={isPending}
+											tributacao={dados.tributacao}
 											onChange={(idcfop, codigo) =>
 												atualizarCfop(item, idcfop, codigo)
 											}

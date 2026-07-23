@@ -1,6 +1,7 @@
 import type { NotaFiscalItem } from "@/model/nota-fiscal-item-model.js";
 import type { ItemPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
 import { extrairTributacaoItemEmissaoNfe } from "@/util/dados-emissao-nfe-nota.js";
+import { normalizarCodigoCest } from "@/util/validar-cest-item-emissao-nfe.js";
 
 function mapearSituacaoTributaria(
 	situacao: string | null | undefined,
@@ -33,13 +34,41 @@ export function mapearItensNotaParaEmissao(
 		const tributacaoSalva = extrairTributacaoItemEmissaoNfe(item.dadosimportacao);
 		const pCredSN = paraNumero(tributacaoSalva?.pCredSN);
 		const vCredICMSSN = paraNumero(tributacaoSalva?.vCredICMSSN);
-		const aliquotaIcms =
-			paraNumero(item.percentualicms) ?? pCredSN;
+		const usaCsosn = Boolean(tributacao.csosn);
+		// No Simples, percentualicms/pCredSN não viram aliquotaIcms (crédito fica só em pCredSN).
+		const aliquotaIcms = usaCsosn
+			? undefined
+			: paraNumero(item.percentualicms);
+		const baseIcms = usaCsosn
+			? undefined
+			: item.baseicms
+				? Number(item.baseicms)
+				: undefined;
+
+		const cest =
+			normalizarCodigoCest(tributacaoSalva?.cest) ??
+			normalizarCodigoCest(
+				(
+					item.dadosimportacao as
+						| { tributacao?: { cest?: string }; cestXml?: string }
+						| null
+						| undefined
+				)?.tributacao?.cest,
+			) ??
+			normalizarCodigoCest(
+				(
+					item.dadosimportacao as
+						| { cestXml?: string }
+						| null
+						| undefined
+				)?.cestXml,
+			);
 
 		return {
 			idproduto: item.idproduto ?? undefined,
 			descricao: item.descricao ?? "Item",
 			ncm: item.ncm ?? "00000000",
+			...(cest ? { cest } : {}),
 			cfop: item.cfop ?? "5102",
 			unidade: item.unidade ?? "UN",
 			quantidade: quantidade > 0 ? quantidade : 1,
@@ -48,7 +77,7 @@ export function mapearItensNotaParaEmissao(
 			orig: item.origem ?? 0,
 			cstPis: item.cstpis ?? undefined,
 			cstCofins: item.cstcofins ?? undefined,
-			baseIcms: item.baseicms ? Number(item.baseicms) : undefined,
+			...(baseIcms != null ? { baseIcms } : {}),
 			...(aliquotaIcms != null ? { aliquotaIcms } : {}),
 			...(pCredSN != null ? { pCredSN } : {}),
 			...(vCredICMSSN != null ? { vCredICMSSN } : {}),

@@ -10,6 +10,8 @@ import type { TotaisFiscaisEmissaoNfe } from "@/util/calcular-totais-fiscais-emi
 
 type PainelCalculoImpostosEmissaoProps = {
 	totaisFiscais: TotaisFiscaisEmissaoNfe;
+	/** Simples Nacional (CRT 1/2/4): oculta BC/Valor ICMS próprio. */
+	ocultarIcmsProprio?: boolean;
 };
 
 const formatarMoeda = (valor: number) =>
@@ -25,10 +27,15 @@ type CampoTotal = {
 
 export function PainelCalculoImpostosEmissao({
 	totaisFiscais,
+	ocultarIcmsProprio = false,
 }: PainelCalculoImpostosEmissaoProps) {
 	const campos: CampoTotal[] = [
-		{ label: "BC ICMS", valor: totaisFiscais.baseIcms },
-		{ label: "Valor ICMS", valor: totaisFiscais.valorIcms },
+		...(!ocultarIcmsProprio
+			? [
+					{ label: "BC ICMS", valor: totaisFiscais.baseIcms },
+					{ label: "Valor ICMS", valor: totaisFiscais.valorIcms },
+				]
+			: []),
 		{ label: "BC ICMS ST", valor: totaisFiscais.baseIcmsSt },
 		{ label: "Valor ICMS ST", valor: totaisFiscais.valorIcmsSt },
 		{ label: "ICMS Desonerado", valor: totaisFiscais.valorIcmsDesonerado },

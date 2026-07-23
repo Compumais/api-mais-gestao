@@ -150,6 +150,29 @@ export async function excluirCustoProduto(id: string) {
 	return registro;
 }
 
+export async function excluirCustosProdutoPorNotaFiscal(idnotafiscal: string) {
+	const removidos = await db
+		.delete(custoproduto)
+		.where(eq(custoproduto.idnotafiscal, idnotafiscal))
+		.returning({
+			id: custoproduto.id,
+			idproduto: custoproduto.idproduto,
+		});
+
+	const idprodutos = [
+		...new Set(
+			removidos
+				.map((registro) => registro.idproduto)
+				.filter((id): id is string => Boolean(id)),
+		),
+	];
+
+	return {
+		quantidade: removidos.length,
+		idprodutos,
+	};
+}
+
 export type AtualizacaoProdutoCusto = {
 	id: string;
 	dados: Partial<NovoProduto>;

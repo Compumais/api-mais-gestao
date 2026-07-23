@@ -55,6 +55,7 @@ export const parametrizacaoTributosFormSchema = z.object({
 	idenquadramentoipi: z.string().optional().nullable(),
 	percentualmva: campoNumericoOpcional,
 	percentualirrf: campoNumericoOpcional,
+	tipoproduto: campoCstOpcional(2, "Tipo de produto"),
 });
 
 export type ParametrizacaoTributosFormData = z.infer<

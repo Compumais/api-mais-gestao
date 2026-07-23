@@ -60,5 +60,5 @@ jobs:
             git checkout main
             git reset --hard origin/main
             pnpm install --frozen-lockfile
-            pnpm run build
-            pm2 restart mais-gestao-web
+            pnpm run build:live
+            pm2 reload mais-gestao-web --update-env

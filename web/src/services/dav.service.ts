@@ -11,6 +11,8 @@ export interface PedidoDav {
 	cnpjcpfcliente: string | null;
 	idcliente: string | null;
 	idnotafiscal: string | null;
+	idnfce: string | null;
+	extra1: string | null;
 	idtipodocumentofinanceiro: string | null;
 	idcondicaopagamento: string | null;
 	idlocalestoque: string | null;
@@ -57,6 +59,7 @@ export interface ListarPedidosParams {
 	faturado?: boolean;
 	codigo?: number;
 	busca?: string;
+	origem?: string;
 }
 
 export interface CriarPedidoData {
@@ -103,6 +106,25 @@ export interface FaturarPedidoNfeData {
 	confirmarProducao?: boolean;
 	gerarFinanceiro?: boolean;
 	gerarEstoque?: boolean;
+}
+
+export interface FaturarPedidoNfceData {
+	idempresa: string;
+	gerarFinanceiro?: boolean;
+	gerarEstoque?: boolean;
+}
+
+export interface ResultadoEmissaoNfcePedido {
+	emitida: boolean;
+	idnotafiscal?: string;
+	chave?: string;
+	protocolo?: string;
+	qrCode?: string;
+	urlChave?: string;
+	cStat?: string;
+	xMotivo?: string;
+	erro?: string;
+	pendencias?: Array<{ codigo: string; mensagem: string }>;
 }
 
 export interface ContextoEmissaoNfePedidoItem {
@@ -235,6 +257,17 @@ export const davService = {
 	): Promise<ResultadoEmissaoNfe> {
 		const { data } = await api.post<ResultadoEmissaoNfe>(
 			`/davs/${iddav}/faturar-nfe`,
+			dados,
+		);
+		return data;
+	},
+
+	async faturarNfce(
+		iddav: string,
+		dados: FaturarPedidoNfceData,
+	): Promise<ResultadoEmissaoNfcePedido> {
+		const { data } = await api.post<ResultadoEmissaoNfcePedido>(
+			`/davs/${iddav}/faturar-nfce`,
 			dados,
 		);
 		return data;

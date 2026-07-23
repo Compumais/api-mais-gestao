@@ -12,7 +12,11 @@ type CampoCfopImportacaoProps = {
 	value?: string;
 	codigoXml?: string;
 	tipomovimento?: TipoMovimentoCfop;
-	onChange: (idcfop: string, codigo?: string) => void;
+	onChange: (
+		idcfop: string,
+		codigo?: string,
+		tipoproduto?: string | null,
+	) => void;
 };
 
 function formatarLabel(codigo: string | null, descricao: string | null) {
@@ -56,16 +60,20 @@ export function CampoCfopImportacao({
 				value={value ?? ""}
 				onChange={(novoValor) => {
 					const cfopSelecionado = cfops.find((c) => c.id === novoValor);
-					onChange(novoValor, cfopSelecionado?.codigo ?? undefined);
+					onChange(
+						novoValor,
+						cfopSelecionado?.codigo ?? undefined,
+						cfopSelecionado?.tipoproduto ?? null,
+					);
 				}}
-				placeholder={isLoading ? "Carregando..." : "Selecione o CFOP"}
+				placeholder={isLoading ? "Carregando..." : "Selecione CFOP de entrada"}
 				searchPlaceholder="Buscar CFOP..."
 				emptyMessage="Nenhum CFOP encontrado"
 			/>
 			{codigoXml ? (
 				<p className="text-xs text-muted-foreground mt-1">
-					CFOP no XML: <span className="font-mono font-medium">{codigoXml}</span>
-					{value ? " — selecione outro CFOP acima para substituir" : null}
+					CFOP no XML (histórico):{" "}
+					<span className="font-mono font-medium">{codigoXml}</span>
 				</p>
 			) : null}
 		</Field>
