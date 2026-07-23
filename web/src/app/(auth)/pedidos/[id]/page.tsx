@@ -2,7 +2,7 @@
 
 import { use, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	ArrowLeft,
@@ -49,6 +49,9 @@ import {
 import { useEmpresa } from "@/hooks/use-empresa";
 import {
 	DAV_STATUS,
+	pedidoEhOrigemPos,
+	pedidoJaFaturado,
+	pedidoPodeEmitirNfce,
 	pedidoPodeFaturarNfe,
 } from "@/constants/dav-status";
 import { entidadesService } from "@/services/entidades.service";
@@ -85,6 +88,7 @@ export default function PedidoDetalhePage({
 }) {
 	const { id } = use(params);
 	const router = useRouter();
+	const searchParams = useSearchParams();
 	const queryClient = useQueryClient();
 	const { localStorageEmpresa: empresa } = useEmpresa();
 
@@ -154,10 +158,20 @@ export default function PedidoDetalhePage({
 	}, [produtosLista]);
 	const descontoNumero = parseFloat(desconto.replace(",", ".")) || 0;
 	const totalPedido = Math.max(totalItens - descontoNumero, 0);
-	const pedidoFaturado = !!pedido?.idnotafiscal;
+	const origemPos =
+		pedidoEhOrigemPos(pedido ?? {}) ||
+		searchParams.get("origem")?.toUpperCase() === "POS";
+	const hrefListaPedidos = origemPos ? "/pedidos?origem=POS" : "/pedidos";
+	const pedidoFaturado = pedidoJaFaturado(pedido ?? {});
 	const pedidoCancelado = pedido?.status === DAV_STATUS.CANCELADO;
 	const podeCancelar = !!pedido && !pedidoFaturado && !pedidoCancelado;
-	const podeFaturar =
+	const podeEmitirNfce =
+		origemPos &&
+		!!pedido &&
+		pedidoPodeEmitirNfce(pedido) &&
+		itens.length > 0;
+	const podeFaturarNfe =
+		!origemPos &&
 		!!pedido &&
 		pedidoPodeFaturarNfe(pedido) &&
 		itens.length > 0 &&
@@ -292,6 +306,41 @@ export default function PedidoDetalhePage({
 		}
 	}
 
+	async function emitirNfce() {
+		if (!empresa) return;
+		setIndoParaEmissao(true);
+		try {
+			await salvarPedidoAsync();
+			const resultado = await davService.faturarNfce(id, {
+				idempresa: empresa.id,
+				gerarFinanceiro: true,
+				gerarEstoque: true,
+			});
+			void queryClient.invalidateQueries({ queryKey: ["pedido", id] });
+			void queryClient.invalidateQueries({ queryKey: ["pedidos"] });
+			if (resultado.emitida) {
+				toast.success("NFC-e autorizada");
+				router.push("/nfce");
+				return;
+			}
+			const motivo =
+				resultado.erro ||
+				resultado.xMotivo ||
+				resultado.pendencias?.map((p) => p.mensagem).join("; ") ||
+				"NFC-e não autorizada";
+			toast.error("NFC-e não autorizada", { description: motivo });
+			if (resultado.idnotafiscal) {
+				router.push("/nfce");
+			}
+		} catch (erro) {
+			toast.error("Erro ao emitir NFC-e", {
+				description: erro instanceof Error ? erro.message : "Erro desconhecido",
+			});
+		} finally {
+			setIndoParaEmissao(false);
+		}
+	}
+
 	if (!empresa) {
 		return (
 			<PageContainer>
@@ -318,7 +367,7 @@ export default function PedidoDetalhePage({
 				<div className="p-6">
 					<p className="text-muted-foreground">Pedido não encontrado.</p>
 					<Button variant="link" asChild className="px-0">
-						<Link href="/pedidos">Voltar para pedidos</Link>
+						<Link href={hrefListaPedidos}>Voltar para pedidos</Link>
 					</Button>
 				</div>
 			</PageContainer>
@@ -331,16 +380,19 @@ export default function PedidoDetalhePage({
 				<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 					<div className="space-y-2">
 						<Button variant="ghost" size="sm" asChild className="-ml-2 w-fit">
-							<Link href="/pedidos">
+							<Link href={hrefListaPedidos}>
 								<ArrowLeft className="h-4 w-4" />
-								Pedidos
+								{origemPos ? "Pedidos da maquininha" : "Pedidos"}
 							</Link>
 						</Button>
 						<div className="flex flex-wrap items-center gap-2">
 							<h1 className="text-2xl font-semibold tracking-tight">
 								Pedido {pedido.codigo ?? pedido.id.slice(0, 8)}
 							</h1>
-							{pedidoFaturado ? (
+							{origemPos && <Badge variant="secondary">POS</Badge>}
+							{pedido.idnfce ? (
+								<Badge>NFC-e emitida</Badge>
+							) : pedido.idnotafiscal ? (
 								<Badge>NF-e emitida</Badge>
 							) : pedidoCancelado ? (
 								<Badge variant="destructive">Cancelado</Badge>
@@ -348,6 +400,14 @@ export default function PedidoDetalhePage({
 								<Badge variant="secondary">Aberto</Badge>
 							)}
 						</div>
+						{pedido.idnfce && (
+							<Button variant="link" asChild className="h-auto p-0">
+								<Link href="/nfce">
+									<ExternalLink className="h-4 w-4" />
+									Ver NFC-e
+								</Link>
+							</Button>
+						)}
 						{pedido.idnotafiscal && (
 							<Button variant="link" asChild className="h-auto p-0">
 								<Link href={`/nota-fiscal-venda/${pedido.idnotafiscal}`}>
@@ -377,18 +437,33 @@ export default function PedidoDetalhePage({
 							<Save className="h-4 w-4" />
 							{salvandoPedido ? "Salvando..." : "Salvar"}
 						</Button>
-						<Button
-							onClick={() => void irParaEmissaoNfe()}
-							disabled={
-								!podeFaturar ||
-								indoParaEmissao ||
-								pedidoFaturado ||
-								pedidoCancelado
-							}
-						>
-							<Send className="h-4 w-4" />
-							{indoParaEmissao ? "Abrindo emissão..." : "Faturar NF-e"}
-						</Button>
+						{origemPos ? (
+							<Button
+								onClick={() => void emitirNfce()}
+								disabled={
+									!podeEmitirNfce ||
+									indoParaEmissao ||
+									pedidoFaturado ||
+									pedidoCancelado
+								}
+							>
+								<Send className="h-4 w-4" />
+								{indoParaEmissao ? "Emitindo NFC-e..." : "Emitir NFC-e"}
+							</Button>
+						) : (
+							<Button
+								onClick={() => void irParaEmissaoNfe()}
+								disabled={
+									!podeFaturarNfe ||
+									indoParaEmissao ||
+									pedidoFaturado ||
+									pedidoCancelado
+								}
+							>
+								<Send className="h-4 w-4" />
+								{indoParaEmissao ? "Abrindo emissão..." : "Faturar NF-e"}
+							</Button>
+						)}
 					</div>
 				</div>
 

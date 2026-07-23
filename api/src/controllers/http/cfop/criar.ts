@@ -7,7 +7,8 @@ import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 const criarCfopBodySchema = z.looseObject({
 	idempresa: z.string(),
 	codigo: z.string().max(20).optional(),
-	descricao: z.string().max(1024).optional()
+	descricao: z.string().max(1024).optional(),
+	tipoproduto: z.string().max(2).optional().nullable(),
 });
 
 export async function criarCfop(request: FastifyRequest, reply: FastifyReply) {

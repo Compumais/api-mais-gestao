@@ -46,6 +46,7 @@ import {
 	cfopService,
 	inferirTipoMovimentoCfop,
 } from "@/services/cfop.service";
+import { obterLabelTipoProduto } from "@/constants/tipo-produto";
 
 const ROTA_BASE = "/tributos/naturezas";
 
@@ -68,6 +69,15 @@ const createColumns = ({
 		header: "Descrição",
 		cell: ({ row }) => (
 			<div className="max-w-xl truncate">{row.getValue("descricao") || "-"}</div>
+		),
+	},
+	{
+		id: "tipoproduto",
+		header: "Tipo produto",
+		cell: ({ row }) => (
+			<div className="max-w-xs truncate text-sm">
+				{obterLabelTipoProduto(row.original.tipoproduto)}
+			</div>
 		),
 	},
 	{
@@ -290,6 +300,7 @@ export default function NaturezasPage() {
 							<TableSkeleton rows={10}>
 								<TableHead className="w-[120px]">Código</TableHead>
 								<TableHead>Descrição</TableHead>
+								<TableHead className="w-[180px]">Tipo produto</TableHead>
 								<TableHead className="w-[120px]">Tipo</TableHead>
 								<TableHead className="w-12 text-end">Ações</TableHead>
 							</TableSkeleton>

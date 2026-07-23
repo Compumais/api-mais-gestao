@@ -25,14 +25,21 @@ import {
 	carregarContextoEmissaoNfce,
 	montarPayloadGatewayEmissaoNfce,
 } from "@/service/nfce-emissao/contexto-emissao-nfce.js";
+import { aplicarCreditoIcmsSnItensEmissao } from "@/service/nfe-emissao/aplicar-credito-icms-sn-itens.js";
 import { montarItensEmissaoPdv } from "@/service/nfce-emissao/montar-itens-emissao-pdv.js";
 import { calcularTotaisFiscaisEmissaoNfe } from "@/util/calcular-totais-fiscais-emissao-nfe.js";
+import {
+	agoraBrasiliaIsoOffset,
+	hojeBrasiliaIsoDate,
+} from "@/util/data-hora-brasilia.js";
 import { montarDadosImportacaoItemEmissaoNfe } from "@/util/dados-emissao-nfe-nota.js";
 import { montarPagamentosPdvParaNfce } from "@/util/montar-pagamentos-pdv-nfce.js";
+import { montarDestinatarioPorIdentidade } from "@/util/montar-destinatario-entidade-nfe.js";
 import { normalizarGtinItensEmissao } from "@/util/normalizar-gtin-item-emissao-nfe.js";
 import { normalizarPagamentoEmissaoNfe } from "@/util/normalizar-pagamento-emissao-nfe.js";
 import { normalizarItensEmissaoNfe } from "@/util/normalizar-tributacao-item-emissao-nfe.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
+import { validarCestItensEmissaoNfe } from "@/util/validar-cest-item-emissao-nfe.js";
 import {
 	normalizarCStatGateway,
 	normalizarCodigoStatusNfe,
@@ -252,8 +259,9 @@ export async function emitirNfceVendaPdvService({
 		});
 	}
 
+	const crt = empresaFiscal.crt ?? 3;
 	const { itens: itensBrutos, pendencias: pendenciasItens } =
-		await montarItensEmissaoPdv(idvenda);
+		await montarItensEmissaoPdv(idvenda, crt);
 
 	if (itensBrutos.length === 0) {
 		return httpBadRequest("A venda PDV não possui itens para emissão da NFC-e");
@@ -275,11 +283,27 @@ export async function emitirNfceVendaPdvService({
 		return httpBadRequest("Não foi possível reservar numeração da série NFC-e");
 	}
 
-	const crt = empresaFiscal.crt ?? 3;
 	const itensEnriquecidos = await enriquecerItensEmissaoComProduto(itensBrutos);
-	const itensNormalizados = normalizarGtinItensEmissao(
+	const itensTributacao = normalizarGtinItensEmissao(
 		normalizarItensEmissaoNfe(crt, itensEnriquecidos),
 	);
+	const { itens: itensNormalizados, pendencias: pendenciasCreditoSn } =
+		await aplicarCreditoIcmsSnItensEmissao(itensTributacao);
+
+	if (pendenciasCreditoSn.length > 0) {
+		return httpOk({
+			emitida: false,
+			erro: pendenciasCreditoSn.join("; "),
+		});
+	}
+
+	const pendenciasCest = validarCestItensEmissaoNfe(itensNormalizados);
+	if (pendenciasCest.length > 0) {
+		return httpOk({
+			emitida: false,
+			erro: pendenciasCest.join("; "),
+		});
+	}
 
 	const valorTotalVenda = Number.parseFloat(venda.valortotal ?? "0");
 	const pagamentoBruto = montarPagamentosPdvParaNfce(
@@ -311,10 +335,14 @@ export async function emitirNfceVendaPdvService({
 			: {}),
 	});
 
+	const destinatarioResolvido = await montarDestinatarioPorIdentidade(
+		venda.identidade,
+	);
+
 	const idnotafiscal = reserva.idnotafiscal;
 	const ambiente = nfceConfiguracao.ambiente;
 
-	const payload = montarPayloadGatewayEmissaoNfce({
+	const payload = await montarPayloadGatewayEmissaoNfce({
 		empresa,
 		empresaFiscal,
 		nfceConfiguracao,
@@ -324,6 +352,9 @@ export async function emitirNfceVendaPdvService({
 		itens: itensNormalizados,
 		pagamento: pagamentoNormalizado,
 		natOp,
+		...(destinatarioResolvido?.destinatario
+			? { destinatario: destinatarioResolvido.destinatario }
+			: {}),
 	});
 
 	const respostaGateway = await emitirNfeGateway(payload);
@@ -343,14 +374,14 @@ export async function emitirNfceVendaPdvService({
 		...(erroTransmissao ? { erroTransmissao } : {}),
 	});
 
-	const agora = new Date().toISOString();
-	const dataEmissao = agora.slice(0, 10);
+	const agora = agoraBrasiliaIsoOffset();
+	const dataEmissao = hojeBrasiliaIsoDate();
 	const valortotalnota = totaisFiscais.totalNota.toFixed(2);
 
 	const dadosNota: NovaNotaFiscal = {
 		id: idnotafiscal,
 		idempresa,
-		identidade: null,
+		identidade: destinatarioResolvido?.identidade ?? venda.identidade ?? null,
 		idplanocontas: null,
 		idcondicaopagto: null,
 		idlocalestoque: null,
@@ -369,15 +400,15 @@ export async function emitirNfceVendaPdvService({
 		tipoambientenfe: ambiente,
 		tipoorigem: 1,
 		status: statusPersistido,
-		razaosocial: null,
-		cnpjcpf: null,
-		inscricaoestadual: null,
-		endereco: null,
-		numeroendereco: null,
-		bairro: null,
-		cep: null,
-		cidade: null,
-		estado: null,
+		razaosocial: destinatarioResolvido?.destinatario?.razaosocial ?? null,
+		cnpjcpf: destinatarioResolvido?.destinatario?.cnpjcpf ?? null,
+		inscricaoestadual: destinatarioResolvido?.destinatario?.ie ?? null,
+		endereco: destinatarioResolvido?.destinatario?.logradouro ?? null,
+		numeroendereco: destinatarioResolvido?.destinatario?.numero ?? null,
+		bairro: destinatarioResolvido?.destinatario?.bairro ?? null,
+		cep: destinatarioResolvido?.destinatario?.cep ?? null,
+		cidade: destinatarioResolvido?.destinatario?.cidade ?? null,
+		estado: destinatarioResolvido?.destinatario?.estado ?? null,
 		valortotalnota,
 		totalproduto: totaisFiscais.totalProdutos.toFixed(2),
 		frete: null,

@@ -10,6 +10,11 @@ import {
 	sql,
 } from "drizzle-orm";
 import { parametrizacaotributos } from "@/repositories/schema.js";
+import {
+	normalizarCodigoCfop,
+	regraParametrizacaoCasaComNota,
+	scoreEspecificidadeRegra,
+} from "@/util/parametrizacao-tributos-matching.js";
 import { db } from "./connection";
 
 export type ParametrizacaoTributos = typeof parametrizacaotributos.$inferSelect;
@@ -26,19 +31,6 @@ export type BuscarParametrizacaoTributosParametros = {
 	ignorarprimeirodigitocst?: boolean | undefined;
 };
 
-function normalizarCstEntrada(
-	cst?: string | undefined,
-	ignorarPrimeiroDigito?: boolean | number | null,
-) {
-	if (!cst) return undefined;
-	const valor = cst.trim();
-	if (!valor) return undefined;
-	if (ignorarPrimeiroDigito && valor.length > 2) {
-		return valor.slice(-2);
-	}
-	return valor;
-}
-
 export async function buscarParametrizacaoTributosImportacao({
 	idempresa,
 	codigocfopentrada,
@@ -47,7 +39,8 @@ export async function buscarParametrizacaoTributosImportacao({
 	ncm,
 	uf,
 }: BuscarParametrizacaoTributosParametros) {
-	if (!codigocfopentrada) return undefined;
+	const cfopNormalizado = normalizarCodigoCfop(codigocfopentrada);
+	if (!cfopNormalizado) return undefined;
 
 	const ufNormalizada = uf?.trim().toUpperCase() || undefined;
 
@@ -58,55 +51,27 @@ export async function buscarParametrizacaoTributosImportacao({
 			and(
 				eq(parametrizacaotributos.idempresa, idempresa),
 				eq(parametrizacaotributos.inativo, 0),
-				eq(parametrizacaotributos.codigocfopentrada, codigocfopentrada),
 			),
 		);
 
 	const candidatos = registros.filter((registro) => {
-		if (ufNormalizada && registro.uf && registro.uf !== ufNormalizada) {
+		if (normalizarCodigoCfop(registro.codigocfopentrada) !== cfopNormalizado) {
 			return false;
 		}
 
-		if (registro.cstentrada && cstentrada) {
-			const cstEntradaNormalizado = normalizarCstEntrada(
-				cstentrada,
-				registro.ignorarprimeirodigitocst,
-			);
-			const cstRegraNormalizado = normalizarCstEntrada(
-				registro.cstentrada,
-				registro.ignorarprimeirodigitocst,
-			);
-			if (cstRegraNormalizado !== cstEntradaNormalizado) return false;
-		} else if (registro.cstentrada) {
-			return false;
-		}
-
-		if (registro.csosnentrada && csosnentrada) {
-			if (registro.csosnentrada !== csosnentrada.trim()) return false;
-		} else if (registro.csosnentrada) {
-			return false;
-		}
-
-		if (registro.ncm && ncm) {
-			if (registro.ncm !== ncm.trim()) return false;
-		} else if (registro.ncm) {
-			return false;
-		}
-
-		return true;
+		return regraParametrizacaoCasaComNota(registro, {
+			cstentrada,
+			csosnentrada,
+			ncm,
+			uf: ufNormalizada,
+		});
 	});
 
 	if (candidatos.length === 0) return undefined;
 
-	candidatos.sort((a, b) => {
-		const score = (item: ParametrizacaoTributos) =>
-			(item.ncm ? 8 : 0) +
-			(item.cstentrada ? 4 : 0) +
-			(item.csosnentrada ? 2 : 0) +
-			(item.uf ? 1 : 0);
-
-		return score(b) - score(a);
-	});
+	candidatos.sort(
+		(a, b) => scoreEspecificidadeRegra(b) - scoreEspecificidadeRegra(a),
+	);
 
 	return candidatos[0];
 }

@@ -24,6 +24,7 @@ export type DadosProdutoNF = {
 	idcfopentrada?: string | undefined;
 	idcfopsaida?: string | undefined;
 	idcfopsaidanfce?: string | undefined;
+	tipoproduto?: string | undefined;
 	cfopvendaecf?: number | undefined;
 	idcest?: string | undefined;
 	idfornecedor?: string | undefined;
@@ -133,6 +134,7 @@ export async function criarProdutoParaNf(
 			idcfopentrada: dados.idcfopentrada ?? null,
 			idcfopsaida: dados.idcfopsaida ?? null,
 			idcfopsaidanfce: dados.idcfopsaidanfce ?? dados.idcfopsaida ?? null,
+			tipoproduto: dados.tipoproduto ?? null,
 			cfopvendaecf: dados.cfopvendaecf ?? null,
 			idcest: dados.idcest ?? null,
 			idfornecedor: dados.idfornecedor ?? null,
@@ -175,6 +177,7 @@ export function montarAtualizacaoProdutoNf(
 		idcfopentrada: dados.idcfopentrada ?? undefined,
 		idcfopsaida: dados.idcfopsaida ?? undefined,
 		idcfopsaidanfce: dados.idcfopsaidanfce ?? dados.idcfopsaida ?? undefined,
+		...(dados.tipoproduto ? { tipoproduto: dados.tipoproduto } : {}),
 		cfopvendaecf: dados.cfopvendaecf ?? undefined,
 		idcest: dados.idcest ?? undefined,
 		idunidademedida: dados.idunidademedida ?? undefined,

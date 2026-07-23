@@ -65,6 +65,7 @@ export async function listarEntidadesService({
 	const { entidades, total } = await listarEntidades({
 		idempresa,
 		nome,
+		q,
 		email,
 		telefone,
 		fornecedor,

@@ -8,6 +8,10 @@ const itemNfeSchema = z.object({
 	eanTributavel: z.string().optional(),
 	descricao: z.string().min(1),
 	ncm: z.string().min(1),
+	cest: z
+		.string()
+		.regex(/^\d{7}$/, "CEST deve ter 7 dígitos")
+		.optional(),
 	cfop: z.string().min(4).max(5),
 	unidade: z.string().min(1).max(6),
 	quantidade: z.number().positive(),

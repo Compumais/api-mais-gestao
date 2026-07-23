@@ -16,6 +16,7 @@ import {
 	type RecorrenciaAutomacao,
 } from "@/service/automacao/calcular-proxima-execucao.js";
 import { FUNCAO_ENVIO_FISCAL_CONTABILIDADE } from "@/service/automacao/funcoes/envio-fiscal-contabilidade.js";
+import { FUNCAO_ALERTA_PENDENCIAS_NF } from "@/service/automacao/funcoes/alerta-pendencias-nf.js";
 import {
 	httpBadRequest,
 	httpCriacao,
@@ -25,7 +26,10 @@ import {
 	httpSemConteudo,
 } from "@/util/http-util.js";
 
-const FUNCOES_VALIDAS = new Set([FUNCAO_ENVIO_FISCAL_CONTABILIDADE]);
+const FUNCOES_VALIDAS = new Set([
+	FUNCAO_ENVIO_FISCAL_CONTABILIDADE,
+	FUNCAO_ALERTA_PENDENCIAS_NF,
+]);
 const RECORRENCIAS = new Set<RecorrenciaAutomacao>([
 	"unica",
 	"diaria",

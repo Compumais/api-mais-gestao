@@ -39,10 +39,24 @@ final class NfeEmissaoService
 
 		$tpAmb = (int) ($ide['tpAmb'] ?? 2);
 		$crt   = (int) ($emitente['crt'] ?? 3);
+		$infoAdic = self::resolverInformacoesAdicionaisSimples(
+			$crt,
+			(string) $infoAdic,
+			is_array($itens) ? $itens : [],
+		);
 		$finNFe = (int) ($ide['finNFe'] ?? 1);
 		$tpNF  = (int) ($ide['tpNF'] ?? 1);
 		$mod   = (int) ($ide['mod'] ?? $configJson['modelo'] ?? 55);
 		$tpImp = (int) ($ide['tpImp'] ?? ($mod === 65 ? 4 : 1));
+
+		$dhEmi = trim((string) ($ide['dhEmi'] ?? ''));
+		if ($dhEmi === '') {
+			$tz = new \DateTimeZone('America/Sao_Paulo');
+			$dhEmi = (new \DateTimeImmutable('now', $tz))->format('Y-m-d\TH:i:sP');
+		} else {
+			// XSD do dhEmi não aceita milissegundos (ex.: .464)
+			$dhEmi = preg_replace('/\.\d+(?=[+-]\d{2}:\d{2}$)/', '', $dhEmi) ?? $dhEmi;
+		}
 
 		// ── infNFe ─────────────────────────────────────────────────────────
 		$mk->taginfNFe((object) ['versao' => $configJson['versao'] ?? '4.00']);
@@ -54,7 +68,7 @@ final class NfeEmissaoService
 			'mod'    => $mod,
 			'serie'  => (int) ($ide['serie'] ?? 1),
 			'nNF'    => (int) ($ide['nNF'] ?? 1),
-			'dhEmi'  => date('c'),
+			'dhEmi'  => $dhEmi,
 			'tpNF'   => $tpNF,
 			'idDest' => (int) ($ide['idDest'] ?? 1),
 			'cMunFG' => (int) ($emitente['codigoMunicipio'] ?? 3550308),
@@ -211,6 +225,10 @@ final class NfeEmissaoService
 				'vUnTrib' => $vUnCom,
 				'indTot' => 1,
 			];
+			$cestDigitos = preg_replace('/\D/', '', (string) ($item['cest'] ?? ''));
+			if (is_string($cestDigitos) && strlen($cestDigitos) === 7) {
+				$prod->CEST = $cestDigitos;
+			}
 			$mk->tagprod(self::anexarValoresComerciaisProd(
 				$prod,
 				$vFreteItem,
@@ -387,8 +405,11 @@ final class NfeEmissaoService
 		// ── pagamento ────────────────────────────────────────────────────────
 		$mk->tagpag((object) []);
 		$formasPag = $pagamento['formas'] ?? [['tPag' => '01', 'vPag' => $vNF]];
+		// YA04 (card) obrigatório para cartão e meios eletrônicos (NT 2015.002 / 2023.004 / 2024.003)
+		$tPagsComCard = ['03', '04', '15', '17'];
 		foreach ($formasPag as $pag) {
-			$tPag = (string) ($pag['tPag'] ?? '01');
+			$tPagRaw = preg_replace('/\D/', '', (string) ($pag['tPag'] ?? '01'));
+			$tPag = str_pad(substr((string) $tPagRaw, -2), 2, '0', STR_PAD_LEFT);
 			$detPag = ['tPag' => $tPag];
 
 			if ($tPag === '90') {
@@ -398,10 +419,18 @@ final class NfeEmissaoService
 				$detPag['vPag'] = (float) ($pag['vPag'] ?? $vNF);
 			}
 
-			if (in_array($tPag, ['03', '04'], true)) {
-				$card = is_array($pag['card'] ?? null) ? $pag['card'] : [];
+			if (in_array($tPag, $tPagsComCard, true)) {
+				$cardRaw = $pag['card'] ?? null;
+				if (is_object($cardRaw)) {
+					$cardRaw = (array) $cardRaw;
+				}
+				$card = is_array($cardRaw) ? $cardRaw : [];
 				$tpIntegra = (int) ($card['tpIntegra'] ?? 2);
-				$detPag['tpIntegra'] = $tpIntegra;
+				if ($tpIntegra !== 1) {
+					$tpIntegra = 2;
+				}
+				// NFePHP só cria <card> se !empty(tpIntegra); string evita edge cases
+				$detPag['tpIntegra'] = (string) $tpIntegra;
 
 				if ($tpIntegra === 1) {
 					if (!empty($card['CNPJ'])) {
@@ -704,6 +733,46 @@ final class NfeEmissaoService
 	}
 
 	/**
+	 * Garante legenda legal do Simples Nacional nas informações complementares.
+	 *
+	 * @param list<array<string, mixed>> $itens
+	 */
+	private static function resolverInformacoesAdicionaisSimples(
+		int $crt,
+		string $infoAdic,
+		array $itens
+	): string {
+		if (!in_array($crt, [1, 2, 4], true)) {
+			return $infoAdic;
+		}
+
+		$texto = trim($infoAdic);
+		$jaTemSimples = stripos($texto, 'SIMPLES NACIONAL') !== false;
+
+		$temCreditoSn = false;
+		foreach ($itens as $item) {
+			$csosn = trim((string) ($item['csosn'] ?? ''));
+			if ($csosn === '' && preg_match('/^[1259]\d{2}$/', trim((string) ($item['cst'] ?? '')))) {
+				$csosn = trim((string) $item['cst']);
+			}
+			if (in_array($csosn, ['101', '201'], true)) {
+				$temCreditoSn = true;
+				break;
+			}
+		}
+
+		$legenda = $temCreditoSn
+			? 'DOCUMENTO EMITIDO POR ME OU EPP OPTANTE PELO SIMPLES NACIONAL'
+			: 'DOCUMENTO EMITIDO POR ME OU EPP OPTANTE PELO SIMPLES NACIONAL. NAO GERA DIREITO A CREDITO FISCAL DE ICMS';
+
+		if ($jaTemSimples) {
+			return $texto;
+		}
+
+		return $texto === '' ? $legenda : rtrim($texto, " .;") . '. ' . $legenda;
+	}
+
+	/**
 	 * Monta os campos do ICMSSN conforme o CSOSN informado.
 	 *
 	 * @param array<string, mixed> $item
@@ -721,7 +790,8 @@ final class NfeEmissaoService
 			'CSOSN' => $csosn,
 		];
 
-		$pCredSN = self::resolverNumeroItem($item, ['pCredSN', 'aliquotaCreditoSn', 'aliquotaIcms']);
+		// Não usar aliquotaIcms aqui: no Simples ela não representa crédito SN.
+		$pCredSN = self::resolverNumeroItem($item, ['pCredSN', 'aliquotaCreditoSn']);
 		$vCredICMSSN = self::resolverNumeroItem($item, ['vCredICMSSN', 'valorCreditoIcmsSn']);
 
 		if (in_array($csosn, ['101', '201'], true)) {

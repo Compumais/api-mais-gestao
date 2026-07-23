@@ -43,6 +43,7 @@ export type NfceConfiguracaoBody = {
 	contingenciaativa?: boolean;
 	contingenciajson?: Record<string, unknown> | null;
 	meiospagamentonfce?: MeiosPagamentoNfceConfig;
+	emitirnfcepos?: boolean;
 };
 
 type ParametrosEmpresa = {
@@ -112,6 +113,8 @@ export async function buscarNfceConfiguracaoService({
 				contingenciaativa: false,
 
 				meiospagamentonfce: MEIOS_PAGAMENTO_NFCE_PADRAO,
+
+				emitirnfcepos: true,
 
 				criadoem: agora,
 

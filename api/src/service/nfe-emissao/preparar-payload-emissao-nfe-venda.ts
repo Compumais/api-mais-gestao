@@ -51,6 +51,7 @@ import { normalizarPagamentoEmissaoNfe } from "@/util/normalizar-pagamento-emiss
 import { normalizarItensEmissaoNfe } from "@/util/normalizar-tributacao-item-emissao-nfe.js";
 import { resolverIdeEmissaoNfe } from "@/util/resolver-ide-emissao-nfe.js";
 import { resolverNatOpEmissaoNfe } from "@/util/resolver-nat-op-emissao-nfe.js";
+import { validarCestItensEmissaoNfe } from "@/util/validar-cest-item-emissao-nfe.js";
 
 export const AVISO_PREVIEW_DANFE =
 	"*** PRÉ-VISUALIZAÇÃO - DOCUMENTO SEM VALOR FISCAL ***";
@@ -126,7 +127,7 @@ export type PayloadEmissaoNfeVendaPreparado = {
 	vProd: number;
 	vFrete: number;
 	vDesc: number;
-	payloadGateway: ReturnType<typeof montarPayloadGatewayEmissaoItens>;
+	payloadGateway: Awaited<ReturnType<typeof montarPayloadGatewayEmissaoItens>>;
 	idplanocontasResolvido?: string;
 	idcondicaopagtoResolvido?: string;
 	idlocalestoqueResolvido?: string;
@@ -529,6 +530,11 @@ export async function prepararPayloadEmissaoNfeVenda(
 		return httpBadRequest(pendenciasCreditoSn.join("; "));
 	}
 
+	const pendenciasCest = validarCestItensEmissaoNfe(itensNormalizados);
+	if (pendenciasCest.length > 0) {
+		return httpBadRequest(pendenciasCest.join("; "));
+	}
+
 	const vProd = itens.reduce(
 		(acc, item) => acc + item.quantidade * item.valorUnitario,
 		0,
@@ -586,7 +592,7 @@ export async function prepararPayloadEmissaoNfeVenda(
 			? anexarAvisoPreview(informacoesAdicionais)
 			: informacoesAdicionais;
 
-	const payloadGateway = montarPayloadGatewayEmissaoItens({
+	const payloadGateway = await montarPayloadGatewayEmissaoItens({
 		empresa,
 		empresaFiscal,
 		nfeConfiguracao,

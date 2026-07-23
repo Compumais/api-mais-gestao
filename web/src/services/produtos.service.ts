@@ -19,6 +19,7 @@ export interface Produto {
 	ippt: string | null;
 	origem: number | null;
 	ncm: string | null;
+	tipoproduto?: string | null;
 	observacoes: string | null;
 	inativo: number | null;
 	enviamobile?: number | null;
@@ -30,6 +31,8 @@ export interface Produto {
 	idcfopsaida?: string | null;
 	idcfopsaidanfce?: string | null;
 	idcest?: string | null;
+	cestCodigo?: string | null;
+	unidademedida?: string | null;
 	idtaxauf?: string | null;
 	situacaotributariasnentrada?: string | null;
 	situacaotributaria?: string | null;
@@ -70,6 +73,7 @@ export interface CriarProdutoData {
 	ippt: string;
 	origem: number;
 	ncm: string;
+	tipoproduto?: string | null;
 	observacoes?: string | null;
 	enviamobile?: number | null;
 	quantidadepadrao?: number | null;
@@ -118,6 +122,7 @@ export interface AtualizarProdutoData {
 	ippt?: string;
 	origem?: number;
 	ncm?: string;
+	tipoproduto?: string | null;
 	observacoes?: string | null;
 	enviamobile?: number | null;
 	quantidadepadrao?: number | null;

@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import { buscarCfopPorCodigo } from "@/repositories/cfop-repositories.js";
+import { listarCfops } from "@/repositories/cfop-repositories.js";
 import type { NovaParametrizacaoTributos } from "@/repositories/parametrizacao-tributos-repositories.js";
 import conteudoParametrizacaoPadrao from "../data/parametrizacao-tributos-padrao.json" with { type: "json" };
 
@@ -14,6 +14,7 @@ type RegraParametrizacaoPadraoJson = {
 	csosnnfce: string;
 	taxaicmsnfce: string;
 	cstipi?: string | undefined;
+	tipoproduto?: string | undefined;
 };
 
 type ParametrizacaoPadraoArquivo = {
@@ -23,18 +24,36 @@ type ParametrizacaoPadraoArquivo = {
 const regrasPadrao = (conteudoParametrizacaoPadrao as ParametrizacaoPadraoArquivo)
 	.regras;
 
+function normalizarCodigo(codigo: string | null | undefined): string {
+	return (codigo ?? "").replace(/\D/g, "");
+}
+
 export async function montarParametrizacaoTributosPadrao(
 	idempresa: string,
 ): Promise<NovaParametrizacaoTributos[]> {
-	const registros: NovaParametrizacaoTributos[] = [];
+	const { cfops } = await listarCfops({
+		idempresa,
+		page: 1,
+		limit: 5000,
+	});
 
-	for (const regra of regrasPadrao) {
-		const [cfopSaidaNfe, cfopSaidaNfce] = await Promise.all([
-			buscarCfopPorCodigo(idempresa, regra.codigocfopsaidanfe),
-			buscarCfopPorCodigo(idempresa, regra.codigocfopsaidanfce),
-		]);
+	const cfopPorCodigo = new Map<string, (typeof cfops)[number]>();
+	for (const registro of cfops) {
+		const codigo = normalizarCodigo(registro.codigo);
+		if (codigo && !cfopPorCodigo.has(codigo)) {
+			cfopPorCodigo.set(codigo, registro);
+		}
+	}
 
-		registros.push({
+	return regrasPadrao.map((regra) => {
+		const cfopSaidaNfe = cfopPorCodigo.get(
+			normalizarCodigo(regra.codigocfopsaidanfe),
+		);
+		const cfopSaidaNfce = cfopPorCodigo.get(
+			normalizarCodigo(regra.codigocfopsaidanfce),
+		);
+
+		return {
 			id: uuidv4(),
 			idempresa,
 			codigocfopentrada: regra.codigocfopentrada,
@@ -60,9 +79,8 @@ export async function montarParametrizacaoTributosPadrao(
 			idenquadramentoipi: null,
 			percentualmva: null,
 			percentualirrf: null,
+			tipoproduto: regra.tipoproduto ?? "00",
 			inativo: 0,
-		});
-	}
-
-	return registros;
+		};
+	});
 }

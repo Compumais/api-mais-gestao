@@ -4,6 +4,7 @@ import { buscarCertificadoAtivoPorEmpresa } from "@/repositories/certificado-dig
 import { buscarNfceConfiguracaoPorEmpresa } from "@/repositories/nfce-configuracao-repositories.js";
 import { buscarNfeSeriePadrao } from "@/repositories/nfe-serie-repositories.js";
 import type {
+	DestinatarioPayloadNfe,
 	ItemPayloadNfe,
 	PagamentoPayloadNfe,
 	TotaisPayloadNfe,
@@ -13,8 +14,13 @@ import {
 	obterCodigoUfIbge,
 } from "@/util/montar-config-sped-nfe.js";
 import { montarConfigJsonSpedNfce } from "@/util/montar-config-sped-nfce.js";
-import { montarIeEmitenteNfe } from "@/util/normalizar-ie-nfe.js";
+import {
+	ajustarDestinatarioAmbienteNfe,
+	montarIeEmitenteNfe,
+} from "@/util/normalizar-ie-nfe.js";
 import { validarPreRequisitosEmissaoNfce } from "@/util/validar-pre-requisitos-emissao-nfce.js";
+import { agoraBrasiliaIsoOffset } from "@/util/data-hora-brasilia.js";
+import { resolverNomeMunicipioIbge } from "@/util/resolver-nome-municipio-ibge.js";
 
 export async function carregarContextoEmissaoNfce(idempresa: string) {
 	const empresa = await buscarEmpresaPorId(idempresa);
@@ -55,7 +61,7 @@ export async function carregarContextoEmissaoNfce(idempresa: string) {
 	};
 }
 
-export function montarPayloadGatewayEmissaoNfce({
+export async function montarPayloadGatewayEmissaoNfce({
 	empresa,
 	empresaFiscal,
 	nfceConfiguracao,
@@ -65,6 +71,7 @@ export function montarPayloadGatewayEmissaoNfce({
 	itens,
 	totais,
 	pagamento,
+	destinatario,
 	natOp,
 	informacoesAdicionais,
 }: {
@@ -83,6 +90,7 @@ export function montarPayloadGatewayEmissaoNfce({
 	itens: ItemPayloadNfe[];
 	totais?: TotaisPayloadNfe;
 	pagamento?: PagamentoPayloadNfe;
+	destinatario?: DestinatarioPayloadNfe;
 	natOp?: string;
 	informacoesAdicionais?: string;
 }) {
@@ -93,6 +101,27 @@ export function montarPayloadGatewayEmissaoNfce({
 	});
 	const credenciais = descriptografarCredenciaisCertificado(certificadoAtivo);
 	const verProc = nfceConfiguracao.verproc ?? "MaisGestao 1.0.0";
+
+	const [nomeMunicipioEmitente, nomeMunicipioDestinatario] = await Promise.all([
+		resolverNomeMunicipioIbge(
+			empresaFiscal.codigomunicipioibge,
+			empresaFiscal.uf,
+		),
+		resolverNomeMunicipioIbge(
+			destinatario?.codigomunicipioibge,
+			destinatario?.estado,
+		),
+	]);
+
+	const destinatarioComMunicipio = destinatario
+		? {
+				...destinatario,
+				cidade:
+					destinatario.cidade ||
+					nomeMunicipioDestinatario ||
+					destinatario.codigomunicipioibge,
+			}
+		: undefined;
 
 	return {
 		configJson,
@@ -110,7 +139,8 @@ export function montarPayloadGatewayEmissaoNfce({
 				complemento: empresaFiscal.complemento ?? "",
 				bairro: empresaFiscal.bairro,
 				codigoMunicipio: empresaFiscal.codigomunicipioibge,
-				municipio: empresaFiscal.codigomunicipioibge,
+				municipio:
+					nomeMunicipioEmitente ?? empresaFiscal.codigomunicipioibge,
 				uf: empresaFiscal.uf,
 				cep: empresaFiscal.cep?.replace(/\D/g, ""),
 				telefone: empresaFiscal.telefone ?? "",
@@ -123,6 +153,7 @@ export function montarPayloadGatewayEmissaoNfce({
 				tpImp: 4,
 				serie: Number(serie),
 				nNF: numeroNf,
+				dhEmi: agoraBrasiliaIsoOffset(),
 				tpAmb: nfceConfiguracao.ambiente,
 				verProc,
 				idDest: 1,
@@ -131,7 +162,11 @@ export function montarPayloadGatewayEmissaoNfce({
 				finNFe: 1,
 				tpNF: 1,
 			},
-			destinatario: {},
+			destinatario:
+				ajustarDestinatarioAmbienteNfe(
+					destinatarioComMunicipio,
+					nfceConfiguracao.ambiente,
+				) ?? {},
 			itens,
 			totais: totais ?? {},
 			pagamento: pagamento ?? {},

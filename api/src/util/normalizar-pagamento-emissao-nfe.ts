@@ -1,5 +1,8 @@
 import type { PagamentoPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
-import { complementarCardPagamentoNfe } from "@/util/card-pagamento-nfce.js";
+import {
+	complementarCardPagamentoNfe,
+	normalizarTPag,
+} from "@/util/card-pagamento-nfce.js";
 import { FIN_NFE_DEVOLUCAO } from "@/util/cfop-devolucao-emissao-nfe.js";
 
 const TPAG_SEM_PAGAMENTO = "90";
@@ -21,7 +24,9 @@ export function normalizarPagamentoEmissaoNfe(
 
 	return {
 		formas: formas.map((forma) => {
-			const tPag = forcarSemPagamento ? TPAG_SEM_PAGAMENTO : forma.tPag;
+			const tPag = forcarSemPagamento
+				? TPAG_SEM_PAGAMENTO
+				: normalizarTPag(forma.tPag);
 
 			if (tPag === TPAG_SEM_PAGAMENTO) {
 				return { tPag: TPAG_SEM_PAGAMENTO, vPag: 0 };

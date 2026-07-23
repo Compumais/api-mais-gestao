@@ -2,6 +2,7 @@ import type { ItemPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.
 import type { TipoDevolucaoNfe } from "@/util/cfop-devolucao-emissao-nfe.js";
 
 export type DadosTributacaoItemEmissaoNfe = {
+	cest?: string;
 	valorIpi?: string;
 	valorIpiDevol?: string;
 	baseIcmsSt?: string;
@@ -27,7 +28,9 @@ function paraStringOpcional(valor?: number | null): string | undefined {
 export function montarDadosImportacaoItemEmissaoNfe(
 	item: ItemPayloadNfe,
 ): DadosImportacaoItemEmissaoNfe | undefined {
+	const cestDigitos = item.cest?.replace(/\D/g, "");
 	const emissao: DadosTributacaoItemEmissaoNfe = {
+		cest: cestDigitos || undefined,
 		valorIpi: paraStringOpcional(item.valorIpi),
 		valorIpiDevol: paraStringOpcional(item.valorIpiDevol),
 		baseIcmsSt: paraStringOpcional(item.baseIcmsSt),

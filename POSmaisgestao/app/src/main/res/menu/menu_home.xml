@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_abrir_caixa"
+        android:title="@string/abrir_caixa"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_fechar_caixa"
+        android:title="@string/fechar_caixa"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_atalhos"
+        android:title="@string/gerenciar_atalhos"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_config"
+        android:title="@string/configuracoes"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_trocar_empresa"
+        android:title="@string/trocar_empresa"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_logout"
+        android:title="@string/sair"
+        app:showAsAction="never" />
+</menu>

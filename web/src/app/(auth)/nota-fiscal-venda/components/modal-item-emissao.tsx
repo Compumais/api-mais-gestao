@@ -30,9 +30,11 @@ import {
 import { ChevronDown } from "lucide-react";
 import type { ItemNfe } from "@/schemas/nfe-emissao.schema";
 import { produtosService } from "@/services/produtos.service";
+import { cestService } from "@/services/cest.service";
 import {
 	empresaUsaCsosn,
 	itemEmissaoPodeSerConfirmado,
+	itemEmissaoRequerCest,
 	mapearProdutoParaItemNfe,
 	mapearTributacaoCfopParaItem,
 	normalizarTributacaoItemFormulario,
@@ -45,6 +47,36 @@ import {
 	OPCOES_CSOSN,
 	OPCOES_CST_ICMS,
 } from "@/util/cst-produto-util";
+
+async function resolverCestCodigoProduto(produto: {
+	cestCodigo?: string | null;
+	idcest?: string | null;
+	cest?: string | number | null;
+}): Promise<string | undefined> {
+	const direto = produto.cestCodigo?.replace(/\D/g, "");
+	if (direto && direto.length === 7 && !/^0+$/.test(direto)) {
+		return direto;
+	}
+
+	if (produto.idcest) {
+		try {
+			const cest = await cestService.buscar(produto.idcest);
+			const codigo = cest.codigo?.replace(/\D/g, "") ?? "";
+			if (codigo.length === 7 && !/^0+$/.test(codigo)) {
+				return codigo;
+			}
+		} catch {
+			// Continua tentando o campo legado abaixo.
+		}
+	}
+
+	const legado = String(produto.cest ?? "").replace(/\D/g, "");
+	if (legado.length === 7 && !/^0+$/.test(legado)) {
+		return legado;
+	}
+
+	return undefined;
+}
 
 const OPCOES_CST_PIS_COFINS = [
 	{ value: "01", label: "01 - Operação tributável (alíquota básica)" },
@@ -164,7 +196,11 @@ export function ModalItemEmissao({
 	}, [cfopOpcoes]);
 
 	useEffect(() => {
-		if (open) {
+		if (!open) return;
+
+		let cancelado = false;
+
+		async function carregarItem() {
 			if (itemParaEditar) {
 				const itemNormalizado = prepararItemEmissaoFormulario(
 					itemParaEditar,
@@ -172,20 +208,74 @@ export function ModalItemEmissao({
 				);
 				setItem(itemNormalizado);
 				setBusca(itemNormalizado.descricao ?? "");
+
+				const cestInvalido =
+					!itemNormalizado.cest ||
+					/^0+$/.test(itemNormalizado.cest.replace(/\D/g, ""));
+				const precisaHidratacao =
+					Boolean(itemNormalizado.idproduto) &&
+					(!itemNormalizado.ean || cestInvalido);
+
+				if (precisaHidratacao && itemNormalizado.idproduto) {
+					setCarregandoProduto(true);
+					try {
+						const produto = await produtosService.buscar(
+							itemNormalizado.idproduto,
+						);
+						if (cancelado) return;
+						const cestCodigo = await resolverCestCodigoProduto(produto);
+						if (cancelado) return;
+						const doCadastro = mapearProdutoParaItemNfe(
+							{ ...produto, cestCodigo: cestCodigo ?? produto.cestCodigo },
+							itemNormalizado.cfop || cfopSaidaPadrao,
+							usaCsosn,
+						);
+						setItem(
+							prepararItemEmissaoFormulario(
+								{
+									...itemNormalizado,
+									ean: itemNormalizado.ean || doCadastro.ean,
+									eanTributavel:
+										itemNormalizado.eanTributavel || doCadastro.eanTributavel,
+									cest: cestInvalido ? doCadastro.cest : itemNormalizado.cest,
+									unidade:
+										itemNormalizado.unidade !== "UN"
+											? itemNormalizado.unidade
+											: doCadastro.unidade || itemNormalizado.unidade,
+								},
+								usaCsosn,
+							),
+						);
+					} catch {
+						// Mantém o item já carregado se o cadastro não estiver disponível.
+					} finally {
+						if (!cancelado) setCarregandoProduto(false);
+					}
+				}
 			} else {
 				setItem({ ...ITEM_NOVO, cfop: cfopSaidaPadrao });
 				setBusca("");
 			}
 			setTimeout(() => searchRef.current?.focus(), 100);
 		}
+
+		void carregarItem();
+		return () => {
+			cancelado = true;
+		};
 	}, [open, itemParaEditar, cfopSaidaPadrao, usaCsosn]);
 
 	async function selecionarProduto(idproduto: string) {
 		setCarregandoProduto(true);
 		try {
 			const produto = await produtosService.buscar(idproduto);
+			const cestCodigo = await resolverCestCodigoProduto(produto);
 			const cfop = cfopSaidaPadrao || item.cfop;
-			let itemMapeado = mapearProdutoParaItemNfe(produto, cfop, usaCsosn);
+			let itemMapeado = mapearProdutoParaItemNfe(
+				{ ...produto, cestCodigo: cestCodigo ?? produto.cestCodigo },
+				cfop,
+				usaCsosn,
+			);
 
 			if (!itemMapeado.cst && !itemMapeado.csosn && idCfopReferencia) {
 				try {
@@ -254,15 +344,22 @@ export function ModalItemEmissao({
 		const gtin = normalizarGtinItemFormulario({ ...item, ...tributacao });
 		const itemFinal = { ...item, ...tributacao, ...gtin };
 
-		if (itemFinal.baseIcms == null) {
-			itemFinal.baseIcms = totalItem;
-		}
-		if (itemFinal.valorIcms == null && itemFinal.aliquotaIcms != null) {
-			itemFinal.valorIcms =
-				Math.round(
-					((itemFinal.baseIcms ?? totalItem) * itemFinal.aliquotaIcms) / 100 *
-						100,
-				) / 100;
+		if (!usaCsosn) {
+			if (itemFinal.baseIcms == null) {
+				itemFinal.baseIcms = totalItem;
+			}
+			if (itemFinal.valorIcms == null && itemFinal.aliquotaIcms != null) {
+				itemFinal.valorIcms =
+					Math.round(
+						((itemFinal.baseIcms ?? totalItem) * itemFinal.aliquotaIcms) /
+							100 *
+							100,
+					) / 100;
+			}
+		} else {
+			itemFinal.baseIcms = undefined;
+			itemFinal.valorIcms = undefined;
+			itemFinal.aliquotaIcms = undefined;
 		}
 
 		onConfirmar(itemFinal);
@@ -453,6 +550,32 @@ export function ModalItemEmissao({
 
 						<div className="space-y-1 min-w-0">
 							<span className="text-sm font-medium text-muted-foreground block">
+								CEST
+								{itemEmissaoRequerCest(item) && (
+									<span className="text-destructive"> *</span>
+								)}
+							</span>
+							<Input
+								value={item.cest ?? ""}
+								maxLength={7}
+								placeholder="0000000"
+								onChange={(e) => {
+									const digitos = e.target.value.replace(/\D/g, "").slice(0, 7);
+									atualizarCampo("cest", digitos || undefined);
+								}}
+							/>
+							{itemEmissaoRequerCest(item) &&
+								(item.cest?.replace(/\D/g, "").length ?? 0) !== 7 && (
+									<p className="text-xs text-destructive">
+										Obrigatório em operação com ICMS-ST (7 dígitos).
+									</p>
+								)}
+						</div>
+					</div>
+
+					<div className="grid grid-cols-1 gap-3">
+						<div className="space-y-1 min-w-0">
+							<span className="text-sm font-medium text-muted-foreground block">
 								CFOP
 							</span>
 							<Combobox
@@ -640,8 +763,12 @@ export function ModalItemEmissao({
 							<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
 								{(
 									[
-										["baseIcms", "Base de cálculo ICMS (R$)"],
-										["valorIcms", "Valor ICMS (R$)"],
+										...(!usaCsosn
+											? ([
+													["baseIcms", "Base de cálculo ICMS (R$)"],
+													["valorIcms", "Valor ICMS (R$)"],
+												] as const)
+											: []),
 										["valorIpi", "Valor IPI (R$)"],
 										...(devolucaoCompra
 											? ([["valorIpiDevol", "IPI Devolvido (R$)"]] as const)

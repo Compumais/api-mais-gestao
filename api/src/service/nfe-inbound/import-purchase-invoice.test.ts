@@ -80,4 +80,79 @@ describe("importPurchaseInvoiceService", () => {
 			expect.objectContaining({ statusimportacao: "importado" }),
 		);
 	});
+
+	it("deve recriar rascunho quando idrascunho aponta para nota inexistente", async () => {
+		vi.mocked(entidadeRepo.verificarUsuarioPertenceEmpresa).mockResolvedValue(true);
+		vi.mocked(nfeInboundRepo.buscarNfeInboundDocumentoPorId).mockResolvedValue({
+			id: "doc-1",
+			idempresa: "emp-1",
+			tipodocumento: "procNFe",
+			chavenfe: CHAVE_NFE,
+			xml: XML_PROC_NFE,
+			idrascunho: "rascunho-apagado",
+		} as never);
+		vi.mocked(notaFiscalRepo.buscarNotaFiscalRascunhoPorId).mockResolvedValue(
+			undefined,
+		);
+		vi.mocked(notaFiscalRepo.buscarNotaFiscalPorChaveNfe).mockResolvedValue(
+			undefined,
+		);
+		vi.mocked(criarRascunho.criarRascunhoImportacaoNfService).mockResolvedValue({
+			success: true,
+			status: 200,
+			body: { idRascunho: "rascunho-novo" },
+		} as never);
+		vi.mocked(nfeInboundRepo.atualizarNfeInboundDocumento).mockResolvedValue(
+			{} as never,
+		);
+
+		const resultado = await importPurchaseInvoiceService({
+			idDocumento: "doc-1",
+			idempresa: "emp-1",
+			idusuario: "user-1",
+		});
+
+		expect(resultado.success).toBe(true);
+		expect(resultado.body?.idRascunho).toBe("rascunho-novo");
+		expect(nfeInboundRepo.atualizarNfeInboundDocumento).toHaveBeenCalledWith(
+			"doc-1",
+			expect.objectContaining({
+				idrascunho: null,
+				statusimportacao: "disponivel",
+			}),
+		);
+	});
+
+	it("deve permitir reimportar quando a NF anterior está cancelada", async () => {
+		vi.mocked(entidadeRepo.verificarUsuarioPertenceEmpresa).mockResolvedValue(true);
+		vi.mocked(nfeInboundRepo.buscarNfeInboundDocumentoPorId).mockResolvedValue({
+			id: "doc-1",
+			idempresa: "emp-1",
+			tipodocumento: "procNFe",
+			chavenfe: CHAVE_NFE,
+			xml: XML_PROC_NFE,
+			idrascunho: null,
+		} as never);
+		// Repository já filtra canceladas; retorno undefined simula chave liberada
+		vi.mocked(notaFiscalRepo.buscarNotaFiscalPorChaveNfe).mockResolvedValue(
+			undefined,
+		);
+		vi.mocked(criarRascunho.criarRascunhoImportacaoNfService).mockResolvedValue({
+			success: true,
+			status: 200,
+			body: { idRascunho: "rascunho-1" },
+		} as never);
+		vi.mocked(nfeInboundRepo.atualizarNfeInboundDocumento).mockResolvedValue(
+			{} as never,
+		);
+
+		const resultado = await importPurchaseInvoiceService({
+			idDocumento: "doc-1",
+			idempresa: "emp-1",
+			idusuario: "user-1",
+		});
+
+		expect(resultado.success).toBe(true);
+		expect(criarRascunho.criarRascunhoImportacaoNfService).toHaveBeenCalled();
+	});
 });

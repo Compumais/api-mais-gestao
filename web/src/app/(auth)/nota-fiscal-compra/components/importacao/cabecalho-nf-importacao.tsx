@@ -1,7 +1,18 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { toast } from "sonner";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import type {
 	FornecedorSugeridoImportacao,
@@ -15,6 +26,7 @@ type CabecalhoNfImportacaoProps = {
 	idRascunho: string;
 	nota: NotaFiscal;
 	fornecedor: FornecedorSugeridoImportacao;
+	quantidadeItens?: number;
 	cfopXmlOperacao?: string | undefined;
 	natOpXml?: string | undefined;
 	finNFe?: number | undefined;
@@ -45,27 +57,54 @@ export function CabecalhoNfImportacao({
 	idRascunho,
 	nota,
 	fornecedor,
+	quantidadeItens = 0,
 	cfopXmlOperacao,
 	natOpXml,
 	finNFe,
 	ipiDevolvidoXml,
 }: CabecalhoNfImportacaoProps) {
 	const queryClient = useQueryClient();
+	const [cfopPendente, setCfopPendente] = useState<string | null>(null);
+	const [dialogAberto, setDialogAberto] = useState(false);
 
 	const { mutate: salvarCfop, isPending } = useMutation({
-		mutationFn: (params: { idcfop: string }) =>
+		mutationFn: (params: { idcfop: string; aplicarCfopItens?: boolean }) =>
 			notaFiscalService.atualizarRascunhoImportacao(idRascunho, {
 				idempresa,
 				idcfop: params.idcfop || null,
+				aplicarCfopItens: params.aplicarCfopItens,
 			}),
-		onSuccess: () => {
-			toast.success("CFOP da nota atualizado");
+		onSuccess: (_data, variables) => {
+			toast.success(
+				variables.aplicarCfopItens
+					? "CFOP aplicado ao cabeçalho e aos itens"
+					: "CFOP da nota atualizado",
+			);
 			queryClient.invalidateQueries({
 				queryKey: ["rascunho-importacao-nf", idRascunho],
 			});
 		},
 		onError: (error: Error) => toast.error(error.message),
 	});
+
+	function solicitarAlteracaoCfop(idcfop: string) {
+		if (isPending) return;
+
+		if (quantidadeItens > 0 && idcfop) {
+			setCfopPendente(idcfop);
+			setDialogAberto(true);
+			return;
+		}
+
+		salvarCfop({ idcfop });
+	}
+
+	function confirmarPropagacao(aplicar: boolean) {
+		if (!cfopPendente) return;
+		salvarCfop({ idcfop: cfopPendente, aplicarCfopItens: aplicar });
+		setCfopPendente(null);
+		setDialogAberto(false);
+	}
 
 	return (
 		<section className="rounded-lg border bg-card p-4">
@@ -86,10 +125,40 @@ export function CabecalhoNfImportacao({
 						</p>
 					</div>
 					<div>
-						<span className="text-muted-foreground">Emissão / Entrada</span>
-						<p className="font-medium">
-							{formatDate(nota.emissao)} / {formatDate(nota.entradasaida)}
-						</p>
+						<span className="text-muted-foreground">Emissão</span>
+						<p className="font-medium">{formatDate(nota.emissao)}</p>
+					</div>
+					<div>
+						<label
+							htmlFor="entradasaida-rascunho"
+							className="text-muted-foreground text-sm"
+						>
+							Data de entrada
+						</label>
+						<input
+							id="entradasaida-rascunho"
+							type="date"
+							className="mt-1 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs"
+							defaultValue={nota.entradasaida?.substring(0, 10) ?? ""}
+							onBlur={(evento) => {
+								const valor = evento.target.value;
+								if (!valor || valor === nota.entradasaida?.substring(0, 10)) {
+									return;
+								}
+								void notaFiscalService
+									.atualizarRascunhoImportacao(idRascunho, {
+										idempresa,
+										entradasaida: valor,
+									})
+									.then(() => {
+										toast.success("Data de entrada atualizada");
+										void queryClient.invalidateQueries({
+											queryKey: ["rascunho-importacao-nf", idRascunho],
+										});
+									})
+									.catch((erro: Error) => toast.error(erro.message));
+							}}
+						/>
 					</div>
 					<div className="sm:col-span-2">
 						<span className="text-muted-foreground">Chave NF-e</span>
@@ -126,16 +195,24 @@ export function CabecalhoNfImportacao({
 							<p className="font-medium">{natOpXml}</p>
 						</div>
 					)}
+					{cfopXmlOperacao ? (
+						<div className="sm:col-span-2">
+							<span className="text-muted-foreground">CFOP do XML (emitente)</span>
+							<p className="font-mono text-sm">{cfopXmlOperacao}</p>
+							<p className="text-xs text-muted-foreground">
+								Referência histórica — selecione o CFOP de entrada da operação ao lado.
+							</p>
+						</div>
+					) : null}
 				</div>
 
 				<div className="flex flex-col gap-4">
 					<CampoCfopImportacao
 						id="idcfop-nota"
-						label="CFOP da operação"
+						label="CFOP de entrada da operação"
 						value={nota.idcfop ?? undefined}
-						codigoXml={cfopXmlOperacao}
 						onChange={(idcfop) => {
-							if (!isPending) salvarCfop({ idcfop });
+							solicitarAlteracaoCfop(idcfop);
 						}}
 					/>
 
@@ -177,6 +254,43 @@ export function CabecalhoNfImportacao({
 					</div>
 				</div>
 			</div>
+
+			<AlertDialog
+				open={dialogAberto}
+				onOpenChange={(aberto) => {
+					setDialogAberto(aberto);
+					if (!aberto) setCfopPendente(null);
+				}}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>
+							Aplicar este CFOP de entrada a todos os itens?
+						</AlertDialogTitle>
+						<AlertDialogDescription>
+							O CFOP do cabeçalho será gravado na nota
+							{quantidadeItens > 0
+								? `. Deseja também atualizar os ${quantidadeItens} itens?`
+								: "."}{" "}
+							O CFOP do XML do fornecedor permanece apenas como histórico.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel
+							disabled={isPending}
+							onClick={() => confirmarPropagacao(false)}
+						>
+							Não, só o cabeçalho
+						</AlertDialogCancel>
+						<AlertDialogAction
+							disabled={isPending}
+							onClick={() => confirmarPropagacao(true)}
+						>
+							Sim, aplicar a todos
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</section>
 	);
 }

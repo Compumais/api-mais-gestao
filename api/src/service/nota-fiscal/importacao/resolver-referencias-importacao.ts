@@ -1,8 +1,13 @@
 import { buscarCfopPorCodigo } from "@/repositories/cfop-repositories.js";
-import { buscarCfopSaidaPorEntrada } from "@/repositories/cfop-depara-repositories.js";
+import {
+	buscarCfopEntradaPorCodigoSaida,
+	buscarCfopSaidaPorEntrada,
+} from "@/repositories/cfop-depara-repositories.js";
 import { buscarCestPorCodigo } from "@/repositories/cest-repositories.js";
 import { buscarNcmPorCodigo } from "@/repositories/ncm-repositories.js";
 import { buscarUnidadeMedidaPorSigla } from "@/repositories/unidade-medida-repositories.js";
+import { sugerirCodigoCfopEntradaPorCfopXml } from "@/util/cfop-entrada-depara-planilha.js";
+import { isCfopEntrada } from "@/util/cfop-entrada-validacao.js";
 import { inferirCodigoCfopSaida } from "@/util/cfop-depara-util.js";
 
 export async function resolverCfopImportacao(
@@ -16,6 +21,48 @@ export async function resolverCfopImportacao(
 	return cfopEncontrado
 		? { id: cfopEncontrado.id, codigo: cfopEncontrado.codigo ?? codigoCfop }
 		: null;
+}
+
+/**
+ * Resolve CFOP de entrada a partir do CFOP do XML (saída do emitente).
+ * Ordem: depara cadastrado (codigosaida) → planilha padrão (revenda) → cadastro por código.
+ */
+export async function resolverCfopEntradaPorCfopXml(
+	idempresa: string,
+	codigoCfopXml?: string | undefined,
+	uf?: string | undefined,
+): Promise<{ id: string; codigo: string } | null> {
+	if (!codigoCfopXml) return null;
+
+	const codigoSaida = codigoCfopXml.replace(/\D/g, "");
+	if (codigoSaida.length < 4) return null;
+
+	const dePara = await buscarCfopEntradaPorCodigoSaida(
+		idempresa,
+		codigoSaida,
+		uf,
+	);
+
+	if (dePara?.idcfopentrada && dePara.codigoentrada) {
+		if (isCfopEntrada(dePara.codigoentrada)) {
+			return {
+				id: dePara.idcfopentrada,
+				codigo: dePara.codigoentrada,
+			};
+		}
+	}
+
+	const codigoEntradaSugerido = sugerirCodigoCfopEntradaPorCfopXml(codigoSaida);
+	if (!codigoEntradaSugerido) return null;
+
+	const cfopEntrada = await buscarCfopPorCodigo(idempresa, codigoEntradaSugerido);
+	if (!cfopEntrada?.id || !cfopEntrada.codigo) return null;
+	if (!isCfopEntrada(cfopEntrada.codigo)) return null;
+
+	return {
+		id: cfopEntrada.id,
+		codigo: cfopEntrada.codigo,
+	};
 }
 
 export async function resolverUnidadeImportacao(

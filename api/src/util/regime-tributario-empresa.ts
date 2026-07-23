@@ -21,6 +21,16 @@ export function normalizarRegimeTributario(
 	return null;
 }
 
+/** Deriva SN/LP a partir do CRT da NF-e (fonte da verdade na UI fiscal). */
+export function derivarRegimeTributarioDoCrt(
+	crt?: number | null,
+): RegimeTributarioEmpresa | null {
+	if (crt == null || !Number.isFinite(crt)) return null;
+	if (crt === 1 || crt === 2 || crt === 4) return "SN";
+	if (crt === 3) return "LP";
+	return null;
+}
+
 export function obterConfigRegimeImportacaoNf(
 	regime?: string | null,
 ): ConfigRegimeImportacaoNf {

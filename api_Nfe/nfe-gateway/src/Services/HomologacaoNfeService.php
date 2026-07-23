@@ -26,13 +26,21 @@ final class HomologacaoNfeService
 
         $mk->taginfNFe((object) ['versao' => $configJson['versao'] ?? '4.00']);
 
+        $dhEmi = trim((string) ($ide['dhEmi'] ?? ''));
+        if ($dhEmi === '') {
+            $tz = new \DateTimeZone('America/Sao_Paulo');
+            $dhEmi = (new \DateTimeImmutable('now', $tz))->format('Y-m-d\TH:i:sP');
+        } else {
+            $dhEmi = preg_replace('/\.\d+(?=[+-]\d{2}:\d{2}$)/', '', $dhEmi) ?? $dhEmi;
+        }
+
         $mk->tagide((object) [
             'cUF' => (int) ($ide['cUF'] ?? 35),
             'natOp' => 'VENDA',
             'mod' => 55,
             'serie' => (int) ($ide['serie'] ?? 1),
             'nNF' => (int) ($ide['nNF'] ?? 1),
-            'dhEmi' => date('c'),
+            'dhEmi' => $dhEmi,
             'tpNF' => 1,
             'idDest' => 1,
             'cMunFG' => (int) ($emitente['codigoMunicipio'] ?? 3550308),

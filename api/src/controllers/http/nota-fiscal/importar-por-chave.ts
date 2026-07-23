@@ -8,6 +8,7 @@ const importarPorChaveBodySchema = z.object({
 	chaveNfe: z.string().min(1, "Informe a chave NF-e"),
 	idplanocontas: z.string().optional().nullable(),
 	idcondicaopagto: z.string().optional().nullable(),
+	idtipodocumento: z.string().optional().nullable(),
 	xmlOpcional: z.string().optional(),
 });
 
@@ -28,6 +29,7 @@ export async function importarNotaFiscalPorChave(
 			chaveNfe: dadosValidados.chaveNfe,
 			idplanocontas: dadosValidados.idplanocontas || undefined,
 			idcondicaopagto: dadosValidados.idcondicaopagto || undefined,
+			idtipodocumento: dadosValidados.idtipodocumento || undefined,
 			xmlOpcional: dadosValidados.xmlOpcional,
 		});
 

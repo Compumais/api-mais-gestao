@@ -9,6 +9,8 @@ import {
 	isNotNull,
 	isNull,
 	lte,
+	or,
+	sql,
 } from "drizzle-orm";
 import type { NovoDAV } from "@/model/dav-model";
 import { dav } from "@/repositories/schema.js";
@@ -53,6 +55,7 @@ export type ListarDavsParametros = {
 	faturado?: boolean | undefined;
 	codigo?: number | undefined;
 	busca?: string | undefined;
+	origem?: string | undefined;
 };
 
 export async function listarDavs({
@@ -66,6 +69,7 @@ export async function listarDavs({
 	faturado,
 	codigo,
 	busca,
+	origem,
 }: ListarDavsParametros) {
 	const where = [];
 
@@ -88,9 +92,12 @@ export async function listarDavs({
 	}
 
 	if (faturado === true) {
-		where.push(isNotNull(dav.idnotafiscal));
+		where.push(
+			or(isNotNull(dav.idnotafiscal), isNotNull(dav.idnfce)) ??
+				sql`false`,
+		);
 	} else if (faturado === false) {
-		where.push(isNull(dav.idnotafiscal));
+		where.push(and(isNull(dav.idnotafiscal), isNull(dav.idnfce)) ?? sql`true`);
 	}
 
 	if (codigo !== undefined) {
@@ -99,6 +106,10 @@ export async function listarDavs({
 
 	if (busca?.trim()) {
 		where.push(ilike(dav.nomecliente, `%${busca.trim()}%`));
+	}
+
+	if (origem?.trim()) {
+		where.push(eq(dav.extra1, origem.trim()));
 	}
 
 	const offset = (page - 1) * limit;

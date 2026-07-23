@@ -86,6 +86,8 @@ export const nfceconfiguracao = pgTable(
 
 			.notNull(),
 
+		emitirnfcepos: boolean().default(true).notNull(),
+
 		ultimaidserie: text(),
 
 		criadoem: timestamp({ precision: 3, mode: "string" })
