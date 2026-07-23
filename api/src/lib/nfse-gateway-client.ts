@@ -14,10 +14,19 @@ type PayloadGatewayNfse = {
 };
 
 function obterConfigGateway() {
-	const url = process.env.NFSE_GATEWAY_URL ?? "http://127.0.0.1:8089";
-	const secret = process.env.NFSE_GATEWAY_SECRET ?? "";
+	const url = (process.env.NFSE_GATEWAY_URL ?? "http://127.0.0.1:8089").replace(
+		/\/$/,
+		"",
+	);
+	const secret = (process.env.NFSE_GATEWAY_SECRET ?? "").trim();
 
-	return { url: url.replace(/\/$/, ""), secret };
+	if (!secret) {
+		throw new Error(
+			"NFSE_GATEWAY_SECRET não configurado na API. Defina o mesmo valor em api/.env e api_Nfe/nfse-gateway/.env.",
+		);
+	}
+
+	return { url, secret };
 }
 
 function obterMensagemErroBruta(erro: unknown): string {
@@ -84,7 +93,17 @@ async function chamarNfseGateway<T extends NfseGatewayRespostaBase>(
 	caminho: string,
 	payload: PayloadGatewayNfse | Record<string, unknown>,
 ): Promise<T> {
-	const { url, secret } = obterConfigGateway();
+	let url: string;
+	let secret: string;
+
+	try {
+		({ url, secret } = obterConfigGateway());
+	} catch (erro) {
+		return {
+			sucesso: false,
+			erro: obterMensagemErroBruta(erro),
+		} as T;
+	}
 
 	const controller = new AbortController();
 	const timeout = setTimeout(() => controller.abort(), 60_000);

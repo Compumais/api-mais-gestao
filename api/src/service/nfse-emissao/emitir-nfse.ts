@@ -16,7 +16,9 @@ import {
 } from "@/service/nfse-emissao/preparar-payload-emissao-nfse.js";
 import { arquivarXmlNotaFiscal } from "@/service/nota-fiscal/arquivar-xml-nota-fiscal.js";
 import { httpOk } from "@/util/http-util.js";
+import { montarIdentificadorXmlNfse } from "@/util/identificador-xml-nfse.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
+import { isLayoutNfseDps } from "@/util/validar-pre-requisitos-emissao-nfse.js";
 
 export type EmitirNfseParametros = PrepararPayloadEmissaoNfseParams;
 
@@ -99,13 +101,48 @@ export async function emitirNfseService(
 	const agora = new Date().toISOString();
 	const idnotafiscal = uuidv4();
 
-	const autorizada = resposta.sucesso === true;
-	const status = autorizada ? NFE_STATUS.AUTORIZADA : NFE_STATUS.REJEITADA;
+	const autorizada =
+		resposta.sucesso === true && Boolean(resposta.numeroNfse);
+	const modoDps =
+		resposta.modo === "dps" ||
+		String(resposta.versaolayout ?? "").toLowerCase().includes("dps") ||
+		isLayoutNfseDps(
+			String(payloadGateway.configJson.versaolayout ?? ""),
+		);
+	const pendenteDps =
+		resposta.sucesso === true &&
+		!autorizada &&
+		Boolean(resposta.protocolo);
+	const status = autorizada
+		? NFE_STATUS.AUTORIZADA
+		: pendenteDps
+			? NFE_STATUS.PENDENTE
+			: NFE_STATUS.REJEITADA;
 
 	const dadosImportacao: DadosEmissaoNfseSalvos = {
 		...dadosSalvos,
 		payload: payloadGateway.payloadNfse,
+		...(resposta.protocolo
+			? { protocolo: resposta.protocolo }
+			: {}),
+		...(modoDps || pendenteDps
+			? { modo: "dps" as const }
+			: resposta.modo === "rps-gerar"
+				? { modo: "rps-gerar" as const }
+				: { modo: "rps" as const }),
 	};
+
+	const mensagemRejeicaoBruta =
+		resposta.erro ??
+		resposta.erros?.map((e) => e.mensagem).join("; ") ??
+		"Emissão NFS-e rejeitada";
+	const indicaE050 =
+		/E050/i.test(mensagemRejeicaoBruta) ||
+		(resposta.erros ?? []).some((e) => e.codigo === "E050");
+	const mensagemRejeicao = indicaE050
+		? `${mensagemRejeicaoBruta} O ID da DPS (série+nDPS ${numeroRps}) já foi usado na Betha/ADN. ` +
+			"Em Configurações → NFS-e, ajuste o próximo número da série para o valor do Fly (ex.: 8402) e emita/retransmita de novo."
+		: mensagemRejeicaoBruta;
 
 	const nota: NovaNotaFiscal = {
 		id: idnotafiscal,
@@ -135,9 +172,9 @@ export async function emitirNfseService(
 		dadosimportacao: dadosImportacao as unknown as Record<string, unknown>,
 		mensagemtransmissaonfe: autorizada
 			? null
-			: (resposta.erro ??
-				resposta.erros?.map((e) => e.mensagem).join("; ") ??
-				"Emissão NFS-e rejeitada"),
+			: pendenteDps
+				? `DPS recebida. Protocolo: ${resposta.protocolo}. Aguardando processamento no ambiente nacional.`
+				: mensagemRejeicao,
 	};
 
 	const itens = montarItensPersistencia(
@@ -150,12 +187,30 @@ export async function emitirNfseService(
 
 	await criarNotaFiscalComItens(nota, itens);
 
-	if (resposta.xmlEnviado || resposta.xml) {
+	const identificadorXml = montarIdentificadorXmlNfse(resposta, idnotafiscal);
+
+	// xmlEnviado = DPS/RPS enviado; xml = retorno SOAP/provedor
+	if (resposta.xmlEnviado) {
+		await arquivarXmlNotaFiscal({
+			idempresa: params.idempresa,
+			idnotafiscal,
+			tipo: "assinado",
+			xml: resposta.xmlEnviado,
+			chavenfe: identificadorXml,
+			protocolonfe: resposta.protocolo ?? undefined,
+		});
+	}
+
+	if (resposta.xml) {
 		await arquivarXmlNotaFiscal({
 			idempresa: params.idempresa,
 			idnotafiscal,
 			tipo: autorizada ? "autorizado" : "assinado",
-			xml: resposta.xml ?? resposta.xmlEnviado ?? "",
+			xml: resposta.xml,
+			chavenfe: resposta.xmlEnviado
+				? `${identificadorXml}-retorno`
+				: identificadorXml,
+			protocolonfe: resposta.protocolo ?? undefined,
 		});
 	}
 

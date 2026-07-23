@@ -23,10 +23,44 @@ export async function criarNotaFiscalXml(dados: NovaNotaFiscalXml) {
 	return registro;
 }
 
+export async function atualizarNotaFiscalXml(
+	id: string,
+	dados: Partial<
+		Pick<
+			NovaNotaFiscalXml,
+			| "chavenfe"
+			| "protocolonfe"
+			| "hashsha256"
+			| "tamanhobytes"
+			| "caminhoanexo"
+			| "tipoxml"
+		>
+	>,
+) {
+	const [registro] = await db
+		.update(notafiscalxml)
+		.set(dados)
+		.where(eq(notafiscalxml.id, id))
+		.returning();
+
+	return registro;
+}
+
 export async function arquivarNotaFiscalXmlSeNaoExistir(dados: NovaNotaFiscalXml) {
 	const existente = await buscarNotaFiscalXmlPorNota(dados.idnotafiscal);
 
 	if (existente) {
+		if (!existente.caminhoanexo && dados.caminhoanexo) {
+			const atualizado = await atualizarNotaFiscalXml(existente.id, {
+				chavenfe: dados.chavenfe ?? existente.chavenfe,
+				protocolonfe: dados.protocolonfe ?? existente.protocolonfe,
+				hashsha256: dados.hashsha256 ?? existente.hashsha256,
+				tamanhobytes: dados.tamanhobytes ?? existente.tamanhobytes,
+				caminhoanexo: dados.caminhoanexo,
+				tipoxml: dados.tipoxml ?? existente.tipoxml,
+			});
+			return atualizado ?? existente;
+		}
 		return existente;
 	}
 

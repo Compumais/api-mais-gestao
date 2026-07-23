@@ -23,6 +23,11 @@ export type NfseConfiguracaoBody = {
 	codigomunicipioibge?: string | null;
 	versaolayout?: string;
 	urlwsdl?: string | null;
+	urlsoperacao?: {
+		emissao?: string | null;
+		consulta?: string | null;
+		cancelamento?: string | null;
+	} | null;
 	usarlotesincrono?: boolean;
 	idcertificadoativo?: string | null;
 	ultimaidserie?: string | null;
@@ -107,6 +112,7 @@ export async function atualizarNfseConfiguracaoService({
 			codigomunicipioibge: dados.codigomunicipioibge ?? null,
 			versaolayout: dados.versaolayout ?? "2.02",
 			urlwsdl: dados.urlwsdl ?? null,
+			urlsoperacao: dados.urlsoperacao ?? null,
 			usarlotesincrono: dados.usarlotesincrono ?? true,
 			idcertificadoativo: dados.idcertificadoativo ?? null,
 			ultimaidserie: dados.ultimaidserie ?? null,

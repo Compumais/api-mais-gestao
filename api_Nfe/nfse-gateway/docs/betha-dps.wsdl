@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><definitions xmlns="http://schemas.xmlsoap.org/wsdl/" xmlns:dps="http://www.betha.com.br/e-nota-dps" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="http://www.betha.com.br/e-nota-dps-service" xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="DpsService" targetNamespace="http://www.betha.com.br/e-nota-dps-service">
+
+    <types>
+<!--        //TODO: [giba] Ler o XSD diretamente do JAR [nfse-soap-dps] eliminando os arquivos físicos de dentro do projeto [nfse-ws-dps]-->
+        <xsd:schema targetNamespace="http://www.betha.com.br/e-nota-dps-service">
+            <xsd:import namespace="http://www.betha.com.br/e-nota-dps" schemaLocation="schemas/nfse_dps_v01.xsd"/>
+        </xsd:schema>
+    </types>
+
+    <!-- DPS Messages -->
+    <message name="RecepcionarDpsEnvioMsg">
+        <part element="dps:RecepcionarDpsEnvio" name="parameters"/>
+    </message>
+    <message name="RecepcionarDpsRespostaMsg">
+        <part element="dps:RecepcionarDpsResposta" name="parameters"/>
+    </message>
+
+    <message name="ConsultarStatusDpsEnvioMsg">
+        <part element="dps:ConsultarStatusDpsEnvio" name="parameters"/>
+    </message>
+    <message name="ConsultarStatusDpsEmissaoRespostaMsg">
+        <part element="dps:ConsultarStatusDpsEmissaoResposta" name="parameters"/>
+    </message>
+    <message name="ConsultarStatusDpsCancelamentoRespostaMsg">
+        <part element="dps:ConsultarStatusDpsCancelamentoResposta" name="parameters"/>
+    </message>
+    <message name="ConsultarStatusDpsCancelamentoSubstituicaoRespostaMsg">
+        <part element="dps:ConsultarStatusDpsCancelamentoSubstituicaoResposta" name="parameters"/>
+    </message>
+
+    <!-- Evento Cancelamento Messages -->
+    <message name="RecepcionarEventoCancelamentoEnvioMsg">
+        <part element="dps:RecepcionarEventoCancelamentoEnvio" name="parameters"/>
+    </message>
+    <message name="RecepcionarEventoCancelamentoRespostaMsg">
+        <part element="dps:RecepcionarEventoCancelamentoResposta" name="parameters"/>
+    </message>
+
+    <!-- Evento Substituição Messages -->
+    <message name="RecepcionarEventoSubstituicaoEnvioMsg">
+        <part element="dps:RecepcionarEventoSubstituicaoEnvio" name="parameters"/>
+    </message>
+    <message name="RecepcionarEventoSubstituicaoRespostaMsg">
+        <part element="dps:RecepcionarEventoSubstituicaoResposta" name="parameters"/>
+    </message>
+
+    <!-- PortType -->
+    <portType name="DpsServicePortType">
+        <!-- DPS Operations -->
+        <operation name="RecepcionarDps">
+            <input message="tns:RecepcionarDpsEnvioMsg"/>
+            <output message="tns:RecepcionarDpsRespostaMsg"/>
+        </operation>
+        <operation name="ConsultarStatusDps">
+            <input message="tns:ConsultarStatusDpsEnvioMsg"/>
+            <output message="tns:ConsultarStatusDpsEmissaoRespostaMsg"/>
+        </operation>
+
+        <!-- Evento Cancelamento Operations -->
+        <operation name="RecepcionarEventoCancelamento">
+            <input message="tns:RecepcionarEventoCancelamentoEnvioMsg"/>
+            <output message="tns:RecepcionarEventoCancelamentoRespostaMsg"/>
+        </operation>
+        <!-- Evento Substituição Operations -->
+        <operation name="RecepcionarEventoSubstituicao">
+            <input message="tns:RecepcionarEventoSubstituicaoEnvioMsg"/>
+            <output message="tns:RecepcionarEventoSubstituicaoRespostaMsg"/>
+        </operation>
+    </portType>
+
+    <!-- Binding -->
+    <binding name="DpsServiceSoapBinding" type="tns:DpsServicePortType">
+        <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        
+        <!-- DPS Operations -->
+        <operation name="RecepcionarDps">
+            <soap:operation soapAction="RecepcionarDps"/>
+            <input><soap:body use="literal"/></input>
+            <output><soap:body use="literal"/></output>
+        </operation>
+        
+        <operation name="ConsultarStatusDps">
+            <soap:operation soapAction="ConsultarStatusDps"/>
+            <input><soap:body use="literal"/></input>
+            <output><soap:body use="literal"/></output>
+        </operation>
+
+        <!-- Evento Cancelamento Operations -->
+        <operation name="RecepcionarEventoCancelamento">
+            <soap:operation soapAction="RecepcionarEventoCancelamento"/>
+            <input><soap:body use="literal"/></input>
+            <output><soap:body use="literal"/></output>
+        </operation>
+        
+        <!-- Evento Substituição Operations -->
+        <operation name="RecepcionarEventoSubstituicao">
+            <soap:operation soapAction="RecepcionarEventoSubstituicao"/>
+            <input><soap:body use="literal"/></input>
+            <output><soap:body use="literal"/></output>
+        </operation>
+        
+    </binding>
+
+    <!-- Service -->
+    <service name="DpsService">
+        <documentation>Serviço SOAP para DPS - Declaração de Prestação de Serviço</documentation>
+        <port binding="tns:DpsServiceSoapBinding" name="DpsServicePort">
+            <soap:address location="https://nota-eletronica.betha.cloud/dps/ws"/>
+        </port>
+    </service>
+
+</definitions>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]><html class="no-js lt-ie10 lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]><html class="no-js lt-ie10 lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]><html class="no-js lt-ie10 lt-ie9"> <![endif]-->
+<!--[if IE 9]><html class="no-js lt-ie10"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+<html lang="pt-br">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Betha Sistemas - Soluções Web</title>
+	<link rel="shortcut icon" href="imagens/favicon.ico" type="image/x-icon">
+	<link rel="stylesheet" href="https://e-gov.betha.com.br/common/bootstrap.min.css">
+	<link rel="stylesheet" href="https://e-gov.betha.com.br/common/style.min.css">
+</head>
+<body>
+
+	<div class="wrapper">
+		<div class="nav">
+			<div class="container">
+				<div class="row">
+					<div class="col-md-6">
+						<div class="logo"></div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<table class="barra-produtos iv">
+			<tr>
+				<td class="mun"></td>
+				<td class="pla"></td>
+				<td class="arr"></td>
+				<td class="ate"></td>
+				<td class="com"></td>
+				<td class="pes"></td>
+				<td class="sau"></td>
+				<td class="edu"></td>
+				<td class="lei"></td>
+			</tr>
+		</table>
+		<!--[if lt IE 9]>
+	      <p class="alert-danger well">
+	        Você está usando um navegador <strong>desatualizado</strong>. Por favor <a href="http://browsehappy.com/">atualize seu navegador</a> para melhorar sua experiência.
+	      </p>
+	    <![endif]-->
+
+		<div class="container">
+			
+			<div class="row">
+				<div class="col-sm-12 col-md-12">
+					<div class="error-wrapper">
+						<hgroup>
+							<h1>Ops! Ocorreu um erro.</h1>
+							<h2>A página que você tentou acessar não foi encontrada.</h2>
+						</hgroup>
+						<a class="btn btn-primary" href="/">Ir para a página inicial</a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<footer>
+		<p>Copyright © Betha Sistemas. Todos os direitos reservados desde 1985.</p>
+	</footer>
+	<!-- Google Analytics -->
+
+	<script type="text/javascript">
+
+	  var _gaq = _gaq || [];
+	  _gaq.push(['_setAccount', 'UA-534994-31']);
+	  _gaq.push(['_trackPageview']);
+	
+	  (function() {
+	    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+	    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+	    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+	  })();
+	
+	</script>
+</body>
+</html>

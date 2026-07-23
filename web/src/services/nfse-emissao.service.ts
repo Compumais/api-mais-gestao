@@ -18,6 +18,51 @@ export interface ResultadoEmissaoNfse {
 	};
 }
 
+export interface DadosEmissaoNfseSalvos {
+	protocolo?: string | null;
+	protocoloCancelamento?: string | null;
+	protocoloSubstituicao?: string | null;
+	modo?: "dps" | "rps" | "rps-gerar";
+	gerarFinanceiro?: boolean;
+	payload?: {
+		prestador?: Record<string, unknown>;
+		tomador?: Record<string, unknown>;
+		rps?: {
+			numero?: number;
+			serie?: string;
+			dataEmissao?: string;
+			competencia?: string;
+		};
+		servico?: {
+			itemListaServico?: string;
+			discriminacao?: string;
+			codigoCnae?: string;
+			codigoTributacaoMunicipio?: string;
+			codigoTributacaoNacional?: string;
+			codigoNbs?: string;
+			exigibilidadeIss?: string;
+			issRetido?: string;
+			valores?: {
+				servicos?: number;
+				iss?: number;
+				aliquota?: number;
+				pis?: number;
+				cofins?: number;
+				inss?: number;
+				ir?: number;
+				csll?: number;
+			};
+			ibsCbs?: { cIndOp?: string };
+		};
+		itens?: Array<{
+			descricao?: string;
+			quantidade?: number;
+			valorUnitario?: number;
+			codigoListaLc11603?: string;
+		}>;
+	};
+}
+
 export interface NotaFiscalServico {
 	id: string;
 	idempresa: string;
@@ -37,6 +82,7 @@ export interface NotaFiscalServico {
 	datahoraemissao?: string | null;
 	mensagemtransmissaonfe?: string | null;
 	cancelamento?: string | null;
+	dadosimportacao?: DadosEmissaoNfseSalvos | null;
 }
 
 export interface NotaFiscalServicoDetalhe {
@@ -49,6 +95,17 @@ export interface NotaFiscalServicoDetalhe {
 		total: string;
 		codigolistalc11603?: string | null;
 	}>;
+}
+
+export interface ResultadoConsultaNfse {
+	idnotafiscal: string;
+	numeroNfse?: string | null;
+	codigoVerificacao?: string | null;
+	link?: string | null;
+	status?: number;
+	protocolo?: string | null;
+	pendente?: boolean;
+	modo?: string;
 }
 
 export async function emitirNfse(
@@ -71,9 +128,14 @@ export async function emitirNfse(
 			discriminacao: dados.discriminacao,
 			codigoCnae: dados.codigoCnae,
 			codigoTributacaoMunicipio: dados.codigoTributacaoMunicipio,
+			codigoTributacaoNacional: dados.codigoTributacaoNacional || undefined,
+			codigoNbs: dados.codigoNbs || undefined,
 			exigibilidadeIss: dados.exigibilidadeIss,
 			issRetido: dados.issRetido,
 			valores: dados.valores,
+			ibsCbs: dados.codigoIndicadorOperacao
+				? { cIndOp: dados.codigoIndicadorOperacao }
+				: undefined,
 		},
 	});
 	return data;
@@ -98,19 +160,39 @@ export async function buscarNfsePorId(id: string) {
 }
 
 export async function cancelarNfse(id: string, motivo: string) {
-	const { data } = await api.post<{ idnotafiscal: string; status: number }>(
-		`/nfse/emissao/${id}/cancelar`,
-		{ motivo },
-	);
+	const { data } = await api.post<{
+		idnotafiscal: string;
+		status: number;
+		pendente?: boolean;
+		protocolo?: string | null;
+	}>(`/nfse/emissao/${id}/cancelar`, { motivo });
+	return data;
+}
+
+export async function substituirNfse(
+	id: string,
+	dados: { idnotafiscalsubstituta: string; motivo: string },
+) {
+	const { data } = await api.post<{
+		idnotafiscal: string;
+		idnotafiscalsubstituta: string;
+		status: number;
+		pendente?: boolean;
+		protocolo?: string | null;
+	}>(`/nfse/emissao/${id}/substituir`, dados);
 	return data;
 }
 
 export async function consultarNfsePorRps(id: string) {
-	const { data } = await api.post<{
-		idnotafiscal: string;
-		numeroNfse?: string | null;
-		codigoVerificacao?: string | null;
-		link?: string | null;
-	}>(`/nfse/emissao/${id}/consultar`);
+	const { data } = await api.post<ResultadoConsultaNfse>(
+		`/nfse/emissao/${id}/consultar`,
+	);
+	return data;
+}
+
+export async function retransmitirNfse(id: string) {
+	const { data } = await api.post<ResultadoEmissaoNfse>(
+		`/nfse/emissao/${id}/retransmitir`,
+	);
 	return data;
 }

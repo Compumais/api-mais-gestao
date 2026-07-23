@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MaisGestao\NfseGateway\Factory;
 
 use MaisGestao\NfseGateway\Adapters\AdapterAbrasfV202;
+use MaisGestao\NfseGateway\Adapters\AdapterBetha;
 use MaisGestao\NfseGateway\Adapters\AdapterGinfes;
 use MaisGestao\NfseGateway\Adapters\AdapterIpm;
 use MaisGestao\NfseGateway\Adapters\AdapterIssNet;
@@ -18,6 +19,7 @@ final class ProvedorFactory
             'ipm' => new AdapterIpm(),
             'issnet' => new AdapterIssNet(),
             'ginfes' => new AdapterGinfes(),
+            'betha' => new AdapterBetha(),
             default => new AdapterAbrasfV202(),
         };
     }
