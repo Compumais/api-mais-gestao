@@ -10,6 +10,7 @@ export const SUPER_ALLOWED_ROUTES = [
 	"/super/usuarios",
 	"/super/cadastro",
 	"/super/informativos",
+	"/super/cms",
 ] as const;
 
 export const GARCOM_ALLOWED_ROUTES = [
