@@ -49,6 +49,32 @@ export interface Informativo {
 	criadoem: string;
 }
 
+export interface AjudaPostAdmin {
+	id: string;
+	titulo: string;
+	subtitulo: string | null;
+	descricao: string;
+	capa: string | null;
+	imagens: string[];
+	slug: string;
+	publicado: boolean;
+	autorid: string;
+	editorid: string;
+	criadoem: string;
+	atualizadoem: string;
+	autorNome: string | null;
+	editorNome: string | null;
+}
+
+export type AjudaPostPayload = {
+	titulo: string;
+	subtitulo?: string | null;
+	descricao: string;
+	capa?: string | null;
+	imagens?: string[];
+	publicado?: boolean;
+};
+
 export const adminService = {
 	async buscarDashboard(): Promise<AdminDashboardData> {
 		const { data } = await api.get<AdminDashboardData>("/admin/dashboard");
@@ -174,6 +200,34 @@ export const adminService = {
 
 	async excluirInformativo(id: string) {
 		const { data } = await api.delete(`/admin/informativos/${id}`);
+		return data;
+	},
+
+	async listarAjudaPosts() {
+		const { data } = await api.get<{ posts: AjudaPostAdmin[] }>(
+			"/admin/ajuda-posts",
+		);
+		return data;
+	},
+
+	async criarAjudaPost(body: AjudaPostPayload) {
+		const { data } = await api.post<AjudaPostAdmin>(
+			"/admin/ajuda-posts",
+			body,
+		);
+		return data;
+	},
+
+	async atualizarAjudaPost(id: string, body: Partial<AjudaPostPayload>) {
+		const { data } = await api.patch<AjudaPostAdmin>(
+			`/admin/ajuda-posts/${id}`,
+			body,
+		);
+		return data;
+	},
+
+	async excluirAjudaPost(id: string) {
+		const { data } = await api.delete(`/admin/ajuda-posts/${id}`);
 		return data;
 	},
 };

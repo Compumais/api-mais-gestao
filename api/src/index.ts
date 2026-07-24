@@ -48,6 +48,7 @@ import { healthRotas } from "./controllers/http/health/rotas.js";
 import { hierarquiasRotas } from "./controllers/http/hierarquia/rotas.js";
 import { iaRotas } from "./controllers/http/ia/rotas.js";
 import { informativosRotas } from "./controllers/http/informativos/rotas.js";
+import { ajudaRotas } from "./controllers/http/ajuda/rotas.js";
 import { integracoesContabilConfiguracaoRotas } from "./controllers/http/integracao-contabil-configuracao/rotas.js";
 import { locaisEstoqueRotas } from "./controllers/http/local-estoque/rotas.js";
 import { locaisRetiradaRotas } from "./controllers/http/local-retirada/rotas.js";
@@ -488,6 +489,7 @@ app.route({
 app.register(healthRotas);
 app.register(adminRotas);
 app.register(informativosRotas);
+app.register(ajudaRotas);
 
 app.register(planoContasRotas);
 app.register(empresasRotas);

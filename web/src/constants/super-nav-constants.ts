@@ -2,6 +2,7 @@ import {
 	IconBuilding,
 	IconChartBar,
 	IconInfoCircle,
+	IconNews,
 	IconUserPlus,
 	IconUsers,
 } from "@tabler/icons-react";
@@ -27,6 +28,11 @@ export const SUPER_NAV = {
 			title: "Informativos",
 			url: "/super/informativos",
 			icon: IconInfoCircle,
+		},
+		{
+			title: "CMS",
+			url: "/super/cms",
+			icon: IconNews,
 		},
 	],
 	navSecondary: [

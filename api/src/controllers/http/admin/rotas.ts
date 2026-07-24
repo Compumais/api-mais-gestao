@@ -22,8 +22,41 @@ import {
 	excluirInformativoAdminService,
 	listarInformativosAdminService,
 } from "@/service/admin/gerenciar-informativos.js";
+import {
+	atualizarAjudaPostAdminService,
+	criarAjudaPostAdminService,
+	excluirAjudaPostAdminService,
+	listarAjudaPostsAdminService,
+} from "@/service/admin/gerenciar-ajuda-posts.js";
 import { listarUsuariosAdminService } from "@/service/admin/listar-usuarios.js";
 import { perfilUsuarioSchema } from "@/util/usuario-perfil.js";
+
+const IMAGEM_MAX_LENGTH = 700_000;
+
+const imagemDataUrlSchema = z
+	.string()
+	.max(IMAGEM_MAX_LENGTH, "Imagem excede o tamanho máximo permitido")
+	.refine((valor) => valor.startsWith("data:image/"), {
+		message: "Imagem deve ser um data URL (data:image/...)",
+	});
+
+const ajudaPostBodySchema = z.object({
+	titulo: z.string().min(1),
+	subtitulo: z.string().nullable().optional(),
+	descricao: z.string().min(1),
+	capa: z.union([imagemDataUrlSchema, z.null()]).optional(),
+	imagens: z.array(imagemDataUrlSchema).max(10).optional(),
+	publicado: z.boolean().optional(),
+});
+
+const ajudaPostPatchSchema = z.object({
+	titulo: z.string().min(1).optional(),
+	subtitulo: z.string().nullable().optional(),
+	descricao: z.string().min(1).optional(),
+	capa: z.union([imagemDataUrlSchema, z.null()]).optional(),
+	imagens: z.array(imagemDataUrlSchema).max(10).optional(),
+	publicado: z.boolean().optional(),
+});
 
 async function enviarResultado(
 	reply: FastifyReply,
@@ -260,5 +293,63 @@ export async function adminRotas(app: FastifyInstance) {
 			reply,
 			await excluirInformativoAdminService(params.id),
 		);
+	});
+
+	app.get("/admin/ajuda-posts", async (_request, reply) => {
+		return enviarResultado(reply, await listarAjudaPostsAdminService());
+	});
+
+	app.post("/admin/ajuda-posts", async (request, reply) => {
+		if (!request.user) {
+			return reply.status(401).send({
+				error: "Não autorizado",
+				code: "UNAUTHORIZED",
+			});
+		}
+
+		const body = ajudaPostBodySchema.parse(request.body);
+
+		return enviarResultado(
+			reply,
+			await criarAjudaPostAdminService({
+				titulo: body.titulo,
+				descricao: body.descricao,
+				autorid: request.user.id,
+				...(body.subtitulo !== undefined && { subtitulo: body.subtitulo }),
+				...(body.capa !== undefined && { capa: body.capa }),
+				...(body.imagens !== undefined && { imagens: body.imagens }),
+				...(body.publicado !== undefined && { publicado: body.publicado }),
+			}),
+		);
+	});
+
+	app.patch("/admin/ajuda-posts/:id", async (request, reply) => {
+		if (!request.user) {
+			return reply.status(401).send({
+				error: "Não autorizado",
+				code: "UNAUTHORIZED",
+			});
+		}
+
+		const params = z.object({ id: z.string() }).parse(request.params);
+		const body = ajudaPostPatchSchema.parse(request.body);
+
+		return enviarResultado(
+			reply,
+			await atualizarAjudaPostAdminService(params.id, {
+				editorid: request.user.id,
+				...(body.titulo !== undefined && { titulo: body.titulo }),
+				...(body.subtitulo !== undefined && { subtitulo: body.subtitulo }),
+				...(body.descricao !== undefined && { descricao: body.descricao }),
+				...(body.capa !== undefined && { capa: body.capa }),
+				...(body.imagens !== undefined && { imagens: body.imagens }),
+				...(body.publicado !== undefined && { publicado: body.publicado }),
+			}),
+		);
+	});
+
+	app.delete("/admin/ajuda-posts/:id", async (request, reply) => {
+		const params = z.object({ id: z.string() }).parse(request.params);
+		return enviarResultado(reply, await excluirAjudaPostAdminService(params.id));
 	});
 }
