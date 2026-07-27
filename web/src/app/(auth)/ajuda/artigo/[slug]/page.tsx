@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { MarkdownContent } from "@/components/markdown-content";
 import { ajudaService } from "@/services/ajuda.service";
+import Image from "next/image"
 
 export default function ArticlePage() {
 	const params = useParams<{ slug: string }>();
@@ -75,9 +76,9 @@ export default function ArticlePage() {
 
 				{post.capa && (
 					<div className="mb-8 overflow-hidden rounded-xl border">
-						<img
+						<Image
 							src={post.capa}
-							alt=""
+							alt="post da capa"
 							className="h-auto w-full object-cover"
 						/>
 					</div>
@@ -92,10 +93,10 @@ export default function ArticlePage() {
 					<div className="mt-10 grid gap-4 sm:grid-cols-2">
 						{post.imagens.map((src, index) => (
 							<div
-								key={`${index}-${src.slice(0, 24)}`}
+								key={`${index.toString()}-${src.slice(0, 24)}`}
 								className="overflow-hidden rounded-lg border"
 							>
-								<img
+								<Image
 									src={src}
 									alt={`Imagem ${index + 1} do artigo`}
 									className="h-auto w-full object-cover"
