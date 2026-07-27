@@ -52,6 +52,8 @@ export async function auditoriaRotas(app: FastifyInstance) {
 									idrecurso: { type: "string", nullable: true },
 									idusuario: { type: "string", nullable: true },
 									idempresa: { type: "string", nullable: true },
+									nomeusuario: { type: "string", nullable: true },
+									nomeempresa: { type: "string", nullable: true },
 									metadados: { type: "object", nullable: true },
 									criadoem: { type: "string", format: "date-time" },
 								},
