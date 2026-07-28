@@ -9,12 +9,18 @@ import {
 	smallint,
 	text,
 	timestamp,
+	uniqueIndex,
 	varchar,
 } from "drizzle-orm/pg-core";
+import { area } from "./area.js";
+import { condicaopagamento } from "./condicao-pagamento.js";
 import { empresa } from "./empresas.js";
 import { entidade } from "./entidade.js";
+import { objeto } from "./objeto.js";
+import { prioridades } from "./prioridades.js";
 import { produtos } from "./produtos.js";
 import { tipodocumentofinanceiro } from "./tipo-documento-financeiro.js";
+import { tipoproblema } from "./tipo-problema.js";
 import { usuarios } from "./usuarios.js";
 
 export const ordemservico = pgTable(
@@ -143,6 +149,10 @@ export const ordemservico = pgTable(
 			"btree",
 			table.codigo.asc().nullsLast().op("int8_ops"),
 		),
+		uniqueIndex("ordemservico_empresa_codigo_key").on(
+			table.idempresa,
+			table.codigo,
+		),
 		foreignKey({
 			columns: [table.idempresa],
 			foreignColumns: [empresa.id],
@@ -189,6 +199,41 @@ export const ordemservico = pgTable(
 			columns: [table.idtipodocumentofinanceiro],
 			foreignColumns: [tipodocumentofinanceiro.id],
 			name: "fk_ordemservico_tipodocfin",
+		})
+			.onUpdate("cascade")
+			.onDelete("set null"),
+		foreignKey({
+			columns: [table.idobjeto],
+			foreignColumns: [objeto.id],
+			name: "fk_ordemservico_objeto",
+		})
+			.onUpdate("cascade")
+			.onDelete("set null"),
+		foreignKey({
+			columns: [table.idarea],
+			foreignColumns: [area.id],
+			name: "fk_ordemservico_area",
+		})
+			.onUpdate("cascade")
+			.onDelete("set null"),
+		foreignKey({
+			columns: [table.idprioridade],
+			foreignColumns: [prioridades.id],
+			name: "fk_ordemservico_prioridade",
+		})
+			.onUpdate("cascade")
+			.onDelete("set null"),
+		foreignKey({
+			columns: [table.idtipoproblema],
+			foreignColumns: [tipoproblema.id],
+			name: "fk_ordemservico_tipoproblema",
+		})
+			.onUpdate("cascade")
+			.onDelete("set null"),
+		foreignKey({
+			columns: [table.idcondicaopagamento],
+			foreignColumns: [condicaopagamento.id],
+			name: "fk_ordemservico_condicaopagamento",
 		})
 			.onUpdate("cascade")
 			.onDelete("set null"),

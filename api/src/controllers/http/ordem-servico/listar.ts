@@ -1,27 +1,35 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { listarOrdensServicoService } from "@/service/ordem-servico/listar-ordens-servico";
+import { listarOrdensServicoService } from "@/service/ordem-servico/listar-ordens-servico.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
-const listarOrdemServicosQuerySchema = z.object({
-	idempresa: z.string(),
-	page: z.coerce.number().min(1).optional().default(1),
-	limit: z.coerce.number().min(1).max(100).optional().default(10),
+const listarOrdemServicoQuerySchema = z.object({
+	idempresa: z.string().uuid(),
+	page: z.coerce.number().int().min(1).default(1),
+	limit: z.coerce.number().int().min(1).max(100).default(10),
+	status: z.coerce.number().int().optional(),
+	idcliente: z.string().uuid().optional(),
+	idultimotecnico: z.string().uuid().optional(),
+	codigo: z.coerce.number().int().optional(),
+	orcamento: z.coerce.number().int().optional(),
+	dataInicio: z.string().optional(),
+	dataFim: z.string().optional(),
+	busca: z.string().optional(),
 });
 
-export async function listarOrdemServicos(request: FastifyRequest, reply: FastifyReply) {
+export async function listarOrdemServicos(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
 		}
 
-		const query = listarOrdemServicosQuerySchema.parse(request.query);
-
+		const query = listarOrdemServicoQuerySchema.parse(request.query);
 		const resultado = await listarOrdensServicoService({
 			idusuario: request.user.id,
-			idempresa: query.idempresa,
-			page: query.page,
-			limit: query.limit,
+			...query,
 		});
 
 		if (!resultado.success) {

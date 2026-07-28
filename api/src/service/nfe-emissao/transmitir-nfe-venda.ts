@@ -105,6 +105,8 @@ export async function transmitirNfeVendaService({
 		idtipodocumento: nota.idtipodocumento ?? undefined,
 		iddav: emissaoSalva?.iddav,
 		iddavs: emissaoSalva?.iddavs,
+		idordemservico: emissaoSalva?.idordemservico,
+		codigoOS: emissaoSalva?.codigoOS,
 		codigosPedidos: emissaoSalva?.codigosPedidos,
 		formasPagamento: emissaoSalva?.formasPagamento,
 		gerarFinanceiro: emissaoSalva?.gerarFinanceiro,

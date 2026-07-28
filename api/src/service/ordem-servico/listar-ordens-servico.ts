@@ -1,14 +1,14 @@
-import type { OrdemServico } from "@/model/ordem-servico-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
+import type { OrdemServico } from "@/model/ordem-servico-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
-import { listarOrdensServico } from "@/repositories/ordem-servico-repositories.js";
+import {
+	type ListarOrdensServicoParametros,
+	listarOrdensServico,
+} from "@/repositories/ordem-servico-repositories.js";
 import { httpOk, httpProibido } from "@/util/http-util.js";
 
-type ListarOrdensServicoParametros = {
+type ListarOrdensServicoServiceParametros = ListarOrdensServicoParametros & {
 	idusuario: string;
-	idempresa: string;
-	page?: number;
-	limit?: number;
 };
 
 type ListarOrdensServicoResposta = {
@@ -26,7 +26,8 @@ export async function listarOrdensServicoService({
 	idempresa,
 	page = 1,
 	limit = 10,
-}: ListarOrdensServicoParametros): Promise<
+	...filtros
+}: ListarOrdensServicoServiceParametros): Promise<
 	HttpResponse<ListarOrdensServicoResposta>
 > {
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
@@ -42,10 +43,11 @@ export async function listarOrdensServicoService({
 		idempresa,
 		page,
 		limit,
+		...filtros,
 	});
 
 	const total = resultado.total ?? 0;
-	const totalPages = Math.ceil(total / limit);
+	const totalPages = Math.ceil(total / limit) || 1;
 
 	return httpOk<ListarOrdensServicoResposta>({
 		data: resultado.ordenservicos,

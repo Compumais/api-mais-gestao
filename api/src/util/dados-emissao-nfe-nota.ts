@@ -74,6 +74,8 @@ export type DadosEmissaoNfeSalvos = {
 	idserienfe?: string;
 	iddav?: string;
 	iddavs?: string[];
+	idordemservico?: string;
+	codigoOS?: number;
 	codigosPedidos?: number[];
 	formasPagamento?: Array<{
 		idtipodocumentofinanceiro: string;
@@ -119,6 +121,8 @@ export function montarSnapshotEmissaoNfe(params: {
 	idserienfe?: string;
 	iddav?: string;
 	iddavs?: string[];
+	idordemservico?: string;
+	codigoOS?: number;
 	codigosPedidos?: number[];
 	formasPagamento?: Array<{
 		idtipodocumentofinanceiro: string;
@@ -154,6 +158,8 @@ export function montarSnapshotEmissaoNfe(params: {
 			idserienfe: params.idserienfe,
 			iddav: params.iddav,
 			iddavs: params.iddavs,
+			idordemservico: params.idordemservico,
+			codigoOS: params.codigoOS,
 			codigosPedidos: params.codigosPedidos,
 			formasPagamento: params.formasPagamento,
 			gerarFinanceiro: params.gerarFinanceiro,

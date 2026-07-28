@@ -4,17 +4,19 @@ import { buscarOrdemServicoService } from "@/service/ordem-servico/buscar-ordem-
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
 const buscarOrdemServicoParamsSchema = z.object({
-	id: z.string(),
+	id: z.string().uuid(),
 });
 
-export async function buscarOrdemServico(request: FastifyRequest, reply: FastifyReply) {
+export async function buscarOrdemServico(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
 		}
 
 		const { id } = buscarOrdemServicoParamsSchema.parse(request.params);
-
 		const resultado = await buscarOrdemServicoService({
 			ordemServicoId: id,
 			idusuario: request.user.id,

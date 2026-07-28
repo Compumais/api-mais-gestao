@@ -1,29 +1,55 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { v4 as uuidv4 } from "uuid";
 import z from "zod";
 import { criarOrdemServicoService } from "@/service/ordem-servico/criar-ordem-servico.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
+import { ORDEM_SERVICO_CAMPOS_EXTRA } from "@/util/ordem-servico-constants.js";
 
-const criarOrdemServicoBodySchema = z.looseObject({
-	idempresa: z.string(),
-	codigo: z.number().int().optional()
+const extrasSchema = Object.fromEntries(
+	ORDEM_SERVICO_CAMPOS_EXTRA.map((campo) => [
+		campo,
+		z.string().nullable().optional(),
+	]),
+);
+
+const criarOrdemServicoBodySchema = z.object({
+	idempresa: z.string().uuid(),
+	idcliente: z.string().uuid().optional().nullable(),
+	nomecliente: z.string().max(60).optional().nullable(),
+	cnpjcpfcliente: z.string().max(18).optional().nullable(),
+	idobjeto: z.string().uuid().optional().nullable(),
+	idarea: z.string().uuid().optional().nullable(),
+	idprioridade: z.string().uuid().optional().nullable(),
+	idtipoproblema: z.string().uuid().optional().nullable(),
+	idatendente: z.string().uuid().optional().nullable(),
+	idultimotecnico: z.string().uuid().optional().nullable(),
+	idcondicaopagamento: z.string().uuid().optional().nullable(),
+	idtipodocumentofinanceiro: z.string().uuid().optional().nullable(),
+	problemadescrito: z.string().optional().nullable(),
+	laudotecnico: z.string().optional().nullable(),
+	observacao: z.string().optional().nullable(),
+	agendamento: z.string().optional().nullable(),
+	previsaoconclusao: z.string().optional().nullable(),
+	dataos: z.string().optional().nullable(),
+	orcamento: z.number().int().optional(),
+	marca: z.string().max(30).optional().nullable(),
+	modelo: z.string().max(30).optional().nullable(),
+	placa: z.string().max(10).optional().nullable(),
+	renavam: z.string().max(11).optional().nullable(),
+	...extrasSchema,
 });
 
-export async function criarOrdemServico(request: FastifyRequest, reply: FastifyReply) {
+export async function criarOrdemServico(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
 		}
 
 		const dadosValidados = criarOrdemServicoBodySchema.parse(request.body);
-
-		const dadosOrdemServico = {
-			id: uuidv4(),
-			...dadosValidados,
-		};
-
 		const resultado = await criarOrdemServicoService({
-			dadosOrdemServico,
+			dadosOrdemServico: dadosValidados,
 			idusuario: request.user.id,
 		});
 
