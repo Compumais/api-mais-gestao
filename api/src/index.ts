@@ -4,6 +4,7 @@ import swaggerUi from "@fastify/swagger-ui";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import Fastify from "fastify";
 import { adminRotas } from "./controllers/http/admin/rotas.js";
+import { ajudaRotas } from "./controllers/http/ajuda/rotas.js";
 import { areasRotas } from "./controllers/http/area/rotas.js";
 import { assinaturasRotas } from "./controllers/http/assinaturas/rotas.js";
 import { atalhosPdvRotas } from "./controllers/http/atalho-pdv/rotas.js";
@@ -11,6 +12,7 @@ import { auditoriaRotas } from "./controllers/http/auditoria/rotas.js";
 // import { authRotas } from "./controllers/http/auth/rotas.js";
 import { obterPerfil } from "./controllers/http/auth/obter-perfil.js";
 import { authenticationRoute } from "./controllers/http/authentication.js";
+import { automacaoRotas } from "./controllers/http/automacao/rotas.js";
 import { bancosRotas } from "./controllers/http/bancos/rotas.js";
 import { centrosCustoRotas } from "./controllers/http/centro-custo/rotas.js";
 import { certificadoDigitalRotas } from "./controllers/http/certificado-digital/rotas.js";
@@ -21,13 +23,13 @@ import { cfopsPadraoRotas } from "./controllers/http/cfop-padrao/rotas.js";
 import { codigosReduzidosContaContabilRotas } from "./controllers/http/codigo-reduzido-conta-contabil/rotas.js";
 import { condicoesPagamentoRotas } from "./controllers/http/condicao-pagamento/rotas.js";
 import { configuracaoRotas } from "./controllers/http/configuracao/rotas.js";
+import { configuracaoOrdemServicoRotas } from "./controllers/http/configuracao-ordem-servico/rotas.js";
 import { configuracaoUsuarioRotas } from "./controllers/http/configuracao-usuario/rotas.js";
 import { contaContabilRotas } from "./controllers/http/conta-contabil/rotas.js";
 import { contaCorrenteLancamentoRotas } from "./controllers/http/conta-corrente-lancamento/rotas.js";
 import { contasMesaRotas } from "./controllers/http/conta-mesa/rotas.js";
 import { contasMesaItemRotas } from "./controllers/http/conta-mesa-item/rotas.js";
 import { contabilidadeRotas } from "./controllers/http/contabilidade/rotas.js";
-import { automacaoRotas } from "./controllers/http/automacao/rotas.js";
 import { contaCorrenteRotas } from "./controllers/http/contacorrente/rotas.js";
 import { custosProdutoRotas } from "./controllers/http/custo-produto/rotas.js";
 import { dashboardRotas } from "./controllers/http/dashboard/rotas.js";
@@ -48,7 +50,6 @@ import { healthRotas } from "./controllers/http/health/rotas.js";
 import { hierarquiasRotas } from "./controllers/http/hierarquia/rotas.js";
 import { iaRotas } from "./controllers/http/ia/rotas.js";
 import { informativosRotas } from "./controllers/http/informativos/rotas.js";
-import { ajudaRotas } from "./controllers/http/ajuda/rotas.js";
 import { integracoesContabilConfiguracaoRotas } from "./controllers/http/integracao-contabil-configuracao/rotas.js";
 import { locaisEstoqueRotas } from "./controllers/http/local-estoque/rotas.js";
 import { locaisRetiradaRotas } from "./controllers/http/local-retirada/rotas.js";
@@ -82,6 +83,7 @@ import { sintegraRotas } from "./controllers/http/sintegra/rotas.js";
 import { tarefasRotas } from "./controllers/http/tarefas/rotas.js";
 import { taxaUfRotas } from "./controllers/http/taxauf/rotas.js";
 import { tiposDocumentoFinanceiroRotas } from "./controllers/http/tipo-documento-financeiro/rotas.js";
+import { tiposOrdemServicoEventoRotas } from "./controllers/http/tipo-ordem-servico-evento/rotas.js";
 import { tiposProblemaRotas } from "./controllers/http/tipo-problema/rotas.js";
 import { unidadesMedidaRotas } from "./controllers/http/unidade-medida/rotas.js";
 import { usuariosRotas } from "./controllers/http/usuarios/rotas.js";
@@ -205,6 +207,19 @@ await app.register(swagger, {
 			{
 				name: "fechamentos-caixa",
 				description: "Operações com fechamentos de caixa de PDV",
+			},
+			{
+				name: "ordens-servico",
+				description:
+					"Ordens de serviço, itens, eventos, financeiro e NF-e rascunho",
+			},
+			{
+				name: "configuracao-ordem-servico",
+				description: "Configuração de campos extras e CFOPs da OS por empresa",
+			},
+			{
+				name: "tipos-ordem-servico-evento",
+				description: "Catálogo personalizável de status/eventos da OS",
 			},
 		],
 	},
@@ -550,6 +565,8 @@ app.register(unidadesMedidaRotas);
 app.register(objetosRotas);
 app.register(tiposProblemaRotas);
 app.register(ordensServicoRotas);
+app.register(configuracaoOrdemServicoRotas);
+app.register(tiposOrdemServicoEventoRotas);
 app.register(operacoesFiscaisRotas);
 app.register(davsRotas);
 app.register(emailRotas);

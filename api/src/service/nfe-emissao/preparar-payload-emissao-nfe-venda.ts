@@ -86,6 +86,8 @@ export type PrepararPayloadEmissaoNfeVendaParams = {
 	formasPagamento?: FormaPagamentoNfVenda[];
 	gerarFinanceiro?: boolean;
 	gerarEstoque?: boolean;
+	idordemservico?: string;
+	codigoOS?: number;
 };
 
 export type NumeracaoEmissaoPreparada = {

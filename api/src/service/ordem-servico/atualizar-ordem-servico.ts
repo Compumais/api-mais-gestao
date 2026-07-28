@@ -7,25 +7,55 @@ import type {
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	atualizarOrdemServico,
-	buscarOrdemServicoPorId,
+	buscarOrdemServicoPorIdEempresa,
 } from "@/repositories/ordem-servico-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
-import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
+import {
+	garantirConfiguracaoOrdemServico,
+	validarExtrasNaOrdemServico,
+} from "@/service/ordem-servico/ordem-servico-helpers.js";
+import {
+	httpBadRequest,
+	httpNaoEncontrado,
+	httpOk,
+	httpProibido,
+} from "@/util/http-util.js";
+
+const CAMPOS_BLOQUEADOS = new Set([
+	"id",
+	"idempresa",
+	"codigo",
+	"status",
+	"geroufinanceiro",
+	"faturouparanota",
+	"faturouparacupom",
+	"iddocumentofiscal",
+	"iddavos",
+	"existeevento",
+	"dataultimoevento",
+	"descricaotipoultimoevento",
+	"descricaoultimoevento",
+]);
 
 type AtualizarOrdemServicoParametros = {
 	ordemServicoId: string;
+	idempresa: string;
 	idusuario: string;
 	dados: Partial<NovoOrdemServico>;
 };
 
 export async function atualizarOrdemServicoService({
 	ordemServicoId,
+	idempresa,
 	idusuario,
 	dados,
 }: AtualizarOrdemServicoParametros): Promise<
 	HttpResponse<OrdemServico | null>
 > {
-	const registroExistente = await buscarOrdemServicoPorId(ordemServicoId);
+	const registroExistente = await buscarOrdemServicoPorIdEempresa(
+		ordemServicoId,
+		idempresa,
+	);
 
 	if (!registroExistente) {
 		return httpNaoEncontrado();
@@ -40,25 +70,42 @@ export async function atualizarOrdemServicoService({
 		return httpProibido();
 	}
 
-	const registroAtualizado = await atualizarOrdemServico(ordemServicoId, dados);
+	const dadosLimpos: Partial<NovoOrdemServico> = {};
+	for (const [chave, valor] of Object.entries(dados)) {
+		if (CAMPOS_BLOQUEADOS.has(chave)) continue;
+		(dadosLimpos as Record<string, unknown>)[chave] = valor;
+	}
+
+	const config = await garantirConfiguracaoOrdemServico(idempresa);
+	const validacaoExtras = validarExtrasNaOrdemServico(config.camposextras, {
+		...registroExistente,
+		...dadosLimpos,
+	} as Record<string, string | null | undefined>);
+
+	if (!validacaoExtras.valido) {
+		return httpBadRequest(validacaoExtras.erro ?? "Extras inválidos");
+	}
+
+	const registroAtualizado = await atualizarOrdemServico(
+		ordemServicoId,
+		idempresa,
+		dadosLimpos,
+	);
 
 	if (!registroAtualizado) {
 		return httpNaoEncontrado();
 	}
 
-	const auditoriaId = uuidv4();
-
 	await criarAuditoriaService({
-		id: auditoriaId,
+		id: uuidv4(),
 		acao: "atualizar_ordem_servico",
 		idusuario,
 		recurso: "ordem_servico",
 		idrecurso: ordemServicoId,
-		idempresa: registroExistente.idempresa,
+		idempresa,
 		criadoem: new Date().toISOString(),
 		metadados: {
-			camposAlterados: Object.keys(dados),
-			valores: dados,
+			camposAlterados: Object.keys(dadosLimpos),
 		},
 	});
 

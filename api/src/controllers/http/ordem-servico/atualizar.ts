@@ -2,16 +2,50 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import { atualizarOrdemServicoService } from "@/service/ordem-servico/atualizar-ordem-servico.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
+import { ORDEM_SERVICO_CAMPOS_EXTRA } from "@/util/ordem-servico-constants.js";
 
 const atualizarOrdemServicoParamsSchema = z.object({
-	id: z.string(),
+	id: z.string().uuid(),
 });
 
-const atualizarOrdemServicoBodySchema = z.looseObject({
-	codigo: z.number().int().optional()
+const extrasSchema = Object.fromEntries(
+	ORDEM_SERVICO_CAMPOS_EXTRA.map((campo) => [
+		campo,
+		z.string().nullable().optional(),
+	]),
+);
+
+const atualizarOrdemServicoBodySchema = z.object({
+	idempresa: z.string().uuid(),
+	idcliente: z.string().uuid().optional().nullable(),
+	nomecliente: z.string().max(60).optional().nullable(),
+	cnpjcpfcliente: z.string().max(18).optional().nullable(),
+	idobjeto: z.string().uuid().optional().nullable(),
+	idarea: z.string().uuid().optional().nullable(),
+	idprioridade: z.string().uuid().optional().nullable(),
+	idtipoproblema: z.string().uuid().optional().nullable(),
+	idatendente: z.string().uuid().optional().nullable(),
+	idultimotecnico: z.string().uuid().optional().nullable(),
+	idcondicaopagamento: z.string().uuid().optional().nullable(),
+	idtipodocumentofinanceiro: z.string().uuid().optional().nullable(),
+	problemadescrito: z.string().optional().nullable(),
+	laudotecnico: z.string().optional().nullable(),
+	observacao: z.string().optional().nullable(),
+	agendamento: z.string().optional().nullable(),
+	previsaoconclusao: z.string().optional().nullable(),
+	dataos: z.string().optional().nullable(),
+	orcamento: z.number().int().optional(),
+	marca: z.string().max(30).optional().nullable(),
+	modelo: z.string().max(30).optional().nullable(),
+	placa: z.string().max(10).optional().nullable(),
+	renavam: z.string().max(11).optional().nullable(),
+	...extrasSchema,
 });
 
-export async function atualizarOrdemServico(request: FastifyRequest, reply: FastifyReply) {
+export async function atualizarOrdemServico(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
@@ -19,11 +53,13 @@ export async function atualizarOrdemServico(request: FastifyRequest, reply: Fast
 
 		const { id } = atualizarOrdemServicoParamsSchema.parse(request.params);
 		const dados = atualizarOrdemServicoBodySchema.parse(request.body);
+		const { idempresa, ...resto } = dados;
 
 		const resultado = await atualizarOrdemServicoService({
 			ordemServicoId: id,
+			idempresa,
 			idusuario: request.user.id,
-			dados,
+			dados: resto,
 		});
 
 		if (!resultado.success) {

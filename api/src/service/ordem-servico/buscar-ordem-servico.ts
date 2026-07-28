@@ -1,7 +1,8 @@
-import type { OrdemServico } from "@/model/ordem-servico-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
+import type { OrdemServico } from "@/model/ordem-servico-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { buscarOrdemServicoPorId } from "@/repositories/ordem-servico-repositories.js";
+import { garantirConfiguracaoOrdemServico } from "@/service/ordem-servico/ordem-servico-helpers.js";
 import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
 
 type BuscarOrdemServicoParametros = {
@@ -12,7 +13,9 @@ type BuscarOrdemServicoParametros = {
 export async function buscarOrdemServicoService({
 	ordemServicoId,
 	idusuario,
-}: BuscarOrdemServicoParametros): Promise<HttpResponse<OrdemServico | null>> {
+}: BuscarOrdemServicoParametros): Promise<
+	HttpResponse<(OrdemServico & { camposextras: unknown }) | null>
+> {
 	const registro = await buscarOrdemServicoPorId(ordemServicoId);
 
 	if (!registro) {
@@ -28,5 +31,10 @@ export async function buscarOrdemServicoService({
 		return httpProibido();
 	}
 
-	return httpOk<OrdemServico>(registro);
+	const config = await garantirConfiguracaoOrdemServico(registro.idempresa);
+
+	return httpOk({
+		...registro,
+		camposextras: config.camposextras,
+	});
 }

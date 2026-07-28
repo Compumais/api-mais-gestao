@@ -6,9 +6,11 @@ import {
 	text,
 	varchar,
 } from "drizzle-orm/pg-core";
+
 import { empresa } from "./empresas.js";
 import { entidade } from "./entidade.js";
 
+// Objetos de conserto da ordem de serviço
 export const objeto = pgTable(
 	"objeto",
 	{

@@ -4,19 +4,28 @@ import { excluirOrdemServicoService } from "@/service/ordem-servico/excluir-orde
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
 const excluirOrdemServicoParamsSchema = z.object({
-	id: z.string(),
+	id: z.string().uuid(),
 });
 
-export async function excluirOrdemServico(request: FastifyRequest, reply: FastifyReply) {
+const excluirOrdemServicoQuerySchema = z.object({
+	idempresa: z.string().uuid(),
+});
+
+export async function excluirOrdemServico(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
 		}
 
 		const { id } = excluirOrdemServicoParamsSchema.parse(request.params);
+		const { idempresa } = excluirOrdemServicoQuerySchema.parse(request.query);
 
 		const resultado = await excluirOrdemServicoService({
 			ordemServicoId: id,
+			idempresa,
 			idusuario: request.user.id,
 		});
 
@@ -24,7 +33,7 @@ export async function excluirOrdemServico(request: FastifyRequest, reply: Fastif
 			return reply.status(resultado.status).send(resultado);
 		}
 
-		return reply.status(resultado.status).send();
+		return reply.status(resultado.status).send(null);
 	} catch (error) {
 		console.error(error);
 		if (error instanceof z.ZodError) {

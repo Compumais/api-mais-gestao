@@ -37,6 +37,19 @@ export async function buscarProximoCodigoDav(idempresa: string): Promise<number>
 	return Number(resultado?.proximo ?? 1);
 }
 
+export async function buscarProximoCodigoOrdemServico(
+	idempresa: string,
+): Promise<number> {
+	const [resultado] = await db
+		.select({
+			proximo: sql<number>`COALESCE(MAX(${schema.ordemservico.codigo}), 0) + 1`,
+		})
+		.from(schema.ordemservico)
+		.where(eq(schema.ordemservico.idempresa, idempresa));
+
+	return Number(resultado?.proximo ?? 1);
+}
+
 async function buscarProximoCodigoVarcharNumerico(
 	tabela:
 		| typeof schema.hierarquia
