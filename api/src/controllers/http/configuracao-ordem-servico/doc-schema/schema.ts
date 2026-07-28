@@ -30,7 +30,7 @@ export const atualizarConfiguracaoOrdemServicoSchema: FastifySchema = {
 	tags: ["configuracao-ordem-servico"],
 	summary: "Atualizar configuração de OS (proprietário/super)",
 	description:
-		"Aceita camposExtras (ou camposextras) com até 16 definições { campo, nome, ativo, obrigatorio }.",
+		"Aceita camposExtras (ou camposextras) com até 16 definições { campo, nome, ativo, obrigatorio }. Flag usadadosveiculo (0/1) controla exibição dos campos de veículo na OS.",
 	security: [{ bearerAuth: [] }],
 	params: {
 		type: "object",
@@ -41,6 +41,7 @@ export const atualizarConfiguracaoOrdemServicoSchema: FastifySchema = {
 		type: "object",
 		additionalProperties: true,
 		properties: {
+			usadadosveiculo: { type: "integer", enum: [0, 1] },
 			camposExtras: {
 				type: "array",
 				maxItems: 16,

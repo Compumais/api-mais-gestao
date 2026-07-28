@@ -456,6 +456,13 @@
       "when": 1784412000000,
       "tag": "0063_ordem_servico_dominio",
       "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1784413000000,
+      "tag": "0064_config_os_usadadosveiculo",
+      "breakpoints": true
     }
   ]
 }

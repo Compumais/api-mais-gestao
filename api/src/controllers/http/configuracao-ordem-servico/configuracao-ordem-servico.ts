@@ -74,6 +74,7 @@ export async function atualizarConfiguracaoOrdemServico(
 				mostrarcamposfinalizaritem: z.number().int().optional(),
 				pedirprimeiroobjeto: z.number().int().optional(),
 				tecnicoobrigatorio: z.number().int().optional(),
+				usadadosveiculo: z.number().int().min(0).max(1).optional(),
 				camposextras: z.array(campoExtraSchema).max(16).optional(),
 				camposExtras: z.array(campoExtraSchema).max(16).optional(),
 			})

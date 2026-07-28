@@ -47,6 +47,7 @@ export async function atualizarConfiguracaoOrdemServicoService(params: {
 		mostrarcamposfinalizaritem?: number | undefined;
 		pedirprimeiroobjeto?: number | undefined;
 		tecnicoobrigatorio?: number | undefined;
+		usadadosveiculo?: number | undefined;
 		camposextras?: CampoExtraOrdemServico[] | undefined;
 	};
 }): Promise<HttpResponse<ConfiguracaoOrdemServico | null>> {

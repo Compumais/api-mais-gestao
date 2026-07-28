@@ -79,6 +79,30 @@ describe("configuração e tipos de evento OS", () => {
 		expect(resultado.success).toBe(true);
 	});
 
+	it("deve permitir proprietario persistir usadadosveiculo", async () => {
+		vi.mocked(
+			configRepositories.atualizarConfiguracaoOrdemServico,
+		).mockResolvedValue({
+			id: "cfg-1",
+			usadadosveiculo: 0,
+		} as never);
+
+		const resultado = await atualizarConfiguracaoOrdemServicoService({
+			idempresa: "emp-1",
+			idusuario: "user-1",
+			roles: ["proprietario"],
+			dados: { usadadosveiculo: 0 },
+		});
+
+		expect(resultado.success).toBe(true);
+		expect(
+			configRepositories.atualizarConfiguracaoOrdemServico,
+		).toHaveBeenCalledWith(
+			"emp-1",
+			expect.objectContaining({ usadadosveiculo: 0 }),
+		);
+	});
+
 	it("não deve permitir alterar codigo interno do tipo de evento", async () => {
 		vi.mocked(
 			tipoRepositories.buscarTipoOrdemServicoEventoPorId,
