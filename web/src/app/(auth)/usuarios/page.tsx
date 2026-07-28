@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/table";
 import { useAuth } from "@/hooks/use-auth";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { useEntitlements } from "@/hooks/use-plano";
 import { formatarPerfilLabel } from "@/lib/perfis";
 import { type Usuario, usuariosService } from "@/services/usuarios.service";
 import { PageContainer } from "../components/page-container";
@@ -131,6 +132,7 @@ const createColumns = ({
 export default function UsuariosPage() {
 	const router = useRouter();
 	const { localStorageEmpresa } = useEmpresa();
+	const { limites } = useEntitlements();
 	const { user } = useAuth();
 	const [sorting, setSorting] = useState<SortingState>([]);
 	const [pagination, setPagination] = useState({
@@ -218,7 +220,24 @@ export default function UsuariosPage() {
 				<div className="flex items-center justify-between px-4">
 					<h1 className="text-2xl font-bold">Usuários</h1>
 					<Button
-						onClick={() => router.push("/usuarios/novo")}
+						onClick={() => {
+							if (
+								limites.maxusuarios > 0 &&
+								(data?.paginacao.total ?? 0) >= limites.maxusuarios
+							) {
+								toast.error(
+									"Limite de usuários atingido. Faça upgrade do plano para continuar.",
+									{
+										action: {
+											label: "Ver planos",
+											onClick: () => router.push("/meus-planos"),
+										},
+									},
+								);
+								return;
+							}
+							router.push("/usuarios/novo");
+						}}
 						className="gap-2"
 						disabled={!localStorageEmpresa}
 					>

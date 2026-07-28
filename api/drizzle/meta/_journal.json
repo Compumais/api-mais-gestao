@@ -463,6 +463,13 @@
       "when": 1784413000000,
       "tag": "0064_config_os_usadadosveiculo",
       "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "7",
+      "when": 1784414000000,
+      "tag": "0065_planos_modulos_saas",
+      "breakpoints": true
     }
   ]
 }

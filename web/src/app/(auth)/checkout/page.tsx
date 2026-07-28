@@ -23,13 +23,14 @@ import { useAuth } from "@/hooks/use-auth";
 import { usePlano } from "@/hooks/use-plano";
 import { maskCep, maskCpfCnpj, maskCreditCard, maskPhone } from "@/lib/masks";
 import {
+	contratarModulo,
 	contratarPlano,
-	TipoPlano,
+	type TipoPlano,
 	upgradePlano,
 } from "@/services/planos.service";
 
 const checkoutSchema = z.object({
-	plano: z.enum(["BASIC", "PREMIUM", "ENTERPRISE"]),
+	plano: z.string().min(1, "Selecione um plano"),
 	holderName: z.string().min(3, "Nome do titular é obrigatório"),
 	cardNumber: z.string().min(16, "Número do cartão inválido"),
 	expiryMonth: z.string().length(2, "Mês inválido (MM)"),
@@ -56,6 +57,7 @@ export default function CheckoutPage() {
 	const queryClient = useQueryClient();
 	const [isLoading, setIsLoading] = useState(false);
 	const [isUpgrade, setIsUpgrade] = useState(false);
+	const modulo = searchParams.get("modulo");
 
 	const form = useForm<CheckoutFormValues>({
 		resolver: zodResolver(checkoutSchema),
@@ -119,7 +121,14 @@ export default function CheckoutPage() {
 		};
 
 		try {
-			if (isUpgrade && plano) {
+			if (modulo) {
+				await contratarModulo({
+					modulo,
+					creditCard: creditCardData,
+					creditCardHolderInfo,
+				});
+				toast.success("Módulo contratado com sucesso!");
+			} else if (isUpgrade && plano) {
 				// Upgrade de plano
 				await upgradePlano({
 					plano: data.plano as TipoPlano,
@@ -144,9 +153,10 @@ export default function CheckoutPage() {
 			await refetchUser();
 
 			router.push("/dashboard");
-		} catch (error: any) {
-			console.error(error);
-			toast.error(error.message || "Erro ao processar operação");
+		} catch (error: unknown) {
+			toast.error(
+				error instanceof Error ? error.message : "Erro ao processar operação",
+			);
 		} finally {
 			setIsLoading(false);
 		}
@@ -162,14 +172,7 @@ export default function CheckoutPage() {
 		const typeParam = searchParams.get("type");
 
 		if (planParam) {
-			const upperPlan = planParam.toUpperCase();
-			if (
-				upperPlan === "BASIC" ||
-				upperPlan === "PREMIUM" ||
-				upperPlan === "ENTERPRISE"
-			) {
-				form.setValue("plano", upperPlan as "BASIC" | "PREMIUM" | "ENTERPRISE");
-			}
+			form.setValue("plano", planParam.toUpperCase());
 		}
 
 		// Verificar se é upgrade
@@ -190,12 +193,18 @@ export default function CheckoutPage() {
 			<Card className="w-full max-w-2xl">
 				<CardHeader>
 					<CardTitle>
-						{isUpgrade ? "Upgrade de Plano" : "Assinar Plano"}
+						{modulo
+							? "Contratar módulo"
+							: isUpgrade
+								? "Upgrade de Plano"
+								: "Assinar Plano"}
 					</CardTitle>
 					<CardDescription>
-						{isUpgrade
-							? "Preencha os dados do cartão de crédito para realizar o upgrade. Você será cobrado apenas pela diferença proporcional."
-							: "Preencha os dados do cartão de crédito para realizar a assinatura."}
+						{modulo
+							? "Preencha os dados do cartão de crédito para contratar o módulo."
+							: isUpgrade
+								? "Preencha os dados do cartão de crédito para realizar o upgrade. Você será cobrado apenas pela diferença proporcional."
+								: "Preencha os dados do cartão de crédito para realizar a assinatura."}
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
@@ -204,59 +213,63 @@ export default function CheckoutPage() {
 						onSubmit={form.handleSubmit(onSubmit)}
 						className="space-y-6"
 					>
-						<div className="space-y-4">
-							<Label className="text-lg font-semibold">Escolha o Plano</Label>
-							<div className="grid grid-cols-3 gap-4">
-								<div
-									className={`border rounded-lg p-4 cursor-pointer hover:bg-accent/50 ${form.watch("plano") === "BASIC" ? "border-primary bg-accent" : ""}`}
-									onClick={() => form.setValue("plano", "BASIC")}
-									onKeyDown={(e) => {
-										if (e.key === "Enter") {
-											form.setValue("plano", "BASIC");
-										}
-									}}
-									role="option"
-									tabIndex={0}
-								>
-									<div className="font-bold">Básico</div>
-									<div className="text-xl">
-										R$ 99,00 <span className="text-sm font-normal">/mês</span>
+						{!modulo && (
+							<div className="space-y-4">
+								<Label className="text-lg font-semibold">Escolha o Plano</Label>
+								<div className="grid grid-cols-3 gap-4">
+									<div
+										className={`border rounded-lg p-4 cursor-pointer hover:bg-accent/50 ${form.watch("plano") === "BASIC" ? "border-primary bg-accent" : ""}`}
+										onClick={() => form.setValue("plano", "BASIC")}
+										onKeyDown={(e) => {
+											if (e.key === "Enter") {
+												form.setValue("plano", "BASIC");
+											}
+										}}
+										role="option"
+										tabIndex={0}
+									>
+										<div className="font-bold">Básico</div>
+										<div className="text-xl">
+											R$ 99,00 <span className="text-sm font-normal">/mês</span>
+										</div>
 									</div>
-								</div>
-								<div
-									className={`border rounded-lg p-4 cursor-pointer hover:bg-accent/50 ${form.watch("plano") === "PREMIUM" ? "border-primary bg-accent" : ""}`}
-									onClick={() => form.setValue("plano", "PREMIUM")}
-									onKeyDown={(e) => {
-										if (e.key === "Enter") {
-											form.setValue("plano", "PREMIUM");
-										}
-									}}
-									role="option"
-									tabIndex={0}
-								>
-									<div className="font-bold">Premium</div>
-									<div className="text-xl">
-										R$ 199,00 <span className="text-sm font-normal">/mês</span>
+									<div
+										className={`border rounded-lg p-4 cursor-pointer hover:bg-accent/50 ${form.watch("plano") === "PREMIUM" ? "border-primary bg-accent" : ""}`}
+										onClick={() => form.setValue("plano", "PREMIUM")}
+										onKeyDown={(e) => {
+											if (e.key === "Enter") {
+												form.setValue("plano", "PREMIUM");
+											}
+										}}
+										role="option"
+										tabIndex={0}
+									>
+										<div className="font-bold">Premium</div>
+										<div className="text-xl">
+											R$ 199,00{" "}
+											<span className="text-sm font-normal">/mês</span>
+										</div>
 									</div>
-								</div>
-								<div
-									className={`border rounded-lg p-4 cursor-pointer hover:bg-accent/50 ${form.watch("plano") === "ENTERPRISE" ? "border-primary bg-accent" : ""}`}
-									onClick={() => form.setValue("plano", "ENTERPRISE")}
-									onKeyDown={(e) => {
-										if (e.key === "Enter") {
-											form.setValue("plano", "ENTERPRISE");
-										}
-									}}
-									role="option"
-									tabIndex={0}
-								>
-									<div className="font-bold">Enterprise</div>
-									<div className="text-xl">
-										R$ 399,00 <span className="text-sm font-normal">/mês</span>
+									<div
+										className={`border rounded-lg p-4 cursor-pointer hover:bg-accent/50 ${form.watch("plano") === "ENTERPRISE" ? "border-primary bg-accent" : ""}`}
+										onClick={() => form.setValue("plano", "ENTERPRISE")}
+										onKeyDown={(e) => {
+											if (e.key === "Enter") {
+												form.setValue("plano", "ENTERPRISE");
+											}
+										}}
+										role="option"
+										tabIndex={0}
+									>
+										<div className="font-bold">Enterprise</div>
+										<div className="text-xl">
+											R$ 399,00{" "}
+											<span className="text-sm font-normal">/mês</span>
+										</div>
 									</div>
 								</div>
 							</div>
-						</div>
+						)}
 
 						<div className="space-y-4">
 							<Label className="text-lg font-semibold">Dados do Cartão</Label>

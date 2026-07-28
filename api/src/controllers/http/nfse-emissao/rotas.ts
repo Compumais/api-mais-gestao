@@ -1,5 +1,7 @@
 import type { FastifyInstance } from "fastify";
+import { MODULOS_SAAS } from "@/constants/saas-catalog.js";
 import { verifyJwt } from "../../middleware/verify-jwt.js";
+import { requireModulo } from "../../middleware/verify-plano.js";
 import { emitirNfse } from "./emitir-nfse.js";
 import { listarNfsesEmitidas } from "./listar-nfses-emitidas.js";
 import { buscarNfsePorId } from "./buscar-nfse-por-id.js";
@@ -10,6 +12,7 @@ import { retransmitirNfse } from "./retransmitir-nfse.js";
 
 export async function nfseEmissaoRotas(app: FastifyInstance) {
 	app.addHook("onRequest", verifyJwt);
+	app.addHook("onRequest", requireModulo(MODULOS_SAAS.NFSE));
 
 	app.post("/nfse/emissao", { handler: emitirNfse });
 	app.get("/nfse/emissao", { handler: listarNfsesEmitidas });

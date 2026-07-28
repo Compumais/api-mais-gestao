@@ -1,10 +1,10 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import type { TipoPlano } from "@/constants/planos.js";
 import { criarPlanoService } from "@/service/planos/criar-plano.js";
+import { normalizarPerfilArray } from "@/util/usuario-perfil.js";
 
 const contratarBodySchema = z.object({
-	plano: z.enum(["BASIC", "PREMIUM", "ENTERPRISE"]),
+	plano: z.string().min(1),
 	ciclo: z.enum(["MONTHLY"]).default("MONTHLY"),
 	creditCard: z.object({
 		holderName: z.string(),
@@ -31,9 +31,18 @@ export async function contratarPlanoController(
 	request: FastifyRequest,
 	reply: FastifyReply,
 ) {
-	// Usuário já garantido pelo hook de autenticação
+	const user = request.user;
+	if (!user) {
+		return reply.status(401).send({ message: "Não autorizado" });
+	}
 
-	if (request.user!.plano != null) {
+	if (!normalizarPerfilArray(user.roles).includes("proprietario")) {
+		return reply.status(403).send({
+			message: "Apenas proprietários podem contratar planos",
+		});
+	}
+
+	if (user.plano != null) {
 		return reply.status(400).send({
 			message:
 				"Usuário já possui um plano ativo. Use upgrade para alterar o plano.",
@@ -58,8 +67,8 @@ export async function contratarPlanoController(
 
 	try {
 		const resultado = await criarPlanoService({
-			idusuario: request.user!.id,
-			plano: body.plano as TipoPlano,
+			idusuario: user.id,
+			plano: body.plano,
 			ciclo: body.ciclo,
 			creditCard: body.creditCard,
 			creditCardHolderInfo,
@@ -73,6 +82,7 @@ export async function contratarPlanoController(
 		const errorMap: Record<string, number> = {
 			"Usuário não encontrado": 404,
 			"Usuário já possui um plano ativo": 400,
+			"Plano inválido": 400,
 		};
 
 		const statusCode = errorMap[message];

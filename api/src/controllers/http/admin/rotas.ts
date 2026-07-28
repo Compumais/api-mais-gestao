@@ -1,17 +1,12 @@
-import type { FastifyInstance } from "fastify";
-import type { FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { verifyJwt } from "../../middleware/verify-jwt.js";
-import { verifySuper } from "../../middleware/verify-super.js";
 import { buscarDashboardAdminService } from "@/service/admin/buscar-dashboard.js";
 import {
-	associarUsuarioEmpresaAdminService,
-	atualizarUsuarioAdminService,
-	alterarSenhaUsuarioAdminService,
-	ativarUsuarioAdminService,
-	criarUsuarioAdminService,
-	inativarUsuarioAdminService,
-} from "@/service/admin/gerenciar-usuarios.js";
+	atualizarAjudaPostAdminService,
+	criarAjudaPostAdminService,
+	excluirAjudaPostAdminService,
+	listarAjudaPostsAdminService,
+} from "@/service/admin/gerenciar-ajuda-posts.js";
 import {
 	criarEmpresaAdminService,
 	listarEmpresasAdminService,
@@ -23,13 +18,26 @@ import {
 	listarInformativosAdminService,
 } from "@/service/admin/gerenciar-informativos.js";
 import {
-	atualizarAjudaPostAdminService,
-	criarAjudaPostAdminService,
-	excluirAjudaPostAdminService,
-	listarAjudaPostsAdminService,
-} from "@/service/admin/gerenciar-ajuda-posts.js";
+	atribuirEntitlementAdminService,
+	atualizarModuloAdminService,
+	atualizarPlanoAdminService,
+	buscarEntitlementUsuarioAdminService,
+	criarModuloAdminService,
+	criarPlanoAdminService,
+	listarCatalogoAdminService,
+} from "@/service/admin/gerenciar-planos-saas.js";
+import {
+	alterarSenhaUsuarioAdminService,
+	associarUsuarioEmpresaAdminService,
+	ativarUsuarioAdminService,
+	atualizarUsuarioAdminService,
+	criarUsuarioAdminService,
+	inativarUsuarioAdminService,
+} from "@/service/admin/gerenciar-usuarios.js";
 import { listarUsuariosAdminService } from "@/service/admin/listar-usuarios.js";
 import { perfilUsuarioSchema } from "@/util/usuario-perfil.js";
+import { verifyJwt } from "../../middleware/verify-jwt.js";
+import { verifySuper } from "../../middleware/verify-super.js";
 
 const IMAGEM_MAX_LENGTH = 700_000;
 
@@ -350,6 +358,145 @@ export async function adminRotas(app: FastifyInstance) {
 
 	app.delete("/admin/ajuda-posts/:id", async (request, reply) => {
 		const params = z.object({ id: z.string() }).parse(request.params);
-		return enviarResultado(reply, await excluirAjudaPostAdminService(params.id));
+		return enviarResultado(
+			reply,
+			await excluirAjudaPostAdminService(params.id),
+		);
+	});
+
+	app.get("/admin/planos-saas", async (_request, reply) => {
+		return enviarResultado(reply, await listarCatalogoAdminService());
+	});
+
+	app.post("/admin/planos-saas", async (request, reply) => {
+		const body = z
+			.object({
+				codigo: z.string().min(1).max(50),
+				nome: z.string().min(1).max(100),
+				descricao: z.string().nullable().optional(),
+				valormensal: z.string().min(1),
+				maxempresas: z.number().int().min(0),
+				maxusuarios: z.number().int().min(0),
+				ordem: z.number().int().default(0),
+				ativo: z.boolean().optional(),
+				idfeatures: z.array(z.string()).optional(),
+			})
+			.parse(request.body);
+
+		return enviarResultado(
+			reply,
+			await criarPlanoAdminService({
+				codigo: body.codigo,
+				nome: body.nome,
+				valormensal: body.valormensal,
+				maxempresas: body.maxempresas,
+				maxusuarios: body.maxusuarios,
+				ordem: body.ordem,
+				...(body.descricao !== undefined && { descricao: body.descricao }),
+				...(body.ativo !== undefined && { ativo: body.ativo }),
+				...(body.idfeatures !== undefined && { idfeatures: body.idfeatures }),
+			}),
+		);
+	});
+
+	app.patch("/admin/planos-saas/:id", async (request, reply) => {
+		const params = z.object({ id: z.string() }).parse(request.params);
+		const body = z
+			.object({
+				nome: z.string().min(1).optional(),
+				descricao: z.string().nullable().optional(),
+				valormensal: z.string().optional(),
+				maxempresas: z.number().int().min(0).optional(),
+				maxusuarios: z.number().int().min(0).optional(),
+				ordem: z.number().int().optional(),
+				ativo: z.boolean().optional(),
+				idfeatures: z.array(z.string()).optional(),
+			})
+			.parse(request.body);
+
+		return enviarResultado(
+			reply,
+			await atualizarPlanoAdminService({
+				id: params.id,
+				dados: body,
+			}),
+		);
+	});
+
+	app.post("/admin/modulos-saas", async (request, reply) => {
+		const body = z
+			.object({
+				codigo: z.string().min(1).max(50),
+				nome: z.string().min(1).max(100),
+				descricao: z.string().nullable().optional(),
+				valormensal: z.string().min(1),
+				ativo: z.boolean().optional(),
+			})
+			.parse(request.body);
+
+		return enviarResultado(
+			reply,
+			await criarModuloAdminService({
+				codigo: body.codigo,
+				nome: body.nome,
+				valormensal: body.valormensal,
+				...(body.descricao !== undefined && { descricao: body.descricao }),
+				...(body.ativo !== undefined && { ativo: body.ativo }),
+			}),
+		);
+	});
+
+	app.patch("/admin/modulos-saas/:id", async (request, reply) => {
+		const params = z.object({ id: z.string() }).parse(request.params);
+		const body = z
+			.object({
+				nome: z.string().min(1).optional(),
+				descricao: z.string().nullable().optional(),
+				valormensal: z.string().optional(),
+				ativo: z.boolean().optional(),
+			})
+			.parse(request.body);
+
+		return enviarResultado(
+			reply,
+			await atualizarModuloAdminService({
+				id: params.id,
+				dados: body,
+			}),
+		);
+	});
+
+	app.get("/admin/usuarios/:id/entitlement", async (request, reply) => {
+		const params = z.object({ id: z.string() }).parse(request.params);
+		return enviarResultado(
+			reply,
+			await buscarEntitlementUsuarioAdminService(params.id),
+		);
+	});
+
+	app.put("/admin/usuarios/:id/entitlement", async (request, reply) => {
+		const params = z.object({ id: z.string() }).parse(request.params);
+		const body = z
+			.object({
+				plano: z.string().min(1).nullable().optional(),
+				modulos: z
+					.array(
+						z.object({
+							codigo: z.string(),
+							ativo: z.boolean(),
+						}),
+					)
+					.optional(),
+			})
+			.parse(request.body);
+
+		return enviarResultado(
+			reply,
+			await atribuirEntitlementAdminService({
+				idusuario: params.id,
+				...(body.plano !== undefined && { plano: body.plano }),
+				...(body.modulos !== undefined && { modulos: body.modulos }),
+			}),
+		);
 	});
 }

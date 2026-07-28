@@ -1,5 +1,7 @@
 import type { FastifyInstance } from "fastify";
+import { FEATURES_SAAS } from "@/constants/saas-catalog.js";
 import { verifyJwt } from "../../middleware/verify-jwt.js";
+import { requireFeature } from "../../middleware/verify-plano.js";
 import {
 	criarEventoOrdemServico,
 	gerarContasReceberOrdemServico,
@@ -28,6 +30,7 @@ import {
 
 export async function ordensServicoRotas(app: FastifyInstance) {
 	app.addHook("onRequest", verifyJwt);
+	app.addHook("onRequest", requireFeature(FEATURES_SAAS.ORDEM_SERVICO));
 
 	app.post("/ordens-servico", {
 		schema: schema.criarOrdemServicoSchema,

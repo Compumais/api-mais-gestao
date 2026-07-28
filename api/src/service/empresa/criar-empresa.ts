@@ -6,13 +6,14 @@ import type { HttpResponse } from "../../model/http-model.js";
 import type { Usuario } from "../../model/usuario-model.js";
 import { executarComControleAcessoPrivilegiado } from "../../repositories/controle-acesso-contexto.js";
 import {
+	buscarEmpresaPorCnpj,
 	criarEmpresa,
 	type NovaEmpresa,
-	buscarEmpresaPorCnpj,
 } from "../../repositories/empresa-repositories.js";
-import { httpCriacao, httpRecursoExistente } from "../../util/http-util.js";
 import { normalizarCnpj } from "../../util/criptografia-certificado.js";
+import { httpCriacao, httpRecursoExistente } from "../../util/http-util.js";
 import { normalizarPerfilArray } from "../../util/usuario-perfil.js";
+import { buscarEntitlementService } from "../planos/buscar-plano-efetivo.js";
 import { popularDadosPadraoEmpresa } from "./popular-dados-padrao-empresa.js";
 
 type CriarEmpresaParametros = {
@@ -24,7 +25,21 @@ type CriarEmpresaParametros = {
 export async function criarEmpresaService({
 	dadosEmpresa,
 	proprietario,
+	quantidadeEmpresas,
 }: CriarEmpresaParametros): Promise<HttpResponse<Empresa | null>> {
+	const entitlement = await buscarEntitlementService({
+		idusuario: proprietario.id,
+	});
+	const maxEmpresas = entitlement.limites.maxempresas;
+	if (quantidadeEmpresas >= maxEmpresas) {
+		return {
+			success: false,
+			status: 403,
+			error: `Limite de empresas do plano atingido (${maxEmpresas})`,
+			code: "PLAN_LIMIT_REACHED",
+		};
+	}
+
 	const cnpjNormalizado = normalizarCnpj(dadosEmpresa.cnpj);
 	const empresaExistente = await buscarEmpresaPorCnpj(cnpjNormalizado);
 

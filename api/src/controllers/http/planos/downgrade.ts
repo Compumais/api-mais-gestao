@@ -1,10 +1,10 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { downgradePlanoService } from "@/service/planos/downgrade-plano.js";
-import type { TipoPlano } from "@/constants/planos.js";
+import { normalizarPerfilArray } from "@/util/usuario-perfil.js";
 
 const downgradeBodySchema = z.object({
-	plano: z.enum(["BASIC", "PREMIUM", "ENTERPRISE"]),
+	plano: z.string().min(1),
 });
 
 export async function downgradePlanoController(
@@ -15,30 +15,38 @@ export async function downgradePlanoController(
 		return reply.status(401).send({ message: "Não autorizado" });
 	}
 
+	if (!normalizarPerfilArray(request.user.roles).includes("proprietario")) {
+		return reply.status(403).send({
+			message: "Apenas proprietários podem fazer downgrade de plano",
+		});
+	}
+
 	const body = downgradeBodySchema.parse(request.body);
 
 	try {
 		const resultado = await downgradePlanoService({
 			idusuario: request.user.id,
-			planoNovo: body.plano as TipoPlano,
+			planoNovo: body.plano,
 		});
 
 		return reply.status(200).send(resultado);
-	} catch (error: any) {
-		if (error.message === "Usuário não encontrado") {
-			return reply.status(404).send({ message: error.message });
+	} catch (error: unknown) {
+		const message = error instanceof Error ? error.message : String(error);
+		if (message === "Usuário não encontrado") {
+			return reply.status(404).send({ message });
 		}
 		if (
-			error.message.includes("não possui plano") ||
-			error.message.includes("inferior") ||
-			error.message.includes("Ciclo")
+			message.includes("não possui plano") ||
+			message.includes("downgrade") ||
+			message.includes("inválido") ||
+			message.includes("Ciclo")
 		) {
-			return reply.status(400).send({ message: error.message });
+			return reply.status(400).send({ message });
 		}
 		console.error("Erro ao agendar downgrade de plano:", error);
 		return reply.status(500).send({
 			message: "Erro ao processar downgrade de plano",
-			error: error.message,
+			error: message,
 		});
 	}
 }
