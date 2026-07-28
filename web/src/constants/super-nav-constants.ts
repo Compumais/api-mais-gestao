@@ -1,6 +1,7 @@
 import {
 	IconBuilding,
 	IconChartBar,
+	IconCreditCard,
 	IconInfoCircle,
 	IconNews,
 	IconUserPlus,
@@ -18,6 +19,11 @@ export const SUPER_NAV = {
 			title: "Usuários",
 			url: "/super/usuarios",
 			icon: IconUsers,
+		},
+		{
+			title: "Planos e módulos",
+			url: "/super/planos",
+			icon: IconCreditCard,
 		},
 		{
 			title: "Cadastro",

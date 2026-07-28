@@ -1,9 +1,10 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Dialog,
 	DialogContent,
@@ -28,19 +29,43 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { formatarPerfilLabel } from "@/lib/perfis";
-import { adminService, type AdminUsuario } from "@/services/admin.service";
+import { type AdminUsuario, adminService } from "@/services/admin.service";
 
 const PERFIS = ["usuario", "admin", "proprietario", "garcom", "super"];
+
+function ehProprietario(usuario: AdminUsuario) {
+	return (usuario.perfil ?? []).includes("proprietario");
+}
 
 export default function SuperUsuariosPage() {
 	const queryClient = useQueryClient();
 	const [selecionado, setSelecionado] = useState<AdminUsuario | null>(null);
+	const [usuarioEntitlement, setUsuarioEntitlement] =
+		useState<AdminUsuario | null>(null);
 	const [novaSenha, setNovaSenha] = useState("");
+	const [planoEntitlement, setPlanoEntitlement] = useState<string | null>(null);
+	const [modulosEntitlement, setModulosEntitlement] = useState<string[]>([]);
 
 	const { data, isLoading } = useQuery({
 		queryKey: ["admin-usuarios"],
 		queryFn: () => adminService.listarUsuarios({ limit: 100 }),
 	});
+	const { data: catalogo } = useQuery({
+		queryKey: ["admin-planos-saas"],
+		queryFn: adminService.listarPlanosSaas,
+	});
+	const { data: entitlement } = useQuery({
+		queryKey: ["admin-entitlement", usuarioEntitlement?.id],
+		queryFn: () =>
+			adminService.buscarEntitlementUsuario(usuarioEntitlement?.id ?? ""),
+		enabled: !!usuarioEntitlement,
+	});
+
+	useEffect(() => {
+		if (!entitlement) return;
+		setPlanoEntitlement(entitlement.plano);
+		setModulosEntitlement(entitlement.modulos);
+	}, [entitlement]);
 
 	const atualizarMutation = useMutation({
 		mutationFn: ({
@@ -79,6 +104,25 @@ export default function SuperUsuariosPage() {
 			queryClient.invalidateQueries({ queryKey: ["admin-usuarios"] });
 			toast.success("Usuário ativado");
 		},
+	});
+	const entitlementMutation = useMutation({
+		mutationFn: () => {
+			if (!usuarioEntitlement) throw new Error("Usuário não selecionado");
+			return adminService.atualizarEntitlementUsuario(usuarioEntitlement.id, {
+				plano: planoEntitlement,
+				modulos: (catalogo?.modulos ?? []).map((modulo) => ({
+					codigo: modulo.codigo,
+					ativo: modulosEntitlement.includes(modulo.codigo),
+				})),
+			});
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["admin-usuarios"] });
+			queryClient.invalidateQueries({ queryKey: ["admin-entitlement"] });
+			toast.success("Entitlements atualizados");
+			setUsuarioEntitlement(null);
+		},
+		onError: () => toast.error("Não foi possível atualizar os entitlements"),
 	});
 
 	return (
@@ -122,6 +166,15 @@ export default function SuperUsuariosPage() {
 									>
 										Editar
 									</Button>
+									{ehProprietario(usuario) && (
+										<Button
+											size="sm"
+											variant="outline"
+											onClick={() => setUsuarioEntitlement(usuario)}
+										>
+											Plano e módulos
+										</Button>
+									)}
 									{usuario.ativo === false ? (
 										<Button
 											size="sm"
@@ -218,6 +271,81 @@ export default function SuperUsuariosPage() {
 									Alterar senha
 								</Button>
 							</div>
+						</div>
+					)}
+				</DialogContent>
+			</Dialog>
+
+			<Dialog
+				open={!!usuarioEntitlement}
+				onOpenChange={(open) => !open && setUsuarioEntitlement(null)}
+			>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Plano e módulos</DialogTitle>
+					</DialogHeader>
+					{usuarioEntitlement && (
+						<div className="space-y-5">
+							<p className="text-sm text-muted-foreground">
+								Defina os acessos de {usuarioEntitlement.nome}.
+							</p>
+							<div className="space-y-2">
+								<Label>Plano</Label>
+								<Select
+									value={planoEntitlement ?? "SEM_PLANO"}
+									onValueChange={(value) =>
+										setPlanoEntitlement(value === "SEM_PLANO" ? null : value)
+									}
+								>
+									<SelectTrigger>
+										<SelectValue placeholder="Sem plano" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="SEM_PLANO">Sem plano</SelectItem>
+										{catalogo?.planos.map((plano) => (
+											<SelectItem key={plano.codigo} value={plano.codigo}>
+												{plano.nome}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+							<div className="space-y-2">
+								<Label>Módulos</Label>
+								{catalogo?.modulos.map((modulo) => {
+									const ativo = modulosEntitlement.includes(modulo.codigo);
+									return (
+										<div
+											key={modulo.codigo}
+											className="flex items-center gap-2 text-sm"
+										>
+											<Checkbox
+												aria-label={modulo.nome}
+												checked={ativo}
+												onCheckedChange={(checked) =>
+													setModulosEntitlement((modulos) =>
+														checked === true
+															? [...modulos, modulo.codigo]
+															: modulos.filter(
+																	(codigo) => codigo !== modulo.codigo,
+																),
+													)
+												}
+											/>
+											{modulo.nome}
+										</div>
+									);
+								})}
+							</div>
+							<Button
+								className="w-full"
+								onClick={() => entitlementMutation.mutate()}
+								disabled={entitlementMutation.isPending}
+							>
+								{entitlementMutation.isPending
+									? "Salvando..."
+									: "Salvar acessos"}
+							</Button>
 						</div>
 					)}
 				</DialogContent>

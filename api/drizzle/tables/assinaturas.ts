@@ -17,9 +17,11 @@ export const assinaturas = pgTable(
 		idempresa: text("idempresa")
 			.notNull()
 			.references(() => empresa.id, { onDelete: "cascade" }),
+		idusuario: text("idusuario"),
 		idassinaturaasaas: text("idassinaturaasaas").notNull(),
 		status: text("status").notNull(), // ACTIVE, EXPIRED, OVERDUE...
-		plano: text("plano").notNull(), // BASIC, PREMIUM
+		plano: text("plano").notNull(), // BASIC, PREMIUM, ENTERPRISE
+		origem: text("origem").default("ASAAS"),
 		valor: numeric("valor", { precision: 12, scale: 2 }).notNull(),
 		ciclo: text("ciclo").notNull(), // MONTHLY
 		proximovencimento: date("proximovencimento"),

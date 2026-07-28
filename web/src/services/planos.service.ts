@@ -1,18 +1,56 @@
 import { api } from "@/lib/axios";
 
-export type TipoPlano = "BASIC" | "PREMIUM" | "ENTERPRISE";
+export type TipoPlano = string;
+
+export interface FeaturePlano {
+	codigo: string;
+	nome: string;
+}
+
+export interface PlanoCatalogo {
+	id: string;
+	codigo: string;
+	nome: string;
+	descricao: string | null;
+	valormensal: number;
+	maxempresas: number;
+	maxusuarios: number;
+	ordem: number;
+	features: FeaturePlano[];
+}
+
+export interface ModuloCatalogo {
+	id: string;
+	codigo: string;
+	nome: string;
+	descricao: string | null;
+	valormensal: number;
+}
+
+export interface CatalogoPlanos {
+	planos: PlanoCatalogo[];
+	modulos: ModuloCatalogo[];
+}
 
 export interface PlanoData {
-	plano: TipoPlano | null;
-	planoAgendado?: TipoPlano | null;
+	plano: string | null;
+	planoAgendado?: string | null;
 	inicioCiclo?: string | null;
 	fimCiclo?: string | null;
 	status: string;
+	limites: {
+		maxempresas: number;
+		maxusuarios: number;
+	};
+	features: string[];
+	modulos: string[];
+	valor: number;
+	nomePlano: string | null;
 	mensagem?: string;
 }
 
 export interface ContratarPlanoParams {
-	plano: TipoPlano;
+	plano: string;
 	ciclo?: "MONTHLY";
 	creditCard: {
 		holderName: string;
@@ -36,7 +74,7 @@ export interface ContratarPlanoParams {
 }
 
 export interface UpgradePlanoParams {
-	plano: TipoPlano;
+	plano: string;
 	creditCard: {
 		holderName: string;
 		number: string;
@@ -59,7 +97,39 @@ export interface UpgradePlanoParams {
 }
 
 export interface DowngradePlanoParams {
-	plano: TipoPlano;
+	plano: string;
+}
+
+export interface DadosCartao {
+	holderName: string;
+	number: string;
+	expiryMonth: string;
+	expiryYear: string;
+	ccv: string;
+}
+
+export interface DadosTitularCartao {
+	name: string;
+	email: string;
+	cpfCnpj: string;
+	postalCode?: string;
+	address?: string;
+	addressNumber?: string;
+	complement?: string;
+	province?: string;
+	city?: string;
+	phone: string;
+}
+
+export interface ContratarModuloParams {
+	modulo: string;
+	creditCard: DadosCartao;
+	creditCardHolderInfo: DadosTitularCartao;
+}
+
+export async function getCatalogo(): Promise<CatalogoPlanos> {
+	const response = await api.get<CatalogoPlanos>("/planos/catalogo");
+	return response.data;
 }
 
 export async function getMeuPlano(idempresa?: string): Promise<PlanoData> {
@@ -93,5 +163,10 @@ export async function downgradePlano(params: DowngradePlanoParams) {
 	const response = await api.post("/planos/downgrade", {
 		plano: params.plano,
 	});
+	return response.data;
+}
+
+export async function contratarModulo(params: ContratarModuloParams) {
+	const response = await api.post("/planos/modulos/contratar", params);
 	return response.data;
 }

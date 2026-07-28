@@ -30,6 +30,40 @@ export interface AdminUsuario {
 	criadoem: string;
 }
 
+export interface AdminFeatureSaas {
+	id: string;
+	codigo: string;
+	nome: string;
+}
+
+export interface AdminPlanoSaas {
+	id: string;
+	codigo: string;
+	nome: string;
+	descricao: string | null;
+	valormensal: string;
+	maxempresas: number;
+	maxusuarios: number;
+	ordem: number;
+	ativo: boolean;
+	features: AdminFeatureSaas[];
+}
+
+export interface AdminModuloSaas {
+	id: string;
+	codigo: string;
+	nome: string;
+	descricao: string | null;
+	valormensal: string;
+	ativo: boolean;
+}
+
+export interface AdminEntitlement {
+	plano: string | null;
+	modulos: string[];
+	features: string[];
+}
+
 export interface AdminEmpresa {
 	id: string;
 	nome: string;
@@ -139,6 +173,95 @@ export const adminService = {
 		return data;
 	},
 
+	async listarPlanosSaas() {
+		const { data } = await api.get<{
+			planos: AdminPlanoSaas[];
+			features: AdminFeatureSaas[];
+			modulos: AdminModuloSaas[];
+		}>("/admin/planos-saas");
+		return data;
+	},
+
+	async atualizarPlanoSaas(
+		id: string,
+		body: Partial<{
+			nome: string;
+			descricao: string | null;
+			valormensal: string;
+			maxempresas: number;
+			maxusuarios: number;
+			ativo: boolean;
+			idfeatures: string[];
+		}>,
+	) {
+		const { data } = await api.patch<AdminPlanoSaas>(
+			`/admin/planos-saas/${id}`,
+			body,
+		);
+		return data;
+	},
+
+	async criarPlanoSaas(body: {
+		codigo: string;
+		nome: string;
+		descricao?: string | null;
+		valormensal: string;
+		maxempresas: number;
+		maxusuarios: number;
+		ordem: number;
+		ativo?: boolean;
+		idfeatures?: string[];
+	}) {
+		const { data } = await api.post<AdminPlanoSaas>("/admin/planos-saas", body);
+		return data;
+	},
+
+	async atualizarModuloSaas(
+		id: string,
+		body: Partial<{ valormensal: string; ativo: boolean }>,
+	) {
+		const { data } = await api.patch<AdminModuloSaas>(
+			`/admin/modulos-saas/${id}`,
+			body,
+		);
+		return data;
+	},
+
+	async criarModuloSaas(body: {
+		codigo: string;
+		nome: string;
+		descricao?: string | null;
+		valormensal: string;
+		ativo?: boolean;
+	}) {
+		const { data } = await api.post<AdminModuloSaas>(
+			"/admin/modulos-saas",
+			body,
+		);
+		return data;
+	},
+
+	async buscarEntitlementUsuario(id: string) {
+		const { data } = await api.get<AdminEntitlement>(
+			`/admin/usuarios/${id}/entitlement`,
+		);
+		return data;
+	},
+
+	async atualizarEntitlementUsuario(
+		id: string,
+		body: {
+			plano?: string | null;
+			modulos?: Array<{ codigo: string; ativo: boolean }>;
+		},
+	) {
+		const { data } = await api.put<AdminEntitlement>(
+			`/admin/usuarios/${id}/entitlement`,
+			body,
+		);
+		return data;
+	},
+
 	async associarEmpresa(
 		idusuario: string,
 		body: { idempresa: string; perfilNaEmpresa?: string },
@@ -211,10 +334,7 @@ export const adminService = {
 	},
 
 	async criarAjudaPost(body: AjudaPostPayload) {
-		const { data } = await api.post<AjudaPostAdmin>(
-			"/admin/ajuda-posts",
-			body,
-		);
+		const { data } = await api.post<AjudaPostAdmin>("/admin/ajuda-posts", body);
 		return data;
 	},
 

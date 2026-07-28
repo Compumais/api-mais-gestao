@@ -1,12 +1,7 @@
 "use client";
 
-import {
-	IconCalendar,
-	IconCheck,
-	IconCreditCard,
-	IconLock,
-} from "@tabler/icons-react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { IconCalendar, IconCheck } from "@tabler/icons-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import Link from "next/link";
@@ -37,66 +32,13 @@ import { useAuth } from "@/hooks/use-auth";
 import { usePlano } from "@/hooks/use-plano";
 import {
 	downgradePlano,
-	getMeuPlano,
+	getCatalogo,
+	type PlanoCatalogo,
 	type TipoPlano,
 } from "@/services/planos.service";
 
-const plans = [
-	{
-		name: "Basic",
-		label: "Básico",
-		price: "R$ 99",
-		period: "/mês",
-		description: "Ideal para pequenas empresas que estão começando",
-		features: [
-			"1 empresa",
-			"Gestão de contas a pagar e receber",
-			"Relatórios básicos",
-			"Suporte por email",
-			"Dashboard simplificado",
-			"Até 3 usuários",
-		],
-		popular: false,
-	},
-	{
-		name: "Premium",
-		label: "Premium",
-		price: "R$ 199",
-		period: "/mês",
-		description: "Para empresas em crescimento que precisam de mais recursos",
-		features: [
-			"Até 2 empresas",
-			"Todas as funcionalidades do Básico",
-			"Relatórios avançados e personalizados",
-			"Dashboard completo com analytics",
-			"Até 6 usuários",
-			"API para integrações",
-		],
-		popular: true,
-	},
-	{
-		name: "Enterprise",
-		label: "Multi-empresa",
-		price: "R$ 399",
-		period: "/mês",
-		description: "Solução completa para grupos empresariais",
-		features: [
-			"Até 5 empresas",
-			"Todas as funcionalidades Premium",
-			"Gestão centralizada de múltiplas empresas",
-			"Consolidação de relatórios",
-			"Até 12 usuários",
-			"Customizações avançadas",
-		],
-		popular: false,
-	},
-];
-
-// Hierarquia dos planos (ordem de upgrade)
-const planHierarchy = ["BASIC", "PREMIUM", "ENTERPRISE"];
-
 function getButtonCta(
-	planName: string,
+	plan: PlanoCatalogo,
 	currentPlanName: string | null,
 	isCurrentPlan: boolean,
 ): string {
@@ -108,35 +50,22 @@ function getButtonCta(
 		return "Contratar";
 	}
 
-	const currentPlanIndex = planHierarchy.indexOf(currentPlanName.toUpperCase());
-	const targetPlanIndex = planHierarchy.indexOf(planName.toUpperCase());
+	const currentPlanIndex = currentPlanName ? Number(currentPlanName) : -1;
+	const targetPlanIndex = plan.ordem;
 
-	// Se o plano alvo está acima do atual (upgrade)
 	if (targetPlanIndex > currentPlanIndex) {
-		const plan = plans.find(
-			(p) => p.name.toUpperCase() === planName.toUpperCase(),
-		);
-		return `Upgrade para ${plan?.label || planName}`;
+		return `Upgrade para ${plan.nome}`;
 	}
 
-	// Se o plano alvo está abaixo do atual (downgrade)
-	const plan = plans.find(
-		(p) => p.name.toUpperCase() === planName.toUpperCase(),
-	);
-	return `Mudar para ${plan?.label || planName}`;
+	return `Mudar para ${plan.nome}`;
 }
 
-function transformarMetodoPagamento(metodoPagamento: string) {
-	switch (metodoPagamento) {
-		case "CREDIT_CARD":
-			return "Cartão de Crédito";
-		case "BOLETO":
-			return "Boleto";
-		case "PIX":
-			return "PIX";
-		default:
-			return "Desconhecido";
-	}
+function formatarValor(valor: number) {
+	return new Intl.NumberFormat("pt-BR", {
+		style: "currency",
+		currency: "BRL",
+		maximumFractionDigits: 2,
+	}).format(valor);
 }
 
 export default function MeusPlanosPage() {
@@ -149,6 +78,11 @@ export default function MeusPlanosPage() {
 		semPlano,
 	} = usePlano();
 	const { refetchUser, user } = useAuth();
+	const { data: catalogo, isLoading: isLoadingCatalogo } = useQuery({
+		queryKey: ["catalogo-planos"],
+		queryFn: getCatalogo,
+		staleTime: 1000 * 60 * 30,
+	});
 
 	const downgradeMutation = useMutation({
 		mutationFn: (plano: TipoPlano) => downgradePlano({ plano }),
@@ -166,13 +100,16 @@ export default function MeusPlanosPage() {
 		},
 	});
 
-	if (isLoadingPlano) {
+	if (isLoadingPlano || isLoadingCatalogo) {
 		return <div className="p-6">Carregando informações do plano...</div>;
 	}
 
 	// Determine current plan for UI logic
-	const currentPlanName = plano?.toUpperCase() || null;
+	const currentPlanName = plano ?? null;
 	const isActive = !semPlano && currentPlanName !== null;
+	const planoAtual = catalogo?.planos.find(
+		(item) => item.codigo === currentPlanName,
+	);
 
 	return (
 		<div className="space-y-6 p-6">
@@ -207,7 +144,7 @@ export default function MeusPlanosPage() {
 							<div className="flex items-center justify-between">
 								<div className="space-y-1">
 									<CardTitle className="text-xl flex items-center gap-2">
-										Plano {currentPlanName}
+										{planoAtual?.nome ?? `Plano ${currentPlanName}`}
 										<Badge
 											variant="default"
 											className="bg-green-600 hover:bg-green-700"
@@ -253,34 +190,24 @@ export default function MeusPlanosPage() {
 			<section className="pt-6">
 				<h2 className="mb-6 text-lg font-semibold">Planos Disponíveis</h2>
 				<div className="grid gap-8 md:grid-cols-3">
-					{plans.map((plan) => {
-						const planNameUpper = plan.name.toUpperCase();
-						const isCurrentPlan = currentPlanName === planNameUpper && isActive;
+					{catalogo?.planos.map((plan) => {
+						const isCurrentPlan = currentPlanName === plan.codigo && isActive;
 						const buttonCta = getButtonCta(
-							plan.name,
-							currentPlanName,
+							plan,
+							planoAtual ? String(planoAtual.ordem) : null,
 							isCurrentPlan,
 						);
 
-						// Determinar se é upgrade ou downgrade
-						const currentPlanIndex = currentPlanName
-							? planHierarchy.indexOf(currentPlanName)
-							: -1;
-						const targetPlanIndex = planHierarchy.indexOf(planNameUpper);
-						const isUpgrade = targetPlanIndex > currentPlanIndex;
+						const currentPlanIndex = planoAtual?.ordem ?? -1;
+						const isUpgrade = plan.ordem > currentPlanIndex;
 						const isDowngrade =
-							targetPlanIndex < currentPlanIndex && currentPlanIndex >= 0;
+							plan.ordem < currentPlanIndex && currentPlanIndex >= 0;
 
 						return (
 							<Card
-								key={plan.name}
-								className={`relative flex flex-col transition-all duration-300 hover:shadow-lg ${plan.popular ? "border-primary shadow-sm" : ""}`}
+								key={plan.id}
+								className="relative flex flex-col transition-all duration-300 hover:shadow-lg"
 							>
-								{plan.popular && !isCurrentPlan && (
-									<div className="absolute -top-3 left-1/2 -translate-x-1/2">
-										<Badge variant="default">Mais Popular</Badge>
-									</div>
-								)}
 								{isCurrentPlan && (
 									<div className="absolute -top-3 left-1/2 -translate-x-1/2">
 										<Badge
@@ -293,24 +220,32 @@ export default function MeusPlanosPage() {
 								)}
 
 								<CardHeader>
-									<CardTitle className="text-2xl">{plan.label}</CardTitle>
-									<CardDescription>{plan.description}</CardDescription>
+									<CardTitle className="text-2xl">{plan.nome}</CardTitle>
+									<CardDescription>{plan.descricao}</CardDescription>
 									<div className="mt-4 flex items-baseline gap-1">
-										<span className="text-4xl font-bold">{plan.price}</span>
-										{plan.period && (
-											<span className="text-muted-foreground">
-												{plan.period}
-											</span>
-										)}
+										<span className="text-4xl font-bold">
+											{formatarValor(plan.valormensal)}
+										</span>
+										<span className="text-muted-foreground">/mês</span>
 									</div>
 								</CardHeader>
 
 								<CardContent className="flex-1">
 									<ul className="space-y-3">
+										<li className="flex items-start gap-2">
+											<IconCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+											<span className="text-sm">
+												Até {plan.maxempresas} empresa(s) e {plan.maxusuarios}{" "}
+												usuário(s)
+											</span>
+										</li>
 										{plan.features.map((feature) => (
-											<li key={feature} className="flex items-start gap-2">
+											<li
+												key={feature.codigo}
+												className="flex items-start gap-2"
+											>
 												<IconCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-												<span className="text-sm">{feature}</span>
+												<span className="text-sm">{feature.nome}</span>
 											</li>
 										))}
 									</ul>
@@ -324,7 +259,9 @@ export default function MeusPlanosPage() {
 											</Button>
 										) : isUpgrade ? (
 											<Button asChild variant="default" className="w-full">
-												<Link href={`/checkout?plan=${plan.name}&type=upgrade`}>
+												<Link
+													href={`/checkout?plan=${plan.codigo}&type=upgrade`}
+												>
 													{buttonCta}
 												</Link>
 											</Button>
@@ -364,7 +301,7 @@ export default function MeusPlanosPage() {
 														<AlertDialogAction
 															onClick={() =>
 																downgradeMutation.mutate(
-																	planNameUpper as TipoPlano,
+																	plan.codigo as TipoPlano,
 																)
 															}
 														>
@@ -375,7 +312,7 @@ export default function MeusPlanosPage() {
 											</AlertDialog>
 										) : (
 											<Button asChild variant="outline" className="w-full">
-												<Link href={`/assinatura?plan=${plan.name}`}>
+												<Link href={`/checkout?plan=${plan.codigo}`}>
 													{buttonCta}
 												</Link>
 											</Button>
@@ -385,6 +322,39 @@ export default function MeusPlanosPage() {
 							</Card>
 						);
 					})}
+				</div>
+			</section>
+			<section className="pt-6">
+				<h2 className="mb-2 text-lg font-semibold">Módulos adicionais</h2>
+				<p className="mb-6 text-sm text-muted-foreground">
+					Amplie seu plano com recursos especializados.
+				</p>
+				<div className="grid gap-4 md:grid-cols-3">
+					{catalogo?.modulos.map((modulo) => (
+						<Card key={modulo.id}>
+							<CardHeader>
+								<CardTitle>{modulo.nome}</CardTitle>
+								<CardDescription>{modulo.descricao}</CardDescription>
+							</CardHeader>
+							<CardContent>
+								<p className="text-xl font-semibold">
+									{formatarValor(modulo.valormensal)}
+									<span className="ml-1 text-sm font-normal text-muted-foreground">
+										/mês
+									</span>
+								</p>
+							</CardContent>
+							{user?.perfil.includes("proprietario") && (
+								<CardFooter>
+									<Button asChild className="w-full" variant="outline">
+										<Link href={`/checkout?modulo=${modulo.codigo}`}>
+											Contratar módulo
+										</Link>
+									</Button>
+								</CardFooter>
+							)}
+						</Card>
+					))}
 				</div>
 			</section>
 		</div>

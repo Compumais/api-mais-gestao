@@ -4,8 +4,12 @@ import type { HttpResponse } from "@/model/http-model.js";
 import type { Usuario } from "@/model/usuario-model.js";
 import { db } from "@/repositories/connection.js";
 import { executarComControleAcessoPrivilegiado } from "@/repositories/controle-acesso-contexto.js";
+import { buscarEmpresaPorId } from "@/repositories/empresa-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
-import { buscarUsuarioPorId } from "@/repositories/usuarios-repositories.js";
+import {
+	buscarUsuarioPorId,
+	listarUsuariosPorEmpresa,
+} from "@/repositories/usuarios-repositories.js";
 import {
 	httpCriacao,
 	httpErroInterno,
@@ -17,15 +21,16 @@ import {
 } from "@/util/usuario-perfil.js";
 import { verificarPodeGerenciarUsuarios } from "@/util/verificar-gestao-usuarios.js";
 import * as schema from "../../../drizzle/schema.js";
+import { buscarEntitlementService } from "../planos/buscar-plano-efetivo.js";
 
 type CriarUsuarioParametros = {
-	idusuario: string; // Usuário que está criando
-	idempresa: string; // Empresa onde o usuário será associado
+	idusuario: string;
+	idempresa: string;
 	nome: string;
 	email: string;
 	password: string;
 	perfil: string | string[];
-	empresasIds?: string[]; // IDs das empresas que o usuário pode ver
+	empresasIds?: string[];
 };
 
 async function rollbackCriacaoUsuario(novoUsuarioId: string) {
@@ -72,6 +77,25 @@ export async function criarUsuarioService({
 	const autor = await buscarUsuarioPorId(idusuario);
 	if (!autor || !verificarPodeGerenciarUsuarios(autor.perfil)) {
 		return httpProibido();
+	}
+
+	const empresa = await buscarEmpresaPorId(idempresa);
+	const entitlement = await buscarEntitlementService({
+		idusuario: empresa?.idproprietario ?? idusuario,
+		idempresa,
+	});
+	const usuariosEmpresa = await listarUsuariosPorEmpresa({
+		idempresa,
+		page: 1,
+		limit: 1000,
+	});
+	if (usuariosEmpresa.total >= entitlement.limites.maxusuarios) {
+		return {
+			success: false,
+			status: 403,
+			error: `Limite de usuários do plano atingido (${entitlement.limites.maxusuarios})`,
+			code: "PLAN_LIMIT_REACHED",
+		};
 	}
 
 	let novoUsuarioId: string | null = null;

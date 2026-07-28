@@ -2,8 +2,10 @@
 
 import { Building2Icon, CheckIcon, PlusIcon } from "lucide-react";
 import Link from "next/link";
-import { useEmpresasUsuario } from "@/hooks/use-empresas-usuario";
+import { toast } from "sonner";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { useEmpresasUsuario } from "@/hooks/use-empresas-usuario";
+import { useEntitlements } from "@/hooks/use-plano";
 import { Button } from "./ui/button";
 import {
 	DropdownMenu,
@@ -16,11 +18,17 @@ import {
 
 export function CompanyToogle() {
 	const { localStorageEmpresa, selecionarEmpresa } = useEmpresa();
-	const { data: empresas, isSuccess: empresasCarregadas } = useEmpresasUsuario();
+	const { data: empresas, isSuccess: empresasCarregadas } =
+		useEmpresasUsuario();
+	const { limites, isLoading: isLoadingEntitlements } = useEntitlements();
 
 	const nomeEmpresa =
 		localStorageEmpresa?.nome ||
 		(!empresasCarregadas ? "Carregando..." : "Selecionar uma empresa");
+	const limiteEmpresasAtingido =
+		!isLoadingEntitlements &&
+		limites.maxempresas > 0 &&
+		(empresas?.length ?? 0) >= limites.maxempresas;
 
 	return (
 		<DropdownMenu>
@@ -47,8 +55,16 @@ export function CompanyToogle() {
 				<DropdownMenuSeparator />
 				<DropdownMenuItem asChild>
 					<Link
-						className="border-2 border-transparent hover:border-2 hover:border-dashed hover:border-border"
+						aria-disabled={limiteEmpresasAtingido}
+						className="border-2 border-transparent hover:border-2 hover:border-dashed hover:border-border aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
 						href="/empresas/nova"
+						onClick={(event) => {
+							if (!limiteEmpresasAtingido) return;
+							event.preventDefault();
+							toast.error(
+								"Limite de empresas atingido. Faça upgrade do plano para adicionar outra empresa.",
+							);
+						}}
 					>
 						<PlusIcon className="size-4" />
 						<span>Adicionar empresa</span>

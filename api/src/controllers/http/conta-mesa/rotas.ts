@@ -1,5 +1,7 @@
 import type { FastifyInstance } from "fastify";
+import { MODULOS_SAAS } from "@/constants/saas-catalog.js";
 import { verifyJwt } from "../../middleware/verify-jwt.js";
+import { requireModulo } from "../../middleware/verify-plano.js";
 import { atualizarContaMesa } from "./atualizar.js";
 import { buscarContaMesa } from "./buscar.js";
 import { criarContaMesa } from "./criar.js";
@@ -9,6 +11,7 @@ import { listarContasMesa } from "./listar.js";
 
 export async function contasMesaRotas(app: FastifyInstance) {
 	app.addHook("onRequest", verifyJwt);
+	app.addHook("onRequest", requireModulo(MODULOS_SAAS.GOURMET));
 
 	app.post("/contas-mesa", {
 		schema: schema.criarContaMesaSchema,

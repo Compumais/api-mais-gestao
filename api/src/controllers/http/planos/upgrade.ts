@@ -1,10 +1,10 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { upgradePlanoService } from "@/service/planos/upgrade-plano.js";
-import type { TipoPlano } from "@/constants/planos.js";
+import { normalizarPerfilArray } from "@/util/usuario-perfil.js";
 
 const upgradeBodySchema = z.object({
-	plano: z.enum(["BASIC", "PREMIUM", "ENTERPRISE"]),
+	plano: z.string().min(1),
 	creditCard: z.object({
 		holderName: z.string(),
 		number: z.string(),
@@ -34,6 +34,12 @@ export async function upgradePlanoController(
 		return reply.status(401).send({ message: "Não autorizado" });
 	}
 
+	if (!normalizarPerfilArray(request.user.roles).includes("proprietario")) {
+		return reply.status(403).send({
+			message: "Apenas proprietários podem fazer upgrade de plano",
+		});
+	}
+
 	const body = upgradeBodySchema.parse(request.body);
 
 	const h = body.creditCardHolderInfo;
@@ -53,7 +59,7 @@ export async function upgradePlanoController(
 	try {
 		const resultado = await upgradePlanoService({
 			idusuario: request.user.id,
-			planoNovo: body.plano as TipoPlano,
+			planoNovo: body.plano,
 			creditCard: body.creditCard,
 			creditCardHolderInfo,
 			remoteIp: request.ip || "0.0.0.0",
@@ -67,7 +73,8 @@ export async function upgradePlanoController(
 		}
 		if (
 			message.includes("não possui plano") ||
-			message.includes("superior") ||
+			message.includes("upgrade") ||
+			message.includes("inválido") ||
 			message.includes("Ciclo")
 		) {
 			return reply.status(400).send({ message });

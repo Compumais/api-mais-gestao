@@ -21,10 +21,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/use-auth";
 import { maskCep, maskCpfCnpj, maskCreditCard, maskPhone } from "@/lib/masks";
-import { contratarPlano, type TipoPlano } from "@/services/planos.service";
+import { contratarPlano } from "@/services/planos.service";
 
 const assinaturaSchema = z.object({
-	plano: z.enum(["BASIC", "PREMIUM", "ENTERPRISE"]),
+	plano: z.string().min(1, "Selecione um plano"),
 	holderName: z.string().min(3, "Nome do titular é obrigatório"),
 	cardNumber: z.string().min(16, "Número do cartão inválido"),
 	expiryMonth: z.string().length(2, "Mês inválido (MM)"),
@@ -139,14 +139,7 @@ export default function AssinaturaPage() {
 
 		const planParam = searchParams.get("plan");
 		if (planParam) {
-			const upperPlan = planParam.toUpperCase();
-			if (
-				upperPlan === "BASIC" ||
-				upperPlan === "PREMIUM" ||
-				upperPlan === "ENTERPRISE"
-			) {
-				form.setValue("plano", upperPlan as TipoPlano);
-			}
+			form.setValue("plano", planParam.toUpperCase());
 		}
 	}, [user, form, searchParams]);
 

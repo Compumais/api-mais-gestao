@@ -14,12 +14,14 @@ import {
 } from "@/components/ui/sidebar";
 import { DATA } from "@/constants/nav-constants";
 import { useAuth } from "@/hooks/use-auth";
+import { useEntitlements } from "@/hooks/use-plano";
 import { hasPerfil, isGarcom } from "@/lib/perfis";
 import { CPlusIcon } from "./icons/c-plus";
 import { NavDocuments } from "./nav-documents";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const { user } = useAuth();
+	const { hasFeature, hasModulo } = useEntitlements();
 
 	const isGarcomUser = React.useMemo(() => isGarcom(user), [user]);
 
@@ -74,6 +76,28 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 		}));
 	}, [canAccessGarcomLink, isGarcomUser]);
 
+	const navNotaFiscalItems = React.useMemo(
+		() =>
+			DATA.navNotaFiscal.map((group) => ({
+				...group,
+				items: group.items?.filter((item) => {
+					if (item.url === "/ordens-servico") {
+						return hasFeature("ordem_servico");
+					}
+					if (item.url === "/nota-fiscal-servico") {
+						return hasModulo("nfse");
+					}
+					if (["/nota-fiscal-venda", "/nfce", "/pedidos"].includes(item.url)) {
+						return hasFeature("notas_fiscais");
+					}
+					return true;
+				}),
+			})),
+		[hasFeature, hasModulo],
+	);
+
+	const exibirGourmet = hasModulo("gourmet");
+
 	return (
 		<Sidebar collapsible="icon" {...props}>
 			<SidebarHeader>
@@ -88,22 +112,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 				{isGarcomUser ? (
 					<>
 						<NavDocuments label="PDV" items={navPdvItems} />
-						<NavDocuments label="Gourmet" items={navGourmetItems} />
+						{exibirGourmet && (
+							<NavDocuments label="Gourmet" items={navGourmetItems} />
+						)}
 					</>
 				) : (
 					<>
 						<NavMain items={navMainItems} />
 
-						{!isUsuario && (
-							<NavDocuments label="PDV" items={navPdvItems} />
-						)}
+						{!isUsuario && <NavDocuments label="PDV" items={navPdvItems} />}
 
-						{!isUsuario && (
+						{!isUsuario && exibirGourmet && (
 							<NavDocuments label="Gourmet" items={navGourmetItems} />
 						)}
 
 						<NavDocuments label="Cadastros" items={DATA.navRegistros} />
-						<NavDocuments label="Notas fiscais" items={DATA.navNotaFiscal} />
+						<NavDocuments label="Notas fiscais" items={navNotaFiscalItems} />
 						<NavDocuments label="Tributos" items={DATA.navTributos} />
 						<NavDocuments label="Financeiro" items={DATA.navFinanceiro} />
 						<NavDocuments label="Painel do contador" items={DATA.others} />

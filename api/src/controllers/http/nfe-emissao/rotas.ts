@@ -1,5 +1,7 @@
 import type { FastifyInstance } from "fastify";
+import { FEATURES_SAAS } from "@/constants/saas-catalog.js";
 import { verifyJwt } from "../../middleware/verify-jwt.js";
+import { requireFeature } from "../../middleware/verify-plano.js";
 import { cancelarNfe } from "./cancelar-nfe.js";
 import { emitirNfe, listarNfesEmitidas } from "./emitir-nfe.js";
 import { inutilizarNfe } from "./inutilizar-nfe.js";
@@ -13,6 +15,7 @@ import { transmitirNfe } from "./transmitir-nfe.js";
 
 export async function nfeEmissaoRotas(app: FastifyInstance) {
 	app.addHook("onRequest", verifyJwt);
+	app.addHook("onRequest", requireFeature(FEATURES_SAAS.NOTAS_FISCAIS));
 
 	app.post("/nfe/sefaz/status", { handler: consultarStatusSefaz });
 	app.post("/nfe/homologacao/testar", {

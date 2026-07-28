@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/use-auth";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { useEntitlements } from "@/hooks/use-plano";
 import { EMPRESAS_USUARIO_QUERY_KEY } from "@/hooks/use-empresas-usuario";
 import { PageContainer } from "../../components/page-container";
 
@@ -34,6 +35,7 @@ export default function NovaEmpresaPage() {
 	const { createCompany, selecionarEmpresa, listarEmpresas } = useEmpresa();
 	const router = useRouter();
 	const queryClient = useQueryClient();
+	const { limites } = useEntitlements();
 
 	// Buscar empresas do usuário (onde ele é proprietário) para verificar se é a primeira empresa
 	const { data: empresasDoUsuario } = useQuery({
@@ -118,6 +120,21 @@ export default function NovaEmpresaPage() {
 	});
 
 	const onSubmit = (data: CriarEmpresaFormData) => {
+		if (
+			limites.maxempresas > 0 &&
+			(empresasDoUsuario?.length ?? 0) >= limites.maxempresas
+		) {
+			toast.error(
+				"Limite de empresas atingido. Faça upgrade do plano para continuar.",
+				{
+					action: {
+						label: "Ver planos",
+						onClick: () => router.push("/meus-planos"),
+					},
+				},
+			);
+			return;
+		}
 		criarEmpresa(data);
 	};
 
