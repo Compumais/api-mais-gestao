@@ -1,5 +1,5 @@
 import {
-    IconCashRegister,
+	IconCashRegister,
 	IconCoins,
 	IconDashboard,
 	IconFileInvoice,
@@ -142,6 +142,10 @@ export const DATA = {
 				{
 					title: "Pedidos (DAV)",
 					url: "/pedidos",
+				},
+				{
+					title: "Ordens de serviço",
+					url: "/ordens-servico",
 				},
 			],
 		},
