@@ -75,7 +75,8 @@ export const ordemServicoFormSchema = z.object({
 	...extrasFormSchema,
 });
 
-export type OrdemServicoFormData = z.infer<typeof ordemServicoFormSchema>;
+export type OrdemServicoFormInput = z.input<typeof ordemServicoFormSchema>;
+export type OrdemServicoFormData = z.output<typeof ordemServicoFormSchema>;
 
 export const ROTULOS_CAMPOS_ORDEM_SERVICO: Record<string, string> = {
 	idcliente: "Cliente",
@@ -184,7 +185,10 @@ export const configuracaoOrdemServicoFormSchema = z.object({
 	camposextras: z.array(campoExtraConfigSchema).max(16).optional(),
 });
 
-export type ConfiguracaoOrdemServicoFormData = z.infer<
+export type ConfiguracaoOrdemServicoFormInput = z.input<
+	typeof configuracaoOrdemServicoFormSchema
+>;
+export type ConfiguracaoOrdemServicoFormData = z.output<
 	typeof configuracaoOrdemServicoFormSchema
 >;
 

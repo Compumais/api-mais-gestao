@@ -33,6 +33,7 @@ import {
 } from "@/hooks/use-ordem-servico";
 import {
 	type OrdemServicoFormData,
+	type OrdemServicoFormInput,
 	ordemServicoFormSchema,
 } from "@/schemas/ordem-servico.schema";
 import { areaService } from "@/services/area.service";
@@ -114,7 +115,11 @@ export default function OrdemServicoDetalhePage({
 	const atualizar = useAtualizarOrdemServico(id);
 	const excluir = useExcluirOrdemServico();
 
-	const form = useForm<OrdemServicoFormData>({
+	const form = useForm<
+		OrdemServicoFormInput,
+		unknown,
+		OrdemServicoFormData
+	>({
 		resolver: zodResolver(ordemServicoFormSchema),
 		defaultValues: {
 			orcamento: 0,
@@ -272,7 +277,7 @@ export default function OrdemServicoDetalhePage({
 		}
 	}
 
-	function onInvalid(erros: FieldErrors<OrdemServicoFormData>) {
+	function onInvalid(erros: FieldErrors<OrdemServicoFormInput>) {
 		const mensagens = listarErrosFormularioOs(
 			erros as Record<string, unknown>,
 		);

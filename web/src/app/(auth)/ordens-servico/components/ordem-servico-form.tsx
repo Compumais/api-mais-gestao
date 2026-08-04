@@ -19,14 +19,14 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import type { OrdemServicoFormData } from "@/schemas/ordem-servico.schema";
+import type { OrdemServicoFormData, OrdemServicoFormInput } from "@/schemas/ordem-servico.schema";
 import type { CampoExtraOrdemServico } from "@/services/ordem-servico.service";
 import { camposExtrasAtivos } from "@/util/ordem-servico-ui";
 
 type Opcao = { value: string; label: string };
 
 type OrdemServicoFormProps = {
-	form: UseFormReturn<OrdemServicoFormData>;
+	form: UseFormReturn<OrdemServicoFormInput, unknown, OrdemServicoFormData>;
 	opcoesClientes: Opcao[];
 	opcoesObjetos: Opcao[];
 	opcoesAreas: Opcao[];
@@ -86,7 +86,7 @@ export function OrdemServicoForm({
 							render={({ field }) => (
 								<Combobox
 									options={opcoesClientes}
-									value={field.value ?? ""}
+									value={typeof field.value === "string" ? field.value : ""}
 									onChange={(value) => field.onChange(value || null)}
 									placeholder="Selecione o cliente"
 									searchPlaceholder="Buscar cliente..."
@@ -105,7 +105,7 @@ export function OrdemServicoForm({
 								render={({ field }) => (
 									<Combobox
 										options={opcoesObjetos}
-										value={field.value ?? ""}
+										value={typeof field.value === "string" ? field.value : ""}
 										onChange={(value) => field.onChange(value || null)}
 										placeholder="Selecione o objeto"
 										searchPlaceholder="Buscar objeto..."
@@ -125,7 +125,7 @@ export function OrdemServicoForm({
 								render={({ field }) => (
 									<Combobox
 										options={opcoesAreas}
-										value={field.value ?? ""}
+										value={typeof field.value === "string" ? field.value : ""}
 										onChange={(value) => field.onChange(value || null)}
 										placeholder="Selecione a área"
 										searchPlaceholder="Buscar área..."
@@ -145,7 +145,7 @@ export function OrdemServicoForm({
 								render={({ field }) => (
 									<Combobox
 										options={opcoesTiposProblema}
-										value={field.value ?? ""}
+										value={typeof field.value === "string" ? field.value : ""}
 										onChange={(value) => field.onChange(value || null)}
 										placeholder="Selecione o tipo"
 										searchPlaceholder="Buscar tipo..."
@@ -164,7 +164,7 @@ export function OrdemServicoForm({
 							render={({ field }) => (
 								<Combobox
 									options={opcoesAtendentes}
-									value={field.value ?? ""}
+									value={typeof field.value === "string" ? field.value : ""}
 									onChange={(value) => field.onChange(value || null)}
 									placeholder="Selecione o atendente"
 									searchPlaceholder="Buscar..."
@@ -182,7 +182,7 @@ export function OrdemServicoForm({
 							render={({ field }) => (
 								<Combobox
 									options={opcoesTecnicos}
-									value={field.value ?? ""}
+									value={typeof field.value === "string" ? field.value : ""}
 									onChange={(value) => field.onChange(value || null)}
 									placeholder="Selecione o técnico"
 									searchPlaceholder="Buscar..."
@@ -255,7 +255,7 @@ export function OrdemServicoForm({
 							render={({ field }) => (
 								<Combobox
 									options={opcoesCondicoes}
-									value={field.value ?? ""}
+									value={typeof field.value === "string" ? field.value : ""}
 									onChange={(value) => field.onChange(value || null)}
 									placeholder="Selecione"
 									searchPlaceholder="Buscar..."
@@ -273,7 +273,7 @@ export function OrdemServicoForm({
 							render={({ field }) => (
 								<Combobox
 									options={opcoesTiposDocumento}
-									value={field.value ?? ""}
+									value={typeof field.value === "string" ? field.value : ""}
 									onChange={(value) => field.onChange(value || null)}
 									placeholder="Selecione"
 									searchPlaceholder="Buscar..."
