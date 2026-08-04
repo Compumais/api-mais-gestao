@@ -1,3 +1,4 @@
+import type { Icon } from "@tabler/icons-react";
 import {
 	IconCashRegister,
 	IconCoins,
@@ -13,6 +14,21 @@ import {
 	IconTools,
 	IconToolsKitchen2,
 } from "@tabler/icons-react";
+import type { AcessoNavegacao } from "@/lib/acesso-navegacao";
+
+export type NavItem = {
+	title: string;
+	url?: string;
+	icon?: Icon;
+	items?: NavSubItem[];
+	acesso?: AcessoNavegacao;
+};
+
+export type NavSubItem = {
+	title: string;
+	url: string;
+	acesso?: AcessoNavegacao;
+};
 
 export const DATA = {
 	navMain: [
@@ -21,7 +37,7 @@ export const DATA = {
 			url: "/dashboard",
 			icon: IconDashboard,
 		},
-	],
+	] satisfies NavItem[],
 	navPdv: [
 		{
 			title: "PDV",
@@ -38,6 +54,7 @@ export const DATA = {
 				{
 					title: "Pedidos da maquininha",
 					url: "/pedidos?origem=POS",
+					acesso: { feature: "notas_fiscais" },
 				},
 				{
 					title: "Fechamentos de caixa",
@@ -45,23 +62,29 @@ export const DATA = {
 				},
 			],
 		},
-	],
+	] satisfies NavItem[],
 	navGourmet: [
 		{
 			title: "Gourmet",
 			icon: IconToolsKitchen2,
+			acesso: { modulo: "gourmet" },
 			items: [
 				{
 					title: "Mesas",
 					url: "/gourmet",
+					acesso: { modulo: "gourmet" },
 				},
 				{
 					title: "Garçom",
 					url: "/garcom",
+					acesso: {
+						modulo: "gourmet",
+						perfis: ["proprietario", "admin", "garcom"],
+					},
 				},
 			],
 		},
-	],
+	] satisfies NavItem[],
 	navRegistros: [
 		{
 			title: "Cadastros",
@@ -71,49 +94,73 @@ export const DATA = {
 					title: "Clientes",
 					url: "/clientes",
 				},
-				// {
-				// 	title: "Comissionados",
-				// 	url: "/comissionados",
-				// },
-				// {
-				// 	title: "Compradores",
-				// 	url: "/compradores",
-				// },
 				{
 					title: "Fornecedores",
 					url: "/fornecedores",
+					acesso: {
+						perfis: ["proprietario", "admin", "financeiro"],
+					},
 				},
 				{
 					title: "Produtos",
 					url: "/produtos",
+					acesso: {
+						perfis: ["proprietario", "admin", "financeiro"],
+					},
 				},
 				{
 					title: "Estoque",
 					url: "/estoque",
+					acesso: {
+						perfis: ["proprietario", "admin", "financeiro"],
+					},
 				},
 				{
 					title: "Grupos",
 					url: "/grupos",
+					acesso: {
+						perfis: ["proprietario", "admin", "financeiro"],
+					},
 				},
 				{
 					title: "Unidades de medida",
 					url: "/unidade-medida",
+					acesso: {
+						perfis: ["proprietario", "admin", "financeiro"],
+					},
 				},
 				{
 					title: "Fatores de conversão",
 					url: "/fator-conversao",
+					acesso: {
+						perfis: ["proprietario", "admin", "financeiro"],
+					},
 				},
 				{
 					title: "Meios de pagamento",
 					url: "/meios-pagamento",
+					acesso: {
+						perfis: ["proprietario", "admin", "financeiro"],
+					},
+				},
+				{
+					title: "Tipos de problema",
+					url: "/tipos-problema",
+					acesso: {
+						feature: "ordem_servico",
+						perfis: ["proprietario", "admin", "financeiro", "usuario"],
+					},
 				},
 				{
 					title: "Usuários",
 					url: "/usuarios",
+					acesso: {
+						perfis: ["proprietario", "admin"],
+					},
 				},
 			],
 		},
-	],
+	] satisfies NavItem[],
 	navNotaFiscal: [
 		{
 			title: "Nota fiscal",
@@ -122,38 +169,67 @@ export const DATA = {
 				{
 					title: "Nota fiscal de compra",
 					url: "/nota-fiscal-compra",
+					acesso: {
+						perfis: ["proprietario", "admin", "financeiro"],
+					},
 				},
 				{
 					title: "Nota fiscal de venda",
 					url: "/nota-fiscal-venda",
+					acesso: {
+						feature: "notas_fiscais",
+						perfis: ["proprietario", "admin", "financeiro"],
+					},
 				},
 				{
 					title: "Nota fiscal de serviço",
 					url: "/nota-fiscal-servico",
+					acesso: {
+						modulo: "nfse",
+						perfis: ["proprietario", "admin", "financeiro"],
+					},
 				},
 				{
 					title: "Captura SEFAZ",
 					url: "/nota-fiscal-compra/captura-sefaz",
+					acesso: {
+						perfis: ["proprietario", "admin", "financeiro"],
+					},
 				},
 				{
 					title: "Consulta NFC-e",
 					url: "/nfce",
+					acesso: {
+						feature: "notas_fiscais",
+						perfis: ["proprietario", "admin", "financeiro"],
+					},
 				},
 				{
 					title: "Pedidos (DAV)",
 					url: "/pedidos",
+					acesso: {
+						feature: "notas_fiscais",
+						perfis: ["proprietario", "admin", "financeiro", "usuario"],
+					},
 				},
 				{
 					title: "Ordens de serviço",
 					url: "/ordens-servico",
+					acesso: {
+						feature: "ordem_servico",
+						perfis: ["proprietario", "admin", "financeiro", "usuario"],
+					},
 				},
 			],
 		},
-	],
+	] satisfies NavItem[],
 	navTributos: [
 		{
 			title: "Tributos",
 			icon: IconReceiptTax,
+			acesso: {
+				perfis: ["proprietario", "admin", "financeiro"],
+			},
 			items: [
 				{
 					title: "Naturezas",
@@ -177,15 +253,21 @@ export const DATA = {
 				},
 			],
 		},
-	],
+	] satisfies NavItem[],
 	navFinanceiro: [
 		{
 			title: "Financeiro",
 			icon: IconCoins,
+			acesso: {
+				perfis: ["proprietario", "admin", "financeiro"],
+			},
 			items: [
 				{
 					title: "Plano de contas",
 					url: "/plano-contas",
+					acesso: {
+						perfis: ["proprietario", "admin", "financeiro"],
+					},
 				},
 				{
 					title: "Bancos",
@@ -217,11 +299,14 @@ export const DATA = {
 				},
 			],
 		},
-	],
+	] satisfies NavItem[],
 	others: [
 		{
 			title: "Contabilidade",
 			icon: IconReportMoney,
+			acesso: {
+				perfis: ["proprietario", "admin", "financeiro"],
+			},
 			items: [
 				{
 					title: "Configuração",
@@ -249,11 +334,14 @@ export const DATA = {
 				},
 			],
 		},
-	],
+	] satisfies NavItem[],
 	navFerramentas: [
 		{
 			title: "Ferramentas",
 			icon: IconTools,
+			acesso: {
+				perfis: ["proprietario", "admin"],
+			},
 			items: [
 				{
 					title: "Agendar tarefas",
@@ -273,7 +361,7 @@ export const DATA = {
 				},
 			],
 		},
-	],
+	] satisfies NavItem[],
 	navSecondary: [
 		{
 			title: "Configurações",
@@ -284,6 +372,9 @@ export const DATA = {
 			title: "Auditoria",
 			url: "/auditoria",
 			icon: IconHistory,
+			acesso: {
+				perfis: ["proprietario", "admin"],
+			},
 		},
 		{
 			title: "Ajuda",
@@ -295,5 +386,5 @@ export const DATA = {
 			url: "#",
 			icon: IconSearch,
 		},
-	],
+	] satisfies NavItem[],
 };

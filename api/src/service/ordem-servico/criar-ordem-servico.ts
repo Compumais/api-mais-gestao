@@ -25,6 +25,7 @@ import {
 	httpErroInterno,
 	httpProibido,
 } from "@/util/http-util.js";
+import { validarUsuariosDaEmpresa } from "@/util/validar-usuario-empresa.js";
 
 type CriarOrdemServicoParametros = {
 	dadosOrdemServico: Omit<NovoOrdemServico, "id" | "codigo"> & {
@@ -59,6 +60,17 @@ export async function criarOrdemServicoService({
 		return httpBadRequest(validacaoExtras.erro ?? "Extras inválidos");
 	}
 
+	const erroUsuarios = await validarUsuariosDaEmpresa(
+		[
+			{ id: dadosOrdemServico.idatendente, rotulo: "Atendente" },
+			{ id: dadosOrdemServico.idultimotecnico, rotulo: "Técnico" },
+		],
+		dadosOrdemServico.idempresa,
+	);
+	if (erroUsuarios) {
+		return httpBadRequest(erroUsuarios);
+	}
+
 	const tipoAberta = await buscarTipoEventoPadrao(
 		dadosOrdemServico.idempresa,
 		"ABERTA",
@@ -67,28 +79,50 @@ export async function criarOrdemServicoService({
 		return httpErroInterno();
 	}
 
+	const payload: Omit<NovoOrdemServico, "id" | "codigo"> & {
+		codigo?: number | undefined;
+	} = { ...dadosOrdemServico };
+
+	if (config.usaarea === 0) {
+		payload.idarea = null;
+	}
+	if (config.usaobjeto === 0) {
+		payload.idobjeto = null;
+	}
+	if (config.usatipoproblema === 0) {
+		payload.idtipoproblema = null;
+	}
+	if (config.usadadosveiculo === 0) {
+		payload.marca = null;
+		payload.modelo = null;
+		payload.placa = null;
+		payload.renavam = null;
+		payload.anofabricacao = null;
+		payload.numerofabricacao = null;
+	}
+
 	const agora = new Date().toISOString();
 	const codigo =
-		dadosOrdemServico.codigo ??
-		(await buscarProximoCodigoOrdemServico(dadosOrdemServico.idempresa));
+		payload.codigo ??
+		(await buscarProximoCodigoOrdemServico(payload.idempresa));
 
 	const registro = await criarOrdemServico({
-		...dadosOrdemServico,
+		...payload,
 		id: uuidv4(),
 		codigo,
 		idusuario,
 		status: tipoAberta.status,
-		orcamento: dadosOrdemServico.orcamento ?? 0,
+		orcamento: payload.orcamento ?? 0,
 		existeevento: 1,
 		dataultimoevento: agora,
 		descricaotipoultimoevento: tipoAberta.descricao,
 		descricaoultimoevento: "Ordem de serviço aberta",
-		data: dadosOrdemServico.data ?? agora,
-		dataos: dadosOrdemServico.dataos ?? agora.substring(0, 10),
+		data: payload.data ?? agora,
+		dataos: payload.dataos ?? agora.substring(0, 10),
 		currenttimemillis: Date.now(),
-		valor: dadosOrdemServico.valor ?? "0.00",
-		valorprodutos: dadosOrdemServico.valorprodutos ?? "0.00",
-		valorservicos: dadosOrdemServico.valorservicos ?? "0.00",
+		valor: payload.valor ?? "0.00",
+		valorprodutos: payload.valorprodutos ?? "0.00",
+		valorservicos: payload.valorservicos ?? "0.00",
 	});
 
 	if (!registro) {

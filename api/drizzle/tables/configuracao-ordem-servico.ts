@@ -39,6 +39,9 @@ export const configuracaoordemservico = pgTable(
 		mostrarcamposfinalizaritem: smallint().default(0),
 		pedirprimeiroobjeto: smallint().default(0),
 		tecnicoobrigatorio: smallint().default(0),
+		usaarea: smallint().default(1),
+		usaobjeto: smallint().default(1),
+		usatipoproblema: smallint().default(1),
 		usadadosveiculo: smallint().default(1),
 		camposextras: jsonb("camposextras")
 			.$type<CampoExtraOrdemServico[]>()

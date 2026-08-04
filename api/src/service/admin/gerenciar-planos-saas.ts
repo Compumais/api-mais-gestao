@@ -228,6 +228,7 @@ export async function atribuirEntitlementAdminService(params: {
 
 	const entitlement = await buscarEntitlementService({
 		idusuario: params.idusuario,
+		modo: "direto",
 	});
 	return httpOk(entitlement);
 }
@@ -240,6 +241,9 @@ export async function buscarEntitlementUsuarioAdminService(idusuario: string) {
 			"Planos e módulos só se aplicam a usuários proprietários",
 		);
 	}
-	const entitlement = await buscarEntitlementService({ idusuario });
+	const entitlement = await buscarEntitlementService({
+		idusuario,
+		modo: "direto",
+	});
 	return httpOk(entitlement);
 }

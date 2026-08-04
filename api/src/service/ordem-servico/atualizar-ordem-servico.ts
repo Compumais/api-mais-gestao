@@ -20,6 +20,7 @@ import {
 	httpOk,
 	httpProibido,
 } from "@/util/http-util.js";
+import { validarUsuariosDaEmpresa } from "@/util/validar-usuario-empresa.js";
 
 const CAMPOS_BLOQUEADOS = new Set([
 	"id",
@@ -84,6 +85,47 @@ export async function atualizarOrdemServicoService({
 
 	if (!validacaoExtras.valido) {
 		return httpBadRequest(validacaoExtras.erro ?? "Extras inválidos");
+	}
+
+	const erroUsuarios = await validarUsuariosDaEmpresa(
+		[
+			{
+				id:
+					dadosLimpos.idatendente !== undefined
+						? dadosLimpos.idatendente
+						: registroExistente.idatendente,
+				rotulo: "Atendente",
+			},
+			{
+				id:
+					dadosLimpos.idultimotecnico !== undefined
+						? dadosLimpos.idultimotecnico
+						: registroExistente.idultimotecnico,
+				rotulo: "Técnico",
+			},
+		],
+		idempresa,
+	);
+	if (erroUsuarios) {
+		return httpBadRequest(erroUsuarios);
+	}
+
+	if (config.usaarea === 0) {
+		dadosLimpos.idarea = null;
+	}
+	if (config.usaobjeto === 0) {
+		dadosLimpos.idobjeto = null;
+	}
+	if (config.usatipoproblema === 0) {
+		dadosLimpos.idtipoproblema = null;
+	}
+	if (config.usadadosveiculo === 0) {
+		dadosLimpos.marca = null;
+		dadosLimpos.modelo = null;
+		dadosLimpos.placa = null;
+		dadosLimpos.renavam = null;
+		dadosLimpos.anofabricacao = null;
+		dadosLimpos.numerofabricacao = null;
 	}
 
 	const registroAtualizado = await atualizarOrdemServico(

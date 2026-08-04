@@ -71,6 +71,9 @@ export function OrdemServicoConfigForm({
 			mostrarcamposfinalizaritem: 0,
 			pedirprimeiroobjeto: 0,
 			tecnicoobrigatorio: 0,
+			usaarea: 1,
+			usaobjeto: 1,
+			usatipoproblema: 1,
 			usadadosveiculo: 1,
 		},
 	});
@@ -100,6 +103,9 @@ export function OrdemServicoConfigForm({
 			mostrarcamposfinalizaritem: config.mostrarcamposfinalizaritem ?? 0,
 			pedirprimeiroobjeto: config.pedirprimeiroobjeto ?? 0,
 			tecnicoobrigatorio: config.tecnicoobrigatorio ?? 0,
+			usaarea: config.usaarea ?? 1,
+			usaobjeto: config.usaobjeto ?? 1,
+			usatipoproblema: config.usatipoproblema ?? 1,
 			usadadosveiculo: config.usadadosveiculo ?? 1,
 			idcfopexternaproduto: config.idcfopexternaproduto,
 			idcfopexternaservico: config.idcfopexternaservico,
@@ -243,6 +249,12 @@ export function OrdemServicoConfigForm({
 										"usadadosveiculo",
 										"Utiliza dados de veículo na ordem de serviço",
 									],
+									["usaarea", "Utiliza área na ordem de serviço"],
+									["usaobjeto", "Utiliza objeto na ordem de serviço"],
+									[
+										"usatipoproblema",
+										"Utiliza tipo de problema na ordem de serviço",
+									],
 								] as const
 							).map(([nome, label]) => (
 								<div key={nome} className="flex items-center gap-2">
@@ -253,8 +265,17 @@ export function OrdemServicoConfigForm({
 											<Checkbox
 												id={`${idBase}-${nome}`}
 												checked={field.value === 1}
-												disabled={!podeEditar}
-												onCheckedChange={(v) => field.onChange(v ? 1 : 0)}
+												disabled={
+													!podeEditar ||
+													(nome === "pedirprimeiroobjeto" &&
+														form.watch("usaobjeto") === 0)
+												}
+												onCheckedChange={(v) => {
+													field.onChange(v ? 1 : 0);
+													if (nome === "usaobjeto" && !v) {
+														form.setValue("pedirprimeiroobjeto", 0);
+													}
+												}}
 											/>
 										)}
 									/>

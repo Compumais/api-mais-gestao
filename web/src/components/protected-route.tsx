@@ -6,6 +6,7 @@ import { CPlusIcon } from "@/components/icons/c-plus";
 import { useAuth } from "@/hooks/use-auth";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { useEmpresasUsuario } from "@/hooks/use-empresas-usuario";
+import { useEntitlements } from "@/hooks/use-plano";
 import { AUTH_SESSION_COOKIE } from "@/lib/auth-session-cookie";
 import { getSessionToken } from "@/lib/auth-token";
 import {
@@ -14,6 +15,7 @@ import {
 	isRouteAllowedForGarcom,
 	isSuper,
 } from "@/lib/perfis";
+import { podeAcessarRota } from "@/lib/regras-acesso-rotas";
 import {
 	EMPRESA_FORCAR_PRIMEIRA_KEY,
 	EMPRESA_SELECIONADA_KEY,
@@ -36,6 +38,11 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
 	const { isAuthenticated, isLoading, user, isError, refetchUser } = useAuth();
 	const { localStorageEmpresa, selecionarEmpresa } = useEmpresa();
+	const {
+		hasFeature,
+		hasModulo,
+		isLoading: entitlementsLoading,
+	} = useEntitlements();
 	const router = useRouter();
 	const pathname = usePathname();
 	const [isMounted, setIsMounted] = useState(false);
@@ -72,8 +79,30 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
 		if (isGarcom(user) && !isRouteAllowedForGarcom(pathname)) {
 			router.push(getDefaultRouteForUser(user));
+			return;
 		}
-	}, [isMounted, isLoading, user, pathname, router]);
+
+		if (
+			!isSuper(user) &&
+			!entitlementsLoading &&
+			!podeAcessarRota(pathname, {
+				perfil: user.perfil,
+				hasFeature,
+				hasModulo,
+			})
+		) {
+			router.push(getDefaultRouteForUser(user));
+		}
+	}, [
+		isMounted,
+		isLoading,
+		user,
+		pathname,
+		router,
+		entitlementsLoading,
+		hasFeature,
+		hasModulo,
+	]);
 
 	useEffect(() => {
 		if (!isMounted || !user?.id) return;
@@ -190,6 +219,18 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 	}
 
 	if (isGarcom(user) && !isRouteAllowedForGarcom(pathname)) {
+		return loadingScreen;
+	}
+
+	if (
+		!isSuper(user) &&
+		(entitlementsLoading ||
+			!podeAcessarRota(pathname, {
+				perfil: user.perfil,
+				hasFeature,
+				hasModulo,
+			}))
+	) {
 		return loadingScreen;
 	}
 

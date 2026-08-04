@@ -23,8 +23,8 @@ export function NavSecondary({
 	label: string;
 	items: {
 		title: string;
-		url: string;
-		icon: Icon;
+		url?: string;
+		icon?: Icon;
 	}[];
 } & React.ComponentPropsWithoutRef<typeof SidebarGroup>) {
 	const pathname = usePathname();
@@ -36,7 +36,7 @@ export function NavSecondary({
 			<SidebarGroupContent>
 				<SidebarMenu>
 					{items.map((item) => {
-						const isActive = pathname === item.url;
+						const isActive = !!item.url && pathname === item.url;
 						const isSearch = item.title === "Pesquisar";
 
 						if (isSearch) {
@@ -46,18 +46,22 @@ export function NavSecondary({
 										onClick={() => setOpen(true)}
 										isActive={isActive}
 									>
-										<item.icon />
+										{item.icon ? <item.icon /> : null}
 										<span>{item.title}</span>
 									</SidebarMenuButton>
 								</SidebarMenuItem>
 							);
 						}
 
+						if (!item.url) {
+							return null;
+						}
+
 						return (
 							<SidebarMenuItem key={item.title}>
 								<SidebarMenuButton asChild isActive={isActive}>
 									<Link href={item.url}>
-										<item.icon />
+										{item.icon ? <item.icon /> : null}
 										<span>{item.title}</span>
 									</Link>
 								</SidebarMenuButton>

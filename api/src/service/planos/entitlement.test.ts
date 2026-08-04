@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as empresaRepositories from "@/repositories/empresa-repositories.js";
+import * as entidadeRepositories from "@/repositories/entidade-repositories.js";
 import * as saasRepositories from "@/repositories/saas-catalog-repositories.js";
 import * as usuariosRepositories from "@/repositories/usuarios-repositories.js";
 import {
@@ -9,6 +10,7 @@ import {
 } from "@/service/admin/gerenciar-planos-saas.js";
 import {
 	buscarEntitlementService,
+	EntitlementAcessoNegadoError,
 	usuarioTemFeature,
 	usuarioTemModulo,
 } from "@/service/planos/buscar-plano-efetivo.js";
@@ -16,6 +18,7 @@ import { downgradePlanoService } from "@/service/planos/downgrade-plano.js";
 import { upgradePlanoService } from "@/service/planos/upgrade-plano.js";
 
 vi.mock("@/repositories/empresa-repositories.js");
+vi.mock("@/repositories/entidade-repositories.js");
 vi.mock("@/repositories/saas-catalog-repositories.js");
 vi.mock("@/repositories/usuarios-repositories.js");
 vi.mock("@/service/asaas/asaas.service.js");
@@ -38,9 +41,14 @@ describe("entitlement SaaS", () => {
 		expect(resultado.status).toBe("SEM_PLANO");
 		expect(resultado.features).toEqual([]);
 		expect(resultado.limites.maxempresas).toBe(0);
+		expect(resultado.idproprietario).toBe("u1");
+		expect(resultado.idempresa).toBeNull();
 	});
 
 	it("resolve features e módulos do proprietário da empresa", async () => {
+		vi.mocked(
+			entidadeRepositories.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(true);
 		vi.mocked(empresaRepositories.buscarEmpresaPorId).mockResolvedValue({
 			id: "e1",
 			idproprietario: "prop-1",
@@ -73,11 +81,138 @@ describe("entitlement SaaS", () => {
 			idempresa: "e1",
 		});
 
-		expect(resultado.idusuario).toBe("prop-1");
+		expect(resultado.idusuario).toBe("operador");
+		expect(resultado.idproprietario).toBe("prop-1");
+		expect(resultado.idempresa).toBe("e1");
 		expect(resultado.plano).toBe("BASIC");
 		expect(resultado.features).toContain("ordem_servico");
 		expect(resultado.modulos).toContain("gourmet");
 		expect(resultado.limites.maxempresas).toBe(1);
+		expect(
+			entidadeRepositories.verificarUsuarioPertenceEmpresa,
+		).toHaveBeenCalledWith("operador", "e1");
+	});
+
+	it("bloqueia entitlement quando usuário não pertence à empresa", async () => {
+		vi.mocked(
+			entidadeRepositories.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(false);
+
+		await expect(
+			buscarEntitlementService({
+				idusuario: "operador",
+				idempresa: "empresa-alheia",
+			}),
+		).rejects.toBeInstanceOf(EntitlementAcessoNegadoError);
+
+		expect(usuariosRepositories.buscarPlanoUsuario).not.toHaveBeenCalled();
+	});
+
+	it("herda planos distintos ao trocar de empresa de proprietários diferentes", async () => {
+		vi.mocked(
+			entidadeRepositories.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(true);
+		vi.mocked(empresaRepositories.buscarEmpresaPorId).mockImplementation(
+			async (id: string) => {
+				if (id === "e-a") {
+					return { id: "e-a", idproprietario: "prop-a" } as never;
+				}
+				return { id: "e-b", idproprietario: "prop-b" } as never;
+			},
+		);
+		vi.mocked(usuariosRepositories.buscarPlanoUsuario).mockImplementation(
+			async (id: string) => {
+				if (id === "prop-a") {
+					return {
+						plano: "BASIC",
+						plano_inicio_ciclo: new Date(),
+						plano_fim_ciclo: new Date(),
+						plano_proximo: null,
+					};
+				}
+				return {
+					plano: "PREMIUM",
+					plano_inicio_ciclo: new Date(),
+					plano_fim_ciclo: new Date(),
+					plano_proximo: null,
+				};
+			},
+		);
+		vi.mocked(saasRepositories.buscarPlanoSaasPorCodigo).mockImplementation(
+			async (codigo: string) =>
+				({
+					id: `plano-${codigo}`,
+					codigo,
+					nome: codigo,
+					valormensal: "10",
+					maxempresas: codigo === "BASIC" ? 1 : 2,
+					maxusuarios: 3,
+					ativo: true,
+				}) as never,
+		);
+		vi.mocked(saasRepositories.listarCodigosFeaturesDoPlano).mockResolvedValue([
+			"ordem_servico",
+		]);
+		vi.mocked(saasRepositories.listarModulosAtivosDoUsuario).mockImplementation(
+			async (id: string) => {
+				if (id === "prop-b") {
+					return [{ codigo: "nfse" }] as never;
+				}
+				return [] as never;
+			},
+		);
+
+		const empA = await buscarEntitlementService({
+			idusuario: "colab",
+			idempresa: "e-a",
+		});
+		const empB = await buscarEntitlementService({
+			idusuario: "colab",
+			idempresa: "e-b",
+		});
+
+		expect(empA.plano).toBe("BASIC");
+		expect(empA.modulos).toEqual([]);
+		expect(empB.plano).toBe("PREMIUM");
+		expect(empB.modulos).toContain("nfse");
+	});
+
+	it("não inclui módulo cancelado na herança", async () => {
+		vi.mocked(
+			entidadeRepositories.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(true);
+		vi.mocked(empresaRepositories.buscarEmpresaPorId).mockResolvedValue({
+			id: "e1",
+			idproprietario: "prop-1",
+		} as never);
+		vi.mocked(usuariosRepositories.buscarPlanoUsuario).mockResolvedValue({
+			plano: "PREMIUM",
+			plano_inicio_ciclo: new Date(),
+			plano_fim_ciclo: new Date(),
+			plano_proximo: null,
+		});
+		vi.mocked(saasRepositories.buscarPlanoSaasPorCodigo).mockResolvedValue({
+			id: "plano-premium",
+			codigo: "PREMIUM",
+			nome: "Premium",
+			valormensal: "199",
+			maxempresas: 2,
+			maxusuarios: 6,
+			ativo: true,
+		} as never);
+		vi.mocked(saasRepositories.listarCodigosFeaturesDoPlano).mockResolvedValue([
+			"notas_fiscais",
+		]);
+		vi.mocked(saasRepositories.listarModulosAtivosDoUsuario).mockResolvedValue(
+			[] as never,
+		);
+
+		const resultado = await buscarEntitlementService({
+			idusuario: "operador",
+			idempresa: "e1",
+		});
+		expect(resultado.modulos).not.toContain("gourmet");
+		expect(resultado.modulos).toEqual([]);
 	});
 
 	it("aceita códigos dinâmicos de plano no entitlement", async () => {

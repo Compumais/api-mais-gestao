@@ -1,6 +1,7 @@
 "use client";
 
-import { ChevronRight, type LucideIcon } from "lucide-react";
+import type { Icon } from "@tabler/icons-react";
+import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 
 import {
@@ -21,20 +22,22 @@ import {
 	SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 
+type NavDocumentsItem = {
+	title: string;
+	icon?: Icon;
+	isActive?: boolean;
+	items?: {
+		title: string;
+		url: string;
+	}[];
+};
+
 export function NavDocuments({
 	label,
 	items,
 }: {
 	label: string;
-	items: {
-		title: string;
-		icon: LucideIcon;
-		isActive?: boolean;
-		items?: {
-			title: string;
-			url: string;
-		}[];
-	}[];
+	items: NavDocumentsItem[];
 }) {
 	return (
 		<SidebarGroup>
@@ -45,7 +48,7 @@ export function NavDocuments({
 						<SidebarMenuItem>
 							<SidebarMenuButton asChild tooltip={item.title}>
 								<div className="flex items-center gap-2">
-									<item.icon />
+									{item.icon ? <item.icon /> : null}
 									<span>{item.title}</span>
 								</div>
 							</SidebarMenuButton>

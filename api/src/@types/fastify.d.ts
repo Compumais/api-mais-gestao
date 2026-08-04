@@ -10,5 +10,9 @@ declare module "fastify" {
 			// Permite adicionar mais informações do usuário futuramente
 			[key: string]: unknown;
 		};
+		empresaContext?: {
+			idempresa: string;
+			idproprietario: string;
+		};
 	}
 }

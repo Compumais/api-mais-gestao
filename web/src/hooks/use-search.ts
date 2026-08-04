@@ -1,8 +1,12 @@
-import { useState, useEffect, useMemo } from "react";
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
 import { SEARCHABLE_PAGES } from "@/constants/search-pages";
 import { useAuth } from "@/hooks/use-auth";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useEntitlements } from "@/hooks/use-plano";
 import { isGarcom, isRouteAllowedForGarcom } from "@/lib/perfis";
+import { podeAcessarRota } from "@/lib/regras-acesso-rotas";
 
 function normalizeText(text: string): string {
 	return text
@@ -16,6 +20,7 @@ export function useSearch() {
 	const [debouncedQuery, setDebouncedQuery] = useState("");
 	const isMobile = useIsMobile();
 	const { user } = useAuth();
+	const { hasFeature, hasModulo } = useEntitlements();
 	const isGarcomUser = isGarcom(user);
 
 	const paginasDisponiveis = useMemo(() => {
@@ -27,8 +32,16 @@ export function useSearch() {
 			pages = pages.filter((page) => isRouteAllowedForGarcom(page.url));
 		}
 
+		pages = pages.filter((page) =>
+			podeAcessarRota(page.url, {
+				perfil: user?.perfil,
+				hasFeature,
+				hasModulo,
+			}),
+		);
+
 		return pages;
-	}, [isMobile, isGarcomUser]);
+	}, [isMobile, isGarcomUser, user?.perfil, hasFeature, hasModulo]);
 
 	// Debounce do termo de busca (300ms)
 	useEffect(() => {

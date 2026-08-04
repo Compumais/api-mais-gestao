@@ -176,14 +176,14 @@ export const ordemservico = pgTable(
 			.onDelete("set null"),
 		foreignKey({
 			columns: [table.idatendente],
-			foreignColumns: [entidade.id],
+			foreignColumns: [usuarios.id],
 			name: "fk_ordemservico_atendente",
 		})
 			.onUpdate("cascade")
 			.onDelete("set null"),
 		foreignKey({
 			columns: [table.idultimotecnico],
-			foreignColumns: [entidade.id],
+			foreignColumns: [usuarios.id],
 			name: "fk_ordemservico_ultimo_tecnico",
 		})
 			.onUpdate("cascade")

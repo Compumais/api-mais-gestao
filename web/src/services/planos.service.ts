@@ -46,6 +46,8 @@ export interface PlanoData {
 	modulos: string[];
 	valor: number;
 	nomePlano: string | null;
+	idempresa?: string | null;
+	idproprietario?: string | null;
 	mensagem?: string;
 }
 

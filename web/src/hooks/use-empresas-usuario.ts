@@ -29,8 +29,10 @@ export function empresasUsuarioQueryOptions(userId: string) {
 export function useEmpresasUsuario() {
 	const { user, isAuthenticated, isLoading: isLoadingAuth } = useAuth();
 
-	return useQuery({
+	const query = useQuery({
 		...empresasUsuarioQueryOptions(user?.id ?? ""),
 		enabled: !!user?.id && isAuthenticated && !isLoadingAuth,
 	});
+
+	return query;
 }

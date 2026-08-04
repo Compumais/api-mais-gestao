@@ -62,6 +62,7 @@ import {
 	useTiposOrdemServicoEvento,
 } from "@/hooks/use-ordem-servico";
 import { entidadesService } from "@/services/entidades.service";
+import { usuariosService } from "@/services/usuarios.service";
 import type { OrdemServico } from "@/services/ordem-servico.service";
 import {
 	formatarDataOs,
@@ -127,6 +128,15 @@ export default function OrdensServicoPage() {
 		enabled: !!empresa?.id,
 	});
 
+	const { data: usuariosLista } = useQuery({
+		queryKey: ["usuarios-os-lista", empresa?.id],
+		queryFn: () =>
+			usuariosService.listarTodos({
+				idempresa: empresa?.id ?? "",
+			}),
+		enabled: !!empresa?.id,
+	});
+
 	const opcoesClientes = useMemo(
 		() =>
 			(entidadesLista ?? [])
@@ -144,15 +154,11 @@ export default function OrdensServicoPage() {
 
 	const opcoesTecnicos = useMemo(
 		() =>
-			(entidadesLista ?? []).map((item) => ({
+			(usuariosLista ?? []).map((item) => ({
 				value: item.id,
-				label:
-					item.razaosocial?.trim() ||
-					item.nome?.trim() ||
-					item.cnpjcpf ||
-					item.id,
+				label: item.nome || item.id,
 			})),
-		[entidadesLista],
+		[usuariosLista],
 	);
 
 	const { data, isLoading } = useOrdensServico(

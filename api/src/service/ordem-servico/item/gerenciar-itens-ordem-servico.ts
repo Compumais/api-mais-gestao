@@ -30,6 +30,7 @@ import {
 	httpProibido,
 	httpSemConteudo,
 } from "@/util/http-util.js";
+import { validarUsuarioDaEmpresa } from "@/util/validar-usuario-empresa.js";
 
 async function validarAcessoOs(
 	ordemServicoId: string,
@@ -95,6 +96,15 @@ export async function criarItemOrdemServicoService(params: {
 	const config = await garantirConfiguracaoOrdemServico(params.idempresa);
 	if (config.tecnicoobrigatorio === 1 && !params.dados.idtecnico) {
 		return httpBadRequest("Técnico obrigatório para itens da ordem de serviço");
+	}
+
+	const erroTecnico = await validarUsuarioDaEmpresa(
+		params.dados.idtecnico,
+		params.idempresa,
+		"Técnico",
+	);
+	if (erroTecnico) {
+		return httpBadRequest(erroTecnico);
 	}
 
 	const quantidade = Number(params.dados.quantidade);
@@ -169,6 +179,15 @@ export async function atualizarItemOrdemServicoService(params: {
 	);
 	if (!item || item.idordemservico !== params.ordemServicoId) {
 		return httpNaoEncontrado();
+	}
+
+	const erroTecnico = await validarUsuarioDaEmpresa(
+		params.dados.idtecnico,
+		params.idempresa,
+		"Técnico",
+	);
+	if (erroTecnico) {
+		return httpBadRequest(erroTecnico);
 	}
 
 	const quantidade = params.dados.quantidade ?? item.quantidade ?? "0";

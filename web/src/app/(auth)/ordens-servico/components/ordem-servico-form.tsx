@@ -37,6 +37,9 @@ type OrdemServicoFormProps = {
 	opcoesTiposDocumento: Opcao[];
 	camposextras?: CampoExtraOrdemServico[];
 	mostrarVeiculoEquipamento?: boolean;
+	mostrarArea?: boolean;
+	mostrarObjeto?: boolean;
+	mostrarTipoProblema?: boolean;
 	desabilitado?: boolean;
 };
 
@@ -52,6 +55,9 @@ export function OrdemServicoForm({
 	opcoesTiposDocumento,
 	camposextras,
 	mostrarVeiculoEquipamento = true,
+	mostrarArea = true,
+	mostrarObjeto = true,
+	mostrarTipoProblema = true,
 	desabilitado = false,
 }: OrdemServicoFormProps) {
 	const idBase = useId();
@@ -90,60 +96,66 @@ export function OrdemServicoForm({
 							)}
 						/>
 					</Field>
-					<Field>
-						<FieldLabel htmlFor="os-objeto">Objeto</FieldLabel>
-						<Controller
-							control={form.control}
-							name="idobjeto"
-							render={({ field }) => (
-								<Combobox
-									options={opcoesObjetos}
-									value={field.value ?? ""}
-									onChange={(value) => field.onChange(value || null)}
-									placeholder="Selecione o objeto"
-									searchPlaceholder="Buscar objeto..."
-									emptyMessage="Nenhum objeto encontrado."
-									disabled={desabilitado}
-								/>
-							)}
-						/>
-					</Field>
-					<Field>
-						<FieldLabel>Área</FieldLabel>
-						<Controller
-							control={form.control}
-							name="idarea"
-							render={({ field }) => (
-								<Combobox
-									options={opcoesAreas}
-									value={field.value ?? ""}
-									onChange={(value) => field.onChange(value || null)}
-									placeholder="Selecione a área"
-									searchPlaceholder="Buscar área..."
-									emptyMessage="Nenhuma área encontrada."
-									disabled={desabilitado}
-								/>
-							)}
-						/>
-					</Field>
-					<Field>
-						<FieldLabel>Tipo de problema</FieldLabel>
-						<Controller
-							control={form.control}
-							name="idtipoproblema"
-							render={({ field }) => (
-								<Combobox
-									options={opcoesTiposProblema}
-									value={field.value ?? ""}
-									onChange={(value) => field.onChange(value || null)}
-									placeholder="Selecione o tipo"
-									searchPlaceholder="Buscar tipo..."
-									emptyMessage="Nenhum tipo encontrado."
-									disabled={desabilitado}
-								/>
-							)}
-						/>
-					</Field>
+					{mostrarObjeto && (
+						<Field>
+							<FieldLabel htmlFor="os-objeto">Objeto</FieldLabel>
+							<Controller
+								control={form.control}
+								name="idobjeto"
+								render={({ field }) => (
+									<Combobox
+										options={opcoesObjetos}
+										value={field.value ?? ""}
+										onChange={(value) => field.onChange(value || null)}
+										placeholder="Selecione o objeto"
+										searchPlaceholder="Buscar objeto..."
+										emptyMessage="Nenhum objeto encontrado."
+										disabled={desabilitado}
+									/>
+								)}
+							/>
+						</Field>
+					)}
+					{mostrarArea && (
+						<Field>
+							<FieldLabel>Área</FieldLabel>
+							<Controller
+								control={form.control}
+								name="idarea"
+								render={({ field }) => (
+									<Combobox
+										options={opcoesAreas}
+										value={field.value ?? ""}
+										onChange={(value) => field.onChange(value || null)}
+										placeholder="Selecione a área"
+										searchPlaceholder="Buscar área..."
+										emptyMessage="Nenhuma área encontrada."
+										disabled={desabilitado}
+									/>
+								)}
+							/>
+						</Field>
+					)}
+					{mostrarTipoProblema && (
+						<Field>
+							<FieldLabel>Tipo de problema</FieldLabel>
+							<Controller
+								control={form.control}
+								name="idtipoproblema"
+								render={({ field }) => (
+									<Combobox
+										options={opcoesTiposProblema}
+										value={field.value ?? ""}
+										onChange={(value) => field.onChange(value || null)}
+										placeholder="Selecione o tipo"
+										searchPlaceholder="Buscar tipo..."
+										emptyMessage="Nenhum tipo encontrado."
+										disabled={desabilitado}
+									/>
+								)}
+							/>
+						</Field>
+					)}
 					<Field>
 						<FieldLabel>Atendente</FieldLabel>
 						<Controller

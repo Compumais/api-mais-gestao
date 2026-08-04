@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { requirePerfil } from "../../middleware/require-perfil.js";
 import { verifyJwt } from "../../middleware/verify-jwt.js";
 import { atualizarPlanoContas } from "./atualizar.js";
 import { buscarPlanoContas } from "./buscar.js";
@@ -16,6 +17,10 @@ const LIMITE_BODY_IMPORTACAO = 20 * 1024 * 1024;
 
 export function planoContasRotas(app: FastifyInstance) {
 	app.addHook("onRequest", verifyJwt);
+	app.addHook(
+		"onRequest",
+		requirePerfil("proprietario", "admin", "financeiro"),
+	);
 
 	app.post("/plano-contas", {
 		schema: schema.criarPlanoContasSchema,

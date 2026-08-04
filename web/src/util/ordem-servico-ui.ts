@@ -4,6 +4,7 @@ import {
 	obterStatusPadraoPorNumero,
 	podeTransicionarStatus,
 } from "@/constants/ordem-servico-status";
+import { ROTULOS_CAMPOS_ORDEM_SERVICO } from "@/schemas/ordem-servico.schema";
 import type {
 	CampoExtraOrdemServico,
 	OrdemServico,
@@ -132,6 +133,31 @@ export function camposExtrasAtivos(
 	camposextras: CampoExtraOrdemServico[] | null | undefined,
 ) {
 	return (camposextras ?? []).filter((campo) => campo.ativo);
+}
+
+/**
+ * Extrai mensagens legíveis dos erros do react-hook-form para toast.
+ */
+export function listarErrosFormularioOs(
+	erros: Record<string, unknown>,
+): string[] {
+	const mensagens: string[] = [];
+
+	for (const [campo, erro] of Object.entries(erros)) {
+		if (!erro || typeof erro !== "object") continue;
+		const message =
+			"message" in erro && typeof erro.message === "string"
+				? erro.message
+				: null;
+		const rotulo = ROTULOS_CAMPOS_ORDEM_SERVICO[campo] ?? campo;
+		if (message) {
+			mensagens.push(`${rotulo}: ${message}`);
+		} else {
+			mensagens.push(`${rotulo}: valor inválido`);
+		}
+	}
+
+	return mensagens;
 }
 
 export function corContrasteTexto(hex: string | null | undefined) {

@@ -31,7 +31,14 @@ import {
 import { formatarPerfilLabel } from "@/lib/perfis";
 import { type AdminUsuario, adminService } from "@/services/admin.service";
 
-const PERFIS = ["usuario", "admin", "proprietario", "garcom", "super"];
+const PERFIS = [
+	"usuario",
+	"admin",
+	"proprietario",
+	"financeiro",
+	"garcom",
+	"super",
+];
 
 function ehProprietario(usuario: AdminUsuario) {
 	return (usuario.perfil ?? []).includes("proprietario");
@@ -287,7 +294,10 @@ export default function SuperUsuariosPage() {
 					{usuarioEntitlement && (
 						<div className="space-y-5">
 							<p className="text-sm text-muted-foreground">
-								Defina os acessos de {usuarioEntitlement.nome}.
+								Defina plano e módulos de {usuarioEntitlement.nome}. Esses
+								acessos ficam no proprietário e são herdados por todos os
+								usuários vinculados às empresas dele. Cada usuário continua
+								limitado pelo próprio perfil (ex.: garçom, financeiro, admin).
 							</p>
 							<div className="space-y-2">
 								<Label>Plano</Label>

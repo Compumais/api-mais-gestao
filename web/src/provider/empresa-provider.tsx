@@ -8,11 +8,16 @@ import {
 	useState,
 } from "react";
 import {
-	empresasService,
-	type Empresa,
-} from "@/services/empresas.service";
+	EMPRESA_FORCAR_PRIMEIRA_KEY,
+	EMPRESA_SELECIONADA_KEY,
+} from "@/constants/empresa-constants";
+import { type Empresa, empresasService } from "@/services/empresas.service";
 
 export type { Empresa };
+export {
+	EMPRESA_FORCAR_PRIMEIRA_KEY,
+	EMPRESA_SELECIONADA_KEY,
+} from "@/constants/empresa-constants";
 
 interface CriarEmpresa {
 	nome: string;
@@ -34,13 +39,12 @@ interface EmpresaContextData {
 		page?: number;
 		limit?: number;
 	}) => Promise<Empresa[]>;
-	createCompany: (data: CriarEmpresa) => ReturnType<typeof empresasService.criar>;
+	createCompany: (
+		data: CriarEmpresa,
+	) => ReturnType<typeof empresasService.criar>;
 }
 
 const EmpresaContext = createContext<EmpresaContextData | null>(null);
-
-export const EMPRESA_SELECIONADA_KEY = "empresa:mais-gestao";
-export const EMPRESA_FORCAR_PRIMEIRA_KEY = "empresa:forcar-primeira";
 
 export function limparEmpresaSelecionada() {
 	if (typeof window === "undefined") return;

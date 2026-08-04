@@ -1,7 +1,7 @@
 import z from "zod";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { httpErroInterno, httpNaoAutorizado } from "src/util/http-util";
-import { substituirNfseService } from "src/service/nfse-emissao/substituir-nfse";
+import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
+import { substituirNfseService } from "@/service/nfse-emissao/substituir-nfse.js";
 
 
 export async function substituirNfse(

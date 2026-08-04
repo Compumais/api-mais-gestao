@@ -3,9 +3,16 @@ import type { Usuario } from "@/model/usuario-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { listarUsuariosPorEmpresa } from "@/repositories/usuarios-repositories.js";
 import { httpOk } from "@/util/http-util.js";
+import { verificarPodeGerenciarUsuarios } from "@/util/verificar-gestao-usuarios.js";
+
+export type UsuarioSelecao = {
+	id: string;
+	nome: string;
+};
 
 type ListarUsuariosParametros = {
 	idusuario: string;
+	roles: string | string[];
 	idempresa: string;
 	nome?: string | null | undefined;
 	email?: string | null | undefined;
@@ -14,7 +21,7 @@ type ListarUsuariosParametros = {
 };
 
 type ListarUsuariosResposta = {
-	data: Usuario[];
+	data: Array<Usuario | UsuarioSelecao>;
 	paginacao: {
 		page: number;
 		limit: number;
@@ -23,8 +30,16 @@ type ListarUsuariosResposta = {
 	};
 };
 
+function sanitizarUsuarioOperacional(usuario: Usuario): UsuarioSelecao {
+	return {
+		id: usuario.id,
+		nome: usuario.nome,
+	};
+}
+
 export async function listarUsuariosService({
 	idusuario,
+	roles,
 	idempresa,
 	nome,
 	email,
@@ -48,18 +63,22 @@ export async function listarUsuariosService({
 		});
 	}
 
+	const podeGerenciar = verificarPodeGerenciarUsuarios(roles);
 	const { usuarios, total } = await listarUsuariosPorEmpresa({
 		idempresa,
 		nome,
-		email,
+		email: podeGerenciar ? email : undefined,
 		page,
 		limit,
 	});
 
 	const totalPages = Math.ceil(total / limit);
+	const data = podeGerenciar
+		? usuarios
+		: usuarios.map(sanitizarUsuarioOperacional);
 
 	return httpOk<ListarUsuariosResposta>({
-		data: usuarios,
+		data,
 		paginacao: {
 			page,
 			limit,

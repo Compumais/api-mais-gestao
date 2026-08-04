@@ -1,4 +1,8 @@
 import axios from "axios";
+import {
+	EMPRESA_SELECIONADA_KEY,
+	HEADER_EMPRESA_ID,
+} from "@/constants/empresa-constants";
 import { getSessionToken } from "@/lib/auth-token";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
@@ -7,6 +11,18 @@ if (!apiUrl) {
 	throw new Error(
 		"NEXT_PUBLIC_API_URL não está definida nas variáveis de ambiente. Configure a variável no arquivo .env.local",
 	);
+}
+
+function obterEmpresaSelecionadaId(): string | null {
+	if (typeof window === "undefined") return null;
+	try {
+		const stored = localStorage.getItem(EMPRESA_SELECIONADA_KEY);
+		if (!stored) return null;
+		const parsed = JSON.parse(stored) as { id?: string };
+		return typeof parsed?.id === "string" ? parsed.id : null;
+	} catch {
+		return null;
+	}
 }
 
 export const api = axios.create({
@@ -22,6 +38,12 @@ api.interceptors.request.use((config) => {
 	if (token) {
 		config.headers.Authorization = `Bearer ${token}`;
 	}
+
+	const idempresa = obterEmpresaSelecionadaId();
+	if (idempresa) {
+		config.headers[HEADER_EMPRESA_ID] = idempresa;
+	}
+
 	return config;
 });
 

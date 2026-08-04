@@ -23,6 +23,7 @@ import {
 	type OrdemServicoStatusCodigo,
 	podeTransicionarStatus,
 } from "@/util/ordem-servico-constants.js";
+import { validarUsuariosDaEmpresa } from "@/util/validar-usuario-empresa.js";
 
 type RegistrarEventoOrdemServicoParametros = {
 	ordemServicoId: string;
@@ -60,6 +61,17 @@ export async function registrarEventoOrdemServicoService({
 		idempresa,
 	);
 	if (!usuarioPertenceEmpresa) return httpProibido();
+
+	const erroTecnicos = await validarUsuariosDaEmpresa(
+		[
+			{ id: idtecnicode, rotulo: "Técnico de origem" },
+			{ id: idtecnicopara, rotulo: "Técnico de destino" },
+		],
+		idempresa,
+	);
+	if (erroTecnicos) {
+		return httpBadRequest(erroTecnicos);
+	}
 
 	const tipo = await buscarTipoOrdemServicoEventoPorId(idtipoevento, idempresa);
 	if (!tipo || tipo.ativo !== 1) {

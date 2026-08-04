@@ -9,7 +9,7 @@ const listarOrdemServicoQuerySchema = z.object({
 	limit: z.coerce.number().int().min(1).max(100).default(10),
 	status: z.coerce.number().int().optional(),
 	idcliente: z.string().uuid().optional(),
-	idultimotecnico: z.string().uuid().optional(),
+	idultimotecnico: z.string().min(1).optional(),
 	codigo: z.coerce.number().int().optional(),
 	orcamento: z.coerce.number().int().optional(),
 	dataInicio: z.string().optional(),

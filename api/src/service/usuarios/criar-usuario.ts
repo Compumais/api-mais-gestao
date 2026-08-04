@@ -80,9 +80,13 @@ export async function criarUsuarioService({
 	}
 
 	const empresa = await buscarEmpresaPorId(idempresa);
+	if (!empresa) {
+		return httpProibido();
+	}
 	const entitlement = await buscarEntitlementService({
-		idusuario: empresa?.idproprietario ?? idusuario,
+		idusuario,
 		idempresa,
+		modo: "operacional",
 	});
 	const usuariosEmpresa = await listarUsuariosPorEmpresa({
 		idempresa,

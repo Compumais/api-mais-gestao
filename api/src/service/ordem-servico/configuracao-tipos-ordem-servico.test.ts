@@ -45,6 +45,38 @@ describe("configuração e tipos de evento OS", () => {
 		expect(resultado.status).toBe(403);
 	});
 
+	it("deve permitir proprietario atualizar flags de classificação", async () => {
+		vi.mocked(
+			configRepositories.atualizarConfiguracaoOrdemServico,
+		).mockResolvedValue({
+			id: "cfg-1",
+			usaarea: 0,
+			usaobjeto: 1,
+			usatipoproblema: 0,
+		} as never);
+
+		const resultado = await atualizarConfiguracaoOrdemServicoService({
+			idempresa: "emp-1",
+			idusuario: "user-1",
+			roles: ["proprietario"],
+			dados: {
+				usaarea: 0,
+				usaobjeto: 1,
+				usatipoproblema: 0,
+			},
+		});
+
+		expect(resultado.success).toBe(true);
+		expect(configRepositories.atualizarConfiguracaoOrdemServico).toHaveBeenCalledWith(
+			"emp-1",
+			expect.objectContaining({
+				usaarea: 0,
+				usaobjeto: 1,
+				usatipoproblema: 0,
+			}),
+		);
+	});
+
 	it("deve permitir proprietario atualizar campos extras", async () => {
 		vi.mocked(
 			configRepositories.atualizarConfiguracaoOrdemServico,
