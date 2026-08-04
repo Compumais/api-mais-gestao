@@ -1,0 +1,50 @@
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
+import { AUTH_SESSION_COOKIE } from "@/lib/auth-session-cookie";
+
+const PUBLIC_ROUTES = new Set([
+	"/",
+	"/entrar",
+	"/registrar",
+	"/termos-de-servico",
+	"/politica-de-privacidade",
+]);
+const AUTH_ROUTES = new Set(["/entrar", "/registrar"]);
+
+function hasSessionCookie(request: NextRequest) {
+	if (request.cookies.get(AUTH_SESSION_COOKIE)?.value === "1") {
+		return true;
+	}
+
+	return request.cookies.getAll().some((cookie) => {
+		const normalizedName = cookie.name.toLowerCase();
+		return (
+			normalizedName.includes("mais-gestao") ||
+			normalizedName.includes("session_token") ||
+			normalizedName.includes("better-auth.session_token")
+		);
+	});
+}
+
+export function proxy(request: NextRequest) {
+	const { pathname } = request.nextUrl;
+	const isPublicRoute = PUBLIC_ROUTES.has(pathname);
+	const isAuthRoute = AUTH_ROUTES.has(pathname);
+	const isAuthenticated = hasSessionCookie(request);
+
+	if (!isAuthenticated && !isPublicRoute) {
+		const loginUrl = new URL("/entrar", request.url);
+		loginUrl.searchParams.set("redirect", pathname);
+		return NextResponse.redirect(loginUrl);
+	}
+
+	if (isAuthenticated && isAuthRoute) {
+		return NextResponse.redirect(new URL("/dashboard", request.url));
+	}
+
+	return NextResponse.next();
+}
+
+export const config = {
+	matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+};

@@ -19,6 +19,7 @@ import {
 } from "@/hooks/use-ordem-servico";
 import {
 	type OrdemServicoFormData,
+	type OrdemServicoFormInput,
 	ordemServicoFormSchema,
 } from "@/schemas/ordem-servico.schema";
 import { areaService } from "@/services/area.service";
@@ -35,7 +36,7 @@ import {
 import { PageContainer } from "../../components/page-container";
 import { OrdemServicoForm } from "../components/ordem-servico-form";
 
-function defaultsForm(): OrdemServicoFormData {
+function defaultsForm(): OrdemServicoFormInput {
 	const extras = Object.fromEntries(
 		ORDEM_SERVICO_CAMPOS_EXTRA.map((campo) => [campo, ""]),
 	) as Record<(typeof ORDEM_SERVICO_CAMPOS_EXTRA)[number], string>;
@@ -132,7 +133,11 @@ export default function NovaOrdemServicoPage() {
 	const mostrarTipoProblema = config?.usatipoproblema !== 0;
 	const mostrarVeiculo = config?.usadadosveiculo !== 0;
 
-	const form = useForm<OrdemServicoFormData>({
+	const form = useForm<
+		OrdemServicoFormInput,
+		unknown,
+		OrdemServicoFormData
+	>({
 		resolver: zodResolver(ordemServicoFormSchema),
 		defaultValues: defaultsForm(),
 	});
@@ -257,7 +262,7 @@ export default function NovaOrdemServicoPage() {
 		}
 	}
 
-	function onInvalid(erros: FieldErrors<OrdemServicoFormData>) {
+	function onInvalid(erros: FieldErrors<OrdemServicoFormInput>) {
 		const mensagens = listarErrosFormularioOs(
 			erros as Record<string, unknown>,
 		);

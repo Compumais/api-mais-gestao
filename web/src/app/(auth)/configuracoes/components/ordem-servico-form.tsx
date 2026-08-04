@@ -36,6 +36,7 @@ import {
 import { hasPerfil } from "@/lib/perfis";
 import {
 	type ConfiguracaoOrdemServicoFormData,
+	type ConfiguracaoOrdemServicoFormInput,
 	configuracaoOrdemServicoFormSchema,
 } from "@/schemas/ordem-servico.schema";
 import { cfopService } from "@/services/cfop.service";
@@ -64,7 +65,11 @@ export function OrdemServicoConfigForm({
 
 	const [extras, setExtras] = useState<CampoExtraOrdemServico[]>([]);
 
-	const form = useForm<ConfiguracaoOrdemServicoFormData>({
+	const form = useForm<
+		ConfiguracaoOrdemServicoFormInput,
+		unknown,
+		ConfiguracaoOrdemServicoFormData
+	>({
 		resolver: zodResolver(configuracaoOrdemServicoFormSchema),
 		defaultValues: {
 			agrupafinanceiroaofaturar: 0,
@@ -311,7 +316,7 @@ export function OrdemServicoConfigForm({
 										render={({ field }) => (
 											<Combobox
 												options={opcoesCfop}
-												value={field.value ?? ""}
+												value={typeof field.value === "string" ? field.value : ""}
 												onChange={(value) => field.onChange(value || null)}
 												placeholder="Selecione"
 												searchPlaceholder="Buscar CFOP..."
