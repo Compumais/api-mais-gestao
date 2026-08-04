@@ -16,7 +16,7 @@ export function NavMain({
 }: {
 	items: {
 		title: string;
-		url: string;
+		url?: string;
 		icon?: Icon;
 	}[];
 }) {
@@ -29,6 +29,7 @@ export function NavMain({
 				</SidebarMenu>
 				<SidebarMenu>
 					{items.map((item) => {
+						if (!item.url) return null;
 						const isActive = pathname === item.url;
 						return (
 							<SidebarMenuItem key={item.title}>
@@ -38,7 +39,7 @@ export function NavMain({
 									isActive={isActive}
 								>
 									<Link href={item.url}>
-										{item.icon && <item.icon />}
+										{item.icon ? <item.icon /> : null}
 										<span>{item.title}</span>
 									</Link>
 								</SidebarMenuButton>

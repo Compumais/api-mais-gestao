@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 import { useForm } from "react-hook-form";
+import type { FieldErrors } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ORDEM_SERVICO_CAMPOS_EXTRA } from "@/constants/ordem-servico-status";
@@ -26,7 +27,11 @@ import { entidadesService } from "@/services/entidades.service";
 import { objetoService } from "@/services/objeto.service";
 import { tipoDocumentoFinanceiroService } from "@/services/tipo-documento-financeiro.service";
 import { tipoProblemaService } from "@/services/tipo-problema.service";
-import { camposExtrasAtivos } from "@/util/ordem-servico-ui";
+import { usuariosService } from "@/services/usuarios.service";
+import {
+	camposExtrasAtivos,
+	listarErrosFormularioOs,
+} from "@/util/ordem-servico-ui";
 import { PageContainer } from "../../components/page-container";
 import { OrdemServicoForm } from "../components/ordem-servico-form";
 
@@ -64,8 +69,19 @@ function defaultsForm(): OrdemServicoFormData {
 function limparPayload(
 	dados: OrdemServicoFormData,
 	camposextrasAtivos: ReturnType<typeof camposExtrasAtivos>,
-	usarDadosVeiculo = true,
+	opcoes: {
+		usarDadosVeiculo?: boolean;
+		usarArea?: boolean;
+		usarObjeto?: boolean;
+		usarTipoProblema?: boolean;
+	} = {},
 ) {
+	const {
+		usarDadosVeiculo = true,
+		usarArea = true,
+		usarObjeto = true,
+		usarTipoProblema = true,
+	} = opcoes;
 	const payload: Record<string, unknown> = { ...dados };
 
 	for (const chave of Object.keys(payload)) {
@@ -88,6 +104,15 @@ function limparPayload(
 		delete payload.placa;
 		delete payload.renavam;
 	}
+	if (!usarArea) {
+		payload.idarea = null;
+	}
+	if (!usarObjeto) {
+		payload.idobjeto = null;
+	}
+	if (!usarTipoProblema) {
+		payload.idtipoproblema = null;
+	}
 
 	if (typeof payload.agendamento === "string" && payload.agendamento) {
 		payload.agendamento = dayjs(payload.agendamento).toISOString();
@@ -102,6 +127,11 @@ export default function NovaOrdemServicoPage() {
 	const { data: config } = useConfiguracaoOrdemServico(empresa?.id ?? null);
 	const criar = useCriarOrdemServico();
 
+	const mostrarArea = config?.usaarea !== 0;
+	const mostrarObjeto = config?.usaobjeto !== 0;
+	const mostrarTipoProblema = config?.usatipoproblema !== 0;
+	const mostrarVeiculo = config?.usadadosveiculo !== 0;
+
 	const form = useForm<OrdemServicoFormData>({
 		resolver: zodResolver(ordemServicoFormSchema),
 		defaultValues: defaultsForm(),
@@ -113,21 +143,27 @@ export default function NovaOrdemServicoPage() {
 			entidadesService.listarTodos({ idempresa: empresa?.id ?? "" }),
 		enabled: !!empresa?.id,
 	});
+	const { data: usuariosLista } = useQuery({
+		queryKey: ["usuarios-os-form", empresa?.id],
+		queryFn: () =>
+			usuariosService.listarTodos({ idempresa: empresa?.id ?? "" }),
+		enabled: !!empresa?.id,
+	});
 	const { data: objetosLista } = useQuery({
 		queryKey: ["objetos-os-form", empresa?.id],
 		queryFn: () => objetoService.listarTodos({ idempresa: empresa?.id ?? "" }),
-		enabled: !!empresa?.id,
+		enabled: !!empresa?.id && mostrarObjeto,
 	});
 	const { data: areasLista } = useQuery({
 		queryKey: ["areas-os-form", empresa?.id],
 		queryFn: () => areaService.listarTodos({ idempresa: empresa?.id ?? "" }),
-		enabled: !!empresa?.id,
+		enabled: !!empresa?.id && mostrarArea,
 	});
 	const { data: tiposProblemaLista } = useQuery({
 		queryKey: ["tipos-problema-os-form", empresa?.id],
 		queryFn: () =>
 			tipoProblemaService.listarTodos({ idempresa: empresa?.id ?? "" }),
-		enabled: !!empresa?.id,
+		enabled: !!empresa?.id && mostrarTipoProblema,
 	});
 	const { data: condicoesLista } = useQuery({
 		queryKey: ["condicoes-os-form", empresa?.id],
@@ -144,17 +180,13 @@ export default function NovaOrdemServicoPage() {
 		enabled: !!empresa?.id,
 	});
 
-	const opcoesEntidades = useMemo(
+	const opcoesUsuarios = useMemo(
 		() =>
-			(entidadesLista ?? []).map((item) => ({
+			(usuariosLista ?? []).map((item) => ({
 				value: item.id,
-				label:
-					item.razaosocial?.trim() ||
-					item.nome?.trim() ||
-					item.cnpjcpf ||
-					item.id,
+				label: item.nome || item.id,
 			})),
-		[entidadesLista],
+		[usuariosLista],
 	);
 	const opcoesClientes = useMemo(
 		() =>
@@ -172,7 +204,10 @@ export default function NovaOrdemServicoPage() {
 	);
 
 	async function onSubmit(dados: OrdemServicoFormData) {
-		if (!empresa) return;
+		if (!empresa) {
+			toast.error("Selecione uma empresa para criar a ordem de serviço");
+			return;
+		}
 
 		const extras = camposExtrasAtivos(config?.camposextras);
 		for (const extra of extras) {
@@ -185,14 +220,22 @@ export default function NovaOrdemServicoPage() {
 			}
 		}
 
-		if (config?.pedirprimeiroobjeto === 1 && !dados.idobjeto) {
+		if (
+			mostrarObjeto &&
+			config?.pedirprimeiroobjeto === 1 &&
+			!dados.idobjeto
+		) {
 			toast.error("Selecione o objeto da ordem de serviço");
 			return;
 		}
 
 		const cliente = entidadesLista?.find((item) => item.id === dados.idcliente);
-		const usarDadosVeiculo = config?.usadadosveiculo !== 0;
-		const payload = limparPayload(dados, extras, usarDadosVeiculo);
+		const payload = limparPayload(dados, extras, {
+			usarDadosVeiculo: mostrarVeiculo,
+			usarArea: mostrarArea,
+			usarObjeto: mostrarObjeto,
+			usarTipoProblema: mostrarTipoProblema,
+		});
 
 		try {
 			const criada = await criar.mutateAsync({
@@ -214,6 +257,18 @@ export default function NovaOrdemServicoPage() {
 		}
 	}
 
+	function onInvalid(erros: FieldErrors<OrdemServicoFormData>) {
+		const mensagens = listarErrosFormularioOs(
+			erros as Record<string, unknown>,
+		);
+		toast.error("Não foi possível criar a ordem de serviço", {
+			description:
+				mensagens.length > 0
+					? mensagens.slice(0, 4).join(" · ")
+					: "Verifique os campos do formulário.",
+		});
+	}
+
 	if (!empresa) {
 		return (
 			<PageContainer>
@@ -230,7 +285,7 @@ export default function NovaOrdemServicoPage() {
 		<PageContainer>
 			<form
 				className="flex flex-col gap-6 p-4 md:p-6"
-				onSubmit={form.handleSubmit(onSubmit)}
+				onSubmit={form.handleSubmit(onSubmit, onInvalid)}
 			>
 				<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 					<div className="space-y-2">
@@ -262,8 +317,8 @@ export default function NovaOrdemServicoPage() {
 							value: item.id,
 							label: item.descricao ?? item.id,
 						}))}
-						opcoesAtendentes={opcoesEntidades}
-						opcoesTecnicos={opcoesEntidades}
+						opcoesAtendentes={opcoesUsuarios}
+						opcoesTecnicos={opcoesUsuarios}
 						opcoesCondicoes={(condicoesLista ?? []).map((item) => ({
 							value: item.id,
 							label: item.descricao ?? item.id,
@@ -273,18 +328,21 @@ export default function NovaOrdemServicoPage() {
 							label: item.descricao ?? item.id,
 						}))}
 						camposextras={config?.camposextras}
-						mostrarVeiculoEquipamento={config?.usadadosveiculo !== 0}
+						mostrarVeiculoEquipamento={mostrarVeiculo}
+						mostrarArea={mostrarArea}
+						mostrarObjeto={mostrarObjeto}
+						mostrarTipoProblema={mostrarTipoProblema}
 					/>
 				</div>
 
-					<div className="flex gap-2 self-end">
-						<Button type="button" variant="outline" asChild>
-							<Link href="/ordens-servico">Cancelar</Link>
-						</Button>
-						<Button type="submit" disabled={criar.isPending}>
-							{criar.isPending ? "Salvando..." : "Criar OS"}
-						</Button>
-					</div>
+				<div className="flex gap-2 self-end">
+					<Button type="button" variant="outline" asChild>
+						<Link href="/ordens-servico">Cancelar</Link>
+					</Button>
+					<Button type="submit" disabled={criar.isPending}>
+						{criar.isPending ? "Salvando..." : "Criar OS"}
+					</Button>
+				</div>
 			</form>
 		</PageContainer>
 	);

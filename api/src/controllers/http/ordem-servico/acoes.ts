@@ -60,8 +60,8 @@ export async function criarEventoOrdemServico(
 				idempresa: z.string().uuid(),
 				idtipoevento: z.string().uuid(),
 				descricao: z.string().min(1),
-				idtecnicode: z.string().uuid().optional(),
-				idtecnicopara: z.string().uuid().optional(),
+				idtecnicode: z.string().min(1).optional(),
+				idtecnicopara: z.string().min(1).optional(),
 				nomecontato: z.string().max(50).optional(),
 			})
 			.parse(request.body);

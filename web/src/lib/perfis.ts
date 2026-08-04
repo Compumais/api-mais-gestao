@@ -8,6 +8,7 @@ export const SUPER_ALLOWED_ROUTES = [
 	"/super",
 	"/super/dashboard",
 	"/super/usuarios",
+	"/super/planos",
 	"/super/cadastro",
 	"/super/informativos",
 	"/super/cms",
@@ -24,6 +25,7 @@ const PERFIS_LABEL: Record<string, string> = {
 	usuario: "Usuário",
 	admin: "Administrador",
 	proprietario: "Proprietário",
+	financeiro: "Financeiro",
 	garcom: "Garçom",
 	super: "Super Admin",
 };

@@ -4,6 +4,7 @@ export const PERFIS_USUARIO = [
 	"usuario",
 	"admin",
 	"proprietario",
+	"financeiro",
 	"garcom",
 	"super",
 ] as const;

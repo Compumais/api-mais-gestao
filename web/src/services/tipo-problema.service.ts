@@ -3,6 +3,7 @@ import { api } from "@/lib/axios";
 export type TipoProblema = {
 	id: string;
 	idempresa: string;
+	codigo: string | null;
 	descricao: string | null;
 	inativo: number | null;
 };
@@ -15,6 +16,19 @@ export type ListarTiposProblemaResponse = {
 		total: number;
 		totalPages: number;
 	};
+};
+
+export type CriarTipoProblemaData = {
+	idempresa: string;
+	codigo?: string | null;
+	descricao?: string | null;
+	inativo?: number | null;
+};
+
+export type AtualizarTipoProblemaData = {
+	codigo?: string | null;
+	descricao?: string | null;
+	inativo?: number | null;
 };
 
 export const tipoProblemaService = {
@@ -54,5 +68,30 @@ export const tipoProblemaService = {
 		}
 
 		return itens;
+	},
+
+	async buscar(id: string): Promise<TipoProblema> {
+		const { data } = await api.get<TipoProblema>(`/tipos-problema/${id}`);
+		return data;
+	},
+
+	async criar(dados: CriarTipoProblemaData): Promise<TipoProblema> {
+		const { data } = await api.post<TipoProblema>("/tipos-problema", dados);
+		return data;
+	},
+
+	async atualizar(
+		id: string,
+		dados: AtualizarTipoProblemaData,
+	): Promise<TipoProblema> {
+		const { data } = await api.put<TipoProblema>(
+			`/tipos-problema/${id}`,
+			dados,
+		);
+		return data;
+	},
+
+	async deletar(id: string): Promise<void> {
+		await api.delete(`/tipos-problema/${id}`);
 	},
 };

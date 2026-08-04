@@ -1,6 +1,10 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { buscarEntitlementService } from "@/service/planos/buscar-plano-efetivo.js";
+import {
+	buscarEntitlementService,
+	EntitlementAcessoNegadoError,
+} from "@/service/planos/buscar-plano-efetivo.js";
+import { obterIdEmpresaDoContexto } from "../../middleware/resolve-empresa-context.js";
 
 const querySchema = z.object({
 	idempresa: z.string().uuid().optional(),
@@ -16,11 +20,14 @@ export async function getMeuPlanoController(
 
 	try {
 		const query = querySchema.safeParse(request.query);
-		const idempresa = query.success ? query.data.idempresa : undefined;
+		const idempresaQuery = query.success ? query.data.idempresa : undefined;
+		const idempresa = obterIdEmpresaDoContexto(request) ?? idempresaQuery;
 
 		const resultado = await buscarEntitlementService({
 			idusuario: request.user.id,
-			...(idempresa && { idempresa }),
+			...(idempresa
+				? { idempresa, modo: "operacional" as const }
+				: { modo: "direto" as const }),
 		});
 
 		return reply.status(200).send({
@@ -34,8 +41,16 @@ export async function getMeuPlanoController(
 			modulos: resultado.modulos,
 			valor: resultado.valor,
 			nomePlano: resultado.nomePlano,
+			idempresa: resultado.idempresa,
+			idproprietario: resultado.idproprietario,
 		});
 	} catch (error: unknown) {
+		if (error instanceof EntitlementAcessoNegadoError) {
+			return reply.status(403).send({
+				message: error.message,
+				code: error.code,
+			});
+		}
 		const message = error instanceof Error ? error.message : String(error);
 		console.error("Erro ao buscar plano do usuário:", error);
 		return reply.status(500).send({

@@ -470,6 +470,20 @@
       "when": 1784414000000,
       "tag": "0065_planos_modulos_saas",
       "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1784415000000,
+      "tag": "0066_ordemservico_atendente_tecnico_usuario",
+      "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1784416000000,
+      "tag": "0067_config_os_campos_classificacao",
+      "breakpoints": true
     }
   ]
 }

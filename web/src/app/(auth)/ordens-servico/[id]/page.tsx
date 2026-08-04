@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
+import type { FieldErrors } from "react-hook-form";
 import { toast } from "sonner";
 import {
 	AlertDialog,
@@ -46,6 +47,7 @@ import {
 	camposExtrasAtivos,
 	extrairExtrasOs,
 	formatarMoedaOs,
+	listarErrosFormularioOs,
 	osBloqueadaEdicao,
 	osPodeExcluir,
 } from "@/util/ordem-servico-ui";
@@ -59,8 +61,19 @@ import { OrdemServicoStatusBadge } from "../components/ordem-servico-status-badg
 function limparPayload(
 	dados: OrdemServicoFormData,
 	camposextrasAtivos: ReturnType<typeof camposExtrasAtivos>,
-	usarDadosVeiculo = true,
+	opcoes: {
+		usarDadosVeiculo?: boolean;
+		usarArea?: boolean;
+		usarObjeto?: boolean;
+		usarTipoProblema?: boolean;
+	} = {},
 ) {
+	const {
+		usarDadosVeiculo = true,
+		usarArea = true,
+		usarObjeto = true,
+		usarTipoProblema = true,
+	} = opcoes;
 	const payload: Record<string, unknown> = { ...dados };
 	for (const chave of Object.keys(payload)) {
 		const valor = payload[chave];
@@ -76,6 +89,9 @@ function limparPayload(
 		delete payload.placa;
 		delete payload.renavam;
 	}
+	if (!usarArea) payload.idarea = null;
+	if (!usarObjeto) payload.idobjeto = null;
+	if (!usarTipoProblema) payload.idtipoproblema = null;
 	if (typeof payload.agendamento === "string" && payload.agendamento) {
 		payload.agendamento = dayjs(payload.agendamento).toISOString();
 	}
@@ -146,28 +162,29 @@ export default function OrdemServicoDetalhePage({
 	const { data: usuariosLista } = useQuery({
 		queryKey: ["usuarios-os-detalhe", empresa?.id],
 		queryFn: () =>
-			usuariosService.listar({
-				idempresa: empresa?.id ?? "",
-				page: 1,
-				limit: 100,
-			}),
+			usuariosService.listarTodos({ idempresa: empresa?.id ?? "" }),
 		enabled: !!empresa?.id,
 	});
+	const mostrarArea = config?.usaarea !== 0;
+	const mostrarObjeto = config?.usaobjeto !== 0;
+	const mostrarTipoProblema = config?.usatipoproblema !== 0;
+	const mostrarVeiculo = config?.usadadosveiculo !== 0;
+
 	const { data: objetosLista } = useQuery({
 		queryKey: ["objetos-os-detalhe", empresa?.id],
 		queryFn: () => objetoService.listarTodos({ idempresa: empresa?.id ?? "" }),
-		enabled: !!empresa?.id,
+		enabled: !!empresa?.id && mostrarObjeto,
 	});
 	const { data: areasLista } = useQuery({
 		queryKey: ["areas-os-detalhe", empresa?.id],
 		queryFn: () => areaService.listarTodos({ idempresa: empresa?.id ?? "" }),
-		enabled: !!empresa?.id,
+		enabled: !!empresa?.id && mostrarArea,
 	});
 	const { data: tiposProblemaLista } = useQuery({
 		queryKey: ["tipos-problema-os-detalhe", empresa?.id],
 		queryFn: () =>
 			tipoProblemaService.listarTodos({ idempresa: empresa?.id ?? "" }),
-		enabled: !!empresa?.id,
+		enabled: !!empresa?.id && mostrarTipoProblema,
 	});
 	const { data: condicoesLista } = useQuery({
 		queryKey: ["condicoes-os-detalhe", empresa?.id],
@@ -189,18 +206,6 @@ export default function OrdemServicoDetalhePage({
 		enabled: !!empresa?.id,
 	});
 
-	const opcoesEntidades = useMemo(
-		() =>
-			(entidadesLista ?? []).map((item) => ({
-				value: item.id,
-				label:
-					item.razaosocial?.trim() ||
-					item.nome?.trim() ||
-					item.cnpjcpf ||
-					item.id,
-			})),
-		[entidadesLista],
-	);
 	const opcoesClientes = useMemo(
 		() =>
 			(entidadesLista ?? [])
@@ -217,9 +222,9 @@ export default function OrdemServicoDetalhePage({
 	);
 	const opcoesUsuarios = useMemo(
 		() =>
-			(usuariosLista?.data ?? []).map((item) => ({
+			(usuariosLista ?? []).map((item) => ({
 				value: item.id,
-				label: item.nome || item.email,
+				label: item.nome || item.id,
 			})),
 		[usuariosLista],
 	);
@@ -227,7 +232,10 @@ export default function OrdemServicoDetalhePage({
 	const bloqueada = osBloqueadaEdicao(os);
 
 	async function onSalvar(dados: OrdemServicoFormData) {
-		if (!empresa || !os) return;
+		if (!empresa || !os) {
+			toast.error("Não foi possível salvar a ordem de serviço");
+			return;
+		}
 		const extras = camposExtrasAtivos(config?.camposextras ?? os.camposextras);
 		for (const extra of extras) {
 			if (extra.obrigatorio) {
@@ -239,8 +247,12 @@ export default function OrdemServicoDetalhePage({
 			}
 		}
 		const cliente = entidadesLista?.find((item) => item.id === dados.idcliente);
-		const usarDadosVeiculo = config?.usadadosveiculo !== 0;
-		const payload = limparPayload(dados, extras, usarDadosVeiculo);
+		const payload = limparPayload(dados, extras, {
+			usarDadosVeiculo: mostrarVeiculo,
+			usarArea: mostrarArea,
+			usarObjeto: mostrarObjeto,
+			usarTipoProblema: mostrarTipoProblema,
+		});
 		try {
 			await atualizar.mutateAsync({
 				idempresa: empresa.id,
@@ -258,6 +270,18 @@ export default function OrdemServicoDetalhePage({
 				description: erro instanceof Error ? erro.message : "Erro desconhecido",
 			});
 		}
+	}
+
+	function onInvalid(erros: FieldErrors<OrdemServicoFormData>) {
+		const mensagens = listarErrosFormularioOs(
+			erros as Record<string, unknown>,
+		);
+		toast.error("Não foi possível salvar a ordem de serviço", {
+			description:
+				mensagens.length > 0
+					? mensagens.slice(0, 4).join(" · ")
+					: "Verifique os campos do formulário.",
+		});
 	}
 
 	async function confirmarExclusao() {
@@ -347,7 +371,7 @@ export default function OrdemServicoDetalhePage({
 						)}
 						<Button
 							type="button"
-							onClick={form.handleSubmit(onSalvar)}
+							onClick={form.handleSubmit(onSalvar, onInvalid)}
 							disabled={atualizar.isPending || bloqueada}
 						>
 							<Save className="h-4 w-4" />
@@ -365,7 +389,7 @@ export default function OrdemServicoDetalhePage({
 					</TabsList>
 
 					<TabsContent value="dados" className="mt-4">
-						<form onSubmit={form.handleSubmit(onSalvar)}>
+						<form onSubmit={form.handleSubmit(onSalvar, onInvalid)}>
 							<OrdemServicoForm
 								form={form}
 								opcoesClientes={opcoesClientes}
@@ -381,8 +405,8 @@ export default function OrdemServicoDetalhePage({
 									value: item.id,
 									label: item.descricao ?? item.id,
 								}))}
-								opcoesAtendentes={opcoesEntidades}
-								opcoesTecnicos={opcoesEntidades}
+								opcoesAtendentes={opcoesUsuarios}
+								opcoesTecnicos={opcoesUsuarios}
 								opcoesCondicoes={(condicoesLista ?? []).map((item) => ({
 									value: item.id,
 									label: item.descricao ?? item.id,
@@ -392,7 +416,10 @@ export default function OrdemServicoDetalhePage({
 									label: item.descricao ?? item.id,
 								}))}
 								camposextras={config?.camposextras ?? os.camposextras}
-								mostrarVeiculoEquipamento={config?.usadadosveiculo !== 0}
+								mostrarVeiculoEquipamento={mostrarVeiculo}
+								mostrarArea={mostrarArea}
+								mostrarObjeto={mostrarObjeto}
+								mostrarTipoProblema={mostrarTipoProblema}
 								desabilitado={bloqueada}
 							/>
 						</form>

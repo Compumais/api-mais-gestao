@@ -1,19 +1,10 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import {
+	EntitlementAcessoNegadoError,
 	usuarioTemFeature,
 	usuarioTemModulo,
 } from "@/service/planos/buscar-plano-efetivo.js";
-
-function extrairIdEmpresa(request: FastifyRequest): string | undefined {
-	const params = request.params as Record<string, string> | undefined;
-	const body = request.body as Record<string, unknown> | undefined;
-	const query = request.query as Record<string, string> | undefined;
-	const deParams = params?.idempresa;
-	const deBody =
-		typeof body?.idempresa === "string" ? body.idempresa : undefined;
-	const deQuery = query?.idempresa;
-	return deParams || deBody || deQuery;
-}
+import { obterIdEmpresaDoContexto } from "./resolve-empresa-context.js";
 
 export async function verifyPlano(
 	request: FastifyRequest,
@@ -35,18 +26,30 @@ export function requireFeature(feature: string) {
 				code: "UNAUTHORIZED",
 			});
 		}
-		const idempresa = extrairIdEmpresa(request);
-		const ok = await usuarioTemFeature({
-			idusuario: request.user.id,
-			feature,
-			...(idempresa && { idempresa }),
-		});
-		if (!ok) {
-			return reply.status(403).send({
-				error: "Funcionalidade não disponível no seu plano",
-				code: "PLAN_FEATURE_REQUIRED",
+		const idempresa = obterIdEmpresaDoContexto(request);
+		try {
+			const ok = await usuarioTemFeature({
+				idusuario: request.user.id,
 				feature,
+				...(idempresa
+					? { idempresa, modo: "operacional" as const }
+					: { modo: "direto" as const }),
 			});
+			if (!ok) {
+				return reply.status(403).send({
+					error: "Funcionalidade não disponível no seu plano",
+					code: "PLAN_FEATURE_REQUIRED",
+					feature,
+				});
+			}
+		} catch (error) {
+			if (error instanceof EntitlementAcessoNegadoError) {
+				return reply.status(403).send({
+					error: error.message,
+					code: error.code,
+				});
+			}
+			throw error;
 		}
 	};
 }
@@ -59,18 +62,30 @@ export function requireModulo(modulo: string) {
 				code: "UNAUTHORIZED",
 			});
 		}
-		const idempresa = extrairIdEmpresa(request);
-		const ok = await usuarioTemModulo({
-			idusuario: request.user.id,
-			modulo,
-			...(idempresa && { idempresa }),
-		});
-		if (!ok) {
-			return reply.status(403).send({
-				error: "Módulo não contratado",
-				code: "MODULE_REQUIRED",
+		const idempresa = obterIdEmpresaDoContexto(request);
+		try {
+			const ok = await usuarioTemModulo({
+				idusuario: request.user.id,
 				modulo,
+				...(idempresa
+					? { idempresa, modo: "operacional" as const }
+					: { modo: "direto" as const }),
 			});
+			if (!ok) {
+				return reply.status(403).send({
+					error: "Módulo não contratado",
+					code: "MODULE_REQUIRED",
+					modulo,
+				});
+			}
+		} catch (error) {
+			if (error instanceof EntitlementAcessoNegadoError) {
+				return reply.status(403).send({
+					error: error.message,
+					code: error.code,
+				});
+			}
+			throw error;
 		}
 	};
 }

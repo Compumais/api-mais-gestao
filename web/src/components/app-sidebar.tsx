@@ -12,88 +12,117 @@ import {
 	SidebarHeader,
 	SidebarMenu,
 } from "@/components/ui/sidebar";
-import { DATA } from "@/constants/nav-constants";
+import { DATA, type NavItem } from "@/constants/nav-constants";
 import { useAuth } from "@/hooks/use-auth";
 import { useEntitlements } from "@/hooks/use-plano";
-import { hasPerfil, isGarcom } from "@/lib/perfis";
+import {
+	type ContextoAcesso,
+	isPerfilMenuRestrito,
+	podeAcessarPorPolitica,
+} from "@/lib/acesso-navegacao";
+import { isGarcom } from "@/lib/perfis";
 import { CPlusIcon } from "./icons/c-plus";
 import { NavDocuments } from "./nav-documents";
+
+function filtrarNavItems(items: NavItem[], ctx: ContextoAcesso): NavItem[] {
+	return items
+		.filter((item) => podeAcessarPorPolitica(item.acesso, ctx))
+		.map((item) => {
+			if (!item.items) return item;
+			const subitens = item.items.filter((sub) =>
+				podeAcessarPorPolitica(sub.acesso, ctx),
+			);
+			return { ...item, items: subitens };
+		})
+		.filter((item) => !item.items || item.items.length > 0);
+}
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const { user } = useAuth();
 	const { hasFeature, hasModulo } = useEntitlements();
 
 	const isGarcomUser = React.useMemo(() => isGarcom(user), [user]);
-
-	const canAccessGarcomLink = React.useMemo(
-		() => isGarcomUser || hasPerfil(user?.perfil, "proprietario"),
-		[isGarcomUser, user?.perfil],
+	const isUsuarioRestrito = React.useMemo(
+		() => isPerfilMenuRestrito(user?.perfil),
+		[user],
 	);
 
-	const isUsuario = React.useMemo(() => {
-		if (!user?.perfil) return false;
-		return user.perfil.includes("usuario");
-	}, [user]);
+	const ctxAcesso = React.useMemo<ContextoAcesso>(
+		() => ({
+			perfil: user?.perfil,
+			hasFeature,
+			hasModulo,
+		}),
+		[user?.perfil, hasFeature, hasModulo],
+	);
 
 	const navMainItems = React.useMemo(() => {
-		if (isUsuario) {
+		if (isUsuarioRestrito) {
 			return DATA.navMain.filter(
 				(item) => item.title === "Dashboard" || item.title === "Clientes",
 			);
 		}
-		return DATA.navMain;
-	}, [isUsuario]);
+		return filtrarNavItems(DATA.navMain, ctxAcesso);
+	}, [isUsuarioRestrito, ctxAcesso]);
 
 	const navSecondaryItems = React.useMemo(() => {
-		let items = DATA.navSecondary;
+		let items = filtrarNavItems(DATA.navSecondary, ctxAcesso);
 
-		if (isUsuario) {
+		if (isUsuarioRestrito) {
 			items = items.filter(
 				(item) =>
-					item.title === "Configura??es" ||
+					item.title === "Configurações" ||
 					item.title === "Ajuda" ||
 					item.title === "Pesquisar",
 			);
 		}
 
 		return items;
-	}, [isUsuario]);
+	}, [isUsuarioRestrito, ctxAcesso]);
 
-	const navPdvItems = React.useMemo(() => DATA.navPdv, []);
+	const navPdvItems = React.useMemo(
+		() => filtrarNavItems(DATA.navPdv, ctxAcesso),
+		[ctxAcesso],
+	);
 
-	const navGourmetItems = React.useMemo(() => {
-		return DATA.navGourmet.map((group) => ({
-			...group,
-			items: group.items?.filter((subItem) => {
-				if (subItem.url === "/garcom") {
-					return canAccessGarcomLink;
-				}
-				if (subItem.url === "/gourmet" && isGarcomUser) {
-					return false;
-				}
-				return true;
-			}),
-		}));
-	}, [canAccessGarcomLink, isGarcomUser]);
+	const navGourmetItems = React.useMemo(
+		() => filtrarNavItems(DATA.navGourmet, ctxAcesso),
+		[ctxAcesso],
+	);
 
 	const navNotaFiscalItems = React.useMemo(
-		() =>
-			DATA.navNotaFiscal.map((group) => ({
+		() => filtrarNavItems(DATA.navNotaFiscal, ctxAcesso),
+		[ctxAcesso],
+	);
+
+	const navRegistrosItems = React.useMemo(() => {
+		if (isUsuarioRestrito) {
+			return DATA.navRegistros.map((group) => ({
 				...group,
-				items: group.items?.filter((item) => {
-					if (item.url === "/ordens-servico") {
-						return hasFeature("ordem_servico");
-					}
-					if (item.url === "/nota-fiscal-servico") {
-						return hasModulo("nfse");
-					}
-					if (["/nota-fiscal-venda", "/nfce", "/pedidos"].includes(item.url)) {
-						return hasFeature("notas_fiscais");
-					}
-					return true;
-				}),
-			})),
-		[hasFeature, hasModulo],
+				items: group.items?.filter((item) => item.url === "/clientes"),
+			}));
+		}
+		return filtrarNavItems(DATA.navRegistros, ctxAcesso);
+	}, [isUsuarioRestrito, ctxAcesso]);
+
+	const navTributosItems = React.useMemo(
+		() => filtrarNavItems(DATA.navTributos, ctxAcesso),
+		[ctxAcesso],
+	);
+
+	const navFinanceiroItems = React.useMemo(
+		() => filtrarNavItems(DATA.navFinanceiro, ctxAcesso),
+		[ctxAcesso],
+	);
+
+	const navContabilidadeItems = React.useMemo(
+		() => filtrarNavItems(DATA.others, ctxAcesso),
+		[ctxAcesso],
+	);
+
+	const navFerramentasItems = React.useMemo(
+		() => filtrarNavItems(DATA.navFerramentas, ctxAcesso),
+		[ctxAcesso],
 	);
 
 	const exibirGourmet = hasModulo("gourmet");
@@ -120,18 +149,34 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 					<>
 						<NavMain items={navMainItems} />
 
-						{!isUsuario && <NavDocuments label="PDV" items={navPdvItems} />}
+						{!isUsuarioRestrito && navPdvItems.length > 0 && (
+							<NavDocuments label="PDV" items={navPdvItems} />
+						)}
 
-						{!isUsuario && exibirGourmet && (
+						{!isUsuarioRestrito && exibirGourmet && (
 							<NavDocuments label="Gourmet" items={navGourmetItems} />
 						)}
 
-						<NavDocuments label="Cadastros" items={DATA.navRegistros} />
-						<NavDocuments label="Notas fiscais" items={navNotaFiscalItems} />
-						<NavDocuments label="Tributos" items={DATA.navTributos} />
-						<NavDocuments label="Financeiro" items={DATA.navFinanceiro} />
-						<NavDocuments label="Painel do contador" items={DATA.others} />
-						<NavDocuments label="Ferramentas" items={DATA.navFerramentas} />
+						<NavDocuments label="Cadastros" items={navRegistrosItems} />
+
+						{!isUsuarioRestrito && (
+							<NavDocuments label="Notas fiscais" items={navNotaFiscalItems} />
+						)}
+						{!isUsuarioRestrito && navTributosItems.length > 0 && (
+							<NavDocuments label="Tributos" items={navTributosItems} />
+						)}
+						{!isUsuarioRestrito && navFinanceiroItems.length > 0 && (
+							<NavDocuments label="Financeiro" items={navFinanceiroItems} />
+						)}
+						{!isUsuarioRestrito && navContabilidadeItems.length > 0 && (
+							<NavDocuments
+								label="Painel do contador"
+								items={navContabilidadeItems}
+							/>
+						)}
+						{!isUsuarioRestrito && navFerramentasItems.length > 0 && (
+							<NavDocuments label="Ferramentas" items={navFerramentasItems} />
+						)}
 
 						<NavSecondary
 							label="Outros"

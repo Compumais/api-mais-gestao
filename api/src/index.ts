@@ -89,6 +89,7 @@ import { unidadesMedidaRotas } from "./controllers/http/unidade-medida/rotas.js"
 import { usuariosRotas } from "./controllers/http/usuarios/rotas.js";
 import { vendasPdvGourmetRotas } from "./controllers/http/venda-pdv-gourmet/rotas.js";
 import { vendasPdvItemRotas } from "./controllers/http/venda-pdv-item/rotas.js";
+import { resolveEmpresaContext } from "./controllers/middleware/resolve-empresa-context.js";
 import { verificarAcessoGarcom } from "./controllers/middleware/verificar-acesso-garcom.js";
 import { verifyJwt } from "./controllers/middleware/verify-jwt.js";
 import { getApiBaseUrl } from "./util/base-url.js";
@@ -109,6 +110,7 @@ app.register(cors, {
 	allowedHeaders: [
 		"Content-Type",
 		"Authorization",
+		"X-Empresa-Id",
 		"X-Requested-With",
 		"Accept",
 		"Origin",
@@ -588,6 +590,7 @@ app.register(fechamentosCaixaRotas);
 app.register(atalhosPdvRotas);
 
 app.addHook("preHandler", verificarAcessoGarcom);
+app.addHook("preHandler", resolveEmpresaContext);
 
 app.listen({ port: 3333 }).then(() => {
 	console.log("HTTP server running on port 3333");

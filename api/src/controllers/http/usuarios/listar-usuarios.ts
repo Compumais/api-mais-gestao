@@ -27,6 +27,7 @@ export async function listarUsuarios(
 
 		const resultado = await listarUsuariosService({
 			idusuario,
+			roles: request.user.roles,
 			...query,
 		});
 

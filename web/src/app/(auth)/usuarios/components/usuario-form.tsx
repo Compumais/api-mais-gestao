@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Field,
 	FieldError,
@@ -21,18 +22,17 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useEmpresa } from "@/hooks/use-empresa";
 import { useAuth } from "@/hooks/use-auth";
-import { empresasService } from "@/services/empresas.service";
+import { useEmpresa } from "@/hooks/use-empresa";
 import {
-	type CriarUsuarioFormData,
 	type AtualizarUsuarioFormData,
-	criarUsuarioSchema,
 	atualizarUsuarioSchema,
+	type CriarUsuarioFormData,
+	criarUsuarioSchema,
 	perfilUsuarioSchema,
 } from "@/schemas/usuarios.schema";
-import { usuariosService, type Usuario } from "@/services/usuarios.service";
+import { empresasService } from "@/services/empresas.service";
+import { type Usuario, usuariosService } from "@/services/usuarios.service";
 
 type UsuarioFormProps = {
 	modo?: "criar" | "editar";
@@ -241,6 +241,7 @@ export function UsuarioForm(props: UsuarioFormProps) {
 							<SelectItem value="usuario">Usuário</SelectItem>
 							<SelectItem value="admin">Administrador</SelectItem>
 							<SelectItem value="proprietario">Proprietário</SelectItem>
+							<SelectItem value="financeiro">Financeiro</SelectItem>
 							<SelectItem value="garcom">Garçom</SelectItem>
 						</SelectContent>
 					</Select>

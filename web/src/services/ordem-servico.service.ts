@@ -132,6 +132,9 @@ export type ConfiguracaoOrdemServico = {
 	mostrarcamposfinalizaritem: number | null;
 	pedirprimeiroobjeto: number | null;
 	tecnicoobrigatorio: number | null;
+	usaarea: number | null;
+	usaobjeto: number | null;
+	usatipoproblema: number | null;
 	usadadosveiculo: number | null;
 	idcfopexternaproduto: string | null;
 	idcfopexternaservico: string | null;

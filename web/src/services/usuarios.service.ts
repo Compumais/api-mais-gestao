@@ -3,14 +3,19 @@ import { api } from "@/lib/axios";
 export interface Usuario {
 	id: string;
 	nome: string;
-	email: string;
-	perfil: string | string[];
-	emailverificado: boolean;
-	imagem: string | null;
-	criadoem: string;
-	atualizadoem: string;
+	email?: string;
+	perfil?: string | string[];
+	emailverificado?: boolean;
+	imagem?: string | null;
+	criadoem?: string;
+	atualizadoem?: string;
 	empresasIds?: string[];
 }
+
+export type UsuarioSelecao = {
+	id: string;
+	nome: string;
+};
 
 export interface ListarUsuariosResponse {
 	data: Usuario[];
@@ -52,6 +57,34 @@ export const usuariosService = {
 			params,
 		});
 		return data;
+	},
+
+	async listarTodos(params: {
+		idempresa: string;
+		nome?: string;
+	}): Promise<UsuarioSelecao[]> {
+		const limite = 100;
+		let page = 1;
+		let totalPages = 1;
+		const itens: UsuarioSelecao[] = [];
+
+		while (page <= totalPages) {
+			const resposta = await this.listar({
+				...params,
+				page,
+				limit: limite,
+			});
+			itens.push(
+				...resposta.data.map((item) => ({
+					id: item.id,
+					nome: item.nome,
+				})),
+			);
+			totalPages = resposta.paginacao.totalPages;
+			page += 1;
+		}
+
+		return itens;
 	},
 
 	async buscar(id: string): Promise<Usuario> {

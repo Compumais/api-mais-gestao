@@ -1,7 +1,7 @@
 import z from "zod";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { buscarNotaFiscalService } from "src/service/nota-fiscal/buscar-nota-fiscal";
-import { httpErroInterno, httpNaoAutorizado } from "src/util/http-util";
+import { buscarNotaFiscalService } from "@/service/nota-fiscal/buscar-nota-fiscal.js";
+import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
 export async function buscarNfsePorId(
     request: FastifyRequest,

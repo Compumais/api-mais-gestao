@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { cancelarNfseService } from "src/service/nfse-emissao/cancelar-nfse";
-import { httpErroInterno, httpNaoAutorizado } from "src/util/http-util";
+import { cancelarNfseService } from "@/service/nfse-emissao/cancelar-nfse.js";
+import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 import z from "zod";
 
 export async function cancelarNfse(

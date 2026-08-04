@@ -1,7 +1,7 @@
 import z from "zod";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { httpErroInterno, httpNaoAutorizado } from "src/util/http-util";
-import { excluirNfeSerieService } from "src/service/nfe-serie/nfe-serie";
+import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
+import { excluirNfeSerieService } from "@/service/nfe-serie/nfe-serie.js";
 
 const queryEmpresaSchema = z.object({
     idempresa: z.string().uuid(),

@@ -47,6 +47,9 @@ export async function atualizarConfiguracaoOrdemServicoService(params: {
 		mostrarcamposfinalizaritem?: number | undefined;
 		pedirprimeiroobjeto?: number | undefined;
 		tecnicoobrigatorio?: number | undefined;
+		usaarea?: number | undefined;
+		usaobjeto?: number | undefined;
+		usatipoproblema?: number | undefined;
 		usadadosveiculo?: number | undefined;
 		camposextras?: CampoExtraOrdemServico[] | undefined;
 	};
