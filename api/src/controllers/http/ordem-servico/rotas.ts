@@ -8,6 +8,7 @@ import {
 	gerarNfeRascunhoOrdemServico,
 	listarEventosOrdemServico,
 	listarFaturamentosOrdemServico,
+	prepararNfseOrdemServico,
 } from "./acoes.js";
 import { atualizarOrdemServico } from "./atualizar.js";
 import { buscarOrdemServico } from "./buscar.js";
@@ -107,5 +108,9 @@ export async function ordensServicoRotas(app: FastifyInstance) {
 	app.post("/ordens-servico/:id/gerar-nfe-rascunho", {
 		schema: schema.gerarNfeRascunhoOrdemServicoSchema,
 		handler: gerarNfeRascunhoOrdemServico,
+	});
+	app.post("/ordens-servico/:id/preparar-nfse", {
+		schema: schema.prepararNfseOrdemServicoSchema,
+		handler: prepararNfseOrdemServico,
 	});
 }

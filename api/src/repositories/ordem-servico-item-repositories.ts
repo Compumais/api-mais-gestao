@@ -1,6 +1,6 @@
-import { and, asc, count, desc, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq, getTableColumns } from "drizzle-orm";
 import type { NovoOrdemServicoItem } from "@/model/ordem-servico-item-model";
-import { ordemservicoitem } from "@/repositories/schema.js";
+import { ordemservicoitem, produtos } from "@/repositories/schema.js";
 import { db } from "./connection";
 
 export async function buscarOrdemServicoItemPorId(
@@ -69,9 +69,13 @@ export async function listarItensPorOrdemServico(
 	idordemservico: string,
 	idempresa: string,
 ) {
-	return db
-		.select()
+	const linhas = await db
+		.select({
+			...getTableColumns(ordemservicoitem),
+			tipoproduto: produtos.tipo,
+		})
 		.from(ordemservicoitem)
+		.leftJoin(produtos, eq(ordemservicoitem.idproduto, produtos.id))
 		.where(
 			and(
 				eq(ordemservicoitem.idordemservico, idordemservico),
@@ -82,6 +86,11 @@ export async function listarItensPorOrdemServico(
 			asc(ordemservicoitem.contador),
 			desc(ordemservicoitem.datacriacao),
 		);
+
+	return linhas.map((linha) => ({
+		...linha,
+		tipoproduto: linha.tipoproduto ?? "P",
+	}));
 }
 
 export async function contarItensOrdemServico(

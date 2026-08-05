@@ -9,13 +9,18 @@ import type {
 import type { NovoNotaFiscalItem } from "@/model/nota-fiscal-item-model.js";
 import type { NovaNotaFiscal } from "@/model/nota-fiscal-model.js";
 import { criarNotaFiscalComItens } from "@/repositories/nota-fiscal-repositories.js";
+import {
+	buscarFaturamentoFiscalPorModeloOrdemServico,
+	criarOrdemServicoFaturamento,
+} from "@/repositories/ordem-servico-faturamento-repositories.js";
+import { buscarOrdemServicoPorIdEempresa } from "@/repositories/ordem-servico-repositories.js";
 import { integrarNfseAutorizadaService } from "@/service/nfse-emissao/integrar-nfse-autorizada.js";
 import {
 	type PrepararPayloadEmissaoNfseParams,
 	prepararPayloadEmissaoNfse,
 } from "@/service/nfse-emissao/preparar-payload-emissao-nfse.js";
 import { arquivarXmlNotaFiscal } from "@/service/nota-fiscal/arquivar-xml-nota-fiscal.js";
-import { httpOk } from "@/util/http-util.js";
+import { httpBadRequest, httpOk } from "@/util/http-util.js";
 import { montarIdentificadorXmlNfse } from "@/util/identificador-xml-nfse.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
 import { isLayoutNfseDps } from "@/util/validar-pre-requisitos-emissao-nfse.js";
@@ -81,6 +86,26 @@ function montarItensPersistencia(
 export async function emitirNfseService(
 	params: EmitirNfseParametros,
 ): Promise<HttpResponse<ResultadoEmissaoNfse>> {
+	if (params.idordemservico) {
+		const os = await buscarOrdemServicoPorIdEempresa(
+			params.idordemservico,
+			params.idempresa,
+		);
+		if (!os) {
+			return httpBadRequest("Ordem de serviço de origem não encontrada");
+		}
+		const nfseExistente = await buscarFaturamentoFiscalPorModeloOrdemServico(
+			params.idordemservico,
+			params.idempresa,
+			MODELO_NFSE,
+		);
+		if (nfseExistente?.idnotafiscal) {
+			return httpBadRequest(
+				`Já existe NFS-e vinculada a esta OS: ${nfseExistente.idnotafiscal}`,
+			);
+		}
+	}
+
 	const preparado = await prepararPayloadEmissaoNfse(params);
 
 	if (!preparado.success || !preparado.body) {
@@ -101,18 +126,15 @@ export async function emitirNfseService(
 	const agora = new Date().toISOString();
 	const idnotafiscal = uuidv4();
 
-	const autorizada =
-		resposta.sucesso === true && Boolean(resposta.numeroNfse);
+	const autorizada = resposta.sucesso === true && Boolean(resposta.numeroNfse);
 	const modoDps =
 		resposta.modo === "dps" ||
-		String(resposta.versaolayout ?? "").toLowerCase().includes("dps") ||
-		isLayoutNfseDps(
-			String(payloadGateway.configJson.versaolayout ?? ""),
-		);
+		String(resposta.versaolayout ?? "")
+			.toLowerCase()
+			.includes("dps") ||
+		isLayoutNfseDps(String(payloadGateway.configJson.versaolayout ?? ""));
 	const pendenteDps =
-		resposta.sucesso === true &&
-		!autorizada &&
-		Boolean(resposta.protocolo);
+		resposta.sucesso === true && !autorizada && Boolean(resposta.protocolo);
 	const status = autorizada
 		? NFE_STATUS.AUTORIZADA
 		: pendenteDps
@@ -122,9 +144,7 @@ export async function emitirNfseService(
 	const dadosImportacao: DadosEmissaoNfseSalvos = {
 		...dadosSalvos,
 		payload: payloadGateway.payloadNfse,
-		...(resposta.protocolo
-			? { protocolo: resposta.protocolo }
-			: {}),
+		...(resposta.protocolo ? { protocolo: resposta.protocolo } : {}),
 		...(modoDps || pendenteDps
 			? { modo: "dps" as const }
 			: resposta.modo === "rps-gerar"
@@ -186,6 +206,16 @@ export async function emitirNfseService(
 	);
 
 	await criarNotaFiscalComItens(nota, itens);
+	if (params.idordemservico) {
+		await criarOrdemServicoFaturamento({
+			id: uuidv4(),
+			idempresa: params.idempresa,
+			idordemservico: params.idordemservico,
+			idnotafiscal,
+			datacriacao: agora,
+			dataalteracao: agora,
+		});
+	}
 
 	const identificadorXml = montarIdentificadorXmlNfse(resposta, idnotafiscal);
 

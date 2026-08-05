@@ -83,6 +83,7 @@ export type OrdemServicoItem = {
 	observacao: string | null;
 	contador: number | null;
 	cancelado: number | null;
+	tipoproduto?: string | null;
 };
 
 export type OrdemServicoItemLote = {
@@ -156,6 +157,28 @@ export type OrdemServicoFaturamento = {
 	iddavos: string | null;
 	datacriacao: string | null;
 	dataalteracao: string | null;
+	modelonotafiscal: string | null;
+	statusnotafiscal: number | null;
+};
+
+export type ResumoFiscalOrdemServico = {
+	possuiProdutos: boolean;
+	possuiServicos: boolean;
+	quantidadeProdutos: number;
+	quantidadeServicos: number;
+	valorProdutos: string;
+	valorServicos: string;
+	valorTotal: string;
+	idNfe: string | null;
+	statusNfe: number | null;
+	idNfse: string | null;
+	statusNfse: number | null;
+	financeiroGerado: boolean;
+};
+
+export type FaturamentosOrdemServicoResposta = {
+	data: OrdemServicoFaturamento[];
+	resumo: ResumoFiscalOrdemServico;
 };
 
 export type ListarOrdensServicoParams = {
@@ -223,6 +246,7 @@ export type CriarItemOsData = {
 	idcfop?: string;
 	unidademedida?: string;
 	observacao?: string;
+	tipoEsperado?: "P" | "S";
 };
 
 export type AtualizarItemOsData = {
@@ -234,6 +258,7 @@ export type AtualizarItemOsData = {
 	unidademedida?: string | null;
 	observacao?: string | null;
 	cancelado?: number;
+	tipoEsperado?: "P" | "S";
 };
 
 export type CriarLoteOsData = {
@@ -278,11 +303,13 @@ export type GerarContasReceberOsResposta = {
 	totalParcelas: number;
 	parcelasGeradas: number;
 	titulosExistentes: number;
+	lancamentosCaixa: number;
 };
 
 export type GerarNfeRascunhoOsData = {
 	idempresa: string;
 	idserienfe?: string;
+	formasPagamento?: GerarContasReceberOsData["formasPagamento"];
 };
 
 export type GerarNfeRascunhoOsResposta = {
@@ -290,6 +317,40 @@ export type GerarNfeRascunhoOsResposta = {
 	status: number;
 	idordemservico: string;
 	avisos?: string[];
+	financeiro?: GerarContasReceberOsResposta;
+};
+
+export type PrepararNfseOsData = GerarContasReceberOsData;
+
+export type PrepararNfseOsResposta = {
+	idordemservico: string;
+	iddestinatario: string;
+	itemListaServico: string;
+	discriminacao: string;
+	codigoTributacaoMunicipio?: string;
+	codigoTributacaoNacional?: string;
+	codigoNbs?: string;
+	exigibilidadeIss: string;
+	issRetido: string;
+	valores: {
+		servicos: number;
+		iss: number;
+		aliquota: number;
+		pis: number;
+		cofins: number;
+	};
+	itens: Array<{
+		descricao: string;
+		quantidade: number;
+		valorUnitario: number;
+		codigoListaLc11603: string;
+	}>;
+	idplanocontas?: string;
+	idcondicaopagto?: string;
+	idtipodocumento?: string;
+	gerarFinanceiro: false;
+	avisos: string[];
+	financeiro?: GerarContasReceberOsResposta;
 };
 
 export const ordemServicoService = {
@@ -445,8 +506,8 @@ export const ordemServicoService = {
 	async listarFaturamentos(
 		id: string,
 		idempresa: string,
-	): Promise<OrdemServicoFaturamento[]> {
-		const { data } = await api.get<OrdemServicoFaturamento[]>(
+	): Promise<FaturamentosOrdemServicoResposta> {
+		const { data } = await api.get<FaturamentosOrdemServicoResposta>(
 			`/ordens-servico/${id}/faturamentos`,
 			{ params: { idempresa } },
 		);
@@ -470,6 +531,17 @@ export const ordemServicoService = {
 	): Promise<GerarNfeRascunhoOsResposta> {
 		const { data } = await api.post<GerarNfeRascunhoOsResposta>(
 			`/ordens-servico/${id}/gerar-nfe-rascunho`,
+			dados,
+		);
+		return data;
+	},
+
+	async prepararNfse(
+		id: string,
+		dados: PrepararNfseOsData,
+	): Promise<PrepararNfseOsResposta> {
+		const { data } = await api.post<PrepararNfseOsResposta>(
+			`/ordens-servico/${id}/preparar-nfse`,
 			dados,
 		);
 		return data;

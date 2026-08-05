@@ -55,9 +55,9 @@ function formatarPreco(preco: string | null) {
 }
 
 type ColumnsProps = {
-	onEdit: (produto: Produto) => void;
+	onEdit: (servico: Produto) => void;
 	onDelete: (id: string) => void;
-	onToggleInativo: (produto: Produto) => void;
+	onToggleInativo: (servico: Produto) => void;
 };
 
 const createColumns = ({
@@ -73,13 +73,7 @@ const createColumns = ({
 	{
 		accessorKey: "nome",
 		header: "Nome",
-		cell: ({ row }) => {
-			return (
-				<div className="flex items-center gap-2">
-					<span>{row.getValue("nome")}</span>
-				</div>
-			);
-		},
+		cell: ({ row }) => <div>{row.getValue("nome")}</div>,
 	},
 	{
 		accessorKey: "preco",
@@ -108,8 +102,8 @@ const createColumns = ({
 		id: "acoes",
 		header: "Ações",
 		cell: ({ row }) => {
-			const produto = row.original;
-			const inativo = produto.inativo === 1;
+			const servico = row.original;
+			const inativo = servico.inativo === 1;
 			return (
 				<div className="flex justify-end">
 					<DropdownMenu>
@@ -124,11 +118,11 @@ const createColumns = ({
 							</Button>
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end">
-							<DropdownMenuItem onClick={() => onEdit(produto)}>
+							<DropdownMenuItem onClick={() => onEdit(servico)}>
 								<IconPencil className="size-4" />
 								Editar
 							</DropdownMenuItem>
-							<DropdownMenuItem onClick={() => onToggleInativo(produto)}>
+							<DropdownMenuItem onClick={() => onToggleInativo(servico)}>
 								{inativo ? (
 									<>
 										<IconCheck className="size-4" />
@@ -144,7 +138,7 @@ const createColumns = ({
 							<DropdownMenuSeparator />
 							<DropdownMenuItem
 								variant="destructive"
-								onClick={() => onDelete(produto.id)}
+								onClick={() => onDelete(servico.id)}
 							>
 								<IconTrash className="size-4" />
 								Excluir
@@ -157,7 +151,7 @@ const createColumns = ({
 	},
 ];
 
-export default function ProdutosPage() {
+export default function ServicosPage() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const queryClient = useQueryClient();
@@ -177,19 +171,15 @@ export default function ProdutosPage() {
 	const handleBuscar = () => {
 		const termo = qInput.trim();
 		setPagination((p) => ({ ...p, pageIndex: 0 }));
-
 		const params = new URLSearchParams();
-		if (termo) {
-			params.set("q", termo);
-		}
-
+		if (termo) params.set("q", termo);
 		const query = params.toString();
-		router.replace(query ? `/produtos?${query}` : "/produtos");
+		router.replace(query ? `/servicos?${query}` : "/servicos");
 	};
 
 	const { data, isLoading } = useQuery({
 		queryKey: [
-			"produtos",
+			"servicos",
 			localStorageEmpresa?.id,
 			qAplicado,
 			pagination.pageIndex + 1,
@@ -203,29 +193,23 @@ export default function ProdutosPage() {
 				idempresa: localStorageEmpresa.id,
 				page: pagination.pageIndex + 1,
 				limit: pagination.pageSize,
-				tipo: "P",
+				tipo: "S",
 				...(qAplicado ? { q: qAplicado } : {}),
 			});
 		},
 		enabled: !!localStorageEmpresa,
 	});
 
-	const { mutate: deletarProduto } = useMutation({
-		mutationFn: async ({
-			id,
-			idempresa,
-		}: {
-			id: string;
-			idempresa: string;
-		}) => {
-			return await produtosService.deletar(id, idempresa);
-		},
+	const { mutate: deletarServico } = useMutation({
+		mutationFn: async ({ id, idempresa }: { id: string; idempresa: string }) =>
+			produtosService.deletar(id, idempresa),
 		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["servicos"] });
 			queryClient.invalidateQueries({ queryKey: ["produtos"] });
-			toast.success("Produto excluído com sucesso!");
+			toast.success("Serviço excluído com sucesso!");
 		},
 		onError: (error: Error) => {
-			toast.error(error.message || "Erro ao excluir produto");
+			toast.error(error.message || "Erro ao excluir serviço");
 		},
 	});
 
@@ -238,24 +222,23 @@ export default function ProdutosPage() {
 			id: string;
 			inativo: number;
 			idempresa: string;
-		}) => {
-			return await produtosService.inativar(id, inativo, idempresa);
-		},
+		}) => produtosService.inativar(id, inativo, idempresa),
 		onSuccess: (_data, variables) => {
+			queryClient.invalidateQueries({ queryKey: ["servicos"] });
 			queryClient.invalidateQueries({ queryKey: ["produtos"] });
 			toast.success(
 				variables.inativo === 1
-					? "Produto inativado com sucesso!"
-					: "Produto reativado com sucesso!",
+					? "Serviço inativado com sucesso!"
+					: "Serviço reativado com sucesso!",
 			);
 		},
 		onError: (error: Error) => {
-			toast.error(error.message || "Erro ao alterar situação do produto");
+			toast.error(error.message || "Erro ao alterar situação do serviço");
 		},
 	});
 
-	const handleEdit = (produto: Produto) => {
-		router.push(`/produtos/${produto.id}/editar`);
+	const handleEdit = (servico: Produto) => {
+		router.push(`/servicos/${servico.id}/editar`);
 	};
 
 	const handleDelete = (id: string) => {
@@ -263,36 +246,33 @@ export default function ProdutosPage() {
 			toast.error("Empresa não selecionada");
 			return;
 		}
-
-		toast.message("Tem certeza que deseja excluir este produto?", {
+		toast.message("Tem certeza que deseja excluir este serviço?", {
 			position: "top-center",
 			duration: 3000,
 			action: {
 				label: "Excluir",
 				onClick: () =>
-					deletarProduto({ id, idempresa: localStorageEmpresa.id }),
+					deletarServico({ id, idempresa: localStorageEmpresa.id }),
 			},
 			description: "Esta ação não pode ser desfeita.",
 		});
 	};
 
-	const handleToggleInativo = (produto: Produto) => {
+	const handleToggleInativo = (servico: Produto) => {
 		if (!localStorageEmpresa) {
 			toast.error("Empresa não selecionada");
 			return;
 		}
-
-		const novoInativo = produto.inativo === 1 ? 0 : 1;
+		const novoInativo = servico.inativo === 1 ? 0 : 1;
 		const acao = novoInativo === 1 ? "inativar" : "reativar";
-
-		toast.message(`Tem certeza que deseja ${acao} este produto?`, {
+		toast.message(`Tem certeza que deseja ${acao} este serviço?`, {
 			position: "top-center",
 			duration: 3000,
 			action: {
 				label: novoInativo === 1 ? "Inativar" : "Reativar",
 				onClick: () =>
 					alterarSituacao({
-						id: produto.id,
+						id: servico.id,
 						inativo: novoInativo,
 						idempresa: localStorageEmpresa.id,
 					}),
@@ -309,10 +289,7 @@ export default function ProdutosPage() {
 	const table = useReactTable({
 		data: data?.data || [],
 		columns,
-		state: {
-			sorting,
-			pagination,
-		},
+		state: { sorting, pagination },
 		onSortingChange: setSorting,
 		onPaginationChange: setPagination,
 		getCoreRowModel: getCoreRowModel(),
@@ -326,14 +303,14 @@ export default function ProdutosPage() {
 		<PageContainer>
 			<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
 				<div className="flex items-center justify-between px-4">
-					<h1 className="text-2xl font-bold">Produtos</h1>
+					<h1 className="text-2xl font-bold">Serviços</h1>
 					<Button
-						onClick={() => router.push("/produtos/novo")}
+						onClick={() => router.push("/servicos/novo")}
 						className="gap-2"
 						disabled={!localStorageEmpresa}
 					>
 						<IconPlus className="size-4" />
-						Incluir Novo Produto
+						Incluir Novo Serviço
 					</Button>
 				</div>
 				<div className="flex gap-2 px-4">
@@ -341,11 +318,9 @@ export default function ProdutosPage() {
 						value={qInput}
 						onChange={(event) => setQInput(event.target.value)}
 						onKeyDown={(event) => {
-							if (event.key === "Enter") {
-								handleBuscar();
-							}
+							if (event.key === "Enter") handleBuscar();
 						}}
-						placeholder="Buscar por nome, código, EAN ou preço..."
+						placeholder="Buscar por nome, código ou preço..."
 						disabled={!localStorageEmpresa}
 						className="max-w-md"
 					/>
@@ -358,11 +333,11 @@ export default function ProdutosPage() {
 						Buscar
 					</Button>
 				</div>
-				<div className="rounded-lg border bg-card mx-4">
+				<div className="mx-4 rounded-lg border bg-card">
 					{!localStorageEmpresa ? (
 						<div className="flex items-center justify-center py-8">
 							<p className="text-muted-foreground">
-								Selecione uma empresa para visualizar os produtos
+								Selecione uma empresa para visualizar os serviços
 							</p>
 						</div>
 					) : isLoading ? (
@@ -415,14 +390,14 @@ export default function ProdutosPage() {
 												colSpan={table.getAllColumns().length}
 												className="h-24 text-center"
 											>
-												Nenhum produto encontrado.
+												Nenhum serviço encontrado.
 											</TableCell>
 										</TableRow>
 									)}
 								</TableBody>
 							</Table>
 							{data && data.paginacao.totalPages > 1 && (
-								<div className="flex items-center justify-between px-4 py-4 border-t">
+								<div className="flex items-center justify-between border-t px-4 py-4">
 									<div className="text-sm text-muted-foreground">
 										Página {pagination.pageIndex + 1} de{" "}
 										{data.paginacao.totalPages} ({data.paginacao.total}{" "}

@@ -1,6 +1,6 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, getTableColumns } from "drizzle-orm";
 import type { NovoOrdemServicoFaturamento } from "@/model/ordem-servico-faturamento-model";
-import { ordemservicofaturamento } from "@/repositories/schema.js";
+import { notafiscal, ordemservicofaturamento } from "@/repositories/schema.js";
 import { db } from "./connection";
 
 export async function criarOrdemServicoFaturamento(
@@ -19,8 +19,16 @@ export async function listarFaturamentosPorOrdemServico(
 	idempresa: string,
 ) {
 	return db
-		.select()
+		.select({
+			...getTableColumns(ordemservicofaturamento),
+			modelonotafiscal: notafiscal.modelo,
+			statusnotafiscal: notafiscal.status,
+		})
 		.from(ordemservicofaturamento)
+		.leftJoin(
+			notafiscal,
+			eq(ordemservicofaturamento.idnotafiscal, notafiscal.id),
+		)
 		.where(
 			and(
 				eq(ordemservicofaturamento.idordemservico, idordemservico),
@@ -30,13 +38,29 @@ export async function listarFaturamentosPorOrdemServico(
 		.orderBy(desc(ordemservicofaturamento.datacriacao));
 }
 
-export async function buscarFaturamentoNfeAtivoPorOrdemServico(
+export async function buscarFaturamentoFiscalPorModeloOrdemServico(
 	idordemservico: string,
 	idempresa: string,
+	modelo: string,
 ) {
 	const registros = await listarFaturamentosPorOrdemServico(
 		idordemservico,
 		idempresa,
 	);
-	return registros.find((item) => item.idnotafiscal) ?? null;
+	return (
+		registros.find(
+			(item) => item.idnotafiscal && item.modelonotafiscal === modelo,
+		) ?? null
+	);
+}
+
+export async function buscarFaturamentoNfeAtivoPorOrdemServico(
+	idordemservico: string,
+	idempresa: string,
+) {
+	return buscarFaturamentoFiscalPorModeloOrdemServico(
+		idordemservico,
+		idempresa,
+		"55",
+	);
 }

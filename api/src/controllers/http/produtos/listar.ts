@@ -8,6 +8,7 @@ const listarProdutosQuerySchema = z.object({
 	nome: z.string().optional(),
 	q: z.string().optional(),
 	inativo: z.coerce.number().int().min(0).max(1).optional(),
+	tipo: z.enum(["P", "S"]).optional(),
 	page: z.coerce.number().min(1).optional().default(1),
 	limit: z.coerce.number().min(1).max(100).optional().default(10),
 });
@@ -29,6 +30,7 @@ export async function listarProdutos(
 			nome: query.nome,
 			q: query.q,
 			inativo: query.inativo,
+			tipo: query.tipo,
 			page: query.page,
 			limit: query.limit,
 		});

@@ -4,6 +4,7 @@ import { gerarContasReceberOrdemServicoService } from "@/service/ordem-servico/g
 import { gerarNfeRascunhoOrdemServicoService } from "@/service/ordem-servico/gerar-nfe-rascunho-ordem-servico.js";
 import { listarEventosOrdemServicoService } from "@/service/ordem-servico/listar-eventos-ordem-servico.js";
 import { listarFaturamentosOrdemServicoService } from "@/service/ordem-servico/listar-faturamentos-ordem-servico.js";
+import { prepararNfseOrdemServicoService } from "@/service/ordem-servico/preparar-nfse-ordem-servico.js";
 import { registrarEventoOrdemServicoService } from "@/service/ordem-servico/registrar-evento-ordem-servico.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
@@ -37,7 +38,7 @@ export async function listarEventosOrdemServico(
 			idempresa,
 			idusuario: request.user.id,
 		});
-		if (!resultado.success) {
+		if (resultado.success === false) {
 			return reply.status(resultado.status).send(resultado);
 		}
 		return reply.status(resultado.status).send(resultado.body);
@@ -95,7 +96,7 @@ export async function listarFaturamentosOrdemServico(
 			idempresa,
 			idusuario: request.user.id,
 		});
-		if (!resultado.success) {
+		if (resultado.success === false) {
 			return reply.status(resultado.status).send(resultado);
 		}
 		return reply.status(resultado.status).send(resultado.body);
@@ -156,6 +157,15 @@ export async function gerarNfeRascunhoOrdemServico(
 			.object({
 				idempresa: z.string().uuid(),
 				idserienfe: z.string().uuid().optional(),
+				formasPagamento: z
+					.array(
+						z.object({
+							idtipodocumentofinanceiro: z.string().uuid(),
+							valor: z.number().positive(),
+							indPag: z.number().int().optional(),
+						}),
+					)
+					.optional(),
 			})
 			.parse(request.body);
 
@@ -164,6 +174,46 @@ export async function gerarNfeRascunhoOrdemServico(
 			idempresa: body.idempresa,
 			idusuario: request.user.id,
 			idserienfe: body.idserienfe,
+			formasPagamento: body.formasPagamento,
+		});
+		if (!resultado.success) {
+			return reply.status(resultado.status).send(resultado);
+		}
+		return reply.status(resultado.status).send(resultado.body);
+	} catch (error) {
+		return tratarErro(error, reply);
+	}
+}
+
+export async function prepararNfseOrdemServico(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
+	try {
+		if (!request.user) {
+			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
+		}
+		const { id } = paramsOsSchema.parse(request.params);
+		const body = z
+			.object({
+				idempresa: z.string().uuid(),
+				formasPagamento: z
+					.array(
+						z.object({
+							idtipodocumentofinanceiro: z.string().uuid(),
+							valor: z.number().positive(),
+							indPag: z.number().int().optional(),
+						}),
+					)
+					.optional(),
+			})
+			.parse(request.body);
+
+		const resultado = await prepararNfseOrdemServicoService({
+			ordemServicoId: id,
+			idempresa: body.idempresa,
+			idusuario: request.user.id,
+			formasPagamento: body.formasPagamento,
 		});
 		if (!resultado.success) {
 			return reply.status(resultado.status).send(resultado);

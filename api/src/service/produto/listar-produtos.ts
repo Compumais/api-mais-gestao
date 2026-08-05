@@ -10,6 +10,7 @@ type ListarProdutosParametros = {
 	nome?: string | undefined;
 	q?: string | undefined;
 	inativo?: number | undefined;
+	tipo?: "P" | "S" | undefined;
 	page?: number;
 	limit?: number;
 };
@@ -30,6 +31,7 @@ export async function listarProdutosService({
 	nome,
 	q,
 	inativo,
+	tipo,
 	page = 1,
 	limit = 10,
 }: ListarProdutosParametros): Promise<HttpResponse<ListarProdutosResposta>> {
@@ -47,6 +49,7 @@ export async function listarProdutosService({
 		nome,
 		q,
 		inativo,
+		tipo,
 		page,
 		limit,
 	});

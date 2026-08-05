@@ -62,10 +62,14 @@ export async function criarItemOrdemServico(
 				idproduto: z.string().uuid(),
 				quantidade: z.string(),
 				preco: z.string(),
-				idtecnico: z.string().min(1).optional(),
-				idcfop: z.string().uuid().optional(),
-				unidademedida: z.string().max(6).optional(),
-				observacao: z.string().optional(),
+				idtecnico: z.preprocess(
+					(valor) => (valor === "" ? null : valor),
+					z.string().min(1).nullable().optional(),
+				),
+				idcfop: z.string().uuid().nullable().optional(),
+				unidademedida: z.string().max(6).nullable().optional(),
+				observacao: z.string().nullable().optional(),
+				tipoEsperado: z.enum(["P", "S"]).optional(),
 			})
 			.parse(request.body);
 
@@ -107,11 +111,15 @@ export async function atualizarItemOrdemServico(
 				idempresa: z.string().uuid(),
 				quantidade: z.string().optional(),
 				preco: z.string().optional(),
-				idtecnico: z.string().min(1).nullable().optional(),
+				idtecnico: z.preprocess(
+					(valor) => (valor === "" ? null : valor),
+					z.string().min(1).nullable().optional(),
+				),
 				idcfop: z.string().uuid().nullable().optional(),
 				unidademedida: z.string().max(6).nullable().optional(),
 				observacao: z.string().nullable().optional(),
 				cancelado: z.number().int().optional(),
+				tipoEsperado: z.enum(["P", "S"]).optional(),
 			})
 			.parse(request.body);
 

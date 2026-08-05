@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import type { z } from "zod";
@@ -26,6 +26,10 @@ import {
 	emitirNfse,
 	type NotaFiscalServicoDetalhe,
 } from "@/services/nfse-emissao.service";
+import {
+	ordemServicoService,
+	type PrepararNfseOsResposta,
+} from "@/services/ordem-servico.service";
 import { PageContainer } from "../../components/page-container";
 import { CampoItemLc116Nfse } from "../components/campo-item-lc116-nfse";
 import { CampoTomadorNfse } from "../components/campo-tomador-nfse";
@@ -43,11 +47,8 @@ function mapearOrigemParaFormulario(
 	return {
 		iddestinatario: notaFiscal.identidade ?? undefined,
 		itemListaServico:
-			servico?.itemListaServico ||
-			item?.codigolistalc11603 ||
-			"",
-		discriminacao:
-			servico?.discriminacao || item?.descricao || "",
+			servico?.itemListaServico || item?.codigolistalc11603 || "",
+		discriminacao: servico?.discriminacao || item?.descricao || "",
 		codigoCnae: servico?.codigoCnae || "",
 		codigoTributacaoMunicipio: servico?.codigoTributacaoMunicipio || "",
 		codigoTributacaoNacional: servico?.codigoTributacaoNacional || "",
@@ -61,9 +62,7 @@ function mapearOrigemParaFormulario(
 				(item?.total != null && item.total !== ""
 					? Number(item.total)
 					: undefined) ??
-				(notaFiscal.valortotalnota
-					? Number(notaFiscal.valortotalnota)
-					: 0),
+				(notaFiscal.valortotalnota ? Number(notaFiscal.valortotalnota) : 0),
 			iss: valores?.iss ?? 0,
 			aliquota: valores?.aliquota ?? 0,
 			pis: valores?.pis,
@@ -77,10 +76,36 @@ function mapearOrigemParaFormulario(
 	};
 }
 
+function mapearOsParaFormulario(
+	rascunho: PrepararNfseOsResposta,
+): Partial<z.input<typeof emissaoNfseSchema>> {
+	return {
+		iddestinatario: rascunho.iddestinatario,
+		itemListaServico: rascunho.itemListaServico,
+		discriminacao: rascunho.discriminacao,
+		codigoTributacaoMunicipio: rascunho.codigoTributacaoMunicipio ?? "",
+		codigoTributacaoNacional: rascunho.codigoTributacaoNacional ?? "",
+		codigoNbs: rascunho.codigoNbs ?? "",
+		exigibilidadeIss: rascunho.exigibilidadeIss,
+		issRetido: rascunho.issRetido,
+		valores: rascunho.valores,
+		idplanocontas: rascunho.idplanocontas,
+		idcondicaopagto: rascunho.idcondicaopagto,
+		idtipodocumento: rascunho.idtipodocumento,
+		idordemservico: rascunho.idordemservico,
+		itens: rascunho.itens,
+		gerarFinanceiro: false,
+		confirmarProducao: false,
+	};
+}
+
 export default function NovaNfsePage() {
+	const formId = useId();
+	const fid = (nome: string) => `${formId}-${nome}`;
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const origemId = searchParams.get("origem")?.trim() || null;
+	const ordemServicoId = searchParams.get("ordemServico")?.trim() || null;
 	const { localStorageEmpresa: empresa } = useEmpresa();
 	const [erroEmissao, setErroEmissao] = useState<{
 		titulo: string;
@@ -88,17 +113,37 @@ export default function NovaNfsePage() {
 		codigo?: string | null;
 	} | null>(null);
 	const [origemAplicada, setOrigemAplicada] = useState<string | null>(null);
+	const [osAplicada, setOsAplicada] = useState<string | null>(null);
 
 	const { data: config } = useQuery({
 		queryKey: ["nfse-configuracao", empresa?.id],
-		queryFn: () => nfseConfiguracaoService.buscar(empresa!.id),
+		queryFn: () => {
+			if (!empresa) throw new Error("Empresa não selecionada");
+			return nfseConfiguracaoService.buscar(empresa.id);
+		},
 		enabled: !!empresa?.id,
 	});
 
 	const { data: origemDetalhe, isLoading: carregandoOrigem } = useQuery({
 		queryKey: ["nfse-origem", origemId],
-		queryFn: () => buscarNfsePorId(origemId!),
+		queryFn: () => {
+			if (!origemId) throw new Error("NFS-e de origem não informada");
+			return buscarNfsePorId(origemId);
+		},
 		enabled: !!origemId,
+	});
+
+	const { data: rascunhoOs, isLoading: carregandoOs } = useQuery({
+		queryKey: ["nfse-rascunho-os", ordemServicoId, empresa?.id],
+		queryFn: () => {
+			if (!ordemServicoId || !empresa) {
+				throw new Error("Ordem de serviço ou empresa não informada");
+			}
+			return ordemServicoService.prepararNfse(ordemServicoId, {
+				idempresa: empresa.id,
+			});
+		},
+		enabled: !!ordemServicoId && !!empresa?.id,
 	});
 
 	const form = useForm<
@@ -139,9 +184,36 @@ export default function NovaNfsePage() {
 		setOrigemAplicada(origemId);
 	}, [origemDetalhe, origemId, origemAplicada, form]);
 
+	useEffect(() => {
+		if (!rascunhoOs || !ordemServicoId || osAplicada === ordemServicoId) {
+			return;
+		}
+		form.reset({
+			itemListaServico: "",
+			discriminacao: "",
+			codigoTributacaoNacional: "",
+			codigoNbs: "",
+			codigoIndicadorOperacao: "",
+			exigibilidadeIss: "1",
+			issRetido: "2",
+			valores: { servicos: 0, iss: 0, aliquota: 0 },
+			gerarFinanceiro: false,
+			confirmarProducao: false,
+			...mapearOsParaFormulario(rascunhoOs),
+		});
+		setOsAplicada(ordemServicoId);
+		if (rascunhoOs.avisos.length > 0) {
+			toast.warning("Rascunho preparado com avisos", {
+				description: rascunhoOs.avisos.join("; "),
+			});
+		}
+	}, [rascunhoOs, ordemServicoId, osAplicada, form]);
+
 	const emitirMutation = useMutation({
-		mutationFn: (dados: z.output<typeof emissaoNfseSchema>) =>
-			emitirNfse(empresa!.id, dados),
+		mutationFn: (dados: z.output<typeof emissaoNfseSchema>) => {
+			if (!empresa) throw new Error("Empresa não selecionada");
+			return emitirNfse(empresa.id, dados);
+		},
 		onSuccess: (resultado) => {
 			if (resultado.numeroNfse) {
 				toast.success(`NFS-e ${resultado.numeroNfse} autorizada`);
@@ -189,18 +261,29 @@ export default function NovaNfsePage() {
 			<main className="flex flex-col gap-6 py-4 px-4 max-w-3xl">
 				<header>
 					<h1 className="text-2xl font-bold">
-						{origemId ? "Emitir a partir de NFS-e existente" : "Nova NFS-e"}
+						{ordemServicoId
+							? "Revisar NFS-e da Ordem de Serviço"
+							: origemId
+								? "Emitir a partir de NFS-e existente"
+								: "Nova NFS-e"}
 					</h1>
 					<p className="text-muted-foreground text-sm">
-						{origemId
-							? "Formulário pré-preenchido — a emissão gera um novo RPS/NFS-e"
-							: "Emissão manual de serviço (RPS → NFS-e)"}
+						{ordemServicoId
+							? "Revise os serviços, impostos e tomador antes de transmitir"
+							: origemId
+								? "Formulário pré-preenchido — a emissão gera um novo RPS/NFS-e"
+								: "Emissão manual de serviço (RPS → NFS-e)"}
 					</p>
 				</header>
 
 				{origemId && carregandoOrigem ? (
 					<p className="text-muted-foreground text-sm">
 						Carregando dados da nota de origem...
+					</p>
+				) : null}
+				{ordemServicoId && carregandoOs ? (
+					<p className="text-muted-foreground text-sm">
+						Preparando serviços da ordem de serviço...
 					</p>
 				) : null}
 
@@ -223,7 +306,7 @@ export default function NovaNfsePage() {
 						<FieldSet>
 							<FieldLegend>1. Tomador do serviço</FieldLegend>
 							<Field data-invalid={!!errors.iddestinatario}>
-								<FieldLabel htmlFor="iddestinatario">Cliente</FieldLabel>
+								<FieldLabel>Cliente</FieldLabel>
 								<Controller
 									control={form.control}
 									name="iddestinatario"
@@ -242,7 +325,7 @@ export default function NovaNfsePage() {
 						<FieldSet>
 							<FieldLegend>2. Serviço prestado</FieldLegend>
 							<Field data-invalid={!!errors.itemListaServico}>
-								<FieldLabel htmlFor="itemListaServico">Item LC 116</FieldLabel>
+								<FieldLabel>Item LC 116</FieldLabel>
 								<Controller
 									control={form.control}
 									name="itemListaServico"
@@ -262,9 +345,11 @@ export default function NovaNfsePage() {
 							</Field>
 
 							<Field>
-								<FieldLabel htmlFor="discriminacao">Discriminação</FieldLabel>
+								<FieldLabel htmlFor={fid("discriminacao")}>
+									Discriminação
+								</FieldLabel>
 								<Textarea
-									id="discriminacao"
+									id={fid("discriminacao")}
 									rows={4}
 									{...form.register("discriminacao")}
 								/>
@@ -273,11 +358,11 @@ export default function NovaNfsePage() {
 							{layoutDps ? (
 								<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 									<Field data-invalid={!!errors.codigoTributacaoNacional}>
-										<FieldLabel htmlFor="codigoTributacaoNacional">
+										<FieldLabel htmlFor={fid("codigoTributacaoNacional")}>
 											cTribNac (6 dígitos)
 										</FieldLabel>
 										<Input
-											id="codigoTributacaoNacional"
+											id={fid("codigoTributacaoNacional")}
 											inputMode="numeric"
 											maxLength={6}
 											placeholder="Ex.: 010101"
@@ -285,11 +370,11 @@ export default function NovaNfsePage() {
 										/>
 									</Field>
 									<Field data-invalid={!!errors.codigoNbs}>
-										<FieldLabel htmlFor="codigoNbs">
+										<FieldLabel htmlFor={fid("codigoNbs")}>
 											cNBS (9 dígitos)
 										</FieldLabel>
 										<Input
-											id="codigoNbs"
+											id={fid("codigoNbs")}
 											inputMode="numeric"
 											maxLength={9}
 											placeholder="Ex.: 115021000"
@@ -297,11 +382,11 @@ export default function NovaNfsePage() {
 										/>
 									</Field>
 									<Field data-invalid={!!errors.codigoIndicadorOperacao}>
-										<FieldLabel htmlFor="codigoIndicadorOperacao">
+										<FieldLabel htmlFor={fid("codigoIndicadorOperacao")}>
 											cIndOp IBS/CBS (opcional)
 										</FieldLabel>
 										<Input
-											id="codigoIndicadorOperacao"
+											id={fid("codigoIndicadorOperacao")}
 											inputMode="numeric"
 											maxLength={6}
 											placeholder="Ex.: 100301 — deixe vazio se Simples"
@@ -317,11 +402,11 @@ export default function NovaNfsePage() {
 
 							<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 								<Field>
-									<FieldLabel htmlFor="valorServicos">
+									<FieldLabel htmlFor={fid("valorServicos")}>
 										Valor serviços
 									</FieldLabel>
 									<Input
-										id="valorServicos"
+										id={fid("valorServicos")}
 										type="number"
 										step="0.01"
 										min="0"
@@ -331,11 +416,11 @@ export default function NovaNfsePage() {
 									/>
 								</Field>
 								<Field>
-									<FieldLabel htmlFor="aliquotaIss">
+									<FieldLabel htmlFor={fid("aliquotaIss")}>
 										Alíquota ISS (%)
 									</FieldLabel>
 									<Input
-										id="aliquotaIss"
+										id={fid("aliquotaIss")}
 										type="number"
 										step="0.01"
 										min="0"
@@ -345,9 +430,9 @@ export default function NovaNfsePage() {
 									/>
 								</Field>
 								<Field>
-									<FieldLabel htmlFor="valorIss">Valor ISS</FieldLabel>
+									<FieldLabel htmlFor={fid("valorIss")}>Valor ISS</FieldLabel>
 									<Input
-										id="valorIss"
+										id={fid("valorIss")}
 										type="number"
 										step="0.01"
 										min="0"
@@ -360,13 +445,13 @@ export default function NovaNfsePage() {
 						{producao ? (
 							<div className="flex items-center gap-2">
 								<Checkbox
-									id="confirmarProducao"
+									id={fid("confirmarProducao")}
 									checked={form.watch("confirmarProducao")}
 									onCheckedChange={(v) =>
 										form.setValue("confirmarProducao", v === true)
 									}
 								/>
-								<FieldLabel htmlFor="confirmarProducao">
+								<FieldLabel htmlFor={fid("confirmarProducao")}>
 									Confirmo emissão em produção
 								</FieldLabel>
 							</div>

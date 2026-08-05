@@ -123,6 +123,8 @@ export async function emitirNfse(
 		idplanocontas: dados.idplanocontas,
 		idcondicaopagto: dados.idcondicaopagto,
 		idtipodocumento: dados.idtipodocumento,
+		idordemservico: dados.idordemservico,
+		itens: dados.itens,
 		servico: {
 			itemListaServico: dados.itemListaServico,
 			discriminacao: dados.discriminacao,
@@ -149,13 +151,20 @@ export async function listarNfsesEmitidas(params: {
 }) {
 	const { data } = await api.get<{
 		data: NotaFiscalServico[];
-		paginacao: { page: number; limit: number; total: number; totalPages: number };
+		paginacao: {
+			page: number;
+			limit: number;
+			total: number;
+			totalPages: number;
+		};
 	}>("/nfse/emissao", { params });
 	return data;
 }
 
 export async function buscarNfsePorId(id: string) {
-	const { data } = await api.get<NotaFiscalServicoDetalhe>(`/nfse/emissao/${id}`);
+	const { data } = await api.get<NotaFiscalServicoDetalhe>(
+		`/nfse/emissao/${id}`,
+	);
 	return data;
 }
 

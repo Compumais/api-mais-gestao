@@ -6,7 +6,11 @@ import {
 	buscarEntidadePorId,
 	verificarUsuarioPertenceEmpresa,
 } from "@/repositories/entidade-repositories.js";
-import { criarNotaFiscalComItens } from "@/repositories/nota-fiscal-repositories.js";
+import {
+	buscarNotaFiscalPorId,
+	criarNotaFiscalComItens,
+	listarItensPorNotaFiscal,
+} from "@/repositories/nota-fiscal-repositories.js";
 import {
 	buscarFaturamentoNfeAtivoPorOrdemServico,
 	criarOrdemServicoFaturamento,
@@ -15,6 +19,10 @@ import {
 	atualizarOrdemServico,
 	buscarOrdemServicoPorIdEempresa,
 } from "@/repositories/ordem-servico-repositories.js";
+import {
+	type FormaPagamentoOs,
+	gerarContasReceberOrdemServicoService,
+} from "@/service/ordem-servico/gerar-contas-receber-ordem-servico.js";
 import { montarItensNfeOrdemServico } from "@/service/ordem-servico/montar-itens-nfe-ordem-servico.js";
 import { garantirConfiguracaoOrdemServico } from "@/service/ordem-servico/ordem-servico-helpers.js";
 import { montarSnapshotEmissaoNfe } from "@/util/dados-emissao-nfe-nota.js";
@@ -31,6 +39,7 @@ type GerarNfeRascunhoOsParametros = {
 	idempresa: string;
 	idusuario: string;
 	idserienfe?: string | undefined;
+	formasPagamento?: FormaPagamentoOs[] | undefined;
 };
 
 type GerarNfeRascunhoOsResposta = {
@@ -40,6 +49,11 @@ type GerarNfeRascunhoOsResposta = {
 	notaFiscal: NotaFiscal;
 	itens: NotaFiscalItem[];
 	avisos: string[];
+	financeiro?: {
+		parcelasGeradas: number;
+		titulosExistentes: number;
+		lancamentosCaixa: number;
+	};
 };
 
 export async function gerarNfeRascunhoOrdemServicoService({
@@ -47,6 +61,7 @@ export async function gerarNfeRascunhoOrdemServicoService({
 	idempresa,
 	idusuario,
 	idserienfe,
+	formasPagamento,
 }: GerarNfeRascunhoOsParametros): Promise<
 	HttpResponse<GerarNfeRascunhoOsResposta>
 > {
@@ -68,7 +83,31 @@ export async function gerarNfeRascunhoOrdemServicoService({
 		idempresa,
 	);
 	if (faturamentoAtivo?.idnotafiscal) {
-		return httpBadRequest("Já existe NF-e vinculada a esta ordem de serviço");
+		const notaExistente = await buscarNotaFiscalPorId(
+			faturamentoAtivo.idnotafiscal,
+		);
+		if (notaExistente) {
+			const itensExistentes = await listarItensPorNotaFiscal(
+				faturamentoAtivo.idnotafiscal,
+			);
+			const financeiroExistente = await gerarContasReceberOrdemServicoService({
+				ordemServicoId,
+				idempresa,
+				idusuario,
+				formasPagamento,
+			});
+			return httpCriacao({
+				idnotafiscal: notaExistente.id,
+				status: notaExistente.status ?? NFE_STATUS.PENDENTE,
+				idordemservico: ordemServicoId,
+				notaFiscal: notaExistente,
+				itens: itensExistentes,
+				avisos: ["Rascunho NF-e já existente; documento reutilizado"],
+				...(financeiroExistente.success && financeiroExistente.body
+					? { financeiro: financeiroExistente.body }
+					: {}),
+			});
+		}
 	}
 
 	const cliente = await buscarEntidadePorId(os.idcliente);
@@ -108,6 +147,14 @@ export async function gerarNfeRascunhoOrdemServicoService({
 	);
 	const codigoOs = os.codigo != null ? Number(os.codigo) : undefined;
 
+	// Desconto da OS é do documento inteiro; na NF-e rateia só sobre produtos.
+	const descontoOs = parseFloat(os.descontosubtotal ?? "0") || 0;
+	const valorOs = parseFloat(os.valor ?? "0") || 0;
+	const descontoProdutos =
+		descontoOs > 0 && valorOs > 0
+			? Number(((descontoOs * valorTotal) / valorOs).toFixed(2))
+			: 0;
+
 	const dadosimportacao = montarSnapshotEmissaoNfe({
 		idserienfe,
 		idordemservico: ordemServicoId,
@@ -115,7 +162,7 @@ export async function gerarNfeRascunhoOrdemServicoService({
 		gerarFinanceiro: false,
 		gerarEstoque: false,
 		totais: {
-			desconto: parseFloat(os.descontosubtotal ?? "0") || 0,
+			desconto: descontoProdutos,
 		},
 	});
 
@@ -178,12 +225,36 @@ export async function gerarNfeRascunhoOrdemServicoService({
 		faturouparanota: 1,
 	});
 
+	const valorTotalOs = parseFloat(os.valor ?? "0") || 0;
+	const formasFinanceiro =
+		formasPagamento?.length === 1 && formasPagamento[0]
+			? [{ ...formasPagamento[0], valor: valorTotalOs }]
+			: formasPagamento;
+
+	const resultadoFinanceiro = await gerarContasReceberOrdemServicoService({
+		ordemServicoId,
+		idempresa,
+		idusuario,
+		formasPagamento: formasFinanceiro,
+	});
+	const avisos = pendencias.filter((p) => p.includes("serviço ignorado"));
+	if (!resultadoFinanceiro.success) {
+		avisos.push(
+			typeof resultadoFinanceiro.error === "string"
+				? `Financeiro não gerado: ${resultadoFinanceiro.error}`
+				: "Financeiro não gerado; revise a forma de pagamento da OS",
+		);
+	}
+
 	return httpCriacao({
 		idnotafiscal,
 		status: NFE_STATUS.PENDENTE,
 		idordemservico: ordemServicoId,
 		notaFiscal: resultado.notaFiscal,
 		itens: resultado.itens,
-		avisos: pendencias.filter((p) => p.includes("serviço ignorado")),
+		avisos,
+		...(resultadoFinanceiro.success && resultadoFinanceiro.body
+			? { financeiro: resultadoFinanceiro.body }
+			: {}),
 	});
 }

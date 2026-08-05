@@ -3,6 +3,7 @@ import * as entidadeRepositories from "@/repositories/entidade-repositories.js";
 import * as notaFiscalRepositories from "@/repositories/nota-fiscal-repositories.js";
 import * as faturamentoRepositories from "@/repositories/ordem-servico-faturamento-repositories.js";
 import * as osRepositories from "@/repositories/ordem-servico-repositories.js";
+import * as financeiroOs from "@/service/ordem-servico/gerar-contas-receber-ordem-servico.js";
 import { gerarNfeRascunhoOrdemServicoService } from "@/service/ordem-servico/gerar-nfe-rascunho-ordem-servico.js";
 import * as montarItens from "@/service/ordem-servico/montar-itens-nfe-ordem-servico.js";
 import * as helpers from "@/service/ordem-servico/ordem-servico-helpers.js";
@@ -14,6 +15,7 @@ vi.mock("@/repositories/ordem-servico-repositories.js");
 vi.mock("@/repositories/nota-fiscal-repositories.js");
 vi.mock("@/service/ordem-servico/ordem-servico-helpers.js");
 vi.mock("@/service/ordem-servico/montar-itens-nfe-ordem-servico.js");
+vi.mock("@/service/ordem-servico/gerar-contas-receber-ordem-servico.js");
 
 describe("gerarNfeRascunhoOrdemServicoService", () => {
 	beforeEach(() => {
@@ -58,6 +60,18 @@ describe("gerarNfeRascunhoOrdemServicoService", () => {
 			pendencias: [],
 			itensServicoIgnorados: 0,
 		});
+		vi.mocked(
+			financeiroOs.gerarContasReceberOrdemServicoService,
+		).mockResolvedValue({
+			success: true,
+			status: 200,
+			body: {
+				totalParcelas: 1,
+				parcelasGeradas: 1,
+				titulosExistentes: 0,
+				lancamentosCaixa: 0,
+			},
+		});
 		vi.mocked(notaFiscalRepositories.criarNotaFiscalComItens).mockResolvedValue(
 			{
 				notaFiscal: { id: "nf-1", status: NFE_STATUS.PENDENTE },
@@ -91,10 +105,17 @@ describe("gerarNfeRascunhoOrdemServicoService", () => {
 		);
 	});
 
-	it("deve bloquear segundo rascunho ativo", async () => {
+	it("deve reutilizar segundo rascunho ativo sem duplicar", async () => {
 		vi.mocked(
 			faturamentoRepositories.buscarFaturamentoNfeAtivoPorOrdemServico,
 		).mockResolvedValue({ idnotafiscal: "nf-antiga" } as never);
+		vi.mocked(notaFiscalRepositories.buscarNotaFiscalPorId).mockResolvedValue({
+			id: "nf-antiga",
+			status: NFE_STATUS.PENDENTE,
+		} as never);
+		vi.mocked(
+			notaFiscalRepositories.listarItensPorNotaFiscal,
+		).mockResolvedValue([{ id: "item-antigo" }] as never);
 
 		const resultado = await gerarNfeRascunhoOrdemServicoService({
 			ordemServicoId: "os-1",
@@ -102,8 +123,12 @@ describe("gerarNfeRascunhoOrdemServicoService", () => {
 			idusuario: "user-1",
 		});
 
-		expect(resultado.success).toBe(false);
-		expect(resultado.status).toBe(400);
+		expect(resultado.success).toBe(true);
+		if (!resultado.success) return;
+		expect(resultado.body?.idnotafiscal).toBe("nf-antiga");
+		expect(resultado.body?.avisos).toContain(
+			"Rascunho NF-e já existente; documento reutilizado",
+		);
 		expect(
 			notaFiscalRepositories.criarNotaFiscalComItens,
 		).not.toHaveBeenCalled();

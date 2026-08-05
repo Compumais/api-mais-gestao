@@ -30,6 +30,7 @@ export interface Produto {
 	idcfopentrada?: string | null;
 	idcfopsaida?: string | null;
 	idcfopsaidanfce?: string | null;
+	idcfopsaidaexterna?: string | null;
 	idcest?: string | null;
 	cestCodigo?: string | null;
 	unidademedida?: string | null;
@@ -45,6 +46,28 @@ export interface Produto {
 	cstcofins?: string | number | null;
 	cstipientrada?: string | null;
 	cstipisaida?: string | null;
+	itemrapido?: number | null;
+	podeserbrinde?: number | null;
+	nomeecf?: string | null;
+	decimaispreco?: number | null;
+	codigolistalc11603?: string | null;
+	codigotributacaonacional?: string | null;
+	codigonbs?: string | null;
+	cicloposvenda?: number | null;
+	idplanocontas?: string | null;
+	comissao?: string | null;
+	comissaoavista?: string | null;
+	comissaoprazo?: string | null;
+	percentualcomissaoquitacao?: string | null;
+	situacaoiss?: string | null;
+	aliquotaiss?: string | null;
+	exigibilidadeiss?: string | null;
+	processoisencaoiss?: string | null;
+	incentivofiscal?: number | null;
+	codigomunicipalservico?: string | null;
+	tipoimpressaogourmet?: string | null;
+	aliquotapis?: string | null;
+	aliquotacofins?: string | null;
 }
 
 export interface ListarProdutosResponse {
@@ -57,7 +80,34 @@ export interface ListarProdutosResponse {
 	};
 }
 
-export interface CriarProdutoData {
+type CamposServicoProduto = {
+	itemrapido?: number | null;
+	podeserbrinde?: number | null;
+	inativo?: number | null;
+	nomeecf?: string | null;
+	decimaispreco?: number | null;
+	codigolistalc11603?: string | null;
+	codigotributacaonacional?: string | null;
+	codigonbs?: string | null;
+	cicloposvenda?: number | null;
+	idplanocontas?: string | null;
+	comissao?: string | null;
+	comissaoavista?: string | null;
+	comissaoprazo?: string | null;
+	percentualcomissaoquitacao?: string | null;
+	situacaoiss?: string | null;
+	aliquotaiss?: string | null;
+	exigibilidadeiss?: string | null;
+	processoisencaoiss?: string | null;
+	incentivofiscal?: number | null;
+	codigomunicipalservico?: string | null;
+	tipoimpressaogourmet?: string | null;
+	idcfopsaidaexterna?: string | null;
+	aliquotapis?: string | null;
+	aliquotacofins?: string | null;
+};
+
+export interface CriarProdutoData extends CamposServicoProduto {
 	idempresa: string;
 	codigo: number;
 	ean?: number | null;
@@ -65,14 +115,14 @@ export interface CriarProdutoData {
 	nome: string;
 	idunidademedida: string;
 	fornecedor?: string | null;
-	idgrupo: string;
+	idgrupo?: string | null;
 	preco: string;
 	custoaquisicao?: string | null;
 	tipo?: string;
 	iat?: string | null;
-	ippt: string;
-	origem: number;
-	ncm: string;
+	ippt?: string | null;
+	origem?: number | null;
+	ncm?: string | null;
 	tipoproduto?: string | null;
 	observacoes?: string | null;
 	enviamobile?: number | null;
@@ -107,21 +157,21 @@ export interface TributacaoPorCfopResponse {
 	cfopvendaecf?: number | null;
 }
 
-export interface AtualizarProdutoData {
+export interface AtualizarProdutoData extends CamposServicoProduto {
 	codigo?: number;
 	ean?: number | null;
 	referencia?: string | null;
 	nome?: string;
 	idunidademedida?: string;
 	fornecedor?: string | null;
-	idgrupo?: string;
+	idgrupo?: string | null;
 	preco?: string;
 	custoaquisicao?: string | null;
 	tipo?: string;
 	iat?: string | null;
-	ippt?: string;
-	origem?: number;
-	ncm?: string;
+	ippt?: string | null;
+	origem?: number | null;
+	ncm?: string | null;
 	tipoproduto?: string | null;
 	observacoes?: string | null;
 	enviamobile?: number | null;
@@ -154,6 +204,7 @@ export const produtosService = {
 		nome?: string;
 		q?: string;
 		inativo?: number;
+		tipo?: "P" | "S";
 	}): Promise<ListarProdutosResponse> {
 		const { data } = await api.get<ListarProdutosResponse>("/produtos", {
 			params,
@@ -166,6 +217,7 @@ export const produtosService = {
 		nome?: string;
 		q?: string;
 		inativo?: number;
+		tipo?: "P" | "S";
 	}): Promise<Produto[]> {
 		const limite = 100;
 		let pagina = 1;
@@ -229,9 +281,7 @@ export const produtosService = {
 		});
 	},
 
-	async buscarProximoCodigo(
-		idempresa: string,
-	): Promise<{ codigo: number }> {
+	async buscarProximoCodigo(idempresa: string): Promise<{ codigo: number }> {
 		const { data } = await api.get<{ codigo: number }>(
 			"/produtos/proximo-codigo",
 			{ params: { idempresa } },

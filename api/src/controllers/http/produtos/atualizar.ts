@@ -5,10 +5,16 @@ import type { NovoProduto } from "@/model/produto-model.js";
 import { atualizarProdutoService } from "@/service/produto/atualizar-produto.js";
 import { enriquecerCamposImpostosProduto } from "@/service/produto/enriquecer-campos-impostos-produto.js";
 import { sincronizarSaldoEstoqueProduto } from "@/service/produto/sincronizar-saldo-estoque-produto.js";
+import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
 import { camposImpostosProdutoSchema } from "@/util/campos-impostos-produto.js";
+import {
+	camposServicoProdutoSchema,
+	montarCamposServicoProduto,
+} from "@/util/campos-servico-produto.js";
 import {
 	httpErroInterno,
 	httpNaoAutorizado,
+	httpNaoEncontrado,
 	httpProibido,
 } from "@/util/http-util.js";
 
@@ -35,13 +41,13 @@ const atualizarProdutoBodySchema = z.object({
 	nome: z.string().min(1).max(120).optional(),
 	idunidademedida: z.string().optional(),
 	fornecedor: z.string().optional().nullable(),
-	idgrupo: z.string().optional(),
+	idgrupo: z.string().optional().nullable(),
 	preco: z.union([z.string(), z.number()]).optional(),
 	tipo: z.enum(["P", "S"]).optional(),
 	iat: z.enum(["A", "T"]).optional().nullable(),
-	ippt: z.enum(["P", "T"]).optional(),
-	origem: z.number().int().min(0).max(8).optional(),
-	ncm: z.string().min(1).max(10).optional(),
+	ippt: z.enum(["P", "T"]).optional().nullable(),
+	origem: z.number().int().min(0).max(8).optional().nullable(),
+	ncm: z.string().max(10).optional().nullable(),
 	tipoproduto: z.string().max(2).optional().nullable(),
 	observacoes: z.string().optional().nullable(),
 	enviamobile: z.number().int().min(0).max(1).optional(),
@@ -51,6 +57,7 @@ const atualizarProdutoBodySchema = z.object({
 	custoaquisicao: z.union([z.string(), z.number()]).optional().nullable(),
 	estoque: z.number().min(0).optional(),
 	...camposImpostosProdutoSchema,
+	...camposServicoProdutoSchema,
 });
 
 export async function atualizarProduto(
@@ -75,10 +82,17 @@ export async function atualizarProduto(
 			return reply.status(httpProibido().status).send(httpProibido().success);
 		}
 
+		const produtoAtual = await buscarProdutoPorId(id);
+		if (!produtoAtual || produtoAtual.idempresa !== idempresa) {
+			return reply.status(httpNaoEncontrado().status).send(httpNaoEncontrado());
+		}
+
+		const tipoEfetivo = dadosValidados.tipo ?? produtoAtual.tipo ?? "P";
+		const ehServico = tipoEfetivo === "S";
+
 		const dados = Object.fromEntries(
 			Object.entries(dadosValidados).filter(
-				([chave, valor]) =>
-					valor !== undefined && chave !== "estoque",
+				([chave, valor]) => valor !== undefined && chave !== "estoque",
 			),
 		) as Partial<NovoProduto>;
 
@@ -102,7 +116,13 @@ export async function atualizarProduto(
 			dados.descricao = dadosValidados.nome.slice(0, 100);
 		}
 
-		const camposImpostosInformados = Object.keys(camposImpostosProdutoSchema).some(
+		if (ehServico && dados.tipoproduto == null) {
+			dados.tipoproduto = "09";
+		}
+
+		const camposImpostosInformados = Object.keys(
+			camposImpostosProdutoSchema,
+		).some(
 			(campo) =>
 				campo in dadosValidados &&
 				dadosValidados[campo as keyof typeof dadosValidados] !== undefined,
@@ -111,6 +131,26 @@ export async function atualizarProduto(
 		if (camposImpostosInformados) {
 			const impostos = await enriquecerCamposImpostosProduto(dadosValidados);
 			Object.assign(dados, impostos);
+		}
+
+		const camposServicoInformados = Object.keys(
+			camposServicoProdutoSchema,
+		).some(
+			(campo) =>
+				campo in dadosValidados &&
+				dadosValidados[campo as keyof typeof dadosValidados] !== undefined,
+		);
+
+		if (camposServicoInformados) {
+			const camposServico = montarCamposServicoProduto(dadosValidados);
+			Object.assign(
+				dados,
+				Object.fromEntries(
+					Object.entries(camposServico).filter(
+						([, valor]) => valor !== undefined,
+					),
+				),
+			);
 		}
 
 		const resultado = await atualizarProdutoService({
@@ -123,15 +163,17 @@ export async function atualizarProduto(
 			return reply.status(resultado.status).send(resultado);
 		}
 
-		const quantidadeSaldo =
-			dadosValidados.estoque ?? dadosValidados.quantidadepadrao;
+		if (!ehServico) {
+			const quantidadeSaldo =
+				dadosValidados.estoque ?? dadosValidados.quantidadepadrao;
 
-		if (quantidadeSaldo != null && resultado.body) {
-			await sincronizarSaldoEstoqueProduto({
-				idempresa,
-				produto: resultado.body,
-				quantidade: quantidadeSaldo,
-			});
+			if (quantidadeSaldo != null && resultado.body) {
+				await sincronizarSaldoEstoqueProduto({
+					idempresa,
+					produto: resultado.body,
+					quantidade: quantidadeSaldo,
+				});
+			}
 		}
 
 		return reply.status(resultado.status).send(resultado.body);

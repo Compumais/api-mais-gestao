@@ -27,6 +27,7 @@ export type ListarProdutosPorEmpresaParametros = {
 	nome?: string | undefined;
 	q?: string | undefined;
 	inativo?: number | undefined;
+	tipo?: "P" | "S" | undefined;
 	page?: number;
 	limit?: number;
 };
@@ -36,6 +37,7 @@ export async function listarProdutosPorEmpresa({
 	nome,
 	q,
 	inativo,
+	tipo,
 	page = 1,
 	limit = 10,
 }: ListarProdutosPorEmpresaParametros) {
@@ -64,6 +66,10 @@ export async function listarProdutosPorEmpresa({
 				ilike(sql`${produtos.preco}::text`, termo),
 			),
 		);
+	}
+
+	if (tipo) {
+		where.push(eq(produtos.tipo, tipo));
 	}
 
 	const filtroInativo = filtroRegistroAtivo(produtos.inativo, inativo);

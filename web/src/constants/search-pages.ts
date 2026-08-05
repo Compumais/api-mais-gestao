@@ -109,6 +109,13 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 		keywords: ["produto", "produtos", "item"],
 	},
 	{
+		title: "Serviços",
+		url: "/servicos",
+		category: "Principal",
+		icon: IconListDetails,
+		keywords: ["serviço", "servico", "serviços", "servicos", "iss", "nfs-e"],
+	},
+	{
 		title: "Grupos",
 		url: "/grupos",
 		category: "Principal",

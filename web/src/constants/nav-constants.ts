@@ -109,6 +109,13 @@ export const DATA = {
 					},
 				},
 				{
+					title: "Serviços",
+					url: "/servicos",
+					acesso: {
+						perfis: ["proprietario", "admin", "financeiro"],
+					},
+				},
+				{
 					title: "Estoque",
 					url: "/estoque",
 					acesso: {
