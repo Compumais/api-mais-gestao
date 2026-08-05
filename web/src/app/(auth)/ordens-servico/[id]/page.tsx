@@ -389,6 +389,7 @@ export default function OrdemServicoDetalhePage({
 					<TabsList>
 						<TabsTrigger value="dados">Dados</TabsTrigger>
 						<TabsTrigger value="itens">Itens</TabsTrigger>
+						<TabsTrigger value="servico">Serviço</TabsTrigger>
 						<TabsTrigger value="eventos">Eventos</TabsTrigger>
 						<TabsTrigger value="faturamento">Faturamento</TabsTrigger>
 					</TabsList>
@@ -434,6 +435,18 @@ export default function OrdemServicoDetalhePage({
 						<AbaItensOs
 							ordemServicoId={id}
 							idempresa={empresa.id}
+							tipoItem="P"
+							desabilitado={bloqueada}
+							tecnicoObrigatorio={config?.tecnicoobrigatorio === 1}
+							opcoesTecnicos={opcoesUsuarios}
+						/>
+					</TabsContent>
+
+					<TabsContent value="servico" className="mt-4">
+						<AbaItensOs
+							ordemServicoId={id}
+							idempresa={empresa.id}
+							tipoItem="S"
 							desabilitado={bloqueada}
 							tecnicoObrigatorio={config?.tecnicoobrigatorio === 1}
 							opcoesTecnicos={opcoesUsuarios}

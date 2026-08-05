@@ -33,6 +33,7 @@ type ModalItemOsProps = {
 		observacao?: string;
 	}) => void;
 	idempresa: string;
+	tipoEsperado: "P" | "S";
 	itemParaEditar?: OrdemServicoItem | null;
 	opcoesTecnicos: Array<{ value: string; label: string }>;
 	tecnicoObrigatorio?: boolean;
@@ -58,6 +59,7 @@ export function ModalItemOs({
 	onClose,
 	onConfirmar,
 	idempresa,
+	tipoEsperado,
 	itemParaEditar,
 	opcoesTecnicos,
 	tecnicoObrigatorio = false,
@@ -69,6 +71,8 @@ export function ModalItemOs({
 	const idUn = `${idBase}-un`;
 	const idObs = `${idBase}-obs`;
 	const searchRef = useRef<HTMLInputElement>(null);
+	const ehServico = tipoEsperado === "S";
+	const rotuloEntidade = ehServico ? "serviço" : "produto";
 	const [idproduto, setIdproduto] = useState("");
 	const [busca, setBusca] = useState("");
 	const [buscaDebounced, setBuscaDebounced] = useState("");
@@ -86,7 +90,7 @@ export function ModalItemOs({
 	}, [busca]);
 
 	const { data: produtosData, isFetching: buscandoProdutos } = useQuery({
-		queryKey: ["produtos-os-busca", idempresa, buscaDebounced],
+		queryKey: ["produtos-os-busca", idempresa, buscaDebounced, tipoEsperado],
 		queryFn: () =>
 			produtosService.listar({
 				idempresa,
@@ -94,6 +98,7 @@ export function ModalItemOs({
 				page: 1,
 				limit: 20,
 				inativo: 0,
+				tipo: tipoEsperado,
 			}),
 		enabled: open && !!idempresa,
 	});
@@ -162,19 +167,27 @@ export function ModalItemOs({
 			<DialogContent className="max-w-lg">
 				<DialogHeader>
 					<DialogTitle>
-						{itemParaEditar ? "Editar item" : "Adicionar item"}
+						{itemParaEditar
+							? ehServico
+								? "Editar serviço"
+								: "Editar item"
+							: ehServico
+								? "Adicionar serviço"
+								: "Adicionar item"}
 					</DialogTitle>
 				</DialogHeader>
 				<div className="space-y-3">
 					<Field>
-						<FieldLabel htmlFor={idBusca}>Produto</FieldLabel>
+						<FieldLabel htmlFor={idBusca}>
+							{ehServico ? "Serviço" : "Produto"}
+						</FieldLabel>
 						<div className="relative">
 							<Input
 								id={idBusca}
 								ref={searchRef}
 								value={busca}
 								onChange={(e) => setBusca(e.target.value)}
-								placeholder="Buscar produto..."
+								placeholder={`Buscar ${rotuloEntidade}...`}
 								disabled={!!itemParaEditar}
 							/>
 							{(buscandoProdutos || carregandoProduto) && (

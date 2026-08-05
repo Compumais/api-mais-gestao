@@ -75,6 +75,105 @@ const propriedadesImpostosProdutoBody = {
 	},
 };
 
+const propriedadesServicoProdutoBody = {
+	itemrapido: {
+		anyOf: [{ type: "number", enum: [0, 1] }, { type: "null" }],
+		description: "Identifica se o serviço é item rápido",
+	},
+	podeserbrinde: {
+		anyOf: [{ type: "number", enum: [0, 1] }, { type: "null" }],
+		description: "Identifica se pode ser brinde",
+	},
+	inativo: {
+		anyOf: [{ type: "number", enum: [0, 1] }, { type: "null" }],
+		description: "0=Ativo, 1=Inativo",
+	},
+	nomeecf: {
+		anyOf: [{ type: "string", maxLength: 120 }, { type: "null" }],
+		description: "Nome PDV/ECF",
+	},
+	decimaispreco: {
+		anyOf: [{ type: "number", minimum: 0, maximum: 6 }, { type: "null" }],
+		description: "Casas decimais do preço",
+	},
+	codigolistalc11603: {
+		anyOf: [{ type: "string", maxLength: 5 }, { type: "null" }],
+		description: "Código da lista LC 116/03",
+	},
+	codigotributacaonacional: {
+		anyOf: [{ type: "string", maxLength: 6 }, { type: "null" }],
+		description: "Código de tributação nacional do ISSQN (6 dígitos)",
+	},
+	codigonbs: {
+		anyOf: [{ type: "string", maxLength: 9 }, { type: "null" }],
+		description: "Código NBS (9 dígitos)",
+	},
+	cicloposvenda: {
+		anyOf: [{ type: "number", minimum: 0 }, { type: "null" }],
+		description: "Ciclo em dias para notificar pós-venda",
+	},
+	idplanocontas: {
+		anyOf: [{ type: "string", format: "uuid" }, { type: "null" }],
+		description: "ID do plano de contas",
+	},
+	comissao: {
+		anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
+		description: "Percentual de comissão",
+	},
+	comissaoavista: {
+		anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
+		description: "Percentual de comissão à vista",
+	},
+	comissaoprazo: {
+		anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
+		description: "Percentual de comissão a prazo",
+	},
+	percentualcomissaoquitacao: {
+		anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
+		description: "Percentual de comissão na quitação",
+	},
+	situacaoiss: {
+		anyOf: [{ type: "string", maxLength: 7 }, { type: "null" }],
+		description: "Situação/tributação do ISS",
+	},
+	aliquotaiss: {
+		anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
+		description: "Alíquota ISS",
+	},
+	exigibilidadeiss: {
+		anyOf: [{ type: "string", maxLength: 1 }, { type: "null" }],
+		description: "Exigibilidade do ISS (NFS-e)",
+	},
+	processoisencaoiss: {
+		anyOf: [{ type: "string", maxLength: 60 }, { type: "null" }],
+		description: "Processo de isenção ISS",
+	},
+	incentivofiscal: {
+		anyOf: [{ type: "number", enum: [0, 1] }, { type: "null" }],
+		description: "Possui incentivo fiscal",
+	},
+	codigomunicipalservico: {
+		anyOf: [{ type: "string", maxLength: 20 }, { type: "null" }],
+		description: "Código municipal do serviço",
+	},
+	tipoimpressaogourmet: {
+		anyOf: [{ type: "string", maxLength: 40 }, { type: "null" }],
+		description: "Tipo de impressão no Gourmet",
+	},
+	idcfopsaidaexterna: {
+		anyOf: [{ type: "string", format: "uuid" }, { type: "null" }],
+		description: "CFOP externa de saída",
+	},
+	aliquotapis: {
+		anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
+		description: "Alíquota PIS",
+	},
+	aliquotacofins: {
+		anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
+		description: "Alíquota COFINS",
+	},
+};
+
 const propriedadesImpostosProdutoResposta = {
 	...propriedadesImpostosProdutoBody,
 	cstpisentrada: {
@@ -123,7 +222,6 @@ const propriedadesProdutoResposta = {
 	origem: { type: "number", minimum: 0, maximum: 8 },
 	ncm: { type: "string", nullable: true },
 	observacoes: { anyOf: [{ type: "string" }, { type: "null" }] },
-	inativo: { type: "number", enum: [0, 1], nullable: true },
 	enviamobile: { type: "number", enum: [0, 1], nullable: true },
 	quantidadepadrao: { type: "number", nullable: true },
 	quantidademinima: { type: "number", nullable: true },
@@ -135,6 +233,7 @@ const propriedadesProdutoResposta = {
 	},
 	unidademedida: { anyOf: [{ type: "string" }, { type: "null" }] },
 	...propriedadesImpostosProdutoResposta,
+	...propriedadesServicoProdutoBody,
 };
 
 export const criarProdutoSchema: FastifySchema = {
@@ -156,10 +255,7 @@ export const criarProdutoSchema: FastifySchema = {
 			preco: { type: "string" },
 			tipo: { type: "string", enum: ["P", "S"] },
 			iat: {
-				anyOf: [
-					{ type: "string", enum: ["A", "T"] },
-					{ type: "null" },
-				],
+				anyOf: [{ type: "string", enum: ["A", "T"] }, { type: "null" }],
 			},
 			ippt: { type: "string", enum: ["P", "T"] },
 			origem: {
@@ -176,18 +272,9 @@ export const criarProdutoSchema: FastifySchema = {
 			quantidademaxima: { anyOf: [{ type: "number" }, { type: "null" }] },
 			estoque: { type: "number", minimum: 0 },
 			...propriedadesImpostosProdutoBody,
+			...propriedadesServicoProdutoBody,
 		},
-		required: [
-			"idempresa",
-			"codigo",
-			"nome",
-			"idunidademedida",
-			"idgrupo",
-			"preco",
-			"ippt",
-			"origem",
-			"ncm",
-		],
+		required: ["idempresa", "codigo", "nome", "idunidademedida", "preco"],
 	},
 	response: {
 		201: {
@@ -221,6 +308,7 @@ export const listarProdutosSchema: FastifySchema = {
 			nome: { type: "string" },
 			q: { type: "string" },
 			inativo: { type: "number" },
+			tipo: { type: "string", enum: ["P", "S"] },
 			page: { type: "number", default: 1 },
 			limit: { type: "number", default: 10 },
 		},
@@ -291,11 +379,15 @@ export const atualizarProdutoSchema: FastifySchema = {
 		type: "object",
 		properties: {
 			codigo: { type: "number" },
-			ean: { anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }] },
+			ean: {
+				anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
+			},
 			referencia: { anyOf: [{ type: "string" }, { type: "null" }] },
 			nome: { type: "string" },
 			idunidademedida: { type: "string", format: "uuid" },
-			fornecedor: { anyOf: [{ type: "string", format: "uuid" }, { type: "null" }] },
+			fornecedor: {
+				anyOf: [{ type: "string", format: "uuid" }, { type: "null" }],
+			},
 			idgrupo: { type: "string", format: "uuid" },
 			preco: { anyOf: [{ type: "string" }, { type: "number" }] },
 			tipo: { type: "string", enum: ["P", "S"] },
@@ -312,6 +404,7 @@ export const atualizarProdutoSchema: FastifySchema = {
 			quantidademaxima: { anyOf: [{ type: "number" }, { type: "null" }] },
 			estoque: { type: "number", minimum: 0 },
 			...propriedadesImpostosProdutoBody,
+			...propriedadesServicoProdutoBody,
 		},
 	},
 	response: {

@@ -11,6 +11,13 @@ const valoresServicoSchema = z.object({
 	csll: z.coerce.number().nonnegative().optional(),
 });
 
+const itemNfseSchema = z.object({
+	descricao: z.string().min(1),
+	quantidade: z.coerce.number().positive(),
+	valorUnitario: z.coerce.number().nonnegative(),
+	codigoListaLc11603: z.string().optional(),
+});
+
 export const emissaoNfseSchema = z.object({
 	iddestinatario: z.string().uuid("Selecione o tomador"),
 	idnfseserie: z.string().uuid().optional(),
@@ -49,6 +56,8 @@ export const emissaoNfseSchema = z.object({
 	idplanocontas: z.string().uuid().optional(),
 	idcondicaopagto: z.string().uuid().optional(),
 	idtipodocumento: z.string().uuid().optional(),
+	idordemservico: z.string().uuid().optional(),
+	itens: z.array(itemNfseSchema).optional(),
 });
 
 export type EmissaoNfseFormData = z.infer<typeof emissaoNfseSchema>;

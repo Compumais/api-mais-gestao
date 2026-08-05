@@ -17,6 +17,7 @@ import {
 	type GerarNfeRascunhoOsData,
 	type ListarOrdensServicoParams,
 	ordemServicoService,
+	type PrepararNfseOsData,
 } from "@/services/ordem-servico.service";
 
 export const ordemServicoQueryKeys = {
@@ -333,6 +334,17 @@ export function useGerarNfeRascunhoOrdemServico(id: string) {
 	return useMutation({
 		mutationFn: (dados: GerarNfeRascunhoOsData) =>
 			ordemServicoService.gerarNfeRascunho(id, dados),
+		onSuccess: (_data, variables) => {
+			invalidarDominioOs(queryClient, id, variables.idempresa);
+		},
+	});
+}
+
+export function usePrepararNfseOrdemServico(id: string) {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: (dados: PrepararNfseOsData) =>
+			ordemServicoService.prepararNfse(id, dados),
 		onSuccess: (_data, variables) => {
 			invalidarDominioOs(queryClient, id, variables.idempresa);
 		},

@@ -1,7 +1,7 @@
 "use client";
 
 import { Layers3, Pencil, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +25,7 @@ import { ModalLotesItemOs } from "./modal-lotes-item-os";
 type AbaItensOsProps = {
 	ordemServicoId: string;
 	idempresa: string;
+	tipoItem: "P" | "S";
 	desabilitado?: boolean;
 	tecnicoObrigatorio?: boolean;
 	opcoesTecnicos: Array<{ value: string; label: string }>;
@@ -33,16 +34,32 @@ type AbaItensOsProps = {
 export function AbaItensOs({
 	ordemServicoId,
 	idempresa,
+	tipoItem,
 	desabilitado = false,
 	tecnicoObrigatorio = false,
 	opcoesTecnicos,
 }: AbaItensOsProps) {
+	const ehServico = tipoItem === "S";
+	const rotuloSingular = ehServico ? "serviço" : "item";
+	const rotuloPlural = ehServico ? "Serviços" : "Itens";
+	const rotuloColuna = ehServico ? "Serviço" : "Produto";
+
 	const { data: itens = [], isLoading } = useOrdemServicoItens(
 		ordemServicoId,
 		idempresa,
 	);
 	const salvar = useSalvarItemOrdemServico(ordemServicoId);
 	const excluir = useExcluirItemOrdemServico(ordemServicoId);
+
+	const itensFiltrados = useMemo(
+		() =>
+			itens.filter((item) =>
+				ehServico
+					? item.tipoproduto === "S"
+					: (item.tipoproduto ?? "P") !== "S",
+			),
+		[itens, ehServico],
+	);
 
 	const [modalAberto, setModalAberto] = useState(false);
 	const [itemEditando, setItemEditando] = useState<OrdemServicoItem | null>(
@@ -60,22 +77,42 @@ export function AbaItensOs({
 		observacao?: string;
 	}) {
 		try {
+			const camposOpcionais = itemEditando
+				? {
+						idtecnico: dados.idtecnico || null,
+						idcfop: dados.idcfop || null,
+						unidademedida: dados.unidademedida || null,
+						observacao: dados.observacao || null,
+					}
+				: {
+						...(dados.idtecnico ? { idtecnico: dados.idtecnico } : {}),
+						...(dados.idcfop ? { idcfop: dados.idcfop } : {}),
+						...(dados.unidademedida
+							? { unidademedida: dados.unidademedida }
+							: {}),
+						...(dados.observacao ? { observacao: dados.observacao } : {}),
+					};
+
 			await salvar.mutateAsync({
 				iditem: itemEditando?.id,
 				dados: {
 					idempresa,
-					...dados,
-					idtecnico: dados.idtecnico || null,
-					idcfop: dados.idcfop || null,
-					unidademedida: dados.unidademedida || null,
-					observacao: dados.observacao || null,
+					idproduto: dados.idproduto,
+					quantidade: dados.quantidade,
+					preco: dados.preco,
+					...camposOpcionais,
+					tipoEsperado: tipoItem,
 				},
 			});
-			toast.success(itemEditando ? "Item atualizado" : "Item adicionado");
+			toast.success(
+				itemEditando
+					? `${ehServico ? "Serviço" : "Item"} atualizado`
+					: `${ehServico ? "Serviço" : "Item"} adicionado`,
+			);
 			setModalAberto(false);
 			setItemEditando(null);
 		} catch (erro) {
-			toast.error("Erro ao salvar item", {
+			toast.error(`Erro ao salvar ${rotuloSingular}`, {
 				description: erro instanceof Error ? erro.message : "Erro desconhecido",
 			});
 		}
@@ -84,9 +121,9 @@ export function AbaItensOs({
 	async function removerItem(item: OrdemServicoItem) {
 		try {
 			await excluir.mutateAsync({ iditem: item.id, idempresa });
-			toast.success("Item removido");
+			toast.success(`${ehServico ? "Serviço" : "Item"} removido`);
 		} catch (erro) {
-			toast.error("Erro ao remover item", {
+			toast.error(`Erro ao remover ${rotuloSingular}`, {
 				description: erro instanceof Error ? erro.message : "Erro desconhecido",
 			});
 		}
@@ -96,11 +133,11 @@ export function AbaItensOs({
 		try {
 			await salvar.mutateAsync({
 				iditem: item.id,
-				dados: { idempresa, cancelado: 1 },
+				dados: { idempresa, cancelado: 1, tipoEsperado: tipoItem },
 			});
-			toast.success("Item cancelado");
+			toast.success(`${ehServico ? "Serviço" : "Item"} cancelado`);
 		} catch (erro) {
-			toast.error("Erro ao cancelar item", {
+			toast.error(`Erro ao cancelar ${rotuloSingular}`, {
 				description: erro instanceof Error ? erro.message : "Erro desconhecido",
 			});
 		}
@@ -109,7 +146,7 @@ export function AbaItensOs({
 	return (
 		<div className="space-y-4">
 			<div className="flex items-center justify-between">
-				<h2 className="text-lg font-semibold">Itens</h2>
+				<h2 className="text-lg font-semibold">{rotuloPlural}</h2>
 				{!desabilitado && (
 					<Button
 						type="button"
@@ -121,7 +158,7 @@ export function AbaItensOs({
 						}}
 					>
 						<Plus className="h-4 w-4" />
-						Adicionar item
+						{ehServico ? "Adicionar serviço" : "Adicionar item"}
 					</Button>
 				)}
 			</div>
@@ -130,7 +167,7 @@ export function AbaItensOs({
 				<Table>
 					<TableHeader>
 						<TableRow>
-							<TableHead>Produto</TableHead>
+							<TableHead>{rotuloColuna}</TableHead>
 							<TableHead className="text-right">Qtd</TableHead>
 							<TableHead className="text-right">Preço</TableHead>
 							<TableHead className="text-right">Total</TableHead>
@@ -145,20 +182,22 @@ export function AbaItensOs({
 									colSpan={6}
 									className="text-center text-muted-foreground"
 								>
-									Carregando itens...
+									Carregando {ehServico ? "serviços" : "itens"}...
 								</TableCell>
 							</TableRow>
-						) : itens.length === 0 ? (
+						) : itensFiltrados.length === 0 ? (
 							<TableRow>
 								<TableCell
 									colSpan={6}
 									className="text-center text-muted-foreground"
 								>
-									Nenhum item na ordem de serviço.
+									{ehServico
+										? "Nenhum serviço na ordem de serviço."
+										: "Nenhum item na ordem de serviço."}
 								</TableCell>
 							</TableRow>
 						) : (
-							itens.map((item) => {
+							itensFiltrados.map((item) => {
 								const qtd = parseFloat(item.quantidade ?? "0");
 								const preco = parseFloat(item.preco ?? "0");
 								const total = parseFloat(item.total ?? "0") || qtd * preco;
@@ -181,22 +220,26 @@ export function AbaItensOs({
 										<TableCell>{cancelado ? "Cancelado" : "Ativo"}</TableCell>
 										<TableCell className="text-right">
 											<div className="flex justify-end gap-1">
-												<Button
-													type="button"
-													variant="ghost"
-													size="icon"
-													aria-label="Lotes do item"
-													onClick={() => setLotesItemId(item.id)}
-												>
-													<Layers3 className="h-4 w-4" />
-												</Button>
+												{!ehServico && (
+													<Button
+														type="button"
+														variant="ghost"
+														size="icon"
+														aria-label="Lotes do item"
+														onClick={() => setLotesItemId(item.id)}
+													>
+														<Layers3 className="h-4 w-4" />
+													</Button>
+												)}
 												{!desabilitado && !cancelado && (
 													<>
 														<Button
 															type="button"
 															variant="ghost"
 															size="icon"
-															aria-label="Editar item"
+															aria-label={
+																ehServico ? "Editar serviço" : "Editar item"
+															}
 															onClick={() => {
 																setItemEditando(item);
 																setModalAberto(true);
@@ -216,7 +259,9 @@ export function AbaItensOs({
 															type="button"
 															variant="ghost"
 															size="icon"
-															aria-label="Excluir item"
+															aria-label={
+																ehServico ? "Excluir serviço" : "Excluir item"
+															}
 															onClick={() => void removerItem(item)}
 														>
 															<Trash2 className="h-4 w-4" />
@@ -241,13 +286,14 @@ export function AbaItensOs({
 				}}
 				onConfirmar={(dados) => void confirmarItem(dados)}
 				idempresa={idempresa}
+				tipoEsperado={tipoItem}
 				itemParaEditar={itemEditando}
 				opcoesTecnicos={opcoesTecnicos}
 				tecnicoObrigatorio={tecnicoObrigatorio}
 				carregando={salvar.isPending}
 			/>
 
-			{lotesItemId && (
+			{!ehServico && lotesItemId && (
 				<ModalLotesItemOs
 					open={!!lotesItemId}
 					onClose={() => setLotesItemId(null)}

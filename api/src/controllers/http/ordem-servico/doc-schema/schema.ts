@@ -361,10 +361,13 @@ export const criarItemOrdemServicoSchema: FastifySchema = {
 			idproduto: { type: "string", format: "uuid" },
 			quantidade: { type: "string" },
 			preco: { type: "string" },
-			idtecnico: { type: "string", format: "uuid" },
-			idcfop: { type: "string", format: "uuid" },
-			unidademedida: { type: "string" },
-			observacao: { type: "string" },
+			idtecnico: { type: ["string", "null"] },
+			idcfop: {
+				anyOf: [{ type: "string", format: "uuid" }, { type: "null" }],
+			},
+			unidademedida: { anyOf: [{ type: "string" }, { type: "null" }] },
+			observacao: { anyOf: [{ type: "string" }, { type: "null" }] },
+			tipoEsperado: { type: "string", enum: ["P", "S"] },
 		},
 	},
 	response: {
@@ -397,6 +400,7 @@ export const atualizarItemOrdemServicoSchema: FastifySchema = {
 			unidademedida: { type: ["string", "null"] },
 			observacao: { type: ["string", "null"] },
 			cancelado: { type: "integer" },
+			tipoEsperado: { type: "string", enum: ["P", "S"] },
 		},
 	},
 	response: {
@@ -548,8 +552,8 @@ export const criarEventoOrdemServicoSchema: FastifySchema = {
 			idempresa: { type: "string", format: "uuid" },
 			idtipoevento: { type: "string", format: "uuid" },
 			descricao: { type: "string" },
-			idtecnicode: { type: "string", format: "uuid" },
-			idtecnicopara: { type: "string", format: "uuid" },
+			idtecnicode: { type: "string" },
+			idtecnicopara: { type: "string" },
 			nomecontato: { type: "string" },
 		},
 	},
@@ -617,6 +621,18 @@ export const gerarNfeRascunhoOrdemServicoSchema: FastifySchema = {
 		properties: {
 			idempresa: { type: "string", format: "uuid" },
 			idserienfe: { type: "string", format: "uuid" },
+			formasPagamento: {
+				type: "array",
+				items: {
+					type: "object",
+					required: ["idtipodocumentofinanceiro", "valor"],
+					properties: {
+						idtipodocumentofinanceiro: { type: "string", format: "uuid" },
+						valor: { type: "number" },
+						indPag: { type: "integer" },
+					},
+				},
+			},
 		},
 	},
 	response: {
@@ -629,6 +645,38 @@ export const gerarNfeRascunhoOrdemServicoSchema: FastifySchema = {
 			},
 			additionalProperties: true,
 		},
+		...erroPadrao,
+	},
+};
+
+export const prepararNfseOrdemServicoSchema: FastifySchema = {
+	tags: ["ordens-servico"],
+	summary: "Preparar rascunho de NFS-e a partir dos serviços da OS",
+	description:
+		"Valida e monta os dados da NFS-e sem transmitir ao município. Gera o financeiro da OS de forma idempotente.",
+	security: [{ bearerAuth: [] }],
+	params: paramsOs,
+	body: {
+		type: "object",
+		required: ["idempresa"],
+		properties: {
+			idempresa: { type: "string", format: "uuid" },
+			formasPagamento: {
+				type: "array",
+				items: {
+					type: "object",
+					required: ["idtipodocumentofinanceiro", "valor"],
+					properties: {
+						idtipodocumentofinanceiro: { type: "string", format: "uuid" },
+						valor: { type: "number" },
+						indPag: { type: "integer" },
+					},
+				},
+			},
+		},
+	},
+	response: {
+		200: { type: "object", additionalProperties: true },
 		...erroPadrao,
 	},
 };

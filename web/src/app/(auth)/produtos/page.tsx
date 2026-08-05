@@ -24,7 +24,6 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { TableSkeleton } from "@/components/table-skeleton";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -32,6 +31,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import {
 	Table,
 	TableBody,
@@ -84,9 +84,7 @@ const createColumns = ({
 	{
 		accessorKey: "preco",
 		header: "Preço",
-		cell: ({ row }) => (
-			<div>{formatarPreco(row.original.preco)}</div>
-		),
+		cell: ({ row }) => <div>{formatarPreco(row.original.preco)}</div>,
 	},
 	{
 		accessorKey: "inativo",
@@ -205,6 +203,7 @@ export default function ProdutosPage() {
 				idempresa: localStorageEmpresa.id,
 				page: pagination.pageIndex + 1,
 				limit: pagination.pageSize,
+				tipo: "P",
 				...(qAplicado ? { q: qAplicado } : {}),
 			});
 		},
@@ -382,9 +381,7 @@ export default function ProdutosPage() {
 										<TableRow key={headerGroup.id}>
 											{headerGroup.headers.map((header) => (
 												<TableHead
-													className={
-														header.id === "acoes" ? "text-right" : ""
-													}
+													className={header.id === "acoes" ? "text-right" : ""}
 													key={header.id}
 												>
 													{header.isPlaceholder

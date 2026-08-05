@@ -32,6 +32,27 @@ import {
 } from "@/util/http-util.js";
 import { validarUsuarioDaEmpresa } from "@/util/validar-usuario-empresa.js";
 
+type TipoProdutoEsperado = "P" | "S";
+
+export type OrdemServicoItemListagem = OrdemServicoItem & {
+	tipoproduto: string;
+};
+
+function validarTipoProdutoEsperado(
+	tipoProduto: string | null | undefined,
+	tipoEsperado?: TipoProdutoEsperado | undefined,
+): string | null {
+	if (!tipoEsperado) return null;
+	const tipo = tipoProduto ?? "P";
+	if (tipoEsperado === "S" && tipo !== "S") {
+		return "O produto selecionado não é um serviço";
+	}
+	if (tipoEsperado === "P" && tipo === "S") {
+		return "O item selecionado é um serviço; use a aba Serviço";
+	}
+	return null;
+}
+
 async function validarAcessoOs(
 	ordemServicoId: string,
 	idempresa: string,
@@ -48,14 +69,14 @@ export async function listarItensOrdemServicoService(params: {
 	ordemServicoId: string;
 	idempresa: string;
 	idusuario: string;
-}): Promise<HttpResponse<OrdemServicoItem[]>> {
+}): Promise<HttpResponse<OrdemServicoItemListagem[]>> {
 	const acesso = await validarAcessoOs(
 		params.ordemServicoId,
 		params.idempresa,
 		params.idusuario,
 	);
 	if ("erro" in acesso && acesso.erro) {
-		return acesso.erro as HttpResponse<OrdemServicoItem[]>;
+		return acesso.erro as HttpResponse<OrdemServicoItemListagem[]>;
 	}
 
 	const itens = await listarItensPorOrdemServico(
@@ -73,10 +94,11 @@ export async function criarItemOrdemServicoService(params: {
 		idproduto: string;
 		quantidade: string;
 		preco: string;
-		idtecnico?: string | undefined;
-		idcfop?: string | undefined;
-		unidademedida?: string | undefined;
-		observacao?: string | undefined;
+		idtecnico?: string | null | undefined;
+		idcfop?: string | null | undefined;
+		unidademedida?: string | null | undefined;
+		observacao?: string | null | undefined;
+		tipoEsperado?: TipoProdutoEsperado | undefined;
 	};
 }): Promise<HttpResponse<OrdemServicoItem | null>> {
 	const acesso = await validarAcessoOs(
@@ -91,6 +113,14 @@ export async function criarItemOrdemServicoService(params: {
 	const produto = await buscarProdutoPorId(params.dados.idproduto);
 	if (!produto || produto.idempresa !== params.idempresa) {
 		return httpBadRequest("Produto não encontrado na empresa");
+	}
+
+	const erroTipo = validarTipoProdutoEsperado(
+		produto.tipo,
+		params.dados.tipoEsperado,
+	);
+	if (erroTipo) {
+		return httpBadRequest(erroTipo);
 	}
 
 	const config = await garantirConfiguracaoOrdemServico(params.idempresa);
@@ -162,6 +192,7 @@ export async function atualizarItemOrdemServicoService(params: {
 		unidademedida: string | null;
 		observacao: string | null;
 		cancelado: number;
+		tipoEsperado: TipoProdutoEsperado;
 	}>;
 }): Promise<HttpResponse<OrdemServicoItem | null>> {
 	const acesso = await validarAcessoOs(
@@ -181,6 +212,17 @@ export async function atualizarItemOrdemServicoService(params: {
 		return httpNaoEncontrado();
 	}
 
+	if (params.dados.tipoEsperado && item.idproduto) {
+		const produto = await buscarProdutoPorId(item.idproduto);
+		const erroTipo = validarTipoProdutoEsperado(
+			produto?.tipo,
+			params.dados.tipoEsperado,
+		);
+		if (erroTipo) {
+			return httpBadRequest(erroTipo);
+		}
+	}
+
 	const erroTecnico = await validarUsuarioDaEmpresa(
 		params.dados.idtecnico,
 		params.idempresa,
@@ -190,15 +232,16 @@ export async function atualizarItemOrdemServicoService(params: {
 		return httpBadRequest(erroTecnico);
 	}
 
-	const quantidade = params.dados.quantidade ?? item.quantidade ?? "0";
-	const preco = params.dados.preco ?? item.preco ?? "0";
+	const { tipoEsperado: _tipoEsperado, ...dadosAtualizacao } = params.dados;
+	const quantidade = dadosAtualizacao.quantidade ?? item.quantidade ?? "0";
+	const preco = dadosAtualizacao.preco ?? item.preco ?? "0";
 	const total = calcularTotalItem(quantidade, preco);
 
 	const atualizado = await atualizarOrdemServicoItem(
 		params.itemId,
 		params.idempresa,
 		{
-			...params.dados,
+			...dadosAtualizacao,
 			quantidade,
 			preco,
 			total,

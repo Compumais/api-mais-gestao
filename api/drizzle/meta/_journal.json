@@ -491,6 +491,13 @@
       "when": 1784417000000,
       "tag": "0068_nfse_urls_operacao",
       "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1784418000000,
+      "tag": "0069_produtos_campos_servico",
+      "breakpoints": true
     }
   ]
 }

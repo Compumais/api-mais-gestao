@@ -6,6 +6,7 @@ import {
 	integer,
 	numeric,
 	pgTable,
+	smallint,
 	text,
 	timestamp,
 	varchar,
@@ -204,6 +205,20 @@ export const produtos = pgTable(
 		valorlancamentospedcusto: numeric({ precision: 12, scale: 2 }),
 		valorlancamentospedcustodebito: numeric({ precision: 12, scale: 2 }),
 		venderpeloprecototal: integer(),
+		itemrapido: integer().default(0), // 0=Nao, 1=Sim
+		decimaispreco: smallint().default(2),
+		codigolistalc11603: varchar({ length: 5 }),
+		codigotributacaonacional: varchar({ length: 6 }),
+		codigonbs: varchar({ length: 9 }),
+		cicloposvenda: integer().default(0),
+		percentualcomissaoquitacao: numeric({ precision: 12, scale: 2 }),
+		situacaoiss: varchar({ length: 7 }),
+		aliquotaiss: numeric({ precision: 7, scale: 4 }),
+		exigibilidadeiss: varchar({ length: 1 }),
+		processoisencaoiss: varchar({ length: 60 }),
+		incentivofiscal: integer().default(0), // 0=Nao, 1=Sim
+		codigomunicipalservico: varchar({ length: 20 }),
+		tipoimpressaogourmet: varchar({ length: 40 }),
 	},
 	(table) => [
 		foreignKey({

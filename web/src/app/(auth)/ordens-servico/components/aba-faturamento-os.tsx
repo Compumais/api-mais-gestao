@@ -1,7 +1,8 @@
 "use client";
 
-import { ExternalLink, FileText, Wallet } from "lucide-react";
+import { ExternalLink, FileText, ReceiptText, Wallet } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,7 @@ import {
 	useGerarContasReceberOrdemServico,
 	useGerarNfeRascunhoOrdemServico,
 	useOrdemServicoFaturamentos,
+	usePrepararNfseOrdemServico,
 } from "@/hooks/use-ordem-servico";
 import type { OrdemServico } from "@/services/ordem-servico.service";
 import { formatarDataHoraOs, formatarMoedaOs } from "@/util/ordem-servico-ui";
@@ -49,15 +51,20 @@ export function AbaFaturamentoOs({
 	opcoesSeriesNfe,
 	desabilitado = false,
 }: AbaFaturamentoOsProps) {
-	const { data: faturamentos = [], isLoading } = useOrdemServicoFaturamentos(
+	const router = useRouter();
+	const { data: faturamentoData, isLoading } = useOrdemServicoFaturamentos(
 		ordemServicoId,
 		idempresa,
 	);
+	const faturamentos = faturamentoData?.data ?? [];
+	const resumo = faturamentoData?.resumo;
 	const gerarCr = useGerarContasReceberOrdemServico(ordemServicoId);
 	const gerarNfe = useGerarNfeRascunhoOrdemServico(ordemServicoId);
+	const prepararNfse = usePrepararNfseOrdemServico(ordemServicoId);
 
 	const [modalCr, setModalCr] = useState(false);
 	const [modalNfe, setModalNfe] = useState(false);
+	const [modalNfse, setModalNfse] = useState(false);
 	const [idTipoDoc, setIdTipoDoc] = useState(
 		os.idtipodocumentofinanceiro ?? "",
 	);
@@ -67,17 +74,45 @@ export function AbaFaturamentoOs({
 	const podeGerarCr =
 		!desabilitado && !!os.idcliente && parseFloat(os.valor ?? "0") > 0;
 	const podeGerarNfe =
-		!desabilitado && !!os.idcliente && os.faturouparanota !== 1;
+		!desabilitado &&
+		!!os.idcliente &&
+		(resumo?.possuiProdutos ?? parseFloat(os.valorprodutos ?? "0") > 0) &&
+		!resumo?.idNfe;
+	const podeGerarNfse =
+		!desabilitado &&
+		!!os.idcliente &&
+		(resumo?.possuiServicos ?? parseFloat(os.valorservicos ?? "0") > 0) &&
+		!resumo?.idNfse;
+
+	const valorTotalOs = os.valor ?? "0.00";
+	const valorProdutosOs = os.valorprodutos ?? "0.00";
+	const valorServicosOs = os.valorservicos ?? "0.00";
+
+	function formasPagamentoTotalOs() {
+		return idTipoDoc
+			? [
+					{
+						idtipodocumentofinanceiro: idTipoDoc,
+						valor: parseFloat(String(valorTotalOs).replace(",", ".")),
+					},
+				]
+			: undefined;
+	}
 
 	async function confirmarContasReceber() {
 		try {
+			const valorInformado = parseFloat(
+				String(valorForma).replace(",", "."),
+			);
 			const resultado = await gerarCr.mutateAsync({
 				idempresa,
 				formasPagamento: idTipoDoc
 					? [
 							{
 								idtipodocumentofinanceiro: idTipoDoc,
-								valor: parseFloat(String(valorForma).replace(",", ".")),
+								valor: Number.isFinite(valorInformado)
+									? valorInformado
+									: parseFloat(String(valorTotalOs).replace(",", ".")),
 							},
 						]
 					: undefined,
@@ -104,6 +139,7 @@ export function AbaFaturamentoOs({
 			const resultado = await gerarNfe.mutateAsync({
 				idempresa,
 				idserienfe: idSerie || undefined,
+				formasPagamento: formasPagamentoTotalOs(),
 			});
 			toast.success("NF-e rascunho criada", {
 				description:
@@ -112,8 +148,31 @@ export function AbaFaturamentoOs({
 						: `Status ${resultado.status}`,
 			});
 			setModalNfe(false);
+			router.push(`/nota-fiscal-venda/${resultado.idnotafiscal}`);
 		} catch (erro) {
 			toast.error("Erro ao gerar NF-e rascunho", {
+				description: erro instanceof Error ? erro.message : "Erro desconhecido",
+			});
+		}
+	}
+
+	async function confirmarNfse() {
+		try {
+			const resultado = await prepararNfse.mutateAsync({
+				idempresa,
+				formasPagamento: formasPagamentoTotalOs(),
+			});
+			if (resultado.avisos.length > 0) {
+				toast.warning("NFS-e preparada com avisos", {
+					description: resultado.avisos.join("; "),
+				});
+			} else {
+				toast.success("Rascunho de NFS-e preparado");
+			}
+			setModalNfse(false);
+			router.push(`/nota-fiscal-servico/nova?ordemServico=${ordemServicoId}`);
+		} catch (erro) {
+			toast.error("Erro ao preparar NFS-e", {
 				description: erro instanceof Error ? erro.message : "Erro desconhecido",
 			});
 		}
@@ -149,25 +208,51 @@ export function AbaFaturamentoOs({
 						type="button"
 						size="sm"
 						disabled={!podeGerarNfe || gerarNfe.isPending}
-						onClick={() => setModalNfe(true)}
+						onClick={() => {
+							setIdTipoDoc(os.idtipodocumentofinanceiro ?? "");
+							setModalNfe(true);
+						}}
 					>
 						<FileText className="h-4 w-4" />
 						Gerar NF-e rascunho
 					</Button>
+					<Button
+						type="button"
+						size="sm"
+						disabled={!podeGerarNfse || prepararNfse.isPending}
+						onClick={() => {
+							setIdTipoDoc(os.idtipodocumentofinanceiro ?? "");
+							setModalNfse(true);
+						}}
+					>
+						<ReceiptText className="h-4 w-4" />
+						Preparar NFS-e
+					</Button>
 				</div>
 			</div>
 
-			{(os.geroufinanceiro === 1 || os.faturouparanota === 1) && (
+			{(resumo?.financeiroGerado || resumo?.idNfe || resumo?.idNfse) && (
 				<div
 					className="rounded-md border bg-muted/40 p-3 text-sm"
 					aria-live="polite"
 				>
-					{os.geroufinanceiro === 1 && <p>Financeiro gerado para esta OS.</p>}
-					{os.faturouparanota === 1 && os.iddocumentofiscal && (
+					{resumo.financeiroGerado && <p>Financeiro gerado para esta OS.</p>}
+					{resumo.idNfe && (
 						<p>
 							NF-e vinculada:{" "}
 							<Link
-								href={`/nota-fiscal-venda/${os.iddocumentofiscal}`}
+								href={`/nota-fiscal-venda/${resumo.idNfe}`}
+								className="underline underline-offset-2"
+							>
+								abrir documento
+							</Link>
+						</p>
+					)}
+					{resumo.idNfse && (
+						<p>
+							NFS-e vinculada:{" "}
+							<Link
+								href={`/nota-fiscal-servico/${resumo.idNfse}`}
 								className="underline underline-offset-2"
 							>
 								abrir documento
@@ -211,7 +296,9 @@ export function AbaFaturamentoOs({
 								<TableRow key={item.id}>
 									<TableCell>
 										{item.idnotafiscal
-											? "NF-e"
+											? item.modelonotafiscal === "NFS"
+												? "NFS-e"
+												: "NF-e"
 											: item.idfaturamento
 												? "Conta a receber"
 												: item.iddavos
@@ -226,11 +313,21 @@ export function AbaFaturamentoOs({
 									</TableCell>
 									<TableCell>{formatarDataHoraOs(item.datacriacao)}</TableCell>
 									<TableCell className="text-right">
-										{item.idnotafiscal && (
+										{item.idnotafiscal && item.modelonotafiscal !== "NFS" && (
 											<Button variant="ghost" size="sm" asChild>
 												<Link href={`/nota-fiscal-venda/${item.idnotafiscal}`}>
 													<ExternalLink className="h-4 w-4" />
 													Abrir NF-e
+												</Link>
+											</Button>
+										)}
+										{item.idnotafiscal && item.modelonotafiscal === "NFS" && (
+											<Button variant="ghost" size="sm" asChild>
+												<Link
+													href={`/nota-fiscal-servico/${item.idnotafiscal}`}
+												>
+													<ExternalLink className="h-4 w-4" />
+													Abrir NFS-e
 												</Link>
 											</Button>
 										)}
@@ -257,7 +354,8 @@ export function AbaFaturamentoOs({
 					</DialogHeader>
 					<div className="space-y-3">
 						<p className="text-sm text-muted-foreground">
-							A geração é idempotente: se já existirem títulos da OS, eles serão
+							Usa o valor total da OS ({formatarMoedaOs(valorTotalOs)}). A
+							geração é idempotente: se já existirem títulos, eles serão
 							reutilizados.
 						</p>
 						<Field>
@@ -273,7 +371,7 @@ export function AbaFaturamentoOs({
 						</Field>
 						{idTipoDoc && (
 							<Field>
-								<FieldLabel>Valor</FieldLabel>
+								<FieldLabel>Valor total</FieldLabel>
 								<MoneyInput value={valorForma} onChange={setValorForma} />
 							</Field>
 						)}
@@ -304,8 +402,9 @@ export function AbaFaturamentoOs({
 					</DialogHeader>
 					<div className="space-y-3">
 						<p className="text-sm text-muted-foreground">
-							Cria NF-e modelo 55 com status pendente (90), sem transmitir à
-							SEFAZ. Itens de serviço não entram na NF-e.
+							Cria NF-e modelo 55 pendente (sem transmitir). A nota usa apenas o
+							valor dos produtos ({formatarMoedaOs(valorProdutosOs)}). Serviços
+							não entram.
 						</p>
 						<Field>
 							<FieldLabel>Série NF-e (opcional)</FieldLabel>
@@ -323,6 +422,25 @@ export function AbaFaturamentoOs({
 								Nenhuma série listada; a API usará a configuração padrão.
 							</p>
 						)}
+						{!resumo?.financeiroGerado && (
+							<>
+								<p className="text-sm text-muted-foreground">
+									Contas a receber usará o valor total da OS (
+									{formatarMoedaOs(valorTotalOs)}), não só os produtos.
+								</p>
+								<Field>
+									<FieldLabel>Tipo de documento financeiro</FieldLabel>
+									<Combobox
+										options={opcoesTiposDocumento}
+										value={idTipoDoc}
+										onChange={setIdTipoDoc}
+										placeholder="Usar condição/tipo da OS"
+										searchPlaceholder="Buscar..."
+										emptyMessage="Nenhum tipo encontrado."
+									/>
+								</Field>
+							</>
+						)}
 						<Input type="hidden" value={idSerie} readOnly aria-hidden />
 					</div>
 					<DialogFooter>
@@ -339,6 +457,56 @@ export function AbaFaturamentoOs({
 							disabled={gerarNfe.isPending}
 						>
 							{gerarNfe.isPending ? "Gerando..." : "Confirmar"}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			<Dialog open={modalNfse} onOpenChange={setModalNfse}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Preparar NFS-e</DialogTitle>
+					</DialogHeader>
+					<div className="space-y-3">
+						<p className="text-sm text-muted-foreground">
+							Os serviços ({formatarMoedaOs(valorServicosOs)}) serão carregados
+							em um rascunho para revisão. Produtos não entram. Nenhum documento
+							será transmitido nesta etapa.
+						</p>
+						{!resumo?.financeiroGerado && (
+							<>
+								<p className="text-sm text-muted-foreground">
+									Contas a receber usará o valor total da OS (
+									{formatarMoedaOs(valorTotalOs)}), não só os serviços.
+								</p>
+								<Field>
+									<FieldLabel>Tipo de documento financeiro</FieldLabel>
+									<Combobox
+										options={opcoesTiposDocumento}
+										value={idTipoDoc}
+										onChange={setIdTipoDoc}
+										placeholder="Usar condição/tipo da OS"
+										searchPlaceholder="Buscar..."
+										emptyMessage="Nenhum tipo encontrado."
+									/>
+								</Field>
+							</>
+						)}
+					</div>
+					<DialogFooter>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => setModalNfse(false)}
+						>
+							Cancelar
+						</Button>
+						<Button
+							type="button"
+							onClick={() => void confirmarNfse()}
+							disabled={prepararNfse.isPending}
+						>
+							{prepararNfse.isPending ? "Preparando..." : "Continuar"}
 						</Button>
 					</DialogFooter>
 				</DialogContent>

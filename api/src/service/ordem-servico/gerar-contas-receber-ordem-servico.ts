@@ -1,6 +1,12 @@
 import { v4 as uuidv4 } from "uuid";
 import type { HttpResponse } from "@/model/http-model.js";
 import { buscarCondicaoPagamentoPorId } from "@/repositories/condicao-pagamento-repositories.js";
+import { db } from "@/repositories/connection.js";
+import { listarDocumentosExistentesPorConta } from "@/repositories/conta-corrente-lancamento-repositories.js";
+import {
+	buscarContaCorrenteCaixaPadrao,
+	criarContaCorrenteCaixaPadrao,
+} from "@/repositories/conta-corrente-repositories.js";
 import {
 	buscarEntidadePorId,
 	verificarUsuarioPertenceEmpresa,
@@ -15,6 +21,7 @@ import {
 	buscarOrdemServicoPorIdEempresa,
 } from "@/repositories/ordem-servico-repositories.js";
 import { buscarTipoDocumentoFinanceiroPorId } from "@/repositories/tipo-documento-financeiro-repositories.js";
+import { inserirLancamentoCaixa } from "@/service/conta-corrente/inserir-lancamento-caixa.js";
 import { buscarTipoEventoPadrao } from "@/service/ordem-servico/ordem-servico-helpers.js";
 import { registrarEventoOrdemServicoService } from "@/service/ordem-servico/registrar-evento-ordem-servico.js";
 import {
@@ -26,6 +33,7 @@ import {
 import { TIPO_ORIGEM_FINANCEIRO_ORDEM_SERVICO } from "@/util/ordem-servico-constants.js";
 import {
 	adicionarDias,
+	formatarDataIso,
 	formatarValorMonetario,
 } from "@/util/recebimentos-venda-util.js";
 import {
@@ -51,6 +59,7 @@ type GerarContasReceberOsResposta = {
 	totalParcelas: number;
 	parcelasGeradas: number;
 	titulosExistentes: number;
+	lancamentosCaixa: number;
 };
 
 function distribuirValor(total: number, parcelas: number): number[] {
@@ -98,6 +107,7 @@ export async function gerarContasReceberOrdemServicoService({
 			totalParcelas: existentes.length,
 			parcelasGeradas: 0,
 			titulosExistentes: existentes.length,
+			lancamentosCaixa: 0,
 		});
 	}
 
@@ -116,6 +126,8 @@ export async function gerarContasReceberOrdemServicoService({
 	const codigoOs = os.codigo != null ? String(os.codigo) : os.id.slice(0, 8);
 
 	let parcelasGeradas = 0;
+	let lancamentosCaixa = 0;
+	let lancamentosCaixaExistentes = 0;
 	const formas = (formasPagamento ?? []).filter((f) => f.valor > 0);
 
 	if (os.idcondicaopagamento) {
@@ -212,6 +224,37 @@ export async function gerarContasReceberOrdemServicoService({
 				forma.indPag,
 			);
 			if (destino === "caixa_imediato") {
+				let caixa = await buscarContaCorrenteCaixaPadrao(idempresa);
+				if (!caixa) {
+					caixa = await criarContaCorrenteCaixaPadrao(idempresa);
+				}
+				const idPlanoContasCaixa = tipoDoc.idplanocontas;
+				if (!caixa || !idPlanoContasCaixa) {
+					return httpBadRequest(
+						"Pagamento imediato exige caixa e plano de contas configurados",
+					);
+				}
+				const documentoCaixa = `OS:${ordemServicoId}:${tipoDoc.id}`;
+				const documentosExistentes = await listarDocumentosExistentesPorConta({
+					idcontacorrente: caixa.id,
+					documentos: [documentoCaixa],
+				});
+				if (!documentosExistentes.includes(documentoCaixa)) {
+					await db.transaction(async (tx) => {
+						await inserirLancamentoCaixa(tx, {
+							idcontacorrente: caixa.id,
+							idusuario,
+							idplanocontas: idPlanoContasCaixa,
+							valor: forma.valor,
+							historico: `Recebimento OS ${codigoOs}`,
+							documento: documentoCaixa,
+							datahora: formatarDataIso(new Date()),
+						});
+					});
+					lancamentosCaixa++;
+				} else {
+					lancamentosCaixaExistentes++;
+				}
 				continue;
 			}
 
@@ -260,7 +303,11 @@ export async function gerarContasReceberOrdemServicoService({
 		}
 	}
 
-	if (parcelasGeradas === 0) {
+	if (
+		parcelasGeradas === 0 &&
+		lancamentosCaixa === 0 &&
+		lancamentosCaixaExistentes === 0
+	) {
 		return httpBadRequest("Nenhum título a receber foi gerado");
 	}
 
@@ -288,8 +335,9 @@ export async function gerarContasReceberOrdemServicoService({
 	}
 
 	return httpOk({
-		totalParcelas: valorTitulos,
+		totalParcelas: valorTitulos + lancamentosCaixa + lancamentosCaixaExistentes,
 		parcelasGeradas,
 		titulosExistentes: 0,
+		lancamentosCaixa,
 	});
 }
