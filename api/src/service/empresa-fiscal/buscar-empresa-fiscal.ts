@@ -63,6 +63,13 @@ function hidratarFiscalComEmpresa(
 		telefone: fiscal.telefone || empresa.telefone || null,
 		email: fiscal.email || empresa.email || null,
 		logradouro: fiscal.logradouro || empresa.endereco || null,
+		numero: fiscal.numero || empresa.numero || null,
+		complemento: fiscal.complemento || empresa.complemento || null,
+		bairro: fiscal.bairro || empresa.bairro || null,
+		cep: fiscal.cep || empresa.cep || null,
+		uf: fiscal.uf || empresa.idestado || null,
+		codigomunicipioibge:
+			fiscal.codigomunicipioibge || empresa.idcidade || null,
 		regimetributario:
 			fiscal.regimetributario ||
 			empresa.regimetributario ||
@@ -107,7 +114,13 @@ export async function buscarEmpresaFiscalService({
 			razaosocial: empresa.nome,
 			telefone: empresa.telefone,
 			email: empresa.email,
-			logradouro: empresa.endereco,
+			logradouro: empresa.endereco || null,
+			numero: empresa.numero || null,
+			complemento: empresa.complemento || null,
+			bairro: empresa.bairro || null,
+			cep: empresa.cep || null,
+			uf: empresa.idestado || null,
+			codigomunicipioibge: empresa.idcidade || null,
 			crt: empresa.regimetributario ? crtPadrao : null,
 			criadoem: agora,
 			atualizadoem: agora,

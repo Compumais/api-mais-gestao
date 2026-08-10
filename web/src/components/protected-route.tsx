@@ -144,11 +144,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 			return;
 		}
 
-		if (
-			listaEmpresas.length === 0 &&
-			user.perfil?.includes("proprietario") &&
-			pathname !== "/empresas/nova"
-		) {
+		if (listaEmpresas.length === 0 && pathname !== "/empresas/nova") {
 			router.push("/empresas/nova");
 		}
 	}, [
@@ -160,7 +156,6 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 		pathname,
 		isMounted,
 		user?.id,
-		user?.perfil,
 	]);
 
 	useEffect(() => {

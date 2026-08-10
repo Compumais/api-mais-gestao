@@ -27,7 +27,7 @@ import {
 	extractSessionTokenFromLoginResponse,
 	setSessionToken,
 } from "@/lib/auth-token";
-import { hasPerfil, resolveRedirectForUser } from "@/lib/perfis";
+import { resolveRedirectForUser } from "@/lib/perfis";
 import { cn } from "@/lib/utils";
 import {
 	EMPRESA_FORCAR_PRIMEIRA_KEY,
@@ -180,9 +180,7 @@ export function LoginForm({
 					}
 				: null;
 			const destino =
-				empresasCarregadasComSucesso &&
-				empresasCount === 0 &&
-				hasPerfil(perfilUsuario?.perfil, "proprietario")
+				empresasCarregadasComSucesso && empresasCount === 0
 					? "/empresas/nova"
 					: resolveRedirectForUser(perfilUsuario, redirectTo);
 			router.push(destino);

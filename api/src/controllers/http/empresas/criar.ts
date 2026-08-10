@@ -6,11 +6,17 @@ import { listarEmpresasService } from "../../../service/empresa/listar-empresas.
 import { buscarUsuarioPorIdService } from "../../../service/usuarios/buscar.js";
 
 const criarEmpresaSchema = z.object({
-	nome: z.string(),
-	cnpj: z.string(),
-	email: z.string(),
-	telefone: z.string(),
-	endereco: z.string(),
+	nome: z.string().min(1),
+	cnpj: z.string().min(1),
+	email: z.string().min(1),
+	telefone: z.string().min(1),
+	endereco: z.string().min(1),
+	numero: z.string().min(1),
+	complemento: z.string().optional().default(""),
+	bairro: z.string().min(1),
+	cep: z.string().min(1),
+	idestado: z.string().min(1),
+	idcidade: z.string().min(1),
 });
 
 export async function criarEmpresa(
@@ -51,6 +57,12 @@ export async function criarEmpresa(
 			telefone: dadosValidados.telefone,
 			email: dadosValidados.email,
 			endereco: dadosValidados.endereco,
+			numero: dadosValidados.numero,
+			complemento: dadosValidados.complemento,
+			bairro: dadosValidados.bairro,
+			cep: dadosValidados.cep,
+			idestado: dadosValidados.idestado,
+			idcidade: dadosValidados.idcidade,
 			atualizadoem: new Date().toISOString(),
 			criadoem: new Date().toISOString(),
 		};

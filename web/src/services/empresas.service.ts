@@ -10,6 +10,12 @@ export interface Empresa {
 	telefone?: string | null;
 	email?: string;
 	endereco?: string;
+	numero?: string;
+	complemento?: string;
+	bairro?: string;
+	cep?: string;
+	idestado?: string;
+	idcidade?: string;
 	regimetributario?: RegimeTributarioEmpresa | null;
 }
 
@@ -19,6 +25,12 @@ interface CriarEmpresa {
 	email: string;
 	telefone: string;
 	endereco: string;
+	numero: string;
+	complemento?: string;
+	bairro: string;
+	cep: string;
+	idestado: string;
+	idcidade: string;
 	idproprietario: string;
 }
 
@@ -26,6 +38,13 @@ export interface AtualizarEmpresaData {
 	nome?: string;
 	cnpj?: string;
 	telefone?: string;
+	endereco?: string;
+	numero?: string;
+	complemento?: string;
+	bairro?: string;
+	cep?: string;
+	idestado?: string;
+	idcidade?: string;
 	regimetributario?: RegimeTributarioEmpresa | "" | null;
 }
 

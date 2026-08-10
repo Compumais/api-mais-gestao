@@ -7,6 +7,7 @@ import * as taxasPadraoService from "../taxauf/criar-taxas-padrao.js";
 import * as parametrizacaoPadraoService from "../parametrizacao-tributos/criar-parametrizacao-tributos-padrao.js";
 import * as fatoresConversaoPadraoService from "../fator-conversao/criar-fatores-conversao-padrao.js";
 import * as tiposDocumentoFinanceiroPadraoService from "../tipo-documento-financeiro/criar-tipos-documento-financeiro-padrao.js";
+import * as planoEfetivoService from "../planos/buscar-plano-efetivo.js";
 import { criarEmpresaService } from "./criar-empresa.js";
 
 vi.mock("@/repositories/empresa-repositories");
@@ -16,6 +17,7 @@ vi.mock("../taxauf/criar-taxas-padrao.js");
 vi.mock("../parametrizacao-tributos/criar-parametrizacao-tributos-padrao.js");
 vi.mock("../fator-conversao/criar-fatores-conversao-padrao.js");
 vi.mock("../tipo-documento-financeiro/criar-tipos-documento-financeiro-padrao.js");
+vi.mock("../planos/buscar-plano-efetivo.js");
 vi.mock("@/repositories/conta-corrente-repositories.js", () => ({
 	criarContaCorrenteCaixaPadrao: vi.fn().mockResolvedValue({ id: "caixa-1" }),
 }));
@@ -32,7 +34,13 @@ describe("criarEmpresaService", () => {
 		cnpj: "12.345.678/0001-90",
 		telefone: "(34) 99999-9999",
 		email: "contato@empresa.com",
-		endereco: "Rua Exemplo, 123",
+		endereco: "Rua Exemplo",
+		numero: "123",
+		complemento: "",
+		bairro: "Centro",
+		cep: "38400-000",
+		idestado: "MG",
+		idcidade: "3170206",
 		idproprietario: "proprietario-1",
 		criadoem: new Date().toISOString(),
 		atualizadoem: new Date().toISOString(),
@@ -63,6 +71,11 @@ describe("criarEmpresaService", () => {
 		vi.mocked(empresaRepository.buscarEmpresaPorCnpj).mockResolvedValue(
 			undefined,
 		);
+		vi.mocked(planoEfetivoService.buscarEntitlementService).mockResolvedValue({
+			limites: { maxempresas: 5, maxusuarios: 10 },
+		} as Awaited<
+			ReturnType<typeof planoEfetivoService.buscarEntitlementService>
+		>);
 		vi.mocked(
 			planoContasPadraoService.criarPlanoContasPadraoService,
 		).mockResolvedValue([]);
@@ -179,6 +192,11 @@ describe("criarEmpresaService", () => {
 
 	it("deve permitir criar empresa quando maxempresas é null ou undefined", async () => {
 		vi.mocked(empresaRepository.criarEmpresa).mockResolvedValue([empresaMock]);
+		vi.mocked(planoEfetivoService.buscarEntitlementService).mockResolvedValue({
+			limites: { maxempresas: 999, maxusuarios: 10 },
+		} as Awaited<
+			ReturnType<typeof planoEfetivoService.buscarEntitlementService>
+		>);
 
 		const resultado = await criarEmpresaService({
 			dadosEmpresa: {

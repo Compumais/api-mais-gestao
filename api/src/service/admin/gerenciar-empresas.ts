@@ -24,6 +24,12 @@ type CriarEmpresaAdminParams = {
 	telefone: string;
 	email?: string;
 	endereco?: string;
+	numero?: string;
+	complemento?: string;
+	bairro?: string;
+	cep?: string;
+	idestado?: string;
+	idcidade?: string;
 	idproprietario?: string;
 	idusuarioAssociado?: string;
 	perfilAssociado?: string | string[];
@@ -58,6 +64,12 @@ export async function criarEmpresaAdminService(
 		telefone: params.telefone,
 		email: params.email ?? "",
 		endereco: params.endereco ?? "",
+		numero: params.numero ?? "",
+		complemento: params.complemento ?? "",
+		bairro: params.bairro ?? "",
+		cep: params.cep ?? "",
+		idestado: params.idestado ?? "",
+		idcidade: params.idcidade ?? "",
 		idproprietario,
 		criadoem: agora,
 		atualizadoem: agora,
