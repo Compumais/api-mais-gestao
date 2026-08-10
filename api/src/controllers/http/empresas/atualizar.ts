@@ -10,6 +10,13 @@ const atualizarEmpresaBodySchema = z.object({
 	nome: z.string().optional(),
 	cnpj: z.string().optional(),
 	telefone: z.string().optional(),
+	endereco: z.string().optional(),
+	numero: z.string().optional(),
+	complemento: z.string().optional(),
+	bairro: z.string().optional(),
+	cep: z.string().optional(),
+	idestado: z.string().optional(),
+	idcidade: z.string().optional(),
 	regimetributario: z
 		.union([z.enum(["SN", "LP", "LR"]), z.literal(""), z.null()])
 		.optional(),

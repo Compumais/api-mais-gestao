@@ -13,6 +13,13 @@ type AtualizaEmpresaParametros = {
 		nome?: string | undefined;
 		cnpj?: string | undefined;
 		telefone?: string | undefined;
+		endereco?: string | undefined;
+		numero?: string | undefined;
+		complemento?: string | undefined;
+		bairro?: string | undefined;
+		cep?: string | undefined;
+		idestado?: string | undefined;
+		idcidade?: string | undefined;
 		regimetributario?: string | null | undefined;
 	};
 };
@@ -47,6 +54,13 @@ export async function atualizarEmpresaService({
 		nome: dados.nome,
 		cnpj: dados.cnpj,
 		telefone: dados.telefone,
+		endereco: dados.endereco,
+		numero: dados.numero,
+		complemento: dados.complemento,
+		bairro: dados.bairro,
+		cep: dados.cep,
+		idestado: dados.idestado,
+		idcidade: dados.idcidade,
 		regimetributario,
 		atualizadoem: new Date().toISOString(),
 	});

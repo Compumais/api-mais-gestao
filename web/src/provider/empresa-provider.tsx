@@ -25,6 +25,12 @@ interface CriarEmpresa {
 	email: string;
 	telefone: string;
 	endereco: string;
+	numero: string;
+	complemento?: string;
+	bairro: string;
+	cep: string;
+	idestado: string;
+	idcidade: string;
 	idproprietario: string;
 }
 

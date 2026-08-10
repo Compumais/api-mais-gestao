@@ -3,7 +3,9 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { customSession } from "better-auth/plugins";
 import { eq } from "drizzle-orm";
 import * as schema from "../../drizzle/schema.js";
+import type { TipoPlano } from "../constants/planos.js";
 import { db } from "../repositories/connection.js";
+import { listarPlanosSaas } from "../repositories/saas-catalog-repositories.js";
 import { getApiBaseUrl } from "../util/base-url.js";
 import {
 	getClientOrigins,
@@ -11,6 +13,13 @@ import {
 	getPrimaryClientOrigin,
 } from "../util/cors-origins.js";
 import { resolverPerfilNaCriacao } from "../util/usuario-perfil.js";
+
+const PLANO_INICIAL_FALLBACK: TipoPlano = "BASIC";
+
+async function resolverCodigoPlanoInicial(): Promise<string> {
+	const planos = await listarPlanosSaas(true);
+	return planos[0]?.codigo ?? PLANO_INICIAL_FALLBACK;
+}
 
 export const auth = betterAuth({
 	baseURL: getApiBaseUrl(),
@@ -30,10 +39,12 @@ export const auth = betterAuth({
 			create: {
 				before: async (user, _context) => {
 					const userRecord = user as Record<string, unknown>;
+					const planoInicial = await resolverCodigoPlanoInicial();
 					return {
 						data: {
 							...user,
 							perfil: resolverPerfilNaCriacao(userRecord),
+							plano: planoInicial,
 						},
 					};
 				},

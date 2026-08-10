@@ -28,10 +28,45 @@ export const criarEmpresaSchema: FastifySchema = {
 			},
 			endereco: {
 				type: "string",
-				description: "Endereço completo da empresa",
+				description: "Logradouro / rua da empresa",
+			},
+			numero: {
+				type: "string",
+				description: "Número do endereço",
+			},
+			complemento: {
+				type: "string",
+				description: "Complemento do endereço",
+			},
+			bairro: {
+				type: "string",
+				description: "Bairro",
+			},
+			cep: {
+				type: "string",
+				description: "CEP",
+			},
+			idestado: {
+				type: "string",
+				description: "UF do estado (ex.: SP)",
+			},
+			idcidade: {
+				type: "string",
+				description: "Código IBGE do município",
 			},
 		},
-		required: ["nome", "cnpj", "email", "telefone", "endereco"],
+		required: [
+			"nome",
+			"cnpj",
+			"email",
+			"telefone",
+			"endereco",
+			"numero",
+			"bairro",
+			"cep",
+			"idestado",
+			"idcidade",
+		],
 	},
 	response: {
 		201: {
@@ -46,6 +81,14 @@ export const criarEmpresaSchema: FastifySchema = {
 				nome: { type: "string", description: "Nome da empresa" },
 				cnpj: { type: "string", description: "CNPJ da empresa" },
 				telefone: { type: "string", description: "Telefone da empresa" },
+				email: { type: "string", description: "Email da empresa" },
+				endereco: { type: "string", description: "Logradouro / rua" },
+				numero: { type: "string", description: "Número" },
+				complemento: { type: "string", description: "Complemento" },
+				bairro: { type: "string", description: "Bairro" },
+				cep: { type: "string", description: "CEP" },
+				idestado: { type: "string", description: "UF" },
+				idcidade: { type: "string", description: "Código IBGE do município" },
 				criadoem: {
 					type: "string",
 					format: "date-time",
@@ -280,6 +323,34 @@ export const atualizarEmpresaSchema: FastifySchema = {
 				type: "string",
 				description: "Telefone de contato da empresa",
 			},
+			endereco: {
+				type: "string",
+				description: "Logradouro / rua da empresa",
+			},
+			numero: {
+				type: "string",
+				description: "Número do endereço",
+			},
+			complemento: {
+				type: "string",
+				description: "Complemento do endereço",
+			},
+			bairro: {
+				type: "string",
+				description: "Bairro",
+			},
+			cep: {
+				type: "string",
+				description: "CEP",
+			},
+			idestado: {
+				type: "string",
+				description: "UF do estado (ex.: SP)",
+			},
+			idcidade: {
+				type: "string",
+				description: "Código IBGE do município",
+			},
 			regimetributario: {
 				type: "string",
 				enum: ["SN", "LP", "LR"],
@@ -298,6 +369,14 @@ export const atualizarEmpresaSchema: FastifySchema = {
 				nome: { type: "string" },
 				cnpj: { type: "string" },
 				telefone: { type: "string" },
+				email: { type: "string" },
+				endereco: { type: "string" },
+				numero: { type: "string" },
+				complemento: { type: "string" },
+				bairro: { type: "string" },
+				cep: { type: "string" },
+				idestado: { type: "string" },
+				idcidade: { type: "string" },
 				regimetributario: { type: "string", nullable: true },
 				criadoem: { type: "string", format: "date-time" },
 				atualizadoem: { type: "string", format: "date-time" },

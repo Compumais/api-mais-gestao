@@ -286,6 +286,12 @@ export const adminService = {
 		telefone: string;
 		email?: string;
 		endereco?: string;
+		numero?: string;
+		complemento?: string;
+		bairro?: string;
+		cep?: string;
+		idestado?: string;
+		idcidade?: string;
 		idproprietario?: string;
 		idusuarioAssociado?: string;
 		perfilAssociado?: string;

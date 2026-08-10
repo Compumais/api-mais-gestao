@@ -1,10 +1,11 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -14,14 +15,32 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { formatarPerfilLabel } from "@/lib/perfis";
+import { maskCep } from "@/lib/masks";
 import { adminService } from "@/services/admin.service";
+import { localidadesService } from "@/services/localidades.service";
 
 const PERFIS = ["usuario", "admin", "proprietario", "garcom"];
 
+const empresaFormInicial = {
+	nome: "",
+	cnpj: "",
+	telefone: "",
+	email: "",
+	cep: "",
+	idestado: "",
+	idcidade: "",
+	endereco: "",
+	numero: "",
+	complemento: "",
+	bairro: "",
+	idusuarioAssociado: "",
+	perfilAssociado: "usuario",
+};
+
 export default function SuperCadastroPage() {
 	const queryClient = useQueryClient();
+	const ultimoCepBuscado = useRef<string | null>(null);
 	const { data: empresasData } = useQuery({
 		queryKey: ["admin-empresas"],
 		queryFn: () => adminService.listarEmpresas(),
@@ -35,15 +54,54 @@ export default function SuperCadastroPage() {
 		idempresa: "",
 	});
 
-	const [empresaForm, setEmpresaForm] = useState({
-		nome: "",
-		cnpj: "",
-		telefone: "",
-		email: "",
-		endereco: "",
-		idusuarioAssociado: "",
-		perfilAssociado: "usuario",
+	const [empresaForm, setEmpresaForm] = useState(empresaFormInicial);
+	const [buscandoCep, setBuscandoCep] = useState(false);
+
+	const { data: estadosData, isLoading: carregandoEstados } = useQuery({
+		queryKey: ["localidades", "estados"],
+		queryFn: () => localidadesService.listarEstados(),
 	});
+
+	const { data: municipiosData, isLoading: carregandoMunicipios } = useQuery({
+		queryKey: ["localidades", "municipios", empresaForm.idestado],
+		queryFn: () => localidadesService.listarMunicipios(empresaForm.idestado),
+		enabled: !!empresaForm.idestado,
+	});
+
+	const municipioOptions = useMemo(
+		() =>
+			(municipiosData?.data ?? []).map((municipio) => ({
+				value: municipio.idcidade,
+				label: municipio.nome,
+			})),
+		[municipiosData?.data],
+	);
+
+	useEffect(() => {
+		const cepLimpo = empresaForm.cep.replace(/\D/g, "");
+		if (cepLimpo.length !== 8) return;
+		if (ultimoCepBuscado.current === cepLimpo) return;
+
+		void (async () => {
+			try {
+				setBuscandoCep(true);
+				ultimoCepBuscado.current = cepLimpo;
+				const endereco = await localidadesService.buscarEnderecoPorCep(cepLimpo);
+				setEmpresaForm((s) => ({
+					...s,
+					endereco: endereco.endereco || s.endereco,
+					bairro: endereco.bairro || s.bairro,
+					idestado: endereco.idestado || s.idestado,
+					idcidade: endereco.idcidade || s.idcidade,
+				}));
+			} catch {
+				toast.error("CEP não encontrado ou inválido");
+				ultimoCepBuscado.current = null;
+			} finally {
+				setBuscandoCep(false);
+			}
+		})();
+	}, [empresaForm.cep]);
 
 	const criarUsuarioMutation = useMutation({
 		mutationFn: () =>
@@ -76,15 +134,8 @@ export default function SuperCadastroPage() {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["admin-empresas"] });
 			toast.success("Empresa criada");
-			setEmpresaForm({
-				nome: "",
-				cnpj: "",
-				telefone: "",
-				email: "",
-				endereco: "",
-				idusuarioAssociado: "",
-				perfilAssociado: "usuario",
-			});
+			setEmpresaForm(empresaFormInicial);
+			ultimoCepBuscado.current = null;
 		},
 	});
 
@@ -224,11 +275,105 @@ export default function SuperCadastroPage() {
 							/>
 						</div>
 						<div className="space-y-2">
-							<Label>Endereço</Label>
-							<Textarea
+							<Label>CEP</Label>
+							<Input
+								placeholder="00000-000"
+								value={empresaForm.cep}
+								onChange={(e) => {
+									const valor = maskCep(e.target.value);
+									setEmpresaForm((s) => ({ ...s, cep: valor }));
+									if (valor.replace(/\D/g, "").length < 8) {
+										ultimoCepBuscado.current = null;
+									}
+								}}
+							/>
+							{buscandoCep ? (
+								<p className="text-xs text-muted-foreground">Buscando CEP...</p>
+							) : null}
+						</div>
+						<div className="space-y-2">
+							<Label>Estado</Label>
+							<Select
+								value={empresaForm.idestado || undefined}
+								onValueChange={(idestado) =>
+									setEmpresaForm((s) => ({
+										...s,
+										idestado,
+										idcidade: "",
+									}))
+								}
+								disabled={carregandoEstados}
+							>
+								<SelectTrigger>
+									<SelectValue placeholder="Selecione o estado" />
+								</SelectTrigger>
+								<SelectContent>
+									{estadosData?.data.map((estado) => (
+										<SelectItem key={estado.idestado} value={estado.idestado}>
+											{estado.nome} ({estado.idestado})
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
+						<div className="space-y-2">
+							<Label>Cidade</Label>
+							<Combobox
+								options={municipioOptions}
+								value={empresaForm.idcidade}
+								onChange={(idcidade) =>
+									setEmpresaForm((s) => ({ ...s, idcidade }))
+								}
+								placeholder={
+									empresaForm.idestado
+										? carregandoMunicipios
+											? "Carregando cidades..."
+											: "Selecione a cidade"
+										: "Selecione o estado primeiro"
+								}
+								searchPlaceholder="Buscar cidade..."
+								emptyMessage="Nenhuma cidade encontrada."
+								disabled={!empresaForm.idestado || carregandoMunicipios}
+							/>
+						</div>
+						<div className="space-y-2">
+							<Label>Rua</Label>
+							<Input
 								value={empresaForm.endereco}
 								onChange={(e) =>
 									setEmpresaForm((s) => ({ ...s, endereco: e.target.value }))
+								}
+							/>
+						</div>
+						<div className="grid grid-cols-2 gap-3">
+							<div className="space-y-2">
+								<Label>Número</Label>
+								<Input
+									value={empresaForm.numero}
+									onChange={(e) =>
+										setEmpresaForm((s) => ({ ...s, numero: e.target.value }))
+									}
+								/>
+							</div>
+							<div className="space-y-2">
+								<Label>Complemento</Label>
+								<Input
+									value={empresaForm.complemento}
+									onChange={(e) =>
+										setEmpresaForm((s) => ({
+											...s,
+											complemento: e.target.value,
+										}))
+									}
+								/>
+							</div>
+						</div>
+						<div className="space-y-2">
+							<Label>Bairro</Label>
+							<Input
+								value={empresaForm.bairro}
+								onChange={(e) =>
+									setEmpresaForm((s) => ({ ...s, bairro: e.target.value }))
 								}
 							/>
 						</div>

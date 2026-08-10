@@ -70,6 +70,14 @@ export async function atualizarEmpresa(
 		nome?: string | undefined;
 		cnpj?: string | undefined;
 		telefone?: string | undefined;
+		email?: string | undefined;
+		endereco?: string | undefined;
+		numero?: string | undefined;
+		complemento?: string | undefined;
+		bairro?: string | undefined;
+		cep?: string | undefined;
+		idestado?: string | undefined;
+		idcidade?: string | undefined;
 		atualizadoem?: string | undefined;
 		regimetributario?: string | null | undefined;
 	},

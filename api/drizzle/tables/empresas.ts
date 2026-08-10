@@ -19,6 +19,12 @@ export const empresa = pgTable(
 		telefone: text().notNull(),
 		email: text().default("").notNull(),
 		endereco: text().default("").notNull(),
+		numero: varchar({ length: 20 }).default("").notNull(),
+		complemento: varchar({ length: 60 }).default("").notNull(),
+		bairro: varchar({ length: 60 }).default("").notNull(),
+		cep: varchar({ length: 9 }).default("").notNull(),
+		idestado: text().default("").notNull(),
+		idcidade: text().default("").notNull(),
 		idproprietario: text().notNull(),
 		criadoem: timestamp({ precision: 3, mode: "string" })
 			.default(sql`CURRENT_TIMESTAMP`)
