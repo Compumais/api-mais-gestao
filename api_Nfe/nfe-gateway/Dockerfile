@@ -2,6 +2,10 @@ FROM php:8.3-cli-bookworm
 
 ENV COMPOSER_ALLOW_SUPERUSER=1
 ENV COMPOSER_HOME=/tmp/composer
+# OpenSSL 3: necessário para PFX A1 com cifragem legada (RC2/3DES)
+ENV OPENSSL_CONF=/etc/ssl/openssl-legacy.cnf
+
+COPY openssl-legacy.cnf /etc/ssl/openssl-legacy.cnf
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
 	git \
