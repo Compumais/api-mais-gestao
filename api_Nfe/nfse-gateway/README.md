@@ -46,3 +46,11 @@ Documentação por provedor: `docs/provedores/`
 cd api_Nfe/nfse-gateway
 docker compose up -d --build
 ```
+
+A imagem habilita o OpenSSL **legacy provider** (`OPENSSL_CONF` → `api_Nfe/openssl-legacy.cnf`) para ler PFX A1 com cifragem antiga (RC2/3DES). Sem isso, `/certificado/info` pode falhar com `error:0308010C:digital envelope routines::unsupported`.
+
+Em PHP local (OpenSSL 3), exporte antes de subir o servidor:
+
+```bash
+export OPENSSL_CONF="$(pwd)/../openssl-legacy.cnf"
+```

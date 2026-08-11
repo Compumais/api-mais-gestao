@@ -1,0 +1,18 @@
+# OpenSSL 3: habilita provider legacy para ler PFX/P12 A1
+# cifrados com algoritmos antigos (ex.: RC2/3DES).
+# Sem isso, openssl_pkcs12_read falha com:
+# error:0308010C:digital envelope routines::unsupported
+openssl_conf = openssl_init
+
+[openssl_init]
+providers = provider_sect
+
+[provider_sect]
+default = default_sect
+legacy = legacy_sect
+
+[default_sect]
+activate = 1
+
+[legacy_sect]
+activate = 1
