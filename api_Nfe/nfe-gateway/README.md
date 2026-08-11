@@ -38,9 +38,13 @@ curl http://127.0.0.1:8088/health
 
 Requisitos: PHP 8.1+, Composer, extensões `openssl`, `soap`, `dom`, `curl`, `mbstring`, `zip`.
 
+Com OpenSSL 3 (PHP 8.2+/Debian Bookworm etc.), aponte `OPENSSL_CONF` para o arquivo na pasta `api_Nfe` — senão PFX A1 com cifragem legada falham com `error:0308010C:digital envelope routines::unsupported`.
+
 ```bash
 cd api_Nfe/sped-nfe && composer install
 cd ../nfe-gateway && composer install
+# PowerShell: $env:OPENSSL_CONF = (Resolve-Path ..\openssl-legacy.cnf).Path
+export OPENSSL_CONF="$(pwd)/../openssl-legacy.cnf"
 NFE_GATEWAY_SECRET=dev-secret-change-me php -S 127.0.0.1:8088 -t public
 ```
 
@@ -63,6 +67,18 @@ NFE_GATEWAY_SECRET=dev-secret-change-me php -S 127.0.0.1:8088 -t public
 Header obrigatório (exceto `/health`): `X-Nfe-Gateway-Secret`
 
 ## Problemas comuns
+
+### `Impossivel ler o certificado` / `error:0308010C:digital envelope routines::unsupported`
+
+Certificados A1 (PFX/P12) gerados com algoritmos legados (RC2/3DES) exigem o **OpenSSL legacy provider**. A imagem Docker já define `OPENSSL_CONF=/etc/ssl/openssl-legacy.cnf` (arquivo em `api_Nfe/openssl-legacy.cnf`).
+
+Após puxar essa alteração, recrie o container:
+
+```powershell
+docker compose up -d --build
+```
+
+Em PHP local, exporte `OPENSSL_CONF` apontando para `api_Nfe/openssl-legacy.cnf` (veja seção acima).
 
 ### `Could not resolve host: hnfe.fazenda.mg.gov.br`
 
