@@ -1,18 +1,43 @@
 const SESSION_TOKEN_KEY = "mais-gestao-session-token";
 
+function persistirToken(token: string) {
+	sessionStorage.setItem(SESSION_TOKEN_KEY, token);
+	localStorage.setItem(SESSION_TOKEN_KEY, token);
+}
+
+function limparToken() {
+	sessionStorage.removeItem(SESSION_TOKEN_KEY);
+	localStorage.removeItem(SESSION_TOKEN_KEY);
+}
+
 export function setSessionToken(token: string | null) {
 	if (typeof window === "undefined") return;
 
 	if (token) {
-		sessionStorage.setItem(SESSION_TOKEN_KEY, token);
+		persistirToken(token);
 	} else {
-		sessionStorage.removeItem(SESSION_TOKEN_KEY);
+		limparToken();
 	}
 }
 
 export function getSessionToken(): string | null {
 	if (typeof window === "undefined") return null;
-	return sessionStorage.getItem(SESSION_TOKEN_KEY);
+
+	const daAba = sessionStorage.getItem(SESSION_TOKEN_KEY);
+	if (daAba) {
+		if (localStorage.getItem(SESSION_TOKEN_KEY) !== daAba) {
+			localStorage.setItem(SESSION_TOKEN_KEY, daAba);
+		}
+		return daAba;
+	}
+
+	const compartilhado = localStorage.getItem(SESSION_TOKEN_KEY);
+	if (compartilhado) {
+		sessionStorage.setItem(SESSION_TOKEN_KEY, compartilhado);
+		return compartilhado;
+	}
+
+	return null;
 }
 
 function extrairTokenDeSessao(session: unknown): string | null {

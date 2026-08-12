@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, Search } from "lucide-react";
+import { ExternalLink, Loader2, Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { getSessionToken } from "@/lib/auth-token";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MoneyInput } from "@/components/ui/money-input";
@@ -174,6 +175,8 @@ export function ModalItemEmissao({
 				inativo: 0,
 			}),
 		enabled: !!idempresa && open,
+		staleTime: 0,
+		refetchOnWindowFocus: true,
 	});
 
 	const produtos = produtosData?.data ?? [];
@@ -380,9 +383,28 @@ export function ModalItemEmissao({
 				<div className="space-y-4 py-2">
 					{/* Busca de produto */}
 					<div className="space-y-1">
-						<span className="text-sm font-medium text-muted-foreground block">
-							Produto
-						</span>
+						<div className="flex items-center justify-between gap-2">
+							<span className="text-sm font-medium text-muted-foreground block">
+								Produto
+							</span>
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								className="h-7 gap-1.5 text-xs"
+								onClick={() => {
+									getSessionToken();
+									window.open(
+										"/produtos/novo",
+										"_blank",
+										"noopener,noreferrer",
+									);
+								}}
+							>
+								<ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+								Cadastrar produto
+							</Button>
+						</div>
 						<div className="relative">
 							<Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
 							<Input

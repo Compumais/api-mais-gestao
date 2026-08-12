@@ -2,7 +2,15 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Eye, Pencil, Plus, Send, Trash2 } from "lucide-react";
+import {
+	ArrowLeft,
+	ExternalLink,
+	Eye,
+	Pencil,
+	Plus,
+	Send,
+	Trash2,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -55,6 +63,7 @@ import {
 	NFE_STATUS,
 } from "@/constants/nfe-status";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { getSessionToken } from "@/lib/auth-token";
 import { useNfeConfiguracao } from "@/hooks/use-nfe-configuracao";
 import {
 	type EmissaoNfeFormData,
@@ -247,6 +256,8 @@ export default function NovaEmissaoNfePage() {
 				idempresa: empresa?.id ?? "",
 			}),
 		enabled: !!empresa,
+		staleTime: 0,
+		refetchOnWindowFocus: true,
 	});
 
 	const { data: cfopsSaida } = useQuery({
@@ -1802,34 +1813,57 @@ export default function NovaEmissaoNfePage() {
 											? "Fornecedor"
 											: "Cliente / Destinatário"}
 								</FieldLabel>
-								<Controller
-									control={form.control}
-									name="iddestinatario"
-									render={({ field }) => (
-										<Combobox
-											options={opcoesDestinatario}
-											value={field.value ?? "_nenhum"}
-											onChange={(v) =>
-												field.onChange(v === "_nenhum" ? undefined : v)
-											}
-											placeholder={
-												isDevolucaoVenda
-													? "Selecionar cliente..."
-													: isOperacaoDevolucao
-														? "Selecionar fornecedor..."
-														: "Selecionar destinatário..."
-											}
-											searchPlaceholder="Buscar por nome ou CNPJ..."
-											emptyMessage={
-												isDevolucaoVenda
-													? "Nenhum cliente encontrado."
-													: isOperacaoDevolucao
-														? "Nenhum fornecedor encontrado."
-														: "Nenhum cliente encontrado."
-											}
+								<div className="flex gap-2 items-start">
+									<div className="min-w-0 flex-1">
+										<Controller
+											control={form.control}
+											name="iddestinatario"
+											render={({ field }) => (
+												<Combobox
+													options={opcoesDestinatario}
+													value={field.value ?? "_nenhum"}
+													onChange={(v) =>
+														field.onChange(v === "_nenhum" ? undefined : v)
+													}
+													placeholder={
+														isDevolucaoVenda
+															? "Selecionar cliente..."
+															: isOperacaoDevolucao
+																? "Selecionar fornecedor..."
+																: "Selecionar destinatário..."
+													}
+													searchPlaceholder="Buscar por nome ou CNPJ..."
+													emptyMessage={
+														isDevolucaoVenda
+															? "Nenhum cliente encontrado."
+															: isOperacaoDevolucao
+																? "Nenhum fornecedor encontrado."
+																: "Nenhum cliente encontrado."
+													}
+												/>
+											)}
 										/>
-									)}
-								/>
+									</div>
+									<Button
+										type="button"
+										variant="outline"
+										size="sm"
+										className="shrink-0 gap-1.5"
+										onClick={() => {
+											getSessionToken();
+											const url =
+												isOperacaoDevolucao && !isDevolucaoVenda
+													? "/fornecedores/novo"
+													: "/clientes/novo";
+											window.open(url, "_blank", "noopener,noreferrer");
+										}}
+									>
+										<ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+										{isOperacaoDevolucao && !isDevolucaoVenda
+											? "Cadastrar fornecedor"
+											: "Cadastrar cliente"}
+									</Button>
+								</div>
 								<FieldError errors={[errors.iddestinatario]} />
 							</Field>
 
