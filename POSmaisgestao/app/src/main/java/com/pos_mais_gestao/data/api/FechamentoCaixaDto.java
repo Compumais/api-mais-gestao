@@ -6,4 +6,6 @@ public class FechamentoCaixaDto {
     public Integer pdv;
     public String suprimentoinicial;
     public String saldoapurado;
+    public String datacriacao;
+    public String datahora;
 }

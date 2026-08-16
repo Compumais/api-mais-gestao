@@ -61,7 +61,8 @@ public class CatalogRepository {
                         texto(obj, "idgrupo"),
                         texto(obj, "idgrupogourmet"),
                         texto(obj, "imagem"),
-                        texto(obj, "caminhoimagem")));
+                        texto(obj, "caminhoimagem"),
+                        flag(obj, "espizza")));
             }
         }
 
@@ -119,6 +120,10 @@ public class CatalogRepository {
         return db.listarPorGrupoGourmet(idgrupogourmet, termo, limit);
     }
 
+    public List<Produto> listarPizzas(String excetoId, int limit) {
+        return db.listarPizzas(excetoId, limit);
+    }
+
     public int contarProdutos() {
         return db.contarProdutos();
     }
@@ -137,5 +142,23 @@ public class CatalogRepository {
     private static String textoOu(JsonObject obj, String key, String fallback) {
         String v = texto(obj, key);
         return v == null ? fallback : v;
+    }
+
+    private static boolean flag(JsonObject obj, String key) {
+        if (obj == null || !obj.has(key) || obj.get(key).isJsonNull()) {
+            return false;
+        }
+        try {
+            if (obj.get(key).isJsonPrimitive() && obj.get(key).getAsJsonPrimitive().isBoolean()) {
+                return obj.get(key).getAsBoolean();
+            }
+            return obj.get(key).getAsInt() == 1;
+        } catch (Exception e) {
+            try {
+                return "1".equals(obj.get(key).getAsString()) || "true".equalsIgnoreCase(obj.get(key).getAsString());
+            } catch (Exception ignored) {
+                return false;
+            }
+        }
     }
 }

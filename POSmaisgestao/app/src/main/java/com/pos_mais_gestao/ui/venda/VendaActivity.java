@@ -11,6 +11,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -83,6 +84,9 @@ public class VendaActivity extends AppCompatActivity {
         lblSecao = findViewById(R.id.lblSecao);
         txtVazio = findViewById(R.id.txtVazio);
         btnPagar = findViewById(R.id.btnPagar);
+        if (prefs.isModoPdvLocal()) {
+            btnPagar.setVisibility(View.GONE);
+        }
         btnCarregarMais = findViewById(R.id.btnCarregarMais);
         inputBusca = findViewById(R.id.inputBusca);
         MaterialButton btnEscanear = findViewById(R.id.btnEscanear);
@@ -112,6 +116,10 @@ public class VendaActivity extends AppCompatActivity {
         listaCarrinho.setAdapter(carrinhoAdapter);
 
         btnPagar.setOnClickListener(v -> {
+            if (prefs.isModoPdvLocal()) {
+                Toast.makeText(this, R.string.cupom_somente_pdv, Toast.LENGTH_LONG).show();
+                return;
+            }
             if (Carrinho.getInstance().isVazio()) {
                 Toast.makeText(this, R.string.carrinho_vazio, Toast.LENGTH_SHORT).show();
                 return;
@@ -204,8 +212,56 @@ public class VendaActivity extends AppCompatActivity {
     }
 
     private void adicionarProduto(Produto produto) {
+        if (produto.isEspizza()) {
+            dialogPizza(produto);
+            return;
+        }
         Carrinho.getInstance().adicionar(produto);
         atualizarCarrinho();
+    }
+
+    private void dialogPizza(Produto primeiro) {
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.pizza_meio_a_meio)
+                .setMessage(getString(R.string.pizza_meio_a_meio_ajuda, primeiro.getDescricao()))
+                .setNeutralButton(android.R.string.cancel, null)
+                .setNegativeButton(R.string.pizza_inteira, (d, w) -> {
+                    Carrinho.getInstance().adicionar(primeiro);
+                    atualizarCarrinho();
+                })
+                .setPositiveButton(R.string.escolher_segundo_sabor, (d, w) -> dialogSegundoSabor(primeiro))
+                .show();
+    }
+
+    private void dialogSegundoSabor(Produto primeiro) {
+        executor.execute(() -> {
+            try {
+                List<Produto> pizzas = api.listarPizzas(primeiro.getId());
+                runOnUiThread(() -> {
+                    if (pizzas.isEmpty()) {
+                        Toast.makeText(this, R.string.sem_outras_pizzas, Toast.LENGTH_LONG).show();
+                        Carrinho.getInstance().adicionar(primeiro);
+                        atualizarCarrinho();
+                        return;
+                    }
+                    CharSequence[] nomes = new CharSequence[pizzas.size()];
+                    for (int i = 0; i < pizzas.size(); i++) {
+                        Produto p = pizzas.get(i);
+                        nomes[i] = p.getDescricao() + "  " + MoneyFormat.format(p.getPreco());
+                    }
+                    new AlertDialog.Builder(this)
+                            .setTitle(R.string.escolher_segundo_sabor)
+                            .setItems(nomes, (d, which) -> {
+                                Carrinho.getInstance().adicionarMeioAMeio(primeiro, pizzas.get(which));
+                                atualizarCarrinho();
+                            })
+                            .setNegativeButton(android.R.string.cancel, null)
+                            .show();
+                });
+            } catch (ApiException e) {
+                runOnUiThread(() -> Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show());
+            }
+        });
     }
 
     private void atualizarCarrinho() {

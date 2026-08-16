@@ -31,6 +31,7 @@ export const produtoFormSchema = z.object({
 	fornecedor: z.string().optional().nullable(),
 	idgrupo: z.string().min(1, "Grupo é obrigatório"),
 	idgrupogourmet: z.string().optional().nullable(),
+	espizza: z.boolean().optional(),
 	preco: z
 		.string()
 		.min(1, "Preço é obrigatório")
@@ -50,11 +51,7 @@ export const produtoFormSchema = z.object({
 	tipo: z.enum(["P", "S"], { message: "Tipo de produto inválido" }),
 	iat: z.enum(["A", "T"]).optional().nullable(),
 	ippt: z.enum(["P", "T"], { message: "IPPT é obrigatório" }),
-	origem: z
-		.number()
-		.int()
-		.min(0, "Origem inválida")
-		.max(8, "Origem inválida"),
+	origem: z.number().int().min(0, "Origem inválida").max(8, "Origem inválida"),
 	ncm: z
 		.string()
 		.min(1, "NCM é obrigatório")

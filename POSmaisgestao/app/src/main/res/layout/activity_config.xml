@@ -23,10 +23,42 @@
             android:textSize="22sp"
             android:textStyle="bold" />
 
-        <com.google.android.material.textfield.TextInputLayout
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="@string/conexao_modo"
+            android:textColor="@color/muted_foreground" />
+
+        <RadioGroup
+            android:id="@+id/radioGrupoConexao"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/radioConexaoCloud"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/conexao_cloud"
+                android:textColor="@color/foreground" />
+
+            <RadioButton
+                android:id="@+id/radioConexaoPdv"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/conexao_pdv_local"
+                android:textColor="@color/foreground" />
+        </RadioGroup>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/layoutUrlApi"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
             android:hint="@string/url_api"
             app:hintTextColor="@color/muted_foreground"
             app:boxStrokeColor="@color/primary">
@@ -41,7 +73,33 @@
                 android:textColorHint="@color/muted_foreground" />
         </com.google.android.material.textfield.TextInputLayout>
 
+        <LinearLayout
+            android:id="@+id/blocoAcoesPdv"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnTestarPdv"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:text="@string/testar_pdv" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCarregarCatalogo"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/carregar_catalogo" />
+        </LinearLayout>
+
         <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/layoutNumeroPdv"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
@@ -60,9 +118,10 @@
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/layoutQuantidadeMesas"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
+            android:layout_marginBottom="8dp"
             android:hint="@string/quantidade_mesas"
             app:hintTextColor="@color/muted_foreground"
             app:boxStrokeColor="@color/primary">
@@ -76,6 +135,16 @@
                 android:textColor="@color/foreground"
                 android:textColorHint="@color/muted_foreground" />
         </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            android:id="@+id/txtConfigOrigemPdv"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:text="@string/config_origem_pdv"
+            android:textColor="@color/muted_foreground"
+            android:textSize="13sp"
+            android:visibility="gone" />
 
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
@@ -204,6 +273,103 @@
                     android:text="@string/fichas_evento_ajuda"
                     android:textColor="@color/muted_foreground"
                     android:textSize="13sp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardBackgroundColor="@color/card"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            app:strokeColor="@color/border"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="4dp"
+                    android:text="@string/pix_config_titulo"
+                    android:textColor="@color/foreground"
+                    android:textSize="17sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:text="@string/pix_config_ajuda"
+                    android:textColor="@color/muted_foreground"
+                    android:textSize="13sp" />
+
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/switchPixQr"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="56dp"
+                    android:text="@string/habilitar_pix_qr"
+                    android:textColor="@color/foreground" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:hint="@string/chave_pix"
+                    app:boxStrokeColor="@color/primary"
+                    app:hintTextColor="@color/muted_foreground">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/inputChavePix"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textEmailAddress"
+                        android:minHeight="56dp"
+                        android:textColor="@color/foreground"
+                        android:textColorHint="@color/muted_foreground" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:hint="@string/nome_recebedor_pix"
+                    app:boxStrokeColor="@color/primary"
+                    app:hintTextColor="@color/muted_foreground">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/inputNomePix"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textPersonName"
+                        android:minHeight="56dp"
+                        android:textColor="@color/foreground"
+                        android:textColorHint="@color/muted_foreground" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:hint="@string/cidade_pix"
+                    app:boxStrokeColor="@color/primary"
+                    app:hintTextColor="@color/muted_foreground">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/inputCidadePix"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="text"
+                        android:minHeight="56dp"
+                        android:textColor="@color/foreground"
+                        android:textColorHint="@color/muted_foreground" />
+                </com.google.android.material.textfield.TextInputLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 

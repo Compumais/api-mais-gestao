@@ -271,6 +271,7 @@ async function syncCriarVenda(
 			precototal: item.precototal,
 			precopromocao: 0,
 			precoalterado: 0,
+			descricao: item.descricao,
 		});
 	}
 

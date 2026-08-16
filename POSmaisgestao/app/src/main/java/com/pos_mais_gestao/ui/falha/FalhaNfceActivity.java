@@ -70,13 +70,15 @@ public class FalhaNfceActivity extends AppCompatActivity {
         }
 
         MaterialButton btnImprimir = findViewById(R.id.btnImprimirComprovanteFalha);
+        boolean local = ((PosApplication) getApplication()).getPrefsStore().isModoPdvLocal();
         btnImprimir.setOnClickListener(v -> imprimirComprovante());
-        if (comprovante == null || comprovante.isEmpty()) {
+        if (local || comprovante == null || comprovante.isEmpty()) {
+            btnImprimir.setVisibility(local ? View.GONE : View.VISIBLE);
             btnImprimir.setEnabled(false);
         }
 
         MaterialButton btnFichas = findViewById(R.id.btnImprimirFichasFalha);
-        boolean temFichas = fichas != null && !fichas.isEmpty();
+        boolean temFichas = !local && fichas != null && !fichas.isEmpty();
         btnFichas.setVisibility(temFichas ? View.VISIBLE : View.GONE);
         btnFichas.setOnClickListener(v -> imprimirFichas());
 
@@ -94,7 +96,7 @@ public class FalhaNfceActivity extends AppCompatActivity {
             }
         });
 
-        if (comprovante != null && !comprovante.isEmpty()) {
+        if (!local && comprovante != null && !comprovante.isEmpty()) {
             imprimirComprovante();
         }
         if (temFichas) {

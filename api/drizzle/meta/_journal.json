@@ -512,6 +512,13 @@
       "when": 1784420000000,
       "tag": "0071_grupogourmet",
       "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1785000000000,
+      "tag": "0072_produtos_espizza",
+      "breakpoints": true
     }
   ]
 }

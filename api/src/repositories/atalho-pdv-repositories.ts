@@ -15,12 +15,16 @@ export async function listarAtalhosPdvComProduto(
 			unidademedida: produtos.unidademedida,
 			idunidademedida: produtos.idunidademedida,
 			codigo: produtos.codigo,
+			espizza: produtos.espizza,
 			ordem: atalhopdv.ordem,
 		})
 		.from(atalhopdv)
 		.innerJoin(produtos, eq(atalhopdv.idproduto, produtos.id))
 		.where(
-			and(eq(atalhopdv.idempresa, idempresa), eq(atalhopdv.idusuario, idusuario)),
+			and(
+				eq(atalhopdv.idempresa, idempresa),
+				eq(atalhopdv.idusuario, idusuario),
+			),
 		)
 		.orderBy(asc(atalhopdv.ordem), asc(produtos.descricao));
 }

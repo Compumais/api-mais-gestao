@@ -6,7 +6,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.pos_mais_gestao.PosApplication;
 import com.pos_mais_gestao.data.local.PrefsStore;
 import com.pos_mais_gestao.ui.empresa.EmpresaActivity;
-import com.pos_mais_gestao.ui.home.HomeActivity;
+import com.pos_mais_gestao.ui.PosDestino;
 import com.pos_mais_gestao.ui.login.LoginActivity;
 
 public class MainActivity extends AppCompatActivity {
@@ -21,7 +21,7 @@ public class MainActivity extends AppCompatActivity {
         } else if (!prefs.hasEmpresa()) {
             intent = new Intent(this, EmpresaActivity.class);
         } else {
-            intent = new Intent(this, HomeActivity.class);
+            intent = PosDestino.intentHub(this, prefs);
         }
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);

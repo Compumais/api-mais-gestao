@@ -36,6 +36,7 @@ import com.pos_mais_gestao.domain.Produto;
 import com.pos_mais_gestao.ui.OfflineBanner;
 import com.pos_mais_gestao.ui.mesas.MesasActivity;
 import com.pos_mais_gestao.util.MoneyFormat;
+import com.pos_mais_gestao.util.PizzaMeioAMeio;
 import com.pos_mais_gestao.util.ProdutoImagemHelper;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -210,14 +211,51 @@ public class PedidoActivity extends AppCompatActivity {
             Toast.makeText(this, R.string.abra_mesa_para_pedir, Toast.LENGTH_SHORT).show();
             return;
         }
-        dialogObservacao(produto, null);
+        if (produto.isEspizza()) {
+            dialogPizza(produto);
+            return;
+        }
+        dialogObservacao(produto, null, null);
     }
 
-    private void dialogObservacao(Produto produto, SacolaLinha existente) {
+    private void dialogPizza(Produto primeiro) {
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.pizza_meio_a_meio)
+                .setMessage(getString(R.string.pizza_meio_a_meio_ajuda, primeiro.getDescricao()))
+                .setNeutralButton(android.R.string.cancel, null)
+                .setNegativeButton(R.string.pizza_inteira, (d, w) -> dialogObservacao(primeiro, null, null))
+                .setPositiveButton(R.string.escolher_segundo_sabor, (d, w) -> dialogSegundoSabor(primeiro))
+                .show();
+    }
+
+    private void dialogSegundoSabor(Produto primeiro) {
+        List<Produto> pizzas = catalog.listarPizzas(primeiro.getId(), 200);
+        if (pizzas.isEmpty()) {
+            Toast.makeText(this, R.string.sem_outras_pizzas, Toast.LENGTH_LONG).show();
+            dialogObservacao(primeiro, null, null);
+            return;
+        }
+        CharSequence[] nomes = new CharSequence[pizzas.size()];
+        for (int i = 0; i < pizzas.size(); i++) {
+            Produto p = pizzas.get(i);
+            nomes[i] = p.getDescricao() + "  " + MoneyFormat.format(p.getPreco());
+        }
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.escolher_segundo_sabor)
+                .setItems(nomes, (d, which) -> dialogObservacao(primeiro, pizzas.get(which), null))
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+    }
+
+    private void dialogObservacao(Produto produto, Produto produtoMeio, SacolaLinha existente) {
         View view = LayoutInflater.from(this).inflate(R.layout.dialog_observation, null);
         TextView txt = view.findViewById(R.id.txtObsProduct);
         TextInputEditText input = view.findViewById(R.id.inputObservation);
-        txt.setText(produto.getDescricao());
+        if (produtoMeio != null) {
+            txt.setText(PizzaMeioAMeio.descricao(produto, produtoMeio));
+        } else {
+            txt.setText(produto.getDescricao());
+        }
         if (existente != null && existente.observacao != null) {
             input.setText(existente.observacao);
         }
@@ -226,7 +264,7 @@ public class PedidoActivity extends AppCompatActivity {
                 .setView(view)
                 .setNegativeButton(R.string.pular, (d, w) -> {
                     if (existente == null) {
-                        sacola.add(new SacolaLinha(produto, BigDecimal.ONE, null));
+                        sacola.add(new SacolaLinha(produto, produtoMeio, BigDecimal.ONE, null));
                     }
                     atualizarSacolaUi();
                 })
@@ -235,7 +273,8 @@ public class PedidoActivity extends AppCompatActivity {
                     if (existente != null) {
                         existente.observacao = obs.isEmpty() ? null : obs;
                     } else {
-                        sacola.add(new SacolaLinha(produto, BigDecimal.ONE, obs.isEmpty() ? null : obs));
+                        sacola.add(new SacolaLinha(
+                                produto, produtoMeio, BigDecimal.ONE, obs.isEmpty() ? null : obs));
                     }
                     atualizarSacolaUi();
                 })
@@ -463,14 +502,14 @@ public class PedidoActivity extends AppCompatActivity {
         @Override
         public void onBindViewHolder(@NonNull VH holder, int position) {
             SacolaLinha linha = sacola.get(position);
-            holder.txtName.setText("1x " + linha.produto.getDescricao());
+            holder.txtName.setText("1x " + linha.descricaoCupom());
             holder.txtPrice.setText(MoneyFormat.format(linha.subtotal()));
             if (linha.observacao != null && !linha.observacao.isEmpty()) {
                 holder.txtDetail.setText(linha.observacao);
             } else {
                 holder.txtDetail.setText(R.string.toque_obs);
             }
-            holder.btnObs.setOnClickListener(v -> dialogObservacao(linha.produto, linha));
+            holder.btnObs.setOnClickListener(v -> dialogObservacao(linha.produto, linha.produtoMeio, linha));
             holder.btnRemove.setOnClickListener(v -> {
                 sacola.remove(position);
                 atualizarSacolaUi();

@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { v4 as uuidv4 } from "uuid";
 import z from "zod";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { criarProdutoService } from "@/service/produto/criar-produto.js";
 import { enriquecerCamposImpostosProduto } from "@/service/produto/enriquecer-campos-impostos-produto.js";
 import { sincronizarSaldoEstoqueProduto } from "@/service/produto/sincronizar-saldo-estoque-produto.js";
@@ -51,6 +51,7 @@ const criarProdutoBodySchema = z
 		tipoproduto: z.string().max(2).optional().nullable(),
 		observacoes: z.string().optional().nullable(),
 		enviamobile: z.number().int().min(0).max(1).optional(),
+		espizza: z.number().int().min(0).max(1).optional(),
 		quantidadepadrao: z.number().int().min(0).optional().nullable(),
 		quantidademinima: z.number().int().min(0).optional().nullable(),
 		quantidademaxima: z.number().int().positive().optional().nullable(),
@@ -149,6 +150,7 @@ export async function criarProduto(
 				dadosValidados.tipoproduto ?? (ehServico ? "09" : null),
 			observacoes: dadosValidados.observacoes ?? null,
 			enviamobile: dadosValidados.enviamobile ?? 0,
+			espizza: dadosValidados.espizza ?? 0,
 			quantidadepadrao: ehServico
 				? 0
 				: (dadosValidados.quantidadepadrao ?? 0),

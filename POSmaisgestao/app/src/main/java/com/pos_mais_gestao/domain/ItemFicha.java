@@ -29,7 +29,7 @@ public class ItemFicha implements Serializable {
             }
             int qty = item.getQuantidade().setScale(0, RoundingMode.HALF_UP).intValue();
             if (qty > 0) {
-                out.add(new ItemFicha(item.getProduto().getDescricao(), qty));
+                out.add(new ItemFicha(item.getDescricaoExibicao(), qty));
             }
         }
         return out;

@@ -40,7 +40,40 @@
             android:textColor="@color/muted_foreground"
             android:textSize="16sp" />
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="@string/conexao_modo"
+            android:textColor="@color/muted_foreground"
+            android:textSize="14sp" />
+
+        <RadioGroup
+            android:id="@+id/radioGrupoConexao"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/radioConexaoCloud"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/conexao_cloud"
+                android:textColor="@color/foreground" />
+
+            <RadioButton
+                android:id="@+id/radioConexaoPdv"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/conexao_pdv_local"
+                android:textColor="@color/foreground" />
+        </RadioGroup>
+
         <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/layoutUrlApi"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
