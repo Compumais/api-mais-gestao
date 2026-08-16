@@ -6,6 +6,7 @@ import { listarItensPorVendaPdv } from "@/repositories/venda-pdv-item-repositori
 import type { ItemPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
 import { empresaUsaCsosn } from "@/util/normalizar-tributacao-item-emissao-nfe.js";
 import { truncarDescricaoItemNfce } from "@/util/pizza-meio-a-meio.js";
+import { normalizarCodigoCest } from "@/util/validar-cest-item-emissao-nfe.js";
 
 async function resolverCodigoCfop(
 	ids: Array<string | null | undefined>,
