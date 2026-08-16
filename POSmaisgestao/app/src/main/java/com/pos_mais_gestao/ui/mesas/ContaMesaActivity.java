@@ -4,11 +4,16 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -28,6 +33,7 @@ import com.pos_mais_gestao.ui.pagamento.PagamentoActivity;
 import com.pos_mais_gestao.ui.venda.ProdutoAdapter;
 import com.pos_mais_gestao.util.CodigoScanHelper;
 import com.pos_mais_gestao.util.MoneyFormat;
+import com.pos_mais_gestao.util.PizzaMeioAMeio;
 import com.pos_mais_gestao.util.ProdutoBuscaHelper;
 import com.pos_mais_gestao.util.SoftInputHelper;
 import java.math.BigDecimal;
@@ -39,13 +45,16 @@ public class ContaMesaActivity extends AppCompatActivity {
     public static final String EXTRA_ID_CONTA = "id_conta";
     public static final String EXTRA_NUMERO_MESA = "numero_mesa";
     public static final String EXTRA_ID_CLIENTE = "id_cliente";
+    public static final String EXTRA_NOME_CLIENTE = "nome_cliente";
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private PrefsStore prefs;
     private ApiClient api;
     private String idConta;
     private String idCliente;
+    private String nomeCliente;
     private int numeroMesa;
+    private MaterialToolbar toolbar;
     private ProdutoAdapter produtoAdapter;
     private ContaItemAdapter itemAdapter;
     private ProdutoBuscaHelper buscaHelper;
@@ -80,21 +89,25 @@ public class ContaMesaActivity extends AppCompatActivity {
 
         idConta = getIntent().getStringExtra(EXTRA_ID_CONTA);
         idCliente = getIntent().getStringExtra(EXTRA_ID_CLIENTE);
+        nomeCliente = getIntent().getStringExtra(EXTRA_NOME_CLIENTE);
         numeroMesa = getIntent().getIntExtra(EXTRA_NUMERO_MESA, 0);
         if (idConta == null) {
             finish();
             return;
         }
 
-        MaterialToolbar toolbar = findViewById(R.id.toolbarConta);
+        toolbar = findViewById(R.id.toolbarConta);
         setSupportActionBar(toolbar);
-        toolbar.setTitle(getString(R.string.mesa_n, numeroMesa));
         toolbar.setNavigationOnClickListener(v -> finish());
+        atualizarTituloMesa();
 
         progress = findViewById(R.id.progressConta);
         lblSecao = findViewById(R.id.lblSecaoConta);
         txtTotalConta = findViewById(R.id.txtTotalConta);
         btnFecharConta = findViewById(R.id.btnFecharConta);
+        if (prefs.isModoPdvLocal()) {
+            btnFecharConta.setVisibility(View.GONE);
+        }
         btnFecharConta.setOnClickListener(v -> irParaPagamento());
         inputBusca = findViewById(R.id.inputBuscaConta);
         MaterialButton btnEscanear = findViewById(R.id.btnEscanearConta);
@@ -201,6 +214,58 @@ public class ContaMesaActivity extends AppCompatActivity {
     }
 
     private void lancarProduto(Produto produto) {
+        if (produto.isEspizza()) {
+            dialogPizza(produto);
+            return;
+        }
+        lancarProdutoNaConta(produto);
+    }
+
+    private void dialogPizza(Produto primeiro) {
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.pizza_meio_a_meio)
+                .setMessage(getString(R.string.pizza_meio_a_meio_ajuda, primeiro.getDescricao()))
+                .setNeutralButton(android.R.string.cancel, null)
+                .setNegativeButton(R.string.pizza_inteira, (d, w) -> lancarProdutoNaConta(primeiro))
+                .setPositiveButton(R.string.escolher_segundo_sabor, (d, w) -> dialogSegundoSabor(primeiro))
+                .show();
+    }
+
+    private void dialogSegundoSabor(Produto primeiro) {
+        executor.execute(() -> {
+            try {
+                List<Produto> pizzas = api.listarPizzas(primeiro.getId());
+                runOnUiThread(() -> {
+                    if (pizzas.isEmpty()) {
+                        Toast.makeText(this, R.string.sem_outras_pizzas, Toast.LENGTH_LONG).show();
+                        lancarProdutoNaConta(primeiro);
+                        return;
+                    }
+                    CharSequence[] nomes = new CharSequence[pizzas.size()];
+                    for (int i = 0; i < pizzas.size(); i++) {
+                        Produto p = pizzas.get(i);
+                        nomes[i] = p.getDescricao() + "  " + MoneyFormat.format(p.getPreco());
+                    }
+                    new AlertDialog.Builder(this)
+                            .setTitle(R.string.escolher_segundo_sabor)
+                            .setItems(nomes, (d, which) -> {
+                                Produto segundo = pizzas.get(which);
+                                Produto base = PizzaMeioAMeio.principal(primeiro, segundo);
+                                Produto lancamento = base.comDescricaoEPreco(
+                                        PizzaMeioAMeio.descricao(primeiro, segundo),
+                                        PizzaMeioAMeio.preco(primeiro, segundo));
+                                lancarProdutoNaConta(lancamento);
+                            })
+                            .setNegativeButton(android.R.string.cancel, null)
+                            .show();
+                });
+            } catch (ApiException e) {
+                runOnUiThread(() -> Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show());
+            }
+        });
+    }
+
+    private void lancarProdutoNaConta(Produto produto) {
         progress.setVisibility(View.VISIBLE);
         String qty = String.valueOf(quantidadeSelecionada);
         executor.execute(() -> {
@@ -257,7 +322,62 @@ public class ContaMesaActivity extends AppCompatActivity {
         btnFecharConta.setEnabled(total.compareTo(BigDecimal.ZERO) > 0);
     }
 
+    private void atualizarTituloMesa() {
+        toolbar.setTitle(getString(prefs.isModeloComanda() ? R.string.comanda_n : R.string.mesa_n, numeroMesa));
+        if (nomeCliente != null && !nomeCliente.trim().isEmpty()) {
+            toolbar.setSubtitle(nomeCliente.trim());
+        } else {
+            toolbar.setSubtitle(getString(R.string.nome_cliente_nao_informado));
+        }
+    }
+
+    private void dialogEditarNomeCliente() {
+        View view = LayoutInflater.from(this).inflate(R.layout.dialog_nome_cliente_mesa, null);
+        TextView txtMesa = view.findViewById(R.id.txtMesaDialog);
+        TextInputEditText inputNome = view.findViewById(R.id.inputNomeClienteMesa);
+        txtMesa.setText(getString(prefs.isModeloComanda() ? R.string.comanda_n : R.string.mesa_n, numeroMesa));
+        if (nomeCliente != null) {
+            inputNome.setText(nomeCliente);
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.nome_cliente_mesa)
+                .setView(view)
+                .setPositiveButton(R.string.salvar, (d, w) -> {
+                    String nome = inputNome.getText() == null
+                            ? ""
+                            : inputNome.getText().toString().trim();
+                    salvarNomeCliente(nome);
+                })
+                .setNegativeButton(R.string.cancelar, null)
+                .show();
+    }
+
+    private void salvarNomeCliente(String nome) {
+        progress.setVisibility(View.VISIBLE);
+        executor.execute(() -> {
+            try {
+                api.atualizarNomeClienteMesa(idConta, nome);
+                runOnUiThread(() -> {
+                    progress.setVisibility(View.GONE);
+                    nomeCliente = nome;
+                    atualizarTituloMesa();
+                    Toast.makeText(this, R.string.nome_cliente_atualizado, Toast.LENGTH_SHORT).show();
+                });
+            } catch (ApiException e) {
+                runOnUiThread(() -> {
+                    progress.setVisibility(View.GONE);
+                    Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
+                });
+            }
+        });
+    }
+
     private void irParaPagamento() {
+        if (prefs.isModoPdvLocal()) {
+            Toast.makeText(this, R.string.cupom_somente_pdv, Toast.LENGTH_LONG).show();
+            return;
+        }
         if (totalAtual.compareTo(BigDecimal.ZERO) <= 0) {
             Toast.makeText(this, R.string.comanda_vazia, Toast.LENGTH_SHORT).show();
             return;
@@ -270,7 +390,25 @@ public class ContaMesaActivity extends AppCompatActivity {
         if (idCliente != null && !idCliente.isEmpty()) {
             intent.putExtra(PagamentoActivity.EXTRA_ID_CLIENTE, idCliente);
         }
+        if (nomeCliente != null && !nomeCliente.isEmpty()) {
+            intent.putExtra(PagamentoActivity.EXTRA_NOME_CLIENTE, nomeCliente);
+        }
         startActivity(intent);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_conta_mesa, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        if (item.getItemId() == R.id.action_nome_cliente_mesa) {
+            dialogEditarNomeCliente();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     private void removerItem(ContaMesaItemDto item) {

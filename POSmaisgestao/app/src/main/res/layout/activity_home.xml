@@ -93,7 +93,25 @@
                 style="@style/PosHubButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
                 android:text="@string/vendas_efetuadas" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnProdutos"
+                style="@style/PosHubButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:text="@string/produtos" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnFecharCaixaHome"
+                style="@style/PosHubButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:backgroundTint="@color/danger"
+                android:text="@string/fechar_caixa"
+                android:visibility="gone" />
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

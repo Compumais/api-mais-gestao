@@ -27,7 +27,18 @@ public class PrefsStore {
     private static final String KEY_IMPRESSORA_TIPO = "impressora_tipo";
     private static final String KEY_TEMA = "tema";
     private static final String KEY_IMPRIMIR_FICHAS_EVENTO = "imprimir_fichas_evento";
+    private static final String KEY_PIX_QR_HABILITADO = "pix_qr_habilitado";
+    private static final String KEY_CHAVE_PIX = "chave_pix";
+    private static final String KEY_NOME_PIX = "nome_pix";
+    private static final String KEY_CIDADE_PIX = "cidade_pix";
+    private static final String KEY_CONEXAO_MODO = "conexao_modo";
+    private static final String KEY_MODELO_ATENDIMENTO = "modelo_atendimento";
+    public static final String MODO_CLOUD = "cloud";
+    public static final String MODO_PDV_LOCAL = "pdv_local";
+    public static final String MODELO_MESA = "mesa";
+    public static final String MODELO_COMANDA = "comanda";
     private static final String DEFAULT_BASE_URL = "http://10.0.2.2:3333";
+    private static final String DEFAULT_PDV_URL = "http://10.0.2.2:5050";
     private static final int DEFAULT_QUANTIDADE_MESAS = 20;
 
     private final SharedPreferences prefs;
@@ -47,6 +58,44 @@ public class PrefsStore {
 
     public void setBaseUrl(String baseUrl) {
         prefs.edit().putString(KEY_BASE_URL, baseUrl == null ? "" : baseUrl.trim()).apply();
+    }
+
+    public String getConexaoModo() {
+        String modo = prefs.getString(KEY_CONEXAO_MODO, MODO_CLOUD);
+        return MODO_PDV_LOCAL.equals(modo) ? MODO_PDV_LOCAL : MODO_CLOUD;
+    }
+
+    public void setConexaoModo(String modo) {
+        prefs.edit()
+                .putString(KEY_CONEXAO_MODO, MODO_PDV_LOCAL.equals(modo) ? MODO_PDV_LOCAL : MODO_CLOUD)
+                .apply();
+    }
+
+    public boolean isModoPdvLocal() {
+        return MODO_PDV_LOCAL.equals(getConexaoModo());
+    }
+
+    public String getModeloAtendimento() {
+        String modelo = prefs.getString(KEY_MODELO_ATENDIMENTO, MODELO_MESA);
+        return MODELO_COMANDA.equals(modelo) ? MODELO_COMANDA : MODELO_MESA;
+    }
+
+    public void setModeloAtendimento(String modelo) {
+        prefs.edit()
+                .putString(KEY_MODELO_ATENDIMENTO, MODELO_COMANDA.equals(modelo) ? MODELO_COMANDA : MODELO_MESA)
+                .apply();
+    }
+
+    public boolean isModeloComanda() {
+        return isModoPdvLocal() && MODELO_COMANDA.equals(getModeloAtendimento());
+    }
+
+    public String getUrlPadraoCloud() {
+        return DEFAULT_BASE_URL;
+    }
+
+    public String getUrlPadraoPdv() {
+        return DEFAULT_PDV_URL;
     }
 
     public String getToken() {
@@ -111,7 +160,7 @@ public class PrefsStore {
     }
 
     public void setQuantidadeMesas(int quantidade) {
-        prefs.edit().putInt(KEY_QUANTIDADE_MESAS, Math.max(1, Math.min(100, quantidade))).apply();
+        prefs.edit().putInt(KEY_QUANTIDADE_MESAS, Math.max(1, Math.min(500, quantidade))).apply();
     }
 
     public String getImpressoraId() {
@@ -148,6 +197,38 @@ public class PrefsStore {
 
     public void setImprimirFichasEvento(boolean imprimir) {
         prefs.edit().putBoolean(KEY_IMPRIMIR_FICHAS_EVENTO, imprimir).apply();
+    }
+
+    public boolean isPixQrHabilitado() {
+        return prefs.getBoolean(KEY_PIX_QR_HABILITADO, false);
+    }
+
+    public void setPixQrHabilitado(boolean habilitado) {
+        prefs.edit().putBoolean(KEY_PIX_QR_HABILITADO, habilitado).apply();
+    }
+
+    public String getChavePix() {
+        return prefs.getString(KEY_CHAVE_PIX, "");
+    }
+
+    public void setChavePix(String chave) {
+        prefs.edit().putString(KEY_CHAVE_PIX, chave == null ? "" : chave.trim()).apply();
+    }
+
+    public String getNomePix() {
+        return prefs.getString(KEY_NOME_PIX, "");
+    }
+
+    public void setNomePix(String nome) {
+        prefs.edit().putString(KEY_NOME_PIX, nome == null ? "" : nome.trim()).apply();
+    }
+
+    public String getCidadePix() {
+        return prefs.getString(KEY_CIDADE_PIX, "");
+    }
+
+    public void setCidadePix(String cidade) {
+        prefs.edit().putString(KEY_CIDADE_PIX, cidade == null ? "" : cidade.trim()).apply();
     }
 
     public boolean isLoggedIn() {

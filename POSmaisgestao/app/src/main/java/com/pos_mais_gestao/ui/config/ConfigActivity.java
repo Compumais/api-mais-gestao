@@ -19,8 +19,11 @@ import androidx.core.content.ContextCompat;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 import com.pos_mais_gestao.PosApplication;
 import com.pos_mais_gestao.R;
+import com.pos_mais_gestao.data.api.ApiClient;
+import com.pos_mais_gestao.data.api.ApiException;
 import com.pos_mais_gestao.data.local.PrefsStore;
 import com.pos_mais_gestao.domain.Carrinho;
 import com.pos_mais_gestao.hardware.ImpressoraDiscovery;
@@ -32,14 +35,29 @@ import com.pos_mais_gestao.util.SoftInputHelper;
 import com.pos_mais_gestao.util.ThemeHelper;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ConfigActivity extends AppCompatActivity {
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private PrefsStore prefs;
+    private ApiClient api;
+    private TextInputLayout layoutUrlApi;
     private TextInputEditText inputUrl;
+    private RadioGroup radioGrupoConexao;
+    private LinearLayout blocoAcoesPdv;
+    private MaterialButton btnTestarPdv;
+    private MaterialButton btnCarregarCatalogo;
     private TextInputEditText inputPdv;
     private TextInputEditText inputMesas;
+    private TextInputLayout layoutMesas;
+    private TextView txtConfigOrigemPdv;
     private SwitchMaterial switchEmitirNfce;
     private SwitchMaterial switchFichasEvento;
+    private SwitchMaterial switchPixQr;
+    private TextInputEditText inputChavePix;
+    private TextInputEditText inputNomePix;
+    private TextInputEditText inputCidadePix;
     private RadioGroup radioGrupoTema;
     private LinearLayout listaImpressoras;
     private TextView txtImpressoraSelecionada;
@@ -66,11 +84,23 @@ public class ConfigActivity extends AppCompatActivity {
         SoftInputHelper.hideOnStart(this);
 
         prefs = ((PosApplication) getApplication()).getPrefsStore();
+        api = ((PosApplication) getApplication()).getApiClient();
+        layoutUrlApi = findViewById(R.id.layoutUrlApi);
         inputUrl = findViewById(R.id.inputUrlApi);
+        radioGrupoConexao = findViewById(R.id.radioGrupoConexao);
+        blocoAcoesPdv = findViewById(R.id.blocoAcoesPdv);
+        btnTestarPdv = findViewById(R.id.btnTestarPdv);
+        btnCarregarCatalogo = findViewById(R.id.btnCarregarCatalogo);
         inputPdv = findViewById(R.id.inputNumeroPdv);
         inputMesas = findViewById(R.id.inputQuantidadeMesas);
+        layoutMesas = findViewById(R.id.layoutQuantidadeMesas);
+        txtConfigOrigemPdv = findViewById(R.id.txtConfigOrigemPdv);
         switchEmitirNfce = findViewById(R.id.switchEmitirNfcePos);
         switchFichasEvento = findViewById(R.id.switchFichasEvento);
+        switchPixQr = findViewById(R.id.switchPixQr);
+        inputChavePix = findViewById(R.id.inputChavePix);
+        inputNomePix = findViewById(R.id.inputNomePix);
+        inputCidadePix = findViewById(R.id.inputCidadePix);
         radioGrupoTema = findViewById(R.id.radioGrupoTema);
         listaImpressoras = findViewById(R.id.listaImpressoras);
         txtImpressoraSelecionada = findViewById(R.id.txtImpressoraSelecionada);
@@ -82,10 +112,25 @@ public class ConfigActivity extends AppCompatActivity {
         MaterialButton btnAtualizarImpressoras = findViewById(R.id.btnAtualizarImpressoras);
 
         inputUrl.setText(prefs.getBaseUrl());
+        if (prefs.isModoPdvLocal()) {
+            radioGrupoConexao.check(R.id.radioConexaoPdv);
+        } else {
+            radioGrupoConexao.check(R.id.radioConexaoCloud);
+        }
+        aplicarModoUi(prefs.isModoPdvLocal());
+        radioGrupoConexao.setOnCheckedChangeListener((group, checkedId) -> {
+            boolean local = checkedId == R.id.radioConexaoPdv;
+            aplicarModoUi(local);
+            sugerirUrlPadrao(local);
+        });
         inputPdv.setText(String.valueOf(prefs.getNumeroPdv()));
         inputMesas.setText(String.valueOf(prefs.getQuantidadeMesas()));
         switchEmitirNfce.setChecked(prefs.isEmitirNfcePos());
         switchFichasEvento.setChecked(prefs.isImprimirFichasEvento());
+        switchPixQr.setChecked(prefs.isPixQrHabilitado());
+        inputChavePix.setText(prefs.getChavePix());
+        inputNomePix.setText(prefs.getNomePix());
+        inputCidadePix.setText(prefs.getCidadePix());
         selecionarRadioTema(ThemeHelper.normalizar(prefs.getTema()));
         impressoraIdSelecionada = prefs.getImpressoraId() != null ? prefs.getImpressoraId() : "";
         impressoraNomeSelecionada = prefs.getImpressoraNome();
@@ -94,6 +139,8 @@ public class ConfigActivity extends AppCompatActivity {
         SoftInputHelper.hideOnStart(this);
 
         btnSalvar.setOnClickListener(v -> salvar());
+        btnTestarPdv.setOnClickListener(v -> testarPdv());
+        btnCarregarCatalogo.setOnClickListener(v -> carregarCatalogo());
         btnAtalhos.setOnClickListener(v -> startActivity(new Intent(this, AtalhosActivity.class)));
         btnAtualizarImpressoras.setOnClickListener(v -> solicitarPermissaoECarregar());
         btnTrocarEmpresa.setOnClickListener(v -> trocarEmpresa());
@@ -107,6 +154,14 @@ public class ConfigActivity extends AppCompatActivity {
         });
 
         solicitarPermissaoECarregar();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (modoPdvLocal()) {
+            sincronizarCamposDoPdv();
+        }
     }
 
     private void trocarEmpresa() {
@@ -225,11 +280,25 @@ public class ConfigActivity extends AppCompatActivity {
             mesas = Integer.parseInt(mesasStr);
         } catch (NumberFormatException ignored) {
         }
+        String chavePix = inputChavePix.getText() == null
+                ? ""
+                : inputChavePix.getText().toString().trim();
+        if (switchPixQr.isChecked() && chavePix.isEmpty()) {
+            Toast.makeText(this, R.string.pix_chave_obrigatoria, Toast.LENGTH_SHORT).show();
+            return;
+        }
         prefs.setBaseUrl(url);
-        prefs.setNumeroPdv(pdv);
-        prefs.setQuantidadeMesas(mesas);
+        prefs.setConexaoModo(modoPdvLocal() ? PrefsStore.MODO_PDV_LOCAL : PrefsStore.MODO_CLOUD);
+        if (!modoPdvLocal()) {
+            prefs.setNumeroPdv(pdv);
+            prefs.setQuantidadeMesas(mesas);
+        }
         prefs.setEmitirNfcePos(switchEmitirNfce.isChecked());
         prefs.setImprimirFichasEvento(switchFichasEvento.isChecked());
+        prefs.setPixQrHabilitado(switchPixQr.isChecked());
+        prefs.setChavePix(chavePix);
+        prefs.setNomePix(inputNomePix.getText() == null ? "" : inputNomePix.getText().toString());
+        prefs.setCidadePix(inputCidadePix.getText() == null ? "" : inputCidadePix.getText().toString());
         prefs.setImpressora(impressoraIdSelecionada, impressoraNomeSelecionada, impressoraTipoSelecionada);
         String tema = lerTemaSelecionado();
         prefs.setTema(tema);
@@ -257,5 +326,129 @@ public class ConfigActivity extends AppCompatActivity {
             return ThemeHelper.SYSTEM;
         }
         return ThemeHelper.LIGHT;
+    }
+
+    private boolean modoPdvLocal() {
+        return radioGrupoConexao.getCheckedRadioButtonId() == R.id.radioConexaoPdv;
+    }
+
+    private void aplicarModoUi(boolean local) {
+        layoutUrlApi.setHint(local ? getString(R.string.url_pdv_local) : getString(R.string.url_api));
+        blocoAcoesPdv.setVisibility(local ? View.VISIBLE : View.GONE);
+        int cupom = local ? View.GONE : View.VISIBLE;
+        ocultarCard(switchEmitirNfce, cupom);
+        ocultarCard(switchPixQr, cupom);
+        ocultarCard(txtImpressoraSelecionada, cupom);
+        inputPdv.setEnabled(!local);
+        inputMesas.setEnabled(!local);
+        txtConfigOrigemPdv.setVisibility(local ? View.VISIBLE : View.GONE);
+        atualizarCamposOrigemPdv();
+        if (local) {
+            sincronizarCamposDoPdv();
+        }
+    }
+
+    private void sincronizarCamposDoPdv() {
+        executor.execute(() -> {
+            try {
+                api.sincronizarConfigPdv();
+                runOnUiThread(this::atualizarCamposOrigemPdv);
+            } catch (Exception ignored) {
+            }
+        });
+    }
+
+    private void atualizarCamposOrigemPdv() {
+        inputPdv.setText(String.valueOf(prefs.getNumeroPdv()));
+        inputMesas.setText(String.valueOf(prefs.getQuantidadeMesas()));
+        boolean comanda = prefs.isModeloComanda();
+        if (layoutMesas != null) {
+            layoutMesas.setHint(getString(comanda ? R.string.quantidade_comandas : R.string.quantidade_mesas));
+        }
+        if (txtConfigOrigemPdv != null && prefs.isModoPdvLocal()) {
+            txtConfigOrigemPdv.setText(getString(
+                    R.string.config_origem_pdv_detalhe,
+                    getString(comanda ? R.string.comandas : R.string.mesas),
+                    prefs.getQuantidadeMesas(),
+                    prefs.getNumeroPdv()));
+        }
+    }
+
+    private void ocultarCard(View inner, int visibility) {
+        if (inner == null) {
+            return;
+        }
+        View parent = (View) inner.getParent();
+        if (parent != null && parent.getParent() instanceof View) {
+            ((View) parent.getParent()).setVisibility(visibility);
+        }
+    }
+
+    private void sugerirUrlPadrao(boolean local) {
+        String atual = inputUrl.getText() == null ? "" : inputUrl.getText().toString().trim();
+        String cloud = prefs.getUrlPadraoCloud();
+        String pdv = prefs.getUrlPadraoPdv();
+        if (local && (atual.isEmpty() || atual.equals(cloud))) {
+            inputUrl.setText(pdv);
+        } else if (!local && (atual.isEmpty() || atual.equals(pdv))) {
+            inputUrl.setText(cloud);
+        }
+    }
+
+    private void aplicarUrlModoLocal() {
+        String url = inputUrl.getText() == null ? "" : inputUrl.getText().toString().trim();
+        prefs.setBaseUrl(url);
+        prefs.setConexaoModo(PrefsStore.MODO_PDV_LOCAL);
+    }
+
+    private void testarPdv() {
+        aplicarUrlModoLocal();
+        btnTestarPdv.setEnabled(false);
+        executor.execute(() -> {
+            try {
+                api.pingPdv();
+                try {
+                    api.sincronizarConfigPdv();
+                } catch (ApiException ignored) {
+                }
+                runOnUiThread(() -> {
+                    btnTestarPdv.setEnabled(true);
+                    atualizarCamposOrigemPdv();
+                    Toast.makeText(this, R.string.pdv_ok, Toast.LENGTH_SHORT).show();
+                });
+            } catch (ApiException e) {
+                runOnUiThread(() -> {
+                    btnTestarPdv.setEnabled(true);
+                    Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
+                });
+            }
+        });
+    }
+
+    private void carregarCatalogo() {
+        aplicarUrlModoLocal();
+        btnCarregarCatalogo.setEnabled(false);
+        executor.execute(() -> {
+            try {
+                int total = api.carregarCatalogo();
+                runOnUiThread(() -> {
+                    btnCarregarCatalogo.setEnabled(true);
+                    atualizarCamposOrigemPdv();
+                    Toast.makeText(this, getString(R.string.catalogo_carregado, total), Toast.LENGTH_LONG)
+                            .show();
+                });
+            } catch (ApiException e) {
+                runOnUiThread(() -> {
+                    btnCarregarCatalogo.setEnabled(true);
+                    Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
+                });
+            }
+        });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        executor.shutdownNow();
     }
 }

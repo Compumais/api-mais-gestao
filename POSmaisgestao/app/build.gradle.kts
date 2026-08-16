@@ -42,6 +42,7 @@ dependencies {
     implementation(libs.gson)
     implementation(libs.recyclerview)
     implementation(libs.zxing.android.embedded)
+    implementation(libs.coil)
     testImplementation(libs.junit)
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(libs.ext.junit)

@@ -28,7 +28,10 @@ CREATE TABLE IF NOT EXISTS grupo_gourmet (
 
 CREATE TABLE IF NOT EXISTS impressora_grupo_gourmet (
 	idgrupogourmet TEXT PRIMARY KEY NOT NULL,
-	impressora_nome TEXT NOT NULL
+	impressora_nome TEXT NOT NULL DEFAULT '',
+	destino TEXT NOT NULL DEFAULT 'sistema',
+	host TEXT NOT NULL DEFAULT '',
+	porta INTEGER NOT NULL DEFAULT 9100
 );
 
 CREATE TABLE IF NOT EXISTS produto_cache (
@@ -40,6 +43,7 @@ CREATE TABLE IF NOT EXISTS produto_cache (
 	ean TEXT,
 	idgrupo TEXT,
 	idgrupogourmet TEXT,
+	espizza INTEGER NOT NULL DEFAULT 0,
 	imagem TEXT,
 	caminhoimagem TEXT,
 	inativo INTEGER NOT NULL DEFAULT 0,

@@ -7,6 +7,8 @@
         <item name="colorOnSurface">@color/foreground</item>
         <item name="colorOnBackground">@color/foreground</item>
         <item name="android:statusBarColor">@color/primary_dark</item>
+        <item name="android:navigationBarColor">@color/surface</item>
+        <item name="android:windowOptOutEdgeToEdgeEnforcement">true</item>
         <item name="android:windowBackground">@color/surface</item>
         <item name="android:colorBackground">@color/background</item>
         <item name="android:textColorPrimary">@color/foreground</item>

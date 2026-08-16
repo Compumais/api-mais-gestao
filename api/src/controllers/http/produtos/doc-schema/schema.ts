@@ -126,6 +126,12 @@ const propriedadesProdutoResposta = {
 	observacoes: { anyOf: [{ type: "string" }, { type: "null" }] },
 	inativo: { type: "number", enum: [0, 1], nullable: true },
 	enviamobile: { type: "number", enum: [0, 1], nullable: true },
+	espizza: {
+		type: "number",
+		enum: [0, 1],
+		nullable: true,
+		description: "1=produto pizza (habilita venda meio a meio no PDV/POS)",
+	},
 	quantidadepadrao: { type: "number", nullable: true },
 	quantidademinima: { type: "number", nullable: true },
 	quantidademaxima: { type: "number", nullable: true },
@@ -158,10 +164,7 @@ export const criarProdutoSchema: FastifySchema = {
 			preco: { type: "string" },
 			tipo: { type: "string", enum: ["P", "S"] },
 			iat: {
-				anyOf: [
-					{ type: "string", enum: ["A", "T"] },
-					{ type: "null" },
-				],
+				anyOf: [{ type: "string", enum: ["A", "T"] }, { type: "null" }],
 			},
 			ippt: { type: "string", enum: ["P", "T"] },
 			origem: {
@@ -173,6 +176,7 @@ export const criarProdutoSchema: FastifySchema = {
 			ncm: { type: "string" },
 			observacoes: { anyOf: [{ type: "string" }, { type: "null" }] },
 			enviamobile: { type: "number", enum: [0, 1] },
+			espizza: { type: "number", enum: [0, 1] },
 			quantidadepadrao: { type: "number" },
 			quantidademinima: { anyOf: [{ type: "number" }, { type: "null" }] },
 			quantidademaxima: { anyOf: [{ type: "number" }, { type: "null" }] },
@@ -293,13 +297,19 @@ export const atualizarProdutoSchema: FastifySchema = {
 		type: "object",
 		properties: {
 			codigo: { type: "number" },
-			ean: { anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }] },
+			ean: {
+				anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
+			},
 			referencia: { anyOf: [{ type: "string" }, { type: "null" }] },
 			nome: { type: "string" },
 			idunidademedida: { type: "string", format: "uuid" },
-			fornecedor: { anyOf: [{ type: "string", format: "uuid" }, { type: "null" }] },
+			fornecedor: {
+				anyOf: [{ type: "string", format: "uuid" }, { type: "null" }],
+			},
 			idgrupo: { type: "string", format: "uuid" },
-			idgrupogourmet: { anyOf: [{ type: "string", format: "uuid" }, { type: "null" }] },
+			idgrupogourmet: {
+				anyOf: [{ type: "string", format: "uuid" }, { type: "null" }],
+			},
 			preco: { anyOf: [{ type: "string" }, { type: "number" }] },
 			tipo: { type: "string", enum: ["P", "S"] },
 			iat: {
@@ -310,6 +320,7 @@ export const atualizarProdutoSchema: FastifySchema = {
 			ncm: { type: "string" },
 			observacoes: { anyOf: [{ type: "string" }, { type: "null" }] },
 			enviamobile: { type: "number", enum: [0, 1] },
+			espizza: { type: "number", enum: [0, 1] },
 			quantidadepadrao: { type: "number" },
 			quantidademinima: { anyOf: [{ type: "number" }, { type: "null" }] },
 			quantidademaxima: { anyOf: [{ type: "number" }, { type: "null" }] },

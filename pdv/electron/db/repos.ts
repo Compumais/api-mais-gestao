@@ -1,6 +1,10 @@
 import type { PoolClient } from "pg";
 import { v4 as uuidv4 } from "uuid";
 import {
+	montarItemPizzaMeioAMeio,
+	produtoEhPizza,
+} from "../util/pizza-meio-a-meio";
+import {
 	execute,
 	garantirMesas,
 	getConfig,
@@ -27,6 +31,7 @@ export type ProdutoLocal = {
 	ean: string | null;
 	idgrupo: string | null;
 	idgrupogourmet: string | null;
+	espizza: number;
 	imagem: string | null;
 	caminhoimagem: string | null;
 };
@@ -148,7 +153,7 @@ export async function limparSessao(): Promise<void> {
 }
 
 const PRODUTO_SELECT =
-	"id, descricao, preco, unidademedida, idunidademedida, ean, idgrupo, idgrupogourmet, imagem, caminhoimagem";
+	"id, descricao, preco, unidademedida, idunidademedida, ean, idgrupo, idgrupogourmet, espizza, imagem, caminhoimagem";
 
 export async function upsertProdutos(
 	produtos: Array<{
@@ -160,6 +165,7 @@ export async function upsertProdutos(
 		ean?: string | null;
 		idgrupo?: string | null;
 		idgrupogourmet?: string | null;
+		espizza?: number | null;
 		imagem?: string | null;
 		caminhoimagem?: string | null;
 	}>,
@@ -168,8 +174,8 @@ export async function upsertProdutos(
 	await withTransaction(async (client) => {
 		for (const p of produtos) {
 			await execute(
-				`INSERT INTO produto_cache (id, descricao, preco, unidademedida, idunidademedida, ean, idgrupo, idgrupogourmet, imagem, caminhoimagem, inativo, atualizadoem)
-				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 0, $11)
+				`INSERT INTO produto_cache (id, descricao, preco, unidademedida, idunidademedida, ean, idgrupo, idgrupogourmet, espizza, imagem, caminhoimagem, inativo, atualizadoem)
+				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 0, $12)
 				 ON CONFLICT (id) DO UPDATE SET
 					descricao = excluded.descricao,
 					preco = excluded.preco,
@@ -178,6 +184,7 @@ export async function upsertProdutos(
 					ean = excluded.ean,
 					idgrupo = excluded.idgrupo,
 					idgrupogourmet = excluded.idgrupogourmet,
+					espizza = excluded.espizza,
 					imagem = excluded.imagem,
 					caminhoimagem = excluded.caminhoimagem,
 					atualizadoem = excluded.atualizadoem`,
@@ -190,6 +197,7 @@ export async function upsertProdutos(
 					p.ean ?? null,
 					p.idgrupo ?? null,
 					p.idgrupogourmet ?? null,
+					p.espizza ? 1 : 0,
 					p.imagem ?? null,
 					p.caminhoimagem ?? null,
 					agora,
@@ -298,45 +306,142 @@ export async function listarProdutosPorGrupoGourmet(
 	);
 }
 
+export async function listarPizzasLocal(
+	excetoId = "",
+	limit = 200,
+): Promise<ProdutoLocal[]> {
+	if (!excetoId) {
+		return query<ProdutoLocal>(
+			`SELECT ${PRODUTO_SELECT}
+			 FROM produto_cache
+			 WHERE inativo = 0 AND espizza = 1
+			 ORDER BY descricao LIMIT $1`,
+			[limit],
+		);
+	}
+	return query<ProdutoLocal>(
+		`SELECT ${PRODUTO_SELECT}
+		 FROM produto_cache
+		 WHERE inativo = 0 AND espizza = 1 AND id <> $1
+		 ORDER BY descricao LIMIT $2`,
+		[excetoId, limit],
+	);
+}
+
+export type MapeamentoImpressoraGourmet = {
+	idgrupogourmet: string;
+	nome: string;
+	destino: string;
+	impressora_nome: string;
+	host: string;
+	porta: number;
+};
+
 export async function listarMapeamentoImpressorasGourmet(): Promise<
-	Array<{ idgrupogourmet: string; nome: string; impressora_nome: string }>
+	MapeamentoImpressoraGourmet[]
 > {
-	return query(
-		`SELECT g.id AS idgrupogourmet, g.nome, COALESCE(i.impressora_nome, '') AS impressora_nome
+	const rows = await query<{
+		idgrupogourmet: string;
+		nome: string;
+		destino: string | null;
+		impressora_nome: string | null;
+		host: string | null;
+		porta: number | null;
+	}>(
+		`SELECT g.id AS idgrupogourmet, g.nome,
+			COALESCE(i.destino, '') AS destino,
+			COALESCE(i.impressora_nome, '') AS impressora_nome,
+			COALESCE(i.host, '') AS host,
+			COALESCE(i.porta, 9100) AS porta
 		 FROM grupo_gourmet g
 		 LEFT JOIN impressora_grupo_gourmet i ON i.idgrupogourmet = g.id
 		 ORDER BY g.nome`,
 	);
+	return rows.map((row) => ({
+		...row,
+		destino: row.destino || (row.impressora_nome ? "sistema" : ""),
+		impressora_nome: row.impressora_nome ?? "",
+		host: row.host ?? "",
+		porta: Number(row.porta) || 9100,
+	}));
 }
 
 export async function salvarMapeamentoImpressorasGourmet(
-	itens: Array<{ idgrupogourmet: string; impressora_nome: string }>,
+	itens: Array<{
+		idgrupogourmet: string;
+		destino?: string;
+		impressora_nome?: string;
+		host?: string;
+		porta?: number;
+	}>,
 ): Promise<void> {
 	await withTransaction(async (client) => {
 		await execute("DELETE FROM impressora_grupo_gourmet", [], client);
 		for (const item of itens) {
-			const nome = item.impressora_nome.trim();
-			if (!nome) {
+			const destino = (item.destino ?? "").trim();
+			if (destino !== "sistema" && destino !== "rede") {
+				continue;
+			}
+			const nome = (item.impressora_nome ?? "").trim();
+			const host = (item.host ?? "").trim();
+			const porta = Number(item.porta) > 0 ? Number(item.porta) : 9100;
+			if (destino === "sistema" && !nome) {
+				continue;
+			}
+			if (destino === "rede" && !host) {
 				continue;
 			}
 			await execute(
-				`INSERT INTO impressora_grupo_gourmet (idgrupogourmet, impressora_nome)
-				 VALUES ($1, $2)`,
-				[item.idgrupogourmet, nome],
+				`INSERT INTO impressora_grupo_gourmet (idgrupogourmet, impressora_nome, destino, host, porta)
+				 VALUES ($1, $2, $3, $4, $5)`,
+				[item.idgrupogourmet, nome, destino, host, porta],
 				client,
 			);
 		}
 	});
 }
 
-export async function obterImpressoraGrupoGourmet(
+export async function obterDestinoGrupoGourmet(
 	idgrupogourmet: string,
-): Promise<string | null> {
-	const row = await queryOne<{ impressora_nome: string }>(
-		"SELECT impressora_nome FROM impressora_grupo_gourmet WHERE idgrupogourmet = $1",
+): Promise<{
+	tipo: "sistema" | "rede";
+	nome?: string;
+	host?: string;
+	porta?: number;
+} | null> {
+	const row = await queryOne<{
+		destino: string;
+		impressora_nome: string;
+		host: string;
+		porta: number;
+	}>(
+		`SELECT destino, impressora_nome, host, porta
+		 FROM impressora_grupo_gourmet WHERE idgrupogourmet = $1`,
 		[idgrupogourmet],
 	);
-	return row?.impressora_nome?.trim() || null;
+	if (!row) {
+		return null;
+	}
+	const destino = row.destino?.trim() || (row.impressora_nome ? "sistema" : "");
+	if (destino === "rede") {
+		const host = row.host?.trim();
+		if (!host) {
+			return null;
+		}
+		return {
+			tipo: "rede",
+			host,
+			porta: Number(row.porta) || 9100,
+		};
+	}
+	if (destino === "sistema") {
+		const nome = row.impressora_nome?.trim();
+		if (!nome) {
+			return null;
+		}
+		return { tipo: "sistema", nome };
+	}
+	return null;
 }
 
 export async function buscarProdutosLocal(
@@ -417,7 +522,7 @@ export async function buscarProdutoPorId(
 
 export async function listarAtalhos(): Promise<ProdutoLocal[]> {
 	return query<ProdutoLocal>(
-		`SELECT p.id, p.descricao, p.preco, p.unidademedida, p.idunidademedida, p.ean, p.idgrupo, p.idgrupogourmet, p.imagem, p.caminhoimagem
+		`SELECT p.id, p.descricao, p.preco, p.unidademedida, p.idunidademedida, p.ean, p.idgrupo, p.idgrupogourmet, p.espizza, p.imagem, p.caminhoimagem
 		 FROM atalho a
 		 JOIN produto_cache p ON p.id = a.idproduto
 		 WHERE p.inativo = 0
@@ -1093,8 +1198,19 @@ export async function enviarPedidoConta(params: {
 		idproduto: string;
 		quantidade: number;
 		observacao?: string | null;
+		idprodutomeio?: string | null;
 	}>;
-}): Promise<ContaMesaLocal & { pedidoNovo: boolean }> {
+}): Promise<
+	ContaMesaLocal & {
+		pedidoNovo: boolean;
+		itensProducao: Array<{
+			idproduto: string;
+			descricao: string;
+			quantidade: number;
+			observacao?: string | null;
+		}>;
+	}
+> {
 	const clientOrderId = params.clientOrderId.trim();
 	if (!clientOrderId) {
 		throw new Error("Pedido sem identificador");
@@ -1111,13 +1227,20 @@ export async function enviarPedidoConta(params: {
 		if (!conta) {
 			throw new Error("Conta inválida");
 		}
-		return { ...conta, pedidoNovo: false };
+		return { ...conta, pedidoNovo: false, itensProducao: [] };
 	}
 
 	const conta = await obterContaMesa(params.idconta);
 	if (!conta || conta.status !== "aberta") {
 		throw new Error("Conta inválida");
 	}
+
+	const itensProducao: Array<{
+		idproduto: string;
+		descricao: string;
+		quantidade: number;
+		observacao?: string | null;
+	}> = [];
 
 	for (const linha of params.itens) {
 		const produto = await buscarProdutoPorId(linha.idproduto);
@@ -1128,11 +1251,36 @@ export async function enviarPedidoConta(params: {
 		if (!Number.isFinite(qtd) || qtd <= 0) {
 			throw new Error("Quantidade inválida");
 		}
+
+		let idproduto = produto.id;
+		let descricao = produto.descricao;
+		let precounitario = produto.preco;
+		let quantidade = qtd;
+
+		const idMeio = linha.idprodutomeio?.trim();
+		if (idMeio) {
+			const segundo = await buscarProdutoPorId(idMeio);
+			if (!segundo) {
+				throw new Error("Segundo sabor não encontrado no catálogo local");
+			}
+			if (!produtoEhPizza(produto) || !produtoEhPizza(segundo)) {
+				throw new Error("Meio a meio só é permitido entre produtos pizza");
+			}
+			if (produto.id === segundo.id) {
+				throw new Error("Escolha dois sabores diferentes");
+			}
+			const montado = montarItemPizzaMeioAMeio(produto, segundo);
+			idproduto = montado.idproduto;
+			descricao = montado.descricao;
+			precounitario = montado.precounitario;
+			quantidade = 1;
+		}
+
 		await adicionarItemConta(params.idconta, {
-			idproduto: produto.id,
-			descricao: produto.descricao,
-			quantidade: qtd,
-			precounitario: produto.preco,
+			idproduto,
+			descricao,
+			quantidade,
+			precounitario,
 			observacao: linha.observacao,
 		});
 		const agora = new Date().toISOString();
@@ -1147,20 +1295,26 @@ export async function enviarPedidoConta(params: {
 				conta.id,
 				conta.numero_mesa,
 				conta.nomecliente,
-				produto.id,
-				produto.descricao,
-				qtd,
+				idproduto,
+				descricao,
+				quantidade,
 				linha.observacao?.trim() || null,
 				agora,
 			],
 		);
+		itensProducao.push({
+			idproduto,
+			descricao,
+			quantidade,
+			observacao: linha.observacao,
+		});
 	}
 
 	const atualizada = await obterContaMesa(params.idconta);
 	if (!atualizada) {
 		throw new Error("Falha ao enviar pedido");
 	}
-	return { ...atualizada, pedidoNovo: true };
+	return { ...atualizada, pedidoNovo: true, itensProducao };
 }
 
 export async function listarPedidosFila(

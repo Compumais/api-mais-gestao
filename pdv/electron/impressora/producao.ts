@@ -1,4 +1,6 @@
 import { getConfig, queryOne } from "../db/database";
+import { obterDestinoGrupoGourmet } from "../db/repos";
+import { chaveDestino, type DestinoImpressora } from "./destino";
 import { imprimirPedidoProducao } from "./escpos";
 
 export type ItemProducao = {
@@ -14,14 +16,17 @@ export async function rotuloOrigemMesa(numero: number): Promise<string> {
 	return `${nome} ${numero}`;
 }
 
-/** Agrupa itens por impressora mapeada. Sem grupo ou sem impressora: ignora. Nunca lança. */
+/** Agrupa itens por destino mapeado. Sem grupo ou sem impressora: ignora. Nunca lança. */
 export async function imprimirProducaoPedido(params: {
 	origem: string;
 	cliente?: string | null;
 	itens: ItemProducao[];
 }): Promise<void> {
 	try {
-		const porImpressora = new Map<string, ItemProducao[]>();
+		const porDestino = new Map<
+			string,
+			{ destino: DestinoImpressora; itens: ItemProducao[] }
+		>();
 		for (const item of params.itens) {
 			const produto = await queryOne<{
 				idgrupogourmet: string | null;
@@ -33,24 +38,26 @@ export async function imprimirProducaoPedido(params: {
 			if (!idGrupo) {
 				continue;
 			}
-			const mapa = await queryOne<{ impressora_nome: string }>(
-				"SELECT impressora_nome FROM impressora_grupo_gourmet WHERE idgrupogourmet = $1",
-				[idGrupo],
-			);
-			const impressora = mapa?.impressora_nome?.trim();
-			if (!impressora) {
+			const destino = await obterDestinoGrupoGourmet(idGrupo);
+			if (!destino) {
 				continue;
 			}
-			const lista = porImpressora.get(impressora) ?? [];
-			lista.push({
+			const chave = chaveDestino(destino);
+			const atual = porDestino.get(chave);
+			const linha = {
 				...item,
-				descricao: produto?.descricao ?? item.descricao,
-			});
-			porImpressora.set(impressora, lista);
+				// Meio a meio: usa a descrição combinada do item; senão o nome do cadastro.
+				descricao: item.descricao?.trim() || produto?.descricao || "",
+			};
+			if (atual) {
+				atual.itens.push(linha);
+			} else {
+				porDestino.set(chave, { destino, itens: [linha] });
+			}
 		}
-		for (const [deviceName, itens] of porImpressora) {
+		for (const { destino, itens } of porDestino.values()) {
 			await imprimirPedidoProducao({
-				deviceName,
+				destino,
 				origem: params.origem,
 				cliente: params.cliente,
 				itens,

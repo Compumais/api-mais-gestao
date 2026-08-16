@@ -50,6 +50,13 @@ export const criarVendaPdvItemSchema: FastifySchema = {
 			precopromocao: { type: "string" },
 			precoalterado: { type: "string" },
 			taxaservico: { type: "number", nullable: true },
+			descricao: {
+				type: "string",
+				maxLength: 120,
+				nullable: true,
+				description:
+					"Snapshot comercial do item (ex.: pizza meio a meio). Usado na NFC-e como xProd.",
+			},
 		},
 		required: [
 			"idempresa",

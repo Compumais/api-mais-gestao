@@ -2,10 +2,13 @@ package com.pos_mais_gestao.ui.home;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
@@ -23,13 +26,19 @@ import com.pos_mais_gestao.data.local.PrefsStore;
 import com.pos_mais_gestao.data.sync.OutboxSync;
 import com.pos_mais_gestao.domain.Carrinho;
 import com.pos_mais_gestao.domain.Produto;
+import com.pos_mais_gestao.domain.ResumoTurnoCaixa;
+import com.pos_mais_gestao.hardware.ImpressoraPos;
 import com.pos_mais_gestao.ui.atalhos.AtalhosActivity;
 import com.pos_mais_gestao.ui.config.ConfigActivity;
 import com.pos_mais_gestao.ui.empresa.EmpresaActivity;
 import com.pos_mais_gestao.ui.login.LoginActivity;
 import com.pos_mais_gestao.ui.mesas.MesasActivity;
+import com.pos_mais_gestao.ui.produtos.ProdutosActivity;
 import com.pos_mais_gestao.ui.venda.VendaActivity;
 import com.pos_mais_gestao.ui.vendas.VendasActivity;
+import com.pos_mais_gestao.util.FechamentoCaixaTexto;
+import com.pos_mais_gestao.util.MoneyFormat;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -43,6 +52,8 @@ public class HomeActivity extends AppCompatActivity {
     private TextView txtSyncPendente;
     private MaterialButton btnVenda;
     private MaterialButton btnMesas;
+    private MaterialButton btnVendas;
+    private MaterialButton btnFecharCaixaHome;
     private FechamentoCaixaDto caixaAberto;
     private boolean carregandoCaixa;
 
@@ -68,9 +79,16 @@ public class HomeActivity extends AppCompatActivity {
         txtSyncPendente = findViewById(R.id.txtSyncPendente);
         btnVenda = findViewById(R.id.btnVendaRapida);
         btnMesas = findViewById(R.id.btnMesas);
-        MaterialButton btnVendas = findViewById(R.id.btnVendas);
+        btnFecharCaixaHome = findViewById(R.id.btnFecharCaixaHome);
+        btnVendas = findViewById(R.id.btnVendas);
+        MaterialButton btnProdutos = findViewById(R.id.btnProdutos);
+        aplicarModoLocalHome();
 
         btnVenda.setOnClickListener(v -> {
+            if (prefs.isModoPdvLocal()) {
+                Toast.makeText(this, R.string.cupom_somente_pdv, Toast.LENGTH_LONG).show();
+                return;
+            }
             if (caixaAberto == null) {
                 Toast.makeText(this, R.string.abra_caixa_para_vender, Toast.LENGTH_SHORT).show();
                 dialogAbrirCaixa();
@@ -80,6 +98,16 @@ public class HomeActivity extends AppCompatActivity {
         });
         btnMesas.setOnClickListener(v -> startActivity(new Intent(this, MesasActivity.class)));
         btnVendas.setOnClickListener(v -> startActivity(new Intent(this, VendasActivity.class)));
+        btnProdutos.setOnClickListener(v -> startActivity(new Intent(this, ProdutosActivity.class)));
+        btnFecharCaixaHome.setOnClickListener(v -> dialogFecharCaixa());
+    }
+
+    private void aplicarModoLocalHome() {
+        boolean local = prefs.isModoPdvLocal();
+        btnVenda.setVisibility(local ? View.GONE : View.VISIBLE);
+        btnVendas.setVisibility(local ? View.GONE : View.VISIBLE);
+        btnFecharCaixaHome.setVisibility(View.GONE);
+        btnMesas.setText(prefs.isModeloComanda() ? R.string.comandas : R.string.mesas);
     }
 
     @Override
@@ -93,7 +121,9 @@ public class HomeActivity extends AppCompatActivity {
     private void sincronizarAtalhosEOutbox() {
         executor.execute(() -> {
             try {
-                outboxSync.processarPendentes();
+                if (!prefs.isModoPdvLocal()) {
+                    outboxSync.processarPendentes();
+                }
                 List<Produto> remotos = api.listarAtalhosRemotos();
                 if (!remotos.isEmpty() || prefs.getAtalhos().isEmpty()) {
                     prefs.setAtalhos(remotos);
@@ -105,6 +135,10 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void atualizarSyncUi() {
+        if (prefs.isModoPdvLocal()) {
+            txtSyncPendente.setVisibility(View.GONE);
+            return;
+        }
         int pendentes = outboxSync.getDb().contarPendentes();
         if (pendentes > 0) {
             txtSyncPendente.setVisibility(View.VISIBLE);
@@ -130,6 +164,7 @@ public class HomeActivity extends AppCompatActivity {
                     carregandoCaixa = false;
                     caixaAberto = null;
                     txtStatusCaixa.setText(e.getMessage());
+                    aplicarModoLocalHome();
                 });
             }
         });
@@ -137,17 +172,37 @@ public class HomeActivity extends AppCompatActivity {
 
     private void atualizarStatusCaixaUi() {
         if (caixaAberto != null) {
-            txtStatusCaixa.setText(getString(R.string.caixa_aberto) + " · PDV " + prefs.getNumeroPdv());
+            String status = getString(R.string.caixa_aberto) + " · PDV " + prefs.getNumeroPdv();
+            if (prefs.isModoPdvLocal()) {
+                status = status + " — " + getString(R.string.caixa_somente_pdv);
+            }
+            txtStatusCaixa.setText(status);
             btnVenda.setEnabled(true);
             btnMesas.setEnabled(true);
+            aplicarModoLocalHome();
+            if (!prefs.isModoPdvLocal()) {
+                btnFecharCaixaHome.setVisibility(View.VISIBLE);
+            }
         } else {
-            txtStatusCaixa.setText(getString(R.string.caixa_fechado) + " — " + getString(R.string.abra_caixa_para_vender));
+            txtStatusCaixa.setText(prefs.isModoPdvLocal()
+                    ? getString(R.string.caixa_fechado) + " — " + getString(R.string.pos_local_ajuda)
+                    : getString(R.string.caixa_fechado) + " — " + getString(R.string.abra_caixa_para_vender));
             btnVenda.setEnabled(true);
             btnMesas.setEnabled(true);
+            aplicarModoLocalHome();
         }
+        invalidateOptionsMenu();
     }
 
     private void dialogAbrirCaixa() {
+        if (prefs.isModoPdvLocal()) {
+            Toast.makeText(this, R.string.abra_caixa_no_pdv, Toast.LENGTH_LONG).show();
+            return;
+        }
+        if (caixaAberto != null) {
+            Toast.makeText(this, R.string.caixa_ja_aberto, Toast.LENGTH_SHORT).show();
+            return;
+        }
         View view = LayoutInflater.from(this).inflate(R.layout.dialog_valor, null);
         TextInputEditText input = view.findViewById(R.id.inputValor);
         input.setText("0");
@@ -166,28 +221,197 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void dialogFecharCaixa() {
+        if (prefs.isModoPdvLocal()) {
+            Toast.makeText(this, R.string.caixa_somente_pdv, Toast.LENGTH_LONG).show();
+            return;
+        }
         if (caixaAberto == null || caixaAberto.id == null) {
             Toast.makeText(this, R.string.caixa_fechado, Toast.LENGTH_SHORT).show();
             return;
         }
-        View view = LayoutInflater.from(this).inflate(R.layout.dialog_valor, null);
-        com.google.android.material.textfield.TextInputLayout layout = view.findViewById(R.id.layoutValor);
-        layout.setHint(getString(R.string.saldo_informado));
-        TextInputEditText input = view.findViewById(R.id.inputValor);
-        input.setText("0");
-        final long idCaixa = caixaAberto.id;
-        new AlertDialog.Builder(this)
+
+        View view = LayoutInflater.from(this).inflate(R.layout.dialog_fechar_caixa, null);
+        ProgressBar progress = view.findViewById(R.id.progressResumoCaixa);
+        View blocoResumo = view.findViewById(R.id.blocoResumoCaixa);
+        TextView txtErro = view.findViewById(R.id.txtErroResumoCaixa);
+        TextView txtSuprimento = view.findViewById(R.id.txtResumoSuprimento);
+        TextView txtTotalVendas = view.findViewById(R.id.txtResumoTotalVendas);
+        TextView txtQtdVendas = view.findViewById(R.id.txtResumoQtdVendas);
+        TextView txtDinheiro = view.findViewById(R.id.txtResumoDinheiro);
+        TextView txtCartao = view.findViewById(R.id.txtResumoCartao);
+        TextView txtPix = view.findViewById(R.id.txtResumoPix);
+        TextView txtPrepago = view.findViewById(R.id.txtResumoPrepago);
+        TextView txtSaldoGaveta = view.findViewById(R.id.txtResumoSaldoGaveta);
+        TextView txtDiferenca = view.findViewById(R.id.txtDiferencaCaixa);
+        TextInputEditText inputSaldo = view.findViewById(R.id.inputSaldoInformado);
+        TextInputEditText inputObs = view.findViewById(R.id.inputObservacaoFechamento);
+
+        inputSaldo.setText("0");
+        progress.setVisibility(View.VISIBLE);
+        blocoResumo.setVisibility(View.GONE);
+        txtErro.setVisibility(View.GONE);
+
+        final FechamentoCaixaDto caixa = caixaAberto;
+        final ResumoTurnoCaixa[] resumoRef = new ResumoTurnoCaixa[1];
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle(R.string.fechar_caixa)
                 .setView(view)
-                .setPositiveButton(R.string.fechar_caixa, (d, w) -> {
-                    String valor = input.getText() == null ? "0" : input.getText().toString().trim();
-                    if (valor.isEmpty()) {
-                        valor = "0";
-                    }
-                    fecharCaixa(idCaixa, valor.replace(",", "."));
-                })
+                .setPositiveButton(R.string.fechar_caixa, null)
+                .setNeutralButton(R.string.imprimir_fechamento, null)
                 .setNegativeButton(R.string.cancelar, null)
-                .show();
+                .create();
+
+        dialog.setOnShowListener(d -> {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
+            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setEnabled(false);
+
+            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v -> {
+                ResumoTurnoCaixa resumo = resumoRef[0];
+                if (resumo == null) {
+                    return;
+                }
+                String saldoStr = inputSaldo.getText() == null
+                        ? "0"
+                        : inputSaldo.getText().toString().trim();
+                BigDecimal saldoInformado = MoneyFormat.parse(saldoStr.replace(",", "."));
+                String obs = inputObs.getText() == null ? null : inputObs.getText().toString();
+                imprimirFechamento(resumo, saldoInformado, obs);
+            });
+
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+                ResumoTurnoCaixa resumo = resumoRef[0];
+                if (resumo == null) {
+                    return;
+                }
+                String saldoStr = inputSaldo.getText() == null
+                        ? "0"
+                        : inputSaldo.getText().toString().trim();
+                if (saldoStr.isEmpty()) {
+                    saldoStr = "0";
+                }
+                BigDecimal saldoInformado = MoneyFormat.parse(saldoStr.replace(",", "."));
+                BigDecimal diferenca = saldoInformado.subtract(resumo.saldoCaixaFisico);
+                BigDecimal sobra = diferenca.max(BigDecimal.ZERO);
+                BigDecimal falta = diferenca.negate().max(BigDecimal.ZERO);
+                String obs = inputObs.getText() == null ? null : inputObs.getText().toString();
+                dialog.dismiss();
+                fecharCaixa(
+                        caixa.id,
+                        MoneyFormat.toApi(saldoInformado),
+                        MoneyFormat.toApi(resumo.saldoapurado),
+                        MoneyFormat.toApi(sobra),
+                        MoneyFormat.toApi(falta),
+                        obs);
+            });
+        });
+        dialog.show();
+
+        TextWatcher diferencaWatcher = new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                atualizarDiferencaUi(resumoRef[0], s == null ? "" : s.toString(), txtDiferenca);
+            }
+        };
+        inputSaldo.addTextChangedListener(diferencaWatcher);
+
+        executor.execute(() -> {
+            try {
+                ResumoTurnoCaixa resumo = api.calcularResumoTurno(caixa);
+                runOnUiThread(() -> {
+                    if (isFinishing()) {
+                        return;
+                    }
+                    resumoRef[0] = resumo;
+                    progress.setVisibility(View.GONE);
+                    blocoResumo.setVisibility(View.VISIBLE);
+                    txtErro.setVisibility(View.GONE);
+
+                    txtSuprimento.setText(MoneyFormat.format(resumo.suprimento));
+                    txtTotalVendas.setText(MoneyFormat.format(resumo.totalVendas));
+                    String labelQtd = resumo.qtdVendas == 1
+                            ? getString(R.string.venda_singular)
+                            : getString(R.string.venda_plural);
+                    txtQtdVendas.setText(getString(R.string.qtd_vendas_turno, resumo.qtdVendas, labelQtd));
+                    txtDinheiro.setText(MoneyFormat.format(resumo.pagamentos.dinheiro));
+                    txtCartao.setText(MoneyFormat.format(resumo.pagamentos.cartao));
+                    txtPix.setText(MoneyFormat.format(resumo.pagamentos.pix));
+                    txtPrepago.setText(MoneyFormat.format(resumo.pagamentos.prepago));
+                    txtSaldoGaveta.setText(MoneyFormat.format(resumo.saldoCaixaFisico));
+
+                    if (dialog.isShowing()) {
+                        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);
+                        dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setEnabled(true);
+                    }
+                    atualizarDiferencaUi(
+                            resumo,
+                            inputSaldo.getText() == null ? "" : inputSaldo.getText().toString(),
+                            txtDiferenca);
+                });
+            } catch (ApiException e) {
+                runOnUiThread(() -> {
+                    if (isFinishing()) {
+                        return;
+                    }
+                    progress.setVisibility(View.GONE);
+                    blocoResumo.setVisibility(View.GONE);
+                    txtErro.setVisibility(View.VISIBLE);
+                    txtErro.setText(e.getMessage() != null
+                            ? e.getMessage()
+                            : getString(R.string.erro_resumo_caixa));
+                    if (dialog.isShowing()) {
+                        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
+                        dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setEnabled(false);
+                    }
+                });
+            }
+        });
+    }
+
+    private void imprimirFechamento(ResumoTurnoCaixa resumo, BigDecimal saldoInformado, String observacao) {
+        String texto = FechamentoCaixaTexto.montar(
+                prefs.getEmpresaNome(),
+                prefs.getNumeroPdv(),
+                resumo,
+                saldoInformado,
+                observacao);
+        try {
+            ImpressoraPos impressora = ((PosApplication) getApplication()).getImpressoraPos();
+            impressora.imprimirTexto(texto);
+            Toast.makeText(this, R.string.fechamento_enviado, Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Toast.makeText(
+                            this,
+                            e.getMessage() != null ? e.getMessage() : getString(R.string.erro_imprimir_fechamento),
+                            Toast.LENGTH_LONG)
+                    .show();
+        }
+    }
+
+    private void atualizarDiferencaUi(ResumoTurnoCaixa resumo, String saldoTexto, TextView txtDiferenca) {
+        if (resumo == null || saldoTexto == null || saldoTexto.trim().isEmpty()) {
+            txtDiferenca.setVisibility(View.GONE);
+            return;
+        }
+        BigDecimal saldoInformado = MoneyFormat.parse(saldoTexto.replace(",", "."));
+        BigDecimal diferenca = saldoInformado.subtract(resumo.saldoCaixaFisico);
+        txtDiferenca.setVisibility(View.VISIBLE);
+        if (diferenca.compareTo(BigDecimal.ZERO) == 0) {
+            txtDiferenca.setText(R.string.caixa_conferido);
+            txtDiferenca.setTextColor(getResources().getColor(R.color.dinheiro, getTheme()));
+        } else if (diferenca.compareTo(BigDecimal.ZERO) > 0) {
+            txtDiferenca.setText(getString(R.string.caixa_sobra, MoneyFormat.format(diferenca)));
+            txtDiferenca.setTextColor(getResources().getColor(R.color.pix, getTheme()));
+        } else {
+            txtDiferenca.setText(getString(R.string.caixa_falta, MoneyFormat.format(diferenca.negate())));
+            txtDiferenca.setTextColor(getResources().getColor(R.color.danger, getTheme()));
+        }
     }
 
     private void abrirCaixa(String suprimento) {
@@ -205,10 +429,16 @@ public class HomeActivity extends AppCompatActivity {
         });
     }
 
-    private void fecharCaixa(long id, String saldo) {
+    private void fecharCaixa(
+            long id,
+            String saldoInformado,
+            String saldoApurado,
+            String sobra,
+            String falta,
+            String observacao) {
         executor.execute(() -> {
             try {
-                api.fecharCaixa(id, saldo, null);
+                api.fecharCaixa(id, saldoInformado, saldoApurado, sobra, falta, observacao);
                 runOnUiThread(() -> {
                     caixaAberto = null;
                     atualizarStatusCaixaUi();
@@ -224,6 +454,21 @@ public class HomeActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_home, menu);
         return true;
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        boolean local = prefs.isModoPdvLocal();
+        boolean aberto = caixaAberto != null;
+        MenuItem abrir = menu.findItem(R.id.action_abrir_caixa);
+        MenuItem fechar = menu.findItem(R.id.action_fechar_caixa);
+        if (abrir != null) {
+            abrir.setVisible(!local && !aberto);
+        }
+        if (fechar != null) {
+            fechar.setVisible(!local && aberto);
+        }
+        return super.onPrepareOptionsMenu(menu);
     }
 
     @Override

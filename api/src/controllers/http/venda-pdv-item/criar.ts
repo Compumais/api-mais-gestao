@@ -14,6 +14,7 @@ const criarVendaPdvItemBodySchema = z.object({
 	precopromocao: z.string(),
 	precoalterado: z.string(),
 	taxaservico: z.number().int().optional(),
+	descricao: z.string().max(120).optional().nullable(),
 });
 
 export async function criarVendaPdvItem(

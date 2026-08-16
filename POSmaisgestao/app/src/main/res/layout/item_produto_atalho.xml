@@ -12,27 +12,36 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:minHeight="100dp"
+        android:minHeight="120dp"
         android:orientation="vertical"
-        android:padding="12dp">
+        android:padding="10dp">
+
+        <ImageView
+            android:id="@+id/imgProduto"
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:contentDescription="@string/imagem_produto"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_produto_placeholder" />
 
         <TextView
             android:id="@+id/txtNomeProduto"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
             android:gravity="center"
             android:maxLines="2"
             android:textColor="@color/white"
-            android:textSize="16sp"
+            android:textSize="15sp"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/txtPrecoProduto"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
+            android:layout_marginTop="4dp"
             android:gravity="center"
             android:textColor="@color/white"
-            android:textSize="15sp" />
+            android:textSize="14sp" />
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

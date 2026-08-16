@@ -13,6 +13,7 @@ export interface Produto {
 	fornecedor: string | null;
 	idgrupo: string | null;
 	idgrupogourmet?: string | null;
+	espizza?: number | null;
 	preco: string | null;
 	custoaquisicao?: string | null;
 	tipo: string | null;
@@ -68,6 +69,7 @@ export interface CriarProdutoData {
 	fornecedor?: string | null;
 	idgrupo: string;
 	idgrupogourmet?: string | null;
+	espizza?: number | null;
 	preco: string;
 	custoaquisicao?: string | null;
 	tipo?: string;
@@ -118,6 +120,7 @@ export interface AtualizarProdutoData {
 	fornecedor?: string | null;
 	idgrupo?: string;
 	idgrupogourmet?: string | null;
+	espizza?: number | null;
 	preco?: string;
 	custoaquisicao?: string | null;
 	tipo?: string;
@@ -232,9 +235,7 @@ export const produtosService = {
 		});
 	},
 
-	async buscarProximoCodigo(
-		idempresa: string,
-	): Promise<{ codigo: number }> {
+	async buscarProximoCodigo(idempresa: string): Promise<{ codigo: number }> {
 		const { data } = await api.get<{ codigo: number }>(
 			"/produtos/proximo-codigo",
 			{ params: { idempresa } },

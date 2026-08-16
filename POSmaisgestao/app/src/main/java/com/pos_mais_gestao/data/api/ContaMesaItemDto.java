@@ -6,4 +6,5 @@ public class ContaMesaItemDto {
     public String nomeproduto;
     public String quantidade;
     public String precounitario;
+    public String observacao;
 }

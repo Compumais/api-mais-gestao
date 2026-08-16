@@ -66,16 +66,18 @@ public class SucessoActivity extends AppCompatActivity {
         txtNfce.setText(nfce != null ? nfce : "");
 
         MaterialButton btnImprimir = findViewById(R.id.btnImprimir);
+        boolean local = ((PosApplication) getApplication()).getPrefsStore().isModoPdvLocal();
         btnImprimir.setText(cupomFiscal
                 ? R.string.reimprimir_danfce
                 : R.string.imprimir_comprovante);
         btnImprimir.setOnClickListener(v -> imprimirComprovante());
-        if (comprovante == null || comprovante.isEmpty()) {
+        if (local || comprovante == null || comprovante.isEmpty()) {
+            btnImprimir.setVisibility(local ? View.GONE : View.VISIBLE);
             btnImprimir.setEnabled(false);
         }
 
         MaterialButton btnFichas = findViewById(R.id.btnImprimirFichas);
-        boolean temFichas = fichas != null && !fichas.isEmpty();
+        boolean temFichas = !local && fichas != null && !fichas.isEmpty();
         btnFichas.setVisibility(temFichas ? View.VISIBLE : View.GONE);
         btnFichas.setOnClickListener(v -> imprimirFichas());
 
@@ -90,7 +92,7 @@ public class SucessoActivity extends AppCompatActivity {
             }
         });
 
-        if (comprovante != null && !comprovante.isEmpty()) {
+        if (!local && comprovante != null && !comprovante.isEmpty()) {
             imprimirComprovante();
         }
         if (temFichas) {

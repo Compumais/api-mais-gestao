@@ -46,6 +46,7 @@ import {
 	listarMapeamentoImpressorasGourmet,
 	listarMesas,
 	listarPedidosFila,
+	listarPizzasLocal,
 	listarProdutosPorGrupo,
 	listarProdutosPorGrupoGourmet,
 	listarVendas,
@@ -66,6 +67,7 @@ import {
 	imprimirCupomNaoFiscal,
 	imprimirDanfce,
 	listarImpressoras,
+	testarImpressora,
 } from "../impressora/escpos";
 import {
 	imprimirProducaoPedido,
@@ -127,6 +129,7 @@ async function emitirNfceOnlineDaVenda(vendaId: string): Promise<{
 					precototal: item.precototal,
 					precopromocao: 0,
 					precoalterado: 0,
+					descricao: item.descricao,
 				});
 			}
 
@@ -309,6 +312,15 @@ export const localApi = {
 		return listarImpressoras();
 	},
 
+	async testarImpressora(destino: {
+		tipo: "sistema" | "rede" | "arquivo";
+		nome?: string;
+		host?: string;
+		porta?: number;
+	}) {
+		return testarImpressora(destino);
+	},
+
 	async abrirCaixa(valorabertura: number) {
 		return abrirCaixa(valorabertura);
 	},
@@ -342,12 +354,22 @@ export const localApi = {
 		return listarProdutosPorGrupoGourmet(idgrupogourmet, termo ?? "", 200);
 	},
 
+	async listarPizzas(excetoId?: string) {
+		return listarPizzasLocal(excetoId ?? "", 200);
+	},
+
 	async listarMapeamentoImpressorasGourmet() {
 		return listarMapeamentoImpressorasGourmet();
 	},
 
 	async salvarMapeamentoImpressorasGourmet(
-		itens: Array<{ idgrupogourmet: string; impressora_nome: string }>,
+		itens: Array<{
+			idgrupogourmet: string;
+			destino?: string;
+			impressora_nome?: string;
+			host?: string;
+			porta?: number;
+		}>,
 	) {
 		await salvarMapeamentoImpressorasGourmet(itens);
 		return { ok: true };
@@ -455,6 +477,7 @@ export const localApi = {
 			idproduto: string;
 			quantidade: number;
 			observacao?: string | null;
+			idprodutomeio?: string | null;
 		}>,
 	) {
 		const conta = await enviarPedidoConta({ idconta, clientOrderId, itens });
@@ -463,12 +486,7 @@ export const localApi = {
 				void imprimirProducaoPedido({
 					origem: await rotuloOrigemMesa(conta.numero_mesa),
 					cliente: conta.nomecliente,
-					itens: itens.map((item) => ({
-						idproduto: item.idproduto,
-						descricao: "",
-						quantidade: item.quantidade,
-						observacao: item.observacao,
-					})),
+					itens: conta.itensProducao,
 				});
 			} catch {
 				// produção não falha o pedido
