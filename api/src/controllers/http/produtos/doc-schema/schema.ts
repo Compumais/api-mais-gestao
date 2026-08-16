@@ -114,6 +114,7 @@ const propriedadesProdutoResposta = {
 	idunidademedida: { type: "string", format: "uuid", nullable: true },
 	fornecedor: { anyOf: [{ type: "string", format: "uuid" }, { type: "null" }] },
 	idgrupo: { type: "string", format: "uuid", nullable: true },
+	idgrupogourmet: { type: "string", format: "uuid", nullable: true },
 	preco: { type: "string", nullable: true },
 	tipo: { type: "string", enum: ["P", "S"], nullable: true },
 	iat: {
@@ -153,6 +154,7 @@ export const criarProdutoSchema: FastifySchema = {
 			idunidademedida: { type: "string" },
 			fornecedor: { anyOf: [{ type: "string" }, { type: "null" }] },
 			idgrupo: { type: "string" },
+			idgrupogourmet: { anyOf: [{ type: "string" }, { type: "null" }] },
 			preco: { type: "string" },
 			tipo: { type: "string", enum: ["P", "S"] },
 			iat: {
@@ -297,6 +299,7 @@ export const atualizarProdutoSchema: FastifySchema = {
 			idunidademedida: { type: "string", format: "uuid" },
 			fornecedor: { anyOf: [{ type: "string", format: "uuid" }, { type: "null" }] },
 			idgrupo: { type: "string", format: "uuid" },
+			idgrupogourmet: { anyOf: [{ type: "string", format: "uuid" }, { type: "null" }] },
 			preco: { anyOf: [{ type: "string" }, { type: "number" }] },
 			tipo: { type: "string", enum: ["P", "S"] },
 			iat: {

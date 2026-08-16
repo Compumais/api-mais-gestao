@@ -96,6 +96,10 @@ export const DATA = {
 					url: "/grupos",
 				},
 				{
+					title: "Grupos gourmet",
+					url: "/grupos-gourmet",
+				},
+				{
 					title: "Unidades de medida",
 					url: "/unidade-medida",
 				},

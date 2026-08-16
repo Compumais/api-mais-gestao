@@ -36,6 +36,15 @@ const atualizarProdutoBodySchema = z.object({
 	idunidademedida: z.string().optional(),
 	fornecedor: z.string().optional().nullable(),
 	idgrupo: z.string().optional(),
+	idgrupogourmet: z
+		.string()
+		.optional()
+		.nullable()
+		.transform((valor) => {
+			if (valor === undefined) return undefined;
+			if (!valor || valor === "none") return null;
+			return valor;
+		}),
 	preco: z.union([z.string(), z.number()]).optional(),
 	tipo: z.enum(["P", "S"]).optional(),
 	iat: z.enum(["A", "T"]).optional().nullable(),

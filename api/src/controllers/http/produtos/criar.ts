@@ -32,6 +32,14 @@ const criarProdutoBodySchema = z.object({
 	idunidademedida: z.string(),
 	fornecedor: z.string().optional().nullable(),
 	idgrupo: z.string(),
+	idgrupogourmet: z
+		.string()
+		.optional()
+		.nullable()
+		.transform((valor) => {
+			if (!valor || valor === "none") return null;
+			return valor;
+		}),
 	preco: z.union([z.string(), z.number()]),
 	tipo: z.enum(["P", "S"]).default("P"),
 	iat: z.enum(["A", "T"]).optional().nullable(),
@@ -94,6 +102,7 @@ export async function criarProduto(
 			idunidademedida: dadosValidados.idunidademedida,
 			fornecedor: dadosValidados.fornecedor ?? null,
 			idgrupo: dadosValidados.idgrupo,
+			idgrupogourmet: dadosValidados.idgrupogourmet ?? null,
 			preco,
 			tipo: dadosValidados.tipo,
 			iat: dadosValidados.iat ?? null,

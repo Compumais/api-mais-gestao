@@ -15,6 +15,7 @@ import { cfop } from "./cfop.js";
 import { empresa } from "./empresas.js";
 import { entidade } from "./entidade.js";
 import { hierarquia } from "./hierarquia.js";
+import { grupogourmet } from "./grupo-gourmet.js";
 import { ncm } from "./ncm.js";
 import { planocontas } from "./plano-contas.js";
 import { receitasemcontribuicao } from "./receitasem-contribuicao.js";
@@ -107,6 +108,7 @@ export const produtos = pgTable(
 		idcfopentradatransfinterna: text(),
 		idunidademedida: text(),
 		idgrupo: text(),
+		idgrupogourmet: text(),
 		preco: numeric({ precision: 12, scale: 2 }),
 		iat: char({ length: 1 }), // A=Arredondamento, T=Truncamento
 		referencia: varchar({ length: 60 }),
@@ -329,6 +331,13 @@ export const produtos = pgTable(
 			columns: [table.idgrupo],
 			foreignColumns: [hierarquia.id],
 			name: "produtos_idgrupo_fkey",
+		})
+			.onUpdate("cascade")
+			.onDelete("set null"),
+		foreignKey({
+			columns: [table.idgrupogourmet],
+			foreignColumns: [grupogourmet.id],
+			name: "produtos_idgrupogourmet_fkey",
 		})
 			.onUpdate("cascade")
 			.onDelete("set null"),
