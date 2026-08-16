@@ -123,6 +123,13 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 		keywords: ["hierarquia", "hierarquias", "grupo", "grupos", "produto"],
 	},
 	{
+		title: "Grupos gourmet",
+		url: "/grupos-gourmet",
+		category: "Principal",
+		icon: IconListDetails,
+		keywords: ["gourmet", "cozinha", "bar", "mesa", "impressora", "grupo"],
+	},
+	{
 		title: "Unidades de medida",
 		url: "/unidade-medida",
 		category: "Principal",

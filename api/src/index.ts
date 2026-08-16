@@ -47,6 +47,7 @@ import { fechamentosCaixaRotas } from "./controllers/http/fechamento-caixa/rotas
 import { financeiroRotas } from "./controllers/http/financeiro/rotas.js";
 import { financeiroLancamentoRotas } from "./controllers/http/financeirolancamento/rotas.js";
 import { healthRotas } from "./controllers/http/health/rotas.js";
+import { gruposGourmetRotas } from "./controllers/http/grupo-gourmet/rotas.js";
 import { hierarquiasRotas } from "./controllers/http/hierarquia/rotas.js";
 import { iaRotas } from "./controllers/http/ia/rotas.js";
 import { informativosRotas } from "./controllers/http/informativos/rotas.js";
@@ -555,6 +556,7 @@ app.register(condicoesPagamentoRotas);
 app.register(departamentosRotas);
 app.register(enquadramentosIpiRotas);
 app.register(hierarquiasRotas);
+app.register(gruposGourmetRotas);
 app.register(locaisRetiradaRotas);
 app.register(locaisEstoqueRotas);
 app.register(saldosEstoqueRotas);
