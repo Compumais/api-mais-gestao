@@ -89,7 +89,8 @@ public class VendaDetalheActivity extends AppCompatActivity {
         lista.setAdapter(adapter);
 
         boolean podeCupom = venda.idNotaFiscal != null && !venda.idNotaFiscal.isEmpty();
-        btnReimprimir.setVisibility(View.VISIBLE);
+        boolean local = ((PosApplication) getApplication()).getPrefsStore().isModoPdvLocal();
+        btnReimprimir.setVisibility(local ? View.GONE : View.VISIBLE);
         btnReimprimir.setText(podeCupom ? R.string.reimprimir_danfce : R.string.reimprimir_comprovante);
         btnReimprimir.setOnClickListener(v -> reimprimir());
 

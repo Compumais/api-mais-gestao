@@ -13,12 +13,14 @@ Plataforma SaaS multi-empresa para controle financeiro e fiscal. O repositório 
 |--------|---------|-------|---------------|
 | API | `api/` | Node.js, Fastify, Drizzle, PostgreSQL, Better Auth, Zod | `api/.cursor/rules/` |
 | Web | `web/` | Next.js (App Router), React Query, shadcn/ui, Zod | `web/.cursor/rules/` |
+| PDV Híbrido | `pdv/` | Electron, React, Vite, PostgreSQL local, Tailwind/shadcn | — |
+| POS Android | `POSmaisgestao/` | Java/Android (maquininha) | — |
 | NFe Gateway | `api_Nfe/nfe-gateway/` | PHP, integração SEFAZ | — |
 | Infra | `infra/` | Deploy VPS, Docker, PM2, Nginx | — |
 
 ## Comandos
 
-- Instalar e executar sempre **dentro do pacote** (`cd api` ou `cd web`).
+- Instalar e executar sempre **dentro do pacote** (`cd api`, `cd web` ou `cd pdv`).
 - Lint/format na raiz: `npm run check` / `npm run format` (Biome via `biome.json`).
 - CI em `.github/workflows/ci.yml` roda lint/build/test por pacote conforme paths alterados.
 
@@ -26,14 +28,17 @@ Plataforma SaaS multi-empresa para controle financeiro e fiscal. O repositório 
 
 - Respeite a arquitetura e regras do pacote em que estiver trabalhando; não misture padrões de `api/` e `web/`.
 - `web/` consome a API via services/hooks — não acesse banco ou lógica de negócio do backend no front.
+- `pdv/` é cliente desacoplado com PostgreSQL local e sync outbox; não importa código de `web/` nem acessa o banco PostgreSQL da API.
 - Não duplique código entre pacotes; não crie pacote compartilhado sem solicitação explícita.
 - Use caminhos relativos ao referenciar arquivos dentro do monorepo.
 - Skills fiscais e resoluções complexas ficam em `.cursor/skills/` na raiz.
-- Alterações em fluxos fiscais (NF-e/NFC-e, entrada de notas) podem impactar `api/`, `web/` e `api_Nfe/` — considere o ciclo completo.
+- Alterações em fluxos fiscais (NF-e/NFC-e, entrada de notas) podem impactar `api/`, `web/`, `pdv/` e `api_Nfe/` — considere o ciclo completo.
 
 ## Escopo de alterações
 
 - Backend (rotas, services, migrations): `api/`
 - Telas, componentes, hooks: `web/`
+- PDV desktop híbrido (Electron + PostgreSQL local): `pdv/`
+- POS maquininha Android: `POSmaisgestao/`
 - Emissão SEFAZ via gateway PHP: `api_Nfe/nfe-gateway/`
 - Deploy e operação: `infra/`

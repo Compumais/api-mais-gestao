@@ -95,9 +95,9 @@ public class OutboxSync {
         JsonArray arr = new JsonArray();
         for (ItemCarrinho item : itens) {
             JsonObject i = new JsonObject();
-            i.addProperty("idproduto", item.getProduto().getId());
-            i.addProperty("descricao", item.getProduto().getDescricao());
-            i.addProperty("preco", item.getProduto().getPreco().toPlainString());
+            i.addProperty("idproduto", item.getProdutoFiscal().getId());
+            i.addProperty("descricao", item.getDescricaoExibicao());
+            i.addProperty("preco", item.getPrecoUnitario().toPlainString());
             i.addProperty("unidademedida", item.getProduto().getUnidadeMedida());
             i.addProperty("idunidademedida", item.getProduto().getIdUnidadeMedida());
             i.addProperty("quantidade", item.getQuantidade().toPlainString());

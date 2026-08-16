@@ -12,6 +12,7 @@ export type ProdutoLocal = {
 	ean: string | null;
 	idgrupo: string | null;
 	idgrupogourmet?: string | null;
+	espizza?: number | null;
 	imagem?: string | null;
 	caminhoimagem?: string | null;
 };

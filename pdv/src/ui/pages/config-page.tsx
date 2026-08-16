@@ -21,7 +21,10 @@ type Config = Record<string, string>;
 type MapeamentoGourmet = {
 	idgrupogourmet: string;
 	nome: string;
+	destino: string;
 	impressora_nome: string;
+	host: string;
+	porta: number;
 };
 
 export function ConfigPage() {
@@ -35,8 +38,9 @@ export function ConfigPage() {
 		MapeamentoGourmet[]
 	>([]);
 	const [lanIps, setLanIps] = useState<string[]>([]);
-	const [msg, setMsg] = useState("");
+	const [testando, setTestando] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
+	const [msg, setMsg] = useState("");
 	const rotulo = rotuloModelo(
 		config.modelo_atendimento === "comanda" ? "comanda" : "mesa",
 	);
@@ -87,6 +91,8 @@ export function ConfigPage() {
 				pix_chave: config.pix_chave ?? "",
 				impressora_nome: config.impressora_nome ?? "",
 				impressora_tipo: config.impressora_tipo ?? "sistema",
+				impressora_host: config.impressora_host ?? "",
+				impressora_porta: config.impressora_porta ?? "9100",
 				certificado_path: config.certificado_path ?? "",
 				certificado_senha: config.certificado_senha ?? "",
 				lan_habilitada: config.lan_habilitada ?? "1",
@@ -109,6 +115,59 @@ export function ConfigPage() {
 		} finally {
 			setLoading(false);
 		}
+	}
+
+	async function testarDestino(
+		id: string,
+		destino: {
+			tipo: "sistema" | "rede" | "arquivo";
+			nome?: string;
+			host?: string;
+			porta?: number;
+		},
+	) {
+		if (destino.tipo === "rede" && !destino.host?.trim()) {
+			setMsg("Informe o IP da impressora de rede");
+			return;
+		}
+		if (
+			id !== "fiscal" &&
+			destino.tipo === "sistema" &&
+			!destino.nome?.trim()
+		) {
+			setMsg("Selecione a impressora do Windows");
+			return;
+		}
+		setTestando(id);
+		setMsg("");
+		try {
+			const result = await pdvInvoke<{ ok: boolean; modo: string }>(
+				"testarImpressora",
+				destino,
+			);
+			setMsg(
+				result.ok
+					? `Teste enviado (${result.modo})`
+					: "Não foi possível testar a impressora",
+			);
+		} catch (err) {
+			setMsg(
+				err instanceof Error ? err.message : "Falha no teste de impressão",
+			);
+		} finally {
+			setTestando(null);
+		}
+	}
+
+	function atualizarGourmet(
+		idgrupogourmet: string,
+		patch: Partial<MapeamentoGourmet>,
+	) {
+		setMapeamentoGourmet((prev) =>
+			prev.map((item) =>
+				item.idgrupogourmet === idgrupogourmet ? { ...item, ...patch } : item,
+			),
+		);
 	}
 
 	return (
@@ -268,31 +327,82 @@ export function ConfigPage() {
 					</CardHeader>
 					<CardContent className="grid gap-4 sm:grid-cols-2">
 						<div className="space-y-2">
-							<Label htmlFor="impressora_tipo">Tipo</Label>
+							<Label htmlFor="impressora_tipo">Conexão</Label>
 							<Select
 								id="impressora_tipo"
 								value={config.impressora_tipo ?? "sistema"}
 								onChange={(e) => set("impressora_tipo", e.target.value)}
 							>
-								<option value="sistema">Sistema (driver do Windows)</option>
+								<option value="sistema">Sistema (USB / Windows)</option>
+								<option value="rede">Rede (IP :9100)</option>
 								<option value="arquivo">Arquivo (depuração)</option>
 							</Select>
 						</div>
-						<div className="space-y-2">
-							<Label htmlFor="impressora_nome">Nome da impressora</Label>
-							<Select
-								id="impressora_nome"
-								value={config.impressora_nome ?? ""}
-								onChange={(e) => set("impressora_nome", e.target.value)}
+						{(config.impressora_tipo ?? "sistema") === "sistema" ? (
+							<div className="space-y-2">
+								<Label htmlFor="impressora_nome">Impressora do Windows</Label>
+								<Select
+									id="impressora_nome"
+									value={config.impressora_nome ?? ""}
+									onChange={(e) => set("impressora_nome", e.target.value)}
+								>
+									<option value="">Padrão do Windows</option>
+									{impressoras.map((p) => (
+										<option key={p.name} value={p.name}>
+											{p.name}
+											{p.isDefault ? " (padrão)" : ""}
+										</option>
+									))}
+								</Select>
+							</div>
+						) : (config.impressora_tipo ?? "sistema") === "rede" ? (
+							<>
+								<div className="space-y-2">
+									<Label htmlFor="impressora_host">IP / hostname</Label>
+									<Input
+										id="impressora_host"
+										value={config.impressora_host ?? ""}
+										onChange={(e) => set("impressora_host", e.target.value)}
+										placeholder="192.168.1.50"
+									/>
+								</div>
+								<div className="space-y-2">
+									<Label htmlFor="impressora_porta">Porta</Label>
+									<Input
+										id="impressora_porta"
+										type="number"
+										min={1}
+										value={config.impressora_porta ?? "9100"}
+										onChange={(e) => set("impressora_porta", e.target.value)}
+									/>
+								</div>
+							</>
+						) : null}
+						<div className="sm:col-span-2 flex flex-wrap items-center gap-2">
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								disabled={testando !== null}
+								onClick={() =>
+									void testarDestino("fiscal", {
+										tipo:
+											config.impressora_tipo === "rede" ||
+											config.impressora_tipo === "arquivo"
+												? config.impressora_tipo
+												: "sistema",
+										nome: config.impressora_nome,
+										host: config.impressora_host,
+										porta: Number(config.impressora_porta) || 9100,
+									})
+								}
 							>
-								<option value="">Padrão do Windows</option>
-								{impressoras.map((p) => (
-									<option key={p.name} value={p.name}>
-										{p.name}
-										{p.isDefault ? " (padrão)" : ""}
-									</option>
-								))}
-							</Select>
+								{testando === "fiscal" ? "Testando…" : "Testar impressão"}
+							</Button>
+							<p className="text-xs text-muted-foreground">
+								USB e impressoras instaladas no Windows usam Sistema. Impressora
+								térmica na LAN usa Rede (porta 9100, ESC/POS).
+							</p>
 						</div>
 					</CardContent>
 				</Card>
@@ -305,42 +415,124 @@ export function ConfigPage() {
 						{mapeamentoGourmet.length === 0 ? (
 							<p className="text-sm text-muted-foreground">
 								Nenhum grupo gourmet sincronizado. Sincronize o catálogo para
-								mapear cada setor a uma impressora Windows.
+								mapear cada setor a uma impressora (USB/Windows ou IP na rede).
 							</p>
 						) : (
 							mapeamentoGourmet.map((grupo) => (
-								<div key={grupo.idgrupogourmet} className="space-y-2">
-									<Label htmlFor={`imp-gourmet-${grupo.idgrupogourmet}`}>
-										{grupo.nome}
-									</Label>
-									<Select
-										id={`imp-gourmet-${grupo.idgrupogourmet}`}
-										value={grupo.impressora_nome}
-										onChange={(e) =>
-											setMapeamentoGourmet((prev) =>
-												prev.map((item) =>
-													item.idgrupogourmet === grupo.idgrupogourmet
-														? { ...item, impressora_nome: e.target.value }
-														: item,
-												),
-											)
-										}
-									>
-										<option value="">Não imprimir</option>
-										{impressoras.map((p) => (
-											<option key={p.name} value={p.name}>
-												{p.name}
-												{p.isDefault ? " (padrão)" : ""}
-											</option>
-										))}
-									</Select>
+								<div
+									key={grupo.idgrupogourmet}
+									className="grid gap-3 rounded-md border p-3 sm:grid-cols-2"
+								>
+									<div className="space-y-2 sm:col-span-2">
+										<Label>{grupo.nome}</Label>
+									</div>
+									<div className="space-y-2">
+										<Label htmlFor={`imp-dest-${grupo.idgrupogourmet}`}>
+											Conexão
+										</Label>
+										<Select
+											id={`imp-dest-${grupo.idgrupogourmet}`}
+											value={grupo.destino}
+											onChange={(e) =>
+												atualizarGourmet(grupo.idgrupogourmet, {
+													destino: e.target.value,
+												})
+											}
+										>
+											<option value="">Não imprimir</option>
+											<option value="sistema">Sistema (USB / Windows)</option>
+											<option value="rede">Rede (IP :9100)</option>
+										</Select>
+									</div>
+									{grupo.destino === "sistema" ? (
+										<div className="space-y-2">
+											<Label htmlFor={`imp-nome-${grupo.idgrupogourmet}`}>
+												Impressora do Windows
+											</Label>
+											<Select
+												id={`imp-nome-${grupo.idgrupogourmet}`}
+												value={grupo.impressora_nome}
+												onChange={(e) =>
+													atualizarGourmet(grupo.idgrupogourmet, {
+														impressora_nome: e.target.value,
+													})
+												}
+											>
+												<option value="">Selecione</option>
+												{impressoras.map((p) => (
+													<option key={p.name} value={p.name}>
+														{p.name}
+														{p.isDefault ? " (padrão)" : ""}
+													</option>
+												))}
+											</Select>
+										</div>
+									) : null}
+									{grupo.destino === "rede" ? (
+										<>
+											<div className="space-y-2">
+												<Label htmlFor={`imp-host-${grupo.idgrupogourmet}`}>
+													IP / hostname
+												</Label>
+												<Input
+													id={`imp-host-${grupo.idgrupogourmet}`}
+													value={grupo.host}
+													onChange={(e) =>
+														atualizarGourmet(grupo.idgrupogourmet, {
+															host: e.target.value,
+														})
+													}
+													placeholder="192.168.1.80"
+												/>
+											</div>
+											<div className="space-y-2">
+												<Label htmlFor={`imp-porta-${grupo.idgrupogourmet}`}>
+													Porta
+												</Label>
+												<Input
+													id={`imp-porta-${grupo.idgrupogourmet}`}
+													type="number"
+													min={1}
+													value={String(grupo.porta || 9100)}
+													onChange={(e) =>
+														atualizarGourmet(grupo.idgrupogourmet, {
+															porta: Number(e.target.value) || 9100,
+														})
+													}
+												/>
+											</div>
+										</>
+									) : null}
+									{(grupo.destino === "sistema" ||
+										grupo.destino === "rede") && (
+										<div className="sm:col-span-2">
+											<Button
+												type="button"
+												variant="outline"
+												size="sm"
+												disabled={testando !== null}
+												onClick={() =>
+													void testarDestino(grupo.idgrupogourmet, {
+														tipo: grupo.destino === "rede" ? "rede" : "sistema",
+														nome: grupo.impressora_nome,
+														host: grupo.host,
+														porta: grupo.porta || 9100,
+													})
+												}
+											>
+												{testando === grupo.idgrupogourmet
+													? "Testando…"
+													: "Testar setor"}
+											</Button>
+										</div>
+									)}
 								</div>
 							))
 						)}
 						<p className="text-xs text-muted-foreground">
 							Ao enviar o pedido (POS) ou lançar item (mesa) / finalizar
 							(balcão), os itens de cada grupo saem na impressora mapeada — sem
-							preço. Grupo sem impressora não imprime e não falha o pedido.
+							preço. Setor sem impressora não imprime e não falha o pedido.
 						</p>
 					</CardContent>
 				</Card>

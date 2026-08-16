@@ -1,11 +1,11 @@
-import { buscarCfopPorId } from "@/repositories/cfop-repositories.js";
 import { buscarCestPorId } from "@/repositories/cest-repositories.js";
+import { buscarCfopPorId } from "@/repositories/cfop-repositories.js";
 import { buscarNcmPorId } from "@/repositories/ncm-repositories.js";
 import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
 import { listarItensPorVendaPdv } from "@/repositories/venda-pdv-item-repositories.js";
 import type { ItemPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
 import { empresaUsaCsosn } from "@/util/normalizar-tributacao-item-emissao-nfe.js";
-import { normalizarCodigoCest } from "@/util/validar-cest-item-emissao-nfe.js";
+import { truncarDescricaoItemNfce } from "@/util/pizza-meio-a-meio.js";
 
 async function resolverCodigoCfop(
 	ids: Array<string | null | undefined>,
@@ -120,7 +120,11 @@ export async function montarItensEmissaoPdv(
 			...(produto.codigo != null
 				? { codigoProduto: String(produto.codigo) }
 				: {}),
-			descricao: produto.descricao ?? `Produto ${produto.codigo ?? ""}`.trim(),
+			descricao: truncarDescricaoItemNfce(
+				itemVenda.descricao?.trim() ||
+					produto.descricao ||
+					`Produto ${produto.codigo ?? ""}`,
+			),
 			ncm,
 			...(cest ? { cest } : {}),
 			cfop: codigoCfop ?? "5102",

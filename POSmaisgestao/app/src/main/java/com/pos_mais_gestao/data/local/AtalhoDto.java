@@ -10,6 +10,9 @@ public class AtalhoDto {
     public String unidadeMedida;
     public String idUnidadeMedida;
     public Integer codigo;
+    public String imagem;
+    public String caminhoImagem;
+    public boolean espizza;
 
     public static AtalhoDto from(Produto produto) {
         AtalhoDto dto = new AtalhoDto();
@@ -19,6 +22,9 @@ public class AtalhoDto {
         dto.unidadeMedida = produto.getUnidadeMedida();
         dto.idUnidadeMedida = produto.getIdUnidadeMedida();
         dto.codigo = produto.getCodigo();
+        dto.imagem = produto.getImagem();
+        dto.caminhoImagem = produto.getCaminhoImagem();
+        dto.espizza = produto.isEspizza();
         return dto;
     }
 
@@ -30,6 +36,7 @@ public class AtalhoDto {
             }
         } catch (Exception ignored) {
         }
-        return new Produto(id, descricao, valor, unidadeMedida, idUnidadeMedida, codigo);
+        return new Produto(
+                id, descricao, valor, unidadeMedida, idUnidadeMedida, codigo, imagem, caminhoImagem, espizza);
     }
 }

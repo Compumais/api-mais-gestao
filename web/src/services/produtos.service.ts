@@ -13,6 +13,7 @@ export interface Produto {
 	fornecedor: string | null;
 	idgrupo: string | null;
 	idgrupogourmet?: string | null;
+	espizza?: number | null;
 	preco: string | null;
 	custoaquisicao?: string | null;
 	tipo: string | null;
@@ -118,6 +119,7 @@ export interface CriarProdutoData extends CamposServicoProduto {
 	fornecedor?: string | null;
 	idgrupo?: string | null;
 	idgrupogourmet?: string | null;
+	espizza?: number | null;
 	preco: string;
 	custoaquisicao?: string | null;
 	tipo?: string;
@@ -168,6 +170,7 @@ export interface AtualizarProdutoData extends CamposServicoProduto {
 	fornecedor?: string | null;
 	idgrupo?: string | null;
 	idgrupogourmet?: string | null;
+	espizza?: number | null;
 	preco?: string;
 	custoaquisicao?: string | null;
 	tipo?: string;

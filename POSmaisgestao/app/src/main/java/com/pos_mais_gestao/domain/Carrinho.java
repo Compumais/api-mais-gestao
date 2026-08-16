@@ -25,12 +25,16 @@ public class Carrinho {
 
     public void adicionar(Produto produto) {
         for (ItemCarrinho item : itens) {
-            if (item.getProduto().getId().equals(produto.getId())) {
+            if (!item.isMeioAMeio() && item.getProduto().getId().equals(produto.getId())) {
                 item.incrementar();
                 return;
             }
         }
         itens.add(new ItemCarrinho(produto, BigDecimal.ONE));
+    }
+
+    public void adicionarMeioAMeio(Produto primeiro, Produto segundo) {
+        itens.add(new ItemCarrinho(primeiro, segundo, BigDecimal.ONE));
     }
 
     public void removerSeZero() {

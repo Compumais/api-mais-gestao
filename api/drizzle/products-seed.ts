@@ -187,6 +187,7 @@ async function seedProducts() {
 			origem: 0,
 			inativo: 0,
 			enviamobile: 0,
+			espizza: 0,
 		};
 	});
 

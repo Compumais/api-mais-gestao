@@ -44,7 +44,7 @@ public class CarrinhoAdapter extends RecyclerView.Adapter<CarrinhoAdapter.VH> {
     @Override
     public void onBindViewHolder(@NonNull VH holder, int position) {
         ItemCarrinho item = itens.get(position);
-        holder.txtNome.setText(item.getProduto().getDescricao());
+        holder.txtNome.setText(item.getDescricaoExibicao());
         holder.txtQtd.setText(item.getQuantidade().stripTrailingZeros().toPlainString());
         holder.txtTotal.setText(MoneyFormat.format(item.getSubtotal()));
         holder.btnMais.setOnClickListener(v -> listener.onMais(item));

@@ -213,6 +213,11 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 			"ALTER TABLE produto_cache ADD COLUMN idgrupogourmet TEXT",
 		);
 	}
+	if (!nomes.has("espizza")) {
+		await database.query(
+			"ALTER TABLE produto_cache ADD COLUMN espizza INTEGER NOT NULL DEFAULT 0",
+		);
+	}
 
 	const itemCols = await database.query<{ column_name: string }>(
 		`SELECT column_name
@@ -222,6 +227,30 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 	const itemNomes = new Set(itemCols.rows.map((c) => c.column_name));
 	if (!itemNomes.has("observacao")) {
 		await database.query("ALTER TABLE item_conta ADD COLUMN observacao TEXT");
+	}
+
+	const gourmetCols = await database.query<{ column_name: string }>(
+		`SELECT column_name
+		 FROM information_schema.columns
+		 WHERE table_schema = 'public' AND table_name = 'impressora_grupo_gourmet'`,
+	);
+	if (gourmetCols.rows.length) {
+		const gourmetNomes = new Set(gourmetCols.rows.map((c) => c.column_name));
+		if (!gourmetNomes.has("destino")) {
+			await database.query(
+				"ALTER TABLE impressora_grupo_gourmet ADD COLUMN destino TEXT NOT NULL DEFAULT 'sistema'",
+			);
+		}
+		if (!gourmetNomes.has("host")) {
+			await database.query(
+				"ALTER TABLE impressora_grupo_gourmet ADD COLUMN host TEXT NOT NULL DEFAULT ''",
+			);
+		}
+		if (!gourmetNomes.has("porta")) {
+			await database.query(
+				"ALTER TABLE impressora_grupo_gourmet ADD COLUMN porta INTEGER NOT NULL DEFAULT 9100",
+			);
+		}
 	}
 }
 
@@ -243,6 +272,8 @@ async function seedDefaults(database: Pool): Promise<void> {
 		["pix_chave", ""],
 		["impressora_nome", ""],
 		["impressora_tipo", "sistema"],
+		["impressora_host", ""],
+		["impressora_porta", "9100"],
 		["certificado_path", ""],
 		["certificado_senha", ""],
 		["lan_habilitada", "1"],

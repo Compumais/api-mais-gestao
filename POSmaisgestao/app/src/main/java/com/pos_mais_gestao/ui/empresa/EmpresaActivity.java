@@ -1,6 +1,5 @@
 package com.pos_mais_gestao.ui.empresa;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ProgressBar;
@@ -14,7 +13,7 @@ import com.pos_mais_gestao.data.api.ApiClient;
 import com.pos_mais_gestao.data.api.ApiException;
 import com.pos_mais_gestao.data.api.EmpresaDto;
 import com.pos_mais_gestao.data.local.PrefsStore;
-import com.pos_mais_gestao.ui.home.HomeActivity;
+import com.pos_mais_gestao.ui.PosDestino;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -71,10 +70,28 @@ public class EmpresaActivity extends AppCompatActivity {
     }
 
     private void selecionarEmpresa(EmpresaDto empresa) {
-        prefs.setEmpresa(empresa.id, empresa.nome);
-        Intent intent = new Intent(this, HomeActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(intent);
+        if (!prefs.isModoPdvLocal()) {
+            prefs.setEmpresa(empresa.id, empresa.nome);
+            irParaHome();
+            return;
+        }
+        progress.setVisibility(View.VISIBLE);
+        executor.execute(() -> {
+            try {
+                api.selecionarEmpresaNoPdv(empresa.id, empresa.nome);
+                prefs.setEmpresa(empresa.id, empresa.nome);
+                runOnUiThread(this::irParaHome);
+            } catch (ApiException e) {
+                runOnUiThread(() -> {
+                    progress.setVisibility(View.GONE);
+                    Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
+                });
+            }
+        });
+    }
+
+    private void irParaHome() {
+        startActivity(PosDestino.intentHub(this, prefs));
         finish();
     }
 

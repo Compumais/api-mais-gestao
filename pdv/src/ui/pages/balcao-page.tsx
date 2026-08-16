@@ -8,15 +8,22 @@ import {
 	rotuloModelo,
 	type StatusContext,
 } from "@/lib/pdv-types";
+import { produtoEhPizza } from "@/lib/pizza-meio-a-meio";
 import { money } from "@/lib/utils";
 import { BarcodeInput } from "@/ui/components/barcode-input";
+import {
+	DialogPizzaMeioAMeio,
+	type ItemPizzaMeioAMeio,
+} from "@/ui/components/dialog-pizza-meio-a-meio";
 import { ProdutoCard } from "@/ui/components/produto-card";
 import { Topbar } from "@/ui/components/topbar";
 import { Button } from "@/ui/components/ui/button";
 import { useEscapeFechaModal } from "@/ui/hooks/use-escape-fecha-modal";
 
 type Item = {
+	chave: string;
 	idproduto: string;
+	idprodutomeio?: string | null;
 	descricao: string;
 	quantidade: number;
 	precounitario: number;
@@ -37,9 +44,11 @@ export function BalcaoPage() {
 	const [rejeicaoNfce, setRejeicaoNfce] = useState<string | null>(null);
 	const [msg, setMsg] = useState("");
 	const [loading, setLoading] = useState(false);
+	const [pizzaPrimeiro, setPizzaPrimeiro] = useState<ProdutoLocal | null>(null);
 
 	useEscapeFechaModal(pagando, () => setPagando(false));
 	useEscapeFechaModal(Boolean(rejeicaoNfce), () => setRejeicaoNfce(null));
+	useEscapeFechaModal(Boolean(pizzaPrimeiro), () => setPizzaPrimeiro(null));
 
 	const total = useMemo(
 		() => itens.reduce((acc, i) => acc + i.precototal, 0),
@@ -66,16 +75,27 @@ export function BalcaoPage() {
 		);
 	}
 
-	function adicionar(produto: {
+	function adicionarLinha(item: Item) {
+		setItens((prev) => [...prev, item]);
+	}
+
+	function adicionarProdutoSimples(produto: {
 		id: string;
 		descricao: string;
 		preco: number;
+		espizza?: number | null;
 	}) {
+		if (produtoEhPizza(produto)) {
+			setPizzaPrimeiro(produto as ProdutoLocal);
+			return;
+		}
 		setItens((prev) => {
-			const existente = prev.find((i) => i.idproduto === produto.id);
+			const existente = prev.find(
+				(i) => i.idproduto === produto.id && !i.idprodutomeio,
+			);
 			if (existente) {
 				return prev.map((i) =>
-					i.idproduto === produto.id
+					i.chave === existente.chave
 						? {
 								...i,
 								quantidade: i.quantidade + 1,
@@ -87,6 +107,7 @@ export function BalcaoPage() {
 			return [
 				...prev,
 				{
+					chave: crypto.randomUUID(),
 					idproduto: produto.id,
 					descricao: produto.descricao,
 					quantidade: 1,
@@ -97,23 +118,43 @@ export function BalcaoPage() {
 		});
 	}
 
+	function confirmarMeioAMeio(item: ItemPizzaMeioAMeio) {
+		adicionarLinha(item);
+		setPizzaPrimeiro(null);
+	}
+
+	function venderPizzaInteira(produto: ProdutoLocal) {
+		setPizzaPrimeiro(null);
+		setItens((prev) => [
+			...prev,
+			{
+				chave: crypto.randomUUID(),
+				idproduto: produto.id,
+				descricao: produto.descricao,
+				quantidade: 1,
+				precounitario: produto.preco,
+				precototal: produto.preco,
+			},
+		]);
+	}
+
 	async function onBip(codigo: string) {
 		const produto = await pdvInvoke<ProdutoLocal | null>(
 			"buscarProdutoPorEan",
 			codigo,
 		);
 		if (produto) {
-			adicionar(produto);
+			adicionarProdutoSimples(produto);
 		} else {
 			setMsg(`Produto não encontrado para o código "${codigo}"`);
 		}
 	}
 
-	function alterarQtd(idproduto: string, delta: number) {
+	function alterarQtd(chave: string, delta: number) {
 		setItens((prev) =>
 			prev
 				.map((i) => {
-					if (i.idproduto !== idproduto) return i;
+					if (i.chave !== chave) return i;
 					const quantidade = Math.max(0, i.quantidade + delta);
 					return { ...i, quantidade, precototal: quantidade * i.precounitario };
 				})
@@ -174,7 +215,7 @@ export function BalcaoPage() {
 												key={`atalho-${p.id}`}
 												produto={p}
 												destaque
-												onClick={() => adicionar(p)}
+												onClick={() => adicionarProdutoSimples(p)}
 											/>
 										))}
 									</div>
@@ -219,7 +260,7 @@ export function BalcaoPage() {
 									<ProdutoCard
 										key={p.id}
 										produto={p}
-										onClick={() => adicionar(p)}
+										onClick={() => adicionarProdutoSimples(p)}
 									/>
 								))}
 								{produtos.length === 0 && (
@@ -236,14 +277,14 @@ export function BalcaoPage() {
 					<h2 className="mb-2 text-sm font-semibold">Fila</h2>
 					<div className="flex-1 space-y-2 overflow-auto">
 						{itens.map((item) => (
-							<div key={item.idproduto} className="rounded-md border p-2">
+							<div key={item.chave} className="rounded-md border p-2">
 								<div className="text-sm font-medium">{item.descricao}</div>
 								<div className="mt-1 flex items-center justify-between gap-2">
 									<div className="flex items-center gap-1">
 										<Button
 											size="sm"
 											variant="outline"
-											onClick={() => alterarQtd(item.idproduto, -1)}
+											onClick={() => alterarQtd(item.chave, -1)}
 										>
 											-
 										</Button>
@@ -253,7 +294,7 @@ export function BalcaoPage() {
 										<Button
 											size="sm"
 											variant="outline"
-											onClick={() => alterarQtd(item.idproduto, 1)}
+											onClick={() => alterarQtd(item.chave, 1)}
 										>
 											+
 										</Button>
@@ -359,6 +400,15 @@ export function BalcaoPage() {
 						</Button>
 					</div>
 				</div>
+			)}
+
+			{pizzaPrimeiro && (
+				<DialogPizzaMeioAMeio
+					primeiro={pizzaPrimeiro}
+					onCancelar={() => setPizzaPrimeiro(null)}
+					onInteira={venderPizzaInteira}
+					onConfirmar={confirmarMeioAMeio}
+				/>
 			)}
 		</div>
 	);

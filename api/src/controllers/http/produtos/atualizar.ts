@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import z from "zod";
 import type { NovoProduto } from "@/model/produto-model.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { atualizarProdutoService } from "@/service/produto/atualizar-produto.js";
 import { enriquecerCamposImpostosProduto } from "@/service/produto/enriquecer-campos-impostos-produto.js";
 import { sincronizarSaldoEstoqueProduto } from "@/service/produto/sincronizar-saldo-estoque-produto.js";
@@ -60,6 +60,7 @@ const atualizarProdutoBodySchema = z.object({
 	tipoproduto: z.string().max(2).optional().nullable(),
 	observacoes: z.string().optional().nullable(),
 	enviamobile: z.number().int().min(0).max(1).optional(),
+	espizza: z.number().int().min(0).max(1).optional(),
 	quantidadepadrao: z.number().int().min(0).optional().nullable(),
 	quantidademinima: z.number().int().min(0).optional().nullable(),
 	quantidademaxima: z.number().int().positive().optional().nullable(),
