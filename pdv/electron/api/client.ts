@@ -238,6 +238,7 @@ export async function listarProdutos(params: {
 			codigoean?: string;
 			idgrupo?: string;
 			idgrupogourmet?: string | null;
+			espizza?: number | null;
 			imagem?: string | null;
 			caminhoimagem?: string | null;
 		}>;
@@ -252,6 +253,7 @@ export async function listarProdutos(params: {
 		ean: p.ean ?? p.codigoean ?? null,
 		idgrupo: p.idgrupo ?? null,
 		idgrupogourmet: p.idgrupogourmet ?? null,
+		espizza: Number(p.espizza ?? 0) === 1 ? 1 : 0,
 		imagem: p.imagem ?? null,
 		caminhoimagem: p.caminhoimagem ?? null,
 	}));
@@ -320,6 +322,7 @@ export async function criarItemVendaPdv(body: {
 	precopromocao?: number | string;
 	precoalterado?: number | string;
 	taxaservico?: number;
+	descricao?: string | null;
 }) {
 	return request("/vendas-pdv-item", {
 		method: "POST",
@@ -335,6 +338,7 @@ export async function criarItemVendaPdv(body: {
 			...(body.taxaservico !== undefined
 				? { taxaservico: body.taxaservico }
 				: {}),
+			...(body.descricao ? { descricao: body.descricao.slice(0, 120) } : {}),
 		},
 	});
 }

@@ -27,6 +27,7 @@ function mapProdutoToForm(
 		fornecedor: data.fornecedor,
 		idgrupo: data.idgrupo ?? "",
 		idgrupogourmet: data.idgrupogourmet ?? "none",
+		espizza: data.espizza === 1,
 		preco: data.preco ?? "",
 		custoaquisicao: data.custoaquisicao ?? "",
 		tipo: tipo === "P" || tipo === "S" ? tipo : "P",

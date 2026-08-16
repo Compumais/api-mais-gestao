@@ -51,6 +51,17 @@
             android:name=".ui.mesas.MesasActivity"
             android:exported="false" />
         <activity
+            android:name=".ui.mesas.OccupyActivity"
+            android:exported="false"
+            android:windowSoftInputMode="stateHidden|adjustResize" />
+        <activity
+            android:name=".ui.pedido.PedidoActivity"
+            android:exported="false"
+            android:windowSoftInputMode="stateHidden|adjustResize" />
+        <activity
+            android:name=".ui.pedido.PedidosActivity"
+            android:exported="false" />
+        <activity
             android:name=".ui.mesas.ContaMesaActivity"
             android:exported="false"
             android:windowSoftInputMode="stateHidden|adjustResize" />
@@ -89,6 +100,10 @@
         <activity
             android:name=".ui.vendas.VendaDetalheActivity"
             android:exported="false" />
+        <activity
+            android:name=".ui.produtos.ProdutosActivity"
+            android:exported="false"
+            android:windowSoftInputMode="stateHidden|adjustResize" />
     </application>
 
 </manifest>

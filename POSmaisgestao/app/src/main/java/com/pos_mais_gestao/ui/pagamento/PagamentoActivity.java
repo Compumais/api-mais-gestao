@@ -1,13 +1,17 @@
 package com.pos_mais_gestao.ui.pagamento;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.button.MaterialButton;
 import com.pos_mais_gestao.PosApplication;
@@ -26,6 +30,8 @@ import com.pos_mais_gestao.ui.cliente.SelecionarClienteActivity;
 import com.pos_mais_gestao.ui.falha.FalhaNfceActivity;
 import com.pos_mais_gestao.ui.sucesso.SucessoActivity;
 import com.pos_mais_gestao.util.MoneyFormat;
+import com.pos_mais_gestao.util.PixPayloadBuilder;
+import com.pos_mais_gestao.util.QrBitmapHelper;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -92,6 +98,12 @@ public class PagamentoActivity extends AppCompatActivity {
         outboxSync = app.getOutboxSync();
         pagamentoHardware = app.getPagamentoHardware();
 
+        if (prefs.isModoPdvLocal()) {
+            Toast.makeText(this, R.string.cupom_somente_pdv, Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
+
         modoMesa = getIntent().getBooleanExtra(EXTRA_MODO_MESA, false);
         idConta = getIntent().getStringExtra(EXTRA_ID_CONTA);
         identidadeCliente = getIntent().getStringExtra(EXTRA_ID_CLIENTE);
@@ -120,8 +132,67 @@ public class PagamentoActivity extends AppCompatActivity {
         btnInformarCliente.setOnClickListener(v ->
                 selecionarClienteLauncher.launch(new Intent(this, SelecionarClienteActivity.class)));
         btnDinheiro.setOnClickListener(v -> confirmar(MeioPagamento.DINHEIRO));
-        btnPix.setOnClickListener(v -> confirmar(MeioPagamento.PIX));
+        btnPix.setOnClickListener(v -> iniciarPagamentoPix());
         btnCartao.setOnClickListener(v -> confirmar(MeioPagamento.CARTAO));
+    }
+
+    private void iniciarPagamentoPix() {
+        if (!prefs.isPixQrHabilitado()) {
+            confirmar(MeioPagamento.PIX);
+            return;
+        }
+        String chave = prefs.getChavePix();
+        if (chave == null || chave.trim().isEmpty()) {
+            Toast.makeText(this, R.string.pix_chave_obrigatoria, Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        BigDecimal total = modoMesa ? totalMesa : Carrinho.getInstance().getTotal();
+        if (modoMesa) {
+            if (idConta == null || idConta.isEmpty()) {
+                Toast.makeText(this, R.string.conta_mesa_invalida, Toast.LENGTH_SHORT).show();
+                finish();
+                return;
+            }
+            if (total.compareTo(BigDecimal.ZERO) <= 0) {
+                Toast.makeText(this, R.string.comanda_vazia, Toast.LENGTH_SHORT).show();
+                finish();
+                return;
+            }
+        } else if (Carrinho.getInstance().isVazio()) {
+            Toast.makeText(this, R.string.carrinho_vazio, Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
+        try {
+            String nome = prefs.getNomePix();
+            if (nome == null || nome.trim().isEmpty()) {
+                nome = prefs.getEmpresaNome();
+            }
+            String payload = PixPayloadBuilder.montar(chave, total, nome, prefs.getCidadePix());
+            Bitmap qr = QrBitmapHelper.gerar(payload, 720);
+
+            View view = LayoutInflater.from(this).inflate(R.layout.dialog_pix_qr, null);
+            TextView txtValor = view.findViewById(R.id.txtPixValor);
+            TextView txtChave = view.findViewById(R.id.txtPixChave);
+            TextView txtPayload = view.findViewById(R.id.txtPixPayload);
+            ImageView imgQr = view.findViewById(R.id.imgPixQr);
+
+            txtValor.setText(MoneyFormat.format(total));
+            txtChave.setText(chave.trim());
+            txtPayload.setText(payload);
+            imgQr.setImageBitmap(qr);
+
+            new AlertDialog.Builder(this)
+                    .setTitle(R.string.pix)
+                    .setView(view)
+                    .setPositiveButton(R.string.pix_confirmar_recebido, (d, w) -> confirmar(MeioPagamento.PIX))
+                    .setNegativeButton(R.string.cancelar, null)
+                    .show();
+        } catch (Exception e) {
+            Toast.makeText(this, R.string.pix_qr_erro, Toast.LENGTH_LONG).show();
+        }
     }
 
     private void atualizarLabelCliente() {
@@ -187,7 +258,7 @@ public class PagamentoActivity extends AppCompatActivity {
                     fichas.addAll(ItemFicha.deCarrinho(snapshot));
                 }
 
-                if (!outboxSync.temRede()) {
+                if (!prefs.isModoPdvLocal() && !outboxSync.temRede()) {
                     if (modoMesa) {
                         throw new ApiException(getString(R.string.fechar_mesa_requer_rede));
                     }

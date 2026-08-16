@@ -6,6 +6,7 @@ import {
 	buscarNfceParaEditar,
 	listarNfcePendentes,
 	reemitirNfce,
+	transmitirNfceContingencia,
 } from "./nfce.js";
 
 export async function nfceRotas(app: FastifyInstance) {
@@ -16,4 +17,5 @@ export async function nfceRotas(app: FastifyInstance) {
 	app.get("/nfce/:idnotafiscal/editar", buscarNfceParaEditar);
 	app.put("/nfce/:idnotafiscal/venda", atualizarVendaNfce);
 	app.post("/nfce/:idnotafiscal/reemitir", reemitirNfce);
+	app.post("/nfce/contingencia/transmitir", transmitirNfceContingencia);
 }

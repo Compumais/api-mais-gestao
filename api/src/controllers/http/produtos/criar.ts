@@ -1,14 +1,11 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { v4 as uuidv4 } from "uuid";
 import z from "zod";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { criarProdutoService } from "@/service/produto/criar-produto.js";
 import { enriquecerCamposImpostosProduto } from "@/service/produto/enriquecer-campos-impostos-produto.js";
 import { sincronizarSaldoEstoqueProduto } from "@/service/produto/sincronizar-saldo-estoque-produto.js";
-import {
-	camposImpostosProdutoSchema,
-	montarCamposImpostosProduto,
-} from "@/util/campos-impostos-produto.js";
+import { camposImpostosProdutoSchema } from "@/util/campos-impostos-produto.js";
 import {
 	httpErroInterno,
 	httpNaoAutorizado,
@@ -49,6 +46,7 @@ const criarProdutoBodySchema = z.object({
 	tipoproduto: z.string().max(2).optional().nullable(),
 	observacoes: z.string().optional().nullable(),
 	enviamobile: z.number().int().min(0).max(1).optional(),
+	espizza: z.number().int().min(0).max(1).optional(),
 	quantidadepadrao: z.number().int().min(0).optional().nullable(),
 	quantidademinima: z.number().int().min(0).optional().nullable(),
 	quantidademaxima: z.number().int().positive().optional().nullable(),
@@ -113,6 +111,7 @@ export async function criarProduto(
 			observacoes: dadosValidados.observacoes ?? null,
 			inativo: 0,
 			enviamobile: dadosValidados.enviamobile ?? 0,
+			espizza: dadosValidados.espizza ?? 0,
 			quantidadepadrao: dadosValidados.quantidadepadrao ?? 0,
 			quantidademinima: dadosValidados.quantidademinima ?? null,
 			quantidademaxima: dadosValidados.quantidademaxima ?? null,

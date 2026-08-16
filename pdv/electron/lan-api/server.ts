@@ -1,4 +1,9 @@
-import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
+import {
+	createServer,
+	type IncomingMessage,
+	type Server,
+	type ServerResponse,
+} from "node:http";
 import { getConfig } from "../db/database";
 import { obterSessao } from "../db/repos";
 import { localApi } from "../local-api";
@@ -25,7 +30,10 @@ export async function startLanServer(): Promise<{
 		return { ok: false, porta: 0, ips: [], motivo: "LAN desabilitada" };
 	}
 
-	const porta = Math.max(1, Number(await getConfig("lan_porta", "5050")) || 5050);
+	const porta = Math.max(
+		1,
+		Number(await getConfig("lan_porta", "5050")) || 5050,
+	);
 	if (server && portaAtual === porta) {
 		return { ok: true, porta, ips: listarIpsLan() };
 	}
@@ -170,7 +178,10 @@ async function despachar(
 
 	const mesaMatch = path.match(/^\/pos\/mesas\/(\d+)$/);
 	if (method === "GET" && mesaMatch) {
-		return { status: 200, body: await localApi.obterMesa(Number(mesaMatch[1])) };
+		return {
+			status: 200,
+			body: await localApi.obterMesa(Number(mesaMatch[1])),
+		};
 	}
 
 	const mesaContaMatch = path.match(/^\/pos\/mesas\/(\d+)\/conta$/);
@@ -227,6 +238,7 @@ async function despachar(
 				idproduto: String(i.idproduto ?? ""),
 				quantidade: Number(i.quantidade ?? 1),
 				observacao: i.observacao != null ? String(i.observacao) : null,
+				idprodutomeio: i.idprodutomeio != null ? String(i.idprodutomeio) : null,
 			};
 		});
 		return {
@@ -243,7 +255,10 @@ async function despachar(
 	if (method === "POST" && contaItensMatch) {
 		return {
 			status: 200,
-			body: await localApi.adicionarItemConta(contaItensMatch[1], itemDeBody(body)),
+			body: await localApi.adicionarItemConta(
+				contaItensMatch[1],
+				itemDeBody(body),
+			),
 		};
 	}
 
@@ -324,7 +339,9 @@ function itemDeBody(body: Record<string, unknown>): {
 	};
 }
 
-function meioDeBody(body: Record<string, unknown>): "DINHEIRO" | "PIX" | "CARTAO" {
+function meioDeBody(
+	body: Record<string, unknown>,
+): "DINHEIRO" | "PIX" | "CARTAO" {
 	const meio = String(body.meio ?? "DINHEIRO").toUpperCase();
 	if (meio === "PIX" || meio === "CARTAO") {
 		return meio;

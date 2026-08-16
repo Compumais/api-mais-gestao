@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <ProgressBar
+            android:id="@+id/progressResumoCaixa"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="12dp"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:id="@+id/blocoResumoCaixa"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:background="@color/surface"
+            android:orientation="vertical"
+            android:padding="12dp"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/suprimento_inicial_resumo"
+                    android:textColor="@color/muted_foreground"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/txtResumoSuprimento"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/foreground"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/total_vendido_turno"
+                    android:textColor="@color/foreground"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/txtResumoTotalVendas"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/foreground"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/txtResumoQtdVendas"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textColor="@color/muted_foreground"
+                android:textSize="12sp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginVertical="8dp"
+                android:background="@color/border" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/resumo_dinheiro"
+                    android:textColor="@color/muted_foreground"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/txtResumoDinheiro"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/foreground"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/resumo_cartao"
+                    android:textColor="@color/muted_foreground"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/txtResumoCartao"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/foreground"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/resumo_pix"
+                    android:textColor="@color/muted_foreground"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/txtResumoPix"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/foreground"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/resumo_prepago"
+                    android:textColor="@color/muted_foreground"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/txtResumoPrepago"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/foreground"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginVertical="8dp"
+                android:background="@color/border" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/saldo_gaveta_esperado"
+                    android:textColor="@color/foreground"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/txtResumoSaldoGaveta"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/primary_dark"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/ajuda_fechamento_caixa"
+                android:textColor="@color/muted_foreground"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/txtErroResumoCaixa"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:textColor="@color/danger"
+            android:textSize="13sp"
+            android:visibility="gone" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/layoutSaldoInformado"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/saldo_informado"
+            app:boxStrokeColor="@color/primary"
+            app:hintTextColor="@color/muted_foreground">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/inputSaldoInformado"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal"
+                android:minHeight="56dp"
+                android:textColor="@color/foreground" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            android:id="@+id/txtDiferencaCaixa"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="@color/muted_foreground"
+            android:textSize="14sp"
+            android:visibility="gone" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:hint="@string/observacao_opcional"
+            app:boxStrokeColor="@color/primary"
+            app:hintTextColor="@color/muted_foreground">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/inputObservacaoFechamento"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textMultiLine"
+                android:minHeight="56dp"
+                android:textColor="@color/foreground" />
+        </com.google.android.material.textfield.TextInputLayout>
+    </LinearLayout>
+</ScrollView>

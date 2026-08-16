@@ -12,7 +12,9 @@ import java.util.List;
 
 public class CatalogDb extends SQLiteOpenHelper {
     private static final String DB = "pos_catalogo.db";
-    private static final int VERSION = 2;
+    private static final int VERSION = 3;
+    private static final String COLUNAS_PRODUTO =
+            "id, descricao, preco, unidademedida, idunidademedida, ean, imagem, caminhoimagem, espizza";
 
     public CatalogDb(Context context) {
         super(context, DB, null, VERSION);
@@ -39,7 +41,8 @@ public class CatalogDb extends SQLiteOpenHelper {
                         + "idgrupo TEXT,"
                         + "idgrupogourmet TEXT,"
                         + "imagem TEXT,"
-                        + "caminhoimagem TEXT)");
+                        + "caminhoimagem TEXT,"
+                        + "espizza INTEGER NOT NULL DEFAULT 0)");
         db.execSQL(
                 "CREATE TABLE catalogo_atalho ("
                         + "ordem INTEGER PRIMARY KEY NOT NULL,"
@@ -66,6 +69,10 @@ public class CatalogDb extends SQLiteOpenHelper {
             db.execSQL(
                     "CREATE INDEX IF NOT EXISTS idx_catalogo_produto_grupo_gourmet"
                             + " ON catalogo_produto(idgrupogourmet)");
+        }
+        if (oldVersion < 3) {
+            db.execSQL(
+                    "ALTER TABLE catalogo_produto ADD COLUMN espizza INTEGER NOT NULL DEFAULT 0");
         }
     }
 
@@ -106,6 +113,7 @@ public class CatalogDb extends SQLiteOpenHelper {
                 values.put("idgrupogourmet", p.idgrupogourmet);
                 values.put("imagem", p.imagem);
                 values.put("caminhoimagem", p.caminhoimagem);
+                values.put("espizza", p.espizza ? 1 : 0);
                 db.insert("catalogo_produto", null, values);
             }
             int ordem = 1;
@@ -132,13 +140,13 @@ public class CatalogDb extends SQLiteOpenHelper {
         String[] args;
         if (q.isEmpty()) {
             sql =
-                    "SELECT id, descricao, preco, unidademedida, idunidademedida, ean, imagem, caminhoimagem"
+                    "SELECT " + COLUNAS_PRODUTO
                             + " FROM catalogo_produto ORDER BY descricao LIMIT ?";
             args = new String[] {String.valueOf(Math.max(1, limit))};
         } else {
             String like = "%" + q + "%";
             sql =
-                    "SELECT id, descricao, preco, unidademedida, idunidademedida, ean, imagem, caminhoimagem"
+                    "SELECT " + COLUNAS_PRODUTO
                             + " FROM catalogo_produto"
                             + " WHERE descricao LIKE ? OR ean LIKE ? OR id LIKE ?"
                             + " ORDER BY descricao LIMIT ?";
@@ -158,7 +166,7 @@ public class CatalogDb extends SQLiteOpenHelper {
         }
         String codigo = ean.trim();
         try (Cursor c = getReadableDatabase().rawQuery(
-                "SELECT id, descricao, preco, unidademedida, idunidademedida, ean, imagem, caminhoimagem"
+                "SELECT " + COLUNAS_PRODUTO
                         + " FROM catalogo_produto WHERE ean = ? OR id = ? LIMIT 1",
                 new String[] {codigo, codigo})) {
             if (c.moveToFirst()) {
@@ -171,7 +179,7 @@ public class CatalogDb extends SQLiteOpenHelper {
     public List<Produto> listarAtalhos() {
         List<Produto> itens = new ArrayList<>();
         try (Cursor c = getReadableDatabase().rawQuery(
-                "SELECT p.id, p.descricao, p.preco, p.unidademedida, p.idunidademedida, p.ean, p.imagem, p.caminhoimagem"
+                "SELECT p.id, p.descricao, p.preco, p.unidademedida, p.idunidademedida, p.ean, p.imagem, p.caminhoimagem, p.espizza"
                         + " FROM catalogo_atalho a JOIN catalogo_produto p ON p.id = a.idproduto"
                         + " ORDER BY a.ordem",
                 null)) {
@@ -222,12 +230,12 @@ public class CatalogDb extends SQLiteOpenHelper {
             return buscarProdutos(q, lim);
         }
         if (q.isEmpty()) {
-            sql = "SELECT id, descricao, preco, unidademedida, idunidademedida, ean, imagem, caminhoimagem"
+            sql = "SELECT " + COLUNAS_PRODUTO
                     + " FROM catalogo_produto WHERE idgrupo = ? ORDER BY descricao LIMIT ?";
             args = new String[] {idgrupo, String.valueOf(lim)};
         } else {
             String like = "%" + q + "%";
-            sql = "SELECT id, descricao, preco, unidademedida, idunidademedida, ean, imagem, caminhoimagem"
+            sql = "SELECT " + COLUNAS_PRODUTO
                     + " FROM catalogo_produto"
                     + " WHERE idgrupo = ? AND (descricao LIKE ? OR ean LIKE ? OR id LIKE ?)"
                     + " ORDER BY descricao LIMIT ?";
@@ -251,13 +259,13 @@ public class CatalogDb extends SQLiteOpenHelper {
                 "idgrupogourmet IS NOT NULL AND idgrupogourmet <> ''";
         if (idgrupogourmet == null || idgrupogourmet.isEmpty()) {
             if (q.isEmpty()) {
-                sql = "SELECT id, descricao, preco, unidademedida, idunidademedida, ean, imagem, caminhoimagem"
+                sql = "SELECT " + COLUNAS_PRODUTO
                         + " FROM catalogo_produto WHERE " + gourmetFiltro
                         + " ORDER BY descricao LIMIT ?";
                 args = new String[] {String.valueOf(lim)};
             } else {
                 String like = "%" + q + "%";
-                sql = "SELECT id, descricao, preco, unidademedida, idunidademedida, ean, imagem, caminhoimagem"
+                sql = "SELECT " + COLUNAS_PRODUTO
                         + " FROM catalogo_produto"
                         + " WHERE " + gourmetFiltro
                         + " AND (descricao LIKE ? OR ean LIKE ? OR id LIKE ?)"
@@ -265,16 +273,38 @@ public class CatalogDb extends SQLiteOpenHelper {
                 args = new String[] {like, like, like, String.valueOf(lim)};
             }
         } else if (q.isEmpty()) {
-            sql = "SELECT id, descricao, preco, unidademedida, idunidademedida, ean, imagem, caminhoimagem"
+            sql = "SELECT " + COLUNAS_PRODUTO
                     + " FROM catalogo_produto WHERE idgrupogourmet = ? ORDER BY descricao LIMIT ?";
             args = new String[] {idgrupogourmet, String.valueOf(lim)};
         } else {
             String like = "%" + q + "%";
-            sql = "SELECT id, descricao, preco, unidademedida, idunidademedida, ean, imagem, caminhoimagem"
+            sql = "SELECT " + COLUNAS_PRODUTO
                     + " FROM catalogo_produto"
                     + " WHERE idgrupogourmet = ? AND (descricao LIKE ? OR ean LIKE ? OR id LIKE ?)"
                     + " ORDER BY descricao LIMIT ?";
             args = new String[] {idgrupogourmet, like, like, like, String.valueOf(lim)};
+        }
+        try (Cursor c = getReadableDatabase().rawQuery(sql, args)) {
+            while (c.moveToNext()) {
+                itens.add(produtoDeCursor(c));
+            }
+        }
+        return itens;
+    }
+
+    public List<Produto> listarPizzas(String excetoId, int limit) {
+        List<Produto> itens = new ArrayList<>();
+        int lim = Math.max(1, limit);
+        String sql;
+        String[] args;
+        if (excetoId == null || excetoId.isEmpty()) {
+            sql = "SELECT " + COLUNAS_PRODUTO
+                    + " FROM catalogo_produto WHERE espizza = 1 ORDER BY descricao LIMIT ?";
+            args = new String[] {String.valueOf(lim)};
+        } else {
+            sql = "SELECT " + COLUNAS_PRODUTO
+                    + " FROM catalogo_produto WHERE espizza = 1 AND id <> ? ORDER BY descricao LIMIT ?";
+            args = new String[] {excetoId, String.valueOf(lim)};
         }
         try (Cursor c = getReadableDatabase().rawQuery(sql, args)) {
             while (c.moveToNext()) {
@@ -315,7 +345,8 @@ public class CatalogDb extends SQLiteOpenHelper {
                 c.getString(4),
                 codigo,
                 c.getString(6),
-                c.getString(7));
+                c.getString(7),
+                c.getColumnCount() > 8 && c.getInt(8) == 1);
     }
 
     public static class GrupoRow {
@@ -339,6 +370,7 @@ public class CatalogDb extends SQLiteOpenHelper {
         public final String idgrupogourmet;
         public final String imagem;
         public final String caminhoimagem;
+        public final boolean espizza;
 
         public ProdutoRow(
                 String id,
@@ -350,7 +382,8 @@ public class CatalogDb extends SQLiteOpenHelper {
                 String idgrupo,
                 String idgrupogourmet,
                 String imagem,
-                String caminhoimagem) {
+                String caminhoimagem,
+                boolean espizza) {
             this.id = id;
             this.descricao = descricao;
             this.preco = preco;
@@ -361,6 +394,7 @@ public class CatalogDb extends SQLiteOpenHelper {
             this.idgrupogourmet = idgrupogourmet;
             this.imagem = imagem;
             this.caminhoimagem = caminhoimagem;
+            this.espizza = espizza;
         }
     }
 }

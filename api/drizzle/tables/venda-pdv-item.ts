@@ -4,6 +4,7 @@ import {
 	pgTable,
 	smallint,
 	text,
+	varchar,
 } from "drizzle-orm/pg-core";
 import { empresa } from "./empresas.js";
 import { produtos } from "./produtos.js";
@@ -16,6 +17,7 @@ export const vendapdvitem = pgTable(
 		idempresa: text().notNull(),
 		idvenda: text().notNull(),
 		idproduto: text().notNull(),
+		descricao: varchar({ length: 120 }),
 		quantidade: numeric({ precision: 12, scale: 3 }).notNull(),
 		precounitario: numeric({ precision: 12, scale: 3 }).notNull(),
 		precototal: numeric({ precision: 12, scale: 3 }).notNull(),

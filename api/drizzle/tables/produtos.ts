@@ -14,8 +14,8 @@ import { cest } from "./cest.js";
 import { cfop } from "./cfop.js";
 import { empresa } from "./empresas.js";
 import { entidade } from "./entidade.js";
-import { hierarquia } from "./hierarquia.js";
 import { grupogourmet } from "./grupo-gourmet.js";
+import { hierarquia } from "./hierarquia.js";
 import { ncm } from "./ncm.js";
 import { planocontas } from "./plano-contas.js";
 import { receitasemcontribuicao } from "./receitasem-contribuicao.js";
@@ -114,6 +114,7 @@ export const produtos = pgTable(
 		referencia: varchar({ length: 60 }),
 		inativo: integer().default(0), // 0=Ativo, 1=Inativo
 		enviamobile: integer().default(0), // 0=Não exibe no garçom, 1=Exibe no garçom
+		espizza: integer().default(0), // 0=Não, 1=Pizza (habilita venda meio a meio)
 		idcfopsaida: text(),
 		idcfopsaidadevolucaoexterna: text(),
 		idcfopsaidadevolucaointerna: text(),

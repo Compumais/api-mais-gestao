@@ -13,8 +13,13 @@ import {
 	rotuloModelo,
 	type StatusContext,
 } from "@/lib/pdv-types";
+import { produtoEhPizza } from "@/lib/pizza-meio-a-meio";
 import { money } from "@/lib/utils";
 import { BarcodeInput } from "@/ui/components/barcode-input";
+import {
+	DialogPizzaMeioAMeio,
+	type ItemPizzaMeioAMeio,
+} from "@/ui/components/dialog-pizza-meio-a-meio";
 import { FunctionBar } from "@/ui/components/function-bar";
 import { ProdutoCard } from "@/ui/components/produto-card";
 import { Topbar } from "@/ui/components/topbar";
@@ -37,7 +42,9 @@ type ContaMesa = {
 };
 
 type ItemFila = {
+	chave: string;
 	idproduto: string;
+	idprodutomeio?: string | null;
 	descricao: string;
 	quantidade: number;
 	precounitario: number;
@@ -73,10 +80,12 @@ export function MesaContaPage() {
 	const [msg, setMsg] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [pronto, setPronto] = useState(false);
+	const [pizzaPrimeiro, setPizzaPrimeiro] = useState<ProdutoLocal | null>(null);
 
 	useEscapeFechaModal(pagando, () => setPagando(false));
 	useEscapeFechaModal(confirmandoSaida, () => setConfirmandoSaida(false));
 	useEscapeFechaModal(Boolean(rejeicaoNfce), () => setRejeicaoNfce(null));
+	useEscapeFechaModal(Boolean(pizzaPrimeiro), () => setPizzaPrimeiro(null));
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: iniciar deve reexecutar apenas quando a mesa muda
 	useEffect(() => {
@@ -167,10 +176,17 @@ export function MesaContaPage() {
 		id: string;
 		descricao: string;
 		preco: number;
+		espizza?: number | null;
 	}) {
 		setMsg("");
+		if (produtoEhPizza(produto)) {
+			setPizzaPrimeiro(produto as ProdutoLocal);
+			return;
+		}
 		setFila((prev) => {
-			const idx = prev.findIndex((i) => i.idproduto === produto.id);
+			const idx = prev.findIndex(
+				(i) => i.idproduto === produto.id && !i.idprodutomeio,
+			);
 			if (idx >= 0) {
 				const atual = prev[idx];
 				const quantidade = atual.quantidade + 1;
@@ -185,6 +201,7 @@ export function MesaContaPage() {
 			return [
 				...prev,
 				{
+					chave: crypto.randomUUID(),
 					idproduto: produto.id,
 					descricao: produto.descricao,
 					quantidade: 1,
@@ -195,11 +212,31 @@ export function MesaContaPage() {
 		});
 	}
 
-	function alterarQtdFila(idproduto: string, delta: number) {
+	function confirmarMeioAMeio(item: ItemPizzaMeioAMeio) {
+		setFila((prev) => [...prev, item]);
+		setPizzaPrimeiro(null);
+	}
+
+	function venderPizzaInteira(produto: ProdutoLocal) {
+		setPizzaPrimeiro(null);
+		setFila((prev) => [
+			...prev,
+			{
+				chave: crypto.randomUUID(),
+				idproduto: produto.id,
+				descricao: produto.descricao,
+				quantidade: 1,
+				precounitario: produto.preco,
+				precototal: produto.preco,
+			},
+		]);
+	}
+
+	function alterarQtdFila(chave: string, delta: number) {
 		setFila((prev) =>
 			prev
 				.map((item) => {
-					if (item.idproduto !== idproduto) return item;
+					if (item.chave !== chave) return item;
 					const quantidade = item.quantidade + delta;
 					return {
 						...item,
@@ -417,7 +454,7 @@ export function MesaContaPage() {
 					<div className="min-h-0 flex-1 space-y-1 overflow-auto">
 						{fila.map((item) => (
 							<div
-								key={item.idproduto}
+								key={item.chave}
 								className="rounded-md border bg-background px-2 py-2 text-sm"
 							>
 								<div className="line-clamp-2 font-medium">{item.descricao}</div>
@@ -427,7 +464,7 @@ export function MesaContaPage() {
 											size="sm"
 											variant="outline"
 											disabled={loading}
-											onClick={() => alterarQtdFila(item.idproduto, -1)}
+											onClick={() => alterarQtdFila(item.chave, -1)}
 										>
 											-
 										</Button>
@@ -436,7 +473,7 @@ export function MesaContaPage() {
 											size="sm"
 											variant="outline"
 											disabled={loading}
-											onClick={() => alterarQtdFila(item.idproduto, 1)}
+											onClick={() => alterarQtdFila(item.chave, 1)}
 										>
 											+
 										</Button>
@@ -672,6 +709,14 @@ export function MesaContaPage() {
 					},
 				]}
 			/>
+			{pizzaPrimeiro && (
+				<DialogPizzaMeioAMeio
+					primeiro={pizzaPrimeiro}
+					onCancelar={() => setPizzaPrimeiro(null)}
+					onInteira={venderPizzaInteira}
+					onConfirmar={confirmarMeioAMeio}
+				/>
+			)}
 		</div>
 	);
 }

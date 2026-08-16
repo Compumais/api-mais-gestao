@@ -4,10 +4,12 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ProgressBar;
+import android.widget.RadioGroup;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 import com.pos_mais_gestao.PosApplication;
 import com.pos_mais_gestao.R;
 import com.pos_mais_gestao.data.api.ApiClient;
@@ -22,9 +24,11 @@ public class LoginActivity extends AppCompatActivity {
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private PrefsStore prefs;
     private ApiClient api;
+    private TextInputLayout layoutUrlApi;
     private TextInputEditText inputUrlApi;
     private TextInputEditText inputEmail;
     private TextInputEditText inputSenha;
+    private RadioGroup radioGrupoConexao;
     private MaterialButton btnEntrar;
     private ProgressBar progressLogin;
 
@@ -38,27 +42,57 @@ public class LoginActivity extends AppCompatActivity {
         prefs = app.getPrefsStore();
         api = app.getApiClient();
 
+        layoutUrlApi = findViewById(R.id.layoutUrlApi);
         inputUrlApi = findViewById(R.id.inputUrlApi);
         inputEmail = findViewById(R.id.inputEmail);
         inputSenha = findViewById(R.id.inputSenha);
+        radioGrupoConexao = findViewById(R.id.radioGrupoConexao);
         btnEntrar = findViewById(R.id.btnEntrar);
         progressLogin = findViewById(R.id.progressLogin);
 
         inputUrlApi.setText(prefs.getBaseUrl());
+        if (prefs.isModoPdvLocal()) {
+            radioGrupoConexao.check(R.id.radioConexaoPdv);
+        } else {
+            radioGrupoConexao.check(R.id.radioConexaoCloud);
+        }
+        aplicarHintModo(prefs.isModoPdvLocal());
+        radioGrupoConexao.setOnCheckedChangeListener((group, checkedId) -> {
+            boolean local = checkedId == R.id.radioConexaoPdv;
+            aplicarHintModo(local);
+            sugerirUrlPadrao(local);
+        });
         SoftInputHelper.hideOnStart(this);
         btnEntrar.setOnClickListener(v -> entrar());
+    }
+
+    private void aplicarHintModo(boolean local) {
+        layoutUrlApi.setHint(local ? getString(R.string.url_pdv_local) : getString(R.string.url_api));
+    }
+
+    private void sugerirUrlPadrao(boolean local) {
+        String atual = text(inputUrlApi);
+        String cloud = prefs.getUrlPadraoCloud();
+        String pdv = prefs.getUrlPadraoPdv();
+        if (local && (atual.isEmpty() || atual.equals(cloud))) {
+            inputUrlApi.setText(pdv);
+        } else if (!local && (atual.isEmpty() || atual.equals(pdv))) {
+            inputUrlApi.setText(cloud);
+        }
     }
 
     private void entrar() {
         String url = text(inputUrlApi);
         String email = text(inputEmail);
         String senha = text(inputSenha);
+        boolean local = radioGrupoConexao.getCheckedRadioButtonId() == R.id.radioConexaoPdv;
 
         if (url.isEmpty() || email.isEmpty() || senha.isEmpty()) {
             Toast.makeText(this, "Preencha URL, e-mail e senha", Toast.LENGTH_SHORT).show();
             return;
         }
 
+        prefs.setConexaoModo(local ? PrefsStore.MODO_PDV_LOCAL : PrefsStore.MODO_CLOUD);
         prefs.setBaseUrl(url);
         setLoading(true);
 
