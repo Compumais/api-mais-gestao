@@ -73,9 +73,13 @@ export async function listarGruposGourmet({
 
 	if (q) {
 		const termo = `%${q}%`;
-		where.push(
-			or(ilike(grupogourmet.codigo, termo), ilike(grupogourmet.nome, termo)),
+		const filtroQ = or(
+			ilike(grupogourmet.codigo, termo),
+			ilike(grupogourmet.nome, termo),
 		);
+		if (filtroQ) {
+			where.push(filtroQ);
+		}
 	}
 
 	const offset = (page - 1) * limit;
