@@ -1,0 +1,20 @@
+{
+	"style": "new-york",
+	"rsc": false,
+	"tsx": true,
+	"tailwind": {
+		"config": "",
+		"css": "src/globals.css",
+		"baseColor": "slate",
+		"cssVariables": true,
+		"prefix": ""
+	},
+	"iconLibrary": "lucide",
+	"aliases": {
+		"components": "@/ui/components",
+		"utils": "@/lib/utils",
+		"ui": "@/ui/components/ui",
+		"lib": "@/lib",
+		"hooks": "@/hooks"
+	}
+}

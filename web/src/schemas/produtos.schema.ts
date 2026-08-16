@@ -30,6 +30,7 @@ export const produtoFormSchema = z.object({
 	idunidademedida: z.string().min(1, "Unidade é obrigatória"),
 	fornecedor: z.string().optional().nullable(),
 	idgrupo: z.string().min(1, "Grupo é obrigatório"),
+	idgrupogourmet: z.string().optional().nullable(),
 	preco: z
 		.string()
 		.min(1, "Preço é obrigatório")
