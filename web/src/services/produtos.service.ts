@@ -12,6 +12,7 @@ export interface Produto {
 	idunidademedida: string | null;
 	fornecedor: string | null;
 	idgrupo: string | null;
+	idgrupogourmet?: string | null;
 	preco: string | null;
 	custoaquisicao?: string | null;
 	tipo: string | null;
@@ -116,6 +117,7 @@ export interface CriarProdutoData extends CamposServicoProduto {
 	idunidademedida: string;
 	fornecedor?: string | null;
 	idgrupo?: string | null;
+	idgrupogourmet?: string | null;
 	preco: string;
 	custoaquisicao?: string | null;
 	tipo?: string;
@@ -165,6 +167,7 @@ export interface AtualizarProdutoData extends CamposServicoProduto {
 	idunidademedida?: string;
 	fornecedor?: string | null;
 	idgrupo?: string | null;
+	idgrupogourmet?: string | null;
 	preco?: string;
 	custoaquisicao?: string | null;
 	tipo?: string;

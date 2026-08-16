@@ -505,6 +505,13 @@
       "when": 1784419000000,
       "tag": "0070_empresas_endereco_estruturado",
       "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1784420000000,
+      "tag": "0071_grupogourmet",
+      "breakpoints": true
     }
   ]
 }

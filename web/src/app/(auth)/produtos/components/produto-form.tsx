@@ -36,6 +36,7 @@ import {
 } from "@/schemas/produtos.schema";
 import { entidadesService } from "@/services/entidades.service";
 import { hierarquiasService } from "@/services/hierarquias.service";
+import { gruposGourmetService } from "@/services/grupos-gourmet.service";
 import { produtosService, type CriarProdutoData } from "@/services/produtos.service";
 import {
 	isUnidadeMedidaGlobal,
@@ -62,6 +63,10 @@ function buildProdutoPayload(
 		nome: data.nome.trim(),
 		idunidademedida: data.idunidademedida,
 		idgrupo: data.idgrupo,
+		idgrupogourmet:
+			data.idgrupogourmet && data.idgrupogourmet !== "none"
+				? data.idgrupogourmet
+				: null,
 		preco: data.preco,
 		tipo: data.tipo,
 		ippt: data.ippt,
@@ -148,6 +153,7 @@ export function ProdutoForm(props: ProdutoFormProps) {
 			idunidademedida: "",
 			fornecedor: null,
 			idgrupo: "",
+			idgrupogourmet: "none",
 			preco: "",
 			custoaquisicao: "",
 			tipo: "P",
@@ -194,6 +200,7 @@ export function ProdutoForm(props: ProdutoFormProps) {
 	const idunidademedida = watch("idunidademedida");
 	const fornecedor = watch("fornecedor");
 	const idgrupo = watch("idgrupo");
+	const idgrupogourmet = watch("idgrupogourmet");
 	const tipo = watch("tipo");
 	const tipoproduto = watch("tipoproduto");
 	const iat = watch("iat");
@@ -234,6 +241,18 @@ export function ProdutoForm(props: ProdutoFormProps) {
 		queryFn: async () => {
 			if (!empresa) throw new Error("Empresa não selecionada");
 			return await hierarquiasService.listar({
+				idempresa: empresa.id,
+				limit: 100,
+			});
+		},
+		enabled: !!empresa,
+	});
+
+	const { data: gruposGourmetData } = useQuery({
+		queryKey: ["grupos-gourmet", empresa?.id],
+		queryFn: async () => {
+			if (!empresa) throw new Error("Empresa não selecionada");
+			return await gruposGourmetService.listar({
 				idempresa: empresa.id,
 				limit: 100,
 			});
@@ -488,6 +507,29 @@ export function ProdutoForm(props: ProdutoFormProps) {
 								</SelectContent>
 							</Select>
 							<FieldError errors={errors.idgrupo ? [errors.idgrupo] : []} />
+						</Field>
+
+						<Field>
+							<FieldLabel htmlFor="idgrupogourmet">Grupo gourmet</FieldLabel>
+							<Select
+								value={idgrupogourmet || "none"}
+								onValueChange={(value) => setValue("idgrupogourmet", value)}
+							>
+								<SelectTrigger className="w-full">
+									<SelectValue placeholder="Nenhum" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="none">Nenhum</SelectItem>
+									{gruposGourmetData?.data.map((grupo) => (
+										<SelectItem key={grupo.id} value={grupo.id}>
+											{grupo.nome || grupo.codigo || grupo.id}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+							<p className="text-sm text-muted-foreground">
+								Usado no cardápio de mesa/balcão e na impressão por setor.
+							</p>
 						</Field>
 
 						<Field data-invalid={!!errors.preco}>

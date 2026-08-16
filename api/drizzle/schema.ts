@@ -64,6 +64,7 @@ export * from "./tables/financeiro.js";
 export * from "./tables/financeiro-lancamento.js";
 export * from "./tables/hierarquia.js";
 export * from "./tables/ajuda-posts.js";
+export * from "./tables/grupo-gourmet.js";
 export * from "./tables/informativos.js";
 export * from "./tables/integracao-contabil-configuracao.js";
 export * from "./tables/inventario-fiscal.js";
