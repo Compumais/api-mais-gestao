@@ -495,6 +495,50 @@ export const tributacaoPorCfopSchema: FastifySchema = {
 	},
 };
 
+export const exportarProdutosMgvSchema: FastifySchema = {
+	tags: ["produtos"],
+	summary: "Exportar produtos para balança Toledo MGV",
+	description:
+		"Gera o arquivo TXTitens.txt (layout ITENSMGV versão 3) com os produtos ativos da empresa.",
+	security: [{ bearerAuth: [] }],
+	body: {
+		type: "object",
+		properties: {
+			idempresa: {
+				type: "string",
+				format: "uuid",
+				description: "ID da empresa",
+			},
+			departamentoPadrao: {
+				type: "number",
+				minimum: 1,
+				maximum: 99,
+				description:
+					"Departamento MGV usado quando o produto não tem departamento (1 a 99)",
+			},
+			diasValidade: {
+				type: "number",
+				description: "Dias de validade (0 a 990, 998 ou 999)",
+			},
+			apenasPesaveis: {
+				type: "boolean",
+				description: "Se verdadeiro, exporta somente produtos pesáveis",
+			},
+		},
+		required: ["idempresa"],
+	},
+	response: {
+		200: {
+			type: "string",
+			description: "Arquivo TXTitens.txt (ISO-8859-1)",
+		},
+		400: respostaErro,
+		401: respostaErro,
+		403: respostaErro,
+		500: respostaErro,
+	},
+};
+
 export const excluirProdutoSchema: FastifySchema = {
 	tags: ["produtos"],
 	summary: "Excluir produto",

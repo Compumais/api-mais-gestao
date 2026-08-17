@@ -1,10 +1,10 @@
-import { and, count, eq, ilike, inArray, or, sql } from "drizzle-orm";
+import { and, count, eq, ilike, inArray, or, type SQL, sql } from "drizzle-orm";
 import type { NovoProduto } from "@/model/produto-model";
+import { departamento, produtos } from "@/repositories/schema.js";
 import { filtroRegistroAtivo } from "@/util/filtro-registro-ativo.js";
 import { inteiroValidoParaPostgres } from "@/util/texto-util.js";
-import { produtos } from "@/repositories/schema.js";
-import { ordenacaoCodigoNumericoAsc } from "./ordenacao-codigo.js";
 import { db } from "./connection";
+import { ordenacaoCodigoNumericoAsc } from "./ordenacao-codigo.js";
 
 export async function criarProduto(dadosProduto: NovoProduto) {
 	const [produto] = await db.insert(produtos).values(dadosProduto).returning();
@@ -151,6 +151,49 @@ export async function buscarProdutoPorDescricao(
 		.limit(1);
 
 	return produto;
+}
+
+export type ProdutoExportacaoMgv = {
+	codigo: number | null;
+	nome: string;
+	descricao: string;
+	preco: string | null;
+	ean: string | null;
+	pesavel: number | null;
+	unidademedida: string | null;
+	departamentoCodigo: string | null;
+};
+
+const LIMITE_EXPORTACAO_MGV = 50_000;
+
+export async function listarProdutosParaExportacaoMgv(
+	idempresa: string,
+): Promise<ProdutoExportacaoMgv[]> {
+	const condicoes: SQL[] = [
+		eq(produtos.idempresa, idempresa),
+		eq(produtos.tipo, "P"),
+	];
+	const filtroAtivo = filtroRegistroAtivo(produtos.inativo, 0);
+	if (filtroAtivo) {
+		condicoes.push(filtroAtivo);
+	}
+
+	return db
+		.select({
+			codigo: produtos.codigo,
+			nome: produtos.nome,
+			descricao: produtos.descricao,
+			preco: produtos.preco,
+			ean: produtos.ean,
+			pesavel: produtos.pesavel,
+			unidademedida: produtos.unidademedida,
+			departamentoCodigo: departamento.codigo,
+		})
+		.from(produtos)
+		.leftJoin(departamento, eq(produtos.iddepartamento, departamento.id))
+		.where(and(...condicoes))
+		.orderBy(ordenacaoCodigoNumericoAsc(produtos.codigo))
+		.limit(LIMITE_EXPORTACAO_MGV);
 }
 
 export async function excluirProduto(id: string) {

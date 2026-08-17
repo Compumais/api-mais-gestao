@@ -50,8 +50,16 @@ api.interceptors.request.use((config) => {
 // Interceptor para tratar erros de autenticação
 api.interceptors.response.use(
 	(response) => response,
-	(error) => {
-		const data = error.response?.data;
+	async (error) => {
+		let data = error.response?.data;
+		if (typeof Blob !== "undefined" && data instanceof Blob) {
+			try {
+				data = JSON.parse(await data.text());
+			} catch {
+				data = undefined;
+			}
+		}
+
 		const message =
 			(typeof data?.message === "string" && data.message) ||
 			(Array.isArray(data?.details) &&

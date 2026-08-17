@@ -45,6 +45,7 @@ import {
 	aplicarAjustesConta,
 	atualizarNomeClienteConta,
 	atualizarVendaSync,
+	buscarProdutoPorCodigo,
 	buscarProdutoPorEan,
 	buscarProdutosLocal,
 	caixaAberto,
@@ -82,9 +83,9 @@ import {
 	obterNfcePorVenda,
 	obterSessao,
 	obterVenda,
+	salvarAtalhos as persistirAtalhosLocal,
 	registrarPagamentoConta,
 	type SessaoLocal,
-	salvarAtalhos as persistirAtalhosLocal,
 	salvarConfiguracoes,
 	salvarMapeamentoImpressorasGourmet,
 	salvarSessao,
@@ -106,6 +107,11 @@ import {
 	rotuloOrigemMesa,
 } from "../impressora/producao";
 import {
+	configEtiquetaDeMapa,
+	montarLancamentoEtiqueta,
+	parsearEtiquetaBalanca,
+} from "../integracao/balanca/etiqueta";
+import {
 	lerPesoBalanca,
 	listarPortasBalanca,
 	resetarConexaoBalanca,
@@ -122,7 +128,6 @@ import {
 	statusTecnibra,
 	syncTecnibra,
 } from "../integracao/tecnibra/servico";
-import { listarIpsLan } from "../lan-api/ips";
 import { assertNumeroPrincipalLivre } from "../pdv-secundario/registro";
 import { normalizarModoPdv, parseNumeroPdv } from "../pdv-secundario/regras";
 import {
@@ -594,12 +599,30 @@ export const localApi = {
 	},
 
 	async statusLan() {
-		const { obterPortaLan } = await import("../lan-api/server");
+		const { statusLanAtual } = await import("../lan-api/server");
+		const atual = statusLanAtual();
+		let habilitada = atual.habilitada;
+		let portaConfigurada = 5050;
+		try {
+			habilitada = (await getConfig("lan_habilitada", "1")) === "1";
+			portaConfigurada = Number(await getConfig("lan_porta", "5050")) || 5050;
+		} catch {
+			// banco ainda indisponível — usa o que o servidor já sabe
+		}
 		return {
-			habilitada: (await getConfig("lan_habilitada", "1")) === "1",
-			porta: obterPortaLan() || Number(await getConfig("lan_porta", "5050")),
-			ips: listarIpsLan(),
+			habilitada,
+			ouvindo: atual.ouvindo,
+			porta: atual.porta,
+			portaConfigurada,
+			ips: atual.ips,
+			erro: atual.erro,
+			motivo: atual.motivo,
 		};
+	},
+
+	async reiniciarLan() {
+		const { restartLanServer } = await import("../lan-api/server");
+		return restartLanServer();
 	},
 
 	async listarImpressoras() {
@@ -709,6 +732,50 @@ export const localApi = {
 		return buscarProdutoPorEan(ean);
 	},
 
+	async buscarLeituraCodigoBarras(codigo: string) {
+		const lido = codigo.trim();
+		if (!lido) return null;
+		const cfg = configEtiquetaDeMapa(await getAllConfig());
+		const parse = parsearEtiquetaBalanca(lido, cfg);
+		if (parse) {
+			const produto = await buscarProdutoPorCodigo(parse.codigo);
+			if (produto) {
+				const lancamento = montarLancamentoEtiqueta(produto, parse, cfg);
+				return {
+					produto,
+					...lancamento,
+					origem: "etiqueta-balanca" as const,
+				};
+			}
+		}
+		const porEan = await buscarProdutoPorEan(lido);
+		if (porEan) {
+			return {
+				produto: porEan,
+				quantidade: 1,
+				precounitario: porEan.preco,
+				precototal: porEan.preco,
+				pesado: false,
+				origem: "ean" as const,
+			};
+		}
+		const plu = Number(lido.replace(/\D/g, ""));
+		if (Number.isInteger(plu) && plu > 0) {
+			const porCodigo = await buscarProdutoPorCodigo(plu);
+			if (porCodigo) {
+				return {
+					produto: porCodigo,
+					quantidade: 1,
+					precounitario: porCodigo.preco,
+					precototal: porCodigo.preco,
+					pesado: false,
+					origem: "ean" as const,
+				};
+			}
+		}
+		return null;
+	},
+
 	async syncAgora() {
 		const pull = (await ehSecundario())
 			? await puxarDoPrincipal()
@@ -725,9 +792,7 @@ export const localApi = {
 			);
 		}
 		const secundario = await ehSecundario();
-		const pull = secundario
-			? await puxarDoPrincipal()
-			: await pullCatalogo();
+		const pull = secundario ? await puxarDoPrincipal() : await pullCatalogo();
 		return {
 			ok: true as const,
 			origem: secundario ? ("principal" as const) : ("nuvem" as const),

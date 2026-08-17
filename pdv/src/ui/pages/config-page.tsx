@@ -11,7 +11,12 @@ import {
 import { useEffect, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { pdvInvoke } from "@/lib/pdv-api";
-import { rotaHomePdv, rotuloModelo, type StatusContext } from "@/lib/pdv-types";
+import {
+	type LeituraCodigoBarras,
+	rotaHomePdv,
+	rotuloModelo,
+	type StatusContext,
+} from "@/lib/pdv-types";
 import { aplicarTema } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { ConfigAtalhos } from "@/ui/components/config-atalhos";
@@ -48,6 +53,33 @@ type AbaId =
 	| "balanca"
 	| "rede";
 
+type StatusLan = {
+	habilitada: boolean;
+	ouvindo: boolean;
+	porta: number;
+	portaConfigurada?: number;
+	ips: string[];
+	erro: string | null;
+	motivo?: string;
+};
+
+function layoutEtiquetaPreview(config: Config): string {
+	const prefixo =
+		(config.etiqueta_balanca_prefixo ?? "2").replace(/\D/g, "").slice(0, 1) ||
+		"2";
+	const n = Number(config.etiqueta_balanca_digitos_codigo ?? "4");
+	const digitos = n === 5 || n === 6 ? n : 4;
+	const extra =
+		config.etiqueta_balanca_indicador_uso === "1"
+			? "U"
+			: digitos === 4
+				? "0"
+				: "";
+	const valorLen = 13 - 1 - digitos - extra.length - 1;
+	const marca = config.etiqueta_balanca_conteudo === "peso" ? "P" : "T";
+	return `${prefixo}${"C".repeat(digitos)}${extra}${marca.repeat(Math.max(0, valorLen))}DV`;
+}
+
 const ABAS: Array<{
 	id: AbaId;
 	label: string;
@@ -73,7 +105,7 @@ export function ConfigPage() {
 	const [mapeamentoGourmet, setMapeamentoGourmet] = useState<
 		MapeamentoGourmet[]
 	>([]);
-	const [lanIps, setLanIps] = useState<string[]>([]);
+	const [statusLan, setStatusLan] = useState<StatusLan | null>(null);
 	const [testando, setTestando] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [msg, setMsg] = useState("");
@@ -103,6 +135,8 @@ export function ConfigPage() {
 		mensagem: string;
 	} | null>(null);
 	const [portasBalanca, setPortasBalanca] = useState<string[]>([]);
+	const [testeEtiqueta, setTesteEtiqueta] = useState("");
+	const [resultadoTesteEtiqueta, setResultadoTesteEtiqueta] = useState("");
 	const rotulo = rotuloModelo(
 		config.modelo_atendimento === "comanda" ? "comanda" : "mesa",
 	);
@@ -130,10 +164,9 @@ export function ConfigPage() {
 				setMapeamentoGourmet([]);
 			}
 			try {
-				const lan = await pdvInvoke<{ ips: string[] }>("statusLan");
-				setLanIps(lan.ips ?? []);
+				setStatusLan(await pdvInvoke<StatusLan>("statusLan"));
 			} catch {
-				setLanIps([]);
+				setStatusLan(null);
 			}
 			try {
 				setStatusTecnibra(await pdvInvoke("statusTecnibra"));
@@ -208,6 +241,14 @@ export function ConfigPage() {
 				balanca_porta: config.balanca_porta ?? "",
 				balanca_baud: config.balanca_baud ?? "9600",
 				balanca_protocolo: config.balanca_protocolo ?? "toledo",
+				etiqueta_balanca_habilitada: config.etiqueta_balanca_habilitada ?? "0",
+				etiqueta_balanca_prefixo: config.etiqueta_balanca_prefixo ?? "2",
+				etiqueta_balanca_digitos_codigo:
+					config.etiqueta_balanca_digitos_codigo ?? "4",
+				etiqueta_balanca_conteudo: config.etiqueta_balanca_conteudo ?? "preco",
+				etiqueta_balanca_centavos: config.etiqueta_balanca_centavos ?? "1",
+				etiqueta_balanca_indicador_uso:
+					config.etiqueta_balanca_indicador_uso ?? "0",
 			});
 			setConfig((prev) => ({ ...prev, ...saved }));
 			try {
@@ -234,6 +275,11 @@ export function ConfigPage() {
 				setStatusBalanca(await pdvInvoke("balanca.status"));
 			} catch {
 				setStatusBalanca(null);
+			}
+			try {
+				setStatusLan(await pdvInvoke<StatusLan>("statusLan"));
+			} catch {
+				setStatusLan(null);
 			}
 			setMsg("Configurações salvas");
 		} catch (err) {
@@ -288,6 +334,26 @@ export function ConfigPage() {
 		}
 	}
 
+	async function reiniciarLan() {
+		setTestando("lan");
+		setMsg("");
+		try {
+			const lan = await pdvInvoke<StatusLan>("reiniciarLan");
+			setStatusLan(lan);
+			setMsg(
+				lan.ouvindo
+					? `API LAN ouvindo em 0.0.0.0:${lan.porta}`
+					: (lan.erro ?? lan.motivo ?? "API LAN não está ouvindo"),
+			);
+		} catch (err) {
+			setMsg(
+				err instanceof Error ? err.message : "Falha ao reiniciar a API LAN",
+			);
+		} finally {
+			setTestando(null);
+		}
+	}
+
 	async function testarBalanca() {
 		setTestando("balanca");
 		setMsg("");
@@ -301,6 +367,34 @@ export function ConfigPage() {
 			}
 		} catch (err) {
 			setMsg(err instanceof Error ? err.message : "Falha ao ler a balança");
+		} finally {
+			setTestando(null);
+		}
+	}
+
+	async function testarEtiqueta() {
+		setTestando("etiqueta");
+		setResultadoTesteEtiqueta("");
+		try {
+			const leitura = await pdvInvoke<LeituraCodigoBarras | null>(
+				"buscarLeituraCodigoBarras",
+				testeEtiqueta,
+			);
+			if (!leitura) {
+				setResultadoTesteEtiqueta(
+					"Não reconhecido como etiqueta MGV nem como EAN cadastrado.",
+				);
+				return;
+			}
+			const origem =
+				leitura.origem === "etiqueta-balanca" ? "Etiqueta MGV" : "EAN / PLU";
+			setResultadoTesteEtiqueta(
+				`${origem}: ${leitura.produto.descricao} · qtd ${leitura.quantidade} · unitário ${leitura.precounitario.toFixed(2)} · total ${leitura.precototal.toFixed(2)}`,
+			);
+		} catch (err) {
+			setResultadoTesteEtiqueta(
+				err instanceof Error ? err.message : "Falha ao interpretar o código",
+			);
 		} finally {
 			setTestando(null);
 		}
@@ -635,9 +729,7 @@ export function ConfigPage() {
 												onClick={() => void cargaLocal()}
 											>
 												<CloudDownload className="size-4" />
-												{testando === "carga"
-													? "Carregando…"
-													: "Carga local"}
+												{testando === "carga" ? "Carregando…" : "Carga local"}
 											</Button>
 										</div>
 									</div>
@@ -646,10 +738,7 @@ export function ConfigPage() {
 						)}
 
 						{aba === "atalhos" && (
-							<ConfigAtalhos
-								secundario={modoSecundario}
-								onMensagem={setMsg}
-							/>
+							<ConfigAtalhos secundario={modoSecundario} onMensagem={setMsg} />
 						)}
 
 						{aba === "impressoras" && (
@@ -1058,86 +1147,228 @@ export function ConfigPage() {
 						)}
 
 						{aba === "balanca" && (
-							<Card>
-								<CardHeader>
-									<CardTitle>Balança serial</CardTitle>
-								</CardHeader>
-								<CardContent className="grid gap-4 sm:grid-cols-2">
-									<div className="space-y-2">
-										<Label htmlFor="balanca_habilitada">Integração</Label>
-										<Select
-											id="balanca_habilitada"
-											value={config.balanca_habilitada ?? "0"}
-											onChange={(e) =>
-												set("balanca_habilitada", e.target.value)
-											}
-										>
-											<option value="0">Desligada</option>
-											<option value="1">Ligada</option>
-										</Select>
-									</div>
-									<div className="space-y-2">
-										<Label htmlFor="balanca_protocolo">Protocolo</Label>
-										<Select
-											id="balanca_protocolo"
-											value={config.balanca_protocolo ?? "toledo"}
-											onChange={(e) => set("balanca_protocolo", e.target.value)}
-										>
-											<option value="toledo">Toledo (STX/ETX)</option>
-											<option value="filizola">Filizola (gramas)</option>
-											<option value="continuo">Contínuo ASCII</option>
-										</Select>
-									</div>
-									<div className="space-y-2">
-										<Label htmlFor="balanca_porta">Porta</Label>
-										<Input
-											id="balanca_porta"
-											list="portas-balanca"
-											value={config.balanca_porta ?? ""}
-											onChange={(e) => set("balanca_porta", e.target.value)}
-											placeholder="COM3 ou /dev/ttyUSB0"
-										/>
-										<datalist id="portas-balanca">
-											{portasBalanca.map((porta) => (
-												<option key={porta} value={porta} />
-											))}
-										</datalist>
-									</div>
-									<div className="space-y-2">
-										<Label htmlFor="balanca_baud">Velocidade (bps)</Label>
-										<Select
-											id="balanca_baud"
-											value={config.balanca_baud ?? "9600"}
-											onChange={(e) => set("balanca_baud", e.target.value)}
-										>
-											<option value="1200">1200</option>
-											<option value="2400">2400</option>
-											<option value="4800">4800</option>
-											<option value="9600">9600</option>
-											<option value="19200">19200</option>
-										</Select>
-									</div>
-									<div className="sm:col-span-2">
-										<Button
-											type="button"
-											variant="outline"
-											disabled={testando === "balanca"}
-											onClick={() => void testarBalanca()}
-										>
-											{testando === "balanca"
-												? "Lendo…"
-												: "Testar leitura de peso"}
-										</Button>
-									</div>
-									<p className="sm:col-span-2 text-xs text-muted-foreground">
-										Produtos com a unidade de sistema KG (Quilograma) abrem a
-										tela de peso ao lançar em mesa, comanda ou balcão. Com a
-										integração ligada, se a balança responder o peso entra
-										sozinho; senão o operador digita.
-										{statusBalanca ? ` ${statusBalanca.mensagem}.` : ""}
-									</p>
-								</CardContent>
-							</Card>
+							<>
+								<Card>
+									<CardHeader>
+										<CardTitle>Balança serial</CardTitle>
+									</CardHeader>
+									<CardContent className="grid gap-4 sm:grid-cols-2">
+										<div className="space-y-2">
+											<Label htmlFor="balanca_habilitada">Integração</Label>
+											<Select
+												id="balanca_habilitada"
+												value={config.balanca_habilitada ?? "0"}
+												onChange={(e) =>
+													set("balanca_habilitada", e.target.value)
+												}
+											>
+												<option value="0">Desligada</option>
+												<option value="1">Ligada</option>
+											</Select>
+										</div>
+										<div className="space-y-2">
+											<Label htmlFor="balanca_protocolo">Protocolo</Label>
+											<Select
+												id="balanca_protocolo"
+												value={config.balanca_protocolo ?? "toledo"}
+												onChange={(e) =>
+													set("balanca_protocolo", e.target.value)
+												}
+											>
+												<option value="toledo">Toledo (STX/ETX)</option>
+												<option value="filizola">Filizola (gramas)</option>
+												<option value="continuo">Contínuo ASCII</option>
+											</Select>
+										</div>
+										<div className="space-y-2">
+											<Label htmlFor="balanca_porta">Porta</Label>
+											<Input
+												id="balanca_porta"
+												list="portas-balanca"
+												value={config.balanca_porta ?? ""}
+												onChange={(e) => set("balanca_porta", e.target.value)}
+												placeholder="COM3 ou /dev/ttyUSB0"
+											/>
+											<datalist id="portas-balanca">
+												{portasBalanca.map((porta) => (
+													<option key={porta} value={porta} />
+												))}
+											</datalist>
+										</div>
+										<div className="space-y-2">
+											<Label htmlFor="balanca_baud">Velocidade (bps)</Label>
+											<Select
+												id="balanca_baud"
+												value={config.balanca_baud ?? "9600"}
+												onChange={(e) => set("balanca_baud", e.target.value)}
+											>
+												<option value="1200">1200</option>
+												<option value="2400">2400</option>
+												<option value="4800">4800</option>
+												<option value="9600">9600</option>
+												<option value="19200">19200</option>
+											</Select>
+										</div>
+										<div className="sm:col-span-2">
+											<Button
+												type="button"
+												variant="outline"
+												disabled={testando === "balanca"}
+												onClick={() => void testarBalanca()}
+											>
+												{testando === "balanca"
+													? "Lendo…"
+													: "Testar leitura de peso"}
+											</Button>
+										</div>
+										<p className="sm:col-span-2 text-xs text-muted-foreground">
+											Produtos com a unidade de sistema KG (Quilograma) abrem a
+											tela de peso ao lançar em mesa, comanda ou balcão. Com a
+											integração ligada, se a balança responder o peso entra
+											sozinho; senão o operador digita.
+											{statusBalanca ? ` ${statusBalanca.mensagem}.` : ""}
+										</p>
+									</CardContent>
+								</Card>
+
+								<Card>
+									<CardHeader>
+										<CardTitle>Etiquetas da balança (MGV / EAN-13)</CardTitle>
+									</CardHeader>
+									<CardContent className="grid gap-4 sm:grid-cols-2">
+										<div className="space-y-2">
+											<Label htmlFor="etiqueta_balanca_habilitada">
+												Leitura no PDV
+											</Label>
+											<Select
+												id="etiqueta_balanca_habilitada"
+												value={config.etiqueta_balanca_habilitada ?? "0"}
+												onChange={(e) =>
+													set("etiqueta_balanca_habilitada", e.target.value)
+												}
+											>
+												<option value="0">Desligada</option>
+												<option value="1">Ligada</option>
+											</Select>
+										</div>
+										<div className="space-y-2">
+											<Label htmlFor="etiqueta_balanca_prefixo">
+												Primeiro dígito (prefixo)
+											</Label>
+											<Input
+												id="etiqueta_balanca_prefixo"
+												value={config.etiqueta_balanca_prefixo ?? "2"}
+												maxLength={1}
+												onChange={(e) =>
+													set(
+														"etiqueta_balanca_prefixo",
+														e.target.value.replace(/\D/g, "").slice(0, 1),
+													)
+												}
+											/>
+										</div>
+										<div className="space-y-2">
+											<Label htmlFor="etiqueta_balanca_digitos_codigo">
+												Dígitos de código (PLU)
+											</Label>
+											<Select
+												id="etiqueta_balanca_digitos_codigo"
+												value={config.etiqueta_balanca_digitos_codigo ?? "4"}
+												onChange={(e) =>
+													set("etiqueta_balanca_digitos_codigo", e.target.value)
+												}
+											>
+												<option value="4">4 (como no MGV6 da loja)</option>
+												<option value="5">5</option>
+												<option value="6">6</option>
+											</Select>
+										</div>
+										<div className="space-y-2">
+											<Label htmlFor="etiqueta_balanca_conteudo">
+												O que vem no código
+											</Label>
+											<Select
+												id="etiqueta_balanca_conteudo"
+												value={config.etiqueta_balanca_conteudo ?? "preco"}
+												onChange={(e) =>
+													set("etiqueta_balanca_conteudo", e.target.value)
+												}
+											>
+												<option value="preco">Preço total</option>
+												<option value="peso">Peso / quantidade</option>
+											</Select>
+										</div>
+										<div className="space-y-2">
+											<Label htmlFor="etiqueta_balanca_centavos">
+												Trabalhar com centavos
+											</Label>
+											<Select
+												id="etiqueta_balanca_centavos"
+												value={config.etiqueta_balanca_centavos ?? "1"}
+												onChange={(e) =>
+													set("etiqueta_balanca_centavos", e.target.value)
+												}
+											>
+												<option value="1">
+													Sim (6 dígitos = R$ 00.000,00)
+												</option>
+												<option value="0">Não</option>
+											</Select>
+										</div>
+										<div className="space-y-2">
+											<Label htmlFor="etiqueta_balanca_indicador_uso">
+												Indicador de uso
+											</Label>
+											<Select
+												id="etiqueta_balanca_indicador_uso"
+												value={config.etiqueta_balanca_indicador_uso ?? "0"}
+												onChange={(e) =>
+													set("etiqueta_balanca_indicador_uso", e.target.value)
+												}
+											>
+												<option value="0">Não</option>
+												<option value="1">Sim</option>
+											</Select>
+										</div>
+										<p className="sm:col-span-2 font-mono text-sm">
+											Composição: {layoutEtiquetaPreview(config)}
+										</p>
+										<p className="sm:col-span-2 text-xs text-muted-foreground">
+											Padrão da captura MGV6: prefixo 2, 4 dígitos de código,
+											zero fixo, 6 dígitos de preço total e DV. O PLU é o código
+											do produto no cadastro. Faça uma carga local depois de
+											ligar para sincronizar os códigos. Salve antes de testar.
+										</p>
+										<div className="sm:col-span-2 space-y-2">
+											<Label htmlFor="teste_etiqueta">Testar código lido</Label>
+											<div className="flex flex-col gap-2 sm:flex-row">
+												<Input
+													id="teste_etiqueta"
+													value={testeEtiqueta}
+													onChange={(e) => setTesteEtiqueta(e.target.value)}
+													placeholder="Bipe ou cole o EAN-13 da etiqueta"
+													className="font-mono"
+												/>
+												<Button
+													type="button"
+													variant="outline"
+													disabled={
+														testando === "etiqueta" || !testeEtiqueta.trim()
+													}
+													onClick={() => void testarEtiqueta()}
+												>
+													{testando === "etiqueta" ? "Lendo…" : "Interpretar"}
+												</Button>
+											</div>
+											{resultadoTesteEtiqueta ? (
+												<p className="text-xs text-muted-foreground">
+													{resultadoTesteEtiqueta}
+												</p>
+											) : null}
+										</div>
+									</CardContent>
+								</Card>
+							</>
 						)}
 
 						{aba === "rede" && (
@@ -1204,8 +1435,36 @@ export function ConfigPage() {
 										<p className="sm:col-span-2 text-xs text-muted-foreground">
 											{modoSecundario
 												? "PDV secundário não expõe API LAN — o POS e outros terminais apontam para o principal."
-												: `O POS Android e PDVs secundários apontam para http://IP-DESTA-MAQUINA:${config.lan_porta || "5050"}. IPs desta máquina: ${lanIps.length ? lanIps.join(", ") : "nenhum detectado"}. No emulador use 10.0.2.2.`}
+												: statusLan?.ouvindo
+													? `API LAN ouvindo em 0.0.0.0:${statusLan.porta}. POS e PDVs secundários: ${
+															(statusLan.ips ?? []).length
+																? statusLan.ips
+																		.map(
+																			(ip) => `http://${ip}:${statusLan.porta}`,
+																		)
+																		.join(", ")
+																: "nenhum IP de rede detectado"
+														}. No emulador use 10.0.2.2.`
+													: `API LAN não está ouvindo${
+															statusLan?.erro || statusLan?.motivo
+																? ` — ${statusLan.erro ?? statusLan.motivo}`
+																: ""
+														}. Salve as configurações ou reinicie a API.`}
 										</p>
+										{!modoSecundario ? (
+											<div className="sm:col-span-2">
+												<Button
+													type="button"
+													variant="outline"
+													disabled={testando === "lan"}
+													onClick={() => void reiniciarLan()}
+												>
+													{testando === "lan"
+														? "Reiniciando…"
+														: "Reiniciar API LAN"}
+												</Button>
+											</div>
+										) : null}
 									</CardContent>
 								</Card>
 

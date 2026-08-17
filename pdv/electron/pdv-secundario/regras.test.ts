@@ -108,6 +108,8 @@ describe("mesclarConfigNegocio", () => {
 			api_url: "https://api.compuchat.space",
 			tema: "light",
 			lan_porta: "5050",
+			etiqueta_balanca_habilitada: "1",
+			etiqueta_balanca_prefixo: "2",
 		};
 		const m = mesclarConfigNegocio(local, remota);
 		assert.equal(m.numeropdv, "2");
@@ -121,6 +123,8 @@ describe("mesclarConfigNegocio", () => {
 		assert.equal(m.pix_chave, "nova-chave");
 		assert.equal(m.api_url, "https://api.compuchat.space");
 		assert.equal(m.lan_porta, undefined);
+		assert.equal(m.etiqueta_balanca_habilitada, "1");
+		assert.equal(m.etiqueta_balanca_prefixo, "2");
 	});
 });
 

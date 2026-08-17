@@ -18,6 +18,7 @@ import {
 	normalizarModoPdv,
 	parseNumeroPdv,
 } from "../pdv-secundario/regras";
+import { garantirRegraFirewall } from "./firewall";
 import { listarIpsLan } from "./ips";
 
 const ROTAS_PUBLICAS = new Set([
@@ -27,65 +28,186 @@ const ROTAS_PUBLICAS = new Set([
 	"POST /pos/pdv/handshake",
 ]);
 
+const CABECALHOS_CORS = {
+	"Access-Control-Allow-Origin": "*",
+	"Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+	"Access-Control-Allow-Headers": "Authorization,Content-Type",
+} as const;
+
+const RETRY_MS = 5000;
+
 let server: Server | null = null;
 let portaAtual = 0;
+let ultimoErro: string | null = null;
+let retryTimer: ReturnType<typeof setTimeout> | null = null;
+let encerrando = false;
+
+export type StatusLan = {
+	habilitada: boolean;
+	ouvindo: boolean;
+	porta: number;
+	ips: string[];
+	erro: string | null;
+	motivo?: string;
+};
 
 export function obterPortaLan(): number {
 	return portaAtual;
 }
 
-export async function startLanServer(): Promise<{
-	ok: boolean;
+export function statusLanAtual(): StatusLan {
+	return {
+		habilitada: true,
+		ouvindo: server != null && portaAtual > 0,
+		porta: portaAtual,
+		ips: listarIpsLan(),
+		erro: ultimoErro,
+	};
+}
+
+async function lerConfigLan(): Promise<{
+	modo: ReturnType<typeof normalizarModoPdv>;
+	habilitada: boolean;
 	porta: number;
-	ips: string[];
-	motivo?: string;
 }> {
-	const modo = normalizarModoPdv(await getConfig("pdv_modo", "principal"));
-	if (modo === "secundario") {
-		await stopLanServer();
+	try {
 		return {
-			ok: false,
+			modo: normalizarModoPdv(await getConfig("pdv_modo", "principal")),
+			habilitada: (await getConfig("lan_habilitada", "1")) === "1",
+			porta: Math.max(1, Number(await getConfig("lan_porta", "5050")) || 5050),
+		};
+	} catch {
+		return { modo: "principal", habilitada: true, porta: 5050 };
+	}
+}
+
+function limparRetry(): void {
+	if (retryTimer) {
+		clearTimeout(retryTimer);
+		retryTimer = null;
+	}
+}
+
+function agendarRetry(): void {
+	if (encerrando || retryTimer) return;
+	retryTimer = setTimeout(() => {
+		retryTimer = null;
+		void startLanServer().catch(() => undefined);
+	}, RETRY_MS);
+}
+
+function marcarErro(err: unknown): void {
+	ultimoErro = err instanceof Error ? err.message : String(err);
+}
+
+export async function startLanServer(): Promise<StatusLan> {
+	if (encerrando) {
+		return { ...statusLanAtual(), habilitada: false, motivo: "encerrando" };
+	}
+
+	const config = await lerConfigLan();
+	if (config.modo === "secundario") {
+		limparRetry();
+		await fecharServidor();
+		ultimoErro = null;
+		return {
+			habilitada: false,
+			ouvindo: false,
 			porta: 0,
-			ips: [],
+			ips: listarIpsLan(),
+			erro: null,
 			motivo: "PDV secundário não expõe API LAN",
 		};
 	}
 
-	const habilitada = (await getConfig("lan_habilitada", "1")) === "1";
-	if (!habilitada) {
-		await stopLanServer();
-		return { ok: false, porta: 0, ips: [], motivo: "LAN desabilitada" };
+	if (!config.habilitada) {
+		limparRetry();
+		await fecharServidor();
+		ultimoErro = null;
+		return {
+			habilitada: false,
+			ouvindo: false,
+			porta: 0,
+			ips: listarIpsLan(),
+			erro: null,
+			motivo: "LAN desabilitada",
+		};
 	}
 
-	const porta = Math.max(
-		1,
-		Number(await getConfig("lan_porta", "5050")) || 5050,
-	);
-	if (server && portaAtual === porta) {
-		return { ok: true, porta, ips: listarIpsLan() };
+	if (server && portaAtual === config.porta) {
+		ultimoErro = null;
+		return {
+			habilitada: true,
+			ouvindo: true,
+			porta: portaAtual,
+			ips: listarIpsLan(),
+			erro: null,
+		};
 	}
 
-	await stopLanServer();
+	await fecharServidor();
 
+	try {
+		const iniciado = await escutar(config.porta);
+		ultimoErro = null;
+		void garantirRegraFirewall(config.porta);
+		console.log(`PDV LAN API em 0.0.0.0:${iniciado.porta}`);
+		return {
+			habilitada: true,
+			ouvindo: true,
+			porta: iniciado.porta,
+			ips: listarIpsLan(),
+			erro: null,
+		};
+	} catch (err) {
+		marcarErro(err);
+		console.error("Falha ao iniciar API LAN:", ultimoErro);
+		agendarRetry();
+		return {
+			habilitada: true,
+			ouvindo: false,
+			porta: 0,
+			ips: listarIpsLan(),
+			erro: ultimoErro,
+			motivo: ultimoErro ?? undefined,
+		};
+	}
+}
+
+function escutar(porta: number): Promise<{ porta: number }> {
 	return new Promise((resolve, reject) => {
 		const httpServer = createServer((req, res) => {
 			void tratarRequisicao(req, res);
 		});
+		let finalizado = false;
+
 		httpServer.on("error", (err) => {
-			server = null;
-			portaAtual = 0;
+			if (finalizado) {
+				if (server === httpServer) {
+					server = null;
+					portaAtual = 0;
+					marcarErro(err);
+					httpServer.close();
+					agendarRetry();
+				}
+				return;
+			}
+			finalizado = true;
+			httpServer.close();
 			reject(err);
 		});
+
 		httpServer.listen(porta, "0.0.0.0", () => {
+			if (finalizado) return;
+			finalizado = true;
 			server = httpServer;
 			portaAtual = porta;
-			console.log(`PDV LAN API em 0.0.0.0:${porta}`);
-			resolve({ ok: true, porta, ips: listarIpsLan() });
+			resolve({ porta });
 		});
 	});
 }
 
-export async function stopLanServer(): Promise<void> {
+async function fecharServidor(): Promise<void> {
 	if (!server) {
 		portaAtual = 0;
 		return;
@@ -98,11 +220,21 @@ export async function stopLanServer(): Promise<void> {
 	});
 }
 
-export async function restartLanServer(): Promise<void> {
+export async function stopLanServer(): Promise<void> {
+	limparRetry();
+	await fecharServidor();
+}
+
+export async function encerrarLanServer(): Promise<void> {
+	encerrando = true;
 	await stopLanServer();
-	await startLanServer().catch((err) => {
-		console.error("Falha ao iniciar API LAN:", err);
-	});
+}
+
+export async function restartLanServer(): Promise<StatusLan> {
+	encerrando = false;
+	limparRetry();
+	await fecharServidor();
+	return startLanServer();
 }
 
 async function tratarRequisicao(
@@ -116,7 +248,7 @@ async function tratarRequisicao(
 		const chave = `${method} ${path}`;
 
 		if (method === "OPTIONS") {
-			res.writeHead(204);
+			res.writeHead(204, CABECALHOS_CORS);
 			res.end();
 			return;
 		}
@@ -558,6 +690,7 @@ function enviarJson(res: ServerResponse, status: number, body: unknown): void {
 	res.writeHead(status, {
 		"Content-Type": "application/json; charset=utf-8",
 		"Content-Length": Buffer.byteLength(payload),
+		...CABECALHOS_CORS,
 	});
 	res.end(payload);
 }
