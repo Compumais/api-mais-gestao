@@ -184,6 +184,7 @@ export interface DadosImportacaoItem {
 	precounitarioXml: string;
 	precounitarioEstoque: string;
 	precoVenda?: string;
+	codigoProduto?: number;
 	cfopXml?: string;
 	idcfop?: string;
 	ncmXml?: string;

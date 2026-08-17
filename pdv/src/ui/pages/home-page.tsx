@@ -527,6 +527,10 @@ export function HomePage() {
 							digits={digitosFechamento}
 							onChange={setDigitosFechamento}
 							disabled={loading}
+							capturarSobreInput
+							onEnter={() => {
+								if (!loading) void confirmarFechamento();
+							}}
 						/>
 						<div className="flex gap-2">
 							<Button

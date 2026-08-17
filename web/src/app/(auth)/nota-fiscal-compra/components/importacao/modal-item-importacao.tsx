@@ -33,9 +33,9 @@ import {
 } from "@/schemas/nota-fiscal.schema";
 import { hierarquiasService } from "@/services/hierarquias.service";
 import {
-	notaFiscalService,
 	type DadosImportacaoItem,
 	type NotaFiscalItemImportacao,
+	notaFiscalService,
 } from "@/services/nota-fiscal.service";
 import { DialogCriarGrupoRapido } from "../dialog-criar-grupo-rapido";
 import { CampoCfopImportacao } from "./campo-cfop-importacao";
@@ -105,6 +105,7 @@ function montarDefaultValues(
 		precounitarioEstoque:
 			dados.precounitarioEstoque ?? item.precounitario ?? "0",
 		precoVenda: dados.precoVenda ?? "",
+		codigoProduto: dados.codigoProduto,
 		idcfop: dados.idcfop ?? "",
 		cfopXml: dados.cfopXml ?? "",
 		ncmXml: dados.ncmXml ?? item.ncm ?? "",
@@ -268,6 +269,7 @@ export function ModalItemImportacao({
 				quantidadeEstoque: formData.quantidadeEstoque,
 				precounitarioEstoque: formData.precounitarioEstoque,
 				precoVenda: formData.precoVenda,
+				codigoProduto: formData.codigoProduto,
 				idcfop: formData.idcfop || undefined,
 				ncmXml: formData.ncmXml,
 				idncm: formData.idncm || undefined,
@@ -384,6 +386,26 @@ export function ModalItemImportacao({
 							</p>
 						) : null}
 					</Field>
+					{statusVinculo === "novo" ? (
+						<Field data-invalid={!!errors.codigoProduto}>
+							<FieldLabel htmlFor="codigoProduto">Código do produto</FieldLabel>
+							<Input
+								id="codigoProduto"
+								type="number"
+								min={1}
+								placeholder="Preenchido automaticamente"
+								{...register("codigoProduto", { valueAsNumber: true })}
+							/>
+							<p className="mt-1 text-xs text-muted-foreground">
+								Próximo código da empresa; pode ser alterado.
+							</p>
+							{errors.codigoProduto ? (
+								<p className="mt-1 text-xs text-destructive">
+									{errors.codigoProduto.message}
+								</p>
+							) : null}
+						</Field>
+					) : null}
 					{dados.eanXml ? (
 						<p className="text-sm text-muted-foreground">
 							Código de barras (XML): <span className="font-mono">{dados.eanXml}</span>

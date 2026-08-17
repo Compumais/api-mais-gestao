@@ -35,7 +35,23 @@ export function BootPage() {
 				navigate("/login", { replace: true });
 				return;
 			}
+			if (!statusAtual.sessao.idempresa) {
+				addMsg("Selecione a empresa para continuar.");
+				marcarBootPendente();
+				navigate("/login", { replace: true });
+				return;
+			}
 			addMsg(`Sessão ativa: ${statusAtual.sessao.username ?? ""}`);
+			try {
+				const avisoBackup = await pdvInvoke<string>(
+					"consumirAvisoBackupEmpresa",
+				);
+				if (avisoBackup) {
+					addMsg(avisoBackup);
+				}
+			} catch {
+				// aviso opcional
+			}
 
 			if (statusAtual.modo === "secundario") {
 				addMsg(
@@ -67,9 +83,22 @@ export function BootPage() {
 				addMsg("Sincronizando produtos, grupos e atalhos...");
 				try {
 					const sync = await pdvInvoke<{
-						pull: { produtos: number; atalhos: number; grupos: number };
+						pull: {
+							produtos: number;
+							atalhos: number;
+							grupos: number;
+							acessoNegado?: boolean;
+						};
 						pendentes: number;
 					}>("syncAgora");
+					if (sync.pull.acessoNegado) {
+						addMsg(
+							"Usuário sem acesso à empresa anterior. Selecione a empresa correta.",
+						);
+						marcarBootPendente();
+						navigate("/login", { replace: true });
+						return;
+					}
 					addMsg(
 						`${sync.pull.produtos} produtos · ${sync.pull.grupos} grupos · ${sync.pull.atalhos} atalhos`,
 					);

@@ -2,12 +2,24 @@ import { v4 as uuidv4 } from "uuid";
 import { buscarCupomNfce } from "../api/client";
 import {
 	atualizarNfceLocalCampos,
+	atualizarVendaSync,
 	obterNfcePorVenda,
 	salvarNfceLocal,
 } from "../db/repos";
 
 export type DadosNfceOnline = {
 	idvenda: string;
+	idnotafiscal?: string;
+	chave?: string;
+	qrCode?: string;
+	protocolo?: string;
+	xml?: string;
+	serie?: string | number;
+	numero?: number;
+};
+
+export type ResultadoEmissaoParaPersistir = {
+	emitida: boolean;
 	idnotafiscal?: string;
 	chave?: string;
 	qrCode?: string;
@@ -33,13 +45,23 @@ function serieNumeroDaChave(chave?: string): {
 	};
 }
 
+function numeracaoValida(serie: number, numero: number): boolean {
+	return (
+		Number.isFinite(serie) &&
+		serie >= 1 &&
+		Number.isFinite(numero) &&
+		numero >= 1
+	);
+}
+
 async function resolverXml(
 	dados: DadosNfceOnline,
+	status: "autorizada" | "erro",
 ): Promise<string | undefined> {
 	if (dados.xml?.trim()) {
 		return dados.xml;
 	}
-	if (!dados.idnotafiscal) {
+	if (status === "erro" || !dados.idnotafiscal) {
 		return undefined;
 	}
 	try {
@@ -50,20 +72,16 @@ async function resolverXml(
 	}
 }
 
-export async function persistirNfceOnlineLocal(
+async function gravarNfceLocal(
 	dados: DadosNfceOnline,
-): Promise<void> {
-	const xml = await resolverXml(dados);
+	status: "autorizada" | "erro",
+): Promise<boolean> {
+	const xml = await resolverXml(dados, status);
 	const daChave = serieNumeroDaChave(dados.chave);
 	const serie = Number(dados.serie ?? daChave.serie ?? 0);
 	const numero = Number(dados.numero ?? daChave.numero ?? 0);
-	if (
-		!Number.isFinite(serie) ||
-		serie < 1 ||
-		!Number.isFinite(numero) ||
-		numero < 1
-	) {
-		return;
+	if (!numeracaoValida(serie, numero)) {
+		return false;
 	}
 
 	const existente = await obterNfcePorVenda(dados.idvenda);
@@ -75,10 +93,14 @@ export async function persistirNfceOnlineLocal(
 			protocolo: dados.protocolo ?? null,
 			serie,
 			numero,
-			status: "autorizada",
-			transmitida: true,
+			status,
+			transmitida: status === "autorizada",
 		});
-		return;
+		await atualizarVendaSync(dados.idvenda, {
+			nfce_status: status,
+			idnfce_local: existente.id,
+		});
+		return true;
 	}
 
 	await salvarNfceLocal({
@@ -88,10 +110,47 @@ export async function persistirNfceOnlineLocal(
 		numero,
 		chave: dados.chave,
 		tpemis: 1,
-		status: "autorizada",
+		status,
 		xml,
 		qrcode: dados.qrCode,
 		protocolo: dados.protocolo,
-		transmitida: true,
+		transmitida: status === "autorizada",
+	});
+	return true;
+}
+
+export async function persistirNfceOnlineLocal(
+	dados: DadosNfceOnline,
+): Promise<void> {
+	await gravarNfceLocal(dados, "autorizada");
+}
+
+/** Persiste autorização ou rejeição localmente, incluindo o id da nota na retaguarda. */
+export async function aplicarEmissaoNfceNaVendaLocal(
+	vendaId: string,
+	nfce: ResultadoEmissaoParaPersistir,
+): Promise<void> {
+	const dados: DadosNfceOnline = {
+		idvenda: vendaId,
+		idnotafiscal: nfce.idnotafiscal,
+		chave: nfce.chave,
+		qrCode: nfce.qrCode,
+		protocolo: nfce.protocolo,
+		xml: nfce.xml,
+		serie: nfce.serie,
+		numero: nfce.numero,
+	};
+
+	if (nfce.emitida) {
+		await gravarNfceLocal(dados, "autorizada");
+		return;
+	}
+
+	const gravou = await gravarNfceLocal(dados, "erro");
+	await atualizarVendaSync(vendaId, {
+		nfce_status: "erro",
+		...(!gravou && nfce.idnotafiscal
+			? { idnfce_local: nfce.idnotafiscal }
+			: {}),
 	});
 }

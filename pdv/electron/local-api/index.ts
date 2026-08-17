@@ -5,12 +5,16 @@ import {
 	criarItemVendaPdv,
 	criarVendaPdv,
 	extrairNfceDaBaixa,
+	isEmpresaAcessoNegado,
 	listarEmpresas,
 	loginEmail,
 	obterMeuPlano,
 	obterPerfilUsuario,
 	pingApi,
+	retransmitirNfceVendaPdv,
 	substituirAtalhosRemotos,
+	transmitirNfceContingencia,
+	VENDA_LOCAL_PDV_HIBRIDO,
 } from "../api/client";
 import {
 	CHAVES_CONFIG_GOURMET,
@@ -77,6 +81,7 @@ import {
 	listarProdutosPorGrupoGourmet,
 	listarVendas,
 	type MeioPagamento,
+	marcarNfceTransmitida,
 	marcarPedidoEntregue,
 	obterContaMesa,
 	obterContaPorNumero,
@@ -147,6 +152,11 @@ import {
 	statusConexao,
 } from "../sync/outbox";
 import { obterTerminaisPdvLocais } from "../sync/terminais-pdv";
+import {
+	arquivarSeTrocaEmpresa,
+	consumirAvisoBackupEmpresa,
+	lembrarEmpresaDaSessao,
+} from "../sync/troca-empresa";
 
 export type {
 	LancamentoPagamento,
@@ -261,7 +271,7 @@ async function emitirNfceOnlineDaVenda(vendaId: string): Promise<{
 				idempresa: sessao.idempresa,
 				numeropdv: Number(await getConfig("numeropdv", "1")),
 				usuarioquefechouvenda: sessao.userid,
-				vendalocal: 2,
+				vendalocal: VENDA_LOCAL_PDV_HIBRIDO,
 				valortotal: venda.valortotal,
 				valortroco: sync.valortroco,
 				valordinheiro: sync.valordinheiro,
@@ -316,21 +326,10 @@ async function emitirNfceOnlineDaVenda(vendaId: string): Promise<{
 			},
 		});
 		const nfce = extrairNfceDaBaixa(baixa);
-		if (nfce.emitida) {
-			const { persistirNfceOnlineLocal } = await import(
-				"../fiscal/persistir-nfce-online"
-			);
-			await persistirNfceOnlineLocal({
-				idvenda: vendaId,
-				idnotafiscal: nfce.idnotafiscal,
-				chave: nfce.chave,
-				qrCode: nfce.qrCode,
-				protocolo: nfce.protocolo,
-				xml: nfce.xml,
-				serie: nfce.serie,
-				numero: nfce.numero,
-			});
-		}
+		const { aplicarEmissaoNfceNaVendaLocal } = await import(
+			"../fiscal/persistir-nfce-online"
+		);
+		await aplicarEmissaoNfceNaVendaLocal(vendaId, nfce);
 		return {
 			ok: nfce.emitida,
 			chave: nfce.chave,
@@ -411,12 +410,16 @@ export const localApi = {
 	async login(email: string, password: string) {
 		const url = await apiBaseUrl();
 		try {
+			await lembrarEmpresaDaSessao();
 			const result = await loginEmail(email, password);
 			await salvarSessao({
 				token: result.token,
 				userid: result.userid,
 				username: result.username,
 				roles: null,
+				idempresa: null,
+				nomeempresa: null,
+				modulogourmet: null,
 			});
 			await sincronizarRolesSessao(await obterSessao());
 			const empresas = await listarEmpresas(result.userid);
@@ -435,28 +438,48 @@ export const localApi = {
 	},
 
 	async selecionarEmpresa(idempresa: string, nomeempresa: string) {
+		const backup = await arquivarSeTrocaEmpresa(idempresa, nomeempresa);
 		await salvarSessao({ idempresa, nomeempresa, modulogourmet: null });
 		await sincronizarModuloGourmet(await obterSessao());
+		const vazio = {
+			produtos: 0,
+			atalhos: 0,
+			grupos: 0,
+			gruposGourmet: 0,
+		};
 		const pull = (await ehSecundario())
-			? await puxarDoPrincipal().catch(() => ({
-					produtos: 0,
-					atalhos: 0,
-					grupos: 0,
-					gruposGourmet: 0,
-				}))
-			: await pullCatalogo().catch(() => ({
-					produtos: 0,
-					atalhos: 0,
-					grupos: 0,
-					gruposGourmet: 0,
-				}));
+			? await puxarDoPrincipal().catch(() => vazio)
+			: await pullCatalogo().catch((err) => {
+					if (isEmpresaAcessoNegado(err)) {
+						throw err;
+					}
+					return vazio;
+				});
+		if ("acessoNegado" in pull && pull.acessoNegado) {
+			throw new Error(
+				"Este usuário não tem acesso à empresa selecionada. Escolha outra empresa.",
+			);
+		}
 		void processarOutbox();
-		return { ok: true, pull };
+		return { ok: true, pull, backup };
 	},
 
 	async logout() {
+		await lembrarEmpresaDaSessao();
 		await limparSessao();
 		return { ok: true };
+	},
+
+	async listarEmpresasSessao() {
+		const sessao = await obterSessao();
+		if (!sessao.token || !sessao.userid) {
+			throw new Error("Faça login para listar as empresas");
+		}
+		return listarEmpresas(sessao.userid);
+	},
+
+	async consumirAvisoBackupEmpresa() {
+		return consumirAvisoBackupEmpresa();
 	},
 
 	async getConfig() {
@@ -1269,6 +1292,140 @@ export const localApi = {
 			});
 		}
 		return imprimirCupomNaoFiscal(vendaId);
+	},
+
+	async retransmitirNfce(vendaId: string) {
+		const venda = await obterVenda(vendaId);
+		if (!venda) {
+			throw new Error("Venda não encontrada");
+		}
+
+		const nfce = await obterNfcePorVenda(vendaId);
+		const online = await pingApi();
+		if (!online) {
+			throw new Error(
+				"Sem conexão com a retaguarda. Tente novamente quando estiver online.",
+			);
+		}
+
+		const sessao = await obterSessao();
+		if (!sessao.idempresa || !sessao.userid) {
+			throw new Error("Sessão inválida");
+		}
+
+		const { aplicarEmissaoNfceNaVendaLocal } = await import(
+			"../fiscal/persistir-nfce-online"
+		);
+
+		if (
+			nfce &&
+			nfce.tpemis === 9 &&
+			nfce.status !== "transmitida" &&
+			nfce.status !== "autorizada"
+		) {
+			await processarOutbox();
+			const depois = await obterNfcePorVenda(vendaId);
+			if (depois?.status === "transmitida" || depois?.status === "autorizada") {
+				return {
+					modo: "contingencia" as const,
+					mensagem: "NFC-e de contingência enviada à retaguarda",
+					chave: depois.chave ?? undefined,
+				};
+			}
+			if (!nfce.xml) {
+				throw new Error("XML de contingência não encontrado para retransmitir");
+			}
+			const result = await transmitirNfceContingencia({
+				idempresa: sessao.idempresa,
+				idvenda: venda.idremoto ?? undefined,
+				xml: nfce.xml,
+				chave: nfce.chave ?? undefined,
+				serie: nfce.serie,
+				numero: nfce.numero,
+				motivo: nfce.motivo_contingencia ?? "Contingencia offline PDV",
+				datacontingencia: new Date().toISOString(),
+			});
+			await marcarNfceTransmitida(nfce.id);
+			await atualizarVendaSync(vendaId, {
+				nfce_status: result.transmitida ? "transmitida" : "contingencia",
+			});
+			return {
+				modo: "contingencia" as const,
+				mensagem: result.transmitida
+					? "NFC-e de contingência enviada à retaguarda"
+					: (result.erro ??
+						"Contingência registrada na retaguarda, aguardando SEFAZ"),
+				chave: nfce.chave ?? undefined,
+			};
+		}
+
+		if (!venda.idremoto) {
+			const resultado = await emitirNfceOnlineDaVenda(vendaId);
+			if (resultado.ok) {
+				await imprimirDanfce({
+					chave: resultado.chave,
+					qrcode: resultado.qrCode,
+					contingencia: false,
+					vendaId,
+				});
+				return {
+					modo: "online" as const,
+					mensagem: "NFC-e autorizada",
+					chave: resultado.chave,
+					qrcode: resultado.qrCode,
+				};
+			}
+			return {
+				modo: "erro" as const,
+				mensagem: resultado.cStat
+					? `NFC-e rejeitada (${resultado.cStat}): ${resultado.erro}`
+					: (resultado.erro ?? "Falha na retransmissão da NFC-e"),
+				cStat: resultado.cStat,
+			};
+		}
+
+		const emissao = await retransmitirNfceVendaPdv({
+			idempresa: sessao.idempresa,
+			idvenda: venda.idremoto,
+		});
+		await aplicarEmissaoNfceNaVendaLocal(vendaId, {
+			emitida: emissao.emitida,
+			idnotafiscal: emissao.idnotafiscal,
+			chave: emissao.chave,
+			qrCode: emissao.qrCode,
+			protocolo: emissao.protocolo,
+			xml: emissao.xml,
+			serie: emissao.serie,
+			numero: emissao.numero,
+		});
+
+		if (emissao.emitida) {
+			await imprimirDanfce({
+				chave: emissao.chave,
+				qrcode: emissao.qrCode,
+				contingencia: false,
+				vendaId,
+			});
+			return {
+				modo: "online" as const,
+				mensagem: "NFC-e autorizada",
+				chave: emissao.chave,
+				qrcode: emissao.qrCode,
+			};
+		}
+
+		const motivo =
+			emissao.erro ??
+			emissao.xMotivo ??
+			emissao.pendencias?.map((p) => p.mensagem).join("; ") ??
+			"Falha na retransmissão da NFC-e";
+		return {
+			modo: "erro" as const,
+			mensagem: emissao.cStat
+				? `NFC-e rejeitada (${emissao.cStat}): ${motivo}`
+				: `NFC-e rejeitada: ${motivo}`,
+			cStat: emissao.cStat,
+		};
 	},
 };
 

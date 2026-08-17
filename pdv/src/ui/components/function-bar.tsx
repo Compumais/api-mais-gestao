@@ -29,7 +29,7 @@ export function FunctionBar({ actions }: { actions: FunctionBarAction[] }) {
 			const action = actions.find(
 				(a) => a.hotkey && a.hotkey.toLowerCase() === e.key.toLowerCase(),
 			);
-			if (action && !action.disabled) {
+			if (action && !action.disabled && !e.defaultPrevented) {
 				e.preventDefault();
 				action.onClick();
 			}

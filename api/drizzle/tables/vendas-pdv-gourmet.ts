@@ -23,7 +23,7 @@ export const vendapdvgourmet = pgTable(
 		id: text().primaryKey().notNull(),
 		idempresa: text().notNull(),
 		idcontamesa: text(),
-		vendalocal: smallint().default(0), // 0=Não, 1=Balcão (web/gourmet), 2=POS (app)
+		vendalocal: smallint().default(0), // 0=Não, 1=Balcão (web/gourmet), 2=POS (app), 3=PDV híbrido (Electron)
 		numeropdv: integer().notNull(),
 		idvendaitem: text(),
 		valordinheiro: numeric123(),

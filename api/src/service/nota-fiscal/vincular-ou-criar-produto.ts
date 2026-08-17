@@ -6,6 +6,7 @@ import {
 	buscarProdutoPorId,
 	criarProduto,
 } from "@/repositories/produtos-repositories.js";
+import { buscarProximoCodigoProduto } from "@/repositories/proximo-codigo-repositories.js";
 import {
 	inteiroValidoParaPostgres,
 	normalizarCodigoBarras,
@@ -118,6 +119,11 @@ export async function criarProdutoParaNf(
 	const nomeProduto =
 		truncarTexto(dados.descricaoproduto, 120) ?? descricaoProduto ?? "Produto";
 	const ean = normalizarCodigoBarras(dados.ean);
+	const codigoInformado = inteiroValidoParaPostgres(dados.codigoproduto);
+	const codigo =
+		codigoInformado && codigoInformado > 0
+			? codigoInformado
+			: Number(await buscarProximoCodigoProduto(dados.idempresa));
 
 	return (
 		(await criarProduto({
@@ -125,7 +131,7 @@ export async function criarProdutoParaNf(
 			idempresa: dados.idempresa,
 			nome: nomeProduto,
 			descricao: descricaoProduto ?? nomeProduto,
-			codigo: inteiroValidoParaPostgres(dados.codigoproduto) ?? null,
+			codigo,
 			ean,
 			eantributavel: ean,
 			idncm: dados.idncm ?? null,

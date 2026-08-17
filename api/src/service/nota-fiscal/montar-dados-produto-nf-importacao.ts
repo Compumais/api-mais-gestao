@@ -48,16 +48,12 @@ export function montarDadosProdutoNfImportacao(
 			? { idfornecedor: idfornecedorOuOpcoes }
 			: (idfornecedorOuOpcoes ?? {});
 
-	const codigoNum = dados.codigoFornecedor
-		? parseInt(dados.codigoFornecedor.replace(/\D/g, ""), 10)
-		: undefined;
-
 	const trib = dados.tributacao;
 	const situacaoEntrada = trib.situacaotributaria;
 
 	return {
 		idempresa,
-		codigoproduto: Number.isNaN(codigoNum ?? NaN) ? undefined : codigoNum,
+		codigoproduto: dados.codigoProduto,
 		ean: normalizarCodigoBarras(dados.eanXml) ?? undefined,
 		descricaoproduto: dados.descricaoFornecedor,
 		idncm: dados.idncm,

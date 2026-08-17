@@ -8,6 +8,8 @@ type BarcodeInputProps = {
 	onProduto?: (produto: ProdutoLocal) => void;
 	placeholder?: string;
 	className?: string;
+	/** Quando um modal está aberto, não recaptura o foco nem trata teclas. */
+	pausado?: boolean;
 };
 
 function pareceCodigoBarras(valor: string): boolean {
@@ -20,18 +22,22 @@ export function BarcodeInput({
 	onProduto,
 	placeholder = "Bipe o código, busque pelo nome ou pressione Enter...",
 	className,
+	pausado = false,
 }: BarcodeInputProps) {
 	const [valor, setValor] = useState("");
 	const [resultados, setResultados] = useState<ProdutoLocal[]>([]);
+	const [indiceAtivo, setIndiceAtivo] = useState(0);
 	const [buscando, setBuscando] = useState(false);
 	const ref = useRef<HTMLInputElement>(null);
+	const itemAtivoRef = useRef<HTMLButtonElement | null>(null);
 
 	useEffect(() => {
+		if (pausado) return;
 		ref.current?.focus();
-	}, []);
+	}, [pausado]);
 
 	useEffect(() => {
-		if (!onProduto) {
+		if (!onProduto || pausado) {
 			setResultados([]);
 			return;
 		}
@@ -49,6 +55,7 @@ export function BarcodeInput({
 						termo,
 					);
 					setResultados(lista);
+					setIndiceAtivo(0);
 				} catch {
 					setResultados([]);
 				} finally {
@@ -57,16 +64,26 @@ export function BarcodeInput({
 			})();
 		}, 250);
 		return () => window.clearTimeout(timer);
-	}, [valor, onProduto]);
+	}, [valor, onProduto, pausado]);
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: o botão ativo está num ref atualizado no render
+	useEffect(() => {
+		itemAtivoRef.current?.scrollIntoView({ block: "nearest" });
+	}, [indiceAtivo, resultados]);
 
 	function refocar() {
-		window.setTimeout(() => ref.current?.focus(), 50);
+		if (pausado) return;
+		window.setTimeout(() => {
+			if (pausado) return;
+			ref.current?.focus();
+		}, 50);
 	}
 
 	function escolherProduto(produto: ProdutoLocal) {
 		onProduto?.(produto);
 		setValor("");
 		setResultados([]);
+		setIndiceAtivo(0);
 		refocar();
 	}
 
@@ -80,16 +97,14 @@ export function BarcodeInput({
 				try {
 					lista = await pdvInvoke<ProdutoLocal[]>("buscarProdutos", codigo);
 					setResultados(lista);
+					setIndiceAtivo(0);
 				} catch {
 					lista = [];
 				}
 			}
-			const unico = lista[0];
-			if (lista.length === 1 && unico) {
-				escolherProduto(unico);
-				return;
-			}
-			if (lista.length > 1) {
+			const destacado = lista[indiceAtivo] ?? lista[0];
+			if (destacado && lista.length >= 1) {
+				escolherProduto(destacado);
 				return;
 			}
 		}
@@ -97,10 +112,23 @@ export function BarcodeInput({
 		onScan(codigo);
 		setValor("");
 		setResultados([]);
+		setIndiceAtivo(0);
 	}
 
 	function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-		if (e.key === "Enter") {
+		if (pausado) return;
+
+		if (e.key === "ArrowDown" && resultados.length > 0) {
+			e.preventDefault();
+			setIndiceAtivo((i) => Math.min(i + 1, resultados.length - 1));
+			return;
+		}
+		if (e.key === "ArrowUp" && resultados.length > 0) {
+			e.preventDefault();
+			setIndiceAtivo((i) => Math.max(i - 1, 0));
+			return;
+		}
+		if (e.key === "Enter" || e.code === "NumpadEnter") {
 			e.preventDefault();
 			void confirmar();
 		}
@@ -116,12 +144,14 @@ export function BarcodeInput({
 				onBlur={refocar}
 				placeholder={placeholder}
 				autoComplete="off"
+				disabled={pausado}
 				className={cn(
 					"flex h-11 w-full rounded-md border border-input bg-background px-3 font-mono text-sm outline-none focus-visible:ring-ring/50 focus-visible:ring-[3px]",
 					className,
 				)}
 			/>
 			{onProduto &&
+			!pausado &&
 			valor.trim().length >= 2 &&
 			!pareceCodigoBarras(valor.trim()) ? (
 				<div className="absolute top-full z-20 mt-1 max-h-64 w-full overflow-auto rounded-md border bg-popover shadow-md">
@@ -133,12 +163,17 @@ export function BarcodeInput({
 						</p>
 					) : (
 						<ul>
-							{resultados.map((p) => (
+							{resultados.map((p, indice) => (
 								<li key={p.id}>
 									<button
 										type="button"
-										className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-accent"
+										ref={indice === indiceAtivo ? itemAtivoRef : undefined}
+										className={cn(
+											"flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-accent",
+											indice === indiceAtivo && "bg-accent",
+										)}
 										onMouseDown={(e) => e.preventDefault()}
+										onMouseEnter={() => setIndiceAtivo(indice)}
 										onClick={() => escolherProduto(p)}
 									>
 										<span className="min-w-0 truncate font-medium">

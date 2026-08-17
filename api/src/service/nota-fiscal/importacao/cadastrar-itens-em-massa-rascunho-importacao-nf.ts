@@ -9,6 +9,11 @@ import {
 	buscarNotaFiscalRascunhoPorId,
 	listarItensPorNotaFiscal,
 } from "@/repositories/nota-fiscal-repositories.js";
+import {
+	buscarProximoCodigoProdutoImportacao,
+	codigoProdutoValido,
+	listarCodigosProdutoReservados,
+} from "@/service/nota-fiscal/importacao/codigo-produto-importacao.js";
 import { validarEanProdutoNf } from "@/service/nota-fiscal/validar-ean-produto-nf.js";
 import {
 	httpBadRequest,
@@ -81,6 +86,11 @@ export async function cadastrarItensEmMassaRascunhoImportacaoNfService({
 	const eansNoLote = new Set<string>();
 	const ignorados: ItemIgnoradoCadastroEmMassa[] = [];
 	let quantidadeCadastrados = 0;
+	const codigosReservados = listarCodigosProdutoReservados(itens);
+	let proximoCodigo = await buscarProximoCodigoProdutoImportacao(
+		idempresa,
+		codigosReservados,
+	);
 
 	for (const item of itens) {
 		if (idsSelecionados && !idsSelecionados.has(item.id)) {
@@ -160,6 +170,10 @@ export async function cadastrarItensEmMassaRascunhoImportacaoNfService({
 			continue;
 		}
 
+		const codigoProduto = codigoProdutoValido(dadosAtuais.codigoProduto)
+			? dadosAtuais.codigoProduto
+			: proximoCodigo;
+
 		const dadosAtualizados: DadosImportacaoItem = {
 			...dadosAtuais,
 			statusVinculo: "novo",
@@ -167,7 +181,12 @@ export async function cadastrarItensEmMassaRascunhoImportacaoNfService({
 			produtoEncontrado: undefined,
 			confirmarCadastro: true,
 			idgrupo,
+			codigoProduto,
 		};
+
+		if (codigoProduto === proximoCodigo) {
+			proximoCodigo += 1;
+		}
 
 		await atualizarItemNotaFiscal(item.id, {
 			idproduto: null,

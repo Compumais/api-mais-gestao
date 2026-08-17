@@ -71,7 +71,8 @@ const filtrosVazios: FiltrosState = {
 
 function tipoVenda(venda: VendaPdvGourmet) {
 	if (venda.idcontamesa) return "Mesa";
-	// vendalocal: 2 = app POS; 1 = balcão web/gourmet; 0/null = legado
+	// vendalocal: 3 = PDV híbrido; 2 = app POS; 1 = balcão web/gourmet; 0/null = legado
+	if (venda.vendalocal === 3) return "PDV";
 	if (venda.vendalocal === 2) return "POS";
 	return "Balcão";
 }

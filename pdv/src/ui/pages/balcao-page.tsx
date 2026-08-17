@@ -26,11 +26,12 @@ import {
 	type ItemPizzaMeioAMeio,
 } from "@/ui/components/dialog-pizza-meio-a-meio";
 import { DialogQuantidadePeso } from "@/ui/components/dialog-quantidade-peso";
+import { DialogRejeicaoNfce } from "@/ui/components/dialog-rejeicao-nfce";
 import { FunctionBar } from "@/ui/components/function-bar";
+import { NumericKeypad } from "@/ui/components/numeric-keypad";
 import { ProdutoCard } from "@/ui/components/produto-card";
 import { Topbar } from "@/ui/components/topbar";
 import { Button } from "@/ui/components/ui/button";
-import { Input } from "@/ui/components/ui/input";
 import { useEscapeFechaModal } from "@/ui/hooks/use-escape-fecha-modal";
 
 type Item = {
@@ -57,6 +58,7 @@ export function BalcaoPage() {
 	const [itens, setItens] = useState<Item[]>([]);
 	const [pagando, setPagando] = useState(false);
 	const [rejeicaoNfce, setRejeicaoNfce] = useState<string | null>(null);
+	const [vendaRejeitadaId, setVendaRejeitadaId] = useState<string | null>(null);
 	const [msg, setMsg] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [pizzaPrimeiro, setPizzaPrimeiro] = useState<ProdutoLocal | null>(null);
@@ -239,8 +241,10 @@ export function BalcaoPage() {
 			});
 			setPagando(false);
 			if (result.fiscal.modo === "erro") {
+				setVendaRejeitadaId(result.venda.id);
 				setRejeicaoNfce(result.fiscal.mensagem);
 				setMsg(result.fiscal.mensagem);
+				setItens([]);
 				return;
 			}
 			setMsg(result.fiscal.mensagem);
@@ -315,6 +319,13 @@ export function BalcaoPage() {
 					<BarcodeInput
 						onScan={(codigo) => void onBip(codigo)}
 						onProduto={(produto) => adicionarProdutoSimples(produto)}
+						pausado={
+							pagando ||
+							fechando ||
+							Boolean(rejeicaoNfce) ||
+							Boolean(pizzaPrimeiro) ||
+							Boolean(produtoPeso)
+						}
 					/>
 
 					{!grupoAtivo ? (
@@ -453,23 +464,14 @@ export function BalcaoPage() {
 			</div>
 
 			{rejeicaoNfce && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-					<div className="w-[28rem] max-w-[95vw] space-y-4 rounded-lg border border-destructive/40 bg-card p-5">
-						<h2 className="text-lg font-semibold text-destructive">
-							NFC-e rejeitada
-						</h2>
-						<p className="whitespace-pre-wrap break-words text-sm">
-							{rejeicaoNfce}
-						</p>
-						<p className="text-xs text-muted-foreground">
-							A venda foi registrada e deve aparecer na retaguarda web. Corrija
-							o cadastro/fiscal e reemita quando possível.
-						</p>
-						<Button className="w-full" onClick={() => setRejeicaoNfce(null)}>
-							Entendi
-						</Button>
-					</div>
-				</div>
+				<DialogRejeicaoNfce
+					mensagem={rejeicaoNfce}
+					vendaId={vendaRejeitadaId}
+					onFechar={() => {
+						setRejeicaoNfce(null);
+						setVendaRejeitadaId(null);
+					}}
+				/>
 			)}
 
 			<DialogPagamentoMisto
@@ -505,10 +507,17 @@ export function BalcaoPage() {
 						<p className="text-sm text-muted-foreground">
 							Informe o valor em caixa.
 						</p>
-						<Input
-							inputMode="decimal"
-							value={valorFechamento}
-							onChange={(e) => setValorFechamento(e.target.value)}
+						<div className="text-center text-2xl font-bold text-primary">
+							{money(centavosToNumber(valorFechamento))}
+						</div>
+						<NumericKeypad
+							digits={valorFechamento}
+							onChange={setValorFechamento}
+							disabled={loading}
+							capturarSobreInput
+							onEnter={() => {
+								if (!loading) void confirmarFechamento();
+							}}
 						/>
 						<div className="flex gap-2">
 							<Button

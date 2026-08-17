@@ -91,9 +91,16 @@ function exibirProdutoCadastro(dados: DadosImportacaoItem) {
 
 	if (dados.statusVinculo === "novo") {
 		return (
-			<span className="text-sm font-medium text-amber-700 dark:text-amber-400">
-				Cadastrar na finalização
-			</span>
+			<div className="min-w-[140px] max-w-[220px]">
+				<p className="text-sm font-medium text-amber-700 dark:text-amber-400">
+					Cadastrar na finalização
+				</p>
+				{dados.codigoProduto != null ? (
+					<p className="text-xs text-muted-foreground">
+						Cód. {dados.codigoProduto}
+					</p>
+				) : null}
+			</div>
 		);
 	}
 

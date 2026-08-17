@@ -1,5 +1,6 @@
 import type { PoolClient } from "pg";
 import { v4 as uuidv4 } from "uuid";
+import { gravarXmlNfceArquivo } from "../fiscal/xml-local";
 import {
 	montarItemPizzaMeioAMeio,
 	produtoEhPizza,
@@ -2364,6 +2365,27 @@ export async function reservarNumeroNfce(): Promise<{
 	return { serie: atual.serie, numero };
 }
 
+async function persistirXmlNfceEmDisco(params: {
+	chave?: string | null;
+	serie: number;
+	numero: number;
+	xml?: string | null;
+}): Promise<void> {
+	if (!params.xml?.trim()) {
+		return;
+	}
+	try {
+		await gravarXmlNfceArquivo({
+			chave: params.chave,
+			serie: params.serie,
+			numero: params.numero,
+			xml: params.xml,
+		});
+	} catch {
+		// XML no disco é cópia auxiliar — o banco continua sendo a fonte
+	}
+}
+
 export async function salvarNfceLocal(dados: {
 	id: string;
 	idvenda: string;
@@ -2401,6 +2423,12 @@ export async function salvarNfceLocal(dados: {
 			new Date().toISOString(),
 		],
 	);
+	await persistirXmlNfceEmDisco({
+		chave: dados.chave,
+		serie: dados.serie,
+		numero: dados.numero,
+		xml: dados.xml,
+	});
 	await atualizarVendaSync(dados.idvenda, {
 		idnfce_local: dados.id,
 		nfce_status: dados.status,
@@ -2483,6 +2511,12 @@ export async function atualizarNfceLocalCampos(
 			id,
 		],
 	);
+	await persistirXmlNfceEmDisco({
+		chave: dados.chave ?? atual.chave,
+		serie: dados.serie ?? atual.serie,
+		numero: dados.numero ?? atual.numero,
+		xml: dados.xml ?? atual.xml,
+	});
 }
 
 export async function marcarNfceTransmitida(id: string): Promise<void> {

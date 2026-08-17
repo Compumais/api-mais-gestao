@@ -551,7 +551,10 @@ export async function emitirNfceVendaPdvService({
 	const qrExtraido = extrairQrCodeNfceXml(xmlQr);
 	if (qrExtraido.qrCode) resultado.qrCode = qrExtraido.qrCode;
 	if (qrExtraido.urlChave) resultado.urlChave = qrExtraido.urlChave;
-	if (emitida && xmlQr) resultado.xml = xmlQr;
+	const xmlCliente = emitida
+		? (xmlQr ?? respostaGateway.xmlEnviado)
+		: (respostaGateway.xmlEnviado ?? xmlQr);
+	if (xmlCliente) resultado.xml = xmlCliente;
 
 	return httpOk(resultado);
 }

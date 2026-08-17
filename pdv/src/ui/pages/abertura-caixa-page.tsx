@@ -68,7 +68,14 @@ export function AberturaCaixaPage() {
 					digits={digitos}
 					onChange={setDigitos}
 					disabled={loading}
+					capturarSobreInput
+					onEnter={() => {
+						if (!loading) void confirmar();
+					}}
 				/>
+				<p className="text-center text-xs text-muted-foreground">
+					Digite o valor e pressione Enter para confirmar.
+				</p>
 				{erro && <p className="text-center text-sm text-destructive">{erro}</p>}
 				<Button
 					size="xl"

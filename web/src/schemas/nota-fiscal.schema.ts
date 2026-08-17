@@ -115,6 +115,11 @@ export const itemImportacaoSchema = z.object({
 	quantidadeEstoque: z.string(),
 	precounitarioEstoque: z.string(),
 	precoVenda: z.string().optional(),
+	codigoProduto: z.preprocess((valor) => {
+		if (valor === "" || valor == null) return undefined;
+		if (typeof valor === "number" && Number.isNaN(valor)) return undefined;
+		return valor;
+	}, z.number().int().positive().optional()),
 	idcfop: z.string().optional(),
 	cfopXml: z.string().optional(),
 	ncmXml: z.string().optional(),
