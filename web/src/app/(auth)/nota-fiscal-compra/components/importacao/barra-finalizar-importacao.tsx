@@ -14,9 +14,10 @@ import {
 	finalizarRascunhoSchema,
 } from "@/schemas/nota-fiscal.schema";
 import {
-	notaFiscalService,
 	type BuscarRascunhoImportacaoResponse,
+	notaFiscalService,
 } from "@/services/nota-fiscal.service";
+import { listarPendenciasCamposImportacao } from "@/util/pendencias-finalizacao-importacao-nf";
 import { listarItensSemPrecoVenda } from "@/util/preco-venda-importacao-nf";
 import {
 	CampoCondicaoPagamentoCompra,
@@ -25,6 +26,7 @@ import {
 } from "../campos-financeiros-nf-compra";
 import { contarPendenciasItens } from "./grid-itens-importacao";
 import { ModalPrecoVendaImportacao } from "./modal-preco-venda-importacao";
+import { ModalResolverPendenciasImportacao } from "./modal-resolver-pendencias-importacao";
 
 type BarraFinalizarImportacaoProps = {
 	idempresa: string;
@@ -44,7 +46,12 @@ export function BarraFinalizarImportacao({
 		() => listarItensSemPrecoVenda(dados.itens),
 		[dados.itens],
 	);
+	const itensComCamposFaltando = useMemo(
+		() => listarPendenciasCamposImportacao(dados.itens),
+		[dados.itens],
+	);
 	const [modalPrecoVendaAberto, setModalPrecoVendaAberto] = useState(false);
+	const [modalPendenciasAberto, setModalPendenciasAberto] = useState(false);
 	const [formDataPendente, setFormDataPendente] =
 		useState<FinalizarRascunhoFormData | null>(null);
 
@@ -98,9 +105,19 @@ export function BarraFinalizarImportacao({
 		});
 	};
 
+	const continuarAposPendencias = (formData: FinalizarRascunhoFormData) => {
+		if (itensSemPrecoVenda.length > 0) {
+			setFormDataPendente(formData);
+			setModalPrecoVendaAberto(true);
+			return;
+		}
+
+		executarFinalizacao(formData);
+	};
+
 	const onFinalizar = handleSubmit((formData) => {
 		if (pendencias.length > 0) {
-			toast.error("Existem pendências nos itens", {
+			toast.error("Existem produtos pendentes de vínculo ou cadastro", {
 				description: pendencias.slice(0, 3).join("\n"),
 			});
 			return;
@@ -111,13 +128,13 @@ export function BarraFinalizarImportacao({
 			return;
 		}
 
-		if (itensSemPrecoVenda.length > 0) {
+		if (itensComCamposFaltando.length > 0) {
 			setFormDataPendente(formData);
-			setModalPrecoVendaAberto(true);
+			setModalPendenciasAberto(true);
 			return;
 		}
 
-		executarFinalizacao(formData);
+		continuarAposPendencias(formData);
 	});
 
 	const { mutate: excluir, isPending: excluindo } = useMutation({
@@ -132,6 +149,18 @@ export function BarraFinalizarImportacao({
 
 	return (
 		<>
+			<ModalResolverPendenciasImportacao
+				idempresa={idempresa}
+				idRascunho={idRascunho}
+				itens={itensComCamposFaltando}
+				aberto={modalPendenciasAberto}
+				onAbertoChange={setModalPendenciasAberto}
+				onResolvido={() => {
+					if (formDataPendente) {
+						continuarAposPendencias(formDataPendente);
+					}
+				}}
+			/>
 			<ModalPrecoVendaImportacao
 				idempresa={idempresa}
 				idRascunho={idRascunho}
@@ -207,8 +236,14 @@ export function BarraFinalizarImportacao({
 
 				{pendencias.length > 0 ? (
 					<p className="mb-4 text-sm text-destructive">
-						{pendencias.length} pendência(s) nos itens. Resolva antes de
-						finalizar.
+						{pendencias.length} produto(s) pendente(s) de vínculo ou cadastro.
+						Resolva antes de finalizar.
+					</p>
+				) : itensComCamposFaltando.length > 0 ? (
+					<p className="mb-4 text-sm text-amber-700 dark:text-amber-400">
+						{itensComCamposFaltando.length} item(ns) com campos faltando
+						(unidade, grupo ou CFOP). Ao finalizar, você poderá preenchê-los de
+						uma vez.
 					</p>
 				) : itensSemPrecoVenda.length > 0 ? (
 					<p className="mb-4 text-sm text-amber-700 dark:text-amber-400">

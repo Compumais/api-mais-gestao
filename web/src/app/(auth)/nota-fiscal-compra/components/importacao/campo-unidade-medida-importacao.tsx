@@ -18,6 +18,7 @@ import {
 
 type CampoUnidadeMedidaImportacaoProps = {
 	idempresa: string;
+	id?: string;
 	value?: string;
 	codigoXml?: string;
 	onChange: (idunidademedida: string, codigo?: string) => void;
@@ -27,6 +28,7 @@ type CampoUnidadeMedidaImportacaoProps = {
 
 export function CampoUnidadeMedidaImportacao({
 	idempresa,
+	id = "idunidademedida-item",
 	value,
 	codigoXml,
 	onChange,
@@ -45,11 +47,12 @@ export function CampoUnidadeMedidaImportacao({
 
 	const unidadesGlobais = unidades.filter(isUnidadeMedidaGlobal);
 	const unidadesEmpresa = unidades.filter((u) => !isUnidadeMedidaGlobal(u));
-	const semUnidades = unidadesGlobais.length === 0 && unidadesEmpresa.length === 0;
+	const semUnidades =
+		unidadesGlobais.length === 0 && unidadesEmpresa.length === 0;
 
 	return (
 		<Field>
-			<FieldLabel htmlFor="idunidademedida-item">
+			<FieldLabel htmlFor={id}>
 				Unidade de medida (estoque){obrigatorio ? " *" : ""}
 			</FieldLabel>
 			{codigoXml ? (
@@ -65,7 +68,7 @@ export function CampoUnidadeMedidaImportacao({
 				}}
 				disabled={isLoading}
 			>
-				<SelectTrigger id="idunidademedida-item" className="w-full">
+				<SelectTrigger id={id} className="w-full">
 					<SelectValue
 						placeholder={
 							isLoading ? "Carregando..." : "Selecione a unidade de estoque"
