@@ -61,6 +61,15 @@ const atualizarProdutoBodySchema = z.object({
 	observacoes: z.string().optional().nullable(),
 	enviamobile: z.number().int().min(0).max(1).optional(),
 	espizza: z.number().int().min(0).max(1).optional(),
+	exportaBalanca: z.number().int().min(0).max(1).optional(),
+	diasValidade: z
+		.number()
+		.int()
+		.refine(
+			(valor) => (valor >= 0 && valor <= 990) || valor === 998 || valor === 999,
+			{ message: "Dias de validade deve ser 0 a 990, 998 ou 999" },
+		)
+		.optional(),
 	quantidadepadrao: z.number().int().min(0).optional().nullable(),
 	quantidademinima: z.number().int().min(0).optional().nullable(),
 	quantidademaxima: z.number().int().positive().optional().nullable(),

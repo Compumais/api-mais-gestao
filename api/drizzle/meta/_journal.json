@@ -533,6 +533,13 @@
       "when": 1785002000000,
       "tag": "0074_terminal_pdv",
       "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "7",
+      "when": 1785003000000,
+      "tag": "0075_produtos_balanca",
+      "breakpoints": true
     }
   ]
 }

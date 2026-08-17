@@ -43,6 +43,8 @@ describe("exportarProdutosMgvService", () => {
 				pesavel: 1,
 				unidademedida: "KG",
 				departamentoCodigo: "01",
+				exportaBalanca: 1,
+				diasValidade: 0,
 			},
 			{
 				codigo: 0,
@@ -53,6 +55,8 @@ describe("exportarProdutosMgvService", () => {
 				pesavel: 1,
 				unidademedida: "KG",
 				departamentoCodigo: null,
+				exportaBalanca: 1,
+				diasValidade: 0,
 			},
 		]);
 
@@ -86,6 +90,8 @@ describe("exportarProdutosMgvService", () => {
 				pesavel: 1,
 				unidademedida: "KG",
 				departamentoCodigo: null,
+				exportaBalanca: 1,
+				diasValidade: 0,
 			},
 			{
 				codigo: 2,
@@ -96,6 +102,8 @@ describe("exportarProdutosMgvService", () => {
 				pesavel: 0,
 				unidademedida: "UN",
 				departamentoCodigo: null,
+				exportaBalanca: 1,
+				diasValidade: 0,
 			},
 		]);
 
@@ -108,6 +116,54 @@ describe("exportarProdutosMgvService", () => {
 		expect(resultado.success).toBe(true);
 		if (resultado.success && resultado.body) {
 			expect(resultado.body.totalLinhas).toBe(1);
+		}
+	});
+
+	it("exporta só produtos marcados para a balança e usa a validade do cadastro", async () => {
+		vi.mocked(
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(true);
+		vi.mocked(
+			produtosRepository.listarProdutosParaExportacaoMgv,
+		).mockResolvedValue([
+			{
+				codigo: 10,
+				nome: "Com balança",
+				descricao: "Com balança",
+				preco: "12.00",
+				ean: null,
+				pesavel: 1,
+				unidademedida: "KG",
+				departamentoCodigo: null,
+				exportaBalanca: 1,
+				diasValidade: 7,
+			},
+			{
+				codigo: 20,
+				nome: "Sem balança",
+				descricao: "Sem balança",
+				preco: "8.00",
+				ean: null,
+				pesavel: 1,
+				unidademedida: "KG",
+				departamentoCodigo: null,
+				exportaBalanca: 0,
+				diasValidade: 3,
+			},
+		]);
+
+		const resultado = await exportarProdutosMgvService({
+			idusuario: "usuario-1",
+			idempresa: "empresa-1",
+			diasValidade: 0,
+		});
+
+		expect(resultado.success).toBe(true);
+		if (resultado.success && resultado.body) {
+			expect(resultado.body.totalLinhas).toBe(1);
+			expect(resultado.body.content.toString("latin1").slice(15, 18)).toBe(
+				"007",
+			);
 		}
 	});
 });

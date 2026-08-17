@@ -176,6 +176,8 @@ export const produtos = pgTable(
 		percredbasepiscofinsentrada: numeric({ precision: 5, scale: 2 }),
 		percredbasepiscofinssaida: numeric({ precision: 5, scale: 2 }),
 		pesavel: integer(), // 0=Produto nao e pesavel, 1=Produto e pesavel
+		exportaBalanca: integer().default(0), // 0=Não exporta para MGV, 1=Exporta
+		diasValidade: integer().default(0), // 0=usa padrão da exportação; 1-990 imprime datas; 998 não imprime; 999 solicita na balança
 		peso: numeric({ precision: 12, scale: 2 }),
 		podeserbrinde: integer(), // 0=Produto nao pode ser brinde, 1=Produto pode ser brinde
 		precoultimacompra: numeric({ precision: 12, scale: 2 }),

@@ -123,6 +123,15 @@ export const produtoFormSchema = z.object({
 		.nullable(),
 	observacoes: z.string().optional().nullable(),
 	enviamobile: z.boolean().optional(),
+	exportaBalanca: z.boolean().optional(),
+	diasValidade: z
+		.number({ message: "Dias de validade inválido" })
+		.int("Dias de validade deve ser um número inteiro")
+		.refine(
+			(valor) => (valor >= 0 && valor <= 990) || valor === 998 || valor === 999,
+			"Use 0 a 990, 998 (não imprime datas) ou 999 (solicita na balança)",
+		)
+		.optional(),
 	quantidadepadrao: numeroInteiroOpcional().refine(
 		(valor) => valor === null || valor === undefined || valor >= 0,
 		"Saldo em estoque não pode ser negativo",

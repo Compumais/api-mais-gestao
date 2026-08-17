@@ -6,6 +6,8 @@ import {
 	normalizarDepartamentoMgv,
 	precoCentavosMgv,
 	produtoEhPesoMgv,
+	produtoExportaBalancaMgv,
+	resolverDiasValidadeMgv,
 } from "./mgv-itens";
 
 describe("montarLinhaItensMgv", () => {
@@ -65,6 +67,15 @@ describe("helpers", () => {
 		expect(precoCentavosMgv(2.78)).toBe(278);
 		expect(precoCentavosMgv(0)).toBeNull();
 		expect(eanFornecedor12("7891234567890")).toBe("789123456789");
+	});
+
+	it("resolve validade do produto ou o padrão da exportação", () => {
+		expect(resolverDiasValidadeMgv(7, 0)).toBe(7);
+		expect(resolverDiasValidadeMgv(0, 5)).toBe(5);
+		expect(resolverDiasValidadeMgv(null, 3)).toBe(3);
+		expect(resolverDiasValidadeMgv(998, 0)).toBe(998);
+		expect(produtoExportaBalancaMgv(1)).toBe(true);
+		expect(produtoExportaBalancaMgv(0)).toBe(false);
 	});
 });
 
