@@ -7,8 +7,20 @@ import {
 	extrairNfceDaBaixa,
 	listarEmpresas,
 	loginEmail,
+	obterMeuPlano,
+	obterPerfilUsuario,
 	pingApi,
 } from "../api/client";
+import {
+	CHAVES_CONFIG_GOURMET,
+	CHAVES_CONFIG_OPERADOR,
+	CHAVES_CONFIG_PRE_LOGIN,
+	normalizarPerfis,
+	payloadSoTemChaves,
+	planoTemGourmet,
+	podeConfigurarPdv,
+	sessaoTemGourmet,
+} from "../db/acesso";
 import {
 	DATABASE_URL_PADRAO,
 	getAllConfig,
@@ -29,6 +41,7 @@ import {
 	abrirContaMesa,
 	adicionarItemConta,
 	adicionarItemNaMesa,
+	aplicarAjustesConta,
 	atualizarNomeClienteConta,
 	atualizarVendaSync,
 	buscarProdutoPorEan,
@@ -40,7 +53,9 @@ import {
 	enviarPedidoConta,
 	fecharCaixa,
 	fecharContaMesa,
+	fecharFatiaItens,
 	type ItemCarrinho,
+	juntarContas,
 	type LancamentoPagamento,
 	limparContasVazias,
 	limparFilaPedidos,
@@ -65,14 +80,21 @@ import {
 	obterNfcePorVenda,
 	obterSessao,
 	obterVenda,
+	registrarPagamentoConta,
+	type SessaoLocal,
 	salvarConfiguracoes,
 	salvarMapeamentoImpressorasGourmet,
 	salvarSessao,
+	senhaGerencialDefinida,
+	transferirConta,
+	transferirItens,
+	validarSenhaGerencial,
 } from "../db/repos";
 import { emitirOuContingencia } from "../fiscal/contingencia";
 import {
 	imprimirCupomNaoFiscal,
 	imprimirDanfce,
+	imprimirPreConta,
 	listarImpressoras,
 	testarImpressora,
 } from "../impressora/escpos";
@@ -80,6 +102,13 @@ import {
 	imprimirProducaoPedido,
 	rotuloOrigemMesa,
 } from "../impressora/producao";
+import {
+	lerPesoBalanca,
+	listarPortasBalanca,
+	resetarConexaoBalanca,
+	statusBalanca,
+	testarBalanca,
+} from "../integracao/balanca/servico";
 import {
 	sitefCancelar,
 	sitefPagar,
@@ -111,6 +140,70 @@ export type {
 
 function avisarTecnibra(): void {
 	void syncTecnibra();
+}
+
+async function sincronizarRolesSessao(
+	sessao: SessaoLocal,
+): Promise<SessaoLocal> {
+	if (!sessao.token) return sessao;
+	try {
+		const perfil = await obterPerfilUsuario();
+		return await salvarSessao({
+			roles: JSON.stringify(normalizarPerfis(perfil.perfil)),
+		});
+	} catch {
+		return sessao;
+	}
+}
+
+async function sincronizarModuloGourmet(
+	sessao: SessaoLocal,
+): Promise<SessaoLocal> {
+	if (!sessao.token || !sessao.idempresa) return sessao;
+	try {
+		const plano = await obterMeuPlano(sessao.idempresa);
+		return await salvarSessao({
+			modulogourmet: planoTemGourmet(plano.modulos) ? "1" : "0",
+		});
+	} catch {
+		return sessao;
+	}
+}
+
+const ERRO_SEM_GOURMET =
+	"O plano desta empresa não inclui o módulo Gourmet. Mesas e comandas ficam indisponíveis.";
+
+async function assertModuloGourmet(): Promise<void> {
+	const sessao = await obterSessao();
+	if (!sessaoTemGourmet(sessao.modulogourmet)) {
+		throw new Error(ERRO_SEM_GOURMET);
+	}
+}
+
+async function assertPodeSalvarConfig(
+	dados: Record<string, string>,
+): Promise<void> {
+	let sessao: SessaoLocal | null = null;
+	try {
+		sessao = await obterSessao();
+	} catch {
+		sessao = null;
+	}
+	if (podeConfigurarPdv(sessao?.roles)) return;
+	const logado = Boolean(sessao?.token);
+	if (!logado) {
+		if (!payloadSoTemChaves(dados, CHAVES_CONFIG_PRE_LOGIN)) {
+			throw new Error(
+				"Faça login como administrador ou proprietário para alterar as configurações.",
+			);
+		}
+		return;
+	}
+	if (!payloadSoTemChaves(dados, CHAVES_CONFIG_OPERADOR)) {
+		throw new Error(
+			"Somente administrador ou proprietário pode alterar as configurações.",
+		);
+	}
 }
 
 async function emitirNfceOnlineDaVenda(vendaId: string): Promise<{
@@ -236,12 +329,25 @@ export const localApi = {
 
 	async getStatus() {
 		const conexao = await statusConexao();
-		const sessao = await obterSessao();
+		let sessao = await obterSessao();
+		if (sessao.token && sessao.roles == null && conexao.online) {
+			sessao = await sincronizarRolesSessao(sessao);
+		}
+		if (
+			sessao.token &&
+			sessao.idempresa &&
+			sessao.modulogourmet == null &&
+			conexao.online
+		) {
+			sessao = await sincronizarModuloGourmet(sessao);
+		}
 		const caixa = await caixaAberto();
 		const modo = normalizarModoPdv(await getConfig("pdv_modo", "principal"));
 		const principal = modo === "secundario" ? statusPrincipalCache() : null;
 		return {
 			...conexao,
+			podeConfigurar: podeConfigurarPdv(sessao.roles),
+			moduloGourmet: sessaoTemGourmet(sessao.modulogourmet),
 			sessao: {
 				logado: Boolean(sessao.token),
 				username: sessao.username,
@@ -259,6 +365,7 @@ export const localApi = {
 			modo,
 			principalOnline: principal ? principal.online : null,
 			principalErro: principal?.erro ?? null,
+			balancaHabilitada: (await getConfig("balanca_habilitada", "0")) === "1",
 		};
 	},
 
@@ -270,7 +377,9 @@ export const localApi = {
 				token: result.token,
 				userid: result.userid,
 				username: result.username,
+				roles: null,
 			});
+			await sincronizarRolesSessao(await obterSessao());
 			const empresas = await listarEmpresas(result.userid);
 			return { username: result.username, empresas };
 		} catch (err) {
@@ -287,7 +396,8 @@ export const localApi = {
 	},
 
 	async selecionarEmpresa(idempresa: string, nomeempresa: string) {
-		await salvarSessao({ idempresa, nomeempresa });
+		await salvarSessao({ idempresa, nomeempresa, modulogourmet: null });
+		await sincronizarModuloGourmet(await obterSessao());
 		const pull = (await ehSecundario())
 			? await puxarDoPrincipal().catch(() => ({
 					produtos: 0,
@@ -313,7 +423,16 @@ export const localApi = {
 	async getConfig() {
 		const database_url = obterDatabaseUrl();
 		try {
-			return { ...(await getAllConfig()), database_url };
+			const config = await getAllConfig();
+			const definida = Boolean(config.senha_gerencial_hash);
+			delete config.senha_gerencial_hash;
+			delete config.senha_gerencial_salt;
+			return {
+				...config,
+				database_url,
+				senha_gerencial: "",
+				senha_gerencial_definida: definida ? "1" : "0",
+			};
 		} catch (err) {
 			if (isBancoIndisponivelError(err)) {
 				return { database_url };
@@ -323,13 +442,37 @@ export const localApi = {
 	},
 
 	async saveConfig(dados: Record<string, string>) {
-		const { database_url, ...resto } = dados;
+		const payload = { ...dados };
+		let sessao: SessaoLocal | null = null;
+		try {
+			sessao = await obterSessao();
+		} catch {
+			sessao = null;
+		}
+		if (!sessaoTemGourmet(sessao?.modulogourmet)) {
+			for (const chave of CHAVES_CONFIG_GOURMET) {
+				delete payload[chave];
+			}
+		}
+		await assertPodeSalvarConfig(payload);
+		const { database_url, ...resto } = payload;
 		if (database_url !== undefined) {
 			const atual = obterDatabaseUrl();
 			const url = database_url.trim() || DATABASE_URL_PADRAO;
 			salvarDatabaseUrlArquivo(url);
 			if (url !== atual || !isDbReady()) {
 				await reconectarDb();
+			}
+		}
+		if (resto.senha_gerencial !== undefined) {
+			const senha = resto.senha_gerencial.trim();
+			delete resto.senha_gerencial;
+			delete resto.senha_gerencial_definida;
+			if (senha) {
+				const { hashSenhaGerencial } = await import("../db/senha-gerencial");
+				const { salt, hash } = hashSenhaGerencial(senha);
+				resto.senha_gerencial_salt = salt;
+				resto.senha_gerencial_hash = hash;
 			}
 		}
 		if (Object.keys(resto).length) {
@@ -383,6 +526,14 @@ export const localApi = {
 			resetarDllCarregada();
 			resetarConfiguracaoSitef();
 		}
+		if (
+			resto.balanca_habilitada !== undefined ||
+			resto.balanca_porta !== undefined ||
+			resto.balanca_baud !== undefined ||
+			resto.balanca_protocolo !== undefined
+		) {
+			await resetarConexaoBalanca();
+		}
 		return { ...saved, database_url: obterDatabaseUrl() };
 	},
 
@@ -409,6 +560,22 @@ export const localApi = {
 		operador?: string;
 	}) {
 		return sitefCancelar(params);
+	},
+
+	async "balanca.status"() {
+		return statusBalanca();
+	},
+
+	async "balanca.lerPeso"() {
+		return lerPesoBalanca();
+	},
+
+	async "balanca.listarPortas"() {
+		return listarPortasBalanca();
+	},
+
+	async "balanca.testar"() {
+		return testarBalanca();
 	},
 
 	async listarEmpresasLan() {
@@ -580,24 +747,29 @@ export const localApi = {
 	},
 
 	async listarMesas() {
+		await assertModuloGourmet();
 		return listarMesas();
 	},
 
 	async obterMesa(numero: number) {
+		await assertModuloGourmet();
 		return obterMesa(numero);
 	},
 
 	async obterContaPorNumero(numero: number) {
+		await assertModuloGourmet();
 		return obterContaPorNumero(numero);
 	},
 
 	async limparContasVazias() {
+		await assertModuloGourmet();
 		const removidas = await limparContasVazias();
 		avisarTecnibra();
 		return removidas;
 	},
 
 	async abrirContaMesa(numero: number, nomecliente?: string) {
+		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
 		const conta = await abrirContaMesa(numero, nomecliente);
 		avisarTecnibra();
@@ -605,6 +777,7 @@ export const localApi = {
 	},
 
 	async obterContaMesa(id: string) {
+		await assertModuloGourmet();
 		return obterContaMesa(id);
 	},
 
@@ -617,6 +790,7 @@ export const localApi = {
 			precounitario: number;
 		},
 	) {
+		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
 		const conta = await adicionarItemConta(idconta, item);
 		avisarTecnibra();
@@ -624,6 +798,7 @@ export const localApi = {
 	},
 
 	async atualizarNomeClienteConta(idconta: string, nomecliente: string) {
+		await assertModuloGourmet();
 		return atualizarNomeClienteConta(idconta, nomecliente);
 	},
 
@@ -637,6 +812,7 @@ export const localApi = {
 			idprodutomeio?: string | null;
 		}>,
 	) {
+		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
 		const conta = await enviarPedidoConta({ idconta, clientOrderId, itens });
 		if (conta.pedidoNovo) {
@@ -678,6 +854,7 @@ export const localApi = {
 		},
 		nomecliente?: string,
 	) {
+		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
 		const conta = await adicionarItemNaMesa(numero, item, nomecliente);
 		try {
@@ -704,6 +881,7 @@ export const localApi = {
 		lancamentosOuMeio: LancamentoPagamento[] | MeioPagamento,
 		troco?: number,
 	) {
+		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
 		let lancamentos: LancamentoPagamento[];
 		if (typeof lancamentosOuMeio === "string") {
@@ -714,7 +892,7 @@ export const localApi = {
 			if (!conta) {
 				throw new Error("Conta inválida");
 			}
-			lancamentos = [lancamentoUnico(lancamentosOuMeio, conta.valortotal)];
+			lancamentos = [lancamentoUnico(lancamentosOuMeio, conta.valorrestante)];
 		} else {
 			lancamentos = lancamentosOuMeio;
 		}
@@ -758,6 +936,126 @@ export const localApi = {
 		void processarOutbox();
 		avisarTecnibra();
 		return { venda, fiscal };
+	},
+
+	async aplicarAjustesConta(
+		idconta: string,
+		ajustes: {
+			numeropessoas?: number;
+			taxaAtiva?: boolean;
+			desconto?: number;
+			senha?: string;
+		},
+	) {
+		await assertModuloGourmet();
+		await garantirOperacaoSecundario();
+		return aplicarAjustesConta({ idconta, ...ajustes });
+	},
+
+	async validarSenhaGerencial(senha: string) {
+		return validarSenhaGerencial(senha);
+	},
+
+	async senhaGerencialDefinida() {
+		return senhaGerencialDefinida();
+	},
+
+	async imprimirPreConta(idconta: string) {
+		await assertModuloGourmet();
+		await garantirOperacaoSecundario();
+		return imprimirPreConta(idconta);
+	},
+
+	async registrarPagamentoConta(
+		idconta: string,
+		lancamentos: LancamentoPagamento[],
+		troco?: number,
+	) {
+		await assertModuloGourmet();
+		await garantirOperacaoSecundario();
+		const result = await registrarPagamentoConta({
+			idconta,
+			lancamentos,
+			troco,
+		});
+		if (result.venda) {
+			const emitir = (await getConfig("emitir_nfce", "1")) === "1";
+			if (emitir) {
+				await emitirOuContingencia({
+					idvenda: result.venda.id,
+					onlineEmitir: () => emitirNfceOnlineDaVenda(result.venda!.id),
+				});
+			} else {
+				await imprimirCupomNaoFiscal(result.venda.id);
+			}
+			void processarOutbox();
+			avisarTecnibra();
+		}
+		return result;
+	},
+
+	async fecharFatiaItens(
+		idconta: string,
+		idsItens: string[],
+		lancamentos: LancamentoPagamento[],
+		troco?: number,
+	) {
+		await assertModuloGourmet();
+		await garantirOperacaoSecundario();
+		const result = await fecharFatiaItens({
+			idconta,
+			idsItens,
+			lancamentos,
+			troco,
+		});
+		const emitir = (await getConfig("emitir_nfce", "1")) === "1";
+		if (emitir) {
+			await emitirOuContingencia({
+				idvenda: result.venda.id,
+				onlineEmitir: () => emitirNfceOnlineDaVenda(result.venda.id),
+			});
+		} else {
+			await imprimirCupomNaoFiscal(result.venda.id);
+		}
+		void processarOutbox();
+		avisarTecnibra();
+		return result;
+	},
+
+	async transferirConta(idconta: string, numeroDestino: number) {
+		await assertModuloGourmet();
+		await garantirOperacaoSecundario();
+		const conta = await transferirConta(idconta, numeroDestino);
+		avisarTecnibra();
+		return conta;
+	},
+
+	async transferirItens(
+		idcontaOrigem: string,
+		idsItens: string[],
+		numeroDestino: number,
+	) {
+		await assertModuloGourmet();
+		await garantirOperacaoSecundario();
+		const result = await transferirItens({
+			idcontaOrigem,
+			idsItens,
+			numeroDestino,
+		});
+		avisarTecnibra();
+		return result;
+	},
+
+	async juntarContas(idOrigem: string, numeroDestino: number) {
+		await assertModuloGourmet();
+		await garantirOperacaoSecundario();
+		const mesa = await obterMesa(numeroDestino);
+		if (!mesa.idconta) {
+			throw new Error("Destino sem conta aberta");
+		}
+		const conta = await juntarContas(idOrigem, mesa.idconta);
+		avisarTecnibra();
+		return conta;
 	},
 
 	async reimprimir(vendaId: string) {

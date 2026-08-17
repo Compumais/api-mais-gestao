@@ -1,8 +1,15 @@
-import { CreditCard, Printer, Settings2, Ticket, Wifi } from "lucide-react";
+import {
+	CreditCard,
+	Printer,
+	Scale,
+	Settings2,
+	Ticket,
+	Wifi,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { pdvInvoke } from "@/lib/pdv-api";
-import { rotuloModelo, type StatusContext } from "@/lib/pdv-types";
+import { rotaHomePdv, rotuloModelo, type StatusContext } from "@/lib/pdv-types";
 import { aplicarTema } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { FunctionBar } from "@/ui/components/function-bar";
@@ -29,7 +36,7 @@ type MapeamentoGourmet = {
 	porta: number;
 };
 
-type AbaId = "geral" | "impressoras" | "tef" | "tecnibra" | "rede";
+type AbaId = "geral" | "impressoras" | "tef" | "tecnibra" | "balanca" | "rede";
 
 const ABAS: Array<{
 	id: AbaId;
@@ -40,12 +47,13 @@ const ABAS: Array<{
 	{ id: "impressoras", label: "Impressoras", icon: Printer },
 	{ id: "tef", label: "TEF / SiTef", icon: CreditCard },
 	{ id: "tecnibra", label: "Catraca Tecnibra", icon: Ticket },
+	{ id: "balanca", label: "Balança", icon: Scale },
 	{ id: "rede", label: "Rede / sync", icon: Wifi },
 ];
 
 export function ConfigPage() {
 	const navigate = useNavigate();
-	const { refresh } = useOutletContext<StatusContext>();
+	const { refresh, status } = useOutletContext<StatusContext>();
 	const [aba, setAba] = useState<AbaId>("geral");
 	const [config, setConfig] = useState<Config>({});
 	const [impressoras, setImpressoras] = useState<
@@ -75,10 +83,23 @@ export function ConfigPage() {
 		portaPinPad?: string | null;
 		mensagem: string;
 	} | null>(null);
+	const [statusBalanca, setStatusBalanca] = useState<{
+		habilitado: boolean;
+		porta: string;
+		baud: number;
+		protocolo: string;
+		conectado: boolean;
+		mensagem: string;
+	} | null>(null);
+	const [portasBalanca, setPortasBalanca] = useState<string[]>([]);
 	const rotulo = rotuloModelo(
 		config.modelo_atendimento === "comanda" ? "comanda" : "mesa",
 	);
 	const modoSecundario = (config.pdv_modo ?? "principal") === "secundario";
+	const gourmet = Boolean(status?.moduloGourmet);
+	const abasVisiveis = gourmet
+		? ABAS
+		: ABAS.filter((item) => item.id !== "tecnibra");
 
 	useEffect(() => {
 		void (async () => {
@@ -113,6 +134,16 @@ export function ConfigPage() {
 			} catch {
 				setStatusSitef(null);
 			}
+			try {
+				setStatusBalanca(await pdvInvoke("balanca.status"));
+			} catch {
+				setStatusBalanca(null);
+			}
+			try {
+				setPortasBalanca(await pdvInvoke<string[]>("balanca.listarPortas"));
+			} catch {
+				setPortasBalanca([]);
+			}
 		})();
 	}, []);
 
@@ -137,6 +168,9 @@ export function ConfigPage() {
 				emitir_nfce: config.emitir_nfce ?? "1",
 				tema: config.tema ?? "light",
 				pix_chave: config.pix_chave ?? "",
+				taxa_servico_percentual: config.taxa_servico_percentual ?? "10",
+				couvert_valor: config.couvert_valor ?? "0",
+				senha_gerencial: config.senha_gerencial ?? "",
 				impressora_nome: config.impressora_nome ?? "",
 				impressora_tipo: config.impressora_tipo ?? "sistema",
 				impressora_host: config.impressora_host ?? "",
@@ -159,6 +193,10 @@ export function ConfigPage() {
 				sitef_parametros: config.sitef_parametros ?? "",
 				sitef_porta_pinpad: config.sitef_porta_pinpad ?? "",
 				sitef_dll_path: config.sitef_dll_path ?? "",
+				balanca_habilitada: config.balanca_habilitada ?? "0",
+				balanca_porta: config.balanca_porta ?? "",
+				balanca_baud: config.balanca_baud ?? "9600",
+				balanca_protocolo: config.balanca_protocolo ?? "toledo",
 			});
 			setConfig((prev) => ({ ...prev, ...saved }));
 			try {
@@ -180,6 +218,11 @@ export function ConfigPage() {
 				setStatusSitef(await pdvInvoke("sitef.status"));
 			} catch {
 				setStatusSitef(null);
+			}
+			try {
+				setStatusBalanca(await pdvInvoke("balanca.status"));
+			} catch {
+				setStatusBalanca(null);
 			}
 			setMsg("Configurações salvas");
 		} catch (err) {
@@ -203,6 +246,24 @@ export function ConfigPage() {
 			setMsg(
 				err instanceof Error ? err.message : "Falha ao conectar no principal",
 			);
+		} finally {
+			setTestando(null);
+		}
+	}
+
+	async function testarBalanca() {
+		setTestando("balanca");
+		setMsg("");
+		try {
+			const result = await pdvInvoke<{ mensagem: string }>("balanca.testar");
+			setMsg(result.mensagem);
+			try {
+				setStatusBalanca(await pdvInvoke("balanca.status"));
+			} catch {
+				setStatusBalanca(null);
+			}
+		} catch (err) {
+			setMsg(err instanceof Error ? err.message : "Falha ao ler a balança");
 		} finally {
 			setTestando(null);
 		}
@@ -267,7 +328,11 @@ export function ConfigPage() {
 				title="Configurações do PDV"
 				subtitle="API, hardware, fiscal e preferências locais"
 				right={
-					<Button variant="secondary" size="sm" onClick={() => navigate(-1)}>
+					<Button
+						variant="secondary"
+						size="sm"
+						onClick={() => navigate(rotaHomePdv(status))}
+					>
 						Voltar
 					</Button>
 				}
@@ -275,7 +340,7 @@ export function ConfigPage() {
 
 			<div className="flex min-h-0 flex-1">
 				<nav className="flex w-56 shrink-0 flex-col gap-1 border-r bg-secondary/40 p-2">
-					{ABAS.map((item) => {
+					{abasVisiveis.map((item) => {
 						const Icon = item.icon;
 						const ativa = aba === item.id;
 						return (
@@ -385,48 +450,57 @@ export function ConfigPage() {
 											LAN.
 										</p>
 									)}
-									<div className="space-y-2">
-										<Label htmlFor="modelo_atendimento">
-											Modelo de atendimento
-										</Label>
-										<Select
-											id="modelo_atendimento"
-											value={config.modelo_atendimento ?? "mesa"}
-											onChange={(e) =>
-												set("modelo_atendimento", e.target.value)
-											}
-										>
-											<option value="mesa">Mesas</option>
-											<option value="comanda">Comandas</option>
-										</Select>
-									</div>
-									<div className="space-y-2">
-										<Label htmlFor="qtd_mesas">
-											Quantidade de {rotulo.plural.toLowerCase()}
-										</Label>
-										<Input
-											id="qtd_mesas"
-											type="number"
-											min={1}
-											value={config.qtd_mesas ?? "20"}
-											onChange={(e) => set("qtd_mesas", e.target.value)}
-										/>
-									</div>
-									<div className="space-y-2">
-										<Label htmlFor="tempo_ociosidade_min">
-											Tempo para ociosidade
-										</Label>
-										<Select
-											id="tempo_ociosidade_min"
-											value={config.tempo_ociosidade_min ?? "15"}
-											onChange={(e) =>
-												set("tempo_ociosidade_min", e.target.value)
-											}
-										>
-											<option value="15">15 minutos</option>
-											<option value="30">30 minutos</option>
-										</Select>
-									</div>
+									{gourmet ? (
+										<>
+											<div className="space-y-2">
+												<Label htmlFor="modelo_atendimento">
+													Modelo de atendimento
+												</Label>
+												<Select
+													id="modelo_atendimento"
+													value={config.modelo_atendimento ?? "mesa"}
+													onChange={(e) =>
+														set("modelo_atendimento", e.target.value)
+													}
+												>
+													<option value="mesa">Mesas</option>
+													<option value="comanda">Comandas</option>
+												</Select>
+											</div>
+											<div className="space-y-2">
+												<Label htmlFor="qtd_mesas">
+													Quantidade de {rotulo.plural.toLowerCase()}
+												</Label>
+												<Input
+													id="qtd_mesas"
+													type="number"
+													min={1}
+													value={config.qtd_mesas ?? "20"}
+													onChange={(e) => set("qtd_mesas", e.target.value)}
+												/>
+											</div>
+											<div className="space-y-2">
+												<Label htmlFor="tempo_ociosidade_min">
+													Tempo para ociosidade
+												</Label>
+												<Select
+													id="tempo_ociosidade_min"
+													value={config.tempo_ociosidade_min ?? "15"}
+													onChange={(e) =>
+														set("tempo_ociosidade_min", e.target.value)
+													}
+												>
+													<option value="15">15 minutos</option>
+													<option value="30">30 minutos</option>
+												</Select>
+											</div>
+										</>
+									) : (
+										<p className="sm:col-span-2 text-xs text-muted-foreground">
+											Mesas e comandas exigem o módulo Gourmet no plano da
+											empresa. Este PDV opera só em balcão.
+										</p>
+									)}
 									<div className="space-y-2">
 										<Label htmlFor="emitir_nfce">Emitir NFC-e</Label>
 										<Select
@@ -457,6 +531,55 @@ export function ConfigPage() {
 											onChange={(e) => set("pix_chave", e.target.value)}
 										/>
 									</div>
+									{gourmet ? (
+										<>
+											<div className="space-y-2">
+												<Label htmlFor="taxa_servico_percentual">
+													Taxa de serviço (%)
+												</Label>
+												<Input
+													id="taxa_servico_percentual"
+													type="number"
+													min={0}
+													value={config.taxa_servico_percentual ?? "10"}
+													onChange={(e) =>
+														set("taxa_servico_percentual", e.target.value)
+													}
+												/>
+											</div>
+											<div className="space-y-2">
+												<Label htmlFor="couvert_valor">
+													Couvert por pessoa
+												</Label>
+												<Input
+													id="couvert_valor"
+													type="number"
+													min={0}
+													step="0.01"
+													value={config.couvert_valor ?? "0"}
+													onChange={(e) => set("couvert_valor", e.target.value)}
+												/>
+											</div>
+											<div className="space-y-2 sm:col-span-2">
+												<Label htmlFor="senha_gerencial">
+													Senha gerencial (desconto)
+												</Label>
+												<Input
+													id="senha_gerencial"
+													type="password"
+													value={config.senha_gerencial ?? ""}
+													onChange={(e) =>
+														set("senha_gerencial", e.target.value)
+													}
+													placeholder={
+														config.senha_gerencial_definida === "1"
+															? "Definida — deixe em branco para manter"
+															: "Mínimo 4 caracteres"
+													}
+												/>
+											</div>
+										</>
+									) : null}
 								</CardContent>
 							</Card>
 						)}
@@ -560,148 +683,152 @@ export function ConfigPage() {
 									</CardContent>
 								</Card>
 
-								<Card>
-									<CardHeader>
-										<CardTitle>Impressoras de produção</CardTitle>
-									</CardHeader>
-									<CardContent className="grid gap-4">
-										{mapeamentoGourmet.length === 0 ? (
-											<p className="text-sm text-muted-foreground">
-												Nenhum grupo gourmet sincronizado. Sincronize o catálogo
-												para mapear cada setor a uma impressora (USB/Windows ou
-												IP na rede).
-											</p>
-										) : (
-											mapeamentoGourmet.map((grupo) => (
-												<div
-													key={grupo.idgrupogourmet}
-													className="grid gap-3 rounded-md border p-3 sm:grid-cols-2"
-												>
-													<div className="space-y-2 sm:col-span-2">
-														<Label>{grupo.nome}</Label>
-													</div>
-													<div className="space-y-2">
-														<Label htmlFor={`imp-dest-${grupo.idgrupogourmet}`}>
-															Conexão
-														</Label>
-														<Select
-															id={`imp-dest-${grupo.idgrupogourmet}`}
-															value={grupo.destino}
-															onChange={(e) =>
-																atualizarGourmet(grupo.idgrupogourmet, {
-																	destino: e.target.value,
-																})
-															}
-														>
-															<option value="">Não imprimir</option>
-															<option value="sistema">
-																Sistema (USB / Windows)
-															</option>
-															<option value="rede">Rede (IP :9100)</option>
-														</Select>
-													</div>
-													{grupo.destino === "sistema" ? (
+								{gourmet ? (
+									<Card>
+										<CardHeader>
+											<CardTitle>Impressoras de produção</CardTitle>
+										</CardHeader>
+										<CardContent className="grid gap-4">
+											{mapeamentoGourmet.length === 0 ? (
+												<p className="text-sm text-muted-foreground">
+													Nenhum grupo gourmet sincronizado. Sincronize o
+													catálogo para mapear cada setor a uma impressora
+													(USB/Windows ou IP na rede).
+												</p>
+											) : (
+												mapeamentoGourmet.map((grupo) => (
+													<div
+														key={grupo.idgrupogourmet}
+														className="grid gap-3 rounded-md border p-3 sm:grid-cols-2"
+													>
+														<div className="space-y-2 sm:col-span-2">
+															<Label>{grupo.nome}</Label>
+														</div>
 														<div className="space-y-2">
 															<Label
-																htmlFor={`imp-nome-${grupo.idgrupogourmet}`}
+																htmlFor={`imp-dest-${grupo.idgrupogourmet}`}
 															>
-																Impressora do Windows
+																Conexão
 															</Label>
 															<Select
-																id={`imp-nome-${grupo.idgrupogourmet}`}
-																value={grupo.impressora_nome}
+																id={`imp-dest-${grupo.idgrupogourmet}`}
+																value={grupo.destino}
 																onChange={(e) =>
 																	atualizarGourmet(grupo.idgrupogourmet, {
-																		impressora_nome: e.target.value,
+																		destino: e.target.value,
 																	})
 																}
 															>
-																<option value="">Selecione</option>
-																{impressoras.map((p) => (
-																	<option key={p.name} value={p.name}>
-																		{p.name}
-																		{p.isDefault ? " (padrão)" : ""}
-																	</option>
-																))}
+																<option value="">Não imprimir</option>
+																<option value="sistema">
+																	Sistema (USB / Windows)
+																</option>
+																<option value="rede">Rede (IP :9100)</option>
 															</Select>
 														</div>
-													) : null}
-													{grupo.destino === "rede" ? (
-														<>
+														{grupo.destino === "sistema" ? (
 															<div className="space-y-2">
 																<Label
-																	htmlFor={`imp-host-${grupo.idgrupogourmet}`}
+																	htmlFor={`imp-nome-${grupo.idgrupogourmet}`}
 																>
-																	IP / hostname
+																	Impressora do Windows
 																</Label>
-																<Input
-																	id={`imp-host-${grupo.idgrupogourmet}`}
-																	value={grupo.host}
+																<Select
+																	id={`imp-nome-${grupo.idgrupogourmet}`}
+																	value={grupo.impressora_nome}
 																	onChange={(e) =>
 																		atualizarGourmet(grupo.idgrupogourmet, {
-																			host: e.target.value,
+																			impressora_nome: e.target.value,
 																		})
 																	}
-																	placeholder="192.168.1.80"
-																/>
-															</div>
-															<div className="space-y-2">
-																<Label
-																	htmlFor={`imp-porta-${grupo.idgrupogourmet}`}
 																>
-																	Porta
-																</Label>
-																<Input
-																	id={`imp-porta-${grupo.idgrupogourmet}`}
-																	type="number"
-																	min={1}
-																	value={String(grupo.porta || 9100)}
-																	onChange={(e) =>
-																		atualizarGourmet(grupo.idgrupogourmet, {
-																			porta: Number(e.target.value) || 9100,
+																	<option value="">Selecione</option>
+																	{impressoras.map((p) => (
+																		<option key={p.name} value={p.name}>
+																			{p.name}
+																			{p.isDefault ? " (padrão)" : ""}
+																		</option>
+																	))}
+																</Select>
+															</div>
+														) : null}
+														{grupo.destino === "rede" ? (
+															<>
+																<div className="space-y-2">
+																	<Label
+																		htmlFor={`imp-host-${grupo.idgrupogourmet}`}
+																	>
+																		IP / hostname
+																	</Label>
+																	<Input
+																		id={`imp-host-${grupo.idgrupogourmet}`}
+																		value={grupo.host}
+																		onChange={(e) =>
+																			atualizarGourmet(grupo.idgrupogourmet, {
+																				host: e.target.value,
+																			})
+																		}
+																		placeholder="192.168.1.80"
+																	/>
+																</div>
+																<div className="space-y-2">
+																	<Label
+																		htmlFor={`imp-porta-${grupo.idgrupogourmet}`}
+																	>
+																		Porta
+																	</Label>
+																	<Input
+																		id={`imp-porta-${grupo.idgrupogourmet}`}
+																		type="number"
+																		min={1}
+																		value={String(grupo.porta || 9100)}
+																		onChange={(e) =>
+																			atualizarGourmet(grupo.idgrupogourmet, {
+																				porta: Number(e.target.value) || 9100,
+																			})
+																		}
+																	/>
+																</div>
+															</>
+														) : null}
+														{(grupo.destino === "sistema" ||
+															grupo.destino === "rede") && (
+															<div className="sm:col-span-2">
+																<Button
+																	type="button"
+																	variant="outline"
+																	size="sm"
+																	disabled={testando !== null}
+																	onClick={() =>
+																		void testarDestino(grupo.idgrupogourmet, {
+																			tipo:
+																				grupo.destino === "rede"
+																					? "rede"
+																					: "sistema",
+																			nome: grupo.impressora_nome,
+																			host: grupo.host,
+																			porta: grupo.porta || 9100,
 																		})
 																	}
-																/>
+																>
+																	{testando === grupo.idgrupogourmet
+																		? "Testando…"
+																		: "Testar setor"}
+																</Button>
 															</div>
-														</>
-													) : null}
-													{(grupo.destino === "sistema" ||
-														grupo.destino === "rede") && (
-														<div className="sm:col-span-2">
-															<Button
-																type="button"
-																variant="outline"
-																size="sm"
-																disabled={testando !== null}
-																onClick={() =>
-																	void testarDestino(grupo.idgrupogourmet, {
-																		tipo:
-																			grupo.destino === "rede"
-																				? "rede"
-																				: "sistema",
-																		nome: grupo.impressora_nome,
-																		host: grupo.host,
-																		porta: grupo.porta || 9100,
-																	})
-																}
-															>
-																{testando === grupo.idgrupogourmet
-																	? "Testando…"
-																	: "Testar setor"}
-															</Button>
-														</div>
-													)}
-												</div>
-											))
-										)}
-										<p className="text-xs text-muted-foreground">
-											Ao enviar o pedido (POS) ou lançar item (mesa) / finalizar
-											(balcão), os itens de cada grupo saem na impressora
-											mapeada — sem preço. Setor sem impressora não imprime e
-											não falha o pedido.
-										</p>
-									</CardContent>
-								</Card>
+														)}
+													</div>
+												))
+											)}
+											<p className="text-xs text-muted-foreground">
+												Ao enviar o pedido (POS) ou lançar item (mesa) /
+												finalizar (balcão), os itens de cada grupo saem na
+												impressora mapeada — sem preço. Setor sem impressora não
+												imprime e não falha o pedido.
+											</p>
+										</CardContent>
+									</Card>
+								) : null}
 							</>
 						)}
 
@@ -800,7 +927,7 @@ export function ConfigPage() {
 							</Card>
 						)}
 
-						{aba === "tecnibra" && (
+						{aba === "tecnibra" && gourmet && (
 							<Card>
 								<CardHeader>
 									<CardTitle>Catraca Tecnibra</CardTitle>
@@ -857,6 +984,88 @@ export function ConfigPage() {
 															: ""
 												}`
 											: ""}
+									</p>
+								</CardContent>
+							</Card>
+						)}
+
+						{aba === "balanca" && (
+							<Card>
+								<CardHeader>
+									<CardTitle>Balança serial</CardTitle>
+								</CardHeader>
+								<CardContent className="grid gap-4 sm:grid-cols-2">
+									<div className="space-y-2">
+										<Label htmlFor="balanca_habilitada">Integração</Label>
+										<Select
+											id="balanca_habilitada"
+											value={config.balanca_habilitada ?? "0"}
+											onChange={(e) =>
+												set("balanca_habilitada", e.target.value)
+											}
+										>
+											<option value="0">Desligada</option>
+											<option value="1">Ligada</option>
+										</Select>
+									</div>
+									<div className="space-y-2">
+										<Label htmlFor="balanca_protocolo">Protocolo</Label>
+										<Select
+											id="balanca_protocolo"
+											value={config.balanca_protocolo ?? "toledo"}
+											onChange={(e) => set("balanca_protocolo", e.target.value)}
+										>
+											<option value="toledo">Toledo (STX/ETX)</option>
+											<option value="filizola">Filizola (gramas)</option>
+											<option value="continuo">Contínuo ASCII</option>
+										</Select>
+									</div>
+									<div className="space-y-2">
+										<Label htmlFor="balanca_porta">Porta</Label>
+										<Input
+											id="balanca_porta"
+											list="portas-balanca"
+											value={config.balanca_porta ?? ""}
+											onChange={(e) => set("balanca_porta", e.target.value)}
+											placeholder="COM3 ou /dev/ttyUSB0"
+										/>
+										<datalist id="portas-balanca">
+											{portasBalanca.map((porta) => (
+												<option key={porta} value={porta} />
+											))}
+										</datalist>
+									</div>
+									<div className="space-y-2">
+										<Label htmlFor="balanca_baud">Velocidade (bps)</Label>
+										<Select
+											id="balanca_baud"
+											value={config.balanca_baud ?? "9600"}
+											onChange={(e) => set("balanca_baud", e.target.value)}
+										>
+											<option value="1200">1200</option>
+											<option value="2400">2400</option>
+											<option value="4800">4800</option>
+											<option value="9600">9600</option>
+											<option value="19200">19200</option>
+										</Select>
+									</div>
+									<div className="sm:col-span-2">
+										<Button
+											type="button"
+											variant="outline"
+											disabled={testando === "balanca"}
+											onClick={() => void testarBalanca()}
+										>
+											{testando === "balanca"
+												? "Lendo…"
+												: "Testar leitura de peso"}
+										</Button>
+									</div>
+									<p className="sm:col-span-2 text-xs text-muted-foreground">
+										Com a integração ligada, produtos em kg abrem a tela de peso
+										ao lançar em mesa, comanda ou balcão. Se a balança
+										responder, o peso entra sozinho; senão o operador digita.
+										{statusBalanca ? ` ${statusBalanca.mensagem}.` : ""}
 									</p>
 								</CardContent>
 							</Card>

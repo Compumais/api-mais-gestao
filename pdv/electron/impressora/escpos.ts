@@ -14,6 +14,12 @@ function formatarChave(chave: string): string {
 	return digits.replace(/(\d{4})(?=\d)/g, "$1 ").trim();
 }
 
+function formatarQtd(n: number): string {
+	const arred = Math.round(n * 1000) / 1000;
+	if (Number.isInteger(arred)) return String(arred);
+	return arred.toFixed(3).replace(".", ",");
+}
+
 async function montarTextoCupom(
 	vendaId: string,
 	extras?: {
@@ -47,10 +53,19 @@ async function montarTextoCupom(
 	for (const item of venda.itens) {
 		linhas.push(item.descricao.slice(0, 32));
 		linhas.push(
-			`  ${item.quantidade} x ${money(item.precounitario)} = ${money(item.precototal)}`,
+			`  ${formatarQtd(item.quantidade)} x ${money(item.precounitario)} = ${money(item.precototal)}`,
 		);
 	}
 	linhas.push("--------------------------------");
+	if ((venda.valordesconto ?? 0) > 0) {
+		linhas.push(`Desconto: -${money(venda.valordesconto ?? 0)}`);
+	}
+	if ((venda.valortaxaservico ?? 0) > 0) {
+		linhas.push(`Taxa servico: ${money(venda.valortaxaservico ?? 0)}`);
+	}
+	if ((venda.valorcouvert ?? 0) > 0) {
+		linhas.push(`Couvert: ${money(venda.valorcouvert ?? 0)}`);
+	}
 	linhas.push(`TOTAL: ${money(venda.valortotal)}`);
 	linhas.push(...linhasPagamentoCupom(venda));
 	if (venda.valortroco > 0) {
@@ -83,6 +98,61 @@ export async function imprimirCupomNaoFiscal(
 ): Promise<{ ok: boolean; modo: string }> {
 	const texto = await montarTextoCupom(vendaId);
 	return enviarParaImpressora(texto);
+}
+
+export async function imprimirPreConta(idconta: string): Promise<{
+	ok: boolean;
+	modo: string;
+}> {
+	const { obterContaMesa } = await import("../db/repos");
+	const conta = await obterContaMesa(idconta);
+	if (!conta || conta.status !== "aberta") {
+		throw new Error("Conta inválida");
+	}
+	if (!conta.itens.length) {
+		throw new Error("Conta sem itens para conferência");
+	}
+	const modelo =
+		(await getConfig("modelo_atendimento", "mesa")) === "comanda"
+			? "Comanda"
+			: "Mesa";
+	const linhas: string[] = [];
+	linhas.push("================================");
+	linhas.push("     CONFERENCIA / PRE-CONTA");
+	linhas.push("  NAO E DOCUMENTO FISCAL");
+	linhas.push("================================");
+	linhas.push(`${modelo}: ${conta.numero_mesa}`);
+	if (conta.nomecliente) {
+		linhas.push(`Cliente: ${conta.nomecliente.slice(0, 28)}`);
+	}
+	linhas.push(`Pessoas: ${conta.numeropessoas}`);
+	linhas.push(`Data: ${new Date().toLocaleString("pt-BR")}`);
+	linhas.push("--------------------------------");
+	for (const item of conta.itens) {
+		linhas.push(item.descricao.slice(0, 32));
+		linhas.push(
+			`  ${formatarQtd(item.quantidade)} x ${money(item.precounitario)} = ${money(item.precototal)}`,
+		);
+	}
+	linhas.push("--------------------------------");
+	linhas.push(`Subtotal: ${money(conta.subtotal)}`);
+	if (conta.valordesconto > 0) {
+		linhas.push(`Desconto: -${money(conta.valordesconto)}`);
+	}
+	if (conta.valortaxaservico > 0) {
+		linhas.push(`Taxa servico: ${money(conta.valortaxaservico)}`);
+	}
+	if (conta.valorcouvert > 0) {
+		linhas.push(`Couvert: ${money(conta.valorcouvert)}`);
+	}
+	if (conta.valorpago > 0) {
+		linhas.push(`Ja pago: ${money(conta.valorpago)}`);
+	}
+	linhas.push(`TOTAL: ${money(conta.valorrestante)}`);
+	linhas.push("================================");
+	linhas.push("Confira os itens antes de pagar.");
+	linhas.push("\n\n\n");
+	return enviarParaImpressora(linhas.join("\n"));
 }
 
 export async function imprimirDanfce(params: {
@@ -139,7 +209,9 @@ export async function imprimirPedidoProducao(params: {
 	linhas.push(`Hora: ${new Date().toLocaleString("pt-BR")}`);
 	linhas.push("--------------------------------");
 	for (const item of params.itens) {
-		linhas.push(`${item.quantidade}  ${item.descricao.slice(0, 30)}`);
+		linhas.push(
+			`${formatarQtd(item.quantidade)}  ${item.descricao.slice(0, 30)}`,
+		);
 		if (item.observacao?.trim()) {
 			linhas.push(`   Obs: ${item.observacao.trim().slice(0, 28)}`);
 		}

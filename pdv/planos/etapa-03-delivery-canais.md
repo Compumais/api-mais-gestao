@@ -1,76 +1,160 @@
-# Etapa 3 — Delivery e canais
+# Etapa 3 — Delivery e retirada (plano de implementação)
 
-## Objetivo
+Status: **próximo plano** — leva A no PDV Electron. POS pela LAN API na mesma etapa, telas Android numa leva seguinte. Canais (iFood / 99Food / Aiqfome) são **leva B**, depois desta estável.
 
-Tratar delivery e retirada como modalidades de atendimento ao lado de mesa/comanda/balcão: pedido com cliente, endereço e taxa no delivery próprio; para viagem / retirar depois no balcão; e, numa segunda leva, ingestão de iFood, 99Food e Aiqfome no mesmo PDV (estoque, produção e NFC-e).
+A Etapa 2 já fecha mesa com taxa de serviço, couvert, desconto e divisão. Esta etapa cobre **pedido que não é mesa**: delivery próprio e retirada / para viagem, com cliente, endereço, taxa de entrega e senha de chamada.
+
+## Decisão de escopo
+
+- **Entra agora (leva A):** PDV Electron, regras testáveis, LAN API no principal (secundário e POS não quebram), sync/NFC-e com origem e taxa de entrega.
+- **Não entra agora:** telas novas no POS Android; motoboy; marketplace. O POS continua mesa/balcão como hoje.
+- **Fora desta etapa:** KDS (Etapa 4), garçom/estorno/CPF na nota como feature isolada (Etapa 5). O cadastro de cliente daqui **alimenta** o CPF depois.
 
 ## Lacuna vs mercado
 
-| Capacidade | Quem tem | Situação hoje no Mais Gestão |
+| Capacidade | Quem tem | Situação hoje |
 |---|---|---|
-| Delivery próprio (cliente, endereço, taxa por região, motoboy) | Uniplus, Linx, VR Food | Só `nomecliente` texto em `conta_mesa` / `mesa`; sem endereço, taxa de entrega ou status de rota |
-| Para viagem / retirar depois / senha de retirada | Uniplus, Linx | Balcão (`origem = 'rapida'`) é venda imediata; mesa/comanda é consumo no local |
-| iFood / 99Food / Aiqfome | Linx, Uniplus, VR, Clipp Pro | Pedido do marketplace não entra no PDV; produção e NFC-e ficam manuais |
+| Delivery próprio (cliente, endereço, taxa) | Uniplus, Linx, VR Food | Só `nomecliente` texto; sem endereço, taxa de entrega ou status de rota |
+| Para viagem / retirar depois / senha | Uniplus, Linx | Balcão (`origem = 'rapida'`) é venda imediata; mesa é consumo no local |
+| iFood / 99Food / Aiqfome | Linx, Uniplus, VR | Pedido do canal não entra no PDV (leva B) |
 
 O gourmet brasileiro espera delivery no mesmo caixa. Sem isso o pedido cai em outro sistema.
 
-## Dependências no código atual
+## Fórmula do total
 
-- Modalidades atuais: `modelo_atendimento` (`mesa` \| `comanda`) + rota `/balcao` em `pdv/src/App.tsx`
-- `venda.origem` em `pdv/electron/db/schema.ts` hoje é `'rapida'` ou `'mesa'` (`criarVendaRapida` / `fecharContaMesa` em `pdv/electron/db/repos.ts`)
-- Identificação: apenas `nomecliente` (abertura da mesa em `home-page.tsx`, edição na conta)
-- Fila de produção: `enviarPedidoConta` grava `pedido_fila` e `imprimirProducaoPedido` (`pdv/electron/impressora/producao.ts`) — delivery deve reutilizar a mesma fila
-- POS: `SelecionarClienteActivity` + `ClienteDto` (`id`, `nome`, `cnpjcpf`) já buscam cliente da API, sem endereço de entrega no PDV local
-- LAN API: venda rápida e conta de mesa; não há recurso `/pos/delivery`
-- Catálogo e NFC-e: iguais às outras origens (outbox + emissão)
-- Pizza meio a meio e grupos gourmet → impressora já servem para a cozinha do delivery
+Reaproveita a da Etapa 2 e soma **taxa de entrega** (não confundir com taxa de serviço do salão):
 
-Não há tabela local de endereço, região/taxa, motoboy nem webhook de marketplace.
+`total = max(0, subtotal − desconto + taxaServico + couvert + taxaEntrega)`
 
-## Escopo
+No delivery/retirada desta leva: taxa de serviço e couvert ficam **0** (não há salão). Desconto com senha gerencial continua válido.
 
-**Leva A — delivery próprio e retirada (implementar primeiro)**
+Taxa de entrega: valor fixo da config **ou** valor do bairro, gravado na conta no momento do pedido (não recalcula sozinha se a config mudar no meio).
 
-- Nova origem de venda/pedido: `delivery` e `retirada` (além de mesa/balcão)
-- Cadastro rápido de cliente no PDV: nome, telefone, CPF/CNPJ opcional, um ou mais endereços
-- Taxa de entrega por região/bairro ou valor fixo configurável; soma no total antes do pagamento
-- Fluxo: montar pedido → produção (`pedido_fila` + cupom) → pagamento (misto da Etapa 1) → NFC-e
-- Para viagem no balcão e “retirar depois” com senha/número de chamada
-- Status simples do delivery próprio: recebido, em produção, saiu para entrega, entregue (sem app de motoboy nesta etapa)
-- POS: abrir pedido delivery/retirada via LAN API com os mesmos campos
+## Modelo local
 
-**Leva B — canais (depois da leva A estável)**
+Não usar a grade de mesas para delivery. A conta continua sendo o núcleo (`item_conta`, `pedido_fila`, pagamento misto, NFC-e), com modalidade nova.
 
-- Ingestão de pedidos iFood, 99Food e Aiqfome para o mesmo `pedido_fila` e catálogo local
-- Mapeamento item do canal → produto do PDV; rejeição explícita se não houver vínculo
-- Pagamento do canal marcado como já quitado no marketplace (não pedir PIX/cartão de novo)
-- NFC-e e produção iguais ao delivery próprio
+Estender `conta_mesa` em [`pdv/electron/db/schema.ts`](pdv/electron/db/schema.ts) / [`pdv/db/schema.sql`](pdv/db/schema.sql):
 
-**Não entra neste bloco de escopo** — ver seção seguinte.
+- `modalidade` TEXT NOT NULL DEFAULT `'mesa'` — `mesa` \| `delivery` \| `retirada`
+- `telefone` TEXT
+- `endereco` TEXT
+- `bairro` TEXT
+- `valorentrega` DOUBLE PRECISION NOT NULL DEFAULT 0
+- `status_entrega` TEXT — `recebido` \| `producao` \| `saiu` \| `entregue` (só delivery/retirada)
+- `senha_chamada` TEXT — número curto visível no PDV (retirada e delivery)
+- `idcliente` TEXT — cache local, opcional
 
-## Critérios de aceite
+Para delivery/retirada, `numero_mesa` fica **0** (não ocupa slot da grade). Listagem é outra tela, não a home de mesas.
 
-**Leva A**
+Tabela nova `cliente_pdv` (cache local, sem obrigar sync com a API nesta leva):
 
-- Operador lança um delivery com cliente, endereço e taxa; a cozinha recebe o pedido (cupom e/ou fila); o total inclui a taxa; o fechamento gera venda com origem `delivery`
-- Balcão registra “para viagem” e “retirar depois”; a retirada usa senha/número visível no PDV e no POS
+- `id`, `nome`, `telefone`, `cnpjcpf`, `endereco`, `bairro`, `atualizadoem`
+- Busca por telefone/nome na abertura do pedido
+- Cadastro rápido se não existir
+
+Config (aba Geral, só admin/proprietário):
+
+- `taxa_entrega_padrao` (default `0`)
+- `bairros_entrega` JSON texto — `[{ "bairro": "Centro", "taxa": "8.00" }]` (opcional; se vazio, usa o valor padrão)
+
+`venda.origem` passa a aceitar `delivery` e `retirada` além de `rapida` e `mesa`.
+
+Novo módulo puro `pdv/electron/db/pedido-entrega.ts` (testável):
+
+- `gerarSenhaChamada(seq)` — 3–4 dígitos, único no dia
+- `resolverTaxaEntrega({ bairro, padrao, tabelaBairros })`
+- `recalcularTotaisEntrega` — envolve `recalcularTotaisConta` da Etapa 2 + `valorentrega`
+- `podeFecharDelivery(conta)` — delivery exige endereço; retirada não
+- `proximoStatusEntrega(atual)` — recebido → producao → saiu → entregue (retirada: recebido → producao → entregue, sem “saiu”)
+
+## Operações
+
+### 1. Abrir pedido delivery / retirada
+
+Home: botão **Delivery** ao lado de Balcão (atalho F6).
+
+Dialog: modalidade (delivery | retirada), busca cliente (telefone), nome, endereço/bairro se delivery, taxa (preenchida pelo bairro ou padrão, editável).
+
+Cria conta `modalidade=delivery|retirada`, `numero_mesa=0`, senha de chamada, status `recebido`. Abre a mesma tela de conta (itens, pizza meio a meio, enviar à cozinha).
+
+### 2. Montar, produzir, pagar
+
+Reutiliza [`mesa-conta-page.tsx`](pdv/src/ui/pages/mesa-conta-page.tsx) (ou rota `/delivery/:id` com o mesmo componente):
+
+- Itens, observação, meio a meio, enviar pedido → `pedido_fila` + cupom de produção (origem “Delivery” / “Retirada” + senha)
+- **Não** mostra transferir/juntar/pessoas/taxa 10%/couvert
+- Mostra senha, endereço, taxa de entrega, status
+- Pagamento misto da Etapa 1; fechamento gera `venda` com `origem` correspondente e `valorentrega` no total
+- NFC-e igual às outras origens (outbox)
+
+Enviar à cozinha avança status para `producao` se ainda estava `recebido`.
+
+### 3. Painel de pedidos abertos
+
+Tela `/delivery`: lista contas `modalidade IN (delivery, retirada)` com status `aberta`.
+
+Colunas: senha, cliente, telefone, modalidade, status, total, tempo. Filtro por status. Ações: abrir, marcar saiu/entregue (delivery), chamar retirada.
+
+Retirada “para viagem” no balcão: na [`balcao-page.tsx`](pdv/src/ui/pages/balcao-page.tsx), opção **consumo / viagem / retirar depois**. Viagem imediata continua `origem=rapida`. Retirar depois abre conta `retirada` (senha + fila), em vez de fechar na hora.
+
+### 4. Cliente
+
+Cadastro rápido local. Não bloqueia se a API de entidades estiver offline. Sync de cliente com o ERP fica para depois (Etapa 5 / CPF na nota pode reutilizar `cnpjcpf`).
+
+## UI
+
+- [`home-page.tsx`](pdv/src/ui/pages/home-page.tsx): botão Delivery + F6
+- Nova [`delivery-page.tsx`](pdv/src/ui/pages/delivery-page.tsx): lista + dialog abrir pedido
+- [`mesa-conta-page.tsx`](pdv/src/ui/pages/mesa-conta-page.tsx): ramo modalidade (esconde salão, mostra entrega)
+- [`balcao-page.tsx`](pdv/src/ui/pages/balcao-page.tsx): consumo / viagem / retirar depois
+- [`config-page.tsx`](pdv/src/ui/pages/config-page.tsx): taxa padrão e bairros
+- [`App.tsx`](pdv/src/App.tsx): rotas `/delivery` e `/delivery/:id`
+
+IPC em [`local-api/index.ts`](pdv/electron/local-api/index.ts): `abrirPedidoEntrega`, `listarPedidosEntrega`, `buscarClientesPdv`, `salvarClientePdv`, `atualizarStatusEntrega`, `aplicarTaxaEntrega`.
+
+LAN API ([`lan-api/server.ts`](pdv/electron/lan-api/server.ts)): `GET/POST /pos/delivery`, status, clientes locais — mesmo sem UI POS agora.
+
+## NFC-e e sync
+
+No outbox `criar_venda`, incluir `origem` (`delivery` \| `retirada`) e `valorentrega`. Estender `POST /vendas-pdv-gourmet` só o mínimo para o total da NFC-e bater com o pago (taxa de entrega no total, **não** como item de cozinha).
+
+`CHAVES_CONFIG_NEGOCIO` do secundário: incluir `taxa_entrega_padrao` e `bairros_entrega` (negócio da loja). Hardware continua local.
+
+## Testes (sem impressora)
+
+`pdv/electron/db/pedido-entrega.test.ts`:
+
+- delivery sem endereço é recusado; retirada sem endereço é aceita
+- bairro “Centro” R$ 8 + subtotal 40 → total 48
+- senha de chamada única no dia
+- status delivery não pula `saiu`; retirada não tem `saiu`
+- fórmula Etapa 2 + entrega: desconto 5 + entrega 8 em subtotal 40 → 43
+- origem da venda `delivery` / `retirada`
+
+`npm run test:pedido-entrega` no [`pdv/package.json`](pdv/package.json).
+
+## Critérios de aceite (leva A)
+
+- Operador lança delivery com cliente, endereço e taxa; a cozinha recebe cupom/fila; o total inclui a entrega; o fechamento gera venda `origem=delivery`
+- Retirada gera senha visível; “retirar depois” não fecha no ato; para viagem no balcão continua venda rápida
 - Pagamento misto (Etapa 1) funciona nessas origens
-- Pedido sem endereço no delivery próprio é recusado; retirada não exige endereço
-- POS cria e fecha delivery/retirada pela LAN API sem segundo cadastro
+- Pedido delivery sem endereço é recusado
+- Grade de mesas **não** lista delivery; painel próprio
+- POS **não** precisa das telas ainda; LAN API já existe para a leva seguinte
+- PDV secundário puxa taxa/bairros do principal; pedidos de delivery **não** são compartilhados entre máquinas (igual mesas hoje)
 
-**Leva B**
+## Leva B (depois)
 
-- Pedido de teste de um canal aparece no PDV com itens mapeados, vai para produção e fecha NFC-e sem redigitar o cardápio
-- Item sem mapeamento não some: fica pendente de vínculo, não some do canal
+Ingestão iFood / 99Food / Aiqfome para o mesmo `pedido_fila` e catálogo. Item sem mapeamento fica pendente, não some. Pagamento do canal já quitado (não pedir PIX/cartão de novo). NFC-e e produção iguais ao delivery próprio.
 
-## O que fica de fora
+## Fora desta etapa
 
-- App ou roteirização de motoboy, rastreio em tempo real, integração com logística terceira
-- Cardápio digital / WhatsApp Business como canal próprio
-- Drive-thru (P2 / Uniplus)
-- Multi-loja com um único aggregator
-- Divisão de conta e taxa 10% de salão (Etapa 2) — no delivery a taxa é de **entrega**, não de serviço
-- KDS avançado (Etapa 4) — a leva A só reutiliza `pedido_fila` e a impressão já existentes
-- Garçom, estorno auditado, opcionais além do meio a meio, CPF na nota como feature isolada (Etapa 5; o cadastro de cliente desta etapa pode **alimentar** o CPF depois)
-- P2: SAT, fidelidade, totem, crediário, recarga
+- Telas POS (delivery/retirada)
+- App ou roteirização de motoboy
+- Cardápio digital / WhatsApp Business
+- Drive-thru, totem, fidelidade (P2)
+- KDS avançado (Etapa 4) — esta leva só reutiliza `pedido_fila` e a impressão já existentes
+- Garçom autenticado, estorno auditado, opcionais, CPF na NFC-e como feature isolada (Etapa 5)
+- Compartilhar o mesmo pedido delivery entre PDV principal e secundário
 - Implementar os três marketplaces na mesma sprint que o delivery próprio

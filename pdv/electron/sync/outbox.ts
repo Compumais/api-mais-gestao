@@ -304,6 +304,9 @@ async function syncCriarVenda(
 				valorcartaodebito: sync.valorcartaodebito,
 				valorcartao: sync.valorcartao,
 				valorprepago: sync.valorprepago,
+				desconto: Number(payload.valordesconto ?? 0),
+				valortaxaservico: Number(payload.valortaxaservico ?? 0),
+				valorcouverartistico: Number(payload.valorcouvert ?? 0),
 			},
 		});
 		const nfce = extrairNfceDaBaixa(baixa);
