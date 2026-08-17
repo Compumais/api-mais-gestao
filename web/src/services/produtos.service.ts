@@ -14,6 +14,8 @@ export interface Produto {
 	idgrupo: string | null;
 	idgrupogourmet?: string | null;
 	espizza?: number | null;
+	exportaBalanca?: number | null;
+	diasValidade?: number | null;
 	preco: string | null;
 	custoaquisicao?: string | null;
 	tipo: string | null;
@@ -120,6 +122,8 @@ export interface CriarProdutoData extends CamposServicoProduto {
 	idgrupo?: string | null;
 	idgrupogourmet?: string | null;
 	espizza?: number | null;
+	exportaBalanca?: number | null;
+	diasValidade?: number | null;
 	preco: string;
 	custoaquisicao?: string | null;
 	tipo?: string;
@@ -171,6 +175,8 @@ export interface AtualizarProdutoData extends CamposServicoProduto {
 	idgrupo?: string | null;
 	idgrupogourmet?: string | null;
 	espizza?: number | null;
+	exportaBalanca?: number | null;
+	diasValidade?: number | null;
 	preco?: string;
 	custoaquisicao?: string | null;
 	tipo?: string;

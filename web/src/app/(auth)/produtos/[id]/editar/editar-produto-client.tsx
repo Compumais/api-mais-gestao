@@ -28,6 +28,8 @@ function mapProdutoToForm(
 		idgrupo: data.idgrupo ?? "",
 		idgrupogourmet: data.idgrupogourmet ?? "none",
 		espizza: data.espizza === 1,
+		exportaBalanca: data.exportaBalanca === 1,
+		diasValidade: data.diasValidade ?? 0,
 		preco: data.preco ?? "",
 		custoaquisicao: data.custoaquisicao ?? "",
 		tipo: tipo === "P" || tipo === "S" ? tipo : "P",
