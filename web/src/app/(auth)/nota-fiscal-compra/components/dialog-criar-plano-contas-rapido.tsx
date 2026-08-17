@@ -63,7 +63,7 @@ export function DialogCriarPlanoContasRapido({
 		<Dialog open={aberto} onOpenChange={onAbertoChange}>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle>Novo plano de contas (despesa)</DialogTitle>
+					<DialogTitle>Novo plano de contas (saída)</DialogTitle>
 				</DialogHeader>
 				<div className="grid gap-4 py-2">
 					<Field>
@@ -77,7 +77,7 @@ export function DialogCriarPlanoContasRapido({
 						/>
 					</Field>
 					<p className="text-xs text-muted-foreground">
-						Será criada uma conta de despesa (saída) ativa.
+						Será criada uma conta de saída ativa.
 					</p>
 				</div>
 				<DialogFooter>

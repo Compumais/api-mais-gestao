@@ -217,6 +217,19 @@ export interface BuscarRascunhoImportacaoResponse {
 	fornecedor: FornecedorSugeridoImportacao;
 }
 
+export interface ItemIgnoradoCadastroEmMassa {
+	idItem: string;
+	contador: number | null;
+	descricao: string;
+	motivo: string;
+}
+
+export interface CadastrarItensEmMassaResponse {
+	quantidadeCadastrados: number;
+	quantidadeIgnorados: number;
+	ignorados: ItemIgnoradoCadastroEmMassa[];
+}
+
 export interface CriarNotaFiscalResponse {
 	notaFiscal: NotaFiscal;
 	itens: NotaFiscalItem[];
@@ -420,6 +433,17 @@ export const notaFiscalService = {
 			idgrupoPadrao: string;
 			quantidadeItens: number;
 		}>(`/notas-fiscais/rascunhos/${id}/grupo-padrao`, payload);
+		return data;
+	},
+
+	async cadastrarItensEmMassaRascunhoImportacao(
+		id: string,
+		payload: { idempresa: string; idsItens?: string[] },
+	): Promise<CadastrarItensEmMassaResponse> {
+		const { data } = await api.post<CadastrarItensEmMassaResponse>(
+			`/notas-fiscais/rascunhos/${id}/cadastrar-em-massa`,
+			payload,
+		);
 		return data;
 	},
 

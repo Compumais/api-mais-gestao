@@ -6,7 +6,7 @@ import {
 	IconLink,
 	IconLinkOff,
 	IconPencil,
-    IconPlus,
+	IconPlus,
 } from "@tabler/icons-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -36,6 +36,7 @@ import {
 } from "@/services/nota-fiscal.service";
 import { CelulaCfopEntradaImportacao } from "./celula-cfop-entrada-importacao";
 import { CelulaFatorConversaoImportacao } from "./celula-fator-conversao-importacao";
+import { DialogCadastrarEmMassaImportacao } from "./dialog-cadastrar-em-massa-importacao";
 import { LocalizarProdutoDialog } from "./localizar-produto-dialog";
 import { ModalComposicaoPrecoImportacao } from "./modal-composicao-preco-importacao";
 import { ModalItemImportacao } from "./modal-item-importacao";
@@ -44,6 +45,7 @@ type GridItensImportacaoProps = {
 	idempresa: string;
 	idRascunho: string;
 	itens: NotaFiscalItemImportacao[];
+	idgrupoPadrao?: string | null;
 };
 
 function statusCor(item: NotaFiscalItemImportacao): string {
@@ -110,10 +112,19 @@ const formatCurrency = (value: string | null | undefined) => {
 	}).format(num);
 };
 
+function listarItensPendentesCadastro(
+	itens: NotaFiscalItemImportacao[],
+): NotaFiscalItemImportacao[] {
+	return itens.filter(
+		(item) => item.dadosimportacao?.statusVinculo === "pendente",
+	);
+}
+
 export function GridItensImportacao({
 	idempresa,
 	idRascunho,
 	itens,
+	idgrupoPadrao,
 }: GridItensImportacaoProps) {
 	const queryClient = useQueryClient();
 	const [itemLocalizar, setItemLocalizar] =
@@ -123,6 +134,8 @@ export function GridItensImportacao({
 	);
 	const [itemComposicao, setItemComposicao] =
 		useState<NotaFiscalItemImportacao | null>(null);
+	const [dialogMassaAberto, setDialogMassaAberto] = useState(false);
+	const itensPendentes = listarItensPendentesCadastro(itens);
 
 	const { mutate: atualizarItem, isPending } = useMutation({
 		mutationFn: (params: {
@@ -191,6 +204,22 @@ export function GridItensImportacao({
 
 	return (
 		<>
+			<div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+				<p className="text-sm text-muted-foreground">
+					{itensPendentes.length === 0
+						? "Nenhum item pendente de cadastro."
+						: `${itensPendentes.length} item(ns) pendente(s) de vínculo ou cadastro.`}
+				</p>
+				<Button
+					type="button"
+					variant="outline"
+					disabled={itensPendentes.length === 0}
+					onClick={() => setDialogMassaAberto(true)}
+				>
+					<IconPlus className="mr-1 size-4" aria-hidden="true" />
+					Cadastrar pendentes
+				</Button>
+			</div>
 			<div className="overflow-x-auto rounded-md border">
 				<Table>
 					<TableHeader>
@@ -340,7 +369,7 @@ export function GridItensImportacao({
 															<DropdownMenuItem
 																onClick={() => marcarCadastro(item)}
 															>
-															  <IconPlus className="mr-2 size-4" />
+																<IconPlus className="mr-2 size-4" />
 																Cadastrar produto
 															</DropdownMenuItem>
 															<DropdownMenuSeparator />
@@ -411,6 +440,15 @@ export function GridItensImportacao({
 					onAbertoChange={(aberto) => !aberto && setItemModal(null)}
 				/>
 			) : null}
+
+			<DialogCadastrarEmMassaImportacao
+				idempresa={idempresa}
+				idRascunho={idRascunho}
+				itensPendentes={itensPendentes}
+				idgrupoPadrao={idgrupoPadrao}
+				aberto={dialogMassaAberto}
+				onAbertoChange={setDialogMassaAberto}
+			/>
 		</>
 	);
 }

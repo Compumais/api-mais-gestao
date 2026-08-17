@@ -11,6 +11,7 @@ import {
 } from "./atualizar-rascunho.js";
 
 import { aplicarGrupoPadraoRascunhoImportacao } from "./aplicar-grupo-padrao-rascunho.js";
+import { cadastrarItensEmMassaRascunhoImportacao } from "./cadastrar-itens-em-massa-rascunho.js";
 
 import { atualizarNotaFiscal } from "./atualizar.js";
 import { atualizarNotaFiscalCompra } from "./atualizar-compra.js";
@@ -80,6 +81,11 @@ export async function notasFiscaisRotas(app: FastifyInstance) {
 	app.post("/notas-fiscais/rascunhos/:id/grupo-padrao", {
 		schema: schema.aplicarGrupoPadraoRascunhoImportacaoSchema,
 		handler: aplicarGrupoPadraoRascunhoImportacao,
+	});
+
+	app.post("/notas-fiscais/rascunhos/:id/cadastrar-em-massa", {
+		schema: schema.cadastrarItensEmMassaRascunhoImportacaoSchema,
+		handler: cadastrarItensEmMassaRascunhoImportacao,
 	});
 
 	app.post("/notas-fiscais/rascunhos/:id/finalizar", {

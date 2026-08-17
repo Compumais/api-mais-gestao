@@ -11,6 +11,8 @@ export type ItemPrecoVendaPendente = {
 	precoVenda: string;
 };
 
+export type DirecaoArredondamentoPreco = "menos" | "mais";
+
 export function precoVendaPreenchido(valor?: string | null): boolean {
 	if (!valor?.trim()) {
 		return false;
@@ -61,4 +63,37 @@ export function calcularPrecoVendaComMargem(
 	const custo = Number.parseFloat(precocusto.replace(",", ".")) || 0;
 	const preco = custo * (1 + margemPercentual / 100);
 	return preco.toFixed(2);
+}
+
+export function arredondarPrecoVenda(
+	valor: string,
+	direcao: DirecaoArredondamentoPreco,
+): string {
+	const numero = Number.parseFloat(valor.replace(",", "."));
+	if (Number.isNaN(numero) || numero <= 0) {
+		return valor;
+	}
+
+	const arredondado =
+		direcao === "mais"
+			? Math.ceil(numero - Number.EPSILON * 1e6)
+			: Math.floor(numero + Number.EPSILON * 1e6);
+
+	if (arredondado <= 0) {
+		return numero.toFixed(2);
+	}
+
+	return arredondado.toFixed(2);
+}
+
+export function aplicarArredondamentoPrecoVenda(
+	valor: string,
+	ativo: boolean,
+	direcao: DirecaoArredondamentoPreco,
+): string {
+	if (!ativo || !precoVendaPreenchido(valor)) {
+		return valor;
+	}
+
+	return arredondarPrecoVenda(valor, direcao);
 }
