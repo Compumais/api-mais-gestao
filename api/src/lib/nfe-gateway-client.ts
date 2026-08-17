@@ -260,6 +260,7 @@ export async function inutilizarNfeGateway(payload: {
 		serie: number;
 		numeroInicial: number;
 		numeroFinal?: number;
+		ano?: number;
 		justificativa: string;
 	};
 }): Promise<NfeGatewayEventoResposta> {

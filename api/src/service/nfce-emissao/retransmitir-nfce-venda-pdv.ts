@@ -53,10 +53,11 @@ export async function retransmitirNfceVendaPdvService({
 			nota &&
 			nota.status !== NFE_STATUS.PENDENTE &&
 			nota.status !== NFE_STATUS.REJEITADA &&
-			nota.status !== NFE_STATUS.DENEGADA
+			nota.status !== NFE_STATUS.DENEGADA &&
+			nota.status !== NFE_STATUS.INUTILIZADA
 		) {
 			return httpBadRequest(
-				"Somente NFC-e pendentes, rejeitadas ou denegadas podem ser retransmitidas",
+				"Somente NFC-e pendentes, rejeitadas, denegadas ou inutilizadas podem ser retransmitidas",
 			);
 		}
 	}

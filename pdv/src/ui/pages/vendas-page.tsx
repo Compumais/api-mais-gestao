@@ -4,6 +4,7 @@ import { pdvInvoke } from "@/lib/pdv-api";
 import { rotaHomePdv, rotuloModelo, type StatusContext } from "@/lib/pdv-types";
 import { money } from "@/lib/utils";
 import { FunctionBar } from "@/ui/components/function-bar";
+import { DialogInutilizarNfce } from "@/ui/components/dialog-inutilizar-nfce";
 import { Topbar } from "@/ui/components/topbar";
 import { Badge } from "@/ui/components/ui/badge";
 import { Button } from "@/ui/components/ui/button";
@@ -38,6 +39,7 @@ function rotuloNfce(status: string) {
 	if (status === "erro") return "rejeitada";
 	if (status === "erro_config") return "erro config";
 	if (status === "pendente_contingencia") return "pendente";
+	if (status === "inutilizada") return "inutilizada";
 	return status;
 }
 
@@ -46,8 +48,13 @@ function podeRetransmitir(status: string) {
 		status === "erro" ||
 		status === "erro_config" ||
 		status === "contingencia" ||
-		status === "pendente_contingencia"
+		status === "pendente_contingencia" ||
+		status === "inutilizada"
 	);
+}
+
+function podeInutilizar(status: string) {
+	return status === "erro";
 }
 
 export function VendasPage() {
@@ -57,6 +64,9 @@ export function VendasPage() {
 	const [vendas, setVendas] = useState<Venda[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [retransmitindoId, setRetransmitindoId] = useState<string | null>(null);
+	const [inutilizarVendaId, setInutilizarVendaId] = useState<string | null>(
+		null,
+	);
 	const [msg, setMsg] = useState("");
 
 	async function load() {
@@ -163,6 +173,16 @@ export function VendasPage() {
 														: "Retransmitir"}
 												</Button>
 											) : null}
+											{podeInutilizar(v.nfce_status) ? (
+												<Button
+													size="sm"
+													variant="outline"
+													disabled={retransmitindoId === v.id}
+													onClick={() => setInutilizarVendaId(v.id)}
+												>
+													Inutilizar
+												</Button>
+											) : null}
 											<Button
 												size="sm"
 												variant="ghost"
@@ -188,6 +208,16 @@ export function VendasPage() {
 					</table>
 				</div>
 			</div>
+
+			<DialogInutilizarNfce
+				aberto={inutilizarVendaId != null}
+				vendaId={inutilizarVendaId}
+				onFechar={() => setInutilizarVendaId(null)}
+				onSucesso={(mensagem) => {
+					setMsg(mensagem);
+					void load();
+				}}
+			/>
 
 			<FunctionBar
 				actions={[

@@ -732,6 +732,32 @@ export async function retransmitirNfceVendaPdv(body: {
 	);
 }
 
+export type ResultadoInutilizacaoNfceApi = {
+	idnotafiscal: string;
+	status: number;
+	cStat?: string;
+	xMotivo?: string;
+	protocolo?: string;
+};
+
+export async function inutilizarNfceVendaPdv(body: {
+	idempresa: string;
+	idvenda: string;
+	justificativa: string;
+}) {
+	return request<ResultadoInutilizacaoNfceApi>(
+		`/nfce/venda/${body.idvenda}/inutilizar`,
+		{
+			method: "POST",
+			body: {
+				idempresa: body.idempresa,
+				justificativa: body.justificativa,
+			},
+			timeoutMs: 60000,
+		},
+	);
+}
+
 export async function abrirCaixaRemoto(body: Record<string, unknown>) {
 	return request<{ id: string }>("/fechamentos-caixa", {
 		method: "POST",

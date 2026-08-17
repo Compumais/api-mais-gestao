@@ -649,6 +649,17 @@ async function despachar(
 		};
 	}
 
+	const inutilizarMatch = path.match(/^\/pos\/vendas\/([^/]+)\/inutilizar$/);
+	if (method === "POST" && inutilizarMatch) {
+		return {
+			status: 200,
+			body: await localApi.inutilizarNfce(
+				inutilizarMatch[1],
+				String(body.justificativa ?? ""),
+			),
+		};
+	}
+
 	return undefined;
 }
 

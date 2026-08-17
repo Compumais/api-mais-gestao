@@ -12,6 +12,8 @@ import { resolverModeloDocumentoFiscal } from "@/util/resolver-modelo-documento-
 import { normalizarCodigoStatusNfe } from "@/util/resolver-status-emissao-nfe.js";
 import {
 	normalizarJustificativaNfe,
+	numeracaoInutilizacaoDaNota,
+	obterAnoInutilizacaoNfe,
 	validarInutilizacaoNfe,
 } from "@/util/validar-eventos-nfe.js";
 import { salvarXmlEventoEmDisco } from "@/util/xml-storage.js";
@@ -72,12 +74,23 @@ export async function inutilizarNfeVendaService({
 		);
 	}
 
-	const serie = Number(nota.serie);
-	const numero = Number(nota.numeronotafiscal);
+	const numeracao = numeracaoInutilizacaoDaNota(nota);
+	if (!numeracao) {
+		return httpBadRequest("Série ou número inválidos para inutilização");
+	}
+
+	const { serie, numero } = numeracao;
 	const justificativaNormalizada = normalizarJustificativaNfe(justificativa);
+	const configJson = {
+		...credenciais.configJson,
+		modelo: modeloSefaz,
+		...(nota.tipoambientenfe === 1 || nota.tipoambientenfe === 2
+			? { tpAmb: nota.tipoambientenfe }
+			: {}),
+	};
 
 	const resposta = await inutilizarNfeGateway({
-		configJson: credenciais.configJson,
+		configJson,
 		pfxBase64: credenciais.pfxBase64,
 		senha: credenciais.senha,
 		dados: {
@@ -85,14 +98,15 @@ export async function inutilizarNfeVendaService({
 			serie,
 			numeroInicial: numero,
 			numeroFinal: numero,
+			ano: obterAnoInutilizacaoNfe(nota),
 			justificativa: justificativaNormalizada,
 		},
 	});
 
 	if (!resposta.sucesso) {
 		return httpBadRequest(
-			resposta.xMotivo ??
-				resposta.erro ??
+			resposta.xMotivo?.trim() ||
+				resposta.erro?.trim() ||
 				"SEFAZ não autorizou a inutilização da numeração",
 		);
 	}
