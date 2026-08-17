@@ -190,6 +190,14 @@ export async function limparSessao(): Promise<void> {
 const PRODUTO_SELECT =
 	"id, descricao, preco, unidademedida, idunidademedida, ean, codigo, idgrupo, idgrupogourmet, espizza, imagem, caminhoimagem";
 
+function padraoIlike(termo: string): string {
+	return `%${termo.replace(/[\\%_]/g, (ch) => `\\${ch}`)}%`;
+}
+
+function padraoIlikePrefixo(termo: string): string {
+	return `${termo.replace(/[\\%_]/g, (ch) => `\\${ch}`)}%`;
+}
+
 export async function upsertProdutos(
 	produtos: Array<{
 		id: string;
@@ -322,9 +330,9 @@ export async function listarProdutosPorGrupoGourmet(
 			`SELECT ${PRODUTO_SELECT}
 			 FROM produto_cache
 			 WHERE inativo = 0 AND idgrupogourmet IS NOT NULL AND idgrupogourmet <> ''
-				AND (descricao LIKE $1 OR ean LIKE $2)
+				AND (descricao ILIKE $1 ESCAPE '\\' OR ean ILIKE $2 ESCAPE '\\')
 			 ORDER BY descricao LIMIT $3`,
-			[`%${q}%`, `%${q}%`, limit],
+			[padraoIlike(q), padraoIlike(q), limit],
 		);
 	}
 	if (!q) {
@@ -338,9 +346,10 @@ export async function listarProdutosPorGrupoGourmet(
 	return query<ProdutoLocal>(
 		`SELECT ${PRODUTO_SELECT}
 		 FROM produto_cache
-		 WHERE inativo = 0 AND idgrupogourmet = $1 AND (descricao LIKE $2 OR ean LIKE $3)
+		 WHERE inativo = 0 AND idgrupogourmet = $1
+		   AND (descricao ILIKE $2 ESCAPE '\\' OR ean ILIKE $3 ESCAPE '\\')
 		 ORDER BY descricao LIMIT $4`,
-		[idgrupogourmet, `%${q}%`, `%${q}%`, limit],
+		[idgrupogourmet, padraoIlike(q), padraoIlike(q), limit],
 	);
 }
 
@@ -495,12 +504,22 @@ export async function buscarProdutosLocal(
 			[limit],
 		);
 	}
+	const contem = padraoIlike(q);
+	const prefixo = padraoIlikePrefixo(q);
 	return query<ProdutoLocal>(
 		`SELECT ${PRODUTO_SELECT}
 		 FROM produto_cache
-		 WHERE inativo = 0 AND (descricao LIKE $1 OR ean LIKE $2 OR id LIKE $3 OR CAST(codigo AS TEXT) LIKE $4)
-		 ORDER BY descricao LIMIT $5`,
-		[`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, limit],
+		 WHERE inativo = 0 AND (
+			descricao ILIKE $1 ESCAPE '\\'
+			OR ean ILIKE $1 ESCAPE '\\'
+			OR id ILIKE $1 ESCAPE '\\'
+			OR CAST(codigo AS TEXT) ILIKE $1 ESCAPE '\\'
+		 )
+		 ORDER BY
+			CASE WHEN descricao ILIKE $2 ESCAPE '\\' THEN 0 ELSE 1 END,
+			descricao
+		 LIMIT $3`,
+		[contem, prefixo, limit],
 	);
 }
 
@@ -521,9 +540,10 @@ export async function listarProdutosPorGrupo(
 	return query<ProdutoLocal>(
 		`SELECT ${PRODUTO_SELECT}
 		 FROM produto_cache
-		 WHERE inativo = 0 AND idgrupo = $1 AND (descricao LIKE $2 OR ean LIKE $3)
+		 WHERE inativo = 0 AND idgrupo = $1
+		   AND (descricao ILIKE $2 ESCAPE '\\' OR ean ILIKE $3 ESCAPE '\\')
 		 ORDER BY descricao LIMIT $4`,
-		[idgrupo, `%${q}%`, `%${q}%`, limit],
+		[idgrupo, padraoIlike(q), padraoIlike(q), limit],
 	);
 }
 
@@ -693,15 +713,55 @@ export async function caixaAberto(): Promise<{
 	numeropdv: number;
 	abertoem: string;
 	valorabertura: number;
+	idusuario: string | null;
+	username: string | null;
 } | null> {
+	const sessao = await obterSessao();
+	if (!sessao.userid) {
+		return null;
+	}
+	const numeropdv = Number(await getConfig("numeropdv", "1"));
 	return (
 		(await queryOne<{
 			id: string;
 			numeropdv: number;
 			abertoem: string;
 			valorabertura: number;
+			idusuario: string | null;
+			username: string | null;
 		}>(
-			`SELECT id, numeropdv, abertoem, valorabertura FROM caixa_turno WHERE status = 'aberto' ORDER BY abertoem DESC LIMIT 1`,
+			`SELECT id, numeropdv, abertoem, valorabertura, idusuario, username
+			 FROM caixa_turno
+			 WHERE status = 'aberto' AND idusuario = $1 AND numeropdv = $2
+			 ORDER BY abertoem DESC LIMIT 1`,
+			[sessao.userid, numeropdv],
+		)) ?? null
+	);
+}
+
+export async function caixaAbertoOutroOperador(): Promise<{
+	username: string | null;
+	abertoem: string;
+} | null> {
+	const sessao = await obterSessao();
+	const numeropdv = Number(await getConfig("numeropdv", "1"));
+	if (!sessao.userid) {
+		return (
+			(await queryOne<{ username: string | null; abertoem: string }>(
+				`SELECT username, abertoem FROM caixa_turno
+				 WHERE status = 'aberto' AND numeropdv = $1
+				 ORDER BY abertoem DESC LIMIT 1`,
+				[numeropdv],
+			)) ?? null
+		);
+	}
+	return (
+		(await queryOne<{ username: string | null; abertoem: string }>(
+			`SELECT username, abertoem FROM caixa_turno
+			 WHERE status = 'aberto' AND numeropdv = $1
+			   AND (idusuario IS NULL OR idusuario <> $2)
+			 ORDER BY abertoem DESC LIMIT 1`,
+			[numeropdv, sessao.userid],
 		)) ?? null
 	);
 }
@@ -716,20 +776,30 @@ export async function abrirCaixa(valorabertura: number): Promise<{
 		return existente;
 	}
 	const sessao = await obterSessao();
-	if (!sessao.idempresa) {
-		throw new Error("Empresa não selecionada");
+	if (!sessao.idempresa || !sessao.userid) {
+		throw new Error("Faça login antes de abrir o caixa");
 	}
 	const id = uuidv4();
 	const agora = new Date().toISOString();
 	const numeropdv = Number(await getConfig("numeropdv", "1"));
 	await execute(
-		`INSERT INTO caixa_turno (id, idempresa, numeropdv, abertoem, valorabertura, status, sync_status)
-		 VALUES ($1, $2, $3, $4, $5, 'aberto', 'pendente')`,
-		[id, sessao.idempresa, numeropdv, agora, valorabertura],
+		`INSERT INTO caixa_turno (
+			id, idempresa, numeropdv, idusuario, username, abertoem, valorabertura, status, sync_status
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, 'aberto', 'pendente')`,
+		[
+			id,
+			sessao.idempresa,
+			numeropdv,
+			sessao.userid,
+			sessao.username,
+			agora,
+			valorabertura,
+		],
 	);
 	await enfileirarOutbox("abrir_caixa", {
 		idlocal: id,
 		idempresa: sessao.idempresa,
+		idusuario: sessao.userid,
 		numeropdv,
 		valorabertura,
 		abertoem: agora,
@@ -740,7 +810,7 @@ export async function abrirCaixa(valorabertura: number): Promise<{
 export async function fecharCaixa(valorfechamento: number): Promise<void> {
 	const caixa = await caixaAberto();
 	if (!caixa) {
-		throw new Error("Nenhum caixa aberto");
+		throw new Error("Nenhum caixa aberto para este operador");
 	}
 	const agora = new Date().toISOString();
 	await execute(

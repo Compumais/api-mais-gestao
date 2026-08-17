@@ -312,7 +312,10 @@ export function BalcaoPage() {
 			<div className="grid flex-1 grid-cols-[1fr_360px] gap-3 overflow-hidden p-3">
 				<div className="flex flex-col gap-3 overflow-hidden rounded-lg border bg-card p-3">
 					<AvisoSecundario status={status} />
-					<BarcodeInput onScan={(codigo) => void onBip(codigo)} />
+					<BarcodeInput
+						onScan={(codigo) => void onBip(codigo)}
+						onProduto={(produto) => adicionarProdutoSimples(produto)}
+					/>
 
 					{!grupoAtivo ? (
 						<div className="flex flex-1 flex-col gap-3 overflow-auto">

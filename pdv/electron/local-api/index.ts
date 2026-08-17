@@ -49,6 +49,7 @@ import {
 	buscarProdutoPorEan,
 	buscarProdutosLocal,
 	caixaAberto,
+	caixaAbertoOutroOperador,
 	concluirOutboxCriarVendaLocal,
 	contarOutboxPendentes,
 	criarVendaRapida,
@@ -145,6 +146,7 @@ import {
 	sincronizarFiscalPdv as puxarFiscalRetaguarda,
 	statusConexao,
 } from "../sync/outbox";
+import { obterTerminaisPdvLocais } from "../sync/terminais-pdv";
 
 export type {
 	LancamentoPagamento,
@@ -377,6 +379,7 @@ export const localApi = {
 			sessao = await sincronizarModuloGourmet(sessao);
 		}
 		const caixa = await caixaAberto();
+		const caixaOutroOperador = caixa ? null : await caixaAbertoOutroOperador();
 		const modo = normalizarModoPdv(await getConfig("pdv_modo", "principal"));
 		const principal = modo === "secundario" ? statusPrincipalCache() : null;
 		return {
@@ -390,6 +393,7 @@ export const localApi = {
 				nomeempresa: sessao.nomeempresa,
 			},
 			caixa,
+			caixaOutroOperador,
 			emitirNfce: (await getConfig("emitir_nfce", "1")) === "1",
 			modeloAtendimento:
 				(await getConfig("modelo_atendimento", "mesa")) === "comanda"
@@ -786,19 +790,34 @@ export const localApi = {
 				origem: "ean" as const,
 			};
 		}
-		const plu = Number(lido.replace(/\D/g, ""));
-		if (Number.isInteger(plu) && plu > 0) {
-			const porCodigo = await buscarProdutoPorCodigo(plu);
-			if (porCodigo) {
-				return {
-					produto: porCodigo,
-					quantidade: 1,
-					precounitario: porCodigo.preco,
-					precototal: porCodigo.preco,
-					pesado: false,
-					origem: "ean" as const,
-				};
+		if (/^\d+$/.test(lido)) {
+			const plu = Number(lido);
+			if (Number.isInteger(plu) && plu > 0) {
+				const porCodigo = await buscarProdutoPorCodigo(plu);
+				if (porCodigo) {
+					return {
+						produto: porCodigo,
+						quantidade: 1,
+						precounitario: porCodigo.preco,
+						precototal: porCodigo.preco,
+						pesado: false,
+						origem: "ean" as const,
+					};
+				}
 			}
+			return null;
+		}
+		const porNome = await buscarProdutosLocal(lido, 8);
+		if (porNome.length === 1) {
+			const produto = porNome[0];
+			return {
+				produto,
+				quantidade: 1,
+				precounitario: produto.preco,
+				precototal: produto.preco,
+				pesado: false,
+				origem: "nome" as const,
+			};
 		}
 		return null;
 	},
@@ -833,6 +852,10 @@ export const localApi = {
 			erro: await getConfig("fiscal_sync_erro", ""),
 			caminho: await getConfig("certificado_path", ""),
 		};
+	},
+
+	async listarTerminaisPdv() {
+		return obterTerminaisPdvLocais();
 	},
 
 	async cargaLocal() {

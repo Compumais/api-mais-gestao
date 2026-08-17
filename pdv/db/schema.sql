@@ -61,6 +61,8 @@ CREATE TABLE IF NOT EXISTS caixa_turno (
 	id TEXT PRIMARY KEY NOT NULL,
 	idempresa TEXT NOT NULL,
 	numeropdv INTEGER NOT NULL DEFAULT 1,
+	idusuario TEXT,
+	username TEXT,
 	abertoem TEXT NOT NULL,
 	fechadoem TEXT,
 	valorabertura DOUBLE PRECISION NOT NULL DEFAULT 0,

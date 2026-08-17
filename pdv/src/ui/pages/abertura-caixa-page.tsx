@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { marcarBootPendente } from "@/lib/boot-state";
 import { pdvInvoke } from "@/lib/pdv-api";
-import type { StatusContext } from "@/lib/pdv-types";
+import { rotaHomePdv, type StatusContext } from "@/lib/pdv-types";
 import { centavosToNumber, money } from "@/lib/utils";
 import { NumericKeypad } from "@/ui/components/numeric-keypad";
 import { Button } from "@/ui/components/ui/button";
@@ -16,13 +16,11 @@ export function AberturaCaixaPage() {
 
 	useEffect(() => {
 		if (status?.caixa) {
-			navigate("/", { replace: true });
+			navigate(rotaHomePdv(status), { replace: true });
 			return;
 		}
-		void (async () => {
-			await refresh();
-		})();
-	}, [status?.caixa, refresh, navigate]);
+		void refresh();
+	}, [status?.caixa, status?.moduloGourmet, refresh, navigate]);
 
 	async function confirmar() {
 		setLoading(true);
@@ -30,7 +28,7 @@ export function AberturaCaixaPage() {
 		try {
 			await pdvInvoke("abrirCaixa", centavosToNumber(digitos));
 			await refresh();
-			navigate("/", { replace: true });
+			navigate(rotaHomePdv(status), { replace: true });
 		} catch (err) {
 			setErro(err instanceof Error ? err.message : "Erro ao abrir caixa");
 		} finally {
@@ -49,10 +47,20 @@ export function AberturaCaixaPage() {
 			<div className="text-center">
 				<h1 className="text-2xl font-bold text-primary">Abertura de caixa</h1>
 				<p className="text-sm text-muted-foreground">
-					Informe o valor de suprimento inicial para começar a operar.
+					Turno de {status?.sessao.username ?? "operador"}. Informe o suprimento
+					inicial para começar a operar.
 				</p>
 			</div>
 			<div className="w-full max-w-xs space-y-4 rounded-lg border bg-card p-5">
+				{status?.caixaOutroOperador ? (
+					<p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-center text-xs text-amber-900">
+						Há um caixa aberto
+						{status.caixaOutroOperador.username
+							? ` por ${status.caixaOutroOperador.username}`
+							: " por outro operador"}
+						. Esse turno não vale para você — abra o seu para vender.
+					</p>
+				) : null}
 				<div className="text-center text-3xl font-bold text-primary">
 					{money(centavosToNumber(digitos))}
 				</div>

@@ -634,6 +634,22 @@ export async function buscarPdvFiscal(idempresa: string, numeropdv: number) {
 	}>(`/empresas/${idempresa}/pdv-fiscal?numeropdv=${numeropdv}`);
 }
 
+export type TerminalPdvRemoto = {
+	id: string;
+	numeropdv: number;
+	descricao: string | null;
+	ativo: boolean;
+	serie: string;
+	numeroproximo: number;
+};
+
+export async function listarTerminaisPdv(idempresa: string) {
+	const data = await request<{ data: TerminalPdvRemoto[] }>(
+		`/terminais-pdv?idempresa=${encodeURIComponent(idempresa)}`,
+	);
+	return data.data ?? [];
+}
+
 export async function buscarNfceConfig(idempresa: string) {
 	return request<{
 		ambiente?: number;
