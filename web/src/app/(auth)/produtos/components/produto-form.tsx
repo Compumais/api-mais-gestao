@@ -45,6 +45,7 @@ import {
 	isUnidadeMedidaGlobal,
 	unidadeMedidaService,
 } from "@/services/unidade-medida.service";
+import { ProdutoAbaBalanca } from "./produto-aba-balanca";
 import { ProdutoAbaGourmet } from "./produto-aba-gourmet";
 import { ProdutoAbaImpostos } from "./produto-aba-impostos";
 
@@ -72,6 +73,8 @@ function buildProdutoPayload(
 				? data.idgrupogourmet
 				: null,
 		espizza: data.espizza ? 1 : 0,
+		exportaBalanca: data.exportaBalanca ? 1 : 0,
+		diasValidade: data.diasValidade ?? 0,
 		preco: data.preco,
 		tipo: data.tipo,
 		ippt: data.ippt,
@@ -160,6 +163,8 @@ export function ProdutoForm(props: ProdutoFormProps) {
 			idgrupo: "",
 			idgrupogourmet: "none",
 			espizza: false,
+			exportaBalanca: false,
+			diasValidade: 0,
 			preco: "",
 			custoaquisicao: "",
 			tipo: "P",
@@ -361,9 +366,10 @@ export function ProdutoForm(props: ProdutoFormProps) {
 	return (
 		<form onSubmit={handleSubmit(onSubmit)}>
 			<Tabs defaultValue="geral" className="w-full">
-				<TabsList className="mb-6 grid w-full grid-cols-3">
+				<TabsList className="mb-6 grid w-full grid-cols-2 md:grid-cols-4">
 					<TabsTrigger value="geral">Geral</TabsTrigger>
 					<TabsTrigger value="gourmet">Gourmet</TabsTrigger>
+					<TabsTrigger value="balanca">Balança</TabsTrigger>
 					<TabsTrigger value="impostos">Impostos</TabsTrigger>
 				</TabsList>
 
@@ -747,6 +753,19 @@ export function ProdutoForm(props: ProdutoFormProps) {
 						setValue={setValue}
 						watch={watch}
 						gruposGourmet={gruposGourmetData?.data ?? []}
+					/>
+				</TabsContent>
+
+				<TabsContent
+					value="balanca"
+					forceMount
+					className="data-[state=inactive]:hidden"
+				>
+					<ProdutoAbaBalanca
+						register={register}
+						setValue={setValue}
+						watch={watch}
+						errors={errors}
 					/>
 				</TabsContent>
 

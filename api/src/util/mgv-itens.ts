@@ -64,6 +64,20 @@ export function precoCentavosMgv(preco: number): number | null {
 	return centavos;
 }
 
+export function produtoExportaBalancaMgv(
+	exportaBalanca: number | boolean | null | undefined,
+): boolean {
+	return exportaBalanca === 1 || exportaBalanca === true;
+}
+
+export function resolverDiasValidadeMgv(
+	produtoDias: number | null | undefined,
+	padrao = 0,
+): number {
+	if (produtoDias == null || produtoDias === 0) return padrao;
+	return produtoDias;
+}
+
 /**
  * Linha ITENSMGV/TXTitens versão 3 (MGV 6; importável no MGV 7).
  * Campos de tamanho fixo, sem separador, CR+LF no arquivo.

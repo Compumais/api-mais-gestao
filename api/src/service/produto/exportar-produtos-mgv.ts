@@ -8,6 +8,8 @@ import {
 	normalizarDepartamentoMgv,
 	precoCentavosMgv,
 	produtoEhPesoMgv,
+	produtoExportaBalancaMgv,
+	resolverDiasValidadeMgv,
 } from "@/util/mgv-itens.js";
 
 export type ExportarProdutosMgvParametros = {
@@ -52,6 +54,10 @@ export async function exportarProdutosMgvService({
 	const deptoPadrao = normalizarDepartamentoMgv(departamentoPadrao);
 
 	for (const produto of produtos) {
+		if (!produtoExportaBalancaMgv(produto.exportaBalanca)) {
+			continue;
+		}
+
 		const codigo = produto.codigo ?? 0;
 		if (!Number.isInteger(codigo) || codigo < 1 || codigo > 999_999) {
 			adicionarAlerta(
@@ -91,13 +97,13 @@ export async function exportarProdutosMgvService({
 				produto.departamentoCodigo,
 				deptoPadrao,
 			),
-			diasValidade,
+			diasValidade: resolverDiasValidadeMgv(produto.diasValidade, diasValidade),
 		});
 	}
 
 	if (itens.length === 0) {
 		return httpBadRequest(
-			"Nenhum produto elegível para exportação no layout MGV (TXTitens).",
+			"Nenhum produto marcado para exportar à balança (aba Balança no cadastro) com dados válidos para o layout MGV.",
 		);
 	}
 

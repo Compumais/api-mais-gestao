@@ -162,6 +162,8 @@ export type ProdutoExportacaoMgv = {
 	pesavel: number | null;
 	unidademedida: string | null;
 	departamentoCodigo: string | null;
+	exportaBalanca: number | null;
+	diasValidade: number | null;
 };
 
 const LIMITE_EXPORTACAO_MGV = 50_000;
@@ -188,6 +190,8 @@ export async function listarProdutosParaExportacaoMgv(
 			pesavel: produtos.pesavel,
 			unidademedida: produtos.unidademedida,
 			departamentoCodigo: departamento.codigo,
+			exportaBalanca: produtos.exportaBalanca,
+			diasValidade: produtos.diasValidade,
 		})
 		.from(produtos)
 		.leftJoin(departamento, eq(produtos.iddepartamento, departamento.id))
