@@ -8,6 +8,10 @@ import {
 	startLanServer,
 } from "./lan-api/server";
 import { localApi } from "./local-api";
+import {
+	iniciarBackupAgendado,
+	pararBackupAgendado,
+} from "./sync/backup-agendado";
 import { iniciarSyncPeriodico, processarOutbox } from "./sync/outbox";
 
 // Linux/dev: chrome-sandbox costuma exigir root+setuid; evita abort do Electron.
@@ -80,6 +84,11 @@ app.whenReady().then(async () => {
 				err instanceof Error ? err.message : "Falha ao iniciar Tecnibra",
 			);
 		});
+		await iniciarBackupAgendado().catch((err) => {
+			console.error(
+				err instanceof Error ? err.message : "Falha ao iniciar backup agendado",
+			);
+		});
 	} catch (err) {
 		console.error(
 			err instanceof Error
@@ -100,6 +109,7 @@ app.on("window-all-closed", () => {
 		clearInterval(syncTimer);
 	}
 	pararTecnibra();
+	pararBackupAgendado();
 	void encerrarLanServer();
 	void closeDb();
 	if (process.platform !== "darwin") {

@@ -1,3 +1,5 @@
+import { mkdir } from "node:fs/promises";
+import { BrowserWindow, dialog, shell } from "electron";
 import {
 	ApiError,
 	apiBaseUrl,
@@ -148,6 +150,11 @@ import {
 	testarConexaoPrincipal,
 	validarIdentidadeAoSalvar,
 } from "../pdv-secundario/servico";
+import {
+	executarBackupPdv,
+	reiniciarBackupAgendado,
+	statusBackupPdv,
+} from "../sync/backup-agendado";
 import {
 	processarOutbox,
 	pullCatalogo,
@@ -506,6 +513,44 @@ export const localApi = {
 		return consumirAvisoBackupEmpresa();
 	},
 
+	async statusBackup() {
+		return statusBackupPdv();
+	},
+
+	async gerarBackup(pasta?: string) {
+		return executarBackupPdv({
+			motivo: "manual",
+			pasta,
+			forcar: true,
+		});
+	},
+
+	async escolherPastaBackup() {
+		const win = BrowserWindow.getFocusedWindow() ?? undefined;
+		const resultado = await dialog.showOpenDialog(win, {
+			title: "Pasta para backups do PDV",
+			properties: ["openDirectory", "createDirectory"],
+		});
+		if (resultado.canceled || !resultado.filePaths[0]) {
+			return null;
+		}
+		return resultado.filePaths[0];
+	},
+
+	async abrirPastaBackup(pasta?: string) {
+		const status = await statusBackupPdv();
+		const destino = (pasta?.trim() || status.pastaEfetiva).trim();
+		if (!destino) {
+			throw new Error("Pasta de backup não configurada");
+		}
+		await mkdir(destino, { recursive: true });
+		const erro = await shell.openPath(destino);
+		if (erro) {
+			throw new Error(erro);
+		}
+		return { ok: true, pasta: destino };
+	},
+
 	async getConfig() {
 		const database_url = obterDatabaseUrl();
 		try {
@@ -620,6 +665,15 @@ export const localApi = {
 		) {
 			await resetarConexaoBalanca();
 		}
+		if (
+			resto.backup_habilitado !== undefined ||
+			resto.backup_pasta !== undefined ||
+			resto.backup_frequencia !== undefined ||
+			resto.backup_hora !== undefined ||
+			resto.backup_manter !== undefined
+		) {
+			await reiniciarBackupAgendado();
+		}
 		return { ...saved, database_url: obterDatabaseUrl() };
 	},
 
@@ -722,6 +776,13 @@ export const localApi = {
 
 	async fecharCaixa(valorfechamento: number) {
 		await fecharCaixa(valorfechamento);
+		void executarBackupPdv({ motivo: "caixa" }).catch((err) => {
+			console.error(
+				err instanceof Error
+					? err.message
+					: "Falha no backup ao fechar o caixa",
+			);
+		});
 		return { ok: true };
 	},
 
@@ -1515,8 +1576,7 @@ export const localApi = {
 		return {
 			modo: "inutilizada" as const,
 			mensagem:
-				resultado.xMotivo?.trim() ||
-				"Numeração da NFC-e inutilizada na SEFAZ",
+				resultado.xMotivo?.trim() || "Numeração da NFC-e inutilizada na SEFAZ",
 			idnotafiscal: resultado.idnotafiscal,
 			cStat: resultado.cStat,
 			protocolo: resultado.protocolo,
