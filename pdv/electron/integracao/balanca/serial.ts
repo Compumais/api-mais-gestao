@@ -1,5 +1,12 @@
+import { type ChildProcessWithoutNullStreams, spawn } from "node:child_process";
 import { execFile } from "node:child_process";
-import { createReadStream, createWriteStream, existsSync } from "node:fs";
+import {
+	closeSync,
+	createReadStream,
+	createWriteStream,
+	existsSync,
+	openSync,
+} from "node:fs";
 import { readdir } from "node:fs/promises";
 import type { Readable, Writable } from "node:stream";
 import { promisify } from "node:util";
@@ -13,36 +20,253 @@ export type PortaSerialAberta = {
 	fechar: () => Promise<void>;
 };
 
-function caminhoWindows(porta: string): string {
-	const nome = porta.trim().toUpperCase();
-	if (nome.startsWith("\\\\.\\")) return nome;
-	return `\\\\.\\${nome}`;
+/** Normaliza COM1 / \\.\COM1\ → COM1. */
+export function normalizarNomePorta(porta: string): string {
+	return porta
+		.trim()
+		.toUpperCase()
+		.replace(/^\\\\.\\/, "")
+		.replace(/\\+$/g, "")
+		.replace(/\/+$/g, "");
+}
+
+function traduzirErroPorta(porta: string, err: unknown): Error {
+	const message = err instanceof Error ? err.message : String(err);
+	const lower = message.toLowerCase();
+	if (
+		lower.includes("access") ||
+		lower.includes("denied") ||
+		lower.includes("eperm") ||
+		lower.includes("eacces") ||
+		lower.includes("in use") ||
+		lower.includes("sharing violation") ||
+		lower.includes("unauthorized")
+	) {
+		return new Error(
+			`Sem permissão para abrir ${porta}. Feche o programa que estiver usando a porta (teste da balança, HyperTerminal, outro PDV) e tente de novo.`,
+		);
+	}
+	if (
+		lower.includes("does not exist") ||
+		lower.includes("file not found") ||
+		lower.includes("enoent") ||
+		lower.includes("cannot find") ||
+		lower.includes("no such file") ||
+		lower.includes("não encontr") ||
+		lower.includes("nao encontr")
+	) {
+		return new Error(
+			`Porta ${porta} não encontrada. Confira a COM da balança no Gerenciador de Dispositivos.`,
+		);
+	}
+	return new Error(`Falha na porta ${porta}: ${message}`);
+}
+
+function powershellExe(): string {
+	const root = process.env.SystemRoot || "C:\\Windows";
+	return `${root}\\System32\\WindowsPowerShell\\v1.0\\powershell.exe`;
+}
+
+const HOST_PS = `
+$ErrorActionPreference = 'Stop'
+$ProgressPreference = 'SilentlyContinue'
+[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false
+[Console]::InputEncoding = New-Object System.Text.UTF8Encoding $false
+$port = $null
+function Out-Line([string]$s) {
+  [Console]::Out.WriteLine($s)
+  [Console]::Out.Flush()
+}
+try {
+  while ($true) {
+    $line = [Console]::In.ReadLine()
+    if ($null -eq $line) { break }
+    $line = $line.Trim()
+    if ($line -eq '') { continue }
+    $parts = $line.Split(' ', 3)
+    $cmd = $parts[0].ToUpperInvariant()
+    try {
+      switch ($cmd) {
+        'OPEN' {
+          if ($port) { $port.Close(); $port.Dispose(); $port = $null }
+          $nome = $parts[1]
+          $baud = [int]$parts[2]
+          $port = New-Object System.IO.Ports.SerialPort $nome, $baud, ([System.IO.Ports.Parity]::None), 8, ([System.IO.Ports.StopBits]::One)
+          $port.Handshake = [System.IO.Ports.Handshake]::None
+          $port.ReadTimeout = 50
+          $port.WriteTimeout = 1000
+          $port.DtrEnable = $true
+          $port.RtsEnable = $true
+          $port.Open()
+          Out-Line 'OK OPEN'
+        }
+        'WRITE' {
+          $bytes = [Convert]::FromBase64String($parts[1])
+          $port.Write($bytes, 0, $bytes.Length)
+          Out-Line 'OK WRITE'
+        }
+        'READ' {
+          $n = $port.BytesToRead
+          if ($n -le 0) { Out-Line 'OK READ'; continue }
+          $buf = New-Object byte[] $n
+          $got = $port.Read($buf, 0, $n)
+          Out-Line ('OK READ ' + [Convert]::ToBase64String($buf, 0, $got))
+        }
+        'CLOSE' {
+          if ($port) { $port.Close(); $port.Dispose(); $port = $null }
+          Out-Line 'OK CLOSE'
+        }
+        'QUIT' {
+          if ($port) { $port.Close(); $port.Dispose(); $port = $null }
+          Out-Line 'OK QUIT'
+          break
+        }
+        default { Out-Line 'ERR comando desconhecido' }
+      }
+    } catch {
+      $msg = $_.Exception.Message.Replace([char]13, ' ').Replace([char]10, ' ')
+      Out-Line ('ERR ' + $msg)
+    }
+  }
+} finally {
+  if ($port) { try { $port.Close(); $port.Dispose() } catch {} }
+}
+`.trim();
+
+type EsperaLinha = {
+	resolve: (line: string) => void;
+	reject: (err: Error) => void;
+};
+
+class SessaoSerialWin {
+	private child: ChildProcessWithoutNullStreams;
+	private fila: EsperaLinha[] = [];
+	private restante = "";
+	private morto = false;
+
+	private constructor(child: ChildProcessWithoutNullStreams) {
+		this.child = child;
+		child.stdout.setEncoding("utf8");
+		child.stdout.on("data", (chunk: string) => this.receber(chunk));
+		child.stderr.on("data", () => undefined);
+		child.on("exit", () => {
+			this.morto = true;
+			const erro = new Error("O helper da porta serial encerrou.");
+			for (const espera of this.fila.splice(0)) {
+				espera.reject(erro);
+			}
+		});
+	}
+
+	static iniciar(): SessaoSerialWin {
+		const encoded = Buffer.from(HOST_PS, "utf16le").toString("base64");
+		const child = spawn(
+			powershellExe(),
+			["-NoProfile", "-STA", "-EncodedCommand", encoded],
+			{
+				stdio: ["pipe", "pipe", "pipe"],
+				windowsHide: true,
+			},
+		);
+		return new SessaoSerialWin(child);
+	}
+
+	private receber(chunk: string) {
+		this.restante += chunk;
+		let idx = this.restante.indexOf("\n");
+		while (idx >= 0) {
+			const line = this.restante.slice(0, idx).replace(/\r$/, "");
+			this.restante = this.restante.slice(idx + 1);
+			if (line) {
+				const espera = this.fila.shift();
+				if (espera) espera.resolve(line);
+			}
+			idx = this.restante.indexOf("\n");
+		}
+	}
+
+	async comando(cmd: string, timeoutMs = 8000): Promise<string> {
+		if (this.morto) {
+			throw new Error("O helper da porta serial encerrou.");
+		}
+		const line = await new Promise<string>((resolve, reject) => {
+			const timer = setTimeout(() => {
+				const i = this.fila.indexOf(espera);
+				if (i >= 0) this.fila.splice(i, 1);
+				reject(new Error("Tempo esgotado na porta serial"));
+			}, timeoutMs);
+			const espera: EsperaLinha = {
+				resolve: (valor) => {
+					clearTimeout(timer);
+					resolve(valor);
+				},
+				reject: (err) => {
+					clearTimeout(timer);
+					reject(err);
+				},
+			};
+			this.fila.push(espera);
+			this.child.stdin.write(`${cmd}\n`);
+		});
+		if (line.startsWith("ERR ")) {
+			throw new Error(line.slice(4).trim());
+		}
+		return line;
+	}
+
+	async fecharProcesso() {
+		try {
+			await this.comando("QUIT", 1500);
+		} catch {
+			// já morto
+		}
+		if (!this.morto) {
+			this.child.kill();
+		}
+	}
+}
+
+function coletarComs(texto: string): string[] {
+	const encontradas = new Set<string>();
+	for (const linha of texto.split(/\r?\n/)) {
+		const nome = normalizarNomePorta(linha.replace(/,$/, ""));
+		if (/^COM\d+$/.test(nome)) encontradas.add(nome);
+		for (const parte of linha.split(/[,\s;]+/)) {
+			const item = normalizarNomePorta(parte);
+			if (/^COM\d+$/.test(item)) encontradas.add(item);
+		}
+	}
+	return [...encontradas].sort(
+		(a, b) => Number(a.replace(/\D/g, "")) - Number(b.replace(/\D/g, "")),
+	);
+}
+
+async function listarPortasWindows(): Promise<string[]> {
+	const encontradas = new Set<string>();
+	const comandos = [
+		"[System.IO.Ports.SerialPort]::GetPortNames()",
+		"Get-CimInstance Win32_SerialPort | ForEach-Object { $_.DeviceID }",
+	];
+	for (const comando of comandos) {
+		try {
+			const { stdout } = await execFileAsync(powershellExe(), [
+				"-NoProfile",
+				"-Command",
+				comando,
+			]);
+			for (const nome of coletarComs(stdout)) encontradas.add(nome);
+		} catch {
+			// tenta o próximo enumerador
+		}
+	}
+	return [...encontradas].sort(
+		(a, b) => Number(a.replace(/\D/g, "")) - Number(b.replace(/\D/g, "")),
+	);
 }
 
 export async function listarPortasSeriais(): Promise<string[]> {
 	if (process.platform === "win32") {
-		const encontradas = new Set<string>();
-		try {
-			const { stdout } = await execFileAsync("powershell.exe", [
-				"-NoProfile",
-				"-Command",
-				"[System.IO.Ports.SerialPort]::GetPortNames() | ForEach-Object { $_ }",
-			]);
-			for (const linha of stdout.split(/\r?\n/)) {
-				const nome = linha.trim().toUpperCase();
-				if (/^COM\d+$/.test(nome)) encontradas.add(nome);
-			}
-		} catch {
-			// fallback abaixo
-		}
-		if (!encontradas.size) {
-			for (let i = 1; i <= 20; i++) {
-				encontradas.add(`COM${i}`);
-			}
-		}
-		return [...encontradas].sort(
-			(a, b) => Number(a.replace(/\D/g, "")) - Number(b.replace(/\D/g, "")),
-		);
+		return listarPortasWindows();
 	}
 
 	const nomes: string[] = [];
@@ -58,18 +282,42 @@ export async function listarPortasSeriais(): Promise<string[]> {
 	return nomes.sort();
 }
 
-async function configurarBaud(path: string, baud: number): Promise<void> {
-	if (process.platform === "win32") {
-		const porta = path.replace(/^\\\\.\\/, "");
-		await execFileAsync("mode.com", [
-			`${porta}:`,
-			`BAUD=${baud}`,
-			"PARITY=N",
-			"DATA=8",
-			"STOP=1",
-		]).catch(() => undefined);
-		return;
+async function abrirPortaWindows(
+	nome: string,
+	baud: number,
+): Promise<PortaSerialAberta> {
+	const sessao = SessaoSerialWin.iniciar();
+	try {
+		await sessao.comando(`OPEN ${nome} ${baud}`, 8000);
+	} catch (err) {
+		await sessao.fecharProcesso().catch(() => undefined);
+		throw traduzirErroPorta(nome, err);
 	}
+
+	return {
+		path: nome,
+		async ler() {
+			const line = await sessao.comando("READ", 2000);
+			const b64 = line.startsWith("OK READ")
+				? line.slice("OK READ".length).trim()
+				: "";
+			return b64 ? Buffer.from(b64, "base64") : Buffer.alloc(0);
+		},
+		async escrever(dados) {
+			await sessao.comando(`WRITE ${dados.toString("base64")}`, 2000);
+		},
+		async fechar() {
+			try {
+				await sessao.comando("CLOSE", 1500);
+			} catch {
+				// já fechada
+			}
+			await sessao.fecharProcesso().catch(() => undefined);
+		},
+	};
+}
+
+async function configurarBaudPosix(path: string, baud: number): Promise<void> {
 	await execFileAsync("stty", [
 		"-F",
 		path,
@@ -86,33 +334,38 @@ async function configurarBaud(path: string, baud: number): Promise<void> {
 	]).catch(() => undefined);
 }
 
-export async function abrirPortaSerial(
-	porta: string,
-	baud = 9600,
+async function abrirPortaPosix(
+	path: string,
+	baud: number,
 ): Promise<PortaSerialAberta> {
-	const path =
-		process.platform === "win32" ? caminhoWindows(porta) : porta.trim();
-	if (!path) {
-		throw new Error("Informe a porta da balança.");
-	}
-	if (process.platform !== "win32" && !existsSync(path)) {
+	if (!existsSync(path)) {
 		throw new Error(`Porta ${path} não encontrada.`);
 	}
+	await configurarBaudPosix(path, baud);
 
-	await configurarBaud(path, baud);
+	let fd: number;
+	try {
+		fd = openSync(path, "r+");
+	} catch (err) {
+		throw traduzirErroPorta(path, err);
+	}
 
 	let leitura: Readable;
 	let escrita: Writable;
 	try {
-		leitura = createReadStream(path, {
-			flags: "r+",
+		leitura = createReadStream("", {
+			fd,
+			autoClose: false,
 			highWaterMark: 256,
 		});
-		escrita = createWriteStream(path, { flags: "r+" });
-	} catch {
-		throw new Error(
-			`Não foi possível abrir ${porta}. Verifique se a balança está ligada e a porta não está em uso.`,
-		);
+		escrita = createWriteStream("", { fd, autoClose: false });
+	} catch (err) {
+		try {
+			closeSync(fd);
+		} catch {
+			// já fechado
+		}
+		throw traduzirErroPorta(path, err);
 	}
 
 	let buffer = Buffer.alloc(0);
@@ -123,23 +376,6 @@ export async function abrirPortaSerial(
 			buffer = buffer.subarray(buffer.length - 2048);
 		}
 	});
-
-	const erroAbertura = await new Promise<Error | null>((resolve) => {
-		const timer = setTimeout(() => resolve(null), 200);
-		leitura.once("error", (err) => {
-			clearTimeout(timer);
-			resolve(err);
-		});
-		escrita.once("error", (err) => {
-			clearTimeout(timer);
-			resolve(err);
-		});
-	});
-	if (erroAbertura) {
-		leitura.destroy();
-		escrita.destroy();
-		throw new Error(`Falha na porta ${porta}: ${erroAbertura.message}`);
-	}
 
 	return {
 		path,
@@ -156,6 +392,25 @@ export async function abrirPortaSerial(
 		async fechar() {
 			leitura.destroy();
 			escrita.end();
+			try {
+				closeSync(fd);
+			} catch {
+				// já fechado
+			}
 		},
 	};
+}
+
+export async function abrirPortaSerial(
+	porta: string,
+	baud = 9600,
+): Promise<PortaSerialAberta> {
+	const nome = normalizarNomePorta(porta);
+	if (!nome) {
+		throw new Error("Informe a porta da balança.");
+	}
+	if (process.platform === "win32") {
+		return abrirPortaWindows(nome, baud);
+	}
+	return abrirPortaPosix(porta.trim(), baud);
 }

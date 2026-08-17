@@ -405,7 +405,7 @@ async function seedDefaults(database: Pool): Promise<void> {
 		["taxa_servico_percentual", "10"],
 		["couvert_valor", "0"],
 		["balanca_habilitada", "0"],
-		["balanca_porta", process.platform === "win32" ? "COM1" : "/dev/ttyUSB0"],
+		["balanca_porta", ""],
 		["balanca_baud", "9600"],
 		["balanca_protocolo", "toledo"],
 	];

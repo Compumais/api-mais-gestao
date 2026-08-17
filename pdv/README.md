@@ -47,6 +47,16 @@ Build Windows:
 npm run pack:win
 ```
 
+Instalador Windows com PostgreSQL local (Inno Setup):
+
+```bash
+npm run pack:iss
+```
+
+Requer [Inno Setup 6](https://jrsoftware.org/isinfo.php). Sem o compilador `ISCC`, o script fica em `installer/pdv-mais-gestao.iss`. Para um setup offline, copie o instalador Windows x64 do PostgreSQL 17 para `installer/vendor/postgresql-17-windows-x64.exe` antes de `pack:iss`.
+
+Se o PDV já estiver instalado, o setup compara a versão: pacote mais antigo é recusado; mesma versão repara os arquivos; versão mais nova só atualiza o aplicativo e **preserva o PostgreSQL e os dados**.
+
 ## Arquitetura
 
 ```

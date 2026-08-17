@@ -1,20 +1,69 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+	ID_UNIDADE_KG_SISTEMA,
 	devePedirPeso,
 	digitosDeKg,
 	formatarQuantidade,
 	kgDeDigitos,
 	produtoEhKg,
+	resolverSiglaUnidade,
 } from "./produto-kg";
 
 describe("produtoEhKg", () => {
+	it("reconhece a unidade de sistema KG / Quilograma", () => {
+		assert.equal(
+			produtoEhKg({ idunidademedida: ID_UNIDADE_KG_SISTEMA }),
+			true,
+		);
+		assert.equal(
+			produtoEhKg({
+				idunidademedida: ID_UNIDADE_KG_SISTEMA.toUpperCase(),
+				unidademedida: null,
+			}),
+			true,
+		);
+	});
+
 	it("reconhece códigos e nomes comuns", () => {
 		assert.equal(produtoEhKg({ unidademedida: "KG" }), true);
 		assert.equal(produtoEhKg({ unidademedida: "kg" }), true);
 		assert.equal(produtoEhKg({ unidademedida: "Quilograma" }), true);
+		assert.equal(produtoEhKg({ unidademedida: "quilograma(s)" }), true);
 		assert.equal(produtoEhKg({ unidademedida: "UN" }), false);
+		assert.equal(produtoEhKg({ unidademedida: "LT" }), false);
 		assert.equal(produtoEhKg({ unidademedida: null }), false);
+		assert.equal(
+			produtoEhKg({
+				idunidademedida: "a0000001-0000-4000-8000-000000000001",
+			}),
+			false,
+		);
+	});
+});
+
+describe("resolverSiglaUnidade", () => {
+	it("preenche KG a partir do cadastro de unidades", () => {
+		const mapa = new Map([
+			[
+				ID_UNIDADE_KG_SISTEMA,
+				{ codigo: "KG", nome: "Quilograma" },
+			],
+		]);
+		assert.equal(
+			resolverSiglaUnidade(
+				{ unidademedida: null, idunidademedida: ID_UNIDADE_KG_SISTEMA },
+				mapa,
+			),
+			"KG",
+		);
+		assert.equal(
+			resolverSiglaUnidade(
+				{ unidademedida: "KG", idunidademedida: ID_UNIDADE_KG_SISTEMA },
+				mapa,
+			),
+			"KG",
+		);
 	});
 });
 
@@ -32,10 +81,13 @@ describe("kgDeDigitos", () => {
 });
 
 describe("devePedirPeso", () => {
-	it("só pede peso com config ativa e unidade kg", () => {
-		assert.equal(devePedirPeso({ unidademedida: "KG" }, true), true);
-		assert.equal(devePedirPeso({ unidademedida: "KG" }, false), false);
-		assert.equal(devePedirPeso({ unidademedida: "UN" }, true), false);
+	it("pede peso só quando a unidade é KG", () => {
+		assert.equal(devePedirPeso({ unidademedida: "KG" }), true);
+		assert.equal(
+			devePedirPeso({ idunidademedida: ID_UNIDADE_KG_SISTEMA }),
+			true,
+		);
+		assert.equal(devePedirPeso({ unidademedida: "UN" }), false);
 	});
 });
 

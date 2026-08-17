@@ -1,6 +1,6 @@
 {
 	"name": "pdv-mais-gestao",
-	"version": "0.1.0",
+	"version": "0.1.2",
 	"private": true,
 	"description": "PDV Híbrido Desktop Mais Gestão (Electron + PostgreSQL local)",
 	"main": "./out/main/index.js",
@@ -13,10 +13,12 @@
 		"test:conta-gourmet": "node ../api/node_modules/tsx/dist/cli.mjs --test electron/db/conta-gourmet.test.ts",
 		"test:acesso": "node ../api/node_modules/tsx/dist/cli.mjs --test electron/db/acesso.test.ts",
 		"test:sitef": "node ../api/node_modules/tsx/dist/cli.mjs --test electron/integracao/sitef/mapeamento.test.ts electron/integracao/sitef/servico.test.ts electron/impressora/cupom-pagamentos.test.ts",
-		"test:balanca": "node ../api/node_modules/tsx/dist/cli.mjs --test electron/integracao/balanca/protocolo.test.ts src/lib/produto-kg.test.ts",
+		"test:balanca": "node ../api/node_modules/tsx/dist/cli.mjs --test electron/integracao/balanca/protocolo.test.ts electron/integracao/balanca/serial.test.ts src/lib/produto-kg.test.ts",
 		"test:pdv-secundario": "node ../api/node_modules/tsx/dist/cli.mjs --test electron/pdv-secundario/regras.test.ts",
 		"postinstall": "electron-builder install-app-deps",
-		"pack:win": "npm run build && electron-builder --win"
+		"pack:win": "npm run build && electron-builder --win",
+		"pack:dir": "set CSC_IDENTITY_AUTO_DISCOVERY=false&& npm run build && electron-builder --win --dir",
+		"pack:iss": "set CSC_IDENTITY_AUTO_DISCOVERY=false&& npm run pack:dir && powershell -NoProfile -File installer/compilar-iss.ps1"
 	},
 	"dependencies": {
 		"@radix-ui/react-dialog": "^1.1.15",
@@ -55,6 +57,7 @@
 	"build": {
 		"appId": "com.maisgestao.pdv",
 		"productName": "PDV Mais Gestão",
+		"forceCodeSigning": false,
 		"directories": {
 			"output": "release"
 		},
@@ -63,6 +66,7 @@
 			"package.json"
 		],
 		"win": {
+			"signAndEditExecutable": false,
 			"target": [
 				"nsis"
 			]

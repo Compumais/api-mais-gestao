@@ -213,13 +213,14 @@ export function MesaContaPage() {
 		preco: number;
 		espizza?: number | null;
 		unidademedida?: string | null;
+		idunidademedida?: string | null;
 	}) {
 		setMsg("");
 		if (produtoEhPizza(produto)) {
 			setPizzaPrimeiro(produto as ProdutoLocal);
 			return;
 		}
-		if (devePedirPeso(produto, Boolean(status?.balancaHabilitada))) {
+		if (devePedirPeso(produto)) {
 			setProdutoPeso(produto as ProdutoLocal);
 			return;
 		}

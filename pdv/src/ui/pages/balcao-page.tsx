@@ -104,12 +104,13 @@ export function BalcaoPage() {
 		preco: number;
 		espizza?: number | null;
 		unidademedida?: string | null;
+		idunidademedida?: string | null;
 	}) {
 		if (gourmet && produtoEhPizza(produto)) {
 			setPizzaPrimeiro(produto as ProdutoLocal);
 			return;
 		}
-		if (devePedirPeso(produto, Boolean(status?.balancaHabilitada))) {
+		if (devePedirPeso(produto)) {
 			setProdutoPeso(produto as ProdutoLocal);
 			return;
 		}

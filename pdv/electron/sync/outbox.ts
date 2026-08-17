@@ -10,7 +10,9 @@ import {
 	listarGrupos,
 	listarGruposGourmet,
 	listarProdutos,
+	listarUnidadesMedida,
 	pingApi,
+	substituirAtalhosRemotos,
 	transmitirNfceContingencia,
 } from "../api/client";
 import { execute, getConfig, isBancoIndisponivelError } from "../db/database";
@@ -101,6 +103,13 @@ export async function pullCatalogo(): Promise<{
 		}
 	}
 
+	const unidades = await listarUnidadesMedida(sessao.idempresa).catch(
+		() => [] as Array<{ id: string; codigo: string | null; nome: string | null }>,
+	);
+	const mapaUnidades = new Map(
+		unidades.map((u) => [u.id, u] as const),
+	);
+
 	let page = 1;
 	let total = 0;
 	for (;;) {
@@ -112,7 +121,18 @@ export async function pullCatalogo(): Promise<{
 		if (!produtos.length) {
 			break;
 		}
-		await upsertProdutos(produtos);
+		await upsertProdutos(
+			produtos.map((p) => {
+				const atual = p.unidademedida?.trim();
+				if (atual) return p;
+				const unidade = p.idunidademedida
+					? mapaUnidades.get(p.idunidademedida)
+					: undefined;
+				const sigla =
+					unidade?.codigo?.trim() || unidade?.nome?.trim() || null;
+				return { ...p, unidademedida: sigla };
+			}),
+		);
 		total += produtos.length;
 		if (produtos.length < 100) {
 			break;
@@ -197,6 +217,11 @@ export async function processarOutbox(): Promise<{
 					await syncCriarVenda(payload, sessao.idempresa, sessao.userid);
 				} else if (item.tipo === "transmitir_nfce_contingencia") {
 					await syncTransmitirContingencia(payload, sessao.idempresa);
+				} else if (item.tipo === "atalhos_pdv") {
+					const ids = Array.isArray(payload.idsProdutos)
+						? payload.idsProdutos.map((id) => String(id))
+						: [];
+					await substituirAtalhosRemotos(sessao.idempresa, ids);
 				} else if (
 					item.tipo === "abrir_caixa" ||
 					item.tipo === "fechamento_caixa" ||

@@ -9,3 +9,6 @@ release
 *.pfx
 *.p12
 .npm-cache
+installer/vendor/*.exe
+installer/vendor/*.zip
+installer/output/
