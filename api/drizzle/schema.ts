@@ -116,5 +116,6 @@ export * from "./tables/unidade-medida.js";
 export * from "./tables/usuario-empresa.js";
 export * from "./tables/usuarios.js";
 export * from "./tables/venda-pdv-item.js";
+export * from "./tables/venda-pdv-pagamento.js";
 export * from "./tables/vendas-pdv-gourmet.js";
 export * from "./tables/verificacoes.js";

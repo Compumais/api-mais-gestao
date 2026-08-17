@@ -84,9 +84,6 @@ public class VendaActivity extends AppCompatActivity {
         lblSecao = findViewById(R.id.lblSecao);
         txtVazio = findViewById(R.id.txtVazio);
         btnPagar = findViewById(R.id.btnPagar);
-        if (prefs.isModoPdvLocal()) {
-            btnPagar.setVisibility(View.GONE);
-        }
         btnCarregarMais = findViewById(R.id.btnCarregarMais);
         inputBusca = findViewById(R.id.inputBusca);
         MaterialButton btnEscanear = findViewById(R.id.btnEscanear);
@@ -116,10 +113,6 @@ public class VendaActivity extends AppCompatActivity {
         listaCarrinho.setAdapter(carrinhoAdapter);
 
         btnPagar.setOnClickListener(v -> {
-            if (prefs.isModoPdvLocal()) {
-                Toast.makeText(this, R.string.cupom_somente_pdv, Toast.LENGTH_LONG).show();
-                return;
-            }
             if (Carrinho.getInstance().isVazio()) {
                 Toast.makeText(this, R.string.carrinho_vazio, Toast.LENGTH_SHORT).show();
                 return;

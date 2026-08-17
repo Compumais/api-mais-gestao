@@ -41,6 +41,23 @@ export function ConfigPage() {
 	const [testando, setTestando] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [msg, setMsg] = useState("");
+	const [statusTecnibra, setStatusTecnibra] = useState<{
+		enabled: boolean;
+		lastSyncAt?: string;
+		lastSuccessAt?: string;
+		lastError?: string | null;
+		commandCount: number;
+		targetPath: string;
+	} | null>(null);
+	const [statusSitef, setStatusSitef] = useState<{
+		habilitado: boolean;
+		disponivel: boolean;
+		plataforma: string;
+		dllEncontrada: boolean;
+		dllPath: string | null;
+		portaPinPad?: string | null;
+		mensagem: string;
+	} | null>(null);
 	const rotulo = rotuloModelo(
 		config.modelo_atendimento === "comanda" ? "comanda" : "mesa",
 	);
@@ -67,6 +84,16 @@ export function ConfigPage() {
 				setLanIps(lan.ips ?? []);
 			} catch {
 				setLanIps([]);
+			}
+			try {
+				setStatusTecnibra(await pdvInvoke("statusTecnibra"));
+			} catch {
+				setStatusTecnibra(null);
+			}
+			try {
+				setStatusSitef(await pdvInvoke("sitef.status"));
+			} catch {
+				setStatusSitef(null);
 			}
 		})();
 	}, []);
@@ -97,6 +124,20 @@ export function ConfigPage() {
 				certificado_senha: config.certificado_senha ?? "",
 				lan_habilitada: config.lan_habilitada ?? "1",
 				lan_porta: config.lan_porta ?? "5050",
+				tecnibra_habilitada: config.tecnibra_habilitada ?? "0",
+				tecnibra_xml_path:
+					config.tecnibra_xml_path ??
+					"C:\\Tecnibra\\IHM Receptora\\Comandas.xml",
+				tecnibra_intervalo_ms: config.tecnibra_intervalo_ms ?? "3000",
+				tecnibra_xml_root: config.tecnibra_xml_root ?? "Comandas",
+				tecnibra_xml_item: config.tecnibra_xml_item ?? "Comanda",
+				sitef_habilitado: config.sitef_habilitado ?? "0",
+				sitef_ip: config.sitef_ip ?? "127.0.0.1",
+				sitef_loja: config.sitef_loja ?? "00000000",
+				sitef_terminal: config.sitef_terminal ?? "PD000001",
+				sitef_parametros: config.sitef_parametros ?? "",
+				sitef_porta_pinpad: config.sitef_porta_pinpad ?? "",
+				sitef_dll_path: config.sitef_dll_path ?? "",
 			});
 			setConfig((prev) => ({ ...prev, ...saved }));
 			try {
@@ -109,6 +150,16 @@ export function ConfigPage() {
 			}
 			aplicarTema(saved.tema ?? config.tema);
 			await refresh();
+			try {
+				setStatusTecnibra(await pdvInvoke("statusTecnibra"));
+			} catch {
+				setStatusTecnibra(null);
+			}
+			try {
+				setStatusSitef(await pdvInvoke("sitef.status"));
+			} catch {
+				setStatusSitef(null);
+			}
 			setMsg("Configurações salvas");
 		} catch (err) {
 			setMsg(err instanceof Error ? err.message : "Erro ao salvar");
@@ -317,6 +368,151 @@ export function ConfigPage() {
 							{config.lan_porta || "5050"}. IPs desta máquina:{" "}
 							{lanIps.length ? lanIps.join(", ") : "nenhum detectado"}. No
 							emulador use 10.0.2.2.
+						</p>
+					</CardContent>
+				</Card>
+
+				<Card>
+					<CardHeader>
+						<CardTitle>Catraca Tecnibra</CardTitle>
+					</CardHeader>
+					<CardContent className="grid gap-4 sm:grid-cols-2">
+						<div className="space-y-2">
+							<Label htmlFor="tecnibra_habilitada">Integração</Label>
+							<Select
+								id="tecnibra_habilitada"
+								value={config.tecnibra_habilitada ?? "0"}
+								onChange={(e) => set("tecnibra_habilitada", e.target.value)}
+							>
+								<option value="0">Desligada</option>
+								<option value="1">Ligada</option>
+							</Select>
+						</div>
+						<div className="space-y-2">
+							<Label htmlFor="tecnibra_intervalo_ms">
+								Intervalo de sync (ms)
+							</Label>
+							<Input
+								id="tecnibra_intervalo_ms"
+								type="number"
+								min={1000}
+								value={config.tecnibra_intervalo_ms ?? "3000"}
+								onChange={(e) => set("tecnibra_intervalo_ms", e.target.value)}
+							/>
+						</div>
+						<div className="space-y-2 sm:col-span-2">
+							<Label htmlFor="tecnibra_xml_path">Caminho do XML</Label>
+							<Input
+								id="tecnibra_xml_path"
+								value={
+									config.tecnibra_xml_path ??
+									"C:\\Tecnibra\\IHM Receptora\\Comandas.xml"
+								}
+								onChange={(e) => set("tecnibra_xml_path", e.target.value)}
+							/>
+						</div>
+						<p className="sm:col-span-2 text-xs text-muted-foreground">
+							A receptora lê este arquivo: comanda presente = saída bloqueada;
+							ausente = liberada. Pasta padrão da IHM: C:\Tecnibra\IHM
+							Receptora\Comandas.xml
+							{statusTecnibra
+								? ` — ${statusTecnibra.commandCount} pendente(s)${
+										statusTecnibra.lastError
+											? `. ${statusTecnibra.lastError}`
+											: statusTecnibra.lastSuccessAt
+												? `. Última sync ok.`
+												: ""
+									}`
+								: ""}
+						</p>
+					</CardContent>
+				</Card>
+
+				<Card>
+					<CardHeader>
+						<CardTitle>SiTef (TEF)</CardTitle>
+					</CardHeader>
+					<CardContent className="grid gap-4 sm:grid-cols-2">
+						<div className="space-y-2">
+							<Label htmlFor="sitef_habilitado">Integração</Label>
+							<Select
+								id="sitef_habilitado"
+								value={config.sitef_habilitado ?? "0"}
+								onChange={(e) => set("sitef_habilitado", e.target.value)}
+							>
+								<option value="0">Desligada (cartão manual)</option>
+								<option value="1">Ligada</option>
+							</Select>
+						</div>
+						<div className="space-y-2">
+							<Label htmlFor="sitef_ip">IP do SiTef</Label>
+							<Input
+								id="sitef_ip"
+								value={config.sitef_ip ?? "127.0.0.1"}
+								onChange={(e) => set("sitef_ip", e.target.value)}
+								placeholder="127.0.0.1"
+							/>
+						</div>
+						<div className="space-y-2">
+							<Label htmlFor="sitef_loja">Código da loja</Label>
+							<Input
+								id="sitef_loja"
+								value={config.sitef_loja ?? "00000000"}
+								onChange={(e) => set("sitef_loja", e.target.value)}
+								placeholder="00000000"
+							/>
+						</div>
+						<div className="space-y-2">
+							<Label htmlFor="sitef_terminal">Terminal</Label>
+							<Input
+								id="sitef_terminal"
+								value={config.sitef_terminal ?? "PD000001"}
+								onChange={(e) => set("sitef_terminal", e.target.value)}
+								placeholder="PD000001"
+							/>
+						</div>
+						<div className="space-y-2 sm:col-span-2">
+							<Label htmlFor="sitef_porta_pinpad">Porta do PIN pad</Label>
+							<Input
+								id="sitef_porta_pinpad"
+								value={config.sitef_porta_pinpad ?? ""}
+								onChange={(e) => set("sitef_porta_pinpad", e.target.value)}
+								placeholder="COM5"
+							/>
+							<p className="text-xs text-muted-foreground">
+								USB aparece como COM virtual no Gerenciador de Dispositivos.
+							</p>
+						</div>
+						<div className="space-y-2 sm:col-span-2">
+							<Label htmlFor="sitef_parametros">Parâmetros extras</Label>
+							<Input
+								id="sitef_parametros"
+								value={config.sitef_parametros ?? ""}
+								onChange={(e) => set("sitef_parametros", e.target.value)}
+								placeholder="[ParmsClient=1=...]"
+							/>
+						</div>
+						<div className="space-y-2 sm:col-span-2">
+							<Label htmlFor="sitef_dll_path">
+								Caminho da DLL CliSiTef (opcional)
+							</Label>
+							<Input
+								id="sitef_dll_path"
+								value={config.sitef_dll_path ?? ""}
+								onChange={(e) => set("sitef_dll_path", e.target.value)}
+								placeholder="C:\SiTef\CliSiTef64I.dll"
+							/>
+						</div>
+						<p className="sm:col-span-2 text-xs text-muted-foreground">
+							A CliSiTef roda só no processo main, em Windows. Sem a DLL ou fora
+							do Windows, o pagamento misto continua e o cartão entra manual.
+							{statusSitef
+								? ` ${statusSitef.disponivel ? "SiTef pronto." : statusSitef.mensagem}`
+								: ""}
+							{statusSitef?.dllPath ? ` DLL: ${statusSitef.dllPath}` : ""}
+							{statusSitef?.portaPinPad
+								? ` PIN pad: ${statusSitef.portaPinPad}`
+								: ""}
 						</p>
 					</CardContent>
 				</Card>

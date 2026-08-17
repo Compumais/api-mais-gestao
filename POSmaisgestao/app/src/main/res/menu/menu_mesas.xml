@@ -2,6 +2,10 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
+        android:id="@+id/action_venda_rapida"
+        android:title="@string/venda_rapida"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/action_config"
         android:icon="@drawable/ic_settings"
         android:title="@string/configuracoes"

@@ -13,6 +13,19 @@ import {
 	setConfig,
 	withTransaction,
 } from "./database";
+import {
+	type LancamentoPagamento,
+	type MeioPagamento,
+	type StatusLancamentoPagamento,
+	totaisParaSync,
+	validarFechamentoPagamentos,
+} from "./pagamento";
+
+export type {
+	LancamentoPagamento,
+	MeioPagamento,
+	StatusLancamentoPagamento,
+} from "./pagamento";
 
 export type SessaoLocal = {
 	token: string | null;
@@ -50,8 +63,6 @@ export type ItemCarrinho = {
 	unidademedida?: string | null;
 	idunidademedida?: string | null;
 };
-
-export type MeioPagamento = "DINHEIRO" | "PIX" | "CARTAO";
 
 export type VendaLocal = {
 	id: string;
@@ -700,9 +711,65 @@ export async function fecharCaixa(valorfechamento: number): Promise<void> {
 	});
 }
 
+export async function listarLancamentosVenda(
+	idvenda: string,
+	client?: PoolClient,
+): Promise<LancamentoPagamento[]> {
+	const rows = await query<{
+		id: string;
+		meio: MeioPagamento;
+		valor: number;
+		nsu: string | null;
+		autorizacao: string | null;
+		bandeira: string | null;
+		status: StatusLancamentoPagamento;
+	}>(
+		`SELECT id, meio, valor, nsu, autorizacao, bandeira, status
+		 FROM pagamento WHERE idvenda = $1 ORDER BY criadoem`,
+		[idvenda],
+		client,
+	);
+	return rows.map((row) => ({
+		id: row.id,
+		meio: row.meio,
+		valor: Number(row.valor),
+		nsu: row.nsu,
+		autorizacao: row.autorizacao,
+		bandeira: row.bandeira,
+		status: row.status ?? "ok",
+	}));
+}
+
+async function gravarLancamentosVenda(
+	client: PoolClient,
+	idvenda: string,
+	lancamentos: LancamentoPagamento[],
+	agora: string,
+): Promise<void> {
+	for (const lanc of lancamentos) {
+		await execute(
+			`INSERT INTO pagamento (
+				id, idvenda, meio, valor, nsu, autorizacao, bandeira, status, criadoem
+			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+			[
+				lanc.id ?? uuidv4(),
+				idvenda,
+				lanc.meio,
+				lanc.valor,
+				lanc.nsu ?? null,
+				lanc.autorizacao ?? null,
+				lanc.bandeira ?? null,
+				lanc.status ?? "ok",
+				agora,
+			],
+			client,
+		);
+	}
+}
+
 export async function criarVendaRapida(params: {
 	itens: ItemCarrinho[];
-	meio: MeioPagamento;
+	lancamentos: LancamentoPagamento[];
 	troco?: number;
 }): Promise<VendaLocal> {
 	const sessao = await obterSessao();
@@ -719,9 +786,12 @@ export async function criarVendaRapida(params: {
 	const id = uuidv4();
 	const agora = new Date().toISOString();
 	const total = params.itens.reduce((acc, i) => acc + i.precototal, 0);
-	const dinheiro = params.meio === "DINHEIRO" ? total : 0;
-	const pix = params.meio === "PIX" ? total : 0;
-	const cartao = params.meio === "CARTAO" ? total : 0;
+	const fechamento = validarFechamentoPagamentos({
+		total,
+		lancamentos: params.lancamentos,
+		troco: params.troco,
+	});
+	const sync = totaisParaSync(fechamento.efetivos, fechamento.troco);
 	const numeropdv = Number(await getConfig("numeropdv", "1"));
 
 	const venda = await withTransaction(async (client) => {
@@ -735,12 +805,12 @@ export async function criarVendaRapida(params: {
 				id,
 				sessao.idempresa,
 				numeropdv,
-				params.meio,
+				fechamento.meio,
 				total,
-				dinheiro,
-				pix,
-				cartao,
-				params.troco ?? 0,
+				sync.valordinheiro,
+				sync.valorpix,
+				sync.valorcartaocredito,
+				fechamento.troco,
 				agora,
 			],
 			client,
@@ -763,11 +833,7 @@ export async function criarVendaRapida(params: {
 			);
 		}
 
-		await execute(
-			`INSERT INTO pagamento (id, idvenda, meio, valor, criadoem) VALUES ($1, $2, $3, $4, $5)`,
-			[uuidv4(), id, params.meio, total, agora],
-			client,
-		);
+		await gravarLancamentosVenda(client, id, fechamento.efetivos, agora);
 
 		const row = await queryOne<VendaLocal>(
 			"SELECT * FROM venda WHERE id = $1",
@@ -782,10 +848,14 @@ export async function criarVendaRapida(params: {
 
 	await enfileirarOutbox("criar_venda", {
 		idlocal: id,
-		meio: params.meio,
+		meio:
+			fechamento.meio === "MISTO"
+				? fechamento.efetivos[0]?.meio
+				: fechamento.meio,
+		pagamentos: fechamento.efetivos,
 		itens: params.itens,
 		valortotal: total,
-		valortroco: params.troco ?? 0,
+		valortroco: fechamento.troco,
 	});
 
 	return venda;
@@ -800,7 +870,10 @@ export async function listarVendas(limit = 100): Promise<VendaLocal[]> {
 
 export async function obterVenda(
 	id: string,
-): Promise<(VendaLocal & { itens: ItemCarrinho[] }) | null> {
+): Promise<
+	| (VendaLocal & { itens: ItemCarrinho[]; pagamentos: LancamentoPagamento[] })
+	| null
+> {
 	const venda = await queryOne<VendaLocal>(
 		"SELECT * FROM venda WHERE id = $1",
 		[id],
@@ -813,7 +886,8 @@ export async function obterVenda(
 		 FROM item_venda WHERE idvenda = $1`,
 		[id],
 	);
-	return { ...venda, itens };
+	const pagamentos = await listarLancamentosVenda(id);
+	return { ...venda, itens, pagamentos };
 }
 
 export async function atualizarVendaSync(
@@ -967,6 +1041,18 @@ export async function listarMesas(): Promise<
 			qtdItens: realmenteOcupada ? row.qtd_itens : 0,
 		};
 	});
+}
+
+export async function listarNumerosComPendencia(): Promise<string[]> {
+	const rows = await query<{ numero: number }>(
+		`SELECT m.numero
+		 FROM mesa m
+		 INNER JOIN conta_mesa c ON c.id = m.idconta AND c.status = 'aberta'
+		 WHERE m.status = 'ocupada'
+		   AND EXISTS (SELECT 1 FROM item_conta i WHERE i.idconta = m.idconta)
+		 ORDER BY m.numero`,
+	);
+	return rows.map((row) => String(row.numero));
 }
 
 export async function obterMesa(numero: number): Promise<{
@@ -1363,7 +1449,8 @@ export async function limparFilaPedidos(): Promise<void> {
 
 export async function fecharContaMesa(params: {
 	idconta: string;
-	meio: MeioPagamento;
+	lancamentos: LancamentoPagamento[];
+	troco?: number;
 }): Promise<VendaLocal> {
 	const conta = await obterContaMesa(params.idconta);
 	if (!conta || conta.status !== "aberta") {
@@ -1385,9 +1472,12 @@ export async function fecharContaMesa(params: {
 	const agora = new Date().toISOString();
 	const total = conta.valortotal;
 	const numeropdv = Number(await getConfig("numeropdv", "1"));
-	const dinheiro = params.meio === "DINHEIRO" ? total : 0;
-	const pix = params.meio === "PIX" ? total : 0;
-	const cartao = params.meio === "CARTAO" ? total : 0;
+	const fechamento = validarFechamentoPagamentos({
+		total,
+		lancamentos: params.lancamentos,
+		troco: params.troco,
+	});
+	const sync = totaisParaSync(fechamento.efetivos, fechamento.troco);
 
 	const venda = await withTransaction(async (client) => {
 		await execute(
@@ -1395,17 +1485,18 @@ export async function fecharContaMesa(params: {
 				id, idempresa, numeropdv, origem, idconta, status, meio_pagamento,
 				valortotal, valordinheiro, valorpix, valorcartao, valortroco,
 				criadoem, sync_status, nfce_status
-			) VALUES ($1, $2, $3, 'mesa', $4, 'fechada', $5, $6, $7, $8, $9, 0, $10, 'pendente', 'pendente')`,
+			) VALUES ($1, $2, $3, 'mesa', $4, 'fechada', $5, $6, $7, $8, $9, $10, $11, 'pendente', 'pendente')`,
 			[
 				idVenda,
 				sessao.idempresa,
 				numeropdv,
 				conta.id,
-				params.meio,
+				fechamento.meio,
 				total,
-				dinheiro,
-				pix,
-				cartao,
+				sync.valordinheiro,
+				sync.valorpix,
+				sync.valorcartaocredito,
+				fechamento.troco,
 				agora,
 			],
 			client,
@@ -1428,11 +1519,7 @@ export async function fecharContaMesa(params: {
 			);
 		}
 
-		await execute(
-			`INSERT INTO pagamento (id, idvenda, meio, valor, criadoem) VALUES ($1, $2, $3, $4, $5)`,
-			[uuidv4(), idVenda, params.meio, total, agora],
-			client,
-		);
+		await gravarLancamentosVenda(client, idVenda, fechamento.efetivos, agora);
 
 		await execute(
 			`UPDATE conta_mesa SET status = 'fechada', fechadoem = $1, sync_status = 'pendente' WHERE id = $2`,
@@ -1459,7 +1546,11 @@ export async function fecharContaMesa(params: {
 
 	await enfileirarOutbox("criar_venda", {
 		idlocal: idVenda,
-		meio: params.meio,
+		meio:
+			fechamento.meio === "MISTO"
+				? fechamento.efetivos[0]?.meio
+				: fechamento.meio,
+		pagamentos: fechamento.efetivos,
 		itens: conta.itens.map((i) => ({
 			idproduto: i.idproduto,
 			descricao: i.descricao,
@@ -1468,7 +1559,7 @@ export async function fecharContaMesa(params: {
 			precototal: i.precototal,
 		})),
 		valortotal: total,
-		valortroco: 0,
+		valortroco: fechamento.troco,
 		origem: "mesa",
 		idconta_local: conta.id,
 		numero_mesa: conta.numero_mesa,

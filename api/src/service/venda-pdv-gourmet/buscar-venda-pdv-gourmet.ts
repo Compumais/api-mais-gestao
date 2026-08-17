@@ -1,7 +1,9 @@
 import type { HttpResponse } from "@/model/http-model.js";
 import type { VendaPdvGourmet } from "@/model/venda-pdv-gourmet-model.js";
+import type { VendaPdvPagamento } from "@/model/venda-pdv-pagamento-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { buscarVendaPdvGourmetPorId } from "@/repositories/venda-pdv-gourmet-repositories.js";
+import { listarVendaPdvPagamentosPorVenda } from "@/repositories/venda-pdv-pagamento-repositories.js";
 import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
 
 type BuscarVendaPdvGourmetParametros = {
@@ -9,11 +11,15 @@ type BuscarVendaPdvGourmetParametros = {
 	idusuario: string;
 };
 
+export type VendaPdvGourmetComPagamentos = VendaPdvGourmet & {
+	pagamentos: VendaPdvPagamento[];
+};
+
 export async function buscarVendaPdvGourmetService({
 	vendaPdvGourmetId,
 	idusuario,
 }: BuscarVendaPdvGourmetParametros): Promise<
-	HttpResponse<VendaPdvGourmet | null>
+	HttpResponse<VendaPdvGourmetComPagamentos | null>
 > {
 	const registro = await buscarVendaPdvGourmetPorId(vendaPdvGourmetId);
 
@@ -30,5 +36,10 @@ export async function buscarVendaPdvGourmetService({
 		return httpProibido();
 	}
 
-	return httpOk<VendaPdvGourmet>(registro);
+	const pagamentos = await listarVendaPdvPagamentosPorVenda(registro.id);
+
+	return httpOk<VendaPdvGourmetComPagamentos>({
+		...registro,
+		pagamentos,
+	});
 }

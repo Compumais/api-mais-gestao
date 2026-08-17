@@ -1,6 +1,7 @@
 import { BrowserWindow } from "electron";
 import { getConfig } from "../db/database";
 import { obterVenda } from "../db/repos";
+import { linhasPagamentoCupom } from "./cupom-pagamentos";
 import { type DestinoImpressora, enviarTextoImpressora } from "./destino";
 
 function money(n: number): string {
@@ -51,7 +52,7 @@ async function montarTextoCupom(
 	}
 	linhas.push("--------------------------------");
 	linhas.push(`TOTAL: ${money(venda.valortotal)}`);
-	linhas.push(`Pagamento: ${venda.meio_pagamento}`);
+	linhas.push(...linhasPagamentoCupom(venda));
 	if (venda.valortroco > 0) {
 		linhas.push(`Troco: ${money(venda.valortroco)}`);
 	}

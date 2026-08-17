@@ -151,6 +151,10 @@ CREATE TABLE IF NOT EXISTS pagamento (
 	idvenda TEXT NOT NULL,
 	meio TEXT NOT NULL,
 	valor DOUBLE PRECISION NOT NULL,
+	nsu TEXT,
+	autorizacao TEXT,
+	bandeira TEXT,
+	status TEXT NOT NULL DEFAULT 'ok',
 	criadoem TEXT NOT NULL
 );
 
@@ -217,4 +221,5 @@ CREATE INDEX IF NOT EXISTS idx_produto_ean ON produto_cache(ean);
 CREATE INDEX IF NOT EXISTS idx_conta_status ON conta_mesa(status);
 CREATE INDEX IF NOT EXISTS idx_pedido_fila_status ON pedido_fila(status, criadoem);
 CREATE INDEX IF NOT EXISTS idx_pedido_fila_client ON pedido_fila(client_order_id);
+CREATE INDEX IF NOT EXISTS idx_pagamento_idvenda ON pagamento(idvenda);
 `;

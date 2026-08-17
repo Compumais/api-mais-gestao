@@ -55,6 +55,24 @@ export const criarVendaPdvGourmetSchema: FastifySchema = {
 			valorprepago: { type: "string", nullable: true },
 			valortroco: { type: "string", nullable: true },
 			valortotal: { type: "string", nullable: true },
+			pagamentos: {
+				type: "array",
+				items: {
+					type: "object",
+					properties: {
+						meio: { type: "string", enum: ["DINHEIRO", "PIX", "CARTAO"] },
+						valor: { type: "string" },
+						nsu: { type: "string", nullable: true },
+						autorizacao: { type: "string", nullable: true },
+						bandeira: { type: "string", nullable: true },
+						status: {
+							type: "string",
+							enum: ["ok", "pendente", "cancelado"],
+						},
+					},
+					required: ["meio", "valor"],
+				},
+			},
 		},
 		required: ["idempresa", "numeropdv", "usuarioquefechouvenda"],
 	},

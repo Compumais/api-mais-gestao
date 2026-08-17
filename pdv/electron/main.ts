@@ -1,6 +1,7 @@
 import { join } from "node:path";
 import { app, BrowserWindow, ipcMain, shell } from "electron";
 import { closeDb, initDb } from "./db/database";
+import { iniciarTecnibra, pararTecnibra } from "./integracao/tecnibra/servico";
 import { startLanServer, stopLanServer } from "./lan-api/server";
 import { localApi } from "./local-api";
 import { iniciarSyncPeriodico, processarOutbox } from "./sync/outbox";
@@ -73,6 +74,11 @@ app.whenReady().then(async () => {
 				err instanceof Error ? err.message : "Falha ao iniciar API LAN",
 			);
 		});
+		await iniciarTecnibra().catch((err) => {
+			console.error(
+				err instanceof Error ? err.message : "Falha ao iniciar Tecnibra",
+			);
+		});
 	} catch (err) {
 		console.error(
 			err instanceof Error
@@ -92,6 +98,7 @@ app.on("window-all-closed", () => {
 	if (syncTimer) {
 		clearInterval(syncTimer);
 	}
+	pararTecnibra();
 	void stopLanServer();
 	void closeDb();
 	if (process.platform !== "darwin") {

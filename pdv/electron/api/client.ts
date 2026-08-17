@@ -305,10 +305,38 @@ export async function listarAtalhosRemotos(idempresa: string) {
 	return (data.data ?? []).map((a) => a.idproduto);
 }
 
-export async function criarVendaPdv(body: Record<string, unknown>) {
+export type LancamentoPagamentoApi = {
+	meio: "DINHEIRO" | "PIX" | "CARTAO";
+	valor: number | string;
+	nsu?: string | null;
+	autorizacao?: string | null;
+	bandeira?: string | null;
+	status?: "ok" | "pendente" | "cancelado";
+};
+
+export async function criarVendaPdv(
+	body: Record<string, unknown> & {
+		pagamentos?: LancamentoPagamentoApi[];
+	},
+) {
+	const { pagamentos, ...resto } = body;
 	return request<{ id: string }>("/vendas-pdv-gourmet", {
 		method: "POST",
-		body,
+		body: {
+			...resto,
+			...(pagamentos?.length
+				? {
+						pagamentos: pagamentos.map((item) => ({
+							meio: item.meio,
+							valor: asApiDecimal(item.valor),
+							...(item.nsu ? { nsu: item.nsu } : {}),
+							...(item.autorizacao ? { autorizacao: item.autorizacao } : {}),
+							...(item.bandeira ? { bandeira: item.bandeira } : {}),
+							status: item.status ?? "ok",
+						})),
+					}
+				: {}),
+		},
 	});
 }
 

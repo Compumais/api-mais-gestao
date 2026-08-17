@@ -5,7 +5,9 @@ import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -14,6 +16,8 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 import com.pos_mais_gestao.PosApplication;
 import com.pos_mais_gestao.R;
 import com.pos_mais_gestao.data.api.ApiClient;
@@ -24,12 +28,13 @@ import com.pos_mais_gestao.data.sync.OutboxSync;
 import com.pos_mais_gestao.domain.Carrinho;
 import com.pos_mais_gestao.domain.ItemCarrinho;
 import com.pos_mais_gestao.domain.ItemFicha;
+import com.pos_mais_gestao.domain.LancamentoPagamento;
 import com.pos_mais_gestao.domain.MeioPagamento;
-import com.pos_mais_gestao.hardware.PagamentoHardware;
 import com.pos_mais_gestao.ui.cliente.SelecionarClienteActivity;
 import com.pos_mais_gestao.ui.falha.FalhaNfceActivity;
 import com.pos_mais_gestao.ui.sucesso.SucessoActivity;
 import com.pos_mais_gestao.util.MoneyFormat;
+import com.pos_mais_gestao.util.PagamentosMisto;
 import com.pos_mais_gestao.util.PixPayloadBuilder;
 import com.pos_mais_gestao.util.QrBitmapHelper;
 import java.io.Serializable;
@@ -48,20 +53,26 @@ public class PagamentoActivity extends AppCompatActivity {
     public static final String EXTRA_NOME_CLIENTE = "nome_cliente";
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final List<LancamentoPagamento> lancamentos = new ArrayList<>();
     private ApiClient api;
     private PrefsStore prefs;
     private OutboxSync outboxSync;
-    private PagamentoHardware pagamentoHardware;
     private ProgressBar progress;
     private MaterialButton btnDinheiro;
     private MaterialButton btnPix;
     private MaterialButton btnCartao;
+    private MaterialButton btnFechar;
     private MaterialButton btnInformarCliente;
+    private TextView txtTotal;
+    private TextView txtRestante;
+    private TextView txtTroco;
     private TextView txtClienteSelecionado;
+    private TextView txtLancamentosVazio;
+    private LinearLayout listaLancamentos;
 
     private boolean modoMesa;
     private String idConta;
-    private BigDecimal totalMesa = BigDecimal.ZERO;
+    private BigDecimal totalVenda = BigDecimal.ZERO;
     private String identidadeCliente;
     private String nomeCliente;
     private String docCliente;
@@ -96,49 +107,94 @@ public class PagamentoActivity extends AppCompatActivity {
         api = app.getApiClient();
         prefs = app.getPrefsStore();
         outboxSync = app.getOutboxSync();
-        pagamentoHardware = app.getPagamentoHardware();
-
-        if (prefs.isModoPdvLocal()) {
-            Toast.makeText(this, R.string.cupom_somente_pdv, Toast.LENGTH_LONG).show();
-            finish();
-            return;
-        }
 
         modoMesa = getIntent().getBooleanExtra(EXTRA_MODO_MESA, false);
         idConta = getIntent().getStringExtra(EXTRA_ID_CONTA);
         identidadeCliente = getIntent().getStringExtra(EXTRA_ID_CLIENTE);
         nomeCliente = getIntent().getStringExtra(EXTRA_NOME_CLIENTE);
         String totalExtra = getIntent().getStringExtra(EXTRA_TOTAL_MESA);
-        if (totalExtra != null) {
+        if (modoMesa && totalExtra != null) {
             try {
-                totalMesa = new BigDecimal(totalExtra);
+                totalVenda = new BigDecimal(totalExtra);
             } catch (Exception ignored) {
-                totalMesa = BigDecimal.ZERO;
+                totalVenda = BigDecimal.ZERO;
             }
+        } else {
+            totalVenda = Carrinho.getInstance().getTotal();
         }
 
-        TextView txtTotal = findViewById(R.id.txtTotalPagamento);
+        txtTotal = findViewById(R.id.txtTotalPagamento);
+        txtRestante = findViewById(R.id.txtRestantePagamento);
+        txtTroco = findViewById(R.id.txtTrocoPagamento);
         progress = findViewById(R.id.progressPagamento);
         btnDinheiro = findViewById(R.id.btnDinheiro);
         btnPix = findViewById(R.id.btnPix);
         btnCartao = findViewById(R.id.btnCartao);
+        btnFechar = findViewById(R.id.btnFecharPagamento);
         btnInformarCliente = findViewById(R.id.btnInformarCliente);
         txtClienteSelecionado = findViewById(R.id.txtClienteSelecionado);
+        txtLancamentosVazio = findViewById(R.id.txtLancamentosVazio);
+        listaLancamentos = findViewById(R.id.listaLancamentos);
 
-        BigDecimal totalExibir = modoMesa ? totalMesa : Carrinho.getInstance().getTotal();
-        txtTotal.setText(getString(R.string.total, MoneyFormat.format(totalExibir)));
+        btnFechar.setText(modoMesa ? R.string.fechar_conta : R.string.confirmar_pagamento);
         atualizarLabelCliente();
+        atualizarResumo();
 
         btnInformarCliente.setOnClickListener(v ->
                 selecionarClienteLauncher.launch(new Intent(this, SelecionarClienteActivity.class)));
-        btnDinheiro.setOnClickListener(v -> confirmar(MeioPagamento.DINHEIRO));
-        btnPix.setOnClickListener(v -> iniciarPagamentoPix());
-        btnCartao.setOnClickListener(v -> confirmar(MeioPagamento.CARTAO));
+        btnDinheiro.setOnClickListener(v -> iniciarLancamento(MeioPagamento.DINHEIRO));
+        btnPix.setOnClickListener(v -> iniciarLancamento(MeioPagamento.PIX));
+        btnCartao.setOnClickListener(v -> iniciarLancamento(MeioPagamento.CARTAO));
+        btnFechar.setOnClickListener(v -> confirmarFechamento());
     }
 
-    private void iniciarPagamentoPix() {
+    private void iniciarLancamento(MeioPagamento meio) {
+        if (!validarVendaAberta()) {
+            return;
+        }
+        BigDecimal restante = PagamentosMisto.restante(totalVenda, lancamentos);
+        if (restante.compareTo(BigDecimal.ZERO) <= 0) {
+            Toast.makeText(this, R.string.saldo_ja_quitado, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        View view = LayoutInflater.from(this).inflate(R.layout.dialog_valor, null);
+        TextInputLayout layout = view.findViewById(R.id.layoutValor);
+        TextInputEditText input = view.findViewById(R.id.inputValor);
+        layout.setHint(getString(R.string.valor_lancamento));
+        input.setText(MoneyFormat.toApi(restante));
+        input.selectAll();
+
+        new AlertDialog.Builder(this)
+                .setTitle(tituloMeio(meio))
+                .setView(view)
+                .setPositiveButton(R.string.adicionar_lancamento, (d, w) -> {
+                    BigDecimal valor = MoneyFormat.parse(
+                            input.getText() == null ? "" : input.getText().toString());
+                    if (valor.compareTo(BigDecimal.ZERO) <= 0) {
+                        Toast.makeText(this, R.string.valor_lancamento_invalido, Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    BigDecimal atual = PagamentosMisto.restante(totalVenda, lancamentos);
+                    if (PagamentosMisto.valorExcedeRestante(meio, valor, atual)) {
+                        Toast.makeText(
+                                this,
+                                getString(R.string.valor_maior_restante, MoneyFormat.format(atual)),
+                                Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    if (meio == MeioPagamento.PIX) {
+                        confirmarPix(valor);
+                    } else {
+                        adicionarLancamento(LancamentoPagamento.ok(meio, valor));
+                    }
+                })
+                .setNegativeButton(R.string.cancelar, null)
+                .show();
+    }
+
+    private void confirmarPix(BigDecimal valor) {
         if (!prefs.isPixQrHabilitado()) {
-            confirmar(MeioPagamento.PIX);
+            adicionarLancamento(LancamentoPagamento.ok(MeioPagamento.PIX, valor));
             return;
         }
         String chave = prefs.getChavePix();
@@ -146,31 +202,12 @@ public class PagamentoActivity extends AppCompatActivity {
             Toast.makeText(this, R.string.pix_chave_obrigatoria, Toast.LENGTH_LONG).show();
             return;
         }
-
-        BigDecimal total = modoMesa ? totalMesa : Carrinho.getInstance().getTotal();
-        if (modoMesa) {
-            if (idConta == null || idConta.isEmpty()) {
-                Toast.makeText(this, R.string.conta_mesa_invalida, Toast.LENGTH_SHORT).show();
-                finish();
-                return;
-            }
-            if (total.compareTo(BigDecimal.ZERO) <= 0) {
-                Toast.makeText(this, R.string.comanda_vazia, Toast.LENGTH_SHORT).show();
-                finish();
-                return;
-            }
-        } else if (Carrinho.getInstance().isVazio()) {
-            Toast.makeText(this, R.string.carrinho_vazio, Toast.LENGTH_SHORT).show();
-            finish();
-            return;
-        }
-
         try {
             String nome = prefs.getNomePix();
             if (nome == null || nome.trim().isEmpty()) {
                 nome = prefs.getEmpresaNome();
             }
-            String payload = PixPayloadBuilder.montar(chave, total, nome, prefs.getCidadePix());
+            String payload = PixPayloadBuilder.montar(chave, valor, nome, prefs.getCidadePix());
             Bitmap qr = QrBitmapHelper.gerar(payload, 720);
 
             View view = LayoutInflater.from(this).inflate(R.layout.dialog_pix_qr, null);
@@ -179,7 +216,7 @@ public class PagamentoActivity extends AppCompatActivity {
             TextView txtPayload = view.findViewById(R.id.txtPixPayload);
             ImageView imgQr = view.findViewById(R.id.imgPixQr);
 
-            txtValor.setText(MoneyFormat.format(total));
+            txtValor.setText(MoneyFormat.format(valor));
             txtChave.setText(chave.trim());
             txtPayload.setText(payload);
             imgQr.setImageBitmap(qr);
@@ -187,12 +224,67 @@ public class PagamentoActivity extends AppCompatActivity {
             new AlertDialog.Builder(this)
                     .setTitle(R.string.pix)
                     .setView(view)
-                    .setPositiveButton(R.string.pix_confirmar_recebido, (d, w) -> confirmar(MeioPagamento.PIX))
+                    .setPositiveButton(R.string.pix_confirmar_recebido, (d, w) ->
+                            adicionarLancamento(LancamentoPagamento.ok(MeioPagamento.PIX, valor)))
                     .setNegativeButton(R.string.cancelar, null)
                     .show();
         } catch (Exception e) {
             Toast.makeText(this, R.string.pix_qr_erro, Toast.LENGTH_LONG).show();
         }
+    }
+
+    private void adicionarLancamento(LancamentoPagamento lancamento) {
+        lancamentos.add(lancamento);
+        atualizarResumo();
+    }
+
+    private void removerLancamento(LancamentoPagamento lancamento) {
+        lancamentos.remove(lancamento);
+        atualizarResumo();
+    }
+
+    private void atualizarResumo() {
+        txtTotal.setText(getString(R.string.total, MoneyFormat.format(totalVenda)));
+        BigDecimal restante = PagamentosMisto.restante(totalVenda, lancamentos);
+        BigDecimal troco = PagamentosMisto.troco(totalVenda, lancamentos);
+        if (restante.compareTo(BigDecimal.ZERO) <= 0) {
+            txtRestante.setText(R.string.saldo_quitado);
+            txtRestante.setTextColor(getColor(R.color.dinheiro));
+        } else {
+            txtRestante.setText(getString(R.string.restante_pagamento, MoneyFormat.format(restante)));
+            txtRestante.setTextColor(getColor(R.color.danger));
+        }
+        if (troco.compareTo(BigDecimal.ZERO) > 0) {
+            txtTroco.setVisibility(View.VISIBLE);
+            txtTroco.setText(getString(R.string.troco_pagamento, MoneyFormat.format(troco)));
+        } else {
+            txtTroco.setVisibility(View.GONE);
+        }
+
+        listaLancamentos.removeAllViews();
+        LayoutInflater inflater = LayoutInflater.from(this);
+        for (LancamentoPagamento item : lancamentos) {
+            View row = inflater.inflate(R.layout.item_lancamento_pagamento, listaLancamentos, false);
+            TextView txtMeio = row.findViewById(R.id.txtLancamentoMeio);
+            TextView txtValor = row.findViewById(R.id.txtLancamentoValor);
+            ImageButton btnRemover = row.findViewById(R.id.btnRemoverLancamento);
+            txtMeio.setText(tituloMeio(item.meio));
+            txtValor.setText(MoneyFormat.format(item.valor));
+            btnRemover.setOnClickListener(v -> removerLancamento(item));
+            listaLancamentos.addView(row);
+        }
+        txtLancamentosVazio.setVisibility(lancamentos.isEmpty() ? View.VISIBLE : View.GONE);
+        btnFechar.setEnabled(PagamentosMisto.podeFechar(totalVenda, lancamentos));
+    }
+
+    private String tituloMeio(MeioPagamento meio) {
+        if (meio == MeioPagamento.PIX) {
+            return getString(R.string.pix);
+        }
+        if (meio == MeioPagamento.CARTAO) {
+            return getString(R.string.cartao);
+        }
+        return getString(R.string.dinheiro);
     }
 
     private void atualizarLabelCliente() {
@@ -214,46 +306,53 @@ public class PagamentoActivity extends AppCompatActivity {
         btnInformarCliente.setText(R.string.trocar_cliente);
     }
 
-    private void confirmar(MeioPagamento meio) {
+    private boolean validarVendaAberta() {
         if (modoMesa) {
             if (idConta == null || idConta.isEmpty()) {
                 Toast.makeText(this, R.string.conta_mesa_invalida, Toast.LENGTH_SHORT).show();
                 finish();
-                return;
+                return false;
             }
-            if (totalMesa.compareTo(BigDecimal.ZERO) <= 0) {
+            if (totalVenda.compareTo(BigDecimal.ZERO) <= 0) {
                 Toast.makeText(this, R.string.comanda_vazia, Toast.LENGTH_SHORT).show();
                 finish();
-                return;
+                return false;
             }
-        } else if (Carrinho.getInstance().isVazio()) {
+            return true;
+        }
+        if (Carrinho.getInstance().isVazio()) {
             Toast.makeText(this, R.string.carrinho_vazio, Toast.LENGTH_SHORT).show();
             finish();
+            return false;
+        }
+        return true;
+    }
+
+    private void confirmarFechamento() {
+        if (!validarVendaAberta()) {
+            return;
+        }
+        PagamentosMisto.ResultadoFechamento fechamento;
+        try {
+            fechamento = PagamentosMisto.validarFechamento(totalVenda, lancamentos, null);
+        } catch (IllegalArgumentException e) {
+            Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
             return;
         }
 
         setLoading(true);
         List<ItemCarrinho> snapshot =
                 modoMesa ? null : new ArrayList<>(Carrinho.getInstance().getItens());
-        BigDecimal totalPagamento = modoMesa ? totalMesa : Carrinho.getInstance().getTotal();
         boolean imprimirFichas = prefs.isImprimirFichasEvento();
         final String idClienteVenda = identidadeCliente;
         final String nomeClienteVenda = nomeCliente;
         final String docClienteVenda = docCliente;
+        final List<LancamentoPagamento> pags = new ArrayList<>(fechamento.efetivos);
+        final BigDecimal troco = fechamento.troco;
 
         executor.execute(() -> {
             try {
-                if (meio != MeioPagamento.DINHEIRO && pagamentoHardware.estaDisponivel()) {
-                    PagamentoHardware.ResultadoPagamentoHardware teF =
-                            pagamentoHardware.pagar(meio, totalPagamento);
-                    if (!teF.aprovado) {
-                        throw new ApiException(
-                                teF.mensagem != null ? teF.mensagem : getString(R.string.tef_indisponivel));
-                    }
-                }
-
                 ArrayList<ItemFicha> fichas = new ArrayList<>();
-                // Fichas de evento só na venda rápida — não imprimir ao fechar mesa
                 if (imprimirFichas && !modoMesa && snapshot != null) {
                     fichas.addAll(ItemFicha.deCarrinho(snapshot));
                 }
@@ -262,7 +361,7 @@ public class PagamentoActivity extends AppCompatActivity {
                     if (modoMesa) {
                         throw new ApiException(getString(R.string.fechar_mesa_requer_rede));
                     }
-                    outboxSync.enfileirarVenda(snapshot, meio);
+                    outboxSync.enfileirarVenda(snapshot, pags, troco);
                     ArrayList<ItemFicha> fichasOffline = fichas;
                     runOnUiThread(() -> {
                         setLoading(false);
@@ -283,9 +382,9 @@ public class PagamentoActivity extends AppCompatActivity {
                 }
 
                 VendaResultadoDto resultado = modoMesa
-                        ? api.fecharContaMesa(idConta, meio, idClienteVenda)
+                        ? api.fecharContaMesa(idConta, pags, troco, idClienteVenda)
                         : api.criarVendaPdvRapida(
-                                snapshot, meio, idClienteVenda, nomeClienteVenda, docClienteVenda);
+                                snapshot, pags, troco, idClienteVenda, nomeClienteVenda, docClienteVenda);
 
                 ArrayList<ItemFicha> fichasFinais = fichas;
                 runOnUiThread(() -> {
@@ -369,6 +468,14 @@ public class PagamentoActivity extends AppCompatActivity {
         btnPix.setEnabled(!loading);
         btnCartao.setEnabled(!loading);
         btnInformarCliente.setEnabled(!loading);
+        btnFechar.setEnabled(!loading && PagamentosMisto.podeFechar(totalVenda, lancamentos));
+        for (int i = 0; i < listaLancamentos.getChildCount(); i++) {
+            View row = listaLancamentos.getChildAt(i);
+            View remover = row.findViewById(R.id.btnRemoverLancamento);
+            if (remover != null) {
+                remover.setEnabled(!loading);
+            }
+        }
     }
 
     @Override

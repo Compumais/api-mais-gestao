@@ -86,7 +86,7 @@ public class HomeActivity extends AppCompatActivity {
 
         btnVenda.setOnClickListener(v -> {
             if (prefs.isModoPdvLocal()) {
-                Toast.makeText(this, R.string.cupom_somente_pdv, Toast.LENGTH_LONG).show();
+                startActivity(new Intent(this, VendaActivity.class));
                 return;
             }
             if (caixaAberto == null) {
@@ -104,7 +104,7 @@ public class HomeActivity extends AppCompatActivity {
 
     private void aplicarModoLocalHome() {
         boolean local = prefs.isModoPdvLocal();
-        btnVenda.setVisibility(local ? View.GONE : View.VISIBLE);
+        btnVenda.setVisibility(View.VISIBLE);
         btnVendas.setVisibility(local ? View.GONE : View.VISIBLE);
         btnFecharCaixaHome.setVisibility(View.GONE);
         btnMesas.setText(prefs.isModeloComanda() ? R.string.comandas : R.string.mesas);

@@ -1,9 +1,11 @@
 package com.pos_mais_gestao.data.api;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.pos_mais_gestao.data.local.PrefsStore;
+import java.math.BigDecimal;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import okhttp3.MediaType;
@@ -87,6 +89,18 @@ public class LocalPdvApi {
     public JsonObject fecharConta(String idConta, String meio) throws ApiException {
         JsonObject body = new JsonObject();
         body.addProperty("meio", meio);
+        return post("/pos/contas/" + idConta + "/fechar", body.toString(), true);
+    }
+
+    public JsonObject fecharConta(String idConta, JsonArray pagamentos, BigDecimal troco)
+            throws ApiException {
+        JsonObject body = new JsonObject();
+        if (pagamentos != null && pagamentos.size() > 0) {
+            body.add("pagamentos", pagamentos);
+        }
+        if (troco != null && troco.compareTo(BigDecimal.ZERO) > 0) {
+            body.addProperty("troco", troco.doubleValue());
+        }
         return post("/pos/contas/" + idConta + "/fechar", body.toString(), true);
     }
 
