@@ -6,25 +6,33 @@ import {
 	gte,
 	ilike,
 	inArray,
-	isNull,
 	isNotNull,
+	isNull,
 	lte,
 	ne,
+	not,
 	notInArray,
 	or,
 	sql,
 } from "drizzle-orm";
-import type { NovaNotaFiscal } from "@/model/nota-fiscal-model";
+import type { DadosImportacaoItem } from "@/model/nota-fiscal-importacao-model.js";
 import type {
 	NotaFiscalItem,
 	NovoNotaFiscalItem,
 } from "@/model/nota-fiscal-item-model";
-import type { DadosImportacaoItem } from "@/model/nota-fiscal-importacao-model.js";
-import { notafiscal, notafiscalitem, vendapdvgourmet, cfop, entidade } from "@/repositories/schema.js";
+import type { NovaNotaFiscal } from "@/model/nota-fiscal-model";
 import {
-	STATUS_RASCUNHO_IMPORTACAO,
+	cfop,
+	entidade,
+	notafiscal,
+	notafiscalitem,
+	vendapdvgourmet,
+} from "@/repositories/schema.js";
+import { NFE_STATUS } from "@/util/nfe-status.js";
+import {
 	STATUS_NF_CONFIRMADA,
 	STATUS_NF_QUE_NAO_BLOQUEIAM_CHAVE,
+	STATUS_RASCUNHO_IMPORTACAO,
 } from "@/util/nota-fiscal-constants.js";
 import { db } from "./connection";
 
@@ -258,6 +266,17 @@ export async function listarNfcePorEmpresa({
 		eq(notafiscal.idempresa, idempresa),
 		eq(notafiscal.modelo, "65"),
 		ne(notafiscal.status, STATUS_RASCUNHO_IMPORTACAO),
+		// Stubs de contingência sem número/valor (timeout + XML local) não são cupom real.
+		not(
+			and(
+				eq(notafiscal.status, NFE_STATUS.PENDENTE),
+				or(
+					isNull(notafiscal.numeronotafiscal),
+					eq(notafiscal.numeronotafiscal, ""),
+				),
+				sql`coalesce(${notafiscal.dadosimportacao}->>'origem','') = 'pdv-hibrido-contingencia'`,
+			),
+		),
 	];
 
 	if (status !== undefined) {
@@ -274,7 +293,10 @@ export async function listarNfcePorEmpresa({
 		db
 			.select({
 				idnotafiscal: notafiscal.id,
-				idvenda: vendapdvgourmet.id,
+				idvenda: sql<string | null>`coalesce(
+					${vendapdvgourmet.id},
+					${notafiscal.dadosimportacao}->>'idvenda'
+				)`,
 				numeronotafiscal: notafiscal.numeronotafiscal,
 				serie: notafiscal.serie,
 				chavenfe: notafiscal.chavenfe,
@@ -604,7 +626,9 @@ const COLUNAS_RELATORIO_FISCAL = {
 	pis: notafiscal.pis,
 	cofins: notafiscal.cofins,
 	status: notafiscal.status,
-	parceiroNome: sql<string | null>`coalesce(${entidade.razaosocial}, ${entidade.nome})`,
+	parceiroNome: sql<
+		string | null
+	>`coalesce(${entidade.razaosocial}, ${entidade.nome})`,
 	cfopCodigo: cfop.codigo,
 	cfopDescricao: cfop.descricao,
 };
@@ -685,10 +709,7 @@ export async function listarNotasRelatorioFiscalContabilidade({
 						eq(notafiscal.status, STATUS_NFE_AUTORIZADA),
 						isNotNull(notafiscal.chavenfe),
 						or(
-							and(
-								eq(notafiscal.modelo, "55"),
-								eq(notafiscal.tipoorigem, 1),
-							),
+							and(eq(notafiscal.modelo, "55"), eq(notafiscal.tipoorigem, 1)),
 							eq(notafiscal.modelo, "65"),
 						),
 					),

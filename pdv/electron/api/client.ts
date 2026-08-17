@@ -410,6 +410,13 @@ export async function criarVendaPdv(
 	});
 }
 
+export async function buscarVendaPdvGourmet(id: string) {
+	return request<{
+		id: string;
+		idnotafiscalnfce?: string | null;
+	}>(`/vendas-pdv-gourmet/${id}`);
+}
+
 export async function criarItemVendaPdv(body: {
 	idempresa: string;
 	idvenda: string;
