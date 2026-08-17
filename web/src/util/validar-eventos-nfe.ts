@@ -67,14 +67,7 @@ export function notaPodeSerInutilizada(
 		};
 	}
 
-	if (nota.protocolonfe?.trim()) {
-		return {
-			permitido: false,
-			motivo: "NF-e com protocolo de autorização deve ser cancelada",
-		};
-	}
-
-	if (!nota.serie || !nota.numeronotafiscal) {
+	if (!nota.serie && !nota.numeronotafiscal && !nota.chavenfe) {
 		return {
 			permitido: false,
 			motivo: "NF-e sem série ou número para inutilização",

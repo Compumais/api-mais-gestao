@@ -67,6 +67,21 @@ describe("validar-eventos-nfe", () => {
 		expect(resultado.ok).toBe(true);
 	});
 
+	it("permite inutilização de NFC-e rejeitada mesmo com protocolo de lote", () => {
+		const resultado = validarInutilizacaoNfe(
+			{
+				tipoorigem: 1,
+				status: NFE_STATUS.REJEITADA,
+				serie: "3",
+				numeronotafiscal: "128",
+				protocolonfe: "123456",
+			},
+			"NFC-e rejeitada, numeração não será utilizada",
+		);
+
+		expect(resultado.ok).toBe(true);
+	});
+
 	it("calcula prazo de cancelamento pela data de autorização", () => {
 		expect(
 			notaEstaDentroPrazoCancelamentoNfe({

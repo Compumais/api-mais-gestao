@@ -72,6 +72,7 @@ describe("inutilizarNfeVendaService", () => {
 					serie: 3,
 					numeroInicial: 128,
 					numeroFinal: 128,
+					ano: expect.any(Number),
 				}),
 			}),
 		);

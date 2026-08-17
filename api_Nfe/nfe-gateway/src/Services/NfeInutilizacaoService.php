@@ -9,7 +9,7 @@ use NFePHP\NFe\Common\Standardize;
 final class NfeInutilizacaoService
 {
 	/**
-	 * @param array{modelo?:int|string,serie:int|string,numeroInicial:int|string,numeroFinal?:int|string,justificativa:string} $dados
+	 * @param array{modelo?:int|string,serie:int|string,numeroInicial:int|string,numeroFinal?:int|string,justificativa:string,ano?:int|string} $dados
 	 */
 	public static function inutilizar(
 		array $configJson,
@@ -22,6 +22,7 @@ final class NfeInutilizacaoService
 		$numeroInicial = (int) ($dados['numeroInicial'] ?? 0);
 		$numeroFinal = (int) ($dados['numeroFinal'] ?? $numeroInicial);
 		$justificativa = trim((string) ($dados['justificativa'] ?? ''));
+		$ano = isset($dados['ano']) ? (int) $dados['ano'] : null;
 
 		if ($modelo !== 55 && $modelo !== 65) {
 			throw new \InvalidArgumentException(
@@ -52,19 +53,27 @@ final class NfeInutilizacaoService
 		$configJson['modelo'] = $modelo;
 		$tools = SpedNfeFactory::criarTools($configJson, $pfxBase64, $senha);
 		$tools->model($modelo);
-		$response = $tools->sefazInutiliza($serie, $numeroInicial, $numeroFinal, $justificativa);
+		$response = $tools->sefazInutiliza(
+			$serie,
+			$numeroInicial,
+			$numeroFinal,
+			$justificativa,
+			null,
+			$ano,
+		);
 
 		$std = (new Standardize($response))->toStd();
-		$cStat = (string) ($std->cStat ?? '');
-		$xMotivo = (string) ($std->xMotivo ?? '');
-		$sucesso = $cStat === '102';
+		$inf = $std->infInut ?? $std;
+		$cStat = (string) ($inf->cStat ?? $std->cStat ?? '');
+		$xMotivo = (string) ($inf->xMotivo ?? $std->xMotivo ?? '');
+		$sucesso = in_array($cStat, ['102', '563'], true);
 
 		return [
 			'sucesso' => $sucesso,
 			'cStat' => $cStat,
 			'xMotivo' => $xMotivo,
 			'xmlRetorno' => $response,
-			'protocolo' => (string) ($std->infInut->nProt ?? ''),
+			'protocolo' => (string) ($inf->nProt ?? ''),
 		];
 	}
 }

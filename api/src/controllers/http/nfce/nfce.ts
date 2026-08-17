@@ -3,6 +3,7 @@ import z from "zod";
 import { atualizarVendaNfcePdvService } from "@/service/nfce-emissao/atualizar-venda-nfce-pdv.js";
 import { buscarDadosCupomNfceService } from "@/service/nfce-emissao/buscar-dados-cupom-nfce.js";
 import { buscarNfceParaEditarService } from "@/service/nfce-emissao/buscar-nfce-para-editar.js";
+import { inutilizarNfceVendaPdvService } from "@/service/nfce-emissao/inutilizar-nfce-venda-pdv.js";
 import { listarNfcePendentesService } from "@/service/nfce-emissao/listar-nfce-pendentes.js";
 import { reemitirNfceService } from "@/service/nfce-emissao/reemitir-nfce.js";
 import { retransmitirNfceVendaPdvService } from "@/service/nfce-emissao/retransmitir-nfce-venda-pdv.js";
@@ -30,6 +31,11 @@ const paramsVendaSchema = z.object({
 
 const bodyReemitirSchema = z.object({
 	idempresa: z.string().uuid(),
+});
+
+const bodyInutilizarSchema = z.object({
+	idempresa: z.string().uuid(),
+	justificativa: z.string().min(15).max(255),
 });
 
 const bodyContingenciaSchema = z.object({
@@ -244,6 +250,45 @@ export async function retransmitirNfceVenda(
 		const resultado = await retransmitirNfceVendaPdvService({
 			idvenda,
 			idempresa,
+			idusuario: request.user.id,
+		});
+
+		if (!resultado.success) {
+			return reply.status(resultado.status).send(resultado);
+		}
+
+		return reply.status(resultado.status).send(resultado.body);
+	} catch (error) {
+		console.error(error);
+		if (error instanceof z.ZodError) {
+			return reply.status(400).send({
+				error: "Erro de validação",
+				code: "VALIDATION_ERROR",
+				details: error.issues,
+			});
+		}
+		return reply.status(httpErroInterno().status).send(httpErroInterno());
+	}
+}
+
+export async function inutilizarNfceVenda(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
+	try {
+		if (!request.user) {
+			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
+		}
+
+		const { idvenda } = paramsVendaSchema.parse(request.params);
+		const { idempresa, justificativa } = bodyInutilizarSchema.parse(
+			request.body,
+		);
+
+		const resultado = await inutilizarNfceVendaPdvService({
+			idvenda,
+			idempresa,
+			justificativa,
 			idusuario: request.user.id,
 		});
 

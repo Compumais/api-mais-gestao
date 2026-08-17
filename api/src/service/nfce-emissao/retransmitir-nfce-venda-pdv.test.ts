@@ -97,4 +97,24 @@ describe("retransmitirNfceVendaPdvService", () => {
 		expect(resultado.status).toBe(400);
 		expect(emitirService.emitirNfceVendaPdvService).not.toHaveBeenCalled();
 	});
+
+	it("permite retransmitir após numeração inutilizada", async () => {
+		vi.mocked(vendaRepository.buscarVendaPdvGourmetPorId).mockResolvedValue({
+			...vendaBase,
+			idnotafiscalnfce: "nf-1",
+		});
+		vi.mocked(notaRepository.buscarNotaFiscalPorId).mockResolvedValue({
+			id: "nf-1",
+			status: NFE_STATUS.INUTILIZADA,
+		} as never);
+
+		const resultado = await retransmitirNfceVendaPdvService({
+			idusuario: "user-1",
+			idempresa: "emp-1",
+			idvenda: "venda-1",
+		});
+
+		expect(resultado.success).toBe(true);
+		expect(emitirService.emitirNfceVendaPdvService).toHaveBeenCalled();
+	});
 });

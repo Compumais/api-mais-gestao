@@ -6,6 +6,7 @@ import {
 	criarItemVendaPdv,
 	criarVendaPdv,
 	extrairNfceDaBaixa,
+	inutilizarNfceVendaPdv,
 	isEmpresaAcessoNegado,
 	listarEmpresas,
 	loginEmail,
@@ -48,6 +49,7 @@ import {
 	adicionarItemConta,
 	adicionarItemNaMesa,
 	aplicarAjustesConta,
+	atualizarNfceLocalCampos,
 	atualizarNomeClienteConta,
 	atualizarVendaSync,
 	buscarProdutoPorCodigo,
@@ -1464,6 +1466,60 @@ export const localApi = {
 				? `NFC-e rejeitada (${emissao.cStat}): ${motivo}`
 				: `NFC-e rejeitada: ${motivo}`,
 			cStat: emissao.cStat,
+		};
+	},
+
+	async inutilizarNfce(vendaId: string, justificativa: string) {
+		const venda = await obterVenda(vendaId);
+		if (!venda) {
+			throw new Error("Venda não encontrada");
+		}
+
+		const online = await pingApi();
+		if (!online) {
+			throw new Error(
+				"Sem conexão com a retaguarda. Tente novamente quando estiver online.",
+			);
+		}
+
+		const sessao = await obterSessao();
+		if (!sessao.idempresa || !sessao.userid) {
+			throw new Error("Sessão inválida");
+		}
+
+		if (!venda.idremoto) {
+			await processarOutbox();
+		}
+		const vendaAtual = (await obterVenda(vendaId)) ?? venda;
+		if (!vendaAtual.idremoto) {
+			throw new Error(
+				"Venda ainda não está na retaguarda. Sincronize e tente novamente.",
+			);
+		}
+
+		const resultado = await inutilizarNfceVendaPdv({
+			idempresa: sessao.idempresa,
+			idvenda: vendaAtual.idremoto,
+			justificativa,
+		});
+
+		const nfce = await obterNfcePorVenda(vendaId);
+		if (nfce) {
+			await atualizarNfceLocalCampos(nfce.id, {
+				status: "inutilizada",
+				transmitida: false,
+			});
+		}
+		await atualizarVendaSync(vendaId, { nfce_status: "inutilizada" });
+
+		return {
+			modo: "inutilizada" as const,
+			mensagem:
+				resultado.xMotivo?.trim() ||
+				"Numeração da NFC-e inutilizada na SEFAZ",
+			idnotafiscal: resultado.idnotafiscal,
+			cStat: resultado.cStat,
+			protocolo: resultado.protocolo,
 		};
 	},
 };

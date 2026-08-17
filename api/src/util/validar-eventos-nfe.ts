@@ -14,6 +14,42 @@ export type NotaFiscalEventoNfe = {
 	emissao?: string | null;
 };
 
+export function numeracaoInutilizacaoDaNota(
+	nota: Pick<NotaFiscalEventoNfe, "serie" | "numeronotafiscal" | "chavenfe">,
+): { serie: number; numero: number } | null {
+	let serie = Number(nota.serie);
+	let numero = Number(nota.numeronotafiscal);
+	const chave = nota.chavenfe?.replace(/\D/g, "") ?? "";
+	if (chave.length === 44) {
+		if (!Number.isFinite(serie) || serie <= 0) {
+			serie = Number(chave.slice(22, 25));
+		}
+		if (!Number.isFinite(numero) || numero <= 0) {
+			numero = Number(chave.slice(25, 34));
+		}
+	}
+	if (
+		!Number.isFinite(serie) ||
+		serie <= 0 ||
+		!Number.isFinite(numero) ||
+		numero <= 0
+	) {
+		return null;
+	}
+	return { serie, numero };
+}
+
+export function obterAnoInutilizacaoNfe(
+	nota: Pick<NotaFiscalEventoNfe, "datahoraemissao" | "emissao">,
+): number {
+	const referencia = nota.datahoraemissao ?? nota.emissao;
+	const data = referencia ? new Date(referencia) : new Date();
+	const ano = Number.isNaN(data.getTime())
+		? new Date().getFullYear()
+		: data.getFullYear();
+	return ano % 100;
+}
+
 export function normalizarJustificativaNfe(justificativa: string): string {
 	return justificativa.trim().replace(/\s+/g, " ");
 }
@@ -114,21 +150,11 @@ export function validarInutilizacaoNfe(
 		};
 	}
 
-	if (nota.protocolonfe?.trim()) {
+	if (!numeracaoInutilizacaoDaNota(nota)) {
 		return {
 			ok: false,
-			mensagem:
-				"NF-e autorizada deve ser cancelada. Inutilização é para numeração não utilizada",
+			mensagem: "Série ou número inválidos para inutilização",
 		};
-	}
-
-	const serie = Number(nota.serie);
-	const numero = Number(nota.numeronotafiscal);
-	if (!Number.isFinite(serie) || serie <= 0) {
-		return { ok: false, mensagem: "Série da NF-e inválida para inutilização" };
-	}
-	if (!Number.isFinite(numero) || numero <= 0) {
-		return { ok: false, mensagem: "Número da NF-e inválido para inutilização" };
 	}
 
 	const erroJustificativa = validarJustificativaNfe(justificativa);
