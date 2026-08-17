@@ -1,12 +1,10 @@
 "use client";
 
-
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { type Resolver, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,7 +24,10 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { OPCOES_TIPO_PRODUTO, sugerirTipoprodutoPorCodigoCfop } from "@/constants/tipo-produto";
+import {
+	OPCOES_TIPO_PRODUTO,
+	sugerirTipoprodutoPorCodigoCfop,
+} from "@/constants/tipo-produto";
 import {
 	type ItemImportacaoFormData,
 	itemImportacaoSchema,
@@ -41,10 +42,7 @@ import { DialogCriarGrupoRapido } from "../dialog-criar-grupo-rapido";
 import { CampoCfopImportacao } from "./campo-cfop-importacao";
 import { CampoUnidadeMedidaImportacao } from "./campo-unidade-medida-importacao";
 
-
-
 type ModalItemImportacaoProps = {
-
 	idempresa: string;
 
 	idRascunho: string;
@@ -54,21 +52,15 @@ type ModalItemImportacaoProps = {
 	aberto: boolean;
 
 	onAbertoChange: (aberto: boolean) => void;
-
 };
 
-
-
 function calcularConversao(
-
 	quantidadeXml: string,
 
 	precounitarioXml: string,
 
 	fator: string,
-
 ) {
-
 	const qtd = parseFloat(quantidadeXml) || 0;
 
 	const preco = parseFloat(precounitarioXml) || 0;
@@ -76,30 +68,21 @@ function calcularConversao(
 	const f = parseFloat(fator) || 1;
 
 	return {
-
 		quantidadeEstoque: (qtd * f).toString(),
 
 		precounitarioEstoque: f !== 0 ? (preco / f).toString() : preco.toString(),
-
 	};
-
 }
 
-
-
 function montarDefaultValues(
-
 	item: NotaFiscalItemImportacao,
 
 	dados: DadosImportacaoItem,
-
 ): ItemImportacaoFormData {
-
 	const trib = dados.tributacao;
 
 	return {
-		descricaoFornecedor:
-			dados.descricaoFornecedor ?? item.descricao ?? "",
+		descricaoFornecedor: dados.descricaoFornecedor ?? item.descricao ?? "",
 		fatorConversao: dados.fatorConversao ?? "1",
 		quantidadeEstoque: dados.quantidadeEstoque ?? item.quantidade ?? "0",
 		precounitarioEstoque:
@@ -138,15 +121,10 @@ function montarDefaultValues(
 		valorcofins: trib.cofins ?? "",
 
 		ipi: trib.ipi ?? "",
-
 	};
-
 }
 
-
-
 export function ModalItemImportacao({
-
 	idempresa,
 
 	idRascunho,
@@ -156,28 +134,18 @@ export function ModalItemImportacao({
 	aberto,
 
 	onAbertoChange,
-
 }: ModalItemImportacaoProps) {
-
 	const queryClient = useQueryClient();
 	const [dialogGrupoAberto, setDialogGrupoAberto] = useState(false);
 	const dados = item.dadosimportacao;
 
-
-
 	const form = useForm<ItemImportacaoFormData>({
+		resolver: zodResolver(
+			itemImportacaoSchema,
+		) as Resolver<ItemImportacaoFormData>,
 
-		resolver: zodResolver(itemImportacaoSchema),
-
-		defaultValues: dados
-
-			? montarDefaultValues(item, dados)
-
-			: undefined,
-
+		defaultValues: dados ? montarDefaultValues(item, dados) : undefined,
 	});
-
-
 
 	const {
 		register,
@@ -203,41 +171,28 @@ export function ModalItemImportacao({
 	});
 
 	useEffect(() => {
-
 		if (dados && aberto) {
-
 			reset(montarDefaultValues(item, dados));
-
 		}
-
 	}, [dados, item, aberto, reset]);
 
-
-
 	useEffect(() => {
-
 		if (!dados) return;
 
 		const { quantidadeEstoque, precounitarioEstoque } = calcularConversao(
-
 			dados.quantidadeXml,
 
 			dados.precounitarioXml,
 
 			fatorConversao,
-
 		);
 
 		setValue("quantidadeEstoque", quantidadeEstoque);
 
 		setValue("precounitarioEstoque", precounitarioEstoque);
-
 	}, [fatorConversao, dados, setValue]);
 
-
-
 	const { mutate: salvar, isPending } = useMutation({
-
 		mutationFn: (formData: ItemImportacaoFormData) => {
 			if (!dados) {
 				return Promise.reject(new Error("Dados de importação indisponíveis"));
@@ -254,14 +209,9 @@ export function ModalItemImportacao({
 			}
 
 			const origemNum =
-
 				formData.origem !== undefined && formData.origem !== ""
-
 					? parseInt(formData.origem, 10)
-
 					: undefined;
-
-
 
 			const payload: Partial<DadosImportacaoItem> = {
 				descricaoFornecedor: formData.descricaoFornecedor.trim(),
@@ -279,7 +229,6 @@ export function ModalItemImportacao({
 				tipoproduto: formData.tipoproduto || undefined,
 				unidadeEstoque: formData.unidadeEstoque || undefined,
 				tributacao: {
-
 					situacaotributaria: formData.situacaotributaria,
 
 					baseicms: formData.baseicms,
@@ -303,486 +252,402 @@ export function ModalItemImportacao({
 					ipi: formData.ipi,
 
 					origem: Number.isNaN(origemNum ?? NaN) ? undefined : origemNum,
-
 				},
-
 			};
 
-
-
 			return notaFiscalService.atualizarItemRascunhoImportacao(
-
 				idRascunho,
 
 				item.id,
 
 				{ idempresa, ...payload },
-
 			);
-
 		},
 
 		onSuccess: () => {
-
 			toast.success("Item atualizado");
 
 			queryClient.invalidateQueries({
-
 				queryKey: ["rascunho-importacao-nf", idRascunho],
-
 			});
 
 			onAbertoChange(false);
-
 		},
 
 		onError: (error: Error) => toast.error(error.message),
-
 	});
-
-
 
 	if (!dados) return null;
 
-
-
 	return (
 		<>
-		<Dialog open={aberto} onOpenChange={onAbertoChange}>
+			<Dialog open={aberto} onOpenChange={onAbertoChange}>
+				<DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+					<DialogHeader>
+						<DialogTitle>Lançamento do produto</DialogTitle>
+					</DialogHeader>
 
-			<DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-
-				<DialogHeader>
-
-					<DialogTitle>Lançamento do produto</DialogTitle>
-
-				</DialogHeader>
-
-				<form
-
-					onSubmit={handleSubmit((formData) => salvar(formData))}
-
-					className="flex flex-col gap-4"
-
-				>
-
-					<Field data-invalid={!!errors.descricaoFornecedor}>
-						<FieldLabel htmlFor="descricaoFornecedor">Nome do produto</FieldLabel>
-						<Input
-							id="descricaoFornecedor"
-							maxLength={120}
-							placeholder="Nome que será cadastrado no estoque"
-							{...register("descricaoFornecedor")}
-						/>
-						{dados.descricaoFornecedor &&
-						watch("descricaoFornecedor") !== dados.descricaoFornecedor ? (
-							<p className="text-xs text-muted-foreground mt-1">
-								Original na NF: {dados.descricaoFornecedor}
-							</p>
-						) : null}
-						{errors.descricaoFornecedor ? (
-							<p className="text-xs text-destructive mt-1">
-								{errors.descricaoFornecedor.message}
-							</p>
-						) : null}
-					</Field>
-					{statusVinculo === "novo" ? (
-						<Field data-invalid={!!errors.codigoProduto}>
-							<FieldLabel htmlFor="codigoProduto">Código do produto</FieldLabel>
+					<form
+						onSubmit={handleSubmit((formData) => salvar(formData))}
+						className="flex flex-col gap-4"
+					>
+						<Field data-invalid={!!errors.descricaoFornecedor}>
+							<FieldLabel htmlFor="descricaoFornecedor">
+								Nome do produto
+							</FieldLabel>
 							<Input
-								id="codigoProduto"
-								type="number"
-								min={1}
-								placeholder="Preenchido automaticamente"
-								{...register("codigoProduto", { valueAsNumber: true })}
+								id="descricaoFornecedor"
+								maxLength={120}
+								placeholder="Nome que será cadastrado no estoque"
+								{...register("descricaoFornecedor")}
 							/>
-							<p className="mt-1 text-xs text-muted-foreground">
-								Próximo código da empresa; pode ser alterado.
-							</p>
-							{errors.codigoProduto ? (
-								<p className="mt-1 text-xs text-destructive">
-									{errors.codigoProduto.message}
+							{dados.descricaoFornecedor &&
+							watch("descricaoFornecedor") !== dados.descricaoFornecedor ? (
+								<p className="text-xs text-muted-foreground mt-1">
+									Original na NF: {dados.descricaoFornecedor}
+								</p>
+							) : null}
+							{errors.descricaoFornecedor ? (
+								<p className="text-xs text-destructive mt-1">
+									{errors.descricaoFornecedor.message}
 								</p>
 							) : null}
 						</Field>
-					) : null}
-					{dados.eanXml ? (
-						<p className="text-sm text-muted-foreground">
-							Código de barras (XML): <span className="font-mono">{dados.eanXml}</span>
-						</p>
-					) : null}
-					<p className="text-xs text-muted-foreground">
-						Unidade NF: {dados.unidadeXml ?? "-"} | Qtd. NF: {dados.quantidadeXml} |
-						Preço NF: {dados.precounitarioXml}
-					</p>
-
-					<Tabs defaultValue="compra">
-
-						<TabsList>
-
-							<TabsTrigger value="compra">Compra</TabsTrigger>
-
-							<TabsTrigger value="tributacao">Tributação</TabsTrigger>
-
-						</TabsList>
-
-
-
-						<TabsContent value="compra" className="mt-4">
-							<FieldGroup>
-								<Field>
-									<FieldLabel htmlFor="fatorConversao">
-										Fator de conversão
-									</FieldLabel>
-									<Input id="fatorConversao" {...register("fatorConversao")} />
-									<p className="text-xs text-muted-foreground mt-1">
-										Relaciona a unidade da nota com a unidade de estoque. Ex.: caixa
-										com 12 unidades → fator 12. Qtd. estoque = qtd. NF × fator.
-										Preço estoque = preço NF ÷ fator.
-									</p>
-								</Field>
-								<div className="grid grid-cols-2 gap-3">
-									<Field>
-										<FieldLabel htmlFor="quantidadeEstoque">
-											Qtd. estoque (calculada)
-										</FieldLabel>
-										<Input
-											id="quantidadeEstoque"
-											readOnly
-											{...register("quantidadeEstoque")}
-										/>
-									</Field>
-									<Field>
-										<FieldLabel htmlFor="precounitarioEstoque">
-											Preço custo estoque (calculado)
-										</FieldLabel>
-										<Input
-											id="precounitarioEstoque"
-											readOnly
-											{...register("precounitarioEstoque")}
-										/>
-									</Field>
-								</div>
-								<Field>
-									<FieldLabel htmlFor="precoVenda">Preço de venda</FieldLabel>
-									<Input id="precoVenda" {...register("precoVenda")} />
-								</Field>
-								<Field>
-									<div className="mb-2 flex items-center justify-between gap-2">
-										<FieldLabel htmlFor="idgrupo">
-											Grupo do produto{precisaDadosProduto ? " *" : ""}
-										</FieldLabel>
-										<Button
-											type="button"
-											variant="ghost"
-											size="sm"
-											className="h-8 gap-1 px-2"
-											onClick={() => setDialogGrupoAberto(true)}
-										>
-											<Plus className="size-3.5" aria-hidden="true" />
-											Cadastrar
-										</Button>
-									</div>
-									<Select
-										value={watch("idgrupo") || undefined}
-										onValueChange={(value) =>
-											setValue("idgrupo", value, { shouldDirty: true })
-										}
-										disabled={carregandoGrupos}
-									>
-										<SelectTrigger id="idgrupo" className="w-full">
-											<SelectValue
-												placeholder={
-													carregandoGrupos
-														? "Carregando grupos..."
-														: "Selecione o grupo"
-												}
-											/>
-										</SelectTrigger>
-										<SelectContent position="popper" className="z-[200]">
-											{grupos.length === 0 ? (
-												<SelectItem value="__vazio" disabled>
-													{erroGrupos
-														? "Erro ao carregar grupos"
-														: "Nenhum grupo cadastrado"}
-												</SelectItem>
-											) : (
-												grupos.map((grupo) => (
-													<SelectItem key={grupo.id} value={grupo.id}>
-														{grupo.nome || grupo.codigo || grupo.id}
-													</SelectItem>
-												))
-											)}
-										</SelectContent>
-									</Select>
-									{precisaDadosProduto && statusVinculo === "pendente" ? (
-										<p className="mt-1 text-xs text-muted-foreground">
-											Obrigatório ao marcar o item como cadastro novo.
-										</p>
-									) : null}
-								</Field>
-								<CampoUnidadeMedidaImportacao
-									idempresa={idempresa}
-									habilitado={aberto}
-									value={watch("idunidademedida")}
-									codigoXml={dados.unidadeXml}
-									obrigatorio={statusVinculo === "novo"}
-									onChange={(id, codigo) => {
-										setValue("idunidademedida", id, { shouldDirty: true });
-										if (codigo) {
-											setValue("unidadeEstoque", codigo, { shouldDirty: true });
-										}
-									}}
+						{statusVinculo === "novo" ? (
+							<Field data-invalid={!!errors.codigoProduto}>
+								<FieldLabel htmlFor="codigoProduto">
+									Código do produto
+								</FieldLabel>
+								<Input
+									id="codigoProduto"
+									type="number"
+									min={1}
+									placeholder="Preenchido automaticamente"
+									{...register("codigoProduto", { valueAsNumber: true })}
 								/>
-								<Field>
-									<FieldLabel htmlFor="tipoproduto-item">
-										Tipo de produto
-									</FieldLabel>
-									<Select
-										value={watch("tipoproduto") || "none"}
-										onValueChange={(valor) =>
-											setValue(
-												"tipoproduto",
-												valor === "none" ? "" : valor,
-												{ shouldDirty: true },
-											)
-										}
-									>
-										<SelectTrigger id="tipoproduto-item" className="w-full">
-											<SelectValue placeholder="Selecione o tipo" />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="none">Não informado</SelectItem>
-											{OPCOES_TIPO_PRODUTO.map((opcao) => (
-												<SelectItem key={opcao.value} value={opcao.value}>
-													{opcao.label}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</Field>
-								<CampoCfopImportacao
-									id="idcfop-item"
-									label="CFOP de entrada"
-									value={watch("idcfop")}
-									codigoXml={dados.cfopXml}
-									onChange={(idcfop, codigo, tipoprodutoCfop) => {
-										setValue("idcfop", idcfop, { shouldDirty: true });
-										const tipoproduto =
-											tipoprodutoCfop?.trim() ||
-											sugerirTipoprodutoPorCodigoCfop(codigo);
-										setValue("tipoproduto", tipoproduto, {
-											shouldDirty: true,
-										});
-									}}
-								/>
-								<p className="text-xs text-muted-foreground -mt-2">
-									Pré-sugerido pela planilha de depara (CFOP do XML → entrada de
-									revenda). Ajuste se a finalidade for uso/consumo ou ativo. O CFOP
-									do XML permanece só como histórico.
+								<p className="mt-1 text-xs text-muted-foreground">
+									Próximo código da empresa; pode ser alterado.
 								</p>
-								<Field>
-									<FieldLabel htmlFor="ncmXml">NCM</FieldLabel>
-									<Input id="ncmXml" {...register("ncmXml")} />
-								</Field>
-							</FieldGroup>
+								{errors.codigoProduto ? (
+									<p className="mt-1 text-xs text-destructive">
+										{errors.codigoProduto.message}
+									</p>
+								) : null}
+							</Field>
+						) : null}
+						{dados.eanXml ? (
+							<p className="text-sm text-muted-foreground">
+								Código de barras (XML):{" "}
+								<span className="font-mono">{dados.eanXml}</span>
+							</p>
+						) : null}
+						<p className="text-xs text-muted-foreground">
+							Unidade NF: {dados.unidadeXml ?? "-"} | Qtd. NF:{" "}
+							{dados.quantidadeXml} | Preço NF: {dados.precounitarioXml}
+						</p>
 
-						</TabsContent>
+						<Tabs defaultValue="compra">
+							<TabsList>
+								<TabsTrigger value="compra">Compra</TabsTrigger>
 
+								<TabsTrigger value="tributacao">Tributação</TabsTrigger>
+							</TabsList>
 
-
-						<TabsContent value="tributacao" className="mt-4">
-
-							<FieldGroup>
-
-								<div className="grid grid-cols-2 gap-3">
-
+							<TabsContent value="compra" className="mt-4">
+								<FieldGroup>
 									<Field>
-
-										<FieldLabel htmlFor="origem">Origem</FieldLabel>
-
-										<Input id="origem" {...register("origem")} />
-
-									</Field>
-
-									<Field>
-
-										<FieldLabel htmlFor="situacaotributaria">
-
-											CST ICMS
-
+										<FieldLabel htmlFor="fatorConversao">
+											Fator de conversão
 										</FieldLabel>
-
 										<Input
-
-											id="situacaotributaria"
-
-											{...register("situacaotributaria")}
-
+											id="fatorConversao"
+											{...register("fatorConversao")}
 										/>
-
+										<p className="text-xs text-muted-foreground mt-1">
+											Relaciona a unidade da nota com a unidade de estoque. Ex.:
+											caixa com 12 unidades → fator 12. Qtd. estoque = qtd. NF ×
+											fator. Preço estoque = preço NF ÷ fator.
+										</p>
 									</Field>
+									<div className="grid grid-cols-2 gap-3">
+										<Field>
+											<FieldLabel htmlFor="quantidadeEstoque">
+												Qtd. estoque (calculada)
+											</FieldLabel>
+											<Input
+												id="quantidadeEstoque"
+												readOnly
+												{...register("quantidadeEstoque")}
+											/>
+										</Field>
+										<Field>
+											<FieldLabel htmlFor="precounitarioEstoque">
+												Preço custo estoque (calculado)
+											</FieldLabel>
+											<Input
+												id="precounitarioEstoque"
+												readOnly
+												{...register("precounitarioEstoque")}
+											/>
+										</Field>
+									</div>
+									<Field>
+										<FieldLabel htmlFor="precoVenda">Preço de venda</FieldLabel>
+										<Input id="precoVenda" {...register("precoVenda")} />
+									</Field>
+									<Field>
+										<div className="mb-2 flex items-center justify-between gap-2">
+											<FieldLabel htmlFor="idgrupo">
+												Grupo do produto{precisaDadosProduto ? " *" : ""}
+											</FieldLabel>
+											<Button
+												type="button"
+												variant="ghost"
+												size="sm"
+												className="h-8 gap-1 px-2"
+												onClick={() => setDialogGrupoAberto(true)}
+											>
+												<Plus className="size-3.5" aria-hidden="true" />
+												Cadastrar
+											</Button>
+										</div>
+										<Select
+											value={watch("idgrupo") || undefined}
+											onValueChange={(value) =>
+												setValue("idgrupo", value, { shouldDirty: true })
+											}
+											disabled={carregandoGrupos}
+										>
+											<SelectTrigger id="idgrupo" className="w-full">
+												<SelectValue
+													placeholder={
+														carregandoGrupos
+															? "Carregando grupos..."
+															: "Selecione o grupo"
+													}
+												/>
+											</SelectTrigger>
+											<SelectContent position="popper" className="z-[200]">
+												{grupos.length === 0 ? (
+													<SelectItem value="__vazio" disabled>
+														{erroGrupos
+															? "Erro ao carregar grupos"
+															: "Nenhum grupo cadastrado"}
+													</SelectItem>
+												) : (
+													grupos.map((grupo) => (
+														<SelectItem key={grupo.id} value={grupo.id}>
+															{grupo.nome || grupo.codigo || grupo.id}
+														</SelectItem>
+													))
+												)}
+											</SelectContent>
+										</Select>
+										{precisaDadosProduto && statusVinculo === "pendente" ? (
+											<p className="mt-1 text-xs text-muted-foreground">
+												Obrigatório ao marcar o item como cadastro novo.
+											</p>
+										) : null}
+									</Field>
+									<CampoUnidadeMedidaImportacao
+										idempresa={idempresa}
+										habilitado={aberto}
+										value={watch("idunidademedida")}
+										codigoXml={dados.unidadeXml}
+										obrigatorio={statusVinculo === "novo"}
+										onChange={(id, codigo) => {
+											setValue("idunidademedida", id, { shouldDirty: true });
+											if (codigo) {
+												setValue("unidadeEstoque", codigo, {
+													shouldDirty: true,
+												});
+											}
+										}}
+									/>
+									<Field>
+										<FieldLabel htmlFor="tipoproduto-item">
+											Tipo de produto
+										</FieldLabel>
+										<Select
+											value={watch("tipoproduto") || "none"}
+											onValueChange={(valor) =>
+												setValue("tipoproduto", valor === "none" ? "" : valor, {
+													shouldDirty: true,
+												})
+											}
+										>
+											<SelectTrigger id="tipoproduto-item" className="w-full">
+												<SelectValue placeholder="Selecione o tipo" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="none">Não informado</SelectItem>
+												{OPCOES_TIPO_PRODUTO.map((opcao) => (
+													<SelectItem key={opcao.value} value={opcao.value}>
+														{opcao.label}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</Field>
+									<CampoCfopImportacao
+										id="idcfop-item"
+										label="CFOP de entrada"
+										value={watch("idcfop")}
+										codigoXml={dados.cfopXml}
+										onChange={(idcfop, codigo, tipoprodutoCfop) => {
+											setValue("idcfop", idcfop, { shouldDirty: true });
+											const tipoproduto =
+												tipoprodutoCfop?.trim() ||
+												sugerirTipoprodutoPorCodigoCfop(codigo);
+											setValue("tipoproduto", tipoproduto, {
+												shouldDirty: true,
+											});
+										}}
+									/>
+									<p className="text-xs text-muted-foreground -mt-2">
+										Pré-sugerido pela planilha de depara (CFOP do XML → entrada
+										de revenda). Ajuste se a finalidade for uso/consumo ou
+										ativo. O CFOP do XML permanece só como histórico.
+									</p>
+									<Field>
+										<FieldLabel htmlFor="ncmXml">NCM</FieldLabel>
+										<Input id="ncmXml" {...register("ncmXml")} />
+									</Field>
+								</FieldGroup>
+							</TabsContent>
 
-								</div>
+							<TabsContent value="tributacao" className="mt-4">
+								<FieldGroup>
+									<div className="grid grid-cols-2 gap-3">
+										<Field>
+											<FieldLabel htmlFor="origem">Origem</FieldLabel>
 
+											<Input id="origem" {...register("origem")} />
+										</Field>
 
+										<Field>
+											<FieldLabel htmlFor="situacaotributaria">
+												CST ICMS
+											</FieldLabel>
 
-								<h4 className="text-sm font-semibold">ICMS</h4>
+											<Input
+												id="situacaotributaria"
+												{...register("situacaotributaria")}
+											/>
+										</Field>
+									</div>
 
-								<div className="grid grid-cols-3 gap-3">
+									<h4 className="text-sm font-semibold">ICMS</h4>
+
+									<div className="grid grid-cols-3 gap-3">
+										<Field>
+											<FieldLabel htmlFor="baseicms">Base ICMS</FieldLabel>
+
+											<Input id="baseicms" {...register("baseicms")} />
+										</Field>
+
+										<Field>
+											<FieldLabel htmlFor="percentualicms">% ICMS</FieldLabel>
+
+											<Input
+												id="percentualicms"
+												{...register("percentualicms")}
+											/>
+										</Field>
+
+										<Field>
+											<FieldLabel htmlFor="valoricms">Valor ICMS</FieldLabel>
+
+											<Input id="valoricms" {...register("valoricms")} />
+										</Field>
+									</div>
+
+									<h4 className="text-sm font-semibold">PIS</h4>
+
+									<div className="grid grid-cols-3 gap-3">
+										<Field>
+											<FieldLabel htmlFor="cstpis">CST PIS</FieldLabel>
+
+											<Input id="cstpis" {...register("cstpis")} />
+										</Field>
+
+										<Field>
+											<FieldLabel htmlFor="aliquotapis">% PIS</FieldLabel>
+
+											<Input id="aliquotapis" {...register("aliquotapis")} />
+										</Field>
+
+										<Field>
+											<FieldLabel htmlFor="valorpis">Valor PIS</FieldLabel>
+
+											<Input id="valorpis" {...register("valorpis")} />
+										</Field>
+									</div>
+
+									<h4 className="text-sm font-semibold">COFINS</h4>
+
+									<div className="grid grid-cols-3 gap-3">
+										<Field>
+											<FieldLabel htmlFor="cstcofins">CST COFINS</FieldLabel>
+
+											<Input id="cstcofins" {...register("cstcofins")} />
+										</Field>
+
+										<Field>
+											<FieldLabel htmlFor="aliquotacofins">% COFINS</FieldLabel>
+
+											<Input
+												id="aliquotacofins"
+												{...register("aliquotacofins")}
+											/>
+										</Field>
+
+										<Field>
+											<FieldLabel htmlFor="valorcofins">
+												Valor COFINS
+											</FieldLabel>
+
+											<Input id="valorcofins" {...register("valorcofins")} />
+										</Field>
+									</div>
+
+									<h4 className="text-sm font-semibold">IPI</h4>
 
 									<Field>
+										<FieldLabel htmlFor="ipi">Valor IPI</FieldLabel>
 
-										<FieldLabel htmlFor="baseicms">Base ICMS</FieldLabel>
-
-										<Input id="baseicms" {...register("baseicms")} />
-
+										<Input id="ipi" {...register("ipi")} />
 									</Field>
-
-									<Field>
-
-										<FieldLabel htmlFor="percentualicms">% ICMS</FieldLabel>
-
-										<Input id="percentualicms" {...register("percentualicms")} />
-
-									</Field>
-
-									<Field>
-
-										<FieldLabel htmlFor="valoricms">Valor ICMS</FieldLabel>
-
-										<Input id="valoricms" {...register("valoricms")} />
-
-									</Field>
-
-								</div>
-
-
-
-								<h4 className="text-sm font-semibold">PIS</h4>
-
-								<div className="grid grid-cols-3 gap-3">
-
-									<Field>
-
-										<FieldLabel htmlFor="cstpis">CST PIS</FieldLabel>
-
-										<Input id="cstpis" {...register("cstpis")} />
-
-									</Field>
-
-									<Field>
-
-										<FieldLabel htmlFor="aliquotapis">% PIS</FieldLabel>
-
-										<Input id="aliquotapis" {...register("aliquotapis")} />
-
-									</Field>
-
-									<Field>
-
-										<FieldLabel htmlFor="valorpis">Valor PIS</FieldLabel>
-
-										<Input id="valorpis" {...register("valorpis")} />
-
-									</Field>
-
-								</div>
-
-
-
-								<h4 className="text-sm font-semibold">COFINS</h4>
-
-								<div className="grid grid-cols-3 gap-3">
-
-									<Field>
-
-										<FieldLabel htmlFor="cstcofins">CST COFINS</FieldLabel>
-
-										<Input id="cstcofins" {...register("cstcofins")} />
-
-									</Field>
-
-									<Field>
-
-										<FieldLabel htmlFor="aliquotacofins">% COFINS</FieldLabel>
-
-										<Input id="aliquotacofins" {...register("aliquotacofins")} />
-
-									</Field>
-
-									<Field>
-
-										<FieldLabel htmlFor="valorcofins">Valor COFINS</FieldLabel>
-
-										<Input id="valorcofins" {...register("valorcofins")} />
-
-									</Field>
-
-								</div>
-
-
-
-								<h4 className="text-sm font-semibold">IPI</h4>
-
-								<Field>
-
-									<FieldLabel htmlFor="ipi">Valor IPI</FieldLabel>
-
-									<Input id="ipi" {...register("ipi")} />
-
-								</Field>
-
-							</FieldGroup>
-
-						</TabsContent>
-
-					</Tabs>
-
-
-
-					<DialogFooter>
-
-						<Button
-
-							type="button"
-
-							variant="outline"
-
-							onClick={() => onAbertoChange(false)}
-
-						>
-
-							Cancelar
-
-						</Button>
-
-						<Button type="submit" disabled={isPending}>
-
-							{isPending ? "Salvando..." : "Salvar item"}
-
-						</Button>
-
-					</DialogFooter>
-
-				</form>
-
-			</DialogContent>
-
-		</Dialog>
-		<DialogCriarGrupoRapido
-			aberto={dialogGrupoAberto}
-			onAbertoChange={setDialogGrupoAberto}
-			onCriado={(id) => {
-				void queryClient.invalidateQueries({
-					queryKey: ["hierarquias", idempresa],
-				});
-				setValue("idgrupo", id, { shouldDirty: true });
-			}}
-		/>
+								</FieldGroup>
+							</TabsContent>
+						</Tabs>
+
+						<DialogFooter>
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() => onAbertoChange(false)}
+							>
+								Cancelar
+							</Button>
+
+							<Button type="submit" disabled={isPending}>
+								{isPending ? "Salvando..." : "Salvar item"}
+							</Button>
+						</DialogFooter>
+					</form>
+				</DialogContent>
+			</Dialog>
+			<DialogCriarGrupoRapido
+				aberto={dialogGrupoAberto}
+				onAbertoChange={setDialogGrupoAberto}
+				onCriado={(id) => {
+					void queryClient.invalidateQueries({
+						queryKey: ["hierarquias", idempresa],
+					});
+					setValue("idgrupo", id, { shouldDirty: true });
+				}}
+			/>
 		</>
 	);
-
 }
-
-
