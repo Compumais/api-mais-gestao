@@ -36,6 +36,11 @@ final class NfeCancelamentoService
 			);
 		}
 
+		$modeloChave = (int) substr($chave, 20, 2);
+		if ($modeloChave === 55 || $modeloChave === 65) {
+			$configJson['modelo'] = $modeloChave;
+		}
+
 		$tools = SpedNfeFactory::criarTools($configJson, $pfxBase64, $senha);
 		$response = $tools->sefazCancela($chave, $justificativa, $protocolo);
 

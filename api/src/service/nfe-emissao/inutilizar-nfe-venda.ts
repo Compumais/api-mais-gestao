@@ -5,8 +5,10 @@ import {
 	atualizarNotaFiscal,
 	buscarNotaFiscalPorId,
 } from "@/repositories/nota-fiscal-repositories.js";
+import { montarCredenciaisGatewayNfce } from "@/service/nfce-emissao/montar-credenciais-gateway-nfce.js";
 import { montarCredenciaisGatewayNfe } from "@/service/nfe-emissao/montar-credenciais-gateway-nfe.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
+import { resolverModeloDocumentoFiscal } from "@/util/resolver-modelo-documento-fiscal.js";
 import { normalizarCodigoStatusNfe } from "@/util/resolver-status-emissao-nfe.js";
 import {
 	normalizarJustificativaNfe,
@@ -59,7 +61,11 @@ export async function inutilizarNfeVendaService({
 		return httpBadRequest(validacao.mensagem);
 	}
 
-	const credenciais = await montarCredenciaisGatewayNfe(nota.idempresa);
+	const modeloSefaz = resolverModeloDocumentoFiscal(nota.modelo);
+	const credenciais =
+		modeloSefaz === 65
+			? await montarCredenciaisGatewayNfce(nota.idempresa)
+			: await montarCredenciaisGatewayNfe(nota.idempresa);
 	if (!credenciais.ok) {
 		return httpBadRequest(
 			credenciais.pendencias.map((p) => p.mensagem).join("; "),
@@ -75,6 +81,7 @@ export async function inutilizarNfeVendaService({
 		pfxBase64: credenciais.pfxBase64,
 		senha: credenciais.senha,
 		dados: {
+			modelo: modeloSefaz,
 			serie,
 			numeroInicial: numero,
 			numeroFinal: numero,
