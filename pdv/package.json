@@ -5,7 +5,7 @@
 	"description": "PDV Híbrido Desktop Mais Gestão (Electron + PostgreSQL local)",
 	"main": "./out/main/index.js",
 	"scripts": {
-		"dev": "ELECTRON_DISABLE_SANDBOX=1 electron-vite dev",
+		"dev": "set ELECTRON_DISABLE_SANDBOX=1 && electron-vite dev",
 		"build": "electron-vite build",
 		"preview": "ELECTRON_DISABLE_SANDBOX=1 electron-vite preview",
 		"typecheck": "tsc --noEmit -p tsconfig.web.json && tsc --noEmit -p tsconfig.node.json",
@@ -14,7 +14,9 @@
 		"test:sitef": "node ../api/node_modules/tsx/dist/cli.mjs --test electron/integracao/sitef/mapeamento.test.ts electron/integracao/sitef/servico.test.ts electron/impressora/cupom-pagamentos.test.ts",
 		"test:pdv-secundario": "node ../api/node_modules/tsx/dist/cli.mjs --test electron/pdv-secundario/regras.test.ts",
 		"postinstall": "electron-builder install-app-deps",
-		"pack:win": "npm run build && electron-builder --win"
+		"pack:win": "npm run build && electron-builder --win",
+		"pack:dir": "set CSC_IDENTITY_AUTO_DISCOVERY=false&& npm run build && electron-builder --win --dir",
+		"pack:iss": "set CSC_IDENTITY_AUTO_DISCOVERY=false&& npm run pack:dir && powershell -NoProfile -File installer/compilar-iss.ps1"
 	},
 	"dependencies": {
 		"@radix-ui/react-dialog": "^1.1.15",
@@ -47,12 +49,14 @@
 		"typescript": "^5.8.3",
 		"vite": "^5.4.19"
 	},
+	"author": "Mais Gestão",
 	"engines": {
 		"node": ">=20"
 	},
 	"build": {
 		"appId": "com.maisgestao.pdv",
 		"productName": "PDV Mais Gestão",
+		"forceCodeSigning": false,
 		"directories": {
 			"output": "release"
 		},
@@ -61,6 +65,7 @@
 			"package.json"
 		],
 		"win": {
+			"signAndEditExecutable": false,
 			"target": [
 				"nsis"
 			]
