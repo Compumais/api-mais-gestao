@@ -63,6 +63,7 @@ import { nfeConfiguracaoRotas } from "./controllers/http/nfe-configuracao/rotas.
 import { nfeEmissaoRotas } from "./controllers/http/nfe-emissao/rotas.js";
 import { nfeInboundRotas } from "./controllers/http/nfe-inbound/rotas.js";
 import { nfeSerieRotas } from "./controllers/http/nfe-serie/rotas.js";
+import { terminalPdvRotas } from "./controllers/http/terminal-pdv/rotas.js";
 import { nfseConfiguracaoRotas } from "./controllers/http/nfse-configuracao/rotas.js";
 import { nfseEmissaoRotas } from "./controllers/http/nfse-emissao/rotas.js";
 import { nfseSerieRotas } from "./controllers/http/nfse-serie/rotas.js";
@@ -550,6 +551,7 @@ app.register(nfceConfiguracaoRotas);
 app.register(nfceRotas);
 app.register(estoqueRotas);
 app.register(nfeSerieRotas);
+app.register(terminalPdvRotas);
 app.register(nfeEmissaoRotas);
 app.register(nfseConfiguracaoRotas);
 app.register(nfseSerieRotas);

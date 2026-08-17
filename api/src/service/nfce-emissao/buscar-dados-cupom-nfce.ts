@@ -4,7 +4,7 @@ import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-reposit
 import { buscarNotaFiscalPorId } from "@/repositories/nota-fiscal-repositories.js";
 import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
 import {
-	buscarVendaPdvGourmetPorId,
+	type buscarVendaPdvGourmetPorId,
 	buscarVendaPdvGourmetPorNotaFiscalNfce,
 } from "@/repositories/venda-pdv-gourmet-repositories.js";
 import { listarItensPorVendaPdv } from "@/repositories/venda-pdv-item-repositories.js";
@@ -56,6 +56,9 @@ export type DadosCupomNfceResposta = {
 		ambiente?: number;
 		qrCode?: string;
 		urlChave?: string;
+		xml?: string;
+		serie?: string;
+		numero?: number;
 	};
 };
 
@@ -84,7 +87,10 @@ function montarPagamentosCupom(
 	);
 
 	const cartaoLegado = parseValorMonetario(venda.valorcartao);
-	if (cartaoLegado > 0 && pagamentos.every((p) => !p.meio.startsWith("cartao"))) {
+	if (
+		cartaoLegado > 0 &&
+		pagamentos.every((p) => !p.meio.startsWith("cartao"))
+	) {
 		adicionar("cartao_credito", "Cartão", cartaoLegado);
 	}
 
@@ -97,7 +103,9 @@ function montarPagamentosCupom(
 export async function buscarDadosCupomNfceService({
 	idusuario,
 	idnotafiscal,
-}: BuscarDadosCupomNfceParametros): Promise<HttpResponse<DadosCupomNfceResposta>> {
+}: BuscarDadosCupomNfceParametros): Promise<
+	HttpResponse<DadosCupomNfceResposta>
+> {
 	const nota = await buscarNotaFiscalPorId(idnotafiscal);
 	if (!nota) {
 		return httpNaoEncontrado();
@@ -129,8 +137,7 @@ export async function buscarDadosCupomNfceService({
 	}
 
 	const venda =
-		(await buscarVendaPdvGourmetPorNotaFiscalNfce(idnotafiscal)) ??
-		undefined;
+		(await buscarVendaPdvGourmetPorNotaFiscalNfce(idnotafiscal)) ?? undefined;
 
 	const itensVenda = venda ? await listarItensPorVendaPdv(venda.id) : [];
 	const itens: ItemCupomNfce[] = [];
@@ -148,7 +155,9 @@ export async function buscarDadosCupomNfceService({
 	const subtotal = itens.reduce((acc, item) => {
 		const qtd = Number.parseFloat(item.quantidade);
 		const preco = Number.parseFloat(item.precounitario);
-		return acc + (Number.isFinite(qtd) && Number.isFinite(preco) ? qtd * preco : 0);
+		return (
+			acc + (Number.isFinite(qtd) && Number.isFinite(preco) ? qtd * preco : 0)
+		);
 	}, 0);
 
 	const total =
@@ -160,7 +169,10 @@ export async function buscarDadosCupomNfceService({
 	const { qrCode, urlChave } = extrairQrCodeNfceXml(xml);
 
 	const dataHora =
-		nota.datahoraemissao ?? nota.emissao ?? nota.datainclusao ?? new Date().toISOString();
+		nota.datahoraemissao ??
+		nota.emissao ??
+		nota.datainclusao ??
+		new Date().toISOString();
 
 	return httpOk({
 		...(venda?.id ? { vendaId: venda.id } : {}),
@@ -178,9 +190,17 @@ export async function buscarDadosCupomNfceService({
 			idnotafiscal: nota.id,
 			chave: nota.chavenfe,
 			...(nota.protocolonfe ? { protocolo: nota.protocolonfe } : {}),
-			...(nota.tipoambientenfe != null ? { ambiente: nota.tipoambientenfe } : {}),
+			...(nota.tipoambientenfe != null
+				? { ambiente: nota.tipoambientenfe }
+				: {}),
 			...(qrCode ? { qrCode } : {}),
 			...(urlChave ? { urlChave } : {}),
+			...(xml ? { xml } : {}),
+			...(nota.serie ? { serie: nota.serie } : {}),
+			...(Number.isFinite(Number(nota.numeronotafiscal)) &&
+			Number(nota.numeronotafiscal) > 0
+				? { numero: Number(nota.numeronotafiscal) }
+				: {}),
 		},
 	});
 }

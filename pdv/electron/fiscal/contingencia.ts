@@ -214,6 +214,9 @@ export async function emitirOuContingencia(params: {
 		cStat?: string;
 		erro?: string;
 		indisponivel?: boolean;
+		xml?: string;
+		serie?: string;
+		numero?: number;
 	}>;
 }): Promise<ResultadoEmissaoLocal> {
 	const emitirNfce = (await getConfig("emitir_nfce", "1")) === "1";
@@ -227,19 +230,18 @@ export async function emitirOuContingencia(params: {
 
 	const online = await params.onlineEmitir();
 	if (online.ok) {
-		const id = uuidv4();
-		const num = await reservarNumeroNfce();
-		await salvarNfceLocal({
-			id,
+		const { persistirNfceOnlineLocal } = await import(
+			"./persistir-nfce-online"
+		);
+		await persistirNfceOnlineLocal({
 			idvenda: params.idvenda,
-			serie: num.serie,
-			numero: num.numero,
+			idnotafiscal: online.idnotafiscal,
 			chave: online.chave,
-			tpemis: 1,
-			status: "autorizada",
-			qrcode: online.qrCode,
+			qrCode: online.qrCode,
 			protocolo: online.protocolo,
-			transmitida: true,
+			xml: online.xml,
+			serie: online.serie,
+			numero: online.numero,
 		});
 		await imprimirDanfce({
 			chave: online.chave,
@@ -249,7 +251,7 @@ export async function emitirOuContingencia(params: {
 		});
 		return {
 			modo: "online",
-			idnfce: id,
+			idnfce: online.idnotafiscal,
 			chave: online.chave,
 			qrcode: online.qrCode,
 			mensagem: "NFC-e autorizada",

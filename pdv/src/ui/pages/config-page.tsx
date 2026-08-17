@@ -53,6 +53,23 @@ type AbaId =
 	| "balanca"
 	| "rede";
 
+type StatusFiscal = {
+	apelido: string;
+	validade: string;
+	serie: number | null;
+	proximoNumero: number | null;
+	ultimaSync: string;
+	erro: string;
+	caminho: string;
+};
+
+function formatarDataCurta(valor?: string): string {
+	if (!valor) return "—";
+	const data = new Date(valor);
+	if (Number.isNaN(data.getTime())) return valor;
+	return data.toLocaleString("pt-BR");
+}
+
 type StatusLan = {
 	habilitada: boolean;
 	ouvindo: boolean;
@@ -106,6 +123,7 @@ export function ConfigPage() {
 		MapeamentoGourmet[]
 	>([]);
 	const [statusLan, setStatusLan] = useState<StatusLan | null>(null);
+	const [statusFiscal, setStatusFiscal] = useState<StatusFiscal | null>(null);
 	const [testando, setTestando] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [msg, setMsg] = useState("");
@@ -167,6 +185,11 @@ export function ConfigPage() {
 				setStatusLan(await pdvInvoke<StatusLan>("statusLan"));
 			} catch {
 				setStatusLan(null);
+			}
+			try {
+				setStatusFiscal(await pdvInvoke<StatusFiscal>("statusFiscalPdv"));
+			} catch {
+				setStatusFiscal(null);
 			}
 			try {
 				setStatusTecnibra(await pdvInvoke("statusTecnibra"));
@@ -301,6 +324,12 @@ export function ConfigPage() {
 				atalhos: number;
 			}>("cargaLocal");
 			await refresh();
+			try {
+				setConfig(await pdvInvoke<Config>("getConfig"));
+				setStatusFiscal(await pdvInvoke<StatusFiscal>("statusFiscalPdv"));
+			} catch {
+				// status fiscal opcional
+			}
 			const origem =
 				result.origem === "principal" ? "PDV principal" : "nuvem (API)";
 			setMsg(
@@ -309,6 +338,30 @@ export function ConfigPage() {
 		} catch (err) {
 			setMsg(
 				err instanceof Error ? err.message : "Falha ao carregar dados da nuvem",
+			);
+		} finally {
+			setTestando(null);
+		}
+	}
+
+	async function buscarFiscalRetaguarda() {
+		setTestando("fiscal");
+		setMsg("");
+		try {
+			await pdvInvoke("sincronizarFiscalPdv");
+			setConfig(await pdvInvoke<Config>("getConfig"));
+			setStatusFiscal(await pdvInvoke<StatusFiscal>("statusFiscalPdv"));
+			setMsg("Certificado, série e numeração atualizados do retaguarda.");
+		} catch (err) {
+			try {
+				setStatusFiscal(await pdvInvoke<StatusFiscal>("statusFiscalPdv"));
+			} catch {
+				// ignore
+			}
+			setMsg(
+				err instanceof Error
+					? err.message
+					: "Falha ao buscar dados fiscais do retaguarda",
 			);
 		} finally {
 			setTestando(null);
@@ -1470,39 +1523,67 @@ export function ConfigPage() {
 
 								<Card>
 									<CardHeader>
-										<CardTitle>Certificado A1 (contingência)</CardTitle>
+										<CardTitle>NFC-e (retaguarda)</CardTitle>
 									</CardHeader>
 									<CardContent className="grid gap-4 sm:grid-cols-2">
-										<div className="space-y-2 sm:col-span-2">
-											<Label htmlFor="certificado_path">
-												Caminho do .pfx/.p12
-											</Label>
-											<Input
-												id="certificado_path"
-												value={config.certificado_path ?? ""}
-												onChange={(e) =>
-													set("certificado_path", e.target.value)
-												}
-											/>
+										<div className="space-y-1">
+											<p className="text-xs text-muted-foreground">
+												Certificado
+											</p>
+											<p className="text-sm">
+												{statusFiscal?.apelido || "Não sincronizado"}
+											</p>
 										</div>
-										<div className="space-y-2 sm:col-span-2">
-											<Label htmlFor="certificado_senha">
-												Senha do certificado
-											</Label>
-											<Input
-												id="certificado_senha"
-												type="password"
-												value={config.certificado_senha ?? ""}
-												onChange={(e) =>
-													set("certificado_senha", e.target.value)
-												}
-											/>
+										<div className="space-y-1">
+											<p className="text-xs text-muted-foreground">Validade</p>
+											<p className="text-sm">
+												{formatarDataCurta(statusFiscal?.validade)}
+											</p>
 										</div>
+										<div className="space-y-1">
+											<p className="text-xs text-muted-foreground">Série</p>
+											<p className="text-sm">{statusFiscal?.serie ?? "—"}</p>
+										</div>
+										<div className="space-y-1">
+											<p className="text-xs text-muted-foreground">
+												Próximo número
+											</p>
+											<p className="text-sm">
+												{statusFiscal?.proximoNumero ?? "—"}
+											</p>
+										</div>
+										<div className="space-y-1 sm:col-span-2">
+											<p className="text-xs text-muted-foreground">
+												Última sync
+											</p>
+											<p className="text-sm">
+												{formatarDataCurta(statusFiscal?.ultimaSync)}
+											</p>
+										</div>
+										{statusFiscal?.erro ? (
+											<p className="sm:col-span-2 text-sm text-destructive">
+												{statusFiscal.erro}
+											</p>
+										) : null}
 										<p className="sm:col-span-2 text-xs text-muted-foreground">
-											CSC/série/número são sincronizados da API quando online. O
-											certificado fica apenas no main process, nunca no
-											repositório.
+											Este terminal precisa estar cadastrado no retaguarda com o
+											mesmo número do PDV e série NFC-e própria. O certificado
+											A1 é baixado automaticamente.
 										</p>
+										{!modoSecundario ? (
+											<div className="sm:col-span-2">
+												<Button
+													type="button"
+													variant="outline"
+													disabled={testando === "fiscal"}
+													onClick={() => void buscarFiscalRetaguarda()}
+												>
+													{testando === "fiscal"
+														? "Buscando…"
+														: "Buscar do retaguarda"}
+												</Button>
+											</div>
+										) : null}
 									</CardContent>
 								</Card>
 							</>
