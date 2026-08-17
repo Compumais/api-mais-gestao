@@ -2,6 +2,7 @@ import {
 	ApiError,
 	apiBaseUrl,
 	baixaEstoqueVenda,
+	buscarVendaPdvGourmet,
 	criarItemVendaPdv,
 	criarVendaPdv,
 	extrairNfceDaBaixa,
@@ -347,6 +348,27 @@ async function emitirNfceOnlineDaVenda(vendaId: string): Promise<{
 		const indisponivel =
 			err instanceof ApiError &&
 			(err.status === 0 || err.status === 408 || (err.status ?? 0) >= 500);
+		if (indisponivel) {
+			const vendaAtual = await obterVenda(vendaId);
+			const idremoto = vendaAtual?.idremoto;
+			if (idremoto) {
+				try {
+					const remota = await buscarVendaPdvGourmet(idremoto);
+					if (remota.idnotafiscalnfce) {
+						return {
+							ok: false,
+							idnotafiscal: remota.idnotafiscalnfce,
+							erro:
+								err instanceof Error
+									? err.message
+									: "Falha na emissão (nota já na retaguarda)",
+						};
+					}
+				} catch {
+					// segue como indisponível e pode cair em contingência
+				}
+			}
+		}
 		return {
 			ok: false,
 			indisponivel,
@@ -1323,40 +1345,57 @@ export const localApi = {
 			nfce.status !== "transmitida" &&
 			nfce.status !== "autorizada"
 		) {
-			await processarOutbox();
-			const depois = await obterNfcePorVenda(vendaId);
-			if (depois?.status === "transmitida" || depois?.status === "autorizada") {
+			let notaRemotaJaExiste = false;
+			if (venda.idremoto) {
+				try {
+					const remota = await buscarVendaPdvGourmet(venda.idremoto);
+					notaRemotaJaExiste = Boolean(remota.idnotafiscalnfce);
+				} catch {
+					notaRemotaJaExiste = false;
+				}
+			}
+
+			if (!notaRemotaJaExiste) {
+				await processarOutbox();
+				const depois = await obterNfcePorVenda(vendaId);
+				if (
+					depois?.status === "transmitida" ||
+					depois?.status === "autorizada"
+				) {
+					return {
+						modo: "contingencia" as const,
+						mensagem: "NFC-e de contingência enviada à retaguarda",
+						chave: depois.chave ?? undefined,
+					};
+				}
+				if (!nfce.xml) {
+					throw new Error(
+						"XML de contingência não encontrado para retransmitir",
+					);
+				}
+				const result = await transmitirNfceContingencia({
+					idempresa: sessao.idempresa,
+					idvenda: venda.idremoto ?? undefined,
+					xml: nfce.xml,
+					chave: nfce.chave ?? undefined,
+					serie: nfce.serie,
+					numero: nfce.numero,
+					motivo: nfce.motivo_contingencia ?? "Contingencia offline PDV",
+					datacontingencia: new Date().toISOString(),
+				});
+				await marcarNfceTransmitida(nfce.id);
+				await atualizarVendaSync(vendaId, {
+					nfce_status: result.transmitida ? "transmitida" : "contingencia",
+				});
 				return {
 					modo: "contingencia" as const,
-					mensagem: "NFC-e de contingência enviada à retaguarda",
-					chave: depois.chave ?? undefined,
+					mensagem: result.transmitida
+						? "NFC-e de contingência enviada à retaguarda"
+						: (result.erro ??
+							"Contingência registrada na retaguarda, aguardando SEFAZ"),
+					chave: nfce.chave ?? undefined,
 				};
 			}
-			if (!nfce.xml) {
-				throw new Error("XML de contingência não encontrado para retransmitir");
-			}
-			const result = await transmitirNfceContingencia({
-				idempresa: sessao.idempresa,
-				idvenda: venda.idremoto ?? undefined,
-				xml: nfce.xml,
-				chave: nfce.chave ?? undefined,
-				serie: nfce.serie,
-				numero: nfce.numero,
-				motivo: nfce.motivo_contingencia ?? "Contingencia offline PDV",
-				datacontingencia: new Date().toISOString(),
-			});
-			await marcarNfceTransmitida(nfce.id);
-			await atualizarVendaSync(vendaId, {
-				nfce_status: result.transmitida ? "transmitida" : "contingencia",
-			});
-			return {
-				modo: "contingencia" as const,
-				mensagem: result.transmitida
-					? "NFC-e de contingência enviada à retaguarda"
-					: (result.erro ??
-						"Contingência registrada na retaguarda, aguardando SEFAZ"),
-				chave: nfce.chave ?? undefined,
-			};
 		}
 
 		if (!venda.idremoto) {

@@ -471,9 +471,23 @@ async function syncTransmitirContingencia(
 	payload: Record<string, unknown>,
 	idempresa: string,
 ): Promise<void> {
+	const idlocal = payload.idvenda ? String(payload.idvenda) : "";
+	const local = idlocal ? await obterVenda(idlocal) : null;
+	if (
+		local &&
+		(local.nfce_status === "autorizada" ||
+			local.nfce_status === "erro" ||
+			local.nfce_status === "transmitida")
+	) {
+		if (payload.idnfce_local) {
+			await marcarNfceTransmitida(String(payload.idnfce_local));
+		}
+		return;
+	}
+
 	const result = await transmitirNfceContingencia({
 		idempresa,
-		idvenda: payload.idvenda ? String(payload.idvenda) : undefined,
+		idvenda: local?.idremoto ?? (idlocal || undefined),
 		xml: String(payload.xml),
 		chave: payload.chave ? String(payload.chave) : undefined,
 		serie: Number(payload.serie),
@@ -485,8 +499,8 @@ async function syncTransmitirContingencia(
 	if (payload.idnfce_local) {
 		await marcarNfceTransmitida(String(payload.idnfce_local));
 	}
-	if (payload.idvenda) {
-		await atualizarVendaSync(String(payload.idvenda), {
+	if (idlocal) {
+		await atualizarVendaSync(idlocal, {
 			nfce_status: result.transmitida ? "transmitida" : "contingencia",
 		});
 	}
