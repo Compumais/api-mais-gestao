@@ -1,6 +1,7 @@
 import {
 	CloudDownload,
 	CreditCard,
+	HardDrive,
 	LayoutGrid,
 	Printer,
 	Scale,
@@ -55,6 +56,7 @@ type AbaId =
 	| "tef"
 	| "tecnibra"
 	| "balanca"
+	| "backup"
 	| "rede";
 
 type StatusFiscal = {
@@ -82,6 +84,18 @@ type StatusLan = {
 	ips: string[];
 	erro: string | null;
 	motivo?: string;
+};
+
+type StatusBackup = {
+	habilitado: boolean;
+	pasta: string;
+	pastaEfetiva: string;
+	frequencia: string;
+	hora: string;
+	manter: number;
+	ultimo: string;
+	ultimoArquivo: string;
+	ultimoErro: string;
 };
 
 function layoutEtiquetaPreview(config: Config): string {
@@ -112,6 +126,7 @@ const ABAS: Array<{
 	{ id: "tef", label: "TEF / SiTef", icon: CreditCard },
 	{ id: "tecnibra", label: "Catraca Tecnibra", icon: Ticket },
 	{ id: "balanca", label: "Balança", icon: Scale },
+	{ id: "backup", label: "Backup", icon: HardDrive },
 	{ id: "rede", label: "Rede / sync", icon: Wifi },
 ];
 
@@ -157,6 +172,7 @@ export function ConfigPage() {
 		mensagem: string;
 	} | null>(null);
 	const [portasBalanca, setPortasBalanca] = useState<string[]>([]);
+	const [statusBackup, setStatusBackup] = useState<StatusBackup | null>(null);
 	const [terminaisPdv, setTerminaisPdv] = useState<TerminalPdvOpcao[]>([]);
 	const [testeEtiqueta, setTesteEtiqueta] = useState("");
 	const [resultadoTesteEtiqueta, setResultadoTesteEtiqueta] = useState("");
@@ -223,6 +239,11 @@ export function ConfigPage() {
 			} catch {
 				setTerminaisPdv([]);
 			}
+			try {
+				setStatusBackup(await pdvInvoke<StatusBackup>("statusBackup"));
+			} catch {
+				setStatusBackup(null);
+			}
 		})();
 	}, []);
 
@@ -284,6 +305,11 @@ export function ConfigPage() {
 				etiqueta_balanca_centavos: config.etiqueta_balanca_centavos ?? "1",
 				etiqueta_balanca_indicador_uso:
 					config.etiqueta_balanca_indicador_uso ?? "0",
+				backup_habilitado: config.backup_habilitado ?? "0",
+				backup_pasta: config.backup_pasta ?? "",
+				backup_frequencia: config.backup_frequencia ?? "diario",
+				backup_hora: config.backup_hora ?? "22:00",
+				backup_manter: config.backup_manter ?? "14",
 			});
 			setConfig((prev) => ({ ...prev, ...saved }));
 			try {
@@ -315,6 +341,11 @@ export function ConfigPage() {
 				setStatusLan(await pdvInvoke<StatusLan>("statusLan"));
 			} catch {
 				setStatusLan(null);
+			}
+			try {
+				setStatusBackup(await pdvInvoke<StatusBackup>("statusBackup"));
+			} catch {
+				setStatusBackup(null);
 			}
 			setMsg("Configurações salvas");
 		} catch (err) {
@@ -510,6 +541,57 @@ export function ConfigPage() {
 			);
 		} finally {
 			setTestando(null);
+		}
+	}
+
+	async function escolherPastaBackup() {
+		try {
+			const pasta = await pdvInvoke<string | null>("escolherPastaBackup");
+			if (pasta) {
+				set("backup_pasta", pasta);
+			}
+		} catch (err) {
+			setMsg(
+				err instanceof Error
+					? err.message
+					: "Não foi possível escolher a pasta",
+			);
+		}
+	}
+
+	async function gerarBackupAgora() {
+		setTestando("backup");
+		setMsg("");
+		try {
+			const result = await pdvInvoke<StatusBackup>(
+				"gerarBackup",
+				config.backup_pasta || undefined,
+			);
+			setStatusBackup(result);
+			setMsg(
+				result.ultimoArquivo
+					? `Backup gerado em ${result.ultimoArquivo}`
+					: "Backup concluído",
+			);
+		} catch (err) {
+			setMsg(err instanceof Error ? err.message : "Falha ao gerar backup");
+			try {
+				setStatusBackup(await pdvInvoke<StatusBackup>("statusBackup"));
+			} catch {
+				// status opcional
+			}
+		} finally {
+			setTestando(null);
+		}
+	}
+
+	async function abrirPastaBackup() {
+		try {
+			await pdvInvoke("abrirPastaBackup", config.backup_pasta || undefined);
+		} catch (err) {
+			setMsg(
+				err instanceof Error ? err.message : "Não foi possível abrir a pasta",
+			);
 		}
 	}
 
@@ -1433,6 +1515,149 @@ export function ConfigPage() {
 												</p>
 											) : null}
 										</div>
+									</CardContent>
+								</Card>
+							</>
+						)}
+
+						{aba === "backup" && (
+							<>
+								<Card>
+									<CardHeader>
+										<CardTitle>Backup local</CardTitle>
+									</CardHeader>
+									<CardContent className="grid gap-4 sm:grid-cols-2">
+										<div className="space-y-2">
+											<Label htmlFor="backup_habilitado">
+												Backup automático
+											</Label>
+											<Select
+												id="backup_habilitado"
+												value={config.backup_habilitado ?? "0"}
+												onChange={(e) =>
+													set("backup_habilitado", e.target.value)
+												}
+											>
+												<option value="0">Não</option>
+												<option value="1">Sim</option>
+											</Select>
+										</div>
+										<div className="space-y-2">
+											<Label htmlFor="backup_frequencia">Frequência</Label>
+											<Select
+												id="backup_frequencia"
+												value={config.backup_frequencia ?? "diario"}
+												onChange={(e) =>
+													set("backup_frequencia", e.target.value)
+												}
+											>
+												<option value="manual">Manual</option>
+												<option value="caixa">Ao fechar o caixa</option>
+												<option value="diario">Diário</option>
+												<option value="hora">A cada hora</option>
+											</Select>
+										</div>
+										{(config.backup_frequencia ?? "diario") === "diario" ? (
+											<div className="space-y-2">
+												<Label htmlFor="backup_hora">Horário</Label>
+												<Input
+													id="backup_hora"
+													type="time"
+													value={config.backup_hora ?? "22:00"}
+													onChange={(e) => set("backup_hora", e.target.value)}
+												/>
+											</div>
+										) : null}
+										<div className="space-y-2">
+											<Label htmlFor="backup_manter">Manter últimos</Label>
+											<Input
+												id="backup_manter"
+												type="number"
+												min={1}
+												max={365}
+												value={config.backup_manter ?? "14"}
+												onChange={(e) => set("backup_manter", e.target.value)}
+											/>
+											<p className="text-xs text-muted-foreground">
+												Arquivos .tar.gz antigos além deste limite são apagados
+												(1 a 365).
+											</p>
+										</div>
+										<div className="space-y-2 sm:col-span-2">
+											<Label htmlFor="backup_pasta">Pasta de destino</Label>
+											<div className="flex flex-col gap-2 sm:flex-row">
+												<Input
+													id="backup_pasta"
+													value={config.backup_pasta ?? ""}
+													onChange={(e) => set("backup_pasta", e.target.value)}
+													placeholder={
+														statusBackup?.pastaEfetiva || "Pasta padrão do PDV"
+													}
+												/>
+												<Button
+													type="button"
+													variant="outline"
+													onClick={() => void escolherPastaBackup()}
+												>
+													Escolher pasta
+												</Button>
+												<Button
+													type="button"
+													variant="outline"
+													onClick={() => void abrirPastaBackup()}
+												>
+													Abrir pasta
+												</Button>
+											</div>
+											<p className="text-xs text-muted-foreground">
+												Vazio usa a pasta padrão do PDV. O backup inclui dados
+												operacionais, XML de NFC-e e certificados.
+											</p>
+										</div>
+										<div className="sm:col-span-2">
+											<Button
+												type="button"
+												disabled={testando === "backup"}
+												onClick={() => void gerarBackupAgora()}
+											>
+												{testando === "backup" ? "Gerando…" : "Backup agora"}
+											</Button>
+										</div>
+										<p className="sm:col-span-2 text-xs text-muted-foreground">
+											Backup agora funciona mesmo com o automático desligado.
+											Salve as configurações para aplicar frequência e pasta.
+										</p>
+									</CardContent>
+								</Card>
+
+								<Card>
+									<CardHeader>
+										<CardTitle>Último backup</CardTitle>
+									</CardHeader>
+									<CardContent className="grid gap-4 sm:grid-cols-2">
+										<div className="space-y-1">
+											<p className="text-xs text-muted-foreground">Quando</p>
+											<p className="text-sm">
+												{formatarDataCurta(statusBackup?.ultimo)}
+											</p>
+										</div>
+										<div className="space-y-1">
+											<p className="text-xs text-muted-foreground">Pasta</p>
+											<p className="text-sm break-all">
+												{statusBackup?.pastaEfetiva || "—"}
+											</p>
+										</div>
+										<div className="space-y-1 sm:col-span-2">
+											<p className="text-xs text-muted-foreground">Arquivo</p>
+											<p className="text-sm break-all">
+												{statusBackup?.ultimoArquivo || "—"}
+											</p>
+										</div>
+										{statusBackup?.ultimoErro ? (
+											<p className="sm:col-span-2 text-sm text-destructive">
+												{statusBackup.ultimoErro}
+											</p>
+										) : null}
 									</CardContent>
 								</Card>
 							</>

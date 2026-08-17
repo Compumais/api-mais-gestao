@@ -1,11 +1,7 @@
-import { existsSync } from "node:fs";
-import { cp, mkdir, rm, writeFile } from "node:fs/promises";
-import { join } from "node:path";
 import {
 	execute,
 	garantirMesas,
 	getConfig,
-	query,
 	setConfig,
 	withTransaction,
 } from "../db/database";
@@ -16,32 +12,11 @@ import {
 	dirXmlNfce,
 	esvaziarPasta,
 } from "../fiscal/xml-local";
-import { carimboArquivoBackup, slugBackupEmpresa } from "./backup-nome";
-import { compactarPastaTarGz } from "./tar-gz";
+import { criarBackupLocal, TABELAS_BACKUP_OPERACIONAL } from "./backup-local";
 
 export const CHAVE_ULTIMA_IDEMPRESA = "ultima_idempresa";
 export const CHAVE_ULTIMA_NOMEEMPRESA = "ultima_nomeempresa";
 export const CHAVE_AVISO_BACKUP = "ultimo_backup_aviso";
-
-const TABELAS_OPERACIONAIS = [
-	"item_conta",
-	"pedido_fila",
-	"conta_pagamento",
-	"item_venda",
-	"pagamento",
-	"nfce_local",
-	"venda",
-	"conta_mesa",
-	"caixa_turno",
-	"atalho",
-	"produto_cache",
-	"impressora_grupo_gourmet",
-	"grupo_gourmet",
-	"grupo",
-	"mesa",
-	"outbox",
-	"sync_meta",
-] as const;
 
 const CHAVES_CONFIG_EMPRESA: Array<[string, string]> = [
 	["certificado_path", ""],
@@ -131,99 +106,25 @@ async function backupELimparDadosEmpresa(params: {
 	idNova: string;
 	nomeNova: string;
 }): Promise<BackupEmpresaResultado> {
-	const dirBackups = dirBackupsEmpresa();
-	await mkdir(dirBackups, { recursive: true });
-	const slug = slugBackupEmpresa(params.nomeAnterior, params.idAnterior);
-	const base = `${carimboArquivoBackup()}_${slug}`;
-	const tmp = join(dirBackups, `.tmp-${base}`);
-	const arquivo = join(dirBackups, `${base}.tar.gz`);
-
+	let arquivo = "";
 	try {
-		await mkdir(join(tmp, "tabelas"), { recursive: true });
-
-		const pastaXml = dirXmlNfce();
-		const destXml = join(tmp, "xml-nfce");
-		if (existsSync(pastaXml)) {
-			await cp(pastaXml, destXml, { recursive: true });
-		} else {
-			await mkdir(destXml, { recursive: true });
-		}
-
-		const pastaCert = dirCertificadosPdv();
-		const destCert = join(tmp, "certificados");
-		if (existsSync(pastaCert)) {
-			await cp(pastaCert, destCert, { recursive: true });
-		} else {
-			await mkdir(destCert, { recursive: true });
-		}
-
-		const manifesto = {
-			geradoem: new Date().toISOString(),
+		const backup = await criarBackupLocal({
+			pasta: dirBackupsEmpresa(),
+			motivo: "troca-empresa",
 			idempresa: params.idAnterior,
 			nomeempresa: params.nomeAnterior,
-			idempresaNova: params.idNova,
-			nomeempresaNova: params.nomeNova,
-		};
-		await writeFile(
-			join(tmp, "manifesto.json"),
-			`${JSON.stringify(manifesto, null, 2)}\n`,
-			"utf8",
-		);
-
-		const config = await query<{ chave: string; valor: string }>(
-			"SELECT chave, valor FROM config",
-		);
-		await writeFile(
-			join(tmp, "config.json"),
-			`${JSON.stringify(config, null, 2)}\n`,
-			"utf8",
-		);
-
-		for (const tabela of TABELAS_OPERACIONAIS) {
-			const rows = await query(`SELECT * FROM ${tabela}`);
-			await writeFile(
-				join(tmp, "tabelas", `${tabela}.json`),
-				`${JSON.stringify(rows)}\n`,
-				"utf8",
-			);
-		}
-
-		const numeracao = await query("SELECT * FROM numeracao_nfce");
-		await writeFile(
-			join(tmp, "tabelas", "numeracao_nfce.json"),
-			`${JSON.stringify(numeracao)}\n`,
-			"utf8",
-		);
-
-		const xmls = await query<{
-			chave: string | null;
-			serie: number;
-			numero: number;
-			xml: string | null;
-		}>(
-			"SELECT chave, serie, numero, xml FROM nfce_local WHERE xml IS NOT NULL",
-		);
-		for (const row of xmls) {
-			if (!row.xml?.trim()) continue;
-			const chave = (row.chave ?? "").replace(/\D/g, "");
-			const nome =
-				chave.length === 44
-					? `${chave}.xml`
-					: `S${row.serie}-N${row.numero}.xml`;
-			await writeFile(join(destXml, nome), row.xml, "utf8");
-		}
-
-		await compactarPastaTarGz(tmp, arquivo);
+			extraManifesto: {
+				idempresaNova: params.idNova,
+				nomeempresaNova: params.nomeNova,
+			},
+		});
+		arquivo = backup.arquivo;
 	} catch (err) {
-		await rm(tmp, { recursive: true, force: true }).catch(() => undefined);
-		await rm(arquivo, { force: true }).catch(() => undefined);
 		const detalhe = err instanceof Error ? err.message : String(err);
 		throw new Error(
 			`Não foi possível arquivar os dados da empresa anterior: ${detalhe}`,
 		);
 	}
-
-	await rm(tmp, { recursive: true, force: true }).catch(() => undefined);
 
 	try {
 		await limparDadosOperacionais();
@@ -244,7 +145,7 @@ async function backupELimparDadosEmpresa(params: {
 async function limparDadosOperacionais(): Promise<void> {
 	await withTransaction(async (client) => {
 		await execute(
-			`TRUNCATE TABLE ${TABELAS_OPERACIONAIS.join(", ")} RESTART IDENTITY`,
+			`TRUNCATE TABLE ${TABELAS_BACKUP_OPERACIONAL.join(", ")} RESTART IDENTITY`,
 			[],
 			client,
 		);

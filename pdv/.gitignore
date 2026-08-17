@@ -8,6 +8,7 @@ release
 .env.*
 *.pfx
 *.p12
+*.tsbuildinfo
 .npm-cache
 installer/vendor/*.exe
 installer/vendor/*.zip
