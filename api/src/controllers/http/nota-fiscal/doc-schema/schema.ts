@@ -578,6 +578,54 @@ export const aplicarGrupoPadraoRascunhoImportacaoSchema: FastifySchema = {
 	},
 };
 
+export const cadastrarItensEmMassaRascunhoImportacaoSchema: FastifySchema = {
+	tags: ["nota-fiscal"],
+	summary: "Marcar itens pendentes para cadastro em massa",
+	description:
+		"Marca os itens pendentes do rascunho como cadastro novo na finalização. Itens já vinculados, com EAN duplicado ou sem grupo/unidade são ignorados e retornados na lista de pendências.",
+	security: [{ bearerAuth: [] }],
+	params: { type: "object", properties: { id: { type: "string" } }, required: ["id"] },
+	body: {
+		type: "object",
+		properties: {
+			idempresa: { type: "string" },
+			idsItens: {
+				type: "array",
+				items: { type: "string" },
+				description:
+					"IDs dos itens a cadastrar. Se omitido, aplica a todos os pendentes.",
+			},
+		},
+		required: ["idempresa"],
+	},
+	response: {
+		200: {
+			type: "object",
+			properties: {
+				quantidadeCadastrados: { type: "number" },
+				quantidadeIgnorados: { type: "number" },
+				ignorados: {
+					type: "array",
+					items: {
+						type: "object",
+						properties: {
+							idItem: { type: "string" },
+							contador: { type: "number", nullable: true },
+							descricao: { type: "string" },
+							motivo: { type: "string" },
+						},
+					},
+				},
+			},
+		},
+		400: respostaErro,
+		404: respostaErro,
+		401: respostaErro,
+		403: respostaErro,
+		500: respostaErro,
+	},
+};
+
 export const finalizarRascunhoImportacaoSchema: FastifySchema = {
 	tags: ["nota-fiscal"],
 	summary: "Finalizar rascunho de importação",

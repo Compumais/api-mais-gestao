@@ -20,8 +20,6 @@ import { tipoDocumentoFinanceiroService } from "@/services/tipo-documento-financ
 import { DialogCriarFormaPagamentoRapido } from "./dialog-criar-forma-pagamento-rapido";
 import { DialogCriarPlanoContasRapido } from "./dialog-criar-plano-contas-rapido";
 
-const TIPO_CONTA_DESPESA = 2;
-
 function formatarPlanoContasLabel(codigo: string | null, nome: string | null) {
 	const nivel = codigo ? (codigo.match(/\./g) || []).length : 0;
 	const prefix = "\u00A0\u00A0".repeat(nivel);
@@ -52,7 +50,7 @@ export function CampoPlanoContasDespesa({
 	const [dialogAberto, setDialogAberto] = useState(false);
 
 	const { data, isLoading, refetch } = useQuery({
-		queryKey: ["plano-contas", "despesas", empresa?.id],
+		queryKey: ["plano-contas", "saidas", empresa?.id],
 		queryFn: async () => {
 			if (!empresa) throw new Error("Empresa não selecionada");
 			return planoContasService.listar({
@@ -66,18 +64,14 @@ export function CampoPlanoContasDespesa({
 		enabled: !!empresa,
 	});
 
-	const planosDespesa =
-		data?.data.filter(
-			(plano) =>
-				plano.inativo !== 1 &&
-				(plano.tipoconta === TIPO_CONTA_DESPESA || plano.tipoconta === null),
-		) ?? [];
+	const planosSaida =
+		data?.data.filter((plano) => plano.inativo !== 1) ?? [];
 
 	return (
 		<>
 			<Field>
 				<div className="mb-2 flex items-center justify-between gap-2">
-					<FieldLabel htmlFor={id}>Plano de contas (despesa)</FieldLabel>
+					<FieldLabel htmlFor={id}>Plano de contas (saída)</FieldLabel>
 					<Button
 						type="button"
 						variant="ghost"
@@ -91,7 +85,7 @@ export function CampoPlanoContasDespesa({
 					</Button>
 				</div>
 				<Combobox
-					options={planosDespesa.map((plano) => ({
+					options={planosSaida.map((plano) => ({
 						value: plano.id,
 						label: formatarPlanoContasLabel(plano.codigo, plano.nome),
 					}))}
@@ -101,7 +95,7 @@ export function CampoPlanoContasDespesa({
 						isLoading ? "Carregando planos..." : "Selecione o plano de contas"
 					}
 					searchPlaceholder="Buscar plano de contas..."
-					emptyMessage="Nenhum plano de contas de despesa encontrado."
+					emptyMessage="Nenhum plano de contas de saída encontrado."
 					disabled={isLoading || !empresa}
 				/>
 			</Field>

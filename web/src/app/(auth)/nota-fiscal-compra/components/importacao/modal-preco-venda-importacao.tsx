@@ -5,6 +5,7 @@ import { Percent } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Dialog,
 	DialogContent,
@@ -17,6 +18,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MoneyInput } from "@/components/ui/money-input";
 import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import {
 	Table,
 	TableBody,
 	TableCell,
@@ -26,7 +34,9 @@ import {
 } from "@/components/ui/table";
 import { notaFiscalService } from "@/services/nota-fiscal.service";
 import {
+	aplicarArredondamentoPrecoVenda,
 	calcularPrecoVendaComMargem,
+	type DirecaoArredondamentoPreco,
 	type ItemPrecoVendaPendente,
 	precoVendaPreenchido,
 } from "@/util/preco-venda-importacao-nf";
@@ -40,6 +50,10 @@ type ModalPrecoVendaImportacaoProps = {
 	onConfirmado: () => void;
 };
 
+type ItemPrecoVendaEditado = ItemPrecoVendaPendente & {
+	precoVendaBase: string;
+};
+
 function formatarMoeda(valor: string): string {
 	const numero = Number.parseFloat(valor.replace(",", "."));
 	if (Number.isNaN(numero)) {
@@ -51,6 +65,26 @@ function formatarMoeda(valor: string): string {
 	}).format(numero);
 }
 
+function montarItensEditados(
+	itens: ItemPrecoVendaPendente[],
+): ItemPrecoVendaEditado[] {
+	return itens.map((item) => ({
+		...item,
+		precoVendaBase: item.precoVenda,
+	}));
+}
+
+function aplicarPrecoComArredondamento(
+	precoBase: string,
+	arredondar: boolean,
+	direcao: DirecaoArredondamentoPreco,
+): Pick<ItemPrecoVendaEditado, "precoVenda" | "precoVendaBase"> {
+	return {
+		precoVendaBase: precoBase,
+		precoVenda: aplicarArredondamentoPrecoVenda(precoBase, arredondar, direcao),
+	};
+}
+
 export function ModalPrecoVendaImportacao({
 	idempresa,
 	idRascunho,
@@ -60,20 +94,25 @@ export function ModalPrecoVendaImportacao({
 	onConfirmado,
 }: ModalPrecoVendaImportacaoProps) {
 	const queryClient = useQueryClient();
-	const [itensEditados, setItensEditados] = useState<ItemPrecoVendaPendente[]>(
+	const [itensEditados, setItensEditados] = useState<ItemPrecoVendaEditado[]>(
 		[],
 	);
 	const [margemPercentual, setMargemPercentual] = useState("");
+	const [arredondarValores, setArredondarValores] = useState(false);
+	const [direcaoArredondamento, setDirecaoArredondamento] =
+		useState<DirecaoArredondamentoPreco>("mais");
 
 	useEffect(() => {
 		if (aberto) {
-			setItensEditados(itens.map((item) => ({ ...item })));
+			setItensEditados(montarItensEditados(itens));
 			setMargemPercentual("");
+			setArredondarValores(false);
+			setDirecaoArredondamento("mais");
 		}
 	}, [aberto, itens]);
 
 	const { mutate: salvarPrecos, isPending } = useMutation({
-		mutationFn: async (lista: ItemPrecoVendaPendente[]) => {
+		mutationFn: async (lista: ItemPrecoVendaEditado[]) => {
 			await Promise.all(
 				lista.map((item) =>
 					notaFiscalService.atualizarItemRascunhoImportacao(
@@ -98,6 +137,18 @@ export function ModalPrecoVendaImportacao({
 		onError: (error: Error) => toast.error(error.message),
 	});
 
+	const recalcularArredondamento = (
+		ativo: boolean,
+		direcao: DirecaoArredondamentoPreco,
+	) => {
+		setItensEditados((atual) =>
+			atual.map((item) => ({
+				...item,
+				...aplicarPrecoComArredondamento(item.precoVendaBase, ativo, direcao),
+			})),
+		);
+	};
+
 	const aplicarMargemATodos = () => {
 		const margem = Number.parseFloat(margemPercentual.replace(",", "."));
 		if (Number.isNaN(margem)) {
@@ -108,7 +159,11 @@ export function ModalPrecoVendaImportacao({
 		setItensEditados((atual) =>
 			atual.map((item) => ({
 				...item,
-				precoVenda: calcularPrecoVendaComMargem(item.precocusto, margem),
+				...aplicarPrecoComArredondamento(
+					calcularPrecoVendaComMargem(item.precocusto, margem),
+					arredondarValores,
+					direcaoArredondamento,
+				),
 			})),
 		);
 	};
@@ -129,9 +184,28 @@ export function ModalPrecoVendaImportacao({
 	const atualizarPrecoItem = (idItem: string, precoVenda: string) => {
 		setItensEditados((atual) =>
 			atual.map((item) =>
-				item.idItem === idItem ? { ...item, precoVenda } : item,
+				item.idItem === idItem
+					? {
+							...item,
+							...aplicarPrecoComArredondamento(
+								precoVenda,
+								false,
+								direcaoArredondamento,
+							),
+						}
+					: item,
 			),
 		);
+	};
+
+	const alternarArredondamento = (marcado: boolean) => {
+		setArredondarValores(marcado);
+		recalcularArredondamento(marcado, direcaoArredondamento);
+	};
+
+	const alterarDirecao = (direcao: DirecaoArredondamentoPreco) => {
+		setDirecaoArredondamento(direcao);
+		recalcularArredondamento(arredondarValores, direcao);
 	};
 
 	return (
@@ -162,9 +236,7 @@ export function ModalPrecoVendaImportacao({
 									inputMode="decimal"
 									placeholder="Ex: 30"
 									value={margemPercentual}
-									onChange={(event) =>
-										setMargemPercentual(event.target.value)
-									}
+									onChange={(event) => setMargemPercentual(event.target.value)}
 									className="pr-9"
 								/>
 								<Percent
@@ -173,9 +245,53 @@ export function ModalPrecoVendaImportacao({
 								/>
 							</div>
 						</div>
-						<Button type="button" variant="secondary" onClick={aplicarMargemATodos}>
+						<Button
+							type="button"
+							variant="secondary"
+							onClick={aplicarMargemATodos}
+						>
 							Aplicar a todos
 						</Button>
+					</div>
+
+					<div className="flex flex-col gap-3 pt-1">
+						<div className="flex items-center gap-2">
+							<Checkbox
+								id="arredondar-valores"
+								checked={arredondarValores}
+								onCheckedChange={(checked) =>
+									alternarArredondamento(checked === true)
+								}
+							/>
+							<Label htmlFor="arredondar-valores" className="font-normal">
+								Arredondar valores
+							</Label>
+						</div>
+						{arredondarValores ? (
+							<div className="space-y-1 max-w-xs">
+								<Label htmlFor="direcao-arredondamento">
+									Direção do arredondamento
+								</Label>
+								<Select
+									value={direcaoArredondamento}
+									onValueChange={(valor) =>
+										alterarDirecao(valor as DirecaoArredondamentoPreco)
+									}
+								>
+									<SelectTrigger id="direcao-arredondamento">
+										<SelectValue placeholder="Selecione a direção" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="menos">Para menos</SelectItem>
+										<SelectItem value="mais">Para mais</SelectItem>
+									</SelectContent>
+								</Select>
+								<p className="text-xs text-muted-foreground">
+									Arredonda o preço para o real inteiro abaixo ou acima. Ex.: R$
+									16,08 vira R$ 16,00 (menos) ou R$ 17,00 (mais).
+								</p>
+							</div>
+						) : null}
 					</div>
 				</section>
 
