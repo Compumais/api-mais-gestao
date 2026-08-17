@@ -49,7 +49,7 @@ function baudValido(valor: string): number {
 }
 
 export async function lerConfigBalanca(): Promise<BalancaConfig> {
-	const portaPadrao = process.platform === "win32" ? "COM1" : "/dev/ttyUSB0";
+	const portaPadrao = "";
 	return {
 		habilitado: (await getConfig("balanca_habilitada", "0")) === "1",
 		porta:
@@ -80,7 +80,7 @@ async function garantirPorta(
 	await resetarConexaoBalanca();
 	const aberta = await comTimeout(
 		abrirPortaSerial(config.porta, config.baud),
-		1500,
+		8000,
 		`Tempo esgotado ao abrir ${config.porta}`,
 	);
 	portaAberta = aberta;

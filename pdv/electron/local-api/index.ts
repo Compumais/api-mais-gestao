@@ -10,6 +10,7 @@ import {
 	obterMeuPlano,
 	obterPerfilUsuario,
 	pingApi,
+	substituirAtalhosRemotos,
 } from "../api/client";
 import {
 	CHAVES_CONFIG_GOURMET,
@@ -50,6 +51,7 @@ import {
 	concluirOutboxCriarVendaLocal,
 	contarOutboxPendentes,
 	criarVendaRapida,
+	enfileirarOutbox,
 	enviarPedidoConta,
 	fecharCaixa,
 	fecharContaMesa,
@@ -82,6 +84,7 @@ import {
 	obterVenda,
 	registrarPagamentoConta,
 	type SessaoLocal,
+	salvarAtalhos as persistirAtalhosLocal,
 	salvarConfiguracoes,
 	salvarMapeamentoImpressorasGourmet,
 	salvarSessao,
@@ -629,6 +632,42 @@ export const localApi = {
 		return listarAtalhos();
 	},
 
+	async salvarAtalhos(ids: string[]) {
+		if (await ehSecundario()) {
+			throw new Error(
+				"No PDV secundário os atalhos vêm do principal. Configure no PDV principal e use Carga local.",
+			);
+		}
+		const unicos = [...new Set(ids.filter(Boolean))];
+		await persistirAtalhosLocal(unicos);
+		const sessao = await obterSessao();
+		if (!sessao.token || !sessao.idempresa) {
+			return {
+				ok: true as const,
+				quantidade: unicos.length,
+				nuvem: false,
+			};
+		}
+		try {
+			await substituirAtalhosRemotos(sessao.idempresa, unicos);
+			return {
+				ok: true as const,
+				quantidade: unicos.length,
+				nuvem: true,
+			};
+		} catch {
+			await enfileirarOutbox("atalhos_pdv", {
+				idempresa: sessao.idempresa,
+				idsProdutos: unicos,
+			});
+			return {
+				ok: true as const,
+				quantidade: unicos.length,
+				nuvem: false,
+			};
+		}
+	},
+
 	async listarGrupos() {
 		return listarGruposLocal();
 	},
@@ -676,6 +715,27 @@ export const localApi = {
 			: await pullCatalogo();
 		const outbox = await processarOutbox();
 		return { pull, outbox, pendentes: await contarOutboxPendentes() };
+	},
+
+	async cargaLocal() {
+		const sessao = await obterSessao();
+		if (!sessao.token || !sessao.idempresa) {
+			throw new Error(
+				"Faça login e selecione a empresa antes de carregar o catálogo.",
+			);
+		}
+		const secundario = await ehSecundario();
+		const pull = secundario
+			? await puxarDoPrincipal()
+			: await pullCatalogo();
+		return {
+			ok: true as const,
+			origem: secundario ? ("principal" as const) : ("nuvem" as const),
+			produtos: pull.produtos,
+			grupos: pull.grupos,
+			gruposGourmet: pull.gruposGourmet,
+			atalhos: pull.atalhos,
+		};
 	},
 
 	async testarPrincipal(params: {

@@ -1,5 +1,7 @@
 import {
+	CloudDownload,
 	CreditCard,
+	LayoutGrid,
 	Printer,
 	Scale,
 	Settings2,
@@ -12,6 +14,7 @@ import { pdvInvoke } from "@/lib/pdv-api";
 import { rotaHomePdv, rotuloModelo, type StatusContext } from "@/lib/pdv-types";
 import { aplicarTema } from "@/lib/theme";
 import { cn } from "@/lib/utils";
+import { ConfigAtalhos } from "@/ui/components/config-atalhos";
 import { FunctionBar } from "@/ui/components/function-bar";
 import { Topbar } from "@/ui/components/topbar";
 import { Button } from "@/ui/components/ui/button";
@@ -36,7 +39,14 @@ type MapeamentoGourmet = {
 	porta: number;
 };
 
-type AbaId = "geral" | "impressoras" | "tef" | "tecnibra" | "balanca" | "rede";
+type AbaId =
+	| "geral"
+	| "atalhos"
+	| "impressoras"
+	| "tef"
+	| "tecnibra"
+	| "balanca"
+	| "rede";
 
 const ABAS: Array<{
 	id: AbaId;
@@ -44,6 +54,7 @@ const ABAS: Array<{
 	icon: typeof Settings2;
 }> = [
 	{ id: "geral", label: "Geral", icon: Settings2 },
+	{ id: "atalhos", label: "Atalhos", icon: LayoutGrid },
 	{ id: "impressoras", label: "Impressoras", icon: Printer },
 	{ id: "tef", label: "TEF / SiTef", icon: CreditCard },
 	{ id: "tecnibra", label: "Catraca Tecnibra", icon: Ticket },
@@ -229,6 +240,32 @@ export function ConfigPage() {
 			setMsg(err instanceof Error ? err.message : "Erro ao salvar");
 		} finally {
 			setLoading(false);
+		}
+	}
+
+	async function cargaLocal() {
+		setTestando("carga");
+		setMsg("");
+		try {
+			const result = await pdvInvoke<{
+				origem: "nuvem" | "principal";
+				produtos: number;
+				grupos: number;
+				gruposGourmet: number;
+				atalhos: number;
+			}>("cargaLocal");
+			await refresh();
+			const origem =
+				result.origem === "principal" ? "PDV principal" : "nuvem (API)";
+			setMsg(
+				`Carga local da ${origem}: ${result.produtos} produtos · ${result.grupos} grupos · ${result.gruposGourmet} gourmet · ${result.atalhos} atalhos`,
+			);
+		} catch (err) {
+			setMsg(
+				err instanceof Error ? err.message : "Falha ao carregar dados da nuvem",
+			);
+		} finally {
+			setTestando(null);
 		}
 	}
 
@@ -580,8 +617,39 @@ export function ConfigPage() {
 											</div>
 										</>
 									) : null}
+									<div className="sm:col-span-2 flex flex-col gap-2 rounded-md border bg-secondary/30 p-3">
+										<div className="flex flex-wrap items-center justify-between gap-2">
+											<div>
+												<p className="text-sm font-medium">Carga local</p>
+												<p className="text-xs text-muted-foreground">
+													{modoSecundario
+														? "Baixa produtos, grupos e atalhos do PDV principal para este terminal."
+														: "Baixa produtos, grupos, atalhos e CSC da API (nuvem) para o banco local."}
+												</p>
+											</div>
+											<Button
+												type="button"
+												variant="outline"
+												size="sm"
+												disabled={testando !== null || loading}
+												onClick={() => void cargaLocal()}
+											>
+												<CloudDownload className="size-4" />
+												{testando === "carga"
+													? "Carregando…"
+													: "Carga local"}
+											</Button>
+										</div>
+									</div>
 								</CardContent>
 							</Card>
+						)}
+
+						{aba === "atalhos" && (
+							<ConfigAtalhos
+								secundario={modoSecundario}
+								onMensagem={setMsg}
+							/>
 						)}
 
 						{aba === "impressoras" && (
@@ -1062,9 +1130,10 @@ export function ConfigPage() {
 										</Button>
 									</div>
 									<p className="sm:col-span-2 text-xs text-muted-foreground">
-										Com a integração ligada, produtos em kg abrem a tela de peso
-										ao lançar em mesa, comanda ou balcão. Se a balança
-										responder, o peso entra sozinho; senão o operador digita.
+										Produtos com a unidade de sistema KG (Quilograma) abrem a
+										tela de peso ao lançar em mesa, comanda ou balcão. Com a
+										integração ligada, se a balança responder o peso entra
+										sozinho; senão o operador digita.
 										{statusBalanca ? ` ${statusBalanca.mensagem}.` : ""}
 									</p>
 								</CardContent>

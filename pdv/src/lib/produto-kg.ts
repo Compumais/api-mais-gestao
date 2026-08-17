@@ -1,17 +1,56 @@
-export function produtoEhKg(produto: {
+/** Unidade global KG (api/drizzle/0016_unidades_medida_globais.sql). */
+export const ID_UNIDADE_KG_SISTEMA =
+	"a0000001-0000-4000-8000-000000000002";
+
+const CODIGOS_KG = new Set([
+	"kg",
+	"kgs",
+	"kilo",
+	"kilos",
+	"kilograma",
+	"quilograma",
+	"quilogramas",
+]);
+
+export type UnidadeProduto = {
 	unidademedida?: string | null;
-}): boolean {
-	const u = (produto.unidademedida ?? "").trim().toLowerCase();
-	if (!u) return false;
-	return (
-		u === "kg" ||
-		u === "kgs" ||
-		u === "kilo" ||
-		u === "kilos" ||
-		u === "kilograma" ||
-		u === "quilograma" ||
-		u === "quilogramas"
-	);
+	idunidademedida?: string | null;
+};
+
+function normalizarUnidade(valor: string): string {
+	return valor
+		.normalize("NFD")
+		.replace(/[\u0300-\u036f]/g, "")
+		.trim()
+		.toLowerCase()
+		.replace(/[^a-z0-9]/g, "");
+}
+
+/** True se o produto usa a unidade de sistema KG / Quilograma. */
+export function produtoEhKg(produto: UnidadeProduto): boolean {
+	const id = (produto.idunidademedida ?? "").trim().toLowerCase();
+	if (id === ID_UNIDADE_KG_SISTEMA) return true;
+
+	const bruto = (produto.unidademedida ?? "").trim();
+	if (!bruto) return false;
+	if (bruto.toLowerCase() === ID_UNIDADE_KG_SISTEMA) return true;
+
+	return CODIGOS_KG.has(normalizarUnidade(bruto));
+}
+
+export function resolverSiglaUnidade(
+	produto: UnidadeProduto,
+	unidades: Map<string, { codigo?: string | null; nome?: string | null }>,
+): string | null {
+	const atual = produto.unidademedida?.trim();
+	if (atual) return atual;
+	const id = produto.idunidademedida?.trim();
+	if (!id) return null;
+	const unidade = unidades.get(id);
+	const codigo = unidade?.codigo?.trim();
+	if (codigo) return codigo;
+	const nome = unidade?.nome?.trim();
+	return nome || null;
 }
 
 export function kgDeDigitos(digitos: string): number {
@@ -39,9 +78,6 @@ export function formatarQuantidade(qtd: number): string {
 	return formatarKg(arred);
 }
 
-export function devePedirPeso(
-	produto: { unidademedida?: string | null },
-	balancaHabilitada: boolean,
-): boolean {
-	return balancaHabilitada && produtoEhKg(produto);
+export function devePedirPeso(produto: UnidadeProduto): boolean {
+	return produtoEhKg(produto);
 }

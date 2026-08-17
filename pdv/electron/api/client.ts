@@ -274,6 +274,36 @@ export async function listarProdutos(params: {
 	}));
 }
 
+export async function listarUnidadesMedida(idempresa: string) {
+	const unidades: Array<{
+		id: string;
+		codigo: string | null;
+		nome: string | null;
+	}> = [];
+	let page = 1;
+	for (;;) {
+		const path = `/unidades-medida?idempresa=${encodeURIComponent(idempresa)}&page=${page}&limit=100`;
+		const data = await request<{
+			data: Array<{
+				id: string;
+				codigo?: string | null;
+				nome?: string | null;
+			}>;
+		}>(path);
+		const lote = data.data ?? [];
+		for (const u of lote) {
+			unidades.push({
+				id: u.id,
+				codigo: u.codigo ?? null,
+				nome: u.nome ?? null,
+			});
+		}
+		if (lote.length < 100 || page > 20) break;
+		page += 1;
+	}
+	return unidades;
+}
+
 export async function listarGrupos(params: {
 	idempresa: string;
 	page?: number;
@@ -317,6 +347,19 @@ export async function listarAtalhosRemotos(idempresa: string) {
 	if (Array.isArray(data.idsProdutos)) {
 		return data.idsProdutos;
 	}
+	return (data.data ?? []).map((a) => a.idproduto);
+}
+
+export async function substituirAtalhosRemotos(
+	idempresa: string,
+	idsProdutos: string[],
+) {
+	const data = await request<{
+		data?: Array<{ idproduto: string }>;
+	}>("/atalhos-pdv", {
+		method: "PUT",
+		body: { idempresa, idsProdutos },
+	});
 	return (data.data ?? []).map((a) => a.idproduto);
 }
 
