@@ -639,6 +639,16 @@ async function despachar(
 		return { status: 200, body: await localApi.obterVenda(vendaMatch[1]) };
 	}
 
+	const retransmitirMatch = path.match(
+		/^\/pos\/vendas\/([^/]+)\/retransmitir$/,
+	);
+	if (method === "POST" && retransmitirMatch) {
+		return {
+			status: 200,
+			body: await localApi.retransmitirNfce(retransmitirMatch[1]),
+		};
+	}
+
 	return undefined;
 }
 

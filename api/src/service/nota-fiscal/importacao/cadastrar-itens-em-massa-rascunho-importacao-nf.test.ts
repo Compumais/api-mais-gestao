@@ -3,10 +3,12 @@ import { cadastrarItensEmMassaRascunhoImportacaoNfService } from "./cadastrar-it
 
 vi.mock("@/repositories/entidade-repositories.js");
 vi.mock("@/repositories/nota-fiscal-repositories.js");
+vi.mock("@/repositories/proximo-codigo-repositories.js");
 vi.mock("@/service/nota-fiscal/validar-ean-produto-nf.js");
 
 import * as entidadeRepositories from "@/repositories/entidade-repositories.js";
 import * as notaRepositories from "@/repositories/nota-fiscal-repositories.js";
+import * as proximoCodigo from "@/repositories/proximo-codigo-repositories.js";
 import * as validarEan from "@/service/nota-fiscal/validar-ean-produto-nf.js";
 
 const parametrosBase = {
@@ -61,6 +63,7 @@ describe("cadastrarItensEmMassaRascunhoImportacaoNfService", () => {
 		vi.mocked(validarEan.validarEanProdutoNf).mockResolvedValue({
 			valido: true,
 		});
+		vi.mocked(proximoCodigo.buscarProximoCodigoProduto).mockResolvedValue(10);
 	});
 
 	it("recusa acesso de usuário de outra empresa", async () => {
@@ -115,6 +118,15 @@ describe("cadastrarItensEmMassaRascunhoImportacaoNfService", () => {
 					statusVinculo: "novo",
 					confirmarCadastro: true,
 					idgrupo: "grupo-1",
+					codigoProduto: 10,
+				}),
+			}),
+		);
+		expect(notaRepositories.atualizarItemNotaFiscal).toHaveBeenCalledWith(
+			"item-2",
+			expect.objectContaining({
+				dadosimportacao: expect.objectContaining({
+					codigoProduto: 11,
 				}),
 			}),
 		);

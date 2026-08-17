@@ -34,12 +34,30 @@ function badgeNfce(status: string) {
 	return "outline" as const;
 }
 
+function rotuloNfce(status: string) {
+	if (status === "erro") return "rejeitada";
+	if (status === "erro_config") return "erro config";
+	if (status === "pendente_contingencia") return "pendente";
+	return status;
+}
+
+function podeRetransmitir(status: string) {
+	return (
+		status === "erro" ||
+		status === "erro_config" ||
+		status === "contingencia" ||
+		status === "pendente_contingencia"
+	);
+}
+
 export function VendasPage() {
 	const navigate = useNavigate();
 	const { status } = useOutletContext<StatusContext>();
 	const rotulo = rotuloModelo(status?.modeloAtendimento);
 	const [vendas, setVendas] = useState<Venda[]>([]);
 	const [loading, setLoading] = useState(false);
+	const [retransmitindoId, setRetransmitindoId] = useState<string | null>(null);
+	const [msg, setMsg] = useState("");
 
 	async function load() {
 		setLoading(true);
@@ -47,6 +65,23 @@ export function VendasPage() {
 			setVendas(await pdvInvoke<Venda[]>("listarVendas"));
 		} finally {
 			setLoading(false);
+		}
+	}
+
+	async function retransmitir(id: string) {
+		setRetransmitindoId(id);
+		setMsg("");
+		try {
+			const result = await pdvInvoke<{ modo: string; mensagem: string }>(
+				"retransmitirNfce",
+				id,
+			);
+			setMsg(result.mensagem);
+			await load();
+		} catch (err) {
+			setMsg(err instanceof Error ? err.message : "Falha ao retransmitir");
+		} finally {
+			setRetransmitindoId(null);
 		}
 	}
 
@@ -75,6 +110,11 @@ export function VendasPage() {
 			/>
 
 			<div className="flex-1 overflow-auto p-3">
+				{msg ? (
+					<p className="mb-3 rounded-md border bg-secondary/40 px-3 py-2 text-sm">
+						{msg}
+					</p>
+				) : null}
 				<div className="overflow-hidden rounded-lg border">
 					<table className="w-full text-sm">
 						<thead className="bg-secondary/60 text-left">
@@ -106,17 +146,31 @@ export function VendasPage() {
 									</td>
 									<td className="px-3 py-2">
 										<Badge variant={badgeNfce(v.nfce_status)}>
-											{v.nfce_status}
+											{rotuloNfce(v.nfce_status)}
 										</Badge>
 									</td>
 									<td className="px-3 py-2">
-										<Button
-											size="sm"
-											variant="ghost"
-											onClick={() => void pdvInvoke("reimprimir", v.id)}
-										>
-											Reimprimir
-										</Button>
+										<div className="flex justify-end gap-1">
+											{podeRetransmitir(v.nfce_status) ? (
+												<Button
+													size="sm"
+													variant="outline"
+													disabled={retransmitindoId === v.id}
+													onClick={() => void retransmitir(v.id)}
+												>
+													{retransmitindoId === v.id
+														? "Enviando…"
+														: "Retransmitir"}
+												</Button>
+											) : null}
+											<Button
+												size="sm"
+												variant="ghost"
+												onClick={() => void pdvInvoke("reimprimir", v.id)}
+											>
+												Reimprimir
+											</Button>
+										</div>
 									</td>
 								</tr>
 							))}

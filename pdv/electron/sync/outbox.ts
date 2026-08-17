@@ -10,6 +10,7 @@ import {
 	criarItemVendaPdv,
 	criarVendaPdv,
 	extrairNfceDaBaixa,
+	isEmpresaAcessoNegado,
 	listarAtalhosRemotos,
 	listarGrupos,
 	listarGruposGourmet,
@@ -18,6 +19,7 @@ import {
 	pingApi,
 	substituirAtalhosRemotos,
 	transmitirNfceContingencia,
+	VENDA_LOCAL_PDV_HIBRIDO,
 } from "../api/client";
 import {
 	execute,
@@ -44,6 +46,7 @@ import {
 	obterSessao,
 	obterVenda,
 	salvarAtalhos,
+	salvarSessao,
 	upsertGrupos,
 	upsertGruposGourmet,
 	upsertProdutos,
@@ -65,18 +68,46 @@ export async function pullCatalogo(): Promise<{
 	atalhos: number;
 	grupos: number;
 	gruposGourmet: number;
+	acessoNegado?: boolean;
 }> {
 	const sessao = await obterSessao();
 	if (!sessao.idempresa || !sessao.token) {
 		return { produtos: 0, atalhos: 0, grupos: 0, gruposGourmet: 0 };
 	}
 
+	try {
+		return await puxarCatalogoDaEmpresa(sessao.idempresa);
+	} catch (err) {
+		if (isEmpresaAcessoNegado(err)) {
+			await salvarSessao({
+				idempresa: null,
+				nomeempresa: null,
+				modulogourmet: null,
+			});
+			return {
+				produtos: 0,
+				atalhos: 0,
+				grupos: 0,
+				gruposGourmet: 0,
+				acessoNegado: true,
+			};
+		}
+		throw err;
+	}
+}
+
+async function puxarCatalogoDaEmpresa(idempresa: string): Promise<{
+	produtos: number;
+	atalhos: number;
+	grupos: number;
+	gruposGourmet: number;
+}> {
 	let totalGrupos = 0;
 	{
 		let page = 1;
 		for (;;) {
 			const grupos = await listarGrupos({
-				idempresa: sessao.idempresa,
+				idempresa,
 				page,
 				limit: 100,
 			});
@@ -97,7 +128,7 @@ export async function pullCatalogo(): Promise<{
 		let page = 1;
 		for (;;) {
 			const grupos = await listarGruposGourmet({
-				idempresa: sessao.idempresa,
+				idempresa,
 				page,
 				limit: 100,
 			});
@@ -113,7 +144,7 @@ export async function pullCatalogo(): Promise<{
 		}
 	}
 
-	const unidades = await listarUnidadesMedida(sessao.idempresa).catch(
+	const unidades = await listarUnidadesMedida(idempresa).catch(
 		() =>
 			[] as Array<{ id: string; codigo: string | null; nome: string | null }>,
 	);
@@ -123,7 +154,7 @@ export async function pullCatalogo(): Promise<{
 	let total = 0;
 	for (;;) {
 		const produtos = await listarProdutos({
-			idempresa: sessao.idempresa,
+			idempresa,
 			page,
 			limit: 100,
 		});
@@ -151,7 +182,7 @@ export async function pullCatalogo(): Promise<{
 		}
 	}
 
-	const ids = await listarAtalhosRemotos(sessao.idempresa);
+	const ids = await listarAtalhosRemotos(idempresa);
 	if (ids.length) {
 		await salvarAtalhos(ids);
 	}
@@ -159,7 +190,7 @@ export async function pullCatalogo(): Promise<{
 	try {
 		const fiscal = await sincronizarFiscalPdv();
 		if (!fiscal.ok) {
-			const cfg = await buscarNfceConfig(sessao.idempresa);
+			const cfg = await buscarNfceConfig(idempresa);
 			const ambiente = Number(cfg.ambiente ?? 2);
 			const cscId = ambiente === 1 ? cfg.idcsc_producao : cfg.idcsc_homologacao;
 			const cscToken =
@@ -167,7 +198,7 @@ export async function pullCatalogo(): Promise<{
 			let cnpj = cfg.cnpj ?? null;
 			let uf: string | null = null;
 			try {
-				const empresa = await buscarEmpresa(sessao.idempresa);
+				const empresa = await buscarEmpresa(idempresa);
 				cnpj = empresa.cnpj ?? cnpj;
 				uf = empresa.uf ?? null;
 			} catch {
@@ -352,7 +383,7 @@ async function syncCriarVenda(
 		idempresa,
 		numeropdv,
 		usuarioquefechouvenda: userid,
-		vendalocal: 2,
+		vendalocal: VENDA_LOCAL_PDV_HIBRIDO,
 		valortotal: total,
 		valortroco: sync.valortroco,
 		valordinheiro: sync.valordinheiro,
@@ -414,23 +445,12 @@ async function syncCriarVenda(
 			},
 		});
 		const nfce = extrairNfceDaBaixa(baixa);
+		const { aplicarEmissaoNfceNaVendaLocal } = await import(
+			"../fiscal/persistir-nfce-online"
+		);
+		await aplicarEmissaoNfceNaVendaLocal(idlocal, nfce);
 		if (nfce.emitida) {
 			await atualizarVendaSync(idlocal, { nfce_status: "autorizada" });
-			const { persistirNfceOnlineLocal } = await import(
-				"../fiscal/persistir-nfce-online"
-			);
-			await persistirNfceOnlineLocal({
-				idvenda: idlocal,
-				idnotafiscal: nfce.idnotafiscal,
-				chave: nfce.chave,
-				qrCode: nfce.qrCode,
-				protocolo: nfce.protocolo,
-				xml: nfce.xml,
-				serie: nfce.serie,
-				numero: nfce.numero,
-			});
-		} else if (nfce.erro) {
-			await atualizarVendaSync(idlocal, { nfce_status: "erro" });
 		}
 	} catch (err) {
 		if (

@@ -1,4 +1,14 @@
-import { and, asc, count, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
+import {
+	and,
+	asc,
+	count,
+	desc,
+	eq,
+	ilike,
+	inArray,
+	or,
+	sql,
+} from "drizzle-orm";
 import * as schema from "../../drizzle/schema.js";
 import { db } from "./connection.js";
 
@@ -175,6 +185,7 @@ export async function listarEmpresas({
 			.where(eq(schema.usuarioEmpresa.idusuario, idusuario));
 
 		const idsEmpresasUsuario = empresasUsuarioEmpresa.map((e) => e.idempresa);
+		orConditions.push(eq(schema.empresa.idproprietario, idusuario));
 		if (idsEmpresasUsuario.length > 0) {
 			orConditions.push(inArray(schema.empresa.id, idsEmpresasUsuario));
 		}

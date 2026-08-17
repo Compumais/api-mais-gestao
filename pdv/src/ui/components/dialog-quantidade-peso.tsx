@@ -72,17 +72,6 @@ export function DialogQuantidadePeso({
 		};
 	}, [manual]);
 
-	useEffect(() => {
-		function onKeyDown(e: KeyboardEvent) {
-			if (e.key !== "Enter") return;
-			if (kg <= 0) return;
-			e.preventDefault();
-			onConfirmar(kg);
-		}
-		window.addEventListener("keydown", onKeyDown);
-		return () => window.removeEventListener("keydown", onKeyDown);
-	}, [kg, onConfirmar]);
-
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
 			<div className="w-[26rem] space-y-4 rounded-lg border bg-card p-5">
@@ -115,7 +104,14 @@ export function DialogQuantidadePeso({
 						? "Peso informado no teclado. A leitura automática foi pausada."
 						: status}
 				</p>
-				<NumericKeypad digits={digitos} onChange={aplicarTeclado} />
+				<NumericKeypad
+					digits={digitos}
+					onChange={aplicarTeclado}
+					capturarSobreInput
+					onEnter={() => {
+						if (kg > 0) onConfirmar(kg);
+					}}
+				/>
 				<div className="flex gap-2">
 					<Button
 						type="button"

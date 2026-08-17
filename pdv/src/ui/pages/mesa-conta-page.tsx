@@ -29,6 +29,7 @@ import {
 	type ItemPizzaMeioAMeio,
 } from "@/ui/components/dialog-pizza-meio-a-meio";
 import { DialogQuantidadePeso } from "@/ui/components/dialog-quantidade-peso";
+import { DialogRejeicaoNfce } from "@/ui/components/dialog-rejeicao-nfce";
 import { DialogSenhaGerencial } from "@/ui/components/dialog-senha-gerencial";
 import { FunctionBar } from "@/ui/components/function-bar";
 import { ProdutoCard } from "@/ui/components/produto-card";
@@ -96,6 +97,7 @@ export function MesaContaPage() {
 	const [pagando, setPagando] = useState(false);
 	const [confirmandoSaida, setConfirmandoSaida] = useState(false);
 	const [rejeicaoNfce, setRejeicaoNfce] = useState<string | null>(null);
+	const [vendaRejeitadaId, setVendaRejeitadaId] = useState<string | null>(null);
 	const [msg, setMsg] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [pronto, setPronto] = useState(false);
@@ -397,6 +399,7 @@ export function MesaContaPage() {
 			}>("fecharContaMesa", conta.id, fechamento.lancamentos, fechamento.troco);
 			setPagando(false);
 			if (result.fiscal.modo === "erro") {
+				setVendaRejeitadaId(result.venda.id);
 				setRejeicaoNfce(result.fiscal.mensagem);
 				setMsg(result.fiscal.mensagem);
 				return;
@@ -641,6 +644,14 @@ export function MesaContaPage() {
 					<BarcodeInput
 						onScan={(codigo) => void onBip(codigo)}
 						onProduto={(produto) => enfileirarProduto(produto)}
+						pausado={
+							pagando ||
+							confirmandoSaida ||
+							Boolean(rejeicaoNfce) ||
+							Boolean(pizzaPrimeiro) ||
+							Boolean(produtoPeso) ||
+							senhaAberta
+						}
 					/>
 
 					{!pronto ? (
@@ -1002,23 +1013,18 @@ export function MesaContaPage() {
 			)}
 
 			{rejeicaoNfce && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-					<div className="w-[28rem] max-w-[95vw] space-y-4 rounded-lg border border-destructive/40 bg-card p-5">
-						<h2 className="text-lg font-semibold text-destructive">
-							NFC-e rejeitada
-						</h2>
-						<p className="whitespace-pre-wrap break-words text-sm">
-							{rejeicaoNfce}
-						</p>
-						<p className="text-xs text-muted-foreground">
-							A venda foi registrada e deve aparecer na retaguarda web. Corrija
-							o cadastro/fiscal e reemita quando possível.
-						</p>
-						<Button className="w-full" onClick={() => setRejeicaoNfce(null)}>
-							Entendi
-						</Button>
-					</div>
-				</div>
+				<DialogRejeicaoNfce
+					mensagem={rejeicaoNfce}
+					vendaId={vendaRejeitadaId}
+					onFechar={() => {
+						const deveSair = Boolean(vendaRejeitadaId);
+						setRejeicaoNfce(null);
+						setVendaRejeitadaId(null);
+						if (deveSair) {
+							navigate("/", { replace: true });
+						}
+					}}
+				/>
 			)}
 
 			<DialogPagamentoMisto

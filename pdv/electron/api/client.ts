@@ -70,6 +70,13 @@ function mensagemErroApi(json: unknown, status: number): string {
 	return `HTTP ${status}`;
 }
 
+export function isEmpresaAcessoNegado(err: unknown): boolean {
+	if (!(err instanceof ApiError) || err.status !== 403) {
+		return false;
+	}
+	return /EMPRESA_ACESSO_NEGADO|não pertence à empresa/i.test(err.message);
+}
+
 async function request<T>(
 	path: string,
 	options: {
@@ -373,6 +380,9 @@ export type LancamentoPagamentoApi = {
 	bandeira?: string | null;
 	status?: "ok" | "pendente" | "cancelado";
 };
+
+/** Origem na retaguarda: 0 legado, 1 balcão web, 2 POS Android, 3 PDV híbrido. */
+export const VENDA_LOCAL_PDV_HIBRIDO = 3;
 
 export async function criarVendaPdv(
 	body: Record<string, unknown> & {
@@ -684,6 +694,35 @@ export async function transmitirNfceContingencia(body: {
 		body,
 		timeoutMs: 60000,
 	});
+}
+
+export type ResultadoEmissaoNfceApi = {
+	emitida: boolean;
+	idnotafiscal?: string;
+	chave?: string;
+	qrCode?: string;
+	protocolo?: string;
+	cStat?: string;
+	xMotivo?: string;
+	erro?: string;
+	xml?: string;
+	serie?: string | number;
+	numero?: number;
+	pendencias?: Array<{ codigo?: string; mensagem: string }>;
+};
+
+export async function retransmitirNfceVendaPdv(body: {
+	idempresa: string;
+	idvenda: string;
+}) {
+	return request<ResultadoEmissaoNfceApi>(
+		`/nfce/venda/${body.idvenda}/retransmitir`,
+		{
+			method: "POST",
+			body: { idempresa: body.idempresa },
+			timeoutMs: 60000,
+		},
+	);
 }
 
 export async function abrirCaixaRemoto(body: Record<string, unknown>) {

@@ -50,6 +50,8 @@ export type RastroTributacaoSaidaImportacao = {
 
 export type DadosImportacaoItem = {
 	codigoFornecedor?: string | undefined;
+	/** Código interno do produto a cadastrar (auto-incremental da empresa). */
+	codigoProduto?: number | undefined;
 	descricaoFornecedor: string;
 	eanXml?: string | undefined;
 	statusVinculo: StatusVinculoImportacao;

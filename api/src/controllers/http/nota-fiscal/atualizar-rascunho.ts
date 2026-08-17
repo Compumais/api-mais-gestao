@@ -64,6 +64,7 @@ const itemBodySchema = z.object({
 	idgrupo: z.string().optional(),
 	idunidademedida: z.string().optional(),
 	unidadeEstoque: z.string().optional(),
+	codigoProduto: z.number().int().positive().optional(),
 	tributacao: tributacaoSchema,
 });
 
@@ -161,6 +162,9 @@ export async function atualizarItemRascunhoImportacao(
 				}),
 				...(dados.unidadeEstoque !== undefined && {
 					unidadeEstoque: dados.unidadeEstoque,
+				}),
+				...(dados.codigoProduto !== undefined && {
+					codigoProduto: dados.codigoProduto,
 				}),
 				...(dados.tributacao !== undefined && { tributacao: dados.tributacao }),
 			},

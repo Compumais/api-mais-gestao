@@ -61,6 +61,25 @@ export function LoginPage() {
 			} catch {
 				setTerminaisPdv([]);
 			}
+			try {
+				const status = await pdvInvoke<{
+					sessao: {
+						logado: boolean;
+						username: string | null;
+						idempresa: string | null;
+					};
+				}>("getStatus");
+				if (status.sessao.logado && !status.sessao.idempresa) {
+					const lista = await pdvInvoke<Empresa[]>("listarEmpresasSessao");
+					setUsername(status.sessao.username ?? "");
+					setEmpresas(lista);
+					if (lista.length === 0) {
+						setErro("Nenhuma empresa vinculada a este usuário.");
+					}
+				}
+			} catch {
+				// sem sessão — permanece no formulário de login
+			}
 		})();
 	}, []);
 
@@ -152,8 +171,13 @@ export function LoginPage() {
 			);
 			setUsername(result.username);
 			setEmpresas(result.empresas);
-			if (result.empresas.length === 1) {
-				await selecionar(result.empresas[0]);
+			if (result.empresas.length === 0) {
+				setErro("Nenhuma empresa vinculada a este usuário.");
+				return;
+			}
+			const unica = result.empresas[0];
+			if (result.empresas.length === 1 && unica) {
+				await selecionar(unica);
 			}
 		} catch (err) {
 			setErro(err instanceof Error ? err.message : "Falha no login");

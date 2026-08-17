@@ -1,8 +1,13 @@
 import type { HttpResponse } from "@/model/http-model.js";
-import type { DadosImportacaoItem } from "@/model/nota-fiscal-importacao-model.js";
-import type { NotaFiscal } from "@/model/nota-fiscal-model.js";
+import type {
+	DadosImportacaoItem,
+	DadosImportacaoNota,
+} from "@/model/nota-fiscal-importacao-model.js";
 import type { NotaFiscalItem } from "@/model/nota-fiscal-item-model.js";
+import type { NotaFiscal } from "@/model/nota-fiscal-model.js";
+import { buscarCfopPorId } from "@/repositories/cfop-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { buscarHierarquiaPorId } from "@/repositories/hierarquia-repositories.js";
 import {
 	atualizarItemNotaFiscal,
 	atualizarNotaFiscal,
@@ -10,10 +15,15 @@ import {
 	buscarNotaFiscalRascunhoPorId,
 	listarItensPorNotaFiscal,
 } from "@/repositories/nota-fiscal-repositories.js";
-import { buscarHierarquiaPorId } from "@/repositories/hierarquia-repositories.js";
-import type { DadosImportacaoNota } from "@/model/nota-fiscal-importacao-model.js";
-import { buscarCfopPorId } from "@/repositories/cfop-repositories.js";
 import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
+import { buscarUnidadeMedidaPorId } from "@/repositories/unidade-medida-repositories.js";
+import {
+	buscarProximoCodigoProdutoImportacao,
+	codigoProdutoValido,
+	listarCodigosProdutoReservados,
+} from "@/service/nota-fiscal/importacao/codigo-produto-importacao.js";
+import { resolverTipoprodutoPorCfopEntrada } from "@/service/nota-fiscal/montar-dados-produto-nf-importacao.js";
+import { validarEanProdutoNf } from "@/service/nota-fiscal/validar-ean-produto-nf.js";
 import { recalcularDadosConversao } from "@/util/calculo-importacao-nf.js";
 import {
 	isCfopEntrada,
@@ -26,9 +36,6 @@ import {
 	httpProibido,
 } from "@/util/http-util.js";
 import { idOpcionalOuNulo, numeroOpcionalOuNulo } from "@/util/texto-util.js";
-import { buscarUnidadeMedidaPorId } from "@/repositories/unidade-medida-repositories.js";
-import { resolverTipoprodutoPorCfopEntrada } from "@/service/nota-fiscal/montar-dados-produto-nf-importacao.js";
-import { validarEanProdutoNf } from "@/service/nota-fiscal/validar-ean-produto-nf.js";
 import { resolverNcmImportacao } from "./resolver-referencias-importacao.js";
 
 type AtualizarCabecalhoRascunhoParametros = {
@@ -79,7 +86,9 @@ async function validarAcessoRascunho(
 	return { nota } as const;
 }
 
-async function resolverCfopEntradaPorId(idcfop: string | null | undefined): Promise<
+async function resolverCfopEntradaPorId(
+	idcfop: string | null | undefined,
+): Promise<
 	| { ok: true; idcfop: string; codigo: string }
 	| { ok: false; erro: string }
 	| { ok: true; idcfop: null; codigo: null }
@@ -109,7 +118,11 @@ export async function atualizarCabecalhoRascunhoImportacaoNfService({
 	idRascunho,
 	dados,
 }: AtualizarCabecalhoRascunhoParametros): Promise<HttpResponse<NotaFiscal>> {
-	const validacao = await validarAcessoRascunho(idusuario, idempresa, idRascunho);
+	const validacao = await validarAcessoRascunho(
+		idusuario,
+		idempresa,
+		idRascunho,
+	);
 
 	if ("erro" in validacao) {
 		return validacao.erro as HttpResponse<NotaFiscal>;
@@ -145,8 +158,7 @@ export async function atualizarCabecalhoRascunhoImportacaoNfService({
 	if (dados.aplicarCfopItens && dados.idcfop) {
 		const idcfop = idOpcionalOuNulo(dados.idcfop);
 		if (idcfop && codigoCfopEntrada) {
-			const tipoproduto =
-				await resolverTipoprodutoPorCfopEntrada(idcfop);
+			const tipoproduto = await resolverTipoprodutoPorCfopEntrada(idcfop);
 			const itens = await listarItensPorNotaFiscal(idRascunho);
 			for (const item of itens) {
 				const dadosAtuais =
@@ -188,7 +200,11 @@ export async function atualizarItemRascunhoImportacaoNfService({
 }: AtualizarItemRascunhoParametros): Promise<
 	HttpResponse<NotaFiscalItem & { dadosimportacao: DadosImportacaoItem | null }>
 > {
-	const validacao = await validarAcessoRascunho(idusuario, idempresa, idRascunho);
+	const validacao = await validarAcessoRascunho(
+		idusuario,
+		idempresa,
+		idRascunho,
+	);
 
 	if ("erro" in validacao) {
 		return validacao.erro as HttpResponse<
@@ -246,6 +262,7 @@ export async function atualizarItemRascunhoImportacaoNfService({
 				codigo: produto.codigo ?? undefined,
 			},
 			confirmarCadastro: false,
+			codigoProduto: undefined,
 			precoVenda:
 				dadosMesclados.precoVenda?.trim() ||
 				(produto.preco?.trim() ? produto.preco : undefined),
@@ -264,12 +281,26 @@ export async function atualizarItemRascunhoImportacaoNfService({
 	}
 
 	if (dados.statusVinculo === "novo") {
+		let codigoProduto = codigoProdutoValido(dadosMesclados.codigoProduto)
+			? dadosMesclados.codigoProduto
+			: undefined;
+
+		if (codigoProduto === undefined) {
+			const itensRascunho = await listarItensPorNotaFiscal(idRascunho);
+			const reservados = listarCodigosProdutoReservados(itensRascunho, idItem);
+			codigoProduto = await buscarProximoCodigoProdutoImportacao(
+				idempresa,
+				reservados,
+			);
+		}
+
 		dadosMesclados = {
 			...dadosMesclados,
 			statusVinculo: "novo",
 			idproduto: undefined,
 			produtoEncontrado: undefined,
 			confirmarCadastro: true,
+			codigoProduto,
 		};
 	}
 
@@ -280,6 +311,7 @@ export async function atualizarItemRascunhoImportacaoNfService({
 			idproduto: undefined,
 			produtoEncontrado: undefined,
 			confirmarCadastro: false,
+			codigoProduto: undefined,
 		};
 	}
 
@@ -288,11 +320,12 @@ export async function atualizarItemRascunhoImportacaoNfService({
 		dados.quantidadeXml !== undefined ||
 		dados.precounitarioXml !== undefined
 	) {
-		const { quantidadeEstoque, precounitarioEstoque } = recalcularDadosConversao(
-			dadosMesclados.quantidadeXml,
-			dadosMesclados.precounitarioXml,
-			dadosMesclados.fatorConversao,
-		);
+		const { quantidadeEstoque, precounitarioEstoque } =
+			recalcularDadosConversao(
+				dadosMesclados.quantidadeXml,
+				dadosMesclados.precounitarioXml,
+				dadosMesclados.fatorConversao,
+			);
 
 		dadosMesclados = {
 			...dadosMesclados,
@@ -390,7 +423,8 @@ export async function atualizarItemRascunhoImportacaoNfService({
 		idproduto: dadosMesclados.idproduto ?? null,
 		descricao: dadosMesclados.descricaoFornecedor,
 		quantidade: numeroOpcionalOuNulo(dadosMesclados.quantidadeXml) ?? null,
-		precounitario: numeroOpcionalOuNulo(dadosMesclados.precounitarioXml) ?? null,
+		precounitario:
+			numeroOpcionalOuNulo(dadosMesclados.precounitarioXml) ?? null,
 		idcfop: idOpcionalOuNulo(dadosMesclados.idcfop) ?? null,
 		cfop: codigoCfopEntrada,
 		idncm: idOpcionalOuNulo(dadosMesclados.idncm) ?? null,
@@ -405,7 +439,8 @@ export async function atualizarItemRascunhoImportacaoNfService({
 		percentualicms:
 			numeroOpcionalOuNulo(dadosMesclados.tributacao.percentualicms) ?? null,
 		icms: numeroOpcionalOuNulo(dadosMesclados.tributacao.icms) ?? null,
-		aliquotapis: numeroOpcionalOuNulo(dadosMesclados.tributacao.aliquotapis) ?? null,
+		aliquotapis:
+			numeroOpcionalOuNulo(dadosMesclados.tributacao.aliquotapis) ?? null,
 		aliquotacofins:
 			numeroOpcionalOuNulo(dadosMesclados.tributacao.aliquotacofins) ?? null,
 		pis: numeroOpcionalOuNulo(dadosMesclados.tributacao.pis) ?? null,
@@ -445,7 +480,11 @@ export async function aplicarGrupoPadraoRascunhoImportacaoNfService({
 }: AplicarGrupoPadraoRascunhoParametros): Promise<
 	HttpResponse<AplicarGrupoPadraoRascunhoResposta>
 > {
-	const validacao = await validarAcessoRascunho(idusuario, idempresa, idRascunho);
+	const validacao = await validarAcessoRascunho(
+		idusuario,
+		idempresa,
+		idRascunho,
+	);
 
 	if ("erro" in validacao) {
 		return validacao.erro as HttpResponse<AplicarGrupoPadraoRascunhoResposta>;
@@ -473,17 +512,18 @@ export async function aplicarGrupoPadraoRascunhoImportacaoNfService({
 	}
 
 	for (const item of itens) {
-		const dadosAtuais = (item.dadosimportacao as DadosImportacaoItem | null) ?? {
-			descricaoFornecedor: item.descricao ?? "",
-			statusVinculo: "pendente" as const,
-			confirmarCadastro: false,
-			fatorConversao: "1",
-			quantidadeXml: item.quantidade ?? "0",
-			quantidadeEstoque: item.quantidade ?? "0",
-			precounitarioXml: item.precounitario ?? "0",
-			precounitarioEstoque: item.precounitario ?? "0",
-			tributacao: {},
-		};
+		const dadosAtuais =
+			(item.dadosimportacao as DadosImportacaoItem | null) ?? {
+				descricaoFornecedor: item.descricao ?? "",
+				statusVinculo: "pendente" as const,
+				confirmarCadastro: false,
+				fatorConversao: "1",
+				quantidadeXml: item.quantidade ?? "0",
+				quantidadeEstoque: item.quantidade ?? "0",
+				precounitarioXml: item.precounitario ?? "0",
+				precounitarioEstoque: item.precounitario ?? "0",
+				tributacao: {},
+			};
 
 		await atualizarItemNotaFiscal(item.id, {
 			dadosimportacao: {

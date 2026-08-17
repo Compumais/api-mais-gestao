@@ -229,6 +229,36 @@ export function DialogPagamentoMisto({
 		);
 	}
 
+	async function aoEnter() {
+		if (ocupado) return;
+		if (podeFechar) {
+			onConfirmar({ lancamentos, troco });
+			return;
+		}
+		const valor = centavosToNumber(digitos);
+		if (!(valor > 0)) {
+			setErro("Informe um valor maior que zero");
+			return;
+		}
+		const novo: LancamentoPagamento[] = [
+			...lancamentos,
+			{
+				id: crypto.randomUUID(),
+				meio: "DINHEIRO",
+				valor,
+				status: "ok",
+			},
+		];
+		if (podeFecharPagamentos(total, novo)) {
+			onConfirmar({
+				lancamentos: novo,
+				troco: trocoEstimado(total, novo),
+			});
+			return;
+		}
+		setLancamentos(novo);
+	}
+
 	if (!aberto) return null;
 
 	return (
@@ -271,8 +301,13 @@ export function DialogPagamentoMisto({
 				<NumericKeypad
 					digits={digitos}
 					onChange={setDigitos}
-					disabled={ocupado || restante <= 0}
+					disabled={ocupado}
+					capturarSobreInput
+					onEnter={() => void aoEnter()}
 				/>
+				<p className="text-center text-xs text-muted-foreground">
+					Enter lança em dinheiro e confirma quando o restante zerar.
+				</p>
 
 				<div className="grid grid-cols-3 gap-2">
 					{MEIOS.map((meio) => (
