@@ -546,7 +546,7 @@ export default function NfcePage() {
 				descricao={
 					eventoModal?.tipo === "cancelar"
 						? "Informe a justificativa do cancelamento (mínimo 15 caracteres)."
-						: "Informe a justificativa da inutilização (mínimo 15 caracteres)."
+						: `Inutilizar numeração da NFC-e (modelo 65) série ${eventoModal?.nota.serie ?? "—"} número ${eventoModal?.nota.numeronotafiscal ?? "—"}. Justificativa mínima de 15 caracteres.`
 				}
 				rotuloConfirmar={
 					eventoModal?.tipo === "cancelar" ? "Cancelar NFC-e" : "Inutilizar"

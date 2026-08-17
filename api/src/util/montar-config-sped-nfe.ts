@@ -17,6 +17,7 @@ export type ConfigSpedNfe = {
 	tokenIBPT?: string;
 	CSC?: string;
 	CSCid?: string;
+	modelo?: number;
 	proxyConf?: {
 		proxyIp: string;
 		proxyPort: string;
@@ -55,6 +56,7 @@ export function montarConfigJsonSpedNfe({
 		schemes: NFE_CONFIG_PADRAO.schema,
 		versao: NFE_CONFIG_PADRAO.versaoleiaute,
 		tokenIBPT: nfeConfiguracao.tokenibpt ?? "",
+		modelo: 55,
 		proxyConf: {
 			proxyIp: "",
 			proxyPort: "",

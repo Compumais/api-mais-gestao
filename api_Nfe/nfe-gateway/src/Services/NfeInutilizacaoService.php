@@ -9,7 +9,7 @@ use NFePHP\NFe\Common\Standardize;
 final class NfeInutilizacaoService
 {
 	/**
-	 * @param array{serie:int|string,numeroInicial:int|string,numeroFinal?:int|string,justificativa:string} $dados
+	 * @param array{modelo?:int|string,serie:int|string,numeroInicial:int|string,numeroFinal?:int|string,justificativa:string} $dados
 	 */
 	public static function inutilizar(
 		array $configJson,
@@ -17,10 +17,17 @@ final class NfeInutilizacaoService
 		string $senha,
 		array $dados,
 	): array {
+		$modelo = (int) ($dados['modelo'] ?? $configJson['modelo'] ?? 55);
 		$serie = (int) ($dados['serie'] ?? 0);
 		$numeroInicial = (int) ($dados['numeroInicial'] ?? 0);
 		$numeroFinal = (int) ($dados['numeroFinal'] ?? $numeroInicial);
 		$justificativa = trim((string) ($dados['justificativa'] ?? ''));
+
+		if ($modelo !== 55 && $modelo !== 65) {
+			throw new \InvalidArgumentException(
+				'Modelo inválido para inutilização. Use 55 (NF-e) ou 65 (NFC-e)',
+			);
+		}
 
 		if ($serie <= 0) {
 			throw new \InvalidArgumentException('Série inválida para inutilização');
@@ -42,7 +49,9 @@ final class NfeInutilizacaoService
 			);
 		}
 
+		$configJson['modelo'] = $modelo;
 		$tools = SpedNfeFactory::criarTools($configJson, $pfxBase64, $senha);
+		$tools->model($modelo);
 		$response = $tools->sefazInutiliza($serie, $numeroInicial, $numeroFinal, $justificativa);
 
 		$std = (new Standardize($response))->toStd();

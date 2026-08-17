@@ -256,6 +256,7 @@ export async function inutilizarNfeGateway(payload: {
 	pfxBase64: string;
 	senha: string;
 	dados: {
+		modelo?: 55 | 65;
 		serie: number;
 		numeroInicial: number;
 		numeroFinal?: number;
