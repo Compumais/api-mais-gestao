@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { DownloadIcon } from "lucide-react";
 import { useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, type Resolver, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,7 +36,7 @@ export default function ExportarMgvPage() {
 	const [alertas, setAlertas] = useState<string[]>([]);
 
 	const form = useForm<ExportarMgvFormData>({
-		resolver: zodResolver(exportarMgvSchema),
+		resolver: zodResolver(exportarMgvSchema) as Resolver<ExportarMgvFormData>,
 		defaultValues: {
 			departamentoPadrao: 1,
 			diasValidade: 0,
