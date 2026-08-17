@@ -9,6 +9,7 @@ export const CHAVES_CONFIG_NEGOCIO = [
 	"api_url",
 	"taxa_servico_percentual",
 	"couvert_valor",
+	"terminais_pdv_json",
 	"etiqueta_balanca_habilitada",
 	"etiqueta_balanca_prefixo",
 	"etiqueta_balanca_digitos_codigo",

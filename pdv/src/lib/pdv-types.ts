@@ -24,7 +24,7 @@ export type LeituraCodigoBarras = {
 	precounitario: number;
 	precototal: number;
 	pesado: boolean;
-	origem: "etiqueta-balanca" | "ean";
+	origem: "etiqueta-balanca" | "ean" | "nome";
 };
 
 export type StatusAtividadeMesa = "livre" | "consumindo" | "ociosa";
@@ -107,6 +107,12 @@ export type StatusPdv = {
 		numeropdv: number;
 		abertoem: string;
 		valorabertura: number;
+		idusuario?: string | null;
+		username?: string | null;
+	} | null;
+	caixaOutroOperador?: {
+		username: string | null;
+		abertoem: string;
 	} | null;
 	numeropdv: number;
 	emitirNfce: boolean;

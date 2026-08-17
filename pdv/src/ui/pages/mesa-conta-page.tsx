@@ -638,7 +638,10 @@ export function MesaContaPage() {
 							</Button>
 						)}
 					</div>
-					<BarcodeInput onScan={(codigo) => void onBip(codigo)} />
+					<BarcodeInput
+						onScan={(codigo) => void onBip(codigo)}
+						onProduto={(produto) => enfileirarProduto(produto)}
+					/>
 
 					{!pronto ? (
 						<p className="text-sm text-muted-foreground">Carregando...</p>

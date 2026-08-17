@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { marcarBootPendente } from "@/lib/boot-state";
 import { pdvInvoke } from "@/lib/pdv-api";
+import {
+	SelectNumeroPdv,
+	type TerminalPdvOpcao,
+} from "@/ui/components/select-numero-pdv";
 import { Button } from "@/ui/components/ui/button";
 import {
 	Card,
@@ -36,9 +40,11 @@ export function LoginPage() {
 	const [testando, setTestando] = useState(false);
 	const [empresas, setEmpresas] = useState<Empresa[]>([]);
 	const [username, setUsername] = useState("");
+	const [terminaisPdv, setTerminaisPdv] = useState<TerminalPdvOpcao[]>([]);
 
 	useEffect(() => {
-		void pdvInvoke<Record<string, string>>("getConfig").then((cfg) => {
+		void (async () => {
+			const cfg = await pdvInvoke<Record<string, string>>("getConfig");
 			setApiUrl(cfg.api_url ?? "http://localhost:3333");
 			const modoCfg = normalizarModo(cfg.pdv_modo);
 			setModo(modoCfg);
@@ -48,7 +54,14 @@ export function LoginPage() {
 			if (modoCfg === "secundario") {
 				setMostrarConexao(true);
 			}
-		});
+			try {
+				setTerminaisPdv(
+					await pdvInvoke<TerminalPdvOpcao[]>("listarTerminaisPdv"),
+				);
+			} catch {
+				setTerminaisPdv([]);
+			}
+		})();
 	}, []);
 
 	function payloadConexao(): Record<string, string> {
@@ -229,16 +242,11 @@ export function LoginPage() {
 										</div>
 										<div className="space-y-2">
 											<Label htmlFor="numeropdv">Número do PDV</Label>
-											<Input
-												id="numeropdv"
-												inputMode="numeric"
+											<SelectNumeroPdv
 												value={numeroPdv}
-												onChange={(e) => setNumeroPdv(e.target.value)}
+												terminais={terminaisPdv}
+												onChange={setNumeroPdv}
 											/>
-											<p className="text-xs text-muted-foreground">
-												Único na loja. No secundário, use um número diferente do
-												principal.
-											</p>
 										</div>
 										{modo === "secundario" ? (
 											<>

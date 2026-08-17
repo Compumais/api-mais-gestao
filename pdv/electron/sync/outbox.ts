@@ -48,6 +48,7 @@ import {
 	upsertGruposGourmet,
 	upsertProdutos,
 } from "../db/repos";
+import { atualizarCacheTerminaisPdv } from "./terminais-pdv";
 
 let syncing = false;
 
@@ -182,6 +183,12 @@ export async function pullCatalogo(): Promise<{
 		}
 	} catch {
 		// config NFC-e opcional no pull
+	}
+
+	try {
+		await atualizarCacheTerminaisPdv();
+	} catch {
+		// cadastro de terminais opcional no pull
 	}
 
 	await execute(

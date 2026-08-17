@@ -373,6 +373,21 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 			await database.query("ALTER TABLE sessao ADD COLUMN modulogourmet TEXT");
 		}
 	}
+
+	const caixaCols = await database.query<{ column_name: string }>(
+		`SELECT column_name
+		 FROM information_schema.columns
+		 WHERE table_schema = 'public' AND table_name = 'caixa_turno'`,
+	);
+	if (caixaCols.rows.length) {
+		const caixaNomes = new Set(caixaCols.rows.map((c) => c.column_name));
+		if (!caixaNomes.has("idusuario")) {
+			await database.query("ALTER TABLE caixa_turno ADD COLUMN idusuario TEXT");
+		}
+		if (!caixaNomes.has("username")) {
+			await database.query("ALTER TABLE caixa_turno ADD COLUMN username TEXT");
+		}
+	}
 }
 
 /** Host antigo do seed que aponta para o front, não para a API. */

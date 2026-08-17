@@ -21,6 +21,10 @@ import { aplicarTema } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { ConfigAtalhos } from "@/ui/components/config-atalhos";
 import { FunctionBar } from "@/ui/components/function-bar";
+import {
+	SelectNumeroPdv,
+	type TerminalPdvOpcao,
+} from "@/ui/components/select-numero-pdv";
 import { Topbar } from "@/ui/components/topbar";
 import { Button } from "@/ui/components/ui/button";
 import {
@@ -153,6 +157,7 @@ export function ConfigPage() {
 		mensagem: string;
 	} | null>(null);
 	const [portasBalanca, setPortasBalanca] = useState<string[]>([]);
+	const [terminaisPdv, setTerminaisPdv] = useState<TerminalPdvOpcao[]>([]);
 	const [testeEtiqueta, setTesteEtiqueta] = useState("");
 	const [resultadoTesteEtiqueta, setResultadoTesteEtiqueta] = useState("");
 	const rotulo = rotuloModelo(
@@ -210,6 +215,13 @@ export function ConfigPage() {
 				setPortasBalanca(await pdvInvoke<string[]>("balanca.listarPortas"));
 			} catch {
 				setPortasBalanca([]);
+			}
+			try {
+				setTerminaisPdv(
+					await pdvInvoke<TerminalPdvOpcao[]>("listarTerminaisPdv"),
+				);
+			} catch {
+				setTerminaisPdv([]);
 			}
 		})();
 	}, []);
@@ -327,6 +339,9 @@ export function ConfigPage() {
 			try {
 				setConfig(await pdvInvoke<Config>("getConfig"));
 				setStatusFiscal(await pdvInvoke<StatusFiscal>("statusFiscalPdv"));
+				setTerminaisPdv(
+					await pdvInvoke<TerminalPdvOpcao[]>("listarTerminaisPdv"),
+				);
 			} catch {
 				// status fiscal opcional
 			}
@@ -351,6 +366,9 @@ export function ConfigPage() {
 			await pdvInvoke("sincronizarFiscalPdv");
 			setConfig(await pdvInvoke<Config>("getConfig"));
 			setStatusFiscal(await pdvInvoke<StatusFiscal>("statusFiscalPdv"));
+			setTerminaisPdv(
+				await pdvInvoke<TerminalPdvOpcao[]>("listarTerminaisPdv"),
+			);
 			setMsg("Certificado, série e numeração atualizados do retaguarda.");
 		} catch (err) {
 			try {
@@ -556,15 +574,11 @@ export function ConfigPage() {
 								<CardContent className="grid gap-4 sm:grid-cols-2">
 									<div className="space-y-2">
 										<Label htmlFor="numeropdv">Número do PDV</Label>
-										<Input
-											id="numeropdv"
+										<SelectNumeroPdv
 											value={config.numeropdv ?? "1"}
-											onChange={(e) => set("numeropdv", e.target.value)}
+											terminais={terminaisPdv}
+											onChange={(valor) => set("numeropdv", valor)}
 										/>
-										<p className="text-xs text-muted-foreground">
-											Único na loja. Dois PDVs com o mesmo número misturam
-											caixa, cupom e NFC-e.
-										</p>
 									</div>
 									<div className="space-y-2">
 										<Label htmlFor="pdv_modo">Modo</Label>
