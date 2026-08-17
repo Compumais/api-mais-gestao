@@ -156,16 +156,13 @@ export async function criarProduto(
 			ippt: dadosValidados.ippt ?? (ehServico ? "T" : "P"),
 			origem: dadosValidados.origem ?? (ehServico ? 0 : 0),
 			ncm: dadosValidados.ncm?.trim() || (ehServico ? null : ""),
-			tipoproduto:
-				dadosValidados.tipoproduto ?? (ehServico ? "09" : null),
+			tipoproduto: dadosValidados.tipoproduto ?? (ehServico ? "09" : null),
 			observacoes: dadosValidados.observacoes ?? null,
 			enviamobile: dadosValidados.enviamobile ?? 0,
 			espizza: dadosValidados.espizza ?? 0,
 			exportaBalanca: dadosValidados.exportaBalanca ?? 0,
 			diasValidade: dadosValidados.diasValidade ?? 0,
-			quantidadepadrao: ehServico
-				? 0
-				: (dadosValidados.quantidadepadrao ?? 0),
+			quantidadepadrao: ehServico ? 0 : (dadosValidados.quantidadepadrao ?? 0),
 			quantidademinima: ehServico
 				? null
 				: (dadosValidados.quantidademinima ?? null),

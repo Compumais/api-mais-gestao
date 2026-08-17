@@ -52,7 +52,10 @@ export function ProdutoAbaBalanca({
 						}
 					/>
 					<div>
-						<Label htmlFor="exportaBalanca" className="cursor-pointer font-normal">
+						<Label
+							htmlFor="exportaBalanca"
+							className="cursor-pointer font-normal"
+						>
 							Exportar para balança
 						</Label>
 						<p className="text-sm text-muted-foreground">

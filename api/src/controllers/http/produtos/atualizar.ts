@@ -2,10 +2,10 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import type { NovoProduto } from "@/model/produto-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
 import { atualizarProdutoService } from "@/service/produto/atualizar-produto.js";
 import { enriquecerCamposImpostosProduto } from "@/service/produto/enriquecer-campos-impostos-produto.js";
 import { sincronizarSaldoEstoqueProduto } from "@/service/produto/sincronizar-saldo-estoque-produto.js";
-import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
 import { camposImpostosProdutoSchema } from "@/util/campos-impostos-produto.js";
 import {
 	camposServicoProdutoSchema,
