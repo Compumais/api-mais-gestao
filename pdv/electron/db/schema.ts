@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS produto_cache (
 	unidademedida TEXT,
 	idunidademedida TEXT,
 	ean TEXT,
+	codigo INTEGER,
 	idgrupo TEXT,
 	idgrupogourmet TEXT,
 	espizza INTEGER NOT NULL DEFAULT 0,
@@ -241,6 +242,7 @@ CREATE INDEX IF NOT EXISTS idx_produto_descricao ON produto_cache(descricao);
 CREATE INDEX IF NOT EXISTS idx_produto_grupo ON produto_cache(idgrupo);
 CREATE INDEX IF NOT EXISTS idx_produto_grupo_gourmet ON produto_cache(idgrupogourmet);
 CREATE INDEX IF NOT EXISTS idx_produto_ean ON produto_cache(ean);
+CREATE INDEX IF NOT EXISTS idx_produto_codigo ON produto_cache(codigo);
 CREATE INDEX IF NOT EXISTS idx_conta_status ON conta_mesa(status);
 CREATE INDEX IF NOT EXISTS idx_pedido_fila_status ON pedido_fila(status, criadoem);
 CREATE INDEX IF NOT EXISTS idx_pedido_fila_client ON pedido_fila(client_order_id);

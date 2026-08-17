@@ -7,6 +7,7 @@ import { buscarProduto } from "./buscar.js";
 import { criarProduto } from "./criar.js";
 import * as schema from "./doc-schema/schema.js";
 import { excluirProduto } from "./excluir.js";
+import { exportarProdutosMgv } from "./exportar-mgv.js";
 import { inativarProduto } from "./inativar.js";
 import { listarProdutos } from "./listar.js";
 import { tributacaoPorCfop } from "./tributacao-por-cfop.js";
@@ -25,6 +26,10 @@ export async function produtosRotas(app: FastifyInstance) {
 	app.get("/produtos/tributacao-por-cfop", {
 		schema: schema.tributacaoPorCfopSchema,
 		handler: tributacaoPorCfop,
+	});
+	app.post("/produtos/exportar-mgv", {
+		schema: schema.exportarProdutosMgvSchema,
+		handler: exportarProdutosMgv,
 	});
 	app.get("/produtos/proximo-codigo", {
 		schema: criarProximoCodigoSchema("produtos", "number"),

@@ -4,6 +4,7 @@ import { marcarBootPendente } from "@/lib/boot-state";
 import { pdvInvoke } from "@/lib/pdv-api";
 import {
 	type GrupoLocal,
+	type LeituraCodigoBarras,
 	type ProdutoLocal,
 	rotuloModelo,
 	type StatusContext,
@@ -179,15 +180,27 @@ export function BalcaoPage() {
 	}
 
 	async function onBip(codigo: string) {
-		const produto = await pdvInvoke<ProdutoLocal | null>(
-			"buscarProdutoPorEan",
+		const leitura = await pdvInvoke<LeituraCodigoBarras | null>(
+			"buscarLeituraCodigoBarras",
 			codigo,
 		);
-		if (produto) {
-			adicionarProdutoSimples(produto);
-		} else {
+		if (!leitura) {
 			setMsg(`Produto não encontrado para o código "${codigo}"`);
+			return;
 		}
+		if (leitura.origem === "etiqueta-balanca") {
+			adicionarLinha({
+				chave: crypto.randomUUID(),
+				idproduto: leitura.produto.id,
+				descricao: leitura.produto.descricao,
+				quantidade: leitura.quantidade,
+				precounitario: leitura.precounitario,
+				precototal: leitura.precototal,
+				pesado: leitura.pesado,
+			});
+			return;
+		}
+		adicionarProdutoSimples(leitura.produto);
 	}
 
 	function alterarQtd(chave: string, delta: number) {

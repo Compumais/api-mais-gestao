@@ -6,9 +6,10 @@ import {
 	useParams,
 } from "react-router-dom";
 import { pdvInvoke } from "@/lib/pdv-api";
-import type { MesaResumo } from "@/lib/pdv-types";
 import {
 	type GrupoLocal,
+	type LeituraCodigoBarras,
+	type MesaResumo,
 	type ProdutoLocal,
 	rotuloModelo,
 	type StatusContext,
@@ -355,15 +356,30 @@ export function MesaContaPage() {
 	}
 
 	async function onBip(codigo: string) {
-		const produto = await pdvInvoke<ProdutoLocal | null>(
-			"buscarProdutoPorEan",
+		const leitura = await pdvInvoke<LeituraCodigoBarras | null>(
+			"buscarLeituraCodigoBarras",
 			codigo,
 		);
-		if (produto) {
-			enfileirarProduto(produto);
-		} else {
+		if (!leitura) {
 			setMsg(`Produto não encontrado para o código "${codigo}"`);
+			return;
 		}
+		if (leitura.origem === "etiqueta-balanca") {
+			setFila((prev) => [
+				...prev,
+				{
+					chave: crypto.randomUUID(),
+					idproduto: leitura.produto.id,
+					descricao: leitura.produto.descricao,
+					quantidade: leitura.quantidade,
+					precounitario: leitura.precounitario,
+					precototal: leitura.precototal,
+					pesado: leitura.pesado,
+				},
+			]);
+			return;
+		}
+		enfileirarProduto(leitura.produto);
 	}
 
 	async function finalizar(fechamento: FechamentoMisto) {

@@ -31,6 +31,7 @@ export type CatalogoPrincipal = {
 		unidademedida?: string | null;
 		idunidademedida?: string | null;
 		ean?: string | null;
+		codigo?: number | null;
 		idgrupo?: string | null;
 		idgrupogourmet?: string | null;
 		espizza?: number | null;

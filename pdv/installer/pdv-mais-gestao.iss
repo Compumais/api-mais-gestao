@@ -94,9 +94,15 @@ Root: HKLM; Subkey: "SYSTEM\CurrentControlSet\Control\Session Manager\Environmen
   Flags: preservestringtype createvalueifdoesntexist; Tasks: postgres
 
 [Run]
+Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=""PDV Mais Gestao LAN"""; Flags: runhidden waituntilterminated; StatusMsg: "Liberando porta LAN no firewall..."
+Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=""PDV Mais Gestao LAN TCP"""; Flags: runhidden waituntilterminated
+Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall add rule name=""PDV Mais Gestao LAN"" dir=in action=allow program=""{app}\{#MyAppExeName}"" enable=yes profile=any"; Flags: runhidden waituntilterminated
+Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall add rule name=""PDV Mais Gestao LAN TCP"" dir=in action=allow protocol=TCP localport=5050 profile=any"; Flags: runhidden waituntilterminated
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 
 [UninstallRun]
+Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=""PDV Mais Gestao LAN"""; Flags: runhidden waituntilterminated; RunOnceId: "RemovePdvLanFw"
+Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=""PDV Mais Gestao LAN TCP"""; Flags: runhidden waituntilterminated; RunOnceId: "RemovePdvLanFwTcp"
 Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; \
   Parameters: "-NoProfile -ExecutionPolicy Bypass -Command ""try {{ Stop-Service -Name '{#PostgresService}' -Force -ErrorAction SilentlyContinue }} catch {{ }}"""; \
   Flags: runhidden waituntilterminated; RunOnceId: "StopPdvPostgres"

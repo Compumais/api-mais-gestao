@@ -9,6 +9,12 @@ export const CHAVES_CONFIG_NEGOCIO = [
 	"api_url",
 	"taxa_servico_percentual",
 	"couvert_valor",
+	"etiqueta_balanca_habilitada",
+	"etiqueta_balanca_prefixo",
+	"etiqueta_balanca_digitos_codigo",
+	"etiqueta_balanca_conteudo",
+	"etiqueta_balanca_centavos",
+	"etiqueta_balanca_indicador_uso",
 ] as const;
 
 export type ChaveConfigNegocio = (typeof CHAVES_CONFIG_NEGOCIO)[number];

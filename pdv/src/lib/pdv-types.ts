@@ -10,11 +10,21 @@ export type ProdutoLocal = {
 	unidademedida: string | null;
 	idunidademedida: string | null;
 	ean: string | null;
+	codigo?: number | null;
 	idgrupo: string | null;
 	idgrupogourmet?: string | null;
 	espizza?: number | null;
 	imagem?: string | null;
 	caminhoimagem?: string | null;
+};
+
+export type LeituraCodigoBarras = {
+	produto: ProdutoLocal;
+	quantidade: number;
+	precounitario: number;
+	precototal: number;
+	pesado: boolean;
+	origem: "etiqueta-balanca" | "ean";
 };
 
 export type StatusAtividadeMesa = "livre" | "consumindo" | "ociosa";

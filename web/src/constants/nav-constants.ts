@@ -370,6 +370,10 @@ export const DATA = {
 					title: "Envio de e-mails",
 					url: "/envio-emails",
 				},
+				{
+					title: "Exportar produtos MGV",
+					url: "/ferramentas/exportar-mgv",
+				},
 			],
 		},
 	] satisfies NavItem[],

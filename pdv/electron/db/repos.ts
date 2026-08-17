@@ -50,6 +50,7 @@ export type ProdutoLocal = {
 	unidademedida: string | null;
 	idunidademedida: string | null;
 	ean: string | null;
+	codigo: number | null;
 	idgrupo: string | null;
 	idgrupogourmet: string | null;
 	espizza: number;
@@ -187,7 +188,7 @@ export async function limparSessao(): Promise<void> {
 }
 
 const PRODUTO_SELECT =
-	"id, descricao, preco, unidademedida, idunidademedida, ean, idgrupo, idgrupogourmet, espizza, imagem, caminhoimagem";
+	"id, descricao, preco, unidademedida, idunidademedida, ean, codigo, idgrupo, idgrupogourmet, espizza, imagem, caminhoimagem";
 
 export async function upsertProdutos(
 	produtos: Array<{
@@ -197,6 +198,7 @@ export async function upsertProdutos(
 		unidademedida?: string | null;
 		idunidademedida?: string | null;
 		ean?: string | null;
+		codigo?: number | null;
 		idgrupo?: string | null;
 		idgrupogourmet?: string | null;
 		espizza?: number | null;
@@ -208,14 +210,15 @@ export async function upsertProdutos(
 	await withTransaction(async (client) => {
 		for (const p of produtos) {
 			await execute(
-				`INSERT INTO produto_cache (id, descricao, preco, unidademedida, idunidademedida, ean, idgrupo, idgrupogourmet, espizza, imagem, caminhoimagem, inativo, atualizadoem)
-				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 0, $12)
+				`INSERT INTO produto_cache (id, descricao, preco, unidademedida, idunidademedida, ean, codigo, idgrupo, idgrupogourmet, espizza, imagem, caminhoimagem, inativo, atualizadoem)
+				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 0, $13)
 				 ON CONFLICT (id) DO UPDATE SET
 					descricao = excluded.descricao,
 					preco = excluded.preco,
 					unidademedida = excluded.unidademedida,
 					idunidademedida = excluded.idunidademedida,
 					ean = excluded.ean,
+					codigo = excluded.codigo,
 					idgrupo = excluded.idgrupo,
 					idgrupogourmet = excluded.idgrupogourmet,
 					espizza = excluded.espizza,
@@ -229,6 +232,7 @@ export async function upsertProdutos(
 					p.unidademedida ?? null,
 					p.idunidademedida ?? null,
 					p.ean ?? null,
+					p.codigo ?? null,
 					p.idgrupo ?? null,
 					p.idgrupogourmet ?? null,
 					p.espizza ? 1 : 0,
@@ -494,9 +498,9 @@ export async function buscarProdutosLocal(
 	return query<ProdutoLocal>(
 		`SELECT ${PRODUTO_SELECT}
 		 FROM produto_cache
-		 WHERE inativo = 0 AND (descricao LIKE $1 OR ean LIKE $2 OR id LIKE $3)
-		 ORDER BY descricao LIMIT $4`,
-		[`%${q}%`, `%${q}%`, `%${q}%`, limit],
+		 WHERE inativo = 0 AND (descricao LIKE $1 OR ean LIKE $2 OR id LIKE $3 OR CAST(codigo AS TEXT) LIKE $4)
+		 ORDER BY descricao LIMIT $5`,
+		[`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, limit],
 	);
 }
 
@@ -520,6 +524,22 @@ export async function listarProdutosPorGrupo(
 		 WHERE inativo = 0 AND idgrupo = $1 AND (descricao LIKE $2 OR ean LIKE $3)
 		 ORDER BY descricao LIMIT $4`,
 		[idgrupo, `%${q}%`, `%${q}%`, limit],
+	);
+}
+
+export async function buscarProdutoPorCodigo(
+	codigo: number,
+): Promise<ProdutoLocal | null> {
+	if (!Number.isInteger(codigo) || codigo < 1) {
+		return null;
+	}
+	return (
+		(await queryOne<ProdutoLocal>(
+			`SELECT ${PRODUTO_SELECT}
+			 FROM produto_cache WHERE inativo = 0 AND codigo = $1
+			 LIMIT 1`,
+			[codigo],
+		)) ?? null
 	);
 }
 
@@ -556,7 +576,7 @@ export async function buscarProdutoPorId(
 
 export async function listarAtalhos(): Promise<ProdutoLocal[]> {
 	return query<ProdutoLocal>(
-		`SELECT p.id, p.descricao, p.preco, p.unidademedida, p.idunidademedida, p.ean, p.idgrupo, p.idgrupogourmet, p.espizza, p.imagem, p.caminhoimagem
+		`SELECT p.id, p.descricao, p.preco, p.unidademedida, p.idunidademedida, p.ean, p.codigo, p.idgrupo, p.idgrupogourmet, p.espizza, p.imagem, p.caminhoimagem
 		 FROM atalho a
 		 JOIN produto_cache p ON p.id = a.idproduto
 		 WHERE p.inativo = 0

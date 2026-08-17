@@ -251,6 +251,7 @@ export async function listarProdutos(params: {
 			idunidademedida?: string;
 			ean?: string;
 			codigoean?: string;
+			codigo?: number | string | null;
 			idgrupo?: string;
 			idgrupogourmet?: string | null;
 			espizza?: number | null;
@@ -266,6 +267,7 @@ export async function listarProdutos(params: {
 		unidademedida: p.unidademedida ?? null,
 		idunidademedida: p.idunidademedida ?? null,
 		ean: p.ean ?? p.codigoean ?? null,
+		codigo: Number(p.codigo) > 0 ? Number(p.codigo) : null,
 		idgrupo: p.idgrupo ?? null,
 		idgrupogourmet: p.idgrupogourmet ?? null,
 		espizza: Number(p.espizza ?? 0) === 1 ? 1 : 0,

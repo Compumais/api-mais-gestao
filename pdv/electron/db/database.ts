@@ -178,6 +178,8 @@ export async function closeDb(): Promise<void> {
 export async function reconectarDb(): Promise<void> {
 	await closeDb();
 	await initDb();
+	const { restartLanServer } = await import("../lan-api/server");
+	await restartLanServer();
 }
 
 async function execSql(database: Pool, sql: string): Promise<void> {
@@ -217,6 +219,9 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 		await database.query(
 			"ALTER TABLE produto_cache ADD COLUMN espizza INTEGER NOT NULL DEFAULT 0",
 		);
+	}
+	if (!nomes.has("codigo")) {
+		await database.query("ALTER TABLE produto_cache ADD COLUMN codigo INTEGER");
 	}
 
 	const itemCols = await database.query<{ column_name: string }>(
@@ -408,6 +413,12 @@ async function seedDefaults(database: Pool): Promise<void> {
 		["balanca_porta", ""],
 		["balanca_baud", "9600"],
 		["balanca_protocolo", "toledo"],
+		["etiqueta_balanca_habilitada", "0"],
+		["etiqueta_balanca_prefixo", "2"],
+		["etiqueta_balanca_digitos_codigo", "4"],
+		["etiqueta_balanca_conteudo", "preco"],
+		["etiqueta_balanca_centavos", "1"],
+		["etiqueta_balanca_indicador_uso", "0"],
 	];
 
 	for (const [chave, valor] of defaults) {

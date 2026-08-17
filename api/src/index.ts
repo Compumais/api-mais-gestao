@@ -46,8 +46,8 @@ import { fatoresConversaoRotas } from "./controllers/http/fator-conversao/rotas.
 import { fechamentosCaixaRotas } from "./controllers/http/fechamento-caixa/rotas.js";
 import { financeiroRotas } from "./controllers/http/financeiro/rotas.js";
 import { financeiroLancamentoRotas } from "./controllers/http/financeirolancamento/rotas.js";
-import { healthRotas } from "./controllers/http/health/rotas.js";
 import { gruposGourmetRotas } from "./controllers/http/grupo-gourmet/rotas.js";
+import { healthRotas } from "./controllers/http/health/rotas.js";
 import { hierarquiasRotas } from "./controllers/http/hierarquia/rotas.js";
 import { iaRotas } from "./controllers/http/ia/rotas.js";
 import { informativosRotas } from "./controllers/http/informativos/rotas.js";
@@ -117,6 +117,13 @@ app.register(cors, {
 		"Origin",
 	],
 	credentials: true, // Necessário para cookies do Better Auth
+	exposedHeaders: [
+		"Content-Disposition",
+		"X-Sintegra-Alertas",
+		"X-Sintegra-Total-Linhas",
+		"X-Mgv-Alertas",
+		"X-Mgv-Total-Linhas",
+	],
 	maxAge: 86400,
 });
 
