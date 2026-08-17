@@ -81,7 +81,7 @@ export default function ExportarMgvPage() {
 					<p className="mt-1 text-sm text-muted-foreground">
 						Gera o arquivo <code className="text-xs">TXTitens.txt</code> no
 						layout Toledo MGV 6 (versão 3), importável no MGV 7, com os produtos
-						ativos da empresa selecionada.
+						ativos marcados na aba Balança do cadastro.
 					</p>
 				</div>
 
@@ -91,7 +91,8 @@ export default function ExportarMgvPage() {
 							<CardTitle>Parâmetros da exportação</CardTitle>
 							<CardDescription>
 								O código do produto vira o PLU da balança. Preço máximo R$
-								9.999,99. Produtos sem código válido ou sem preço são ignorados.
+								9.999,99. Só entram itens marcados para exportar na aba Balança
+								do cadastro.
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
@@ -137,6 +138,7 @@ export default function ExportarMgvPage() {
 											{...form.register("diasValidade")}
 										/>
 										<FieldDescription>
+											Usado quando o produto está com validade 0 na aba Balança.
 											0 não imprime validade. 1 a 990 imprime datas. 998 não
 											imprime. 999 solicita na balança.
 										</FieldDescription>
