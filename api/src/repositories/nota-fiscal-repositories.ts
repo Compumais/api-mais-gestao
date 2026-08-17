@@ -10,7 +10,6 @@ import {
 	isNull,
 	lte,
 	ne,
-	not,
 	notInArray,
 	or,
 	sql,
@@ -267,16 +266,11 @@ export async function listarNfcePorEmpresa({
 		eq(notafiscal.modelo, "65"),
 		ne(notafiscal.status, STATUS_RASCUNHO_IMPORTACAO),
 		// Stubs de contingência sem número/valor (timeout + XML local) não são cupom real.
-		not(
-			and(
-				eq(notafiscal.status, NFE_STATUS.PENDENTE),
-				or(
-					isNull(notafiscal.numeronotafiscal),
-					eq(notafiscal.numeronotafiscal, ""),
-				),
-				sql`coalesce(${notafiscal.dadosimportacao}->>'origem','') = 'pdv-hibrido-contingencia'`,
-			),
-		),
+		sql`not (
+			${notafiscal.status} = ${NFE_STATUS.PENDENTE}
+			and coalesce(${notafiscal.numeronotafiscal}, '') = ''
+			and coalesce(${notafiscal.dadosimportacao}->>'origem', '') = 'pdv-hibrido-contingencia'
+		)`,
 	];
 
 	if (status !== undefined) {
