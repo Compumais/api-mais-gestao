@@ -14,6 +14,7 @@ import {
 } from "@/lib/pdv-types";
 import { produtoEhPizza } from "@/lib/pizza-meio-a-meio";
 import { money } from "@/lib/utils";
+import { AvisoSecundario } from "@/ui/components/aviso-secundario";
 import { BarcodeInput } from "@/ui/components/barcode-input";
 import {
 	DialogPagamentoMisto,
@@ -372,6 +373,7 @@ export function MesaContaPage() {
 
 			<div className="grid flex-1 grid-cols-[1fr_320px] gap-3 overflow-hidden p-3">
 				<div className="flex min-h-0 flex-col gap-3 overflow-hidden rounded-lg border bg-card p-3">
+					<AvisoSecundario status={status} />
 					<div className="flex items-center justify-between gap-2">
 						<h2 className="text-sm font-semibold">Selecionar produtos</h2>
 						{grupoAtivo && (

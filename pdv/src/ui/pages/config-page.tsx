@@ -1,8 +1,10 @@
+import { CreditCard, Printer, Settings2, Ticket, Wifi } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { pdvInvoke } from "@/lib/pdv-api";
 import { rotuloModelo, type StatusContext } from "@/lib/pdv-types";
 import { aplicarTema } from "@/lib/theme";
+import { cn } from "@/lib/utils";
 import { FunctionBar } from "@/ui/components/function-bar";
 import { Topbar } from "@/ui/components/topbar";
 import { Button } from "@/ui/components/ui/button";
@@ -27,9 +29,24 @@ type MapeamentoGourmet = {
 	porta: number;
 };
 
+type AbaId = "geral" | "impressoras" | "tef" | "tecnibra" | "rede";
+
+const ABAS: Array<{
+	id: AbaId;
+	label: string;
+	icon: typeof Settings2;
+}> = [
+	{ id: "geral", label: "Geral", icon: Settings2 },
+	{ id: "impressoras", label: "Impressoras", icon: Printer },
+	{ id: "tef", label: "TEF / SiTef", icon: CreditCard },
+	{ id: "tecnibra", label: "Catraca Tecnibra", icon: Ticket },
+	{ id: "rede", label: "Rede / sync", icon: Wifi },
+];
+
 export function ConfigPage() {
 	const navigate = useNavigate();
 	const { refresh } = useOutletContext<StatusContext>();
+	const [aba, setAba] = useState<AbaId>("geral");
 	const [config, setConfig] = useState<Config>({});
 	const [impressoras, setImpressoras] = useState<
 		Array<{ name: string; isDefault: boolean }>
@@ -61,6 +78,7 @@ export function ConfigPage() {
 	const rotulo = rotuloModelo(
 		config.modelo_atendimento === "comanda" ? "comanda" : "mesa",
 	);
+	const modoSecundario = (config.pdv_modo ?? "principal") === "secundario";
 
 	useEffect(() => {
 		void (async () => {
@@ -110,6 +128,9 @@ export function ConfigPage() {
 				database_url: config.database_url ?? "",
 				api_url: config.api_url ?? "",
 				numeropdv: config.numeropdv ?? "1",
+				pdv_modo: config.pdv_modo ?? "principal",
+				pdv_principal_host: config.pdv_principal_host ?? "",
+				pdv_principal_porta: config.pdv_principal_porta ?? "5050",
 				qtd_mesas: config.qtd_mesas ?? "20",
 				modelo_atendimento: config.modelo_atendimento ?? "mesa",
 				tempo_ociosidade_min: config.tempo_ociosidade_min ?? "15",
@@ -165,6 +186,25 @@ export function ConfigPage() {
 			setMsg(err instanceof Error ? err.message : "Erro ao salvar");
 		} finally {
 			setLoading(false);
+		}
+	}
+
+	async function testarPrincipal() {
+		setTestando("principal");
+		setMsg("");
+		try {
+			const result = await pdvInvoke<{ mensagem: string }>("testarPrincipal", {
+				host: config.pdv_principal_host ?? "",
+				porta: config.pdv_principal_porta ?? "5050",
+				numeropdv: config.numeropdv ?? "1",
+			});
+			setMsg(result.mensagem);
+		} catch (err) {
+			setMsg(
+				err instanceof Error ? err.message : "Falha ao conectar no principal",
+			);
+		} finally {
+			setTestando(null);
 		}
 	}
 
@@ -233,536 +273,707 @@ export function ConfigPage() {
 				}
 			/>
 
-			<div className="mx-auto w-full max-w-3xl flex-1 space-y-4 overflow-auto p-4">
-				<Card>
-					<CardHeader>
-						<CardTitle>Conexão e PDV</CardTitle>
-					</CardHeader>
-					<CardContent className="grid gap-4 sm:grid-cols-2">
-						<div className="space-y-2 sm:col-span-2">
-							<Label htmlFor="database_url">PostgreSQL local</Label>
-							<Input
-								id="database_url"
-								value={config.database_url ?? ""}
-								onChange={(e) => set("database_url", e.target.value)}
-								placeholder="postgresql://pdv:pdv@127.0.0.1:5433/pdv_local"
-							/>
-							<p className="text-xs text-muted-foreground">
-								Banco local do PDV (não é o Postgres da API). Padrão:
-								postgresql://pdv:pdv@127.0.0.1:5433/pdv_local
-							</p>
-						</div>
-						<div className="space-y-2 sm:col-span-2">
-							<Label htmlFor="api_url">URL da API</Label>
-							<Input
-								id="api_url"
-								value={config.api_url ?? ""}
-								onChange={(e) => set("api_url", e.target.value)}
-							/>
-						</div>
-						<div className="space-y-2">
-							<Label htmlFor="numeropdv">Número do PDV</Label>
-							<Input
-								id="numeropdv"
-								value={config.numeropdv ?? "1"}
-								onChange={(e) => set("numeropdv", e.target.value)}
-							/>
-						</div>
-						<div className="space-y-2">
-							<Label htmlFor="modelo_atendimento">Modelo de atendimento</Label>
-							<Select
-								id="modelo_atendimento"
-								value={config.modelo_atendimento ?? "mesa"}
-								onChange={(e) => set("modelo_atendimento", e.target.value)}
-							>
-								<option value="mesa">Mesas</option>
-								<option value="comanda">Comandas</option>
-							</Select>
-						</div>
-						<div className="space-y-2">
-							<Label htmlFor="qtd_mesas">
-								Quantidade de {rotulo.plural.toLowerCase()}
-							</Label>
-							<Input
-								id="qtd_mesas"
-								type="number"
-								min={1}
-								value={config.qtd_mesas ?? "20"}
-								onChange={(e) => set("qtd_mesas", e.target.value)}
-							/>
-						</div>
-						<div className="space-y-2">
-							<Label htmlFor="tempo_ociosidade_min">
-								Tempo para ociosidade
-							</Label>
-							<Select
-								id="tempo_ociosidade_min"
-								value={config.tempo_ociosidade_min ?? "15"}
-								onChange={(e) => set("tempo_ociosidade_min", e.target.value)}
-							>
-								<option value="15">15 minutos</option>
-								<option value="30">30 minutos</option>
-							</Select>
-						</div>
-						<div className="space-y-2">
-							<Label htmlFor="emitir_nfce">Emitir NFC-e</Label>
-							<Select
-								id="emitir_nfce"
-								value={config.emitir_nfce ?? "1"}
-								onChange={(e) => set("emitir_nfce", e.target.value)}
-							>
-								<option value="1">Sim</option>
-								<option value="0">Não</option>
-							</Select>
-						</div>
-						<div className="space-y-2">
-							<Label htmlFor="tema">Tema</Label>
-							<Select
-								id="tema"
-								value={config.tema ?? "light"}
-								onChange={(e) => set("tema", e.target.value)}
-							>
-								<option value="light">Claro</option>
-								<option value="dark">Escuro</option>
-							</Select>
-						</div>
-						<div className="space-y-2 sm:col-span-2">
-							<Label htmlFor="pix_chave">Chave PIX</Label>
-							<Input
-								id="pix_chave"
-								value={config.pix_chave ?? ""}
-								onChange={(e) => set("pix_chave", e.target.value)}
-							/>
-						</div>
-					</CardContent>
-				</Card>
-
-				<Card>
-					<CardHeader>
-						<CardTitle>POS na LAN</CardTitle>
-					</CardHeader>
-					<CardContent className="grid gap-4 sm:grid-cols-2">
-						<div className="space-y-2">
-							<Label htmlFor="lan_habilitada">Expor API para o POS</Label>
-							<Select
-								id="lan_habilitada"
-								value={config.lan_habilitada ?? "1"}
-								onChange={(e) => set("lan_habilitada", e.target.value)}
-							>
-								<option value="1">Sim</option>
-								<option value="0">Não</option>
-							</Select>
-						</div>
-						<div className="space-y-2">
-							<Label htmlFor="lan_porta">Porta</Label>
-							<Input
-								id="lan_porta"
-								type="number"
-								min={1}
-								value={config.lan_porta ?? "5050"}
-								onChange={(e) => set("lan_porta", e.target.value)}
-							/>
-						</div>
-						<p className="sm:col-span-2 text-xs text-muted-foreground">
-							O POS Android aponta para http://IP-DESTA-MAQUINA:
-							{config.lan_porta || "5050"}. IPs desta máquina:{" "}
-							{lanIps.length ? lanIps.join(", ") : "nenhum detectado"}. No
-							emulador use 10.0.2.2.
-						</p>
-					</CardContent>
-				</Card>
-
-				<Card>
-					<CardHeader>
-						<CardTitle>Catraca Tecnibra</CardTitle>
-					</CardHeader>
-					<CardContent className="grid gap-4 sm:grid-cols-2">
-						<div className="space-y-2">
-							<Label htmlFor="tecnibra_habilitada">Integração</Label>
-							<Select
-								id="tecnibra_habilitada"
-								value={config.tecnibra_habilitada ?? "0"}
-								onChange={(e) => set("tecnibra_habilitada", e.target.value)}
-							>
-								<option value="0">Desligada</option>
-								<option value="1">Ligada</option>
-							</Select>
-						</div>
-						<div className="space-y-2">
-							<Label htmlFor="tecnibra_intervalo_ms">
-								Intervalo de sync (ms)
-							</Label>
-							<Input
-								id="tecnibra_intervalo_ms"
-								type="number"
-								min={1000}
-								value={config.tecnibra_intervalo_ms ?? "3000"}
-								onChange={(e) => set("tecnibra_intervalo_ms", e.target.value)}
-							/>
-						</div>
-						<div className="space-y-2 sm:col-span-2">
-							<Label htmlFor="tecnibra_xml_path">Caminho do XML</Label>
-							<Input
-								id="tecnibra_xml_path"
-								value={
-									config.tecnibra_xml_path ??
-									"C:\\Tecnibra\\IHM Receptora\\Comandas.xml"
-								}
-								onChange={(e) => set("tecnibra_xml_path", e.target.value)}
-							/>
-						</div>
-						<p className="sm:col-span-2 text-xs text-muted-foreground">
-							A receptora lê este arquivo: comanda presente = saída bloqueada;
-							ausente = liberada. Pasta padrão da IHM: C:\Tecnibra\IHM
-							Receptora\Comandas.xml
-							{statusTecnibra
-								? ` — ${statusTecnibra.commandCount} pendente(s)${
-										statusTecnibra.lastError
-											? `. ${statusTecnibra.lastError}`
-											: statusTecnibra.lastSuccessAt
-												? `. Última sync ok.`
-												: ""
-									}`
-								: ""}
-						</p>
-					</CardContent>
-				</Card>
-
-				<Card>
-					<CardHeader>
-						<CardTitle>SiTef (TEF)</CardTitle>
-					</CardHeader>
-					<CardContent className="grid gap-4 sm:grid-cols-2">
-						<div className="space-y-2">
-							<Label htmlFor="sitef_habilitado">Integração</Label>
-							<Select
-								id="sitef_habilitado"
-								value={config.sitef_habilitado ?? "0"}
-								onChange={(e) => set("sitef_habilitado", e.target.value)}
-							>
-								<option value="0">Desligada (cartão manual)</option>
-								<option value="1">Ligada</option>
-							</Select>
-						</div>
-						<div className="space-y-2">
-							<Label htmlFor="sitef_ip">IP do SiTef</Label>
-							<Input
-								id="sitef_ip"
-								value={config.sitef_ip ?? "127.0.0.1"}
-								onChange={(e) => set("sitef_ip", e.target.value)}
-								placeholder="127.0.0.1"
-							/>
-						</div>
-						<div className="space-y-2">
-							<Label htmlFor="sitef_loja">Código da loja</Label>
-							<Input
-								id="sitef_loja"
-								value={config.sitef_loja ?? "00000000"}
-								onChange={(e) => set("sitef_loja", e.target.value)}
-								placeholder="00000000"
-							/>
-						</div>
-						<div className="space-y-2">
-							<Label htmlFor="sitef_terminal">Terminal</Label>
-							<Input
-								id="sitef_terminal"
-								value={config.sitef_terminal ?? "PD000001"}
-								onChange={(e) => set("sitef_terminal", e.target.value)}
-								placeholder="PD000001"
-							/>
-						</div>
-						<div className="space-y-2 sm:col-span-2">
-							<Label htmlFor="sitef_porta_pinpad">Porta do PIN pad</Label>
-							<Input
-								id="sitef_porta_pinpad"
-								value={config.sitef_porta_pinpad ?? ""}
-								onChange={(e) => set("sitef_porta_pinpad", e.target.value)}
-								placeholder="COM5"
-							/>
-							<p className="text-xs text-muted-foreground">
-								USB aparece como COM virtual no Gerenciador de Dispositivos.
-							</p>
-						</div>
-						<div className="space-y-2 sm:col-span-2">
-							<Label htmlFor="sitef_parametros">Parâmetros extras</Label>
-							<Input
-								id="sitef_parametros"
-								value={config.sitef_parametros ?? ""}
-								onChange={(e) => set("sitef_parametros", e.target.value)}
-								placeholder="[ParmsClient=1=...]"
-							/>
-						</div>
-						<div className="space-y-2 sm:col-span-2">
-							<Label htmlFor="sitef_dll_path">
-								Caminho da DLL CliSiTef (opcional)
-							</Label>
-							<Input
-								id="sitef_dll_path"
-								value={config.sitef_dll_path ?? ""}
-								onChange={(e) => set("sitef_dll_path", e.target.value)}
-								placeholder="C:\SiTef\CliSiTef64I.dll"
-							/>
-						</div>
-						<p className="sm:col-span-2 text-xs text-muted-foreground">
-							A CliSiTef roda só no processo main, em Windows. Sem a DLL ou fora
-							do Windows, o pagamento misto continua e o cartão entra manual.
-							{statusSitef
-								? ` ${statusSitef.disponivel ? "SiTef pronto." : statusSitef.mensagem}`
-								: ""}
-							{statusSitef?.dllPath ? ` DLL: ${statusSitef.dllPath}` : ""}
-							{statusSitef?.portaPinPad
-								? ` PIN pad: ${statusSitef.portaPinPad}`
-								: ""}
-						</p>
-					</CardContent>
-				</Card>
-
-				<Card>
-					<CardHeader>
-						<CardTitle>Impressora fiscal / cupom</CardTitle>
-					</CardHeader>
-					<CardContent className="grid gap-4 sm:grid-cols-2">
-						<div className="space-y-2">
-							<Label htmlFor="impressora_tipo">Conexão</Label>
-							<Select
-								id="impressora_tipo"
-								value={config.impressora_tipo ?? "sistema"}
-								onChange={(e) => set("impressora_tipo", e.target.value)}
-							>
-								<option value="sistema">Sistema (USB / Windows)</option>
-								<option value="rede">Rede (IP :9100)</option>
-								<option value="arquivo">Arquivo (depuração)</option>
-							</Select>
-						</div>
-						{(config.impressora_tipo ?? "sistema") === "sistema" ? (
-							<div className="space-y-2">
-								<Label htmlFor="impressora_nome">Impressora do Windows</Label>
-								<Select
-									id="impressora_nome"
-									value={config.impressora_nome ?? ""}
-									onChange={(e) => set("impressora_nome", e.target.value)}
-								>
-									<option value="">Padrão do Windows</option>
-									{impressoras.map((p) => (
-										<option key={p.name} value={p.name}>
-											{p.name}
-											{p.isDefault ? " (padrão)" : ""}
-										</option>
-									))}
-								</Select>
-							</div>
-						) : (config.impressora_tipo ?? "sistema") === "rede" ? (
-							<>
-								<div className="space-y-2">
-									<Label htmlFor="impressora_host">IP / hostname</Label>
-									<Input
-										id="impressora_host"
-										value={config.impressora_host ?? ""}
-										onChange={(e) => set("impressora_host", e.target.value)}
-										placeholder="192.168.1.50"
-									/>
-								</div>
-								<div className="space-y-2">
-									<Label htmlFor="impressora_porta">Porta</Label>
-									<Input
-										id="impressora_porta"
-										type="number"
-										min={1}
-										value={config.impressora_porta ?? "9100"}
-										onChange={(e) => set("impressora_porta", e.target.value)}
-									/>
-								</div>
-							</>
-						) : null}
-						<div className="sm:col-span-2 flex flex-wrap items-center gap-2">
-							<Button
+			<div className="flex min-h-0 flex-1">
+				<nav className="flex w-56 shrink-0 flex-col gap-1 border-r bg-secondary/40 p-2">
+					{ABAS.map((item) => {
+						const Icon = item.icon;
+						const ativa = aba === item.id;
+						return (
+							<button
+								key={item.id}
 								type="button"
-								variant="outline"
-								size="sm"
-								disabled={testando !== null}
-								onClick={() =>
-									void testarDestino("fiscal", {
-										tipo:
-											config.impressora_tipo === "rede" ||
-											config.impressora_tipo === "arquivo"
-												? config.impressora_tipo
-												: "sistema",
-										nome: config.impressora_nome,
-										host: config.impressora_host,
-										porta: Number(config.impressora_porta) || 9100,
-									})
-								}
+								onClick={() => setAba(item.id)}
+								className={cn(
+									"flex items-center gap-2 rounded-md px-3 py-2.5 text-left text-sm font-medium transition",
+									ativa
+										? "bg-primary text-primary-foreground"
+										: "hover:bg-card",
+								)}
 							>
-								{testando === "fiscal" ? "Testando…" : "Testar impressão"}
-							</Button>
-							<p className="text-xs text-muted-foreground">
-								USB e impressoras instaladas no Windows usam Sistema. Impressora
-								térmica na LAN usa Rede (porta 9100, ESC/POS).
-							</p>
-						</div>
-					</CardContent>
-				</Card>
+								<Icon className="size-4 shrink-0" />
+								{item.label}
+							</button>
+						);
+					})}
+				</nav>
 
-				<Card>
-					<CardHeader>
-						<CardTitle>Impressoras de produção</CardTitle>
-					</CardHeader>
-					<CardContent className="grid gap-4">
-						{mapeamentoGourmet.length === 0 ? (
-							<p className="text-sm text-muted-foreground">
-								Nenhum grupo gourmet sincronizado. Sincronize o catálogo para
-								mapear cada setor a uma impressora (USB/Windows ou IP na rede).
-							</p>
-						) : (
-							mapeamentoGourmet.map((grupo) => (
-								<div
-									key={grupo.idgrupogourmet}
-									className="grid gap-3 rounded-md border p-3 sm:grid-cols-2"
-								>
-									<div className="space-y-2 sm:col-span-2">
-										<Label>{grupo.nome}</Label>
+				<div className="min-h-0 flex-1 overflow-auto p-4">
+					<div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
+						{aba === "geral" && (
+							<Card>
+								<CardHeader>
+									<CardTitle>Este PDV</CardTitle>
+								</CardHeader>
+								<CardContent className="grid gap-4 sm:grid-cols-2">
+									<div className="space-y-2">
+										<Label htmlFor="numeropdv">Número do PDV</Label>
+										<Input
+											id="numeropdv"
+											value={config.numeropdv ?? "1"}
+											onChange={(e) => set("numeropdv", e.target.value)}
+										/>
+										<p className="text-xs text-muted-foreground">
+											Único na loja. Dois PDVs com o mesmo número misturam
+											caixa, cupom e NFC-e.
+										</p>
 									</div>
 									<div className="space-y-2">
-										<Label htmlFor={`imp-dest-${grupo.idgrupogourmet}`}>
-											Conexão
-										</Label>
+										<Label htmlFor="pdv_modo">Modo</Label>
 										<Select
-											id={`imp-dest-${grupo.idgrupogourmet}`}
-											value={grupo.destino}
-											onChange={(e) =>
-												atualizarGourmet(grupo.idgrupogourmet, {
-													destino: e.target.value,
-												})
-											}
+											id="pdv_modo"
+											value={config.pdv_modo ?? "principal"}
+											onChange={(e) => set("pdv_modo", e.target.value)}
 										>
-											<option value="">Não imprimir</option>
-											<option value="sistema">Sistema (USB / Windows)</option>
-											<option value="rede">Rede (IP :9100)</option>
+											<option value="principal">Principal (banco local)</option>
+											<option value="secundario">
+												Secundário (lê o principal)
+											</option>
 										</Select>
 									</div>
-									{grupo.destino === "sistema" ? (
-										<div className="space-y-2">
-											<Label htmlFor={`imp-nome-${grupo.idgrupogourmet}`}>
-												Impressora do Windows
-											</Label>
-											<Select
-												id={`imp-nome-${grupo.idgrupogourmet}`}
-												value={grupo.impressora_nome}
-												onChange={(e) =>
-													atualizarGourmet(grupo.idgrupogourmet, {
-														impressora_nome: e.target.value,
-													})
-												}
-											>
-												<option value="">Selecione</option>
-												{impressoras.map((p) => (
-													<option key={p.name} value={p.name}>
-														{p.name}
-														{p.isDefault ? " (padrão)" : ""}
-													</option>
-												))}
-											</Select>
-										</div>
-									) : null}
-									{grupo.destino === "rede" ? (
+									{modoSecundario ? (
 										<>
 											<div className="space-y-2">
-												<Label htmlFor={`imp-host-${grupo.idgrupogourmet}`}>
-													IP / hostname
+												<Label htmlFor="pdv_principal_host">
+													IP do PDV principal
 												</Label>
 												<Input
-													id={`imp-host-${grupo.idgrupogourmet}`}
-													value={grupo.host}
+													id="pdv_principal_host"
+													value={config.pdv_principal_host ?? ""}
 													onChange={(e) =>
-														atualizarGourmet(grupo.idgrupogourmet, {
-															host: e.target.value,
-														})
+														set("pdv_principal_host", e.target.value)
 													}
-													placeholder="192.168.1.80"
+													placeholder="192.168.1.10"
 												/>
 											</div>
 											<div className="space-y-2">
-												<Label htmlFor={`imp-porta-${grupo.idgrupogourmet}`}>
-													Porta
+												<Label htmlFor="pdv_principal_porta">
+													Porta LAN do principal
 												</Label>
 												<Input
-													id={`imp-porta-${grupo.idgrupogourmet}`}
+													id="pdv_principal_porta"
 													type="number"
 													min={1}
-													value={String(grupo.porta || 9100)}
+													value={config.pdv_principal_porta ?? "5050"}
 													onChange={(e) =>
-														atualizarGourmet(grupo.idgrupogourmet, {
-															porta: Number(e.target.value) || 9100,
-														})
+														set("pdv_principal_porta", e.target.value)
 													}
 												/>
 											</div>
+											<div className="sm:col-span-2 flex flex-wrap items-center gap-2">
+												<Button
+													type="button"
+													variant="outline"
+													size="sm"
+													disabled={testando !== null}
+													onClick={() => void testarPrincipal()}
+												>
+													{testando === "principal"
+														? "Testando…"
+														: "Testar conexão"}
+												</Button>
+												<p className="text-xs text-muted-foreground">
+													O secundário busca produtos e configurações de negócio
+													no principal. SiTef, impressora e PIN pad continuam
+													desta máquina.
+												</p>
+											</div>
 										</>
-									) : null}
-									{(grupo.destino === "sistema" ||
-										grupo.destino === "rede") && (
-										<div className="sm:col-span-2">
+									) : (
+										<p className="sm:col-span-2 text-xs text-muted-foreground">
+											Este PDV guarda o banco local e sincroniza com a API.
+											Outros terminais apontam para o IP desta máquina na porta
+											LAN.
+										</p>
+									)}
+									<div className="space-y-2">
+										<Label htmlFor="modelo_atendimento">
+											Modelo de atendimento
+										</Label>
+										<Select
+											id="modelo_atendimento"
+											value={config.modelo_atendimento ?? "mesa"}
+											onChange={(e) =>
+												set("modelo_atendimento", e.target.value)
+											}
+										>
+											<option value="mesa">Mesas</option>
+											<option value="comanda">Comandas</option>
+										</Select>
+									</div>
+									<div className="space-y-2">
+										<Label htmlFor="qtd_mesas">
+											Quantidade de {rotulo.plural.toLowerCase()}
+										</Label>
+										<Input
+											id="qtd_mesas"
+											type="number"
+											min={1}
+											value={config.qtd_mesas ?? "20"}
+											onChange={(e) => set("qtd_mesas", e.target.value)}
+										/>
+									</div>
+									<div className="space-y-2">
+										<Label htmlFor="tempo_ociosidade_min">
+											Tempo para ociosidade
+										</Label>
+										<Select
+											id="tempo_ociosidade_min"
+											value={config.tempo_ociosidade_min ?? "15"}
+											onChange={(e) =>
+												set("tempo_ociosidade_min", e.target.value)
+											}
+										>
+											<option value="15">15 minutos</option>
+											<option value="30">30 minutos</option>
+										</Select>
+									</div>
+									<div className="space-y-2">
+										<Label htmlFor="emitir_nfce">Emitir NFC-e</Label>
+										<Select
+											id="emitir_nfce"
+											value={config.emitir_nfce ?? "1"}
+											onChange={(e) => set("emitir_nfce", e.target.value)}
+										>
+											<option value="1">Sim</option>
+											<option value="0">Não</option>
+										</Select>
+									</div>
+									<div className="space-y-2">
+										<Label htmlFor="tema">Tema</Label>
+										<Select
+											id="tema"
+											value={config.tema ?? "light"}
+											onChange={(e) => set("tema", e.target.value)}
+										>
+											<option value="light">Claro</option>
+											<option value="dark">Escuro</option>
+										</Select>
+									</div>
+									<div className="space-y-2 sm:col-span-2">
+										<Label htmlFor="pix_chave">Chave PIX</Label>
+										<Input
+											id="pix_chave"
+											value={config.pix_chave ?? ""}
+											onChange={(e) => set("pix_chave", e.target.value)}
+										/>
+									</div>
+								</CardContent>
+							</Card>
+						)}
+
+						{aba === "impressoras" && (
+							<>
+								<Card>
+									<CardHeader>
+										<CardTitle>Impressora fiscal / cupom</CardTitle>
+									</CardHeader>
+									<CardContent className="grid gap-4 sm:grid-cols-2">
+										<div className="space-y-2">
+											<Label htmlFor="impressora_tipo">Conexão</Label>
+											<Select
+												id="impressora_tipo"
+												value={config.impressora_tipo ?? "sistema"}
+												onChange={(e) => set("impressora_tipo", e.target.value)}
+											>
+												<option value="sistema">Sistema (USB / Windows)</option>
+												<option value="rede">Rede (IP :9100)</option>
+												<option value="arquivo">Arquivo (depuração)</option>
+											</Select>
+										</div>
+										{(config.impressora_tipo ?? "sistema") === "sistema" ? (
+											<div className="space-y-2">
+												<Label htmlFor="impressora_nome">
+													Impressora do Windows
+												</Label>
+												<Select
+													id="impressora_nome"
+													value={config.impressora_nome ?? ""}
+													onChange={(e) =>
+														set("impressora_nome", e.target.value)
+													}
+												>
+													<option value="">Padrão do Windows</option>
+													{impressoras.map((p) => (
+														<option key={p.name} value={p.name}>
+															{p.name}
+															{p.isDefault ? " (padrão)" : ""}
+														</option>
+													))}
+												</Select>
+											</div>
+										) : (config.impressora_tipo ?? "sistema") === "rede" ? (
+											<>
+												<div className="space-y-2">
+													<Label htmlFor="impressora_host">IP / hostname</Label>
+													<Input
+														id="impressora_host"
+														value={config.impressora_host ?? ""}
+														onChange={(e) =>
+															set("impressora_host", e.target.value)
+														}
+														placeholder="192.168.1.50"
+													/>
+												</div>
+												<div className="space-y-2">
+													<Label htmlFor="impressora_porta">Porta</Label>
+													<Input
+														id="impressora_porta"
+														type="number"
+														min={1}
+														value={config.impressora_porta ?? "9100"}
+														onChange={(e) =>
+															set("impressora_porta", e.target.value)
+														}
+													/>
+												</div>
+											</>
+										) : null}
+										<div className="sm:col-span-2 flex flex-wrap items-center gap-2">
 											<Button
 												type="button"
 												variant="outline"
 												size="sm"
 												disabled={testando !== null}
 												onClick={() =>
-													void testarDestino(grupo.idgrupogourmet, {
-														tipo: grupo.destino === "rede" ? "rede" : "sistema",
-														nome: grupo.impressora_nome,
-														host: grupo.host,
-														porta: grupo.porta || 9100,
+													void testarDestino("fiscal", {
+														tipo:
+															config.impressora_tipo === "rede" ||
+															config.impressora_tipo === "arquivo"
+																? config.impressora_tipo
+																: "sistema",
+														nome: config.impressora_nome,
+														host: config.impressora_host,
+														porta: Number(config.impressora_porta) || 9100,
 													})
 												}
 											>
-												{testando === grupo.idgrupogourmet
+												{testando === "fiscal"
 													? "Testando…"
-													: "Testar setor"}
+													: "Testar impressão"}
 											</Button>
+											<p className="text-xs text-muted-foreground">
+												USB e impressoras instaladas no Windows usam Sistema.
+												Impressora térmica na LAN usa Rede (porta 9100,
+												ESC/POS).
+											</p>
 										</div>
-									)}
-								</div>
-							))
+									</CardContent>
+								</Card>
+
+								<Card>
+									<CardHeader>
+										<CardTitle>Impressoras de produção</CardTitle>
+									</CardHeader>
+									<CardContent className="grid gap-4">
+										{mapeamentoGourmet.length === 0 ? (
+											<p className="text-sm text-muted-foreground">
+												Nenhum grupo gourmet sincronizado. Sincronize o catálogo
+												para mapear cada setor a uma impressora (USB/Windows ou
+												IP na rede).
+											</p>
+										) : (
+											mapeamentoGourmet.map((grupo) => (
+												<div
+													key={grupo.idgrupogourmet}
+													className="grid gap-3 rounded-md border p-3 sm:grid-cols-2"
+												>
+													<div className="space-y-2 sm:col-span-2">
+														<Label>{grupo.nome}</Label>
+													</div>
+													<div className="space-y-2">
+														<Label htmlFor={`imp-dest-${grupo.idgrupogourmet}`}>
+															Conexão
+														</Label>
+														<Select
+															id={`imp-dest-${grupo.idgrupogourmet}`}
+															value={grupo.destino}
+															onChange={(e) =>
+																atualizarGourmet(grupo.idgrupogourmet, {
+																	destino: e.target.value,
+																})
+															}
+														>
+															<option value="">Não imprimir</option>
+															<option value="sistema">
+																Sistema (USB / Windows)
+															</option>
+															<option value="rede">Rede (IP :9100)</option>
+														</Select>
+													</div>
+													{grupo.destino === "sistema" ? (
+														<div className="space-y-2">
+															<Label
+																htmlFor={`imp-nome-${grupo.idgrupogourmet}`}
+															>
+																Impressora do Windows
+															</Label>
+															<Select
+																id={`imp-nome-${grupo.idgrupogourmet}`}
+																value={grupo.impressora_nome}
+																onChange={(e) =>
+																	atualizarGourmet(grupo.idgrupogourmet, {
+																		impressora_nome: e.target.value,
+																	})
+																}
+															>
+																<option value="">Selecione</option>
+																{impressoras.map((p) => (
+																	<option key={p.name} value={p.name}>
+																		{p.name}
+																		{p.isDefault ? " (padrão)" : ""}
+																	</option>
+																))}
+															</Select>
+														</div>
+													) : null}
+													{grupo.destino === "rede" ? (
+														<>
+															<div className="space-y-2">
+																<Label
+																	htmlFor={`imp-host-${grupo.idgrupogourmet}`}
+																>
+																	IP / hostname
+																</Label>
+																<Input
+																	id={`imp-host-${grupo.idgrupogourmet}`}
+																	value={grupo.host}
+																	onChange={(e) =>
+																		atualizarGourmet(grupo.idgrupogourmet, {
+																			host: e.target.value,
+																		})
+																	}
+																	placeholder="192.168.1.80"
+																/>
+															</div>
+															<div className="space-y-2">
+																<Label
+																	htmlFor={`imp-porta-${grupo.idgrupogourmet}`}
+																>
+																	Porta
+																</Label>
+																<Input
+																	id={`imp-porta-${grupo.idgrupogourmet}`}
+																	type="number"
+																	min={1}
+																	value={String(grupo.porta || 9100)}
+																	onChange={(e) =>
+																		atualizarGourmet(grupo.idgrupogourmet, {
+																			porta: Number(e.target.value) || 9100,
+																		})
+																	}
+																/>
+															</div>
+														</>
+													) : null}
+													{(grupo.destino === "sistema" ||
+														grupo.destino === "rede") && (
+														<div className="sm:col-span-2">
+															<Button
+																type="button"
+																variant="outline"
+																size="sm"
+																disabled={testando !== null}
+																onClick={() =>
+																	void testarDestino(grupo.idgrupogourmet, {
+																		tipo:
+																			grupo.destino === "rede"
+																				? "rede"
+																				: "sistema",
+																		nome: grupo.impressora_nome,
+																		host: grupo.host,
+																		porta: grupo.porta || 9100,
+																	})
+																}
+															>
+																{testando === grupo.idgrupogourmet
+																	? "Testando…"
+																	: "Testar setor"}
+															</Button>
+														</div>
+													)}
+												</div>
+											))
+										)}
+										<p className="text-xs text-muted-foreground">
+											Ao enviar o pedido (POS) ou lançar item (mesa) / finalizar
+											(balcão), os itens de cada grupo saem na impressora
+											mapeada — sem preço. Setor sem impressora não imprime e
+											não falha o pedido.
+										</p>
+									</CardContent>
+								</Card>
+							</>
 						)}
-						<p className="text-xs text-muted-foreground">
-							Ao enviar o pedido (POS) ou lançar item (mesa) / finalizar
-							(balcão), os itens de cada grupo saem na impressora mapeada — sem
-							preço. Setor sem impressora não imprime e não falha o pedido.
-						</p>
-					</CardContent>
-				</Card>
 
-				<Card>
-					<CardHeader>
-						<CardTitle>Certificado A1 (contingência)</CardTitle>
-					</CardHeader>
-					<CardContent className="grid gap-4 sm:grid-cols-2">
-						<div className="space-y-2 sm:col-span-2">
-							<Label htmlFor="certificado_path">Caminho do .pfx/.p12</Label>
-							<Input
-								id="certificado_path"
-								value={config.certificado_path ?? ""}
-								onChange={(e) => set("certificado_path", e.target.value)}
-							/>
-						</div>
-						<div className="space-y-2 sm:col-span-2">
-							<Label htmlFor="certificado_senha">Senha do certificado</Label>
-							<Input
-								id="certificado_senha"
-								type="password"
-								value={config.certificado_senha ?? ""}
-								onChange={(e) => set("certificado_senha", e.target.value)}
-							/>
-						</div>
-						<p className="sm:col-span-2 text-xs text-muted-foreground">
-							CSC/série/número são sincronizados da API quando online. O
-							certificado fica apenas no main process, nunca no repositório.
-						</p>
-					</CardContent>
-				</Card>
+						{aba === "tef" && (
+							<Card>
+								<CardHeader>
+									<CardTitle>SiTef (TEF)</CardTitle>
+								</CardHeader>
+								<CardContent className="grid gap-4 sm:grid-cols-2">
+									<div className="space-y-2">
+										<Label htmlFor="sitef_habilitado">Integração</Label>
+										<Select
+											id="sitef_habilitado"
+											value={config.sitef_habilitado ?? "0"}
+											onChange={(e) => set("sitef_habilitado", e.target.value)}
+										>
+											<option value="0">Desligada (cartão manual)</option>
+											<option value="1">Ligada</option>
+										</Select>
+									</div>
+									<div className="space-y-2">
+										<Label htmlFor="sitef_ip">IP do SiTef</Label>
+										<Input
+											id="sitef_ip"
+											value={config.sitef_ip ?? "127.0.0.1"}
+											onChange={(e) => set("sitef_ip", e.target.value)}
+											placeholder="127.0.0.1"
+										/>
+									</div>
+									<div className="space-y-2">
+										<Label htmlFor="sitef_loja">Código da loja</Label>
+										<Input
+											id="sitef_loja"
+											value={config.sitef_loja ?? "00000000"}
+											onChange={(e) => set("sitef_loja", e.target.value)}
+											placeholder="00000000"
+										/>
+									</div>
+									<div className="space-y-2">
+										<Label htmlFor="sitef_terminal">Terminal</Label>
+										<Input
+											id="sitef_terminal"
+											value={config.sitef_terminal ?? "PD000001"}
+											onChange={(e) => set("sitef_terminal", e.target.value)}
+											placeholder="PD000001"
+										/>
+									</div>
+									<div className="space-y-2 sm:col-span-2">
+										<Label htmlFor="sitef_porta_pinpad">Porta do PIN pad</Label>
+										<Input
+											id="sitef_porta_pinpad"
+											value={config.sitef_porta_pinpad ?? ""}
+											onChange={(e) =>
+												set("sitef_porta_pinpad", e.target.value)
+											}
+											placeholder="COM5"
+										/>
+										<p className="text-xs text-muted-foreground">
+											USB aparece como COM virtual no Gerenciador de
+											Dispositivos.
+										</p>
+									</div>
+									<div className="space-y-2 sm:col-span-2">
+										<Label htmlFor="sitef_parametros">Parâmetros extras</Label>
+										<Input
+											id="sitef_parametros"
+											value={config.sitef_parametros ?? ""}
+											onChange={(e) => set("sitef_parametros", e.target.value)}
+											placeholder="[ParmsClient=1=...]"
+										/>
+									</div>
+									<div className="space-y-2 sm:col-span-2">
+										<Label htmlFor="sitef_dll_path">
+											Caminho da DLL CliSiTef (opcional)
+										</Label>
+										<Input
+											id="sitef_dll_path"
+											value={config.sitef_dll_path ?? ""}
+											onChange={(e) => set("sitef_dll_path", e.target.value)}
+											placeholder="C:\SiTef\CliSiTef64I.dll"
+										/>
+									</div>
+									<p className="sm:col-span-2 text-xs text-muted-foreground">
+										A CliSiTef roda só no processo main, em Windows. Sem a DLL
+										ou fora do Windows, o pagamento misto continua e o cartão
+										entra manual.
+										{statusSitef
+											? ` ${statusSitef.disponivel ? "SiTef pronto." : statusSitef.mensagem}`
+											: ""}
+										{statusSitef?.dllPath ? ` DLL: ${statusSitef.dllPath}` : ""}
+										{statusSitef?.portaPinPad
+											? ` PIN pad: ${statusSitef.portaPinPad}`
+											: ""}
+									</p>
+								</CardContent>
+							</Card>
+						)}
 
-				{msg && <p className="text-sm">{msg}</p>}
+						{aba === "tecnibra" && (
+							<Card>
+								<CardHeader>
+									<CardTitle>Catraca Tecnibra</CardTitle>
+								</CardHeader>
+								<CardContent className="grid gap-4 sm:grid-cols-2">
+									<div className="space-y-2">
+										<Label htmlFor="tecnibra_habilitada">Integração</Label>
+										<Select
+											id="tecnibra_habilitada"
+											value={config.tecnibra_habilitada ?? "0"}
+											onChange={(e) =>
+												set("tecnibra_habilitada", e.target.value)
+											}
+										>
+											<option value="0">Desligada</option>
+											<option value="1">Ligada</option>
+										</Select>
+									</div>
+									<div className="space-y-2">
+										<Label htmlFor="tecnibra_intervalo_ms">
+											Intervalo de sync (ms)
+										</Label>
+										<Input
+											id="tecnibra_intervalo_ms"
+											type="number"
+											min={1000}
+											value={config.tecnibra_intervalo_ms ?? "3000"}
+											onChange={(e) =>
+												set("tecnibra_intervalo_ms", e.target.value)
+											}
+										/>
+									</div>
+									<div className="space-y-2 sm:col-span-2">
+										<Label htmlFor="tecnibra_xml_path">Caminho do XML</Label>
+										<Input
+											id="tecnibra_xml_path"
+											value={
+												config.tecnibra_xml_path ??
+												"C:\\Tecnibra\\IHM Receptora\\Comandas.xml"
+											}
+											onChange={(e) => set("tecnibra_xml_path", e.target.value)}
+										/>
+									</div>
+									<p className="sm:col-span-2 text-xs text-muted-foreground">
+										A receptora lê este arquivo: comanda presente = saída
+										bloqueada; ausente = liberada. Pasta padrão da IHM:
+										C:\Tecnibra\IHM Receptora\Comandas.xml
+										{statusTecnibra
+											? ` — ${statusTecnibra.commandCount} pendente(s)${
+													statusTecnibra.lastError
+														? `. ${statusTecnibra.lastError}`
+														: statusTecnibra.lastSuccessAt
+															? `. Última sync ok.`
+															: ""
+												}`
+											: ""}
+									</p>
+								</CardContent>
+							</Card>
+						)}
+
+						{aba === "rede" && (
+							<>
+								<Card>
+									<CardHeader>
+										<CardTitle>Banco e API</CardTitle>
+									</CardHeader>
+									<CardContent className="grid gap-4 sm:grid-cols-2">
+										<div className="space-y-2 sm:col-span-2">
+											<Label htmlFor="database_url">PostgreSQL local</Label>
+											<Input
+												id="database_url"
+												value={config.database_url ?? ""}
+												onChange={(e) => set("database_url", e.target.value)}
+												placeholder="postgresql://pdv:pdv@127.0.0.1:5433/pdv_local"
+											/>
+											<p className="text-xs text-muted-foreground">
+												Banco local deste terminal (não é o Postgres da API).
+												Padrão: postgresql://pdv:pdv@127.0.0.1:5433/pdv_local
+											</p>
+										</div>
+										<div className="space-y-2 sm:col-span-2">
+											<Label htmlFor="api_url">URL da API</Label>
+											<Input
+												id="api_url"
+												value={config.api_url ?? ""}
+												onChange={(e) => set("api_url", e.target.value)}
+											/>
+										</div>
+									</CardContent>
+								</Card>
+
+								<Card>
+									<CardHeader>
+										<CardTitle>POS na LAN</CardTitle>
+									</CardHeader>
+									<CardContent className="grid gap-4 sm:grid-cols-2">
+										<div className="space-y-2">
+											<Label htmlFor="lan_habilitada">
+												Expor API para o POS
+											</Label>
+											<Select
+												id="lan_habilitada"
+												value={config.lan_habilitada ?? "1"}
+												onChange={(e) => set("lan_habilitada", e.target.value)}
+												disabled={modoSecundario}
+											>
+												<option value="1">Sim</option>
+												<option value="0">Não</option>
+											</Select>
+										</div>
+										<div className="space-y-2">
+											<Label htmlFor="lan_porta">Porta</Label>
+											<Input
+												id="lan_porta"
+												type="number"
+												min={1}
+												value={config.lan_porta ?? "5050"}
+												onChange={(e) => set("lan_porta", e.target.value)}
+												disabled={modoSecundario}
+											/>
+										</div>
+										<p className="sm:col-span-2 text-xs text-muted-foreground">
+											{modoSecundario
+												? "PDV secundário não expõe API LAN — o POS e outros terminais apontam para o principal."
+												: `O POS Android e PDVs secundários apontam para http://IP-DESTA-MAQUINA:${config.lan_porta || "5050"}. IPs desta máquina: ${lanIps.length ? lanIps.join(", ") : "nenhum detectado"}. No emulador use 10.0.2.2.`}
+										</p>
+									</CardContent>
+								</Card>
+
+								<Card>
+									<CardHeader>
+										<CardTitle>Certificado A1 (contingência)</CardTitle>
+									</CardHeader>
+									<CardContent className="grid gap-4 sm:grid-cols-2">
+										<div className="space-y-2 sm:col-span-2">
+											<Label htmlFor="certificado_path">
+												Caminho do .pfx/.p12
+											</Label>
+											<Input
+												id="certificado_path"
+												value={config.certificado_path ?? ""}
+												onChange={(e) =>
+													set("certificado_path", e.target.value)
+												}
+											/>
+										</div>
+										<div className="space-y-2 sm:col-span-2">
+											<Label htmlFor="certificado_senha">
+												Senha do certificado
+											</Label>
+											<Input
+												id="certificado_senha"
+												type="password"
+												value={config.certificado_senha ?? ""}
+												onChange={(e) =>
+													set("certificado_senha", e.target.value)
+												}
+											/>
+										</div>
+										<p className="sm:col-span-2 text-xs text-muted-foreground">
+											CSC/série/número são sincronizados da API quando online. O
+											certificado fica apenas no main process, nunca no
+											repositório.
+										</p>
+									</CardContent>
+								</Card>
+							</>
+						)}
+
+						{msg && <p className="text-sm">{msg}</p>}
+					</div>
+				</div>
 			</div>
 
 			<FunctionBar

@@ -35,7 +35,32 @@ export function BootPage() {
 			}
 			addMsg(`Sessão ativa: ${status.sessao.username ?? ""}`);
 
-			if (status.online) {
+			if (status.modo === "secundario") {
+				addMsg(
+					`PDV secundário nº ${status.numeropdv} — conectando no principal...`,
+				);
+				try {
+					await pdvInvoke("conectarPrincipal");
+					const sync = await pdvInvoke<{
+						pull: { produtos: number; grupos: number; atalhos: number };
+					}>("syncAgora");
+					addMsg(
+						`Catálogo do principal: ${sync.pull.produtos} produtos · ${sync.pull.grupos} grupos · ${sync.pull.atalhos} atalhos`,
+					);
+				} catch (err) {
+					const mensagem =
+						err instanceof Error
+							? err.message
+							: "Não foi possível conectar no PDV principal.";
+					if (/duplicad|mesmo|é o do PDV principal/i.test(mensagem)) {
+						marcarBootConcluido();
+						setErro(mensagem);
+						return;
+					}
+					addMsg(`Principal indisponível: ${mensagem}`);
+					addMsg("Operação ficará bloqueada até o principal voltar.");
+				}
+			} else if (status.online) {
 				addMsg("Conectando à API...");
 				addMsg("Sincronizando produtos, grupos e atalhos...");
 				try {
@@ -88,12 +113,20 @@ export function BootPage() {
 				{erro && <div className="text-red-200">Erro: {erro}</div>}
 			</div>
 			{erro && (
-				<Button
-					variant="secondary"
-					onClick={() => navigate("/login", { replace: true })}
-				>
-					Ir para o login
-				</Button>
+				<div className="flex gap-2">
+					<Button
+						variant="secondary"
+						onClick={() => navigate("/config", { replace: true })}
+					>
+						Ir para configurações
+					</Button>
+					<Button
+						variant="secondary"
+						onClick={() => navigate("/login", { replace: true })}
+					>
+						Ir para o login
+					</Button>
+				</div>
 			)}
 		</div>
 	);

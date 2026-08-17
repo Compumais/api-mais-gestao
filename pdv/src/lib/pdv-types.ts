@@ -100,6 +100,9 @@ export type StatusPdv = {
 	emitirNfce: boolean;
 	modeloAtendimento: ModeloAtendimento;
 	qtdMesas: number;
+	modo?: "principal" | "secundario";
+	principalOnline?: boolean | null;
+	principalErro?: string | null;
 };
 
 export type StatusContext = {
