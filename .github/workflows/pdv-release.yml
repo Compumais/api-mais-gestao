@@ -1,0 +1,79 @@
+# Gera o executável Windows do PDV, o instalador NSIS e o setup Inno (com PostgreSQL).
+name: PDV instalador
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "pdv-v*"
+
+concurrency:
+  group: pdv-release-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CSC_IDENTITY_AUTO_DISCOVERY: "false"
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: pdv
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: pdv/package-lock.json
+
+      - name: Cache Electron
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/AppData/Local/electron/Cache
+            ~/AppData/Local/electron-builder/Cache
+          key: ${{ runner.os }}-electron-${{ hashFiles('pdv/package-lock.json') }}
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Empacotar executável e instalador NSIS
+        run: npm run pack:win
+
+      - name: Instalar Inno Setup
+        run: choco install innosetup --yes --no-progress
+
+      - name: Compilar instalador Inno Setup
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File installer/compilar-iss.ps1
+
+      - name: Compactar executável portátil
+        run: |
+          $zip = Join-Path "release" "PDV-Mais-Gestao-portable.zip"
+          if (Test-Path $zip) { Remove-Item $zip -Force }
+          Compress-Archive -Path "release\win-unpacked\*" -DestinationPath $zip -Force
+
+      - name: Publicar artefatos
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdv-windows-${{ github.run_number }}
+          if-no-files-found: error
+          path: |
+            pdv/release/*.exe
+            pdv/release/*.zip
+            pdv/installer/output/*.exe
+
+      - name: Criar GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            pdv/release/*.exe
+            pdv/release/*.zip
+            pdv/installer/output/*.exe

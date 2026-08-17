@@ -18,8 +18,9 @@
 		"test:troca-empresa": "node ../api/node_modules/tsx/dist/cli.mjs --test electron/sync/troca-empresa.test.ts electron/sync/tar-gz.test.ts",
 		"postinstall": "electron-builder install-app-deps",
 		"pack:win": "npm run build && electron-builder --win",
-		"pack:dir": "set CSC_IDENTITY_AUTO_DISCOVERY=false&& npm run build && electron-builder --win --dir",
-		"pack:iss": "set CSC_IDENTITY_AUTO_DISCOVERY=false&& npm run pack:dir && powershell -NoProfile -File installer/compilar-iss.ps1"
+		"pack:dir": "npm run build && electron-builder --win --dir",
+		"pack:iss": "npm run pack:dir && powershell -NoProfile -ExecutionPolicy Bypass -File installer/compilar-iss.ps1",
+		"pack:release": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/gerar-instalador.ps1"
 	},
 	"dependencies": {
 		"@radix-ui/react-dialog": "^1.1.15",
@@ -74,8 +75,7 @@
 		},
 		"nsis": {
 			"oneClick": false,
-			"allowToChangeInstallationDirectory": true,
-			"include": "build/installer.nsh"
+			"allowToChangeInstallationDirectory": true
 		}
 	}
 }

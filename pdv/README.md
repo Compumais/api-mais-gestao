@@ -55,6 +55,26 @@ npm run pack:iss
 
 Requer [Inno Setup 6](https://jrsoftware.org/isinfo.php). Sem o compilador `ISCC`, o script fica em `installer/pdv-mais-gestao.iss`. Para um setup offline, copie o instalador Windows x64 do PostgreSQL 17 para `installer/vendor/postgresql-17-windows-x64.exe` antes de `pack:iss`.
 
+### Automatizar (GitHub Actions)
+
+O workflow **PDV instalador** gera, em um runner Windows:
+
+- executável portátil (`PDV-Mais-Gestao-portable.zip`)
+- instalador NSIS (`pdv/release/*.exe`)
+- instalador Inno Setup com PostgreSQL (`pdv/installer/output/*.exe`)
+
+Disparo manual (depois de enviar o código):
+
+```bash
+gh workflow run "PDV instalador"
+# ou, a partir de pdv/:
+bash scripts/gerar-instalador.sh
+```
+
+Também roda ao publicar a tag `pdv-v*` (exemplo: `git tag pdv-v0.1.2 && git push origin pdv-v0.1.2`), e nesse caso cria um GitHub Release com os arquivos.
+
+No Windows local, o equivalente é `npm run pack:release`.
+
 Se o PDV já estiver instalado, o setup compara a versão: pacote mais antigo é recusado; mesma versão repara os arquivos; versão mais nova só atualiza o aplicativo e **preserva o PostgreSQL e os dados**.
 
 ## Arquitetura
