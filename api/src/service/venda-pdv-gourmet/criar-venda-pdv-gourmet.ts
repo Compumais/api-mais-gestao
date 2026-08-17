@@ -4,11 +4,13 @@ import type {
 	NovaVendaPdvGourmet,
 	VendaPdvGourmet,
 } from "@/model/venda-pdv-gourmet-model.js";
+import type { LancamentoPagamentoPdv } from "@/model/venda-pdv-pagamento-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	criarVendaPdvGourmet,
 	excluirVendaPdvGourmet,
 } from "@/repositories/venda-pdv-gourmet-repositories.js";
+import { criarVendaPdvPagamentos } from "@/repositories/venda-pdv-pagamento-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
 import {
 	gerarContasReceberVendaPdvService,
@@ -21,17 +23,24 @@ import {
 	httpErroInterno,
 	httpProibido,
 } from "@/util/http-util.js";
+import {
+	campoPagamentoVazio,
+	totaisDeLancamentosPdv,
+} from "@/util/lancamento-pagamento-pdv.js";
+import { formatarValorMonetario } from "@/util/recebimentos-venda-util.js";
 
 type CriarVendaPdvGourmetParametros = {
 	dadosVendaPdvGourmet: NovaVendaPdvGourmet;
 	idusuario: string;
 	pagamentosErp?: PagamentoErpVendaPdv[] | undefined;
+	pagamentos?: LancamentoPagamentoPdv[] | undefined;
 };
 
 export async function criarVendaPdvGourmetService({
 	dadosVendaPdvGourmet,
 	idusuario,
 	pagamentosErp,
+	pagamentos,
 }: CriarVendaPdvGourmetParametros): Promise<
 	HttpResponse<VendaPdvGourmet | null>
 > {
@@ -44,10 +53,40 @@ export async function criarVendaPdvGourmetService({
 		return httpProibido();
 	}
 
-	const registro = await criarVendaPdvGourmet(dadosVendaPdvGourmet);
+	const dadosComTotais = preencherTotaisDeLancamentos(
+		dadosVendaPdvGourmet,
+		pagamentos,
+	);
+	const registro = await criarVendaPdvGourmet(dadosComTotais);
 
 	if (!registro) {
 		return httpErro();
+	}
+
+	const lancamentosOk =
+		pagamentos?.filter(
+			(item) => (item.status ?? "ok") === "ok" && item.valor > 0,
+		) ?? [];
+
+	if (lancamentosOk.length > 0) {
+		try {
+			await criarVendaPdvPagamentos(
+				lancamentosOk.map((item) => ({
+					id: uuidv4(),
+					idempresa: registro.idempresa,
+					idvenda: registro.id,
+					meio: item.meio,
+					valor: formatarValorMonetario(item.valor),
+					nsu: item.nsu ?? null,
+					autorizacao: item.autorizacao ?? null,
+					bandeira: item.bandeira ?? null,
+					status: item.status ?? "ok",
+				})),
+			);
+		} catch {
+			await excluirVendaPdvGourmet(registro.id);
+			return httpErroInterno();
+		}
 	}
 
 	const auditoriaId = uuidv4();
@@ -119,4 +158,36 @@ export async function criarVendaPdvGourmetService({
 	}
 
 	return httpCriacao<VendaPdvGourmet>(registro);
+}
+
+function preencherTotaisDeLancamentos(
+	dados: NovaVendaPdvGourmet,
+	pagamentos?: LancamentoPagamentoPdv[],
+): NovaVendaPdvGourmet {
+	if (!pagamentos?.length) {
+		return dados;
+	}
+
+	const totais = totaisDeLancamentosPdv(pagamentos);
+	const usarTotais =
+		campoPagamentoVazio(dados.valordinheiro) &&
+		campoPagamentoVazio(dados.valorpix) &&
+		campoPagamentoVazio(dados.valorcartaocredito) &&
+		campoPagamentoVazio(dados.valorcartaodebito) &&
+		campoPagamentoVazio(dados.valorcartao) &&
+		campoPagamentoVazio(dados.valorprepago);
+
+	if (!usarTotais) {
+		return dados;
+	}
+
+	return {
+		...dados,
+		valordinheiro: totais.valordinheiro,
+		valorpix: totais.valorpix,
+		valorcartaocredito: totais.valorcartaocredito,
+		valorcartaodebito: totais.valorcartaodebito,
+		valorcartao: totais.valorcartao,
+		valorprepago: totais.valorprepago,
+	};
 }

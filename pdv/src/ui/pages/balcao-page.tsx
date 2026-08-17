@@ -3,7 +3,6 @@ import { useNavigate, useOutletContext } from "react-router-dom";
 import { pdvInvoke } from "@/lib/pdv-api";
 import {
 	type GrupoLocal,
-	type MeioPagamento,
 	type ProdutoLocal,
 	rotuloModelo,
 	type StatusContext,
@@ -11,6 +10,10 @@ import {
 import { produtoEhPizza } from "@/lib/pizza-meio-a-meio";
 import { money } from "@/lib/utils";
 import { BarcodeInput } from "@/ui/components/barcode-input";
+import {
+	DialogPagamentoMisto,
+	type FechamentoMisto,
+} from "@/ui/components/dialog-pagamento-misto";
 import {
 	DialogPizzaMeioAMeio,
 	type ItemPizzaMeioAMeio,
@@ -39,14 +42,12 @@ export function BalcaoPage() {
 	const [grupoAtivo, setGrupoAtivo] = useState<GrupoLocal | null>(null);
 	const [produtos, setProdutos] = useState<ProdutoLocal[]>([]);
 	const [itens, setItens] = useState<Item[]>([]);
-	const [meio, setMeio] = useState<MeioPagamento>("DINHEIRO");
 	const [pagando, setPagando] = useState(false);
 	const [rejeicaoNfce, setRejeicaoNfce] = useState<string | null>(null);
 	const [msg, setMsg] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [pizzaPrimeiro, setPizzaPrimeiro] = useState<ProdutoLocal | null>(null);
 
-	useEscapeFechaModal(pagando, () => setPagando(false));
 	useEscapeFechaModal(Boolean(rejeicaoNfce), () => setRejeicaoNfce(null));
 	useEscapeFechaModal(Boolean(pizzaPrimeiro), () => setPizzaPrimeiro(null));
 
@@ -162,14 +163,18 @@ export function BalcaoPage() {
 		);
 	}
 
-	async function finalizar() {
+	async function finalizar(fechamento: FechamentoMisto) {
 		if (!itens.length) return;
 		setLoading(true);
 		try {
 			const result = await pdvInvoke<{
 				venda: { id: string };
 				fiscal: { modo: string; mensagem: string; chave?: string };
-			}>("criarVendaRapida", { itens, meio });
+			}>("criarVendaRapida", {
+				itens,
+				lancamentos: fechamento.lancamentos,
+				troco: fechamento.troco,
+			});
 			setPagando(false);
 			if (result.fiscal.modo === "erro") {
 				setRejeicaoNfce(result.fiscal.mensagem);
@@ -357,50 +362,15 @@ export function BalcaoPage() {
 				</div>
 			)}
 
-			{pagando && (
-				<div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-primary p-6 text-primary-foreground">
-					<div className="text-lg">Total a pagar</div>
-					<div className="text-5xl font-bold">{money(total)}</div>
-					<div className="grid w-full max-w-md grid-cols-3 gap-3">
-						{(["DINHEIRO", "PIX", "CARTAO"] as MeioPagamento[]).map((m) => (
-							<Button
-								key={m}
-								size="lg"
-								variant={meio === m ? "secondary" : "outline"}
-								className={
-									meio === m
-										? ""
-										: "border-primary-foreground/40 text-primary-foreground hover:bg-primary-foreground/10"
-								}
-								onClick={() => setMeio(m)}
-							>
-								{m === "CARTAO"
-									? "Cartão"
-									: m.charAt(0) + m.slice(1).toLowerCase()}
-							</Button>
-						))}
-					</div>
-					<div className="flex w-full max-w-md gap-3">
-						<Button
-							variant="outline"
-							className="flex-1 border-primary-foreground/40 text-primary-foreground hover:bg-primary-foreground/10"
-							disabled={loading}
-							onClick={() => setPagando(false)}
-						>
-							Cancelar
-						</Button>
-						<Button
-							size="lg"
-							variant="secondary"
-							className="flex-1"
-							disabled={loading}
-							onClick={() => void finalizar()}
-						>
-							{loading ? "Finalizando..." : "Confirmar"}
-						</Button>
-					</div>
-				</div>
-			)}
+			<DialogPagamentoMisto
+				aberto={pagando}
+				total={total}
+				loading={loading}
+				titulo="Finalizar venda"
+				confirmarLabel="Confirmar"
+				onCancelar={() => setPagando(false)}
+				onConfirmar={(fechamento) => void finalizar(fechamento)}
+			/>
 
 			{pizzaPrimeiro && (
 				<DialogPizzaMeioAMeio

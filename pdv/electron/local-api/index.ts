@@ -20,6 +20,11 @@ import {
 	salvarDatabaseUrlArquivo,
 } from "../db/database";
 import {
+	ehMeioPagamento,
+	lancamentoUnico,
+	totaisParaSync,
+} from "../db/pagamento";
+import {
 	abrirCaixa,
 	abrirContaMesa,
 	adicionarItemConta,
@@ -36,6 +41,7 @@ import {
 	fecharCaixa,
 	fecharContaMesa,
 	type ItemCarrinho,
+	type LancamentoPagamento,
 	limparContasVazias,
 	limparFilaPedidos,
 	limparSessao,
@@ -43,6 +49,7 @@ import {
 	listarCatalogoCarga,
 	listarGruposGourmetLocal,
 	listarGruposLocal,
+	listarLancamentosVenda,
 	listarMapeamentoImpressorasGourmet,
 	listarMesas,
 	listarPedidosFila,
@@ -73,8 +80,28 @@ import {
 	imprimirProducaoPedido,
 	rotuloOrigemMesa,
 } from "../impressora/producao";
+import {
+	sitefCancelar,
+	sitefPagar,
+	statusSitef,
+} from "../integracao/sitef/servico";
+import {
+	reiniciarTecnibra,
+	statusTecnibra,
+	syncTecnibra,
+} from "../integracao/tecnibra/servico";
 import { listarIpsLan } from "../lan-api/ips";
 import { processarOutbox, pullCatalogo, statusConexao } from "../sync/outbox";
+
+export type {
+	LancamentoPagamento,
+	MeioPagamento,
+	StatusLancamentoPagamento,
+} from "../db/pagamento";
+
+function avisarTecnibra(): void {
+	void syncTecnibra();
+}
 
 async function emitirNfceOnlineDaVenda(vendaId: string): Promise<{
 	ok: boolean;
@@ -101,6 +128,11 @@ async function emitirNfceOnlineDaVenda(vendaId: string): Promise<{
 		if (!sessao.idempresa || !sessao.userid) {
 			return { ok: false, erro: "Sessão inválida" };
 		}
+		const pagamentos =
+			venda.pagamentos.length > 0
+				? venda.pagamentos
+				: await listarLancamentosVenda(venda.id);
+		const sync = totaisParaSync(pagamentos, venda.valortroco);
 		let idremoto = venda.idremoto;
 		if (!idremoto) {
 			const criada = await criarVendaPdv({
@@ -109,13 +141,14 @@ async function emitirNfceOnlineDaVenda(vendaId: string): Promise<{
 				usuarioquefechouvenda: sessao.userid,
 				vendalocal: 2,
 				valortotal: venda.valortotal,
-				valortroco: venda.valortroco,
-				valordinheiro: venda.valordinheiro,
-				valorpix: venda.valorpix,
-				valorcartaocredito: venda.valorcartao,
-				valorcartaodebito: 0,
-				valorcartao: 0,
-				valorprepago: 0,
+				valortroco: sync.valortroco,
+				valordinheiro: sync.valordinheiro,
+				valorpix: sync.valorpix,
+				valorcartaocredito: sync.valorcartaocredito,
+				valorcartaodebito: sync.valorcartaodebito,
+				valorcartao: sync.valorcartao,
+				valorprepago: sync.valorprepago,
+				pagamentos,
 			});
 			idremoto = criada.id;
 
@@ -151,13 +184,13 @@ async function emitirNfceOnlineDaVenda(vendaId: string): Promise<{
 			})),
 			pagamentos: {
 				valortotal: venda.valortotal,
-				valortroco: venda.valortroco,
-				valordinheiro: venda.valordinheiro,
-				valorpix: venda.valorpix,
-				valorcartaocredito: venda.valorcartao,
-				valorcartaodebito: 0,
-				valorcartao: 0,
-				valorprepago: 0,
+				valortroco: sync.valortroco,
+				valordinheiro: sync.valordinheiro,
+				valorpix: sync.valorpix,
+				valorcartaocredito: sync.valorcartaocredito,
+				valorcartaodebito: sync.valorcartaodebito,
+				valorcartao: sync.valorcartao,
+				valorprepago: sync.valorprepago,
 			},
 		});
 		const nfce = extrairNfceDaBaixa(baixa);
@@ -284,7 +317,57 @@ export const localApi = {
 			const { restartLanServer } = await import("../lan-api/server");
 			await restartLanServer();
 		}
+		if (
+			resto.tecnibra_habilitada !== undefined ||
+			resto.tecnibra_xml_path !== undefined ||
+			resto.tecnibra_intervalo_ms !== undefined ||
+			resto.tecnibra_xml_root !== undefined ||
+			resto.tecnibra_xml_item !== undefined
+		) {
+			await reiniciarTecnibra();
+		}
+		if (
+			resto.sitef_habilitado !== undefined ||
+			resto.sitef_ip !== undefined ||
+			resto.sitef_loja !== undefined ||
+			resto.sitef_terminal !== undefined ||
+			resto.sitef_parametros !== undefined ||
+			resto.sitef_porta_pinpad !== undefined ||
+			resto.sitef_dll_path !== undefined
+		) {
+			const { resetarDllCarregada } = await import("../integracao/sitef/dll");
+			const { resetarConfiguracaoSitef } = await import(
+				"../integracao/sitef/servico"
+			);
+			resetarDllCarregada();
+			resetarConfiguracaoSitef();
+		}
 		return { ...saved, database_url: obterDatabaseUrl() };
+	},
+
+	async statusTecnibra() {
+		return statusTecnibra();
+	},
+
+	async "sitef.status"() {
+		return statusSitef();
+	},
+
+	async "sitef.pagar"(params: {
+		valor: number;
+		cupom?: string;
+		operador?: string;
+	}) {
+		return sitefPagar(params);
+	},
+
+	async "sitef.cancelar"(params: {
+		nsu?: string | null;
+		valor?: number;
+		cupom?: string;
+		operador?: string;
+	}) {
+		return sitefCancelar(params);
 	},
 
 	async listarEmpresasLan() {
@@ -387,10 +470,19 @@ export const localApi = {
 
 	async criarVendaRapida(input: {
 		itens: ItemCarrinho[];
-		meio: MeioPagamento;
+		lancamentos?: LancamentoPagamento[];
+		meio?: MeioPagamento;
 		troco?: number;
 	}) {
-		const venda = await criarVendaRapida(input);
+		const total = input.itens.reduce((acc, item) => acc + item.precototal, 0);
+		const lancamentos = input.lancamentos?.length
+			? input.lancamentos
+			: [lancamentoUnico(input.meio ?? "DINHEIRO", total)];
+		const venda = await criarVendaRapida({
+			itens: input.itens,
+			lancamentos,
+			troco: input.troco,
+		});
 		const emitir = (await getConfig("emitir_nfce", "1")) === "1";
 
 		let fiscal: {
@@ -443,11 +535,15 @@ export const localApi = {
 	},
 
 	async limparContasVazias() {
-		return limparContasVazias();
+		const removidas = await limparContasVazias();
+		avisarTecnibra();
+		return removidas;
 	},
 
 	async abrirContaMesa(numero: number, nomecliente?: string) {
-		return abrirContaMesa(numero, nomecliente);
+		const conta = await abrirContaMesa(numero, nomecliente);
+		avisarTecnibra();
+		return conta;
 	},
 
 	async obterContaMesa(id: string) {
@@ -463,7 +559,9 @@ export const localApi = {
 			precounitario: number;
 		},
 	) {
-		return adicionarItemConta(idconta, item);
+		const conta = await adicionarItemConta(idconta, item);
+		avisarTecnibra();
+		return conta;
 	},
 
 	async atualizarNomeClienteConta(idconta: string, nomecliente: string) {
@@ -492,6 +590,7 @@ export const localApi = {
 				// produção não falha o pedido
 			}
 		}
+		avisarTecnibra();
 		return conta;
 	},
 
@@ -535,11 +634,29 @@ export const localApi = {
 		} catch {
 			// produção não falha o pedido
 		}
+		avisarTecnibra();
 		return conta;
 	},
 
-	async fecharContaMesa(idconta: string, meio: MeioPagamento) {
-		const venda = await fecharContaMesa({ idconta, meio });
+	async fecharContaMesa(
+		idconta: string,
+		lancamentosOuMeio: LancamentoPagamento[] | MeioPagamento,
+		troco?: number,
+	) {
+		let lancamentos: LancamentoPagamento[];
+		if (typeof lancamentosOuMeio === "string") {
+			if (!ehMeioPagamento(lancamentosOuMeio)) {
+				throw new Error("Meio de pagamento inválido");
+			}
+			const conta = await obterContaMesa(idconta);
+			if (!conta) {
+				throw new Error("Conta inválida");
+			}
+			lancamentos = [lancamentoUnico(lancamentosOuMeio, conta.valortotal)];
+		} else {
+			lancamentos = lancamentosOuMeio;
+		}
+		const venda = await fecharContaMesa({ idconta, lancamentos, troco });
 		const emitir = (await getConfig("emitir_nfce", "1")) === "1";
 		let fiscal: {
 			modo: "online" | "contingencia" | "nao_fiscal" | "erro";
@@ -577,6 +694,7 @@ export const localApi = {
 		}
 
 		void processarOutbox();
+		avisarTecnibra();
 		return { venda, fiscal };
 	},
 

@@ -8,12 +8,14 @@ import com.google.gson.JsonParser;
 import com.pos_mais_gestao.data.local.CatalogRepository;
 import com.pos_mais_gestao.data.local.PrefsStore;
 import com.pos_mais_gestao.domain.ItemCarrinho;
+import com.pos_mais_gestao.domain.LancamentoPagamento;
 import com.pos_mais_gestao.domain.MeioPagamento;
 import com.pos_mais_gestao.domain.PagamentosResumo;
 import com.pos_mais_gestao.domain.Produto;
 import com.pos_mais_gestao.domain.ResumoTurnoCaixa;
 import com.pos_mais_gestao.ui.pedido.SacolaLinha;
 import com.pos_mais_gestao.util.MoneyFormat;
+import com.pos_mais_gestao.util.PagamentosMisto;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -890,14 +892,38 @@ public class ApiClient {
             String nomeCliente,
             String cnpjCpfCliente)
             throws ApiException {
+        return criarVendaPdvRapida(
+                itens,
+                lancamentoUnico(meio, totalItens(itens)),
+                BigDecimal.ZERO,
+                identidade,
+                nomeCliente,
+                cnpjCpfCliente);
+    }
+
+    public VendaResultadoDto criarVendaPdvRapida(
+            List<ItemCarrinho> itens,
+            List<LancamentoPagamento> lancamentos,
+            BigDecimal troco,
+            String identidade,
+            String nomeCliente,
+            String cnpjCpfCliente)
+            throws ApiException {
         if (itens == null || itens.isEmpty()) {
             throw new ApiException("Carrinho vazio");
         }
+        PagamentosMisto.ResultadoFechamento fechamento;
+        try {
+            fechamento = PagamentosMisto.validarFechamento(totalItens(itens), lancamentos, troco);
+        } catch (IllegalArgumentException e) {
+            throw new ApiException(e.getMessage());
+        }
         if (isLocal()) {
-            throw new ApiException("Receba e emita o cupom no PDV desktop");
+            return criarVendaRapidaLocal(itens, fechamento.efetivos, fechamento.troco);
         }
         if (!prefsStore.isEmitirNfcePos()) {
-            return criarPedidoDavPos(itens, meio, identidade, nomeCliente, cnpjCpfCliente);
+            return criarPedidoDavPos(
+                    itens, fechamento.efetivos, fechamento.troco, identidade, nomeCliente, cnpjCpfCliente);
         }
         String empresaId = prefsStore.getEmpresaId();
         String userId = prefsStore.getUserId();
@@ -905,12 +931,8 @@ public class ApiClient {
             throw new ApiException("Sessão ou empresa inválida");
         }
 
-        BigDecimal total = BigDecimal.ZERO;
-        for (ItemCarrinho item : itens) {
-            total = total.add(item.getSubtotal());
-        }
+        BigDecimal total = totalItens(itens);
         String totalStr = total.toPlainString();
-        String zero = "0";
 
         JsonObject vendaBody = new JsonObject();
         vendaBody.addProperty("idempresa", empresaId);
@@ -919,13 +941,8 @@ public class ApiClient {
         // 2 = origem POS (app); 1 = balcão web/gourmet; 0 = não local
         vendaBody.addProperty("vendalocal", 2);
         vendaBody.addProperty("valortotal", totalStr);
-        vendaBody.addProperty("valortroco", zero);
-        vendaBody.addProperty("valordinheiro", meio == MeioPagamento.DINHEIRO ? totalStr : zero);
-        vendaBody.addProperty("valorpix", meio == MeioPagamento.PIX ? totalStr : zero);
-        vendaBody.addProperty("valorcartaocredito", meio == MeioPagamento.CARTAO ? totalStr : zero);
-        vendaBody.addProperty("valorcartaodebito", zero);
-        vendaBody.addProperty("valorcartao", zero);
-        vendaBody.addProperty("valorprepago", zero);
+        aplicarTotaisPagamento(vendaBody, fechamento.efetivos, fechamento.troco);
+        vendaBody.add("pagamentos", PagamentosMisto.toJsonArray(fechamento.efetivos));
         if (identidade != null && !identidade.trim().isEmpty()) {
             vendaBody.addProperty("identidade", identidade.trim());
         }
@@ -965,13 +982,7 @@ public class ApiClient {
         baixaBody.add("itens", itensBaixa);
         JsonObject pags = new JsonObject();
         pags.addProperty("valortotal", totalStr);
-        pags.addProperty("valortroco", zero);
-        pags.addProperty("valordinheiro", meio == MeioPagamento.DINHEIRO ? totalStr : zero);
-        pags.addProperty("valorpix", meio == MeioPagamento.PIX ? totalStr : zero);
-        pags.addProperty("valorcartaocredito", meio == MeioPagamento.CARTAO ? totalStr : zero);
-        pags.addProperty("valorcartaodebito", zero);
-        pags.addProperty("valorcartao", zero);
-        pags.addProperty("valorprepago", zero);
+        aplicarTotaisPagamento(pags, fechamento.efetivos, fechamento.troco);
         baixaBody.add("pagamentos", pags);
 
         JsonObject baixaJson = postJson("/estoque/baixa-venda", baixaBody.toString(), true);
@@ -983,7 +994,8 @@ public class ApiClient {
             resultado.codigo = String.valueOf(vendaJson.get("codigo").getAsLong());
         }
         resultado.pedidoDav = false;
-        aplicarResultadoEmissaoNfce(resultado, baixaJson, itens, totalStr, meio);
+        aplicarResultadoEmissaoNfce(
+                resultado, baixaJson, itens, totalStr, PagamentosMisto.rotulo(fechamento.efetivos));
         return resultado;
     }
 
@@ -996,11 +1008,37 @@ public class ApiClient {
 
     public VendaResultadoDto fecharContaMesa(String idConta, MeioPagamento meio, String identidade)
             throws ApiException {
+        return fecharContaMesa(idConta, null, null, identidade, meio);
+    }
+
+    public VendaResultadoDto fecharContaMesa(
+            String idConta,
+            List<LancamentoPagamento> lancamentos,
+            BigDecimal troco,
+            String identidade)
+            throws ApiException {
+        return fecharContaMesa(idConta, lancamentos, troco, identidade, null);
+    }
+
+    private VendaResultadoDto fecharContaMesa(
+            String idConta,
+            List<LancamentoPagamento> lancamentos,
+            BigDecimal troco,
+            String identidade,
+            MeioPagamento meioLegado)
+            throws ApiException {
         if (idConta == null || idConta.isEmpty()) {
             throw new ApiException("Conta da mesa inválida");
         }
         if (isLocal()) {
-            throw new ApiException("Receba e emita o cupom no PDV desktop");
+            if (lancamentos != null && !lancamentos.isEmpty()) {
+                return mapearResultadoFiscalPdv(
+                        localPdv.fecharConta(idConta, PagamentosMisto.toJsonArray(lancamentos), troco));
+            }
+            if (meioLegado == null) {
+                throw new ApiException("Informe ao menos um lançamento de pagamento");
+            }
+            return mapearResultadoFiscalPdv(localPdv.fecharConta(idConta, meioLegado.name()));
         }
         String empresaId = prefsStore.getEmpresaId();
         String userId = prefsStore.getUserId();
@@ -1018,9 +1056,15 @@ public class ApiClient {
             throw new ApiException("Comanda sem itens válidos");
         }
 
-        BigDecimal total = BigDecimal.ZERO;
-        for (ItemCarrinho item : itens) {
-            total = total.add(item.getSubtotal());
+        BigDecimal total = totalItens(itens);
+        List<LancamentoPagamento> pagsLista = lancamentos != null && !lancamentos.isEmpty()
+                ? lancamentos
+                : lancamentoUnico(meioLegado != null ? meioLegado : MeioPagamento.DINHEIRO, total);
+        PagamentosMisto.ResultadoFechamento fechamento;
+        try {
+            fechamento = PagamentosMisto.validarFechamento(total, pagsLista, troco);
+        } catch (IllegalArgumentException e) {
+            throw new ApiException(e.getMessage());
         }
         String totalStr = total.toPlainString();
         String zero = "0";
@@ -1031,14 +1075,8 @@ public class ApiClient {
         contaBody.addProperty("valortaxaservico", zero);
         contaBody.addProperty("valorcouverartistico", zero);
         contaBody.addProperty("valortotal", totalStr);
-        contaBody.addProperty("valortroco", zero);
         contaBody.addProperty("valorpendente", zero);
-        contaBody.addProperty("valordinheiro", meio == MeioPagamento.DINHEIRO ? totalStr : zero);
-        contaBody.addProperty("valorpix", meio == MeioPagamento.PIX ? totalStr : zero);
-        contaBody.addProperty("valorcartaocredito", meio == MeioPagamento.CARTAO ? totalStr : zero);
-        contaBody.addProperty("valorcartaodebito", zero);
-        contaBody.addProperty("valorcartao", zero);
-        contaBody.addProperty("valorprepago", zero);
+        aplicarTotaisPagamento(contaBody, fechamento.efetivos, fechamento.troco);
         contaBody.addProperty("usuarioquefechouconta", userId);
         if (identidade != null && !identidade.trim().isEmpty()) {
             contaBody.addProperty("idcliente", identidade.trim());
@@ -1053,13 +1091,8 @@ public class ApiClient {
         // 2 = origem POS (app); 1 = balcão web/gourmet; 0 = não local
         vendaBody.addProperty("vendalocal", 2);
         vendaBody.addProperty("valortotal", totalStr);
-        vendaBody.addProperty("valortroco", zero);
-        vendaBody.addProperty("valordinheiro", meio == MeioPagamento.DINHEIRO ? totalStr : zero);
-        vendaBody.addProperty("valorpix", meio == MeioPagamento.PIX ? totalStr : zero);
-        vendaBody.addProperty("valorcartaocredito", meio == MeioPagamento.CARTAO ? totalStr : zero);
-        vendaBody.addProperty("valorcartaodebito", zero);
-        vendaBody.addProperty("valorcartao", zero);
-        vendaBody.addProperty("valorprepago", zero);
+        aplicarTotaisPagamento(vendaBody, fechamento.efetivos, fechamento.troco);
+        vendaBody.add("pagamentos", PagamentosMisto.toJsonArray(fechamento.efetivos));
         if (identidade != null && !identidade.trim().isEmpty()) {
             vendaBody.addProperty("identidade", identidade.trim());
         }
@@ -1099,13 +1132,7 @@ public class ApiClient {
         baixaBody.add("itens", itensBaixa);
         JsonObject pags = new JsonObject();
         pags.addProperty("valortotal", totalStr);
-        pags.addProperty("valortroco", zero);
-        pags.addProperty("valordinheiro", meio == MeioPagamento.DINHEIRO ? totalStr : zero);
-        pags.addProperty("valorpix", meio == MeioPagamento.PIX ? totalStr : zero);
-        pags.addProperty("valorcartaocredito", meio == MeioPagamento.CARTAO ? totalStr : zero);
-        pags.addProperty("valorcartaodebito", zero);
-        pags.addProperty("valorcartao", zero);
-        pags.addProperty("valorprepago", zero);
+        aplicarTotaisPagamento(pags, fechamento.efetivos, fechamento.troco);
         baixaBody.add("pagamentos", pags);
 
         JsonObject baixaJson = postJson("/estoque/baixa-venda", baixaBody.toString(), true);
@@ -1117,7 +1144,8 @@ public class ApiClient {
             resultado.codigo = String.valueOf(vendaJson.get("codigo").getAsLong());
         }
         resultado.pedidoDav = false;
-        aplicarResultadoEmissaoNfce(resultado, baixaJson, itens, totalStr, meio);
+        aplicarResultadoEmissaoNfce(
+                resultado, baixaJson, itens, totalStr, PagamentosMisto.rotulo(fechamento.efetivos));
         if (resultado.sucessoFiscalCompleto && !resultado.cupomFiscal
                 && (resultado.mensagemNfce == null
                         || resultado.mensagemNfce.equals("Venda registrada")
@@ -1160,7 +1188,7 @@ public class ApiClient {
             JsonObject baixaJson,
             List<ItemCarrinho> itens,
             String totalStr,
-            MeioPagamento meio) {
+            String meio) {
         boolean deveEmitir = baixaJson.has("deveEmitirNfce")
                 && !baixaJson.get("deveEmitirNfce").isJsonNull()
                 && baixaJson.get("deveEmitirNfce").getAsBoolean();
@@ -1367,7 +1395,7 @@ public class ApiClient {
             VendaResultadoDto resultado,
             List<ItemCarrinho> itens,
             String total,
-            MeioPagamento meio) {
+            String meio) {
         StringBuilder sb = new StringBuilder();
         sb.append("DOCUMENTO AUXILIAR DA NFC-e\n");
         String empresa = prefsStore.getEmpresaNome();
@@ -1387,7 +1415,7 @@ public class ApiClient {
         }
         sb.append("--------------------------------\n");
         sb.append("TOTAL R$ ").append(total).append("\n");
-        sb.append("Pagamento: ").append(meio.name()).append("\n");
+        sb.append("Pagamento: ").append(meio).append("\n");
         sb.append("--------------------------------\n");
         sb.append("CHAVE DE ACESSO\n");
         if (resultado.chaveNfce != null) {
@@ -1415,16 +1443,37 @@ public class ApiClient {
             String nomeCliente,
             String cnpjCpfCliente)
             throws ApiException {
+        return criarPedidoDavPos(
+                itens,
+                lancamentoUnico(meio, totalItens(itens)),
+                BigDecimal.ZERO,
+                identidade,
+                nomeCliente,
+                cnpjCpfCliente);
+    }
+
+    private VendaResultadoDto criarPedidoDavPos(
+            List<ItemCarrinho> itens,
+            List<LancamentoPagamento> lancamentos,
+            BigDecimal troco,
+            String identidade,
+            String nomeCliente,
+            String cnpjCpfCliente)
+            throws ApiException {
         String empresaId = prefsStore.getEmpresaId();
         if (empresaId == null) {
             throw new ApiException("Empresa não selecionada");
         }
 
-        BigDecimal total = BigDecimal.ZERO;
-        for (ItemCarrinho item : itens) {
-            total = total.add(item.getSubtotal());
+        BigDecimal total = totalItens(itens);
+        PagamentosMisto.ResultadoFechamento fechamento;
+        try {
+            fechamento = PagamentosMisto.validarFechamento(total, lancamentos, troco);
+        } catch (IllegalArgumentException e) {
+            throw new ApiException(e.getMessage());
         }
         String totalStr = total.toPlainString();
+        PagamentosMisto.Totais totais = fechamento.totais;
 
         long agora = System.currentTimeMillis();
         SimpleDateFormat iso = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
@@ -1440,12 +1489,14 @@ public class ApiClient {
         davBody.addProperty("currenttimemillis", agora);
         davBody.addProperty("extra1", "POS");
         davBody.addProperty("valor", totalStr);
-        if (meio == MeioPagamento.DINHEIRO) {
-            davBody.addProperty("dinheiro", totalStr);
-        } else if (meio == MeioPagamento.PIX) {
-            davBody.addProperty("pix", totalStr);
-        } else if (meio == MeioPagamento.CARTAO) {
-            davBody.addProperty("posavista", totalStr);
+        if (totais.dinheiro.compareTo(BigDecimal.ZERO) > 0) {
+            davBody.addProperty("dinheiro", MoneyFormat.toApi(totais.dinheiro));
+        }
+        if (totais.pix.compareTo(BigDecimal.ZERO) > 0) {
+            davBody.addProperty("pix", MoneyFormat.toApi(totais.pix));
+        }
+        if (totais.cartao.compareTo(BigDecimal.ZERO) > 0) {
+            davBody.addProperty("posavista", MoneyFormat.toApi(totais.cartao));
         }
         if (identidade != null && !identidade.trim().isEmpty()) {
             davBody.addProperty("idcliente", identidade.trim());
@@ -1487,12 +1538,13 @@ public class ApiClient {
         resultado.cupomFiscal = false;
         resultado.mensagemNfce = "Pedido #" + (resultado.codigo != null ? resultado.codigo : "—")
                 + " — veja em Pedidos da maquininha";
-        resultado.comprovanteTexto = montarComprovanteDav(itens, totalStr, meio, resultado);
+        resultado.comprovanteTexto =
+                montarComprovanteDav(itens, totalStr, PagamentosMisto.rotulo(fechamento.efetivos), resultado);
         return resultado;
     }
 
     private String montarComprovanteDav(
-            List<ItemCarrinho> itens, String total, MeioPagamento meio, VendaResultadoDto resultado) {
+            List<ItemCarrinho> itens, String total, String meio, VendaResultadoDto resultado) {
         StringBuilder sb = new StringBuilder();
         sb.append("MAIS GESTAO - POS\n");
         sb.append("PEDIDO (DAV) - NAO FISCAL\n");
@@ -1507,7 +1559,7 @@ public class ApiClient {
         }
         sb.append("----------------\n");
         sb.append("TOTAL: ").append(total).append("\n");
-        sb.append("PAGTO: ").append(meio.name()).append("\n");
+        sb.append("PAGTO: ").append(meio).append("\n");
         if (resultado.codigo != null) {
             sb.append("PEDIDO: ").append(resultado.codigo).append("\n");
         }
@@ -1516,7 +1568,7 @@ public class ApiClient {
     }
 
     private String montarComprovanteNaoFiscal(
-            List<ItemCarrinho> itens, String total, MeioPagamento meio, VendaResultadoDto resultado) {
+            List<ItemCarrinho> itens, String total, String meio, VendaResultadoDto resultado) {
         StringBuilder sb = new StringBuilder();
         sb.append("MAIS GESTAO - POS\n");
         sb.append("COMPROVANTE NAO FISCAL\n");
@@ -1534,7 +1586,7 @@ public class ApiClient {
         }
         sb.append("----------------\n");
         sb.append("TOTAL: ").append(total).append("\n");
-        sb.append("PAGTO: ").append(meio.name()).append("\n");
+        sb.append("PAGTO: ").append(meio).append("\n");
         if (resultado.codigo != null) {
             sb.append("VENDA: ").append(resultado.codigo).append("\n");
         }
@@ -2264,7 +2316,8 @@ public class ApiClient {
         }
     }
 
-    private VendaResultadoDto criarVendaRapidaLocal(List<ItemCarrinho> itens, MeioPagamento meio)
+    private VendaResultadoDto criarVendaRapidaLocal(
+            List<ItemCarrinho> itens, List<LancamentoPagamento> lancamentos, BigDecimal troco)
             throws ApiException {
         JsonArray itensJson = new JsonArray();
         for (ItemCarrinho item : itens) {
@@ -2278,8 +2331,40 @@ public class ApiClient {
         }
         JsonObject body = new JsonObject();
         body.add("itens", itensJson);
-        body.addProperty("meio", meio.name());
+        body.add("pagamentos", PagamentosMisto.toJsonArray(lancamentos));
+        if (troco != null && troco.compareTo(BigDecimal.ZERO) > 0) {
+            body.addProperty("troco", troco.doubleValue());
+        }
         return mapearResultadoFiscalPdv(localPdv.vendaRapida(body));
+    }
+
+    private static BigDecimal totalItens(List<ItemCarrinho> itens) {
+        BigDecimal total = BigDecimal.ZERO;
+        if (itens == null) {
+            return total;
+        }
+        for (ItemCarrinho item : itens) {
+            total = total.add(item.getSubtotal());
+        }
+        return LancamentoPagamento.arredondar(total);
+    }
+
+    private static List<LancamentoPagamento> lancamentoUnico(MeioPagamento meio, BigDecimal total) {
+        List<LancamentoPagamento> lista = new ArrayList<>();
+        lista.add(LancamentoPagamento.ok(meio != null ? meio : MeioPagamento.DINHEIRO, total));
+        return lista;
+    }
+
+    private static void aplicarTotaisPagamento(
+            JsonObject dest, List<LancamentoPagamento> lancamentos, BigDecimal troco) {
+        PagamentosMisto.Totais totais = PagamentosMisto.totais(lancamentos);
+        dest.addProperty("valordinheiro", MoneyFormat.toApi(totais.dinheiro));
+        dest.addProperty("valorpix", MoneyFormat.toApi(totais.pix));
+        dest.addProperty("valorcartaocredito", MoneyFormat.toApi(totais.cartao));
+        dest.addProperty("valorcartaodebito", "0");
+        dest.addProperty("valorcartao", "0");
+        dest.addProperty("valorprepago", "0");
+        dest.addProperty("valortroco", MoneyFormat.toApi(troco == null ? BigDecimal.ZERO : troco));
     }
 
     private VendaResultadoDto mapearResultadoFiscalPdv(JsonObject response) {

@@ -105,9 +105,6 @@ public class ContaMesaActivity extends AppCompatActivity {
         lblSecao = findViewById(R.id.lblSecaoConta);
         txtTotalConta = findViewById(R.id.txtTotalConta);
         btnFecharConta = findViewById(R.id.btnFecharConta);
-        if (prefs.isModoPdvLocal()) {
-            btnFecharConta.setVisibility(View.GONE);
-        }
         btnFecharConta.setOnClickListener(v -> irParaPagamento());
         inputBusca = findViewById(R.id.inputBuscaConta);
         MaterialButton btnEscanear = findViewById(R.id.btnEscanearConta);
@@ -374,10 +371,6 @@ public class ContaMesaActivity extends AppCompatActivity {
     }
 
     private void irParaPagamento() {
-        if (prefs.isModoPdvLocal()) {
-            Toast.makeText(this, R.string.cupom_somente_pdv, Toast.LENGTH_LONG).show();
-            return;
-        }
         if (totalAtual.compareTo(BigDecimal.ZERO) <= 0) {
             Toast.makeText(this, R.string.comanda_vazia, Toast.LENGTH_SHORT).show();
             return;

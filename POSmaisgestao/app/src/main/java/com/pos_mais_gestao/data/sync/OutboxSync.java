@@ -11,8 +11,10 @@ import com.google.gson.reflect.TypeToken;
 import com.pos_mais_gestao.data.api.ApiClient;
 import com.pos_mais_gestao.data.local.OutboxDb;
 import com.pos_mais_gestao.domain.ItemCarrinho;
+import com.pos_mais_gestao.domain.LancamentoPagamento;
 import com.pos_mais_gestao.domain.MeioPagamento;
 import com.pos_mais_gestao.domain.Produto;
+import com.pos_mais_gestao.util.PagamentosMisto;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -59,7 +61,6 @@ public class OutboxSync {
                     api.sincronizarAtalhos(ids != null ? ids : new ArrayList<>());
                 } else if (OutboxDb.TIPO_VENDA.equals(item.tipo)) {
                     JsonObject obj = gson.fromJson(item.payload, JsonObject.class);
-                    MeioPagamento meio = MeioPagamento.valueOf(obj.get("meio").getAsString());
                     Type type = new TypeToken<List<ItemCarrinhoPayload>>() {}.getType();
                     List<ItemCarrinhoPayload> payloads = gson.fromJson(obj.get("itens"), type);
                     List<ItemCarrinho> itens = new ArrayList<>();
@@ -75,7 +76,12 @@ public class OutboxSync {
                             itens.add(new ItemCarrinho(produto, new BigDecimal(p.quantidade)));
                         }
                     }
-                    api.criarVendaPdvRapida(itens, meio);
+                    List<LancamentoPagamento> pags = lerLancamentosOutbox(obj, itens);
+                    BigDecimal troco = BigDecimal.ZERO;
+                    if (obj.has("troco") && !obj.get("troco").isJsonNull()) {
+                        troco = new BigDecimal(obj.get("troco").getAsString());
+                    }
+                    api.criarVendaPdvRapida(itens, pags, troco, null, null, null);
                 }
                 db.marcarConcluido(item.id);
             } catch (Exception e) {
@@ -90,8 +96,25 @@ public class OutboxSync {
     }
 
     public void enfileirarVenda(List<ItemCarrinho> itens, MeioPagamento meio) {
+        BigDecimal total = BigDecimal.ZERO;
+        for (ItemCarrinho item : itens) {
+            total = total.add(item.getSubtotal());
+        }
+        List<LancamentoPagamento> pags = new ArrayList<>();
+        pags.add(LancamentoPagamento.ok(meio, total));
+        enfileirarVenda(itens, pags, BigDecimal.ZERO);
+    }
+
+    public void enfileirarVenda(
+            List<ItemCarrinho> itens, List<LancamentoPagamento> lancamentos, BigDecimal troco) {
         JsonObject obj = new JsonObject();
-        obj.addProperty("meio", meio.name());
+        if (lancamentos != null && !lancamentos.isEmpty()) {
+            obj.addProperty("meio", PagamentosMisto.meioPrincipal(lancamentos).name());
+            obj.add("pagamentos", PagamentosMisto.toJsonArray(lancamentos));
+        }
+        if (troco != null && troco.compareTo(BigDecimal.ZERO) > 0) {
+            obj.addProperty("troco", troco.toPlainString());
+        }
         JsonArray arr = new JsonArray();
         for (ItemCarrinho item : itens) {
             JsonObject i = new JsonObject();
@@ -105,6 +128,52 @@ public class OutboxSync {
         }
         obj.add("itens", arr);
         db.enfileirar(OutboxDb.TIPO_VENDA, obj.toString());
+    }
+
+    private static List<LancamentoPagamento> lerLancamentosOutbox(
+            JsonObject obj, List<ItemCarrinho> itens) {
+        List<LancamentoPagamento> pags = new ArrayList<>();
+        if (obj.has("pagamentos") && obj.get("pagamentos").isJsonArray()) {
+            for (com.google.gson.JsonElement el : obj.getAsJsonArray("pagamentos")) {
+                if (!el.isJsonObject()) {
+                    continue;
+                }
+                JsonObject p = el.getAsJsonObject();
+                try {
+                    MeioPagamento meio = MeioPagamento.valueOf(p.get("meio").getAsString());
+                    BigDecimal valor = new BigDecimal(p.get("valor").getAsString());
+                    LancamentoPagamento item = LancamentoPagamento.ok(meio, valor);
+                    if (p.has("status") && !p.get("status").isJsonNull()) {
+                        item.status = p.get("status").getAsString();
+                    }
+                    if (p.has("nsu") && !p.get("nsu").isJsonNull()) {
+                        item.nsu = p.get("nsu").getAsString();
+                    }
+                    if (p.has("autorizacao") && !p.get("autorizacao").isJsonNull()) {
+                        item.autorizacao = p.get("autorizacao").getAsString();
+                    }
+                    if (p.has("bandeira") && !p.get("bandeira").isJsonNull()) {
+                        item.bandeira = p.get("bandeira").getAsString();
+                    }
+                    pags.add(item);
+                } catch (Exception ignored) {
+                    // ignora lançamento inválido do payload antigo
+                }
+            }
+        }
+        if (!pags.isEmpty()) {
+            return pags;
+        }
+        MeioPagamento meio = MeioPagamento.DINHEIRO;
+        if (obj.has("meio") && !obj.get("meio").isJsonNull()) {
+            meio = MeioPagamento.valueOf(obj.get("meio").getAsString());
+        }
+        BigDecimal total = BigDecimal.ZERO;
+        for (ItemCarrinho item : itens) {
+            total = total.add(item.getSubtotal());
+        }
+        pags.add(LancamentoPagamento.ok(meio, total));
+        return pags;
     }
 
     private static class ItemCarrinhoPayload {

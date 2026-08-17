@@ -9,6 +9,9 @@
 		"build": "electron-vite build",
 		"preview": "ELECTRON_DISABLE_SANDBOX=1 electron-vite preview",
 		"typecheck": "tsc --noEmit -p tsconfig.web.json && tsc --noEmit -p tsconfig.node.json",
+		"test:tecnibra": "node ../api/node_modules/tsx/dist/cli.mjs --test electron/integracao/tecnibra/xml.test.ts electron/integracao/tecnibra/escrever.test.ts",
+		"test:pagamento": "node ../api/node_modules/tsx/dist/cli.mjs --test electron/db/pagamento.test.ts",
+		"test:sitef": "node ../api/node_modules/tsx/dist/cli.mjs --test electron/integracao/sitef/mapeamento.test.ts electron/integracao/sitef/servico.test.ts electron/impressora/cupom-pagamentos.test.ts",
 		"postinstall": "electron-builder install-app-deps",
 		"pack:win": "npm run build && electron-builder --win"
 	},

@@ -42,6 +42,43 @@ export type MesaConsulta = {
 
 export type MeioPagamento = "DINHEIRO" | "PIX" | "CARTAO";
 
+export type StatusLancamentoPagamento = "ok" | "pendente" | "cancelado";
+
+export type LancamentoPagamento = {
+	id?: string;
+	meio: MeioPagamento;
+	valor: number;
+	nsu?: string | null;
+	autorizacao?: string | null;
+	bandeira?: string | null;
+	status?: StatusLancamentoPagamento;
+};
+
+export type SitefStatus = {
+	habilitado: boolean;
+	disponivel: boolean;
+	plataforma: string;
+	dllEncontrada: boolean;
+	dllPath: string | null;
+	portaPinPad?: string | null;
+	mensagem: string;
+};
+
+export type SitefPagarResultado = {
+	ok: boolean;
+	manual: boolean;
+	nsu?: string | null;
+	autorizacao?: string | null;
+	bandeira?: string | null;
+	mensagem?: string;
+};
+
+export type SitefCancelarResultado = {
+	ok: boolean;
+	manual: boolean;
+	mensagem?: string;
+};
+
 export type ModeloAtendimento = "mesa" | "comanda";
 
 export type StatusPdv = {

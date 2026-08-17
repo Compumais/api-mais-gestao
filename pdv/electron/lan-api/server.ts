@@ -5,6 +5,7 @@ import {
 	type ServerResponse,
 } from "node:http";
 import { getConfig } from "../db/database";
+import { lancamentosDeBody } from "../db/pagamento";
 import { obterSessao } from "../db/repos";
 import { localApi } from "../local-api";
 import { listarIpsLan } from "./ips";
@@ -264,10 +265,14 @@ async function despachar(
 
 	const contaFecharMatch = path.match(/^\/pos\/contas\/([^/]+)\/fechar$/);
 	if (method === "POST" && contaFecharMatch) {
-		const meio = meioDeBody(body);
+		const lancamentos = lancamentosDeBody(body);
 		return {
 			status: 200,
-			body: await localApi.fecharContaMesa(contaFecharMatch[1], meio),
+			body: await localApi.fecharContaMesa(
+				contaFecharMatch[1],
+				lancamentos.length ? lancamentos : meioDeBody(body),
+				body.troco != null ? Number(body.troco) : undefined,
+			),
 		};
 	}
 
@@ -283,11 +288,12 @@ async function despachar(
 				precototal: Number(i.precototal ?? 0),
 			};
 		});
+		const lancamentos = lancamentosDeBody(body);
 		return {
 			status: 200,
 			body: await localApi.criarVendaRapida({
 				itens,
-				meio: meioDeBody(body),
+				...(lancamentos.length ? { lancamentos } : { meio: meioDeBody(body) }),
 				troco: body.troco != null ? Number(body.troco) : undefined,
 			}),
 		};

@@ -30,6 +30,7 @@ import com.pos_mais_gestao.ui.OfflineBanner;
 import com.pos_mais_gestao.ui.config.ConfigActivity;
 import com.pos_mais_gestao.ui.pedido.PedidoActivity;
 import com.pos_mais_gestao.ui.pedido.PedidosActivity;
+import com.pos_mais_gestao.ui.venda.VendaActivity;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -125,6 +126,10 @@ public class MesasActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        if (item.getItemId() == R.id.action_venda_rapida) {
+            startActivity(new Intent(this, VendaActivity.class));
+            return true;
+        }
         if (item.getItemId() == R.id.action_config) {
             startActivity(new Intent(this, ConfigActivity.class));
             return true;

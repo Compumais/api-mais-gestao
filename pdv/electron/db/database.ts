@@ -252,6 +252,29 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 			);
 		}
 	}
+
+	const pagCols = await database.query<{ column_name: string }>(
+		`SELECT column_name
+		 FROM information_schema.columns
+		 WHERE table_schema = 'public' AND table_name = 'pagamento'`,
+	);
+	if (pagCols.rows.length) {
+		const pagNomes = new Set(pagCols.rows.map((c) => c.column_name));
+		if (!pagNomes.has("nsu")) {
+			await database.query("ALTER TABLE pagamento ADD COLUMN nsu TEXT");
+		}
+		if (!pagNomes.has("autorizacao")) {
+			await database.query("ALTER TABLE pagamento ADD COLUMN autorizacao TEXT");
+		}
+		if (!pagNomes.has("bandeira")) {
+			await database.query("ALTER TABLE pagamento ADD COLUMN bandeira TEXT");
+		}
+		if (!pagNomes.has("status")) {
+			await database.query(
+				"ALTER TABLE pagamento ADD COLUMN status TEXT NOT NULL DEFAULT 'ok'",
+			);
+		}
+	}
 }
 
 /** Host antigo do seed que aponta para o front, não para a API. */
@@ -278,6 +301,11 @@ async function seedDefaults(database: Pool): Promise<void> {
 		["certificado_senha", ""],
 		["lan_habilitada", "1"],
 		["lan_porta", "5050"],
+		["tecnibra_habilitada", "0"],
+		["tecnibra_xml_path", "C:\\Tecnibra\\IHM Receptora\\Comandas.xml"],
+		["tecnibra_intervalo_ms", "3000"],
+		["tecnibra_xml_root", "Comandas"],
+		["tecnibra_xml_item", "Comanda"],
 	];
 
 	for (const [chave, valor] of defaults) {

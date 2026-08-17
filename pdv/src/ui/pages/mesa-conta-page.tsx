@@ -8,7 +8,6 @@ import {
 import { pdvInvoke } from "@/lib/pdv-api";
 import {
 	type GrupoLocal,
-	type MeioPagamento,
 	type ProdutoLocal,
 	rotuloModelo,
 	type StatusContext,
@@ -16,6 +15,10 @@ import {
 import { produtoEhPizza } from "@/lib/pizza-meio-a-meio";
 import { money } from "@/lib/utils";
 import { BarcodeInput } from "@/ui/components/barcode-input";
+import {
+	DialogPagamentoMisto,
+	type FechamentoMisto,
+} from "@/ui/components/dialog-pagamento-misto";
 import {
 	DialogPizzaMeioAMeio,
 	type ItemPizzaMeioAMeio,
@@ -73,7 +76,6 @@ export function MesaContaPage() {
 	const [grupoAtivo, setGrupoAtivo] = useState<GrupoLocal | null>(null);
 	const [produtos, setProdutos] = useState<ProdutoLocal[]>([]);
 	const [fila, setFila] = useState<ItemFila[]>([]);
-	const [meio, setMeio] = useState<MeioPagamento>("DINHEIRO");
 	const [pagando, setPagando] = useState(false);
 	const [confirmandoSaida, setConfirmandoSaida] = useState(false);
 	const [rejeicaoNfce, setRejeicaoNfce] = useState<string | null>(null);
@@ -82,7 +84,6 @@ export function MesaContaPage() {
 	const [pronto, setPronto] = useState(false);
 	const [pizzaPrimeiro, setPizzaPrimeiro] = useState<ProdutoLocal | null>(null);
 
-	useEscapeFechaModal(pagando, () => setPagando(false));
 	useEscapeFechaModal(confirmandoSaida, () => setConfirmandoSaida(false));
 	useEscapeFechaModal(Boolean(rejeicaoNfce), () => setRejeicaoNfce(null));
 	useEscapeFechaModal(Boolean(pizzaPrimeiro), () => setPizzaPrimeiro(null));
@@ -304,7 +305,7 @@ export function MesaContaPage() {
 		}
 	}
 
-	async function finalizar() {
+	async function finalizar(fechamento: FechamentoMisto) {
 		if (!conta) return;
 		if (fila.length > 0) {
 			setMsg("Há itens na fila. Adicione-os à conta antes de receber.");
@@ -316,7 +317,7 @@ export function MesaContaPage() {
 			const result = await pdvInvoke<{
 				venda: { id: string };
 				fiscal: { modo: string; mensagem: string; cStat?: string };
-			}>("fecharContaMesa", conta.id, meio);
+			}>("fecharContaMesa", conta.id, fechamento.lancamentos, fechamento.troco);
 			setPagando(false);
 			if (result.fiscal.modo === "erro") {
 				setRejeicaoNfce(result.fiscal.mensagem);
@@ -626,46 +627,15 @@ export function MesaContaPage() {
 				</div>
 			)}
 
-			{pagando && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-					<div className="w-96 space-y-4 rounded-lg border bg-card p-5">
-						<h2 className="text-lg font-semibold">Selecione o pagamento</h2>
-						<div className="text-center text-3xl font-bold text-primary">
-							{money(total)}
-						</div>
-						<div className="grid grid-cols-3 gap-2">
-							{(["DINHEIRO", "PIX", "CARTAO"] as MeioPagamento[]).map((m) => (
-								<Button
-									key={m}
-									variant={meio === m ? "default" : "outline"}
-									onClick={() => setMeio(m)}
-								>
-									{m === "CARTAO"
-										? "Cartão"
-										: m.charAt(0) + m.slice(1).toLowerCase()}
-								</Button>
-							))}
-						</div>
-						<div className="flex gap-2">
-							<Button
-								variant="outline"
-								className="flex-1"
-								disabled={loading}
-								onClick={() => setPagando(false)}
-							>
-								Cancelar
-							</Button>
-							<Button
-								className="flex-1"
-								disabled={loading}
-								onClick={() => void finalizar()}
-							>
-								{loading ? "Finalizando..." : "Confirmar e imprimir DANFC-e"}
-							</Button>
-						</div>
-					</div>
-				</div>
-			)}
+			<DialogPagamentoMisto
+				aberto={pagando}
+				total={total}
+				loading={loading}
+				titulo="Receber / fechar conta"
+				confirmarLabel="Confirmar e imprimir DANFC-e"
+				onCancelar={() => setPagando(false)}
+				onConfirmar={(fechamento) => void finalizar(fechamento)}
+			/>
 
 			<FunctionBar
 				actions={[

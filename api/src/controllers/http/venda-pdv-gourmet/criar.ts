@@ -34,6 +34,18 @@ const criarVendaPdvGourmetBodySchema = z.object({
 			}),
 		)
 		.optional(),
+	pagamentos: z
+		.array(
+			z.object({
+				meio: z.enum(["DINHEIRO", "PIX", "CARTAO"]),
+				valor: z.union([z.string(), z.number()]),
+				nsu: z.string().nullable().optional(),
+				autorizacao: z.string().nullable().optional(),
+				bandeira: z.string().nullable().optional(),
+				status: z.enum(["ok", "pendente", "cancelado"]).optional(),
+			}),
+		)
+		.optional(),
 });
 
 export async function criarVendaPdvGourmet(
@@ -47,7 +59,7 @@ export async function criarVendaPdvGourmet(
 
 		const dadosValidados = criarVendaPdvGourmetBodySchema.parse(request.body);
 
-		const { pagamentosErp, ...dadosVenda } = dadosValidados;
+		const { pagamentosErp, pagamentos, ...dadosVenda } = dadosValidados;
 
 		const pagamentosErpNormalizados = pagamentosErp?.map((forma) => ({
 			idtipodocumentofinanceiro: forma.idtipodocumentofinanceiro,
@@ -57,10 +69,23 @@ export async function criarVendaPdvGourmet(
 					: Number.parseFloat(String(forma.valor).replace(",", ".")) || 0,
 		}));
 
+		const pagamentosNormalizados = pagamentos?.map((item) => ({
+			meio: item.meio,
+			valor:
+				typeof item.valor === "number"
+					? item.valor
+					: Number.parseFloat(String(item.valor).replace(",", ".")) || 0,
+			nsu: item.nsu ?? null,
+			autorizacao: item.autorizacao ?? null,
+			bandeira: item.bandeira ?? null,
+			status: item.status ?? "ok",
+		}));
+
 		const resultado = await criarVendaPdvGourmetService({
 			dadosVendaPdvGourmet: { id: uuidv4(), ...dadosVenda },
 			idusuario: request.user.id,
 			pagamentosErp: pagamentosErpNormalizados,
+			pagamentos: pagamentosNormalizados,
 		});
 
 		if (!resultado.success) {

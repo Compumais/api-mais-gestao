@@ -15,12 +15,18 @@ import {
 } from "../api/client";
 import { execute, getConfig, isBancoIndisponivelError } from "../db/database";
 import {
+	lancamentoUnico,
+	normalizarLancamentos,
+	normalizarMeioPagamento,
+	totaisParaSync,
+} from "../db/pagamento";
+import {
 	atualizarNumeracaoNfce,
 	atualizarVendaSync,
 	contarOutboxPendentes,
 	type ItemCarrinho,
+	type LancamentoPagamento,
 	listarOutboxPendentes,
-	type MeioPagamento,
 	marcarNfceTransmitida,
 	marcarOutboxConcluido,
 	marcarOutboxErro,
@@ -225,15 +231,12 @@ async function syncCriarVenda(
 	userid: string,
 ): Promise<void> {
 	const itens = payload.itens as ItemCarrinho[];
-	const meio = payload.meio as MeioPagamento;
 	const total = Number(payload.valortotal ?? 0);
 	const idlocal = String(payload.idlocal);
 	const numeropdv = Number(await getConfig("numeropdv", "1"));
-	const zero = 0;
 	const valortroco = Number(payload.valortroco ?? 0);
-	const valordinheiro = meio === "DINHEIRO" ? total : zero;
-	const valorpix = meio === "PIX" ? total : zero;
-	const valorcartaocredito = meio === "CARTAO" ? total : zero;
+	const pagamentos = resolverPagamentosPayload(payload, total);
+	const sync = totaisParaSync(pagamentos, valortroco);
 
 	const local = await obterVenda(idlocal);
 	// Já sincronizada no fluxo online — não recria na retaguarda.
@@ -247,13 +250,14 @@ async function syncCriarVenda(
 		usuarioquefechouvenda: userid,
 		vendalocal: 2,
 		valortotal: total,
-		valortroco,
-		valordinheiro,
-		valorpix,
-		valorcartaocredito,
-		valorcartaodebito: zero,
-		valorcartao: zero,
-		valorprepago: zero,
+		valortroco: sync.valortroco,
+		valordinheiro: sync.valordinheiro,
+		valorpix: sync.valorpix,
+		valorcartaocredito: sync.valorcartaocredito,
+		valorcartaodebito: sync.valorcartaodebito,
+		valorcartao: sync.valorcartao,
+		valorprepago: sync.valorprepago,
+		pagamentos,
 	});
 
 	await atualizarVendaSync(idlocal, {
@@ -293,13 +297,13 @@ async function syncCriarVenda(
 			})),
 			pagamentos: {
 				valortotal: total,
-				valortroco,
-				valordinheiro,
-				valorpix,
-				valorcartaocredito,
-				valorcartaodebito: zero,
-				valorcartao: zero,
-				valorprepago: zero,
+				valortroco: sync.valortroco,
+				valordinheiro: sync.valordinheiro,
+				valorpix: sync.valorpix,
+				valorcartaocredito: sync.valorcartaocredito,
+				valorcartaodebito: sync.valorcartaodebito,
+				valorcartao: sync.valorcartao,
+				valorprepago: sync.valorprepago,
 			},
 		});
 		const nfce = extrairNfceDaBaixa(baixa);
@@ -346,6 +350,22 @@ async function syncTransmitirContingencia(
 			nfce_status: result.transmitida ? "transmitida" : "contingencia",
 		});
 	}
+}
+
+function resolverPagamentosPayload(
+	payload: Record<string, unknown>,
+	total: number,
+): LancamentoPagamento[] {
+	const lista = normalizarLancamentos(
+		payload.pagamentos ?? payload.lancamentos,
+	);
+	if (lista.length) {
+		return lista;
+	}
+	if (payload.meio != null && total > 0) {
+		return [lancamentoUnico(normalizarMeioPagamento(payload.meio), total)];
+	}
+	return [];
 }
 
 export function iniciarSyncPeriodico(intervalMs = 30000): NodeJS.Timeout {
