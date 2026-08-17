@@ -81,6 +81,7 @@ import {
 	obterContaPorNumero,
 	obterMesa,
 	obterNfcePorVenda,
+	obterNumeracaoNfce,
 	obterSessao,
 	obterVenda,
 	salvarAtalhos as persistirAtalhosLocal,
@@ -138,7 +139,12 @@ import {
 	testarConexaoPrincipal,
 	validarIdentidadeAoSalvar,
 } from "../pdv-secundario/servico";
-import { processarOutbox, pullCatalogo, statusConexao } from "../sync/outbox";
+import {
+	processarOutbox,
+	pullCatalogo,
+	sincronizarFiscalPdv as puxarFiscalRetaguarda,
+	statusConexao,
+} from "../sync/outbox";
 
 export type {
 	LancamentoPagamento,
@@ -223,6 +229,9 @@ async function emitirNfceOnlineDaVenda(vendaId: string): Promise<{
 	cStat?: string;
 	erro?: string;
 	indisponivel?: boolean;
+	xml?: string;
+	serie?: string;
+	numero?: number;
 }> {
 	const online = await pingApi();
 	if (!online) {
@@ -305,6 +314,21 @@ async function emitirNfceOnlineDaVenda(vendaId: string): Promise<{
 			},
 		});
 		const nfce = extrairNfceDaBaixa(baixa);
+		if (nfce.emitida) {
+			const { persistirNfceOnlineLocal } = await import(
+				"../fiscal/persistir-nfce-online"
+			);
+			await persistirNfceOnlineLocal({
+				idvenda: vendaId,
+				idnotafiscal: nfce.idnotafiscal,
+				chave: nfce.chave,
+				qrCode: nfce.qrCode,
+				protocolo: nfce.protocolo,
+				xml: nfce.xml,
+				serie: nfce.serie,
+				numero: nfce.numero,
+			});
+		}
 		return {
 			ok: nfce.emitida,
 			chave: nfce.chave,
@@ -314,6 +338,9 @@ async function emitirNfceOnlineDaVenda(vendaId: string): Promise<{
 			cStat: nfce.cStat,
 			erro: nfce.erro,
 			indisponivel: !nfce.emitida && !nfce.erro,
+			xml: nfce.xml,
+			serie: nfce.serie,
+			numero: nfce.numero,
 		};
 	} catch (err) {
 		const indisponivel =
@@ -782,6 +809,30 @@ export const localApi = {
 			: await pullCatalogo();
 		const outbox = await processarOutbox();
 		return { pull, outbox, pendentes: await contarOutboxPendentes() };
+	},
+
+	async sincronizarFiscalPdv() {
+		if (await ehSecundario()) {
+			throw new Error("Sincronize o certificado no PDV principal.");
+		}
+		const resultado = await puxarFiscalRetaguarda();
+		if (!resultado.ok) {
+			throw new Error(resultado.erro ?? "Falha ao buscar dados fiscais");
+		}
+		return resultado;
+	},
+
+	async statusFiscalPdv() {
+		const numeracao = await obterNumeracaoNfce().catch(() => null);
+		return {
+			apelido: await getConfig("certificado_apelido", ""),
+			validade: await getConfig("certificado_validade", ""),
+			serie: numeracao?.serie ?? null,
+			proximoNumero: numeracao?.proximo_numero ?? null,
+			ultimaSync: await getConfig("fiscal_ultima_sync", ""),
+			erro: await getConfig("fiscal_sync_erro", ""),
+			caminho: await getConfig("certificado_path", ""),
+		};
 	},
 
 	async cargaLocal() {

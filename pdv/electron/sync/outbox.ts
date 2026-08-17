@@ -1,8 +1,12 @@
+import { mkdir, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+import { app } from "electron";
 import {
 	ApiError,
 	baixaEstoqueVenda,
 	buscarEmpresa,
 	buscarNfceConfig,
+	buscarPdvFiscal,
 	criarItemVendaPdv,
 	criarVendaPdv,
 	extrairNfceDaBaixa,
@@ -15,7 +19,12 @@ import {
 	substituirAtalhosRemotos,
 	transmitirNfceContingencia,
 } from "../api/client";
-import { execute, getConfig, isBancoIndisponivelError } from "../db/database";
+import {
+	execute,
+	getConfig,
+	isBancoIndisponivelError,
+	setConfig,
+} from "../db/database";
 import {
 	lancamentoUnico,
 	normalizarLancamentos,
@@ -104,11 +113,10 @@ export async function pullCatalogo(): Promise<{
 	}
 
 	const unidades = await listarUnidadesMedida(sessao.idempresa).catch(
-		() => [] as Array<{ id: string; codigo: string | null; nome: string | null }>,
+		() =>
+			[] as Array<{ id: string; codigo: string | null; nome: string | null }>,
 	);
-	const mapaUnidades = new Map(
-		unidades.map((u) => [u.id, u] as const),
-	);
+	const mapaUnidades = new Map(unidades.map((u) => [u.id, u] as const));
 
 	let page = 1;
 	let total = 0;
@@ -128,8 +136,7 @@ export async function pullCatalogo(): Promise<{
 				const unidade = p.idunidademedida
 					? mapaUnidades.get(p.idunidademedida)
 					: undefined;
-				const sigla =
-					unidade?.codigo?.trim() || unidade?.nome?.trim() || null;
+				const sigla = unidade?.codigo?.trim() || unidade?.nome?.trim() || null;
 				return { ...p, unidademedida: sigla };
 			}),
 		);
@@ -149,27 +156,30 @@ export async function pullCatalogo(): Promise<{
 	}
 
 	try {
-		const cfg = await buscarNfceConfig(sessao.idempresa);
-		const ambiente = Number(cfg.ambiente ?? 2);
-		const cscId = ambiente === 1 ? cfg.idcsc_producao : cfg.idcsc_homologacao;
-		const cscToken =
-			ambiente === 1 ? cfg.csctoken_producao : cfg.csctoken_homologacao;
-		let cnpj = cfg.cnpj ?? null;
-		let uf: string | null = null;
-		try {
-			const empresa = await buscarEmpresa(sessao.idempresa);
-			cnpj = empresa.cnpj ?? cnpj;
-			uf = empresa.uf ?? null;
-		} catch {
-			// empresa opcional
+		const fiscal = await sincronizarFiscalPdv();
+		if (!fiscal.ok) {
+			const cfg = await buscarNfceConfig(sessao.idempresa);
+			const ambiente = Number(cfg.ambiente ?? 2);
+			const cscId = ambiente === 1 ? cfg.idcsc_producao : cfg.idcsc_homologacao;
+			const cscToken =
+				ambiente === 1 ? cfg.csctoken_producao : cfg.csctoken_homologacao;
+			let cnpj = cfg.cnpj ?? null;
+			let uf: string | null = null;
+			try {
+				const empresa = await buscarEmpresa(sessao.idempresa);
+				cnpj = empresa.cnpj ?? cnpj;
+				uf = empresa.uf ?? null;
+			} catch {
+				// empresa opcional
+			}
+			await atualizarNumeracaoNfce({
+				csc_id: cscId ?? null,
+				csc_token: cscToken ?? null,
+				ambiente,
+				cnpj,
+				uf,
+			});
 		}
-		await atualizarNumeracaoNfce({
-			csc_id: cscId ?? null,
-			csc_token: cscToken ?? null,
-			ambiente,
-			cnpj,
-			uf,
-		});
 	} catch {
 		// config NFC-e opcional no pull
 	}
@@ -186,6 +196,68 @@ export async function pullCatalogo(): Promise<{
 		grupos: totalGrupos,
 		gruposGourmet: totalGruposGourmet,
 	};
+}
+
+async function gravarCertificadoPfx(
+	pfxBase64: string,
+	senha: string,
+): Promise<void> {
+	const dir = join(app.getPath("userData"), "certificados");
+	await mkdir(dir, { recursive: true });
+	const caminho = join(dir, "nfce.pfx");
+	await writeFile(caminho, Buffer.from(pfxBase64, "base64"));
+	await setConfig("certificado_path", caminho);
+	await setConfig("certificado_senha", senha);
+}
+
+export async function sincronizarFiscalPdv(): Promise<{
+	ok: boolean;
+	erro?: string;
+}> {
+	const sessao = await obterSessao();
+	if (!sessao.idempresa || !sessao.token) {
+		return { ok: false, erro: "Sessão inválida" };
+	}
+
+	const numeropdv = Math.max(1, Number(await getConfig("numeropdv", "1")) || 1);
+
+	try {
+		const fiscal = await buscarPdvFiscal(sessao.idempresa, numeropdv);
+		const serie = Number(fiscal.serie);
+		await atualizarNumeracaoNfce({
+			...(Number.isFinite(serie) && serie > 0 ? { serie } : {}),
+			proximo_numero: fiscal.numeroproximo,
+			csc_id: fiscal.csc_id,
+			csc_token: fiscal.csc_token,
+			ambiente: fiscal.ambiente,
+			cnpj: fiscal.cnpj,
+			uf: fiscal.uf,
+		});
+
+		if (fiscal.certificado?.pfxBase64) {
+			await gravarCertificadoPfx(
+				fiscal.certificado.pfxBase64,
+				fiscal.certificado.senha,
+			);
+			await setConfig("certificado_apelido", fiscal.certificado.apelido);
+			await setConfig(
+				"certificado_validade",
+				fiscal.certificado.validadefim ?? "",
+			);
+		} else {
+			await setConfig("certificado_apelido", "");
+			await setConfig("certificado_validade", "");
+		}
+
+		await setConfig("fiscal_sync_erro", "");
+		await setConfig("fiscal_ultima_sync", new Date().toISOString());
+		return { ok: true };
+	} catch (err) {
+		const erro =
+			err instanceof Error ? err.message : "Falha ao buscar dados fiscais";
+		await setConfig("fiscal_sync_erro", erro);
+		return { ok: false, erro };
+	}
 }
 
 export async function processarOutbox(): Promise<{
@@ -337,6 +409,19 @@ async function syncCriarVenda(
 		const nfce = extrairNfceDaBaixa(baixa);
 		if (nfce.emitida) {
 			await atualizarVendaSync(idlocal, { nfce_status: "autorizada" });
+			const { persistirNfceOnlineLocal } = await import(
+				"../fiscal/persistir-nfce-online"
+			);
+			await persistirNfceOnlineLocal({
+				idvenda: idlocal,
+				idnotafiscal: nfce.idnotafiscal,
+				chave: nfce.chave,
+				qrCode: nfce.qrCode,
+				protocolo: nfce.protocolo,
+				xml: nfce.xml,
+				serie: nfce.serie,
+				numero: nfce.numero,
+			});
 		} else if (nfce.erro) {
 			await atualizarVendaSync(idlocal, { nfce_status: "erro" });
 		}

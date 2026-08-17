@@ -2,17 +2,12 @@ import { v4 as uuidv4 } from "uuid";
 import type { HttpResponse } from "@/model/http-model.js";
 import type { NovaNotaFiscal } from "@/model/nota-fiscal-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { avancarNumeroproximoSerieSeNecessario } from "@/repositories/nfe-serie-repositories.js";
 import { criarNotaFiscalComItens } from "@/repositories/nota-fiscal-repositories.js";
 import { arquivarXmlNotaFiscal } from "@/service/nota-fiscal/arquivar-xml-nota-fiscal.js";
-import {
-	hojeBrasiliaIsoDate,
-} from "@/util/data-hora-brasilia.js";
+import { hojeBrasiliaIsoDate } from "@/util/data-hora-brasilia.js";
+import { httpBadRequest, httpCriacao, httpProibido } from "@/util/http-util.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
-import {
-	httpCriacao,
-	httpProibido,
-	httpBadRequest,
-} from "@/util/http-util.js";
 
 export type TransmitirNfceContingenciaParametros = {
 	idusuario: string;
@@ -88,6 +83,13 @@ export async function transmitirNfceContingenciaService({
 	};
 
 	await criarNotaFiscalComItens(dadosNota, []);
+
+	await avancarNumeroproximoSerieSeNecessario(
+		idempresa,
+		"65",
+		String(serie),
+		numero,
+	);
 
 	if (chave) {
 		await arquivarXmlNotaFiscal({

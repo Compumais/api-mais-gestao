@@ -19,13 +19,13 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { NFCE_CONFIG_PADRAO_LABEL } from "@/constants/nfce-config-padrao";
 import {
 	atualizarMeioPagamentoNfce,
 	MEIOS_PAGAMENTO_NFCE_PADRAO,
 	normalizarMeiosPagamentoNfce,
 	resolverValorMeioPagamentoNfce,
 } from "@/constants/meios-pagamento-nfce";
+import { NFCE_CONFIG_PADRAO_LABEL } from "@/constants/nfce-config-padrao";
 import { MEIOS_PAGAMENTO_PDV } from "@/lib/gourmet-utils";
 import {
 	type NfceConfiguracaoFormData,
@@ -33,6 +33,7 @@ import {
 } from "@/schemas/nfce-configuracao.schema";
 import { nfceConfiguracaoService } from "@/services/nfce-configuracao.service";
 import { NfeSeriesSection } from "./nfe-series-section";
+import { TerminaisPdvSection } from "./terminais-pdv-section";
 
 interface NfceConfiguracaoFormProps {
 	idempresa: string;
@@ -415,6 +416,8 @@ export function NfceConfiguracaoForm({ idempresa }: NfceConfiguracaoFormProps) {
 				descricao="Numeração utilizada pelo PDV na emissão de cupons fiscais eletrônicos."
 				queryKey="nfce-series"
 			/>
+
+			<TerminaisPdvSection idempresa={idempresa} />
 		</div>
 	);
 }

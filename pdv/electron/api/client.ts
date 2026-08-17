@@ -467,6 +467,9 @@ export async function baixaEstoqueVenda(body: {
 			cStat?: string;
 			xMotivo?: string;
 			erro?: string;
+			xml?: string;
+			serie?: string;
+			numero?: number;
 			pendencias?: Array<{ codigo?: string; mensagem: string }>;
 		};
 		nfce?: {
@@ -515,6 +518,9 @@ export function extrairNfceDaBaixa(
 	idnotafiscal?: string;
 	cStat?: string;
 	erro?: string;
+	xml?: string;
+	serie?: string;
+	numero?: number;
 } {
 	const nfce = baixa.emissaoNfce ?? baixa.nfce;
 	const pendencias = baixa.emissaoNfce?.pendencias
@@ -552,6 +558,19 @@ export function extrairNfceDaBaixa(
 		}
 	}
 
+	const xml =
+		nfce && "xml" in nfce
+			? ((nfce as { xml?: string }).xml ?? undefined)
+			: undefined;
+	const serie =
+		nfce && "serie" in nfce
+			? ((nfce as { serie?: string }).serie ?? undefined)
+			: undefined;
+	const numero =
+		nfce && "numero" in nfce
+			? ((nfce as { numero?: number }).numero ?? undefined)
+			: undefined;
+
 	return {
 		emitida,
 		chave: nfce?.chave,
@@ -561,16 +580,58 @@ export function extrairNfceDaBaixa(
 			baixa.emissaoNfce?.idnotafiscal ?? baixa.idnotafiscal ?? undefined,
 		cStat,
 		erro,
+		xml,
+		serie,
+		numero,
 	};
 }
 
 export async function buscarCupomNfce(idnotafiscal: string) {
-	return request<{
+	const data = await request<{
 		chave?: string;
 		qrCode?: string;
 		xml?: string;
 		protocolo?: string;
+		nfce?: {
+			chave?: string;
+			qrCode?: string;
+			xml?: string;
+			protocolo?: string;
+			serie?: string;
+			numero?: number;
+		};
 	}>(`/nfce/${idnotafiscal}/cupom`);
+	return {
+		chave: data.nfce?.chave ?? data.chave,
+		qrCode: data.nfce?.qrCode ?? data.qrCode,
+		xml: data.nfce?.xml ?? data.xml,
+		protocolo: data.nfce?.protocolo ?? data.protocolo,
+		serie: data.nfce?.serie,
+		numero: data.nfce?.numero,
+	};
+}
+
+export async function buscarPdvFiscal(idempresa: string, numeropdv: number) {
+	return request<{
+		numeropdv: number;
+		descricao: string | null;
+		ativo: boolean;
+		ambiente: number;
+		csc_id: string | null;
+		csc_token: string | null;
+		cnpj: string | null;
+		uf: string | null;
+		serie: string;
+		numeroproximo: number;
+		certificado: {
+			apelido: string;
+			cnpjcertificado: string;
+			validadeinicio: string | null;
+			validadefim: string | null;
+			pfxBase64: string;
+			senha: string;
+		} | null;
+	}>(`/empresas/${idempresa}/pdv-fiscal?numeropdv=${numeropdv}`);
 }
 
 export async function buscarNfceConfig(idempresa: string) {

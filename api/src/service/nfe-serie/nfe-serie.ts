@@ -1,12 +1,15 @@
 import { v4 as uuidv4 } from "uuid";
-import type { NfeSerie } from "@/model/nfe-emissao-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
+import type { NfeSerie } from "@/model/nfe-emissao-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
-import { buscarNfceConfiguracaoPorEmpresa } from "@/repositories/nfce-configuracao-repositories.js";
-import { buscarNfeConfiguracaoPorEmpresa } from "@/repositories/nfe-configuracao-repositories.js";
-import { atualizarNfceConfiguracao } from "@/repositories/nfce-configuracao-repositories.js";
-import { atualizarNfeConfiguracao } from "@/repositories/nfe-configuracao-repositories.js";
-import { contarNotasFiscaisPorSerie } from "@/repositories/nota-fiscal-repositories.js";
+import {
+	atualizarNfceConfiguracao,
+	buscarNfceConfiguracaoPorEmpresa,
+} from "@/repositories/nfce-configuracao-repositories.js";
+import {
+	atualizarNfeConfiguracao,
+	buscarNfeConfiguracaoPorEmpresa,
+} from "@/repositories/nfe-configuracao-repositories.js";
 import {
 	atualizarNfeSerie,
 	buscarNfeSerieDuplicada,
@@ -16,6 +19,8 @@ import {
 	excluirNfeSerie,
 	listarNfeSeriesPorEmpresa,
 } from "@/repositories/nfe-serie-repositories.js";
+import { contarNotasFiscaisPorSerie } from "@/repositories/nota-fiscal-repositories.js";
+import { buscarTerminalPdvPorSerie } from "@/repositories/terminal-pdv-repositories.js";
 import {
 	httpBadRequest,
 	httpCriacao,
@@ -44,7 +49,9 @@ export async function listarNfeSeriesService({
 	idempresa,
 	idusuario,
 	modelo,
-}: ParametrosBase & { modelo?: string }): Promise<HttpResponse<{ data: NfeSerie[] }>> {
+}: ParametrosBase & { modelo?: string }): Promise<
+	HttpResponse<{ data: NfeSerie[] }>
+> {
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
 		idusuario,
 		idempresa,
@@ -146,10 +153,7 @@ export async function atualizarNfeSerieService({
 	}
 
 	if (dados.padrao) {
-		await desmarcarSeriesPadrao(
-			idempresa,
-			dados.modelo ?? existente.modelo,
-		);
+		await desmarcarSeriesPadrao(idempresa, dados.modelo ?? existente.modelo);
 	}
 
 	const registro = await atualizarNfeSerie(id, {
@@ -181,6 +185,13 @@ export async function excluirNfeSerieService({
 	const existente = await buscarNfeSeriePorId(id);
 	if (!existente || existente.idempresa !== idempresa) {
 		return httpNaoEncontrado();
+	}
+
+	const terminalVinculado = await buscarTerminalPdvPorSerie(id);
+	if (terminalVinculado) {
+		return httpBadRequest(
+			"Não é possível excluir uma série vinculada a um terminal PDV",
+		);
 	}
 
 	const notasVinculadas = await contarNotasFiscaisPorSerie(id);
@@ -220,7 +231,8 @@ export async function excluirNfeSerieService({
 			idempresa,
 			existente.modelo,
 		);
-		const proximaPadrao = restantes.find((serie) => serie.ativo) ?? restantes[0];
+		const proximaPadrao =
+			restantes.find((serie) => serie.ativo) ?? restantes[0];
 		if (proximaPadrao) {
 			await atualizarNfeSerie(proximaPadrao.id, {
 				padrao: true,

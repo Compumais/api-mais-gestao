@@ -110,6 +110,7 @@ export * from "./tables/servicos-nfse.js";
 export * from "./tables/sessoes.js";
 export * from "./tables/tarefa-execucao.js";
 export * from "./tables/taxauf.js";
+export * from "./tables/terminal-pdv.js";
 export * from "./tables/tipo-documento-financeiro.js";
 export * from "./tables/tipo-problema.js";
 export * from "./tables/unidade-medida.js";

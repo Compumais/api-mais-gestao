@@ -5,7 +5,10 @@ import { db } from "./connection";
 export type NfeSerie = typeof nfeserie.$inferSelect;
 export type NovaNfeSerie = typeof nfeserie.$inferInsert;
 
-export async function listarNfeSeriesPorEmpresa(idempresa: string, modelo?: string) {
+export async function listarNfeSeriesPorEmpresa(
+	idempresa: string,
+	modelo?: string,
+) {
 	const where = [eq(nfeserie.idempresa, idempresa)];
 	if (modelo) {
 		where.push(eq(nfeserie.modelo, modelo));
@@ -47,7 +50,10 @@ export async function criarNfeSerie(dados: NovaNfeSerie) {
 	return registro;
 }
 
-export async function atualizarNfeSerie(id: string, dados: Partial<NovaNfeSerie>) {
+export async function atualizarNfeSerie(
+	id: string,
+	dados: Partial<NovaNfeSerie>,
+) {
 	const [registro] = await db
 		.update(nfeserie)
 		.set(dados)
@@ -82,9 +88,7 @@ export async function desmarcarSeriesPadrao(idempresa: string, modelo: string) {
 	await db
 		.update(nfeserie)
 		.set({ padrao: false, atualizadoem: new Date().toISOString() })
-		.where(
-			and(eq(nfeserie.idempresa, idempresa), eq(nfeserie.modelo, modelo)),
-		);
+		.where(and(eq(nfeserie.idempresa, idempresa), eq(nfeserie.modelo, modelo)));
 }
 
 export async function buscarNfeSeriePorNumeroSerie(
@@ -130,6 +134,45 @@ export async function reservarProximoNumeroSerie(id: string) {
 			.where(eq(nfeserie.id, id));
 
 		return { ...serie, numeroReservado };
+	});
+}
+
+export async function avancarNumeroproximoSerieSeNecessario(
+	idempresa: string,
+	modelo: string,
+	serie: string,
+	numeroUsado: number,
+) {
+	if (!Number.isFinite(numeroUsado) || numeroUsado < 1) {
+		return;
+	}
+
+	return db.transaction(async (tx) => {
+		const [registro] = await tx
+			.select()
+			.from(nfeserie)
+			.where(
+				and(
+					eq(nfeserie.idempresa, idempresa),
+					eq(nfeserie.modelo, modelo),
+					eq(nfeserie.serie, serie),
+				),
+			)
+			.for("update");
+
+		if (!registro) {
+			return;
+		}
+
+		if (numeroUsado >= registro.numeroproximo) {
+			await tx
+				.update(nfeserie)
+				.set({
+					numeroproximo: numeroUsado + 1,
+					atualizadoem: new Date().toISOString(),
+				})
+				.where(eq(nfeserie.id, registro.id));
+		}
 	});
 }
 

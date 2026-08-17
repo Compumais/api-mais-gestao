@@ -2343,6 +2343,9 @@ export async function obterNfcePorVenda(idvenda: string): Promise<{
 	qrcode: string | null;
 	status: string;
 	tpemis: number;
+	xml: string | null;
+	serie: number;
+	numero: number;
 	motivo_contingencia: string | null;
 } | null> {
 	return (
@@ -2352,12 +2355,63 @@ export async function obterNfcePorVenda(idvenda: string): Promise<{
 			qrcode: string | null;
 			status: string;
 			tpemis: number;
+			xml: string | null;
+			serie: number;
+			numero: number;
 			motivo_contingencia: string | null;
 		}>(
-			`SELECT id, chave, qrcode, status, tpemis, motivo_contingencia
+			`SELECT id, chave, qrcode, status, tpemis, xml, serie, numero, motivo_contingencia
 			 FROM nfce_local WHERE idvenda = $1 ORDER BY criadoem DESC LIMIT 1`,
 			[idvenda],
 		)) ?? null
+	);
+}
+
+export async function atualizarNfceLocalCampos(
+	id: string,
+	dados: {
+		xml?: string | null;
+		chave?: string | null;
+		qrcode?: string | null;
+		protocolo?: string | null;
+		serie?: number;
+		numero?: number;
+		status?: string;
+		transmitida?: boolean;
+	},
+): Promise<void> {
+	const atual = await queryOne<{
+		xml: string | null;
+		chave: string | null;
+		qrcode: string | null;
+		protocolo: string | null;
+		serie: number;
+		numero: number;
+		status: string;
+		transmitida: number;
+	}>(
+		`SELECT xml, chave, qrcode, protocolo, serie, numero, status, transmitida FROM nfce_local WHERE id = $1`,
+		[id],
+	);
+	if (!atual) return;
+	await execute(
+		`UPDATE nfce_local SET xml = $1, chave = $2, qrcode = $3, protocolo = $4,
+			serie = $5, numero = $6, status = $7, transmitida = $8 WHERE id = $9`,
+		[
+			dados.xml ?? atual.xml,
+			dados.chave ?? atual.chave,
+			dados.qrcode ?? atual.qrcode,
+			dados.protocolo ?? atual.protocolo,
+			dados.serie ?? atual.serie,
+			dados.numero ?? atual.numero,
+			dados.status ?? atual.status,
+			dados.transmitida != null
+				? dados.transmitida
+					? 1
+					: 0
+				: atual.transmitida,
+			id,
+		],
 	);
 }
 
