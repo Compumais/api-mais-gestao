@@ -47,7 +47,11 @@ Opcional (instalador offline, sem download na maquina do cliente):
 }
 
 Write-Host "Compilando $iss com $iscc"
-& $iscc $iss
+$pkgPath = [System.IO.Path]::GetFullPath((Join-Path $installerDir "..\package.json"))
+$pkg = Get-Content -LiteralPath $pkgPath -Raw -Encoding UTF8 | ConvertFrom-Json
+$versao = [string]$pkg.version
+Write-Host "Versao do PDV: $versao"
+& $iscc "/DMyAppVersion=$versao" $iss
 if ($LASTEXITCODE -ne 0) {
 	throw "ISCC falhou com codigo $LASTEXITCODE"
 }

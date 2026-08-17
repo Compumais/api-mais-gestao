@@ -114,7 +114,7 @@ $psql = Get-PsqlPath
 $pgBin = if ($psql) { Split-Path $psql -Parent } else { Join-Path $Prefix "bin" }
 
 if (Test-PgReady $pgBin) {
-	Write-Log "PostgreSQL ja responde em 127.0.0.1:${Port}"
+	Write-Log "PostgreSQL ja responde em 127.0.0.1:${Port} — o cluster sera preservado"
 } else {
 	if (-not (Test-Path $InstallerExe)) {
 		throw "Instalador do PostgreSQL nao encontrado: $InstallerExe"

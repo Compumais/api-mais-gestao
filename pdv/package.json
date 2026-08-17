@@ -1,6 +1,6 @@
 {
 	"name": "pdv-mais-gestao",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"private": true,
 	"description": "PDV Híbrido Desktop Mais Gestão (Electron + PostgreSQL local)",
 	"main": "./out/main/index.js",
