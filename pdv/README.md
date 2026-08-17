@@ -67,13 +67,15 @@ Disparo manual (depois de enviar o código):
 
 ```bash
 gh workflow run "PDV instalador"
-# ou, a partir de pdv/:
+# Linux:
 bash scripts/gerar-instalador.sh
+# Windows:
+scripts\gerar-instalador.bat
 ```
 
 Também roda ao publicar a tag `pdv-v*` (exemplo: `git tag pdv-v0.1.2 && git push origin pdv-v0.1.2`), e nesse caso cria um GitHub Release com os arquivos.
 
-No Windows local, o equivalente é `npm run pack:release`.
+No Windows, para gerar neste computador (sem GitHub Actions): `scripts\gerar-instalador.bat local` ou `npm run pack:release`.
 
 Se o PDV já estiver instalado, o setup compara a versão: pacote mais antigo é recusado; mesma versão repara os arquivos; versão mais nova só atualiza o aplicativo e **preserva o PostgreSQL e os dados**.
 
