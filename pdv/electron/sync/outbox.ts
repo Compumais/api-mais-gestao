@@ -370,6 +370,16 @@ function resolverPagamentosPayload(
 
 export function iniciarSyncPeriodico(intervalMs = 30000): NodeJS.Timeout {
 	return setInterval(() => {
-		void processarOutbox();
+		void (async () => {
+			try {
+				const { sincronizarSecundarioPeriodico } = await import(
+					"../pdv-secundario/servico"
+				);
+				await sincronizarSecundarioPeriodico();
+			} catch {
+				// status do principal já fica no cache
+			}
+			void processarOutbox();
+		})();
 	}, intervalMs);
 }

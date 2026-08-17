@@ -9,6 +9,10 @@ import {
 } from "@/lib/pdv-types";
 import { produtoEhPizza } from "@/lib/pizza-meio-a-meio";
 import { money } from "@/lib/utils";
+import {
+	AvisoSecundario,
+	secundarioDesconectado,
+} from "@/ui/components/aviso-secundario";
 import { BarcodeInput } from "@/ui/components/barcode-input";
 import {
 	DialogPagamentoMisto,
@@ -37,6 +41,7 @@ export function BalcaoPage() {
 	const navigate = useNavigate();
 	const { status } = useOutletContext<StatusContext>();
 	const rotulo = rotuloModelo(status?.modeloAtendimento);
+	const bloqueado = secundarioDesconectado(status);
 	const [grupos, setGrupos] = useState<GrupoLocal[]>([]);
 	const [atalhos, setAtalhos] = useState<ProdutoLocal[]>([]);
 	const [grupoAtivo, setGrupoAtivo] = useState<GrupoLocal | null>(null);
@@ -164,6 +169,13 @@ export function BalcaoPage() {
 	}
 
 	async function finalizar(fechamento: FechamentoMisto) {
+		if (bloqueado) {
+			setMsg(
+				status?.principalErro ?? "PDV principal offline. Operação bloqueada.",
+			);
+			setPagando(false);
+			return;
+		}
 		if (!itens.length) return;
 		setLoading(true);
 		try {
@@ -207,6 +219,7 @@ export function BalcaoPage() {
 
 			<div className="grid flex-1 grid-cols-[1fr_360px] gap-3 overflow-hidden p-3">
 				<div className="flex flex-col gap-3 overflow-hidden rounded-lg border bg-card p-3">
+					<AvisoSecundario status={status} />
 					<BarcodeInput onScan={(codigo) => void onBip(codigo)} />
 
 					{!grupoAtivo ? (

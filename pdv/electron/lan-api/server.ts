@@ -4,13 +4,27 @@ import {
 	type Server,
 	type ServerResponse,
 } from "node:http";
-import { getConfig } from "../db/database";
+import { getAllConfig, getConfig } from "../db/database";
 import { lancamentosDeBody } from "../db/pagamento";
 import { obterSessao } from "../db/repos";
 import { localApi } from "../local-api";
+import {
+	handshakeTerminal,
+	tokenTerminalValido,
+} from "../pdv-secundario/registro";
+import {
+	extrairConfigNegocio,
+	normalizarModoPdv,
+	parseNumeroPdv,
+} from "../pdv-secundario/regras";
 import { listarIpsLan } from "./ips";
 
-const ROTAS_PUBLICAS = new Set(["GET /pos/health", "POST /pos/login"]);
+const ROTAS_PUBLICAS = new Set([
+	"GET /pos/health",
+	"POST /pos/login",
+	"GET /pos/pdv/identidade",
+	"POST /pos/pdv/handshake",
+]);
 
 let server: Server | null = null;
 let portaAtual = 0;
@@ -25,6 +39,17 @@ export async function startLanServer(): Promise<{
 	ips: string[];
 	motivo?: string;
 }> {
+	const modo = normalizarModoPdv(await getConfig("pdv_modo", "principal"));
+	if (modo === "secundario") {
+		await stopLanServer();
+		return {
+			ok: false,
+			porta: 0,
+			ips: [],
+			motivo: "PDV secundário não expõe API LAN",
+		};
+	}
+
 	const habilitada = (await getConfig("lan_habilitada", "1")) === "1";
 	if (!habilitada) {
 		await stopLanServer();
@@ -123,6 +148,9 @@ async function autorizar(req: IncomingMessage): Promise<boolean> {
 	if (!token) {
 		return false;
 	}
+	if (await tokenTerminalValido(token)) {
+		return true;
+	}
 	const sessao = await obterSessao();
 	return Boolean(sessao.token && sessao.token === token);
 }
@@ -134,6 +162,50 @@ async function despachar(
 ): Promise<{ status: number; body: unknown } | undefined> {
 	if (method === "GET" && path === "/pos/health") {
 		return { status: 200, body: await localApi.health() };
+	}
+
+	if (method === "GET" && path === "/pos/pdv/identidade") {
+		const numeropdv = parseNumeroPdv(await getConfig("numeropdv", "1")) || 1;
+		return {
+			status: 200,
+			body: {
+				app: "pdv-mais-gestao",
+				modo: normalizarModoPdv(await getConfig("pdv_modo", "principal")),
+				numeropdv,
+				lanPorta:
+					portaAtual || Number(await getConfig("lan_porta", "5050")) || 5050,
+			},
+		};
+	}
+
+	if (method === "POST" && path === "/pos/pdv/handshake") {
+		const numeroPrincipal =
+			parseNumeroPdv(await getConfig("numeropdv", "1")) || 1;
+		const result = await handshakeTerminal({
+			numeropdv: String(body.numeropdv ?? ""),
+			identificador: String(body.identificador ?? ""),
+			numeroPrincipal,
+		});
+		return {
+			status: 200,
+			body: {
+				ok: true,
+				token: result.token,
+				numeropdv: result.numeropdv,
+				numeropdvPrincipal: numeroPrincipal,
+			},
+		};
+	}
+
+	if (method === "GET" && path === "/pos/pdv/config-negocio") {
+		return {
+			status: 200,
+			body: { config: extrairConfigNegocio(await getAllConfig()) },
+		};
+	}
+
+	if (method === "GET" && path === "/pos/pdv/catalogo") {
+		return { status: 200, body: await localApi.catalogoCarga() };
 	}
 
 	if (method === "POST" && path === "/pos/login") {
@@ -357,7 +429,12 @@ function meioDeBody(
 
 function statusDeErro(err: unknown): number {
 	const mensagem = err instanceof Error ? err.message : "";
-	if (/abra o caixa/i.test(mensagem) || /nenhum caixa aberto/i.test(mensagem)) {
+	if (
+		/abra o caixa/i.test(mensagem) ||
+		/nenhum caixa aberto/i.test(mensagem) ||
+		(err instanceof Error && err.name === "NumeroPdvDuplicadoError") ||
+		/já existe um PDV|é o do PDV principal/i.test(mensagem)
+	) {
 		return 409;
 	}
 	if (/não autoriz|sessão/i.test(mensagem)) {

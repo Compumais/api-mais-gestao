@@ -91,6 +91,16 @@ import {
 	syncTecnibra,
 } from "../integracao/tecnibra/servico";
 import { listarIpsLan } from "../lan-api/ips";
+import { assertNumeroPrincipalLivre } from "../pdv-secundario/registro";
+import { normalizarModoPdv, parseNumeroPdv } from "../pdv-secundario/regras";
+import {
+	ehSecundario,
+	garantirOperacaoSecundario,
+	puxarDoPrincipal,
+	statusPrincipalCache,
+	testarConexaoPrincipal,
+	validarIdentidadeAoSalvar,
+} from "../pdv-secundario/servico";
 import { processarOutbox, pullCatalogo, statusConexao } from "../sync/outbox";
 
 export type {
@@ -228,6 +238,8 @@ export const localApi = {
 		const conexao = await statusConexao();
 		const sessao = await obterSessao();
 		const caixa = await caixaAberto();
+		const modo = normalizarModoPdv(await getConfig("pdv_modo", "principal"));
+		const principal = modo === "secundario" ? statusPrincipalCache() : null;
 		return {
 			...conexao,
 			sessao: {
@@ -244,6 +256,9 @@ export const localApi = {
 					: "mesa",
 			qtdMesas: Math.max(1, Number(await getConfig("qtd_mesas", "20")) || 20),
 			numeropdv: Math.max(1, Number(await getConfig("numeropdv", "1")) || 1),
+			modo,
+			principalOnline: principal ? principal.online : null,
+			principalErro: principal?.erro ?? null,
 		};
 	},
 
@@ -273,12 +288,19 @@ export const localApi = {
 
 	async selecionarEmpresa(idempresa: string, nomeempresa: string) {
 		await salvarSessao({ idempresa, nomeempresa });
-		const pull = await pullCatalogo().catch(() => ({
-			produtos: 0,
-			atalhos: 0,
-			grupos: 0,
-			gruposGourmet: 0,
-		}));
+		const pull = (await ehSecundario())
+			? await puxarDoPrincipal().catch(() => ({
+					produtos: 0,
+					atalhos: 0,
+					grupos: 0,
+					gruposGourmet: 0,
+				}))
+			: await pullCatalogo().catch(() => ({
+					produtos: 0,
+					atalhos: 0,
+					grupos: 0,
+					gruposGourmet: 0,
+				}));
 		void processarOutbox();
 		return { ok: true, pull };
 	},
@@ -310,12 +332,31 @@ export const localApi = {
 				await reconectarDb();
 			}
 		}
+		if (Object.keys(resto).length) {
+			await validarIdentidadeAoSalvar(resto);
+			const modo = normalizarModoPdv(
+				resto.pdv_modo ?? (await getConfig("pdv_modo", "principal")),
+			);
+			if (modo === "principal" && resto.numeropdv !== undefined) {
+				const numero = parseNumeroPdv(resto.numeropdv);
+				if (numero) {
+					await assertNumeroPrincipalLivre(numero);
+				}
+			}
+		}
 		const saved = Object.keys(resto).length
 			? await salvarConfiguracoes(resto)
 			: {};
-		if (resto.lan_habilitada !== undefined || resto.lan_porta !== undefined) {
+		if (
+			resto.lan_habilitada !== undefined ||
+			resto.lan_porta !== undefined ||
+			resto.pdv_modo !== undefined
+		) {
 			const { restartLanServer } = await import("../lan-api/server");
 			await restartLanServer();
+		}
+		if (await ehSecundario()) {
+			await puxarDoPrincipal().catch(() => undefined);
 		}
 		if (
 			resto.tecnibra_habilitada !== undefined ||
@@ -463,9 +504,24 @@ export const localApi = {
 	},
 
 	async syncAgora() {
-		const pull = await pullCatalogo();
+		const pull = (await ehSecundario())
+			? await puxarDoPrincipal()
+			: await pullCatalogo();
 		const outbox = await processarOutbox();
 		return { pull, outbox, pendentes: await contarOutboxPendentes() };
+	},
+
+	async testarPrincipal(params: {
+		host: string;
+		porta: string;
+		numeropdv: string;
+	}) {
+		return testarConexaoPrincipal(params);
+	},
+
+	async conectarPrincipal() {
+		const { conectarNoPrincipal } = await import("../pdv-secundario/servico");
+		return conectarNoPrincipal();
 	},
 
 	async criarVendaRapida(input: {
@@ -478,6 +534,7 @@ export const localApi = {
 		const lancamentos = input.lancamentos?.length
 			? input.lancamentos
 			: [lancamentoUnico(input.meio ?? "DINHEIRO", total)];
+		await garantirOperacaoSecundario();
 		const venda = await criarVendaRapida({
 			itens: input.itens,
 			lancamentos,
@@ -541,6 +598,7 @@ export const localApi = {
 	},
 
 	async abrirContaMesa(numero: number, nomecliente?: string) {
+		await garantirOperacaoSecundario();
 		const conta = await abrirContaMesa(numero, nomecliente);
 		avisarTecnibra();
 		return conta;
@@ -559,6 +617,7 @@ export const localApi = {
 			precounitario: number;
 		},
 	) {
+		await garantirOperacaoSecundario();
 		const conta = await adicionarItemConta(idconta, item);
 		avisarTecnibra();
 		return conta;
@@ -578,6 +637,7 @@ export const localApi = {
 			idprodutomeio?: string | null;
 		}>,
 	) {
+		await garantirOperacaoSecundario();
 		const conta = await enviarPedidoConta({ idconta, clientOrderId, itens });
 		if (conta.pedidoNovo) {
 			try {
@@ -618,6 +678,7 @@ export const localApi = {
 		},
 		nomecliente?: string,
 	) {
+		await garantirOperacaoSecundario();
 		const conta = await adicionarItemNaMesa(numero, item, nomecliente);
 		try {
 			void imprimirProducaoPedido({
@@ -643,6 +704,7 @@ export const localApi = {
 		lancamentosOuMeio: LancamentoPagamento[] | MeioPagamento,
 		troco?: number,
 	) {
+		await garantirOperacaoSecundario();
 		let lancamentos: LancamentoPagamento[];
 		if (typeof lancamentosOuMeio === "string") {
 			if (!ehMeioPagamento(lancamentosOuMeio)) {

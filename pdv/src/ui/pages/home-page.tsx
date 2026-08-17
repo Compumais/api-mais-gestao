@@ -19,6 +19,10 @@ import {
 	type StatusContext,
 } from "@/lib/pdv-types";
 import { centavosToNumber, cn, money } from "@/lib/utils";
+import {
+	AvisoSecundario,
+	secundarioDesconectado,
+} from "@/ui/components/aviso-secundario";
 import { FunctionBar } from "@/ui/components/function-bar";
 import { NumericKeypad } from "@/ui/components/numeric-keypad";
 import { StatusBar } from "@/ui/components/status-bar";
@@ -109,6 +113,7 @@ export function HomePage() {
 	});
 
 	const rotulo = rotuloModelo(status?.modeloAtendimento);
+	const bloqueado = secundarioDesconectado(status);
 
 	async function carregarMesas() {
 		setMesas(await pdvInvoke<MesaResumo[]>("listarMesas"));
@@ -181,6 +186,12 @@ export function HomePage() {
 		nomecliente: string | null;
 		valortotal: number;
 	}) {
+		if (bloqueado) {
+			setMsg(
+				status?.principalErro ?? "PDV principal offline. Operação bloqueada.",
+			);
+			return;
+		}
 		if (mesa.status === "ocupada") {
 			setDialogo({
 				tipo: "continuar",
@@ -195,6 +206,12 @@ export function HomePage() {
 	}
 
 	async function abrirNova() {
+		if (bloqueado) {
+			setMsg(
+				status?.principalErro ?? "PDV principal offline. Operação bloqueada.",
+			);
+			return;
+		}
 		const numero = Number(novaNumero);
 		if (!Number.isInteger(numero) || numero < 1) {
 			setMsg(`Informe um número válido de ${rotulo.singular.toLowerCase()}.`);
@@ -305,7 +322,7 @@ export function HomePage() {
 							</div>
 							<Button
 								size="sm"
-								disabled={loading || !novaNumero}
+								disabled={loading || bloqueado || !novaNumero}
 								onClick={() => void abrirNova()}
 							>
 								Abrir
@@ -313,6 +330,7 @@ export function HomePage() {
 						</div>
 					</div>
 
+					<AvisoSecundario status={status} />
 					{msg && <p className="text-sm text-muted-foreground">{msg}</p>}
 
 					<div className="mb-1 flex flex-wrap gap-3 text-xs">
@@ -390,7 +408,16 @@ export function HomePage() {
 					<SideButton
 						label="Balcão"
 						icon={ShoppingCart}
-						onClick={() => navigate("/balcao")}
+						onClick={() => {
+							if (bloqueado) {
+								setMsg(
+									status?.principalErro ??
+										"PDV principal offline. Operação bloqueada.",
+								);
+								return;
+							}
+							navigate("/balcao");
+						}}
 					/>
 					<SideButton
 						label="Vendas"
@@ -516,6 +543,17 @@ export function HomePage() {
 						value: status?.online ? "Online" : "Offline",
 						tone: status?.online ? "success" : "warning",
 					},
+					...(status?.modo === "secundario"
+						? [
+								{
+									label: "Principal",
+									value: status.principalOnline ? "Online" : "Offline",
+									tone: status.principalOnline
+										? ("success" as const)
+										: ("destructive" as const),
+								},
+							]
+						: []),
 					{ label: "Fila", value: status?.outboxPendentes ?? 0 },
 					{ label: "Livres", value: livres, tone: "success" },
 					{
@@ -548,6 +586,7 @@ export function HomePage() {
 						hotkey: "F2",
 						variant: "default",
 						onClick: () => navigate("/balcao"),
+						disabled: bloqueado,
 					},
 					{
 						key: "vendas",
