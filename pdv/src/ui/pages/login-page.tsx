@@ -11,42 +11,127 @@ import {
 } from "@/ui/components/ui/card";
 import { Input } from "@/ui/components/ui/input";
 import { Label } from "@/ui/components/ui/label";
+import { Select } from "@/ui/components/ui/select";
 
 type Empresa = { id: string; nome: string };
+type ModoPdv = "principal" | "secundario";
+
+function normalizarModo(valor: string | undefined): ModoPdv {
+	return valor === "secundario" ? "secundario" : "principal";
+}
 
 export function LoginPage() {
 	const navigate = useNavigate();
 	const [apiUrl, setApiUrl] = useState("");
+	const [modo, setModo] = useState<ModoPdv>("principal");
+	const [principalHost, setPrincipalHost] = useState("");
+	const [principalPorta, setPrincipalPorta] = useState("5050");
+	const [numeroPdv, setNumeroPdv] = useState("1");
 	const [mostrarConexao, setMostrarConexao] = useState(false);
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [erro, setErro] = useState("");
+	const [okConexao, setOkConexao] = useState("");
 	const [loading, setLoading] = useState(false);
+	const [testando, setTestando] = useState(false);
 	const [empresas, setEmpresas] = useState<Empresa[]>([]);
 	const [username, setUsername] = useState("");
 
 	useEffect(() => {
 		void pdvInvoke<Record<string, string>>("getConfig").then((cfg) => {
 			setApiUrl(cfg.api_url ?? "http://localhost:3333");
+			const modoCfg = normalizarModo(cfg.pdv_modo);
+			setModo(modoCfg);
+			setPrincipalHost(cfg.pdv_principal_host ?? "");
+			setPrincipalPorta(cfg.pdv_principal_porta || "5050");
+			setNumeroPdv(cfg.numeropdv || "1");
+			if (modoCfg === "secundario") {
+				setMostrarConexao(true);
+			}
 		});
 	}, []);
 
-	async function salvarApiUrl() {
+	function payloadConexao(): Record<string, string> {
+		const dados: Record<string, string> = {
+			pdv_modo: modo,
+			numeropdv: numeroPdv.trim() || "1",
+			pdv_principal_host: principalHost.trim(),
+			pdv_principal_porta: principalPorta.trim() || "5050",
+		};
 		const url = apiUrl.trim().replace(/\/$/, "");
-		if (!url) {
-			setErro("Informe a URL da API");
+		if (url) {
+			dados.api_url = url;
+		}
+		return dados;
+	}
+
+	async function aplicarConfigSalva() {
+		const cfg = await pdvInvoke<Record<string, string>>("getConfig");
+		if (cfg.api_url) {
+			setApiUrl(cfg.api_url);
+		}
+	}
+
+	async function salvarConexao() {
+		if (modo === "secundario" && !principalHost.trim()) {
+			throw new Error("Informe o IP do PDV principal.");
+		}
+		if (modo === "principal" && !apiUrl.trim()) {
+			throw new Error("Informe a URL da API");
+		}
+		await pdvInvoke("saveConfig", payloadConexao());
+		await aplicarConfigSalva();
+	}
+
+	async function onSalvarConexao() {
+		setErro("");
+		setOkConexao("");
+		setLoading(true);
+		try {
+			await salvarConexao();
+			setOkConexao(
+				modo === "secundario"
+					? "PDV secundário salvo. A URL da API é puxada do principal."
+					: "Conexão salva.",
+			);
+		} catch (err) {
+			setErro(err instanceof Error ? err.message : "Falha ao salvar conexão");
+		} finally {
+			setLoading(false);
+		}
+	}
+
+	async function onTestarPrincipal() {
+		setErro("");
+		setOkConexao("");
+		if (!principalHost.trim()) {
+			setErro("Informe o IP do PDV principal.");
 			return;
 		}
-		await pdvInvoke("saveConfig", { api_url: url });
-		setApiUrl(url);
+		setTestando(true);
+		try {
+			const result = await pdvInvoke<{ mensagem: string }>("testarPrincipal", {
+				host: principalHost.trim(),
+				porta: principalPorta.trim() || "5050",
+				numeropdv: numeroPdv.trim() || "1",
+			});
+			setOkConexao(result.mensagem);
+		} catch (err) {
+			setErro(
+				err instanceof Error ? err.message : "Falha ao conectar no principal",
+			);
+		} finally {
+			setTestando(false);
+		}
 	}
 
 	async function onLogin(e: React.FormEvent) {
 		e.preventDefault();
 		setErro("");
+		setOkConexao("");
 		setLoading(true);
 		try {
-			await salvarApiUrl();
+			await salvarConexao();
 			const result = await pdvInvoke<{ username: string; empresas: Empresa[] }>(
 				"login",
 				email,
@@ -88,6 +173,13 @@ export function LoginPage() {
 				</div>
 				<div className="space-y-2 rounded-lg bg-black/15 p-4 font-mono text-xs">
 					<div>› Aguardando autenticação...</div>
+					<div>
+						› Modo:{" "}
+						{modo === "secundario"
+							? `secundário · principal ${principalHost || "não definido"}:${principalPorta || "5050"}`
+							: "principal (banco local)"}
+					</div>
+					<div>› PDV nº {numeroPdv || "1"}</div>
 					<div>› API configurada: {apiUrl || "não definida"}</div>
 					<div>› Operação offline-first com sincronização automática.</div>
 				</div>
@@ -112,22 +204,122 @@ export function LoginPage() {
 									className="text-xs text-muted-foreground underline underline-offset-2"
 									onClick={() => setMostrarConexao((v) => !v)}
 								>
-									{mostrarConexao ? "Ocultar conexão" : "Configurar conexão"}
+									{mostrarConexao
+										? "Ocultar conexão"
+										: "Configurar conexão / PDV secundário"}
 								</button>
 								{mostrarConexao && (
-									<div className="space-y-2 rounded-md border p-3">
-										<Label htmlFor="api_url">URL da API</Label>
-										<Input
-											id="api_url"
-											type="url"
-											placeholder="https://api.seudominio.com"
-											value={apiUrl}
-											onChange={(e) => setApiUrl(e.target.value)}
-										/>
-										<p className="text-xs text-muted-foreground">
-											Ex.: https://api.compuchat.space ou
-											http://localhost:3333
-										</p>
+									<div className="space-y-3 rounded-md border p-3">
+										<div className="space-y-2">
+											<Label htmlFor="pdv_modo">Este PDV</Label>
+											<Select
+												id="pdv_modo"
+												value={modo}
+												onChange={(e) =>
+													setModo(normalizarModo(e.target.value))
+												}
+											>
+												<option value="principal">
+													Principal (banco local)
+												</option>
+												<option value="secundario">
+													Secundário (lê o principal)
+												</option>
+											</Select>
+										</div>
+										<div className="space-y-2">
+											<Label htmlFor="numeropdv">Número do PDV</Label>
+											<Input
+												id="numeropdv"
+												inputMode="numeric"
+												value={numeroPdv}
+												onChange={(e) => setNumeroPdv(e.target.value)}
+											/>
+											<p className="text-xs text-muted-foreground">
+												Único na loja. No secundário, use um número diferente do
+												principal.
+											</p>
+										</div>
+										{modo === "secundario" ? (
+											<>
+												<div className="space-y-2">
+													<Label htmlFor="pdv_principal_host">
+														IP do PDV principal
+													</Label>
+													<Input
+														id="pdv_principal_host"
+														placeholder="192.168.1.10"
+														value={principalHost}
+														onChange={(e) => setPrincipalHost(e.target.value)}
+													/>
+												</div>
+												<div className="space-y-2">
+													<Label htmlFor="pdv_principal_porta">
+														Porta LAN do principal
+													</Label>
+													<Input
+														id="pdv_principal_porta"
+														type="number"
+														min={1}
+														value={principalPorta}
+														onChange={(e) => setPrincipalPorta(e.target.value)}
+													/>
+												</div>
+												<p className="text-xs text-muted-foreground">
+													Produtos e configurações de negócio vêm do principal.
+													A URL da API também é puxada de lá ao conectar.
+												</p>
+												<div className="space-y-2">
+													<Label htmlFor="api_url_sec">
+														URL da API (opcional)
+													</Label>
+													<Input
+														id="api_url_sec"
+														type="url"
+														placeholder="deixe em branco para usar a do principal"
+														value={apiUrl}
+														onChange={(e) => setApiUrl(e.target.value)}
+													/>
+												</div>
+											</>
+										) : (
+											<div className="space-y-2">
+												<Label htmlFor="api_url">URL da API</Label>
+												<Input
+													id="api_url"
+													type="url"
+													placeholder="https://api.seudominio.com"
+													value={apiUrl}
+													onChange={(e) => setApiUrl(e.target.value)}
+												/>
+												<p className="text-xs text-muted-foreground">
+													Ex.: https://api.compuchat.space ou
+													http://localhost:3333
+												</p>
+											</div>
+										)}
+										<div className="flex flex-wrap gap-2">
+											<Button
+												type="button"
+												variant="outline"
+												size="sm"
+												disabled={loading}
+												onClick={() => void onSalvarConexao()}
+											>
+												Salvar conexão
+											</Button>
+											{modo === "secundario" ? (
+												<Button
+													type="button"
+													variant="outline"
+													size="sm"
+													disabled={testando || loading}
+													onClick={() => void onTestarPrincipal()}
+												>
+													{testando ? "Testando…" : "Testar principal"}
+												</Button>
+											) : null}
+										</div>
 									</div>
 								)}
 								<div className="space-y-2">
@@ -152,6 +344,9 @@ export function LoginPage() {
 										required
 									/>
 								</div>
+								{okConexao && (
+									<p className="text-sm text-emerald-700">{okConexao}</p>
+								)}
 								{erro && <p className="text-sm text-destructive">{erro}</p>}
 								<Button className="w-full" size="lg" disabled={loading}>
 									{loading ? "Entrando..." : "Entrar"}

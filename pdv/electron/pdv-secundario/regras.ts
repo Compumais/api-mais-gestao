@@ -7,6 +7,8 @@ export const CHAVES_CONFIG_NEGOCIO = [
 	"emitir_nfce",
 	"pix_chave",
 	"api_url",
+	"taxa_servico_percentual",
+	"couvert_valor",
 ] as const;
 
 export type ChaveConfigNegocio = (typeof CHAVES_CONFIG_NEGOCIO)[number];
@@ -40,7 +42,13 @@ export const CHAVES_CONFIG_LOCAL = [
 	"sitef_parametros",
 	"sitef_porta_pinpad",
 	"sitef_dll_path",
+	"balanca_habilitada",
+	"balanca_porta",
+	"balanca_baud",
+	"balanca_protocolo",
 	"tema",
+	"senha_gerencial_hash",
+	"senha_gerencial_salt",
 ] as const;
 
 export type ResultadoNumeroPdv =

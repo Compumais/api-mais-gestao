@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS sessao (
 	username TEXT,
 	idempresa TEXT,
 	nomeempresa TEXT,
+	roles TEXT,
+	modulogourmet TEXT,
 	atualizadoem TEXT NOT NULL
 );
 
@@ -85,6 +87,11 @@ CREATE TABLE IF NOT EXISTS conta_mesa (
 	abertoem TEXT NOT NULL,
 	fechadoem TEXT,
 	valortotal DOUBLE PRECISION NOT NULL DEFAULT 0,
+	numeropessoas INTEGER NOT NULL DEFAULT 1,
+	valordesconto DOUBLE PRECISION NOT NULL DEFAULT 0,
+	valortaxaservico DOUBLE PRECISION NOT NULL DEFAULT 0,
+	valorcouvert DOUBLE PRECISION NOT NULL DEFAULT 0,
+	taxa_ativa INTEGER NOT NULL DEFAULT 0,
 	idremoto TEXT,
 	sync_status TEXT NOT NULL DEFAULT 'pendente'
 );
@@ -98,6 +105,7 @@ CREATE TABLE IF NOT EXISTS item_conta (
 	precounitario DOUBLE PRECISION NOT NULL,
 	precototal DOUBLE PRECISION NOT NULL,
 	observacao TEXT,
+	pago INTEGER NOT NULL DEFAULT 0,
 	criadoem TEXT NOT NULL
 );
 
@@ -129,6 +137,9 @@ CREATE TABLE IF NOT EXISTS venda (
 	valorpix DOUBLE PRECISION NOT NULL DEFAULT 0,
 	valorcartao DOUBLE PRECISION NOT NULL DEFAULT 0,
 	valortroco DOUBLE PRECISION NOT NULL DEFAULT 0,
+	valordesconto DOUBLE PRECISION NOT NULL DEFAULT 0,
+	valortaxaservico DOUBLE PRECISION NOT NULL DEFAULT 0,
+	valorcouvert DOUBLE PRECISION NOT NULL DEFAULT 0,
 	criadoem TEXT NOT NULL,
 	idremoto TEXT,
 	sync_status TEXT NOT NULL DEFAULT 'pendente',
@@ -144,6 +155,18 @@ CREATE TABLE IF NOT EXISTS item_venda (
 	quantidade DOUBLE PRECISION NOT NULL,
 	precounitario DOUBLE PRECISION NOT NULL,
 	precototal DOUBLE PRECISION NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS conta_pagamento (
+	id TEXT PRIMARY KEY NOT NULL,
+	idconta TEXT NOT NULL,
+	meio TEXT NOT NULL,
+	valor DOUBLE PRECISION NOT NULL,
+	nsu TEXT,
+	autorizacao TEXT,
+	bandeira TEXT,
+	status TEXT NOT NULL DEFAULT 'ok',
+	criadoem TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS pagamento (
@@ -222,4 +245,6 @@ CREATE INDEX IF NOT EXISTS idx_conta_status ON conta_mesa(status);
 CREATE INDEX IF NOT EXISTS idx_pedido_fila_status ON pedido_fila(status, criadoem);
 CREATE INDEX IF NOT EXISTS idx_pedido_fila_client ON pedido_fila(client_order_id);
 CREATE INDEX IF NOT EXISTS idx_pagamento_idvenda ON pagamento(idvenda);
+CREATE INDEX IF NOT EXISTS idx_conta_pagamento_idconta ON conta_pagamento(idconta);
+CREATE INDEX IF NOT EXISTS idx_item_conta_pago ON item_conta(idconta, pago);
 `;

@@ -275,6 +275,99 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 			);
 		}
 	}
+
+	const contaCols = await database.query<{ column_name: string }>(
+		`SELECT column_name
+		 FROM information_schema.columns
+		 WHERE table_schema = 'public' AND table_name = 'conta_mesa'`,
+	);
+	if (contaCols.rows.length) {
+		const contaNomes = new Set(contaCols.rows.map((c) => c.column_name));
+		if (!contaNomes.has("numeropessoas")) {
+			await database.query(
+				"ALTER TABLE conta_mesa ADD COLUMN numeropessoas INTEGER NOT NULL DEFAULT 1",
+			);
+		}
+		if (!contaNomes.has("valordesconto")) {
+			await database.query(
+				"ALTER TABLE conta_mesa ADD COLUMN valordesconto DOUBLE PRECISION NOT NULL DEFAULT 0",
+			);
+		}
+		if (!contaNomes.has("valortaxaservico")) {
+			await database.query(
+				"ALTER TABLE conta_mesa ADD COLUMN valortaxaservico DOUBLE PRECISION NOT NULL DEFAULT 0",
+			);
+		}
+		if (!contaNomes.has("valorcouvert")) {
+			await database.query(
+				"ALTER TABLE conta_mesa ADD COLUMN valorcouvert DOUBLE PRECISION NOT NULL DEFAULT 0",
+			);
+		}
+		if (!contaNomes.has("taxa_ativa")) {
+			await database.query(
+				"ALTER TABLE conta_mesa ADD COLUMN taxa_ativa INTEGER NOT NULL DEFAULT 0",
+			);
+		}
+	}
+
+	if (!itemNomes.has("pago")) {
+		await database.query(
+			"ALTER TABLE item_conta ADD COLUMN pago INTEGER NOT NULL DEFAULT 0",
+		);
+	}
+
+	const vendaCols = await database.query<{ column_name: string }>(
+		`SELECT column_name
+		 FROM information_schema.columns
+		 WHERE table_schema = 'public' AND table_name = 'venda'`,
+	);
+	if (vendaCols.rows.length) {
+		const vendaNomes = new Set(vendaCols.rows.map((c) => c.column_name));
+		if (!vendaNomes.has("valordesconto")) {
+			await database.query(
+				"ALTER TABLE venda ADD COLUMN valordesconto DOUBLE PRECISION NOT NULL DEFAULT 0",
+			);
+		}
+		if (!vendaNomes.has("valortaxaservico")) {
+			await database.query(
+				"ALTER TABLE venda ADD COLUMN valortaxaservico DOUBLE PRECISION NOT NULL DEFAULT 0",
+			);
+		}
+		if (!vendaNomes.has("valorcouvert")) {
+			await database.query(
+				"ALTER TABLE venda ADD COLUMN valorcouvert DOUBLE PRECISION NOT NULL DEFAULT 0",
+			);
+		}
+	}
+
+	await database.query(`
+		CREATE TABLE IF NOT EXISTS conta_pagamento (
+			id TEXT PRIMARY KEY NOT NULL,
+			idconta TEXT NOT NULL,
+			meio TEXT NOT NULL,
+			valor DOUBLE PRECISION NOT NULL,
+			nsu TEXT,
+			autorizacao TEXT,
+			bandeira TEXT,
+			status TEXT NOT NULL DEFAULT 'ok',
+			criadoem TEXT NOT NULL
+		)
+	`);
+
+	const sessaoCols = await database.query<{ column_name: string }>(
+		`SELECT column_name
+		 FROM information_schema.columns
+		 WHERE table_schema = 'public' AND table_name = 'sessao'`,
+	);
+	if (sessaoCols.rows.length) {
+		const sessaoNomes = new Set(sessaoCols.rows.map((c) => c.column_name));
+		if (!sessaoNomes.has("roles")) {
+			await database.query("ALTER TABLE sessao ADD COLUMN roles TEXT");
+		}
+		if (!sessaoNomes.has("modulogourmet")) {
+			await database.query("ALTER TABLE sessao ADD COLUMN modulogourmet TEXT");
+		}
+	}
 }
 
 /** Host antigo do seed que aponta para o front, não para a API. */
@@ -309,6 +402,12 @@ async function seedDefaults(database: Pool): Promise<void> {
 		["tecnibra_intervalo_ms", "3000"],
 		["tecnibra_xml_root", "Comandas"],
 		["tecnibra_xml_item", "Comanda"],
+		["taxa_servico_percentual", "10"],
+		["couvert_valor", "0"],
+		["balanca_habilitada", "0"],
+		["balanca_porta", process.platform === "win32" ? "COM1" : "/dev/ttyUSB0"],
+		["balanca_baud", "9600"],
+		["balanca_protocolo", "toledo"],
 	];
 
 	for (const [chave, valor] of defaults) {

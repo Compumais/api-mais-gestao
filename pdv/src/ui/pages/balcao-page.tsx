@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
+import { marcarBootPendente } from "@/lib/boot-state";
 import { pdvInvoke } from "@/lib/pdv-api";
 import {
 	type GrupoLocal,
@@ -8,7 +9,8 @@ import {
 	type StatusContext,
 } from "@/lib/pdv-types";
 import { produtoEhPizza } from "@/lib/pizza-meio-a-meio";
-import { money } from "@/lib/utils";
+import { devePedirPeso, formatarQuantidade } from "@/lib/produto-kg";
+import { centavosToNumber, money } from "@/lib/utils";
 import {
 	AvisoSecundario,
 	secundarioDesconectado,
@@ -22,9 +24,12 @@ import {
 	DialogPizzaMeioAMeio,
 	type ItemPizzaMeioAMeio,
 } from "@/ui/components/dialog-pizza-meio-a-meio";
+import { DialogQuantidadePeso } from "@/ui/components/dialog-quantidade-peso";
+import { FunctionBar } from "@/ui/components/function-bar";
 import { ProdutoCard } from "@/ui/components/produto-card";
 import { Topbar } from "@/ui/components/topbar";
 import { Button } from "@/ui/components/ui/button";
+import { Input } from "@/ui/components/ui/input";
 import { useEscapeFechaModal } from "@/ui/hooks/use-escape-fecha-modal";
 
 type Item = {
@@ -35,12 +40,14 @@ type Item = {
 	quantidade: number;
 	precounitario: number;
 	precototal: number;
+	pesado?: boolean;
 };
 
 export function BalcaoPage() {
 	const navigate = useNavigate();
 	const { status } = useOutletContext<StatusContext>();
 	const rotulo = rotuloModelo(status?.modeloAtendimento);
+	const gourmet = Boolean(status?.moduloGourmet);
 	const bloqueado = secundarioDesconectado(status);
 	const [grupos, setGrupos] = useState<GrupoLocal[]>([]);
 	const [atalhos, setAtalhos] = useState<ProdutoLocal[]>([]);
@@ -52,9 +59,14 @@ export function BalcaoPage() {
 	const [msg, setMsg] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [pizzaPrimeiro, setPizzaPrimeiro] = useState<ProdutoLocal | null>(null);
+	const [produtoPeso, setProdutoPeso] = useState<ProdutoLocal | null>(null);
+	const [fechando, setFechando] = useState(false);
+	const [valorFechamento, setValorFechamento] = useState("0");
 
 	useEscapeFechaModal(Boolean(rejeicaoNfce), () => setRejeicaoNfce(null));
 	useEscapeFechaModal(Boolean(pizzaPrimeiro), () => setPizzaPrimeiro(null));
+	useEscapeFechaModal(Boolean(produtoPeso), () => setProdutoPeso(null));
+	useEscapeFechaModal(fechando, () => setFechando(false));
 
 	const total = useMemo(
 		() => itens.reduce((acc, i) => acc + i.precototal, 0),
@@ -62,20 +74,21 @@ export function BalcaoPage() {
 	);
 
 	useEffect(() => {
+		const listarGrupos = gourmet ? "listarGruposGourmet" : "listarGrupos";
 		void Promise.all([
-			pdvInvoke<GrupoLocal[]>("listarGruposGourmet"),
+			pdvInvoke<GrupoLocal[]>(listarGrupos),
 			pdvInvoke<ProdutoLocal[]>("listarAtalhos"),
 		]).then(([g, a]) => {
 			setGrupos(g);
 			setAtalhos(a);
 		});
-	}, []);
+	}, [gourmet]);
 
 	async function abrirGrupo(grupo: GrupoLocal) {
 		setGrupoAtivo(grupo);
 		setProdutos(
 			await pdvInvoke<ProdutoLocal[]>(
-				"listarProdutosPorGrupoGourmet",
+				gourmet ? "listarProdutosPorGrupoGourmet" : "listarProdutosPorGrupo",
 				grupo.id,
 			),
 		);
@@ -90,14 +103,19 @@ export function BalcaoPage() {
 		descricao: string;
 		preco: number;
 		espizza?: number | null;
+		unidademedida?: string | null;
 	}) {
-		if (produtoEhPizza(produto)) {
+		if (gourmet && produtoEhPizza(produto)) {
 			setPizzaPrimeiro(produto as ProdutoLocal);
+			return;
+		}
+		if (devePedirPeso(produto, Boolean(status?.balancaHabilitada))) {
+			setProdutoPeso(produto as ProdutoLocal);
 			return;
 		}
 		setItens((prev) => {
 			const existente = prev.find(
-				(i) => i.idproduto === produto.id && !i.idprodutomeio,
+				(i) => i.idproduto === produto.id && !i.idprodutomeio && !i.pesado,
 			);
 			if (existente) {
 				return prev.map((i) =>
@@ -121,6 +139,21 @@ export function BalcaoPage() {
 					precototal: produto.preco,
 				},
 			];
+		});
+	}
+
+	function confirmarPeso(quantidade: number) {
+		const produto = produtoPeso;
+		setProdutoPeso(null);
+		if (!produto || quantidade <= 0) return;
+		adicionarLinha({
+			chave: crypto.randomUUID(),
+			idproduto: produto.id,
+			descricao: produto.descricao,
+			quantidade,
+			precounitario: produto.preco,
+			precototal: quantidade * produto.preco,
+			pesado: true,
 		});
 	}
 
@@ -161,6 +194,9 @@ export function BalcaoPage() {
 			prev
 				.map((i) => {
 					if (i.chave !== chave) return i;
+					if (i.pesado) {
+						return delta < 0 ? { ...i, quantidade: 0, precototal: 0 } : i;
+					}
 					const quantidade = Math.max(0, i.quantidade + delta);
 					return { ...i, quantidade, precototal: quantidade * i.precounitario };
 				})
@@ -205,15 +241,57 @@ export function BalcaoPage() {
 		}
 	}
 
+	async function confirmarFechamento() {
+		setLoading(true);
+		try {
+			await pdvInvoke("fecharCaixa", centavosToNumber(valorFechamento));
+			setFechando(false);
+			navigate("/abertura-caixa", { replace: true });
+		} catch (err) {
+			setMsg(err instanceof Error ? err.message : "Erro ao fechar caixa");
+		} finally {
+			setLoading(false);
+		}
+	}
+
+	async function sair() {
+		await pdvInvoke("logout");
+		marcarBootPendente();
+		navigate("/login", { replace: true });
+	}
+
 	return (
 		<div className="flex h-screen flex-col">
 			<Topbar
-				title="Balcão"
-				subtitle="Venda rápida"
+				title={gourmet ? "Balcão" : "PDV"}
+				subtitle={
+					gourmet ? "Venda rápida" : (status?.sessao.nomeempresa ?? "Venda")
+				}
 				right={
-					<Button variant="secondary" size="sm" onClick={() => navigate(-1)}>
-						Voltar às {rotulo.plural.toLowerCase()}
-					</Button>
+					gourmet ? (
+						<Button variant="secondary" size="sm" onClick={() => navigate(-1)}>
+							Voltar às {rotulo.plural.toLowerCase()}
+						</Button>
+					) : (
+						<div className="flex gap-2">
+							{status?.podeConfigurar ? (
+								<Button
+									variant="secondary"
+									size="sm"
+									onClick={() => navigate("/config")}
+								>
+									Configurações
+								</Button>
+							) : null}
+							<Button
+								variant="secondary"
+								size="sm"
+								onClick={() => navigate("/vendas")}
+							>
+								Histórico
+							</Button>
+						</div>
+					)
 				}
 			/>
 
@@ -306,12 +384,14 @@ export function BalcaoPage() {
 										>
 											-
 										</Button>
-										<span className="w-8 text-center text-sm">
-											{item.quantidade}
+										<span className="min-w-10 text-center text-sm tabular-nums">
+											{formatarQuantidade(item.quantidade)}
+											{item.pesado ? " kg" : ""}
 										</span>
 										<Button
 											size="sm"
 											variant="outline"
+											disabled={item.pesado}
 											onClick={() => alterarQtd(item.chave, 1)}
 										>
 											+
@@ -385,7 +465,7 @@ export function BalcaoPage() {
 				onConfirmar={(fechamento) => void finalizar(fechamento)}
 			/>
 
-			{pizzaPrimeiro && (
+			{pizzaPrimeiro && gourmet && (
 				<DialogPizzaMeioAMeio
 					primeiro={pizzaPrimeiro}
 					onCancelar={() => setPizzaPrimeiro(null)}
@@ -393,6 +473,84 @@ export function BalcaoPage() {
 					onConfirmar={confirmarMeioAMeio}
 				/>
 			)}
+			{produtoPeso && (
+				<DialogQuantidadePeso
+					produto={produtoPeso}
+					onCancelar={() => setProdutoPeso(null)}
+					onConfirmar={confirmarPeso}
+				/>
+			)}
+
+			{fechando && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+					<div className="w-80 space-y-3 rounded-lg border bg-card p-5">
+						<h2 className="text-lg font-semibold">Fechar caixa</h2>
+						<p className="text-sm text-muted-foreground">
+							Informe o valor em caixa.
+						</p>
+						<Input
+							inputMode="decimal"
+							value={valorFechamento}
+							onChange={(e) => setValorFechamento(e.target.value)}
+						/>
+						<div className="flex gap-2">
+							<Button
+								variant="outline"
+								className="flex-1"
+								onClick={() => setFechando(false)}
+							>
+								Cancelar
+							</Button>
+							<Button
+								className="flex-1"
+								disabled={loading}
+								onClick={() => void confirmarFechamento()}
+							>
+								Fechar
+							</Button>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{!gourmet ? (
+				<FunctionBar
+					actions={[
+						{
+							key: "historico",
+							label: "Histórico",
+							hotkey: "F3",
+							variant: "secondary",
+							onClick: () => navigate("/vendas"),
+						},
+						...(status?.podeConfigurar
+							? [
+									{
+										key: "config",
+										label: "Config",
+										hotkey: "F4",
+										variant: "outline" as const,
+										onClick: () => navigate("/config"),
+									},
+								]
+							: []),
+						{
+							key: "fechar-caixa",
+							label: "Fechar caixa",
+							hotkey: "F9",
+							variant: "destructive" as const,
+							onClick: () => setFechando(true),
+						},
+						{
+							key: "sair",
+							label: "Sair",
+							hotkey: "F12",
+							variant: "outline" as const,
+							onClick: () => void sair(),
+						},
+					]}
+				/>
+			) : null}
 		</div>
 	);
 }

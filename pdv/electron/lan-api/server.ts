@@ -4,6 +4,7 @@ import {
 	type Server,
 	type ServerResponse,
 } from "node:http";
+import { sessaoTemGourmet } from "../db/acesso";
 import { getAllConfig, getConfig } from "../db/database";
 import { lancamentosDeBody } from "../db/pagamento";
 import { obterSessao } from "../db/repos";
@@ -160,6 +161,23 @@ async function despachar(
 	path: string,
 	body: Record<string, unknown>,
 ): Promise<{ status: number; body: unknown } | undefined> {
+	if (
+		path === "/pos/mesas" ||
+		path.startsWith("/pos/mesas/") ||
+		path.startsWith("/pos/contas/")
+	) {
+		const sessao = await obterSessao();
+		if (!sessaoTemGourmet(sessao.modulogourmet)) {
+			return {
+				status: 403,
+				body: {
+					error:
+						"O plano desta empresa não inclui o módulo Gourmet. Mesas e comandas ficam indisponíveis.",
+				},
+			};
+		}
+	}
+
 	if (method === "GET" && path === "/pos/health") {
 		return { status: 200, body: await localApi.health() };
 	}
@@ -226,6 +244,10 @@ async function despachar(
 
 	if (method === "GET" && path === "/pos/status") {
 		return { status: 200, body: await localApi.getStatus() };
+	}
+
+	if (method === "GET" && path === "/pos/balanca/peso") {
+		return { status: 200, body: await localApi["balanca.lerPeso"]() };
 	}
 
 	if (method === "GET" && path === "/pos/empresas") {
@@ -344,6 +366,91 @@ async function despachar(
 				contaFecharMatch[1],
 				lancamentos.length ? lancamentos : meioDeBody(body),
 				body.troco != null ? Number(body.troco) : undefined,
+			),
+		};
+	}
+
+	const contaAjustesMatch = path.match(/^\/pos\/contas\/([^/]+)\/ajustes$/);
+	if (method === "POST" && contaAjustesMatch) {
+		return {
+			status: 200,
+			body: await localApi.aplicarAjustesConta(contaAjustesMatch[1], {
+				numeropessoas:
+					body.numeropessoas != null ? Number(body.numeropessoas) : undefined,
+				taxaAtiva: body.taxaAtiva != null ? Boolean(body.taxaAtiva) : undefined,
+				desconto: body.desconto != null ? Number(body.desconto) : undefined,
+				senha: body.senha != null ? String(body.senha) : undefined,
+			}),
+		};
+	}
+
+	const contaPreMatch = path.match(/^\/pos\/contas\/([^/]+)\/preconta$/);
+	if (method === "POST" && contaPreMatch) {
+		return {
+			status: 200,
+			body: await localApi.imprimirPreConta(contaPreMatch[1]),
+		};
+	}
+
+	const contaPagMatch = path.match(/^\/pos\/contas\/([^/]+)\/pagamento$/);
+	if (method === "POST" && contaPagMatch) {
+		return {
+			status: 200,
+			body: await localApi.registrarPagamentoConta(
+				contaPagMatch[1],
+				lancamentosDeBody(body),
+				body.troco != null ? Number(body.troco) : undefined,
+			),
+		};
+	}
+
+	const contaFatiaMatch = path.match(/^\/pos\/contas\/([^/]+)\/fatia$/);
+	if (method === "POST" && contaFatiaMatch) {
+		const ids = Array.isArray(body.idsItens)
+			? body.idsItens.map((id) => String(id))
+			: [];
+		return {
+			status: 200,
+			body: await localApi.fecharFatiaItens(
+				contaFatiaMatch[1],
+				ids,
+				lancamentosDeBody(body),
+				body.troco != null ? Number(body.troco) : undefined,
+			),
+		};
+	}
+
+	const contaTransMatch = path.match(/^\/pos\/contas\/([^/]+)\/transferir$/);
+	if (method === "POST" && contaTransMatch) {
+		const ids = Array.isArray(body.idsItens)
+			? body.idsItens.map((id) => String(id))
+			: [];
+		if (ids.length) {
+			return {
+				status: 200,
+				body: await localApi.transferirItens(
+					contaTransMatch[1],
+					ids,
+					Number(body.numeroDestino),
+				),
+			};
+		}
+		return {
+			status: 200,
+			body: await localApi.transferirConta(
+				contaTransMatch[1],
+				Number(body.numeroDestino),
+			),
+		};
+	}
+
+	const contaJuntarMatch = path.match(/^\/pos\/contas\/([^/]+)\/juntar$/);
+	if (method === "POST" && contaJuntarMatch) {
+		return {
+			status: 200,
+			body: await localApi.juntarContas(
+				contaJuntarMatch[1],
+				Number(body.numeroDestino),
 			),
 		};
 	}

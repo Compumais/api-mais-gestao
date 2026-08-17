@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { marcarBootConcluido, marcarBootPendente } from "@/lib/boot-state";
 import { pdvInvoke } from "@/lib/pdv-api";
-import type { StatusPdv } from "@/lib/pdv-types";
+import { rotaHomePdv, type StatusPdv } from "@/lib/pdv-types";
 import { Button } from "@/ui/components/ui/button";
 
 export function BootPage() {
@@ -11,6 +11,7 @@ export function BootPage() {
 		Array<{ id: number; texto: string }>
 	>([]);
 	const [erro, setErro] = useState("");
+	const [status, setStatus] = useState<StatusPdv | null>(null);
 	const proximoId = useRef(0);
 
 	function addMsg(texto: string) {
@@ -26,18 +27,19 @@ export function BootPage() {
 	async function iniciar() {
 		try {
 			addMsg("Verificando sessão...");
-			const status = await pdvInvoke<StatusPdv>("getStatus");
-			if (!status.sessao.logado) {
+			const statusAtual = await pdvInvoke<StatusPdv>("getStatus");
+			setStatus(statusAtual);
+			if (!statusAtual.sessao.logado) {
 				addMsg("Nenhuma sessão ativa.");
 				marcarBootPendente();
 				navigate("/login", { replace: true });
 				return;
 			}
-			addMsg(`Sessão ativa: ${status.sessao.username ?? ""}`);
+			addMsg(`Sessão ativa: ${statusAtual.sessao.username ?? ""}`);
 
-			if (status.modo === "secundario") {
+			if (statusAtual.modo === "secundario") {
 				addMsg(
-					`PDV secundário nº ${status.numeropdv} — conectando no principal...`,
+					`PDV secundário nº ${statusAtual.numeropdv} — conectando no principal...`,
 				);
 				try {
 					await pdvInvoke("conectarPrincipal");
@@ -60,7 +62,7 @@ export function BootPage() {
 					addMsg(`Principal indisponível: ${mensagem}`);
 					addMsg("Operação ficará bloqueada até o principal voltar.");
 				}
-			} else if (status.online) {
+			} else if (statusAtual.online) {
 				addMsg("Conectando à API...");
 				addMsg("Sincronizando produtos, grupos e atalhos...");
 				try {
@@ -87,7 +89,7 @@ export function BootPage() {
 			marcarBootConcluido();
 			if (atualizado.caixa) {
 				addMsg("Caixa aberto. Entrando...");
-				navigate("/", { replace: true });
+				navigate(rotaHomePdv(atualizado), { replace: true });
 			} else {
 				addMsg("Caixa fechado. Solicitando abertura...");
 				navigate("/abertura-caixa", { replace: true });
@@ -114,12 +116,14 @@ export function BootPage() {
 			</div>
 			{erro && (
 				<div className="flex gap-2">
-					<Button
-						variant="secondary"
-						onClick={() => navigate("/config", { replace: true })}
-					>
-						Ir para configurações
-					</Button>
+					{status?.podeConfigurar ? (
+						<Button
+							variant="secondary"
+							onClick={() => navigate("/config", { replace: true })}
+						>
+							Ir para configurações
+						</Button>
+					) : null}
 					<Button
 						variant="secondary"
 						onClick={() => navigate("/login", { replace: true })}

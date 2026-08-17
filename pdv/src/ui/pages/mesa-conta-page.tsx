@@ -6,6 +6,7 @@ import {
 	useParams,
 } from "react-router-dom";
 import { pdvInvoke } from "@/lib/pdv-api";
+import type { MesaResumo } from "@/lib/pdv-types";
 import {
 	type GrupoLocal,
 	type ProdutoLocal,
@@ -13,9 +14,11 @@ import {
 	type StatusContext,
 } from "@/lib/pdv-types";
 import { produtoEhPizza } from "@/lib/pizza-meio-a-meio";
+import { devePedirPeso, formatarQuantidade } from "@/lib/produto-kg";
 import { money } from "@/lib/utils";
 import { AvisoSecundario } from "@/ui/components/aviso-secundario";
 import { BarcodeInput } from "@/ui/components/barcode-input";
+import { DialogEscolherMesa } from "@/ui/components/dialog-escolher-mesa";
 import {
 	DialogPagamentoMisto,
 	type FechamentoMisto,
@@ -24,10 +27,13 @@ import {
 	DialogPizzaMeioAMeio,
 	type ItemPizzaMeioAMeio,
 } from "@/ui/components/dialog-pizza-meio-a-meio";
+import { DialogQuantidadePeso } from "@/ui/components/dialog-quantidade-peso";
+import { DialogSenhaGerencial } from "@/ui/components/dialog-senha-gerencial";
 import { FunctionBar } from "@/ui/components/function-bar";
 import { ProdutoCard } from "@/ui/components/produto-card";
 import { Topbar } from "@/ui/components/topbar";
 import { Button } from "@/ui/components/ui/button";
+import { Input } from "@/ui/components/ui/input";
 import { useEscapeFechaModal } from "@/ui/hooks/use-escape-fecha-modal";
 
 type ContaMesa = {
@@ -35,6 +41,14 @@ type ContaMesa = {
 	numero_mesa: number;
 	nomecliente: string | null;
 	valortotal: number;
+	numeropessoas?: number;
+	subtotal?: number;
+	valordesconto?: number;
+	valortaxaservico?: number;
+	valorcouvert?: number;
+	taxa_ativa?: number;
+	valorpago?: number;
+	valorrestante?: number;
 	itens: Array<{
 		id: string;
 		idproduto: string;
@@ -53,6 +67,7 @@ type ItemFila = {
 	quantidade: number;
 	precounitario: number;
 	precototal: number;
+	pesado?: boolean;
 };
 
 type LocationState = {
@@ -84,10 +99,27 @@ export function MesaContaPage() {
 	const [loading, setLoading] = useState(false);
 	const [pronto, setPronto] = useState(false);
 	const [pizzaPrimeiro, setPizzaPrimeiro] = useState<ProdutoLocal | null>(null);
+	const [produtoPeso, setProdutoPeso] = useState<ProdutoLocal | null>(null);
+	const [mesas, setMesas] = useState<MesaResumo[]>([]);
+	const [senhaAberta, setSenhaAberta] = useState(false);
+	const [descontoPendente, setDescontoPendente] = useState("");
+	const [destinoAberto, setDestinoAberto] = useState<
+		null | "transferir" | "juntar" | "itens"
+	>(null);
+	const [dividirAberto, setDividirAberto] = useState(false);
+	const [modoDividir, setModoDividir] = useState<"pessoas" | "valor" | "itens">(
+		"pessoas",
+	);
+	const [qtdPessoasDiv, setQtdPessoasDiv] = useState("2");
+	const [valoresDiv, setValoresDiv] = useState("50,50");
+	const [itensSel, setItensSel] = useState<string[]>([]);
+	const [fatiaValor, setFatiaValor] = useState<number | null>(null);
+	const [pagandoFatia, setPagandoFatia] = useState(false);
 
 	useEscapeFechaModal(confirmandoSaida, () => setConfirmandoSaida(false));
 	useEscapeFechaModal(Boolean(rejeicaoNfce), () => setRejeicaoNfce(null));
 	useEscapeFechaModal(Boolean(pizzaPrimeiro), () => setPizzaPrimeiro(null));
+	useEscapeFechaModal(Boolean(produtoPeso), () => setProdutoPeso(null));
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: iniciar deve reexecutar apenas quando a mesa muda
 	useEffect(() => {
@@ -131,6 +163,7 @@ export function MesaContaPage() {
 				setConta(null);
 				setNomeCliente(nomeDoState ?? null);
 			}
+			setMesas(await pdvInvoke<MesaResumo[]>("listarMesas"));
 		} catch (err) {
 			setMsg(
 				err instanceof Error
@@ -179,15 +212,20 @@ export function MesaContaPage() {
 		descricao: string;
 		preco: number;
 		espizza?: number | null;
+		unidademedida?: string | null;
 	}) {
 		setMsg("");
 		if (produtoEhPizza(produto)) {
 			setPizzaPrimeiro(produto as ProdutoLocal);
 			return;
 		}
+		if (devePedirPeso(produto, Boolean(status?.balancaHabilitada))) {
+			setProdutoPeso(produto as ProdutoLocal);
+			return;
+		}
 		setFila((prev) => {
 			const idx = prev.findIndex(
-				(i) => i.idproduto === produto.id && !i.idprodutomeio,
+				(i) => i.idproduto === produto.id && !i.idprodutomeio && !i.pesado,
 			);
 			if (idx >= 0) {
 				const atual = prev[idx];
@@ -212,6 +250,24 @@ export function MesaContaPage() {
 				},
 			];
 		});
+	}
+
+	function confirmarPeso(quantidade: number) {
+		const produto = produtoPeso;
+		setProdutoPeso(null);
+		if (!produto || quantidade <= 0) return;
+		setFila((prev) => [
+			...prev,
+			{
+				chave: crypto.randomUUID(),
+				idproduto: produto.id,
+				descricao: produto.descricao,
+				quantidade,
+				precounitario: produto.preco,
+				precototal: quantidade * produto.preco,
+				pesado: true,
+			},
+		]);
 	}
 
 	function confirmarMeioAMeio(item: ItemPizzaMeioAMeio) {
@@ -239,6 +295,9 @@ export function MesaContaPage() {
 			prev
 				.map((item) => {
 					if (item.chave !== chave) return item;
+					if (item.pesado) {
+						return delta < 0 ? { ...item, quantidade: 0, precototal: 0 } : item;
+					}
 					const quantidade = item.quantidade + delta;
 					return {
 						...item,
@@ -338,8 +397,184 @@ export function MesaContaPage() {
 		}
 	}
 
+	async function aplicarAjustes(parcial: {
+		numeropessoas?: number;
+		taxaAtiva?: boolean;
+		desconto?: number;
+		senha?: string;
+	}) {
+		if (!conta) return;
+		setLoading(true);
+		setMsg("");
+		try {
+			const atualizada = await pdvInvoke<ContaMesa>(
+				"aplicarAjustesConta",
+				conta.id,
+				parcial,
+			);
+			setConta(atualizada);
+		} catch (err) {
+			setMsg(err instanceof Error ? err.message : "Erro ao ajustar a conta");
+		} finally {
+			setLoading(false);
+		}
+	}
+
+	async function confirmarDesconto(senha: string) {
+		const valor = Number(descontoPendente.replace(",", "."));
+		setSenhaAberta(false);
+		await aplicarAjustes({ desconto: valor, senha });
+	}
+
+	async function preConta() {
+		if (!conta) return;
+		setLoading(true);
+		try {
+			await pdvInvoke("imprimirPreConta", conta.id);
+			setMsg("Pré-conta enviada à impressora.");
+		} catch (err) {
+			setMsg(err instanceof Error ? err.message : "Erro ao imprimir pré-conta");
+		} finally {
+			setLoading(false);
+		}
+	}
+
+	async function confirmarDestino(numero: number) {
+		if (!conta || !destinoAberto) return;
+		setLoading(true);
+		setMsg("");
+		try {
+			if (destinoAberto === "juntar") {
+				const atualizada = await pdvInvoke<ContaMesa>(
+					"juntarContas",
+					conta.id,
+					numero,
+				);
+				setConta(atualizada);
+				setMsg(
+					`Contas juntadas na ${rotulo.singular.toLowerCase()} ${numero}.`,
+				);
+			} else if (destinoAberto === "itens") {
+				const result = await pdvInvoke<{
+					origem: ContaMesa | null;
+					destino: ContaMesa;
+				}>("transferirItens", conta.id, itensSel, numero);
+				setConta(result.origem);
+				setItensSel([]);
+				if (!result.origem) {
+					navigate("/", { replace: true });
+					return;
+				}
+				setMsg("Itens transferidos.");
+			} else {
+				const atualizada = await pdvInvoke<ContaMesa>(
+					"transferirConta",
+					conta.id,
+					numero,
+				);
+				navigate(`/mesas/${atualizada.numero_mesa}`, { replace: true });
+				return;
+			}
+			setDestinoAberto(null);
+			setMesas(await pdvInvoke<MesaResumo[]>("listarMesas"));
+		} catch (err) {
+			setMsg(err instanceof Error ? err.message : "Erro ao mover a conta");
+		} finally {
+			setLoading(false);
+		}
+	}
+
+	function iniciarDivisao() {
+		if (!conta) return;
+		setModoDividir("pessoas");
+		setQtdPessoasDiv(String(Math.max(2, conta.numeropessoas || 2)));
+		setDividirAberto(true);
+	}
+
+	function abrirPagamentoFatia() {
+		if (!conta) return;
+		const restante = conta.valorrestante ?? conta.valortotal;
+		if (modoDividir === "itens") {
+			if (!itensSel.length) {
+				setMsg("Marque os itens desta fatia.");
+				return;
+			}
+			setFatiaValor(null);
+			setDividirAberto(false);
+			setPagandoFatia(true);
+			setPagando(true);
+			return;
+		}
+		if (modoDividir === "pessoas") {
+			const n = Math.max(2, Number(qtdPessoasDiv) || 2);
+			setFatiaValor(Math.round((restante / n) * 100) / 100);
+		} else {
+			const partes = valoresDiv
+				.split(/[;,\s]+/)
+				.map((v) => Number(v.replace(",", ".")))
+				.filter((v) => v > 0);
+			setFatiaValor(partes[0] ?? restante);
+		}
+		setDividirAberto(false);
+		setPagandoFatia(true);
+		setPagando(true);
+	}
+
+	async function finalizarFatia(fechamento: FechamentoMisto) {
+		if (!conta) return;
+		setLoading(true);
+		try {
+			if (itensSel.length && fatiaValor == null) {
+				const result = await pdvInvoke<{
+					conta: ContaMesa | null;
+					venda: { id: string };
+				}>(
+					"fecharFatiaItens",
+					conta.id,
+					itensSel,
+					fechamento.lancamentos,
+					fechamento.troco,
+				);
+				setPagando(false);
+				setItensSel([]);
+				if (!result.conta) {
+					navigate("/", { replace: true });
+					return;
+				}
+				setConta(result.conta);
+				setMsg("Fatia recebida.");
+				return;
+			}
+			const result = await pdvInvoke<{
+				conta: ContaMesa;
+				venda: { id: string } | null;
+			}>(
+				"registrarPagamentoConta",
+				conta.id,
+				fechamento.lancamentos,
+				fechamento.troco,
+			);
+			setPagando(false);
+			setFatiaValor(null);
+			if (result.venda) {
+				navigate("/", { replace: true });
+				return;
+			}
+			setConta(result.conta);
+			setMsg(
+				`Pagamento parcial registrado. Restante ${money(result.conta.valorrestante ?? 0)}.`,
+			);
+		} catch (err) {
+			setPagando(false);
+			setMsg(err instanceof Error ? err.message : "Erro no pagamento da fatia");
+		} finally {
+			setLoading(false);
+		}
+	}
+
 	const itens = conta?.itens ?? [];
-	const total = conta?.valortotal ?? 0;
+	const total = conta?.valorrestante ?? conta?.valortotal ?? 0;
+	const totalPagar = fatiaValor ?? total;
 	const totalFila = useMemo(
 		() => fila.reduce((acc, i) => acc + i.precototal, 0),
 		[fila],
@@ -471,11 +706,14 @@ export function MesaContaPage() {
 										>
 											-
 										</Button>
-										<span className="w-6 text-center">{item.quantidade}</span>
+										<span className="min-w-10 text-center tabular-nums">
+											{formatarQuantidade(item.quantidade)}
+											{item.pesado ? " kg" : ""}
+										</span>
 										<Button
 											size="sm"
 											variant="outline"
-											disabled={loading}
+											disabled={loading || item.pesado}
 											onClick={() => alterarQtdFila(item.chave, 1)}
 										>
 											+
@@ -500,15 +738,29 @@ export function MesaContaPage() {
 									Já na conta
 								</h3>
 								{itens.map((item) => (
-									<div
+									<label
 										key={item.id}
-										className="flex justify-between gap-2 py-0.5 text-xs text-muted-foreground"
+										className="flex items-center justify-between gap-2 py-0.5 text-xs text-muted-foreground"
 									>
-										<span className="min-w-0 flex-1 truncate">
-											{item.quantidade}x {item.descricao}
+										<span className="flex min-w-0 flex-1 items-center gap-1">
+											<input
+												type="checkbox"
+												className="size-3 accent-primary"
+												checked={itensSel.includes(item.id)}
+												onChange={(e) => {
+													setItensSel((prev) =>
+														e.target.checked
+															? [...prev, item.id]
+															: prev.filter((id) => id !== item.id),
+													);
+												}}
+											/>
+											<span className="truncate">
+												{formatarQuantidade(item.quantidade)}x {item.descricao}
+											</span>
 										</span>
 										<span>{money(item.precototal)}</span>
-									</div>
+									</label>
 								))}
 							</div>
 						)}
@@ -521,8 +773,69 @@ export function MesaContaPage() {
 								<span className="text-primary">{money(totalFila)}</span>
 							</div>
 						)}
+						{conta && (
+							<>
+								<div className="flex items-center justify-between gap-2 text-xs">
+									<span>Pessoas</span>
+									<Input
+										type="number"
+										min={1}
+										className="h-8 w-16"
+										value={conta.numeropessoas ?? 1}
+										disabled={!conta || loading}
+										onChange={(e) =>
+											void aplicarAjustes({
+												numeropessoas: Number(e.target.value),
+											})
+										}
+									/>
+								</div>
+								<label className="flex items-center justify-between text-xs">
+									<span>Taxa de serviço</span>
+									<input
+										type="checkbox"
+										className="size-4 accent-primary"
+										checked={conta.taxa_ativa === 1}
+										disabled={!conta || loading}
+										onChange={(e) =>
+											void aplicarAjustes({ taxaAtiva: e.target.checked })
+										}
+									/>
+								</label>
+								{(conta.subtotal ?? 0) > 0 && (
+									<div className="flex justify-between text-xs text-muted-foreground">
+										<span>Subtotal</span>
+										<span>{money(conta.subtotal ?? 0)}</span>
+									</div>
+								)}
+								{(conta.valordesconto ?? 0) > 0 && (
+									<div className="flex justify-between text-xs text-muted-foreground">
+										<span>Desconto</span>
+										<span>-{money(conta.valordesconto ?? 0)}</span>
+									</div>
+								)}
+								{(conta.valortaxaservico ?? 0) > 0 && (
+									<div className="flex justify-between text-xs text-muted-foreground">
+										<span>Taxa serviço</span>
+										<span>{money(conta.valortaxaservico ?? 0)}</span>
+									</div>
+								)}
+								{(conta.valorcouvert ?? 0) > 0 && (
+									<div className="flex justify-between text-xs text-muted-foreground">
+										<span>Couvert</span>
+										<span>{money(conta.valorcouvert ?? 0)}</span>
+									</div>
+								)}
+								{(conta.valorpago ?? 0) > 0 && (
+									<div className="flex justify-between text-xs text-muted-foreground">
+										<span>Já pago</span>
+										<span>{money(conta.valorpago ?? 0)}</span>
+									</div>
+								)}
+							</>
+						)}
 						<div className="flex justify-between text-lg font-bold">
-							<span>Total conta</span>
+							<span>A pagar</span>
 							<span className="text-primary">{money(total)}</span>
 						</div>
 					</div>
@@ -571,10 +884,69 @@ export function MesaContaPage() {
 							variant="outline"
 							className="w-full"
 							disabled={!itens.length || fila.length > 0}
-							onClick={() => setPagando(true)}
+							onClick={() => {
+								setPagandoFatia(false);
+								setFatiaValor(null);
+								setPagando(true);
+							}}
 						>
 							Receber / Fechar conta
 						</Button>
+						<div className="grid grid-cols-2 gap-2">
+							<Button
+								variant="outline"
+								size="sm"
+								disabled={!itens.length || loading}
+								onClick={() => void preConta()}
+							>
+								Pré-conta
+							</Button>
+							<Button
+								variant="outline"
+								size="sm"
+								disabled={!itens.length || loading}
+								onClick={() => iniciarDivisao()}
+							>
+								Dividir
+							</Button>
+							<Button
+								variant="outline"
+								size="sm"
+								disabled={!itens.length || loading}
+								onClick={() => setDestinoAberto("transferir")}
+							>
+								Transferir
+							</Button>
+							<Button
+								variant="outline"
+								size="sm"
+								disabled={!itens.length || loading}
+								onClick={() => setDestinoAberto("juntar")}
+							>
+								Juntar
+							</Button>
+						</div>
+						<div className="grid grid-cols-2 gap-2">
+							<Button
+								variant="outline"
+								size="sm"
+								disabled={!itens.length || loading}
+								onClick={() => {
+									setDescontoPendente("");
+									setSenhaAberta(true);
+								}}
+							>
+								Desconto
+							</Button>
+							<Button
+								variant="outline"
+								size="sm"
+								disabled={!itensSel.length || loading}
+								onClick={() => setDestinoAberto("itens")}
+							>
+								Mover itens
+							</Button>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -631,13 +1003,114 @@ export function MesaContaPage() {
 
 			<DialogPagamentoMisto
 				aberto={pagando}
-				total={total}
+				total={totalPagar}
 				loading={loading}
-				titulo="Receber / fechar conta"
-				confirmarLabel="Confirmar e imprimir DANFC-e"
-				onCancelar={() => setPagando(false)}
-				onConfirmar={(fechamento) => void finalizar(fechamento)}
+				titulo={pagandoFatia ? "Receber fatia" : "Receber / fechar conta"}
+				confirmarLabel="Confirmar"
+				onCancelar={() => {
+					setPagando(false);
+					setFatiaValor(null);
+					setPagandoFatia(false);
+				}}
+				onConfirmar={(fechamento) =>
+					void (pagandoFatia
+						? finalizarFatia(fechamento)
+						: finalizar(fechamento))
+				}
 			/>
+
+			<DialogSenhaGerencial
+				aberto={senhaAberta}
+				loading={loading}
+				onCancelar={() => setSenhaAberta(false)}
+				onConfirmar={(senha) => void confirmarDesconto(senha)}
+			>
+				<Input
+					placeholder="Valor do desconto (R$)"
+					value={descontoPendente}
+					onChange={(e) => setDescontoPendente(e.target.value)}
+				/>
+			</DialogSenhaGerencial>
+
+			<DialogEscolherMesa
+				aberto={destinoAberto !== null}
+				titulo={
+					destinoAberto === "juntar"
+						? `Juntar nesta ${rotulo.singular.toLowerCase()}`
+						: destinoAberto === "itens"
+							? "Mover itens para"
+							: `Transferir para`
+				}
+				mesas={mesas}
+				excluirNumero={numeroMesa}
+				apenasOcupadas={destinoAberto === "juntar"}
+				loading={loading}
+				onCancelar={() => setDestinoAberto(null)}
+				onConfirmar={(n) => void confirmarDestino(n)}
+			/>
+
+			{dividirAberto && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+					<div className="w-[28rem] max-w-[95vw] space-y-4 rounded-lg border bg-card p-5">
+						<h2 className="text-lg font-semibold">Dividir conta</h2>
+						<div className="flex gap-2">
+							<Button
+								size="sm"
+								variant={modoDividir === "pessoas" ? "default" : "outline"}
+								onClick={() => setModoDividir("pessoas")}
+							>
+								Pessoas
+							</Button>
+							<Button
+								size="sm"
+								variant={modoDividir === "valor" ? "default" : "outline"}
+								onClick={() => setModoDividir("valor")}
+							>
+								Valor
+							</Button>
+							<Button
+								size="sm"
+								variant={modoDividir === "itens" ? "default" : "outline"}
+								onClick={() => setModoDividir("itens")}
+							>
+								Itens
+							</Button>
+						</div>
+						{modoDividir === "pessoas" && (
+							<Input
+								type="number"
+								min={2}
+								value={qtdPessoasDiv}
+								onChange={(e) => setQtdPessoasDiv(e.target.value)}
+							/>
+						)}
+						{modoDividir === "valor" && (
+							<Input
+								placeholder="Ex.: 40, 60"
+								value={valoresDiv}
+								onChange={(e) => setValoresDiv(e.target.value)}
+							/>
+						)}
+						{modoDividir === "itens" && (
+							<p className="text-sm text-muted-foreground">
+								Marque os itens na lista da conta e depois receba esta fatia.
+							</p>
+						)}
+						<div className="flex gap-2">
+							<Button
+								variant="outline"
+								className="flex-1"
+								onClick={() => setDividirAberto(false)}
+							>
+								Cancelar
+							</Button>
+							<Button className="flex-1" onClick={() => abrirPagamentoFatia()}>
+								Receber fatia
+							</Button>
+						</div>
+					</div>
+				</div>
+			)}
 
 			<FunctionBar
 				actions={[
@@ -665,12 +1138,24 @@ export function MesaContaPage() {
 						onClick: () => cancelarFila(),
 					},
 					{
+						key: "preconta",
+						label: "Pré-conta",
+						hotkey: "F6",
+						variant: "outline",
+						disabled: !itens.length || loading,
+						onClick: () => void preConta(),
+					},
+					{
 						key: "receber",
 						label: "Receber",
 						hotkey: "F5",
 						variant: "secondary",
 						disabled: !itens.length || fila.length > 0 || loading,
-						onClick: () => setPagando(true),
+						onClick: () => {
+							setPagandoFatia(false);
+							setFatiaValor(null);
+							setPagando(true);
+						},
 					},
 					{
 						key: "voltar",
@@ -687,6 +1172,13 @@ export function MesaContaPage() {
 					onCancelar={() => setPizzaPrimeiro(null)}
 					onInteira={venderPizzaInteira}
 					onConfirmar={confirmarMeioAMeio}
+				/>
+			)}
+			{produtoPeso && (
+				<DialogQuantidadePeso
+					produto={produtoPeso}
+					onCancelar={() => setProdutoPeso(null)}
+					onConfirmar={confirmarPeso}
 				/>
 			)}
 		</div>

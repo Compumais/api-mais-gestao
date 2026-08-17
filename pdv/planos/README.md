@@ -2,7 +2,11 @@
 
 Roadmaps das etapas do PDV gourmet (Electron + PostgreSQL local + POS Android na LAN). São documentos de consulta — **não implementam** feature.
 
-A Etapa 1 (SiTef + pagamento misto) está no plano de execução corrente, não neste índice de markdowns futuros.
+A Etapa 1 (SiTef + pagamento misto) e a Etapa 2 no **PDV Electron** (taxa, couvert, desconto, pré-conta, divisão, transferir/juntar) já foram implementadas. O POS ainda fecha a conta inteira, sem essas telas.
+
+Também já entrou fora das etapas numeradas: config só para admin/proprietário/super; modo PDV secundário na tela de login.
+
+A Etapa 3 tem plano de implementação em [etapa-03-delivery-canais.md](etapa-03-delivery-canais.md) (leva A: delivery próprio e retirada no PDV; canais depois).
 
 ## As 5 etapas
 

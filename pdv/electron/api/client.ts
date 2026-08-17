@@ -184,6 +184,21 @@ export async function loginEmail(email: string, password: string) {
 	};
 }
 
+export async function obterPerfilUsuario(): Promise<{ perfil: unknown }> {
+	const data = await request<{ perfil?: unknown }>("/api/auth/perfil");
+	return { perfil: data.perfil ?? [] };
+}
+
+export async function obterMeuPlano(idempresa?: string | null): Promise<{
+	modulos: unknown;
+}> {
+	const path = idempresa
+		? `/planos/meu-plano?idempresa=${encodeURIComponent(idempresa)}`
+		: "/planos/meu-plano";
+	const data = await request<{ modulos?: unknown }>(path);
+	return { modulos: data.modulos ?? [] };
+}
+
 export async function listarEmpresas(idusuario?: string | null) {
 	let path = "/empresas?page=1&limit=100";
 	if (idusuario) {
@@ -389,6 +404,9 @@ export async function baixaEstoqueVenda(body: {
 		valorcartaodebito?: number | string;
 		valorcartao?: number | string;
 		valorprepago?: number | string;
+		desconto?: number | string;
+		valortaxaservico?: number | string;
+		valorcouverartistico?: number | string;
 	};
 }) {
 	return request<{

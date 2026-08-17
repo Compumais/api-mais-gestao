@@ -84,6 +84,8 @@ export type ModeloAtendimento = "mesa" | "comanda";
 export type StatusPdv = {
 	online: boolean;
 	outboxPendentes: number;
+	podeConfigurar: boolean;
+	moduloGourmet: boolean;
 	sessao: {
 		logado: boolean;
 		username: string | null;
@@ -103,6 +105,23 @@ export type StatusPdv = {
 	modo?: "principal" | "secundario";
 	principalOnline?: boolean | null;
 	principalErro?: string | null;
+	balancaHabilitada?: boolean;
+};
+
+export type BalancaStatus = {
+	habilitado: boolean;
+	porta: string;
+	baud: number;
+	protocolo: string;
+	conectado: boolean;
+	mensagem: string;
+};
+
+export type BalancaPeso = {
+	peso: number;
+	conectado: boolean;
+	origem: "balanca" | "nenhuma";
+	mensagem: string;
 };
 
 export type StatusContext = {
@@ -116,4 +135,8 @@ export function rotuloModelo(modelo: ModeloAtendimento | undefined) {
 		return { singular: "Comanda", plural: "Comandas" };
 	}
 	return { singular: "Mesa", plural: "Mesas" };
+}
+
+export function rotaHomePdv(status: StatusPdv | null | undefined): string {
+	return status?.moduloGourmet ? "/" : "/balcao";
 }

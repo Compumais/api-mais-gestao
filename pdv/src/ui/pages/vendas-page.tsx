@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { pdvInvoke } from "@/lib/pdv-api";
-import { rotuloModelo, type StatusContext } from "@/lib/pdv-types";
+import { rotaHomePdv, rotuloModelo, type StatusContext } from "@/lib/pdv-types";
 import { money } from "@/lib/utils";
 import { FunctionBar } from "@/ui/components/function-bar";
 import { Topbar } from "@/ui/components/topbar";
@@ -61,8 +61,15 @@ export function VendasPage() {
 				title="Vendas do PDV"
 				subtitle="Histórico local com status de sincronização e NFC-e"
 				right={
-					<Button variant="secondary" size="sm" onClick={() => navigate(-1)}>
-						Voltar às {rotulo.plural.toLowerCase()}
+					<Button
+						variant="secondary"
+						size="sm"
+						onClick={() => navigate(rotaHomePdv(status))}
+					>
+						Voltar{" "}
+						{status?.moduloGourmet
+							? `às ${rotulo.plural.toLowerCase()}`
+							: "ao PDV"}
 					</Button>
 				}
 			/>
@@ -143,7 +150,7 @@ export function VendasPage() {
 						label: "Voltar",
 						hotkey: "Escape",
 						variant: "outline",
-						onClick: () => navigate(-1),
+						onClick: () => navigate(rotaHomePdv(status)),
 					},
 				]}
 			/>

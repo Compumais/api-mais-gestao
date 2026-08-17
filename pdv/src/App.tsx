@@ -4,12 +4,14 @@ import { pdvInvoke } from "@/lib/pdv-api";
 import { aplicarTema } from "@/lib/theme";
 import { GlobalEscapeBack } from "@/ui/components/global-escape-back";
 import { RequireCaixa } from "@/ui/guards/require-caixa";
+import { RequireConfig } from "@/ui/guards/require-config";
+import { RequireGourmet } from "@/ui/guards/require-gourmet";
 import { RequireSessao } from "@/ui/guards/require-sessao";
 import { AberturaCaixaPage } from "@/ui/pages/abertura-caixa-page";
 import { BalcaoPage } from "@/ui/pages/balcao-page";
 import { BootPage } from "@/ui/pages/boot-page";
 import { ConfigPage } from "@/ui/pages/config-page";
-import { HomePage } from "@/ui/pages/home-page";
+import { HomeEntry } from "@/ui/pages/home-page";
 import { LoginPage } from "@/ui/pages/login-page";
 import { MesaContaPage } from "@/ui/pages/mesa-conta-page";
 import { VendasPage } from "@/ui/pages/vendas-page";
@@ -35,11 +37,15 @@ export function App() {
 
 				<Route element={<RequireSessao />}>
 					<Route path="/abertura-caixa" element={<AberturaCaixaPage />} />
-					<Route path="/config" element={<ConfigPage />} />
+					<Route element={<RequireConfig />}>
+						<Route path="/config" element={<ConfigPage />} />
+					</Route>
 
 					<Route element={<RequireCaixa />}>
-						<Route path="/" element={<HomePage />} />
-						<Route path="/mesas/:numero" element={<MesaContaPage />} />
+						<Route path="/" element={<HomeEntry />} />
+						<Route element={<RequireGourmet />}>
+							<Route path="/mesas/:numero" element={<MesaContaPage />} />
+						</Route>
 						<Route path="/balcao" element={<BalcaoPage />} />
 						<Route path="/vendas" element={<VendasPage />} />
 					</Route>

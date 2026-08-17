@@ -1,70 +1,153 @@
-# Etapa 2 — Conta gourmet
+# Etapa 2 — Conta gourmet (plano de implementação)
 
-## Objetivo
+Status: **plano** — PDV Electron nesta leva. POS Android fica para uma leva seguinte.
 
-Fechar mesa de grupo sem planilha: dividir a conta, transferir ou juntar mesas/comandas, aplicar taxa de serviço (10%) e couvert, conceder desconto com senha gerencial e emitir pré-conta (cupom de conferência, sem NFC-e).
+A Etapa 1 já fecha a mesma conta com vários meios. Esta etapa cobre **como o total se forma e se parte**: taxa, couvert, desconto, pré-conta, divisão, transferir e juntar.
+
+## Decisão de escopo
+
+- **Entra agora:** PDV Electron (mesa/comanda), LAN API no principal (para o POS não quebrar e para o secundário continuar lendo contas), testes unitários das regras.
+- **Não entra agora:** telas e fluxos novos no POS Android. O POS continua fechando a conta inteira com pagamento misto, sem dividir/transferir/taxa.
 
 ## Lacuna vs mercado
 
-No food service (Uniplus, Linx Menew, VR) a conta não é “um total + um meio”. O operador precisa:
+No food service (Uniplus, Linx Menew, VR) a conta não é “um total + um meio”. O operador precisa dividir, transferir, aplicar 10%, dar desconto com senha e imprimir conferência antes do fiscal.
 
-| Capacidade | Quem tem | Situação hoje no Mais Gestão |
-|---|---|---|
-| Divisão por pessoa, item ou valor | Uniplus, Linx Menew, VR | Um único `valortotal`; `fecharContaMesa` recebe um meio |
-| Transferir / juntar mesa ou comanda | Uniplus (ALT+F12), VR | `mesa.numero` e `conta_mesa` são 1:1; não há mover itens nem fundir contas |
-| Taxa de serviço 10% e couvert | Uniplus, Linx, VR | Total = soma de `item_conta`; sem linha de taxa |
-| Desconto com senha | Uniplus, Linx, VR | Sem desconto e sem senha gerencial no PDV |
-| Pré-conta / conferência (cupom não fiscal) | Uniplus F3 | Só cupom fiscal / produção; cliente não confere antes de pagar |
+Hoje no PDV local: `conta_mesa.valortotal` = soma de `item_conta`; `fecharContaMesa` cobra esse total de uma vez; não há mover itens, senha gerencial nem cupom de conferência.
 
-A Etapa 1 (pagamento misto) cobre vários meios no **mesmo** total. Esta etapa cobre **como se forma e se parte** esse total.
+## Fórmula do total (alinha ao ERP / NFC-e)
 
-## Dependências no código atual
+A API e o Web já usam:
 
-- Modelo local: `mesa`, `conta_mesa`, `item_conta` em `pdv/electron/db/schema.ts`
-- Regras: `listarMesas`, `abrirContaMesa`, `adicionarItemConta`, `enviarPedidoConta`, `fecharContaMesa` em `pdv/electron/db/repos.ts`
-- UI da conta: `pdv/src/ui/pages/mesa-conta-page.tsx` (fila → itens da conta → um meio → fechar)
-- Grade: `pdv/src/ui/pages/home-page.tsx` (livre / consumindo / ociosa; sem ação de transferir)
-- LAN API: `GET/POST /pos/mesas`, `POST /pos/contas/:id/pedido`, `POST /pos/contas/:id/fechar` em `pdv/electron/lan-api/server.ts`
-- POS: `MesasActivity`, `ContaMesaActivity`, `PagamentoActivity` em `POSmaisgestao/`
-- Impressão: `pdv/electron/impressora/` (reutilizar ESC/POS para pré-conta; não emitir NFC-e)
-- Catraca Tecnibra: `listarNumerosComPendencia` — transferência/juntar precisa manter o XML coerente com as comandas ocupadas
-- Pressupõe Etapa 1: cada fatia da divisão fecha com lançamentos mistos (PIX + dinheiro, dois cartões)
+`total = max(0, subtotal − desconto + taxaServico + couvert)`
 
-Não há hoje remoção de item da conta, campo de taxa/desconto nem senha de supervisor.
+(`web/src/lib/gourmet-utils.ts` → `calcularTotalComTaxas`; NFC-e em `api/src/service/nfce-emissao/atualizar-venda-nfce-pdv.ts`.)
 
-## Escopo
+O PDV local passa a gravar esses quatro números na conta e a usar **esse total** no pagamento misto, no cupom e no outbox. Sem isso a NFC-e diverge do que o cliente pagou.
 
-**Entra**
+Couvert é valor fixo por pessoa × `numeropessoas` (configurável). Taxa é percentual sobre o subtotal dos itens (padrão 10%), ligável/desligável na conta.
 
-- Divisão da conta aberta por:
-  - pessoa (N partes iguais, com ajuste de centavos)
-  - item (marcar linhas para cada pagador)
-  - valor (rateio informado)
-- Transferir itens ou a conta inteira para outra mesa/comanda livre ou ocupada
-- Juntar duas contas abertas numa só (itens e total somados; origem fica livre)
-- Taxa de serviço configurável (padrão 10%), aplicável/removível na conta; couvert como item ou taxa fixa por pessoa
-- Desconto em valor ou percentual, só após senha gerencial (configurada no PDV)
-- Pré-conta: cupom não fiscal com itens, subtotal, taxa, desconto e total, sem gravar venda e sem NFC-e
-- Mesmas operações no POS via LAN API (dividir/transferir/juntar/taxa/desconto/pré-conta), alinhadas ao desktop
+## Modelo local
 
-**Não entra neste bloco de escopo** — ver seção seguinte.
+Estender `conta_mesa` em [`pdv/electron/db/schema.ts`](pdv/electron/db/schema.ts) / [`pdv/db/schema.sql`](pdv/db/schema.sql):
 
-## Critérios de aceite
+- `numeropessoas` (int, default 1)
+- `valordesconto`, `valortaxaservico`, `valorcouvert` (numeric)
+- `taxa_ativa` (0/1) — se 1, taxa = % config × subtotal
+- `subtotal` pode ser derivado da soma dos itens; `valortotal` passa a ser a fórmula acima, recalculada em todo mutate de item/ajuste
 
-- Mesa de 6 fecha em 3 pagadores (por pessoa ou por item) sem recalcular na mão; cada fatia pode usar pagamento misto da Etapa 1
-- Transferir a conta da mesa 4 para a 7 (livre) e juntar a 7 com a 8 (ocupada) preserva itens, observações, pizza meio a meio e total
-- Taxa 10% e couvert entram no total da conta e no cupom; NFC-e, quando emitida no fechamento, reflete o mesmo total
-- Desconto sem senha é recusado; com senha válida, o total e o cupom batem
-- Pré-conta imprime conferência e a mesa continua aberta; só o fechamento gera venda/NFC-e
-- POS executa divisão, transferência, taxa e pré-conta contra a LAN API sem divergir do PDV
-- Comandas com Tecnibra habilitada continuam listadas no XML após transferir/juntar
+Config (aba Geral):
 
-## O que fica de fora
+- `taxa_servico_percentual` (default `10`)
+- `couvert_valor` (default `0`)
+- `senha_gerencial` (hash, não texto puro) — só para desconto nesta etapa
 
-- TEF / SiTef e modelagem de lançamentos múltiplos (Etapa 1)
-- Delivery, viagem e canais (Etapa 3)
-- KDS / status de produção além do que `pedido_fila` já faz (Etapa 4)
-- Garçom autenticado, estorno com motivo, opcionais/borda, CPF na NFC-e, mapa do salão (Etapa 5)
-- P2: SAT, fidelidade, totem, crediário, recarga
-- Reserva de mesa, planta do salão, comissão de garçom
-- Integração com o financeiro da API além do sync/outbox já existente da venda
+Novo módulo de regras: `pdv/electron/db/conta-gourmet.ts` (puro, testável):
+
+- `recalcularTotaisConta({ itens, numeropessoas, taxaAtiva, percentualTaxa, couvertUnitario, desconto })`
+- `partirPorPessoas(total, n)` — N partes iguais, resto de centavos na última
+- `partirPorValor(total, valores[])` — soma tem que bater
+- `partirPorItens(itens, grupos)` — cada grupo vira uma fatia com seus itens; taxa/desconto/couvert rateados proporcionalmente ao subtotal da fatia
+
+`fecharContaMesa` em [`pdv/electron/db/repos.ts`](pdv/electron/db/repos.ts) deixa de usar só `conta.valortotal` cru: usa o total recalculado e envia desconto/taxa/couvert no outbox para a API (`vendapdv` / gourmet) no mesmo formato que o Web já manda.
+
+## Operações
+
+### 1. Ajustes na conta (antes de pagar)
+
+Na [`mesa-conta-page.tsx`](pdv/src/ui/pages/mesa-conta-page.tsx), barra de conta:
+
+- pessoas (N)
+- toggle taxa 10% (ou % da config)
+- couvert (N × valor config, editável)
+- desconto R$ ou % — **abre dialog de senha gerencial**; recusa se inválida
+- totais visíveis: subtotal, desconto, taxa, couvert, a pagar
+
+### 2. Pré-conta
+
+Novo `imprimirPreConta(idconta)` em [`pdv/electron/impressora/escpos.ts`](pdv/electron/impressora/escpos.ts):
+
+- cupom **não fiscal** (“CONFERÊNCIA — NÃO É DOCUMENTO FISCAL”)
+- itens, subtotal, desconto, taxa, couvert, total
+- **não** cria `venda`, **não** emite NFC-e, mesa permanece aberta
+- reutiliza destino fiscal já configurado
+
+Atalho na conta (ex. F3, alinhado ao Uniplus).
+
+### 3. Divisão no fechamento
+
+Não quebra a conta em N vendas no banco até cada fatia ser paga (evita mesa “meia fechada” sem rastreio).
+
+Fluxo:
+
+1. Operador escolhe modo: pessoas | itens | valor.
+2. UI monta fatias (`valor` + itens da fatia).
+3. Para cada fatia, reutiliza [`dialog-pagamento-misto.tsx`](pdv/src/ui/components/dialog-pagamento-misto.tsx) (Etapa 1).
+4. Fatia paga → grava uma `venda` parcial (`origem: 'mesa'`, mesmos `idconta`, itens da fatia, totais da fatia).
+5. Itens pagos saem da conta (ou ficam marcados `pago`); `valortotal` da conta cai.
+6. Quando não restar saldo, fecha `conta_mesa` e libera a mesa como hoje.
+
+Se o operador cancelar no meio, o que já foi pago permanece (vendas parciais); o restante fica na mesa.
+
+### 4. Transferir
+
+- **Conta inteira:** muda `numero_mesa` da conta aberta; origem fica livre; destino precisa estar livre **ou** vazio. Se destino já tem conta aberta → recusar e sugerir **juntar**.
+- **Itens selecionados:** move linhas de `item_conta` para a conta do destino (abre conta se destino livre). Recalcula totais nas duas. Pizza meio a meio e observação vão junto.
+
+Depois: `avisarTecnibra()` para o XML refletir comandas ocupadas.
+
+### 5. Juntar
+
+Origem + destino abertas → itens da origem vão para o destino; origem fecha vazia e mesa fica livre; destino soma totais (taxa/desconto: destino prevalece; origem não carrega desconto da outra mesa). Recalcular + Tecnibra.
+
+## UI
+
+- [`mesa-conta-page.tsx`](pdv/src/ui/pages/mesa-conta-page.tsx): ajustes, pré-conta, dividir, transferir itens.
+- [`home-page.tsx`](pdv/src/ui/pages/home-page.tsx): ação na mesa ocupada — transferir conta / juntar (escolhe destino na grade).
+- [`config-page.tsx`](pdv/src/ui/pages/config-page.tsx): aba **Geral** — % taxa, valor couvert, senha gerencial (definir/alterar).
+- Dialogs novos: senha gerencial, dividir conta, escolher mesa destino.
+
+IPC em [`local-api/index.ts`](pdv/electron/local-api/index.ts): `recalcularConta`, `aplicarAjustesConta`, `validarSenhaGerencial`, `imprimirPreConta`, `dividirFecharFatia`, `transferirConta`, `transferirItens`, `juntarContas`.
+
+LAN API ([`lan-api/server.ts`](pdv/electron/lan-api/server.ts)): expor as mesmas operações (mesmo sem UI POS agora), para o secundário e para o POS na leva seguinte.
+
+## NFC-e e sync
+
+No outbox `criar_venda`, incluir `valordesconto`, `valortaxaservico`, `valorcouvert` (e, se a API gourmet já tiver os campos, mapear 1:1 com `contamesa` / venda PDV). Conferir `POST /vendas-pdv-gourmet` e estender só o mínimo para o XML da NFC-e bater com o total pago.
+
+Itens de taxa/couvert: **não** inventar produto fantasma no cupom de produção. No DANFCE, seguir o que a API já faz (totalização no pagamento, não linha de produto), salvo se a emissão atual exigir item — nesse caso uma linha de serviço só no XML, nunca na cozinha.
+
+## Tecnibra
+
+`listarNumerosComPendencia` já olha mesa ocupada com itens. Transferir/juntar tem que atualizar `mesa.status` / `item_conta` **antes** do `avisarTecnibra()`, para a comanda origem sair do XML e a destino entrar.
+
+## Testes (sem impressora)
+
+`pdv/electron/db/conta-gourmet.test.ts`:
+
+- 10% + couvert 2 pessoas + desconto → total da fórmula
+- 3 pessoas em R$ 100,00 → 33,33 / 33,33 / 33,34
+- partir por itens preserva soma
+- senha errada não aplica desconto (função de hash)
+- juntar/transferir: origem livre, destino com todos os itens
+
+`npm run test:conta-gourmet` no [`pdv/package.json`](pdv/package.json).
+
+## Critérios de aceite (esta leva)
+
+- Mesa de 6 fecha em 3 pagadores (pessoa ou item) no **PDV**, cada fatia com pagamento misto da Etapa 1
+- Transferir mesa 4 → 7 (livre) e juntar 7 + 8 (ocupada) preserva itens, observação, pizza meio a meio e total
+- Taxa 10% e couvert entram no total, no pré-conta e na venda/NFC-e
+- Desconto sem senha é recusado; com senha, total e cupom batem
+- Pré-conta imprime conferência; mesa continua aberta; só o fechamento gera venda/NFC-e
+- Tecnibra: XML coerente após transferir/juntar
+- POS **não** precisa destas telas ainda; fechamento integral atual continua válido
+
+## Fora desta etapa
+
+- Telas POS (dividir/transferir/taxa/pré-conta)
+- Delivery / canais (Etapa 3)
+- KDS (Etapa 4)
+- Garçom autenticado, estorno com motivo, opcionais, CPF na NFC-e, mapa do salão (Etapa 5)
+- Reserva, planta, comissão
+- Compartilhar a **mesma** mesa aberta entre PDV principal e secundário (ainda contas locais por terminal)

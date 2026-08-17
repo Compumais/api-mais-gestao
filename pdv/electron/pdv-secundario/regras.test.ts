@@ -91,6 +91,7 @@ describe("mesclarConfigNegocio", () => {
 			sitef_ip: "10.0.0.8",
 			sitef_porta_pinpad: "COM5",
 			impressora_host: "192.168.1.50",
+			balanca_porta: "COM7",
 			qtd_mesas: "10",
 			pix_chave: "antiga",
 			tema: "dark",
@@ -100,6 +101,7 @@ describe("mesclarConfigNegocio", () => {
 			sitef_ip: "127.0.0.1",
 			sitef_porta_pinpad: "COM1",
 			impressora_host: "10.0.0.1",
+			balanca_porta: "COM1",
 			qtd_mesas: "20",
 			modelo_atendimento: "comanda",
 			pix_chave: "nova-chave",
@@ -112,6 +114,7 @@ describe("mesclarConfigNegocio", () => {
 		assert.equal(m.sitef_ip, "10.0.0.8");
 		assert.equal(m.sitef_porta_pinpad, "COM5");
 		assert.equal(m.impressora_host, "192.168.1.50");
+		assert.equal(m.balanca_porta, "COM7");
 		assert.equal(m.tema, "dark");
 		assert.equal(m.qtd_mesas, "20");
 		assert.equal(m.modelo_atendimento, "comanda");

@@ -31,6 +31,7 @@ import { Badge } from "@/ui/components/ui/badge";
 import { Button } from "@/ui/components/ui/button";
 import { Input } from "@/ui/components/ui/input";
 import { useEscapeFechaModal } from "@/ui/hooks/use-escape-fecha-modal";
+import { BalcaoPage } from "@/ui/pages/balcao-page";
 
 type DialogoAbertura =
 	| null
@@ -90,6 +91,16 @@ function classeMesa(status: StatusAtividadeMesa) {
 		return "border-accent bg-accent text-accent-foreground";
 	}
 	return "border-border bg-card text-muted-foreground";
+}
+
+/** Home: mesas se a empresa tem Gourmet; senão, só o balcão. */
+export function HomeEntry() {
+	const ctx = useOutletContext<StatusContext>();
+	if (!ctx.status) return null;
+	if (!ctx.status.moduloGourmet) {
+		return <BalcaoPage />;
+	}
+	return <HomePage />;
 }
 
 export function HomePage() {
@@ -424,11 +435,13 @@ export function HomePage() {
 						icon={Receipt}
 						onClick={() => navigate("/vendas")}
 					/>
-					<SideButton
-						label="Config"
-						icon={Settings}
-						onClick={() => navigate("/config")}
-					/>
+					{status?.podeConfigurar ? (
+						<SideButton
+							label="Config"
+							icon={Settings}
+							onClick={() => navigate("/config")}
+						/>
+					) : null}
 				</aside>
 			</div>
 
@@ -595,13 +608,17 @@ export function HomePage() {
 						variant: "secondary",
 						onClick: () => navigate("/vendas"),
 					},
-					{
-						key: "config",
-						label: "Config",
-						hotkey: "F4",
-						variant: "outline",
-						onClick: () => navigate("/config"),
-					},
+					...(status?.podeConfigurar
+						? [
+								{
+									key: "config",
+									label: "Config",
+									hotkey: "F4",
+									variant: "outline" as const,
+									onClick: () => navigate("/config"),
+								},
+							]
+						: []),
 					{
 						key: "fechar-caixa",
 						label: "Fechar caixa",

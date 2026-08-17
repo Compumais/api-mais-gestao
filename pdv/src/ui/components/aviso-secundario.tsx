@@ -24,14 +24,16 @@ export function AvisoSecundario({ status }: { status: StatusPdv | null }) {
 				{status.principalErro ??
 					"PDV principal offline. Vendas e mesas ficam bloqueadas até reconectar."}
 			</p>
-			<Button
-				type="button"
-				variant="outline"
-				size="sm"
-				onClick={() => navigate("/config")}
-			>
-				Configurações
-			</Button>
+			{status.podeConfigurar ? (
+				<Button
+					type="button"
+					variant="outline"
+					size="sm"
+					onClick={() => navigate("/config")}
+				>
+					Configurações
+				</Button>
+			) : null}
 		</div>
 	);
 }
