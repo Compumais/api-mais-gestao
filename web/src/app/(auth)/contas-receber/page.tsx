@@ -1,12 +1,12 @@
 "use client";
 
 import {
-	IconDotsVertical,
-	IconPencil,
-	IconTrash,
-	IconEye,
 	IconCheck,
+	IconDotsVertical,
+	IconEye,
+	IconPencil,
 	IconPlus,
+	IconTrash,
 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -21,6 +21,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { TableSkeleton } from "@/components/table-skeleton";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -54,7 +55,6 @@ import {
 	financeiroService,
 } from "@/services/financeiro.service";
 import { PageContainer } from "../components/page-container";
-import { TableSkeleton } from "@/components/table-skeleton";
 
 const formatCurrency = (value: string | null | undefined) => {
 	if (!value) return "R$ 0,00";
@@ -74,12 +74,28 @@ const formatParcela = (
 	parcela: number | null | undefined,
 	totalParcelas: number | null | undefined,
 ) => {
-	if (!parcela) return "-";
+	const atual = parcela && parcela > 0 ? parcela : 1;
 	if (totalParcelas && totalParcelas > 1) {
-		return `${parcela}/${totalParcelas}`;
+		return `${atual}/${totalParcelas}`;
 	}
-	return String(parcela);
+	return String(atual);
 };
+
+const documentoPareceUuid = (valor: string) =>
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+		valor,
+	);
+
+const formatDocumento = (financeiro: Financeiro) => {
+	const documento = financeiro.documento?.trim() ?? "";
+	if (!documento || documentoPareceUuid(documento)) {
+		return financeiro.historico?.trim() || "Venda PDV";
+	}
+	return documento;
+};
+
+const formatNome = (financeiro: Financeiro) =>
+	financeiro.emitente?.trim() || financeiro.historico?.trim() || "-";
 
 const getStatusBadge = (status: string | null | undefined) => {
 	if (!status) return <Badge variant="outline">-</Badge>;
@@ -129,16 +145,14 @@ const createColumns = ({
 		accessorKey: "documento",
 		header: "Documento",
 		cell: ({ row }) => (
-			<div className="font-medium">{row.getValue("documento") || "-"}</div>
+			<div className="font-medium">{formatDocumento(row.original)}</div>
 		),
 	},
 	{
 		accessorKey: "emitente",
 		header: "Nome",
 		cell: ({ row }) => (
-			<div className="max-w-[220px] truncate">
-				{row.getValue("emitente") || "-"}
-			</div>
+			<div className="max-w-[220px] truncate">{formatNome(row.original)}</div>
 		),
 	},
 	{

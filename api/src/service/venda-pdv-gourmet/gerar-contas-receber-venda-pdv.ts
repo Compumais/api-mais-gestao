@@ -1,25 +1,34 @@
 import { v4 as uuidv4 } from "uuid";
 import type { HttpResponse } from "@/model/http-model.js";
 import type { VendaPdvGourmet } from "@/model/venda-pdv-gourmet-model.js";
+import type { LancamentoPagamentoPdv } from "@/model/venda-pdv-pagamento-model.js";
 import { buscarCondicaoPagamentoPorId } from "@/repositories/condicao-pagamento-repositories.js";
+import { buscarEmpresaPorId } from "@/repositories/empresa-repositories.js";
 import { buscarEntidadePorId } from "@/repositories/entidade-repositories.js";
 import {
 	buscarFinanceirosPorOrigem,
 	criarFinanceiro,
 } from "@/repositories/financeiro-repositories.js";
-import { buscarTipoDocumentoFinanceiroPorId } from "@/repositories/tipo-documento-financeiro-repositories.js";
+import {
+	buscarTipoDocumentoFinanceiroPorId,
+	listarTiposDocumentoFinanceiroAtivos,
+} from "@/repositories/tipo-documento-financeiro-repositories.js";
 import { montarIdentificacaoFinanceiroPdv } from "@/util/financeiro-pdv-util.js";
 import { httpBadRequest, httpOk } from "@/util/http-util.js";
 import {
 	adicionarDias,
 	formatarValorMonetario,
+	parseValorMonetario,
 	TIPO_ORIGEM_VENDA_PDV,
 } from "@/util/recebimentos-venda-util.js";
+import { resolverPrazoDiasTipoDocumento } from "@/util/resolver-financeiro-emissao-nfe.js";
 import { resolverParcelasCondicaoPagamento } from "@/util/resolver-parcelas-condicao-pagamento.js";
 import {
-	resolverDestinoFinanceiroFormaPagamento,
-	resolverPrazoDiasTipoDocumento,
-} from "@/util/resolver-financeiro-emissao-nfe.js";
+	resolverTipoDocumentoPorFormaNfe,
+	TPAG_CARTAO_CREDITO,
+	TPAG_CARTAO_DEBITO,
+	tipoDocumentoGeraContasReceber,
+} from "@/util/resolver-tipo-documento-pdv.js";
 
 export type PagamentoErpVendaPdv = {
 	idtipodocumentofinanceiro: string;
@@ -29,7 +38,7 @@ export type PagamentoErpVendaPdv = {
 type GerarContasReceberVendaPdvParametros = {
 	venda: VendaPdvGourmet;
 	idusuario: string;
-	identidade: string;
+	identidade?: string | undefined;
 	idcondicaopagto?: string | undefined;
 	pagamentosErp: PagamentoErpVendaPdv[];
 };
@@ -55,6 +64,82 @@ function distribuirValor(total: number, parcelas: number): number[] {
 	return resultado;
 }
 
+export async function inferirPagamentosErpVendaPdv(params: {
+	venda: VendaPdvGourmet;
+	pagamentos?: LancamentoPagamentoPdv[];
+}): Promise<PagamentoErpVendaPdv[]> {
+	const tipos = await listarTiposDocumentoFinanceiroAtivos(
+		params.venda.idempresa,
+	);
+	if (tipos.length === 0) {
+		return [];
+	}
+
+	let valorCredito = parseValorMonetario(params.venda.valorcartaocredito);
+	const valorDebito = parseValorMonetario(params.venda.valorcartaodebito);
+	if (valorCredito === 0 && valorDebito === 0) {
+		valorCredito = parseValorMonetario(params.venda.valorcartao);
+	}
+
+	const cartoes =
+		params.pagamentos?.filter(
+			(item) =>
+				item.meio === "CARTAO" &&
+				(item.status ?? "ok") === "ok" &&
+				item.valor > 0,
+		) ?? [];
+
+	const formas: PagamentoErpVendaPdv[] = [];
+
+	if (cartoes.length > 0 && valorCredito > 0 && valorDebito === 0) {
+		for (const cartao of cartoes) {
+			const tipo = resolverTipoDocumentoPorFormaNfe(
+				tipos,
+				TPAG_CARTAO_CREDITO,
+				cartao.bandeira,
+			);
+			if (!tipo || !tipoDocumentoGeraContasReceber(tipo)) {
+				continue;
+			}
+			formas.push({
+				idtipodocumentofinanceiro: tipo.id,
+				valor: cartao.valor,
+			});
+		}
+		return formas;
+	}
+
+	if (valorCredito > 0) {
+		const tipo = resolverTipoDocumentoPorFormaNfe(
+			tipos,
+			TPAG_CARTAO_CREDITO,
+			cartoes[0]?.bandeira,
+		);
+		if (tipo && tipoDocumentoGeraContasReceber(tipo)) {
+			formas.push({
+				idtipodocumentofinanceiro: tipo.id,
+				valor: valorCredito,
+			});
+		}
+	}
+
+	if (valorDebito > 0) {
+		const tipo = resolverTipoDocumentoPorFormaNfe(
+			tipos,
+			TPAG_CARTAO_DEBITO,
+			cartoes[0]?.bandeira,
+		);
+		if (tipo && tipoDocumentoGeraContasReceber(tipo)) {
+			formas.push({
+				idtipodocumentofinanceiro: tipo.id,
+				valor: valorDebito,
+			});
+		}
+	}
+
+	return formas;
+}
+
 async function gerarParcelasPorCondicaoPdv(
 	parametros: GerarContasReceberVendaPdvParametros,
 	valorTotal: number,
@@ -63,9 +148,9 @@ async function gerarParcelasPorCondicaoPdv(
 	idtipodocumentoPadrao: string | null,
 	idplanocontasPadrao: string | null,
 ): Promise<number> {
-	const condicao = await buscarCondicaoPagamentoPorId(
-		parametros.idcondicaopagto!,
-	);
+	const condicao = parametros.idcondicaopagto
+		? await buscarCondicaoPagamentoPorId(parametros.idcondicaopagto)
+		: undefined;
 
 	if (!condicao) {
 		return 0;
@@ -95,7 +180,7 @@ async function gerarParcelasPorCondicaoPdv(
 		const financeiro = await criarFinanceiro({
 			id: uuidv4(),
 			idempresa: parametros.venda.idempresa,
-			identidade: parametros.identidade,
+			identidade: parametros.identidade ?? null,
 			tipo: "R",
 			tipoorigem: TIPO_ORIGEM_VENDA_PDV,
 			idorigem: parametros.venda.id,
@@ -128,9 +213,9 @@ async function gerarParcelasPorCondicaoPdv(
 export async function gerarContasReceberVendaPdvService(
 	parametros: GerarContasReceberVendaPdvParametros,
 ): Promise<HttpResponse<GerarContasReceberVendaPdvResposta>> {
-	const formas = parametros.pagamentosErp.filter((f) => f.valor > 0);
+	const formasInformadas = parametros.pagamentosErp.filter((f) => f.valor > 0);
 
-	if (formas.length === 0) {
+	if (formasInformadas.length === 0) {
 		return httpOk({ parcelasGeradas: 0 });
 	}
 
@@ -144,61 +229,72 @@ export async function gerarContasReceberVendaPdvService(
 		return httpOk({ parcelasGeradas: 0 });
 	}
 
-	if (!parametros.identidade?.trim()) {
-		return httpBadRequest(
-			"Cliente obrigatório para pagamento a prazo no PDV",
-		);
-	}
-
-	const cliente = await buscarEntidadePorId(parametros.identidade);
-
-	if (!cliente || cliente.idempresa !== parametros.venda.idempresa) {
-		return httpBadRequest("Cliente não encontrado");
-	}
-
-	if (cliente.cliente !== 1) {
-		return httpBadRequest("A entidade informada não está cadastrada como cliente");
-	}
-
-	for (const forma of formas) {
+	const formasComTipo = [];
+	for (const forma of formasInformadas) {
 		const tipoDoc = await buscarTipoDocumentoFinanceiroPorId(
 			forma.idtipodocumentofinanceiro,
 		);
-
 		if (!tipoDoc) {
 			return httpBadRequest("Forma de pagamento ERP não encontrada");
 		}
+		if (!tipoDocumentoGeraContasReceber(tipoDoc)) {
+			continue;
+		}
+		formasComTipo.push({ forma, tipoDoc });
+	}
 
-		if (tipoDoc.aprazo === 1 && !parametros.identidade) {
+	if (formasComTipo.length === 0) {
+		return httpOk({ parcelasGeradas: 0 });
+	}
+
+	const exigeCliente = formasComTipo.some(
+		({ tipoDoc }) => tipoDoc.aprazo === 1,
+	);
+
+	if (exigeCliente && !parametros.identidade?.trim()) {
+		return httpBadRequest("Cliente obrigatório para pagamento a prazo no PDV");
+	}
+
+	const cliente = parametros.identidade?.trim()
+		? await buscarEntidadePorId(parametros.identidade)
+		: undefined;
+
+	if (parametros.identidade?.trim()) {
+		if (!cliente || cliente.idempresa !== parametros.venda.idempresa) {
+			return httpBadRequest("Cliente não encontrado");
+		}
+		if (cliente.cliente !== 1) {
 			return httpBadRequest(
-				"Cliente obrigatório para forma de pagamento a prazo",
+				"A entidade informada não está cadastrada como cliente",
 			);
 		}
 	}
 
 	const nomeCliente =
-		cliente.razaosocial?.trim() || cliente.nome?.trim() || undefined;
-	const valorTotalErp = formas.reduce((acc, f) => acc + f.valor, 0);
+		cliente?.razaosocial?.trim() || cliente?.nome?.trim() || undefined;
+	const valorTotalErp = formasComTipo.reduce(
+		(acc, item) => acc + item.forma.valor,
+		0,
+	);
 
 	if (valorTotalErp <= 0) {
 		return httpOk({ parcelasGeradas: 0 });
 	}
 
+	const empresa = await buscarEmpresaPorId(parametros.venda.idempresa);
 	const dataEmissao = new Date().toISOString().substring(0, 10);
 	const dataRegistro = new Date().toISOString();
 	let parcelasGeradas = 0;
 
-	const idtipodocumentoPrincipal = formas[0]?.idtipodocumentofinanceiro ?? null;
-	let idplanocontas: string | null = null;
+	const idtipodocumentoPrincipal = formasComTipo[0]?.tipoDoc.id ?? null;
+	const idplanocontas: string | null =
+		formasComTipo[0]?.tipoDoc.idplanocontas ?? null;
 
-	if (idtipodocumentoPrincipal) {
-		const tipoPrincipal = await buscarTipoDocumentoFinanceiroPorId(
-			idtipodocumentoPrincipal,
-		);
-		idplanocontas = tipoPrincipal?.idplanocontas ?? null;
-	}
-
-	if (parametros.idcondicaopagto) {
+	if (
+		exigeCliente &&
+		parametros.idcondicaopagto &&
+		parametros.identidade?.trim()
+	) {
 		const condicao = await buscarCondicaoPagamentoPorId(
 			parametros.idcondicaopagto,
 		);
@@ -208,7 +304,7 @@ export async function gerarContasReceberVendaPdvService(
 				parametros,
 				valorTotalErp,
 				nomeCliente,
-				cliente.cnpjcpf ?? null,
+				cliente?.cnpjcpf ?? null,
 				idtipodocumentoPrincipal,
 				idplanocontas,
 			);
@@ -217,37 +313,29 @@ export async function gerarContasReceberVendaPdvService(
 		}
 	}
 
-	for (const forma of formas) {
-		const tipoDoc = await buscarTipoDocumentoFinanceiroPorId(
-			forma.idtipodocumentofinanceiro,
-		);
-
-		if (!tipoDoc) continue;
-
-		const destino = resolverDestinoFinanceiroFormaPagamento(tipoDoc);
+	for (const { forma, tipoDoc } of formasComTipo) {
 		const idplanocontasForma = tipoDoc.idplanocontas ?? idplanocontas;
-
+		const nomeTitulo = nomeCliente || tipoDoc.descricao?.trim() || "CONSUMIDOR";
 		const identificacao = montarIdentificacaoFinanceiroPdv({
 			numeropdv: parametros.venda.numeropdv,
 			parcela: 1,
 			totalParcelas: 1,
-			nomeCliente,
+			nomeCliente: nomeTitulo,
 		});
 
-		if (destino === "caixa_imediato") {
-			continue;
-		}
-
-		const prazoDias = resolverPrazoDiasTipoDocumento(tipoDoc);
-		const vencimento =
-			destino === "titulo_vista"
-				? dataEmissao
-				: adicionarDias(new Date(dataEmissao), prazoDias);
+		const prazoFallback =
+			tipoDoc.formapagamentonfe === TPAG_CARTAO_CREDITO
+				? (empresa?.prazocartaocredito ?? 30)
+				: tipoDoc.formapagamentonfe === TPAG_CARTAO_DEBITO
+					? (empresa?.prazocartaodebito ?? 1)
+					: 0;
+		const prazoDias = resolverPrazoDiasTipoDocumento(tipoDoc, prazoFallback);
+		const vencimento = adicionarDias(new Date(dataEmissao), prazoDias);
 
 		const financeiro = await criarFinanceiro({
 			id: uuidv4(),
 			idempresa: parametros.venda.idempresa,
-			identidade: parametros.identidade,
+			identidade: parametros.identidade?.trim() || null,
 			tipo: "R",
 			tipoorigem: TIPO_ORIGEM_VENDA_PDV,
 			idorigem: parametros.venda.id,
@@ -255,7 +343,7 @@ export async function gerarContasReceberVendaPdvService(
 			totalparcelas: 1,
 			documento: identificacao.documento,
 			emitente: identificacao.emitente,
-			cnpjcpfemitente: cliente.cnpjcpf ?? null,
+			cnpjcpfemitente: cliente?.cnpjcpf ?? null,
 			idtipodocumentofinanceiro: tipoDoc.id,
 			idplanocontas: idplanocontasForma,
 			status: "A",
@@ -275,4 +363,13 @@ export async function gerarContasReceberVendaPdvService(
 	}
 
 	return httpOk({ parcelasGeradas });
+}
+
+export async function formaErpExigeCliente(
+	idtipodocumentofinanceiro: string,
+): Promise<boolean> {
+	const tipo = await buscarTipoDocumentoFinanceiroPorId(
+		idtipodocumentofinanceiro,
+	);
+	return tipo?.aprazo === 1;
 }

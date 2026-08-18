@@ -28,6 +28,7 @@ export const TIPOS_DOCUMENTO_FINANCEIRO_PADRAO: TipoDocumentoFinanceiroPadrao[] 
 			formapagamentonfe: "03",
 			integracaixabanco: 0,
 			aprazo: 0,
+			prazodias: 30,
 		},
 		{
 			descricao: "Cartão de débito",
@@ -36,8 +37,22 @@ export const TIPOS_DOCUMENTO_FINANCEIRO_PADRAO: TipoDocumentoFinanceiroPadrao[] 
 			aprazo: 0,
 		},
 		{
+			descricao: "Cheque",
+			formapagamentonfe: "02",
+			integracaixabanco: 0,
+			aprazo: 1,
+			prazodias: 30,
+		},
+		{
 			descricao: "Boleto bancário",
 			formapagamentonfe: "15",
+			integracaixabanco: 0,
+			aprazo: 1,
+			prazodias: 30,
+		},
+		{
+			descricao: "Crediário",
+			formapagamentonfe: "99",
 			integracaixabanco: 0,
 			aprazo: 1,
 			prazodias: 30,
