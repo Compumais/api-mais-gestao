@@ -1,7 +1,6 @@
 import type { HttpResponse } from "@/model/http-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { buscarNotaFiscalPorId } from "@/repositories/nota-fiscal-repositories.js";
-import { buscarVendaPdvGourmetPorId } from "@/repositories/venda-pdv-gourmet-repositories.js";
 import {
 	inutilizarNfeVendaService,
 	type ResultadoInutilizacaoNfe,
@@ -11,20 +10,24 @@ import {
 	httpNaoEncontrado,
 	httpProibido,
 } from "@/util/http-util.js";
+import {
+	MENSAGEM_NFE_NO_FLUXO_NFCE,
+	notaEhModeloNfce65,
+} from "@/util/modelo-documento-fiscal-fluxo.js";
 
-type InutilizarNfceVendaPdvParametros = {
+type InutilizarNfcePorNotaParametros = {
 	idusuario: string;
 	idempresa: string;
-	idvenda: string;
+	idnotafiscal: string;
 	justificativa: string;
 };
 
-export async function inutilizarNfceVendaPdvService({
+export async function inutilizarNfcePorNotaService({
 	idusuario,
 	idempresa,
-	idvenda,
+	idnotafiscal,
 	justificativa,
-}: InutilizarNfceVendaPdvParametros): Promise<
+}: InutilizarNfcePorNotaParametros): Promise<
 	HttpResponse<ResultadoInutilizacaoNfe>
 > {
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
@@ -35,27 +38,18 @@ export async function inutilizarNfceVendaPdvService({
 		return httpProibido();
 	}
 
-	const venda = await buscarVendaPdvGourmetPorId(idvenda);
-	if (!venda || venda.idempresa !== idempresa) {
+	const nota = await buscarNotaFiscalPorId(idnotafiscal);
+	if (!nota || nota.idempresa !== idempresa) {
 		return httpNaoEncontrado();
 	}
 
-	if (!venda.idnotafiscalnfce) {
-		return httpBadRequest(
-			"NFC-e da venda não encontrada na retaguarda para inutilização",
-		);
-	}
-
-	const nota = await buscarNotaFiscalPorId(venda.idnotafiscalnfce);
-	if (!nota || nota.modelo !== "65") {
-		return httpBadRequest(
-			"Somente NFC-e (modelo 65) podem ser inutilizadas por esta rota",
-		);
+	if (!notaEhModeloNfce65(nota.modelo)) {
+		return httpBadRequest(MENSAGEM_NFE_NO_FLUXO_NFCE);
 	}
 
 	return inutilizarNfeVendaService({
 		idusuario,
-		idnotafiscal: venda.idnotafiscalnfce,
+		idnotafiscal,
 		justificativa,
 		permitirNfce: true,
 	});

@@ -1,7 +1,7 @@
 import { api } from "@/lib/axios";
-import type { Paginacao } from "@/services/conta-mesa.service";
-import type { FecharContaFormData } from "@/schemas/fechar-conta.schema";
 import type { CarrinhoLocalItem } from "@/lib/gourmet-utils";
+import type { FecharContaFormData } from "@/schemas/fechar-conta.schema";
+import type { Paginacao } from "@/services/conta-mesa.service";
 
 export interface NfceListagem {
 	idnotafiscal: string;
@@ -114,10 +114,10 @@ export const nfceService = {
 		page?: number;
 		limit?: number;
 	}): Promise<{ data: NfceListagem[]; paginacao: Paginacao }> {
-		const { data } = await api.get<{ data: NfceListagem[]; paginacao: Paginacao }>(
-			"/nfce/pendentes",
-			{ params },
-		);
+		const { data } = await api.get<{
+			data: NfceListagem[];
+			paginacao: Paginacao;
+		}>("/nfce/pendentes", { params });
 		return data;
 	},
 
@@ -176,6 +176,32 @@ export const nfceService = {
 	async buscarCupom(idnotafiscal: string): Promise<DadosCupomNfceApi> {
 		const { data } = await api.get<DadosCupomNfceApi>(
 			`/nfce/${idnotafiscal}/cupom`,
+		);
+		return data;
+	},
+
+	async cancelar(params: {
+		idnotafiscal: string;
+		justificativa: string;
+	}): Promise<{ idnotafiscal: string; status: number }> {
+		const { data } = await api.post<{ idnotafiscal: string; status: number }>(
+			`/nfce/${params.idnotafiscal}/cancelar`,
+			{ justificativa: params.justificativa },
+		);
+		return data;
+	},
+
+	async inutilizar(params: {
+		idempresa: string;
+		idnotafiscal: string;
+		justificativa: string;
+	}): Promise<{ idnotafiscal: string; status: number }> {
+		const { data } = await api.post<{ idnotafiscal: string; status: number }>(
+			`/nfce/${params.idnotafiscal}/inutilizar`,
+			{
+				idempresa: params.idempresa,
+				justificativa: params.justificativa,
+			},
 		);
 		return data;
 	},

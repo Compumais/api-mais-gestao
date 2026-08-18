@@ -10,12 +10,22 @@ export const empresaFiscalConfigSchema = z.object({
 	razaosocial: z.preprocess(vazioParaNull, z.string().max(60).nullable()),
 	nomefantasia: z.preprocess(vazioParaNull, z.string().max(60).nullable()),
 	inscricaoestadual: z.preprocess(vazioParaNull, z.string().max(20).nullable()),
-	inscricaomunicipal: z.preprocess(vazioParaNull, z.string().max(20).nullable()),
-	crt: z.coerce
-		.number({ error: "CRT obrigatório" })
-		.int()
-		.min(1, "CRT inválido")
-		.max(4, "CRT inválido"),
+	inscricaomunicipal: z.preprocess(
+		vazioParaNull,
+		z.string().max(20).nullable(),
+	),
+	crt: z.preprocess(
+		(valor) => {
+			if (valor == null || valor === "") return undefined;
+			const numero = Number(valor);
+			return Number.isFinite(numero) ? numero : valor;
+		},
+		z
+			.number({ error: "CRT obrigatório" })
+			.int()
+			.min(1, "CRT inválido")
+			.max(4, "CRT inválido"),
+	),
 	cnae: z.preprocess(vazioParaNull, z.string().max(7).nullable()),
 	indicadorie: z.coerce.number().int().min(1).max(9).optional().nullable(),
 	logradouro: z.preprocess(vazioParaNull, z.string().max(60).nullable()),
@@ -23,8 +33,14 @@ export const empresaFiscalConfigSchema = z.object({
 	complemento: z.preprocess(vazioParaNull, z.string().max(60).nullable()),
 	bairro: z.preprocess(vazioParaNull, z.string().max(60).nullable()),
 	cep: z.preprocess(vazioParaNull, z.string().max(9).nullable()),
-	codigomunicipioibge: z.preprocess(vazioParaNull, z.string().max(7).nullable()),
-	uf: z.preprocess(vazioParaNull, z.string().length(2, "UF inválida").nullable()),
+	codigomunicipioibge: z.preprocess(
+		vazioParaNull,
+		z.string().max(7).nullable(),
+	),
+	uf: z.preprocess(
+		vazioParaNull,
+		z.string().length(2, "UF inválida").nullable(),
+	),
 	codigopais: z.preprocess(vazioParaNull, z.string().max(4).nullable()),
 	telefone: z.preprocess(vazioParaNull, z.string().max(40).nullable()),
 	email: z.preprocess(

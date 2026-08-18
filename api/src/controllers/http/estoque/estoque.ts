@@ -49,6 +49,7 @@ const bodyBaixaSchema = z.object({
 		valortroco: z.string().nullable().optional(),
 		valortotal: z.string().nullable().optional(),
 	}),
+	emitirNfce: z.boolean().optional(),
 });
 
 export async function listarSaldosEstoqueGestao(
@@ -95,8 +96,12 @@ export async function listarMovimentosEstoqueGestao(
 			idusuario: request.user.id,
 			idempresa: query.idempresa,
 			...(query.idproduto !== undefined ? { idproduto: query.idproduto } : {}),
-			...(query.codigoproduto !== undefined ? { codigoproduto: query.codigoproduto } : {}),
-			...(query.tipoestoque !== undefined ? { tipoestoque: query.tipoestoque } : {}),
+			...(query.codigoproduto !== undefined
+				? { codigoproduto: query.codigoproduto }
+				: {}),
+			...(query.tipoestoque !== undefined
+				? { tipoestoque: query.tipoestoque }
+				: {}),
 			...(query.page !== undefined ? { page: query.page } : {}),
 			...(query.limit !== undefined ? { limit: query.limit } : {}),
 		});
@@ -130,9 +135,12 @@ export async function baixaEstoqueVenda(
 				idproduto: item.idproduto,
 				quantidade: item.quantidade,
 				precounitario: item.precounitario,
-				...(item.nomeproduto !== undefined ? { nomeproduto: item.nomeproduto } : {}),
+				...(item.nomeproduto !== undefined
+					? { nomeproduto: item.nomeproduto }
+					: {}),
 			})),
 			pagamentos: removerUndefined(body.pagamentos),
+			...(body.emitirNfce !== undefined ? { emitirNfce: body.emitirNfce } : {}),
 		});
 
 		if (!resultado.success) {

@@ -1,14 +1,16 @@
 import { v4 as uuidv4 } from "uuid";
-import type { EmpresaFiscal } from "@/model/nfe-emissao-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
-import { buscarEmpresaPorId } from "@/repositories/empresa-repositories.js";
+import type { EmpresaFiscal } from "@/model/nfe-emissao-model.js";
 import {
 	atualizarEmpresaFiscal,
 	buscarEmpresaFiscalPorEmpresa,
 	criarEmpresaFiscal,
 } from "@/repositories/empresa-fiscal-repositories.js";
+import {
+	atualizarEmpresa,
+	buscarEmpresaPorId,
+} from "@/repositories/empresa-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
-import { atualizarEmpresa } from "@/repositories/empresa-repositories.js";
 import {
 	httpBadRequest,
 	httpErro,
@@ -16,6 +18,12 @@ import {
 	httpOk,
 	httpProibido,
 } from "@/util/http-util.js";
+import {
+	inteiroOuNulo,
+	normalizarCodigoMunicipioIbge,
+	normalizarCrt,
+	normalizarUfFiscal,
+} from "@/util/normalizar-dados-empresa-fiscal.js";
 import {
 	derivarRegimeTributarioDoCrt,
 	normalizarRegimeTributario,
@@ -57,6 +65,14 @@ function hidratarFiscalComEmpresa(
 	fiscal: EmpresaFiscal,
 	empresa: NonNullable<Awaited<ReturnType<typeof buscarEmpresaPorId>>>,
 ): EmpresaFiscal {
+	const crt =
+		normalizarCrt(fiscal.crt) ??
+		(empresa.regimetributario === "SN"
+			? 1
+			: empresa.regimetributario
+				? 3
+				: null);
+
 	return {
 		...fiscal,
 		razaosocial: fiscal.razaosocial || empresa.nome || null,
@@ -67,20 +83,20 @@ function hidratarFiscalComEmpresa(
 		complemento: fiscal.complemento || empresa.complemento || null,
 		bairro: fiscal.bairro || empresa.bairro || null,
 		cep: fiscal.cep || empresa.cep || null,
-		uf: fiscal.uf || empresa.idestado || null,
+		uf:
+			normalizarUfFiscal(fiscal.uf) ||
+			normalizarUfFiscal(empresa.idestado) ||
+			null,
 		codigomunicipioibge:
-			fiscal.codigomunicipioibge || empresa.idcidade || null,
+			normalizarCodigoMunicipioIbge(fiscal.codigomunicipioibge) ||
+			normalizarCodigoMunicipioIbge(empresa.idcidade) ||
+			null,
 		regimetributario:
 			fiscal.regimetributario ||
 			empresa.regimetributario ||
-			derivarRegimeTributarioDoCrt(fiscal.crt),
-		crt:
-			fiscal.crt ??
-			(empresa.regimetributario === "SN"
-				? 1
-				: empresa.regimetributario
-					? 3
-					: null),
+			derivarRegimeTributarioDoCrt(crt),
+		crt,
+		indicadorie: inteiroOuNulo(fiscal.indicadorie) ?? 1,
 	};
 }
 
@@ -136,7 +152,9 @@ export async function atualizarEmpresaFiscalService({
 	idempresa,
 	idusuario,
 	dados,
-}: AtualizarEmpresaFiscalParametros): Promise<HttpResponse<EmpresaFiscal | null>> {
+}: AtualizarEmpresaFiscalParametros): Promise<
+	HttpResponse<EmpresaFiscal | null>
+> {
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
 		idusuario,
 		idempresa,
@@ -151,14 +169,16 @@ export async function atualizarEmpresaFiscalService({
 		return httpNaoEncontrado();
 	}
 
-	if (dados.crt != null && (dados.crt < 1 || dados.crt > 4)) {
+	if (dados.crt != null && normalizarCrt(dados.crt) == null) {
 		return httpBadRequest("CRT inválido. Informe um valor entre 1 e 4.");
 	}
+
+	const crtNormalizado = normalizarCrt(dados.crt);
 
 	// CRT é a fonte da verdade; regime legado é derivado para outros módulos.
 	const regimeDerivado =
 		dados.crt !== undefined
-			? derivarRegimeTributarioDoCrt(dados.crt)
+			? derivarRegimeTributarioDoCrt(crtNormalizado)
 			: dados.regimetributario !== undefined
 				? normalizarRegimeTributario(dados.regimetributario)
 				: undefined;
@@ -185,6 +205,16 @@ export async function atualizarEmpresaFiscalService({
 
 	const payload = {
 		...dados,
+		crt: dados.crt !== undefined ? crtNormalizado : dados.crt,
+		uf: dados.uf !== undefined ? normalizarUfFiscal(dados.uf) : dados.uf,
+		codigomunicipioibge:
+			dados.codigomunicipioibge !== undefined
+				? normalizarCodigoMunicipioIbge(dados.codigomunicipioibge)
+				: dados.codigomunicipioibge,
+		indicadorie:
+			dados.indicadorie !== undefined
+				? (inteiroOuNulo(dados.indicadorie) ?? 1)
+				: dados.indicadorie,
 		regimetributario:
 			regimeDerivado !== undefined ? regimeDerivado : dados.regimetributario,
 		atualizadoem: agora,

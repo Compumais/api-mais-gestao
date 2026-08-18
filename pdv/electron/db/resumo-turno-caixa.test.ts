@@ -25,6 +25,22 @@ describe("pagamentosVendaTurno", () => {
 			},
 		);
 	});
+
+	it("usa lançamentos PIX+cartão quando o meio da venda é misto", () => {
+		const parcela = pagamentosVendaTurno({
+			valortotal: 80,
+			valordinheiro: 0,
+			valorpix: 0,
+			valorcartao: 0,
+			valortroco: 0,
+			lanc_pix: 50,
+			lanc_cartao: 30,
+		});
+		assert.equal(parcela.pix, 50);
+		assert.equal(parcela.cartao, 30);
+		assert.equal(parcela.dinheiro, 0);
+		assert.equal(parcela.total, 80);
+	});
 });
 
 describe("montarResumoTurnoCaixa", () => {

@@ -74,6 +74,7 @@ describe("inutilizarNfceVendaPdvService", () => {
 			idusuario: "user-1",
 			idnotafiscal: "nfce-1",
 			justificativa: "NFC-e rejeitada, numeração não será utilizada",
+			permitirNfce: true,
 		});
 	});
 

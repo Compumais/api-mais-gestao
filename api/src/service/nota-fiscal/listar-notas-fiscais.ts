@@ -11,6 +11,7 @@ type ListarNotasFiscaisParametros = {
 	identidade?: string | undefined;
 	status?: number | undefined;
 	tipoorigem?: number | undefined;
+	modelo?: string | undefined;
 	idcfop?: string | undefined;
 	dataInicio?: string | undefined;
 	dataFim?: string | undefined;
@@ -36,6 +37,7 @@ export async function listarNotasFiscaisService({
 	identidade,
 	status,
 	tipoorigem,
+	modelo,
 	idcfop,
 	dataInicio,
 	dataFim,
@@ -60,6 +62,7 @@ export async function listarNotasFiscaisService({
 		identidade,
 		status,
 		tipoorigem,
+		modelo,
 		idcfop,
 		dataInicio,
 		dataFim,

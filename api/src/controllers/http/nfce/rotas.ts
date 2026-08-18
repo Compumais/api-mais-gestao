@@ -6,6 +6,8 @@ import {
 	atualizarVendaNfce,
 	buscarCupomNfce,
 	buscarNfceParaEditar,
+	cancelarNfce,
+	inutilizarNfcePorNota,
 	inutilizarNfceVenda,
 	listarNfcePendentes,
 	reemitirNfce,
@@ -25,4 +27,6 @@ export async function nfceRotas(app: FastifyInstance) {
 	app.get("/nfce/:idnotafiscal/editar", buscarNfceParaEditar);
 	app.put("/nfce/:idnotafiscal/venda", atualizarVendaNfce);
 	app.post("/nfce/:idnotafiscal/reemitir", reemitirNfce);
+	app.post("/nfce/:idnotafiscal/cancelar", cancelarNfce);
+	app.post("/nfce/:idnotafiscal/inutilizar", inutilizarNfcePorNota);
 }

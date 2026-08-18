@@ -12,7 +12,7 @@ import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 const paramsSchema = z.object({ id: z.string().uuid() });
 
 const bodySchema = z.object({
-	ambiente: z.number().int().min(1).max(2).optional(),
+	ambiente: z.coerce.number().int().min(1).max(2).optional(),
 	idcertificadoativo: z.string().uuid().nullable().optional(),
 	idcsc_homologacao: z.string().max(6).nullable().optional(),
 	csctoken_homologacao: z.string().max(36).nullable().optional(),
@@ -35,11 +35,8 @@ export async function buscarNfceConfiguracao(
 	request: FastifyRequest,
 	reply: FastifyReply,
 ) {
-
 	try {
-
 		if (!request.user) {
-
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
 		}
 
@@ -76,8 +73,9 @@ export async function atualizarNfceConfiguracao(
 		const resultado = await atualizarNfceConfiguracaoService({
 			idempresa: id,
 			idusuario: request.user.id,
-			dados: dados as Parameters<typeof atualizarNfceConfiguracaoService>[0]["dados"],
-
+			dados: dados as Parameters<
+				typeof atualizarNfceConfiguracaoService
+			>[0]["dados"],
 		});
 
 		if (!resultado.success) {
@@ -97,4 +95,3 @@ export async function atualizarNfceConfiguracao(
 		return reply.status(httpErroInterno().status).send(httpErroInterno());
 	}
 }
-

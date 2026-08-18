@@ -39,3 +39,10 @@ export function buscarEstadoPorSigla(sigla: string): EstadoBrasil | undefined {
 		(estado) => estado.idestado.toUpperCase() === sigla.toUpperCase(),
 	);
 }
+
+export function buscarEstadoPorCodigoIbge(
+	codigoIbge: string,
+): EstadoBrasil | undefined {
+	const codigo = codigoIbge.trim();
+	return ESTADOS_BRASIL.find((estado) => estado.codigoIbge === codigo);
+}

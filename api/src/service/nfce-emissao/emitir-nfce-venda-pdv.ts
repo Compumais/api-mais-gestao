@@ -25,6 +25,7 @@ import {
 	montarPayloadGatewayEmissaoNfce,
 } from "@/service/nfce-emissao/contexto-emissao-nfce.js";
 import { montarItensEmissaoPdv } from "@/service/nfce-emissao/montar-itens-emissao-pdv.js";
+import { reconciliarNfceAutorizadaSefaz } from "@/service/nfce-emissao/reconciliar-nfce-autorizada-sefaz.js";
 import { aplicarCreditoIcmsSnItensEmissao } from "@/service/nfe-emissao/aplicar-credito-icms-sn-itens.js";
 import { enriquecerItensEmissaoComProduto } from "@/service/nfe-emissao/enriquecer-itens-emissao-produto.js";
 import { arquivarXmlNotaFiscal } from "@/service/nota-fiscal/arquivar-xml-nota-fiscal.js";
@@ -244,6 +245,17 @@ export async function emitirNfceVendaPdvService({
 			}
 
 			return httpOk(resultadoExistente);
+		}
+
+		if (
+			notaExistente &&
+			(notaExistente.status === NFE_STATUS.PENDENTE ||
+				notaExistente.status === NFE_STATUS.REJEITADA)
+		) {
+			const reconciliada = await reconciliarNfceAutorizadaSefaz(notaExistente);
+			if (reconciliada) {
+				return httpOk(reconciliada);
+			}
 		}
 	}
 

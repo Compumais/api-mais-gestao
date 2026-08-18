@@ -19,6 +19,10 @@ import {
 	httpNaoEncontrado,
 	httpProibido,
 } from "@/util/http-util.js";
+import {
+	MENSAGEM_NFCE_NO_FLUXO_NFE,
+	notaEhModeloNfe55,
+} from "@/util/modelo-documento-fiscal-fluxo.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
 import { normalizarPagamentoEmissaoNfe } from "@/util/normalizar-pagamento-emissao-nfe.js";
 
@@ -52,6 +56,10 @@ export async function transmitirNfeVendaService({
 
 	if (nota.tipoorigem !== 1) {
 		return httpBadRequest("Somente NF-e de venda podem ser transmitidas");
+	}
+
+	if (!notaEhModeloNfe55(nota.modelo)) {
+		return httpBadRequest(MENSAGEM_NFCE_NO_FLUXO_NFE);
 	}
 
 	if (nota.status === NFE_STATUS.AUTORIZADA) {

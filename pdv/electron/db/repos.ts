@@ -860,10 +860,33 @@ export async function calcularResumoTurno(caixa: {
 	valorabertura: number;
 }): Promise<ResumoTurnoCaixa> {
 	const vendas = await query<VendaParaResumoTurno>(
-		`SELECT valortotal, valordinheiro, valorpix, valorcartao, valortroco
-		 FROM venda
-		 WHERE numeropdv = $1 AND criadoem >= $2 AND status = 'fechada'
-		 ORDER BY criadoem`,
+		`SELECT
+			v.valortotal,
+			v.valordinheiro,
+			v.valorpix,
+			v.valorcartao,
+			v.valortroco,
+			COALESCE((
+				SELECT SUM(p.valor) FROM pagamento p
+				WHERE p.idvenda = v.id
+					AND p.meio = 'DINHEIRO'
+					AND COALESCE(p.status, 'ok') = 'ok'
+			), 0) AS lanc_dinheiro,
+			COALESCE((
+				SELECT SUM(p.valor) FROM pagamento p
+				WHERE p.idvenda = v.id
+					AND p.meio = 'PIX'
+					AND COALESCE(p.status, 'ok') = 'ok'
+			), 0) AS lanc_pix,
+			COALESCE((
+				SELECT SUM(p.valor) FROM pagamento p
+				WHERE p.idvenda = v.id
+					AND p.meio = 'CARTAO'
+					AND COALESCE(p.status, 'ok') = 'ok'
+			), 0) AS lanc_cartao
+		 FROM venda v
+		 WHERE v.numeropdv = $1 AND v.criadoem >= $2 AND v.status = 'fechada'
+		 ORDER BY v.criadoem`,
 		[caixa.numeropdv, caixa.abertoem],
 	);
 	return montarResumoTurnoCaixa({
@@ -883,7 +906,16 @@ export async function calcularResumoTurnoAberto(): Promise<ResumoTurnoCaixa> {
 export async function fecharCaixa(params: {
 	saldoinformado: number;
 	observacao?: string | null;
-}): Promise<void> {
+}): Promise<{
+	numeropdv: number;
+	username: string | null;
+	abertoem: string;
+	fechadoem: string;
+	resumo: ResumoTurnoCaixa;
+	conferencia: ReturnType<typeof calcularConferenciaCaixa>;
+	observacao: string | null;
+	nomeempresa: string | null;
+}> {
 	const caixa = await caixaAberto();
 	if (!caixa) {
 		throw new Error("Nenhum caixa aberto para este operador");
@@ -920,6 +952,16 @@ export async function fecharCaixa(params: {
 		pagamentos: resumo.pagamentos,
 		valorfechamento: conferencia.saldoinformado,
 	});
+	return {
+		numeropdv: caixa.numeropdv,
+		username: caixa.username,
+		abertoem: caixa.abertoem,
+		fechadoem: agora,
+		resumo,
+		conferencia,
+		observacao,
+		nomeempresa: sessao.nomeempresa,
+	};
 }
 
 export async function listarLancamentosVenda(
@@ -1229,11 +1271,11 @@ export async function criarVendaRapida(params: {
 
 	await enfileirarOutbox("criar_venda", {
 		idlocal: id,
-		meio:
-			fechamento.meio === "MISTO"
-				? fechamento.efetivos[0]?.meio
-				: fechamento.meio,
+		meio: fechamento.meio,
 		pagamentos: fechamento.efetivos,
+		valordinheiro: sync.valordinheiro,
+		valorpix: sync.valorpix,
+		valorcartao: sync.valorcartaocredito,
 		itens: params.itens,
 		valortotal: total,
 		valortroco: fechamento.troco,
@@ -1997,11 +2039,11 @@ async function gravarVendaMesa(params: {
 
 	await enfileirarOutbox("criar_venda", {
 		idlocal: idVenda,
-		meio:
-			fechamento.meio === "MISTO"
-				? fechamento.efetivos[0]?.meio
-				: fechamento.meio,
+		meio: fechamento.meio,
 		pagamentos: fechamento.efetivos,
+		valordinheiro: sync.valordinheiro,
+		valorpix: sync.valorpix,
+		valorcartao: sync.valorcartaocredito,
 		itens: params.itens.map((i) => ({
 			idproduto: i.idproduto,
 			descricao: i.descricao,
@@ -2471,6 +2513,34 @@ export async function reservarNumeroNfce(): Promise<{
 	const numero = atual.proximo_numero;
 	await atualizarNumeracaoNfce({ proximo_numero: numero + 1 });
 	return { serie: atual.serie, numero };
+}
+
+export async function avancarNumeracaoNfceAposEmissao(
+	serie: number,
+	numero: number,
+): Promise<void> {
+	if (
+		!Number.isFinite(serie) ||
+		serie < 1 ||
+		!Number.isFinite(numero) ||
+		numero < 1
+	) {
+		return;
+	}
+
+	const atual = await obterNumeracaoNfce();
+	const proximo = numero + 1;
+	if (atual.serie !== serie) {
+		await atualizarNumeracaoNfce({
+			serie,
+			proximo_numero: Math.max(proximo, atual.proximo_numero),
+		});
+		return;
+	}
+
+	if (proximo > atual.proximo_numero) {
+		await atualizarNumeracaoNfce({ proximo_numero: proximo });
+	}
 }
 
 async function persistirXmlNfceEmDisco(params: {

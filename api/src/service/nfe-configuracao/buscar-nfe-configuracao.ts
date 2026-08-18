@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
-import type { NfeConfiguracao } from "@/model/nfe-emissao-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
+import type { NfeConfiguracao } from "@/model/nfe-emissao-model.js";
 import { buscarEmpresaPorId } from "@/repositories/empresa-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
@@ -8,11 +8,17 @@ import {
 	buscarNfeConfiguracaoPorEmpresa,
 	criarNfeConfiguracao,
 } from "@/repositories/nfe-configuracao-repositories.js";
-import { httpErro, httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
+import {
+	httpErro,
+	httpNaoEncontrado,
+	httpOk,
+	httpProibido,
+} from "@/util/http-util.js";
 import {
 	aplicarPadroesTecnicosNfe,
 	NFE_CONFIG_PADRAO,
 } from "@/util/nfe-config-padrao.js";
+import { comAmbienteSefazNumerico } from "@/util/normalizar-dados-empresa-fiscal.js";
 
 export type NfeConfiguracaoBody = {
 	ambiente?: number;
@@ -80,7 +86,9 @@ export async function buscarNfeConfiguracaoService({
 		);
 	}
 
-	return httpOk<NfeConfiguracao | null>(config ?? null);
+	return httpOk<NfeConfiguracao | null>(
+		config ? comAmbienteSefazNumerico(config) : null,
+	);
 }
 
 export async function atualizarNfeConfiguracaoService({
@@ -132,5 +140,5 @@ export async function atualizarNfeConfiguracaoService({
 		return httpErro();
 	}
 
-	return httpOk<NfeConfiguracao>(config);
+	return httpOk<NfeConfiguracao>(comAmbienteSefazNumerico(config));
 }

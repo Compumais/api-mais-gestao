@@ -1,13 +1,25 @@
 import { z } from "zod";
 
 export const nfeConfiguracaoSchema = z.object({
-	ambiente: z.number().int().min(1).max(2),
+	ambiente: z.coerce.number().int().min(1).max(2),
 	idcertificadoativo: z.string().uuid().nullable().optional(),
 	tokenibpt: z.string().max(100).nullable().optional(),
-	emailenvioxml: z.string().email().max(200).nullable().optional().or(z.literal("")),
+	emailenvioxml: z
+		.string()
+		.email()
+		.max(200)
+		.nullable()
+		.optional()
+		.or(z.literal("")),
 	infresptec_cnpj: z.string().max(14).nullable().optional(),
 	infresptec_nome: z.string().max(60).nullable().optional(),
-	infresptec_email: z.string().email().max(200).nullable().optional().or(z.literal("")),
+	infresptec_email: z
+		.string()
+		.email()
+		.max(200)
+		.nullable()
+		.optional()
+		.or(z.literal("")),
 	infresptec_fone: z.string().max(20).nullable().optional(),
 	contingenciaativa: z.boolean().optional(),
 });

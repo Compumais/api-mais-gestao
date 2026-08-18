@@ -42,7 +42,23 @@ describe("inutilizarNfeVendaService", () => {
 		});
 	});
 
-	it("inutiliza NFC-e com modelo 65 e série do cupom", async () => {
+	it("recusa inutilizar NFC-e pelo fluxo de NF-e sem permitirNfce", async () => {
+		vi.mocked(notaRepository.buscarNotaFiscalPorId).mockResolvedValue(
+			notaNfce as never,
+		);
+
+		const resultado = await inutilizarNfeVendaService({
+			idusuario: "user-1",
+			idnotafiscal: "nfce-1",
+			justificativa: "Numeração não utilizada por rejeição da NFC-e",
+		});
+
+		expect(resultado.success).toBe(false);
+		expect(resultado.error).toContain("Consulta NFC-e");
+		expect(gateway.inutilizarNfeGateway).not.toHaveBeenCalled();
+	});
+
+	it("inutiliza NFC-e com modelo 65 quando permitirNfce", async () => {
 		vi.mocked(notaRepository.buscarNotaFiscalPorId).mockResolvedValue(
 			notaNfce as never,
 		);
@@ -57,6 +73,7 @@ describe("inutilizarNfeVendaService", () => {
 			idusuario: "user-1",
 			idnotafiscal: "nfce-1",
 			justificativa: "Numeração não utilizada por rejeição da NFC-e",
+			permitirNfce: true,
 		});
 
 		expect(resultado.success).toBe(true);
@@ -136,6 +153,7 @@ describe("inutilizarNfeVendaService", () => {
 			idusuario: "user-1",
 			idnotafiscal: "nfce-1",
 			justificativa: "Numeração não utilizada por rejeição da NFC-e",
+			permitirNfce: true,
 		});
 
 		expect(resultado.success).toBe(true);

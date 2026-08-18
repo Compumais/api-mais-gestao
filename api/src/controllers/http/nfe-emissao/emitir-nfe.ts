@@ -83,6 +83,7 @@ export async function listarNfesEmitidas(
 			idempresa,
 			status,
 			tipoorigem: 1,
+			modelo: "55",
 			page,
 			limit,
 			rascunho: false,

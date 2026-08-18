@@ -1,5 +1,6 @@
 import type { HttpResponse } from "@/model/http-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { listarMovimentosEstoquePorIdOriginal } from "@/repositories/movimento-estoque-repositories.js";
 import { buscarNfceConfiguracaoPorEmpresa } from "@/repositories/nfce-configuracao-repositories.js";
 import { atualizarVendaPdvGourmet } from "@/repositories/venda-pdv-gourmet-repositories.js";
 import {
@@ -34,6 +35,7 @@ export type BaixaEstoqueVendaParametros = {
 		valortroco?: string | null;
 		valortotal?: string | null;
 	};
+	emitirNfce?: boolean;
 };
 
 export type ResultadoBaixaEstoqueVenda = {
@@ -50,7 +52,10 @@ export async function baixaEstoqueVendaService({
 	idvenda,
 	itens,
 	pagamentos,
-}: BaixaEstoqueVendaParametros): Promise<HttpResponse<ResultadoBaixaEstoqueVenda>> {
+	emitirNfce = true,
+}: BaixaEstoqueVendaParametros): Promise<
+	HttpResponse<ResultadoBaixaEstoqueVenda>
+> {
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
 		idusuario,
 		idempresa,
@@ -61,21 +66,41 @@ export async function baixaEstoqueVendaService({
 	}
 
 	const configNfce = await buscarNfceConfiguracaoPorEmpresa(idempresa);
-	const meiosConfig = normalizarMeiosPagamentoNfce(configNfce?.meiospagamentonfce);
+	const meiosConfig = normalizarMeiosPagamentoNfce(
+		configNfce?.meiospagamentonfce,
+	);
 	const avaliacao = avaliarEmissaoNfcePorPagamento(pagamentos, meiosConfig);
-	const tipoestoque = avaliacao.deveEmitir
+	const deveEmitir = avaliacao.deveEmitir && emitirNfce;
+	const tipoestoque = deveEmitir
 		? TIPO_ESTOQUE.AMBOS
 		: TIPO_ESTOQUE.OPERACIONAL;
 
 	const avisos: string[] = [];
 	let movimentosRegistrados = 0;
+	const movimentosExistentes =
+		await listarMovimentosEstoquePorIdOriginal(idvenda);
+	const itensJaBaixados = new Set(
+		movimentosExistentes
+			.filter(
+				(movimento) =>
+					(movimento.cancelado ?? 0) === 0 && movimento.iditemoriginal,
+			)
+			.map((movimento) => movimento.iditemoriginal as string),
+	);
 
 	for (const item of itens) {
 		const qty = Number.parseFloat(item.quantidade);
 		if (Number.isNaN(qty) || qty <= 0) continue;
 
+		if (itensJaBaixados.has(item.idproduto)) {
+			movimentosRegistrados++;
+			continue;
+		}
+
 		const precoUnit = Number.parseFloat(item.precounitario);
-		const valorTotal = (qty * (Number.isNaN(precoUnit) ? 0 : precoUnit)).toFixed(2);
+		const valorTotal = (
+			qty * (Number.isNaN(precoUnit) ? 0 : precoUnit)
+		).toFixed(2);
 
 		try {
 			const movimento = await registrarMovimentoEstoque({
@@ -104,7 +129,7 @@ export async function baixaEstoqueVendaService({
 
 	try {
 		await atualizarVendaPdvGourmet(idvenda, {
-			deveemitirnfce: avaliacao.deveEmitir,
+			deveemitirnfce: deveEmitir,
 		});
 	} catch (erro) {
 		console.error("[estoque] Falha ao marcar deveemitirnfce na venda:", erro);
@@ -112,7 +137,7 @@ export async function baixaEstoqueVendaService({
 	}
 
 	let emissaoNfce: ResultadoEmissaoNfcePdv | undefined;
-	if (avaliacao.deveEmitir) {
+	if (deveEmitir) {
 		console.info(
 			`[pdv] Emitindo NFC-e para venda ${idvenda} (meios: ${avaliacao.meiosUtilizados.join(", ")})`,
 		);
@@ -140,7 +165,7 @@ export async function baixaEstoqueVendaService({
 
 	return httpOk({
 		movimentosRegistrados,
-		deveEmitirNfce: avaliacao.deveEmitir,
+		deveEmitirNfce: deveEmitir,
 		meiosUtilizados: avaliacao.meiosUtilizados,
 		avisos,
 		...(emissaoNfce ? { emissaoNfce } : {}),

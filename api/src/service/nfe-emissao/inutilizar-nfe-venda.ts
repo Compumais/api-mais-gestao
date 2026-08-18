@@ -1,5 +1,5 @@
-import type { HttpResponse } from "@/model/http-model.js";
 import { inutilizarNfeGateway } from "@/lib/nfe-gateway-client.js";
+import type { HttpResponse } from "@/model/http-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	atualizarNotaFiscal,
@@ -7,6 +7,16 @@ import {
 } from "@/repositories/nota-fiscal-repositories.js";
 import { montarCredenciaisGatewayNfce } from "@/service/nfce-emissao/montar-credenciais-gateway-nfce.js";
 import { montarCredenciaisGatewayNfe } from "@/service/nfe-emissao/montar-credenciais-gateway-nfe.js";
+import {
+	httpBadRequest,
+	httpNaoEncontrado,
+	httpOk,
+	httpProibido,
+} from "@/util/http-util.js";
+import {
+	MENSAGEM_NFCE_NO_FLUXO_NFE,
+	notaEhModeloNfe55,
+} from "@/util/modelo-documento-fiscal-fluxo.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
 import { resolverModeloDocumentoFiscal } from "@/util/resolver-modelo-documento-fiscal.js";
 import { normalizarCodigoStatusNfe } from "@/util/resolver-status-emissao-nfe.js";
@@ -18,12 +28,6 @@ import {
 	validarInutilizacaoNfe,
 } from "@/util/validar-eventos-nfe.js";
 import { salvarXmlEventoEmDisco } from "@/util/xml-storage.js";
-import {
-	httpBadRequest,
-	httpNaoEncontrado,
-	httpOk,
-	httpProibido,
-} from "@/util/http-util.js";
 
 export type ResultadoInutilizacaoNfe = {
 	idnotafiscal: string;
@@ -37,13 +41,17 @@ type InutilizarNfeVendaParametros = {
 	idusuario: string;
 	idnotafiscal: string;
 	justificativa: string;
+	permitirNfce?: boolean;
 };
 
 export async function inutilizarNfeVendaService({
 	idusuario,
 	idnotafiscal,
 	justificativa,
-}: InutilizarNfeVendaParametros): Promise<HttpResponse<ResultadoInutilizacaoNfe>> {
+	permitirNfce = false,
+}: InutilizarNfeVendaParametros): Promise<
+	HttpResponse<ResultadoInutilizacaoNfe>
+> {
 	const nota = await buscarNotaFiscalPorId(idnotafiscal);
 
 	if (!nota) {
@@ -57,6 +65,10 @@ export async function inutilizarNfeVendaService({
 
 	if (!usuarioPertenceEmpresa) {
 		return httpProibido();
+	}
+
+	if (!notaEhModeloNfe55(nota.modelo) && !permitirNfce) {
+		return httpBadRequest(MENSAGEM_NFCE_NO_FLUXO_NFE);
 	}
 
 	const validacao = validarInutilizacaoNfe(nota, justificativa);
@@ -109,10 +121,7 @@ export async function inutilizarNfeVendaService({
 		resposta.xMotivo?.trim() ||
 		resposta.erro?.trim() ||
 		"SEFAZ não autorizou a inutilização da numeração";
-	if (
-		!resposta.sucesso &&
-		!inutilizacaoJaEncerradaNaSefaz(cStat, xMotivo)
-	) {
+	if (!resposta.sucesso && !inutilizacaoJaEncerradaNaSefaz(cStat, xMotivo)) {
 		return httpBadRequest(xMotivo);
 	}
 

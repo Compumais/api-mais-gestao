@@ -1,0 +1,96 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import * as entidadeRepository from "@/repositories/entidade-repositories.js";
+import * as movimentoRepository from "@/repositories/movimento-estoque-repositories.js";
+import * as nfceConfigRepository from "@/repositories/nfce-configuracao-repositories.js";
+import * as vendaRepository from "@/repositories/venda-pdv-gourmet-repositories.js";
+import * as emitirNfce from "@/service/nfce-emissao/emitir-nfce-venda-pdv.js";
+import { TIPO_ESTOQUE } from "@/util/tipo-estoque.js";
+import { baixaEstoqueVendaService } from "./baixa-estoque-venda.js";
+import * as registrarMovimento from "./registrar-movimento-estoque.js";
+
+vi.mock("@/repositories/entidade-repositories.js");
+vi.mock("@/repositories/movimento-estoque-repositories.js");
+vi.mock("@/repositories/nfce-configuracao-repositories.js");
+vi.mock("@/repositories/venda-pdv-gourmet-repositories.js");
+vi.mock("@/service/nfce-emissao/emitir-nfce-venda-pdv.js");
+vi.mock("./registrar-movimento-estoque.js");
+
+describe("baixaEstoqueVendaService", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		vi.mocked(
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(true);
+		vi.mocked(
+			nfceConfigRepository.buscarNfceConfiguracaoPorEmpresa,
+		).mockResolvedValue({ meiospagamentonfce: [] } as never);
+		vi.mocked(vendaRepository.atualizarVendaPdvGourmet).mockResolvedValue(
+			{} as never,
+		);
+		vi.mocked(
+			movimentoRepository.listarMovimentosEstoquePorIdOriginal,
+		).mockResolvedValue([]);
+		vi.mocked(registrarMovimento.registrarMovimentoEstoque).mockResolvedValue({
+			id: 1,
+		} as never);
+	});
+
+	it("não duplica movimento quando a venda já baixou o item", async () => {
+		vi.mocked(
+			movimentoRepository.listarMovimentosEstoquePorIdOriginal,
+		).mockResolvedValue([
+			{
+				iditemoriginal: "prod-1",
+				cancelado: 0,
+			},
+		] as never);
+
+		const resultado = await baixaEstoqueVendaService({
+			idempresa: "emp-1",
+			idusuario: "user-1",
+			idvenda: "venda-1",
+			itens: [
+				{
+					idproduto: "prod-1",
+					quantidade: "1",
+					precounitario: "10",
+				},
+			],
+			pagamentos: { valortotal: "10", valordinheiro: "10" },
+			emitirNfce: false,
+		});
+
+		expect(resultado.success).toBe(true);
+		expect(resultado.body?.movimentosRegistrados).toBe(1);
+		expect(registrarMovimento.registrarMovimentoEstoque).not.toHaveBeenCalled();
+		expect(emitirNfce.emitirNfceVendaPdvService).not.toHaveBeenCalled();
+	});
+
+	it("baixa estoque operacional sem emitir NFC-e quando emitirNfce=false", async () => {
+		const resultado = await baixaEstoqueVendaService({
+			idempresa: "emp-1",
+			idusuario: "user-1",
+			idvenda: "venda-1",
+			itens: [
+				{
+					idproduto: "prod-1",
+					quantidade: "2",
+					precounitario: "5",
+				},
+			],
+			pagamentos: { valortotal: "10", valorpix: "10" },
+			emitirNfce: false,
+		});
+
+		expect(resultado.success).toBe(true);
+		expect(resultado.body?.deveEmitirNfce).toBe(false);
+		expect(registrarMovimento.registrarMovimentoEstoque).toHaveBeenCalledWith(
+			expect.objectContaining({
+				tipoestoque: TIPO_ESTOQUE.OPERACIONAL,
+				idoriginal: "venda-1",
+				iditemoriginal: "prod-1",
+			}),
+		);
+		expect(emitirNfce.emitirNfceVendaPdvService).not.toHaveBeenCalled();
+	});
+});

@@ -1,5 +1,5 @@
-import type { HttpResponse } from "@/model/http-model.js";
 import { cancelarNfeGateway } from "@/lib/nfe-gateway-client.js";
+import type { HttpResponse } from "@/model/http-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	atualizarNotaFiscal,
@@ -7,6 +7,19 @@ import {
 } from "@/repositories/nota-fiscal-repositories.js";
 import { montarCredenciaisGatewayNfce } from "@/service/nfce-emissao/montar-credenciais-gateway-nfce.js";
 import { montarCredenciaisGatewayNfe } from "@/service/nfe-emissao/montar-credenciais-gateway-nfe.js";
+import { estornarIntegracaoNotaFiscalVendaService } from "@/service/nota-fiscal/estornar-integracao-nota-fiscal-venda.js";
+import {
+	httpBadRequest,
+	httpNaoEncontrado,
+	httpOk,
+	httpProibido,
+} from "@/util/http-util.js";
+import {
+	MENSAGEM_NFCE_NO_FLUXO_NFE,
+	MENSAGEM_NFE_NO_FLUXO_NFCE,
+	notaEhModeloNfce65,
+	notaEhModeloNfe55,
+} from "@/util/modelo-documento-fiscal-fluxo.js";
 import { resolverModeloDocumentoFiscal } from "@/util/resolver-modelo-documento-fiscal.js";
 import { normalizarCodigoStatusNfe } from "@/util/resolver-status-emissao-nfe.js";
 import {
@@ -14,14 +27,7 @@ import {
 	resolverStatusCancelamentoNfe,
 	validarCancelamentoNfe,
 } from "@/util/validar-eventos-nfe.js";
-import { estornarIntegracaoNotaFiscalVendaService } from "@/service/nota-fiscal/estornar-integracao-nota-fiscal-venda.js";
 import { salvarXmlEventoEmDisco } from "@/util/xml-storage.js";
-import {
-	httpBadRequest,
-	httpNaoEncontrado,
-	httpOk,
-	httpProibido,
-} from "@/util/http-util.js";
 
 export type ResultadoCancelamentoNfe = {
 	idnotafiscal: string;
@@ -35,13 +41,17 @@ type CancelarNfeVendaParametros = {
 	idusuario: string;
 	idnotafiscal: string;
 	justificativa: string;
+	modeloEsperado?: "55" | "65";
 };
 
 export async function cancelarNfeVendaService({
 	idusuario,
 	idnotafiscal,
 	justificativa,
-}: CancelarNfeVendaParametros): Promise<HttpResponse<ResultadoCancelamentoNfe>> {
+	modeloEsperado = "55",
+}: CancelarNfeVendaParametros): Promise<
+	HttpResponse<ResultadoCancelamentoNfe>
+> {
 	const nota = await buscarNotaFiscalPorId(idnotafiscal);
 
 	if (!nota) {
@@ -55,6 +65,14 @@ export async function cancelarNfeVendaService({
 
 	if (!usuarioPertenceEmpresa) {
 		return httpProibido();
+	}
+
+	if (modeloEsperado === "55" && !notaEhModeloNfe55(nota.modelo)) {
+		return httpBadRequest(MENSAGEM_NFCE_NO_FLUXO_NFE);
+	}
+
+	if (modeloEsperado === "65" && !notaEhModeloNfce65(nota.modelo)) {
+		return httpBadRequest(MENSAGEM_NFE_NO_FLUXO_NFCE);
 	}
 
 	const validacao = validarCancelamentoNfe(nota, justificativa);
@@ -124,7 +142,10 @@ export async function cancelarNfeVendaService({
 		idusuario,
 		idnotafiscal,
 	}).catch((erro) => {
-		console.error("Falha ao estornar integração operacional da NF cancelada:", erro);
+		console.error(
+			"Falha ao estornar integração operacional da NF cancelada:",
+			erro,
+		);
 	});
 
 	return httpOk<ResultadoCancelamentoNfe>({
