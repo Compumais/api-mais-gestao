@@ -15,7 +15,7 @@
 		"test:sitef": "node ../api/node_modules/tsx/dist/cli.mjs --test electron/integracao/sitef/mapeamento.test.ts electron/integracao/sitef/servico.test.ts electron/impressora/cupom-pagamentos.test.ts",
 		"test:balanca": "node ../api/node_modules/tsx/dist/cli.mjs --test electron/integracao/balanca/protocolo.test.ts electron/integracao/balanca/serial.test.ts electron/integracao/balanca/etiqueta.test.ts src/lib/produto-kg.test.ts",
 		"test:pdv-secundario": "node ../api/node_modules/tsx/dist/cli.mjs --test electron/pdv-secundario/regras.test.ts",
-		"test:troca-empresa": "node ../api/node_modules/tsx/dist/cli.mjs --test electron/sync/troca-empresa.test.ts electron/sync/tar-gz.test.ts electron/sync/backup-agendado.test.ts",
+		"test:troca-empresa": "node ../api/node_modules/tsx/dist/cli.mjs --test electron/sync/troca-empresa.test.ts electron/sync/tar-gz.test.ts electron/sync/backup-agendado.test.ts electron/sync/nfce-retaguarda.test.ts",
 		"postinstall": "electron-builder install-app-deps",
 		"pack:win": "npm run build && electron-builder --win",
 		"pack:dir": "npm run build && electron-builder --win --dir",

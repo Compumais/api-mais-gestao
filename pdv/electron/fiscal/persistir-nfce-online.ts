@@ -27,6 +27,7 @@ export type ResultadoEmissaoParaPersistir = {
 	xml?: string;
 	serie?: string | number;
 	numero?: number;
+	statusLocal?: "autorizada" | "erro" | "inutilizada" | "cancelada" | "pendente";
 };
 
 function serieNumeroDaChave(chave?: string): {
@@ -56,12 +57,12 @@ function numeracaoValida(serie: number, numero: number): boolean {
 
 async function resolverXml(
 	dados: DadosNfceOnline,
-	status: "autorizada" | "erro",
+	status: "autorizada" | "erro" | "inutilizada" | "cancelada" | "pendente",
 ): Promise<string | undefined> {
 	if (dados.xml?.trim()) {
 		return dados.xml;
 	}
-	if (status === "erro" || !dados.idnotafiscal) {
+	if (status !== "autorizada" || !dados.idnotafiscal) {
 		return undefined;
 	}
 	try {
@@ -74,7 +75,7 @@ async function resolverXml(
 
 async function gravarNfceLocal(
 	dados: DadosNfceOnline,
-	status: "autorizada" | "erro",
+	status: "autorizada" | "erro" | "inutilizada" | "cancelada" | "pendente",
 ): Promise<boolean> {
 	const xml = await resolverXml(dados, status);
 	const daChave = serieNumeroDaChave(dados.chave);
@@ -141,14 +142,15 @@ export async function aplicarEmissaoNfceNaVendaLocal(
 		numero: nfce.numero,
 	};
 
-	if (nfce.emitida) {
+	if (nfce.emitida || nfce.statusLocal === "autorizada") {
 		await gravarNfceLocal(dados, "autorizada");
 		return;
 	}
 
-	const gravou = await gravarNfceLocal(dados, "erro");
+	const statusLocal = nfce.statusLocal ?? "erro";
+	const gravou = await gravarNfceLocal(dados, statusLocal);
 	await atualizarVendaSync(vendaId, {
-		nfce_status: "erro",
+		nfce_status: statusLocal === "pendente" ? "pendente_contingencia" : statusLocal,
 		...(!gravou && nfce.idnotafiscal
 			? { idnfce_local: nfce.idnotafiscal }
 			: {}),

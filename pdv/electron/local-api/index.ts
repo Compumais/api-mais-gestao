@@ -161,6 +161,7 @@ import {
 	sincronizarFiscalPdv as puxarFiscalRetaguarda,
 	statusConexao,
 } from "../sync/outbox";
+import { puxarNfceDaRetaguarda } from "../sync/nfce-retaguarda";
 import { obterTerminaisPdvLocais } from "../sync/terminais-pdv";
 import {
 	arquivarSeTrocaEmpresa,
@@ -975,6 +976,9 @@ export const localApi = {
 		}
 		const secundario = await ehSecundario();
 		const pull = secundario ? await puxarDoPrincipal() : await pullCatalogo();
+		if (!secundario) {
+			void puxarNfceDaRetaguarda().catch(() => 0);
+		}
 		return {
 			ok: true as const,
 			origem: secundario ? ("principal" as const) : ("nuvem" as const),

@@ -414,6 +414,14 @@ export async function buscarVendaPdvGourmet(id: string) {
 	return request<{
 		id: string;
 		idnotafiscalnfce?: string | null;
+		nfce?: {
+			idnotafiscal: string;
+			status: number | null;
+			chave: string | null;
+			serie: string | null;
+			numero: string | null;
+			protocolo: string | null;
+		} | null;
 	}>(`/vendas-pdv-gourmet/${id}`);
 }
 

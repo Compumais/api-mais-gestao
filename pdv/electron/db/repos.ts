@@ -1152,6 +1152,17 @@ export async function listarVendas(limit = 100): Promise<VendaLocal[]> {
 	);
 }
 
+export async function listarVendasComRemoto(
+	limit = 40,
+): Promise<Array<Pick<VendaLocal, "id" | "idremoto" | "nfce_status">>> {
+	return query<Pick<VendaLocal, "id" | "idremoto" | "nfce_status">>(
+		`SELECT id, idremoto, nfce_status FROM venda
+		 WHERE idremoto IS NOT NULL AND nfce_status <> 'nao_fiscal'
+		 ORDER BY criadoem DESC LIMIT $1`,
+		[limit],
+	);
+}
+
 export async function obterVenda(
 	id: string,
 ): Promise<

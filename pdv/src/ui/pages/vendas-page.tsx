@@ -28,9 +28,17 @@ function badgeSync(status: string) {
 function badgeNfce(status: string) {
 	if (status === "autorizada" || status === "transmitida")
 		return "success" as const;
-	if (status === "contingencia" || status === "pendente_contingencia")
+	if (
+		status === "contingencia" ||
+		status === "pendente_contingencia" ||
+		status === "pendente"
+	)
 		return "warning" as const;
-	if (status === "erro" || status === "erro_config")
+	if (
+		status === "erro" ||
+		status === "erro_config" ||
+		status === "cancelada"
+	)
 		return "destructive" as const;
 	return "outline" as const;
 }
@@ -38,8 +46,10 @@ function badgeNfce(status: string) {
 function rotuloNfce(status: string) {
 	if (status === "erro") return "rejeitada";
 	if (status === "erro_config") return "erro config";
-	if (status === "pendente_contingencia") return "pendente";
+	if (status === "pendente_contingencia" || status === "pendente")
+		return "pendente";
 	if (status === "inutilizada") return "inutilizada";
+	if (status === "cancelada") return "cancelada";
 	return status;
 }
 
