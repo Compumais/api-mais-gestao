@@ -4,6 +4,7 @@ import * as entidadeRepository from "@/repositories/entidade-repositories.js";
 import * as vendaRepository from "@/repositories/venda-pdv-gourmet-repositories.js";
 import * as pagamentoRepository from "@/repositories/venda-pdv-pagamento-repositories.js";
 import * as auditoriaService from "@/service/auditoria/criar-auditoria.js";
+import * as contasReceberService from "@/service/venda-pdv-gourmet/gerar-contas-receber-venda-pdv.js";
 import * as recebimentosService from "@/service/venda-pdv-gourmet/registrar-recebimentos-venda.js";
 import { criarVendaPdvGourmetService } from "./criar-venda-pdv-gourmet.js";
 
@@ -58,6 +59,19 @@ describe("criarVendaPdvGourmetService", () => {
 		vi.mocked(
 			recebimentosService.registrarRecebimentosVendaService,
 		).mockResolvedValue({ success: true });
+		vi.mocked(
+			contasReceberService.inferirPagamentosErpVendaPdv,
+		).mockResolvedValue([]);
+		vi.mocked(contasReceberService.formaErpExigeCliente).mockResolvedValue(
+			false,
+		);
+		vi.mocked(
+			contasReceberService.gerarContasReceberVendaPdvService,
+		).mockResolvedValue({
+			success: true,
+			status: 200,
+			body: { parcelasGeradas: 0 },
+		} as never);
 	});
 
 	it("persiste NSU e o segundo cartão", async () => {

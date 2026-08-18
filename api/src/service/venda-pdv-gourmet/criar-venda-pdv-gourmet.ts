@@ -13,7 +13,9 @@ import {
 import { criarVendaPdvPagamentos } from "@/repositories/venda-pdv-pagamento-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
 import {
+	formaErpExigeCliente,
 	gerarContasReceberVendaPdvService,
+	inferirPagamentosErpVendaPdv,
 	type PagamentoErpVendaPdv,
 } from "@/service/venda-pdv-gourmet/gerar-contas-receber-venda-pdv.js";
 import { registrarRecebimentosVendaService } from "@/service/venda-pdv-gourmet/registrar-recebimentos-venda.js";
@@ -126,9 +128,24 @@ export async function criarVendaPdvGourmetService({
 	}
 
 	const formasErp = pagamentosErp?.filter((f) => f.valor > 0) ?? [];
+	const formasResolvidas =
+		formasErp.length > 0
+			? formasErp
+			: ((await inferirPagamentosErpVendaPdv({
+					venda: registro,
+					pagamentos,
+				})) ?? []);
 
-	if (formasErp.length > 0) {
-		if (!dadosVendaPdvGourmet.identidade?.trim()) {
+	if (formasResolvidas.length > 0) {
+		const exigeCliente = (
+			await Promise.all(
+				formasResolvidas.map((forma) =>
+					formaErpExigeCliente(forma.idtipodocumentofinanceiro),
+				),
+			)
+		).some(Boolean);
+
+		if (exigeCliente && !dadosVendaPdvGourmet.identidade?.trim()) {
 			await excluirVendaPdvGourmet(registro.id);
 			return {
 				success: false,
@@ -141,9 +158,9 @@ export async function criarVendaPdvGourmetService({
 		const contasReceber = await gerarContasReceberVendaPdvService({
 			venda: registro,
 			idusuario,
-			identidade: dadosVendaPdvGourmet.identidade,
+			identidade: dadosVendaPdvGourmet.identidade ?? undefined,
 			idcondicaopagto: dadosVendaPdvGourmet.idcondicaopagto ?? undefined,
-			pagamentosErp: formasErp,
+			pagamentosErp: formasResolvidas,
 		});
 
 		if (!contasReceber.success) {

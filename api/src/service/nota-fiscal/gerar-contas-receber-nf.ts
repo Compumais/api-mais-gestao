@@ -275,10 +275,7 @@ export async function gerarContasReceberNfService(
 			}
 
 			const prazoDias = resolverPrazoDiasTipoDocumento(tipoDoc);
-			const vencimento =
-				destino === "titulo_vista"
-					? dataEmissao
-					: adicionarDias(new Date(dataEmissao), prazoDias);
+			const vencimento = adicionarDias(new Date(dataEmissao), prazoDias);
 
 			const financeiro = await criarFinanceiro({
 				id: uuidv4(),

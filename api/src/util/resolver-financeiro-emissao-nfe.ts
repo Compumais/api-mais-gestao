@@ -6,10 +6,7 @@ export type DestinoFinanceiroFormaPagamento =
 	| "titulo_vista";
 
 export function resolverDestinoFinanceiroFormaPagamento(
-	tipoDocumento: Pick<
-		TipoDocumentoFinanceiro,
-		"aprazo" | "integracaixabanco"
-	>,
+	tipoDocumento: Pick<TipoDocumentoFinanceiro, "aprazo" | "integracaixabanco">,
 	indPag?: number,
 ): DestinoFinanceiroFormaPagamento {
 	const aPrazo = tipoDocumento.aprazo === 1 || indPag === 1;
@@ -29,13 +26,13 @@ export function resolverPrazoDiasTipoDocumento(
 	tipoDocumento: Pick<TipoDocumentoFinanceiro, "prazodias" | "aprazo">,
 	fallback = 30,
 ): number {
-	if (tipoDocumento.aprazo !== 1) {
-		return 0;
-	}
-
 	if (tipoDocumento.prazodias != null && tipoDocumento.prazodias > 0) {
 		return tipoDocumento.prazodias;
 	}
 
-	return fallback;
+	if (tipoDocumento.aprazo === 1) {
+		return fallback;
+	}
+
+	return fallback > 0 ? fallback : 0;
 }

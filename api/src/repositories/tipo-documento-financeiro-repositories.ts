@@ -101,6 +101,19 @@ export async function listarTiposDocumentoFinanceiro({
 	};
 }
 
+export async function listarTiposDocumentoFinanceiroAtivos(idempresa: string) {
+	const filtroAtivo = filtroRegistroAtivo(tipodocumentofinanceiro.inativo, 0);
+	return db
+		.select()
+		.from(tipodocumentofinanceiro)
+		.where(
+			and(
+				eq(tipodocumentofinanceiro.idempresa, idempresa),
+				...(filtroAtivo ? [filtroAtivo] : []),
+			),
+		);
+}
+
 export async function verificarEmpresaPossuiTiposDocumentoFinanceiro(
 	idempresa: string,
 ) {

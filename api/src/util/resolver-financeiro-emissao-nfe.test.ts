@@ -7,13 +7,19 @@ import {
 describe("resolver-financeiro-emissao-nfe", () => {
 	it("deve direcionar meio a prazo para contas a receber", () => {
 		expect(
-			resolverDestinoFinanceiroFormaPagamento({ aprazo: 1, integracaixabanco: 0 }),
+			resolverDestinoFinanceiroFormaPagamento({
+				aprazo: 1,
+				integracaixabanco: 0,
+			}),
 		).toBe("contas_receber");
 	});
 
 	it("deve direcionar à vista com integração de caixa", () => {
 		expect(
-			resolverDestinoFinanceiroFormaPagamento({ aprazo: 0, integracaixabanco: 1 }),
+			resolverDestinoFinanceiroFormaPagamento({
+				aprazo: 0,
+				integracaixabanco: 1,
+			}),
 		).toBe("caixa_imediato");
 	});
 
@@ -27,7 +33,17 @@ describe("resolver-financeiro-emissao-nfe", () => {
 	});
 
 	it("deve resolver prazo padrão do tipo documento", () => {
-		expect(resolverPrazoDiasTipoDocumento({ aprazo: 1, prazodias: 15 })).toBe(15);
-		expect(resolverPrazoDiasTipoDocumento({ aprazo: 0, prazodias: 15 })).toBe(0);
+		expect(resolverPrazoDiasTipoDocumento({ aprazo: 1, prazodias: 15 })).toBe(
+			15,
+		);
+		expect(resolverPrazoDiasTipoDocumento({ aprazo: 0, prazodias: 15 })).toBe(
+			15,
+		);
+		expect(
+			resolverPrazoDiasTipoDocumento({ aprazo: 0, prazodias: null }, 0),
+		).toBe(0);
+		expect(resolverPrazoDiasTipoDocumento({ aprazo: 1, prazodias: null })).toBe(
+			30,
+		);
 	});
 });
