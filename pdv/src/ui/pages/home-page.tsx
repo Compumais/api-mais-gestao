@@ -18,13 +18,13 @@ import {
 	type StatusAtividadeMesa,
 	type StatusContext,
 } from "@/lib/pdv-types";
-import { centavosToNumber, cn, money } from "@/lib/utils";
+import { cn, money } from "@/lib/utils";
 import {
 	AvisoSecundario,
 	secundarioDesconectado,
 } from "@/ui/components/aviso-secundario";
+import { DialogFecharCaixa } from "@/ui/components/dialog-fechar-caixa";
 import { FunctionBar } from "@/ui/components/function-bar";
-import { NumericKeypad } from "@/ui/components/numeric-keypad";
 import { StatusBar } from "@/ui/components/status-bar";
 import { Topbar } from "@/ui/components/topbar";
 import { Badge } from "@/ui/components/ui/badge";
@@ -111,13 +111,11 @@ export function HomePage() {
 	const [msg, setMsg] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [fechando, setFechando] = useState(false);
-	const [digitosFechamento, setDigitosFechamento] = useState("0");
 	const [apenasAbertas, setApenasAbertas] = useState(false);
 	const [novaNumero, setNovaNumero] = useState("");
 	const [dialogo, setDialogo] = useState<DialogoAbertura>(null);
 	const [nomeCliente, setNomeCliente] = useState("");
 
-	useEscapeFechaModal(fechando, () => setFechando(false));
 	useEscapeFechaModal(dialogo !== null, () => {
 		setDialogo(null);
 		setNomeCliente("");
@@ -259,21 +257,6 @@ export function HomePage() {
 			);
 		} catch (err) {
 			setMsg(err instanceof Error ? err.message : "Falha ao sincronizar");
-		} finally {
-			setLoading(false);
-		}
-	}
-
-	async function confirmarFechamento() {
-		setLoading(true);
-		try {
-			await pdvInvoke("fecharCaixa", centavosToNumber(digitosFechamento));
-			await refresh();
-			setFechando(false);
-			setDigitosFechamento("0");
-			navigate("/abertura-caixa", { replace: true });
-		} catch (err) {
-			setMsg(err instanceof Error ? err.message : "Erro ao fechar caixa");
 		} finally {
 			setLoading(false);
 		}
@@ -516,42 +499,14 @@ export function HomePage() {
 				</div>
 			)}
 
-			{fechando && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-					<div className="w-80 space-y-3 rounded-lg border bg-card p-4">
-						<h2 className="text-lg font-semibold">Fechamento de caixa</h2>
-						<div className="text-center text-2xl font-bold text-primary">
-							{money(centavosToNumber(digitosFechamento))}
-						</div>
-						<NumericKeypad
-							digits={digitosFechamento}
-							onChange={setDigitosFechamento}
-							disabled={loading}
-							capturarSobreInput
-							onEnter={() => {
-								if (!loading) void confirmarFechamento();
-							}}
-						/>
-						<div className="flex gap-2">
-							<Button
-								variant="outline"
-								className="flex-1"
-								disabled={loading}
-								onClick={() => setFechando(false)}
-							>
-								Cancelar
-							</Button>
-							<Button
-								className="flex-1"
-								disabled={loading}
-								onClick={() => void confirmarFechamento()}
-							>
-								Confirmar
-							</Button>
-						</div>
-					</div>
-				</div>
-			)}
+			<DialogFecharCaixa
+				aberto={fechando}
+				onFechar={() => setFechando(false)}
+				onSucesso={async () => {
+					await refresh();
+					navigate("/abertura-caixa", { replace: true });
+				}}
+			/>
 
 			<StatusBar
 				items={[

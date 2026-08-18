@@ -27,12 +27,19 @@ import {
 	totaisParaSync,
 	validarFechamentoPagamentos,
 } from "./pagamento";
+import {
+	calcularConferenciaCaixa,
+	montarResumoTurnoCaixa,
+	type ResumoTurnoCaixa,
+	type VendaParaResumoTurno,
+} from "./resumo-turno-caixa";
 
 export type {
 	LancamentoPagamento,
 	MeioPagamento,
 	StatusLancamentoPagamento,
 } from "./pagamento";
+export type { ResumoTurnoCaixa } from "./resumo-turno-caixa";
 
 export type SessaoLocal = {
 	token: string | null;
@@ -716,6 +723,7 @@ export async function caixaAberto(): Promise<{
 	valorabertura: number;
 	idusuario: string | null;
 	username: string | null;
+	idremoto: string | null;
 } | null> {
 	const sessao = await obterSessao();
 	if (!sessao.userid) {
@@ -730,8 +738,9 @@ export async function caixaAberto(): Promise<{
 			valorabertura: number;
 			idusuario: string | null;
 			username: string | null;
+			idremoto: string | null;
 		}>(
-			`SELECT id, numeropdv, abertoem, valorabertura, idusuario, username
+			`SELECT id, numeropdv, abertoem, valorabertura, idusuario, username, idremoto
 			 FROM caixa_turno
 			 WHERE status = 'aberto' AND idusuario = $1 AND numeropdv = $2
 			 ORDER BY abertoem DESC LIMIT 1`,
@@ -808,20 +817,108 @@ export async function abrirCaixa(valorabertura: number): Promise<{
 	return { id, abertoem: agora, valorabertura };
 }
 
-export async function fecharCaixa(valorfechamento: number): Promise<void> {
+export type CaixaTurnoLocal = {
+	id: string;
+	idempresa: string;
+	numeropdv: number;
+	idusuario: string | null;
+	username: string | null;
+	abertoem: string;
+	fechadoem: string | null;
+	valorabertura: number;
+	valorfechamento: number | null;
+	status: string;
+	idremoto: string | null;
+};
+
+export async function obterCaixaTurno(
+	id: string,
+): Promise<CaixaTurnoLocal | null> {
+	return (
+		(await queryOne<CaixaTurnoLocal>(
+			`SELECT id, idempresa, numeropdv, idusuario, username, abertoem, fechadoem,
+		        valorabertura, valorfechamento, status, idremoto
+		 FROM caixa_turno WHERE id = $1`,
+			[id],
+		)) ?? null
+	);
+}
+
+export async function atualizarCaixaIdRemoto(
+	id: string,
+	idremoto: string,
+): Promise<void> {
+	await execute(
+		`UPDATE caixa_turno SET idremoto = $1, sync_status = 'sincronizado' WHERE id = $2`,
+		[idremoto, id],
+	);
+}
+
+export async function calcularResumoTurno(caixa: {
+	numeropdv: number;
+	abertoem: string;
+	valorabertura: number;
+}): Promise<ResumoTurnoCaixa> {
+	const vendas = await query<VendaParaResumoTurno>(
+		`SELECT valortotal, valordinheiro, valorpix, valorcartao, valortroco
+		 FROM venda
+		 WHERE numeropdv = $1 AND criadoem >= $2 AND status = 'fechada'
+		 ORDER BY criadoem`,
+		[caixa.numeropdv, caixa.abertoem],
+	);
+	return montarResumoTurnoCaixa({
+		valorabertura: caixa.valorabertura,
+		vendas,
+	});
+}
+
+export async function calcularResumoTurnoAberto(): Promise<ResumoTurnoCaixa> {
 	const caixa = await caixaAberto();
 	if (!caixa) {
 		throw new Error("Nenhum caixa aberto para este operador");
 	}
+	return calcularResumoTurno(caixa);
+}
+
+export async function fecharCaixa(params: {
+	saldoinformado: number;
+	observacao?: string | null;
+}): Promise<void> {
+	const caixa = await caixaAberto();
+	if (!caixa) {
+		throw new Error("Nenhum caixa aberto para este operador");
+	}
+	const resumo = await calcularResumoTurno(caixa);
+	const conferencia = calcularConferenciaCaixa(
+		params.saldoinformado,
+		resumo.saldoCaixaFisico,
+	);
 	const agora = new Date().toISOString();
+	const observacao = params.observacao?.trim() || null;
 	await execute(
 		`UPDATE caixa_turno SET status = 'fechado', fechadoem = $1, valorfechamento = $2, sync_status = 'pendente' WHERE id = $3`,
-		[agora, valorfechamento, caixa.id],
+		[agora, conferencia.saldoinformado, caixa.id],
 	);
+	const sessao = await obterSessao();
 	await enfileirarOutbox("fechamento_caixa", {
 		idlocal: caixa.id,
-		valorfechamento,
+		idremoto: caixa.idremoto,
+		idempresa: sessao.idempresa,
+		idusuario: caixa.idusuario,
+		numeropdv: caixa.numeropdv,
+		valorabertura: caixa.valorabertura,
+		abertoem: caixa.abertoem,
 		fechadoem: agora,
+		saldoinformado: conferencia.saldoinformado,
+		saldoconferido: conferencia.saldoinformado,
+		saldoapurado: resumo.saldoapurado,
+		saldoCaixaFisico: resumo.saldoCaixaFisico,
+		sobra: conferencia.sobra,
+		falta: conferencia.falta,
+		observacao,
+		qtdVendas: resumo.qtdVendas,
+		pagamentos: resumo.pagamentos,
+		valorfechamento: conferencia.saldoinformado,
 	});
 }
 
