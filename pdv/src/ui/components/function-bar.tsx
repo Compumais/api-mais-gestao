@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { teclaCorresponde } from "@/lib/teclas-funcao";
 import { cn } from "@/lib/utils";
 
 export type FunctionBarAction = {
@@ -27,7 +28,7 @@ export function FunctionBar({ actions }: { actions: FunctionBarAction[] }) {
 			// Escape é reservado ao voltar global (GlobalEscapeBack).
 			if (e.key === "Escape") return;
 			const action = actions.find(
-				(a) => a.hotkey && a.hotkey.toLowerCase() === e.key.toLowerCase(),
+				(a) => a.hotkey && teclaCorresponde(e, a.hotkey),
 			);
 			if (action && !action.disabled && !e.defaultPrevented) {
 				e.preventDefault();

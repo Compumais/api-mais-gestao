@@ -32,6 +32,7 @@ import {
 	nfceConfiguracaoSchema,
 } from "@/schemas/nfce-configuracao.schema";
 import { nfceConfiguracaoService } from "@/services/nfce-configuracao.service";
+import { BotaoAlterarNumeracao } from "./dialog-alterar-numeracao";
 import { NfeSeriesSection } from "./nfe-series-section";
 import { TerminaisPdvSection } from "./terminais-pdv-section";
 
@@ -165,7 +166,10 @@ export function NfceConfiguracaoForm({ idempresa }: NfceConfiguracaoFormProps) {
 				onSubmit={form.handleSubmit((dados) => salvarMutation.mutate(dados))}
 			>
 				<div className="rounded-lg border bg-card p-6">
-					<h2 className="text-lg font-semibold mb-4">Parâmetros NFC-e</h2>
+					<div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+						<h2 className="text-lg font-semibold">Parâmetros NFC-e</h2>
+						<BotaoAlterarNumeracao idempresa={idempresa} abaInicial="nfce" />
+					</div>
 
 					{ambiente === 1 && (
 						<p className="mb-4 rounded-md border border-amber-500/50 bg-amber-500/10 px-3 py-2 text-sm text-amber-800 dark:text-amber-200">

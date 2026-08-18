@@ -3,11 +3,12 @@ import { useNavigate, useOutletContext } from "react-router-dom";
 import { pdvInvoke } from "@/lib/pdv-api";
 import { rotaHomePdv, rotuloModelo, type StatusContext } from "@/lib/pdv-types";
 import { money } from "@/lib/utils";
-import { FunctionBar } from "@/ui/components/function-bar";
 import { DialogInutilizarNfce } from "@/ui/components/dialog-inutilizar-nfce";
+import { FunctionBar } from "@/ui/components/function-bar";
 import { Topbar } from "@/ui/components/topbar";
 import { Badge } from "@/ui/components/ui/badge";
 import { Button } from "@/ui/components/ui/button";
+import { useTeclasFuncao } from "@/ui/hooks/use-teclas-funcao";
 
 type Venda = {
 	id: string;
@@ -34,11 +35,7 @@ function badgeNfce(status: string) {
 		status === "pendente"
 	)
 		return "warning" as const;
-	if (
-		status === "erro" ||
-		status === "erro_config" ||
-		status === "cancelada"
-	)
+	if (status === "erro" || status === "erro_config" || status === "cancelada")
 		return "destructive" as const;
 	return "outline" as const;
 }
@@ -70,6 +67,7 @@ function podeInutilizar(status: string) {
 export function VendasPage() {
 	const navigate = useNavigate();
 	const { status } = useOutletContext<StatusContext>();
+	const { teclas } = useTeclasFuncao();
 	const rotulo = rotuloModelo(status?.modeloAtendimento);
 	const [vendas, setVendas] = useState<Venda[]>([]);
 	const [loading, setLoading] = useState(false);
@@ -234,7 +232,7 @@ export function VendasPage() {
 					{
 						key: "atualizar",
 						label: "Atualizar",
-						hotkey: "F5",
+						hotkey: teclas.sincronizar,
 						variant: "secondary",
 						onClick: () => void load(),
 						disabled: loading,

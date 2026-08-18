@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	type ColumnDef,
 	flexRender,
@@ -10,11 +10,19 @@ import {
 	type SortingState,
 	useReactTable,
 } from "@tanstack/react-table";
-import { useState } from "react";
+import { Ban, FileX2, Plus, RotateCcw } from "lucide-react";
 import Link from "next/link";
-import { Plus, RotateCcw, Ban, FileX2 } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 import { TableSkeleton } from "@/components/table-skeleton";
 import { Button } from "@/components/ui/button";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import {
 	Table,
 	TableBody,
@@ -24,26 +32,31 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
+	NFE_AMBIENTE_LABELS,
+	NFE_STATUS,
+	NFE_STATUS_LABELS,
+} from "@/constants/nfe-status";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { useNfeConfiguracao } from "@/hooks/use-nfe-configuracao";
-import { NFE_STATUS, NFE_STATUS_LABELS, NFE_AMBIENTE_LABELS } from "@/constants/nfe-status";
-import { listarNfesEmitidas, cancelarNfe, inutilizarNfe, type NotaFiscalEmitida } from "@/services/nfe-emissao.service";
-import { obterCodigoRejeicaoNota, obterMotivoRejeicaoNota } from "@/util/nfe-rejeicao-util";
+import {
+	cancelarNfe,
+	inutilizarNfe,
+	listarNfesEmitidas,
+	type NotaFiscalEmitida,
+} from "@/services/nfe-emissao.service";
+import {
+	obterCodigoRejeicaoNota,
+	obterMotivoRejeicaoNota,
+} from "@/util/nfe-rejeicao-util";
 import {
 	notaPodeSerCancelada,
 	notaPodeSerInutilizada,
 } from "@/util/validar-eventos-nfe";
-import { AvisoAmbienteNfe } from "./components/aviso-ambiente-nfe";
-import { StatusNfeBadge } from "./components/status-nfe-badge";
-import { ModalEventoNfe } from "./components/modal-evento-nfe";
 import { PageContainer } from "../components/page-container";
-import { toast } from "sonner";
+import { BotaoAlterarNumeracao } from "../configuracoes/components/dialog-alterar-numeracao";
+import { AvisoAmbienteNfe } from "./components/aviso-ambiente-nfe";
+import { ModalEventoNfe } from "./components/modal-evento-nfe";
+import { StatusNfeBadge } from "./components/status-nfe-badge";
 
 const formatCurrency = (value: string | null | undefined) => {
 	if (!value) return "R$ 0,00";
@@ -167,12 +180,10 @@ const createColumns = (params: {
 		header: "Chave",
 		cell: ({ row }) => {
 			const chave = row.getValue("chavenfe") as string | null;
-			if (!chave) return <span className="text-muted-foreground text-sm">—</span>;
+			if (!chave)
+				return <span className="text-muted-foreground text-sm">—</span>;
 			return (
-				<span
-					className="font-mono text-xs text-muted-foreground"
-					title={chave}
-				>
+				<span className="font-mono text-xs text-muted-foreground" title={chave}>
 					{chave.replace(/(\d{4})(?=\d)/g, "$1 ").trim()}
 				</span>
 			);
@@ -274,8 +285,7 @@ export default function NotaFiscalVendaPage() {
 			if (!empresa) throw new Error("Empresa não selecionada");
 			return listarNfesEmitidas({
 				idempresa: empresa.id,
-				status:
-					statusFiltro !== "todos" ? Number(statusFiltro) : undefined,
+				status: statusFiltro !== "todos" ? Number(statusFiltro) : undefined,
 				page: pagination.pageIndex + 1,
 				limit: pagination.pageSize,
 			});
@@ -345,12 +355,15 @@ export default function NotaFiscalVendaPage() {
 				<div className="flex items-center justify-between px-4">
 					<h1 className="text-2xl font-bold">Notas Fiscais de Venda (NF-e)</h1>
 					{empresa && (
-						<Link href="/nota-fiscal-venda/nova">
-							<Button className="gap-2">
-								<Plus className="h-4 w-4" />
-								Emitir NF-e
-							</Button>
-						</Link>
+						<div className="flex flex-wrap items-center gap-2">
+							<BotaoAlterarNumeracao idempresa={empresa.id} abaInicial="nfe" />
+							<Link href="/nota-fiscal-venda/nova">
+								<Button className="gap-2">
+									<Plus className="h-4 w-4" />
+									Emitir NF-e
+								</Button>
+							</Link>
+						</div>
 					)}
 				</div>
 

@@ -37,6 +37,7 @@ import { Topbar } from "@/ui/components/topbar";
 import { Button } from "@/ui/components/ui/button";
 import { Input } from "@/ui/components/ui/input";
 import { useEscapeFechaModal } from "@/ui/hooks/use-escape-fecha-modal";
+import { useTeclasFuncao } from "@/ui/hooks/use-teclas-funcao";
 
 type ContaMesa = {
 	id: string;
@@ -84,6 +85,7 @@ export function MesaContaPage() {
 	const numeroMesa = Number(numero);
 	const rotulo = rotuloModelo(status?.modeloAtendimento);
 	const nomeDoState = (location.state as LocationState | null)?.nomecliente;
+	const { teclas } = useTeclasFuncao();
 
 	const [conta, setConta] = useState<ContaMesa | null>(null);
 	const [nomeCliente, setNomeCliente] = useState<string | null>(
@@ -1174,9 +1176,9 @@ export function MesaContaPage() {
 					{
 						key: "receber",
 						label: "Receber",
-						hotkey: "F5",
+						hotkey: teclas.receber,
 						variant: "secondary",
-						disabled: !itens.length || fila.length > 0 || loading,
+						disabled: !itens.length || fila.length > 0 || loading || pagando,
 						onClick: () => {
 							setPagandoFatia(false);
 							setFatiaValor(null);

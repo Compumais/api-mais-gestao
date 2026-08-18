@@ -28,6 +28,7 @@ import {
 	type ResultadoEmissaoTeste,
 	type ResultadoSefaz,
 } from "@/services/nfe-configuracao.service";
+import { BotaoAlterarNumeracao } from "./dialog-alterar-numeracao";
 import { NfeSeriesSection } from "./nfe-series-section";
 
 interface NfeConfiguracaoFormProps {
@@ -55,7 +56,7 @@ export function NfeConfiguracaoForm({ idempresa }: NfeConfiguracaoFormProps) {
 		queryFn: () => nfeConfiguracaoService.listarCertificados(idempresa),
 	});
 
-	const { data: series = [] } = useQuery({
+	useQuery({
 		queryKey: ["nfe-series", idempresa],
 		queryFn: () => nfeConfiguracaoService.listarSeries(idempresa),
 	});
@@ -192,7 +193,10 @@ export function NfeConfiguracaoForm({ idempresa }: NfeConfiguracaoFormProps) {
 				onSubmit={form.handleSubmit((dados) => salvarMutation.mutate(dados))}
 			>
 				<div className="rounded-lg border bg-card p-6">
-					<h2 className="text-lg font-semibold mb-4">Parâmetros NF-e</h2>
+					<div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+						<h2 className="text-lg font-semibold">Parâmetros NF-e</h2>
+						<BotaoAlterarNumeracao idempresa={idempresa} abaInicial="nfe" />
+					</div>
 
 					{ambiente === 1 && (
 						<p className="mb-4 rounded-md border border-amber-500/50 bg-amber-500/10 px-3 py-2 text-sm text-amber-800 dark:text-amber-200">

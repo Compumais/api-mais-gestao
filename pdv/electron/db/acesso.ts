@@ -61,7 +61,10 @@ export const CHAVES_CONFIG_GOURMET = [
 ] as const;
 
 /** Preferências do operador — qualquer usuário logado pode gravar. */
-export const CHAVES_CONFIG_OPERADOR = ["filtro_apenas_abertas"] as const;
+export const CHAVES_CONFIG_OPERADOR = [
+	"filtro_apenas_abertas",
+	"teclas_funcao",
+] as const;
 
 /** Sem sessão: conexão na tela de login (API, banco e identidade de PDV secundário). */
 export const CHAVES_CONFIG_PRE_LOGIN = [

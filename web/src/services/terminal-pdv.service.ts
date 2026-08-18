@@ -12,6 +12,7 @@ export interface TerminalPdv {
 	numeroproximo: number;
 	modeloserie: string;
 	serieativa: boolean;
+	ultimonumero?: number | null;
 }
 
 export const terminalPdvService = {

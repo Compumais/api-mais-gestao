@@ -11,6 +11,7 @@ import {
 } from "@/lib/pdv-types";
 import { produtoEhPizza } from "@/lib/pizza-meio-a-meio";
 import { devePedirPeso, formatarQuantidade } from "@/lib/produto-kg";
+import { teclaCorresponde } from "@/lib/teclas-funcao";
 import { money } from "@/lib/utils";
 import {
 	AvisoSecundario,
@@ -33,6 +34,7 @@ import { ProdutoCard } from "@/ui/components/produto-card";
 import { Topbar } from "@/ui/components/topbar";
 import { Button } from "@/ui/components/ui/button";
 import { useEscapeFechaModal } from "@/ui/hooks/use-escape-fecha-modal";
+import { useTeclasFuncao } from "@/ui/hooks/use-teclas-funcao";
 
 type Item = {
 	chave: string;
@@ -51,6 +53,7 @@ export function BalcaoPage() {
 	const rotulo = rotuloModelo(status?.modeloAtendimento);
 	const gourmet = Boolean(status?.moduloGourmet);
 	const bloqueado = secundarioDesconectado(status);
+	const { teclas } = useTeclasFuncao();
 	const [grupos, setGrupos] = useState<GrupoLocal[]>([]);
 	const [atalhos, setAtalhos] = useState<ProdutoLocal[]>([]);
 	const [grupoAtivo, setGrupoAtivo] = useState<GrupoLocal | null>(null);
@@ -263,6 +266,53 @@ export function BalcaoPage() {
 		navigate("/login", { replace: true });
 	}
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: sair usa navigate já listado
+	useEffect(() => {
+		function onKeyDown(e: KeyboardEvent) {
+			if (e.defaultPrevented) return;
+			if (pagando || fechando || pizzaPrimeiro || produtoPeso || rejeicaoNfce) {
+				return;
+			}
+			if (teclaCorresponde(e, teclas.finalizar)) {
+				if (!itens.length || bloqueado) return;
+				e.preventDefault();
+				setPagando(true);
+				return;
+			}
+			if (!gourmet) return;
+			if (teclaCorresponde(e, teclas.historico)) {
+				e.preventDefault();
+				navigate("/vendas");
+				return;
+			}
+			if (teclaCorresponde(e, teclas.fechar_caixa)) {
+				e.preventDefault();
+				setFechando(true);
+				return;
+			}
+			if (teclaCorresponde(e, teclas.sair)) {
+				e.preventDefault();
+				void sair();
+			}
+		}
+		window.addEventListener("keydown", onKeyDown);
+		return () => window.removeEventListener("keydown", onKeyDown);
+	}, [
+		bloqueado,
+		fechando,
+		gourmet,
+		itens.length,
+		navigate,
+		pagando,
+		pizzaPrimeiro,
+		produtoPeso,
+		rejeicaoNfce,
+		teclas.fechar_caixa,
+		teclas.finalizar,
+		teclas.historico,
+		teclas.sair,
+	]);
+
 	return (
 		<div className="flex h-screen flex-col">
 			<Topbar
@@ -444,6 +494,9 @@ export function BalcaoPage() {
 						onClick={() => setPagando(true)}
 					>
 						Finalizar
+						<span className="ml-2 text-xs font-semibold opacity-80">
+							{teclas.finalizar}
+						</span>
 					</Button>
 				</div>
 			</div>
@@ -500,8 +553,9 @@ export function BalcaoPage() {
 						{
 							key: "historico",
 							label: "Histórico",
-							hotkey: "F3",
+							hotkey: teclas.historico,
 							variant: "secondary",
+							disabled: pagando,
 							onClick: () => navigate("/vendas"),
 						},
 						...(status?.podeConfigurar
@@ -511,6 +565,7 @@ export function BalcaoPage() {
 										label: "Config",
 										hotkey: "F4",
 										variant: "outline" as const,
+										disabled: pagando,
 										onClick: () => navigate("/config"),
 									},
 								]
@@ -518,15 +573,17 @@ export function BalcaoPage() {
 						{
 							key: "fechar-caixa",
 							label: "Fechar caixa",
-							hotkey: "F9",
+							hotkey: teclas.fechar_caixa,
 							variant: "destructive" as const,
+							disabled: pagando,
 							onClick: () => setFechando(true),
 						},
 						{
 							key: "sair",
 							label: "Sair",
-							hotkey: "F12",
+							hotkey: teclas.sair,
 							variant: "outline" as const,
+							disabled: pagando,
 							onClick: () => void sair(),
 						},
 					]}

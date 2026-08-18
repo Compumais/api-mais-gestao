@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	lancamentoTemSitef,
 	podeFecharPagamentos,
@@ -16,10 +16,12 @@ import type {
 	SitefPagarResultado,
 	SitefStatus,
 } from "@/lib/pdv-types";
+import { teclaCorresponde } from "@/lib/teclas-funcao";
 import { centavosToNumber, money } from "@/lib/utils";
 import { NumericKeypad } from "@/ui/components/numeric-keypad";
 import { Button } from "@/ui/components/ui/button";
 import { useEscapeFechaModal } from "@/ui/hooks/use-escape-fecha-modal";
+import { useTeclasFuncao } from "@/ui/hooks/use-teclas-funcao";
 
 export type FechamentoMisto = {
 	lancamentos: LancamentoPagamento[];
@@ -52,6 +54,7 @@ export function DialogPagamentoMisto({
 	const [sitef, setSitef] = useState<SitefStatus | null>(null);
 	const [processando, setProcessando] = useState(false);
 	const [erro, setErro] = useState("");
+	const { teclas } = useTeclasFuncao();
 
 	const restante = useMemo(
 		() => saldoRestante(total, lancamentos),
@@ -197,6 +200,30 @@ export function DialogPagamentoMisto({
 		}
 	}
 
+	const adicionarRef = useRef(adicionar);
+	adicionarRef.current = adicionar;
+
+	useEffect(() => {
+		if (!aberto) return;
+		function onKeyDown(e: KeyboardEvent) {
+			if (ocupado) return;
+			const meio: MeioPagamento | null = teclaCorresponde(e, teclas.dinheiro)
+				? "DINHEIRO"
+				: teclaCorresponde(e, teclas.pix)
+					? "PIX"
+					: teclaCorresponde(e, teclas.cartao)
+						? "CARTAO"
+						: null;
+			if (!meio) return;
+			e.preventDefault();
+			e.stopPropagation();
+			e.stopImmediatePropagation();
+			void adicionarRef.current(meio);
+		}
+		window.addEventListener("keydown", onKeyDown, true);
+		return () => window.removeEventListener("keydown", onKeyDown, true);
+	}, [aberto, ocupado, teclas.cartao, teclas.dinheiro, teclas.pix]);
+
 	async function remover(id: string | undefined, indice: number) {
 		if (ocupado) return;
 		const item = id
@@ -310,20 +337,35 @@ export function DialogPagamentoMisto({
 				</p>
 
 				<div className="grid grid-cols-3 gap-2">
-					{MEIOS.map((meio) => (
-						<Button
-							key={meio}
-							variant="outline"
-							disabled={ocupado || (restante <= 0 && meio !== "DINHEIRO")}
-							onClick={() => void adicionar(meio)}
-						>
-							{meio === "CARTAO"
-								? sitef?.disponivel
-									? "Cartão/SiTef"
-									: "Cartão"
-								: rotuloMeio(meio)}
-						</Button>
-					))}
+					{MEIOS.map((meio) => {
+						const atalho =
+							meio === "DINHEIRO"
+								? teclas.dinheiro
+								: meio === "PIX"
+									? teclas.pix
+									: teclas.cartao;
+						return (
+							<Button
+								key={meio}
+								variant="outline"
+								disabled={ocupado || (restante <= 0 && meio !== "DINHEIRO")}
+								onClick={() => void adicionar(meio)}
+							>
+								<span className="flex flex-col items-center leading-tight">
+									<span>
+										{meio === "CARTAO"
+											? sitef?.disponivel
+												? "Cartão/SiTef"
+												: "Cartão"
+											: rotuloMeio(meio)}
+									</span>
+									<span className="text-[10px] font-semibold opacity-70">
+										{atalho}
+									</span>
+								</span>
+							</Button>
+						);
+					})}
 				</div>
 				<p className="text-xs text-muted-foreground">
 					{processando

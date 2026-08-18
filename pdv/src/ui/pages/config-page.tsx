@@ -2,6 +2,7 @@ import {
 	CloudDownload,
 	CreditCard,
 	HardDrive,
+	Keyboard,
 	LayoutGrid,
 	Printer,
 	Scale,
@@ -18,9 +19,11 @@ import {
 	rotuloModelo,
 	type StatusContext,
 } from "@/lib/pdv-types";
+import { serializarTeclasFuncao } from "@/lib/teclas-funcao";
 import { aplicarTema } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { ConfigAtalhos } from "@/ui/components/config-atalhos";
+import { ConfigTeclasFuncao } from "@/ui/components/config-teclas-funcao";
 import { FunctionBar } from "@/ui/components/function-bar";
 import {
 	SelectNumeroPdv,
@@ -52,6 +55,7 @@ type MapeamentoGourmet = {
 type AbaId =
 	| "geral"
 	| "atalhos"
+	| "teclas"
 	| "impressoras"
 	| "tef"
 	| "tecnibra"
@@ -122,6 +126,7 @@ const ABAS: Array<{
 }> = [
 	{ id: "geral", label: "Geral", icon: Settings2 },
 	{ id: "atalhos", label: "Atalhos", icon: LayoutGrid },
+	{ id: "teclas", label: "Teclas", icon: Keyboard },
 	{ id: "impressoras", label: "Impressoras", icon: Printer },
 	{ id: "tef", label: "TEF / SiTef", icon: CreditCard },
 	{ id: "tecnibra", label: "Catraca Tecnibra", icon: Ticket },
@@ -310,6 +315,7 @@ export function ConfigPage() {
 				backup_frequencia: config.backup_frequencia ?? "diario",
 				backup_hora: config.backup_hora ?? "22:00",
 				backup_manter: config.backup_manter ?? "14",
+				teclas_funcao: config.teclas_funcao ?? "",
 			});
 			setConfig((prev) => ({ ...prev, ...saved }));
 			try {
@@ -888,6 +894,23 @@ export function ConfigPage() {
 
 						{aba === "atalhos" && (
 							<ConfigAtalhos secundario={modoSecundario} onMensagem={setMsg} />
+						)}
+
+						{aba === "teclas" && (
+							<Card>
+								<CardHeader>
+									<CardTitle>Teclas rápidas</CardTitle>
+								</CardHeader>
+								<CardContent>
+									<ConfigTeclasFuncao
+										valorInicial={config.teclas_funcao}
+										onMensagem={setMsg}
+										onSalvo={(mapa) =>
+											set("teclas_funcao", serializarTeclasFuncao(mapa))
+										}
+									/>
+								</CardContent>
+							</Card>
 						)}
 
 						{aba === "impressoras" && (

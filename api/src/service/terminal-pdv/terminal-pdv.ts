@@ -9,6 +9,7 @@ import {
 	criarNfeSerie,
 	desmarcarSeriesPadrao,
 } from "@/repositories/nfe-serie-repositories.js";
+import { buscarUltimoNumeroPorSeries } from "@/repositories/nota-fiscal-repositories.js";
 import {
 	atualizarTerminalPdv,
 	buscarTerminalPdvPorId,
@@ -126,7 +127,11 @@ async function hidratarTerminal(
 export async function listarTerminaisPdvService({
 	idempresa,
 	idusuario,
-}: ParametrosBase): Promise<HttpResponse<{ data: TerminalPdvComSerie[] }>> {
+}: ParametrosBase): Promise<
+	HttpResponse<{
+		data: Array<TerminalPdvComSerie & { ultimonumero: number | null }>;
+	}>
+> {
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
 		idusuario,
 		idempresa,
@@ -135,7 +140,14 @@ export async function listarTerminaisPdvService({
 		return httpProibido();
 	}
 
-	const data = await listarTerminaisPdvPorEmpresa(idempresa);
+	const terminais = await listarTerminaisPdvPorEmpresa(idempresa);
+	const ultimos = await buscarUltimoNumeroPorSeries(
+		terminais.map((terminal) => terminal.idnfeserie),
+	);
+	const data = terminais.map((terminal) => ({
+		...terminal,
+		ultimonumero: ultimos.get(terminal.idnfeserie) ?? null,
+	}));
 	return httpOk({ data });
 }
 

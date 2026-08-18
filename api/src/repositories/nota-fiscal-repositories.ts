@@ -535,6 +535,40 @@ export async function contarNotasFiscaisPorSerie(idserie: string) {
 	return resultado?.value ?? 0;
 }
 
+export async function buscarUltimoNumeroPorSeries(
+	ids: string[],
+): Promise<Map<string, number>> {
+	const mapa = new Map<string, number>();
+	if (!ids.length) {
+		return mapa;
+	}
+
+	const rows = await db
+		.select({
+			idserie: notafiscal.idserie,
+			ultimo: sql<number | null>`MAX(
+				CASE
+					WHEN ${notafiscal.numeronotafiscal} ~ '^[0-9]+$'
+					THEN (${notafiscal.numeronotafiscal})::int
+					ELSE NULL
+				END
+			)`,
+		})
+		.from(notafiscal)
+		.where(and(inArray(notafiscal.idserie, ids), isNotNull(notafiscal.idserie)))
+		.groupBy(notafiscal.idserie);
+
+	for (const row of rows) {
+		if (!row.idserie) continue;
+		const ultimo = Number(row.ultimo);
+		if (Number.isFinite(ultimo) && ultimo > 0) {
+			mapa.set(row.idserie, ultimo);
+		}
+	}
+
+	return mapa;
+}
+
 export type ListarNotasParaExportacaoXmlContabilidadeParametros = {
 	idempresa: string;
 	dataInicio: string;
