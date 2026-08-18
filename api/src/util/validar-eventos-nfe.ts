@@ -128,6 +128,28 @@ export function validarCancelamentoNfe(
 	return { ok: true };
 }
 
+const CSTAT_INUTILIZACAO_HOMOLOGADA = new Set(["102", "563", "241"]);
+
+export function inutilizacaoJaEncerradaNaSefaz(
+	cStat?: string | null,
+	xMotivo?: string | null,
+): boolean {
+	const codigo = String(cStat ?? "")
+		.trim()
+		.replace(/^0+/, "");
+	if (CSTAT_INUTILIZACAO_HOMOLOGADA.has(codigo)) {
+		return true;
+	}
+	const motivo = String(xMotivo ?? "")
+		.normalize("NFD")
+		.replace(/[\u0300-\u036f]/g, "")
+		.toLowerCase();
+	return (
+		motivo.includes("ja existe pedido de inutilizacao") ||
+		motivo.includes("um numero da faixa ja foi utilizado")
+	);
+}
+
 export function validarInutilizacaoNfe(
 	nota: NotaFiscalEventoNfe,
 	justificativa: string,

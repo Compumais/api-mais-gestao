@@ -115,4 +115,33 @@ describe("inutilizarNfeVendaService", () => {
 			}),
 		);
 	});
+
+	it("sincroniza inutilização quando a SEFAZ já encerrou a faixa", async () => {
+		vi.mocked(notaRepository.buscarNotaFiscalPorId).mockResolvedValue(
+			notaNfce as never,
+		);
+		vi.mocked(credenciaisNfce.montarCredenciaisGatewayNfce).mockResolvedValue({
+			ok: true,
+			configJson: { modelo: 65, tpAmb: 2 },
+			pfxBase64: "pfx",
+			senha: "senha",
+		});
+		vi.mocked(gateway.inutilizarNfeGateway).mockResolvedValue({
+			sucesso: false,
+			cStat: "241",
+			xMotivo: "Rejeição: Um número da faixa já foi utilizado",
+		});
+
+		const resultado = await inutilizarNfeVendaService({
+			idusuario: "user-1",
+			idnotafiscal: "nfce-1",
+			justificativa: "Numeração não utilizada por rejeição da NFC-e",
+		});
+
+		expect(resultado.success).toBe(true);
+		expect(notaRepository.atualizarNotaFiscal).toHaveBeenCalledWith(
+			"nfce-1",
+			expect.objectContaining({ status: NFE_STATUS.INUTILIZADA }),
+		);
+	});
 });
