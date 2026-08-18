@@ -7,6 +7,11 @@ import {
 } from "@/repositories/nota-fiscal-repositories.js";
 import { montarCredenciaisGatewayNfce } from "@/service/nfce-emissao/montar-credenciais-gateway-nfce.js";
 import { montarCredenciaisGatewayNfe } from "@/service/nfe-emissao/montar-credenciais-gateway-nfe.js";
+import { numeroFiscalPreenchido } from "@/util/completar-listagem-nfce.js";
+import {
+	agoraBrasiliaIsoOffset,
+	hojeBrasiliaIsoDate,
+} from "@/util/data-hora-brasilia.js";
 import {
 	httpBadRequest,
 	httpNaoEncontrado,
@@ -140,12 +145,22 @@ export async function inutilizarNfeVendaService({
 		}
 	}
 
+	const agora = agoraBrasiliaIsoOffset();
 	await atualizarNotaFiscal(idnotafiscal, {
 		status: NFE_STATUS.INUTILIZADA,
 		justificativacancelamentonfe: justificativaNormalizada,
 		mensagemprotocolonfe: resposta.xMotivo?.trim() || xMotivo,
 		codigostatusprotocolonfe: normalizarCodigoStatusNfe(cStat),
 		protocolonfe: resposta.protocolo ?? nota.protocolonfe,
+		...(!numeroFiscalPreenchido(nota.serie)
+			? { serie: String(numeracao.serie) }
+			: {}),
+		...(!numeroFiscalPreenchido(nota.numeronotafiscal)
+			? { numeronotafiscal: String(numeracao.numero) }
+			: {}),
+		...(!nota.emissao ? { emissao: hojeBrasiliaIsoDate() } : {}),
+		...(!nota.datahoraemissao ? { datahoraemissao: agora } : {}),
+		...(!nota.datainclusao ? { datainclusao: agora } : {}),
 	});
 
 	return httpOk<ResultadoInutilizacaoNfe>({

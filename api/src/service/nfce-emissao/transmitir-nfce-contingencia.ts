@@ -13,12 +13,18 @@ import {
 	buscarVendaPdvGourmetPorId,
 } from "@/repositories/venda-pdv-gourmet-repositories.js";
 import { arquivarXmlNotaFiscal } from "@/service/nota-fiscal/arquivar-xml-nota-fiscal.js";
+import { numeroFiscalPreenchido } from "@/util/completar-listagem-nfce.js";
 import {
 	agoraBrasiliaIsoOffset,
 	hojeBrasiliaIsoDate,
 } from "@/util/data-hora-brasilia.js";
+import { decodificarChaveNfe } from "@/util/decodificar-chave-nfe.js";
 import { httpBadRequest, httpCriacao, httpProibido } from "@/util/http-util.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
+import {
+	formatarValorMonetario,
+	parseValorMonetario,
+} from "@/util/recebimentos-venda-util.js";
 
 export type TransmitirNfceContingenciaParametros = {
 	idusuario: string;
@@ -47,6 +53,26 @@ function normalizarChave(chave?: string): string | undefined {
 function extrairValorTotalXml(xml: string): string | null {
 	const m = xml.match(/<vNF>([0-9.]+)<\/vNF>/i);
 	return m?.[1] ?? null;
+}
+
+function extrairNumeracaoXml(xml: string): { serie: number; numero: number } {
+	const serieMatch = xml.match(/<serie>(\d+)<\/serie>/i);
+	const numeroMatch = xml.match(/<nNF>(\d+)<\/nNF>/i);
+	return {
+		serie: Number(serieMatch?.[1] ?? 0),
+		numero: Number(numeroMatch?.[1] ?? 0),
+	};
+}
+
+function primeiroNumeroFiscal(
+	...candidatos: Array<number | string | null | undefined>
+): number | null {
+	for (const candidato of candidatos) {
+		if (numeroFiscalPreenchido(candidato)) {
+			return Number(candidato);
+		}
+	}
+	return null;
 }
 
 function resultadoExistente(
@@ -104,33 +130,46 @@ export async function transmitirNfceContingenciaService({
 		}
 	}
 
-	if (idvenda) {
-		const venda = await buscarVendaPdvGourmetPorId(idvenda);
-		if (venda?.idempresa === idempresa && venda.idnotafiscalnfce) {
-			const notaVenda = await buscarNotaFiscalPorId(venda.idnotafiscalnfce);
-			if (notaVenda) {
-				return httpCriacao(
-					resultadoExistente(
-						notaVenda.id,
-						notaVenda.status,
-						notaVenda.chavenfe ?? chaveNorm,
-					),
-				);
-			}
+	const venda = idvenda ? await buscarVendaPdvGourmetPorId(idvenda) : null;
+	if (venda?.idempresa === idempresa && venda.idnotafiscalnfce) {
+		const notaVenda = await buscarNotaFiscalPorId(venda.idnotafiscalnfce);
+		if (notaVenda) {
+			return httpCriacao(
+				resultadoExistente(
+					notaVenda.id,
+					notaVenda.status,
+					notaVenda.chavenfe ?? chaveNorm,
+				),
+			);
 		}
+	}
+
+	const daChave = chaveNorm ? decodificarChaveNfe(chaveNorm) : null;
+	const daXml = extrairNumeracaoXml(xml);
+	const serieFinal = primeiroNumeroFiscal(serie, daChave?.serie, daXml.serie);
+	const numeroFinal = primeiroNumeroFiscal(
+		numero,
+		daChave?.numero,
+		daXml.numero,
+	);
+	if (serieFinal == null || numeroFinal == null) {
+		return httpBadRequest("Série ou número da NFC-e de contingência inválidos");
 	}
 
 	const idnotafiscal = uuidv4();
 	const [dataCont, horaCont] = splitDataHoraContingencia(datacontingencia);
 	const agora = agoraBrasiliaIsoOffset();
 	const valorXml = extrairValorTotalXml(xml);
+	const valorVenda = parseValorMonetario(venda?.valortotal);
+	const valortotalnota =
+		valorXml ?? (valorVenda > 0 ? formatarValorMonetario(valorVenda) : null);
 
 	const dadosNota: NovaNotaFiscal = {
 		id: idnotafiscal,
 		idempresa,
 		modelo: "65",
-		serie: String(serie),
-		numeronotafiscal: String(numero),
+		serie: String(serieFinal),
+		numeronotafiscal: String(numeroFinal),
 		tipoambientenfe: 2,
 		tipoorigem: 1,
 		status: NFE_STATUS.PENDENTE,
@@ -147,7 +186,7 @@ export async function transmitirNfceContingenciaService({
 		datahoraemissao: agora,
 		datainclusao: agora,
 		currenttimemillis: Date.now(),
-		...(valorXml ? { valortotalnota: valorXml } : {}),
+		...(valortotalnota ? { valortotalnota } : {}),
 		dadosimportacao: {
 			origem: "pdv-hibrido-contingencia",
 			idvenda: idvenda ?? null,
@@ -160,17 +199,14 @@ export async function transmitirNfceContingenciaService({
 	await avancarNumeroproximoSerieSeNecessario(
 		idempresa,
 		"65",
-		String(serie),
-		numero,
+		String(serieFinal),
+		numeroFinal,
 	);
 
-	if (idvenda) {
-		const venda = await buscarVendaPdvGourmetPorId(idvenda);
-		if (venda?.idempresa === idempresa && !venda.idnotafiscalnfce) {
-			await atualizarVendaPdvGourmet(idvenda, {
-				idnotafiscalnfce: idnotafiscal,
-			});
-		}
+	if (idvenda && venda?.idempresa === idempresa && !venda.idnotafiscalnfce) {
+		await atualizarVendaPdvGourmet(idvenda, {
+			idnotafiscalnfce: idnotafiscal,
+		});
 	}
 
 	if (chaveNorm) {
