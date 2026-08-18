@@ -10,6 +10,7 @@ export type TerminalPdvComSerie = TerminalPdv & {
 	numeroproximo: number;
 	modeloserie: string;
 	serieativa: boolean;
+	ultimonumero?: number | null;
 };
 
 export async function listarTerminaisPdvPorEmpresa(idempresa: string) {

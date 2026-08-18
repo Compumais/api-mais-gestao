@@ -19,7 +19,10 @@ import {
 	excluirNfeSerie,
 	listarNfeSeriesPorEmpresa,
 } from "@/repositories/nfe-serie-repositories.js";
-import { contarNotasFiscaisPorSerie } from "@/repositories/nota-fiscal-repositories.js";
+import {
+	buscarUltimoNumeroPorSeries,
+	contarNotasFiscaisPorSerie,
+} from "@/repositories/nota-fiscal-repositories.js";
 import { buscarTerminalPdvPorSerie } from "@/repositories/terminal-pdv-repositories.js";
 import {
 	httpBadRequest,
@@ -50,7 +53,7 @@ export async function listarNfeSeriesService({
 	idusuario,
 	modelo,
 }: ParametrosBase & { modelo?: string }): Promise<
-	HttpResponse<{ data: NfeSerie[] }>
+	HttpResponse<{ data: Array<NfeSerie & { ultimonumero: number | null }> }>
 > {
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
 		idusuario,
@@ -62,7 +65,15 @@ export async function listarNfeSeriesService({
 	}
 
 	const data = await listarNfeSeriesPorEmpresa(idempresa, modelo);
-	return httpOk({ data });
+	const ultimos = await buscarUltimoNumeroPorSeries(
+		data.map((serie) => serie.id),
+	);
+	return httpOk({
+		data: data.map((serie) => ({
+			...serie,
+			ultimonumero: ultimos.get(serie.id) ?? null,
+		})),
+	});
 }
 
 export async function criarNfeSerieService({

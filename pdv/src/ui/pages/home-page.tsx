@@ -31,6 +31,7 @@ import { Badge } from "@/ui/components/ui/badge";
 import { Button } from "@/ui/components/ui/button";
 import { Input } from "@/ui/components/ui/input";
 import { useEscapeFechaModal } from "@/ui/hooks/use-escape-fecha-modal";
+import { useTeclasFuncao } from "@/ui/hooks/use-teclas-funcao";
 import { BalcaoPage } from "@/ui/pages/balcao-page";
 
 type DialogoAbertura =
@@ -106,6 +107,7 @@ export function HomeEntry() {
 export function HomePage() {
 	const { status, refresh } = useOutletContext<StatusContext>();
 	const navigate = useNavigate();
+	const { teclas } = useTeclasFuncao();
 	const [mesas, setMesas] = useState<MesaResumo[]>([]);
 	const [totalHoje, setTotalHoje] = useState(0);
 	const [msg, setMsg] = useState("");
@@ -547,7 +549,7 @@ export function HomePage() {
 					{
 						key: "sync",
 						label: "Sincronizar",
-						hotkey: "F5",
+						hotkey: teclas.sincronizar,
 						variant: "secondary",
 						onClick: () => void sincronizar(),
 						disabled: loading,
@@ -563,7 +565,7 @@ export function HomePage() {
 					{
 						key: "vendas",
 						label: "Vendas",
-						hotkey: "F3",
+						hotkey: teclas.historico,
 						variant: "secondary",
 						onClick: () => navigate("/vendas"),
 					},
@@ -581,14 +583,14 @@ export function HomePage() {
 					{
 						key: "fechar-caixa",
 						label: "Fechar caixa",
-						hotkey: "F9",
+						hotkey: teclas.fechar_caixa,
 						variant: "destructive",
 						onClick: () => setFechando(true),
 					},
 					{
 						key: "sair",
 						label: "Sair",
-						hotkey: "F12",
+						hotkey: teclas.sair,
 						variant: "outline",
 						onClick: () => void sair(),
 					},

@@ -42,6 +42,7 @@ export interface NfeSerie {
 	padrao: boolean;
 	ativo: boolean;
 	descricao?: string | null;
+	ultimonumero?: number | null;
 }
 
 export interface PendenciaNfe {

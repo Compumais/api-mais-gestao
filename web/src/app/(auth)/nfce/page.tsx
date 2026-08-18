@@ -16,10 +16,7 @@ import { toast } from "sonner";
 import { CupomNaoFiscal } from "@/components/pdv/cupom-nao-fiscal";
 import { TableSkeleton } from "@/components/table-skeleton";
 import { Button } from "@/components/ui/button";
-import {
-	Dialog,
-	DialogContent,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
 	Select,
 	SelectContent,
@@ -42,40 +39,62 @@ import {
 } from "@/constants/nfe-status";
 import { useEmpresa } from "@/hooks/use-empresa";
 import {
-	formatCurrency,
 	type CupomNaoFiscalData,
+	formatCurrency,
 	type MeioPagamentoPdv,
 	type PagamentoParcialPdv,
 } from "@/lib/gourmet-utils";
+import {
+	type DadosCupomNfceApi,
+	type NfceListagem,
+	nfceService,
+} from "@/services/nfce.service";
 import {
 	cancelarNfe,
 	inutilizarNfe,
 	type NotaFiscalEmitida,
 } from "@/services/nfe-emissao.service";
 import {
-	nfceService,
-	type DadosCupomNfceApi,
-	type NfceListagem,
-} from "@/services/nfce.service";
-import { obterCodigoRejeicaoNota, obterMotivoRejeicaoNota } from "@/util/nfe-rejeicao-util";
+	obterCodigoRejeicaoNota,
+	obterMotivoRejeicaoNota,
+} from "@/util/nfe-rejeicao-util";
 import {
 	notaPodeSerCancelada,
 	notaPodeSerInutilizada,
 } from "@/util/validar-eventos-nfe";
+import { PageContainer } from "../components/page-container";
+import { BotaoAlterarNumeracao } from "../configuracoes/components/dialog-alterar-numeracao";
 import { ModalEventoNfe } from "../nota-fiscal-venda/components/modal-evento-nfe";
 import { StatusNfeBadge } from "../nota-fiscal-venda/components/status-nfe-badge";
-import { PageContainer } from "../components/page-container";
 
 const FILTRO_TODOS = "todos";
 
 const OPCOES_STATUS = [
 	{ value: FILTRO_TODOS, label: "Todos os status" },
-	{ value: String(NFE_STATUS.PENDENTE), label: NFE_STATUS_LABELS[NFE_STATUS.PENDENTE] },
-	{ value: String(NFE_STATUS.AUTORIZADA), label: NFE_STATUS_LABELS[NFE_STATUS.AUTORIZADA] },
-	{ value: String(NFE_STATUS.REJEITADA), label: NFE_STATUS_LABELS[NFE_STATUS.REJEITADA] },
-	{ value: String(NFE_STATUS.CANCELADA), label: NFE_STATUS_LABELS[NFE_STATUS.CANCELADA] },
-	{ value: String(NFE_STATUS.INUTILIZADA), label: NFE_STATUS_LABELS[NFE_STATUS.INUTILIZADA] },
-	{ value: String(NFE_STATUS.DENEGADA), label: NFE_STATUS_LABELS[NFE_STATUS.DENEGADA] },
+	{
+		value: String(NFE_STATUS.PENDENTE),
+		label: NFE_STATUS_LABELS[NFE_STATUS.PENDENTE],
+	},
+	{
+		value: String(NFE_STATUS.AUTORIZADA),
+		label: NFE_STATUS_LABELS[NFE_STATUS.AUTORIZADA],
+	},
+	{
+		value: String(NFE_STATUS.REJEITADA),
+		label: NFE_STATUS_LABELS[NFE_STATUS.REJEITADA],
+	},
+	{
+		value: String(NFE_STATUS.CANCELADA),
+		label: NFE_STATUS_LABELS[NFE_STATUS.CANCELADA],
+	},
+	{
+		value: String(NFE_STATUS.INUTILIZADA),
+		label: NFE_STATUS_LABELS[NFE_STATUS.INUTILIZADA],
+	},
+	{
+		value: String(NFE_STATUS.DENEGADA),
+		label: NFE_STATUS_LABELS[NFE_STATUS.DENEGADA],
+	},
 ];
 
 function paraNotaFiscalEmitida(nota: NfceListagem): NotaFiscalEmitida {
@@ -138,7 +157,9 @@ export default function NfcePage() {
 	const [filtroStatus, setFiltroStatus] = useState(FILTRO_TODOS);
 	const [reemitindoId, setReemitindoId] = useState<string | null>(null);
 	const [cupomDados, setCupomDados] = useState<CupomNaoFiscalData | null>(null);
-	const [carregandoCupomId, setCarregandoCupomId] = useState<string | null>(null);
+	const [carregandoCupomId, setCarregandoCupomId] = useState<string | null>(
+		null,
+	);
 	const [eventoModal, setEventoModal] = useState<{
 		tipo: "cancelar" | "inutilizar";
 		nota: NfceListagem;
@@ -309,15 +330,8 @@ export default function NfcePage() {
 					return (
 						<div className="flex flex-wrap items-center justify-end gap-1">
 							{podeAlterar && (
-								<Button
-									type="button"
-									size="sm"
-									variant="outline"
-									asChild
-								>
-									<Link
-										href={`/nfce/editar?editarNfce=${nota.idnotafiscal}`}
-									>
+								<Button type="button" size="sm" variant="outline" asChild>
+									<Link href={`/nfce/editar?editarNfce=${nota.idnotafiscal}`}>
 										<IconPencil className="size-4" />
 										Alterar
 									</Link>
@@ -362,9 +376,7 @@ export default function NfcePage() {
 									size="sm"
 									variant="outline"
 									className="text-destructive"
-									onClick={() =>
-										setEventoModal({ tipo: "cancelar", nota })
-									}
+									onClick={() => setEventoModal({ tipo: "cancelar", nota })}
 								>
 									<Ban className="size-4" />
 									Cancelar
@@ -375,9 +387,7 @@ export default function NfcePage() {
 									type="button"
 									size="sm"
 									variant="outline"
-									onClick={() =>
-										setEventoModal({ tipo: "inutilizar", nota })
-									}
+									onClick={() => setEventoModal({ tipo: "inutilizar", nota })}
 								>
 									<FileX2 className="size-4" />
 									Inutilizar
@@ -422,25 +432,28 @@ export default function NfcePage() {
 							rejeitados
 						</p>
 					</div>
-					<div className="w-full sm:w-56">
-						<Select
-							value={filtroStatus}
-							onValueChange={(valor) => {
-								setFiltroStatus(valor);
-								setPage(1);
-							}}
-						>
-							<SelectTrigger>
-								<SelectValue placeholder="Status" />
-							</SelectTrigger>
-							<SelectContent>
-								{OPCOES_STATUS.map((opcao) => (
-									<SelectItem key={opcao.value} value={opcao.value}>
-										{opcao.label}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
+					<div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+						<BotaoAlterarNumeracao idempresa={idempresa} abaInicial="nfce" />
+						<div className="w-full sm:w-56">
+							<Select
+								value={filtroStatus}
+								onValueChange={(valor) => {
+									setFiltroStatus(valor);
+									setPage(1);
+								}}
+							>
+								<SelectTrigger>
+									<SelectValue placeholder="Status" />
+								</SelectTrigger>
+								<SelectContent>
+									{OPCOES_STATUS.map((opcao) => (
+										<SelectItem key={opcao.value} value={opcao.value}>
+											{opcao.label}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
 					</div>
 				</div>
 
