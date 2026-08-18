@@ -46,6 +46,9 @@ async function clean() {
 		console.log("🗑️  Limpando tipodocumentofinanceiro...");
 		await db.delete(schema.tipodocumentofinanceiro);
 
+		console.log("🗑️  Limpando bandeiracartao...");
+		await db.delete(schema.bandeiracartao);
+
 		console.log("🗑️  Limpando motivobaixafinanceiro...");
 		await db.delete(schema.motivobaixafinanceiro);
 

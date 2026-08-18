@@ -27,6 +27,7 @@ export * from "./tables/assinaturas.js";
 export * from "./tables/atalho-pdv.js";
 export * from "./tables/audit-logs.js";
 export * from "./tables/banco.js";
+export * from "./tables/bandeira-cartao.js";
 export * from "./tables/centro-custo.js";
 export * from "./tables/certificado-digital.js";
 export * from "./tables/cest.js";

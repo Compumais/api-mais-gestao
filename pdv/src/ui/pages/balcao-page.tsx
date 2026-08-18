@@ -239,6 +239,7 @@ export function BalcaoPage() {
 				itens,
 				lancamentos: fechamento.lancamentos,
 				troco: fechamento.troco,
+				cliente: fechamento.cliente,
 			});
 			setPagando(false);
 			if (result.fiscal.modo === "erro") {

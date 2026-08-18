@@ -38,6 +38,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { formatarEscopoCondicaoPagamento } from "@/schemas/condicao-pagamento.schema";
 import {
@@ -45,7 +46,7 @@ import {
 	condicaoPagamentoService,
 } from "@/services/condicao-pagamento.service";
 import { PageContainer } from "../components/page-container";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BandeirasCartaoTab } from "./components/bandeiras-cartao-tab";
 import { FormasErpTab } from "./components/formas-erp-tab";
 
 const ROTA_BASE = "/meios-pagamento";
@@ -68,7 +69,9 @@ const createColumns = ({
 		accessorKey: "descricao",
 		header: "Descrição",
 		cell: ({ row }) => (
-			<div className="max-w-md truncate">{row.getValue("descricao") || "-"}</div>
+			<div className="max-w-md truncate">
+				{row.getValue("descricao") || "-"}
+			</div>
 		),
 	},
 	{
@@ -225,7 +228,8 @@ export default function MeiosPagamentoPage() {
 				<div className="px-4">
 					<h1 className="text-2xl font-bold">Meios de pagamento</h1>
 					<p className="text-sm text-muted-foreground mt-1">
-						Condições de parcelamento e formas usadas na NF-e e no financeiro.
+						Condições de parcelamento, formas usadas na NF-e e bandeiras de
+						cartão do PDV.
 					</p>
 				</div>
 
@@ -233,133 +237,140 @@ export default function MeiosPagamentoPage() {
 					<TabsList>
 						<TabsTrigger value="condicoes">Condições de pagamento</TabsTrigger>
 						<TabsTrigger value="formas-erp">Formas ERP (NF-e)</TabsTrigger>
+						<TabsTrigger value="bandeiras">Bandeiras de cartão</TabsTrigger>
 					</TabsList>
 
 					<TabsContent value="condicoes" className="mt-4 space-y-4">
-				<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-					<h2 className="text-lg font-semibold">Condições de pagamento</h2>
-					<Button
-						onClick={() => router.push(`${ROTA_BASE}/novo`)}
-						className="gap-2"
-						disabled={!localStorageEmpresa}
-					>
-						<IconPlus className="size-4" />
-						Cadastrar condição
-					</Button>
-				</div>
-
-				<div className="px-0">
-					<Input
-						placeholder="Buscar por descrição..."
-						value={busca}
-						onChange={(event) => {
-							setBusca(event.target.value);
-							setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-						}}
-						className="max-w-sm"
-						aria-label="Buscar meios de pagamento por descrição"
-					/>
-				</div>
-
-				<div className="rounded-lg border bg-card">
-					{!localStorageEmpresa ? (
-						<div className="flex items-center justify-center py-8">
-							<p className="text-muted-foreground">
-								Selecione uma empresa para visualizar os meios de pagamento
-							</p>
+						<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+							<h2 className="text-lg font-semibold">Condições de pagamento</h2>
+							<Button
+								onClick={() => router.push(`${ROTA_BASE}/novo`)}
+								className="gap-2"
+								disabled={!localStorageEmpresa}
+							>
+								<IconPlus className="size-4" />
+								Cadastrar condição
+							</Button>
 						</div>
-					) : isLoading ? (
-						<TableSkeleton rows={10}>
-							<TableHead className="w-[100px]">Código</TableHead>
-							<TableHead>Descrição</TableHead>
-							<TableHead className="w-[100px]">Parcelas</TableHead>
-							<TableHead className="w-[120px]">Prazos</TableHead>
-							<TableHead className="w-[140px]">Escopo</TableHead>
-							<TableHead className="w-[100px]">Status</TableHead>
-							<TableHead className="w-12 text-end">Ações</TableHead>
-						</TableSkeleton>
-					) : (
-						<>
-							<Table>
-								<TableHeader>
-									{table.getHeaderGroups().map((headerGroup) => (
-										<TableRow key={headerGroup.id}>
-											{headerGroup.headers.map((header) => (
-												<TableHead
-													className={header.id === "acoes" ? "text-right" : ""}
-													key={header.id}
-												>
-													{header.isPlaceholder
-														? null
-														: flexRender(
-																header.column.columnDef.header,
-																header.getContext(),
-															)}
-												</TableHead>
-											))}
-										</TableRow>
-									))}
-								</TableHeader>
-								<TableBody>
-									{table.getRowModel().rows?.length ? (
-										table.getRowModel().rows.map((row) => (
-											<TableRow key={row.id}>
-												{row.getVisibleCells().map((cell) => (
-													<TableCell key={cell.id}>
-														{flexRender(
-															cell.column.columnDef.cell,
-															cell.getContext(),
-														)}
-													</TableCell>
-												))}
-											</TableRow>
-										))
-									) : (
-										<TableRow>
-											<TableCell
-												colSpan={table.getAllColumns().length}
-												className="h-24 text-center"
-											>
-												Nenhum meio de pagamento encontrado.
-											</TableCell>
-										</TableRow>
-									)}
-								</TableBody>
-							</Table>
-							{data && data.paginacao.totalPages > 1 && (
-								<div className="flex items-center justify-between px-4 py-4 border-t">
-									<div className="text-sm text-muted-foreground">
-										Página {pagination.pageIndex + 1} de{" "}
-										{data.paginacao.totalPages} ({data.paginacao.total}{" "}
-										registros)
-									</div>
-									<div className="flex gap-2">
-										<Button
-											variant="outline"
-											size="sm"
-											onClick={() => table.previousPage()}
-											disabled={!table.getCanPreviousPage()}
-										>
-											Anterior
-										</Button>
-										<Button
-											variant="outline"
-											size="sm"
-											onClick={() => table.nextPage()}
-											disabled={!table.getCanNextPage()}
-										>
-											Próxima
-										</Button>
-									</div>
+
+						<div className="px-0">
+							<Input
+								placeholder="Buscar por descrição..."
+								value={busca}
+								onChange={(event) => {
+									setBusca(event.target.value);
+									setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+								}}
+								className="max-w-sm"
+								aria-label="Buscar meios de pagamento por descrição"
+							/>
+						</div>
+
+						<div className="rounded-lg border bg-card">
+							{!localStorageEmpresa ? (
+								<div className="flex items-center justify-center py-8">
+									<p className="text-muted-foreground">
+										Selecione uma empresa para visualizar os meios de pagamento
+									</p>
 								</div>
+							) : isLoading ? (
+								<TableSkeleton rows={10}>
+									<TableHead className="w-[100px]">Código</TableHead>
+									<TableHead>Descrição</TableHead>
+									<TableHead className="w-[100px]">Parcelas</TableHead>
+									<TableHead className="w-[120px]">Prazos</TableHead>
+									<TableHead className="w-[140px]">Escopo</TableHead>
+									<TableHead className="w-[100px]">Status</TableHead>
+									<TableHead className="w-12 text-end">Ações</TableHead>
+								</TableSkeleton>
+							) : (
+								<>
+									<Table>
+										<TableHeader>
+											{table.getHeaderGroups().map((headerGroup) => (
+												<TableRow key={headerGroup.id}>
+													{headerGroup.headers.map((header) => (
+														<TableHead
+															className={
+																header.id === "acoes" ? "text-right" : ""
+															}
+															key={header.id}
+														>
+															{header.isPlaceholder
+																? null
+																: flexRender(
+																		header.column.columnDef.header,
+																		header.getContext(),
+																	)}
+														</TableHead>
+													))}
+												</TableRow>
+											))}
+										</TableHeader>
+										<TableBody>
+											{table.getRowModel().rows?.length ? (
+												table.getRowModel().rows.map((row) => (
+													<TableRow key={row.id}>
+														{row.getVisibleCells().map((cell) => (
+															<TableCell key={cell.id}>
+																{flexRender(
+																	cell.column.columnDef.cell,
+																	cell.getContext(),
+																)}
+															</TableCell>
+														))}
+													</TableRow>
+												))
+											) : (
+												<TableRow>
+													<TableCell
+														colSpan={table.getAllColumns().length}
+														className="h-24 text-center"
+													>
+														Nenhum meio de pagamento encontrado.
+													</TableCell>
+												</TableRow>
+											)}
+										</TableBody>
+									</Table>
+									{data && data.paginacao.totalPages > 1 && (
+										<div className="flex items-center justify-between px-4 py-4 border-t">
+											<div className="text-sm text-muted-foreground">
+												Página {pagination.pageIndex + 1} de{" "}
+												{data.paginacao.totalPages} ({data.paginacao.total}{" "}
+												registros)
+											</div>
+											<div className="flex gap-2">
+												<Button
+													variant="outline"
+													size="sm"
+													onClick={() => table.previousPage()}
+													disabled={!table.getCanPreviousPage()}
+												>
+													Anterior
+												</Button>
+												<Button
+													variant="outline"
+													size="sm"
+													onClick={() => table.nextPage()}
+													disabled={!table.getCanNextPage()}
+												>
+													Próxima
+												</Button>
+											</div>
+										</div>
+									)}
+								</>
 							)}
-						</>
-					)}
-				</div>
+						</div>
 					</TabsContent>
 
 					<TabsContent value="formas-erp" className="mt-4">
 						<FormasErpTab />
+					</TabsContent>
+
+					<TabsContent value="bandeiras" className="mt-4">
+						<BandeirasCartaoTab />
 					</TabsContent>
 				</Tabs>
 			</div>

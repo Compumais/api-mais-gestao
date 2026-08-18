@@ -17,7 +17,7 @@
 		"test:pdv-secundario": "node ../api/node_modules/tsx/dist/cli.mjs --test electron/pdv-secundario/regras.test.ts",
 		"test:troca-empresa": "node ../api/node_modules/tsx/dist/cli.mjs --test electron/sync/troca-empresa.test.ts electron/sync/tar-gz.test.ts electron/sync/backup-agendado.test.ts electron/sync/nfce-retaguarda.test.ts",
 		"test:caixa": "node ../api/node_modules/tsx/dist/cli.mjs --test electron/db/resumo-turno-caixa.test.ts electron/impressora/comprovante-caixa.test.ts",
-		"test:teclas": "node ../api/node_modules/tsx/dist/cli.mjs --test src/lib/teclas-funcao.test.ts",
+		"test:teclas": "node ../api/node_modules/tsx/dist/cli.mjs --test src/lib/teclas-funcao.test.ts src/lib/pagamento-forma-nfe.test.ts",
 		"postinstall": "electron-builder install-app-deps",
 		"pack:win": "npm run build && electron-builder --win",
 		"pack:dir": "npm run build && electron-builder --win --dir",

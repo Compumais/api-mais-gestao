@@ -398,7 +398,7 @@ export function MesaContaPage() {
 			const result = await pdvInvoke<{
 				venda: { id: string };
 				fiscal: { modo: string; mensagem: string; cStat?: string };
-			}>("fecharContaMesa", conta.id, fechamento.lancamentos, fechamento.troco);
+			}>("fecharContaMesa", conta.id, fechamento.lancamentos, fechamento.troco, fechamento.cliente);
 			setPagando(false);
 			if (result.fiscal.modo === "erro") {
 				setVendaRejeitadaId(result.venda.id);
@@ -556,6 +556,7 @@ export function MesaContaPage() {
 					itensSel,
 					fechamento.lancamentos,
 					fechamento.troco,
+					fechamento.cliente,
 				);
 				setPagando(false);
 				setItensSel([]);
@@ -1035,6 +1036,7 @@ export function MesaContaPage() {
 				loading={loading}
 				titulo={pagandoFatia ? "Receber fatia" : "Receber / fechar conta"}
 				confirmarLabel="Confirmar"
+				nomeClienteHint={nomeCliente}
 				onCancelar={() => {
 					setPagando(false);
 					setFatiaValor(null);

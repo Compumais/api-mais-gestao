@@ -14,9 +14,12 @@ import {
 	extrairNfceDaBaixa,
 	isEmpresaAcessoNegado,
 	listarAtalhosRemotos,
+	listarBandeirasCartao,
+	listarClientes,
 	listarGrupos,
 	listarGruposGourmet,
 	listarProdutos,
+	listarTiposDocumentoFinanceiro,
 	listarUnidadesMedida,
 	pingApi,
 	STATUS_CAIXA_ABERTO,
@@ -54,8 +57,11 @@ import {
 	obterVenda,
 	salvarAtalhos,
 	salvarSessao,
+	upsertBandeirasCartao,
+	upsertClientes,
 	upsertGrupos,
 	upsertGruposGourmet,
+	upsertMeiosPagamento,
 	upsertProdutos,
 } from "../db/repos";
 import { calcularConferenciaCaixa } from "../db/resumo-turno-caixa";
@@ -77,11 +83,22 @@ export async function pullCatalogo(): Promise<{
 	atalhos: number;
 	grupos: number;
 	gruposGourmet: number;
+	clientes: number;
+	bandeiras: number;
+	meiosPagamento: number;
 	acessoNegado?: boolean;
 }> {
 	const sessao = await obterSessao();
 	if (!sessao.idempresa || !sessao.token) {
-		return { produtos: 0, atalhos: 0, grupos: 0, gruposGourmet: 0 };
+		return {
+			produtos: 0,
+			atalhos: 0,
+			grupos: 0,
+			gruposGourmet: 0,
+			clientes: 0,
+			bandeiras: 0,
+			meiosPagamento: 0,
+		};
 	}
 
 	try {
@@ -98,6 +115,9 @@ export async function pullCatalogo(): Promise<{
 				atalhos: 0,
 				grupos: 0,
 				gruposGourmet: 0,
+				clientes: 0,
+				bandeiras: 0,
+				meiosPagamento: 0,
 				acessoNegado: true,
 			};
 		}
@@ -110,6 +130,9 @@ async function puxarCatalogoDaEmpresa(idempresa: string): Promise<{
 	atalhos: number;
 	grupos: number;
 	gruposGourmet: number;
+	clientes: number;
+	bandeiras: number;
+	meiosPagamento: number;
 }> {
 	let totalGrupos = 0;
 	{
@@ -196,6 +219,75 @@ async function puxarCatalogoDaEmpresa(idempresa: string): Promise<{
 		await salvarAtalhos(ids);
 	}
 
+	let totalClientes = 0;
+	try {
+		let page = 1;
+		for (;;) {
+			const clientes = await listarClientes({
+				idempresa,
+				page,
+				limit: 100,
+			});
+			if (!clientes.length) {
+				break;
+			}
+			await upsertClientes(clientes);
+			totalClientes += clientes.length;
+			if (clientes.length < 100 || page > 50) {
+				break;
+			}
+			page += 1;
+		}
+	} catch {
+		// catálogo de clientes opcional no pull
+	}
+
+	let totalBandeiras = 0;
+	try {
+		let page = 1;
+		for (;;) {
+			const bandeiras = await listarBandeirasCartao({
+				idempresa,
+				page,
+				limit: 100,
+			});
+			if (!bandeiras.length) {
+				break;
+			}
+			await upsertBandeirasCartao(bandeiras);
+			totalBandeiras += bandeiras.length;
+			if (bandeiras.length < 100 || page > 20) {
+				break;
+			}
+			page += 1;
+		}
+	} catch {
+		// cadastro de bandeiras opcional no pull
+	}
+
+	let totalMeios = 0;
+	try {
+		let page = 1;
+		for (;;) {
+			const meios = await listarTiposDocumentoFinanceiro({
+				idempresa,
+				page,
+				limit: 100,
+			});
+			if (!meios.length) {
+				break;
+			}
+			await upsertMeiosPagamento(meios);
+			totalMeios += meios.length;
+			if (meios.length < 100 || page > 20) {
+				break;
+			}
+			page += 1;
+		}
+	} catch {
+		// formas ERP opcionais no pull
+	}
+
 	try {
 		const fiscal = await sincronizarFiscalPdv();
 		if (!fiscal.ok) {
@@ -242,6 +334,9 @@ async function puxarCatalogoDaEmpresa(idempresa: string): Promise<{
 		atalhos: ids.length,
 		grupos: totalGrupos,
 		gruposGourmet: totalGruposGourmet,
+		clientes: totalClientes,
+		bandeiras: totalBandeiras,
+		meiosPagamento: totalMeios,
 	};
 }
 
@@ -573,6 +668,9 @@ async function syncCriarVenda(
 		valorcartao: sync.valorcartao,
 		valorprepago: sync.valorprepago,
 		pagamentos,
+		...(typeof payload.identidade === "string" && payload.identidade
+			? { identidade: payload.identidade }
+			: {}),
 	});
 
 	await atualizarVendaSync(idlocal, {

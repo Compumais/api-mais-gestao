@@ -540,6 +540,13 @@
       "when": 1785003000000,
       "tag": "0075_produtos_balanca",
       "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "7",
+      "when": 1785004000000,
+      "tag": "0076_bandeira_cartao",
+      "breakpoints": true
     }
   ]
 }

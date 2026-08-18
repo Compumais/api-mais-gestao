@@ -3,6 +3,34 @@ export type GrupoLocal = {
 	nome: string;
 };
 
+export type ClienteLocal = {
+	id: string;
+	nome: string;
+	razaosocial: string | null;
+	cnpjcpf: string | null;
+	telefone: string | null;
+	email: string | null;
+};
+
+export type BandeiraCartaoLocal = {
+	id: string;
+	codigo: string | null;
+	descricao: string;
+};
+
+export type MeioPagamentoLocal = {
+	id: string;
+	descricao: string;
+	formapagamentonfe: string | null;
+	aprazo: number;
+};
+
+export type ClienteVenda = {
+	id: string;
+	nome: string;
+	cnpjcpf: string | null;
+};
+
 export type ProdutoLocal = {
 	id: string;
 	descricao: string;
