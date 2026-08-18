@@ -6,6 +6,7 @@ import {
 	atualizarFechamentoCaixaRemoto,
 	baixaEstoqueVenda,
 	buscarEmpresa,
+	buscarEmpresaFiscal,
 	buscarNfceConfig,
 	buscarPdvFiscal,
 	criarFechamentoCaixaRemoto,
@@ -312,6 +313,7 @@ async function puxarCatalogoDaEmpresa(idempresa: string): Promise<{
 				cnpj,
 				uf,
 			});
+			await cachearEmitenteDanfce(idempresa, cnpj, uf);
 		}
 	} catch {
 		// config NFC-e opcional no pull
@@ -350,6 +352,66 @@ async function gravarCertificadoPfx(
 	await writeFile(caminho, Buffer.from(pfxBase64, "base64"));
 	await setConfig("certificado_path", caminho);
 	await setConfig("certificado_senha", senha);
+}
+
+async function cachearEmitenteDanfce(
+	idempresa: string,
+	cnpj?: string | null,
+	uf?: string | null,
+): Promise<void> {
+	const { CHAVE_EMITENTE_DANFCE } = await import("../impressora/danfce");
+	let nome = "";
+	let ie: string | undefined;
+	let logradouro: string | undefined;
+	let numero: string | undefined;
+	let bairro: string | undefined;
+	let municipio: string | undefined;
+	let fone: string | undefined;
+	let crt: number | undefined;
+	let cnpjFinal = cnpj ?? undefined;
+	let ufFinal = uf ?? undefined;
+	try {
+		const fiscal = await buscarEmpresaFiscal(idempresa);
+		nome = (fiscal.razaosocial || fiscal.nomefantasia || "").trim();
+		ie = fiscal.inscricaoestadual ?? undefined;
+		logradouro = fiscal.logradouro ?? undefined;
+		numero = fiscal.numero ?? undefined;
+		bairro = fiscal.bairro ?? undefined;
+		ufFinal = fiscal.uf ?? ufFinal;
+		fone = fiscal.telefone ?? undefined;
+		if (fiscal.crt != null && Number.isFinite(fiscal.crt)) {
+			crt = fiscal.crt;
+		}
+	} catch {
+		// cadastro fiscal opcional
+	}
+	try {
+		const empresa = await buscarEmpresa(idempresa);
+		nome = nome || (empresa.nome ?? empresa.razaosocial ?? "");
+		cnpjFinal = cnpjFinal || empresa.cnpj || undefined;
+		ufFinal = ufFinal || empresa.uf || undefined;
+		fone = fone || empresa.telefone || undefined;
+		logradouro = logradouro || empresa.endereco || undefined;
+		numero = numero || empresa.numero || undefined;
+		bairro = bairro || empresa.bairro || undefined;
+	} catch {
+		// empresa opcional
+	}
+	await setConfig(
+		CHAVE_EMITENTE_DANFCE,
+		JSON.stringify({
+			nome,
+			cnpj: cnpjFinal ?? "",
+			ie,
+			logradouro,
+			numero,
+			bairro,
+			municipio,
+			uf: ufFinal,
+			fone,
+			crt,
+		}),
+	);
 }
 
 export async function sincronizarFiscalPdv(): Promise<{
@@ -393,6 +455,7 @@ export async function sincronizarFiscalPdv(): Promise<{
 
 		await setConfig("fiscal_sync_erro", "");
 		await setConfig("fiscal_ultima_sync", new Date().toISOString());
+		await cachearEmitenteDanfce(sessao.idempresa, fiscal.cnpj, fiscal.uf);
 		return { ok: true };
 	} catch (err) {
 		const erro =

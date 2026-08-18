@@ -232,8 +232,26 @@ export async function buscarEmpresa(idempresa: string) {
 		nome?: string;
 		razaosocial?: string;
 		cnpj?: string;
+		telefone?: string;
+		endereco?: string;
+		numero?: string;
+		bairro?: string;
 		uf?: string;
 	}>(`/empresas/${idempresa}`);
+}
+
+export async function buscarEmpresaFiscal(idempresa: string) {
+	return request<{
+		razaosocial?: string | null;
+		nomefantasia?: string | null;
+		inscricaoestadual?: string | null;
+		logradouro?: string | null;
+		numero?: string | null;
+		bairro?: string | null;
+		uf?: string | null;
+		telefone?: string | null;
+		crt?: number | null;
+	}>(`/empresas/${idempresa}/fiscal`);
 }
 
 export async function listarProdutos(params: {

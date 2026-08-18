@@ -25,6 +25,7 @@ const CHAVES_CONFIG_EMPRESA: Array<[string, string]> = [
 	["certificado_validade", ""],
 	["fiscal_ultima_sync", ""],
 	["fiscal_sync_erro", ""],
+	["emitente_danfce_json", ""],
 	["terminais_pdv_json", "[]"],
 	["senha_gerencial_hash", ""],
 	["senha_gerencial_salt", ""],

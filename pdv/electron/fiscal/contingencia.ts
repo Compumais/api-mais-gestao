@@ -12,7 +12,9 @@ import {
 	reservarNumeroNfce,
 	salvarNfceLocal,
 } from "../db/repos";
+import { lerEmitenteDanfceCache } from "../impressora/danfce";
 import { imprimirDanfce } from "../impressora/escpos";
+import { codigoIbgeDaUf, urlConsultaNfce, urlQrCodeNfce } from "./nfce-portais";
 
 function onlyDigits(value: string): string {
 	return value.replace(/\D/g, "");
@@ -49,7 +51,10 @@ function montarChaveAcesso(params: {
 	tpEmis: number;
 	codigo: string;
 }): string {
-	const ufCode = mapUfToCode(params.uf);
+	const ufCode = codigoIbgeDaUf(params.uf);
+	if (ufCode == null) {
+		throw new Error(`UF inválida para chave NFC-e: ${params.uf}`);
+	}
 	const base =
 		pad(ufCode, 2) +
 		params.aamm +
@@ -62,50 +67,20 @@ function montarChaveAcesso(params: {
 	return base + calcularDvChave(base);
 }
 
-function mapUfToCode(uf: string): number {
-	const map: Record<string, number> = {
-		RO: 11,
-		AC: 12,
-		AM: 13,
-		RR: 14,
-		PA: 15,
-		AP: 16,
-		TO: 17,
-		MA: 21,
-		PI: 22,
-		CE: 23,
-		RN: 24,
-		PB: 25,
-		PE: 26,
-		AL: 27,
-		SE: 28,
-		BA: 29,
-		MG: 31,
-		ES: 32,
-		RJ: 33,
-		SP: 35,
-		PR: 41,
-		SC: 42,
-		RS: 43,
-		MS: 50,
-		MT: 51,
-		GO: 52,
-		DF: 53,
-	};
-	return map[uf.toUpperCase()] ?? 35;
-}
-
 function montarQrCodeContingencia(params: {
 	chave: string;
 	ambiente: number;
 	cscId: string;
 	cscToken: string;
 	valor: number;
+	uf: string;
 }): string {
-	const urlBase =
-		params.ambiente === 1
-			? "https://www.nfce.fazenda.sp.gov.br/qrcode"
-			: "https://www.homologacao.nfce.fazenda.sp.gov.br/NFCeConsultaPublica/Paginas/ConsultaQRCode.aspx";
+	const urlBase = urlQrCodeNfce(params.uf, params.ambiente !== 1);
+	if (!urlBase) {
+		throw new Error(
+			`Portal de QR Code NFC-e não configurado para a UF ${params.uf}`,
+		);
+	}
 	const digVal = createHash("sha1")
 		.update(`${params.chave}|${params.cscId}|${params.cscToken}`)
 		.digest("hex")
@@ -126,6 +101,8 @@ function montarXmlContingencia(params: {
 	itens: ItemCarrinho[];
 	total: number;
 	meio: MeioPagamento;
+	qrcode: string;
+	urlChave?: string;
 }): string {
 	const itensXml = params.itens
 		.map(
@@ -149,7 +126,7 @@ function montarXmlContingencia(params: {
 <NFe xmlns="http://www.portalfiscal.inf.br/nfe">
   <infNFe Id="NFe${params.chave}" versao="4.00">
     <ide>
-      <cUF>${mapUfToCode(params.uf)}</cUF>
+      <cUF>${codigoIbgeDaUf(params.uf)}</cUF>
       <natOp>VENDA</natOp>
       <mod>65</mod>
       <serie>${params.serie}</serie>
@@ -182,6 +159,10 @@ function montarXmlContingencia(params: {
       </detPag>
     </pag>
   </infNFe>
+  <infNFeSupl>
+    <qrCode>${escapeXml(params.qrcode)}</qrCode>
+    ${params.urlChave ? `<urlChave>${escapeXml(params.urlChave)}</urlChave>` : ""}
+  </infNFeSupl>
 </NFe>`;
 }
 
@@ -328,7 +309,16 @@ export async function emitirContingencia(
 	const agora = new Date();
 	const aamm = `${String(agora.getFullYear()).slice(2)}${pad(agora.getMonth() + 1, 2)}`;
 	const codigo = pad(Math.floor(Math.random() * 99999999), 8);
-	const uf = numeracao.uf ?? "SP";
+	const emitenteCache = await lerEmitenteDanfceCache();
+	const uf = (numeracao.uf || emitenteCache?.uf || "").trim().toUpperCase();
+	if (!uf || codigoIbgeDaUf(uf) == null) {
+		await atualizarVendaSync(idvenda, { nfce_status: "erro_config" });
+		return {
+			modo: "nao_fiscal",
+			mensagem:
+				"Contingência indisponível: UF do emitente não configurada. Sincronize os dados fiscais.",
+		};
+	}
 	const chave = montarChaveAcesso({
 		uf,
 		aamm,
@@ -341,6 +331,16 @@ export async function emitirContingencia(
 	});
 
 	const dh = agora.toISOString().replace(/\.\d{3}Z$/, "-03:00");
+	const qrcode = montarQrCodeContingencia({
+		chave,
+		ambiente: numeracao.ambiente,
+		cscId: numeracao.csc_id,
+		cscToken: numeracao.csc_token,
+		valor: venda.valortotal,
+		uf,
+	});
+	const urlChave = urlConsultaNfce(uf, numeracao.ambiente !== 1);
+
 	const xml = montarXmlContingencia({
 		chave,
 		serie,
@@ -354,14 +354,8 @@ export async function emitirContingencia(
 		itens: venda.itens,
 		total: venda.valortotal,
 		meio: venda.meio_pagamento as MeioPagamento,
-	});
-
-	const qrcode = montarQrCodeContingencia({
-		chave,
-		ambiente: numeracao.ambiente,
-		cscId: numeracao.csc_id,
-		cscToken: numeracao.csc_token,
-		valor: venda.valortotal,
+		qrcode,
+		...(urlChave ? { urlChave } : {}),
 	});
 
 	const id = uuidv4();
