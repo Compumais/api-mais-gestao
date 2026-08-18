@@ -52,6 +52,7 @@ import {
 	upsertProdutos,
 } from "../db/repos";
 import { atualizarCacheTerminaisPdv } from "./terminais-pdv";
+import { puxarNfceDaRetaguarda } from "./nfce-retaguarda";
 
 let syncing = false;
 
@@ -356,6 +357,8 @@ export async function processarOutbox(): Promise<{
 	} finally {
 		syncing = false;
 	}
+
+	void puxarNfceDaRetaguarda().catch(() => undefined);
 
 	return { processados, erros };
 }
