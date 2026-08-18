@@ -11,12 +11,13 @@ import {
 } from "@/lib/pdv-types";
 import { produtoEhPizza } from "@/lib/pizza-meio-a-meio";
 import { devePedirPeso, formatarQuantidade } from "@/lib/produto-kg";
-import { centavosToNumber, money } from "@/lib/utils";
+import { money } from "@/lib/utils";
 import {
 	AvisoSecundario,
 	secundarioDesconectado,
 } from "@/ui/components/aviso-secundario";
 import { BarcodeInput } from "@/ui/components/barcode-input";
+import { DialogFecharCaixa } from "@/ui/components/dialog-fechar-caixa";
 import {
 	DialogPagamentoMisto,
 	type FechamentoMisto,
@@ -28,7 +29,6 @@ import {
 import { DialogQuantidadePeso } from "@/ui/components/dialog-quantidade-peso";
 import { DialogRejeicaoNfce } from "@/ui/components/dialog-rejeicao-nfce";
 import { FunctionBar } from "@/ui/components/function-bar";
-import { NumericKeypad } from "@/ui/components/numeric-keypad";
 import { ProdutoCard } from "@/ui/components/produto-card";
 import { Topbar } from "@/ui/components/topbar";
 import { Button } from "@/ui/components/ui/button";
@@ -47,7 +47,7 @@ type Item = {
 
 export function BalcaoPage() {
 	const navigate = useNavigate();
-	const { status } = useOutletContext<StatusContext>();
+	const { status, refresh } = useOutletContext<StatusContext>();
 	const rotulo = rotuloModelo(status?.modeloAtendimento);
 	const gourmet = Boolean(status?.moduloGourmet);
 	const bloqueado = secundarioDesconectado(status);
@@ -64,12 +64,10 @@ export function BalcaoPage() {
 	const [pizzaPrimeiro, setPizzaPrimeiro] = useState<ProdutoLocal | null>(null);
 	const [produtoPeso, setProdutoPeso] = useState<ProdutoLocal | null>(null);
 	const [fechando, setFechando] = useState(false);
-	const [valorFechamento, setValorFechamento] = useState("0");
 
 	useEscapeFechaModal(Boolean(rejeicaoNfce), () => setRejeicaoNfce(null));
 	useEscapeFechaModal(Boolean(pizzaPrimeiro), () => setPizzaPrimeiro(null));
 	useEscapeFechaModal(Boolean(produtoPeso), () => setProdutoPeso(null));
-	useEscapeFechaModal(fechando, () => setFechando(false));
 
 	const total = useMemo(
 		() => itens.reduce((acc, i) => acc + i.precototal, 0),
@@ -254,19 +252,6 @@ export function BalcaoPage() {
 			const texto = err instanceof Error ? err.message : "Falha na venda";
 			setRejeicaoNfce(texto);
 			setMsg(texto);
-		} finally {
-			setLoading(false);
-		}
-	}
-
-	async function confirmarFechamento() {
-		setLoading(true);
-		try {
-			await pdvInvoke("fecharCaixa", centavosToNumber(valorFechamento));
-			setFechando(false);
-			navigate("/abertura-caixa", { replace: true });
-		} catch (err) {
-			setMsg(err instanceof Error ? err.message : "Erro ao fechar caixa");
 		} finally {
 			setLoading(false);
 		}
@@ -500,44 +485,14 @@ export function BalcaoPage() {
 				/>
 			)}
 
-			{fechando && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-					<div className="w-80 space-y-3 rounded-lg border bg-card p-5">
-						<h2 className="text-lg font-semibold">Fechar caixa</h2>
-						<p className="text-sm text-muted-foreground">
-							Informe o valor em caixa.
-						</p>
-						<div className="text-center text-2xl font-bold text-primary">
-							{money(centavosToNumber(valorFechamento))}
-						</div>
-						<NumericKeypad
-							digits={valorFechamento}
-							onChange={setValorFechamento}
-							disabled={loading}
-							capturarSobreInput
-							onEnter={() => {
-								if (!loading) void confirmarFechamento();
-							}}
-						/>
-						<div className="flex gap-2">
-							<Button
-								variant="outline"
-								className="flex-1"
-								onClick={() => setFechando(false)}
-							>
-								Cancelar
-							</Button>
-							<Button
-								className="flex-1"
-								disabled={loading}
-								onClick={() => void confirmarFechamento()}
-							>
-								Fechar
-							</Button>
-						</div>
-					</div>
-				</div>
-			)}
+			<DialogFecharCaixa
+				aberto={fechando}
+				onFechar={() => setFechando(false)}
+				onSucesso={async () => {
+					await refresh();
+					navigate("/abertura-caixa", { replace: true });
+				}}
+			/>
 
 			{!gourmet ? (
 				<FunctionBar

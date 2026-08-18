@@ -52,6 +52,23 @@ export type MesaConsulta = {
 
 export type MeioPagamento = "DINHEIRO" | "PIX" | "CARTAO";
 
+export type PagamentosResumoTurno = {
+	dinheiro: number;
+	cartao: number;
+	pix: number;
+	prepago: number;
+	total: number;
+};
+
+export type ResumoTurnoCaixa = {
+	qtdVendas: number;
+	pagamentos: PagamentosResumoTurno;
+	totalVendas: number;
+	suprimento: number;
+	saldoapurado: number;
+	saldoCaixaFisico: number;
+};
+
 export type StatusLancamentoPagamento = "ok" | "pendente" | "cancelado";
 
 export type LancamentoPagamento = {
@@ -109,6 +126,7 @@ export type StatusPdv = {
 		valorabertura: number;
 		idusuario?: string | null;
 		username?: string | null;
+		idremoto?: string | null;
 	} | null;
 	caixaOutroOperador?: {
 		username: string | null;

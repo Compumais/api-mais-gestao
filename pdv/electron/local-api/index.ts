@@ -59,6 +59,7 @@ import {
 	buscarProdutosLocal,
 	caixaAberto,
 	caixaAbertoOutroOperador,
+	calcularResumoTurnoAberto,
 	concluirOutboxCriarVendaLocal,
 	contarOutboxPendentes,
 	criarVendaRapida,
@@ -527,7 +528,10 @@ export const localApi = {
 	},
 
 	async escolherPastaBackup() {
-		const win = BrowserWindow.getFocusedWindow() ?? undefined;
+		const win = BrowserWindow.getFocusedWindow();
+		if (!win) {
+			return null;
+		}
 		const resultado = await dialog.showOpenDialog(win, {
 			title: "Pasta para backups do PDV",
 			properties: ["openDirectory", "createDirectory"],
@@ -772,11 +776,21 @@ export const localApi = {
 	},
 
 	async abrirCaixa(valorabertura: number) {
-		return abrirCaixa(valorabertura);
+		const caixa = await abrirCaixa(valorabertura);
+		void processarOutbox();
+		return caixa;
 	},
 
-	async fecharCaixa(valorfechamento: number) {
-		await fecharCaixa(valorfechamento);
+	async resumoTurnoCaixa() {
+		return calcularResumoTurnoAberto();
+	},
+
+	async fecharCaixa(saldoinformado: number, observacao?: string) {
+		await fecharCaixa({
+			saldoinformado: Number(saldoinformado) || 0,
+			observacao,
+		});
+		void processarOutbox();
 		void executarBackupPdv({ motivo: "caixa" }).catch((err) => {
 			console.error(
 				err instanceof Error

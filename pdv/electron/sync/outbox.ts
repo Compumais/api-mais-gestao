@@ -3,10 +3,12 @@ import { join } from "node:path";
 import { app } from "electron";
 import {
 	ApiError,
+	atualizarFechamentoCaixaRemoto,
 	baixaEstoqueVenda,
 	buscarEmpresa,
 	buscarNfceConfig,
 	buscarPdvFiscal,
+	criarFechamentoCaixaRemoto,
 	criarItemVendaPdv,
 	criarVendaPdv,
 	extrairNfceDaBaixa,
@@ -17,6 +19,8 @@ import {
 	listarProdutos,
 	listarUnidadesMedida,
 	pingApi,
+	STATUS_CAIXA_ABERTO,
+	STATUS_CAIXA_FECHADO,
 	substituirAtalhosRemotos,
 	transmitirNfceContingencia,
 	VENDA_LOCAL_PDV_HIBRIDO,
@@ -34,8 +38,10 @@ import {
 	totaisParaSync,
 } from "../db/pagamento";
 import {
+	atualizarCaixaIdRemoto,
 	atualizarNumeracaoNfce,
 	atualizarVendaSync,
+	calcularResumoTurno,
 	contarOutboxPendentes,
 	type ItemCarrinho,
 	type LancamentoPagamento,
@@ -43,6 +49,7 @@ import {
 	marcarNfceTransmitida,
 	marcarOutboxConcluido,
 	marcarOutboxErro,
+	obterCaixaTurno,
 	obterSessao,
 	obterVenda,
 	salvarAtalhos,
@@ -51,8 +58,9 @@ import {
 	upsertGruposGourmet,
 	upsertProdutos,
 } from "../db/repos";
-import { atualizarCacheTerminaisPdv } from "./terminais-pdv";
+import { calcularConferenciaCaixa } from "../db/resumo-turno-caixa";
 import { puxarNfceDaRetaguarda } from "./nfce-retaguarda";
+import { atualizarCacheTerminaisPdv } from "./terminais-pdv";
 
 let syncing = false;
 
@@ -333,11 +341,11 @@ export async function processarOutbox(): Promise<{
 						? payload.idsProdutos.map((id) => String(id))
 						: [];
 					await substituirAtalhosRemotos(sessao.idempresa, ids);
-				} else if (
-					item.tipo === "abrir_caixa" ||
-					item.tipo === "fechamento_caixa" ||
-					item.tipo === "conta_mesa"
-				) {
+				} else if (item.tipo === "abrir_caixa") {
+					await syncAbrirCaixa(payload);
+				} else if (item.tipo === "fechamento_caixa") {
+					await syncFecharCaixa(payload, sessao.idempresa, sessao.userid);
+				} else if (item.tipo === "conta_mesa") {
 					// Espelhamento remoto best-effort; marcado concluído para não travar a fila
 				}
 				await marcarOutboxConcluido(item.id);
@@ -361,6 +369,102 @@ export async function processarOutbox(): Promise<{
 	void puxarNfceDaRetaguarda().catch(() => undefined);
 
 	return { processados, erros };
+}
+
+function moneyApi(valor: unknown): string {
+	const n = Number(valor ?? 0);
+	return (Number.isFinite(n) ? n : 0).toFixed(2);
+}
+
+async function garantirCaixaRemoto(
+	payload: Record<string, unknown>,
+	idempresa: string,
+	userid: string,
+): Promise<string> {
+	const idlocal = String(payload.idlocal ?? "");
+	const local = idlocal ? await obterCaixaTurno(idlocal) : null;
+	if (local?.idremoto) {
+		return local.idremoto;
+	}
+
+	const idusuario = String(payload.idusuario ?? local?.idusuario ?? userid);
+	const idremoto = await criarFechamentoCaixaRemoto({
+		idempresa: String(payload.idempresa ?? local?.idempresa ?? idempresa),
+		pdv: Number(payload.numeropdv ?? local?.numeropdv ?? 1),
+		idusuario,
+		idusuariosuprimento: idusuario,
+		suprimentoinicial: moneyApi(
+			payload.valorabertura ?? local?.valorabertura ?? 0,
+		),
+		status: STATUS_CAIXA_ABERTO,
+		local: 1,
+		datahora: String(
+			payload.abertoem ?? local?.abertoem ?? new Date().toISOString(),
+		),
+	});
+
+	if (idlocal) {
+		await atualizarCaixaIdRemoto(idlocal, idremoto);
+	}
+	return idremoto;
+}
+
+async function syncAbrirCaixa(payload: Record<string, unknown>): Promise<void> {
+	const sessao = await obterSessao();
+	if (!sessao.idempresa || !sessao.userid) {
+		throw new Error("Sessão inválida para abrir caixa remoto");
+	}
+	await garantirCaixaRemoto(payload, sessao.idempresa, sessao.userid);
+}
+
+async function syncFecharCaixa(
+	payload: Record<string, unknown>,
+	idempresa: string,
+	userid: string,
+): Promise<void> {
+	const idremoto = await garantirCaixaRemoto(payload, idempresa, userid);
+	const idlocal = String(payload.idlocal ?? "");
+	const local = idlocal ? await obterCaixaTurno(idlocal) : null;
+
+	let saldoapurado = Number(payload.saldoapurado);
+	let sobra = Number(payload.sobra);
+	let falta = Number(payload.falta);
+	let saldoinformadoNum = Number(
+		payload.saldoinformado ?? payload.valorfechamento ?? 0,
+	);
+
+	const precisaRecalcular =
+		!Number.isFinite(saldoapurado) ||
+		!Number.isFinite(sobra) ||
+		!Number.isFinite(falta);
+
+	if (precisaRecalcular && local) {
+		const resumo = await calcularResumoTurno(local);
+		const conferencia = calcularConferenciaCaixa(
+			saldoinformadoNum,
+			resumo.saldoCaixaFisico,
+		);
+		saldoapurado = resumo.saldoapurado;
+		sobra = conferencia.sobra;
+		falta = conferencia.falta;
+		saldoinformadoNum = conferencia.saldoinformado;
+	}
+
+	const saldoinformado = moneyApi(saldoinformadoNum);
+	await atualizarFechamentoCaixaRemoto(idremoto, {
+		status: STATUS_CAIXA_FECHADO,
+		saldoapurado: moneyApi(saldoapurado),
+		saldoinformado,
+		saldoconferido: moneyApi(payload.saldoconferido ?? saldoinformado),
+		sobra: moneyApi(sobra),
+		falta: moneyApi(falta),
+		idusuariofechamento: userid,
+		observacao:
+			typeof payload.observacao === "string" && payload.observacao.trim()
+				? payload.observacao.trim()
+				: null,
+		datahora: String(payload.fechadoem ?? new Date().toISOString()),
+	});
 }
 
 async function syncCriarVenda(

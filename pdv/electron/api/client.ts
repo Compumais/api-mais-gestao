@@ -766,9 +766,47 @@ export async function inutilizarNfceVendaPdv(body: {
 	);
 }
 
-export async function abrirCaixaRemoto(body: Record<string, unknown>) {
-	return request<{ id: string }>("/fechamentos-caixa", {
+export const STATUS_CAIXA_ABERTO = 0;
+export const STATUS_CAIXA_FECHADO = 1;
+
+export function extrairIdFechamentoCaixa(json: unknown): string | null {
+	if (!json || typeof json !== "object") return null;
+	const obj = json as Record<string, unknown>;
+	const aninhado =
+		obj.body && typeof obj.body === "object"
+			? (obj.body as Record<string, unknown>)
+			: null;
+	const id = aninhado?.id ?? obj.id;
+	if (id == null || id === "") return null;
+	return String(id);
+}
+
+export async function criarFechamentoCaixaRemoto(
+	body: Record<string, unknown>,
+): Promise<string> {
+	const json = await request<unknown>("/fechamentos-caixa", {
 		method: "POST",
+		body,
+	});
+	const id = extrairIdFechamentoCaixa(json);
+	if (!id) {
+		throw new ApiError("Retaguarda não devolveu o ID do fechamento de caixa");
+	}
+	return id;
+}
+
+/** @deprecated use criarFechamentoCaixaRemoto */
+export async function abrirCaixaRemoto(body: Record<string, unknown>) {
+	const id = await criarFechamentoCaixaRemoto(body);
+	return { id };
+}
+
+export async function atualizarFechamentoCaixaRemoto(
+	id: string | number,
+	body: Record<string, unknown>,
+): Promise<void> {
+	await request(`/fechamentos-caixa/${id}`, {
+		method: "PUT",
 		body,
 	});
 }
