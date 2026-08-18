@@ -162,4 +162,42 @@ describe("inutilizarNfeVendaService", () => {
 			expect.objectContaining({ status: NFE_STATUS.INUTILIZADA }),
 		);
 	});
+
+	it("grava série, número e data quando o stub de NFC-e está vazio", async () => {
+		vi.mocked(notaRepository.buscarNotaFiscalPorId).mockResolvedValue({
+			...notaNfce,
+			serie: null,
+			numeronotafiscal: null,
+			emissao: null,
+			datahoraemissao: null,
+			datainclusao: null,
+			chavenfe: "35260812345678000190650010000001011000000010",
+		} as never);
+		vi.mocked(credenciaisNfce.montarCredenciaisGatewayNfce).mockResolvedValue({
+			ok: true,
+			configJson: { modelo: 65, tpAmb: 2 },
+			pfxBase64: "pfx",
+			senha: "senha",
+		});
+
+		const resultado = await inutilizarNfeVendaService({
+			idusuario: "user-1",
+			idnotafiscal: "nfce-1",
+			justificativa: "Numeração não utilizada por rejeição da NFC-e",
+			permitirNfce: true,
+		});
+
+		expect(resultado.success).toBe(true);
+		expect(notaRepository.atualizarNotaFiscal).toHaveBeenCalledWith(
+			"nfce-1",
+			expect.objectContaining({
+				status: NFE_STATUS.INUTILIZADA,
+				serie: "1",
+				numeronotafiscal: "101",
+				emissao: expect.any(String),
+				datahoraemissao: expect.any(String),
+				datainclusao: expect.any(String),
+			}),
+		);
+	});
 });

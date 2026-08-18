@@ -27,7 +27,6 @@ import {
 	notafiscalitem,
 	vendapdvgourmet,
 } from "@/repositories/schema.js";
-import { NFE_STATUS } from "@/util/nfe-status.js";
 import {
 	STATUS_NF_CONFIRMADA,
 	STATUS_NF_QUE_NAO_BLOQUEIAM_CHAVE,
@@ -257,6 +256,11 @@ export type NfceListagem = {
 	codigostatusprotocolonfe: number | null;
 };
 
+export type NfceListagemBruta = NfceListagem & {
+	valortotalvenda: string | null;
+	datacriacaovenda: string | null;
+};
+
 export type ListarNfcePendentesParametros = ListarNfcePorEmpresaParametros;
 
 export type NfcePendenteListagem = NfceListagem;
@@ -271,11 +275,13 @@ export async function listarNfcePorEmpresa({
 		eq(notafiscal.idempresa, idempresa),
 		eq(notafiscal.modelo, "65"),
 		ne(notafiscal.status, STATUS_RASCUNHO_IMPORTACAO),
-		// Stubs de contingência sem número/valor (timeout + XML local) não são cupom real.
+		// Ghosts sem número e sem chave válida (stub de timeout/contingência).
 		sql`not (
-			${notafiscal.status} = ${NFE_STATUS.PENDENTE}
-			and coalesce(${notafiscal.numeronotafiscal}, '') = ''
-			and coalesce(${notafiscal.dadosimportacao}->>'origem', '') = 'pdv-hibrido-contingencia'
+			(
+				coalesce(${notafiscal.numeronotafiscal}, '') = ''
+				or ${notafiscal.numeronotafiscal} ~ '^0+$'
+			)
+			and length(regexp_replace(coalesce(${notafiscal.chavenfe}, ''), '[^0-9]', '', 'g')) <> 44
 		)`,
 	];
 
@@ -303,6 +309,8 @@ export async function listarNfcePorEmpresa({
 				protocolonfe: notafiscal.protocolonfe,
 				status: notafiscal.status,
 				valortotalnota: notafiscal.valortotalnota,
+				valortotalvenda: vendapdvgourmet.valortotal,
+				datacriacaovenda: vendapdvgourmet.datacriacao,
 				emissao: notafiscal.emissao,
 				datahoraemissao: notafiscal.datahoraemissao,
 				datainclusao: notafiscal.datainclusao,
@@ -313,7 +321,13 @@ export async function listarNfcePorEmpresa({
 			.from(notafiscal)
 			.leftJoin(
 				vendapdvgourmet,
-				eq(vendapdvgourmet.idnotafiscalnfce, notafiscal.id),
+				or(
+					eq(vendapdvgourmet.idnotafiscalnfce, notafiscal.id),
+					eq(
+						vendapdvgourmet.id,
+						sql`${notafiscal.dadosimportacao}->>'idvenda'`,
+					),
+				),
 			)
 			.where(and(...where))
 			.orderBy(desc(notafiscal.datainclusao))
@@ -322,7 +336,7 @@ export async function listarNfcePorEmpresa({
 	]);
 
 	return {
-		notas: registros as NfceListagem[],
+		notas: registros as NfceListagemBruta[],
 		total: totalCount[0]?.value ?? 0,
 	};
 }

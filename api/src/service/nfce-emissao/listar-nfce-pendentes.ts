@@ -4,6 +4,7 @@ import {
 	listarNfcePorEmpresa,
 	type NfceListagem,
 } from "@/repositories/nota-fiscal-repositories.js";
+import { completarListagemNfce } from "@/util/completar-listagem-nfce.js";
 import { httpOk, httpProibido } from "@/util/http-util.js";
 
 type ListarNfcePendentesParametros = {
@@ -50,9 +51,16 @@ export async function listarNfcePendentesService({
 	});
 
 	const total = resultado.total ?? 0;
+	const notas = resultado.notas.map((nota) => {
+		const { valortotalvenda, datacriacaovenda, ...listagem } = nota;
+		return completarListagemNfce(listagem, {
+			valortotal: valortotalvenda,
+			datacriacao: datacriacaovenda,
+		});
+	});
 
 	return httpOk({
-		data: resultado.notas,
+		data: notas,
 		paginacao: {
 			page,
 			limit,
