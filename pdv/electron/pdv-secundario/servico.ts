@@ -3,8 +3,11 @@ import { getAllConfig, getConfig, setConfig } from "../db/database";
 import {
 	salvarAtalhos,
 	salvarConfiguracoes,
+	upsertBandeirasCartao,
+	upsertClientes,
 	upsertGrupos,
 	upsertGruposGourmet,
+	upsertMeiosPagamento,
 	upsertProdutos,
 } from "../db/repos";
 import {
@@ -144,6 +147,9 @@ export async function puxarDoPrincipal(): Promise<{
 	grupos: number;
 	gruposGourmet: number;
 	atalhos: number;
+	clientes: number;
+	bandeiras: number;
+	meiosPagamento: number;
 }> {
 	const host = await getConfig("pdv_principal_host", "");
 	const porta = await getConfig("pdv_principal_porta", "5050");
@@ -180,6 +186,15 @@ export async function puxarDoPrincipal(): Promise<{
 	if (catalogo.atalhos?.length) {
 		await salvarAtalhos(catalogo.atalhos.map((a) => a.id).filter(Boolean));
 	}
+	if (catalogo.clientes?.length) {
+		await upsertClientes(catalogo.clientes);
+	}
+	if (catalogo.bandeiras?.length) {
+		await upsertBandeirasCartao(catalogo.bandeiras);
+	}
+	if (catalogo.meiosPagamento?.length) {
+		await upsertMeiosPagamento(catalogo.meiosPagamento);
+	}
 
 	const local = await getAllConfig();
 	const mesclada = mesclarConfigNegocio(local, remota);
@@ -205,6 +220,9 @@ export async function puxarDoPrincipal(): Promise<{
 		grupos: catalogo.grupos?.length ?? 0,
 		gruposGourmet: catalogo.gruposGourmet?.length ?? 0,
 		atalhos: catalogo.atalhos?.length ?? 0,
+		clientes: catalogo.clientes?.length ?? 0,
+		bandeiras: catalogo.bandeiras?.length ?? 0,
+		meiosPagamento: catalogo.meiosPagamento?.length ?? 0,
 	};
 }
 

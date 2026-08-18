@@ -71,6 +71,50 @@ export type GrupoLocal = {
 	nome: string;
 };
 
+export type ClienteLocal = {
+	id: string;
+	nome: string;
+	razaosocial: string | null;
+	cnpjcpf: string | null;
+	telefone: string | null;
+	email: string | null;
+};
+
+export type BandeiraCartaoLocal = {
+	id: string;
+	codigo: string | null;
+	descricao: string;
+};
+
+export type MeioPagamentoLocal = {
+	id: string;
+	descricao: string;
+	formapagamentonfe: string | null;
+	aprazo: number;
+};
+
+export type ClienteVenda = {
+	id: string;
+	nome: string;
+	cnpjcpf: string | null;
+};
+
+function dadosClienteVenda(cliente?: ClienteVenda | null): {
+	idcliente: string | null;
+	nomecliente: string | null;
+	cnpjcpf: string | null;
+} {
+	if (!cliente?.id) {
+		return { idcliente: null, nomecliente: null, cnpjcpf: null };
+	}
+	const nome = cliente.nome.trim();
+	return {
+		idcliente: cliente.id,
+		nomecliente: nome || null,
+		cnpjcpf: cliente.cnpjcpf?.trim() || null,
+	};
+}
+
 export type ItemCarrinho = {
 	idproduto: string;
 	descricao: string;
@@ -101,6 +145,9 @@ export type VendaLocal = {
 	sync_status: string;
 	nfce_status: string;
 	idnfce_local: string | null;
+	idcliente?: string | null;
+	nomecliente?: string | null;
+	cnpjcpf?: string | null;
 };
 
 export type ContaMesaLocal = {
@@ -315,6 +362,155 @@ export async function listarGruposGourmetLocal(): Promise<GrupoLocal[]> {
 		 FROM grupo_gourmet g
 		 JOIN produto_cache p ON p.idgrupogourmet = g.id AND p.inativo = 0
 		 ORDER BY g.nome`,
+	);
+}
+
+export async function upsertClientes(
+	clientes: Array<{
+		id: string;
+		nome: string;
+		razaosocial?: string | null;
+		cnpjcpf?: string | null;
+		telefone?: string | null;
+		email?: string | null;
+	}>,
+): Promise<void> {
+	const agora = new Date().toISOString();
+	await withTransaction(async (client) => {
+		for (const item of clientes) {
+			await execute(
+				`INSERT INTO cliente (id, nome, razaosocial, cnpjcpf, telefone, email, inativo, atualizadoem)
+				 VALUES ($1, $2, $3, $4, $5, $6, 0, $7)
+				 ON CONFLICT (id) DO UPDATE SET
+					nome = excluded.nome,
+					razaosocial = excluded.razaosocial,
+					cnpjcpf = excluded.cnpjcpf,
+					telefone = excluded.telefone,
+					email = excluded.email,
+					inativo = 0,
+					atualizadoem = excluded.atualizadoem`,
+				[
+					item.id,
+					item.nome,
+					item.razaosocial ?? null,
+					item.cnpjcpf ?? null,
+					item.telefone ?? null,
+					item.email ?? null,
+					agora,
+				],
+				client,
+			);
+		}
+	});
+}
+
+export async function buscarClientesLocal(
+	termo = "",
+	limit = 20,
+): Promise<ClienteLocal[]> {
+	const q = termo.trim();
+	if (!q) {
+		return query<ClienteLocal>(
+			`SELECT id, nome, razaosocial, cnpjcpf, telefone, email
+			 FROM cliente WHERE inativo = 0
+			 ORDER BY nome LIMIT $1`,
+			[limit],
+		);
+	}
+	const contem = padraoIlike(q);
+	const prefixo = padraoIlikePrefixo(q);
+	return query<ClienteLocal>(
+		`SELECT id, nome, razaosocial, cnpjcpf, telefone, email
+		 FROM cliente
+		 WHERE inativo = 0 AND (
+			nome ILIKE $1 ESCAPE '\\'
+			OR COALESCE(razaosocial, '') ILIKE $1 ESCAPE '\\'
+			OR COALESCE(cnpjcpf, '') ILIKE $1 ESCAPE '\\'
+			OR COALESCE(telefone, '') ILIKE $1 ESCAPE '\\'
+		 )
+		 ORDER BY
+			CASE WHEN nome ILIKE $2 ESCAPE '\\' THEN 0 ELSE 1 END,
+			nome
+		 LIMIT $3`,
+		[contem, prefixo, limit],
+	);
+}
+
+export async function upsertBandeirasCartao(
+	bandeiras: Array<{
+		id: string;
+		codigo?: string | null;
+		descricao: string;
+	}>,
+): Promise<void> {
+	const agora = new Date().toISOString();
+	await withTransaction(async (client) => {
+		for (const item of bandeiras) {
+			await execute(
+				`INSERT INTO bandeira_cartao (id, codigo, descricao, inativo, atualizadoem)
+				 VALUES ($1, $2, $3, 0, $4)
+				 ON CONFLICT (id) DO UPDATE SET
+					codigo = excluded.codigo,
+					descricao = excluded.descricao,
+					inativo = 0,
+					atualizadoem = excluded.atualizadoem`,
+				[item.id, item.codigo ?? null, item.descricao, agora],
+				client,
+			);
+		}
+	});
+}
+
+export async function listarBandeirasCartaoLocal(): Promise<
+	BandeiraCartaoLocal[]
+> {
+	return query<BandeiraCartaoLocal>(
+		`SELECT id, codigo, descricao
+		 FROM bandeira_cartao WHERE inativo = 0
+		 ORDER BY descricao`,
+	);
+}
+
+export async function upsertMeiosPagamento(
+	meios: Array<{
+		id: string;
+		descricao: string;
+		formapagamentonfe?: string | null;
+		aprazo?: number | null;
+	}>,
+): Promise<void> {
+	const agora = new Date().toISOString();
+	await withTransaction(async (client) => {
+		for (const item of meios) {
+			await execute(
+				`INSERT INTO meio_pagamento (id, descricao, formapagamentonfe, aprazo, inativo, atualizadoem)
+				 VALUES ($1, $2, $3, $4, 0, $5)
+				 ON CONFLICT (id) DO UPDATE SET
+					descricao = excluded.descricao,
+					formapagamentonfe = excluded.formapagamentonfe,
+					aprazo = excluded.aprazo,
+					inativo = 0,
+					atualizadoem = excluded.atualizadoem`,
+				[
+					item.id,
+					item.descricao,
+					item.formapagamentonfe ?? null,
+					item.aprazo ? 1 : 0,
+					agora,
+				],
+				client,
+			);
+		}
+	});
+}
+
+export async function listarMeiosPagamentoLocal(): Promise<
+	MeioPagamentoLocal[]
+> {
+	return query<MeioPagamentoLocal>(
+		`SELECT id, descricao, formapagamentonfe, aprazo
+		 FROM meio_pagamento WHERE inativo = 0
+		 ORDER BY descricao`,
 	);
 }
 
@@ -617,6 +813,9 @@ export async function listarCatalogoCarga(): Promise<{
 	gruposGourmet: GrupoLocal[];
 	produtos: ProdutoLocal[];
 	atalhos: ProdutoLocal[];
+	clientes: ClienteLocal[];
+	bandeiras: BandeiraCartaoLocal[];
+	meiosPagamento: MeioPagamentoLocal[];
 	atualizadoem: string;
 }> {
 	const grupos = await query<GrupoLocal>(
@@ -629,11 +828,17 @@ export async function listarCatalogoCarga(): Promise<{
 		`SELECT ${PRODUTO_SELECT} FROM produto_cache WHERE inativo = 0 ORDER BY descricao`,
 	);
 	const atalhos = await listarAtalhos();
+	const clientes = await buscarClientesLocal("", 5000);
+	const bandeiras = await listarBandeirasCartaoLocal();
+	const meiosPagamento = await listarMeiosPagamentoLocal();
 	return {
 		grupos,
 		gruposGourmet,
 		produtos,
 		atalhos,
+		clientes,
+		bandeiras,
+		meiosPagamento,
 		atualizadoem: new Date().toISOString(),
 	};
 }
@@ -1194,6 +1399,7 @@ export async function criarVendaRapida(params: {
 	itens: ItemCarrinho[];
 	lancamentos: LancamentoPagamento[];
 	troco?: number;
+	cliente?: ClienteVenda | null;
 }): Promise<VendaLocal> {
 	const sessao = await obterSessao();
 	if (!sessao.idempresa || !sessao.userid) {
@@ -1216,14 +1422,15 @@ export async function criarVendaRapida(params: {
 	});
 	const sync = totaisParaSync(fechamento.efetivos, fechamento.troco);
 	const numeropdv = Number(await getConfig("numeropdv", "1"));
+	const cliente = dadosClienteVenda(params.cliente);
 
 	const venda = await withTransaction(async (client) => {
 		await execute(
 			`INSERT INTO venda (
 				id, idempresa, numeropdv, origem, status, meio_pagamento,
 				valortotal, valordinheiro, valorpix, valorcartao, valortroco,
-				criadoem, sync_status, nfce_status
-			) VALUES ($1, $2, $3, 'rapida', 'fechada', $4, $5, $6, $7, $8, $9, $10, 'pendente', 'pendente')`,
+				criadoem, sync_status, nfce_status, idcliente, nomecliente, cnpjcpf
+			) VALUES ($1, $2, $3, 'rapida', 'fechada', $4, $5, $6, $7, $8, $9, $10, 'pendente', 'pendente', $11, $12, $13)`,
 			[
 				id,
 				sessao.idempresa,
@@ -1235,6 +1442,9 @@ export async function criarVendaRapida(params: {
 				sync.valorcartaocredito,
 				fechamento.troco,
 				agora,
+				cliente.idcliente,
+				cliente.nomecliente,
+				cliente.cnpjcpf,
 			],
 			client,
 		);
@@ -1279,6 +1489,7 @@ export async function criarVendaRapida(params: {
 		itens: params.itens,
 		valortotal: total,
 		valortroco: fechamento.troco,
+		identidade: cliente.idcliente,
 	});
 
 	return venda;
@@ -1892,6 +2103,7 @@ export async function fecharContaMesa(params: {
 	idconta: string;
 	lancamentos: LancamentoPagamento[];
 	troco?: number;
+	cliente?: ClienteVenda | null;
 }): Promise<VendaLocal> {
 	await recalcularContaPersistida(params.idconta);
 	const conta = await obterContaMesa(params.idconta);
@@ -1921,6 +2133,7 @@ export async function fecharContaMesa(params: {
 		valorcouvert: conta.valorcouvert,
 		fecharConta: true,
 		marcarItensIds: conta.itens.map((i) => i.id),
+		cliente: params.cliente,
 	});
 }
 
@@ -1935,6 +2148,7 @@ async function gravarVendaMesa(params: {
 	valorcouvert: number;
 	fecharConta: boolean;
 	marcarItensIds: string[];
+	cliente?: ClienteVenda | null;
 }): Promise<VendaLocal> {
 	const sessao = await obterSessao();
 	if (!sessao.idempresa) {
@@ -1953,6 +2167,8 @@ async function gravarVendaMesa(params: {
 		troco: params.troco,
 	});
 	const sync = totaisParaSync(fechamento.efetivos, fechamento.troco);
+	const cliente = dadosClienteVenda(params.cliente);
+	const nomecliente = cliente.nomecliente ?? params.conta.nomecliente ?? null;
 
 	const venda = await withTransaction(async (client) => {
 		await execute(
@@ -1960,8 +2176,8 @@ async function gravarVendaMesa(params: {
 				id, idempresa, numeropdv, origem, idconta, status, meio_pagamento,
 				valortotal, valordinheiro, valorpix, valorcartao, valortroco,
 				valordesconto, valortaxaservico, valorcouvert,
-				criadoem, sync_status, nfce_status
-			) VALUES ($1, $2, $3, 'mesa', $4, 'fechada', $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'pendente', 'pendente')`,
+				criadoem, sync_status, nfce_status, idcliente, nomecliente, cnpjcpf
+			) VALUES ($1, $2, $3, 'mesa', $4, 'fechada', $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'pendente', 'pendente', $15, $16, $17)`,
 			[
 				idVenda,
 				sessao.idempresa,
@@ -1977,6 +2193,9 @@ async function gravarVendaMesa(params: {
 				params.valortaxaservico,
 				params.valorcouvert,
 				agora,
+				cliente.idcliente,
+				nomecliente,
+				cliente.cnpjcpf,
 			],
 			client,
 		);
@@ -2059,6 +2278,7 @@ async function gravarVendaMesa(params: {
 		origem: "mesa",
 		idconta_local: params.conta.id,
 		numero_mesa: params.conta.numero_mesa,
+		identidade: cliente.idcliente,
 	});
 
 	return venda;
@@ -2209,6 +2429,7 @@ export async function fecharFatiaItens(params: {
 	idsItens: string[];
 	lancamentos: LancamentoPagamento[];
 	troco?: number;
+	cliente?: ClienteVenda | null;
 }): Promise<{ conta: ContaMesaLocal | null; venda: VendaLocal }> {
 	await recalcularContaPersistida(params.idconta);
 	const conta = await obterContaMesa(params.idconta);
@@ -2258,6 +2479,7 @@ export async function fecharFatiaItens(params: {
 		valorcouvert: fatia.couvert,
 		fecharConta: restoIds.length === 0,
 		marcarItensIds: params.idsItens,
+		cliente: params.cliente,
 	});
 
 	if (restoIds.length === 0) {

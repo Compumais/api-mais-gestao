@@ -81,6 +81,21 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 		icon: IconUsers,
 		keywords: ["cliente", "clientes"],
 	},
+	{
+		title: "Meios de pagamento",
+		url: "/meios-pagamento",
+		category: "Cadastros",
+		icon: IconCreditCard,
+		keywords: [
+			"meio",
+			"pagamento",
+			"condicao",
+			"bandeira",
+			"cartao",
+			"visa",
+			"mastercard",
+		],
+	},
 	// {
 	// 	title: "Comissionados",
 	// 	url: "/comissionados",

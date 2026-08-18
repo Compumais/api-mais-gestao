@@ -371,6 +371,9 @@ export function ConfigPage() {
 				grupos: number;
 				gruposGourmet: number;
 				atalhos: number;
+				clientes?: number;
+				bandeiras?: number;
+				meiosPagamento?: number;
 			}>("cargaLocal");
 			await refresh();
 			try {
@@ -385,7 +388,7 @@ export function ConfigPage() {
 			const origem =
 				result.origem === "principal" ? "PDV principal" : "nuvem (API)";
 			setMsg(
-				`Carga local da ${origem}: ${result.produtos} produtos · ${result.grupos} grupos · ${result.gruposGourmet} gourmet · ${result.atalhos} atalhos`,
+				`Carga local da ${origem}: ${result.produtos} produtos · ${result.grupos} grupos · ${result.gruposGourmet} gourmet · ${result.atalhos} atalhos · ${result.clientes ?? 0} clientes · ${result.bandeiras ?? 0} bandeiras · ${result.meiosPagamento ?? 0} meios`,
 			);
 		} catch (err) {
 			setMsg(

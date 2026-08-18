@@ -343,6 +343,15 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 				"ALTER TABLE venda ADD COLUMN valorcouvert DOUBLE PRECISION NOT NULL DEFAULT 0",
 			);
 		}
+		if (!vendaNomes.has("idcliente")) {
+			await database.query("ALTER TABLE venda ADD COLUMN idcliente TEXT");
+		}
+		if (!vendaNomes.has("nomecliente")) {
+			await database.query("ALTER TABLE venda ADD COLUMN nomecliente TEXT");
+		}
+		if (!vendaNomes.has("cnpjcpf")) {
+			await database.query("ALTER TABLE venda ADD COLUMN cnpjcpf TEXT");
+		}
 	}
 
 	await database.query(`

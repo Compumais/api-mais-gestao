@@ -54,9 +54,11 @@ import {
 	atualizarNfceLocalCampos,
 	atualizarNomeClienteConta,
 	atualizarVendaSync,
+	buscarClientesLocal,
 	buscarProdutoPorCodigo,
 	buscarProdutoPorEan,
 	buscarProdutosLocal,
+	type ClienteVenda,
 	caixaAberto,
 	caixaAbertoOutroOperador,
 	calcularResumoTurnoAberto,
@@ -75,11 +77,13 @@ import {
 	limparFilaPedidos,
 	limparSessao,
 	listarAtalhos,
+	listarBandeirasCartaoLocal,
 	listarCatalogoCarga,
 	listarGruposGourmetLocal,
 	listarGruposLocal,
 	listarLancamentosVenda,
 	listarMapeamentoImpressorasGourmet,
+	listarMeiosPagamentoLocal,
 	listarMesas,
 	listarPedidosFila,
 	listarPizzasLocal,
@@ -488,6 +492,9 @@ export const localApi = {
 			atalhos: 0,
 			grupos: 0,
 			gruposGourmet: 0,
+			clientes: 0,
+			bandeiras: 0,
+			meiosPagamento: 0,
 		};
 		const pull = (await ehSecundario())
 			? await puxarDoPrincipal().catch(() => vazio)
@@ -742,6 +749,18 @@ export const localApi = {
 
 	async catalogoCarga() {
 		return listarCatalogoCarga();
+	},
+
+	async buscarClientes(termo?: string) {
+		return buscarClientesLocal(termo ?? "", 20);
+	},
+
+	async listarBandeirasCartao() {
+		return listarBandeirasCartaoLocal();
+	},
+
+	async listarMeiosPagamento() {
+		return listarMeiosPagamentoLocal();
 	},
 
 	async statusLan() {
@@ -1027,6 +1046,9 @@ export const localApi = {
 			grupos: pull.grupos,
 			gruposGourmet: pull.gruposGourmet,
 			atalhos: pull.atalhos,
+			clientes: pull.clientes,
+			bandeiras: pull.bandeiras,
+			meiosPagamento: pull.meiosPagamento,
 		};
 	},
 
@@ -1048,6 +1070,7 @@ export const localApi = {
 		lancamentos?: LancamentoPagamento[];
 		meio?: MeioPagamento;
 		troco?: number;
+		cliente?: ClienteVenda | null;
 	}) {
 		const total = input.itens.reduce((acc, item) => acc + item.precototal, 0);
 		const lancamentos = input.lancamentos?.length
@@ -1058,6 +1081,7 @@ export const localApi = {
 			itens: input.itens,
 			lancamentos,
 			troco: input.troco,
+			cliente: input.cliente,
 		});
 		const emitir = (await getConfig("emitir_nfce", "1")) === "1";
 
@@ -1233,6 +1257,7 @@ export const localApi = {
 		idconta: string,
 		lancamentosOuMeio: LancamentoPagamento[] | MeioPagamento,
 		troco?: number,
+		cliente?: ClienteVenda | null,
 	) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
@@ -1249,7 +1274,12 @@ export const localApi = {
 		} else {
 			lancamentos = lancamentosOuMeio;
 		}
-		const venda = await fecharContaMesa({ idconta, lancamentos, troco });
+		const venda = await fecharContaMesa({
+			idconta,
+			lancamentos,
+			troco,
+			cliente,
+		});
 		const emitir = (await getConfig("emitir_nfce", "1")) === "1";
 		let fiscal: {
 			modo: "online" | "contingencia" | "nao_fiscal" | "erro";
@@ -1354,6 +1384,7 @@ export const localApi = {
 		idsItens: string[],
 		lancamentos: LancamentoPagamento[],
 		troco?: number,
+		cliente?: ClienteVenda | null,
 	) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
@@ -1362,6 +1393,7 @@ export const localApi = {
 			idsItens,
 			lancamentos,
 			troco,
+			cliente,
 		});
 		const emitir = (await getConfig("emitir_nfce", "1")) === "1";
 		if (emitir) {

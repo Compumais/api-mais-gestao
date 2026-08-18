@@ -68,6 +68,17 @@ export function rotuloMeio(meio: MeioPagamento): string {
 	return "Dinheiro";
 }
 
+export function meioNativoDaFormaNfe(
+	codigo: string | null | undefined,
+): MeioPagamento | null {
+	const digits = String(codigo ?? "").replace(/\D/g, "");
+	const pad = digits.padStart(2, "0");
+	if (pad === "01") return "DINHEIRO";
+	if (pad === "17") return "PIX";
+	if (pad === "03" || pad === "04") return "CARTAO";
+	return null;
+}
+
 export function rotuloPagamentoVenda(venda: {
 	meio_pagamento: string;
 	valordinheiro?: number;

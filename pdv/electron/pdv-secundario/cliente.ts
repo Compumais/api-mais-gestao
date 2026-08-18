@@ -39,6 +39,25 @@ export type CatalogoPrincipal = {
 		caminhoimagem?: string | null;
 	}>;
 	atalhos: Array<{ id: string }>;
+	clientes?: Array<{
+		id: string;
+		nome: string;
+		razaosocial?: string | null;
+		cnpjcpf?: string | null;
+		telefone?: string | null;
+		email?: string | null;
+	}>;
+	bandeiras?: Array<{
+		id: string;
+		codigo?: string | null;
+		descricao: string;
+	}>;
+	meiosPagamento?: Array<{
+		id: string;
+		descricao: string;
+		formapagamentonfe?: string | null;
+		aprazo?: number | null;
+	}>;
 	atualizadoem?: string;
 };
 

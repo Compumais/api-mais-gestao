@@ -347,6 +347,87 @@ export async function listarGruposGourmet(params: {
 		.map((g) => ({ id: g.id, nome: String(g.nome) }));
 }
 
+export async function listarClientes(params: {
+	idempresa: string;
+	page?: number;
+	limit?: number;
+}) {
+	const page = params.page ?? 1;
+	const limit = params.limit ?? 100;
+	const path = `/entidades?idempresa=${encodeURIComponent(params.idempresa)}&cliente=1&page=${page}&limit=${limit}`;
+	const data = await request<{
+		data: Array<{
+			id: string;
+			nome?: string | null;
+			razaosocial?: string | null;
+			cnpjcpf?: string | null;
+			telefone?: string | null;
+			email?: string | null;
+		}>;
+	}>(path);
+
+	return (data.data ?? []).map((c) => ({
+		id: c.id,
+		nome: (c.nome ?? c.razaosocial ?? "").trim() || c.id,
+		razaosocial: c.razaosocial ?? null,
+		cnpjcpf: c.cnpjcpf ?? null,
+		telefone: c.telefone ?? null,
+		email: c.email ?? null,
+	}));
+}
+
+export async function listarBandeirasCartao(params: {
+	idempresa: string;
+	page?: number;
+	limit?: number;
+}) {
+	const page = params.page ?? 1;
+	const limit = params.limit ?? 100;
+	const path = `/bandeiras-cartao?idempresa=${encodeURIComponent(params.idempresa)}&inativo=0&page=${page}&limit=${limit}`;
+	const data = await request<{
+		data: Array<{
+			id: string;
+			codigo?: string | null;
+			descricao?: string | null;
+		}>;
+	}>(path);
+
+	return (data.data ?? [])
+		.filter((b) => b.descricao?.trim())
+		.map((b) => ({
+			id: b.id,
+			codigo: b.codigo ?? null,
+			descricao: String(b.descricao).trim(),
+		}));
+}
+
+export async function listarTiposDocumentoFinanceiro(params: {
+	idempresa: string;
+	page?: number;
+	limit?: number;
+}) {
+	const page = params.page ?? 1;
+	const limit = params.limit ?? 100;
+	const path = `/tipos-documento-financeiro?idempresa=${encodeURIComponent(params.idempresa)}&inativo=0&page=${page}&limit=${limit}`;
+	const data = await request<{
+		data: Array<{
+			id: string;
+			descricao?: string | null;
+			formapagamentonfe?: string | null;
+			aprazo?: number | null;
+		}>;
+	}>(path);
+
+	return (data.data ?? [])
+		.filter((m) => m.descricao?.trim())
+		.map((m) => ({
+			id: m.id,
+			descricao: String(m.descricao).trim(),
+			formapagamentonfe: m.formapagamentonfe ?? null,
+			aprazo: Number(m.aprazo ?? 0) === 1 ? 1 : 0,
+		}));
+}
+
 export async function listarAtalhosRemotos(idempresa: string) {
 	const data = await request<{
 		data?: Array<{ idproduto: string }>;

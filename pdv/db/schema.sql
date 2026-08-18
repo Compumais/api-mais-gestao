@@ -57,6 +57,34 @@ CREATE TABLE IF NOT EXISTS atalho (
 	PRIMARY KEY (ordem)
 );
 
+CREATE TABLE IF NOT EXISTS cliente (
+	id TEXT PRIMARY KEY NOT NULL,
+	nome TEXT NOT NULL,
+	razaosocial TEXT,
+	cnpjcpf TEXT,
+	telefone TEXT,
+	email TEXT,
+	inativo INTEGER NOT NULL DEFAULT 0,
+	atualizadoem TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS bandeira_cartao (
+	id TEXT PRIMARY KEY NOT NULL,
+	codigo TEXT,
+	descricao TEXT NOT NULL,
+	inativo INTEGER NOT NULL DEFAULT 0,
+	atualizadoem TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS meio_pagamento (
+	id TEXT PRIMARY KEY NOT NULL,
+	descricao TEXT NOT NULL,
+	formapagamentonfe TEXT,
+	aprazo INTEGER NOT NULL DEFAULT 0,
+	inativo INTEGER NOT NULL DEFAULT 0,
+	atualizadoem TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS caixa_turno (
 	id TEXT PRIMARY KEY NOT NULL,
 	idempresa TEXT NOT NULL,
@@ -145,7 +173,10 @@ CREATE TABLE IF NOT EXISTS venda (
 	idremoto TEXT,
 	sync_status TEXT NOT NULL DEFAULT 'pendente',
 	nfce_status TEXT NOT NULL DEFAULT 'nenhuma',
-	idnfce_local TEXT
+	idnfce_local TEXT,
+	idcliente TEXT,
+	nomecliente TEXT,
+	cnpjcpf TEXT
 );
 
 CREATE TABLE IF NOT EXISTS item_venda (
@@ -240,3 +271,7 @@ CREATE INDEX IF NOT EXISTS idx_pedido_fila_client ON pedido_fila(client_order_id
 CREATE INDEX IF NOT EXISTS idx_pagamento_idvenda ON pagamento(idvenda);
 CREATE INDEX IF NOT EXISTS idx_conta_pagamento_idconta ON conta_pagamento(idconta);
 CREATE INDEX IF NOT EXISTS idx_item_conta_pago ON item_conta(idconta, pago);
+CREATE INDEX IF NOT EXISTS idx_cliente_nome ON cliente(nome);
+CREATE INDEX IF NOT EXISTS idx_cliente_cnpjcpf ON cliente(cnpjcpf);
+CREATE INDEX IF NOT EXISTS idx_bandeira_descricao ON bandeira_cartao(descricao);
+CREATE INDEX IF NOT EXISTS idx_meio_pagamento_descricao ON meio_pagamento(descricao);
