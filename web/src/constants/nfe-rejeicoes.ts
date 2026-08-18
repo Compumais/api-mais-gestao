@@ -5,16 +5,19 @@ export type NfeRejeicaoInfo = {
 
 export const NFE_REJEICOES: Record<string, NfeRejeicaoInfo> = {
 	"108": {
-		descricao: "Serviço Paralisado Momentaneamente (vide Paragrafo Único do Art. 11 do Decreto 7.979/13)",
+		descricao:
+			"Serviço Paralisado Momentaneamente (vide Paragrafo Único do Art. 11 do Decreto 7.979/13)",
 		instrucao: "Aguarde alguns minutos e tente novamente.",
 	},
 	"109": {
 		descricao: "Serviço Paralisado sem Previsão",
-		instrucao: "O serviço da SEFAZ está fora do ar. Considere emissão em contingência.",
+		instrucao:
+			"O serviço da SEFAZ está fora do ar. Considere emissão em contingência.",
 	},
 	"204": {
 		descricao: "Duplicidade de NF-e",
-		instrucao: "Uma NF-e com a mesma chave já foi autorizada. Verifique o número/série da NF.",
+		instrucao:
+			"Uma NF-e com a mesma chave já foi autorizada. Verifique o número/série da NF.",
 	},
 	"205": {
 		descricao: "NF-e está denegada na base de dados da SEFAZ",
@@ -54,11 +57,13 @@ export const NFE_REJEICOES: Record<string, NfeRejeicaoInfo> = {
 	},
 	"302": {
 		descricao: "IE do emitente não cadastrada",
-		instrucao: "A Inscrição Estadual do emitente não consta na SEFAZ. Verifique o cadastro.",
+		instrucao:
+			"A Inscrição Estadual do emitente não consta na SEFAZ. Verifique o cadastro.",
 	},
 	"399": {
 		descricao: "Signer Certificate Problem",
-		instrucao: "Problema com o certificado digital. Verifique a validade e o CNPJ do certificado.",
+		instrucao:
+			"Problema com o certificado digital. Verifique a validade e o CNPJ do certificado.",
 	},
 	"401": {
 		descricao: "Filtro inválido: 1 diferente de 1",
@@ -77,15 +82,17 @@ export const NFE_REJEICOES: Record<string, NfeRejeicaoInfo> = {
 		instrucao: "A empresa precisa ser habilitada na SEFAZ do seu estado.",
 	},
 	"539": {
-		descricao: "CNPJ do emitente inválido para a UF",
-		instrucao: "Confira o CNPJ e a UF no cadastro fiscal da empresa.",
+		descricao: "Duplicidade de NF-e/NFC-e, com diferença na Chave de Acesso",
+		instrucao:
+			"A SEFAZ já autorizou este número/série com outra chave. Consulte a chave na retaguarda e não retransmita o mesmo número em outra venda.",
 	},
 	"591": {
 		descricao: "Informar a tributação do ICMS para cada item",
 		instrucao: "Verifique o CST/CSOSN e alíquotas de ICMS dos itens.",
 	},
 	"594": {
-		descricao: "O número de série e/ou número da NF-e informado já foi utilizado",
+		descricao:
+			"O número de série e/ou número da NF-e informado já foi utilizado",
 		instrucao: "Aguarde a emissão ser processada ou utilize outra numeração.",
 	},
 	"747": {
@@ -94,7 +101,8 @@ export const NFE_REJEICOES: Record<string, NfeRejeicaoInfo> = {
 	},
 	"999": {
 		descricao: "Erro não catalogado",
-		instrucao: "Consulte o xMotivo retornado pela SEFAZ e entre em contato com o suporte.",
+		instrucao:
+			"Consulte o xMotivo retornado pela SEFAZ e entre em contato com o suporte.",
 	},
 };
 
@@ -103,7 +111,8 @@ export function obterInfoRejeicao(cStat: string | number): NfeRejeicaoInfo {
 	return (
 		NFE_REJEICOES[codigo] ?? {
 			descricao: `Código ${codigo}`,
-			instrucao: "Consulte o motivo retornado pela SEFAZ ou entre em contato com o suporte.",
+			instrucao:
+				"Consulte o motivo retornado pela SEFAZ ou entre em contato com o suporte.",
 		}
 	);
 }

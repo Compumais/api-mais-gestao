@@ -68,6 +68,25 @@ export function rotuloMeio(meio: MeioPagamento): string {
 	return "Dinheiro";
 }
 
+export function rotuloPagamentoVenda(venda: {
+	meio_pagamento: string;
+	valordinheiro?: number;
+	valorpix?: number;
+	valorcartao?: number;
+}): string {
+	const partes: string[] = [];
+	if ((Number(venda.valordinheiro) || 0) > 0.009) partes.push("Dinheiro");
+	if ((Number(venda.valorpix) || 0) > 0.009) partes.push("PIX");
+	if ((Number(venda.valorcartao) || 0) > 0.009) partes.push("Cartão");
+	if (partes.length) return partes.join(" + ");
+	const meio = String(venda.meio_pagamento ?? "").toUpperCase();
+	if (meio === "MISTO") return "Misto";
+	if (meio === "CARTAO") return "Cartão";
+	if (meio === "PIX") return "PIX";
+	if (meio === "DINHEIRO") return "Dinheiro";
+	return venda.meio_pagamento || "—";
+}
+
 export function reaisParaDigitos(valor: number): string {
 	return String(Math.max(0, Math.round(arredondarDinheiro(valor) * 100)));
 }

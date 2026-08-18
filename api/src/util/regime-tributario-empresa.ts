@@ -23,11 +23,13 @@ export function normalizarRegimeTributario(
 
 /** Deriva SN/LP a partir do CRT da NF-e (fonte da verdade na UI fiscal). */
 export function derivarRegimeTributarioDoCrt(
-	crt?: number | null,
+	crt?: number | string | null,
 ): RegimeTributarioEmpresa | null {
-	if (crt == null || !Number.isFinite(crt)) return null;
-	if (crt === 1 || crt === 2 || crt === 4) return "SN";
-	if (crt === 3) return "LP";
+	if (crt == null || crt === "") return null;
+	const codigo = typeof crt === "number" ? crt : Number(String(crt).trim());
+	if (!Number.isInteger(codigo)) return null;
+	if (codigo === 1 || codigo === 2 || codigo === 4) return "SN";
+	if (codigo === 3) return "LP";
 	return null;
 }
 

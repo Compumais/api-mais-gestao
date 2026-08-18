@@ -36,20 +36,49 @@ import { BotaoAlterarNumeracao } from "./dialog-alterar-numeracao";
 import { NfeSeriesSection } from "./nfe-series-section";
 import { TerminaisPdvSection } from "./terminais-pdv-section";
 
+function ambienteSefaz(valor: unknown): 1 | 2 {
+	return Number(valor) === 1 ? 1 : 2;
+}
+
 interface NfceConfiguracaoFormProps {
 	idempresa: string;
 }
 
 export function NfceConfiguracaoForm({ idempresa }: NfceConfiguracaoFormProps) {
-	const queryClient = useQueryClient();
-	const arquivoRef = useRef<HTMLInputElement>(null);
-	const [senhaCert, setSenhaCert] = useState("");
-	const [apelidoCert, setApelidoCert] = useState("");
-
 	const { data: config, isLoading } = useQuery({
 		queryKey: ["nfce-configuracao", idempresa],
 		queryFn: () => nfceConfiguracaoService.buscar(idempresa),
 	});
+
+	if (isLoading || !config) {
+		return (
+			<div className="flex justify-center py-8">
+				<div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+			</div>
+		);
+	}
+
+	return (
+		<NfceConfiguracaoFormCampos
+			key={config.id}
+			idempresa={idempresa}
+			config={config}
+		/>
+	);
+}
+
+function NfceConfiguracaoFormCampos({
+	idempresa,
+	config,
+}: NfceConfiguracaoFormProps & {
+	config: NonNullable<
+		Awaited<ReturnType<typeof nfceConfiguracaoService.buscar>>
+	>;
+}) {
+	const queryClient = useQueryClient();
+	const arquivoRef = useRef<HTMLInputElement>(null);
+	const [senhaCert, setSenhaCert] = useState("");
+	const [apelidoCert, setApelidoCert] = useState("");
 
 	const { data: certificados = [] } = useQuery({
 		queryKey: ["certificados-digitais", idempresa],
@@ -62,20 +91,18 @@ export function NfceConfiguracaoForm({ idempresa }: NfceConfiguracaoFormProps) {
 		z.output<typeof nfceConfiguracaoSchema>
 	>({
 		resolver: zodResolver(nfceConfiguracaoSchema),
-		values: config
-			? {
-					ambiente: config.ambiente,
-					idcertificadoativo: config.idcertificadoativo ?? null,
-					idcsc_homologacao: config.idcsc_homologacao ?? "",
-					csctoken_homologacao: config.csctoken_homologacao ?? "",
-					idcsc_producao: config.idcsc_producao ?? "",
-					csctoken_producao: config.csctoken_producao ?? "",
-					contingenciaativa: config.contingenciaativa,
-					meiospagamentonfce: normalizarMeiosPagamentoNfce(
-						config.meiospagamentonfce ?? MEIOS_PAGAMENTO_NFCE_PADRAO,
-					),
-				}
-			: undefined,
+		values: {
+			ambiente: ambienteSefaz(config.ambiente),
+			idcertificadoativo: config.idcertificadoativo ?? null,
+			idcsc_homologacao: config.idcsc_homologacao ?? "",
+			csctoken_homologacao: config.csctoken_homologacao ?? "",
+			idcsc_producao: config.idcsc_producao ?? "",
+			csctoken_producao: config.csctoken_producao ?? "",
+			contingenciaativa: config.contingenciaativa,
+			meiospagamentonfce: normalizarMeiosPagamentoNfce(
+				config.meiospagamentonfce ?? MEIOS_PAGAMENTO_NFCE_PADRAO,
+			),
+		},
 	});
 
 	const salvarMutation = useMutation({
@@ -148,15 +175,7 @@ export function NfceConfiguracaoForm({ idempresa }: NfceConfiguracaoFormProps) {
 		},
 	});
 
-	if (isLoading) {
-		return (
-			<div className="flex justify-center py-8">
-				<div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-			</div>
-		);
-	}
-
-	const ambiente = form.watch("ambiente");
+	const ambiente = ambienteSefaz(form.watch("ambiente"));
 	const contingenciaativa = form.watch("contingenciaativa");
 	const meiospagamentonfce = form.watch("meiospagamentonfce");
 
@@ -182,6 +201,7 @@ export function NfceConfiguracaoForm({ idempresa }: NfceConfiguracaoFormProps) {
 						<Field>
 							<FieldLabel>Ambiente</FieldLabel>
 							<Select
+								key={`ambiente-nfce-${ambiente}`}
 								value={String(ambiente)}
 								onValueChange={(v) => form.setValue("ambiente", Number(v))}
 							>

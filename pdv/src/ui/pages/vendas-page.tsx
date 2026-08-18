@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
+import { rotuloPagamentoVenda } from "@/lib/pagamento";
 import { pdvInvoke } from "@/lib/pdv-api";
 import { rotaHomePdv, rotuloModelo, type StatusContext } from "@/lib/pdv-types";
 import { money } from "@/lib/utils";
@@ -15,6 +16,9 @@ type Venda = {
 	origem: string;
 	meio_pagamento: string;
 	valortotal: number;
+	valordinheiro?: number;
+	valorpix?: number;
+	valorcartao?: number;
 	criadoem: string;
 	sync_status: string;
 	nfce_status: string;
@@ -27,8 +31,8 @@ function badgeSync(status: string) {
 }
 
 function badgeNfce(status: string) {
-	if (status === "autorizada" || status === "transmitida")
-		return "success" as const;
+	if (status === "autorizada") return "success" as const;
+	if (status === "transmitida") return "warning" as const;
 	if (
 		status === "contingencia" ||
 		status === "pendente_contingencia" ||
@@ -45,6 +49,7 @@ function rotuloNfce(status: string) {
 	if (status === "erro_config") return "erro config";
 	if (status === "pendente_contingencia" || status === "pendente")
 		return "pendente";
+	if (status === "transmitida") return "enviada (aguardando SEFAZ)";
 	if (status === "inutilizada") return "inutilizada";
 	if (status === "cancelada") return "cancelada";
 	return status;
@@ -153,7 +158,7 @@ export function VendasPage() {
 										{new Date(v.criadoem).toLocaleString("pt-BR")}
 									</td>
 									<td className="px-3 py-2 capitalize">{v.origem}</td>
-									<td className="px-3 py-2">{v.meio_pagamento}</td>
+									<td className="px-3 py-2">{rotuloPagamentoVenda(v)}</td>
 									<td className="px-3 py-2 font-medium">
 										{money(v.valortotal)}
 									</td>

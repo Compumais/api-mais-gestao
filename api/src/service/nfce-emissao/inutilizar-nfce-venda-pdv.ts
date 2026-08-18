@@ -57,5 +57,6 @@ export async function inutilizarNfceVendaPdvService({
 		idusuario,
 		idnotafiscal: venda.idnotafiscalnfce,
 		justificativa,
+		permitirNfce: true,
 	});
 }

@@ -467,6 +467,71 @@ async function syncFecharCaixa(
 	});
 }
 
+async function baixarEstoqueVendaOutbox(params: {
+	idlocal: string;
+	idremoto: string;
+	idempresa: string;
+	itens: ItemCarrinho[];
+	total: number;
+	sync: ReturnType<typeof totaisParaSync>;
+	payload: Record<string, unknown>;
+}): Promise<void> {
+	const emitir = (await getConfig("emitir_nfce", "1")) === "1";
+	try {
+		const baixa = await baixaEstoqueVenda({
+			idempresa: params.idempresa,
+			idvenda: params.idremoto,
+			itens: params.itens.map((i) => ({
+				idproduto: i.idproduto,
+				quantidade: i.quantidade,
+				precounitario: i.precounitario,
+				nomeproduto: i.descricao,
+			})),
+			pagamentos: {
+				valortotal: params.total,
+				valortroco: params.sync.valortroco,
+				valordinheiro: params.sync.valordinheiro,
+				valorpix: params.sync.valorpix,
+				valorcartaocredito: params.sync.valorcartaocredito,
+				valorcartaodebito: params.sync.valorcartaodebito,
+				valorcartao: params.sync.valorcartao,
+				valorprepago: params.sync.valorprepago,
+				desconto: Number(params.payload.valordesconto ?? 0),
+				valortaxaservico: Number(params.payload.valortaxaservico ?? 0),
+				valorcouverartistico: Number(params.payload.valorcouvert ?? 0),
+			},
+			emitirNfce: emitir,
+		});
+		if (!emitir) {
+			await atualizarVendaSync(params.idlocal, { nfce_status: "nao_fiscal" });
+			return;
+		}
+		const nfce = extrairNfceDaBaixa(baixa);
+		const { aplicarEmissaoNfceNaVendaLocal } = await import(
+			"../fiscal/persistir-nfce-online"
+		);
+		await aplicarEmissaoNfceNaVendaLocal(params.idlocal, nfce);
+		if (nfce.emitida) {
+			await atualizarVendaSync(params.idlocal, { nfce_status: "autorizada" });
+		}
+	} catch (err) {
+		if (
+			err instanceof ApiError &&
+			(err.status === 0 || err.status === 408 || (err.status ?? 0) >= 500)
+		) {
+			if (emitir) {
+				await atualizarVendaSync(params.idlocal, {
+					nfce_status: "pendente_contingencia",
+				});
+			}
+			throw err;
+		}
+		if (emitir) {
+			await atualizarVendaSync(params.idlocal, { nfce_status: "erro" });
+		}
+	}
+}
+
 async function syncCriarVenda(
 	payload: Record<string, unknown>,
 	idempresa: string,
@@ -481,8 +546,16 @@ async function syncCriarVenda(
 	const sync = totaisParaSync(pagamentos, valortroco);
 
 	const local = await obterVenda(idlocal);
-	// Já sincronizada no fluxo online — não recria na retaguarda.
 	if (local?.idremoto) {
+		await baixarEstoqueVendaOutbox({
+			idlocal,
+			idremoto: local.idremoto,
+			idempresa,
+			itens,
+			total,
+			sync,
+			payload,
+		});
 		return;
 	}
 
@@ -521,57 +594,15 @@ async function syncCriarVenda(
 		});
 	}
 
-	const emitir = (await getConfig("emitir_nfce", "1")) === "1";
-	if (!emitir) {
-		await atualizarVendaSync(idlocal, { nfce_status: "nao_fiscal" });
-		return;
-	}
-
-	try {
-		const baixa = await baixaEstoqueVenda({
-			idempresa,
-			idvenda: venda.id,
-			itens: itens.map((i) => ({
-				idproduto: i.idproduto,
-				quantidade: i.quantidade,
-				precounitario: i.precounitario,
-				nomeproduto: i.descricao,
-			})),
-			pagamentos: {
-				valortotal: total,
-				valortroco: sync.valortroco,
-				valordinheiro: sync.valordinheiro,
-				valorpix: sync.valorpix,
-				valorcartaocredito: sync.valorcartaocredito,
-				valorcartaodebito: sync.valorcartaodebito,
-				valorcartao: sync.valorcartao,
-				valorprepago: sync.valorprepago,
-				desconto: Number(payload.valordesconto ?? 0),
-				valortaxaservico: Number(payload.valortaxaservico ?? 0),
-				valorcouverartistico: Number(payload.valorcouvert ?? 0),
-			},
-		});
-		const nfce = extrairNfceDaBaixa(baixa);
-		const { aplicarEmissaoNfceNaVendaLocal } = await import(
-			"../fiscal/persistir-nfce-online"
-		);
-		await aplicarEmissaoNfceNaVendaLocal(idlocal, nfce);
-		if (nfce.emitida) {
-			await atualizarVendaSync(idlocal, { nfce_status: "autorizada" });
-		}
-	} catch (err) {
-		if (
-			err instanceof ApiError &&
-			(err.status === 0 || err.status === 408 || (err.status ?? 0) >= 500)
-		) {
-			await atualizarVendaSync(idlocal, {
-				nfce_status: "pendente_contingencia",
-			});
-			throw err;
-		}
-		// Validação/SEFAZ: venda já está na retaguarda — não reprocessa outbox.
-		await atualizarVendaSync(idlocal, { nfce_status: "erro" });
-	}
+	await baixarEstoqueVendaOutbox({
+		idlocal,
+		idremoto: venda.id,
+		idempresa,
+		itens,
+		total,
+		sync,
+		payload,
+	});
 }
 
 async function syncTransmitirContingencia(
@@ -623,8 +654,27 @@ function resolverPagamentosPayload(
 	if (lista.length) {
 		return lista;
 	}
-	if (payload.meio != null && total > 0) {
-		return [lancamentoUnico(normalizarMeioPagamento(payload.meio), total)];
+	const fromTotais: LancamentoPagamento[] = [];
+	const dinheiro = Number(payload.valordinheiro ?? 0);
+	const pix = Number(payload.valorpix ?? 0);
+	const cartao = Number(payload.valorcartao ?? 0);
+	if (dinheiro > 0) {
+		fromTotais.push(lancamentoUnico("DINHEIRO", dinheiro));
+	}
+	if (pix > 0) {
+		fromTotais.push(lancamentoUnico("PIX", pix));
+	}
+	if (cartao > 0) {
+		fromTotais.push(lancamentoUnico("CARTAO", cartao));
+	}
+	if (fromTotais.length) {
+		return fromTotais;
+	}
+	const meio = String(payload.meio ?? "")
+		.trim()
+		.toUpperCase();
+	if (meio && meio !== "MISTO" && total > 0) {
+		return [lancamentoUnico(normalizarMeioPagamento(meio), total)];
 	}
 	return [];
 }

@@ -109,6 +109,7 @@ import {
 } from "../db/repos";
 import { emitirOuContingencia } from "../fiscal/contingencia";
 import {
+	imprimirComprovanteFechamentoCaixa,
 	imprimirCupomNaoFiscal,
 	imprimirDanfce,
 	imprimirPreConta,
@@ -156,13 +157,13 @@ import {
 	reiniciarBackupAgendado,
 	statusBackupPdv,
 } from "../sync/backup-agendado";
+import { puxarNfceDaRetaguarda } from "../sync/nfce-retaguarda";
 import {
 	processarOutbox,
 	pullCatalogo,
 	sincronizarFiscalPdv as puxarFiscalRetaguarda,
 	statusConexao,
 } from "../sync/outbox";
-import { puxarNfceDaRetaguarda } from "../sync/nfce-retaguarda";
 import { obterTerminaisPdvLocais } from "../sync/terminais-pdv";
 import {
 	arquivarSeTrocaEmpresa,
@@ -244,7 +245,10 @@ async function assertPodeSalvarConfig(
 	}
 }
 
-async function emitirNfceOnlineDaVenda(vendaId: string): Promise<{
+async function emitirNfceOnlineDaVenda(
+	vendaId: string,
+	emitirNfce = true,
+): Promise<{
 	ok: boolean;
 	chave?: string;
 	qrCode?: string;
@@ -314,7 +318,6 @@ async function emitirNfceOnlineDaVenda(vendaId: string): Promise<{
 				idremoto,
 				sync_status: "sincronizado",
 			});
-			await concluirOutboxCriarVendaLocal(vendaId);
 		}
 
 		const baixa = await baixaEstoqueVenda({
@@ -336,7 +339,13 @@ async function emitirNfceOnlineDaVenda(vendaId: string): Promise<{
 				valorcartao: sync.valorcartao,
 				valorprepago: sync.valorprepago,
 			},
+			emitirNfce,
 		});
+		await concluirOutboxCriarVendaLocal(vendaId);
+		if (!emitirNfce) {
+			await atualizarVendaSync(vendaId, { nfce_status: "nao_fiscal" });
+			return { ok: true };
+		}
 		const nfce = extrairNfceDaBaixa(baixa);
 		const { aplicarEmissaoNfceNaVendaLocal } = await import(
 			"../fiscal/persistir-nfce-online"
@@ -786,7 +795,7 @@ export const localApi = {
 	},
 
 	async fecharCaixa(saldoinformado: number, observacao?: string) {
-		await fecharCaixa({
+		const fechamento = await fecharCaixa({
 			saldoinformado: Number(saldoinformado) || 0,
 			observacao,
 		});
@@ -798,6 +807,24 @@ export const localApi = {
 					: "Falha no backup ao fechar o caixa",
 			);
 		});
+		try {
+			await imprimirComprovanteFechamentoCaixa({
+				nomeempresa: fechamento.nomeempresa,
+				username: fechamento.username,
+				numeropdv: fechamento.numeropdv,
+				abertoem: fechamento.abertoem,
+				fechadoem: fechamento.fechadoem,
+				resumo: fechamento.resumo,
+				conferencia: fechamento.conferencia,
+				observacao: fechamento.observacao,
+			});
+		} catch (err) {
+			console.error(
+				err instanceof Error
+					? err.message
+					: "Falha ao imprimir comprovante de caixa",
+			);
+		}
 		return { ok: true };
 	},
 
@@ -1051,6 +1078,7 @@ export const localApi = {
 				onlineEmitir: () => emitirNfceOnlineDaVenda(venda.id),
 			});
 		} else {
+			await emitirNfceOnlineDaVenda(venda.id, false);
 			await imprimirCupomNaoFiscal(venda.id);
 		}
 
@@ -1255,6 +1283,7 @@ export const localApi = {
 				}
 			}
 		} else {
+			await emitirNfceOnlineDaVenda(venda.id, false);
 			await imprimirCupomNaoFiscal(venda.id);
 		}
 
@@ -1311,6 +1340,7 @@ export const localApi = {
 					onlineEmitir: () => emitirNfceOnlineDaVenda(result.venda!.id),
 				});
 			} else {
+				await emitirNfceOnlineDaVenda(result.venda.id, false);
 				await imprimirCupomNaoFiscal(result.venda.id);
 			}
 			void processarOutbox();
@@ -1340,6 +1370,7 @@ export const localApi = {
 				onlineEmitir: () => emitirNfceOnlineDaVenda(result.venda.id),
 			});
 		} else {
+			await emitirNfceOnlineDaVenda(result.venda.id, false);
 			await imprimirCupomNaoFiscal(result.venda.id);
 		}
 		void processarOutbox();

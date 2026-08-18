@@ -1,15 +1,11 @@
-import type { Municipio } from "@/model/localidade-model.js";
-import type { HttpResponse } from "@/model/http-model.js";
 import { buscarEstadoPorSigla } from "@/constants/estados-brasil.js";
+import type { HttpResponse } from "@/model/http-model.js";
+import type { Municipio } from "@/model/localidade-model.js";
 import {
 	buscarMunicipiosBrasilApi,
 	normalizarNomeLocalidade,
 } from "@/service/localidade/brasil-api-client.js";
-import {
-	httpBadGateway,
-	httpBadRequest,
-	httpOk,
-} from "@/util/http-util.js";
+import { httpBadGateway, httpBadRequest, httpOk } from "@/util/http-util.js";
 
 type ListarMunicipiosResposta = {
 	data: Municipio[];
@@ -23,7 +19,9 @@ type ListarMunicipiosParametros = {
 export async function listarMunicipiosService({
 	uf,
 	nome,
-}: ListarMunicipiosParametros): Promise<HttpResponse<ListarMunicipiosResposta>> {
+}: ListarMunicipiosParametros): Promise<
+	HttpResponse<ListarMunicipiosResposta>
+> {
 	const estado = buscarEstadoPorSigla(uf);
 	if (!estado) {
 		return httpBadRequest("UF inválida");
@@ -33,7 +31,7 @@ export async function listarMunicipiosService({
 		const municipios = await buscarMunicipiosBrasilApi(estado.idestado);
 
 		let data: Municipio[] = municipios.map((municipio) => ({
-			idcidade: municipio.codigo_ibge,
+			idcidade: String(municipio.codigo_ibge),
 			nome: municipio.nome,
 			idestado: estado.idestado,
 		}));

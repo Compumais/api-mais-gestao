@@ -13,9 +13,9 @@ const bodySchema = z.object({
 	nomefantasia: z.string().max(60).nullable().optional(),
 	inscricaoestadual: z.string().max(20).nullable().optional(),
 	inscricaomunicipal: z.string().max(20).nullable().optional(),
-	crt: z.number().int().min(1).max(4).nullable().optional(),
+	crt: z.union([z.coerce.number().int().min(1).max(4), z.null()]).optional(),
 	cnae: z.string().max(7).nullable().optional(),
-	indicadorie: z.number().int().nullable().optional(),
+	indicadorie: z.coerce.number().int().nullable().optional(),
 	logradouro: z.string().max(60).nullable().optional(),
 	numero: z.string().max(10).nullable().optional(),
 	complemento: z.string().max(60).nullable().optional(),
@@ -80,7 +80,9 @@ export async function atualizarEmpresaFiscal(
 		const resultado = await atualizarEmpresaFiscalService({
 			idempresa: id,
 			idusuario: request.user.id,
-			dados: dados as Parameters<typeof atualizarEmpresaFiscalService>[0]["dados"],
+			dados: dados as Parameters<
+				typeof atualizarEmpresaFiscalService
+			>[0]["dados"],
 		});
 
 		if (!resultado.success) {

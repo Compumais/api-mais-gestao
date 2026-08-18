@@ -478,6 +478,7 @@ export async function baixaEstoqueVenda(body: {
 		valortaxaservico?: number | string;
 		valorcouverartistico?: number | string;
 	};
+	emitirNfce?: boolean;
 }) {
 	return request<{
 		idnotafiscal?: string;
@@ -527,6 +528,7 @@ export async function baixaEstoqueVenda(body: {
 				valorcartao: asApiDecimal(body.pagamentos.valorcartao ?? 0),
 				valorprepago: asApiDecimal(body.pagamentos.valorprepago ?? 0),
 			},
+			...(body.emitirNfce === false ? { emitirNfce: false } : {}),
 		},
 		timeoutMs: 60000,
 	});

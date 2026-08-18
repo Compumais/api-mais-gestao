@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { v4 as uuidv4 } from "uuid";
+import { buscarVendaPdvGourmet } from "../api/client";
 import { getConfig } from "../db/database";
 import {
 	atualizarVendaSync,
@@ -284,6 +285,33 @@ export async function emitirContingencia(
 	const venda = await obterVenda(idvenda);
 	if (!venda) {
 		throw new Error("Venda não encontrada");
+	}
+
+	if (
+		venda.nfce_status === "autorizada" ||
+		venda.nfce_status === "transmitida"
+	) {
+		return {
+			modo: "online",
+			mensagem:
+				"NFC-e desta venda já foi enviada. Aguarde a autorização ou retransmita pela retaguarda.",
+		};
+	}
+
+	if (venda.idremoto) {
+		try {
+			const remota = await buscarVendaPdvGourmet(venda.idremoto);
+			if (remota.idnotafiscalnfce || remota.nfce?.idnotafiscal) {
+				await atualizarVendaSync(idvenda, { nfce_status: "pendente" });
+				return {
+					modo: "erro",
+					mensagem:
+						"Esta venda já possui NFC-e na retaguarda. Retransmita o cupom em vez de emitir contingência.",
+				};
+			}
+		} catch {
+			// se a consulta falhar, segue para contingência local
+		}
 	}
 
 	const numeracao = await obterNumeracaoNfce();

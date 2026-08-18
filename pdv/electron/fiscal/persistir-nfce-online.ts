@@ -3,6 +3,7 @@ import { buscarCupomNfce } from "../api/client";
 import {
 	atualizarNfceLocalCampos,
 	atualizarVendaSync,
+	avancarNumeracaoNfceAposEmissao,
 	obterNfcePorVenda,
 	salvarNfceLocal,
 } from "../db/repos";
@@ -27,7 +28,12 @@ export type ResultadoEmissaoParaPersistir = {
 	xml?: string;
 	serie?: string | number;
 	numero?: number;
-	statusLocal?: "autorizada" | "erro" | "inutilizada" | "cancelada" | "pendente";
+	statusLocal?:
+		| "autorizada"
+		| "erro"
+		| "inutilizada"
+		| "cancelada"
+		| "pendente";
 };
 
 function serieNumeroDaChave(chave?: string): {
@@ -101,6 +107,7 @@ async function gravarNfceLocal(
 			nfce_status: status,
 			idnfce_local: existente.id,
 		});
+		await avancarNumeracaoNfceAposEmissao(serie, numero);
 		return true;
 	}
 
@@ -117,6 +124,7 @@ async function gravarNfceLocal(
 		protocolo: dados.protocolo,
 		transmitida: status === "autorizada",
 	});
+	await avancarNumeracaoNfceAposEmissao(serie, numero);
 	return true;
 }
 
@@ -150,7 +158,8 @@ export async function aplicarEmissaoNfceNaVendaLocal(
 	const statusLocal = nfce.statusLocal ?? "erro";
 	const gravou = await gravarNfceLocal(dados, statusLocal);
 	await atualizarVendaSync(vendaId, {
-		nfce_status: statusLocal === "pendente" ? "pendente_contingencia" : statusLocal,
+		nfce_status:
+			statusLocal === "pendente" ? "pendente_contingencia" : statusLocal,
 		...(!gravou && nfce.idnotafiscal
 			? { idnfce_local: nfce.idnotafiscal }
 			: {}),

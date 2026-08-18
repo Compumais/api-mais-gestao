@@ -9,7 +9,7 @@ import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 const paramsSchema = z.object({ id: z.string().uuid() });
 
 const bodySchema = z.object({
-	ambiente: z.number().int().min(1).max(2).optional(),
+	ambiente: z.coerce.number().int().min(1).max(2).optional(),
 	idcertificadoativo: z.string().uuid().nullable().optional(),
 	tokenibpt: z.string().max(100).nullable().optional(),
 	emailenvioxml: z.string().max(200).nullable().optional(),
@@ -63,7 +63,9 @@ export async function atualizarNfeConfiguracao(
 		const resultado = await atualizarNfeConfiguracaoService({
 			idempresa: id,
 			idusuario: request.user.id,
-			dados: dados as Parameters<typeof atualizarNfeConfiguracaoService>[0]["dados"],
+			dados: dados as Parameters<
+				typeof atualizarNfeConfiguracaoService
+			>[0]["dados"],
 		});
 
 		if (!resultado.success) {

@@ -11,4 +11,8 @@ describe("status NFC-e da retaguarda", () => {
 		assert.equal(statusNfceRetaguardaParaPdv(90), "pendente");
 		assert.equal(statusNfceRetaguardaParaPdv(null), null);
 	});
+
+	it("não trata pendente da retaguarda como autorização local", () => {
+		assert.notEqual(statusNfceRetaguardaParaPdv(90), "autorizada");
+	});
 });

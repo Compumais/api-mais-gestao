@@ -74,8 +74,7 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 	const ufRaw = form.watch("uf");
 	const uf = typeof ufRaw === "string" ? ufRaw : "";
 	const municipioRaw = form.watch("codigomunicipioibge");
-	const municipioIbge =
-		typeof municipioRaw === "string" ? municipioRaw : "";
+	const municipioIbge = typeof municipioRaw === "string" ? municipioRaw : "";
 	const errors = form.formState.errors;
 
 	const { data: municipiosData, isLoading: carregandoMunicipios } = useQuery({
@@ -87,12 +86,31 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 
 	useEffect(() => {
 		if (!fiscal) return;
+		const ufSalva = String(fiscal.uf ?? "")
+			.trim()
+			.toUpperCase();
+		const uf =
+			estadosData?.data.find((estado) => estado.idestado === ufSalva)
+				?.idestado ??
+			estadosData?.data.find((estado) => estado.codigoIbge === ufSalva)
+				?.idestado ??
+			ufSalva;
+		const municipioDigitos = String(fiscal.codigomunicipioibge ?? "").replace(
+			/\D/g,
+			"",
+		);
+		const crtNumero = Number(fiscal.crt);
+		const crt =
+			Number.isInteger(crtNumero) && crtNumero >= 1 && crtNumero <= 4
+				? crtNumero
+				: undefined;
+
 		form.reset({
 			razaosocial: fiscal.razaosocial ?? "",
 			nomefantasia: fiscal.nomefantasia ?? "",
 			inscricaoestadual: fiscal.inscricaoestadual ?? "",
 			inscricaomunicipal: fiscal.inscricaomunicipal ?? "",
-			crt: fiscal.crt ?? undefined,
+			crt,
 			cnae: fiscal.cnae ?? "",
 			indicadorie: fiscal.indicadorie ?? 1,
 			logradouro: fiscal.logradouro ?? "",
@@ -100,13 +118,15 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 			complemento: fiscal.complemento ?? "",
 			bairro: fiscal.bairro ?? "",
 			cep: fiscal.cep ?? "",
-			codigomunicipioibge: fiscal.codigomunicipioibge ?? "",
-			uf: fiscal.uf ?? "",
+			codigomunicipioibge: municipioDigitos
+				? municipioDigitos.padStart(7, "0")
+				: "",
+			uf,
 			codigopais: fiscal.codigopais ?? "1058",
 			telefone: fiscal.telefone ?? "",
 			email: fiscal.email ?? "",
 		});
-	}, [fiscal, form]);
+	}, [fiscal, estadosData, form]);
 
 	// Radix Select só exibe o label depois que as options existem; remonta e
 	// reafirma o valor salvo quando a lista de municípios da UF carrega.
@@ -114,7 +134,9 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 		if (carregandoMunicipios || !municipiosData?.data.length) return;
 		const municipioSalvo = form.getValues("codigomunicipioibge");
 		if (!municipioSalvo || typeof municipioSalvo !== "string") return;
-		const existe = municipiosData.data.some((m) => m.idcidade === municipioSalvo);
+		const existe = municipiosData.data.some(
+			(m) => String(m.idcidade) === String(municipioSalvo),
+		);
 		if (existe) {
 			form.setValue("codigomunicipioibge", municipioSalvo, {
 				shouldValidate: true,
@@ -169,6 +191,7 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 									CRT (código regime tributário NF-e)
 								</FieldLabel>
 								<Select
+									key={`crt-${form.watch("crt") ?? "vazio"}`}
 									value={
 										form.watch("crt") != null
 											? String(form.watch("crt"))
@@ -275,6 +298,7 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 							<Field data-invalid={!!errors.uf}>
 								<FieldLabel htmlFor="uf">UF</FieldLabel>
 								<Select
+									key={`uf-${uf || "vazio"}-${estadosData?.data.length ?? 0}`}
 									value={uf || undefined}
 									onValueChange={(v) => {
 										form.setValue("uf", v, { shouldValidate: true });
@@ -319,7 +343,10 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 									</SelectTrigger>
 									<SelectContent>
 										{municipiosData?.data.map((m) => (
-											<SelectItem key={m.idcidade} value={m.idcidade}>
+											<SelectItem
+												key={String(m.idcidade)}
+												value={String(m.idcidade)}
+											>
 												{m.nome}
 											</SelectItem>
 										))}
@@ -327,9 +354,7 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 								</Select>
 								<FieldError
 									errors={
-										erros.codigomunicipioibge
-											? [erros.codigomunicipioibge]
-											: []
+										erros.codigomunicipioibge ? [erros.codigomunicipioibge] : []
 									}
 								/>
 							</Field>

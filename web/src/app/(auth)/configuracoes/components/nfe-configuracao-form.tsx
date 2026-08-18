@@ -31,11 +31,45 @@ import {
 import { BotaoAlterarNumeracao } from "./dialog-alterar-numeracao";
 import { NfeSeriesSection } from "./nfe-series-section";
 
+function ambienteSefaz(valor: unknown): 1 | 2 {
+	return Number(valor) === 1 ? 1 : 2;
+}
+
 interface NfeConfiguracaoFormProps {
 	idempresa: string;
 }
 
 export function NfeConfiguracaoForm({ idempresa }: NfeConfiguracaoFormProps) {
+	const { data: config, isLoading } = useQuery({
+		queryKey: ["nfe-configuracao", idempresa],
+		queryFn: () => nfeConfiguracaoService.buscar(idempresa),
+	});
+
+	if (isLoading || !config) {
+		return (
+			<div className="flex justify-center py-8">
+				<div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+			</div>
+		);
+	}
+
+	return (
+		<NfeConfiguracaoFormCampos
+			key={config.id}
+			idempresa={idempresa}
+			config={config}
+		/>
+	);
+}
+
+function NfeConfiguracaoFormCampos({
+	idempresa,
+	config,
+}: NfeConfiguracaoFormProps & {
+	config: NonNullable<
+		Awaited<ReturnType<typeof nfeConfiguracaoService.buscar>>
+	>;
+}) {
 	const queryClient = useQueryClient();
 	const arquivoRef = useRef<HTMLInputElement>(null);
 	const [senhaCert, setSenhaCert] = useState("");
@@ -45,11 +79,6 @@ export function NfeConfiguracaoForm({ idempresa }: NfeConfiguracaoFormProps) {
 	);
 	const [resultadoEmissao, setResultadoEmissao] =
 		useState<ResultadoEmissaoTeste | null>(null);
-
-	const { data: config, isLoading } = useQuery({
-		queryKey: ["nfe-configuracao", idempresa],
-		queryFn: () => nfeConfiguracaoService.buscar(idempresa),
-	});
 
 	const { data: certificados = [] } = useQuery({
 		queryKey: ["certificados-digitais", idempresa],
@@ -67,19 +96,17 @@ export function NfeConfiguracaoForm({ idempresa }: NfeConfiguracaoFormProps) {
 		z.output<typeof nfeConfiguracaoSchema>
 	>({
 		resolver: zodResolver(nfeConfiguracaoSchema),
-		values: config
-			? {
-					ambiente: config.ambiente,
-					idcertificadoativo: config.idcertificadoativo ?? null,
-					tokenibpt: config.tokenibpt ?? "",
-					emailenvioxml: config.emailenvioxml ?? "",
-					infresptec_cnpj: config.infresptec_cnpj ?? "",
-					infresptec_nome: config.infresptec_nome ?? "",
-					infresptec_email: config.infresptec_email ?? "",
-					infresptec_fone: config.infresptec_fone ?? "",
-					contingenciaativa: config.contingenciaativa,
-				}
-			: undefined,
+		values: {
+			ambiente: ambienteSefaz(config.ambiente),
+			idcertificadoativo: config.idcertificadoativo ?? null,
+			tokenibpt: config.tokenibpt ?? "",
+			emailenvioxml: config.emailenvioxml ?? "",
+			infresptec_cnpj: config.infresptec_cnpj ?? "",
+			infresptec_nome: config.infresptec_nome ?? "",
+			infresptec_email: config.infresptec_email ?? "",
+			infresptec_fone: config.infresptec_fone ?? "",
+			contingenciaativa: config.contingenciaativa,
+		},
 	});
 
 	const salvarMutation = useMutation({
@@ -177,15 +204,7 @@ export function NfeConfiguracaoForm({ idempresa }: NfeConfiguracaoFormProps) {
 		onError: () => toast.error("Falha na emissão de teste"),
 	});
 
-	if (isLoading) {
-		return (
-			<div className="flex justify-center py-8">
-				<div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-			</div>
-		);
-	}
-
-	const ambiente = form.watch("ambiente");
+	const ambiente = ambienteSefaz(form.watch("ambiente"));
 
 	return (
 		<div className="space-y-6">
@@ -209,6 +228,7 @@ export function NfeConfiguracaoForm({ idempresa }: NfeConfiguracaoFormProps) {
 						<Field>
 							<FieldLabel>Ambiente</FieldLabel>
 							<Select
+								key={`ambiente-nfe-${ambiente}`}
 								value={String(ambiente)}
 								onValueChange={(v) => form.setValue("ambiente", Number(v))}
 							>

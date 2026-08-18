@@ -3,6 +3,8 @@ import z from "zod";
 import { atualizarVendaNfcePdvService } from "@/service/nfce-emissao/atualizar-venda-nfce-pdv.js";
 import { buscarDadosCupomNfceService } from "@/service/nfce-emissao/buscar-dados-cupom-nfce.js";
 import { buscarNfceParaEditarService } from "@/service/nfce-emissao/buscar-nfce-para-editar.js";
+import { cancelarNfceService } from "@/service/nfce-emissao/cancelar-nfce.js";
+import { inutilizarNfcePorNotaService } from "@/service/nfce-emissao/inutilizar-nfce-por-nota.js";
 import { inutilizarNfceVendaPdvService } from "@/service/nfce-emissao/inutilizar-nfce-venda-pdv.js";
 import { listarNfcePendentesService } from "@/service/nfce-emissao/listar-nfce-pendentes.js";
 import { reemitirNfceService } from "@/service/nfce-emissao/reemitir-nfce.js";
@@ -374,6 +376,83 @@ export async function transmitirNfceContingencia(
 				error: resultado.error,
 				code: resultado.code,
 			});
+		}
+
+		return reply.status(resultado.status).send(resultado.body);
+	} catch (error) {
+		console.error(error);
+		if (error instanceof z.ZodError) {
+			return reply.status(400).send({
+				error: "Erro de validação",
+				code: "VALIDATION_ERROR",
+				details: error.issues,
+			});
+		}
+		return reply.status(httpErroInterno().status).send(httpErroInterno());
+	}
+}
+
+export async function cancelarNfce(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
+	try {
+		if (!request.user) {
+			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
+		}
+
+		const { idnotafiscal } = paramsNotaSchema.parse(request.params);
+		const { justificativa } = bodyInutilizarSchema
+			.pick({ justificativa: true })
+			.parse(request.body);
+
+		const resultado = await cancelarNfceService({
+			idusuario: request.user.id,
+			idnotafiscal,
+			justificativa,
+		});
+
+		if (!resultado.success) {
+			return reply.status(resultado.status).send(resultado);
+		}
+
+		return reply.status(resultado.status).send(resultado.body);
+	} catch (error) {
+		console.error(error);
+		if (error instanceof z.ZodError) {
+			return reply.status(400).send({
+				error: "Erro de validação",
+				code: "VALIDATION_ERROR",
+				details: error.issues,
+			});
+		}
+		return reply.status(httpErroInterno().status).send(httpErroInterno());
+	}
+}
+
+export async function inutilizarNfcePorNota(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
+	try {
+		if (!request.user) {
+			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
+		}
+
+		const { idnotafiscal } = paramsNotaSchema.parse(request.params);
+		const { idempresa, justificativa } = bodyInutilizarSchema.parse(
+			request.body,
+		);
+
+		const resultado = await inutilizarNfcePorNotaService({
+			idusuario: request.user.id,
+			idempresa,
+			idnotafiscal,
+			justificativa,
+		});
+
+		if (!resultado.success) {
+			return reply.status(resultado.status).send(resultado);
 		}
 
 		return reply.status(resultado.status).send(resultado.body);

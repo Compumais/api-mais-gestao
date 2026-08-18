@@ -146,6 +146,7 @@ export type ListarNotasFiscaisPorEmpresaParametros = {
 	identidade?: string | undefined;
 	status?: number | undefined;
 	tipoorigem?: number | undefined;
+	modelo?: string | undefined;
 	idcfop?: string | undefined;
 	dataInicio?: string | undefined;
 	dataFim?: string | undefined;
@@ -161,6 +162,7 @@ export async function listarNotasFiscaisPorEmpresa({
 	identidade,
 	status,
 	tipoorigem,
+	modelo,
 	idcfop,
 	dataInicio,
 	dataFim,
@@ -191,6 +193,10 @@ export async function listarNotasFiscaisPorEmpresa({
 
 	if (tipoorigem !== undefined) {
 		where.push(eq(notafiscal.tipoorigem, tipoorigem));
+	}
+
+	if (modelo) {
+		where.push(eq(notafiscal.modelo, modelo));
 	}
 
 	if (idcfop) {

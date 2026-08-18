@@ -11,7 +11,7 @@ import {
 import dayjs from "dayjs";
 import { Ban, FileX2 } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { CupomNaoFiscal } from "@/components/pdv/cupom-nao-fiscal";
 import { TableSkeleton } from "@/components/table-skeleton";
@@ -49,11 +49,7 @@ import {
 	type NfceListagem,
 	nfceService,
 } from "@/services/nfce.service";
-import {
-	cancelarNfe,
-	inutilizarNfe,
-	type NotaFiscalEmitida,
-} from "@/services/nfe-emissao.service";
+import type { NotaFiscalEmitida } from "@/services/nfe-emissao.service";
 import {
 	obterCodigoRejeicaoNota,
 	obterMotivoRejeicaoNota,
@@ -215,9 +211,16 @@ export default function NfcePage() {
 			justificativa: string;
 		}) => {
 			if (tipo === "cancelar") {
-				return cancelarNfe(nota.idnotafiscal, justificativa);
+				return nfceService.cancelar({
+					idnotafiscal: nota.idnotafiscal,
+					justificativa,
+				});
 			}
-			return inutilizarNfe(nota.idnotafiscal, justificativa);
+			return nfceService.inutilizar({
+				idempresa,
+				idnotafiscal: nota.idnotafiscal,
+				justificativa,
+			});
 		},
 		onSuccess: (_, variables) => {
 			toast.success(
@@ -237,7 +240,7 @@ export default function NfcePage() {
 		},
 	});
 
-	const handleImprimirCupom = async (idnotafiscal: string) => {
+	const handleImprimirCupom = useCallback(async (idnotafiscal: string) => {
 		setCarregandoCupomId(idnotafiscal);
 		try {
 			const dados = await nfceService.buscarCupom(idnotafiscal);
@@ -249,7 +252,7 @@ export default function NfcePage() {
 		} finally {
 			setCarregandoCupomId(null);
 		}
-	};
+	}, []);
 
 	const columns = useMemo<ColumnDef<NfceListagem>[]>(
 		() => [
@@ -398,7 +401,7 @@ export default function NfcePage() {
 				},
 			},
 		],
-		[idempresa, reemitindoId, reemitirMutation, carregandoCupomId],
+		[reemitindoId, reemitirMutation, carregandoCupomId, handleImprimirCupom],
 	);
 
 	const table = useReactTable({

@@ -1,6 +1,10 @@
 import { BrowserWindow } from "electron";
 import { getConfig } from "../db/database";
 import { obterVenda } from "../db/repos";
+import {
+	type DadosComprovanteFechamentoCaixa,
+	montarTextoComprovanteFechamentoCaixa,
+} from "./comprovante-caixa";
 import { linhasPagamentoCupom } from "./cupom-pagamentos";
 import { type DestinoImpressora, enviarTextoImpressora } from "./destino";
 
@@ -153,6 +157,12 @@ export async function imprimirPreConta(idconta: string): Promise<{
 	linhas.push("Confira os itens antes de pagar.");
 	linhas.push("\n\n\n");
 	return enviarParaImpressora(linhas.join("\n"));
+}
+
+export async function imprimirComprovanteFechamentoCaixa(
+	dados: DadosComprovanteFechamentoCaixa,
+): Promise<{ ok: boolean; modo: string }> {
+	return enviarParaImpressora(montarTextoComprovanteFechamentoCaixa(dados));
 }
 
 export async function imprimirDanfce(params: {

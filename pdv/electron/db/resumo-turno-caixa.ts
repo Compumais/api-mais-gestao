@@ -6,6 +6,9 @@ export type VendaParaResumoTurno = {
 	valorpix: number;
 	valorcartao: number;
 	valortroco: number;
+	lanc_dinheiro?: number;
+	lanc_pix?: number;
+	lanc_cartao?: number;
 };
 
 export type PagamentosResumoTurno = {
@@ -37,14 +40,39 @@ function numero(valor: unknown): number {
 	return Number.isFinite(n) ? arredondarDinheiro(n) : 0;
 }
 
+export function valoresVendaParaResumo(
+	venda: VendaParaResumoTurno,
+): VendaParaResumoTurno {
+	const lancDinheiro = numero(venda.lanc_dinheiro);
+	const lancPix = numero(venda.lanc_pix);
+	const lancCartao = numero(venda.lanc_cartao);
+	if (lancDinheiro + lancPix + lancCartao > 0) {
+		return {
+			valortotal: numero(venda.valortotal),
+			valordinheiro: lancDinheiro,
+			valorpix: lancPix,
+			valorcartao: lancCartao,
+			valortroco: numero(venda.valortroco),
+		};
+	}
+	return {
+		valortotal: numero(venda.valortotal),
+		valordinheiro: numero(venda.valordinheiro),
+		valorpix: numero(venda.valorpix),
+		valorcartao: numero(venda.valorcartao),
+		valortroco: numero(venda.valortroco),
+	};
+}
+
 export function pagamentosVendaTurno(
 	venda: VendaParaResumoTurno,
 ): PagamentosResumoTurno {
-	const dinheiroBruto = numero(venda.valordinheiro);
-	const troco = numero(venda.valortroco);
+	const origem = valoresVendaParaResumo(venda);
+	const dinheiroBruto = origem.valordinheiro;
+	const troco = origem.valortroco;
 	const dinheiro = Math.max(0, arredondarDinheiro(dinheiroBruto - troco));
-	const cartao = numero(venda.valorcartao);
-	const pix = numero(venda.valorpix);
+	const cartao = origem.valorcartao;
+	const pix = origem.valorpix;
 	const prepago = 0;
 	const totalInformado = numero(venda.valortotal);
 	const total =
