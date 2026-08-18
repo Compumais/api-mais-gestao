@@ -98,7 +98,7 @@ export async function inutilizarNfeVendaService({
 			serie,
 			numeroInicial: numero,
 			numeroFinal: numero,
-			ano: obterAnoInutilizacaoNfe(nota),
+			ano: String(obterAnoInutilizacaoNfe(nota)).padStart(2, "0"),
 			justificativa: justificativaNormalizada,
 		},
 	});

@@ -22,7 +22,7 @@ final class NfeInutilizacaoService
 		$numeroInicial = (int) ($dados['numeroInicial'] ?? 0);
 		$numeroFinal = (int) ($dados['numeroFinal'] ?? $numeroInicial);
 		$justificativa = trim((string) ($dados['justificativa'] ?? ''));
-		$ano = isset($dados['ano']) ? (int) $dados['ano'] : null;
+		$ano = self::normalizarAnoInutilizacao($dados['ano'] ?? null);
 
 		if ($modelo !== 55 && $modelo !== 65) {
 			throw new \InvalidArgumentException(
@@ -59,7 +59,7 @@ final class NfeInutilizacaoService
 			$numeroFinal,
 			$justificativa,
 			null,
-			$ano,
+			$ano !== null ? (string) $ano : null,
 		);
 
 		$std = (new Standardize($response))->toStd();
@@ -75,5 +75,20 @@ final class NfeInutilizacaoService
 			'xmlRetorno' => $response,
 			'protocolo' => (string) ($inf->nProt ?? ''),
 		];
+	}
+
+	private static function normalizarAnoInutilizacao(mixed $ano): ?string
+	{
+		if ($ano === null || $ano === '') {
+			return null;
+		}
+		$numero = (int) $ano;
+		if ($numero >= 100) {
+			$numero %= 100;
+		}
+		if ($numero < 0) {
+			return null;
+		}
+		return str_pad((string) $numero, 2, '0', STR_PAD_LEFT);
 	}
 }
