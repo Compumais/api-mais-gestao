@@ -8,6 +8,8 @@ import {
 import { linhasPagamentoCupom } from "./cupom-pagamentos";
 import { type DestinoImpressora, enviarTextoImpressora } from "./destino";
 
+export { imprimirDanfce } from "./danfce";
+
 function money(n: number): string {
 	return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
@@ -163,20 +165,6 @@ export async function imprimirComprovanteFechamentoCaixa(
 	dados: DadosComprovanteFechamentoCaixa,
 ): Promise<{ ok: boolean; modo: string }> {
 	return enviarParaImpressora(montarTextoComprovanteFechamentoCaixa(dados));
-}
-
-export async function imprimirDanfce(params: {
-	vendaId: string;
-	chave?: string;
-	qrcode?: string;
-	contingencia?: boolean;
-	motivo?: string;
-}): Promise<{ ok: boolean; modo: string }> {
-	const texto = await montarTextoCupom(params.vendaId, {
-		...params,
-		danfce: true,
-	});
-	return enviarParaImpressora(texto);
 }
 
 async function destinoFiscal(): Promise<DestinoImpressora> {

@@ -2844,6 +2844,7 @@ export async function obterNfcePorVenda(idvenda: string): Promise<{
 	xml: string | null;
 	serie: number;
 	numero: number;
+	protocolo: string | null;
 	motivo_contingencia: string | null;
 } | null> {
 	return (
@@ -2856,9 +2857,10 @@ export async function obterNfcePorVenda(idvenda: string): Promise<{
 			xml: string | null;
 			serie: number;
 			numero: number;
+			protocolo: string | null;
 			motivo_contingencia: string | null;
 		}>(
-			`SELECT id, chave, qrcode, status, tpemis, xml, serie, numero, motivo_contingencia
+			`SELECT id, chave, qrcode, status, tpemis, xml, serie, numero, protocolo, motivo_contingencia
 			 FROM nfce_local WHERE idvenda = $1 ORDER BY criadoem DESC LIMIT 1`,
 			[idvenda],
 		)) ?? null

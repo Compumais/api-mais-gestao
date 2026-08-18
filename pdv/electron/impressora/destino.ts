@@ -2,6 +2,8 @@ import { Buffer } from "node:buffer";
 import net from "node:net";
 import { BrowserWindow } from "electron";
 import { execute } from "../db/database";
+import { MARCADOR_QR_DANFCE } from "./danfce-layout";
+import { bytesQrEscpos } from "./qr-escpos";
 
 export type TipoDestinoImpressora = "sistema" | "rede" | "arquivo";
 
@@ -59,13 +61,26 @@ function paraLatin1(texto: string): Buffer {
 	return Buffer.from(bytes);
 }
 
-function montarEscpos(texto: string): Buffer {
+function montarEscpos(texto: string, qrcode?: string): Buffer {
 	const init = Buffer.from([0x1b, 0x40]);
 	const codepage = Buffer.from([0x1b, 0x74, 0x10]);
-	const corpo = paraLatin1(texto.replace(/\n/g, "\r\n"));
+	const alignCenter = Buffer.from([0x1b, 0x61, 0x01]);
+	const alignLeft = Buffer.from([0x1b, 0x61, 0x00]);
 	const avanco = Buffer.from([0x1b, 0x64, 0x04]);
 	const corte = Buffer.from([0x1d, 0x56, 0x41, 0x03]);
-	return Buffer.concat([init, codepage, corpo, avanco, corte]);
+	const partes: Buffer[] = [init, codepage];
+	const qr = qrcode?.trim() ?? "";
+	const chunks = texto.split(MARCADOR_QR_DANFCE);
+	chunks.forEach((chunk, idx) => {
+		if (chunk) {
+			partes.push(paraLatin1(chunk.replace(/\n/g, "\r\n")));
+		}
+		if (idx < chunks.length - 1 && qr) {
+			partes.push(alignCenter, bytesQrEscpos(qr), alignLeft);
+		}
+	});
+	partes.push(avanco, corte);
+	return Buffer.concat(partes);
 }
 
 async function enviarRawTcp(
@@ -121,15 +136,8 @@ function escapeHtml(value: string): string {
 		.replace(/>/g, "&gt;");
 }
 
-async function enviarSpoolerWindows(
-	texto: string,
-	deviceNamePreferido?: string,
-): Promise<{ ok: boolean; modo: string }> {
-	const win = new BrowserWindow({
-		show: false,
-		webPreferences: { offscreen: true },
-	});
-	const html = `<!DOCTYPE html>
+function htmlCupomSimples(texto: string): string {
+	return `<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8" />
@@ -149,6 +157,16 @@ async function enviarSpoolerWindows(
 </head>
 <body><pre>${escapeHtml(texto)}</pre></body>
 </html>`;
+}
+
+async function enviarSpoolerWindows(
+	html: string,
+	deviceNamePreferido?: string,
+): Promise<{ ok: boolean; modo: string }> {
+	const win = new BrowserWindow({
+		show: false,
+		webPreferences: { offscreen: true },
+	});
 	try {
 		await win.loadURL(
 			`data:text/html;charset=utf-8,${encodeURIComponent(html)}`,
@@ -199,14 +217,20 @@ async function gravarBufferLocal(texto: string): Promise<void> {
 	);
 }
 
-export async function enviarTextoImpressora(
-	texto: string,
-	destino: DestinoImpressora,
-	opcoes?: { estrito?: boolean },
-): Promise<{ ok: boolean; modo: string }> {
-	const estrito = Boolean(opcoes?.estrito);
+async function enviarParaDestino(params: {
+	texto: string;
+	html: string;
+	destino: DestinoImpressora;
+	qrcode?: string;
+	estrito?: boolean;
+}): Promise<{ ok: boolean; modo: string }> {
+	const { texto, html, destino, qrcode, estrito } = params;
+	const textoArquivo = texto.replaceAll(
+		MARCADOR_QR_DANFCE,
+		qrcode ? "[QR CODE NFC-e]" : "",
+	);
 	if (destino.tipo === "arquivo") {
-		await gravarBufferLocal(texto);
+		await gravarBufferLocal(textoArquivo);
 		return { ok: true, modo: "arquivo" };
 	}
 	if (!destinoPronto(destino)) {
@@ -217,7 +241,7 @@ export async function enviarTextoImpressora(
 					: "Selecione a impressora",
 			);
 		}
-		await gravarBufferLocal(texto);
+		await gravarBufferLocal(textoArquivo);
 		return { ok: true, modo: "buffer_local" };
 	}
 
@@ -226,17 +250,48 @@ export async function enviarTextoImpressora(
 			destino.host ?? "",
 			destino.porta,
 		);
-		await enviarRawTcp(host, porta, montarEscpos(texto));
+		await enviarRawTcp(host, porta, montarEscpos(texto, qrcode));
 		return { ok: true, modo: "rede" };
 	}
 
 	try {
-		return await enviarSpoolerWindows(texto, destino.nome);
+		return await enviarSpoolerWindows(html, destino.nome);
 	} catch (err) {
 		if (estrito) {
 			throw err;
 		}
-		await gravarBufferLocal(texto);
+		await gravarBufferLocal(textoArquivo);
 		return { ok: true, modo: "buffer_local" };
 	}
+}
+
+export async function enviarTextoImpressora(
+	texto: string,
+	destino: DestinoImpressora,
+	opcoes?: { estrito?: boolean },
+): Promise<{ ok: boolean; modo: string }> {
+	return enviarParaDestino({
+		texto,
+		html: htmlCupomSimples(texto),
+		destino,
+		estrito: Boolean(opcoes?.estrito),
+	});
+}
+
+export async function enviarDanfceImpressora(
+	params: {
+		texto: string;
+		html: string;
+		qrcode?: string;
+	},
+	destino: DestinoImpressora,
+	opcoes?: { estrito?: boolean },
+): Promise<{ ok: boolean; modo: string }> {
+	return enviarParaDestino({
+		texto: params.texto,
+		html: params.html,
+		qrcode: params.qrcode,
+		destino,
+		estrito: Boolean(opcoes?.estrito),
+	});
 }
