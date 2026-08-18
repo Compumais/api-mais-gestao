@@ -66,7 +66,7 @@ final class NfeInutilizacaoService
 		$inf = $std->infInut ?? $std;
 		$cStat = (string) ($inf->cStat ?? $std->cStat ?? '');
 		$xMotivo = (string) ($inf->xMotivo ?? $std->xMotivo ?? '');
-		$sucesso = in_array($cStat, ['102', '563'], true);
+		$sucesso = in_array($cStat, ['102', '241', '563'], true);
 
 		return [
 			'sucesso' => $sucesso,

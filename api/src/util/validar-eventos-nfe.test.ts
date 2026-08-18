@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { NFE_STATUS } from "@/util/nfe-status.js";
 import {
+	inutilizacaoJaEncerradaNaSefaz,
 	notaEstaDentroPrazoCancelamentoNfe,
 	validarCancelamentoNfe,
 	validarInutilizacaoNfe,
@@ -88,5 +89,19 @@ describe("validar-eventos-nfe", () => {
 				datahoraemissao: "2026-06-23T10:00:00.000Z",
 			}, new Date("2026-06-23T20:00:00.000Z")),
 		).toBe(true);
+	});
+
+	it("reconhece inutilização já encerrada na SEFAZ", () => {
+		expect(inutilizacaoJaEncerradaNaSefaz("563")).toBe(true);
+		expect(inutilizacaoJaEncerradaNaSefaz("241")).toBe(true);
+		expect(
+			inutilizacaoJaEncerradaNaSefaz(
+				undefined,
+				"Rejeição: Um número da faixa já foi utilizado",
+			),
+		).toBe(true);
+		expect(inutilizacaoJaEncerradaNaSefaz("215", "Rejeição genérica")).toBe(
+			false,
+		);
 	});
 });

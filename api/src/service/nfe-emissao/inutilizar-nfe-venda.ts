@@ -11,6 +11,7 @@ import { NFE_STATUS } from "@/util/nfe-status.js";
 import { resolverModeloDocumentoFiscal } from "@/util/resolver-modelo-documento-fiscal.js";
 import { normalizarCodigoStatusNfe } from "@/util/resolver-status-emissao-nfe.js";
 import {
+	inutilizacaoJaEncerradaNaSefaz,
 	normalizarJustificativaNfe,
 	numeracaoInutilizacaoDaNota,
 	obterAnoInutilizacaoNfe,
@@ -103,15 +104,18 @@ export async function inutilizarNfeVendaService({
 		},
 	});
 
-	if (!resposta.sucesso) {
-		return httpBadRequest(
-			resposta.xMotivo?.trim() ||
-				resposta.erro?.trim() ||
-				"SEFAZ não autorizou a inutilização da numeração",
-		);
+	const cStat = String(resposta.cStat ?? "").trim();
+	const xMotivo =
+		resposta.xMotivo?.trim() ||
+		resposta.erro?.trim() ||
+		"SEFAZ não autorizou a inutilização da numeração";
+	if (
+		!resposta.sucesso &&
+		!inutilizacaoJaEncerradaNaSefaz(cStat, xMotivo)
+	) {
+		return httpBadRequest(xMotivo);
 	}
 
-	const cStat = String(resposta.cStat ?? "").trim();
 	const identificador = `inutil-${serie}-${numero}`;
 
 	if (resposta.xmlRetorno?.trim()) {
@@ -130,7 +134,7 @@ export async function inutilizarNfeVendaService({
 	await atualizarNotaFiscal(idnotafiscal, {
 		status: NFE_STATUS.INUTILIZADA,
 		justificativacancelamentonfe: justificativaNormalizada,
-		mensagemprotocolonfe: resposta.xMotivo ?? null,
+		mensagemprotocolonfe: resposta.xMotivo?.trim() || xMotivo,
 		codigostatusprotocolonfe: normalizarCodigoStatusNfe(cStat),
 		protocolonfe: resposta.protocolo ?? nota.protocolonfe,
 	});
@@ -139,7 +143,7 @@ export async function inutilizarNfeVendaService({
 		idnotafiscal,
 		status: NFE_STATUS.INUTILIZADA,
 		cStat,
-		xMotivo: resposta.xMotivo,
+		xMotivo,
 		protocolo: resposta.protocolo,
 	});
 }
