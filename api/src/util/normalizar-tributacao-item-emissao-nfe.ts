@@ -1,4 +1,5 @@
 import type { ItemPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
+import { aplicarPisCofinsItemEmissao } from "@/util/montar-grupo-pis-cofins-item-nfe.js";
 
 const CSOSN_PADRAO_SN = "102";
 const CST_PADRAO_LP_LR = "00";
@@ -54,8 +55,10 @@ export function normalizarItensEmissaoNfe(
 	crt: number | null | undefined,
 	itens: ItemPayloadNfe[],
 ): ItemPayloadNfe[] {
-	return itens.map((item) => ({
-		...item,
-		...normalizarTributacaoIcmsItem(crt, item),
-	}));
+	return itens.map((item) =>
+		aplicarPisCofinsItemEmissao({
+			...item,
+			...normalizarTributacaoIcmsItem(crt, item),
+		}),
+	);
 }

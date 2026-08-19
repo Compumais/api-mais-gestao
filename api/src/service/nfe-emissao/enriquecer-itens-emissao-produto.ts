@@ -1,6 +1,10 @@
-import type { ItemPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
 import { buscarCestPorId } from "@/repositories/cest-repositories.js";
 import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
+import type { ItemPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
+import {
+	cstPisCofinsAusenteOuInvalido,
+	normalizarCstPisCofins,
+} from "@/util/montar-grupo-pis-cofins-item-nfe.js";
 import { normalizarCodigoCest } from "@/util/validar-cest-item-emissao-nfe.js";
 
 function sanitizarGtin(valor?: string | number | null): string | undefined {
@@ -58,6 +62,51 @@ async function resolverCestProduto(
 	return normalizarCodigoCest(produto.cest);
 }
 
+function paraNumeroOpcional(
+	valor?: string | number | null,
+): number | undefined {
+	if (valor == null || valor === "") return undefined;
+	const numero = typeof valor === "number" ? valor : Number(valor);
+	return Number.isFinite(numero) ? numero : undefined;
+}
+
+function aplicarPisCofinsDoProduto(
+	item: ItemPayloadNfe,
+	produto: NonNullable<Awaited<ReturnType<typeof buscarProdutoPorId>>>,
+): ItemPayloadNfe {
+	const resultado = { ...item };
+
+	if (cstPisCofinsAusenteOuInvalido(resultado.cstPis)) {
+		const cstProduto = normalizarCstPisCofins(produto.cstpis);
+		if (cstProduto && !cstPisCofinsAusenteOuInvalido(cstProduto)) {
+			resultado.cstPis = cstProduto;
+		}
+	}
+
+	if (cstPisCofinsAusenteOuInvalido(resultado.cstCofins)) {
+		const cstProduto = normalizarCstPisCofins(produto.cstcofins);
+		if (cstProduto && !cstPisCofinsAusenteOuInvalido(cstProduto)) {
+			resultado.cstCofins = cstProduto;
+		}
+	}
+
+	if (resultado.aliquotaPis == null) {
+		const aliquota = paraNumeroOpcional(produto.aliquotapis);
+		if (aliquota != null) {
+			resultado.aliquotaPis = aliquota;
+		}
+	}
+
+	if (resultado.aliquotaCofins == null) {
+		const aliquota = paraNumeroOpcional(produto.aliquotacofins);
+		if (aliquota != null) {
+			resultado.aliquotaCofins = aliquota;
+		}
+	}
+
+	return resultado;
+}
+
 export async function enriquecerItensEmissaoComProduto(
 	itens: ItemPayloadNfe[],
 ): Promise<ItemPayloadNfe[]> {
@@ -88,6 +137,8 @@ export async function enriquecerItensEmissaoComProduto(
 			if (produto.codigo != null && !resultado.codigoProduto) {
 				resultado.codigoProduto = String(produto.codigo);
 			}
+
+			resultado = aplicarPisCofinsDoProduto(resultado, produto);
 
 			if (!normalizarCodigoCest(resultado.cest)) {
 				const cestProduto = await resolverCestProduto(produto);

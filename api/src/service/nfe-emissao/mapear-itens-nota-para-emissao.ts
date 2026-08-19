@@ -1,6 +1,7 @@
 import type { NotaFiscalItem } from "@/model/nota-fiscal-item-model.js";
 import type { ItemPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
 import { extrairTributacaoItemEmissaoNfe } from "@/util/dados-emissao-nfe-nota.js";
+import { normalizarCstPisCofins } from "@/util/montar-grupo-pis-cofins-item-nfe.js";
 import { normalizarCodigoCest } from "@/util/validar-cest-item-emissao-nfe.js";
 
 function mapearSituacaoTributaria(
@@ -18,9 +19,12 @@ function mapearSituacaoTributaria(
 	return { cst: codigo };
 }
 
-function paraNumero(valor: string | number | null | undefined): number | undefined {
+function paraNumero(
+	valor: string | number | null | undefined,
+): number | undefined {
 	if (valor == null || valor === "") return undefined;
-	const numero = typeof valor === "number" ? valor : Number.parseFloat(String(valor));
+	const numero =
+		typeof valor === "number" ? valor : Number.parseFloat(String(valor));
 	return Number.isFinite(numero) ? numero : undefined;
 }
 
@@ -31,14 +35,14 @@ export function mapearItensNotaParaEmissao(
 		const quantidade = Number(item.quantidade ?? 0);
 		const valorUnitario = Number(item.precounitario ?? 0);
 		const tributacao = mapearSituacaoTributaria(item.situacaotributaria);
-		const tributacaoSalva = extrairTributacaoItemEmissaoNfe(item.dadosimportacao);
+		const tributacaoSalva = extrairTributacaoItemEmissaoNfe(
+			item.dadosimportacao,
+		);
 		const pCredSN = paraNumero(tributacaoSalva?.pCredSN);
 		const vCredICMSSN = paraNumero(tributacaoSalva?.vCredICMSSN);
 		const usaCsosn = Boolean(tributacao.csosn);
 		// No Simples, percentualicms/pCredSN não viram aliquotaIcms (crédito fica só em pCredSN).
-		const aliquotaIcms = usaCsosn
-			? undefined
-			: paraNumero(item.percentualicms);
+		const aliquotaIcms = usaCsosn ? undefined : paraNumero(item.percentualicms);
 		const baseIcms = usaCsosn
 			? undefined
 			: item.baseicms
@@ -56,13 +60,12 @@ export function mapearItensNotaParaEmissao(
 				)?.tributacao?.cest,
 			) ??
 			normalizarCodigoCest(
-				(
-					item.dadosimportacao as
-						| { cestXml?: string }
-						| null
-						| undefined
-				)?.cestXml,
+				(item.dadosimportacao as { cestXml?: string } | null | undefined)
+					?.cestXml,
 			);
+
+		const aliquotaPis = paraNumero(item.aliquotapis);
+		const aliquotaCofins = paraNumero(item.aliquotacofins);
 
 		return {
 			idproduto: item.idproduto ?? undefined,
@@ -75,8 +78,10 @@ export function mapearItensNotaParaEmissao(
 			valorUnitario: valorUnitario > 0 ? valorUnitario : 0.01,
 			...tributacao,
 			orig: item.origem ?? 0,
-			cstPis: item.cstpis ?? undefined,
-			cstCofins: item.cstcofins ?? undefined,
+			cstPis: normalizarCstPisCofins(item.cstpis),
+			cstCofins: normalizarCstPisCofins(item.cstcofins),
+			...(aliquotaPis != null ? { aliquotaPis } : {}),
+			...(aliquotaCofins != null ? { aliquotaCofins } : {}),
 			...(baseIcms != null ? { baseIcms } : {}),
 			...(aliquotaIcms != null ? { aliquotaIcms } : {}),
 			...(pCredSN != null ? { pCredSN } : {}),

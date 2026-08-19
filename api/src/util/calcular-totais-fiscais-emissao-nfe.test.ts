@@ -132,4 +132,42 @@ describe("calcularTotaisFiscaisEmissaoNfe", () => {
 		expect(totais.totalProdutos).toBe(51);
 		expect(totais.totalNota).toBe(51);
 	});
+
+	it("normaliza CST PIS 1 dígito como 01 e calcula o valor", () => {
+		const totais = calcularTotaisFiscaisEmissaoNfe(
+			3,
+			[
+				{
+					quantidade: 1,
+					valorUnitario: 100,
+					cstPis: "1",
+					cstCofins: "1",
+					aliquotaPis: 1.65,
+					aliquotaCofins: 7.6,
+				},
+			],
+			{},
+		);
+
+		expect(totais.valorPis).toBe(1.65);
+		expect(totais.valorCofins).toBe(7.6);
+	});
+
+	it("CST PIS vazio não destaca PIS (fallback NT)", () => {
+		const totais = calcularTotaisFiscaisEmissaoNfe(
+			3,
+			[
+				{
+					quantidade: 1,
+					valorUnitario: 100,
+					aliquotaPis: 1.65,
+					aliquotaCofins: 7.6,
+				},
+			],
+			{},
+		);
+
+		expect(totais.valorPis).toBe(0);
+		expect(totais.valorCofins).toBe(0);
+	});
 });
