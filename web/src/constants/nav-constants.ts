@@ -325,7 +325,7 @@ export const DATA = {
 				},
 				{
 					title: "Integração contábil",
-					url: "/integracao-contabil",
+					url: "/configuracoes?tab=integracoes-contabeis",
 				},
 				{
 					title: "Código reduzidos",

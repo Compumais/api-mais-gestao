@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useConfiguracao } from "@/hooks/use-configuracao";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { PageContainer } from "../components/page-container";
+import { DominioIntegracaoSection } from "./components/dominio-integracao-section";
 import { EmpresaFiscalForm } from "./components/empresa-fiscal-form";
 import { ImpressaoForm } from "./components/impressao-form";
 import { IntegracaoForm } from "./components/integracao-form";
@@ -68,6 +69,9 @@ export default function ConfiguracoesPage() {
 							<TabsTrigger value="nfse">NFS-e</TabsTrigger>
 							<TabsTrigger value="ordem-servico">Ordem de serviço</TabsTrigger>
 							<TabsTrigger value="integracao">Integrações</TabsTrigger>
+							<TabsTrigger value="integracoes-contabeis">
+								Integrações contábeis
+							</TabsTrigger>
 							<TabsTrigger value="relatorios">Relatórios</TabsTrigger>
 							<TabsTrigger value="impressao">Impressão</TabsTrigger>
 						</TabsList>
@@ -104,6 +108,10 @@ export default function ConfiguracoesPage() {
 								configuracao={configuracao}
 								idempresa={empresa.id}
 							/>
+						</TabsContent>
+
+						<TabsContent value="integracoes-contabeis" className="mt-4">
+							<DominioIntegracaoSection idempresa={empresa.id} />
 						</TabsContent>
 
 						<TabsContent value="relatorios" className="mt-4">
