@@ -23,6 +23,7 @@ import {
 } from "@/util/http-util.js";
 import { isCfopEntrada } from "@/util/cfop-entrada-validacao.js";
 import { recalcularDadosConversao } from "@/util/calculo-importacao-nf.js";
+import { resolverDataEntradaImportacao } from "@/util/data-competencia-nota-fiscal.js";
 import { STATUS_RASCUNHO_IMPORTACAO } from "@/util/nota-fiscal-constants.js";
 import { parseNFeXml } from "@/util/nfe-xml-parser.js";
 import {
@@ -282,10 +283,13 @@ async function executarCriarRascunhoImportacaoNf({
 		modelo: truncarTexto(dadosXml.modelo, 4),
 		chavenfe: truncarTexto(dadosXml.chavenfe, 44),
 		emissao: dadosXml.emissao ?? null,
-		entradasaida: dadosXml.entradasaida ?? null,
+		entradasaida: resolverDataEntradaImportacao(
+			dadosXml.entradasaida,
+			datahoraAtual,
+		),
 		datahoraemissao: normalizarDataHoraTimestamp(dadosXml.datahoraemissao),
 		datahoraentradasaida: normalizarDataHoraTimestamp(
-			dadosXml.datahoraentradasaida,
+			dadosXml.datahoraentradasaida ?? datahoraAtual,
 		),
 		tipodocumento: truncarTexto(dadosXml.tipodocumento, 2),
 		cnpjemissor: truncarTexto(dadosXml.cnpjemissor, 14),

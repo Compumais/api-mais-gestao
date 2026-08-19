@@ -1,18 +1,20 @@
 import cron, { type ScheduledTask } from "node-cron";
+import {
+	liberarLockAgendador,
+	tentarAdquirirLockAgendador,
+} from "@/repositories/tarefa-execucao-repositories.js";
+import { executarJob } from "./executar-job.js";
 import { executarAlertasVencimento } from "./jobs/alertas-vencimento.js";
 import { executarConciliacaoPendente } from "./jobs/conciliacao-pendente.js";
 import { executarProcessarAutomacoes } from "./jobs/processar-automacoes.js";
 import { executarRelatoriosAutomaticos } from "./jobs/relatorios-automaticos.js";
 import { executarSaldoBaixo } from "./jobs/saldo-baixo.js";
-import { executarVerificarCiclosPlano } from "./jobs/verificar-ciclos-plano.js";
+import { executarSyncDominio } from "./jobs/sync-dominio.js";
 import { executarSyncInboundInvoices } from "./jobs/sync-inbound-invoices.js";
-import { executarJob } from "./executar-job.js";
-import {
-	liberarLockAgendador,
-	tentarAdquirirLockAgendador,
-} from "@/repositories/tarefa-execucao-repositories.js";
+import { executarVerificarCiclosPlano } from "./jobs/verificar-ciclos-plano.js";
 import {
 	LOCK_AGENDADOR_AUTOMACOES,
+	LOCK_AGENDADOR_DOMINIO,
 	LOCK_AGENDADOR_INBOUND_NFE,
 	LOCK_AGENDADOR_PRINCIPAL,
 } from "./types.js";
@@ -62,7 +64,9 @@ async function executarCicloPlanos() {
 }
 
 async function executarCicloInboundNfe() {
-	const adquiriu = await tentarAdquirirLockAgendador(LOCK_AGENDADOR_INBOUND_NFE);
+	const adquiriu = await tentarAdquirirLockAgendador(
+		LOCK_AGENDADOR_INBOUND_NFE,
+	);
 	if (!adquiriu) {
 		return;
 	}
@@ -107,6 +111,29 @@ async function executarCicloAutomacoes() {
 	}
 }
 
+async function executarCicloDominio() {
+	const adquiriu = await tentarAdquirirLockAgendador(LOCK_AGENDADOR_DOMINIO);
+	if (!adquiriu) {
+		return;
+	}
+
+	const contexto = { agora: new Date() };
+
+	try {
+		await executarJob(
+			"sync_dominio",
+			executarSyncDominio,
+			contexto,
+			null,
+			180_000,
+		);
+	} catch (error) {
+		console.error("[agendador] Erro no ciclo Domínio:", error);
+	} finally {
+		await liberarLockAgendador(LOCK_AGENDADOR_DOMINIO);
+	}
+}
+
 export function iniciarAgendador() {
 	if (tarefasAgendadas.length > 0) {
 		return;
@@ -128,9 +155,19 @@ export function iniciarAgendador() {
 		void executarCicloAutomacoes();
 	});
 
-	tarefasAgendadas = [cronAlertas, cronPlanos, cronInboundNfe, cronAutomacoes];
+	const cronDominio = cron.schedule("*/2 * * * *", () => {
+		void executarCicloDominio();
+	});
+
+	tarefasAgendadas = [
+		cronAlertas,
+		cronPlanos,
+		cronInboundNfe,
+		cronAutomacoes,
+		cronDominio,
+	];
 	console.log(
-		"[agendador] Iniciado — alertas/automações a cada 5 min, ciclos de plano às 06:00, inbound NF-e a cada 10 min",
+		"[agendador] Iniciado — alertas/automações a cada 5 min, ciclos de plano às 06:00, inbound NF-e a cada 10 min, Domínio a cada 2 min",
 	);
 }
 
@@ -143,31 +180,23 @@ export function pararAgendador() {
 
 export const JOBS_DISPONIVEIS = {
 	alertasVencimento: () =>
-		executarJob(
-			"alerta_vencimento",
-			executarAlertasVencimento,
-			{ agora: new Date() },
-		),
+		executarJob("alerta_vencimento", executarAlertasVencimento, {
+			agora: new Date(),
+		}),
 	saldoBaixo: () =>
 		executarJob("saldo_baixo", executarSaldoBaixo, { agora: new Date() }),
 	conciliacaoPendente: () =>
-		executarJob(
-			"conciliacao_pendente",
-			executarConciliacaoPendente,
-			{ agora: new Date() },
-		),
+		executarJob("conciliacao_pendente", executarConciliacaoPendente, {
+			agora: new Date(),
+		}),
 	relatoriosAutomaticos: () =>
-		executarJob(
-			"relatorios_automaticos",
-			executarRelatoriosAutomaticos,
-			{ agora: new Date() },
-		),
+		executarJob("relatorios_automaticos", executarRelatoriosAutomaticos, {
+			agora: new Date(),
+		}),
 	verificarCiclosPlano: () =>
-		executarJob(
-			"verificar_ciclos_plano",
-			executarVerificarCiclosPlano,
-			{ agora: new Date() },
-		),
+		executarJob("verificar_ciclos_plano", executarVerificarCiclosPlano, {
+			agora: new Date(),
+		}),
 	syncInboundInvoices: () =>
 		executarJob(
 			"sync_inbound_nfe",
@@ -183,6 +212,14 @@ export const JOBS_DISPONIVEIS = {
 			{ agora: new Date() },
 			null,
 			900_000,
+		),
+	syncDominio: () =>
+		executarJob(
+			"sync_dominio",
+			executarSyncDominio,
+			{ agora: new Date() },
+			null,
+			180_000,
 		),
 } as const;
 

@@ -1,6 +1,7 @@
 import { consultarSituacaoChaveSefazGateway } from "@/lib/nfe-gateway-client.js";
 import type { NotaFiscal } from "@/model/nota-fiscal-model.js";
 import { atualizarNotaFiscal } from "@/repositories/nota-fiscal-repositories.js";
+import { enfileirarEnvioDominioSilencioso } from "@/service/dominio/enfileirar-envio-dominio.js";
 import { montarCredenciaisGatewayNfce } from "@/service/nfce-emissao/montar-credenciais-gateway-nfce.js";
 import { arquivarXmlNotaFiscal } from "@/service/nota-fiscal/arquivar-xml-nota-fiscal.js";
 import { extrairQrCodeNfceXml } from "@/util/extrair-qr-code-nfce-xml.js";
@@ -115,6 +116,12 @@ export async function reconciliarNfceAutorizadaSefaz(
 				tipo: "autorizado",
 			}).catch(console.error);
 		}
+
+		void enfileirarEnvioDominioSilencioso({
+			idempresa: nota.idempresa,
+			idnotafiscal: nota.id,
+			tipo: "autorizada",
+		});
 
 		return montarResultadoAutorizado(
 			{

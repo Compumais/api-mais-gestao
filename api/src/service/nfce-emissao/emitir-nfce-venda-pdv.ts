@@ -20,6 +20,7 @@ import {
 	atualizarVendaPdvGourmet,
 	buscarVendaPdvGourmetPorId,
 } from "@/repositories/venda-pdv-gourmet-repositories.js";
+import { enfileirarEnvioDominioSilencioso } from "@/service/dominio/enfileirar-envio-dominio.js";
 import {
 	carregarContextoEmissaoNfce,
 	montarPayloadGatewayEmissaoNfce,
@@ -539,6 +540,14 @@ export async function emitirNfceVendaPdvService({
 			protocolonfe: respostaGateway.protocolo,
 			tipo: "autorizado",
 		}).catch(console.error);
+	}
+
+	if (statusPersistido === NFE_STATUS.AUTORIZADA) {
+		void enfileirarEnvioDominioSilencioso({
+			idempresa,
+			idnotafiscal,
+			tipo: "autorizada",
+		});
 	}
 
 	const emitida = statusPersistido === NFE_STATUS.AUTORIZADA;

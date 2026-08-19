@@ -5,6 +5,7 @@ import {
 	atualizarNotaFiscal,
 	buscarNotaFiscalPorId,
 } from "@/repositories/nota-fiscal-repositories.js";
+import { enfileirarEnvioDominioSilencioso } from "@/service/dominio/enfileirar-envio-dominio.js";
 import { montarCredenciaisGatewayNfce } from "@/service/nfce-emissao/montar-credenciais-gateway-nfce.js";
 import { montarCredenciaisGatewayNfe } from "@/service/nfe-emissao/montar-credenciais-gateway-nfe.js";
 import { estornarIntegracaoNotaFiscalVendaService } from "@/service/nota-fiscal/estornar-integracao-nota-fiscal-venda.js";
@@ -136,6 +137,15 @@ export async function cancelarNfeVendaService({
 		justificativacancelamentonfe: justificativaNormalizada,
 		mensagemprotocolonfe: resposta.xMotivo ?? null,
 		codigostatusprotocolonfe: normalizarCodigoStatusNfe(cStat),
+		...(resposta.xmlProtocolado?.trim()
+			? { arquivoxmlcancelada: resposta.xmlProtocolado }
+			: {}),
+	});
+
+	void enfileirarEnvioDominioSilencioso({
+		idempresa: nota.idempresa,
+		idnotafiscal,
+		tipo: "cancelamento",
 	});
 
 	await estornarIntegracaoNotaFiscalVendaService({

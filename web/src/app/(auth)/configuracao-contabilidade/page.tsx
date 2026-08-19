@@ -22,6 +22,7 @@ import {
 } from "@/schemas/automacao.schema";
 import { contabilidadeCadastroService } from "@/services/contabilidade-cadastro.service";
 import { PageContainer } from "../components/page-container";
+import { DominioIntegracaoSection } from "./dominio-integracao-section";
 
 export default function ConfiguracaoContabilidadePage() {
 	const { localStorageEmpresa: empresa } = useEmpresa();
@@ -108,7 +109,7 @@ export default function ConfiguracaoContabilidadePage() {
 					</h1>
 					<p className="text-sm text-muted-foreground">
 						Cadastre o escritório contábil que receberá SINTEGRA e XMLs pelas
-						automações.
+						automações e configure a API Domínio para envio automático.
 					</p>
 				</div>
 
@@ -133,7 +134,9 @@ export default function ConfiguracaoContabilidadePage() {
 										)}
 									</Field>
 									<Field>
-										<FieldLabel htmlFor="contab-cnpj">CNPJ (opcional)</FieldLabel>
+										<FieldLabel htmlFor="contab-cnpj">
+											CNPJ (opcional)
+										</FieldLabel>
 										<Input id="contab-cnpj" {...form.register("cnpj")} />
 									</Field>
 									<Field>
@@ -190,6 +193,8 @@ export default function ConfiguracaoContabilidadePage() {
 						</Button>
 					</form>
 				)}
+
+				<DominioIntegracaoSection idempresa={empresa.id} />
 			</div>
 		</PageContainer>
 	);

@@ -49,6 +49,7 @@ import {
 	mensagemInconsistenciaCfopEntrada,
 	validarCoerenciaCfopEntradaItem,
 } from "@/util/cfop-entrada-validacao.js";
+import { resolverDataEntradaImportacao } from "@/util/data-competencia-nota-fiscal.js";
 import {
 	httpBadRequest,
 	httpNaoEncontrado,
@@ -56,19 +57,17 @@ import {
 	httpProibido,
 } from "@/util/http-util.js";
 import { montarSnapshotImportacaoItem } from "@/util/montar-snapshot-importacao-nf.js";
-import { numeroOpcionalOuNulo, truncarTexto } from "@/util/texto-util.js";
+import { STATUS_NF_CONFIRMADA } from "@/util/nota-fiscal-constants.js";
 import {
 	normalizarDataRastro,
 	obterLotePrincipalItem,
 } from "@/util/rastro-importacao-nf.js";
+import { obterConfigRegimeImportacaoNf } from "@/util/regime-tributario-empresa.js";
 import {
 	mesclarSugestaoTributacaoSaidaProduto,
 	sugerirTributacaoSaidaProdutoNf,
 } from "@/util/sugerir-tributacao-saida-produto-nf.js";
-import {
-	STATUS_NF_CONFIRMADA,
-} from "@/util/nota-fiscal-constants.js";
-import { obterConfigRegimeImportacaoNf } from "@/util/regime-tributario-empresa.js";
+import { numeroOpcionalOuNulo, truncarTexto } from "@/util/texto-util.js";
 
 type FinalizarRascunhoImportacaoNfParametros = {
 	idusuario: string;
@@ -512,6 +511,11 @@ export async function finalizarRascunhoImportacaoNfService({
 			})
 		: null;
 
+	const dataEntrada = resolverDataEntradaImportacao(
+		nota.entradasaida,
+		finalizadoEm,
+	);
+
 	const resultado = await finalizarRascunhoNotaFiscal(
 		idRascunho,
 		{
@@ -520,6 +524,7 @@ export async function finalizarRascunhoImportacaoNfService({
 			totalproduto: nota.totalproduto,
 			valortotalnota: nota.valortotalnota,
 			datainclusao: finalizadoEm,
+			...(nota.entradasaida ? {} : { entradasaida: dataEntrada }),
 			dadosimportacao: {
 				duplicatas: dadosNotaImportacao.duplicatas,
 				finalizadoEm,
@@ -570,7 +575,7 @@ export async function finalizarRascunhoImportacaoNfService({
 			idempresa,
 			idnotafiscal: idRascunho,
 			idlocalestoque: localEstoque?.id ?? nota.idlocalestoque ?? undefined,
-			dataMovimento: nota.emissao ?? finalizadoEm,
+			dataMovimento: dataEntrada,
 			sentido: "entrada",
 			itens: itensComDados
 				.filter((item) => produtosResolvidos.has(item.id))
@@ -608,7 +613,7 @@ export async function finalizarRascunhoImportacaoNfService({
 				idtipodocumento: nota.idtipodocumento ?? undefined,
 				idplanocontas: nota.idplanocontas ?? undefined,
 				valortotalnota: nota.valortotalnota ?? "0",
-				emissao: nota.emissao ?? finalizadoEm,
+				emissao: dataEntrada,
 				numero: nota.numero ?? nota.numeronotafiscal ?? undefined,
 				serie: nota.serie ?? undefined,
 				chavenfe: nota.chavenfe ?? undefined,
