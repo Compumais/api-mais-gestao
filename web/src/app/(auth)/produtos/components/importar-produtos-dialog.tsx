@@ -226,7 +226,8 @@ export function ImportarProdutosDialog({
 									/>
 									<p className="text-sm text-muted-foreground text-center">
 										Selecione um arquivo .{formato} com as colunas Nome, Grupo,
-										Unidade, Preço e NCM. MVA e alíquotas são opcionais.
+										Unidade, Preço e NCM. MVA, alíquotas e tributação (CFOP,
+										CST/CSOSN, IPI, PIS/COFINS) são opcionais.
 									</p>
 									<Button onClick={() => inputArquivoRef.current?.click()}>
 										Selecionar arquivo

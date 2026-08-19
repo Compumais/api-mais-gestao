@@ -188,21 +188,23 @@ export async function resolverProdutosImportacao(parametros: {
 			}
 		}
 
-		let existente =
+		const existentePorCodigo =
 			linha.codigo != null ? produtoPorCodigo.get(linha.codigo) : undefined;
-		if (!existente && linha.ean) {
-			existente = produtoPorEan.get(linha.ean);
-		}
+		const existentePorEan = linha.ean
+			? produtoPorEan.get(linha.ean)
+			: undefined;
+		const existente = existentePorCodigo ?? existentePorEan;
 
-		if (existente && linha.ean) {
-			const donoEan = produtoPorEan.get(linha.ean);
-			if (donoEan && donoEan.id !== existente.id) {
-				erros.push("EAN já pertence a outro produto");
-			}
+		if (
+			existentePorCodigo &&
+			existentePorEan &&
+			existentePorCodigo.id !== existentePorEan.id
+		) {
+			erros.push("EAN já pertence a outro produto");
 		}
 
 		const acao: "criar" | "atualizar" = existente ? "atualizar" : "criar";
-		let codigoFinal = existente?.codigo ?? linha.codigo;
+		let codigoFinal = linha.codigo ?? existente?.codigo ?? null;
 		if (acao === "criar" && codigoFinal == null) {
 			codigoFinal = proximoCodigoLivre(usados, proximo);
 		}
@@ -272,8 +274,24 @@ export function montarDadosProdutoImportacao(
 		...(produto.idcfopsaidanfce
 			? { idcfopsaidanfce: produto.idcfopsaidanfce }
 			: {}),
+		...(produto.tipoproduto ? { tipoproduto: produto.tipoproduto } : {}),
+		...(produto.situacaotributariasnentrada
+			? { situacaotributariasnentrada: produto.situacaotributariasnentrada }
+			: {}),
 		...(produto.cst ? { situacaotributaria: produto.cst } : {}),
 		...(produto.csosn ? { situacaotributariasn: produto.csosn } : {}),
+		...(produto.tributacaoespecial
+			? { tributacaoespecial: produto.tributacaoespecial }
+			: {}),
+		...(produto.tributacaosn ? { tributacaosn: produto.tributacaosn } : {}),
+		...(produto.cstipientrada ? { cstipientrada: produto.cstipientrada } : {}),
+		...(produto.cstipisaida ? { cstipisaida: produto.cstipisaida } : {}),
+		...(produto.cstpisentrada ? { cstpisentrada: produto.cstpisentrada } : {}),
+		...(produto.cstcofinsentrada
+			? { cstcofinsentrada: produto.cstcofinsentrada }
+			: {}),
+		...(produto.cstpis ? { cstpis: produto.cstpis } : {}),
+		...(produto.cstcofins ? { cstcofins: produto.cstcofins } : {}),
 		...(produto.estoque != null
 			? { quantidadepadrao: Math.max(0, Math.round(produto.estoque)) }
 			: produto.acao === "criar"

@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { validarArquivoImportacaoProdutos } from "./produtos-importacao.js";
+import { gerarTemplateProdutosService } from "@/service/produto/gerar-template-produtos.js";
+import {
+	COLUNAS_FISCAIS_PRODUTO,
+	validarArquivoImportacaoProdutos,
+} from "./produtos-importacao.js";
 
 const CABECALHO =
 	"Código;EAN;Referência;Nome;Grupo;Unidade;Preço;Custo;NCM;CEST;Origem;MVA;Estoque;Alíquota ICMS interna;Alíquota PIS saída;Alíquota COFINS saída";
@@ -36,6 +40,91 @@ describe("validarArquivoImportacaoProdutos", () => {
 		});
 	});
 
+	it("lê colunas fiscais da aba Impostos", async () => {
+		const csv = [
+			[
+				"Nome",
+				"Grupo",
+				"Unidade",
+				"Preço",
+				"NCM",
+				"CFOP de entrada",
+				"Tipo de produto",
+				"CST/CSOSN entrada",
+				"CFOP NF saída",
+				"CFOP ECF/NFC-e",
+				"CST ICMS contribuinte",
+				"CSOSN ICMS contribuinte",
+				"CST ICMS não contribuinte",
+				"CSOSN ICMS não contribuinte",
+				"CST IPI entrada",
+				"CST IPI saída",
+				"CST PIS entrada",
+				"CST COFINS entrada",
+				"CST PIS saída",
+				"CST COFINS saída",
+			].join(";"),
+			[
+				"Refrigerante 2L",
+				"BEBIDAS",
+				"UN",
+				"9,90",
+				"22021000",
+				"1102",
+				"04",
+				"00",
+				"5102",
+				"5102",
+				"00",
+				"102",
+				"00",
+				"102",
+				"00",
+				"50",
+				"50",
+				"50",
+				"01",
+				"01",
+			].join(";"),
+		].join("\n");
+
+		const resultado = await validarArquivoImportacaoProdutos("csv", csv);
+
+		expect(resultado.errosGerais).toEqual([]);
+		expect(resultado.totalErros).toBe(0);
+		expect(resultado.produtos[0]).toMatchObject({
+			cfopEntrada: "1102",
+			tipoproduto: "04",
+			situacaotributariasnentrada: "00",
+			cfopSaida: "5102",
+			cfopNfce: "5102",
+			cst: "00",
+			csosn: "102",
+			tributacaoespecial: "00",
+			tributacaosn: "102",
+			cstipientrada: "00",
+			cstipisaida: "50",
+			cstpisentrada: "50",
+			cstcofinsentrada: "50",
+			cstpis: "01",
+			cstcofins: "01",
+		});
+	});
+
+	it("marca código e EAN duplicados no arquivo", async () => {
+		const csv = [
+			"Nome;Grupo;Unidade;Preço;NCM;Código;EAN",
+			"Produto A;GERAL;UN;10,00;22021000;1;7891000055120",
+			"Produto B;GERAL;UN;12,00;22021000;1;7891000055120",
+		].join("\n");
+
+		const resultado = await validarArquivoImportacaoProdutos("csv", csv);
+
+		expect(resultado.produtos[1]?.erros.join(" ")).toContain("Código");
+		expect(resultado.produtos[1]?.erros.join(" ")).toContain("EAN");
+		expect(resultado.totalErros).toBeGreaterThan(0);
+	});
+
 	it("exige colunas obrigatórias", async () => {
 		const csv = "Código;Nome\n1;Produto";
 		const resultado = await validarArquivoImportacaoProdutos("csv", csv);
@@ -69,5 +158,44 @@ describe("validarArquivoImportacaoProdutos", () => {
 		const resultado = await validarArquivoImportacaoProdutos("csv", csv);
 
 		expect(resultado.produtos[0]?.erros.join(" ")).toContain("MVA");
+	});
+});
+
+describe("template de importação de produtos", () => {
+	it("inclui colunas fiscais preenchíveis no modelo CSV", async () => {
+		const resposta = await gerarTemplateProdutosService("csv");
+
+		expect(resposta.success).toBe(true);
+		if (!resposta.success) {
+			return;
+		}
+
+		const csv = resposta.body?.content.toString("utf-8") ?? "";
+		for (const coluna of COLUNAS_FISCAIS_PRODUTO) {
+			expect(csv).toContain(coluna.cabecalho);
+		}
+
+		const validacao = await validarArquivoImportacaoProdutos("csv", csv);
+
+		expect(validacao.errosGerais).toEqual([]);
+		expect(validacao.produtos).toHaveLength(1);
+		expect(validacao.produtos[0]).toMatchObject({
+			cfopEntrada: "1102",
+			tipoproduto: "04",
+			situacaotributariasnentrada: "00",
+			cfopSaida: "5102",
+			cfopNfce: "5102",
+			cst: "00",
+			csosn: "102",
+			tributacaoespecial: "00",
+			tributacaosn: "102",
+			cstipientrada: "00",
+			cstipisaida: "50",
+			cstcofinsentrada: "50",
+			cstpisentrada: "50",
+			cstpis: "01",
+			cstcofins: "01",
+			mva: "40.00",
+		});
 	});
 });

@@ -4,7 +4,10 @@ import ExcelJS from "exceljs";
 import type { HttpResponse } from "@/model/http-model.js";
 import { httpOk } from "@/util/http-util.js";
 import type { FormatoArquivoImportacao } from "@/util/plano-contas-importacao.js";
-import { COLUNAS_ALIQUOTA_PRODUTO } from "@/util/produtos-importacao.js";
+import {
+	COLUNAS_ALIQUOTA_PRODUTO,
+	COLUNAS_FISCAIS_PRODUTO,
+} from "@/util/produtos-importacao.js";
 
 type GerarTemplateProdutosResposta = {
 	content: Buffer;
@@ -30,6 +33,7 @@ const CABECALHO_BASE = [
 
 const CABECALHO = [
 	...CABECALHO_BASE,
+	...COLUNAS_FISCAIS_PRODUTO.map((coluna) => coluna.cabecalho),
 	...COLUNAS_ALIQUOTA_PRODUTO.map((coluna) => coluna.cabecalho),
 ];
 
@@ -49,6 +53,10 @@ const LINHA_EXEMPLO_BASE = [
 	"10",
 ];
 
+const LINHA_EXEMPLO_FISCAL = COLUNAS_FISCAIS_PRODUTO.map(
+	(coluna) => coluna.exemplo,
+);
+
 const LINHA_EXEMPLO_ALIQUOTAS = COLUNAS_ALIQUOTA_PRODUTO.map((coluna) => {
 	if (coluna.campo === "aliquotaicmsinterna") return "18,00";
 	if (coluna.campo === "aliquotapis") return "1,65";
@@ -56,7 +64,9 @@ const LINHA_EXEMPLO_ALIQUOTAS = COLUNAS_ALIQUOTA_PRODUTO.map((coluna) => {
 	return "";
 });
 
-const LINHAS_EXEMPLO = [[...LINHA_EXEMPLO_BASE, ...LINHA_EXEMPLO_ALIQUOTAS]];
+const LINHAS_EXEMPLO = [
+	[...LINHA_EXEMPLO_BASE, ...LINHA_EXEMPLO_FISCAL, ...LINHA_EXEMPLO_ALIQUOTAS],
+];
 
 async function gerarXlsx(): Promise<Buffer> {
 	const workbook = new ExcelJS.Workbook();
@@ -76,6 +86,17 @@ async function gerarXlsx(): Promise<Buffer> {
 
 	planilha.getColumn(1).numFmt = "0";
 	planilha.getColumn(2).numFmt = "@";
+
+	const primeiraColunaFiscal = CABECALHO_BASE.length + 1;
+	const ultimaColunaFiscal =
+		CABECALHO_BASE.length + COLUNAS_FISCAIS_PRODUTO.length;
+	for (
+		let indice = primeiraColunaFiscal;
+		indice <= ultimaColunaFiscal;
+		indice++
+	) {
+		planilha.getColumn(indice).numFmt = "@";
+	}
 
 	const conteudo = await workbook.xlsx.writeBuffer();
 
