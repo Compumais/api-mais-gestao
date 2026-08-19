@@ -39,6 +39,8 @@ import {
 	lancamentoUnico,
 	normalizarLancamentos,
 	normalizarMeioPagamento,
+	pagamentosErpDosLancamentos,
+	pagamentosNativosParaApi,
 	totaisParaSync,
 } from "../db/pagamento";
 import {
@@ -717,6 +719,10 @@ async function syncCriarVenda(
 		return;
 	}
 
+	const pagamentosErp = pagamentosErpDosLancamentos(pagamentos);
+	const identidade = [payload.identidade, local?.idcliente]
+		.map((valor) => (typeof valor === "string" ? valor.trim() : ""))
+		.find(Boolean);
 	const venda = await criarVendaPdv({
 		idempresa,
 		numeropdv,
@@ -730,10 +736,9 @@ async function syncCriarVenda(
 		valorcartaodebito: sync.valorcartaodebito,
 		valorcartao: sync.valorcartao,
 		valorprepago: sync.valorprepago,
-		pagamentos,
-		...(typeof payload.identidade === "string" && payload.identidade
-			? { identidade: payload.identidade }
-			: {}),
+		pagamentos: pagamentosNativosParaApi(pagamentos),
+		...(pagamentosErp.length ? { pagamentosErp } : {}),
+		...(identidade ? { identidade } : {}),
 	});
 
 	await atualizarVendaSync(idlocal, {

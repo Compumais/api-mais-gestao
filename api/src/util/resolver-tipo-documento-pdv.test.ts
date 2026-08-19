@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
 	resolverTipoDocumentoPorFormaNfe,
+	tipoDocumentoExigeClientePdv,
 	tipoDocumentoGeraContasReceber,
 } from "@/util/resolver-tipo-documento-pdv.js";
 
@@ -49,5 +50,26 @@ describe("resolver-tipo-documento-pdv", () => {
 			"03",
 		);
 		expect(tipo?.id).toBe("cred-receber");
+	});
+
+	it("não exige cliente em dinheiro, PIX ou cartão", () => {
+		expect(
+			tipoDocumentoExigeClientePdv({
+				aprazo: 1,
+				formapagamentonfe: "17",
+			}),
+		).toBe(false);
+		expect(
+			tipoDocumentoExigeClientePdv({
+				aprazo: 1,
+				formapagamentonfe: "01",
+			}),
+		).toBe(false);
+		expect(
+			tipoDocumentoExigeClientePdv({
+				aprazo: 1,
+				formapagamentonfe: "15",
+			}),
+		).toBe(true);
 	});
 });

@@ -17,6 +17,9 @@ export type PagamentosRegistro = {
 	valorprepago?: string | null;
 	valortroco?: string | null;
 	valortotal?: string | null;
+	desconto?: string | null;
+	valortaxaservico?: string | null;
+	valorcouverartistico?: string | null;
 };
 
 export function pagamentosResumoVazio(): PagamentosResumo {

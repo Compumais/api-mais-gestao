@@ -67,6 +67,7 @@ export function BalcaoPage() {
 	const [pizzaPrimeiro, setPizzaPrimeiro] = useState<ProdutoLocal | null>(null);
 	const [produtoPeso, setProdutoPeso] = useState<ProdutoLocal | null>(null);
 	const [fechando, setFechando] = useState(false);
+	const [iniciarComDesconto, setIniciarComDesconto] = useState(false);
 
 	useEscapeFechaModal(Boolean(rejeicaoNfce), () => setRejeicaoNfce(null));
 	useEscapeFechaModal(Boolean(pizzaPrimeiro), () => setPizzaPrimeiro(null));
@@ -240,6 +241,7 @@ export function BalcaoPage() {
 				lancamentos: fechamento.lancamentos,
 				troco: fechamento.troco,
 				cliente: fechamento.cliente,
+				valordesconto: fechamento.desconto ?? 0,
 			});
 			setPagando(false);
 			if (result.fiscal.modo === "erro") {
@@ -274,9 +276,17 @@ export function BalcaoPage() {
 			if (pagando || fechando || pizzaPrimeiro || produtoPeso || rejeicaoNfce) {
 				return;
 			}
+			if (teclaCorresponde(e, teclas.desconto)) {
+				if (!itens.length || bloqueado) return;
+				e.preventDefault();
+				setIniciarComDesconto(true);
+				setPagando(true);
+				return;
+			}
 			if (teclaCorresponde(e, teclas.finalizar)) {
 				if (!itens.length || bloqueado) return;
 				e.preventDefault();
+				setIniciarComDesconto(false);
 				setPagando(true);
 				return;
 			}
@@ -308,6 +318,7 @@ export function BalcaoPage() {
 		pizzaPrimeiro,
 		produtoPeso,
 		rejeicaoNfce,
+		teclas.desconto,
 		teclas.fechar_caixa,
 		teclas.finalizar,
 		teclas.historico,
@@ -489,10 +500,28 @@ export function BalcaoPage() {
 						</p>
 					)}
 					<Button
-						size="xl"
+						size="lg"
+						variant="outline"
 						className="mt-3 w-full"
+						disabled={!itens.length || bloqueado}
+						onClick={() => {
+							setIniciarComDesconto(true);
+							setPagando(true);
+						}}
+					>
+						Desconto
+						<span className="ml-2 text-xs font-semibold opacity-80">
+							{teclas.desconto}
+						</span>
+					</Button>
+					<Button
+						size="xl"
+						className="mt-2 w-full"
 						disabled={!itens.length}
-						onClick={() => setPagando(true)}
+						onClick={() => {
+							setIniciarComDesconto(false);
+							setPagando(true);
+						}}
 					>
 						Finalizar
 						<span className="ml-2 text-xs font-semibold opacity-80">
@@ -519,8 +548,15 @@ export function BalcaoPage() {
 				loading={loading}
 				titulo="Finalizar venda"
 				confirmarLabel="Confirmar"
-				onCancelar={() => setPagando(false)}
-				onConfirmar={(fechamento) => void finalizar(fechamento)}
+				iniciarComDesconto={iniciarComDesconto}
+				onCancelar={() => {
+					setPagando(false);
+					setIniciarComDesconto(false);
+				}}
+				onConfirmar={(fechamento) => {
+					setIniciarComDesconto(false);
+					void finalizar(fechamento);
+				}}
 			/>
 
 			{pizzaPrimeiro && gourmet && (
@@ -558,6 +594,17 @@ export function BalcaoPage() {
 							variant: "secondary",
 							disabled: pagando,
 							onClick: () => navigate("/vendas"),
+						},
+						{
+							key: "desconto",
+							label: "Desconto",
+							hotkey: teclas.desconto,
+							variant: "outline",
+							disabled: pagando || !itens.length || bloqueado,
+							onClick: () => {
+								setIniciarComDesconto(true);
+								setPagando(true);
+							},
 						},
 						...(status?.podeConfigurar
 							? [

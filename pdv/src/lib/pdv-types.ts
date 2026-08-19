@@ -78,7 +78,7 @@ export type MesaConsulta = {
 	qtdItens: number;
 };
 
-export type MeioPagamento = "DINHEIRO" | "PIX" | "CARTAO";
+export type MeioPagamento = "DINHEIRO" | "PIX" | "CARTAO" | "OUTROS";
 
 export type PagamentosResumoTurno = {
 	dinheiro: number;
@@ -107,6 +107,10 @@ export type LancamentoPagamento = {
 	autorizacao?: string | null;
 	bandeira?: string | null;
 	status?: StatusLancamentoPagamento;
+	descricao?: string | null;
+	formapagamentonfe?: string | null;
+	idtipodocumentofinanceiro?: string | null;
+	aprazo?: number;
 };
 
 export type SitefStatus = {

@@ -495,7 +495,7 @@ export async function upsertMeiosPagamento(
 					item.id,
 					item.descricao,
 					item.formapagamentonfe ?? null,
-					item.aprazo ? 1 : 0,
+					Number(item.aprazo) === 1 ? 1 : 0,
 					agora,
 				],
 				client,
@@ -1181,8 +1181,13 @@ export async function listarLancamentosVenda(
 		autorizacao: string | null;
 		bandeira: string | null;
 		status: StatusLancamentoPagamento;
+		descricao: string | null;
+		formapagamentonfe: string | null;
+		idtipodocumentofinanceiro: string | null;
+		aprazo: number | null;
 	}>(
-		`SELECT id, meio, valor, nsu, autorizacao, bandeira, status
+		`SELECT id, meio, valor, nsu, autorizacao, bandeira, status,
+		        descricao, formapagamentonfe, idtipodocumentofinanceiro, aprazo
 		 FROM pagamento WHERE idvenda = $1 ORDER BY criadoem`,
 		[idvenda],
 		client,
@@ -1195,6 +1200,10 @@ export async function listarLancamentosVenda(
 		autorizacao: row.autorizacao,
 		bandeira: row.bandeira,
 		status: row.status ?? "ok",
+		descricao: row.descricao,
+		formapagamentonfe: row.formapagamentonfe,
+		idtipodocumentofinanceiro: row.idtipodocumentofinanceiro,
+		aprazo: Number(row.aprazo ?? 0) === 1 ? 1 : 0,
 	}));
 }
 
@@ -1207,8 +1216,9 @@ async function gravarLancamentosVenda(
 	for (const lanc of lancamentos) {
 		await execute(
 			`INSERT INTO pagamento (
-				id, idvenda, meio, valor, nsu, autorizacao, bandeira, status, criadoem
-			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+				id, idvenda, meio, valor, nsu, autorizacao, bandeira, status,
+				descricao, formapagamentonfe, idtipodocumentofinanceiro, aprazo, criadoem
+			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
 			[
 				lanc.id ?? uuidv4(),
 				idvenda,
@@ -1218,6 +1228,10 @@ async function gravarLancamentosVenda(
 				lanc.autorizacao ?? null,
 				lanc.bandeira ?? null,
 				lanc.status ?? "ok",
+				lanc.descricao ?? null,
+				lanc.formapagamentonfe ?? null,
+				lanc.idtipodocumentofinanceiro ?? null,
+				lanc.aprazo === 1 ? 1 : 0,
 				agora,
 			],
 			client,
@@ -1400,6 +1414,7 @@ export async function criarVendaRapida(params: {
 	lancamentos: LancamentoPagamento[];
 	troco?: number;
 	cliente?: ClienteVenda | null;
+	valordesconto?: number;
 }): Promise<VendaLocal> {
 	const sessao = await obterSessao();
 	if (!sessao.idempresa || !sessao.userid) {
@@ -1414,7 +1429,13 @@ export async function criarVendaRapida(params: {
 
 	const id = uuidv4();
 	const agora = new Date().toISOString();
-	const total = params.itens.reduce((acc, i) => acc + i.precototal, 0);
+	const subtotal = arredondarMoeda(
+		params.itens.reduce((acc, i) => acc + i.precototal, 0),
+	);
+	const desconto = arredondarMoeda(
+		Math.min(Math.max(0, Number(params.valordesconto) || 0), subtotal),
+	);
+	const total = arredondarMoeda(Math.max(0, subtotal - desconto));
 	const fechamento = validarFechamentoPagamentos({
 		total,
 		lancamentos: params.lancamentos,
@@ -1429,8 +1450,9 @@ export async function criarVendaRapida(params: {
 			`INSERT INTO venda (
 				id, idempresa, numeropdv, origem, status, meio_pagamento,
 				valortotal, valordinheiro, valorpix, valorcartao, valortroco,
+				valordesconto,
 				criadoem, sync_status, nfce_status, idcliente, nomecliente, cnpjcpf
-			) VALUES ($1, $2, $3, 'rapida', 'fechada', $4, $5, $6, $7, $8, $9, $10, 'pendente', 'pendente', $11, $12, $13)`,
+			) VALUES ($1, $2, $3, 'rapida', 'fechada', $4, $5, $6, $7, $8, $9, $10, $11, 'pendente', 'pendente', $12, $13, $14)`,
 			[
 				id,
 				sessao.idempresa,
@@ -1441,6 +1463,7 @@ export async function criarVendaRapida(params: {
 				sync.valorpix,
 				sync.valorcartaocredito,
 				fechamento.troco,
+				desconto,
 				agora,
 				cliente.idcliente,
 				cliente.nomecliente,
@@ -1489,6 +1512,7 @@ export async function criarVendaRapida(params: {
 		itens: params.itens,
 		valortotal: total,
 		valortroco: fechamento.troco,
+		valordesconto: desconto,
 		identidade: cliente.idcliente,
 	});
 

@@ -212,6 +212,10 @@ CREATE TABLE IF NOT EXISTS pagamento (
 	autorizacao TEXT,
 	bandeira TEXT,
 	status TEXT NOT NULL DEFAULT 'ok',
+	descricao TEXT,
+	formapagamentonfe TEXT,
+	idtipodocumentofinanceiro TEXT,
+	aprazo INTEGER NOT NULL DEFAULT 0,
 	criadoem TEXT NOT NULL
 );
 

@@ -1,4 +1,4 @@
-export type MeioPagamento = "DINHEIRO" | "PIX" | "CARTAO";
+export type MeioPagamento = "DINHEIRO" | "PIX" | "CARTAO" | "OUTROS";
 
 export type StatusLancamentoPagamento = "ok" | "pendente" | "cancelado";
 
@@ -10,12 +10,22 @@ export type LancamentoPagamento = {
 	autorizacao?: string | null;
 	bandeira?: string | null;
 	status?: StatusLancamentoPagamento;
+	descricao?: string | null;
+	formapagamentonfe?: string | null;
+	idtipodocumentofinanceiro?: string | null;
+	aprazo?: number;
 };
 
 export type TotaisPagamento = {
 	dinheiro: number;
 	pix: number;
 	cartao: number;
+	outros: number;
+};
+
+export type PagamentoErpVendaPdv = {
+	idtipodocumentofinanceiro: string;
+	valor: number;
 };
 
 export type ResultadoFechamentoPagamentos = {
@@ -26,7 +36,9 @@ export type ResultadoFechamentoPagamentos = {
 	soma: number;
 };
 
-const MEIOS: readonly MeioPagamento[] = ["DINHEIRO", "PIX", "CARTAO"];
+const MEIOS: readonly MeioPagamento[] = ["DINHEIRO", "PIX", "CARTAO", "OUTROS"];
+const UUID_RE =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const STATUS: readonly StatusLancamentoPagamento[] = [
 	"ok",
 	"pendente",
@@ -94,6 +106,12 @@ export function normalizarLancamento(raw: unknown): LancamentoPagamento | null {
 	const nsu = textoOpcional(item.nsu);
 	const autorizacao = textoOpcional(item.autorizacao);
 	const bandeira = textoOpcional(item.bandeira);
+	const descricao = textoOpcional(item.descricao);
+	const formapagamentonfe = textoOpcional(item.formapagamentonfe);
+	const idtipodocumentofinanceiro = textoOpcional(
+		item.idtipodocumentofinanceiro,
+	);
+	const aprazo = Number(item.aprazo ?? 0) === 1 ? 1 : 0;
 	const id = textoOpcional(item.id);
 	return {
 		...(id ? { id } : {}),
@@ -103,6 +121,10 @@ export function normalizarLancamento(raw: unknown): LancamentoPagamento | null {
 		nsu,
 		autorizacao,
 		bandeira,
+		descricao,
+		formapagamentonfe,
+		idtipodocumentofinanceiro,
+		aprazo,
 	};
 }
 
@@ -149,14 +171,21 @@ export function somarLancamentos(lancamentos: LancamentoPagamento[]): number {
 export function totaisPorMeio(
 	lancamentos: LancamentoPagamento[],
 ): TotaisPagamento {
-	const totais: TotaisPagamento = { dinheiro: 0, pix: 0, cartao: 0 };
+	const totais: TotaisPagamento = {
+		dinheiro: 0,
+		pix: 0,
+		cartao: 0,
+		outros: 0,
+	};
 	for (const item of lancamentosEfetivos(lancamentos)) {
 		if (item.meio === "DINHEIRO") {
 			totais.dinheiro = arredondarDinheiro(totais.dinheiro + item.valor);
 		} else if (item.meio === "PIX") {
 			totais.pix = arredondarDinheiro(totais.pix + item.valor);
-		} else {
+		} else if (item.meio === "CARTAO") {
 			totais.cartao = arredondarDinheiro(totais.cartao + item.valor);
+		} else {
+			totais.outros = arredondarDinheiro(totais.outros + item.valor);
 		}
 	}
 	return totais;
@@ -189,16 +218,76 @@ export function totaisParaSync(
 	valorprepago: number;
 	valortroco: number;
 } {
+	let credito = 0;
+	let debito = 0;
+	for (const item of lancamentosEfetivos(lancamentos)) {
+		if (item.meio !== "CARTAO") continue;
+		const tPag = String(item.formapagamentonfe ?? "")
+			.replace(/\D/g, "")
+			.padStart(2, "0");
+		if (tPag === "04") {
+			debito = arredondarDinheiro(debito + item.valor);
+		} else {
+			credito = arredondarDinheiro(credito + item.valor);
+		}
+	}
 	const totais = totaisPorMeio(lancamentos);
 	return {
 		valordinheiro: totais.dinheiro,
 		valorpix: totais.pix,
-		valorcartaocredito: totais.cartao,
-		valorcartaodebito: 0,
+		valorcartaocredito: credito,
+		valorcartaodebito: debito,
 		valorcartao: 0,
-		valorprepago: 0,
+		valorprepago: totais.outros,
 		valortroco: arredondarDinheiro(troco),
 	};
+}
+
+export function ehPagamentoAPrazo(params: {
+	aprazo?: number | string | boolean | null;
+	meio?: string | null;
+	formapagamentonfe?: string | null;
+}): boolean {
+	const meio = String(params.meio ?? "")
+		.trim()
+		.toUpperCase();
+	if (meio === "DINHEIRO" || meio === "PIX" || meio === "CARTAO") {
+		return false;
+	}
+	const tPag = String(params.formapagamentonfe ?? "")
+		.replace(/\D/g, "")
+		.padStart(2, "0");
+	if (tPag === "01" || tPag === "17" || tPag === "03" || tPag === "04") {
+		return false;
+	}
+	return Number(params.aprazo) === 1;
+}
+
+export function pagamentosErpDosLancamentos(
+	lancamentos: LancamentoPagamento[],
+): PagamentoErpVendaPdv[] {
+	return lancamentosEfetivos(lancamentos)
+		.filter(
+			(item) =>
+				ehPagamentoAPrazo(item) &&
+				UUID_RE.test(item.idtipodocumentofinanceiro ?? ""),
+		)
+		.map((item) => ({
+			idtipodocumentofinanceiro: item.idtipodocumentofinanceiro as string,
+			valor: item.valor,
+		}));
+}
+
+export function pagamentosNativosParaApi(
+	lancamentos: LancamentoPagamento[],
+): Array<LancamentoPagamento & { meio: Exclude<MeioPagamento, "OUTROS"> }> {
+	return lancamentosEfetivos(lancamentos).filter(
+		(
+			item,
+		): item is LancamentoPagamento & {
+			meio: Exclude<MeioPagamento, "OUTROS">;
+		} => item.meio !== "OUTROS",
+	);
 }
 
 export function validarFechamentoPagamentos(params: {

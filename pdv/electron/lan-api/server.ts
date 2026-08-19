@@ -606,6 +606,8 @@ async function despachar(
 				itens,
 				...(lancamentos.length ? { lancamentos } : { meio: meioDeBody(body) }),
 				troco: body.troco != null ? Number(body.troco) : undefined,
+				valordesconto:
+					body.desconto != null ? Number(body.desconto) : undefined,
 			}),
 		};
 	}

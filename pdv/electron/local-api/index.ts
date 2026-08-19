@@ -43,6 +43,8 @@ import {
 import {
 	ehMeioPagamento,
 	lancamentoUnico,
+	pagamentosErpDosLancamentos,
+	pagamentosNativosParaApi,
 	totaisParaSync,
 } from "../db/pagamento";
 import {
@@ -285,6 +287,7 @@ async function emitirNfceOnlineDaVenda(
 				? venda.pagamentos
 				: await listarLancamentosVenda(venda.id);
 		const sync = totaisParaSync(pagamentos, venda.valortroco);
+		const pagamentosErp = pagamentosErpDosLancamentos(pagamentos);
 		let idremoto = venda.idremoto;
 		if (!idremoto) {
 			const criada = await criarVendaPdv({
@@ -300,7 +303,11 @@ async function emitirNfceOnlineDaVenda(
 				valorcartaodebito: sync.valorcartaodebito,
 				valorcartao: sync.valorcartao,
 				valorprepago: sync.valorprepago,
-				pagamentos,
+				pagamentos: pagamentosNativosParaApi(pagamentos),
+				...(pagamentosErp.length ? { pagamentosErp } : {}),
+				...(venda.idcliente?.trim()
+					? { identidade: venda.idcliente.trim() }
+					: {}),
 			});
 			idremoto = criada.id;
 
@@ -342,6 +349,9 @@ async function emitirNfceOnlineDaVenda(
 				valorcartaodebito: sync.valorcartaodebito,
 				valorcartao: sync.valorcartao,
 				valorprepago: sync.valorprepago,
+				desconto: venda.valordesconto ?? 0,
+				valortaxaservico: venda.valortaxaservico ?? 0,
+				valorcouverartistico: venda.valorcouvert ?? 0,
 			},
 			emitirNfce,
 		});
@@ -1071,8 +1081,14 @@ export const localApi = {
 		meio?: MeioPagamento;
 		troco?: number;
 		cliente?: ClienteVenda | null;
+		valordesconto?: number;
 	}) {
-		const total = input.itens.reduce((acc, item) => acc + item.precototal, 0);
+		const desconto = Number(input.valordesconto) || 0;
+		const subtotal = input.itens.reduce(
+			(acc, item) => acc + item.precototal,
+			0,
+		);
+		const total = Math.max(0, subtotal - desconto);
 		const lancamentos = input.lancamentos?.length
 			? input.lancamentos
 			: [lancamentoUnico(input.meio ?? "DINHEIRO", total)];
@@ -1082,6 +1098,7 @@ export const localApi = {
 			lancamentos,
 			troco: input.troco,
 			cliente: input.cliente,
+			valordesconto: desconto,
 		});
 		const emitir = (await getConfig("emitir_nfce", "1")) === "1";
 

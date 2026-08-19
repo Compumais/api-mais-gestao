@@ -50,6 +50,7 @@ import { normalizarPagamentoEmissaoNfe } from "@/util/normalizar-pagamento-emiss
 import { normalizarItensEmissaoNfe } from "@/util/normalizar-tributacao-item-emissao-nfe.js";
 import { obterXmlAutorizadoNotaFiscal } from "@/util/obter-xml-nota-fiscal.js";
 import type { PagamentosRegistro } from "@/util/pagamentos-pdv-util.js";
+import { parseValorMonetario } from "@/util/recebimentos-venda-util.js";
 import { resolverNatOpEmissaoNfe } from "@/util/resolver-nat-op-emissao-nfe.js";
 import {
 	normalizarCodigoStatusNfe,
@@ -365,10 +366,11 @@ export async function emitirNfceVendaPdvService({
 		valorTotalVenda,
 	);
 
+	const desconto = parseValorMonetario(pagamentos.desconto);
 	const totaisFiscais = calcularTotaisFiscaisEmissaoNfe(
 		crt,
 		itensNormalizados,
-		{},
+		desconto > 0 ? { desconto } : {},
 	);
 	const pagamentoNormalizado = normalizarPagamentoEmissaoNfe(pagamentoBruto, {
 		finNFe: 1,
@@ -399,6 +401,7 @@ export async function emitirNfceVendaPdvService({
 		itens: itensNormalizados,
 		pagamento: pagamentoNormalizado,
 		natOp,
+		...(desconto > 0 ? { totais: { desconto } } : {}),
 		...(destinatarioResolvido?.destinatario
 			? { destinatario: destinatarioResolvido.destinatario }
 			: {}),
@@ -462,7 +465,7 @@ export async function emitirNfceVendaPdvService({
 		totalproduto: totaisFiscais.totalProdutos.toFixed(2),
 		frete: null,
 		seguro: null,
-		descontosubtotal: null,
+		descontosubtotal: desconto > 0 ? desconto.toFixed(2) : null,
 		outrasdespesas: null,
 		tipofrete: 9,
 		baseicms: totaisFiscais.baseIcms.toFixed(2),

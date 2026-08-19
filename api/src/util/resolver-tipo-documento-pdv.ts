@@ -8,6 +8,34 @@ export const TPAG_CARTAO_DEBITO = "04";
 export const TPAG_BOLETO = "15";
 export const TPAG_PIX = "17";
 
+const TPAG_A_VISTA_PDV = new Set([
+	TPAG_DINHEIRO,
+	TPAG_PIX,
+	TPAG_CARTAO_CREDITO,
+	TPAG_CARTAO_DEBITO,
+]);
+
+function normalizarTPag(formapagamentonfe: string | null | undefined): string {
+	return String(formapagamentonfe ?? "")
+		.replace(/\D/g, "")
+		.padStart(2, "0");
+}
+
+export function formaNfeEhAVistaPdv(
+	formapagamentonfe: string | null | undefined,
+): boolean {
+	return TPAG_A_VISTA_PDV.has(normalizarTPag(formapagamentonfe));
+}
+
+export function tipoDocumentoExigeClientePdv(
+	tipo: Pick<TipoDocumentoFinanceiro, "aprazo" | "formapagamentonfe">,
+): boolean {
+	if (formaNfeEhAVistaPdv(tipo.formapagamentonfe)) {
+		return false;
+	}
+	return Number(tipo.aprazo) === 1;
+}
+
 function normalizarTexto(valor: string | null | undefined): string {
 	return (valor ?? "")
 		.normalize("NFD")

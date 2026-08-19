@@ -48,6 +48,9 @@ const bodyBaixaSchema = z.object({
 		valorprepago: z.string().nullable().optional(),
 		valortroco: z.string().nullable().optional(),
 		valortotal: z.string().nullable().optional(),
+		desconto: z.string().nullable().optional(),
+		valortaxaservico: z.string().nullable().optional(),
+		valorcouverartistico: z.string().nullable().optional(),
 	}),
 	emitirNfce: z.boolean().optional(),
 });

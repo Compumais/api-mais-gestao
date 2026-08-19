@@ -5,7 +5,9 @@ import {
 	lancamentoUnico,
 	meioPrincipal,
 	normalizarLancamentos,
+	pagamentosErpDosLancamentos,
 	somarLancamentos,
+	totaisParaSync,
 	totaisPorMeio,
 	validarFechamentoPagamentos,
 } from "./pagamento";
@@ -155,6 +157,58 @@ describe("totaisPorMeio / meioPrincipal", () => {
 				{ meio: "DINHEIRO", valor: 10 },
 			]),
 			"MISTO",
+		);
+	});
+
+	it("não mistura cheque/boleto com cartão", () => {
+		const totais = totaisPorMeio([
+			{ meio: "CARTAO", valor: 40, formapagamentonfe: "03" },
+			{
+				meio: "OUTROS",
+				valor: 60,
+				formapagamentonfe: "15",
+				idtipodocumentofinanceiro: "11111111-1111-4111-8111-111111111111",
+			},
+		]);
+		assert.equal(totais.cartao, 40);
+		assert.equal(totais.outros, 60);
+		const sync = totaisParaSync(
+			[
+				{ meio: "CARTAO", valor: 40, formapagamentonfe: "04" },
+				{
+					meio: "OUTROS",
+					valor: 60,
+					idtipodocumentofinanceiro: "11111111-1111-4111-8111-111111111111",
+				},
+			],
+			0,
+		);
+		assert.equal(sync.valorcartaodebito, 40);
+		assert.equal(sync.valorcartaocredito, 0);
+		assert.equal(sync.valorprepago, 60);
+		assert.deepEqual(
+			pagamentosErpDosLancamentos([
+				{
+					meio: "PIX",
+					valor: 40,
+					aprazo: 1,
+					idtipodocumentofinanceiro: "11111111-1111-4111-8111-111111111111",
+					formapagamentonfe: "17",
+				},
+				{
+					meio: "OUTROS",
+					valor: 60,
+					aprazo: 1,
+					formapagamentonfe: "15",
+					idtipodocumentofinanceiro: "11111111-1111-4111-8111-111111111111",
+				},
+			]),
+			[
+				{
+					idtipodocumentofinanceiro: "11111111-1111-4111-8111-111111111111",
+					valor: 60,
+				},
+			],
 		);
 	});
 });
