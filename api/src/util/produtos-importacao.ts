@@ -83,6 +83,139 @@ export const COLUNAS_ALIQUOTA_PRODUTO = [
 export type CampoAliquotaProduto =
 	(typeof COLUNAS_ALIQUOTA_PRODUTO)[number]["campo"];
 
+export const COLUNAS_FISCAIS_PRODUTO = [
+	{
+		campo: "cfopentrada",
+		cabecalho: "CFOP de entrada",
+		aliases: ["cfop entrada", "cfopentrada"],
+		exemplo: "1102",
+	},
+	{
+		campo: "tipoproduto",
+		cabecalho: "Tipo de produto",
+		aliases: ["tipo de produto", "tipoproduto", "tipo produto"],
+		exemplo: "04",
+	},
+	{
+		campo: "situacaotributariasnentrada",
+		cabecalho: "CST/CSOSN entrada",
+		aliases: [
+			"cst csosn entrada",
+			"situacao tributaria sn entrada",
+			"situacaotributariasnentrada",
+		],
+		exemplo: "00",
+	},
+	{
+		campo: "cfopsaida",
+		cabecalho: "CFOP NF saída",
+		aliases: [
+			"cfop saida",
+			"cfopsaida",
+			"cfop nf",
+			"cfop venda",
+			"cfop nf saida",
+		],
+		exemplo: "5102",
+	},
+	{
+		campo: "cfopnfce",
+		cabecalho: "CFOP ECF/NFC-e",
+		aliases: [
+			"cfop nfce",
+			"cfopsaidanfce",
+			"cfop ecf",
+			"cfop nfc e",
+			"cfop ecf nfc e",
+		],
+		exemplo: "5102",
+	},
+	{
+		campo: "cst",
+		cabecalho: "CST ICMS contribuinte",
+		aliases: ["cst", "situacao tributaria", "cst nfe", "situacaotributaria"],
+		exemplo: "00",
+	},
+	{
+		campo: "csosn",
+		cabecalho: "CSOSN ICMS contribuinte",
+		aliases: [
+			"csosn",
+			"situacao tributaria sn",
+			"csosn nfe",
+			"situacaotributariasn",
+		],
+		exemplo: "102",
+	},
+	{
+		campo: "tributacaoespecial",
+		cabecalho: "CST ICMS não contribuinte",
+		aliases: [
+			"tributacao especial",
+			"cst cfe",
+			"tributacaoespecial",
+			"cst icms nao contribuinte",
+		],
+		exemplo: "00",
+	},
+	{
+		campo: "tributacaosn",
+		cabecalho: "CSOSN ICMS não contribuinte",
+		aliases: [
+			"tributacao sn",
+			"csosn cfe",
+			"tributacaosn",
+			"csosn icms nao contribuinte",
+		],
+		exemplo: "102",
+	},
+	{
+		campo: "cstipientrada",
+		cabecalho: "CST IPI entrada",
+		aliases: ["cstipi entrada", "cstipientrada"],
+		exemplo: "00",
+	},
+	{
+		campo: "cstipisaida",
+		cabecalho: "CST IPI saída",
+		aliases: ["cstipi saida", "cstipisaida"],
+		exemplo: "50",
+	},
+	{
+		campo: "cstpisentrada",
+		cabecalho: "CST PIS entrada",
+		aliases: ["cstpisentrada"],
+		exemplo: "50",
+	},
+	{
+		campo: "cstcofinsentrada",
+		cabecalho: "CST COFINS entrada",
+		aliases: ["cstcofinsentrada"],
+		exemplo: "50",
+	},
+	{
+		campo: "cstpis",
+		cabecalho: "CST PIS saída",
+		aliases: ["cst pis", "cstpis"],
+		exemplo: "01",
+	},
+	{
+		campo: "cstcofins",
+		cabecalho: "CST COFINS saída",
+		aliases: ["cst cofins", "cstcofins"],
+		exemplo: "01",
+	},
+] as const;
+
+export type CampoFiscalProduto =
+	(typeof COLUNAS_FISCAIS_PRODUTO)[number]["campo"];
+
+type ColunaComCabecalho = {
+	campo: string;
+	cabecalho: string;
+	aliases: readonly string[];
+};
+
 const COLUNAS_BASE = [
 	"codigo",
 	"ean",
@@ -98,11 +231,7 @@ const COLUNAS_BASE = [
 	"mva",
 	"estoque",
 	"ippt",
-	"cfopsaida",
-	"cfopentrada",
-	"cfopnfce",
-	"cst",
-	"csosn",
+	...COLUNAS_FISCAIS_PRODUTO.map((coluna) => coluna.campo),
 	...COLUNAS_ALIQUOTA_PRODUTO.map((coluna) => coluna.campo),
 ] as const;
 
@@ -140,8 +269,18 @@ export type LinhaImportacaoProduto = {
 	cfopSaida: string | null;
 	cfopEntrada: string | null;
 	cfopNfce: string | null;
+	tipoproduto: string | null;
+	situacaotributariasnentrada: string | null;
 	cst: string | null;
 	csosn: string | null;
+	tributacaoespecial: string | null;
+	tributacaosn: string | null;
+	cstipientrada: string | null;
+	cstipisaida: string | null;
+	cstpisentrada: string | null;
+	cstcofinsentrada: string | null;
+	cstpis: string | null;
+	cstcofins: string | null;
 	aliquotas: AliquotasProdutoImportacao;
 	erros: string[];
 };
@@ -183,6 +322,19 @@ export function normalizarTextoCabecalho(valor: string): string {
 		.toLowerCase();
 }
 
+function colunaCorresponde(
+	coluna: ColunaComCabecalho,
+	normalizado: string,
+): boolean {
+	return (
+		normalizado === normalizarTextoCabecalho(coluna.cabecalho) ||
+		normalizado === coluna.campo ||
+		coluna.aliases.some(
+			(alias) => normalizarTextoCabecalho(alias) === normalizado,
+		)
+	);
+}
+
 function mapearColuna(cabecalho: string): ColunaImportacao | null {
 	const normalizado = normalizarTextoCabecalho(cabecalho);
 
@@ -207,31 +359,15 @@ function mapearColuna(cabecalho: string): ColunaImportacao | null {
 	if (["estoque", "saldo", "quantidade"].includes(normalizado))
 		return "estoque";
 	if (normalizado === "ippt") return "ippt";
-	if (
-		["cfop saida", "cfopsaida", "cfop nf", "cfop venda"].includes(normalizado)
-	) {
-		return "cfopsaida";
+
+	for (const coluna of COLUNAS_FISCAIS_PRODUTO) {
+		if (colunaCorresponde(coluna, normalizado)) {
+			return coluna.campo;
+		}
 	}
-	if (["cfop entrada", "cfopentrada"].includes(normalizado)) {
-		return "cfopentrada";
-	}
-	if (
-		["cfop nfce", "cfopsaidanfce", "cfop ecf", "cfop nfc e"].includes(
-			normalizado,
-		)
-	) {
-		return "cfopnfce";
-	}
-	if (["cst", "situacao tributaria"].includes(normalizado)) return "cst";
-	if (["csosn", "situacao tributaria sn"].includes(normalizado)) return "csosn";
 
 	for (const coluna of COLUNAS_ALIQUOTA_PRODUTO) {
-		const cabecalhoNormalizado = normalizarTextoCabecalho(coluna.cabecalho);
-		if (
-			normalizado === cabecalhoNormalizado ||
-			(coluna.aliases as readonly string[]).includes(normalizado) ||
-			normalizado === coluna.campo
-		) {
+		if (colunaCorresponde(coluna, normalizado)) {
 			return coluna.campo;
 		}
 	}
@@ -337,6 +473,34 @@ function celula(
 		return "";
 	}
 	return (linha[indice] ?? "").trim();
+}
+
+function recortarCodigoFiscal(valor: string, max: number): string | null {
+	const texto = valor.trim();
+	if (!texto) {
+		return null;
+	}
+
+	const somenteDigitos = texto.replace(/\D/g, "");
+	if (somenteDigitos) {
+		return somenteDigitos.slice(0, max);
+	}
+
+	return texto.slice(0, max);
+}
+
+function recortarTipoProduto(valor: string): string | null {
+	const texto = valor.trim();
+	if (!texto) {
+		return null;
+	}
+
+	const digitos = texto.replace(/\D/g, "");
+	if (digitos) {
+		return digitos.slice(0, 2).padStart(2, "0");
+	}
+
+	return texto.slice(0, 2);
 }
 
 function validarLinha(
@@ -493,15 +657,56 @@ function validarLinha(
 		mva,
 		estoque,
 		ippt,
-		cfopSaida:
-			celula(valores, indicePorColuna, "cfopsaida").replace(/\D/g, "") || null,
-		cfopEntrada:
-			celula(valores, indicePorColuna, "cfopentrada").replace(/\D/g, "") ||
-			null,
-		cfopNfce:
-			celula(valores, indicePorColuna, "cfopnfce").replace(/\D/g, "") || null,
-		cst: celula(valores, indicePorColuna, "cst").slice(0, 3) || null,
-		csosn: celula(valores, indicePorColuna, "csosn").slice(0, 3) || null,
+		cfopSaida: recortarCodigoFiscal(
+			celula(valores, indicePorColuna, "cfopsaida"),
+			4,
+		),
+		cfopEntrada: recortarCodigoFiscal(
+			celula(valores, indicePorColuna, "cfopentrada"),
+			4,
+		),
+		cfopNfce: recortarCodigoFiscal(
+			celula(valores, indicePorColuna, "cfopnfce"),
+			4,
+		),
+		tipoproduto: recortarTipoProduto(
+			celula(valores, indicePorColuna, "tipoproduto"),
+		),
+		situacaotributariasnentrada: recortarCodigoFiscal(
+			celula(valores, indicePorColuna, "situacaotributariasnentrada"),
+			3,
+		),
+		cst: recortarCodigoFiscal(celula(valores, indicePorColuna, "cst"), 3),
+		csosn: recortarCodigoFiscal(celula(valores, indicePorColuna, "csosn"), 3),
+		tributacaoespecial: recortarCodigoFiscal(
+			celula(valores, indicePorColuna, "tributacaoespecial"),
+			7,
+		),
+		tributacaosn: recortarCodigoFiscal(
+			celula(valores, indicePorColuna, "tributacaosn"),
+			3,
+		),
+		cstipientrada: recortarCodigoFiscal(
+			celula(valores, indicePorColuna, "cstipientrada"),
+			3,
+		),
+		cstipisaida: recortarCodigoFiscal(
+			celula(valores, indicePorColuna, "cstipisaida"),
+			3,
+		),
+		cstpisentrada: recortarCodigoFiscal(
+			celula(valores, indicePorColuna, "cstpisentrada"),
+			2,
+		),
+		cstcofinsentrada: recortarCodigoFiscal(
+			celula(valores, indicePorColuna, "cstcofinsentrada"),
+			2,
+		),
+		cstpis: recortarCodigoFiscal(celula(valores, indicePorColuna, "cstpis"), 2),
+		cstcofins: recortarCodigoFiscal(
+			celula(valores, indicePorColuna, "cstcofins"),
+			2,
+		),
 		aliquotas,
 		erros,
 	};
