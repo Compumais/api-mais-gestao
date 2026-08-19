@@ -1,8 +1,8 @@
 import { and, count, eq, ilike, or } from "drizzle-orm";
 import type { NovoHierarquia } from "@/model/hierarquia-model";
 import { hierarquia } from "@/repositories/schema.js";
-import { ordenacaoCodigoVarcharAsc } from "./ordenacao-codigo.js";
 import { db } from "./connection";
+import { ordenacaoCodigoVarcharAsc } from "./ordenacao-codigo.js";
 
 export async function buscarHierarquiaPorId(id: string) {
 	const [registro] = await db
@@ -70,10 +70,7 @@ export async function listarHierarquias({
 	if (q) {
 		const termo = `%${q}%`;
 		where.push(
-			or(
-				ilike(hierarquia.codigo, termo),
-				ilike(hierarquia.nome, termo),
-			),
+			or(ilike(hierarquia.codigo, termo), ilike(hierarquia.nome, termo)),
 		);
 	}
 
@@ -97,4 +94,15 @@ export async function listarHierarquias({
 		hierarquias,
 		total: totalCount[0]?.value ?? 0,
 	};
+}
+
+export async function listarHierarquiasPorEmpresa(idempresa: string) {
+	return db
+		.select({
+			id: hierarquia.id,
+			codigo: hierarquia.codigo,
+			nome: hierarquia.nome,
+		})
+		.from(hierarquia)
+		.where(eq(hierarquia.idempresa, idempresa));
 }

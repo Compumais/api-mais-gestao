@@ -72,6 +72,17 @@ export interface Produto {
 	tipoimpressaogourmet?: string | null;
 	aliquotapis?: string | null;
 	aliquotacofins?: string | null;
+	percentualmva?: string | null;
+	aliquotaicmsinterna?: string | null;
+	aliquotaicmsdiferencialentrada?: string | null;
+	aliquotareducaoicmsnfcesat?: string | null;
+	aliquotafcpnf?: string | null;
+	ultimaaliquotaicmsst?: string | null;
+	ultimaaliquotafcpst?: string | null;
+	aliquotapisentrada?: string | null;
+	aliquotaconfinsentrada?: string | null;
+	aliquotapisconfinsentradapreco?: string | null;
+	aliquotapisconfinssaidapreco?: string | null;
 }
 
 export interface ListarProdutosResponse {
@@ -111,7 +122,23 @@ type CamposServicoProduto = {
 	aliquotacofins?: string | null;
 };
 
-export interface CriarProdutoData extends CamposServicoProduto {
+type CamposAliquotaProduto = {
+	percentualmva?: string | null;
+	aliquotaicmsinterna?: string | null;
+	aliquotaicmsdiferencialentrada?: string | null;
+	aliquotareducaoicmsnfcesat?: string | null;
+	aliquotafcpnf?: string | null;
+	ultimaaliquotaicmsst?: string | null;
+	ultimaaliquotafcpst?: string | null;
+	aliquotapisentrada?: string | null;
+	aliquotaconfinsentrada?: string | null;
+	aliquotapisconfinsentradapreco?: string | null;
+	aliquotapisconfinssaidapreco?: string | null;
+};
+
+export interface CriarProdutoData
+	extends CamposServicoProduto,
+		CamposAliquotaProduto {
 	idempresa: string;
 	codigo: number;
 	ean?: number | null;
@@ -165,7 +192,44 @@ export interface TributacaoPorCfopResponse {
 	cfopvendaecf?: number | null;
 }
 
-export interface AtualizarProdutoData extends CamposServicoProduto {
+export type FormatoImportacaoProdutos = "csv" | "xlsx";
+
+export interface ImportacaoProdutosData {
+	idempresa: string;
+	formato: FormatoImportacaoProdutos;
+	conteudo: string;
+	nomeArquivo?: string;
+}
+
+export interface ProdutoPreviewImportacao {
+	linha: number;
+	codigo: number | null;
+	nome: string;
+	grupo: string;
+	unidade: string;
+	preco: string | null;
+	acao: "criar" | "atualizar";
+	erros: string[];
+}
+
+export interface PreviewImportacaoProdutosResponse {
+	totalProdutos: number;
+	totalCriar: number;
+	totalAtualizar: number;
+	totalErros: number;
+	errosGerais: string[];
+	produtos: ProdutoPreviewImportacao[];
+}
+
+export interface ImportarProdutosResponse {
+	totalImportados: number;
+	totalCriados: number;
+	totalAtualizados: number;
+}
+
+export interface AtualizarProdutoData
+	extends CamposServicoProduto,
+		CamposAliquotaProduto {
 	codigo?: number;
 	ean?: number | null;
 	referencia?: string | null;
@@ -309,6 +373,42 @@ export const produtosService = {
 			"/produtos/tributacao-por-cfop",
 			{ params: { idempresa, idcfop } },
 		);
+		return data;
+	},
+
+	async previewImportacao(
+		dados: ImportacaoProdutosData,
+	): Promise<PreviewImportacaoProdutosResponse> {
+		const { data } = await api.post<PreviewImportacaoProdutosResponse>(
+			"/produtos/importar/preview",
+			dados,
+		);
+		return data;
+	},
+
+	async importar(
+		dados: ImportacaoProdutosData,
+		onUploadProgress?: (percentual: number) => void,
+	): Promise<ImportarProdutosResponse> {
+		const { data } = await api.post<ImportarProdutosResponse>(
+			"/produtos/importar",
+			dados,
+			{
+				onUploadProgress: (evento) => {
+					if (onUploadProgress && evento.total) {
+						onUploadProgress(Math.round((evento.loaded / evento.total) * 100));
+					}
+				},
+			},
+		);
+		return data;
+	},
+
+	async baixarTemplate(formato: FormatoImportacaoProdutos): Promise<Blob> {
+		const { data } = await api.get<Blob>("/produtos/template", {
+			params: { formato },
+			responseType: "blob",
+		});
 		return data;
 	},
 };

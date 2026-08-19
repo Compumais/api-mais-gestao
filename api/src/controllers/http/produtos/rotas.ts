@@ -8,9 +8,14 @@ import { criarProduto } from "./criar.js";
 import * as schema from "./doc-schema/schema.js";
 import { excluirProduto } from "./excluir.js";
 import { exportarProdutosMgv } from "./exportar-mgv.js";
+import { importarProdutos } from "./importar.js";
+import { previewImportacaoProdutos } from "./importar-preview.js";
 import { inativarProduto } from "./inativar.js";
 import { listarProdutos } from "./listar.js";
+import { templateProdutos } from "./template.js";
 import { tributacaoPorCfop } from "./tributacao-por-cfop.js";
+
+const LIMITE_BODY_IMPORTACAO = 20 * 1024 * 1024;
 
 export async function produtosRotas(app: FastifyInstance) {
 	app.addHook("onRequest", verifyJwt);
@@ -34,6 +39,20 @@ export async function produtosRotas(app: FastifyInstance) {
 	app.get("/produtos/proximo-codigo", {
 		schema: criarProximoCodigoSchema("produtos", "number"),
 		handler: criarHandlerProximoCodigo("produto"),
+	});
+	app.get("/produtos/template", {
+		schema: schema.templateProdutosSchema,
+		handler: templateProdutos,
+	});
+	app.post("/produtos/importar/preview", {
+		schema: schema.previewImportacaoProdutosSchema,
+		bodyLimit: LIMITE_BODY_IMPORTACAO,
+		handler: previewImportacaoProdutos,
+	});
+	app.post("/produtos/importar", {
+		schema: schema.importarProdutosSchema,
+		bodyLimit: LIMITE_BODY_IMPORTACAO,
+		handler: importarProdutos,
 	});
 	app.patch("/produtos/inativar/:id", {
 		schema: schema.inativarProdutoSchema,

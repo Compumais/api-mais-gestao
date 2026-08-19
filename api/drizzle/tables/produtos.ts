@@ -172,6 +172,7 @@ export const produtos = pgTable(
 		percentuallucroajustado: numeric({ precision: 12, scale: 2 }),
 		percentualreducaoicms: numeric({ precision: 7, scale: 4 }),
 		percentualreducaomva: numeric({ precision: 5, scale: 2 }),
+		percentualmva: numeric({ precision: 5, scale: 2 }), // Percentual do MVA (Margem de Valor Agregado)
 		percoutrosvalorespreco: numeric({ precision: 5, scale: 2 }),
 		percredbasepiscofinsentrada: numeric({ precision: 5, scale: 2 }),
 		percredbasepiscofinssaida: numeric({ precision: 5, scale: 2 }),
