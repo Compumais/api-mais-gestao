@@ -222,6 +222,29 @@ export async function atualizarProduto(
 	return produto;
 }
 
+export async function buscarProdutosPorIds(ids: string[]) {
+	if (ids.length === 0) {
+		return [];
+	}
+
+	return db.select().from(produtos).where(inArray(produtos.id, ids));
+}
+
+export async function atualizarProdutosEmMassa(
+	ids: string[],
+	dadosProduto: Partial<NovoProduto>,
+) {
+	if (ids.length === 0) {
+		return [];
+	}
+
+	return db
+		.update(produtos)
+		.set(dadosProduto)
+		.where(inArray(produtos.id, ids))
+		.returning();
+}
+
 export async function listarIdentificadoresProdutos(idempresa: string) {
 	return db
 		.select({

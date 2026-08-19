@@ -6,8 +6,8 @@ import { Combobox } from "@/components/ui/combobox";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { useEmpresa } from "@/hooks/use-empresa";
 import {
-	cfopService,
 	type Cfop,
+	cfopService,
 	type TipoMovimentoCfop,
 } from "@/services/cfop.service";
 
@@ -18,6 +18,7 @@ type CampoCfopProdutoProps = {
 	tipomovimento: TipoMovimentoCfop;
 	onChange: (idcfop: string, cfop?: Cfop | null) => void;
 	erro?: string | undefined;
+	ocultarRotulo?: boolean;
 };
 
 function formatarLabel(codigo: string | null, descricao: string | null) {
@@ -32,6 +33,7 @@ export function CampoCfopProduto({
 	tipomovimento,
 	onChange,
 	erro,
+	ocultarRotulo = false,
 }: CampoCfopProdutoProps) {
 	const { localStorageEmpresa: empresa } = useEmpresa();
 	const [rotuloSelecionado, setRotuloSelecionado] = useState<string | null>(
@@ -77,17 +79,14 @@ export function CampoCfopProduto({
 
 	return (
 		<Field data-invalid={!!erro}>
-			<FieldLabel htmlFor={id}>{label}</FieldLabel>
+			{ocultarRotulo ? null : <FieldLabel htmlFor={id}>{label}</FieldLabel>}
 			<Combobox
 				options={opcoes}
 				value={value ?? ""}
 				onChange={(idSelecionado) => {
-					const cfop =
-						cfops.find((item) => item.id === idSelecionado) ?? null;
+					const cfop = cfops.find((item) => item.id === idSelecionado) ?? null;
 					if (cfop) {
-						setRotuloSelecionado(
-							formatarLabel(cfop.codigo, cfop.descricao),
-						);
+						setRotuloSelecionado(formatarLabel(cfop.codigo, cfop.descricao));
 					} else if (!idSelecionado) {
 						setRotuloSelecionado(null);
 					}
