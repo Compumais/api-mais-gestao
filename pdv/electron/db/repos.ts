@@ -2951,3 +2951,28 @@ export async function marcarNfceTransmitida(id: string): Promise<void> {
 		[id],
 	);
 }
+
+export async function listarNfceComXml(): Promise<
+	Array<{
+		id: string;
+		chave: string | null;
+		serie: number;
+		numero: number;
+		xml: string;
+		criadoem: string;
+	}>
+> {
+	return query<{
+		id: string;
+		chave: string | null;
+		serie: number;
+		numero: number;
+		xml: string;
+		criadoem: string;
+	}>(
+		`SELECT id, chave, serie, numero, xml, criadoem
+		 FROM nfce_local
+		 WHERE xml IS NOT NULL AND btrim(xml) <> ''
+		 ORDER BY criadoem`,
+	);
+}

@@ -1,6 +1,7 @@
 import {
 	CloudDownload,
 	CreditCard,
+	FileDown,
 	HardDrive,
 	Keyboard,
 	LayoutGrid,
@@ -61,6 +62,7 @@ type AbaId =
 	| "tecnibra"
 	| "balanca"
 	| "backup"
+	| "xml"
 	| "rede";
 
 type StatusFiscal = {
@@ -78,6 +80,23 @@ function formatarDataCurta(valor?: string): string {
 	const data = new Date(valor);
 	if (Number.isNaN(data.getTime())) return valor;
 	return data.toLocaleString("pt-BR");
+}
+
+function dataLocalIso(data: Date): string {
+	const ano = data.getFullYear();
+	const mes = String(data.getMonth() + 1).padStart(2, "0");
+	const dia = String(data.getDate()).padStart(2, "0");
+	return `${ano}-${mes}-${dia}`;
+}
+
+function obterPeriodoMesAtual(): { dataInicio: string; dataFim: string } {
+	const hoje = new Date();
+	const inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+	const fim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+	return {
+		dataInicio: dataLocalIso(inicio),
+		dataFim: dataLocalIso(fim),
+	};
 }
 
 type StatusLan = {
@@ -132,6 +151,7 @@ const ABAS: Array<{
 	{ id: "tecnibra", label: "Catraca Tecnibra", icon: Ticket },
 	{ id: "balanca", label: "Balança", icon: Scale },
 	{ id: "backup", label: "Backup", icon: HardDrive },
+	{ id: "xml", label: "XMLs NFC-e", icon: FileDown },
 	{ id: "rede", label: "Rede / sync", icon: Wifi },
 ];
 
@@ -178,6 +198,14 @@ export function ConfigPage() {
 	} | null>(null);
 	const [portasBalanca, setPortasBalanca] = useState<string[]>([]);
 	const [statusBackup, setStatusBackup] = useState<StatusBackup | null>(null);
+	const periodoXmlPadrao = obterPeriodoMesAtual();
+	const [xmlDataInicio, setXmlDataInicio] = useState(
+		periodoXmlPadrao.dataInicio,
+	);
+	const [xmlDataFim, setXmlDataFim] = useState(periodoXmlPadrao.dataFim);
+	const [xmlCriterio, setXmlCriterio] = useState<"emissao" | "autorizacao">(
+		"emissao",
+	);
 	const [terminaisPdv, setTerminaisPdv] = useState<TerminalPdvOpcao[]>([]);
 	const [testeEtiqueta, setTesteEtiqueta] = useState("");
 	const [resultadoTesteEtiqueta, setResultadoTesteEtiqueta] = useState("");
@@ -589,6 +617,42 @@ export function ConfigPage() {
 			} catch {
 				// status opcional
 			}
+		} finally {
+			setTestando(null);
+		}
+	}
+
+	async function exportarXmlsNfce() {
+		if (!xmlDataInicio || !xmlDataFim) {
+			setMsg("Preencha o período completo");
+			return;
+		}
+		setTestando("xml");
+		setMsg("");
+		try {
+			const resultado = await pdvInvoke<{
+				cancelado: boolean;
+				total: number;
+				ignorados: number;
+				pasta: string;
+			}>("exportarXmlsNfce", {
+				dataInicio: xmlDataInicio,
+				dataFim: xmlDataFim,
+				criterio: xmlCriterio,
+			});
+			if (resultado.cancelado) {
+				setMsg("Exportação cancelada");
+				return;
+			}
+			setMsg(
+				resultado.total > 0
+					? `${resultado.total} XML(s) exportado(s) em ${resultado.pasta}`
+					: "Nenhum XML encontrado no período com o critério escolhido",
+			);
+		} catch (err) {
+			setMsg(
+				err instanceof Error ? err.message : "Falha ao exportar XMLs da NFC-e",
+			);
 		} finally {
 			setTestando(null);
 		}
@@ -1689,6 +1753,71 @@ export function ConfigPage() {
 									</CardContent>
 								</Card>
 							</>
+						)}
+
+						{aba === "xml" && (
+							<Card>
+								<CardHeader>
+									<CardTitle>Exportar XMLs da NFC-e</CardTitle>
+								</CardHeader>
+								<CardContent className="grid gap-4 sm:grid-cols-2">
+									<div className="space-y-2">
+										<Label htmlFor="xml_data_inicio">Data inicial</Label>
+										<Input
+											id="xml_data_inicio"
+											type="date"
+											value={xmlDataInicio}
+											onChange={(e) => setXmlDataInicio(e.target.value)}
+										/>
+									</div>
+									<div className="space-y-2">
+										<Label htmlFor="xml_data_fim">Data final</Label>
+										<Input
+											id="xml_data_fim"
+											type="date"
+											value={xmlDataFim}
+											onChange={(e) => setXmlDataFim(e.target.value)}
+										/>
+									</div>
+									<div className="space-y-2 sm:col-span-2">
+										<Label htmlFor="xml_criterio">Filtrar por</Label>
+										<Select
+											id="xml_criterio"
+											value={xmlCriterio}
+											onChange={(e) =>
+												setXmlCriterio(
+													e.target.value === "autorizacao"
+														? "autorizacao"
+														: "emissao",
+												)
+											}
+										>
+											<option value="emissao">Data de emissão</option>
+											<option value="autorizacao">Data de autorização</option>
+										</Select>
+										<p className="text-xs text-muted-foreground">
+											Emissão usa o dhEmi do XML. Autorização usa o dhRecbto do
+											protocolo SEFAZ — notas em contingência sem autorização
+											não entram nesse filtro.
+										</p>
+									</div>
+									<div className="sm:col-span-2">
+										<Button
+											type="button"
+											disabled={testando === "xml"}
+											onClick={() => void exportarXmlsNfce()}
+										>
+											{testando === "xml"
+												? "Exportando…"
+												: "Escolher pasta e exportar"}
+										</Button>
+									</div>
+									<p className="sm:col-span-2 text-xs text-muted-foreground">
+										Só os XMLs gravados neste terminal entram na pasta. Cada
+										arquivo usa a chave de acesso da NFC-e.
+									</p>
+								</CardContent>
+							</Card>
 						)}
 
 						{aba === "rede" && (

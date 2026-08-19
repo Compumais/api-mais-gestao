@@ -8,6 +8,7 @@ export type TipoTarefaExecucao =
 	| "verificar_ciclos_plano"
 	| "sync_inbound_nfe"
 	| "processar_automacoes"
+	| "sync_dominio"
 	| `automacao:${string}`;
 
 export type JobContext = {
@@ -26,6 +27,7 @@ export type JobHandler = (contexto: JobContext) => Promise<JobResult>;
 export const LOCK_AGENDADOR_PRINCIPAL = 871_234_001;
 export const LOCK_AGENDADOR_INBOUND_NFE = 871_234_002;
 export const LOCK_AGENDADOR_AUTOMACOES = 871_234_003;
+export const LOCK_AGENDADOR_DOMINIO = 871_234_004;
 
 export const CONFIGURACAO_NOTIFICACOES_PADRAO: ConfiguracaoNotificacoes = {
 	alertasFinanceiros: {

@@ -17,7 +17,7 @@ export function montarRegistro53(nota: NotaSintegra): string {
 		"53",
 		formatarCnpjCpf(nota.cnpjCpf),
 		formatarInscricaoEstadual(nota.inscricaoEstadual),
-		formatarDataAaaammdd(nota.emissao),
+		formatarDataAaaammdd(nota.dataCompetencia ?? nota.emissao),
 		formatarAlfanumerico(nota.uf, 2),
 		formatarNumerico(nota.modelo, 2),
 		formatarSerie(nota.serie),

@@ -3,6 +3,31 @@ import { buscarNotaFiscalPorId } from "@/repositories/nota-fiscal-repositories.j
 import { buscarNotaFiscalXmlPorNota } from "@/repositories/nota-fiscal-xml-repositories.js";
 import { obterCaminhoCompletoXml } from "@/util/xml-storage.js";
 
+export async function obterXmlCancelamentoNotaFiscal(
+	idnotafiscal: string,
+): Promise<string | null> {
+	const nota = await buscarNotaFiscalPorId(idnotafiscal);
+	if (!nota) return null;
+
+	if (nota.arquivoxmlcancelada?.trim()) {
+		return nota.arquivoxmlcancelada;
+	}
+
+	const registroXml = await buscarNotaFiscalXmlPorNota(idnotafiscal);
+	if (!registroXml?.caminhoanexo || registroXml.tipoxml !== "cancelado") {
+		return null;
+	}
+
+	try {
+		return await readFile(
+			obterCaminhoCompletoXml(registroXml.caminhoanexo),
+			"utf8",
+		);
+	} catch {
+		return null;
+	}
+}
+
 export async function obterXmlAutorizadoNotaFiscal(
 	idnotafiscal: string,
 ): Promise<string | null> {
@@ -36,9 +61,7 @@ export async function obterXmlNotaFiscal(
 	if (!nota) return null;
 
 	const conteudoBanco =
-		tipo === "autorizado"
-			? nota.arquivoxmlautorizada
-			: nota.arquivoxmlassinado;
+		tipo === "autorizado" ? nota.arquivoxmlautorizada : nota.arquivoxmlassinado;
 
 	if (conteudoBanco?.trim()) {
 		return conteudoBanco;

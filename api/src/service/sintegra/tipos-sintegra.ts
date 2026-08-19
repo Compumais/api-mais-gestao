@@ -30,6 +30,7 @@ export type DadosContribuinteSintegra = {
 export type NotaSintegra = {
 	id: string;
 	emissao: string | null;
+	dataCompetencia: string | null;
 	modelo: string | null;
 	serie: string | null;
 	numero: string | null;

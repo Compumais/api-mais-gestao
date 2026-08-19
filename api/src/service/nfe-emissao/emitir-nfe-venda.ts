@@ -9,6 +9,7 @@ import {
 	criarNotaFiscalComItens,
 	substituirItensNotaFiscal,
 } from "@/repositories/nota-fiscal-repositories.js";
+import { enfileirarEnvioDominioSilencioso } from "@/service/dominio/enfileirar-envio-dominio.js";
 import { salvarUltimaPreferenciaEmissaoNfe } from "@/service/nfe-configuracao/salvar-ultima-preferencia-emissao-nfe.js";
 import type {
 	DestinatarioPayloadNfe,
@@ -28,10 +29,6 @@ import type { FormaPagamentoNfVenda } from "@/service/nota-fiscal/gerar-contas-r
 import { integrarNotaFiscalVendaAutorizadaService } from "@/service/nota-fiscal/integrar-nota-fiscal-venda-autorizada.js";
 import type { calcularTotaisFiscaisEmissaoNfe } from "@/util/calcular-totais-fiscais-emissao-nfe.js";
 import {
-	agoraBrasiliaIsoOffset,
-	hojeBrasiliaIsoDate,
-} from "@/util/data-hora-brasilia.js";
-import {
 	FIN_NFE_NORMAL,
 	type TipoDevolucaoNfe,
 } from "@/util/cfop-devolucao-emissao-nfe.js";
@@ -39,6 +36,10 @@ import {
 	montarDadosImportacaoItemEmissaoNfe,
 	montarSnapshotEmissaoNfe,
 } from "@/util/dados-emissao-nfe-nota.js";
+import {
+	agoraBrasiliaIsoOffset,
+	hojeBrasiliaIsoDate,
+} from "@/util/data-hora-brasilia.js";
 import { httpOk } from "@/util/http-util.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
 import {
@@ -544,6 +545,12 @@ export async function emitirNfeVendaService(
 		if (integracao?.success && integracao.body) {
 			corpo.integracao = integracao.body;
 		}
+
+		void enfileirarEnvioDominioSilencioso({
+			idempresa,
+			idnotafiscal,
+			tipo: "autorizada",
+		});
 	}
 
 	return httpOk(corpo);

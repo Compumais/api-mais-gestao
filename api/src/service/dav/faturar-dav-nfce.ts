@@ -1,66 +1,70 @@
 import { v4 as uuidv4 } from "uuid";
-import type { HttpResponse } from "@/model/http-model.js";
-import type { NovaNotaFiscal } from "@/model/nota-fiscal-model.js";
-import type { NovoNotaFiscalItem } from "@/model/nota-fiscal-item-model.js";
 import { emitirNfeGateway } from "@/lib/nfe-gateway-client.js";
-import { atualizarDav, buscarDavPorId } from "@/repositories/dav-repositories.js";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import type { HttpResponse } from "@/model/http-model.js";
+import type { NovoNotaFiscalItem } from "@/model/nota-fiscal-item-model.js";
+import type { NovaNotaFiscal } from "@/model/nota-fiscal-model.js";
 import {
-	buscarNotaFiscalPorId,
-	criarNotaFiscalComItens,
-	atualizarNotaFiscal,
-	substituirItensNotaFiscal,
-} from "@/repositories/nota-fiscal-repositories.js";
+	atualizarDav,
+	buscarDavPorId,
+} from "@/repositories/dav-repositories.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	buscarNfeSeriePadrao,
 	buscarNfeSeriePorNumeroSerie,
 	reservarProximoNumeroSerie,
 } from "@/repositories/nfe-serie-repositories.js";
+import {
+	atualizarNotaFiscal,
+	buscarNotaFiscalPorId,
+	criarNotaFiscalComItens,
+	substituirItensNotaFiscal,
+} from "@/repositories/nota-fiscal-repositories.js";
 import { buscarTipoDocumentoFinanceiroPorId } from "@/repositories/tipo-documento-financeiro-repositories.js";
-import { arquivarXmlNotaFiscal } from "@/service/nota-fiscal/arquivar-xml-nota-fiscal.js";
-import { integrarNotaFiscalVendaAutorizadaService } from "@/service/nota-fiscal/integrar-nota-fiscal-venda-autorizada.js";
-import { enriquecerItensEmissaoComProduto } from "@/service/nfe-emissao/enriquecer-itens-emissao-produto.js";
+import { montarItensEmissaoDav } from "@/service/dav/montar-itens-emissao-dav.js";
+import { enfileirarEnvioDominioSilencioso } from "@/service/dominio/enfileirar-envio-dominio.js";
 import {
 	carregarContextoEmissaoNfce,
 	montarPayloadGatewayEmissaoNfce,
 } from "@/service/nfce-emissao/contexto-emissao-nfce.js";
-import { aplicarCreditoIcmsSnItensEmissao } from "@/service/nfe-emissao/aplicar-credito-icms-sn-itens.js";
 import type { ResultadoEmissaoNfcePdv } from "@/service/nfce-emissao/emitir-nfce-venda-pdv.js";
-import { montarItensEmissaoDav } from "@/service/dav/montar-itens-emissao-dav.js";
-import { calcularTotaisFiscaisEmissaoNfe } from "@/util/calcular-totais-fiscais-emissao-nfe.js";
-import {
-	agoraBrasiliaIsoOffset,
-	hojeBrasiliaIsoDate,
-} from "@/util/data-hora-brasilia.js";
-import { montarDadosImportacaoItemEmissaoNfe } from "@/util/dados-emissao-nfe-nota.js";
-import { montarPagamentosPdvParaNfce } from "@/util/montar-pagamentos-pdv-nfce.js";
-import { montarDestinatarioPorIdentidade } from "@/util/montar-destinatario-entidade-nfe.js";
-import { normalizarGtinItensEmissao } from "@/util/normalizar-gtin-item-emissao-nfe.js";
-import { normalizarPagamentoEmissaoNfe } from "@/util/normalizar-pagamento-emissao-nfe.js";
-import { normalizarItensEmissaoNfe } from "@/util/normalizar-tributacao-item-emissao-nfe.js";
-import { NFE_STATUS } from "@/util/nfe-status.js";
-import { validarCestItensEmissaoNfe } from "@/util/validar-cest-item-emissao-nfe.js";
-import {
-	normalizarCStatGateway,
-	normalizarCodigoStatusNfe,
-	resolverStatusPersistenciaEmissao,
-} from "@/util/resolver-status-emissao-nfe.js";
-import {
-	httpBadRequest,
-	httpNaoEncontrado,
-	httpOk,
-	httpProibido,
-} from "@/util/http-util.js";
-import { resolverNatOpEmissaoNfe } from "@/util/resolver-nat-op-emissao-nfe.js";
-import { extrairQrCodeNfceXml } from "@/util/extrair-qr-code-nfce-xml.js";
-import { obterXmlAutorizadoNotaFiscal } from "@/util/obter-xml-nota-fiscal.js";
+import { aplicarCreditoIcmsSnItensEmissao } from "@/service/nfe-emissao/aplicar-credito-icms-sn-itens.js";
 import type { PagamentoPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
+import { enriquecerItensEmissaoComProduto } from "@/service/nfe-emissao/enriquecer-itens-emissao-produto.js";
+import { arquivarXmlNotaFiscal } from "@/service/nota-fiscal/arquivar-xml-nota-fiscal.js";
+import { integrarNotaFiscalVendaAutorizadaService } from "@/service/nota-fiscal/integrar-nota-fiscal-venda-autorizada.js";
+import { calcularTotaisFiscaisEmissaoNfe } from "@/util/calcular-totais-fiscais-emissao-nfe.js";
 import {
 	complementarCardPagamentoNfe,
 	exigeGrupoCard,
 	montarCardPagamentoNfce,
 	normalizarTPag,
 } from "@/util/card-pagamento-nfce.js";
+import { montarDadosImportacaoItemEmissaoNfe } from "@/util/dados-emissao-nfe-nota.js";
+import {
+	agoraBrasiliaIsoOffset,
+	hojeBrasiliaIsoDate,
+} from "@/util/data-hora-brasilia.js";
+import { extrairQrCodeNfceXml } from "@/util/extrair-qr-code-nfce-xml.js";
+import {
+	httpBadRequest,
+	httpNaoEncontrado,
+	httpOk,
+	httpProibido,
+} from "@/util/http-util.js";
+import { montarDestinatarioPorIdentidade } from "@/util/montar-destinatario-entidade-nfe.js";
+import { montarPagamentosPdvParaNfce } from "@/util/montar-pagamentos-pdv-nfce.js";
+import { NFE_STATUS } from "@/util/nfe-status.js";
+import { normalizarGtinItensEmissao } from "@/util/normalizar-gtin-item-emissao-nfe.js";
+import { normalizarPagamentoEmissaoNfe } from "@/util/normalizar-pagamento-emissao-nfe.js";
+import { normalizarItensEmissaoNfe } from "@/util/normalizar-tributacao-item-emissao-nfe.js";
+import { obterXmlAutorizadoNotaFiscal } from "@/util/obter-xml-nota-fiscal.js";
+import { resolverNatOpEmissaoNfe } from "@/util/resolver-nat-op-emissao-nfe.js";
+import {
+	normalizarCodigoStatusNfe,
+	normalizarCStatGateway,
+	resolverStatusPersistenciaEmissao,
+} from "@/util/resolver-status-emissao-nfe.js";
+import { validarCestItensEmissaoNfe } from "@/util/validar-cest-item-emissao-nfe.js";
 
 type FaturarDavNfceParametros = {
 	idusuario: string;
@@ -183,7 +187,8 @@ async function montarPagamentoDavParaNfce(
 	const dinheiro = parseValor(dav.dinheiro);
 	const pix = parseValor(dav.pix);
 	const cartao = parseValor(dav.posavista) + parseValor(dav.posaprazo);
-	const outros = parseValor(dav.avista) + parseValor(dav.aprazo) + parseValor(dav.cheque);
+	const outros =
+		parseValor(dav.avista) + parseValor(dav.aprazo) + parseValor(dav.cheque);
 
 	const pagamentoCampos = montarPagamentosPdvParaNfce(
 		{
@@ -278,7 +283,8 @@ export async function faturarDavNfceService({
 				emitida: true,
 				idnotafiscal: notaExistente.id,
 			};
-			if (notaExistente.chavenfe) resultadoExistente.chave = notaExistente.chavenfe;
+			if (notaExistente.chavenfe)
+				resultadoExistente.chave = notaExistente.chavenfe;
 			if (notaExistente.protocolonfe) {
 				resultadoExistente.protocolo = notaExistente.protocolonfe;
 			}
@@ -286,7 +292,8 @@ export async function faturarDavNfceService({
 			const xmlExistente = await obterXmlAutorizadoNotaFiscal(notaExistente.id);
 			const qrExtraido = extrairQrCodeNfceXml(xmlExistente);
 			if (qrExtraido.qrCode) resultadoExistente.qrCode = qrExtraido.qrCode;
-			if (qrExtraido.urlChave) resultadoExistente.urlChave = qrExtraido.urlChave;
+			if (qrExtraido.urlChave)
+				resultadoExistente.urlChave = qrExtraido.urlChave;
 
 			return httpOk(resultadoExistente);
 		}
@@ -300,8 +307,13 @@ export async function faturarDavNfceService({
 		});
 	}
 
-	const { empresa, empresaFiscal, nfceConfiguracao, certificadoAtivo, seriePadrao } =
-		contexto;
+	const {
+		empresa,
+		empresaFiscal,
+		nfceConfiguracao,
+		certificadoAtivo,
+		seriePadrao,
+	} = contexto;
 	if (!empresa || !empresaFiscal || !nfceConfiguracao || !certificadoAtivo) {
 		return httpBadRequest("Contexto de emissão NFC-e incompleto");
 	}
@@ -374,9 +386,13 @@ export async function faturarDavNfceService({
 	const valorNota = Math.max(valorTotalItens - desconto, 0.01);
 
 	const pagamentoBruto = await montarPagamentoDavParaNfce(dav, valorNota);
-	const totaisFiscais = calcularTotaisFiscaisEmissaoNfe(crt, itensNormalizados, {
-		...(desconto > 0 ? { desconto } : {}),
-	});
+	const totaisFiscais = calcularTotaisFiscaisEmissaoNfe(
+		crt,
+		itensNormalizados,
+		{
+			...(desconto > 0 ? { desconto } : {}),
+		},
+	);
 	const pagamentoNormalizado = normalizarPagamentoEmissaoNfe(pagamentoBruto, {
 		finNFe: 1,
 		valorNota: totaisFiscais.totalNota,
@@ -434,7 +450,9 @@ export async function faturarDavNfceService({
 
 	const statusPersistido = resolverStatusPersistenciaEmissao({
 		...(cStat ? { cStat } : {}),
-		...(respostaGateway.protocolo ? { protocolo: respostaGateway.protocolo } : {}),
+		...(respostaGateway.protocolo
+			? { protocolo: respostaGateway.protocolo }
+			: {}),
 		...(erroTransmissao ? { erroTransmissao } : {}),
 	});
 
@@ -464,8 +482,7 @@ export async function faturarDavNfceService({
 		tipoambientenfe: ambiente,
 		tipoorigem: 1,
 		status: statusPersistido,
-		razaosocial:
-			destinatario?.razaosocial ?? dav.nomecliente ?? null,
+		razaosocial: destinatario?.razaosocial ?? dav.nomecliente ?? null,
 		cnpjcpf: destinatario?.cnpjcpf ?? dav.cnpjcpfcliente ?? null,
 		inscricaoestadual: destinatario?.ie ?? null,
 		endereco: destinatario?.logradouro ?? null,
@@ -569,6 +586,12 @@ export async function faturarDavNfceService({
 		}).catch((erro) => {
 			console.error("Erro na integração operacional da NFC-e do pedido:", erro);
 		});
+
+		void enfileirarEnvioDominioSilencioso({
+			idempresa,
+			idnotafiscal,
+			tipo: "autorizada",
+		});
 	}
 
 	const emitida = statusPersistido === NFE_STATUS.AUTORIZADA;
@@ -578,7 +601,8 @@ export async function faturarDavNfceService({
 	};
 
 	if (respostaGateway.chave) resultado.chave = respostaGateway.chave;
-	if (respostaGateway.protocolo) resultado.protocolo = respostaGateway.protocolo;
+	if (respostaGateway.protocolo)
+		resultado.protocolo = respostaGateway.protocolo;
 	if (cStat) resultado.cStat = cStat;
 	if (xMotivo) resultado.xMotivo = xMotivo;
 	if (!emitida && !cStat && respostaGateway.erro) {

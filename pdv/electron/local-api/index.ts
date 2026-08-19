@@ -114,6 +114,7 @@ import {
 	validarSenhaGerencial,
 } from "../db/repos";
 import { emitirOuContingencia } from "../fiscal/contingencia";
+import { exportarXmlsNfce as gravarXmlsNfcePeriodo } from "../fiscal/exportar-xml-nfce";
 import {
 	imprimirComprovanteFechamentoCaixa,
 	imprimirCupomNaoFiscal,
@@ -580,6 +581,35 @@ export const localApi = {
 			throw new Error(erro);
 		}
 		return { ok: true, pasta: destino };
+	},
+
+	async exportarXmlsNfce(params: {
+		dataInicio: string;
+		dataFim: string;
+		criterio: "emissao" | "autorizacao";
+	}) {
+		const win = BrowserWindow.getFocusedWindow();
+		if (!win) {
+			throw new Error("Janela do PDV indisponível");
+		}
+		const escolha = await dialog.showOpenDialog(win, {
+			title: "Pasta para salvar os XMLs da NFC-e",
+			properties: ["openDirectory", "createDirectory"],
+		});
+		if (escolha.canceled || !escolha.filePaths[0]) {
+			return { cancelado: true as const, total: 0, ignorados: 0, pasta: "" };
+		}
+		const resultado = await gravarXmlsNfcePeriodo({
+			dataInicio: params.dataInicio,
+			dataFim: params.dataFim,
+			criterio: params.criterio,
+			pasta: escolha.filePaths[0],
+		});
+		const erro = await shell.openPath(resultado.pasta);
+		if (erro) {
+			throw new Error(erro);
+		}
+		return { cancelado: false as const, ...resultado };
 	},
 
 	async getConfig() {

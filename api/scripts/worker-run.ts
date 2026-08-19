@@ -7,7 +7,7 @@ const nomeJob = process.argv[2] as NomeJobManual | undefined;
 
 if (!nomeJob || !(nomeJob in JOBS_DISPONIVEIS)) {
 	console.error(
-		"Uso: npm run worker:run -- <job>\nJobs: alertasVencimento, saldoBaixo, conciliacaoPendente, relatoriosAutomaticos, verificarCiclosPlano",
+		"Uso: npm run worker:run -- <job>\nJobs: alertasVencimento, saldoBaixo, conciliacaoPendente, relatoriosAutomaticos, verificarCiclosPlano, syncInboundInvoices, processarAutomacoes, syncDominio",
 	);
 	process.exit(1);
 }

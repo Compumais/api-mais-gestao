@@ -65,4 +65,75 @@ describe("gerarArquivoSintegra", () => {
 		expect(resultado.conteudo).toContain("90");
 		expect(resultado.filename).toContain("sintegra-");
 	});
+
+	it("inclui compra no mês da entrada e imprime essa data no registro 50", async () => {
+		const notaEntrada = {
+			id: "nota-entrada-1",
+			emissao: "2025-06-15",
+			dataCompetencia: "2025-07-10",
+			modelo: "55",
+			serie: "1",
+			numero: "88",
+			numeronotafiscal: "88",
+			cnpjCpf: "12345678000190",
+			inscricaoEstadual: "1234567890",
+			uf: "MG",
+			cfopCodigo: "1102",
+			valorTotal: "100.00",
+			baseIcms: "100.00",
+			valorIcms: "12.00",
+			valorIpi: "0",
+			baseIcmsSt: "0",
+			valorIcmsSt: "0",
+			emitente: "T" as const,
+			situacao: "N" as const,
+			tipoorigem: 0,
+			cancelada: false,
+		};
+
+		vi.mocked(buscarDadosContribuinteSintegra).mockResolvedValue({
+			cnpj: "12345678000190",
+			inscricaoEstadual: "1234567890",
+			razaosocial: "EMPRESA TESTE LTDA",
+			municipio: "BELO HORIZONTE",
+			uf: "MG",
+			fax: "",
+			logradouro: "RUA TESTE",
+			numero: "100",
+			complemento: "",
+			bairro: "CENTRO",
+			cep: "30100000",
+			contato: "CONTATO",
+			telefone: "31999999999",
+			crt: 3,
+			codigoMunicipioIbge: "3106200",
+		});
+		vi.mocked(listarNotasSintegra).mockResolvedValue([notaEntrada]);
+		vi.mocked(listarItensNotasSintegra).mockResolvedValue([]);
+		vi.mocked(listarInventarioFiscalSintegra).mockResolvedValue([]);
+		vi.mocked(listarResumoNfceDiarioSintegra).mockResolvedValue([]);
+		vi.mocked(listarProdutosSintegra).mockResolvedValue([]);
+		vi.mocked(agruparItensRegistro50).mockReturnValue([
+			{
+				nota: notaEntrada,
+				cfop: "1102",
+				aliquota: "12.00",
+				valorTotal: 100,
+				baseIcms: 100,
+				valorIcms: 12,
+				valorIsento: 0,
+				valorOutras: 0,
+			},
+		]);
+		vi.mocked(somarIpiPorNota).mockReturnValue(new Map());
+
+		const resultado = await gerarArquivoSintegra({
+			idempresa: "00000000-0000-0000-0000-000000000001",
+			dataInicio: "2025-07-01",
+			dataFim: "2025-07-31",
+		});
+
+		expect(resultado.conteudo).toContain("20250710");
+		expect(resultado.conteudo).not.toContain("20250615");
+	});
 });

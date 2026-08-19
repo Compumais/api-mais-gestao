@@ -13,8 +13,8 @@ import { auditoriaRotas } from "./controllers/http/auditoria/rotas.js";
 import { obterPerfil } from "./controllers/http/auth/obter-perfil.js";
 import { authenticationRoute } from "./controllers/http/authentication.js";
 import { automacaoRotas } from "./controllers/http/automacao/rotas.js";
-import { bandeirasCartaoRotas } from "./controllers/http/bandeira-cartao/rotas.js";
 import { bancosRotas } from "./controllers/http/bancos/rotas.js";
+import { bandeirasCartaoRotas } from "./controllers/http/bandeira-cartao/rotas.js";
 import { centrosCustoRotas } from "./controllers/http/centro-custo/rotas.js";
 import { certificadoDigitalRotas } from "./controllers/http/certificado-digital/rotas.js";
 import { cestsRotas } from "./controllers/http/cest/rotas.js";
@@ -36,6 +36,7 @@ import { custosProdutoRotas } from "./controllers/http/custo-produto/rotas.js";
 import { dashboardRotas } from "./controllers/http/dashboard/rotas.js";
 import { davsRotas } from "./controllers/http/dav/rotas.js";
 import { departamentosRotas } from "./controllers/http/departamento/rotas.js";
+import { dominioRotas } from "./controllers/http/dominio/rotas.js";
 import { emailRotas } from "./controllers/http/email/rotas.js";
 import { empresaFiscalRotas } from "./controllers/http/empresa-fiscal/rotas.js";
 import { empresasRotas } from "./controllers/http/empresas/rotas.js";
@@ -64,7 +65,6 @@ import { nfeConfiguracaoRotas } from "./controllers/http/nfe-configuracao/rotas.
 import { nfeEmissaoRotas } from "./controllers/http/nfe-emissao/rotas.js";
 import { nfeInboundRotas } from "./controllers/http/nfe-inbound/rotas.js";
 import { nfeSerieRotas } from "./controllers/http/nfe-serie/rotas.js";
-import { terminalPdvRotas } from "./controllers/http/terminal-pdv/rotas.js";
 import { nfseConfiguracaoRotas } from "./controllers/http/nfse-configuracao/rotas.js";
 import { nfseEmissaoRotas } from "./controllers/http/nfse-emissao/rotas.js";
 import { nfseSerieRotas } from "./controllers/http/nfse-serie/rotas.js";
@@ -85,6 +85,7 @@ import { servicosNfseRotas } from "./controllers/http/servicos-nfse/rotas.js";
 import { sintegraRotas } from "./controllers/http/sintegra/rotas.js";
 import { tarefasRotas } from "./controllers/http/tarefas/rotas.js";
 import { taxaUfRotas } from "./controllers/http/taxauf/rotas.js";
+import { terminalPdvRotas } from "./controllers/http/terminal-pdv/rotas.js";
 import { tiposDocumentoFinanceiroRotas } from "./controllers/http/tipo-documento-financeiro/rotas.js";
 import { tiposOrdemServicoEventoRotas } from "./controllers/http/tipo-ordem-servico-evento/rotas.js";
 import { tiposProblemaRotas } from "./controllers/http/tipo-problema/rotas.js";
@@ -198,6 +199,10 @@ await app.register(swagger, {
 			{
 				name: "contabilidade",
 				description: "Operações de contabilidade e exportação fiscal",
+			},
+			{
+				name: "dominio",
+				description: "Integração API Domínio / Onvio por empresa",
 			},
 			{
 				name: "relatorios",
@@ -587,6 +592,7 @@ app.register(davsRotas);
 app.register(emailRotas);
 app.register(codigosReduzidosContaContabilRotas);
 app.register(contabilidadeRotas);
+app.register(dominioRotas);
 app.register(automacaoRotas);
 app.register(sintegraRotas);
 app.register(entidadesContaContabilRotas);

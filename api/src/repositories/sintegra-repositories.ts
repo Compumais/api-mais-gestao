@@ -12,9 +12,6 @@ import {
 	saldoestoque,
 	unidademedida,
 } from "@/repositories/schema.js";
-import { STATUS_NF_CONFIRMADA } from "@/util/nota-fiscal-constants.js";
-import { NFE_STATUS, statusEhCancelada } from "@/util/nfe-status.js";
-import { db } from "./connection.js";
 import type {
 	DadosContribuinteSintegra,
 	InventarioSintegra,
@@ -23,8 +20,19 @@ import type {
 	ProdutoSintegra,
 	ResumoNfceDiarioSintegra,
 } from "@/service/sintegra/tipos-sintegra.js";
+import { obterDataCompetenciaNotaFiscal } from "@/util/data-competencia-nota-fiscal.js";
+import { NFE_STATUS, statusEhCancelada } from "@/util/nfe-status.js";
+import { STATUS_NF_CONFIRMADA } from "@/util/nota-fiscal-constants.js";
+import { db } from "./connection.js";
 
 const STATUS_RASCUNHO_IMPORTACAO = 99;
+
+const dataCompetenciaSql = sql<string>`
+	case
+		when ${notafiscal.tipoorigem} = 0 then coalesce(${notafiscal.entradasaida}, ${notafiscal.emissao})
+		else ${notafiscal.emissao}
+	end
+`;
 
 export type ListarDadosSintegraParametros = {
 	idempresa: string;
@@ -105,6 +113,7 @@ export async function listarNotasSintegra({
 		.select({
 			id: notafiscal.id,
 			emissao: notafiscal.emissao,
+			entradasaida: notafiscal.entradasaida,
 			modelo: notafiscal.modelo,
 			serie: notafiscal.serie,
 			numero: notafiscal.numero,
@@ -130,8 +139,8 @@ export async function listarNotasSintegra({
 		.where(
 			and(
 				eq(notafiscal.idempresa, idempresa),
-				gte(notafiscal.emissao, dataInicio),
-				lte(notafiscal.emissao, dataFim),
+				gte(dataCompetenciaSql, dataInicio),
+				lte(dataCompetenciaSql, dataFim),
 				ne(notafiscal.status, STATUS_RASCUNHO_IMPORTACAO),
 				or(
 					and(
@@ -153,7 +162,7 @@ export async function listarNotasSintegra({
 				),
 			),
 		)
-		.orderBy(notafiscal.emissao);
+		.orderBy(dataCompetenciaSql);
 
 	return notas.map((nota) => {
 		const cancelada =
@@ -161,6 +170,11 @@ export async function listarNotasSintegra({
 		return {
 			id: nota.id,
 			emissao: nota.emissao,
+			dataCompetencia: obterDataCompetenciaNotaFiscal({
+				tipoorigem: nota.tipoorigem,
+				emissao: nota.emissao,
+				entradasaida: nota.entradasaida,
+			}),
 			modelo: nota.modelo,
 			serie: nota.serie,
 			numero: nota.numero,
