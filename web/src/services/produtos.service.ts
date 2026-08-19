@@ -227,6 +227,17 @@ export interface ImportarProdutosResponse {
 	totalAtualizados: number;
 }
 
+export interface AlterarProdutosEmMassaData {
+	idempresa: string;
+	ids: string[];
+	campos: AtualizarProdutoData;
+}
+
+export interface AlterarProdutosEmMassaResponse {
+	atualizados: number;
+	erros: number;
+}
+
 export interface AtualizarProdutoData
 	extends CamposServicoProduto,
 		CamposAliquotaProduto {
@@ -336,6 +347,16 @@ export const produtosService = {
 		const { data } = await api.put<Produto>(`/produtos/${id}`, dados, {
 			params: { idempresa },
 		});
+		return data;
+	},
+
+	async alterarEmMassa(
+		dados: AlterarProdutosEmMassaData,
+	): Promise<AlterarProdutosEmMassaResponse> {
+		const { data } = await api.post<AlterarProdutosEmMassaResponse>(
+			"/produtos/alterar-em-massa",
+			dados,
+		);
 		return data;
 	},
 

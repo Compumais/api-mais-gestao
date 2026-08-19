@@ -712,6 +712,86 @@ export const importarProdutosSchema: FastifySchema = {
 	},
 };
 
+export const alterarProdutosEmMassaSchema: FastifySchema = {
+	tags: ["produtos"],
+	summary: "Alterar produtos em massa",
+	description:
+		"Aplica os mesmos valores parciais a todos os produtos selecionados da empresa. Somente as chaves enviadas em campos são atualizadas.",
+	security: [{ bearerAuth: [] }],
+	body: {
+		type: "object",
+		properties: {
+			idempresa: {
+				type: "string",
+				format: "uuid",
+				description: "ID da empresa",
+			},
+			ids: {
+				type: "array",
+				minItems: 1,
+				maxItems: 500,
+				items: { type: "string", format: "uuid" },
+				description: "IDs dos produtos a alterar",
+			},
+			campos: {
+				type: "object",
+				description:
+					"Campos parciais a aplicar. Chaves omitidas não são alteradas.",
+				properties: {
+					idgrupo: {
+						anyOf: [{ type: "string", format: "uuid" }, { type: "null" }],
+					},
+					idunidademedida: { type: "string", format: "uuid" },
+					preco: { anyOf: [{ type: "string" }, { type: "number" }] },
+					custoaquisicao: {
+						anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
+					},
+					origem: { type: "number", minimum: 0, maximum: 8 },
+					ncm: { anyOf: [{ type: "string", maxLength: 10 }, { type: "null" }] },
+					ippt: {
+						anyOf: [{ type: "string", enum: ["P", "T"] }, { type: "null" }],
+					},
+					inativo: {
+						anyOf: [{ type: "number", enum: [0, 1] }, { type: "null" }],
+					},
+					tipoproduto: {
+						anyOf: [{ type: "string", maxLength: 2 }, { type: "null" }],
+					},
+					aliquotapis: {
+						anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
+					},
+					aliquotacofins: {
+						anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
+					},
+					...propriedadesImpostosProdutoBody,
+				},
+			},
+		},
+		required: ["idempresa", "ids", "campos"],
+	},
+	response: {
+		200: {
+			type: "object",
+			description: "Resultado da alteração em massa",
+			properties: {
+				atualizados: { type: "number" },
+				erros: { type: "number" },
+			},
+		},
+		400: {
+			type: "object",
+			properties: {
+				error: { type: "string" },
+				code: { type: "string" },
+				details: { type: "array" },
+			},
+		},
+		401: respostaErro,
+		403: respostaErro,
+		500: respostaErro,
+	},
+};
+
 export const templateProdutosSchema: FastifySchema = {
 	tags: ["produtos"],
 	summary: "Baixar modelo de importação de produtos",

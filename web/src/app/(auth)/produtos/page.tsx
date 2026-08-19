@@ -16,6 +16,7 @@ import {
 	getCoreRowModel,
 	getPaginationRowModel,
 	getSortedRowModel,
+	type RowSelectionState,
 	type SortingState,
 	useReactTable,
 } from "@tanstack/react-table";
@@ -23,9 +24,11 @@ import { Download, FileSpreadsheet, FileText } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { AlterarProdutosEmMassaDialog } from "@/app/(auth)/produtos/components/alterar-produtos-em-massa-dialog";
 import { ImportarProdutosDialog } from "@/app/(auth)/produtos/components/importar-produtos-dialog";
 import { TableSkeleton } from "@/components/table-skeleton";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -71,6 +74,27 @@ const createColumns = ({
 	onDelete,
 	onToggleInativo,
 }: ColumnsProps): ColumnDef<Produto>[] => [
+	{
+		id: "select",
+		header: ({ table }) => (
+			<Checkbox
+				checked={
+					table.getIsAllPageRowsSelected() ||
+					(table.getIsSomePageRowsSelected() && "indeterminate")
+				}
+				onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+				aria-label="Selecionar todos da página"
+			/>
+		),
+		cell: ({ row }) => (
+			<Checkbox
+				checked={row.getIsSelected()}
+				onCheckedChange={(value) => row.toggleSelected(!!value)}
+				aria-label={`Selecionar produto ${row.original.nome}`}
+			/>
+		),
+		enableSorting: false,
+	},
 	{
 		accessorKey: "codigo",
 		header: "Código",
@@ -177,10 +201,18 @@ export default function ProdutosPage() {
 	});
 	const [formatoImportacao, setFormatoImportacao] =
 		useState<FormatoImportacaoProdutos | null>(null);
+	const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+	const [dialogAlteracaoAberto, setDialogAlteracaoAberto] = useState(false);
 
 	useEffect(() => {
 		setQInput(qAplicado);
 	}, [qAplicado]);
+
+	const empresaId = localStorageEmpresa?.id;
+	// biome-ignore lint/correctness/useExhaustiveDependencies: limpa a seleção ao mudar busca ou empresa
+	useEffect(() => {
+		setRowSelection({});
+	}, [qAplicado, empresaId]);
 
 	const handleBuscar = () => {
 		const termo = qInput.trim();
@@ -320,15 +352,23 @@ export default function ProdutosPage() {
 		state: {
 			sorting,
 			pagination,
+			rowSelection,
 		},
 		onSortingChange: setSorting,
 		onPaginationChange: setPagination,
+		onRowSelectionChange: setRowSelection,
 		getCoreRowModel: getCoreRowModel(),
 		getSortedRowModel: getSortedRowModel(),
 		getPaginationRowModel: getPaginationRowModel(),
+		getRowId: (row) => row.id,
+		enableRowSelection: true,
 		manualPagination: true,
 		pageCount: data?.paginacao.totalPages ?? 0,
 	});
+
+	const idsSelecionados = Object.keys(rowSelection).filter(
+		(id) => rowSelection[id],
+	);
 
 	const baixarModeloMutation = useMutation({
 		mutationFn: async (formato: FormatoImportacaoProdutos) => {
@@ -404,6 +444,16 @@ export default function ProdutosPage() {
 							</DropdownMenu>
 						</div>
 						<Button
+							variant="outline"
+							className="gap-2"
+							onClick={() => setDialogAlteracaoAberto(true)}
+							disabled={!localStorageEmpresa || idsSelecionados.length === 0}
+						>
+							<IconPencil className="size-4" aria-hidden="true" />
+							Alterar em massa
+							{idsSelecionados.length > 0 ? ` (${idsSelecionados.length})` : ""}
+						</Button>
+						<Button
 							onClick={() => router.push("/produtos/novo")}
 							className="gap-2"
 							disabled={!localStorageEmpresa}
@@ -444,6 +494,7 @@ export default function ProdutosPage() {
 						</div>
 					) : isLoading ? (
 						<TableSkeleton rows={10}>
+							<TableHead className="w-10" />
 							<TableHead>Código</TableHead>
 							<TableHead>Nome</TableHead>
 							<TableHead className="w-[140px]">Preço</TableHead>
@@ -475,7 +526,10 @@ export default function ProdutosPage() {
 								<TableBody>
 									{table.getRowModel().rows?.length ? (
 										table.getRowModel().rows.map((row) => (
-											<TableRow key={row.id}>
+											<TableRow
+												key={row.id}
+												data-state={row.getIsSelected() && "selected"}
+											>
 												{row.getVisibleCells().map((cell) => (
 													<TableCell key={cell.id}>
 														{flexRender(
@@ -533,6 +587,12 @@ export default function ProdutosPage() {
 			<ImportarProdutosDialog
 				formato={formatoImportacao}
 				onFechar={() => setFormatoImportacao(null)}
+			/>
+			<AlterarProdutosEmMassaDialog
+				aberto={dialogAlteracaoAberto}
+				onAbertoChange={setDialogAlteracaoAberto}
+				ids={idsSelecionados}
+				onSucesso={() => setRowSelection({})}
 			/>
 		</PageContainer>
 	);
