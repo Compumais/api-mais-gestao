@@ -554,6 +554,13 @@
       "when": 1785005000000,
       "tag": "0077_dominio_integracao",
       "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1785006000000,
+      "tag": "0078_produtos_percentualmva",
+      "breakpoints": true
     }
   ]
 }

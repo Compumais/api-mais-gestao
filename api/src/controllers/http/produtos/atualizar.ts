@@ -165,9 +165,12 @@ export async function atualizarProduto(
 			Object.assign(
 				dados,
 				Object.fromEntries(
-					Object.entries(camposServico).filter(
-						([, valor]) => valor !== undefined,
-					),
+					Object.entries(camposServico).filter(([chave]) => {
+						return (
+							chave in dadosValidados &&
+							dadosValidados[chave as keyof typeof dadosValidados] !== undefined
+						);
+					}),
 				),
 			);
 		}

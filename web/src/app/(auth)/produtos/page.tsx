@@ -19,9 +19,11 @@ import {
 	type SortingState,
 	useReactTable,
 } from "@tanstack/react-table";
+import { Download, FileSpreadsheet, FileText } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { ImportarProdutosDialog } from "@/app/(auth)/produtos/components/importar-produtos-dialog";
 import { TableSkeleton } from "@/components/table-skeleton";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,7 +43,11 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { useEmpresa } from "@/hooks/use-empresa";
-import { type Produto, produtosService } from "@/services/produtos.service";
+import {
+	type FormatoImportacaoProdutos,
+	type Produto,
+	produtosService,
+} from "@/services/produtos.service";
 import { PageContainer } from "../components/page-container";
 
 function formatarPreco(preco: string | null) {
@@ -169,6 +175,8 @@ export default function ProdutosPage() {
 		pageIndex: 0,
 		pageSize: 10,
 	});
+	const [formatoImportacao, setFormatoImportacao] =
+		useState<FormatoImportacaoProdutos | null>(null);
 
 	useEffect(() => {
 		setQInput(qAplicado);
@@ -322,19 +330,88 @@ export default function ProdutosPage() {
 		pageCount: data?.paginacao.totalPages ?? 0,
 	});
 
+	const baixarModeloMutation = useMutation({
+		mutationFn: async (formato: FormatoImportacaoProdutos) => {
+			const blob = await produtosService.baixarTemplate(formato);
+			return { blob, formato };
+		},
+		onSuccess: ({ blob, formato }) => {
+			const url = URL.createObjectURL(blob);
+			const link = document.createElement("a");
+			link.href = url;
+			link.download = `modelo-produtos.${formato}`;
+			document.body.appendChild(link);
+			link.click();
+			link.remove();
+			URL.revokeObjectURL(url);
+			toast.success("Modelo baixado com sucesso");
+		},
+		onError: (error: Error) => {
+			toast.error(error.message || "Erro ao baixar modelo");
+		},
+	});
+
 	return (
 		<PageContainer>
 			<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-				<div className="flex items-center justify-between px-4">
+				<div className="flex flex-wrap items-center justify-between gap-2 px-4">
 					<h1 className="text-2xl font-bold">Produtos</h1>
-					<Button
-						onClick={() => router.push("/produtos/novo")}
-						className="gap-2"
-						disabled={!localStorageEmpresa}
-					>
-						<IconPlus className="size-4" />
-						Incluir Novo Produto
-					</Button>
+					<div className="flex flex-wrap items-center gap-2">
+						<div className="inline-flex -space-x-px rounded-md shadow-xs">
+							<Button
+								variant="outline"
+								className="rounded-r-none"
+								onClick={() => setFormatoImportacao("csv")}
+								disabled={!localStorageEmpresa}
+							>
+								<FileText className="h-4 w-4" aria-hidden="true" />
+								Importar CSV
+							</Button>
+							<Button
+								variant="outline"
+								className="rounded-none"
+								onClick={() => setFormatoImportacao("xlsx")}
+								disabled={!localStorageEmpresa}
+							>
+								<FileSpreadsheet className="h-4 w-4" aria-hidden="true" />
+								Importar XLSX
+							</Button>
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<Button
+										variant="outline"
+										className="rounded-l-none"
+										disabled={
+											!localStorageEmpresa || baixarModeloMutation.isPending
+										}
+									>
+										<Download className="h-4 w-4" aria-hidden="true" />
+										Baixar modelo
+									</Button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent align="end">
+									<DropdownMenuItem
+										onClick={() => baixarModeloMutation.mutate("csv")}
+									>
+										Modelo CSV
+									</DropdownMenuItem>
+									<DropdownMenuItem
+										onClick={() => baixarModeloMutation.mutate("xlsx")}
+									>
+										Modelo XLSX
+									</DropdownMenuItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
+						</div>
+						<Button
+							onClick={() => router.push("/produtos/novo")}
+							className="gap-2"
+							disabled={!localStorageEmpresa}
+						>
+							<IconPlus className="size-4" />
+							Incluir Novo Produto
+						</Button>
+					</div>
 				</div>
 				<div className="flex gap-2 px-4">
 					<Input
@@ -452,6 +529,11 @@ export default function ProdutosPage() {
 					)}
 				</div>
 			</div>
+
+			<ImportarProdutosDialog
+				formato={formatoImportacao}
+				onFechar={() => setFormatoImportacao(null)}
+			/>
 		</PageContainer>
 	);
 }

@@ -1,5 +1,5 @@
 import { and, count, eq, ilike, inArray, or, type SQL, sql } from "drizzle-orm";
-import type { NovoProduto } from "@/model/produto-model";
+import type { NovoProduto, Produto } from "@/model/produto-model";
 import { departamento, produtos } from "@/repositories/schema.js";
 import { filtroRegistroAtivo } from "@/util/filtro-registro-ativo.js";
 import { inteiroValidoParaPostgres } from "@/util/texto-util.js";
@@ -220,4 +220,45 @@ export async function atualizarProduto(
 		.returning();
 
 	return produto;
+}
+
+export async function listarIdentificadoresProdutos(idempresa: string) {
+	return db
+		.select({
+			id: produtos.id,
+			codigo: produtos.codigo,
+			ean: produtos.ean,
+		})
+		.from(produtos)
+		.where(and(eq(produtos.idempresa, idempresa), eq(produtos.tipo, "P")));
+}
+
+export async function persistirImportacaoProdutos(parametros: {
+	criar: NovoProduto[];
+	atualizar: { id: string; dados: Partial<NovoProduto> }[];
+}): Promise<{ criados: Produto[]; atualizados: Produto[] }> {
+	return db.transaction(async (tx) => {
+		const criados: Produto[] = [];
+		const atualizados: Produto[] = [];
+
+		for (const dados of parametros.criar) {
+			const [produto] = await tx.insert(produtos).values(dados).returning();
+			if (produto) {
+				criados.push(produto);
+			}
+		}
+
+		for (const item of parametros.atualizar) {
+			const [produto] = await tx
+				.update(produtos)
+				.set(item.dados)
+				.where(eq(produtos.id, item.id))
+				.returning();
+			if (produto) {
+				atualizados.push(produto);
+			}
+		}
+
+		return { criados, atualizados };
+	});
 }

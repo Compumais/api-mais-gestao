@@ -6,7 +6,10 @@ const percentualOpcional = z
 	.nullable()
 	.superRefine((valor, ctx) => {
 		if (valor === null || valor === undefined || valor === "") return;
-		const numero = typeof valor === "number" ? valor : Number.parseFloat(valor);
+		const numero =
+			typeof valor === "number"
+				? valor
+				: Number.parseFloat(String(valor).replace(",", "."));
 		if (Number.isNaN(numero) || numero < 0) {
 			ctx.addIssue({
 				code: z.ZodIssueCode.custom,
@@ -16,7 +19,10 @@ const percentualOpcional = z
 	})
 	.transform((valor) => {
 		if (valor === null || valor === undefined || valor === "") return null;
-		const numero = typeof valor === "number" ? valor : Number.parseFloat(valor);
+		const numero =
+			typeof valor === "number"
+				? valor
+				: Number.parseFloat(String(valor).replace(",", "."));
 		return numero.toFixed(2);
 	});
 

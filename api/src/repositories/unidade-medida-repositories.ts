@@ -1,8 +1,8 @@
 import { and, count, eq, ilike, isNull, or } from "drizzle-orm";
 import type { NovoUnidadeMedida } from "@/model/unidade-medida-model";
 import { unidademedida } from "@/repositories/schema.js";
-import { ordenacaoCodigoVarcharAsc } from "./ordenacao-codigo.js";
 import { db } from "./connection";
+import { ordenacaoCodigoVarcharAsc } from "./ordenacao-codigo.js";
 
 export async function buscarUnidadeMedidaPorId(id: string) {
 	const [registro] = await db
@@ -98,10 +98,7 @@ export async function listarUnidadesMedida({
 	if (q) {
 		const termo = `%${q}%`;
 		where.push(
-			or(
-				ilike(unidademedida.codigo, termo),
-				ilike(unidademedida.nome, termo),
-			),
+			or(ilike(unidademedida.codigo, termo), ilike(unidademedida.nome, termo)),
 		);
 	}
 
@@ -123,4 +120,20 @@ export async function listarUnidadesMedida({
 		unidadesmedida,
 		total: totalCount[0]?.value ?? 0,
 	};
+}
+
+export async function listarUnidadesMedidaPorEmpresa(idempresa: string) {
+	return db
+		.select({
+			id: unidademedida.id,
+			codigo: unidademedida.codigo,
+			idempresa: unidademedida.idempresa,
+		})
+		.from(unidademedida)
+		.where(
+			or(
+				eq(unidademedida.idempresa, idempresa),
+				isNull(unidademedida.idempresa),
+			),
+		);
 }

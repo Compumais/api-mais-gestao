@@ -138,6 +138,28 @@ function buildProdutoPayload(
 	payload.cstcofins = textoOuNulo(data.cstcofins);
 	payload.cstipientrada = textoOuNulo(data.cstipientrada);
 	payload.cstipisaida = textoOuNulo(data.cstipisaida);
+	payload.percentualmva = textoOuNulo(data.percentualmva);
+	payload.aliquotaicmsinterna = textoOuNulo(data.aliquotaicmsinterna);
+	payload.aliquotaicmsdiferencialentrada = textoOuNulo(
+		data.aliquotaicmsdiferencialentrada,
+	);
+	payload.aliquotareducaoicmsnfcesat = textoOuNulo(
+		data.aliquotareducaoicmsnfcesat,
+	);
+	payload.aliquotafcpnf = textoOuNulo(data.aliquotafcpnf);
+	payload.ultimaaliquotaicmsst = textoOuNulo(data.ultimaaliquotaicmsst);
+	payload.ultimaaliquotafcpst = textoOuNulo(data.ultimaaliquotafcpst);
+	payload.aliquotapis = textoOuNulo(data.aliquotapis);
+	payload.aliquotapisentrada = textoOuNulo(data.aliquotapisentrada);
+	payload.aliquotacofins = textoOuNulo(data.aliquotacofins);
+	payload.aliquotaconfinsentrada = textoOuNulo(data.aliquotaconfinsentrada);
+	payload.aliquotapisconfinssaidapreco = textoOuNulo(
+		data.aliquotapisconfinssaidapreco,
+	);
+	payload.aliquotapisconfinsentradapreco = textoOuNulo(
+		data.aliquotapisconfinsentradapreco,
+	);
+	payload.aliquotaiss = textoOuNulo(data.aliquotaiss);
 
 	return payload;
 }
@@ -189,6 +211,20 @@ export function ProdutoForm(props: ProdutoFormProps) {
 			cstcofins: null,
 			cstipientrada: null,
 			cstipisaida: null,
+			percentualmva: null,
+			aliquotaicmsinterna: null,
+			aliquotaicmsdiferencialentrada: null,
+			aliquotareducaoicmsnfcesat: null,
+			aliquotafcpnf: null,
+			ultimaaliquotaicmsst: null,
+			ultimaaliquotafcpst: null,
+			aliquotapis: null,
+			aliquotapisentrada: null,
+			aliquotacofins: null,
+			aliquotaconfinsentrada: null,
+			aliquotapisconfinssaidapreco: null,
+			aliquotapisconfinsentradapreco: null,
+			aliquotaiss: null,
 			observacoes: null,
 			enviamobile: false,
 			quantidadepadrao: 0,

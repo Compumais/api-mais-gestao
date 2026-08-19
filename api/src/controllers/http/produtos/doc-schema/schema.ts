@@ -73,6 +73,50 @@ const propriedadesImpostosProdutoBody = {
 		anyOf: [{ type: "string", maxLength: 3 }, { type: "null" }],
 		description: "CST IPI na saída",
 	},
+	percentualmva: {
+		anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
+		description: "Percentual de MVA (Margem de Valor Agregado) do produto",
+	},
+	aliquotaicmsinterna: {
+		anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
+		description: "Alíquota de ICMS interna",
+	},
+	aliquotaicmsdiferencialentrada: {
+		anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
+		description: "Alíquota de ICMS diferencial na entrada",
+	},
+	aliquotareducaoicmsnfcesat: {
+		anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
+		description: "Alíquota de redução de ICMS para NFC-e/SAT",
+	},
+	aliquotafcpnf: {
+		anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
+		description: "Alíquota de FCP na nota fiscal",
+	},
+	ultimaaliquotaicmsst: {
+		anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
+		description: "Última alíquota de ICMS ST",
+	},
+	ultimaaliquotafcpst: {
+		anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
+		description: "Última alíquota de FCP ST",
+	},
+	aliquotapisentrada: {
+		anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
+		description: "Alíquota de PIS na entrada",
+	},
+	aliquotaconfinsentrada: {
+		anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
+		description: "Alíquota de COFINS na entrada",
+	},
+	aliquotapisconfinsentradapreco: {
+		anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
+		description: "Alíquota PIS/COFINS na formação de preço de entrada",
+	},
+	aliquotapisconfinssaidapreco: {
+		anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
+		description: "Alíquota PIS/COFINS na formação de preço de saída",
+	},
 };
 
 const propriedadesServicoProdutoBody = {
@@ -572,6 +616,121 @@ export const excluirProdutoSchema: FastifySchema = {
 		404: respostaErro,
 		401: respostaErro,
 		403: respostaErro,
+		500: respostaErro,
+	},
+};
+
+const corpoImportacaoProdutos = {
+	type: "object",
+	properties: {
+		idempresa: {
+			type: "string",
+			format: "uuid",
+			description: "ID da empresa",
+		},
+		formato: {
+			type: "string",
+			enum: ["csv", "xlsx"],
+			description: "Formato do arquivo",
+		},
+		conteudo: {
+			type: "string",
+			description: "Conteúdo do arquivo: texto para CSV ou base64 para XLSX",
+		},
+		nomeArquivo: {
+			type: "string",
+			nullable: true,
+			description: "Nome do arquivo original (para validar a extensão)",
+		},
+	},
+	required: ["idempresa", "formato", "conteudo"],
+};
+
+export const previewImportacaoProdutosSchema: FastifySchema = {
+	tags: ["produtos"],
+	summary: "Preview da importação de produtos",
+	description:
+		"Valida um arquivo CSV ou XLSX de produtos e retorna os registros encontrados, a ação (criar ou atualizar) e os erros de validação, sem persistir nada.",
+	security: [{ bearerAuth: [] }],
+	body: corpoImportacaoProdutos,
+	response: {
+		200: {
+			type: "object",
+			description: "Resultado da validação do arquivo",
+			properties: {
+				totalProdutos: { type: "number" },
+				totalCriar: { type: "number" },
+				totalAtualizar: { type: "number" },
+				totalErros: { type: "number" },
+				errosGerais: { type: "array", items: { type: "string" } },
+				produtos: {
+					type: "array",
+					items: {
+						type: "object",
+						properties: {
+							linha: { type: "number" },
+							codigo: { type: "number", nullable: true },
+							nome: { type: "string" },
+							grupo: { type: "string" },
+							unidade: { type: "string" },
+							preco: { type: "string", nullable: true },
+							acao: { type: "string", enum: ["criar", "atualizar"] },
+							erros: { type: "array", items: { type: "string" } },
+						},
+					},
+				},
+			},
+		},
+		400: respostaErro,
+		401: respostaErro,
+		403: respostaErro,
+		500: respostaErro,
+	},
+};
+
+export const importarProdutosSchema: FastifySchema = {
+	tags: ["produtos"],
+	summary: "Importar produtos",
+	description:
+		"Cria ou atualiza produtos a partir de um arquivo CSV ou XLSX. Produtos existentes são identificados pelo código ou EAN.",
+	security: [{ bearerAuth: [] }],
+	body: corpoImportacaoProdutos,
+	response: {
+		200: {
+			type: "object",
+			description: "Produtos importados com sucesso",
+			properties: {
+				totalImportados: { type: "number" },
+				totalCriados: { type: "number" },
+				totalAtualizados: { type: "number" },
+			},
+		},
+		400: respostaErro,
+		401: respostaErro,
+		403: respostaErro,
+		500: respostaErro,
+	},
+};
+
+export const templateProdutosSchema: FastifySchema = {
+	tags: ["produtos"],
+	summary: "Baixar modelo de importação de produtos",
+	description:
+		"Retorna um arquivo modelo (CSV ou XLSX) com as colunas de cadastro, MVA e alíquotas e uma linha de exemplo.",
+	security: [{ bearerAuth: [] }],
+	querystring: {
+		type: "object",
+		properties: {
+			formato: {
+				type: "string",
+				enum: ["csv", "xlsx"],
+				default: "csv",
+				description: "Formato do arquivo modelo",
+			},
+		},
+	},
+	response: {
+		401: respostaErro,
 		500: respostaErro,
 	},
 };

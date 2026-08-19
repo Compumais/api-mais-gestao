@@ -8,6 +8,18 @@ function numeroInteiroOpcional() {
 	}, z.number().int().optional().nullable());
 }
 
+function percentualOpcional() {
+	return z
+		.string()
+		.optional()
+		.nullable()
+		.refine((valor) => {
+			if (!valor || valor.trim() === "") return true;
+			const numero = Number.parseFloat(valor.replace(",", "."));
+			return !Number.isNaN(numero) && numero >= 0 && numero <= 999.99;
+		}, "Percentual deve ser um número entre 0 e 999,99");
+}
+
 export const produtoFormSchema = z.object({
 	codigo: z
 		.number({ message: "Código é obrigatório" })
@@ -121,6 +133,20 @@ export const produtoFormSchema = z.object({
 		.max(3, "CST IPI deve ter no máximo 3 caracteres")
 		.optional()
 		.nullable(),
+	percentualmva: percentualOpcional(),
+	aliquotaicmsinterna: percentualOpcional(),
+	aliquotaicmsdiferencialentrada: percentualOpcional(),
+	aliquotareducaoicmsnfcesat: percentualOpcional(),
+	aliquotafcpnf: percentualOpcional(),
+	ultimaaliquotaicmsst: percentualOpcional(),
+	ultimaaliquotafcpst: percentualOpcional(),
+	aliquotapis: percentualOpcional(),
+	aliquotapisentrada: percentualOpcional(),
+	aliquotacofins: percentualOpcional(),
+	aliquotaconfinsentrada: percentualOpcional(),
+	aliquotapisconfinssaidapreco: percentualOpcional(),
+	aliquotapisconfinsentradapreco: percentualOpcional(),
+	aliquotaiss: percentualOpcional(),
 	observacoes: z.string().optional().nullable(),
 	enviamobile: z.boolean().optional(),
 	exportaBalanca: z.boolean().optional(),
