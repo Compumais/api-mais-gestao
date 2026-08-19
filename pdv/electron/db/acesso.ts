@@ -64,6 +64,7 @@ export const CHAVES_CONFIG_GOURMET = [
 export const CHAVES_CONFIG_OPERADOR = [
 	"filtro_apenas_abertas",
 	"teclas_funcao",
+	"teclado_virtual_pagamento",
 ] as const;
 
 /** Sem sessão: conexão na tela de login (API, banco e identidade de PDV secundário). */

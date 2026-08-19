@@ -279,6 +279,24 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 				"ALTER TABLE pagamento ADD COLUMN status TEXT NOT NULL DEFAULT 'ok'",
 			);
 		}
+		if (!pagNomes.has("descricao")) {
+			await database.query("ALTER TABLE pagamento ADD COLUMN descricao TEXT");
+		}
+		if (!pagNomes.has("formapagamentonfe")) {
+			await database.query(
+				"ALTER TABLE pagamento ADD COLUMN formapagamentonfe TEXT",
+			);
+		}
+		if (!pagNomes.has("idtipodocumentofinanceiro")) {
+			await database.query(
+				"ALTER TABLE pagamento ADD COLUMN idtipodocumentofinanceiro TEXT",
+			);
+		}
+		if (!pagNomes.has("aprazo")) {
+			await database.query(
+				"ALTER TABLE pagamento ADD COLUMN aprazo INTEGER NOT NULL DEFAULT 0",
+			);
+		}
 	}
 
 	const contaCols = await database.query<{ column_name: string }>(

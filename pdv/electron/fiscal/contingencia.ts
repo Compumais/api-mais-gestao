@@ -120,7 +120,13 @@ function montarXmlContingencia(params: {
 		.join("");
 
 	const tPag =
-		params.meio === "DINHEIRO" ? "01" : params.meio === "PIX" ? "17" : "03";
+		params.meio === "DINHEIRO"
+			? "01"
+			: params.meio === "PIX"
+				? "17"
+				: params.meio === "CARTAO"
+					? "03"
+					: "99";
 
 	return `<?xml version="1.0" encoding="UTF-8"?>
 <NFe xmlns="http://www.portalfiscal.inf.br/nfe">

@@ -480,28 +480,46 @@ export type LancamentoPagamentoApi = {
 	status?: "ok" | "pendente" | "cancelado";
 };
 
+export type PagamentoErpVendaPdvApi = {
+	idtipodocumentofinanceiro: string;
+	valor: number | string;
+};
+
 /** Origem na retaguarda: 0 legado, 1 balcão web, 2 POS Android, 3 PDV híbrido. */
 export const VENDA_LOCAL_PDV_HIBRIDO = 3;
 
 export async function criarVendaPdv(
 	body: Record<string, unknown> & {
 		pagamentos?: LancamentoPagamentoApi[];
+		pagamentosErp?: PagamentoErpVendaPdvApi[];
 	},
 ) {
-	const { pagamentos, ...resto } = body;
+	const { pagamentos, pagamentosErp, ...resto } = body;
+	const nativos = (pagamentos ?? []).filter(
+		(item) =>
+			item.meio === "DINHEIRO" || item.meio === "PIX" || item.meio === "CARTAO",
+	);
 	return request<{ id: string }>("/vendas-pdv-gourmet", {
 		method: "POST",
 		body: {
 			...resto,
-			...(pagamentos?.length
+			...(nativos.length
 				? {
-						pagamentos: pagamentos.map((item) => ({
+						pagamentos: nativos.map((item) => ({
 							meio: item.meio,
 							valor: asApiDecimal(item.valor),
 							...(item.nsu ? { nsu: item.nsu } : {}),
 							...(item.autorizacao ? { autorizacao: item.autorizacao } : {}),
 							...(item.bandeira ? { bandeira: item.bandeira } : {}),
 							status: item.status ?? "ok",
+						})),
+					}
+				: {}),
+			...(pagamentosErp?.length
+				? {
+						pagamentosErp: pagamentosErp.map((forma) => ({
+							idtipodocumentofinanceiro: forma.idtipodocumentofinanceiro,
+							valor: asApiDecimal(forma.valor),
 						})),
 					}
 				: {}),
@@ -626,6 +644,11 @@ export async function baixaEstoqueVenda(body: {
 				valorcartaodebito: asApiDecimal(body.pagamentos.valorcartaodebito ?? 0),
 				valorcartao: asApiDecimal(body.pagamentos.valorcartao ?? 0),
 				valorprepago: asApiDecimal(body.pagamentos.valorprepago ?? 0),
+				desconto: asApiDecimal(body.pagamentos.desconto ?? 0),
+				valortaxaservico: asApiDecimal(body.pagamentos.valortaxaservico ?? 0),
+				valorcouverartistico: asApiDecimal(
+					body.pagamentos.valorcouverartistico ?? 0,
+				),
 			},
 			...(body.emitirNfce === false ? { emitirNfce: false } : {}),
 		},

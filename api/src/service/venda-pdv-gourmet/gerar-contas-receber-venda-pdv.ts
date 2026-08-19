@@ -27,6 +27,7 @@ import {
 	resolverTipoDocumentoPorFormaNfe,
 	TPAG_CARTAO_CREDITO,
 	TPAG_CARTAO_DEBITO,
+	tipoDocumentoExigeClientePdv,
 	tipoDocumentoGeraContasReceber,
 } from "@/util/resolver-tipo-documento-pdv.js";
 
@@ -247,8 +248,8 @@ export async function gerarContasReceberVendaPdvService(
 		return httpOk({ parcelasGeradas: 0 });
 	}
 
-	const exigeCliente = formasComTipo.some(
-		({ tipoDoc }) => tipoDoc.aprazo === 1,
+	const exigeCliente = formasComTipo.some(({ tipoDoc }) =>
+		tipoDocumentoExigeClientePdv(tipoDoc),
 	);
 
 	if (exigeCliente && !parametros.identidade?.trim()) {
@@ -371,5 +372,8 @@ export async function formaErpExigeCliente(
 	const tipo = await buscarTipoDocumentoFinanceiroPorId(
 		idtipodocumentofinanceiro,
 	);
-	return tipo?.aprazo === 1;
+	if (!tipo) {
+		return false;
+	}
+	return tipoDocumentoExigeClientePdv(tipo);
 }

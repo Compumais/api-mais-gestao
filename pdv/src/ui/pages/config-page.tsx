@@ -902,15 +902,17 @@ export function ConfigPage() {
 						{aba === "teclas" && (
 							<Card>
 								<CardHeader>
-									<CardTitle>Teclas rápidas</CardTitle>
+									<CardTitle>Atalhos de teclado</CardTitle>
 								</CardHeader>
 								<CardContent>
 									<ConfigTeclasFuncao
 										valorInicial={config.teclas_funcao}
+										tecladoVirtualInicial={config.teclado_virtual_pagamento}
 										onMensagem={setMsg}
-										onSalvo={(mapa) =>
-											set("teclas_funcao", serializarTeclasFuncao(mapa))
-										}
+										onSalvo={(mapa, tecladoVirtual, meios) => {
+											set("teclas_funcao", serializarTeclasFuncao(mapa, meios));
+											set("teclado_virtual_pagamento", tecladoVirtual);
+										}}
 									/>
 								</CardContent>
 							</Card>

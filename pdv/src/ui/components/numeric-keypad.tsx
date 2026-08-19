@@ -11,6 +11,8 @@ type NumericKeypadProps = {
 	onEnter?: () => void;
 	/** Captura o teclado mesmo com input focado (modais sobre a busca). */
 	capturarSobreInput?: boolean;
+	/** Esconde os botões touch, mas continua capturando o teclado físico. */
+	mostrarBotoes?: boolean;
 };
 
 function aplicarTecla(digits: string, tecla: string): string {
@@ -35,6 +37,7 @@ export function NumericKeypad({
 	disabled,
 	onEnter,
 	capturarSobreInput = false,
+	mostrarBotoes = true,
 }: NumericKeypadProps) {
 	function pressionar(tecla: string) {
 		if (disabled) return;
@@ -91,6 +94,10 @@ export function NumericKeypad({
 		window.addEventListener("keydown", onKeyDown, true);
 		return () => window.removeEventListener("keydown", onKeyDown, true);
 	}, [digits, onChange, disabled, onEnter, capturarSobreInput]);
+
+	if (!mostrarBotoes) {
+		return null;
+	}
 
 	return (
 		<div className="grid grid-cols-3 gap-2">

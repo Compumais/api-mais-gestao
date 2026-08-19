@@ -5,6 +5,7 @@ import {
 	useOutletContext,
 	useParams,
 } from "react-router-dom";
+import { arredondarDinheiro } from "@/lib/pagamento";
 import { pdvInvoke } from "@/lib/pdv-api";
 import {
 	type GrupoLocal,
@@ -395,10 +396,24 @@ export function MesaContaPage() {
 		}
 		setLoading(true);
 		try {
+			if ((fechamento.desconto ?? 0) > 0.009) {
+				await pdvInvoke<ContaMesa>("aplicarAjustesConta", conta.id, {
+					desconto: arredondarDinheiro(
+						(conta.valordesconto ?? 0) + fechamento.desconto,
+					),
+					senha: fechamento.senhaGerencial ?? "",
+				});
+			}
 			const result = await pdvInvoke<{
 				venda: { id: string };
 				fiscal: { modo: string; mensagem: string; cStat?: string };
-			}>("fecharContaMesa", conta.id, fechamento.lancamentos, fechamento.troco, fechamento.cliente);
+			}>(
+				"fecharContaMesa",
+				conta.id,
+				fechamento.lancamentos,
+				fechamento.troco,
+				fechamento.cliente,
+			);
 			setPagando(false);
 			if (result.fiscal.modo === "erro") {
 				setVendaRejeitadaId(result.venda.id);
@@ -440,6 +455,12 @@ export function MesaContaPage() {
 		} finally {
 			setLoading(false);
 		}
+	}
+
+	function abrirDesconto() {
+		if (!conta?.itens.length || loading || pagando) return;
+		setDescontoPendente(conta.valordesconto ? String(conta.valordesconto) : "");
+		setSenhaAberta(true);
 	}
 
 	async function confirmarDesconto(senha: string) {
@@ -965,10 +986,7 @@ export function MesaContaPage() {
 								variant="outline"
 								size="sm"
 								disabled={!itens.length || loading}
-								onClick={() => {
-									setDescontoPendente("");
-									setSenhaAberta(true);
-								}}
+								onClick={() => abrirDesconto()}
 							>
 								Desconto
 							</Button>
@@ -1037,6 +1055,8 @@ export function MesaContaPage() {
 				titulo={pagandoFatia ? "Receber fatia" : "Receber / fechar conta"}
 				confirmarLabel="Confirmar"
 				nomeClienteHint={nomeCliente}
+				permitirDesconto={!pagandoFatia}
+				descontoJaAplicado={conta?.valordesconto ?? 0}
 				onCancelar={() => {
 					setPagando(false);
 					setFatiaValor(null);
@@ -1174,6 +1194,14 @@ export function MesaContaPage() {
 						variant: "outline",
 						disabled: !itens.length || loading,
 						onClick: () => void preConta(),
+					},
+					{
+						key: "desconto",
+						label: "Desconto",
+						hotkey: teclas.desconto,
+						variant: "outline",
+						disabled: !itens.length || loading || pagando || senhaAberta,
+						onClick: () => abrirDesconto(),
 					},
 					{
 						key: "receber",

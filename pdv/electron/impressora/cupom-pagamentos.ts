@@ -7,6 +7,7 @@ function rotuloMeioCupom(meio: string): string {
 	if (meio === "PIX") return "PIX";
 	if (meio === "DINHEIRO") return "DINHEIRO";
 	if (meio === "MISTO") return "MISTO";
+	if (meio === "OUTROS") return "OUTROS";
 	return meio;
 }
 
@@ -15,6 +16,7 @@ export function linhasPagamentoCupom(venda: {
 	pagamentos?: Array<{
 		meio: string;
 		valor: number;
+		descricao?: string | null;
 		nsu?: string | null;
 		autorizacao?: string | null;
 		bandeira?: string | null;
@@ -29,9 +31,11 @@ export function linhasPagamentoCupom(venda: {
 	}
 	const linhas: string[] = ["PAGAMENTOS"];
 	for (const item of efetivos) {
-		linhas.push(
-			`${rotuloMeioCupom(item.meio).padEnd(10)} ${money(item.valor)}`,
+		const rotulo = (item.descricao?.trim() || rotuloMeioCupom(item.meio)).slice(
+			0,
+			18,
 		);
+		linhas.push(`${rotulo.padEnd(18)} ${money(item.valor)}`);
 		if (item.meio === "CARTAO") {
 			if (item.bandeira) {
 				linhas.push(`  Bandeira: ${item.bandeira}`);
