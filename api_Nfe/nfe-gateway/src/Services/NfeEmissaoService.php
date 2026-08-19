@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MaisGestao\NfeGateway\Services;
 
+use MaisGestao\NfeGateway\Fiscal\MontarPisCofinsItemNfe;
 use NFePHP\NFe\Complements;
 use NFePHP\NFe\Common\Standardize;
 use NFePHP\NFe\Make;
@@ -314,50 +315,13 @@ final class NfeEmissaoService
 			$vIcmsMonoRetTotal += $vIcmsMonoRet;
 			$vIcmsMonoRetenTotal += $vIcmsMonoReten;
 
-			$cstPis  = (string) ($item['cstPis'] ?? '07');
-			$cstCof  = (string) ($item['cstCofins'] ?? '07');
-			$pPis    = (float) ($item['aliquotaPis'] ?? 0);
-			$pCofins = (float) ($item['aliquotaCofins'] ?? 0);
-			$vPis    = round($vProd * $pPis / 100, 2);
-			$vCofins = round($vProd * $pCofins / 100, 2);
-			$vPisTotal  += $vPis;
-			$vCofinsTotal += $vCofins;
+			$pis = MontarPisCofinsItemNfe::montarPis($nItem, $item, $vProd, $qCom);
+			$cofins = MontarPisCofinsItemNfe::montarCofins($nItem, $item, $vProd, $qCom);
+			$vPisTotal += round((float) ($pis->vPIS ?? 0), 2);
+			$vCofinsTotal += round((float) ($cofins->vCOFINS ?? 0), 2);
 
-			if (in_array($cstPis, ['01', '02', '03'], true)) {
-				$mk->tagPIS((object) [
-					'item'  => $nItem,
-					'CST'   => $cstPis,
-					'vBC'   => $vProd,
-					'pPIS'  => $pPis,
-					'vPIS'  => $vPis,
-				]);
-			} else {
-				$mk->tagPIS((object) [
-					'item'  => $nItem,
-					'CST'   => $cstPis,
-					'vBC'   => 0,
-					'pPIS'  => 0,
-					'vPIS'  => 0,
-				]);
-			}
-
-			if (in_array($cstCof, ['01', '02', '03'], true)) {
-				$mk->tagCOFINS((object) [
-					'item'    => $nItem,
-					'CST'     => $cstCof,
-					'vBC'     => $vProd,
-					'pCOFINS' => $pCofins,
-					'vCOFINS' => $vCofins,
-				]);
-			} else {
-				$mk->tagCOFINS((object) [
-					'item'    => $nItem,
-					'CST'     => $cstCof,
-					'vBC'     => 0,
-					'pCOFINS' => 0,
-					'vCOFINS' => 0,
-				]);
-			}
+			$mk->tagPIS($pis);
+			$mk->tagCOFINS($cofins);
 		}
 
 		// ── totais ────────────────────────────────────────────────────────────

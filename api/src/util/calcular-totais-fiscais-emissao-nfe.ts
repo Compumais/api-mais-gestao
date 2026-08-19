@@ -1,3 +1,8 @@
+import {
+	montarCofinsItemNfe,
+	montarPisItemNfe,
+} from "@/util/montar-grupo-pis-cofins-item-nfe.js";
+
 export type ItemTributacaoEmissaoNfe = {
 	quantidade: number;
 	valorUnitario: number;
@@ -87,21 +92,25 @@ function calcularIcmsItem(
 	return { base, valor };
 }
 
-function calcularPisCofinsItem(
-	item: ItemTributacaoEmissaoNfe,
-): { pis: number; cofins: number } {
+function calcularPisCofinsItem(item: ItemTributacaoEmissaoNfe): {
+	pis: number;
+	cofins: number;
+} {
 	const vProd = valorProdutoItem(item);
-	const cstPis = item.cstPis ?? "07";
-	const cstCof = item.cstCofins ?? "07";
-	const tributavel = ["01", "02", "03"].includes(cstPis);
-	const tributavelCof = ["01", "02", "03"].includes(cstCof);
+	const pis = montarPisItemNfe({
+		cstPis: item.cstPis,
+		aliquotaPis: item.aliquotaPis,
+		valorProduto: vProd,
+		quantidade: item.quantidade,
+	});
+	const cofins = montarCofinsItemNfe({
+		cstCofins: item.cstCofins,
+		aliquotaCofins: item.aliquotaCofins,
+		valorProduto: vProd,
+		quantidade: item.quantidade,
+	});
 
-	return {
-		pis: tributavel ? round2((vProd * (item.aliquotaPis ?? 0)) / 100) : 0,
-		cofins: tributavelCof
-			? round2((vProd * (item.aliquotaCofins ?? 0)) / 100)
-			: 0,
-	};
+	return { pis: pis.vPIS, cofins: cofins.vCOFINS };
 }
 
 export function calcularTotaisFiscaisEmissaoNfe(

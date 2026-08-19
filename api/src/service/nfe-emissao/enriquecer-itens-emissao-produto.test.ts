@@ -73,4 +73,37 @@ describe("enriquecerItensEmissaoComProduto", () => {
 		expect(itens[0]?.cest).toBe("2805900");
 		expect(cestRepositories.buscarCestPorId).not.toHaveBeenCalled();
 	});
+
+	it("preenche CST e alíquota PIS/COFINS do produto quando o item não tem", async () => {
+		vi.mocked(produtosRepositories.buscarProdutoPorId).mockResolvedValue({
+			id: "prod-1",
+			idempresa: "emp-1",
+			codigo: 10,
+			idcest: null,
+			cest: null,
+			ean: null,
+			eantributavel: null,
+			cstpis: "1.00",
+			cstcofins: "1.00",
+			aliquotapis: "1.65",
+			aliquotacofins: "7.60",
+		} as Awaited<ReturnType<typeof produtosRepositories.buscarProdutoPorId>>);
+
+		const itens = await enriquecerItensEmissaoComProduto([
+			{
+				idproduto: "prod-1",
+				descricao: "Produto importado",
+				ncm: "22021000",
+				cfop: "5102",
+				unidade: "UN",
+				quantidade: 1,
+				valorUnitario: 10,
+			},
+		]);
+
+		expect(itens[0]?.cstPis).toBe("01");
+		expect(itens[0]?.cstCofins).toBe("01");
+		expect(itens[0]?.aliquotaPis).toBe(1.65);
+		expect(itens[0]?.aliquotaCofins).toBe(7.6);
+	});
 });
