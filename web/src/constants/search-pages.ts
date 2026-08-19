@@ -307,10 +307,18 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 	},
 	{
 		title: "Integração contábil",
-		url: "/integracao-contabil",
+		url: "/configuracoes?tab=integracoes-contabeis",
 		category: "Contabilidade",
 		icon: IconReportMoney,
-		keywords: ["integração", "integracao", "integracao contabil", "contábil"],
+		keywords: [
+			"integração",
+			"integracao",
+			"integracao contabil",
+			"contábil",
+			"domínio",
+			"dominio",
+			"onvio",
+		],
 	},
 	{
 		title: "Código reduzidos",
@@ -424,6 +432,11 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 			"proximo numero",
 			"série",
 			"serie",
+			"domínio",
+			"dominio",
+			"onvio",
+			"integrações contábeis",
+			"integracoes contabeis",
 		],
 	},
 	{
