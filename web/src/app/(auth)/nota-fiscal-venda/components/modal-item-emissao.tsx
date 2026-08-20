@@ -38,14 +38,18 @@ import {
 	OPCOES_CST_PIS_COFINS,
 } from "@/util/cst-produto-util";
 import {
+	codigoCfopPorId,
 	empresaUsaCsosn,
 	itemEmissaoPodeSerConfirmado,
 	itemEmissaoRequerCest,
+	itemEmissaoSemTributacaoCompleta,
 	mapearProdutoParaItemNfe,
 	mapearTributacaoCfopParaItem,
 	normalizarGtinItemFormulario,
 	normalizarTributacaoItemFormulario,
+	preencherItemComCadastro,
 	prepararItemEmissaoFormulario,
+	sugerirIcmsStPeloMva,
 } from "@/util/mapear-produto-item-nfe";
 import { resolverIcmsItemDeTaxaUf } from "@/util/resolver-icms-taxa-uf";
 import { BlocoLotesItemNfe } from "./bloco-lotes-item-nfe";
@@ -233,7 +237,8 @@ export function ModalItemEmissao({
 					Boolean(itemNormalizado.idproduto) &&
 					(!itemNormalizado.ean ||
 						cestInvalido ||
-						itemNormalizado.controlaLote == null);
+						itemNormalizado.controlaLote == null ||
+						itemEmissaoSemTributacaoCompleta(itemNormalizado, usaCsosn));
 
 				if (precisaHidratacao && itemNormalizado.idproduto) {
 					setCarregandoProduto(true);
@@ -244,26 +249,24 @@ export function ModalItemEmissao({
 						if (cancelado) return;
 						const cestCodigo = await resolverCestCodigoProduto(produto);
 						if (cancelado) return;
+						const cfopCadastro =
+							codigoCfopPorId(produto.idcfopsaida, cfopsReferencia) ||
+							itemNormalizado.cfop ||
+							cfopSaidaPadrao;
 						const doCadastro = mapearProdutoParaItemNfe(
 							{ ...produto, cestCodigo: cestCodigo ?? produto.cestCodigo },
-							itemNormalizado.cfop || cfopSaidaPadrao,
+							cfopCadastro,
 							usaCsosn,
+						);
+						const mesclado = preencherItemComCadastro(
+							itemNormalizado,
+							doCadastro,
 						);
 						setItem(
 							prepararItemEmissaoFormulario(
 								{
-									...itemNormalizado,
-									ean: itemNormalizado.ean || doCadastro.ean,
-									eanTributavel:
-										itemNormalizado.eanTributavel || doCadastro.eanTributavel,
-									cest: cestInvalido ? doCadastro.cest : itemNormalizado.cest,
-									unidade:
-										itemNormalizado.unidade !== "UN"
-											? itemNormalizado.unidade
-											: doCadastro.unidade || itemNormalizado.unidade,
-									controlaLote:
-										itemNormalizado.controlaLote ?? doCadastro.controlaLote,
-									rastros: itemNormalizado.rastros ?? doCadastro.rastros,
+									...mesclado,
+									...sugerirIcmsStPeloMva(mesclado),
 								},
 								usaCsosn,
 							),
@@ -285,25 +288,29 @@ export function ModalItemEmissao({
 		return () => {
 			cancelado = true;
 		};
-	}, [open, itemParaEditar, cfopSaidaPadrao, usaCsosn]);
+	}, [open, itemParaEditar, cfopSaidaPadrao, usaCsosn, cfopsReferencia]);
 
 	async function selecionarProduto(idproduto: string) {
 		setCarregandoProduto(true);
 		try {
 			const produto = await produtosService.buscar(idproduto);
 			const cestCodigo = await resolverCestCodigoProduto(produto);
-			const cfop = cfopSaidaPadrao || item.cfop;
+			const cfop =
+				codigoCfopPorId(produto.idcfopsaida, cfopsReferencia) ||
+				cfopSaidaPadrao ||
+				item.cfop;
 			let itemMapeado = mapearProdutoParaItemNfe(
 				{ ...produto, cestCodigo: cestCodigo ?? produto.cestCodigo },
 				cfop,
 				usaCsosn,
 			);
 
-			if (!itemMapeado.cst && !itemMapeado.csosn && idCfopReferencia) {
+			const idCfopTributacao = produto.idcfopsaida || idCfopReferencia;
+			if (!itemMapeado.cst && !itemMapeado.csosn && idCfopTributacao) {
 				try {
 					const tributacaoCfop = await produtosService.tributacaoPorCfop(
 						idempresa,
-						idCfopReferencia,
+						idCfopTributacao,
 					);
 					itemMapeado = {
 						...itemMapeado,
@@ -317,6 +324,7 @@ export function ModalItemEmissao({
 			itemMapeado = {
 				...itemMapeado,
 				...normalizarTributacaoItemFormulario(itemMapeado, usaCsosn),
+				...sugerirIcmsStPeloMva(itemMapeado),
 			};
 
 			if (produto.idtaxauf && ufEmpresa && !usaCsosn) {
@@ -359,7 +367,20 @@ export function ModalItemEmissao({
 		campo: K,
 		valor: ItemNfe[K],
 	) {
-		setItem((prev) => ({ ...prev, [campo]: valor }));
+		setItem((prev) => {
+			const atualizado = { ...prev, [campo]: valor };
+			if (campo === "quantidade" || campo === "valorUnitario") {
+				return {
+					...atualizado,
+					...sugerirIcmsStPeloMva({
+						...atualizado,
+						baseIcmsSt: undefined,
+						valorIcmsSt: undefined,
+					}),
+				};
+			}
+			return atualizado;
+		});
 	}
 
 	const totalItem = (item.quantidade || 0) * (item.valorUnitario || 0);
@@ -367,7 +388,12 @@ export function ModalItemEmissao({
 	function handleConfirmar() {
 		const tributacao = normalizarTributacaoItemFormulario(item, usaCsosn);
 		const gtin = normalizarGtinItemFormulario({ ...item, ...tributacao });
-		const itemFinal = { ...item, ...tributacao, ...gtin };
+		const itemFinal = {
+			...item,
+			...tributacao,
+			...gtin,
+			...sugerirIcmsStPeloMva({ ...item, ...tributacao }),
+		};
 
 		if (!usaCsosn) {
 			if (itemFinal.baseIcms == null) {
@@ -680,11 +706,11 @@ export function ModalItemEmissao({
 								</span>
 								{usaCsosn ? (
 									<Select
-										value={item.csosn ?? ""}
+										value={item.csosn ?? "none"}
 										onValueChange={(v) =>
 											setItem((prev) => ({
 												...prev,
-												csosn: v,
+												csosn: v === "none" ? undefined : v,
 												cst: undefined,
 											}))
 										}
@@ -693,6 +719,7 @@ export function ModalItemEmissao({
 											<SelectValue placeholder="Selecione o CSOSN" />
 										</SelectTrigger>
 										<SelectContent>
+											<SelectItem value="none">Nenhum</SelectItem>
 											{OPCOES_CSOSN.map((opcao) => (
 												<SelectItem key={opcao.value} value={opcao.value}>
 													{opcao.label}
@@ -731,13 +758,19 @@ export function ModalItemEmissao({
 										CST PIS
 									</span>
 									<Select
-										value={item.cstPis ?? ""}
-										onValueChange={(v) => atualizarCampo("cstPis", v)}
+										value={item.cstPis ?? "none"}
+										onValueChange={(v) =>
+											atualizarCampo(
+												"cstPis",
+												v === "none" ? undefined : v,
+											)
+										}
 									>
 										<SelectTrigger className="w-full">
 											<SelectValue placeholder="Selecione" />
 										</SelectTrigger>
 										<SelectContent>
+											<SelectItem value="none">Nenhum</SelectItem>
 											{OPCOES_CST_PIS_COFINS.map((opcao) => (
 												<SelectItem key={opcao.value} value={opcao.value}>
 													{opcao.label}
@@ -752,13 +785,19 @@ export function ModalItemEmissao({
 										CST COFINS
 									</span>
 									<Select
-										value={item.cstCofins ?? ""}
-										onValueChange={(v) => atualizarCampo("cstCofins", v)}
+										value={item.cstCofins ?? "none"}
+										onValueChange={(v) =>
+											atualizarCampo(
+												"cstCofins",
+												v === "none" ? undefined : v,
+											)
+										}
 									>
 										<SelectTrigger className="w-full">
 											<SelectValue placeholder="Selecione" />
 										</SelectTrigger>
 										<SelectContent>
+											<SelectItem value="none">Nenhum</SelectItem>
 											{OPCOES_CST_PIS_COFINS.map((opcao) => (
 												<SelectItem key={opcao.value} value={opcao.value}>
 													{opcao.label}
@@ -813,6 +852,82 @@ export function ModalItemEmissao({
 						</CollapsibleTrigger>
 						<CollapsibleContent className="px-3 pb-3">
 							<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+								<div className="space-y-1">
+									<span className="text-sm font-medium text-muted-foreground block">
+										MVA ST (%)
+									</span>
+									<Input
+										type="number"
+										min="0"
+										step="0.01"
+										value={item.percentualMvaSt ?? ""}
+										onChange={(e) => {
+											const mva = e.target.value
+												? parseFloat(e.target.value)
+												: undefined;
+											setItem((prev) => {
+												const atualizado = {
+													...prev,
+													percentualMvaSt: mva,
+												};
+												return {
+													...atualizado,
+													...sugerirIcmsStPeloMva({
+														...atualizado,
+														baseIcmsSt: undefined,
+														valorIcmsSt: undefined,
+													}),
+												};
+											});
+										}}
+									/>
+								</div>
+								<div className="space-y-1">
+									<span className="text-sm font-medium text-muted-foreground block">
+										Alíquota ICMS ST (%)
+									</span>
+									<Input
+										type="number"
+										min="0"
+										step="0.01"
+										value={item.aliquotaIcmsSt ?? ""}
+										onChange={(e) => {
+											const aliquota = e.target.value
+												? parseFloat(e.target.value)
+												: undefined;
+											setItem((prev) => {
+												const atualizado = {
+													...prev,
+													aliquotaIcmsSt: aliquota,
+												};
+												return {
+													...atualizado,
+													...sugerirIcmsStPeloMva({
+														...atualizado,
+														valorIcmsSt: undefined,
+													}),
+												};
+											});
+										}}
+									/>
+								</div>
+								<div className="space-y-1">
+									<span className="text-sm font-medium text-muted-foreground block">
+										Alíquota FCP ST (%)
+									</span>
+									<Input
+										type="number"
+										min="0"
+										step="0.01"
+										value={item.aliquotaFcpSt ?? ""}
+										onChange={(e) => {
+											const aliquota = e.target.value
+												? parseFloat(e.target.value)
+												: undefined;
+											atualizarCampo("aliquotaFcpSt", aliquota);
+										}}
+									/>
+								</div>
 								{(
 									[
 										...(!usaCsosn
@@ -839,11 +954,13 @@ export function ModalItemEmissao({
 											{label}
 										</span>
 										<MoneyInput
-											value={String(
+											value={
 												campo === "baseIcms"
-													? (item.baseIcms ?? totalItem)
-													: (item[campo] ?? 0),
-											)}
+													? String(item.baseIcms ?? totalItem)
+													: item[campo] == null
+														? ""
+														: String(item[campo])
+											}
 											onChange={(v) =>
 												atualizarCampo(campo, v ? parseFloat(v) : undefined)
 											}
