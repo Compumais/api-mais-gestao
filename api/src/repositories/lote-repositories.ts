@@ -48,7 +48,10 @@ export async function atualizarLote(id: string, dados: Partial<NovoLote>) {
 export async function listarLotesPorProduto(
 	idempresa: string,
 	idproduto: string,
-	opcoes?: { somenteComSaldo?: boolean | undefined },
+	opcoes?: {
+		somenteComSaldo?: boolean | undefined;
+		tipoSaldo?: "operacional" | "fiscal" | "ambos" | undefined;
+	},
 ) {
 	const condicoes = [
 		eq(lote.idempresa, idempresa),
@@ -57,7 +60,15 @@ export async function listarLotesPorProduto(
 	];
 
 	if (opcoes?.somenteComSaldo) {
-		condicoes.push(gt(sql`cast(${lote.quantidade} as numeric)`, 0));
+		const tipoSaldo = opcoes.tipoSaldo ?? "operacional";
+		if (tipoSaldo === "fiscal") {
+			condicoes.push(gt(sql`cast(${lote.quantidadefiscal} as numeric)`, 0));
+		} else if (tipoSaldo === "ambos") {
+			condicoes.push(gt(sql`cast(${lote.quantidade} as numeric)`, 0));
+			condicoes.push(gt(sql`cast(${lote.quantidadefiscal} as numeric)`, 0));
+		} else {
+			condicoes.push(gt(sql`cast(${lote.quantidade} as numeric)`, 0));
+		}
 	}
 
 	return db

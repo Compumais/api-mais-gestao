@@ -23,6 +23,7 @@ const criarMovimentoEstoqueBodySchema = z.object({
 	quantidadeentrada: z.string().optional().nullable(),
 	quantidadesaida: z.string().optional().nullable(),
 	tipodocumento: z.number().int().optional().nullable(),
+	tipoestoque: z.coerce.number().int().min(0).max(2).optional().nullable(),
 	valortotal: z.string().optional().nullable(),
 	variacao: z.number().int().optional().nullable(),
 });

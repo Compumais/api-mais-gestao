@@ -11,6 +11,7 @@ import {
 	type ResultadoEmissaoNfcePdv,
 } from "@/service/nfce-emissao/emitir-nfce-venda-pdv.js";
 import { resolverVendaPorNotaFiscalNfce } from "@/service/nfce-emissao/resolver-venda-nfce.js";
+import { complementarBaixaFiscalVendaPdv } from "@/service/estoque/complementar-baixa-fiscal-venda-pdv.js";
 import { reajustarEstoqueVendaPdv } from "@/service/estoque/reajustar-estoque-venda-pdv.js";
 import { avaliarEmissaoNfcePorPagamento } from "@/util/avaliar-emissao-nfce-pagamento.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
@@ -212,24 +213,23 @@ export async function atualizarVendaNfcePdvService({
 	const configNfce = await buscarNfceConfiguracaoPorEmpresa(idempresa);
 	const meiosConfig = normalizarMeiosPagamentoNfce(configNfce?.meiospagamentonfce);
 	const avaliacao = avaliarEmissaoNfcePorPagamento(pagamentosVenda, meiosConfig);
-	const tipoestoque = avaliacao.deveEmitir
-		? TIPO_ESTOQUE.AMBOS
-		: TIPO_ESTOQUE.OPERACIONAL;
 
 	const avisos: string[] = [];
+	const itensEstoque = itens.map((item) => ({
+		idproduto: item.idproduto,
+		quantidade: item.quantidade,
+		precounitario: item.precounitario,
+		...(item.nomeproduto !== undefined
+			? { nomeproduto: item.nomeproduto }
+			: {}),
+	}));
 
-	const movimentosRegistrados = await reajustarEstoqueVendaPdv({
+	// Reajuste sempre no operacional; fiscal só após NFC-e autorizada.
+	let movimentosRegistrados = await reajustarEstoqueVendaPdv({
 		idempresa,
 		idvenda: venda.id,
-		itensNovos: itens.map((item) => ({
-			idproduto: item.idproduto,
-			quantidade: item.quantidade,
-			precounitario: item.precounitario,
-			...(item.nomeproduto !== undefined
-				? { nomeproduto: item.nomeproduto }
-				: {}),
-		})),
-		tipoestoque,
+		itensNovos: itensEstoque,
+		tipoestoque: TIPO_ESTOQUE.OPERACIONAL,
 	}).catch((erro) => {
 		console.error("[nfce] Falha ao reajustar estoque da venda:", erro);
 		avisos.push("Falha ao reajustar estoque da venda");
@@ -248,7 +248,15 @@ export async function atualizarVendaNfcePdvService({
 
 		if (emissao.success && emissao.body) {
 			emissaoNfce = emissao.body;
-			if (!emissao.body.emitida) {
+			if (emissao.body.emitida) {
+				const complemento = await complementarBaixaFiscalVendaPdv({
+					idempresa,
+					idvenda: venda.id,
+					itens: itensEstoque,
+				});
+				movimentosRegistrados += complemento.movimentosRegistrados;
+				avisos.push(...complemento.avisos);
+			} else {
 				const mensagem =
 					emissao.body.erro ??
 					emissao.body.xMotivo ??

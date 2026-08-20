@@ -2,6 +2,10 @@ import { buscarCfopPorId } from "@/repositories/cfop-repositories.js";
 import { listarLotesPorProduto } from "@/repositories/lote-repositories.js";
 import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
 import { buscarSaldoEstoquePorCodigoProduto } from "@/repositories/saldo-estoque-repositories.js";
+import {
+	saldoDisponivelLoteFefo,
+	type TipoSaldoLoteFefo,
+} from "@/util/tipo-estoque.js";
 
 export type LoteFefoSugerido = {
 	idlote: string;
@@ -34,8 +38,11 @@ export async function resolverLotesFefo(params: {
 	quantidade: number;
 	idcfop?: string | null | undefined;
 	dataReferencia?: string | undefined;
+	/** Padrão operacional; emissão NF-e/NFC-e deve usar ambos. */
+	tipoSaldo?: TipoSaldoLoteFefo | undefined;
 }): Promise<ResultadoFefo> {
 	const hoje = (params.dataReferencia ?? new Date().toISOString()).slice(0, 10);
+	const tipoSaldo = params.tipoSaldo ?? "operacional";
 	let permitirVencido = false;
 
 	if (params.idcfop) {
@@ -48,6 +55,7 @@ export async function resolverLotesFefo(params: {
 		params.idproduto,
 		{
 			somenteComSaldo: true,
+			tipoSaldo,
 		},
 	);
 
@@ -61,7 +69,11 @@ export async function resolverLotesFefo(params: {
 
 	for (const lote of disponiveis) {
 		if (restante <= 0) break;
-		const saldo = parseQtd(lote.quantidade);
+		const saldo = saldoDisponivelLoteFefo(
+			lote.quantidade,
+			lote.quantidadefiscal,
+			tipoSaldo,
+		);
 		if (saldo <= 0) continue;
 		const usar = Math.min(saldo, restante);
 		escolhidos.push({
@@ -82,11 +94,22 @@ export async function resolverLotesFefo(params: {
 			params.idempresa,
 			String(produto.codigo),
 		);
-		saldoProduto = parseQtd(saldo?.quantidade);
+		if (tipoSaldo === "fiscal") {
+			saldoProduto = parseQtd(saldo?.quantidadefiscal);
+		} else if (tipoSaldo === "ambos") {
+			saldoProduto = Math.min(
+				parseQtd(saldo?.quantidade),
+				parseQtd(saldo?.quantidadefiscal),
+			);
+		} else {
+			saldoProduto = parseQtd(saldo?.quantidade);
+		}
 	}
 
 	const somaLotes = lotes.reduce(
-		(acc, lote) => acc + parseQtd(lote.quantidade),
+		(acc, lote) =>
+			acc +
+			saldoDisponivelLoteFefo(lote.quantidade, lote.quantidadefiscal, tipoSaldo),
 		0,
 	);
 	const saldoOrfao = Math.max(0, Number((saldoProduto - somaLotes).toFixed(6)));

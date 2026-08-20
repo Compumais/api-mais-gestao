@@ -11,7 +11,11 @@ import {
 	httpOk,
 	httpProibido,
 } from "@/util/http-util.js";
-import { TIPO_DOCUMENTO_ESTOQUE, TIPO_ESTOQUE } from "@/util/tipo-estoque.js";
+import {
+	TIPO_DOCUMENTO_ESTOQUE,
+	TIPO_ESTOQUE,
+	type TipoEstoque,
+} from "@/util/tipo-estoque.js";
 
 export type CriarLoteAjusteParametros = {
 	idusuario: string;
@@ -22,7 +26,23 @@ export type CriarLoteAjusteParametros = {
 	datavalidade?: string | null | undefined;
 	codigoagregacao?: string | null | undefined;
 	quantidadeAjuste?: number | undefined;
+	/** 0 operacional, 1 fiscal, 2 ambos (padrão). */
+	tipoestoque?: TipoEstoque | undefined;
 };
+
+function resolverTipoEstoqueAjuste(
+	tipoestoque: number | undefined,
+): TipoEstoque | null {
+	if (tipoestoque == null) return TIPO_ESTOQUE.AMBOS;
+	if (
+		tipoestoque === TIPO_ESTOQUE.OPERACIONAL ||
+		tipoestoque === TIPO_ESTOQUE.FISCAL ||
+		tipoestoque === TIPO_ESTOQUE.AMBOS
+	) {
+		return tipoestoque;
+	}
+	return null;
+}
 
 export async function criarLoteAjusteService(
 	params: CriarLoteAjusteParametros,
@@ -46,6 +66,13 @@ export async function criarLoteAjusteService(
 		return httpBadRequest("Número do lote é obrigatório");
 	}
 
+	const tipoestoque = resolverTipoEstoqueAjuste(params.tipoestoque);
+	if (tipoestoque == null) {
+		return httpBadRequest(
+			"tipoestoque inválido (use 0 operacional, 1 fiscal ou 2 ambos)",
+		);
+	}
+
 	const lote = await upsertLoteCadastro({
 		idempresa: params.idempresa,
 		idproduto: params.idproduto,
@@ -62,7 +89,7 @@ export async function criarLoteAjusteService(
 			idproduto: params.idproduto,
 			quantidade: quantidadeAjuste.toFixed(6),
 			sentido: "entrada",
-			tipoestoque: TIPO_ESTOQUE.AMBOS,
+			tipoestoque,
 			tipodocumento: TIPO_DOCUMENTO_ESTOQUE.ACERTO,
 			idlote: lote.id,
 			observacao: `Ajuste lote ${lote.numero}`.slice(0, 50),

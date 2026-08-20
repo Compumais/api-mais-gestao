@@ -10,7 +10,12 @@ import {
 import { avaliarEmissaoNfcePorPagamento } from "@/util/avaliar-emissao-nfce-pagamento.js";
 import { httpOk, httpProibido } from "@/util/http-util.js";
 import { normalizarMeiosPagamentoNfce } from "@/util/nfce-config-padrao.js";
-import { TIPO_DOCUMENTO_ESTOQUE, TIPO_ESTOQUE } from "@/util/tipo-estoque.js";
+import {
+	TIPO_DOCUMENTO_ESTOQUE,
+	TIPO_ESTOQUE,
+	tipoEstoqueAfetouOperacional,
+} from "@/util/tipo-estoque.js";
+import { complementarBaixaFiscalVendaPdv } from "./complementar-baixa-fiscal-venda-pdv.js";
 import { registrarMovimentoEstoque } from "./registrar-movimento-estoque.js";
 
 export type ItemBaixaEstoqueVenda = {
@@ -74,28 +79,29 @@ export async function baixaEstoqueVendaService({
 	);
 	const avaliacao = avaliarEmissaoNfcePorPagamento(pagamentos, meiosConfig);
 	const deveEmitir = avaliacao.deveEmitir && emitirNfce;
-	const tipoestoque = deveEmitir
-		? TIPO_ESTOQUE.AMBOS
-		: TIPO_ESTOQUE.OPERACIONAL;
 
 	const avisos: string[] = [];
 	let movimentosRegistrados = 0;
 	const movimentosExistentes =
 		await listarMovimentosEstoquePorIdOriginal(idvenda);
-	const itensJaBaixados = new Set(
+	const itensJaBaixadosOperacional = new Set(
 		movimentosExistentes
 			.filter(
 				(movimento) =>
-					(movimento.cancelado ?? 0) === 0 && movimento.iditemoriginal,
+					(movimento.cancelado ?? 0) === 0 &&
+					movimento.iditemoriginal &&
+					tipoEstoqueAfetouOperacional(movimento.tipoestoque),
 			)
 			.map((movimento) => movimento.iditemoriginal as string),
 	);
 
+	// Regra canônica PDV: na finalização baixa sempre o operacional.
+	// O fiscal só é baixado após NFC-e autorizada (complemento abaixo).
 	for (const item of itens) {
 		const qty = Number.parseFloat(item.quantidade);
 		if (Number.isNaN(qty) || qty <= 0) continue;
 
-		if (itensJaBaixados.has(item.idproduto)) {
+		if (itensJaBaixadosOperacional.has(item.idproduto)) {
 			movimentosRegistrados++;
 			continue;
 		}
@@ -111,7 +117,7 @@ export async function baixaEstoqueVendaService({
 				idproduto: item.idproduto,
 				quantidade: qty.toFixed(6),
 				sentido: "saida",
-				tipoestoque,
+				tipoestoque: TIPO_ESTOQUE.OPERACIONAL,
 				tipodocumento: TIPO_DOCUMENTO_ESTOQUE.PDV,
 				idoriginal: idvenda,
 				iditemoriginal: item.idproduto,
@@ -154,7 +160,15 @@ export async function baixaEstoqueVendaService({
 
 		if (emissao.success && emissao.body) {
 			emissaoNfce = emissao.body;
-			if (!emissao.body.emitida) {
+			if (emissao.body.emitida) {
+				const complemento = await complementarBaixaFiscalVendaPdv({
+					idempresa,
+					idvenda,
+					itens,
+				});
+				movimentosRegistrados += complemento.movimentosRegistrados;
+				avisos.push(...complemento.avisos);
+			} else {
 				const mensagem =
 					emissao.body.erro ??
 					emissao.body.xMotivo ??

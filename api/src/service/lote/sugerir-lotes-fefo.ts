@@ -11,6 +11,7 @@ import {
 	httpOk,
 	httpProibido,
 } from "@/util/http-util.js";
+import type { TipoSaldoLoteFefo } from "@/util/tipo-estoque.js";
 
 export async function sugerirLotesFefoService(params: {
 	idusuario: string;
@@ -19,6 +20,7 @@ export async function sugerirLotesFefoService(params: {
 	quantidade: number;
 	idcfop?: string | null | undefined;
 	dataReferencia?: string | undefined;
+	tipoSaldo?: TipoSaldoLoteFefo | undefined;
 }): Promise<HttpResponse<ResultadoFefo>> {
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
 		params.idusuario,
@@ -44,6 +46,7 @@ export async function sugerirLotesFefoService(params: {
 		quantidade: params.quantidade,
 		idcfop: params.idcfop,
 		dataReferencia: params.dataReferencia,
+		tipoSaldo: params.tipoSaldo,
 	});
 
 	return httpOk(resultado);

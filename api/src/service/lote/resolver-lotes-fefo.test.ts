@@ -60,6 +60,32 @@ describe("resolverLotesFefo", () => {
 		expect(resultado.quantidadeFaltante).toBe(0);
 	});
 
+	it("em tipoSaldo ambos limita pelo menor saldo operacional/fiscal", async () => {
+		vi.mocked(loteRepository.listarLotesPorProduto).mockResolvedValue([
+			{
+				id: "lote-1",
+				numero: "A",
+				quantidade: "10",
+				quantidadefiscal: "3",
+				datavalidade: "2026-09-01",
+				datafabricacao: "2026-01-01",
+				codigoagregacao: null,
+			},
+		] as never);
+
+		const resultado = await resolverLotesFefo({
+			idempresa: "emp-1",
+			idproduto: "prod-1",
+			quantidade: 5,
+			dataReferencia: "2026-08-20",
+			tipoSaldo: "ambos",
+		});
+
+		expect(resultado.lotes).toHaveLength(1);
+		expect(resultado.lotes[0]?.quantidade).toBe(3);
+		expect(resultado.quantidadeFaltante).toBe(2);
+	});
+
 	it("bloqueia lote vencido salvo CFOP liberar", async () => {
 		vi.mocked(loteRepository.listarLotesPorProduto).mockResolvedValue([
 			{

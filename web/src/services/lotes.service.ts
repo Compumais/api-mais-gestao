@@ -69,6 +69,8 @@ export const lotesService = {
 		datavalidade?: string | null;
 		codigoagregacao?: string | null;
 		quantidadeAjuste?: number;
+		/** 0 operacional, 1 fiscal, 2 ambos */
+		tipoestoque?: 0 | 1 | 2;
 	}): Promise<LoteProduto> {
 		const { data } = await api.post<LoteProduto>("/lotes", dados);
 		return data;
@@ -80,6 +82,7 @@ export const lotesService = {
 		quantidade: number;
 		idcfop?: string | null;
 		dataReferencia?: string;
+		tipoSaldo?: "operacional" | "fiscal" | "ambos";
 	}): Promise<ResultadoFefo> {
 		const { data } = await api.post<ResultadoFefo>(
 			"/lotes/sugerir-fefo",
