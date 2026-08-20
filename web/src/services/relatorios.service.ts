@@ -152,6 +152,27 @@ export async function gerarRelatorioDespesasPorCategoria(
 	}
 }
 
+export async function gerarRelatorioDreGerencial(
+	params: GerarRelatorioContasParams,
+): Promise<void> {
+	try {
+		const ext = params.formato === "pdf" ? "html" : params.formato;
+		await downloadRelatorioBlob(
+			"/relatorios/dre-gerencial",
+			params,
+			`dre-gerencial-${params.dataInicio}-${params.dataFim}.${ext}`,
+		);
+	} catch (error: unknown) {
+		console.error("Erro ao gerar relatório DRE Gerencial:", error);
+		const msg =
+			error && typeof error === "object" && "response" in error
+				? (error as { response?: { data?: { error?: string } } }).response?.data
+						?.error
+				: undefined;
+		throw new Error(msg || "Erro ao gerar relatório DRE Gerencial");
+	}
+}
+
 export async function gerarRelatorioFormasDePagamento(
 	params: GerarRelatorioContasParams,
 ): Promise<void> {

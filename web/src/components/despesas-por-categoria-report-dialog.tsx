@@ -34,8 +34,14 @@ export function DespesasPorCategoriaReportDialog({
 	onOpenChange,
 }: DespesasPorCategoriaReportDialogProps) {
 	const { empresa } = useEmpresa();
-	const [dataInicio, setDataInicio] = useState("");
-	const [dataFim, setDataFim] = useState("");
+	const hoje = new Date();
+	const primeiroDiaMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+	const ultimoDiaMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+	const dataInicioPadrao = primeiroDiaMes.toISOString().split("T")[0] ?? "";
+	const dataFimPadrao = ultimoDiaMes.toISOString().split("T")[0] ?? "";
+
+	const [dataInicio, setDataInicio] = useState(dataInicioPadrao);
+	const [dataFim, setDataFim] = useState(dataFimPadrao);
 	const [formato, setFormato] = useState<"pdf" | "txt" | "html">("txt");
 
 	const gerarRelatorioMutation = useMutation({
@@ -52,8 +58,8 @@ export function DespesasPorCategoriaReportDialog({
 		onSuccess: () => {
 			toast.success("Relatório gerado com sucesso!");
 			onOpenChange(false);
-			setDataInicio("");
-			setDataFim("");
+			setDataInicio(dataInicioPadrao);
+			setDataFim(dataFimPadrao);
 			setFormato("txt");
 		},
 		onError: (error: Error) => {
@@ -81,12 +87,6 @@ export function DespesasPorCategoriaReportDialog({
 		gerarRelatorioMutation.mutate();
 	};
 
-	const hoje = new Date();
-	const primeiroDiaMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-	const ultimoDiaMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
-	const dataInicioPadrao = primeiroDiaMes.toISOString().split("T")[0];
-	const dataFimPadrao = ultimoDiaMes.toISOString().split("T")[0];
-
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="sm:max-w-[500px]">
@@ -103,7 +103,7 @@ export function DespesasPorCategoriaReportDialog({
 						<Input
 							id="dpc-dataInicio"
 							type="date"
-							value={dataInicio || dataInicioPadrao}
+							value={dataInicio}
 							onChange={(e) => setDataInicio(e.target.value)}
 							required
 						/>
@@ -113,7 +113,7 @@ export function DespesasPorCategoriaReportDialog({
 						<Input
 							id="dpc-dataFim"
 							type="date"
-							value={dataFim || dataFimPadrao}
+							value={dataFim}
 							onChange={(e) => setDataFim(e.target.value)}
 							required
 						/>

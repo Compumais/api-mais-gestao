@@ -2,6 +2,8 @@ import type { FastifyInstance } from "fastify";
 import { verifyJwt } from "../../middleware/verify-jwt.js";
 import { gerarRelatorioContasPagarController } from "./contas-pagar.js";
 import { gerarRelatorioContasReceberController } from "./contas-receber.js";
+import { gerarRelatorioDespesasPorCategoriaController } from "./despesas-por-categoria.js";
+import { gerarRelatorioDreGerencialController } from "./dre-gerencial.js";
 import { gerarRelatorioFiscalComprasController } from "./fiscal-compras.js";
 import { gerarRelatorioFiscalContabilidadeController } from "./fiscal-contabilidade.js";
 import { gerarRelatorioFiscalVendasController } from "./fiscal-vendas.js";
@@ -159,6 +161,30 @@ export async function relatoriosRotas(app: FastifyInstance) {
 			response: relatorioResponseSchema,
 		},
 		handler: gerarRelatorioContasReceberController,
+	});
+
+	app.post("/relatorios/despesas-por-categoria", {
+		schema: {
+			tags: ["relatorios"],
+			summary: "Gerar relatório de despesas por categoria",
+			description:
+				"Gera relatório de despesas agrupadas por plano de contas no período (PDF, TXT ou HTML)",
+			body: relatorioBodySchema,
+			response: relatorioResponseSchema,
+		},
+		handler: gerarRelatorioDespesasPorCategoriaController,
+	});
+
+	app.post("/relatorios/dre-gerencial", {
+		schema: {
+			tags: ["relatorios"],
+			summary: "Gerar relatório DRE Gerencial",
+			description:
+				"Gera Demonstração do Resultado do Exercício gerencial no período (PDF, TXT ou HTML)",
+			body: relatorioBodySchema,
+			response: relatorioResponseSchema,
+		},
+		handler: gerarRelatorioDreGerencialController,
 	});
 
 	app.post("/relatorios/fiscal-compras", {
