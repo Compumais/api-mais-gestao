@@ -1,0 +1,28 @@
+{
+  "nacionais": [
+    {
+      "orgao": "Portal Nacional da NF-e",
+      "url": "https://www.nfe.fazenda.gov.br/"
+    },
+    {
+      "orgao": "CONFAZ",
+      "url": "https://www.confaz.fazenda.gov.br/"
+    },
+    {
+      "orgao": "Receita Federal",
+      "url": "https://www.gov.br/receitafederal/"
+    },
+    {
+      "orgao": "Simples Nacional",
+      "url": "https://www8.receita.fazenda.gov.br/SimplesNacional/"
+    },
+    {
+      "orgao": "Planalto",
+      "url": "https://www.planalto.gov.br/"
+    }
+  ],
+  "estaduais": [
+    { "uf": "MG", "orgao": "SEF/MG", "url": "https://www.fazenda.mg.gov.br/" },
+    { "uf": "SP", "orgao": "SEFAZ/SP", "url": "https://portal.fazenda.sp.gov.br/" }
+  ]
+}

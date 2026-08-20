@@ -482,6 +482,60 @@ export function AlterarProdutosEmMassaDialog({
 									)}
 								/>
 							</LinhaCampo>
+							<LinhaCampo
+								id="controlalote"
+								label="Controla lote"
+								alterar={valores.controlalote?.alterar ?? false}
+								onAlterar={(alterar) =>
+									setValue("controlalote.alterar", alterar)
+								}
+							>
+								<Controller
+									name="controlalote.valor"
+									control={control}
+									render={({ field }) => (
+										<Select
+											value={field.value?.toString()}
+											onValueChange={(valor) => field.onChange(Number(valor))}
+										>
+											<SelectTrigger id="controlalote" className="w-full">
+												<SelectValue placeholder="Selecione" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="0">Não</SelectItem>
+												<SelectItem value="1">Sim</SelectItem>
+											</SelectContent>
+										</Select>
+									)}
+								/>
+							</LinhaCampo>
+							<LinhaCampo
+								id="controlavalidade"
+								label="Controla validade"
+								alterar={valores.controlavalidade?.alterar ?? false}
+								onAlterar={(alterar) =>
+									setValue("controlavalidade.alterar", alterar)
+								}
+							>
+								<Controller
+									name="controlavalidade.valor"
+									control={control}
+									render={({ field }) => (
+										<Select
+											value={field.value?.toString()}
+											onValueChange={(valor) => field.onChange(Number(valor))}
+										>
+											<SelectTrigger id="controlavalidade" className="w-full">
+												<SelectValue placeholder="Selecione" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="0">Não</SelectItem>
+												<SelectItem value="1">Sim</SelectItem>
+											</SelectContent>
+										</Select>
+									)}
+								/>
+							</LinhaCampo>
 						</section>
 
 						<section className="space-y-3">

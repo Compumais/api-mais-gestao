@@ -1,21 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { ExternalLink, Loader2, Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { ChevronDown, ExternalLink, Loader2, Search } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { getSessionToken } from "@/lib/auth-token";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { MoneyInput } from "@/components/ui/money-input";
-import { Combobox } from "@/components/ui/combobox";
 import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { Combobox } from "@/components/ui/combobox";
 import {
 	Dialog,
 	DialogContent,
@@ -23,31 +18,37 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { MoneyInput } from "@/components/ui/money-input";
 import {
-	Collapsible,
-	CollapsibleContent,
-	CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { ChevronDown } from "lucide-react";
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import { getSessionToken } from "@/lib/auth-token";
 import type { ItemNfe } from "@/schemas/nfe-emissao.schema";
-import { produtosService } from "@/services/produtos.service";
 import { cestService } from "@/services/cest.service";
+import { produtosService } from "@/services/produtos.service";
+import { taxaUfService } from "@/services/taxauf.service";
+import {
+	OPCOES_CSOSN,
+	OPCOES_CST_ICMS,
+	OPCOES_CST_PIS_COFINS,
+} from "@/util/cst-produto-util";
 import {
 	empresaUsaCsosn,
 	itemEmissaoPodeSerConfirmado,
 	itemEmissaoRequerCest,
 	mapearProdutoParaItemNfe,
 	mapearTributacaoCfopParaItem,
-	normalizarTributacaoItemFormulario,
 	normalizarGtinItemFormulario,
+	normalizarTributacaoItemFormulario,
 	prepararItemEmissaoFormulario,
 } from "@/util/mapear-produto-item-nfe";
 import { resolverIcmsItemDeTaxaUf } from "@/util/resolver-icms-taxa-uf";
-import { taxaUfService } from "@/services/taxauf.service";
-import {
-	OPCOES_CSOSN,
-	OPCOES_CST_ICMS,
-} from "@/util/cst-produto-util";
+import { BlocoLotesItemNfe } from "./bloco-lotes-item-nfe";
 
 async function resolverCestCodigoProduto(produto: {
 	cestCodigo?: string | null;
@@ -79,16 +80,6 @@ async function resolverCestCodigoProduto(produto: {
 	return undefined;
 }
 
-const OPCOES_CST_PIS_COFINS = [
-	{ value: "01", label: "01 - Operação tributável (alíquota básica)" },
-	{ value: "04", label: "04 - Monofásica (alíquota zero)" },
-	{ value: "06", label: "06 - Alíquota zero" },
-	{ value: "07", label: "07 - Operação isenta" },
-	{ value: "08", label: "08 - Sem incidência" },
-	{ value: "09", label: "09 - Suspensão" },
-	{ value: "49", label: "49 - Outras operações de saída" },
-];
-
 const OPCOES_ORIGEM = [
 	{ value: "0", label: "0 - Nacional" },
 	{ value: "1", label: "1 - Estrangeira (importação direta)" },
@@ -97,7 +88,10 @@ const OPCOES_ORIGEM = [
 	{ value: "4", label: "4 - Nacional (processos produtivos básicos)" },
 	{ value: "5", label: "5 - Nacional (conteúdo importação <= 40%)" },
 	{ value: "6", label: "6 - Estrangeira (importação direta, sem similar)" },
-	{ value: "7", label: "7 - Estrangeira (adquirida no mercado interno, sem similar)" },
+	{
+		value: "7",
+		label: "7 - Estrangeira (adquirida no mercado interno, sem similar)",
+	},
 	{ value: "8", label: "8 - Nacional (conteúdo importação > 70%)" },
 ];
 
@@ -126,12 +120,32 @@ const ITEM_NOVO: ItemNfe = {
 };
 
 const CFOP_COMUNS = [
-	{ value: "5102", label: "5102 — Venda de mercadoria adquirida ou recebida de terceiros (dentro do estado)" },
-	{ value: "5405", label: "5405 — Venda de mercadoria com ST (dentro do estado)" },
-	{ value: "5101", label: "5101 — Venda de produto industrializado (dentro do estado)" },
-	{ value: "6102", label: "6102 — Venda de mercadoria adquirida ou recebida de terceiros (fora do estado)" },
-	{ value: "6101", label: "6101 — Venda de produto industrializado (fora do estado)" },
-	{ value: "6403", label: "6403 — Venda de mercadoria com ST (fora do estado)" },
+	{
+		value: "5102",
+		label:
+			"5102 — Venda de mercadoria adquirida ou recebida de terceiros (dentro do estado)",
+	},
+	{
+		value: "5405",
+		label: "5405 — Venda de mercadoria com ST (dentro do estado)",
+	},
+	{
+		value: "5101",
+		label: "5101 — Venda de produto industrializado (dentro do estado)",
+	},
+	{
+		value: "6102",
+		label:
+			"6102 — Venda de mercadoria adquirida ou recebida de terceiros (fora do estado)",
+	},
+	{
+		value: "6101",
+		label: "6101 — Venda de produto industrializado (fora do estado)",
+	},
+	{
+		value: "6403",
+		label: "6403 — Venda de mercadoria com ST (fora do estado)",
+	},
 ];
 
 const formatarMoeda = (v: number) =>
@@ -217,7 +231,9 @@ export function ModalItemEmissao({
 					/^0+$/.test(itemNormalizado.cest.replace(/\D/g, ""));
 				const precisaHidratacao =
 					Boolean(itemNormalizado.idproduto) &&
-					(!itemNormalizado.ean || cestInvalido);
+					(!itemNormalizado.ean ||
+						cestInvalido ||
+						itemNormalizado.controlaLote == null);
 
 				if (precisaHidratacao && itemNormalizado.idproduto) {
 					setCarregandoProduto(true);
@@ -245,6 +261,9 @@ export function ModalItemEmissao({
 										itemNormalizado.unidade !== "UN"
 											? itemNormalizado.unidade
 											: doCadastro.unidade || itemNormalizado.unidade,
+									controlaLote:
+										itemNormalizado.controlaLote ?? doCadastro.controlaLote,
+									rastros: itemNormalizado.rastros ?? doCadastro.rastros,
 								},
 								usaCsosn,
 							),
@@ -317,7 +336,7 @@ export function ModalItemEmissao({
 							? {
 									valorIcms:
 										Math.round(
-											(icmsTaxa.baseIcms * icmsTaxa.aliquotaIcms) / 100 * 100,
+											((icmsTaxa.baseIcms * icmsTaxa.aliquotaIcms) / 100) * 100,
 										) / 100,
 								}
 							: {}),
@@ -336,7 +355,10 @@ export function ModalItemEmissao({
 		}
 	}
 
-	function atualizarCampo<K extends keyof ItemNfe>(campo: K, valor: ItemNfe[K]) {
+	function atualizarCampo<K extends keyof ItemNfe>(
+		campo: K,
+		valor: ItemNfe[K],
+	) {
 		setItem((prev) => ({ ...prev, [campo]: valor }));
 	}
 
@@ -354,8 +376,8 @@ export function ModalItemEmissao({
 			if (itemFinal.valorIcms == null && itemFinal.aliquotaIcms != null) {
 				itemFinal.valorIcms =
 					Math.round(
-						((itemFinal.baseIcms ?? totalItem) * itemFinal.aliquotaIcms) /
-							100 *
+						(((itemFinal.baseIcms ?? totalItem) * itemFinal.aliquotaIcms) /
+							100) *
 							100,
 					) / 100;
 			}
@@ -437,24 +459,22 @@ export function ModalItemEmissao({
 							!item.idproduto &&
 							!carregandoProduto &&
 							produtos.length > 0 && (
-							<div className="rounded-md border bg-popover text-popover-foreground shadow-md max-h-40 overflow-y-auto">
-								{produtos.map((p) => (
-									<button
-										key={p.id}
-										type="button"
-										className="w-full text-left px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors flex items-center justify-between gap-3"
-										onClick={() => selecionarProduto(p.id)}
-									>
-										<span className="font-medium truncate">{p.nome}</span>
-										<span className="text-muted-foreground text-xs shrink-0">
-											{p.preco
-												? formatarMoeda(parseFloat(p.preco))
-												: "—"}
-										</span>
-									</button>
-								))}
-							</div>
-						)}
+								<div className="rounded-md border bg-popover text-popover-foreground shadow-md max-h-40 overflow-y-auto">
+									{produtos.map((p) => (
+										<button
+											key={p.id}
+											type="button"
+											className="w-full text-left px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors flex items-center justify-between gap-3"
+											onClick={() => selecionarProduto(p.id)}
+										>
+											<span className="font-medium truncate">{p.nome}</span>
+											<span className="text-muted-foreground text-xs shrink-0">
+												{p.preco ? formatarMoeda(parseFloat(p.preco)) : "—"}
+											</span>
+										</button>
+									))}
+								</div>
+							)}
 
 						{busca.length > 0 &&
 							!item.idproduto &&
@@ -510,6 +530,15 @@ export function ModalItemEmissao({
 						</div>
 					</div>
 
+					{item.controlaLote ? (
+						<BlocoLotesItemNfe
+							item={item}
+							idempresa={idempresa}
+							idcfop={idCfopReferencia}
+							onChange={(rastros) => atualizarCampo("rastros", rastros)}
+						/>
+					) : null}
+
 					<div className="grid grid-cols-1 gap-3">
 						<div className="space-y-1">
 							<span className="text-sm font-medium text-muted-foreground block">
@@ -524,8 +553,9 @@ export function ModalItemEmissao({
 									setItem((prev) => ({
 										...prev,
 										ean: valor || undefined,
-										eanTributavel:
-											valor ? prev.eanTributavel || valor : undefined,
+										eanTributavel: valor
+											? prev.eanTributavel || valor
+											: undefined,
 									}));
 								}}
 							/>
@@ -549,8 +579,8 @@ export function ModalItemEmissao({
 								}}
 							/>
 							<p className="text-xs text-muted-foreground">
-								Obrigatório quando houver GTIN comercial. Deixe ambos vazios se o
-								produto não tiver código de barras.
+								Obrigatório quando houver GTIN comercial. Deixe ambos vazios se
+								o produto não tiver código de barras.
 							</p>
 						</div>
 					</div>
@@ -650,7 +680,7 @@ export function ModalItemEmissao({
 								</span>
 								{usaCsosn ? (
 									<Select
-										value={item.csosn ?? "102"}
+										value={item.csosn ?? ""}
 										onValueChange={(v) =>
 											setItem((prev) => ({
 												...prev,
@@ -701,11 +731,11 @@ export function ModalItemEmissao({
 										CST PIS
 									</span>
 									<Select
-										value={item.cstPis ?? "07"}
+										value={item.cstPis ?? ""}
 										onValueChange={(v) => atualizarCampo("cstPis", v)}
 									>
 										<SelectTrigger className="w-full">
-											<SelectValue />
+											<SelectValue placeholder="Selecione" />
 										</SelectTrigger>
 										<SelectContent>
 											{OPCOES_CST_PIS_COFINS.map((opcao) => (
@@ -722,11 +752,11 @@ export function ModalItemEmissao({
 										CST COFINS
 									</span>
 									<Select
-										value={item.cstCofins ?? "07"}
+										value={item.cstCofins ?? ""}
 										onValueChange={(v) => atualizarCampo("cstCofins", v)}
 									>
 										<SelectTrigger className="w-full">
-											<SelectValue />
+											<SelectValue placeholder="Selecione" />
 										</SelectTrigger>
 										<SelectContent>
 											{OPCOES_CST_PIS_COFINS.map((opcao) => (
@@ -815,10 +845,7 @@ export function ModalItemEmissao({
 													: (item[campo] ?? 0),
 											)}
 											onChange={(v) =>
-												atualizarCampo(
-													campo,
-													v ? parseFloat(v) : undefined,
-												)
+												atualizarCampo(campo, v ? parseFloat(v) : undefined)
 											}
 										/>
 									</div>

@@ -15,4 +15,5 @@ export type HttpResponse<T> =
 				cStat?: string;
 				xMotivo?: string;
 			} | null;
+			relatorioFiscal?: import("./regra-fiscal-model.js").RelatorioAuditoriaFiscal;
 	  };

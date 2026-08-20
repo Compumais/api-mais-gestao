@@ -15,6 +15,8 @@ export interface Produto {
 	idgrupogourmet?: string | null;
 	espizza?: number | null;
 	exportaBalanca?: number | null;
+	controlalote?: number | null;
+	controlavalidade?: number | null;
 	diasValidade?: number | null;
 	preco: string | null;
 	custoaquisicao?: string | null;
@@ -150,6 +152,8 @@ export interface CriarProdutoData
 	idgrupogourmet?: string | null;
 	espizza?: number | null;
 	exportaBalanca?: number | null;
+	controlalote?: number | null;
+	controlavalidade?: number | null;
 	diasValidade?: number | null;
 	preco: string;
 	custoaquisicao?: string | null;
@@ -251,6 +255,8 @@ export interface AtualizarProdutoData
 	idgrupogourmet?: string | null;
 	espizza?: number | null;
 	exportaBalanca?: number | null;
+	controlalote?: number | null;
+	controlavalidade?: number | null;
 	diasValidade?: number | null;
 	preco?: string;
 	custoaquisicao?: string | null;

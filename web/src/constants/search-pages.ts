@@ -181,6 +181,13 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 		keywords: ["cfop", "de-para", "entrada", "saída", "mapeamento"],
 	},
 	{
+		title: "Regras fiscais",
+		url: "/tributos/regras-fiscais",
+		category: "Tributos",
+		icon: IconListDetails,
+		keywords: ["regra fiscal", "st", "difal", "cfop", "vigência", "nfe"],
+	},
+	{
 		title: "Tributos",
 		url: "/tributos",
 		category: "Tributos",

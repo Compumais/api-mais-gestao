@@ -36,6 +36,7 @@ import {
 	type SaldoEstoqueGestao,
 } from "@/services/estoque-gestao.service";
 import { PageContainer } from "../components/page-container";
+import { LotesProdutoEstoque } from "./components/lotes-produto-estoque";
 
 function formatarQuantidade(valor: string | null | undefined) {
 	const n = Number.parseFloat(valor ?? "0");
@@ -301,7 +302,14 @@ export default function EstoquePage() {
 						</SheetDescription>
 					</SheetHeader>
 
-					<div className="mt-6 space-y-3">
+					<div className="mt-6 space-y-6">
+						<LotesProdutoEstoque
+							idempresa={idempresa}
+							codigoproduto={produtoSelecionado?.codigoproduto}
+						/>
+
+						<div className="space-y-3">
+							<h3 className="text-sm font-semibold">Movimentos</h3>
 						{carregandoMovimentos ? (
 							<p className="text-sm text-muted-foreground">Carregando...</p>
 						) : (
@@ -323,6 +331,7 @@ export default function EstoquePage() {
 								</div>
 							))
 						)}
+						</div>
 					</div>
 				</SheetContent>
 			</Sheet>

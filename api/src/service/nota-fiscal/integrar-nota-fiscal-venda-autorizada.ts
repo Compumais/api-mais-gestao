@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from "uuid";
 import type { HttpResponse } from "@/model/http-model.js";
 import { buscarDavsPorIds } from "@/repositories/dav-repositories.js";
 import { buscarPrimeiroLocalEstoqueEmpresa } from "@/repositories/local-estoque-repositories.js";
+import { listarLotesPorItensNota } from "@/repositories/nota-fiscal-item-lote-repositories.js";
 import {
 	atualizarNotaFiscal,
 	buscarNotaFiscalPorId,
@@ -9,8 +10,8 @@ import {
 } from "@/repositories/nota-fiscal-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
 import {
-	gerarContasReceberNfService,
 	type FormaPagamentoNfVenda,
+	gerarContasReceberNfService,
 } from "@/service/nota-fiscal/gerar-contas-receber-nf.js";
 import { registrarMovimentosEstoqueNf } from "@/service/nota-fiscal/registrar-movimentos-estoque-nf.js";
 import { registrarVendaDashboardNfVenda } from "@/service/nota-fiscal/registrar-venda-dashboard-nf-venda.js";
@@ -19,6 +20,7 @@ import {
 	resolverTipoDevolucaoEmissao,
 } from "@/util/cfop-devolucao-emissao-nfe.js";
 import { extrairDadosEmissaoNfeSalvos } from "@/util/dados-emissao-nfe-nota.js";
+import { explodirItensMovimentoPorLote } from "@/util/explodir-itens-movimento-lote-nf.js";
 import { httpBadRequest, httpOk } from "@/util/http-util.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
 
@@ -52,7 +54,9 @@ export async function integrarNotaFiscalVendaAutorizadaService({
 	}
 
 	if (nota.tipoorigem !== 1) {
-		return httpBadRequest("Integração operacional disponível apenas para NF-e de venda");
+		return httpBadRequest(
+			"Integração operacional disponível apenas para NF-e de venda",
+		);
 	}
 
 	if (nota.status !== NFE_STATUS.AUTORIZADA) {
@@ -60,7 +64,8 @@ export async function integrarNotaFiscalVendaAutorizadaService({
 	}
 
 	const emissaoSalva = extrairDadosEmissaoNfeSalvos(nota.dadosimportacao);
-	const gerarFinanceiro = gerarFinanceiroParam ?? emissaoSalva?.gerarFinanceiro ?? true;
+	const gerarFinanceiro =
+		gerarFinanceiroParam ?? emissaoSalva?.gerarFinanceiro ?? true;
 	const gerarEstoque = gerarEstoqueParam ?? emissaoSalva?.gerarEstoque ?? true;
 
 	const avisos: string[] = [];
@@ -110,26 +115,25 @@ export async function integrarNotaFiscalVendaAutorizadaService({
 		}
 
 		try {
+			const lotesItens = await listarLotesPorItensNota(
+				itens.map((item) => item.id),
+			);
 			const resultadoEstoque = await registrarMovimentosEstoqueNf({
 				idempresa: nota.idempresa,
 				idnotafiscal,
 				idlocalestoque: localEstoque ?? undefined,
 				dataMovimento: nota.emissao ?? agora,
 				sentido,
-				itens: itens
-					.filter((item) => item.idproduto)
-					.map((item) => ({
-						iditem: item.id,
-						idproduto: item.idproduto as string,
-						quantidade: item.quantidade ?? "0",
-						custoUnitario: item.custoaquisicao ?? item.precounitario ?? "0",
-					})),
+				itens: explodirItensMovimentoPorLote(itens, lotesItens),
 			});
 
 			movimentosGerados = resultadoEstoque.movimentosCriados;
 			avisos.push(...resultadoEstoque.avisos);
 		} catch (erro) {
-			console.error("Erro ao registrar movimentos de estoque da NF venda:", erro);
+			console.error(
+				"Erro ao registrar movimentos de estoque da NF venda:",
+				erro,
+			);
 			avisos.push("Falha ao registrar movimentos de estoque");
 		}
 	}

@@ -150,6 +150,8 @@ export const produtoFormSchema = z.object({
 	observacoes: z.string().optional().nullable(),
 	enviamobile: z.boolean().optional(),
 	exportaBalanca: z.boolean().optional(),
+	controlalote: z.boolean().optional(),
+	controlavalidade: z.boolean().optional(),
 	diasValidade: z
 		.number({ message: "Dias de validade inválido" })
 		.int("Dias de validade deve ser um número inteiro")

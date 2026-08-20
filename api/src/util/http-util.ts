@@ -1,4 +1,5 @@
 import type { HttpResponse } from "../model/http-model.js";
+import type { RelatorioAuditoriaFiscal } from "../model/regra-fiscal-model.js";
 
 export function httpCriacao<T>(body: T): HttpResponse<T> {
 	return {
@@ -101,6 +102,8 @@ export function httpBadRequest(
 		cStat?: string;
 		codigoErro?: string;
 		consultaSituacao?: { cStat?: string; xMotivo?: string } | null;
+		code?: string;
+		relatorioFiscal?: RelatorioAuditoriaFiscal;
 	},
 ): HttpResponse<never> {
 	const errorMessage =
@@ -112,11 +115,14 @@ export function httpBadRequest(
 		success: false as const,
 		status: 400,
 		error: errorMessage,
-		code: "BAD_REQUEST_ERROR",
+		code: meta?.code ?? "BAD_REQUEST_ERROR",
 		...(meta?.cStat !== undefined && { cStat: meta.cStat }),
 		...(meta?.codigoErro !== undefined && { codigoErro: meta.codigoErro }),
 		...(meta?.consultaSituacao !== undefined && {
 			consultaSituacao: meta.consultaSituacao,
+		}),
+		...(meta?.relatorioFiscal !== undefined && {
+			relatorioFiscal: meta.relatorioFiscal,
 		}),
 	};
 }
