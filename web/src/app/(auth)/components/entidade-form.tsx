@@ -37,6 +37,7 @@ import {
 	criarValoresPadraoEntidadeForm,
 	flagsEntidadeParaApi,
 	formatarCepParaEnvio,
+	inferirTipopessoaPorDocumento,
 	montarIndIeDestPayload,
 	type TipoEntidadePrincipal,
 } from "@/schemas/entidades.schema";
@@ -143,8 +144,17 @@ export function EntidadeForm({
 	const endereco = watch("endereco");
 	const tipopessoa = watch("tipopessoa");
 	const indiedest = watch("indiedest");
-	const ieDesabilitada =
+	const ieSomenteLeitura =
 		tipopessoa !== 1 || indiedest === 9 || indiedest === 2;
+
+	useEffect(() => {
+		const tipopessoaInferida = inferirTipopessoaPorDocumento(cnpjcpf);
+		if (tipopessoaInferida === null) return;
+
+		if (getValues("tipopessoa") !== tipopessoaInferida) {
+			setValue("tipopessoa", tipopessoaInferida, { shouldValidate: true });
+		}
+	}, [cnpjcpf, getValues, setValue]);
 
 	useEffect(() => {
 		if (tipopessoa === 0) {
@@ -436,11 +446,14 @@ export function EntidadeForm({
 				}
 				return await entidadesService.atualizar(entidadeId, dados);
 			},
-			onSuccess: () => {
-				invalidarListagens();
-				toast.success(config.mensagens.atualizadoSucesso);
-				router.push(config.rotaListagem);
-			},
+		onSuccess: () => {
+			invalidarListagens();
+			if (entidadeId) {
+				queryClient.invalidateQueries({ queryKey: ["entidade", entidadeId] });
+			}
+			toast.success(config.mensagens.atualizadoSucesso);
+			router.push(config.rotaListagem);
+		},
 			onError: (error: Error) => {
 				toast.error(error.message || config.mensagens.erroAtualizar);
 			},
@@ -479,15 +492,24 @@ export function EntidadeForm({
 			return;
 		}
 
+		const dadosCompletos: CriarEntidadeFormData = {
+			...data,
+			tipopessoa: getValues("tipopessoa") ?? data.tipopessoa,
+			indiedest: getValues("indiedest") ?? data.indiedest,
+			inscricaoestadual:
+				getValues("inscricaoestadual") ?? data.inscricaoestadual,
+		};
+		const payload = montarPayloadComum(dadosCompletos);
+
 		if (!isEdicao) {
 			criarEntidade({
 				idempresa: empresa.id,
-				...montarPayloadComum(data),
+				...payload,
 			});
 			return;
 		}
 
-		atualizarEntidade(montarPayloadComum(data));
+		atualizarEntidade(payload);
 	};
 
 	const municipioOptions =
@@ -694,23 +716,35 @@ export function EntidadeForm({
 							<FieldLabel htmlFor="inscricaoestadual">
 								Inscrição Estadual
 							</FieldLabel>
-							<Input
-								id="inscricaoestadual"
-								placeholder={
-									indiedest === 2
-										? "ISENTO"
-										: indiedest === 1
-											? "Informe a inscrição estadual"
-											: "Não aplicável para não contribuinte"
-								}
-								disabled={ieDesabilitada}
-								aria-invalid={!!errors.inscricaoestadual}
-								aria-describedby={
-									errors.inscricaoestadual
-										? "inscricaoestadual-error"
-										: undefined
-								}
-								{...register("inscricaoestadual")}
+							<Controller
+								control={control}
+								name="inscricaoestadual"
+								render={({ field }) => (
+									<Input
+										id="inscricaoestadual"
+										placeholder={
+											indiedest === 2
+												? "ISENTO"
+												: indiedest === 1
+													? "Informe a inscrição estadual"
+													: "Não aplicável para não contribuinte"
+										}
+										readOnly={ieSomenteLeitura}
+										className={
+											ieSomenteLeitura ? "bg-muted cursor-not-allowed" : undefined
+										}
+										aria-invalid={!!errors.inscricaoestadual}
+										aria-describedby={
+											errors.inscricaoestadual
+												? "inscricaoestadual-error"
+												: undefined
+										}
+										value={field.value ?? ""}
+										onChange={field.onChange}
+										onBlur={field.onBlur}
+										ref={field.ref}
+									/>
+								)}
 							/>
 							<FieldError
 								errors={

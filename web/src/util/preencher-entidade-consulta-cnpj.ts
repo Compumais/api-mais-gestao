@@ -47,7 +47,14 @@ export function preencherEntidadeConsultaCnpj<T extends FieldValues>({
 				});
 
 	if (indiedest === 1 || indiedest === 2 || indiedest === 9) {
-		setValue("indiedest" as never, indiedest as never, opcoes);
+		const indiedestAtual = getValues("indiedest" as never) as
+			| number
+			| null
+			| undefined;
+
+		if (indiedestAtual !== 1 && indiedestAtual !== 2) {
+			setValue("indiedest" as never, indiedest as never, opcoes);
+		}
 	}
 
 	if (entidade.email) {
