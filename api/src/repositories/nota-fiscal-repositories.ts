@@ -27,6 +27,7 @@ import {
 	notafiscalitem,
 	vendapdvgourmet,
 } from "@/repositories/schema.js";
+import { NFE_STATUS } from "@/util/nfe-status.js";
 import {
 	STATUS_NF_CONFIRMADA,
 	STATUS_NF_QUE_NAO_BLOQUEIAM_CHAVE,
@@ -600,9 +601,16 @@ export type NotaFiscalExportacaoXml = {
 	modelo: string | null;
 	chavenfe: string | null;
 	emissao: string | null;
+	status: number | null;
 };
 
 const STATUS_NFE_AUTORIZADA = 100;
+
+const STATUS_XML_EXPORTACAO_CONTABILIDADE = [
+	NFE_STATUS.AUTORIZADA,
+	NFE_STATUS.CANCELADA,
+	NFE_STATUS.CANCELADA_FORA_PRAZO,
+] as const;
 
 export async function listarNotasParaExportacaoXmlContabilidade({
 	idempresa,
@@ -617,12 +625,13 @@ export async function listarNotasParaExportacaoXmlContabilidade({
 			modelo: notafiscal.modelo,
 			chavenfe: notafiscal.chavenfe,
 			emissao: notafiscal.emissao,
+			status: notafiscal.status,
 		})
 		.from(notafiscal)
 		.where(
 			and(
 				eq(notafiscal.idempresa, idempresa),
-				eq(notafiscal.status, STATUS_NFE_AUTORIZADA),
+				inArray(notafiscal.status, [...STATUS_XML_EXPORTACAO_CONTABILIDADE]),
 				gte(notafiscal.emissao, dataInicio),
 				lte(notafiscal.emissao, dataFim),
 				isNotNull(notafiscal.chavenfe),

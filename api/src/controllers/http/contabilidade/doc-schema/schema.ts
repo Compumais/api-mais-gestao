@@ -4,7 +4,7 @@ export const exportarXmlsContabilidadeSchema: FastifySchema = {
 	tags: ["contabilidade"],
 	summary: "Exportar XMLs fiscais para contabilidade",
 	description:
-		"Compacta os XMLs autorizados de NF-e de venda (modelo 55) e NFC-e (modelo 65) do período informado em um arquivo ZIP com pastas nfe/ e nfce/.",
+		"Compacta os XMLs de NF-e de venda (modelo 55) e NFC-e (modelo 65) do período informado em um arquivo ZIP com pastas nfe/ e nfce/. Notas canceladas ficam em nfe/canceladas e nfce/canceladas, com o XML autorizado e o XML do evento de cancelamento quando existir.",
 	security: [{ bearerAuth: [] }],
 	body: {
 		type: "object",

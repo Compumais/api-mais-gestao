@@ -2,16 +2,13 @@ import type { HttpResponse } from "@/model/http-model.js";
 import { buscarEmpresaPorId } from "@/repositories/empresa-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { listarNotasParaExportacaoXmlContabilidade } from "@/repositories/nota-fiscal-repositories.js";
-import {
-	type ArquivoXmlCompactacao,
-	compactarXmlsFiscais,
-} from "@/util/compactar-xmls-fiscais.js";
+import { montarArquivosXmlContabilidade } from "@/service/contabilidade/montar-arquivos-xml-contabilidade.js";
+import { compactarXmlsFiscais } from "@/util/compactar-xmls-fiscais.js";
 import {
 	httpBadRequest,
 	httpOk,
 	httpProibido,
 } from "@/util/http-util.js";
-import { obterXmlAutorizadoNotaFiscal } from "@/util/obter-xml-nota-fiscal.js";
 
 export type ExportarXmlsContabilidadeParametros = {
 	idusuario: string;
@@ -27,6 +24,8 @@ export type ExportarXmlsContabilidadeResposta = {
 	resumo: {
 		totalNfe: number;
 		totalNfce: number;
+		totalNfeCanceladas: number;
+		totalNfceCanceladas: number;
 	};
 };
 
@@ -47,12 +46,6 @@ function validarPeriodo(dataInicio: string, dataFim: string): string | null {
 		return `Período máximo permitido é de ${PERIODO_MAXIMO_DIAS} dias`;
 	}
 
-	return null;
-}
-
-function resolverPastaXml(modelo: string | null): "nfe" | "nfce" | null {
-	if (modelo === "55") return "nfe";
-	if (modelo === "65") return "nfce";
 	return null;
 }
 
@@ -94,41 +87,34 @@ export async function exportarXmlsContabilidadeService({
 		dataFim,
 	});
 
-	const arquivos: ArquivoXmlCompactacao[] = [];
-
-	for (const nota of notas) {
-		const chave = nota.chavenfe?.trim();
-		if (!chave) continue;
-
-		const pasta = resolverPastaXml(nota.modelo);
-		if (!pasta) continue;
-
-		const xml = await obterXmlAutorizadoNotaFiscal(nota.id);
-		if (!xml) continue;
-
-		arquivos.push({
-			pasta,
-			nomeArquivo: `${chave}-autorizado.xml`,
-			conteudo: xml,
-		});
-	}
+	const arquivos = await montarArquivosXmlContabilidade(notas);
 
 	if (arquivos.length === 0) {
 		return httpBadRequest(
-			"Nenhum XML autorizado encontrado para o período informado",
+			"Nenhum XML encontrado para o período informado",
 		);
 	}
 
 	const content = await compactarXmlsFiscais(arquivos);
 	const filename = await montarNomeArquivoZip(idempresa, dataInicio, dataFim);
 
-	const totalNfe = arquivos.filter((arquivo) => arquivo.pasta === "nfe").length;
-	const totalNfce = arquivos.filter((arquivo) => arquivo.pasta === "nfce").length;
+	const totalNfe = arquivos.filter(
+		(arquivo) => arquivo.pasta === "nfe" && !arquivo.subpasta,
+	).length;
+	const totalNfce = arquivos.filter(
+		(arquivo) => arquivo.pasta === "nfce" && !arquivo.subpasta,
+	).length;
+	const totalNfeCanceladas = arquivos.filter(
+		(arquivo) => arquivo.pasta === "nfe" && arquivo.subpasta === "canceladas",
+	).length;
+	const totalNfceCanceladas = arquivos.filter(
+		(arquivo) => arquivo.pasta === "nfce" && arquivo.subpasta === "canceladas",
+	).length;
 
 	return httpOk({
 		content,
 		contentType: "application/zip",
 		filename,
-		resumo: { totalNfe, totalNfce },
+		resumo: { totalNfe, totalNfce, totalNfeCanceladas, totalNfceCanceladas },
 	});
 }

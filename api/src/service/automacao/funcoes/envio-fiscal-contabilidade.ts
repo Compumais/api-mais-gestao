@@ -5,14 +5,11 @@ import { contarNfcePendentesNoPeriodo } from "@/repositories/nota-fiscal-reposit
 import { listarNotasParaExportacaoXmlContabilidade } from "@/repositories/nota-fiscal-repositories.js";
 import type { Automacao } from "@/repositories/automacao-repositories.js";
 import { periodoMesAnterior } from "@/service/automacao/calcular-proxima-execucao.js";
+import { montarArquivosXmlContabilidade } from "@/service/contabilidade/montar-arquivos-xml-contabilidade.js";
 import { criarNotificacaoAgendadaService } from "@/service/notificacoes/criar-notificacao-agendada.js";
 import { gerarArquivoSintegra } from "@/service/sintegra/gerar-sintegra.js";
 import { enviarEmailService } from "@/service/email/enviar-email.js";
-import {
-	type ArquivoXmlCompactacao,
-	compactarXmlsFiscais,
-} from "@/util/compactar-xmls-fiscais.js";
-import { obterXmlAutorizadoNotaFiscal } from "@/util/obter-xml-nota-fiscal.js";
+import { compactarXmlsFiscais } from "@/util/compactar-xmls-fiscais.js";
 import { httpBadRequest, httpOk } from "@/util/http-util.js";
 
 export const FUNCAO_ENVIO_FISCAL_CONTABILIDADE = "envio_fiscal_contabilidade";
@@ -24,12 +21,6 @@ export type ResultadoFuncaoAutomacao = {
 	/** Se true, o runner deve reagendar em ~6h em vez da recorrência normal. */
 	reagendarTentativa?: boolean;
 };
-
-function resolverPastaXml(modelo: string | null): "nfe" | "nfce" | null {
-	if (modelo === "55") return "nfe";
-	if (modelo === "65") return "nfce";
-	return null;
-}
 
 export async function executarEnvioFiscalContabilidade(
 	automacao: Automacao,
@@ -130,20 +121,7 @@ export async function executarEnvioFiscalContabilidade(
 			dataFim,
 		});
 
-		const arquivos: ArquivoXmlCompactacao[] = [];
-		for (const nota of notas) {
-			const chave = nota.chavenfe?.trim();
-			if (!chave) continue;
-			const pasta = resolverPastaXml(nota.modelo);
-			if (!pasta) continue;
-			const xml = await obterXmlAutorizadoNotaFiscal(nota.id);
-			if (!xml) continue;
-			arquivos.push({
-				pasta,
-				nomeArquivo: `${chave}-autorizado.xml`,
-				conteudo: xml,
-			});
-		}
+		const arquivos = await montarArquivosXmlContabilidade(notas);
 
 		if (arquivos.length > 0) {
 			const zip = await compactarXmlsFiscais(arquivos);
@@ -154,10 +132,22 @@ export async function executarEnvioFiscalContabilidade(
 				content: zip,
 				contentType: "application/zip",
 			});
-			resumo.totalNfe = arquivos.filter((a) => a.pasta === "nfe").length;
-			resumo.totalNfce = arquivos.filter((a) => a.pasta === "nfce").length;
+			resumo.totalNfe = arquivos.filter(
+				(arquivo) => arquivo.pasta === "nfe" && !arquivo.subpasta,
+			).length;
+			resumo.totalNfce = arquivos.filter(
+				(arquivo) => arquivo.pasta === "nfce" && !arquivo.subpasta,
+			).length;
+			resumo.totalNfeCanceladas = arquivos.filter(
+				(arquivo) =>
+					arquivo.pasta === "nfe" && arquivo.subpasta === "canceladas",
+			).length;
+			resumo.totalNfceCanceladas = arquivos.filter(
+				(arquivo) =>
+					arquivo.pasta === "nfce" && arquivo.subpasta === "canceladas",
+			).length;
 		} else {
-			resumo.xmls = "nenhum_xml_autorizado";
+			resumo.xmls = "nenhum_xml";
 		}
 	}
 
@@ -178,7 +168,9 @@ export async function executarEnvioFiscalContabilidade(
 	const texto = [
 		`Segue em anexo a documentação fiscal do período ${dataInicio} a ${dataFim}.`,
 		incluirSintegra ? "- Arquivo SINTEGRA" : null,
-		incluirXml ? "- ZIP com XMLs autorizados (NF-e / NFC-e)" : null,
+		incluirXml
+			? "- ZIP com XMLs (NF-e / NFC-e), inclusive canceladas"
+			: null,
 		"",
 		"Enviado automaticamente pelo Mais Gestão.",
 	]
