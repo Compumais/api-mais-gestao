@@ -226,6 +226,10 @@ function normalizarTipopessoaParaForm(
 	tipopessoa: number | string | null | undefined,
 	cnpjcpf: string,
 ): number | null {
+	const digitos = cnpjcpf.replace(/\D/g, "");
+	if (digitos.length === 14) return 1;
+	if (digitos.length === 11) return 0;
+
 	if (tipopessoa !== null && tipopessoa !== undefined && tipopessoa !== "") {
 		const valor = Number(tipopessoa);
 		if (!Number.isNaN(valor) && (valor === 0 || valor === 1)) {
@@ -233,10 +237,15 @@ function normalizarTipopessoaParaForm(
 		}
 	}
 
-	const digitos = cnpjcpf.replace(/\D/g, "");
+	return null;
+}
+
+export function inferirTipopessoaPorDocumento(
+	cnpjcpf?: string | null,
+): 0 | 1 | null {
+	const digitos = cnpjcpf?.replace(/\D/g, "") ?? "";
 	if (digitos.length === 14) return 1;
 	if (digitos.length === 11) return 0;
-
 	return null;
 }
 
@@ -261,6 +270,11 @@ export function montarIndIeDestPayload(data: CriarEntidadeFormData): {
 		const ie = inscricaoestadual?.toUpperCase() ?? "";
 		if (!ie || ie === "ISENTO" || ie === "ISENTA") {
 			inscricaoestadual = "ISENTO";
+		}
+	} else if (indiedest === 1 && inscricaoestadual) {
+		const ieUpper = inscricaoestadual.toUpperCase();
+		if (ieUpper !== "ISENTO" && ieUpper !== "ISENTA") {
+			inscricaoestadual = somenteDigitos(inscricaoestadual) || null;
 		}
 	}
 
@@ -358,5 +372,8 @@ export function criarValoresPadraoEntidadeForm({
 		fornecedor: valoresIniciais.fornecedor ?? false,
 		transportador: valoresIniciais.transportador ?? false,
 		representante: valoresIniciais.representante ?? false,
+		indiedest: valoresIniciais.indiedest ?? base.indiedest,
+		inscricaoestadual:
+			valoresIniciais.inscricaoestadual ?? base.inscricaoestadual,
 	};
 }
