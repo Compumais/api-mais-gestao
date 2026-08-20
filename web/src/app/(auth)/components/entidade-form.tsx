@@ -37,6 +37,7 @@ import {
 	criarValoresPadraoEntidadeForm,
 	flagsEntidadeParaApi,
 	formatarCepParaEnvio,
+	montarIndIeDestPayload,
 	type TipoEntidadePrincipal,
 } from "@/schemas/entidades.schema";
 import {
@@ -45,6 +46,7 @@ import {
 } from "@/services/entidades.service";
 import { localidadesService } from "@/services/localidades.service";
 import { planoContasService } from "@/services/plano-contas.service";
+import { OPCOES_IND_IEDEST_NFE } from "@/util/destinatario-nfe-util";
 import { preencherEntidadeConsultaCnpj } from "@/util/preencher-entidade-consulta-cnpj";
 
 export type EntidadeFormConfig = {
@@ -139,6 +141,42 @@ export function EntidadeForm({
 	const cep = watch("cep");
 	const cnpjcpf = watch("cnpjcpf");
 	const endereco = watch("endereco");
+	const tipopessoa = watch("tipopessoa");
+	const indiedest = watch("indiedest");
+	const ieDesabilitada =
+		tipopessoa !== 1 || indiedest === 9 || indiedest === 2;
+
+	useEffect(() => {
+		if (tipopessoa === 0) {
+			if (indiedest !== 9) {
+				setValue("indiedest", 9, { shouldValidate: true });
+			}
+			if (getValues("inscricaoestadual")) {
+				setValue("inscricaoestadual", null, { shouldValidate: true });
+			}
+			return;
+		}
+
+		if (tipopessoa === 1 && indiedest == null) {
+			setValue("indiedest", 9, { shouldValidate: true });
+		}
+	}, [tipopessoa, indiedest, getValues, setValue]);
+
+	useEffect(() => {
+		if (indiedest === 9) {
+			if (getValues("inscricaoestadual")) {
+				setValue("inscricaoestadual", null, { shouldValidate: true });
+			}
+			return;
+		}
+
+		if (indiedest === 2) {
+			const ieAtual = getValues("inscricaoestadual")?.trim().toUpperCase() ?? "";
+			if (!ieAtual || ieAtual === "ISENTA") {
+				setValue("inscricaoestadual", "ISENTO", { shouldValidate: true });
+			}
+		}
+	}, [indiedest, getValues, setValue]);
 
 	useEffect(() => {
 		if (!isEdicao || !valoresIniciais) return;
@@ -424,7 +462,7 @@ export function EntidadeForm({
 		cnpjcpf: data.cnpjcpf.replace(/\D/g, ""),
 		razaosocial: data.razaosocial || null,
 		tipopessoa: data.tipopessoa ?? null,
-		inscricaoestadual: data.inscricaoestadual || null,
+		...montarIndIeDestPayload(data),
 		rg: data.rg || null,
 		email: data.email || null,
 		telefone: data.telefone?.replace(/\D/g, "") || null,
@@ -608,14 +646,64 @@ export function EntidadeForm({
 							/>
 						</Field>
 
+						<Field data-invalid={!!errors.indiedest}>
+							<FieldLabel htmlFor="indiedest">
+								Indicador IE (NF-e)
+							</FieldLabel>
+							<Controller
+								control={control}
+								name="indiedest"
+								render={({ field }) => (
+									<Select
+										key={`indiedest-${field.value ?? "vazio"}`}
+										value={
+											field.value !== null && field.value !== undefined
+												? String(field.value)
+												: undefined
+										}
+										onValueChange={(value) =>
+											field.onChange(value ? Number(value) : null)
+										}
+										disabled={tipopessoa === 0}
+									>
+										<SelectTrigger
+											className="w-full"
+											aria-invalid={!!errors.indiedest}
+											aria-describedby={
+												errors.indiedest ? "indiedest-error" : undefined
+											}
+										>
+											<SelectValue placeholder="Selecione o indicador de IE" />
+										</SelectTrigger>
+										<SelectContent>
+											{OPCOES_IND_IEDEST_NFE.map((opcao) => (
+												<SelectItem key={opcao.value} value={opcao.value}>
+													{opcao.label}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								)}
+							/>
+							<FieldError
+								errors={errors.indiedest ? [errors.indiedest] : []}
+							/>
+						</Field>
+
 						<Field data-invalid={!!errors.inscricaoestadual}>
 							<FieldLabel htmlFor="inscricaoestadual">
 								Inscrição Estadual
 							</FieldLabel>
 							<Input
 								id="inscricaoestadual"
-								placeholder="Inscrição estadual"
-								disabled={form.watch("tipopessoa") !== 1}
+								placeholder={
+									indiedest === 2
+										? "ISENTO"
+										: indiedest === 1
+											? "Informe a inscrição estadual"
+											: "Não aplicável para não contribuinte"
+								}
+								disabled={ieDesabilitada}
 								aria-invalid={!!errors.inscricaoestadual}
 								aria-describedby={
 									errors.inscricaoestadual
