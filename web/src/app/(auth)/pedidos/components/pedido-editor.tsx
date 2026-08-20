@@ -266,7 +266,7 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 	}
 
 	const { mutate: salvarPedido, isPending: salvandoPedido } = useMutation({
-		mutationFn: async (opcoes?: { concluir?: boolean }) => {
+		mutationFn: async (opcoes: { concluir?: boolean }) => {
 			if (modoCriacao) {
 				const validacao = salvarNovoPedidoDavSchema.safeParse({
 					idcliente,
@@ -673,7 +673,7 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 						)}
 						<Button
 							variant="outline"
-							onClick={() => salvarPedido()}
+							onClick={() => salvarPedido({})}
 							disabled={salvandoPedido || pedidoFaturado || pedidoCancelado}
 						>
 							<Save className="h-4 w-4" aria-hidden="true" />
