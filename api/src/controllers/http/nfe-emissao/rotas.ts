@@ -11,6 +11,11 @@ import {
 } from "./nfe-emissao.js";
 import { previewDanfeNfe } from "./preview-danfe.js";
 import { resolverReferenciaEmissao } from "./resolver-referencia.js";
+import {
+	excluirRascunhoEmissaoNfe,
+	listarRascunhosEmissaoNfe,
+	salvarRascunhoEmissaoNfe,
+} from "./rascunho-emissao.js";
 import { transmitirNfe } from "./transmitir-nfe.js";
 
 export async function nfeEmissaoRotas(app: FastifyInstance) {
@@ -25,6 +30,11 @@ export async function nfeEmissaoRotas(app: FastifyInstance) {
 		handler: resolverReferenciaEmissao,
 	});
 	app.post("/nfe/emissao/preview-danfe", { handler: previewDanfeNfe });
+	app.post("/nfe/emissao/rascunho", { handler: salvarRascunhoEmissaoNfe });
+	app.get("/nfe/emissao/rascunhos", { handler: listarRascunhosEmissaoNfe });
+	app.delete("/nfe/emissao/rascunhos/:id", {
+		handler: excluirRascunhoEmissaoNfe,
+	});
 	app.post("/nfe/emissao", { handler: emitirNfe });
 	app.post("/nfe/emissao/:id/transmitir", { handler: transmitirNfe });
 	app.post("/nfe/emissao/:id/cancelar", { handler: cancelarNfe });

@@ -54,6 +54,11 @@ export async function excluirNotaFiscalService({
 	}
 
 	if (ehRascunho) {
+		if (registro.tipoorigem === 1) {
+			return httpBadRequest(
+				"Rascunho de NF-e de venda deve ser excluído em DELETE /nfe/emissao/rascunhos/:id",
+			);
+		}
 		return httpBadRequest(
 			"Rascunho de importação deve ser excluído em DELETE /notas-fiscais/rascunhos/:id",
 		);

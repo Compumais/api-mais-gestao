@@ -138,6 +138,41 @@ export async function emitirNfe(
 	return data;
 }
 
+export interface SalvarRascunhoEmissaoNfeResposta {
+	idnotafiscal: string;
+	status: number;
+}
+
+export async function salvarRascunhoEmissaoNfe(
+	dados: EmissaoNfeFormData,
+): Promise<SalvarRascunhoEmissaoNfeResposta> {
+	const { data } = await api.post<SalvarRascunhoEmissaoNfeResposta>(
+		"/nfe/emissao/rascunho",
+		dados,
+	);
+	return data;
+}
+
+export async function listarRascunhosEmissaoNfe(params: {
+	idempresa: string;
+	page?: number;
+	limit?: number;
+}): Promise<ListarNfesResponse> {
+	const { data } = await api.get<ListarNfesResponse>("/nfe/emissao/rascunhos", {
+		params,
+	});
+	return data;
+}
+
+export async function excluirRascunhoEmissaoNfe(
+	id: string,
+	idempresa: string,
+): Promise<void> {
+	await api.delete(`/nfe/emissao/rascunhos/${id}`, {
+		params: { idempresa },
+	});
+}
+
 export async function transmitirNfe(
 	id: string,
 	confirmarProducao = false,
