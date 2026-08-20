@@ -1,0 +1,14 @@
+---
+description: Ao finalizar uma tarefa, criar commit e enviar ao remoto.
+alwaysApply: true
+---
+
+# Commit e push ao finalizar
+
+Quando a tarefa pedida estiver concluída (incluindo correção de build/typecheck):
+
+- Faça o commit das alterações relevantes da tarefa.
+- Faça o `git push` da branch atual para o remoto.
+- Não precisa o usuário pedir commit/push de novo nesta sessão.
+
+Mantenha as restrições de segurança do Git: sem `--force` em main/master, sem pular hooks, sem commitar secrets, sem `--amend` de commits já enviados.
