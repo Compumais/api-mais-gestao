@@ -571,11 +571,19 @@ export function sugerirIcmsStPeloMva(
 		item.baseIcmsSt != null
 			? item.baseIcmsSt
 			: round2(vProd * (1 + mva / 100));
+	const stBruto =
+		item.aliquotaIcmsSt != null
+			? round2((base * item.aliquotaIcmsSt) / 100)
+			: undefined;
+	const icmsProprio =
+		item.aliquotaIcms != null && item.aliquotaIcms > 0
+			? round2((vProd * item.aliquotaIcms) / 100)
+			: 0;
 	const valor =
 		item.valorIcmsSt != null
 			? item.valorIcmsSt
-			: item.aliquotaIcmsSt != null
-				? round2((base * item.aliquotaIcmsSt) / 100)
+			: stBruto != null
+				? round2(Math.max(0, stBruto - icmsProprio))
 				: undefined;
 
 	return {

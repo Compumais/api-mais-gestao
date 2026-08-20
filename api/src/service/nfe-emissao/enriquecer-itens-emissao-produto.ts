@@ -175,6 +175,13 @@ function aplicarCsosnStDoProduto(
 		}
 	}
 
+	if (resultado.aliquotaIcms == null) {
+		const aliquotaInterna = paraNumeroOpcional(produto.aliquotaicmsinterna);
+		if (aliquotaInterna != null) {
+			resultado.aliquotaIcms = aliquotaInterna;
+		}
+	}
+
 	return resultado;
 }
 
