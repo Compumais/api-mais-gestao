@@ -83,10 +83,12 @@ export default function ExportarXmlsContabilidadePage() {
 				<div className="px-4">
 					<h1 className="text-2xl font-bold">Exportar XMLs fiscais</h1>
 					<p className="mt-1 text-sm text-muted-foreground">
-						Baixe um arquivo ZIP com os XMLs autorizados de NF-e de venda e
-						NFC-e da empresa no período informado, organizados nas pastas{" "}
+						Baixe um arquivo ZIP com os XMLs de NF-e de venda e NFC-e da
+						empresa no período informado, organizados nas pastas{" "}
 						<code className="text-xs">nfe/</code> e{" "}
-						<code className="text-xs">nfce/</code>.
+						<code className="text-xs">nfce/</code>. Notas canceladas ficam
+						em <code className="text-xs">nfe/canceladas</code> e{" "}
+						<code className="text-xs">nfce/canceladas</code>.
 					</p>
 				</div>
 
@@ -95,8 +97,8 @@ export default function ExportarXmlsContabilidadePage() {
 						<CardHeader>
 							<CardTitle>Período de emissão</CardTitle>
 							<CardDescription>
-								Somente notas autorizadas com XML disponível serão incluídas no
-								arquivo.
+								Notas autorizadas e canceladas com XML disponível serão
+								incluídas no arquivo.
 							</CardDescription>
 						</CardHeader>
 						<CardContent>

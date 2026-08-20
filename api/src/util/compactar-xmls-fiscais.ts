@@ -3,11 +3,21 @@ import { ZipArchive } from "archiver";
 
 export type PastaXmlFiscal = "nfe" | "nfce";
 
+export type SubpastaXmlFiscal = "canceladas";
+
 export type ArquivoXmlCompactacao = {
 	pasta: PastaXmlFiscal;
+	subpasta?: SubpastaXmlFiscal;
 	nomeArquivo: string;
 	conteudo: string;
 };
+
+export function montarCaminhoZipXml(arquivo: ArquivoXmlCompactacao): string {
+	const partes = [arquivo.pasta];
+	if (arquivo.subpasta) partes.push(arquivo.subpasta);
+	partes.push(arquivo.nomeArquivo);
+	return partes.join("/");
+}
 
 export async function compactarXmlsFiscais(
 	arquivos: ArquivoXmlCompactacao[],
@@ -26,7 +36,7 @@ export async function compactarXmlsFiscais(
 
 		for (const arquivo of arquivos) {
 			archive.append(arquivo.conteudo, {
-				name: `${arquivo.pasta}/${arquivo.nomeArquivo}`,
+				name: montarCaminhoZipXml(arquivo),
 			});
 		}
 
