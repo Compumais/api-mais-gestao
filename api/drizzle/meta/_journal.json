@@ -575,6 +575,13 @@
       "when": 1785008000000,
       "tag": "0080_regra_fiscal",
       "breakpoints": true
+    },
+    {
+      "idx": 81,
+      "version": "7",
+      "when": 1785009000000,
+      "tag": "0081_modelo_impressao_ordem_servico",
+      "breakpoints": true
     }
   ]
 }

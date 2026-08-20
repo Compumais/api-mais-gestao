@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
-import { ArrowLeft, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, Printer, Save, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useEffect, useMemo, useState } from "react";
@@ -29,6 +29,7 @@ import {
 	useConfiguracaoOrdemServico,
 	useExcluirOrdemServico,
 	useOrdemServico,
+	useOrdemServicoItens,
 	useTiposOrdemServicoEvento,
 } from "@/hooks/use-ordem-servico";
 import {
@@ -56,6 +57,7 @@ import { PageContainer } from "../../components/page-container";
 import { AbaEventosOs } from "../components/aba-eventos-os";
 import { AbaFaturamentoOs } from "../components/aba-faturamento-os";
 import { AbaItensOs } from "../components/aba-itens-os";
+import { ModalImprimirOrdemServico } from "../components/modal-imprimir-ordem-servico";
 import { OrdemServicoForm } from "../components/ordem-servico-form";
 import { OrdemServicoStatusBadge } from "../components/ordem-servico-status-badge";
 
@@ -108,10 +110,12 @@ export default function OrdemServicoDetalhePage({
 	const router = useRouter();
 	const { localStorageEmpresa: empresa } = useEmpresa();
 	const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
+	const [modalImpressaoAberto, setModalImpressaoAberto] = useState(false);
 
 	const { data: os, isLoading } = useOrdemServico(id);
 	const { data: config } = useConfiguracaoOrdemServico(empresa?.id ?? null);
 	const { data: tipos = [] } = useTiposOrdemServicoEvento(empresa?.id ?? null);
+	const { data: itensOs = [] } = useOrdemServicoItens(id, empresa?.id ?? null);
 	const atualizar = useAtualizarOrdemServico(id);
 	const excluir = useExcluirOrdemServico();
 
@@ -363,6 +367,15 @@ export default function OrdemServicoDetalhePage({
 						</p>
 					</div>
 					<div className="flex flex-wrap gap-2">
+						<Button
+							type="button"
+							variant="outline"
+							className="gap-2"
+							onClick={() => setModalImpressaoAberto(true)}
+						>
+							<Printer className="h-4 w-4" />
+							Imprimir
+						</Button>
 						{osPodeExcluir(os) && (
 							<Button
 								type="button"
@@ -510,6 +523,15 @@ export default function OrdemServicoDetalhePage({
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>
+
+			<ModalImprimirOrdemServico
+				open={modalImpressaoAberto}
+				onClose={() => setModalImpressaoAberto(false)}
+				idempresa={empresa.id}
+				empresa={empresa}
+				ordem={os}
+				itens={itensOs}
+			/>
 		</PageContainer>
 	);
 }

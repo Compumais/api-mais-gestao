@@ -15,6 +15,7 @@ import { NfeConfiguracaoForm } from "./components/nfe-configuracao-form";
 import { NfseConfiguracaoForm } from "./components/nfse-configuracao-form";
 import { NotificacoesForm } from "./components/notificacoes-form";
 import { OrdemServicoConfigForm } from "./components/ordem-servico-form";
+import { ModelosImpressaoOsLista } from "./components/modelos-impressao-os-lista";
 import { RelatoriosForm } from "./components/relatorios-form";
 
 export default function ConfiguracoesPage() {
@@ -68,6 +69,9 @@ export default function ConfiguracoesPage() {
 							<TabsTrigger value="nfce">NFC-e</TabsTrigger>
 							<TabsTrigger value="nfse">NFS-e</TabsTrigger>
 							<TabsTrigger value="ordem-servico">Ordem de serviço</TabsTrigger>
+							<TabsTrigger value="modelos-impressao">
+								Modelos de impressão
+							</TabsTrigger>
 							<TabsTrigger value="integracao">Integrações</TabsTrigger>
 							<TabsTrigger value="integracoes-contabeis">
 								Integrações contábeis
@@ -101,6 +105,10 @@ export default function ConfiguracoesPage() {
 
 						<TabsContent value="ordem-servico" className="mt-4">
 							<OrdemServicoConfigForm idempresa={empresa.id} />
+						</TabsContent>
+
+						<TabsContent value="modelos-impressao" className="mt-4">
+							<ModelosImpressaoOsLista idempresa={empresa.id} />
 						</TabsContent>
 
 						<TabsContent value="integracao" className="mt-4">

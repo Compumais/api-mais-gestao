@@ -185,7 +185,7 @@ export const DATA = {
 					},
 				},
 				{
-					title: "Nota fiscal de venda",
+					title: "Nota fiscal de produto",
 					url: "/nota-fiscal-venda",
 					acesso: {
 						feature: "notas_fiscais",
@@ -278,17 +278,6 @@ export const DATA = {
 			},
 			items: [
 				{
-					title: "Plano de contas",
-					url: "/plano-contas",
-					acesso: {
-						perfis: ["proprietario", "admin", "financeiro"],
-					},
-				},
-				{
-					title: "Bancos",
-					url: "/bancos",
-				},
-				{
 					title: "Contas correntes",
 					url: "/contas-correntes",
 				},
@@ -358,6 +347,17 @@ export const DATA = {
 				perfis: ["proprietario", "admin"],
 			},
 			items: [
+				{
+					title: "Plano de contas",
+					url: "/plano-contas",
+					acesso: {
+						perfis: ["proprietario", "admin", "financeiro"],
+					},
+				},
+				{
+					title: "Bancos",
+					url: "/bancos",
+				},
 				{
 					title: "Agendar tarefas",
 					url: "/agendamentos",

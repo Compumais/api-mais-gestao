@@ -165,6 +165,42 @@ export const listarFinanceirosSchema: FastifySchema = {
 				nullable: true,
 				description: "Filtro por data de emissão (busca parcial)",
 			},
+			emitente: {
+				type: "string",
+				nullable: true,
+				description: "Filtro por nome do cliente/fornecedor (busca parcial)",
+			},
+			emissaoInicio: {
+				type: "string",
+				format: "date",
+				nullable: true,
+				description: "Data inicial de emissão",
+			},
+			emissaoFim: {
+				type: "string",
+				format: "date",
+				nullable: true,
+				description: "Data final de emissão",
+			},
+			vencimentoInicio: {
+				type: "string",
+				format: "date",
+				nullable: true,
+				description: "Data inicial de vencimento",
+			},
+			vencimentoFim: {
+				type: "string",
+				format: "date",
+				nullable: true,
+				description: "Data final de vencimento",
+			},
+			status: {
+				type: "string",
+				enum: ["A", "P", "C", "V"],
+				nullable: true,
+				description:
+					"Filtro por status: A (Aberto), P (Pago), C (Cancelado), V (Vencido)",
+			},
 			tipo: {
 				type: "string",
 				enum: ["P", "R"],
