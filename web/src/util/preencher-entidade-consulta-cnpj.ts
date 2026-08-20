@@ -43,7 +43,6 @@ export function preencherEntidadeConsultaCnpj<T extends FieldValues>({
 			? entidade.indiedest
 			: inferirIndIeDestEntidade({
 					cnpjcpf: entidade.cnpjcpf,
-					inscricaoestadual: entidade.inscricaoestadual,
 					indiedest: entidade.indiedest,
 				});
 
