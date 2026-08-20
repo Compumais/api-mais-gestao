@@ -3,6 +3,10 @@ import type { ValidacaoFiscalItem } from "@/model/regra-fiscal-model.js";
 import { ID_DEST_NFE } from "@/constants/ind-pres-nfe.js";
 import { empresaUsaCsosn } from "@/util/normalizar-tributacao-item-emissao-nfe.js";
 import {
+	calcularIcmsStItemEmissao,
+	itemExigeCalculoSt,
+} from "@/util/calcular-icms-st-item-emissao-nfe.js";
+import {
 	cfopIndicaSt,
 	normalizarCfop,
 } from "@/service/fiscal/indicadores-st-nfe.js";
@@ -131,6 +135,36 @@ export function validarCoerenciaFiscalNfe(params: {
 				field: `itens[${indice}].csosn`,
 				message: `Item ${posicao}: CSOSN 102 não comporta vST no grupo ICMSSN102`,
 				tipoInconsistencia: "ERRO_DE_PARAMETRIZACAO_FISCAL",
+			});
+		}
+
+		if (
+			itemExigeCalculoSt(item) &&
+			item.percentualMvaSt != null &&
+			item.aliquotaIcmsSt != null &&
+			(item.aliquotaIcms == null || item.aliquotaIcms <= 0)
+		) {
+			validacoes.push({
+				status: "ATENCAO",
+				code: "ST_SEM_ALIQUOTA_INTERNA",
+				field: `itens[${indice}].aliquotaIcms`,
+				message: `Item ${posicao}: operação com ST sem alíquota interna (ICMS próprio). A dedução no cálculo de ST não será aplicada.`,
+			});
+		}
+
+		const icmsStEsperado = calcularIcmsStItemEmissao(item);
+		if (
+			icmsStEsperado.valorIcmsSt != null &&
+			valorSt > 0 &&
+			Math.abs(valorSt - icmsStEsperado.valorIcmsSt) > 0.01
+		) {
+			validacoes.push({
+				status: "ATENCAO",
+				code: "ST_VALOR_DIVERGENTE",
+				field: `itens[${indice}].valorIcmsSt`,
+				expected: String(icmsStEsperado.valorIcmsSt),
+				actual: String(valorSt),
+				message: `Item ${posicao}: valor ICMS ST (${valorSt.toFixed(2)}) diverge do esperado (${icmsStEsperado.valorIcmsSt.toFixed(2)}) com dedução do ICMS próprio.`,
 			});
 		}
 	}

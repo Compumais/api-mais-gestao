@@ -27,6 +27,7 @@ import { enriquecerItensEmissaoComProduto } from "@/service/nfe-emissao/enriquec
 import { resolverDocumentoReferenciadoEmissao } from "@/service/nfe-emissao/resolver-documento-referenciado-emissao.js";
 import type { FormaPagamentoNfVenda } from "@/service/nota-fiscal/gerar-contas-receber-nf.js";
 import { calcularTotaisFiscaisEmissaoNfe } from "@/util/calcular-totais-fiscais-emissao-nfe.js";
+import { recalcularIcmsStItensEmissao } from "@/util/calcular-icms-st-item-emissao-nfe.js";
 import {
 	emissaoRequerDocumentoReferenciado,
 	FIN_NFE_DEVOLUCAO,
@@ -529,8 +530,10 @@ export async function prepararPayloadEmissaoNfeVenda(
 
 	const crt = empresaFiscal.crt ?? 3;
 	const itensEnriquecidos = await enriquecerItensEmissaoComProduto(itens);
-	const itensTributacao = normalizarGtinItensEmissao(
-		normalizarItensEmissaoNfe(crt, itensEnriquecidos),
+	const itensTributacao = recalcularIcmsStItensEmissao(
+		normalizarGtinItensEmissao(
+			normalizarItensEmissaoNfe(crt, itensEnriquecidos),
+		),
 	);
 	const { itens: itensNormalizados, pendencias: pendenciasCreditoSn } =
 		await aplicarCreditoIcmsSnItensEmissao(itensTributacao);
