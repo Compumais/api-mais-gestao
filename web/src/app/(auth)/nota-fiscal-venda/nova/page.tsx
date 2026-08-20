@@ -52,6 +52,10 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import {
+	anexarRastrosInformacoesAdicionaisNfe,
+	montarSecaoObservacoesLotesNfe,
+} from "@/util/montar-observacoes-lotes-nfe";
+import {
 	IND_PRES_NFE_PADRAO,
 	isIndPresNfeValido,
 	OPCOES_IND_PRES_NFE,
@@ -363,6 +367,30 @@ export default function NovaEmissaoNfePage() {
 		formState: { errors },
 	} = form;
 	const itensValue = form.watch("itens");
+	const informacoesAdicionaisWatch = form.watch("informacoesAdicionais");
+	const observacoesComLotes = useMemo(
+		() =>
+			anexarRastrosInformacoesAdicionaisNfe(
+				informacoesAdicionaisWatch,
+				(itensValue ?? []).map((item) => ({
+					descricao: item.descricao,
+					codigoProduto: item.codigoProduto,
+					rastros: item.rastros,
+				})),
+			),
+		[informacoesAdicionaisWatch, itensValue],
+	);
+	const secaoLotesObservacoes = useMemo(
+		() =>
+			montarSecaoObservacoesLotesNfe(
+				(itensValue ?? []).map((item) => ({
+					descricao: item.descricao,
+					codigoProduto: item.codigoProduto,
+					rastros: item.rastros,
+				})),
+			),
+		[itensValue],
+	);
 	const [freteWatch, seguroWatch, descontoWatch, outrasDespesasWatch] =
 		form.watch([
 			"totais.frete",
@@ -2298,6 +2326,17 @@ export default function NovaEmissaoNfePage() {
 									maxLength={2000}
 									{...form.register("informacoesAdicionais")}
 								/>
+								{secaoLotesObservacoes && (
+									<div className="rounded-md border bg-muted/40 p-3 text-sm">
+										<p className="text-xs text-muted-foreground mb-2">
+											Prévia das informações complementares na NF-e (inclui
+											lotes informados nos itens):
+										</p>
+										<p className="whitespace-pre-wrap">
+											{observacoesComLotes}
+										</p>
+									</div>
+								)}
 								{(pedidoId || isLotePedidos) && (
 									<p className="text-xs text-muted-foreground">
 										Pré-preenchido com o(s) DAV(s) de origem da NF-e. Você pode

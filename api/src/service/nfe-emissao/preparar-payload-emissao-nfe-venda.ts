@@ -12,6 +12,7 @@ import {
 import { buscarNotaFiscalPorId } from "@/repositories/nota-fiscal-repositories.js";
 import { buscarTipoDocumentoFinanceiroPorId } from "@/repositories/tipo-documento-financeiro-repositories.js";
 import { completarRastrosItensEmissao } from "@/service/lote/completar-rastros-emissao.js";
+import { anexarRastrosInformacoesAdicionaisNfe } from "@/util/montar-observacoes-lotes-nfe.js";
 import { aplicarCreditoIcmsSnItensEmissao } from "@/service/nfe-emissao/aplicar-credito-icms-sn-itens.js";
 import {
 	carregarContextoEmissaoNfe,
@@ -637,10 +638,14 @@ export async function prepararPayloadEmissaoNfeVenda(
 		});
 	}
 
-	const infoAdic =
+	const infoAdicBase =
 		opcoes.modo === "preview"
 			? anexarAvisoPreview(informacoesAdicionais)
 			: informacoesAdicionais;
+	const infoAdic = anexarRastrosInformacoesAdicionaisNfe(
+		infoAdicBase,
+		itensComRastros,
+	);
 
 	const payloadGateway = await montarPayloadGatewayEmissaoItens({
 		empresa,

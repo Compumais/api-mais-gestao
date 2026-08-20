@@ -105,7 +105,16 @@ export default function EstoquePage() {
 			{
 				accessorKey: "nomeproduto",
 				header: "Produto",
-				cell: ({ row }) => row.original.nomeproduto ?? "-",
+				cell: ({ row }) => (
+					<div className="flex items-center gap-2">
+						<span>{row.original.nomeproduto ?? "-"}</span>
+						{!row.original.possuiSaldo && (
+							<Badge variant="secondary" className="text-xs">
+								Sem movimento
+							</Badge>
+						)}
+					</div>
+				),
 			},
 			{
 				accessorKey: "quantidade",
@@ -151,6 +160,7 @@ export default function EstoquePage() {
 		data: data?.data ?? [],
 		columns,
 		getCoreRowModel: getCoreRowModel(),
+		getRowId: (row) => row.idproduto,
 	});
 
 	const totalPages = data?.paginacao.totalPages ?? 1;
@@ -161,7 +171,8 @@ export default function EstoquePage() {
 				<div className="px-4">
 					<h1 className="text-2xl font-bold">Estoque</h1>
 					<p className="text-muted-foreground text-sm mt-1">
-						Saldo operacional (real) e fiscal por produto
+						Todos os produtos cadastrados com saldo operacional e fiscal para
+						validação de divergências
 					</p>
 				</div>
 
@@ -243,7 +254,7 @@ export default function EstoquePage() {
 							{table.getRowModel().rows.length === 0 ? (
 								<TableRow>
 									<TableCell colSpan={6} className="h-24 text-center">
-										Nenhum saldo encontrado
+										Nenhum produto encontrado
 									</TableCell>
 								</TableRow>
 							) : (
