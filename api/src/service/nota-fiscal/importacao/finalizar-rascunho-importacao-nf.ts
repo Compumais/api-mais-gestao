@@ -742,6 +742,12 @@ export async function excluirRascunhoImportacaoNfService({
 		return httpNaoEncontrado();
 	}
 
+	if (nota.tipoorigem === 1) {
+		return httpBadRequest(
+			"Rascunho de NF-e de venda deve ser excluído em DELETE /nfe/emissao/rascunhos/:id",
+		);
+	}
+
 	await excluirNotaFiscal(idRascunho);
 
 	return httpOk(null);
@@ -774,6 +780,7 @@ export async function listarRascunhosImportacaoNfService({
 	const resultado = await listarNotasFiscaisPorEmpresa({
 		idempresa,
 		somenteRascunhos: true,
+		tipoorigem: 0,
 		page,
 		limit,
 	});

@@ -1,5 +1,6 @@
 export const NFE_STATUS = {
 	PENDENTE: 90,
+	RASCUNHO: 99,
 	AUTORIZADA: 100,
 	CANCELADA: 101,
 	INUTILIZADA: 102,
@@ -12,6 +13,7 @@ export type NfeStatusCode = (typeof NFE_STATUS)[keyof typeof NFE_STATUS];
 
 export const NFE_STATUS_LABELS: Record<number, string> = {
 	90: "Pendente",
+	99: "Rascunho",
 	100: "Autorizada",
 	101: "Cancelada",
 	102: "Inutilizada",

@@ -8,6 +8,7 @@ import {
 	Eye,
 	Pencil,
 	Plus,
+	Save,
 	Send,
 	Trash2,
 } from "lucide-react";
@@ -86,8 +87,10 @@ import {
 	abrirDanfeNfe,
 	buscarNfeEmitidaComItens,
 	emitirNfe,
+	excluirRascunhoEmissaoNfe,
 	previewDanfeNfe,
 	resolverReferenciaEmissao,
+	salvarRascunhoEmissaoNfe,
 } from "@/services/nfe-emissao.service";
 import {
 	calcularIcmsItemEmissao,
@@ -209,6 +212,7 @@ export default function NovaEmissaoNfePage() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const reemitirId = searchParams.get("reemitir");
+	const rascunhoId = searchParams.get("rascunho");
 	const pedidoId = searchParams.get("pedido");
 	const pedidosParam = searchParams.get("pedidos");
 	const pedidosIds = useMemo(
@@ -254,6 +258,7 @@ export default function NovaEmissaoNfePage() {
 	const [cfopDialogAberto, setCfopDialogAberto] = useState(false);
 	const [cfopPendente, setCfopPendente] = useState<string | null>(null);
 	const reemitirAplicadoRef = useRef<string | null>(null);
+	const rascunhoAplicadoRef = useRef<string | null>(null);
 	const pedidoAplicadoRef = useRef<string | null>(null);
 	const devolucaoAplicadaRef = useRef<string | null>(null);
 	const ultimaPreferenciaAplicadaRef = useRef(false);
@@ -304,6 +309,19 @@ export default function NovaEmissaoNfePage() {
 			return buscarNfeEmitidaComItens(reemitirId);
 		},
 		enabled: !!reemitirId,
+		staleTime: 0,
+		refetchOnMount: "always",
+	});
+
+	const { data: dadosRascunho, isLoading: carregandoRascunho } = useQuery({
+		queryKey: ["nfe-rascunho", rascunhoId],
+		queryFn: async () => {
+			if (!rascunhoId) {
+				throw new Error("Rascunho não informado");
+			}
+			return buscarNfeEmitidaComItens(rascunhoId);
+		},
+		enabled: !!rascunhoId && !reemitirId,
 		staleTime: 0,
 		refetchOnMount: "always",
 	});
@@ -729,6 +747,109 @@ export default function NovaEmissaoNfePage() {
 		// Executa uma vez quando todos os dados da reemissão estiverem prontos.
 		// eslint-disable-next-line react-hooks/exhaustive-deps -- chave estável evita reexecução em refetch.
 	}, [reemitirProntoKey]);
+
+	const notaRascunho = dadosRascunho?.notaFiscal;
+
+	const rascunhoProntoKey = useMemo(() => {
+		if (
+			!rascunhoId ||
+			!dadosRascunho?.notaFiscal?.id ||
+			!empresa?.id ||
+			!empresaFiscal ||
+			seriesData === undefined ||
+			cfopsSaida === undefined ||
+			cfopsEntrada === undefined
+		) {
+			return null;
+		}
+
+		return [
+			rascunhoId,
+			dadosRascunho.notaFiscal.id,
+			empresa.id,
+			JSON.stringify(dadosRascunho.notaFiscal.dadosimportacao ?? null),
+			dadosRascunho.itens.length,
+		].join(":");
+	}, [
+		rascunhoId,
+		dadosRascunho?.notaFiscal?.id,
+		dadosRascunho?.notaFiscal?.dadosimportacao,
+		dadosRascunho?.itens.length,
+		empresa?.id,
+		empresaFiscal,
+		seriesData,
+		cfopsSaida,
+		cfopsEntrada,
+	]);
+
+	useEffect(() => {
+		if (!rascunhoProntoKey || !dadosRascunho || !empresa || !empresaFiscal) {
+			return;
+		}
+
+		const { notaFiscal, itens } = dadosRascunho;
+
+		if (rascunhoAplicadoRef.current === rascunhoProntoKey) return;
+
+		if (notaFiscal.status !== NFE_STATUS.RASCUNHO) {
+			toast.error("Esta nota não é um rascunho editável.");
+			router.replace(`/nota-fiscal-venda/${notaFiscal.id}`);
+			return;
+		}
+
+		const usaCsosn = empresaUsaCsosn(empresaFiscal.crt);
+		const itensForm = itens.map((item) =>
+			mapearItemNotaReemissaoParaForm(item, usaCsosn),
+		);
+
+		const primeiroCfop = itensForm[0]?.cfop;
+		if (primeiroCfop) setCfopSaida(primeiroCfop);
+
+		const contexto = resolverContextoReemissaoNfe(notaFiscal);
+		const ehDevolucao =
+			notaFiscal.finalidadeemissaonfe === 4 ||
+			!!notaFiscal.chavedocumentoreferenciado ||
+			!!contexto.documentoReferenciado;
+		setFormaPagamento(
+			ehDevolucao ? "90" : contexto.formaPagamento,
+		);
+
+		const cfopReemissao =
+			cfopsSaida?.find((c) => c.codigo === primeiroCfop) ??
+			cfopsEntrada?.find((c) => c.codigo === primeiroCfop);
+		const natOpRascunho = (
+			contexto.natOp?.trim() ||
+			cfopReemissao?.descricao?.trim() ||
+			(primeiroCfop ? `Venda CFOP ${primeiroCfop}` : "Rascunho NF-e")
+		).slice(0, 60);
+
+		rascunhoAplicadoRef.current = rascunhoProntoKey;
+
+		form.reset({
+			idempresa: empresa.id,
+			idnotafiscal: notaFiscal.id,
+			iddestinatario: notaFiscal.identidade ?? undefined,
+			idserienfe: contexto.idserienfe ?? undefined,
+			confirmarProducao: false,
+			natOp: natOpRascunho,
+			indPres:
+				contexto.indPres != null && isIndPresNfeValido(contexto.indPres)
+					? contexto.indPres
+					: IND_PRES_NFE_PADRAO,
+			itens: itensForm,
+			totais: contexto.totais,
+			transporte: contexto.transporte,
+			informacoesAdicionais: contexto.informacoesAdicionais,
+			documentoReferenciado: contexto.documentoReferenciado,
+			idtipodocumento: contexto.idtipodocumento,
+			idcondicaopagto: contexto.idcondicaopagto,
+			idplanocontas: contexto.idplanocontas,
+			idlocalestoque: contexto.idlocalestoque,
+			gerarFinanceiro: ehDevolucao ? false : contexto.gerarFinanceiro,
+			gerarEstoque: contexto.gerarEstoque,
+		});
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- chave estável evita reexecução em refetch.
+	}, [rascunhoProntoKey]);
 
 	const pedidoProntoKey = useMemo(() => {
 		if (
@@ -1242,6 +1363,9 @@ export default function NovaEmissaoNfePage() {
 
 			void queryClient.invalidateQueries({ queryKey: ["nfe-emitidas"] });
 			void queryClient.invalidateQueries({
+				queryKey: ["rascunhos-emissao-nfe", empresa?.id],
+			});
+			void queryClient.invalidateQueries({
 				queryKey: ["nfe-configuracao", empresa?.id],
 			});
 			void queryClient.invalidateQueries({
@@ -1347,6 +1471,48 @@ export default function NovaEmissaoNfePage() {
 		},
 	});
 
+	const { mutate: salvarRascunho, isPending: isSalvandoRascunho } = useMutation({
+		mutationFn: salvarRascunhoEmissaoNfe,
+		onSuccess: (resultado) => {
+			void queryClient.invalidateQueries({
+				queryKey: ["rascunhos-emissao-nfe", empresa?.id],
+			});
+			toast.success("Rascunho salvo");
+			if (!rascunhoId) {
+				router.replace(
+					`/nota-fiscal-venda/nova?rascunho=${resultado.idnotafiscal}`,
+				);
+			}
+		},
+		onError: (erro: Error) => {
+			toast.error("Erro ao salvar rascunho", {
+				description: erro.message,
+			});
+		},
+	});
+
+	const { mutate: descartarRascunho, isPending: isDescartandoRascunho } =
+		useMutation({
+			mutationFn: async () => {
+				if (!empresa || !rascunhoId) {
+					throw new Error("Rascunho não identificado");
+				}
+				await excluirRascunhoEmissaoNfe(rascunhoId, empresa.id);
+			},
+			onSuccess: () => {
+				void queryClient.invalidateQueries({
+					queryKey: ["rascunhos-emissao-nfe", empresa?.id],
+				});
+				toast.success("Rascunho descartado");
+				router.push("/nota-fiscal-venda");
+			},
+			onError: (erro: Error) => {
+				toast.error("Erro ao descartar rascunho", {
+					description: erro.message,
+				});
+			},
+		});
+
 	function handleInvalidSubmit(erros: FieldErrors<EmissaoNfeFormData>) {
 		const mensagem =
 			extrairPrimeiraMensagemErroForm(erros) ??
@@ -1375,7 +1541,9 @@ export default function NovaEmissaoNfePage() {
 			idempresa: empresa.id,
 			idnotafiscal: reemitirId
 				? (dados.idnotafiscal ?? reemitirId)
-				: dados.idnotafiscal,
+				: rascunhoId
+					? (dados.idnotafiscal ?? rascunhoId)
+					: dados.idnotafiscal,
 			itens: dados.itens.map((item) =>
 				prepararItemEmissaoFormulario(item, usaCsosn),
 			),
@@ -1462,6 +1630,52 @@ export default function NovaEmissaoNfePage() {
 		emitir(dadosComPagamento);
 	}
 
+	function montarDadosRascunhoFormulario(
+		dados: EmissaoNfeFormData,
+	): EmissaoNfeFormData | null {
+		if (!empresa?.id) {
+			toast.error("Selecione uma empresa para salvar o rascunho.");
+			return null;
+		}
+
+		const usaCsosn = empresaUsaCsosn(empresaFiscal?.crt ?? 3);
+		const cfopSelecionado = cfopSaida
+			? cfopsOperacao?.find((c) => c.codigo === cfopSaida)
+			: undefined;
+		const natOp =
+			dados.natOp?.trim() ||
+			cfopSelecionado?.descricao?.trim()?.slice(0, 60) ||
+			(dados.itens[0]?.cfop
+				? `Venda CFOP ${dados.itens[0].cfop}`.slice(0, 60)
+				: "Rascunho NF-e");
+
+		return {
+			...dados,
+			idempresa: empresa.id,
+			idnotafiscal: rascunhoId
+				? (dados.idnotafiscal ?? rascunhoId)
+				: dados.idnotafiscal,
+			natOp,
+			itens: dados.itens.map((item) =>
+				prepararItemEmissaoFormulario(item, usaCsosn),
+			),
+			pagamento: montarPagamentoEmissaoNfe(formaPagamento, totalNF, {
+				forcarSemPagamento: isOperacaoDevolucao,
+			}),
+			...montarPayloadIntegracaoEmissao(
+				dados,
+				totalNF,
+				isOperacaoDevolucao,
+			),
+		};
+	}
+
+	function handleSalvarRascunho() {
+		const dados = montarDadosRascunhoFormulario(form.getValues());
+		if (!dados) return;
+		salvarRascunho(dados);
+	}
+
 	function handleConfirmarProducao() {
 		setModalConfirmacaoAberto(false);
 		const dados = form.getValues();
@@ -1477,7 +1691,9 @@ export default function NovaEmissaoNfePage() {
 			idempresa: empresa?.id ?? dados.idempresa,
 			idnotafiscal: reemitirId
 				? (dados.idnotafiscal ?? reemitirId)
-				: dados.idnotafiscal,
+				: rascunhoId
+					? (dados.idnotafiscal ?? rascunhoId)
+					: dados.idnotafiscal,
 			itens: (dados.itens ?? []).map((item) =>
 				prepararItemEmissaoFormulario(item, usaCsosn),
 			),
@@ -1529,7 +1745,9 @@ export default function NovaEmissaoNfePage() {
 				</Button>
 				<div className="flex-1 min-w-0">
 					<h1 className="text-lg font-semibold leading-tight">
-						{reemitirId && notaReemitir
+						{rascunhoId && notaRascunho
+							? "Continuar rascunho de NF-e"
+							: reemitirId && notaReemitir
 							? `Reemitir NF-e ${notaReemitir.serie}-${notaReemitir.numeronotafiscal}`
 							: isLotePedidos
 								? `Emitir NF-e de ${pedidosIds.length} pedidos`
@@ -1538,7 +1756,9 @@ export default function NovaEmissaoNfePage() {
 									: "Nova NF-e — Modelo 55"}
 					</h1>
 					<p className="text-xs text-muted-foreground truncate">
-						{reemitirId && notaReemitir
+						{rascunhoId && notaRascunho
+							? "Rascunho salvo — revise e emita quando estiver pronto"
+							: reemitirId && notaReemitir
 							? `Mesma numeração: série ${notaReemitir.serie}, nº ${notaReemitir.numeronotafiscal}`
 							: isLotePedidos
 								? contextoLote?.codigosPedidos?.length
@@ -2368,6 +2588,22 @@ export default function NovaEmissaoNfePage() {
 						)}
 					</div>
 					<div className="flex items-center gap-2">
+						{rascunhoId ? (
+							<Button
+								type="button"
+								variant="outline"
+								className="gap-2 text-destructive"
+								disabled={
+									isDescartandoRascunho ||
+									isPending ||
+									isSalvandoRascunho
+								}
+								onClick={() => descartarRascunho()}
+							>
+								<Trash2 className="h-4 w-4" />
+								{isDescartandoRascunho ? "Descartando..." : "Descartar"}
+							</Button>
+						) : null}
 						<Button variant="outline" asChild>
 							<Link href="/nota-fiscal-venda">Cancelar</Link>
 						</Button>
@@ -2376,7 +2612,26 @@ export default function NovaEmissaoNfePage() {
 							variant="outline"
 							className="gap-2"
 							disabled={
-								isPending || isPreviewPending || itensValue.length === 0
+								isPending ||
+								isPreviewPending ||
+								isSalvandoRascunho ||
+								isDescartandoRascunho ||
+								carregandoRascunho
+							}
+							onClick={handleSalvarRascunho}
+						>
+							<Save className="h-4 w-4" />
+							{isSalvandoRascunho ? "Salvando..." : "Salvar rascunho"}
+						</Button>
+						<Button
+							type="button"
+							variant="outline"
+							className="gap-2"
+							disabled={
+								isPending ||
+								isPreviewPending ||
+								isSalvandoRascunho ||
+								itensValue.length === 0
 							}
 							onClick={handlePreview}
 						>
@@ -2388,7 +2643,10 @@ export default function NovaEmissaoNfePage() {
 							form="form-emissao-nfe"
 							className="gap-2"
 							disabled={
-								isPending || isPreviewPending || itensValue.length === 0
+								isPending ||
+								isPreviewPending ||
+								isSalvandoRascunho ||
+								itensValue.length === 0
 							}
 						>
 							<Send className="h-4 w-4" />

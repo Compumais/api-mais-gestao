@@ -42,6 +42,7 @@ import {
 	cancelarNfe,
 	inutilizarNfe,
 	listarNfesEmitidas,
+	listarRascunhosEmissaoNfe,
 	type NotaFiscalEmitida,
 } from "@/services/nfe-emissao.service";
 import {
@@ -293,6 +294,18 @@ export default function NotaFiscalVendaPage() {
 		enabled: !!empresa,
 	});
 
+	const { data: rascunhos } = useQuery({
+		queryKey: ["rascunhos-emissao-nfe", empresa?.id],
+		queryFn: async () => {
+			if (!empresa) throw new Error("Empresa não selecionada");
+			return listarRascunhosEmissaoNfe({
+				idempresa: empresa.id,
+				limit: 5,
+			});
+		},
+		enabled: !!empresa,
+	});
+
 	const { mutate: executarEvento, isPending: processandoEvento } = useMutation({
 		mutationFn: async ({
 			tipo,
@@ -372,6 +385,25 @@ export default function NotaFiscalVendaPage() {
 						<AvisoAmbienteNfe ambiente={nfeConfiguracao.ambiente} />
 					</div>
 				)}
+
+				{rascunhos && rascunhos.data.length > 0 ? (
+					<section className="mx-4 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/30">
+						<h2 className="font-semibold mb-2">Rascunhos pendentes</h2>
+						<ul className="flex flex-col gap-2">
+							{rascunhos.data.map((rascunho) => (
+								<li key={rascunho.id}>
+									<Link
+										href={`/nota-fiscal-venda/nova?rascunho=${rascunho.id}`}
+										className="text-sm underline-offset-4 hover:underline"
+									>
+										{rascunho.razaosocial ?? "Destinatário não informado"} (
+										{formatCurrency(rascunho.valortotalnota)})
+									</Link>
+								</li>
+							))}
+						</ul>
+					</section>
+				) : null}
 
 				{empresa && (
 					<div className="flex items-center gap-3 px-4">

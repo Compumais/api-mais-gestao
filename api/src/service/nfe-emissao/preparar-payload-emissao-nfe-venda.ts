@@ -45,6 +45,7 @@ import {
 	httpProibido,
 } from "@/util/http-util.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
+import { STATUS_RASCUNHO_IMPORTACAO } from "@/util/nota-fiscal-constants.js";
 import { normalizarGtinItensEmissao } from "@/util/normalizar-gtin-item-emissao-nfe.js";
 import {
 	normalizarIeParaNfe,
@@ -218,6 +219,46 @@ async function resolverNumeracaoEmissao({
 		if (notaExistente.status === NFE_STATUS.AUTORIZADA) {
 			return httpBadRequest("NF-e já autorizada não pode ser reemitida");
 		}
+
+		if (notaExistente.status === STATUS_RASCUNHO_IMPORTACAO) {
+			let serieParaUsar = seriePadrao;
+			if (idserienfe) {
+				const serieBuscada = await buscarNfeSeriePorId(idserienfe);
+				if (serieBuscada) serieParaUsar = serieBuscada;
+			}
+			if (!serieParaUsar && notaExistente.idserie) {
+				const serieSalva = await buscarNfeSeriePorId(notaExistente.idserie);
+				if (serieSalva) serieParaUsar = serieSalva;
+			}
+
+			if (!serieParaUsar) {
+				return httpBadRequest("Selecione a série NF-e para emitir o rascunho");
+			}
+
+			if (modo === "preview") {
+				return httpOk({
+					numeroNf: serieParaUsar.numeroproximo,
+					serie: serieParaUsar.serie,
+					idserie: serieParaUsar.id,
+					idnotafiscal: notaExistente.id,
+					reemissao: true,
+				});
+			}
+
+			const reserva = await reservarProximoNumeroSerie(serieParaUsar.id);
+			if (!reserva) {
+				return httpBadRequest("Não foi possível reservar numeração da série");
+			}
+
+			return httpOk({
+				numeroNf: reserva.numeroReservado,
+				serie: reserva.serie,
+				idserie: serieParaUsar.id,
+				idnotafiscal: notaExistente.id,
+				reemissao: true,
+			});
+		}
+
 		if (
 			notaExistente.status !== NFE_STATUS.REJEITADA &&
 			notaExistente.status !== NFE_STATUS.PENDENTE
