@@ -135,8 +135,30 @@ const UUID_REGEX =
 
 function paraNumeroOpcional(valor: unknown): number | undefined {
 	if (valor == null || valor === "") return undefined;
-	const numero = typeof valor === "number" ? valor : Number(valor);
+	if (typeof valor === "number") {
+		return Number.isFinite(valor) ? valor : undefined;
+	}
+
+	const texto = String(valor).trim();
+	if (!texto) return undefined;
+
+	const normalizado = texto.includes(",")
+		? texto.replace(/\./g, "").replace(",", ".")
+		: texto;
+	const numero = Number(normalizado);
 	return Number.isFinite(numero) ? numero : undefined;
+}
+
+function round2(valor: number): number {
+	return Math.round(valor * 100) / 100;
+}
+
+function codigoCstOpcional(
+	valor: string | number | null | undefined,
+	tamanho = 2,
+): string | undefined {
+	if (valor == null || valor === "") return undefined;
+	return formatarCstProduto(valor, tamanho) || undefined;
 }
 
 function extrairTributacaoItemEmissaoSalva(dadosimportacao: unknown) {
@@ -385,10 +407,14 @@ export function mapearProdutoParaItemNfe(
 		tributacaosn?: string | null;
 		cstpis?: string | number | null;
 		cstcofins?: string | number | null;
+		aliquotapis?: string | number | null;
+		aliquotacofins?: string | number | null;
+		aliquotaicmsinterna?: string | number | null;
 		percentualmva?: string | number | null;
 		ultimaaliquotaicmsst?: string | number | null;
 		ultimaaliquotafcpst?: string | number | null;
 		controlalote?: number | boolean | null;
+		idcfopsaida?: string | null;
 	},
 	cfop?: string,
 	usaCsosn = false,
@@ -422,14 +448,11 @@ export function mapearProdutoParaItemNfe(
 		valorUnitario: produto.preco ? parseFloat(produto.preco) : 0,
 		orig: produto.origem ?? 0,
 		...tributacao,
-		cstPis:
-			produto.cstpis != null
-				? formatarCstProduto(produto.cstpis, 2)
-				: undefined,
-		cstCofins:
-			produto.cstcofins != null
-				? formatarCstProduto(produto.cstcofins, 2)
-				: undefined,
+		cstPis: codigoCstOpcional(produto.cstpis),
+		cstCofins: codigoCstOpcional(produto.cstcofins),
+		aliquotaPis: paraNumeroOpcional(produto.aliquotapis),
+		aliquotaCofins: paraNumeroOpcional(produto.aliquotacofins),
+		aliquotaIcms: paraNumeroOpcional(produto.aliquotaicmsinterna),
 		...mapearDadosStProduto(produto),
 		controlaLote: produto.controlalote === 1 || produto.controlalote === true,
 		rastros: undefined,
@@ -468,5 +491,95 @@ function mapearDadosStProduto(produto: {
 		...(percentualMvaSt != null ? { percentualMvaSt } : {}),
 		...(aliquotaIcmsSt != null ? { aliquotaIcmsSt } : {}),
 		...(aliquotaFcpSt != null ? { aliquotaFcpSt } : {}),
+	};
+}
+
+function textoPreenchido(valor?: string | null): string | undefined {
+	const texto = valor?.trim();
+	return texto ? texto : undefined;
+}
+
+export function codigoCfopPorId(
+	idcfop: string | null | undefined,
+	referencias: Array<{ id: string; codigo: string }>,
+): string | undefined {
+	if (!idcfop) return undefined;
+	return referencias.find((cfop) => cfop.id === idcfop)?.codigo;
+}
+
+export function itemEmissaoSemTributacaoCompleta(
+	item: ItemNfe,
+	usaCsosn: boolean,
+): boolean {
+	const faltaIcms = usaCsosn
+		? !textoPreenchido(item.csosn)
+		: !textoPreenchido(item.cst);
+	return (
+		faltaIcms ||
+		!textoPreenchido(item.cstPis) ||
+		!textoPreenchido(item.cstCofins) ||
+		item.percentualMvaSt == null
+	);
+}
+
+export function preencherItemComCadastro(
+	item: ItemNfe,
+	cadastro: ItemNfe,
+): ItemNfe {
+	const cestItem = item.cest?.replace(/\D/g, "") ?? "";
+	const cestInvalido = !cestItem || /^0+$/.test(cestItem);
+
+	return {
+		...item,
+		ean: item.ean || cadastro.ean,
+		eanTributavel: item.eanTributavel || cadastro.eanTributavel,
+		ncm: item.ncm || cadastro.ncm,
+		cest: cestInvalido ? cadastro.cest : item.cest,
+		cfop: item.cfop || cadastro.cfop,
+		unidade:
+			item.unidade && item.unidade !== "UN"
+				? item.unidade
+				: cadastro.unidade || item.unidade,
+		orig: item.orig ?? cadastro.orig,
+		cst: textoPreenchido(item.cst) ?? cadastro.cst,
+		csosn: textoPreenchido(item.csosn) ?? cadastro.csosn,
+		cstPis: textoPreenchido(item.cstPis) ?? cadastro.cstPis,
+		cstCofins: textoPreenchido(item.cstCofins) ?? cadastro.cstCofins,
+		aliquotaPis: item.aliquotaPis ?? cadastro.aliquotaPis,
+		aliquotaCofins: item.aliquotaCofins ?? cadastro.aliquotaCofins,
+		aliquotaIcms: item.aliquotaIcms ?? cadastro.aliquotaIcms,
+		percentualMvaSt: item.percentualMvaSt ?? cadastro.percentualMvaSt,
+		aliquotaIcmsSt: item.aliquotaIcmsSt ?? cadastro.aliquotaIcmsSt,
+		aliquotaFcpSt: item.aliquotaFcpSt ?? cadastro.aliquotaFcpSt,
+		controlaLote: item.controlaLote ?? cadastro.controlaLote,
+		rastros: item.rastros ?? cadastro.rastros,
+	};
+}
+
+export function sugerirIcmsStPeloMva(
+	item: ItemNfe,
+): Pick<ItemNfe, "baseIcmsSt" | "valorIcmsSt"> {
+	const mva = item.percentualMvaSt;
+	if (mva == null || mva < 0) return {};
+
+	const vProd = round2(
+		(Number(item.quantidade) || 0) * (Number(item.valorUnitario) || 0),
+	);
+	if (vProd <= 0) return {};
+
+	const base =
+		item.baseIcmsSt != null
+			? item.baseIcmsSt
+			: round2(vProd * (1 + mva / 100));
+	const valor =
+		item.valorIcmsSt != null
+			? item.valorIcmsSt
+			: item.aliquotaIcmsSt != null
+				? round2((base * item.aliquotaIcmsSt) / 100)
+				: undefined;
+
+	return {
+		...(item.baseIcmsSt == null ? { baseIcmsSt: base } : {}),
+		...(item.valorIcmsSt == null && valor != null ? { valorIcmsSt: valor } : {}),
 	};
 }

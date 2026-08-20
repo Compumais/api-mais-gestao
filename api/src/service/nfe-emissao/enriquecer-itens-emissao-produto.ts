@@ -65,8 +65,22 @@ async function resolverCestProduto(
 function paraNumeroOpcional(
 	valor?: string | number | null,
 ): number | undefined {
-	if (valor == null || valor === "") return undefined;
-	const numero = typeof valor === "number" ? valor : Number(valor);
+	if (valor == null || valor === "") {
+		return undefined;
+	}
+	if (typeof valor === "number") {
+		return Number.isFinite(valor) ? valor : undefined;
+	}
+
+	const texto = String(valor).trim();
+	if (!texto) {
+		return undefined;
+	}
+
+	const normalizado = texto.includes(",")
+		? texto.replace(/\./g, "").replace(",", ".")
+		: texto;
+	const numero = Number(normalizado);
 	return Number.isFinite(numero) ? numero : undefined;
 }
 
