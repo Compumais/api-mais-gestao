@@ -7,12 +7,21 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { lotesService } from "@/services/lotes.service";
 
 type LotesProdutoEstoqueProps = {
 	idempresa: string;
 	codigoproduto?: string | null;
 };
+
+type TipoEstoqueAjuste = "0" | "1" | "2";
 
 function formatarQuantidade(valor: string | null | undefined) {
 	const n = Number.parseFloat(valor ?? "0");
@@ -29,6 +38,7 @@ export function LotesProdutoEstoque({
 	const [quantidadeAjuste, setQuantidadeAjuste] = useState("");
 	const [datavalidade, setDatavalidade] = useState("");
 	const [datafabricacao, setDatafabricacao] = useState("");
+	const [tipoestoque, setTipoestoque] = useState<TipoEstoqueAjuste>("2");
 
 	const queryKey = ["estoque-lotes", idempresa, codigoproduto];
 
@@ -54,6 +64,7 @@ export function LotesProdutoEstoque({
 				datafabricacao: datafabricacao || null,
 				datavalidade: datavalidade || null,
 				quantidadeAjuste: Number.parseFloat(quantidadeAjuste.replace(",", ".")),
+				tipoestoque: Number(tipoestoque) as 0 | 1 | 2,
 			});
 		},
 		onSuccess: async () => {
@@ -62,6 +73,7 @@ export function LotesProdutoEstoque({
 			setQuantidadeAjuste("");
 			setDatavalidade("");
 			setDatafabricacao("");
+			setTipoestoque("2");
 			await queryClient.invalidateQueries({ queryKey });
 		},
 		onError: (error: Error) => {
@@ -154,6 +166,24 @@ export function LotesProdutoEstoque({
 							value={datavalidade}
 							onChange={(e) => setDatavalidade(e.target.value)}
 						/>
+					</div>
+					<div className="col-span-2 space-y-1">
+						<Label htmlFor="lote-tipo-estoque">Aplicar em</Label>
+						<Select
+							value={tipoestoque}
+							onValueChange={(value) =>
+								setTipoestoque(value as TipoEstoqueAjuste)
+							}
+						>
+							<SelectTrigger id="lote-tipo-estoque">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="2">Operacional e fiscal</SelectItem>
+								<SelectItem value="0">Somente operacional</SelectItem>
+								<SelectItem value="1">Somente fiscal</SelectItem>
+							</SelectContent>
+						</Select>
 					</div>
 				</div>
 				<Button

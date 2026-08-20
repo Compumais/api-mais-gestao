@@ -51,6 +51,7 @@ export async function completarRastrosItensEmissao(params: {
 				quantidade: item.quantidade,
 				idcfop: cfop?.id,
 				dataReferencia: hoje,
+				tipoSaldo: "ambos",
 			});
 			rastros = fefo.lotes.map((lote) => ({
 				idlote: lote.idlote,
