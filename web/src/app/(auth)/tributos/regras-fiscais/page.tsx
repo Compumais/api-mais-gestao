@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { IconCheck, IconHistory, IconPlus } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { type Resolver, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { TableSkeleton } from "@/components/table-skeleton";
 import { Button } from "@/components/ui/button";
@@ -61,7 +61,9 @@ export default function RegrasFiscaisPage() {
 	const [registroEdicao, setRegistroEdicao] = useState<RegraFiscal | null>(null);
 
 	const form = useForm<RegraFiscalFormData>({
-		resolver: zodResolver(regraFiscalFormSchema),
+		resolver: zodResolver(
+			regraFiscalFormSchema,
+		) as Resolver<RegraFiscalFormData>,
 		defaultValues: VALORES_PADRAO,
 	});
 
