@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "regrafiscal",
+  "type": "object",
+  "required": [
+    "rule_id",
+    "descricao",
+    "prioridade",
+    "vigencia_inicio",
+    "condicoes",
+    "resultado",
+    "fontes",
+    "status"
+  ],
+  "properties": {
+    "rule_id": { "type": "string" },
+    "descricao": { "type": "string" },
+    "prioridade": { "type": "integer" },
+    "vigencia_inicio": { "type": "string" },
+    "vigencia_fim": { "type": ["string", "null"] },
+    "condicoes": { "type": "object" },
+    "resultado": { "type": "object" },
+    "fontes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "tipo": { "type": "string" },
+          "numero": { "type": "string" },
+          "url": { "type": "string" },
+          "orgao": { "type": "string" },
+          "vigencia_inicio": { "type": "string" }
+        }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": ["rascunho", "pendente_revisao", "validado", "incompativel", "desativado"]
+    },
+    "versao": { "type": "integer" },
+    "validado_em": { "type": ["string", "null"] },
+    "validado_por": { "type": ["string", "null"] }
+  }
+}

@@ -5,8 +5,8 @@ import type {
 	DadosImportacaoNota,
 	RastroTributacaoSaidaImportacao,
 } from "@/model/nota-fiscal-importacao-model.js";
-import type { NotaFiscal } from "@/model/nota-fiscal-model.js";
 import type { NotaFiscalItem } from "@/model/nota-fiscal-item-model.js";
+import type { NotaFiscal } from "@/model/nota-fiscal-model.js";
 import { buscarCfopPorId } from "@/repositories/cfop-repositories.js";
 import { buscarEmpresaPorId } from "@/repositories/empresa-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
@@ -19,11 +19,16 @@ import {
 	listarItensPorNotaFiscal,
 } from "@/repositories/nota-fiscal-repositories.js";
 import { vincularProdutoFornecedorSeNaoExistir } from "@/repositories/produto-fornecedor-repositories.js";
-import { atualizarProduto, buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
+import {
+	atualizarProduto,
+	buscarProdutoPorId,
+} from "@/repositories/produtos-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
 import { registrarCustosNfService } from "@/service/custo-produto/registrar-custos-nf.js";
+import { persistirLotesEntradaItemNf } from "@/service/lote/persistir-lotes-entrada-item-nf.js";
 import { arquivarXmlNotaFiscal } from "@/service/nota-fiscal/arquivar-xml-nota-fiscal.js";
 import { gerarContasPagarNfService } from "@/service/nota-fiscal/gerar-contas-pagar-nf.js";
+import { resolverCfopSaidaDeEntrada } from "@/service/nota-fiscal/importacao/resolver-referencias-importacao.js";
 import {
 	montarDadosProdutoNfImportacao,
 	parseQuantidadePadraoImportacao,
@@ -36,14 +41,13 @@ import {
 	criarProdutoParaNf,
 	montarAtualizacaoProdutoNf,
 } from "@/service/nota-fiscal/vincular-ou-criar-produto.js";
-import { resolverCfopSaidaDeEntrada } from "@/service/nota-fiscal/importacao/resolver-referencias-importacao.js";
 import { aplicarParametrizacaoTributosProduto } from "@/service/parametrizacao-tributos/aplicar-parametrizacao-tributos-produto.js";
-import { calcularTotalItemXmlImportacao } from "@/util/calculo-importacao-nf.js";
 import {
 	calcularCustoContabilItem,
 	calcularRateioItensImportacaoNf,
 	montarItemCustoNfFromImportacao,
 } from "@/util/calcular-rateio-custo-nf.js";
+import { calcularTotalItemXmlImportacao } from "@/util/calculo-importacao-nf.js";
 import { obterFlagsCreditoItemImportacao } from "@/util/cfop-depara-util.js";
 import {
 	mensagemInconsistenciaCfopEntrada,
@@ -108,7 +112,9 @@ async function validarItensRascunho(
 		const dados = item.dadosimportacao;
 
 		if (!dados) {
-			pendencias.push(`Item ${item.contador ?? "?"}: dados de importação ausentes`);
+			pendencias.push(
+				`Item ${item.contador ?? "?"}: dados de importação ausentes`,
+			);
 			continue;
 		}
 
@@ -272,7 +278,10 @@ export async function finalizarRascunhoImportacaoNfService({
 	}
 
 	const produtosResolvidos = new Map<string, string>();
-	const rastroTributacaoPorItem = new Map<string, RastroTributacaoSaidaImportacao>();
+	const rastroTributacaoPorItem = new Map<
+		string,
+		RastroTributacaoSaidaImportacao
+	>();
 
 	for (const item of itensComDados) {
 		const dados = item.dadosimportacao;
@@ -396,9 +405,7 @@ export async function finalizarRascunhoImportacaoNfService({
 				idcfopsaidanfce:
 					sugestaoSaida.idcfopsaidanfce ?? dadosProduto.idcfopsaidanfce,
 				cfopvendaecf: sugestaoSaida.cfopvendaecf,
-				...(tipoprodutoResolvido
-					? { tipoproduto: tipoprodutoResolvido }
-					: {}),
+				...(tipoprodutoResolvido ? { tipoproduto: tipoprodutoResolvido } : {}),
 			});
 
 			if (!novoProduto) {
@@ -424,6 +431,23 @@ export async function finalizarRascunhoImportacaoNfService({
 		}
 	}
 
+	for (const item of itensComDados) {
+		const idproduto = produtosResolvidos.get(item.id);
+		const dados = item.dadosimportacao;
+		if (!idproduto || !dados) continue;
+
+		const produto = await buscarProdutoPorId(idproduto);
+		const temRastro = (dados.rastrosXml ?? []).some((rastro) =>
+			rastro.numeroLote?.trim(),
+		);
+
+		if (produto?.controlalote === 1 && !temRastro) {
+			return httpBadRequest(
+				`Produto "${produto.nome}" controla lote e o XML não informou rastro (nLote).`,
+			);
+		}
+	}
+
 	const itensFinalizados = await Promise.all(
 		itensComDados.map(async (item) => {
 			const dados = item.dadosimportacao;
@@ -446,7 +470,9 @@ export async function finalizarRascunhoImportacaoNfService({
 
 			const lotePrincipal = obterLotePrincipalItem(dados.rastrosXml);
 			const loteNumero = truncarTexto(lotePrincipal?.numeroLote, 30);
-			const dataFabricacao = normalizarDataRastro(lotePrincipal?.dataFabricacao);
+			const dataFabricacao = normalizarDataRastro(
+				lotePrincipal?.dataFabricacao,
+			);
 			const dataValidade = normalizarDataRastro(lotePrincipal?.dataValidade);
 
 			let codigoCfopEntrada = item.cfop ?? null;
@@ -471,7 +497,7 @@ export async function finalizarRascunhoImportacaoNfService({
 				lote: loteNumero ?? null,
 				datalote: dataFabricacao,
 				datavalidade: dataValidade,
-				idlote: loteNumero ? `${item.id}-${loteNumero}` : null,
+				idlote: null,
 				situacaotributaria: dados.tributacao.situacaotributaria ?? null,
 				cstpis: dados.tributacao.cstpis ?? null,
 				cstcofins: dados.tributacao.cstcofins ?? null,
@@ -547,6 +573,35 @@ export async function finalizarRascunhoImportacaoNfService({
 		return httpBadRequest("Falha ao finalizar rascunho");
 	}
 
+	const lotesPorItem = new Map<
+		string,
+		Awaited<ReturnType<typeof persistirLotesEntradaItemNf>>
+	>();
+
+	for (const item of itensComDados) {
+		const idproduto = produtosResolvidos.get(item.id);
+		const dados = item.dadosimportacao;
+		if (!idproduto || !dados) continue;
+
+		const produto = await buscarProdutoPorId(idproduto);
+		const temRastro = (dados.rastrosXml ?? []).some((rastro) =>
+			rastro.numeroLote?.trim(),
+		);
+
+		if (!temRastro) continue;
+
+		const persistidos = await persistirLotesEntradaItemNf({
+			idempresa,
+			idproduto,
+			idnotafiscalitem: item.id,
+			quantidadeEstoque: dados.quantidadeEstoque,
+			controlaLote: produto?.controlalote === 1,
+			controlaValidade: produto?.controlavalidade === 1,
+			rastros: dados.rastrosXml,
+		});
+		lotesPorItem.set(item.id, persistidos);
+	}
+
 	if (gerarCustos) {
 		const itensCustos = itensComDados
 			.filter((item) => produtosResolvidos.has(item.id))
@@ -579,19 +634,34 @@ export async function finalizarRascunhoImportacaoNfService({
 			sentido: "entrada",
 			itens: itensComDados
 				.filter((item) => produtosResolvidos.has(item.id))
-				.map((item) => {
+				.flatMap((item) => {
 					const dados = item.dadosimportacao as DadosImportacaoItem;
-					const lotePrincipal = obterLotePrincipalItem(dados.rastrosXml);
-					const loteNumero = truncarTexto(lotePrincipal?.numeroLote, 30);
-					return {
-						iditem: item.id,
-						idproduto: produtosResolvidos.get(item.id) as string,
-						quantidade: dados.quantidadeEstoque,
-						custoUnitario:
-							dados.custoContabilCalculado ?? dados.precounitarioEstoque,
-						lote: loteNumero ?? undefined,
-						idlote: loteNumero ? `${item.id}-${loteNumero}` : undefined,
-					};
+					const idproduto = produtosResolvidos.get(item.id) as string;
+					const persistidos = lotesPorItem.get(item.id);
+					const custoUnitario =
+						dados.custoContabilCalculado ?? dados.precounitarioEstoque;
+
+					if (persistidos && persistidos.length > 0) {
+						return persistidos
+							.filter((lote) => Number.parseFloat(lote.quantidade) > 0)
+							.map((lote) => ({
+								iditem: item.id,
+								idproduto,
+								quantidade: lote.quantidade,
+								custoUnitario,
+								lote: lote.numero,
+								idlote: lote.idlote,
+							}));
+					}
+
+					return [
+						{
+							iditem: item.id,
+							idproduto,
+							quantidade: dados.quantidadeEstoque,
+							custoUnitario,
+						},
+					];
 				}),
 		});
 	} catch (erro) {

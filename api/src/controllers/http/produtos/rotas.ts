@@ -13,6 +13,7 @@ import { importarProdutos } from "./importar.js";
 import { previewImportacaoProdutos } from "./importar-preview.js";
 import { inativarProduto } from "./inativar.js";
 import { listarProdutos } from "./listar.js";
+import { listarLotesProduto } from "./lotes.js";
 import { templateProdutos } from "./template.js";
 import { tributacaoPorCfop } from "./tributacao-por-cfop.js";
 
@@ -62,6 +63,9 @@ export async function produtosRotas(app: FastifyInstance) {
 	app.post("/produtos/alterar-em-massa", {
 		schema: schema.alterarProdutosEmMassaSchema,
 		handler: alterarProdutosEmMassa,
+	});
+	app.get("/produtos/:id/lotes", {
+		handler: listarLotesProduto,
 	});
 	app.get("/produtos/:id", {
 		schema: schema.buscarProdutoSchema,

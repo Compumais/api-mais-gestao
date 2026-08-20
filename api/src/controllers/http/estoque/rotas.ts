@@ -5,6 +5,7 @@ import {
 	listarMovimentosEstoqueGestao,
 	listarSaldosEstoqueGestao,
 } from "./estoque.js";
+import { criarLote, listarLotes, sugerirLotesFefo } from "./lotes.js";
 
 export async function estoqueRotas(app: FastifyInstance) {
 	app.addHook("onRequest", verifyJwt);
@@ -12,4 +13,7 @@ export async function estoqueRotas(app: FastifyInstance) {
 	app.get("/estoque/saldos", listarSaldosEstoqueGestao);
 	app.get("/estoque/movimentos", listarMovimentosEstoqueGestao);
 	app.post("/estoque/baixa-venda", baixaEstoqueVenda);
+	app.get("/lotes", listarLotes);
+	app.post("/lotes", criarLote);
+	app.post("/lotes/sugerir-fefo", sugerirLotesFefo);
 }

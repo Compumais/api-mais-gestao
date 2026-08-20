@@ -40,6 +40,8 @@ Referências no repositório (consultar ao auditar implementação):
 
 Skill complementar para **entrada**: [fluxo-fiscal-entrada-erp](../fluxo-fiscal-entrada-erp/SKILL.md).
 
+Skill complementar para **validação tributária** (CFOP/ST/DIFAL, vigência, auditoria, sem inventar regra): [inteligencia-fiscal-nfe](../inteligencia-fiscal-nfe/SKILL.md).
+
 ## Contexto funcional
 
 Estamos desenvolvendo o módulo de emissão fiscal.

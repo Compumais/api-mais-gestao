@@ -83,7 +83,7 @@ export async function transmitirNfeVendaService({
 		return httpBadRequest("NF-e sem itens para transmissão");
 	}
 
-	const itens = mapearItensNotaParaEmissao(itensDb);
+	const itens = await mapearItensNotaParaEmissao(itensDb);
 	const valorTotal = Number(nota.valortotalnota ?? 0);
 	const emissaoSalva = extrairDadosEmissaoNfeSalvos(nota.dadosimportacao);
 	const formaPagamento = emissaoSalva?.formaPagamento ?? "01";

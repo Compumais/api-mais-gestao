@@ -11,6 +11,7 @@ import {
 } from "@/repositories/nfe-serie-repositories.js";
 import { buscarNotaFiscalPorId } from "@/repositories/nota-fiscal-repositories.js";
 import { buscarTipoDocumentoFinanceiroPorId } from "@/repositories/tipo-documento-financeiro-repositories.js";
+import { completarRastrosItensEmissao } from "@/service/lote/completar-rastros-emissao.js";
 import { aplicarCreditoIcmsSnItensEmissao } from "@/service/nfe-emissao/aplicar-credito-icms-sn-itens.js";
 import {
 	carregarContextoEmissaoNfe,
@@ -51,7 +52,12 @@ import { normalizarPagamentoEmissaoNfe } from "@/util/normalizar-pagamento-emiss
 import { normalizarItensEmissaoNfe } from "@/util/normalizar-tributacao-item-emissao-nfe.js";
 import { resolverIdeEmissaoNfe } from "@/util/resolver-ide-emissao-nfe.js";
 import { resolverNatOpEmissaoNfe } from "@/util/resolver-nat-op-emissao-nfe.js";
+import { agoraBrasiliaIsoOffset } from "@/util/data-hora-brasilia.js";
 import { validarCestItensEmissaoNfe } from "@/util/validar-cest-item-emissao-nfe.js";
+import {
+	avaliarEmissaoFiscalService,
+	mensagemBloqueioFiscal,
+} from "@/service/fiscal/avaliar-emissao-fiscal-service.js";
 
 export const AVISO_PREVIEW_DANFE =
 	"*** PRÉ-VISUALIZAÇÃO - DOCUMENTO SEM VALOR FISCAL ***";
@@ -537,6 +543,15 @@ export async function prepararPayloadEmissaoNfeVenda(
 		return httpBadRequest(pendenciasCest.join("; "));
 	}
 
+	const { itens: itensComRastros, pendencias: pendenciasLote } =
+		await completarRastrosItensEmissao({
+			idempresa,
+			itens: itensNormalizados,
+		});
+	if (pendenciasLote.length > 0) {
+		return httpBadRequest(pendenciasLote.join("; "));
+	}
+
 	const vProd = itens.reduce(
 		(acc, item) => acc + item.quantidade * item.valorUnitario,
 		0,
@@ -545,7 +560,7 @@ export async function prepararPayloadEmissaoNfeVenda(
 	const vDesc = totais?.desconto ?? 0;
 	const totaisFiscais = calcularTotaisFiscaisEmissaoNfe(
 		crt,
-		itensNormalizados,
+		itensComRastros,
 		totais ?? {},
 	);
 
@@ -589,6 +604,34 @@ export async function prepararPayloadEmissaoNfeVenda(
 		finNFe,
 	});
 
+	const relatorioFiscal = await avaliarEmissaoFiscalService({
+		operacaoId: idnotafiscal,
+		idempresa,
+		idnotafiscal,
+		dataOperacao: agoraBrasiliaIsoOffset(),
+		crt,
+		ufEmitente: empresaFiscal.uf,
+		ufDestinatario: destinatario?.estado,
+		idDest: ideEmissao.idDest,
+		finNFe,
+		consumidorFinal: true,
+		indIEDest: destinatario?.indIEDest,
+		itens: itensComRastros,
+		totais: totais ?? {},
+	});
+
+	if (!relatorioFiscal.permitir_transmissao) {
+		return httpBadRequest(mensagemBloqueioFiscal(relatorioFiscal), {
+			code:
+				relatorioFiscal.classificacao_final === "BUG_DE_SISTEMA"
+					? "BUG_DE_SISTEMA"
+					: relatorioFiscal.classificacao_final === "ERRO_DE_CONFIGURACAO"
+						? "ERRO_DE_CONFIGURACAO"
+						: "REGRA_FISCAL_NAO_CONFIRMADA",
+			relatorioFiscal,
+		});
+	}
+
 	const infoAdic =
 		opcoes.modo === "preview"
 			? anexarAvisoPreview(informacoesAdicionais)
@@ -602,7 +645,7 @@ export async function prepararPayloadEmissaoNfeVenda(
 		numeroNf,
 		serie,
 		destinatario,
-		itens: itensNormalizados,
+		itens: itensComRastros,
 		totais,
 		pagamento: pagamentoNormalizado,
 		transporte: transporteAjustado,
@@ -631,7 +674,7 @@ export async function prepararPayloadEmissaoNfeVenda(
 		ambiente,
 		destinatario,
 		identidade,
-		itensNormalizados,
+		itensNormalizados: itensComRastros,
 		transporteAjustado,
 		natOpResolvida,
 		pagamentoNormalizado,

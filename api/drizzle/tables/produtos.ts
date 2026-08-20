@@ -179,6 +179,8 @@ export const produtos = pgTable(
 		pesavel: integer(), // 0=Produto nao e pesavel, 1=Produto e pesavel
 		exportaBalanca: integer().default(0), // 0=Não exporta para MGV, 1=Exporta
 		diasValidade: integer().default(0), // 0=usa padrão da exportação; 1-990 imprime datas; 998 não imprime; 999 solicita na balança
+		controlalote: integer().default(0), // 0=não controla lote, 1=controla lote no estoque e na NF-e
+		controlavalidade: integer().default(0), // 0=não exige validade, 1=exige data de validade no lote
 		peso: numeric({ precision: 12, scale: 2 }),
 		podeserbrinde: integer(), // 0=Produto nao pode ser brinde, 1=Produto pode ser brinde
 		precoultimacompra: numeric({ precision: 12, scale: 2 }),

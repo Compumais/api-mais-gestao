@@ -1,11 +1,15 @@
+import type { NovoMovimentoEstoque } from "@/model/movimento-estoque-model.js";
+import {
+	aplicarDeltaSaldoLote,
+	buscarLotePorId,
+} from "@/repositories/lote-repositories.js";
+import { criarMovimentoEstoque } from "@/repositories/movimento-estoque-repositories.js";
 import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
 import {
 	atualizarSaldoEstoque,
 	buscarSaldoEstoquePorCodigoProduto,
 	criarSaldoEstoque,
 } from "@/repositories/saldo-estoque-repositories.js";
-import type { NovoMovimentoEstoque } from "@/model/movimento-estoque-model.js";
-import { criarMovimentoEstoque } from "@/repositories/movimento-estoque-repositories.js";
 import { TIPO_ESTOQUE, type TipoEstoque } from "@/util/tipo-estoque.js";
 
 export type SentidoMovimentoEstoque = "entrada" | "saida";
@@ -30,6 +34,7 @@ export type RegistrarMovimentoEstoqueParametros = {
 	precoultimacompra?: string | null;
 	observacao?: string | null;
 	idlote?: string | null;
+	permitirSemLote?: boolean | undefined;
 };
 
 function parseQuantidade(valor: string): number {
@@ -108,6 +113,48 @@ async function aplicarDeltaSaldo(
 	await atualizarSaldoEstoque(saldo.id, dadosAtualizacao);
 }
 
+async function aplicarDeltaSaldoDoLote(params: {
+	idlote: string;
+	idproduto: string;
+	delta: number;
+	tipoestoque: TipoEstoque;
+}) {
+	const registro = await buscarLotePorId(params.idlote);
+	if (!registro) {
+		throw new Error("Lote não encontrado");
+	}
+	if (registro.idproduto !== params.idproduto) {
+		throw new Error("Lote não pertence ao produto do movimento");
+	}
+
+	const aplicaOperacional =
+		params.tipoestoque === TIPO_ESTOQUE.OPERACIONAL ||
+		params.tipoestoque === TIPO_ESTOQUE.AMBOS;
+	const aplicaFiscal =
+		params.tipoestoque === TIPO_ESTOQUE.FISCAL ||
+		params.tipoestoque === TIPO_ESTOQUE.AMBOS;
+
+	const operacional = parseQuantidade(registro.quantidade);
+	const fiscal = parseQuantidade(registro.quantidadefiscal);
+
+	if (aplicaOperacional && operacional + params.delta < -0.000001) {
+		throw new Error(
+			`Saldo do lote ${registro.numero} insuficiente para a saída`,
+		);
+	}
+	if (aplicaFiscal && fiscal + params.delta < -0.000001) {
+		throw new Error(
+			`Saldo fiscal do lote ${registro.numero} insuficiente para a saída`,
+		);
+	}
+
+	await aplicarDeltaSaldoLote(
+		params.idlote,
+		aplicaOperacional ? params.delta : 0,
+		aplicaFiscal ? params.delta : 0,
+	);
+}
+
 export async function registrarMovimentoEstoque({
 	idempresa,
 	idproduto,
@@ -128,6 +175,7 @@ export async function registrarMovimentoEstoque({
 	precoultimacompra,
 	observacao,
 	idlote,
+	permitirSemLote = false,
 }: RegistrarMovimentoEstoqueParametros) {
 	const agora = new Date();
 	const dataIso = data ?? agora.toISOString().slice(0, 10);
@@ -135,6 +183,13 @@ export async function registrarMovimentoEstoque({
 		datahora ?? agora.toISOString().replace("T", " ").replace("Z", "");
 	const qtd = parseQuantidade(quantidade);
 	if (qtd <= 0) return null;
+
+	const produto = await buscarProdutoPorId(idproduto);
+	if (produto?.controlalote === 1 && !idlote && !permitirSemLote) {
+		throw new Error(
+			`Produto ${produto.nome} controla lote. Informe o lote do movimento.`,
+		);
+	}
 
 	const isSaida = sentido === "saida";
 	const delta = isSaida ? -qtd : qtd;
@@ -162,6 +217,15 @@ export async function registrarMovimentoEstoque({
 		cancelado: 0,
 		currenttimemillis: agora.getTime(),
 	};
+
+	if (idlote) {
+		await aplicarDeltaSaldoDoLote({
+			idlote,
+			idproduto,
+			delta,
+			tipoestoque,
+		});
+	}
 
 	const movimento = await criarMovimentoEstoque(movimentoData);
 

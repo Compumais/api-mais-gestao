@@ -259,6 +259,10 @@ export const DATA = {
 					url: "/tributos/parametrizacao",
 				},
 				{
+					title: "Regras fiscais",
+					url: "/tributos/regras-fiscais",
+				},
+				{
 					title: "Taxas por UF",
 					url: "/tributos/taxas",
 				},

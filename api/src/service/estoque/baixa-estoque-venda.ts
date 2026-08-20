@@ -116,6 +116,7 @@ export async function baixaEstoqueVendaService({
 				idoriginal: idvenda,
 				iditemoriginal: item.idproduto,
 				valortotal: valorTotal,
+				permitirSemLote: true,
 			});
 
 			if (movimento) movimentosRegistrados++;

@@ -10,6 +10,7 @@ import {
 	substituirItensNotaFiscal,
 } from "@/repositories/nota-fiscal-repositories.js";
 import { enfileirarEnvioDominioSilencioso } from "@/service/dominio/enfileirar-envio-dominio.js";
+import { persistirLotesItensNotaEmissao } from "@/service/lote/persistir-lotes-itens-nota-emissao.js";
 import { salvarUltimaPreferenciaEmissaoNfe } from "@/service/nfe-configuracao/salvar-ultima-preferencia-emissao-nfe.js";
 import type {
 	DestinatarioPayloadNfe,
@@ -67,6 +68,30 @@ export type ResultadoEmissaoNfeVenda = {
 	};
 };
 
+function resumoLotePrincipal(item: ItemPayloadNfe): {
+	lote: string | null;
+	datalote: string | null;
+	datavalidade: string | null;
+	idlote: string | null;
+} {
+	const primeiro = item.rastros?.[0];
+	if (!primeiro) {
+		return {
+			lote: null,
+			datalote: null,
+			datavalidade: null,
+			idlote: null,
+		};
+	}
+
+	return {
+		lote: primeiro.nLote.slice(0, 30),
+		datalote: primeiro.dFab ?? null,
+		datavalidade: primeiro.dVal ?? null,
+		idlote: primeiro.idlote ?? null,
+	};
+}
+
 function montarItensPersistencia(
 	idnotafiscal: string,
 	itens: ItemPayloadNfe[],
@@ -98,6 +123,7 @@ function montarItensPersistencia(
 		tipo: "P",
 		currenttimemillis: Date.now(),
 		dadosimportacao: montarDadosImportacaoItemEmissaoNfe(item) ?? null,
+		...resumoLotePrincipal(item),
 	}));
 }
 
@@ -475,6 +501,15 @@ export async function emitirNfeVendaService(
 	} else {
 		await criarNotaFiscalComItens(dadosNota, itensPersistencia);
 	}
+
+	await persistirLotesItensNotaEmissao({
+		idempresa,
+		itens: itensPersistencia.map((item, index) => ({
+			iditem: item.id,
+			idproduto: item.idproduto,
+			rastros: itensNormalizados[index]?.rastros,
+		})),
+	});
 
 	if (respostaGateway.xmlEnviado && respostaGateway.chave) {
 		await arquivarXmlNotaFiscal({

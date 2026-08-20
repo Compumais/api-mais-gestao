@@ -106,11 +106,14 @@ import {
 } from "@/util/nfe-rejeicao-util";
 import type { CardErroOperacaoNfe } from "@/util/normalizar-erro-operacao-nfe";
 import { normalizarErroOperacaoNfe } from "@/util/normalizar-erro-operacao-nfe";
+import { extrairRelatorioFiscalErro } from "@/schemas/relatorio-fiscal.schema";
+import type { RelatorioAuditoriaFiscal } from "@/schemas/relatorio-fiscal.schema";
 import { montarPagamentoEmissaoNfe } from "@/util/normalizar-pagamento-emissao-nfe";
 import { resolverContextoReemissaoNfe } from "@/util/resolver-contexto-reemissao-nfe";
 import { AvisoAmbienteNfe } from "../components/aviso-ambiente-nfe";
 import { CamposIntegracaoNfVenda } from "../components/campos-integracao-nf-venda";
 import { CardErroNfe } from "../components/card-erro-nfe";
+import { DialogRelatorioFiscal } from "../components/dialog-relatorio-fiscal";
 import { ModalConfirmacaoProducao } from "../components/modal-confirmacao-producao";
 import { ModalEnviarEmailNfe } from "../components/modal-enviar-email-nfe";
 import { ModalItemEmissao } from "../components/modal-item-emissao";
@@ -227,6 +230,8 @@ export default function NovaEmissaoNfePage() {
 	});
 	const [modalConfirmacaoAberto, setModalConfirmacaoAberto] = useState(false);
 	const [modalPreviewAberto, setModalPreviewAberto] = useState(false);
+	const [relatorioFiscal, setRelatorioFiscal] =
+		useState<RelatorioAuditoriaFiscal | null>(null);
 	const [pdfPreview, setPdfPreview] = useState<Blob | null>(null);
 	const [erroPreview, setErroPreview] = useState<CardErroOperacaoNfe | null>(
 		null,
@@ -1185,6 +1190,10 @@ export default function NovaEmissaoNfePage() {
 			setModalPreviewAberto(true);
 		},
 		onError: (erro: Error) => {
+			const relatorio = extrairRelatorioFiscalErro(erro);
+			if (relatorio) {
+				setRelatorioFiscal(relatorio);
+			}
 			const normalizado = normalizarErroOperacaoNfe(erro.message, "preview");
 			setErroPreview(normalizado.card);
 			toast.error(normalizado.tituloToast, {
@@ -1300,6 +1309,10 @@ export default function NovaEmissaoNfePage() {
 			}
 		},
 		onError: (erro) => {
+			const relatorio = extrairRelatorioFiscalErro(erro);
+			if (relatorio) {
+				setRelatorioFiscal(relatorio);
+			}
 			toast.error("Erro ao emitir NF-e", {
 				description: erro instanceof Error ? erro.message : "Erro desconhecido",
 			});
@@ -2377,6 +2390,14 @@ export default function NovaEmissaoNfePage() {
 				onClose={() => setModalConfirmacaoAberto(false)}
 				onConfirmar={handleConfirmarProducao}
 				carregando={isPending}
+			/>
+
+			<DialogRelatorioFiscal
+				aberto={relatorioFiscal != null}
+				onAbertoChange={(aberto) => {
+					if (!aberto) setRelatorioFiscal(null);
+				}}
+				relatorio={relatorioFiscal}
 			/>
 
 			{notaEmitidaId && empresa && (

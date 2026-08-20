@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MaisGestao\NfeGateway\Services;
 
 use MaisGestao\NfeGateway\Fiscal\MontarPisCofinsItemNfe;
+use MaisGestao\NfeGateway\Fiscal\MontarRastroItemNfe;
 use NFePHP\NFe\Complements;
 use NFePHP\NFe\Common\Standardize;
 use NFePHP\NFe\Make;
@@ -237,6 +238,12 @@ final class NfeEmissaoService
 				$vDescItem,
 				$vOutroItem,
 			));
+
+			$dataEmissao = substr($dhEmi, 0, 10);
+			$rastrosItem = is_array($item['rastros'] ?? null) ? $item['rastros'] : [];
+			foreach (MontarRastroItemNfe::montar($nItem, $rastrosItem, $dataEmissao) as $rastro) {
+				$mk->tagRastro($rastro);
+			}
 
 			$mk->tagimposto((object) ['item' => $nItem]);
 

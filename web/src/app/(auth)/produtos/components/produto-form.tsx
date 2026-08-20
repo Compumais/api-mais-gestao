@@ -74,6 +74,8 @@ function buildProdutoPayload(
 				: null,
 		espizza: data.espizza ? 1 : 0,
 		exportaBalanca: data.exportaBalanca ? 1 : 0,
+		controlalote: data.controlalote ? 1 : 0,
+		controlavalidade: data.controlavalidade ? 1 : 0,
 		diasValidade: data.diasValidade ?? 0,
 		preco: data.preco,
 		tipo: data.tipo,
@@ -186,6 +188,8 @@ export function ProdutoForm(props: ProdutoFormProps) {
 			idgrupogourmet: "none",
 			espizza: false,
 			exportaBalanca: false,
+			controlalote: false,
+			controlavalidade: false,
 			diasValidade: 0,
 			preco: "",
 			custoaquisicao: "",
@@ -254,6 +258,8 @@ export function ProdutoForm(props: ProdutoFormProps) {
 	const preco = watch("preco");
 	const custoaquisicao = watch("custoaquisicao");
 	const enviamobile = watch("enviamobile");
+	const controlalote = watch("controlalote");
+	const controlavalidade = watch("controlavalidade");
 	const codigo = watch("codigo");
 
 	useProximoCodigo({
@@ -750,6 +756,50 @@ export function ProdutoForm(props: ProdutoFormProps) {
 										}
 									/>
 								</Field>
+							</div>
+						</div>
+
+						<div className="mt-6 space-y-4">
+							<h2 className="text-lg font-semibold">Controle de lote</h2>
+							<div className="space-y-3 rounded-lg border p-4">
+								<div className="flex items-center gap-3">
+									<Checkbox
+										id="controlalote"
+										checked={!!controlalote}
+										onCheckedChange={(checked) =>
+											setValue("controlalote", checked === true, {
+												shouldValidate: true,
+											})
+										}
+									/>
+									<Label
+										htmlFor="controlalote"
+										className="cursor-pointer font-normal"
+									>
+										Controla lote
+									</Label>
+								</div>
+								<div className="flex items-center gap-3">
+									<Checkbox
+										id="controlavalidade"
+										checked={!!controlavalidade}
+										onCheckedChange={(checked) =>
+											setValue("controlavalidade", checked === true, {
+												shouldValidate: true,
+											})
+										}
+									/>
+									<Label
+										htmlFor="controlavalidade"
+										className="cursor-pointer font-normal"
+									>
+										Controla validade
+									</Label>
+								</div>
+								<p className="text-sm text-muted-foreground">
+									O lote é cadastrado no estoque, não no produto. Independente
+									dos dias de validade da balança.
+								</p>
 							</div>
 						</div>
 

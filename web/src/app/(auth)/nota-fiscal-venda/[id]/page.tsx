@@ -49,9 +49,12 @@ import {
 	notaPodeSerCancelada,
 	notaPodeSerInutilizada,
 } from "@/util/validar-eventos-nfe";
+import { extrairRelatorioFiscalErro } from "@/schemas/relatorio-fiscal.schema";
+import type { RelatorioAuditoriaFiscal } from "@/schemas/relatorio-fiscal.schema";
 import { PageContainer } from "../../components/page-container";
 import { AvisoAmbienteNfe } from "../components/aviso-ambiente-nfe";
 import { CardErroNfe } from "../components/card-erro-nfe";
+import { DialogRelatorioFiscal } from "../components/dialog-relatorio-fiscal";
 import { ModalConfirmacaoProducao } from "../components/modal-confirmacao-producao";
 import { ModalEventoNfe } from "../components/modal-evento-nfe";
 import { ResumoDestinatarioNfe } from "../components/resumo-destinatario-nfe";
@@ -111,6 +114,8 @@ export default function DetalheNfePage({
 	const router = useRouter();
 	const queryClient = useQueryClient();
 	const [modalConfirmacaoAberto, setModalConfirmacaoAberto] = useState(false);
+	const [relatorioFiscal, setRelatorioFiscal] =
+		useState<RelatorioAuditoriaFiscal | null>(null);
 	const [modalEvento, setModalEvento] = useState<
 		"cancelar" | "inutilizar" | null
 	>(null);
@@ -194,6 +199,8 @@ export default function DetalheNfePage({
 			router.refresh();
 		},
 		onError: (erro) => {
+			const relatorio = extrairRelatorioFiscalErro(erro);
+			if (relatorio) setRelatorioFiscal(relatorio);
 			toast.error("Erro ao transmitir NF-e", {
 				description: erro instanceof Error ? erro.message : "Erro desconhecido",
 			});
@@ -579,6 +586,14 @@ export default function DetalheNfePage({
 					onClose={() => setModalConfirmacaoAberto(false)}
 					onConfirmar={handleConfirmarTransmissaoProducao}
 					carregando={transmitindo}
+				/>
+
+				<DialogRelatorioFiscal
+					aberto={relatorioFiscal != null}
+					onAbertoChange={(aberto) => {
+						if (!aberto) setRelatorioFiscal(null);
+					}}
+					relatorio={relatorioFiscal}
 				/>
 
 				<ModalEventoNfe

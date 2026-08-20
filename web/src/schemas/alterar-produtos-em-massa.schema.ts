@@ -21,6 +21,8 @@ export const alterarProdutosEmMassaFormSchema = z
 		idcest: campoAlteracao(z.string().nullable()),
 		ippt: campoAlteracao(z.enum(["P", "T"]).nullable()),
 		inativo: campoAlteracao(z.number().int().min(0).max(1).nullable()),
+		controlalote: campoAlteracao(z.number().int().min(0).max(1)),
+		controlavalidade: campoAlteracao(z.number().int().min(0).max(1)),
 		percentualmva: campoAlteracao(percentualOpcional),
 		idcfopentrada: campoAlteracao(z.string().nullable()),
 		idcfopsaida: campoAlteracao(z.string().nullable()),
@@ -79,6 +81,8 @@ export const valoresPadraoAlteracaoEmMassa: AlterarProdutosEmMassaFormData = {
 	idcest: { alterar: false, valor: null },
 	ippt: { alterar: false, valor: "P" },
 	inativo: { alterar: false, valor: 0 },
+	controlalote: { alterar: false, valor: 0 },
+	controlavalidade: { alterar: false, valor: 0 },
 	percentualmva: { alterar: false, valor: "" },
 	idcfopentrada: { alterar: false, valor: null },
 	idcfopsaida: { alterar: false, valor: null },
@@ -127,6 +131,10 @@ export function montarCamposAlteracaoEmMassa(
 	if (dados.idcest.alterar) campos.idcest = dados.idcest.valor || null;
 	if (dados.ippt.alterar) campos.ippt = dados.ippt.valor;
 	if (dados.inativo.alterar) campos.inativo = dados.inativo.valor;
+	if (dados.controlalote.alterar) campos.controlalote = dados.controlalote.valor;
+	if (dados.controlavalidade.alterar) {
+		campos.controlavalidade = dados.controlavalidade.valor;
+	}
 	if (dados.percentualmva.alterar) {
 		campos.percentualmva = valorOuNulo(dados.percentualmva.valor);
 	}

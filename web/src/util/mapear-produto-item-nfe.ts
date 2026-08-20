@@ -320,6 +320,8 @@ export function itemEmissaoPodeSerConfirmado(
 		!itemEmissaoRequerCest({ ...preparado, ...tributacao }) ||
 		(cestDigitos.length === 7 && !/^0+$/.test(cestDigitos));
 
+	const lotesOk = !preparado.controlaLote || somaRastrosFecha(preparado);
+
 	return (
 		preparado.descricao.trim() !== "" &&
 		preparado.ncm.trim() !== "" &&
@@ -329,8 +331,22 @@ export function itemEmissaoPodeSerConfirmado(
 		(usaCsosn
 			? Boolean(tributacao.csosn?.trim())
 			: Boolean(tributacao.cst?.trim())) &&
-		cestOk
+		cestOk &&
+		lotesOk
 	);
+}
+
+function somaRastrosFecha(item: ItemNfe): boolean {
+	const rastros = item.rastros ?? [];
+	if (rastros.length === 0) return false;
+	if (rastros.some((rastro) => !rastro.nLote?.trim() || !(rastro.qLote > 0))) {
+		return false;
+	}
+	const soma = rastros.reduce(
+		(total, rastro) => total + (rastro.qLote || 0),
+		0,
+	);
+	return Math.abs(soma - item.quantidade) <= 0.000001;
 }
 
 export function normalizarGtinItemFormulario(
@@ -372,6 +388,7 @@ export function mapearProdutoParaItemNfe(
 		percentualmva?: string | number | null;
 		ultimaaliquotaicmsst?: string | number | null;
 		ultimaaliquotafcpst?: string | number | null;
+		controlalote?: number | boolean | null;
 	},
 	cfop?: string,
 	usaCsosn = false,
@@ -414,6 +431,8 @@ export function mapearProdutoParaItemNfe(
 				? formatarCstProduto(produto.cstcofins, 2)
 				: undefined,
 		...mapearDadosStProduto(produto),
+		controlaLote: produto.controlalote === 1 || produto.controlalote === true,
+		rastros: undefined,
 	};
 }
 

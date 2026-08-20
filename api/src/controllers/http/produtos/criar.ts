@@ -62,6 +62,8 @@ const criarProdutoBodySchema = z
 				{ message: "Dias de validade deve ser 0 a 990, 998 ou 999" },
 			)
 			.optional(),
+		controlalote: z.number().int().min(0).max(1).optional(),
+		controlavalidade: z.number().int().min(0).max(1).optional(),
 		quantidadepadrao: z.number().int().min(0).optional().nullable(),
 		quantidademinima: z.number().int().min(0).optional().nullable(),
 		quantidademaxima: z.number().int().positive().optional().nullable(),
@@ -162,6 +164,8 @@ export async function criarProduto(
 			espizza: dadosValidados.espizza ?? 0,
 			exportaBalanca: dadosValidados.exportaBalanca ?? 0,
 			diasValidade: dadosValidados.diasValidade ?? 0,
+			controlalote: dadosValidados.controlalote ?? 0,
+			controlavalidade: dadosValidados.controlavalidade ?? 0,
 			quantidadepadrao: ehServico ? 0 : (dadosValidados.quantidadepadrao ?? 0),
 			quantidademinima: ehServico
 				? null

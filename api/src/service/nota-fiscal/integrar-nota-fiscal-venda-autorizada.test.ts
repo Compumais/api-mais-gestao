@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import * as notaFiscalRepository from "@/repositories/nota-fiscal-repositories.js";
 import * as localEstoqueRepository from "@/repositories/local-estoque-repositories.js";
+import * as notaFiscalRepository from "@/repositories/nota-fiscal-repositories.js";
 import * as gerarContasReceber from "@/service/nota-fiscal/gerar-contas-receber-nf.js";
-import * as registrarMovimentos from "@/service/nota-fiscal/registrar-movimentos-estoque-nf.js";
 import { integrarNotaFiscalVendaAutorizadaService } from "@/service/nota-fiscal/integrar-nota-fiscal-venda-autorizada.js";
+import * as registrarMovimentos from "@/service/nota-fiscal/registrar-movimentos-estoque-nf.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
 
 vi.mock("@/repositories/nota-fiscal-repositories.js");
@@ -16,6 +16,9 @@ vi.mock("@/service/nota-fiscal/registrar-venda-dashboard-nf-venda.js", () => ({
 		criada: true,
 		avisos: [],
 	}),
+}));
+vi.mock("@/repositories/nota-fiscal-item-lote-repositories.js", () => ({
+	listarLotesPorItensNota: vi.fn().mockResolvedValue([]),
 }));
 vi.mock("@/service/auditoria/criar-auditoria.js", () => ({
 	criarAuditoriaService: vi.fn().mockResolvedValue({ success: true }),
@@ -53,7 +56,9 @@ describe("integrarNotaFiscalVendaAutorizadaService", () => {
 			status: NFE_STATUS.AUTORIZADA,
 			valortotalnota: "100.00",
 			emissao: "2026-06-24",
-			dadosimportacao: { emissao: { gerarFinanceiro: true, gerarEstoque: true } },
+			dadosimportacao: {
+				emissao: { gerarFinanceiro: true, gerarEstoque: true },
+			},
 		} as never);
 		vi.mocked(notaFiscalRepository.listarItensPorNotaFiscal).mockResolvedValue([
 			{
@@ -63,18 +68,22 @@ describe("integrarNotaFiscalVendaAutorizadaService", () => {
 				cfop: "5102",
 			},
 		] as never);
-		vi.mocked(localEstoqueRepository.buscarPrimeiroLocalEstoqueEmpresa).mockResolvedValue(
-			{ id: "local-1" } as never,
-		);
-		vi.mocked(registrarMovimentos.registrarMovimentosEstoqueNf).mockResolvedValue({
+		vi.mocked(
+			localEstoqueRepository.buscarPrimeiroLocalEstoqueEmpresa,
+		).mockResolvedValue({ id: "local-1" } as never);
+		vi.mocked(
+			registrarMovimentos.registrarMovimentosEstoqueNf,
+		).mockResolvedValue({
 			movimentosCriados: 1,
 			avisos: [],
 		});
-		vi.mocked(gerarContasReceber.gerarContasReceberNfService).mockResolvedValue({
-			success: true,
-			status: 200,
-			body: { parcelasGeradas: 1, lancamentosCaixa: 0, totalParcelas: 1 },
-		});
+		vi.mocked(gerarContasReceber.gerarContasReceberNfService).mockResolvedValue(
+			{
+				success: true,
+				status: 200,
+				body: { parcelasGeradas: 1, lancamentosCaixa: 0, totalParcelas: 1 },
+			},
+		);
 
 		const resultado = await integrarNotaFiscalVendaAutorizadaService({
 			idusuario: "user-1",
@@ -97,7 +106,9 @@ describe("integrarNotaFiscalVendaAutorizadaService", () => {
 			valortotalnota: "0",
 			dadosimportacao: {},
 		} as never);
-		vi.mocked(notaFiscalRepository.listarItensPorNotaFiscal).mockResolvedValue([]);
+		vi.mocked(notaFiscalRepository.listarItensPorNotaFiscal).mockResolvedValue(
+			[],
+		);
 
 		await integrarNotaFiscalVendaAutorizadaService({
 			idusuario: "user-1",
@@ -106,7 +117,11 @@ describe("integrarNotaFiscalVendaAutorizadaService", () => {
 			gerarFinanceiro: false,
 		});
 
-		expect(registrarMovimentos.registrarMovimentosEstoqueNf).not.toHaveBeenCalled();
-		expect(gerarContasReceber.gerarContasReceberNfService).not.toHaveBeenCalled();
+		expect(
+			registrarMovimentos.registrarMovimentosEstoqueNf,
+		).not.toHaveBeenCalled();
+		expect(
+			gerarContasReceber.gerarContasReceberNfService,
+		).not.toHaveBeenCalled();
 	});
 });

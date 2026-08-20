@@ -54,6 +54,14 @@ export type ItemPayloadNfe = {
 	valorIcmsMonoReten?: number;
 	pCredSN?: number;
 	vCredICMSSN?: number;
+	rastros?: Array<{
+		idlote?: string;
+		nLote: string;
+		qLote: number;
+		dFab?: string;
+		dVal?: string;
+		cAgreg?: string;
+	}>;
 };
 
 export type DestinatarioPayloadNfe = {

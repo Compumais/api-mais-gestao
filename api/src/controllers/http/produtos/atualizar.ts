@@ -70,6 +70,8 @@ const atualizarProdutoBodySchema = z.object({
 			{ message: "Dias de validade deve ser 0 a 990, 998 ou 999" },
 		)
 		.optional(),
+	controlalote: z.number().int().min(0).max(1).optional(),
+	controlavalidade: z.number().int().min(0).max(1).optional(),
 	quantidadepadrao: z.number().int().min(0).optional().nullable(),
 	quantidademinima: z.number().int().min(0).optional().nullable(),
 	quantidademaxima: z.number().int().positive().optional().nullable(),

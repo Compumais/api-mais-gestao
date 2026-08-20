@@ -159,6 +159,7 @@ Não refatorar módulos fora do escopo fiscal solicitado.
 
 - Checklist detalhado de produto: [checklist-produto.md](checklist-produto.md)
 - Emissão NF-e (55) / NFC-e (65): [fluxo-fiscal-emissao-erp](../fluxo-fiscal-emissao-erp/SKILL.md)
+- Validação tributária (CFOP/ST/DIFAL, vigência, auditoria): [inteligencia-fiscal-nfe](../inteligencia-fiscal-nfe/SKILL.md)
 
 ## Próximo passo ideal (auditoria)
 

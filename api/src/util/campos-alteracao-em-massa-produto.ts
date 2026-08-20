@@ -25,6 +25,8 @@ export const camposAlteracaoEmMassaProdutoSchema = z
 			}),
 		ippt: z.enum(["P", "T"]).optional().nullable(),
 		inativo: z.number().int().min(0).max(1).optional().nullable(),
+		controlalote: z.number().int().min(0).max(1).optional(),
+		controlavalidade: z.number().int().min(0).max(1).optional(),
 		tipoproduto: z.string().max(2).optional().nullable(),
 		aliquotapis: camposServicoProdutoSchema.aliquotapis,
 		aliquotacofins: camposServicoProdutoSchema.aliquotacofins,

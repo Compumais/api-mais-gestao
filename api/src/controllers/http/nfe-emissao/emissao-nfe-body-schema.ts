@@ -40,6 +40,18 @@ const itemNfeSchema = z.object({
 	valorIcmsDesonerado: z.number().min(0).optional(),
 	valorIcmsMonoRet: z.number().min(0).optional(),
 	valorIcmsMonoReten: z.number().min(0).optional(),
+	rastros: z
+		.array(
+			z.object({
+				idlote: z.string().uuid().optional(),
+				nLote: z.string().min(1).max(20),
+				qLote: z.number().positive(),
+				dFab: z.string().optional(),
+				dVal: z.string().optional(),
+				cAgreg: z.string().max(20).optional(),
+			}),
+		)
+		.optional(),
 });
 
 const documentoReferenciadoSchema = z

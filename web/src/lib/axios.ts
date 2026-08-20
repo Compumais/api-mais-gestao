@@ -74,6 +74,17 @@ api.interceptors.response.use(
 			data?.error ||
 			error.message ||
 			"Erro ao realizar a requisição";
-		return Promise.reject(new Error(message));
+
+		const erro = new Error(message) as Error & {
+			code?: string;
+			relatorioFiscal?: unknown;
+		};
+		if (typeof data?.code === "string") {
+			erro.code = data.code;
+		}
+		if (data?.relatorioFiscal) {
+			erro.relatorioFiscal = data.relatorioFiscal;
+		}
+		return Promise.reject(erro);
 	},
 );

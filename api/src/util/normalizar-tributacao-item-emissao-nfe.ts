@@ -1,9 +1,6 @@
 import type { ItemPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
 import { aplicarPisCofinsItemEmissao } from "@/util/montar-grupo-pis-cofins-item-nfe.js";
 
-const CSOSN_PADRAO_SN = "102";
-const CST_PADRAO_LP_LR = "00";
-
 export function empresaUsaCsosn(crt: number | null | undefined): boolean {
 	return crt === 1 || crt === 2 || crt === 4;
 }
@@ -34,7 +31,7 @@ export function normalizarTributacaoIcmsItem(
 		const csosn =
 			(csosnInformado && ehCsosn(csosnInformado) ? csosnInformado : null) ||
 			(cstInformado && ehCsosn(cstInformado) ? cstInformado : null) ||
-			CSOSN_PADRAO_SN;
+			undefined;
 
 		return { csosn, cst: undefined };
 	}
@@ -46,7 +43,7 @@ export function normalizarTributacaoIcmsItem(
 		(csosnInformado && !ehCsosn(csosnInformado)
 			? csosnInformado.padStart(2, "0").slice(-2)
 			: null) ||
-		CST_PADRAO_LP_LR;
+		undefined;
 
 	return { cst, csosn: undefined };
 }
