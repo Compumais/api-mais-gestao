@@ -151,6 +151,18 @@ export async function criarAuditoriaFiscalNfe(dados: NovaAuditoriaFiscalNfe) {
 	return registro;
 }
 
+export async function vincularAuditoriaFiscalNfeNota(
+	idAuditoria: string,
+	idnotafiscal: string,
+) {
+	const [registro] = await db
+		.update(auditoriafiscalnfe)
+		.set({ idnotafiscal })
+		.where(eq(auditoriafiscalnfe.id, idAuditoria))
+		.returning();
+	return registro;
+}
+
 export function condicoesRegraFiscal(
 	valor: unknown,
 ): CondicoesRegraFiscal {

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { normalizarCstPisCofins } from "@/util/montar-grupo-pis-cofins-item-nfe.js";
 
 const campoCstIcmsOpcional = z
 	.string()
@@ -21,13 +22,14 @@ const campoTributacaoEcfOpcional = z
 	});
 
 const campoCstPisCofinsOpcional = z
-	.string()
-	.max(2)
+	.union([z.string(), z.number()])
 	.optional()
 	.nullable()
 	.transform((valor) => {
-		const texto = valor?.trim();
-		return texto ? texto : null;
+		if (valor === null || valor === undefined || valor === "") {
+			return null;
+		}
+		return normalizarCstPisCofins(valor) ?? null;
 	});
 
 export function parseNumeroDecimal(
@@ -86,6 +88,8 @@ export const camposAliquotaProdutoSchema = {
 	aliquotafcpnf: campoPercentualOpcional(),
 	ultimaaliquotaicmsst: campoPercentualOpcional(),
 	ultimaaliquotafcpst: campoPercentualOpcional(),
+	aliquotapis: campoPercentualOpcional(),
+	aliquotacofins: campoPercentualOpcional(),
 	aliquotapisentrada: campoPercentualOpcional(),
 	aliquotaconfinsentrada: campoPercentualOpcional(),
 	aliquotapisconfinsentradapreco: campoPercentualOpcional(),
@@ -154,6 +158,8 @@ export type CamposImpostosProduto = {
 	aliquotafcpnf?: string | null | undefined;
 	ultimaaliquotaicmsst?: string | null | undefined;
 	ultimaaliquotafcpst?: string | null | undefined;
+	aliquotapis?: string | null | undefined;
+	aliquotacofins?: string | null | undefined;
 	aliquotapisentrada?: string | null | undefined;
 	aliquotaconfinsentrada?: string | null | undefined;
 	aliquotapisconfinsentradapreco?: string | null | undefined;
@@ -189,6 +195,8 @@ export function montarCamposImpostosProduto(
 		aliquotafcpnf: dados.aliquotafcpnf ?? null,
 		ultimaaliquotaicmsst: dados.ultimaaliquotaicmsst ?? null,
 		ultimaaliquotafcpst: dados.ultimaaliquotafcpst ?? null,
+		aliquotapis: dados.aliquotapis ?? null,
+		aliquotacofins: dados.aliquotacofins ?? null,
 		aliquotapisentrada: dados.aliquotapisentrada ?? null,
 		aliquotaconfinsentrada: dados.aliquotaconfinsentrada ?? null,
 		aliquotapisconfinsentradapreco:

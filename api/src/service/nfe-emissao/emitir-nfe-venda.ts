@@ -11,6 +11,7 @@ import {
 } from "@/repositories/nota-fiscal-repositories.js";
 import { enfileirarEnvioDominioSilencioso } from "@/service/dominio/enfileirar-envio-dominio.js";
 import { persistirLotesItensNotaEmissao } from "@/service/lote/persistir-lotes-itens-nota-emissao.js";
+import { vincularAuditoriaFiscalNfeNota } from "@/repositories/regra-fiscal-repositories.js";
 import { salvarUltimaPreferenciaEmissaoNfe } from "@/service/nfe-configuracao/salvar-ultima-preferencia-emissao-nfe.js";
 import type {
 	DestinatarioPayloadNfe,
@@ -405,6 +406,7 @@ export async function emitirNfeVendaService(
 		informacoesAdicionais,
 		totais,
 		tipoDevolucao,
+		idAuditoriaFiscal,
 	} = prep;
 
 	const { numeroNf, serie, idserie, idnotafiscal, reemissao } = numeracao;
@@ -500,6 +502,13 @@ export async function emitirNfeVendaService(
 		await substituirItensNotaFiscal(idnotafiscal, itensPersistencia);
 	} else {
 		await criarNotaFiscalComItens(dadosNota, itensPersistencia);
+	}
+
+	if (idAuditoriaFiscal) {
+		await vincularAuditoriaFiscalNfeNota(
+			idAuditoriaFiscal,
+			idnotafiscal,
+		).catch(console.error);
 	}
 
 	await persistirLotesItensNotaEmissao({

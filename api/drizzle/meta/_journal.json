@@ -580,6 +580,20 @@
       "idx": 81,
       "version": "7",
       "when": 1785009000000,
+      "tag": "0081_produtos_cst_pis_cofins_varchar",
+      "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "7",
+      "when": 1785010000000,
+      "tag": "0082_regra_fiscal_mg_st_seed",
+      "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1785011000000,
       "tag": "0081_modelo_impressao_ordem_servico",
       "breakpoints": true
     }

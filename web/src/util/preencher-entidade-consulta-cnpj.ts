@@ -1,6 +1,7 @@
 import type { FieldValues, UseFormGetValues, UseFormSetValue } from "react-hook-form";
 import { maskCep, maskCpfCnpj, maskPhone } from "@/lib/masks";
 import type { ConsultaCnpjEntidadeResposta } from "@/services/entidades.service";
+import { inferirIndIeDestEntidade } from "@/util/destinatario-nfe-util";
 
 type PreencherEntidadeConsultaCnpjParametros<T extends FieldValues> = {
 	entidade: ConsultaCnpjEntidadeResposta["entidade"];
@@ -34,6 +35,26 @@ export function preencherEntidadeConsultaCnpj<T extends FieldValues>({
 	}
 
 	setValue("tipopessoa" as never, entidade.tipopessoa as never, opcoes);
+
+	const indiedest =
+		entidade.indiedest === 1 ||
+		entidade.indiedest === 2 ||
+		entidade.indiedest === 9
+			? entidade.indiedest
+			: inferirIndIeDestEntidade({
+					cnpjcpf: entidade.cnpjcpf,
+					indiedest: entidade.indiedest,
+				});
+
+	if (indiedest === 1 || indiedest === 2 || indiedest === 9) {
+		const { indiedest: indiedestAtual } = getValues() as {
+			indiedest?: number | null;
+		};
+
+		if (indiedestAtual !== 1 && indiedestAtual !== 2) {
+			setValue("indiedest" as never, indiedest as never, opcoes);
+		}
+	}
 
 	if (entidade.email) {
 		setValue("email" as never, entidade.email as never, opcoes);

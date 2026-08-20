@@ -630,7 +630,7 @@ export const listarEntidadesSchema: FastifySchema = {
 			email: { type: "string" },
 			telefone: { type: "string" },
 		},
-		required: ["page", "limit", "idempresa"],
+		required: ["idempresa"],
 	},
 	response: {
 		200: {
