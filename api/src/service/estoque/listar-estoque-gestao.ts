@@ -1,20 +1,22 @@
 import type { HttpResponse } from "@/model/http-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { listarEstoqueGestaoPorProdutos } from "@/repositories/estoque-gestao-repositories.js";
 import { listarMovimentosEstoque } from "@/repositories/movimento-estoque-repositories.js";
 import { buscarProdutoPorCodigoOuEan } from "@/repositories/produtos-repositories.js";
-import { listarSaldosEstoque } from "@/repositories/saldo-estoque-repositories.js";
 import { httpOk, httpProibido } from "@/util/http-util.js";
 
 export type SaldoEstoqueComDivergencia = {
-	id: number;
+	id: number | null;
+	idproduto: string;
 	idempresa: string;
 	codigoproduto: string | null;
 	nomeproduto: string | null;
-	quantidade: string | null;
-	quantidadefiscal: string | null;
+	quantidade: string;
+	quantidadefiscal: string;
 	divergencia: string;
 	ncm: string | null;
 	unidademedida: string | null;
+	possuiSaldo: boolean;
 };
 
 type ListarSaldosEstoqueGestaoParametros = {
@@ -58,39 +60,32 @@ export async function listarSaldosEstoqueGestaoService({
 		return httpProibido();
 	}
 
-	const { saldosEstoque, total } = await listarSaldosEstoque({
+	const { itens, total } = await listarEstoqueGestaoPorProdutos({
 		idempresa,
-		nomeproduto: busca,
+		busca,
+		somenteDivergencia,
 		page,
-		limit: somenteDivergencia ? 500 : limit,
+		limit,
 	});
 
-	let data = saldosEstoque.map((saldo) => ({
-		id: saldo.id,
-		idempresa: saldo.idempresa,
-		codigoproduto: saldo.codigoproduto,
-		nomeproduto: saldo.nomeproduto,
-		quantidade: saldo.quantidade,
-		quantidadefiscal: saldo.quantidadefiscal ?? "0",
-		divergencia: calcularDivergencia(saldo.quantidade, saldo.quantidadefiscal),
-		ncm: saldo.ncm,
-		unidademedida: saldo.unidademedida,
-	}));
+	const data = itens.map((item) => {
+		const quantidade = item.quantidade ?? "0";
+		const quantidadefiscal = item.quantidadefiscal ?? "0";
 
-	if (somenteDivergencia) {
-		data = data.filter((item) => Number.parseFloat(item.divergencia) !== 0);
-		const offset = (page - 1) * limit;
-		const paginado = data.slice(offset, offset + limit);
-		return httpOk({
-			data: paginado,
-			paginacao: {
-				page,
-				limit,
-				total: data.length,
-				totalPages: Math.ceil(data.length / limit) || 1,
-			},
-		});
-	}
+		return {
+			id: item.idsaldo,
+			idproduto: item.idproduto,
+			idempresa: item.idempresa,
+			codigoproduto: item.codigoproduto,
+			nomeproduto: item.nomeproduto,
+			quantidade,
+			quantidadefiscal,
+			divergencia: calcularDivergencia(quantidade, quantidadefiscal),
+			ncm: item.ncm,
+			unidademedida: item.unidademedida,
+			possuiSaldo: item.idsaldo != null,
+		};
+	});
 
 	return httpOk({
 		data,

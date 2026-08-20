@@ -2,15 +2,17 @@ import { api } from "@/lib/axios";
 import type { Paginacao } from "@/services/conta-mesa.service";
 
 export interface SaldoEstoqueGestao {
-	id: number;
+	id: number | null;
+	idproduto: string;
 	idempresa: string;
 	codigoproduto: string | null;
 	nomeproduto: string | null;
-	quantidade: string | null;
-	quantidadefiscal: string | null;
+	quantidade: string;
+	quantidadefiscal: string;
 	divergencia: string;
 	ncm: string | null;
 	unidademedida: string | null;
+	possuiSaldo: boolean;
 }
 
 export interface MovimentoEstoqueGestao {
