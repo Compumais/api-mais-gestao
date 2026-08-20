@@ -47,10 +47,9 @@ export function preencherEntidadeConsultaCnpj<T extends FieldValues>({
 				});
 
 	if (indiedest === 1 || indiedest === 2 || indiedest === 9) {
-		const indiedestAtual = getValues("indiedest" as never) as
-			| number
-			| null
-			| undefined;
+		const { indiedest: indiedestAtual } = getValues() as {
+			indiedest?: number | null;
+		};
 
 		if (indiedestAtual !== 1 && indiedestAtual !== 2) {
 			setValue("indiedest" as never, indiedest as never, opcoes);
