@@ -77,6 +77,8 @@ export interface CriarPedidoData {
 	data?: string;
 	datainclusao?: string;
 	currenttimemillis?: number;
+	descontosubtotal?: string;
+	valor?: string;
 }
 
 export interface AtualizarPedidoData extends Partial<CriarPedidoData> {

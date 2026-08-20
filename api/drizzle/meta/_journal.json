@@ -596,6 +596,13 @@
       "when": 1785011000000,
       "tag": "0081_modelo_impressao_ordem_servico",
       "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1785012000000,
+      "tag": "0083_modelo_impressao_pedido",
+      "breakpoints": true
     }
   ]
 }

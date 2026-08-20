@@ -6,23 +6,23 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-	useDefinirPrimarioModeloImpressaoOs,
-	useDuplicarModeloImpressaoOs,
-	useExcluirModeloImpressaoOs,
-	useModelosImpressaoOs,
-} from "@/hooks/use-modelo-impressao-os";
+	useDefinirPrimarioModeloImpressaoPedido,
+	useDuplicarModeloImpressaoPedido,
+	useExcluirModeloImpressaoPedido,
+	useModelosImpressaoPedido,
+} from "@/hooks/use-modelo-impressao-pedido";
 
-type ModelosImpressaoOsListaProps = {
+type ModelosImpressaoPedidoListaProps = {
 	idempresa: string;
 };
 
-export function ModelosImpressaoOsLista({
+export function ModelosImpressaoPedidoLista({
 	idempresa,
-}: ModelosImpressaoOsListaProps) {
-	const { data: modelos = [], isLoading } = useModelosImpressaoOs(idempresa);
-	const excluir = useExcluirModeloImpressaoOs(idempresa);
-	const duplicar = useDuplicarModeloImpressaoOs(idempresa);
-	const definirPrimario = useDefinirPrimarioModeloImpressaoOs(idempresa);
+}: ModelosImpressaoPedidoListaProps) {
+	const { data: modelos = [], isLoading } = useModelosImpressaoPedido(idempresa);
+	const excluir = useExcluirModeloImpressaoPedido(idempresa);
+	const duplicar = useDuplicarModeloImpressaoPedido(idempresa);
+	const definirPrimario = useDefinirPrimarioModeloImpressaoPedido(idempresa);
 
 	if (isLoading) {
 		return (
@@ -36,14 +36,14 @@ export function ModelosImpressaoOsLista({
 		<div className="space-y-4">
 			<div className="flex items-center justify-between gap-3">
 				<div>
-					<h2 className="text-lg font-semibold">Ordens de serviço</h2>
+					<h2 className="text-lg font-semibold">Pedidos</h2>
 					<p className="text-sm text-muted-foreground">
-						Defina o layout usado ao imprimir ordens de serviço
+						Defina o layout usado ao imprimir pedidos (DAV)
 					</p>
 				</div>
 				<Button asChild className="gap-2">
-					<Link href="/configuracoes/modelos-impressao/novo">
-						<Plus className="h-4 w-4" />
+					<Link href="/configuracoes/modelos-impressao-pedido/novo">
+						<Plus className="h-4 w-4" aria-hidden="true" />
 						Novo modelo
 					</Link>
 				</Button>
@@ -66,7 +66,7 @@ export function ModelosImpressaoOsLista({
 									<span className="font-medium">{modelo.nome}</span>
 									{modelo.primario && (
 										<Badge variant="default" className="gap-1">
-											<Star className="h-3 w-3" />
+											<Star className="h-3 w-3" aria-hidden="true" />
 											Primário
 										</Badge>
 									)}
@@ -104,7 +104,7 @@ export function ModelosImpressaoOsLista({
 											}
 										}}
 									>
-										<Star className="h-3.5 w-3.5" />
+										<Star className="h-3.5 w-3.5" aria-hidden="true" />
 										Primário
 									</Button>
 								)}
@@ -128,16 +128,21 @@ export function ModelosImpressaoOsLista({
 										}
 									}}
 								>
-									<Copy className="h-3.5 w-3.5" />
+									<Copy className="h-3.5 w-3.5" aria-hidden="true" />
 									Duplicar
 								</Button>
 								{!modelo.sistema && (
 									<>
-										<Button asChild variant="outline" size="sm" className="gap-1.5">
+										<Button
+											asChild
+											variant="outline"
+											size="sm"
+											className="gap-1.5"
+										>
 											<Link
-												href={`/configuracoes/modelos-impressao/${modelo.id}`}
+												href={`/configuracoes/modelos-impressao-pedido/${modelo.id}`}
 											>
-												<Pencil className="h-3.5 w-3.5" />
+												<Pencil className="h-3.5 w-3.5" aria-hidden="true" />
 												Editar
 											</Link>
 										</Button>
@@ -161,7 +166,7 @@ export function ModelosImpressaoOsLista({
 												}
 											}}
 										>
-											<Trash2 className="h-3.5 w-3.5" />
+											<Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
 											Excluir
 										</Button>
 									</>
@@ -169,7 +174,7 @@ export function ModelosImpressaoOsLista({
 								{modelo.sistema && (
 									<Button asChild variant="ghost" size="sm" className="gap-1.5">
 										<Link
-											href={`/configuracoes/modelos-impressao/${modelo.id}`}
+											href={`/configuracoes/modelos-impressao-pedido/${modelo.id}`}
 										>
 											Ver
 										</Link>

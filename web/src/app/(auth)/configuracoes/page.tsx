@@ -16,6 +16,7 @@ import { NfseConfiguracaoForm } from "./components/nfse-configuracao-form";
 import { NotificacoesForm } from "./components/notificacoes-form";
 import { OrdemServicoConfigForm } from "./components/ordem-servico-form";
 import { ModelosImpressaoOsLista } from "./components/modelos-impressao-os-lista";
+import { ModelosImpressaoPedidoLista } from "./components/modelos-impressao-pedido-lista";
 import { RelatoriosForm } from "./components/relatorios-form";
 
 export default function ConfiguracoesPage() {
@@ -107,8 +108,9 @@ export default function ConfiguracoesPage() {
 							<OrdemServicoConfigForm idempresa={empresa.id} />
 						</TabsContent>
 
-						<TabsContent value="modelos-impressao" className="mt-4">
+						<TabsContent value="modelos-impressao" className="mt-4 space-y-8">
 							<ModelosImpressaoOsLista idempresa={empresa.id} />
+							<ModelosImpressaoPedidoLista idempresa={empresa.id} />
 						</TabsContent>
 
 						<TabsContent value="integracao" className="mt-4">
