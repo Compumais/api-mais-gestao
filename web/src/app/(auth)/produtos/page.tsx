@@ -37,6 +37,14 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import {
 	Table,
 	TableBody,
@@ -552,8 +560,34 @@ export default function ProdutosPage() {
 									)}
 								</TableBody>
 							</Table>
-							{data && data.paginacao.totalPages > 1 && (
-								<div className="flex items-center justify-between px-4 py-4 border-t">
+							{data && data.paginacao.total > 0 && (
+								<div className="flex flex-col gap-4 border-t px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+									<div className="flex items-center gap-2">
+										<Label htmlFor="produtos-por-pagina" className="text-sm">
+											Itens por página
+										</Label>
+										<Select
+											value={`${pagination.pageSize}`}
+											onValueChange={(value) => {
+												table.setPageSize(Number(value));
+												table.setPageIndex(0);
+											}}
+										>
+											<SelectTrigger
+												id="produtos-por-pagina"
+												className="h-8 w-[72px]"
+											>
+												<SelectValue placeholder={pagination.pageSize} />
+											</SelectTrigger>
+											<SelectContent side="top">
+												{[10, 20, 30, 50, 100].map((tamanho) => (
+													<SelectItem key={tamanho} value={`${tamanho}`}>
+														{tamanho}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</div>
 									<div className="text-sm text-muted-foreground">
 										Página {pagination.pageIndex + 1} de{" "}
 										{data.paginacao.totalPages} ({data.paginacao.total}{" "}

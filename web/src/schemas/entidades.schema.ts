@@ -7,6 +7,7 @@ import {
 } from "@/lib/documentos-brasil";
 import { maskCep, maskCpfCnpj, maskPhone } from "@/lib/masks";
 import type { Entidade } from "@/services/entidades.service";
+import { inferirIndIeDestEntidade } from "@/util/destinatario-nfe-util";
 
 const flagEntidadeSchema = z.boolean().default(false);
 
@@ -92,7 +93,14 @@ export const criarEntidadeSchema = z
 		fornecedor: flagEntidadeSchema,
 		transportador: flagEntidadeSchema,
 		representante: flagEntidadeSchema,
-		indiedest: z.number().int().nullable().optional(), // 1=Contribuinte | 2=Isento | 9=Não Contribuinte
+		indiedest: z
+			.number()
+			.int()
+			.refine((valor) => [1, 2, 9].includes(valor), {
+				message: "Selecione o indicador de IE para NF-e",
+			})
+			.nullable()
+			.optional(),
 	})
 	.superRefine((data, ctx) => {
 		if (!validarCpfCnpj(data.cnpjcpf)) {
@@ -119,9 +127,36 @@ export const criarEntidadeSchema = z
 			});
 		}
 
+		if (
+			data.indiedest !== 1 &&
+			data.indiedest !== 2 &&
+			data.indiedest !== 9
+		) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["indiedest"],
+				message: "Selecione o indicador de IE para NF-e",
+			});
+		}
+
+		if (data.tipopessoa === 0 && data.indiedest != null && data.indiedest !== 9) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["indiedest"],
+				message: "Pessoa física deve ser não contribuinte (indicador 9)",
+			});
+		}
+
 		const ieNumerica = somenteDigitos(data.inscricaoestadual ?? "");
-		const exigeIeContribuinte =
-			data.tipopessoa === 1 && data.indiedest === 1 && ieNumerica.length > 0;
+		const exigeIeContribuinte = data.tipopessoa === 1 && data.indiedest === 1;
+
+		if (exigeIeContribuinte && ieNumerica.length === 0) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["inscricaoestadual"],
+				message: "Informe a inscrição estadual do contribuinte ICMS",
+			});
+		}
 
 		if (exigeIeContribuinte && !data.idestado) {
 			ctx.addIssue({
@@ -191,6 +226,10 @@ function normalizarTipopessoaParaForm(
 	tipopessoa: number | string | null | undefined,
 	cnpjcpf: string,
 ): number | null {
+	const digitos = cnpjcpf.replace(/\D/g, "");
+	if (digitos.length === 14) return 1;
+	if (digitos.length === 11) return 0;
+
 	if (tipopessoa !== null && tipopessoa !== undefined && tipopessoa !== "") {
 		const valor = Number(tipopessoa);
 		if (!Number.isNaN(valor) && (valor === 0 || valor === 1)) {
@@ -198,10 +237,15 @@ function normalizarTipopessoaParaForm(
 		}
 	}
 
-	const digitos = cnpjcpf.replace(/\D/g, "");
+	return null;
+}
+
+export function inferirTipopessoaPorDocumento(
+	cnpjcpf?: string | null,
+): 0 | 1 | null {
+	const digitos = cnpjcpf?.replace(/\D/g, "") ?? "";
 	if (digitos.length === 14) return 1;
 	if (digitos.length === 11) return 0;
-
 	return null;
 }
 
@@ -213,10 +257,39 @@ function normalizarIdLocalidade(
 	return normalizado.length > 0 ? normalizado : null;
 }
 
+export function montarIndIeDestPayload(data: CriarEntidadeFormData): {
+	indiedest: number | null;
+	inscricaoestadual: string | null;
+} {
+	const indiedest = data.indiedest ?? null;
+	let inscricaoestadual = data.inscricaoestadual?.trim() || null;
+
+	if (indiedest === 9) {
+		inscricaoestadual = null;
+	} else if (indiedest === 2) {
+		const ie = inscricaoestadual?.toUpperCase() ?? "";
+		if (!ie || ie === "ISENTO" || ie === "ISENTA") {
+			inscricaoestadual = "ISENTO";
+		}
+	} else if (indiedest === 1 && inscricaoestadual) {
+		const ieUpper = inscricaoestadual.toUpperCase();
+		if (ieUpper !== "ISENTO" && ieUpper !== "ISENTA") {
+			inscricaoestadual = somenteDigitos(inscricaoestadual) || null;
+		}
+	}
+
+	return { indiedest, inscricaoestadual };
+}
+
 export function mapEntidadeToForm(
 	entidade: Entidade,
 ): Partial<CriarEntidadeFormData> {
-	const indiedest = entidade.indiedest ?? null;
+	const indiedest =
+		inferirIndIeDestEntidade({
+			cnpjcpf: entidade.cnpjcpf,
+			inscricaoestadual: entidade.inscricaoestadual,
+			indiedest: entidade.indiedest,
+		}) ?? null;
 
 	return {
 		idempresa: entidade.idempresa,
@@ -299,5 +372,8 @@ export function criarValoresPadraoEntidadeForm({
 		fornecedor: valoresIniciais.fornecedor ?? false,
 		transportador: valoresIniciais.transportador ?? false,
 		representante: valoresIniciais.representante ?? false,
+		indiedest: valoresIniciais.indiedest ?? base.indiedest,
+		inscricaoestadual:
+			valoresIniciais.inscricaoestadual ?? base.inscricaoestadual,
 	};
 }
