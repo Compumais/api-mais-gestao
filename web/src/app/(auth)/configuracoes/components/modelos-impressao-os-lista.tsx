@@ -36,7 +36,7 @@ export function ModelosImpressaoOsLista({
 		<div className="space-y-4">
 			<div className="flex items-center justify-between gap-3">
 				<div>
-					<h2 className="text-lg font-semibold">Modelos de impressão</h2>
+					<h2 className="text-lg font-semibold">Ordens de serviço</h2>
 					<p className="text-sm text-muted-foreground">
 						Defina o layout usado ao imprimir ordens de serviço
 					</p>

@@ -191,31 +191,6 @@ export default function PedidosPage() {
 		enabled: !!empresa?.id,
 	});
 
-	const { mutate: criarPedido, isPending: criandoPedido } = useMutation({
-		mutationFn: async () => {
-			if (!empresa) throw new Error("Empresa não selecionada");
-			const agora = new Date();
-			return davService.criar({
-				idempresa: empresa.id,
-				status: 0,
-				tipodocumento: 4,
-				data: agora.toISOString().slice(0, 10),
-				datainclusao: agora.toISOString(),
-				currenttimemillis: agora.getTime(),
-			});
-		},
-		onSuccess: (pedido) => {
-			void queryClient.invalidateQueries({ queryKey: ["pedidos"] });
-			toast.success("Pedido criado");
-			router.push(`/pedidos/${pedido.id}`);
-		},
-		onError: (erro) => {
-			toast.error("Erro ao criar pedido", {
-				description: erro instanceof Error ? erro.message : "Erro desconhecido",
-			});
-		},
-	});
-
 	const { mutate: cancelarPedido, isPending: cancelando } = useMutation({
 		mutationFn: async (pedido: PedidoDav) => {
 			if (!empresa) throw new Error("Empresa não selecionada");
@@ -530,9 +505,11 @@ export default function PedidosPage() {
 							</Button>
 						)}
 						{!filtrarOrigemPos && (
-							<Button onClick={() => criarPedido()} disabled={criandoPedido}>
-								<Plus className="h-4 w-4" />
-								{criandoPedido ? "Criando..." : "Novo pedido"}
+							<Button asChild>
+								<Link href="/pedidos/novo">
+									<Plus className="h-4 w-4" aria-hidden="true" />
+									Novo pedido
+								</Link>
 							</Button>
 						)}
 					</div>
@@ -699,13 +676,10 @@ export default function PedidosPage() {
 															: "Nenhum pedido encontrado."}
 													</p>
 													{!comFiltros && (
-														<Button
-															variant="outline"
-															size="sm"
-															onClick={() => criarPedido()}
-															disabled={criandoPedido}
-														>
-															Criar primeiro pedido
+														<Button variant="outline" size="sm" asChild>
+															<Link href="/pedidos/novo">
+																Criar primeiro pedido
+															</Link>
 														</Button>
 													)}
 												</div>
