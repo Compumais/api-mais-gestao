@@ -18,6 +18,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { ContasPagarReportDialog } from "@/components/contas-pagar-report-dialog";
 import { ContasReceberReportDialog } from "@/components/contas-receber-report-dialog";
+import { DespesasPorCategoriaReportDialog } from "@/components/despesas-por-categoria-report-dialog";
+import { DreGerencialReportDialog } from "@/components/dre-gerencial-report-dialog";
 import { FluxoCaixaReportDialog } from "@/components/fluxo-caixa-report-dialog";
 import {
 	Card,
@@ -27,26 +29,20 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 
-// ... (reports array remains)
-
-// Add a property to identify premium reports
 const reports = [
-	// ...
 	{
 		title: "DRE Gerencial",
 		description: "Demonstração do Resultado do Exercício detalhado.",
 		icon: IconFileAnalytics,
 		href: "#",
 		color: "text-purple-500",
-		premium: true,
 	},
 	{
 		title: "Despesas por Categoria",
-		description: "Análise gráfica das despesas categorizadas.",
+		description: "Análise das despesas categorizadas pelo plano de contas.",
 		icon: IconChartPie,
 		href: "#",
 		color: "text-orange-500",
-		premium: true,
 	},
 	{
 		title: "Receita por Categoria",
@@ -80,7 +76,6 @@ const reports = [
 		color: "text-cyan-500",
 		premium: true,
 	},
-	// ... other reports (Fluxo de Caixa, Contas a Pagar, Contas a Receber) are free/basic
 	{
 		title: "Fluxo de Caixa",
 		description: "Acompanhe as entradas e saídas de recursos financeiros.",
@@ -133,7 +128,8 @@ export default function RelatoriosPage() {
 	const [isContasPagarDialogOpen, setIsContasPagarDialogOpen] = useState(false);
 	const [isContasReceberDialogOpen, setIsContasReceberDialogOpen] =
 		useState(false);
-
+	const [isDespesasDialogOpen, setIsDespesasDialogOpen] = useState(false);
+	const [isDreDialogOpen, setIsDreDialogOpen] = useState(false);
 
 	return (
 		<div className="space-y-6 p-6">
@@ -147,82 +143,101 @@ export default function RelatoriosPage() {
 			<Separator />
 
 			<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-				{reports
-
-					.map((report) => {
-						const CardContent = (
-							<Card
-								className="h-full transition-all duration-200 hover:border-primary hover:shadow-md"
-							>
-								<CardHeader>
-									<div className="flex items-center gap-4">
-										<div
-											className={`p-2 rounded-lg bg-muted  transition-colors ${report.color}`}
-										>
-											<report.icon className="h-6 w-6" />
-										</div>
-										<div className="flex-1">
-											<div className="flex items-center justify-between">
-												<CardTitle
-													className={`text-lg  transition-colors`}
-												>
-													{report.title}
-												</CardTitle>
-</div>
+				{reports.map((report) => {
+					const CardContent = (
+						<Card className="h-full transition-all duration-200 hover:border-primary hover:shadow-md">
+							<CardHeader>
+								<div className="flex items-center gap-4">
+									<div
+										className={`p-2 rounded-lg bg-muted transition-colors ${report.color}`}
+									>
+										<report.icon className="h-6 w-6" />
+									</div>
+									<div className="flex-1">
+										<div className="flex items-center justify-between">
+											<CardTitle className="text-lg transition-colors">
+												{report.title}
+											</CardTitle>
 										</div>
 									</div>
-									<CardDescription className="mt-2 pt-2">
-										{report.description}
-									</CardDescription>
-</CardHeader>
-							</Card>
-						);
+								</div>
+								<CardDescription className="mt-2 pt-2">
+									{report.description}
+								</CardDescription>
+							</CardHeader>
+						</Card>
+					);
 
-						const reportButtonClass =
-							"group cursor-pointer w-full text-left border-0 bg-transparent p-0";
-						if (report.title === "Fluxo de Caixa") {
-							return (
-								<button
-									key={report.title}
-									type="button"
-									className={reportButtonClass}
-									onClick={() => setIsFluxoCaixaDialogOpen(true)}
-								>
-									{CardContent}
-								</button>
-							);
-						}
-						if (report.title === "Contas a Pagar") {
-							return (
-								<button
-									key={report.title}
-									type="button"
-									className={reportButtonClass}
-									onClick={() => setIsContasPagarDialogOpen(true)}
-								>
-									{CardContent}
-								</button>
-							);
-						}
-						if (report.title === "Contas a Receber") {
-							return (
-								<button
-									key={report.title}
-									type="button"
-									className={reportButtonClass}
-									onClick={() => setIsContasReceberDialogOpen(true)}
-								>
-									{CardContent}
-								</button>
-							);
-						}
+					const reportButtonClass =
+						"group cursor-pointer w-full text-left border-0 bg-transparent p-0";
 
+					if (report.title === "Fluxo de Caixa") {
 						return (
-							<Link href={report.href} key={report.title} className="group">
+							<button
+								key={report.title}
+								type="button"
+								className={reportButtonClass}
+								onClick={() => setIsFluxoCaixaDialogOpen(true)}
+							>
 								{CardContent}
-							</Link>
+							</button>
 						);
-					})}
+					}
+					if (report.title === "Contas a Pagar") {
+						return (
+							<button
+								key={report.title}
+								type="button"
+								className={reportButtonClass}
+								onClick={() => setIsContasPagarDialogOpen(true)}
+							>
+								{CardContent}
+							</button>
+						);
+					}
+					if (report.title === "Contas a Receber") {
+						return (
+							<button
+								key={report.title}
+								type="button"
+								className={reportButtonClass}
+								onClick={() => setIsContasReceberDialogOpen(true)}
+							>
+								{CardContent}
+							</button>
+						);
+					}
+					if (report.title === "Despesas por Categoria") {
+						return (
+							<button
+								key={report.title}
+								type="button"
+								className={reportButtonClass}
+								onClick={() => setIsDespesasDialogOpen(true)}
+							>
+								{CardContent}
+							</button>
+						);
+					}
+					if (report.title === "DRE Gerencial") {
+						return (
+							<button
+								key={report.title}
+								type="button"
+								className={reportButtonClass}
+								onClick={() => setIsDreDialogOpen(true)}
+							>
+								{CardContent}
+							</button>
+						);
+					}
+
+					return (
+						<Link href={report.href} key={report.title} className="group">
+							{CardContent}
+						</Link>
+					);
+				})}
 			</div>
 
 			<FluxoCaixaReportDialog
@@ -236,6 +251,14 @@ export default function RelatoriosPage() {
 			<ContasReceberReportDialog
 				open={isContasReceberDialogOpen}
 				onOpenChange={setIsContasReceberDialogOpen}
+			/>
+			<DespesasPorCategoriaReportDialog
+				open={isDespesasDialogOpen}
+				onOpenChange={setIsDespesasDialogOpen}
+			/>
+			<DreGerencialReportDialog
+				open={isDreDialogOpen}
+				onOpenChange={setIsDreDialogOpen}
 			/>
 		</div>
 	);

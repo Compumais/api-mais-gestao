@@ -22,17 +22,17 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { useEmpresa } from "@/provider/empresa-provider";
-import { gerarRelatorioDespesasPorCategoria } from "@/services/relatorios.service";
+import { gerarRelatorioDreGerencial } from "@/services/relatorios.service";
 
-interface DespesasPorCategoriaReportDialogProps {
+interface DreGerencialReportDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 }
 
-export function DespesasPorCategoriaReportDialog({
+export function DreGerencialReportDialog({
 	open,
 	onOpenChange,
-}: DespesasPorCategoriaReportDialogProps) {
+}: DreGerencialReportDialogProps) {
 	const { empresa } = useEmpresa();
 	const hoje = new Date();
 	const primeiroDiaMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
@@ -48,7 +48,7 @@ export function DespesasPorCategoriaReportDialog({
 		mutationFn: async () => {
 			if (!empresa?.id) throw new Error("Empresa não selecionada");
 			if (!dataInicio || !dataFim) throw new Error("Preencha todas as datas");
-			await gerarRelatorioDespesasPorCategoria({
+			await gerarRelatorioDreGerencial({
 				idempresa: empresa.id,
 				dataInicio,
 				dataFim,
@@ -91,7 +91,7 @@ export function DespesasPorCategoriaReportDialog({
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="sm:max-w-[500px]">
 				<DialogHeader>
-					<DialogTitle>Gerar Relatório de Despesas por Categoria</DialogTitle>
+					<DialogTitle>Gerar DRE Gerencial</DialogTitle>
 					<DialogDescription>
 						Selecione o período e o formato do relatório
 					</DialogDescription>
@@ -99,9 +99,9 @@ export function DespesasPorCategoriaReportDialog({
 
 				<FieldGroup>
 					<Field>
-						<FieldLabel htmlFor="dpc-dataInicio">Data Inicial *</FieldLabel>
+						<FieldLabel htmlFor="dre-dataInicio">Data Inicial *</FieldLabel>
 						<Input
-							id="dpc-dataInicio"
+							id="dre-dataInicio"
 							type="date"
 							value={dataInicio}
 							onChange={(e) => setDataInicio(e.target.value)}
@@ -109,9 +109,9 @@ export function DespesasPorCategoriaReportDialog({
 						/>
 					</Field>
 					<Field>
-						<FieldLabel htmlFor="dpc-dataFim">Data Final *</FieldLabel>
+						<FieldLabel htmlFor="dre-dataFim">Data Final *</FieldLabel>
 						<Input
-							id="dpc-dataFim"
+							id="dre-dataFim"
 							type="date"
 							value={dataFim}
 							onChange={(e) => setDataFim(e.target.value)}
@@ -119,14 +119,12 @@ export function DespesasPorCategoriaReportDialog({
 						/>
 					</Field>
 					<Field>
-						<FieldLabel htmlFor="dpc-formato">
-							Formato do Relatório *
-						</FieldLabel>
+						<FieldLabel htmlFor="dre-formato">Formato do Relatório *</FieldLabel>
 						<Select
 							value={formato}
 							onValueChange={(v) => setFormato(v as "pdf" | "txt" | "html")}
 						>
-							<SelectTrigger id="dpc-formato">
+							<SelectTrigger id="dre-formato">
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent>

@@ -359,6 +359,42 @@ export async function buscarReceitasPorCategoria({
 	}));
 }
 
+export interface DreGerencialLinha {
+	codigo: string | null;
+	nome: string | null;
+	total: number;
+}
+
+export interface DreGerencialDados {
+	receitas: DreGerencialLinha[];
+	despesas: DreGerencialLinha[];
+	totalReceitas: number;
+	totalDespesas: number;
+	resultado: number;
+}
+
+export async function buscarDadosDreGerencial({
+	idempresa,
+	dataInicio,
+	dataFim,
+}: BuscarPorCategoriaParams): Promise<DreGerencialDados> {
+	const [receitas, despesas] = await Promise.all([
+		buscarReceitasPorCategoria({ idempresa, dataInicio, dataFim }),
+		buscarDespesasPorCategoria({ idempresa, dataInicio, dataFim }),
+	]);
+
+	const totalReceitas = receitas.reduce((acc, item) => acc + item.total, 0);
+	const totalDespesas = despesas.reduce((acc, item) => acc + item.total, 0);
+
+	return {
+		receitas,
+		despesas,
+		totalReceitas,
+		totalDespesas,
+		resultado: totalReceitas - totalDespesas,
+	};
+}
+
 export interface FormasDePagamentoItem {
 	formapagamento: string;
 	totalReceitas: number;
