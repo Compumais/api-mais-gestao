@@ -25,10 +25,53 @@ export function labelTipoPessoa(tipopessoa?: number | null): string | null {
 	return null;
 }
 
+export const OPCOES_IND_IEDEST_NFE = [
+	{ value: "1", label: "1 - Contribuinte ICMS" },
+	{ value: "2", label: "2 - Contribuinte isento de IE" },
+	{ value: "9", label: "9 - Não contribuinte" },
+] as const;
+
+export type IndIeDestNfe = 1 | 2 | 9;
+
 export function labelIndIeDest(indiedest?: number | null): string | null {
 	if (indiedest === 1) return "1 — Contribuinte ICMS";
 	if (indiedest === 2) return "2 — Contribuinte Isento de IE";
 	if (indiedest === 9) return "9 — Não Contribuinte";
+	return null;
+}
+
+/** Infere indIEDest para exibição/cadastro quando o banco não tem valor gravado. */
+export function inferirIndIeDestEntidade(params: {
+	cnpjcpf?: string | null;
+	inscricaoestadual?: string | null;
+	indiedest?: number | null;
+}): IndIeDestNfe | null {
+	if (
+		params.indiedest === 1 ||
+		params.indiedest === 2 ||
+		params.indiedest === 9
+	) {
+		return params.indiedest;
+	}
+
+	const documento = params.cnpjcpf?.replace(/\D/g, "") ?? "";
+	if (documento.length === 11) {
+		return 9;
+	}
+
+	const ie = params.inscricaoestadual?.trim().toUpperCase() ?? "";
+	if (ie === "ISENTO" || ie === "ISENTA") {
+		return 2;
+	}
+
+	if (ie.replace(/\D/g, "").length > 0) {
+		return 1;
+	}
+
+	if (documento.length === 14) {
+		return 9;
+	}
+
 	return null;
 }
 
