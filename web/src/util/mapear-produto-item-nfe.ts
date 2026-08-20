@@ -114,8 +114,9 @@ export function normalizarTributacaoItemFormulario(
 	if (usaCsosn) {
 		const csosn =
 			item.csosn?.trim() ||
-			(item.cst?.trim() && ehCsosn(item.cst.trim()) ? item.cst.trim() : undefined) ||
-			"102";
+			(item.cst?.trim() && ehCsosn(item.cst.trim())
+				? item.cst.trim()
+				: undefined);
 		return { csosn, cst: undefined };
 	}
 
@@ -143,7 +144,8 @@ function extrairTributacaoItemEmissaoSalva(dadosimportacao: unknown) {
 		return undefined;
 	}
 
-	const emissao = (dadosimportacao as { emissao?: Record<string, unknown> }).emissao;
+	const emissao = (dadosimportacao as { emissao?: Record<string, unknown> })
+		.emissao;
 	if (!emissao || typeof emissao !== "object") {
 		return undefined;
 	}
@@ -159,7 +161,9 @@ export function mapearItemNotaReemissaoParaForm(
 	const valorBruto = Number(item.precounitario ?? 0);
 	const idprodutoRaw = item.idproduto ? String(item.idproduto) : undefined;
 	const ncmDigitos = String(item.ncm ?? "").replace(/\D/g, "");
-	const tributacaoSalva = extrairTributacaoItemEmissaoSalva(item.dadosimportacao);
+	const tributacaoSalva = extrairTributacaoItemEmissaoSalva(
+		item.dadosimportacao,
+	);
 	const tributacaoImportacao = (
 		item.dadosimportacao as { tributacao?: Record<string, unknown> } | null
 	)?.tributacao;
@@ -172,7 +176,9 @@ export function mapearItemNotaReemissaoParaForm(
 					: undefined,
 			descricao: String(item.descricao ?? "").trim(),
 			ncm: (ncmDigitos || "00000000").padStart(8, "0").slice(0, 8),
-			cfop: String(item.cfop ?? "").replace(/\D/g, "").slice(0, 4),
+			cfop: String(item.cfop ?? "")
+				.replace(/\D/g, "")
+				.slice(0, 4),
 			unidade: String(item.unidade ?? "UN").trim() || "UN",
 			quantidade:
 				Number.isFinite(quantidadeBruta) && quantidadeBruta > 0
@@ -216,6 +222,9 @@ export function mapearItemNotaReemissaoParaForm(
 			valorIcmsSt:
 				paraNumeroOpcional(tributacaoSalva?.valorIcmsSt) ??
 				paraNumeroOpcional(tributacaoImportacao?.icmsst),
+			percentualMvaSt: paraNumeroOpcional(tributacaoSalva?.percentualMvaSt),
+			aliquotaIcmsSt: paraNumeroOpcional(tributacaoSalva?.aliquotaIcmsSt),
+			aliquotaFcpSt: paraNumeroOpcional(tributacaoSalva?.aliquotaFcpSt),
 			valorFcpSt:
 				paraNumeroOpcional(tributacaoSalva?.valorFcpSt) ??
 				paraNumeroOpcional(tributacaoImportacao?.fcpst),
@@ -266,6 +275,12 @@ export function prepararItemEmissaoFormulario(
 		baseIcmsSt: item.baseIcmsSt != null ? Number(item.baseIcmsSt) : undefined,
 		valorIcmsSt:
 			item.valorIcmsSt != null ? Number(item.valorIcmsSt) : undefined,
+		percentualMvaSt:
+			item.percentualMvaSt != null ? Number(item.percentualMvaSt) : undefined,
+		aliquotaIcmsSt:
+			item.aliquotaIcmsSt != null ? Number(item.aliquotaIcmsSt) : undefined,
+		aliquotaFcpSt:
+			item.aliquotaFcpSt != null ? Number(item.aliquotaFcpSt) : undefined,
 		valorFcpSt: item.valorFcpSt != null ? Number(item.valorFcpSt) : undefined,
 		valorFcpStRet:
 			item.valorFcpStRet != null ? Number(item.valorFcpStRet) : undefined,
@@ -354,6 +369,9 @@ export function mapearProdutoParaItemNfe(
 		tributacaosn?: string | null;
 		cstpis?: string | number | null;
 		cstcofins?: string | number | null;
+		percentualmva?: string | number | null;
+		ultimaaliquotaicmsst?: string | number | null;
+		ultimaaliquotafcpst?: string | number | null;
 	},
 	cfop?: string,
 	usaCsosn = false,
@@ -367,9 +385,7 @@ export function mapearProdutoParaItemNfe(
 	const ean = eanDigitos.length >= 8 ? eanDigitos : undefined;
 	const eanTributavelDigitos = produto.eantributavel?.replace(/\D/g, "") ?? "";
 	const eanTributavel =
-		eanTributavelDigitos.length >= 8
-			? eanTributavelDigitos
-			: ean;
+		eanTributavelDigitos.length >= 8 ? eanTributavelDigitos : ean;
 
 	const cest =
 		normalizarCodigoCestFront(produto.cestCodigo) ??
@@ -377,8 +393,7 @@ export function mapearProdutoParaItemNfe(
 
 	return {
 		idproduto: produto.id,
-		codigoProduto:
-			produto.codigo != null ? String(produto.codigo) : undefined,
+		codigoProduto: produto.codigo != null ? String(produto.codigo) : undefined,
 		ean,
 		eanTributavel,
 		descricao: produto.nome,
@@ -398,6 +413,7 @@ export function mapearProdutoParaItemNfe(
 			produto.cstcofins != null
 				? formatarCstProduto(produto.cstcofins, 2)
 				: undefined,
+		...mapearDadosStProduto(produto),
 	};
 }
 
@@ -418,4 +434,20 @@ function normalizarCodigoCestFront(
 		return /^0+$/.test(padded) ? undefined : padded;
 	}
 	return undefined;
+}
+
+function mapearDadosStProduto(produto: {
+	percentualmva?: string | number | null;
+	ultimaaliquotaicmsst?: string | number | null;
+	ultimaaliquotafcpst?: string | number | null;
+}): Pick<ItemNfe, "percentualMvaSt" | "aliquotaIcmsSt" | "aliquotaFcpSt"> {
+	const percentualMvaSt = paraNumeroOpcional(produto.percentualmva);
+	const aliquotaIcmsSt = paraNumeroOpcional(produto.ultimaaliquotaicmsst);
+	const aliquotaFcpSt = paraNumeroOpcional(produto.ultimaaliquotafcpst);
+
+	return {
+		...(percentualMvaSt != null ? { percentualMvaSt } : {}),
+		...(aliquotaIcmsSt != null ? { aliquotaIcmsSt } : {}),
+		...(aliquotaFcpSt != null ? { aliquotaFcpSt } : {}),
+	};
 }

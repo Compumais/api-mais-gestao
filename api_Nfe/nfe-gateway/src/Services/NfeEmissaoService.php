@@ -248,9 +248,6 @@ final class NfeEmissaoService
 				if ($csosn === '' && $cst !== '' && preg_match('/^[1259]\d{2}$/', $cst)) {
 					$csosn = $cst;
 				}
-				if ($csosn === '') {
-					$csosn = '102';
-				}
 
 				$mk->tagICMSSN(self::montarTagIcmsSn($nItem, $orig, $csosn, $item, $vProd));
 			} else {
@@ -792,11 +789,17 @@ final class NfeEmissaoService
 				'vBCST' => ['vBCST', 'baseIcmsSt'],
 				'pICMSST' => ['pICMSST', 'aliquotaIcmsSt'],
 				'vICMSST' => ['vICMSST', 'valorIcmsSt'],
+				'vBCFCPST' => ['vBCFCPST', 'baseFcpSt'],
+				'pFCPST' => ['pFCPST', 'aliquotaFcpSt'],
+				'vFCPST' => ['vFCPST', 'valorFcpSt'],
 			] as $campoXml => $aliases) {
 				$valor = self::resolverNumeroItem($item, $aliases);
 				if ($valor !== null) {
 					$dados[$campoXml] = round($valor, $campoXml === 'modBCST' ? 0 : 2);
 				}
+			}
+			if (isset($dados['pMVAST']) && !isset($dados['modBCST'])) {
+				$dados['modBCST'] = 4;
 			}
 		}
 

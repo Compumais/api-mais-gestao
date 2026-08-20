@@ -38,6 +38,7 @@ import { taxaUfService } from "@/services/taxauf.service";
 import {
 	OPCOES_CSOSN,
 	OPCOES_CST_ICMS,
+	OPCOES_CST_PIS_COFINS,
 	type OpcaoCst,
 } from "@/util/cst-produto-util";
 import { CampoCfopProduto } from "./campo-cfop-produto";
@@ -560,61 +561,62 @@ export function ProdutoAbaImpostos({
 				<section className="space-y-4">
 					<h3 className="text-base font-semibold">PIS / COFINS</h3>
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-						<Field data-invalid={!!errors.cstpisentrada}>
-							<FieldLabel htmlFor="cstpisentrada">CST PIS entrada</FieldLabel>
-							<Input
-								id="cstpisentrada"
-								placeholder="Ex.: 01"
-								type="number"
-								maxLength={2}
-								{...register("cstpisentrada")}
-							/>
-							<FieldError
-								errors={errors.cstpisentrada ? [errors.cstpisentrada] : []}
-							/>
-						</Field>
-
-						<Field data-invalid={!!errors.cstcofinsentrada}>
-							<FieldLabel htmlFor="cstcofinsentrada">
-								CST COFINS entrada
-							</FieldLabel>
-							<Input
-								id="cstcofinsentrada"
-								placeholder="Ex.: 01"
-								type="number"
-								maxLength={2}
-								{...register("cstcofinsentrada")}
-							/>
-							<FieldError
-								errors={
-									errors.cstcofinsentrada ? [errors.cstcofinsentrada] : []
-								}
-							/>
-						</Field>
-
-						<Field data-invalid={!!errors.cstpis}>
-							<FieldLabel htmlFor="cstpis">CST PIS saída</FieldLabel>
-							<Input
-								id="cstpis"
-								placeholder="Ex.: 01"
-								type="number"
-								maxLength={2}
-								{...register("cstpis")}
-							/>
-							<FieldError errors={errors.cstpis ? [errors.cstpis] : []} />
-						</Field>
-
-						<Field data-invalid={!!errors.cstcofins}>
-							<FieldLabel htmlFor="cstcofins">CST COFINS saída</FieldLabel>
-							<Input
-								id="cstcofins"
-								placeholder="Ex.: 01"
-								type="number"
-								maxLength={2}
-								{...register("cstcofins")}
-							/>
-							<FieldError errors={errors.cstcofins ? [errors.cstcofins] : []} />
-						</Field>
+						<Controller
+							name="cstpisentrada"
+							control={control}
+							render={({ field }) => (
+								<CampoCstSelect
+									id="cstpisentrada"
+									label="CST PIS entrada"
+									value={field.value}
+									opcoes={OPCOES_CST_PIS_COFINS}
+									onChange={field.onChange}
+									erro={errors.cstpisentrada?.message}
+								/>
+							)}
+						/>
+						<Controller
+							name="cstcofinsentrada"
+							control={control}
+							render={({ field }) => (
+								<CampoCstSelect
+									id="cstcofinsentrada"
+									label="CST COFINS entrada"
+									value={field.value}
+									opcoes={OPCOES_CST_PIS_COFINS}
+									onChange={field.onChange}
+									erro={errors.cstcofinsentrada?.message}
+								/>
+							)}
+						/>
+						<Controller
+							name="cstpis"
+							control={control}
+							render={({ field }) => (
+								<CampoCstSelect
+									id="cstpis"
+									label="CST PIS saída"
+									value={field.value}
+									opcoes={OPCOES_CST_PIS_COFINS}
+									onChange={field.onChange}
+									erro={errors.cstpis?.message}
+								/>
+							)}
+						/>
+						<Controller
+							name="cstcofins"
+							control={control}
+							render={({ field }) => (
+								<CampoCstSelect
+									id="cstcofins"
+									label="CST COFINS saída"
+									value={field.value}
+									opcoes={OPCOES_CST_PIS_COFINS}
+									onChange={field.onChange}
+									erro={errors.cstcofins?.message}
+								/>
+							)}
+						/>
 					</div>
 				</section>
 
