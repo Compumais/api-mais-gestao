@@ -11,6 +11,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	type ColumnDef,
+	type RowSelectionState,
 	flexRender,
 	getCoreRowModel,
 	getPaginationRowModel,
@@ -21,6 +22,13 @@ import {
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import {
+	FiltrosFinanceiroLista,
+	type FiltrosFinanceiroState,
+	filtrosFinanceiroAtivos,
+	filtrosFinanceiroVazios,
+} from "@/components/filtros-financeiro-lista";
+import { ModalBaixaFinanceiro } from "@/components/modal-baixa-financeiro";
 import { TableSkeleton } from "@/components/table-skeleton";
 import {
 	AlertDialog,
@@ -34,6 +42,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -97,6 +106,9 @@ const formatDocumento = (financeiro: Financeiro) => {
 const formatNome = (financeiro: Financeiro) =>
 	financeiro.emitente?.trim() || financeiro.historico?.trim() || "-";
 
+const podeDarBaixa = (financeiro: Financeiro) =>
+	financeiro.status === "A" && !financeiro.baixa;
+
 const getStatusBadge = (status: string | null | undefined) => {
 	if (!status) return <Badge variant="outline">-</Badge>;
 
@@ -141,6 +153,28 @@ const createColumns = ({
 	onDarBaixa,
 	onVerDetalhes,
 }: ColumnsProps): ColumnDef<Financeiro>[] => [
+	{
+		id: "select",
+		header: ({ table }) => (
+			<Checkbox
+				checked={
+					table.getIsAllPageRowsSelected() ||
+					(table.getIsSomePageRowsSelected() && "indeterminate")
+				}
+				onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+				aria-label="Selecionar todos"
+			/>
+		),
+		cell: ({ row }) => (
+			<Checkbox
+				checked={row.getIsSelected()}
+				disabled={!row.getCanSelect()}
+				onCheckedChange={(value) => row.toggleSelected(!!value)}
+				aria-label="Selecionar documento"
+			/>
+		),
+		enableSorting: false,
+	},
 	{
 		accessorKey: "documento",
 		header: "Documento",
@@ -229,7 +263,7 @@ const createColumns = ({
 		cell: ({ row }) => {
 			const financeiro = row.original;
 			const podeExcluir = financeiro.status === "A" && !financeiro.baixa;
-			const podeDarBaixa = financeiro.status === "A" && !financeiro.baixa;
+			const podeBaixar = podeDarBaixa(financeiro);
 
 			return (
 				<div className="flex justify-end">
@@ -253,7 +287,7 @@ const createColumns = ({
 								<IconPencil className="size-4 mr-2" />
 								Editar
 							</DropdownMenuItem>
-							{podeDarBaixa && (
+							{podeBaixar && (
 								<>
 									<DropdownMenuSeparator />
 									<DropdownMenuItem onClick={() => onDarBaixa(financeiro.id)}>
@@ -288,14 +322,23 @@ export default function ContasAReceberPage() {
 	const queryClient = useQueryClient();
 	const { localStorageEmpresa: empresa } = useEmpresa();
 	const [sorting, setSorting] = useState<SortingState>([]);
+	const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 	const [pagination, setPagination] = useState({
 		pageIndex: 0,
 		pageSize: 10,
 	});
+	const [filtros, setFiltros] = useState<FiltrosFinanceiroState>(
+		filtrosFinanceiroVazios,
+	);
+	const [filtrosAplicados, setFiltrosAplicados] =
+		useState<FiltrosFinanceiroState>(filtrosFinanceiroVazios);
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [financeiroToDelete, setFinanceiroToDelete] = useState<string | null>(
 		null,
 	);
+	const [baixaDialogOpen, setBaixaDialogOpen] = useState(false);
+	const [idsParaBaixa, setIdsParaBaixa] = useState<string[]>([]);
+	const [baixando, setBaixando] = useState(false);
 
 	const { data, isLoading } = useQuery({
 		queryKey: [
@@ -304,6 +347,7 @@ export default function ContasAReceberPage() {
 			empresa?.id,
 			pagination.pageIndex + 1,
 			pagination.pageSize,
+			filtrosAplicados,
 		],
 		queryFn: async () => {
 			if (!empresa) {
@@ -313,6 +357,12 @@ export default function ContasAReceberPage() {
 				tipo: "R",
 				page: pagination.pageIndex + 1,
 				limit: pagination.pageSize,
+				emitente: filtrosAplicados.emitente || undefined,
+				emissaoInicio: filtrosAplicados.emissaoInicio || undefined,
+				emissaoFim: filtrosAplicados.emissaoFim || undefined,
+				vencimentoInicio: filtrosAplicados.vencimentoInicio || undefined,
+				vencimentoFim: filtrosAplicados.vencimentoFim || undefined,
+				status: filtrosAplicados.status || undefined,
 			});
 		},
 		enabled: !!empresa,
@@ -331,17 +381,6 @@ export default function ContasAReceberPage() {
 		},
 	});
 
-	const darBaixaMutation = useMutation({
-		mutationFn: financeiroService.darBaixa,
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["financeiro"] });
-			toast.success("Baixa realizada com sucesso!");
-		},
-		onError: (error: Error) => {
-			toast.error(error.message || "Erro ao dar baixa na conta a receber");
-		},
-	});
-
 	const handleEdit = (financeiro: Financeiro) => {
 		router.push(`/contas-receber/${financeiro.id}/editar`);
 	};
@@ -357,12 +396,67 @@ export default function ContasAReceberPage() {
 		}
 	};
 
+	const handleAbrirBaixa = (ids: string[]) => {
+		if (ids.length === 0) return;
+		setIdsParaBaixa(ids);
+		setBaixaDialogOpen(true);
+	};
+
 	const handleDarBaixa = (id: string) => {
-		darBaixaMutation.mutate(id);
+		handleAbrirBaixa([id]);
+	};
+
+	const handleConfirmBaixa = async (dataBaixa: string) => {
+		setBaixando(true);
+		let ok = 0;
+		let falhas = 0;
+
+		for (const id of idsParaBaixa) {
+			try {
+				await financeiroService.darBaixa(id, dataBaixa);
+				ok += 1;
+			} catch {
+				falhas += 1;
+			}
+		}
+
+		setBaixando(false);
+		setBaixaDialogOpen(false);
+		setIdsParaBaixa([]);
+		setRowSelection({});
+		void queryClient.invalidateQueries({ queryKey: ["financeiro"] });
+
+		if (ok > 0) {
+			toast.success(
+				ok === 1
+					? "Baixa realizada com sucesso!"
+					: `${ok} baixas realizadas com sucesso!`,
+			);
+		}
+		if (falhas > 0) {
+			toast.error(
+				falhas === 1
+					? "Falha ao dar baixa em 1 documento"
+					: `Falha ao dar baixa em ${falhas} documentos`,
+			);
+		}
 	};
 
 	const handleVerDetalhes = (id: string) => {
 		router.push(`/contas-receber/${id}`);
+	};
+
+	const handleAplicarFiltros = () => {
+		setFiltrosAplicados({ ...filtros });
+		setPagination((p) => ({ ...p, pageIndex: 0 }));
+		setRowSelection({});
+	};
+
+	const handleLimparFiltros = () => {
+		setFiltros(filtrosFinanceiroVazios);
+		setFiltrosAplicados(filtrosFinanceiroVazios);
+		setPagination((p) => ({ ...p, pageIndex: 0 }));
+		setRowSelection({});
 	};
 
 	const columns = createColumns({
@@ -378,27 +472,34 @@ export default function ContasAReceberPage() {
 		state: {
 			sorting,
 			pagination,
+			rowSelection,
 		},
 		onSortingChange: setSorting,
 		onPaginationChange: setPagination,
+		onRowSelectionChange: setRowSelection,
 		getCoreRowModel: getCoreRowModel(),
 		getSortedRowModel: getSortedRowModel(),
 		getPaginationRowModel: getPaginationRowModel(),
 		manualPagination: true,
 		pageCount: data?.paginacao.totalPages ?? 0,
+		enableRowSelection: (row) => podeDarBaixa(row.original),
+		getRowId: (row) => row.id,
 	});
+
+	const idsSelecionados = Object.keys(rowSelection).filter(
+		(id) => rowSelection[id],
+	);
+	const comFiltros = filtrosFinanceiroAtivos(filtrosAplicados);
 
 	useEffect(() => {
 		const handleKeyDown = (event: KeyboardEvent) => {
-			// Verifica se não está digitando em um input
 			const isInputFocused =
 				event.target instanceof HTMLInputElement ||
 				event.target instanceof HTMLTextAreaElement ||
 				event.target instanceof HTMLSelectElement;
 
-			if (isInputFocused) return; // Ignora se e	ver digitando
+			if (isInputFocused) return;
 
-			// F2 - Redireciona para Inclusão
 			if (event.key === "F2") {
 				event.preventDefault();
 				router.push("/contas-receber/novo");
@@ -417,15 +518,35 @@ export default function ContasAReceberPage() {
 			<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
 				<div className="flex items-center justify-between px-4">
 					<h1 className="text-2xl font-bold">Contas a Receber</h1>
-					<Button
-						disabled={!empresa}
-						onClick={() => router.push("/contas-receber/novo")}
-						className="gap-2"
-					>
-						<IconPlus className="size-4" />
-						Incluir (F2)
-					</Button>
+					<div className="flex flex-wrap gap-2">
+						{idsSelecionados.length > 0 && (
+							<Button
+								onClick={() => handleAbrirBaixa(idsSelecionados)}
+								className="gap-2"
+							>
+								<IconCheck className="size-4" />
+								Dar baixa ({idsSelecionados.length})
+							</Button>
+						)}
+						<Button
+							disabled={!empresa}
+							onClick={() => router.push("/contas-receber/novo")}
+							className="gap-2"
+						>
+							<IconPlus className="size-4" />
+							Incluir (F2)
+						</Button>
+					</div>
 				</div>
+
+				<FiltrosFinanceiroLista
+					filtros={filtros}
+					onChange={setFiltros}
+					onAplicar={handleAplicarFiltros}
+					onLimpar={handleLimparFiltros}
+					comFiltrosAtivos={comFiltros}
+				/>
+
 				<div className="rounded-lg border bg-card mx-4">
 					{!empresa ? (
 						<div className="flex items-center justify-center py-8">
@@ -434,7 +555,8 @@ export default function ContasAReceberPage() {
 							</p>
 						</div>
 					) : isLoading ? (
-						<TableSkeleton rows={10} columns={11}>
+						<TableSkeleton rows={10} columns={12}>
+							<TableCell className="w-10" />
 							<TableCell>Documento</TableCell>
 							<TableCell>Nome</TableCell>
 							<TableCell>Parcela</TableCell>
@@ -482,7 +604,10 @@ export default function ContasAReceberPage() {
 								<TableBody>
 									{table.getRowModel().rows?.length ? (
 										table.getRowModel().rows.map((row) => (
-											<TableRow key={row.id}>
+											<TableRow
+												key={row.id}
+												data-state={row.getIsSelected() && "selected"}
+											>
 												{row.getVisibleCells().map((cell) => (
 													<TableCell key={cell.id}>
 														{flexRender(
@@ -557,6 +682,14 @@ export default function ContasAReceberPage() {
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>
+
+			<ModalBaixaFinanceiro
+				open={baixaDialogOpen}
+				onOpenChange={setBaixaDialogOpen}
+				quantidade={idsParaBaixa.length}
+				onConfirm={handleConfirmBaixa}
+				isPending={baixando}
+			/>
 		</PageContainer>
 	);
 }

@@ -25,6 +25,7 @@ import { codigosReduzidosContaContabilRotas } from "./controllers/http/codigo-re
 import { condicoesPagamentoRotas } from "./controllers/http/condicao-pagamento/rotas.js";
 import { configuracaoRotas } from "./controllers/http/configuracao/rotas.js";
 import { configuracaoOrdemServicoRotas } from "./controllers/http/configuracao-ordem-servico/rotas.js";
+import { modeloImpressaoOsRotas } from "./controllers/http/modelo-impressao-os/rotas.js";
 import { configuracaoUsuarioRotas } from "./controllers/http/configuracao-usuario/rotas.js";
 import { contaContabilRotas } from "./controllers/http/conta-contabil/rotas.js";
 import { contaCorrenteLancamentoRotas } from "./controllers/http/conta-corrente-lancamento/rotas.js";
@@ -588,6 +589,7 @@ app.register(objetosRotas);
 app.register(tiposProblemaRotas);
 app.register(ordensServicoRotas);
 app.register(configuracaoOrdemServicoRotas);
+app.register(modeloImpressaoOsRotas);
 app.register(tiposOrdemServicoEventoRotas);
 app.register(operacoesFiscaisRotas);
 app.register(davsRotas);

@@ -7,6 +7,12 @@ const listarFinanceirosQuerySchema = z.object({
 	limit: z.coerce.number().min(1).max(100).optional().default(10),
 	saldo: z.string().optional().nullable(),
 	emissao: z.string().optional().nullable(),
+	emitente: z.string().optional().nullable(),
+	emissaoInicio: z.string().optional().nullable(),
+	emissaoFim: z.string().optional().nullable(),
+	vencimentoInicio: z.string().optional().nullable(),
+	vencimentoFim: z.string().optional().nullable(),
+	status: z.enum(["A", "P", "C", "V"]).optional().nullable(),
 	tipo: z.enum(["P", "R"]).optional().nullable(),
 });
 

@@ -1,4 +1,4 @@
-import { and, count, desc, eq, ilike, inArray } from "drizzle-orm";
+import { and, count, desc, eq, gte, ilike, inArray, lte } from "drizzle-orm";
 import type { NovoFinanceiro } from "@/model/financeiro-model.js";
 import * as schema from "@/repositories/schema.js";
 import { db } from "./connection.js";
@@ -84,6 +84,12 @@ interface ListarFinanceiroParametros {
 	limit?: number;
 	saldo?: string | null | undefined;
 	emissao?: string | null | undefined;
+	emitente?: string | null | undefined;
+	emissaoInicio?: string | null | undefined;
+	emissaoFim?: string | null | undefined;
+	vencimentoInicio?: string | null | undefined;
+	vencimentoFim?: string | null | undefined;
+	status?: string | null | undefined;
 	tipo?: "P" | "R" | null | undefined;
 }
 
@@ -93,6 +99,12 @@ export async function listarFinanceiro({
 	limit = 10,
 	saldo,
 	emissao,
+	emitente,
+	emissaoInicio,
+	emissaoFim,
+	vencimentoInicio,
+	vencimentoFim,
+	status,
 	tipo,
 }: ListarFinanceiroParametros) {
 	const offset = (page - 1) * limit;
@@ -105,6 +117,30 @@ export async function listarFinanceiro({
 
 	if (emissao) {
 		where.push(ilike(schema.financeiro.emissao, emissao));
+	}
+
+	if (emitente?.trim()) {
+		where.push(ilike(schema.financeiro.emitente, `%${emitente.trim()}%`));
+	}
+
+	if (emissaoInicio) {
+		where.push(gte(schema.financeiro.emissao, emissaoInicio));
+	}
+
+	if (emissaoFim) {
+		where.push(lte(schema.financeiro.emissao, emissaoFim));
+	}
+
+	if (vencimentoInicio) {
+		where.push(gte(schema.financeiro.vencimento, vencimentoInicio));
+	}
+
+	if (vencimentoFim) {
+		where.push(lte(schema.financeiro.vencimento, vencimentoFim));
+	}
+
+	if (status) {
+		where.push(eq(schema.financeiro.status, status));
 	}
 
 	if (tipo) {

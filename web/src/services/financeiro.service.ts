@@ -121,6 +121,12 @@ export interface ListarFinanceirosParams {
 	limit?: number;
 	saldo?: string | null;
 	emissao?: string | null;
+	emitente?: string | null;
+	emissaoInicio?: string | null;
+	emissaoFim?: string | null;
+	vencimentoInicio?: string | null;
+	vencimentoFim?: string | null;
+	status?: string | null;
 	tipo?: string | null; // P ou R
 }
 
@@ -255,12 +261,10 @@ export const financeiroService = {
 		await api.delete(`/financeiro/${id}`);
 	},
 
-	async darBaixa(id: string): Promise<Financeiro> {
-		// Dar baixa atualiza o status para "P" (Pago) e registra a data de baixa
-		const hoje = new Date().toISOString().split("T")[0];
+	async darBaixa(id: string, dataBaixa: string): Promise<Financeiro> {
 		const { data } = await api.put<Financeiro>(`/financeiro/${id}`, {
 			status: "P",
-			baixa: hoje,
+			baixa: dataBaixa,
 		});
 		return data;
 	},

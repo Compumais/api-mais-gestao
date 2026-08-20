@@ -8,6 +8,12 @@ type ListarFinanceirosParametros = {
 	idusuario: string;
 	saldo?: string | null | undefined;
 	emissao?: string | null | undefined;
+	emitente?: string | null | undefined;
+	emissaoInicio?: string | null | undefined;
+	emissaoFim?: string | null | undefined;
+	vencimentoInicio?: string | null | undefined;
+	vencimentoFim?: string | null | undefined;
+	status?: string | null | undefined;
 	tipo?: "P" | "R" | null | undefined;
 	page?: number;
 	limit?: number;
@@ -27,6 +33,12 @@ export async function listarFinanceirosService({
 	idusuario,
 	saldo,
 	emissao,
+	emitente,
+	emissaoInicio,
+	emissaoFim,
+	vencimentoInicio,
+	vencimentoFim,
+	status,
 	tipo,
 	page = 1,
 	limit = 10,
@@ -51,6 +63,12 @@ export async function listarFinanceirosService({
 		idempresas,
 		saldo,
 		emissao,
+		emitente,
+		emissaoInicio,
+		emissaoFim,
+		vencimentoInicio,
+		vencimentoFim,
+		status,
 		tipo,
 		page,
 		limit,
