@@ -6,6 +6,7 @@ import {
 	mensagemBloqueioFiscal,
 } from "@/service/fiscal/avaliar-emissao-fiscal.js";
 import type { RegraFiscalResolvida } from "@/service/fiscal/resolver-regras-fiscais.js";
+import { buscarNotaFiscalPorId } from "@/repositories/nota-fiscal-repositories.js";
 import {
 	condicoesRegraFiscal,
 	criarAuditoriaFiscalNfe,
@@ -50,18 +51,33 @@ function mapearRegraBanco(regra: Awaited<ReturnType<typeof listarRegrasFiscaisVa
 	};
 }
 
+export type ResultadoAvaliacaoEmissaoFiscal = {
+	relatorio: RelatorioAuditoriaFiscal;
+	idAuditoria: string;
+};
+
 export async function avaliarEmissaoFiscalService(
 	params: AvaliarEmissaoFiscalServiceParams,
-): Promise<RelatorioAuditoriaFiscal> {
+): Promise<ResultadoAvaliacaoEmissaoFiscal> {
 	const regrasBanco = await listarRegrasFiscaisValidas();
 	const relatorio = avaliarEmissaoFiscal({
 		...params,
 		regras: regrasBanco.map(mapearRegraBanco),
 	});
 
+	const idAuditoria = uuidv4();
+	let idnotafiscalAuditoria: string | null = null;
+
+	if (params.idnotafiscal) {
+		const notaExistente = await buscarNotaFiscalPorId(params.idnotafiscal);
+		if (notaExistente) {
+			idnotafiscalAuditoria = params.idnotafiscal;
+		}
+	}
+
 	await criarAuditoriaFiscalNfe({
-		id: uuidv4(),
-		idnotafiscal: params.idnotafiscal,
+		id: idAuditoria,
+		idnotafiscal: idnotafiscalAuditoria,
 		idempresa: params.idempresa,
 		classificacaofinal: relatorio.classificacao_final,
 		nivelconfianca: relatorio.nivel_confianca,
@@ -69,7 +85,7 @@ export async function avaliarEmissaoFiscalService(
 		relatorio,
 	});
 
-	return relatorio;
+	return { relatorio, idAuditoria };
 }
 
 export { mensagemBloqueioFiscal };

@@ -148,6 +148,7 @@ export type PayloadEmissaoNfeVendaPreparado = {
 	codigosPedidosResolvidos?: number[];
 	informacoesAdicionais?: string;
 	totais?: TotaisPayloadNfe;
+	idAuditoriaFiscal?: string;
 };
 
 type ResultadoPreparacaoComPendencias = {
@@ -604,7 +605,8 @@ export async function prepararPayloadEmissaoNfeVenda(
 		finNFe,
 	});
 
-	const relatorioFiscal = await avaliarEmissaoFiscalService({
+	const { relatorio: relatorioFiscal, idAuditoria } =
+		await avaliarEmissaoFiscalService({
 		operacaoId: idnotafiscal,
 		idempresa,
 		idnotafiscal,
@@ -700,5 +702,6 @@ export async function prepararPayloadEmissaoNfeVenda(
 		codigosPedidosResolvidos,
 		informacoesAdicionais: infoAdic,
 		totais,
+		idAuditoriaFiscal: idAuditoria,
 	});
 }
