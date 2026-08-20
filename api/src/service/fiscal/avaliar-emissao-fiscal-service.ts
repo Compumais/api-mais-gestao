@@ -14,6 +14,7 @@ import {
 	listarRegrasFiscaisValidas,
 	resultadoRegraFiscal,
 } from "@/repositories/regra-fiscal-repositories.js";
+import { garantirRegrasFiscaisOperacionaisSeed } from "@/service/fiscal/garantir-regras-fiscais-seed.js";
 
 export type AvaliarEmissaoFiscalServiceParams = {
 	operacaoId: string;
@@ -59,6 +60,7 @@ export type ResultadoAvaliacaoEmissaoFiscal = {
 export async function avaliarEmissaoFiscalService(
 	params: AvaliarEmissaoFiscalServiceParams,
 ): Promise<ResultadoAvaliacaoEmissaoFiscal> {
+	await garantirRegrasFiscaisOperacionaisSeed();
 	const regrasBanco = await listarRegrasFiscaisValidas();
 	const relatorio = avaliarEmissaoFiscal({
 		...params,

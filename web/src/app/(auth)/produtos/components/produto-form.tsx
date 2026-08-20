@@ -769,6 +769,7 @@ export function ProdutoForm(props: ProdutoFormProps) {
 										onCheckedChange={(checked) =>
 											setValue("controlalote", checked === true, {
 												shouldValidate: true,
+												shouldDirty: true,
 											})
 										}
 									/>
@@ -786,6 +787,7 @@ export function ProdutoForm(props: ProdutoFormProps) {
 										onCheckedChange={(checked) =>
 											setValue("controlavalidade", checked === true, {
 												shouldValidate: true,
+												shouldDirty: true,
 											})
 										}
 									/>
