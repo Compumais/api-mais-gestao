@@ -7,6 +7,9 @@ export type DadosTributacaoItemEmissaoNfe = {
 	valorIpiDevol?: string;
 	baseIcmsSt?: string;
 	valorIcmsSt?: string;
+	percentualMvaSt?: string;
+	aliquotaIcmsSt?: string;
+	aliquotaFcpSt?: string;
 	valorFcpSt?: string;
 	valorFcpStRet?: string;
 	valorIcmsDesonerado?: string;
@@ -35,6 +38,9 @@ export function montarDadosImportacaoItemEmissaoNfe(
 		valorIpiDevol: paraStringOpcional(item.valorIpiDevol),
 		baseIcmsSt: paraStringOpcional(item.baseIcmsSt),
 		valorIcmsSt: paraStringOpcional(item.valorIcmsSt),
+		percentualMvaSt: paraStringOpcional(item.percentualMvaSt),
+		aliquotaIcmsSt: paraStringOpcional(item.aliquotaIcmsSt),
+		aliquotaFcpSt: paraStringOpcional(item.aliquotaFcpSt),
 		valorFcpSt: paraStringOpcional(item.valorFcpSt),
 		valorFcpStRet: paraStringOpcional(item.valorFcpStRet),
 		valorIcmsDesonerado: paraStringOpcional(item.valorIcmsDesonerado),

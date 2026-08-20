@@ -1,19 +1,22 @@
-import { buscarEmpresaPorId } from "@/repositories/empresa-repositories.js";
-import { buscarEmpresaFiscalPorEmpresa } from "@/repositories/empresa-fiscal-repositories.js";
 import { buscarCertificadoAtivoPorEmpresa } from "@/repositories/certificado-digital-repositories.js";
+import { buscarEmpresaFiscalPorEmpresa } from "@/repositories/empresa-fiscal-repositories.js";
+import { buscarEmpresaPorId } from "@/repositories/empresa-repositories.js";
 import { buscarNfeConfiguracaoPorEmpresa } from "@/repositories/nfe-configuracao-repositories.js";
 import { buscarNfeSeriePadrao } from "@/repositories/nfe-serie-repositories.js";
+import { agoraBrasiliaIsoOffset } from "@/util/data-hora-brasilia.js";
 import {
 	descriptografarCredenciaisCertificado,
 	montarConfigJsonSpedNfe,
 	obterCodigoUfIbge,
 } from "@/util/montar-config-sped-nfe.js";
 import { NFE_CONFIG_PADRAO } from "@/util/nfe-config-padrao.js";
-import { montarIeEmitenteNfe, ajustarDestinatarioAmbienteNfe } from "@/util/normalizar-ie-nfe.js";
+import {
+	ajustarDestinatarioAmbienteNfe,
+	montarIeEmitenteNfe,
+} from "@/util/normalizar-ie-nfe.js";
 import { resolverIdeEmissaoNfe } from "@/util/resolver-ide-emissao-nfe.js";
-import { validarPreRequisitosEmissaoNfe } from "@/util/validar-pre-requisitos-emissao-nfe.js";
-import { agoraBrasiliaIsoOffset } from "@/util/data-hora-brasilia.js";
 import { resolverNomeMunicipioIbge } from "@/util/resolver-nome-municipio-ibge.js";
+import { validarPreRequisitosEmissaoNfe } from "@/util/validar-pre-requisitos-emissao-nfe.js";
 
 export type ItemPayloadNfe = {
 	idproduto?: string;
@@ -41,6 +44,9 @@ export type ItemPayloadNfe = {
 	valorIpiDevol?: number;
 	baseIcmsSt?: number;
 	valorIcmsSt?: number;
+	percentualMvaSt?: number;
+	aliquotaIcmsSt?: number;
+	aliquotaFcpSt?: number;
 	valorFcpSt?: number;
 	valorFcpStRet?: number;
 	valorIcmsDesonerado?: number;
@@ -208,7 +214,8 @@ export async function montarPayloadGatewayEmissao({
 			},
 			item: {
 				cProd: "000001",
-				xProd: "NOTA FISCAL EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL",
+				xProd:
+					"NOTA FISCAL EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL",
 				ncm: "61091000",
 				cfop: "5102",
 				uCom: "UN",
@@ -246,9 +253,15 @@ export async function montarPayloadGatewayEmissaoItens({
 	indPres,
 }: {
 	empresa: NonNullable<Awaited<ReturnType<typeof buscarEmpresaPorId>>>;
-	empresaFiscal: NonNullable<Awaited<ReturnType<typeof buscarEmpresaFiscalPorEmpresa>>>;
-	nfeConfiguracao: NonNullable<Awaited<ReturnType<typeof buscarNfeConfiguracaoPorEmpresa>>>;
-	certificadoAtivo: NonNullable<Awaited<ReturnType<typeof buscarCertificadoAtivoPorEmpresa>>>;
+	empresaFiscal: NonNullable<
+		Awaited<ReturnType<typeof buscarEmpresaFiscalPorEmpresa>>
+	>;
+	nfeConfiguracao: NonNullable<
+		Awaited<ReturnType<typeof buscarNfeConfiguracaoPorEmpresa>>
+	>;
+	certificadoAtivo: NonNullable<
+		Awaited<ReturnType<typeof buscarCertificadoAtivoPorEmpresa>>
+	>;
 	numeroNf: number;
 	serie: string;
 	destinatario?: DestinatarioPayloadNfe;
@@ -263,7 +276,11 @@ export async function montarPayloadGatewayEmissaoItens({
 	documentosReferenciados?: DocumentoReferenciadoPayloadNfe[];
 	indPres?: number;
 }) {
-	const configJson = montarConfigJsonSpedNfe({ empresa, empresaFiscal, nfeConfiguracao });
+	const configJson = montarConfigJsonSpedNfe({
+		empresa,
+		empresaFiscal,
+		nfeConfiguracao,
+	});
 	const credenciais = descriptografarCredenciaisCertificado(certificadoAtivo);
 	const ide = resolverIdeEmissaoNfe({
 		ufEmitente: empresaFiscal.uf,
@@ -310,8 +327,7 @@ export async function montarPayloadGatewayEmissaoItens({
 				complemento: empresaFiscal.complemento ?? "",
 				bairro: empresaFiscal.bairro,
 				codigoMunicipio: empresaFiscal.codigomunicipioibge,
-				municipio:
-					nomeMunicipioEmitente ?? empresaFiscal.codigomunicipioibge,
+				municipio: nomeMunicipioEmitente ?? empresaFiscal.codigomunicipioibge,
 				uf: empresaFiscal.uf,
 				cep: empresaFiscal.cep?.replace(/\D/g, ""),
 				telefone: empresaFiscal.telefone ?? "",
@@ -334,10 +350,11 @@ export async function montarPayloadGatewayEmissaoItens({
 			documentosReferenciados: (documentosReferenciados ?? []).map((doc) => ({
 				refNFe: doc.chave.replace(/\D/g, ""),
 			})),
-			destinatario: ajustarDestinatarioAmbienteNfe(
-				destinatarioComMunicipio,
-				nfeConfiguracao.ambiente,
-			) ?? {},
+			destinatario:
+				ajustarDestinatarioAmbienteNfe(
+					destinatarioComMunicipio,
+					nfeConfiguracao.ambiente,
+				) ?? {},
 			itens,
 			totais: totais ?? {},
 			pagamento: pagamento ?? {},

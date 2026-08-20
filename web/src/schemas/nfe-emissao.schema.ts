@@ -34,6 +34,9 @@ export const itemNfeSchema = z.object({
 	valorIpiDevol: z.number().min(0).optional(),
 	baseIcmsSt: z.number().min(0).optional(),
 	valorIcmsSt: z.number().min(0).optional(),
+	percentualMvaSt: z.number().min(0).optional(),
+	aliquotaIcmsSt: z.number().min(0).optional(),
+	aliquotaFcpSt: z.number().min(0).optional(),
 	valorFcpSt: z.number().min(0).optional(),
 	valorFcpStRet: z.number().min(0).optional(),
 	valorIcmsDesonerado: z.number().min(0).optional(),
@@ -49,13 +52,15 @@ export const totaisNfeSchema = z.object({
 });
 
 export const pagamentoNfeSchema = z.object({
-	formas: z.array(
-		z.object({
-			tPag: z.string().min(2),
-			vPag: z.number().positive(),
-			indPag: z.number().optional(),
-		}),
-	).min(1, "Informe ao menos uma forma de pagamento"),
+	formas: z
+		.array(
+			z.object({
+				tPag: z.string().min(2),
+				vPag: z.number().positive(),
+				indPag: z.number().optional(),
+			}),
+		)
+		.min(1, "Informe ao menos uma forma de pagamento"),
 });
 
 export const transporteNfeSchema = z.object({
@@ -111,4 +116,6 @@ export type EmissaoNfeFormData = z.infer<typeof emissaoNfeFormSchema>;
 export type ItemNfe = z.infer<typeof itemNfeSchema>;
 export type TotaisNfe = z.infer<typeof totaisNfeSchema>;
 export type PagamentoNfe = z.infer<typeof pagamentoNfeSchema>;
-export type DocumentoReferenciadoNfe = z.infer<typeof documentoReferenciadoSchema>;
+export type DocumentoReferenciadoNfe = z.infer<
+	typeof documentoReferenciadoSchema
+>;

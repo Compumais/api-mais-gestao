@@ -107,6 +107,63 @@ function aplicarPisCofinsDoProduto(
 	return resultado;
 }
 
+function codigoCsosnProduto(
+	produto: NonNullable<Awaited<ReturnType<typeof buscarProdutoPorId>>>,
+): string | undefined {
+	for (const valor of [produto.situacaotributariasn, produto.tributacaosn]) {
+		const codigo = String(valor ?? "").replace(/\D/g, "");
+		if (
+			codigo.length === 3 &&
+			(codigo.startsWith("1") ||
+				codigo.startsWith("2") ||
+				codigo.startsWith("5") ||
+				codigo.startsWith("9"))
+		) {
+			return codigo;
+		}
+	}
+	return undefined;
+}
+
+function aplicarCsosnStDoProduto(
+	item: ItemPayloadNfe,
+	produto: NonNullable<Awaited<ReturnType<typeof buscarProdutoPorId>>>,
+): ItemPayloadNfe {
+	const resultado = { ...item };
+	const csosnItem = resultado.csosn?.replace(/\D/g, "") ?? "";
+
+	if (!csosnItem) {
+		const csosnProduto = codigoCsosnProduto(produto);
+		if (csosnProduto) {
+			resultado.csosn = csosnProduto;
+			resultado.cst = undefined;
+		}
+	}
+
+	if (resultado.percentualMvaSt == null) {
+		const mva = paraNumeroOpcional(produto.percentualmva);
+		if (mva != null) {
+			resultado.percentualMvaSt = mva;
+		}
+	}
+
+	if (resultado.aliquotaIcmsSt == null) {
+		const aliquota = paraNumeroOpcional(produto.ultimaaliquotaicmsst);
+		if (aliquota != null) {
+			resultado.aliquotaIcmsSt = aliquota;
+		}
+	}
+
+	if (resultado.aliquotaFcpSt == null) {
+		const aliquota = paraNumeroOpcional(produto.ultimaaliquotafcpst);
+		if (aliquota != null) {
+			resultado.aliquotaFcpSt = aliquota;
+		}
+	}
+
+	return resultado;
+}
+
 export async function enriquecerItensEmissaoComProduto(
 	itens: ItemPayloadNfe[],
 ): Promise<ItemPayloadNfe[]> {
@@ -139,6 +196,7 @@ export async function enriquecerItensEmissaoComProduto(
 			}
 
 			resultado = aplicarPisCofinsDoProduto(resultado, produto);
+			resultado = aplicarCsosnStDoProduto(resultado, produto);
 
 			if (!normalizarCodigoCest(resultado.cest)) {
 				const cestProduto = await resolverCestProduto(produto);
