@@ -148,7 +148,11 @@ export const entidadesService = {
 		telefone?: string;
 	}): Promise<ListarEntidadesResponse> {
 		const { data } = await api.get<ListarEntidadesResponse>("/entidades", {
-			params,
+			params: {
+				page: 1,
+				limit: 10,
+				...params,
+			},
 		});
 		return data;
 	},

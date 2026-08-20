@@ -3,6 +3,11 @@ export type OpcaoCst = {
 	label: string;
 };
 
+/**
+ * Formata CST/CSOSN para exibição e selects.
+ * Colunas numeric no banco (`1.00` = CST 01) exigem truncar a parte inteira,
+ * não extrair todos os dígitos (`"1.00"` → `"00"`).
+ */
 export function formatarCstProduto(
 	valor?: string | number | null,
 	tamanho = 2,
@@ -11,7 +16,28 @@ export function formatarCstProduto(
 		return "";
 	}
 
-	const digitos = String(valor).replace(/\D/g, "");
+	const maxValor = 10 ** tamanho - 1;
+
+	if (typeof valor === "number") {
+		if (!Number.isFinite(valor) || valor < 0 || valor > maxValor) {
+			return "";
+		}
+		return String(Math.trunc(valor)).padStart(tamanho, "0").slice(-tamanho);
+	}
+
+	const texto = String(valor).trim();
+	if (!texto) return "";
+
+	const comPonto = texto.replace(",", ".");
+	if (/^-?\d+(\.\d+)?$/.test(comPonto)) {
+		const numero = Number(comPonto);
+		if (!Number.isFinite(numero) || numero < 0 || numero > maxValor) {
+			return "";
+		}
+		return String(Math.trunc(numero)).padStart(tamanho, "0").slice(-tamanho);
+	}
+
+	const digitos = texto.replace(/\D/g, "");
 	if (!digitos) return "";
 
 	return digitos.padStart(tamanho, "0").slice(-tamanho);
