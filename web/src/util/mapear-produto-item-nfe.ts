@@ -321,6 +321,29 @@ export function prepararItemEmissaoFormulario(
 
 const CST_COM_ST = new Set(["10", "30", "60", "70"]);
 const CSOSN_COM_ST = new Set(["201", "202", "203", "500"]);
+const CSOSN_ST_COM_MVA = new Set(["201", "202", "203"]);
+
+/**
+ * Itens com ST por MVA precisam da alíquota interna (ICMS próprio) para a
+ * dedução no cálculo de vICMSST — inclusive no Simples Nacional.
+ */
+export function itemPrecisaAliquotaIcmsParaSt(
+	item: Pick<
+		ItemNfe,
+		"cst" | "csosn" | "percentualMvaSt" | "aliquotaIcmsSt"
+	>,
+): boolean {
+	const cst = item.cst?.replace(/\D/g, "") ?? "";
+	const csosn = item.csosn?.replace(/\D/g, "") ?? "";
+	if (CSOSN_ST_COM_MVA.has(csosn) || CST_COM_ST.has(cst)) {
+		return true;
+	}
+	return (
+		item.percentualMvaSt != null &&
+		item.percentualMvaSt >= 0 &&
+		item.aliquotaIcmsSt != null
+	);
+}
 
 export function itemEmissaoRequerCest(item: ItemNfe): boolean {
 	const cst = item.cst?.replace(/\D/g, "") ?? "";
