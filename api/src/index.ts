@@ -47,6 +47,8 @@ import { entidadesContaContabilRotas } from "./controllers/http/entidade-conta-c
 import { entidadesRotas } from "./controllers/http/entidades/rotas.js";
 import { estoqueRotas } from "./controllers/http/estoque/rotas.js";
 import { fatoresConversaoRotas } from "./controllers/http/fator-conversao/rotas.js";
+import { fichasProducaoRotas } from "./controllers/http/ficha-producao/rotas.js";
+import { producoesRotas } from "./controllers/http/producao/rotas.js";
 import { fechamentosCaixaRotas } from "./controllers/http/fechamento-caixa/rotas.js";
 import { financeiroRotas } from "./controllers/http/financeiro/rotas.js";
 import { financeiroLancamentoRotas } from "./controllers/http/financeirolancamento/rotas.js";
@@ -585,6 +587,8 @@ app.register(receitasSemContribuicaoRotas);
 app.register(tiposDocumentoFinanceiroRotas);
 app.register(bandeirasCartaoRotas);
 app.register(fatoresConversaoRotas);
+app.register(fichasProducaoRotas);
+app.register(producoesRotas);
 app.register(unidadesMedidaRotas);
 app.register(objetosRotas);
 app.register(tiposProblemaRotas);

@@ -6,6 +6,13 @@ import * as registrarMovimento from "./registrar-movimento-estoque.js";
 
 vi.mock("@/repositories/movimento-estoque-repositories.js");
 vi.mock("./registrar-movimento-estoque.js");
+vi.mock("@/service/producao/garantir-producao-na-venda.js", () => ({
+	garantirProducaoNaVendaService: vi.fn().mockResolvedValue({
+		success: true,
+		status: 200,
+		body: { executada: false, jaExistia: false },
+	}),
+}));
 
 describe("complementarBaixaFiscalVendaPdv", () => {
 	beforeEach(() => {

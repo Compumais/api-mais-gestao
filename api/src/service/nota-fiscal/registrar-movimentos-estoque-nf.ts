@@ -1,4 +1,5 @@
 import { registrarMovimentoEstoque } from "@/service/estoque/registrar-movimento-estoque.js";
+import { garantirProducaoNaVendaService } from "@/service/producao/garantir-producao-na-venda.js";
 import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
 import { listarMovimentosEstoquePorDocumento } from "@/repositories/movimento-estoque-repositories.js";
 import { TIPO_DOCUMENTO_ESTOQUE, TIPO_ESTOQUE } from "@/util/tipo-estoque.js";
@@ -19,6 +20,7 @@ export type RegistrarMovimentosEstoqueNfParametros = {
 	dataMovimento: string;
 	sentido?: "entrada" | "saida" | undefined;
 	itens: ItemMovimentoEstoqueNf[];
+	idusuario?: string | undefined;
 };
 
 export type ResultadoMovimentosEstoqueNf = {
@@ -46,6 +48,7 @@ export async function registrarMovimentosEstoqueNf({
 	dataMovimento,
 	sentido = "entrada",
 	itens,
+	idusuario,
 }: RegistrarMovimentosEstoqueNfParametros): Promise<ResultadoMovimentosEstoqueNf> {
 	const avisos: string[] = [];
 
@@ -80,6 +83,24 @@ export async function registrarMovimentosEstoqueNf({
 		const custoTotal = (qtd * custoUnitario).toFixed(2);
 
 		try {
+			if (sentido === "saida" && idusuario) {
+				const producao = await garantirProducaoNaVendaService({
+					idempresa,
+					idproduto: item.idproduto,
+					quantidade: item.quantidade,
+					idoriginal: idnotafiscal,
+					tipoestoque: TIPO_ESTOQUE.AMBOS,
+					idusuario,
+				});
+
+				if (!producao.success) {
+					avisos.push(
+						`Produção na venda falhou (item ${item.iditem}): ${producao.error ?? "erro"}`,
+					);
+					continue;
+				}
+			}
+
 			const movimento = await registrarMovimentoEstoque({
 				idempresa,
 				idproduto: item.idproduto,
