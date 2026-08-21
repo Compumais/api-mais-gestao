@@ -55,6 +55,12 @@ export const REGRAS_ACESSO_ROTAS: Array<{
 		},
 	},
 	{
+		prefixo: "/grupos-gourmet",
+		acesso: {
+			modulo: "gourmet",
+		},
+	},
+	{
 		prefixo: "/gourmet",
 		acesso: {
 			modulo: "gourmet",

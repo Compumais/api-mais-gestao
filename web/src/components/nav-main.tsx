@@ -10,6 +10,7 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { useSearchDialog } from "@/hooks/use-search-dialog";
 
 export function NavMain({
 	items,
@@ -21,14 +22,29 @@ export function NavMain({
 	}[];
 }) {
 	const pathname = usePathname();
+	const { setOpen } = useSearchDialog();
+
 	return (
 		<SidebarGroup>
 			<SidebarGroupContent className="flex flex-col gap-2">
 				<SidebarMenu>
-					<SidebarMenuItem className="flex items-center gap-2"></SidebarMenuItem>
-				</SidebarMenu>
-				<SidebarMenu>
 					{items.map((item) => {
+						const isSearch = item.title === "Pesquisar";
+
+						if (isSearch) {
+							return (
+								<SidebarMenuItem key={item.title}>
+									<SidebarMenuButton
+										tooltip={item.title}
+										onClick={() => setOpen(true)}
+									>
+										{item.icon ? <item.icon /> : null}
+										<span>{item.title}</span>
+									</SidebarMenuButton>
+								</SidebarMenuItem>
+							);
+						}
+
 						if (!item.url) return null;
 						const isActive = pathname === item.url;
 						return (
