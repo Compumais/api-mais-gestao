@@ -13,7 +13,7 @@ export type ArquivoXmlCompactacao = {
 };
 
 export function montarCaminhoZipXml(arquivo: ArquivoXmlCompactacao): string {
-	const partes = [arquivo.pasta];
+	const partes: string[] = [arquivo.pasta];
 	if (arquivo.subpasta) partes.push(arquivo.subpasta);
 	partes.push(arquivo.nomeArquivo);
 	return partes.join("/");

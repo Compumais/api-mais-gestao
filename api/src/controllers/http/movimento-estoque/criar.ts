@@ -46,7 +46,10 @@ export async function criarMovimentoEstoque(
 		);
 
 		const resultado = await criarMovimentoEstoqueService({
-			dadosMovimentoEstoque: dadosValidados,
+			dadosMovimentoEstoque: {
+				...dadosValidados,
+				tipoestoque: dadosValidados.tipoestoque ?? undefined,
+			},
 			idusuario,
 		});
 
