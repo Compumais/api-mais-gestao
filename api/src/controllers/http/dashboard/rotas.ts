@@ -1,5 +1,7 @@
 import type { FastifyInstance } from "fastify";
+import { FEATURES_SAAS } from "@/constants/saas-catalog.js";
 import { verifyJwt } from "../../middleware/verify-jwt.js";
+import { requireFeature } from "../middleware/verify-plano.js";
 import { buscarClientesAnalytics } from "./buscar-clientes-analytics.js";
 import { buscarClientesRfm } from "./buscar-clientes-rfm.js";
 import { buscarComparativo } from "./buscar-comparativo.js";
@@ -100,7 +102,7 @@ export async function dashboardRotas(app: FastifyInstance) {
 		handler: buscarComparativo,
 	});
 
-	/* Analytics redesign */
+	/* Analytics — base (simplificado) */
 	app.get("/dashboard/executivo", {
 		handler: buscarExecutivo,
 	});
@@ -129,10 +131,6 @@ export async function dashboardRotas(app: FastifyInstance) {
 		handler: buscarFinanceiroSaude,
 	});
 
-	app.get("/dashboard/fluxo-caixa", {
-		handler: buscarFluxoCaixa,
-	});
-
 	app.get("/dashboard/dre-avancado", {
 		handler: buscarDreAvancado,
 	});
@@ -141,39 +139,56 @@ export async function dashboardRotas(app: FastifyInstance) {
 		handler: buscarComparativoFlexivel,
 	});
 
+	/* Analytics — completo */
+	const requireCompleto = requireFeature(FEATURES_SAAS.DASHBOARD_COMPLETO);
+
+	app.get("/dashboard/fluxo-caixa", {
+		onRequest: [requireCompleto],
+		handler: buscarFluxoCaixa,
+	});
+
 	app.get("/dashboard/rentabilidade", {
+		onRequest: [requireCompleto],
 		handler: buscarRentabilidade,
 	});
 
 	app.get("/dashboard/clientes", {
+		onRequest: [requireCompleto],
 		handler: buscarClientesAnalytics,
 	});
 
 	app.get("/dashboard/clientes-rfm", {
+		onRequest: [requireCompleto],
 		handler: buscarClientesRfm,
 	});
 
 	app.get("/dashboard/insights", {
+		onRequest: [requireCompleto],
 		handler: buscarInsights,
 	});
 
 	app.get("/dashboard/metas", {
+		onRequest: [requireCompleto],
 		handler: listarMetas,
 	});
 
 	app.get("/dashboard/metas-acompanhamento", {
+		onRequest: [requireCompleto],
 		handler: buscarMetasAcompanhamento,
 	});
 
 	app.post("/dashboard/metas", {
+		onRequest: [requireCompleto],
 		handler: criarMetaDashboard,
 	});
 
 	app.put("/dashboard/metas/:id", {
+		onRequest: [requireCompleto],
 		handler: atualizarMetaDashboard,
 	});
 
 	app.delete("/dashboard/metas/:id", {
+		onRequest: [requireCompleto],
 		handler: excluirMetaDashboard,
 	});
 }
