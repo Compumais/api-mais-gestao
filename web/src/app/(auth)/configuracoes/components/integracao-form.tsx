@@ -54,7 +54,16 @@ import {
 	atualizarConfiguracaoUsuarioSchema,
 	type AtualizarConfiguracaoUsuarioFormData,
 } from "@/schemas/configuracao-usuario.schema";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
+import {
+	iaService,
+	MODELOS_GEMINI,
+	MODELOS_OPENAI,
+	MODELOS_OPENROUTER,
+	type ProvedorIa,
+} from "@/services/ia.service";
+import { useEmpresa } from "@/hooks/use-empresa";
+import { useMutation } from "@tanstack/react-query";
 
 interface IntegracaoFormProps {
 	configuracao: Configuracao | undefined;
@@ -92,6 +101,11 @@ export function IntegracaoForm({
 	const [mostrarOpenRouter, setMostrarOpenRouter] = useState(false);
 	const [mostrarAsaas, setMostrarAsaas] = useState(false);
 
+	const { localStorageEmpresa } = useEmpresa();
+	const [testandoProvedor, setTestandoProvedor] = useState<ProvedorIa | null>(
+		null,
+	);
+
 	const formIntegracoesGlobais = useForm<AtualizarConfiguracaoUsuarioFormData>({
 		resolver: zodResolver(atualizarConfiguracaoUsuarioSchema),
 		defaultValues: {
@@ -99,6 +113,10 @@ export function IntegracaoForm({
 			openaiApiKey: "",
 			openrouterApiKey: "",
 			asaasToken: "",
+			provedorPreferido: "auto",
+			modeloOpenai: MODELOS_OPENAI[0],
+			modeloGemini: MODELOS_GEMINI[0],
+			modeloOpenrouter: MODELOS_OPENROUTER[0],
 		},
 	});
 
@@ -111,9 +129,69 @@ export function IntegracaoForm({
 				openrouterApiKey:
 					configuracaoUsuario.integracoes.openrouterApiKey || "",
 				asaasToken: configuracaoUsuario.integracoes.asaasToken || "",
+				provedorPreferido:
+					configuracaoUsuario.integracoes.provedorPreferido || "auto",
+				modeloOpenai:
+					configuracaoUsuario.integracoes.modeloOpenai || MODELOS_OPENAI[0],
+				modeloGemini:
+					configuracaoUsuario.integracoes.modeloGemini || MODELOS_GEMINI[0],
+				modeloOpenrouter:
+					configuracaoUsuario.integracoes.modeloOpenrouter ||
+					MODELOS_OPENROUTER[0],
 			});
 		}
 	}, [configuracaoUsuario, formIntegracoesGlobais]);
+
+	const testarIaMutation = useMutation({
+		mutationFn: async (provedor: ProvedorIa) => {
+			const values = formIntegracoesGlobais.getValues();
+			const apiKey =
+				provedor === "openai"
+					? values.openaiApiKey
+					: provedor === "gemini"
+						? values.geminiApiKey
+						: values.openrouterApiKey;
+			const modelo =
+				provedor === "openai"
+					? values.modeloOpenai
+					: provedor === "gemini"
+						? values.modeloGemini
+						: values.modeloOpenrouter;
+
+			if (!localStorageEmpresa?.id) {
+				throw new Error("Selecione uma empresa para testar a IA.");
+			}
+
+			return iaService.testar({
+				idempresa: localStorageEmpresa.id,
+				provedor,
+				...(apiKey?.trim() ? { apiKey: apiKey.trim() } : {}),
+				...(modelo ? { modelo } : {}),
+			});
+		},
+		onMutate: (provedor) => {
+			setTestandoProvedor(provedor);
+		},
+		onSettled: () => {
+			setTestandoProvedor(null);
+		},
+		onSuccess: (result) => {
+			if (result.ok) {
+				toast.success(result.mensagem, {
+					description: result.respostaModelo
+						? `Resposta: ${result.respostaModelo}`
+						: `Modelo: ${result.modelo}`,
+				});
+			} else {
+				toast.error(result.mensagem, {
+					description: `Provedor ${result.provedor} · modelo ${result.modelo}`,
+				});
+			}
+		},
+		onError: (error: Error) => {
+			toast.error(error.message || "Falha ao testar IA");
+		},
+	});
 
 	const handleAtualizarIntegracoesGlobais = (
 		data: AtualizarConfiguracaoUsuarioFormData,
@@ -497,8 +575,13 @@ export function IntegracaoForm({
 					<h2 className="text-lg font-semibold mb-2">Integrações Globais</h2>
 					<p className="text-sm text-muted-foreground">
 						{isProprietario
-							? "Configure as chaves de API e tokens que serão compartilhados entre todas as suas empresas."
+							? "Configure as chaves de API e tokens que serão compartilhados entre todas as suas empresas. Use Testar para validar chave e modelo antes de usar a Atena."
 							: "Estas são as configurações do proprietário da empresa. Você pode visualizar, mas não pode editar."}
+					</p>
+					<p className="mt-2 text-xs text-muted-foreground">
+						No modo automático, a Atena usa Gemini se houver chave; depois
+						OpenAI; depois OpenRouter. Se falhar, tenta o próximo provedor
+						disponível.
 					</p>
 				</div>
 
@@ -510,37 +593,103 @@ export function IntegracaoForm({
 				>
 					<FieldGroup>
 						<Field>
+							<FieldLabel>Provedor preferido da Atena</FieldLabel>
+							<Select
+								value={formIntegracoesGlobais.watch("provedorPreferido") || "auto"}
+								onValueChange={(value) =>
+									formIntegracoesGlobais.setValue(
+										"provedorPreferido",
+										value as "auto" | "openai" | "gemini" | "openrouter",
+									)
+								}
+								disabled={!isProprietario}
+							>
+								<SelectTrigger>
+									<SelectValue placeholder="Selecione" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="auto">Automático (Gemini → OpenAI)</SelectItem>
+									<SelectItem value="gemini">Forçar Gemini</SelectItem>
+									<SelectItem value="openai">Forçar OpenAI</SelectItem>
+									<SelectItem value="openrouter">Forçar OpenRouter</SelectItem>
+								</SelectContent>
+							</Select>
+						</Field>
+
+						<Field>
 							<FieldLabel htmlFor="geminiApiKey">
 								Chave da API Gemini
 							</FieldLabel>
-							<div className="relative">
-								<Input
-									id="geminiApiKey"
-									type={mostrarGemini ? "text" : "password"}
-									readOnly={!isProprietario}
-									placeholder={
-										isProprietario
-											? "Digite a chave da API Gemini"
-											: "Configurada pelo proprietário"
-									}
-									{...formIntegracoesGlobais.register("geminiApiKey")}
-									className={!isProprietario ? "bg-muted" : ""}
-								/>
+							<div className="flex gap-2">
+								<div className="relative flex-1">
+									<Input
+										id="geminiApiKey"
+										type={mostrarGemini ? "text" : "password"}
+										readOnly={!isProprietario}
+										placeholder={
+											isProprietario
+												? "Digite a chave da API Gemini"
+												: "Configurada pelo proprietário"
+										}
+										{...formIntegracoesGlobais.register("geminiApiKey")}
+										className={!isProprietario ? "bg-muted" : ""}
+									/>
+									{isProprietario && (
+										<Button
+											type="button"
+											variant="ghost"
+											size="sm"
+											className="absolute right-0 top-0 h-full px-3"
+											onClick={() => setMostrarGemini(!mostrarGemini)}
+										>
+											{mostrarGemini ? (
+												<EyeOff className="h-4 w-4" />
+											) : (
+												<Eye className="h-4 w-4" />
+											)}
+										</Button>
+									)}
+								</div>
 								{isProprietario && (
 									<Button
 										type="button"
-										variant="ghost"
-										size="sm"
-										className="absolute right-0 top-0 h-full px-3"
-										onClick={() => setMostrarGemini(!mostrarGemini)}
+										variant="outline"
+										disabled={testandoProvedor !== null}
+										onClick={() => testarIaMutation.mutate("gemini")}
 									>
-										{mostrarGemini ? (
-											<EyeOff className="h-4 w-4" />
+										{testandoProvedor === "gemini" ? (
+											<Loader2 className="h-4 w-4 animate-spin" />
 										) : (
-											<Eye className="h-4 w-4" />
+											"Testar"
 										)}
 									</Button>
 								)}
+							</div>
+							<div className="mt-2">
+								<FieldLabel className="text-xs text-muted-foreground">
+									Modelo Gemini
+								</FieldLabel>
+								<Select
+									value={
+										formIntegracoesGlobais.watch("modeloGemini") ||
+										MODELOS_GEMINI[0]
+									}
+									onValueChange={(value) =>
+										formIntegracoesGlobais.setValue("modeloGemini", value)
+									}
+									disabled={!isProprietario}
+								>
+									<SelectTrigger>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										{MODELOS_GEMINI.map((m) => (
+											<SelectItem key={m} value={m}>
+												{m}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
 							</div>
 							<FieldError
 								errors={
@@ -555,34 +704,76 @@ export function IntegracaoForm({
 							<FieldLabel htmlFor="openaiApiKey">
 								Chave de API OpenAI
 							</FieldLabel>
-							<div className="relative">
-								<Input
-									id="openaiApiKey"
-									type={mostrarOpenAI ? "text" : "password"}
-									readOnly={!isProprietario}
-									placeholder={
-										isProprietario
-											? "Digite a chave da API OpenAI"
-											: "Configurada pelo proprietário"
-									}
-									{...formIntegracoesGlobais.register("openaiApiKey")}
-									className={!isProprietario ? "bg-muted" : ""}
-								/>
+							<div className="flex gap-2">
+								<div className="relative flex-1">
+									<Input
+										id="openaiApiKey"
+										type={mostrarOpenAI ? "text" : "password"}
+										readOnly={!isProprietario}
+										placeholder={
+											isProprietario
+												? "Digite a chave da API OpenAI"
+												: "Configurada pelo proprietário"
+										}
+										{...formIntegracoesGlobais.register("openaiApiKey")}
+										className={!isProprietario ? "bg-muted" : ""}
+									/>
+									{isProprietario && (
+										<Button
+											type="button"
+											variant="ghost"
+											size="sm"
+											className="absolute right-0 top-0 h-full px-3"
+											onClick={() => setMostrarOpenAI(!mostrarOpenAI)}
+										>
+											{mostrarOpenAI ? (
+												<EyeOff className="h-4 w-4" />
+											) : (
+												<Eye className="h-4 w-4" />
+											)}
+										</Button>
+									)}
+								</div>
 								{isProprietario && (
 									<Button
 										type="button"
-										variant="ghost"
-										size="sm"
-										className="absolute right-0 top-0 h-full px-3"
-										onClick={() => setMostrarOpenAI(!mostrarOpenAI)}
+										variant="outline"
+										disabled={testandoProvedor !== null}
+										onClick={() => testarIaMutation.mutate("openai")}
 									>
-										{mostrarOpenAI ? (
-											<EyeOff className="h-4 w-4" />
+										{testandoProvedor === "openai" ? (
+											<Loader2 className="h-4 w-4 animate-spin" />
 										) : (
-											<Eye className="h-4 w-4" />
+											"Testar"
 										)}
 									</Button>
 								)}
+							</div>
+							<div className="mt-2">
+								<FieldLabel className="text-xs text-muted-foreground">
+									Modelo OpenAI
+								</FieldLabel>
+								<Select
+									value={
+										formIntegracoesGlobais.watch("modeloOpenai") ||
+										MODELOS_OPENAI[0]
+									}
+									onValueChange={(value) =>
+										formIntegracoesGlobais.setValue("modeloOpenai", value)
+									}
+									disabled={!isProprietario}
+								>
+									<SelectTrigger>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										{MODELOS_OPENAI.map((m) => (
+											<SelectItem key={m} value={m}>
+												{m}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
 							</div>
 							<FieldError
 								errors={
@@ -597,34 +788,76 @@ export function IntegracaoForm({
 							<FieldLabel htmlFor="openrouterApiKey">
 								Chave de API OpenRouter
 							</FieldLabel>
-							<div className="relative">
-								<Input
-									id="openrouterApiKey"
-									type={mostrarOpenRouter ? "text" : "password"}
-									readOnly={!isProprietario}
-									placeholder={
-										isProprietario
-											? "Digite a chave da API OpenRouter"
-											: "Configurada pelo proprietário"
-									}
-									{...formIntegracoesGlobais.register("openrouterApiKey")}
-									className={!isProprietario ? "bg-muted" : ""}
-								/>
+							<div className="flex gap-2">
+								<div className="relative flex-1">
+									<Input
+										id="openrouterApiKey"
+										type={mostrarOpenRouter ? "text" : "password"}
+										readOnly={!isProprietario}
+										placeholder={
+											isProprietario
+												? "Digite a chave da API OpenRouter"
+												: "Configurada pelo proprietário"
+										}
+										{...formIntegracoesGlobais.register("openrouterApiKey")}
+										className={!isProprietario ? "bg-muted" : ""}
+									/>
+									{isProprietario && (
+										<Button
+											type="button"
+											variant="ghost"
+											size="sm"
+											className="absolute right-0 top-0 h-full px-3"
+											onClick={() => setMostrarOpenRouter(!mostrarOpenRouter)}
+										>
+											{mostrarOpenRouter ? (
+												<EyeOff className="h-4 w-4" />
+											) : (
+												<Eye className="h-4 w-4" />
+											)}
+										</Button>
+									)}
+								</div>
 								{isProprietario && (
 									<Button
 										type="button"
-										variant="ghost"
-										size="sm"
-										className="absolute right-0 top-0 h-full px-3"
-										onClick={() => setMostrarOpenRouter(!mostrarOpenRouter)}
+										variant="outline"
+										disabled={testandoProvedor !== null}
+										onClick={() => testarIaMutation.mutate("openrouter")}
 									>
-										{mostrarOpenRouter ? (
-											<EyeOff className="h-4 w-4" />
+										{testandoProvedor === "openrouter" ? (
+											<Loader2 className="h-4 w-4 animate-spin" />
 										) : (
-											<Eye className="h-4 w-4" />
+											"Testar"
 										)}
 									</Button>
 								)}
+							</div>
+							<div className="mt-2">
+								<FieldLabel className="text-xs text-muted-foreground">
+									Modelo OpenRouter
+								</FieldLabel>
+								<Select
+									value={
+										formIntegracoesGlobais.watch("modeloOpenrouter") ||
+										MODELOS_OPENROUTER[0]
+									}
+									onValueChange={(value) =>
+										formIntegracoesGlobais.setValue("modeloOpenrouter", value)
+									}
+									disabled={!isProprietario}
+								>
+									<SelectTrigger>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										{MODELOS_OPENROUTER.map((m) => (
+											<SelectItem key={m} value={m}>
+												{m}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
 							</div>
 							<FieldError
 								errors={

@@ -18,6 +18,7 @@ import {
 } from "@/util/tipo-estoque.js";
 import { complementarBaixaFiscalVendaPdv } from "./complementar-baixa-fiscal-venda-pdv.js";
 import { registrarMovimentoEstoque } from "./registrar-movimento-estoque.js";
+import { garantirProducaoNaVendaService } from "@/service/producao/garantir-producao-na-venda.js";
 
 export type ItemBaixaEstoqueVenda = {
 	idproduto: string;
@@ -120,6 +121,22 @@ export async function baixaEstoqueVendaService({
 			).toFixed(2);
 
 			try {
+				const producao = await garantirProducaoNaVendaService({
+					idempresa,
+					idproduto: item.idproduto,
+					quantidade: qty.toFixed(6),
+					idoriginal: idvenda,
+					tipoestoque: TIPO_ESTOQUE.OPERACIONAL,
+					idusuario,
+				});
+
+				if (!producao.success) {
+					avisos.push(
+						`Produção na venda falhou (${item.nomeproduto ?? item.idproduto}): ${producao.error ?? "erro"}`,
+					);
+					continue;
+				}
+
 				const movimento = await registrarMovimentoEstoque({
 					idempresa,
 					idproduto: item.idproduto,
@@ -174,6 +191,7 @@ export async function baixaEstoqueVendaService({
 					idempresa,
 					idvenda,
 					itens,
+					idusuario,
 				});
 				movimentosRegistrados += complemento.movimentosRegistrados;
 				avisos.push(...complemento.avisos);

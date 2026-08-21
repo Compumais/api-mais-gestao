@@ -27,6 +27,7 @@ export const TIPO_DOCUMENTO_ESTOQUE = {
 	PDV: 0,
 	NOTA_FISCAL: 1,
 	ACERTO: 2,
+	PRODUCAO: 3,
 } as const;
 
 export function tipoEstoqueAfetouOperacional(
