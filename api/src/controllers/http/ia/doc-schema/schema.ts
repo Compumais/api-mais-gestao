@@ -4,11 +4,11 @@ export const chatComAtenaSchema: FastifySchema = {
 	tags: ["ia"],
 	summary: "Chat com IA Atena",
 	description:
-		"Envia uma mensagem para a IA Atena e recebe uma resposta baseada nos dados do dashboard. A IA usa as configurações de API do usuário/proprietário (OpenAI, Gemini ou OpenRouter).",
+		"Envia uma mensagem para a Atena (agente com tools). Pode cadastrar clientes, gerar relatórios, faturar pedidos e enviar documentos à contabilidade. Usa OpenAI ou Gemini das integrações do usuário.",
 	security: [{ bearerAuth: [] }],
 	body: {
 		type: "object",
-		required: ["mensagem"],
+		required: ["mensagem", "idempresa"],
 		properties: {
 			mensagem: {
 				type: "string",
@@ -18,7 +18,7 @@ export const chatComAtenaSchema: FastifySchema = {
 			idempresa: {
 				type: "string",
 				format: "uuid",
-				description: "ID da empresa (opcional)",
+				description: "ID da empresa",
 			},
 			historico: {
 				type: "array",
@@ -46,6 +46,21 @@ export const chatComAtenaSchema: FastifySchema = {
 				resposta: {
 					type: "string",
 					description: "Resposta da IA Atena",
+				},
+				acoes: {
+					type: "array",
+					description: "Ferramentas executadas nesta interação",
+					items: {
+						type: "object",
+						properties: {
+							nome: { type: "string" },
+							status: {
+								type: "string",
+								enum: ["sucesso", "erro", "bloqueado"],
+							},
+							resumo: { type: "string" },
+						},
+					},
 				},
 			},
 		},
