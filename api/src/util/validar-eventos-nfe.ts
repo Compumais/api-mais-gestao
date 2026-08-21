@@ -187,9 +187,17 @@ export function validarInutilizacaoNfe(
 	return { ok: true };
 }
 
+/**
+ * Mapeia o cStat do evento de cancelamento (SEFAZ) para o status interno da NF.
+ * - 135: evento registrado e vinculado (cancelamento no prazo)
+ * - 155: cancelamento homologado fora do prazo
+ * - 101: NF-e cancelada (retorno legado/alternativo)
+ */
 export function resolverStatusCancelamentoNfe(cStat?: string | null): number {
-	const codigo = String(cStat ?? "").trim();
-	if (codigo === "135" || codigo === "155") {
+	const codigo = String(cStat ?? "")
+		.trim()
+		.replace(/^0+/, "");
+	if (codigo === "155") {
 		return NFE_STATUS.CANCELADA_FORA_PRAZO;
 	}
 	return NFE_STATUS.CANCELADA;
