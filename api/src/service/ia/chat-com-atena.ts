@@ -1,5 +1,13 @@
 import type { HttpResponse } from "@/model/http-model.js";
+import type { IntegracoesUsuario } from "@/repositories/configuracao-usuario-repositories.js";
 import { buscarConfiguracaoUsuarioService } from "@/service/configuracao-usuario/buscar-configuracao-usuario.js";
+import {
+	fetchWithTimeout,
+	mensagemErroIaAmigavel,
+	MODELOS_GEMINI,
+	resolverProvedor,
+	type ProvedorIa,
+} from "@/service/ia/provedores.js";
 import {
 	executarToolPorNome,
 	toolsParaGemini,
@@ -40,21 +48,6 @@ Regras:
 - Se uma ferramenta retornar erro ou bloqueio, explique ao usuário e oriente o próximo passo.
 - Não exponha chaves de API nem detalhes internos técnicos.`;
 
-async function fetchWithTimeout(
-	url: string,
-	init: RequestInit,
-	timeoutMs: number,
-): Promise<Response> {
-	const controller = new AbortController();
-	const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-	try {
-		return await fetch(url, { ...init, signal: controller.signal });
-	} finally {
-		clearTimeout(timeoutId);
-	}
-}
-
 function normalizarHistorico(
 	historico?: MensagemChat[],
 ): MensagemChat[] | undefined {
@@ -81,6 +74,7 @@ type OpenAIMessage = {
 
 async function loopOpenAI(params: {
 	apiKey: string;
+	modelo: string;
 	mensagem: string;
 	historico?: MensagemChat[];
 	idusuario: string;
@@ -111,7 +105,7 @@ async function loopOpenAI(params: {
 					Authorization: `Bearer ${params.apiKey}`,
 				},
 				body: JSON.stringify({
-					model: "gpt-4o-mini",
+					model: params.modelo,
 					messages,
 					tools,
 					tool_choice: "auto",
@@ -218,6 +212,7 @@ type GeminiContent = {
 
 async function loopGemini(params: {
 	apiKey: string;
+	modelo: string;
 	mensagem: string;
 	historico?: MensagemChat[];
 	idusuario: string;
@@ -242,7 +237,10 @@ async function loopGemini(params: {
 	const ctx = { idusuario: params.idusuario, idempresa: params.idempresa };
 	const tools = toolsParaGemini();
 
-	const modelos = ["gemini-2.0-flash", "gemini-1.5-flash"];
+	const modelos = [
+		params.modelo,
+		...MODELOS_GEMINI.filter((m) => m !== params.modelo),
+	];
 
 	for (let round = 0; round < MAX_AGENT_ROUNDS; round++) {
 		let data: {
@@ -252,11 +250,12 @@ async function loopGemini(params: {
 			error?: { message?: string };
 		} | null = null;
 		let lastError: Error | null = null;
+		let modeloUsado = params.modelo;
 
 		for (const modelo of modelos) {
 			try {
 				const response = await fetchWithTimeout(
-					`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${params.apiKey}`,
+					`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${encodeURIComponent(params.apiKey)}`,
 					{
 						method: "POST",
 						headers: { "Content-Type": "application/json" },
@@ -277,30 +276,47 @@ async function loopGemini(params: {
 					const error = await response
 						.json()
 						.catch(() => ({ error: { message: "Erro desconhecido" } }));
-					lastError = new Error(
+					const msg =
 						error.error?.message ||
-							`Erro ao chamar Gemini (${modelo}): ${response.statusText}`,
-					);
-					continue;
+						`Erro ao chamar Gemini (${modelo}): ${response.statusText}`;
+					lastError = new Error(msg);
+					if (
+						/not found|NOT_FOUND|unsupported|is not found/i.test(msg) ||
+						response.status === 404
+					) {
+						continue;
+					}
+					throw lastError;
 				}
 
 				data = await response.json();
+				modeloUsado = modelo;
 				lastError = null;
 				break;
 			} catch (error) {
 				lastError =
 					error instanceof Error ? error : new Error("Falha no Gemini");
+				if (
+					!/not found|NOT_FOUND|unsupported|is not found/i.test(
+						lastError.message,
+					)
+				) {
+					throw lastError;
+				}
 			}
 		}
 
 		if (!data) {
-			throw lastError ?? new Error("Falha ao chamar Gemini");
+			throw lastError ?? new Error(`Falha ao chamar Gemini (${modeloUsado})`);
 		}
 
 		const parts = data.candidates?.[0]?.content?.parts ?? [];
 		const functionCalls = parts.filter(
-			(p): p is { functionCall: { name: string; args?: Record<string, unknown> } } =>
-				"functionCall" in p && Boolean(p.functionCall?.name),
+			(
+				p,
+			): p is {
+				functionCall: { name: string; args?: Record<string, unknown> };
+			} => "functionCall" in p && Boolean(p.functionCall?.name),
 		);
 
 		if (functionCalls.length > 0) {
@@ -337,7 +353,10 @@ async function loopGemini(params: {
 		}
 
 		const texto = parts
-			.filter((p): p is { text: string } => "text" in p && typeof p.text === "string")
+			.filter(
+				(p): p is { text: string } =>
+					"text" in p && typeof p.text === "string",
+			)
 			.map((p) => p.text)
 			.join("\n")
 			.trim();
@@ -357,6 +376,7 @@ async function loopGemini(params: {
 
 async function chatOpenRouterSemTools(params: {
 	apiKey: string;
+	modelo: string;
 	mensagem: string;
 	historico?: MensagemChat[];
 }): Promise<string> {
@@ -379,7 +399,7 @@ async function chatOpenRouterSemTools(params: {
 				"X-Title": "Mais Gestão - Atena",
 			},
 			body: JSON.stringify({
-				model: "openai/gpt-4o-mini",
+				model: params.modelo,
 				messages,
 				temperature: 0.3,
 				max_tokens: 1500,
@@ -403,6 +423,15 @@ async function chatOpenRouterSemTools(params: {
 		data.choices?.[0]?.message?.content ||
 		"Desculpe, não consegui gerar uma resposta."
 	);
+}
+
+function chaveDoProvedor(
+	integracoes: IntegracoesUsuario,
+	provedor: ProvedorIa,
+): string | undefined {
+	if (provedor === "openai") return integracoes.openaiApiKey?.trim() || undefined;
+	if (provedor === "gemini") return integracoes.geminiApiKey?.trim() || undefined;
+	return integracoes.openrouterApiKey?.trim() || undefined;
 }
 
 export async function chatComAtenaService({
@@ -436,38 +465,22 @@ export async function chatComAtenaService({
 	}
 
 	const integracoes = configuracaoResult.body.integracoes;
+	const resolvido = resolverProvedor(integracoes);
 
-	let apiKey: string | undefined;
-	let apiTipo: "openai" | "gemini" | "openrouter" | null = null;
-
-	if (integracoes.openaiApiKey && integracoes.openaiApiKey.trim() !== "") {
-		apiKey = integracoes.openaiApiKey;
-		apiTipo = "openai";
-	} else if (
-		integracoes.geminiApiKey &&
-		integracoes.geminiApiKey.trim() !== ""
-	) {
-		apiKey = integracoes.geminiApiKey;
-		apiTipo = "gemini";
-	} else if (
-		integracoes.openrouterApiKey &&
-		integracoes.openrouterApiKey.trim() !== ""
-	) {
-		apiKey = integracoes.openrouterApiKey;
-		apiTipo = "openrouter";
-	}
-
-	if (!apiKey || !apiTipo) {
+	if (!resolvido) {
 		return httpBadRequest({
 			error:
-				"Nenhuma API de IA configurada. Configure OpenAI ou Gemini em Configurações > Integrações.",
+				"Nenhuma API de IA configurada. Configure OpenAI ou Gemini em Configurações > Integrações e use o botão Testar.",
 		});
 	}
 
+	const { provedor, apiKey, modelo } = resolvido;
+
 	try {
-		if (apiTipo === "openai") {
+		if (provedor === "openai") {
 			const resultado = await loopOpenAI({
 				apiKey,
+				modelo,
 				mensagem,
 				historico: historicoNormalizado,
 				idusuario,
@@ -476,9 +489,10 @@ export async function chatComAtenaService({
 			return httpOk(resultado);
 		}
 
-		if (apiTipo === "gemini") {
+		if (provedor === "gemini") {
 			const resultado = await loopGemini({
 				apiKey,
+				modelo,
 				mensagem,
 				historico: historicoNormalizado,
 				idusuario,
@@ -489,15 +503,67 @@ export async function chatComAtenaService({
 
 		const resposta = await chatOpenRouterSemTools({
 			apiKey,
+			modelo,
 			mensagem,
 			historico: historicoNormalizado,
 		});
 		return httpOk({
-			resposta: `${resposta}\n\n(Observação: com OpenRouter as automações/ferramentas ficam limitadas. Configure OpenAI ou Gemini para executar tarefas.)`,
+			resposta: `${resposta}\n\n(Observação: com OpenRouter as automações/ferramentas ficam limitadas. Preferência: OpenAI ou Gemini.)`,
 			acoes: [],
 		});
 	} catch (error) {
 		console.error("Erro ao chamar API de IA:", error);
-		return httpBadGateway("Serviço de IA indisponível");
+		const msg = mensagemErroIaAmigavel(error);
+
+		// Fallback auto: se preferência auto e falhou o provedor atual, tenta o outro
+		const preferido = integracoes.provedorPreferido ?? "auto";
+		if (preferido === "auto") {
+			const alternativos: ProvedorIa[] = ["gemini", "openai", "openrouter"].filter(
+				(p) => p !== provedor,
+			) as ProvedorIa[];
+
+			for (const alt of alternativos) {
+				const altKey = chaveDoProvedor(integracoes, alt);
+				if (!altKey) continue;
+				const altResolvido = resolverProvedor({
+					...integracoes,
+					provedorPreferido: alt,
+				});
+				if (!altResolvido) continue;
+				try {
+					if (alt === "gemini") {
+						return httpOk(
+							await loopGemini({
+								apiKey: altResolvido.apiKey,
+								modelo: altResolvido.modelo,
+								mensagem,
+								historico: historicoNormalizado,
+								idusuario,
+								idempresa,
+							}),
+						);
+					}
+					if (alt === "openai") {
+						return httpOk(
+							await loopOpenAI({
+								apiKey: altResolvido.apiKey,
+								modelo: altResolvido.modelo,
+								mensagem,
+								historico: historicoNormalizado,
+								idusuario,
+								idempresa,
+							}),
+						);
+					}
+				} catch (altError) {
+					console.error(`Fallback ${alt} também falhou:`, altError);
+				}
+			}
+		}
+
+		if (/autenticação|API key|invalid|401|403/i.test(msg)) {
+			return httpBadRequest({ error: msg });
+		}
+		return httpBadGateway(msg);
 	}
 }

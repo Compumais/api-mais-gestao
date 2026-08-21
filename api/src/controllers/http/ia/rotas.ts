@@ -4,6 +4,7 @@ import { verifyJwt } from "../../middleware/verify-jwt.js";
 import { requireModulo } from "../../middleware/verify-plano.js";
 import { chatComAtena } from "./chat.js";
 import * as schema from "./doc-schema/schema.js";
+import { testarIa } from "./testar.js";
 
 export async function iaRotas(app: FastifyInstance) {
 	app.addHook("onRequest", verifyJwt);
@@ -12,5 +13,10 @@ export async function iaRotas(app: FastifyInstance) {
 	app.post("/ia/chat", {
 		schema: schema.chatComAtenaSchema,
 		handler: chatComAtena,
+	});
+
+	app.post("/ia/testar", {
+		schema: schema.testarIaSchema,
+		handler: testarIa,
 	});
 }

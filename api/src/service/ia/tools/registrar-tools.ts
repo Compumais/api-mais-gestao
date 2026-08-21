@@ -10,6 +10,7 @@ import { toolsDashboard } from "./dashboard.js";
 import { toolsFiscal } from "./fiscal.js";
 import { toolsPedidos } from "./pedidos.js";
 import { toolsRelatorios } from "./relatorios.js";
+import { sanitizarSchemaGemini } from "@/service/ia/provedores.js";
 import { zodParaJsonSchema } from "./util-tools.js";
 
 const TOOLS: DefinicaoTool[] = [
@@ -48,7 +49,7 @@ export function toolsParaGemini() {
 			functionDeclarations: TOOLS.map((tool) => ({
 				name: tool.nome,
 				description: tool.descricao,
-				parameters: zodParaJsonSchema(tool.schema),
+				parameters: sanitizarSchemaGemini(zodParaJsonSchema(tool.schema)),
 			})),
 		},
 	];

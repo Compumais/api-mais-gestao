@@ -16,6 +16,13 @@ vi.mock("@/repositories/venda-pdv-gourmet-repositories.js");
 vi.mock("@/service/nfce-emissao/emitir-nfce-venda-pdv.js");
 vi.mock("./registrar-movimento-estoque.js");
 vi.mock("./complementar-baixa-fiscal-venda-pdv.js");
+vi.mock("@/service/producao/garantir-producao-na-venda.js", () => ({
+	garantirProducaoNaVendaService: vi.fn().mockResolvedValue({
+		success: true,
+		status: 200,
+		body: { executada: false, jaExistia: false },
+	}),
+}));
 
 describe("baixaEstoqueVendaService", () => {
 	beforeEach(() => {

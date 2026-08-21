@@ -137,6 +137,7 @@ export async function integrarNotaFiscalVendaAutorizadaService({
 				dataMovimento: nota.emissao ?? agora,
 				sentido,
 				itens: explodirItensMovimentoPorLote(itens, lotesItens),
+				idusuario,
 			});
 
 			movimentosGerados = resultadoEstoque.movimentosCriados;

@@ -1,5 +1,6 @@
 import type { Icon } from "@tabler/icons-react";
 import {
+	IconBuildingFactory,
 	IconCashRegister,
 	IconCoins,
 	IconDashboard,
@@ -213,6 +214,22 @@ export const DATA = {
 			title: "Posição de estoque",
 			url: "/estoque",
 			icon: IconPackage,
+			acesso: {
+				perfis: [...PERFIS_GESTAO],
+			},
+		},
+		{
+			title: "Fichas de produção",
+			url: "/fichas-producao",
+			icon: IconBuildingFactory,
+			acesso: {
+				perfis: [...PERFIS_GESTAO],
+			},
+		},
+		{
+			title: "Produções",
+			url: "/producoes",
+			icon: IconHistory,
 			acesso: {
 				perfis: [...PERFIS_GESTAO],
 			},

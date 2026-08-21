@@ -8,6 +8,10 @@ export interface IntegracoesUsuario {
 	openaiApiKey?: string | null;
 	openrouterApiKey?: string | null;
 	asaasToken?: string | null;
+	provedorPreferido?: "auto" | "openai" | "gemini" | "openrouter" | null;
+	modeloOpenai?: string | null;
+	modeloGemini?: string | null;
+	modeloOpenrouter?: string | null;
 }
 
 /** Objeto sem nulls para insert/update no schema (exactOptionalPropertyTypes). */
@@ -21,10 +25,14 @@ function integracoesParaJsonb(
 				"openaiApiKey",
 				"openrouterApiKey",
 				"asaasToken",
+				"provedorPreferido",
+				"modeloOpenai",
+				"modeloGemini",
+				"modeloOpenrouter",
 			] as const
 		)
-			.filter((k) => dados[k] != null)
-			.map((k) => [k, dados[k] as string]),
+			.filter((k) => dados[k] != null && String(dados[k]).trim() !== "")
+			.map((k) => [k, String(dados[k])]),
 	);
 }
 

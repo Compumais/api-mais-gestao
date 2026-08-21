@@ -1,4 +1,5 @@
 import { listarMovimentosEstoquePorIdOriginal } from "@/repositories/movimento-estoque-repositories.js";
+import { garantirProducaoNaVendaService } from "@/service/producao/garantir-producao-na-venda.js";
 import {
 	TIPO_DOCUMENTO_ESTOQUE,
 	TIPO_ESTOQUE,
@@ -15,6 +16,7 @@ export async function complementarBaixaFiscalVendaPdv(params: {
 	idempresa: string;
 	idvenda: string;
 	itens: ItemBaixaEstoqueVenda[];
+	idusuario?: string;
 }): Promise<{ movimentosRegistrados: number; avisos: string[] }> {
 	const avisos: string[] = [];
 	let movimentosRegistrados = 0;
@@ -45,6 +47,24 @@ export async function complementarBaixaFiscalVendaPdv(params: {
 		).toFixed(2);
 
 		try {
+			if (params.idusuario) {
+				const producao = await garantirProducaoNaVendaService({
+					idempresa: params.idempresa,
+					idproduto: item.idproduto,
+					quantidade: qty.toFixed(6),
+					idoriginal: params.idvenda,
+					tipoestoque: TIPO_ESTOQUE.FISCAL,
+					idusuario: params.idusuario,
+				});
+
+				if (!producao.success) {
+					avisos.push(
+						`Produção fiscal na venda falhou (${item.nomeproduto ?? item.idproduto}): ${producao.error ?? "erro"}`,
+					);
+					continue;
+				}
+			}
+
 			const movimento = await registrarMovimentoEstoque({
 				idempresa: params.idempresa,
 				idproduto: item.idproduto,
