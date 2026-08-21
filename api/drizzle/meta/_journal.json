@@ -617,6 +617,13 @@
       "when": 1785014000000,
       "tag": "0085_ficha_producao",
       "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "7",
+      "when": 1785015000000,
+      "tag": "0086_metas_dashboard",
+      "breakpoints": true
     }
   ]
 }

@@ -80,6 +80,7 @@ export * from "./tables/inventario-fiscal.js";
 export * from "./tables/local-estoque.js";
 export * from "./tables/local-retirada.js";
 export * from "./tables/lote.js";
+export * from "./tables/metas-dashboard.js";
 export * from "./tables/modelo-impressao-ordem-servico.js";
 export * from "./tables/modelo-impressao-pedido.js";
 export * from "./tables/modulos-saas.js";
