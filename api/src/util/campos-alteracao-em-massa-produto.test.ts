@@ -37,6 +37,22 @@ describe("prepararCamposAlteracaoEmMassaProduto", () => {
 		expect(dados).not.toHaveProperty("situacaotributaria");
 		expect(dados).not.toHaveProperty("cstpisentrada");
 	});
+
+	it("permite limpar campo com null explícito sem afetar os demais", () => {
+		const dados = prepararCamposAlteracaoEmMassaProduto(
+			camposAlteracaoParseados({
+				ncm: null,
+				percentualmva: "10",
+			}),
+		);
+
+		expect(dados).toEqual({
+			ncm: null,
+			percentualmva: "10.00",
+		});
+		expect(dados).not.toHaveProperty("cstpis");
+		expect(dados).not.toHaveProperty("situacaotributaria");
+	});
 });
 
 describe("alterarProdutosEmMassaBodySchema", () => {
