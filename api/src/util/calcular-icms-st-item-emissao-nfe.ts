@@ -115,6 +115,20 @@ export function recalcularIcmsStItemEmissao<T extends ItemPayloadNfe>(item: T): 
 		return item;
 	}
 
+	const semAliquotaInterna =
+		item.aliquotaIcms == null || item.aliquotaIcms <= 0;
+
+	// Sem alíquota interna: recalcula a base, mas preserva o vST já informado
+	// (ex.: front calculou com dedução e o Simples limpou aliquotaIcms no payload).
+	// Evita divergência painel × DANFE (47,25 vs 124,65 no cenário MVA 61,05%).
+	if (semAliquotaInterna && item.valorIcmsSt != null) {
+		return {
+			...item,
+			baseIcmsSt: calculado.baseIcmsSt,
+			valorIcmsSt: item.valorIcmsSt,
+		};
+	}
+
 	return {
 		...item,
 		baseIcmsSt: calculado.baseIcmsSt,

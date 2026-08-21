@@ -43,6 +43,7 @@ import {
 	itemEmissaoPodeSerConfirmado,
 	itemEmissaoRequerCest,
 	itemEmissaoSemTributacaoCompleta,
+	itemPrecisaAliquotaIcmsParaSt,
 	mapearProdutoParaItemNfe,
 	mapearTributacaoCfopParaItem,
 	normalizarGtinItemFormulario,
@@ -408,9 +409,14 @@ export function ModalItemEmissao({
 					) / 100;
 			}
 		} else {
+			// Simples: não destaca ICMS próprio (vBC/vICMS), mas mantém a
+			// alíquota interna quando há ST — ela alimenta a dedução do vICMSST
+			// no painel e no recalculo da API/pré-visualização DANFE.
 			itemFinal.baseIcms = undefined;
 			itemFinal.valorIcms = undefined;
-			itemFinal.aliquotaIcms = undefined;
+			if (!itemPrecisaAliquotaIcmsParaSt(itemFinal)) {
+				itemFinal.aliquotaIcms = undefined;
+			}
 		}
 
 		onConfirmar(itemFinal);
@@ -809,11 +815,13 @@ export function ModalItemEmissao({
 							</div>
 						</div>
 
-						{!usaCsosn && (
+						{(!usaCsosn || itemPrecisaAliquotaIcmsParaSt(item)) && (
 							<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 								<div className="space-y-1">
 									<span className="text-sm font-medium text-muted-foreground block">
-										Alíquota ICMS (%)
+										{usaCsosn
+											? "Alíquota ICMS interna — dedução ST (%)"
+											: "Alíquota ICMS (%)"}
 									</span>
 									<Input
 										type="number"
@@ -826,19 +834,35 @@ export function ModalItemEmissao({
 												: undefined;
 											const base = item.baseIcms ?? totalItem;
 											const valorIcms =
-												aliquota !== undefined
+												!usaCsosn && aliquota !== undefined
 													? Math.round(((base * aliquota) / 100) * 100) / 100
 													: undefined;
-											setItem((prev) => ({
-												...prev,
-												aliquotaIcms: aliquota,
-												valorIcms,
-											}));
+											setItem((prev) => {
+												const atualizado = {
+													...prev,
+													aliquotaIcms: aliquota,
+													...(usaCsosn
+														? {}
+														: { valorIcms }),
+												};
+												if (!itemPrecisaAliquotaIcmsParaSt(atualizado)) {
+													return atualizado;
+												}
+												return {
+													...atualizado,
+													...sugerirIcmsStPeloMva({
+														...atualizado,
+														baseIcmsSt: undefined,
+														valorIcmsSt: undefined,
+													}),
+												};
+											});
 										}}
 									/>
 									<p className="text-xs text-muted-foreground">
-										Altera a alíquota e sugere o valor do ICMS. Você pode
-										ajustar base e valor na seção abaixo.
+										{usaCsosn
+											? "Usada só na dedução do ICMS ST (não destaca ICMS próprio no Simples)."
+											: "Altera a alíquota e sugere o valor do ICMS. Você pode ajustar base e valor na seção abaixo."}
 									</p>
 								</div>
 							</div>
