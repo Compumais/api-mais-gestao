@@ -1,19 +1,25 @@
 "use client";
 
 import * as React from "react";
+import type { AcaoIA } from "@/services/ia.service";
 
 interface MensagemChat {
 	id: string;
 	role: "user" | "assistant";
 	content: string;
 	timestamp: Date;
+	acoes?: AcaoIA[];
 }
 
 interface AtenaChatContextType {
 	isOpen: boolean;
 	setIsOpen: (open: boolean) => void;
 	mensagens: MensagemChat[];
-	adicionarMensagem: (role: "user" | "assistant", content: string) => void;
+	adicionarMensagem: (
+		role: "user" | "assistant",
+		content: string,
+		acoes?: AcaoIA[],
+	) => void;
 	limparMensagens: () => void;
 }
 
@@ -26,12 +32,13 @@ export function AtenaChatProvider({ children }: { children: React.ReactNode }) {
 	const [mensagens, setMensagens] = React.useState<MensagemChat[]>([]);
 
 	const adicionarMensagem = React.useCallback(
-		(role: "user" | "assistant", content: string) => {
+		(role: "user" | "assistant", content: string, acoes?: AcaoIA[]) => {
 			const novaMensagem: MensagemChat = {
 				id: crypto.randomUUID(),
 				role,
 				content,
 				timestamp: new Date(),
+				...(acoes && acoes.length > 0 ? { acoes } : {}),
 			};
 			setMensagens((prev) => [...prev, novaMensagem]);
 		},

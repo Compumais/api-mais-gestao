@@ -11,8 +11,15 @@ export interface EnviarMensagemParams {
 	historico?: MensagemChat[];
 }
 
+export interface AcaoIA {
+	nome: string;
+	status: "sucesso" | "erro" | "bloqueado";
+	resumo: string;
+}
+
 export interface RespostaIA {
 	resposta: string;
+	acoes?: AcaoIA[];
 }
 
 export const iaService = {
