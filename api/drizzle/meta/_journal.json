@@ -610,6 +610,13 @@
       "when": 1785013000000,
       "tag": "0084_dav_item_lote",
       "breakpoints": true
+    },
+    {
+      "idx": 86,
+      "version": "7",
+      "when": 1785014000000,
+      "tag": "0085_ficha_producao",
+      "breakpoints": true
     }
   ]
 }

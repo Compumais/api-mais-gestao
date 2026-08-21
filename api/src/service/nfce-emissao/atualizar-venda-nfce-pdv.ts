@@ -253,6 +253,7 @@ export async function atualizarVendaNfcePdvService({
 					idempresa,
 					idvenda: venda.id,
 					itens: itensEstoque,
+					idusuario,
 				});
 				movimentosRegistrados += complemento.movimentosRegistrados;
 				avisos.push(...complemento.avisos);
