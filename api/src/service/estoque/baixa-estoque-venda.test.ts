@@ -26,6 +26,7 @@ describe("baixaEstoqueVendaService", () => {
 		vi.mocked(
 			nfceConfigRepository.buscarNfceConfiguracaoPorEmpresa,
 		).mockResolvedValue({
+			ambiente: 1,
 			meiospagamentonfce: {
 				dinheiro: true,
 				cartao: true,
@@ -207,5 +208,48 @@ describe("baixaEstoqueVendaService", () => {
 			complementarFiscal.complementarBaixaFiscalVendaPdv,
 		).not.toHaveBeenCalled();
 		expect(resultado.body?.avisos).toContain("Rejeição SEFAZ");
+	});
+
+	it("em homologação não movimenta estoque operacional nem fiscal", async () => {
+		vi.mocked(
+			nfceConfigRepository.buscarNfceConfiguracaoPorEmpresa,
+		).mockResolvedValue({
+			ambiente: 2,
+			meiospagamentonfce: {
+				dinheiro: true,
+				cartao: true,
+				pix: true,
+				prepago: false,
+			},
+		} as never);
+		vi.mocked(emitirNfce.emitirNfceVendaPdvService).mockResolvedValue({
+			success: true,
+			status: 200,
+			body: { emitida: true, idnotafiscal: "nf-1" },
+		} as never);
+
+		const resultado = await baixaEstoqueVendaService({
+			idempresa: "emp-1",
+			idusuario: "user-1",
+			idvenda: "venda-1",
+			itens: [
+				{
+					idproduto: "prod-1",
+					quantidade: "1",
+					precounitario: "10",
+				},
+			],
+			pagamentos: { valortotal: "10", valordinheiro: "10" },
+		});
+
+		expect(resultado.success).toBe(true);
+		expect(registrarMovimento.registrarMovimentoEstoque).not.toHaveBeenCalled();
+		expect(
+			complementarFiscal.complementarBaixaFiscalVendaPdv,
+		).not.toHaveBeenCalled();
+		expect(emitirNfce.emitirNfceVendaPdvService).toHaveBeenCalled();
+		expect(
+			resultado.body?.avisos.some((aviso) => aviso.includes("homologação")),
+		).toBe(true);
 	});
 });

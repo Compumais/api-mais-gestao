@@ -33,6 +33,7 @@ import { enriquecerItensEmissaoComProduto } from "@/service/nfe-emissao/enriquec
 import { arquivarXmlNotaFiscal } from "@/service/nota-fiscal/arquivar-xml-nota-fiscal.js";
 import { integrarNotaFiscalVendaAutorizadaService } from "@/service/nota-fiscal/integrar-nota-fiscal-venda-autorizada.js";
 import { calcularTotaisFiscaisEmissaoNfe } from "@/util/calcular-totais-fiscais-emissao-nfe.js";
+import { isAmbienteHomologacao } from "@/util/ambiente-sefaz.js";
 import {
 	complementarCardPagamentoNfe,
 	exigeGrupoCard,
@@ -420,6 +421,12 @@ export async function faturarDavNfceService({
 
 	const idnotafiscal = reserva.idnotafiscal;
 	const ambiente = nfceConfiguracao.ambiente;
+	const gerarFinanceiroResolvido = isAmbienteHomologacao(ambiente)
+		? false
+		: gerarFinanceiro;
+	const gerarEstoqueResolvido = isAmbienteHomologacao(ambiente)
+		? false
+		: gerarEstoque;
 
 	const payload = await montarPayloadGatewayEmissaoNfce({
 		empresa,
@@ -527,8 +534,8 @@ export async function faturarDavNfceService({
 			natOp,
 			pagamento: pagamentoNormalizado,
 			emissao: {
-				gerarFinanceiro,
-				gerarEstoque,
+				gerarFinanceiro: gerarFinanceiroResolvido,
+				gerarEstoque: gerarEstoqueResolvido,
 			},
 		},
 	};
@@ -581,8 +588,8 @@ export async function faturarDavNfceService({
 		await integrarNotaFiscalVendaAutorizadaService({
 			idusuario,
 			idnotafiscal,
-			gerarFinanceiro,
-			gerarEstoque,
+			gerarFinanceiro: gerarFinanceiroResolvido,
+			gerarEstoque: gerarEstoqueResolvido,
 		}).catch((erro) => {
 			console.error("Erro na integração operacional da NFC-e do pedido:", erro);
 		});

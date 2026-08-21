@@ -150,6 +150,8 @@ export type ListarNotasFiscaisPorEmpresaParametros = {
 	idcfop?: string | undefined;
 	dataInicio?: string | undefined;
 	dataFim?: string | undefined;
+	/** 1 produção / 2 homologação — filtra `tipoambientenfe` */
+	tipoambientenfe?: number | undefined;
 	excluirRascunhos?: boolean | undefined;
 	somenteRascunhos?: boolean | undefined;
 	page?: number;
@@ -166,6 +168,7 @@ export async function listarNotasFiscaisPorEmpresa({
 	idcfop,
 	dataInicio,
 	dataFim,
+	tipoambientenfe,
 	excluirRascunhos = false,
 	somenteRascunhos = false,
 	page = 1,
@@ -211,6 +214,15 @@ export async function listarNotasFiscaisPorEmpresa({
 		where.push(lte(notafiscal.emissao, dataFim));
 	}
 
+	if (tipoambientenfe === 2) {
+		where.push(eq(notafiscal.tipoambientenfe, 2));
+	} else if (tipoambientenfe === 1) {
+		// Legado sem ambiente gravado trata-se como produção
+		where.push(
+			or(eq(notafiscal.tipoambientenfe, 1), isNull(notafiscal.tipoambientenfe))!,
+		);
+	}
+
 	const offset = (page - 1) * limit;
 
 	const [totalCount, notas] = await Promise.all([
@@ -236,6 +248,8 @@ export async function listarNotasFiscaisPorEmpresa({
 export type ListarNfcePorEmpresaParametros = {
 	idempresa: string;
 	status?: number | undefined;
+	/** 1 produção / 2 homologação — filtra `tipoambientenfe` */
+	tipoambientenfe?: number | undefined;
 	page?: number;
 	limit?: number;
 };
@@ -269,6 +283,7 @@ export type NfcePendenteListagem = NfceListagem;
 export async function listarNfcePorEmpresa({
 	idempresa,
 	status,
+	tipoambientenfe,
 	page = 1,
 	limit = 20,
 }: ListarNfcePorEmpresaParametros) {
@@ -288,6 +303,14 @@ export async function listarNfcePorEmpresa({
 
 	if (status !== undefined) {
 		where.push(eq(notafiscal.status, status));
+	}
+
+	if (tipoambientenfe === 2) {
+		where.push(eq(notafiscal.tipoambientenfe, 2));
+	} else if (tipoambientenfe === 1) {
+		where.push(
+			or(eq(notafiscal.tipoambientenfe, 1), isNull(notafiscal.tipoambientenfe))!,
+		);
 	}
 
 	const offset = (page - 1) * limit;

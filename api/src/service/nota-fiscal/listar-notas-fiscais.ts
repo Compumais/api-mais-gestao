@@ -15,6 +15,7 @@ type ListarNotasFiscaisParametros = {
 	idcfop?: string | undefined;
 	dataInicio?: string | undefined;
 	dataFim?: string | undefined;
+	tipoambientenfe?: number | undefined;
 	rascunho?: boolean | undefined;
 	page?: number;
 	limit?: number;
@@ -41,6 +42,7 @@ export async function listarNotasFiscaisService({
 	idcfop,
 	dataInicio,
 	dataFim,
+	tipoambientenfe,
 	rascunho = false,
 	page = 1,
 	limit = 10,
@@ -66,6 +68,7 @@ export async function listarNotasFiscaisService({
 		idcfop,
 		dataInicio,
 		dataFim,
+		tipoambientenfe,
 		somenteRascunhos: rascunho,
 		excluirRascunhos: !rascunho,
 		page,

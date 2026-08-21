@@ -29,6 +29,7 @@ import { resolverDocumentoReferenciadoEmissao } from "@/service/nfe-emissao/reso
 import type { FormaPagamentoNfVenda } from "@/service/nota-fiscal/gerar-contas-receber-nf.js";
 import { calcularTotaisFiscaisEmissaoNfe } from "@/util/calcular-totais-fiscais-emissao-nfe.js";
 import { recalcularIcmsStItensEmissao } from "@/util/calcular-icms-st-item-emissao-nfe.js";
+import { isAmbienteHomologacao } from "@/util/ambiente-sefaz.js";
 import {
 	emissaoRequerDocumentoReferenciado,
 	FIN_NFE_DEVOLUCAO,
@@ -453,6 +454,11 @@ export async function prepararPayloadEmissaoNfeVenda(
 		iddavResolvido ??= emissaoSalvaReemissao?.iddav;
 		iddavsResolvidos ??= emissaoSalvaReemissao?.iddavs;
 		codigosPedidosResolvidos ??= emissaoSalvaReemissao?.codigosPedidos;
+	}
+
+	if (isAmbienteHomologacao(ambiente)) {
+		gerarFinanceiroResolvido = false;
+		gerarEstoqueResolvido = false;
 	}
 
 	if (

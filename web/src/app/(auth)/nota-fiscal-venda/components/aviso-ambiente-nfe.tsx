@@ -26,8 +26,10 @@ export function AvisoAmbienteNfe({ ambiente, className }: AvisoAmbienteNfeProps)
 				<div className="text-sm">
 					<span className="font-semibold">Ambiente de Homologação (Teste)</span>
 					{" — "}
-					As NF-es emitidas neste ambiente <strong>não possuem valor fiscal</strong>.
-					Utilize para testes e validação antes de emitir em produção.
+					As notas deste ambiente <strong>não possuem valor fiscal</strong>,{" "}
+					<strong>não movimentam estoque</strong> e{" "}
+					<strong>não geram financeiro</strong>. A listagem mostra apenas
+					operações de homologação.
 				</div>
 			</div>
 		);
@@ -45,8 +47,9 @@ export function AvisoAmbienteNfe({ ambiente, className }: AvisoAmbienteNfeProps)
 			<div className="text-sm">
 				<span className="font-semibold">Ambiente de Produção</span>
 				{" — "}
-				As NF-es emitidas neste ambiente possuem <strong>validade fiscal</strong>.
-				Certifique-se de que os dados estão corretos antes de emitir.
+				As notas deste ambiente possuem <strong>validade fiscal</strong> e
+				movimentam estoque/financeiro. A listagem mostra apenas operações de
+				produção.
 			</div>
 		</div>
 	);

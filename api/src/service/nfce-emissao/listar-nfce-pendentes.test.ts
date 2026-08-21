@@ -1,10 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as entidadeRepository from "@/repositories/entidade-repositories.js";
+import * as nfceConfigRepository from "@/repositories/nfce-configuracao-repositories.js";
 import * as notaRepository from "@/repositories/nota-fiscal-repositories.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
 import { listarNfcePendentesService } from "./listar-nfce-pendentes.js";
 
 vi.mock("@/repositories/entidade-repositories.js");
+vi.mock("@/repositories/nfce-configuracao-repositories.js");
 vi.mock("@/repositories/nota-fiscal-repositories.js");
 
 const CHAVE_NFCE = "35260812345678000190650010000001011000000010";
@@ -15,6 +17,9 @@ describe("listarNfcePendentesService", () => {
 		vi.mocked(
 			entidadeRepository.verificarUsuarioPertenceEmpresa,
 		).mockResolvedValue(true);
+		vi.mocked(
+			nfceConfigRepository.buscarNfceConfiguracaoPorEmpresa,
+		).mockResolvedValue({ ambiente: 2 } as never);
 	});
 
 	it("completa NFC-e inutilizada sem número usando chave e venda", async () => {
@@ -48,6 +53,12 @@ describe("listarNfcePendentesService", () => {
 		});
 
 		expect(resultado.success).toBe(true);
+		expect(notaRepository.listarNfcePorEmpresa).toHaveBeenCalledWith(
+			expect.objectContaining({
+				idempresa: "emp-1",
+				tipoambientenfe: 2,
+			}),
+		);
 		expect(resultado.body?.data[0]).toEqual(
 			expect.objectContaining({
 				numeronotafiscal: "101",
