@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { FEATURES_SAAS } from "@/constants/saas-catalog.js";
 import { verifyJwt } from "../../middleware/verify-jwt.js";
-import { requireFeature } from "../middleware/verify-plano.js";
+import { requireFeature } from "../../middleware/verify-plano.js";
 import { buscarClientesAnalytics } from "./buscar-clientes-analytics.js";
 import { buscarClientesRfm } from "./buscar-clientes-rfm.js";
 import { buscarComparativo } from "./buscar-comparativo.js";
