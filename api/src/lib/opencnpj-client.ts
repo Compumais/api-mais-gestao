@@ -1,10 +1,15 @@
-import type { OpenCnpjDados, OpenCnpjResposta } from "@/model/consulta-cnpj-model.js";
+import type { OpenCnpjDados } from "@/model/consulta-cnpj-model.js";
 import { normalizarCnpj } from "@/util/criptografia-certificado.js";
+import {
+	mapearOpenCnpjOrgParaOpenCnpjDados,
+	type OpenCnpjOrgResposta,
+} from "@/util/mapear-opencnpj-org-cnpj.js";
 
 const OPENCNPJ_TIMEOUT_MS = 15_000;
+const OPENCNPJ_USER_AGENT = "MaisGestao/1.0 (+https://maisgestao.com.br)";
 
 function obterBaseUrlOpenCnpj(): string {
-	const base = process.env.OPENCNPJ_BASE_URL ?? "https://kitana.opencnpj.com";
+	const base = process.env.OPENCNPJ_BASE_URL ?? "https://api.opencnpj.org";
 	return base.replace(/\/$/, "");
 }
 
@@ -29,9 +34,12 @@ export async function buscarCnpjOpenCnpj(cnpj: string): Promise<OpenCnpjDados> {
 
 	try {
 		const resposta = await fetch(
-			`${obterBaseUrlOpenCnpj()}/cnpj/${cnpjNormalizado}`,
+			`${obterBaseUrlOpenCnpj()}/${cnpjNormalizado}`,
 			{
-				headers: { Accept: "application/json" },
+				headers: {
+					Accept: "application/json",
+					"User-Agent": OPENCNPJ_USER_AGENT,
+				},
 				signal: controller.signal,
 			},
 		);
@@ -46,13 +54,13 @@ export async function buscarCnpjOpenCnpj(cnpj: string): Promise<OpenCnpjDados> {
 			);
 		}
 
-		const corpo = (await resposta.json()) as OpenCnpjResposta;
+		const corpo = (await resposta.json()) as OpenCnpjOrgResposta;
 
-		if (!corpo.success || !corpo.data) {
+		if (corpo.error || !corpo.cnpj) {
 			throw new OpenCnpjNaoEncontradoError(cnpjNormalizado);
 		}
 
-		return corpo.data;
+		return mapearOpenCnpjOrgParaOpenCnpjDados(corpo);
 	} catch (error) {
 		if (error instanceof OpenCnpjNaoEncontradoError) {
 			throw error;

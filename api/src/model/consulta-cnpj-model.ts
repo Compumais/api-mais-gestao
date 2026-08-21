@@ -41,12 +41,6 @@ export type OpenCnpjDados = {
 	socios: SocioConsultaCnpj[];
 };
 
-export type OpenCnpjResposta = {
-	success: boolean;
-	message: string | null;
-	data: OpenCnpjDados | null;
-};
-
 export type EntidadeConsultaCnpj = {
 	cnpjcpf: string;
 	nome: string;

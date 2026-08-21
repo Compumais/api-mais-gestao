@@ -1,4 +1,5 @@
 const BRASIL_API_BASE_URL = "https://brasilapi.com.br/api";
+const BRASIL_API_USER_AGENT = "MaisGestao/1.0 (+https://maisgestao.com.br)";
 
 type BrasilApiMunicipio = {
 	nome: string;
@@ -49,7 +50,10 @@ export async function buscarMunicipiosBrasilApi(
 	const resposta = await fetch(
 		`${BRASIL_API_BASE_URL}/ibge/municipios/v1/${ufNormalizada}`,
 		{
-			headers: { Accept: "application/json" },
+			headers: {
+				Accept: "application/json",
+				"User-Agent": BRASIL_API_USER_AGENT,
+			},
 		},
 	);
 
@@ -66,7 +70,10 @@ export async function buscarCepBrasilApi(
 	cep: string,
 ): Promise<BrasilApiCep | null> {
 	const resposta = await fetch(`${BRASIL_API_BASE_URL}/cep/v1/${cep}`, {
-		headers: { Accept: "application/json" },
+		headers: {
+			Accept: "application/json",
+			"User-Agent": BRASIL_API_USER_AGENT,
+		},
 	});
 
 	if (resposta.status === 404) {
@@ -143,7 +150,10 @@ export async function buscarCnpjBrasilApi(
 		const resposta = await fetch(
 			`${BRASIL_API_BASE_URL}/cnpj/v1/${cnpjDigitos}`,
 			{
-				headers: { Accept: "application/json" },
+				headers: {
+					Accept: "application/json",
+					"User-Agent": BRASIL_API_USER_AGENT,
+				},
 				signal: controller.signal,
 			},
 		);
