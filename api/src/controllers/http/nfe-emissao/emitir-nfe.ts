@@ -33,6 +33,7 @@ export async function emitirNfe(request: FastifyRequest, reply: FastifyReply) {
 			indPres: dados.indPres,
 			itens: dados.itens,
 			totais: dados.totais,
+			totaisInformados: dados.totaisInformados,
 			pagamento: dados.pagamento,
 			transporte: dados.transporte,
 			informacoesAdicionais: dados.informacoesAdicionais,

@@ -39,6 +39,8 @@ export type ItemPayloadNfe = {
 	aliquotaCofins?: number;
 	baseIcms?: number;
 	aliquotaIcms?: number;
+	/** Alíquota interna só para dedução do ICMS ST (não é crédito SN). */
+	aliquotaIcmsProprioSt?: number;
 	valorIcms?: number;
 	valorIpi?: number;
 	valorIpiDevol?: number;

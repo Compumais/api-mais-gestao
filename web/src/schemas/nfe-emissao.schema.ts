@@ -29,6 +29,7 @@ export const itemNfeSchema = z.object({
 	aliquotaCofins: z.number().optional(),
 	baseIcms: z.number().min(0).optional(),
 	aliquotaIcms: z.number().optional(),
+	aliquotaIcmsProprioSt: z.number().min(0).optional(),
 	valorIcms: z.number().min(0).optional(),
 	valorIpi: z.number().min(0).optional(),
 	valorIpiDevol: z.number().min(0).optional(),
@@ -63,6 +64,17 @@ export const totaisNfeSchema = z.object({
 	desconto: z.coerce.number().min(0).optional(),
 	outrasDespesas: z.coerce.number().min(0).optional(),
 });
+
+export const totaisInformadosNfeSchema = z
+	.object({
+		vProd: z.number().optional(),
+		vNF: z.number().optional(),
+		vDesc: z.number().optional(),
+		vFrete: z.number().optional(),
+		vSeg: z.number().optional(),
+		vOutro: z.number().optional(),
+	})
+	.optional();
 
 export const pagamentoNfeSchema = z.object({
 	formas: z
@@ -109,6 +121,7 @@ export const emissaoNfeFormSchema = z.object({
 		.default(1),
 	itens: z.array(itemNfeSchema).min(1, "Informe ao menos um item"),
 	totais: totaisNfeSchema.optional(),
+	totaisInformados: totaisInformadosNfeSchema,
 	pagamento: pagamentoNfeSchema.optional(),
 	transporte: transporteNfeSchema.optional(),
 	informacoesAdicionais: z.string().max(2000).optional(),

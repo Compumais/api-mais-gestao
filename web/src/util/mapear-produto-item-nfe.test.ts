@@ -17,7 +17,7 @@ describe("sugerirIcmsStPeloMva", () => {
 			csosn: "202",
 			percentualMvaSt: 61.05,
 			aliquotaIcmsSt: 18,
-			aliquotaIcms: 18,
+			aliquotaIcmsProprioSt: 18,
 		};
 
 		const resultado = sugerirIcmsStPeloMva(item);
@@ -55,7 +55,7 @@ describe("sugerirIcmsStPeloMva", () => {
 			csosn: "202",
 			percentualMvaSt: 61.05,
 			aliquotaIcmsSt: 18,
-			aliquotaIcms: 18,
+			aliquotaIcmsProprioSt: 18,
 			valorIcmsSt: 1.5,
 		};
 

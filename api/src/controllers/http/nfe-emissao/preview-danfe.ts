@@ -26,6 +26,7 @@ export async function previewDanfeNfe(
 			indPres: dados.indPres,
 			itens: dados.itens,
 			totais: dados.totais,
+			totaisInformados: dados.totaisInformados,
 			pagamento: dados.pagamento,
 			transporte: dados.transporte,
 			informacoesAdicionais: dados.informacoesAdicionais,

@@ -409,13 +409,18 @@ export function ModalItemEmissao({
 					) / 100;
 			}
 		} else {
-			// Simples: não destaca ICMS próprio (vBC/vICMS), mas mantém a
-			// alíquota interna quando há ST — ela alimenta a dedução do vICMSST
-			// no painel e no recalculo da API/pré-visualização DANFE.
+			// Simples: não destaca ICMS próprio (vBC/vICMS). Mantém
+			// aliquotaIcmsProprioSt para dedução do ST; limpa aliquotaIcms
+			// para não misturar com crédito SN (pCredSN).
 			itemFinal.baseIcms = undefined;
 			itemFinal.valorIcms = undefined;
-			if (!itemPrecisaAliquotaIcmsParaSt(itemFinal)) {
-				itemFinal.aliquotaIcms = undefined;
+			itemFinal.aliquotaIcms = undefined;
+			if (
+				itemPrecisaAliquotaIcmsParaSt(itemFinal) &&
+				itemFinal.aliquotaIcmsProprioSt == null &&
+				item.aliquotaIcms != null
+			) {
+				itemFinal.aliquotaIcmsProprioSt = item.aliquotaIcms;
 			}
 		}
 
@@ -827,7 +832,11 @@ export function ModalItemEmissao({
 										type="number"
 										min="0"
 										step="0.01"
-										value={item.aliquotaIcms ?? ""}
+										value={
+											usaCsosn
+												? (item.aliquotaIcmsProprioSt ?? "")
+												: (item.aliquotaIcms ?? "")
+										}
 										onChange={(e) => {
 											const aliquota = e.target.value
 												? parseFloat(e.target.value)
@@ -840,10 +849,13 @@ export function ModalItemEmissao({
 											setItem((prev) => {
 												const atualizado = {
 													...prev,
-													aliquotaIcms: aliquota,
 													...(usaCsosn
-														? {}
-														: { valorIcms }),
+														? { aliquotaIcmsProprioSt: aliquota }
+														: {
+																aliquotaIcms: aliquota,
+																valorIcms,
+																aliquotaIcmsProprioSt: aliquota,
+															}),
 												};
 												if (!itemPrecisaAliquotaIcmsParaSt(atualizado)) {
 													return atualizado;
@@ -861,7 +873,7 @@ export function ModalItemEmissao({
 									/>
 									<p className="text-xs text-muted-foreground">
 										{usaCsosn
-											? "Usada só na dedução do ICMS ST (não destaca ICMS próprio no Simples)."
+											? "Usada só na dedução do ICMS ST (não é crédito SN)."
 											: "Altera a alíquota e sugere o valor do ICMS. Você pode ajustar base e valor na seção abaixo."}
 									</p>
 								</div>

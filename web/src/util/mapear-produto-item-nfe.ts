@@ -290,6 +290,10 @@ export function prepararItemEmissaoFormulario(
 		baseIcms: item.baseIcms != null ? Number(item.baseIcms) : undefined,
 		aliquotaIcms:
 			item.aliquotaIcms != null ? Number(item.aliquotaIcms) : undefined,
+		aliquotaIcmsProprioSt:
+			item.aliquotaIcmsProprioSt != null
+				? Number(item.aliquotaIcmsProprioSt)
+				: undefined,
 		valorIcms: item.valorIcms != null ? Number(item.valorIcms) : undefined,
 		valorIpi: item.valorIpi != null ? Number(item.valorIpi) : undefined,
 		valorIpiDevol:
@@ -476,6 +480,7 @@ export function mapearProdutoParaItemNfe(
 		aliquotaPis: paraNumeroOpcional(produto.aliquotapis),
 		aliquotaCofins: paraNumeroOpcional(produto.aliquotacofins),
 		aliquotaIcms: paraNumeroOpcional(produto.aliquotaicmsinterna),
+		aliquotaIcmsProprioSt: paraNumeroOpcional(produto.aliquotaicmsinterna),
 		...mapearDadosStProduto(produto),
 		controlaLote: produto.controlalote === 1 || produto.controlalote === true,
 		rastros: undefined,
@@ -571,6 +576,8 @@ export function preencherItemComCadastro(
 		aliquotaPis: item.aliquotaPis ?? cadastro.aliquotaPis,
 		aliquotaCofins: item.aliquotaCofins ?? cadastro.aliquotaCofins,
 		aliquotaIcms: item.aliquotaIcms ?? cadastro.aliquotaIcms,
+		aliquotaIcmsProprioSt:
+			item.aliquotaIcmsProprioSt ?? cadastro.aliquotaIcmsProprioSt,
 		percentualMvaSt: item.percentualMvaSt ?? cadastro.percentualMvaSt,
 		aliquotaIcmsSt: item.aliquotaIcmsSt ?? cadastro.aliquotaIcmsSt,
 		aliquotaFcpSt: item.aliquotaFcpSt ?? cadastro.aliquotaFcpSt,
@@ -598,9 +605,15 @@ export function sugerirIcmsStPeloMva(
 		item.aliquotaIcmsSt != null
 			? round2((base * item.aliquotaIcmsSt) / 100)
 			: undefined;
+	const icmsProprioAliquota =
+		item.aliquotaIcmsProprioSt != null && item.aliquotaIcmsProprioSt > 0
+			? item.aliquotaIcmsProprioSt
+			: item.aliquotaIcms != null && item.aliquotaIcms > 0
+				? item.aliquotaIcms
+				: null;
 	const icmsProprio =
-		item.aliquotaIcms != null && item.aliquotaIcms > 0
-			? round2((vProd * item.aliquotaIcms) / 100)
+		icmsProprioAliquota != null
+			? round2((vProd * icmsProprioAliquota) / 100)
 			: 0;
 	const valor =
 		item.valorIcmsSt != null

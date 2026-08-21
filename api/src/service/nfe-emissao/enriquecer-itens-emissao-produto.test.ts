@@ -141,6 +141,7 @@ describe("enriquecerItensEmissaoComProduto", () => {
 		expect(itens[0]?.aliquotaIcmsSt).toBe(18);
 		expect(itens[0]?.aliquotaFcpSt).toBe(2);
 		expect(itens[0]?.aliquotaIcms).toBe(18);
+		expect(itens[0]?.aliquotaIcmsProprioSt).toBe(18);
 	});
 
 	it("não inventa CSOSN 102 nem MVA quando o cadastro está vazio", async () => {

@@ -43,6 +43,33 @@ export function calcularValorIcmsSt(params: {
 	return round2(Math.max(0, stBruto - icmsProprio));
 }
 
+export function calcularValorFcpSt(params: {
+	baseIcmsSt: number;
+	aliquotaFcpSt?: number | null;
+	valorFcpStManual?: number | null;
+}): number | undefined {
+	const aliquota = params.aliquotaFcpSt;
+	if (aliquota == null || aliquota <= 0 || params.baseIcmsSt <= 0) {
+		return params.valorFcpStManual != null
+			? round2(params.valorFcpStManual)
+			: undefined;
+	}
+	return round2((params.baseIcmsSt * aliquota) / 100);
+}
+
+export function resolverAliquotaIcmsProprioSt(item: {
+	aliquotaIcmsProprioSt?: number | null;
+	aliquotaIcms?: number | null;
+}): number | null {
+	if (item.aliquotaIcmsProprioSt != null && item.aliquotaIcmsProprioSt > 0) {
+		return item.aliquotaIcmsProprioSt;
+	}
+	if (item.aliquotaIcms != null && item.aliquotaIcms > 0) {
+		return item.aliquotaIcms;
+	}
+	return null;
+}
+
 export function itemExigeCalculoSt(item: {
 	cst?: string | null;
 	csosn?: string | null;
@@ -71,13 +98,20 @@ export function calcularIcmsStItemEmissao(
 		| "percentualMvaSt"
 		| "aliquotaIcmsSt"
 		| "aliquotaIcms"
+		| "aliquotaIcmsProprioSt"
+		| "aliquotaFcpSt"
 		| "baseIcmsSt"
 		| "valorIcmsSt"
+		| "valorFcpSt"
 	> & {
 		cst?: string | null;
 		csosn?: string | null;
 	},
-): { baseIcmsSt?: number; valorIcmsSt?: number } {
+): {
+	baseIcmsSt?: number;
+	valorIcmsSt?: number;
+	valorFcpSt?: number;
+} {
 	if (!itemExigeCalculoSt(item)) {
 		return {};
 	}
@@ -98,10 +132,19 @@ export function calcularIcmsStItemEmissao(
 		vProd,
 		baseIcmsSt,
 		aliquotaIcmsSt: aliquotaSt,
-		aliquotaIcmsProprio: item.aliquotaIcms,
+		aliquotaIcmsProprio: resolverAliquotaIcmsProprioSt(item),
+	});
+	const valorFcpSt = calcularValorFcpSt({
+		baseIcmsSt,
+		aliquotaFcpSt: item.aliquotaFcpSt,
+		valorFcpStManual: item.valorFcpSt,
 	});
 
-	return { baseIcmsSt, valorIcmsSt };
+	return {
+		baseIcmsSt,
+		valorIcmsSt,
+		...(valorFcpSt != null ? { valorFcpSt } : {}),
+	};
 }
 
 export function recalcularIcmsStItemEmissao<T extends ItemPayloadNfe>(item: T): T {
@@ -115,17 +158,19 @@ export function recalcularIcmsStItemEmissao<T extends ItemPayloadNfe>(item: T): 
 		return item;
 	}
 
-	const semAliquotaInterna =
-		item.aliquotaIcms == null || item.aliquotaIcms <= 0;
+	const aliquotaProprio = resolverAliquotaIcmsProprioSt(item);
+	const semAliquotaInterna = aliquotaProprio == null;
 
-	// Sem alíquota interna: recalcula a base, mas preserva o vST já informado
-	// (ex.: front calculou com dedução e o Simples limpou aliquotaIcms no payload).
-	// Evita divergência painel × DANFE (47,25 vs 124,65 no cenário MVA 61,05%).
+	// Sem alíquota interna: recalcula a base/FCP, mas preserva o vST já informado
+	// (evita divergência painel × DANFE quando o payload veio sem dedução).
 	if (semAliquotaInterna && item.valorIcmsSt != null) {
 		return {
 			...item,
 			baseIcmsSt: calculado.baseIcmsSt,
 			valorIcmsSt: item.valorIcmsSt,
+			...(calculado.valorFcpSt != null
+				? { valorFcpSt: calculado.valorFcpSt }
+				: {}),
 		};
 	}
 
@@ -133,6 +178,9 @@ export function recalcularIcmsStItemEmissao<T extends ItemPayloadNfe>(item: T): 
 		...item,
 		baseIcmsSt: calculado.baseIcmsSt,
 		valorIcmsSt: calculado.valorIcmsSt,
+		...(calculado.valorFcpSt != null
+			? { valorFcpSt: calculado.valorFcpSt }
+			: {}),
 	};
 }
 

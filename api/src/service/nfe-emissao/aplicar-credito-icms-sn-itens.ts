@@ -17,15 +17,16 @@ export async function aplicarCreditoIcmsSnItensEmissao(
 			continue;
 		}
 
-		let aliquotaIcmsInterna: string | number | null | undefined =
-			item.pCredSN ?? item.aliquotaIcms;
+		// Não usar aliquotaIcms / aliquotaIcmsProprioSt: esses campos alimentam
+		// a dedução do ICMS ST, não o crédito SN (pCredSN).
+		let aliquotaCreditoSn: string | number | null | undefined = item.pCredSN;
 
 		if (
-			(aliquotaIcmsInterna == null || Number(aliquotaIcmsInterna) <= 0) &&
+			(aliquotaCreditoSn == null || Number(aliquotaCreditoSn) <= 0) &&
 			item.idproduto
 		) {
 			const produto = await buscarProdutoPorId(item.idproduto);
-			aliquotaIcmsInterna = produto?.aliquotaicmsinterna;
+			aliquotaCreditoSn = produto?.aliquotaicmsinterna;
 		}
 
 		const valorProduto = item.quantidade * item.valorUnitario;
@@ -34,7 +35,7 @@ export async function aplicarCreditoIcmsSnItensEmissao(
 			valorProduto,
 			pCredSN: item.pCredSN,
 			vCredICMSSN: item.vCredICMSSN,
-			aliquotaIcmsInterna,
+			aliquotaIcmsInterna: aliquotaCreditoSn,
 		});
 
 		if (credito.pendencia) {
