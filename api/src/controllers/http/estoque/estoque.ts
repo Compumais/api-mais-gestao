@@ -1,5 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
+import { ajustarEstoqueEmMassaService } from "@/service/estoque/ajustar-estoque-em-massa.js";
 import { baixaEstoqueVendaService } from "@/service/estoque/baixa-estoque-venda.js";
 import {
 	listarMovimentosEstoqueGestaoService,
@@ -7,6 +8,7 @@ import {
 } from "@/service/estoque/listar-estoque-gestao.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 import { removerUndefined } from "@/util/remover-undefined.js";
+import type { TipoEstoque } from "@/util/tipo-estoque.js";
 
 const querySaldosSchema = z.object({
 	idempresa: z.string().uuid(),
@@ -53,6 +55,23 @@ const bodyBaixaSchema = z.object({
 		valorcouverartistico: z.string().nullable().optional(),
 	}),
 	emitirNfce: z.boolean().optional(),
+});
+
+const bodyAjusteSchema = z.object({
+	idempresa: z.string().uuid(),
+	tipooperacao: z.enum(["entrada", "saida", "contagem"]),
+	tipoestoque: z.coerce.number().int().min(0).max(2),
+	observacao: z.string().max(50).optional().nullable(),
+	itens: z
+		.array(
+			z.object({
+				idproduto: z.string().uuid(),
+				quantidade: z.string(),
+				nomeproduto: z.string().optional(),
+			}),
+		)
+		.min(1)
+		.max(500),
 });
 
 export async function listarSaldosEstoqueGestao(
@@ -144,6 +163,49 @@ export async function baixaEstoqueVenda(
 			})),
 			pagamentos: removerUndefined(body.pagamentos),
 			...(body.emitirNfce !== undefined ? { emitirNfce: body.emitirNfce } : {}),
+		});
+
+		if (!resultado.success) {
+			return reply.status(resultado.status).send(resultado);
+		}
+
+		return reply.status(resultado.status).send(resultado.body);
+	} catch (error) {
+		console.error(error);
+		if (error instanceof z.ZodError) {
+			return reply.status(400).send({
+				error: "Erro de validação",
+				code: "VALIDATION_ERROR",
+				details: error.issues,
+			});
+		}
+		return reply.status(httpErroInterno().status).send(httpErroInterno());
+	}
+}
+
+export async function ajustarEstoqueEmMassa(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
+	try {
+		if (!request.user) {
+			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
+		}
+
+		const body = bodyAjusteSchema.parse(request.body);
+		const resultado = await ajustarEstoqueEmMassaService({
+			idusuario: request.user.id,
+			idempresa: body.idempresa,
+			tipooperacao: body.tipooperacao,
+			tipoestoque: body.tipoestoque as TipoEstoque,
+			observacao: body.observacao,
+			itens: body.itens.map((item) => ({
+				idproduto: item.idproduto,
+				quantidade: item.quantidade,
+				...(item.nomeproduto !== undefined
+					? { nomeproduto: item.nomeproduto }
+					: {}),
+			})),
 		});
 
 		if (!resultado.success) {

@@ -1,9 +1,10 @@
 "use client";
 
 import { IconSearch } from "@tabler/icons-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	type ColumnDef,
+	type RowSelectionState,
 	flexRender,
 	getCoreRowModel,
 	useReactTable,
@@ -36,6 +37,7 @@ import {
 	type SaldoEstoqueGestao,
 } from "@/services/estoque-gestao.service";
 import { PageContainer } from "../components/page-container";
+import { AjusteEstoqueDialog } from "./components/ajuste-estoque-dialog";
 import { LotesProdutoEstoque } from "./components/lotes-produto-estoque";
 
 function formatarQuantidade(valor: string | null | undefined) {
@@ -51,6 +53,7 @@ const TIPO_ESTOQUE_LABEL: Record<number, string> = {
 };
 
 export default function EstoquePage() {
+	const queryClient = useQueryClient();
 	const { empresa } = useEmpresa();
 	const idempresa = empresa?.id ?? "";
 	const [busca, setBusca] = useState("");
@@ -59,6 +62,8 @@ export default function EstoquePage() {
 	const [page, setPage] = useState(1);
 	const [produtoSelecionado, setProdutoSelecionado] =
 		useState<SaldoEstoqueGestao | null>(null);
+	const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+	const [ajusteAberto, setAjusteAberto] = useState(false);
 
 	const { data, isLoading } = useQuery({
 		queryKey: [
@@ -97,6 +102,30 @@ export default function EstoquePage() {
 
 	const columns = useMemo<ColumnDef<SaldoEstoqueGestao>[]>(
 		() => [
+			{
+				id: "select",
+				header: ({ table }) => (
+					<Checkbox
+						checked={
+							table.getIsAllPageRowsSelected() ||
+							(table.getIsSomePageRowsSelected() && "indeterminate")
+						}
+						onCheckedChange={(value) =>
+							table.toggleAllPageRowsSelected(!!value)
+						}
+						aria-label="Selecionar todos"
+					/>
+				),
+				cell: ({ row }) => (
+					<Checkbox
+						checked={row.getIsSelected()}
+						onCheckedChange={(value) => row.toggleSelected(!!value)}
+						aria-label="Selecionar linha"
+					/>
+				),
+				enableSorting: false,
+				enableHiding: false,
+			},
 			{
 				accessorKey: "codigoproduto",
 				header: "Código",
@@ -159,193 +188,229 @@ export default function EstoquePage() {
 	const table = useReactTable({
 		data: data?.data ?? [],
 		columns,
+		state: { rowSelection },
+		onRowSelectionChange: setRowSelection,
+		enableRowSelection: true,
 		getCoreRowModel: getCoreRowModel(),
 		getRowId: (row) => row.idproduto,
 	});
 
+	const produtosSelecionados = table
+		.getSelectedRowModel()
+		.rows.map((row) => row.original);
 	const totalPages = data?.paginacao.totalPages ?? 1;
 
 	return (
 		<PageContainer>
 			<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-				<div className="px-4">
-					<h1 className="text-2xl font-bold">Estoque</h1>
-					<p className="text-muted-foreground text-sm mt-1">
-						Todos os produtos cadastrados com saldo operacional e fiscal para
-						validação de divergências
-					</p>
-				</div>
-
-			<div className="flex flex-col gap-4 px-4 mb-2">
-				<div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-					<div className="flex-1">
-						<Label htmlFor="busca-estoque">Buscar produto</Label>
-						<div className="relative mt-1">
-							<IconSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-							<Input
-								id="busca-estoque"
-								className="pl-9"
-								placeholder="Nome ou código"
-								value={busca}
-								onChange={(e) => setBusca(e.target.value)}
-								onKeyDown={(e) => {
-									if (e.key === "Enter") {
-										setBuscaAplicada(busca);
-										setPage(1);
-									}
-								}}
-							/>
-						</div>
+				<div className="flex flex-col gap-3 px-4 sm:flex-row sm:items-start sm:justify-between">
+					<div>
+						<h1 className="text-2xl font-bold">Estoque</h1>
+						<p className="text-muted-foreground text-sm mt-1">
+							Todos os produtos cadastrados com saldo operacional e fiscal para
+							validação de divergências
+						</p>
 					</div>
-					<Button
-						onClick={() => {
-							setBuscaAplicada(busca);
-							setPage(1);
-						}}
-					>
-						Buscar
+					<Button type="button" onClick={() => setAjusteAberto(true)}>
+						Ajuste de estoque
+						{produtosSelecionados.length > 0
+							? ` (${produtosSelecionados.length})`
+							: ""}
 					</Button>
 				</div>
 
-				<div className="flex items-center gap-2">
-					<Checkbox
-						id="somente-divergencia"
-						checked={somenteDivergencia}
-						onCheckedChange={(v) => {
-							setSomenteDivergencia(v === true);
-							setPage(1);
-						}}
-					/>
-					<Label htmlFor="somente-divergencia" className="font-normal">
-						Somente produtos com divergência entre operacional e fiscal
-					</Label>
-				</div>
-			</div>
+				<div className="flex flex-col gap-4 px-4 mb-2">
+					<div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+						<div className="flex-1">
+							<Label htmlFor="busca-estoque">Buscar produto</Label>
+							<div className="relative mt-1">
+								<IconSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+								<Input
+									id="busca-estoque"
+									className="pl-9"
+									placeholder="Nome ou código"
+									value={busca}
+									onChange={(e) => setBusca(e.target.value)}
+									onKeyDown={(e) => {
+										if (e.key === "Enter") {
+											setBuscaAplicada(busca);
+											setPage(1);
+										}
+									}}
+								/>
+							</div>
+						</div>
+						<Button
+							onClick={() => {
+								setBuscaAplicada(busca);
+								setPage(1);
+							}}
+						>
+							Buscar
+						</Button>
+					</div>
 
-			{isLoading ? (
-				<TableSkeleton columns={6} rows={8}>
-					<TableHead>Código</TableHead>
-					<TableHead>Produto</TableHead>
-					<TableHead>Operacional</TableHead>
-					<TableHead>Fiscal</TableHead>
-					<TableHead>Divergência</TableHead>
-					<TableHead className="w-12" />
-				</TableSkeleton>
-			) : (
-				<div className="rounded-lg border mx-4">
-					<Table>
-						<TableHeader>
-							{table.getHeaderGroups().map((headerGroup) => (
-								<TableRow key={headerGroup.id}>
-									{headerGroup.headers.map((header) => (
-										<TableHead key={header.id}>
-											{header.isPlaceholder
-												? null
-												: flexRender(
-														header.column.columnDef.header,
-														header.getContext(),
-													)}
-										</TableHead>
-									))}
-								</TableRow>
-							))}
-						</TableHeader>
-						<TableBody>
-							{table.getRowModel().rows.length === 0 ? (
-								<TableRow>
-									<TableCell colSpan={6} className="h-24 text-center">
-										Nenhum produto encontrado
-									</TableCell>
-								</TableRow>
-							) : (
-								table.getRowModel().rows.map((row) => (
-									<TableRow key={row.id}>
-										{row.getVisibleCells().map((cell) => (
-											<TableCell key={cell.id}>
-												{flexRender(
-													cell.column.columnDef.cell,
-													cell.getContext(),
-												)}
-											</TableCell>
+					<div className="flex items-center gap-2">
+						<Checkbox
+							id="somente-divergencia"
+							checked={somenteDivergencia}
+							onCheckedChange={(v) => {
+								setSomenteDivergencia(v === true);
+								setPage(1);
+							}}
+						/>
+						<Label htmlFor="somente-divergencia" className="font-normal">
+							Somente produtos com divergência entre operacional e fiscal
+						</Label>
+					</div>
+				</div>
+
+				{isLoading ? (
+					<TableSkeleton columns={7} rows={8}>
+						<TableHead className="w-10" />
+						<TableHead>Código</TableHead>
+						<TableHead>Produto</TableHead>
+						<TableHead>Operacional</TableHead>
+						<TableHead>Fiscal</TableHead>
+						<TableHead>Divergência</TableHead>
+						<TableHead className="w-12" />
+					</TableSkeleton>
+				) : (
+					<div className="rounded-lg border mx-4">
+						<Table>
+							<TableHeader>
+								{table.getHeaderGroups().map((headerGroup) => (
+									<TableRow key={headerGroup.id}>
+										{headerGroup.headers.map((header) => (
+											<TableHead key={header.id}>
+												{header.isPlaceholder
+													? null
+													: flexRender(
+															header.column.columnDef.header,
+															header.getContext(),
+														)}
+											</TableHead>
 										))}
 									</TableRow>
-								))
-							)}
-						</TableBody>
-					</Table>
-				</div>
-			)}
-
-			<div className="flex items-center justify-between mt-4 px-4">
-				<p className="text-sm text-muted-foreground">
-					Página {page} de {totalPages}
-				</p>
-				<div className="flex gap-2">
-					<Button
-						variant="outline"
-						size="sm"
-						disabled={page <= 1}
-						onClick={() => setPage((p) => Math.max(1, p - 1))}
-					>
-						Anterior
-					</Button>
-					<Button
-						variant="outline"
-						size="sm"
-						disabled={page >= totalPages}
-						onClick={() => setPage((p) => p + 1)}
-					>
-						Próxima
-					</Button>
-				</div>
-			</div>
-
-			<Sheet
-				open={!!produtoSelecionado}
-				onOpenChange={(open) => !open && setProdutoSelecionado(null)}
-			>
-				<SheetContent className="sm:max-w-lg overflow-y-auto">
-					<SheetHeader>
-						<SheetTitle>{produtoSelecionado?.nomeproduto}</SheetTitle>
-						<SheetDescription>
-							Código {produtoSelecionado?.codigoproduto ?? "-"} · Histórico de
-							movimentos (últimos registros da empresa)
-						</SheetDescription>
-					</SheetHeader>
-
-					<div className="mt-6 space-y-6">
-						<LotesProdutoEstoque
-							idempresa={idempresa}
-							codigoproduto={produtoSelecionado?.codigoproduto}
-						/>
-
-						<div className="space-y-3">
-							<h3 className="text-sm font-semibold">Movimentos</h3>
-						{carregandoMovimentos ? (
-							<p className="text-sm text-muted-foreground">Carregando...</p>
-						) : (
-							(movimentosData?.data ?? []).map((mov) => (
-								<div key={mov.id} className="rounded border p-3 text-sm">
-									<div className="flex items-center justify-between gap-2">
-										<span className="font-medium">
-											{mov.quantidadesaida
-												? `Saída ${formatarQuantidade(mov.quantidadesaida)}`
-												: `Entrada ${formatarQuantidade(mov.quantidadeentrada)}`}
-										</span>
-										<Badge variant="outline">
-											{TIPO_ESTOQUE_LABEL[mov.tipoestoque ?? 0] ?? "—"}
-										</Badge>
-									</div>
-									<p className="text-muted-foreground mt-1">
-										{mov.datahora ?? mov.data ?? "—"}
-									</p>
-								</div>
-							))
-						)}
-						</div>
+								))}
+							</TableHeader>
+							<TableBody>
+								{table.getRowModel().rows.length === 0 ? (
+									<TableRow>
+										<TableCell colSpan={7} className="h-24 text-center">
+											Nenhum produto encontrado
+										</TableCell>
+									</TableRow>
+								) : (
+									table.getRowModel().rows.map((row) => (
+										<TableRow
+											key={row.id}
+											data-state={row.getIsSelected() && "selected"}
+										>
+											{row.getVisibleCells().map((cell) => (
+												<TableCell key={cell.id}>
+													{flexRender(
+														cell.column.columnDef.cell,
+														cell.getContext(),
+													)}
+												</TableCell>
+											))}
+										</TableRow>
+									))
+								)}
+							</TableBody>
+						</Table>
 					</div>
-				</SheetContent>
-			</Sheet>
+				)}
+
+				<div className="flex items-center justify-between mt-4 px-4">
+					<p className="text-sm text-muted-foreground">
+						Página {page} de {totalPages}
+						{produtosSelecionados.length > 0
+							? ` · ${produtosSelecionados.length} selecionado(s)`
+							: ""}
+					</p>
+					<div className="flex gap-2">
+						<Button
+							variant="outline"
+							size="sm"
+							disabled={page <= 1}
+							onClick={() => setPage((p) => Math.max(1, p - 1))}
+						>
+							Anterior
+						</Button>
+						<Button
+							variant="outline"
+							size="sm"
+							disabled={page >= totalPages}
+							onClick={() => setPage((p) => p + 1)}
+						>
+							Próxima
+						</Button>
+					</div>
+				</div>
+
+				<Sheet
+					open={!!produtoSelecionado}
+					onOpenChange={(open) => !open && setProdutoSelecionado(null)}
+				>
+					<SheetContent className="sm:max-w-lg overflow-y-auto">
+						<SheetHeader>
+							<SheetTitle>{produtoSelecionado?.nomeproduto}</SheetTitle>
+							<SheetDescription>
+								Código {produtoSelecionado?.codigoproduto ?? "-"} · Histórico de
+								movimentos (últimos registros da empresa)
+							</SheetDescription>
+						</SheetHeader>
+
+						<div className="mt-6 space-y-6">
+							<LotesProdutoEstoque
+								idempresa={idempresa}
+								codigoproduto={produtoSelecionado?.codigoproduto}
+							/>
+
+							<div className="space-y-3">
+								<h3 className="text-sm font-semibold">Movimentos</h3>
+								{carregandoMovimentos ? (
+									<p className="text-sm text-muted-foreground">Carregando...</p>
+								) : (
+									(movimentosData?.data ?? []).map((mov) => (
+										<div key={mov.id} className="rounded border p-3 text-sm">
+											<div className="flex items-center justify-between gap-2">
+												<span className="font-medium">
+													{mov.quantidadesaida
+														? `Saída ${formatarQuantidade(mov.quantidadesaida)}`
+														: `Entrada ${formatarQuantidade(mov.quantidadeentrada)}`}
+												</span>
+												<Badge variant="outline">
+													{TIPO_ESTOQUE_LABEL[mov.tipoestoque ?? 0] ?? "—"}
+												</Badge>
+											</div>
+											<p className="text-muted-foreground mt-1">
+												{mov.datahora ?? mov.data ?? "—"}
+											</p>
+										</div>
+									))
+								)}
+							</div>
+						</div>
+					</SheetContent>
+				</Sheet>
+
+				<AjusteEstoqueDialog
+					aberto={ajusteAberto}
+					onAbertoChange={setAjusteAberto}
+					idempresa={idempresa}
+					produtosIniciais={produtosSelecionados}
+					onSucesso={() => {
+						setRowSelection({});
+						void queryClient.invalidateQueries({ queryKey: ["estoque-saldos"] });
+						void queryClient.invalidateQueries({
+							queryKey: ["estoque-movimentos"],
+						});
+						void queryClient.invalidateQueries({ queryKey: ["estoque-lotes"] });
+					}}
+				/>
 			</div>
 		</PageContainer>
 	);

@@ -48,6 +48,20 @@ export interface ResultadoBaixaEstoqueVenda {
 	};
 }
 
+export interface ResultadoAjusteEstoqueEmMassa {
+	idajuste: string;
+	movimentosRegistrados: number;
+	itensProcessados: number;
+	itensIgnorados: number;
+	resultados: Array<{
+		idproduto: string;
+		nomeproduto?: string;
+		sucesso: boolean;
+		movimentos: number;
+		mensagem?: string;
+	}>;
+}
+
 export const estoqueGestaoService = {
 	async listarSaldos(params: {
 		idempresa: string;
@@ -100,6 +114,24 @@ export const estoqueGestaoService = {
 	}): Promise<ResultadoBaixaEstoqueVenda> {
 		const { data } = await api.post<ResultadoBaixaEstoqueVenda>(
 			"/estoque/baixa-venda",
+			dados,
+		);
+		return data;
+	},
+
+	async ajustarEmMassa(dados: {
+		idempresa: string;
+		tipooperacao: "entrada" | "saida" | "contagem";
+		tipoestoque: 0 | 1 | 2;
+		observacao?: string | null;
+		itens: Array<{
+			idproduto: string;
+			quantidade: string;
+			nomeproduto?: string;
+		}>;
+	}): Promise<ResultadoAjusteEstoqueEmMassa> {
+		const { data } = await api.post<ResultadoAjusteEstoqueEmMassa>(
+			"/estoque/ajustes",
 			dados,
 		);
 		return data;
