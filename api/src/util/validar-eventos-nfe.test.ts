@@ -3,6 +3,7 @@ import { NFE_STATUS } from "@/util/nfe-status.js";
 import {
 	inutilizacaoJaEncerradaNaSefaz,
 	notaEstaDentroPrazoCancelamentoNfe,
+	resolverStatusCancelamentoNfe,
 	validarCancelamentoNfe,
 	validarInutilizacaoNfe,
 	validarJustificativaNfe,
@@ -103,5 +104,14 @@ describe("validar-eventos-nfe", () => {
 		expect(inutilizacaoJaEncerradaNaSefaz("215", "Rejeição genérica")).toBe(
 			false,
 		);
+	});
+
+	it("mapeia cStat 135/101 como cancelada no prazo e 155 como fora do prazo", () => {
+		expect(resolverStatusCancelamentoNfe("135")).toBe(NFE_STATUS.CANCELADA);
+		expect(resolverStatusCancelamentoNfe("101")).toBe(NFE_STATUS.CANCELADA);
+		expect(resolverStatusCancelamentoNfe("155")).toBe(
+			NFE_STATUS.CANCELADA_FORA_PRAZO,
+		);
+		expect(resolverStatusCancelamentoNfe(null)).toBe(NFE_STATUS.CANCELADA);
 	});
 });
