@@ -6,13 +6,24 @@ import {
 	buscarDavItemPorId,
 } from "@/repositories/dav-item-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
-import { httpBadRequest, httpErro, httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
+import {
+	type RastroDavItemInput,
+	sincronizarLotesDavItem,
+} from "@/service/dav-item/sincronizar-lotes-dav-item.js";
+import {
+	httpBadRequest,
+	httpErro,
+	httpNaoEncontrado,
+	httpOk,
+	httpProibido,
+} from "@/util/http-util.js";
 
 type AtualizarDavItemParametros = {
 	iddav: string;
 	iditem: string;
 	idusuario: string;
 	dados: Partial<NovoDavItem>;
+	rastros?: RastroDavItemInput[];
 };
 
 export async function atualizarDavItemService({
@@ -20,6 +31,7 @@ export async function atualizarDavItemService({
 	iditem,
 	idusuario,
 	dados,
+	rastros,
 }: AtualizarDavItemParametros): Promise<HttpResponse<DavItem | null>> {
 	const dav = await buscarDavPorId(iddav);
 
@@ -46,6 +58,14 @@ export async function atualizarDavItemService({
 
 	if (!registro) {
 		return httpErro();
+	}
+
+	if (rastros !== undefined) {
+		await sincronizarLotesDavItem({
+			idempresa: dav.idempresa,
+			iddavitem: iditem,
+			rastros,
+		});
 	}
 
 	return httpOk(registro);

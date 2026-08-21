@@ -53,6 +53,7 @@ export * from "./tables/contas.js";
 export * from "./tables/custo-produto.js";
 export * from "./tables/dav.js";
 export * from "./tables/dav-item.js";
+export * from "./tables/dav-item-lote.js";
 export * from "./tables/departamento.js";
 export * from "./tables/dominio-envio.js";
 export * from "./tables/dominio-integracao.js";

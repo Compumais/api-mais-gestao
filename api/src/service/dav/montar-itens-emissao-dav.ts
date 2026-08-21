@@ -1,5 +1,6 @@
 import { buscarCfopPorId } from "@/repositories/cfop-repositories.js";
 import { listarItensPorDav } from "@/repositories/dav-item-repositories.js";
+import { listarLotesPorDavItens } from "@/repositories/dav-item-lote-repositories.js";
 import { buscarCestPorId } from "@/repositories/cest-repositories.js";
 import { buscarNcmPorId } from "@/repositories/ncm-repositories.js";
 import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
@@ -64,6 +65,13 @@ export async function montarItensEmissaoDav(
 	opcoes: MontarItensEmissaoDavOpcoes = {},
 ): Promise<{ itens: ItemPayloadNfe[]; pendencias: string[] }> {
 	const itensDav = await listarItensPorDav(iddav);
+	const lotesDav = await listarLotesPorDavItens(itensDav.map((item) => item.id));
+	const lotesPorItem = new Map<string, typeof lotesDav>();
+	for (const lote of lotesDav) {
+		const atuais = lotesPorItem.get(lote.iddavitem) ?? [];
+		atuais.push(lote);
+		lotesPorItem.set(lote.iddavitem, atuais);
+	}
 	const pendencias: string[] = [];
 	const itens: ItemPayloadNfe[] = [];
 	const prioridadeNfce = opcoes.prioridadeNfce === true;
@@ -133,6 +141,19 @@ export async function montarItensEmissaoDav(
 			formatarSituacaoTributaria(produto.tributacaosn) ??
 			formatarSituacaoTributaria(produto.situacaotributariasn);
 
+		const rastrosItem = lotesPorItem.get(itemDav.id) ?? [];
+		const rastros =
+			rastrosItem.length > 0
+				? rastrosItem.map((lote) => ({
+						...(lote.idlote ? { idlote: lote.idlote } : {}),
+						nLote: lote.numero,
+						qLote: Number.parseFloat(lote.quantidade ?? "0") || 0,
+						...(lote.datafabricacao ? { dFab: lote.datafabricacao } : {}),
+						...(lote.datavalidade ? { dVal: lote.datavalidade } : {}),
+						...(lote.codigoagregacao ? { cAgreg: lote.codigoagregacao } : {}),
+					}))
+				: undefined;
+
 		itens.push({
 			idproduto: produto.id,
 			...(produto.codigo != null
@@ -148,6 +169,7 @@ export async function montarItensEmissaoDav(
 			...(cst ? { cst } : {}),
 			...(csosn ? { csosn } : {}),
 			orig: produto.origem ?? 0,
+			...(rastros ? { rastros } : {}),
 		});
 	}
 

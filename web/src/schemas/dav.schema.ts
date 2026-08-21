@@ -5,11 +5,21 @@ const idOpcional = z.preprocess(
 	z.string().uuid().optional(),
 );
 
+const rastroPedidoSchema = z.object({
+	idlote: z.string().uuid().optional(),
+	nLote: z.string().min(1).max(20),
+	qLote: z.number().positive(),
+	dFab: z.string().optional(),
+	dVal: z.string().optional(),
+	cAgreg: z.string().optional(),
+});
+
 export const pedidoDavItemLocalSchema = z.object({
 	idproduto: z.string().uuid(),
 	quantidade: z.string().min(1),
 	preco: z.string().min(1),
 	unidademedida: z.string().optional(),
+	rastros: z.array(rastroPedidoSchema).optional(),
 });
 
 export const salvarNovoPedidoDavSchema = z

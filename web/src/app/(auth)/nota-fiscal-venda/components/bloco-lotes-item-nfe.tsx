@@ -1,22 +1,38 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import type { ItemNfe } from "@/schemas/nfe-emissao.schema";
 import { lotesService } from "@/services/lotes.service";
 
+export type RastroItemLote = NonNullable<ItemNfe["rastros"]>[number];
+
 type BlocoLotesItemNfeProps = {
-	item: ItemNfe;
+	item: Pick<ItemNfe, "idproduto" | "quantidade" | "rastros">;
 	idempresa: string;
 	idcfop?: string;
-	onChange: (rastros: NonNullable<ItemNfe["rastros"]>) => void;
+	onChange: (rastros: RastroItemLote[]) => void;
 };
 
-function somarRastros(rastros: NonNullable<ItemNfe["rastros"]>): number {
+function somarRastros(rastros: RastroItemLote[]): number {
 	return rastros.reduce((total, rastro) => total + (rastro.qLote || 0), 0);
+}
+
+function formatarSaldo(valor: string | null | undefined) {
+	const n = Number.parseFloat(valor ?? "0");
+	if (!Number.isFinite(n)) return "0";
+	return n.toLocaleString("pt-BR", { maximumFractionDigits: 6 });
 }
 
 export function BlocoLotesItemNfe({
@@ -25,9 +41,31 @@ export function BlocoLotesItemNfe({
 	idcfop,
 	onChange,
 }: BlocoLotesItemNfeProps) {
+	const queryClient = useQueryClient();
 	const rastros = item.rastros ?? [];
 	const soma = somarRastros(rastros);
 	const fecha = Math.abs(soma - item.quantidade) <= 0.000001;
+	const qtdRestante = Math.max(0, item.quantidade - soma);
+
+	const [criando, setCriando] = useState(false);
+	const [numeroNovo, setNumeroNovo] = useState("");
+	const [fabNovo, setFabNovo] = useState("");
+	const [valNovo, setValNovo] = useState("");
+
+	const queryKey = ["lotes-produto-item", idempresa, item.idproduto];
+
+	const { data: lotesData } = useQuery({
+		queryKey,
+		queryFn: () =>
+			lotesService.listarPorProduto(item.idproduto ?? "", idempresa),
+		enabled: !!idempresa && !!item.idproduto,
+	});
+
+	const lotesDisponiveis = (lotesData?.lotes ?? []).filter(
+		(lote) =>
+			!rastros.some((rastro) => rastro.idlote === lote.id) &&
+			Number.parseFloat(lote.quantidade ?? "0") > 0,
+	);
 
 	const sugerir = useMutation({
 		mutationFn: () =>
@@ -69,9 +107,42 @@ export function BlocoLotesItemNfe({
 		},
 	});
 
+	const criarLote = useMutation({
+		mutationFn: () =>
+			lotesService.criar({
+				idempresa,
+				idproduto: item.idproduto ?? "",
+				numero: numeroNovo.trim(),
+				datafabricacao: fabNovo || null,
+				datavalidade: valNovo || null,
+			}),
+		onSuccess: async (lote) => {
+			onChange([
+				...rastros,
+				{
+					idlote: lote.id,
+					nLote: lote.numero,
+					qLote: qtdRestante > 0 ? qtdRestante : 1,
+					dFab: lote.datafabricacao ?? undefined,
+					dVal: lote.datavalidade ?? undefined,
+					cAgreg: lote.codigoagregacao ?? undefined,
+				},
+			]);
+			setNumeroNovo("");
+			setFabNovo("");
+			setValNovo("");
+			setCriando(false);
+			toast.success("Lote criado e vinculado ao item");
+			await queryClient.invalidateQueries({ queryKey });
+		},
+		onError: (error: Error) => {
+			toast.error(error.message || "Não foi possível criar o lote.");
+		},
+	});
+
 	function atualizarRastro(
 		indice: number,
-		campo: keyof NonNullable<ItemNfe["rastros"]>[number],
+		campo: keyof RastroItemLote,
 		valor: string | number | undefined,
 	) {
 		onChange(
@@ -81,11 +152,28 @@ export function BlocoLotesItemNfe({
 		);
 	}
 
+	function selecionarLoteExistente(idlote: string) {
+		const lote = lotesDisponiveis.find((itemLote) => itemLote.id === idlote);
+		if (!lote) return;
+		const saldo = Number.parseFloat(lote.quantidade ?? "0") || 0;
+		onChange([
+			...rastros,
+			{
+				idlote: lote.id,
+				nLote: lote.numero,
+				qLote: Math.min(qtdRestante > 0 ? qtdRestante : saldo, saldo) || 1,
+				dFab: lote.datafabricacao ?? undefined,
+				dVal: lote.datavalidade ?? undefined,
+				cAgreg: lote.codigoagregacao ?? undefined,
+			},
+		]);
+	}
+
 	return (
 		<div className="space-y-3 rounded-lg border p-3">
-			<div className="flex items-center justify-between gap-2">
+			<div className="flex flex-wrap items-center justify-between gap-2">
 				<span className="text-sm font-medium">Lotes</span>
-				<div className="flex gap-2">
+				<div className="flex flex-wrap gap-2">
 					<Button
 						type="button"
 						variant="outline"
@@ -99,6 +187,16 @@ export function BlocoLotesItemNfe({
 						type="button"
 						variant="outline"
 						size="sm"
+						disabled={!item.idproduto}
+						onClick={() => setCriando((atual) => !atual)}
+					>
+						<Plus className="size-4" />
+						Criar lote
+					</Button>
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
 						onClick={() =>
 							onChange([
 								...rastros,
@@ -107,15 +205,84 @@ export function BlocoLotesItemNfe({
 						}
 					>
 						<Plus className="size-4" />
-						Lote
+						Linha
 					</Button>
 				</div>
 			</div>
 
+			{item.idproduto ? (
+				<div className="space-y-1">
+					<span className="text-xs text-muted-foreground">
+						Selecionar lote existente
+					</span>
+					<Select
+						key={`selecionar-lote-${rastros.length}`}
+						onValueChange={selecionarLoteExistente}
+						disabled={lotesDisponiveis.length === 0}
+					>
+						<SelectTrigger className="w-full">
+							<SelectValue
+								placeholder={
+									lotesDisponiveis.length === 0
+										? "Nenhum lote com saldo disponível"
+										: "Escolha um lote..."
+								}
+							/>
+						</SelectTrigger>
+						<SelectContent>
+							{lotesDisponiveis.map((lote) => (
+								<SelectItem key={lote.id} value={lote.id}>
+									{lote.numero} · saldo {formatarSaldo(lote.quantidade)}
+									{lote.datavalidade ? ` · val. ${lote.datavalidade}` : ""}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</div>
+			) : null}
+
+			{criando ? (
+				<div className="grid grid-cols-[1fr_7rem_7rem_auto] gap-2 items-end rounded-md border border-dashed p-2">
+					<div className="space-y-1">
+						<span className="text-xs text-muted-foreground">Novo lote</span>
+						<Input
+							value={numeroNovo}
+							maxLength={20}
+							placeholder="Número"
+							onChange={(e) => setNumeroNovo(e.target.value)}
+						/>
+					</div>
+					<div className="space-y-1">
+						<span className="text-xs text-muted-foreground">Fabricação</span>
+						<Input
+							type="date"
+							value={fabNovo}
+							onChange={(e) => setFabNovo(e.target.value)}
+						/>
+					</div>
+					<div className="space-y-1">
+						<span className="text-xs text-muted-foreground">Validade</span>
+						<Input
+							type="date"
+							value={valNovo}
+							onChange={(e) => setValNovo(e.target.value)}
+						/>
+					</div>
+					<Button
+						type="button"
+						size="sm"
+						disabled={!numeroNovo.trim() || criarLote.isPending || !item.idproduto}
+						onClick={() => criarLote.mutate()}
+					>
+						{criarLote.isPending ? "Salvando..." : "Salvar"}
+					</Button>
+				</div>
+			) : null}
+
 			{rastros.length === 0 ? (
 				<p className="text-sm text-muted-foreground">
-					Informe os lotes ou use Sugerir FEFO. A soma deve fechar com a
-					quantidade do item.
+					Selecione um lote, crie um novo ou use Sugerir FEFO. A soma deve fechar
+					com a quantidade do item.
 				</p>
 			) : (
 				<div className="space-y-2">

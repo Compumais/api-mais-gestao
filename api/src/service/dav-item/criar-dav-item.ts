@@ -4,17 +4,28 @@ import type { HttpResponse } from "@/model/http-model.js";
 import { buscarDavPorId } from "@/repositories/dav-repositories.js";
 import { criarDavItem } from "@/repositories/dav-item-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
-import { httpBadRequest, httpCriacao, httpErro, httpProibido } from "@/util/http-util.js";
+import {
+	type RastroDavItemInput,
+	sincronizarLotesDavItem,
+} from "@/service/dav-item/sincronizar-lotes-dav-item.js";
+import {
+	httpBadRequest,
+	httpCriacao,
+	httpErro,
+	httpProibido,
+} from "@/util/http-util.js";
 
 type CriarDavItemParametros = {
 	iddav: string;
 	dadosItem: Omit<NovoDavItem, "id" | "iddav">;
+	rastros?: RastroDavItemInput[];
 	idusuario: string;
 };
 
 export async function criarDavItemService({
 	iddav,
 	dadosItem,
+	rastros,
 	idusuario,
 }: CriarDavItemParametros): Promise<HttpResponse<DavItem | null>> {
 	const dav = await buscarDavPorId(iddav);
@@ -32,8 +43,9 @@ export async function criarDavItemService({
 		return httpProibido();
 	}
 
+	const id = uuidv4();
 	const registro = await criarDavItem({
-		id: uuidv4(),
+		id,
 		iddav,
 		...dadosItem,
 		currenttimemillis: Date.now(),
@@ -41,6 +53,14 @@ export async function criarDavItemService({
 
 	if (!registro) {
 		return httpErro();
+	}
+
+	if (rastros && rastros.length > 0) {
+		await sincronizarLotesDavItem({
+			idempresa: dav.idempresa,
+			iddavitem: id,
+			rastros,
+		});
 	}
 
 	return httpCriacao(registro);
