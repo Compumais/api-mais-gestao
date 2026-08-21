@@ -5,6 +5,7 @@ import {
 	AlertTriangle,
 	ArrowLeft,
 	Ban,
+	Copy,
 	Download,
 	FileX2,
 	Printer,
@@ -534,6 +535,12 @@ export default function DetalheNfePage({
 							</Button>
 						</Link>
 					)}
+					<Link href={`/nota-fiscal-venda/nova?clonar=${id}`}>
+						<Button variant="outline" className="gap-2">
+							<Copy className="h-4 w-4" />
+							Clonar NF-e
+						</Button>
+					</Link>
 					{ehAutorizada && (
 						<Button
 							variant="default"

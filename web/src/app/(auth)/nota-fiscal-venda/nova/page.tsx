@@ -214,6 +214,7 @@ export default function NovaEmissaoNfePage() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const reemitirId = searchParams.get("reemitir");
+	const clonarId = searchParams.get("clonar");
 	const rascunhoId = searchParams.get("rascunho");
 	const pedidoId = searchParams.get("pedido");
 	const pedidosParam = searchParams.get("pedidos");
@@ -228,6 +229,7 @@ export default function NovaEmissaoNfePage() {
 	const isLotePedidos = pedidosIds.length > 0;
 	const devolverEntradaId = searchParams.get("devolverEntrada");
 	const devolverVendaId = searchParams.get("devolverVenda");
+	const origemNotaId = clonarId || reemitirId;
 	const queryClient = useQueryClient();
 	const { localStorageEmpresa: empresa } = useEmpresa();
 	const { nfeConfiguracao, carregando: carregandoNfeConfig } =
@@ -260,6 +262,7 @@ export default function NovaEmissaoNfePage() {
 	const [cfopDialogAberto, setCfopDialogAberto] = useState(false);
 	const [cfopPendente, setCfopPendente] = useState<string | null>(null);
 	const reemitirAplicadoRef = useRef<string | null>(null);
+	const clonarAplicadoRef = useRef<string | null>(null);
 	const rascunhoAplicadoRef = useRef<string | null>(null);
 	const pedidoAplicadoRef = useRef<string | null>(null);
 	const devolucaoAplicadaRef = useRef<string | null>(null);
@@ -302,18 +305,23 @@ export default function NovaEmissaoNfePage() {
 		enabled: !!empresa,
 	});
 
-	const { data: dadosReemitir, isLoading: carregandoReemissao } = useQuery({
-		queryKey: ["nfe-reemitir", reemitirId],
+	const { data: dadosOrigemNota, isLoading: carregandoOrigemNota } = useQuery({
+		queryKey: ["nfe-origem-emissao", origemNotaId],
 		queryFn: async () => {
-			if (!reemitirId) {
-				throw new Error("NF-e para reemissão não informada");
+			if (!origemNotaId) {
+				throw new Error("NF-e de origem não informada");
 			}
-			return buscarNfeEmitidaComItens(reemitirId);
+			return buscarNfeEmitidaComItens(origemNotaId);
 		},
-		enabled: !!reemitirId,
+		enabled: !!origemNotaId,
 		staleTime: 0,
 		refetchOnMount: "always",
 	});
+
+	const dadosReemitir = reemitirId ? dadosOrigemNota : undefined;
+	const carregandoReemissao = Boolean(reemitirId && carregandoOrigemNota);
+	const dadosClonar = clonarId ? dadosOrigemNota : undefined;
+	const carregandoClone = Boolean(clonarId && carregandoOrigemNota);
 
 	const { data: dadosRascunho, isLoading: carregandoRascunho } = useQuery({
 		queryKey: ["nfe-rascunho", rascunhoId],
@@ -323,7 +331,7 @@ export default function NovaEmissaoNfePage() {
 			}
 			return buscarNfeEmitidaComItens(rascunhoId);
 		},
-		enabled: !!rascunhoId && !reemitirId,
+		enabled: !!rascunhoId && !origemNotaId,
 		staleTime: 0,
 		refetchOnMount: "always",
 	});
@@ -515,6 +523,7 @@ export default function NovaEmissaoNfePage() {
 	useEffect(() => {
 		if (
 			reemitirId ||
+			clonarId ||
 			pedidoId ||
 			isLotePedidos ||
 			devolverEntradaId ||
@@ -749,6 +758,149 @@ export default function NovaEmissaoNfePage() {
 		// Executa uma vez quando todos os dados da reemissão estiverem prontos.
 		// eslint-disable-next-line react-hooks/exhaustive-deps -- chave estável evita reexecução em refetch.
 	}, [reemitirProntoKey]);
+
+	const notaClonar = dadosClonar?.notaFiscal;
+
+	const clonarProntoKey = useMemo(() => {
+		if (
+			!clonarId ||
+			!dadosClonar?.notaFiscal?.id ||
+			!empresa?.id ||
+			!empresaFiscal ||
+			seriesData === undefined ||
+			cfopsSaida === undefined ||
+			cfopsEntrada === undefined
+		) {
+			return null;
+		}
+
+		return [
+			clonarId,
+			dadosClonar.notaFiscal.id,
+			empresa.id,
+			empresaFiscal.crt,
+			dadosClonar.notaFiscal.datahoraemissao ?? "",
+			dadosClonar.notaFiscal.frete ?? "",
+			dadosClonar.notaFiscal.tipofrete ?? "",
+			JSON.stringify(dadosClonar.notaFiscal.dadosimportacao ?? null),
+		].join(":");
+	}, [
+		clonarId,
+		dadosClonar?.notaFiscal?.id,
+		dadosClonar?.notaFiscal?.datahoraemissao,
+		dadosClonar?.notaFiscal?.frete,
+		dadosClonar?.notaFiscal?.tipofrete,
+		dadosClonar?.notaFiscal?.dadosimportacao,
+		empresa?.id,
+		empresaFiscal,
+		seriesData,
+		cfopsSaida,
+		cfopsEntrada,
+	]);
+
+	useEffect(() => {
+		if (!clonarProntoKey || !dadosClonar || !empresa || !empresaFiscal) {
+			return;
+		}
+
+		const { notaFiscal, itens } = dadosClonar;
+
+		if (clonarAplicadoRef.current === clonarProntoKey) return;
+
+		if (!itens.length) {
+			toast.error("A NF-e de origem não possui itens para clonar.");
+			router.replace(`/nota-fiscal-venda/${notaFiscal.id}`);
+			return;
+		}
+
+		const usaCsosn = empresaUsaCsosn(empresaFiscal.crt);
+		const seriesAtivasClone = (seriesData ?? []).filter(
+			(s) => s.ativo && s.modelo === "55",
+		);
+
+		const itensForm = itens.map((item) =>
+			mapearItemNotaReemissaoParaForm(item, usaCsosn),
+		);
+
+		const primeiroCfop = itensForm[0]?.cfop;
+		if (primeiroCfop) setCfopSaida(primeiroCfop);
+
+		const contextoClone = resolverContextoReemissaoNfe(notaFiscal);
+		const ehDevolucaoClone =
+			notaFiscal.finalidadeemissaonfe === 4 ||
+			!!notaFiscal.chavedocumentoreferenciado ||
+			!!contextoClone.documentoReferenciado;
+		setFormaPagamento(
+			ehDevolucaoClone ? "90" : contextoClone.formaPagamento,
+		);
+
+		const cfopClone =
+			cfopsSaida?.find((c) => c.codigo === primeiroCfop) ??
+			cfopsEntrada?.find((c) => c.codigo === primeiroCfop);
+		const natOpClone = (
+			contextoClone.natOp?.trim() ||
+			cfopClone?.descricao?.trim() ||
+			(primeiroCfop ? `Venda CFOP ${primeiroCfop}` : "VENDA")
+		).slice(0, 60);
+
+		const serieEncontrada =
+			(contextoClone.idserienfe
+				? seriesAtivasClone.find((s) => s.id === contextoClone.idserienfe)
+				: undefined) ??
+			seriesAtivasClone.find((s) => {
+				if (s.serie === notaFiscal.serie) return true;
+				const numeroSerie = Number(s.serie);
+				const numeroNota = Number(notaFiscal.serie);
+				return (
+					Number.isFinite(numeroSerie) &&
+					Number.isFinite(numeroNota) &&
+					numeroSerie === numeroNota
+				);
+			}) ??
+			seriesAtivasClone.find((s) => s.padrao);
+
+		const origemLabel = [
+			notaFiscal.serie,
+			notaFiscal.numeronotafiscal,
+		]
+			.filter(Boolean)
+			.join("-");
+		const infoBase = contextoClone.informacoesAdicionais?.trim() ?? "";
+		const infoClone = (
+			origemLabel
+				? infoBase
+					? `${infoBase}\nClonada a partir da NF-e ${origemLabel}.`
+					: `Clonada a partir da NF-e ${origemLabel}.`
+				: infoBase
+		).slice(0, 2000);
+
+		clonarAplicadoRef.current = clonarProntoKey;
+
+		form.reset({
+			idempresa: empresa.id,
+			iddestinatario: notaFiscal.identidade ?? undefined,
+			idserienfe: serieEncontrada?.id ?? contextoClone.idserienfe ?? undefined,
+			confirmarProducao: false,
+			natOp: natOpClone,
+			indPres:
+				contextoClone.indPres != null &&
+				isIndPresNfeValido(contextoClone.indPres)
+					? contextoClone.indPres
+					: IND_PRES_NFE_PADRAO,
+			itens: itensForm,
+			totais: contextoClone.totais,
+			transporte: contextoClone.transporte,
+			informacoesAdicionais: infoClone || undefined,
+			documentoReferenciado: contextoClone.documentoReferenciado,
+			idtipodocumento: contextoClone.idtipodocumento,
+			idcondicaopagto: contextoClone.idcondicaopagto,
+			idplanocontas: contextoClone.idplanocontas,
+			idlocalestoque: contextoClone.idlocalestoque,
+			gerarFinanceiro: ehDevolucaoClone ? false : contextoClone.gerarFinanceiro,
+			gerarEstoque: contextoClone.gerarEstoque,
+		});
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- chave estável evita reexecução em refetch.
+	}, [clonarProntoKey]);
 
 	const notaRascunho = dadosRascunho?.notaFiscal;
 
@@ -1595,11 +1747,13 @@ export default function NovaEmissaoNfePage() {
 		const dadosNormalizados: EmissaoNfeFormData = {
 			...dados,
 			idempresa: empresa.id,
-			idnotafiscal: reemitirId
-				? (dados.idnotafiscal ?? reemitirId)
-				: rascunhoId
-					? (dados.idnotafiscal ?? rascunhoId)
-					: dados.idnotafiscal,
+			idnotafiscal: clonarId
+				? undefined
+				: reemitirId
+					? (dados.idnotafiscal ?? reemitirId)
+					: rascunhoId
+						? (dados.idnotafiscal ?? rascunhoId)
+						: dados.idnotafiscal,
 			itens: dados.itens.map((item) =>
 				prepararItemEmissaoFormulario(item, usaCsosn),
 			),
@@ -1753,11 +1907,13 @@ export default function NovaEmissaoNfePage() {
 		emitir({
 			...dados,
 			idempresa: empresa?.id ?? dados.idempresa,
-			idnotafiscal: reemitirId
-				? (dados.idnotafiscal ?? reemitirId)
-				: rascunhoId
-					? (dados.idnotafiscal ?? rascunhoId)
-					: dados.idnotafiscal,
+			idnotafiscal: clonarId
+				? undefined
+				: reemitirId
+					? (dados.idnotafiscal ?? reemitirId)
+					: rascunhoId
+						? (dados.idnotafiscal ?? rascunhoId)
+						: dados.idnotafiscal,
 			itens: (dados.itens ?? []).map((item) =>
 				prepararItemEmissaoFormulario(item, usaCsosn),
 			),
@@ -1811,6 +1967,8 @@ export default function NovaEmissaoNfePage() {
 					<h1 className="text-lg font-semibold leading-tight">
 						{rascunhoId && notaRascunho
 							? "Continuar rascunho de NF-e"
+							: clonarId && notaClonar
+								? `Clonar NF-e ${[notaClonar.serie, notaClonar.numeronotafiscal].filter(Boolean).join("-")}`
 							: reemitirId && notaReemitir
 							? `Reemitir NF-e ${notaReemitir.serie}-${notaReemitir.numeronotafiscal}`
 							: isLotePedidos
@@ -1822,6 +1980,8 @@ export default function NovaEmissaoNfePage() {
 					<p className="text-xs text-muted-foreground truncate">
 						{rascunhoId && notaRascunho
 							? "Rascunho salvo — revise e emita quando estiver pronto"
+							: clonarId && notaClonar
+								? `Nova numeração · origem série ${notaClonar.serie}, nº ${notaClonar.numeronotafiscal}`
 							: reemitirId && notaReemitir
 							? `Mesma numeração: série ${notaReemitir.serie}, nº ${notaReemitir.numeronotafiscal}`
 							: isLotePedidos
@@ -1931,6 +2091,25 @@ export default function NovaEmissaoNfePage() {
 								{isLotePedidos
 									? "os pedidos serão vinculados à NF-e."
 									: "o pedido será vinculado à NF-e."}
+							</p>
+						)}
+					</div>
+				)}
+				{clonarId && (
+					<div className="mb-6 rounded-lg border border-blue-300 bg-blue-50 p-4 text-sm text-blue-950 space-y-2">
+						<p className="font-medium">
+							{carregandoClone
+								? "Carregando dados da NF-e para clonagem..."
+								: "Você está clonando uma NF-e existente. Será gerada uma nota nova, com numeração própria."}
+						</p>
+						{!carregandoClone && notaClonar && (
+							<p className="text-xs leading-relaxed">
+								Origem: série {notaClonar.serie} nº{" "}
+								{notaClonar.numeronotafiscal}
+								{notaClonar.razaosocial
+									? ` — ${notaClonar.razaosocial}`
+									: ""}
+								.
 							</p>
 						)}
 					</div>

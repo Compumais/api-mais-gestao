@@ -10,7 +10,7 @@ import {
 	type SortingState,
 	useReactTable,
 } from "@tanstack/react-table";
-import { Ban, FileX2, Plus, RotateCcw } from "lucide-react";
+import { Ban, Copy, FileX2, Plus, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -200,6 +200,12 @@ const createColumns = (params: {
 				nota.status === NFE_STATUS.REJEITADA;
 			const podeDevolver =
 				nota.status === NFE_STATUS.AUTORIZADA && !!nota.chavenfe;
+			const podeClonar =
+				nota.status === NFE_STATUS.AUTORIZADA ||
+				nota.status === NFE_STATUS.CANCELADA ||
+				nota.status === NFE_STATUS.CANCELADA_FORA_PRAZO ||
+				nota.status === NFE_STATUS.REJEITADA ||
+				nota.status === NFE_STATUS.PENDENTE;
 			const podeCancelar = notaPodeSerCancelada(nota).permitido;
 			const podeInutilizar = notaPodeSerInutilizada(nota).permitido;
 
@@ -238,6 +244,14 @@ const createColumns = (params: {
 							<Button size="sm" variant="outline" className="h-7 px-2 text-xs">
 								<RotateCcw className="mr-1 size-3" />
 								Devolver
+							</Button>
+						</Link>
+					)}
+					{podeClonar && (
+						<Link href={`/nota-fiscal-venda/nova?clonar=${nota.id}`}>
+							<Button size="sm" variant="outline" className="h-7 px-2 text-xs">
+								<Copy className="mr-1 size-3" />
+								Clonar
 							</Button>
 						</Link>
 					)}
