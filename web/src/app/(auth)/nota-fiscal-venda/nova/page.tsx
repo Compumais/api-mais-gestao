@@ -86,6 +86,7 @@ import type { DocumentoReferenciadoResolvido } from "@/services/nfe-emissao.serv
 import {
 	abrirDanfeNfe,
 	buscarNfeEmitidaComItens,
+	calcularTributosNfe,
 	emitirNfe,
 	excluirRascunhoEmissaoNfe,
 	previewDanfeNfe,
@@ -95,6 +96,7 @@ import {
 import {
 	calcularIcmsItemEmissao,
 	calcularTotaisFiscaisEmissaoNfe,
+	type TotaisFiscaisEmissaoNfe,
 } from "@/util/calcular-totais-fiscais-emissao-nfe";
 import {
 	detectarTipoDevolucaoPorCfop,
@@ -1279,6 +1281,7 @@ export default function NovaEmissaoNfePage() {
 		() =>
 			JSON.stringify(
 				(itensValue ?? []).map((item) => ({
+					idproduto: item.idproduto,
 					quantidade: item.quantidade,
 					valorUnitario: item.valorUnitario,
 					cst: item.cst,
@@ -1289,11 +1292,15 @@ export default function NovaEmissaoNfePage() {
 					aliquotaCofins: item.aliquotaCofins,
 					baseIcms: item.baseIcms,
 					aliquotaIcms: item.aliquotaIcms,
+					aliquotaIcmsProprioSt: item.aliquotaIcmsProprioSt,
 					valorIcms: item.valorIcms,
 					valorIpi: item.valorIpi,
 					valorIpiDevol: item.valorIpiDevol,
 					baseIcmsSt: item.baseIcmsSt,
 					valorIcmsSt: item.valorIcmsSt,
+					percentualMvaSt: item.percentualMvaSt,
+					aliquotaIcmsSt: item.aliquotaIcmsSt,
+					aliquotaFcpSt: item.aliquotaFcpSt,
 					valorFcpSt: item.valorFcpSt,
 					valorFcpStRet: item.valorFcpStRet,
 					valorIcmsDesonerado: item.valorIcmsDesonerado,
@@ -1304,7 +1311,28 @@ export default function NovaEmissaoNfePage() {
 		[itensValue],
 	);
 
-	const totaisFiscais = useMemo(
+	const totaisComerciaisKey = useMemo(
+		() =>
+			JSON.stringify({
+				frete: freteWatch,
+				seguro: seguroWatch,
+				desconto: descontoWatch,
+				outrasDespesas: outrasDespesasWatch,
+			}),
+		[freteWatch, seguroWatch, descontoWatch, outrasDespesasWatch],
+	);
+
+	const [chaveCalculoDebounced, setChaveCalculoDebounced] = useState(
+		`${itensImpostosKey}|${totaisComerciaisKey}`,
+	);
+
+	useEffect(() => {
+		const chave = `${itensImpostosKey}|${totaisComerciaisKey}`;
+		const timer = window.setTimeout(() => setChaveCalculoDebounced(chave), 400);
+		return () => window.clearTimeout(timer);
+	}, [itensImpostosKey, totaisComerciaisKey]);
+
+	const totaisFiscaisLocais = useMemo(
 		() =>
 			calcularTotaisFiscaisEmissaoNfe(
 				empresaFiscal?.crt ?? 3,
@@ -1325,6 +1353,34 @@ export default function NovaEmissaoNfePage() {
 			outrasDespesasWatch,
 		],
 	);
+
+	const { data: calculoTributosApi } = useQuery({
+		queryKey: [
+			"nfe-calcular-tributos",
+			empresa?.id,
+			chaveCalculoDebounced,
+		],
+		queryFn: () =>
+			calcularTributosNfe({
+				idempresa: empresa!.id,
+				itens: itensValue ?? [],
+				totais: {
+					frete: freteWatch,
+					seguro: seguroWatch,
+					desconto: descontoWatch,
+					outrasDespesas: outrasDespesasWatch,
+				},
+			}),
+		enabled:
+			!!empresa?.id &&
+			(itensValue?.length ?? 0) > 0 &&
+			chaveCalculoDebounced.length > 0,
+		placeholderData: (anterior) => anterior,
+		retry: 1,
+	});
+
+	const totaisFiscais: TotaisFiscaisEmissaoNfe =
+		calculoTributosApi?.totaisFiscais ?? totaisFiscaisLocais;
 
 	const totalProdutos = totaisFiscais.totalProdutos;
 	const totalFrete = totaisFiscais.frete;
@@ -1575,6 +1631,14 @@ export default function NovaEmissaoNfePage() {
 		return {
 			...dadosNormalizados,
 			natOp,
+			totaisInformados: {
+				vProd: totaisFiscais.totalProdutos,
+				vNF: totaisFiscais.totalNota,
+				vDesc: totaisFiscais.desconto,
+				vFrete: totaisFiscais.frete,
+				vSeg: totaisFiscais.seguro,
+				vOutro: totaisFiscais.outrasDespesas,
+			},
 			documentoReferenciado: isOperacaoDevolucao
 				? {
 						...dadosNormalizados.documentoReferenciado,

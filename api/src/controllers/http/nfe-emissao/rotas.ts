@@ -3,6 +3,7 @@ import { FEATURES_SAAS } from "@/constants/saas-catalog.js";
 import { verifyJwt } from "../../middleware/verify-jwt.js";
 import { requireFeature } from "../../middleware/verify-plano.js";
 import { cancelarNfe } from "./cancelar-nfe.js";
+import { calcularTributosNfe } from "./calcular-tributos.js";
 import { emitirNfe, listarNfesEmitidas } from "./emitir-nfe.js";
 import { inutilizarNfe } from "./inutilizar-nfe.js";
 import {
@@ -29,6 +30,7 @@ export async function nfeEmissaoRotas(app: FastifyInstance) {
 	app.post("/nfe/emissao/resolver-referencia", {
 		handler: resolverReferenciaEmissao,
 	});
+	app.post("/nfe/emissao/calcular-tributos", { handler: calcularTributosNfe });
 	app.post("/nfe/emissao/preview-danfe", { handler: previewDanfeNfe });
 	app.post("/nfe/emissao/rascunho", { handler: salvarRascunhoEmissaoNfe });
 	app.get("/nfe/emissao/rascunhos", { handler: listarRascunhosEmissaoNfe });

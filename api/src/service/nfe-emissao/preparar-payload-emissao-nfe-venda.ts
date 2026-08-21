@@ -13,7 +13,7 @@ import { buscarNotaFiscalPorId } from "@/repositories/nota-fiscal-repositories.j
 import { buscarTipoDocumentoFinanceiroPorId } from "@/repositories/tipo-documento-financeiro-repositories.js";
 import { completarRastrosItensEmissao } from "@/service/lote/completar-rastros-emissao.js";
 import { anexarRastrosInformacoesAdicionaisNfe } from "@/util/montar-observacoes-lotes-nfe.js";
-import { aplicarCreditoIcmsSnItensEmissao } from "@/service/nfe-emissao/aplicar-credito-icms-sn-itens.js";
+import { aplicarTributacaoItensEmissaoNfe } from "@/service/nfe-emissao/calcular-tributos-itens-emissao-nfe.js";
 import {
 	carregarContextoEmissaoNfe,
 	type DestinatarioPayloadNfe,
@@ -24,11 +24,9 @@ import {
 	type TotaisPayloadNfe,
 	type TransportePayloadNfe,
 } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
-import { enriquecerItensEmissaoComProduto } from "@/service/nfe-emissao/enriquecer-itens-emissao-produto.js";
 import { resolverDocumentoReferenciadoEmissao } from "@/service/nfe-emissao/resolver-documento-referenciado-emissao.js";
 import type { FormaPagamentoNfVenda } from "@/service/nota-fiscal/gerar-contas-receber-nf.js";
 import { calcularTotaisFiscaisEmissaoNfe } from "@/util/calcular-totais-fiscais-emissao-nfe.js";
-import { recalcularIcmsStItensEmissao } from "@/util/calcular-icms-st-item-emissao-nfe.js";
 import { isAmbienteHomologacao } from "@/util/ambiente-sefaz.js";
 import {
 	emissaoRequerDocumentoReferenciado,
@@ -47,13 +45,11 @@ import {
 } from "@/util/http-util.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
 import { STATUS_RASCUNHO_IMPORTACAO } from "@/util/nota-fiscal-constants.js";
-import { normalizarGtinItensEmissao } from "@/util/normalizar-gtin-item-emissao-nfe.js";
 import {
 	normalizarIeParaNfe,
 	resolverIndIeDestNfe,
 } from "@/util/normalizar-ie-nfe.js";
 import { normalizarPagamentoEmissaoNfe } from "@/util/normalizar-pagamento-emissao-nfe.js";
-import { normalizarItensEmissaoNfe } from "@/util/normalizar-tributacao-item-emissao-nfe.js";
 import { resolverIdeEmissaoNfe } from "@/util/resolver-ide-emissao-nfe.js";
 import { resolverNatOpEmissaoNfe } from "@/util/resolver-nat-op-emissao-nfe.js";
 import { agoraBrasiliaIsoOffset } from "@/util/data-hora-brasilia.js";
@@ -66,6 +62,15 @@ import {
 export const AVISO_PREVIEW_DANFE =
 	"*** PRÉ-VISUALIZAÇÃO - DOCUMENTO SEM VALOR FISCAL ***";
 
+export type TotaisInformadosEmissaoNfe = {
+	vProd?: number;
+	vNF?: number;
+	vDesc?: number;
+	vFrete?: number;
+	vSeg?: number;
+	vOutro?: number;
+};
+
 export type PrepararPayloadEmissaoNfeVendaParams = {
 	idusuario: string;
 	idempresa: string;
@@ -77,6 +82,7 @@ export type PrepararPayloadEmissaoNfeVendaParams = {
 	indPres?: number;
 	itens: ItemPayloadNfe[];
 	totais?: TotaisPayloadNfe;
+	totaisInformados?: TotaisInformadosEmissaoNfe;
 	pagamento?: PagamentoPayloadNfe;
 	transporte?: TransportePayloadNfe;
 	informacoesAdicionais?: string;
@@ -353,6 +359,7 @@ export async function prepararPayloadEmissaoNfeVenda(
 		indPres,
 		itens,
 		totais,
+		totaisInformados,
 		pagamento,
 		transporte,
 		informacoesAdicionais,
@@ -577,20 +584,20 @@ export async function prepararPayloadEmissaoNfeVenda(
 			: 1;
 
 	const crt = empresaFiscal.crt ?? 3;
-	const itensEnriquecidos = await enriquecerItensEmissaoComProduto(itens);
-	const itensTributacao = recalcularIcmsStItensEmissao(
-		normalizarGtinItensEmissao(
-			normalizarItensEmissaoNfe(crt, itensEnriquecidos),
-		),
-	);
-	const { itens: itensNormalizados, pendencias: pendenciasCreditoSn } =
-		await aplicarCreditoIcmsSnItensEmissao(itensTributacao);
+	const {
+		itens: itensTributados,
+		pendencias: pendenciasTributacao,
+	} = await aplicarTributacaoItensEmissaoNfe({
+		crt,
+		itens,
+		totais: totais ?? {},
+	});
 
-	if (pendenciasCreditoSn.length > 0) {
-		return httpBadRequest(pendenciasCreditoSn.join("; "));
+	if (pendenciasTributacao.length > 0) {
+		return httpBadRequest(pendenciasTributacao.join("; "));
 	}
 
-	const pendenciasCest = validarCestItensEmissaoNfe(itensNormalizados);
+	const pendenciasCest = validarCestItensEmissaoNfe(itensTributados);
 	if (pendenciasCest.length > 0) {
 		return httpBadRequest(pendenciasCest.join("; "));
 	}
@@ -598,7 +605,7 @@ export async function prepararPayloadEmissaoNfeVenda(
 	const { itens: itensComRastros, pendencias: pendenciasLote } =
 		await completarRastrosItensEmissao({
 			idempresa,
-			itens: itensNormalizados,
+			itens: itensTributados,
 		});
 	if (pendenciasLote.length > 0) {
 		return httpBadRequest(pendenciasLote.join("; "));
@@ -671,6 +678,14 @@ export async function prepararPayloadEmissaoNfeVenda(
 		indIEDest: destinatario?.indIEDest,
 		itens: itensComRastros,
 		totais: totais ?? {},
+		totaisInformados: totaisInformados ?? {
+			vProd: totaisFiscais.totalProdutos,
+			vNF: totaisFiscais.totalNota,
+			vDesc: totaisFiscais.desconto,
+			vFrete: totaisFiscais.frete,
+			vSeg: totaisFiscais.seguro,
+			vOutro: totaisFiscais.outrasDespesas,
+		},
 	});
 
 	if (!relatorioFiscal.permitir_transmissao) {

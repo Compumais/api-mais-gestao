@@ -36,6 +36,14 @@ export type AvaliarEmissaoFiscalServiceParams = {
 		desconto?: number;
 		outrasDespesas?: number;
 	};
+	totaisInformados?: {
+		vProd?: number;
+		vNF?: number;
+		vDesc?: number;
+		vFrete?: number;
+		vSeg?: number;
+		vOutro?: number;
+	};
 };
 
 function mapearRegraBanco(regra: Awaited<ReturnType<typeof listarRegrasFiscaisValidas>>[number]): RegraFiscalResolvida {

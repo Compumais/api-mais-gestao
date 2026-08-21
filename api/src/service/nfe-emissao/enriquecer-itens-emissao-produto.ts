@@ -175,9 +175,12 @@ function aplicarCsosnStDoProduto(
 		}
 	}
 
-	if (resultado.aliquotaIcms == null) {
-		const aliquotaInterna = paraNumeroOpcional(produto.aliquotaicmsinterna);
-		if (aliquotaInterna != null) {
+	const aliquotaInterna = paraNumeroOpcional(produto.aliquotaicmsinterna);
+	if (aliquotaInterna != null) {
+		if (resultado.aliquotaIcmsProprioSt == null) {
+			resultado.aliquotaIcmsProprioSt = aliquotaInterna;
+		}
+		if (resultado.aliquotaIcms == null) {
 			resultado.aliquotaIcms = aliquotaInterna;
 		}
 	}

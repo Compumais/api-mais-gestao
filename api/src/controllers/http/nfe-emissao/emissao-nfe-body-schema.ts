@@ -25,6 +25,7 @@ const itemNfeSchema = z.object({
 	aliquotaCofins: z.number().optional(),
 	baseIcms: z.number().min(0).optional(),
 	aliquotaIcms: z.number().optional(),
+	aliquotaIcmsProprioSt: z.number().min(0).optional(),
 	pCredSN: z.number().optional(),
 	vCredICMSSN: z.number().min(0).optional(),
 	valorIcms: z.number().min(0).optional(),
@@ -69,6 +70,17 @@ const indPresNfeSchema = z
 	.refine((valor) => isIndPresNfeValido(valor), "indPres inválido")
 	.optional();
 
+const totaisInformadosSchema = z
+	.object({
+		vProd: z.number().optional(),
+		vNF: z.number().optional(),
+		vDesc: z.number().optional(),
+		vFrete: z.number().optional(),
+		vSeg: z.number().optional(),
+		vOutro: z.number().optional(),
+	})
+	.optional();
+
 export const emitirNfeBodySchema = z.object({
 	idempresa: z.string().uuid(),
 	idnotafiscal: z.string().uuid().optional(),
@@ -86,6 +98,7 @@ export const emitirNfeBodySchema = z.object({
 			outrasDespesas: z.number().optional(),
 		})
 		.optional(),
+	totaisInformados: totaisInformadosSchema,
 	pagamento: z
 		.object({
 			formas: z.array(
@@ -121,3 +134,20 @@ export const emitirNfeBodySchema = z.object({
 });
 
 export type EmitirNfeBody = z.infer<typeof emitirNfeBodySchema>;
+
+export const calcularTributosNfeBodySchema = z.object({
+	idempresa: z.string().uuid(),
+	itens: z.array(itemNfeSchema).min(1),
+	totais: z
+		.object({
+			frete: z.number().optional(),
+			seguro: z.number().optional(),
+			desconto: z.number().optional(),
+			outrasDespesas: z.number().optional(),
+		})
+		.optional(),
+});
+
+export type CalcularTributosNfeBody = z.infer<
+	typeof calcularTributosNfeBodySchema
+>;

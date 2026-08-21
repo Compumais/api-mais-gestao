@@ -292,6 +292,49 @@ export async function previewDanfeNfe(
 	return data;
 }
 
+export type TotaisFiscaisCalculoApi = {
+	baseIcms: number;
+	valorIcms: number;
+	baseIcmsSt: number;
+	valorIcmsSt: number;
+	valorIcmsDesonerado: number;
+	desconto: number;
+	totalProdutos: number;
+	frete: number;
+	seguro: number;
+	outrasDespesas: number;
+	valorIpi: number;
+	valorIpiDevol: number;
+	baseIss: number;
+	valorIss: number;
+	totalServicos: number;
+	valorFcpSt: number;
+	valorFcpStRet: number;
+	valorIcmsMonoRet: number;
+	valorIcmsMonoReten: number;
+	valorPis: number;
+	valorCofins: number;
+	totalNota: number;
+};
+
+export type ResultadoCalcularTributosNfe = {
+	crt: number;
+	itens: EmissaoNfeFormData["itens"];
+	totaisFiscais: TotaisFiscaisCalculoApi;
+};
+
+export async function calcularTributosNfe(params: {
+	idempresa: string;
+	itens: EmissaoNfeFormData["itens"];
+	totais?: EmissaoNfeFormData["totais"];
+}): Promise<ResultadoCalcularTributosNfe> {
+	const { data } = await api.post<ResultadoCalcularTributosNfe>(
+		"/nfe/emissao/calcular-tributos",
+		params,
+	);
+	return data;
+}
+
 export async function abrirDanfeNfe(id: string): Promise<void> {
 	const blob = await downloadDanfeNfe(id);
 

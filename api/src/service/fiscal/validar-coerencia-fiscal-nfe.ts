@@ -142,13 +142,15 @@ export function validarCoerenciaFiscalNfe(params: {
 			itemExigeCalculoSt(item) &&
 			item.percentualMvaSt != null &&
 			item.aliquotaIcmsSt != null &&
+			(item.aliquotaIcmsProprioSt == null || item.aliquotaIcmsProprioSt <= 0) &&
 			(item.aliquotaIcms == null || item.aliquotaIcms <= 0)
 		) {
 			validacoes.push({
-				status: "ATENCAO",
+				status: "INCONSISTENCIA",
 				code: "ST_SEM_ALIQUOTA_INTERNA",
-				field: `itens[${indice}].aliquotaIcms`,
-				message: `Item ${posicao}: operação com ST sem alíquota interna (ICMS próprio). A dedução no cálculo de ST não será aplicada.`,
+				field: `itens[${indice}].aliquotaIcmsProprioSt`,
+				message: `Item ${posicao}: operação com ST sem alíquota interna (ICMS próprio). Informe a alíquota de dedução ST no item ou no cadastro do produto.`,
+				tipoInconsistencia: "ERRO_DE_PARAMETRIZACAO_FISCAL",
 			});
 		}
 
@@ -159,12 +161,13 @@ export function validarCoerenciaFiscalNfe(params: {
 			Math.abs(valorSt - icmsStEsperado.valorIcmsSt) > 0.01
 		) {
 			validacoes.push({
-				status: "ATENCAO",
+				status: "INCONSISTENCIA",
 				code: "ST_VALOR_DIVERGENTE",
 				field: `itens[${indice}].valorIcmsSt`,
 				expected: String(icmsStEsperado.valorIcmsSt),
 				actual: String(valorSt),
 				message: `Item ${posicao}: valor ICMS ST (${valorSt.toFixed(2)}) diverge do esperado (${icmsStEsperado.valorIcmsSt.toFixed(2)}) com dedução do ICMS próprio.`,
+				tipoInconsistencia: "BUG_DE_SISTEMA",
 			});
 		}
 	}
