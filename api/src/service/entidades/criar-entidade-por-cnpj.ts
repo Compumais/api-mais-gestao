@@ -61,7 +61,13 @@ export async function criarEntidadePorCnpjService({
 
 	const existente = await buscarEntidadePorCnpj(idempresa, cnpjNormalizado);
 	if (existente) {
-		return httpRecursoExistente();
+		const nomeExistente =
+			existente.nome?.trim() || existente.razaosocial?.trim();
+		return httpRecursoExistente(
+			nomeExistente
+				? `Já existe um cadastro com este CNPJ (“${nomeExistente}”). A razão social pode se repetir; o conflito é no CNPJ.`
+				: "Já existe um cadastro com este CNPJ. A razão social pode se repetir; o conflito é no CNPJ.",
+		);
 	}
 
 	const agora = new Date().toISOString();

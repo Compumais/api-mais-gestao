@@ -1,8 +1,8 @@
 import type { Entidade, NovaEntidade } from "@/model/entidade-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
 import {
+	buscarEntidadePorCnpj,
 	criarEntidade,
-	verificarEmailTelefoneDuplicado,
 	verificarUsuarioPertenceEmpresa,
 } from "@/repositories/entidade-repositories.js";
 import {
@@ -80,14 +80,19 @@ export async function criarEntidadeService({
 
 	const dados = sanitizarDadosEntidade(dadosEntidade);
 
-	const emailOuTelefoneDuplicado = await verificarEmailTelefoneDuplicado(
-		dados.idempresa,
-		dados.email,
-		dados.telefone,
-	);
-
-	if (emailOuTelefoneDuplicado) {
-		return httpRecursoExistente();
+	const documento = dados.cnpjcpf?.replace(/\D/g, "") ?? "";
+	if (documento.length === 11 || documento.length === 14) {
+		const existente = await buscarEntidadePorCnpj(dados.idempresa, documento);
+		if (existente) {
+			const rotulo = documento.length === 14 ? "CNPJ" : "CPF";
+			const nomeExistente =
+				existente.nome?.trim() || existente.razaosocial?.trim();
+			return httpRecursoExistente(
+				nomeExistente
+					? `Já existe um cadastro com este ${rotulo} (“${nomeExistente}”). A razão social pode se repetir; o conflito é no ${rotulo}.`
+					: `Já existe um cadastro com este ${rotulo}. A razão social pode se repetir; o conflito é no ${rotulo}.`,
+			);
+		}
 	}
 
 	try {

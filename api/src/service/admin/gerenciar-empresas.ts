@@ -53,7 +53,12 @@ export async function criarEmpresaAdminService(
 	const empresaExistente = await buscarEmpresaPorCnpj(cnpjNormalizado);
 
 	if (empresaExistente) {
-		return httpRecursoExistente("CNPJ já cadastrado");
+		const nomeExistente = empresaExistente.nome?.trim();
+		return httpRecursoExistente(
+			nomeExistente
+				? `Já existe uma empresa cadastrada com este CNPJ (“${nomeExistente}”). A razão social pode se repetir; o conflito é no CNPJ.`
+				: "Já existe uma empresa cadastrada com este CNPJ. A razão social pode se repetir; o conflito é no CNPJ.",
+		);
 	}
 
 	const agora = new Date().toISOString();

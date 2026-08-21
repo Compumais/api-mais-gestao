@@ -2,8 +2,8 @@ import type { Entidade } from "@/model/entidade-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
 import {
 	atualizarEntidade,
+	buscarEntidadePorCnpj,
 	buscarEntidadePorId,
-	verificarEmailTelefoneDuplicado,
 	verificarUsuarioPertenceEmpresa,
 } from "@/repositories/entidade-repositories.js";
 import { sanitizarDadosEntidade } from "@/service/entidades/criar-entidade.js";
@@ -67,16 +67,22 @@ export async function atualizarEntidadeService({
 		return httpProibido();
 	}
 
-	if (dados.email || dados.telefone) {
-		const emailOuTelefoneDuplicado = await verificarEmailTelefoneDuplicado(
+	const cnpjcpfAtual = dados.cnpjcpf ?? entidadeExistente.cnpjcpf;
+	const documento = cnpjcpfAtual?.replace(/\D/g, "") ?? "";
+	if (documento.length === 11 || documento.length === 14) {
+		const existente = await buscarEntidadePorCnpj(
 			entidadeExistente.idempresa,
-			dados.email ?? entidadeExistente.email,
-			dados.telefone ?? entidadeExistente.telefone,
-			entidadeId,
+			documento,
 		);
-
-		if (emailOuTelefoneDuplicado) {
-			return httpRecursoExistente();
+		if (existente && existente.id !== entidadeId) {
+			const rotulo = documento.length === 14 ? "CNPJ" : "CPF";
+			const nomeExistente =
+				existente.nome?.trim() || existente.razaosocial?.trim();
+			return httpRecursoExistente(
+				nomeExistente
+					? `Já existe um cadastro com este ${rotulo} (“${nomeExistente}”). A razão social pode se repetir; o conflito é no ${rotulo}.`
+					: `Já existe um cadastro com este ${rotulo}. A razão social pode se repetir; o conflito é no ${rotulo}.`,
+			);
 		}
 	}
 

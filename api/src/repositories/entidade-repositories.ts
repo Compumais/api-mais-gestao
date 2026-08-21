@@ -1,4 +1,4 @@
-import { and, count, desc, eq, ilike, ne, or } from "drizzle-orm";
+import { and, count, desc, eq, ilike, ne, or, sql } from "drizzle-orm";
 import type { NovaEntidade } from "@/model/entidade-model.js";
 import {
 	empresa as schemaEmpresa,
@@ -27,6 +27,7 @@ export async function buscarEntidadePorId(id: string) {
 
 export async function buscarEntidadePorCnpj(idempresa: string, cnpj: string) {
 	const cnpjNormalizado = cnpj.replace(/\D/g, "");
+	if (!cnpjNormalizado) return undefined;
 
 	const [entidade] = await db
 		.select()
@@ -34,10 +35,7 @@ export async function buscarEntidadePorCnpj(idempresa: string, cnpj: string) {
 		.where(
 			and(
 				eq(schemaEntidade.idempresa, idempresa),
-				or(
-					eq(schemaEntidade.cnpjcpf, cnpjNormalizado),
-					eq(schemaEntidade.cnpjcpf, cnpj),
-				),
+				sql`regexp_replace(${schemaEntidade.cnpjcpf}, '[^0-9]', '', 'g') = ${cnpjNormalizado}`,
 			),
 		)
 		.limit(1);
