@@ -23,6 +23,7 @@ import { extrairDadosEmissaoNfeSalvos } from "@/util/dados-emissao-nfe-nota.js";
 import { explodirItensMovimentoPorLote } from "@/util/explodir-itens-movimento-lote-nf.js";
 import { httpBadRequest, httpOk } from "@/util/http-util.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
+import { permiteIntegracaoOperacionalNota } from "@/util/ambiente-sefaz.js";
 
 export type IntegrarNotaFiscalVendaAutorizadaParametros = {
 	idusuario: string;
@@ -64,11 +65,20 @@ export async function integrarNotaFiscalVendaAutorizadaService({
 	}
 
 	const emissaoSalva = extrairDadosEmissaoNfeSalvos(nota.dadosimportacao);
-	const gerarFinanceiro =
-		gerarFinanceiroParam ?? emissaoSalva?.gerarFinanceiro ?? true;
-	const gerarEstoque = gerarEstoqueParam ?? emissaoSalva?.gerarEstoque ?? true;
+	const homologacao = !permiteIntegracaoOperacionalNota(nota.tipoambientenfe);
+	const gerarFinanceiro = homologacao
+		? false
+		: (gerarFinanceiroParam ?? emissaoSalva?.gerarFinanceiro ?? true);
+	const gerarEstoque = homologacao
+		? false
+		: (gerarEstoqueParam ?? emissaoSalva?.gerarEstoque ?? true);
 
 	const avisos: string[] = [];
+	if (homologacao) {
+		avisos.push(
+			"Ambiente de homologação: estoque, financeiro e dashboard não foram movimentados.",
+		);
+	}
 	let parcelasGeradas = 0;
 	let lancamentosCaixa = 0;
 	let movimentosGerados = 0;
@@ -77,22 +87,24 @@ export async function integrarNotaFiscalVendaAutorizadaService({
 
 	const itens = await listarItensPorNotaFiscal(idnotafiscal);
 
-	try {
-		const resultadoVendaDashboard = await registrarVendaDashboardNfVenda({
-			nota,
-			itens,
-			emissaoSalva,
-			idusuario,
-		});
+	if (!homologacao) {
+		try {
+			const resultadoVendaDashboard = await registrarVendaDashboardNfVenda({
+				nota,
+				itens,
+				emissaoSalva,
+				idusuario,
+			});
 
-		avisos.push(...resultadoVendaDashboard.avisos);
+			avisos.push(...resultadoVendaDashboard.avisos);
 
-		if (resultadoVendaDashboard.idvenda) {
-			idvendaDashboard = resultadoVendaDashboard.idvenda;
+			if (resultadoVendaDashboard.idvenda) {
+				idvendaDashboard = resultadoVendaDashboard.idvenda;
+			}
+		} catch (erro) {
+			console.error("Erro ao registrar venda do dashboard da NF venda:", erro);
+			avisos.push("Falha ao registrar venda no dashboard");
 		}
-	} catch (erro) {
-		console.error("Erro ao registrar venda do dashboard da NF venda:", erro);
-		avisos.push("Falha ao registrar venda no dashboard");
 	}
 
 	if (gerarEstoque) {

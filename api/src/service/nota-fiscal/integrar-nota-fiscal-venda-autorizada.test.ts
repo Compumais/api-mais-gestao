@@ -124,4 +124,45 @@ describe("integrarNotaFiscalVendaAutorizadaService", () => {
 			gerarContasReceber.gerarContasReceberNfService,
 		).not.toHaveBeenCalled();
 	});
+
+	it("não integra estoque nem financeiro em homologação", async () => {
+		vi.mocked(notaFiscalRepository.buscarNotaFiscalPorId).mockResolvedValue({
+			id: "nf-1",
+			idempresa: "emp-1",
+			tipoorigem: 1,
+			tipoambientenfe: 2,
+			status: NFE_STATUS.AUTORIZADA,
+			valortotalnota: "100.00",
+			dadosimportacao: {
+				emissao: { gerarFinanceiro: true, gerarEstoque: true },
+			},
+		} as never);
+		vi.mocked(notaFiscalRepository.listarItensPorNotaFiscal).mockResolvedValue([
+			{
+				id: "item-1",
+				idproduto: "prod-1",
+				quantidade: "1",
+				cfop: "5102",
+			},
+		] as never);
+
+		const resultado = await integrarNotaFiscalVendaAutorizadaService({
+			idusuario: "user-1",
+			idnotafiscal: "nf-1",
+			gerarEstoque: true,
+			gerarFinanceiro: true,
+		});
+
+		expect(resultado.success).toBe(true);
+		expect(
+			registrarMovimentos.registrarMovimentosEstoqueNf,
+		).not.toHaveBeenCalled();
+		expect(
+			gerarContasReceber.gerarContasReceberNfService,
+		).not.toHaveBeenCalled();
+		if (!resultado.success) return;
+		expect(resultado.body?.avisos.some((a) => a.includes("homologação"))).toBe(
+			true,
+		);
+	});
 });

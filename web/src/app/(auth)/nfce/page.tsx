@@ -38,6 +38,7 @@ import {
 	NFE_STATUS_LABELS,
 } from "@/constants/nfe-status";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { useNfceAmbientePdv } from "@/hooks/use-nfce-ambiente-pdv";
 import {
 	type CupomNaoFiscalData,
 	formatCurrency,
@@ -60,6 +61,7 @@ import {
 } from "@/util/validar-eventos-nfe";
 import { PageContainer } from "../components/page-container";
 import { BotaoAlterarNumeracao } from "../configuracoes/components/dialog-alterar-numeracao";
+import { AvisoAmbienteNfe } from "../nota-fiscal-venda/components/aviso-ambiente-nfe";
 import { ModalEventoNfe } from "../nota-fiscal-venda/components/modal-evento-nfe";
 import { StatusNfeBadge } from "../nota-fiscal-venda/components/status-nfe-badge";
 
@@ -147,6 +149,7 @@ function mapearCupomApi(dados: DadosCupomNfceApi): CupomNaoFiscalData {
 
 export default function NfcePage() {
 	const { empresa } = useEmpresa();
+	const { ambiente: ambienteNfce } = useNfceAmbientePdv();
 	const idempresa = empresa?.id ?? "";
 	const queryClient = useQueryClient();
 	const [page, setPage] = useState(1);
@@ -458,6 +461,10 @@ export default function NfcePage() {
 							</Select>
 						</div>
 					</div>
+				</div>
+
+				<div className="px-4">
+					<AvisoAmbienteNfe ambiente={ambienteNfce} />
 				</div>
 
 				<div className="px-4">

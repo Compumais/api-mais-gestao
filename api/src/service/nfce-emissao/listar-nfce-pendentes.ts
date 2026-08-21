@@ -1,9 +1,11 @@
 import type { HttpResponse } from "@/model/http-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { buscarNfceConfiguracaoPorEmpresa } from "@/repositories/nfce-configuracao-repositories.js";
 import {
 	listarNfcePorEmpresa,
 	type NfceListagem,
 } from "@/repositories/nota-fiscal-repositories.js";
+import { resolverAmbienteSefaz } from "@/util/ambiente-sefaz.js";
 import { completarListagemNfce } from "@/util/completar-listagem-nfce.js";
 import { httpOk, httpProibido } from "@/util/http-util.js";
 
@@ -43,9 +45,13 @@ export async function listarNfcePendentesService({
 		return httpProibido();
 	}
 
+	const nfceConfig = await buscarNfceConfiguracaoPorEmpresa(idempresa);
+	const tipoambientenfe = resolverAmbienteSefaz(nfceConfig?.ambiente);
+
 	const resultado = await listarNfcePorEmpresa({
 		idempresa,
 		status,
+		tipoambientenfe,
 		page,
 		limit,
 	});

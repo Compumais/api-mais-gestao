@@ -8,6 +8,7 @@ import {
 	type ResultadoEmissaoNfcePdv,
 } from "@/service/nfce-emissao/emitir-nfce-venda-pdv.js";
 import { avaliarEmissaoNfcePorPagamento } from "@/util/avaliar-emissao-nfce-pagamento.js";
+import { isAmbienteHomologacao } from "@/util/ambiente-sefaz.js";
 import { httpOk, httpProibido } from "@/util/http-util.js";
 import { normalizarMeiosPagamentoNfce } from "@/util/nfce-config-padrao.js";
 import {
@@ -74,6 +75,7 @@ export async function baixaEstoqueVendaService({
 	}
 
 	const configNfce = await buscarNfceConfiguracaoPorEmpresa(idempresa);
+	const homologacao = isAmbienteHomologacao(configNfce?.ambiente);
 	const meiosConfig = normalizarMeiosPagamentoNfce(
 		configNfce?.meiospagamentonfce,
 	);
@@ -82,58 +84,65 @@ export async function baixaEstoqueVendaService({
 
 	const avisos: string[] = [];
 	let movimentosRegistrados = 0;
-	const movimentosExistentes =
-		await listarMovimentosEstoquePorIdOriginal(idvenda);
-	const itensJaBaixadosOperacional = new Set(
-		movimentosExistentes
-			.filter(
-				(movimento) =>
-					(movimento.cancelado ?? 0) === 0 &&
-					movimento.iditemoriginal &&
-					tipoEstoqueAfetouOperacional(movimento.tipoestoque),
-			)
-			.map((movimento) => movimento.iditemoriginal as string),
-	);
 
-	// Regra canônica PDV: na finalização baixa sempre o operacional.
-	// O fiscal só é baixado após NFC-e autorizada (complemento abaixo).
-	for (const item of itens) {
-		const qty = Number.parseFloat(item.quantidade);
-		if (Number.isNaN(qty) || qty <= 0) continue;
+	if (homologacao) {
+		avisos.push(
+			"Ambiente de homologação NFC-e: estoque operacional/fiscal não foi movimentado.",
+		);
+	} else {
+		const movimentosExistentes =
+			await listarMovimentosEstoquePorIdOriginal(idvenda);
+		const itensJaBaixadosOperacional = new Set(
+			movimentosExistentes
+				.filter(
+					(movimento) =>
+						(movimento.cancelado ?? 0) === 0 &&
+						movimento.iditemoriginal &&
+						tipoEstoqueAfetouOperacional(movimento.tipoestoque),
+				)
+				.map((movimento) => movimento.iditemoriginal as string),
+		);
 
-		if (itensJaBaixadosOperacional.has(item.idproduto)) {
-			movimentosRegistrados++;
-			continue;
-		}
+		// Regra canônica PDV: na finalização baixa sempre o operacional.
+		// O fiscal só é baixado após NFC-e autorizada (complemento abaixo).
+		for (const item of itens) {
+			const qty = Number.parseFloat(item.quantidade);
+			if (Number.isNaN(qty) || qty <= 0) continue;
 
-		const precoUnit = Number.parseFloat(item.precounitario);
-		const valorTotal = (
-			qty * (Number.isNaN(precoUnit) ? 0 : precoUnit)
-		).toFixed(2);
+			if (itensJaBaixadosOperacional.has(item.idproduto)) {
+				movimentosRegistrados++;
+				continue;
+			}
 
-		try {
-			const movimento = await registrarMovimentoEstoque({
-				idempresa,
-				idproduto: item.idproduto,
-				quantidade: qty.toFixed(6),
-				sentido: "saida",
-				tipoestoque: TIPO_ESTOQUE.OPERACIONAL,
-				tipodocumento: TIPO_DOCUMENTO_ESTOQUE.PDV,
-				idoriginal: idvenda,
-				iditemoriginal: item.idproduto,
-				valortotal: valorTotal,
-				permitirSemLote: true,
-			});
+			const precoUnit = Number.parseFloat(item.precounitario);
+			const valorTotal = (
+				qty * (Number.isNaN(precoUnit) ? 0 : precoUnit)
+			).toFixed(2);
 
-			if (movimento) movimentosRegistrados++;
-		} catch (erro) {
-			console.error(
-				`[estoque] Falha ao baixar estoque do produto ${item.nomeproduto ?? item.idproduto}:`,
-				erro,
-			);
-			avisos.push(
-				`Falha ao baixar estoque: ${item.nomeproduto ?? item.idproduto}`,
-			);
+			try {
+				const movimento = await registrarMovimentoEstoque({
+					idempresa,
+					idproduto: item.idproduto,
+					quantidade: qty.toFixed(6),
+					sentido: "saida",
+					tipoestoque: TIPO_ESTOQUE.OPERACIONAL,
+					tipodocumento: TIPO_DOCUMENTO_ESTOQUE.PDV,
+					idoriginal: idvenda,
+					iditemoriginal: item.idproduto,
+					valortotal: valorTotal,
+					permitirSemLote: true,
+				});
+
+				if (movimento) movimentosRegistrados++;
+			} catch (erro) {
+				console.error(
+					`[estoque] Falha ao baixar estoque do produto ${item.nomeproduto ?? item.idproduto}:`,
+					erro,
+				);
+				avisos.push(
+					`Falha ao baixar estoque: ${item.nomeproduto ?? item.idproduto}`,
+				);
+			}
 		}
 	}
 
@@ -160,7 +169,7 @@ export async function baixaEstoqueVendaService({
 
 		if (emissao.success && emissao.body) {
 			emissaoNfce = emissao.body;
-			if (emissao.body.emitida) {
+			if (emissao.body.emitida && !homologacao) {
 				const complemento = await complementarBaixaFiscalVendaPdv({
 					idempresa,
 					idvenda,
@@ -168,6 +177,10 @@ export async function baixaEstoqueVendaService({
 				});
 				movimentosRegistrados += complemento.movimentosRegistrados;
 				avisos.push(...complemento.avisos);
+			} else if (emissao.body.emitida && homologacao) {
+				avisos.push(
+					"NFC-e autorizada em homologação: baixa fiscal não aplicada.",
+				);
 			} else {
 				const mensagem =
 					emissao.body.erro ??

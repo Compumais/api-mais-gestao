@@ -1,7 +1,9 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
+import { buscarNfeConfiguracaoPorEmpresa } from "@/repositories/nfe-configuracao-repositories.js";
 import { emitirNfeVendaService } from "@/service/nfe-emissao/emitir-nfe-venda.js";
 import { listarNotasFiscaisService } from "@/service/nota-fiscal/listar-notas-fiscais.js";
+import { resolverAmbienteSefaz } from "@/util/ambiente-sefaz.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 import { emitirNfeBodySchema } from "./emissao-nfe-body-schema.js";
 
@@ -78,12 +80,16 @@ export async function listarNfesEmitidas(
 			request.query,
 		);
 
+		const nfeConfig = await buscarNfeConfiguracaoPorEmpresa(idempresa);
+		const tipoambientenfe = resolverAmbienteSefaz(nfeConfig?.ambiente);
+
 		const resultado = await listarNotasFiscaisService({
 			idusuario: request.user.id,
 			idempresa,
 			status,
 			tipoorigem: 1,
 			modelo: "55",
+			tipoambientenfe,
 			page,
 			limit,
 			rascunho: false,
