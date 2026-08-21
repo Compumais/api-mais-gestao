@@ -7,12 +7,14 @@ import {
 	IconHelp,
 	IconHistory,
 	IconListDetails,
+	IconPackage,
 	IconReceiptTax,
 	IconReportMoney,
+	IconScale,
 	IconSearch,
 	IconSettings,
-	IconTools,
 	IconToolsKitchen2,
+	IconUsers,
 } from "@tabler/icons-react";
 import type { AcessoNavegacao } from "@/lib/acesso-navegacao";
 
@@ -30,6 +32,15 @@ export type NavSubItem = {
 	acesso?: AcessoNavegacao;
 };
 
+const PERFIS_GESTAO = ["proprietario", "admin", "financeiro"] as const;
+const PERFIS_OPERACAO = [
+	"proprietario",
+	"admin",
+	"financeiro",
+	"usuario",
+] as const;
+const PERFIS_ADMIN = ["proprietario", "admin"] as const;
+
 export const DATA = {
 	navMain: [
 		{
@@ -37,8 +48,14 @@ export const DATA = {
 			url: "/dashboard",
 			icon: IconDashboard,
 		},
+		{
+			title: "Pesquisar",
+			url: "#",
+			icon: IconSearch,
+		},
 	] satisfies NavItem[],
-	navPdv: [
+
+	navVendas: [
 		{
 			title: "PDV",
 			icon: IconCashRegister,
@@ -52,18 +69,34 @@ export const DATA = {
 					url: "/vendas-pdv",
 				},
 				{
+					title: "Fechamentos de caixa",
+					url: "/fechamentos-caixa",
+				},
+				{
 					title: "Pedidos da maquininha",
 					url: "/pedidos?origem=POS",
 					acesso: { feature: "notas_fiscais" },
 				},
-				{
-					title: "Fechamentos de caixa",
-					url: "/fechamentos-caixa",
-				},
 			],
 		},
-	] satisfies NavItem[],
-	navGourmet: [
+		{
+			title: "Pedidos (DAV)",
+			url: "/pedidos",
+			icon: IconFileInvoice,
+			acesso: {
+				feature: "notas_fiscais",
+				perfis: [...PERFIS_OPERACAO],
+			},
+		},
+		{
+			title: "Ordens de serviço",
+			url: "/ordens-servico",
+			icon: IconListDetails,
+			acesso: {
+				feature: "ordem_servico",
+				perfis: [...PERFIS_OPERACAO],
+			},
+		},
 		{
 			title: "Gourmet",
 			icon: IconToolsKitchen2,
@@ -85,10 +118,11 @@ export const DATA = {
 			],
 		},
 	] satisfies NavItem[],
-	navRegistros: [
+
+	navCadastros: [
 		{
-			title: "Cadastros",
-			icon: IconListDetails,
+			title: "Pessoas",
+			icon: IconUsers,
 			items: [
 				{
 					title: "Clientes",
@@ -98,60 +132,68 @@ export const DATA = {
 					title: "Fornecedores",
 					url: "/fornecedores",
 					acesso: {
-						perfis: ["proprietario", "admin", "financeiro"],
+						perfis: [...PERFIS_GESTAO],
 					},
 				},
+			],
+		},
+		{
+			title: "Catálogo",
+			icon: IconListDetails,
+			acesso: {
+				perfis: [...PERFIS_GESTAO],
+			},
+			items: [
 				{
 					title: "Produtos",
 					url: "/produtos",
-					acesso: {
-						perfis: ["proprietario", "admin", "financeiro"],
-					},
 				},
 				{
 					title: "Serviços",
 					url: "/servicos",
-					acesso: {
-						perfis: ["proprietario", "admin", "financeiro"],
-					},
-				},
-				{
-					title: "Estoque",
-					url: "/estoque",
-					acesso: {
-						perfis: ["proprietario", "admin", "financeiro"],
-					},
 				},
 				{
 					title: "Grupos",
 					url: "/grupos",
-					acesso: {
-						perfis: ["proprietario", "admin", "financeiro"],
-					},
-				},
-				{
-					title: "Grupos gourmet",
-					url: "/grupos-gourmet",
 				},
 				{
 					title: "Unidades de medida",
 					url: "/unidade-medida",
-					acesso: {
-						perfis: ["proprietario", "admin", "financeiro"],
-					},
 				},
 				{
 					title: "Fatores de conversão",
 					url: "/fator-conversao",
-					acesso: {
-						perfis: ["proprietario", "admin", "financeiro"],
-					},
 				},
+			],
+		},
+		{
+			title: "Gourmet",
+			icon: IconToolsKitchen2,
+			acesso: { modulo: "gourmet" },
+			items: [
+				{
+					title: "Grupos gourmet",
+					url: "/grupos-gourmet",
+					acesso: { modulo: "gourmet" },
+				},
+			],
+		},
+		{
+			title: "Gerais",
+			icon: IconSettings,
+			items: [
 				{
 					title: "Meios de pagamento",
 					url: "/meios-pagamento",
 					acesso: {
-						perfis: ["proprietario", "admin", "financeiro"],
+						perfis: [...PERFIS_GESTAO],
+					},
+				},
+				{
+					title: "Bancos",
+					url: "/bancos",
+					acesso: {
+						perfis: [...PERFIS_ADMIN],
 					},
 				},
 				{
@@ -159,37 +201,105 @@ export const DATA = {
 					url: "/tipos-problema",
 					acesso: {
 						feature: "ordem_servico",
-						perfis: ["proprietario", "admin", "financeiro", "usuario"],
-					},
-				},
-				{
-					title: "Usuários",
-					url: "/usuarios",
-					acesso: {
-						perfis: ["proprietario", "admin"],
+						perfis: [...PERFIS_OPERACAO],
 					},
 				},
 			],
 		},
 	] satisfies NavItem[],
-	navNotaFiscal: [
+
+	navEstoque: [
 		{
-			title: "Nota fiscal",
+			title: "Posição de estoque",
+			url: "/estoque",
+			icon: IconPackage,
+			acesso: {
+				perfis: [...PERFIS_GESTAO],
+			},
+		},
+		{
+			title: "Exportar balança (MGV)",
+			url: "/ferramentas/exportar-mgv",
+			icon: IconScale,
+			acesso: {
+				perfis: [...PERFIS_ADMIN],
+			},
+		},
+	] satisfies NavItem[],
+
+	navFinanceiro: [
+		{
+			title: "Contas a receber",
+			url: "/contas-receber",
+			icon: IconCoins,
+			acesso: {
+				perfis: [...PERFIS_GESTAO],
+			},
+		},
+		{
+			title: "Contas a pagar",
+			url: "/contas-pagar",
+			icon: IconCoins,
+			acesso: {
+				perfis: [...PERFIS_GESTAO],
+			},
+		},
+		{
+			title: "Contas correntes",
+			url: "/contas-correntes",
+			icon: IconCoins,
+			acesso: {
+				perfis: [...PERFIS_GESTAO],
+			},
+		},
+		{
+			title: "Movimentações",
+			url: "/movimentacoes",
+			icon: IconCoins,
+			acesso: {
+				perfis: [...PERFIS_GESTAO],
+			},
+		},
+		{
+			title: "Plano de contas",
+			url: "/plano-contas",
+			icon: IconCoins,
+			acesso: {
+				perfis: [...PERFIS_GESTAO],
+			},
+		},
+		{
+			title: "Conciliação",
+			url: "#",
+			icon: IconCoins,
+			acesso: {
+				perfis: [...PERFIS_GESTAO],
+			},
+		},
+		{
+			title: "Relatórios",
+			url: "/relatorios",
+			icon: IconCoins,
+			acesso: {
+				perfis: [...PERFIS_GESTAO],
+			},
+		},
+	] satisfies NavItem[],
+
+	navFiscal: [
+		{
+			title: "Documentos",
 			icon: IconFileInvoice,
+			acesso: {
+				perfis: [...PERFIS_GESTAO],
+			},
 			items: [
-				{
-					title: "Nota fiscal de compra",
-					url: "/nota-fiscal-compra",
-					acesso: {
-						perfis: ["proprietario", "admin", "financeiro"],
-					},
-				},
 				{
 					title: "Nota fiscal de produto",
 					url: "/nota-fiscal-venda",
 					acesso: {
 						feature: "notas_fiscais",
-						perfis: ["proprietario", "admin", "financeiro"],
+						perfis: [...PERFIS_GESTAO],
 					},
 				},
 				{
@@ -197,14 +307,14 @@ export const DATA = {
 					url: "/nota-fiscal-servico",
 					acesso: {
 						modulo: "nfse",
-						perfis: ["proprietario", "admin", "financeiro"],
+						perfis: [...PERFIS_GESTAO],
 					},
 				},
 				{
-					title: "Captura SEFAZ",
-					url: "/nota-fiscal-compra/captura-sefaz",
+					title: "Nota fiscal de compra",
+					url: "/nota-fiscal-compra",
 					acesso: {
-						perfis: ["proprietario", "admin", "financeiro"],
+						perfis: [...PERFIS_GESTAO],
 					},
 				},
 				{
@@ -212,43 +322,28 @@ export const DATA = {
 					url: "/nfce",
 					acesso: {
 						feature: "notas_fiscais",
-						perfis: ["proprietario", "admin", "financeiro"],
+						perfis: [...PERFIS_GESTAO],
 					},
 				},
 				{
-					title: "Pedidos (DAV)",
-					url: "/pedidos",
+					title: "Captura SEFAZ",
+					url: "/nota-fiscal-compra/captura-sefaz",
 					acesso: {
-						feature: "notas_fiscais",
-						perfis: ["proprietario", "admin", "financeiro", "usuario"],
-					},
-				},
-				{
-					title: "Ordens de serviço",
-					url: "/ordens-servico",
-					acesso: {
-						feature: "ordem_servico",
-						perfis: ["proprietario", "admin", "financeiro", "usuario"],
+						perfis: [...PERFIS_GESTAO],
 					},
 				},
 			],
 		},
-	] satisfies NavItem[],
-	navTributos: [
 		{
-			title: "Tributos",
+			title: "Regras e tributos",
 			icon: IconReceiptTax,
 			acesso: {
-				perfis: ["proprietario", "admin", "financeiro"],
+				perfis: [...PERFIS_GESTAO],
 			},
 			items: [
 				{
 					title: "Naturezas",
 					url: "/tributos/naturezas",
-				},
-				{
-					title: "Configuração fiscal",
-					url: "/tributos/configuracao-fiscal",
 				},
 				{
 					title: "Mapeamento CFOP",
@@ -266,68 +361,56 @@ export const DATA = {
 					title: "Taxas por UF",
 					url: "/tributos/taxas",
 				},
-			],
-		},
-	] satisfies NavItem[],
-	navFinanceiro: [
-		{
-			title: "Financeiro",
-			icon: IconCoins,
-			acesso: {
-				perfis: ["proprietario", "admin", "financeiro"],
-			},
-			items: [
 				{
-					title: "Contas correntes",
-					url: "/contas-correntes",
-				},
-				{
-					title: "Movimentações",
-					url: "/movimentacoes",
-				},
-				{
-					title: "Contas a receber",
-					url: "/contas-receber",
-				},
-				{
-					title: "Contas a pagar",
-					url: "/contas-pagar",
-				},
-				{
-					title: "Conciliação",
-					url: "#",
-				},
-				{
-					title: "Relatórios",
-					url: "/relatorios",
+					title: "Configuração fiscal",
+					url: "/tributos/configuracao-fiscal",
 				},
 			],
 		},
 	] satisfies NavItem[],
-	others: [
+
+	navContabilidade: [
 		{
-			title: "Contabilidade",
+			title: "Painel",
 			icon: IconReportMoney,
 			acesso: {
-				perfis: ["proprietario", "admin", "financeiro"],
+				perfis: [...PERFIS_GESTAO],
 			},
 			items: [
 				{
 					title: "Configuração",
 					url: "/configuracao-contabilidade",
 				},
+			],
+		},
+		{
+			title: "Integração",
+			icon: IconReportMoney,
+			acesso: {
+				perfis: [...PERFIS_GESTAO],
+			},
+			items: [
 				{
 					title: "Integração contábil",
 					url: "/configuracoes?tab=integracoes-contabeis",
 				},
 				{
-					title: "Código reduzidos",
+					title: "Códigos reduzidos",
 					url: "/codigo-reduzidos",
 				},
 				{
 					title: "Plano de contas contábeis",
 					url: "/conta-contabil",
 				},
+			],
+		},
+		{
+			title: "Exportação",
+			icon: IconReportMoney,
+			acesso: {
+				perfis: [...PERFIS_GESTAO],
+			},
+			items: [
 				{
 					title: "Gerar SINTEGRA",
 					url: "/contabilidade/sintegra",
@@ -339,33 +422,28 @@ export const DATA = {
 			],
 		},
 	] satisfies NavItem[],
-	navFerramentas: [
+
+	navSistema: [
 		{
-			title: "Ferramentas",
-			icon: IconTools,
+			title: "Usuários e permissões",
+			url: "/usuarios",
+			icon: IconUsers,
 			acesso: {
-				perfis: ["proprietario", "admin"],
+				perfis: [...PERFIS_ADMIN],
+			},
+		},
+		{
+			title: "Configurações",
+			url: "/configuracoes",
+			icon: IconSettings,
+		},
+		{
+			title: "Configurações gerais",
+			icon: IconSettings,
+			acesso: {
+				perfis: [...PERFIS_ADMIN],
 			},
 			items: [
-				{
-					title: "Plano de contas",
-					url: "/plano-contas",
-					acesso: {
-						perfis: ["proprietario", "admin", "financeiro"],
-					},
-				},
-				{
-					title: "Bancos",
-					url: "/bancos",
-				},
-				{
-					title: "Agendar tarefas",
-					url: "/agendamentos",
-				},
-				{
-					title: "Editor SQL",
-					url: "/editor-sql",
-				},
 				{
 					title: "Certificados digitais",
 					url: "/certificados-digitais",
@@ -374,25 +452,30 @@ export const DATA = {
 					title: "Envio de e-mails",
 					url: "/envio-emails",
 				},
-				{
-					title: "Exportar produtos MGV",
-					url: "/ferramentas/exportar-mgv",
-				},
 			],
 		},
-	] satisfies NavItem[],
-	navSecondary: [
 		{
-			title: "Configurações",
-			url: "/configuracoes",
+			title: "Agendar tarefas",
+			url: "/agendamentos",
 			icon: IconSettings,
+			acesso: {
+				perfis: [...PERFIS_ADMIN],
+			},
 		},
 		{
 			title: "Auditoria",
 			url: "/auditoria",
 			icon: IconHistory,
 			acesso: {
-				perfis: ["proprietario", "admin"],
+				perfis: [...PERFIS_ADMIN],
+			},
+		},
+		{
+			title: "Editor SQL",
+			url: "/editor-sql",
+			icon: IconSettings,
+			acesso: {
+				perfis: [...PERFIS_ADMIN],
 			},
 		},
 		{
@@ -400,10 +483,19 @@ export const DATA = {
 			url: "/ajuda",
 			icon: IconHelp,
 		},
+	] satisfies NavItem[],
+
+	/** Rodapé: só para perfil restrito (config/ajuda). Pesquisar fica em navMain. */
+	navSecondary: [
 		{
-			title: "Pesquisar",
-			url: "#",
-			icon: IconSearch,
+			title: "Configurações",
+			url: "/configuracoes",
+			icon: IconSettings,
+		},
+		{
+			title: "Ajuda",
+			url: "/ajuda",
+			icon: IconHelp,
 		},
 	] satisfies NavItem[],
 };

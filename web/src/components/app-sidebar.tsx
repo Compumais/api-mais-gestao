@@ -34,7 +34,19 @@ function filtrarNavItems(items: NavItem[], ctx: ContextoAcesso): NavItem[] {
 			);
 			return { ...item, items: subitens };
 		})
-		.filter((item) => !item.items || item.items.length > 0);
+		.filter((item) => {
+			if (item.items) return item.items.length > 0;
+			return Boolean(item.url);
+		});
+}
+
+function filtrarCadastrosRestrito(items: NavItem[]): NavItem[] {
+	return items
+		.map((group) => ({
+			...group,
+			items: group.items?.filter((item) => item.url === "/clientes"),
+		}))
+		.filter((group) => (group.items?.length ?? 0) > 0);
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -59,54 +71,26 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const navMainItems = React.useMemo(() => {
 		if (isUsuarioRestrito) {
 			return DATA.navMain.filter(
-				(item) => item.title === "Dashboard" || item.title === "Clientes",
+				(item) => item.title === "Dashboard" || item.title === "Pesquisar",
 			);
 		}
 		return filtrarNavItems(DATA.navMain, ctxAcesso);
 	}, [isUsuarioRestrito, ctxAcesso]);
 
-	const navSecondaryItems = React.useMemo(() => {
-		let items = filtrarNavItems(DATA.navSecondary, ctxAcesso);
+	const navVendasItems = React.useMemo(
+		() => filtrarNavItems(DATA.navVendas, ctxAcesso),
+		[ctxAcesso],
+	);
 
+	const navCadastrosItems = React.useMemo(() => {
 		if (isUsuarioRestrito) {
-			items = items.filter(
-				(item) =>
-					item.title === "Configurações" ||
-					item.title === "Ajuda" ||
-					item.title === "Pesquisar",
-			);
+			return filtrarCadastrosRestrito(DATA.navCadastros);
 		}
-
-		return items;
+		return filtrarNavItems(DATA.navCadastros, ctxAcesso);
 	}, [isUsuarioRestrito, ctxAcesso]);
 
-	const navPdvItems = React.useMemo(
-		() => filtrarNavItems(DATA.navPdv, ctxAcesso),
-		[ctxAcesso],
-	);
-
-	const navGourmetItems = React.useMemo(
-		() => filtrarNavItems(DATA.navGourmet, ctxAcesso),
-		[ctxAcesso],
-	);
-
-	const navNotaFiscalItems = React.useMemo(
-		() => filtrarNavItems(DATA.navNotaFiscal, ctxAcesso),
-		[ctxAcesso],
-	);
-
-	const navRegistrosItems = React.useMemo(() => {
-		if (isUsuarioRestrito) {
-			return DATA.navRegistros.map((group) => ({
-				...group,
-				items: group.items?.filter((item) => item.url === "/clientes"),
-			}));
-		}
-		return filtrarNavItems(DATA.navRegistros, ctxAcesso);
-	}, [isUsuarioRestrito, ctxAcesso]);
-
-	const navTributosItems = React.useMemo(
-		() => filtrarNavItems(DATA.navTributos, ctxAcesso),
+	const navEstoqueItems = React.useMemo(
+		() => filtrarNavItems(DATA.navEstoque, ctxAcesso),
 		[ctxAcesso],
 	);
 
@@ -115,17 +99,25 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 		[ctxAcesso],
 	);
 
+	const navFiscalItems = React.useMemo(
+		() => filtrarNavItems(DATA.navFiscal, ctxAcesso),
+		[ctxAcesso],
+	);
+
 	const navContabilidadeItems = React.useMemo(
-		() => filtrarNavItems(DATA.others, ctxAcesso),
+		() => filtrarNavItems(DATA.navContabilidade, ctxAcesso),
 		[ctxAcesso],
 	);
 
-	const navFerramentasItems = React.useMemo(
-		() => filtrarNavItems(DATA.navFerramentas, ctxAcesso),
+	const navSistemaItems = React.useMemo(
+		() => filtrarNavItems(DATA.navSistema, ctxAcesso),
 		[ctxAcesso],
 	);
 
-	const exibirGourmet = hasModulo("gourmet");
+	const navSecondaryItems = React.useMemo(() => {
+		if (!isUsuarioRestrito) return [];
+		return filtrarNavItems(DATA.navSecondary, ctxAcesso);
+	}, [isUsuarioRestrito, ctxAcesso]);
 
 	return (
 		<Sidebar collapsible="icon" {...props}>
@@ -139,50 +131,58 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 			</SidebarHeader>
 			<SidebarContent>
 				{isGarcomUser ? (
-					<>
-						<NavDocuments label="PDV" items={navPdvItems} />
-						{exibirGourmet && (
-							<NavDocuments label="Gourmet" items={navGourmetItems} />
-						)}
-					</>
+					<NavDocuments label="Vendas e operação" items={navVendasItems} />
 				) : (
 					<>
 						<NavMain items={navMainItems} />
 
-						{!isUsuarioRestrito && navPdvItems.length > 0 && (
-							<NavDocuments label="PDV" items={navPdvItems} />
+						{!isUsuarioRestrito && navVendasItems.length > 0 && (
+							<NavDocuments
+								label="Vendas e operação"
+								items={navVendasItems}
+							/>
 						)}
 
-						{!isUsuarioRestrito && exibirGourmet && (
-							<NavDocuments label="Gourmet" items={navGourmetItems} />
+						{navCadastrosItems.length > 0 && (
+							<NavDocuments label="Cadastros" items={navCadastrosItems} />
 						)}
 
-						<NavDocuments label="Cadastros" items={navRegistrosItems} />
+						{!isUsuarioRestrito && navEstoqueItems.length > 0 && (
+							<NavDocuments label="Estoque" items={navEstoqueItems} />
+						)}
 
-						{!isUsuarioRestrito && (
-							<NavDocuments label="Notas fiscais" items={navNotaFiscalItems} />
-						)}
-						{!isUsuarioRestrito && navTributosItems.length > 0 && (
-							<NavDocuments label="Tributos" items={navTributosItems} />
-						)}
 						{!isUsuarioRestrito && navFinanceiroItems.length > 0 && (
 							<NavDocuments label="Financeiro" items={navFinanceiroItems} />
 						)}
+
+						{!isUsuarioRestrito && navFiscalItems.length > 0 && (
+							<NavDocuments
+								label="Fiscal e tributário"
+								items={navFiscalItems}
+							/>
+						)}
+
 						{!isUsuarioRestrito && navContabilidadeItems.length > 0 && (
 							<NavDocuments
-								label="Painel do contador"
+								label="Contabilidade"
 								items={navContabilidadeItems}
 							/>
 						)}
-						{!isUsuarioRestrito && navFerramentasItems.length > 0 && (
-							<NavDocuments label="Ferramentas" items={navFerramentasItems} />
+
+						{!isUsuarioRestrito && navSistemaItems.length > 0 && (
+							<NavDocuments
+								label="Administração e sistema"
+								items={navSistemaItems}
+							/>
 						)}
 
-						<NavSecondary
-							label="Outros"
-							items={navSecondaryItems}
-							className="mt-auto"
-						/>
+						{isUsuarioRestrito && navSecondaryItems.length > 0 && (
+							<NavSecondary
+								label="Outros"
+								items={navSecondaryItems}
+								className="mt-auto"
+							/>
+						)}
 					</>
 				)}
 			</SidebarContent>
