@@ -62,6 +62,7 @@ describe("consultarCnpjEntidadeService", () => {
 			expect(resultado.body?.entidade.idestado).toBe("MG");
 			expect(resultado.body?.jaCadastrada).toBeNull();
 		}
+		expect(brasilApiClient.buscarCnpjBrasilApi).not.toHaveBeenCalled();
 	});
 
 	it("deve retornar jaCadastrada quando CNPJ já existir na empresa", async () => {
@@ -113,11 +114,49 @@ describe("consultarCnpjEntidadeService", () => {
 		if (!resultado.success) {
 			expect(resultado.status).toBe(404);
 		}
+		expect(brasilApiClient.buscarCnpjBrasilApi).not.toHaveBeenCalled();
 	});
 
-	it("deve retornar 502 quando OpenCNPJ falhar", async () => {
+	it("deve usar BrasilAPI quando OpenCNPJ falhar", async () => {
 		vi.mocked(openCnpjClient.buscarCnpjOpenCnpj).mockRejectedValue(
 			new openCnpjClient.OpenCnpjErroConsultaError("Timeout"),
+		);
+		vi.mocked(brasilApiClient.buscarCnpjBrasilApi).mockResolvedValue({
+			cnpj: "10.579.611/0001-90",
+			razao_social: "COMPUMAIS INFORMATICA LTDA",
+			nome_fantasia: "COMPUMAIS",
+			descricao_situacao_cadastral: "ATIVA",
+			municipio: "SACRAMENTO",
+			uf: "MG",
+			cep: "38190000",
+			opcao_pelo_simples: true,
+			opcao_pelo_mei: false,
+		});
+		vi.mocked(brasilApiClient.buscarMunicipiosBrasilApi).mockResolvedValue([
+			{ nome: "Sacramento", codigo_ibge: "3156905" },
+		]);
+
+		const resultado = await consultarCnpjEntidadeService({
+			cnpj: "10579611000190",
+		});
+
+		expect(resultado.success).toBe(true);
+		if (resultado.success) {
+			expect(resultado.body?.entidade.cnpjcpf).toBe("10579611000190");
+			expect(resultado.body?.entidade.nome).toBe("COMPUMAIS");
+			expect(resultado.body?.entidade.idcidade).toBe("3156905");
+		}
+		expect(brasilApiClient.buscarCnpjBrasilApi).toHaveBeenCalledWith(
+			"10579611000190",
+		);
+	});
+
+	it("deve retornar 502 quando OpenCNPJ e BrasilAPI falharem", async () => {
+		vi.mocked(openCnpjClient.buscarCnpjOpenCnpj).mockRejectedValue(
+			new openCnpjClient.OpenCnpjErroConsultaError("Timeout"),
+		);
+		vi.mocked(brasilApiClient.buscarCnpjBrasilApi).mockRejectedValue(
+			new brasilApiClient.BrasilApiCnpjErroConsultaError("BrasilAPI offline"),
 		);
 
 		const resultado = await consultarCnpjEntidadeService({

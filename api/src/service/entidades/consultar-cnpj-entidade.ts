@@ -4,13 +4,20 @@ import {
 	OpenCnpjErroConsultaError,
 	OpenCnpjNaoEncontradoError,
 } from "@/lib/opencnpj-client.js";
-import type { ConsultaCnpjEntidade } from "@/model/consulta-cnpj-model.js";
+import type {
+	ConsultaCnpjEntidade,
+	OpenCnpjDados,
+} from "@/model/consulta-cnpj-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
 import { buscarEntidadePorCnpj } from "@/repositories/entidade-repositories.js";
 import {
+	BrasilApiCnpjErroConsultaError,
+	BrasilApiCnpjNaoEncontradoError,
+	buscarCnpjBrasilApi,
 	buscarMunicipiosBrasilApi,
 	normalizarNomeLocalidade,
 } from "@/service/localidade/brasil-api-client.js";
+import { mapearBrasilApiParaOpenCnpjDados } from "@/util/mapear-brasilapi-cnpj.js";
 import { normalizarCnpj } from "@/util/criptografia-certificado.js";
 import {
 	httpBadGateway,
@@ -69,6 +76,41 @@ async function resolverLocalidadeConsultaCnpj(
 	}
 }
 
+async function obterDadosCnpjComFallback(
+	cnpjNormalizado: string,
+): Promise<OpenCnpjDados> {
+	try {
+		return await buscarCnpjOpenCnpj(cnpjNormalizado);
+	} catch (error) {
+		if (error instanceof OpenCnpjNaoEncontradoError) {
+			throw error;
+		}
+
+		console.error(
+			"OpenCNPJ indisponível; tentando BrasilAPI como fallback:",
+			error,
+		);
+
+		try {
+			const brasilApi = await buscarCnpjBrasilApi(cnpjNormalizado);
+			return mapearBrasilApiParaOpenCnpjDados(brasilApi);
+		} catch (fallbackError) {
+			if (fallbackError instanceof BrasilApiCnpjNaoEncontradoError) {
+				throw new OpenCnpjNaoEncontradoError(cnpjNormalizado);
+			}
+
+			if (fallbackError instanceof BrasilApiCnpjErroConsultaError) {
+				console.error("BrasilAPI CNPJ também falhou:", fallbackError);
+				throw new OpenCnpjErroConsultaError(
+					"Falha ao consultar CNPJ (OpenCNPJ e BrasilAPI indisponíveis)",
+				);
+			}
+
+			throw fallbackError;
+		}
+	}
+}
+
 export async function obterConsultaCnpjEntidade({
 	cnpj,
 	idempresa,
@@ -80,7 +122,7 @@ export async function obterConsultaCnpjEntidade({
 	}
 
 	try {
-		const dados = await buscarCnpjOpenCnpj(cnpjNormalizado);
+		const dados = await obterDadosCnpjComFallback(cnpjNormalizado);
 		const localidade = await resolverLocalidadeConsultaCnpj(
 			dados.municipio,
 			dados.uf,
@@ -106,12 +148,14 @@ export async function obterConsultaCnpjEntidade({
 		}
 
 		if (error instanceof OpenCnpjErroConsultaError) {
-			console.error("Erro ao consultar OpenCNPJ:", error);
-			return httpBadGateway("Não foi possível consultar CNPJ na OpenCNPJ");
+			console.error("Erro ao consultar CNPJ:", error);
+			return httpBadGateway(
+				"Não foi possível consultar CNPJ (OpenCNPJ e BrasilAPI indisponíveis)",
+			);
 		}
 
 		console.error("Erro inesperado ao consultar CNPJ:", error);
-		return httpBadGateway("Não foi possível consultar CNPJ na OpenCNPJ");
+		return httpBadGateway("Não foi possível consultar CNPJ");
 	}
 }
 
