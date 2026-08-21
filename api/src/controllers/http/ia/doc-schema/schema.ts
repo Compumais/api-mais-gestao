@@ -88,3 +88,49 @@ export const chatComAtenaSchema: FastifySchema = {
 		},
 	},
 };
+
+export const testarIaSchema: FastifySchema = {
+	tags: ["ia"],
+	summary: "Testar conexão com provedor de IA",
+	description:
+		"Valida chave e modelo (OpenAI, Gemini ou OpenRouter). Pode enviar apiKey no body ou usar a chave salva nas integrações.",
+	security: [{ bearerAuth: [] }],
+	body: {
+		type: "object",
+		required: ["idempresa", "provedor"],
+		properties: {
+			idempresa: { type: "string", format: "uuid" },
+			provedor: {
+				type: "string",
+				enum: ["openai", "gemini", "openrouter"],
+			},
+			apiKey: {
+				type: "string",
+				description: "Chave opcional (se omitida, usa a salva)",
+			},
+			modelo: {
+				type: "string",
+				description: "Modelo opcional a testar",
+			},
+		},
+	},
+	response: {
+		200: {
+			type: "object",
+			properties: {
+				ok: { type: "boolean" },
+				provedor: { type: "string" },
+				modelo: { type: "string" },
+				mensagem: { type: "string" },
+				respostaModelo: { type: "string" },
+			},
+		},
+		400: {
+			type: "object",
+			properties: {
+				error: { type: "string" },
+				code: { type: "string" },
+			},
+		},
+	},
+};

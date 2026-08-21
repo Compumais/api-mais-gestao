@@ -5,6 +5,12 @@ export const atualizarConfiguracaoUsuarioSchema = z.object({
 	openaiApiKey: z.string().optional(),
 	openrouterApiKey: z.string().optional(),
 	asaasToken: z.string().optional(),
+	provedorPreferido: z
+		.enum(["auto", "openai", "gemini", "openrouter"])
+		.optional(),
+	modeloOpenai: z.string().optional(),
+	modeloGemini: z.string().optional(),
+	modeloOpenrouter: z.string().optional(),
 });
 
 export type AtualizarConfiguracaoUsuarioFormData = z.infer<

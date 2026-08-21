@@ -5,6 +5,10 @@ export interface IntegracoesUsuario {
 	openaiApiKey?: string;
 	openrouterApiKey?: string;
 	asaasToken?: string;
+	provedorPreferido?: "auto" | "openai" | "gemini" | "openrouter";
+	modeloOpenai?: string;
+	modeloGemini?: string;
+	modeloOpenrouter?: string;
 }
 
 export interface ConfiguracaoUsuario {

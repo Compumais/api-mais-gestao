@@ -8,6 +8,13 @@ const atualizarConfiguracaoUsuarioBodySchema = z.object({
 	openaiApiKey: z.string().nullable().optional(),
 	openrouterApiKey: z.string().nullable().optional(),
 	asaasToken: z.string().nullable().optional(),
+	provedorPreferido: z
+		.enum(["auto", "openai", "gemini", "openrouter"])
+		.nullable()
+		.optional(),
+	modeloOpenai: z.string().nullable().optional(),
+	modeloGemini: z.string().nullable().optional(),
+	modeloOpenrouter: z.string().nullable().optional(),
 });
 
 export async function atualizarConfiguracaoUsuario(
@@ -32,6 +39,10 @@ export async function atualizarConfiguracaoUsuario(
 				openaiApiKey: dados.openaiApiKey ?? null,
 				openrouterApiKey: dados.openrouterApiKey ?? null,
 				asaasToken: dados.asaasToken ?? null,
+				provedorPreferido: dados.provedorPreferido ?? null,
+				modeloOpenai: dados.modeloOpenai ?? null,
+				modeloGemini: dados.modeloGemini ?? null,
+				modeloOpenrouter: dados.modeloOpenrouter ?? null,
 			},
 		});
 
