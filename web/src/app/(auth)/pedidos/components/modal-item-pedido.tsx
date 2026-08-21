@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Loader2, Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { MoneyInput } from "@/components/ui/money-input";
 import {
@@ -14,18 +15,25 @@ import {
 } from "@/components/ui/dialog";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import {
+	BlocoLotesItemNfe,
+	type RastroItemLote,
+} from "@/app/(auth)/nota-fiscal-venda/components/bloco-lotes-item-nfe";
 import { produtosService } from "@/services/produtos.service";
-import type { PedidoDavItem } from "@/services/dav.service";
+import type { PedidoDavItem, PedidoDavItemRastro } from "@/services/dav.service";
+
+type DadosItemPedido = {
+	idproduto: string;
+	quantidade: string;
+	preco: string;
+	unidademedida?: string;
+	rastros?: PedidoDavItemRastro[];
+};
 
 type ModalItemPedidoProps = {
 	open: boolean;
 	onClose: () => void;
-	onConfirmar: (dados: {
-		idproduto: string;
-		quantidade: string;
-		preco: string;
-		unidademedida?: string;
-	}) => void;
+	onConfirmar: (dados: DadosItemPedido) => void;
 	idempresa: string;
 	itemParaEditar?: PedidoDavItem | null;
 	carregando?: boolean;
@@ -53,6 +61,32 @@ function normalizarPrecoProduto(valor: string | null | undefined): string {
 	return numero.toFixed(2);
 }
 
+function rastrosParaUi(
+	rastros: PedidoDavItemRastro[] | undefined,
+): RastroItemLote[] {
+	return (rastros ?? []).map((rastro) => ({
+		idlote: rastro.idlote,
+		nLote: rastro.nLote,
+		qLote: rastro.qLote,
+		dFab: rastro.dFab,
+		dVal: rastro.dVal,
+		cAgreg: rastro.cAgreg,
+	}));
+}
+
+function rastrosParaApi(rastros: RastroItemLote[]): PedidoDavItemRastro[] {
+	return rastros
+		.filter((rastro) => rastro.nLote.trim() && rastro.qLote > 0)
+		.map((rastro) => ({
+			...(rastro.idlote ? { idlote: rastro.idlote } : {}),
+			nLote: rastro.nLote.trim(),
+			qLote: rastro.qLote,
+			...(rastro.dFab ? { dFab: rastro.dFab } : {}),
+			...(rastro.dVal ? { dVal: rastro.dVal } : {}),
+			...(rastro.cAgreg ? { cAgreg: rastro.cAgreg } : {}),
+		}));
+}
+
 export function ModalItemPedido({
 	open,
 	onClose,
@@ -67,6 +101,9 @@ export function ModalItemPedido({
 	const [buscaDebounced, setBuscaDebounced] = useState("");
 	const [quantidade, setQuantidade] = useState("1");
 	const [preco, setPreco] = useState("0.00");
+	const [controlaLote, setControlaLote] = useState(false);
+	const [unidademedida, setUnidademedida] = useState<string | undefined>();
+	const [rastros, setRastros] = useState<RastroItemLote[]>([]);
 	const [carregandoProduto, setCarregandoProduto] = useState(false);
 
 	useEffect(() => {
@@ -97,6 +134,19 @@ export function ModalItemPedido({
 			setBusca(itemParaEditar.nomeproduto ?? "");
 			setQuantidade(itemParaEditar.quantidade ?? "1");
 			setPreco(normalizarPrecoProduto(itemParaEditar.preco));
+			setUnidademedida(itemParaEditar.unidademedida ?? undefined);
+			setRastros(rastrosParaUi(itemParaEditar.rastros));
+			setControlaLote((itemParaEditar.rastros?.length ?? 0) > 0);
+
+			if (itemParaEditar.idproduto) {
+				void produtosService
+					.buscar(itemParaEditar.idproduto)
+					.then((produto) => {
+						setControlaLote(produto.controlalote === 1);
+						setUnidademedida(produto.unidademedida ?? undefined);
+					})
+					.catch(() => undefined);
+			}
 			return;
 		}
 
@@ -104,6 +154,9 @@ export function ModalItemPedido({
 		setBusca("");
 		setQuantidade("1");
 		setPreco("0.00");
+		setControlaLote(false);
+		setUnidademedida(undefined);
+		setRastros([]);
 		setTimeout(() => searchRef.current?.focus(), 100);
 	}, [open, itemParaEditar]);
 
@@ -114,6 +167,11 @@ export function ModalItemPedido({
 			setIdproduto(produto.id);
 			setBusca(formatarLabelProduto(produto));
 			setPreco(normalizarPrecoProduto(produto.preco));
+			setUnidademedida(produto.unidademedida ?? undefined);
+			const controla =
+				produto.controlalote === 1;
+			setControlaLote(controla);
+			setRastros([]);
 		} finally {
 			setCarregandoProduto(false);
 		}
@@ -125,10 +183,38 @@ export function ModalItemPedido({
 		if (!idproduto || !Number.isFinite(qtd) || qtd <= 0) return;
 		if (!Number.isFinite(valor) || valor <= 0) return;
 
+		if (controlaLote) {
+			const rastrosValidos = rastrosParaApi(rastros);
+			const soma = rastrosValidos.reduce(
+				(total, rastro) => total + rastro.qLote,
+				0,
+			);
+			if (rastrosValidos.length === 0) {
+				toast.error("Informe ao menos um lote para este produto.");
+				return;
+			}
+			if (Math.abs(soma - qtd) > 0.000001) {
+				toast.error(
+					"A soma das quantidades dos lotes deve fechar com a quantidade do item.",
+				);
+				return;
+			}
+			onConfirmar({
+				idproduto,
+				quantidade: qtd.toFixed(4),
+				preco: valor.toFixed(6),
+				unidademedida,
+				rastros: rastrosValidos,
+			});
+			return;
+		}
+
 		onConfirmar({
 			idproduto,
 			quantidade: qtd.toFixed(4),
 			preco: valor.toFixed(6),
+			unidademedida,
+			...(itemParaEditar ? { rastros: [] } : {}),
 		});
 	}
 
@@ -137,6 +223,8 @@ export function ModalItemPedido({
 		!buscandoProdutos &&
 		!carregandoProduto &&
 		produtos.length > 0;
+
+	const quantidadeNumero = parseFloat(quantidade.replace(",", ".")) || 0;
 
 	return (
 		<Dialog open={open} onOpenChange={(aberto) => !aberto && onClose()}>
@@ -147,7 +235,7 @@ export function ModalItemPedido({
 					</DialogTitle>
 				</DialogHeader>
 
-				<div className="grid gap-4 py-2">
+				<div className="grid max-h-[70vh] gap-4 overflow-y-auto py-2">
 					<Field>
 						<FieldLabel>Produto</FieldLabel>
 						<div className="relative">
@@ -164,6 +252,9 @@ export function ModalItemPedido({
 									if (idproduto) {
 										setIdproduto("");
 										setPreco("0.00");
+										setControlaLote(false);
+										setRastros([]);
+										setUnidademedida(undefined);
 									}
 								}}
 							/>
@@ -234,6 +325,18 @@ export function ModalItemPedido({
 							/>
 						</Field>
 					</div>
+
+					{controlaLote && idproduto ? (
+						<BlocoLotesItemNfe
+							item={{
+								idproduto,
+								quantidade: quantidadeNumero,
+								rastros,
+							}}
+							idempresa={idempresa}
+							onChange={setRastros}
+						/>
+					) : null}
 				</div>
 
 				<DialogFooter>

@@ -25,6 +25,15 @@ export interface PedidoDav {
 	datahorafaturamento: string | null;
 }
 
+export interface PedidoDavItemRastro {
+	idlote?: string;
+	nLote: string;
+	qLote: number;
+	dFab?: string;
+	dVal?: string;
+	cAgreg?: string;
+}
+
 export interface PedidoDavItem {
 	id: string;
 	iddav: string;
@@ -36,6 +45,7 @@ export interface PedidoDavItem {
 	total: string | null;
 	unidademedida: string | null;
 	idcfop: string | null;
+	rastros?: PedidoDavItemRastro[];
 }
 
 export interface ListarPedidosResponse {
@@ -92,6 +102,7 @@ export interface CriarPedidoItemData {
 	preco: string;
 	unidademedida?: string;
 	idcfop?: string;
+	rastros?: PedidoDavItemRastro[];
 }
 
 export interface AtualizarPedidoItemData {
@@ -100,6 +111,7 @@ export interface AtualizarPedidoItemData {
 	preco?: string;
 	unidademedida?: string;
 	idcfop?: string | null;
+	rastros?: PedidoDavItemRastro[];
 }
 
 export interface FaturarPedidoNfeData {

@@ -9,12 +9,22 @@ const davItemParamsSchema = z.object({
 	iditem: z.string().uuid(),
 });
 
+const rastroSchema = z.object({
+	idlote: z.string().uuid().optional().nullable(),
+	nLote: z.string().min(1).max(20),
+	qLote: z.union([z.string(), z.number()]),
+	dFab: z.string().optional().nullable(),
+	dVal: z.string().optional().nullable(),
+	cAgreg: z.string().max(20).optional().nullable(),
+});
+
 const atualizarDavItemBodySchema = z.object({
 	quantidade: z.string().optional(),
 	preco: z.string().optional(),
 	unidademedida: z.string().max(6).optional(),
 	idcfop: z.string().uuid().optional().nullable(),
 	idproduto: z.string().uuid().optional(),
+	rastros: z.array(rastroSchema).optional(),
 });
 
 export async function atualizarDavItem(
@@ -27,13 +37,16 @@ export async function atualizarDavItem(
 		}
 
 		const { id, iditem } = davItemParamsSchema.parse(request.params);
-		const dados = removerUndefined(atualizarDavItemBodySchema.parse(request.body));
+		const body = atualizarDavItemBodySchema.parse(request.body);
+		const { rastros, ...resto } = body;
+		const dados = removerUndefined(resto);
 
 		const resultado = await atualizarDavItemService({
 			iddav: id,
 			iditem,
 			idusuario: request.user.id,
 			dados,
+			rastros,
 		});
 
 		if (!resultado.success) {

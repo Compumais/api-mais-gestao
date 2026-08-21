@@ -277,6 +277,8 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 										idproduto: item.idproduto,
 										quantidade: item.quantidade ?? "1",
 										preco: item.preco ?? "0",
+										unidademedida: item.unidademedida ?? undefined,
+										rastros: item.rastros,
 									},
 								]
 							: [],
@@ -303,7 +305,13 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 				});
 
 				for (const item of validacao.data.itens) {
-					await davService.criarItem(criado.id, item);
+					await davService.criarItem(criado.id, {
+						idproduto: item.idproduto,
+						quantidade: item.quantidade,
+						preco: item.preco,
+						unidademedida: item.unidademedida,
+						rastros: item.rastros,
+					});
 				}
 
 				return { vazio: false as const, pedido: criado };
@@ -357,6 +365,8 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 			idproduto: string;
 			quantidade: string;
 			preco: string;
+			unidademedida?: string;
+			rastros?: PedidoDavItem["rastros"];
 		}) => {
 			if (!pedidoId) throw new Error("Pedido não informado");
 			if (itemEditando) {
@@ -427,6 +437,8 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 		idproduto: string;
 		quantidade: string;
 		preco: string;
+		unidademedida?: string;
+		rastros?: PedidoDavItem["rastros"];
 	}) {
 		const nomeproduto = mapaProdutos.get(dados.idproduto) ?? null;
 		const total = totalLinha(dados.quantidade, dados.preco);
@@ -442,6 +454,8 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 								quantidade: dados.quantidade,
 								preco: dados.preco,
 								total,
+								unidademedida: dados.unidademedida ?? item.unidademedida,
+								rastros: dados.rastros,
 							}
 						: item,
 				),
@@ -459,8 +473,9 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 					quantidade: dados.quantidade,
 					preco: dados.preco,
 					total,
-					unidademedida: null,
+					unidademedida: dados.unidademedida ?? null,
 					idcfop: null,
+					rastros: dados.rastros,
 				},
 			]);
 			toast.success("Item adicionado");
@@ -474,6 +489,8 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 		idproduto: string;
 		quantidade: string;
 		preco: string;
+		unidademedida?: string;
+		rastros?: PedidoDavItem["rastros"];
 	}) {
 		if (modoCriacao) {
 			confirmarItemLocal(dados);
