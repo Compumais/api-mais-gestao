@@ -1,12 +1,17 @@
 import { z } from "zod";
 import { normalizarCstPisCofins } from "@/util/montar-grupo-pis-cofins-item-nfe.js";
 
+/**
+ * Campos omitidos no JSON devem permanecer `undefined` (não gravar).
+ * Só `null`/string vazia limpam o valor no banco.
+ */
 const campoCstIcmsOpcional = z
 	.string()
 	.max(3)
 	.optional()
 	.nullable()
 	.transform((valor) => {
+		if (valor === undefined) return undefined;
 		const texto = valor?.trim();
 		return texto ? texto : null;
 	});
@@ -17,6 +22,7 @@ const campoTributacaoEcfOpcional = z
 	.optional()
 	.nullable()
 	.transform((valor) => {
+		if (valor === undefined) return undefined;
 		const texto = valor?.trim();
 		return texto ? texto : null;
 	});
@@ -26,7 +32,8 @@ const campoCstPisCofinsOpcional = z
 	.optional()
 	.nullable()
 	.transform((valor) => {
-		if (valor === null || valor === undefined || valor === "") {
+		if (valor === undefined) return undefined;
+		if (valor === null || valor === "") {
 			return null;
 		}
 		return normalizarCstPisCofins(valor) ?? null;
@@ -62,7 +69,8 @@ function campoPercentualOpcional(casas = 2, max = 999.99) {
 		.optional()
 		.nullable()
 		.transform((valor) => {
-			if (valor === null || valor === undefined || valor === "") {
+			if (valor === undefined) return undefined;
+			if (valor === null || valor === "") {
 				return null;
 			}
 
@@ -117,6 +125,7 @@ export const camposImpostosProdutoSchema = {
 		.optional()
 		.nullable()
 		.transform((valor) => {
+			if (valor === undefined) return undefined;
 			const texto = valor?.trim();
 			return texto ? texto : null;
 		}),
@@ -126,6 +135,7 @@ export const camposImpostosProdutoSchema = {
 		.optional()
 		.nullable()
 		.transform((valor) => {
+			if (valor === undefined) return undefined;
 			const texto = valor?.trim();
 			return texto ? texto : null;
 		}),
@@ -169,38 +179,22 @@ export type CamposImpostosProduto = {
 export function montarCamposImpostosProduto(
 	dados: CamposImpostosProduto,
 ): CamposImpostosProduto {
-	return {
-		idcfopentrada: dados.idcfopentrada ?? null,
-		idcfopsaida: dados.idcfopsaida ?? null,
-		idcfopsaidanfce: dados.idcfopsaidanfce ?? null,
-		idcest: dados.idcest ?? null,
-		idtaxauf: dados.idtaxauf ?? null,
-		situacaotributariasnentrada: dados.situacaotributariasnentrada ?? null,
-		situacaotributaria: dados.situacaotributaria ?? null,
-		situacaotributariasn: dados.situacaotributariasn ?? null,
-		tributacaoespecial: dados.tributacaoespecial ?? null,
-		tributacaosn: dados.tributacaosn ?? null,
-		cstpisentrada: dados.cstpisentrada ?? null,
-		cstcofinsentrada: dados.cstcofinsentrada ?? null,
-		cstpis: dados.cstpis ?? null,
-		cstcofins: dados.cstcofins ?? null,
-		cstipientrada: dados.cstipientrada ?? null,
-		cstipisaida: dados.cstipisaida ?? null,
-		cfopvendaecf: dados.cfopvendaecf ?? null,
-		percentualmva: dados.percentualmva ?? null,
-		aliquotaicmsinterna: dados.aliquotaicmsinterna ?? null,
-		aliquotaicmsdiferencialentrada:
-			dados.aliquotaicmsdiferencialentrada ?? null,
-		aliquotareducaoicmsnfcesat: dados.aliquotareducaoicmsnfcesat ?? null,
-		aliquotafcpnf: dados.aliquotafcpnf ?? null,
-		ultimaaliquotaicmsst: dados.ultimaaliquotaicmsst ?? null,
-		ultimaaliquotafcpst: dados.ultimaaliquotafcpst ?? null,
-		aliquotapis: dados.aliquotapis ?? null,
-		aliquotacofins: dados.aliquotacofins ?? null,
-		aliquotapisentrada: dados.aliquotapisentrada ?? null,
-		aliquotaconfinsentrada: dados.aliquotaconfinsentrada ?? null,
-		aliquotapisconfinsentradapreco:
-			dados.aliquotapisconfinsentradapreco ?? null,
-		aliquotapisconfinssaidapreco: dados.aliquotapisconfinssaidapreco ?? null,
-	};
+	const chaves = Object.keys(
+		camposImpostosProdutoSchema,
+	) as (keyof CamposImpostosProduto)[];
+
+	const resultado: CamposImpostosProduto = {};
+
+	for (const chave of chaves) {
+		if (!(chave in dados) || dados[chave] === undefined) {
+			continue;
+		}
+		(resultado as Record<string, unknown>)[chave] = dados[chave] ?? null;
+	}
+
+	if ("cfopvendaecf" in dados && dados.cfopvendaecf !== undefined) {
+		resultado.cfopvendaecf = dados.cfopvendaecf ?? null;
+	}
+
+	return resultado;
 }

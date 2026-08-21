@@ -18,7 +18,8 @@ const percentualOpcional = z
 		}
 	})
 	.transform((valor) => {
-		if (valor === null || valor === undefined || valor === "") return null;
+		if (valor === undefined) return undefined;
+		if (valor === null || valor === "") return null;
 		const numero =
 			typeof valor === "number"
 				? valor
@@ -40,6 +41,7 @@ export const camposServicoProdutoSchema = {
 		.optional()
 		.nullable()
 		.transform((valor) => {
+			if (valor === undefined) return undefined;
 			const texto = valor?.replace(/\D/g, "").trim();
 			return texto ? texto : null;
 		}),
