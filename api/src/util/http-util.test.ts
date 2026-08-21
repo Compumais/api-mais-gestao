@@ -80,7 +80,7 @@ describe("http-util", () => {
 			expect(resultado.success).toBe(false);
 			expect(resultado.status).toBe(401);
 			if (!resultado.success) {
-				expect(resultado.error).toBe("NÃ£o autorizado");
+				expect(resultado.error).toBe("Não autorizado");
 				expect(resultado.code).toBe("UNAUTHORIZED_ERROR");
 			}
 		});
@@ -93,7 +93,7 @@ describe("http-util", () => {
 			expect(resultado.success).toBe(false);
 			expect(resultado.status).toBe(404);
 			if (!resultado.success) {
-				expect(resultado.error).toBe("Recurso nÃ£o encontrado");
+				expect(resultado.error).toBe("Recurso não encontrado");
 				expect(resultado.code).toBe("NOT_FOUND_ERROR");
 			}
 		});
@@ -119,7 +119,7 @@ describe("http-util", () => {
 			expect(resultado.success).toBe(false);
 			expect(resultado.status).toBe(409);
 			if (!resultado.success) {
-				expect(resultado.error).toBe("Recurso jÃ¡ existe");
+				expect(resultado.error).toBe("Recurso já existe");
 				expect(resultado.code).toBe("RESOURCE_ALREADY_EXISTS");
 			}
 		});

@@ -13,7 +13,7 @@ export function httpNaoAutorizado() {
 	return {
 		success: false,
 		status: 401,
-		error: "NÃ£o autorizado",
+		error: "Não autorizado",
 		code: "UNAUTHORIZED_ERROR",
 	};
 }
@@ -22,7 +22,7 @@ export function httpNaoEncontrado() {
 	return {
 		success: false,
 		status: 404,
-		error: "Recurso nÃ£o encontrado",
+		error: "Recurso não encontrado",
 		code: "NOT_FOUND_ERROR",
 	};
 }
@@ -30,7 +30,7 @@ export function httpBadGateway(error?: string): HttpResponse<never> {
 	return {
 		success: false as const,
 		status: 502,
-		error: error || "Erro no serviÃ§o externo",
+		error: error || "Erro no serviço externo",
 		code: "BAD_GATEWAY_ERROR",
 	};
 }
@@ -44,7 +44,7 @@ export function httpErroInterno() {
 	};
 }
 
-export function httpRecursoExistente(error = "Recurso jÃ¡ existe") {
+export function httpRecursoExistente(error = "Recurso já existe") {
 	return {
 		success: false,
 		status: 409,
@@ -91,7 +91,7 @@ export function httpErro() {
 	return {
 		success: false,
 		status: 400,
-		error: "Erro ao processar a requisiÃ§Ã£o",
+		error: "Erro ao processar a requisição",
 		code: "BAD_REQUEST_ERROR",
 	};
 }
@@ -109,7 +109,7 @@ export function httpBadRequest(
 	const errorMessage =
 		typeof error === "string"
 			? error
-			: error?.error || "RequisiÃ§Ã£o invÃ¡lida";
+			: error?.error || "Requisição inválida";
 
 	return {
 		success: false as const,

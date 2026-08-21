@@ -60,9 +60,9 @@ describe("criarEntidadeService", () => {
 		vi.mocked(
 			entidadeRepository.verificarUsuarioPertenceEmpresa,
 		).mockResolvedValue(true);
-		vi.mocked(
-			entidadeRepository.verificarEmailTelefoneDuplicado,
-		).mockResolvedValue(false);
+		vi.mocked(entidadeRepository.buscarEntidadePorCnpj).mockResolvedValue(
+			undefined,
+		);
 		vi.mocked(entidadeRepository.criarEntidade).mockResolvedValue(entidadeMock);
 
 		const resultado = await criarEntidadeService({
@@ -81,9 +81,10 @@ describe("criarEntidadeService", () => {
 		expect(
 			entidadeRepository.verificarUsuarioPertenceEmpresa,
 		).toHaveBeenCalledWith("usuario-123", "empresa-123");
-		expect(
-			entidadeRepository.verificarEmailTelefoneDuplicado,
-		).toHaveBeenCalledTimes(1);
+		expect(entidadeRepository.buscarEntidadePorCnpj).toHaveBeenCalledWith(
+			"empresa-123",
+			"12345678901",
+		);
 		expect(entidadeRepository.criarEntidade).toHaveBeenCalledTimes(1);
 		expect(entidadeRepository.criarEntidade).toHaveBeenCalledWith(
 			expect.objectContaining({
@@ -95,7 +96,7 @@ describe("criarEntidadeService", () => {
 				endereco: "Rua São Miguel",
 				idcidade: "id-sacramento",
 				idestado: "id-mg",
-				cep: "38190-000",
+				cep: "38190000",
 				pais: "Brasil",
 				idempresa: "empresa-123",
 			}),
@@ -121,19 +122,19 @@ describe("criarEntidadeService", () => {
 		expect(
 			entidadeRepository.verificarUsuarioPertenceEmpresa,
 		).toHaveBeenCalledTimes(1);
-		expect(
-			entidadeRepository.verificarEmailTelefoneDuplicado,
-		).not.toHaveBeenCalled();
+		expect(entidadeRepository.buscarEntidadePorCnpj).not.toHaveBeenCalled();
 		expect(entidadeRepository.criarEntidade).not.toHaveBeenCalled();
 	});
 
-	it("deve retornar erro 409 quando email está duplicado na empresa", async () => {
+	it("deve retornar erro 409 quando CPF/CNPJ já está cadastrado na empresa", async () => {
 		vi.mocked(
 			entidadeRepository.verificarUsuarioPertenceEmpresa,
 		).mockResolvedValue(true);
-		vi.mocked(
-			entidadeRepository.verificarEmailTelefoneDuplicado,
-		).mockResolvedValue(true);
+		vi.mocked(entidadeRepository.buscarEntidadePorCnpj).mockResolvedValue({
+			...entidadeMock,
+			id: "outra-entidade",
+			nome: "Cadastro Existente",
+		});
 
 		const resultado = await criarEntidadeService({
 			dadosEntidade: dadosEntidadeMock,
@@ -143,63 +144,50 @@ describe("criarEntidadeService", () => {
 		expect(resultado.success).toBe(false);
 		if (!resultado.success) {
 			expect(resultado.status).toBe(409);
-			expect(resultado.error).toBe("Recurso já existe");
+			expect(resultado.error).toContain("Já existe um cadastro com este CPF");
+			expect(resultado.error).toContain("Cadastro Existente");
 			expect(resultado.code).toBe("RESOURCE_ALREADY_EXISTS");
 		}
-		expect(
-			entidadeRepository.verificarUsuarioPertenceEmpresa,
-		).toHaveBeenCalledTimes(1);
-		expect(
-			entidadeRepository.verificarEmailTelefoneDuplicado,
-		).toHaveBeenCalledTimes(1);
-		expect(
-			entidadeRepository.verificarEmailTelefoneDuplicado,
-		).toHaveBeenCalledWith(
+		expect(entidadeRepository.buscarEntidadePorCnpj).toHaveBeenCalledWith(
 			"empresa-123",
-			"john.doe@example.com",
-			"(34) 3351-1861",
+			"12345678901",
 		);
 		expect(entidadeRepository.criarEntidade).not.toHaveBeenCalled();
 	});
 
-	it("deve retornar erro 409 quando telefone está duplicado na empresa", async () => {
+	it("deve permitir e-mail e telefone iguais aos de outro cadastro", async () => {
 		vi.mocked(
 			entidadeRepository.verificarUsuarioPertenceEmpresa,
 		).mockResolvedValue(true);
-		vi.mocked(
-			entidadeRepository.verificarEmailTelefoneDuplicado,
-		).mockResolvedValue(true);
-
-		const dadosComTelefoneDuplicado = {
-			...dadosEntidadeMock,
-			email: null,
-			telefone: "(34) 3351-1861",
-		};
+		vi.mocked(entidadeRepository.buscarEntidadePorCnpj).mockResolvedValue(
+			undefined,
+		);
+		vi.mocked(entidadeRepository.criarEntidade).mockResolvedValue({
+			...entidadeMock,
+			id: "entidade-nova",
+			cnpjcpf: "98765432100",
+		});
 
 		const resultado = await criarEntidadeService({
-			dadosEntidade: dadosComTelefoneDuplicado,
+			dadosEntidade: {
+				...dadosEntidadeMock,
+				id: "entidade-nova",
+				cnpjcpf: "98765432100",
+			},
 			idusuario: "usuario-123",
 		});
 
-		expect(resultado.success).toBe(false);
-		if (!resultado.success) {
-			expect(resultado.status).toBe(409);
-			expect(resultado.error).toBe("Recurso já existe");
-			expect(resultado.code).toBe("RESOURCE_ALREADY_EXISTS");
-		}
-		expect(
-			entidadeRepository.verificarEmailTelefoneDuplicado,
-		).toHaveBeenCalledWith("empresa-123", null, "(34) 3351-1861");
-		expect(entidadeRepository.criarEntidade).not.toHaveBeenCalled();
+		expect(resultado.success).toBe(true);
+		expect(entidadeRepository.criarEntidade).toHaveBeenCalledTimes(1);
 	});
 
 	it("deve retornar erro 400 quando criação falha (retorna null)", async () => {
 		vi.mocked(
 			entidadeRepository.verificarUsuarioPertenceEmpresa,
 		).mockResolvedValue(true);
-		vi.mocked(
-			entidadeRepository.verificarEmailTelefoneDuplicado,
-		).mockResolvedValue(false);
+		vi.mocked(entidadeRepository.buscarEntidadePorCnpj).mockResolvedValue(
+			undefined,
+		);
 		vi.mocked(entidadeRepository.criarEntidade).mockResolvedValue(
 			null as unknown as Entidade,
 		);
@@ -215,36 +203,6 @@ describe("criarEntidadeService", () => {
 			expect(resultado.error).toBe("Erro ao processar a requisição");
 			expect(resultado.code).toBe("BAD_REQUEST_ERROR");
 		}
-		expect(
-			entidadeRepository.verificarUsuarioPertenceEmpresa,
-		).toHaveBeenCalledTimes(1);
-		expect(
-			entidadeRepository.verificarEmailTelefoneDuplicado,
-		).toHaveBeenCalledTimes(1);
 		expect(entidadeRepository.criarEntidade).toHaveBeenCalledTimes(1);
-	});
-
-	it("deve verificar permissão antes de verificar duplicidade", async () => {
-		vi.mocked(
-			entidadeRepository.verificarUsuarioPertenceEmpresa,
-		).mockResolvedValue(true);
-		vi.mocked(
-			entidadeRepository.verificarEmailTelefoneDuplicado,
-		).mockResolvedValue(false);
-		vi.mocked(entidadeRepository.criarEntidade).mockResolvedValue(entidadeMock);
-
-		await criarEntidadeService({
-			dadosEntidade: dadosEntidadeMock,
-			idusuario: "usuario-123",
-		});
-
-		const calls = vi.mocked(entidadeRepository.verificarUsuarioPertenceEmpresa)
-			.mock.calls;
-		const duplicidadeCalls = vi.mocked(
-			entidadeRepository.verificarEmailTelefoneDuplicado,
-		).mock.calls;
-
-		expect(calls.length).toBeGreaterThan(0);
-		expect(duplicidadeCalls.length).toBeGreaterThan(0);
 	});
 });

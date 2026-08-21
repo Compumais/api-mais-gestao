@@ -44,7 +44,12 @@ export async function criarEmpresaService({
 	const empresaExistente = await buscarEmpresaPorCnpj(cnpjNormalizado);
 
 	if (empresaExistente) {
-		return httpRecursoExistente("CNPJ já cadastrado");
+		const nomeExistente = empresaExistente.nome?.trim();
+		return httpRecursoExistente(
+			nomeExistente
+				? `Já existe uma empresa cadastrada com este CNPJ (“${nomeExistente}”). A razão social pode se repetir; o conflito é no CNPJ.`
+				: "Já existe uma empresa cadastrada com este CNPJ. A razão social pode se repetir; o conflito é no CNPJ.",
+		);
 	}
 
 	const dadosEmpresaNormalizados: NovaEmpresa = {
@@ -55,7 +60,9 @@ export async function criarEmpresaService({
 	const [empresa] = await criarEmpresa(dadosEmpresaNormalizados);
 
 	if (!empresa) {
-		return httpRecursoExistente("CNPJ já cadastrado");
+		return httpRecursoExistente(
+			"Já existe uma empresa cadastrada com este CNPJ. A razão social pode se repetir; o conflito é no CNPJ.",
+		);
 	}
 
 	await popularDadosPadraoEmpresa(empresa.id);

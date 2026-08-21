@@ -56,9 +56,9 @@ describe("atualizarEntidadeService", () => {
 		vi.mocked(
 			entidadeRepository.verificarUsuarioPertenceEmpresa,
 		).mockResolvedValue(true);
-		vi.mocked(
-			entidadeRepository.verificarEmailTelefoneDuplicado,
-		).mockResolvedValue(false);
+		vi.mocked(entidadeRepository.buscarEntidadePorCnpj).mockResolvedValue(
+			entidadeMock,
+		);
 		vi.mocked(entidadeRepository.atualizarEntidade).mockResolvedValue(
 			entidadeAtualizadoMock,
 		);
@@ -81,9 +81,6 @@ describe("atualizarEntidadeService", () => {
 		expect(entidadeRepository.buscarEntidadePorId).toHaveBeenCalledTimes(1);
 		expect(
 			entidadeRepository.verificarUsuarioPertenceEmpresa,
-		).toHaveBeenCalledTimes(1);
-		expect(
-			entidadeRepository.verificarEmailTelefoneDuplicado,
 		).toHaveBeenCalledTimes(1);
 		expect(entidadeRepository.atualizarEntidade).toHaveBeenCalledTimes(1);
 		expect(entidadeRepository.atualizarEntidade).toHaveBeenCalledWith(
@@ -149,82 +146,66 @@ describe("atualizarEntidadeService", () => {
 		expect(
 			entidadeRepository.verificarUsuarioPertenceEmpresa,
 		).toHaveBeenCalledTimes(1);
-		expect(
-			entidadeRepository.verificarEmailTelefoneDuplicado,
-		).not.toHaveBeenCalled();
 		expect(entidadeRepository.atualizarEntidade).not.toHaveBeenCalled();
 	});
 
-	it("deve retornar erro 409 quando email está duplicado (ignorando próprio entidade)", async () => {
+	it("deve retornar erro 409 quando CPF/CNPJ já pertence a outro cadastro", async () => {
 		vi.mocked(entidadeRepository.buscarEntidadePorId).mockResolvedValue(
 			entidadeMock,
 		);
 		vi.mocked(
 			entidadeRepository.verificarUsuarioPertenceEmpresa,
 		).mockResolvedValue(true);
-		vi.mocked(
-			entidadeRepository.verificarEmailTelefoneDuplicado,
-		).mockResolvedValue(true);
+		vi.mocked(entidadeRepository.buscarEntidadePorCnpj).mockResolvedValue({
+			...entidadeMock,
+			id: "outra-entidade",
+			nome: "Outro Cadastro",
+			cnpjcpf: "98765432100",
+		});
 
 		const resultado = await atualizarEntidadeService({
 			entidadeId: "entidade-123",
 			idusuario: "usuario-123",
 			dados: {
-				email: "email.duplicado@example.com",
+				cnpjcpf: "98765432100",
 			},
 		});
 
 		expect(resultado.success).toBe(false);
 		if (!resultado.success) {
 			expect(resultado.status).toBe(409);
-			expect(resultado.error).toBe("Recurso já existe");
+			expect(resultado.error).toContain("Já existe um cadastro com este CPF");
+			expect(resultado.error).toContain("Outro Cadastro");
 			expect(resultado.code).toBe("RESOURCE_ALREADY_EXISTS");
 		}
-		expect(
-			entidadeRepository.verificarEmailTelefoneDuplicado,
-		).toHaveBeenCalledWith(
-			"empresa-123",
-			"email.duplicado@example.com",
-			"(34) 3351-1861",
-			"entidade-123",
-		);
 		expect(entidadeRepository.atualizarEntidade).not.toHaveBeenCalled();
 	});
 
-	it("deve retornar erro 409 quando telefone está duplicado (ignorando próprio entidade)", async () => {
+	it("deve permitir e-mail e telefone iguais aos de outro cadastro", async () => {
 		vi.mocked(entidadeRepository.buscarEntidadePorId).mockResolvedValue(
 			entidadeMock,
 		);
 		vi.mocked(
 			entidadeRepository.verificarUsuarioPertenceEmpresa,
 		).mockResolvedValue(true);
-		vi.mocked(
-			entidadeRepository.verificarEmailTelefoneDuplicado,
-		).mockResolvedValue(true);
+		vi.mocked(entidadeRepository.buscarEntidadePorCnpj).mockResolvedValue(
+			entidadeMock,
+		);
+		vi.mocked(entidadeRepository.atualizarEntidade).mockResolvedValue(
+			entidadeAtualizadoMock,
+		);
 
 		const resultado = await atualizarEntidadeService({
 			entidadeId: "entidade-123",
 			idusuario: "usuario-123",
 			dados: {
-				telefone: "(34) 9999-9999",
+				email: "email.compartilhado@example.com",
+				telefone: "(34) 1111-1111",
 			},
 		});
 
-		expect(resultado.success).toBe(false);
-		if (!resultado.success) {
-			expect(resultado.status).toBe(409);
-			expect(resultado.error).toBe("Recurso já existe");
-			expect(resultado.code).toBe("RESOURCE_ALREADY_EXISTS");
-		}
-		expect(
-			entidadeRepository.verificarEmailTelefoneDuplicado,
-		).toHaveBeenCalledWith(
-			"empresa-123",
-			"john.doe@example.com",
-			"(34) 9999-9999",
-			"entidade-123",
-		);
-		expect(entidadeRepository.atualizarEntidade).not.toHaveBeenCalled();
+		expect(resultado.success).toBe(true);
+		expect(entidadeRepository.atualizarEntidade).toHaveBeenCalledTimes(1);
 	});
 
 	it("deve atualizar apenas campos fornecidos", async () => {
@@ -234,9 +215,9 @@ describe("atualizarEntidadeService", () => {
 		vi.mocked(
 			entidadeRepository.verificarUsuarioPertenceEmpresa,
 		).mockResolvedValue(true);
-		vi.mocked(
-			entidadeRepository.verificarEmailTelefoneDuplicado,
-		).mockResolvedValue(false);
+		vi.mocked(entidadeRepository.buscarEntidadePorCnpj).mockResolvedValue(
+			entidadeMock,
+		);
 		vi.mocked(entidadeRepository.atualizarEntidade).mockResolvedValue({
 			...entidadeMock,
 			nome: "Apenas Nome Atualizado",
@@ -262,65 +243,6 @@ describe("atualizarEntidadeService", () => {
 				nome: "Apenas Nome Atualizado",
 				atualizadoem: expect.any(String),
 			}),
-		);
-	});
-
-	it("deve verificar duplicidade apenas quando email ou telefone são fornecidos", async () => {
-		vi.mocked(entidadeRepository.buscarEntidadePorId).mockResolvedValue(
-			entidadeMock,
-		);
-		vi.mocked(
-			entidadeRepository.verificarUsuarioPertenceEmpresa,
-		).mockResolvedValue(true);
-		vi.mocked(entidadeRepository.atualizarEntidade).mockResolvedValue({
-			...entidadeMock,
-			nome: "Nome Atualizado",
-			atualizadoem: new Date().toISOString(),
-		});
-
-		await atualizarEntidadeService({
-			entidadeId: "entidade-123",
-			idusuario: "usuario-123",
-			dados: {
-				nome: "Nome Atualizado",
-			},
-		});
-
-		expect(
-			entidadeRepository.verificarEmailTelefoneDuplicado,
-		).not.toHaveBeenCalled();
-		expect(entidadeRepository.atualizarEntidade).toHaveBeenCalledTimes(1);
-	});
-
-	it("deve usar email/telefone existente quando não fornecido na atualização", async () => {
-		vi.mocked(entidadeRepository.buscarEntidadePorId).mockResolvedValue(
-			entidadeMock,
-		);
-		vi.mocked(
-			entidadeRepository.verificarUsuarioPertenceEmpresa,
-		).mockResolvedValue(true);
-		vi.mocked(
-			entidadeRepository.verificarEmailTelefoneDuplicado,
-		).mockResolvedValue(false);
-		vi.mocked(entidadeRepository.atualizarEntidade).mockResolvedValue(
-			entidadeAtualizadoMock,
-		);
-
-		await atualizarEntidadeService({
-			entidadeId: "entidade-123",
-			idusuario: "usuario-123",
-			dados: {
-				email: "novo.email@example.com",
-			},
-		});
-
-		expect(
-			entidadeRepository.verificarEmailTelefoneDuplicado,
-		).toHaveBeenCalledWith(
-			"empresa-123",
-			"novo.email@example.com",
-			"(34) 3351-1861",
-			"entidade-123",
 		);
 	});
 });

@@ -153,7 +153,9 @@ describe("criarEmpresaService", () => {
 		expect(resultado.success).toBe(false);
 		if (!resultado.success) {
 			expect(resultado.status).toBe(409);
-			expect(resultado.error).toBe("CNPJ já cadastrado");
+			expect(resultado.error).toBe(
+				'Já existe uma empresa cadastrada com este CNPJ (“Empresa Teste”). A razão social pode se repetir; o conflito é no CNPJ.',
+			);
 			expect(resultado.code).toBe("RESOURCE_ALREADY_EXISTS");
 		}
 		expect(empresaRepository.criarEmpresa).not.toHaveBeenCalled();
