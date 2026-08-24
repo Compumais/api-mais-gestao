@@ -222,6 +222,47 @@ export function BalcaoPage() {
 		);
 	}
 
+	async function retirarDepois() {
+		if (bloqueado) {
+			setMsg(
+				status?.principalErro ?? "PDV principal offline. Operação bloqueada.",
+			);
+			return;
+		}
+		if (!itens.length) return;
+		setLoading(true);
+		setMsg("");
+		try {
+			const conta = await pdvInvoke<{ id: string }>("abrirPedidoEntrega", {
+				modalidade: "retirada",
+				nomecliente: null,
+				telefone: null,
+				endereco: null,
+				bairro: null,
+				valorentrega: 0,
+			});
+			await pdvInvoke(
+				"enviarPedidoConta",
+				conta.id,
+				crypto.randomUUID(),
+				itens.map((item) => ({
+					idproduto: item.idproduto,
+					quantidade: item.quantidade,
+					observacao: null,
+					idprodutomeio: item.idprodutomeio ?? null,
+				})),
+			);
+			setItens([]);
+			navigate(`/delivery/${conta.id}`);
+		} catch (err) {
+			setMsg(
+				err instanceof Error ? err.message : "Erro ao abrir retirada",
+			);
+		} finally {
+			setLoading(false);
+		}
+	}
+
 	async function finalizar(fechamento: FechamentoMisto) {
 		if (bloqueado) {
 			setMsg(
@@ -514,6 +555,17 @@ export function BalcaoPage() {
 							{teclas.desconto}
 						</span>
 					</Button>
+					{status?.moduloGourmet ? (
+						<Button
+							size="lg"
+							variant="secondary"
+							className="mt-2 w-full"
+							disabled={!itens.length || bloqueado || loading}
+							onClick={() => void retirarDepois()}
+						>
+							Retirar depois
+						</Button>
+					) : null}
 					<Button
 						size="xl"
 						className="mt-2 w-full"

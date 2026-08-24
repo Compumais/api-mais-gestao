@@ -31,7 +31,21 @@ describe("recalcularTotaisConta", () => {
 		assert.equal(totais.valordesconto, 8);
 		assert.equal(totais.valortaxaservico, 10);
 		assert.equal(totais.valorcouvert, 10);
+		assert.equal(totais.valorentrega, 0);
 		assert.equal(totais.valortotal, 112);
+	});
+
+	it("inclui taxa de entrega no total", () => {
+		const totais = recalcularTotaisConta([{ precototal: 40 }], {
+			numeropessoas: 1,
+			taxaAtiva: false,
+			percentualTaxa: 10,
+			couvertUnitario: 0,
+			desconto: 5,
+			valorentrega: 8,
+		});
+		assert.equal(totais.valorentrega, 8);
+		assert.equal(totais.valortotal, 43);
 	});
 
 	it("sem taxa e sem couvert o total é subtotal menos desconto", () => {

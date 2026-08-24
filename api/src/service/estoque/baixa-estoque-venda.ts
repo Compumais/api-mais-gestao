@@ -44,6 +44,7 @@ export type BaixaEstoqueVendaParametros = {
 		desconto?: string | null;
 		valortaxaservico?: string | null;
 		valorcouverartistico?: string | null;
+		valorentrega?: string | null;
 	};
 	emitirNfce?: boolean;
 };

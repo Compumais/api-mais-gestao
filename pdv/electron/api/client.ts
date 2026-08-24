@@ -594,6 +594,7 @@ export async function baixaEstoqueVenda(body: {
 		desconto?: number | string;
 		valortaxaservico?: number | string;
 		valorcouverartistico?: number | string;
+		valorentrega?: number | string;
 	};
 	emitirNfce?: boolean;
 }) {
@@ -649,6 +650,7 @@ export async function baixaEstoqueVenda(body: {
 				valorcouverartistico: asApiDecimal(
 					body.pagamentos.valorcouverartistico ?? 0,
 				),
+				valorentrega: asApiDecimal(body.pagamentos.valorentrega ?? 0),
 			},
 			...(body.emitirNfce === false ? { emitirNfce: false } : {}),
 		},

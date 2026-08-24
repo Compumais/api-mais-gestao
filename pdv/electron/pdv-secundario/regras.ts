@@ -16,6 +16,8 @@ export const CHAVES_CONFIG_NEGOCIO = [
 	"etiqueta_balanca_conteudo",
 	"etiqueta_balanca_centavos",
 	"etiqueta_balanca_indicador_uso",
+	"taxa_entrega_padrao",
+	"bairros_entrega",
 ] as const;
 
 export type ChaveConfigNegocio = (typeof CHAVES_CONFIG_NEGOCIO)[number];

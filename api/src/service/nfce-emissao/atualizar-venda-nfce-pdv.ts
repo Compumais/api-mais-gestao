@@ -48,6 +48,7 @@ export type AtualizarVendaNfcePdvParametros = {
 		desconto?: string | null;
 		valortaxaservico?: string | null;
 		valorcouverartistico?: string | null;
+		valorentrega?: string | null;
 	};
 };
 
@@ -75,8 +76,12 @@ function calcularTotalComTaxas(
 	desconto: number,
 	taxaServico: number,
 	couvert: number,
+	valorentrega = 0,
 ): number {
-	return Math.max(0, subtotal - desconto + taxaServico + couvert);
+	return Math.max(
+		0,
+		subtotal - desconto + taxaServico + couvert + valorentrega,
+	);
 }
 
 function calcularTotalPago(pagamentos: PagamentosRegistro): number {
@@ -136,12 +141,14 @@ export async function atualizarVendaNfcePdvService({
 	const desconto = parseValorMonetario(pagamentos.desconto);
 	const taxaServico = parseValorMonetario(pagamentos.valortaxaservico);
 	const couvert = parseValorMonetario(pagamentos.valorcouverartistico);
+	const valorentrega = parseValorMonetario(pagamentos.valorentrega);
 	const subtotal = calcularSubtotalItens(itens);
 	const valortotal = calcularTotalComTaxas(
 		subtotal,
 		desconto,
 		taxaServico,
 		couvert,
+		valorentrega,
 	);
 	const pago = calcularTotalPago(pagamentos);
 

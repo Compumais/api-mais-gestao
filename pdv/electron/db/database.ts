@@ -331,7 +331,83 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 				"ALTER TABLE conta_mesa ADD COLUMN taxa_ativa INTEGER NOT NULL DEFAULT 0",
 			);
 		}
+		if (!contaNomes.has("modalidade")) {
+			await database.query(
+				"ALTER TABLE conta_mesa ADD COLUMN modalidade TEXT NOT NULL DEFAULT 'mesa'",
+			);
+		}
+		if (!contaNomes.has("telefone")) {
+			await database.query("ALTER TABLE conta_mesa ADD COLUMN telefone TEXT");
+		}
+		if (!contaNomes.has("endereco")) {
+			await database.query("ALTER TABLE conta_mesa ADD COLUMN endereco TEXT");
+		}
+		if (!contaNomes.has("bairro")) {
+			await database.query("ALTER TABLE conta_mesa ADD COLUMN bairro TEXT");
+		}
+		if (!contaNomes.has("complemento")) {
+			await database.query(
+				"ALTER TABLE conta_mesa ADD COLUMN complemento TEXT",
+			);
+		}
+		if (!contaNomes.has("referencia")) {
+			await database.query(
+				"ALTER TABLE conta_mesa ADD COLUMN referencia TEXT",
+			);
+		}
+		if (!contaNomes.has("valorentrega")) {
+			await database.query(
+				"ALTER TABLE conta_mesa ADD COLUMN valorentrega DOUBLE PRECISION NOT NULL DEFAULT 0",
+			);
+		}
+		if (!contaNomes.has("status_entrega")) {
+			await database.query(
+				"ALTER TABLE conta_mesa ADD COLUMN status_entrega TEXT",
+			);
+		}
+		if (!contaNomes.has("senha_chamada")) {
+			await database.query(
+				"ALTER TABLE conta_mesa ADD COLUMN senha_chamada TEXT",
+			);
+		}
+		if (!contaNomes.has("idcliente")) {
+			await database.query("ALTER TABLE conta_mesa ADD COLUMN idcliente TEXT");
+		}
+		if (!contaNomes.has("orderidintegracao")) {
+			await database.query(
+				"ALTER TABLE conta_mesa ADD COLUMN orderidintegracao TEXT",
+			);
+		}
+		if (!contaNomes.has("obs")) {
+			await database.query("ALTER TABLE conta_mesa ADD COLUMN obs TEXT");
+		}
 	}
+
+	await database.query(`
+		CREATE UNIQUE INDEX IF NOT EXISTS idx_conta_mesa_orderidintegracao_aberta
+		ON conta_mesa (orderidintegracao)
+		WHERE orderidintegracao IS NOT NULL AND status = 'aberta'
+	`);
+
+	await database.query(`
+		CREATE TABLE IF NOT EXISTS cliente_pdv (
+			id TEXT PRIMARY KEY NOT NULL,
+			nome TEXT NOT NULL,
+			telefone TEXT,
+			cnpjcpf TEXT,
+			endereco TEXT,
+			bairro TEXT,
+			complemento TEXT,
+			referencia TEXT,
+			atualizadoem TEXT NOT NULL
+		)
+	`);
+	await database.query(
+		`CREATE INDEX IF NOT EXISTS idx_cliente_pdv_telefone ON cliente_pdv(telefone)`,
+	);
+	await database.query(
+		`CREATE INDEX IF NOT EXISTS idx_cliente_pdv_nome ON cliente_pdv(nome)`,
+	);
 
 	if (!itemNomes.has("pago")) {
 		await database.query(
@@ -359,6 +435,11 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 		if (!vendaNomes.has("valorcouvert")) {
 			await database.query(
 				"ALTER TABLE venda ADD COLUMN valorcouvert DOUBLE PRECISION NOT NULL DEFAULT 0",
+			);
+		}
+		if (!vendaNomes.has("valorentrega")) {
+			await database.query(
+				"ALTER TABLE venda ADD COLUMN valorentrega DOUBLE PRECISION NOT NULL DEFAULT 0",
 			);
 		}
 		if (!vendaNomes.has("idcliente")) {
@@ -465,6 +546,8 @@ async function seedDefaults(database: Pool): Promise<void> {
 		["etiqueta_balanca_conteudo", "preco"],
 		["etiqueta_balanca_centavos", "1"],
 		["etiqueta_balanca_indicador_uso", "0"],
+		["taxa_entrega_padrao", "0"],
+		["bairros_entrega", "[]"],
 	];
 
 	for (const [chave, valor] of defaults) {

@@ -50,13 +50,18 @@ import {
 import {
 	abrirCaixa,
 	abrirContaMesa,
+	abrirPedidoEntrega,
 	adicionarItemConta,
 	adicionarItemNaMesa,
 	aplicarAjustesConta,
+	aplicarTaxaEntrega,
+	atualizarDadosEntrega,
 	atualizarNfceLocalCampos,
 	atualizarNomeClienteConta,
+	atualizarStatusEntrega,
 	atualizarVendaSync,
 	buscarClientesLocal,
+	buscarClientesPdv,
 	buscarProdutoPorCodigo,
 	buscarProdutoPorEan,
 	buscarProdutosLocal,
@@ -72,6 +77,7 @@ import {
 	fecharCaixa,
 	fecharContaMesa,
 	fecharFatiaItens,
+	ingestPedidoDelivery,
 	type ItemCarrinho,
 	juntarContas,
 	type LancamentoPagamento,
@@ -87,6 +93,7 @@ import {
 	listarMapeamentoImpressorasGourmet,
 	listarMeiosPagamentoLocal,
 	listarMesas,
+	listarPedidosEntrega,
 	listarPedidosFila,
 	listarPizzasLocal,
 	listarProdutosPorGrupo,
@@ -104,7 +111,9 @@ import {
 	obterVenda,
 	salvarAtalhos as persistirAtalhosLocal,
 	registrarPagamentoConta,
+	rotuloOrigemConta,
 	type SessaoLocal,
+	salvarClientePdv,
 	salvarConfiguracoes,
 	salvarMapeamentoImpressorasGourmet,
 	salvarSessao,
@@ -127,6 +136,7 @@ import {
 	imprimirProducaoPedido,
 	rotuloOrigemMesa,
 } from "../impressora/producao";
+import { rotuloProducaoEntrega } from "../db/pedido-entrega";
 import {
 	configEtiquetaDeMapa,
 	montarLancamentoEtiqueta,
@@ -1242,7 +1252,7 @@ export const localApi = {
 		if (conta.pedidoNovo) {
 			try {
 				void imprimirProducaoPedido({
-					origem: await rotuloOrigemMesa(conta.numero_mesa),
+					origem: rotuloOrigemConta(conta),
 					cliente: conta.nomecliente,
 					itens: conta.itensProducao,
 				});
@@ -1367,6 +1377,131 @@ export const localApi = {
 		void processarOutbox();
 		avisarTecnibra();
 		return { venda, fiscal };
+	},
+
+	async listarPedidosEntrega(statusFiltro?: string | null) {
+		await assertModuloGourmet();
+		return listarPedidosEntrega(statusFiltro);
+	},
+
+	async abrirPedidoEntrega(params: {
+		modalidade: "delivery" | "retirada";
+		nomecliente?: string | null;
+		telefone?: string | null;
+		endereco?: string | null;
+		bairro?: string | null;
+		complemento?: string | null;
+		referencia?: string | null;
+		valorentrega?: number | null;
+		idcliente?: string | null;
+		obs?: string | null;
+	}) {
+		await assertModuloGourmet();
+		await garantirOperacaoSecundario();
+		const conta = await abrirPedidoEntrega(params);
+		avisarTecnibra();
+		return conta;
+	},
+
+	async atualizarStatusEntrega(
+		idconta: string,
+		status?: "recebido" | "producao" | "saiu" | "entregue" | null,
+	) {
+		await assertModuloGourmet();
+		await garantirOperacaoSecundario();
+		return atualizarStatusEntrega(idconta, status);
+	},
+
+	async aplicarTaxaEntrega(idconta: string, valorentrega: number) {
+		await assertModuloGourmet();
+		await garantirOperacaoSecundario();
+		const conta = await aplicarTaxaEntrega(idconta, valorentrega);
+		avisarTecnibra();
+		return conta;
+	},
+
+	async atualizarDadosEntrega(
+		idconta: string,
+		dados: {
+			nomecliente?: string | null;
+			telefone?: string | null;
+			endereco?: string | null;
+			bairro?: string | null;
+			complemento?: string | null;
+			referencia?: string | null;
+			obs?: string | null;
+		},
+	) {
+		await assertModuloGourmet();
+		await garantirOperacaoSecundario();
+		return atualizarDadosEntrega(idconta, dados);
+	},
+
+	async buscarClientesPdv(termo?: string, limit?: number) {
+		await assertModuloGourmet();
+		return buscarClientesPdv(termo, limit);
+	},
+
+	async salvarClientePdv(params: {
+		id?: string;
+		nome: string;
+		telefone?: string | null;
+		cnpjcpf?: string | null;
+		endereco?: string | null;
+		bairro?: string | null;
+		complemento?: string | null;
+		referencia?: string | null;
+	}) {
+		await assertModuloGourmet();
+		await garantirOperacaoSecundario();
+		return salvarClientePdv(params);
+	},
+
+	async ingestPedidoDelivery(params: {
+		protocol: string;
+		modalidade?: "delivery" | "retirada";
+		nomecliente?: string | null;
+		telefone?: string | null;
+		endereco?: string | null;
+		bairro?: string | null;
+		complemento?: string | null;
+		referencia?: string | null;
+		documento?: string | null;
+		valorentrega?: number | null;
+		obs?: string | null;
+		itens: Array<{
+			idproduto?: string | null;
+			ean?: string | null;
+			codigo?: string | null;
+			codigoproduto?: string | null;
+			nomeproduto?: string | null;
+			quantidade: number;
+			precounitario?: number | null;
+			observacao?: string | null;
+		}>;
+	}) {
+		await assertModuloGourmet();
+		await garantirOperacaoSecundario();
+		const result = await ingestPedidoDelivery(params);
+		if (result.action === "created" && result.itensProducao.length) {
+			try {
+				void imprimirProducaoPedido({
+					origem:
+						rotuloOrigemConta(result.conta) ||
+						rotuloProducaoEntrega({
+							modalidade: result.conta.modalidade,
+							senhaChamada: result.conta.senha_chamada,
+							protocolo: result.conta.orderidintegracao,
+						}),
+					cliente: result.conta.nomecliente,
+					itens: result.itensProducao,
+				});
+			} catch {
+				// produção não falha o ingest
+			}
+		}
+		avisarTecnibra();
+		return result;
 	},
 
 	async aplicarAjustesConta(

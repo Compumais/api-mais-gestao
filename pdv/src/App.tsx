@@ -11,6 +11,7 @@ import { AberturaCaixaPage } from "@/ui/pages/abertura-caixa-page";
 import { BalcaoPage } from "@/ui/pages/balcao-page";
 import { BootPage } from "@/ui/pages/boot-page";
 import { ConfigPage } from "@/ui/pages/config-page";
+import { DeliveryPage } from "@/ui/pages/delivery-page";
 import { HomeEntry } from "@/ui/pages/home-page";
 import { LoginPage } from "@/ui/pages/login-page";
 import { MesaContaPage } from "@/ui/pages/mesa-conta-page";
@@ -45,6 +46,8 @@ export function App() {
 						<Route path="/" element={<HomeEntry />} />
 						<Route element={<RequireGourmet />}>
 							<Route path="/mesas/:numero" element={<MesaContaPage />} />
+							<Route path="/delivery" element={<DeliveryPage />} />
+							<Route path="/delivery/:id" element={<MesaContaPage />} />
 						</Route>
 						<Route path="/balcao" element={<BalcaoPage />} />
 						<Route path="/vendas" element={<VendasPage />} />

@@ -50,9 +50,19 @@ type ContaMesa = {
 	valordesconto?: number;
 	valortaxaservico?: number;
 	valorcouvert?: number;
+	valorentrega?: number;
 	taxa_ativa?: number;
 	valorpago?: number;
 	valorrestante?: number;
+	modalidade?: "mesa" | "delivery" | "retirada";
+	telefone?: string | null;
+	endereco?: string | null;
+	bairro?: string | null;
+	complemento?: string | null;
+	referencia?: string | null;
+	status_entrega?: string | null;
+	senha_chamada?: string | null;
+	orderidintegracao?: string | null;
 	itens: Array<{
 		id: string;
 		idproduto: string;
@@ -79,10 +89,14 @@ type LocationState = {
 };
 
 export function MesaContaPage() {
-	const { numero } = useParams<{ numero: string }>();
+	const { numero, id: idContaParam } = useParams<{
+		numero?: string;
+		id?: string;
+	}>();
 	const navigate = useNavigate();
 	const location = useLocation();
 	const { status } = useOutletContext<StatusContext>();
+	const modoEntrega = Boolean(idContaParam);
 	const numeroMesa = Number(numero);
 	const rotulo = rotuloModelo(status?.modeloAtendimento);
 	const nomeDoState = (location.state as LocationState | null)?.nomecliente;
@@ -121,13 +135,14 @@ export function MesaContaPage() {
 	const [itensSel, setItensSel] = useState<string[]>([]);
 	const [fatiaValor, setFatiaValor] = useState<number | null>(null);
 	const [pagandoFatia, setPagandoFatia] = useState(false);
+	const [taxaEntregaEdit, setTaxaEntregaEdit] = useState("");
 
 	useEscapeFechaModal(confirmandoSaida, () => setConfirmandoSaida(false));
 	useEscapeFechaModal(Boolean(rejeicaoNfce), () => setRejeicaoNfce(null));
 	useEscapeFechaModal(Boolean(pizzaPrimeiro), () => setPizzaPrimeiro(null));
 	useEscapeFechaModal(Boolean(produtoPeso), () => setProdutoPeso(null));
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: iniciar deve reexecutar apenas quando a mesa muda
+	// biome-ignore lint/correctness/useExhaustiveDependencies: iniciar deve reexecutar apenas quando a mesa/conta muda
 	useEffect(() => {
 		void iniciar();
 		void Promise.all([
@@ -137,7 +152,7 @@ export function MesaContaPage() {
 			setGrupos(g);
 			setAtalhos(a);
 		});
-	}, [numeroMesa]);
+	}, [numeroMesa, idContaParam]);
 
 	// Intercepta Escape global quando há itens na fila (antes do voltar automático).
 	useEffect(() => {
@@ -158,23 +173,38 @@ export function MesaContaPage() {
 		setMsg("");
 		setFila([]);
 		try {
-			const existente = await pdvInvoke<ContaMesa | null>(
-				"obterContaPorNumero",
-				numeroMesa,
-			);
-			if (existente) {
+			if (modoEntrega && idContaParam) {
+				const existente = await pdvInvoke<ContaMesa | null>(
+					"obterContaMesa",
+					idContaParam,
+				);
+				if (!existente) {
+					throw new Error("Pedido não encontrado");
+				}
 				setConta(existente);
 				setNomeCliente(existente.nomecliente);
+				setTaxaEntregaEdit(String(existente.valorentrega ?? 0));
 			} else {
-				setConta(null);
-				setNomeCliente(nomeDoState ?? null);
+				const existente = await pdvInvoke<ContaMesa | null>(
+					"obterContaPorNumero",
+					numeroMesa,
+				);
+				if (existente) {
+					setConta(existente);
+					setNomeCliente(existente.nomecliente);
+				} else {
+					setConta(null);
+					setNomeCliente(nomeDoState ?? null);
+				}
+				setMesas(await pdvInvoke<MesaResumo[]>("listarMesas"));
 			}
-			setMesas(await pdvInvoke<MesaResumo[]>("listarMesas"));
 		} catch (err) {
 			setMsg(
 				err instanceof Error
 					? err.message
-					: `Erro ao carregar a ${rotulo.singular.toLowerCase()}`,
+					: modoEntrega
+						? "Erro ao carregar o pedido"
+						: `Erro ao carregar a ${rotulo.singular.toLowerCase()}`,
 			);
 		} finally {
 			setPronto(true);
@@ -333,18 +363,37 @@ export function MesaContaPage() {
 		setMsg("");
 		try {
 			let atualizada: ContaMesa | null = conta;
-			for (const item of fila) {
-				atualizada = await pdvInvoke<ContaMesa>(
-					"adicionarItemNaMesa",
-					numeroMesa,
-					{
-						idproduto: item.idproduto,
-						descricao: item.descricao,
-						quantidade: item.quantidade,
-						precounitario: item.precounitario,
-					},
-					nomeCliente ?? undefined,
-				);
+			if (modoEntrega) {
+				if (!conta?.id) {
+					throw new Error("Pedido inválido");
+				}
+				atualizada = await pdvInvoke<ContaMesa>("enviarPedidoConta", conta.id, crypto.randomUUID(), fila.map((item) => ({
+					idproduto: item.idproduto,
+					quantidade: item.quantidade,
+					observacao: null,
+					idprodutomeio: item.idprodutomeio ?? null,
+				})));
+				if (conta.status_entrega === "recebido") {
+					atualizada = await pdvInvoke<ContaMesa>(
+						"atualizarStatusEntrega",
+						conta.id,
+						"producao",
+					);
+				}
+			} else {
+				for (const item of fila) {
+					atualizada = await pdvInvoke<ContaMesa>(
+						"adicionarItemNaMesa",
+						numeroMesa,
+						{
+							idproduto: item.idproduto,
+							descricao: item.descricao,
+							quantidade: item.quantidade,
+							precounitario: item.precounitario,
+						},
+						nomeCliente ?? undefined,
+					);
+				}
 			}
 			if (atualizada) {
 				setConta(atualizada);
@@ -422,7 +471,7 @@ export function MesaContaPage() {
 				return;
 			}
 			setMsg(result.fiscal.mensagem);
-			navigate("/", { replace: true });
+			navigate(modoEntrega ? "/delivery" : "/", { replace: true });
 		} catch (err) {
 			setPagando(false);
 			const texto =
@@ -624,11 +673,14 @@ export function MesaContaPage() {
 		[fila],
 	);
 	const identificacao = nomeCliente || "Sem identificação";
+	const tituloConta = modoEntrega
+		? `${conta?.modalidade === "retirada" ? "Retirada" : "Delivery"} #${conta?.senha_chamada ?? "—"}`
+		: `${rotulo.singular} ${numeroMesa}`;
 
 	return (
 		<div className="flex h-screen flex-col">
 			<Topbar
-				title={`${rotulo.singular} ${numeroMesa}`}
+				title={tituloConta}
 				subtitle={
 					conta
 						? identificacao
@@ -830,33 +882,92 @@ export function MesaContaPage() {
 						)}
 						{conta && (
 							<>
-								<div className="flex items-center justify-between gap-2 text-xs">
-									<span>Pessoas</span>
-									<Input
-										type="number"
-										min={1}
-										className="h-8 w-16"
-										value={conta.numeropessoas ?? 1}
-										disabled={!conta || loading}
-										onChange={(e) =>
-											void aplicarAjustes({
-												numeropessoas: Number(e.target.value),
-											})
-										}
-									/>
-								</div>
-								<label className="flex items-center justify-between text-xs">
-									<span>Taxa de serviço</span>
-									<input
-										type="checkbox"
-										className="size-4 accent-primary"
-										checked={conta.taxa_ativa === 1}
-										disabled={!conta || loading}
-										onChange={(e) =>
-											void aplicarAjustes({ taxaAtiva: e.target.checked })
-										}
-									/>
-								</label>
+								{modoEntrega ? (
+									<div className="space-y-1 text-xs text-muted-foreground">
+										{conta.telefone ? <div>Tel: {conta.telefone}</div> : null}
+										{conta.endereco ? (
+											<div>
+												{conta.endereco}
+												{conta.bairro ? ` — ${conta.bairro}` : ""}
+											</div>
+										) : null}
+										<div>
+											Status: {conta.status_entrega ?? "recebido"}
+											{conta.orderidintegracao
+												? ` · ${conta.orderidintegracao}`
+												: ""}
+										</div>
+										<div className="flex items-center justify-between gap-2 pt-1">
+											<span>Taxa entrega</span>
+											<div className="flex items-center gap-1">
+												<Input
+													className="h-8 w-20"
+													value={taxaEntregaEdit}
+													disabled={loading}
+													onChange={(e) => setTaxaEntregaEdit(e.target.value)}
+													onBlur={() => {
+														const n = Number(
+															taxaEntregaEdit.replace(",", "."),
+														);
+														if (!Number.isFinite(n) || !conta) return;
+														void pdvInvoke<ContaMesa>(
+															"aplicarTaxaEntrega",
+															conta.id,
+															n,
+														).then((c) => {
+															setConta(c);
+															setTaxaEntregaEdit(String(c.valorentrega ?? 0));
+														});
+													}}
+												/>
+											</div>
+										</div>
+										<Button
+											size="sm"
+											variant="outline"
+											className="w-full"
+											disabled={loading}
+											onClick={() => {
+												void pdvInvoke<ContaMesa>(
+													"atualizarStatusEntrega",
+													conta.id,
+												).then(setConta);
+											}}
+										>
+											Avançar status
+										</Button>
+									</div>
+								) : (
+									<>
+										<div className="flex items-center justify-between gap-2 text-xs">
+											<span>Pessoas</span>
+											<Input
+												type="number"
+												min={1}
+												className="h-8 w-16"
+												value={conta.numeropessoas ?? 1}
+												disabled={!conta || loading}
+												onChange={(e) =>
+													void aplicarAjustes({
+														numeropessoas: Number(e.target.value),
+													})
+												}
+											/>
+										</div>
+										<label className="flex items-center justify-between text-xs">
+											<span>Taxa de serviço</span>
+											<input
+												type="checkbox"
+												className="size-4 accent-primary"
+												checked={conta.taxa_ativa === 1}
+												disabled={!conta || loading}
+												onChange={(e) =>
+													void aplicarAjustes({ taxaAtiva: e.target.checked })
+												}
+											/>
+										</label>
+									</>
+								)}
 								{(conta.subtotal ?? 0) > 0 && (
 									<div className="flex justify-between text-xs text-muted-foreground">
 										<span>Subtotal</span>
@@ -879,6 +990,12 @@ export function MesaContaPage() {
 									<div className="flex justify-between text-xs text-muted-foreground">
 										<span>Couvert</span>
 										<span>{money(conta.valorcouvert ?? 0)}</span>
+									</div>
+								)}
+								{(conta.valorentrega ?? 0) > 0 && (
+									<div className="flex justify-between text-xs text-muted-foreground">
+										<span>Entrega</span>
+										<span>{money(conta.valorentrega ?? 0)}</span>
 									</div>
 								)}
 								{(conta.valorpago ?? 0) > 0 && (
@@ -932,7 +1049,9 @@ export function MesaContaPage() {
 							className="w-full"
 							onClick={() => tentarSair()}
 						>
-							Voltar às {rotulo.plural.toLowerCase()}
+							{modoEntrega
+								? "Voltar ao delivery"
+								: `Voltar às ${rotulo.plural.toLowerCase()}`}
 						</Button>
 						<Button
 							size="lg"
@@ -947,7 +1066,42 @@ export function MesaContaPage() {
 						>
 							Receber / Fechar conta
 						</Button>
-						<div className="grid grid-cols-2 gap-2">
+						{!modoEntrega ? (
+							<div className="grid grid-cols-2 gap-2">
+								<Button
+									variant="outline"
+									size="sm"
+									disabled={!itens.length || loading}
+									onClick={() => void preConta()}
+								>
+									Pré-conta
+								</Button>
+								<Button
+									variant="outline"
+									size="sm"
+									disabled={!itens.length || loading}
+									onClick={() => iniciarDivisao()}
+								>
+									Dividir
+								</Button>
+								<Button
+									variant="outline"
+									size="sm"
+									disabled={!itens.length || loading}
+									onClick={() => setDestinoAberto("transferir")}
+								>
+									Transferir
+								</Button>
+								<Button
+									variant="outline"
+									size="sm"
+									disabled={!itens.length || loading}
+									onClick={() => setDestinoAberto("juntar")}
+								>
+									Juntar
+								</Button>
+							</div>
+						) : (
 							<Button
 								variant="outline"
 								size="sm"
@@ -956,31 +1110,7 @@ export function MesaContaPage() {
 							>
 								Pré-conta
 							</Button>
-							<Button
-								variant="outline"
-								size="sm"
-								disabled={!itens.length || loading}
-								onClick={() => iniciarDivisao()}
-							>
-								Dividir
-							</Button>
-							<Button
-								variant="outline"
-								size="sm"
-								disabled={!itens.length || loading}
-								onClick={() => setDestinoAberto("transferir")}
-							>
-								Transferir
-							</Button>
-							<Button
-								variant="outline"
-								size="sm"
-								disabled={!itens.length || loading}
-								onClick={() => setDestinoAberto("juntar")}
-							>
-								Juntar
-							</Button>
-						</div>
+						)}
 						<div className="grid grid-cols-2 gap-2">
 							<Button
 								variant="outline"
@@ -990,14 +1120,16 @@ export function MesaContaPage() {
 							>
 								Desconto
 							</Button>
-							<Button
-								variant="outline"
-								size="sm"
-								disabled={!itensSel.length || loading}
-								onClick={() => setDestinoAberto("itens")}
-							>
-								Mover itens
-							</Button>
+							{!modoEntrega ? (
+								<Button
+									variant="outline"
+									size="sm"
+									disabled={!itensSel.length || loading}
+									onClick={() => setDestinoAberto("itens")}
+								>
+									Mover itens
+								</Button>
+							) : null}
 						</div>
 					</div>
 				</div>

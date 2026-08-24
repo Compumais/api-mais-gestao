@@ -71,6 +71,7 @@ const bodyAtualizarVendaSchema = z.object({
 		desconto: z.string().optional().nullable(),
 		valortaxaservico: z.string().optional().nullable(),
 		valorcouverartistico: z.string().optional().nullable(),
+		valorentrega: z.string().optional().nullable(),
 	}),
 });
 
@@ -180,6 +181,7 @@ export async function atualizarVendaNfce(
 				desconto: body.pagamentos.desconto ?? null,
 				valortaxaservico: body.pagamentos.valortaxaservico ?? null,
 				valorcouverartistico: body.pagamentos.valorcouverartistico ?? null,
+				valorentrega: body.pagamentos.valorentrega ?? null,
 			},
 		});
 

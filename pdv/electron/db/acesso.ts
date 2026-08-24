@@ -50,6 +50,8 @@ export const CHAVES_CONFIG_GOURMET = [
 	"qtd_mesas",
 	"taxa_servico_percentual",
 	"couvert_valor",
+	"taxa_entrega_padrao",
+	"bairros_entrega",
 	"senha_gerencial",
 	"senha_gerencial_hash",
 	"senha_gerencial_salt",

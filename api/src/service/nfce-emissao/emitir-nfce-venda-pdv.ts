@@ -368,10 +368,16 @@ export async function emitirNfceVendaPdvService({
 	);
 
 	const desconto = parseValorMonetario(pagamentos.desconto);
+	const valorentrega = parseValorMonetario(
+		(pagamentos as { valorentrega?: string | null }).valorentrega,
+	);
 	const totaisFiscais = calcularTotaisFiscaisEmissaoNfe(
 		crt,
 		itensNormalizados,
-		desconto > 0 ? { desconto } : {},
+		{
+			...(desconto > 0 ? { desconto } : {}),
+			...(valorentrega > 0 ? { frete: valorentrega } : {}),
+		},
 	);
 	const pagamentoNormalizado = normalizarPagamentoEmissaoNfe(pagamentoBruto, {
 		finNFe: 1,
