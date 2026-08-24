@@ -301,8 +301,10 @@ export function ConfigPage() {
 				emitir_nfce: config.emitir_nfce ?? "1",
 				tema: config.tema ?? "light",
 				pix_chave: config.pix_chave ?? "",
-				taxa_servico_percentual: config.taxa_servico_percentual ?? "10",
+												taxa_servico_percentual: config.taxa_servico_percentual ?? "10",
 				couvert_valor: config.couvert_valor ?? "0",
+				taxa_entrega_padrao: config.taxa_entrega_padrao ?? "0",
+				bairros_entrega: config.bairros_entrega ?? "[]",
 				senha_gerencial: config.senha_gerencial ?? "",
 				impressora_nome: config.impressora_nome ?? "",
 				impressora_tipo: config.impressora_tipo ?? "sistema",
@@ -911,6 +913,34 @@ export function ConfigPage() {
 													step="0.01"
 													value={config.couvert_valor ?? "0"}
 													onChange={(e) => set("couvert_valor", e.target.value)}
+												/>
+											</div>
+											<div className="space-y-2">
+												<Label htmlFor="taxa_entrega_padrao">
+													Taxa de entrega padrão
+												</Label>
+												<Input
+													id="taxa_entrega_padrao"
+													type="number"
+													min={0}
+													step="0.01"
+													value={config.taxa_entrega_padrao ?? "0"}
+													onChange={(e) =>
+														set("taxa_entrega_padrao", e.target.value)
+													}
+												/>
+											</div>
+											<div className="space-y-2 sm:col-span-2">
+												<Label htmlFor="bairros_entrega">
+													Bairros / taxas (JSON)
+												</Label>
+												<Input
+													id="bairros_entrega"
+													value={config.bairros_entrega ?? "[]"}
+													onChange={(e) =>
+														set("bairros_entrega", e.target.value)
+													}
+													placeholder='[{"bairro":"Centro","taxa":8}]'
 												/>
 											</div>
 											<div className="space-y-2 sm:col-span-2">

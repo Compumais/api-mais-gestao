@@ -121,8 +121,32 @@ CREATE TABLE IF NOT EXISTS conta_mesa (
 	valortaxaservico DOUBLE PRECISION NOT NULL DEFAULT 0,
 	valorcouvert DOUBLE PRECISION NOT NULL DEFAULT 0,
 	taxa_ativa INTEGER NOT NULL DEFAULT 0,
+	modalidade TEXT NOT NULL DEFAULT 'mesa',
+	telefone TEXT,
+	endereco TEXT,
+	bairro TEXT,
+	complemento TEXT,
+	referencia TEXT,
+	valorentrega DOUBLE PRECISION NOT NULL DEFAULT 0,
+	status_entrega TEXT,
+	senha_chamada TEXT,
+	idcliente TEXT,
+	orderidintegracao TEXT,
+	obs TEXT,
 	idremoto TEXT,
 	sync_status TEXT NOT NULL DEFAULT 'pendente'
+);
+
+CREATE TABLE IF NOT EXISTS cliente_pdv (
+	id TEXT PRIMARY KEY NOT NULL,
+	nome TEXT NOT NULL,
+	telefone TEXT,
+	cnpjcpf TEXT,
+	endereco TEXT,
+	bairro TEXT,
+	complemento TEXT,
+	referencia TEXT,
+	atualizadoem TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS item_conta (
@@ -169,6 +193,7 @@ CREATE TABLE IF NOT EXISTS venda (
 	valordesconto DOUBLE PRECISION NOT NULL DEFAULT 0,
 	valortaxaservico DOUBLE PRECISION NOT NULL DEFAULT 0,
 	valorcouvert DOUBLE PRECISION NOT NULL DEFAULT 0,
+	valorentrega DOUBLE PRECISION NOT NULL DEFAULT 0,
 	criadoem TEXT NOT NULL,
 	idremoto TEXT,
 	sync_status TEXT NOT NULL DEFAULT 'pendente',

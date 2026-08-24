@@ -296,7 +296,9 @@ async function despachar(
 	if (
 		path === "/pos/mesas" ||
 		path.startsWith("/pos/mesas/") ||
-		path.startsWith("/pos/contas/")
+		path.startsWith("/pos/contas/") ||
+		path === "/pos/delivery" ||
+		path.startsWith("/pos/delivery/")
 	) {
 		const sessao = await obterSessao();
 		if (!sessaoTemGourmet(sessao.modulogourmet)) {
@@ -626,6 +628,154 @@ async function despachar(
 
 	if (method === "POST" && path === "/pos/pedidos/limpar-fila") {
 		return { status: 200, body: await localApi.limparFilaPedidos() };
+	}
+
+	if (method === "GET" && path === "/pos/delivery") {
+		const statusFiltro =
+			body.status != null ? String(body.status) : undefined;
+		return {
+			status: 200,
+			body: { data: await localApi.listarPedidosEntrega(statusFiltro) },
+		};
+	}
+
+	if (method === "POST" && path === "/pos/delivery") {
+		const modalidadeRaw = String(body.modalidade ?? "delivery");
+		const modalidade =
+			modalidadeRaw === "retirada" ? "retirada" : "delivery";
+		return {
+			status: 200,
+			body: await localApi.abrirPedidoEntrega({
+				modalidade,
+				nomecliente:
+					body.nomecliente != null ? String(body.nomecliente) : null,
+				telefone: body.telefone != null ? String(body.telefone) : null,
+				endereco: body.endereco != null ? String(body.endereco) : null,
+				bairro: body.bairro != null ? String(body.bairro) : null,
+				complemento:
+					body.complemento != null ? String(body.complemento) : null,
+				referencia:
+					body.referencia != null ? String(body.referencia) : null,
+				valorentrega:
+					body.valorentrega != null ? Number(body.valorentrega) : null,
+				idcliente: body.idcliente != null ? String(body.idcliente) : null,
+				obs: body.obs != null ? String(body.obs) : null,
+			}),
+		};
+	}
+
+	if (method === "POST" && path === "/pos/delivery/ingest") {
+		const contamesa = (body.contamesa ?? body) as Record<string, unknown>;
+		const itensRaw = Array.isArray(body.itens) ? body.itens : [];
+		const protocol = String(
+			body.protocol ??
+				contamesa.orderidintegracao ??
+				body.orderidintegracao ??
+				"",
+		);
+		const modalidadeRaw = String(
+			body.modalidade ??
+				(Number(contamesa.retiradanobalcao) === 1 ? "retirada" : "delivery"),
+		);
+		const itens = itensRaw.map((item) => {
+			const i = item as Record<string, unknown>;
+			return {
+				idproduto: i.idproduto != null ? String(i.idproduto) : null,
+				ean: i.ean != null ? String(i.ean) : null,
+				codigo: i.codigo != null ? String(i.codigo) : null,
+				codigoproduto:
+					i.codigoproduto != null ? String(i.codigoproduto) : null,
+				nomeproduto: i.nomeproduto != null ? String(i.nomeproduto) : null,
+				quantidade: Number(i.quantidade ?? 1),
+				precounitario:
+					i.precounitario != null ? Number(i.precounitario) : null,
+				observacao: i.observacao != null ? String(i.observacao) : null,
+			};
+		});
+		const result = await localApi.ingestPedidoDelivery({
+			protocol,
+			modalidade: modalidadeRaw === "retirada" ? "retirada" : "delivery",
+			nomecliente: String(
+				contamesa.nomecliente ?? contamesa.nome ?? body.nomecliente ?? "",
+			),
+			telefone:
+				contamesa.telefone != null
+					? String(contamesa.telefone)
+					: body.telefone != null
+						? String(body.telefone)
+						: null,
+			endereco:
+				contamesa.endereco != null ? String(contamesa.endereco) : null,
+			bairro:
+				contamesa.enderecobairro != null
+					? String(contamesa.enderecobairro)
+					: contamesa.bairro != null
+						? String(contamesa.bairro)
+						: null,
+			complemento:
+				contamesa.enderecocomplemento != null
+					? String(contamesa.enderecocomplemento)
+					: contamesa.complemento != null
+						? String(contamesa.complemento)
+						: null,
+			referencia:
+				contamesa.enderecoreferencia != null
+					? String(contamesa.enderecoreferencia)
+					: null,
+			documento:
+				contamesa.documento != null ? String(contamesa.documento) : null,
+			valorentrega:
+				contamesa.valorentrega != null
+					? Number(contamesa.valorentrega)
+					: body.valorentrega != null
+						? Number(body.valorentrega)
+						: null,
+			obs: contamesa.obs != null ? String(contamesa.obs) : null,
+			itens,
+		});
+		return {
+			status: 200,
+			body: {
+				action: result.action,
+				idconta: result.conta.id,
+				conta: result.conta,
+				maisGestaoContaId: result.conta.id,
+				maisGestaoAction: result.action,
+				protocol,
+			},
+		};
+	}
+
+	const deliveryIdMatch = path.match(/^\/pos\/delivery\/([^/]+)$/);
+	if (method === "GET" && deliveryIdMatch) {
+		return {
+			status: 200,
+			body: await localApi.obterContaMesa(deliveryIdMatch[1]),
+		};
+	}
+
+	const deliveryStatusMatch = path.match(
+		/^\/pos\/delivery\/([^/]+)\/status$/,
+	);
+	if (
+		(method === "PATCH" || method === "POST") &&
+		deliveryStatusMatch
+	) {
+		const status =
+			body.status != null
+				? (String(body.status) as
+						| "recebido"
+						| "producao"
+						| "saiu"
+						| "entregue")
+				: null;
+		return {
+			status: 200,
+			body: await localApi.atualizarStatusEntrega(
+				deliveryStatusMatch[1],
+				status,
+			),
+		};
 	}
 
 	const pedidoEntregueMatch = path.match(/^\/pos\/pedidos\/([^/]+)\/entregue$/);

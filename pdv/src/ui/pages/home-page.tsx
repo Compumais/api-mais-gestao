@@ -1,4 +1,5 @@
 import {
+	Bike,
 	Circle,
 	Clock3,
 	Receipt,
@@ -416,6 +417,20 @@ export function HomePage() {
 						}}
 					/>
 					<SideButton
+						label="Delivery"
+						icon={Bike}
+						onClick={() => {
+							if (bloqueado) {
+								setMsg(
+									status?.principalErro ??
+										"PDV principal offline. Operação bloqueada.",
+								);
+								return;
+							}
+							navigate("/delivery");
+						}}
+					/>
+					<SideButton
 						label="Vendas"
 						icon={Receipt}
 						onClick={() => navigate("/vendas")}
@@ -560,6 +575,14 @@ export function HomePage() {
 						hotkey: "F2",
 						variant: "default",
 						onClick: () => navigate("/balcao"),
+						disabled: bloqueado,
+					},
+					{
+						key: "delivery",
+						label: "Delivery",
+						hotkey: "F6",
+						variant: "default",
+						onClick: () => navigate("/delivery"),
 						disabled: bloqueado,
 					},
 					{

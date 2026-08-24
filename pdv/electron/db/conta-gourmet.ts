@@ -9,6 +9,7 @@ export type AjustesContaGourmet = {
 	percentualTaxa: number;
 	couvertUnitario: number;
 	desconto: number;
+	valorentrega?: number;
 };
 
 export type TotaisContaGourmet = {
@@ -16,6 +17,7 @@ export type TotaisContaGourmet = {
 	valordesconto: number;
 	valortaxaservico: number;
 	valorcouvert: number;
+	valorentrega: number;
 	valortotal: number;
 	numeropessoas: number;
 };
@@ -26,6 +28,7 @@ export type FatiaItensGourmet = {
 	desconto: number;
 	taxa: number;
 	couvert: number;
+	entrega: number;
 	total: number;
 };
 
@@ -61,14 +64,21 @@ export function recalcularTotaisConta(
 	const valorcouvert = arredondarMoeda(
 		Math.max(0, Number(ajustes.couvertUnitario) || 0) * numeropessoas,
 	);
+	const valorentrega = arredondarMoeda(
+		Math.max(0, Number(ajustes.valorentrega) || 0),
+	);
 	const valortotal = arredondarMoeda(
-		Math.max(0, subtotal - desconto + valortaxaservico + valorcouvert),
+		Math.max(
+			0,
+			subtotal - desconto + valortaxaservico + valorcouvert + valorentrega,
+		),
 	);
 	return {
 		subtotal,
 		valordesconto: desconto,
 		valortaxaservico,
 		valorcouvert,
+		valorentrega,
 		valortotal,
 		numeropessoas,
 	};
@@ -104,17 +114,24 @@ export function partirPorValor(total: number, valores: number[]): number[] {
 export function ratearAjustes(
 	subtotalFatia: number,
 	totais: TotaisContaGourmet,
-): { desconto: number; taxa: number; couvert: number; total: number } {
+): {
+	desconto: number;
+	taxa: number;
+	couvert: number;
+	entrega: number;
+	total: number;
+} {
 	const fatia = arredondarMoeda(subtotalFatia);
 	if (totais.subtotal <= 0) {
-		return { desconto: 0, taxa: 0, couvert: 0, total: 0 };
+		return { desconto: 0, taxa: 0, couvert: 0, entrega: 0, total: 0 };
 	}
 	const r = fatia / totais.subtotal;
 	const desconto = arredondarMoeda(totais.valordesconto * r);
 	const taxa = arredondarMoeda(totais.valortaxaservico * r);
 	const couvert = arredondarMoeda(totais.valorcouvert * r);
-	const total = arredondarMoeda(fatia - desconto + taxa + couvert);
-	return { desconto, taxa, couvert, total };
+	const entrega = arredondarMoeda((totais.valorentrega || 0) * r);
+	const total = arredondarMoeda(fatia - desconto + taxa + couvert + entrega);
+	return { desconto, taxa, couvert, entrega, total };
 }
 
 export function partirPorItens(
@@ -131,6 +148,7 @@ export function partirPorItens(
 	let accDesconto = 0;
 	let accTaxa = 0;
 	let accCouvert = 0;
+	let accEntrega = 0;
 	let accTotal = 0;
 
 	for (let i = 0; i < grupos.length; i += 1) {
@@ -155,13 +173,25 @@ export function partirPorItens(
 			const desconto = arredondarMoeda(totais.valordesconto - accDesconto);
 			const taxa = arredondarMoeda(totais.valortaxaservico - accTaxa);
 			const couvert = arredondarMoeda(totais.valorcouvert - accCouvert);
+			const entrega = arredondarMoeda(
+				(totais.valorentrega || 0) - accEntrega,
+			);
 			const total = arredondarMoeda(totais.valortotal - accTotal);
-			fatias.push({ ids, subtotal, desconto, taxa, couvert, total });
+			fatias.push({
+				ids,
+				subtotal,
+				desconto,
+				taxa,
+				couvert,
+				entrega,
+				total,
+			});
 		} else {
 			const rateio = ratearAjustes(subtotal, totais);
 			accDesconto = arredondarMoeda(accDesconto + rateio.desconto);
 			accTaxa = arredondarMoeda(accTaxa + rateio.taxa);
 			accCouvert = arredondarMoeda(accCouvert + rateio.couvert);
+			accEntrega = arredondarMoeda(accEntrega + rateio.entrega);
 			accTotal = arredondarMoeda(accTotal + rateio.total);
 			fatias.push({
 				ids,
@@ -169,6 +199,7 @@ export function partirPorItens(
 				desconto: rateio.desconto,
 				taxa: rateio.taxa,
 				couvert: rateio.couvert,
+				entrega: rateio.entrega,
 				total: rateio.total,
 			});
 		}

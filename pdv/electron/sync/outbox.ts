@@ -659,6 +659,7 @@ async function baixarEstoqueVendaOutbox(params: {
 				desconto: Number(params.payload.valordesconto ?? 0),
 				valortaxaservico: Number(params.payload.valortaxaservico ?? 0),
 				valorcouverartistico: Number(params.payload.valorcouvert ?? 0),
+				valorentrega: Number(params.payload.valorentrega ?? 0),
 			},
 			emitirNfce: emitir,
 		});
