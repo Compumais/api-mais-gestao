@@ -8,9 +8,9 @@ const atualizarTipoProblemaParamsSchema = z.object({
 });
 
 const atualizarTipoProblemaBodySchema = z.object({
-	codigo: z.string().max(6).optional(),
+	codigo: z.string().max(6).optional().nullable(),
 	descricao: z.string().max(50).optional(),
-	inativo: z.number().int().optional()
+	inativo: z.coerce.number().int().min(0).max(1).optional(),
 });
 
 export async function atualizarTipoProblema(request: FastifyRequest, reply: FastifyReply) {
