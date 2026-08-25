@@ -26,9 +26,15 @@ function hasSessionCookie(request: NextRequest) {
 	});
 }
 
+function isPublicPath(pathname: string) {
+	if (PUBLIC_ROUTES.has(pathname)) return true;
+	if (pathname.startsWith("/cotacao-compra/")) return true;
+	return false;
+}
+
 export function proxy(request: NextRequest) {
 	const { pathname } = request.nextUrl;
-	const isPublicRoute = PUBLIC_ROUTES.has(pathname);
+	const isPublicRoute = isPublicPath(pathname);
 	const isAuthRoute = AUTH_ROUTES.has(pathname);
 	const isAuthenticated = hasSessionCookie(request);
 
