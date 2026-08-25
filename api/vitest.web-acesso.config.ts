@@ -9,7 +9,7 @@ export default defineConfig({
 	test: {
 		environment: "node",
 		globals: true,
-		include: ["src/lib/acesso-navegacao.test.ts"],
+		include: ["src/lib/*.test.ts"],
 		root: raizWeb,
 	},
 	resolve: {
