@@ -38,6 +38,15 @@ const criarOrdemServicoBodySchema = z.object({
 	...extrasSchema,
 });
 
+function isPostgresForeignKeyError(error: unknown): boolean {
+	return (
+		!!error &&
+		typeof error === "object" &&
+		"code" in error &&
+		error.code === "23503"
+	);
+}
+
 export async function criarOrdemServico(
 	request: FastifyRequest,
 	reply: FastifyReply,
@@ -65,6 +74,12 @@ export async function criarOrdemServico(
 				error: "Erro de validação",
 				code: "VALIDATION_ERROR",
 				details: error.issues,
+			});
+		}
+		if (isPostgresForeignKeyError(error)) {
+			return reply.status(400).send({
+				error: "Referência inválida ao criar ordem de serviço",
+				code: "FOREIGN_KEY_VIOLATION",
 			});
 		}
 		return reply.status(httpErroInterno().status).send(httpErroInterno());
