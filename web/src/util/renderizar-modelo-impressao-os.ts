@@ -332,8 +332,11 @@ export const CSS_MODELO_IMPRESSAO_OS = `
 `;
 
 export function imprimirHtmlModeloOs(htmlInterno: string, titulo: string) {
-	const janela = window.open("", "_blank", "noopener,noreferrer,width=900,height=700");
+	// Não usar noopener: com noopener o navegador retorna null e impede document.write,
+	// mesmo com pop-ups liberados.
+	const janela = window.open("", "_blank", "width=900,height=700");
 	if (!janela) return false;
+	janela.opener = null;
 	janela.document.write(`<!doctype html>
 <html lang="pt-BR">
 <head>
