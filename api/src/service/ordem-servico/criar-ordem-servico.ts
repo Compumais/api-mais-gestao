@@ -4,7 +4,10 @@ import type {
 	NovoOrdemServico,
 	OrdemServico,
 } from "@/model/ordem-servico-model.js";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import {
+	buscarEntidadePorId,
+	verificarUsuarioPertenceEmpresa,
+} from "@/repositories/entidade-repositories.js";
 import { criarOrdemServicoEvento } from "@/repositories/ordem-servico-evento-repositories.js";
 import {
 	criarOrdemServico,
@@ -69,6 +72,13 @@ export async function criarOrdemServicoService({
 	);
 	if (erroUsuarios) {
 		return httpBadRequest(erroUsuarios);
+	}
+
+	if (dadosOrdemServico.idcliente) {
+		const cliente = await buscarEntidadePorId(dadosOrdemServico.idcliente);
+		if (!cliente || cliente.idempresa !== dadosOrdemServico.idempresa) {
+			return httpBadRequest("Cliente inválido ou não pertence à empresa");
+		}
 	}
 
 	const tipoAberta = await buscarTipoEventoPadrao(

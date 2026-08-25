@@ -1,7 +1,8 @@
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { buscarUsuarioPorId } from "@/repositories/usuarios-repositories.js";
 
 /**
- * Valida se o usuário informado (quando presente) pertence à empresa.
+ * Valida se o usuário informado (quando presente) existe e pertence à empresa.
  * Retorna mensagem de erro ou null quando válido.
  */
 export async function validarUsuarioDaEmpresa(
@@ -10,6 +11,11 @@ export async function validarUsuarioDaEmpresa(
 	rotuloCampo = "Usuário",
 ): Promise<string | null> {
 	if (!idusuario) return null;
+
+	const usuario = await buscarUsuarioPorId(idusuario);
+	if (!usuario) {
+		return `${rotuloCampo} inválido ou inexistente`;
+	}
 
 	const pertence = await verificarUsuarioPertenceEmpresa(idusuario, idempresa);
 	if (!pertence) {
