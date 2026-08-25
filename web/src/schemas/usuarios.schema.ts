@@ -17,14 +17,14 @@ export const criarUsuarioSchema = z.object({
 		.min(1, "Nome é obrigatório")
 		.min(3, "Nome deve ter no mínimo 3 caracteres")
 		.max(100, "Nome deve ter no máximo 100 caracteres"),
-	email: z.string().email("Email inválido").min(1, "Email é obrigatório"),
+	email: z.email("Email inválido"),
 	password: z
 		.string()
 		.min(6, "Senha deve ter no mínimo 6 caracteres")
 		.max(100, "Senha deve ter no máximo 100 caracteres"),
 	perfil: perfilUsuarioSchema,
-	empresasIds: z.array(z.string().uuid()).optional(),
-	idempresa: z.string().uuid("ID da empresa inválido"),
+	empresasIds: z.array(z.uuid()).optional(),
+	idempresa: z.uuid("ID da empresa inválido"),
 });
 
 export const atualizarUsuarioSchema = z.object({
@@ -32,11 +32,12 @@ export const atualizarUsuarioSchema = z.object({
 		.string()
 		.min(1, "Nome é obrigatório")
 		.min(3, "Nome deve ter no mínimo 3 caracteres")
-		.max(100, "Nome deve ter no máximo 100 caracteres")
-		.optional(),
-	perfil: perfilUsuarioSchema.optional(),
-	empresasIds: z.array(z.string().uuid()).optional(),
-	idempresa: z.string().uuid("ID da empresa inválido"),
+		.max(100, "Nome deve ter no máximo 100 caracteres"),
+	email: z.string().optional(),
+	password: z.string().optional(),
+	perfil: perfilUsuarioSchema,
+	empresasIds: z.array(z.uuid()).optional(),
+	idempresa: z.uuid("ID da empresa inválido"),
 });
 
 export type CriarUsuarioFormData = z.infer<typeof criarUsuarioSchema>;

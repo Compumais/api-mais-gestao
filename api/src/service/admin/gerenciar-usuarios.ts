@@ -9,14 +9,15 @@ import {
 	emailJaUtilizado,
 	inativarSessoesUsuario,
 } from "@/repositories/usuarios-repositories.js";
-import * as schema from "../../../drizzle/schema.js";
+import { hashSenha } from "@/util/hash-senha.js";
 import {
+	httpErroInterno,
 	httpNaoEncontrado,
 	httpOk,
 	httpRecursoExistente,
 } from "@/util/http-util.js";
-import { hashSenha } from "@/util/hash-senha.js";
 import { toPerfilArray } from "@/util/usuario-perfil.js";
+import * as schema from "../../../drizzle/schema.js";
 
 export async function atualizarUsuarioAdminService({
 	id,
@@ -38,13 +39,18 @@ export async function atualizarUsuarioAdminService({
 		return httpRecursoExistente();
 	}
 
-	const atualizado = await atualizarUsuarioAdmin(id, {
-		...(nome !== undefined && { nome }),
-		...(email !== undefined && { email }),
-		...(perfil !== undefined && { perfil: toPerfilArray(perfil) }),
-	});
+	try {
+		const atualizado = await atualizarUsuarioAdmin(id, {
+			...(nome !== undefined && { nome }),
+			...(email !== undefined && { email }),
+			...(perfil !== undefined && { perfil: toPerfilArray(perfil) }),
+		});
 
-	return httpOk(atualizado);
+		return httpOk(atualizado);
+	} catch (error) {
+		console.error("Erro ao atualizar usuário admin:", error);
+		return httpErroInterno();
+	}
 }
 
 export async function alterarSenhaUsuarioAdminService({
