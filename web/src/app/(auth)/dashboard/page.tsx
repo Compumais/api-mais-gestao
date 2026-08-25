@@ -2,6 +2,21 @@
 
 import * as React from "react";
 import { Suspense } from "react";
+import { DashboardFiltersBar } from "@/components/dashboard/dashboard-filters-bar";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import {
+	DashboardFiltersProvider,
+	useDashboardFilters,
+} from "@/hooks/dashboard/dashboard-filters-context";
+import { useDashboardFiltroOpcoes } from "@/hooks/dashboard/use-dashboard-filtro-opcoes";
+import { useEntitlements } from "@/hooks/use-plano";
+import {
+	DASHBOARD_TAB_LABELS,
+	DASHBOARD_TABS_BASICAS,
+	DASHBOARD_TABS_COMPLETAS,
+	type DashboardTab,
+} from "@/lib/dashboard-periodo";
+import { PageContainer } from "../components/page-container";
 import { AlertasSection } from "./components/alertas-section";
 import { ClientesSection } from "./components/clientes-section";
 import { ComparativoSection } from "./components/comparativo-section";
@@ -13,25 +28,13 @@ import { MetasSection } from "./components/metas-section";
 import { RentabilidadeSection } from "./components/rentabilidade-section";
 import { VendasSection } from "./components/vendas-section";
 import { VisaoGeralSection } from "./components/visao-geral-section";
-import { DashboardFiltersBar } from "@/components/dashboard/dashboard-filters-bar";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import {
-	DashboardFiltersProvider,
-	useDashboardFilters,
-} from "@/hooks/dashboard/dashboard-filters-context";
-import { useEntitlements } from "@/hooks/use-plano";
-import {
-	DASHBOARD_TAB_LABELS,
-	DASHBOARD_TABS_BASICAS,
-	DASHBOARD_TABS_COMPLETAS,
-	type DashboardTab,
-} from "@/lib/dashboard-periodo";
-import { PageContainer } from "../components/page-container";
 
 const FEATURE_DASHBOARD_COMPLETO = "dashboard_completo";
 
 function DashboardShell() {
 	const { tab, setTab } = useDashboardFilters();
+	const { vendedores, categorias, carregandoOpcoes } =
+		useDashboardFiltroOpcoes();
 	const { hasFeature, isLoading: loadingPlano } = useEntitlements();
 	const temCompleto = hasFeature(FEATURE_DASHBOARD_COMPLETO);
 
@@ -59,7 +62,11 @@ function DashboardShell() {
 	}, [temCompleto, loadingPlano]);
 
 	React.useEffect(() => {
-		if (!loadingPlano && !temCompleto && DASHBOARD_TABS_COMPLETAS.includes(tab)) {
+		if (
+			!loadingPlano &&
+			!temCompleto &&
+			DASHBOARD_TABS_COMPLETAS.includes(tab)
+		) {
 			setTab("visao-geral");
 		}
 	}, [loadingPlano, temCompleto, tab, setTab]);
@@ -71,11 +78,16 @@ function DashboardShell() {
 					<div className="mb-4">
 						<h1 className="text-xl font-semibold tracking-tight">Dashboard</h1>
 						<p className="text-sm text-muted-foreground">
-							Gestão e tomada de decisão — visão executiva com drill-down por área
+							Gestão e tomada de decisão — visão executiva com drill-down por
+							área
 						</p>
 					</div>
 
-					<DashboardFiltersBar />
+					<DashboardFiltersBar
+						vendedores={vendedores}
+						categorias={categorias}
+						carregandoOpcoes={carregandoOpcoes}
+					/>
 
 					<ToggleGroup
 						type="single"
