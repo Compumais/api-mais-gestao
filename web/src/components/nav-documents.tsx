@@ -3,6 +3,7 @@
 import type { Icon } from "@tabler/icons-react";
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { BotaoFixarNav } from "@/components/nav-botao-fixar";
 import {
 	Collapsible,
@@ -13,7 +14,6 @@ import {
 	SidebarGroup,
 	SidebarGroupLabel,
 	SidebarMenu,
-	SidebarMenuAction,
 	SidebarMenuButton,
 	SidebarMenuItem,
 	SidebarMenuSub,
@@ -36,6 +36,17 @@ function isLeafLink(item: NavDocumentsItem): boolean {
 	return Boolean(item.url) && !item.items?.length;
 }
 
+function rotaEstaAtiva(pathname: string, url: string): boolean {
+	const path = url.split("?")[0];
+	if (!path || path === "#") return false;
+	return pathname === path || pathname.startsWith(`${path}/`);
+}
+
+function itemTemRotaAtiva(item: NavDocumentsItem, pathname: string): boolean {
+	if (item.url && rotaEstaAtiva(pathname, item.url)) return true;
+	return Boolean(item.items?.some((sub) => rotaEstaAtiva(pathname, sub.url)));
+}
+
 export function NavDocuments({
 	label,
 	items,
@@ -43,13 +54,20 @@ export function NavDocuments({
 	label: string;
 	items: NavDocumentsItem[];
 }) {
+	const pathname = usePathname();
+	const ocultarRotulo =
+		items.length === 1 &&
+		items[0]?.title === label &&
+		Boolean(items[0]?.items?.length);
+
 	return (
 		<SidebarGroup>
-			<SidebarGroupLabel>{label}</SidebarGroupLabel>
+			{ocultarRotulo ? null : <SidebarGroupLabel>{label}</SidebarGroupLabel>}
 			<SidebarMenu>
 				{items.map((item) => {
 					if (isLeafLink(item) && item.url) {
 						const isPlaceholder = item.url === "#";
+						const ativo = rotaEstaAtiva(pathname, item.url);
 						return (
 							<SidebarMenuItem key={item.title}>
 								{isPlaceholder ? (
@@ -59,7 +77,11 @@ export function NavDocuments({
 									</SidebarMenuButton>
 								) : (
 									<>
-										<SidebarMenuButton tooltip={item.title} asChild>
+										<SidebarMenuButton
+											tooltip={item.title}
+											isActive={ativo}
+											asChild
+										>
 											<Link href={item.url}>
 												{item.icon ? <item.icon /> : null}
 												<span>{item.title}</span>
@@ -72,42 +94,58 @@ export function NavDocuments({
 						);
 					}
 
+					const aberto = item.isActive || itemTemRotaAtiva(item, pathname);
+
 					return (
-						<Collapsible key={item.title} asChild defaultOpen={item.isActive}>
+						<Collapsible
+							key={item.title}
+							asChild
+							defaultOpen={aberto}
+							className="group/collapsible"
+						>
 							<SidebarMenuItem>
-								<SidebarMenuButton asChild tooltip={item.title}>
-									<div className="flex items-center gap-2">
+								<CollapsibleTrigger asChild>
+									<SidebarMenuButton tooltip={item.title} isActive={aberto}>
 										{item.icon ? <item.icon /> : null}
 										<span>{item.title}</span>
-									</div>
-								</SidebarMenuButton>
+										<ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+									</SidebarMenuButton>
+								</CollapsibleTrigger>
 								{item.items?.length ? (
-									<>
-										<CollapsibleTrigger asChild>
-											<SidebarMenuAction className="data-[state=open]:rotate-90">
-												<ChevronRight />
-												<span className="sr-only">Toggle</span>
-											</SidebarMenuAction>
-										</CollapsibleTrigger>
-										<CollapsibleContent>
-											<SidebarMenuSub>
-												{item.items.map((subItem) => (
+									<CollapsibleContent>
+										<SidebarMenuSub>
+											{item.items.map((subItem) => {
+												const isPlaceholder = subItem.url === "#";
+												const ativo = rotaEstaAtiva(pathname, subItem.url);
+												return (
 													<SidebarMenuSubItem key={subItem.title}>
-														<SidebarMenuSubButton asChild className="pr-7">
-															<Link href={subItem.url}>
+														{isPlaceholder ? (
+															<SidebarMenuSubButton aria-disabled>
 																<span>{subItem.title}</span>
-															</Link>
-														</SidebarMenuSubButton>
-														<BotaoFixarNav
-															url={subItem.url}
-															title={subItem.title}
-															variante="subitem"
-														/>
+															</SidebarMenuSubButton>
+														) : (
+															<>
+																<SidebarMenuSubButton
+																	asChild
+																	isActive={ativo}
+																	className="pr-7"
+																>
+																	<Link href={subItem.url}>
+																		<span>{subItem.title}</span>
+																	</Link>
+																</SidebarMenuSubButton>
+																<BotaoFixarNav
+																	url={subItem.url}
+																	title={subItem.title}
+																	variante="subitem"
+																/>
+															</>
+														)}
 													</SidebarMenuSubItem>
-												))}
-											</SidebarMenuSub>
-										</CollapsibleContent>
-									</>
+												);
+											})}
+										</SidebarMenuSub>
+									</CollapsibleContent>
 								) : null}
 							</SidebarMenuItem>
 						</Collapsible>

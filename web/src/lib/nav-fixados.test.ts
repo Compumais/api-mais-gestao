@@ -21,14 +21,23 @@ describe("nav-fixados", () => {
 						{ title: "Conciliação", url: "#" },
 					],
 				},
+				{
+					title: "Financeiro",
+					items: [
+						{ title: "Contas a receber", url: "/contas-receber" },
+						{ title: "Conciliação", url: "#" },
+					],
+				},
 			],
 		]);
 
 		expect(itens.map((item) => item.url)).toEqual([
 			"/dashboard",
 			"/nota-fiscal-venda",
+			"/contas-receber",
 		]);
 		expect(itens[1]?.title).toBe("Nota fiscal de produto");
+		expect(itens[2]?.title).toBe("Contas a receber");
 	});
 
 	it("resolve só atalhos ainda acessíveis, na ordem fixada", () => {
