@@ -4,6 +4,7 @@ import type { Usuario } from "@/model/usuario-model.js";
 import { executarComControleAcessoPrivilegiado } from "@/repositories/controle-acesso-contexto.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { buscarUsuarioPorId } from "@/repositories/usuarios-repositories.js";
+import { alterarSenhaUsuarioService } from "@/service/usuarios/alterar-senha-usuario.js";
 import {
 	httpErroInterno,
 	httpNaoAutorizado,
@@ -25,6 +26,7 @@ type AtualizarUsuarioParametros = {
 	nome?: string | undefined;
 	perfil?: string | string[] | undefined;
 	empresasIds?: string[]; // IDs das empresas que o usuário pode ver
+	password?: string | undefined;
 };
 
 export async function atualizarUsuarioService({
@@ -34,6 +36,7 @@ export async function atualizarUsuarioService({
 	nome,
 	perfil,
 	empresasIds,
+	password,
 }: AtualizarUsuarioParametros): Promise<HttpResponse<Usuario | null>> {
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
 		idusuario,
@@ -122,6 +125,16 @@ export async function atualizarUsuarioService({
 			!perfisPersistidosIguais(usuario.perfil, perfilArray)
 		) {
 			return httpErroInterno();
+		}
+
+		if (password) {
+			const senha = await alterarSenhaUsuarioService({
+				id: idUsuarioAtualizar,
+				novaSenha: password,
+			});
+			if (!senha.success) {
+				return senha;
+			}
 		}
 
 		return httpOk<Usuario>(usuario);

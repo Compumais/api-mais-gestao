@@ -98,6 +98,9 @@ export default function SuperUsuariosPage() {
 			setNovaSenha("");
 			toast.success("Senha alterada");
 		},
+		onError: (error: Error) => {
+			toast.error(error.message || "Erro ao alterar senha");
+		},
 	});
 
 	const inativarMutation = useMutation({
@@ -231,12 +234,14 @@ export default function SuperUsuariosPage() {
 								<Label>E-mail</Label>
 								<Input
 									defaultValue={selecionado.email}
-									onBlur={(e) =>
+									onBlur={(e) => {
+										const email = e.target.value.trim();
+										if (!email || email === selecionado.email) return;
 										atualizarMutation.mutate({
 											id: selecionado.id,
-											dados: { email: e.target.value },
-										})
-									}
+											dados: { email },
+										});
+									}}
 								/>
 							</div>
 							<div className="space-y-2">

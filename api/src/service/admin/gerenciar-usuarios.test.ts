@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as usuariosRepositories from "@/repositories/usuarios-repositories.js";
-import { atualizarUsuarioAdminService } from "./gerenciar-usuarios.js";
+import {
+	alterarSenhaUsuarioAdminService,
+	atualizarUsuarioAdminService,
+} from "./gerenciar-usuarios.js";
 
 vi.mock("@/lib/auth.js", () => ({
 	auth: { api: { signUpEmail: vi.fn() } },
@@ -58,5 +61,35 @@ describe("atualizarUsuarioAdminService", () => {
 
 		expect(resultado.success).toBe(false);
 		expect(resultado.status).toBe(500);
+	});
+});
+
+describe("alterarSenhaUsuarioAdminService", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		vi.mocked(usuariosRepositories.buscarUsuarioPorId).mockResolvedValue({
+			id: "user-1",
+			nome: "Ana",
+			email: "ana@empresa.com",
+			perfil: ["usuario"],
+		} as never);
+		vi.mocked(
+			usuariosRepositories.atualizarOuCriarSenhaContaUsuario,
+		).mockResolvedValue(undefined);
+		vi.mocked(usuariosRepositories.inativarSessoesUsuario).mockResolvedValue(
+			undefined,
+		);
+	});
+
+	it("altera senha de usuário com id do Better Auth", async () => {
+		const resultado = await alterarSenhaUsuarioAdminService({
+			id: "gXou73QSz8QlfgtwnmlFwzeJ5EIvPBmn",
+			novaSenha: "senhaNova1",
+		});
+
+		expect(resultado.success).toBe(true);
+		expect(
+			usuariosRepositories.atualizarOuCriarSenhaContaUsuario,
+		).toHaveBeenCalled();
 	});
 });
