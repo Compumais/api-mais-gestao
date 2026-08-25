@@ -19,6 +19,10 @@ export interface ConfiguracaoUsuario {
 	atualizadoem: string;
 }
 
+export type PreferenciasUiUsuario = {
+	colunasTabelas?: Record<string, Record<string, boolean>>;
+};
+
 export const configuracaoUsuarioService = {
 	async buscar(idempresa?: string): Promise<ConfiguracaoUsuario | null> {
 		const params = idempresa ? { idempresa } : {};
@@ -32,6 +36,23 @@ export const configuracaoUsuarioService = {
 	async atualizar(dados: IntegracoesUsuario): Promise<ConfiguracaoUsuario> {
 		const { data } = await api.put<ConfiguracaoUsuario>(
 			"/configuracoes-usuario",
+			dados,
+		);
+		return data;
+	},
+
+	async buscarPreferenciasUi(): Promise<PreferenciasUiUsuario> {
+		const { data } = await api.get<PreferenciasUiUsuario>(
+			"/configuracoes-usuario/preferencias-ui",
+		);
+		return data ?? { colunasTabelas: {} };
+	},
+
+	async atualizarPreferenciasUi(
+		dados: PreferenciasUiUsuario,
+	): Promise<PreferenciasUiUsuario> {
+		const { data } = await api.put<PreferenciasUiUsuario>(
+			"/configuracoes-usuario/preferencias-ui",
 			dados,
 		);
 		return data;

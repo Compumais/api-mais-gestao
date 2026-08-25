@@ -9,6 +9,10 @@ import {
 } from "drizzle-orm/pg-core";
 import { usuarios } from "./usuarios.js";
 
+export type PreferenciasUiUsuario = {
+	colunasTabelas?: Record<string, Record<string, boolean>>;
+};
+
 export const configuracoesUsuario = pgTable(
 	"configuracoes_usuario",
 	{
@@ -22,6 +26,9 @@ export const configuracoesUsuario = pgTable(
 				openrouterApiKey?: string;
 				asaasToken?: string;
 			}>()
+			.default(sql`'{}'::jsonb`),
+		preferenciasui: jsonb("preferenciasui")
+			.$type<PreferenciasUiUsuario>()
 			.default(sql`'{}'::jsonb`),
 		criadoem: timestamp({ precision: 3, mode: "string" })
 			.default(sql`CURRENT_TIMESTAMP`)

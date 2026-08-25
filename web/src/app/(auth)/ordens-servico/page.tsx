@@ -1,24 +1,10 @@
 "use client";
 
-import {
-	IconDotsVertical,
-	IconEye,
-	IconPencil,
-	IconTrash,
-} from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
-import {
-	type ColumnDef,
-	flexRender,
-	getCoreRowModel,
-	useReactTable,
-} from "@tanstack/react-table";
 import { FilterX, Plus } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useCallback, useId, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { TableSkeleton } from "@/components/table-skeleton";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -31,13 +17,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -47,31 +26,21 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
 import { useEmpresa } from "@/hooks/use-empresa";
 import {
+	useConfiguracaoOrdemServico,
 	useExcluirOrdemServico,
 	useOrdensServico,
 	useTiposOrdemServicoEvento,
 } from "@/hooks/use-ordem-servico";
+import { areaService } from "@/services/area.service";
 import { entidadesService } from "@/services/entidades.service";
-import { usuariosService } from "@/services/usuarios.service";
+import { objetoService } from "@/services/objeto.service";
 import type { OrdemServico } from "@/services/ordem-servico.service";
-import {
-	formatarDataOs,
-	formatarMoedaOs,
-	osBloqueadaEdicao,
-	osPodeExcluir,
-} from "@/util/ordem-servico-ui";
+import { tipoProblemaService } from "@/services/tipo-problema.service";
+import { usuariosService } from "@/services/usuarios.service";
 import { PageContainer } from "../components/page-container";
-import { OrdemServicoStatusBadge } from "./components/ordem-servico-status-badge";
+import { OrdensServicoTabela } from "./components/ordens-servico-tabela";
 
 type FiltrosState = {
 	dataInicio: string;
@@ -100,7 +69,6 @@ function filtrosAtivos(filtros: FiltrosState) {
 }
 
 export default function OrdensServicoPage() {
-	const router = useRouter();
 	const { localStorageEmpresa: empresa } = useEmpresa();
 	const excluir = useExcluirOrdemServico();
 	const idBase = useId();
@@ -118,6 +86,8 @@ export default function OrdensServicoPage() {
 	const limit = 20;
 
 	const { data: tipos = [] } = useTiposOrdemServicoEvento(empresa?.id ?? null);
+	const { data: config, isLoading: isLoadingConfig } =
+		useConfiguracaoOrdemServico(empresa?.id ?? null);
 
 	const { data: entidadesLista } = useQuery({
 		queryKey: ["entidades-os-lista", empresa?.id],
@@ -135,6 +105,36 @@ export default function OrdensServicoPage() {
 				idempresa: empresa?.id ?? "",
 			}),
 		enabled: !!empresa?.id,
+	});
+
+	const { data: objetosLista } = useQuery({
+		queryKey: ["objetos-os-lista", empresa?.id],
+		queryFn: () =>
+			objetoService.listarTodos({
+				idempresa: empresa?.id ?? "",
+				inativo: 0,
+			}),
+		enabled: !!empresa?.id && (config?.usaobjeto ?? 1) === 1,
+	});
+
+	const { data: areasLista } = useQuery({
+		queryKey: ["areas-os-lista", empresa?.id],
+		queryFn: () =>
+			areaService.listarTodos({
+				idempresa: empresa?.id ?? "",
+				inativo: 0,
+			}),
+		enabled: !!empresa?.id && (config?.usaarea ?? 1) === 1,
+	});
+
+	const { data: tiposProblemaLista } = useQuery({
+		queryKey: ["tipos-problema-os-lista", empresa?.id],
+		queryFn: () =>
+			tipoProblemaService.listarTodos({
+				idempresa: empresa?.id ?? "",
+				inativo: 0,
+			}),
+		enabled: !!empresa?.id && (config?.usatipoproblema ?? 1) === 1,
 	});
 
 	const opcoesClientes = useMemo(
@@ -160,6 +160,38 @@ export default function OrdensServicoPage() {
 			})),
 		[usuariosLista],
 	);
+
+	const mapaUsuarios = useMemo(() => {
+		const mapa: Record<string, string> = {};
+		for (const item of usuariosLista ?? []) {
+			mapa[item.id] = item.nome || item.id;
+		}
+		return mapa;
+	}, [usuariosLista]);
+
+	const mapaObjetos = useMemo(() => {
+		const mapa: Record<string, string> = {};
+		for (const item of objetosLista ?? []) {
+			mapa[item.id] = item.descricao?.trim() || item.id;
+		}
+		return mapa;
+	}, [objetosLista]);
+
+	const mapaAreas = useMemo(() => {
+		const mapa: Record<string, string> = {};
+		for (const item of areasLista ?? []) {
+			mapa[item.id] = item.descricao?.trim() || item.id;
+		}
+		return mapa;
+	}, [areasLista]);
+
+	const mapaTiposProblema = useMemo(() => {
+		const mapa: Record<string, string> = {};
+		for (const item of tiposProblemaLista ?? []) {
+			mapa[item.id] = item.descricao?.trim() || item.codigo || item.id;
+		}
+		return mapa;
+	}, [tiposProblemaLista]);
 
 	const { data, isLoading } = useOrdensServico(
 		empresa
@@ -204,112 +236,6 @@ export default function OrdensServicoPage() {
 			});
 		}
 	}, [empresa, excluir, osParaExcluir]);
-
-	const colunas = useMemo<ColumnDef<OrdemServico>[]>(
-		() => [
-			{
-				accessorKey: "codigo",
-				header: "Código",
-				cell: ({ row }) => (
-					<span className="font-medium">{row.original.codigo ?? "—"}</span>
-				),
-			},
-			{
-				id: "cliente",
-				header: "Cliente",
-				cell: ({ row }) => (
-					<div className="max-w-[220px] truncate">
-						{row.original.nomecliente ?? "Sem cliente"}
-					</div>
-				),
-			},
-			{
-				id: "data",
-				header: "Data",
-				cell: ({ row }) =>
-					formatarDataOs(row.original.dataos ?? row.original.data),
-			},
-			{
-				id: "status",
-				header: "Status",
-				cell: ({ row }) => (
-					<OrdemServicoStatusBadge status={row.original.status} tipos={tipos} />
-				),
-			},
-			{
-				id: "valor",
-				header: "Valor",
-				cell: ({ row }) => formatarMoedaOs(row.original.valor),
-			},
-			{
-				id: "orcamento",
-				header: "Orçamento",
-				cell: ({ row }) => (row.original.orcamento === 1 ? "Sim" : "Não"),
-			},
-			{
-				id: "acoes",
-				header: "Ações",
-				cell: ({ row }) => {
-					const os = row.original;
-					const podeEditar = !osBloqueadaEdicao(os);
-					const podeExcluir = osPodeExcluir(os);
-
-					return (
-						<div className="flex justify-end">
-							<DropdownMenu>
-								<DropdownMenuTrigger asChild>
-									<Button
-										variant="ghost"
-										size="icon"
-										className="h-8 w-8"
-										aria-label={`Ações da OS ${os.codigo ?? ""}`}
-									>
-										<IconDotsVertical className="size-4" />
-									</Button>
-								</DropdownMenuTrigger>
-								<DropdownMenuContent align="end">
-									<DropdownMenuItem
-										onClick={() => router.push(`/ordens-servico/${os.id}`)}
-									>
-										<IconEye className="size-4" />
-										Visualizar
-									</DropdownMenuItem>
-									{podeEditar && (
-										<DropdownMenuItem
-											onClick={() => router.push(`/ordens-servico/${os.id}`)}
-										>
-											<IconPencil className="size-4" />
-											Editar
-										</DropdownMenuItem>
-									)}
-									{podeExcluir && (
-										<>
-											<DropdownMenuSeparator />
-											<DropdownMenuItem
-												variant="destructive"
-												onClick={() => setOsParaExcluir(os)}
-											>
-												<IconTrash className="size-4" />
-												Excluir
-											</DropdownMenuItem>
-										</>
-									)}
-								</DropdownMenuContent>
-							</DropdownMenu>
-						</div>
-					);
-				},
-			},
-		],
-		[router, tipos],
-	);
-
-	const tabela = useReactTable({
-		data: ordens,
-		columns: colunas,
-		getCoreRowModel: getCoreRowModel(),
-		getRowId: (row) => row.id,
-	});
 
 	if (!empresa) {
 		return (
@@ -491,94 +417,23 @@ export default function OrdensServicoPage() {
 					</div>
 				</div>
 
-				{isLoading ? (
-					<TableSkeleton columns={7} rows={8}>
-						<TableHead>Código</TableHead>
-						<TableHead>Cliente</TableHead>
-						<TableHead>Data</TableHead>
-						<TableHead>Status</TableHead>
-						<TableHead>Valor</TableHead>
-						<TableHead>Orçamento</TableHead>
-						<TableHead className="w-12">Ações</TableHead>
-					</TableSkeleton>
-				) : (
-					<>
-						<div className="rounded-md border">
-							<Table>
-								<TableHeader>
-									{tabela.getHeaderGroups().map((headerGroup) => (
-										<TableRow key={headerGroup.id}>
-											{headerGroup.headers.map((header) => (
-												<TableHead key={header.id}>
-													{header.isPlaceholder
-														? null
-														: flexRender(
-																header.column.columnDef.header,
-																header.getContext(),
-															)}
-												</TableHead>
-											))}
-										</TableRow>
-									))}
-								</TableHeader>
-								<TableBody>
-									{tabela.getRowModel().rows.length > 0 ? (
-										tabela.getRowModel().rows.map((row) => (
-											<TableRow key={row.id}>
-												{row.getVisibleCells().map((cell) => (
-													<TableCell key={cell.id}>
-														{flexRender(
-															cell.column.columnDef.cell,
-															cell.getContext(),
-														)}
-													</TableCell>
-												))}
-											</TableRow>
-										))
-									) : (
-										<TableRow>
-											<TableCell
-												colSpan={colunas.length}
-												className="h-32 text-center text-muted-foreground"
-											>
-												{comFiltros
-													? "Nenhuma ordem encontrada para os filtros selecionados."
-													: "Nenhuma ordem de serviço encontrada."}
-											</TableCell>
-										</TableRow>
-									)}
-								</TableBody>
-							</Table>
-						</div>
-
-						{totalPages > 1 && (
-							<div className="flex items-center justify-between gap-2">
-								<p className="text-sm text-muted-foreground">
-									Página {page} de {totalPages} · {data?.paginacao.total ?? 0}{" "}
-									registro(s)
-								</p>
-								<div className="flex gap-2">
-									<Button
-										variant="outline"
-										size="sm"
-										disabled={page <= 1}
-										onClick={() => setPage((p) => Math.max(1, p - 1))}
-									>
-										Anterior
-									</Button>
-									<Button
-										variant="outline"
-										size="sm"
-										disabled={page >= totalPages}
-										onClick={() => setPage((p) => p + 1)}
-									>
-										Próxima
-									</Button>
-								</div>
-							</div>
-						)}
-					</>
-				)}
+				<OrdensServicoTabela
+					ordens={ordens}
+					isLoading={isLoading || isLoadingConfig}
+					tipos={tipos}
+					config={config}
+					mapaUsuarios={mapaUsuarios}
+					mapaObjetos={mapaObjetos}
+					mapaAreas={mapaAreas}
+					mapaTiposProblema={mapaTiposProblema}
+					comFiltros={comFiltros}
+					page={page}
+					totalPages={totalPages}
+					totalRegistros={data?.paginacao.total ?? 0}
+					onPageChange={setPage}
+					onExcluir={setOsParaExcluir}
+					configPronta={!isLoadingConfig}
+				/>
 			</div>
 
 			<AlertDialog
