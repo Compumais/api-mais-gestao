@@ -3,13 +3,12 @@
 import type { Icon } from "@tabler/icons-react";
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
-
+import { BotaoFixarNav } from "@/components/nav-botao-fixar";
 import {
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-
 import {
 	SidebarGroup,
 	SidebarGroupLabel,
@@ -59,12 +58,15 @@ export function NavDocuments({
 										<span>{item.title}</span>
 									</SidebarMenuButton>
 								) : (
-									<SidebarMenuButton tooltip={item.title} asChild>
-										<Link href={item.url}>
-											{item.icon ? <item.icon /> : null}
-											<span>{item.title}</span>
-										</Link>
-									</SidebarMenuButton>
+									<>
+										<SidebarMenuButton tooltip={item.title} asChild>
+											<Link href={item.url}>
+												{item.icon ? <item.icon /> : null}
+												<span>{item.title}</span>
+											</Link>
+										</SidebarMenuButton>
+										<BotaoFixarNav url={item.url} title={item.title} />
+									</>
 								)}
 							</SidebarMenuItem>
 						);
@@ -91,11 +93,16 @@ export function NavDocuments({
 											<SidebarMenuSub>
 												{item.items.map((subItem) => (
 													<SidebarMenuSubItem key={subItem.title}>
-														<SidebarMenuSubButton asChild>
+														<SidebarMenuSubButton asChild className="pr-7">
 															<Link href={subItem.url}>
 																<span>{subItem.title}</span>
 															</Link>
 														</SidebarMenuSubButton>
+														<BotaoFixarNav
+															url={subItem.url}
+															title={subItem.title}
+															variante="subitem"
+														/>
 													</SidebarMenuSubItem>
 												))}
 											</SidebarMenuSub>
