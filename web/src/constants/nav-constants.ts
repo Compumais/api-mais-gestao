@@ -246,60 +246,62 @@ export const DATA = {
 
 	navFinanceiro: [
 		{
-			title: "Contas a receber",
-			url: "/contas-receber",
+			title: "Financeiro",
 			icon: IconCoins,
 			acesso: {
 				perfis: [...PERFIS_GESTAO],
 			},
-		},
-		{
-			title: "Contas a pagar",
-			url: "/contas-pagar",
-			icon: IconCoins,
-			acesso: {
-				perfis: [...PERFIS_GESTAO],
-			},
-		},
-		{
-			title: "Contas correntes",
-			url: "/contas-correntes",
-			icon: IconCoins,
-			acesso: {
-				perfis: [...PERFIS_GESTAO],
-			},
-		},
-		{
-			title: "Movimentações",
-			url: "/movimentacoes",
-			icon: IconCoins,
-			acesso: {
-				perfis: [...PERFIS_GESTAO],
-			},
-		},
-		{
-			title: "Plano de contas",
-			url: "/plano-contas",
-			icon: IconCoins,
-			acesso: {
-				perfis: [...PERFIS_GESTAO],
-			},
-		},
-		{
-			title: "Conciliação",
-			url: "#",
-			icon: IconCoins,
-			acesso: {
-				perfis: [...PERFIS_GESTAO],
-			},
-		},
-		{
-			title: "Relatórios",
-			url: "/relatorios",
-			icon: IconCoins,
-			acesso: {
-				perfis: [...PERFIS_GESTAO],
-			},
+			items: [
+				{
+					title: "Contas a receber",
+					url: "/contas-receber",
+					acesso: {
+						perfis: [...PERFIS_GESTAO],
+					},
+				},
+				{
+					title: "Contas a pagar",
+					url: "/contas-pagar",
+					acesso: {
+						perfis: [...PERFIS_GESTAO],
+					},
+				},
+				{
+					title: "Contas correntes",
+					url: "/contas-correntes",
+					acesso: {
+						perfis: [...PERFIS_GESTAO],
+					},
+				},
+				{
+					title: "Movimentações",
+					url: "/movimentacoes",
+					acesso: {
+						perfis: [...PERFIS_GESTAO],
+					},
+				},
+				{
+					title: "Plano de contas",
+					url: "/plano-contas",
+					acesso: {
+						perfis: [...PERFIS_GESTAO],
+					},
+				},
+				{
+					title: "Conciliação",
+					url: "#",
+					acesso: {
+						perfis: [...PERFIS_GESTAO],
+					},
+				},
+				{
+					title: "Relatórios",
+					url: "/relatorios",
+					acesso: {
+						perfis: [...PERFIS_GESTAO],
+					},
+				},
+			],
 		},
 	] satisfies NavItem[],
 
