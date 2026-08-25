@@ -86,6 +86,9 @@ export default function SuperUsuariosPage() {
 			queryClient.invalidateQueries({ queryKey: ["admin-usuarios"] });
 			toast.success("Usuário atualizado");
 		},
+		onError: (error: Error) => {
+			toast.error(error.message || "Erro ao atualizar usuário");
+		},
 	});
 
 	const senhaMutation = useMutation({

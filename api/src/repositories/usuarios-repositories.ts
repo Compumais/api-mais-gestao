@@ -1,6 +1,17 @@
-import { and, desc, eq, ilike, inArray, isNotNull, lte, ne, sql } from "drizzle-orm";
+import {
+	and,
+	desc,
+	eq,
+	ilike,
+	inArray,
+	isNotNull,
+	lte,
+	ne,
+	sql,
+} from "drizzle-orm";
 import * as schema from "../../drizzle/schema.js";
 import { db } from "./connection.js";
+import { executarComControleAcessoPrivilegiado } from "./controle-acesso-contexto.js";
 
 type Usuario = typeof schema.usuarios.$inferSelect;
 
@@ -13,7 +24,9 @@ export async function buscarUsuarioPorId(id: string): Promise<Usuario | null> {
 	return usuario || null;
 }
 
-export async function buscarUsuarioPorEmail(email: string): Promise<Usuario | null> {
+export async function buscarUsuarioPorEmail(
+	email: string,
+): Promise<Usuario | null> {
 	const [usuario] = await db
 		.select()
 		.from(schema.usuarios)
@@ -110,13 +123,15 @@ export async function atualizarUsuarioAdmin(
 	if (dados.ativo !== undefined) updateData.ativo = dados.ativo;
 	if (dados.plano !== undefined) updateData.plano = dados.plano;
 
-	const [usuario] = await db
-		.update(schema.usuarios)
-		.set(updateData)
-		.where(eq(schema.usuarios.id, id))
-		.returning();
+	return executarComControleAcessoPrivilegiado(async (tx) => {
+		const [usuario] = await tx
+			.update(schema.usuarios)
+			.set(updateData)
+			.where(eq(schema.usuarios.id, id))
+			.returning();
 
-	return usuario || null;
+		return usuario || null;
+	});
 }
 
 export async function atualizarSenhaContaUsuario(
@@ -277,7 +292,9 @@ export async function listarIdsUsuariosFinanceirosPorEmpresa(
 	return rows.map((r) => r.idusuario);
 }
 
-export async function listarUsuariosComPlanoProximoVencido(dataReferencia: Date) {
+export async function listarUsuariosComPlanoProximoVencido(
+	dataReferencia: Date,
+) {
 	const dataStr = dataReferencia.toISOString().slice(0, 10);
 
 	return db

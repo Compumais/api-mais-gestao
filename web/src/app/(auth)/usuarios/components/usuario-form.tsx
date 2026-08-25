@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import type { Resolver } from "react-hook-form";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -60,7 +61,7 @@ export function UsuarioForm(props: UsuarioFormProps) {
 
 	const schema = isEdicao ? atualizarUsuarioSchema : criarUsuarioSchema;
 	const form = useForm<UsuarioFormValues>({
-		resolver: zodResolver(schema) as any,
+		resolver: zodResolver(schema) as Resolver<UsuarioFormValues>,
 		defaultValues: {
 			idempresa: empresa?.id || "",
 			nome: "",
@@ -71,36 +72,49 @@ export function UsuarioForm(props: UsuarioFormProps) {
 		},
 	});
 
-	// Buscar empresas disponíveis (apenas onde o usuário autenticado é proprietário)
 	const { data: empresasData } = useQuery({
 		queryKey: ["empresas-proprietario-usuario-form", user?.id],
-		queryFn: () => empresasService.listar({ idproprietario: user?.id }),
+		queryFn: () =>
+			empresasService.listar({ idproprietario: user?.id, limit: 100 }),
 		enabled: !!user?.id,
 	});
 
-	// Buscar dados do usuário se estiver editando
 	const { data: usuarioData, isLoading: isLoadingUsuario } = useQuery<Usuario>({
 		queryKey: ["usuario", props.usuarioId],
-		queryFn: () => usuariosService.buscar(props.usuarioId!),
+		queryFn: () => {
+			if (!props.usuarioId) {
+				throw new Error("ID do usuário é obrigatório");
+			}
+			return usuariosService.buscar(props.usuarioId);
+		},
 		enabled: isEdicao && !!props.usuarioId,
 	});
 
-	// Preencher formulário quando os dados chegarem
 	useEffect(() => {
-		if (isEdicao && usuarioData) {
-			const perfilRaw = Array.isArray(usuarioData.perfil)
-				? usuarioData.perfil[0] || "usuario"
-				: usuarioData.perfil || "usuario";
-			const perfilParsed = perfilUsuarioSchema.safeParse(perfilRaw);
-
-			form.reset({
-				nome: usuarioData.nome,
-				perfil: perfilParsed.success ? perfilParsed.data : "usuario",
-				empresasIds: usuarioData.empresasIds || [],
-				idempresa: empresa?.id || "",
-			});
+		if (empresa?.id) {
+			form.setValue("idempresa", empresa.id);
 		}
-	}, [isEdicao, usuarioData, empresa, form]);
+	}, [empresa?.id, form]);
+
+	useEffect(() => {
+		if (!isEdicao || !usuarioData) {
+			return;
+		}
+
+		const perfilRaw = Array.isArray(usuarioData.perfil)
+			? usuarioData.perfil[0] || "usuario"
+			: usuarioData.perfil || "usuario";
+		const perfilParsed = perfilUsuarioSchema.safeParse(perfilRaw);
+
+		form.reset({
+			nome: usuarioData.nome,
+			email: usuarioData.email || "",
+			password: "",
+			perfil: perfilParsed.success ? perfilParsed.data : "usuario",
+			empresasIds: usuarioData.empresasIds || [],
+			idempresa: empresa?.id || form.getValues("idempresa") || "",
+		});
+	}, [isEdicao, usuarioData, empresa?.id, form]);
 
 	const { mutate: criarUsuario, isPending: isCreating } = useMutation({
 		mutationFn: usuariosService.criar,
@@ -115,10 +129,15 @@ export function UsuarioForm(props: UsuarioFormProps) {
 	});
 
 	const { mutate: atualizarUsuario, isPending: isUpdating } = useMutation({
-		mutationFn: (data: AtualizarUsuarioFormData) =>
-			usuariosService.atualizar(props.usuarioId!, data),
+		mutationFn: (data: AtualizarUsuarioFormData) => {
+			if (!props.usuarioId) {
+				throw new Error("ID do usuário é obrigatório");
+			}
+			return usuariosService.atualizar(props.usuarioId, data);
+		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["usuarios"] });
+			queryClient.invalidateQueries({ queryKey: ["usuario", props.usuarioId] });
 			toast.success("Usuário atualizado com sucesso!");
 			router.push("/usuarios");
 		},
@@ -128,6 +147,11 @@ export function UsuarioForm(props: UsuarioFormProps) {
 	});
 
 	const onSubmit = (data: UsuarioFormValues) => {
+		if (!data.idempresa) {
+			toast.error("Selecione uma empresa antes de salvar o usuário.");
+			return;
+		}
+
 		if (isEdicao) {
 			const payload: AtualizarUsuarioFormData = {
 				idempresa: data.idempresa,
@@ -148,6 +172,7 @@ export function UsuarioForm(props: UsuarioFormProps) {
 			criarUsuario(payload);
 		}
 	};
+
 	if (isEdicao && isLoadingUsuario) {
 		return (
 			<div className="flex items-center justify-center py-8">
@@ -159,7 +184,12 @@ export function UsuarioForm(props: UsuarioFormProps) {
 	const empresas = empresasData?.data || [];
 
 	return (
-		<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+		<form
+			onSubmit={form.handleSubmit(onSubmit, () => {
+				toast.error("Verifique os campos obrigatórios e tente novamente.");
+			})}
+			className="space-y-6"
+		>
 			<FieldGroup>
 				<Field data-invalid={!!form.formState.errors.nome}>
 					<FieldLabel htmlFor="nome">Nome *</FieldLabel>
@@ -179,26 +209,25 @@ export function UsuarioForm(props: UsuarioFormProps) {
 					/>
 				</Field>
 
-				{!isEdicao && (
-					<Field data-invalid={!!form.formState.errors.email}>
-						<FieldLabel htmlFor="email">Email *</FieldLabel>
-						<Input
-							id="email"
-							type="email"
-							placeholder="email@exemplo.com"
-							aria-invalid={!!form.formState.errors.email}
-							aria-describedby={
-								form.formState.errors.email ? "email-error" : undefined
-							}
-							{...form.register("email")}
-						/>
-						<FieldError
-							errors={
-								form.formState.errors.email ? [form.formState.errors.email] : []
-							}
-						/>
-					</Field>
-				)}
+				<Field data-invalid={!!form.formState.errors.email}>
+					<FieldLabel htmlFor="email">Email *</FieldLabel>
+					<Input
+						id="email"
+						type="email"
+						placeholder="email@exemplo.com"
+						disabled={isEdicao}
+						aria-invalid={!!form.formState.errors.email}
+						aria-describedby={
+							form.formState.errors.email ? "email-error" : undefined
+						}
+						{...form.register("email")}
+					/>
+					<FieldError
+						errors={
+							form.formState.errors.email ? [form.formState.errors.email] : []
+						}
+					/>
+				</Field>
 
 				{!isEdicao && (
 					<Field data-invalid={!!form.formState.errors.password}>
@@ -252,36 +281,59 @@ export function UsuarioForm(props: UsuarioFormProps) {
 					/>
 				</Field>
 
-				<Field>
+				<Field data-invalid={!!form.formState.errors.empresasIds}>
 					<FieldLabel>Empresas que o usuário pode ver</FieldLabel>
 					<div className="space-y-2">
-						{empresas.map((emp) => (
-							<div key={emp.id} className="flex items-center space-x-2">
-								<Checkbox
-									id={`empresa-${emp.id}`}
-									checked={form.watch("empresasIds")?.includes(emp.id)}
-									onCheckedChange={(checked) => {
-										const currentIds = form.getValues("empresasIds") || [];
-										if (checked) {
-											form.setValue("empresasIds", [...currentIds, emp.id]);
-										} else {
-											form.setValue(
-												"empresasIds",
-												currentIds.filter((id) => id !== emp.id),
-											);
-										}
-									}}
-								/>
-								<label
-									htmlFor={`empresa-${emp.id}`}
-									className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-								>
-									{emp.nome}
-								</label>
-							</div>
-						))}
+						{empresas.length === 0 ? (
+							<p className="text-sm text-muted-foreground">
+								Nenhuma empresa disponível para vincular. O usuário permanece
+								associado à empresa selecionada.
+							</p>
+						) : (
+							empresas.map((emp) => (
+								<div key={emp.id} className="flex items-center space-x-2">
+									<Checkbox
+										id={`empresa-${emp.id}`}
+										checked={form.watch("empresasIds")?.includes(emp.id)}
+										onCheckedChange={(checked) => {
+											const currentIds = form.getValues("empresasIds") || [];
+											if (checked) {
+												form.setValue("empresasIds", [...currentIds, emp.id], {
+													shouldDirty: true,
+												});
+											} else {
+												form.setValue(
+													"empresasIds",
+													currentIds.filter((id) => id !== emp.id),
+													{ shouldDirty: true },
+												);
+											}
+										}}
+									/>
+									<label
+										htmlFor={`empresa-${emp.id}`}
+										className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+									>
+										{emp.nome}
+									</label>
+								</div>
+							))
+						)}
 					</div>
+					<FieldError
+						errors={
+							form.formState.errors.empresasIds
+								? [form.formState.errors.empresasIds]
+								: []
+						}
+					/>
 				</Field>
+
+				{form.formState.errors.idempresa && (
+					<Field data-invalid>
+						<FieldError errors={[form.formState.errors.idempresa]} />
+					</Field>
+				)}
 			</FieldGroup>
 
 			<div className="flex justify-end gap-2">
@@ -292,7 +344,10 @@ export function UsuarioForm(props: UsuarioFormProps) {
 				>
 					Cancelar
 				</Button>
-				<Button type="submit" disabled={isCreating || isUpdating}>
+				<Button
+					type="submit"
+					disabled={isCreating || isUpdating || !empresa?.id}
+				>
 					{isCreating || isUpdating
 						? "Salvando..."
 						: isEdicao

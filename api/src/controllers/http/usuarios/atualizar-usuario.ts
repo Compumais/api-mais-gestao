@@ -6,7 +6,7 @@ import { perfilUsuarioSchema } from "@/util/usuario-perfil.js";
 const atualizarUsuarioBodySchema = z.object({
 	nome: z.string().min(1).optional(),
 	perfil: perfilUsuarioSchema.optional(),
-	empresasIds: z.array(z.uuid()),
+	empresasIds: z.array(z.uuid()).optional(),
 	idempresa: z.uuid(),
 });
 

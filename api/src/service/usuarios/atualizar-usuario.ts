@@ -1,15 +1,14 @@
 import { eq } from "drizzle-orm";
 import type { HttpResponse } from "@/model/http-model.js";
 import type { Usuario } from "@/model/usuario-model.js";
-import { db } from "@/repositories/connection.js";
 import { executarComControleAcessoPrivilegiado } from "@/repositories/controle-acesso-contexto.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { buscarUsuarioPorId } from "@/repositories/usuarios-repositories.js";
 import {
-	httpCriacao,
 	httpErroInterno,
 	httpNaoAutorizado,
 	httpNaoEncontrado,
+	httpOk,
 	httpProibido,
 } from "@/util/http-util.js";
 import {
@@ -56,38 +55,51 @@ export async function atualizarUsuarioService({
 	}
 
 	try {
-		if (nome !== undefined) {
-			await db
-				.update(schema.usuarios)
-				.set({ nome })
-				.where(eq(schema.usuarios.id, idUsuarioAtualizar));
-		}
+		const perfilArray =
+			perfil !== undefined ? toPerfilArray(perfil) : undefined;
+		const empresasParaAssociar =
+			empresasIds !== undefined
+				? [...new Set([idempresa, ...empresasIds])]
+				: undefined;
 
-		if (perfil !== undefined) {
-			const perfilArray = toPerfilArray(perfil);
-			await executarComControleAcessoPrivilegiado(async (tx) => {
+		await executarComControleAcessoPrivilegiado(async (tx) => {
+			const dadosAtualizacao: {
+				nome?: string;
+				perfil?: string[];
+			} = {};
+
+			if (nome !== undefined) {
+				dadosAtualizacao.nome = nome;
+			}
+			if (perfilArray !== undefined) {
+				dadosAtualizacao.perfil = perfilArray;
+			}
+
+			if (Object.keys(dadosAtualizacao).length > 0) {
 				const [usuarioAtualizado] = await tx
 					.update(schema.usuarios)
-					.set({ perfil: perfilArray })
+					.set(dadosAtualizacao)
 					.where(eq(schema.usuarios.id, idUsuarioAtualizar))
 					.returning({ perfil: schema.usuarios.perfil });
 
+				if (!usuarioAtualizado) {
+					throw new Error("Falha ao persistir dados do usuário");
+				}
+
 				if (
-					!usuarioAtualizado ||
+					perfilArray !== undefined &&
 					!perfisPersistidosIguais(usuarioAtualizado.perfil, perfilArray)
 				) {
 					throw new Error("Falha ao persistir perfil do usuário");
 				}
-			});
-		}
+			}
 
-		if (empresasIds !== undefined) {
-			await executarComControleAcessoPrivilegiado(async (tx) => {
+			if (empresasParaAssociar !== undefined) {
 				await tx
 					.delete(schema.usuarioEmpresa)
 					.where(eq(schema.usuarioEmpresa.idusuario, idUsuarioAtualizar));
 
-				for (const empresaId of empresasIds) {
+				for (const empresaId of empresasParaAssociar) {
 					await tx.insert(schema.usuarioEmpresa).values({
 						id: crypto.randomUUID(),
 						idusuario: idUsuarioAtualizar,
@@ -96,8 +108,8 @@ export async function atualizarUsuarioService({
 						atualizadoem: new Date().toISOString(),
 					});
 				}
-			});
-		}
+			}
+		});
 
 		const usuario = await buscarUsuarioPorId(idUsuarioAtualizar);
 
@@ -106,13 +118,13 @@ export async function atualizarUsuarioService({
 		}
 
 		if (
-			perfil !== undefined &&
-			!perfisPersistidosIguais(usuario.perfil, toPerfilArray(perfil))
+			perfilArray !== undefined &&
+			!perfisPersistidosIguais(usuario.perfil, perfilArray)
 		) {
 			return httpErroInterno();
 		}
 
-		return httpCriacao<Usuario>(usuario);
+		return httpOk<Usuario>(usuario);
 	} catch (error) {
 		console.error("Erro ao atualizar usuário:", error);
 		return httpErroInterno();
