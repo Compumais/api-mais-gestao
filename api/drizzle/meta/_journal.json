@@ -617,6 +617,27 @@
       "when": 1785014000000,
       "tag": "0085_ficha_producao",
       "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "7",
+      "when": 1785015000000,
+      "tag": "0086_budget",
+      "breakpoints": true
+    },
+    {
+      "idx": 88,
+      "version": "7",
+      "when": 1785016000000,
+      "tag": "0087_compras",
+      "breakpoints": true
+    },
+    {
+      "idx": 89,
+      "version": "7",
+      "when": 1785017000000,
+      "tag": "0088_cotacao_item_nao_cadastrado",
+      "breakpoints": true
     }
   ]
 }

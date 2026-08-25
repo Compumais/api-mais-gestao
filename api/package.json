@@ -18,6 +18,7 @@
 		"seed:servicos-nfse": "tsx drizzle/servicos-nfse-seed.ts",
 		"seed:products": "tsx drizzle/products-seed.ts",
 		"seed:financeiro-dashboard": "tsx drizzle/financeiro-dashboard-seed.ts",
+		"seed:budget": "tsx drizzle/budget-seed.ts",
 		"worker:run": "tsx scripts/worker-run.ts",
 		"clean": "tsx drizzle/clean.ts",
 		"db:patch-roles": "tsx drizzle/patch-roles.ts",

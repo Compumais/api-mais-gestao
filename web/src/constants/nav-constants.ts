@@ -14,6 +14,7 @@ import {
 	IconScale,
 	IconSearch,
 	IconSettings,
+	IconShoppingCart,
 	IconToolsKitchen2,
 	IconUsers,
 } from "@tabler/icons-react";
@@ -244,6 +245,25 @@ export const DATA = {
 		},
 	] satisfies NavItem[],
 
+	navCompras: [
+		{
+			title: "Cotações",
+			url: "/compras/cotacoes",
+			icon: IconShoppingCart,
+			acesso: {
+				perfis: [...PERFIS_GESTAO],
+			},
+		},
+		{
+			title: "Pedidos de compra",
+			url: "/compras/pedidos",
+			icon: IconShoppingCart,
+			acesso: {
+				perfis: [...PERFIS_GESTAO],
+			},
+		},
+	] satisfies NavItem[],
+
 	navFinanceiro: [
 		{
 			title: "Contas a receber",
@@ -280,6 +300,14 @@ export const DATA = {
 		{
 			title: "Plano de contas",
 			url: "/plano-contas",
+			icon: IconCoins,
+			acesso: {
+				perfis: [...PERFIS_GESTAO],
+			},
+		},
+		{
+			title: "Budget",
+			url: "/budget",
 			icon: IconCoins,
 			acesso: {
 				perfis: [...PERFIS_GESTAO],

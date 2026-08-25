@@ -94,6 +94,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 		[ctxAcesso],
 	);
 
+	const navComprasItems = React.useMemo(
+		() => filtrarNavItems(DATA.navCompras, ctxAcesso),
+		[ctxAcesso],
+	);
+
 	const navFinanceiroItems = React.useMemo(
 		() => filtrarNavItems(DATA.navFinanceiro, ctxAcesso),
 		[ctxAcesso],
@@ -149,6 +154,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
 						{!isUsuarioRestrito && navEstoqueItems.length > 0 && (
 							<NavDocuments label="Estoque" items={navEstoqueItems} />
+						)}
+
+						{!isUsuarioRestrito && navComprasItems.length > 0 && (
+							<NavDocuments label="Compras" items={navComprasItems} />
 						)}
 
 						{!isUsuarioRestrito && navFinanceiroItems.length > 0 && (
