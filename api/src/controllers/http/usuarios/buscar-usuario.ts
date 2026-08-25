@@ -3,7 +3,7 @@ import z from "zod";
 import { buscarUsuarioPorIdService } from "@/service/usuarios/buscar.js";
 
 const buscarUsuarioParamsSchema = z.object({
-	id: z.string().uuid(),
+	id: z.string().min(1),
 });
 
 export async function buscarUsuario(

@@ -8,10 +8,11 @@ const atualizarUsuarioBodySchema = z.object({
 	perfil: perfilUsuarioSchema.optional(),
 	empresasIds: z.array(z.uuid()).optional(),
 	idempresa: z.uuid(),
+	password: z.string().min(6).optional(),
 });
 
 const atualizarUsuarioParamsSchema = z.object({
-	id: z.string().uuid(),
+	id: z.string().min(1),
 });
 
 export async function atualizarUsuario(
@@ -37,6 +38,7 @@ export async function atualizarUsuario(
 			nome: body.nome,
 			perfil: body.perfil,
 			empresasIds: body.empresasIds,
+			password: body.password,
 		});
 
 		if (!resultado.success) {

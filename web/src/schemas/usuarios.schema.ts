@@ -34,7 +34,15 @@ export const atualizarUsuarioSchema = z.object({
 		.min(3, "Nome deve ter no mínimo 3 caracteres")
 		.max(100, "Nome deve ter no máximo 100 caracteres"),
 	email: z.string().optional(),
-	password: z.string().optional(),
+	password: z
+		.string()
+		.optional()
+		.refine((value) => !value || value.length >= 6, {
+			message: "Senha deve ter no mínimo 6 caracteres",
+		})
+		.refine((value) => !value || value.length <= 100, {
+			message: "Senha deve ter no máximo 100 caracteres",
+		}),
 	perfil: perfilUsuarioSchema,
 	empresasIds: z.array(z.uuid()).optional(),
 	idempresa: z.uuid("ID da empresa inválido"),

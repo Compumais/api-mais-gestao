@@ -3,13 +3,12 @@ import { auth } from "@/lib/auth.js";
 import type { HttpResponse } from "@/model/http-model.js";
 import { executarComControleAcessoPrivilegiado } from "@/repositories/controle-acesso-contexto.js";
 import {
-	atualizarSenhaContaUsuario,
 	atualizarUsuarioAdmin,
 	buscarUsuarioPorId,
 	emailJaUtilizado,
 	inativarSessoesUsuario,
 } from "@/repositories/usuarios-repositories.js";
-import { hashSenha } from "@/util/hash-senha.js";
+import { alterarSenhaUsuarioService } from "@/service/usuarios/alterar-senha-usuario.js";
 import {
 	httpErroInterno,
 	httpNaoEncontrado,
@@ -60,16 +59,7 @@ export async function alterarSenhaUsuarioAdminService({
 	id: string;
 	novaSenha: string;
 }): Promise<HttpResponse<unknown>> {
-	const usuario = await buscarUsuarioPorId(id);
-	if (!usuario) {
-		return httpNaoEncontrado();
-	}
-
-	const senhaHash = await hashSenha(novaSenha);
-	await atualizarSenhaContaUsuario(id, senhaHash);
-	await inativarSessoesUsuario(id);
-
-	return httpOk({ sucesso: true });
+	return alterarSenhaUsuarioService({ id, novaSenha });
 }
 
 export async function inativarUsuarioAdminService({

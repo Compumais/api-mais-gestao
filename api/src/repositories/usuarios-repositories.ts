@@ -114,7 +114,7 @@ export async function atualizarUsuarioAdmin(
 	}>,
 ): Promise<Usuario | null> {
 	const updateData: Record<string, unknown> = {
-		atualizadoem: new Date().toISOString(),
+		atualizadoem: new Date(),
 	};
 
 	if (dados.nome !== undefined) updateData.nome = dados.nome;
@@ -134,22 +134,42 @@ export async function atualizarUsuarioAdmin(
 	});
 }
 
-export async function atualizarSenhaContaUsuario(
+export async function atualizarOuCriarSenhaContaUsuario(
 	idusuario: string,
 	senhaHash: string,
 ): Promise<void> {
-	await db
-		.update(schema.contas)
-		.set({
-			password: senhaHash,
-			atualizadoem: new Date(),
-		})
+	const agora = new Date();
+	const [conta] = await db
+		.select({ id: schema.contas.id })
+		.from(schema.contas)
 		.where(
 			and(
 				eq(schema.contas.idusuario, idusuario),
 				eq(schema.contas.idprovedor, "credential"),
 			),
-		);
+		)
+		.limit(1);
+
+	if (conta) {
+		await db
+			.update(schema.contas)
+			.set({
+				password: senhaHash,
+				atualizadoem: agora,
+			})
+			.where(eq(schema.contas.id, conta.id));
+		return;
+	}
+
+	await db.insert(schema.contas).values({
+		id: crypto.randomUUID(),
+		idconta: idusuario,
+		idprovedor: "credential",
+		idusuario,
+		password: senhaHash,
+		criadoem: agora,
+		atualizadoem: agora,
+	});
 }
 
 export async function inativarSessoesUsuario(idusuario: string): Promise<void> {

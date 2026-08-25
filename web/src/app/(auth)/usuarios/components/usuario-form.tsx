@@ -153,11 +153,13 @@ export function UsuarioForm(props: UsuarioFormProps) {
 		}
 
 		if (isEdicao) {
+			const senha = data.password?.trim();
 			const payload: AtualizarUsuarioFormData = {
 				idempresa: data.idempresa,
 				nome: data.nome,
 				perfil: data.perfil,
 				empresasIds: data.empresasIds,
+				...(senha ? { password: senha } : {}),
 			};
 			atualizarUsuario(payload);
 		} else {
@@ -229,7 +231,28 @@ export function UsuarioForm(props: UsuarioFormProps) {
 					/>
 				</Field>
 
-				{!isEdicao && (
+				{isEdicao ? (
+					<Field data-invalid={!!form.formState.errors.password}>
+						<FieldLabel htmlFor="password">Nova senha</FieldLabel>
+						<Input
+							id="password"
+							type="password"
+							placeholder="Deixe em branco para manter a senha atual"
+							aria-invalid={!!form.formState.errors.password}
+							aria-describedby={
+								form.formState.errors.password ? "password-error" : undefined
+							}
+							{...form.register("password")}
+						/>
+						<FieldError
+							errors={
+								form.formState.errors.password
+									? [form.formState.errors.password]
+									: []
+							}
+						/>
+					</Field>
+				) : (
 					<Field data-invalid={!!form.formState.errors.password}>
 						<FieldLabel htmlFor="password">Senha *</FieldLabel>
 						<Input

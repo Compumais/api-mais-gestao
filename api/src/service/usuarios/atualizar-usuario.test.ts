@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as entidadeRepositories from "@/repositories/entidade-repositories.js";
 import * as usuariosRepositories from "@/repositories/usuarios-repositories.js";
+import { alterarSenhaUsuarioService } from "@/service/usuarios/alterar-senha-usuario.js";
 import { atualizarUsuarioService } from "./atualizar-usuario.js";
 
 const { txMock } = vi.hoisted(() => ({
@@ -13,6 +14,13 @@ const { txMock } = vi.hoisted(() => ({
 
 vi.mock("@/repositories/entidade-repositories.js");
 vi.mock("@/repositories/usuarios-repositories.js");
+vi.mock("@/service/usuarios/alterar-senha-usuario.js", () => ({
+	alterarSenhaUsuarioService: vi.fn(async () => ({
+		success: true,
+		status: 200,
+		body: { sucesso: true },
+	})),
+}));
 vi.mock("@/repositories/controle-acesso-contexto.js", () => ({
 	executarComControleAcessoPrivilegiado: vi.fn(
 		async (callback: (tx: unknown) => Promise<unknown>) => callback(txMock),
@@ -125,5 +133,21 @@ describe("atualizarUsuarioService", () => {
 
 		expect(resultado.success).toBe(false);
 		expect(resultado.status).toBe(404);
+	});
+
+	it("altera senha quando informada na edição", async () => {
+		const resultado = await atualizarUsuarioService({
+			idusuario: "autor-1",
+			idUsuarioAtualizar: "gXou73QSz8QlfgtwnmlFwzeJ5EIvPBmn",
+			idempresa: "emp-1",
+			nome: "Ana",
+			password: "novaSenha1",
+		});
+
+		expect(resultado.success).toBe(true);
+		expect(alterarSenhaUsuarioService).toHaveBeenCalledWith({
+			id: "gXou73QSz8QlfgtwnmlFwzeJ5EIvPBmn",
+			novaSenha: "novaSenha1",
+		});
 	});
 });
