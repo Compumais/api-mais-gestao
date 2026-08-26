@@ -1,4 +1,4 @@
-import { and, eq, gte, inArray, lte, ne, or, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, lte, ne, or, sql } from "drizzle-orm";
 import {
 	cfop,
 	empresa,
@@ -20,11 +20,64 @@ import type {
 	ParticipanteEfd,
 	ProdutoEfd,
 } from "@/service/efd-icms/tipos-efd-icms.js";
+import { AMBIENTE_SEFAZ } from "@/util/ambiente-sefaz.js";
 import { obterDataCompetenciaNotaFiscal } from "@/util/data-competencia-nota-fiscal.js";
 import { NFE_STATUS, statusEhCancelada } from "@/util/nfe-status.js";
 import { STATUS_NF_CONFIRMADA } from "@/util/nota-fiscal-constants.js";
 import { listarAjustesApuracaoEfd } from "./apuracao-efd-ajuste-repositories.js";
 import { db } from "./connection.js";
+
+function textoEfd(valor: string | null | undefined): string {
+	return String(valor ?? "").trim();
+}
+
+function extrairCamposEfdDoJson(dados: unknown): {
+	codigoProduto: string;
+	baseIcmsSt: string;
+	valorIcmsSt: string;
+	aliquotaIcmsSt: string;
+} {
+	if (!dados || typeof dados !== "object") {
+		return {
+			codigoProduto: "",
+			baseIcmsSt: "",
+			valorIcmsSt: "",
+			aliquotaIcmsSt: "",
+		};
+	}
+	const registro = dados as Record<string, unknown>;
+	const tributacao =
+		registro.tributacao && typeof registro.tributacao === "object"
+			? (registro.tributacao as Record<string, unknown>)
+			: {};
+	const snapshot =
+		registro.xmlItemSnapshot && typeof registro.xmlItemSnapshot === "object"
+			? (registro.xmlItemSnapshot as Record<string, unknown>)
+			: {};
+	const tributacaoSnapshot =
+		snapshot.tributacaoXml && typeof snapshot.tributacaoXml === "object"
+			? (snapshot.tributacaoXml as Record<string, unknown>)
+			: {};
+
+	const codigo =
+		textoEfd(registro.cProd as string) ||
+		textoEfd(registro.codigoProduto as string) ||
+		textoEfd(registro.codigo as string);
+
+	return {
+		codigoProduto: codigo,
+		baseIcmsSt:
+			textoEfd(tributacao.baseicmsst as string) ||
+			textoEfd(tributacaoSnapshot.baseicmsst as string),
+		valorIcmsSt:
+			textoEfd(tributacao.icmsst as string) ||
+			textoEfd(tributacao.valoricmsst as string) ||
+			textoEfd(tributacaoSnapshot.icmsst as string),
+		aliquotaIcmsSt:
+			textoEfd(tributacao.aliquotaicmsst as string) ||
+			textoEfd(tributacaoSnapshot.aliquotaicmsst as string),
+	};
+}
 
 const STATUS_RASCUNHO_IMPORTACAO = 99;
 
@@ -134,6 +187,7 @@ export async function listarNotasEfd({
 			indFrete: notafiscal.tipofrete,
 			status: notafiscal.status,
 			cancelamento: notafiscal.cancelamento,
+			tipoambientenfe: notafiscal.tipoambientenfe,
 		})
 		.from(notafiscal)
 		.where(
@@ -142,6 +196,10 @@ export async function listarNotasEfd({
 				gte(dataCompetenciaSql, dataInicio),
 				lte(dataCompetenciaSql, dataFim),
 				ne(notafiscal.status, STATUS_RASCUNHO_IMPORTACAO),
+				or(
+					isNull(notafiscal.tipoambientenfe),
+					ne(notafiscal.tipoambientenfe, AMBIENTE_SEFAZ.HOMOLOGACAO),
+				),
 				or(
 					and(
 						eq(notafiscal.tipoorigem, 0),
@@ -206,9 +264,9 @@ export async function listarItensEfd(idsNotas: string[]): Promise<ItemEfd[]> {
 			id: notafiscalitem.id,
 			idnotafiscal: notafiscalitem.idnotafiscal,
 			contador: notafiscalitem.contador,
-			codigoProduto: sql<
-				string | null
-			>`coalesce(${produtos.codigo}::text, ${notafiscalitem.produto})`,
+			codigoCadastro: sql<string | null>`${produtos.codigo}::text`,
+			codigoItem: notafiscalitem.produto,
+			dadosimportacao: notafiscalitem.dadosimportacao,
 			descricao: notafiscalitem.descricao,
 			unidade: sql<
 				string | null
@@ -249,37 +307,44 @@ export async function listarItensEfd(idsNotas: string[]): Promise<ItemEfd[]> {
 		.where(inArray(notafiscalitem.idnotafiscal, idsNotas))
 		.orderBy(notafiscalitem.idnotafiscal, notafiscalitem.contador);
 
-	return itens.map((item, indice) => ({
-		id: item.id,
-		idnotafiscal: item.idnotafiscal,
-		numeroItem: item.contador ?? indice + 1,
-		codigoProduto: item.codigoProduto,
-		descricao: item.descricao,
-		unidade: item.unidade,
-		quantidade: item.quantidade,
-		valorItem: item.valorItem,
-		desconto: item.desconto,
-		cfop: item.cfop,
-		cstIcms: item.cstIcms,
-		csosn: item.csosn,
-		origem: item.origem,
-		baseIcms: item.baseIcms,
-		aliquotaIcms: item.aliquotaIcms,
-		valorIcms: item.valorIcms,
-		baseIcmsSt: item.baseIcmsSt,
-		aliquotaIcmsSt: item.aliquotaIcmsSt,
-		valorIcmsSt: item.valorIcmsSt,
-		cstIpi: item.cstIpi,
-		valorIpi: item.valorIpi,
-		cstPis: item.cstPis,
-		basePis: item.basePis,
-		aliquotaPis: item.aliquotaPis,
-		valorPis: item.valorPis,
-		cstCofins: item.cstCofins,
-		baseCofins: item.baseCofins,
-		aliquotaCofins: item.aliquotaCofins,
-		valorCofins: item.valorCofins,
-	}));
+	return itens.map((item, indice) => {
+		const extra = extrairCamposEfdDoJson(item.dadosimportacao);
+		const codigoProduto =
+			textoEfd(item.codigoCadastro) ||
+			textoEfd(item.codigoItem) ||
+			textoEfd(extra.codigoProduto);
+		return {
+			id: item.id,
+			idnotafiscal: item.idnotafiscal,
+			numeroItem: item.contador ?? indice + 1,
+			codigoProduto,
+			descricao: item.descricao,
+			unidade: item.unidade,
+			quantidade: item.quantidade,
+			valorItem: item.valorItem,
+			desconto: item.desconto,
+			cfop: item.cfop,
+			cstIcms: item.cstIcms,
+			csosn: item.csosn,
+			origem: item.origem,
+			baseIcms: item.baseIcms,
+			aliquotaIcms: item.aliquotaIcms,
+			valorIcms: item.valorIcms,
+			baseIcmsSt: textoEfd(item.baseIcmsSt) || extra.baseIcmsSt,
+			aliquotaIcmsSt: textoEfd(item.aliquotaIcmsSt) || extra.aliquotaIcmsSt,
+			valorIcmsSt: textoEfd(item.valorIcmsSt) || extra.valorIcmsSt,
+			cstIpi: item.cstIpi,
+			valorIpi: item.valorIpi,
+			cstPis: item.cstPis,
+			basePis: item.basePis,
+			aliquotaPis: item.aliquotaPis,
+			valorPis: item.valorPis,
+			cstCofins: item.cstCofins,
+			baseCofins: item.baseCofins,
+			aliquotaCofins: item.aliquotaCofins,
+			valorCofins: item.valorCofins,
+		};
+	});
 }
 
 export async function listarParticipantesEfd(

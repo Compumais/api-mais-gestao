@@ -97,6 +97,45 @@ describe("C190 x C170", () => {
 		expect(grupos[0]?.valorIcms).toBe(18);
 		expect(conferirC190IgualC170(itens, grupos)).toEqual([]);
 	});
+
+	it("detecta C190 sem ST quando o C170 tem ST", () => {
+		const itens: ItemEfd[] = [
+			{
+				id: "1",
+				idnotafiscal: "n1",
+				numeroItem: 1,
+				codigoProduto: "10",
+				descricao: "P",
+				unidade: "UN",
+				quantidade: "1",
+				valorItem: "100.00",
+				desconto: "0",
+				cfop: "5401",
+				cstIcms: "10",
+				csosn: null,
+				origem: 0,
+				baseIcms: "0",
+				aliquotaIcms: "0",
+				valorIcms: "0",
+				baseIcmsSt: "200.00",
+				aliquotaIcmsSt: "18",
+				valorIcmsSt: "36.00",
+				cstIpi: null,
+				valorIpi: "0",
+				cstPis: "01",
+				basePis: "100.00",
+				aliquotaPis: "1.65",
+				valorPis: "1.65",
+				cstCofins: "01",
+				baseCofins: "100.00",
+				aliquotaCofins: "7.60",
+				valorCofins: "7.60",
+			},
+		];
+		const grupos = agruparItensC190(itens);
+		expect(grupos[0]?.valorIcmsSt).toBe(36);
+		expect(conferirC190IgualC170(itens, grupos)).toEqual([]);
+	});
 });
 
 describe("C100 situação", () => {
