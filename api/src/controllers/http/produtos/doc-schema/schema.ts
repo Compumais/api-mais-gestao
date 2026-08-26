@@ -73,6 +73,14 @@ const propriedadesImpostosProdutoBody = {
 		anyOf: [{ type: "string", maxLength: 3 }, { type: "null" }],
 		description: "CST IPI na saída",
 	},
+	cstibs: {
+		anyOf: [{ type: "string", maxLength: 3 }, { type: "null" }],
+		description: "CST IBS/CBS (grupo IBSCBS da NF-e)",
+	},
+	classtributariaibs: {
+		anyOf: [{ type: "string", maxLength: 6 }, { type: "null" }],
+		description: "Classificação tributária IBS/CBS (cClassTrib)",
+	},
 	percentualmva: {
 		anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
 		description: "Percentual de MVA (Margem de Valor Agregado) do produto",
@@ -116,6 +124,14 @@ const propriedadesImpostosProdutoBody = {
 	aliquotapisconfinssaidapreco: {
 		anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
 		description: "Alíquota PIS/COFINS na formação de preço de saída",
+	},
+	aliquotaiibs: {
+		anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
+		description: "Alíquota IBS (%)",
+	},
+	aliquotacbs: {
+		anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
+		description: "Alíquota CBS (%)",
 	},
 };
 
