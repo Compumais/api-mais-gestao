@@ -30,6 +30,7 @@ import { arquivarXmlNotaFiscal } from "@/service/nota-fiscal/arquivar-xml-nota-f
 import type { FormaPagamentoNfVenda } from "@/service/nota-fiscal/gerar-contas-receber-nf.js";
 import { integrarNotaFiscalVendaAutorizadaService } from "@/service/nota-fiscal/integrar-nota-fiscal-venda-autorizada.js";
 import type { calcularTotaisFiscaisEmissaoNfe } from "@/util/calcular-totais-fiscais-emissao-nfe.js";
+import { camposTributariosItemEmissao } from "@/util/campos-tributarios-item-emissao.js";
 import {
 	FIN_NFE_NORMAL,
 	type TipoDevolucaoNfe,
@@ -123,6 +124,7 @@ function montarItensPersistencia(
 		contador: index + 1,
 		tipo: "P",
 		currenttimemillis: Date.now(),
+		...camposTributariosItemEmissao(item),
 		dadosimportacao: montarDadosImportacaoItemEmissaoNfe(item) ?? null,
 		...resumoLotePrincipal(item),
 	}));

@@ -31,6 +31,7 @@ import { aplicarCreditoIcmsSnItensEmissao } from "@/service/nfe-emissao/aplicar-
 import { enriquecerItensEmissaoComProduto } from "@/service/nfe-emissao/enriquecer-itens-emissao-produto.js";
 import { arquivarXmlNotaFiscal } from "@/service/nota-fiscal/arquivar-xml-nota-fiscal.js";
 import { calcularTotaisFiscaisEmissaoNfe } from "@/util/calcular-totais-fiscais-emissao-nfe.js";
+import { camposTributariosItemEmissao } from "@/util/campos-tributarios-item-emissao.js";
 import { montarDadosImportacaoItemEmissaoNfe } from "@/util/dados-emissao-nfe-nota.js";
 import {
 	agoraBrasiliaIsoOffset,
@@ -198,6 +199,7 @@ function montarItensPersistencia(
 		contador: index + 1,
 		tipo: "P",
 		currenttimemillis: Date.now(),
+		...camposTributariosItemEmissao(item),
 		dadosimportacao: montarDadosImportacaoItemEmissaoNfe(item) ?? null,
 	}));
 }
@@ -480,8 +482,12 @@ export async function emitirNfceVendaPdvService({
 		ipi: null,
 		pis: totaisFiscais.valorPis.toFixed(2),
 		cofins: totaisFiscais.valorCofins.toFixed(2),
-		baseicmssubstituicao: null,
-		icmssubstituicao: null,
+		baseicmssubstituicao:
+			totaisFiscais.baseIcmsSt > 0 ? totaisFiscais.baseIcmsSt.toFixed(2) : null,
+		icmssubstituicao:
+			totaisFiscais.valorIcmsSt > 0
+				? totaisFiscais.valorIcmsSt.toFixed(2)
+				: null,
 		arquivoxmlassinado: respostaGateway.xmlEnviado ?? null,
 		arquivoxmlautorizada:
 			statusPersistido === NFE_STATUS.AUTORIZADA

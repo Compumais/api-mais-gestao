@@ -35,6 +35,11 @@ export type ItemNFeXml = {
 	cstipi?: string | undefined;
 	enquadramentoipi?: string | undefined;
 	origem?: number | undefined;
+	basepis?: string | undefined;
+	basecofins?: string | undefined;
+	aliquotaicmsst?: string | undefined;
+	basefcp?: string | undefined;
+	valorfcp?: string | undefined;
 	referenciafornecedor?: string | undefined;
 	informacaoadicional?: string | undefined;
 	rastros?: RastroNFeXml[] | undefined;
@@ -86,6 +91,13 @@ export type NFeXmlParsed = {
 	ipiDevolvido?: string | undefined;
 	pis?: string | undefined;
 	cofins?: string | undefined;
+	baseicmssubstituicao?: string | undefined;
+	icmssubstituicao?: string | undefined;
+	icmsfundopobreza?: string | undefined;
+	icmsfundopobrezast?: string | undefined;
+	basecalculoicmsdifal?: string | undefined;
+	icmsdestino?: string | undefined;
+	icmsremetente?: string | undefined;
 	pesobruto?: string | undefined;
 	pesoliquido?: string | undefined;
 	observacao?: string | undefined;
@@ -109,7 +121,17 @@ function paraStr(valor: unknown): string | undefined {
 	return texto === "" ? undefined : texto;
 }
 
-type CampoTributoItem = "baseicms" | "icms" | "pis" | "cofins" | "ipi";
+type CampoTributoItem =
+	| "baseicms"
+	| "icms"
+	| "pis"
+	| "cofins"
+	| "ipi"
+	| "baseicmsst"
+	| "icmsst"
+	| "basepis"
+	| "basecofins"
+	| "valorfcp";
 
 function somarTributosItens(
 	itens: ItemNFeXml[],
@@ -200,6 +222,9 @@ function extrairIcmsItem(imposto: Record<string, unknown>): {
 	icmsst?: string | undefined;
 	mvaicmsst?: string | undefined;
 	fcpst?: string | undefined;
+	aliquotaicmsst?: string | undefined;
+	basefcp?: string | undefined;
+	valorfcp?: string | undefined;
 } {
 	const icmsContainer = imposto?.ICMS as Record<string, unknown> | undefined;
 	if (!icmsContainer) return {};
@@ -224,6 +249,9 @@ function extrairIcmsItem(imposto: Record<string, unknown>): {
 				icmsst: paraStr(dados.vICMSST),
 				mvaicmsst: paraStr(dados.pMVAST ?? dados.pRedBCST),
 				fcpst: paraStr(dados.vFCPST),
+				aliquotaicmsst: paraStr(dados.pICMSST),
+				basefcp: paraStr(dados.vBCFCP),
+				valorfcp: paraStr(dados.vFCP),
 			};
 		}
 	}
@@ -235,6 +263,7 @@ function extrairPisItem(imposto: Record<string, unknown>): {
 	cstpis?: string | undefined;
 	aliquotapis?: string | undefined;
 	pis?: string | undefined;
+	basepis?: string | undefined;
 } {
 	const pisContainer = imposto?.PIS as Record<string, unknown> | undefined;
 	if (!pisContainer) return {};
@@ -247,6 +276,7 @@ function extrairPisItem(imposto: Record<string, unknown>): {
 				cstpis: paraStr(dados.CST),
 				aliquotapis: paraStr(dados.pPIS),
 				pis: paraStr(dados.vPIS),
+				basepis: paraStr(dados.vBC),
 			};
 		}
 	}
@@ -257,6 +287,7 @@ function extrairCofinsItem(imposto: Record<string, unknown>): {
 	cstcofins?: string | undefined;
 	aliquotacofins?: string | undefined;
 	cofins?: string | undefined;
+	basecofins?: string | undefined;
 } {
 	const cofinsContainer = imposto?.COFINS as
 		| Record<string, unknown>
@@ -273,6 +304,7 @@ function extrairCofinsItem(imposto: Record<string, unknown>): {
 				cstcofins: paraStr(dados.CST),
 				aliquotacofins: paraStr(dados.pCOFINS),
 				cofins: paraStr(dados.vCOFINS),
+				basecofins: paraStr(dados.vBC),
 			};
 		}
 	}
@@ -532,6 +564,18 @@ export function parseNFeXml(xmlString: string): NFeXmlParsed {
 		ipiDevolvido: paraStr(icmsTot?.vIPIDevol),
 		pis: valorIcmsTotOuSomaItens(icmsTot, "vPIS", itens, "pis"),
 		cofins: valorIcmsTotOuSomaItens(icmsTot, "vCOFINS", itens, "cofins"),
+		baseicmssubstituicao: valorIcmsTotOuSomaItens(
+			icmsTot,
+			"vBCST",
+			itens,
+			"baseicmsst",
+		),
+		icmssubstituicao: valorIcmsTotOuSomaItens(icmsTot, "vST", itens, "icmsst"),
+		icmsfundopobreza: valorIcmsTotOuSomaItens(icmsTot, "vFCP", itens, "valorfcp"),
+		icmsfundopobrezast: paraStr(icmsTot?.vFCPST),
+		basecalculoicmsdifal: paraStr(icmsTot?.vBCUFDest),
+		icmsdestino: paraStr(icmsTot?.vICMSUFDest),
+		icmsremetente: paraStr(icmsTot?.vICMSUFRemet),
 		valortotalnota: paraStr(icmsTot?.vNF),
 		pesobruto: paraStr(vol?.pesoB),
 		pesoliquido: paraStr(vol?.pesoL),

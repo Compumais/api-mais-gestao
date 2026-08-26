@@ -34,6 +34,10 @@ export const empresafiscal = pgTable(
 		telefone: varchar({ length: 40 }),
 		email: varchar({ length: 200 }),
 		regimetributario: varchar({ length: 2 }),
+		/** Perfil EFD ICMS/IPI: A, B ou C (registro 0000 IND_PERFIL). */
+		indperfil: char({ length: 1 }).default("A"),
+		/** Atividade EFD: 0 industrial / 1 outros (registro 0000 IND_ATIV). */
+		indativ: smallint().default(1),
 		criadoem: timestamp({ precision: 3, mode: "string" })
 			.default(sql`CURRENT_TIMESTAMP`)
 			.notNull(),

@@ -41,6 +41,17 @@ const OPCOES_INDICADOR_IE = [
 	{ value: "9", label: "9 - Não contribuinte" },
 ];
 
+const OPCOES_IND_PERFIL = [
+	{ value: "A", label: "A - Completo (com itens C170)" },
+	{ value: "B", label: "B - Resumido" },
+	{ value: "C", label: "C - Simplificado" },
+];
+
+const OPCOES_IND_ATIV = [
+	{ value: "1", label: "1 - Outros (comércio/serviço)" },
+	{ value: "0", label: "0 - Industrial" },
+];
+
 interface EmpresaFiscalFormProps {
 	idempresa: string;
 }
@@ -68,6 +79,8 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 			indicadorie: 1,
 			codigopais: "1058",
 			crt: undefined,
+			indperfil: "A",
+			indativ: 1,
 		},
 	});
 
@@ -113,6 +126,11 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 			crt,
 			cnae: fiscal.cnae ?? "",
 			indicadorie: fiscal.indicadorie ?? 1,
+			indperfil:
+				fiscal.indperfil === "B" || fiscal.indperfil === "C"
+					? fiscal.indperfil
+					: "A",
+			indativ: fiscal.indativ === 0 ? 0 : 1,
 			logradouro: fiscal.logradouro ?? "",
 			numero: fiscal.numero ?? "",
 			complemento: fiscal.complemento ?? "",
@@ -241,6 +259,60 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 								<FieldError
 									errors={errors.indicadorie ? [errors.indicadorie] : []}
 								/>
+							</Field>
+
+							<Field data-invalid={!!errors.indperfil}>
+								<FieldLabel htmlFor="indperfil">
+									Perfil EFD ICMS/IPI
+								</FieldLabel>
+								<Select
+									value={String(form.watch("indperfil") ?? "A")}
+									onValueChange={(v) =>
+										form.setValue("indperfil", v as "A" | "B" | "C", {
+											shouldValidate: true,
+										})
+									}
+								>
+									<SelectTrigger id="indperfil">
+										<SelectValue placeholder="Perfil SPED" />
+									</SelectTrigger>
+									<SelectContent>
+										{OPCOES_IND_PERFIL.map((o) => (
+											<SelectItem key={o.value} value={o.value}>
+												{o.label}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+								<FieldError
+									errors={errors.indperfil ? [errors.indperfil] : []}
+								/>
+							</Field>
+
+							<Field data-invalid={!!errors.indativ}>
+								<FieldLabel htmlFor="indativ">
+									Atividade EFD (IND_ATIV)
+								</FieldLabel>
+								<Select
+									value={String(form.watch("indativ") ?? 1)}
+									onValueChange={(v) =>
+										form.setValue("indativ", Number(v), {
+											shouldValidate: true,
+										})
+									}
+								>
+									<SelectTrigger id="indativ">
+										<SelectValue placeholder="Atividade" />
+									</SelectTrigger>
+									<SelectContent>
+										{OPCOES_IND_ATIV.map((o) => (
+											<SelectItem key={o.value} value={o.value}>
+												{o.label}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+								<FieldError errors={errors.indativ ? [errors.indativ] : []} />
 							</Field>
 						</div>
 					</div>
