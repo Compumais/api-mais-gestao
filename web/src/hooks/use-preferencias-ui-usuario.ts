@@ -6,8 +6,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
 	configuracaoUsuarioService,
+	type LayoutMenuUsuario,
 	type PreferenciasUiUsuario,
 } from "@/services/configuracao-usuario.service";
+
+export type { LayoutMenuUsuario, PreferenciasUiUsuario };
 
 export const preferenciasUiQueryKey = ["preferencias-ui-usuario"] as const;
 
@@ -32,9 +35,37 @@ export function useAtualizarPreferenciasUiUsuario() {
 			queryClient.setQueryData(preferenciasUiQueryKey, dados);
 		},
 		onError: (error: Error) => {
-			toast.error(error.message || "Erro ao salvar preferências de colunas");
+			toast.error(error.message || "Erro ao salvar preferências de UI");
 		},
 	});
+}
+
+export function useLayoutMenu() {
+	const { data: preferencias, isLoading } = usePreferenciasUiUsuario();
+	const atualizar = useAtualizarPreferenciasUiUsuario();
+
+	const layoutMenu = preferencias?.layoutMenu ?? "sidebar";
+
+	const setLayoutMenu = useCallback(
+		(valor: LayoutMenuUsuario) => {
+			atualizar.mutate(
+				{ layoutMenu: valor },
+				{
+					onSuccess: () => {
+						toast.success("Layout de menu atualizado");
+					},
+				},
+			);
+		},
+		[atualizar],
+	);
+
+	return {
+		layoutMenu,
+		isLoading,
+		setLayoutMenu,
+		isSaving: atualizar.isPending,
+	};
 }
 
 type UseColunasTabelaPersistidasOpcoes = {

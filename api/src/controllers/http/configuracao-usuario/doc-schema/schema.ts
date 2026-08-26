@@ -164,6 +164,12 @@ const preferenciasUiProperties = {
 		description:
 			'Mapa de tabela → coluna → visível. Ex.: { "ordens-servico": { placa: true } }',
 	},
+	layoutMenu: {
+		type: "string",
+		enum: ["sidebar", "topbar"],
+		description:
+			"Layout de navegação preferido: sidebar (padrão) ou topbar horizontal.",
+	},
 };
 
 export const buscarPreferenciasUiUsuarioSchema: FastifySchema = {

@@ -10,14 +10,25 @@ import { DominioIntegracaoSection } from "./components/dominio-integracao-sectio
 import { EmpresaFiscalForm } from "./components/empresa-fiscal-form";
 import { ImpressaoForm } from "./components/impressao-form";
 import { IntegracaoForm } from "./components/integracao-form";
+import { ModelosImpressaoOsLista } from "./components/modelos-impressao-os-lista";
+import { ModelosImpressaoPedidoLista } from "./components/modelos-impressao-pedido-lista";
 import { NfceConfiguracaoForm } from "./components/nfce-configuracao-form";
 import { NfeConfiguracaoForm } from "./components/nfe-configuracao-form";
 import { NfseConfiguracaoForm } from "./components/nfse-configuracao-form";
 import { NotificacoesForm } from "./components/notificacoes-form";
 import { OrdemServicoConfigForm } from "./components/ordem-servico-form";
-import { ModelosImpressaoOsLista } from "./components/modelos-impressao-os-lista";
-import { ModelosImpressaoPedidoLista } from "./components/modelos-impressao-pedido-lista";
 import { RelatoriosForm } from "./components/relatorios-form";
+import { TemaForm } from "./components/tema-form";
+
+function AvisoEmpresaNecessaria() {
+	return (
+		<div className="flex items-center justify-center py-8 px-4">
+			<p className="text-muted-foreground">
+				Selecione uma empresa para visualizar estas configurações
+			</p>
+		</div>
+	);
+}
 
 export default function ConfiguracoesPage() {
 	const { localStorageEmpresa: empresa } = useEmpresa();
@@ -29,27 +40,16 @@ export default function ConfiguracoesPage() {
 		empresa?.id || null,
 	);
 
-	if (!empresa) {
-		return (
-			<PageContainer>
-				<div className="flex items-center justify-center py-8 px-4">
-					<p className="text-muted-foreground">
-						Selecione uma empresa para visualizar as configurações
-					</p>
-				</div>
-			</PageContainer>
-		);
-	}
-
-	if (isLoading) {
-		return (
-			<PageContainer>
+	const conteudoEmpresa =
+		!empresa || isLoading ? (
+			!empresa ? (
+				<AvisoEmpresaNecessaria />
+			) : (
 				<div className="flex items-center justify-center py-8">
 					<div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
 				</div>
-			</PageContainer>
-		);
-	}
+			)
+		) : null;
 
 	return (
 		<PageContainer>
@@ -57,13 +57,14 @@ export default function ConfiguracoesPage() {
 				<div className="px-4">
 					<h1 className="text-2xl font-bold">Configurações</h1>
 					<p className="text-muted-foreground text-sm">
-						Gerencie as configurações da empresa
+						Gerencie as configurações da empresa e preferências de interface
 					</p>
 				</div>
 
 				<div className="px-4">
 					<Tabs value={tabAtiva} onValueChange={setTabAtiva}>
-						<TabsList>
+						<TabsList className="h-auto flex-wrap">
+							<TabsTrigger value="tema">Tema</TabsTrigger>
 							<TabsTrigger value="notificacoes">Notificações</TabsTrigger>
 							<TabsTrigger value="empresa-fiscal">Empresa fiscal</TabsTrigger>
 							<TabsTrigger value="nfe">NF-e</TabsTrigger>
@@ -81,61 +82,89 @@ export default function ConfiguracoesPage() {
 							<TabsTrigger value="impressao">Impressão</TabsTrigger>
 						</TabsList>
 
+						<TabsContent value="tema" className="mt-4">
+							<TemaForm />
+						</TabsContent>
+
 						<TabsContent value="notificacoes" className="mt-4">
-							<NotificacoesForm
-								configuracao={configuracao}
-								idempresa={empresa.id}
-							/>
+							{conteudoEmpresa ?? (
+								<NotificacoesForm
+									configuracao={configuracao}
+									idempresa={empresa!.id}
+								/>
+							)}
 						</TabsContent>
 
 						<TabsContent value="empresa-fiscal" className="mt-4">
-							<EmpresaFiscalForm idempresa={empresa.id} />
+							{conteudoEmpresa ?? (
+								<EmpresaFiscalForm idempresa={empresa!.id} />
+							)}
 						</TabsContent>
 
 						<TabsContent value="nfe" className="mt-4">
-							<NfeConfiguracaoForm idempresa={empresa.id} />
+							{conteudoEmpresa ?? (
+								<NfeConfiguracaoForm idempresa={empresa!.id} />
+							)}
 						</TabsContent>
 
 						<TabsContent value="nfce" className="mt-4">
-							<NfceConfiguracaoForm idempresa={empresa.id} />
+							{conteudoEmpresa ?? (
+								<NfceConfiguracaoForm idempresa={empresa!.id} />
+							)}
 						</TabsContent>
 
 						<TabsContent value="nfse" className="mt-4">
-							<NfseConfiguracaoForm idempresa={empresa.id} />
+							{conteudoEmpresa ?? (
+								<NfseConfiguracaoForm idempresa={empresa!.id} />
+							)}
 						</TabsContent>
 
 						<TabsContent value="ordem-servico" className="mt-4">
-							<OrdemServicoConfigForm idempresa={empresa.id} />
+							{conteudoEmpresa ?? (
+								<OrdemServicoConfigForm idempresa={empresa!.id} />
+							)}
 						</TabsContent>
 
 						<TabsContent value="modelos-impressao" className="mt-4 space-y-8">
-							<ModelosImpressaoOsLista idempresa={empresa.id} />
-							<ModelosImpressaoPedidoLista idempresa={empresa.id} />
+							{conteudoEmpresa ?? (
+								<>
+									<ModelosImpressaoOsLista idempresa={empresa!.id} />
+									<ModelosImpressaoPedidoLista idempresa={empresa!.id} />
+								</>
+							)}
 						</TabsContent>
 
 						<TabsContent value="integracao" className="mt-4">
-							<IntegracaoForm
-								configuracao={configuracao}
-								idempresa={empresa.id}
-							/>
+							{conteudoEmpresa ?? (
+								<IntegracaoForm
+									configuracao={configuracao}
+									idempresa={empresa!.id}
+								/>
+							)}
 						</TabsContent>
 
 						<TabsContent value="integracoes-contabeis" className="mt-4">
-							<DominioIntegracaoSection idempresa={empresa.id} />
+							{conteudoEmpresa ?? (
+								<DominioIntegracaoSection idempresa={empresa!.id} />
+							)}
 						</TabsContent>
 
 						<TabsContent value="relatorios" className="mt-4">
-							<RelatoriosForm
-								configuracao={configuracao}
-								idempresa={empresa.id}
-							/>
+							{conteudoEmpresa ?? (
+								<RelatoriosForm
+									configuracao={configuracao}
+									idempresa={empresa!.id}
+								/>
+							)}
 						</TabsContent>
 
 						<TabsContent value="impressao" className="mt-4">
-							<ImpressaoForm
-								configuracao={configuracao}
-								idempresa={empresa.id}
-							/>
+							{conteudoEmpresa ?? (
+								<ImpressaoForm
+									configuracao={configuracao}
+									idempresa={empresa!.id}
+								/>
+							)}
 						</TabsContent>
 					</Tabs>
 				</div>
