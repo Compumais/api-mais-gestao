@@ -9,9 +9,9 @@ import {
 	criarNotaFiscalComItens,
 	substituirItensNotaFiscal,
 } from "@/repositories/nota-fiscal-repositories.js";
+import { vincularAuditoriaFiscalNfeNota } from "@/repositories/regra-fiscal-repositories.js";
 import { enfileirarEnvioDominioSilencioso } from "@/service/dominio/enfileirar-envio-dominio.js";
 import { persistirLotesItensNotaEmissao } from "@/service/lote/persistir-lotes-itens-nota-emissao.js";
-import { vincularAuditoriaFiscalNfeNota } from "@/repositories/regra-fiscal-repositories.js";
 import { salvarUltimaPreferenciaEmissaoNfe } from "@/service/nfe-configuracao/salvar-ultima-preferencia-emissao-nfe.js";
 import type {
 	DestinatarioPayloadNfe,
@@ -102,6 +102,7 @@ function montarItensPersistencia(
 		id: uuidv4(),
 		idnotafiscal,
 		idproduto: item.idproduto ?? null,
+		produto: item.codigoProduto?.trim().slice(0, 20) || null,
 		descricao: item.descricao,
 		quantidade: String(item.quantidade),
 		precounitario: String(item.valorUnitario),
@@ -507,10 +508,9 @@ export async function emitirNfeVendaService(
 	}
 
 	if (idAuditoriaFiscal) {
-		await vincularAuditoriaFiscalNfeNota(
-			idAuditoriaFiscal,
-			idnotafiscal,
-		).catch(console.error);
+		await vincularAuditoriaFiscalNfeNota(idAuditoriaFiscal, idnotafiscal).catch(
+			console.error,
+		);
 	}
 
 	await persistirLotesItensNotaEmissao({

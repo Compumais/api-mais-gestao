@@ -32,6 +32,7 @@
 		"db:migrate:baseline": "tsx scripts/aplicar-migrations-pendentes.ts baseline",
 		"db:migrate:diagnostico": "tsx scripts/aplicar-migrations-pendentes.ts drizzle",
 		"db:diagnostico:produtos-csv": "tsx scripts/diagnostico-produtos-coluna-csv.ts",
+		"corrigir-itens-efd-nfe": "tsx scripts/corrigir-itens-efd-nfe.ts",
 		"popular-cfops-padrao": "tsx scripts/popular-cfops-padrao-empresas.ts",
 		"popular-fatores-conversao-padrao": "tsx scripts/popular-fatores-conversao-padrao-empresas.ts",
 		"popular-taxas-padrao": "tsx scripts/popular-taxas-padrao-empresas.ts",

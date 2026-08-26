@@ -19,6 +19,7 @@ import type {
 } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
 import type { FormaPagamentoNfVenda } from "@/service/nota-fiscal/gerar-contas-receber-nf.js";
 import { camposTributariosItemEmissao } from "@/util/campos-tributarios-item-emissao.js";
+import { FIN_NFE_NORMAL } from "@/util/cfop-devolucao-emissao-nfe.js";
 import {
 	montarDadosImportacaoItemEmissaoNfe,
 	montarSnapshotEmissaoNfe,
@@ -27,8 +28,6 @@ import {
 	agoraBrasiliaIsoOffset,
 	hojeBrasiliaIsoDate,
 } from "@/util/data-hora-brasilia.js";
-import { FIN_NFE_NORMAL } from "@/util/cfop-devolucao-emissao-nfe.js";
-import { montarDestinatarioPorIdentidade } from "@/util/montar-destinatario-entidade-nfe.js";
 import {
 	httpBadRequest,
 	httpCriacao,
@@ -36,6 +35,7 @@ import {
 	httpOk,
 	httpProibido,
 } from "@/util/http-util.js";
+import { montarDestinatarioPorIdentidade } from "@/util/montar-destinatario-entidade-nfe.js";
 import { STATUS_RASCUNHO_IMPORTACAO } from "@/util/nota-fiscal-constants.js";
 
 export type SalvarRascunhoEmissaoNfeVendaParametros = {
@@ -96,6 +96,7 @@ function montarItensRascunho(
 		id: uuidv4(),
 		idnotafiscal,
 		idproduto: item.idproduto ?? null,
+		produto: item.codigoProduto?.trim().slice(0, 20) || null,
 		descricao: item.descricao,
 		quantidade: String(item.quantidade),
 		precounitario: String(item.valorUnitario),
@@ -203,7 +204,8 @@ function montarDadosNotaRascunho(params: {
 		modelodocumentoreferenciado: params.documentoReferenciado ? "55" : null,
 		seriedocumentoreferenciado: params.documentoReferenciado?.serie ?? null,
 		numerodocumentoreferenciado: params.documentoReferenciado?.numero ?? null,
-		datadocumentoreferenciado: params.documentoReferenciado?.dataEmissao ?? null,
+		datadocumentoreferenciado:
+			params.documentoReferenciado?.dataEmissao ?? null,
 		tiponotadocumentoreferenciado: params.documentoReferenciado ? "NFE" : null,
 		idserie: params.idserie ?? null,
 		dadosimportacao: montarSnapshotEmissaoNfe({
@@ -267,7 +269,9 @@ export async function salvarRascunhoEmissaoNfeVendaService(
 			return httpNaoEncontrado();
 		}
 		if (existente.tipoorigem !== 1) {
-			return httpBadRequest("Somente rascunhos de NF-e de venda podem ser editados");
+			return httpBadRequest(
+				"Somente rascunhos de NF-e de venda podem ser editados",
+			);
 		}
 		if (existente.status !== STATUS_RASCUNHO_IMPORTACAO) {
 			return httpBadRequest(
