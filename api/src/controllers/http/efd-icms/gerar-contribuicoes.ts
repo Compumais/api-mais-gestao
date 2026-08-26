@@ -26,9 +26,13 @@ export async function gerarEfdContribuicoes(
 		});
 
 		if (!resultado.success) {
-			return reply
-				.status(resultado.status)
-				.send("error" in resultado ? resultado.error : httpErroInterno());
+			const erro =
+				"error" in resultado && typeof resultado.error === "string"
+					? { error: resultado.error, code: "BAD_REQUEST_ERROR" }
+					: "error" in resultado
+						? resultado.error
+						: httpErroInterno();
+			return reply.status(resultado.status).send(erro);
 		}
 		if (!resultado.body) {
 			return reply.status(httpErroInterno().status).send(httpErroInterno());

@@ -185,16 +185,18 @@ export function conferirC190IgualC170(
 			opr: acc.opr + parseNumeroEfd(item.valorItem),
 			bc: acc.bc + parseNumeroEfd(item.baseIcms),
 			icms: acc.icms + parseNumeroEfd(item.valorIcms),
+			st: acc.st + parseNumeroEfd(item.valorIcmsSt),
 		}),
-		{ opr: 0, bc: 0, icms: 0 },
+		{ opr: 0, bc: 0, icms: 0, st: 0 },
 	);
 	const somaGrupos = grupos.reduce(
 		(acc, grupo) => ({
 			opr: acc.opr + grupo.valorOperacao,
 			bc: acc.bc + grupo.baseIcms,
 			icms: acc.icms + grupo.valorIcms,
+			st: acc.st + grupo.valorIcmsSt,
 		}),
-		{ opr: 0, bc: 0, icms: 0 },
+		{ opr: 0, bc: 0, icms: 0, st: 0 },
 	);
 	const alertas: string[] = [];
 	if (Math.abs(somaItens.opr - somaGrupos.opr) > tolerancia) {
@@ -202,6 +204,9 @@ export function conferirC190IgualC170(
 	}
 	if (Math.abs(somaItens.icms - somaGrupos.icms) > tolerancia) {
 		alertas.push("C190 diverge do C170 no valor do ICMS.");
+	}
+	if (Math.abs(somaItens.st - somaGrupos.st) > tolerancia) {
+		alertas.push("C190 diverge do C170 no valor do ICMS ST.");
 	}
 	return alertas;
 }

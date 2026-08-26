@@ -1,4 +1,4 @@
-import { campoNumerico } from "@/util/efd/formatador-pipe.js";
+import { campoNumerico, parseNumeroEfd } from "@/util/efd/formatador-pipe.js";
 import { mesCompetencia } from "@/util/efd/vigencia.js";
 import { codigoSituacaoDocumento } from "./registros/bloco-c.js";
 import type {
@@ -66,7 +66,9 @@ export function validarDadosEfdIcms({
 
 	const itensSemProduto = itens.filter((item) => !item.codigoProduto?.trim());
 	if (itensSemProduto.length > 0) {
-		alertas.push(`${itensSemProduto.length} item(ns) sem código de produto.`);
+		erros.push(
+			`${itensSemProduto.length} item(ns) sem código de produto (C170 COD_ITEM). Vincule o item ao cadastro ou preencha o código do produto na nota — o PVA rejeita C170 sem 0200.`,
+		);
 	}
 
 	const itensSemCfop = itens.filter((item) => !item.cfop?.replace(/\D/g, ""));
@@ -106,6 +108,18 @@ export function validarDadosEfdIcms({
 		) {
 			erros.push(
 				`Documento modelo ${modelo} número ${nota.numero ?? "?"} exige chave de 44 dígitos.`,
+			);
+		}
+		if (situacao !== "00") continue;
+		const itensNota = itens.filter((item) => item.idnotafiscal === nota.id);
+		const somaStItens = itensNota.reduce(
+			(acc, item) => acc + parseNumeroEfd(item.valorIcmsSt),
+			0,
+		);
+		const stCabecalho = parseNumeroEfd(nota.valorIcmsSt);
+		if (stCabecalho > 0.01 && somaStItens < 0.01) {
+			erros.push(
+				`NF ${nota.numero ?? nota.id}: C100 tem ICMS ST de ${stCabecalho.toFixed(2)} mas os itens (C170) estão sem base/valor ST. O C190 nasceria zerado e o PVA rejeita.`,
 			);
 		}
 	}
