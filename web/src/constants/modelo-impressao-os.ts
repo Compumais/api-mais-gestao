@@ -32,11 +32,23 @@ export const CAMPOS_DADOS_OS = [
 export const CAMPOS_CLIENTE_OS = [
 	{ value: "nomecliente", label: "Nome" },
 	{ value: "cnpjcpfcliente", label: "CNPJ/CPF" },
+	{ value: "enderecocompleto", label: "Endereço completo" },
+	{ value: "telefone", label: "Telefone" },
+	{ value: "email", label: "E-mail" },
+	{ value: "inscricaoestadual", label: "Inscrição estadual" },
 ] as const;
+
+export const CAMPOS_CLIENTE_OS_PADRAO = CAMPOS_CLIENTE_OS.map((c) => c.value);
 
 export const CAMPOS_VEICULO_OS = [
 	{ value: "marca", label: "Marca" },
 	{ value: "modelo", label: "Modelo" },
 	{ value: "placa", label: "Placa" },
 	{ value: "renavam", label: "RENAVAM" },
+] as const;
+
+export const OPCOES_COLUNA_BLOCO = [
+	{ value: "cheia", label: "Largura total" },
+	{ value: "esquerda", label: "Coluna 1" },
+	{ value: "direita", label: "Coluna 2" },
 ] as const;

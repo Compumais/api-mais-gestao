@@ -78,6 +78,7 @@ export type OrdemServicoItem = {
 	preco: string | null;
 	total: string | null;
 	idtecnico: string | null;
+	nometecnico?: string | null;
 	idcfop: string | null;
 	unidademedida: string | null;
 	observacao: string | null;

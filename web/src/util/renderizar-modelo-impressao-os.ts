@@ -1,10 +1,30 @@
 import { obterStatusPadraoPorNumero } from "@/constants/ordem-servico-status";
-import type { LayoutModeloImpressaoOs } from "@/schemas/modelo-impressao-os.schema";
+import { CAMPOS_CLIENTE_OS_PADRAO } from "@/constants/modelo-impressao-os";
+import type {
+	BlocoModeloImpressaoOs,
+	ColunaBlocoModeloImpressao,
+	LayoutModeloImpressaoOs,
+} from "@/schemas/modelo-impressao-os.schema";
 import type { Empresa } from "@/services/empresas.service";
 import type {
 	OrdemServico,
 	OrdemServicoItem,
 } from "@/services/ordem-servico.service";
+
+export type DadosClienteImpressao = {
+	nome?: string | null;
+	cnpjcpf?: string | null;
+	inscricaoestadual?: string | null;
+	telefone?: string | null;
+	email?: string | null;
+	endereco?: string | null;
+	numero?: string | null;
+	complemento?: string | null;
+	bairro?: string | null;
+	cep?: string | null;
+	cidade?: string | null;
+	uf?: string | null;
+};
 
 export type DadosPreviewModeloImpressaoOs = {
 	empresa?: Empresa | null;
@@ -12,7 +32,8 @@ export type DadosPreviewModeloImpressaoOs = {
 		nomecliente?: string | null;
 		cnpjcpfcliente?: string | null;
 	};
-	itens?: OrdemServicoItem[];
+	itens?: (OrdemServicoItem & { nometecnico?: string | null })[];
+	cliente?: DadosClienteImpressao | null;
 };
 
 function formatarData(valor?: string | null) {
@@ -32,10 +53,37 @@ function formatarMoeda(valor?: string | number | null) {
 	}).format(n);
 }
 
+function escapeHtml(valor: string) {
+	return valor
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;");
+}
+
+function colunaEfetiva(
+	bloco: { coluna?: ColunaBlocoModeloImpressao },
+): ColunaBlocoModeloImpressao {
+	return bloco.coluna ?? "cheia";
+}
+
+function montarEnderecoCompleto(cliente?: DadosClienteImpressao | null) {
+	if (!cliente) return "";
+	const linha1 = [cliente.endereco, cliente.numero, cliente.complemento]
+		.filter(Boolean)
+		.join(", ");
+	const cidadeUf = [cliente.cidade, cliente.uf].filter(Boolean).join("/");
+	const linha2 = [cliente.bairro, cidadeUf, cliente.cep ? `CEP ${cliente.cep}` : ""]
+		.filter(Boolean)
+		.join(" — ");
+	return [linha1, linha2].filter(Boolean).join(". ");
+}
+
 function valorCampoOs(
 	ordem: DadosPreviewModeloImpressaoOs["ordem"],
 	campo: string,
-): string {
+	cliente?: DadosClienteImpressao | null,
+): string | null {
 	switch (campo) {
 		case "codigo":
 			return ordem.codigo != null ? String(ordem.codigo) : "—";
@@ -52,9 +100,29 @@ function valorCampoOs(
 		case "orcamento":
 			return ordem.orcamento === 1 ? "Sim" : "Não";
 		case "nomecliente":
-			return ordem.nomecliente?.trim() || "—";
+			return (
+				cliente?.nome?.trim() ||
+				ordem.nomecliente?.trim() ||
+				"—"
+			);
 		case "cnpjcpfcliente":
-			return ordem.cnpjcpfcliente?.trim() || "—";
+			return (
+				cliente?.cnpjcpf?.trim() ||
+				ordem.cnpjcpfcliente?.trim() ||
+				"—"
+			);
+		case "enderecocompleto": {
+			const endereco = montarEnderecoCompleto(cliente);
+			return endereco || "—";
+		}
+		case "telefone":
+			return cliente?.telefone?.trim() || "—";
+		case "email":
+			return cliente?.email?.trim() || "—";
+		case "inscricaoestadual": {
+			const ie = cliente?.inscricaoestadual?.trim();
+			return ie || null;
+		}
 		case "marca":
 			return ordem.marca?.trim() || "—";
 		case "modelo":
@@ -73,261 +141,340 @@ function linhasCampos(
 	campos: string[] | undefined,
 	padrao: string[],
 	labels: Record<string, string>,
+	cliente?: DadosClienteImpressao | null,
 ): string {
 	const lista = campos?.length ? campos : padrao;
 	return lista
-		.map(
-			(campo) =>
-				`<div class="campo"><span class="rotulo">${labels[campo] ?? campo}</span><span class="valor">${valorCampoOs(ordem, campo)}</span></div>`,
-		)
+		.map((campo) => {
+			const valor = valorCampoOs(ordem, campo, cliente);
+			if (valor == null) return "";
+			return `<div class="campo"><span class="rotulo">${labels[campo] ?? campo}</span><span class="valor">${escapeHtml(valor)}</span></div>`;
+		})
+		.filter(Boolean)
 		.join("");
+}
+
+function camposClienteEfetivos(campos: string[] | undefined): string[] {
+	if (!campos?.length) return [...CAMPOS_CLIENTE_OS_PADRAO];
+	const soBasicos =
+		campos.every((c) => c === "nomecliente" || c === "cnpjcpfcliente") &&
+		campos.length <= 2;
+	if (soBasicos) return [...CAMPOS_CLIENTE_OS_PADRAO];
+	return campos;
+}
+
+function renderizarBlocoOs(
+	bloco: BlocoModeloImpressaoOs,
+	dados: DadosPreviewModeloImpressaoOs,
+): string {
+	const { empresa, ordem, itens = [], cliente } = dados;
+
+	switch (bloco.tipo) {
+		case "cabecalhoEmpresa": {
+			const endereco = [
+				empresa?.endereco,
+				empresa?.numero,
+				empresa?.bairro,
+				empresa?.cep,
+			]
+				.filter(Boolean)
+				.join(", ");
+			return `
+				<section class="bloco cabecalho">
+					<div class="empresa-nome">${escapeHtml(empresa?.nome ?? "Empresa")}</div>
+					<div class="empresa-meta">${empresa?.cnpj ? `CNPJ: ${escapeHtml(empresa.cnpj)}` : ""}</div>
+					<div class="empresa-meta">${escapeHtml(endereco || "")}</div>
+					<div class="empresa-meta">${escapeHtml([empresa?.telefone, empresa?.email].filter(Boolean).join(" · "))}</div>
+				</section>
+			`;
+		}
+		case "titulo":
+			return `<section class="bloco titulo"><h1>${escapeHtml(bloco.props?.titulo?.trim() || "Ordem de Serviço")}</h1></section>`;
+		case "textoLivre":
+			return `<section class="bloco texto-livre"><p>${escapeHtml(bloco.props?.texto ?? "").replace(/\n/g, "<br/>")}</p></section>`;
+		case "dadosOs":
+			return `
+				<section class="bloco">
+					<h2>Dados da OS</h2>
+					<div class="grade">
+						${linhasCampos(
+							ordem,
+							bloco.props?.campos,
+							["codigo", "status", "dataos"],
+							{
+								codigo: "Código",
+								status: "Status",
+								dataos: "Data",
+								agendamento: "Agendamento",
+								previsaoconclusao: "Previsão",
+								orcamento: "Orçamento",
+							},
+						)}
+					</div>
+				</section>
+			`;
+		case "cliente":
+			return `
+				<section class="bloco">
+					<h2>Cliente</h2>
+					<div class="grade">
+						${linhasCampos(
+							ordem,
+							camposClienteEfetivos(bloco.props?.campos),
+							[...CAMPOS_CLIENTE_OS_PADRAO],
+							{
+								nomecliente: "Nome",
+								cnpjcpfcliente: "CNPJ/CPF",
+								enderecocompleto: "Endereço",
+								telefone: "Telefone",
+								email: "E-mail",
+								inscricaoestadual: "IE",
+							},
+							cliente,
+						)}
+					</div>
+				</section>
+			`;
+		case "veiculo":
+			return `
+				<section class="bloco">
+					<h2>Veículo</h2>
+					<div class="grade">
+						${linhasCampos(
+							ordem,
+							bloco.props?.campos,
+							["marca", "modelo", "placa", "renavam"],
+							{
+								marca: "Marca",
+								modelo: "Modelo",
+								placa: "Placa",
+								renavam: "RENAVAM",
+							},
+						)}
+					</div>
+				</section>
+			`;
+		case "problema":
+			return `
+				<section class="bloco">
+					<h2>Problema descrito</h2>
+					<p>${escapeHtml(ordem.problemadescrito?.trim() || "—")}</p>
+				</section>
+			`;
+		case "laudo":
+			return `
+				<section class="bloco">
+					<h2>Laudo técnico</h2>
+					<p>${escapeHtml(ordem.laudotecnico?.trim() || "—")}</p>
+				</section>
+			`;
+		case "observacao":
+			return `
+				<section class="bloco">
+					<h2>Observação</h2>
+					<p>${escapeHtml(ordem.observacao?.trim() || "—")}</p>
+				</section>
+			`;
+		case "itens": {
+			const mostrarResponsavel = bloco.props?.mostrarResponsavel === true;
+			const colSpan = mostrarResponsavel ? 6 : 5;
+			const linhas =
+				itens.length === 0
+					? `<tr><td colspan="${colSpan}">Nenhum item</td></tr>`
+					: itens
+							.map((item) => {
+								const responsavel = mostrarResponsavel
+									? `<td>${escapeHtml(item.nometecnico?.trim() || "—")}</td>`
+									: "";
+								return `
+							<tr>
+								<td>${escapeHtml(item.codigorproduto ?? "—")}</td>
+								<td>${escapeHtml(item.nomeproduto ?? "—")}</td>
+								<td class="num">${escapeHtml(item.quantidade ?? "—")}</td>
+								<td class="num">${formatarMoeda(item.preco)}</td>
+								<td class="num">${formatarMoeda(item.total)}</td>
+								${responsavel}
+							</tr>`;
+							})
+							.join("");
+			const thResponsavel = mostrarResponsavel
+				? "<th>Responsável</th>"
+				: "";
+			return `
+				<section class="bloco">
+					<h2>Itens</h2>
+					<table>
+						<thead>
+							<tr>
+								<th>Código</th>
+								<th>Descrição</th>
+								<th>Qtd</th>
+								<th>Unit.</th>
+								<th>Total</th>
+								${thResponsavel}
+							</tr>
+						</thead>
+						<tbody>${linhas}</tbody>
+					</table>
+				</section>
+			`;
+		}
+		case "totais":
+			return `
+				<section class="bloco totais">
+					<h2>Totais</h2>
+					<div class="grade">
+						<div class="campo"><span class="rotulo">Produtos</span><span class="valor">${formatarMoeda(ordem.valorprodutos)}</span></div>
+						<div class="campo"><span class="rotulo">Serviços</span><span class="valor">${formatarMoeda(ordem.valorservicos)}</span></div>
+						<div class="campo"><span class="rotulo">Desconto</span><span class="valor">${formatarMoeda(ordem.descontosubtotal)}</span></div>
+						<div class="campo total"><span class="rotulo">Total</span><span class="valor">${formatarMoeda(ordem.valor)}</span></div>
+					</div>
+				</section>
+			`;
+		case "extras": {
+			const extras = Array.from({ length: 16 }, (_, i) => {
+				const key = `extra${i + 1}` as keyof OrdemServico;
+				const valor = ordem[key];
+				if (typeof valor !== "string" || !valor.trim()) return null;
+				const config = ordem.camposextras?.find(
+					(c) => c.campo === `extra${i + 1}`,
+				);
+				return `<div class="campo"><span class="rotulo">${escapeHtml(config?.nome ?? `Extra ${i + 1}`)}</span><span class="valor">${escapeHtml(valor)}</span></div>`;
+			}).filter(Boolean);
+			return `
+				<section class="bloco">
+					<h2>Campos extras</h2>
+					<div class="grade">${extras.length ? extras.join("") : "<p>—</p>"}</div>
+				</section>
+			`;
+		}
+		case "assinaturas":
+			return `
+				<section class="bloco assinaturas">
+					<div class="assinatura"><div class="linha"></div><span>Cliente</span></div>
+					<div class="assinatura"><div class="linha"></div><span>Técnico / Responsável</span></div>
+				</section>
+			`;
+		case "rodape":
+			return `
+				<section class="bloco rodape">
+					<p>${escapeHtml(bloco.props?.texto?.trim() || "Documento gerado pelo Mais Gestão")}</p>
+				</section>
+			`;
+		default:
+			return "";
+	}
 }
 
 export function renderizarHtmlModeloImpressaoOs(
 	layout: LayoutModeloImpressaoOs,
 	dados: DadosPreviewModeloImpressaoOs,
 ): string {
-	const { empresa, ordem, itens = [] } = dados;
 	const partes: string[] = [];
+	let faixaCols: string[] = [];
+
+	function flushFaixa() {
+		if (faixaCols.length === 0) return;
+		partes.push(`<div class="faixa-colunas">${faixaCols.join("")}</div>`);
+		faixaCols = [];
+	}
 
 	for (const bloco of layout) {
-		switch (bloco.tipo) {
-			case "cabecalhoEmpresa": {
-				const endereco = [
-					empresa?.endereco,
-					empresa?.numero,
-					empresa?.bairro,
-					empresa?.cep,
-				]
-					.filter(Boolean)
-					.join(", ");
-				partes.push(`
-					<section class="bloco cabecalho">
-						<div class="empresa-nome">${empresa?.nome ?? "Empresa"}</div>
-						<div class="empresa-meta">${empresa?.cnpj ? `CNPJ: ${empresa.cnpj}` : ""}</div>
-						<div class="empresa-meta">${endereco || ""}</div>
-						<div class="empresa-meta">${[empresa?.telefone, empresa?.email].filter(Boolean).join(" · ")}</div>
-					</section>
-				`);
-				break;
-			}
-			case "titulo":
-				partes.push(
-					`<section class="bloco titulo"><h1>${bloco.props?.titulo?.trim() || "Ordem de Serviço"}</h1></section>`,
-				);
-				break;
-			case "textoLivre":
-				partes.push(
-					`<section class="bloco texto-livre"><p>${(bloco.props?.texto ?? "").replace(/\n/g, "<br/>")}</p></section>`,
-				);
-				break;
-			case "dadosOs":
-				partes.push(`
-					<section class="bloco">
-						<h2>Dados da OS</h2>
-						<div class="grade">
-							${linhasCampos(
-								ordem,
-								bloco.props?.campos,
-								["codigo", "status", "dataos"],
-								{
-									codigo: "Código",
-									status: "Status",
-									dataos: "Data",
-									agendamento: "Agendamento",
-									previsaoconclusao: "Previsão",
-									orcamento: "Orçamento",
-								},
-							)}
-						</div>
-					</section>
-				`);
-				break;
-			case "cliente":
-				partes.push(`
-					<section class="bloco">
-						<h2>Cliente</h2>
-						<div class="grade">
-							${linhasCampos(
-								ordem,
-								bloco.props?.campos,
-								["nomecliente", "cnpjcpfcliente"],
-								{
-									nomecliente: "Nome",
-									cnpjcpfcliente: "CNPJ/CPF",
-								},
-							)}
-						</div>
-					</section>
-				`);
-				break;
-			case "veiculo":
-				partes.push(`
-					<section class="bloco">
-						<h2>Veículo</h2>
-						<div class="grade">
-							${linhasCampos(
-								ordem,
-								bloco.props?.campos,
-								["marca", "modelo", "placa", "renavam"],
-								{
-									marca: "Marca",
-									modelo: "Modelo",
-									placa: "Placa",
-									renavam: "RENAVAM",
-								},
-							)}
-						</div>
-					</section>
-				`);
-				break;
-			case "problema":
-				partes.push(`
-					<section class="bloco">
-						<h2>Problema descrito</h2>
-						<p>${ordem.problemadescrito?.trim() || "—"}</p>
-					</section>
-				`);
-				break;
-			case "laudo":
-				partes.push(`
-					<section class="bloco">
-						<h2>Laudo técnico</h2>
-						<p>${ordem.laudotecnico?.trim() || "—"}</p>
-					</section>
-				`);
-				break;
-			case "observacao":
-				partes.push(`
-					<section class="bloco">
-						<h2>Observação</h2>
-						<p>${ordem.observacao?.trim() || "—"}</p>
-					</section>
-				`);
-				break;
-			case "itens": {
-				const linhas =
-					itens.length === 0
-						? `<tr><td colspan="5">Nenhum item</td></tr>`
-						: itens
-								.map(
-									(item) => `
-							<tr>
-								<td>${item.codigorproduto ?? "—"}</td>
-								<td>${item.nomeproduto ?? "—"}</td>
-								<td class="num">${item.quantidade ?? "—"}</td>
-								<td class="num">${formatarMoeda(item.preco)}</td>
-								<td class="num">${formatarMoeda(item.total)}</td>
-							</tr>`,
-								)
-								.join("");
-				partes.push(`
-					<section class="bloco">
-						<h2>Itens</h2>
-						<table>
-							<thead>
-								<tr>
-									<th>Código</th>
-									<th>Descrição</th>
-									<th>Qtd</th>
-									<th>Unit.</th>
-									<th>Total</th>
-								</tr>
-							</thead>
-							<tbody>${linhas}</tbody>
-						</table>
-					</section>
-				`);
-				break;
-			}
-			case "totais":
-				partes.push(`
-					<section class="bloco totais">
-						<h2>Totais</h2>
-						<div class="grade">
-							<div class="campo"><span class="rotulo">Produtos</span><span class="valor">${formatarMoeda(ordem.valorprodutos)}</span></div>
-							<div class="campo"><span class="rotulo">Serviços</span><span class="valor">${formatarMoeda(ordem.valorservicos)}</span></div>
-							<div class="campo"><span class="rotulo">Desconto</span><span class="valor">${formatarMoeda(ordem.descontosubtotal)}</span></div>
-							<div class="campo total"><span class="rotulo">Total</span><span class="valor">${formatarMoeda(ordem.valor)}</span></div>
-						</div>
-					</section>
-				`);
-				break;
-			case "extras": {
-				const extras = Array.from({ length: 16 }, (_, i) => {
-					const key = `extra${i + 1}` as keyof OrdemServico;
-					const valor = ordem[key];
-					if (typeof valor !== "string" || !valor.trim()) return null;
-					const config = ordem.camposextras?.find(
-						(c) => c.campo === `extra${i + 1}`,
-					);
-					return `<div class="campo"><span class="rotulo">${config?.nome ?? `Extra ${i + 1}`}</span><span class="valor">${valor}</span></div>`;
-				}).filter(Boolean);
-				partes.push(`
-					<section class="bloco">
-						<h2>Campos extras</h2>
-						<div class="grade">${extras.length ? extras.join("") : "<p>—</p>"}</div>
-					</section>
-				`);
-				break;
-			}
-			case "assinaturas":
-				partes.push(`
-					<section class="bloco assinaturas">
-						<div class="assinatura"><div class="linha"></div><span>Cliente</span></div>
-						<div class="assinatura"><div class="linha"></div><span>Técnico / Responsável</span></div>
-					</section>
-				`);
-				break;
-			case "rodape":
-				partes.push(`
-					<section class="bloco rodape">
-						<p>${bloco.props?.texto?.trim() || "Documento gerado pelo Mais Gestão"}</p>
-					</section>
-				`);
-				break;
-			default:
-				break;
+		const html = renderizarBlocoOs(bloco, dados);
+		if (!html) continue;
+		const col = colunaEfetiva(bloco);
+		if (col === "cheia") {
+			flushFaixa();
+			partes.push(html);
+		} else {
+			faixaCols.push(
+				`<div class="col-bloco col-${col}">${html}</div>`,
+			);
 		}
 	}
+	flushFaixa();
 
 	return partes.join("\n");
 }
 
 export const CSS_MODELO_IMPRESSAO_OS = `
+	@page { size: A4; margin: 8mm; }
 	.folha-os {
 		font-family: Georgia, "Times New Roman", serif;
 		color: #1a1a1a;
-		font-size: 12px;
-		line-height: 1.45;
+		font-size: 10.5px;
+		line-height: 1.35;
 		width: 210mm;
 		min-height: 297mm;
-		padding: 14mm;
+		max-height: 297mm;
+		padding: 8mm;
 		box-sizing: border-box;
 		background: #fff;
+		overflow: hidden;
 	}
-	.folha-os .bloco { margin-bottom: 14px; }
-	.folha-os .cabecalho { border-bottom: 2px solid #111; padding-bottom: 10px; margin-bottom: 16px; }
-	.folha-os .empresa-nome { font-size: 18px; font-weight: 700; }
-	.folha-os .empresa-meta { font-size: 11px; color: #444; }
-	.folha-os .titulo h1 { font-size: 16px; margin: 0; text-align: center; letter-spacing: 0.04em; text-transform: uppercase; }
-	.folha-os h2 { font-size: 12px; margin: 0 0 8px; border-bottom: 1px solid #ccc; padding-bottom: 4px; text-transform: uppercase; letter-spacing: 0.03em; }
-	.folha-os .grade { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; }
-	.folha-os .campo { display: flex; flex-direction: column; gap: 2px; }
-	.folha-os .rotulo { font-size: 10px; color: #666; text-transform: uppercase; }
-	.folha-os .valor { font-size: 12px; }
-	.folha-os .totais .total .valor { font-weight: 700; font-size: 14px; }
+	.folha-os.folha-os-preview {
+		overflow: visible;
+		max-height: none;
+		position: relative;
+	}
+	.folha-os .limite-folha {
+		position: absolute;
+		left: 0;
+		right: 0;
+		top: 297mm;
+		border-top: 2px dashed #e11d48;
+		pointer-events: none;
+		z-index: 2;
+	}
+	.folha-os .aviso-folha {
+		position: absolute;
+		left: 8mm;
+		top: calc(297mm + 4px);
+		font-size: 10px;
+		color: #e11d48;
+		font-family: system-ui, sans-serif;
+	}
+	.folha-os .bloco { margin-bottom: 8px; }
+	.folha-os .cabecalho { border-bottom: 1.5px solid #111; padding-bottom: 6px; margin-bottom: 10px; }
+	.folha-os .empresa-nome { font-size: 15px; font-weight: 700; }
+	.folha-os .empresa-meta { font-size: 10px; color: #444; }
+	.folha-os .titulo h1 { font-size: 13px; margin: 0; text-align: center; letter-spacing: 0.04em; text-transform: uppercase; }
+	.folha-os h2 { font-size: 10px; margin: 0 0 4px; border-bottom: 1px solid #ccc; padding-bottom: 2px; text-transform: uppercase; letter-spacing: 0.03em; }
+	.folha-os .grade { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; }
+	.folha-os .faixa-colunas {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 8px 14px;
+		margin-bottom: 8px;
+		align-items: start;
+	}
+	.folha-os .faixa-colunas .bloco { margin-bottom: 0; }
+	.folha-os .faixa-colunas .col-bloco.col-esquerda { grid-column: 1; }
+	.folha-os .faixa-colunas .col-bloco.col-direita { grid-column: 2; }
+	.folha-os .campo { display: flex; flex-direction: column; gap: 1px; }
+	.folha-os .rotulo { font-size: 9px; color: #666; text-transform: uppercase; }
+	.folha-os .valor { font-size: 10.5px; }
+	.folha-os .totais .total .valor { font-weight: 700; font-size: 12px; }
 	.folha-os table { width: 100%; border-collapse: collapse; }
-	.folha-os th, .folha-os td { border-bottom: 1px solid #ddd; padding: 6px 4px; text-align: left; font-size: 11px; }
-	.folha-os th { font-size: 10px; text-transform: uppercase; color: #555; }
+	.folha-os th, .folha-os td { border-bottom: 1px solid #ddd; padding: 3px 3px; text-align: left; font-size: 10px; }
+	.folha-os th { font-size: 9px; text-transform: uppercase; color: #555; }
 	.folha-os td.num, .folha-os th.num { text-align: right; }
-	.folha-os .assinaturas { display: flex; justify-content: space-between; gap: 40px; margin-top: 40px; }
+	.folha-os .assinaturas { display: flex; justify-content: space-between; gap: 28px; margin-top: 24px; }
 	.folha-os .assinatura { flex: 1; text-align: center; }
-	.folha-os .assinatura .linha { border-top: 1px solid #111; margin-bottom: 6px; }
-	.folha-os .rodape { margin-top: 24px; font-size: 10px; color: #666; text-align: center; border-top: 1px dashed #ccc; padding-top: 8px; }
+	.folha-os .assinatura .linha { border-top: 1px solid #111; margin-bottom: 4px; }
+	.folha-os .rodape { margin-top: 12px; font-size: 9px; color: #666; text-align: center; border-top: 1px dashed #ccc; padding-top: 6px; }
 	@media print {
 		body { margin: 0; }
-		.folha-os { width: auto; min-height: auto; padding: 0; box-shadow: none; }
+		.folha-os {
+			width: auto;
+			min-height: auto;
+			max-height: none;
+			padding: 0;
+			box-shadow: none;
+			overflow: visible;
+		}
+		.folha-os .limite-folha,
+		.folha-os .aviso-folha { display: none; }
 	}
 `;
 
@@ -341,7 +488,7 @@ export function imprimirHtmlModeloOs(htmlInterno: string, titulo: string) {
 <html lang="pt-BR">
 <head>
 	<meta charset="utf-8" />
-	<title>${titulo}</title>
+	<title>${escapeHtml(titulo)}</title>
 	<style>${CSS_MODELO_IMPRESSAO_OS}</style>
 </head>
 <body>
@@ -394,6 +541,20 @@ export const DADOS_AMOSTRA_MODELO_IMPRESSAO_OS: DadosPreviewModeloImpressaoOs = 
 		descontosubtotal: "0",
 		orcamento: 0,
 	},
+	cliente: {
+		nome: "Cliente Demonstração",
+		cnpjcpf: "12.345.678/0001-90",
+		inscricaoestadual: "123.456.789.012",
+		telefone: "(11) 98888-7777",
+		email: "cliente@exemplo.com",
+		endereco: "Av. Paulista",
+		numero: "1000",
+		complemento: "Sala 12",
+		bairro: "Bela Vista",
+		cep: "01310-100",
+		cidade: "São Paulo",
+		uf: "SP",
+	},
 	itens: [
 		{
 			id: "1",
@@ -406,6 +567,7 @@ export const DADOS_AMOSTRA_MODELO_IMPRESSAO_OS: DadosPreviewModeloImpressaoOs = 
 			preco: "200.00",
 			total: "200.00",
 			idtecnico: null,
+			nometecnico: null,
 			idcfop: null,
 			unidademedida: "UN",
 			observacao: null,
@@ -422,7 +584,8 @@ export const DADOS_AMOSTRA_MODELO_IMPRESSAO_OS: DadosPreviewModeloImpressaoOs = 
 			quantidade: "1",
 			preco: "250.00",
 			total: "250.00",
-			idtecnico: null,
+			idtecnico: "tec-1",
+			nometecnico: "João Técnico",
 			idcfop: null,
 			unidademedida: "UN",
 			observacao: null,

@@ -23,12 +23,22 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
 	CAMPOS_CLIENTE_PEDIDO,
+	CAMPOS_CLIENTE_PEDIDO_PADRAO,
 	CAMPOS_DADOS_PEDIDO,
 	LABELS_BLOCO_MODELO_IMPRESSAO_PEDIDO,
+	OPCOES_COLUNA_BLOCO_PEDIDO,
 } from "@/constants/modelo-impressao-pedido";
+import type { ColunaBlocoModeloImpressao } from "@/schemas/modelo-impressao-os.schema";
 import type {
 	BlocoModeloImpressaoPedido,
 	LayoutModeloImpressaoPedido,
@@ -44,7 +54,11 @@ function novoId() {
 function criarBloco(
 	tipo: TipoBlocoModeloImpressaoPedido,
 ): BlocoModeloImpressaoPedido {
-	const base: BlocoModeloImpressaoPedido = { id: novoId(), tipo };
+	const base: BlocoModeloImpressaoPedido = {
+		id: novoId(),
+		tipo,
+		coluna: "cheia",
+	};
 	switch (tipo) {
 		case "titulo":
 			return { ...base, props: { titulo: "Pedido" } };
@@ -58,7 +72,7 @@ function criarBloco(
 		case "cliente":
 			return {
 				...base,
-				props: { campos: ["nomecliente", "cnpjcpfcliente"] },
+				props: { campos: [...CAMPOS_CLIENTE_PEDIDO_PADRAO] },
 			};
 		case "rodape":
 			return {
@@ -89,6 +103,11 @@ function BlocoSortable({
 		transition,
 	};
 
+	const coluna = bloco.coluna ?? "cheia";
+	const rotuloColuna =
+		OPCOES_COLUNA_BLOCO_PEDIDO.find((o) => o.value === coluna)?.label ??
+		"Largura total";
+
 	return (
 		<div
 			ref={setNodeRef}
@@ -111,7 +130,10 @@ function BlocoSortable({
 				className="flex-1 text-left text-sm"
 				onClick={onSelect}
 			>
-				{LABELS_BLOCO_MODELO_IMPRESSAO_PEDIDO[bloco.tipo]}
+				<span className="block">
+					{LABELS_BLOCO_MODELO_IMPRESSAO_PEDIDO[bloco.tipo]}
+				</span>
+				<span className="block text-xs text-muted-foreground">{rotuloColuna}</span>
 			</button>
 			<Button
 				type="button"
@@ -256,6 +278,9 @@ export function EditorModeloImpressaoPedido({
 
 				<div className="rounded-lg border p-3 space-y-2">
 					<p className="text-sm font-medium">Layout</p>
+					<p className="text-xs text-muted-foreground">
+						Use colunas para colocar blocos lado a lado e caber em uma folha A4.
+					</p>
 					{layout.length === 0 ? (
 						<p className="text-sm text-muted-foreground py-6 text-center">
 							Adicione blocos pela paleta à esquerda
@@ -300,6 +325,28 @@ export function EditorModeloImpressaoPedido({
 							Propriedades —{" "}
 							{LABELS_BLOCO_MODELO_IMPRESSAO_PEDIDO[blocoSelecionado.tipo]}
 						</p>
+						<div className="space-y-1">
+							<Label>Coluna no layout</Label>
+							<Select
+								value={blocoSelecionado.coluna ?? "cheia"}
+								onValueChange={(v) =>
+									atualizarBloco(blocoSelecionado.id, {
+										coluna: v as ColunaBlocoModeloImpressao,
+									})
+								}
+							>
+								<SelectTrigger>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									{OPCOES_COLUNA_BLOCO_PEDIDO.map((opcao) => (
+										<SelectItem key={opcao.value} value={opcao.value}>
+											{opcao.label}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
 						{(blocoSelecionado.tipo === "titulo" ||
 							blocoSelecionado.tipo === "rodape") && (
 							<div className="space-y-1">
@@ -382,13 +429,13 @@ export function EditorModeloImpressaoPedido({
 									>
 										<Checkbox
 											checked={(
-												blocoSelecionado.props?.campos ?? []
+												blocoSelecionado.props?.campos ??
+												CAMPOS_CLIENTE_PEDIDO_PADRAO
 											).includes(campo.value)}
 											onCheckedChange={() =>
-												toggleCampo(
-													campo.value,
-													CAMPOS_CLIENTE_PEDIDO.map((c) => c.value),
-												)
+												toggleCampo(campo.value, [
+													...CAMPOS_CLIENTE_PEDIDO_PADRAO,
+												])
 											}
 										/>
 										{campo.label}
@@ -401,8 +448,8 @@ export function EditorModeloImpressaoPedido({
 			</div>
 
 			<div className="rounded-lg border bg-muted/30 p-3 overflow-auto max-h-[80vh]">
-				<p className="text-sm font-medium mb-3">Preview</p>
-				<PreviewModeloImpressaoPedido layout={layout} />
+				<p className="text-sm font-medium mb-3">Preview (1 folha A4)</p>
+				<PreviewModeloImpressaoPedido layout={layout} mostrarLimiteFolha />
 			</div>
 		</div>
 	);

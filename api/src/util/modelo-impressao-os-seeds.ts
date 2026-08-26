@@ -4,22 +4,40 @@ import type { LayoutModeloImpressaoOs } from "@/repositories/schema.js";
 function bloco(
 	tipo: LayoutModeloImpressaoOs[number]["tipo"],
 	props?: LayoutModeloImpressaoOs[number]["props"],
+	coluna?: LayoutModeloImpressaoOs[number]["coluna"],
 ): LayoutModeloImpressaoOs[number] {
-	return { id: uuidv4(), tipo, props };
+	return { id: uuidv4(), tipo, props, coluna };
 }
+
+const CAMPOS_CLIENTE_PADRAO = [
+	"nomecliente",
+	"cnpjcpfcliente",
+	"enderecocompleto",
+	"telefone",
+	"email",
+	"inscricaoestadual",
+];
 
 export function layoutModeloCompletoOs(): LayoutModeloImpressaoOs {
 	return [
 		bloco("cabecalhoEmpresa"),
 		bloco("titulo", { titulo: "Ordem de Serviço" }),
-		bloco("dadosOs", {
-			campos: ["codigo", "status", "dataos", "agendamento", "previsaoconclusao"],
-		}),
-		bloco("cliente", {
-			campos: ["nomecliente", "cnpjcpfcliente"],
-		}),
+		bloco(
+			"dadosOs",
+			{
+				campos: [
+					"codigo",
+					"status",
+					"dataos",
+					"agendamento",
+					"previsaoconclusao",
+				],
+			},
+			"esquerda",
+		),
+		bloco("cliente", { campos: [...CAMPOS_CLIENTE_PADRAO] }, "direita"),
 		bloco("problema"),
-		bloco("itens"),
+		bloco("itens", { mostrarResponsavel: false }),
 		bloco("totais"),
 		bloco("observacao"),
 		bloco("assinaturas"),
@@ -31,12 +49,12 @@ export function layoutModeloResumidoOs(): LayoutModeloImpressaoOs {
 	return [
 		bloco("cabecalhoEmpresa"),
 		bloco("titulo", { titulo: "Ordem de Serviço" }),
-		bloco("dadosOs", {
-			campos: ["codigo", "status", "dataos"],
-		}),
-		bloco("cliente", {
-			campos: ["nomecliente", "cnpjcpfcliente"],
-		}),
+		bloco(
+			"dadosOs",
+			{ campos: ["codigo", "status", "dataos"] },
+			"esquerda",
+		),
+		bloco("cliente", { campos: [...CAMPOS_CLIENTE_PADRAO] }, "direita"),
 		bloco("totais"),
 		bloco("assinaturas"),
 	];
