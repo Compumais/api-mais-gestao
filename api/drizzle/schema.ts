@@ -23,6 +23,7 @@ export const prismaMigrations = pgTable("_prisma_migrations", {
 });
 
 export * from "./tables/ajuda-posts.js";
+export * from "./tables/apuracao-efd-ajuste.js";
 export * from "./tables/area.js";
 export * from "./tables/assinaturas.js";
 export * from "./tables/atalho-pdv.js";

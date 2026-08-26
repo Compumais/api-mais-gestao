@@ -17,11 +17,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import {
-	Field,
-	FieldGroup,
-	FieldLabel,
-} from "@/components/ui/field";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
 	Select,
@@ -37,13 +33,10 @@ import {
 	FUNCAO_ALERTA_PENDENCIAS_NF,
 	FUNCAO_ENVIO_FISCAL_CONTABILIDADE,
 	FUNCOES_AUTOMACAO,
-	LABELS_FUNCAO_AUTOMACAO,
 	type FuncaoAutomacao,
+	LABELS_FUNCAO_AUTOMACAO,
 } from "@/schemas/automacao.schema";
-import {
-	type Automacao,
-	automacaoService,
-} from "@/services/automacao.service";
+import { type Automacao, automacaoService } from "@/services/automacao.service";
 import { contabilidadeCadastroService } from "@/services/contabilidade-cadastro.service";
 import { emailService } from "@/services/email.service";
 import { PageContainer } from "../components/page-container";
@@ -74,12 +67,16 @@ const DEFAULTS_FORM: AutomacaoFormData = {
 	diasemana: 1,
 	incluirSintegra: true,
 	incluirXml: true,
+	incluirEfdIcms: false,
+	incluirEfdContribuicoes: false,
 	incluirNfe: true,
 	incluirNfce: true,
 	ativo: true,
 };
 
-function defaultsPorFuncao(funcao: FuncaoAutomacao): Partial<AutomacaoFormData> {
+function defaultsPorFuncao(
+	funcao: FuncaoAutomacao,
+): Partial<AutomacaoFormData> {
 	if (funcao === FUNCAO_ALERTA_PENDENCIAS_NF) {
 		return {
 			nome: "Alerta de pendências NF-e / NFC-e",
@@ -98,6 +95,8 @@ function defaultsPorFuncao(funcao: FuncaoAutomacao): Partial<AutomacaoFormData> 
 		diames: 5,
 		incluirSintegra: true,
 		incluirXml: true,
+		incluirEfdIcms: false,
+		incluirEfdContribuicoes: false,
 	};
 }
 
@@ -189,6 +188,9 @@ export default function AgendamentosPage() {
 			diasemana: item.diasemana ?? 1,
 			incluirSintegra: item.parametros?.incluirSintegra !== false,
 			incluirXml: item.parametros?.incluirXml !== false,
+			incluirEfdIcms: item.parametros?.incluirEfdIcms === true,
+			incluirEfdContribuicoes:
+				item.parametros?.incluirEfdContribuicoes === true,
 			incluirNfe: item.parametros?.incluirNfe !== false,
 			incluirNfce: item.parametros?.incluirNfce !== false,
 			ativo: item.ativo,
@@ -208,6 +210,8 @@ export default function AgendamentosPage() {
 					: {
 							incluirSintegra: dados.incluirSintegra,
 							incluirXml: dados.incluirXml,
+							incluirEfdIcms: dados.incluirEfdIcms,
+							incluirEfdContribuicoes: dados.incluirEfdContribuicoes,
 							finalidadeSintegra: "1" as const,
 						};
 			const payload = {
@@ -394,22 +398,17 @@ export default function AgendamentosPage() {
 											{item.recorrencia === "mensal" && item.diames
 												? ` · dia ${item.diames}`
 												: ""}
-											{item.recorrencia === "semanal" &&
-											item.diasemana != null
+											{item.recorrencia === "semanal" && item.diasemana != null
 												? ` · ${DIAS_SEMANA[item.diasemana]}`
 												: ""}
 											{` · ${item.horario}`}
 										</td>
 										<td className="p-3">
 											{item.proximaexecucao
-												? dayjs(item.proximaexecucao).format(
-														"DD/MM/YYYY HH:mm",
-													)
+												? dayjs(item.proximaexecucao).format("DD/MM/YYYY HH:mm")
 												: "—"}
 										</td>
-										<td className="p-3">
-											{formatarStatus(item.statusultima)}
-										</td>
+										<td className="p-3">{formatarStatus(item.statusultima)}</td>
 										<td className="p-3">
 											<Checkbox
 												checked={item.ativo}
@@ -417,7 +416,9 @@ export default function AgendamentosPage() {
 													alternarAtivo({ id: item.id, ativo: !!v })
 												}
 												aria-label={
-													item.ativo ? "Desativar automação" : "Ativar automação"
+													item.ativo
+														? "Desativar automação"
+														: "Ativar automação"
 												}
 											/>
 										</td>
@@ -569,7 +570,9 @@ export default function AgendamentosPage() {
 							</div>
 							{recorrencia === "mensal" && (
 								<Field>
-									<FieldLabel htmlFor="auto-diames">Dia do mês (1–28)</FieldLabel>
+									<FieldLabel htmlFor="auto-diames">
+										Dia do mês (1–28)
+									</FieldLabel>
 									<Input
 										id="auto-diames"
 										type="number"
@@ -643,6 +646,44 @@ export default function AgendamentosPage() {
 												Anexar ZIP de XMLs
 											</FieldLabel>
 										</div>
+										<div className="flex items-center gap-2">
+											<Controller
+												control={form.control}
+												name="incluirEfdIcms"
+												render={({ field }) => (
+													<Checkbox
+														id="auto-efd-icms"
+														checked={field.value}
+														onCheckedChange={(v) => field.onChange(!!v)}
+													/>
+												)}
+											/>
+											<FieldLabel
+												htmlFor="auto-efd-icms"
+												className="font-normal"
+											>
+												Anexar EFD ICMS/IPI
+											</FieldLabel>
+										</div>
+										<div className="flex items-center gap-2">
+											<Controller
+												control={form.control}
+												name="incluirEfdContribuicoes"
+												render={({ field }) => (
+													<Checkbox
+														id="auto-efd-contrib"
+														checked={field.value}
+														onCheckedChange={(v) => field.onChange(!!v)}
+													/>
+												)}
+											/>
+											<FieldLabel
+												htmlFor="auto-efd-contrib"
+												className="font-normal"
+											>
+												Anexar EFD-Contribuições
+											</FieldLabel>
+										</div>
 									</>
 								)}
 								{funcao === FUNCAO_ALERTA_PENDENCIAS_NF && (
@@ -700,9 +741,9 @@ export default function AgendamentosPage() {
 							</div>
 							{funcao === FUNCAO_ENVIO_FISCAL_CONTABILIDADE ? (
 								<p className="text-xs text-muted-foreground">
-									Período padrão: mês civil anterior à execução. Se houver
-									NFC-e pendente no período, a automação notifica e tenta
-									novamente em 6h.
+									Período padrão: mês civil anterior à execução. Se houver NFC-e
+									pendente no período, a automação notifica e tenta novamente em
+									6h.
 								</p>
 							) : (
 								<p className="text-xs text-muted-foreground">

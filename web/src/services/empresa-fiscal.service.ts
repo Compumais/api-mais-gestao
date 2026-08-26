@@ -22,6 +22,8 @@ export interface EmpresaFiscal {
 	telefone?: string | null;
 	email?: string | null;
 	regimetributario?: RegimeTributarioEmpresa | null;
+	indperfil?: string | null;
+	indativ?: number | null;
 }
 
 export const empresaFiscalService = {
