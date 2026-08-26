@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const SEGMENTOS_DEMONSTRACAO = [
 	"Comércio e varejo",
-	"Restaurante e food service",
+	"Restaurante e lanchonete",
 	"Prestação de serviços",
 	"Distribuição e atacado",
 	"Indústria",

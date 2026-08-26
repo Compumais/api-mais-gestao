@@ -229,7 +229,7 @@ export function SolicitacaoDemonstracaoForm() {
 					</FieldLabel>
 					<Textarea
 						id="demonstracao-mensagem"
-						placeholder="Conte um pouco do seu negócio: loja, restaurante, oficina..."
+						placeholder="Conte um pouco do seu negócio e se precisa de Gourmet, notas ou ordens de serviço..."
 						className="min-h-24 text-sm md:text-sm"
 						aria-invalid={!!errors.mensagem}
 						aria-describedby={

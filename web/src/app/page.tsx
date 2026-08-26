@@ -31,11 +31,11 @@ import { SolicitacaoDemonstracaoForm } from "./components/solicitacao-demonstrac
 export const metadata: Metadata = {
 	title: "Mais Gestão - Sistema de gestão para o seu negócio",
 	description:
-		"Venda no caixa, emita notas, controle estoque e acompanhe o financeiro em um só sistema. Feito para comércio, serviços e restaurantes.",
+		"Venda no caixa, controle estoque e acompanhe o financeiro. Módulos de Gourmet, emissão de NF-e e NFC-e e ordens de serviço conforme o seu negócio.",
 	openGraph: {
 		title: "Mais Gestão - Sistema de gestão para o seu negócio",
 		description:
-			"Venda, emita notas, controle estoque e acompanhe o caixa da sua empresa em um só lugar.",
+			"Sistema de gestão com módulos para restaurante, notas fiscais e ordens de serviço.",
 		type: "website",
 	},
 	robots: {
@@ -48,12 +48,7 @@ const pilares = [
 	{
 		title: "Vender com facilidade",
 		description:
-			"Atenda no caixa, faça orçamentos, abra mesas no restaurante ou registre um serviço. Tudo vira venda, sem retrabalho.",
-	},
-	{
-		title: "Emitir notas sem dor de cabeça",
-		description:
-			"Nota de produto, cupom no balcão e nota de serviço saem do próprio sistema. A compra do fornecedor também entra com poucos cliques.",
+			"Atenda no caixa, faça orçamentos e registre o pagamento. Sem passar a venda de um programa para outro.",
 	},
 	{
 		title: "Saber o que tem e o que falta",
@@ -65,32 +60,43 @@ const pilares = [
 		description:
 			"O movimento do mês já está organizado. Você envia os arquivos e relatórios que a contabilidade precisa, sem montar planilha no fim do período.",
 	},
+	{
+		title: "Ligar só o que o negócio precisa",
+		description:
+			"Gourmet, emissão de notas e ordens de serviço são módulos. Você usa o sistema e escolhe o que entra na sua operação.",
+	},
 ];
 
-const features = [
+const modulos = [
+	{
+		icon: IconToolsKitchen2,
+		title: "Gourmet",
+		paraQuem: "Restaurante e lanchonete",
+		description:
+			"Mesas, comanda e pedido pelo celular do garçom. Fecha a conta na hora, com o que foi consumido.",
+	},
+	{
+		icon: IconFileInvoice,
+		title: "Emissão de notas",
+		paraQuem: "NF-e e NFC-e",
+		description:
+			"Nota da venda para o cliente e cupom no caixa, sem outro programa. A nota de compra do fornecedor também entra no sistema.",
+	},
+	{
+		icon: IconClipboardList,
+		title: "Ordens de serviço",
+		paraQuem: "Oficina e assistência",
+		description:
+			"Abra o serviço, acompanhe o andamento e feche com o cliente. Do orçamento ao reparo, tudo no mesmo lugar.",
+	},
+];
+
+const capacidadesBase = [
 	{
 		icon: IconCashRegister,
 		title: "Caixa da loja",
 		description:
 			"Venda no computador, no celular ou na maquininha. Fecha o caixa no fim do dia e vê como o cliente pagou.",
-	},
-	{
-		icon: IconFileInvoice,
-		title: "Notas fiscais no dia a dia",
-		description:
-			"Emite nota de produto e de serviço, cupom no varejo e registra a nota de compra. Sem sair do sistema para outro programa.",
-	},
-	{
-		icon: IconToolsKitchen2,
-		title: "Restaurante e lanchonete",
-		description:
-			"Controle de mesas, comanda e pedido pelo celular do garçom. Fecha a conta na hora, com o que foi consumido.",
-	},
-	{
-		icon: IconClipboardList,
-		title: "Orçamentos e ordens de serviço",
-		description:
-			"Faça um orçamento, transforme em venda ou acompanhe um reparo do início ao fim — oficina, assistência e prestadores de serviço.",
 	},
 	{
 		icon: IconPackage,
@@ -129,19 +135,19 @@ const etapasContratacao = [
 		passo: "1",
 		title: "Peça uma demonstração",
 		description:
-			"Conte o tipo do seu negócio. Sem cartão e sem escolher plano na hora.",
+			"Conte o tipo do seu negócio e se precisa de Gourmet, notas ou ordens de serviço.",
 	},
 	{
 		passo: "2",
 		title: "Veja o sistema na prática",
 		description:
-			"Mostramos como fica a sua rotina: venda, nota, estoque e financeiro.",
+			"Mostramos o sistema e só os módulos que fazem sentido para você.",
 	},
 	{
 		passo: "3",
 		title: "Receba uma proposta do seu jeito",
 		description:
-			"Você paga pelo que vai usar — loja, restaurante, oficina ou várias filiais.",
+			"Você monta o que vai usar: o sistema e, se quiser, Gourmet, emissão de notas e OS.",
 	},
 	{
 		passo: "4",
@@ -241,10 +247,10 @@ export default function Home() {
 							O sistema
 						</Link>
 						<Link
-							href="#features"
+							href="#modulos"
 							className="hidden text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline"
 						>
-							O que faz
+							Módulos
 						</Link>
 						<Link
 							href="#demonstracao"
@@ -284,9 +290,9 @@ export default function Home() {
 								className="mb-8 animate-fade-in-up text-lg text-muted-foreground sm:text-xl"
 								style={{ animationDelay: "0.3s" }}
 							>
-								O Mais Gestão ajuda lojas, prestadores de serviço e restaurantes
-								a organizar o dia a dia: do atendimento ao cliente até o
-								fechamento do mês com o contador.
+								O Mais Gestão organiza o dia a dia da loja: venda, estoque e
+								caixa. Se o seu negócio precisa, você liga os módulos de
+								Gourmet, emissão de notas ou ordens de serviço.
 							</p>
 							<div
 								className="flex animate-fade-in-up flex-col items-center justify-center gap-4 sm:flex-row"
@@ -301,7 +307,7 @@ export default function Home() {
 									size="lg"
 									className="w-full sm:w-auto"
 								>
-									<Link href="#features">Ver o que o sistema faz</Link>
+									<Link href="#modulos">Ver os módulos</Link>
 								</Button>
 							</div>
 						</div>
@@ -317,9 +323,9 @@ export default function Home() {
 								<span className="text-primary">sua empresa</span>
 							</h2>
 							<p className="text-lg text-muted-foreground">
-								Você atende o cliente, emite a nota, baixa o estoque e registra
-								o pagamento. Tudo isso no mesmo lugar, para não ficar repassando
-								informação de um programa para outro.
+								Você atende o cliente, baixa o estoque e registra o pagamento no
+								mesmo lugar. Os módulos entram só se o seu negócio precisar:
+								restaurante, notas fiscais ou oficina.
 							</p>
 						</div>
 						<div className="mx-auto grid max-w-6xl gap-6 md:grid-cols-2">
@@ -343,36 +349,79 @@ export default function Home() {
 						<div className="mx-auto mt-12 flex max-w-4xl flex-wrap items-center justify-center gap-2">
 							{[
 								"Caixa e vendas",
-								"Notas fiscais",
-								"Restaurante",
-								"Ordens de serviço",
 								"Estoque",
 								"Financeiro",
-								"Relatórios",
-								"Várias empresas",
-							].map((modulo) => (
-								<Badge key={modulo} variant="secondary">
-									{modulo}
+								"Módulo Gourmet",
+								"Módulo de notas",
+								"Módulo de OS",
+							].map((item) => (
+								<Badge key={item} variant="secondary">
+									{item}
 								</Badge>
 							))}
 						</div>
 					</div>
 				</section>
 
-				<section id="features" className="border-t bg-muted/30 py-20 md:py-32">
+				<section id="modulos" className="border-t bg-muted/30 py-20 md:py-32">
 					<div className="container mx-auto px-4">
 						<div className="mx-auto mb-16 max-w-2xl text-center">
 							<h2 className="mb-4 text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-								O que você consegue{" "}
-								<span className="text-primary">fazer no Mais Gestão</span>
+								Módulos para o{" "}
+								<span className="text-primary">seu tipo de negócio</span>
 							</h2>
 							<p className="text-lg text-muted-foreground">
-								Ferramentas para o dia a dia de loja, restaurante e prestador de
-								serviço — do jeito que você usa, sem lista de siglas.
+								O sistema já cuida de venda, estoque e financeiro. Os módulos
+								abaixo entram só se você precisar — restaurante, notas fiscais
+								ou oficina.
+							</p>
+						</div>
+						<div className="mx-auto grid max-w-6xl gap-8 md:grid-cols-3">
+							{modulos.map((modulo, index) => {
+								const Icon = modulo.icon;
+								return (
+									<Card
+										key={modulo.title}
+										className="group animate-fade-in-up transition-all duration-300 hover:scale-105 hover:shadow-lg"
+										style={{ animationDelay: `${0.1 * index}s` }}
+									>
+										<CardHeader>
+											<div className="mb-4 flex items-center justify-between gap-3">
+												<div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+													<Icon className="h-6 w-6" aria-hidden="true" />
+												</div>
+												<Badge variant="secondary">Módulo</Badge>
+											</div>
+											<CardTitle>{modulo.title}</CardTitle>
+											<p className="text-sm font-medium text-primary">
+												{modulo.paraQuem}
+											</p>
+										</CardHeader>
+										<CardContent>
+											<CardDescription className="text-base">
+												{modulo.description}
+											</CardDescription>
+										</CardContent>
+									</Card>
+								);
+							})}
+						</div>
+					</div>
+				</section>
+
+				<section id="features" className="border-t py-20 md:py-32">
+					<div className="container mx-auto px-4">
+						<div className="mx-auto mb-16 max-w-2xl text-center">
+							<h2 className="mb-4 text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
+								O que já vem no <span className="text-primary">sistema</span>
+							</h2>
+							<p className="text-lg text-muted-foreground">
+								Para o dia a dia da loja, com ou sem os módulos. Tudo no mesmo
+								lugar, sem passar informação de um programa para outro.
 							</p>
 						</div>
 						<div className="mx-auto grid max-w-6xl gap-8 md:grid-cols-2 lg:grid-cols-3">
-							{features.map((feature, index) => {
+							{capacidadesBase.map((feature, index) => {
 								const Icon = feature.icon;
 								return (
 									<Card
@@ -395,7 +444,7 @@ export default function Home() {
 								);
 							})}
 						</div>
-						<div className="mx-auto mt-12 flex max-w-xl items-start gap-3 rounded-lg border bg-background p-4">
+						<div className="mx-auto mt-12 flex max-w-xl items-start gap-3 rounded-lg border bg-muted/30 p-4">
 							<IconShield
 								className="mt-0.5 h-5 w-5 shrink-0 text-primary"
 								aria-hidden="true"
@@ -457,8 +506,8 @@ export default function Home() {
 								<span className="text-primary">Peça uma demonstração</span>
 							</h2>
 							<p className="text-lg text-muted-foreground">
-								Não vendemos um pacote único para todo mundo. Primeiro
-								entendemos o seu negócio, mostramos o sistema e só então
+								Não é um pacote único. Primeiro entendemos o seu negócio,
+								mostramos o sistema e os módulos que fazem sentido, e só então
 								montamos uma proposta.
 							</p>
 						</div>
@@ -514,8 +563,8 @@ export default function Home() {
 								<span className="text-xl font-bold">Mais Gestão</span>
 							</div>
 							<p className="mb-4 text-sm text-muted-foreground">
-								Sistema de gestão para lojas, prestadores de serviço e
-								restaurantes. Venda, notas, estoque e financeiro em um só lugar.
+								Sistema de gestão para lojas, com módulos de Gourmet, emissão de
+								notas e ordens de serviço conforme o seu negócio.
 							</p>
 							<div className="flex gap-4">
 								<Button
@@ -593,10 +642,10 @@ export default function Home() {
 								</li>
 								<li>
 									<Link
-										href="#features"
+										href="#modulos"
 										className="text-muted-foreground transition-colors hover:text-foreground"
 									>
-										O que faz
+										Módulos
 									</Link>
 								</li>
 								<li>
