@@ -12,7 +12,7 @@ export const LABELS_BLOCO_MODELO_IMPRESSAO_OS: Record<
 	veiculo: "Veículo",
 	problema: "Problema descrito",
 	laudo: "Laudo técnico",
-	servicoRealizado: "Serviço realizado",
+	servicoRealizado: "Serviços realizados",
 	observacao: "Observação",
 	itens: "Itens",
 	totais: "Totais",
@@ -47,15 +47,6 @@ export const CAMPOS_VEICULO_OS = [
 	{ value: "placa", label: "Placa" },
 	{ value: "renavam", label: "RENAVAM" },
 ] as const;
-
-export const CAMPOS_SERVICO_REALIZADO_OS = [
-	{ value: "servicoexecutado", label: "Serviço realizado" },
-	{ value: "serviconaoexecutado", label: "Serviço não realizado" },
-] as const;
-
-export const CAMPOS_SERVICO_REALIZADO_OS_PADRAO = CAMPOS_SERVICO_REALIZADO_OS.map(
-	(c) => c.value,
-);
 
 export const OPCOES_COLUNA_BLOCO = [
 	{ value: "cheia", label: "Largura total" },

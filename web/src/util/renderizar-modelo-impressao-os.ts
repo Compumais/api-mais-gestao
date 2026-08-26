@@ -271,43 +271,45 @@ function renderizarBlocoOs(
 				</section>
 			`;
 		case "servicoRealizado": {
-			const camposServico =
-				bloco.props?.campos?.length
-					? bloco.props.campos
-					: ["servicoexecutado", "serviconaoexecutado"];
-			const partesServico: string[] = [];
-			if (camposServico.includes("servicoexecutado")) {
-				partesServico.push(`
-					<div class="campo-texto">
-						<span class="rotulo">Serviço realizado</span>
-						<p>${escapeHtml(ordem.servicoexecutado?.trim() || "—")}</p>
-					</div>
-				`);
-			}
-			if (camposServico.includes("serviconaoexecutado")) {
-				partesServico.push(`
-					<div class="campo-texto">
-						<span class="rotulo">Serviço não realizado</span>
-						<p>${escapeHtml(ordem.serviconaoexecutado?.trim() || "—")}</p>
-					</div>
-				`);
-			}
-			const nomeTecnico =
-				tecnicoResponsavel?.trim() ||
-				itens.find((i) => i.nometecnico?.trim())?.nometecnico?.trim() ||
-				"—";
+			const servicos = itens.filter(
+				(item) =>
+					item.tipoproduto === "S" &&
+					item.cancelado !== 1,
+			);
+			const linhas =
+				servicos.length === 0
+					? `<tr><td colspan="5">Nenhum serviço</td></tr>`
+					: servicos
+							.map((item) => {
+								const tecnico =
+									item.nometecnico?.trim() ||
+									tecnicoResponsavel?.trim() ||
+									"—";
+								return `
+							<tr>
+								<td>${escapeHtml(tecnico)}</td>
+								<td>${escapeHtml(item.nomeproduto ?? item.codigorproduto ?? "—")}</td>
+								<td class="num">${escapeHtml(item.quantidade ?? "—")}</td>
+								<td class="num">${formatarMoeda(item.preco)}</td>
+								<td class="num">${formatarMoeda(item.total)}</td>
+							</tr>`;
+							})
+							.join("");
 			return `
 				<section class="bloco">
-					<h2>Serviço realizado</h2>
-					<div class="servico-realizado-grade">
-						<div class="servico-realizado-tecnico">
-							<span class="rotulo">Técnico responsável</span>
-							<span class="valor">${escapeHtml(nomeTecnico)}</span>
-						</div>
-						<div class="servico-realizado-textos">
-							${partesServico.join("") || "<p>—</p>"}
-						</div>
-					</div>
+					<h2>Serviços realizados</h2>
+					<table>
+						<thead>
+							<tr>
+								<th>Técnico responsável</th>
+								<th>Serviço</th>
+								<th>Qtd</th>
+								<th>Unit.</th>
+								<th>Total</th>
+							</tr>
+						</thead>
+						<tbody>${linhas}</tbody>
+					</table>
 				</section>
 			`;
 		}
@@ -500,24 +502,6 @@ export const CSS_MODELO_IMPRESSAO_OS = `
 	.folha-os .campo-texto { margin-bottom: 6px; }
 	.folha-os .campo-texto .rotulo { display: block; margin-bottom: 2px; }
 	.folha-os .campo-texto p { margin: 0; }
-	.folha-os .servico-realizado-grade {
-		display: grid;
-		grid-template-columns: minmax(120px, 0.35fr) 1fr;
-		gap: 10px 14px;
-		align-items: start;
-	}
-	.folha-os .servico-realizado-tecnico {
-		display: flex;
-		flex-direction: column;
-		gap: 2px;
-		padding-right: 10px;
-		border-right: 1px solid #ddd;
-	}
-	.folha-os .servico-realizado-tecnico .valor {
-		font-weight: 600;
-		font-size: 11px;
-	}
-	.folha-os .servico-realizado-textos .campo-texto:last-child { margin-bottom: 0; }
 	.folha-os .totais .total .valor { font-weight: 700; font-size: 12px; }
 	.folha-os table { width: 100%; border-collapse: collapse; }
 	.folha-os th, .folha-os td { border-bottom: 1px solid #ddd; padding: 3px 3px; text-align: left; font-size: 10px; }
@@ -594,8 +578,6 @@ export const DADOS_AMOSTRA_MODELO_IMPRESSAO_OS: DadosPreviewModeloImpressaoOs = 
 		previsaoconclusao: new Date().toISOString(),
 		problemadescrito: "Equipamento não liga após queda de energia.",
 		laudotecnico: "Fonte danificada. Substituição realizada.",
-		servicoexecutado: "Substituição da fonte 500W e testes de funcionamento.",
-		serviconaoexecutado: "Limpeza interna completa (não solicitada).",
 		observacao: "Garantia de 90 dias no serviço.",
 		marca: "Genérica",
 		modelo: "X100",
@@ -640,6 +622,7 @@ export const DADOS_AMOSTRA_MODELO_IMPRESSAO_OS: DadosPreviewModeloImpressaoOs = 
 			observacao: null,
 			contador: 1,
 			cancelado: 0,
+			tipoproduto: "P",
 		},
 		{
 			id: "2",
@@ -658,6 +641,7 @@ export const DADOS_AMOSTRA_MODELO_IMPRESSAO_OS: DadosPreviewModeloImpressaoOs = 
 			observacao: null,
 			contador: 2,
 			cancelado: 0,
+			tipoproduto: "S",
 		},
 	],
 };
