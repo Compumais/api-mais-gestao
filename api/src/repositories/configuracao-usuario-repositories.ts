@@ -112,7 +112,14 @@ function mesclarPreferenciasUi(
 		};
 	}
 
-	return { colunasTabelas };
+	return {
+		colunasTabelas,
+		...(parcial.layoutMenu !== undefined
+			? { layoutMenu: parcial.layoutMenu }
+			: atual?.layoutMenu !== undefined
+				? { layoutMenu: atual.layoutMenu }
+				: {}),
+	};
 }
 
 export async function criarOuAtualizarPreferenciasUiUsuario(

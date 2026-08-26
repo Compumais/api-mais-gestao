@@ -7,6 +7,7 @@ const atualizarPreferenciasUiBodySchema = z.object({
 	colunasTabelas: z
 		.record(z.string(), z.record(z.string(), z.boolean()))
 		.optional(),
+	layoutMenu: z.enum(["sidebar", "topbar"]).optional(),
 });
 
 export async function atualizarPreferenciasUiUsuario(
@@ -23,7 +24,12 @@ export async function atualizarPreferenciasUiUsuario(
 		const resultado = await atualizarPreferenciasUiUsuarioService({
 			idusuario: request.user.id,
 			dados: {
-				colunasTabelas: dados.colunasTabelas ?? {},
+				...(dados.colunasTabelas !== undefined
+					? { colunasTabelas: dados.colunasTabelas }
+					: {}),
+				...(dados.layoutMenu !== undefined
+					? { layoutMenu: dados.layoutMenu }
+					: {}),
 			},
 		});
 

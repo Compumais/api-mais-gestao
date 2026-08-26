@@ -9,8 +9,11 @@ import {
 } from "drizzle-orm/pg-core";
 import { usuarios } from "./usuarios.js";
 
+export type LayoutMenuUsuario = "sidebar" | "topbar";
+
 export type PreferenciasUiUsuario = {
 	colunasTabelas?: Record<string, Record<string, boolean>>;
+	layoutMenu?: LayoutMenuUsuario;
 };
 
 export const configuracoesUsuario = pgTable(

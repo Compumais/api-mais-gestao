@@ -103,6 +103,40 @@ describe("preferencias UI do usuário", () => {
 			});
 		});
 
+		it("deve atualizar layoutMenu preservando colunas existentes", async () => {
+			vi.mocked(
+				configuracaoUsuarioRepository.criarOuAtualizarPreferenciasUiUsuario,
+			).mockResolvedValue({
+				id: "cfg-1",
+				idusuario: "usuario-1",
+				integracoes: {},
+				preferenciasui: {
+					colunasTabelas: {
+						"ordens-servico": { placa: true },
+					},
+					layoutMenu: "topbar",
+				},
+				criadoem: "2026-01-01",
+				atualizadoem: "2026-01-02",
+			});
+
+			const resultado = await atualizarPreferenciasUiUsuarioService({
+				idusuario: "usuario-1",
+				dados: { layoutMenu: "topbar" },
+			});
+
+			expect(resultado.success).toBe(true);
+			if (resultado.success) {
+				expect(resultado.body.layoutMenu).toBe("topbar");
+				expect(resultado.body.colunasTabelas).toEqual({
+					"ordens-servico": { placa: true },
+				});
+			}
+			expect(
+				configuracaoUsuarioRepository.criarOuAtualizarPreferenciasUiUsuario,
+			).toHaveBeenCalledWith("usuario-1", { layoutMenu: "topbar" });
+		});
+
 		it("deve retornar 404 quando a persistência falhar", async () => {
 			vi.mocked(
 				configuracaoUsuarioRepository.criarOuAtualizarPreferenciasUiUsuario,

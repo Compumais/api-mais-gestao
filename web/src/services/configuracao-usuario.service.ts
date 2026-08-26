@@ -19,8 +19,11 @@ export interface ConfiguracaoUsuario {
 	atualizadoem: string;
 }
 
+export type LayoutMenuUsuario = "sidebar" | "topbar";
+
 export type PreferenciasUiUsuario = {
 	colunasTabelas?: Record<string, Record<string, boolean>>;
+	layoutMenu?: LayoutMenuUsuario;
 };
 
 export const configuracaoUsuarioService = {
