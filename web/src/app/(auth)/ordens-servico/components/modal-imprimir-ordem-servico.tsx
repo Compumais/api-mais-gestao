@@ -26,6 +26,7 @@ import type {
 	OrdemServico,
 	OrdemServicoItem,
 } from "@/services/ordem-servico.service";
+import { usuariosService } from "@/services/usuarios.service";
 import { carregarDadosClienteImpressao } from "@/util/carregar-dados-cliente-impressao";
 import {
 	imprimirHtmlModeloOs,
@@ -67,6 +68,12 @@ export function ModalImprimirOrdemServico({
 		enabled: open,
 	});
 
+	const { data: usuarios = [] } = useQuery({
+		queryKey: ["usuarios-impressao-os", idempresa],
+		queryFn: () => usuariosService.listarTodos({ idempresa }),
+		enabled: open && !!idempresa,
+	});
+
 	useEffect(() => {
 		if (!open || modelos.length === 0) return;
 		const primario = modelos.find((m) => m.primario);
@@ -78,6 +85,15 @@ export function ModalImprimirOrdemServico({
 		[modelos, modeloId],
 	);
 
+	const tecnicoResponsavel = useMemo(() => {
+		if (ordem.idultimotecnico) {
+			const nome = usuarios.find((u) => u.id === ordem.idultimotecnico)?.nome;
+			if (nome?.trim()) return nome.trim();
+		}
+		const doItem = itens.find((i) => i.nometecnico?.trim())?.nometecnico;
+		return doItem?.trim() || null;
+	}, [ordem.idultimotecnico, usuarios, itens]);
+
 	const dadosPreview = useMemo(
 		() => ({
 			empresa,
@@ -87,8 +103,9 @@ export function ModalImprimirOrdemServico({
 				nome: ordem.nomecliente,
 				cnpjcpf: ordem.cnpjcpfcliente,
 			},
+			tecnicoResponsavel,
 		}),
-		[empresa, ordem, itens, cliente],
+		[empresa, ordem, itens, cliente, tecnicoResponsavel],
 	);
 
 	function handleImprimir() {
