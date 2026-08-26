@@ -25,4 +25,18 @@ export const CAMPOS_DADOS_PEDIDO = [
 export const CAMPOS_CLIENTE_PEDIDO = [
 	{ value: "nomecliente", label: "Nome" },
 	{ value: "cnpjcpfcliente", label: "CNPJ/CPF" },
+	{ value: "enderecocompleto", label: "Endereço completo" },
+	{ value: "telefone", label: "Telefone" },
+	{ value: "email", label: "E-mail" },
+	{ value: "inscricaoestadual", label: "Inscrição estadual" },
+] as const;
+
+export const CAMPOS_CLIENTE_PEDIDO_PADRAO = CAMPOS_CLIENTE_PEDIDO.map(
+	(c) => c.value,
+);
+
+export const OPCOES_COLUNA_BLOCO_PEDIDO = [
+	{ value: "cheia", label: "Largura total" },
+	{ value: "esquerda", label: "Coluna 1" },
+	{ value: "direita", label: "Coluna 2" },
 ] as const;

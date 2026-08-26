@@ -26,6 +26,7 @@ export type TipoBlocoModeloImpressaoPedido =
 export type BlocoModeloImpressaoPedido = {
 	id: string;
 	tipo: TipoBlocoModeloImpressaoPedido;
+	coluna?: "cheia" | "esquerda" | "direita";
 	props?: {
 		titulo?: string;
 		texto?: string;

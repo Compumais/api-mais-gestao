@@ -2,6 +2,7 @@
 
 import { Printer } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +23,7 @@ import { PreviewModeloImpressaoPedido } from "@/app/(auth)/configuracoes/modelos
 import { useModelosImpressaoPedido } from "@/hooks/use-modelo-impressao-pedido";
 import type { Empresa } from "@/services/empresas.service";
 import type { PedidoDav, PedidoDavItem } from "@/services/dav.service";
+import { carregarDadosClienteImpressao } from "@/util/carregar-dados-cliente-impressao";
 import {
 	imprimirHtmlModeloPedido,
 	renderizarHtmlModeloImpressaoPedido,
@@ -47,6 +49,21 @@ export function ModalImprimirPedido({
 	const { data: modelos = [], isLoading } = useModelosImpressaoPedido(idempresa);
 	const [modeloId, setModeloId] = useState<string>("");
 
+	const { data: cliente } = useQuery({
+		queryKey: [
+			"cliente-impressao-pedido",
+			pedido.idcliente,
+			pedido.nomecliente,
+			pedido.cnpjcpfcliente,
+		],
+		queryFn: () =>
+			carregarDadosClienteImpressao(pedido.idcliente, {
+				nome: pedido.nomecliente,
+				cnpjcpf: pedido.cnpjcpfcliente,
+			}),
+		enabled: open,
+	});
+
 	useEffect(() => {
 		if (!open || modelos.length === 0) return;
 		const primario = modelos.find((m) => m.primario);
@@ -63,8 +80,12 @@ export function ModalImprimirPedido({
 			empresa,
 			pedido,
 			itens,
+			cliente: cliente ?? {
+				nome: pedido.nomecliente,
+				cnpjcpf: pedido.cnpjcpfcliente,
+			},
 		}),
-		[empresa, pedido, itens],
+		[empresa, pedido, itens, cliente],
 	);
 
 	function handleImprimir() {
@@ -128,6 +149,7 @@ export function ModalImprimirPedido({
 							<PreviewModeloImpressaoPedido
 								layout={modeloSelecionado.layout}
 								dados={dadosPreview}
+								mostrarLimiteFolha={false}
 							/>
 						</div>
 					)}
@@ -143,7 +165,7 @@ export function ModalImprimirPedido({
 						disabled={!modeloSelecionado}
 						onClick={handleImprimir}
 					>
-						<Printer className="h-4 w-4" aria-hidden="true" />
+						<Printer className="h-4 w-4" />
 						Imprimir
 					</Button>
 				</DialogFooter>

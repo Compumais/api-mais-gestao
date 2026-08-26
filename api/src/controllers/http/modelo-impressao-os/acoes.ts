@@ -38,14 +38,18 @@ const tiposBloco = z.enum([
 	"rodape",
 ]);
 
+const colunaBloco = z.enum(["cheia", "esquerda", "direita"]);
+
 const blocoSchema = z.object({
 	id: z.string().min(1),
 	tipo: tiposBloco,
+	coluna: colunaBloco.optional(),
 	props: z
 		.object({
 			titulo: z.string().max(200).optional(),
 			texto: z.string().max(5000).optional(),
 			campos: z.array(z.string()).optional(),
+			mostrarResponsavel: z.boolean().optional(),
 		})
 		.optional(),
 });

@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+	COLUNAS_BLOCO_MODELO_IMPRESSAO,
+	colunaBlocoModeloImpressaoSchema,
+} from "@/schemas/modelo-impressao-os.schema";
 
 export const TIPOS_BLOCO_MODELO_IMPRESSAO_PEDIDO = [
 	"cabecalhoEmpresa",
@@ -13,6 +17,8 @@ export const TIPOS_BLOCO_MODELO_IMPRESSAO_PEDIDO = [
 	"rodape",
 ] as const;
 
+export { COLUNAS_BLOCO_MODELO_IMPRESSAO };
+
 export const tipoBlocoModeloImpressaoPedidoSchema = z.enum(
 	TIPOS_BLOCO_MODELO_IMPRESSAO_PEDIDO,
 );
@@ -20,6 +26,7 @@ export const tipoBlocoModeloImpressaoPedidoSchema = z.enum(
 export const blocoModeloImpressaoPedidoSchema = z.object({
 	id: z.string().min(1),
 	tipo: tipoBlocoModeloImpressaoPedidoSchema,
+	coluna: colunaBlocoModeloImpressaoSchema.optional(),
 	props: z
 		.object({
 			titulo: z.string().max(200).optional(),

@@ -36,6 +36,7 @@ type TipoProdutoEsperado = "P" | "S";
 
 export type OrdemServicoItemListagem = OrdemServicoItem & {
 	tipoproduto: string;
+	nometecnico: string | null;
 };
 
 function validarTipoProdutoEsperado(

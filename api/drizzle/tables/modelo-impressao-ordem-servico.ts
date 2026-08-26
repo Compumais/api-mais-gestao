@@ -27,13 +27,17 @@ export type TipoBlocoModeloImpressaoOs =
 	| "assinaturas"
 	| "rodape";
 
+export type ColunaBlocoModeloImpressao = "cheia" | "esquerda" | "direita";
+
 export type BlocoModeloImpressaoOs = {
 	id: string;
 	tipo: TipoBlocoModeloImpressaoOs;
+	coluna?: ColunaBlocoModeloImpressao;
 	props?: {
 		titulo?: string;
 		texto?: string;
 		campos?: string[];
+		mostrarResponsavel?: boolean;
 	};
 };
 
