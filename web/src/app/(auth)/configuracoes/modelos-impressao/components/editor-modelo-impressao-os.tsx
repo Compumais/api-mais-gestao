@@ -35,8 +35,6 @@ import {
 	CAMPOS_CLIENTE_OS,
 	CAMPOS_CLIENTE_OS_PADRAO,
 	CAMPOS_DADOS_OS,
-	CAMPOS_SERVICO_REALIZADO_OS,
-	CAMPOS_SERVICO_REALIZADO_OS_PADRAO,
 	CAMPOS_VEICULO_OS,
 	LABELS_BLOCO_MODELO_IMPRESSAO_OS,
 	OPCOES_COLUNA_BLOCO,
@@ -77,10 +75,7 @@ function criarBloco(tipo: TipoBlocoModeloImpressaoOs): BlocoModeloImpressaoOs {
 				props: { campos: ["marca", "modelo", "placa", "renavam"] },
 			};
 		case "servicoRealizado":
-			return {
-				...base,
-				props: { campos: [...CAMPOS_SERVICO_REALIZADO_OS_PADRAO] },
-			};
+			return base;
 		case "itens":
 			return {
 				...base,
@@ -477,27 +472,10 @@ export function EditorModeloImpressaoOs({
 							</div>
 						)}
 						{blocoSelecionado.tipo === "servicoRealizado" && (
-							<div className="space-y-2">
-								{CAMPOS_SERVICO_REALIZADO_OS.map((campo) => (
-									<label
-										key={campo.value}
-										className="flex items-center gap-2 text-sm"
-									>
-										<Checkbox
-											checked={(
-												blocoSelecionado.props?.campos ??
-												CAMPOS_SERVICO_REALIZADO_OS_PADRAO
-											).includes(campo.value)}
-											onCheckedChange={() =>
-												toggleCampo(campo.value, [
-													...CAMPOS_SERVICO_REALIZADO_OS_PADRAO,
-												])
-											}
-										/>
-										{campo.label}
-									</label>
-								))}
-							</div>
+							<p className="text-sm text-muted-foreground">
+								Lista os serviços da aba Serviço da OS, com o técnico
+								responsável na primeira coluna.
+							</p>
 						)}
 						{blocoSelecionado.tipo === "itens" && (
 							<label className="flex items-center gap-2 text-sm">
