@@ -14,7 +14,7 @@ export const LABELS_BLOCO_MODELO_IMPRESSAO_OS: Record<
 	laudo: "Laudo técnico",
 	servicoRealizado: "Serviços realizados",
 	observacao: "Observação",
-	itens: "Itens",
+	itens: "Itens (produtos)",
 	totais: "Totais",
 	extras: "Campos extras",
 	assinaturas: "Assinaturas",

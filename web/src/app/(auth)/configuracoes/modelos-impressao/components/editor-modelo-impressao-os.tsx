@@ -77,10 +77,7 @@ function criarBloco(tipo: TipoBlocoModeloImpressaoOs): BlocoModeloImpressaoOs {
 		case "servicoRealizado":
 			return base;
 		case "itens":
-			return {
-				...base,
-				props: { mostrarResponsavel: false },
-			};
+			return base;
 		case "rodape":
 			return {
 				...base,
@@ -478,20 +475,9 @@ export function EditorModeloImpressaoOs({
 							</p>
 						)}
 						{blocoSelecionado.tipo === "itens" && (
-							<label className="flex items-center gap-2 text-sm">
-								<Checkbox
-									checked={blocoSelecionado.props?.mostrarResponsavel === true}
-									onCheckedChange={(v) =>
-										atualizarBloco(blocoSelecionado.id, {
-											props: {
-												...blocoSelecionado.props,
-												mostrarResponsavel: v === true,
-											},
-										})
-									}
-								/>
-								Mostrar responsável do serviço na impressão
-							</label>
+							<p className="text-sm text-muted-foreground">
+								Lista apenas os produtos da aba Itens (sem serviços).
+							</p>
 						)}
 					</div>
 				)}

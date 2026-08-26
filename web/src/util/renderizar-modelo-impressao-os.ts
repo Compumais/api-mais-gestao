@@ -321,30 +321,24 @@ function renderizarBlocoOs(
 				</section>
 			`;
 		case "itens": {
-			const mostrarResponsavel = bloco.props?.mostrarResponsavel === true;
-			const colSpan = mostrarResponsavel ? 6 : 5;
+			const produtos = itens.filter(
+				(item) => (item.tipoproduto ?? "P") !== "S" && item.cancelado !== 1,
+			);
 			const linhas =
-				itens.length === 0
-					? `<tr><td colspan="${colSpan}">Nenhum item</td></tr>`
-					: itens
-							.map((item) => {
-								const responsavel = mostrarResponsavel
-									? `<td>${escapeHtml(item.nometecnico?.trim() || "—")}</td>`
-									: "";
-								return `
+				produtos.length === 0
+					? `<tr><td colspan="5">Nenhum produto</td></tr>`
+					: produtos
+							.map(
+								(item) => `
 							<tr>
 								<td>${escapeHtml(item.codigorproduto ?? "—")}</td>
 								<td>${escapeHtml(item.nomeproduto ?? "—")}</td>
 								<td class="num">${escapeHtml(item.quantidade ?? "—")}</td>
 								<td class="num">${formatarMoeda(item.preco)}</td>
 								<td class="num">${formatarMoeda(item.total)}</td>
-								${responsavel}
-							</tr>`;
-							})
+							</tr>`,
+							)
 							.join("");
-			const thResponsavel = mostrarResponsavel
-				? "<th>Responsável</th>"
-				: "";
 			return `
 				<section class="bloco">
 					<h2>Itens</h2>
@@ -356,7 +350,6 @@ function renderizarBlocoOs(
 								<th>Qtd</th>
 								<th>Unit.</th>
 								<th>Total</th>
-								${thResponsavel}
 							</tr>
 						</thead>
 						<tbody>${linhas}</tbody>
