@@ -869,6 +869,68 @@ export function AlterarProdutosEmMassaDialog({
 						</section>
 
 						<section className="space-y-3">
+							<h3 className="text-sm font-semibold">IBS / CBS</h3>
+							<LinhaCampo
+								id="cstibs"
+								label="CST IBS/CBS"
+								alterar={valores.cstibs?.alterar ?? false}
+								onAlterar={(alterar) => setValue("cstibs.alterar", alterar)}
+							>
+								<Input
+									id="cstibs"
+									placeholder="Ex.: 000"
+									maxLength={3}
+									{...register("cstibs.valor")}
+								/>
+							</LinhaCampo>
+							<LinhaCampo
+								id="classtributariaibs"
+								label="Classificação tributária"
+								alterar={valores.classtributariaibs?.alterar ?? false}
+								onAlterar={(alterar) =>
+									setValue("classtributariaibs.alterar", alterar)
+								}
+							>
+								<Input
+									id="classtributariaibs"
+									placeholder="Ex.: 000001"
+									maxLength={6}
+									{...register("classtributariaibs.valor")}
+								/>
+							</LinhaCampo>
+							<LinhaCampo
+								id="aliquotaiibs"
+								label="Alíquota IBS (%)"
+								alterar={valores.aliquotaiibs?.alterar ?? false}
+								onAlterar={(alterar) =>
+									setValue("aliquotaiibs.alterar", alterar)
+								}
+							>
+								<Input
+									id="aliquotaiibs"
+									placeholder="Ex.: 0,10"
+									inputMode="decimal"
+									{...register("aliquotaiibs.valor")}
+								/>
+							</LinhaCampo>
+							<LinhaCampo
+								id="aliquotacbs"
+								label="Alíquota CBS (%)"
+								alterar={valores.aliquotacbs?.alterar ?? false}
+								onAlterar={(alterar) =>
+									setValue("aliquotacbs.alterar", alterar)
+								}
+							>
+								<Input
+									id="aliquotacbs"
+									placeholder="Ex.: 0,90"
+									inputMode="decimal"
+									{...register("aliquotacbs.valor")}
+								/>
+							</LinhaCampo>
+						</section>
+
+						<section className="space-y-3">
 							<h3 className="text-sm font-semibold">Alíquotas</h3>
 							{(
 								[

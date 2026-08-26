@@ -39,6 +39,8 @@ export const alterarProdutosEmMassaFormSchema = z
 		cstcofinsentrada: campoAlteracao(z.string().nullable()),
 		cstpis: campoAlteracao(z.string().nullable()),
 		cstcofins: campoAlteracao(z.string().nullable()),
+		cstibs: campoAlteracao(z.string().nullable()),
+		classtributariaibs: campoAlteracao(z.string().nullable()),
 		aliquotaicmsinterna: campoAlteracao(percentualOpcional),
 		aliquotaicmsdiferencialentrada: campoAlteracao(percentualOpcional),
 		aliquotareducaoicmsnfcesat: campoAlteracao(percentualOpcional),
@@ -51,6 +53,8 @@ export const alterarProdutosEmMassaFormSchema = z
 		aliquotaconfinsentrada: campoAlteracao(percentualOpcional),
 		aliquotapisconfinssaidapreco: campoAlteracao(percentualOpcional),
 		aliquotapisconfinsentradapreco: campoAlteracao(percentualOpcional),
+		aliquotaiibs: campoAlteracao(percentualOpcional),
+		aliquotacbs: campoAlteracao(percentualOpcional),
 	})
 	.superRefine((dados, ctx) => {
 		const algumMarcado = Object.values(dados).some((campo) => campo.alterar);
@@ -99,6 +103,8 @@ export const valoresPadraoAlteracaoEmMassa: AlterarProdutosEmMassaFormData = {
 	cstcofinsentrada: { alterar: false, valor: null },
 	cstpis: { alterar: false, valor: null },
 	cstcofins: { alterar: false, valor: null },
+	cstibs: { alterar: false, valor: "" },
+	classtributariaibs: { alterar: false, valor: "" },
 	aliquotaicmsinterna: { alterar: false, valor: "" },
 	aliquotaicmsdiferencialentrada: { alterar: false, valor: "" },
 	aliquotareducaoicmsnfcesat: { alterar: false, valor: "" },
@@ -111,6 +117,8 @@ export const valoresPadraoAlteracaoEmMassa: AlterarProdutosEmMassaFormData = {
 	aliquotaconfinsentrada: { alterar: false, valor: "" },
 	aliquotapisconfinssaidapreco: { alterar: false, valor: "" },
 	aliquotapisconfinsentradapreco: { alterar: false, valor: "" },
+	aliquotaiibs: { alterar: false, valor: "" },
+	aliquotacbs: { alterar: false, valor: "" },
 };
 
 export function montarCamposAlteracaoEmMassa(
@@ -131,7 +139,8 @@ export function montarCamposAlteracaoEmMassa(
 	if (dados.idcest.alterar) campos.idcest = dados.idcest.valor || null;
 	if (dados.ippt.alterar) campos.ippt = dados.ippt.valor;
 	if (dados.inativo.alterar) campos.inativo = dados.inativo.valor;
-	if (dados.controlalote.alterar) campos.controlalote = dados.controlalote.valor;
+	if (dados.controlalote.alterar)
+		campos.controlalote = dados.controlalote.valor;
 	if (dados.controlavalidade.alterar) {
 		campos.controlavalidade = dados.controlavalidade.valor;
 	}
@@ -181,6 +190,10 @@ export function montarCamposAlteracaoEmMassa(
 	}
 	if (dados.cstpis.alterar) campos.cstpis = dados.cstpis.valor;
 	if (dados.cstcofins.alterar) campos.cstcofins = dados.cstcofins.valor;
+	if (dados.cstibs.alterar) campos.cstibs = valorOuNulo(dados.cstibs.valor);
+	if (dados.classtributariaibs.alterar) {
+		campos.classtributariaibs = valorOuNulo(dados.classtributariaibs.valor);
+	}
 	if (dados.aliquotaicmsinterna.alterar) {
 		campos.aliquotaicmsinterna = valorOuNulo(dados.aliquotaicmsinterna.valor);
 	}
@@ -226,6 +239,12 @@ export function montarCamposAlteracaoEmMassa(
 		campos.aliquotapisconfinsentradapreco = valorOuNulo(
 			dados.aliquotapisconfinsentradapreco.valor,
 		);
+	}
+	if (dados.aliquotaiibs.alterar) {
+		campos.aliquotaiibs = valorOuNulo(dados.aliquotaiibs.valor);
+	}
+	if (dados.aliquotacbs.alterar) {
+		campos.aliquotacbs = valorOuNulo(dados.aliquotacbs.valor);
 	}
 
 	return campos;

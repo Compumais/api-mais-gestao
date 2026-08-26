@@ -295,6 +295,8 @@ export interface AtualizarProdutoData
 	cstcofins?: string | null;
 	cstipientrada?: string | null;
 	cstipisaida?: string | null;
+	cstibs?: string | null;
+	classtributariaibs?: string | null;
 }
 
 export const produtosService = {
