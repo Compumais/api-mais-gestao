@@ -64,26 +64,41 @@ export function validarDadosEfdIcms({
 		alertas.push("Nenhuma nota fiscal encontrada no período informado.");
 	}
 
-	const itensSemProduto = itens.filter((item) => !item.codigoProduto?.trim());
+	const notasPorId = new Map(notas.map((nota) => [nota.id, nota]));
+	const itensComC170 = itens.filter((item) => {
+		const nota = notasPorId.get(item.idnotafiscal);
+		return nota ? codigoSituacaoDocumento(nota) === "00" : false;
+	});
+
+	const itensSemProduto = itensComC170.filter(
+		(item) => !item.codigoProduto?.trim(),
+	);
 	if (itensSemProduto.length > 0) {
+		const numeros = [
+			...new Set(
+				itensSemProduto.map(
+					(item) => notasPorId.get(item.idnotafiscal)?.numero ?? "?",
+				),
+			),
+		];
 		erros.push(
-			`${itensSemProduto.length} item(ns) sem código de produto (C170 COD_ITEM). Vincule o item ao cadastro ou preencha o código do produto na nota — o PVA rejeita C170 sem 0200.`,
+			`${itensSemProduto.length} item(ns) sem código de produto (C170 COD_ITEM) nas NF ${numeros.join(", ")}. Vincule o item ao cadastro ou preencha o código do produto na nota — o PVA rejeita C170 sem 0200.`,
 		);
 	}
 
-	const itensSemCfop = itens.filter((item) => !item.cfop?.replace(/\D/g, ""));
+	const itensSemCfop = itensComC170.filter(
+		(item) => !item.cfop?.replace(/\D/g, ""),
+	);
 	if (itensSemCfop.length > 0) {
 		alertas.push(`${itensSemCfop.length} item(ns) sem CFOP.`);
 	}
 
-	const itensSemUnidade = itens.filter((item) => !item.unidade?.trim());
+	const itensSemUnidade = itensComC170.filter((item) => !item.unidade?.trim());
 	if (itensSemUnidade.length > 0) {
 		erros.push(
 			`${itensSemUnidade.length} item(ns) sem unidade de medida. Corrija o cadastro antes de gerar a EFD.`,
 		);
 	}
-
-	const notasPorId = new Map(notas.map((nota) => [nota.id, nota]));
 	for (const nota of notas) {
 		const modelo = campoNumerico(nota.modelo).padStart(2, "0").slice(-2);
 		if (!modelo || modelo === "00") {
