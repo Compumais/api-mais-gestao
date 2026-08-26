@@ -140,6 +140,26 @@ export async function listarItensPorNotaFiscal(idnotafiscal: string) {
 		.orderBy(notafiscalitem.contador);
 }
 
+export async function listarNotasFiscaisPorNumeros(
+	idempresa: string,
+	numeros: string[],
+) {
+	if (numeros.length === 0) return [];
+
+	return db
+		.select()
+		.from(notafiscal)
+		.where(
+			and(
+				eq(notafiscal.idempresa, idempresa),
+				or(
+					inArray(notafiscal.numero, numeros),
+					inArray(notafiscal.numeronotafiscal, numeros),
+				),
+			),
+		);
+}
+
 export type ListarNotasFiscaisPorEmpresaParametros = {
 	idempresa: string;
 	numero?: string | undefined;
@@ -219,7 +239,10 @@ export async function listarNotasFiscaisPorEmpresa({
 	} else if (tipoambientenfe === 1) {
 		// Legado sem ambiente gravado trata-se como produção
 		where.push(
-			or(eq(notafiscal.tipoambientenfe, 1), isNull(notafiscal.tipoambientenfe))!,
+			or(
+				eq(notafiscal.tipoambientenfe, 1),
+				isNull(notafiscal.tipoambientenfe),
+			)!,
 		);
 	}
 
@@ -309,7 +332,10 @@ export async function listarNfcePorEmpresa({
 		where.push(eq(notafiscal.tipoambientenfe, 2));
 	} else if (tipoambientenfe === 1) {
 		where.push(
-			or(eq(notafiscal.tipoambientenfe, 1), isNull(notafiscal.tipoambientenfe))!,
+			or(
+				eq(notafiscal.tipoambientenfe, 1),
+				isNull(notafiscal.tipoambientenfe),
+			)!,
 		);
 	}
 

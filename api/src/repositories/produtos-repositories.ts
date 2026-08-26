@@ -153,6 +153,42 @@ export async function buscarProdutoPorDescricao(
 	return produto;
 }
 
+export async function buscarProdutoPorNomeOuDescricao(
+	idempresa: string,
+	texto: string,
+) {
+	const termo = texto.trim();
+	if (termo.length < 4) return undefined;
+
+	const [exato] = await db
+		.select()
+		.from(produtos)
+		.where(
+			and(
+				eq(produtos.idempresa, idempresa),
+				or(ilike(produtos.nome, termo), ilike(produtos.descricao, termo)),
+			),
+		)
+		.limit(1);
+	if (exato) return exato;
+
+	const [parcial] = await db
+		.select()
+		.from(produtos)
+		.where(
+			and(
+				eq(produtos.idempresa, idempresa),
+				or(
+					ilike(produtos.nome, `%${termo}%`),
+					ilike(produtos.descricao, `%${termo}%`),
+				),
+			),
+		)
+		.limit(1);
+
+	return parcial;
+}
+
 export type ProdutoExportacaoMgv = {
 	codigo: number | null;
 	nome: string;

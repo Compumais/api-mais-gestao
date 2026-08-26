@@ -472,14 +472,18 @@ export function ModalItemEmissao({
 								placeholder="Buscar por nome, código ou código de barras..."
 								value={busca}
 								onChange={(e) => {
-									setBusca(e.target.value);
-									if (e.target.value !== item.descricao) {
-										setItem((prev) => ({
-											...prev,
-											idproduto: undefined,
-											descricao: e.target.value,
-										}));
-									}
+									const valor = e.target.value;
+									setBusca(valor);
+									setItem((prev) => ({
+										...prev,
+										descricao: valor,
+										...(valor.trim() === ""
+											? {
+													idproduto: undefined,
+													codigoProduto: undefined,
+												}
+											: {}),
+									}));
 								}}
 							/>
 						</div>
@@ -771,10 +775,7 @@ export function ModalItemEmissao({
 									<Select
 										value={item.cstPis ?? "none"}
 										onValueChange={(v) =>
-											atualizarCampo(
-												"cstPis",
-												v === "none" ? undefined : v,
-											)
+											atualizarCampo("cstPis", v === "none" ? undefined : v)
 										}
 									>
 										<SelectTrigger className="w-full">
@@ -798,10 +799,7 @@ export function ModalItemEmissao({
 									<Select
 										value={item.cstCofins ?? "none"}
 										onValueChange={(v) =>
-											atualizarCampo(
-												"cstCofins",
-												v === "none" ? undefined : v,
-											)
+											atualizarCampo("cstCofins", v === "none" ? undefined : v)
 										}
 									>
 										<SelectTrigger className="w-full">
