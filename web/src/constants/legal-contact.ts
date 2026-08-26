@@ -1,6 +1,7 @@
 export const LEGAL_CONTACT = {
 	email: "contato@compumais.com",
 	telefone: "(34) 3351-1861",
+	whatsapp: "553433511861",
 	endereco:
 		"Rua Coronel José Afonso de Almeida N° 143, Letra: B, Bairro: Centro, Cidade: Sacramento",
 } as const;
