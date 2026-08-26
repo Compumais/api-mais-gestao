@@ -147,6 +147,18 @@ export const produtoFormSchema = z.object({
 	aliquotapisconfinssaidapreco: percentualOpcional(),
 	aliquotapisconfinsentradapreco: percentualOpcional(),
 	aliquotaiss: percentualOpcional(),
+	cstibs: z
+		.string()
+		.max(3, "CST IBS/CBS deve ter no máximo 3 caracteres")
+		.optional()
+		.nullable(),
+	classtributariaibs: z
+		.string()
+		.max(6, "Classificação tributária deve ter no máximo 6 caracteres")
+		.optional()
+		.nullable(),
+	aliquotaiibs: percentualOpcional(),
+	aliquotacbs: percentualOpcional(),
 	observacoes: z.string().optional().nullable(),
 	enviamobile: z.boolean().optional(),
 	exportaBalanca: z.boolean().optional(),

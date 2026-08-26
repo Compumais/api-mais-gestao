@@ -107,7 +107,9 @@ type CampoPercentualProps = {
 		| "aliquotaconfinsentrada"
 		| "aliquotapisconfinssaidapreco"
 		| "aliquotapisconfinsentradapreco"
-		| "aliquotaiss";
+		| "aliquotaiss"
+		| "aliquotaiibs"
+		| "aliquotacbs";
 	label: string;
 	register: UseFormRegister<ProdutoFormData>;
 	erro?: { message?: string };
@@ -616,6 +618,58 @@ export function ProdutoAbaImpostos({
 									erro={errors.cstcofins?.message}
 								/>
 							)}
+						/>
+					</div>
+				</section>
+
+				<section className="space-y-4">
+					<div className="space-y-1">
+						<h3 className="text-base font-semibold">IBS / CBS</h3>
+						<p className="text-sm text-muted-foreground">
+							Reforma tributária (LC 214/2025). CST e classificação do grupo
+							IBSCBS da NF-e.
+						</p>
+					</div>
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<Field data-invalid={!!errors.cstibs}>
+							<FieldLabel htmlFor="cstibs">CST IBS/CBS</FieldLabel>
+							<Input
+								id="cstibs"
+								placeholder="Ex.: 000"
+								maxLength={3}
+								aria-invalid={!!errors.cstibs}
+								{...register("cstibs")}
+							/>
+							<FieldError errors={errors.cstibs ? [errors.cstibs] : []} />
+						</Field>
+						<Field data-invalid={!!errors.classtributariaibs}>
+							<FieldLabel htmlFor="classtributariaibs">
+								Classificação tributária
+							</FieldLabel>
+							<Input
+								id="classtributariaibs"
+								placeholder="Ex.: 000001"
+								maxLength={6}
+								aria-invalid={!!errors.classtributariaibs}
+								{...register("classtributariaibs")}
+							/>
+							<FieldError
+								errors={
+									errors.classtributariaibs ? [errors.classtributariaibs] : []
+								}
+							/>
+						</Field>
+						<CampoPercentual
+							id="aliquotaiibs"
+							label="Alíquota IBS (%)"
+							register={register}
+							erro={errors.aliquotaiibs}
+						/>
+						<CampoPercentual
+							id="aliquotacbs"
+							label="Alíquota CBS (%)"
+							register={register}
+							erro={errors.aliquotacbs}
 						/>
 					</div>
 				</section>

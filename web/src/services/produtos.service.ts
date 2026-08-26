@@ -50,6 +50,8 @@ export interface Produto {
 	cstcofinsentrada?: string | number | null;
 	cstpis?: string | number | null;
 	cstcofins?: string | number | null;
+	cstibs?: string | null;
+	classtributariaibs?: string | null;
 	cstipientrada?: string | null;
 	cstipisaida?: string | null;
 	itemrapido?: number | null;
@@ -85,6 +87,8 @@ export interface Produto {
 	aliquotaconfinsentrada?: string | null;
 	aliquotapisconfinsentradapreco?: string | null;
 	aliquotapisconfinssaidapreco?: string | null;
+	aliquotaiibs?: string | null;
+	aliquotacbs?: string | null;
 }
 
 export interface ListarProdutosResponse {
@@ -136,6 +140,8 @@ type CamposAliquotaProduto = {
 	aliquotaconfinsentrada?: string | null;
 	aliquotapisconfinsentradapreco?: string | null;
 	aliquotapisconfinssaidapreco?: string | null;
+	aliquotaiibs?: string | null;
+	aliquotacbs?: string | null;
 };
 
 export interface CriarProdutoData
@@ -184,6 +190,8 @@ export interface CriarProdutoData
 	cstcofins?: string | null;
 	cstipientrada?: string | null;
 	cstipisaida?: string | null;
+	cstibs?: string | null;
+	classtributariaibs?: string | null;
 }
 
 export interface TributacaoPorCfopResponse {
