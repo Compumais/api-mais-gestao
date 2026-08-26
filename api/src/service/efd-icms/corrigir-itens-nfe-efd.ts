@@ -1,3 +1,7 @@
+import {
+	listarItensEfd,
+	listarNotasEfd,
+} from "@/repositories/efd-icms-repositories.js";
 import { buscarEmpresaPorCnpj } from "@/repositories/empresa-repositories.js";
 import {
 	atualizarItemNotaFiscal,
@@ -10,6 +14,7 @@ import {
 } from "@/repositories/produtos-repositories.js";
 import { parseNFeXml } from "@/util/nfe-xml-parser.js";
 import { obterXmlAutorizadoNotaFiscal } from "@/util/obter-xml-nota-fiscal.js";
+import { codigoSituacaoDocumento } from "./registros/bloco-c.js";
 
 export function descricaoProdutoSemLote(texto: string): string {
 	return texto
@@ -67,7 +72,9 @@ export type CorrecaoItemEfd = {
 
 export async function corrigirItensNfeParaEfd(params: {
 	cnpj: string;
-	numeros: string[];
+	numeros?: string[];
+	dataInicio?: string;
+	dataFim?: string;
 	aplicar: boolean;
 }): Promise<CorrecaoItemEfd[]> {
 	const empresaReg = await buscarEmpresaPorCnpj(params.cnpj);
@@ -77,15 +84,34 @@ export async function corrigirItensNfeParaEfd(params: {
 		);
 	}
 
+	const numerosInformados = (params.numeros ?? []).filter(Boolean);
+	const numeros =
+		numerosInformados.length > 0
+			? numerosInformados
+			: await descobrirNumerosSemCodigoProduto({
+					idempresa: empresaReg.id,
+					dataInicio: params.dataInicio,
+					dataFim: params.dataFim,
+				});
+
+	if (numeros.length === 0) {
+		if (numerosInformados.length > 0) {
+			throw new Error(
+				`Nenhuma NF-e de produção ${numerosInformados.join(", ")} encontrada para o CNPJ informado.`,
+			);
+		}
+		return [];
+	}
+
 	const notas = await listarNotasFiscaisPorNumeros(
 		empresaReg.id,
-		expandirNumerosNota(params.numeros),
+		expandirNumerosNota(numeros),
 	);
 	const notasProducao = notas.filter(
 		(nota) =>
 			nota.modelo !== "65" &&
 			nota.tipoambientenfe !== 2 &&
-			params.numeros.some((numero) => {
+			numeros.some((numero) => {
 				const pedido = String(Number.parseInt(numero.replace(/\D/g, ""), 10));
 				const atual = String(
 					Number.parseInt(
@@ -100,7 +126,7 @@ export async function corrigirItensNfeParaEfd(params: {
 
 	if (notasProducao.length === 0) {
 		throw new Error(
-			`Nenhuma NF-e de produção ${params.numeros.join(", ")} encontrada para o CNPJ informado.`,
+			`Nenhuma NF-e de produção ${numeros.join(", ")} encontrada para o CNPJ informado.`,
 		);
 	}
 
@@ -234,4 +260,38 @@ async function localizarProdutoCadastro(params: {
 	}
 
 	return null;
+}
+
+async function descobrirNumerosSemCodigoProduto(params: {
+	idempresa: string;
+	dataInicio?: string;
+	dataFim?: string;
+}): Promise<string[]> {
+	if (!params.dataInicio || !params.dataFim) {
+		throw new Error("Informe --numeros 57,58 ou --periodo 2026-08.");
+	}
+
+	const notas = await listarNotasEfd({
+		idempresa: params.idempresa,
+		dataInicio: params.dataInicio,
+		dataFim: params.dataFim,
+	});
+	const autorizadas = notas.filter(
+		(nota) => codigoSituacaoDocumento(nota) === "00",
+	);
+	const itens = await listarItensEfd(autorizadas.map((nota) => nota.id));
+	const idsSemCodigo = new Set(
+		itens
+			.filter((item) => !item.codigoProduto?.trim())
+			.map((item) => item.idnotafiscal),
+	);
+
+	return [
+		...new Set(
+			autorizadas
+				.filter((nota) => idsSemCodigo.has(nota.id))
+				.map((nota) => nota.numero)
+				.filter((numero): numero is string => Boolean(numero?.trim())),
+		),
+	];
 }
