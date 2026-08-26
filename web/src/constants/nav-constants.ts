@@ -435,6 +435,21 @@ export const DATA = {
 					url: "/contabilidade/sintegra",
 				},
 				{
+					title: "Gerar EFD ICMS/IPI",
+					url: "/contabilidade/efd",
+					acesso: { feature: "sped_efd" },
+				},
+				{
+					title: "Gerar EFD-Contribuições",
+					url: "/contabilidade/efd-contribuicoes",
+					acesso: { feature: "sped_efd" },
+				},
+				{
+					title: "Apuração EFD",
+					url: "/contabilidade/apuracao-efd",
+					acesso: { feature: "sped_efd" },
+				},
+				{
 					title: "Exportar XMLs fiscais",
 					url: "/contabilidade/exportar-xmls",
 				},

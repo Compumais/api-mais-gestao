@@ -12,7 +12,8 @@ export const FUNCOES_AUTOMACAO = [
 export type FuncaoAutomacao = (typeof FUNCOES_AUTOMACAO)[number];
 
 export const LABELS_FUNCAO_AUTOMACAO: Record<FuncaoAutomacao, string> = {
-	envio_fiscal_contabilidade: "Envio fiscal à contabilidade (SINTEGRA / XMLs)",
+	envio_fiscal_contabilidade:
+		"Envio fiscal à contabilidade (SINTEGRA / XMLs / EFD)",
 	alerta_pendencias_nf: "Alerta de pendências NF-e / NFC-e",
 };
 
@@ -42,16 +43,23 @@ export const automacaoFormSchema = z
 		diasemana: z.number().int().min(0).max(6).optional(),
 		incluirSintegra: z.boolean(),
 		incluirXml: z.boolean(),
+		incluirEfdIcms: z.boolean(),
+		incluirEfdContribuicoes: z.boolean(),
 		incluirNfe: z.boolean(),
 		incluirNfce: z.boolean(),
 		ativo: z.boolean(),
 	})
 	.superRefine((dados, ctx) => {
 		if (dados.funcao === FUNCAO_ENVIO_FISCAL_CONTABILIDADE) {
-			if (!dados.incluirSintegra && !dados.incluirXml) {
+			if (
+				!dados.incluirSintegra &&
+				!dados.incluirXml &&
+				!dados.incluirEfdIcms &&
+				!dados.incluirEfdContribuicoes
+			) {
 				ctx.addIssue({
 					code: z.ZodIssueCode.custom,
-					message: "Selecione SINTEGRA e/ou XML",
+					message: "Selecione ao menos um anexo (SINTEGRA, XML ou EFD)",
 					path: ["incluirSintegra"],
 				});
 			}

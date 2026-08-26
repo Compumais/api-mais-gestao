@@ -18,6 +18,7 @@ import type {
 	TransportePayloadNfe,
 } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
 import type { FormaPagamentoNfVenda } from "@/service/nota-fiscal/gerar-contas-receber-nf.js";
+import { camposTributariosItemEmissao } from "@/util/campos-tributarios-item-emissao.js";
 import {
 	montarDadosImportacaoItemEmissaoNfe,
 	montarSnapshotEmissaoNfe,
@@ -117,6 +118,7 @@ function montarItensRascunho(
 		contador: index + 1,
 		tipo: "P",
 		currenttimemillis: Date.now(),
+		...camposTributariosItemEmissao(item),
 		dadosimportacao: montarDadosImportacaoItemEmissaoNfe(item) ?? null,
 		...resumoLotePrincipal(item),
 	}));
