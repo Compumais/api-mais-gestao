@@ -1,6 +1,6 @@
 "use client";
 
-import type { Icon } from "@tabler/icons-react";
+import { IconSearch } from "@tabler/icons-react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -21,7 +21,6 @@ import { useNavFiltrada, type NavSecaoTopbar } from "@/hooks/use-nav-filtrada";
 import { NavFixadosProvider } from "@/hooks/use-nav-fixados";
 import { useSearchDialog } from "@/hooks/use-search-dialog";
 import { cn } from "@/lib/utils";
-import { CPlusIcon } from "./icons/c-plus";
 import { NavFixados } from "./nav-fixados";
 
 function rotaEstaAtiva(pathname: string, url: string): boolean {
@@ -151,9 +150,7 @@ function NavMenuMobileContent({ onNavigate }: { onNavigate: () => void }) {
 	const pathname = usePathname();
 	const { setOpen: setSearchOpen } = useSearchDialog();
 	const {
-		user,
 		isGarcomUser,
-		navMainItems,
 		secoesTopbar,
 		itensNavFixaveis,
 	} = useNavFiltrada();
@@ -161,36 +158,18 @@ function NavMenuMobileContent({ onNavigate }: { onNavigate: () => void }) {
 	return (
 		<div className="flex-1 overflow-y-auto px-2">
 			<div className="space-y-1 py-2">
-				{navMainItems.map((item) => {
-					if (item.title === "Pesquisar") {
-						return (
-							<button
-								key={item.title}
-								type="button"
-								onClick={() => {
-									setSearchOpen(true);
-									onNavigate();
-								}}
-								className="flex w-full items-center rounded-md px-3 py-2 text-sm hover:bg-muted"
-							>
-								{item.icon ? <item.icon className="mr-2 size-4" /> : null}
-								{item.title}
-							</button>
-						);
-					}
-					if (!item.url) return null;
-					return (
-						<NavLinkMobile
-							key={item.title}
-							href={item.url}
-							onNavigate={onNavigate}
-							ativo={rotaEstaAtiva(pathname, item.url)}
-						>
-							{item.icon ? <item.icon className="mr-2 size-4" /> : null}
-							{item.title}
-						</NavLinkMobile>
-					);
-				})}
+				<button
+					type="button"
+					onClick={() => {
+						setSearchOpen(true);
+						onNavigate();
+					}}
+					className="flex w-full items-center justify-center rounded-md px-3 py-2 text-sm hover:bg-muted"
+					aria-label="Pesquisar"
+					title="Pesquisar"
+				>
+					<IconSearch className="size-5" />
+				</button>
 
 				{!isGarcomUser && itensNavFixaveis.length > 0 && (
 					<div className="pt-2">
@@ -225,14 +204,11 @@ export function NavMenuMobileSheet({
 		<Sheet open={open} onOpenChange={onOpenChange}>
 			<SheetContent side="left" className="flex w-[min(100vw-2rem,18rem)] flex-col p-0">
 				<SheetHeader className="border-b px-4 py-3 text-left">
-					<div className="flex items-center gap-2">
-						<CPlusIcon size={28} />
-						<div>
-							<SheetTitle className="text-base">Mais Gestão</SheetTitle>
-							<SheetDescription className="text-xs">
-								Gestão Financeira & Fiscal
-							</SheetDescription>
-						</div>
+					<div>
+						<SheetTitle className="text-base">Mais Gestão</SheetTitle>
+						<SheetDescription className="text-xs">
+							Gestão Financeira & Fiscal
+						</SheetDescription>
 					</div>
 				</SheetHeader>
 				<NavFixadosProvider userId={user?.id}>
