@@ -3,7 +3,7 @@
 import { IconSearch } from "@tabler/icons-react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
 	Collapsible,
 	CollapsibleContent,
@@ -20,22 +20,21 @@ import type { NavItem } from "@/constants/nav-constants";
 import { useNavFiltrada, type NavSecaoTopbar } from "@/hooks/use-nav-filtrada";
 import { NavFixadosProvider } from "@/hooks/use-nav-fixados";
 import { useSearchDialog } from "@/hooks/use-search-dialog";
+import {
+	itemNavTemRotaAtiva,
+	rotaNavEstaAtiva,
+} from "@/lib/nav-rota-ativa";
 import { cn } from "@/lib/utils";
 import { NavFixados } from "./nav-fixados";
 
-function rotaEstaAtiva(pathname: string, url: string): boolean {
-	const path = url.split("?")[0];
-	if (!path || path === "#") return false;
-	return pathname === path || pathname.startsWith(`${path}/`);
-}
-
-function itemTemRotaAtiva(item: NavItem, pathname: string): boolean {
-	if (item.url && rotaEstaAtiva(pathname, item.url)) return true;
-	return Boolean(item.items?.some((sub) => rotaEstaAtiva(pathname, sub.url)));
-}
-
-function secaoTemRotaAtiva(secao: NavSecaoTopbar, pathname: string): boolean {
-	return secao.items.some((item) => itemTemRotaAtiva(item, pathname));
+function secaoTemRotaAtiva(
+	secao: NavSecaoTopbar,
+	pathname: string,
+	search: string,
+): boolean {
+	return secao.items.some((item) =>
+		itemNavTemRotaAtiva(pathname, search, item),
+	);
 }
 
 function NavLinkMobile({
@@ -66,10 +65,12 @@ function NavLinkMobile({
 function NavItemMobile({
 	item,
 	pathname,
+	search,
 	onNavigate,
 }: {
 	item: NavItem;
 	pathname: string;
+	search: string;
 	onNavigate: () => void;
 }) {
 	const isLeaf = Boolean(item.url) && !item.items?.length;
@@ -80,7 +81,7 @@ function NavItemMobile({
 			<NavLinkMobile
 				href={item.url}
 				onNavigate={onNavigate}
-				ativo={rotaEstaAtiva(pathname, item.url)}
+				ativo={rotaNavEstaAtiva(pathname, search, item.url)}
 			>
 				{item.icon ? <item.icon className="mr-2 size-4 shrink-0" /> : null}
 				{item.title}
@@ -88,7 +89,7 @@ function NavItemMobile({
 		);
 	}
 
-	const aberto = itemTemRotaAtiva(item, pathname);
+	const aberto = itemNavTemRotaAtiva(pathname, search, item);
 
 	return (
 		<Collapsible defaultOpen={aberto} className="group/collapsible">
@@ -105,7 +106,7 @@ function NavItemMobile({
 						key={sub.url}
 						href={sub.url}
 						onNavigate={onNavigate}
-						ativo={rotaEstaAtiva(pathname, sub.url)}
+						ativo={rotaNavEstaAtiva(pathname, search, sub.url)}
 					>
 						{sub.title}
 					</NavLinkMobile>
@@ -118,13 +119,15 @@ function NavItemMobile({
 function NavSecaoMobile({
 	secao,
 	pathname,
+	search,
 	onNavigate,
 }: {
 	secao: NavSecaoTopbar;
 	pathname: string;
+	search: string;
 	onNavigate: () => void;
 }) {
-	const aberto = secaoTemRotaAtiva(secao, pathname);
+	const aberto = secaoTemRotaAtiva(secao, pathname, search);
 
 	return (
 		<Collapsible defaultOpen={aberto} className="group/secao">
@@ -138,6 +141,7 @@ function NavSecaoMobile({
 						key={item.title}
 						item={item}
 						pathname={pathname}
+						search={search}
 						onNavigate={onNavigate}
 					/>
 				))}
@@ -148,6 +152,8 @@ function NavSecaoMobile({
 
 function NavMenuMobileContent({ onNavigate }: { onNavigate: () => void }) {
 	const pathname = usePathname();
+	const searchParams = useSearchParams();
+	const search = searchParams.toString();
 	const { setOpen: setSearchOpen } = useSearchDialog();
 	const {
 		isGarcomUser,
@@ -182,6 +188,7 @@ function NavMenuMobileContent({ onNavigate }: { onNavigate: () => void }) {
 						key={secao.label}
 						secao={secao}
 						pathname={pathname}
+						search={search}
 						onNavigate={onNavigate}
 					/>
 				))}

@@ -3,7 +3,7 @@
 import type { Icon } from "@tabler/icons-react";
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { BotaoFixarNav } from "@/components/nav-botao-fixar";
 import {
 	Collapsible,
@@ -20,6 +20,10 @@ import {
 	SidebarMenuSubButton,
 	SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
+import {
+	itemNavTemRotaAtiva,
+	rotaNavEstaAtiva,
+} from "@/lib/nav-rota-ativa";
 
 type NavDocumentsItem = {
 	title: string;
@@ -36,17 +40,6 @@ function isLeafLink(item: NavDocumentsItem): boolean {
 	return Boolean(item.url) && !item.items?.length;
 }
 
-function rotaEstaAtiva(pathname: string, url: string): boolean {
-	const path = url.split("?")[0];
-	if (!path || path === "#") return false;
-	return pathname === path || pathname.startsWith(`${path}/`);
-}
-
-function itemTemRotaAtiva(item: NavDocumentsItem, pathname: string): boolean {
-	if (item.url && rotaEstaAtiva(pathname, item.url)) return true;
-	return Boolean(item.items?.some((sub) => rotaEstaAtiva(pathname, sub.url)));
-}
-
 export function NavDocuments({
 	label,
 	items,
@@ -55,6 +48,8 @@ export function NavDocuments({
 	items: NavDocumentsItem[];
 }) {
 	const pathname = usePathname();
+	const searchParams = useSearchParams();
+	const search = searchParams.toString();
 	const ocultarRotulo =
 		items.length === 1 &&
 		items[0]?.title === label &&
@@ -67,7 +62,7 @@ export function NavDocuments({
 				{items.map((item) => {
 					if (isLeafLink(item) && item.url) {
 						const isPlaceholder = item.url === "#";
-						const ativo = rotaEstaAtiva(pathname, item.url);
+						const ativo = rotaNavEstaAtiva(pathname, search, item.url);
 						return (
 							<SidebarMenuItem key={item.title}>
 								{isPlaceholder ? (
@@ -94,7 +89,7 @@ export function NavDocuments({
 						);
 					}
 
-					const aberto = item.isActive || itemTemRotaAtiva(item, pathname);
+					const aberto = item.isActive || itemNavTemRotaAtiva(pathname, search, item);
 
 					return (
 						<Collapsible
@@ -116,7 +111,7 @@ export function NavDocuments({
 										<SidebarMenuSub>
 											{item.items.map((subItem) => {
 												const isPlaceholder = subItem.url === "#";
-												const ativo = rotaEstaAtiva(pathname, subItem.url);
+												const ativo = rotaNavEstaAtiva(pathname, search, subItem.url);
 												return (
 													<SidebarMenuSubItem key={subItem.title}>
 														{isPlaceholder ? (
