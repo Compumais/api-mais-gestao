@@ -3,30 +3,28 @@
 import { IconSearch } from "@tabler/icons-react";
 import { ChevronDown, Menu } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { NavMenuMobileSheet } from "@/components/nav-menu-mobile-sheet";
 import { NavUserTopbar } from "@/components/nav-user-topbar";
 import { Button } from "@/components/ui/button";
-import type { NavItem } from "@/constants/nav-constants";
 import { useNavFiltrada, type NavSecaoTopbar } from "@/hooks/use-nav-filtrada";
 import { NavFixadosProvider } from "@/hooks/use-nav-fixados";
 import { useSearchDialog } from "@/hooks/use-search-dialog";
+import {
+	itemNavTemRotaAtiva,
+	rotaNavEstaAtiva,
+} from "@/lib/nav-rota-ativa";
 import { cn } from "@/lib/utils";
 
-function rotaEstaAtiva(pathname: string, url: string): boolean {
-	const path = url.split("?")[0];
-	if (!path || path === "#") return false;
-	return pathname === path || pathname.startsWith(`${path}/`);
-}
-
-function itemTemRotaAtiva(item: NavItem, pathname: string): boolean {
-	if (item.url && rotaEstaAtiva(pathname, item.url)) return true;
-	return Boolean(item.items?.some((sub) => rotaEstaAtiva(pathname, sub.url)));
-}
-
-function secaoTemRotaAtiva(secao: NavSecaoTopbar, pathname: string): boolean {
-	return secao.items.some((item) => itemTemRotaAtiva(item, pathname));
+function secaoTemRotaAtiva(
+	secao: NavSecaoTopbar,
+	pathname: string,
+	search: string,
+): boolean {
+	return secao.items.some((item) =>
+		itemNavTemRotaAtiva(pathname, search, item),
+	);
 }
 
 const topbarTriggerClass =
@@ -38,17 +36,19 @@ const topbarTriggerAtivoClass =
 function TopbarSecaoPainel({
 	secao,
 	pathname,
+	search,
 	onNavigate,
 }: {
 	secao: NavSecaoTopbar;
 	pathname: string;
+	search: string;
 	onNavigate: () => void;
 }) {
 	return (
 		<div className="mx-auto grid w-full max-w-screen-2xl gap-6 px-4 py-5 sm:px-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 			{secao.items.map((item) => {
 				if (item.url && !item.items?.length) {
-					const ativo = rotaEstaAtiva(pathname, item.url);
+					const ativo = rotaNavEstaAtiva(pathname, search, item.url);
 					return (
 						<div key={item.title}>
 							<Link
@@ -74,7 +74,7 @@ function TopbarSecaoPainel({
 						</div>
 						<ul className="space-y-0.5">
 							{item.items?.map((sub) => {
-								const ativo = rotaEstaAtiva(pathname, sub.url);
+								const ativo = rotaNavEstaAtiva(pathname, search, sub.url);
 								return (
 									<li key={sub.url}>
 										<Link
@@ -100,6 +100,8 @@ function TopbarSecaoPainel({
 
 export function AppTopbar() {
 	const pathname = usePathname();
+	const searchParams = useSearchParams();
+	const search = searchParams.toString();
 	const { setOpen: setSearchOpen } = useSearchDialog();
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [secaoAberta, setSecaoAberta] = useState<string | null>(null);
@@ -177,7 +179,7 @@ export function AppTopbar() {
 							{secoesTopbar.map((secao) => {
 								const ativo =
 									secaoAberta === secao.label ||
-									secaoTemRotaAtiva(secao, pathname);
+									secaoTemRotaAtiva(secao, pathname, search);
 
 								return (
 									<button
@@ -223,6 +225,7 @@ export function AppTopbar() {
 						<TopbarSecaoPainel
 							secao={secaoAtual}
 							pathname={pathname}
+							search={search}
 							onNavigate={() => setSecaoAberta(null)}
 						/>
 					</div>
