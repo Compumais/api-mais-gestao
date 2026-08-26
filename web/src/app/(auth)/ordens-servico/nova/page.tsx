@@ -54,6 +54,8 @@ function defaultsForm(): OrdemServicoFormInput {
 		idtipodocumentofinanceiro: null,
 		problemadescrito: "",
 		laudotecnico: "",
+		servicoexecutado: "",
+		serviconaoexecutado: "",
 		observacao: "",
 		agendamento: "",
 		previsaoconclusao: "",

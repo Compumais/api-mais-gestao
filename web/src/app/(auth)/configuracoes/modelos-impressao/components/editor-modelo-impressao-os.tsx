@@ -35,6 +35,8 @@ import {
 	CAMPOS_CLIENTE_OS,
 	CAMPOS_CLIENTE_OS_PADRAO,
 	CAMPOS_DADOS_OS,
+	CAMPOS_SERVICO_REALIZADO_OS,
+	CAMPOS_SERVICO_REALIZADO_OS_PADRAO,
 	CAMPOS_VEICULO_OS,
 	LABELS_BLOCO_MODELO_IMPRESSAO_OS,
 	OPCOES_COLUNA_BLOCO,
@@ -73,6 +75,11 @@ function criarBloco(tipo: TipoBlocoModeloImpressaoOs): BlocoModeloImpressaoOs {
 			return {
 				...base,
 				props: { campos: ["marca", "modelo", "placa", "renavam"] },
+			};
+		case "servicoRealizado":
+			return {
+				...base,
+				props: { campos: [...CAMPOS_SERVICO_REALIZADO_OS_PADRAO] },
 			};
 		case "itens":
 			return {
@@ -462,6 +469,29 @@ export function EditorModeloImpressaoOs({
 													campo.value,
 													CAMPOS_VEICULO_OS.map((c) => c.value),
 												)
+											}
+										/>
+										{campo.label}
+									</label>
+								))}
+							</div>
+						)}
+						{blocoSelecionado.tipo === "servicoRealizado" && (
+							<div className="space-y-2">
+								{CAMPOS_SERVICO_REALIZADO_OS.map((campo) => (
+									<label
+										key={campo.value}
+										className="flex items-center gap-2 text-sm"
+									>
+										<Checkbox
+											checked={(
+												blocoSelecionado.props?.campos ??
+												CAMPOS_SERVICO_REALIZADO_OS_PADRAO
+											).includes(campo.value)}
+											onCheckedChange={() =>
+												toggleCampo(campo.value, [
+													...CAMPOS_SERVICO_REALIZADO_OS_PADRAO,
+												])
 											}
 										/>
 										{campo.label}

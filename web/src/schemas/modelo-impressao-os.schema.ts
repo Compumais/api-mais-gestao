@@ -9,6 +9,7 @@ export const TIPOS_BLOCO_MODELO_IMPRESSAO_OS = [
 	"veiculo",
 	"problema",
 	"laudo",
+	"servicoRealizado",
 	"observacao",
 	"itens",
 	"totais",

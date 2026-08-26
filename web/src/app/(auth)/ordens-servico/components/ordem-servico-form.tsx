@@ -66,6 +66,8 @@ export function OrdemServicoForm({
 	const idPrevisao = `${idBase}-previsao`;
 	const idProblema = `${idBase}-problema`;
 	const idLaudo = `${idBase}-laudo`;
+	const idServicoExecutado = `${idBase}-servico-executado`;
+	const idServicoNaoExecutado = `${idBase}-servico-nao-executado`;
 	const idObs = `${idBase}-obs`;
 	const idMarca = `${idBase}-marca`;
 	const idModelo = `${idBase}-modelo`;
@@ -305,6 +307,28 @@ export function OrdemServicoForm({
 							rows={3}
 							disabled={desabilitado}
 							{...form.register("laudotecnico")}
+						/>
+					</Field>
+					<Field>
+						<FieldLabel htmlFor={idServicoExecutado}>
+							Serviço realizado
+						</FieldLabel>
+						<Textarea
+							id={idServicoExecutado}
+							rows={3}
+							disabled={desabilitado}
+							{...form.register("servicoexecutado")}
+						/>
+					</Field>
+					<Field>
+						<FieldLabel htmlFor={idServicoNaoExecutado}>
+							Serviço não realizado
+						</FieldLabel>
+						<Textarea
+							id={idServicoNaoExecutado}
+							rows={2}
+							disabled={desabilitado}
+							{...form.register("serviconaoexecutado")}
 						/>
 					</Field>
 					<Field>

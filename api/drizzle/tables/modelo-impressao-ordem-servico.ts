@@ -20,6 +20,7 @@ export type TipoBlocoModeloImpressaoOs =
 	| "veiculo"
 	| "problema"
 	| "laudo"
+	| "servicoRealizado"
 	| "observacao"
 	| "itens"
 	| "totais"
