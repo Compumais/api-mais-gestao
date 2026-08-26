@@ -149,6 +149,8 @@ export default function OrdemServicoDetalhePage({
 			idtipodocumentofinanceiro: os.idtipodocumentofinanceiro,
 			problemadescrito: os.problemadescrito ?? "",
 			laudotecnico: os.laudotecnico ?? "",
+			servicoexecutado: os.servicoexecutado ?? "",
+			serviconaoexecutado: os.serviconaoexecutado ?? "",
 			observacao: os.observacao ?? "",
 			agendamento,
 			previsaoconclusao: os.previsaoconclusao ?? "",

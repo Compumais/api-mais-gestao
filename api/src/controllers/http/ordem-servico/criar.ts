@@ -26,6 +26,8 @@ const criarOrdemServicoBodySchema = z.object({
 	idtipodocumentofinanceiro: z.string().uuid().optional().nullable(),
 	problemadescrito: z.string().optional().nullable(),
 	laudotecnico: z.string().optional().nullable(),
+	servicoexecutado: z.string().optional().nullable(),
+	serviconaoexecutado: z.string().optional().nullable(),
 	observacao: z.string().optional().nullable(),
 	agendamento: z.string().optional().nullable(),
 	previsaoconclusao: z.string().optional().nullable(),

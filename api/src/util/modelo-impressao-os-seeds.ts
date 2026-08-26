@@ -37,6 +37,9 @@ export function layoutModeloCompletoOs(): LayoutModeloImpressaoOs {
 		),
 		bloco("cliente", { campos: [...CAMPOS_CLIENTE_PADRAO] }, "direita"),
 		bloco("problema"),
+		bloco("servicoRealizado", {
+			campos: ["servicoexecutado", "serviconaoexecutado"],
+		}),
 		bloco("itens", { mostrarResponsavel: false }),
 		bloco("totais"),
 		bloco("observacao"),

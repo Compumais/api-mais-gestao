@@ -30,6 +30,7 @@ const tiposBloco = z.enum([
 	"veiculo",
 	"problema",
 	"laudo",
+	"servicoRealizado",
 	"observacao",
 	"itens",
 	"totais",

@@ -26,6 +26,8 @@ export type OrdemServico = {
 	idtipodocumentofinanceiro: string | null;
 	problemadescrito: string | null;
 	laudotecnico: string | null;
+	servicoexecutado: string | null;
+	serviconaoexecutado: string | null;
 	observacao: string | null;
 	agendamento: string | null;
 	previsaoconclusao: string | null;
@@ -220,6 +222,8 @@ export type CriarOrdemServicoData = {
 	idtipodocumentofinanceiro?: string | null;
 	problemadescrito?: string | null;
 	laudotecnico?: string | null;
+	servicoexecutado?: string | null;
+	serviconaoexecutado?: string | null;
 	observacao?: string | null;
 	agendamento?: string | null;
 	previsaoconclusao?: string | null;

@@ -268,6 +268,35 @@ function renderizarBlocoOs(
 					<p>${escapeHtml(ordem.laudotecnico?.trim() || "—")}</p>
 				</section>
 			`;
+		case "servicoRealizado": {
+			const camposServico =
+				bloco.props?.campos?.length
+					? bloco.props.campos
+					: ["servicoexecutado", "serviconaoexecutado"];
+			const partesServico: string[] = [];
+			if (camposServico.includes("servicoexecutado")) {
+				partesServico.push(`
+					<div class="campo-texto">
+						<span class="rotulo">Serviço realizado</span>
+						<p>${escapeHtml(ordem.servicoexecutado?.trim() || "—")}</p>
+					</div>
+				`);
+			}
+			if (camposServico.includes("serviconaoexecutado")) {
+				partesServico.push(`
+					<div class="campo-texto">
+						<span class="rotulo">Serviço não realizado</span>
+						<p>${escapeHtml(ordem.serviconaoexecutado?.trim() || "—")}</p>
+					</div>
+				`);
+			}
+			return `
+				<section class="bloco">
+					<h2>Serviço realizado</h2>
+					${partesServico.join("") || "<p>—</p>"}
+				</section>
+			`;
+		}
 		case "observacao":
 			return `
 				<section class="bloco">
@@ -454,6 +483,9 @@ export const CSS_MODELO_IMPRESSAO_OS = `
 	.folha-os .campo { display: flex; flex-direction: column; gap: 1px; }
 	.folha-os .rotulo { font-size: 9px; color: #666; text-transform: uppercase; }
 	.folha-os .valor { font-size: 10.5px; }
+	.folha-os .campo-texto { margin-bottom: 6px; }
+	.folha-os .campo-texto .rotulo { display: block; margin-bottom: 2px; }
+	.folha-os .campo-texto p { margin: 0; }
 	.folha-os .totais .total .valor { font-weight: 700; font-size: 12px; }
 	.folha-os table { width: 100%; border-collapse: collapse; }
 	.folha-os th, .folha-os td { border-bottom: 1px solid #ddd; padding: 3px 3px; text-align: left; font-size: 10px; }
@@ -530,6 +562,8 @@ export const DADOS_AMOSTRA_MODELO_IMPRESSAO_OS: DadosPreviewModeloImpressaoOs = 
 		previsaoconclusao: new Date().toISOString(),
 		problemadescrito: "Equipamento não liga após queda de energia.",
 		laudotecnico: "Fonte danificada. Substituição realizada.",
+		servicoexecutado: "Substituição da fonte 500W e testes de funcionamento.",
+		serviconaoexecutado: "Limpeza interna completa (não solicitada).",
 		observacao: "Garantia de 90 dias no serviço.",
 		marca: "Genérica",
 		modelo: "X100",
