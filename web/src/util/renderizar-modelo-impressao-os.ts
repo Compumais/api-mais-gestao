@@ -34,6 +34,8 @@ export type DadosPreviewModeloImpressaoOs = {
 	};
 	itens?: (OrdemServicoItem & { nometecnico?: string | null })[];
 	cliente?: DadosClienteImpressao | null;
+	/** Nome do técnico responsável da OS (idultimotecnico resolvido). */
+	tecnicoResponsavel?: string | null;
 };
 
 function formatarData(valor?: string | null) {
@@ -167,7 +169,7 @@ function renderizarBlocoOs(
 	bloco: BlocoModeloImpressaoOs,
 	dados: DadosPreviewModeloImpressaoOs,
 ): string {
-	const { empresa, ordem, itens = [], cliente } = dados;
+	const { empresa, ordem, itens = [], cliente, tecnicoResponsavel } = dados;
 
 	switch (bloco.tipo) {
 		case "cabecalhoEmpresa": {
@@ -290,10 +292,22 @@ function renderizarBlocoOs(
 					</div>
 				`);
 			}
+			const nomeTecnico =
+				tecnicoResponsavel?.trim() ||
+				itens.find((i) => i.nometecnico?.trim())?.nometecnico?.trim() ||
+				"—";
 			return `
 				<section class="bloco">
 					<h2>Serviço realizado</h2>
-					${partesServico.join("") || "<p>—</p>"}
+					<div class="servico-realizado-grade">
+						<div class="servico-realizado-tecnico">
+							<span class="rotulo">Técnico responsável</span>
+							<span class="valor">${escapeHtml(nomeTecnico)}</span>
+						</div>
+						<div class="servico-realizado-textos">
+							${partesServico.join("") || "<p>—</p>"}
+						</div>
+					</div>
 				</section>
 			`;
 		}
@@ -486,6 +500,24 @@ export const CSS_MODELO_IMPRESSAO_OS = `
 	.folha-os .campo-texto { margin-bottom: 6px; }
 	.folha-os .campo-texto .rotulo { display: block; margin-bottom: 2px; }
 	.folha-os .campo-texto p { margin: 0; }
+	.folha-os .servico-realizado-grade {
+		display: grid;
+		grid-template-columns: minmax(120px, 0.35fr) 1fr;
+		gap: 10px 14px;
+		align-items: start;
+	}
+	.folha-os .servico-realizado-tecnico {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		padding-right: 10px;
+		border-right: 1px solid #ddd;
+	}
+	.folha-os .servico-realizado-tecnico .valor {
+		font-weight: 600;
+		font-size: 11px;
+	}
+	.folha-os .servico-realizado-textos .campo-texto:last-child { margin-bottom: 0; }
 	.folha-os .totais .total .valor { font-weight: 700; font-size: 12px; }
 	.folha-os table { width: 100%; border-collapse: collapse; }
 	.folha-os th, .folha-os td { border-bottom: 1px solid #ddd; padding: 3px 3px; text-align: left; font-size: 10px; }
@@ -575,6 +607,7 @@ export const DADOS_AMOSTRA_MODELO_IMPRESSAO_OS: DadosPreviewModeloImpressaoOs = 
 		descontosubtotal: "0",
 		orcamento: 0,
 	},
+	tecnicoResponsavel: "João Técnico",
 	cliente: {
 		nome: "Cliente Demonstração",
 		cnpjcpf: "12.345.678/0001-90",
