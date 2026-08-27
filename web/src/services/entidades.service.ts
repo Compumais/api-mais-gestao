@@ -144,8 +144,25 @@ export const entidadesService = {
 		transportador?: number;
 		representante?: number;
 		q?: string;
+		razaosocial?: string;
+		cnpjcpf?: string;
+		endereco?: string;
+		tipopessoa?: number;
+		indiedest?: number;
+		inscricaoestadual?: string;
+		rg?: string;
 		email?: string;
 		telefone?: string;
+		numeroendereco?: string;
+		complemento?: string;
+		bairro?: string;
+		cep?: string;
+		fax?: string;
+		nascimento?: string;
+		pais?: string;
+		criadoem?: string;
+		ordenarPor?: string;
+		ordem?: "asc" | "desc";
 	}): Promise<ListarEntidadesResponse> {
 		const { data } = await api.get<ListarEntidadesResponse>("/entidades", {
 			params: {

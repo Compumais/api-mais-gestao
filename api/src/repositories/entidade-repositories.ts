@@ -1,4 +1,17 @@
-import { and, count, desc, eq, ilike, ne, or, sql } from "drizzle-orm";
+import {
+	and,
+	asc,
+	count,
+	desc,
+	eq,
+	gte,
+	ilike,
+	lte,
+	ne,
+	or,
+	type SQL,
+	sql,
+} from "drizzle-orm";
 import type { NovaEntidade } from "@/model/entidade-model.js";
 import {
 	empresa as schemaEmpresa,
@@ -6,6 +19,70 @@ import {
 	usuarioEmpresa as schemaUsuarioEmpresa,
 } from "../../drizzle/schema.js";
 import { db } from "./connection.js";
+
+export const ORDENAR_ENTIDADES_CAMPOS = [
+	"nome",
+	"razaosocial",
+	"cnpjcpf",
+	"endereco",
+	"tipopessoa",
+	"indiedest",
+	"inscricaoestadual",
+	"rg",
+	"email",
+	"telefone",
+	"numeroendereco",
+	"complemento",
+	"bairro",
+	"cep",
+	"fax",
+	"nascimento",
+	"pais",
+	"criadoem",
+] as const;
+
+export type OrdenarEntidadesCampo = (typeof ORDENAR_ENTIDADES_CAMPOS)[number];
+
+const COLUNAS_ORDENACAO = {
+	nome: schemaEntidade.nome,
+	razaosocial: schemaEntidade.razaosocial,
+	cnpjcpf: schemaEntidade.cnpjcpf,
+	endereco: schemaEntidade.endereco,
+	tipopessoa: schemaEntidade.tipopessoa,
+	indiedest: schemaEntidade.indiedest,
+	inscricaoestadual: schemaEntidade.inscricaoestadual,
+	rg: schemaEntidade.rg,
+	email: schemaEntidade.email,
+	telefone: schemaEntidade.telefone,
+	numeroendereco: schemaEntidade.numeroendereco,
+	complemento: schemaEntidade.complemento,
+	bairro: schemaEntidade.bairro,
+	cep: schemaEntidade.cep,
+	fax: schemaEntidade.fax,
+	nascimento: schemaEntidade.nascimento,
+	pais: schemaEntidade.pais,
+	criadoem: schemaEntidade.criadoem,
+} as const;
+
+function adicionarFiltroTexto(
+	where: SQL[],
+	coluna: Parameters<typeof ilike>[0],
+	valor: string | undefined,
+) {
+	if (valor?.trim()) {
+		where.push(ilike(coluna, `%${valor.trim()}%`));
+	}
+}
+
+function filtroDataDiaTimestamp(
+	coluna: typeof schemaEntidade.criadoem,
+	data: string,
+) {
+	return and(
+		gte(coluna, `${data}T00:00:00.000`),
+		lte(coluna, `${data}T23:59:59.999`),
+	);
+}
 
 export async function criarEntidade(dadosEntidade: NovaEntidade) {
 	const [entidade] = await db
@@ -185,12 +262,29 @@ export type ListarEntidadesParametros = {
 	idempresa: string;
 	nome?: string | undefined;
 	q?: string | undefined;
+	razaosocial?: string | undefined;
+	cnpjcpf?: string | undefined;
+	endereco?: string | undefined;
+	tipopessoa?: number | undefined;
+	indiedest?: number | undefined;
+	inscricaoestadual?: string | undefined;
+	rg?: string | undefined;
 	email?: string | undefined;
 	telefone?: string | undefined;
+	numeroendereco?: string | undefined;
+	complemento?: string | undefined;
+	bairro?: string | undefined;
+	cep?: string | undefined;
+	fax?: string | undefined;
+	nascimento?: string | undefined;
+	pais?: string | undefined;
+	criadoem?: string | undefined;
 	fornecedor?: number | undefined;
 	cliente?: number | undefined;
 	transportador?: number | undefined;
 	representante?: number | undefined;
+	ordenarPor?: OrdenarEntidadesCampo | undefined;
+	ordem?: "asc" | "desc" | undefined;
 	page?: number;
 	limit?: number;
 };
@@ -199,59 +293,109 @@ export async function listarEntidades({
 	idempresa,
 	nome,
 	q,
+	razaosocial,
+	cnpjcpf,
+	endereco,
+	tipopessoa,
+	indiedest,
+	inscricaoestadual,
+	rg,
 	email,
 	telefone,
+	numeroendereco,
+	complemento,
+	bairro,
+	cep,
+	fax,
+	nascimento,
+	pais,
+	criadoem,
 	fornecedor,
 	cliente,
 	transportador,
 	representante,
+	ordenarPor,
+	ordem = "asc",
 	page = 1,
 	limit = 10,
 }: ListarEntidadesParametros) {
-	const where = [];
+	const where: SQL[] = [];
 
 	where.push(eq(schemaEntidade.idempresa, idempresa));
 
-	if (fornecedor) {
+	if (fornecedor !== undefined) {
 		where.push(eq(schemaEntidade.fornecedor, fornecedor));
 	}
 
-	if (cliente) {
+	if (cliente !== undefined) {
 		where.push(eq(schemaEntidade.cliente, cliente));
 	}
 
-	if (transportador) {
+	if (transportador !== undefined) {
 		where.push(eq(schemaEntidade.transportador, transportador));
 	}
 
-	if (representante) {
+	if (representante !== undefined) {
 		where.push(eq(schemaEntidade.representante, representante));
-	}
-
-	if (nome) {
-		where.push(ilike(schemaEntidade.nome, `%${nome}%`));
 	}
 
 	if (q) {
 		const termo = `%${q}%`;
-		where.push(
-			or(
-				ilike(schemaEntidade.nome, termo),
-				ilike(schemaEntidade.razaosocial, termo),
-				ilike(schemaEntidade.cnpjcpf, termo),
-			),
+		const buscaOr = or(
+			ilike(schemaEntidade.nome, termo),
+			ilike(schemaEntidade.razaosocial, termo),
+			ilike(schemaEntidade.cnpjcpf, termo),
 		);
+		if (buscaOr) where.push(buscaOr);
 	}
 
-	if (email) {
-		where.push(ilike(schemaEntidade.email, `%${email}%`));
+	adicionarFiltroTexto(where, schemaEntidade.nome, nome);
+	adicionarFiltroTexto(where, schemaEntidade.razaosocial, razaosocial);
+	adicionarFiltroTexto(where, schemaEntidade.cnpjcpf, cnpjcpf);
+	adicionarFiltroTexto(where, schemaEntidade.endereco, endereco);
+	adicionarFiltroTexto(
+		where,
+		schemaEntidade.inscricaoestadual,
+		inscricaoestadual,
+	);
+	adicionarFiltroTexto(where, schemaEntidade.rg, rg);
+	adicionarFiltroTexto(where, schemaEntidade.email, email);
+	adicionarFiltroTexto(where, schemaEntidade.telefone, telefone);
+	adicionarFiltroTexto(where, schemaEntidade.numeroendereco, numeroendereco);
+	adicionarFiltroTexto(where, schemaEntidade.complemento, complemento);
+	adicionarFiltroTexto(where, schemaEntidade.bairro, bairro);
+	adicionarFiltroTexto(where, schemaEntidade.cep, cep);
+	adicionarFiltroTexto(where, schemaEntidade.fax, fax);
+	adicionarFiltroTexto(where, schemaEntidade.pais, pais);
+
+	if (tipopessoa !== undefined) {
+		where.push(eq(schemaEntidade.tipopessoa, tipopessoa));
 	}
 
-	if (telefone) {
-		where.push(ilike(schemaEntidade.telefone, `%${telefone}%`));
+	if (indiedest !== undefined) {
+		where.push(eq(schemaEntidade.indiedest, indiedest));
+	}
+
+	if (nascimento?.trim()) {
+		where.push(eq(schemaEntidade.nascimento, nascimento.trim()));
+	}
+
+	if (criadoem?.trim()) {
+		const condicao = filtroDataDiaTimestamp(
+			schemaEntidade.criadoem,
+			criadoem.trim(),
+		);
+		if (condicao) where.push(condicao);
 	}
 
 	const offset = (page - 1) * limit;
+
+	const ordenacao =
+		ordenarPor && COLUNAS_ORDENACAO[ordenarPor]
+			? ordem === "desc"
+				? desc(COLUNAS_ORDENACAO[ordenarPor])
+				: asc(COLUNAS_ORDENACAO[ordenarPor])
+			: desc(schemaEntidade.criadoem);
 
 	const [totalCount, entidades] = await Promise.all([
 		db
@@ -262,7 +406,7 @@ export async function listarEntidades({
 			.select()
 			.from(schemaEntidade)
 			.where(and(...where))
-			.orderBy(desc(schemaEntidade.criadoem))
+			.orderBy(ordenacao)
 			.limit(limit)
 			.offset(offset),
 	]);
