@@ -47,7 +47,7 @@ export function ProdutoCard({
 				"flex flex-col items-center gap-2 rounded-lg p-3 text-center ring-1 transition disabled:pointer-events-none disabled:opacity-50",
 				destaque
 					? "bg-primary text-primary-foreground ring-primary hover:bg-primary/80"
-					: "bg-background ring-foreground/10 hover:ring-primary",
+					: "bg-background ring-foreground/20 hover:ring-primary",
 			)}
 		>
 			<div

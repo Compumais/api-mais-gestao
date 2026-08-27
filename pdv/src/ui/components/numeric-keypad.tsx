@@ -109,7 +109,7 @@ export function NumericKeypad({
 					disabled={disabled}
 					onMouseDown={(e) => e.preventDefault()}
 					onClick={() => pressionar(tecla)}
-					className="h-14 rounded-lg bg-card text-xl font-semibold ring-1 ring-foreground/10 transition hover:bg-muted active:scale-95 disabled:pointer-events-none disabled:opacity-50"
+					className="h-14 rounded-lg bg-card text-xl font-semibold ring-1 ring-foreground/20 transition hover:bg-muted active:scale-95 disabled:pointer-events-none disabled:opacity-50"
 				>
 					{tecla}
 				</button>
