@@ -17,6 +17,7 @@ export const preferenciasUiQueryKey = ["preferencias-ui-usuario"] as const;
 export const TABELA_ORDENS_SERVICO = "ordens-servico";
 export const TABELA_PRODUTOS = "produtos";
 export const TABELA_SERVICOS = "servicos";
+export const TABELA_GRUPOS = "grupos";
 
 export function usePreferenciasUiUsuario() {
 	return useQuery({
