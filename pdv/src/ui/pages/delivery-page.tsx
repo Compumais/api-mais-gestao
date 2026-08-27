@@ -173,127 +173,131 @@ export function DeliveryPage() {
 	);
 
 	return (
-		<div className="flex h-full flex-col gap-3 p-4">
-			<Topbar
-				title={titulo}
-				subtitle="Pedidos de entrega e retirada"
-			/>
-			<AvisoSecundario status={status} />
-			{msg ? (
-				<p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-					{msg}
-				</p>
-			) : null}
+		<div className="flex h-screen flex-col">
+			<Topbar title={titulo} subtitle="Pedidos de entrega e retirada" />
 
-			<div className="flex flex-wrap items-center gap-2">
-				<Button
-					variant={filtro === "" ? "default" : "outline"}
-					onClick={() => setFiltro("")}
-				>
-					Todos
-				</Button>
-				{["recebido", "producao", "saiu"].map((s) => (
+			<div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden bg-muted/30 p-3">
+				<AvisoSecundario status={status} />
+				{msg ? (
+					<p className="shrink-0 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+						{msg}
+					</p>
+				) : null}
+
+				<div className="flex shrink-0 flex-wrap items-center gap-2">
 					<Button
-						key={s}
-						variant={filtro === s ? "default" : "outline"}
-						onClick={() => setFiltro(s)}
+						variant={filtro === "" ? "default" : "outline"}
+						onClick={() => setFiltro("")}
 					>
-						{rotuloStatus(s)}
+						Todos
 					</Button>
-				))}
-				<div className="ml-auto">
-					<Button onClick={() => setAbrir(true)}>
-						<Plus className="mr-1 size-4" />
-						Novo pedido
-					</Button>
+					{["recebido", "producao", "saiu"].map((s) => (
+						<Button
+							key={s}
+							variant={filtro === s ? "default" : "outline"}
+							onClick={() => setFiltro(s)}
+						>
+							{rotuloStatus(s)}
+						</Button>
+					))}
+					<div className="ml-auto">
+						<Button onClick={() => setAbrir(true)}>
+							<Plus className="mr-1 size-4" />
+							Novo pedido
+						</Button>
+					</div>
 				</div>
-			</div>
 
-			<div className="pdv-surface min-h-0 flex-1 overflow-auto">
-				<table className="w-full text-sm">
-					<thead className="sticky top-0 bg-muted/80 text-left">
-						<tr>
-							<th className="px-3 py-2">Senha</th>
-							<th className="px-3 py-2">Cliente</th>
-							<th className="px-3 py-2">Tipo</th>
-							<th className="px-3 py-2">Status</th>
-							<th className="px-3 py-2">Total</th>
-							<th className="px-3 py-2">Tempo</th>
-							<th className="px-3 py-2" />
-						</tr>
-					</thead>
-					<tbody>
-						{pedidos.map((p) => (
-							<tr
-								key={p.id}
-								className="border-t border-border hover:bg-muted/40"
-							>
-								<td className="px-3 py-2 font-mono font-semibold">
-									#{p.senha_chamada ?? "—"}
-								</td>
-								<td className="px-3 py-2">
-									<div className="font-medium">{p.nomecliente || "Sem nome"}</div>
-									{p.telefone ? (
-										<div className="flex items-center gap-1 text-xs text-muted-foreground">
-											<Phone className="size-3" />
-											{p.telefone}
-										</div>
-									) : null}
-									{p.modalidade === "delivery" && p.endereco ? (
-										<div className="text-xs text-muted-foreground">
-											{p.endereco}
-											{p.bairro ? ` — ${p.bairro}` : ""}
-										</div>
-									) : null}
-								</td>
-								<td className="px-3 py-2">
-									<span className="inline-flex items-center gap-1">
-										{p.modalidade === "delivery" ? (
-											<Bike className="size-3.5" />
-										) : (
-											<Package className="size-3.5" />
-										)}
-										{p.modalidade === "delivery" ? "Delivery" : "Retirada"}
-									</span>
-								</td>
-								<td className="px-3 py-2">{rotuloStatus(p.status_entrega)}</td>
-								<td className="px-3 py-2 font-semibold">
-									{money(p.valortotal)}
-								</td>
-								<td className="px-3 py-2 text-muted-foreground">
-									{tempoAberto(p.abertoem)}
-								</td>
-								<td className="px-3 py-2 text-right">
-									<div className="flex justify-end gap-1">
-										<Button
-											size="sm"
-											variant="outline"
-											onClick={() => void avancarStatus(p.id)}
-										>
-											Avançar
-										</Button>
-										<Button
-											size="sm"
-											onClick={() => navigate(`/delivery/${p.id}`)}
-										>
-											Abrir
-										</Button>
-									</div>
-								</td>
-							</tr>
-						))}
-						{!pedidos.length && !loading ? (
+				<div className="pdv-surface min-h-0 flex-1 overflow-auto">
+					<table className="w-full text-sm">
+						<thead className="sticky top-0 bg-muted/80 text-left">
 							<tr>
-								<td
-									colSpan={7}
-									className="px-3 py-8 text-center text-muted-foreground"
-								>
-									Nenhum pedido aberto
-								</td>
+								<th className="px-3 py-2">Senha</th>
+								<th className="px-3 py-2">Cliente</th>
+								<th className="px-3 py-2">Tipo</th>
+								<th className="px-3 py-2">Status</th>
+								<th className="px-3 py-2">Total</th>
+								<th className="px-3 py-2">Tempo</th>
+								<th className="px-3 py-2" />
 							</tr>
-						) : null}
-					</tbody>
-				</table>
+						</thead>
+						<tbody>
+							{pedidos.map((p) => (
+								<tr
+									key={p.id}
+									className="border-t border-border hover:bg-muted/40"
+								>
+									<td className="px-3 py-2 font-mono font-semibold">
+										#{p.senha_chamada ?? "—"}
+									</td>
+									<td className="px-3 py-2">
+										<div className="font-medium">
+											{p.nomecliente || "Sem nome"}
+										</div>
+										{p.telefone ? (
+											<div className="flex items-center gap-1 text-xs text-muted-foreground">
+												<Phone className="size-3" />
+												{p.telefone}
+											</div>
+										) : null}
+										{p.modalidade === "delivery" && p.endereco ? (
+											<div className="text-xs text-muted-foreground">
+												{p.endereco}
+												{p.bairro ? ` — ${p.bairro}` : ""}
+											</div>
+										) : null}
+									</td>
+									<td className="px-3 py-2">
+										<span className="inline-flex items-center gap-1">
+											{p.modalidade === "delivery" ? (
+												<Bike className="size-3.5" />
+											) : (
+												<Package className="size-3.5" />
+											)}
+											{p.modalidade === "delivery" ? "Delivery" : "Retirada"}
+										</span>
+									</td>
+									<td className="px-3 py-2">
+										{rotuloStatus(p.status_entrega)}
+									</td>
+									<td className="px-3 py-2 font-semibold">
+										{money(p.valortotal)}
+									</td>
+									<td className="px-3 py-2 text-muted-foreground">
+										{tempoAberto(p.abertoem)}
+									</td>
+									<td className="px-3 py-2 text-right">
+										<div className="flex justify-end gap-1">
+											<Button
+												size="sm"
+												variant="outline"
+												onClick={() => void avancarStatus(p.id)}
+											>
+												Avançar
+											</Button>
+											<Button
+												size="sm"
+												onClick={() => navigate(`/delivery/${p.id}`)}
+											>
+												Abrir
+											</Button>
+										</div>
+									</td>
+								</tr>
+							))}
+							{!pedidos.length && !loading ? (
+								<tr>
+									<td
+										colSpan={7}
+										className="px-3 py-8 text-center text-muted-foreground"
+									>
+										Nenhum pedido aberto
+									</td>
+								</tr>
+							) : null}
+						</tbody>
+					</table>
+				</div>
 			</div>
 
 			<FunctionBar
