@@ -1,6 +1,9 @@
 import type { Auditoria } from "@/model/auditoria-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
-import { listarAuditorias } from "@/repositories/auditoria-repositories.js";
+import {
+	listarAuditorias,
+	type OrdenarAuditoriaCampo,
+} from "@/repositories/auditoria-repositories.js";
 import { httpOk } from "@/util/http-util.js";
 
 type AuditoriaListagem = Auditoria & {
@@ -10,6 +13,14 @@ type AuditoriaListagem = Auditoria & {
 
 interface ListarAuditoriasServiceParams {
 	idempresa?: string;
+	acao?: string | undefined;
+	recurso?: string | undefined;
+	idrecurso?: string | undefined;
+	nomeusuario?: string | undefined;
+	nomeempresa?: string | undefined;
+	criadoem?: string | undefined;
+	ordenarPor?: OrdenarAuditoriaCampo | undefined;
+	ordem?: "asc" | "desc" | undefined;
 	page?: number;
 	limit?: number;
 }
@@ -26,25 +37,32 @@ interface ListarAuditoriasServiceResponta {
 
 export async function ListarAuditoriasService({
 	idempresa,
+	acao,
+	recurso,
+	idrecurso,
+	nomeusuario,
+	nomeempresa,
+	criadoem,
+	ordenarPor,
+	ordem,
 	limit = 100,
 	page = 1,
 }: ListarAuditoriasServiceParams): Promise<
 	HttpResponse<ListarAuditoriasServiceResponta>
 > {
-	const params: {
-		limit: number;
-		page: number;
-		idempresa?: string;
-	} = {
+	const { auditorias, totalCount } = await listarAuditorias({
+		idempresa,
+		acao,
+		recurso,
+		idrecurso,
+		nomeusuario,
+		nomeempresa,
+		criadoem,
+		ordenarPor,
+		ordem,
 		limit,
 		page,
-	};
-
-	if (idempresa !== undefined) {
-		params.idempresa = idempresa;
-	}
-
-	const { auditorias, totalCount } = await listarAuditorias(params);
+	});
 
 	const totalPages = Math.ceil(totalCount / limit);
 
