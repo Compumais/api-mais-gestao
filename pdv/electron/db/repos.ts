@@ -162,6 +162,9 @@ export type VendaLocal = {
 	idcliente?: string | null;
 	nomecliente?: string | null;
 	cnpjcpf?: string | null;
+	idconta?: string | null;
+	numero_mesa?: number | null;
+	senha_chamada?: string | null;
 };
 
 export type ContaMesaLocal = {
@@ -1599,7 +1602,13 @@ export async function criarVendaRapida(params: {
 
 export async function listarVendas(limit = 100): Promise<VendaLocal[]> {
 	return query<VendaLocal>(
-		`SELECT * FROM venda ORDER BY criadoem DESC LIMIT $1`,
+		`SELECT v.*,
+			c.numero_mesa AS numero_mesa,
+			c.senha_chamada AS senha_chamada
+		 FROM venda v
+		 LEFT JOIN conta_mesa c ON c.id = v.idconta
+		 ORDER BY v.criadoem DESC
+		 LIMIT $1`,
 		[limit],
 	);
 }

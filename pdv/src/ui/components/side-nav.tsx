@@ -75,6 +75,7 @@ export function SideNav({
 	const mesasAtivo = path === "/" || path.startsWith("/mesas/");
 	const balcaoAtivo = path === "/balcao" || (!gourmet && path === "/");
 	const deliveryAtivo = path === "/delivery" || path.startsWith("/delivery/");
+	const vendasAtivo = path === "/vendas" || path.startsWith("/vendas/");
 
 	function tentarNavegar(destino: string) {
 		if (bloqueado) {
@@ -123,7 +124,11 @@ export function SideNav({
 			<SideButton
 				label="Vendas"
 				icon={Receipt}
-				onClick={() => navigate("/vendas")}
+				active={vendasAtivo}
+				onClick={() => {
+					if (vendasAtivo) return;
+					navigate("/vendas");
+				}}
 			/>
 			{status?.podeConfigurar ? (
 				<SideButton
