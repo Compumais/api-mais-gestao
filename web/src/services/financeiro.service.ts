@@ -121,6 +121,7 @@ export interface ListarFinanceirosParams {
 	limit?: number;
 	saldo?: string | null;
 	emissao?: string | null;
+	documento?: string | null;
 	emitente?: string | null;
 	emissaoInicio?: string | null;
 	emissaoFim?: string | null;
@@ -128,6 +129,8 @@ export interface ListarFinanceirosParams {
 	vencimentoFim?: string | null;
 	status?: string | null;
 	tipo?: string | null; // P ou R
+	ordenarPor?: string;
+	ordem?: "asc" | "desc";
 }
 
 export interface CriarFinanceiroData {
