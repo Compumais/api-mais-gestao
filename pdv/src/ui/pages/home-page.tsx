@@ -1,13 +1,4 @@
-import {
-	Bike,
-	Circle,
-	Clock3,
-	Receipt,
-	Settings,
-	ShoppingCart,
-	UtensilsCrossed,
-} from "lucide-react";
-import type { ComponentType } from "react";
+import { Circle, Clock3, UtensilsCrossed } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { marcarBootPendente } from "@/lib/boot-state";
@@ -26,6 +17,7 @@ import {
 } from "@/ui/components/aviso-secundario";
 import { DialogFecharCaixa } from "@/ui/components/dialog-fechar-caixa";
 import { FunctionBar } from "@/ui/components/function-bar";
+import { SideNav } from "@/ui/components/side-nav";
 import { StatusBar } from "@/ui/components/status-bar";
 import { Topbar } from "@/ui/components/topbar";
 import { Badge } from "@/ui/components/ui/badge";
@@ -44,34 +36,6 @@ type DialogoAbertura =
 			nomecliente: string | null;
 			valortotal: number;
 	  };
-
-function SideButton({
-	label,
-	icon: Icon,
-	onClick,
-	active,
-}: {
-	label: string;
-	icon: ComponentType<{ className?: string }>;
-	onClick: () => void;
-	active?: boolean;
-}) {
-	return (
-		<button
-			type="button"
-			onClick={onClick}
-			className={cn(
-				"flex flex-1 flex-col items-center justify-center gap-2 rounded-lg py-4 text-sm font-semibold transition ring-1",
-				active
-					? "bg-sidebar-primary text-sidebar-primary-foreground ring-sidebar-primary"
-					: "bg-sidebar-accent/40 text-sidebar-foreground ring-transparent hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-			)}
-		>
-			<Icon className="size-7" />
-			{label}
-		</button>
-	);
-}
 
 function iconeStatus(status: StatusAtividadeMesa) {
 	if (status === "consumindo") return UtensilsCrossed;
@@ -283,8 +247,8 @@ export function HomePage() {
 				}
 			/>
 
-			<div className="flex flex-1 gap-3 overflow-hidden bg-muted/30 p-3">
-				<div className="pdv-surface flex flex-1 flex-col gap-3 overflow-hidden p-3">
+			<div className="flex min-h-0 flex-1 gap-3 overflow-hidden bg-muted/30 p-3">
+				<div className="pdv-surface flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden p-3">
 					<div className="flex flex-wrap items-end gap-3">
 						<label className="flex items-center gap-2 text-sm">
 							<input
@@ -395,54 +359,11 @@ export function HomePage() {
 					</div>
 				</div>
 
-				<aside className="flex w-48 flex-col gap-2 rounded-xl bg-sidebar p-2 text-sidebar-foreground ring-1 ring-sidebar-border">
-					<SideButton
-						label={rotulo.plural}
-						icon={UtensilsCrossed}
-						active
-						onClick={() => void carregarMesas()}
-					/>
-					<SideButton
-						label="Balcão"
-						icon={ShoppingCart}
-						onClick={() => {
-							if (bloqueado) {
-								setMsg(
-									status?.principalErro ??
-										"PDV principal offline. Operação bloqueada.",
-								);
-								return;
-							}
-							navigate("/balcao");
-						}}
-					/>
-					<SideButton
-						label="Delivery"
-						icon={Bike}
-						onClick={() => {
-							if (bloqueado) {
-								setMsg(
-									status?.principalErro ??
-										"PDV principal offline. Operação bloqueada.",
-								);
-								return;
-							}
-							navigate("/delivery");
-						}}
-					/>
-					<SideButton
-						label="Vendas"
-						icon={Receipt}
-						onClick={() => navigate("/vendas")}
-					/>
-					{status?.podeConfigurar ? (
-						<SideButton
-							label="Config"
-							icon={Settings}
-							onClick={() => navigate("/config")}
-						/>
-					) : null}
-				</aside>
+				<SideNav
+					status={status}
+					onBlocked={setMsg}
+					onMesasActiveClick={() => void carregarMesas()}
+				/>
 			</div>
 
 			{dialogo?.tipo === "nome" && (

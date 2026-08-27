@@ -6,6 +6,7 @@ import type { StatusContext } from "@/lib/pdv-types";
 import { money } from "@/lib/utils";
 import { AvisoSecundario } from "@/ui/components/aviso-secundario";
 import { FunctionBar } from "@/ui/components/function-bar";
+import { PdvShell } from "@/ui/components/pdv-shell";
 import { Topbar } from "@/ui/components/topbar";
 import { Button } from "@/ui/components/ui/button";
 import { Input } from "@/ui/components/ui/input";
@@ -173,10 +174,168 @@ export function DeliveryPage() {
 	);
 
 	return (
-		<div className="flex h-screen flex-col">
-			<Topbar title={titulo} subtitle="Pedidos de entrega e retirada" />
+		<PdvShell
+			status={status}
+			onBlockedNavigate={setMsg}
+			topbar={
+				<Topbar title={titulo} subtitle="Pedidos de entrega e retirada" />
+			}
+			footer={
+				<>
+					<FunctionBar
+						actions={[
+							{
+								key: "novo",
+								label: "Novo",
+								hotkey: "F6",
+								variant: "default",
+								onClick: () => setAbrir(true),
+							},
+							{
+								key: "atualizar",
+								label: "Atualizar",
+								hotkey: "F5",
+								variant: "secondary",
+								onClick: () => void carregar(),
+								disabled: loading,
+							},
+							{
+								key: "voltar",
+								label: "Voltar",
+								hotkey: "Esc",
+								variant: "outline",
+								onClick: () => navigate("/"),
+							},
+						]}
+					/>
 
-			<div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden bg-muted/30 p-3">
+					{abrir ? (
+						<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+							<div className="pdv-surface max-h-[90vh] w-full max-w-lg overflow-auto p-4">
+								<h2 className="mb-3 text-lg font-semibold">Novo pedido</h2>
+								<div className="mb-3 flex gap-2">
+									<Button
+										variant={modalidade === "delivery" ? "default" : "outline"}
+										onClick={() => setModalidade("delivery")}
+									>
+										Delivery
+									</Button>
+									<Button
+										variant={modalidade === "retirada" ? "default" : "outline"}
+										onClick={() => setModalidade("retirada")}
+									>
+										Retirada
+									</Button>
+								</div>
+								<div className="space-y-3">
+									<div>
+										<Label>Telefone / nome</Label>
+										<Input
+											value={telefone || nome}
+											placeholder="Buscar cliente..."
+											onChange={(e) => {
+												const v = e.target.value;
+												if (/^\d/.test(v)) {
+													setTelefone(v);
+													void buscarClientes(v);
+												} else {
+													setNome(v);
+													void buscarClientes(v);
+												}
+											}}
+										/>
+										{clientes.length > 0 ? (
+											<ul className="mt-1 max-h-32 overflow-auto rounded border border-border text-sm">
+												{clientes.map((c) => (
+													<li key={c.id}>
+														<button
+															type="button"
+															className="w-full px-2 py-1.5 text-left hover:bg-muted"
+															onClick={() => selecionarCliente(c)}
+														>
+															{c.nome}
+															{c.telefone ? ` · ${c.telefone}` : ""}
+														</button>
+													</li>
+												))}
+											</ul>
+										) : null}
+									</div>
+									<div>
+										<Label>Nome</Label>
+										<Input
+											value={nome}
+											onChange={(e) => setNome(e.target.value)}
+										/>
+									</div>
+									<div>
+										<Label>Telefone</Label>
+										<Input
+											value={telefone}
+											onChange={(e) => setTelefone(e.target.value)}
+										/>
+									</div>
+									{modalidade === "delivery" ? (
+										<>
+											<div>
+												<Label>Endereço</Label>
+												<Input
+													value={endereco}
+													onChange={(e) => setEndereco(e.target.value)}
+												/>
+											</div>
+											<div className="grid grid-cols-2 gap-2">
+												<div>
+													<Label>Bairro</Label>
+													<Input
+														value={bairro}
+														onChange={(e) => setBairro(e.target.value)}
+													/>
+												</div>
+												<div>
+													<Label>Taxa entrega</Label>
+													<Input
+														value={taxa}
+														placeholder="Automática"
+														onChange={(e) => setTaxa(e.target.value)}
+													/>
+												</div>
+											</div>
+											<div>
+												<Label>Complemento</Label>
+												<Input
+													value={complemento}
+													onChange={(e) => setComplemento(e.target.value)}
+												/>
+											</div>
+											<div>
+												<Label>Referência</Label>
+												<Input
+													value={referencia}
+													onChange={(e) => setReferencia(e.target.value)}
+												/>
+											</div>
+										</>
+									) : null}
+								</div>
+								<div className="mt-4 flex justify-end gap-2">
+									<Button variant="outline" onClick={() => setAbrir(false)}>
+										Cancelar
+									</Button>
+									<Button
+										disabled={loading}
+										onClick={() => void confirmarAbrir()}
+									>
+										Abrir pedido
+									</Button>
+								</div>
+							</div>
+						</div>
+					) : null}
+				</>
+			}
+		>
+			<div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
 				<AvisoSecundario status={status} />
 				{msg ? (
 					<p className="shrink-0 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
@@ -299,151 +458,6 @@ export function DeliveryPage() {
 					</table>
 				</div>
 			</div>
-
-			<FunctionBar
-				actions={[
-					{
-						key: "novo",
-						label: "Novo",
-						hotkey: "F6",
-						variant: "default",
-						onClick: () => setAbrir(true),
-					},
-					{
-						key: "atualizar",
-						label: "Atualizar",
-						hotkey: "F5",
-						variant: "secondary",
-						onClick: () => void carregar(),
-						disabled: loading,
-					},
-					{
-						key: "voltar",
-						label: "Voltar",
-						hotkey: "Esc",
-						variant: "outline",
-						onClick: () => navigate("/"),
-					},
-				]}
-			/>
-
-			{abrir ? (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-					<div className="pdv-surface max-h-[90vh] w-full max-w-lg overflow-auto p-4">
-						<h2 className="mb-3 text-lg font-semibold">Novo pedido</h2>
-						<div className="mb-3 flex gap-2">
-							<Button
-								variant={modalidade === "delivery" ? "default" : "outline"}
-								onClick={() => setModalidade("delivery")}
-							>
-								Delivery
-							</Button>
-							<Button
-								variant={modalidade === "retirada" ? "default" : "outline"}
-								onClick={() => setModalidade("retirada")}
-							>
-								Retirada
-							</Button>
-						</div>
-						<div className="space-y-3">
-							<div>
-								<Label>Telefone / nome</Label>
-								<Input
-									value={telefone || nome}
-									placeholder="Buscar cliente..."
-									onChange={(e) => {
-										const v = e.target.value;
-										if (/^\d/.test(v)) {
-											setTelefone(v);
-											void buscarClientes(v);
-										} else {
-											setNome(v);
-											void buscarClientes(v);
-										}
-									}}
-								/>
-								{clientes.length > 0 ? (
-									<ul className="mt-1 max-h-32 overflow-auto rounded border border-border text-sm">
-										{clientes.map((c) => (
-											<li key={c.id}>
-												<button
-													type="button"
-													className="w-full px-2 py-1.5 text-left hover:bg-muted"
-													onClick={() => selecionarCliente(c)}
-												>
-													{c.nome}
-													{c.telefone ? ` · ${c.telefone}` : ""}
-												</button>
-											</li>
-										))}
-									</ul>
-								) : null}
-							</div>
-							<div>
-								<Label>Nome</Label>
-								<Input value={nome} onChange={(e) => setNome(e.target.value)} />
-							</div>
-							<div>
-								<Label>Telefone</Label>
-								<Input
-									value={telefone}
-									onChange={(e) => setTelefone(e.target.value)}
-								/>
-							</div>
-							{modalidade === "delivery" ? (
-								<>
-									<div>
-										<Label>Endereço</Label>
-										<Input
-											value={endereco}
-											onChange={(e) => setEndereco(e.target.value)}
-										/>
-									</div>
-									<div className="grid grid-cols-2 gap-2">
-										<div>
-											<Label>Bairro</Label>
-											<Input
-												value={bairro}
-												onChange={(e) => setBairro(e.target.value)}
-											/>
-										</div>
-										<div>
-											<Label>Taxa entrega</Label>
-											<Input
-												value={taxa}
-												placeholder="Automática"
-												onChange={(e) => setTaxa(e.target.value)}
-											/>
-										</div>
-									</div>
-									<div>
-										<Label>Complemento</Label>
-										<Input
-											value={complemento}
-											onChange={(e) => setComplemento(e.target.value)}
-										/>
-									</div>
-									<div>
-										<Label>Referência</Label>
-										<Input
-											value={referencia}
-											onChange={(e) => setReferencia(e.target.value)}
-										/>
-									</div>
-								</>
-							) : null}
-						</div>
-						<div className="mt-4 flex justify-end gap-2">
-							<Button variant="outline" onClick={() => setAbrir(false)}>
-								Cancelar
-							</Button>
-							<Button disabled={loading} onClick={() => void confirmarAbrir()}>
-								Abrir pedido
-							</Button>
-						</div>
-					</div>
-				</div>
-			) : null}
-		</div>
+		</PdvShell>
 	);
 }
