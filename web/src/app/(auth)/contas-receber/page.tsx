@@ -2,32 +2,25 @@
 
 import {
 	IconCheck,
+	IconChevronDown,
 	IconDotsVertical,
 	IconEye,
+	IconLayoutColumns,
 	IconPencil,
 	IconPlus,
 	IconTrash,
 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-	type ColumnDef,
 	type RowSelectionState,
 	flexRender,
 	getCoreRowModel,
-	getPaginationRowModel,
-	getSortedRowModel,
-	type SortingState,
 	useReactTable,
 } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { toast } from "sonner";
-import {
-	FiltrosFinanceiroLista,
-	type FiltrosFinanceiroState,
-	filtrosFinanceiroAtivos,
-	filtrosFinanceiroVazios,
-} from "@/components/filtros-financeiro-lista";
+import type { OrdenacaoColunaTabela } from "@/components/cabecalho-coluna-tabela";
 import { ModalBaixaFinanceiro } from "@/components/modal-baixa-financeiro";
 import { TableSkeleton } from "@/components/table-skeleton";
 import {
@@ -40,16 +33,24 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
 	DropdownMenu,
+	DropdownMenuCheckboxItem,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import {
 	Table,
 	TableBody,
@@ -60,278 +61,55 @@ import {
 } from "@/components/ui/table";
 import { useEmpresa } from "@/hooks/use-empresa";
 import {
+	TABELA_CONTAS_RECEBER,
+	useColunasTabelaPersistidas,
+} from "@/hooks/use-preferencias-ui-usuario";
+import {
 	type Financeiro,
 	financeiroService,
 } from "@/services/financeiro.service";
+import {
+	COLUNA_PARA_CAMPO_FILTRO_FINANCEIRO,
+	type ConfigFiltroColunaFinanceiro,
+	criarColunasFinanceiro,
+	type FiltrosColunaFinanceiroState,
+	filtrosColunaFinanceiroVazios,
+	podeDarBaixa,
+	STATUS_OPCOES_FILTRO,
+	visibilidadePadraoColunasFinanceiro,
+} from "../components/financeiro-lista-colunas";
 import { PageContainer } from "../components/page-container";
 
-const formatCurrency = (value: string | null | undefined) => {
-	if (!value) return "R$ 0,00";
-	const num = parseFloat(value);
-	return new Intl.NumberFormat("pt-BR", {
-		style: "currency",
-		currency: "BRL",
-	}).format(num);
-};
-
-const formatDate = (date: string | null | undefined) => {
-	if (!date) return "-";
-	return new Date(date).toLocaleDateString("pt-BR");
-};
-
-const formatParcela = (
-	parcela: number | null | undefined,
-	totalParcelas: number | null | undefined,
-) => {
-	const atual = parcela && parcela > 0 ? parcela : 1;
-	if (totalParcelas && totalParcelas > 1) {
-		return `${atual}/${totalParcelas}`;
+function rotuloColuna(column: {
+	id: string;
+	columnDef: { meta?: unknown; header?: unknown };
+}) {
+	const meta = column.columnDef.meta as { label?: string } | undefined;
+	if (meta?.label) return meta.label;
+	if (typeof column.columnDef.header === "string") {
+		return column.columnDef.header;
 	}
-	return String(atual);
-};
+	return column.id;
+}
 
-const documentoPareceUuid = (valor: string) =>
-	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-		valor,
-	);
-
-const formatDocumento = (financeiro: Financeiro) => {
-	const documento = financeiro.documento?.trim() ?? "";
-	if (!documento || documentoPareceUuid(documento)) {
-		return financeiro.historico?.trim() || "Venda PDV";
-	}
-	return documento;
-};
-
-const formatNome = (financeiro: Financeiro) =>
-	financeiro.emitente?.trim() || financeiro.historico?.trim() || "-";
-
-const podeDarBaixa = (financeiro: Financeiro) =>
-	financeiro.status === "A" && !financeiro.baixa;
-
-const getStatusBadge = (status: string | null | undefined) => {
-	if (!status) return <Badge variant="outline">-</Badge>;
-
-	const statusMap: Record<
-		string,
-		{
-			label: string;
-			variant: "default" | "secondary" | "destructive" | "outline";
-		}
-	> = {
-		A: { label: "Aberto", variant: "default" },
-		P: { label: "Pago", variant: "secondary" },
-		C: { label: "Cancelado", variant: "destructive" },
-		V: { label: "Vencido", variant: "destructive" },
-	};
-
-	const statusInfo = statusMap[status] || {
-		label: status,
-		variant: "outline" as const,
-	};
-
-	return <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>;
-};
-
-const calculateSaldoSemJurosMulta = (financeiro: Financeiro) => {
-	const saldo = parseFloat(financeiro.saldo || "0");
-	const juros = financeiro.juros || 0;
-	const multa = financeiro.multa || 0;
-	return saldo - juros - multa;
-};
-
-type ColumnsProps = {
-	onEdit: (financeiro: Financeiro) => void;
-	onDelete: (id: string) => void;
-	onDarBaixa: (id: string) => void;
-	onVerDetalhes: (id: string) => void;
-};
-
-const createColumns = ({
-	onEdit,
-	onDelete,
-	onDarBaixa,
-	onVerDetalhes,
-}: ColumnsProps): ColumnDef<Financeiro>[] => [
-	{
-		id: "select",
-		header: ({ table }) => (
-			<Checkbox
-				checked={
-					table.getIsAllPageRowsSelected() ||
-					(table.getIsSomePageRowsSelected() && "indeterminate")
-				}
-				onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-				aria-label="Selecionar todos"
-			/>
-		),
-		cell: ({ row }) => (
-			<Checkbox
-				checked={row.getIsSelected()}
-				disabled={!row.getCanSelect()}
-				onCheckedChange={(value) => row.toggleSelected(!!value)}
-				aria-label="Selecionar documento"
-			/>
-		),
-		enableSorting: false,
-	},
-	{
-		accessorKey: "documento",
-		header: "Documento",
-		cell: ({ row }) => (
-			<div className="font-medium">{formatDocumento(row.original)}</div>
-		),
-	},
-	{
-		accessorKey: "emitente",
-		header: "Nome",
-		cell: ({ row }) => (
-			<div className="max-w-[220px] truncate">{formatNome(row.original)}</div>
-		),
-	},
-	{
-		id: "parcela",
-		header: "Parcela",
-		cell: ({ row }) => (
-			<div>
-				{formatParcela(row.original.parcela, row.original.totalparcelas)}
-			</div>
-		),
-	},
-	{
-		accessorKey: "status",
-		header: "Status",
-		cell: ({ row }) => getStatusBadge(row.getValue("status")),
-	},
-	{
-		accessorKey: "emissao",
-		header: "Emissão",
-		cell: ({ row }) => <div>{formatDate(row.getValue("emissao"))}</div>,
-	},
-	{
-		accessorKey: "vencimento",
-		header: "Vencimento",
-		cell: ({ row }) => <div>{formatDate(row.getValue("vencimento"))}</div>,
-	},
-	{
-		accessorKey: "valor",
-		header: () => <div className="text-right">Valor</div>,
-		cell: ({ row }) => {
-			const valor = row.getValue("valor") as string;
-			return (
-				<div className="text-right font-medium">{formatCurrency(valor)}</div>
-			);
-		},
-	},
-	{
-		accessorKey: "saldo",
-		header: () => <div className="text-right">Saldo</div>,
-		cell: ({ row }) => {
-			const saldo = row.getValue("saldo") as string;
-			return (
-				<div className="text-right font-medium">{formatCurrency(saldo)}</div>
-			);
-		},
-	},
-	{
-		id: "saldoSemJurosMulta",
-		header: () => <div className="text-right">Saldo sem juros/multa</div>,
-		cell: ({ row }) => {
-			const saldoSemJurosMulta = calculateSaldoSemJurosMulta(row.original);
-			return (
-				<div className="text-right font-medium">
-					{formatCurrency(saldoSemJurosMulta.toString())}
-				</div>
-			);
-		},
-	},
-	{
-		accessorKey: "tipo",
-		header: "Tipo",
-		cell: ({ row }) => {
-			const tipo = row.getValue("tipo") as string | null;
-			return (
-				<Badge variant="outline">
-					{tipo === "P" ? "Pagar" : tipo === "R" ? "Receber" : "-"}
-				</Badge>
-			);
-		},
-	},
-	{
-		id: "acoes",
-		header: "Ações",
-		cell: ({ row }) => {
-			const financeiro = row.original;
-			const podeExcluir = financeiro.status === "A" && !financeiro.baixa;
-			const podeBaixar = podeDarBaixa(financeiro);
-
-			return (
-				<div className="flex justify-end">
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon"
-								className="h-8 w-8"
-								aria-label="Abrir menu de ações"
-							>
-								<IconDotsVertical className="size-4" />
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end">
-							<DropdownMenuItem onClick={() => onVerDetalhes(financeiro.id)}>
-								<IconEye className="size-4 mr-2" />
-								Ver detalhes
-							</DropdownMenuItem>
-							<DropdownMenuItem onClick={() => onEdit(financeiro)}>
-								<IconPencil className="size-4 mr-2" />
-								Editar
-							</DropdownMenuItem>
-							{podeBaixar && (
-								<>
-									<DropdownMenuSeparator />
-									<DropdownMenuItem onClick={() => onDarBaixa(financeiro.id)}>
-										<IconCheck className="size-4 mr-2" />
-										Dar baixa
-									</DropdownMenuItem>
-								</>
-							)}
-							{podeExcluir && (
-								<>
-									<DropdownMenuSeparator />
-									<DropdownMenuItem
-										variant="destructive"
-										onClick={() => onDelete(financeiro.id)}
-									>
-										<IconTrash className="size-4 mr-2" />
-										Excluir
-									</DropdownMenuItem>
-								</>
-							)}
-						</DropdownMenuContent>
-					</DropdownMenu>
-				</div>
-			);
-		},
-		enableHiding: false,
-	},
-];
+function filtrosColunaAtivos(filtros: FiltrosColunaFinanceiroState) {
+	return Object.values(filtros).some((valor) => valor.trim() !== "");
+}
 
 export default function ContasAReceberPage() {
 	const router = useRouter();
 	const queryClient = useQueryClient();
 	const { localStorageEmpresa: empresa } = useEmpresa();
-	const [sorting, setSorting] = useState<SortingState>([]);
+	const idPorPagina = useId();
 	const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 	const [pagination, setPagination] = useState({
 		pageIndex: 0,
 		pageSize: 10,
 	});
-	const [filtros, setFiltros] = useState<FiltrosFinanceiroState>(
-		filtrosFinanceiroVazios,
-	);
-	const [filtrosAplicados, setFiltrosAplicados] =
-		useState<FiltrosFinanceiroState>(filtrosFinanceiroVazios);
+	const [filtrosColuna, setFiltrosColuna] =
+		useState<FiltrosColunaFinanceiroState>(filtrosColunaFinanceiroVazios);
+	const [ordenarPor, setOrdenarPor] = useState<string | null>(null);
+	const [ordem, setOrdem] = useState<"asc" | "desc" | null>(null);
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [financeiroToDelete, setFinanceiroToDelete] = useState<string | null>(
 		null,
@@ -340,6 +118,52 @@ export default function ContasAReceberPage() {
 	const [idsParaBaixa, setIdsParaBaixa] = useState<string[]>([]);
 	const [baixando, setBaixando] = useState(false);
 
+	const visibilidadePadrao = useMemo(
+		() => visibilidadePadraoColunasFinanceiro("receber"),
+		[],
+	);
+	const { columnVisibility, onColumnVisibilityChange, isLoadingPreferencias } =
+		useColunasTabelaPersistidas(TABELA_CONTAS_RECEBER, visibilidadePadrao);
+
+	const onOrdenarColuna = useCallback(
+		(colunaId: string, direcao: OrdenacaoColunaTabela) => {
+			if (!direcao) {
+				setOrdenarPor(null);
+				setOrdem(null);
+			} else {
+				setOrdenarPor(colunaId);
+				setOrdem(direcao);
+			}
+			setPagination((p) => ({ ...p, pageIndex: 0 }));
+			setRowSelection({});
+		},
+		[],
+	);
+
+	const onFiltrarColuna = useCallback((colunaId: string, valor: string) => {
+		const campo = COLUNA_PARA_CAMPO_FILTRO_FINANCEIRO[colunaId];
+		if (!campo) return;
+		setFiltrosColuna((atual) => ({ ...atual, [campo]: valor }));
+		setPagination((p) => ({ ...p, pageIndex: 0 }));
+		setRowSelection({});
+	}, []);
+
+	const configFiltroPorColuna = useMemo((): Record<
+		string,
+		ConfigFiltroColunaFinanceiro
+	> => {
+		return {
+			documento: { tipo: "texto", placeholder: "Documento" },
+			emitente: { tipo: "texto", placeholder: "Nome" },
+			parcela: { tipo: "nenhum" },
+			status: { tipo: "opcoes", opcoes: STATUS_OPCOES_FILTRO },
+			emissao: { tipo: "data" },
+			vencimento: { tipo: "data" },
+			valor: { tipo: "nenhum" },
+			saldo: { tipo: "nenhum" },
+		};
+	}, []);
+
 	const { data, isLoading } = useQuery({
 		queryKey: [
 			"financeiro",
@@ -347,7 +171,9 @@ export default function ContasAReceberPage() {
 			empresa?.id,
 			pagination.pageIndex + 1,
 			pagination.pageSize,
-			filtrosAplicados,
+			filtrosColuna,
+			ordenarPor,
+			ordem,
 		],
 		queryFn: async () => {
 			if (!empresa) {
@@ -357,12 +183,27 @@ export default function ContasAReceberPage() {
 				tipo: "R",
 				page: pagination.pageIndex + 1,
 				limit: pagination.pageSize,
-				emitente: filtrosAplicados.emitente || undefined,
-				emissaoInicio: filtrosAplicados.emissaoInicio || undefined,
-				emissaoFim: filtrosAplicados.emissaoFim || undefined,
-				vencimentoInicio: filtrosAplicados.vencimentoInicio || undefined,
-				vencimentoFim: filtrosAplicados.vencimentoFim || undefined,
-				status: filtrosAplicados.status || undefined,
+				...(filtrosColuna.documento
+					? { documento: filtrosColuna.documento }
+					: {}),
+				...(filtrosColuna.emitente
+					? { emitente: filtrosColuna.emitente }
+					: {}),
+				...(filtrosColuna.status ? { status: filtrosColuna.status } : {}),
+				...(filtrosColuna.emissao
+					? {
+							emissaoInicio: filtrosColuna.emissao,
+							emissaoFim: filtrosColuna.emissao,
+						}
+					: {}),
+				...(filtrosColuna.vencimento
+					? {
+							vencimentoInicio: filtrosColuna.vencimento,
+							vencimentoFim: filtrosColuna.vencimento,
+						}
+					: {}),
+				...(ordenarPor ? { ordenarPor } : {}),
+				...(ordem ? { ordem } : {}),
 			});
 		},
 		enabled: !!empresa,
@@ -371,7 +212,7 @@ export default function ContasAReceberPage() {
 	const deleteMutation = useMutation({
 		mutationFn: financeiroService.deletar,
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["financeiro"] });
+			void queryClient.invalidateQueries({ queryKey: ["financeiro"] });
 			toast.success("Conta a receber excluída com sucesso!");
 			setDeleteDialogOpen(false);
 			setFinanceiroToDelete(null);
@@ -381,14 +222,17 @@ export default function ContasAReceberPage() {
 		},
 	});
 
-	const handleEdit = (financeiro: Financeiro) => {
-		router.push(`/contas-receber/${financeiro.id}/editar`);
-	};
+	const handleEdit = useCallback(
+		(financeiro: Financeiro) => {
+			router.push(`/contas-receber/${financeiro.id}/editar`);
+		},
+		[router],
+	);
 
-	const handleDelete = (id: string) => {
+	const handleDelete = useCallback((id: string) => {
 		setFinanceiroToDelete(id);
 		setDeleteDialogOpen(true);
-	};
+	}, []);
 
 	const handleConfirmDelete = () => {
 		if (financeiroToDelete) {
@@ -402,9 +246,9 @@ export default function ContasAReceberPage() {
 		setBaixaDialogOpen(true);
 	};
 
-	const handleDarBaixa = (id: string) => {
+	const handleDarBaixa = useCallback((id: string) => {
 		handleAbrirBaixa([id]);
-	};
+	}, []);
 
 	const handleConfirmBaixa = async (dataBaixa: string) => {
 		setBaixando(true);
@@ -442,44 +286,126 @@ export default function ContasAReceberPage() {
 		}
 	};
 
-	const handleVerDetalhes = (id: string) => {
-		router.push(`/contas-receber/${id}`);
-	};
+	const handleVerDetalhes = useCallback(
+		(id: string) => {
+			router.push(`/contas-receber/${id}`);
+		},
+		[router],
+	);
 
-	const handleAplicarFiltros = () => {
-		setFiltrosAplicados({ ...filtros });
-		setPagination((p) => ({ ...p, pageIndex: 0 }));
-		setRowSelection({});
-	};
+	const columns = useMemo(
+		() =>
+			criarColunasFinanceiro({
+				variante: "receber",
+				filtros: filtrosColuna,
+				ordenarPor,
+				ordem,
+				onOrdenarColuna,
+				onFiltrarColuna,
+				configFiltroPorColuna,
+				renderSelectHeader: (table) => (
+					<Checkbox
+						checked={
+							table.getIsAllPageRowsSelected() ||
+							(table.getIsSomePageRowsSelected() && "indeterminate")
+						}
+						onCheckedChange={(value) =>
+							table.toggleAllPageRowsSelected(!!value)
+						}
+						aria-label="Selecionar todos"
+					/>
+				),
+				renderSelectCell: (row) => (
+					<Checkbox
+						checked={row.getIsSelected()}
+						disabled={!row.getCanSelect()}
+						onCheckedChange={(value) => row.toggleSelected(!!value)}
+						aria-label="Selecionar documento"
+					/>
+				),
+				renderAcoes: (financeiro) => {
+					const podeExcluir = financeiro.status === "A" && !financeiro.baixa;
+					const podeBaixar = podeDarBaixa(financeiro);
 
-	const handleLimparFiltros = () => {
-		setFiltros(filtrosFinanceiroVazios);
-		setFiltrosAplicados(filtrosFinanceiroVazios);
-		setPagination((p) => ({ ...p, pageIndex: 0 }));
-		setRowSelection({});
-	};
-
-	const columns = createColumns({
-		onEdit: handleEdit,
-		onDelete: handleDelete,
-		onDarBaixa: handleDarBaixa,
-		onVerDetalhes: handleVerDetalhes,
-	});
+					return (
+						<div className="flex justify-end">
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon"
+										className="h-8 w-8"
+										aria-label="Abrir menu de ações"
+									>
+										<IconDotsVertical className="size-4" />
+									</Button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent align="end">
+									<DropdownMenuItem
+										onClick={() => handleVerDetalhes(financeiro.id)}
+									>
+										<IconEye className="size-4 mr-2" />
+										Ver detalhes
+									</DropdownMenuItem>
+									<DropdownMenuItem onClick={() => handleEdit(financeiro)}>
+										<IconPencil className="size-4 mr-2" />
+										Editar
+									</DropdownMenuItem>
+									{podeBaixar && (
+										<>
+											<DropdownMenuSeparator />
+											<DropdownMenuItem
+												onClick={() => handleDarBaixa(financeiro.id)}
+											>
+												<IconCheck className="size-4 mr-2" />
+												Dar baixa
+											</DropdownMenuItem>
+										</>
+									)}
+									{podeExcluir && (
+										<>
+											<DropdownMenuSeparator />
+											<DropdownMenuItem
+												variant="destructive"
+												onClick={() => handleDelete(financeiro.id)}
+											>
+												<IconTrash className="size-4 mr-2" />
+												Excluir
+											</DropdownMenuItem>
+										</>
+									)}
+								</DropdownMenuContent>
+							</DropdownMenu>
+						</div>
+					);
+				},
+			}),
+		[
+			filtrosColuna,
+			ordenarPor,
+			ordem,
+			onOrdenarColuna,
+			onFiltrarColuna,
+			configFiltroPorColuna,
+			handleEdit,
+			handleDelete,
+			handleDarBaixa,
+			handleVerDetalhes,
+		],
+	);
 
 	const table = useReactTable({
 		data: data?.data || [],
 		columns,
 		state: {
-			sorting,
 			pagination,
+			columnVisibility,
 			rowSelection,
 		},
-		onSortingChange: setSorting,
 		onPaginationChange: setPagination,
+		onColumnVisibilityChange,
 		onRowSelectionChange: setRowSelection,
 		getCoreRowModel: getCoreRowModel(),
-		getSortedRowModel: getSortedRowModel(),
-		getPaginationRowModel: getPaginationRowModel(),
 		manualPagination: true,
 		pageCount: data?.paginacao.totalPages ?? 0,
 		enableRowSelection: (row) => podeDarBaixa(row.original),
@@ -489,7 +415,9 @@ export default function ContasAReceberPage() {
 	const idsSelecionados = Object.keys(rowSelection).filter(
 		(id) => rowSelection[id],
 	);
-	const comFiltros = filtrosFinanceiroAtivos(filtrosAplicados);
+	const colunasVisiveis = table.getVisibleLeafColumns();
+	const mostrarSkeleton = isLoading || isLoadingPreferencias;
+	const comFiltros = filtrosColunaAtivos(filtrosColuna) || !!ordenarPor;
 
 	useEffect(() => {
 		const handleKeyDown = (event: KeyboardEvent) => {
@@ -516,9 +444,38 @@ export default function ContasAReceberPage() {
 	return (
 		<PageContainer>
 			<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-				<div className="flex items-center justify-between px-4">
+				<div className="flex flex-wrap items-center justify-between gap-2 px-4">
 					<h1 className="text-2xl font-bold">Contas a Receber</h1>
 					<div className="flex flex-wrap gap-2">
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button variant="outline" size="sm">
+									<IconLayoutColumns className="size-4" />
+									<span className="hidden lg:inline">Personalizar Colunas</span>
+									<span className="lg:hidden">Colunas</span>
+									<IconChevronDown className="size-4" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent
+								align="end"
+								className="max-h-72 w-56 overflow-y-auto"
+							>
+								{table
+									.getAllColumns()
+									.filter((column) => column.getCanHide())
+									.map((column) => (
+										<DropdownMenuCheckboxItem
+											key={column.id}
+											checked={column.getIsVisible()}
+											onCheckedChange={(value) =>
+												column.toggleVisibility(!!value)
+											}
+										>
+											{rotuloColuna(column)}
+										</DropdownMenuCheckboxItem>
+									))}
+							</DropdownMenuContent>
+						</DropdownMenu>
 						{idsSelecionados.length > 0 && (
 							<Button
 								onClick={() => handleAbrirBaixa(idsSelecionados)}
@@ -539,14 +496,6 @@ export default function ContasAReceberPage() {
 					</div>
 				</div>
 
-				<FiltrosFinanceiroLista
-					filtros={filtros}
-					onChange={setFiltros}
-					onAplicar={handleAplicarFiltros}
-					onLimpar={handleLimparFiltros}
-					comFiltrosAtivos={comFiltros}
-				/>
-
 				<div className="rounded-lg border bg-card mx-4">
 					{!empresa ? (
 						<div className="flex items-center justify-center py-8">
@@ -554,22 +503,14 @@ export default function ContasAReceberPage() {
 								Selecione uma empresa para visualizar as contas a receber
 							</p>
 						</div>
-					) : isLoading ? (
-						<TableSkeleton rows={10} columns={12}>
-							<TableCell className="w-10" />
-							<TableCell>Documento</TableCell>
-							<TableCell>Nome</TableCell>
-							<TableCell>Parcela</TableCell>
-							<TableCell>Status</TableCell>
-							<TableCell>Emissão</TableCell>
-							<TableCell>Vencimento</TableCell>
-							<TableCell>Valor</TableCell>
-							<TableCell>Saldo</TableCell>
-							<TableCell className="w-24 text-end">
-								Saldo sem juros/multa
-							</TableCell>
-							<TableCell>Tipo</TableCell>
-							<TableCell className="w-12">Ações</TableCell>
+					) : mostrarSkeleton ? (
+						<TableSkeleton
+							rows={10}
+							columns={colunasVisiveis.length || 11}
+						>
+							{colunasVisiveis.map((coluna) => (
+								<TableHead key={coluna.id}>{rotuloColuna(coluna)}</TableHead>
+							))}
 						</TableSkeleton>
 					) : (
 						<>
@@ -621,17 +562,42 @@ export default function ContasAReceberPage() {
 									) : (
 										<TableRow>
 											<TableCell
-												colSpan={table.getAllColumns().length}
+												colSpan={colunasVisiveis.length}
 												className="h-24 text-center"
 											>
-												Nenhuma conta a receber encontrada.
+												{comFiltros
+													? "Nenhuma conta a receber encontrada para os filtros selecionados."
+													: "Nenhuma conta a receber encontrada."}
 											</TableCell>
 										</TableRow>
 									)}
 								</TableBody>
 							</Table>
-							{data && data.paginacao.totalPages > 1 && (
-								<div className="flex items-center justify-between px-4 py-4 border-t">
+							{data && data.paginacao.total > 0 && (
+								<div className="flex flex-col gap-4 border-t px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+									<div className="flex items-center gap-2">
+										<Label htmlFor={idPorPagina} className="text-sm">
+											Itens por página
+										</Label>
+										<Select
+											value={`${pagination.pageSize}`}
+											onValueChange={(value) => {
+												table.setPageSize(Number(value));
+												table.setPageIndex(0);
+											}}
+										>
+											<SelectTrigger id={idPorPagina} className="h-8 w-[72px]">
+												<SelectValue placeholder={pagination.pageSize} />
+											</SelectTrigger>
+											<SelectContent side="top">
+												{[10, 20, 30, 50, 100].map((tamanho) => (
+													<SelectItem key={tamanho} value={`${tamanho}`}>
+														{tamanho}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</div>
 									<div className="text-sm text-muted-foreground">
 										Página {pagination.pageIndex + 1} de{" "}
 										{data.paginacao.totalPages} ({data.paginacao.total}{" "}
