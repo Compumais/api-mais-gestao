@@ -18,6 +18,7 @@ export const TABELA_ORDENS_SERVICO = "ordens-servico";
 export const TABELA_PRODUTOS = "produtos";
 export const TABELA_SERVICOS = "servicos";
 export const TABELA_GRUPOS = "grupos";
+export const TABELA_UNIDADE_MEDIDA = "unidade-medida";
 
 export function usePreferenciasUiUsuario() {
 	return useQuery({
