@@ -40,32 +40,28 @@ import type { OrdemServico } from "@/services/ordem-servico.service";
 import { tipoProblemaService } from "@/services/tipo-problema.service";
 import { usuariosService } from "@/services/usuarios.service";
 import { PageContainer } from "../components/page-container";
+import type { OrdenacaoColunaOs } from "./components/cabecalho-coluna-os";
 import { OrdensServicoTabela } from "./components/ordens-servico-tabela";
+import {
+	COLUNA_PARA_CAMPO_FILTRO,
+	type ConfigFiltroColunaOs,
+	type FiltrosColunaOsState,
+	filtrosColunaOsVazios,
+} from "./ordens-servico-colunas";
 
-type FiltrosState = {
-	dataInicio: string;
-	dataFim: string;
-	idcliente: string;
-	idultimotecnico: string;
-	status: string;
-	codigo: string;
-	orcamento: string;
-	busca: string;
-};
+const OPCOES_SIM_NAO = [
+	{ value: "1", label: "Sim" },
+	{ value: "0", label: "Não" },
+];
 
-const filtrosVazios: FiltrosState = {
-	dataInicio: "",
-	dataFim: "",
-	idcliente: "",
-	idultimotecnico: "",
-	status: "",
-	codigo: "",
-	orcamento: "",
-	busca: "",
-};
-
-function filtrosAtivos(filtros: FiltrosState) {
+function filtrosAtivos(filtros: FiltrosColunaOsState) {
 	return Object.values(filtros).some((valor) => valor.trim() !== "");
+}
+
+function numeroOpcional(valor: string): number | undefined {
+	if (valor.trim() === "") return undefined;
+	const n = Number(valor);
+	return Number.isFinite(n) ? n : undefined;
 }
 
 export default function OrdensServicoPage() {
@@ -79,9 +75,13 @@ export default function OrdensServicoPage() {
 	const idOrcamento = `${idBase}-orcamento`;
 	const idBusca = `${idBase}-busca`;
 	const [page, setPage] = useState(1);
-	const [filtros, setFiltros] = useState<FiltrosState>(filtrosVazios);
+	const [filtros, setFiltros] = useState<FiltrosColunaOsState>(
+		filtrosColunaOsVazios,
+	);
 	const [filtrosAplicados, setFiltrosAplicados] =
-		useState<FiltrosState>(filtrosVazios);
+		useState<FiltrosColunaOsState>(filtrosColunaOsVazios);
+	const [ordenarPor, setOrdenarPor] = useState<string | null>(null);
+	const [ordem, setOrdem] = useState<"asc" | "desc" | null>(null);
 	const [osParaExcluir, setOsParaExcluir] = useState<OrdemServico | null>(null);
 	const limit = 20;
 
@@ -161,6 +161,33 @@ export default function OrdensServicoPage() {
 		[usuariosLista],
 	);
 
+	const opcoesObjetos = useMemo(
+		() =>
+			(objetosLista ?? []).map((item) => ({
+				value: item.id,
+				label: item.descricao?.trim() || item.id,
+			})),
+		[objetosLista],
+	);
+
+	const opcoesAreas = useMemo(
+		() =>
+			(areasLista ?? []).map((item) => ({
+				value: item.id,
+				label: item.descricao?.trim() || item.id,
+			})),
+		[areasLista],
+	);
+
+	const opcoesTiposProblema = useMemo(
+		() =>
+			(tiposProblemaLista ?? []).map((item) => ({
+				value: item.id,
+				label: item.descricao?.trim() || item.codigo || item.id,
+			})),
+		[tiposProblemaLista],
+	);
+
 	const mapaUsuarios = useMemo(() => {
 		const mapa: Record<string, string> = {};
 		for (const item of usuariosLista ?? []) {
@@ -193,6 +220,132 @@ export default function OrdensServicoPage() {
 		return mapa;
 	}, [tiposProblemaLista]);
 
+	const opcoesStatus = useMemo(
+		() =>
+			tipos
+				.filter((tipo) => tipo.ativo === 1)
+				.sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0))
+				.map((tipo) => ({
+					value: String(tipo.status),
+					label: tipo.descricao ?? `Status ${tipo.status}`,
+				})),
+		[tipos],
+	);
+
+	const configFiltroPorColuna = useMemo((): Record<
+		string,
+		ConfigFiltroColunaOs
+	> => {
+		const texto = (placeholder?: string): ConfigFiltroColunaOs => ({
+			tipo: "texto",
+			placeholder,
+		});
+		const data = (): ConfigFiltroColunaOs => ({ tipo: "data" });
+		const nenhum = (): ConfigFiltroColunaOs => ({ tipo: "nenhum" });
+
+		return {
+			codigo: texto("Ex: 123"),
+			cliente: texto("Nome do cliente"),
+			cnpjcpfcliente: texto("CNPJ/CPF"),
+			data: data(),
+			status: { tipo: "opcoes", opcoes: opcoesStatus },
+			valor: nenhum(),
+			orcamento: {
+				tipo: "opcoes",
+				opcoes: [
+					{ value: "1", label: "Somente orçamentos" },
+					{ value: "0", label: "Somente OS" },
+				],
+			},
+			tecnico: { tipo: "catalogo", opcoes: opcoesTecnicos },
+			atendente: { tipo: "catalogo", opcoes: opcoesTecnicos },
+			objeto: { tipo: "catalogo", opcoes: opcoesObjetos },
+			area: { tipo: "catalogo", opcoes: opcoesAreas },
+			tipoproblema: { tipo: "catalogo", opcoes: opcoesTiposProblema },
+			agendamento: data(),
+			previsaoconclusao: data(),
+			dataultimoevento: data(),
+			problemadescrito: texto("Problema descrito"),
+			laudotecnico: texto("Laudo técnico"),
+			observacao: texto("Observação"),
+			descricaotipoultimoevento: texto("Tipo do último evento"),
+			descricaoultimoevento: texto("Último evento"),
+			valorprodutos: nenhum(),
+			valorservicos: nenhum(),
+			descontosubtotal: nenhum(),
+			geroufinanceiro: { tipo: "opcoes", opcoes: OPCOES_SIM_NAO },
+			faturouparanota: { tipo: "opcoes", opcoes: OPCOES_SIM_NAO },
+			faturouparacupom: { tipo: "opcoes", opcoes: OPCOES_SIM_NAO },
+			placa: texto("Placa"),
+			marca: texto("Marca"),
+			modelo: texto("Modelo"),
+			renavam: texto("Renavam"),
+			extra1: texto(),
+			extra2: texto(),
+			extra3: texto(),
+			extra4: texto(),
+			extra5: texto(),
+			extra6: texto(),
+			extra7: texto(),
+			extra8: texto(),
+			extra9: texto(),
+			extra10: texto(),
+			extra11: texto(),
+			extra12: texto(),
+			extra13: texto(),
+			extra14: texto(),
+			extra15: texto(),
+			extra16: texto(),
+		};
+	}, [
+		opcoesStatus,
+		opcoesTecnicos,
+		opcoesObjetos,
+		opcoesAreas,
+		opcoesTiposProblema,
+	]);
+
+	const aplicarFiltrosImediatos = useCallback(
+		(proximos: FiltrosColunaOsState) => {
+			setFiltros(proximos);
+			setFiltrosAplicados(proximos);
+			setPage(1);
+		},
+		[],
+	);
+
+	const onOrdenarColuna = useCallback(
+		(colunaId: string, direcao: OrdenacaoColunaOs) => {
+			if (!direcao) {
+				setOrdenarPor(null);
+				setOrdem(null);
+			} else {
+				setOrdenarPor(colunaId);
+				setOrdem(direcao);
+			}
+			setPage(1);
+		},
+		[],
+	);
+
+	const onFiltrarColuna = useCallback((colunaId: string, valor: string) => {
+		const campo = COLUNA_PARA_CAMPO_FILTRO[colunaId];
+		if (!campo) return;
+
+		setFiltros((atual) => {
+			const proximos: FiltrosColunaOsState = { ...atual };
+			if (colunaId === "data") {
+				proximos.dataInicio = valor;
+				proximos.dataFim = valor;
+			} else {
+				proximos[campo] = valor;
+			}
+			setFiltrosAplicados(proximos);
+			return proximos;
+		});
+		setPage(1);
+	}, []);
+
 	const { data, isLoading } = useOrdensServico(
 		empresa
 			? {
@@ -203,17 +356,50 @@ export default function OrdensServicoPage() {
 					dataFim: filtrosAplicados.dataFim || undefined,
 					idcliente: filtrosAplicados.idcliente || undefined,
 					idultimotecnico: filtrosAplicados.idultimotecnico || undefined,
-					status: filtrosAplicados.status
-						? Number(filtrosAplicados.status)
-						: undefined,
-					codigo: filtrosAplicados.codigo
-						? Number(filtrosAplicados.codigo)
-						: undefined,
-					orcamento:
-						filtrosAplicados.orcamento !== ""
-							? Number(filtrosAplicados.orcamento)
-							: undefined,
+					idatendente: filtrosAplicados.idatendente || undefined,
+					idobjeto: filtrosAplicados.idobjeto || undefined,
+					idarea: filtrosAplicados.idarea || undefined,
+					idtipoproblema: filtrosAplicados.idtipoproblema || undefined,
+					status: numeroOpcional(filtrosAplicados.status),
+					codigo: numeroOpcional(filtrosAplicados.codigo),
+					orcamento: numeroOpcional(filtrosAplicados.orcamento),
 					busca: filtrosAplicados.busca || undefined,
+					cnpjcpfcliente: filtrosAplicados.cnpjcpfcliente || undefined,
+					geroufinanceiro: numeroOpcional(filtrosAplicados.geroufinanceiro),
+					faturouparanota: numeroOpcional(filtrosAplicados.faturouparanota),
+					faturouparacupom: numeroOpcional(filtrosAplicados.faturouparacupom),
+					agendamento: filtrosAplicados.agendamento || undefined,
+					previsaoconclusao: filtrosAplicados.previsaoconclusao || undefined,
+					dataultimoevento: filtrosAplicados.dataultimoevento || undefined,
+					problemadescrito: filtrosAplicados.problemadescrito || undefined,
+					laudotecnico: filtrosAplicados.laudotecnico || undefined,
+					observacao: filtrosAplicados.observacao || undefined,
+					descricaotipoultimoevento:
+						filtrosAplicados.descricaotipoultimoevento || undefined,
+					descricaoultimoevento:
+						filtrosAplicados.descricaoultimoevento || undefined,
+					placa: filtrosAplicados.placa || undefined,
+					marca: filtrosAplicados.marca || undefined,
+					modelo: filtrosAplicados.modelo || undefined,
+					renavam: filtrosAplicados.renavam || undefined,
+					extra1: filtrosAplicados.extra1 || undefined,
+					extra2: filtrosAplicados.extra2 || undefined,
+					extra3: filtrosAplicados.extra3 || undefined,
+					extra4: filtrosAplicados.extra4 || undefined,
+					extra5: filtrosAplicados.extra5 || undefined,
+					extra6: filtrosAplicados.extra6 || undefined,
+					extra7: filtrosAplicados.extra7 || undefined,
+					extra8: filtrosAplicados.extra8 || undefined,
+					extra9: filtrosAplicados.extra9 || undefined,
+					extra10: filtrosAplicados.extra10 || undefined,
+					extra11: filtrosAplicados.extra11 || undefined,
+					extra12: filtrosAplicados.extra12 || undefined,
+					extra13: filtrosAplicados.extra13 || undefined,
+					extra14: filtrosAplicados.extra14 || undefined,
+					extra15: filtrosAplicados.extra15 || undefined,
+					extra16: filtrosAplicados.extra16 || undefined,
+					ordenarPor: ordenarPor || undefined,
+					ordem: ordem || undefined,
 				}
 			: null,
 	);
@@ -249,7 +435,7 @@ export default function OrdensServicoPage() {
 		);
 	}
 
-	const comFiltros = filtrosAtivos(filtrosAplicados);
+	const comFiltros = filtrosAtivos(filtrosAplicados) || !!ordenarPor;
 
 	return (
 		<PageContainer>
@@ -336,14 +522,11 @@ export default function OrdensServicoPage() {
 							</SelectTrigger>
 							<SelectContent>
 								<SelectItem value="todos">Todos</SelectItem>
-								{tipos
-									.filter((tipo) => tipo.ativo === 1)
-									.sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0))
-									.map((tipo) => (
-										<SelectItem key={tipo.id} value={String(tipo.status)}>
-											{tipo.descricao}
-										</SelectItem>
-									))}
+								{opcoesStatus.map((tipo) => (
+									<SelectItem key={tipo.value} value={tipo.value}>
+										{tipo.label}
+									</SelectItem>
+								))}
 							</SelectContent>
 						</Select>
 					</div>
@@ -395,8 +578,7 @@ export default function OrdensServicoPage() {
 					<div className="flex justify-end items-end gap-2 xl:col-span-4">
 						<Button
 							onClick={() => {
-								setFiltrosAplicados({ ...filtros });
-								setPage(1);
+								aplicarFiltrosImediatos({ ...filtros });
 							}}
 						>
 							Filtrar
@@ -405,8 +587,10 @@ export default function OrdensServicoPage() {
 							<Button
 								variant="outline"
 								onClick={() => {
-									setFiltros(filtrosVazios);
-									setFiltrosAplicados(filtrosVazios);
+									setFiltros(filtrosColunaOsVazios);
+									setFiltrosAplicados(filtrosColunaOsVazios);
+									setOrdenarPor(null);
+									setOrdem(null);
 									setPage(1);
 								}}
 							>
@@ -433,6 +617,12 @@ export default function OrdensServicoPage() {
 					onPageChange={setPage}
 					onExcluir={setOsParaExcluir}
 					configPronta={!isLoadingConfig}
+					filtros={filtrosAplicados}
+					ordenarPor={ordenarPor}
+					ordem={ordem}
+					onOrdenarColuna={onOrdenarColuna}
+					onFiltrarColuna={onFiltrarColuna}
+					configFiltroPorColuna={configFiltroPorColuna}
 				/>
 			</div>
 

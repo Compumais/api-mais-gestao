@@ -44,10 +44,13 @@ import type {
 } from "@/services/ordem-servico.service";
 import { osBloqueadaEdicao, osPodeExcluir } from "@/util/ordem-servico-ui";
 import {
+	type ConfigFiltroColunaOs,
 	criarColunasOrdensServico,
+	type FiltrosColunaOsState,
 	type MapaNomes,
 	visibilidadePadraoColunasOs,
 } from "../ordens-servico-colunas";
+import type { OrdenacaoColunaOs } from "./cabecalho-coluna-os";
 import { OrdemServicoStatusBadge } from "./ordem-servico-status-badge";
 
 type OrdensServicoTabelaProps = {
@@ -66,6 +69,12 @@ type OrdensServicoTabelaProps = {
 	totalRegistros: number;
 	onPageChange: (page: number) => void;
 	onExcluir: (os: OrdemServico) => void;
+	filtros: FiltrosColunaOsState;
+	ordenarPor: string | null;
+	ordem: "asc" | "desc" | null;
+	onOrdenarColuna: (colunaId: string, direcao: OrdenacaoColunaOs) => void;
+	onFiltrarColuna: (colunaId: string, valor: string) => void;
+	configFiltroPorColuna: Record<string, ConfigFiltroColunaOs>;
 };
 
 function rotuloColuna(column: {
@@ -96,6 +105,12 @@ export function OrdensServicoTabela({
 	totalRegistros,
 	onPageChange,
 	onExcluir,
+	filtros,
+	ordenarPor,
+	ordem,
+	onOrdenarColuna,
+	onFiltrarColuna,
+	configFiltroPorColuna,
 }: OrdensServicoTabelaProps) {
 	const router = useRouter();
 
@@ -121,6 +136,12 @@ export function OrdensServicoTabela({
 				mapaObjetos,
 				mapaAreas,
 				mapaTiposProblema,
+				filtros,
+				ordenarPor,
+				ordem,
+				onOrdenarColuna,
+				onFiltrarColuna,
+				configFiltroPorColuna,
 				renderStatus: (status) => (
 					<OrdemServicoStatusBadge status={status} tipos={tipos} />
 				),
@@ -181,6 +202,12 @@ export function OrdensServicoTabela({
 			mapaObjetos,
 			mapaAreas,
 			mapaTiposProblema,
+			filtros,
+			ordenarPor,
+			ordem,
+			onOrdenarColuna,
+			onFiltrarColuna,
+			configFiltroPorColuna,
 			router,
 			onExcluir,
 		],
