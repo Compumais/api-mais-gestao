@@ -416,6 +416,8 @@ export const listarProdutosSchema: FastifySchema = {
 			preco: { type: "string" },
 			custoaquisicao: { type: "string" },
 			datacadastro: { type: "string" },
+			codigolistalc11603: { type: "string" },
+			codigonbs: { type: "string" },
 			ordenarPor: { type: "string" },
 			ordem: { type: "string", enum: ["asc", "desc"] },
 			page: { type: "number", default: 1 },
