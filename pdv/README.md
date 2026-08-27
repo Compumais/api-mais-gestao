@@ -63,19 +63,19 @@ O workflow **PDV instalador** gera, em um runner Windows:
 - instalador NSIS (`pdv/release/*.exe`)
 - instalador Inno Setup com PostgreSQL (`pdv/installer/output/*.exe`)
 
-Disparo manual (depois de enviar o código):
+Disparo manual (depois de enviar o código). No Linux use o `.sh`; o `.bat` é só para o `cmd.exe` do Windows:
 
 ```bash
 gh workflow run "PDV instalador"
 # Linux:
-bash scripts/gerar-instalador.sh
+bash pdv/scripts/gerar-instalador.sh
 # Windows:
-scripts\gerar-instalador.bat
+pdv\scripts\gerar-instalador.bat
 ```
 
 Também roda ao publicar a tag `pdv-v*` (exemplo: `git tag pdv-v0.1.2 && git push origin pdv-v0.1.2`), e nesse caso cria um GitHub Release com os arquivos.
 
-No Windows, para gerar neste computador (sem GitHub Actions): `scripts\gerar-instalador.bat local` ou `npm run pack:release`.
+No Windows, para gerar neste computador (sem GitHub Actions): `pdv\scripts\gerar-instalador.bat local` ou `npm run pack:release`.
 
 Se o PDV já estiver instalado, o setup compara a versão: pacote mais antigo é recusado; mesma versão repara os arquivos; versão mais nova só atualiza o aplicativo e **preserva o PostgreSQL e os dados**.
 
