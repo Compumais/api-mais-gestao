@@ -432,6 +432,11 @@ async function despachar(
 		return { status: 200, body: { data: await localApi.listarMesas() } };
 	}
 
+	if (method === "POST" && path === "/pos/mesas/limpar-vazias") {
+		const removidas = await localApi.limparContasVazias();
+		return { status: 200, body: { removidas } };
+	}
+
 	const mesaMatch = path.match(/^\/pos\/mesas\/(\d+)$/);
 	if (method === "GET" && mesaMatch) {
 		return {
@@ -521,12 +526,27 @@ async function despachar(
 	const contaFecharMatch = path.match(/^\/pos\/contas\/([^/]+)\/fechar$/);
 	if (method === "POST" && contaFecharMatch) {
 		const lancamentos = lancamentosDeBody(body);
+		const cliente =
+			body.cliente && typeof body.cliente === "object"
+				? (body.cliente as {
+						id?: string;
+						nome?: string;
+						cnpjcpf?: string | null;
+					})
+				: null;
 		return {
 			status: 200,
 			body: await localApi.fecharContaMesa(
 				contaFecharMatch[1],
 				lancamentos.length ? lancamentos : meioDeBody(body),
 				body.troco != null ? Number(body.troco) : undefined,
+				cliente?.id
+					? {
+							id: String(cliente.id),
+							nome: String(cliente.nome ?? ""),
+							cnpjcpf: cliente.cnpjcpf != null ? String(cliente.cnpjcpf) : null,
+						}
+					: null,
 			),
 		};
 	}
@@ -620,6 +640,17 @@ async function despachar(
 			body: await localApi.juntarContas(
 				contaJuntarMatch[1],
 				Number(body.numeroDestino),
+			),
+		};
+	}
+
+	const contaTaxaMatch = path.match(/^\/pos\/contas\/([^/]+)\/taxa-entrega$/);
+	if (method === "POST" && contaTaxaMatch) {
+		return {
+			status: 200,
+			body: await localApi.aplicarTaxaEntrega(
+				contaTaxaMatch[1],
+				Number(body.valorentrega ?? 0),
 			),
 		};
 	}
@@ -786,6 +817,23 @@ async function despachar(
 		return {
 			status: 200,
 			body: await localApi.obterContaMesa(deliveryIdMatch[1]),
+		};
+	}
+	if (method === "PATCH" && deliveryIdMatch) {
+		return {
+			status: 200,
+			body: await localApi.atualizarDadosEntrega(deliveryIdMatch[1], {
+				nomecliente:
+					body.nomecliente != null ? String(body.nomecliente) : undefined,
+				telefone: body.telefone != null ? String(body.telefone) : undefined,
+				endereco: body.endereco != null ? String(body.endereco) : undefined,
+				bairro: body.bairro != null ? String(body.bairro) : undefined,
+				complemento:
+					body.complemento != null ? String(body.complemento) : undefined,
+				referencia:
+					body.referencia != null ? String(body.referencia) : undefined,
+				obs: body.obs != null ? String(body.obs) : undefined,
+			}),
 		};
 	}
 

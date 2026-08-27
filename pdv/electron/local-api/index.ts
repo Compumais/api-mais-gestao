@@ -162,13 +162,14 @@ import {
 } from "../integracao/tecnibra/servico";
 import { assertNumeroPrincipalLivre } from "../pdv-secundario/registro";
 import { normalizarModoPdv, parseNumeroPdv } from "../pdv-secundario/regras";
+import * as remoto from "../pdv-secundario/operacoes-remoto";
 import {
+	buscarOpcoesPdvNoPrincipal,
 	ehSecundario,
 	garantirOperacaoSecundario,
 	puxarDoPrincipal,
 	statusPrincipalCache,
 	testarConexaoPrincipal,
-	buscarOpcoesPdvNoPrincipal,
 	validarIdentidadeAoSalvar,
 } from "../pdv-secundario/servico";
 import {
@@ -1139,6 +1140,15 @@ export const localApi = {
 			? input.lancamentos
 			: [lancamentoUnico(input.meio ?? "DINHEIRO", total)];
 		await garantirOperacaoSecundario();
+		if (await ehSecundario()) {
+			const result = await remoto.criarVendaRapidaRemoto({
+				...input,
+				lancamentos,
+				valordesconto: desconto,
+			});
+			avisarTecnibra();
+			return result;
+		}
 		const venda = await criarVendaRapida({
 			itens: input.itens,
 			lancamentos,
@@ -1179,30 +1189,56 @@ export const localApi = {
 	},
 
 	async listarVendas() {
+		if (await ehSecundario()) {
+			await garantirOperacaoSecundario();
+			return remoto.listarVendasRemoto();
+		}
 		return listarVendas(200);
 	},
 
 	async obterVenda(id: string) {
+		if (await ehSecundario()) {
+			await garantirOperacaoSecundario();
+			return remoto.obterVendaRemoto(id);
+		}
 		return obterVenda(id);
 	},
 
 	async listarMesas() {
 		await assertModuloGourmet();
+		if (await ehSecundario()) {
+			await garantirOperacaoSecundario();
+			return remoto.listarMesasRemoto();
+		}
 		return listarMesas();
 	},
 
 	async obterMesa(numero: number) {
 		await assertModuloGourmet();
+		if (await ehSecundario()) {
+			await garantirOperacaoSecundario();
+			return remoto.obterMesaRemoto(numero);
+		}
 		return obterMesa(numero);
 	},
 
 	async obterContaPorNumero(numero: number) {
 		await assertModuloGourmet();
+		if (await ehSecundario()) {
+			await garantirOperacaoSecundario();
+			return remoto.obterContaPorNumeroRemoto(numero);
+		}
 		return obterContaPorNumero(numero);
 	},
 
 	async limparContasVazias() {
 		await assertModuloGourmet();
+		if (await ehSecundario()) {
+			await garantirOperacaoSecundario();
+			const removidas = await remoto.limparContasVaziasRemoto();
+			avisarTecnibra();
+			return removidas;
+		}
 		const removidas = await limparContasVazias();
 		avisarTecnibra();
 		return removidas;
@@ -1211,6 +1247,11 @@ export const localApi = {
 	async cancelarContaMesa(idconta: string) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
+		if (await ehSecundario()) {
+			const result = await remoto.cancelarContaMesaRemoto(idconta);
+			avisarTecnibra();
+			return result;
+		}
 		await cancelarContaMesaRepo(idconta);
 		avisarTecnibra();
 		return { ok: true as const };
@@ -1219,6 +1260,11 @@ export const localApi = {
 	async abrirContaMesa(numero: number, nomecliente?: string) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
+		if (await ehSecundario()) {
+			const conta = await remoto.abrirContaMesaRemoto(numero, nomecliente);
+			avisarTecnibra();
+			return conta;
+		}
 		const conta = await abrirContaMesa(numero, nomecliente);
 		avisarTecnibra();
 		return conta;
@@ -1226,6 +1272,10 @@ export const localApi = {
 
 	async obterContaMesa(id: string) {
 		await assertModuloGourmet();
+		if (await ehSecundario()) {
+			await garantirOperacaoSecundario();
+			return remoto.obterContaMesaRemoto(id);
+		}
 		return obterContaMesa(id);
 	},
 
@@ -1240,6 +1290,11 @@ export const localApi = {
 	) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
+		if (await ehSecundario()) {
+			const conta = await remoto.adicionarItemContaRemoto(idconta, item);
+			avisarTecnibra();
+			return conta;
+		}
 		const conta = await adicionarItemConta(idconta, item);
 		avisarTecnibra();
 		return conta;
@@ -1247,6 +1302,10 @@ export const localApi = {
 
 	async atualizarNomeClienteConta(idconta: string, nomecliente: string) {
 		await assertModuloGourmet();
+		if (await ehSecundario()) {
+			await garantirOperacaoSecundario();
+			return remoto.atualizarNomeClienteContaRemoto(idconta, nomecliente);
+		}
 		return atualizarNomeClienteConta(idconta, nomecliente);
 	},
 
@@ -1262,6 +1321,15 @@ export const localApi = {
 	) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
+		if (await ehSecundario()) {
+			const conta = await remoto.enviarPedidoContaRemoto(
+				idconta,
+				clientOrderId,
+				itens,
+			);
+			avisarTecnibra();
+			return conta;
+		}
 		const conta = await enviarPedidoConta({ idconta, clientOrderId, itens });
 		if (conta.pedidoNovo) {
 			try {
@@ -1279,15 +1347,27 @@ export const localApi = {
 	},
 
 	async listarPedidosFila(pendentes: boolean) {
+		if (await ehSecundario()) {
+			await garantirOperacaoSecundario();
+			return remoto.listarPedidosFilaRemoto(pendentes);
+		}
 		return listarPedidosFila(pendentes);
 	},
 
 	async marcarPedidoEntregue(id: string) {
+		if (await ehSecundario()) {
+			await garantirOperacaoSecundario();
+			return remoto.marcarPedidoEntregueRemoto(id);
+		}
 		await marcarPedidoEntregue(id);
 		return { ok: true };
 	},
 
 	async limparFilaPedidos() {
+		if (await ehSecundario()) {
+			await garantirOperacaoSecundario();
+			return remoto.limparFilaPedidosRemoto();
+		}
 		await limparFilaPedidos();
 		return { ok: true };
 	},
@@ -1304,6 +1384,15 @@ export const localApi = {
 	) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
+		if (await ehSecundario()) {
+			const conta = await remoto.adicionarItemNaMesaRemoto(
+				numero,
+				item,
+				nomecliente,
+			);
+			avisarTecnibra();
+			return conta;
+		}
 		const conta = await adicionarItemNaMesa(numero, item, nomecliente);
 		try {
 			void imprimirProducaoPedido({
@@ -1332,18 +1421,31 @@ export const localApi = {
 	) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
+		const secundario = await ehSecundario();
 		let lancamentos: LancamentoPagamento[];
 		if (typeof lancamentosOuMeio === "string") {
 			if (!ehMeioPagamento(lancamentosOuMeio)) {
 				throw new Error("Meio de pagamento inválido");
 			}
-			const conta = await obterContaMesa(idconta);
+			const conta = secundario
+				? await remoto.obterContaMesaRemoto(idconta)
+				: await obterContaMesa(idconta);
 			if (!conta) {
 				throw new Error("Conta inválida");
 			}
 			lancamentos = [lancamentoUnico(lancamentosOuMeio, conta.valorrestante)];
 		} else {
 			lancamentos = lancamentosOuMeio;
+		}
+		if (secundario) {
+			const result = await remoto.fecharContaMesaRemoto(
+				idconta,
+				lancamentos,
+				troco,
+				cliente,
+			);
+			avisarTecnibra();
+			return result;
 		}
 		const venda = await fecharContaMesa({
 			idconta,
@@ -1395,6 +1497,10 @@ export const localApi = {
 
 	async listarPedidosEntrega(statusFiltro?: string | null) {
 		await assertModuloGourmet();
+		if (await ehSecundario()) {
+			await garantirOperacaoSecundario();
+			return remoto.listarPedidosEntregaRemoto(statusFiltro);
+		}
 		return listarPedidosEntrega(statusFiltro);
 	},
 
@@ -1412,6 +1518,11 @@ export const localApi = {
 	}) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
+		if (await ehSecundario()) {
+			const conta = await remoto.abrirPedidoEntregaRemoto(params);
+			avisarTecnibra();
+			return conta;
+		}
 		const conta = await abrirPedidoEntrega(params);
 		avisarTecnibra();
 		return conta;
@@ -1423,12 +1534,23 @@ export const localApi = {
 	) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
+		if (await ehSecundario()) {
+			return remoto.atualizarStatusEntregaRemoto(idconta, status);
+		}
 		return atualizarStatusEntrega(idconta, status);
 	},
 
 	async aplicarTaxaEntrega(idconta: string, valorentrega: number) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
+		if (await ehSecundario()) {
+			const conta = await remoto.aplicarTaxaEntregaRemoto(
+				idconta,
+				valorentrega,
+			);
+			avisarTecnibra();
+			return conta;
+		}
 		const conta = await aplicarTaxaEntrega(idconta, valorentrega);
 		avisarTecnibra();
 		return conta;
@@ -1448,6 +1570,9 @@ export const localApi = {
 	) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
+		if (await ehSecundario()) {
+			return remoto.atualizarDadosEntregaRemoto(idconta, dados);
+		}
 		return atualizarDadosEntrega(idconta, dados);
 	},
 
@@ -1529,6 +1654,9 @@ export const localApi = {
 	) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
+		if (await ehSecundario()) {
+			return remoto.aplicarAjustesContaRemoto(idconta, ajustes);
+		}
 		return aplicarAjustesConta({ idconta, ...ajustes });
 	},
 
@@ -1543,6 +1671,13 @@ export const localApi = {
 	async imprimirPreConta(idconta: string) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
+		if (await ehSecundario()) {
+			const conta = await remoto.obterContaMesaRemoto(idconta);
+			if (!conta) {
+				throw new Error("Conta inválida");
+			}
+			return imprimirPreConta(conta);
+		}
 		return imprimirPreConta(idconta);
 	},
 
@@ -1553,6 +1688,15 @@ export const localApi = {
 	) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
+		if (await ehSecundario()) {
+			const result = await remoto.registrarPagamentoContaRemoto(
+				idconta,
+				lancamentos,
+				troco,
+			);
+			avisarTecnibra();
+			return result;
+		}
 		const result = await registrarPagamentoConta({
 			idconta,
 			lancamentos,
@@ -1584,6 +1728,17 @@ export const localApi = {
 	) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
+		if (await ehSecundario()) {
+			const result = await remoto.fecharFatiaItensRemoto(
+				idconta,
+				idsItens,
+				lancamentos,
+				troco,
+				cliente,
+			);
+			avisarTecnibra();
+			return result;
+		}
 		const result = await fecharFatiaItens({
 			idconta,
 			idsItens,
@@ -1609,6 +1764,14 @@ export const localApi = {
 	async transferirConta(idconta: string, numeroDestino: number) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
+		if (await ehSecundario()) {
+			const conta = await remoto.transferirContaRemoto(
+				idconta,
+				numeroDestino,
+			);
+			avisarTecnibra();
+			return conta;
+		}
 		const conta = await transferirConta(idconta, numeroDestino);
 		avisarTecnibra();
 		return conta;
@@ -1621,6 +1784,15 @@ export const localApi = {
 	) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
+		if (await ehSecundario()) {
+			const result = await remoto.transferirItensRemoto(
+				idcontaOrigem,
+				idsItens,
+				numeroDestino,
+			);
+			avisarTecnibra();
+			return result;
+		}
 		const result = await transferirItens({
 			idcontaOrigem,
 			idsItens,
@@ -1633,6 +1805,11 @@ export const localApi = {
 	async juntarContas(idOrigem: string, numeroDestino: number) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
+		if (await ehSecundario()) {
+			const conta = await remoto.juntarContasRemoto(idOrigem, numeroDestino);
+			avisarTecnibra();
+			return conta;
+		}
 		const mesa = await obterMesa(numeroDestino);
 		if (!mesa.idconta) {
 			throw new Error("Destino sem conta aberta");
