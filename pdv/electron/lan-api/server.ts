@@ -11,6 +11,7 @@ import { obterSessao } from "../db/repos";
 import { localApi } from "../local-api";
 import {
 	handshakeTerminal,
+	numerosOcupadosPorSecundarios,
 	tokenTerminalValido,
 } from "../pdv-secundario/registro";
 import {
@@ -25,6 +26,7 @@ const ROTAS_PUBLICAS = new Set([
 	"GET /pos/health",
 	"POST /pos/login",
 	"GET /pos/pdv/identidade",
+	"GET /pos/pdv/terminais",
 	"POST /pos/pdv/handshake",
 ]);
 
@@ -326,6 +328,31 @@ async function despachar(
 				numeropdv,
 				lanPorta:
 					portaAtual || Number(await getConfig("lan_porta", "5050")) || 5050,
+			},
+		};
+	}
+
+	if (method === "GET" && path === "/pos/pdv/terminais") {
+		const modo = normalizarModoPdv(await getConfig("pdv_modo", "principal"));
+		if (modo === "secundario") {
+			return {
+				status: 400,
+				body: {
+					error:
+						"Este endereço é um PDV secundário. Informe o IP do principal.",
+				},
+			};
+		}
+		const numeropdvPrincipal =
+			parseNumeroPdv(await getConfig("numeropdv", "1")) || 1;
+		const terminais = await localApi.listarTerminaisPdv();
+		const ocupados = await numerosOcupadosPorSecundarios();
+		return {
+			status: 200,
+			body: {
+				numeropdvPrincipal,
+				terminais,
+				ocupados,
 			},
 		};
 	}

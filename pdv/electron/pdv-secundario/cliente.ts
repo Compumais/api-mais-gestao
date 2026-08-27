@@ -117,6 +117,18 @@ export async function pingIdentidade(
 	return requisitar<IdentidadePrincipal>(baseUrl, "/pos/pdv/identidade");
 }
 
+export type TerminaisPrincipal = {
+	numeropdvPrincipal: number;
+	terminais: Array<{ numeropdv: number; descricao: string | null }>;
+	ocupados: number[];
+};
+
+export async function buscarTerminaisRemoto(
+	baseUrl: string,
+): Promise<TerminaisPrincipal> {
+	return requisitar<TerminaisPrincipal>(baseUrl, "/pos/pdv/terminais");
+}
+
 export async function handshakePrincipal(
 	baseUrl: string,
 	params: { numeropdv: number; identificador: string },
