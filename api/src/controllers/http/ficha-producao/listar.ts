@@ -1,12 +1,21 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
+import { ORDENAR_FICHAS_PRODUCAO_CAMPOS } from "@/repositories/ficha-producao-repositories.js";
 import { listarFichasProducaoService } from "@/service/ficha-producao/listar-fichas-producao.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
+const textoOpcional = z.string().optional();
+
 const querySchema = z.object({
 	idempresa: z.string().uuid(),
-	q: z.string().optional(),
+	q: textoOpcional,
+	codigo: textoOpcional,
+	nome: textoOpcional,
 	ativo: z.coerce.number().int().optional(),
+	permiteproducaomassa: z.coerce.number().int().optional(),
+	producaonavenda: z.coerce.number().int().optional(),
+	ordenarPor: z.enum(ORDENAR_FICHAS_PRODUCAO_CAMPOS).optional(),
+	ordem: z.enum(["asc", "desc"]).optional(),
 	page: z.coerce.number().int().positive().optional().default(1),
 	limit: z.coerce.number().int().positive().max(100).optional().default(10),
 });
@@ -25,7 +34,13 @@ export async function listarFichasProducao(
 			idusuario: request.user.id,
 			idempresa: query.idempresa,
 			q: query.q,
+			codigo: query.codigo,
+			nome: query.nome,
 			ativo: query.ativo,
+			permiteproducaomassa: query.permiteproducaomassa,
+			producaonavenda: query.producaonavenda,
+			ordenarPor: query.ordenarPor,
+			ordem: query.ordem,
 			page: query.page,
 			limit: query.limit,
 		});
