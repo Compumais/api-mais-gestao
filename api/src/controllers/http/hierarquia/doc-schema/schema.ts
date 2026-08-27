@@ -3,7 +3,8 @@ import type { FastifySchema } from "fastify";
 export const criarHierarquiaSchema: FastifySchema = {
 	tags: ["hierarquias"],
 	summary: "Criar hierarquia",
-	description: "Cria um novo registro de hierarquia na empresa do usuário autenticado.",
+	description:
+		"Cria um novo registro de hierarquia na empresa do usuário autenticado.",
 	security: [{ bearerAuth: [] }],
 	body: {
 		type: "object",
@@ -119,6 +120,14 @@ export const listarHierarquiasSchema: FastifySchema = {
 			idempresa: { type: "string", description: "ID da empresa" },
 			nome: { type: "string", description: "Filtro opcional por nome" },
 			q: { type: "string", description: "Busca por nome ou código" },
+			codigo: { type: "string" },
+			ncm: { type: "string" },
+			classe: { type: "number" },
+			origem: { type: "number" },
+			comissao: { type: "string" },
+			enviamobile: { type: "number" },
+			ordenarPor: { type: "string" },
+			ordem: { type: "string", enum: ["asc", "desc"] },
 			page: { type: "number", default: 1 },
 			limit: { type: "number", default: 10 },
 		},
@@ -128,7 +137,10 @@ export const listarHierarquiasSchema: FastifySchema = {
 		200: {
 			type: "object",
 			properties: {
-				data: { type: "array", items: { type: "object", additionalProperties: true } },
+				data: {
+					type: "array",
+					items: { type: "object", additionalProperties: true },
+				},
 				paginacao: {
 					type: "object",
 					properties: {

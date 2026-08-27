@@ -1,8 +1,51 @@
-import { and, count, eq, ilike, or } from "drizzle-orm";
+import {
+	and,
+	asc,
+	count,
+	desc,
+	eq,
+	ilike,
+	or,
+	type SQL,
+	sql,
+} from "drizzle-orm";
 import type { NovoHierarquia } from "@/model/hierarquia-model";
 import { hierarquia } from "@/repositories/schema.js";
 import { db } from "./connection";
 import { ordenacaoCodigoVarcharAsc } from "./ordenacao-codigo.js";
+
+export const ORDENAR_HIERARQUIAS_CAMPOS = [
+	"codigo",
+	"nome",
+	"ncm",
+	"classe",
+	"origem",
+	"comissao",
+	"enviamobile",
+] as const;
+
+export type OrdenarHierarquiasCampo =
+	(typeof ORDENAR_HIERARQUIAS_CAMPOS)[number];
+
+const COLUNAS_ORDENACAO = {
+	codigo: hierarquia.codigo,
+	nome: hierarquia.nome,
+	ncm: hierarquia.ncm,
+	classe: hierarquia.classe,
+	origem: hierarquia.origem,
+	comissao: hierarquia.comissao,
+	enviamobile: hierarquia.enviamobile,
+} as const;
+
+function adicionarFiltroTexto(
+	where: SQL[],
+	coluna: Parameters<typeof ilike>[0],
+	valor: string | undefined,
+) {
+	if (valor?.trim()) {
+		where.push(ilike(coluna, `%${valor.trim()}%`));
+	}
+}
 
 export async function buscarHierarquiaPorId(id: string) {
 	const [registro] = await db
@@ -48,6 +91,14 @@ export type ListarHierarquiasParametros = {
 	idempresa: string;
 	nome?: string | undefined;
 	q?: string | undefined;
+	codigo?: string | undefined;
+	ncm?: string | undefined;
+	classe?: number | undefined;
+	origem?: number | undefined;
+	comissao?: string | undefined;
+	enviamobile?: number | undefined;
+	ordenarPor?: OrdenarHierarquiasCampo | undefined;
+	ordem?: "asc" | "desc" | undefined;
 	page?: number;
 	limit?: number;
 };
@@ -56,10 +107,18 @@ export async function listarHierarquias({
 	idempresa,
 	nome,
 	q,
+	codigo,
+	ncm,
+	classe,
+	origem,
+	comissao,
+	enviamobile,
+	ordenarPor,
+	ordem = "asc",
 	page = 1,
 	limit = 10,
 }: ListarHierarquiasParametros) {
-	const where = [];
+	const where: SQL[] = [];
 
 	where.push(eq(hierarquia.idempresa, idempresa));
 
@@ -69,25 +128,56 @@ export async function listarHierarquias({
 
 	if (q) {
 		const termo = `%${q}%`;
-		where.push(
-			or(ilike(hierarquia.codigo, termo), ilike(hierarquia.nome, termo)),
+		const buscaOr = or(
+			ilike(hierarquia.codigo, termo),
+			ilike(hierarquia.nome, termo),
 		);
+		if (buscaOr) where.push(buscaOr);
+	}
+
+	adicionarFiltroTexto(where, hierarquia.codigo, codigo);
+	adicionarFiltroTexto(where, hierarquia.ncm, ncm);
+	adicionarFiltroTexto(where, sql`${hierarquia.comissao}::text`, comissao);
+
+	if (classe !== undefined) {
+		where.push(eq(hierarquia.classe, classe));
+	}
+	if (origem !== undefined) {
+		where.push(eq(hierarquia.origem, origem));
+	}
+	if (enviamobile !== undefined) {
+		where.push(eq(hierarquia.enviamobile, enviamobile));
 	}
 
 	const offset = (page - 1) * limit;
+
+	const ordenacao =
+		ordenarPor && COLUNAS_ORDENACAO[ordenarPor]
+			? ordem === "desc"
+				? desc(COLUNAS_ORDENACAO[ordenarPor])
+				: asc(COLUNAS_ORDENACAO[ordenarPor])
+			: undefined;
 
 	const [totalCount, hierarquias] = await Promise.all([
 		db
 			.select({ value: count() })
 			.from(hierarquia)
 			.where(and(...where)),
-		db
-			.select()
-			.from(hierarquia)
-			.where(and(...where))
-			.orderBy(...ordenacaoCodigoVarcharAsc(hierarquia.codigo))
-			.limit(limit)
-			.offset(offset),
+		ordenacao
+			? db
+					.select()
+					.from(hierarquia)
+					.where(and(...where))
+					.orderBy(ordenacao)
+					.limit(limit)
+					.offset(offset)
+			: db
+					.select()
+					.from(hierarquia)
+					.where(and(...where))
+					.orderBy(...ordenacaoCodigoVarcharAsc(hierarquia.codigo))
+					.limit(limit)
+					.offset(offset),
 	]);
 
 	return {
@@ -98,11 +188,8 @@ export async function listarHierarquias({
 
 export async function listarHierarquiasPorEmpresa(idempresa: string) {
 	return db
-		.select({
-			id: hierarquia.id,
-			codigo: hierarquia.codigo,
-			nome: hierarquia.nome,
-		})
+		.select()
 		.from(hierarquia)
-		.where(eq(hierarquia.idempresa, idempresa));
+		.where(eq(hierarquia.idempresa, idempresa))
+		.orderBy(...ordenacaoCodigoVarcharAsc(hierarquia.codigo));
 }
