@@ -31,6 +31,7 @@ export const TABELA_FICHAS_PRODUCAO = "fichas-producao";
 export const TABELA_PRODUCOES = "producoes";
 export const TABELA_CONTAS_PAGAR = "contas-pagar";
 export const TABELA_CONTAS_RECEBER = "contas-receber";
+export const TABELA_MOVIMENTACOES = "movimentacoes";
 
 export function usePreferenciasUiUsuario() {
 	return useQuery({
