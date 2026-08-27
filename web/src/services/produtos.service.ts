@@ -308,6 +308,18 @@ export const produtosService = {
 		q?: string;
 		inativo?: number;
 		tipo?: "P" | "S";
+		codigo?: string;
+		ean?: string;
+		referencia?: string;
+		ncm?: string;
+		unidademedida?: string;
+		tipoproduto?: string;
+		fornecedor?: string;
+		preco?: string;
+		custoaquisicao?: string;
+		datacadastro?: string;
+		ordenarPor?: string;
+		ordem?: "asc" | "desc";
 	}): Promise<ListarProdutosResponse> {
 		const { data } = await api.get<ListarProdutosResponse>("/produtos", {
 			params,

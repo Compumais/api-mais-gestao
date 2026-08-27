@@ -3,7 +3,9 @@
 import {
 	IconBan,
 	IconCheck,
+	IconChevronDown,
 	IconDotsVertical,
+	IconLayoutColumns,
 	IconPencil,
 	IconPlus,
 	IconSearch,
@@ -11,26 +13,24 @@ import {
 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-	type ColumnDef,
 	flexRender,
 	getCoreRowModel,
-	getPaginationRowModel,
-	getSortedRowModel,
 	type RowSelectionState,
-	type SortingState,
 	useReactTable,
 } from "@tanstack/react-table";
 import { Download, FileSpreadsheet, FileText } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AlterarProdutosEmMassaDialog } from "@/app/(auth)/produtos/components/alterar-produtos-em-massa-dialog";
 import { ImportarProdutosDialog } from "@/app/(auth)/produtos/components/importar-produtos-dialog";
+import type { OrdenacaoColunaTabela } from "@/components/cabecalho-coluna-tabela";
 import { TableSkeleton } from "@/components/table-skeleton";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
 	DropdownMenu,
+	DropdownMenuCheckboxItem,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuSeparator,
@@ -55,154 +55,48 @@ import {
 } from "@/components/ui/table";
 import { useEmpresa } from "@/hooks/use-empresa";
 import {
+	TABELA_PRODUTOS,
+	useColunasTabelaPersistidas,
+} from "@/hooks/use-preferencias-ui-usuario";
+import {
 	type FormatoImportacaoProdutos,
 	type Produto,
 	produtosService,
 } from "@/services/produtos.service";
 import { PageContainer } from "../components/page-container";
+import {
+	COLUNA_PARA_CAMPO_FILTRO_PRODUTO,
+	type ConfigFiltroColunaProduto,
+	criarColunasProdutos,
+	type FiltrosColunaProdutosState,
+	filtrosColunaProdutosVazios,
+	visibilidadePadraoColunasProdutos,
+} from "./produtos-colunas";
 
-function formatarPreco(preco: string | null) {
-	if (!preco) return "-";
-	const numero = Number.parseFloat(preco);
-	if (Number.isNaN(numero)) return "-";
-	return new Intl.NumberFormat("pt-BR", {
-		style: "currency",
-		currency: "BRL",
-	}).format(numero);
+function rotuloColuna(column: {
+	id: string;
+	columnDef: { meta?: unknown; header?: unknown };
+}) {
+	const meta = column.columnDef.meta as { label?: string } | undefined;
+	if (meta?.label) return meta.label;
+	if (typeof column.columnDef.header === "string") {
+		return column.columnDef.header;
+	}
+	return column.id;
 }
 
-type ColumnsProps = {
-	onEdit: (produto: Produto) => void;
-	onDelete: (id: string) => void;
-	onToggleInativo: (produto: Produto) => void;
-};
-
-const createColumns = ({
-	onEdit,
-	onDelete,
-	onToggleInativo,
-}: ColumnsProps): ColumnDef<Produto>[] => [
-	{
-		id: "select",
-		header: ({ table }) => (
-			<Checkbox
-				checked={
-					table.getIsAllPageRowsSelected() ||
-					(table.getIsSomePageRowsSelected() && "indeterminate")
-				}
-				onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-				aria-label="Selecionar todos da página"
-			/>
-		),
-		cell: ({ row }) => (
-			<Checkbox
-				checked={row.getIsSelected()}
-				onCheckedChange={(value) => row.toggleSelected(!!value)}
-				aria-label={`Selecionar produto ${row.original.nome}`}
-			/>
-		),
-		enableSorting: false,
-	},
-	{
-		accessorKey: "codigo",
-		header: "Código",
-		cell: ({ row }) => <div>{row.getValue("codigo") ?? "-"}</div>,
-	},
-	{
-		accessorKey: "nome",
-		header: "Nome",
-		cell: ({ row }) => {
-			return (
-				<div className="flex items-center gap-2">
-					<span>{row.getValue("nome")}</span>
-				</div>
-			);
-		},
-	},
-	{
-		accessorKey: "preco",
-		header: "Preço",
-		cell: ({ row }) => <div>{formatarPreco(row.original.preco)}</div>,
-	},
-	{
-		accessorKey: "inativo",
-		header: "Situação",
-		cell: ({ row }) => {
-			const inativo = row.original.inativo === 1;
-			return (
-				<span
-					className={
-						inativo
-							? "text-muted-foreground"
-							: "text-green-600 dark:text-green-400"
-					}
-				>
-					{inativo ? "Inativo" : "Ativo"}
-				</span>
-			);
-		},
-	},
-	{
-		id: "acoes",
-		header: "Ações",
-		cell: ({ row }) => {
-			const produto = row.original;
-			const inativo = produto.inativo === 1;
-			return (
-				<div className="flex justify-end">
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon"
-								className="h-8 w-8"
-								aria-label="Abrir menu de ações"
-							>
-								<IconDotsVertical className="size-4" />
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end">
-							<DropdownMenuItem onClick={() => onEdit(produto)}>
-								<IconPencil className="size-4" />
-								Editar
-							</DropdownMenuItem>
-							<DropdownMenuItem onClick={() => onToggleInativo(produto)}>
-								{inativo ? (
-									<>
-										<IconCheck className="size-4" />
-										Reativar
-									</>
-								) : (
-									<>
-										<IconBan className="size-4" />
-										Inativar
-									</>
-								)}
-							</DropdownMenuItem>
-							<DropdownMenuSeparator />
-							<DropdownMenuItem
-								variant="destructive"
-								onClick={() => onDelete(produto.id)}
-							>
-								<IconTrash className="size-4" />
-								Excluir
-							</DropdownMenuItem>
-						</DropdownMenuContent>
-					</DropdownMenu>
-				</div>
-			);
-		},
-	},
-];
+function filtrosColunaAtivos(filtros: FiltrosColunaProdutosState) {
+	return Object.values(filtros).some((valor) => valor.trim() !== "");
+}
 
 export default function ProdutosPage() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const queryClient = useQueryClient();
 	const { localStorageEmpresa } = useEmpresa();
+	const idPorPagina = useId();
 	const qAplicado = searchParams.get("q")?.trim() ?? "";
 	const [qInput, setQInput] = useState(qAplicado);
-	const [sorting, setSorting] = useState<SortingState>([]);
 	const [pagination, setPagination] = useState({
 		pageIndex: 0,
 		pageSize: 10,
@@ -211,6 +105,17 @@ export default function ProdutosPage() {
 		useState<FormatoImportacaoProdutos | null>(null);
 	const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 	const [dialogAlteracaoAberto, setDialogAlteracaoAberto] = useState(false);
+	const [filtrosColuna, setFiltrosColuna] =
+		useState<FiltrosColunaProdutosState>(filtrosColunaProdutosVazios);
+	const [ordenarPor, setOrdenarPor] = useState<string | null>(null);
+	const [ordem, setOrdem] = useState<"asc" | "desc" | null>(null);
+
+	const visibilidadePadrao = useMemo(
+		() => visibilidadePadraoColunasProdutos(),
+		[],
+	);
+	const { columnVisibility, onColumnVisibilityChange, isLoadingPreferencias } =
+		useColunasTabelaPersistidas(TABELA_PRODUTOS, visibilidadePadrao);
 
 	useEffect(() => {
 		setQInput(qAplicado);
@@ -220,7 +125,7 @@ export default function ProdutosPage() {
 	// biome-ignore lint/correctness/useExhaustiveDependencies: limpa a seleção ao mudar busca ou empresa
 	useEffect(() => {
 		setRowSelection({});
-	}, [qAplicado, empresaId]);
+	}, [qAplicado, empresaId, filtrosColuna, ordenarPor, ordem]);
 
 	const handleBuscar = () => {
 		const termo = qInput.trim();
@@ -235,6 +140,57 @@ export default function ProdutosPage() {
 		router.replace(query ? `/produtos?${query}` : "/produtos");
 	};
 
+	const onOrdenarColuna = useCallback(
+		(colunaId: string, direcao: OrdenacaoColunaTabela) => {
+			if (!direcao) {
+				setOrdenarPor(null);
+				setOrdem(null);
+			} else {
+				setOrdenarPor(colunaId);
+				setOrdem(direcao);
+			}
+			setPagination((p) => ({ ...p, pageIndex: 0 }));
+		},
+		[],
+	);
+
+	const onFiltrarColuna = useCallback((colunaId: string, valor: string) => {
+		const campo = COLUNA_PARA_CAMPO_FILTRO_PRODUTO[colunaId];
+		if (!campo) return;
+		setFiltrosColuna((atual) => ({ ...atual, [campo]: valor }));
+		setPagination((p) => ({ ...p, pageIndex: 0 }));
+	}, []);
+
+	const configFiltroPorColuna = useMemo((): Record<
+		string,
+		ConfigFiltroColunaProduto
+	> => {
+		const texto = (placeholder?: string): ConfigFiltroColunaProduto => ({
+			tipo: "texto",
+			placeholder,
+		});
+		return {
+			codigo: texto("Ex: 123"),
+			nome: texto("Nome do produto"),
+			preco: texto("Preço"),
+			inativo: {
+				tipo: "opcoes",
+				opcoes: [
+					{ value: "0", label: "Ativo" },
+					{ value: "1", label: "Inativo" },
+				],
+			},
+			ean: texto("EAN"),
+			referencia: texto("Referência"),
+			ncm: texto("NCM"),
+			unidademedida: texto("Unidade"),
+			tipoproduto: texto("Tipo"),
+			fornecedor: texto("Fornecedor"),
+			custoaquisicao: texto("Custo"),
+			datacadastro: { tipo: "data" },
+		};
+	}, []);
+
 	const { data, isLoading } = useQuery({
 		queryKey: [
 			"produtos",
@@ -242,6 +198,9 @@ export default function ProdutosPage() {
 			qAplicado,
 			pagination.pageIndex + 1,
 			pagination.pageSize,
+			filtrosColuna,
+			ordenarPor,
+			ordem,
 		],
 		queryFn: async () => {
 			if (!localStorageEmpresa) {
@@ -253,6 +212,34 @@ export default function ProdutosPage() {
 				limit: pagination.pageSize,
 				tipo: "P",
 				...(qAplicado ? { q: qAplicado } : {}),
+				...(filtrosColuna.nome ? { nome: filtrosColuna.nome } : {}),
+				...(filtrosColuna.inativo !== ""
+					? { inativo: Number(filtrosColuna.inativo) }
+					: {}),
+				...(filtrosColuna.codigo ? { codigo: filtrosColuna.codigo } : {}),
+				...(filtrosColuna.ean ? { ean: filtrosColuna.ean } : {}),
+				...(filtrosColuna.referencia
+					? { referencia: filtrosColuna.referencia }
+					: {}),
+				...(filtrosColuna.ncm ? { ncm: filtrosColuna.ncm } : {}),
+				...(filtrosColuna.unidademedida
+					? { unidademedida: filtrosColuna.unidademedida }
+					: {}),
+				...(filtrosColuna.tipoproduto
+					? { tipoproduto: filtrosColuna.tipoproduto }
+					: {}),
+				...(filtrosColuna.fornecedor
+					? { fornecedor: filtrosColuna.fornecedor }
+					: {}),
+				...(filtrosColuna.preco ? { preco: filtrosColuna.preco } : {}),
+				...(filtrosColuna.custoaquisicao
+					? { custoaquisicao: filtrosColuna.custoaquisicao }
+					: {}),
+				...(filtrosColuna.datacadastro
+					? { datacadastro: filtrosColuna.datacadastro }
+					: {}),
+				...(ordenarPor ? { ordenarPor } : {}),
+				...(ordem ? { ordem } : {}),
 			});
 		},
 		enabled: !!localStorageEmpresa,
@@ -302,78 +289,170 @@ export default function ProdutosPage() {
 		},
 	});
 
-	const handleEdit = (produto: Produto) => {
-		router.push(`/produtos/${produto.id}/editar`);
-	};
+	const handleEdit = useCallback(
+		(produto: Produto) => {
+			router.push(`/produtos/${produto.id}/editar`);
+		},
+		[router],
+	);
 
-	const handleDelete = (id: string) => {
-		if (!localStorageEmpresa) {
-			toast.error("Empresa não selecionada");
-			return;
-		}
+	const handleDelete = useCallback(
+		(id: string) => {
+			if (!localStorageEmpresa) {
+				toast.error("Empresa não selecionada");
+				return;
+			}
 
-		toast.message("Tem certeza que deseja excluir este produto?", {
-			position: "top-center",
-			duration: 3000,
-			action: {
-				label: "Excluir",
-				onClick: () =>
-					deletarProduto({ id, idempresa: localStorageEmpresa.id }),
-			},
-			description: "Esta ação não pode ser desfeita.",
-		});
-	};
+			toast.message("Tem certeza que deseja excluir este produto?", {
+				position: "top-center",
+				duration: 3000,
+				action: {
+					label: "Excluir",
+					onClick: () =>
+						deletarProduto({ id, idempresa: localStorageEmpresa.id }),
+				},
+				description: "Esta ação não pode ser desfeita.",
+			});
+		},
+		[deletarProduto, localStorageEmpresa],
+	);
 
-	const handleToggleInativo = (produto: Produto) => {
-		if (!localStorageEmpresa) {
-			toast.error("Empresa não selecionada");
-			return;
-		}
+	const handleToggleInativo = useCallback(
+		(produto: Produto) => {
+			if (!localStorageEmpresa) {
+				toast.error("Empresa não selecionada");
+				return;
+			}
 
-		const novoInativo = produto.inativo === 1 ? 0 : 1;
-		const acao = novoInativo === 1 ? "inativar" : "reativar";
+			const novoInativo = produto.inativo === 1 ? 0 : 1;
+			const acao = novoInativo === 1 ? "inativar" : "reativar";
 
-		toast.message(`Tem certeza que deseja ${acao} este produto?`, {
-			position: "top-center",
-			duration: 3000,
-			action: {
-				label: novoInativo === 1 ? "Inativar" : "Reativar",
-				onClick: () =>
-					alterarSituacao({
-						id: produto.id,
-						inativo: novoInativo,
-						idempresa: localStorageEmpresa.id,
-					}),
-			},
-		});
-	};
+			toast.message(`Tem certeza que deseja ${acao} este produto?`, {
+				position: "top-center",
+				duration: 3000,
+				action: {
+					label: novoInativo === 1 ? "Inativar" : "Reativar",
+					onClick: () =>
+						alterarSituacao({
+							id: produto.id,
+							inativo: novoInativo,
+							idempresa: localStorageEmpresa.id,
+						}),
+				},
+			});
+		},
+		[alterarSituacao, localStorageEmpresa],
+	);
 
-	const columns = createColumns({
-		onEdit: handleEdit,
-		onDelete: handleDelete,
-		onToggleInativo: handleToggleInativo,
-	});
+	const columns = useMemo(
+		() =>
+			criarColunasProdutos({
+				filtros: filtrosColuna,
+				ordenarPor,
+				ordem,
+				onOrdenarColuna,
+				onFiltrarColuna,
+				configFiltroPorColuna,
+				renderSelectHeader: (table) => (
+					<Checkbox
+						checked={
+							table.getIsAllPageRowsSelected() ||
+							(table.getIsSomePageRowsSelected() && "indeterminate")
+						}
+						onCheckedChange={(value) =>
+							table.toggleAllPageRowsSelected(!!value)
+						}
+						aria-label="Selecionar todos da página"
+					/>
+				),
+				renderSelectCell: (row) => (
+					<Checkbox
+						checked={row.getIsSelected()}
+						onCheckedChange={(value) => row.toggleSelected(!!value)}
+						aria-label={`Selecionar produto ${row.original.nome}`}
+					/>
+				),
+				renderAcoes: (produto) => {
+					const inativo = produto.inativo === 1;
+					return (
+						<div className="flex justify-end">
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon"
+										className="h-8 w-8"
+										aria-label="Abrir menu de ações"
+									>
+										<IconDotsVertical className="size-4" />
+									</Button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent align="end">
+									<DropdownMenuItem onClick={() => handleEdit(produto)}>
+										<IconPencil className="size-4" />
+										Editar
+									</DropdownMenuItem>
+									<DropdownMenuItem
+										onClick={() => handleToggleInativo(produto)}
+									>
+										{inativo ? (
+											<>
+												<IconCheck className="size-4" />
+												Reativar
+											</>
+										) : (
+											<>
+												<IconBan className="size-4" />
+												Inativar
+											</>
+										)}
+									</DropdownMenuItem>
+									<DropdownMenuSeparator />
+									<DropdownMenuItem
+										variant="destructive"
+										onClick={() => handleDelete(produto.id)}
+									>
+										<IconTrash className="size-4" />
+										Excluir
+									</DropdownMenuItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
+						</div>
+					);
+				},
+			}),
+		[
+			filtrosColuna,
+			ordenarPor,
+			ordem,
+			onOrdenarColuna,
+			onFiltrarColuna,
+			configFiltroPorColuna,
+			handleEdit,
+			handleDelete,
+			handleToggleInativo,
+		],
+	);
 
 	const table = useReactTable({
 		data: data?.data || [],
 		columns,
 		state: {
-			sorting,
 			pagination,
 			rowSelection,
+			columnVisibility,
 		},
-		onSortingChange: setSorting,
 		onPaginationChange: setPagination,
 		onRowSelectionChange: setRowSelection,
+		onColumnVisibilityChange,
 		getCoreRowModel: getCoreRowModel(),
-		getSortedRowModel: getSortedRowModel(),
-		getPaginationRowModel: getPaginationRowModel(),
 		getRowId: (row) => row.id,
 		enableRowSelection: true,
 		manualPagination: true,
 		pageCount: data?.paginacao.totalPages ?? 0,
 	});
 
+	const colunasVisiveis = table.getVisibleLeafColumns();
 	const idsSelecionados = Object.keys(rowSelection).filter(
 		(id) => rowSelection[id],
 	);
@@ -398,6 +477,10 @@ export default function ProdutosPage() {
 			toast.error(error.message || "Erro ao baixar modelo");
 		},
 	});
+
+	const mostrarSkeleton = isLoading || isLoadingPreferencias;
+	const comFiltros =
+		!!qAplicado || filtrosColunaAtivos(filtrosColuna) || !!ordenarPor;
 
 	return (
 		<PageContainer>
@@ -471,27 +554,60 @@ export default function ProdutosPage() {
 						</Button>
 					</div>
 				</div>
-				<div className="flex gap-2 px-4">
-					<Input
-						value={qInput}
-						onChange={(event) => setQInput(event.target.value)}
-						onKeyDown={(event) => {
-							if (event.key === "Enter") {
-								handleBuscar();
-							}
-						}}
-						placeholder="Buscar por nome, código, EAN ou preço..."
-						disabled={!localStorageEmpresa}
-						className="max-w-md"
-					/>
-					<Button
-						onClick={handleBuscar}
-						disabled={!localStorageEmpresa}
-						className="gap-2"
-					>
-						<IconSearch className="size-4" />
-						Buscar
-					</Button>
+				<div className="flex flex-wrap items-center justify-between gap-2 px-4">
+					<div className="flex gap-2">
+						<Input
+							value={qInput}
+							onChange={(event) => setQInput(event.target.value)}
+							onKeyDown={(event) => {
+								if (event.key === "Enter") {
+									handleBuscar();
+								}
+							}}
+							placeholder="Buscar por nome, código, EAN ou preço..."
+							disabled={!localStorageEmpresa}
+							className="max-w-md"
+						/>
+						<Button
+							onClick={handleBuscar}
+							disabled={!localStorageEmpresa}
+							className="gap-2"
+						>
+							<IconSearch className="size-4" />
+							Buscar
+						</Button>
+					</div>
+					{localStorageEmpresa && (
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button variant="outline" size="sm">
+									<IconLayoutColumns className="size-4" />
+									<span className="hidden lg:inline">Personalizar Colunas</span>
+									<span className="lg:hidden">Colunas</span>
+									<IconChevronDown className="size-4" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent
+								align="end"
+								className="max-h-72 w-56 overflow-y-auto"
+							>
+								{table
+									.getAllColumns()
+									.filter((column) => column.getCanHide())
+									.map((column) => (
+										<DropdownMenuCheckboxItem
+											key={column.id}
+											checked={column.getIsVisible()}
+											onCheckedChange={(value) =>
+												column.toggleVisibility(!!value)
+											}
+										>
+											{rotuloColuna(column)}
+										</DropdownMenuCheckboxItem>
+									))}
+							</DropdownMenuContent>
+						</DropdownMenu>
+					)}
 				</div>
 				<div className="rounded-lg border bg-card mx-4">
 					{!localStorageEmpresa ? (
@@ -500,14 +616,22 @@ export default function ProdutosPage() {
 								Selecione uma empresa para visualizar os produtos
 							</p>
 						</div>
-					) : isLoading ? (
-						<TableSkeleton rows={10}>
-							<TableHead className="w-10" />
-							<TableHead>Código</TableHead>
-							<TableHead>Nome</TableHead>
-							<TableHead className="w-[140px]">Preço</TableHead>
-							<TableHead className="w-[120px]">Situação</TableHead>
-							<TableHead className="w-12 text-end">Ações</TableHead>
+					) : mostrarSkeleton ? (
+						<TableSkeleton columns={colunasVisiveis.length || 6} rows={10}>
+							{colunasVisiveis.map((coluna) => (
+								<TableHead
+									key={coluna.id}
+									className={
+										coluna.id === "acoes"
+											? "w-12 text-end"
+											: coluna.id === "select"
+												? "w-10"
+												: undefined
+									}
+								>
+									{rotuloColuna(coluna)}
+								</TableHead>
+							))}
 						</TableSkeleton>
 					) : (
 						<>
@@ -551,10 +675,12 @@ export default function ProdutosPage() {
 									) : (
 										<TableRow>
 											<TableCell
-												colSpan={table.getAllColumns().length}
+												colSpan={colunasVisiveis.length}
 												className="h-24 text-center"
 											>
-												Nenhum produto encontrado.
+												{comFiltros
+													? "Nenhum produto encontrado para os filtros selecionados."
+													: "Nenhum produto encontrado."}
 											</TableCell>
 										</TableRow>
 									)}
@@ -563,7 +689,7 @@ export default function ProdutosPage() {
 							{data && data.paginacao.total > 0 && (
 								<div className="flex flex-col gap-4 border-t px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
 									<div className="flex items-center gap-2">
-										<Label htmlFor="produtos-por-pagina" className="text-sm">
+										<Label htmlFor={idPorPagina} className="text-sm">
 											Itens por página
 										</Label>
 										<Select
@@ -573,10 +699,7 @@ export default function ProdutosPage() {
 												table.setPageIndex(0);
 											}}
 										>
-											<SelectTrigger
-												id="produtos-por-pagina"
-												className="h-8 w-[72px]"
-											>
+											<SelectTrigger id={idPorPagina} className="h-8 w-[72px]">
 												<SelectValue placeholder={pagination.pageSize} />
 											</SelectTrigger>
 											<SelectContent side="top">
