@@ -43,6 +43,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { NFE_STATUS, NFE_STATUS_LABELS } from "@/constants/nfe-status";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { maskCpfCnpj } from "@/lib/masks";
+import { nfseConfiguracaoService } from "@/services/nfse-configuracao.service";
 import {
 	cancelarNfse,
 	consultarNfsePorRps,
@@ -97,6 +98,15 @@ export default function NotaFiscalServicoPage() {
 		queryKey: ["nfse-emissao", empresa?.id],
 		queryFn: () =>
 			listarNfsesEmitidas({ idempresa: empresa!.id, page: 1, limit: 50 }),
+		enabled: !!empresa?.id,
+	});
+
+	const { data: nfseConfiguracao } = useQuery({
+		queryKey: ["nfse-configuracao", empresa?.id],
+		queryFn: () => {
+			if (!empresa) throw new Error("Empresa não selecionada");
+			return nfseConfiguracaoService.buscar(empresa.id);
+		},
 		enabled: !!empresa?.id,
 	});
 
@@ -187,7 +197,7 @@ export default function NotaFiscalServicoPage() {
 						</p>
 					</div>
 					<div className="flex items-center gap-2">
-						<AvisoAmbienteNfse ambiente={2} />
+						<AvisoAmbienteNfse ambiente={nfseConfiguracao?.ambiente} />
 						<Button asChild>
 							<Link href="/nota-fiscal-servico/nova">
 								<Plus className="h-4 w-4 mr-2" aria-hidden="true" />
