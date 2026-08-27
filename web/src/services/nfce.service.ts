@@ -111,6 +111,13 @@ export const nfceService = {
 	async listar(params: {
 		idempresa: string;
 		status?: number;
+		numero?: string;
+		chavenfe?: string;
+		idvenda?: string;
+		dataInicio?: string;
+		dataFim?: string;
+		ordenarPor?: string;
+		ordem?: "asc" | "desc";
 		page?: number;
 		limit?: number;
 	}): Promise<{ data: NfceListagem[]; paginacao: Paginacao }> {

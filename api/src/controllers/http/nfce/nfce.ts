@@ -1,5 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
+import { ORDENAR_NFCE_CAMPOS } from "@/repositories/nota-fiscal-repositories.js";
 import { atualizarVendaNfcePdvService } from "@/service/nfce-emissao/atualizar-venda-nfce-pdv.js";
 import { buscarDadosCupomNfceService } from "@/service/nfce-emissao/buscar-dados-cupom-nfce.js";
 import { buscarNfceParaEditarService } from "@/service/nfce-emissao/buscar-nfce-para-editar.js";
@@ -15,6 +16,13 @@ import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 const queryListarSchema = z.object({
 	idempresa: z.string().uuid(),
 	status: z.coerce.number().int().optional(),
+	numero: z.string().optional(),
+	chavenfe: z.string().optional(),
+	idvenda: z.string().optional(),
+	dataInicio: z.string().optional(),
+	dataFim: z.string().optional(),
+	ordenarPor: z.enum(ORDENAR_NFCE_CAMPOS).optional(),
+	ordem: z.enum(["asc", "desc"]).optional(),
 	page: z.coerce.number().int().min(1).optional(),
 	limit: z.coerce.number().int().min(1).max(100).optional(),
 });
@@ -89,6 +97,13 @@ export async function listarNfcePendentes(
 			idusuario: request.user.id,
 			idempresa: query.idempresa,
 			status: query.status,
+			numero: query.numero,
+			chavenfe: query.chavenfe,
+			idvenda: query.idvenda,
+			dataInicio: query.dataInicio,
+			dataFim: query.dataFim,
+			ordenarPor: query.ordenarPor,
+			ordem: query.ordem,
 			page: query.page ?? 1,
 			limit: query.limit ?? 20,
 		});
