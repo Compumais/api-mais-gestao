@@ -165,17 +165,6 @@ export function AppTopbar() {
 							className="hidden min-w-0 flex-1 items-center gap-0.5 overflow-x-auto px-2 md:flex"
 							aria-label="Menu principal"
 						>
-							<Button
-								variant="ghost"
-								size="icon"
-								onClick={() => setSearchOpen(true)}
-								className="shrink-0 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
-								aria-label="Pesquisar"
-								title="Pesquisar"
-							>
-								<IconSearch className="size-4" />
-							</Button>
-
 							{secoesTopbar.map((secao) => {
 								const ativo =
 									secaoAberta === secao.label ||

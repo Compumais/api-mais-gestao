@@ -49,11 +49,6 @@ export const DATA = {
 			url: "/dashboard",
 			icon: IconDashboard,
 		},
-		{
-			title: "Pesquisar",
-			url: "#",
-			icon: IconSearch,
-		},
 	] satisfies NavItem[],
 
 	navVendas: [
