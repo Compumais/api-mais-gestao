@@ -31,6 +31,7 @@ import { DialogQuantidadePeso } from "@/ui/components/dialog-quantidade-peso";
 import { DialogRejeicaoNfce } from "@/ui/components/dialog-rejeicao-nfce";
 import { FunctionBar } from "@/ui/components/function-bar";
 import { ProdutoCard } from "@/ui/components/produto-card";
+import { SideNav } from "@/ui/components/side-nav";
 import { Topbar } from "@/ui/components/topbar";
 import { Button } from "@/ui/components/ui/button";
 import { useEscapeFechaModal } from "@/ui/hooks/use-escape-fecha-modal";
@@ -401,8 +402,9 @@ export function BalcaoPage() {
 				}
 			/>
 
-			<div className="grid flex-1 grid-cols-[1fr_360px] gap-3 overflow-hidden bg-muted/30 p-3">
-				<div className="pdv-surface flex flex-col gap-3 overflow-hidden p-3">
+			<div className="flex min-h-0 flex-1 gap-3 overflow-hidden bg-muted/30 p-3">
+				<div className="grid min-h-0 min-w-0 flex-1 grid-cols-[1fr_360px] gap-3 overflow-hidden">
+				<div className="pdv-surface flex min-h-0 flex-col gap-3 overflow-hidden p-3">
 					<AvisoSecundario status={status} />
 					<BarcodeInput
 						onScan={(codigo) => void onBip(codigo)}
@@ -581,6 +583,8 @@ export function BalcaoPage() {
 						</span>
 					</Button>
 				</div>
+				</div>
+				<SideNav status={status} onBlocked={setMsg} />
 			</div>
 
 			{rejeicaoNfce && (

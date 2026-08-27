@@ -34,6 +34,7 @@ import { DialogRejeicaoNfce } from "@/ui/components/dialog-rejeicao-nfce";
 import { DialogSenhaGerencial } from "@/ui/components/dialog-senha-gerencial";
 import { FunctionBar } from "@/ui/components/function-bar";
 import { ProdutoCard } from "@/ui/components/produto-card";
+import { SideNav } from "@/ui/components/side-nav";
 import { Topbar } from "@/ui/components/topbar";
 import { Button } from "@/ui/components/ui/button";
 import { Input } from "@/ui/components/ui/input";
@@ -727,7 +728,8 @@ export function MesaContaPage() {
 				}
 			/>
 
-			<div className="grid flex-1 grid-cols-[1fr_320px] gap-3 overflow-hidden bg-muted/30 p-3">
+			<div className="flex min-h-0 flex-1 gap-3 overflow-hidden bg-muted/30 p-3">
+				<div className="grid min-h-0 min-w-0 flex-1 grid-cols-[1fr_320px] gap-3 overflow-hidden">
 				<div className="pdv-surface flex min-h-0 flex-col gap-3 overflow-hidden p-3">
 					<AvisoSecundario status={status} />
 					<div className="flex items-center justify-between gap-2">
@@ -1159,6 +1161,8 @@ export function MesaContaPage() {
 						</div>
 					</div>
 				</div>
+			</div>
+				<SideNav status={status} />
 			</div>
 
 			{confirmandoSaida && (
