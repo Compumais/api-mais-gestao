@@ -12,8 +12,162 @@ import {
 	formatarDataOs,
 	formatarMoedaOs,
 } from "@/util/ordem-servico-ui";
+import {
+	CabecalhoColunaOs,
+	type OpcaoFiltroColunaOs,
+	type OrdenacaoColunaOs,
+	type TipoFiltroColunaOs,
+} from "./components/cabecalho-coluna-os";
 
 export type MapaNomes = Record<string, string>;
+
+export type FiltrosColunaOsState = {
+	dataInicio: string;
+	dataFim: string;
+	idcliente: string;
+	idultimotecnico: string;
+	idatendente: string;
+	idobjeto: string;
+	idarea: string;
+	idtipoproblema: string;
+	status: string;
+	codigo: string;
+	orcamento: string;
+	busca: string;
+	cnpjcpfcliente: string;
+	geroufinanceiro: string;
+	faturouparanota: string;
+	faturouparacupom: string;
+	agendamento: string;
+	previsaoconclusao: string;
+	dataultimoevento: string;
+	problemadescrito: string;
+	laudotecnico: string;
+	observacao: string;
+	descricaotipoultimoevento: string;
+	descricaoultimoevento: string;
+	placa: string;
+	marca: string;
+	modelo: string;
+	renavam: string;
+	extra1: string;
+	extra2: string;
+	extra3: string;
+	extra4: string;
+	extra5: string;
+	extra6: string;
+	extra7: string;
+	extra8: string;
+	extra9: string;
+	extra10: string;
+	extra11: string;
+	extra12: string;
+	extra13: string;
+	extra14: string;
+	extra15: string;
+	extra16: string;
+};
+
+export const filtrosColunaOsVazios: FiltrosColunaOsState = {
+	dataInicio: "",
+	dataFim: "",
+	idcliente: "",
+	idultimotecnico: "",
+	idatendente: "",
+	idobjeto: "",
+	idarea: "",
+	idtipoproblema: "",
+	status: "",
+	codigo: "",
+	orcamento: "",
+	busca: "",
+	cnpjcpfcliente: "",
+	geroufinanceiro: "",
+	faturouparanota: "",
+	faturouparacupom: "",
+	agendamento: "",
+	previsaoconclusao: "",
+	dataultimoevento: "",
+	problemadescrito: "",
+	laudotecnico: "",
+	observacao: "",
+	descricaotipoultimoevento: "",
+	descricaoultimoevento: "",
+	placa: "",
+	marca: "",
+	modelo: "",
+	renavam: "",
+	extra1: "",
+	extra2: "",
+	extra3: "",
+	extra4: "",
+	extra5: "",
+	extra6: "",
+	extra7: "",
+	extra8: "",
+	extra9: "",
+	extra10: "",
+	extra11: "",
+	extra12: "",
+	extra13: "",
+	extra14: "",
+	extra15: "",
+	extra16: "",
+};
+
+export type CampoFiltroColunaOs = keyof FiltrosColunaOsState;
+
+/** Mapeia id da coluna da tabela → campo do estado de filtros */
+export const COLUNA_PARA_CAMPO_FILTRO: Record<string, CampoFiltroColunaOs> = {
+	codigo: "codigo",
+	cliente: "busca",
+	cnpjcpfcliente: "cnpjcpfcliente",
+	data: "dataInicio",
+	status: "status",
+	orcamento: "orcamento",
+	tecnico: "idultimotecnico",
+	atendente: "idatendente",
+	objeto: "idobjeto",
+	area: "idarea",
+	tipoproblema: "idtipoproblema",
+	agendamento: "agendamento",
+	previsaoconclusao: "previsaoconclusao",
+	dataultimoevento: "dataultimoevento",
+	problemadescrito: "problemadescrito",
+	laudotecnico: "laudotecnico",
+	observacao: "observacao",
+	descricaotipoultimoevento: "descricaotipoultimoevento",
+	descricaoultimoevento: "descricaoultimoevento",
+	geroufinanceiro: "geroufinanceiro",
+	faturouparanota: "faturouparanota",
+	faturouparacupom: "faturouparacupom",
+	placa: "placa",
+	marca: "marca",
+	modelo: "modelo",
+	renavam: "renavam",
+	extra1: "extra1",
+	extra2: "extra2",
+	extra3: "extra3",
+	extra4: "extra4",
+	extra5: "extra5",
+	extra6: "extra6",
+	extra7: "extra7",
+	extra8: "extra8",
+	extra9: "extra9",
+	extra10: "extra10",
+	extra11: "extra11",
+	extra12: "extra12",
+	extra13: "extra13",
+	extra14: "extra14",
+	extra15: "extra15",
+	extra16: "extra16",
+};
+
+export type ConfigFiltroColunaOs = {
+	tipo: TipoFiltroColunaOs;
+	opcoes?: OpcaoFiltroColunaOs[];
+	placeholder?: string;
+};
 
 export type OpcoesColunasOs = {
 	config: ConfiguracaoOrdemServico | null | undefined;
@@ -23,6 +177,12 @@ export type OpcoesColunasOs = {
 	mapaTiposProblema: MapaNomes;
 	renderAcoes: (os: OrdemServico) => ReactNode;
 	renderStatus: (status: number | null) => ReactNode;
+	filtros: FiltrosColunaOsState;
+	ordenarPor: string | null;
+	ordem: "asc" | "desc" | null;
+	onOrdenarColuna: (colunaId: string, direcao: OrdenacaoColunaOs) => void;
+	onFiltrarColuna: (colunaId: string, valor: string) => void;
+	configFiltroPorColuna: Record<string, ConfigFiltroColunaOs>;
 };
 
 type DefinicaoColunaOs = {
@@ -176,6 +336,51 @@ function resolverNome(mapa: MapaNomes, id: string | null | undefined) {
 	return mapa[id] ?? "—";
 }
 
+function valorFiltroColuna(
+	filtros: FiltrosColunaOsState,
+	colunaId: string,
+): string {
+	const campo = COLUNA_PARA_CAMPO_FILTRO[colunaId];
+	if (!campo) return "";
+	if (colunaId === "data") {
+		// filtro de data na coluna usa dataInicio; só considera ativo se dataInicio === dataFim
+		if (filtros.dataInicio && filtros.dataInicio === filtros.dataFim) {
+			return filtros.dataInicio;
+		}
+		if (filtros.dataInicio && !filtros.dataFim) return filtros.dataInicio;
+		return "";
+	}
+	return filtros[campo] ?? "";
+}
+
+function criarHeaderColuna(
+	def: { id: string; label: string },
+	opcoes: OpcoesColunasOs,
+) {
+	const configFiltro = opcoes.configFiltroPorColuna[def.id] ?? {
+		tipo: "texto" as const,
+	};
+	const valorFiltro = valorFiltroColuna(opcoes.filtros, def.id);
+	const filtroAtivo = valorFiltro.trim() !== "";
+	const ordenacao: OrdenacaoColunaOs =
+		opcoes.ordenarPor === def.id && opcoes.ordem ? opcoes.ordem : false;
+
+	return (
+		<CabecalhoColunaOs
+			titulo={def.label}
+			colunaId={def.id}
+			ordenacao={ordenacao}
+			onOrdenar={(direcao) => opcoes.onOrdenarColuna(def.id, direcao)}
+			filtroAtivo={filtroAtivo}
+			valorFiltro={valorFiltro}
+			onFiltrar={(valor) => opcoes.onFiltrarColuna(def.id, valor)}
+			tipoFiltro={configFiltro.tipo}
+			opcoes={configFiltro.opcoes}
+			placeholderFiltro={configFiltro.placeholder}
+		/>
+	);
+}
+
 export function listarDefinicoesColunasOs(opcoes: {
 	config: ConfiguracaoOrdemServico | null | undefined;
 	camposextras?: CampoExtraOrdemServico[] | null;
@@ -235,12 +440,13 @@ export function criarColunasOrdensServico(
 		}
 
 		const meta = { label: def.label };
+		const header = () => criarHeaderColuna(def, opcoes);
 
 		switch (def.id) {
 			case "codigo":
 				colunas.push({
 					accessorKey: "codigo",
-					header: def.label,
+					header,
 					meta,
 					cell: ({ row }) => (
 						<span className="font-medium">{row.original.codigo ?? "—"}</span>
@@ -251,7 +457,7 @@ export function criarColunasOrdensServico(
 				colunas.push({
 					id: "cliente",
 					accessorFn: (row) => row.nomecliente,
-					header: def.label,
+					header,
 					meta,
 					cell: ({ row }) => (
 						<div className="max-w-[220px] truncate">
@@ -263,7 +469,7 @@ export function criarColunasOrdensServico(
 			case "cnpjcpfcliente":
 				colunas.push({
 					accessorKey: "cnpjcpfcliente",
-					header: def.label,
+					header,
 					meta,
 					cell: ({ row }) => row.original.cnpjcpfcliente ?? "—",
 				});
@@ -272,7 +478,7 @@ export function criarColunasOrdensServico(
 				colunas.push({
 					id: "data",
 					accessorFn: (row) => row.dataos ?? row.data,
-					header: def.label,
+					header,
 					meta,
 					cell: ({ row }) =>
 						formatarDataOs(row.original.dataos ?? row.original.data),
@@ -282,7 +488,7 @@ export function criarColunasOrdensServico(
 				colunas.push({
 					id: "status",
 					accessorFn: (row) => row.status,
-					header: def.label,
+					header,
 					meta,
 					cell: ({ row }) => opcoes.renderStatus(row.original.status),
 				});
@@ -291,7 +497,7 @@ export function criarColunasOrdensServico(
 				colunas.push({
 					id: "valor",
 					accessorFn: (row) => row.valor,
-					header: def.label,
+					header,
 					meta,
 					cell: ({ row }) => formatarMoedaOs(row.original.valor),
 				});
@@ -300,7 +506,7 @@ export function criarColunasOrdensServico(
 				colunas.push({
 					id: "orcamento",
 					accessorFn: (row) => row.orcamento,
-					header: def.label,
+					header,
 					meta,
 					cell: ({ row }) => simNao(row.original.orcamento),
 				});
@@ -309,7 +515,7 @@ export function criarColunasOrdensServico(
 				colunas.push({
 					id: "tecnico",
 					accessorFn: (row) => row.idultimotecnico,
-					header: def.label,
+					header,
 					meta,
 					cell: ({ row }) =>
 						resolverNome(opcoes.mapaUsuarios, row.original.idultimotecnico),
@@ -319,7 +525,7 @@ export function criarColunasOrdensServico(
 				colunas.push({
 					id: "atendente",
 					accessorFn: (row) => row.idatendente,
-					header: def.label,
+					header,
 					meta,
 					cell: ({ row }) =>
 						resolverNome(opcoes.mapaUsuarios, row.original.idatendente),
@@ -329,7 +535,7 @@ export function criarColunasOrdensServico(
 				colunas.push({
 					id: "objeto",
 					accessorFn: (row) => row.idobjeto,
-					header: def.label,
+					header,
 					meta,
 					cell: ({ row }) =>
 						resolverNome(opcoes.mapaObjetos, row.original.idobjeto),
@@ -339,7 +545,7 @@ export function criarColunasOrdensServico(
 				colunas.push({
 					id: "area",
 					accessorFn: (row) => row.idarea,
-					header: def.label,
+					header,
 					meta,
 					cell: ({ row }) =>
 						resolverNome(opcoes.mapaAreas, row.original.idarea),
@@ -349,7 +555,7 @@ export function criarColunasOrdensServico(
 				colunas.push({
 					id: "tipoproblema",
 					accessorFn: (row) => row.idtipoproblema,
-					header: def.label,
+					header,
 					meta,
 					cell: ({ row }) =>
 						resolverNome(opcoes.mapaTiposProblema, row.original.idtipoproblema),
@@ -358,7 +564,7 @@ export function criarColunasOrdensServico(
 			case "agendamento":
 				colunas.push({
 					accessorKey: "agendamento",
-					header: def.label,
+					header,
 					meta,
 					cell: ({ row }) => formatarDataHoraOs(row.original.agendamento),
 				});
@@ -366,7 +572,7 @@ export function criarColunasOrdensServico(
 			case "previsaoconclusao":
 				colunas.push({
 					accessorKey: "previsaoconclusao",
-					header: def.label,
+					header,
 					meta,
 					cell: ({ row }) => formatarDataOs(row.original.previsaoconclusao),
 				});
@@ -374,7 +580,7 @@ export function criarColunasOrdensServico(
 			case "dataultimoevento":
 				colunas.push({
 					accessorKey: "dataultimoevento",
-					header: def.label,
+					header,
 					meta,
 					cell: ({ row }) => formatarDataHoraOs(row.original.dataultimoevento),
 				});
@@ -382,7 +588,7 @@ export function criarColunasOrdensServico(
 			case "problemadescrito":
 				colunas.push({
 					accessorKey: "problemadescrito",
-					header: def.label,
+					header,
 					meta,
 					cell: ({ row }) => textoTruncado(row.original.problemadescrito),
 				});
@@ -390,7 +596,7 @@ export function criarColunasOrdensServico(
 			case "laudotecnico":
 				colunas.push({
 					accessorKey: "laudotecnico",
-					header: def.label,
+					header,
 					meta,
 					cell: ({ row }) => textoTruncado(row.original.laudotecnico),
 				});
@@ -398,7 +604,7 @@ export function criarColunasOrdensServico(
 			case "observacao":
 				colunas.push({
 					accessorKey: "observacao",
-					header: def.label,
+					header,
 					meta,
 					cell: ({ row }) => textoTruncado(row.original.observacao),
 				});
@@ -406,7 +612,7 @@ export function criarColunasOrdensServico(
 			case "descricaotipoultimoevento":
 				colunas.push({
 					accessorKey: "descricaotipoultimoevento",
-					header: def.label,
+					header,
 					meta,
 					cell: ({ row }) =>
 						textoTruncado(row.original.descricaotipoultimoevento),
@@ -415,7 +621,7 @@ export function criarColunasOrdensServico(
 			case "descricaoultimoevento":
 				colunas.push({
 					accessorKey: "descricaoultimoevento",
-					header: def.label,
+					header,
 					meta,
 					cell: ({ row }) => textoTruncado(row.original.descricaoultimoevento),
 				});
@@ -423,7 +629,7 @@ export function criarColunasOrdensServico(
 			case "valorprodutos":
 				colunas.push({
 					accessorKey: "valorprodutos",
-					header: def.label,
+					header,
 					meta,
 					cell: ({ row }) => formatarMoedaOs(row.original.valorprodutos),
 				});
@@ -431,7 +637,7 @@ export function criarColunasOrdensServico(
 			case "valorservicos":
 				colunas.push({
 					accessorKey: "valorservicos",
-					header: def.label,
+					header,
 					meta,
 					cell: ({ row }) => formatarMoedaOs(row.original.valorservicos),
 				});
@@ -439,7 +645,7 @@ export function criarColunasOrdensServico(
 			case "descontosubtotal":
 				colunas.push({
 					accessorKey: "descontosubtotal",
-					header: def.label,
+					header,
 					meta,
 					cell: ({ row }) => formatarMoedaOs(row.original.descontosubtotal),
 				});
@@ -447,7 +653,7 @@ export function criarColunasOrdensServico(
 			case "geroufinanceiro":
 				colunas.push({
 					accessorKey: "geroufinanceiro",
-					header: def.label,
+					header,
 					meta,
 					cell: ({ row }) => simNao(row.original.geroufinanceiro),
 				});
@@ -455,7 +661,7 @@ export function criarColunasOrdensServico(
 			case "faturouparanota":
 				colunas.push({
 					accessorKey: "faturouparanota",
-					header: def.label,
+					header,
 					meta,
 					cell: ({ row }) => simNao(row.original.faturouparanota),
 				});
@@ -463,7 +669,7 @@ export function criarColunasOrdensServico(
 			case "faturouparacupom":
 				colunas.push({
 					accessorKey: "faturouparacupom",
-					header: def.label,
+					header,
 					meta,
 					cell: ({ row }) => simNao(row.original.faturouparacupom),
 				});
@@ -474,7 +680,7 @@ export function criarColunasOrdensServico(
 			case "renavam":
 				colunas.push({
 					accessorKey: def.id,
-					header: def.label,
+					header,
 					meta,
 					cell: ({ row }) =>
 						(row.original[def.id as keyof OrdemServico] as string | null) ??
@@ -487,7 +693,7 @@ export function criarColunasOrdensServico(
 					colunas.push({
 						id: def.id,
 						accessorFn: (row) => row[campo],
-						header: def.label,
+						header,
 						meta,
 						cell: ({ row }) =>
 							textoTruncado(
