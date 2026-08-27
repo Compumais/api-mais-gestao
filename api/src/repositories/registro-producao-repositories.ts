@@ -1,4 +1,15 @@
-import { and, count, desc, eq } from "drizzle-orm";
+import {
+	and,
+	asc,
+	count,
+	desc,
+	eq,
+	gte,
+	ilike,
+	lte,
+	type SQL,
+	sql,
+} from "drizzle-orm";
 import type { NovoRegistroProducao } from "@/model/registro-producao-model.js";
 import type { NovoRegistroProducaoItem } from "@/model/registro-producao-item-model.js";
 import {
@@ -7,6 +18,49 @@ import {
 	registroproducaoitem,
 } from "@/repositories/schema.js";
 import { db } from "./connection.js";
+
+export const ORDENAR_PRODUCOES_CAMPOS = [
+	"datahora",
+	"nome",
+	"codigo",
+	"quantidadeproduzida",
+	"origem",
+	"custounitario",
+	"custototal",
+] as const;
+
+export type OrdenarProducoesCampo =
+	(typeof ORDENAR_PRODUCOES_CAMPOS)[number];
+
+const COLUNAS_ORDENACAO = {
+	datahora: registroproducao.datahora,
+	nome: produtos.nome,
+	codigo: produtos.codigo,
+	quantidadeproduzida: registroproducao.quantidadeproduzida,
+	origem: registroproducao.origem,
+	custounitario: registroproducao.custounitario,
+	custototal: registroproducao.custototal,
+} as const;
+
+function adicionarFiltroTexto(
+	where: SQL[],
+	coluna: Parameters<typeof ilike>[0],
+	valor: string | undefined,
+) {
+	if (valor?.trim()) {
+		where.push(ilike(coluna, `%${valor.trim()}%`));
+	}
+}
+
+function filtroDataDia(
+	coluna: typeof registroproducao.datahora,
+	data: string,
+) {
+	return and(
+		gte(coluna, `${data}T00:00:00.000`),
+		lte(coluna, `${data}T23:59:59.999`),
+	);
+}
 
 export async function criarRegistroProducaoComItens(
 	dados: NovoRegistroProducao,
@@ -80,6 +134,11 @@ export type ListarRegistrosProducaoParametros = {
 	idempresa: string;
 	origem?: number | undefined;
 	idprodutoacabado?: string | undefined;
+	nome?: string | undefined;
+	codigo?: string | undefined;
+	datahora?: string | undefined;
+	ordenarPor?: OrdenarProducoesCampo | undefined;
+	ordem?: "asc" | "desc" | undefined;
 	page?: number;
 	limit?: number;
 };
@@ -88,10 +147,15 @@ export async function listarRegistrosProducao({
 	idempresa,
 	origem,
 	idprodutoacabado,
+	nome,
+	codigo,
+	datahora,
+	ordenarPor,
+	ordem = "desc",
 	page = 1,
 	limit = 10,
 }: ListarRegistrosProducaoParametros) {
-	const where = [eq(registroproducao.idempresa, idempresa)];
+	const where: SQL[] = [eq(registroproducao.idempresa, idempresa)];
 
 	if (origem !== undefined) {
 		where.push(eq(registroproducao.origem, origem));
@@ -100,11 +164,38 @@ export async function listarRegistrosProducao({
 		where.push(eq(registroproducao.idprodutoacabado, idprodutoacabado));
 	}
 
+	adicionarFiltroTexto(where, produtos.nome, nome);
+	adicionarFiltroTexto(
+		where,
+		sql`CAST(${produtos.codigo} AS TEXT)`,
+		codigo,
+	);
+
+	if (datahora?.trim()) {
+		const condicao = filtroDataDia(registroproducao.datahora, datahora.trim());
+		if (condicao) {
+			where.push(condicao);
+		}
+	}
+
 	const filtro = and(...where);
 	const offset = (page - 1) * limit;
 
+	const ordenacao =
+		ordenarPor && COLUNAS_ORDENACAO[ordenarPor]
+			? ordem === "asc"
+				? asc(COLUNAS_ORDENACAO[ordenarPor])
+				: desc(COLUNAS_ORDENACAO[ordenarPor])
+			: desc(registroproducao.datahora);
+
+	const joinProduto = eq(registroproducao.idprodutoacabado, produtos.id);
+
 	const [totalCount, registros] = await Promise.all([
-		db.select({ value: count() }).from(registroproducao).where(filtro),
+		db
+			.select({ value: count() })
+			.from(registroproducao)
+			.leftJoin(produtos, joinProduto)
+			.where(filtro),
 		db
 			.select({
 				id: registroproducao.id,
@@ -124,12 +215,9 @@ export async function listarRegistrosProducao({
 				codigoprodutoacabado: produtos.codigo,
 			})
 			.from(registroproducao)
-			.leftJoin(
-				produtos,
-				eq(registroproducao.idprodutoacabado, produtos.id),
-			)
+			.leftJoin(produtos, joinProduto)
 			.where(filtro)
-			.orderBy(desc(registroproducao.datahora))
+			.orderBy(ordenacao)
 			.limit(limit)
 			.offset(offset),
 	]);

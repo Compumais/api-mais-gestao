@@ -1,8 +1,41 @@
-import { and, count, desc, eq, ilike } from "drizzle-orm";
+import {
+	and,
+	asc,
+	count,
+	desc,
+	eq,
+	ilike,
+	type SQL,
+} from "drizzle-orm";
 import type { NovaBandeiraCartao } from "@/model/bandeira-cartao-model";
 import { bandeiracartao } from "@/repositories/schema.js";
 import { filtroRegistroAtivo } from "@/util/filtro-registro-ativo.js";
 import { db } from "./connection";
+
+export const ORDENAR_BANDEIRAS_CARTAO_CAMPOS = [
+	"descricao",
+	"codigo",
+	"inativo",
+] as const;
+
+export type OrdenarBandeirasCartaoCampo =
+	(typeof ORDENAR_BANDEIRAS_CARTAO_CAMPOS)[number];
+
+const COLUNAS_ORDENACAO = {
+	descricao: bandeiracartao.descricao,
+	codigo: bandeiracartao.codigo,
+	inativo: bandeiracartao.inativo,
+} as const;
+
+function adicionarFiltroTexto(
+	where: SQL[],
+	coluna: Parameters<typeof ilike>[0],
+	valor: string | undefined,
+) {
+	if (valor?.trim()) {
+		where.push(ilike(coluna, `%${valor.trim()}%`));
+	}
+}
 
 export async function buscarBandeiraCartaoPorId(id: string) {
 	const [registro] = await db
@@ -44,7 +77,10 @@ export async function excluirBandeiraCartao(id: string) {
 export type ListarBandeirasCartaoParametros = {
 	idempresa: string;
 	descricao?: string | undefined;
+	codigo?: string | undefined;
 	inativo?: number | undefined;
+	ordenarPor?: OrdenarBandeirasCartaoCampo | undefined;
+	ordem?: "asc" | "desc" | undefined;
 	page?: number;
 	limit?: number;
 };
@@ -52,17 +88,17 @@ export type ListarBandeirasCartaoParametros = {
 export async function listarBandeirasCartao({
 	idempresa,
 	descricao,
+	codigo,
 	inativo,
+	ordenarPor,
+	ordem = "desc",
 	page = 1,
 	limit = 10,
 }: ListarBandeirasCartaoParametros) {
-	const where = [];
+	const where: SQL[] = [eq(bandeiracartao.idempresa, idempresa)];
 
-	where.push(eq(bandeiracartao.idempresa, idempresa));
-
-	if (descricao) {
-		where.push(ilike(bandeiracartao.descricao, `%${descricao}%`));
-	}
+	adicionarFiltroTexto(where, bandeiracartao.descricao, descricao);
+	adicionarFiltroTexto(where, bandeiracartao.codigo, codigo);
 
 	if (inativo !== undefined) {
 		const filtroInativo = filtroRegistroAtivo(bandeiracartao.inativo, inativo);
@@ -73,6 +109,13 @@ export async function listarBandeirasCartao({
 
 	const offset = (page - 1) * limit;
 
+	const ordenacao =
+		ordenarPor && COLUNAS_ORDENACAO[ordenarPor]
+			? ordem === "asc"
+				? asc(COLUNAS_ORDENACAO[ordenarPor])
+				: desc(COLUNAS_ORDENACAO[ordenarPor])
+			: desc(bandeiracartao.descricao);
+
 	const [totalCount, bandeiras] = await Promise.all([
 		db
 			.select({ value: count() })
@@ -82,7 +125,7 @@ export async function listarBandeirasCartao({
 			.select()
 			.from(bandeiracartao)
 			.where(and(...where))
-			.orderBy(desc(bandeiracartao.descricao))
+			.orderBy(ordenacao)
 			.limit(limit)
 			.offset(offset),
 	]);

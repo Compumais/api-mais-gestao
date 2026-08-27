@@ -1,6 +1,9 @@
 import type { HttpResponse } from "@/model/http-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
-import { listarEstoqueGestaoPorProdutos } from "@/repositories/estoque-gestao-repositories.js";
+import {
+	listarEstoqueGestaoPorProdutos,
+	type OrdenarEstoqueSaldosCampo,
+} from "@/repositories/estoque-gestao-repositories.js";
 import { listarMovimentosEstoque } from "@/repositories/movimento-estoque-repositories.js";
 import { buscarProdutoPorCodigoOuEan } from "@/repositories/produtos-repositories.js";
 import { httpOk, httpProibido } from "@/util/http-util.js";
@@ -23,7 +26,13 @@ type ListarSaldosEstoqueGestaoParametros = {
 	idempresa: string;
 	idusuario: string;
 	busca?: string | undefined;
+	codigoproduto?: string | undefined;
+	nomeproduto?: string | undefined;
+	ncm?: string | undefined;
+	unidademedida?: string | undefined;
 	somenteDivergencia?: boolean | undefined;
+	ordenarPor?: OrdenarEstoqueSaldosCampo | undefined;
+	ordem?: "asc" | "desc" | undefined;
 	page?: number;
 	limit?: number;
 };
@@ -42,7 +51,13 @@ export async function listarSaldosEstoqueGestaoService({
 	idempresa,
 	idusuario,
 	busca,
+	codigoproduto,
+	nomeproduto,
+	ncm,
+	unidademedida,
 	somenteDivergencia,
+	ordenarPor,
+	ordem,
 	page = 1,
 	limit = 20,
 }: ListarSaldosEstoqueGestaoParametros): Promise<
@@ -63,7 +78,13 @@ export async function listarSaldosEstoqueGestaoService({
 	const { itens, total } = await listarEstoqueGestaoPorProdutos({
 		idempresa,
 		busca,
+		codigoproduto,
+		nomeproduto,
+		ncm,
+		unidademedida,
 		somenteDivergencia,
+		ordenarPor,
+		ordem,
 		page,
 		limit,
 	});

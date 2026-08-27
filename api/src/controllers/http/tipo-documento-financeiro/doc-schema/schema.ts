@@ -111,7 +111,15 @@ export const listarTipoDocumentoFinanceirosSchema: FastifySchema = {
 		properties: {
 			idempresa: { type: "string", description: "ID da empresa" },
 			descricao: { type: "string", description: "Filtro opcional por descricao" },
+			formapagamentonfe: { type: "string" },
+			prazodias: { type: "string" },
+			destino: {
+				type: "string",
+				enum: ["caixa", "recebivel", "contas_receber"],
+			},
 			inativo: { type: "number", description: "Filtro opcional por inativo" },
+			ordenarPor: { type: "string" },
+			ordem: { type: "string", enum: ["asc", "desc"] },
 			page: { type: "number", default: 1 },
 			limit: { type: "number", default: 10 },
 		},

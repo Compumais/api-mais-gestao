@@ -1,19 +1,39 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
+import { ORDENAR_ENTIDADES_CAMPOS } from "@/repositories/entidade-repositories.js";
 import { listarEntidadesService } from "@/service/entidades/listar-entidades.js";
+
+const textoOpcional = z.string().optional();
 
 const listarEntidadesQuerySchema = z.object({
 	page: z.coerce.number().min(1).optional().default(1),
 	limit: z.coerce.number().min(1).max(100).optional().default(10),
-	nome: z.string().optional(),
-	q: z.string().optional(),
-	email: z.string().optional(),
-	telefone: z.string().optional(),
+	nome: textoOpcional,
+	q: textoOpcional,
+	razaosocial: textoOpcional,
+	cnpjcpf: textoOpcional,
+	endereco: textoOpcional,
+	tipopessoa: z.coerce.number().int().min(0).max(1).optional(),
+	indiedest: z.coerce.number().int().optional(),
+	inscricaoestadual: textoOpcional,
+	rg: textoOpcional,
+	email: textoOpcional,
+	telefone: textoOpcional,
+	numeroendereco: textoOpcional,
+	complemento: textoOpcional,
+	bairro: textoOpcional,
+	cep: textoOpcional,
+	fax: textoOpcional,
+	nascimento: textoOpcional,
+	pais: textoOpcional,
+	criadoem: textoOpcional,
 	idempresa: z.uuid(),
 	fornecedor: z.coerce.number().int().min(0).max(1).optional(),
 	cliente: z.coerce.number().int().min(0).max(1).optional(),
 	transportador: z.coerce.number().int().min(0).max(1).optional(),
 	representante: z.coerce.number().int().min(0).max(1).optional(),
+	ordenarPor: z.enum(ORDENAR_ENTIDADES_CAMPOS).optional(),
+	ordem: z.enum(["asc", "desc"]).optional(),
 });
 
 export async function listarEntidades(

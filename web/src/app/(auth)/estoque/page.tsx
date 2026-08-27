@@ -1,21 +1,33 @@
 "use client";
 
-import { IconSearch } from "@tabler/icons-react";
+import { IconChevronDown, IconLayoutColumns } from "@tabler/icons-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-	type ColumnDef,
 	type RowSelectionState,
 	flexRender,
 	getCoreRowModel,
 	useReactTable,
 } from "@tanstack/react-table";
-import { useMemo, useState } from "react";
+import { useCallback, useId, useMemo, useState } from "react";
+import type { OrdenacaoColunaTabela } from "@/components/cabecalho-coluna-tabela";
 import { TableSkeleton } from "@/components/table-skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
+import {
+	DropdownMenu,
+	DropdownMenuCheckboxItem,
+	DropdownMenuContent,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import {
 	Sheet,
 	SheetContent,
@@ -33,12 +45,25 @@ import {
 } from "@/components/ui/table";
 import { useEmpresa } from "@/hooks/use-empresa";
 import {
+	TABELA_ESTOQUE,
+	useColunasTabelaPersistidas,
+} from "@/hooks/use-preferencias-ui-usuario";
+import {
 	estoqueGestaoService,
 	type SaldoEstoqueGestao,
 } from "@/services/estoque-gestao.service";
 import { PageContainer } from "../components/page-container";
 import { AjusteEstoqueDialog } from "./components/ajuste-estoque-dialog";
 import { LotesProdutoEstoque } from "./components/lotes-produto-estoque";
+import {
+	COLUNA_PARA_CAMPO_FILTRO_ESTOQUE,
+	type ConfigFiltroColunaEstoque,
+	criarColunasEstoque,
+	DIVERGENCIA_OPCOES_FILTRO,
+	type FiltrosColunaEstoqueState,
+	filtrosColunaEstoqueVazios,
+	visibilidadePadraoColunasEstoque,
+} from "./estoque-colunas";
 
 function formatarQuantidade(valor: string | null | undefined) {
 	const n = Number.parseFloat(valor ?? "0");
@@ -52,34 +77,119 @@ const TIPO_ESTOQUE_LABEL: Record<number, string> = {
 	2: "Ambos",
 };
 
+function rotuloColuna(column: {
+	id: string;
+	columnDef: { meta?: unknown; header?: unknown };
+}) {
+	const meta = column.columnDef.meta as { label?: string } | undefined;
+	if (meta?.label) return meta.label;
+	if (typeof column.columnDef.header === "string") {
+		return column.columnDef.header;
+	}
+	return column.id;
+}
+
+function filtrosColunaAtivos(filtros: FiltrosColunaEstoqueState) {
+	return Object.values(filtros).some((valor) => valor.trim() !== "");
+}
+
 export default function EstoquePage() {
 	const queryClient = useQueryClient();
 	const { empresa } = useEmpresa();
 	const idempresa = empresa?.id ?? "";
-	const [busca, setBusca] = useState("");
-	const [buscaAplicada, setBuscaAplicada] = useState("");
-	const [somenteDivergencia, setSomenteDivergencia] = useState(false);
-	const [page, setPage] = useState(1);
+	const idPorPagina = useId();
+	const [pagination, setPagination] = useState({
+		pageIndex: 0,
+		pageSize: 20,
+	});
+	const [filtrosColuna, setFiltrosColuna] = useState<FiltrosColunaEstoqueState>(
+		filtrosColunaEstoqueVazios,
+	);
+	const [ordenarPor, setOrdenarPor] = useState<string | null>(null);
+	const [ordem, setOrdem] = useState<"asc" | "desc" | null>(null);
 	const [produtoSelecionado, setProdutoSelecionado] =
 		useState<SaldoEstoqueGestao | null>(null);
 	const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 	const [ajusteAberto, setAjusteAberto] = useState(false);
 
+	const visibilidadePadrao = useMemo(
+		() => visibilidadePadraoColunasEstoque(),
+		[],
+	);
+	const { columnVisibility, onColumnVisibilityChange, isLoadingPreferencias } =
+		useColunasTabelaPersistidas(TABELA_ESTOQUE, visibilidadePadrao);
+
+	const onOrdenarColuna = useCallback(
+		(colunaId: string, direcao: OrdenacaoColunaTabela) => {
+			if (!direcao) {
+				setOrdenarPor(null);
+				setOrdem(null);
+			} else {
+				setOrdenarPor(colunaId);
+				setOrdem(direcao);
+			}
+			setPagination((p) => ({ ...p, pageIndex: 0 }));
+		},
+		[],
+	);
+
+	const onFiltrarColuna = useCallback((colunaId: string, valor: string) => {
+		const campo = COLUNA_PARA_CAMPO_FILTRO_ESTOQUE[colunaId];
+		if (!campo) return;
+		setFiltrosColuna((atual) => ({ ...atual, [campo]: valor }));
+		setPagination((p) => ({ ...p, pageIndex: 0 }));
+	}, []);
+
+	const configFiltroPorColuna = useMemo((): Record<
+		string,
+		ConfigFiltroColunaEstoque
+	> => {
+		return {
+			codigo: { tipo: "texto", placeholder: "Código" },
+			nome: { tipo: "texto", placeholder: "Produto" },
+			quantidade: { tipo: "nenhum" },
+			quantidadefiscal: { tipo: "nenhum" },
+			divergencia: {
+				tipo: "opcoes",
+				opcoes: DIVERGENCIA_OPCOES_FILTRO,
+			},
+			ncm: { tipo: "texto", placeholder: "NCM" },
+			unidademedida: { tipo: "texto", placeholder: "Unidade" },
+		};
+	}, []);
+
 	const { data, isLoading } = useQuery({
 		queryKey: [
 			"estoque-saldos",
 			idempresa,
-			buscaAplicada,
-			somenteDivergencia,
-			page,
+			pagination.pageIndex + 1,
+			pagination.pageSize,
+			filtrosColuna,
+			ordenarPor,
+			ordem,
 		],
 		queryFn: () =>
 			estoqueGestaoService.listarSaldos({
 				idempresa,
-				busca: buscaAplicada || undefined,
-				somenteDivergencia,
-				page,
-				limit: 20,
+				page: pagination.pageIndex + 1,
+				limit: pagination.pageSize,
+				...(filtrosColuna.codigoproduto
+					? { codigoproduto: filtrosColuna.codigoproduto }
+					: {}),
+				...(filtrosColuna.nomeproduto
+					? { nomeproduto: filtrosColuna.nomeproduto }
+					: {}),
+				...(filtrosColuna.ncm ? { ncm: filtrosColuna.ncm } : {}),
+				...(filtrosColuna.unidademedida
+					? { unidademedida: filtrosColuna.unidademedida }
+					: {}),
+				...(filtrosColuna.divergencia === "com"
+					? { somenteDivergencia: true }
+					: filtrosColuna.divergencia === "sem"
+						? { somenteDivergencia: false }
+						: {}),
+				...(ordenarPor ? { ordenarPor } : {}),
+				...(ordem ? { ordem } : {}),
 			}),
 		enabled: !!idempresa,
 	});
@@ -100,11 +210,16 @@ export default function EstoquePage() {
 		enabled: !!idempresa && !!produtoSelecionado?.codigoproduto,
 	});
 
-	const columns = useMemo<ColumnDef<SaldoEstoqueGestao>[]>(
-		() => [
-			{
-				id: "select",
-				header: ({ table }) => (
+	const columns = useMemo(
+		() =>
+			criarColunasEstoque({
+				filtros: filtrosColuna,
+				ordenarPor,
+				ordem,
+				onOrdenarColuna,
+				onFiltrarColuna,
+				configFiltroPorColuna,
+				renderSelectHeader: (table) => (
 					<Checkbox
 						checked={
 							table.getIsAllPageRowsSelected() ||
@@ -116,89 +231,57 @@ export default function EstoquePage() {
 						aria-label="Selecionar todos"
 					/>
 				),
-				cell: ({ row }) => (
+				renderSelectCell: (row) => (
 					<Checkbox
 						checked={row.getIsSelected()}
 						onCheckedChange={(value) => row.toggleSelected(!!value)}
 						aria-label="Selecionar linha"
 					/>
 				),
-				enableSorting: false,
-				enableHiding: false,
-			},
-			{
-				accessorKey: "codigoproduto",
-				header: "Código",
-				cell: ({ row }) => row.original.codigoproduto ?? "-",
-			},
-			{
-				accessorKey: "nomeproduto",
-				header: "Produto",
-				cell: ({ row }) => (
-					<div className="flex items-center gap-2">
-						<span>{row.original.nomeproduto ?? "-"}</span>
-						{!row.original.possuiSaldo && (
-							<Badge variant="secondary" className="text-xs">
-								Sem movimento
-							</Badge>
-						)}
-					</div>
-				),
-			},
-			{
-				accessorKey: "quantidade",
-				header: "Operacional",
-				cell: ({ row }) => formatarQuantidade(row.original.quantidade),
-			},
-			{
-				accessorKey: "quantidadefiscal",
-				header: "Fiscal",
-				cell: ({ row }) => formatarQuantidade(row.original.quantidadefiscal),
-			},
-			{
-				accessorKey: "divergencia",
-				header: "Divergência",
-				cell: ({ row }) => {
-					const div = Number.parseFloat(row.original.divergencia ?? "0");
-					const destacar = !Number.isNaN(div) && div !== 0;
-					return (
-						<span className={destacar ? "font-medium text-amber-600" : ""}>
-							{formatarQuantidade(row.original.divergencia)}
-						</span>
-					);
-				},
-			},
-			{
-				id: "acoes",
-				header: "",
-				cell: ({ row }) => (
+				renderAcoes: (saldo) => (
 					<Button
 						variant="outline"
 						size="sm"
-						onClick={() => setProdutoSelecionado(row.original)}
+						onClick={() => setProdutoSelecionado(saldo)}
 					>
 						Movimentos
 					</Button>
 				),
-			},
+			}),
+		[
+			filtrosColuna,
+			ordenarPor,
+			ordem,
+			onOrdenarColuna,
+			onFiltrarColuna,
+			configFiltroPorColuna,
 		],
-		[],
 	);
 
 	const table = useReactTable({
 		data: data?.data ?? [],
 		columns,
-		state: { rowSelection },
+		state: {
+			pagination,
+			columnVisibility,
+			rowSelection,
+		},
+		onPaginationChange: setPagination,
+		onColumnVisibilityChange,
 		onRowSelectionChange: setRowSelection,
 		enableRowSelection: true,
 		getCoreRowModel: getCoreRowModel(),
 		getRowId: (row) => row.idproduto,
+		manualPagination: true,
+		pageCount: data?.paginacao.totalPages ?? 0,
 	});
 
 	const produtosSelecionados = table
 		.getSelectedRowModel()
 		.rows.map((row) => row.original);
-	const totalPages = data?.paginacao.totalPages ?? 1;
+	const colunasVisiveis = table.getVisibleLeafColumns();
+	const mostrarSkeleton = isLoading || isLoadingPreferencias;
+	const comFiltros = filtrosColunaAtivos(filtrosColuna) || !!ordenarPor;
 
 	return (
 		<PageContainer>
@@ -211,143 +294,177 @@ export default function EstoquePage() {
 							validação de divergências
 						</p>
 					</div>
-					<Button type="button" onClick={() => setAjusteAberto(true)}>
-						Ajuste de estoque
-						{produtosSelecionados.length > 0
-							? ` (${produtosSelecionados.length})`
-							: ""}
-					</Button>
-				</div>
-
-				<div className="flex flex-col gap-4 px-4 mb-2">
-					<div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-						<div className="flex-1">
-							<Label htmlFor="busca-estoque">Buscar produto</Label>
-							<div className="relative mt-1">
-								<IconSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-								<Input
-									id="busca-estoque"
-									className="pl-9"
-									placeholder="Nome ou código"
-									value={busca}
-									onChange={(e) => setBusca(e.target.value)}
-									onKeyDown={(e) => {
-										if (e.key === "Enter") {
-											setBuscaAplicada(busca);
-											setPage(1);
-										}
-									}}
-								/>
-							</div>
-						</div>
-						<Button
-							onClick={() => {
-								setBuscaAplicada(busca);
-								setPage(1);
-							}}
-						>
-							Buscar
+					<div className="flex flex-wrap items-center gap-2">
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button variant="outline" size="sm">
+									<IconLayoutColumns className="size-4" />
+									<span className="hidden lg:inline">Personalizar Colunas</span>
+									<span className="lg:hidden">Colunas</span>
+									<IconChevronDown className="size-4" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent
+								align="end"
+								className="max-h-72 w-56 overflow-y-auto"
+							>
+								{table
+									.getAllColumns()
+									.filter((column) => column.getCanHide())
+									.map((column) => (
+										<DropdownMenuCheckboxItem
+											key={column.id}
+											checked={column.getIsVisible()}
+											onCheckedChange={(value) =>
+												column.toggleVisibility(!!value)
+											}
+										>
+											{rotuloColuna(column)}
+										</DropdownMenuCheckboxItem>
+									))}
+							</DropdownMenuContent>
+						</DropdownMenu>
+						<Button type="button" onClick={() => setAjusteAberto(true)}>
+							Ajuste de estoque
+							{produtosSelecionados.length > 0
+								? ` (${produtosSelecionados.length})`
+								: ""}
 						</Button>
 					</div>
-
-					<div className="flex items-center gap-2">
-						<Checkbox
-							id="somente-divergencia"
-							checked={somenteDivergencia}
-							onCheckedChange={(v) => {
-								setSomenteDivergencia(v === true);
-								setPage(1);
-							}}
-						/>
-						<Label htmlFor="somente-divergencia" className="font-normal">
-							Somente produtos com divergência entre operacional e fiscal
-						</Label>
-					</div>
 				</div>
 
-				{isLoading ? (
-					<TableSkeleton columns={7} rows={8}>
-						<TableHead className="w-10" />
-						<TableHead>Código</TableHead>
-						<TableHead>Produto</TableHead>
-						<TableHead>Operacional</TableHead>
-						<TableHead>Fiscal</TableHead>
-						<TableHead>Divergência</TableHead>
-						<TableHead className="w-12" />
-					</TableSkeleton>
-				) : (
-					<div className="rounded-lg border mx-4">
-						<Table>
-							<TableHeader>
-								{table.getHeaderGroups().map((headerGroup) => (
-									<TableRow key={headerGroup.id}>
-										{headerGroup.headers.map((header) => (
-											<TableHead key={header.id}>
-												{header.isPlaceholder
-													? null
-													: flexRender(
-															header.column.columnDef.header,
-															header.getContext(),
-														)}
-											</TableHead>
-										))}
-									</TableRow>
-								))}
-							</TableHeader>
-							<TableBody>
-								{table.getRowModel().rows.length === 0 ? (
-									<TableRow>
-										<TableCell colSpan={7} className="h-24 text-center">
-											Nenhum produto encontrado
-										</TableCell>
-									</TableRow>
-								) : (
-									table.getRowModel().rows.map((row) => (
-										<TableRow
-											key={row.id}
-											data-state={row.getIsSelected() && "selected"}
-										>
-											{row.getVisibleCells().map((cell) => (
-												<TableCell key={cell.id}>
-													{flexRender(
-														cell.column.columnDef.cell,
-														cell.getContext(),
-													)}
-												</TableCell>
+				<div className="mx-4 rounded-lg border bg-card">
+					{mostrarSkeleton ? (
+						<TableSkeleton columns={colunasVisiveis.length || 7} rows={8}>
+							{colunasVisiveis.map((coluna) => (
+								<TableHead
+									key={coluna.id}
+									className={
+										coluna.id === "select"
+											? "w-10"
+											: coluna.id === "acoes"
+												? "w-12"
+												: undefined
+									}
+								>
+									{rotuloColuna(coluna)}
+								</TableHead>
+							))}
+						</TableSkeleton>
+					) : (
+						<>
+							<Table>
+								<TableHeader>
+									{table.getHeaderGroups().map((headerGroup) => (
+										<TableRow key={headerGroup.id}>
+											{headerGroup.headers.map((header) => (
+												<TableHead
+													key={header.id}
+													className={
+														header.id === "select"
+															? "w-10"
+															: header.id === "acoes"
+																? "w-28"
+																: undefined
+													}
+												>
+													{header.isPlaceholder
+														? null
+														: flexRender(
+																header.column.columnDef.header,
+																header.getContext(),
+															)}
+												</TableHead>
 											))}
 										</TableRow>
-									))
-								)}
-							</TableBody>
-						</Table>
-					</div>
-				)}
-
-				<div className="flex items-center justify-between mt-4 px-4">
-					<p className="text-sm text-muted-foreground">
-						Página {page} de {totalPages}
-						{produtosSelecionados.length > 0
-							? ` · ${produtosSelecionados.length} selecionado(s)`
-							: ""}
-					</p>
-					<div className="flex gap-2">
-						<Button
-							variant="outline"
-							size="sm"
-							disabled={page <= 1}
-							onClick={() => setPage((p) => Math.max(1, p - 1))}
-						>
-							Anterior
-						</Button>
-						<Button
-							variant="outline"
-							size="sm"
-							disabled={page >= totalPages}
-							onClick={() => setPage((p) => p + 1)}
-						>
-							Próxima
-						</Button>
-					</div>
+									))}
+								</TableHeader>
+								<TableBody>
+									{table.getRowModel().rows.length === 0 ? (
+										<TableRow>
+											<TableCell
+												colSpan={colunasVisiveis.length}
+												className="h-24 text-center"
+											>
+												{comFiltros
+													? "Nenhum produto encontrado para os filtros selecionados."
+													: "Nenhum produto encontrado"}
+											</TableCell>
+										</TableRow>
+									) : (
+										table.getRowModel().rows.map((row) => (
+											<TableRow
+												key={row.id}
+												data-state={row.getIsSelected() && "selected"}
+											>
+												{row.getVisibleCells().map((cell) => (
+													<TableCell key={cell.id}>
+														{flexRender(
+															cell.column.columnDef.cell,
+															cell.getContext(),
+														)}
+													</TableCell>
+												))}
+											</TableRow>
+										))
+									)}
+								</TableBody>
+							</Table>
+							{data && data.paginacao.total > 0 && (
+								<div className="flex flex-col gap-4 border-t px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+									<div className="flex items-center gap-2">
+										<Label htmlFor={idPorPagina} className="text-sm">
+											Itens por página
+										</Label>
+										<Select
+											value={`${pagination.pageSize}`}
+											onValueChange={(value) => {
+												table.setPageSize(Number(value));
+												table.setPageIndex(0);
+											}}
+										>
+											<SelectTrigger id={idPorPagina} className="h-8 w-[72px]">
+												<SelectValue placeholder={pagination.pageSize} />
+											</SelectTrigger>
+											<SelectContent side="top">
+												{[10, 20, 30, 50, 100].map((tamanho) => (
+													<SelectItem key={tamanho} value={`${tamanho}`}>
+														{tamanho}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</div>
+									<div className="text-sm text-muted-foreground">
+										Página {pagination.pageIndex + 1} de{" "}
+										{data.paginacao.totalPages} ({data.paginacao.total}{" "}
+										registros)
+										{produtosSelecionados.length > 0
+											? ` · ${produtosSelecionados.length} selecionado(s)`
+											: ""}
+									</div>
+									<div className="flex gap-2">
+										<Button
+											variant="outline"
+											size="sm"
+											onClick={() => table.previousPage()}
+											disabled={!table.getCanPreviousPage()}
+										>
+											Anterior
+										</Button>
+										<Button
+											variant="outline"
+											size="sm"
+											onClick={() => table.nextPage()}
+											disabled={!table.getCanNextPage()}
+										>
+											Próxima
+										</Button>
+									</div>
+								</div>
+							)}
+						</>
+					)}
 				</div>
 
 				<Sheet
@@ -376,7 +493,7 @@ export default function EstoquePage() {
 								) : (
 									(movimentosData?.data ?? []).map((mov) => (
 										<div key={mov.id} className="rounded border p-3 text-sm">
-											<div className="flex items-center justify-between gap-2">
+											<div className="flex items-center gap-2 justify-between">
 												<span className="font-medium">
 													{mov.quantidadesaida
 														? `Saída ${formatarQuantidade(mov.quantidadesaida)}`

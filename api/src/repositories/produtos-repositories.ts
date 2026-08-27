@@ -32,6 +32,8 @@ export const ORDENAR_PRODUTOS_CAMPOS = [
 	"fornecedor",
 	"custoaquisicao",
 	"datacadastro",
+	"codigolistalc11603",
+	"codigonbs",
 ] as const;
 
 export type OrdenarProdutosCampo = (typeof ORDENAR_PRODUTOS_CAMPOS)[number];
@@ -49,6 +51,8 @@ const COLUNAS_ORDENACAO = {
 	fornecedor: produtos.fornecedor,
 	custoaquisicao: produtos.custoaquisicao,
 	datacadastro: produtos.datacadastro,
+	codigolistalc11603: produtos.codigolistalc11603,
+	codigonbs: produtos.codigonbs,
 } as const;
 
 function adicionarFiltroTexto(
@@ -100,6 +104,8 @@ export type ListarProdutosPorEmpresaParametros = {
 	preco?: string | undefined;
 	custoaquisicao?: string | undefined;
 	datacadastro?: string | undefined;
+	codigolistalc11603?: string | undefined;
+	codigonbs?: string | undefined;
 	ordenarPor?: OrdenarProdutosCampo | undefined;
 	ordem?: "asc" | "desc" | undefined;
 	page?: number;
@@ -122,6 +128,8 @@ export async function listarProdutosPorEmpresa({
 	preco,
 	custoaquisicao,
 	datacadastro,
+	codigolistalc11603,
+	codigonbs,
 	ordenarPor,
 	ordem = "asc",
 	page = 1,
@@ -175,6 +183,8 @@ export async function listarProdutosPorEmpresa({
 		sql`${produtos.custoaquisicao}::text`,
 		custoaquisicao,
 	);
+	adicionarFiltroTexto(where, produtos.codigolistalc11603, codigolistalc11603);
+	adicionarFiltroTexto(where, produtos.codigonbs, codigonbs);
 	if (datacadastro) {
 		const condicao = filtroDataDia(produtos.datacadastro, datacadastro);
 		if (condicao) where.push(condicao);
