@@ -3,14 +3,15 @@ import type { FastifySchema } from "fastify";
 export const criarUnidadeMedidaSchema: FastifySchema = {
 	tags: ["unidades-medida"],
 	summary: "Criar unidade de medida",
-	description: "Cria um novo registro de unidade de medida na empresa do usuário autenticado.",
+	description:
+		"Cria um novo registro de unidade de medida na empresa do usuário autenticado.",
 	security: [{ bearerAuth: [] }],
 	body: {
 		type: "object",
 		properties: {
 			idempresa: { type: "string", description: "ID da empresa" },
 			codigo: { type: "string" },
-			nome: { type: "string" }
+			nome: { type: "string" },
 		},
 		required: ["idempresa"],
 	},
@@ -112,6 +113,12 @@ export const listarUnidadeMedidasSchema: FastifySchema = {
 			idempresa: { type: "string", description: "ID da empresa" },
 			nome: { type: "string", description: "Filtro opcional por nome" },
 			q: { type: "string", description: "Busca por nome ou código" },
+			codigo: { type: "string" },
+			origem: { type: "string", enum: ["sistema", "empresa"] },
+			casasdecimais: { type: "string" },
+			tipovalor: { type: "string" },
+			ordenarPor: { type: "string" },
+			ordem: { type: "string", enum: ["asc", "desc"] },
 			page: { type: "number", default: 1 },
 			limit: { type: "number", default: 10 },
 		},
@@ -121,7 +128,10 @@ export const listarUnidadeMedidasSchema: FastifySchema = {
 		200: {
 			type: "object",
 			properties: {
-				data: { type: "array", items: { type: "object", additionalProperties: true } },
+				data: {
+					type: "array",
+					items: { type: "object", additionalProperties: true },
+				},
 				paginacao: {
 					type: "object",
 					properties: {

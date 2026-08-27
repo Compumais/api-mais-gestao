@@ -10,7 +10,9 @@ export interface UnidadeMedida {
 	tipovalor: number | null;
 }
 
-export function isUnidadeMedidaGlobal(unidade: Pick<UnidadeMedida, "idempresa">) {
+export function isUnidadeMedidaGlobal(
+	unidade: Pick<UnidadeMedida, "idempresa">,
+) {
 	return unidade.idempresa === null;
 }
 
@@ -42,6 +44,12 @@ export const unidadeMedidaService = {
 		limit?: number;
 		nome?: string;
 		q?: string;
+		codigo?: string;
+		origem?: "sistema" | "empresa";
+		casasdecimais?: string;
+		tipovalor?: string;
+		ordenarPor?: string;
+		ordem?: "asc" | "desc";
 	}): Promise<ListarUnidadeMedidasResponse> {
 		const { data } = await api.get<ListarUnidadeMedidasResponse>(
 			"/unidades-medida",
@@ -102,9 +110,7 @@ export const unidadeMedidaService = {
 		await api.delete(`/unidades-medida/${id}`);
 	},
 
-	async buscarProximoCodigo(
-		idempresa: string,
-	): Promise<{ codigo: string }> {
+	async buscarProximoCodigo(idempresa: string): Promise<{ codigo: string }> {
 		const { data } = await api.get<{ codigo: string }>(
 			"/unidades-medida/proximo-codigo",
 			{ params: { idempresa } },

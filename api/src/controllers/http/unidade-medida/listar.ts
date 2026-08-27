@@ -1,17 +1,29 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
+import { ORDENAR_UNIDADE_MEDIDA_CAMPOS } from "@/repositories/unidade-medida-repositories.js";
 import { listarUnidadeMedidasService } from "@/service/unidade-medida/listar-unidade-medidas.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
+const textoOpcional = z.string().optional();
+
 const listarUnidadeMedidasQuerySchema = z.object({
 	idempresa: z.string(),
-	nome: z.string().optional(),
-	q: z.string().optional(),
+	nome: textoOpcional,
+	q: textoOpcional,
+	codigo: textoOpcional,
+	origem: z.enum(["sistema", "empresa"]).optional(),
+	casasdecimais: textoOpcional,
+	tipovalor: textoOpcional,
+	ordenarPor: z.enum(ORDENAR_UNIDADE_MEDIDA_CAMPOS).optional(),
+	ordem: z.enum(["asc", "desc"]).optional(),
 	page: z.coerce.number().min(1).optional().default(1),
 	limit: z.coerce.number().min(1).max(100).optional().default(10),
 });
 
-export async function listarUnidadeMedidas(request: FastifyRequest, reply: FastifyReply) {
+export async function listarUnidadeMedidas(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
@@ -24,6 +36,12 @@ export async function listarUnidadeMedidas(request: FastifyRequest, reply: Fasti
 			idempresa: query.idempresa,
 			nome: query.nome,
 			q: query.q,
+			codigo: query.codigo,
+			origem: query.origem,
+			casasdecimais: query.casasdecimais,
+			tipovalor: query.tipovalor,
+			ordenarPor: query.ordenarPor,
+			ordem: query.ordem,
 			page: query.page,
 			limit: query.limit,
 		});
