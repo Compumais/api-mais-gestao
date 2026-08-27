@@ -1,14 +1,29 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
+import { ORDENAR_PRODUTOS_CAMPOS } from "@/repositories/produtos-repositories.js";
 import { listarProdutosService } from "@/service/produto/listar-produtos.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
+const textoOpcional = z.string().optional();
+
 const listarProdutosQuerySchema = z.object({
 	idempresa: z.string(),
-	nome: z.string().optional(),
-	q: z.string().optional(),
+	nome: textoOpcional,
+	q: textoOpcional,
 	inativo: z.coerce.number().int().min(0).max(1).optional(),
 	tipo: z.enum(["P", "S"]).optional(),
+	codigo: textoOpcional,
+	ean: textoOpcional,
+	referencia: textoOpcional,
+	ncm: textoOpcional,
+	unidademedida: textoOpcional,
+	tipoproduto: textoOpcional,
+	fornecedor: textoOpcional,
+	preco: textoOpcional,
+	custoaquisicao: textoOpcional,
+	datacadastro: textoOpcional,
+	ordenarPor: z.enum(ORDENAR_PRODUTOS_CAMPOS).optional(),
+	ordem: z.enum(["asc", "desc"]).optional(),
 	page: z.coerce.number().min(1).optional().default(1),
 	limit: z.coerce.number().min(1).max(100).optional().default(10),
 });
@@ -31,6 +46,18 @@ export async function listarProdutos(
 			q: query.q,
 			inativo: query.inativo,
 			tipo: query.tipo,
+			codigo: query.codigo,
+			ean: query.ean,
+			referencia: query.referencia,
+			ncm: query.ncm,
+			unidademedida: query.unidademedida,
+			tipoproduto: query.tipoproduto,
+			fornecedor: query.fornecedor,
+			preco: query.preco,
+			custoaquisicao: query.custoaquisicao,
+			datacadastro: query.datacadastro,
+			ordenarPor: query.ordenarPor,
+			ordem: query.ordem,
 			page: query.page,
 			limit: query.limit,
 		});

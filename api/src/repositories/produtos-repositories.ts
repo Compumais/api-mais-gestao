@@ -1,10 +1,72 @@
-import { and, count, eq, ilike, inArray, or, type SQL, sql } from "drizzle-orm";
+import {
+	and,
+	asc,
+	count,
+	desc,
+	eq,
+	gte,
+	ilike,
+	inArray,
+	lte,
+	or,
+	type SQL,
+	sql,
+} from "drizzle-orm";
 import type { NovoProduto, Produto } from "@/model/produto-model";
 import { departamento, produtos } from "@/repositories/schema.js";
 import { filtroRegistroAtivo } from "@/util/filtro-registro-ativo.js";
 import { inteiroValidoParaPostgres } from "@/util/texto-util.js";
 import { db } from "./connection";
 import { ordenacaoCodigoNumericoAsc } from "./ordenacao-codigo.js";
+
+export const ORDENAR_PRODUTOS_CAMPOS = [
+	"codigo",
+	"nome",
+	"preco",
+	"inativo",
+	"ean",
+	"referencia",
+	"ncm",
+	"unidademedida",
+	"tipoproduto",
+	"fornecedor",
+	"custoaquisicao",
+	"datacadastro",
+] as const;
+
+export type OrdenarProdutosCampo = (typeof ORDENAR_PRODUTOS_CAMPOS)[number];
+
+const COLUNAS_ORDENACAO = {
+	codigo: produtos.codigo,
+	nome: produtos.nome,
+	preco: produtos.preco,
+	inativo: produtos.inativo,
+	ean: produtos.ean,
+	referencia: produtos.referencia,
+	ncm: produtos.ncm,
+	unidademedida: produtos.unidademedida,
+	tipoproduto: produtos.tipoproduto,
+	fornecedor: produtos.fornecedor,
+	custoaquisicao: produtos.custoaquisicao,
+	datacadastro: produtos.datacadastro,
+} as const;
+
+function adicionarFiltroTexto(
+	where: SQL[],
+	coluna: Parameters<typeof ilike>[0],
+	valor: string | undefined,
+) {
+	if (valor?.trim()) {
+		where.push(ilike(coluna, `%${valor.trim()}%`));
+	}
+}
+
+function filtroDataDia(coluna: typeof produtos.datacadastro, data: string) {
+	return and(
+		gte(coluna, `${data}T00:00:00.000`),
+		lte(coluna, `${data}T23:59:59.999`),
+	);
+}
 
 export async function criarProduto(dadosProduto: NovoProduto) {
 	const [produto] = await db.insert(produtos).values(dadosProduto).returning();
@@ -28,6 +90,18 @@ export type ListarProdutosPorEmpresaParametros = {
 	q?: string | undefined;
 	inativo?: number | undefined;
 	tipo?: "P" | "S" | undefined;
+	codigo?: string | undefined;
+	ean?: string | undefined;
+	referencia?: string | undefined;
+	ncm?: string | undefined;
+	unidademedida?: string | undefined;
+	tipoproduto?: string | undefined;
+	fornecedor?: string | undefined;
+	preco?: string | undefined;
+	custoaquisicao?: string | undefined;
+	datacadastro?: string | undefined;
+	ordenarPor?: OrdenarProdutosCampo | undefined;
+	ordem?: "asc" | "desc" | undefined;
 	page?: number;
 	limit?: number;
 };
@@ -38,10 +112,22 @@ export async function listarProdutosPorEmpresa({
 	q,
 	inativo,
 	tipo,
+	codigo,
+	ean,
+	referencia,
+	ncm,
+	unidademedida,
+	tipoproduto,
+	fornecedor,
+	preco,
+	custoaquisicao,
+	datacadastro,
+	ordenarPor,
+	ordem = "asc",
 	page = 1,
 	limit = 10,
 }: ListarProdutosPorEmpresaParametros) {
-	const where = [];
+	const where: SQL[] = [];
 
 	if (idempresas.length === 0) {
 		return {
@@ -58,14 +144,13 @@ export async function listarProdutosPorEmpresa({
 
 	if (q) {
 		const termo = `%${q}%`;
-		where.push(
-			or(
-				ilike(produtos.nome, termo),
-				ilike(sql`${produtos.codigo}::text`, termo),
-				ilike(sql`${produtos.ean}::text`, termo),
-				ilike(sql`${produtos.preco}::text`, termo),
-			),
+		const buscaOr = or(
+			ilike(produtos.nome, termo),
+			ilike(sql`${produtos.codigo}::text`, termo),
+			ilike(sql`${produtos.ean}::text`, termo),
+			ilike(sql`${produtos.preco}::text`, termo),
 		);
+		if (buscaOr) where.push(buscaOr);
 	}
 
 	if (tipo) {
@@ -77,7 +162,32 @@ export async function listarProdutosPorEmpresa({
 		where.push(filtroInativo);
 	}
 
+	adicionarFiltroTexto(where, sql`${produtos.codigo}::text`, codigo);
+	adicionarFiltroTexto(where, sql`${produtos.ean}::text`, ean);
+	adicionarFiltroTexto(where, produtos.referencia, referencia);
+	adicionarFiltroTexto(where, produtos.ncm, ncm);
+	adicionarFiltroTexto(where, produtos.unidademedida, unidademedida);
+	adicionarFiltroTexto(where, produtos.tipoproduto, tipoproduto);
+	adicionarFiltroTexto(where, produtos.fornecedor, fornecedor);
+	adicionarFiltroTexto(where, sql`${produtos.preco}::text`, preco);
+	adicionarFiltroTexto(
+		where,
+		sql`${produtos.custoaquisicao}::text`,
+		custoaquisicao,
+	);
+	if (datacadastro) {
+		const condicao = filtroDataDia(produtos.datacadastro, datacadastro);
+		if (condicao) where.push(condicao);
+	}
+
 	const offset = (page - 1) * limit;
+
+	const ordenacao =
+		ordenarPor && COLUNAS_ORDENACAO[ordenarPor]
+			? ordem === "desc"
+				? desc(COLUNAS_ORDENACAO[ordenarPor])
+				: asc(COLUNAS_ORDENACAO[ordenarPor])
+			: ordenacaoCodigoNumericoAsc(produtos.codigo);
 
 	const [totalCount, produtosListagem] = await Promise.all([
 		db
@@ -88,7 +198,7 @@ export async function listarProdutosPorEmpresa({
 			.select()
 			.from(produtos)
 			.where(and(...where))
-			.orderBy(ordenacaoCodigoNumericoAsc(produtos.codigo))
+			.orderBy(ordenacao)
 			.limit(limit)
 			.offset(offset),
 	]);
