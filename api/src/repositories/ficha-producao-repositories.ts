@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, ilike, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, ilike, or, type SQL, sql } from "drizzle-orm";
 import type { NovaFichaProducao } from "@/model/ficha-producao-model.js";
 import type { NovoFichaProducaoItem } from "@/model/ficha-producao-item-model.js";
 import {
@@ -7,6 +7,37 @@ import {
 	produtos,
 } from "@/repositories/schema.js";
 import { db } from "./connection.js";
+
+export const ORDENAR_FICHAS_PRODUCAO_CAMPOS = [
+	"codigo",
+	"nome",
+	"ativo",
+	"permiteproducaomassa",
+	"producaonavenda",
+	"atualizadoem",
+] as const;
+
+export type OrdenarFichasProducaoCampo =
+	(typeof ORDENAR_FICHAS_PRODUCAO_CAMPOS)[number];
+
+const COLUNAS_ORDENACAO = {
+	codigo: produtos.codigo,
+	nome: produtos.nome,
+	ativo: fichaproducao.ativo,
+	permiteproducaomassa: fichaproducao.permiteproducaomassa,
+	producaonavenda: fichaproducao.producaonavenda,
+	atualizadoem: fichaproducao.atualizadoem,
+} as const;
+
+function adicionarFiltroTexto(
+	where: SQL[],
+	coluna: Parameters<typeof ilike>[0],
+	valor: string | undefined,
+) {
+	if (valor?.trim()) {
+		where.push(ilike(coluna, `%${valor.trim()}%`));
+	}
+}
 
 export async function criarFichaProducao(dados: NovaFichaProducao) {
 	const [registro] = await db
@@ -138,7 +169,13 @@ export async function excluirFichaProducao(id: string) {
 export type ListarFichasProducaoParametros = {
 	idempresa: string;
 	q?: string | undefined;
+	codigo?: string | undefined;
+	nome?: string | undefined;
 	ativo?: number | undefined;
+	permiteproducaomassa?: number | undefined;
+	producaonavenda?: number | undefined;
+	ordenarPor?: OrdenarFichasProducaoCampo | undefined;
+	ordem?: "asc" | "desc" | undefined;
 	page?: number;
 	limit?: number;
 };
@@ -146,14 +183,28 @@ export type ListarFichasProducaoParametros = {
 export async function listarFichasProducao({
 	idempresa,
 	q,
+	codigo,
+	nome,
 	ativo,
+	permiteproducaomassa,
+	producaonavenda,
+	ordenarPor,
+	ordem = "desc",
 	page = 1,
 	limit = 10,
 }: ListarFichasProducaoParametros) {
-	const where = [eq(fichaproducao.idempresa, idempresa)];
+	const where: SQL[] = [eq(fichaproducao.idempresa, idempresa)];
 
 	if (ativo !== undefined) {
 		where.push(eq(fichaproducao.ativo, ativo));
+	}
+
+	if (permiteproducaomassa !== undefined) {
+		where.push(eq(fichaproducao.permiteproducaomassa, permiteproducaomassa));
+	}
+
+	if (producaonavenda !== undefined) {
+		where.push(eq(fichaproducao.producaonavenda, producaonavenda));
 	}
 
 	if (q) {
@@ -165,8 +216,22 @@ export async function listarFichasProducao({
 		);
 	}
 
+	adicionarFiltroTexto(
+		where,
+		sql`CAST(${produtos.codigo} AS TEXT)`,
+		codigo,
+	);
+	adicionarFiltroTexto(where, produtos.nome, nome);
+
 	const filtro = and(...where);
 	const offset = (page - 1) * limit;
+
+	const ordenacao =
+		ordenarPor && COLUNAS_ORDENACAO[ordenarPor]
+			? ordem === "asc"
+				? asc(COLUNAS_ORDENACAO[ordenarPor])
+				: desc(COLUNAS_ORDENACAO[ordenarPor])
+			: desc(fichaproducao.atualizadoem);
 
 	const [totalCount, fichas] = await Promise.all([
 		db
@@ -192,7 +257,7 @@ export async function listarFichasProducao({
 			.from(fichaproducao)
 			.leftJoin(produtos, eq(fichaproducao.idprodutoacabado, produtos.id))
 			.where(filtro)
-			.orderBy(desc(fichaproducao.atualizadoem))
+			.orderBy(ordenacao)
 			.limit(limit)
 			.offset(offset),
 	]);
