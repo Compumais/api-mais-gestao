@@ -29,7 +29,7 @@ export function DialogSenhaGerencial({
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
 			<form
-				className="w-96 space-y-4 rounded-lg border bg-card p-5"
+				className="pdv-surface w-96 space-y-4 p-5"
 				onSubmit={(e) => {
 					e.preventDefault();
 					onConfirmar(senha);

@@ -4,17 +4,18 @@ import type * as React from "react";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-	"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 outline-none focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+	"inline-flex shrink-0 items-center justify-center gap-2 rounded-md border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 active:translate-y-px disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
 	{
 		variants: {
 			variant: {
-				default: "bg-primary text-primary-foreground hover:bg-primary/90",
-				destructive: "bg-destructive text-white hover:bg-destructive/90",
+				default: "bg-primary text-primary-foreground hover:bg-primary/80",
 				outline:
-					"border bg-background hover:bg-accent hover:text-accent-foreground",
+					"border-border bg-background hover:bg-input/50 hover:text-foreground dark:bg-input/30",
 				secondary:
-					"bg-secondary text-secondary-foreground hover:bg-secondary/80",
-				ghost: "hover:bg-accent hover:text-accent-foreground",
+					"bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)]",
+				ghost: "hover:bg-muted hover:text-foreground dark:hover:bg-muted/50",
+				destructive:
+					"bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20",
 			},
 			size: {
 				default: "h-10 px-4 py-2",
@@ -42,6 +43,7 @@ function Button({
 	const Comp = asChild ? Slot : "button";
 	return (
 		<Comp
+			data-slot="button"
 			className={cn(buttonVariants({ variant, size, className }))}
 			{...props}
 		/>

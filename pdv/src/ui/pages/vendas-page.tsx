@@ -132,15 +132,15 @@ export function VendasPage() {
 				}
 			/>
 
-			<div className="flex-1 overflow-auto p-3">
+			<div className="flex-1 overflow-auto bg-muted/30 p-3">
 				{msg ? (
-					<p className="mb-3 rounded-md border bg-secondary/40 px-3 py-2 text-sm">
+					<p className="mb-3 rounded-md bg-muted px-3 py-2 text-sm ring-1 ring-foreground/10">
 						{msg}
 					</p>
 				) : null}
-				<div className="overflow-hidden rounded-lg border">
+				<div className="pdv-surface overflow-hidden">
 					<table className="w-full text-sm">
-						<thead className="bg-secondary/60 text-left">
+						<thead className="bg-muted/80 text-left">
 							<tr>
 								<th className="px-3 py-2 font-medium">Data</th>
 								<th className="px-3 py-2 font-medium">Origem</th>

@@ -727,8 +727,8 @@ export function MesaContaPage() {
 				}
 			/>
 
-			<div className="grid flex-1 grid-cols-[1fr_320px] gap-3 overflow-hidden p-3">
-				<div className="flex min-h-0 flex-col gap-3 overflow-hidden rounded-lg border bg-card p-3">
+			<div className="grid flex-1 grid-cols-[1fr_320px] gap-3 overflow-hidden bg-muted/30 p-3">
+				<div className="pdv-surface flex min-h-0 flex-col gap-3 overflow-hidden p-3">
 					<AvisoSecundario status={status} />
 					<div className="flex items-center justify-between gap-2">
 						<h2 className="text-sm font-semibold">Selecionar produtos</h2>
@@ -784,7 +784,7 @@ export function MesaContaPage() {
 											key={g.id}
 											type="button"
 											onClick={() => void abrirGrupo(g)}
-											className="rounded-lg border bg-background p-4 text-sm font-semibold transition hover:border-primary"
+											className="rounded-lg bg-background p-4 text-sm font-semibold ring-1 ring-foreground/10 transition hover:ring-primary"
 										>
 											{g.nome}
 										</button>
@@ -817,7 +817,7 @@ export function MesaContaPage() {
 					)}
 				</div>
 
-				<div className="flex min-h-0 flex-col rounded-lg border bg-card p-3">
+				<div className="pdv-surface flex min-h-0 flex-col p-3">
 					<h2 className="mb-2 text-sm font-semibold">
 						Fila ({fila.length} {fila.length === 1 ? "item" : "itens"})
 					</h2>
@@ -1163,7 +1163,7 @@ export function MesaContaPage() {
 
 			{confirmandoSaida && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-					<div className="w-96 space-y-4 rounded-lg border bg-card p-5">
+					<div className="pdv-surface w-96 space-y-4 p-5">
 						<h2 className="text-lg font-semibold">Itens na fila</h2>
 						<p className="text-sm text-muted-foreground">
 							Há {fila.length}{" "}
@@ -1193,7 +1193,7 @@ export function MesaContaPage() {
 
 			{confirmandoCancelar && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-					<div className="w-96 space-y-4 rounded-lg border bg-card p-5">
+					<div className="pdv-surface w-96 space-y-4 p-5">
 						<h2 className="text-lg font-semibold">Cancelar {rotulo}</h2>
 						<p className="text-sm text-muted-foreground">
 							{conta
@@ -1289,7 +1289,7 @@ export function MesaContaPage() {
 
 			{dividirAberto && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-					<div className="w-[28rem] max-w-[95vw] space-y-4 rounded-lg border bg-card p-5">
+					<div className="pdv-surface w-[28rem] max-w-[95vw] space-y-4 p-5">
 						<h2 className="text-lg font-semibold">Dividir conta</h2>
 						<div className="flex gap-2">
 							<Button
