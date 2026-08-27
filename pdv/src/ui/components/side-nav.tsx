@@ -42,7 +42,7 @@ function SideButton({
 				"flex flex-1 flex-col items-center justify-center gap-1 rounded-md py-2.5 text-xs font-semibold transition ring-1",
 				active
 					? "bg-sidebar-primary text-sidebar-primary-foreground ring-sidebar-primary"
-					: "bg-sidebar-accent/40 text-sidebar-foreground ring-transparent hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+					: "bg-card text-sidebar-foreground ring-sidebar-border hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
 			)}
 		>
 			<Icon className="size-5" />
@@ -86,7 +86,7 @@ export function SideNav({
 	}
 
 	return (
-		<aside className="flex w-36 shrink-0 flex-col gap-1.5 rounded-xl bg-sidebar p-1.5 text-sidebar-foreground ring-1 ring-sidebar-border">
+		<aside className="flex w-36 shrink-0 flex-col gap-1.5 rounded-xl bg-sidebar p-1.5 text-sidebar-foreground ring-1 ring-sidebar-border shadow-sm">
 			{gourmet ? (
 				<SideButton
 					label={rotulo.plural}

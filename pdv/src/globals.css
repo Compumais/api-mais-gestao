@@ -73,30 +73,33 @@
 	--popover-foreground: oklch(0.153 0.006 107.1);
 	--primary: oklch(0.488 0.243 264.376);
 	--primary-foreground: oklch(0.97 0.014 254.604);
-	--secondary: oklch(0.967 0.001 286.375);
+	/* Secondary um pouco mais escuro para botões legíveis no PDV */
+	--secondary: oklch(0.92 0.008 286);
 	--secondary-foreground: oklch(0.21 0.006 285.885);
-	--muted: oklch(0.966 0.005 106.5);
-	--muted-foreground: oklch(0.58 0.031 107.3);
-	--accent: oklch(0.966 0.005 106.5);
+	--muted: oklch(0.94 0.006 106.5);
+	/* Texto secundário mais escuro (placeholders, labels) — contraste POS */
+	--muted-foreground: oklch(0.42 0.025 107.3);
+	--accent: oklch(0.94 0.006 106.5);
 	--accent-foreground: oklch(0.228 0.013 107.4);
 	--destructive: oklch(0.577 0.245 27.325);
 	--destructive-foreground: oklch(1 0 0);
-	--border: oklch(0.93 0.007 106.5);
-	--input: oklch(0.93 0.007 106.5);
-	--ring: oklch(0.737 0.021 106.9);
+	/* Bordas e inputs mais visíveis contra fundo branco */
+	--border: oklch(0.78 0.012 106.5);
+	--input: oklch(0.78 0.012 106.5);
+	--ring: oklch(0.55 0.04 264);
 	--chart-1: oklch(0.809 0.105 251.813);
 	--chart-2: oklch(0.623 0.214 259.815);
 	--chart-3: oklch(0.546 0.245 262.881);
 	--chart-4: oklch(0.488 0.243 264.376);
 	--chart-5: oklch(0.424 0.199 265.638);
-	--sidebar: oklch(0.988 0.003 106.5);
+	--sidebar: oklch(0.97 0.004 106.5);
 	--sidebar-foreground: oklch(0.153 0.006 107.1);
 	--sidebar-primary: oklch(0.546 0.245 262.881);
 	--sidebar-primary-foreground: oklch(0.97 0.014 254.604);
-	--sidebar-accent: oklch(0.966 0.005 106.5);
+	--sidebar-accent: oklch(0.92 0.008 106.5);
 	--sidebar-accent-foreground: oklch(0.228 0.013 107.4);
-	--sidebar-border: oklch(0.93 0.007 106.5);
-	--sidebar-ring: oklch(0.737 0.021 106.9);
+	--sidebar-border: oklch(0.78 0.012 106.5);
+	--sidebar-ring: oklch(0.55 0.04 264);
 	--font-sans: Inter, "Segoe UI", ui-sans-serif, system-ui, sans-serif;
 	--font-serif: "Source Serif 4", ui-serif, Georgia, serif;
 	--font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -185,6 +188,6 @@
 /* Painel de conteúdo alinhado ao SidebarInset da retaguarda */
 @layer components {
 	.pdv-surface {
-		@apply rounded-xl bg-card text-card-foreground shadow-sm ring-1 ring-foreground/10;
+		@apply rounded-xl bg-card text-card-foreground shadow-sm ring-1 ring-foreground/20;
 	}
 }
