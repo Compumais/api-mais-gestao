@@ -1,5 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
+import { ORDENAR_NOTAS_FISCAIS_CAMPOS } from "@/repositories/nota-fiscal-repositories.js";
 import { listarNotasFiscaisService } from "@/service/nota-fiscal/listar-notas-fiscais.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
@@ -12,7 +13,14 @@ const listarNotasFiscaisQuerySchema = z.object({
 	idcfop: z.string().optional(),
 	dataInicio: z.string().optional(),
 	dataFim: z.string().optional(),
+	entradasaida: z.string().optional(),
+	razaosocial: z.string().optional(),
+	chavenfe: z.string().optional(),
+	serie: z.string().optional(),
+	numeronfse: z.string().optional(),
 	rascunho: z.coerce.number().optional(),
+	ordenarPor: z.enum(ORDENAR_NOTAS_FISCAIS_CAMPOS).optional(),
+	ordem: z.enum(["asc", "desc"]).optional(),
 	page: z.coerce.number().min(1).optional().default(1),
 	limit: z.coerce.number().min(1).max(100).optional().default(10),
 });
@@ -38,7 +46,14 @@ export async function listarNotasFiscais(
 			idcfop: query.idcfop,
 			dataInicio: query.dataInicio,
 			dataFim: query.dataFim,
+			entradasaida: query.entradasaida,
+			razaosocial: query.razaosocial,
+			chavenfe: query.chavenfe,
+			serie: query.serie,
+			numeronfse: query.numeronfse,
 			rascunho: query.rascunho === 1,
+			ordenarPor: query.ordenarPor,
+			ordem: query.ordem,
 			page: query.page,
 			limit: query.limit,
 		});
