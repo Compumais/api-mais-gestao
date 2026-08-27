@@ -61,13 +61,20 @@ export type CatalogoPrincipal = {
 	atualizadoem?: string;
 };
 
-async function requisitar<T>(
+export class PrincipalNaoAutorizadoError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = "PrincipalNaoAutorizadoError";
+	}
+}
+
+export async function requisitarPrincipal<T>(
 	baseUrl: string,
 	path: string,
-	init: RequestInit & { token?: string } = {},
+	init: RequestInit & { token?: string; timeoutMs?: number } = {},
 ): Promise<T> {
 	const url = `${baseUrl.replace(/\/+$/, "")}${path}`;
-	const { token, headers, ...resto } = init;
+	const { token, headers, timeoutMs = 8000, ...resto } = init;
 	let res: Response;
 	try {
 		res = await fetch(url, {
@@ -78,7 +85,7 @@ async function requisitar<T>(
 				...(token ? { Authorization: `Bearer ${token}` } : {}),
 				...headers,
 			},
-			signal: AbortSignal.timeout(8000),
+			signal: AbortSignal.timeout(timeoutMs),
 		});
 	} catch {
 		throw new PrincipalOfflineError(
@@ -96,6 +103,9 @@ async function requisitar<T>(
 			: `Erro ${res.status} ao falar com o PDV principal`;
 
 	if (!res.ok) {
+		if (res.status === 401 || /não autoriz|sessão/i.test(mensagem)) {
+			throw new PrincipalNaoAutorizadoError(mensagem);
+		}
 		if (
 			res.status === 409 ||
 			/duplicad|mesmo número|é o do PDV principal/i.test(mensagem)
@@ -103,6 +113,27 @@ async function requisitar<T>(
 			throw new NumeroPdvDuplicadoError(mensagem);
 		}
 		throw new Error(mensagem);
+	}
+	return body as T;
+}
+
+/** @deprecated use requisitarPrincipal */
+async function requisitar<T>(
+	baseUrl: string,
+	path: string,
+	init: RequestInit & { token?: string } = {},
+): Promise<T> {
+	return requisitarPrincipal<T>(baseUrl, path, init);
+}
+
+export function unwrapDataEnvelope<T>(body: T | { data: T }): T {
+	if (
+		body &&
+		typeof body === "object" &&
+		"data" in (body as object) &&
+		(body as { data: unknown }).data !== undefined
+	) {
+		return (body as { data: T }).data;
 	}
 	return body as T;
 }

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { unwrapDataEnvelope } from "./cliente";
 import {
 	extrairConfigNegocio,
 	identidadePdvMudou,
@@ -154,5 +155,20 @@ describe("helpers", () => {
 			identidadePdvMudou({ numeropdv: "1" }, { numeropdv: "1", sitef_ip: "x" }),
 			false,
 		);
+	});
+});
+
+describe("unwrapDataEnvelope", () => {
+	it("extrai data quando a LAN usa envelope", () => {
+		assert.deepEqual(unwrapDataEnvelope({ data: [1, 2] }), [1, 2]);
+	});
+
+	it("devolve o corpo quando já é o payload", () => {
+		assert.deepEqual(unwrapDataEnvelope({ id: "a" }), { id: "a" });
+		assert.equal(unwrapDataEnvelope(42), 42);
+	});
+
+	it("preserva data null explícito como envelope", () => {
+		assert.equal(unwrapDataEnvelope({ data: null }), null);
 	});
 });
