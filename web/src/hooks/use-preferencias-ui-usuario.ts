@@ -36,6 +36,7 @@ export const TABELA_NOTA_FISCAL_PRODUTO = "nota-fiscal-produto";
 export const TABELA_NOTA_FISCAL_SERVICO = "nota-fiscal-servico";
 export const TABELA_NOTA_FISCAL_COMPRA = "nota-fiscal-compra";
 export const TABELA_NFCE = "nfce";
+export const TABELA_AUDITORIA = "auditoria";
 
 export function usePreferenciasUiUsuario() {
 	return useQuery({
