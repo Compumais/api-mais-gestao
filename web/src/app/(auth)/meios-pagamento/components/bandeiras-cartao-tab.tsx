@@ -1,11 +1,20 @@
 "use client";
 
-import { IconTrash } from "@tabler/icons-react";
+import {
+	IconChevronDown,
+	IconLayoutColumns,
+	IconTrash,
+} from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import {
+	flexRender,
+	getCoreRowModel,
+	useReactTable,
+} from "@tanstack/react-table";
+import { useCallback, useId, useMemo, useState } from "react";
 import { toast } from "sonner";
+import type { OrdenacaoColunaTabela } from "@/components/cabecalho-coluna-tabela";
 import { TableSkeleton } from "@/components/table-skeleton";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -14,8 +23,22 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import {
+	DropdownMenu,
+	DropdownMenuCheckboxItem,
+	DropdownMenuContent,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import {
 	Table,
 	TableBody,
@@ -25,22 +48,125 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { useEmpresa } from "@/hooks/use-empresa";
-import { bandeiraCartaoService } from "@/services/bandeira-cartao.service";
+import {
+	TABELA_BANDEIRAS_CARTAO,
+	useColunasTabelaPersistidas,
+} from "@/hooks/use-preferencias-ui-usuario";
+import {
+	type BandeiraCartao,
+	bandeiraCartaoService,
+} from "@/services/bandeira-cartao.service";
+import {
+	COLUNA_PARA_CAMPO_FILTRO_BANDEIRA_CARTAO,
+	type ConfigFiltroColunaBandeiraCartao,
+	criarColunasBandeirasCartao,
+	type FiltrosColunaBandeirasCartaoState,
+	filtrosColunaBandeirasCartaoVazios,
+	STATUS_OPCOES_FILTRO,
+	visibilidadePadraoColunasBandeirasCartao,
+} from "../bandeiras-cartao-colunas";
+
+function rotuloColuna(column: {
+	id: string;
+	columnDef: { meta?: unknown; header?: unknown };
+}) {
+	const meta = column.columnDef.meta as { label?: string } | undefined;
+	if (meta?.label) return meta.label;
+	if (typeof column.columnDef.header === "string") {
+		return column.columnDef.header;
+	}
+	return column.id;
+}
+
+function filtrosColunaAtivos(filtros: FiltrosColunaBandeirasCartaoState) {
+	return Object.values(filtros).some((valor) => valor.trim() !== "");
+}
 
 export function BandeirasCartaoTab() {
 	const queryClient = useQueryClient();
 	const { localStorageEmpresa: empresa } = useEmpresa();
+	const idPorPagina = useId();
 	const [modalAberto, setModalAberto] = useState(false);
 	const [descricao, setDescricao] = useState("");
 	const [codigo, setCodigo] = useState("");
+	const [pagination, setPagination] = useState({
+		pageIndex: 0,
+		pageSize: 10,
+	});
+	const [filtrosColuna, setFiltrosColuna] =
+		useState<FiltrosColunaBandeirasCartaoState>(
+			filtrosColunaBandeirasCartaoVazios,
+		);
+	const [ordenarPor, setOrdenarPor] = useState<string | null>(null);
+	const [ordem, setOrdem] = useState<"asc" | "desc" | null>(null);
 
-	const { data: bandeiras = [], isLoading } = useQuery({
-		queryKey: ["bandeiras-cartao", empresa?.id],
+	const visibilidadePadrao = useMemo(
+		() => visibilidadePadraoColunasBandeirasCartao(),
+		[],
+	);
+	const { columnVisibility, onColumnVisibilityChange, isLoadingPreferencias } =
+		useColunasTabelaPersistidas(TABELA_BANDEIRAS_CARTAO, visibilidadePadrao);
+
+	const onOrdenarColuna = useCallback(
+		(colunaId: string, direcao: OrdenacaoColunaTabela) => {
+			if (!direcao) {
+				setOrdenarPor(null);
+				setOrdem(null);
+			} else {
+				setOrdenarPor(colunaId);
+				setOrdem(direcao);
+			}
+			setPagination((p) => ({ ...p, pageIndex: 0 }));
+		},
+		[],
+	);
+
+	const onFiltrarColuna = useCallback((colunaId: string, valor: string) => {
+		const campo = COLUNA_PARA_CAMPO_FILTRO_BANDEIRA_CARTAO[colunaId];
+		if (!campo) return;
+		setFiltrosColuna((atual) => ({ ...atual, [campo]: valor }));
+		setPagination((p) => ({ ...p, pageIndex: 0 }));
+	}, []);
+
+	const configFiltroPorColuna = useMemo((): Record<
+		string,
+		ConfigFiltroColunaBandeiraCartao
+	> => {
+		return {
+			descricao: { tipo: "texto", placeholder: "Descrição" },
+			codigo: { tipo: "texto", placeholder: "Código" },
+			status: {
+				tipo: "opcoes",
+				opcoes: STATUS_OPCOES_FILTRO,
+			},
+		};
+	}, []);
+
+	const { data, isLoading } = useQuery({
+		queryKey: [
+			"bandeiras-cartao",
+			empresa?.id,
+			pagination.pageIndex + 1,
+			pagination.pageSize,
+			filtrosColuna,
+			ordenarPor,
+			ordem,
+		],
 		queryFn: async () => {
 			if (!empresa) throw new Error("Empresa não selecionada");
-			return bandeiraCartaoService.listarTodos({
+			return bandeiraCartaoService.listar({
 				idempresa: empresa.id,
-				inativo: 0,
+				page: pagination.pageIndex + 1,
+				limit: pagination.pageSize,
+				...(filtrosColuna.descricao
+					? { descricao: filtrosColuna.descricao }
+					: {}),
+				...(filtrosColuna.codigo ? { codigo: filtrosColuna.codigo } : {}),
+				...(filtrosColuna.inativo !== ""
+					? { inativo: Number(filtrosColuna.inativo) }
+					: {}),
+				...(ordenarPor ? { ordenarPor } : {}),
+				...(ordem ? { ordem } : {}),
 			});
 		},
 		enabled: !!empresa,
@@ -102,6 +228,73 @@ export function BandeirasCartaoTab() {
 		},
 	});
 
+	const handleExcluir = useCallback(
+		(bandeira: BandeiraCartao) => {
+			toast.message(`Excluir a bandeira ${bandeira.descricao}?`, {
+				position: "top-center",
+				action: {
+					label: "Excluir",
+					onClick: () => excluirBandeira(bandeira.id),
+				},
+			});
+		},
+		[excluirBandeira],
+	);
+
+	const columns = useMemo(
+		() =>
+			criarColunasBandeirasCartao({
+				filtros: filtrosColuna,
+				ordenarPor,
+				ordem,
+				onOrdenarColuna,
+				onFiltrarColuna,
+				configFiltroPorColuna,
+				renderAcoes: (bandeira) => (
+					<div className="flex justify-end">
+						<Button
+							variant="ghost"
+							size="icon"
+							className="h-8 w-8"
+							aria-label={`Excluir ${bandeira.descricao}`}
+							onClick={() => handleExcluir(bandeira)}
+						>
+							<IconTrash className="size-4" />
+						</Button>
+					</div>
+				),
+			}),
+		[
+			filtrosColuna,
+			ordenarPor,
+			ordem,
+			onOrdenarColuna,
+			onFiltrarColuna,
+			configFiltroPorColuna,
+			handleExcluir,
+		],
+	);
+
+	const table = useReactTable({
+		data: data?.data || [],
+		columns,
+		state: {
+			pagination,
+			columnVisibility,
+		},
+		onPaginationChange: setPagination,
+		onColumnVisibilityChange,
+		getCoreRowModel: getCoreRowModel(),
+		getRowId: (row) => row.id,
+		manualPagination: true,
+		pageCount: data?.paginacao.totalPages ?? 0,
+	});
+
+	const colunasVisiveis = table.getVisibleLeafColumns();
+	const mostrarSkeleton = isLoading || isLoadingPreferencias;
+	const comFiltros = filtrosColunaAtivos(filtrosColuna) || !!ordenarPor;
+	const semRegistros = (data?.paginacao.total ?? 0) === 0 && !comFiltros;
+
 	if (!empresa) {
 		return (
 			<p className="px-4 text-muted-foreground">
@@ -112,15 +305,46 @@ export function BandeirasCartaoTab() {
 
 	return (
 		<div className="flex flex-col gap-4">
-			<div className="flex flex-wrap gap-2 px-4">
-				<Button
-					variant="outline"
-					onClick={() => popularPadrao()}
-					disabled={populando}
-				>
-					{populando ? "Criando..." : "Criar bandeiras padrão"}
-				</Button>
-				<Button onClick={() => setModalAberto(true)}>Nova bandeira</Button>
+			<div className="flex flex-wrap items-center justify-between gap-2 px-4">
+				<div className="flex flex-wrap gap-2">
+					<Button
+						variant="outline"
+						onClick={() => popularPadrao()}
+						disabled={populando}
+					>
+						{populando ? "Criando..." : "Criar bandeiras padrão"}
+					</Button>
+					<Button onClick={() => setModalAberto(true)}>Nova bandeira</Button>
+				</div>
+				<DropdownMenu>
+					<DropdownMenuTrigger asChild>
+						<Button variant="outline" size="sm">
+							<IconLayoutColumns className="size-4" />
+							<span className="hidden lg:inline">Personalizar Colunas</span>
+							<span className="lg:hidden">Colunas</span>
+							<IconChevronDown className="size-4" />
+						</Button>
+					</DropdownMenuTrigger>
+					<DropdownMenuContent
+						align="end"
+						className="max-h-72 w-56 overflow-y-auto"
+					>
+						{table
+							.getAllColumns()
+							.filter((column) => column.getCanHide())
+							.map((column) => (
+								<DropdownMenuCheckboxItem
+									key={column.id}
+									checked={column.getIsVisible()}
+									onCheckedChange={(value) =>
+										column.toggleVisibility(!!value)
+									}
+								>
+									{rotuloColuna(column)}
+								</DropdownMenuCheckboxItem>
+							))}
+					</DropdownMenuContent>
+				</DropdownMenu>
 			</div>
 
 			<p className="px-4 text-sm text-muted-foreground">
@@ -128,15 +352,21 @@ export function BandeirasCartaoTab() {
 				financeiro. Visa, Mastercard, Elo e outras podem ser criadas em lote.
 			</p>
 
-			<div className="rounded-lg border bg-card mx-4">
-				{isLoading ? (
-					<TableSkeleton rows={6}>
-						<TableHead>Descrição</TableHead>
-						<TableHead>Código</TableHead>
-						<TableHead>Status</TableHead>
-						<TableHead className="w-12 text-end">Ações</TableHead>
+			<div className="mx-4 rounded-lg border bg-card">
+				{mostrarSkeleton ? (
+					<TableSkeleton columns={colunasVisiveis.length || 4} rows={6}>
+						{colunasVisiveis.map((coluna) => (
+							<TableHead
+								key={coluna.id}
+								className={
+									coluna.id === "acoes" ? "w-12 text-end" : undefined
+								}
+							>
+								{rotuloColuna(coluna)}
+							</TableHead>
+						))}
 					</TableSkeleton>
-				) : bandeiras.length === 0 ? (
+				) : semRegistros ? (
 					<div className="flex flex-col items-center gap-3 py-10 text-center text-muted-foreground">
 						<p>Nenhuma bandeira cadastrada.</p>
 						<Button variant="outline" onClick={() => popularPadrao()}>
@@ -144,55 +374,106 @@ export function BandeirasCartaoTab() {
 						</Button>
 					</div>
 				) : (
-					<Table>
-						<TableHeader>
-							<TableRow>
-								<TableHead>Descrição</TableHead>
-								<TableHead>Código</TableHead>
-								<TableHead>Status</TableHead>
-								<TableHead className="w-12 text-end">Ações</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{bandeiras.map((bandeira) => (
-								<TableRow key={bandeira.id}>
-									<TableCell className="font-medium">
-										{bandeira.descricao}
-									</TableCell>
-									<TableCell>{bandeira.codigo || "—"}</TableCell>
-									<TableCell>
-										{bandeira.inativo === 1 ? (
-											<Badge variant="secondary">Inativo</Badge>
-										) : (
-											<Badge variant="outline">Ativo</Badge>
-										)}
-									</TableCell>
-									<TableCell className="text-right">
-										<Button
-											variant="ghost"
-											size="icon"
-											className="h-8 w-8"
-											aria-label={`Excluir ${bandeira.descricao}`}
-											onClick={() => {
-												toast.message(
-													`Excluir a bandeira ${bandeira.descricao}?`,
-													{
-														position: "top-center",
-														action: {
-															label: "Excluir",
-															onClick: () => excluirBandeira(bandeira.id),
-														},
-													},
-												);
-											}}
+					<>
+						<Table>
+							<TableHeader>
+								{table.getHeaderGroups().map((headerGroup) => (
+									<TableRow key={headerGroup.id}>
+										{headerGroup.headers.map((header) => (
+											<TableHead
+												className={
+													header.id === "acoes" ? "w-12 text-right" : ""
+												}
+												key={header.id}
+											>
+												{header.isPlaceholder
+													? null
+													: flexRender(
+															header.column.columnDef.header,
+															header.getContext(),
+														)}
+											</TableHead>
+										))}
+									</TableRow>
+								))}
+							</TableHeader>
+							<TableBody>
+								{table.getRowModel().rows?.length ? (
+									table.getRowModel().rows.map((row) => (
+										<TableRow key={row.id}>
+											{row.getVisibleCells().map((cell) => (
+												<TableCell key={cell.id}>
+													{flexRender(
+														cell.column.columnDef.cell,
+														cell.getContext(),
+													)}
+												</TableCell>
+											))}
+										</TableRow>
+									))
+								) : (
+									<TableRow>
+										<TableCell
+											colSpan={colunasVisiveis.length}
+											className="h-24 text-center"
 										>
-											<IconTrash className="size-4" />
-										</Button>
-									</TableCell>
-								</TableRow>
-							))}
-						</TableBody>
-					</Table>
+											Nenhuma bandeira encontrada para os filtros selecionados.
+										</TableCell>
+									</TableRow>
+								)}
+							</TableBody>
+						</Table>
+						{data && data.paginacao.total > 0 && (
+							<div className="flex flex-col gap-4 border-t px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+								<div className="flex items-center gap-2">
+									<Label htmlFor={idPorPagina} className="text-sm">
+										Itens por página
+									</Label>
+									<Select
+										value={`${pagination.pageSize}`}
+										onValueChange={(value) => {
+											table.setPageSize(Number(value));
+											table.setPageIndex(0);
+										}}
+									>
+										<SelectTrigger id={idPorPagina} className="h-8 w-[72px]">
+											<SelectValue placeholder={pagination.pageSize} />
+										</SelectTrigger>
+										<SelectContent side="top">
+											{[10, 20, 30, 50, 100].map((tamanho) => (
+												<SelectItem key={tamanho} value={`${tamanho}`}>
+													{tamanho}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</div>
+								<div className="text-sm text-muted-foreground">
+									Página {pagination.pageIndex + 1} de{" "}
+									{data.paginacao.totalPages} ({data.paginacao.total}{" "}
+									registros)
+								</div>
+								<div className="flex gap-2">
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={() => table.previousPage()}
+										disabled={!table.getCanPreviousPage()}
+									>
+										Anterior
+									</Button>
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={() => table.nextPage()}
+										disabled={!table.getCanNextPage()}
+									>
+										Próxima
+									</Button>
+								</div>
+							</div>
+						)}
+					</>
 				)}
 			</div>
 
