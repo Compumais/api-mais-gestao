@@ -1,12 +1,18 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
+import { ORDENAR_BANDEIRAS_CARTAO_CAMPOS } from "@/repositories/bandeira-cartao-repositories.js";
 import { listarBandeirasCartaoService } from "@/service/bandeira-cartao/listar-bandeiras-cartao.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
+const textoOpcional = z.string().optional();
+
 const listarBandeirasCartaoQuerySchema = z.object({
 	idempresa: z.string().uuid(),
-	descricao: z.string().optional(),
+	descricao: textoOpcional,
+	codigo: textoOpcional,
 	inativo: z.coerce.number().int().optional(),
+	ordenarPor: z.enum(ORDENAR_BANDEIRAS_CARTAO_CAMPOS).optional(),
+	ordem: z.enum(["asc", "desc"]).optional(),
 	page: z.coerce.number().min(1).optional().default(1),
 	limit: z.coerce.number().min(1).max(100).optional().default(10),
 });
@@ -26,7 +32,10 @@ export async function listarBandeirasCartao(
 			idusuario: request.user.id,
 			idempresa: query.idempresa,
 			descricao: query.descricao,
+			codigo: query.codigo,
 			inativo: query.inativo,
+			ordenarPor: query.ordenarPor,
+			ordem: query.ordem,
 			page: query.page,
 			limit: query.limit,
 		});
