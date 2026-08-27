@@ -72,11 +72,10 @@ describe("listarEntidadesService", () => {
 		vi.clearAllMocks();
 	});
 
-	it("deve listar entidades com sucesso quando usuário tem empresas", async () => {
-		vi.mocked(entidadeRepository.buscarEmpresasDoUsuario).mockResolvedValue([
-			"empresa-123",
-			"empresa-456",
-		]);
+	it("deve listar entidades com sucesso quando usuário pertence à empresa", async () => {
+		vi.mocked(
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(true);
 		vi.mocked(entidadeRepository.listarEntidades).mockResolvedValue({
 			entidades: [entidadeMock1, entidadeMock2],
 			total: 2,
@@ -99,24 +98,46 @@ describe("listarEntidadesService", () => {
 			expect(resultado.body?.paginacao.limit).toBe(10);
 			expect(resultado.body?.paginacao.totalPages).toBe(1);
 		}
-		expect(entidadeRepository.buscarEmpresasDoUsuario).toHaveBeenCalledTimes(1);
-		expect(entidadeRepository.buscarEmpresasDoUsuario).toHaveBeenCalledWith(
-			"usuario-123",
-		);
+		expect(
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
+		).toHaveBeenCalledWith("usuario-123", "empresa-123");
 		expect(entidadeRepository.listarEntidades).toHaveBeenCalledTimes(1);
 		expect(entidadeRepository.listarEntidades).toHaveBeenCalledWith({
-			idempresas: ["empresa-123", "empresa-456"],
+			idempresa: "empresa-123",
 			nome: undefined,
+			q: undefined,
+			razaosocial: undefined,
+			cnpjcpf: undefined,
+			endereco: undefined,
+			tipopessoa: undefined,
+			indiedest: undefined,
+			inscricaoestadual: undefined,
+			rg: undefined,
 			email: undefined,
 			telefone: undefined,
-			idempresa: "empresa-123",
+			numeroendereco: undefined,
+			complemento: undefined,
+			bairro: undefined,
+			cep: undefined,
+			fax: undefined,
+			nascimento: undefined,
+			pais: undefined,
+			criadoem: undefined,
+			fornecedor: undefined,
+			cliente: undefined,
+			transportador: undefined,
+			representante: undefined,
+			ordenarPor: undefined,
+			ordem: undefined,
 			page: 1,
 			limit: 10,
 		});
 	});
 
-	it("deve retornar lista vazia quando usuário não tem empresas", async () => {
-		vi.mocked(entidadeRepository.buscarEmpresasDoUsuario).mockResolvedValue([]);
+	it("deve retornar lista vazia quando usuário não pertence à empresa", async () => {
+		vi.mocked(
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(false);
 
 		const resultado = await listarEntidadesService({
 			idusuario: "usuario-123",
@@ -132,14 +153,16 @@ describe("listarEntidadesService", () => {
 			expect(resultado.body?.paginacao.total).toBe(0);
 			expect(resultado.body?.paginacao.totalPages).toBe(0);
 		}
-		expect(entidadeRepository.buscarEmpresasDoUsuario).toHaveBeenCalledTimes(1);
+		expect(
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
+		).toHaveBeenCalledTimes(1);
 		expect(entidadeRepository.listarEntidades).not.toHaveBeenCalled();
 	});
 
 	it("deve aplicar filtros de nome, email e telefone", async () => {
-		vi.mocked(entidadeRepository.buscarEmpresasDoUsuario).mockResolvedValue([
-			"empresa-123",
-		]);
+		vi.mocked(
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(true);
 		vi.mocked(entidadeRepository.listarEntidades).mockResolvedValue({
 			entidades: [entidadeMock1],
 			total: 1,
@@ -159,21 +182,58 @@ describe("listarEntidadesService", () => {
 		if (resultado.success) {
 			expect(resultado.body?.data).toHaveLength(1);
 		}
-		expect(entidadeRepository.listarEntidades).toHaveBeenCalledWith({
-			idempresas: ["empresa-123"],
-			nome: "John",
-			email: "john",
-			telefone: "3351",
+		expect(entidadeRepository.listarEntidades).toHaveBeenCalledWith(
+			expect.objectContaining({
+				idempresa: "empresa-123",
+				nome: "John",
+				email: "john",
+				telefone: "3351",
+				page: 1,
+				limit: 10,
+			}),
+		);
+	});
+
+	it("deve aplicar filtros por coluna e ordenação", async () => {
+		vi.mocked(
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(true);
+		vi.mocked(entidadeRepository.listarEntidades).mockResolvedValue({
+			entidades: [entidadeMock1],
+			total: 1,
+		});
+
+		const resultado = await listarEntidadesService({
+			idusuario: "usuario-123",
 			idempresa: "empresa-123",
+			razaosocial: "Ltda",
+			cnpjcpf: "123",
+			tipopessoa: 1,
+			indiedest: 9,
+			ordenarPor: "nome",
+			ordem: "asc",
 			page: 1,
 			limit: 10,
 		});
+
+		expect(resultado.success).toBe(true);
+		expect(entidadeRepository.listarEntidades).toHaveBeenCalledWith(
+			expect.objectContaining({
+				idempresa: "empresa-123",
+				razaosocial: "Ltda",
+				cnpjcpf: "123",
+				tipopessoa: 1,
+				indiedest: 9,
+				ordenarPor: "nome",
+				ordem: "asc",
+			}),
+		);
 	});
 
 	it("deve aplicar paginação corretamente", async () => {
-		vi.mocked(entidadeRepository.buscarEmpresasDoUsuario).mockResolvedValue([
-			"empresa-123",
-		]);
+		vi.mocked(
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(true);
 		vi.mocked(entidadeRepository.listarEntidades).mockResolvedValue({
 			entidades: [entidadeMock1],
 			total: 25,
@@ -193,21 +253,12 @@ describe("listarEntidadesService", () => {
 			expect(resultado.body?.paginacao.total).toBe(25);
 			expect(resultado.body?.paginacao.totalPages).toBe(3);
 		}
-		expect(entidadeRepository.listarEntidades).toHaveBeenCalledWith({
-			idempresas: ["empresa-123"],
-			nome: undefined,
-			email: undefined,
-			telefone: undefined,
-			idempresa: "empresa-123",
-			page: 2,
-			limit: 10,
-		});
 	});
 
 	it("deve calcular totalPages corretamente", async () => {
-		vi.mocked(entidadeRepository.buscarEmpresasDoUsuario).mockResolvedValue([
-			"empresa-123",
-		]);
+		vi.mocked(
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(true);
 		vi.mocked(entidadeRepository.listarEntidades).mockResolvedValue({
 			entidades: [entidadeMock1],
 			total: 15,
@@ -227,9 +278,9 @@ describe("listarEntidadesService", () => {
 	});
 
 	it("deve usar valores padrão de paginação quando não fornecidos", async () => {
-		vi.mocked(entidadeRepository.buscarEmpresasDoUsuario).mockResolvedValue([
-			"empresa-123",
-		]);
+		vi.mocked(
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(true);
 		vi.mocked(entidadeRepository.listarEntidades).mockResolvedValue({
 			entidades: [entidadeMock1],
 			total: 1,
@@ -245,14 +296,12 @@ describe("listarEntidadesService", () => {
 			expect(resultado.body?.paginacao.page).toBe(1);
 			expect(resultado.body?.paginacao.limit).toBe(10);
 		}
-		expect(entidadeRepository.listarEntidades).toHaveBeenCalledWith({
-			idempresas: ["empresa-123"],
-			nome: undefined,
-			email: undefined,
-			telefone: undefined,
-			idempresa: "empresa-123",
-			page: 1,
-			limit: 10,
-		});
+		expect(entidadeRepository.listarEntidades).toHaveBeenCalledWith(
+			expect.objectContaining({
+				idempresa: "empresa-123",
+				page: 1,
+				limit: 10,
+			}),
+		);
 	});
 });

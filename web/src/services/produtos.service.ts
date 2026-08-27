@@ -318,6 +318,8 @@ export const produtosService = {
 		preco?: string;
 		custoaquisicao?: string;
 		datacadastro?: string;
+		codigolistalc11603?: string;
+		codigonbs?: string;
 		ordenarPor?: string;
 		ordem?: "asc" | "desc";
 	}): Promise<ListarProdutosResponse> {

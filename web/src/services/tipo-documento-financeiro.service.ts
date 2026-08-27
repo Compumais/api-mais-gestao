@@ -30,6 +30,11 @@ export const tipoDocumentoFinanceiroService = {
 		limit?: number;
 		inativo?: number;
 		descricao?: string;
+		formapagamentonfe?: string;
+		prazodias?: string;
+		destino?: "caixa" | "recebivel" | "contas_receber";
+		ordenarPor?: string;
+		ordem?: "asc" | "desc";
 	}): Promise<ListarTiposDocumentoFinanceiroResponse> {
 		const { data } = await api.get<ListarTiposDocumentoFinanceiroResponse>(
 			"/tipos-documento-financeiro",

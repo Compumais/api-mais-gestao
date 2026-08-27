@@ -1,11 +1,18 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
+import { ORDENAR_FATORES_CONVERSAO_CAMPOS } from "@/repositories/fator-conversao-repositories.js";
 import { listarFatoresConversaoService } from "@/service/fator-conversao/listar-fatores-conversao.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
+const textoOpcional = z.string().optional();
+
 const listarFatoresConversaoQuerySchema = z.object({
 	idempresa: z.string(),
-	q: z.string().optional(),
+	q: textoOpcional,
+	nome: textoOpcional,
+	fator: textoOpcional,
+	ordenarPor: z.enum(ORDENAR_FATORES_CONVERSAO_CAMPOS).optional(),
+	ordem: z.enum(["asc", "desc"]).optional(),
 	page: z.coerce.number().min(1).optional().default(1),
 	limit: z.coerce.number().min(1).max(100).optional().default(10),
 });
@@ -25,6 +32,10 @@ export async function listarFatoresConversao(
 			idusuario: request.user.id,
 			idempresa: query.idempresa,
 			q: query.q,
+			nome: query.nome,
+			fator: query.fator,
+			ordenarPor: query.ordenarPor,
+			ordem: query.ordem,
 			page: query.page,
 			limit: query.limit,
 		});

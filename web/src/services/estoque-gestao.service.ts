@@ -66,7 +66,13 @@ export const estoqueGestaoService = {
 	async listarSaldos(params: {
 		idempresa: string;
 		busca?: string;
+		codigoproduto?: string;
+		nomeproduto?: string;
+		ncm?: string;
+		unidademedida?: string;
 		somenteDivergencia?: boolean;
+		ordenarPor?: string;
+		ordem?: "asc" | "desc";
 		page?: number;
 		limit?: number;
 	}): Promise<{ data: SaldoEstoqueGestao[]; paginacao: Paginacao }> {

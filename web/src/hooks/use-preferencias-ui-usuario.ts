@@ -16,6 +16,19 @@ export const preferenciasUiQueryKey = ["preferencias-ui-usuario"] as const;
 
 export const TABELA_ORDENS_SERVICO = "ordens-servico";
 export const TABELA_PRODUTOS = "produtos";
+export const TABELA_SERVICOS = "servicos";
+export const TABELA_GRUPOS = "grupos";
+export const TABELA_UNIDADE_MEDIDA = "unidade-medida";
+export const TABELA_CLIENTES = "clientes";
+export const TABELA_FORNECEDORES = "fornecedores";
+export const TABELA_FATOR_CONVERSAO = "fator-conversao";
+export const TABELA_CONDICOES_PAGAMENTO = "condicoes-pagamento";
+export const TABELA_FORMAS_ERP = "formas-erp";
+export const TABELA_BANDEIRAS_CARTAO = "bandeiras-cartao";
+export const TABELA_ESTOQUE = "estoque";
+export const TABELA_TIPOS_PROBLEMA = "tipos-problema";
+export const TABELA_FICHAS_PRODUCAO = "fichas-producao";
+export const TABELA_PRODUCOES = "producoes";
 
 export function usePreferenciasUiUsuario() {
 	return useQuery({

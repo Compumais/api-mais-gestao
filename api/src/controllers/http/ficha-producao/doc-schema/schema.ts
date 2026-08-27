@@ -58,7 +58,23 @@ export const listarFichasProducaoSchema: FastifySchema = {
 		properties: {
 			idempresa: { type: "string" },
 			q: { type: "string" },
+			codigo: { type: "string" },
+			nome: { type: "string" },
 			ativo: { type: "number" },
+			permiteproducaomassa: { type: "number" },
+			producaonavenda: { type: "number" },
+			ordenarPor: {
+				type: "string",
+				enum: [
+					"codigo",
+					"nome",
+					"ativo",
+					"permiteproducaomassa",
+					"producaonavenda",
+					"atualizadoem",
+				],
+			},
+			ordem: { type: "string", enum: ["asc", "desc"] },
 			page: { type: "number" },
 			limit: { type: "number" },
 		},
