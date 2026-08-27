@@ -1,6 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import { buscarNfeConfiguracaoPorEmpresa } from "@/repositories/nfe-configuracao-repositories.js";
+import { ORDENAR_NOTAS_FISCAIS_CAMPOS } from "@/repositories/nota-fiscal-repositories.js";
 import { emitirNfeVendaService } from "@/service/nfe-emissao/emitir-nfe-venda.js";
 import { listarNotasFiscaisService } from "@/service/nota-fiscal/listar-notas-fiscais.js";
 import { resolverAmbienteSefaz } from "@/util/ambiente-sefaz.js";
@@ -10,6 +11,13 @@ import { emitirNfeBodySchema } from "./emissao-nfe-body-schema.js";
 const listarNfeQuerySchema = z.object({
 	idempresa: z.string().uuid(),
 	status: z.coerce.number().optional(),
+	numero: z.string().optional(),
+	razaosocial: z.string().optional(),
+	chavenfe: z.string().optional(),
+	dataInicio: z.string().optional(),
+	dataFim: z.string().optional(),
+	ordenarPor: z.enum(ORDENAR_NOTAS_FISCAIS_CAMPOS).optional(),
+	ordem: z.enum(["asc", "desc"]).optional(),
 	page: z.coerce.number().default(1),
 	limit: z.coerce.number().default(20),
 });
@@ -77,22 +85,27 @@ export async function listarNfesEmitidas(
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
 		}
 
-		const { idempresa, status, page, limit } = listarNfeQuerySchema.parse(
-			request.query,
-		);
+		const query = listarNfeQuerySchema.parse(request.query);
 
-		const nfeConfig = await buscarNfeConfiguracaoPorEmpresa(idempresa);
+		const nfeConfig = await buscarNfeConfiguracaoPorEmpresa(query.idempresa);
 		const tipoambientenfe = resolverAmbienteSefaz(nfeConfig?.ambiente);
 
 		const resultado = await listarNotasFiscaisService({
 			idusuario: request.user.id,
-			idempresa,
-			status,
+			idempresa: query.idempresa,
+			status: query.status,
+			numero: query.numero,
+			razaosocial: query.razaosocial,
+			chavenfe: query.chavenfe,
+			dataInicio: query.dataInicio,
+			dataFim: query.dataFim,
+			ordenarPor: query.ordenarPor,
+			ordem: query.ordem,
 			tipoorigem: 1,
 			modelo: "55",
 			tipoambientenfe,
-			page,
-			limit,
+			page: query.page,
+			limit: query.limit,
 			rascunho: false,
 		});
 

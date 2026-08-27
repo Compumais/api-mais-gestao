@@ -217,6 +217,13 @@ export async function inutilizarNfe(
 export async function listarNfesEmitidas(params: {
 	idempresa: string;
 	status?: number;
+	numero?: string;
+	razaosocial?: string;
+	chavenfe?: string;
+	dataInicio?: string;
+	dataFim?: string;
+	ordenarPor?: string;
+	ordem?: "asc" | "desc";
 	page?: number;
 	limit?: number;
 }): Promise<ListarNfesResponse> {

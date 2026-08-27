@@ -32,6 +32,9 @@ export const TABELA_PRODUCOES = "producoes";
 export const TABELA_CONTAS_PAGAR = "contas-pagar";
 export const TABELA_CONTAS_RECEBER = "contas-receber";
 export const TABELA_MOVIMENTACOES = "movimentacoes";
+export const TABELA_NOTA_FISCAL_PRODUTO = "nota-fiscal-produto";
+export const TABELA_NOTA_FISCAL_SERVICO = "nota-fiscal-servico";
+export const TABELA_NOTA_FISCAL_COMPRA = "nota-fiscal-compra";
 
 export function usePreferenciasUiUsuario() {
 	return useQuery({
