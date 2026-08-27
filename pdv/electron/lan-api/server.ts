@@ -504,6 +504,14 @@ async function despachar(
 		};
 	}
 
+	const contaCancelarMatch = path.match(/^\/pos\/contas\/([^/]+)\/cancelar$/);
+	if (method === "POST" && contaCancelarMatch) {
+		return {
+			status: 200,
+			body: await localApi.cancelarContaMesa(contaCancelarMatch[1]),
+		};
+	}
+
 	const contaAjustesMatch = path.match(/^\/pos\/contas\/([^/]+)\/ajustes$/);
 	if (method === "POST" && contaAjustesMatch) {
 		return {

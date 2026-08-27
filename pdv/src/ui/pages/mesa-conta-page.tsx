@@ -113,6 +113,7 @@ export function MesaContaPage() {
 	const [fila, setFila] = useState<ItemFila[]>([]);
 	const [pagando, setPagando] = useState(false);
 	const [confirmandoSaida, setConfirmandoSaida] = useState(false);
+	const [confirmandoCancelar, setConfirmandoCancelar] = useState(false);
 	const [rejeicaoNfce, setRejeicaoNfce] = useState<string | null>(null);
 	const [vendaRejeitadaId, setVendaRejeitadaId] = useState<string | null>(null);
 	const [msg, setMsg] = useState("");
@@ -138,6 +139,9 @@ export function MesaContaPage() {
 	const [taxaEntregaEdit, setTaxaEntregaEdit] = useState("");
 
 	useEscapeFechaModal(confirmandoSaida, () => setConfirmandoSaida(false));
+	useEscapeFechaModal(confirmandoCancelar, () =>
+		setConfirmandoCancelar(false),
+	);
 	useEscapeFechaModal(Boolean(rejeicaoNfce), () => setRejeicaoNfce(null));
 	useEscapeFechaModal(Boolean(pizzaPrimeiro), () => setPizzaPrimeiro(null));
 	useEscapeFechaModal(Boolean(produtoPeso), () => setProdutoPeso(null));
@@ -158,7 +162,7 @@ export function MesaContaPage() {
 	useEffect(() => {
 		function onKeyDown(e: KeyboardEvent) {
 			if (e.key !== "Escape") return;
-			if (pagando || confirmandoSaida) return;
+			if (pagando || confirmandoSaida || confirmandoCancelar) return;
 			if (fila.length === 0) return;
 			e.preventDefault();
 			e.stopImmediatePropagation();
@@ -166,7 +170,7 @@ export function MesaContaPage() {
 		}
 		window.addEventListener("keydown", onKeyDown, true);
 		return () => window.removeEventListener("keydown", onKeyDown, true);
-	}, [fila.length, pagando, confirmandoSaida]);
+	}, [fila.length, pagando, confirmandoSaida, confirmandoCancelar]);
 
 	async function iniciar() {
 		setPronto(false);
@@ -347,14 +351,35 @@ export function MesaContaPage() {
 	}
 
 	function limparFila() {
+		if (fila.length === 0) return;
 		setFila([]);
-		setMsg("Fila cancelada.");
+		setGrupoAtivo(null);
+		setMsg("Fila limpa.");
 	}
 
-	function cancelarFila() {
-		if (fila.length === 0) return;
-		limparFila();
-		setGrupoAtivo(null);
+	function solicitarCancelarMesa() {
+		if (modoEntrega || loading || pagando) return;
+		if (!conta && fila.length === 0) return;
+		setConfirmandoCancelar(true);
+	}
+
+	async function confirmarCancelarMesa() {
+		setConfirmandoCancelar(false);
+		setLoading(true);
+		setMsg("");
+		try {
+			if (conta?.id) {
+				await pdvInvoke("cancelarContaMesa", conta.id);
+			}
+			setFila([]);
+			setConta(null);
+			setGrupoAtivo(null);
+			navigate("/", { replace: true });
+		} catch (err) {
+			setMsg(err instanceof Error ? err.message : "Falha ao cancelar");
+		} finally {
+			setLoading(false);
+		}
 	}
 
 	async function confirmarFilaNaConta() {
@@ -723,6 +748,7 @@ export function MesaContaPage() {
 						pausado={
 							pagando ||
 							confirmandoSaida ||
+							confirmandoCancelar ||
 							Boolean(rejeicaoNfce) ||
 							Boolean(pizzaPrimeiro) ||
 							Boolean(produtoPeso) ||
@@ -1029,9 +1055,9 @@ export function MesaContaPage() {
 								variant="outline"
 								className="w-full"
 								disabled={fila.length === 0 || loading}
-								onClick={() => cancelarFila()}
+								onClick={() => limparFila()}
 							>
-								Cancelar
+								Limpar fila
 							</Button>
 							<Button
 								size="lg"
@@ -1159,6 +1185,36 @@ export function MesaContaPage() {
 								onClick={() => confirmarSaidaSemSalvar()}
 							>
 								Sair sem adicionar
+							</Button>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{confirmandoCancelar && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+					<div className="w-96 space-y-4 rounded-lg border bg-card p-5">
+						<h2 className="text-lg font-semibold">Cancelar {rotulo}</h2>
+						<p className="text-sm text-muted-foreground">
+							{conta
+								? `Os itens da ${rotulo.toLowerCase()} serão desconsiderados, ela será liberada e removida da catraca. Esta ação não pode ser desfeita.`
+								: `Há itens apenas na fila. Ao cancelar, a fila será descartada e você voltará ao salão.`}
+						</p>
+						<div className="flex gap-2">
+							<Button
+								variant="outline"
+								className="flex-1"
+								onClick={() => setConfirmandoCancelar(false)}
+							>
+								Voltar
+							</Button>
+							<Button
+								variant="destructive"
+								className="flex-1"
+								disabled={loading}
+								onClick={() => void confirmarCancelarMesa()}
+							>
+								Confirmar cancelamento
 							</Button>
 						</div>
 					</div>
@@ -1313,11 +1369,16 @@ export function MesaContaPage() {
 					},
 					{
 						key: "cancelar",
-						label: "Cancelar",
+						label: `Cancelar ${rotulo}`,
 						hotkey: "F3",
 						variant: "outline",
-						disabled: fila.length === 0 || loading,
-						onClick: () => cancelarFila(),
+						disabled:
+							modoEntrega ||
+							loading ||
+							pagando ||
+							confirmandoCancelar ||
+							(!conta && fila.length === 0),
+						onClick: () => solicitarCancelarMesa(),
 					},
 					{
 						key: "preconta",

@@ -1729,6 +1729,77 @@ export async function limparContasVazias(): Promise<number> {
 	return vazias.length;
 }
 
+/** Descarta itens, libera a mesa/comanda e cancela outbox pendente da conta. */
+export async function cancelarContaMesa(idconta: string): Promise<void> {
+	const conta = await obterContaMesa(idconta);
+	if (!conta || conta.status !== "aberta") {
+		throw new Error("Conta inválida");
+	}
+	if (conta.modalidade && conta.modalidade !== "mesa") {
+		throw new Error("Cancelamento disponível apenas para mesa/comanda");
+	}
+	if (conta.valorpago > 0) {
+		throw new Error(
+			"Conta com pagamento parcial não pode ser cancelada. Finalize ou estorne os pagamentos.",
+		);
+	}
+
+	const rotulo =
+		(await getConfig("modelo_atendimento", "mesa")) === "comanda"
+			? "Comanda"
+			: "Mesa";
+	const numero = conta.numero_mesa;
+	if (numero <= 0) {
+		throw new Error(`${rotulo} inválida para cancelamento`);
+	}
+	const agora = new Date().toISOString();
+
+	await withTransaction(async (client) => {
+		await execute("DELETE FROM item_conta WHERE idconta = $1", [idconta], client);
+		await execute(
+			"DELETE FROM conta_pagamento WHERE idconta = $1",
+			[idconta],
+			client,
+		);
+		await execute(
+			`UPDATE pedido_fila SET status = 'entregue', entregueem = $1
+			 WHERE idconta = $2 AND status = 'pendente'`,
+			[agora, idconta],
+			client,
+		);
+		await execute(
+			`UPDATE mesa SET status = 'livre', idconta = NULL, nomecliente = NULL
+			 WHERE numero = $1 AND (idconta = $2 OR idconta IS NULL)`,
+			[numero, idconta],
+			client,
+		);
+		await execute("DELETE FROM conta_mesa WHERE id = $1", [idconta], client);
+
+		const pendentes = await query<{ id: string; payload: string }>(
+			`SELECT id, payload FROM outbox WHERE status = 'pendente' AND tipo = 'conta_mesa'`,
+			[],
+			client,
+		);
+		for (const o of pendentes) {
+			try {
+				const p = JSON.parse(o.payload) as {
+					idlocal?: string;
+					idconta?: string;
+				};
+				if (p.idlocal === idconta || p.idconta === idconta) {
+					await execute(
+						`UPDATE outbox SET status = 'cancelado', processadoem = $1 WHERE id = $2`,
+						[agora, o.id],
+						client,
+					);
+				}
+			} catch {
+				// payload inválido: ignora
+			}
+		}
+	});
+}
+
 export async function listarMesas(): Promise<
 	Array<{
 		numero: number;

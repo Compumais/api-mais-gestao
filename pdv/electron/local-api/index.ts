@@ -65,6 +65,7 @@ import {
 	buscarProdutoPorCodigo,
 	buscarProdutoPorEan,
 	buscarProdutosLocal,
+	cancelarContaMesa as cancelarContaMesaRepo,
 	type ClienteVenda,
 	caixaAberto,
 	caixaAbertoOutroOperador,
@@ -1200,6 +1201,14 @@ export const localApi = {
 		const removidas = await limparContasVazias();
 		avisarTecnibra();
 		return removidas;
+	},
+
+	async cancelarContaMesa(idconta: string) {
+		await assertModuloGourmet();
+		await garantirOperacaoSecundario();
+		await cancelarContaMesaRepo(idconta);
+		avisarTecnibra();
+		return { ok: true as const };
 	},
 
 	async abrirContaMesa(numero: number, nomecliente?: string) {
