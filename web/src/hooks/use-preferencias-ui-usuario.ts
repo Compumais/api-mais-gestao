@@ -26,6 +26,7 @@ export const TABELA_CONDICOES_PAGAMENTO = "condicoes-pagamento";
 export const TABELA_FORMAS_ERP = "formas-erp";
 export const TABELA_BANDEIRAS_CARTAO = "bandeiras-cartao";
 export const TABELA_ESTOQUE = "estoque";
+export const TABELA_TIPOS_PROBLEMA = "tipos-problema";
 
 export function usePreferenciasUiUsuario() {
 	return useQuery({

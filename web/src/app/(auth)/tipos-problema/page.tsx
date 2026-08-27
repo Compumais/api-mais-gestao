@@ -1,35 +1,41 @@
 "use client";
 
 import {
+	IconChevronDown,
 	IconDotsVertical,
+	IconLayoutColumns,
 	IconPencil,
 	IconPlus,
 	IconTrash,
 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-	type ColumnDef,
 	flexRender,
 	getCoreRowModel,
-	getPaginationRowModel,
-	getSortedRowModel,
-	type SortingState,
 	useReactTable,
 } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useCallback, useId, useMemo, useState } from "react";
 import { toast } from "sonner";
+import type { OrdenacaoColunaTabela } from "@/components/cabecalho-coluna-tabela";
 import { TableSkeleton } from "@/components/table-skeleton";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
+	DropdownMenuCheckboxItem,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import {
 	Table,
 	TableBody,
@@ -40,94 +46,97 @@ import {
 } from "@/components/ui/table";
 import { useEmpresa } from "@/hooks/use-empresa";
 import {
+	TABELA_TIPOS_PROBLEMA,
+	useColunasTabelaPersistidas,
+} from "@/hooks/use-preferencias-ui-usuario";
+import {
 	type TipoProblema,
 	tipoProblemaService,
 } from "@/services/tipo-problema.service";
 import { PageContainer } from "../components/page-container";
+import {
+	COLUNA_PARA_CAMPO_FILTRO_TIPO_PROBLEMA,
+	type ConfigFiltroColunaTipoProblema,
+	criarColunasTiposProblema,
+	type FiltrosColunaTiposProblemaState,
+	filtrosColunaTiposProblemaVazios,
+	STATUS_OPCOES_FILTRO,
+	visibilidadePadraoColunasTiposProblema,
+} from "./tipos-problema-colunas";
 
 const ROTA_BASE = "/tipos-problema";
 
-type ColumnsProps = {
-	onEdit: (registro: TipoProblema) => void;
-	onDelete: (id: string) => void;
-};
+function rotuloColuna(column: {
+	id: string;
+	columnDef: { meta?: unknown; header?: unknown };
+}) {
+	const meta = column.columnDef.meta as { label?: string } | undefined;
+	if (meta?.label) return meta.label;
+	if (typeof column.columnDef.header === "string") {
+		return column.columnDef.header;
+	}
+	return column.id;
+}
 
-const createColumns = ({
-	onEdit,
-	onDelete,
-}: ColumnsProps): ColumnDef<TipoProblema>[] => [
-	{
-		accessorKey: "codigo",
-		header: "Código",
-		cell: ({ row }) => <div>{row.getValue("codigo") || "-"}</div>,
-	},
-	{
-		accessorKey: "descricao",
-		header: "Descrição",
-		cell: ({ row }) => (
-			<div className="max-w-md truncate">{row.getValue("descricao") || "-"}</div>
-		),
-	},
-	{
-		id: "status",
-		header: "Status",
-		cell: ({ row }) =>
-			row.original.inativo === 1 ? (
-				<Badge variant="secondary">Inativo</Badge>
-			) : (
-				<Badge variant="outline">Ativo</Badge>
-			),
-	},
-	{
-		id: "acoes",
-		header: "Ações",
-		cell: ({ row }) => {
-			const registro = row.original;
-
-			return (
-				<div className="flex justify-end">
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon"
-								className="h-8 w-8"
-								aria-label="Abrir menu de ações"
-							>
-								<IconDotsVertical className="size-4" />
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end">
-							<DropdownMenuItem onClick={() => onEdit(registro)}>
-								<IconPencil className="size-4" />
-								Editar
-							</DropdownMenuItem>
-							<DropdownMenuSeparator />
-							<DropdownMenuItem
-								variant="destructive"
-								onClick={() => onDelete(registro.id)}
-							>
-								<IconTrash className="size-4" />
-								Excluir
-							</DropdownMenuItem>
-						</DropdownMenuContent>
-					</DropdownMenu>
-				</div>
-			);
-		},
-	},
-];
+function filtrosColunaAtivos(filtros: FiltrosColunaTiposProblemaState) {
+	return Object.values(filtros).some((valor) => valor.trim() !== "");
+}
 
 export default function TiposProblemaPage() {
 	const router = useRouter();
 	const queryClient = useQueryClient();
 	const { localStorageEmpresa } = useEmpresa();
-	const [sorting, setSorting] = useState<SortingState>([]);
-	const [busca, setBusca] = useState("");
+	const idPorPagina = useId();
 	const [pagination, setPagination] = useState({
 		pageIndex: 0,
 		pageSize: 10,
 	});
+	const [filtrosColuna, setFiltrosColuna] =
+		useState<FiltrosColunaTiposProblemaState>(filtrosColunaTiposProblemaVazios);
+	const [ordenarPor, setOrdenarPor] = useState<string | null>(null);
+	const [ordem, setOrdem] = useState<"asc" | "desc" | null>(null);
+
+	const visibilidadePadrao = useMemo(
+		() => visibilidadePadraoColunasTiposProblema(),
+		[],
+	);
+	const { columnVisibility, onColumnVisibilityChange, isLoadingPreferencias } =
+		useColunasTabelaPersistidas(TABELA_TIPOS_PROBLEMA, visibilidadePadrao);
+
+	const onOrdenarColuna = useCallback(
+		(colunaId: string, direcao: OrdenacaoColunaTabela) => {
+			if (!direcao) {
+				setOrdenarPor(null);
+				setOrdem(null);
+			} else {
+				setOrdenarPor(colunaId);
+				setOrdem(direcao);
+			}
+			setPagination((p) => ({ ...p, pageIndex: 0 }));
+		},
+		[],
+	);
+
+	const onFiltrarColuna = useCallback((colunaId: string, valor: string) => {
+		const campo = COLUNA_PARA_CAMPO_FILTRO_TIPO_PROBLEMA[colunaId];
+		if (!campo) return;
+		setFiltrosColuna((atual) => ({ ...atual, [campo]: valor }));
+		setPagination((p) => ({ ...p, pageIndex: 0 }));
+	}, []);
+
+	const configFiltroPorColuna = useMemo((): Record<
+		string,
+		ConfigFiltroColunaTipoProblema
+	> => {
+		return {
+			codigo: { tipo: "texto", placeholder: "Código" },
+			descricao: { tipo: "texto", placeholder: "Descrição" },
+			status: {
+				tipo: "opcoes",
+				opcoes: STATUS_OPCOES_FILTRO,
+			},
+		};
+	}, []);
 
 	const { data, isLoading } = useQuery({
 		queryKey: [
@@ -135,7 +144,9 @@ export default function TiposProblemaPage() {
 			localStorageEmpresa?.id,
 			pagination.pageIndex + 1,
 			pagination.pageSize,
-			busca,
+			filtrosColuna,
+			ordenarPor,
+			ordem,
 		],
 		queryFn: async () => {
 			if (!localStorageEmpresa) {
@@ -145,7 +156,15 @@ export default function TiposProblemaPage() {
 				idempresa: localStorageEmpresa.id,
 				page: pagination.pageIndex + 1,
 				limit: pagination.pageSize,
-				descricao: busca || undefined,
+				...(filtrosColuna.descricao
+					? { descricao: filtrosColuna.descricao }
+					: {}),
+				...(filtrosColuna.codigo ? { codigo: filtrosColuna.codigo } : {}),
+				...(filtrosColuna.inativo !== ""
+					? { inativo: Number(filtrosColuna.inativo) }
+					: {}),
+				...(ordenarPor ? { ordenarPor } : {}),
+				...(ordem ? { ordem } : {}),
 			});
 		},
 		enabled: !!localStorageEmpresa,
@@ -154,9 +173,11 @@ export default function TiposProblemaPage() {
 	const { mutate: deletar } = useMutation({
 		mutationFn: tipoProblemaService.deletar,
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["tipos-problema"] });
-			queryClient.invalidateQueries({ queryKey: ["tipos-problema-os-form"] });
-			queryClient.invalidateQueries({
+			void queryClient.invalidateQueries({ queryKey: ["tipos-problema"] });
+			void queryClient.invalidateQueries({
+				queryKey: ["tipos-problema-os-form"],
+			});
+			void queryClient.invalidateQueries({
 				queryKey: ["tipos-problema-os-detalhe"],
 			});
 			toast.success("Tipo de problema excluído com sucesso!");
@@ -166,42 +187,98 @@ export default function TiposProblemaPage() {
 		},
 	});
 
-	const handleEdit = (registro: TipoProblema) => {
-		router.push(`${ROTA_BASE}/${registro.id}/editar`);
-	};
+	const handleEdit = useCallback(
+		(registro: TipoProblema) => {
+			router.push(`${ROTA_BASE}/${registro.id}/editar`);
+		},
+		[router],
+	);
 
-	const handleDelete = (id: string) => {
-		toast.message("Tem certeza que deseja excluir este tipo de problema?", {
-			position: "top-center",
-			duration: 3000,
-			action: {
-				label: "Excluir",
-				onClick: () => deletar(id),
-			},
-			description: "Esta ação não pode ser desfeita.",
-		});
-	};
+	const handleDelete = useCallback(
+		(id: string) => {
+			toast.message("Tem certeza que deseja excluir este tipo de problema?", {
+				position: "top-center",
+				duration: 3000,
+				action: {
+					label: "Excluir",
+					onClick: () => deletar(id),
+				},
+				description: "Esta ação não pode ser desfeita.",
+			});
+		},
+		[deletar],
+	);
 
-	const columns = createColumns({
-		onEdit: handleEdit,
-		onDelete: handleDelete,
-	});
+	const columns = useMemo(
+		() =>
+			criarColunasTiposProblema({
+				filtros: filtrosColuna,
+				ordenarPor,
+				ordem,
+				onOrdenarColuna,
+				onFiltrarColuna,
+				configFiltroPorColuna,
+				renderAcoes: (registro) => (
+					<div className="flex justify-end">
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon"
+									className="h-8 w-8"
+									aria-label="Abrir menu de ações"
+								>
+									<IconDotsVertical className="size-4" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="end">
+								<DropdownMenuItem onClick={() => handleEdit(registro)}>
+									<IconPencil className="size-4" />
+									Editar
+								</DropdownMenuItem>
+								<DropdownMenuSeparator />
+								<DropdownMenuItem
+									variant="destructive"
+									onClick={() => handleDelete(registro.id)}
+								>
+									<IconTrash className="size-4" />
+									Excluir
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
+					</div>
+				),
+			}),
+		[
+			filtrosColuna,
+			ordenarPor,
+			ordem,
+			onOrdenarColuna,
+			onFiltrarColuna,
+			configFiltroPorColuna,
+			handleEdit,
+			handleDelete,
+		],
+	);
 
 	const table = useReactTable({
 		data: data?.data || [],
 		columns,
 		state: {
-			sorting,
 			pagination,
+			columnVisibility,
 		},
-		onSortingChange: setSorting,
 		onPaginationChange: setPagination,
+		onColumnVisibilityChange,
 		getCoreRowModel: getCoreRowModel(),
-		getSortedRowModel: getSortedRowModel(),
-		getPaginationRowModel: getPaginationRowModel(),
+		getRowId: (row) => row.id,
 		manualPagination: true,
 		pageCount: data?.paginacao.totalPages ?? 0,
 	});
+
+	const colunasVisiveis = table.getVisibleLeafColumns();
+	const mostrarSkeleton = isLoading || isLoadingPreferencias;
+	const comFiltros = filtrosColunaAtivos(filtrosColuna) || !!ordenarPor;
 
 	return (
 		<PageContainer>
@@ -213,27 +290,45 @@ export default function TiposProblemaPage() {
 							Cadastre os tipos de problema usados nas ordens de serviço.
 						</p>
 					</div>
-					<Button
-						onClick={() => router.push(`${ROTA_BASE}/novo`)}
-						className="gap-2"
-						disabled={!localStorageEmpresa}
-					>
-						<IconPlus className="size-4" />
-						Novo tipo de problema
-					</Button>
-				</div>
-
-				<div className="px-4">
-					<Input
-						placeholder="Buscar por descrição..."
-						value={busca}
-						onChange={(event) => {
-							setBusca(event.target.value);
-							setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-						}}
-						className="max-w-sm"
-						aria-label="Buscar tipos de problema por descrição"
-					/>
+					<div className="flex flex-wrap items-center gap-2">
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button variant="outline" size="sm">
+									<IconLayoutColumns className="size-4" />
+									<span className="hidden lg:inline">Personalizar Colunas</span>
+									<span className="lg:hidden">Colunas</span>
+									<IconChevronDown className="size-4" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent
+								align="end"
+								className="max-h-72 w-56 overflow-y-auto"
+							>
+								{table
+									.getAllColumns()
+									.filter((column) => column.getCanHide())
+									.map((column) => (
+										<DropdownMenuCheckboxItem
+											key={column.id}
+											checked={column.getIsVisible()}
+											onCheckedChange={(value) =>
+												column.toggleVisibility(!!value)
+											}
+										>
+											{rotuloColuna(column)}
+										</DropdownMenuCheckboxItem>
+									))}
+							</DropdownMenuContent>
+						</DropdownMenu>
+						<Button
+							onClick={() => router.push(`${ROTA_BASE}/novo`)}
+							className="gap-2"
+							disabled={!localStorageEmpresa}
+						>
+							<IconPlus className="size-4" />
+							Novo tipo de problema
+						</Button>
+					</div>
 				</div>
 
 				<div className="mx-4 rounded-lg border bg-card">
@@ -243,12 +338,21 @@ export default function TiposProblemaPage() {
 								Selecione uma empresa para visualizar os tipos de problema
 							</p>
 						</div>
-					) : isLoading ? (
-						<TableSkeleton rows={10}>
-							<TableHead className="w-[100px]">Código</TableHead>
-							<TableHead>Descrição</TableHead>
-							<TableHead className="w-[100px]">Status</TableHead>
-							<TableHead className="w-12 text-end">Ações</TableHead>
+					) : mostrarSkeleton ? (
+						<TableSkeleton
+							columns={colunasVisiveis.length || 4}
+							rows={10}
+						>
+							{colunasVisiveis.map((coluna) => (
+								<TableHead
+									key={coluna.id}
+									className={
+										coluna.id === "acoes" ? "w-12 text-end" : undefined
+									}
+								>
+									{rotuloColuna(coluna)}
+								</TableHead>
+							))}
 						</TableSkeleton>
 					) : (
 						<>
@@ -258,7 +362,9 @@ export default function TiposProblemaPage() {
 										<TableRow key={headerGroup.id}>
 											{headerGroup.headers.map((header) => (
 												<TableHead
-													className={header.id === "acoes" ? "text-right" : ""}
+													className={
+														header.id === "acoes" ? "w-12 text-right" : ""
+													}
 													key={header.id}
 												>
 													{header.isPlaceholder
@@ -289,17 +395,42 @@ export default function TiposProblemaPage() {
 									) : (
 										<TableRow>
 											<TableCell
-												colSpan={table.getAllColumns().length}
+												colSpan={colunasVisiveis.length}
 												className="h-24 text-center"
 											>
-												Nenhum tipo de problema encontrado.
+												{comFiltros
+													? "Nenhum tipo de problema encontrado para os filtros selecionados."
+													: "Nenhum tipo de problema encontrado."}
 											</TableCell>
 										</TableRow>
 									)}
 								</TableBody>
 							</Table>
-							{data && data.paginacao.totalPages > 1 && (
-								<div className="flex items-center justify-between px-4 py-4 border-t">
+							{data && data.paginacao.total > 0 && (
+								<div className="flex flex-col gap-4 border-t px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+									<div className="flex items-center gap-2">
+										<Label htmlFor={idPorPagina} className="text-sm">
+											Itens por página
+										</Label>
+										<Select
+											value={`${pagination.pageSize}`}
+											onValueChange={(value) => {
+												table.setPageSize(Number(value));
+												table.setPageIndex(0);
+											}}
+										>
+											<SelectTrigger id={idPorPagina} className="h-8 w-[72px]">
+												<SelectValue placeholder={pagination.pageSize} />
+											</SelectTrigger>
+											<SelectContent side="top">
+												{[10, 20, 30, 50, 100].map((tamanho) => (
+													<SelectItem key={tamanho} value={`${tamanho}`}>
+														{tamanho}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</div>
 									<div className="text-sm text-muted-foreground">
 										Página {pagination.pageIndex + 1} de{" "}
 										{data.paginacao.totalPages} ({data.paginacao.total}{" "}

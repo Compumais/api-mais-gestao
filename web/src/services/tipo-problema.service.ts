@@ -35,7 +35,10 @@ export const tipoProblemaService = {
 	async listar(params: {
 		idempresa: string;
 		descricao?: string;
+		codigo?: string;
 		inativo?: number;
+		ordenarPor?: string;
+		ordem?: "asc" | "desc";
 		page?: number;
 		limit?: number;
 	}): Promise<ListarTiposProblemaResponse> {
