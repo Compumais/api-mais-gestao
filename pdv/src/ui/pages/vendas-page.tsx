@@ -12,6 +12,7 @@ import { rotaHomePdv, rotuloModelo, type StatusContext } from "@/lib/pdv-types";
 import type { OrdenacaoColunaTabela } from "@/ui/components/cabecalho-coluna-tabela";
 import { DialogInutilizarNfce } from "@/ui/components/dialog-inutilizar-nfce";
 import { FunctionBar } from "@/ui/components/function-bar";
+import { PdvShell } from "@/ui/components/pdv-shell";
 import { Topbar } from "@/ui/components/topbar";
 import { Button } from "@/ui/components/ui/button";
 import {
@@ -153,6 +154,7 @@ export function VendasPage() {
 	> => {
 		return {
 			criadoem: { tipo: "data" },
+			numero_mesa: { tipo: "texto", placeholder: "Nº mesa/comanda" },
 			origem: { tipo: "opcoes", opcoes: ORIGEM_OPCOES_FILTRO },
 			pagamento: { tipo: "opcoes", opcoes: PAGAMENTO_OPCOES_FILTRO },
 			valortotal: { tipo: "nenhum" },
@@ -222,25 +224,61 @@ export function VendasPage() {
 	const comFiltros = filtrosColunaAtivos(filtrosColuna) || !!ordenarPor;
 
 	return (
-		<div className="flex h-screen flex-col">
-			<Topbar
-				title="Vendas do PDV"
-				subtitle="Histórico local com status de sincronização e NFC-e"
-				right={
-					<Button
-						variant="secondary"
-						size="sm"
-						onClick={() => navigate(rotaHomePdv(status))}
-					>
-						Voltar{" "}
-						{status?.moduloGourmet
-							? `às ${rotulo.plural.toLowerCase()}`
-							: "ao PDV"}
-					</Button>
-				}
-			/>
-
-			<div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden bg-muted/30 p-3">
+		<PdvShell
+			status={status}
+			onBlockedNavigate={setMsg}
+			topbar={
+				<Topbar
+					title="Vendas do PDV"
+					subtitle="Histórico local com status de sincronização e NFC-e"
+					right={
+						<Button
+							variant="secondary"
+							size="sm"
+							onClick={() => navigate(rotaHomePdv(status))}
+						>
+							Voltar{" "}
+							{status?.moduloGourmet
+								? `às ${rotulo.plural.toLowerCase()}`
+								: "ao PDV"}
+						</Button>
+					}
+				/>
+			}
+			footer={
+				<>
+					<DialogInutilizarNfce
+						aberto={inutilizarVendaId != null}
+						vendaId={inutilizarVendaId}
+						onFechar={() => setInutilizarVendaId(null)}
+						onSucesso={(mensagem) => {
+							setMsg(mensagem);
+							void load();
+						}}
+					/>
+					<FunctionBar
+						actions={[
+							{
+								key: "atualizar",
+								label: "Atualizar",
+								hotkey: teclas.sincronizar,
+								variant: "secondary",
+								onClick: () => void load(),
+								disabled: loading,
+							},
+							{
+								key: "voltar",
+								label: "Voltar",
+								hotkey: "Escape",
+								variant: "outline",
+								onClick: () => navigate(rotaHomePdv(status)),
+							},
+						]}
+					/>
+				</>
+			}
+		>
+			<div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
 				<div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
 					{msg ? (
 						<p className="rounded-md bg-muted px-3 py-2 text-sm ring-1 ring-foreground/10">
@@ -398,36 +436,6 @@ export function VendasPage() {
 					) : null}
 				</div>
 			</div>
-
-			<DialogInutilizarNfce
-				aberto={inutilizarVendaId != null}
-				vendaId={inutilizarVendaId}
-				onFechar={() => setInutilizarVendaId(null)}
-				onSucesso={(mensagem) => {
-					setMsg(mensagem);
-					void load();
-				}}
-			/>
-
-			<FunctionBar
-				actions={[
-					{
-						key: "atualizar",
-						label: "Atualizar",
-						hotkey: teclas.sincronizar,
-						variant: "secondary",
-						onClick: () => void load(),
-						disabled: loading,
-					},
-					{
-						key: "voltar",
-						label: "Voltar",
-						hotkey: "Escape",
-						variant: "outline",
-						onClick: () => navigate(rotaHomePdv(status)),
-					},
-				]}
-			/>
-		</div>
+		</PdvShell>
 	);
 }

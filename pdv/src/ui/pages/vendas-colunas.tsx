@@ -22,10 +22,13 @@ export type VendaListagem = {
 	criadoem: string;
 	sync_status: string;
 	nfce_status: string;
+	numero_mesa?: number | null;
+	senha_chamada?: string | null;
 };
 
 export type FiltrosColunaVendasState = {
 	criadoem: string;
+	numero_mesa: string;
 	origem: string;
 	pagamento: string;
 	sync_status: string;
@@ -34,6 +37,7 @@ export type FiltrosColunaVendasState = {
 
 export const filtrosColunaVendasVazios: FiltrosColunaVendasState = {
 	criadoem: "",
+	numero_mesa: "",
 	origem: "",
 	pagamento: "",
 	sync_status: "",
@@ -47,6 +51,7 @@ export const COLUNA_PARA_CAMPO_FILTRO_VENDAS: Record<
 	CampoFiltroColunaVendas
 > = {
 	criadoem: "criadoem",
+	numero_mesa: "numero_mesa",
 	origem: "origem",
 	pagamento: "pagamento",
 	sync_status: "sync_status",
@@ -55,6 +60,7 @@ export const COLUNA_PARA_CAMPO_FILTRO_VENDAS: Record<
 
 export const COLUNA_PARA_ORDENAR_VENDAS: Record<string, string> = {
 	criadoem: "criadoem",
+	numero_mesa: "numero_mesa",
 	origem: "origem",
 	pagamento: "meio_pagamento",
 	valortotal: "valortotal",
@@ -110,6 +116,7 @@ type DefinicaoColuna = {
 
 const DEFINICOES_COLUNAS: DefinicaoColuna[] = [
 	{ id: "criadoem", label: "Data", visivelPadrao: true },
+	{ id: "numero_mesa", label: "Mesa/Comanda", visivelPadrao: true },
 	{ id: "origem", label: "Origem", visivelPadrao: true },
 	{ id: "pagamento", label: "Pagamento", visivelPadrao: true },
 	{ id: "valortotal", label: "Total", visivelPadrao: true },
@@ -178,6 +185,13 @@ function rotuloOrigem(origem: string) {
 	return origem;
 }
 
+export function rotuloMesaComanda(venda: VendaListagem): string {
+	const numero = Number(venda.numero_mesa ?? 0);
+	if (numero > 0) return String(numero);
+	if (venda.senha_chamada) return `#${venda.senha_chamada}`;
+	return "—";
+}
+
 function podeRetransmitir(status: string) {
 	return (
 		status === "erro" ||
@@ -214,6 +228,19 @@ export function filtrarVendas(
 		if (filtros.criadoem) {
 			const dia = dayjs(venda.criadoem).format("YYYY-MM-DD");
 			if (dia !== filtros.criadoem) return false;
+		}
+		if (filtros.numero_mesa) {
+			const termo = filtros.numero_mesa.trim().toLowerCase();
+			const rotulo = rotuloMesaComanda(venda).toLowerCase();
+			const numero = String(venda.numero_mesa ?? "");
+			const senha = String(venda.senha_chamada ?? "").toLowerCase();
+			if (
+				!rotulo.includes(termo) &&
+				!numero.includes(termo) &&
+				!senha.includes(termo.replace(/^#/, ""))
+			) {
+				return false;
+			}
 		}
 		if (filtros.origem && venda.origem !== filtros.origem) return false;
 		if (filtros.pagamento && chavePagamento(venda) !== filtros.pagamento) {
@@ -254,6 +281,10 @@ export function ordenarVendas(
 			case "criadoem":
 				va = new Date(a.criadoem).getTime();
 				vb = new Date(b.criadoem).getTime();
+				break;
+			case "numero_mesa":
+				va = Number(a.numero_mesa ?? 0);
+				vb = Number(b.numero_mesa ?? 0);
 				break;
 			case "origem":
 				va = a.origem;
@@ -394,6 +425,18 @@ export function criarColunasVendas(
 					meta,
 					cell: ({ row }) =>
 						dayjs(row.original.criadoem).format("DD/MM/YYYY HH:mm:ss"),
+				});
+				break;
+			case "numero_mesa":
+				colunas.push({
+					id: "numero_mesa",
+					header,
+					meta,
+					cell: ({ row }) => (
+						<span className="font-mono font-semibold">
+							{rotuloMesaComanda(row.original)}
+						</span>
+					),
 				});
 				break;
 			case "origem":
