@@ -1,12 +1,20 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
+import { ORDENAR_PRODUCOES_CAMPOS } from "@/repositories/registro-producao-repositories.js";
 import { listarProducoesService } from "@/service/producao/listar-producoes.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
+
+const textoOpcional = z.string().optional();
 
 const querySchema = z.object({
 	idempresa: z.string().uuid(),
 	origem: z.coerce.number().int().optional(),
 	idprodutoacabado: z.string().uuid().optional(),
+	nome: textoOpcional,
+	codigo: textoOpcional,
+	datahora: textoOpcional,
+	ordenarPor: z.enum(ORDENAR_PRODUCOES_CAMPOS).optional(),
+	ordem: z.enum(["asc", "desc"]).optional(),
 	page: z.coerce.number().int().positive().optional().default(1),
 	limit: z.coerce.number().int().positive().max(100).optional().default(10),
 });
@@ -26,6 +34,11 @@ export async function listarProducoes(
 			idempresa: query.idempresa,
 			origem: query.origem,
 			idprodutoacabado: query.idprodutoacabado,
+			nome: query.nome,
+			codigo: query.codigo,
+			datahora: query.datahora,
+			ordenarPor: query.ordenarPor,
+			ordem: query.ordem,
 			page: query.page,
 			limit: query.limit,
 		});
