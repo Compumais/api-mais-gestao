@@ -1,5 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
+import { ORDENAR_ESTOQUE_SALDOS_CAMPOS } from "@/repositories/estoque-gestao-repositories.js";
 import { ajustarEstoqueEmMassaService } from "@/service/estoque/ajustar-estoque-em-massa.js";
 import { baixaEstoqueVendaService } from "@/service/estoque/baixa-estoque-venda.js";
 import {
@@ -13,10 +14,16 @@ import type { TipoEstoque } from "@/util/tipo-estoque.js";
 const querySaldosSchema = z.object({
 	idempresa: z.string().uuid(),
 	busca: z.string().optional(),
+	codigoproduto: z.string().optional(),
+	nomeproduto: z.string().optional(),
+	ncm: z.string().optional(),
+	unidademedida: z.string().optional(),
 	somenteDivergencia: z
 		.union([z.literal("true"), z.literal("false")])
 		.optional()
-		.transform((v) => v === "true"),
+		.transform((v) => (v === undefined ? undefined : v === "true")),
+	ordenarPor: z.enum(ORDENAR_ESTOQUE_SALDOS_CAMPOS).optional(),
+	ordem: z.enum(["asc", "desc"]).optional(),
 	page: z.coerce.number().int().min(1).optional(),
 	limit: z.coerce.number().int().min(1).max(100).optional(),
 });
@@ -88,8 +95,24 @@ export async function listarSaldosEstoqueGestao(
 		const resultado = await listarSaldosEstoqueGestaoService({
 			idusuario: request.user.id,
 			idempresa: query.idempresa,
-			somenteDivergencia: query.somenteDivergencia,
+			...(query.somenteDivergencia !== undefined
+				? { somenteDivergencia: query.somenteDivergencia }
+				: {}),
 			...(query.busca !== undefined ? { busca: query.busca } : {}),
+			...(query.codigoproduto !== undefined
+				? { codigoproduto: query.codigoproduto }
+				: {}),
+			...(query.nomeproduto !== undefined
+				? { nomeproduto: query.nomeproduto }
+				: {}),
+			...(query.ncm !== undefined ? { ncm: query.ncm } : {}),
+			...(query.unidademedida !== undefined
+				? { unidademedida: query.unidademedida }
+				: {}),
+			...(query.ordenarPor !== undefined
+				? { ordenarPor: query.ordenarPor }
+				: {}),
+			...(query.ordem !== undefined ? { ordem: query.ordem } : {}),
 			...(query.page !== undefined ? { page: query.page } : {}),
 			...(query.limit !== undefined ? { limit: query.limit } : {}),
 		});

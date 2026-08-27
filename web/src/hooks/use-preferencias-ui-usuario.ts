@@ -25,6 +25,7 @@ export const TABELA_FATOR_CONVERSAO = "fator-conversao";
 export const TABELA_CONDICOES_PAGAMENTO = "condicoes-pagamento";
 export const TABELA_FORMAS_ERP = "formas-erp";
 export const TABELA_BANDEIRAS_CARTAO = "bandeiras-cartao";
+export const TABELA_ESTOQUE = "estoque";
 
 export function usePreferenciasUiUsuario() {
 	return useQuery({
