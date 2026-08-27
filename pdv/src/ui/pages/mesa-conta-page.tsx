@@ -1194,10 +1194,12 @@ export function MesaContaPage() {
 			{confirmandoCancelar && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
 					<div className="pdv-surface w-96 space-y-4 p-5">
-						<h2 className="text-lg font-semibold">Cancelar {rotulo}</h2>
+						<h2 className="text-lg font-semibold">
+							Cancelar {rotulo.singular}
+						</h2>
 						<p className="text-sm text-muted-foreground">
 							{conta
-								? `Os itens da ${rotulo.toLowerCase()} serão desconsiderados, ela será liberada e removida da catraca. Esta ação não pode ser desfeita.`
+								? `Os itens da ${rotulo.singular.toLowerCase()} serão desconsiderados, ela será liberada e removida da catraca. Esta ação não pode ser desfeita.`
 								: `Há itens apenas na fila. Ao cancelar, a fila será descartada e você voltará ao salão.`}
 						</p>
 						<div className="flex gap-2">
@@ -1369,7 +1371,7 @@ export function MesaContaPage() {
 					},
 					{
 						key: "cancelar",
-						label: `Cancelar ${rotulo}`,
+						label: `Cancelar ${rotulo.singular}`,
 						hotkey: "F3",
 						variant: "outline",
 						disabled:
