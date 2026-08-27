@@ -168,6 +168,7 @@ import {
 	puxarDoPrincipal,
 	statusPrincipalCache,
 	testarConexaoPrincipal,
+	buscarOpcoesPdvNoPrincipal,
 	validarIdentidadeAoSalvar,
 } from "../pdv-secundario/servico";
 import {
@@ -1109,6 +1110,10 @@ export const localApi = {
 		numeropdv: string;
 	}) {
 		return testarConexaoPrincipal(params);
+	},
+
+	async buscarTerminaisPrincipal(params: { host: string; porta: string }) {
+		return buscarOpcoesPdvNoPrincipal(params);
 	},
 
 	async conectarPrincipal() {
