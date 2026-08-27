@@ -13,13 +13,13 @@ export function AvisoSecundario({ status }: { status: StatusPdv | null }) {
 	}
 	if (status.principalOnline) {
 		return (
-			<div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+			<div className="rounded-md bg-primary/10 px-3 py-2 text-sm text-primary ring-1 ring-primary/20">
 				PDV secundário nº {status.numeropdv} · principal online
 			</div>
 		);
 	}
 	return (
-		<div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm">
+		<div className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive ring-1 ring-destructive/30">
 			<p>
 				{status.principalErro ??
 					"PDV principal offline. Vendas e mesas ficam bloqueadas até reconectar."}

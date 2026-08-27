@@ -209,7 +209,7 @@ export function DeliveryPage() {
 				</div>
 			</div>
 
-			<div className="min-h-0 flex-1 overflow-auto rounded-lg border border-border">
+			<div className="pdv-surface min-h-0 flex-1 overflow-auto">
 				<table className="w-full text-sm">
 					<thead className="sticky top-0 bg-muted/80 text-left">
 						<tr>
@@ -325,7 +325,7 @@ export function DeliveryPage() {
 
 			{abrir ? (
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-					<div className="max-h-[90vh] w-full max-w-lg overflow-auto rounded-xl border border-border bg-card p-4 shadow-lg">
+					<div className="pdv-surface max-h-[90vh] w-full max-w-lg overflow-auto p-4">
 						<h2 className="mb-3 text-lg font-semibold">Novo pedido</h2>
 						<div className="mb-3 flex gap-2">
 							<Button

@@ -401,8 +401,8 @@ export function BalcaoPage() {
 				}
 			/>
 
-			<div className="grid flex-1 grid-cols-[1fr_360px] gap-3 overflow-hidden p-3">
-				<div className="flex flex-col gap-3 overflow-hidden rounded-lg border bg-card p-3">
+			<div className="grid flex-1 grid-cols-[1fr_360px] gap-3 overflow-hidden bg-muted/30 p-3">
+				<div className="pdv-surface flex flex-col gap-3 overflow-hidden p-3">
 					<AvisoSecundario status={status} />
 					<BarcodeInput
 						onScan={(codigo) => void onBip(codigo)}
@@ -441,7 +441,7 @@ export function BalcaoPage() {
 											key={g.id}
 											type="button"
 											onClick={() => void abrirGrupo(g)}
-											className="rounded-lg border bg-background p-4 text-sm font-semibold transition hover:border-primary"
+											className="rounded-lg bg-background p-4 text-sm font-semibold ring-1 ring-foreground/10 transition hover:ring-primary"
 										>
 											{g.nome}
 										</button>
@@ -485,7 +485,7 @@ export function BalcaoPage() {
 					)}
 				</div>
 
-				<div className="flex flex-col rounded-lg border bg-card p-3">
+				<div className="pdv-surface flex flex-col p-3">
 					<h2 className="mb-2 text-sm font-semibold">Fila</h2>
 					<div className="flex-1 space-y-2 overflow-auto">
 						{itens.map((item) => (

@@ -246,7 +246,7 @@ export function LoginPage() {
 										: "Configurar conexão / PDV secundário"}
 								</button>
 								{mostrarConexao && (
-									<div className="space-y-3 rounded-md border p-3">
+									<div className="space-y-3 rounded-md bg-muted/50 p-3 ring-1 ring-foreground/10">
 										<div className="space-y-2">
 											<Label htmlFor="pdv_modo">Este PDV</Label>
 											<Select
@@ -377,7 +377,7 @@ export function LoginPage() {
 									/>
 								</div>
 								{okConexao && (
-									<p className="text-sm text-emerald-700">{okConexao}</p>
+									<p className="text-sm text-primary">{okConexao}</p>
 								)}
 								{erro && <p className="text-sm text-destructive">{erro}</p>}
 								<Button className="w-full" size="lg" disabled={loading}>

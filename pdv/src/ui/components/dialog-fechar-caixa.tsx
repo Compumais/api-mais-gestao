@@ -116,7 +116,7 @@ export function DialogFecharCaixa({
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-			<div className="max-h-[95vh] w-[28rem] max-w-[95vw] space-y-4 overflow-y-auto rounded-lg border bg-card p-5">
+			<div className="pdv-surface max-h-[95vh] w-[28rem] max-w-[95vw] space-y-4 overflow-y-auto p-5">
 				<div>
 					<h2 className="text-lg font-semibold">Fechar caixa</h2>
 					<p className="text-sm text-muted-foreground">

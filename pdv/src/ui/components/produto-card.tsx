@@ -44,10 +44,10 @@ export function ProdutoCard({
 			disabled={disabled}
 			onClick={onClick}
 			className={cn(
-				"flex flex-col items-center gap-2 rounded-lg border p-3 text-center transition hover:border-primary disabled:pointer-events-none disabled:opacity-50",
+				"flex flex-col items-center gap-2 rounded-lg p-3 text-center ring-1 transition disabled:pointer-events-none disabled:opacity-50",
 				destaque
-					? "border-primary/40 bg-primary text-primary-foreground hover:bg-primary/90"
-					: "bg-background",
+					? "bg-primary text-primary-foreground ring-primary hover:bg-primary/80"
+					: "bg-background ring-foreground/10 hover:ring-primary",
 			)}
 		>
 			<div
