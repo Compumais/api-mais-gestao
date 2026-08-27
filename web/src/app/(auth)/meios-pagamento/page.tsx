@@ -1,35 +1,42 @@
 "use client";
 
 import {
+	IconChevronDown,
 	IconDotsVertical,
+	IconLayoutColumns,
 	IconPencil,
 	IconPlus,
 	IconTrash,
 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-	type ColumnDef,
 	flexRender,
 	getCoreRowModel,
-	getPaginationRowModel,
-	getSortedRowModel,
-	type SortingState,
 	useReactTable,
 } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useCallback, useId, useMemo, useState } from "react";
 import { toast } from "sonner";
+import type { OrdenacaoColunaTabela } from "@/components/cabecalho-coluna-tabela";
 import { TableSkeleton } from "@/components/table-skeleton";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
+	DropdownMenuCheckboxItem,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import {
 	Table,
 	TableBody,
@@ -40,7 +47,10 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEmpresa } from "@/hooks/use-empresa";
-import { formatarEscopoCondicaoPagamento } from "@/schemas/condicao-pagamento.schema";
+import {
+	TABELA_CONDICOES_PAGAMENTO,
+	useColunasTabelaPersistidas,
+} from "@/hooks/use-preferencias-ui-usuario";
 import {
 	type CondicaoPagamento,
 	condicaoPagamentoService,
@@ -48,109 +58,105 @@ import {
 import { PageContainer } from "../components/page-container";
 import { BandeirasCartaoTab } from "./components/bandeiras-cartao-tab";
 import { FormasErpTab } from "./components/formas-erp-tab";
+import {
+	COLUNA_PARA_CAMPO_FILTRO_CONDICAO_PAGAMENTO,
+	type ConfigFiltroColunaCondicaoPagamento,
+	criarColunasCondicoesPagamento,
+	ESCOPO_OPCOES_FILTRO,
+	type FiltrosColunaCondicoesPagamentoState,
+	filtrosColunaCondicoesPagamentoVazios,
+	STATUS_OPCOES_FILTRO,
+	visibilidadePadraoColunasCondicoesPagamento,
+} from "./condicoes-pagamento-colunas";
 
 const ROTA_BASE = "/meios-pagamento";
 
-type ColumnsProps = {
-	onEdit: (registro: CondicaoPagamento) => void;
-	onDelete: (id: string) => void;
-};
+function rotuloColuna(column: {
+	id: string;
+	columnDef: { meta?: unknown; header?: unknown };
+}) {
+	const meta = column.columnDef.meta as { label?: string } | undefined;
+	if (meta?.label) return meta.label;
+	if (typeof column.columnDef.header === "string") {
+		return column.columnDef.header;
+	}
+	return column.id;
+}
 
-const createColumns = ({
-	onEdit,
-	onDelete,
-}: ColumnsProps): ColumnDef<CondicaoPagamento>[] => [
-	{
-		accessorKey: "codigo",
-		header: "Código",
-		cell: ({ row }) => <div>{row.getValue("codigo") || "-"}</div>,
-	},
-	{
-		accessorKey: "descricao",
-		header: "Descrição",
-		cell: ({ row }) => (
-			<div className="max-w-md truncate">
-				{row.getValue("descricao") || "-"}
-			</div>
-		),
-	},
-	{
-		accessorKey: "parcelas",
-		header: "Parcelas",
-		cell: ({ row }) => <div>{row.getValue("parcelas") ?? "-"}</div>,
-	},
-	{
-		accessorKey: "prazos",
-		header: "Prazos",
-		cell: ({ row }) => <div>{row.getValue("prazos") || "-"}</div>,
-	},
-	{
-		id: "escopo",
-		header: "Escopo",
-		cell: ({ row }) => (
-			<div>{formatarEscopoCondicaoPagamento(row.original.escopo)}</div>
-		),
-	},
-	{
-		id: "status",
-		header: "Status",
-		cell: ({ row }) =>
-			row.original.inativo === 1 ? (
-				<Badge variant="secondary">Inativo</Badge>
-			) : (
-				<Badge variant="outline">Ativo</Badge>
-			),
-	},
-	{
-		id: "acoes",
-		header: "Ações",
-		cell: ({ row }) => {
-			const registro = row.original;
-
-			return (
-				<div className="flex justify-end">
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon"
-								className="h-8 w-8"
-								aria-label="Abrir menu de ações"
-							>
-								<IconDotsVertical className="size-4" />
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end">
-							<DropdownMenuItem onClick={() => onEdit(registro)}>
-								<IconPencil className="size-4" />
-								Editar
-							</DropdownMenuItem>
-							<DropdownMenuSeparator />
-							<DropdownMenuItem
-								variant="destructive"
-								onClick={() => onDelete(registro.id)}
-							>
-								<IconTrash className="size-4" />
-								Excluir
-							</DropdownMenuItem>
-						</DropdownMenuContent>
-					</DropdownMenu>
-				</div>
-			);
-		},
-	},
-];
+function filtrosColunaAtivos(filtros: FiltrosColunaCondicoesPagamentoState) {
+	return Object.values(filtros).some((valor) => valor.trim() !== "");
+}
 
 export default function MeiosPagamentoPage() {
 	const router = useRouter();
 	const queryClient = useQueryClient();
 	const { localStorageEmpresa } = useEmpresa();
-	const [sorting, setSorting] = useState<SortingState>([]);
+	const idPorPagina = useId();
 	const [busca, setBusca] = useState("");
 	const [pagination, setPagination] = useState({
 		pageIndex: 0,
 		pageSize: 10,
 	});
+	const [filtrosColuna, setFiltrosColuna] =
+		useState<FiltrosColunaCondicoesPagamentoState>(
+			filtrosColunaCondicoesPagamentoVazios,
+		);
+	const [ordenarPor, setOrdenarPor] = useState<string | null>(null);
+	const [ordem, setOrdem] = useState<"asc" | "desc" | null>(null);
+
+	const visibilidadePadrao = useMemo(
+		() => visibilidadePadraoColunasCondicoesPagamento(),
+		[],
+	);
+	const { columnVisibility, onColumnVisibilityChange, isLoadingPreferencias } =
+		useColunasTabelaPersistidas(TABELA_CONDICOES_PAGAMENTO, visibilidadePadrao);
+
+	const onOrdenarColuna = useCallback(
+		(colunaId: string, direcao: OrdenacaoColunaTabela) => {
+			if (!direcao) {
+				setOrdenarPor(null);
+				setOrdem(null);
+			} else {
+				setOrdenarPor(colunaId);
+				setOrdem(direcao);
+			}
+			setPagination((p) => ({ ...p, pageIndex: 0 }));
+		},
+		[],
+	);
+
+	const onFiltrarColuna = useCallback((colunaId: string, valor: string) => {
+		const campo = COLUNA_PARA_CAMPO_FILTRO_CONDICAO_PAGAMENTO[colunaId];
+		if (!campo) return;
+		setFiltrosColuna((atual) => ({ ...atual, [campo]: valor }));
+		setPagination((p) => ({ ...p, pageIndex: 0 }));
+	}, []);
+
+	const configFiltroPorColuna = useMemo((): Record<
+		string,
+		ConfigFiltroColunaCondicaoPagamento
+	> => {
+		const texto = (
+			placeholder?: string,
+		): ConfigFiltroColunaCondicaoPagamento => ({
+			tipo: "texto",
+			placeholder,
+		});
+		return {
+			codigo: texto("Ex: 01"),
+			descricao: texto("Descrição"),
+			parcelas: texto("Parcelas"),
+			prazos: texto("Prazos"),
+			escopo: {
+				tipo: "opcoes",
+				opcoes: ESCOPO_OPCOES_FILTRO,
+			},
+			status: {
+				tipo: "opcoes",
+				opcoes: STATUS_OPCOES_FILTRO,
+			},
+		};
+	}, []);
 
 	const { data, isLoading } = useQuery({
 		queryKey: [
@@ -159,6 +165,9 @@ export default function MeiosPagamentoPage() {
 			pagination.pageIndex + 1,
 			pagination.pageSize,
 			busca,
+			filtrosColuna,
+			ordenarPor,
+			ordem,
 		],
 		queryFn: async () => {
 			if (!localStorageEmpresa) {
@@ -168,7 +177,23 @@ export default function MeiosPagamentoPage() {
 				idempresa: localStorageEmpresa.id,
 				page: pagination.pageIndex + 1,
 				limit: pagination.pageSize,
-				descricao: busca || undefined,
+				...(busca.trim() ? { descricao: busca.trim() } : {}),
+				...(filtrosColuna.codigo ? { codigo: filtrosColuna.codigo } : {}),
+				...(filtrosColuna.descricao
+					? { descricao: filtrosColuna.descricao }
+					: {}),
+				...(filtrosColuna.parcelas
+					? { parcelas: filtrosColuna.parcelas }
+					: {}),
+				...(filtrosColuna.prazos ? { prazos: filtrosColuna.prazos } : {}),
+				...(filtrosColuna.escopo !== ""
+					? { escopo: Number(filtrosColuna.escopo) }
+					: {}),
+				...(filtrosColuna.inativo !== ""
+					? { inativo: Number(filtrosColuna.inativo) }
+					: {}),
+				...(ordenarPor ? { ordenarPor } : {}),
+				...(ordem ? { ordem } : {}),
 			});
 		},
 		enabled: !!localStorageEmpresa,
@@ -185,49 +210,106 @@ export default function MeiosPagamentoPage() {
 		},
 	});
 
-	const handleEdit = (registro: CondicaoPagamento) => {
-		router.push(`${ROTA_BASE}/${registro.id}/editar`);
-	};
+	const handleEdit = useCallback(
+		(registro: CondicaoPagamento) => {
+			router.push(`${ROTA_BASE}/${registro.id}/editar`);
+		},
+		[router],
+	);
 
-	const handleDelete = (id: string) => {
-		toast.message("Tem certeza que deseja excluir este meio de pagamento?", {
-			position: "top-center",
-			duration: 3000,
-			action: {
-				label: "Excluir",
-				onClick: () => deletar(id),
-			},
-			description: "Esta ação não pode ser desfeita.",
-		});
-	};
+	const handleDelete = useCallback(
+		(id: string) => {
+			toast.message("Tem certeza que deseja excluir este meio de pagamento?", {
+				position: "top-center",
+				duration: 3000,
+				action: {
+					label: "Excluir",
+					onClick: () => deletar(id),
+				},
+				description: "Esta ação não pode ser desfeita.",
+			});
+		},
+		[deletar],
+	);
 
-	const columns = createColumns({
-		onEdit: handleEdit,
-		onDelete: handleDelete,
-	});
+	const columns = useMemo(
+		() =>
+			criarColunasCondicoesPagamento({
+				filtros: filtrosColuna,
+				ordenarPor,
+				ordem,
+				onOrdenarColuna,
+				onFiltrarColuna,
+				configFiltroPorColuna,
+				renderAcoes: (registro) => (
+					<div className="flex justify-end">
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon"
+									className="h-8 w-8"
+									aria-label="Abrir menu de ações"
+								>
+									<IconDotsVertical className="size-4" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="end">
+								<DropdownMenuItem onClick={() => handleEdit(registro)}>
+									<IconPencil className="size-4" />
+									Editar
+								</DropdownMenuItem>
+								<DropdownMenuSeparator />
+								<DropdownMenuItem
+									variant="destructive"
+									onClick={() => handleDelete(registro.id)}
+								>
+									<IconTrash className="size-4" />
+									Excluir
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
+					</div>
+				),
+			}),
+		[
+			filtrosColuna,
+			ordenarPor,
+			ordem,
+			onOrdenarColuna,
+			onFiltrarColuna,
+			configFiltroPorColuna,
+			handleEdit,
+			handleDelete,
+		],
+	);
 
 	const table = useReactTable({
 		data: data?.data || [],
 		columns,
 		state: {
-			sorting,
 			pagination,
+			columnVisibility,
 		},
-		onSortingChange: setSorting,
 		onPaginationChange: setPagination,
+		onColumnVisibilityChange,
 		getCoreRowModel: getCoreRowModel(),
-		getSortedRowModel: getSortedRowModel(),
-		getPaginationRowModel: getPaginationRowModel(),
+		getRowId: (row) => row.id,
 		manualPagination: true,
 		pageCount: data?.paginacao.totalPages ?? 0,
 	});
+
+	const colunasVisiveis = table.getVisibleLeafColumns();
+	const mostrarSkeleton = isLoading || isLoadingPreferencias;
+	const comFiltros =
+		!!busca.trim() || filtrosColunaAtivos(filtrosColuna) || !!ordenarPor;
 
 	return (
 		<PageContainer>
 			<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
 				<div className="px-4">
 					<h1 className="text-2xl font-bold">Meios de pagamento</h1>
-					<p className="text-sm text-muted-foreground mt-1">
+					<p className="mt-1 text-sm text-muted-foreground">
 						Condições de parcelamento, formas usadas na NF-e e bandeiras de
 						cartão do PDV.
 					</p>
@@ -253,7 +335,7 @@ export default function MeiosPagamentoPage() {
 							</Button>
 						</div>
 
-						<div className="px-0">
+						<div className="flex flex-wrap items-center justify-between gap-2">
 							<Input
 								placeholder="Buscar por descrição..."
 								value={busca}
@@ -264,6 +346,39 @@ export default function MeiosPagamentoPage() {
 								className="max-w-sm"
 								aria-label="Buscar meios de pagamento por descrição"
 							/>
+							{localStorageEmpresa && (
+								<DropdownMenu>
+									<DropdownMenuTrigger asChild>
+										<Button variant="outline" size="sm">
+											<IconLayoutColumns className="size-4" />
+											<span className="hidden lg:inline">
+												Personalizar Colunas
+											</span>
+											<span className="lg:hidden">Colunas</span>
+											<IconChevronDown className="size-4" />
+										</Button>
+									</DropdownMenuTrigger>
+									<DropdownMenuContent
+										align="end"
+										className="max-h-72 w-56 overflow-y-auto"
+									>
+										{table
+											.getAllColumns()
+											.filter((column) => column.getCanHide())
+											.map((column) => (
+												<DropdownMenuCheckboxItem
+													key={column.id}
+													checked={column.getIsVisible()}
+													onCheckedChange={(value) =>
+														column.toggleVisibility(!!value)
+													}
+												>
+													{rotuloColuna(column)}
+												</DropdownMenuCheckboxItem>
+											))}
+									</DropdownMenuContent>
+								</DropdownMenu>
+							)}
 						</div>
 
 						<div className="rounded-lg border bg-card">
@@ -273,15 +388,21 @@ export default function MeiosPagamentoPage() {
 										Selecione uma empresa para visualizar os meios de pagamento
 									</p>
 								</div>
-							) : isLoading ? (
-								<TableSkeleton rows={10}>
-									<TableHead className="w-[100px]">Código</TableHead>
-									<TableHead>Descrição</TableHead>
-									<TableHead className="w-[100px]">Parcelas</TableHead>
-									<TableHead className="w-[120px]">Prazos</TableHead>
-									<TableHead className="w-[140px]">Escopo</TableHead>
-									<TableHead className="w-[100px]">Status</TableHead>
-									<TableHead className="w-12 text-end">Ações</TableHead>
+							) : mostrarSkeleton ? (
+								<TableSkeleton
+									columns={colunasVisiveis.length || 7}
+									rows={10}
+								>
+									{colunasVisiveis.map((coluna) => (
+										<TableHead
+											key={coluna.id}
+											className={
+												coluna.id === "acoes" ? "w-12 text-end" : undefined
+											}
+										>
+											{rotuloColuna(coluna)}
+										</TableHead>
+									))}
 								</TableSkeleton>
 							) : (
 								<>
@@ -324,17 +445,45 @@ export default function MeiosPagamentoPage() {
 											) : (
 												<TableRow>
 													<TableCell
-														colSpan={table.getAllColumns().length}
+														colSpan={colunasVisiveis.length}
 														className="h-24 text-center"
 													>
-														Nenhum meio de pagamento encontrado.
+														{comFiltros
+															? "Nenhum meio de pagamento encontrado para os filtros selecionados."
+															: "Nenhum meio de pagamento encontrado."}
 													</TableCell>
 												</TableRow>
 											)}
 										</TableBody>
 									</Table>
-									{data && data.paginacao.totalPages > 1 && (
-										<div className="flex items-center justify-between px-4 py-4 border-t">
+									{data && data.paginacao.total > 0 && (
+										<div className="flex flex-col gap-4 border-t px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+											<div className="flex items-center gap-2">
+												<Label htmlFor={idPorPagina} className="text-sm">
+													Itens por página
+												</Label>
+												<Select
+													value={`${pagination.pageSize}`}
+													onValueChange={(value) => {
+														table.setPageSize(Number(value));
+														table.setPageIndex(0);
+													}}
+												>
+													<SelectTrigger
+														id={idPorPagina}
+														className="h-8 w-[72px]"
+													>
+														<SelectValue placeholder={pagination.pageSize} />
+													</SelectTrigger>
+													<SelectContent side="top">
+														{[10, 20, 30, 50, 100].map((tamanho) => (
+															<SelectItem key={tamanho} value={`${tamanho}`}>
+																{tamanho}
+															</SelectItem>
+														))}
+													</SelectContent>
+												</Select>
+											</div>
 											<div className="text-sm text-muted-foreground">
 												Página {pagination.pageIndex + 1} de{" "}
 												{data.paginacao.totalPages} ({data.paginacao.total}{" "}
