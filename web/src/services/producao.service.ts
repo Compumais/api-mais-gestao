@@ -35,6 +35,11 @@ export const producaoService = {
 		limit?: number;
 		origem?: number;
 		idprodutoacabado?: string;
+		nome?: string;
+		codigo?: string;
+		datahora?: string;
+		ordenarPor?: string;
+		ordem?: "asc" | "desc";
 	}): Promise<ListarProducoesResponse> {
 		const { data } = await api.get<ListarProducoesResponse>("/producoes", {
 			params,

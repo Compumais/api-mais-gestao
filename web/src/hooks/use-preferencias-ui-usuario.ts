@@ -28,6 +28,7 @@ export const TABELA_BANDEIRAS_CARTAO = "bandeiras-cartao";
 export const TABELA_ESTOQUE = "estoque";
 export const TABELA_TIPOS_PROBLEMA = "tipos-problema";
 export const TABELA_FICHAS_PRODUCAO = "fichas-producao";
+export const TABELA_PRODUCOES = "producoes";
 
 export function usePreferenciasUiUsuario() {
 	return useQuery({
