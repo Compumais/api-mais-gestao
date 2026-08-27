@@ -19,6 +19,7 @@ jobs:
     runs-on: windows-latest
     permissions:
       contents: write
+      actions: write
     defaults:
       run:
         working-directory: pdv
@@ -47,7 +48,12 @@ jobs:
         run: npm run pack:win
 
       - name: Instalar Inno Setup
-        run: choco install innosetup --yes --no-progress
+        run: |
+          choco install innosetup --yes --no-progress
+          if ($LASTEXITCODE -ne 0) {
+            choco install innosetup --yes --no-progress --ignore-checksums
+          }
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Compilar instalador Inno Setup
         run: powershell -NoProfile -ExecutionPolicy Bypass -File installer/compilar-iss.ps1
