@@ -3,6 +3,7 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppTopbar } from "@/components/app-topbar";
 import { ProtectedRoute } from "@/components/protected-route";
+import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
 import { SearchDialog } from "@/components/search-dialog";
 import { SearchShortcut } from "@/components/search-shortcut";
 import { SiteHeader } from "@/components/site-header";
@@ -41,6 +42,7 @@ function LayoutSidebar({ children }: { children: React.ReactNode }) {
 		>
 			<AppSidebar variant="inset" />
 			<SidebarInset>
+				<PwaInstallPrompt />
 				<SiteHeader />
 				{children}
 			</SidebarInset>
@@ -60,6 +62,7 @@ function LayoutTopbar({ children }: { children: React.ReactNode }) {
 			}
 		>
 			<AppTopbar />
+			<PwaInstallPrompt />
 			<SiteHeaderTopbar />
 			<main className="flex flex-1 flex-col">{children}</main>
 			<LayoutComum>{null}</LayoutComum>

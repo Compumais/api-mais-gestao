@@ -8,6 +8,7 @@ const PUBLIC_ROUTES = new Set([
 	"/registrar",
 	"/termos-de-servico",
 	"/politica-de-privacidade",
+	"/~offline",
 ]);
 const AUTH_ROUTES = new Set(["/entrar", "/registrar"]);
 
@@ -46,5 +47,7 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-	matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+	matcher: [
+		"/((?!api|_next/static|_next/image|favicon.ico|manifest.webmanifest|serwist|icons|apple-touch-icon|sw.js).*)",
+	],
 };
