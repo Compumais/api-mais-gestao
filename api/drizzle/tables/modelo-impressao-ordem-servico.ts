@@ -25,10 +25,26 @@ export type TipoBlocoModeloImpressaoOs =
 	| "itens"
 	| "totais"
 	| "extras"
+	| "personalizado"
 	| "assinaturas"
 	| "rodape";
 
 export type ColunaBlocoModeloImpressao = "cheia" | "esquerda" | "direita";
+
+export type TipoCampoPersonalizadoOs =
+	| "assinatura"
+	| "data"
+	| "observacao"
+	| "textoFixo"
+	| "status";
+
+export type CampoPersonalizadoOs = {
+	id: string;
+	tipo: TipoCampoPersonalizadoOs;
+	rotulo: string;
+	valor?: string;
+	coluna: ColunaBlocoModeloImpressao;
+};
 
 export type BlocoModeloImpressaoOs = {
 	id: string;
@@ -39,6 +55,8 @@ export type BlocoModeloImpressaoOs = {
 		texto?: string;
 		campos?: string[];
 		mostrarResponsavel?: boolean;
+		tituloSecao?: string;
+		camposPersonalizados?: CampoPersonalizadoOs[];
 	};
 };
 

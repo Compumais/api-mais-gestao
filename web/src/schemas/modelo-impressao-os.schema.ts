@@ -14,6 +14,7 @@ export const TIPOS_BLOCO_MODELO_IMPRESSAO_OS = [
 	"itens",
 	"totais",
 	"extras",
+	"personalizado",
 	"assinaturas",
 	"rodape",
 ] as const;
@@ -32,6 +33,26 @@ export const colunaBlocoModeloImpressaoSchema = z.enum(
 	COLUNAS_BLOCO_MODELO_IMPRESSAO,
 );
 
+export const TIPOS_CAMPO_PERSONALIZADO_OS = [
+	"assinatura",
+	"data",
+	"observacao",
+	"textoFixo",
+	"status",
+] as const;
+
+export const tipoCampoPersonalizadoOsSchema = z.enum(
+	TIPOS_CAMPO_PERSONALIZADO_OS,
+);
+
+export const campoPersonalizadoOsSchema = z.object({
+	id: z.string().min(1),
+	tipo: tipoCampoPersonalizadoOsSchema,
+	rotulo: z.string().max(120),
+	valor: z.string().max(5000).optional(),
+	coluna: colunaBlocoModeloImpressaoSchema.default("cheia"),
+});
+
 export const blocoModeloImpressaoOsSchema = z.object({
 	id: z.string().min(1),
 	tipo: tipoBlocoModeloImpressaoOsSchema,
@@ -42,6 +63,8 @@ export const blocoModeloImpressaoOsSchema = z.object({
 			texto: z.string().max(5000).optional(),
 			campos: z.array(z.string()).optional(),
 			mostrarResponsavel: z.boolean().optional(),
+			tituloSecao: z.string().max(200).optional(),
+			camposPersonalizados: z.array(campoPersonalizadoOsSchema).optional(),
 		})
 		.optional(),
 });
@@ -59,6 +82,10 @@ export type TipoBlocoModeloImpressaoOs = z.infer<
 export type ColunaBlocoModeloImpressao = z.infer<
 	typeof colunaBlocoModeloImpressaoSchema
 >;
+export type TipoCampoPersonalizadoOs = z.infer<
+	typeof tipoCampoPersonalizadoOsSchema
+>;
+export type CampoPersonalizadoOs = z.infer<typeof campoPersonalizadoOsSchema>;
 export type BlocoModeloImpressaoOs = z.infer<typeof blocoModeloImpressaoOsSchema>;
 export type LayoutModeloImpressaoOs = BlocoModeloImpressaoOs[];
 export type ModeloImpressaoOsFormData = z.infer<typeof modeloImpressaoOsFormSchema>;
