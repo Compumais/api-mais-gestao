@@ -2,6 +2,7 @@ import { obterStatusPadraoPorNumero } from "@/constants/ordem-servico-status";
 import { CAMPOS_CLIENTE_OS_PADRAO } from "@/constants/modelo-impressao-os";
 import type {
 	BlocoModeloImpressaoOs,
+	CampoPersonalizadoOs,
 	ColunaBlocoModeloImpressao,
 	LayoutModeloImpressaoOs,
 } from "@/schemas/modelo-impressao-os.schema";
@@ -163,6 +164,63 @@ function camposClienteEfetivos(campos: string[] | undefined): string[] {
 		campos.length <= 2;
 	if (soBasicos) return [...CAMPOS_CLIENTE_OS_PADRAO];
 	return campos;
+}
+
+function renderizarCampoPersonalizadoOs(
+	campo: CampoPersonalizadoOs,
+	ordem: DadosPreviewModeloImpressaoOs["ordem"],
+): string {
+	const rotulo = escapeHtml(campo.rotulo?.trim() || "—");
+
+	switch (campo.tipo) {
+		case "textoFixo":
+			return `<div class="campo campo-texto"><span class="rotulo">${rotulo}</span><p>${escapeHtml(campo.valor?.trim() || "—")}</p></div>`;
+		case "observacao": {
+			const texto = campo.valor?.trim() || "—";
+			return `<div class="campo campo-texto"><span class="rotulo">${rotulo}</span><p>${escapeHtml(texto).replace(/\n/g, "<br/>")}</p></div>`;
+		}
+		case "assinatura":
+			return `<div class="campo campo-assinatura"><span class="rotulo">${rotulo}</span><div class="assinatura-inline"><div class="linha"></div></div></div>`;
+		case "data":
+			return `<div class="campo campo-data"><span class="rotulo">${rotulo}</span><span class="valor campo-data-linha">___/___/______</span></div>`;
+		case "status": {
+			const status = valorCampoOs(ordem, "status") ?? "—";
+			return `<div class="campo"><span class="rotulo">${rotulo}</span><span class="valor">${escapeHtml(status)}</span></div>`;
+		}
+		default:
+			return "";
+	}
+}
+
+function renderizarCamposPersonalizadosHtml(
+	campos: CampoPersonalizadoOs[],
+	ordem: DadosPreviewModeloImpressaoOs["ordem"],
+): string {
+	if (campos.length === 0) return "<p>—</p>";
+
+	const partes: string[] = [];
+	let faixaCols: string[] = [];
+
+	function flushFaixa() {
+		if (faixaCols.length === 0) return;
+		partes.push(`<div class="faixa-colunas">${faixaCols.join("")}</div>`);
+		faixaCols = [];
+	}
+
+	for (const campo of campos) {
+		const html = renderizarCampoPersonalizadoOs(campo, ordem);
+		if (!html) continue;
+		const col = campo.coluna ?? "cheia";
+		if (col === "cheia") {
+			flushFaixa();
+			partes.push(html);
+		} else {
+			faixaCols.push(`<div class="col-bloco col-${col}">${html}</div>`);
+		}
+	}
+	flushFaixa();
+
+	return partes.join("");
 }
 
 function renderizarBlocoOs(
@@ -386,6 +444,16 @@ function renderizarBlocoOs(
 				</section>
 			`;
 		}
+		case "personalizado": {
+			const camposPersonalizados = bloco.props?.camposPersonalizados ?? [];
+			const tituloSecao = bloco.props?.tituloSecao?.trim();
+			return `
+				<section class="bloco personalizado">
+					${tituloSecao ? `<h2>${escapeHtml(tituloSecao)}</h2>` : ""}
+					${renderizarCamposPersonalizadosHtml(camposPersonalizados, ordem)}
+				</section>
+			`;
+		}
 		case "assinaturas":
 			return `
 				<section class="bloco assinaturas">
@@ -503,6 +571,9 @@ export const CSS_MODELO_IMPRESSAO_OS = `
 	.folha-os .assinaturas { display: flex; justify-content: space-between; gap: 28px; margin-top: 24px; }
 	.folha-os .assinatura { flex: 1; text-align: center; }
 	.folha-os .assinatura .linha { border-top: 1px solid #111; margin-bottom: 4px; }
+	.folha-os .personalizado .campo-assinatura .assinatura-inline { margin-top: 12px; }
+	.folha-os .personalizado .campo-assinatura .linha { border-top: 1px solid #111; height: 0; }
+	.folha-os .personalizado .campo-data-linha { letter-spacing: 0.08em; }
 	.folha-os .rodape { margin-top: 12px; font-size: 9px; color: #666; text-align: center; border-top: 1px dashed #ccc; padding-top: 6px; }
 	@media print {
 		body { margin: 0; }
