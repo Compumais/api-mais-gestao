@@ -2,15 +2,12 @@
 
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppTopbar } from "@/components/app-topbar";
-import { AtenaChatButton } from "@/components/atena-chat-button";
-import { AtenaChatWindow } from "@/components/atena-chat-window";
 import { ProtectedRoute } from "@/components/protected-route";
 import { SearchDialog } from "@/components/search-dialog";
 import { SearchShortcut } from "@/components/search-shortcut";
 import { SiteHeader } from "@/components/site-header";
 import { SiteHeaderTopbar } from "@/components/site-header-topbar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { AtenaChatProvider } from "@/hooks/use-atena-chat";
 import { useLayoutMenu } from "@/hooks/use-preferencias-ui-usuario";
 import {
 	SearchDialogProvider,
@@ -28,8 +25,6 @@ function LayoutComum({ children }: { children: React.ReactNode }) {
 			{children}
 			<SearchShortcut />
 			<SearchDialogWrapper />
-			<AtenaChatButton />
-			<AtenaChatWindow />
 		</>
 	);
 }
@@ -94,9 +89,7 @@ export default function AuthLayout({
 	return (
 		<ProtectedRoute>
 			<SearchDialogProvider>
-				<AtenaChatProvider>
-					<AuthLayoutShell>{children}</AuthLayoutShell>
-				</AtenaChatProvider>
+				<AuthLayoutShell>{children}</AuthLayoutShell>
 			</SearchDialogProvider>
 		</ProtectedRoute>
 	);
