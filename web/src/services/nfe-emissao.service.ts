@@ -323,6 +323,22 @@ export type ResultadoCalcularTributosNfe = {
 	totaisFiscais: TotaisFiscaisCalculoApi;
 };
 
+export type ResultadoCalcularObservacoesNfe = {
+	informacoesAdicionais?: string;
+	textoUsuario?: string;
+	legendaSimples?: string;
+	textoIbpt?: string;
+	tributosIbpt: {
+		totalFederal: number;
+		totalEstadual: number;
+		totalMunicipal: number;
+		totalAproximado: number;
+		chave?: string;
+		fonte?: string;
+	};
+	pendencias: string[];
+};
+
 export async function calcularTributosNfe(params: {
 	idempresa: string;
 	itens: EmissaoNfeFormData["itens"];
@@ -330,6 +346,18 @@ export async function calcularTributosNfe(params: {
 }): Promise<ResultadoCalcularTributosNfe> {
 	const { data } = await api.post<ResultadoCalcularTributosNfe>(
 		"/nfe/emissao/calcular-tributos",
+		params,
+	);
+	return data;
+}
+
+export async function calcularObservacoesNfe(params: {
+	idempresa: string;
+	informacoesAdicionais?: string;
+	itens: EmissaoNfeFormData["itens"];
+}): Promise<ResultadoCalcularObservacoesNfe> {
+	const { data } = await api.post<ResultadoCalcularObservacoesNfe>(
+		"/nfe/emissao/calcular-observacoes",
 		params,
 	);
 	return data;

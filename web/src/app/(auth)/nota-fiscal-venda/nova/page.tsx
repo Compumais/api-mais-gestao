@@ -52,10 +52,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import {
-	anexarRastrosInformacoesAdicionaisNfe,
-	montarSecaoObservacoesLotesNfe,
-} from "@/util/montar-observacoes-lotes-nfe";
+import { anexarRastrosInformacoesAdicionaisNfe } from "@/util/montar-observacoes-lotes-nfe";
 import {
 	IND_PRES_NFE_PADRAO,
 	isIndPresNfeValido,
@@ -86,6 +83,7 @@ import type { DocumentoReferenciadoResolvido } from "@/services/nfe-emissao.serv
 import {
 	abrirDanfeNfe,
 	buscarNfeEmitidaComItens,
+	calcularObservacoesNfe,
 	calcularTributosNfe,
 	emitirNfe,
 	excluirRascunhoEmissaoNfe,
@@ -408,17 +406,44 @@ export default function NovaEmissaoNfePage() {
 			),
 		[informacoesAdicionaisWatch, itensValue],
 	);
-	const secaoLotesObservacoes = useMemo(
+	const chaveObservacoesLegais = useMemo(
 		() =>
-			montarSecaoObservacoesLotesNfe(
-				(itensValue ?? []).map((item) => ({
+			JSON.stringify({
+				itens: (itensValue ?? []).map((item) => ({
+					idproduto: item.idproduto,
+					ncm: item.ncm,
+					orig: item.orig,
+					quantidade: item.quantidade,
+					valorUnitario: item.valorUnitario,
+					cst: item.cst,
+					csosn: item.csosn,
 					descricao: item.descricao,
 					codigoProduto: item.codigoProduto,
+					cfop: item.cfop,
+					unidade: item.unidade,
 					rastros: item.rastros,
 				})),
-			),
-		[itensValue],
+				informacoesAdicionais: informacoesAdicionaisWatch ?? "",
+				crt: empresaFiscal?.crt ?? 3,
+				uf: empresaFiscal?.uf ?? "",
+			}),
+		[
+			itensValue,
+			informacoesAdicionaisWatch,
+			empresaFiscal?.crt,
+			empresaFiscal?.uf,
+		],
 	);
+	const [chaveObservacoesDebounced, setChaveObservacoesDebounced] = useState(
+		chaveObservacoesLegais,
+	);
+	useEffect(() => {
+		const timer = window.setTimeout(
+			() => setChaveObservacoesDebounced(chaveObservacoesLegais),
+			400,
+		);
+		return () => window.clearTimeout(timer);
+	}, [chaveObservacoesLegais]);
 	const [freteWatch, seguroWatch, descontoWatch, outrasDespesasWatch] =
 		form.watch([
 			"totais.frete",
@@ -1530,6 +1555,41 @@ export default function NovaEmissaoNfePage() {
 		placeholderData: (anterior) => anterior,
 		retry: 1,
 	});
+
+	const paramsObservacoesDebounced = useMemo(() => {
+		try {
+			return JSON.parse(chaveObservacoesDebounced) as {
+				itens: EmissaoNfeFormData["itens"];
+				informacoesAdicionais?: string;
+			};
+		} catch {
+			return null;
+		}
+	}, [chaveObservacoesDebounced]);
+
+	const { data: calculoObservacoesApi } = useQuery({
+		queryKey: [
+			"nfe-calcular-observacoes",
+			empresa?.id,
+			chaveObservacoesDebounced,
+		],
+		queryFn: () =>
+			calcularObservacoesNfe({
+				idempresa: empresa!.id,
+				informacoesAdicionais:
+					paramsObservacoesDebounced?.informacoesAdicionais,
+				itens: paramsObservacoesDebounced?.itens ?? [],
+			}),
+		enabled:
+			!!empresa?.id &&
+			(paramsObservacoesDebounced?.itens?.length ?? 0) > 0 &&
+			chaveObservacoesDebounced.length > 0,
+		placeholderData: (anterior) => anterior,
+		retry: 1,
+	});
+
+	const previewObservacoesLegais =
+		calculoObservacoesApi?.informacoesAdicionais ?? observacoesComLotes;
 
 	const totaisFiscais: TotaisFiscaisEmissaoNfe =
 		calculoTributosApi?.totaisFiscais ?? totaisFiscaisLocais;
@@ -2783,23 +2843,50 @@ export default function NovaEmissaoNfePage() {
 							<FieldLegend>9. Dados Adicionais</FieldLegend>
 							<Field>
 								<FieldLabel>Informações complementares</FieldLabel>
+								{(calculoObservacoesApi?.legendaSimples ||
+									calculoObservacoesApi?.textoIbpt) && (
+									<p className="text-xs text-muted-foreground mb-2">
+										Observações legais incluídas automaticamente
+										{calculoObservacoesApi.legendaSimples ? " (Simples)" : ""}
+										{calculoObservacoesApi.textoIbpt ? " (IBPT)" : ""}.
+									</p>
+								)}
 								<Textarea
 									placeholder="Informações de interesse do Fisco e do contribuinte..."
 									rows={3}
 									maxLength={2000}
 									{...form.register("informacoesAdicionais")}
 								/>
-								{secaoLotesObservacoes && (
+								{previewObservacoesLegais && (
 									<div className="rounded-md border bg-muted/40 p-3 text-sm">
 										<p className="text-xs text-muted-foreground mb-2">
-											Prévia das informações complementares na NF-e (inclui
-											lotes informados nos itens):
+											Prévia das informações complementares na NF-e (texto livre
+											+ observações legais e lotes):
 										</p>
 										<p className="whitespace-pre-wrap">
-											{observacoesComLotes}
+											{previewObservacoesLegais}
 										</p>
 									</div>
 								)}
+								{calculoObservacoesApi?.pendencias &&
+									calculoObservacoesApi.pendencias.length > 0 && (
+										<p className="text-xs text-amber-700 dark:text-amber-300 mt-2">
+											{calculoObservacoesApi.pendencias.join(" ")}
+										</p>
+									)}
+								{calculoObservacoesApi?.tributosIbpt &&
+									calculoObservacoesApi.tributosIbpt.totalAproximado > 0 && (
+										<p className="text-xs text-muted-foreground mt-1">
+											Tributos aproximados: R${" "}
+											{calculoObservacoesApi.tributosIbpt.totalAproximado.toLocaleString(
+												"pt-BR",
+												{
+													minimumFractionDigits: 2,
+													maximumFractionDigits: 2,
+												},
+											)}
+										</p>
+									)}
 								{(pedidoId || isLotePedidos) && (
 									<p className="text-xs text-muted-foreground">
 										Pré-preenchido com o(s) DAV(s) de origem da NF-e. Você pode

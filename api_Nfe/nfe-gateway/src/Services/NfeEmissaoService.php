@@ -172,6 +172,7 @@ final class NfeEmissaoService
 		$vIcmsMonoRetenTotal = 0;
 		$vPisTotal  = 0;
 		$vCofinsTotal = 0;
+		$vTotTribTotal = 0;
 
 		$vFreteTotal = (float) ($totais['frete'] ?? 0);
 		$vSegTotal = (float) ($totais['seguro'] ?? 0);
@@ -245,7 +246,13 @@ final class NfeEmissaoService
 				$mk->tagRastro($rastro);
 			}
 
-			$mk->tagimposto((object) ['item' => $nItem]);
+			$mk->tagimposto((object) array_filter([
+				'item'     => $nItem,
+				'vTotTrib' => ($vTotTribItem = round((float) ($item['valorTributosAproximados'] ?? 0), 2)) > 0
+					? $vTotTribItem
+					: null,
+			], static fn ($valor) => $valor !== null));
+			$vTotTribTotal += $vTotTribItem;
 
 			$csosn = trim((string) ($item['csosn'] ?? ''));
 			$cst   = trim((string) ($item['cst'] ?? ''));
@@ -358,6 +365,7 @@ final class NfeEmissaoService
 			'vCOFINS'    => round($vCofinsTotal, 2),
 			'vOutro'     => $vOutro,
 			'vNF'        => $vNF,
+			'vTotTrib'   => round($vTotTribTotal, 2),
 		]);
 
 		// ── transporte ───────────────────────────────────────────────────────

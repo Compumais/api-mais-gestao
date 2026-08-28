@@ -1,7 +1,7 @@
 import z from "zod";
 import { isIndPresNfeValido } from "@/constants/ind-pres-nfe.js";
 
-const itemNfeSchema = z.object({
+export const itemNfeSchema = z.object({
 	idproduto: z.string().uuid().optional(),
 	codigoProduto: z.string().optional(),
 	ean: z.string().optional(),
