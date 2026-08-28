@@ -12,8 +12,9 @@ import {
 import { buscarNotaFiscalPorId } from "@/repositories/nota-fiscal-repositories.js";
 import { buscarTipoDocumentoFinanceiroPorId } from "@/repositories/tipo-documento-financeiro-repositories.js";
 import { completarRastrosItensEmissao } from "@/service/lote/completar-rastros-emissao.js";
-import { anexarRastrosInformacoesAdicionaisNfe } from "@/util/montar-observacoes-lotes-nfe.js";
+import { calcularTributosAproximadosIbpt } from "@/service/nfe-emissao/calcular-tributos-aproximados-ibpt.js";
 import { aplicarTributacaoItensEmissaoNfe } from "@/service/nfe-emissao/calcular-tributos-itens-emissao-nfe.js";
+import { montarObservacoesLegaisNfe } from "@/util/montar-observacoes-legais-nfe.js";
 import {
 	carregarContextoEmissaoNfe,
 	type DestinatarioPayloadNfe,
@@ -704,10 +705,22 @@ export async function prepararPayloadEmissaoNfeVenda(
 		opcoes.modo === "preview"
 			? anexarAvisoPreview(informacoesAdicionais)
 			: informacoesAdicionais;
-	const infoAdic = anexarRastrosInformacoesAdicionaisNfe(
-		infoAdicBase,
-		itensComRastros,
-	);
+
+	const tributosIbpt = await calcularTributosAproximadosIbpt({
+		uf: empresaFiscal.uf ?? "",
+		itens: itensComRastros,
+	});
+
+	const itensComIbpt = tributosIbpt.itens;
+
+	const observacoesLegais = montarObservacoesLegaisNfe({
+		informacoesAdicionais: infoAdicBase,
+		crt,
+		itens: itensComIbpt,
+		tributosIbpt,
+	});
+
+	const infoAdic = observacoesLegais.informacoesAdicionais;
 
 	const payloadGateway = await montarPayloadGatewayEmissaoItens({
 		empresa,
@@ -717,7 +730,7 @@ export async function prepararPayloadEmissaoNfeVenda(
 		numeroNf,
 		serie,
 		destinatario,
-		itens: itensComRastros,
+		itens: itensComIbpt,
 		totais,
 		pagamento: pagamentoNormalizado,
 		transporte: transporteAjustado,
@@ -746,7 +759,7 @@ export async function prepararPayloadEmissaoNfeVenda(
 		ambiente,
 		destinatario,
 		identidade,
-		itensNormalizados: itensComRastros,
+		itensNormalizados: itensComIbpt,
 		transporteAjustado,
 		natOpResolvida,
 		pagamentoNormalizado,

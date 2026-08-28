@@ -53,6 +53,7 @@ import { financeiroLancamentoRotas } from "./controllers/http/financeirolancamen
 import { gruposGourmetRotas } from "./controllers/http/grupo-gourmet/rotas.js";
 import { healthRotas } from "./controllers/http/health/rotas.js";
 import { hierarquiasRotas } from "./controllers/http/hierarquia/rotas.js";
+import { ibptRotas } from "./controllers/http/ibpt/rotas.js";
 import { iaRotas } from "./controllers/http/ia/rotas.js";
 import { informativosRotas } from "./controllers/http/informativos/rotas.js";
 import { integracoesContabilConfiguracaoRotas } from "./controllers/http/integracao-contabil-configuracao/rotas.js";
@@ -582,6 +583,7 @@ app.register(condicoesPagamentoRotas);
 app.register(departamentosRotas);
 app.register(enquadramentosIpiRotas);
 app.register(hierarquiasRotas);
+app.register(ibptRotas);
 app.register(gruposGourmetRotas);
 app.register(locaisRetiradaRotas);
 app.register(locaisEstoqueRotas);

@@ -28,6 +28,8 @@ import {
 	type ResultadoEmissaoTeste,
 	type ResultadoSefaz,
 } from "@/services/nfe-configuracao.service";
+import { empresaFiscalService } from "@/services/empresa-fiscal.service";
+import { ibptService } from "@/services/ibpt.service";
 import { BotaoAlterarNumeracao } from "./dialog-alterar-numeracao";
 import { NfeSeriesSection } from "./nfe-series-section";
 
@@ -72,6 +74,7 @@ function NfeConfiguracaoFormCampos({
 }) {
 	const queryClient = useQueryClient();
 	const arquivoRef = useRef<HTMLInputElement>(null);
+	const arquivoIbptRef = useRef<HTMLInputElement>(null);
 	const [senhaCert, setSenhaCert] = useState("");
 	const [apelidoCert, setApelidoCert] = useState("");
 	const [resultadoSefaz, setResultadoSefaz] = useState<ResultadoSefaz | null>(
@@ -88,6 +91,19 @@ function NfeConfiguracaoFormCampos({
 	useQuery({
 		queryKey: ["nfe-series", idempresa],
 		queryFn: () => nfeConfiguracaoService.listarSeries(idempresa),
+	});
+
+	const { data: empresaFiscal } = useQuery({
+		queryKey: ["empresa-fiscal", idempresa],
+		queryFn: () => empresaFiscalService.buscar(idempresa),
+	});
+
+	const ufEmpresa = empresaFiscal?.uf?.toUpperCase() ?? "";
+
+	const { data: statusIbpt, isLoading: statusIbptLoading } = useQuery({
+		queryKey: ["ibpt-status", idempresa, ufEmpresa],
+		queryFn: () => ibptService.status(idempresa, ufEmpresa),
+		enabled: ufEmpresa.length === 2,
 	});
 
 	const form = useForm<
@@ -204,6 +220,26 @@ function NfeConfiguracaoFormCampos({
 		onError: () => toast.error("Falha na emissão de teste"),
 	});
 
+	const importarIbptMutation = useMutation({
+		mutationFn: async () => {
+			const arquivo = arquivoIbptRef.current?.files?.[0];
+			if (!arquivo) throw new Error("Selecione o arquivo JSON da tabela IBPT");
+			const conteudo = await arquivo.text();
+			return ibptService.importar(idempresa, conteudo, ufEmpresa || undefined);
+		},
+		onSuccess: (data) => {
+			toast.success(
+				`Tabela IBPT importada: ${data.quantidadeRegistros} NCMs (UF ${data.uf})`,
+			);
+			if (arquivoIbptRef.current) arquivoIbptRef.current.value = "";
+			queryClient.invalidateQueries({
+				queryKey: ["ibpt-status", idempresa, ufEmpresa],
+			});
+		},
+		onError: (e: Error) =>
+			toast.error(e.message || "Erro ao importar tabela IBPT"),
+	});
+
 	const ambiente = ambienteSefaz(form.watch("ambiente"));
 
 	return (
@@ -246,6 +282,19 @@ function NfeConfiguracaoFormCampos({
 							Leiaute fiscal: {NFE_CONFIG_PADRAO_LABEL} (configurado
 							automaticamente pelo sistema).
 						</p>
+
+						<Field>
+							<FieldLabel htmlFor="tokenibpt">Token IBPT</FieldLabel>
+							<Input
+								id="tokenibpt"
+								placeholder="Token De Olho no Imposto (opcional)"
+								{...form.register("tokenibpt")}
+							/>
+							<p className="text-muted-foreground text-xs mt-1">
+								Usado para sincronização automática futura. A importação manual
+								do JSON por UF já está disponível abaixo.
+							</p>
+						</Field>
 					</FieldGroup>
 
 					<div className="border-t pt-6">
@@ -289,6 +338,77 @@ function NfeConfiguracaoFormCampos({
 					</div>
 				</div>
 			</form>
+
+			<div className="rounded-lg border bg-card p-6">
+				<h2 className="text-lg font-semibold mb-4">
+					Tabela de tributos aproximados (IBPT)
+				</h2>
+				<p className="text-muted-foreground text-sm mb-4">
+					Importe o arquivo JSON oficial baixado em{" "}
+					<a
+						href="https://deolhonoimposto.ibpt.org.br"
+						target="_blank"
+						rel="noreferrer"
+						className="underline"
+					>
+						deolhonoimposto.ibpt.org.br
+					</a>{" "}
+					para a UF da empresa ({ufEmpresa || "configure a UF em Empresa fiscal"}
+					).
+				</p>
+
+				{ufEmpresa.length === 2 && (
+					<div className="mb-4 rounded-md border bg-muted/40 p-3 text-sm space-y-1">
+						{statusIbptLoading ? (
+							<p className="text-muted-foreground">Consultando status...</p>
+						) : statusIbpt?.importado ? (
+							<>
+								<p>
+									<Badge variant="secondary" className="mr-2">
+										Importada
+									</Badge>
+									UF {statusIbpt.uf} — {statusIbpt.quantidadeRegistros} NCMs
+								</p>
+								<p className="text-muted-foreground text-xs">
+									Chave {statusIbpt.chave}
+									{statusIbpt.importadoEm
+										? ` · ${dayjs(statusIbpt.importadoEm).format("DD/MM/YYYY HH:mm")}`
+										: ""}
+								</p>
+							</>
+						) : (
+							<p className="text-amber-700 dark:text-amber-300">
+								Nenhuma tabela importada para a UF {ufEmpresa}. Os tributos
+								aproximados não serão calculados até a importação.
+							</p>
+						)}
+					</div>
+				)}
+
+				<Field>
+					<FieldLabel htmlFor="ibpt-json">Arquivo JSON IBPT</FieldLabel>
+					<Input
+						id="ibpt-json"
+						ref={arquivoIbptRef}
+						type="file"
+						accept=".json,application/json"
+						disabled={ufEmpresa.length !== 2 || importarIbptMutation.isPending}
+					/>
+				</Field>
+				<Button
+					type="button"
+					variant="secondary"
+					className="mt-3"
+					onClick={() => importarIbptMutation.mutate()}
+					disabled={
+						ufEmpresa.length !== 2 || importarIbptMutation.isPending
+					}
+				>
+					{importarIbptMutation.isPending
+						? "Importando..."
+						: "Importar tabela IBPT"}
+				</Button>
+			</div>
 
 			<div className="rounded-lg border bg-card p-6">
 				<h2 className="text-lg font-semibold mb-4">Certificado digital A1</h2>

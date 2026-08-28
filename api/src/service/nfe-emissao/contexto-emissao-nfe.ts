@@ -56,6 +56,12 @@ export type ItemPayloadNfe = {
 	valorIcmsMonoReten?: number;
 	pCredSN?: number;
 	vCredICMSSN?: number;
+	valorTributosAproximados?: number;
+	valorTributoFederal?: number;
+	valorTributoEstadual?: number;
+	valorTributoMunicipal?: number;
+	chaveIbpt?: string;
+	fonteIbpt?: string;
 	rastros?: Array<{
 		idlote?: string;
 		nLote: string;
