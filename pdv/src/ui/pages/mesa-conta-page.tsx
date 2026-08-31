@@ -6,6 +6,7 @@ import {
 	useParams,
 } from "react-router-dom";
 import { arredondarDinheiro } from "@/lib/pagamento";
+import { totalFatiaItensSelecionados } from "@/lib/conta-gourmet";
 import { pdvInvoke } from "@/lib/pdv-api";
 import {
 	type GrupoLocal,
@@ -129,6 +130,7 @@ export function MesaContaPage() {
 		null | "transferir" | "juntar" | "itens"
 	>(null);
 	const [dividirAberto, setDividirAberto] = useState(false);
+	const [pagarItensAberto, setPagarItensAberto] = useState(false);
 	const [modoDividir, setModoDividir] = useState<"pessoas" | "valor" | "itens">(
 		"pessoas",
 	);
@@ -145,6 +147,8 @@ export function MesaContaPage() {
 	);
 	useEscapeFechaModal(Boolean(rejeicaoNfce), () => setRejeicaoNfce(null));
 	useEscapeFechaModal(Boolean(pizzaPrimeiro), () => setPizzaPrimeiro(null));
+	useEscapeFechaModal(dividirAberto, () => setDividirAberto(false));
+	useEscapeFechaModal(pagarItensAberto, () => setPagarItensAberto(false));
 	useEscapeFechaModal(Boolean(produtoPeso), () => setProdutoPeso(null));
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: iniciar deve reexecutar apenas quando a mesa/conta muda
@@ -609,18 +613,51 @@ export function MesaContaPage() {
 		setDividirAberto(true);
 	}
 
+	function totalDosItensSelecionados(): number {
+		if (!conta || !itensSel.length) return 0;
+		return totalFatiaItensSelecionados(
+			conta.itens.map((i) => ({ id: i.id, precototal: i.precototal })),
+			itensSel,
+			{
+				subtotal: conta.subtotal ?? conta.valortotal,
+				valordesconto: conta.valordesconto ?? 0,
+				valortaxaservico: conta.valortaxaservico ?? 0,
+				valorcouvert: conta.valorcouvert ?? 0,
+				valorentrega: conta.valorentrega ?? 0,
+				valortotal: conta.valortotal,
+			},
+		);
+	}
+
+	function abrirPagarPorItens() {
+		if (!conta?.itens.length) return;
+		setPagarItensAberto(true);
+	}
+
+	function confirmarSelecaoItensParaPagamento() {
+		if (!conta) return;
+		if (!itensSel.length) {
+			setMsg("Selecione os itens que esta pessoa vai pagar.");
+			return;
+		}
+		const valor = totalDosItensSelecionados();
+		if (valor <= 0) {
+			setMsg("O valor dos itens selecionados é zero.");
+			return;
+		}
+		setFatiaValor(valor);
+		setPagarItensAberto(false);
+		setDividirAberto(false);
+		setPagandoFatia(true);
+		setPagando(true);
+		setMsg("");
+	}
+
 	function abrirPagamentoFatia() {
 		if (!conta) return;
 		const restante = conta.valorrestante ?? conta.valortotal;
 		if (modoDividir === "itens") {
-			if (!itensSel.length) {
-				setMsg("Marque os itens desta fatia.");
-				return;
-			}
-			setFatiaValor(null);
-			setDividirAberto(false);
-			setPagandoFatia(true);
-			setPagando(true);
+			confirmarSelecaoItensParaPagamento();
 			return;
 		}
 		if (modoDividir === "pessoas") {
@@ -642,7 +679,7 @@ export function MesaContaPage() {
 		if (!conta) return;
 		setLoading(true);
 		try {
-			if (itensSel.length && fatiaValor == null) {
+			if (itensSel.length > 0) {
 				const result = await pdvInvoke<{
 					conta: ContaMesa | null;
 					venda: { id: string };
@@ -655,13 +692,17 @@ export function MesaContaPage() {
 					fechamento.cliente,
 				);
 				setPagando(false);
+				setPagandoFatia(false);
+				setFatiaValor(null);
 				setItensSel([]);
 				if (!result.conta) {
 					navigate("/", { replace: true });
 					return;
 				}
 				setConta(result.conta);
-				setMsg("Fatia recebida.");
+				setMsg(
+					`Itens recebidos. Restante ${money(result.conta.valorrestante ?? 0)}.`,
+				);
 				return;
 			}
 			const result = await pdvInvoke<{
@@ -674,6 +715,7 @@ export function MesaContaPage() {
 				fechamento.troco,
 			);
 			setPagando(false);
+			setPagandoFatia(false);
 			setFatiaValor(null);
 			if (result.venda) {
 				navigate("/", { replace: true });
@@ -693,6 +735,21 @@ export function MesaContaPage() {
 
 	const itens = conta?.itens ?? [];
 	const total = conta?.valorrestante ?? conta?.valortotal ?? 0;
+	const totalSelecionado = useMemo(() => {
+		if (!conta || !itensSel.length) return 0;
+		return totalFatiaItensSelecionados(
+			conta.itens.map((i) => ({ id: i.id, precototal: i.precototal })),
+			itensSel,
+			{
+				subtotal: conta.subtotal ?? conta.valortotal,
+				valordesconto: conta.valordesconto ?? 0,
+				valortaxaservico: conta.valortaxaservico ?? 0,
+				valorcouvert: conta.valorcouvert ?? 0,
+				valorentrega: conta.valorentrega ?? 0,
+				valortotal: conta.valortotal,
+			},
+		);
+	}, [conta, itensSel]);
 	const totalPagar = fatiaValor ?? total;
 	const totalFila = useMemo(
 		() => fila.reduce((acc, i) => acc + i.precototal, 0),
@@ -869,34 +926,74 @@ export function MesaContaPage() {
 
 						{itens.length > 0 && (
 							<div className="mt-3 border-t pt-3">
-								<h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-									Já na conta
-								</h3>
-								{itens.map((item) => (
-									<label
-										key={item.id}
-										className="flex items-center justify-between gap-2 py-0.5 text-xs text-muted-foreground"
-									>
-										<span className="flex min-w-0 flex-1 items-center gap-1">
-											<input
-												type="checkbox"
-												className="size-3 accent-primary"
-												checked={itensSel.includes(item.id)}
-												onChange={(e) => {
-													setItensSel((prev) =>
-														e.target.checked
-															? [...prev, item.id]
-															: prev.filter((id) => id !== item.id),
-													);
-												}}
-											/>
-											<span className="truncate">
-												{formatarQuantidade(item.quantidade)}x {item.descricao}
+								<div className="mb-2 flex items-center justify-between gap-2">
+									<h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+										Já na conta
+									</h3>
+									{itensSel.length > 0 ? (
+										<button
+											type="button"
+											className="text-xs text-primary underline"
+											onClick={() => setItensSel([])}
+										>
+											Limpar seleção
+										</button>
+									) : (
+										<button
+											type="button"
+											className="text-xs text-muted-foreground underline"
+											onClick={() => setItensSel(itens.map((i) => i.id))}
+										>
+											Selecionar todos
+										</button>
+									)}
+								</div>
+								{itens.map((item) => {
+									const marcado = itensSel.includes(item.id);
+									return (
+										<label
+											key={item.id}
+											className={`mb-1 flex cursor-pointer items-center justify-between gap-2 rounded-md px-2 py-2 text-sm ${
+												marcado
+													? "bg-primary/10 ring-1 ring-primary/40"
+													: "bg-background ring-1 ring-foreground/10"
+											}`}
+										>
+											<span className="flex min-w-0 flex-1 items-center gap-2">
+												<input
+													type="checkbox"
+													className="size-4 shrink-0 accent-primary"
+													checked={marcado}
+													onChange={(e) => {
+														setItensSel((prev) =>
+															e.target.checked
+																? [...prev, item.id]
+																: prev.filter((id) => id !== item.id),
+														);
+													}}
+												/>
+												<span className="truncate font-medium text-foreground">
+													{formatarQuantidade(item.quantidade)}x{" "}
+													{item.descricao}
+												</span>
 											</span>
+											<span className="shrink-0 font-semibold tabular-nums">
+												{money(item.precototal)}
+											</span>
+										</label>
+									);
+								})}
+								{itensSel.length > 0 && (
+									<div className="mt-2 flex items-center justify-between rounded-md bg-primary/10 px-2 py-1.5 text-sm font-semibold">
+										<span>
+											{itensSel.length}{" "}
+											{itensSel.length === 1 ? "item" : "itens"}
 										</span>
-										<span>{money(item.precototal)}</span>
-									</label>
-								))}
+										<span className="text-primary">
+											{money(totalSelecionado)}
+										</span>
+									</div>
+								)}
 							</div>
 						)}
 					</div>
@@ -1094,6 +1191,17 @@ export function MesaContaPage() {
 						>
 							Receber / Fechar conta
 						</Button>
+						<Button
+							size="lg"
+							variant="secondary"
+							className="w-full"
+							disabled={!itens.length || fila.length > 0 || loading}
+							onClick={() => abrirPagarPorItens()}
+						>
+							{itensSel.length
+								? `Pagar ${itensSel.length} itens (${money(totalSelecionado)})`
+								: "Pagar por itens"}
+						</Button>
 						{!modoEntrega ? (
 							<div className="grid grid-cols-2 gap-2">
 								<Button
@@ -1246,7 +1354,13 @@ export function MesaContaPage() {
 				aberto={pagando}
 				total={totalPagar}
 				loading={loading}
-				titulo={pagandoFatia ? "Receber fatia" : "Receber / fechar conta"}
+				titulo={
+					pagandoFatia && itensSel.length
+						? `Pagar ${itensSel.length} ${itensSel.length === 1 ? "item" : "itens"}`
+						: pagandoFatia
+							? "Receber fatia"
+							: "Receber / fechar conta"
+				}
 				confirmarLabel="Confirmar"
 				nomeClienteHint={nomeCliente}
 				permitirDesconto={!pagandoFatia}
@@ -1336,9 +1450,17 @@ export function MesaContaPage() {
 							/>
 						)}
 						{modoDividir === "itens" && (
-							<p className="text-sm text-muted-foreground">
-								Marque os itens na lista da conta e depois receba esta fatia.
-							</p>
+							<div className="space-y-2">
+								<p className="text-sm text-muted-foreground">
+									Marque na lista da conta (painel direito) os itens desta
+									pessoa, ou use o botão &quot;Pagar por itens&quot;.
+								</p>
+								{itensSel.length > 0 ? (
+									<p className="text-sm font-semibold text-primary">
+										{itensSel.length} selecionado(s) · {money(totalSelecionado)}
+									</p>
+								) : null}
+							</div>
 						)}
 						<div className="flex gap-2">
 							<Button
@@ -1350,6 +1472,92 @@ export function MesaContaPage() {
 							</Button>
 							<Button className="flex-1" onClick={() => abrirPagamentoFatia()}>
 								Receber fatia
+							</Button>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{pagarItensAberto && conta && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3">
+					<div className="pdv-surface flex max-h-[90vh] w-[28rem] max-w-[95vw] flex-col space-y-3 p-5">
+						<div>
+							<h2 className="text-lg font-semibold">Pagar por itens</h2>
+							<p className="text-sm text-muted-foreground">
+								Selecione o que esta pessoa consumiu. Taxa, desconto e demais
+								ajustes são rateados automaticamente.
+							</p>
+						</div>
+						<div className="flex gap-2">
+							<Button
+								size="sm"
+								variant="outline"
+								onClick={() => setItensSel(itens.map((i) => i.id))}
+							>
+								Todos
+							</Button>
+							<Button
+								size="sm"
+								variant="outline"
+								onClick={() => setItensSel([])}
+							>
+								Nenhum
+							</Button>
+						</div>
+						<div className="min-h-0 flex-1 space-y-1 overflow-auto">
+							{itens.map((item) => {
+								const marcado = itensSel.includes(item.id);
+								return (
+									<label
+										key={item.id}
+										className={`flex cursor-pointer items-center justify-between gap-2 rounded-md px-3 py-3 text-sm ${
+											marcado
+												? "bg-primary/10 ring-1 ring-primary/40"
+												: "bg-background ring-1 ring-foreground/10"
+										}`}
+									>
+										<span className="flex min-w-0 flex-1 items-center gap-3">
+											<input
+												type="checkbox"
+												className="size-5 shrink-0 accent-primary"
+												checked={marcado}
+												onChange={(e) => {
+													setItensSel((prev) =>
+														e.target.checked
+															? [...prev, item.id]
+															: prev.filter((id) => id !== item.id),
+													);
+												}}
+											/>
+											<span className="font-medium">
+												{formatarQuantidade(item.quantidade)}x {item.descricao}
+											</span>
+										</span>
+										<span className="shrink-0 font-semibold tabular-nums">
+											{money(item.precototal)}
+										</span>
+									</label>
+								);
+							})}
+						</div>
+						<div className="flex items-center justify-between border-t pt-2 text-base font-bold">
+							<span>A receber nesta fatia</span>
+							<span className="text-primary">{money(totalSelecionado)}</span>
+						</div>
+						<div className="flex gap-2">
+							<Button
+								variant="outline"
+								className="flex-1"
+								onClick={() => setPagarItensAberto(false)}
+							>
+								Cancelar
+							</Button>
+							<Button
+								className="flex-1"
+								disabled={!itensSel.length || loading}
+								onClick={() => confirmarSelecaoItensParaPagamento()}
+							>
+								Receber itens
 							</Button>
 						</div>
 					</div>
@@ -1413,6 +1621,19 @@ export function MesaContaPage() {
 							setFatiaValor(null);
 							setPagando(true);
 						},
+					},
+					{
+						key: "pagar-itens",
+						label: "Pagar itens",
+						hotkey: "F8",
+						variant: "outline",
+						disabled:
+							!itens.length ||
+							fila.length > 0 ||
+							loading ||
+							pagando ||
+							pagarItensAberto,
+						onClick: () => abrirPagarPorItens(),
 					},
 					{
 						key: "voltar",
