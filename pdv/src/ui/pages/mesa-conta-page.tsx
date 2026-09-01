@@ -1,3 +1,4 @@
+import { X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
 	useLocation,
@@ -155,6 +156,11 @@ export function MesaContaPage() {
 	const [reimprimirAberto, setReimprimirAberto] = useState(false);
 	const [obsFilaChave, setObsFilaChave] = useState<string | null>(null);
 	const [maisAcoesAberto, setMaisAcoesAberto] = useState(false);
+	const [itemCancelar, setItemCancelar] = useState<
+		ContaMesa["itens"][number] | null
+	>(null);
+	const [senhaCancelarItem, setSenhaCancelarItem] = useState("");
+	const [exigeSenhaItem, setExigeSenhaItem] = useState(false);
 
 	useEscapeFechaModal(confirmandoSaida, () => setConfirmandoSaida(false));
 	useEscapeFechaModal(confirmandoCancelar, () => setConfirmandoCancelar(false));
@@ -164,6 +170,7 @@ export function MesaContaPage() {
 	useEscapeFechaModal(pagarItensAberto, () => setPagarItensAberto(false));
 	useEscapeFechaModal(Boolean(produtoPeso), () => setProdutoPeso(null));
 	useEscapeFechaModal(Boolean(obsFilaChave), () => setObsFilaChave(null));
+	useEscapeFechaModal(Boolean(itemCancelar), () => setItemCancelar(null));
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: iniciar deve reexecutar apenas quando a mesa/conta muda
 	useEffect(() => {
@@ -186,7 +193,8 @@ export function MesaContaPage() {
 				confirmandoSaida ||
 				confirmandoCancelar ||
 				obsFilaChave ||
-				maisAcoesAberto
+				maisAcoesAberto ||
+				itemCancelar
 			)
 				return;
 			if (fila.length === 0) return;
@@ -203,6 +211,7 @@ export function MesaContaPage() {
 		confirmandoCancelar,
 		obsFilaChave,
 		maisAcoesAberto,
+		itemCancelar,
 	]);
 
 	async function iniciar() {
@@ -425,6 +434,45 @@ export function MesaContaPage() {
 			navigate("/", { replace: true });
 		} catch (err) {
 			setMsg(err instanceof Error ? err.message : "Falha ao cancelar");
+		} finally {
+			setLoading(false);
+		}
+	}
+
+	async function solicitarCancelarItem(item: ContaMesa["itens"][number]) {
+		if (loading || pagando) return;
+		setSenhaCancelarItem("");
+		try {
+			const definida = await pdvInvoke<boolean>("senhaGerencialDefinida");
+			setExigeSenhaItem(Boolean(definida));
+		} catch {
+			setExigeSenhaItem(false);
+		}
+		setItemCancelar(item);
+	}
+
+	async function confirmarCancelarItem() {
+		if (!conta || !itemCancelar) return;
+		if (exigeSenhaItem && !senhaCancelarItem.trim()) return;
+		const alvo = itemCancelar;
+		setLoading(true);
+		setMsg("");
+		try {
+			const atualizada = await pdvInvoke<ContaMesa>(
+				"cancelarItemConta",
+				conta.id,
+				alvo.id,
+				exigeSenhaItem ? senhaCancelarItem : undefined,
+			);
+			setConta(atualizada);
+			setItensSel((prev) => prev.filter((id) => id !== alvo.id));
+			setItemCancelar(null);
+			setSenhaCancelarItem("");
+			setMsg(
+				`Item cancelado: ${formatarQuantidade(alvo.quantidade)}x ${alvo.descricao}.`,
+			);
+		} catch (err) {
+			setMsg(err instanceof Error ? err.message : "Falha ao cancelar item");
 		} finally {
 			setLoading(false);
 		}
@@ -862,7 +910,8 @@ export function MesaContaPage() {
 								Boolean(produtoPeso) ||
 								Boolean(obsFilaChave) ||
 								maisAcoesAberto ||
-								senhaAberta
+								senhaAberta ||
+								Boolean(itemCancelar)
 							}
 						/>
 
@@ -1021,13 +1070,11 @@ export function MesaContaPage() {
 									{itens.map((item) => {
 										const marcado = itensSel.includes(item.id);
 										return (
-											<label
+											<div
 												key={item.id}
-												className={`mb-1 flex cursor-pointer items-center justify-between gap-2 rounded-md px-2 py-2 text-sm ${
-													classeLinhaItemSelecionavel(marcado)
-												}`}
+												className={`mb-1 flex items-center justify-between gap-2 rounded-md px-2 py-2 text-sm ${classeLinhaItemSelecionavel(marcado)}`}
 											>
-												<span className="flex min-w-0 flex-1 items-center gap-2">
+												<label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2">
 													<input
 														type="checkbox"
 														className="size-4 shrink-0 accent-primary"
@@ -1051,11 +1098,24 @@ export function MesaContaPage() {
 															</span>
 														) : null}
 													</span>
+												</label>
+												<span className="flex shrink-0 items-center gap-1">
+													<span className="font-semibold tabular-nums">
+														{money(item.precototal)}
+													</span>
+													<Button
+														type="button"
+														size="icon"
+														variant="ghost"
+														className="size-8 text-destructive"
+														disabled={loading}
+														aria-label={`Cancelar ${item.descricao}`}
+														onClick={() => void solicitarCancelarItem(item)}
+													>
+														<X className="size-4" />
+													</Button>
 												</span>
-												<span className="shrink-0 font-semibold tabular-nums">
-													{money(item.precototal)}
-												</span>
-											</label>
+											</div>
 										);
 									})}
 									{itensSel.length > 0 && (
@@ -1312,6 +1372,58 @@ export function MesaContaPage() {
 				</div>
 			)}
 
+			{itemCancelar && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+					<form
+						className="pdv-surface w-96 space-y-4 p-5"
+						onSubmit={(e) => {
+							e.preventDefault();
+							void confirmarCancelarItem();
+						}}
+					>
+						<h2 className="text-lg font-semibold">Cancelar item</h2>
+						<p className="text-sm text-muted-foreground">
+							Remover da conta{" "}
+							<span className="font-medium text-foreground">
+								{formatarQuantidade(itemCancelar.quantidade)}x{" "}
+								{itemCancelar.descricao}
+							</span>{" "}
+							({money(itemCancelar.precototal)})? Esta ação não pode ser
+							desfeita.
+						</p>
+						{exigeSenhaItem ? (
+							<Input
+								type="password"
+								autoFocus
+								value={senhaCancelarItem}
+								onChange={(e) => setSenhaCancelarItem(e.target.value)}
+								placeholder="Senha gerencial"
+							/>
+						) : null}
+						<div className="flex gap-2">
+							<Button
+								type="button"
+								variant="outline"
+								className="flex-1"
+								onClick={() => setItemCancelar(null)}
+							>
+								Voltar
+							</Button>
+							<Button
+								type="submit"
+								variant="destructive"
+								className="flex-1"
+								disabled={
+									loading || (exigeSenhaItem && !senhaCancelarItem.trim())
+								}
+							>
+								Cancelar item
+							</Button>
+						</div>
+					</form>
+				</div>
+			)}
+
 			{rejeicaoNfce && (
 				<DialogRejeicaoNfce
 					mensagem={rejeicaoNfce}
@@ -1493,9 +1605,7 @@ export function MesaContaPage() {
 								return (
 									<label
 										key={item.id}
-										className={`flex cursor-pointer items-center justify-between gap-2 rounded-md px-3 py-3 text-sm ${
-											classeLinhaItemSelecionavel(marcado)
-										}`}
+										className={`flex cursor-pointer items-center justify-between gap-2 rounded-md px-3 py-3 text-sm ${classeLinhaItemSelecionavel(marcado)}`}
 									>
 										<span className="flex min-w-0 flex-1 items-center gap-3">
 											<input
@@ -1678,6 +1788,16 @@ export function MesaContaPage() {
 						label: "Limpar fila",
 						disabled: fila.length === 0 || loading,
 						onClick: () => limparFila(),
+					},
+					{
+						key: "cancelar-item",
+						label: "Cancelar item",
+						variant: "destructive" as const,
+						disabled: itensSel.length !== 1 || loading || pagando,
+						onClick: () => {
+							const item = itens.find((i) => i.id === itensSel[0]);
+							if (item) void solicitarCancelarItem(item);
+						},
 					},
 					{
 						key: "pagar-itens",
