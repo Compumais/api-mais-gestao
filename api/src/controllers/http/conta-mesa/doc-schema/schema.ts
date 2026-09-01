@@ -147,3 +147,41 @@ export const excluirContaMesaSchema: FastifySchema = {
 		...respostasPadrao,
 	},
 };
+
+export const fecharFatiaItensContaMesaSchema: FastifySchema = {
+	tags: ["contas-mesa"],
+	summary: "Receber fatia de itens da conta mesa",
+	description:
+		"Registra pagamento parcial dos itens selecionados, marca-os como pagos e fecha a conta quando não restarem itens pendentes.",
+	security: [{ bearerAuth: [] }],
+	params: {
+		type: "object",
+		properties: { id: { type: "string" } },
+		required: ["id"],
+	},
+	body: {
+		type: "object",
+		properties: {
+			idempresa: { type: "string" },
+			numeropdv: { type: "number" },
+			idsItens: { type: "array", items: { type: "string" } },
+			valordinheiro: { type: "string", nullable: true },
+			valorcartao: { type: "string", nullable: true },
+			valorcartaocredito: { type: "string", nullable: true },
+			valorcartaodebito: { type: "string", nullable: true },
+			valorpix: { type: "string", nullable: true },
+			valorprepago: { type: "string", nullable: true },
+			desconto: { type: "string", nullable: true },
+			valortaxaservico: { type: "string", nullable: true },
+			valorcouverartistico: { type: "string", nullable: true },
+			valortroco: { type: "string", nullable: true },
+			identidade: { type: "string", nullable: true },
+			idcondicaopagto: { type: "string", nullable: true },
+		},
+		required: ["idempresa", "numeropdv", "idsItens"],
+	},
+	response: {
+		200: { type: "object", additionalProperties: true },
+		...respostasPadrao,
+	},
+};
