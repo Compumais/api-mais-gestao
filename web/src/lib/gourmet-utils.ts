@@ -154,6 +154,118 @@ export function calcularTotalContaMesaItens(itens: ContaMesaItem[]): number {
 	return calcularSubtotalItens(itens);
 }
 
+export function filtrarItensPendentesContaMesa(
+	itens: ContaMesaItem[],
+): ContaMesaItem[] {
+	return itens.filter((item) => item.pago !== 1);
+}
+
+export function itemContaMesaEstaPago(item: ContaMesaItem): boolean {
+	return item.pago === 1;
+}
+
+type TotaisContaGourmetWeb = {
+	subtotal: number;
+	valordesconto: number;
+	valortaxaservico: number;
+	valorcouvert: number;
+	valorentrega: number;
+	valortotal: number;
+};
+
+function ratearAjustesFatia(
+	subtotalFatia: number,
+	totais: TotaisContaGourmetWeb,
+): {
+	desconto: number;
+	taxa: number;
+	couvert: number;
+	total: number;
+} {
+	const fatia = arredondarMoeda(subtotalFatia);
+	if (totais.subtotal <= 0) {
+		return { desconto: 0, taxa: 0, couvert: 0, total: 0 };
+	}
+	const r = fatia / totais.subtotal;
+	const desconto = arredondarMoeda(totais.valordesconto * r);
+	const taxa = arredondarMoeda(totais.valortaxaservico * r);
+	const couvert = arredondarMoeda(totais.valorcouvert * r);
+	const total = arredondarMoeda(fatia - desconto + taxa + couvert);
+	return { desconto, taxa, couvert, total };
+}
+
+function partirPorItensFatia(
+	itens: Array<{ id: string; precototal: number }>,
+	grupos: string[][],
+	totais: TotaisContaGourmetWeb,
+): number {
+	if (!grupos.length) return 0;
+	const porId = new Map(itens.map((i) => [i.id, i]));
+	let accDesconto = 0;
+	let accTaxa = 0;
+	let accCouvert = 0;
+	let accTotal = 0;
+
+	for (let i = 0; i < grupos.length; i += 1) {
+		const ids = [...new Set(grupos[i] ?? [])];
+		let subtotal = 0;
+		for (const id of ids) {
+			const item = porId.get(id);
+			if (item) {
+				subtotal = arredondarMoeda(subtotal + item.precototal);
+			}
+		}
+		const ultima = i === grupos.length - 1;
+		if (ultima) {
+			return arredondarMoeda(totais.valortotal - accTotal);
+		}
+		const rateio = ratearAjustesFatia(subtotal, totais);
+		accDesconto = arredondarMoeda(accDesconto + rateio.desconto);
+		accTaxa = arredondarMoeda(accTaxa + rateio.taxa);
+		accCouvert = arredondarMoeda(accCouvert + rateio.couvert);
+		accTotal = arredondarMoeda(accTotal + rateio.total);
+		if (i === 0) {
+			return rateio.total;
+		}
+	}
+	return 0;
+}
+
+export function calcularTotalFatiaSelecionada(
+	itensPendentes: ContaMesaItem[],
+	idsSelecionados: string[],
+	ajustes: { desconto: number; taxaServico: number; couvert: number },
+): number {
+	if (idsSelecionados.length === 0) return 0;
+
+	const idsSet = new Set(idsSelecionados);
+	const itensParaRateio = itensPendentes.map((item) => ({
+		id: item.id,
+		precototal: arredondarMoeda(
+			parseValor(item.quantidade) * parseValor(item.precounitario),
+		),
+	}));
+	const subtotalPendentes = calcularSubtotalItens(itensPendentes);
+	const totais: TotaisContaGourmetWeb = {
+		subtotal: subtotalPendentes,
+		valordesconto: ajustes.desconto,
+		valortaxaservico: ajustes.taxaServico,
+		valorcouvert: ajustes.couvert,
+		valorentrega: 0,
+		valortotal: calcularTotalComTaxas(
+			subtotalPendentes,
+			ajustes.desconto,
+			ajustes.taxaServico,
+			ajustes.couvert,
+		),
+	};
+	const restoIds = itensPendentes
+		.filter((item) => !idsSet.has(item.id))
+		.map((item) => item.id);
+	const grupos = restoIds.length ? [idsSelecionados, restoIds] : [idsSelecionados];
+	return partirPorItensFatia(itensParaRateio, grupos, totais);
+}
+
 export function getNumeropdv(): number {
 	if (typeof window === "undefined") return 1;
 	const stored = localStorage.getItem(NUMERO_PDV_KEY);
@@ -294,6 +406,7 @@ export interface CupomItemLinha {
 	nome: string;
 	quantidade: string;
 	precounitario: string;
+	pago?: boolean;
 }
 
 export interface CupomNfceInfo {
@@ -324,6 +437,8 @@ export interface CupomNaoFiscalData {
 export interface ConfirmacaoVendaPdvResult {
 	vendaId: string;
 	nfce?: CupomNfceInfo;
+	contaFechada?: boolean;
+	todosItensPagos?: boolean;
 }
 
 export function buildCupomNfceInfo(

@@ -1,72 +1,70 @@
-import { useEffect, useState } from "react";
+import {
+	flexRender,
+	getCoreRowModel,
+	type VisibilityState,
+	useReactTable,
+} from "@tanstack/react-table";
+import { ChevronDown, Columns3 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
-import { rotuloPagamentoVenda } from "@/lib/pagamento";
 import { pdvInvoke } from "@/lib/pdv-api";
 import { rotaHomePdv, rotuloModelo, type StatusContext } from "@/lib/pdv-types";
-import { money } from "@/lib/utils";
+import type { OrdenacaoColunaTabela } from "@/ui/components/cabecalho-coluna-tabela";
 import { DialogInutilizarNfce } from "@/ui/components/dialog-inutilizar-nfce";
 import { FunctionBar } from "@/ui/components/function-bar";
+import { PdvShell } from "@/ui/components/pdv-shell";
 import { Topbar } from "@/ui/components/topbar";
-import { Badge } from "@/ui/components/ui/badge";
 import { Button } from "@/ui/components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuCheckboxItem,
+	DropdownMenuContent,
+	DropdownMenuTrigger,
+} from "@/ui/components/ui/dropdown-menu";
+import { Label } from "@/ui/components/ui/label";
+import { Select } from "@/ui/components/ui/select";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/ui/components/ui/table";
 import { useTeclasFuncao } from "@/ui/hooks/use-teclas-funcao";
+import {
+	COLUNA_PARA_CAMPO_FILTRO_VENDAS,
+	type ConfigFiltroColunaVendas,
+	criarColunasVendas,
+	filtrarVendas,
+	type FiltrosColunaVendasState,
+	filtrosColunaVendasVazios,
+	NFCE_OPCOES_FILTRO,
+	ordenarVendas,
+	ORIGEM_OPCOES_FILTRO,
+	PAGAMENTO_OPCOES_FILTRO,
+	rotuloColunaVendas,
+	SYNC_OPCOES_FILTRO,
+	type VendaListagem,
+	visibilidadePadraoColunasVendas,
+} from "./vendas-colunas";
 
-type Venda = {
-	id: string;
-	origem: string;
-	meio_pagamento: string;
-	valortotal: number;
-	valordinheiro?: number;
-	valorpix?: number;
-	valorcartao?: number;
-	criadoem: string;
-	sync_status: string;
-	nfce_status: string;
-};
+const CHAVE_COLUNAS_VENDAS = "pdv.vendas.colunas";
 
-function badgeSync(status: string) {
-	if (status === "sincronizado") return "success" as const;
-	if (status === "pendente") return "warning" as const;
-	return "outline" as const;
+function carregarVisibilidadeColunas(): VisibilityState {
+	const padrao = visibilidadePadraoColunasVendas();
+	try {
+		const raw = localStorage.getItem(CHAVE_COLUNAS_VENDAS);
+		if (!raw) return padrao;
+		const parsed = JSON.parse(raw) as VisibilityState;
+		return { ...padrao, ...parsed };
+	} catch {
+		return padrao;
+	}
 }
 
-function badgeNfce(status: string) {
-	if (status === "autorizada") return "success" as const;
-	if (status === "transmitida") return "warning" as const;
-	if (
-		status === "contingencia" ||
-		status === "pendente_contingencia" ||
-		status === "pendente"
-	)
-		return "warning" as const;
-	if (status === "erro" || status === "erro_config" || status === "cancelada")
-		return "destructive" as const;
-	return "outline" as const;
-}
-
-function rotuloNfce(status: string) {
-	if (status === "erro") return "rejeitada";
-	if (status === "erro_config") return "erro config";
-	if (status === "pendente_contingencia" || status === "pendente")
-		return "pendente";
-	if (status === "transmitida") return "enviada (aguardando SEFAZ)";
-	if (status === "inutilizada") return "inutilizada";
-	if (status === "cancelada") return "cancelada";
-	return status;
-}
-
-function podeRetransmitir(status: string) {
-	return (
-		status === "erro" ||
-		status === "erro_config" ||
-		status === "contingencia" ||
-		status === "pendente_contingencia" ||
-		status === "inutilizada"
-	);
-}
-
-function podeInutilizar(status: string) {
-	return status === "erro";
+function filtrosColunaAtivos(filtros: FiltrosColunaVendasState) {
+	return Object.values(filtros).some((valor) => valor.trim() !== "");
 }
 
 export function VendasPage() {
@@ -74,18 +72,34 @@ export function VendasPage() {
 	const { status } = useOutletContext<StatusContext>();
 	const { teclas } = useTeclasFuncao();
 	const rotulo = rotuloModelo(status?.modeloAtendimento);
-	const [vendas, setVendas] = useState<Venda[]>([]);
+	const [vendas, setVendas] = useState<VendaListagem[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [retransmitindoId, setRetransmitindoId] = useState<string | null>(null);
 	const [inutilizarVendaId, setInutilizarVendaId] = useState<string | null>(
 		null,
 	);
 	const [msg, setMsg] = useState("");
+	const [pagination, setPagination] = useState({
+		pageIndex: 0,
+		pageSize: 20,
+	});
+	const [filtrosColuna, setFiltrosColuna] = useState<FiltrosColunaVendasState>(
+		filtrosColunaVendasVazios,
+	);
+	const [ordenarPor, setOrdenarPor] = useState<string | null>(null);
+	const [ordem, setOrdem] = useState<"asc" | "desc" | null>(null);
+	const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
+		() => carregarVisibilidadeColunas(),
+	);
+
+	useEffect(() => {
+		localStorage.setItem(CHAVE_COLUNAS_VENDAS, JSON.stringify(columnVisibility));
+	}, [columnVisibility]);
 
 	async function load() {
 		setLoading(true);
 		try {
-			setVendas(await pdvInvoke<Venda[]>("listarVendas"));
+			setVendas(await pdvInvoke<VendaListagem[]>("listarVendas"));
 		} finally {
 			setLoading(false);
 		}
@@ -113,144 +127,315 @@ export function VendasPage() {
 		void load();
 	}, []);
 
-	return (
-		<div className="flex h-screen flex-col">
-			<Topbar
-				title="Vendas do PDV"
-				subtitle="Histórico local com status de sincronização e NFC-e"
-				right={
-					<Button
-						variant="secondary"
-						size="sm"
-						onClick={() => navigate(rotaHomePdv(status))}
-					>
-						Voltar{" "}
-						{status?.moduloGourmet
-							? `às ${rotulo.plural.toLowerCase()}`
-							: "ao PDV"}
-					</Button>
-				}
-			/>
+	const onOrdenarColuna = useCallback(
+		(colunaId: string, direcao: OrdenacaoColunaTabela) => {
+			if (!direcao) {
+				setOrdenarPor(null);
+				setOrdem(null);
+			} else {
+				setOrdenarPor(colunaId);
+				setOrdem(direcao);
+			}
+			setPagination((p) => ({ ...p, pageIndex: 0 }));
+		},
+		[],
+	);
 
-			<div className="flex-1 overflow-auto p-3">
-				{msg ? (
-					<p className="mb-3 rounded-md border bg-secondary/40 px-3 py-2 text-sm">
-						{msg}
-					</p>
-				) : null}
-				<div className="overflow-hidden rounded-lg border">
-					<table className="w-full text-sm">
-						<thead className="bg-secondary/60 text-left">
-							<tr>
-								<th className="px-3 py-2 font-medium">Data</th>
-								<th className="px-3 py-2 font-medium">Origem</th>
-								<th className="px-3 py-2 font-medium">Pagamento</th>
-								<th className="px-3 py-2 font-medium">Total</th>
-								<th className="px-3 py-2 font-medium">Sync</th>
-								<th className="px-3 py-2 font-medium">NFC-e</th>
-								<th className="px-3 py-2 font-medium" />
-							</tr>
-						</thead>
-						<tbody>
-							{vendas.map((v) => (
-								<tr key={v.id} className="border-t">
-									<td className="px-3 py-2">
-										{new Date(v.criadoem).toLocaleString("pt-BR")}
-									</td>
-									<td className="px-3 py-2 capitalize">{v.origem}</td>
-									<td className="px-3 py-2">{rotuloPagamentoVenda(v)}</td>
-									<td className="px-3 py-2 font-medium">
-										{money(v.valortotal)}
-									</td>
-									<td className="px-3 py-2">
-										<Badge variant={badgeSync(v.sync_status)}>
-											{v.sync_status}
-										</Badge>
-									</td>
-									<td className="px-3 py-2">
-										<Badge variant={badgeNfce(v.nfce_status)}>
-											{rotuloNfce(v.nfce_status)}
-										</Badge>
-									</td>
-									<td className="px-3 py-2">
-										<div className="flex justify-end gap-1">
-											{podeRetransmitir(v.nfce_status) ? (
-												<Button
-													size="sm"
-													variant="outline"
-													disabled={retransmitindoId === v.id}
-													onClick={() => void retransmitir(v.id)}
-												>
-													{retransmitindoId === v.id
-														? "Enviando…"
-														: "Retransmitir"}
-												</Button>
-											) : null}
-											{podeInutilizar(v.nfce_status) ? (
-												<Button
-													size="sm"
-													variant="outline"
-													disabled={retransmitindoId === v.id}
-													onClick={() => setInutilizarVendaId(v.id)}
-												>
-													Inutilizar
-												</Button>
-											) : null}
-											<Button
-												size="sm"
-												variant="ghost"
-												onClick={() => void pdvInvoke("reimprimir", v.id)}
-											>
-												Reimprimir
-											</Button>
-										</div>
-									</td>
-								</tr>
-							))}
-							{vendas.length === 0 && (
-								<tr>
-									<td
-										colSpan={7}
-										className="px-3 py-8 text-center text-muted-foreground"
-									>
-										Nenhuma venda local ainda.
-									</td>
-								</tr>
-							)}
-						</tbody>
-					</table>
+	const onFiltrarColuna = useCallback((colunaId: string, valor: string) => {
+		const campo = COLUNA_PARA_CAMPO_FILTRO_VENDAS[colunaId];
+		if (!campo) return;
+		setFiltrosColuna((atual) => ({ ...atual, [campo]: valor }));
+		setPagination((p) => ({ ...p, pageIndex: 0 }));
+	}, []);
+
+	const configFiltroPorColuna = useMemo((): Record<
+		string,
+		ConfigFiltroColunaVendas
+	> => {
+		return {
+			criadoem: { tipo: "data" },
+			numero_mesa: { tipo: "texto", placeholder: "Nº mesa/comanda" },
+			origem: { tipo: "opcoes", opcoes: ORIGEM_OPCOES_FILTRO },
+			pagamento: { tipo: "opcoes", opcoes: PAGAMENTO_OPCOES_FILTRO },
+			valortotal: { tipo: "nenhum" },
+			sync_status: { tipo: "opcoes", opcoes: SYNC_OPCOES_FILTRO },
+			nfce_status: { tipo: "opcoes", opcoes: NFCE_OPCOES_FILTRO },
+		};
+	}, []);
+
+	const vendasFiltradas = useMemo(() => {
+		const filtradas = filtrarVendas(vendas, filtrosColuna);
+		return ordenarVendas(filtradas, ordenarPor, ordem);
+	}, [vendas, filtrosColuna, ordenarPor, ordem]);
+
+	const pageCount = Math.max(
+		1,
+		Math.ceil(vendasFiltradas.length / pagination.pageSize) || 1,
+	);
+
+	const vendasPagina = useMemo(() => {
+		const inicio = pagination.pageIndex * pagination.pageSize;
+		return vendasFiltradas.slice(inicio, inicio + pagination.pageSize);
+	}, [vendasFiltradas, pagination.pageIndex, pagination.pageSize]);
+
+	useEffect(() => {
+		if (pagination.pageIndex > 0 && pagination.pageIndex >= pageCount) {
+			setPagination((p) => ({ ...p, pageIndex: Math.max(0, pageCount - 1) }));
+		}
+	}, [pagination.pageIndex, pageCount]);
+
+	const columns = useMemo(
+		() =>
+			criarColunasVendas({
+				filtros: filtrosColuna,
+				ordenarPor,
+				ordem,
+				onOrdenarColuna,
+				onFiltrarColuna,
+				configFiltroPorColuna,
+				retransmitindoId,
+				onRetransmitir: (id) => void retransmitir(id),
+				onInutilizar: setInutilizarVendaId,
+				onReimprimir: (id) => void pdvInvoke("reimprimir", id),
+			}),
+		[
+			filtrosColuna,
+			ordenarPor,
+			ordem,
+			onOrdenarColuna,
+			onFiltrarColuna,
+			configFiltroPorColuna,
+			retransmitindoId,
+		],
+	);
+
+	const table = useReactTable({
+		data: vendasPagina,
+		columns,
+		state: { pagination, columnVisibility },
+		onPaginationChange: setPagination,
+		onColumnVisibilityChange: setColumnVisibility,
+		getCoreRowModel: getCoreRowModel(),
+		manualPagination: true,
+		pageCount,
+	});
+
+	const colunasVisiveis = table.getVisibleLeafColumns();
+	const comFiltros = filtrosColunaAtivos(filtrosColuna) || !!ordenarPor;
+
+	return (
+		<PdvShell
+			status={status}
+			onBlockedNavigate={setMsg}
+			topbar={
+				<Topbar
+					title="Vendas do PDV"
+					subtitle="Histórico local com status de sincronização e NFC-e"
+					right={
+						<Button
+							variant="secondary"
+							size="sm"
+							onClick={() => navigate(rotaHomePdv(status))}
+						>
+							Voltar{" "}
+							{status?.moduloGourmet
+								? `às ${rotulo.plural.toLowerCase()}`
+								: "ao PDV"}
+						</Button>
+					}
+				/>
+			}
+			footer={
+				<>
+					<DialogInutilizarNfce
+						aberto={inutilizarVendaId != null}
+						vendaId={inutilizarVendaId}
+						onFechar={() => setInutilizarVendaId(null)}
+						onSucesso={(mensagem) => {
+							setMsg(mensagem);
+							void load();
+						}}
+					/>
+					<FunctionBar
+						actions={[
+							{
+								key: "atualizar",
+								label: "Atualizar",
+								hotkey: teclas.sincronizar,
+								variant: "secondary",
+								onClick: () => void load(),
+								disabled: loading,
+							},
+							{
+								key: "voltar",
+								label: "Voltar",
+								hotkey: "Escape",
+								variant: "outline",
+								onClick: () => navigate(rotaHomePdv(status)),
+							},
+						]}
+					/>
+				</>
+			}
+		>
+			<div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+				<div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
+					{msg ? (
+						<p className="rounded-md bg-muted px-3 py-2 text-sm ring-1 ring-foreground/10">
+							{msg}
+						</p>
+					) : (
+						<p className="text-sm text-muted-foreground">
+							{loading
+								? "Carregando…"
+								: `${vendasFiltradas.length} venda${vendasFiltradas.length === 1 ? "" : "s"}`}
+						</p>
+					)}
+					<div className="flex flex-wrap items-center gap-2">
+						{comFiltros ? (
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={() => {
+									setFiltrosColuna(filtrosColunaVendasVazios);
+									setOrdenarPor(null);
+									setOrdem(null);
+									setPagination((p) => ({ ...p, pageIndex: 0 }));
+								}}
+							>
+								Limpar filtros
+							</Button>
+						) : null}
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button variant="outline" size="sm">
+									<Columns3 className="size-4" />
+									<span className="hidden sm:inline">Personalizar Colunas</span>
+									<span className="sm:hidden">Colunas</span>
+									<ChevronDown className="size-4" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent
+								align="end"
+								className="max-h-72 w-56 overflow-y-auto"
+							>
+								{table
+									.getAllColumns()
+									.filter((column) => column.getCanHide())
+									.map((column) => (
+										<DropdownMenuCheckboxItem
+											key={column.id}
+											checked={column.getIsVisible()}
+											onCheckedChange={(value) =>
+												column.toggleVisibility(!!value)
+											}
+										>
+											{rotuloColunaVendas(column)}
+										</DropdownMenuCheckboxItem>
+									))}
+							</DropdownMenuContent>
+						</DropdownMenu>
+					</div>
+				</div>
+
+				<div className="pdv-surface flex min-h-0 flex-1 flex-col overflow-hidden">
+					<div className="min-h-0 flex-1 overflow-auto">
+						<Table>
+							<TableHeader className="sticky top-0 z-10 bg-card">
+								{table.getHeaderGroups().map((headerGroup) => (
+									<TableRow key={headerGroup.id}>
+										{headerGroup.headers.map((header) => (
+											<TableHead key={header.id}>
+												{header.isPlaceholder
+													? null
+													: flexRender(
+															header.column.columnDef.header,
+															header.getContext(),
+														)}
+											</TableHead>
+										))}
+									</TableRow>
+								))}
+							</TableHeader>
+							<TableBody>
+								{table.getRowModel().rows.length === 0 ? (
+									<TableRow>
+										<TableCell
+											colSpan={colunasVisiveis.length}
+											className="h-24 text-center text-muted-foreground"
+										>
+											{loading
+												? "Carregando vendas…"
+												: comFiltros
+													? "Nenhuma venda encontrada para os filtros selecionados."
+													: "Nenhuma venda local ainda."}
+										</TableCell>
+									</TableRow>
+								) : (
+									table.getRowModel().rows.map((row) => (
+										<TableRow key={row.id}>
+											{row.getVisibleCells().map((cell) => (
+												<TableCell key={cell.id}>
+													{flexRender(
+														cell.column.columnDef.cell,
+														cell.getContext(),
+													)}
+												</TableCell>
+											))}
+										</TableRow>
+									))
+								)}
+							</TableBody>
+						</Table>
+					</div>
+
+					{vendasFiltradas.length > 0 ? (
+						<div className="flex shrink-0 flex-col gap-3 border-t px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+							<div className="flex items-center gap-2">
+								<Label htmlFor="vendas-por-pagina" className="text-sm">
+									Itens por página
+								</Label>
+								<Select
+									id="vendas-por-pagina"
+									className="h-8 w-[72px]"
+									value={String(pagination.pageSize)}
+									onChange={(e) => {
+										table.setPageSize(Number(e.target.value));
+										table.setPageIndex(0);
+									}}
+								>
+									{[10, 20, 50, 100].map((n) => (
+										<option key={n} value={n}>
+											{n}
+										</option>
+									))}
+								</Select>
+							</div>
+							<div className="flex items-center gap-2">
+								<span className="text-sm text-muted-foreground">
+									Página {pagination.pageIndex + 1} de {pageCount}
+								</span>
+								<Button
+									variant="outline"
+									size="sm"
+									disabled={!table.getCanPreviousPage()}
+									onClick={() => table.previousPage()}
+								>
+									Anterior
+								</Button>
+								<Button
+									variant="outline"
+									size="sm"
+									disabled={!table.getCanNextPage()}
+									onClick={() => table.nextPage()}
+								>
+									Próxima
+								</Button>
+							</div>
+						</div>
+					) : null}
 				</div>
 			</div>
-
-			<DialogInutilizarNfce
-				aberto={inutilizarVendaId != null}
-				vendaId={inutilizarVendaId}
-				onFechar={() => setInutilizarVendaId(null)}
-				onSucesso={(mensagem) => {
-					setMsg(mensagem);
-					void load();
-				}}
-			/>
-
-			<FunctionBar
-				actions={[
-					{
-						key: "atualizar",
-						label: "Atualizar",
-						hotkey: teclas.sincronizar,
-						variant: "secondary",
-						onClick: () => void load(),
-						disabled: loading,
-					},
-					{
-						key: "voltar",
-						label: "Voltar",
-						hotkey: "Escape",
-						variant: "outline",
-						onClick: () => navigate(rotaHomePdv(status)),
-					},
-				]}
-			/>
-		</div>
+		</PdvShell>
 	);
 }

@@ -36,7 +36,7 @@ export function DialogEscolherMesa({
 	if (!aberto) return null;
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-			<div className="w-[28rem] max-w-[95vw] space-y-4 rounded-lg border bg-card p-5">
+			<div className="pdv-surface w-[28rem] max-w-[95vw] space-y-4 p-5">
 				<h2 className="text-lg font-semibold">{titulo}</h2>
 				<Input
 					type="number"

@@ -13,7 +13,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { useContaCorrenteLancamentos } from "@/hooks/use-conta-corrente-lancamento";
 import { useEmpresa } from "@/hooks/use-empresa";
 import type { ContaCorrenteLancamento } from "@/services/conta-corrente-lancamento.service";
 import { contasCorrentesService } from "@/services/contas-correntes.service";
@@ -39,7 +38,6 @@ export default function MovimentacoesPage() {
 		}
 	}, [searchParams]);
 
-	// Buscar contas correntes para o select
 	const { data: contasCorrentesData } = useQuery({
 		queryKey: ["contas-correntes", empresa?.id],
 		queryFn: async () => {
@@ -50,14 +48,6 @@ export default function MovimentacoesPage() {
 			});
 		},
 		enabled: !!empresa,
-	});
-
-	// Buscar movimentações
-	const { data: lancamentosData, isLoading } = useContaCorrenteLancamentos({
-		idcontacorrente,
-		page: 1,
-		limit: 50,
-		enabled: !!idcontacorrente,
 	});
 
 	const handleNovaMovimentacao = () => {
@@ -138,9 +128,9 @@ export default function MovimentacoesPage() {
 
 						{idcontacorrente ? (
 							<MovimentacoesTable
-								data={lancamentosData?.data || []}
+								key={idcontacorrente}
+								idcontacorrente={idcontacorrente}
 								onEdit={handleEdit}
-								isLoading={isLoading}
 							/>
 						) : (
 							<div className="flex items-center justify-center py-8 rounded-lg border">

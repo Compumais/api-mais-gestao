@@ -308,14 +308,33 @@ export function ProdutoForm(props: ProdutoFormProps) {
 		enabled: !!empresa,
 	});
 
-	const { data: gruposGourmetData } = useQuery({
-		queryKey: ["grupos-gourmet", empresa?.id],
+	const idgrupogourmetInicial =
+		isEdicao && props.valoresIniciais?.idgrupogourmet
+			? props.valoresIniciais.idgrupogourmet
+			: null;
+
+	const { data: gruposGourmet = [] } = useQuery({
+		queryKey: ["grupos-gourmet", empresa?.id, "todos", idgrupogourmetInicial],
 		queryFn: async () => {
 			if (!empresa) throw new Error("Empresa não selecionada");
-			return await gruposGourmetService.listar({
+			const registros = await gruposGourmetService.listarTodos({
 				idempresa: empresa.id,
-				limit: 100,
 			});
+			if (
+				idgrupogourmetInicial &&
+				idgrupogourmetInicial !== "none" &&
+				!registros.some((grupo) => grupo.id === idgrupogourmetInicial)
+			) {
+				try {
+					const grupo = await gruposGourmetService.buscar(idgrupogourmetInicial);
+					if (grupo.idempresa === empresa.id) {
+						return [...registros, grupo];
+					}
+				} catch {
+					// grupo removido ou inacessível
+				}
+			}
+			return registros;
 		},
 		enabled: !!empresa,
 	});
@@ -846,9 +865,8 @@ export function ProdutoForm(props: ProdutoFormProps) {
 					className="data-[state=inactive]:hidden"
 				>
 					<ProdutoAbaGourmet
-						setValue={setValue}
-						watch={watch}
-						gruposGourmet={gruposGourmetData?.data ?? []}
+						control={control}
+						gruposGourmet={gruposGourmet}
 					/>
 				</TabsContent>
 

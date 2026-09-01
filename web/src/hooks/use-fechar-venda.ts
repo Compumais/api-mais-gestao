@@ -30,12 +30,27 @@ interface FecharContaParams {
 	pagamento: FecharContaFormData;
 }
 
+interface FecharFatiaItensParams {
+	idempresa: string;
+	userId: string;
+	idcontamesa: string;
+	idsItens: string[];
+	itensFatia: ContaMesaItem[];
+	pagamento: FecharContaFormData;
+}
+
 interface FecharVendaRapidaParams {
 	idempresa: string;
 	userId: string;
 	itens: CarrinhoLocalItem[];
 	subtotal: number;
 	pagamento: FecharContaFormData;
+}
+
+interface FinalizarMesaContaParams {
+	idempresa: string;
+	userId: string;
+	idcontamesa: string;
 }
 
 async function criarItensVenda(
@@ -180,6 +195,99 @@ export function useFecharVenda() {
 		},
 	});
 
+	const fecharFatiaItensMutation = useMutation({
+		mutationFn: async ({
+			idempresa,
+			userId,
+			idcontamesa,
+			idsItens,
+			itensFatia,
+			pagamento,
+		}: FecharFatiaItensParams) => {
+			const resultado = await contaMesaService.fecharFatiaItens(idcontamesa, {
+				idempresa,
+				numeropdv: getNumeropdv(),
+				idsItens,
+				pagamento,
+			});
+
+			const valortotal = parseValor(resultado.venda.valortotal);
+			const valortroco = parseValor(resultado.venda.valortroco);
+
+			const baixa = await baixarEstoqueVenda({
+				idempresa,
+				idvenda: resultado.venda.id,
+				itens: itensFatia.map((item) => ({
+					idproduto: item.idproduto,
+					nomeproduto: item.nomeproduto ?? "",
+					quantidade: item.quantidade,
+					precounitario: item.precounitario,
+				})),
+				pagamentos: {
+					valordinheiro: pagamento.valordinheiro,
+					valorcartaocredito: pagamento.valorcartaocredito,
+					valorcartaodebito: pagamento.valorcartaodebito,
+					valorcartao: pagamento.valorcartao,
+					valorpix: pagamento.valorpix,
+					valorprepago: pagamento.valorprepago,
+					valortroco: valortroco.toFixed(2),
+					valortotal: valortotal.toFixed(2),
+				},
+			});
+
+			return { ...resultado, baixa, userId };
+		},
+		onSuccess: async (resultado, variables) => {
+			await Promise.all([
+				queryClient.invalidateQueries({ queryKey: ["contas-mesa"] }),
+				queryClient.invalidateQueries({
+					queryKey: ["conta-mesa", variables.idcontamesa],
+				}),
+				queryClient.refetchQueries({
+					queryKey: ["conta-mesa-itens", variables.idcontamesa],
+				}),
+				queryClient.invalidateQueries({
+					queryKey: ["nfce", variables.idempresa],
+				}),
+			]);
+
+			if (resultado.todosItensPagos) {
+				toast.success(
+					"Todos os itens foram pagos. Finalize a venda para encerrar a mesa.",
+				);
+			} else {
+				toast.success("Fatia recebida. Selecione os próximos itens para pagar.");
+			}
+		},
+		onError: (error: Error) => {
+			if (error instanceof BaixaEstoqueVendaError) return;
+			toast.error(error.message || "Erro ao receber fatia");
+		},
+	});
+
+	const finalizarMesaContaMutation = useMutation({
+		mutationFn: async ({
+			userId,
+			idcontamesa,
+		}: FinalizarMesaContaParams) => {
+			return contaMesaService.atualizar(idcontamesa, {
+				status: STATUS_MESA.FECHADO,
+				valorpendente: "0",
+				usuarioquefechouconta: userId,
+			});
+		},
+		onSuccess: (_conta, variables) => {
+			queryClient.invalidateQueries({ queryKey: ["contas-mesa"] });
+			queryClient.invalidateQueries({
+				queryKey: ["conta-mesa", variables.idcontamesa],
+			});
+			toast.success("Mesa finalizada com sucesso!");
+		},
+		onError: (error: Error) => {
+			toast.error(error.message || "Erro ao finalizar venda");
+		},
+	});
+
 	const fecharVendaRapidaMutation = useMutation({
 		mutationFn: async ({
 			idempresa,
@@ -281,6 +389,8 @@ export function useFecharVenda() {
 
 	return {
 		fecharConta: fecharContaMutation,
+		fecharFatiaItens: fecharFatiaItensMutation,
+		finalizarMesaConta: finalizarMesaContaMutation,
 		fecharVendaRapida: fecharVendaRapidaMutation,
 	};
 }

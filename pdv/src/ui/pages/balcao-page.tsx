@@ -31,6 +31,7 @@ import { DialogQuantidadePeso } from "@/ui/components/dialog-quantidade-peso";
 import { DialogRejeicaoNfce } from "@/ui/components/dialog-rejeicao-nfce";
 import { FunctionBar } from "@/ui/components/function-bar";
 import { ProdutoCard } from "@/ui/components/produto-card";
+import { SideNav } from "@/ui/components/side-nav";
 import { Topbar } from "@/ui/components/topbar";
 import { Button } from "@/ui/components/ui/button";
 import { useEscapeFechaModal } from "@/ui/hooks/use-escape-fecha-modal";
@@ -401,8 +402,9 @@ export function BalcaoPage() {
 				}
 			/>
 
-			<div className="grid flex-1 grid-cols-[1fr_360px] gap-3 overflow-hidden p-3">
-				<div className="flex flex-col gap-3 overflow-hidden rounded-lg border bg-card p-3">
+			<div className="flex min-h-0 flex-1 gap-3 overflow-hidden bg-muted/30 p-3">
+				<div className="grid min-h-0 min-w-0 flex-1 grid-cols-[1fr_360px] gap-3 overflow-hidden">
+				<div className="pdv-surface flex min-h-0 flex-col gap-3 overflow-hidden p-3">
 					<AvisoSecundario status={status} />
 					<BarcodeInput
 						onScan={(codigo) => void onBip(codigo)}
@@ -441,7 +443,7 @@ export function BalcaoPage() {
 											key={g.id}
 											type="button"
 											onClick={() => void abrirGrupo(g)}
-											className="rounded-lg border bg-background p-4 text-sm font-semibold transition hover:border-primary"
+											className="rounded-lg bg-background p-4 text-sm font-semibold ring-1 ring-foreground/10 transition hover:ring-primary"
 										>
 											{g.nome}
 										</button>
@@ -485,7 +487,7 @@ export function BalcaoPage() {
 					)}
 				</div>
 
-				<div className="flex flex-col rounded-lg border bg-card p-3">
+				<div className="pdv-surface flex flex-col p-3">
 					<h2 className="mb-2 text-sm font-semibold">Fila</h2>
 					<div className="flex-1 space-y-2 overflow-auto">
 						{itens.map((item) => (
@@ -581,6 +583,8 @@ export function BalcaoPage() {
 						</span>
 					</Button>
 				</div>
+				</div>
+				<SideNav status={status} onBlocked={setMsg} />
 			</div>
 
 			{rejeicaoNfce && (

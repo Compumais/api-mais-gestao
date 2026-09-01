@@ -1,4 +1,7 @@
-import type { TipoBlocoModeloImpressaoOs } from "@/schemas/modelo-impressao-os.schema";
+import type {
+	TipoBlocoModeloImpressaoOs,
+	TipoCampoPersonalizadoOs,
+} from "@/schemas/modelo-impressao-os.schema";
 
 export const LABELS_BLOCO_MODELO_IMPRESSAO_OS: Record<
 	TipoBlocoModeloImpressaoOs,
@@ -17,6 +20,7 @@ export const LABELS_BLOCO_MODELO_IMPRESSAO_OS: Record<
 	itens: "Itens (produtos)",
 	totais: "Totais",
 	extras: "Campos extras",
+	personalizado: "Bloco personalizado",
 	assinaturas: "Assinaturas",
 	rodape: "Rodapé",
 };
@@ -53,3 +57,14 @@ export const OPCOES_COLUNA_BLOCO = [
 	{ value: "esquerda", label: "Coluna 1" },
 	{ value: "direita", label: "Coluna 2" },
 ] as const;
+
+export const LABELS_CAMPO_PERSONALIZADO_OS: Record<
+	TipoCampoPersonalizadoOs,
+	string
+> = {
+	assinatura: "Assinatura",
+	data: "Data",
+	observacao: "Observação",
+	textoFixo: "Texto fixo",
+	status: "Status",
+};

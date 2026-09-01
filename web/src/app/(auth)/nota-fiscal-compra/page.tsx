@@ -1,20 +1,20 @@
 "use client";
 
-import { IconPlus } from "@tabler/icons-react";
+import {
+	IconChevronDown,
+	IconLayoutColumns,
+	IconPlus,
+} from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-	type ColumnDef,
 	flexRender,
 	getCoreRowModel,
-	getPaginationRowModel,
-	getSortedRowModel,
-	type SortingState,
 	useReactTable,
 } from "@tanstack/react-table";
-import { Ban, Pencil, RotateCcw } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useId, useMemo, useState } from "react";
 import { toast } from "sonner";
+import type { OrdenacaoColunaTabela } from "@/components/cabecalho-coluna-tabela";
 import { TableSkeleton } from "@/components/table-skeleton";
 import {
 	AlertDialog,
@@ -26,8 +26,21 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuCheckboxItem,
+	DropdownMenuContent,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import {
 	Table,
 	TableBody,
@@ -38,14 +51,23 @@ import {
 } from "@/components/ui/table";
 import { useEmpresa } from "@/hooks/use-empresa";
 import {
+	TABELA_NOTA_FISCAL_COMPRA,
+	useColunasTabelaPersistidas,
+} from "@/hooks/use-preferencias-ui-usuario";
+import {
 	type NotaFiscal,
 	notaFiscalService,
 } from "@/services/nota-fiscal.service";
 import { PageContainer } from "../components/page-container";
-
-const STATUS_CONFIRMADA = 1;
-const STATUS_CANCELADA = 2;
-const STATUS_RASCUNHO = 99;
+import {
+	COLUNA_PARA_CAMPO_FILTRO_NF_COMPRA,
+	type ConfigFiltroColunaNotaFiscalCompra,
+	criarColunasNotaFiscalCompra,
+	type FiltrosColunaNotaFiscalCompraState,
+	filtrosColunaNotaFiscalCompraVazios,
+	STATUS_COMPRA_OPCOES_FILTRO,
+	visibilidadePadraoColunasNotaFiscalCompra,
+} from "./nota-fiscal-compra-colunas";
 
 const formatCurrency = (value: string | null | undefined) => {
 	if (!value) return "R$ 0,00";
@@ -57,152 +79,81 @@ const formatCurrency = (value: string | null | undefined) => {
 	}).format(num);
 };
 
-const formatDate = (date: string | null | undefined) => {
-	if (!date) return "-";
-	return new Date(date).toLocaleDateString("pt-BR");
-};
-
-function statusBadge(status: number | null | undefined) {
-	if (status === STATUS_CANCELADA) {
-		return <Badge variant="destructive">Cancelada</Badge>;
+function rotuloColuna(column: {
+	id: string;
+	columnDef: { meta?: unknown; header?: unknown };
+}) {
+	const meta = column.columnDef.meta as { label?: string } | undefined;
+	if (meta?.label) return meta.label;
+	if (typeof column.columnDef.header === "string") {
+		return column.columnDef.header;
 	}
-	if (status === STATUS_CONFIRMADA) {
-		return <Badge className="bg-green-600">Confirmada</Badge>;
-	}
-	if (status === STATUS_RASCUNHO) {
-		return <Badge variant="outline">Rascunho</Badge>;
-	}
-	if (status === null || status === undefined) {
-		return <Badge variant="secondary">Registrada</Badge>;
-	}
-	return <Badge variant="secondary">{status}</Badge>;
+	return column.id;
 }
 
-type ColunasParams = {
-	onCancelar: (nota: NotaFiscal) => void;
-	cancelandoId?: string | null;
-};
-
-const createColumns = ({
-	onCancelar,
-	cancelandoId,
-}: ColunasParams): ColumnDef<NotaFiscal>[] => [
-	{
-		accessorKey: "numero",
-		header: "Número",
-		cell: ({ row }) => (
-			<div className="font-medium">
-				{row.original.numero ?? row.original.numeronotafiscal ?? "-"}
-			</div>
-		),
-	},
-	{
-		accessorKey: "serie",
-		header: "Série",
-		cell: ({ row }) => <div>{row.getValue("serie") ?? "-"}</div>,
-	},
-	{
-		accessorKey: "razaosocial",
-		header: "Fornecedor",
-		cell: ({ row }) => (
-			<div className="max-w-[200px] truncate">
-				{row.getValue("razaosocial") ?? "-"}
-			</div>
-		),
-	},
-	{
-		accessorKey: "emissao",
-		header: "Emissão",
-		cell: ({ row }) => <div>{formatDate(row.getValue("emissao"))}</div>,
-	},
-	{
-		accessorKey: "entradasaida",
-		header: "Entrada",
-		cell: ({ row }) => <div>{formatDate(row.getValue("entradasaida"))}</div>,
-	},
-	{
-		accessorKey: "valortotalnota",
-		header: () => <div className="text-right">Valor total</div>,
-		cell: ({ row }) => (
-			<div className="text-right font-medium">
-				{formatCurrency(row.getValue("valortotalnota"))}
-			</div>
-		),
-	},
-	{
-		accessorKey: "chavenfe",
-		header: "Chave NF-e",
-		cell: ({ row }) => {
-			const chave = row.getValue("chavenfe") as string | null;
-			if (!chave) return <div>-</div>;
-			return (
-				<div className="max-w-[120px] truncate text-xs text-muted-foreground">
-					{chave}
-				</div>
-			);
-		},
-	},
-	{
-		accessorKey: "status",
-		header: "Status",
-		cell: ({ row }) => statusBadge(row.getValue("status") as number | null),
-	},
-	{
-		id: "acoes",
-		header: "",
-		cell: ({ row }) => {
-			const nota = row.original;
-			const cancelada = nota.status === STATUS_CANCELADA;
-			const podeEditar = !cancelada && nota.status !== STATUS_RASCUNHO;
-			const podeCancelar = !cancelada && nota.status !== STATUS_RASCUNHO;
-			const podeDevolver =
-				!!nota.chavenfe && !cancelada && nota.status !== STATUS_RASCUNHO;
-
-			return (
-				<div className="flex items-center justify-end gap-1">
-					{podeEditar && (
-						<Button asChild size="sm" variant="outline" className="h-7 px-2 text-xs">
-							<Link href={`/nota-fiscal-compra/${nota.id}/editar`}>
-								<Pencil className="mr-1 size-3" />
-								Editar
-							</Link>
-						</Button>
-					)}
-					{podeCancelar && (
-						<Button
-							size="sm"
-							variant="outline"
-							className="h-7 px-2 text-xs text-destructive border-destructive/30"
-							disabled={cancelandoId === nota.id}
-							onClick={() => onCancelar(nota)}
-						>
-							<Ban className="mr-1 size-3" />
-							Cancelar
-						</Button>
-					)}
-					{podeDevolver && (
-						<Button asChild size="sm" variant="outline" className="h-7 px-2 text-xs">
-							<Link href={`/nota-fiscal-venda/nova?devolverEntrada=${nota.id}`}>
-								<RotateCcw className="mr-1 size-3" />
-								Devolver
-							</Link>
-						</Button>
-					)}
-				</div>
-			);
-		},
-	},
-];
+function filtrosColunaAtivos(filtros: FiltrosColunaNotaFiscalCompraState) {
+	return Object.values(filtros).some((valor) => valor.trim() !== "");
+}
 
 export default function NotaFiscalCompraPage() {
 	const { localStorageEmpresa: empresa } = useEmpresa();
 	const queryClient = useQueryClient();
-	const [sorting, setSorting] = useState<SortingState>([]);
+	const idPorPagina = useId();
 	const [pagination, setPagination] = useState({
 		pageIndex: 0,
 		pageSize: 10,
 	});
 	const [notaCancelar, setNotaCancelar] = useState<NotaFiscal | null>(null);
+	const [filtrosColuna, setFiltrosColuna] =
+		useState<FiltrosColunaNotaFiscalCompraState>(
+			filtrosColunaNotaFiscalCompraVazios,
+		);
+	const [ordenarPor, setOrdenarPor] = useState<string | null>(null);
+	const [ordem, setOrdem] = useState<"asc" | "desc" | null>(null);
+
+	const visibilidadePadrao = useMemo(
+		() => visibilidadePadraoColunasNotaFiscalCompra(),
+		[],
+	);
+	const { columnVisibility, onColumnVisibilityChange, isLoadingPreferencias } =
+		useColunasTabelaPersistidas(TABELA_NOTA_FISCAL_COMPRA, visibilidadePadrao);
+
+	const onOrdenarColuna = useCallback(
+		(colunaId: string, direcao: OrdenacaoColunaTabela) => {
+			if (!direcao) {
+				setOrdenarPor(null);
+				setOrdem(null);
+			} else {
+				setOrdenarPor(colunaId);
+				setOrdem(direcao);
+			}
+			setPagination((p) => ({ ...p, pageIndex: 0 }));
+		},
+		[],
+	);
+
+	const onFiltrarColuna = useCallback((colunaId: string, valor: string) => {
+		const campo = COLUNA_PARA_CAMPO_FILTRO_NF_COMPRA[colunaId];
+		if (!campo) return;
+		setFiltrosColuna((atual) => ({ ...atual, [campo]: valor }));
+		setPagination((p) => ({ ...p, pageIndex: 0 }));
+	}, []);
+
+	const configFiltroPorColuna = useMemo((): Record<
+		string,
+		ConfigFiltroColunaNotaFiscalCompra
+	> => {
+		return {
+			numero: { tipo: "texto", placeholder: "Número" },
+			serie: { tipo: "texto", placeholder: "Série" },
+			razaosocial: { tipo: "texto", placeholder: "Fornecedor" },
+			emissao: { tipo: "data" },
+			entradasaida: { tipo: "data" },
+			valortotalnota: { tipo: "nenhum" },
+			chavenfe: { tipo: "texto", placeholder: "Chave" },
+			status: { tipo: "opcoes", opcoes: STATUS_COMPRA_OPCOES_FILTRO },
+		};
+	}, []);
 
 	const { data, isLoading } = useQuery({
 		queryKey: [
@@ -210,6 +161,9 @@ export default function NotaFiscalCompraPage() {
 			empresa?.id,
 			pagination.pageIndex + 1,
 			pagination.pageSize,
+			filtrosColuna,
+			ordenarPor,
+			ordem,
 		],
 		queryFn: async () => {
 			if (!empresa) {
@@ -220,6 +174,28 @@ export default function NotaFiscalCompraPage() {
 				tipoorigem: 0,
 				page: pagination.pageIndex + 1,
 				limit: pagination.pageSize,
+				...(filtrosColuna.numero ? { numero: filtrosColuna.numero } : {}),
+				...(filtrosColuna.serie ? { serie: filtrosColuna.serie } : {}),
+				...(filtrosColuna.razaosocial
+					? { razaosocial: filtrosColuna.razaosocial }
+					: {}),
+				...(filtrosColuna.emissao
+					? {
+							dataInicio: filtrosColuna.emissao,
+							dataFim: filtrosColuna.emissao,
+						}
+					: {}),
+				...(filtrosColuna.entradasaida
+					? { entradasaida: filtrosColuna.entradasaida }
+					: {}),
+				...(filtrosColuna.chavenfe
+					? { chavenfe: filtrosColuna.chavenfe }
+					: {}),
+				...(filtrosColuna.status
+					? { status: Number(filtrosColuna.status) }
+					: {}),
+				...(ordenarPor ? { ordenarPor } : {}),
+				...(ordem ? { ordem } : {}),
 			});
 		},
 		enabled: !!empresa,
@@ -262,32 +238,78 @@ export default function NotaFiscalCompraPage() {
 
 	const columns = useMemo(
 		() =>
-			createColumns({
+			criarColunasNotaFiscalCompra({
+				filtros: filtrosColuna,
+				ordenarPor,
+				ordem,
+				onOrdenarColuna,
+				onFiltrarColuna,
+				configFiltroPorColuna,
 				onCancelar: setNotaCancelar,
 				cancelandoId: cancelando ? notaCancelar?.id : null,
 			}),
-		[cancelando, notaCancelar?.id],
+		[
+			filtrosColuna,
+			ordenarPor,
+			ordem,
+			onOrdenarColuna,
+			onFiltrarColuna,
+			configFiltroPorColuna,
+			cancelando,
+			notaCancelar?.id,
+		],
 	);
 
 	const table = useReactTable({
 		data: data?.data || [],
 		columns,
-		state: { sorting, pagination },
-		onSortingChange: setSorting,
+		state: { pagination, columnVisibility },
 		onPaginationChange: setPagination,
+		onColumnVisibilityChange,
 		getCoreRowModel: getCoreRowModel(),
-		getSortedRowModel: getSortedRowModel(),
-		getPaginationRowModel: getPaginationRowModel(),
 		manualPagination: true,
 		pageCount: data?.paginacao.totalPages ?? 0,
 	});
+
+	const colunasVisiveis = table.getVisibleLeafColumns();
+	const mostrarSkeleton = isLoading || isLoadingPreferencias;
+	const comFiltros = filtrosColunaAtivos(filtrosColuna) || !!ordenarPor;
 
 	return (
 		<PageContainer>
 			<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
 				<div className="flex items-center justify-between px-4">
 					<h1 className="text-2xl font-bold">Nota fiscal de compra</h1>
-					<div className="flex gap-2">
+					<div className="flex flex-wrap gap-2">
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button variant="outline" size="sm" disabled={!empresa}>
+									<IconLayoutColumns className="size-4" />
+									<span className="hidden lg:inline">Personalizar Colunas</span>
+									<span className="lg:hidden">Colunas</span>
+									<IconChevronDown className="size-4" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent
+								align="end"
+								className="max-h-72 w-56 overflow-y-auto"
+							>
+								{table
+									.getAllColumns()
+									.filter((column) => column.getCanHide())
+									.map((column) => (
+										<DropdownMenuCheckboxItem
+											key={column.id}
+											checked={column.getIsVisible()}
+											onCheckedChange={(value) =>
+												column.toggleVisibility(!!value)
+											}
+										>
+											{rotuloColuna(column)}
+										</DropdownMenuCheckboxItem>
+									))}
+							</DropdownMenuContent>
+						</DropdownMenu>
 						<Button asChild variant="outline" disabled={!empresa}>
 							<Link href="/nota-fiscal-compra/importar">Importar XML</Link>
 						</Button>
@@ -309,8 +331,8 @@ export default function NotaFiscalCompraPage() {
 										href={`/nota-fiscal-compra/rascunho/${rascunho.id}`}
 										className="text-sm underline-offset-4 hover:underline"
 									>
-										NF {rascunho.numero ?? rascunho.numeronotafiscal ?? "-"}{" "}
-										— {rascunho.razaosocial ?? "Fornecedor"} (
+										NF {rascunho.numero ?? rascunho.numeronotafiscal ?? "-"} —{" "}
+										{rascunho.razaosocial ?? "Fornecedor"} (
 										{formatCurrency(rascunho.valortotalnota)})
 									</Link>
 								</li>
@@ -325,16 +347,14 @@ export default function NotaFiscalCompraPage() {
 								Selecione uma empresa para visualizar as notas fiscais de compra
 							</p>
 						</div>
-					) : isLoading ? (
-						<TableSkeleton rows={10} columns={8}>
-							<TableCell>Número</TableCell>
-							<TableCell>Série</TableCell>
-							<TableCell>Fornecedor</TableCell>
-							<TableCell>Emissão</TableCell>
-							<TableCell>Entrada</TableCell>
-							<TableCell className="text-right">Valor total</TableCell>
-							<TableCell>Chave NF-e</TableCell>
-							<TableCell>Status</TableCell>
+					) : mostrarSkeleton ? (
+						<TableSkeleton
+							rows={10}
+							columns={colunasVisiveis.length || 8}
+						>
+							{colunasVisiveis.map((coluna) => (
+								<TableHead key={coluna.id}>{rotuloColuna(coluna)}</TableHead>
+							))}
 						</TableSkeleton>
 					) : (
 						<>
@@ -379,27 +399,57 @@ export default function NotaFiscalCompraPage() {
 									) : (
 										<TableRow>
 											<TableCell
-												colSpan={table.getAllColumns().length}
+												colSpan={colunasVisiveis.length}
 												className="h-24 text-center"
 											>
-												<div className="flex flex-col items-center gap-3">
+												{comFiltros ? (
 													<p className="text-muted-foreground">
-														Nenhuma nota fiscal de compra encontrada.
+														Nenhuma nota fiscal encontrada para os filtros
+														selecionados.
 													</p>
-													<Button asChild variant="outline" size="sm">
-														<Link href="/nota-fiscal-compra/nova">
-															<IconPlus className="size-4" />
-															Incluir primeira NF
-														</Link>
-													</Button>
-												</div>
+												) : (
+													<div className="flex flex-col items-center gap-3">
+														<p className="text-muted-foreground">
+															Nenhuma nota fiscal de compra encontrada.
+														</p>
+														<Button asChild variant="outline" size="sm">
+															<Link href="/nota-fiscal-compra/nova">
+																<IconPlus className="size-4" />
+																Incluir primeira NF
+															</Link>
+														</Button>
+													</div>
+												)}
 											</TableCell>
 										</TableRow>
 									)}
 								</TableBody>
 							</Table>
-							{data && data.paginacao.totalPages > 1 && (
-								<div className="flex items-center justify-between px-4 py-4 border-t">
+							{data && data.paginacao.total > 0 && (
+								<div className="flex flex-col gap-4 border-t px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+									<div className="flex items-center gap-2">
+										<Label htmlFor={idPorPagina} className="text-sm">
+											Itens por página
+										</Label>
+										<Select
+											value={`${pagination.pageSize}`}
+											onValueChange={(value) => {
+												table.setPageSize(Number(value));
+												table.setPageIndex(0);
+											}}
+										>
+											<SelectTrigger id={idPorPagina} className="h-8 w-[72px]">
+												<SelectValue placeholder={pagination.pageSize} />
+											</SelectTrigger>
+											<SelectContent side="top">
+												{[10, 20, 30, 50, 100].map((tamanho) => (
+													<SelectItem key={tamanho} value={`${tamanho}`}>
+														{tamanho}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</div>
 									<div className="text-sm text-muted-foreground">
 										Página {pagination.pageIndex + 1} de{" "}
 										{data.paginacao.totalPages} ({data.paginacao.total}{" "}
@@ -438,7 +488,9 @@ export default function NotaFiscalCompraPage() {
 			>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>Cancelar e apagar nota de compra?</AlertDialogTitle>
+						<AlertDialogTitle>
+							Cancelar e apagar nota de compra?
+						</AlertDialogTitle>
 						<AlertDialogDescription>
 							O estoque de entrada será estornado, os títulos a pagar sem baixa e
 							os custos vinculados à nota serão removidos, e a nota será

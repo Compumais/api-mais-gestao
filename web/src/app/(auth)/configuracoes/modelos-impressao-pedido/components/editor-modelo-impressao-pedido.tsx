@@ -17,7 +17,7 @@ import {
 	verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Plus, Trash2 } from "lucide-react";
+import { GripVertical, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -45,6 +45,7 @@ import type {
 	TipoBlocoModeloImpressaoPedido,
 } from "@/schemas/modelo-impressao-pedido.schema";
 import { TIPOS_BLOCO_MODELO_IMPRESSAO_PEDIDO } from "@/schemas/modelo-impressao-pedido.schema";
+import { PaletaBlocosImpressao } from "@/components/modelo-impressao/paleta-blocos-impressao";
 import { PreviewModeloImpressaoPedido } from "./preview-modelo-impressao-pedido";
 
 function novoId() {
@@ -53,6 +54,7 @@ function novoId() {
 
 function criarBloco(
 	tipo: TipoBlocoModeloImpressaoPedido,
+	campos?: string[],
 ): BlocoModeloImpressaoPedido {
 	const base: BlocoModeloImpressaoPedido = {
 		id: novoId(),
@@ -67,12 +69,16 @@ function criarBloco(
 		case "dadosPedido":
 			return {
 				...base,
-				props: { campos: ["codigo", "status", "data"] },
+				props: {
+					campos: campos ?? CAMPOS_DADOS_PEDIDO.map((c) => c.value),
+				},
 			};
 		case "cliente":
 			return {
 				...base,
-				props: { campos: [...CAMPOS_CLIENTE_PEDIDO_PADRAO] },
+				props: {
+					campos: campos ?? CAMPOS_CLIENTE_PEDIDO.map((c) => c.value),
+				},
 			};
 		case "rodape":
 			return {
@@ -217,32 +223,20 @@ export function EditorModeloImpressaoPedido({
 
 	return (
 		<div className="grid gap-4 xl:grid-cols-[220px_minmax(0,1fr)_minmax(280px,360px)]">
-			<div className="rounded-lg border p-3 space-y-2 h-fit">
-				<p className="text-sm font-medium">Blocos</p>
-				<p className="text-xs text-muted-foreground">
-					Clique para adicionar ao modelo
-				</p>
-				<div className="flex flex-col gap-1.5">
-					{TIPOS_BLOCO_MODELO_IMPRESSAO_PEDIDO.map((tipo) => (
-						<Button
-							key={tipo}
-							type="button"
-							variant="outline"
-							size="sm"
-							className="justify-start gap-2"
-							disabled={somenteLeitura}
-							onClick={() => {
-								const bloco = criarBloco(tipo);
-								onLayoutChange([...layout, bloco]);
-								setBlocoSelecionadoId(bloco.id);
-							}}
-						>
-							<Plus className="h-3.5 w-3.5" aria-hidden="true" />
-							{LABELS_BLOCO_MODELO_IMPRESSAO_PEDIDO[tipo]}
-						</Button>
-					))}
-				</div>
-			</div>
+			<PaletaBlocosImpressao
+				tipos={TIPOS_BLOCO_MODELO_IMPRESSAO_PEDIDO}
+				labels={LABELS_BLOCO_MODELO_IMPRESSAO_PEDIDO}
+				camposPorTipo={{
+					dadosPedido: CAMPOS_DADOS_PEDIDO,
+					cliente: CAMPOS_CLIENTE_PEDIDO,
+				}}
+				criarBloco={criarBloco}
+				onAdicionar={(bloco) => {
+					onLayoutChange([...layout, bloco]);
+					setBlocoSelecionadoId(bloco.id);
+				}}
+				somenteLeitura={somenteLeitura}
+			/>
 
 			<div className="space-y-4">
 				<div className="rounded-lg border p-4 space-y-3">

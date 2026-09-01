@@ -1,22 +1,26 @@
 "use client";
 
-import { IconPencil, IconPrinter, IconRefresh } from "@tabler/icons-react";
+import { IconChevronDown, IconLayoutColumns } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-	type ColumnDef,
 	flexRender,
 	getCoreRowModel,
 	useReactTable,
 } from "@tanstack/react-table";
-import dayjs from "dayjs";
-import { Ban, FileX2 } from "lucide-react";
-import Link from "next/link";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useId, useMemo, useState } from "react";
 import { toast } from "sonner";
+import type { OrdenacaoColunaTabela } from "@/components/cabecalho-coluna-tabela";
 import { CupomNaoFiscal } from "@/components/pdv/cupom-nao-fiscal";
 import { TableSkeleton } from "@/components/table-skeleton";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import {
+	DropdownMenu,
+	DropdownMenuCheckboxItem,
+	DropdownMenuContent,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Label } from "@/components/ui/label";
 import {
 	Select,
 	SelectContent,
@@ -32,16 +36,14 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import {
-	NFE_AMBIENTE_LABELS,
-	NFE_STATUS,
-	NFE_STATUS_LABELS,
-} from "@/constants/nfe-status";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { useNfceAmbientePdv } from "@/hooks/use-nfce-ambiente-pdv";
 import {
+	TABELA_NFCE,
+	useColunasTabelaPersistidas,
+} from "@/hooks/use-preferencias-ui-usuario";
+import {
 	type CupomNaoFiscalData,
-	formatCurrency,
 	type MeioPagamentoPdv,
 	type PagamentoParcialPdv,
 } from "@/lib/gourmet-utils";
@@ -50,78 +52,19 @@ import {
 	type NfceListagem,
 	nfceService,
 } from "@/services/nfce.service";
-import type { NotaFiscalEmitida } from "@/services/nfe-emissao.service";
-import {
-	obterCodigoRejeicaoNota,
-	obterMotivoRejeicaoNota,
-} from "@/util/nfe-rejeicao-util";
-import {
-	notaPodeSerCancelada,
-	notaPodeSerInutilizada,
-} from "@/util/validar-eventos-nfe";
 import { PageContainer } from "../components/page-container";
 import { BotaoAlterarNumeracao } from "../configuracoes/components/dialog-alterar-numeracao";
 import { AvisoAmbienteNfe } from "../nota-fiscal-venda/components/aviso-ambiente-nfe";
 import { ModalEventoNfe } from "../nota-fiscal-venda/components/modal-evento-nfe";
-import { StatusNfeBadge } from "../nota-fiscal-venda/components/status-nfe-badge";
-
-const FILTRO_TODOS = "todos";
-
-const OPCOES_STATUS = [
-	{ value: FILTRO_TODOS, label: "Todos os status" },
-	{
-		value: String(NFE_STATUS.PENDENTE),
-		label: NFE_STATUS_LABELS[NFE_STATUS.PENDENTE],
-	},
-	{
-		value: String(NFE_STATUS.AUTORIZADA),
-		label: NFE_STATUS_LABELS[NFE_STATUS.AUTORIZADA],
-	},
-	{
-		value: String(NFE_STATUS.REJEITADA),
-		label: NFE_STATUS_LABELS[NFE_STATUS.REJEITADA],
-	},
-	{
-		value: String(NFE_STATUS.CANCELADA),
-		label: NFE_STATUS_LABELS[NFE_STATUS.CANCELADA],
-	},
-	{
-		value: String(NFE_STATUS.INUTILIZADA),
-		label: NFE_STATUS_LABELS[NFE_STATUS.INUTILIZADA],
-	},
-	{
-		value: String(NFE_STATUS.DENEGADA),
-		label: NFE_STATUS_LABELS[NFE_STATUS.DENEGADA],
-	},
-];
-
-function paraNotaFiscalEmitida(nota: NfceListagem): NotaFiscalEmitida {
-	return {
-		id: nota.idnotafiscal,
-		idempresa: "",
-		numeronotafiscal: nota.numeronotafiscal,
-		serie: nota.serie,
-		chavenfe: nota.chavenfe,
-		protocolonfe: nota.protocolonfe,
-		status: nota.status,
-		tipoambientenfe: nota.tipoambientenfe,
-		valortotalnota: nota.valortotalnota,
-		emissao: nota.emissao,
-		datahoraemissao: nota.datahoraemissao,
-		mensagemtransmissaonfe: nota.mensagemtransmissaonfe,
-		codigostatusprotocolonfe: nota.codigostatusprotocolonfe,
-	};
-}
-
-function formatarValor(valor: string | null | undefined) {
-	const n = Number.parseFloat(valor ?? "0");
-	if (Number.isNaN(n)) return "R$ 0,00";
-	return formatCurrency(n);
-}
-
-function obterDataExibicao(nota: NfceListagem) {
-	return nota.datahoraemissao ?? nota.emissao ?? nota.datainclusao;
-}
+import {
+	COLUNA_PARA_CAMPO_FILTRO_NFCE,
+	type ConfigFiltroColunaNfce,
+	criarColunasNfce,
+	type FiltrosColunaNfceState,
+	filtrosColunaNfceVazios,
+	NFCE_STATUS_OPCOES_FILTRO,
+	visibilidadePadraoColunasNfce,
+} from "./nfce-colunas";
 
 function mapearCupomApi(dados: DadosCupomNfceApi): CupomNaoFiscalData {
 	return {
@@ -147,13 +90,37 @@ function mapearCupomApi(dados: DadosCupomNfceApi): CupomNaoFiscalData {
 	};
 }
 
+function rotuloColuna(column: {
+	id: string;
+	columnDef: { meta?: unknown; header?: unknown };
+}) {
+	const meta = column.columnDef.meta as { label?: string } | undefined;
+	if (meta?.label) return meta.label;
+	if (typeof column.columnDef.header === "string") {
+		return column.columnDef.header;
+	}
+	return column.id;
+}
+
+function filtrosColunaAtivos(filtros: FiltrosColunaNfceState) {
+	return Object.values(filtros).some((valor) => valor.trim() !== "");
+}
+
 export default function NfcePage() {
 	const { empresa } = useEmpresa();
 	const { ambiente: ambienteNfce } = useNfceAmbientePdv();
 	const idempresa = empresa?.id ?? "";
 	const queryClient = useQueryClient();
-	const [page, setPage] = useState(1);
-	const [filtroStatus, setFiltroStatus] = useState(FILTRO_TODOS);
+	const idPorPagina = useId();
+	const [pagination, setPagination] = useState({
+		pageIndex: 0,
+		pageSize: 20,
+	});
+	const [filtrosColuna, setFiltrosColuna] = useState<FiltrosColunaNfceState>(
+		filtrosColunaNfceVazios,
+	);
+	const [ordenarPor, setOrdenarPor] = useState<string | null>(null);
+	const [ordem, setOrdem] = useState<"asc" | "desc" | null>(null);
 	const [reemitindoId, setReemitindoId] = useState<string | null>(null);
 	const [cupomDados, setCupomDados] = useState<CupomNaoFiscalData | null>(null);
 	const [carregandoCupomId, setCarregandoCupomId] = useState<string | null>(
@@ -164,17 +131,77 @@ export default function NfcePage() {
 		nota: NfceListagem;
 	} | null>(null);
 
-	const statusFiltro =
-		filtroStatus === FILTRO_TODOS ? undefined : Number(filtroStatus);
+	const visibilidadePadrao = useMemo(() => visibilidadePadraoColunasNfce(), []);
+	const { columnVisibility, onColumnVisibilityChange, isLoadingPreferencias } =
+		useColunasTabelaPersistidas(TABELA_NFCE, visibilidadePadrao);
+
+	const onOrdenarColuna = useCallback(
+		(colunaId: string, direcao: OrdenacaoColunaTabela) => {
+			if (!direcao) {
+				setOrdenarPor(null);
+				setOrdem(null);
+			} else {
+				setOrdenarPor(colunaId);
+				setOrdem(direcao);
+			}
+			setPagination((p) => ({ ...p, pageIndex: 0 }));
+		},
+		[],
+	);
+
+	const onFiltrarColuna = useCallback((colunaId: string, valor: string) => {
+		const campo = COLUNA_PARA_CAMPO_FILTRO_NFCE[colunaId];
+		if (!campo) return;
+		setFiltrosColuna((atual) => ({ ...atual, [campo]: valor }));
+		setPagination((p) => ({ ...p, pageIndex: 0 }));
+	}, []);
+
+	const configFiltroPorColuna = useMemo((): Record<
+		string,
+		ConfigFiltroColunaNfce
+	> => {
+		return {
+			dataEmissao: { tipo: "data" },
+			numeronotafiscal: { tipo: "texto", placeholder: "Número" },
+			idvenda: { tipo: "texto", placeholder: "Venda PDV" },
+			valortotalnota: { tipo: "nenhum" },
+			status: { tipo: "opcoes", opcoes: NFCE_STATUS_OPCOES_FILTRO },
+			tipoambientenfe: { tipo: "nenhum" },
+			chavenfe: { tipo: "texto", placeholder: "Chave" },
+		};
+	}, []);
 
 	const { data, isLoading } = useQuery({
-		queryKey: ["nfce", idempresa, page, filtroStatus],
+		queryKey: [
+			"nfce",
+			idempresa,
+			pagination.pageIndex + 1,
+			pagination.pageSize,
+			filtrosColuna,
+			ordenarPor,
+			ordem,
+		],
 		queryFn: () =>
 			nfceService.listar({
 				idempresa,
-				status: statusFiltro,
-				page,
-				limit: 20,
+				page: pagination.pageIndex + 1,
+				limit: pagination.pageSize,
+				...(filtrosColuna.numero ? { numero: filtrosColuna.numero } : {}),
+				...(filtrosColuna.idvenda ? { idvenda: filtrosColuna.idvenda } : {}),
+				...(filtrosColuna.chavenfe
+					? { chavenfe: filtrosColuna.chavenfe }
+					: {}),
+				...(filtrosColuna.emissao
+					? {
+							dataInicio: filtrosColuna.emissao,
+							dataFim: filtrosColuna.emissao,
+						}
+					: {}),
+				...(filtrosColuna.status
+					? { status: Number(filtrosColuna.status) }
+					: {}),
+				...(ordenarPor ? { ordenarPor } : {}),
+				...(ordem ? { ordem } : {}),
 			}),
 		enabled: !!idempresa,
 	});
@@ -257,163 +284,55 @@ export default function NfcePage() {
 		}
 	}, []);
 
-	const columns = useMemo<ColumnDef<NfceListagem>[]>(
-		() => [
-			{
-				header: "Data",
-				cell: ({ row }) => {
-					const data = obterDataExibicao(row.original);
-					return data ? dayjs(data).format("DD/MM/YYYY HH:mm") : "—";
+	const columns = useMemo(
+		() =>
+			criarColunasNfce({
+				filtros: filtrosColuna,
+				ordenarPor,
+				ordem,
+				onOrdenarColuna,
+				onFiltrarColuna,
+				configFiltroPorColuna,
+				reemitindoId,
+				carregandoCupomId,
+				onRetransmitir: (idnotafiscal) => {
+					setReemitindoId(idnotafiscal);
+					reemitirMutation.mutate(idnotafiscal);
 				},
-			},
-			{
-				header: "Número",
-				cell: ({ row }) => {
-					const { numeronotafiscal, serie } = row.original;
-					if (!numeronotafiscal) return "—";
-					return serie ? `${numeronotafiscal}/${serie}` : numeronotafiscal;
+				onImprimir: (idnotafiscal) => {
+					void handleImprimirCupom(idnotafiscal);
 				},
-			},
-			{
-				header: "Venda PDV",
-				accessorKey: "idvenda",
-				cell: ({ row }) =>
-					row.original.idvenda ? row.original.idvenda.slice(0, 8) : "—",
-			},
-			{
-				header: "Valor",
-				accessorKey: "valortotalnota",
-				cell: ({ row }) => formatarValor(row.original.valortotalnota),
-			},
-			{
-				header: "Status",
-				cell: ({ row }) => {
-					const nota = paraNotaFiscalEmitida(row.original);
-					return (
-						<StatusNfeBadge
-							status={nota.status}
-							cStat={obterCodigoRejeicaoNota(nota)}
-							xMotivo={obterMotivoRejeicaoNota(nota)}
-							size="sm"
-						/>
-					);
-				},
-			},
-			{
-				header: "Ambiente",
-				cell: ({ row }) => {
-					const ambiente = row.original.tipoambientenfe;
-					if (ambiente == null) return "—";
-					return NFE_AMBIENTE_LABELS[ambiente] ?? ambiente;
-				},
-			},
-			{
-				header: "Chave",
-				cell: ({ row }) =>
-					row.original.chavenfe ? (
-						<span className="font-mono text-xs">
-							{row.original.chavenfe.slice(-8)}
-						</span>
-					) : (
-						"—"
-					),
-			},
-			{
-				id: "acoes",
-				header: "",
-				cell: ({ row }) => {
-					const nota = row.original;
-					const notaEmitida = paraNotaFiscalEmitida(nota);
-					const podeReemitir =
-						nota.status === NFE_STATUS.PENDENTE ||
-						nota.status === NFE_STATUS.REJEITADA ||
-						nota.status === NFE_STATUS.DENEGADA;
-					const podeAlterar = podeReemitir;
-					const podeImprimir = nota.status === NFE_STATUS.AUTORIZADA;
-					const podeCancelar = notaPodeSerCancelada(notaEmitida).permitido;
-					const podeInutilizar = notaPodeSerInutilizada(notaEmitida).permitido;
-
-					return (
-						<div className="flex flex-wrap items-center justify-end gap-1">
-							{podeAlterar && (
-								<Button type="button" size="sm" variant="outline" asChild>
-									<Link href={`/nfce/editar?editarNfce=${nota.idnotafiscal}`}>
-										<IconPencil className="size-4" />
-										Alterar
-									</Link>
-								</Button>
-							)}
-							{podeReemitir && (
-								<Button
-									type="button"
-									size="sm"
-									variant="outline"
-									disabled={reemitindoId === nota.idnotafiscal}
-									onClick={() => {
-										setReemitindoId(nota.idnotafiscal);
-										reemitirMutation.mutate(nota.idnotafiscal);
-									}}
-								>
-									<IconRefresh className="size-4" />
-									{reemitindoId === nota.idnotafiscal
-										? "Enviando..."
-										: "Retransmitir"}
-								</Button>
-							)}
-							{podeImprimir && (
-								<Button
-									type="button"
-									size="sm"
-									variant="outline"
-									disabled={carregandoCupomId === nota.idnotafiscal}
-									onClick={() => {
-										void handleImprimirCupom(nota.idnotafiscal);
-									}}
-								>
-									<IconPrinter className="size-4" />
-									{carregandoCupomId === nota.idnotafiscal
-										? "Carregando..."
-										: "Imprimir"}
-								</Button>
-							)}
-							{podeCancelar && (
-								<Button
-									type="button"
-									size="sm"
-									variant="outline"
-									className="text-destructive"
-									onClick={() => setEventoModal({ tipo: "cancelar", nota })}
-								>
-									<Ban className="size-4" />
-									Cancelar
-								</Button>
-							)}
-							{podeInutilizar && (
-								<Button
-									type="button"
-									size="sm"
-									variant="outline"
-									onClick={() => setEventoModal({ tipo: "inutilizar", nota })}
-								>
-									<FileX2 className="size-4" />
-									Inutilizar
-								</Button>
-							)}
-						</div>
-					);
-				},
-			},
+				onCancelar: (nota) => setEventoModal({ tipo: "cancelar", nota }),
+				onInutilizar: (nota) => setEventoModal({ tipo: "inutilizar", nota }),
+			}),
+		[
+			filtrosColuna,
+			ordenarPor,
+			ordem,
+			onOrdenarColuna,
+			onFiltrarColuna,
+			configFiltroPorColuna,
+			reemitindoId,
+			carregandoCupomId,
+			reemitirMutation,
+			handleImprimirCupom,
 		],
-		[reemitindoId, reemitirMutation, carregandoCupomId, handleImprimirCupom],
 	);
 
 	const table = useReactTable({
 		data: data?.data ?? [],
 		columns,
+		state: { pagination, columnVisibility },
+		onPaginationChange: setPagination,
+		onColumnVisibilityChange,
 		getCoreRowModel: getCoreRowModel(),
+		manualPagination: true,
+		pageCount: data?.paginacao.totalPages ?? 0,
 	});
 
-	const totalPages = data?.paginacao.totalPages ?? 1;
+	const colunasVisiveis = table.getVisibleLeafColumns();
+	const mostrarSkeleton = isLoading || isLoadingPreferencias;
+	const comFiltros = filtrosColunaAtivos(filtrosColuna) || !!ordenarPor;
 
 	if (!idempresa) {
 		return (
@@ -438,28 +357,37 @@ export default function NfcePage() {
 							rejeitados
 						</p>
 					</div>
-					<div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-						<BotaoAlterarNumeracao idempresa={idempresa} abaInicial="nfce" />
-						<div className="w-full sm:w-56">
-							<Select
-								value={filtroStatus}
-								onValueChange={(valor) => {
-									setFiltroStatus(valor);
-									setPage(1);
-								}}
+					<div className="flex w-full flex-wrap gap-2 sm:w-auto sm:items-center">
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button variant="outline" size="sm">
+									<IconLayoutColumns className="size-4" />
+									<span className="hidden lg:inline">Personalizar Colunas</span>
+									<span className="lg:hidden">Colunas</span>
+									<IconChevronDown className="size-4" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent
+								align="end"
+								className="max-h-72 w-56 overflow-y-auto"
 							>
-								<SelectTrigger>
-									<SelectValue placeholder="Status" />
-								</SelectTrigger>
-								<SelectContent>
-									{OPCOES_STATUS.map((opcao) => (
-										<SelectItem key={opcao.value} value={opcao.value}>
-											{opcao.label}
-										</SelectItem>
+								{table
+									.getAllColumns()
+									.filter((column) => column.getCanHide())
+									.map((column) => (
+										<DropdownMenuCheckboxItem
+											key={column.id}
+											checked={column.getIsVisible()}
+											onCheckedChange={(value) =>
+												column.toggleVisibility(!!value)
+											}
+										>
+											{rotuloColuna(column)}
+										</DropdownMenuCheckboxItem>
 									))}
-								</SelectContent>
-							</Select>
-						</div>
+							</DropdownMenuContent>
+						</DropdownMenu>
+						<BotaoAlterarNumeracao idempresa={idempresa} abaInicial="nfce" />
 					</div>
 				</div>
 
@@ -467,89 +395,111 @@ export default function NfcePage() {
 					<AvisoAmbienteNfe ambiente={ambienteNfce} />
 				</div>
 
-				<div className="px-4">
-					{isLoading ? (
-						<TableSkeleton columns={8} rows={8}>
-							<TableHead>Data</TableHead>
-							<TableHead>Número</TableHead>
-							<TableHead>Venda PDV</TableHead>
-							<TableHead>Valor</TableHead>
-							<TableHead>Status</TableHead>
-							<TableHead>Ambiente</TableHead>
-							<TableHead>Chave</TableHead>
-							<TableHead />
+				<div className="mx-4 rounded-lg border bg-card">
+					{mostrarSkeleton ? (
+						<TableSkeleton
+							columns={colunasVisiveis.length || 7}
+							rows={8}
+						>
+							{colunasVisiveis.map((coluna) => (
+								<TableHead key={coluna.id}>{rotuloColuna(coluna)}</TableHead>
+							))}
 						</TableSkeleton>
 					) : (
 						<>
-							<div className="rounded-md border">
-								<Table>
-									<TableHeader>
-										{table.getHeaderGroups().map((headerGroup) => (
-											<TableRow key={headerGroup.id}>
-												{headerGroup.headers.map((header) => (
-													<TableHead key={header.id}>
-														{header.isPlaceholder
-															? null
-															: flexRender(
-																	header.column.columnDef.header,
-																	header.getContext(),
-																)}
-													</TableHead>
+							<Table>
+								<TableHeader>
+									{table.getHeaderGroups().map((headerGroup) => (
+										<TableRow key={headerGroup.id}>
+											{headerGroup.headers.map((header) => (
+												<TableHead key={header.id}>
+													{header.isPlaceholder
+														? null
+														: flexRender(
+																header.column.columnDef.header,
+																header.getContext(),
+															)}
+												</TableHead>
+											))}
+										</TableRow>
+									))}
+								</TableHeader>
+								<TableBody>
+									{table.getRowModel().rows.length === 0 ? (
+										<TableRow>
+											<TableCell
+												colSpan={colunasVisiveis.length}
+												className="h-24 text-center text-muted-foreground"
+											>
+												{comFiltros
+													? "Nenhuma NFC-e encontrada para os filtros selecionados."
+													: "Nenhuma NFC-e encontrada."}
+											</TableCell>
+										</TableRow>
+									) : (
+										table.getRowModel().rows.map((row) => (
+											<TableRow key={row.id}>
+												{row.getVisibleCells().map((cell) => (
+													<TableCell key={cell.id}>
+														{flexRender(
+															cell.column.columnDef.cell,
+															cell.getContext(),
+														)}
+													</TableCell>
 												))}
 											</TableRow>
-										))}
-									</TableHeader>
-									<TableBody>
-										{table.getRowModel().rows.length === 0 ? (
-											<TableRow>
-												<TableCell
-													colSpan={columns.length}
-													className="h-24 text-center text-muted-foreground"
-												>
-													Nenhuma NFC-e encontrada.
-												</TableCell>
-											</TableRow>
-										) : (
-											table.getRowModel().rows.map((row) => (
-												<TableRow key={row.id}>
-													{row.getVisibleCells().map((cell) => (
-														<TableCell key={cell.id}>
-															{flexRender(
-																cell.column.columnDef.cell,
-																cell.getContext(),
-															)}
-														</TableCell>
-													))}
-												</TableRow>
-											))
-										)}
-									</TableBody>
-								</Table>
-							</div>
-
-							{totalPages > 1 && (
-								<div className="mt-4 flex items-center justify-end gap-2">
-									<Button
-										type="button"
-										variant="outline"
-										size="sm"
-										disabled={page <= 1}
-										onClick={() => setPage((p) => Math.max(1, p - 1))}
-									>
-										Anterior
-									</Button>
-									<span className="text-sm text-muted-foreground">
-										Página {page} de {totalPages}
-									</span>
-									<Button
-										type="button"
-										variant="outline"
-										size="sm"
-										disabled={page >= totalPages}
-										onClick={() => setPage((p) => p + 1)}
-									>
-										Próxima
-									</Button>
+										))
+									)}
+								</TableBody>
+							</Table>
+							{data && data.paginacao.total > 0 && (
+								<div className="flex flex-col gap-4 border-t px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+									<div className="flex items-center gap-2">
+										<Label htmlFor={idPorPagina} className="text-sm">
+											Itens por página
+										</Label>
+										<Select
+											value={`${pagination.pageSize}`}
+											onValueChange={(value) => {
+												table.setPageSize(Number(value));
+												table.setPageIndex(0);
+											}}
+										>
+											<SelectTrigger id={idPorPagina} className="h-8 w-[72px]">
+												<SelectValue placeholder={pagination.pageSize} />
+											</SelectTrigger>
+											<SelectContent side="top">
+												{[10, 20, 30, 50, 100].map((tamanho) => (
+													<SelectItem key={tamanho} value={`${tamanho}`}>
+														{tamanho}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</div>
+									<div className="text-sm text-muted-foreground">
+										Página {pagination.pageIndex + 1} de{" "}
+										{data.paginacao.totalPages} ({data.paginacao.total}{" "}
+										registros)
+									</div>
+									<div className="flex gap-2">
+										<Button
+											variant="outline"
+											size="sm"
+											onClick={() => table.previousPage()}
+											disabled={!table.getCanPreviousPage()}
+										>
+											Anterior
+										</Button>
+										<Button
+											variant="outline"
+											size="sm"
+											onClick={() => table.nextPage()}
+											disabled={!table.getCanNextPage()}
+										>
+											Próxima
+										</Button>
+									</div>
 								</div>
 							)}
 						</>

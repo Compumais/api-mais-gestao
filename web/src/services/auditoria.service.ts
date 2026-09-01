@@ -27,6 +27,14 @@ export interface ListarAuditoriasParams {
 	page?: number;
 	limit?: number;
 	idempresa: string;
+	acao?: string;
+	recurso?: string;
+	idrecurso?: string;
+	nomeusuario?: string;
+	nomeempresa?: string;
+	criadoem?: string;
+	ordenarPor?: string;
+	ordem?: "asc" | "desc";
 }
 
 export const auditoriaService = {

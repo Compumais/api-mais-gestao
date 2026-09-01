@@ -4,6 +4,7 @@ import { buscarNfceConfiguracaoPorEmpresa } from "@/repositories/nfce-configurac
 import {
 	listarNfcePorEmpresa,
 	type NfceListagem,
+	type OrdenarNfceCampo,
 } from "@/repositories/nota-fiscal-repositories.js";
 import { resolverAmbienteSefaz } from "@/util/ambiente-sefaz.js";
 import { completarListagemNfce } from "@/util/completar-listagem-nfce.js";
@@ -13,6 +14,13 @@ type ListarNfcePendentesParametros = {
 	idusuario: string;
 	idempresa: string;
 	status?: number | undefined;
+	numero?: string | undefined;
+	chavenfe?: string | undefined;
+	idvenda?: string | undefined;
+	dataInicio?: string | undefined;
+	dataFim?: string | undefined;
+	ordenarPor?: OrdenarNfceCampo | undefined;
+	ordem?: "asc" | "desc" | undefined;
 	page?: number;
 	limit?: number;
 };
@@ -31,6 +39,13 @@ export async function listarNfcePendentesService({
 	idusuario,
 	idempresa,
 	status,
+	numero,
+	chavenfe,
+	idvenda,
+	dataInicio,
+	dataFim,
+	ordenarPor,
+	ordem,
 	page = 1,
 	limit = 20,
 }: ListarNfcePendentesParametros): Promise<
@@ -51,6 +66,13 @@ export async function listarNfcePendentesService({
 	const resultado = await listarNfcePorEmpresa({
 		idempresa,
 		status,
+		numero,
+		chavenfe,
+		idvenda,
+		dataInicio,
+		dataFim,
+		ordenarPor,
+		ordem,
 		tipoambientenfe,
 		page,
 		limit,

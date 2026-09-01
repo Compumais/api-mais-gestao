@@ -170,6 +170,11 @@ export const listarFinanceirosSchema: FastifySchema = {
 				nullable: true,
 				description: "Filtro por nome do cliente/fornecedor (busca parcial)",
 			},
+			documento: {
+				type: "string",
+				nullable: true,
+				description: "Filtro por documento (busca parcial)",
+			},
 			emissaoInicio: {
 				type: "string",
 				format: "date",
@@ -206,6 +211,24 @@ export const listarFinanceirosSchema: FastifySchema = {
 				enum: ["P", "R"],
 				nullable: true,
 				description: "Filtro por tipo: P (pagar) ou R (receber)",
+			},
+			ordenarPor: {
+				type: "string",
+				enum: [
+					"documento",
+					"emitente",
+					"parcela",
+					"status",
+					"emissao",
+					"vencimento",
+					"valor",
+					"saldo",
+					"currenttimemillis",
+				],
+			},
+			ordem: {
+				type: "string",
+				enum: ["asc", "desc"],
 			},
 		},
 	},

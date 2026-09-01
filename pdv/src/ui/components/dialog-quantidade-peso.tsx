@@ -74,7 +74,7 @@ export function DialogQuantidadePeso({
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-			<div className="w-[26rem] space-y-4 rounded-lg border bg-card p-5">
+			<div className="pdv-surface w-[26rem] space-y-4 p-5">
 				<div>
 					<h2 className="text-lg font-semibold">Pesar produto</h2>
 					<p className="text-sm text-muted-foreground">{produto.descricao}</p>

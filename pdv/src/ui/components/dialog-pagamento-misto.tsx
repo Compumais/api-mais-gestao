@@ -529,7 +529,7 @@ export function DialogPagamentoMisto({
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3">
-			<div className="flex max-h-[95vh] w-[56rem] max-w-[96vw] flex-col overflow-hidden rounded-lg border bg-card">
+			<div className="pdv-surface flex max-h-[95vh] w-[56rem] max-w-[96vw] flex-col overflow-hidden">
 				<div className="flex items-start justify-between gap-3 border-b px-5 py-4">
 					<div>
 						<h2 className="text-lg font-semibold">{titulo}</h2>

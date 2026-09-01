@@ -14,6 +14,7 @@ import {
 	handshakePrincipal,
 	NumeroPdvDuplicadoError,
 	PrincipalOfflineError,
+	buscarTerminaisRemoto,
 	pingIdentidade,
 	puxarCatalogoRemoto,
 	puxarConfigNegocioRemota,
@@ -284,5 +285,91 @@ export async function testarConexaoPrincipal(params: {
 		ok: true,
 		numeropdvPrincipal,
 		mensagem: `Conectado ao PDV principal nº ${numeropdvPrincipal}. Número ${params.numeropdv} aceito.`,
+	};
+}
+
+export type TerminalPdvDisponivel = {
+	numeropdv: number;
+	descricao: string | null;
+	disponivel: boolean;
+	motivo?: string;
+};
+
+export async function buscarOpcoesPdvNoPrincipal(params: {
+	host: string;
+	porta?: string;
+}): Promise<{
+	numeropdvPrincipal: number;
+	terminais: TerminalPdvDisponivel[];
+	mensagem: string;
+}> {
+	const url = urlConfigurada(params.host, params.porta);
+	let remoto: Awaited<ReturnType<typeof buscarTerminaisRemoto>>;
+	try {
+		remoto = await buscarTerminaisRemoto(url);
+	} catch (err) {
+		ultimoStatus = {
+			online: false,
+			erro:
+				err instanceof Error
+					? err.message
+					: "PDV principal offline ou inacessível.",
+			numeropdvPrincipal: null,
+			url,
+		};
+		throw err;
+	}
+
+	const principal = Number(remoto.numeropdvPrincipal) || 0;
+	const ocupados = new Set(
+		(remoto.ocupados ?? []).map((n) => Number(n)).filter((n) => n > 0),
+	);
+	const mapa = new Map<number, string | null>();
+	for (const t of remoto.terminais ?? []) {
+		const n = Number(t.numeropdv);
+		if (!Number.isInteger(n) || n < 1) continue;
+		mapa.set(n, t.descricao ?? null);
+	}
+	if (principal > 0 && !mapa.has(principal)) {
+		mapa.set(principal, "Principal");
+	}
+
+	const terminais: TerminalPdvDisponivel[] = [...mapa.entries()]
+		.sort((a, b) => a[0] - b[0])
+		.map(([numeropdv, descricao]) => {
+			if (numeropdv === principal) {
+				return {
+					numeropdv,
+					descricao,
+					disponivel: false,
+					motivo: "é o PDV principal",
+				};
+			}
+			if (ocupados.has(numeropdv)) {
+				return {
+					numeropdv,
+					descricao,
+					disponivel: false,
+					motivo: "já em uso por outro secundário",
+				};
+			}
+			return { numeropdv, descricao, disponivel: true };
+		});
+
+	ultimoStatus = {
+		online: true,
+		erro: null,
+		numeropdvPrincipal: principal || null,
+		url,
+	};
+
+	const livres = terminais.filter((t) => t.disponivel).length;
+	return {
+		numeropdvPrincipal: principal,
+		terminais,
+		mensagem:
+			livres > 0
+				? `Principal nº ${principal} online. ${livres} número(s) disponível(is) para este secundário.`
+				: `Principal nº ${principal} online, mas não há outro terminal livre no cadastro. Cadastre PDV 2, 3… no retaguarda (NFC-e → Terminais PDV).`,
 	};
 }

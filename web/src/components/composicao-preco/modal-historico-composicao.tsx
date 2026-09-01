@@ -97,7 +97,9 @@ export function ModalHistoricoComposicao({
 
 				<div className="flex-1 overflow-y-auto px-6 py-4">
 					{isLoading ? (
-						<p className="text-sm text-muted-foreground">Carregando histórico...</p>
+						<p className="text-sm text-muted-foreground">
+							Carregando histórico...
+						</p>
 					) : entradas.length === 0 ? (
 						<p className="text-sm text-muted-foreground">
 							Nenhuma composição registrada para este produto.
@@ -134,12 +136,8 @@ export function ModalHistoricoComposicao({
 												) : null}
 											</div>
 										</TableCell>
-										<TableCell>
-											{entrada.nomeusuario ?? "—"}
-										</TableCell>
-										<TableCell>
-											{entrada.numeronotafiscal ?? "—"}
-										</TableCell>
+										<TableCell>{entrada.nomeusuario ?? "—"}</TableCell>
+										<TableCell>{entrada.numeronotafiscal ?? "—"}</TableCell>
 										<TableCell className="text-right tabular-nums">
 											{formatarMoeda(entrada.precocompra)}
 										</TableCell>
@@ -180,9 +178,7 @@ export function ModalHistoricoComposicao({
 								size="sm"
 								disabled={page >= paginacao.totalPages || isFetching}
 								onClick={() =>
-									setPage((atual) =>
-										Math.min(paginacao.totalPages, atual + 1),
-									)
+									setPage((atual) => Math.min(paginacao.totalPages, atual + 1))
 								}
 							>
 								Próxima

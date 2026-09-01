@@ -2,15 +2,13 @@
 
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppTopbar } from "@/components/app-topbar";
-import { AtenaChatButton } from "@/components/atena-chat-button";
-import { AtenaChatWindow } from "@/components/atena-chat-window";
 import { ProtectedRoute } from "@/components/protected-route";
+import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
 import { SearchDialog } from "@/components/search-dialog";
 import { SearchShortcut } from "@/components/search-shortcut";
 import { SiteHeader } from "@/components/site-header";
 import { SiteHeaderTopbar } from "@/components/site-header-topbar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { AtenaChatProvider } from "@/hooks/use-atena-chat";
 import { useLayoutMenu } from "@/hooks/use-preferencias-ui-usuario";
 import {
 	SearchDialogProvider,
@@ -28,8 +26,6 @@ function LayoutComum({ children }: { children: React.ReactNode }) {
 			{children}
 			<SearchShortcut />
 			<SearchDialogWrapper />
-			<AtenaChatButton />
-			<AtenaChatWindow />
 		</>
 	);
 }
@@ -46,6 +42,7 @@ function LayoutSidebar({ children }: { children: React.ReactNode }) {
 		>
 			<AppSidebar variant="inset" />
 			<SidebarInset>
+				<PwaInstallPrompt />
 				<SiteHeader />
 				{children}
 			</SidebarInset>
@@ -65,6 +62,7 @@ function LayoutTopbar({ children }: { children: React.ReactNode }) {
 			}
 		>
 			<AppTopbar />
+			<PwaInstallPrompt />
 			<SiteHeaderTopbar />
 			<main className="flex flex-1 flex-col">{children}</main>
 			<LayoutComum>{null}</LayoutComum>
@@ -94,9 +92,7 @@ export default function AuthLayout({
 	return (
 		<ProtectedRoute>
 			<SearchDialogProvider>
-				<AtenaChatProvider>
-					<AuthLayoutShell>{children}</AuthLayoutShell>
-				</AtenaChatProvider>
+				<AuthLayoutShell>{children}</AuthLayoutShell>
 			</SearchDialogProvider>
 		</ProtectedRoute>
 	);
