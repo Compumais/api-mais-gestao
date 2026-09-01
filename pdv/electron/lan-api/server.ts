@@ -508,6 +508,11 @@ async function despachar(
 				contaPedidoMatch[1],
 				String(body.clientOrderId ?? ""),
 				itens,
+				body.observacaoPedido != null
+					? String(body.observacaoPedido)
+					: body.obsPedido != null
+						? String(body.obsPedido)
+						: null,
 			),
 		};
 	}

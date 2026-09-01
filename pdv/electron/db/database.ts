@@ -234,6 +234,22 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 		await database.query("ALTER TABLE item_conta ADD COLUMN observacao TEXT");
 	}
 
+	const pedidoFilaCols = await database.query<{ column_name: string }>(
+		`SELECT column_name
+		 FROM information_schema.columns
+		 WHERE table_schema = 'public' AND table_name = 'pedido_fila'`,
+	);
+	if (pedidoFilaCols.rows.length) {
+		const pedidoFilaNomes = new Set(
+			pedidoFilaCols.rows.map((c) => c.column_name),
+		);
+		if (!pedidoFilaNomes.has("observacao_pedido")) {
+			await database.query(
+				"ALTER TABLE pedido_fila ADD COLUMN observacao_pedido TEXT",
+			);
+		}
+	}
+
 	const gourmetCols = await database.query<{ column_name: string }>(
 		`SELECT column_name
 		 FROM information_schema.columns

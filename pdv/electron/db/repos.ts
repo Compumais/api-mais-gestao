@@ -229,6 +229,7 @@ export type PedidoFilaLocal = {
 	descricao: string;
 	quantidade: number;
 	observacao: string | null;
+	observacao_pedido: string | null;
 	status: string;
 	criadoem: string;
 	entregueem: string | null;
@@ -2186,6 +2187,7 @@ export async function atualizarNomeClienteConta(
 export async function enviarPedidoConta(params: {
 	idconta: string;
 	clientOrderId: string;
+	observacaoPedido?: string | null;
 	itens: Array<{
 		idproduto: string;
 		quantidade: number;
@@ -2195,6 +2197,7 @@ export async function enviarPedidoConta(params: {
 }): Promise<
 	ContaMesaLocal & {
 		pedidoNovo: boolean;
+		observacaoPedido: string | null;
 		itensProducao: Array<{
 			idproduto: string;
 			descricao: string;
@@ -2210,6 +2213,7 @@ export async function enviarPedidoConta(params: {
 	if (!params.itens.length) {
 		throw new Error("Pedido sem itens");
 	}
+	const observacaoPedido = params.observacaoPedido?.trim() || null;
 	const existente = await queryOne<{ id: string }>(
 		"SELECT id FROM pedido_fila WHERE client_order_id = $1 LIMIT 1",
 		[clientOrderId],
@@ -2219,7 +2223,12 @@ export async function enviarPedidoConta(params: {
 		if (!conta) {
 			throw new Error("Conta inválida");
 		}
-		return { ...conta, pedidoNovo: false, itensProducao: [] };
+		return {
+			...conta,
+			pedidoNovo: false,
+			observacaoPedido,
+			itensProducao: [],
+		};
 	}
 
 	const conta = await obterContaMesa(params.idconta);
@@ -2279,8 +2288,8 @@ export async function enviarPedidoConta(params: {
 		await execute(
 			`INSERT INTO pedido_fila (
 				id, client_order_id, idconta, numero_mesa, nomecliente,
-				idproduto, descricao, quantidade, observacao, status, criadoem
-			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pendente', $10)`,
+				idproduto, descricao, quantidade, observacao, observacao_pedido, status, criadoem
+			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pendente', $11)`,
 			[
 				uuidv4(),
 				clientOrderId,
@@ -2291,6 +2300,7 @@ export async function enviarPedidoConta(params: {
 				descricao,
 				quantidade,
 				linha.observacao?.trim() || null,
+				observacaoPedido,
 				agora,
 			],
 		);
@@ -2306,7 +2316,7 @@ export async function enviarPedidoConta(params: {
 	if (!atualizada) {
 		throw new Error("Falha ao enviar pedido");
 	}
-	return { ...atualizada, pedidoNovo: true, itensProducao };
+	return { ...atualizada, pedidoNovo: true, observacaoPedido, itensProducao };
 }
 
 export async function listarPedidosFila(
@@ -2318,7 +2328,7 @@ export async function listarPedidosFila(
 	if (pendentes) {
 		return query<PedidoFilaLocal>(
 			`SELECT id, client_order_id, idconta, numero_mesa, nomecliente, idproduto,
-				descricao, quantidade, observacao, status, criadoem, entregueem
+				descricao, quantidade, observacao, observacao_pedido, status, criadoem, entregueem
 			 FROM pedido_fila
 			 WHERE criadoem >= $1 AND status = 'pendente'
 			 ORDER BY criadoem`,
@@ -2327,7 +2337,7 @@ export async function listarPedidosFila(
 	}
 	return query<PedidoFilaLocal>(
 		`SELECT id, client_order_id, idconta, numero_mesa, nomecliente, idproduto,
-			descricao, quantidade, observacao, status, criadoem, entregueem
+			descricao, quantidade, observacao, observacao_pedido, status, criadoem, entregueem
 		 FROM pedido_fila
 		 WHERE criadoem >= $1
 		 ORDER BY criadoem`,

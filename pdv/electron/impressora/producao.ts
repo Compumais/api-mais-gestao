@@ -148,6 +148,7 @@ async function resolverDestinoPedido(
 export async function imprimirProducaoPedido(params: {
 	origem: string;
 	cliente?: string | null;
+	observacaoPedido?: string | null;
 	itens: ItemProducao[];
 	reimpressao?: boolean;
 }): Promise<void> {
@@ -168,6 +169,7 @@ export async function imprimirProducaoPedido(params: {
 				destino,
 				origem: params.origem,
 				cliente: params.cliente,
+				observacaoPedido: params.observacaoPedido,
 				itens,
 				reimpressao: params.reimpressao,
 			});
