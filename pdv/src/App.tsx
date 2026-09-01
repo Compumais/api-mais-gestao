@@ -15,6 +15,7 @@ import { DeliveryPage } from "@/ui/pages/delivery-page";
 import { HomeEntry } from "@/ui/pages/home-page";
 import { LoginPage } from "@/ui/pages/login-page";
 import { MesaContaPage } from "@/ui/pages/mesa-conta-page";
+import { NotasNaoSincronizadasPage } from "@/ui/pages/notas-nao-sincronizadas-page";
 import { PedidosPage } from "@/ui/pages/pedidos-page";
 import { VendasPage } from "@/ui/pages/vendas-page";
 
@@ -53,6 +54,10 @@ export function App() {
 						</Route>
 						<Route path="/balcao" element={<BalcaoPage />} />
 						<Route path="/vendas" element={<VendasPage />} />
+						<Route
+							path="/vendas/nao-sincronizadas"
+							element={<NotasNaoSincronizadasPage />}
+						/>
 					</Route>
 				</Route>
 

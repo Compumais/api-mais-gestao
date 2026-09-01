@@ -22,9 +22,26 @@ export type VendaListagem = {
 	criadoem: string;
 	sync_status: string;
 	nfce_status: string;
+	idremoto?: string | null;
 	numero_mesa?: number | null;
 	senha_chamada?: string | null;
 };
+
+export function vendaPendenteSincronizacao(venda: {
+	sync_status: string;
+	nfce_status: string;
+	idremoto?: string | null;
+}): boolean {
+	if (venda.sync_status === "pendente") return true;
+	if (
+		venda.nfce_status === "pendente" ||
+		venda.nfce_status === "pendente_contingencia" ||
+		venda.nfce_status === "contingencia"
+	) {
+		return true;
+	}
+	return venda.nfce_status === "erro" && Boolean(venda.idremoto);
+}
 
 export type FiltrosColunaVendasState = {
 	criadoem: string;
@@ -146,13 +163,13 @@ export function rotuloColunaVendas(column: {
 	return column.id;
 }
 
-function badgeSync(status: string) {
+export function badgeSync(status: string) {
 	if (status === "sincronizado") return "success" as const;
 	if (status === "pendente") return "warning" as const;
 	return "outline" as const;
 }
 
-function badgeNfce(status: string) {
+export function badgeNfce(status: string) {
 	if (status === "autorizada") return "success" as const;
 	if (status === "transmitida") return "warning" as const;
 	if (
@@ -166,7 +183,7 @@ function badgeNfce(status: string) {
 	return "outline" as const;
 }
 
-function rotuloNfce(status: string) {
+export function rotuloNfce(status: string) {
 	if (status === "erro") return "rejeitada";
 	if (status === "erro_config") return "erro config";
 	if (status === "pendente_contingencia" || status === "pendente")
@@ -177,7 +194,7 @@ function rotuloNfce(status: string) {
 	return status;
 }
 
-function rotuloOrigem(origem: string) {
+export function rotuloOrigem(origem: string) {
 	if (origem === "rapida") return "Balcão";
 	if (origem === "mesa") return "Mesa";
 	if (origem === "delivery") return "Delivery";

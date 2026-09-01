@@ -101,6 +101,7 @@ import {
 	listarProdutosPorGrupo,
 	listarProdutosPorGrupoGourmet,
 	listarVendas,
+	listarVendasNaoSincronizadas,
 	type MeioPagamento,
 	marcarNfceTransmitida,
 	marcarPedidoEntregue,
@@ -1198,6 +1199,45 @@ export const localApi = {
 		return listarVendas(200);
 	},
 
+	async listarVendasNaoSincronizadas() {
+		if (await ehSecundario()) {
+			await garantirOperacaoSecundario();
+			const vendas = await remoto.listarVendasRemoto();
+			return vendas.filter(
+				(v) =>
+					v.sync_status === "pendente" ||
+					v.nfce_status === "pendente" ||
+					v.nfce_status === "pendente_contingencia" ||
+					v.nfce_status === "contingencia" ||
+					(v.nfce_status === "erro" && v.idremoto),
+			);
+		}
+		return listarVendasNaoSincronizadas(100);
+	},
+
+	async enviarParaRetaguarda() {
+		if (await ehSecundario()) {
+			throw new Error(
+				"No PDV secundário a sincronização com a retaguarda é feita no PDV principal (onde fica o banco local).",
+			);
+		}
+		const online = await pingApi();
+		if (!online) {
+			throw new Error(
+				"Sem conexão com a retaguarda. Verifique a internet e tente novamente.",
+			);
+		}
+		const outbox = await processarOutbox();
+		const nfceAtualizadas = await puxarNfceDaRetaguarda(80);
+		const pendentes = await contarOutboxPendentes();
+		return {
+			outboxProcessados: outbox.processados,
+			outboxErros: outbox.erros,
+			nfceAtualizadas,
+			pendentes,
+		};
+	},
+
 	async obterVenda(id: string) {
 		if (await ehSecundario()) {
 			await garantirOperacaoSecundario();
@@ -2107,11 +2147,24 @@ export const localApi = {
 			);
 		}
 
-		const resultado = await inutilizarNfceVendaPdv({
-			idempresa: sessao.idempresa,
-			idvenda: vendaAtual.idremoto,
-			justificativa,
-		});
+		let resultado: Awaited<ReturnType<typeof inutilizarNfceVendaPdv>>;
+		try {
+			resultado = await inutilizarNfceVendaPdv({
+				idempresa: sessao.idempresa,
+				idvenda: vendaAtual.idremoto,
+				justificativa,
+			});
+		} catch (err) {
+			if (
+				err instanceof ApiError &&
+				/não encontrada na retaguarda/i.test(err.message)
+			) {
+				throw new Error(
+					`${err.message} Envie a venda para a retaguarda em Vendas → Notas não sincronizadas e tente inutilizar novamente.`,
+				);
+			}
+			throw err;
+		}
 
 		const nfce = await obterNfcePorVenda(vendaId);
 		if (nfce) {
