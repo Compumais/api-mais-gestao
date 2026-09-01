@@ -787,6 +787,16 @@ export const alterarProdutosEmMassaSchema: FastifySchema = {
 					idgrupo: {
 						anyOf: [{ type: "string", format: "uuid" }, { type: "null" }],
 					},
+					idgrupogourmet: {
+						anyOf: [{ type: "string", format: "uuid" }, { type: "null" }],
+						description:
+							"Grupo gourmet para cardápio de mesa/balcão e impressão por setor",
+					},
+					espizza: {
+						type: "number",
+						enum: [0, 1],
+						description: "1=produto pizza (habilita venda meio a meio no PDV/POS)",
+					},
 					idunidademedida: { type: "string", format: "uuid" },
 					preco: { anyOf: [{ type: "string" }, { type: "number" }] },
 					custoaquisicao: {

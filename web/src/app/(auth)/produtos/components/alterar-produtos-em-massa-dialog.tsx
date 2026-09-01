@@ -38,6 +38,7 @@ import {
 	valoresPadraoAlteracaoEmMassa,
 } from "@/schemas/alterar-produtos-em-massa.schema";
 import { cestService } from "@/services/cest.service";
+import { gruposGourmetService } from "@/services/grupos-gourmet.service";
 import { hierarquiasService } from "@/services/hierarquias.service";
 import { produtosService } from "@/services/produtos.service";
 import {
@@ -183,6 +184,15 @@ export function AlterarProdutosEmMassaDialog({
 		queryFn: async () => {
 			if (!empresa) throw new Error("Empresa não selecionada");
 			return cestService.listarTodos({ idempresa: empresa.id });
+		},
+		enabled: aberto && !!empresa,
+	});
+
+	const { data: gruposGourmet = [] } = useQuery({
+		queryKey: ["grupos-gourmet", empresa?.id, "todos"],
+		queryFn: async () => {
+			if (!empresa) throw new Error("Empresa não selecionada");
+			return gruposGourmetService.listarTodos({ idempresa: empresa.id });
 		},
 		enabled: aberto && !!empresa,
 	});
@@ -526,6 +536,66 @@ export function AlterarProdutosEmMassaDialog({
 											onValueChange={(valor) => field.onChange(Number(valor))}
 										>
 											<SelectTrigger id="controlavalidade" className="w-full">
+												<SelectValue placeholder="Selecione" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="0">Não</SelectItem>
+												<SelectItem value="1">Sim</SelectItem>
+											</SelectContent>
+										</Select>
+									)}
+								/>
+							</LinhaCampo>
+						</section>
+
+						<section className="space-y-3">
+							<h3 className="text-sm font-semibold">Gourmet</h3>
+							<LinhaCampo
+								id="idgrupogourmet"
+								label="Grupo gourmet"
+								alterar={valores.idgrupogourmet?.alterar ?? false}
+								onAlterar={(alterar) =>
+									setValue("idgrupogourmet.alterar", alterar)
+								}
+							>
+								<Controller
+									name="idgrupogourmet.valor"
+									control={control}
+									render={({ field }) => (
+										<Select
+											value={field.value || "none"}
+											onValueChange={field.onChange}
+										>
+											<SelectTrigger id="idgrupogourmet" className="w-full">
+												<SelectValue placeholder="Nenhum" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="none">Nenhum</SelectItem>
+												{gruposGourmet.map((grupo) => (
+													<SelectItem key={grupo.id} value={grupo.id}>
+														{grupo.nome || grupo.codigo || grupo.id}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									)}
+								/>
+							</LinhaCampo>
+							<LinhaCampo
+								id="espizza"
+								label="É pizza"
+								alterar={valores.espizza?.alterar ?? false}
+								onAlterar={(alterar) => setValue("espizza.alterar", alterar)}
+							>
+								<Controller
+									name="espizza.valor"
+									control={control}
+									render={({ field }) => (
+										<Select
+											value={field.value?.toString()}
+											onValueChange={(valor) => field.onChange(Number(valor))}
+										>
+											<SelectTrigger id="espizza" className="w-full">
 												<SelectValue placeholder="Selecione" />
 											</SelectTrigger>
 											<SelectContent>
