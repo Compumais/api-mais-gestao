@@ -12,6 +12,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import {
 	Collapsible,
@@ -49,6 +50,7 @@ import {
 	arredondarMoeda,
 	fecharContaFormToPagamentosParciais,
 	formatCurrency,
+	itemContaMesaEstaPago,
 	MEIOS_PAGAMENTO_PDV,
 	pagamentoCobreTotal,
 	pagamentosToFecharContaForm,
@@ -62,6 +64,7 @@ import {
 } from "@/lib/gourmet-utils";
 import { ESCOPO_CONDICAO_PAGAMENTO } from "@/schemas/condicao-pagamento.schema";
 import type { FecharContaFormData } from "@/schemas/fechar-conta.schema";
+import type { ContaMesaItem } from "@/services/conta-mesa-item.service";
 import { condicaoPagamentoService } from "@/services/condicao-pagamento.service";
 import { entidadesService } from "@/services/entidades.service";
 import {
@@ -96,6 +99,20 @@ interface PagamentoPdvDialogProps {
 	onVendaConcluida?: () => void;
 	isPending?: boolean;
 	pagamentoInicial?: FecharContaFormData;
+	modoFatiaItens?: boolean;
+	itensContaMesa?: ContaMesaItem[];
+	idsItensSelecionados?: string[];
+	onToggleItemConta?: (id: string) => void;
+	onSelecionarTodosPendentes?: () => void;
+	onFatiaParcialConcluida?: () => void;
+	ajustesExternos?: {
+		desconto: string;
+		taxaServico: string;
+		couvert: string;
+		onDescontoChange: (valor: string) => void;
+		onTaxaServicoChange: (valor: string) => void;
+		onCouvertChange: (valor: string) => void;
+	};
 }
 
 export function PagamentoPdvDialog({
@@ -110,6 +127,13 @@ export function PagamentoPdvDialog({
 	onVendaConcluida,
 	isPending,
 	pagamentoInicial,
+	modoFatiaItens,
+	itensContaMesa,
+	idsItensSelecionados = [],
+	onToggleItemConta,
+	onSelecionarTodosPendentes,
+	onFatiaParcialConcluida,
+	ajustesExternos,
 }: PagamentoPdvDialogProps) {
 	const [passo, setPasso] = useState<PassoPagamento>("selecao");
 	const [pagamentos, setPagamentos] = useState<PagamentoParcialPdv[]>([]);
@@ -121,9 +145,16 @@ export function PagamentoPdvDialog({
 	const [identidade, setIdentidade] = useState("");
 	const [idcondicaopagto, setIdcondicaopagto] = useState("");
 	const [valorParcial, setValorParcial] = useState("");
-	const [desconto, setDesconto] = useState("");
-	const [taxaServico, setTaxaServico] = useState("");
-	const [couvert, setCouvert] = useState("");
+	const [descontoInterno, setDescontoInterno] = useState("");
+	const [taxaServicoInterno, setTaxaServicoInterno] = useState("");
+	const [couvertInterno, setCouvertInterno] = useState("");
+	const desconto = ajustesExternos?.desconto ?? descontoInterno;
+	const setDesconto = ajustesExternos?.onDescontoChange ?? setDescontoInterno;
+	const taxaServico = ajustesExternos?.taxaServico ?? taxaServicoInterno;
+	const setTaxaServico =
+		ajustesExternos?.onTaxaServicoChange ?? setTaxaServicoInterno;
+	const couvert = ajustesExternos?.couvert ?? couvertInterno;
+	const setCouvert = ajustesExternos?.onCouvertChange ?? setCouvertInterno;
 	const [ajustesAbertos, setAjustesAbertos] = useState(false);
 	const [cupomDados, setCupomDados] = useState<CupomNaoFiscalData | null>(null);
 	const [finalizando, setFinalizando] = useState(false);
@@ -194,12 +225,9 @@ export function PagamentoPdvDialog({
 	const descontoNum = parseValor(desconto);
 	const taxaServicoNum = parseValor(taxaServico);
 	const couvertNum = parseValor(couvert);
-	const total = calcularTotalComTaxas(
-		subtotal,
-		descontoNum,
-		taxaServicoNum,
-		couvertNum,
-	);
+	const total = modoFatiaItens
+		? subtotal
+		: calcularTotalComTaxas(subtotal, descontoNum, taxaServicoNum, couvertNum);
 	const pago = totalPagamentosParciais(pagamentos);
 	const restante = Math.max(0, arredondarMoeda(total - pago));
 
@@ -212,9 +240,9 @@ export function PagamentoPdvDialog({
 			setIdentidade("");
 			setIdcondicaopagto("");
 			setValorParcial("");
-			setDesconto("");
-			setTaxaServico("");
-			setCouvert("");
+			setDescontoInterno("");
+			setTaxaServicoInterno("");
+			setCouvertInterno("");
 			setAjustesAbertos(false);
 			setCupomDados(null);
 			setFinalizando(false);
@@ -229,9 +257,9 @@ export function PagamentoPdvDialog({
 			setIdentidade("");
 			setIdcondicaopagto("");
 			setValorParcial("");
-			setDesconto(pagamentoInicial.desconto ?? "");
-			setTaxaServico(pagamentoInicial.valortaxaservico ?? "");
-			setCouvert(pagamentoInicial.valorcouverartistico ?? "");
+			setDescontoInterno(pagamentoInicial.desconto ?? "");
+			setTaxaServicoInterno(pagamentoInicial.valortaxaservico ?? "");
+			setCouvertInterno(pagamentoInicial.valorcouverartistico ?? "");
 			setAjustesAbertos(false);
 			setCupomDados(null);
 			setFinalizando(false);
@@ -239,6 +267,11 @@ export function PagamentoPdvDialog({
 	}, [open, pagamentoInicial]);
 
 	const selecionarMeio = (meio: MeioPagamentoPdv) => {
+		if (modoFatiaItens && idsItensSelecionados.length === 0) {
+			toast.error("Selecione ao menos um item para pagar");
+			return;
+		}
+
 		const info = MEIOS_PAGAMENTO_PDV.find((m) => m.id === meio);
 		if (!info) return;
 
@@ -249,6 +282,11 @@ export function PagamentoPdvDialog({
 	};
 
 	const selecionarFormaErp = (forma: TipoDocumentoFinanceiro) => {
+		if (modoFatiaItens && idsItensSelecionados.length === 0) {
+			toast.error("Selecione ao menos um item para pagar");
+			return;
+		}
+
 		setMeioSelecionado(null);
 		setFormaErpSelecionada(forma);
 		setValorParcial(restante > 0 ? arredondarMoeda(restante).toFixed(2) : "");
@@ -368,6 +406,17 @@ export function PagamentoPdvDialog({
 		setFinalizando(true);
 		try {
 			const resultado = await onConfirmarVenda(formData);
+			if (modoFatiaItens && resultado?.contaFechada === false) {
+				setPasso("selecao");
+				setPagamentos([]);
+				setMeioSelecionado(null);
+				setFormaErpSelecionada(null);
+				setValorParcial("");
+				setIdentidade("");
+				setIdcondicaopagto("");
+				onFatiaParcialConcluida?.();
+				return;
+			}
 			setCupomDados({
 				vendaId: resultado?.vendaId,
 				empresaNome,
@@ -421,7 +470,9 @@ export function PagamentoPdvDialog({
 				className={
 					passo === "cupom"
 						? "flex max-h-[95vh] flex-col sm:max-w-lg"
-						: "max-h-[90vh] overflow-y-auto sm:max-w-md"
+						: modoFatiaItens
+							? "max-h-[90vh] overflow-y-auto sm:max-w-lg"
+							: "max-h-[90vh] overflow-y-auto sm:max-w-md"
 				}
 			>
 				{passo === "cupom" && cupomDados ? (
@@ -533,9 +584,86 @@ export function PagamentoPdvDialog({
 						<DialogHeader>
 							<DialogTitle>{titulo}</DialogTitle>
 							<DialogDescription>
-								Selecione a forma de pagamento e informe o valor.
+								{modoFatiaItens
+									? "Selecione os itens desta fatia e escolha a forma de pagamento."
+									: "Selecione a forma de pagamento e informe o valor."}
 							</DialogDescription>
 						</DialogHeader>
+
+						{modoFatiaItens && itensContaMesa && itensContaMesa.length > 0 && (
+							<div className="space-y-2 rounded-lg border p-3">
+								<div className="flex items-center justify-between gap-2">
+									<p className="text-sm font-medium">Itens da comanda</p>
+									{onSelecionarTodosPendentes && (
+										<Button
+											type="button"
+											variant="ghost"
+											size="sm"
+											className="h-7 px-2 text-xs"
+											disabled={processando}
+											onClick={onSelecionarTodosPendentes}
+										>
+											Selecionar pendentes
+										</Button>
+									)}
+								</div>
+								<div className="max-h-40 space-y-1 overflow-y-auto">
+									{itensContaMesa.map((item) => {
+										const pago = itemContaMesaEstaPago(item);
+										const qty = parseValor(item.quantidade);
+										const totalItem = qty * parseValor(item.precounitario);
+										const selecionado = idsItensSelecionados.includes(item.id);
+
+										return (
+											<label
+												key={item.id}
+												className="flex cursor-pointer items-center justify-between gap-2 rounded-md px-1 py-1 text-sm hover:bg-muted/50"
+											>
+												<span className="flex min-w-0 flex-1 items-center gap-2">
+													<Checkbox
+														checked={pago || selecionado}
+														disabled={pago || processando}
+														onCheckedChange={() => {
+															if (!pago) {
+																onToggleItemConta?.(item.id);
+															}
+														}}
+														aria-label={`Selecionar ${item.nomeproduto}`}
+													/>
+													<span
+														className={
+															pago
+																? "truncate line-through text-muted-foreground"
+																: "truncate"
+														}
+													>
+														{qty}x {item.nomeproduto}
+														{pago && (
+															<span className="ml-1 text-xs">(pago)</span>
+														)}
+													</span>
+												</span>
+												<span
+													className={
+														pago ? "text-muted-foreground line-through" : ""
+													}
+												>
+													{formatCurrency(totalItem)}
+												</span>
+											</label>
+										);
+									})}
+								</div>
+								{modoFatiaItens && idsItensSelecionados.length > 0 && (
+									<p className="text-xs text-muted-foreground">
+										Total selecionado:{" "}
+										<span className="font-medium text-foreground">
+											{formatCurrency(total)}
+										</span>
+									</p>
+								)}
+							</div>
+						)}
 
 						<AvisoAmbienteNfe ambiente={ambienteNfce} className="text-xs" />
 
@@ -644,7 +772,8 @@ export function PagamentoPdvDialog({
 							</FieldGroup>
 						)}
 
-						<Collapsible open={ajustesAbertos} onOpenChange={setAjustesAbertos}>
+						{!modoFatiaItens && (
+							<Collapsible open={ajustesAbertos} onOpenChange={setAjustesAbertos}>
 							<CollapsibleTrigger asChild>
 								<Button type="button" variant="ghost" className="w-full">
 									{ajustesAbertos ? "Ocultar ajustes" : "Desconto, taxa e couvert"}
@@ -679,6 +808,45 @@ export function PagamentoPdvDialog({
 								</FieldGroup>
 							</CollapsibleContent>
 						</Collapsible>
+						)}
+
+						{modoFatiaItens && (
+							<Collapsible open={ajustesAbertos} onOpenChange={setAjustesAbertos}>
+								<CollapsibleTrigger asChild>
+									<Button type="button" variant="ghost" className="w-full">
+										{ajustesAbertos ? "Ocultar ajustes" : "Desconto, taxa e couvert"}
+									</Button>
+								</CollapsibleTrigger>
+								<CollapsibleContent>
+									<FieldGroup className="mt-2 gap-3">
+										<Field>
+											<FieldLabel>Desconto (conta inteira)</FieldLabel>
+											<MoneyInput
+												value={desconto}
+												onChange={setDesconto}
+												placeholder="R$ 0,00"
+											/>
+										</Field>
+										<Field>
+											<FieldLabel>Taxa de serviço (conta inteira)</FieldLabel>
+											<MoneyInput
+												value={taxaServico}
+												onChange={setTaxaServico}
+												placeholder="R$ 0,00"
+											/>
+										</Field>
+										<Field>
+											<FieldLabel>Couvert artístico (conta inteira)</FieldLabel>
+											<MoneyInput
+												value={couvert}
+												onChange={setCouvert}
+												placeholder="R$ 0,00"
+											/>
+										</Field>
+									</FieldGroup>
+								</CollapsibleContent>
+							</Collapsible>
+						)}
 
 						<div className="grid grid-cols-2 gap-3">
 							{MEIOS_PAGAMENTO_PDV.map((meio) => {
