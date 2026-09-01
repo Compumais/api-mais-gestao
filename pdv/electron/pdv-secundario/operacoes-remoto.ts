@@ -21,6 +21,7 @@ type ItemContaInput = {
 	descricao: string;
 	quantidade: number;
 	precounitario: number;
+	observacao?: string | null;
 };
 
 type ItemPedidoInput = {

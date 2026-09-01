@@ -245,7 +245,11 @@ export async function imprimirPedidoProducao(params: {
 			`${formatarQtd(item.quantidade)}  ${item.descricao.slice(0, 30)}`,
 		);
 		if (item.observacao?.trim()) {
-			linhas.push(`   Obs: ${item.observacao.trim().slice(0, 28)}`);
+			const obs = item.observacao.trim();
+			linhas.push(`   Obs: ${obs.slice(0, 28)}`);
+			for (let i = 28; i < obs.length; i += 32) {
+				linhas.push(`   ${obs.slice(i, i + 32)}`);
+			}
 		}
 	}
 	linhas.push("================================");
