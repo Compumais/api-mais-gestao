@@ -523,6 +523,20 @@ async function despachar(
 		};
 	}
 
+	const contaItemCancelarMatch = path.match(
+		/^\/pos\/contas\/([^/]+)\/itens\/([^/]+)\/cancelar$/,
+	);
+	if (method === "POST" && contaItemCancelarMatch) {
+		return {
+			status: 200,
+			body: await localApi.cancelarItemConta(
+				contaItemCancelarMatch[1],
+				contaItemCancelarMatch[2],
+				body.senha != null ? String(body.senha) : undefined,
+			),
+		};
+	}
+
 	const contaFecharMatch = path.match(/^\/pos\/contas\/([^/]+)\/fechar$/);
 	if (method === "POST" && contaFecharMatch) {
 		const lancamentos = lancamentosDeBody(body);

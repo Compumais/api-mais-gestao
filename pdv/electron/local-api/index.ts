@@ -66,6 +66,7 @@ import {
 	buscarProdutoPorEan,
 	buscarProdutosLocal,
 	cancelarContaMesa as cancelarContaMesaRepo,
+	cancelarItemConta as cancelarItemContaRepo,
 	type ClienteVenda,
 	caixaAberto,
 	caixaAbertoOutroOperador,
@@ -1256,6 +1257,23 @@ export const localApi = {
 		await cancelarContaMesaRepo(idconta);
 		avisarTecnibra();
 		return { ok: true as const };
+	},
+
+	async cancelarItemConta(idconta: string, iditem: string, senha?: string) {
+		await assertModuloGourmet();
+		await garantirOperacaoSecundario();
+		if (await ehSecundario()) {
+			const conta = await remoto.cancelarItemContaRemoto(
+				idconta,
+				iditem,
+				senha,
+			);
+			avisarTecnibra();
+			return conta;
+		}
+		const conta = await cancelarItemContaRepo(idconta, iditem, senha);
+		avisarTecnibra();
+		return conta;
 	},
 
 	async abrirContaMesa(numero: number, nomecliente?: string) {

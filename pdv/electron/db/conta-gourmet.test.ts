@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+	mensagemErroCancelarItem,
 	partirPorItens,
 	partirPorPessoas,
 	partirPorValor,
@@ -111,5 +112,57 @@ describe("senha gerencial", () => {
 		const { salt, hash } = hashSenhaGerencial("1234");
 		assert.equal(senhaGerencialConfere("1234", salt, hash), true);
 		assert.equal(senhaGerencialConfere("0000", salt, hash), false);
+	});
+});
+
+describe("mensagemErroCancelarItem", () => {
+	it("permite cancelar item aberto e não pago", () => {
+		assert.equal(
+			mensagemErroCancelarItem({
+				contaValida: true,
+				itemEncontrado: true,
+				itemPago: false,
+				valorPago: 0,
+				totalAposCancelar: 40,
+			}),
+			null,
+		);
+	});
+
+	it("recusa item já pago", () => {
+		assert.equal(
+			mensagemErroCancelarItem({
+				contaValida: true,
+				itemEncontrado: true,
+				itemPago: true,
+			}),
+			"Item já pago não pode ser cancelado",
+		);
+	});
+
+	it("recusa se o pago ficar maior que o total", () => {
+		assert.equal(
+			mensagemErroCancelarItem({
+				contaValida: true,
+				itemEncontrado: true,
+				itemPago: false,
+				valorPago: 50,
+				totalAposCancelar: 40,
+			}),
+			"Não é possível cancelar: o valor já pago ficaria maior que o total da conta.",
+		);
+	});
+
+	it("permite esvaziar a conta quando não há pagamento", () => {
+		assert.equal(
+			mensagemErroCancelarItem({
+				contaValida: true,
+				itemEncontrado: true,
+				itemPago: false,
+				valorPago: 0,
+				totalAposCancelar: 0,
+			}),
+			null,
+		);
 	});
 });

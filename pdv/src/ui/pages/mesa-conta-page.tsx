@@ -96,6 +96,12 @@ type LocationState = {
 	nomecliente?: string | null;
 };
 
+function classeLinhaItemSelecionavel(marcado: boolean) {
+	return marcado
+		? "bg-primary/20 text-foreground ring-2 ring-primary"
+		: "bg-background ring-1 ring-foreground/10";
+}
+
 export function MesaContaPage() {
 	const { numero, id: idContaParam } = useParams<{
 		numero?: string;
@@ -1018,9 +1024,7 @@ export function MesaContaPage() {
 											<label
 												key={item.id}
 												className={`mb-1 flex cursor-pointer items-center justify-between gap-2 rounded-md px-2 py-2 text-sm ${
-													marcado
-														? "bg-primary/10 ring-1 ring-primary/40"
-														: "bg-background ring-1 ring-foreground/10"
+													classeLinhaItemSelecionavel(marcado)
 												}`}
 											>
 												<span className="flex min-w-0 flex-1 items-center gap-2">
@@ -1490,9 +1494,7 @@ export function MesaContaPage() {
 									<label
 										key={item.id}
 										className={`flex cursor-pointer items-center justify-between gap-2 rounded-md px-3 py-3 text-sm ${
-											marcado
-												? "bg-primary/10 ring-1 ring-primary/40"
-												: "bg-background ring-1 ring-foreground/10"
+											classeLinhaItemSelecionavel(marcado)
 										}`}
 									>
 										<span className="flex min-w-0 flex-1 items-center gap-3">

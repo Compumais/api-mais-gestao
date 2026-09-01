@@ -169,6 +169,17 @@ export async function cancelarContaMesaRemoto(
 	);
 }
 
+export async function cancelarItemContaRemoto(
+	idconta: string,
+	iditem: string,
+	senha?: string,
+): Promise<ContaMesaLocal> {
+	return remoto(
+		`/pos/contas/${encodeURIComponent(idconta)}/itens/${encodeURIComponent(iditem)}/cancelar`,
+		jsonBody(senha != null && senha !== "" ? { senha } : {}),
+	);
+}
+
 export async function aplicarAjustesContaRemoto(
 	idconta: string,
 	ajustes: {

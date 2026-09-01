@@ -211,3 +211,30 @@ export function partirPorItens(
 export function valorRestante(total: number, pago: number): number {
 	return arredondarMoeda(Math.max(0, arredondarMoeda(total) - arredondarMoeda(pago)));
 }
+
+/** Regras de cancelar item já lançado (espelha exclusão da API / web gourmet). */
+export function mensagemErroCancelarItem(params: {
+	contaValida: boolean;
+	itemEncontrado: boolean;
+	itemPago: boolean;
+	valorPago?: number;
+	totalAposCancelar?: number;
+}): string | null {
+	if (!params.contaValida) {
+		return "Conta inválida";
+	}
+	if (!params.itemEncontrado) {
+		return "Item não encontrado na conta";
+	}
+	if (params.itemPago) {
+		return "Item já pago não pode ser cancelado";
+	}
+	if (
+		params.valorPago != null &&
+		params.totalAposCancelar != null &&
+		params.valorPago > params.totalAposCancelar + 0.009
+	) {
+		return "Não é possível cancelar: o valor já pago ficaria maior que o total da conta.";
+	}
+	return null;
+}
