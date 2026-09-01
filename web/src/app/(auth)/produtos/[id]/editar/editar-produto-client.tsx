@@ -26,7 +26,7 @@ function mapProdutoToForm(
 		idunidademedida: data.idunidademedida ?? "",
 		fornecedor: data.fornecedor,
 		idgrupo: data.idgrupo ?? "",
-		idgrupogourmet: data.idgrupogourmet ?? "none",
+		idgrupogourmet: data.idgrupogourmet || "none",
 		espizza: data.espizza === 1,
 		exportaBalanca: data.exportaBalanca === 1,
 		controlalote: data.controlalote === 1,
