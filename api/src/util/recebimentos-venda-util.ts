@@ -35,3 +35,20 @@ export function parseValorMonetario(
 export function formatarValorMonetario(valor: number): string {
 	return valor.toFixed(2);
 }
+
+/** Converte valor de pagamento do PDV para string numeric válida no PostgreSQL. */
+export function normalizarValorPagamentoParaBanco(
+	valor: string | number | null | undefined,
+): string {
+	if (valor == null || valor === "") {
+		return formatarValorMonetario(0);
+	}
+
+	const numero = Number(String(valor).replace(",", "."));
+
+	if (!Number.isFinite(numero) || numero < 0) {
+		return formatarValorMonetario(0);
+	}
+
+	return formatarValorMonetario(numero);
+}
