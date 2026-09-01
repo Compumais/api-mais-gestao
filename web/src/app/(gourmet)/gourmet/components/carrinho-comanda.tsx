@@ -20,8 +20,10 @@ interface CarrinhoComandaProps {
 	onAtualizarQuantidade: (item: ContaMesaItem, novaQuantidade: number) => void;
 	onRemover: (itemId: string) => void;
 	onFecharConta: () => void;
+	onFinalizarVenda: () => void;
 	onCancelarMesa: () => void;
 	isUpdating?: boolean;
+	isFinalizando?: boolean;
 	numeromesa?: number;
 }
 
@@ -31,12 +33,16 @@ export function CarrinhoComanda({
 	onAtualizarQuantidade,
 	onRemover,
 	onFecharConta,
+	onFinalizarVenda,
 	onCancelarMesa,
 	isUpdating,
+	isFinalizando,
 	numeromesa,
 }: CarrinhoComandaProps) {
 	const itensPendentes = filtrarItensPendentesContaMesa(itens);
+	const itensPagos = itens.length - itensPendentes.length;
 	const subtotal = calcularTotalContaMesaItens(itensPendentes);
+	const todosItensPagos = itens.length > 0 && itensPendentes.length === 0;
 
 	return (
 		<div className="flex h-full flex-col border-l bg-muted/20">
@@ -46,6 +52,19 @@ export function CarrinhoComanda({
 				</h2>
 				<p className="text-sm text-muted-foreground">
 					{itens.length} {itens.length === 1 ? "item" : "itens"}
+					{itens.length > 0 && (
+						<>
+							{" "}
+							· {itensPendentes.length}{" "}
+							{itensPendentes.length === 1 ? "pendente" : "pendentes"}
+							{itensPagos > 0 && (
+								<>
+									{" "}
+									· {itensPagos} {itensPagos === 1 ? "pago" : "pagos"}
+								</>
+							)}
+						</>
+					)}
 				</p>
 			</div>
 
@@ -155,9 +174,19 @@ export function CarrinhoComanda({
 						Fechar conta
 					</Button>
 					<Button
+						size="lg"
+						variant={todosItensPagos ? "default" : "secondary"}
+						onClick={onFinalizarVenda}
+						disabled={
+							isUpdating || isFinalizando || !todosItensPagos
+						}
+					>
+						{isFinalizando ? "Finalizando..." : "Finalizar venda"}
+					</Button>
+					<Button
 						variant="outline"
 						onClick={onCancelarMesa}
-						disabled={isUpdating}
+						disabled={isUpdating || isFinalizando}
 					>
 						Cancelar mesa
 					</Button>

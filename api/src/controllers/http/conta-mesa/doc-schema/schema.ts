@@ -152,7 +152,7 @@ export const fecharFatiaItensContaMesaSchema: FastifySchema = {
 	tags: ["contas-mesa"],
 	summary: "Receber fatia de itens da conta mesa",
 	description:
-		"Registra pagamento parcial dos itens selecionados, marca-os como pagos e fecha a conta quando não restarem itens pendentes.",
+		"Registra pagamento parcial dos itens selecionados e marca-os como pagos. A mesa permanece aberta até finalização explícita.",
 	security: [{ bearerAuth: [] }],
 	params: {
 		type: "object",

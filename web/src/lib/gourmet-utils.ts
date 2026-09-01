@@ -406,6 +406,7 @@ export interface CupomItemLinha {
 	nome: string;
 	quantidade: string;
 	precounitario: string;
+	pago?: boolean;
 }
 
 export interface CupomNfceInfo {
@@ -437,6 +438,7 @@ export interface ConfirmacaoVendaPdvResult {
 	vendaId: string;
 	nfce?: CupomNfceInfo;
 	contaFechada?: boolean;
+	todosItensPagos?: boolean;
 }
 
 export function buildCupomNfceInfo(

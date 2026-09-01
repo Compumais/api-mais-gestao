@@ -135,12 +135,14 @@ export const contaMesaService = {
 	): Promise<{
 		venda: VendaPdvGourmet;
 		contaFechada: boolean;
+		todosItensPagos: boolean;
 		conta: ContaMesa | null;
 	}> {
 		const { pagamento, ...resto } = dados;
 		const { data } = await api.post<{
 			venda: VendaPdvGourmet;
 			contaFechada: boolean;
+			todosItensPagos: boolean;
 			conta: ContaMesa | null;
 		}>(`/contas-mesa/${id}/fatia-itens`, {
 			...resto,

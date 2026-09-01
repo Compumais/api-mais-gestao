@@ -406,22 +406,24 @@ export function PagamentoPdvDialog({
 		setFinalizando(true);
 		try {
 			const resultado = await onConfirmarVenda(formData);
-			if (modoFatiaItens && resultado?.contaFechada === false) {
-				setPasso("selecao");
-				setPagamentos([]);
-				setMeioSelecionado(null);
-				setFormaErpSelecionada(null);
-				setValorParcial("");
-				setIdentidade("");
-				setIdcondicaopagto("");
-				onFatiaParcialConcluida?.();
-				return;
-			}
+			const idsPagosNestafatia = new Set(idsItensSelecionados);
+			const itensCupomFinal =
+				modoFatiaItens && itensContaMesa
+					? itensContaMesa.map((item) => ({
+							nome: item.nomeproduto,
+							quantidade: item.quantidade,
+							precounitario: item.precounitario,
+							pago:
+								itemContaMesaEstaPago(item) ||
+								idsPagosNestafatia.has(item.id),
+						}))
+					: itens;
+
 			setCupomDados({
 				vendaId: resultado?.vendaId,
 				empresaNome,
 				dataHora: new Date(),
-				itens,
+				itens: itensCupomFinal,
 				subtotal,
 				desconto: descontoNum,
 				taxaServico: taxaServicoNum,
@@ -446,6 +448,20 @@ export function PagamentoPdvDialog({
 	};
 
 	const handleFecharCupom = () => {
+		if (modoFatiaItens) {
+			setPasso("selecao");
+			setPagamentos([]);
+			setMeioSelecionado(null);
+			setFormaErpSelecionada(null);
+			setValorParcial("");
+			setIdentidade("");
+			setIdcondicaopagto("");
+			setCupomDados(null);
+			onFatiaParcialConcluida?.();
+			onOpenChange(false);
+			return;
+		}
+
 		onOpenChange(false);
 		onVendaConcluida?.();
 	};
@@ -621,7 +637,7 @@ export function PagamentoPdvDialog({
 											>
 												<span className="flex min-w-0 flex-1 items-center gap-2">
 													<Checkbox
-														checked={pago || selecionado}
+														checked={pago ? true : selecionado}
 														disabled={pago || processando}
 														onCheckedChange={() => {
 															if (!pago) {

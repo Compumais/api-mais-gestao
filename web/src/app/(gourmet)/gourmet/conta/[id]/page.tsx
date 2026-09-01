@@ -44,7 +44,7 @@ export default function ContaMesaPage() {
 	const queryClient = useQueryClient();
 	const { user } = useAuth();
 	const { localStorageEmpresa: empresa } = useEmpresa();
-	const { fecharFatiaItens } = useFecharVenda();
+	const { fecharFatiaItens, finalizarMesaConta } = useFecharVenda();
 	const { ambiente: ambienteNfce } = useNfceAmbientePdv();
 	const { saldoPorCodigo } = useSaldosEstoque(empresa?.id);
 	const { estaAberto } = useCaixaPdv();
@@ -193,11 +193,32 @@ export default function ContaMesaPage() {
 		return {
 			vendaId: resultado.venda.id,
 			contaFechada: resultado.contaFechada,
+			todosItensPagos: resultado.todosItensPagos,
 			nfce: buildCupomNfceInfo(resultado.baixa.emissaoNfce, ambienteNfce),
 		};
 	};
 
-	const handleVendaConcluida = () => {
+	const handleFinalizarVenda = async () => {
+		if (!estaAberto) {
+			toast.error("Abra o caixa antes de realizar vendas");
+			return;
+		}
+
+		if (!empresa?.id || !user?.id) {
+			toast.error("Empresa ou usuário não selecionado");
+			return;
+		}
+
+		if (itensPendentes.length > 0) {
+			toast.error("Ainda há itens pendentes de pagamento");
+			return;
+		}
+
+		await finalizarMesaConta.mutateAsync({
+			idempresa: empresa.id,
+			userId: user.id,
+			idcontamesa: contaId,
+		});
 		router.push("/gourmet");
 	};
 
@@ -260,8 +281,15 @@ export default function ContaMesaPage() {
 							}
 							setPagamentoDialogAberto(true);
 						}}
+						onFinalizarVenda={() => void handleFinalizarVenda()}
 						onCancelarMesa={() => setCancelarDialogAberto(true)}
-						isUpdating={isUpdating || isAdding || fecharFatiaItens.isPending}
+						isUpdating={
+							isUpdating ||
+							isAdding ||
+							fecharFatiaItens.isPending ||
+							finalizarMesaConta.isPending
+						}
+						isFinalizando={finalizarMesaConta.isPending}
 					/>
 				</div>
 			</main>
@@ -274,7 +302,6 @@ export default function ContaMesaPage() {
 				empresaNome={empresa?.nome ?? "Empresa"}
 				contexto={`Mesa ${conta.numeromesa}`}
 				onConfirmarFatia={handleConfirmarFatia}
-				onVendaConcluida={handleVendaConcluida}
 				isPending={fecharFatiaItens.isPending}
 			/>
 
