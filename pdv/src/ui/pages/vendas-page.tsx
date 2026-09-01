@@ -259,6 +259,12 @@ export function VendasPage() {
 					<FunctionBar
 						actions={[
 							{
+								key: "nao-sincronizadas",
+								label: "Não sincronizadas",
+								variant: "default",
+								onClick: () => navigate("/vendas/nao-sincronizadas"),
+							},
+							{
 								key: "atualizar",
 								label: "Atualizar",
 								hotkey: teclas.sincronizar,

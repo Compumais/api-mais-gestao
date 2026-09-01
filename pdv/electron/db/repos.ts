@@ -1627,6 +1627,25 @@ export async function listarVendasComRemoto(
 	);
 }
 
+/** Vendas com fila de sync ou NFC-e ainda não refletida na retaguarda. */
+export async function listarVendasNaoSincronizadas(
+	limit = 100,
+): Promise<VendaLocal[]> {
+	return query<VendaLocal>(
+		`SELECT v.*,
+			c.numero_mesa AS numero_mesa,
+			c.senha_chamada AS senha_chamada
+		 FROM venda v
+		 LEFT JOIN conta_mesa c ON c.id = v.idconta
+		 WHERE v.sync_status = 'pendente'
+		    OR v.nfce_status IN ('pendente', 'pendente_contingencia', 'contingencia')
+		    OR (v.nfce_status = 'erro' AND v.idremoto IS NOT NULL)
+		 ORDER BY v.criadoem DESC
+		 LIMIT $1`,
+		[limit],
+	);
+}
+
 export async function obterVenda(
 	id: string,
 ): Promise<
