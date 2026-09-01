@@ -174,6 +174,7 @@ CREATE TABLE IF NOT EXISTS pedido_fila (
 	descricao TEXT NOT NULL,
 	quantidade DOUBLE PRECISION NOT NULL,
 	observacao TEXT,
+	observacao_pedido TEXT,
 	status TEXT NOT NULL DEFAULT 'pendente',
 	criadoem TEXT NOT NULL,
 	entregueem TEXT

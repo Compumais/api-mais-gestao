@@ -220,6 +220,7 @@ export async function imprimirPedidoProducao(params: {
 	destino: DestinoImpressora;
 	origem: string;
 	cliente?: string | null;
+	observacaoPedido?: string | null;
 	itens: Array<{
 		quantidade: number;
 		descricao: string;
@@ -239,6 +240,14 @@ export async function imprimirPedidoProducao(params: {
 		linhas.push(`Cliente: ${params.cliente.trim()}`);
 	}
 	linhas.push(`Hora: ${new Date().toLocaleString("pt-BR")}`);
+	if (params.observacaoPedido?.trim()) {
+		linhas.push("--------------------------------");
+		linhas.push("Obs pedido:");
+		const obs = params.observacaoPedido.trim();
+		for (let i = 0; i < obs.length; i += 32) {
+			linhas.push(obs.slice(i, i + 32));
+		}
+	}
 	linhas.push("--------------------------------");
 	for (const item of params.itens) {
 		linhas.push(

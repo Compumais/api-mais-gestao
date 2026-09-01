@@ -8,6 +8,7 @@ import {
 } from "react-router-dom";
 import { totalFatiaItensSelecionados } from "@/lib/conta-gourmet";
 import { normalizarObservacaoItem } from "@/lib/observacao-item";
+import { normalizarObservacaoPedido } from "@/lib/observacao-pedido";
 import { arredondarDinheiro } from "@/lib/pagamento";
 import { pdvInvoke } from "@/lib/pdv-api";
 import {
@@ -26,6 +27,7 @@ import { BarcodeInput } from "@/ui/components/barcode-input";
 import { DialogEscolherMesa } from "@/ui/components/dialog-escolher-mesa";
 import { DialogMaisAcoesMesa } from "@/ui/components/dialog-mais-acoes-mesa";
 import { DialogObservacaoItem } from "@/ui/components/dialog-observacao-item";
+import { DialogObservacaoPedido } from "@/ui/components/dialog-observacao-pedido";
 import {
 	DialogPagamentoMisto,
 	type FechamentoMisto,
@@ -155,6 +157,7 @@ export function MesaContaPage() {
 	const [taxaEntregaEdit, setTaxaEntregaEdit] = useState("");
 	const [reimprimirAberto, setReimprimirAberto] = useState(false);
 	const [obsFilaChave, setObsFilaChave] = useState<string | null>(null);
+	const [obsPedidoAberto, setObsPedidoAberto] = useState(false);
 	const [maisAcoesAberto, setMaisAcoesAberto] = useState(false);
 	const [itemCancelar, setItemCancelar] = useState<
 		ContaMesa["itens"][number] | null
@@ -170,6 +173,7 @@ export function MesaContaPage() {
 	useEscapeFechaModal(pagarItensAberto, () => setPagarItensAberto(false));
 	useEscapeFechaModal(Boolean(produtoPeso), () => setProdutoPeso(null));
 	useEscapeFechaModal(Boolean(obsFilaChave), () => setObsFilaChave(null));
+	useEscapeFechaModal(obsPedidoAberto, () => setObsPedidoAberto(false));
 	useEscapeFechaModal(Boolean(itemCancelar), () => setItemCancelar(null));
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: iniciar deve reexecutar apenas quando a mesa/conta muda
@@ -193,6 +197,7 @@ export function MesaContaPage() {
 				confirmandoSaida ||
 				confirmandoCancelar ||
 				obsFilaChave ||
+				obsPedidoAberto ||
 				maisAcoesAberto ||
 				itemCancelar
 			)
@@ -210,6 +215,7 @@ export function MesaContaPage() {
 		confirmandoSaida,
 		confirmandoCancelar,
 		obsFilaChave,
+		obsPedidoAberto,
 		maisAcoesAberto,
 		itemCancelar,
 	]);
@@ -478,10 +484,18 @@ export function MesaContaPage() {
 		}
 	}
 
-	async function confirmarFilaNaConta() {
+	async function confirmarFilaNaConta(observacaoPedido?: string | null) {
 		if (fila.length === 0) return;
+		setObsPedidoAberto(false);
 		setLoading(true);
 		setMsg("");
+		const obsPedido = normalizarObservacaoPedido(observacaoPedido);
+		const itensPayload = fila.map((item) => ({
+			idproduto: item.idproduto,
+			quantidade: item.quantidade,
+			observacao: normalizarObservacaoItem(item.observacao),
+			idprodutomeio: item.idprodutomeio ?? null,
+		}));
 		try {
 			let atualizada: ContaMesa | null = conta;
 			if (modoEntrega) {
@@ -492,12 +506,8 @@ export function MesaContaPage() {
 					"enviarPedidoConta",
 					conta.id,
 					crypto.randomUUID(),
-					fila.map((item) => ({
-						idproduto: item.idproduto,
-						quantidade: item.quantidade,
-						observacao: normalizarObservacaoItem(item.observacao),
-						idprodutomeio: item.idprodutomeio ?? null,
-					})),
+					itensPayload,
+					obsPedido,
 				);
 				if (conta.status_entrega === "recebido") {
 					atualizada = await pdvInvoke<ContaMesa>(
@@ -507,20 +517,22 @@ export function MesaContaPage() {
 					);
 				}
 			} else {
-				for (const item of fila) {
-					atualizada = await pdvInvoke<ContaMesa>(
-						"adicionarItemNaMesa",
+				let idconta = conta?.id;
+				if (!idconta) {
+					const aberta = await pdvInvoke<ContaMesa>(
+						"abrirContaMesa",
 						numeroMesa,
-						{
-							idproduto: item.idproduto,
-							descricao: item.descricao,
-							quantidade: item.quantidade,
-							precounitario: item.precounitario,
-							observacao: normalizarObservacaoItem(item.observacao),
-						},
 						nomeCliente ?? undefined,
 					);
+					idconta = aberta.id;
 				}
+				atualizada = await pdvInvoke<ContaMesa>(
+					"enviarPedidoConta",
+					idconta,
+					crypto.randomUUID(),
+					itensPayload,
+					obsPedido,
+				);
 			}
 			if (atualizada) {
 				setConta(atualizada);
@@ -534,6 +546,11 @@ export function MesaContaPage() {
 		} finally {
 			setLoading(false);
 		}
+	}
+
+	function solicitarEnviarFila() {
+		if (fila.length === 0 || loading) return;
+		setObsPedidoAberto(true);
 	}
 
 	async function onBip(codigo: string) {
@@ -909,6 +926,7 @@ export function MesaContaPage() {
 								Boolean(pizzaPrimeiro) ||
 								Boolean(produtoPeso) ||
 								Boolean(obsFilaChave) ||
+								obsPedidoAberto ||
 								maisAcoesAberto ||
 								senhaAberta ||
 								Boolean(itemCancelar)
@@ -1270,7 +1288,7 @@ export function MesaContaPage() {
 								variant="default"
 								className="w-full"
 								disabled={fila.length === 0 || loading}
-								onClick={() => void confirmarFilaNaConta()}
+								onClick={() => solicitarEnviarFila()}
 							>
 								{loading ? "Adicionando..." : "Adicionar itens"}
 							</Button>
@@ -1670,7 +1688,7 @@ export function MesaContaPage() {
 						hotkey: "F4",
 						variant: "default",
 						disabled: fila.length === 0 || loading,
-						onClick: () => void confirmarFilaNaConta(),
+						onClick: () => solicitarEnviarFila(),
 					},
 					{
 						key: "cancelar",
@@ -1894,6 +1912,12 @@ export function MesaContaPage() {
 				}
 				onCancelar={() => setObsFilaChave(null)}
 				onConfirmar={aplicarObservacaoFila}
+			/>
+			<DialogObservacaoPedido
+				aberto={obsPedidoAberto}
+				loading={loading}
+				onCancelar={() => setObsPedidoAberto(false)}
+				onConfirmar={(observacao) => void confirmarFilaNaConta(observacao)}
 			/>
 		</div>
 	);

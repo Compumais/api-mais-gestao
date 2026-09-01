@@ -1338,24 +1338,33 @@ export const localApi = {
 			observacao?: string | null;
 			idprodutomeio?: string | null;
 		}>,
+		observacaoPedido?: string | null,
 	) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
+		const obs = observacaoPedido?.trim() || null;
 		if (await ehSecundario()) {
 			const conta = await remoto.enviarPedidoContaRemoto(
 				idconta,
 				clientOrderId,
 				itens,
+				obs,
 			);
 			avisarTecnibra();
 			return conta;
 		}
-		const conta = await enviarPedidoConta({ idconta, clientOrderId, itens });
+		const conta = await enviarPedidoConta({
+			idconta,
+			clientOrderId,
+			itens,
+			observacaoPedido: obs,
+		});
 		if (conta.pedidoNovo) {
 			try {
 				void imprimirProducaoPedido({
 					origem: rotuloOrigemConta(conta),
 					cliente: conta.nomecliente,
+					observacaoPedido: conta.observacaoPedido,
 					itens: conta.itensProducao,
 				});
 			} catch {
@@ -1397,6 +1406,7 @@ export const localApi = {
 				nomecliente: primeiro.nomecliente,
 				origem,
 				criadoem: primeiro.criadoem,
+				observacaoPedido: primeiro.observacao_pedido,
 				status: itens.some((item) => item.status === "pendente")
 					? "pendente"
 					: "entregue",
@@ -1425,6 +1435,7 @@ export const localApi = {
 		await imprimirProducaoPedido({
 			origem: pedido.origem,
 			cliente: pedido.nomecliente,
+			observacaoPedido: pedido.observacaoPedido,
 			itens: pedido.itens,
 			reimpressao: true,
 		});
