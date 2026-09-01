@@ -374,4 +374,17 @@ export async function criarVendaRapidaRemoto(input: {
 	});
 }
 
+export async function inutilizarNfceRemoto(
+	vendaId: string,
+	justificativa: string,
+) {
+	return remoto(
+		`/pos/vendas/${encodeURIComponent(vendaId)}/inutilizar`,
+		{
+			...jsonBody({ justificativa }),
+			timeoutMs: 60_000,
+		},
+	);
+}
+
 export { unwrapDataEnvelope };
