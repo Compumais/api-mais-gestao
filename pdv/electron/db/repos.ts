@@ -136,6 +136,7 @@ export type ItemCarrinho = {
 	precototal: number;
 	unidademedida?: string | null;
 	idunidademedida?: string | null;
+	observacao?: string | null;
 };
 
 export type VendaLocal = {
@@ -2079,6 +2080,7 @@ export async function adicionarItemNaMesa(
 		descricao: string;
 		quantidade: number;
 		precounitario: number;
+		observacao?: string | null;
 	},
 	nomecliente?: string,
 ): Promise<ContaMesaLocal> {

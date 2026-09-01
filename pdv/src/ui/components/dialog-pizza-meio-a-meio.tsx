@@ -14,6 +14,7 @@ export type ItemPizzaMeioAMeio = {
 	quantidade: number;
 	precounitario: number;
 	precototal: number;
+	observacao?: string | null;
 };
 
 type DialogPizzaMeioAMeioProps = {

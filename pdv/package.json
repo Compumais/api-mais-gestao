@@ -21,6 +21,7 @@
 		"test:caixa": "node ../api/node_modules/tsx/dist/cli.mjs --test electron/db/resumo-turno-caixa.test.ts electron/impressora/comprovante-caixa.test.ts electron/impressora/danfce.test.ts",
 		"test:teclas": "node ../api/node_modules/tsx/dist/cli.mjs --test src/lib/teclas-funcao.test.ts src/lib/pagamento-forma-nfe.test.ts src/lib/conta-gourmet.test.ts electron/db/pagamento.test.ts",
 		"test:producao": "node ../api/node_modules/tsx/dist/cli.mjs --test electron/impressora/producao.test.ts",
+		"test:observacao": "node ../api/node_modules/tsx/dist/cli.mjs --test src/lib/observacao-item.test.ts",
 		"postinstall": "electron-builder install-app-deps",
 		"pack:win": "npm run build && electron-builder --win",
 		"pack:dir": "npm run build && electron-builder --win --dir",

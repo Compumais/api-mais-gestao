@@ -1287,6 +1287,7 @@ export const localApi = {
 			descricao: string;
 			quantidade: number;
 			precounitario: number;
+			observacao?: string | null;
 		},
 	) {
 		await assertModuloGourmet();
@@ -1437,6 +1438,7 @@ export const localApi = {
 			descricao: string;
 			quantidade: number;
 			precounitario: number;
+			observacao?: string | null;
 		},
 		nomecliente?: string,
 	) {
@@ -1461,6 +1463,7 @@ export const localApi = {
 						idproduto: item.idproduto,
 						descricao: item.descricao,
 						quantidade: item.quantidade,
+						observacao: item.observacao,
 					},
 				],
 			});

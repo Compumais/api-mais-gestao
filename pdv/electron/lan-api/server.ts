@@ -911,12 +911,14 @@ function itemDeBody(body: Record<string, unknown>): {
 	descricao: string;
 	quantidade: number;
 	precounitario: number;
+	observacao?: string | null;
 } {
 	return {
 		idproduto: String(body.idproduto ?? ""),
 		descricao: String(body.descricao ?? ""),
 		quantidade: Number(body.quantidade ?? 0),
 		precounitario: Number(body.precounitario ?? 0),
+		observacao: body.observacao != null ? String(body.observacao) : null,
 	};
 }
 

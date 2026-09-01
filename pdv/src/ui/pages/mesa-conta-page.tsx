@@ -5,8 +5,9 @@ import {
 	useOutletContext,
 	useParams,
 } from "react-router-dom";
-import { arredondarDinheiro } from "@/lib/pagamento";
 import { totalFatiaItensSelecionados } from "@/lib/conta-gourmet";
+import { normalizarObservacaoItem } from "@/lib/observacao-item";
+import { arredondarDinheiro } from "@/lib/pagamento";
 import { pdvInvoke } from "@/lib/pdv-api";
 import {
 	type GrupoLocal,
@@ -22,6 +23,8 @@ import { money } from "@/lib/utils";
 import { AvisoSecundario } from "@/ui/components/aviso-secundario";
 import { BarcodeInput } from "@/ui/components/barcode-input";
 import { DialogEscolherMesa } from "@/ui/components/dialog-escolher-mesa";
+import { DialogMaisAcoesMesa } from "@/ui/components/dialog-mais-acoes-mesa";
+import { DialogObservacaoItem } from "@/ui/components/dialog-observacao-item";
 import {
 	DialogPagamentoMisto,
 	type FechamentoMisto,
@@ -73,6 +76,7 @@ type ContaMesa = {
 		quantidade: number;
 		precounitario: number;
 		precototal: number;
+		observacao?: string | null;
 	}>;
 };
 
@@ -85,6 +89,7 @@ type ItemFila = {
 	precounitario: number;
 	precototal: number;
 	pesado?: boolean;
+	observacao?: string | null;
 };
 
 type LocationState = {
@@ -142,16 +147,17 @@ export function MesaContaPage() {
 	const [pagandoFatia, setPagandoFatia] = useState(false);
 	const [taxaEntregaEdit, setTaxaEntregaEdit] = useState("");
 	const [reimprimirAberto, setReimprimirAberto] = useState(false);
+	const [obsFilaChave, setObsFilaChave] = useState<string | null>(null);
+	const [maisAcoesAberto, setMaisAcoesAberto] = useState(false);
 
 	useEscapeFechaModal(confirmandoSaida, () => setConfirmandoSaida(false));
-	useEscapeFechaModal(confirmandoCancelar, () =>
-		setConfirmandoCancelar(false),
-	);
+	useEscapeFechaModal(confirmandoCancelar, () => setConfirmandoCancelar(false));
 	useEscapeFechaModal(Boolean(rejeicaoNfce), () => setRejeicaoNfce(null));
 	useEscapeFechaModal(Boolean(pizzaPrimeiro), () => setPizzaPrimeiro(null));
 	useEscapeFechaModal(dividirAberto, () => setDividirAberto(false));
 	useEscapeFechaModal(pagarItensAberto, () => setPagarItensAberto(false));
 	useEscapeFechaModal(Boolean(produtoPeso), () => setProdutoPeso(null));
+	useEscapeFechaModal(Boolean(obsFilaChave), () => setObsFilaChave(null));
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: iniciar deve reexecutar apenas quando a mesa/conta muda
 	useEffect(() => {
@@ -169,7 +175,14 @@ export function MesaContaPage() {
 	useEffect(() => {
 		function onKeyDown(e: KeyboardEvent) {
 			if (e.key !== "Escape") return;
-			if (pagando || confirmandoSaida || confirmandoCancelar) return;
+			if (
+				pagando ||
+				confirmandoSaida ||
+				confirmandoCancelar ||
+				obsFilaChave ||
+				maisAcoesAberto
+			)
+				return;
 			if (fila.length === 0) return;
 			e.preventDefault();
 			e.stopImmediatePropagation();
@@ -177,7 +190,14 @@ export function MesaContaPage() {
 		}
 		window.addEventListener("keydown", onKeyDown, true);
 		return () => window.removeEventListener("keydown", onKeyDown, true);
-	}, [fila.length, pagando, confirmandoSaida, confirmandoCancelar]);
+	}, [
+		fila.length,
+		pagando,
+		confirmandoSaida,
+		confirmandoCancelar,
+		obsFilaChave,
+		maisAcoesAberto,
+	]);
 
 	async function iniciar() {
 		setPronto(false);
@@ -273,7 +293,11 @@ export function MesaContaPage() {
 		}
 		setFila((prev) => {
 			const idx = prev.findIndex(
-				(i) => i.idproduto === produto.id && !i.idprodutomeio && !i.pesado,
+				(i) =>
+					i.idproduto === produto.id &&
+					!i.idprodutomeio &&
+					!i.pesado &&
+					!i.observacao?.trim(),
 			);
 			if (idx >= 0) {
 				const atual = prev[idx];
@@ -357,6 +381,17 @@ export function MesaContaPage() {
 		);
 	}
 
+	function aplicarObservacaoFila(observacao: string | null) {
+		const chave = obsFilaChave;
+		setObsFilaChave(null);
+		if (!chave) return;
+		setFila((prev) =>
+			prev.map((item) =>
+				item.chave === chave ? { ...item, observacao } : item,
+			),
+		);
+	}
+
 	function limparFila() {
 		if (fila.length === 0) return;
 		setFila([]);
@@ -399,12 +434,17 @@ export function MesaContaPage() {
 				if (!conta?.id) {
 					throw new Error("Pedido inválido");
 				}
-				atualizada = await pdvInvoke<ContaMesa>("enviarPedidoConta", conta.id, crypto.randomUUID(), fila.map((item) => ({
-					idproduto: item.idproduto,
-					quantidade: item.quantidade,
-					observacao: null,
-					idprodutomeio: item.idprodutomeio ?? null,
-				})));
+				atualizada = await pdvInvoke<ContaMesa>(
+					"enviarPedidoConta",
+					conta.id,
+					crypto.randomUUID(),
+					fila.map((item) => ({
+						idproduto: item.idproduto,
+						quantidade: item.quantidade,
+						observacao: normalizarObservacaoItem(item.observacao),
+						idprodutomeio: item.idprodutomeio ?? null,
+					})),
+				);
 				if (conta.status_entrega === "recebido") {
 					atualizada = await pdvInvoke<ContaMesa>(
 						"atualizarStatusEntrega",
@@ -422,6 +462,7 @@ export function MesaContaPage() {
 							descricao: item.descricao,
 							quantidade: item.quantidade,
 							precounitario: item.precounitario,
+							observacao: normalizarObservacaoItem(item.observacao),
 						},
 						nomeCliente ?? undefined,
 					);
@@ -788,254 +829,279 @@ export function MesaContaPage() {
 			/>
 
 			<div className="flex min-h-0 flex-1 gap-3 overflow-hidden bg-muted/30 p-3">
-				<div className="grid min-h-0 min-w-0 flex-1 grid-cols-[1fr_320px] gap-3 overflow-hidden">
-				<div className="pdv-surface flex min-h-0 flex-col gap-3 overflow-hidden p-3">
-					<AvisoSecundario status={status} />
-					<div className="flex items-center justify-between gap-2">
-						<h2 className="text-sm font-semibold">Selecionar produtos</h2>
-						{grupoAtivo && (
-							<Button
-								variant="secondary"
-								size="sm"
-								onClick={() => setGrupoAtivo(null)}
-							>
-								Trocar grupo
-							</Button>
-						)}
-					</div>
-					<BarcodeInput
-						onScan={(codigo) => void onBip(codigo)}
-						onProduto={(produto) => enfileirarProduto(produto)}
-						pausado={
-							pagando ||
-							confirmandoSaida ||
-							confirmandoCancelar ||
-							Boolean(rejeicaoNfce) ||
-							Boolean(pizzaPrimeiro) ||
-							Boolean(produtoPeso) ||
-							senhaAberta
-						}
-					/>
-
-					{!pronto ? (
-						<p className="text-sm text-muted-foreground">Carregando...</p>
-					) : !grupoAtivo ? (
-						<div className="flex flex-1 flex-col gap-3 overflow-auto">
-							{atalhos.length > 0 && (
-								<div>
-									<h2 className="mb-2 text-sm font-semibold">Atalhos</h2>
-									<div className="grid auto-rows-min grid-cols-3 gap-2 sm:grid-cols-4">
-										{atalhos.map((p) => (
-											<ProdutoCard
-												key={`atalho-${p.id}`}
-												produto={p}
-												destaque
-												disabled={loading}
-												onClick={() => enfileirarProduto(p)}
-											/>
-										))}
-									</div>
-								</div>
-							)}
-							<div>
-								<h2 className="mb-2 text-sm font-semibold">Escolha o grupo</h2>
-								<div className="grid auto-rows-min grid-cols-3 gap-2 sm:grid-cols-4">
-									{grupos.map((g) => (
-										<button
-											key={g.id}
-											type="button"
-											onClick={() => void abrirGrupo(g)}
-											className="rounded-lg bg-background p-4 text-sm font-semibold ring-1 ring-foreground/10 transition hover:ring-primary"
-										>
-											{g.nome}
-										</button>
-									))}
-									{grupos.length === 0 && atalhos.length === 0 && (
-										<p className="col-span-full text-sm text-muted-foreground">
-											Nenhum grupo ou atalho sincronizado ainda. Use a bipagem
-											para enfileirar produtos.
-										</p>
-									)}
-								</div>
-							</div>
-						</div>
-					) : (
-						<div className="grid flex-1 auto-rows-min grid-cols-3 gap-2 overflow-auto sm:grid-cols-4">
-							{produtos.map((p) => (
-								<ProdutoCard
-									key={p.id}
-									produto={p}
-									disabled={loading}
-									onClick={() => enfileirarProduto(p)}
-								/>
-							))}
-							{produtos.length === 0 && (
-								<p className="col-span-full text-sm text-muted-foreground">
-									Sem produtos neste grupo.
-								</p>
+				<div className="grid min-h-0 min-w-0 flex-1 grid-cols-[1fr_340px] gap-3 overflow-hidden">
+					<div className="pdv-surface flex min-h-0 flex-col gap-3 overflow-hidden p-3">
+						<AvisoSecundario status={status} />
+						<div className="flex items-center justify-between gap-2">
+							<h2 className="text-sm font-semibold">Selecionar produtos</h2>
+							{grupoAtivo && (
+								<Button
+									variant="secondary"
+									size="sm"
+									onClick={() => setGrupoAtivo(null)}
+								>
+									Trocar grupo
+								</Button>
 							)}
 						</div>
-					)}
-				</div>
+						<BarcodeInput
+							onScan={(codigo) => void onBip(codigo)}
+							onProduto={(produto) => enfileirarProduto(produto)}
+							pausado={
+								pagando ||
+								confirmandoSaida ||
+								confirmandoCancelar ||
+								Boolean(rejeicaoNfce) ||
+								Boolean(pizzaPrimeiro) ||
+								Boolean(produtoPeso) ||
+								Boolean(obsFilaChave) ||
+								maisAcoesAberto ||
+								senhaAberta
+							}
+						/>
 
-				<div className="pdv-surface flex min-h-0 flex-col p-3">
-					<h2 className="mb-2 text-sm font-semibold">
-						Fila ({fila.length} {fila.length === 1 ? "item" : "itens"})
-					</h2>
-
-					<div className="min-h-0 flex-1 space-y-1 overflow-auto">
-						{fila.map((item) => (
-							<div
-								key={item.chave}
-								className="rounded-md border bg-background px-2 py-2 text-sm"
-							>
-								<div className="line-clamp-2 font-medium">{item.descricao}</div>
-								<div className="mt-1 flex items-center justify-between gap-2">
-									<div className="flex items-center gap-1">
-										<Button
-											size="sm"
-											variant="outline"
-											disabled={loading}
-											onClick={() => alterarQtdFila(item.chave, -1)}
-										>
-											-
-										</Button>
-										<span className="min-w-10 text-center tabular-nums">
-											{formatarQuantidade(item.quantidade)}
-											{item.pesado ? " kg" : ""}
-										</span>
-										<Button
-											size="sm"
-											variant="outline"
-											disabled={loading || item.pesado}
-											onClick={() => alterarQtdFila(item.chave, 1)}
-										>
-											+
-										</Button>
-									</div>
-									<span className="font-semibold text-primary">
-										{money(item.precototal)}
-									</span>
-								</div>
-							</div>
-						))}
-						{fila.length === 0 && (
-							<p className="text-sm text-muted-foreground">
-								Selecione produtos à esquerda para montar a fila. Depois clique
-								em Adicionar itens.
-							</p>
-						)}
-
-						{itens.length > 0 && (
-							<div className="mt-3 border-t pt-3">
-								<div className="mb-2 flex items-center justify-between gap-2">
-									<h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-										Já na conta
-									</h3>
-									{itensSel.length > 0 ? (
-										<button
-											type="button"
-											className="text-xs text-primary underline"
-											onClick={() => setItensSel([])}
-										>
-											Limpar seleção
-										</button>
-									) : (
-										<button
-											type="button"
-											className="text-xs text-muted-foreground underline"
-											onClick={() => setItensSel(itens.map((i) => i.id))}
-										>
-											Selecionar todos
-										</button>
-									)}
-								</div>
-								{itens.map((item) => {
-									const marcado = itensSel.includes(item.id);
-									return (
-										<label
-											key={item.id}
-											className={`mb-1 flex cursor-pointer items-center justify-between gap-2 rounded-md px-2 py-2 text-sm ${
-												marcado
-													? "bg-primary/10 ring-1 ring-primary/40"
-													: "bg-background ring-1 ring-foreground/10"
-											}`}
-										>
-											<span className="flex min-w-0 flex-1 items-center gap-2">
-												<input
-													type="checkbox"
-													className="size-4 shrink-0 accent-primary"
-													checked={marcado}
-													onChange={(e) => {
-														setItensSel((prev) =>
-															e.target.checked
-																? [...prev, item.id]
-																: prev.filter((id) => id !== item.id),
-														);
-													}}
+						{!pronto ? (
+							<p className="text-sm text-muted-foreground">Carregando...</p>
+						) : !grupoAtivo ? (
+							<div className="flex flex-1 flex-col gap-3 overflow-auto">
+								{atalhos.length > 0 && (
+									<div>
+										<h2 className="mb-2 text-sm font-semibold">Atalhos</h2>
+										<div className="grid auto-rows-min grid-cols-3 gap-2 sm:grid-cols-4">
+											{atalhos.map((p) => (
+												<ProdutoCard
+													key={`atalho-${p.id}`}
+													produto={p}
+													destaque
+													disabled={loading}
+													onClick={() => enfileirarProduto(p)}
 												/>
-												<span className="truncate font-medium text-foreground">
-													{formatarQuantidade(item.quantidade)}x{" "}
-													{item.descricao}
-												</span>
-											</span>
-											<span className="shrink-0 font-semibold tabular-nums">
-												{money(item.precototal)}
-											</span>
-										</label>
-									);
-								})}
-								{itensSel.length > 0 && (
-									<div className="mt-2 flex items-center justify-between rounded-md bg-primary/10 px-2 py-1.5 text-sm font-semibold">
-										<span>
-											{itensSel.length}{" "}
-											{itensSel.length === 1 ? "item" : "itens"}
-										</span>
-										<span className="text-primary">
-											{money(totalSelecionado)}
-										</span>
+											))}
+										</div>
 									</div>
+								)}
+								<div>
+									<h2 className="mb-2 text-sm font-semibold">
+										Escolha o grupo
+									</h2>
+									<div className="grid auto-rows-min grid-cols-3 gap-2 sm:grid-cols-4">
+										{grupos.map((g) => (
+											<button
+												key={g.id}
+												type="button"
+												onClick={() => void abrirGrupo(g)}
+												className="rounded-lg bg-background p-4 text-sm font-semibold ring-1 ring-foreground/10 transition hover:ring-primary"
+											>
+												{g.nome}
+											</button>
+										))}
+										{grupos.length === 0 && atalhos.length === 0 && (
+											<p className="col-span-full text-sm text-muted-foreground">
+												Nenhum grupo ou atalho sincronizado ainda. Use a bipagem
+												para enfileirar produtos.
+											</p>
+										)}
+									</div>
+								</div>
+							</div>
+						) : (
+							<div className="grid flex-1 auto-rows-min grid-cols-3 gap-2 overflow-auto sm:grid-cols-4">
+								{produtos.map((p) => (
+									<ProdutoCard
+										key={p.id}
+										produto={p}
+										disabled={loading}
+										onClick={() => enfileirarProduto(p)}
+									/>
+								))}
+								{produtos.length === 0 && (
+									<p className="col-span-full text-sm text-muted-foreground">
+										Sem produtos neste grupo.
+									</p>
 								)}
 							</div>
 						)}
 					</div>
 
-					<div className="mt-2 space-y-1 border-t pt-2 text-sm">
-						{fila.length > 0 && (
-							<div className="flex justify-between font-medium">
-								<span>Subtotal fila</span>
-								<span className="text-primary">{money(totalFila)}</span>
-							</div>
-						)}
-						{conta && (
-							<>
-								{modoEntrega ? (
-									<div className="space-y-1 text-xs text-muted-foreground">
-										{conta.telefone ? <div>Tel: {conta.telefone}</div> : null}
-										{conta.endereco ? (
-											<div>
-												{conta.endereco}
-												{conta.bairro ? ` — ${conta.bairro}` : ""}
-											</div>
-										) : null}
-										<div>
-											Status: {conta.status_entrega ?? "recebido"}
-											{conta.orderidintegracao
-												? ` · ${conta.orderidintegracao}`
-												: ""}
+					<div className="pdv-surface flex min-h-0 flex-col overflow-hidden p-3">
+						<h2 className="mb-2 shrink-0 text-sm font-semibold">
+							Fila ({fila.length} {fila.length === 1 ? "item" : "itens"})
+						</h2>
+
+						<div className="min-h-0 flex-1 space-y-1 overflow-auto">
+							{fila.map((item) => (
+								<div
+									key={item.chave}
+									className="rounded-md border bg-background px-2 py-2 text-sm"
+								>
+									<div className="flex items-start justify-between gap-2">
+										<div className="line-clamp-2 min-w-0 font-medium">
+											{item.descricao}
 										</div>
-										<div className="flex items-center justify-between gap-2 pt-1">
-											<span>Taxa entrega</span>
-											<div className="flex items-center gap-1">
+										<Button
+											size="sm"
+											variant={item.observacao ? "secondary" : "outline"}
+											disabled={loading}
+											onClick={() => setObsFilaChave(item.chave)}
+										>
+											Obs
+										</Button>
+									</div>
+									{item.observacao ? (
+										<p className="mt-1 text-xs text-muted-foreground">
+											{item.observacao}
+										</p>
+									) : null}
+									<div className="mt-1 flex items-center justify-between gap-2">
+										<div className="flex items-center gap-1">
+											<Button
+												size="sm"
+												variant="outline"
+												disabled={loading}
+												onClick={() => alterarQtdFila(item.chave, -1)}
+											>
+												-
+											</Button>
+											<span className="min-w-10 text-center tabular-nums">
+												{formatarQuantidade(item.quantidade)}
+												{item.pesado ? " kg" : ""}
+											</span>
+											<Button
+												size="sm"
+												variant="outline"
+												disabled={loading || item.pesado}
+												onClick={() => alterarQtdFila(item.chave, 1)}
+											>
+												+
+											</Button>
+										</div>
+										<span className="font-semibold text-primary">
+											{money(item.precototal)}
+										</span>
+									</div>
+								</div>
+							))}
+							{fila.length === 0 && (
+								<p className="text-sm text-muted-foreground">
+									Selecione produtos à esquerda para montar a fila. Depois
+									clique em Adicionar itens.
+								</p>
+							)}
+
+							{itens.length > 0 && (
+								<div className="mt-3 border-t pt-3">
+									<div className="mb-2 flex items-center justify-between gap-2">
+										<h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+											Já na conta
+										</h3>
+										{itensSel.length > 0 ? (
+											<button
+												type="button"
+												className="text-xs text-primary underline"
+												onClick={() => setItensSel([])}
+											>
+												Limpar seleção
+											</button>
+										) : (
+											<button
+												type="button"
+												className="text-xs text-muted-foreground underline"
+												onClick={() => setItensSel(itens.map((i) => i.id))}
+											>
+												Selecionar todos
+											</button>
+										)}
+									</div>
+									{itens.map((item) => {
+										const marcado = itensSel.includes(item.id);
+										return (
+											<label
+												key={item.id}
+												className={`mb-1 flex cursor-pointer items-center justify-between gap-2 rounded-md px-2 py-2 text-sm ${
+													marcado
+														? "bg-primary/10 ring-1 ring-primary/40"
+														: "bg-background ring-1 ring-foreground/10"
+												}`}
+											>
+												<span className="flex min-w-0 flex-1 items-center gap-2">
+													<input
+														type="checkbox"
+														className="size-4 shrink-0 accent-primary"
+														checked={marcado}
+														onChange={(e) => {
+															setItensSel((prev) =>
+																e.target.checked
+																	? [...prev, item.id]
+																	: prev.filter((id) => id !== item.id),
+															);
+														}}
+													/>
+													<span className="min-w-0">
+														<span className="block truncate font-medium text-foreground">
+															{formatarQuantidade(item.quantidade)}x{" "}
+															{item.descricao}
+														</span>
+														{item.observacao ? (
+															<span className="block truncate text-xs text-muted-foreground">
+																{item.observacao}
+															</span>
+														) : null}
+													</span>
+												</span>
+												<span className="shrink-0 font-semibold tabular-nums">
+													{money(item.precototal)}
+												</span>
+											</label>
+										);
+									})}
+									{itensSel.length > 0 && (
+										<div className="mt-2 flex items-center justify-between rounded-md bg-primary/10 px-2 py-1.5 text-sm font-semibold">
+											<span>
+												{itensSel.length}{" "}
+												{itensSel.length === 1 ? "item" : "itens"}
+											</span>
+											<span className="text-primary">
+												{money(totalSelecionado)}
+											</span>
+										</div>
+									)}
+								</div>
+							)}
+						</div>
+
+						<div className="mt-2 shrink-0 space-y-1 border-t pt-2 text-sm">
+							{fila.length > 0 && (
+								<div className="flex justify-between font-medium">
+									<span>Subtotal fila</span>
+									<span className="text-primary">{money(totalFila)}</span>
+								</div>
+							)}
+							{conta && (
+								<>
+									{modoEntrega ? (
+										<div className="space-y-0.5 text-xs text-muted-foreground">
+											{conta.telefone ? <div>Tel: {conta.telefone}</div> : null}
+											{conta.endereco ? (
+												<div className="line-clamp-2">
+													{conta.endereco}
+													{conta.bairro ? ` — ${conta.bairro}` : ""}
+												</div>
+											) : null}
+											<div>
+												Status: {conta.status_entrega ?? "recebido"}
+												{conta.orderidintegracao
+													? ` · ${conta.orderidintegracao}`
+													: ""}
+											</div>
+											<div className="flex items-center justify-between gap-2 pt-1">
+												<span>Taxa entrega</span>
 												<Input
 													className="h-8 w-20"
 													value={taxaEntregaEdit}
 													disabled={loading}
 													onChange={(e) => setTaxaEntregaEdit(e.target.value)}
 													onBlur={() => {
-														const n = Number(
-															taxaEntregaEdit.replace(",", "."),
-														);
+														const n = Number(taxaEntregaEdit.replace(",", "."));
 														if (!Number.isFinite(n) || !conta) return;
 														void pdvInvoke<ContaMesa>(
 															"aplicarTaxaEntrega",
@@ -1049,117 +1115,92 @@ export function MesaContaPage() {
 												/>
 											</div>
 										</div>
-										<Button
-											size="sm"
-											variant="outline"
-											className="w-full"
-											disabled={loading}
-											onClick={() => {
-												void pdvInvoke<ContaMesa>(
-													"atualizarStatusEntrega",
-													conta.id,
-												).then(setConta);
-											}}
-										>
-											Avançar status
-										</Button>
-									</div>
-								) : (
-									<>
-										<div className="flex items-center justify-between gap-2 text-xs">
-											<span>Pessoas</span>
-											<Input
-												type="number"
-												min={1}
-												className="h-8 w-16"
-												value={conta.numeropessoas ?? 1}
-												disabled={!conta || loading}
-												onChange={(e) =>
-													void aplicarAjustes({
-														numeropessoas: Number(e.target.value),
-													})
-												}
-											/>
+									) : (
+										<div className="flex items-center justify-between gap-3 text-xs">
+											<div className="flex items-center gap-1.5">
+												<span>Pessoas</span>
+												<Input
+													type="number"
+													min={1}
+													className="h-8 w-14"
+													value={conta.numeropessoas ?? 1}
+													disabled={!conta || loading}
+													onChange={(e) =>
+														void aplicarAjustes({
+															numeropessoas: Number(e.target.value),
+														})
+													}
+												/>
+											</div>
+											<label className="flex items-center gap-1.5">
+												<span>Taxa</span>
+												<input
+													type="checkbox"
+													className="size-4 accent-primary"
+													checked={conta.taxa_ativa === 1}
+													disabled={!conta || loading}
+													onChange={(e) =>
+														void aplicarAjustes({ taxaAtiva: e.target.checked })
+													}
+												/>
+											</label>
 										</div>
-										<label className="flex items-center justify-between text-xs">
-											<span>Taxa de serviço</span>
-											<input
-												type="checkbox"
-												className="size-4 accent-primary"
-												checked={conta.taxa_ativa === 1}
-												disabled={!conta || loading}
-												onChange={(e) =>
-													void aplicarAjustes({ taxaAtiva: e.target.checked })
-												}
-											/>
-										</label>
-									</>
-								)}
-								{(conta.subtotal ?? 0) > 0 && (
-									<div className="flex justify-between text-xs text-muted-foreground">
-										<span>Subtotal</span>
-										<span>{money(conta.subtotal ?? 0)}</span>
-									</div>
-								)}
-								{(conta.valordesconto ?? 0) > 0 && (
-									<div className="flex justify-between text-xs text-muted-foreground">
-										<span>Desconto</span>
-										<span>-{money(conta.valordesconto ?? 0)}</span>
-									</div>
-								)}
-								{(conta.valortaxaservico ?? 0) > 0 && (
-									<div className="flex justify-between text-xs text-muted-foreground">
-										<span>Taxa serviço</span>
-										<span>{money(conta.valortaxaservico ?? 0)}</span>
-									</div>
-								)}
-								{(conta.valorcouvert ?? 0) > 0 && (
-									<div className="flex justify-between text-xs text-muted-foreground">
-										<span>Couvert</span>
-										<span>{money(conta.valorcouvert ?? 0)}</span>
-									</div>
-								)}
-								{(conta.valorentrega ?? 0) > 0 && (
-									<div className="flex justify-between text-xs text-muted-foreground">
-										<span>Entrega</span>
-										<span>{money(conta.valorentrega ?? 0)}</span>
-									</div>
-								)}
-								{(conta.valorpago ?? 0) > 0 && (
-									<div className="flex justify-between text-xs text-muted-foreground">
-										<span>Já pago</span>
-										<span>{money(conta.valorpago ?? 0)}</span>
-									</div>
-								)}
-							</>
-						)}
-						<div className="flex justify-between text-lg font-bold">
-							<span>A pagar</span>
-							<span className="text-primary">{money(total)}</span>
+									)}
+									{(conta.subtotal ?? 0) > 0 && (
+										<div className="flex justify-between text-xs text-muted-foreground">
+											<span>Subtotal</span>
+											<span>{money(conta.subtotal ?? 0)}</span>
+										</div>
+									)}
+									{(conta.valordesconto ?? 0) > 0 && (
+										<div className="flex justify-between text-xs text-muted-foreground">
+											<span>Desconto</span>
+											<span>-{money(conta.valordesconto ?? 0)}</span>
+										</div>
+									)}
+									{(conta.valortaxaservico ?? 0) > 0 && (
+										<div className="flex justify-between text-xs text-muted-foreground">
+											<span>Taxa serviço</span>
+											<span>{money(conta.valortaxaservico ?? 0)}</span>
+										</div>
+									)}
+									{(conta.valorcouvert ?? 0) > 0 && (
+										<div className="flex justify-between text-xs text-muted-foreground">
+											<span>Couvert</span>
+											<span>{money(conta.valorcouvert ?? 0)}</span>
+										</div>
+									)}
+									{(conta.valorentrega ?? 0) > 0 && (
+										<div className="flex justify-between text-xs text-muted-foreground">
+											<span>Entrega</span>
+											<span>{money(conta.valorentrega ?? 0)}</span>
+										</div>
+									)}
+									{(conta.valorpago ?? 0) > 0 && (
+										<div className="flex justify-between text-xs text-muted-foreground">
+											<span>Já pago</span>
+											<span>{money(conta.valorpago ?? 0)}</span>
+										</div>
+									)}
+								</>
+							)}
+							<div className="flex justify-between text-lg font-bold">
+								<span>A pagar</span>
+								<span className="text-primary">{money(total)}</span>
+							</div>
 						</div>
-					</div>
-					{msg && (
-						<p
-							className={
-								rejeicaoNfce
-									? "mt-2 text-sm text-destructive"
-									: "mt-2 text-sm text-muted-foreground"
-							}
-						>
-							{msg}
-						</p>
-					)}
-					<div className="mt-3 grid gap-2">
-						<div className="grid grid-cols-2 gap-2">
-							<Button
-								size="lg"
-								variant="outline"
-								className="w-full"
-								disabled={fila.length === 0 || loading}
-								onClick={() => limparFila()}
+						{msg ? (
+							<p
+								className={
+									rejeicaoNfce
+										? "mt-1 shrink-0 line-clamp-2 text-sm text-destructive"
+										: "mt-1 shrink-0 line-clamp-2 text-sm text-muted-foreground"
+								}
 							>
-								Limpar fila
-							</Button>
+								{msg}
+							</p>
+						) : null}
+						<div className="mt-2 grid shrink-0 grid-cols-2 gap-2">
 							<Button
 								size="lg"
 								variant="default"
@@ -1169,127 +1210,39 @@ export function MesaContaPage() {
 							>
 								{loading ? "Adicionando..." : "Adicionar itens"}
 							</Button>
-						</div>
-						<Button
-							size="lg"
-							variant="secondary"
-							className="w-full"
-							onClick={() => tentarSair()}
-						>
-							{modoEntrega
-								? "Voltar ao delivery"
-								: `Voltar às ${rotulo.plural.toLowerCase()}`}
-						</Button>
-						<Button
-							size="lg"
-							variant="outline"
-							className="w-full"
-							disabled={!itens.length || fila.length > 0}
-							onClick={() => {
-								setPagandoFatia(false);
-								setFatiaValor(null);
-								setPagando(true);
-							}}
-						>
-							Receber / Fechar conta
-						</Button>
-						<Button
-							size="lg"
-							variant="secondary"
-							className="w-full"
-							disabled={!itens.length || fila.length > 0 || loading}
-							onClick={() => abrirPagarPorItens()}
-						>
-							{itensSel.length
-								? `Pagar ${itensSel.length} itens (${money(totalSelecionado)})`
-								: "Pagar por itens"}
-						</Button>
-						{!modoEntrega ? (
-							<div className="grid grid-cols-2 gap-2">
-								<Button
-									variant="outline"
-									size="sm"
-									disabled={!itens.length || loading}
-									onClick={() => void preConta()}
-								>
-									Pré-conta
-								</Button>
-								<Button
-									variant="outline"
-									size="sm"
-									disabled={!conta || loading}
-									onClick={() => setReimprimirAberto(true)}
-								>
-									Reimprimir
-								</Button>
-								<Button
-									variant="outline"
-									size="sm"
-									disabled={!itens.length || loading}
-									onClick={() => iniciarDivisao()}
-								>
-									Dividir
-								</Button>
-								<Button
-									variant="outline"
-									size="sm"
-									disabled={!itens.length || loading}
-									onClick={() => setDestinoAberto("transferir")}
-								>
-									Transferir
-								</Button>
-								<Button
-									variant="outline"
-									size="sm"
-									disabled={!itens.length || loading}
-									onClick={() => setDestinoAberto("juntar")}
-								>
-									Juntar
-								</Button>
-							</div>
-						) : (
-							<div className="grid grid-cols-2 gap-2">
-								<Button
-									variant="outline"
-									size="sm"
-									disabled={!itens.length || loading}
-									onClick={() => void preConta()}
-								>
-									Pré-conta
-								</Button>
-								<Button
-									variant="outline"
-									size="sm"
-									disabled={!conta || loading}
-									onClick={() => setReimprimirAberto(true)}
-								>
-									Reimprimir
-								</Button>
-							</div>
-						)}
-						<div className="grid grid-cols-2 gap-2">
 							<Button
-								variant="outline"
-								size="sm"
-								disabled={!itens.length || loading}
-								onClick={() => abrirDesconto()}
+								size="lg"
+								variant="secondary"
+								className="w-full"
+								disabled={!itens.length || fila.length > 0 || loading}
+								onClick={() => {
+									setPagandoFatia(false);
+									setFatiaValor(null);
+									setPagando(true);
+								}}
 							>
-								Desconto
+								Receber
 							</Button>
-							{!modoEntrega ? (
-								<Button
-									variant="outline"
-									size="sm"
-									disabled={!itensSel.length || loading}
-									onClick={() => setDestinoAberto("itens")}
-								>
-									Mover itens
-								</Button>
-							) : null}
+							<Button
+								size="lg"
+								variant="outline"
+								className="w-full"
+								onClick={() => tentarSair()}
+							>
+								Voltar
+							</Button>
+							<Button
+								size="lg"
+								variant="outline"
+								className="w-full"
+								disabled={loading || pagando}
+								onClick={() => setMaisAcoesAberto(true)}
+							>
+								Mais ações
+							</Button>
 						</div>
 					</div>
 				</div>
-			</div>
 				<SideNav status={status} />
 			</div>
 
@@ -1637,6 +1590,17 @@ export function MesaContaPage() {
 						onClick: () => setReimprimirAberto(true),
 					},
 					{
+						key: "observacao",
+						label: "Observação",
+						hotkey: "F5",
+						variant: "outline",
+						disabled: fila.length === 0 || loading,
+						onClick: () => {
+							const ultimo = fila[fila.length - 1];
+							if (ultimo) setObsFilaChave(ultimo.chave);
+						},
+					},
+					{
 						key: "desconto",
 						label: "Desconto",
 						hotkey: teclas.desconto,
@@ -1693,6 +1657,122 @@ export function MesaContaPage() {
 					onConfirmar={confirmarPeso}
 				/>
 			)}
+			<DialogMaisAcoesMesa
+				aberto={maisAcoesAberto}
+				onFechar={() => setMaisAcoesAberto(false)}
+				acoes={[
+					{
+						key: "observacao",
+						label: "Observação",
+						hotkey: "F5",
+						disabled: fila.length === 0 || loading,
+						onClick: () => {
+							const ultimo = fila[fila.length - 1];
+							if (ultimo) setObsFilaChave(ultimo.chave);
+						},
+					},
+					{
+						key: "limpar-fila",
+						label: "Limpar fila",
+						disabled: fila.length === 0 || loading,
+						onClick: () => limparFila(),
+					},
+					{
+						key: "pagar-itens",
+						label: itensSel.length
+							? `Pagar ${itensSel.length} itens (${money(totalSelecionado)})`
+							: "Pagar por itens",
+						hotkey: "F8",
+						disabled: !itens.length || fila.length > 0 || loading || pagando,
+						onClick: () => abrirPagarPorItens(),
+					},
+					{
+						key: "preconta",
+						label: "Pré-conta",
+						hotkey: "F6",
+						disabled: !itens.length || loading,
+						onClick: () => void preConta(),
+					},
+					{
+						key: "reimprimir",
+						label: "Reimprimir",
+						hotkey: "F7",
+						disabled: !conta || loading,
+						onClick: () => setReimprimirAberto(true),
+					},
+					{
+						key: "desconto",
+						label: "Desconto",
+						hotkey: teclas.desconto,
+						disabled: !itens.length || loading || pagando || senhaAberta,
+						onClick: () => abrirDesconto(),
+					},
+					...(modoEntrega
+						? [
+								{
+									key: "avancar-status",
+									label: "Avançar status",
+									disabled: !conta || loading,
+									onClick: () => {
+										if (!conta) return;
+										void pdvInvoke<ContaMesa>(
+											"atualizarStatusEntrega",
+											conta.id,
+										).then(setConta);
+									},
+								},
+							]
+						: [
+								{
+									key: "dividir",
+									label: "Dividir",
+									disabled: !itens.length || loading,
+									onClick: () => iniciarDivisao(),
+								},
+								{
+									key: "transferir",
+									label: "Transferir",
+									disabled: !itens.length || loading,
+									onClick: () => setDestinoAberto("transferir"),
+								},
+								{
+									key: "juntar",
+									label: "Juntar",
+									disabled: !itens.length || loading,
+									onClick: () => setDestinoAberto("juntar"),
+								},
+								{
+									key: "mover-itens",
+									label: "Mover itens",
+									disabled: !itensSel.length || loading,
+									onClick: () => setDestinoAberto("itens"),
+								},
+								{
+									key: "cancelar",
+									label: `Cancelar ${rotulo.singular}`,
+									hotkey: "F3",
+									variant: "destructive" as const,
+									disabled:
+										loading ||
+										pagando ||
+										confirmandoCancelar ||
+										(!conta && fila.length === 0),
+									onClick: () => solicitarCancelarMesa(),
+								},
+							]),
+				]}
+			/>
+			<DialogObservacaoItem
+				aberto={Boolean(obsFilaChave)}
+				descricao={
+					fila.find((item) => item.chave === obsFilaChave)?.descricao ?? ""
+				}
+				valorInicial={
+					fila.find((item) => item.chave === obsFilaChave)?.observacao
+				}
+				onCancelar={() => setObsFilaChave(null)}
+				onConfirmar={aplicarObservacaoFila}
+			/>
 		</div>
 	);
 }
