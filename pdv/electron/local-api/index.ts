@@ -2075,6 +2075,11 @@ export const localApi = {
 	},
 
 	async inutilizarNfce(vendaId: string, justificativa: string) {
+		if (await ehSecundario()) {
+			await garantirOperacaoSecundario();
+			return remoto.inutilizarNfceRemoto(vendaId, justificativa);
+		}
+
 		const venda = await obterVenda(vendaId);
 		if (!venda) {
 			throw new Error("Venda não encontrada");
