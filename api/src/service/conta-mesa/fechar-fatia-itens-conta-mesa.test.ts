@@ -188,4 +188,37 @@ describe("fecharFatiaItensContaMesaService", () => {
 			expect.not.objectContaining({ status: 2 }),
 		);
 	});
+
+	it("normaliza campos de pagamento vazios antes de criar a venda", async () => {
+		vi.mocked(contaMesaItemRepository.contarItensPendentes).mockResolvedValue(1);
+
+		await fecharFatiaItensContaMesaService({
+			contaMesaId: "conta-1",
+			idusuario: "user-1",
+			idempresa: "emp-1",
+			numeropdv: 1,
+			idsItens: ["item-a"],
+			pagamento: {
+				valordinheiro: "648.53",
+				valorcartao: "",
+				valorcartaocredito: "113.12",
+				valorcartaodebito: "",
+				valorpix: "",
+				valorprepago: "",
+			},
+		});
+
+		expect(criarVendaService.criarVendaPdvGourmetService).toHaveBeenCalledWith(
+			expect.objectContaining({
+				dadosVendaPdvGourmet: expect.objectContaining({
+					valordinheiro: "648.53",
+					valorcartao: "0.00",
+					valorcartaocredito: "113.12",
+					valorcartaodebito: "0.00",
+					valorpix: "0.00",
+					valorprepago: "0.00",
+				}),
+			}),
+		);
+	});
 });

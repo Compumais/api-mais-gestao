@@ -33,7 +33,10 @@ import {
 	httpOk,
 	httpProibido,
 } from "@/util/http-util.js";
-import { parseValorMonetario } from "@/util/recebimentos-venda-util.js";
+import {
+	normalizarValorPagamentoParaBanco,
+	parseValorMonetario,
+} from "@/util/recebimentos-venda-util.js";
 
 const STATUS_MESA_ABERTO = 1;
 const STATUS_MESA_FECHADO = 2;
@@ -232,12 +235,16 @@ export async function fecharFatiaItensContaMesaService({
 			numeropdv,
 			usuarioquefechouvenda: idusuario,
 			vendalocal: 1,
-			valordinheiro: pagamento.valordinheiro ?? "0",
-			valorcartaocredito: pagamento.valorcartaocredito ?? "0",
-			valorcartaodebito: pagamento.valorcartaodebito ?? "0",
-			valorcartao: pagamento.valorcartao ?? "0",
-			valorpix: pagamento.valorpix ?? "0",
-			valorprepago: pagamento.valorprepago ?? "0",
+			valordinheiro: normalizarValorPagamentoParaBanco(pagamento.valordinheiro),
+			valorcartaocredito: normalizarValorPagamentoParaBanco(
+				pagamento.valorcartaocredito,
+			),
+			valorcartaodebito: normalizarValorPagamentoParaBanco(
+				pagamento.valorcartaodebito,
+			),
+			valorcartao: normalizarValorPagamentoParaBanco(pagamento.valorcartao),
+			valorpix: normalizarValorPagamentoParaBanco(pagamento.valorpix),
+			valorprepago: normalizarValorPagamentoParaBanco(pagamento.valorprepago),
 			valortroco: valortroco.toFixed(2),
 			valortotal: fatia.total.toFixed(2),
 			...(pagamento.identidade ? { identidade: pagamento.identidade } : {}),
@@ -295,12 +302,20 @@ export async function fecharFatiaItensContaMesaService({
 					valortaxaservico: fatia.taxa.toFixed(2),
 					valorcouverartistico: fatia.couvert.toFixed(2),
 					valortotal: fatia.total.toFixed(2),
-					valordinheiro: pagamento.valordinheiro ?? "0",
-					valorcartaocredito: pagamento.valorcartaocredito ?? "0",
-					valorcartaodebito: pagamento.valorcartaodebito ?? "0",
-					valorcartao: pagamento.valorcartao ?? "0",
-					valorpix: pagamento.valorpix ?? "0",
-					valorprepago: pagamento.valorprepago ?? "0",
+					valordinheiro: normalizarValorPagamentoParaBanco(
+						pagamento.valordinheiro,
+					),
+					valorcartaocredito: normalizarValorPagamentoParaBanco(
+						pagamento.valorcartaocredito,
+					),
+					valorcartaodebito: normalizarValorPagamentoParaBanco(
+						pagamento.valorcartaodebito,
+					),
+					valorcartao: normalizarValorPagamentoParaBanco(pagamento.valorcartao),
+					valorpix: normalizarValorPagamentoParaBanco(pagamento.valorpix),
+					valorprepago: normalizarValorPagamentoParaBanco(
+						pagamento.valorprepago,
+					),
 					valortroco: valortroco.toFixed(2),
 					valorpendente: "0",
 					usuarioquefechouconta: idusuario,
