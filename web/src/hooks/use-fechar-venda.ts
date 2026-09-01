@@ -47,6 +47,12 @@ interface FecharVendaRapidaParams {
 	pagamento: FecharContaFormData;
 }
 
+interface FinalizarMesaContaParams {
+	idempresa: string;
+	userId: string;
+	idcontamesa: string;
+}
+
 async function criarItensVenda(
 	idempresa: string,
 	idvenda: string,
@@ -231,28 +237,24 @@ export function useFecharVenda() {
 
 			return { ...resultado, baixa, userId };
 		},
-		onSuccess: (resultado, variables) => {
-			queryClient.invalidateQueries({ queryKey: ["contas-mesa"] });
-			queryClient.invalidateQueries({
-				queryKey: ["conta-mesa", variables.idcontamesa],
-			});
-			queryClient.invalidateQueries({
-				queryKey: ["conta-mesa-itens", variables.idcontamesa],
-			});
-			queryClient.invalidateQueries({ queryKey: ["nfce", variables.idempresa] });
+		onSuccess: async (resultado, variables) => {
+			await Promise.all([
+				queryClient.invalidateQueries({ queryKey: ["contas-mesa"] }),
+				queryClient.invalidateQueries({
+					queryKey: ["conta-mesa", variables.idcontamesa],
+				}),
+				queryClient.refetchQueries({
+					queryKey: ["conta-mesa-itens", variables.idcontamesa],
+				}),
+				queryClient.invalidateQueries({
+					queryKey: ["nfce", variables.idempresa],
+				}),
+			]);
 
-			if (resultado.contaFechada) {
-				if (resultado.baixa?.emissaoNfce?.emitida) {
-					toast.success("Conta fechada e NFC-e emitida!");
-				} else if (!resultado.baixa?.deveEmitirNfce) {
-					if (resultado.baixa.meiosUtilizados.length > 0) {
-						toast.info(
-							"Conta fechada sem NFC-e: meio de pagamento não habilitado na configuração fiscal.",
-						);
-					} else {
-						toast.success("Conta fechada com sucesso!");
-					}
-				}
+			if (resultado.todosItensPagos) {
+				toast.success(
+					"Todos os itens foram pagos. Finalize a venda para encerrar a mesa.",
+				);
 			} else {
 				toast.success("Fatia recebida. Selecione os próximos itens para pagar.");
 			}
@@ -260,6 +262,29 @@ export function useFecharVenda() {
 		onError: (error: Error) => {
 			if (error instanceof BaixaEstoqueVendaError) return;
 			toast.error(error.message || "Erro ao receber fatia");
+		},
+	});
+
+	const finalizarMesaContaMutation = useMutation({
+		mutationFn: async ({
+			userId,
+			idcontamesa,
+		}: FinalizarMesaContaParams) => {
+			return contaMesaService.atualizar(idcontamesa, {
+				status: STATUS_MESA.FECHADO,
+				valorpendente: "0",
+				usuarioquefechouconta: userId,
+			});
+		},
+		onSuccess: (_conta, variables) => {
+			queryClient.invalidateQueries({ queryKey: ["contas-mesa"] });
+			queryClient.invalidateQueries({
+				queryKey: ["conta-mesa", variables.idcontamesa],
+			});
+			toast.success("Mesa finalizada com sucesso!");
+		},
+		onError: (error: Error) => {
+			toast.error(error.message || "Erro ao finalizar venda");
 		},
 	});
 
@@ -365,6 +390,7 @@ export function useFecharVenda() {
 	return {
 		fecharConta: fecharContaMutation,
 		fecharFatiaItens: fecharFatiaItensMutation,
+		finalizarMesaConta: finalizarMesaContaMutation,
 		fecharVendaRapida: fecharVendaRapidaMutation,
 	};
 }

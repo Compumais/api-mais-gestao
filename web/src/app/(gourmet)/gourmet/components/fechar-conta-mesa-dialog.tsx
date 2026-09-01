@@ -24,7 +24,6 @@ interface FecharContaMesaDialogProps {
 		itensFatia: ContaMesaItem[],
 		pagamento: FecharContaFormData,
 	) => Promise<ConfirmacaoVendaPdvResult | void>;
-	onVendaConcluida?: () => void;
 	isPending?: boolean;
 }
 
@@ -36,7 +35,6 @@ export function FecharContaMesaDialog({
 	empresaNome,
 	contexto,
 	onConfirmarFatia,
-	onVendaConcluida,
 	isPending,
 }: FecharContaMesaDialogProps) {
 	const [idsSelecionados, setIdsSelecionados] = useState<string[]>([]);
@@ -112,7 +110,6 @@ export function FecharContaMesaDialog({
 			contexto={contexto}
 			titulo="Fechar conta"
 			onConfirmarVenda={handleConfirmarVenda}
-			onVendaConcluida={onVendaConcluida}
 			isPending={isPending}
 			modoFatiaItens
 			itensContaMesa={itens}

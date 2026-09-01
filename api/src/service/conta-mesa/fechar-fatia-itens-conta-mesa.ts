@@ -39,7 +39,6 @@ import {
 } from "@/util/recebimentos-venda-util.js";
 
 const STATUS_MESA_ABERTO = 1;
-const STATUS_MESA_FECHADO = 2;
 
 export type FecharFatiaItensPagamento = {
 	valordinheiro?: string | undefined;
@@ -69,7 +68,8 @@ export type FecharFatiaItensContaMesaParametros = {
 
 export type FecharFatiaItensContaMesaResultado = {
 	venda: VendaPdvGourmet;
-	contaFechada: boolean;
+	contaFechada: false;
+	todosItensPagos: boolean;
 	conta: ContaMesa | null;
 };
 
@@ -283,7 +283,7 @@ export async function fecharFatiaItensContaMesaService({
 		await marcarItensComoPagos(idsItens);
 
 		const pendentesRestantes = await contarItensPendentes(contaMesaId);
-		const contaFechada = pendentesRestantes === 0;
+		const todosItensPagos = pendentesRestantes === 0;
 
 		const descontoRestante = arredondarMoeda(
 			Math.max(0, totaisConta.valordesconto - fatia.desconto),
@@ -295,38 +295,18 @@ export async function fecharFatiaItensContaMesaService({
 			Math.max(0, totaisConta.valorcouvert - fatia.couvert),
 		);
 
-		const dadosContaAtualizacao = contaFechada
-			? {
-					status: STATUS_MESA_FECHADO,
-					desconto: fatia.desconto.toFixed(2),
-					valortaxaservico: fatia.taxa.toFixed(2),
-					valorcouverartistico: fatia.couvert.toFixed(2),
-					valortotal: fatia.total.toFixed(2),
-					valordinheiro: normalizarValorPagamentoParaBanco(
-						pagamento.valordinheiro,
-					),
-					valorcartaocredito: normalizarValorPagamentoParaBanco(
-						pagamento.valorcartaocredito,
-					),
-					valorcartaodebito: normalizarValorPagamentoParaBanco(
-						pagamento.valorcartaodebito,
-					),
-					valorcartao: normalizarValorPagamentoParaBanco(pagamento.valorcartao),
-					valorpix: normalizarValorPagamentoParaBanco(pagamento.valorpix),
-					valorprepago: normalizarValorPagamentoParaBanco(
-						pagamento.valorprepago,
-					),
-					valortroco: valortroco.toFixed(2),
-					valorpendente: "0",
-					usuarioquefechouconta: idusuario,
-					dataalteracao: new Date().toISOString(),
-				}
-			: {
-					desconto: descontoRestante.toFixed(2),
-					valortaxaservico: taxaRestante.toFixed(2),
-					valorcouverartistico: couvertRestante.toFixed(2),
-					dataalteracao: new Date().toISOString(),
-				};
+		const dadosContaAtualizacao = {
+			desconto: todosItensPagos
+				? "0.00"
+				: descontoRestante.toFixed(2),
+			valortaxaservico: todosItensPagos
+				? "0.00"
+				: taxaRestante.toFixed(2),
+			valorcouverartistico: todosItensPagos
+				? "0.00"
+				: couvertRestante.toFixed(2),
+			dataalteracao: new Date().toISOString(),
+		};
 
 		const contaAtualizada = await atualizarContaMesa(
 			contaMesaId,
@@ -335,7 +315,8 @@ export async function fecharFatiaItensContaMesaService({
 
 		return httpOk<FecharFatiaItensContaMesaResultado>({
 			venda: resultadoVenda.body,
-			contaFechada,
+			contaFechada: false,
+			todosItensPagos,
 			conta: contaAtualizada ?? null,
 		});
 	} catch (error) {

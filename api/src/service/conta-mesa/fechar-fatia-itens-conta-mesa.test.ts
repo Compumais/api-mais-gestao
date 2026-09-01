@@ -146,8 +146,11 @@ describe("fecharFatiaItensContaMesaService", () => {
 		expect(resultado.code).toBe("ITEM_JA_PAGO");
 	});
 
-	it("fecha a conta quando a fatia inclui todos os itens pendentes", async () => {
+	it("marca todos os itens pagos sem fechar a mesa", async () => {
 		vi.mocked(contaMesaItemRepository.contarItensPendentes).mockResolvedValue(0);
+		vi.mocked(contaMesaRepository.atualizarContaMesa).mockResolvedValue(
+			contaBase,
+		);
 
 		const resultado = await fecharFatiaItensContaMesaService({
 			contaMesaId: "conta-1",
@@ -159,10 +162,19 @@ describe("fecharFatiaItensContaMesaService", () => {
 		});
 
 		expect(resultado.success).toBe(true);
-		expect(resultado.body?.contaFechada).toBe(true);
+		expect(resultado.body?.contaFechada).toBe(false);
+		expect(resultado.body?.todosItensPagos).toBe(true);
 		expect(contaMesaRepository.atualizarContaMesa).toHaveBeenCalledWith(
 			"conta-1",
-			expect.objectContaining({ status: 2 }),
+			expect.objectContaining({
+				desconto: "0.00",
+				valortaxaservico: "0.00",
+				valorcouverartistico: "0.00",
+			}),
+		);
+		expect(contaMesaRepository.atualizarContaMesa).toHaveBeenCalledWith(
+			"conta-1",
+			expect.not.objectContaining({ status: 2 }),
 		);
 	});
 
