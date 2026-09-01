@@ -7,6 +7,7 @@ import {
 } from "../util/pizza-meio-a-meio";
 import {
 	arredondarMoeda,
+	mensagemErroCancelarItem,
 	recalcularTotaisConta,
 	type TotaisContaGourmet,
 	valorRestante,
@@ -2068,6 +2069,72 @@ export async function adicionarItemConta(
 	const atualizada = await obterContaMesa(idconta);
 	if (!atualizada) {
 		throw new Error("Falha ao atualizar conta");
+	}
+	return atualizada;
+}
+
+/** Remove item não pago da conta e recalcula totais. Não fecha a mesa se ficar vazia. */
+export async function cancelarItemConta(
+	idconta: string,
+	iditem: string,
+	senha?: string,
+): Promise<ContaMesaLocal> {
+	const conta = await obterContaMesa(idconta);
+	const item = await queryOne<{
+		id: string;
+		idconta: string;
+		descricao: string;
+		quantidade: number;
+		pago: number;
+	}>(
+		`SELECT id, idconta, descricao, quantidade, COALESCE(pago, 0)::int as pago
+		 FROM item_conta WHERE id = $1`,
+		[iditem],
+	);
+
+	const erroInicial = mensagemErroCancelarItem({
+		contaValida: Boolean(conta && conta.status === "aberta"),
+		itemEncontrado: Boolean(item && item.idconta === idconta),
+		itemPago: Number(item?.pago) === 1,
+	});
+	if (erroInicial) {
+		throw new Error(erroInicial);
+	}
+
+	if (await senhaGerencialDefinida()) {
+		await exigirSenhaGerencial(senha);
+	}
+
+	await withTransaction(async (client) => {
+		await execute(
+			`DELETE FROM item_conta
+			 WHERE id = $1 AND idconta = $2 AND COALESCE(pago, 0) = 0`,
+			[iditem, idconta],
+			client,
+		);
+		const totais = await recalcularContaPersistida(idconta, client);
+		const valorpago = await somarPagoConta(idconta, client);
+		const erroTotal = mensagemErroCancelarItem({
+			contaValida: true,
+			itemEncontrado: true,
+			itemPago: false,
+			valorPago: valorpago,
+			totalAposCancelar: totais.valortotal,
+		});
+		if (erroTotal) {
+			throw new Error(erroTotal);
+		}
+	});
+
+	await enfileirarOutbox("conta_mesa", {
+		acao: "cancelar_item",
+		idconta,
+		iditem,
+	});
+
+	const atualizada = await obterContaMesa(idconta);
+	if (!atualizada) {
+		throw new Error("Falha ao cancelar item");
 	}
 	return atualizada;
 }
