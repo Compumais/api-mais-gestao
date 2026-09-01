@@ -2,6 +2,7 @@
 
 import {
 	IconBan,
+	IconCalculator,
 	IconCheck,
 	IconChevronDown,
 	IconDotsVertical,
@@ -24,6 +25,7 @@ import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AlterarProdutosEmMassaDialog } from "@/app/(auth)/produtos/components/alterar-produtos-em-massa-dialog";
 import { ImportarProdutosDialog } from "@/app/(auth)/produtos/components/importar-produtos-dialog";
+import { ModalComposicaoPrecoProduto } from "@/app/(auth)/produtos/components/modal-composicao-preco-produto";
 import type { OrdenacaoColunaTabela } from "@/components/cabecalho-coluna-tabela";
 import { TableSkeleton } from "@/components/table-skeleton";
 import { Button } from "@/components/ui/button";
@@ -105,6 +107,9 @@ export default function ProdutosPage() {
 		useState<FormatoImportacaoProdutos | null>(null);
 	const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 	const [dialogAlteracaoAberto, setDialogAlteracaoAberto] = useState(false);
+	const [produtoComposicao, setProdutoComposicao] = useState<Produto | null>(
+		null,
+	);
 	const [filtrosColuna, setFiltrosColuna] =
 		useState<FiltrosColunaProdutosState>(filtrosColunaProdutosVazios);
 	const [ordenarPor, setOrdenarPor] = useState<string | null>(null);
@@ -391,6 +396,12 @@ export default function ProdutosPage() {
 									<DropdownMenuItem onClick={() => handleEdit(produto)}>
 										<IconPencil className="size-4" />
 										Editar
+									</DropdownMenuItem>
+									<DropdownMenuItem
+										onClick={() => setProdutoComposicao(produto)}
+									>
+										<IconCalculator className="size-4" />
+										Composição de preço
 									</DropdownMenuItem>
 									<DropdownMenuItem
 										onClick={() => handleToggleInativo(produto)}
@@ -751,6 +762,16 @@ export default function ProdutosPage() {
 				ids={idsSelecionados}
 				onSucesso={() => setRowSelection({})}
 			/>
+			{produtoComposicao && localStorageEmpresa ? (
+				<ModalComposicaoPrecoProduto
+					produto={produtoComposicao}
+					idempresa={localStorageEmpresa.id}
+					aberto={!!produtoComposicao}
+					onAbertoChange={(aberto) => {
+						if (!aberto) setProdutoComposicao(null);
+					}}
+				/>
+			) : null}
 		</PageContainer>
 	);
 }

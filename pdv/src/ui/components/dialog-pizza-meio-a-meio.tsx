@@ -50,7 +50,7 @@ export function DialogPizzaMeioAMeio({
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-			<div className="flex max-h-[90vh] w-[32rem] max-w-[95vw] flex-col gap-3 rounded-lg border bg-card p-5">
+			<div className="pdv-surface flex max-h-[90vh] w-[32rem] max-w-[95vw] flex-col gap-3 p-5">
 				<h2 className="text-lg font-semibold">Pizza meio a meio</h2>
 				<p className="text-sm text-muted-foreground">
 					Primeiro sabor: <strong>{primeiro.descricao}</strong> (

@@ -29,6 +29,14 @@ export const TABELA_ESTOQUE = "estoque";
 export const TABELA_TIPOS_PROBLEMA = "tipos-problema";
 export const TABELA_FICHAS_PRODUCAO = "fichas-producao";
 export const TABELA_PRODUCOES = "producoes";
+export const TABELA_CONTAS_PAGAR = "contas-pagar";
+export const TABELA_CONTAS_RECEBER = "contas-receber";
+export const TABELA_MOVIMENTACOES = "movimentacoes";
+export const TABELA_NOTA_FISCAL_PRODUTO = "nota-fiscal-produto";
+export const TABELA_NOTA_FISCAL_SERVICO = "nota-fiscal-servico";
+export const TABELA_NOTA_FISCAL_COMPRA = "nota-fiscal-compra";
+export const TABELA_NFCE = "nfce";
+export const TABELA_AUDITORIA = "auditoria";
 
 export function usePreferenciasUiUsuario() {
 	return useQuery({

@@ -1,5 +1,6 @@
 import {
 	and,
+	asc,
 	count,
 	desc,
 	eq,
@@ -12,6 +13,7 @@ import {
 	ne,
 	notInArray,
 	or,
+	type SQL,
 	sql,
 } from "drizzle-orm";
 import type { DadosImportacaoItem } from "@/model/nota-fiscal-importacao-model.js";
@@ -34,6 +36,49 @@ import {
 	STATUS_RASCUNHO_IMPORTACAO,
 } from "@/util/nota-fiscal-constants.js";
 import { db } from "./connection";
+
+export const ORDENAR_NOTAS_FISCAIS_CAMPOS = [
+	"numeronotafiscal",
+	"numero",
+	"serie",
+	"razaosocial",
+	"emissao",
+	"entradasaida",
+	"valortotalnota",
+	"status",
+	"chavenfe",
+	"numeronfse",
+	"tipoambientenfe",
+	"datainclusao",
+] as const;
+
+export type OrdenarNotasFiscaisCampo =
+	(typeof ORDENAR_NOTAS_FISCAIS_CAMPOS)[number];
+
+const COLUNAS_ORDENACAO_NOTAS_FISCAIS = {
+	numeronotafiscal: notafiscal.numeronotafiscal,
+	numero: notafiscal.numero,
+	serie: notafiscal.serie,
+	razaosocial: notafiscal.razaosocial,
+	emissao: notafiscal.emissao,
+	entradasaida: notafiscal.entradasaida,
+	valortotalnota: notafiscal.valortotalnota,
+	status: notafiscal.status,
+	chavenfe: notafiscal.chavenfe,
+	numeronfse: notafiscal.numeronfse,
+	tipoambientenfe: notafiscal.tipoambientenfe,
+	datainclusao: notafiscal.datainclusao,
+} as const;
+
+function adicionarFiltroTextoNota(
+	where: SQL[],
+	coluna: Parameters<typeof ilike>[0],
+	valor: string | undefined,
+) {
+	if (valor?.trim()) {
+		where.push(ilike(coluna, `%${valor.trim()}%`));
+	}
+}
 
 const COLUNAS_ITEM_NF = [
 	"id",
@@ -170,10 +215,18 @@ export type ListarNotasFiscaisPorEmpresaParametros = {
 	idcfop?: string | undefined;
 	dataInicio?: string | undefined;
 	dataFim?: string | undefined;
+	/** Dia único YYYY-MM-DD em `entradasaida` */
+	entradasaida?: string | undefined;
+	razaosocial?: string | undefined;
+	chavenfe?: string | undefined;
+	serie?: string | undefined;
+	numeronfse?: string | undefined;
 	/** 1 produção / 2 homologação — filtra `tipoambientenfe` */
 	tipoambientenfe?: number | undefined;
 	excluirRascunhos?: boolean | undefined;
 	somenteRascunhos?: boolean | undefined;
+	ordenarPor?: OrdenarNotasFiscaisCampo | undefined;
+	ordem?: "asc" | "desc" | undefined;
 	page?: number;
 	limit?: number;
 };
@@ -188,13 +241,20 @@ export async function listarNotasFiscaisPorEmpresa({
 	idcfop,
 	dataInicio,
 	dataFim,
+	entradasaida,
+	razaosocial,
+	chavenfe,
+	serie,
+	numeronfse,
 	tipoambientenfe,
 	excluirRascunhos = false,
 	somenteRascunhos = false,
+	ordenarPor,
+	ordem = "desc",
 	page = 1,
 	limit = 10,
 }: ListarNotasFiscaisPorEmpresaParametros) {
-	const where = [eq(notafiscal.idempresa, idempresa)];
+	const where: SQL[] = [eq(notafiscal.idempresa, idempresa)];
 
 	if (somenteRascunhos) {
 		where.push(eq(notafiscal.status, STATUS_RASCUNHO_IMPORTACAO));
@@ -202,8 +262,14 @@ export async function listarNotasFiscaisPorEmpresa({
 		where.push(ne(notafiscal.status, STATUS_RASCUNHO_IMPORTACAO));
 	}
 
-	if (numero) {
-		where.push(ilike(notafiscal.numero, `%${numero}%`));
+	if (numero?.trim()) {
+		const termo = `%${numero.trim()}%`;
+		where.push(
+			or(
+				ilike(notafiscal.numero, termo),
+				ilike(notafiscal.numeronotafiscal, termo),
+			)!,
+		);
 	}
 
 	if (identidade) {
@@ -234,6 +300,18 @@ export async function listarNotasFiscaisPorEmpresa({
 		where.push(lte(notafiscal.emissao, dataFim));
 	}
 
+	if (entradasaida?.trim()) {
+		const dia = entradasaida.trim();
+		where.push(
+			and(gte(notafiscal.entradasaida, dia), lte(notafiscal.entradasaida, dia))!,
+		);
+	}
+
+	adicionarFiltroTextoNota(where, notafiscal.razaosocial, razaosocial);
+	adicionarFiltroTextoNota(where, notafiscal.chavenfe, chavenfe);
+	adicionarFiltroTextoNota(where, notafiscal.serie, serie);
+	adicionarFiltroTextoNota(where, notafiscal.numeronfse, numeronfse);
+
 	if (tipoambientenfe === 2) {
 		where.push(eq(notafiscal.tipoambientenfe, 2));
 	} else if (tipoambientenfe === 1) {
@@ -247,17 +325,22 @@ export async function listarNotasFiscaisPorEmpresa({
 	}
 
 	const offset = (page - 1) * limit;
+	const orderBy =
+		ordenarPor && COLUNAS_ORDENACAO_NOTAS_FISCAIS[ordenarPor]
+			? ordem === "asc"
+				? asc(COLUNAS_ORDENACAO_NOTAS_FISCAIS[ordenarPor])
+				: desc(COLUNAS_ORDENACAO_NOTAS_FISCAIS[ordenarPor])
+			: desc(notafiscal.datainclusao);
+
+	const filtro = and(...where);
 
 	const [totalCount, notas] = await Promise.all([
-		db
-			.select({ value: count() })
-			.from(notafiscal)
-			.where(and(...where)),
+		db.select({ value: count() }).from(notafiscal).where(filtro),
 		db
 			.select()
 			.from(notafiscal)
-			.where(and(...where))
-			.orderBy(desc(notafiscal.datainclusao))
+			.where(filtro)
+			.orderBy(orderBy)
 			.limit(limit)
 			.offset(offset),
 	]);
@@ -268,11 +351,49 @@ export async function listarNotasFiscaisPorEmpresa({
 	};
 }
 
+export const ORDENAR_NFCE_CAMPOS = [
+	"datahoraemissao",
+	"emissao",
+	"numeronotafiscal",
+	"idvenda",
+	"valortotalnota",
+	"status",
+	"tipoambientenfe",
+	"chavenfe",
+	"datainclusao",
+] as const;
+
+export type OrdenarNfceCampo = (typeof ORDENAR_NFCE_CAMPOS)[number];
+
+const IDVENDA_NFCE_SQL = sql<string | null>`coalesce(
+	${vendapdvgourmet.id},
+	${notafiscal.dadosimportacao}->>'idvenda'
+)`;
+
+const COLUNAS_ORDENACAO_NFCE = {
+	datahoraemissao: notafiscal.datahoraemissao,
+	emissao: notafiscal.emissao,
+	numeronotafiscal: notafiscal.numeronotafiscal,
+	idvenda: IDVENDA_NFCE_SQL,
+	valortotalnota: notafiscal.valortotalnota,
+	status: notafiscal.status,
+	tipoambientenfe: notafiscal.tipoambientenfe,
+	chavenfe: notafiscal.chavenfe,
+	datainclusao: notafiscal.datainclusao,
+} as const;
+
 export type ListarNfcePorEmpresaParametros = {
 	idempresa: string;
 	status?: number | undefined;
+	numero?: string | undefined;
+	chavenfe?: string | undefined;
+	idvenda?: string | undefined;
+	dataInicio?: string | undefined;
+	dataFim?: string | undefined;
 	/** 1 produção / 2 homologação — filtra `tipoambientenfe` */
 	tipoambientenfe?: number | undefined;
+	ordenarPor?: OrdenarNfceCampo | undefined;
+	ordem?: "asc" | "desc" | undefined;
 	page?: number;
 	limit?: number;
 };
@@ -306,11 +427,18 @@ export type NfcePendenteListagem = NfceListagem;
 export async function listarNfcePorEmpresa({
 	idempresa,
 	status,
+	numero,
+	chavenfe,
+	idvenda,
+	dataInicio,
+	dataFim,
 	tipoambientenfe,
+	ordenarPor,
+	ordem = "desc",
 	page = 1,
 	limit = 20,
 }: ListarNfcePorEmpresaParametros) {
-	const where = [
+	const where: SQL[] = [
 		eq(notafiscal.idempresa, idempresa),
 		eq(notafiscal.modelo, "65"),
 		ne(notafiscal.status, STATUS_RASCUNHO_IMPORTACAO),
@@ -328,6 +456,31 @@ export async function listarNfcePorEmpresa({
 		where.push(eq(notafiscal.status, status));
 	}
 
+	if (numero?.trim()) {
+		const termo = `%${numero.trim()}%`;
+		where.push(
+			or(
+				ilike(notafiscal.numero, termo),
+				ilike(notafiscal.numeronotafiscal, termo),
+			)!,
+		);
+	}
+
+	adicionarFiltroTextoNota(where, notafiscal.chavenfe, chavenfe);
+
+	if (idvenda?.trim()) {
+		const termo = `%${idvenda.trim()}%`;
+		where.push(sql`${IDVENDA_NFCE_SQL} ilike ${termo}`);
+	}
+
+	if (dataInicio) {
+		where.push(gte(notafiscal.emissao, dataInicio));
+	}
+
+	if (dataFim) {
+		where.push(lte(notafiscal.emissao, dataFim));
+	}
+
 	if (tipoambientenfe === 2) {
 		where.push(eq(notafiscal.tipoambientenfe, 2));
 	} else if (tipoambientenfe === 1) {
@@ -340,19 +493,30 @@ export async function listarNfcePorEmpresa({
 	}
 
 	const offset = (page - 1) * limit;
+	const orderBy =
+		ordenarPor && COLUNAS_ORDENACAO_NFCE[ordenarPor]
+			? ordem === "asc"
+				? asc(COLUNAS_ORDENACAO_NFCE[ordenarPor])
+				: desc(COLUNAS_ORDENACAO_NFCE[ordenarPor])
+			: desc(notafiscal.datainclusao);
+
+	const joinVenda = or(
+		eq(vendapdvgourmet.idnotafiscalnfce, notafiscal.id),
+		eq(vendapdvgourmet.id, sql`${notafiscal.dadosimportacao}->>'idvenda'`),
+	);
+
+	const filtro = and(...where);
 
 	const [totalCount, registros] = await Promise.all([
 		db
-			.select({ value: count() })
+			.select({ value: sql<number>`count(distinct ${notafiscal.id})` })
 			.from(notafiscal)
-			.where(and(...where)),
+			.leftJoin(vendapdvgourmet, joinVenda)
+			.where(filtro),
 		db
 			.select({
 				idnotafiscal: notafiscal.id,
-				idvenda: sql<string | null>`coalesce(
-					${vendapdvgourmet.id},
-					${notafiscal.dadosimportacao}->>'idvenda'
-				)`,
+				idvenda: IDVENDA_NFCE_SQL,
 				numeronotafiscal: notafiscal.numeronotafiscal,
 				serie: notafiscal.serie,
 				chavenfe: notafiscal.chavenfe,
@@ -369,25 +533,16 @@ export async function listarNfcePorEmpresa({
 				codigostatusprotocolonfe: notafiscal.codigostatusprotocolonfe,
 			})
 			.from(notafiscal)
-			.leftJoin(
-				vendapdvgourmet,
-				or(
-					eq(vendapdvgourmet.idnotafiscalnfce, notafiscal.id),
-					eq(
-						vendapdvgourmet.id,
-						sql`${notafiscal.dadosimportacao}->>'idvenda'`,
-					),
-				),
-			)
-			.where(and(...where))
-			.orderBy(desc(notafiscal.datainclusao))
+			.leftJoin(vendapdvgourmet, joinVenda)
+			.where(filtro)
+			.orderBy(orderBy)
 			.limit(limit)
 			.offset(offset),
 	]);
 
 	return {
 		notas: registros as NfceListagemBruta[],
-		total: totalCount[0]?.value ?? 0,
+		total: Number(totalCount[0]?.value ?? 0),
 	};
 }
 

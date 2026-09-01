@@ -1,19 +1,25 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
+import { ORDENAR_FINANCEIROS_CAMPOS } from "@/repositories/financeiro-repositories.js";
 import { listarFinanceirosService } from "@/service/financeiro/listar-financeiros.js";
+
+const textoOpcional = z.string().optional().nullable();
 
 const listarFinanceirosQuerySchema = z.object({
 	page: z.coerce.number().min(1).optional().default(1),
 	limit: z.coerce.number().min(1).max(100).optional().default(10),
-	saldo: z.string().optional().nullable(),
-	emissao: z.string().optional().nullable(),
-	emitente: z.string().optional().nullable(),
-	emissaoInicio: z.string().optional().nullable(),
-	emissaoFim: z.string().optional().nullable(),
-	vencimentoInicio: z.string().optional().nullable(),
-	vencimentoFim: z.string().optional().nullable(),
+	saldo: textoOpcional,
+	emissao: textoOpcional,
+	documento: textoOpcional,
+	emitente: textoOpcional,
+	emissaoInicio: textoOpcional,
+	emissaoFim: textoOpcional,
+	vencimentoInicio: textoOpcional,
+	vencimentoFim: textoOpcional,
 	status: z.enum(["A", "P", "C", "V"]).optional().nullable(),
 	tipo: z.enum(["P", "R"]).optional().nullable(),
+	ordenarPor: z.enum(ORDENAR_FINANCEIROS_CAMPOS).optional(),
+	ordem: z.enum(["asc", "desc"]).optional(),
 });
 
 export async function listarFinanceiros(

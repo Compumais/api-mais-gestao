@@ -1,5 +1,9 @@
 import type { LancamentoPagamentoPdv } from "@/model/venda-pdv-pagamento-model.js";
-import { formatarValorMonetario } from "@/util/recebimentos-venda-util.js";
+import type { NovaVendaPdvGourmet } from "@/model/venda-pdv-gourmet-model.js";
+import {
+	formatarValorMonetario,
+	normalizarValorPagamentoParaBanco,
+} from "@/util/recebimentos-venda-util.js";
 
 export type TotaisLancamentosPdv = {
 	valordinheiro: string;
@@ -51,4 +55,24 @@ export function campoPagamentoVazio(
 		return true;
 	}
 	return Number.parseFloat(String(valor).replace(",", ".")) === 0;
+}
+
+export function normalizarCamposPagamentoVendaPdv(
+	dados: NovaVendaPdvGourmet,
+): NovaVendaPdvGourmet {
+	return {
+		...dados,
+		valordinheiro: normalizarValorPagamentoParaBanco(dados.valordinheiro),
+		valorcartao: normalizarValorPagamentoParaBanco(dados.valorcartao),
+		valorcartaocredito: normalizarValorPagamentoParaBanco(
+			dados.valorcartaocredito,
+		),
+		valorcartaodebito: normalizarValorPagamentoParaBanco(
+			dados.valorcartaodebito,
+		),
+		valorpix: normalizarValorPagamentoParaBanco(dados.valorpix),
+		valorprepago: normalizarValorPagamentoParaBanco(dados.valorprepago),
+		valortroco: normalizarValorPagamentoParaBanco(dados.valortroco),
+		valortotal: normalizarValorPagamentoParaBanco(dados.valortotal),
+	};
 }

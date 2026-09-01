@@ -27,6 +27,7 @@ import {
 } from "@/util/http-util.js";
 import {
 	campoPagamentoVazio,
+	normalizarCamposPagamentoVendaPdv,
 	totaisDeLancamentosPdv,
 } from "@/util/lancamento-pagamento-pdv.js";
 import { formatarValorMonetario } from "@/util/recebimentos-venda-util.js";
@@ -55,9 +56,8 @@ export async function criarVendaPdvGourmetService({
 		return httpProibido();
 	}
 
-	const dadosComTotais = preencherTotaisDeLancamentos(
-		dadosVendaPdvGourmet,
-		pagamentos,
+	const dadosComTotais = normalizarCamposPagamentoVendaPdv(
+		preencherTotaisDeLancamentos(dadosVendaPdvGourmet, pagamentos),
 	);
 	const registro = await criarVendaPdvGourmet(dadosComTotais);
 

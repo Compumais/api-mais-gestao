@@ -207,6 +207,10 @@ export function ConfigPage() {
 		"emissao",
 	);
 	const [terminaisPdv, setTerminaisPdv] = useState<TerminalPdvOpcao[]>([]);
+	const [terminaisBuscados, setTerminaisBuscados] = useState(false);
+	const [numeropdvPrincipal, setNumeropdvPrincipal] = useState<number | null>(
+		null,
+	);
 	const [testeEtiqueta, setTesteEtiqueta] = useState("");
 	const [resultadoTesteEtiqueta, setResultadoTesteEtiqueta] = useState("");
 	const rotulo = rotuloModelo(
@@ -220,7 +224,8 @@ export function ConfigPage() {
 
 	useEffect(() => {
 		void (async () => {
-			setConfig(await pdvInvoke<Config>("getConfig"));
+			const cfgInicial = await pdvInvoke<Config>("getConfig");
+			setConfig(cfgInicial);
 			try {
 				setImpressoras(await pdvInvoke("listarImpressoras"));
 			} catch {
@@ -266,9 +271,11 @@ export function ConfigPage() {
 				setPortasBalanca([]);
 			}
 			try {
-				setTerminaisPdv(
-					await pdvInvoke<TerminalPdvOpcao[]>("listarTerminaisPdv"),
-				);
+				if (cfgInicial.pdv_modo !== "secundario") {
+					setTerminaisPdv(
+						await pdvInvoke<TerminalPdvOpcao[]>("listarTerminaisPdv"),
+					);
+				}
 			} catch {
 				setTerminaisPdv([]);
 			}
@@ -288,6 +295,16 @@ export function ConfigPage() {
 		setLoading(true);
 		setMsg("");
 		try {
+			if ((config.pdv_modo ?? "principal") === "secundario") {
+				if (!(config.pdv_principal_host ?? "").trim()) {
+					throw new Error("Informe o IP do PDV principal.");
+				}
+				if (!(config.numeropdv ?? "").trim()) {
+					throw new Error(
+						"Busque os números no principal e selecione o deste PDV secundário.",
+					);
+				}
+			}
 			const saved = await pdvInvoke<Config>("saveConfig", {
 				database_url: config.database_url ?? "",
 				api_url: config.api_url ?? "",
@@ -465,6 +482,11 @@ export function ConfigPage() {
 		setTestando("principal");
 		setMsg("");
 		try {
+			if (!(config.numeropdv ?? "").trim()) {
+				throw new Error(
+					"Busque os números no principal e selecione o deste PDV.",
+				);
+			}
 			const result = await pdvInvoke<{ mensagem: string }>("testarPrincipal", {
 				host: config.pdv_principal_host ?? "",
 				porta: config.pdv_principal_porta ?? "5050",
@@ -474,6 +496,52 @@ export function ConfigPage() {
 		} catch (err) {
 			setMsg(
 				err instanceof Error ? err.message : "Falha ao conectar no principal",
+			);
+		} finally {
+			setTestando(null);
+		}
+	}
+
+	async function buscarTerminaisPrincipal() {
+		setTestando("buscar-terminais");
+		setMsg("");
+		try {
+			const host = (config.pdv_principal_host ?? "").trim();
+			if (!host) {
+				throw new Error("Informe o IP do PDV principal.");
+			}
+			const result = await pdvInvoke<{
+				numeropdvPrincipal: number;
+				terminais: TerminalPdvOpcao[];
+				mensagem: string;
+			}>("buscarTerminaisPrincipal", {
+				host,
+				porta: config.pdv_principal_porta ?? "5050",
+			});
+			setTerminaisPdv(result.terminais);
+			setNumeropdvPrincipal(result.numeropdvPrincipal);
+			setTerminaisBuscados(true);
+			const livre = result.terminais.find((t) => t.disponivel !== false);
+			const atual = Number(config.numeropdv ?? 0);
+			const atualLivre = result.terminais.find(
+				(t) => t.numeropdv === atual && t.disponivel !== false,
+			);
+			if (atualLivre) {
+				// mantém
+			} else if (livre) {
+				set("numeropdv", String(livre.numeropdv));
+			} else {
+				set("numeropdv", "");
+			}
+			setMsg(result.mensagem);
+		} catch (err) {
+			setTerminaisBuscados(false);
+			setTerminaisPdv([]);
+			setNumeropdvPrincipal(null);
+			setMsg(
+				err instanceof Error
+					? err.message
+					: "Falha ao buscar números no principal",
 			);
 		} finally {
 			setTestando(null);
@@ -702,8 +770,8 @@ export function ConfigPage() {
 				}
 			/>
 
-			<div className="flex min-h-0 flex-1">
-				<nav className="flex w-56 shrink-0 flex-col gap-1 border-r bg-secondary/40 p-2">
+			<div className="flex min-h-0 flex-1 bg-muted/30">
+				<nav className="flex w-56 shrink-0 flex-col gap-1 border-r border-sidebar-border bg-sidebar p-2 text-sidebar-foreground">
 					{abasVisiveis.map((item) => {
 						const Icon = item.icon;
 						const ativa = aba === item.id;
@@ -715,8 +783,8 @@ export function ConfigPage() {
 								className={cn(
 									"flex items-center gap-2 rounded-md px-3 py-2.5 text-left text-sm font-medium transition",
 									ativa
-										? "bg-primary text-primary-foreground"
-										: "hover:bg-card",
+										? "bg-sidebar-primary text-sidebar-primary-foreground"
+										: "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
 								)}
 							>
 								<Icon className="size-4 shrink-0" />
@@ -735,19 +803,25 @@ export function ConfigPage() {
 								</CardHeader>
 								<CardContent className="grid gap-4 sm:grid-cols-2">
 									<div className="space-y-2">
-										<Label htmlFor="numeropdv">Número do PDV</Label>
-										<SelectNumeroPdv
-											value={config.numeropdv ?? "1"}
-											terminais={terminaisPdv}
-											onChange={(valor) => set("numeropdv", valor)}
-										/>
-									</div>
-									<div className="space-y-2">
 										<Label htmlFor="pdv_modo">Modo</Label>
 										<Select
 											id="pdv_modo"
 											value={config.pdv_modo ?? "principal"}
-											onChange={(e) => set("pdv_modo", e.target.value)}
+											onChange={(e) => {
+												const valor = e.target.value;
+												set("pdv_modo", valor);
+												setTerminaisBuscados(false);
+												setNumeropdvPrincipal(null);
+												if (valor !== "secundario") {
+													void pdvInvoke<TerminalPdvOpcao[]>(
+														"listarTerminaisPdv",
+													)
+														.then(setTerminaisPdv)
+														.catch(() => setTerminaisPdv([]));
+												} else {
+													setTerminaisPdv([]);
+												}
+											}}
 										>
 											<option value="principal">Principal (banco local)</option>
 											<option value="secundario">
@@ -759,14 +833,17 @@ export function ConfigPage() {
 										<>
 											<div className="space-y-2">
 												<Label htmlFor="pdv_principal_host">
-													IP do PDV principal
+													1. IP do PDV principal
 												</Label>
 												<Input
 													id="pdv_principal_host"
 													value={config.pdv_principal_host ?? ""}
-													onChange={(e) =>
-														set("pdv_principal_host", e.target.value)
-													}
+													onChange={(e) => {
+														set("pdv_principal_host", e.target.value);
+														setTerminaisBuscados(false);
+														setTerminaisPdv([]);
+														setNumeropdvPrincipal(null);
+													}}
 													placeholder="192.168.1.10"
 												/>
 											</div>
@@ -779,17 +856,63 @@ export function ConfigPage() {
 													type="number"
 													min={1}
 													value={config.pdv_principal_porta ?? "5050"}
-													onChange={(e) =>
-														set("pdv_principal_porta", e.target.value)
-													}
+													onChange={(e) => {
+														set("pdv_principal_porta", e.target.value);
+														setTerminaisBuscados(false);
+														setTerminaisPdv([]);
+														setNumeropdvPrincipal(null);
+													}}
 												/>
 											</div>
 											<div className="sm:col-span-2 flex flex-wrap items-center gap-2">
 												<Button
 													type="button"
-													variant="outline"
+													variant="secondary"
 													size="sm"
 													disabled={testando !== null}
+													onClick={() => void buscarTerminaisPrincipal()}
+												>
+													{testando === "buscar-terminais"
+														? "Buscando…"
+														: "2. Buscar números no principal"}
+												</Button>
+												<p className="text-xs text-muted-foreground">
+													Conecta no principal e lista os PDVs cadastrados,
+													excluindo o número do próprio principal.
+												</p>
+											</div>
+											{terminaisBuscados ? (
+												<div className="sm:col-span-2 space-y-2">
+													<Label htmlFor="numeropdv">
+														3. Número deste PDV secundário
+														{numeropdvPrincipal
+															? ` (principal é o nº ${numeropdvPrincipal})`
+															: ""}
+													</Label>
+													<SelectNumeroPdv
+														value={config.numeropdv ?? ""}
+														terminais={terminaisPdv}
+														somenteDisponiveis
+														onChange={(valor) => set("numeropdv", valor)}
+														ajuda="Só números livres do cadastro (NFC-e → Terminais PDV)."
+													/>
+												</div>
+											) : (
+												<p className="sm:col-span-2 text-xs text-muted-foreground">
+													Após informar o IP, busque os números para escolher um
+													PDV livre e evitar conflito com o principal.
+												</p>
+											)}
+											<div className="sm:col-span-2 flex flex-wrap items-center gap-2">
+												<Button
+													type="button"
+													variant="outline"
+													size="sm"
+													disabled={
+														testando !== null ||
+														!terminaisBuscados ||
+														!(config.numeropdv ?? "").trim()
+													}
 													onClick={() => void testarPrincipal()}
 												>
 													{testando === "principal"
@@ -804,11 +927,21 @@ export function ConfigPage() {
 											</div>
 										</>
 									) : (
-										<p className="sm:col-span-2 text-xs text-muted-foreground">
-											Este PDV guarda o banco local e sincroniza com a API.
-											Outros terminais apontam para o IP desta máquina na porta
-											LAN.
-										</p>
+										<>
+											<div className="space-y-2">
+												<Label htmlFor="numeropdv">Número do PDV</Label>
+												<SelectNumeroPdv
+													value={config.numeropdv ?? "1"}
+													terminais={terminaisPdv}
+													onChange={(valor) => set("numeropdv", valor)}
+												/>
+											</div>
+											<p className="sm:col-span-2 text-xs text-muted-foreground">
+												Este PDV guarda o banco local e sincroniza com a API.
+												Outros terminais apontam para o IP desta máquina na
+												porta LAN.
+											</p>
+										</>
 									)}
 									{gourmet ? (
 										<>

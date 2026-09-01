@@ -82,15 +82,59 @@ function Invoke-Dispatch {
 	Write-Host "Artefatos baixados em pdv\release"
 }
 
+function Get-PdvElectronTravando {
+	param([string]$PdvDir)
+	$distMarker = Join-Path $PdvDir "node_modules\electron\dist"
+	$procs = @()
+	try {
+		$procs = Get-CimInstance Win32_Process -ErrorAction SilentlyContinue |
+			Where-Object {
+				$_.Name -match '^(electron|PDV Mais Gestao|PDV Mais Gestão)\.exe$' -and
+				$_.CommandLine -and
+				($_.CommandLine -like "*$distMarker*" -or $_.CommandLine -like "*pdv*electron*")
+			}
+	} catch {
+		$procs = @()
+	}
+	return @($procs)
+}
+
 function Invoke-Local {
 	$pdvDir = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
 	Set-Location $pdvDir
 
 	$env:CSC_IDENTITY_AUTO_DISCOVERY = "false"
 
+	$travados = Get-PdvElectronTravando -PdvDir $pdvDir
+	if ($travados.Count -gt 0) {
+		Write-Host ""
+		Write-Host "O PDV (Electron) esta em execucao e trava os arquivos do Electron."
+		Write-Host "Feche a janela do PDV (npm run dev / instalado) e rode de novo."
+		Write-Host "Processos:"
+		foreach ($p in $travados) {
+			Write-Host (" - PID {0} {1}" -f $p.ProcessId, $p.Name)
+		}
+		Write-Host ""
+		$resp = Read-Host "Encerrar esses processos agora e continuar? (S/N)"
+		if ($resp -notmatch '^[sS]') {
+			throw "Abortado: feche o PDV antes de gerar o instalador."
+		}
+		foreach ($p in $travados) {
+			Stop-Process -Id $p.ProcessId -Force -ErrorAction SilentlyContinue
+		}
+		Start-Sleep -Seconds 2
+		$ainda = Get-PdvElectronTravando -PdvDir $pdvDir
+		if ($ainda.Count -gt 0) {
+			throw "Ainda ha processos Electron ativos. Feche o PDV manualmente e tente de novo."
+		}
+	}
+
 	Write-Host "Instalando dependencias..."
 	npm ci
 	if ($LASTEXITCODE -ne 0) {
+		if ($LASTEXITCODE -eq -4082 -or $LASTEXITCODE -eq 4082) {
+			Write-Host "Dica: EBUSY costuma ser PDV/Electron aberto. Feche o app e rode de novo."
+		}
 		throw "npm ci falhou com codigo $LASTEXITCODE"
 	}
 

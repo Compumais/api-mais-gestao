@@ -258,7 +258,16 @@ export const notaFiscalService = {
 		page?: number;
 		limit?: number;
 		numero?: string;
+		serie?: string;
+		razaosocial?: string;
+		chavenfe?: string;
+		status?: number;
 		tipoorigem?: number;
+		dataInicio?: string;
+		dataFim?: string;
+		entradasaida?: string;
+		ordenarPor?: string;
+		ordem?: "asc" | "desc";
 	}): Promise<ListarNotasFiscaisResponse> {
 		const { data } = await api.get<ListarNotasFiscaisResponse>(
 			"/notas-fiscais",

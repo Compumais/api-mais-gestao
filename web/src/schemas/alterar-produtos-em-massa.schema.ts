@@ -13,6 +13,8 @@ function campoAlteracao<T extends z.ZodTypeAny>(valor: T) {
 export const alterarProdutosEmMassaFormSchema = z
 	.object({
 		idgrupo: campoAlteracao(z.string().nullable()),
+		idgrupogourmet: campoAlteracao(z.string().nullable()),
+		espizza: campoAlteracao(z.number().int().min(0).max(1)),
 		idunidademedida: campoAlteracao(z.string().nullable()),
 		preco: campoAlteracao(z.string()),
 		custoaquisicao: campoAlteracao(z.string().nullable()),
@@ -77,6 +79,8 @@ function valorOuNulo(valor: string | null | undefined): string | null {
 
 export const valoresPadraoAlteracaoEmMassa: AlterarProdutosEmMassaFormData = {
 	idgrupo: { alterar: false, valor: null },
+	idgrupogourmet: { alterar: false, valor: "none" },
+	espizza: { alterar: false, valor: 0 },
 	idunidademedida: { alterar: false, valor: null },
 	preco: { alterar: false, valor: "" },
 	custoaquisicao: { alterar: false, valor: null },
@@ -127,6 +131,12 @@ export function montarCamposAlteracaoEmMassa(
 	const campos: AtualizarProdutoData = {};
 
 	if (dados.idgrupo.alterar) campos.idgrupo = dados.idgrupo.valor || null;
+	if (dados.idgrupogourmet.alterar) {
+		const valor = dados.idgrupogourmet.valor;
+		campos.idgrupogourmet =
+			valor && valor !== "none" ? valor : null;
+	}
+	if (dados.espizza.alterar) campos.espizza = dados.espizza.valor;
 	if (dados.idunidademedida.alterar) {
 		campos.idunidademedida = dados.idunidademedida.valor || undefined;
 	}

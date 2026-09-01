@@ -1,21 +1,26 @@
 "use client";
 
+import { IconChevronDown, IconLayoutColumns } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-	type ColumnDef,
 	flexRender,
 	getCoreRowModel,
-	getPaginationRowModel,
-	getSortedRowModel,
-	type SortingState,
 	useReactTable,
 } from "@tanstack/react-table";
-import { Ban, Copy, FileX2, Plus, RotateCcw } from "lucide-react";
+import { Plus } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useCallback, useId, useMemo, useState } from "react";
 import { toast } from "sonner";
+import type { OrdenacaoColunaTabela } from "@/components/cabecalho-coluna-tabela";
 import { TableSkeleton } from "@/components/table-skeleton";
 import { Button } from "@/components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuCheckboxItem,
+	DropdownMenuContent,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Label } from "@/components/ui/label";
 import {
 	Select,
 	SelectContent,
@@ -31,13 +36,12 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import {
-	NFE_AMBIENTE_LABELS,
-	NFE_STATUS,
-	NFE_STATUS_LABELS,
-} from "@/constants/nfe-status";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { useNfeConfiguracao } from "@/hooks/use-nfe-configuracao";
+import {
+	TABELA_NOTA_FISCAL_PRODUTO,
+	useColunasTabelaPersistidas,
+} from "@/hooks/use-preferencias-ui-usuario";
 import {
 	cancelarNfe,
 	inutilizarNfe,
@@ -45,19 +49,19 @@ import {
 	listarRascunhosEmissaoNfe,
 	type NotaFiscalEmitida,
 } from "@/services/nfe-emissao.service";
-import {
-	obterCodigoRejeicaoNota,
-	obterMotivoRejeicaoNota,
-} from "@/util/nfe-rejeicao-util";
-import {
-	notaPodeSerCancelada,
-	notaPodeSerInutilizada,
-} from "@/util/validar-eventos-nfe";
 import { PageContainer } from "../components/page-container";
 import { BotaoAlterarNumeracao } from "../configuracoes/components/dialog-alterar-numeracao";
 import { AvisoAmbienteNfe } from "./components/aviso-ambiente-nfe";
 import { ModalEventoNfe } from "./components/modal-evento-nfe";
-import { StatusNfeBadge } from "./components/status-nfe-badge";
+import {
+	COLUNA_PARA_CAMPO_FILTRO_NF_PRODUTO,
+	type ConfigFiltroColunaNotaFiscalProduto,
+	criarColunasNotaFiscalProduto,
+	type FiltrosColunaNotaFiscalProdutoState,
+	filtrosColunaNotaFiscalProdutoVazios,
+	NFE_STATUS_OPCOES_FILTRO,
+	visibilidadePadraoColunasNotaFiscalProduto,
+} from "./nota-fiscal-venda-colunas";
 
 const formatCurrency = (value: string | null | undefined) => {
 	if (!value) return "R$ 0,00";
@@ -68,217 +72,27 @@ const formatCurrency = (value: string | null | undefined) => {
 	}).format(num);
 };
 
-const formatDateTime = (date: string | null | undefined) => {
-	if (!date) return "-";
-	try {
-		return new Date(date).toLocaleString("pt-BR", {
-			day: "2-digit",
-			month: "2-digit",
-			year: "numeric",
-			hour: "2-digit",
-			minute: "2-digit",
-		});
-	} catch {
-		return date;
+function rotuloColuna(column: {
+	id: string;
+	columnDef: { meta?: unknown; header?: unknown };
+}) {
+	const meta = column.columnDef.meta as { label?: string } | undefined;
+	if (meta?.label) return meta.label;
+	if (typeof column.columnDef.header === "string") {
+		return column.columnDef.header;
 	}
-};
+	return column.id;
+}
 
-const obterDataExibicao = (nota: NotaFiscalEmitida) =>
-	nota.emissao ?? nota.datahoraemissao ?? nota.datainclusao;
-
-const createColumns = (params: {
-	onCancelar: (nota: NotaFiscalEmitida) => void;
-	onInutilizar: (nota: NotaFiscalEmitida) => void;
-}): ColumnDef<NotaFiscalEmitida>[] => [
-	{
-		accessorKey: "numeronotafiscal",
-		header: "Nº",
-		cell: ({ row }) => (
-			<div className="font-medium">
-				{row.original.serie}-{row.getValue("numeronotafiscal") || "—"}
-			</div>
-		),
-	},
-	{
-		accessorKey: "razaosocial",
-		header: "Destinatário",
-		cell: ({ row }) => (
-			<div className="max-w-[200px] truncate">
-				{row.getValue("razaosocial") || "Consumidor Final"}
-			</div>
-		),
-	},
-	{
-		id: "dataEmissao",
-		header: "Data",
-		cell: ({ row }) => (
-			<div className="whitespace-nowrap text-sm">
-				{formatDateTime(obterDataExibicao(row.original))}
-			</div>
-		),
-	},
-	{
-		accessorKey: "valortotalnota",
-		header: () => <div className="text-right">Total</div>,
-		cell: ({ row }) => (
-			<div className="text-right font-medium">
-				{formatCurrency(row.getValue("valortotalnota"))}
-			</div>
-		),
-	},
-	{
-		accessorKey: "tipoambientenfe",
-		header: "Ambiente",
-		cell: ({ row }) => {
-			const amb = row.getValue("tipoambientenfe") as number | null;
-			if (!amb) return <span className="text-muted-foreground text-sm">—</span>;
-			return (
-				<span
-					className={
-						amb === 2
-							? "text-yellow-700 text-xs font-medium"
-							: "text-red-700 text-xs font-medium"
-					}
-				>
-					{NFE_AMBIENTE_LABELS[amb] ?? amb}
-				</span>
-			);
-		},
-	},
-	{
-		accessorKey: "status",
-		header: "Status",
-		cell: ({ row }) => {
-			const nota = row.original;
-			const rejeitada = nota.status === NFE_STATUS.REJEITADA;
-			const motivo = obterMotivoRejeicaoNota(nota);
-			const codigo = obterCodigoRejeicaoNota(nota);
-
-			return (
-				<div className="flex max-w-[280px] flex-col gap-1">
-					<StatusNfeBadge
-						status={nota.status}
-						cStat={codigo}
-						xMotivo={motivo}
-						size="sm"
-					/>
-					{rejeitada && (codigo || motivo) && (
-						<p
-							className="text-xs leading-snug text-red-700 line-clamp-3"
-							title={[codigo, motivo].filter(Boolean).join(" — ")}
-						>
-							{codigo ? `Cód. ${codigo}` : "Rejeição"}
-							{codigo && motivo ? ": " : ""}
-							{motivo ?? ""}
-						</p>
-					)}
-				</div>
-			);
-		},
-	},
-	{
-		accessorKey: "chavenfe",
-		header: "Chave",
-		cell: ({ row }) => {
-			const chave = row.getValue("chavenfe") as string | null;
-			if (!chave)
-				return <span className="text-muted-foreground text-sm">—</span>;
-			return (
-				<span className="font-mono text-xs text-muted-foreground" title={chave}>
-					{chave.replace(/(\d{4})(?=\d)/g, "$1 ").trim()}
-				</span>
-			);
-		},
-	},
-	{
-		id: "acoes",
-		header: "",
-		cell: ({ row }) => {
-			const nota = row.original;
-			const podeTransmitir =
-				nota.status === NFE_STATUS.PENDENTE ||
-				nota.status === NFE_STATUS.REJEITADA;
-			const podeDevolver =
-				nota.status === NFE_STATUS.AUTORIZADA && !!nota.chavenfe;
-			const podeClonar =
-				nota.status === NFE_STATUS.AUTORIZADA ||
-				nota.status === NFE_STATUS.CANCELADA ||
-				nota.status === NFE_STATUS.CANCELADA_FORA_PRAZO ||
-				nota.status === NFE_STATUS.REJEITADA ||
-				nota.status === NFE_STATUS.PENDENTE;
-			const podeCancelar = notaPodeSerCancelada(nota).permitido;
-			const podeInutilizar = notaPodeSerInutilizada(nota).permitido;
-
-			return (
-				<div className="flex items-center gap-1">
-					{podeCancelar && (
-						<Button
-							size="sm"
-							variant="outline"
-							className="h-7 px-2 text-xs text-destructive border-destructive/30"
-							onClick={(e) => {
-								e.stopPropagation();
-								params.onCancelar(nota);
-							}}
-						>
-							<Ban className="mr-1 size-3" />
-							Cancelar
-						</Button>
-					)}
-					{podeInutilizar && (
-						<Button
-							size="sm"
-							variant="outline"
-							className="h-7 px-2 text-xs"
-							onClick={(e) => {
-								e.stopPropagation();
-								params.onInutilizar(nota);
-							}}
-						>
-							<FileX2 className="mr-1 size-3" />
-							Inutilizar
-						</Button>
-					)}
-					{podeDevolver && (
-						<Link href={`/nota-fiscal-venda/nova?devolverVenda=${nota.id}`}>
-							<Button size="sm" variant="outline" className="h-7 px-2 text-xs">
-								<RotateCcw className="mr-1 size-3" />
-								Devolver
-							</Button>
-						</Link>
-					)}
-					{podeClonar && (
-						<Link href={`/nota-fiscal-venda/nova?clonar=${nota.id}`}>
-							<Button size="sm" variant="outline" className="h-7 px-2 text-xs">
-								<Copy className="mr-1 size-3" />
-								Clonar
-							</Button>
-						</Link>
-					)}
-					{podeTransmitir && (
-						<Link href={`/nota-fiscal-venda/${nota.id}`}>
-							<Button size="sm" className="h-7 px-2 text-xs">
-								Transmitir
-							</Button>
-						</Link>
-					)}
-					<Link href={`/nota-fiscal-venda/${nota.id}`}>
-						<Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
-							Ver
-						</Button>
-					</Link>
-				</div>
-			);
-		},
-	},
-];
+function filtrosColunaAtivos(filtros: FiltrosColunaNotaFiscalProdutoState) {
+	return Object.values(filtros).some((valor) => valor.trim() !== "");
+}
 
 export default function NotaFiscalVendaPage() {
 	const { localStorageEmpresa: empresa } = useEmpresa();
 	const { nfeConfiguracao } = useNfeConfiguracao(empresa?.id);
 	const queryClient = useQueryClient();
-	const [sorting, setSorting] = useState<SortingState>([]);
-	const [statusFiltro, setStatusFiltro] = useState<string>("todos");
+	const idPorPagina = useId();
 	const [eventoModal, setEventoModal] = useState<{
 		tipo: "cancelar" | "inutilizar";
 		nota: NotaFiscalEmitida;
@@ -287,22 +101,90 @@ export default function NotaFiscalVendaPage() {
 		pageIndex: 0,
 		pageSize: 20,
 	});
+	const [filtrosColuna, setFiltrosColuna] =
+		useState<FiltrosColunaNotaFiscalProdutoState>(
+			filtrosColunaNotaFiscalProdutoVazios,
+		);
+	const [ordenarPor, setOrdenarPor] = useState<string | null>(null);
+	const [ordem, setOrdem] = useState<"asc" | "desc" | null>(null);
+
+	const visibilidadePadrao = useMemo(
+		() => visibilidadePadraoColunasNotaFiscalProduto(),
+		[],
+	);
+	const { columnVisibility, onColumnVisibilityChange, isLoadingPreferencias } =
+		useColunasTabelaPersistidas(TABELA_NOTA_FISCAL_PRODUTO, visibilidadePadrao);
+
+	const onOrdenarColuna = useCallback(
+		(colunaId: string, direcao: OrdenacaoColunaTabela) => {
+			if (!direcao) {
+				setOrdenarPor(null);
+				setOrdem(null);
+			} else {
+				setOrdenarPor(colunaId);
+				setOrdem(direcao);
+			}
+			setPagination((p) => ({ ...p, pageIndex: 0 }));
+		},
+		[],
+	);
+
+	const onFiltrarColuna = useCallback((colunaId: string, valor: string) => {
+		const campo = COLUNA_PARA_CAMPO_FILTRO_NF_PRODUTO[colunaId];
+		if (!campo) return;
+		setFiltrosColuna((atual) => ({ ...atual, [campo]: valor }));
+		setPagination((p) => ({ ...p, pageIndex: 0 }));
+	}, []);
+
+	const configFiltroPorColuna = useMemo((): Record<
+		string,
+		ConfigFiltroColunaNotaFiscalProduto
+	> => {
+		return {
+			numeronotafiscal: { tipo: "texto", placeholder: "Número" },
+			razaosocial: { tipo: "texto", placeholder: "Destinatário" },
+			dataEmissao: { tipo: "data" },
+			valortotalnota: { tipo: "nenhum" },
+			tipoambientenfe: { tipo: "nenhum" },
+			status: { tipo: "opcoes", opcoes: NFE_STATUS_OPCOES_FILTRO },
+			chavenfe: { tipo: "texto", placeholder: "Chave" },
+		};
+	}, []);
 
 	const { data, isLoading } = useQuery({
 		queryKey: [
 			"nfe-emitidas",
 			empresa?.id,
-			statusFiltro,
 			pagination.pageIndex + 1,
 			pagination.pageSize,
+			filtrosColuna,
+			ordenarPor,
+			ordem,
 		],
 		queryFn: async () => {
 			if (!empresa) throw new Error("Empresa não selecionada");
 			return listarNfesEmitidas({
 				idempresa: empresa.id,
-				status: statusFiltro !== "todos" ? Number(statusFiltro) : undefined,
 				page: pagination.pageIndex + 1,
 				limit: pagination.pageSize,
+				...(filtrosColuna.numero ? { numero: filtrosColuna.numero } : {}),
+				...(filtrosColuna.razaosocial
+					? { razaosocial: filtrosColuna.razaosocial }
+					: {}),
+				...(filtrosColuna.emissao
+					? {
+							dataInicio: filtrosColuna.emissao,
+							dataFim: filtrosColuna.emissao,
+						}
+					: {}),
+				...(filtrosColuna.status
+					? { status: Number(filtrosColuna.status) }
+					: {}),
+				...(filtrosColuna.chavenfe
+					? { chavenfe: filtrosColuna.chavenfe }
+					: {}),
+				...(ordenarPor ? { ordenarPor } : {}),
+				...(ordem ? { ordem } : {}),
 			});
 		},
 		enabled: !!empresa,
@@ -358,23 +240,42 @@ export default function NotaFiscalVendaPage() {
 		},
 	});
 
-	const columns = createColumns({
-		onCancelar: (nota) => setEventoModal({ tipo: "cancelar", nota }),
-		onInutilizar: (nota) => setEventoModal({ tipo: "inutilizar", nota }),
-	});
+	const columns = useMemo(
+		() =>
+			criarColunasNotaFiscalProduto({
+				filtros: filtrosColuna,
+				ordenarPor,
+				ordem,
+				onOrdenarColuna,
+				onFiltrarColuna,
+				configFiltroPorColuna,
+				onCancelar: (nota) => setEventoModal({ tipo: "cancelar", nota }),
+				onInutilizar: (nota) => setEventoModal({ tipo: "inutilizar", nota }),
+			}),
+		[
+			filtrosColuna,
+			ordenarPor,
+			ordem,
+			onOrdenarColuna,
+			onFiltrarColuna,
+			configFiltroPorColuna,
+		],
+	);
 
 	const table = useReactTable({
 		data: data?.data ?? [],
 		columns,
-		state: { sorting, pagination },
-		onSortingChange: setSorting,
+		state: { pagination, columnVisibility },
 		onPaginationChange: setPagination,
+		onColumnVisibilityChange,
 		getCoreRowModel: getCoreRowModel(),
-		getSortedRowModel: getSortedRowModel(),
-		getPaginationRowModel: getPaginationRowModel(),
 		manualPagination: true,
 		pageCount: data?.paginacao?.totalPages ?? 0,
 	});
+
+	const colunasVisiveis = table.getVisibleLeafColumns();
+	const mostrarSkeleton = isLoading || isLoadingPreferencias;
+	const comFiltros = filtrosColunaAtivos(filtrosColuna) || !!ordenarPor;
 
 	return (
 		<PageContainer>
@@ -383,6 +284,37 @@ export default function NotaFiscalVendaPage() {
 					<h1 className="text-2xl font-bold">Notas Fiscais de Venda (NF-e)</h1>
 					{empresa && (
 						<div className="flex flex-wrap items-center gap-2">
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<Button variant="outline" size="sm">
+										<IconLayoutColumns className="size-4" />
+										<span className="hidden lg:inline">
+											Personalizar Colunas
+										</span>
+										<span className="lg:hidden">Colunas</span>
+										<IconChevronDown className="size-4" />
+									</Button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent
+									align="end"
+									className="max-h-72 w-56 overflow-y-auto"
+								>
+									{table
+										.getAllColumns()
+										.filter((column) => column.getCanHide())
+										.map((column) => (
+											<DropdownMenuCheckboxItem
+												key={column.id}
+												checked={column.getIsVisible()}
+												onCheckedChange={(value) =>
+													column.toggleVisibility(!!value)
+												}
+											>
+												{rotuloColuna(column)}
+											</DropdownMenuCheckboxItem>
+										))}
+								</DropdownMenuContent>
+							</DropdownMenu>
 							<BotaoAlterarNumeracao idempresa={empresa.id} abaInicial="nfe" />
 							<Link href="/nota-fiscal-venda/nova">
 								<Button className="gap-2">
@@ -419,25 +351,6 @@ export default function NotaFiscalVendaPage() {
 					</section>
 				) : null}
 
-				{empresa && (
-					<div className="flex items-center gap-3 px-4">
-						<span className="text-sm text-muted-foreground">Status:</span>
-						<Select value={statusFiltro} onValueChange={setStatusFiltro}>
-							<SelectTrigger className="w-44">
-								<SelectValue placeholder="Todos" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="todos">Todos</SelectItem>
-								{Object.entries(NFE_STATUS_LABELS).map(([codigo, label]) => (
-									<SelectItem key={codigo} value={codigo}>
-										{label}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					</div>
-				)}
-
 				<div className="rounded-lg border bg-card mx-4">
 					{!empresa ? (
 						<div className="flex items-center justify-center py-8">
@@ -445,16 +358,14 @@ export default function NotaFiscalVendaPage() {
 								Selecione uma empresa para visualizar as notas fiscais
 							</p>
 						</div>
-					) : isLoading ? (
-						<TableSkeleton rows={10} columns={8}>
-							<TableCell>Nº</TableCell>
-							<TableCell>Destinatário</TableCell>
-							<TableCell>Data</TableCell>
-							<TableCell className="text-right">Total</TableCell>
-							<TableCell>Ambiente</TableCell>
-							<TableCell>Status</TableCell>
-							<TableCell>Chave</TableCell>
-							<TableCell />
+					) : mostrarSkeleton ? (
+						<TableSkeleton
+							rows={10}
+							columns={colunasVisiveis.length || 7}
+						>
+							{colunasVisiveis.map((coluna) => (
+								<TableHead key={coluna.id}>{rotuloColuna(coluna)}</TableHead>
+							))}
 						</TableSkeleton>
 					) : (
 						<>
@@ -495,23 +406,52 @@ export default function NotaFiscalVendaPage() {
 									) : (
 										<TableRow>
 											<TableCell
-												colSpan={columns.length}
+												colSpan={colunasVisiveis.length}
 												className="h-24 text-center text-muted-foreground"
 											>
-												Nenhuma NF-e emitida.{" "}
-												<Link
-													href="/nota-fiscal-venda/nova"
-													className="text-primary underline"
-												>
-													Emitir agora
-												</Link>
+												{comFiltros ? (
+													"Nenhuma NF-e encontrada para os filtros selecionados."
+												) : (
+													<>
+														Nenhuma NF-e emitida.{" "}
+														<Link
+															href="/nota-fiscal-venda/nova"
+															className="text-primary underline"
+														>
+															Emitir agora
+														</Link>
+													</>
+												)}
 											</TableCell>
 										</TableRow>
 									)}
 								</TableBody>
 							</Table>
-							{data && (data.paginacao?.totalPages ?? 0) > 1 && (
-								<div className="flex items-center justify-between px-4 py-4 border-t">
+							{data && (data.paginacao?.total ?? 0) > 0 && (
+								<div className="flex flex-col gap-4 border-t px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+									<div className="flex items-center gap-2">
+										<Label htmlFor={idPorPagina} className="text-sm">
+											Itens por página
+										</Label>
+										<Select
+											value={`${pagination.pageSize}`}
+											onValueChange={(value) => {
+												table.setPageSize(Number(value));
+												table.setPageIndex(0);
+											}}
+										>
+											<SelectTrigger id={idPorPagina} className="h-8 w-[72px]">
+												<SelectValue placeholder={pagination.pageSize} />
+											</SelectTrigger>
+											<SelectContent side="top">
+												{[10, 20, 30, 50, 100].map((tamanho) => (
+													<SelectItem key={tamanho} value={`${tamanho}`}>
+														{tamanho}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</div>
 									<div className="text-sm text-muted-foreground">
 										Página {pagination.pageIndex + 1} de{" "}
 										{data.paginacao?.totalPages} ({data.paginacao?.total}{" "}

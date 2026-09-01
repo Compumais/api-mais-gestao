@@ -17,7 +17,7 @@ import {
 	verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Plus, Trash2 } from "lucide-react";
+import { GripVertical, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -46,13 +46,18 @@ import type {
 	TipoBlocoModeloImpressaoOs,
 } from "@/schemas/modelo-impressao-os.schema";
 import { TIPOS_BLOCO_MODELO_IMPRESSAO_OS } from "@/schemas/modelo-impressao-os.schema";
+import { PaletaBlocosImpressao } from "@/components/modelo-impressao/paleta-blocos-impressao";
+import { EditorCamposPersonalizadosOs } from "@/components/modelo-impressao/editor-campos-personalizados-os";
 import { PreviewModeloImpressaoOs } from "./preview-modelo-impressao-os";
 
 function novoId() {
 	return crypto.randomUUID();
 }
 
-function criarBloco(tipo: TipoBlocoModeloImpressaoOs): BlocoModeloImpressaoOs {
+function criarBloco(
+	tipo: TipoBlocoModeloImpressaoOs,
+	campos?: string[],
+): BlocoModeloImpressaoOs {
 	const base: BlocoModeloImpressaoOs = { id: novoId(), tipo, coluna: "cheia" };
 	switch (tipo) {
 		case "titulo":
@@ -62,22 +67,30 @@ function criarBloco(tipo: TipoBlocoModeloImpressaoOs): BlocoModeloImpressaoOs {
 		case "dadosOs":
 			return {
 				...base,
-				props: { campos: ["codigo", "status", "dataos"] },
+				props: {
+					campos: campos ?? CAMPOS_DADOS_OS.map((c) => c.value),
+				},
 			};
 		case "cliente":
 			return {
 				...base,
-				props: { campos: [...CAMPOS_CLIENTE_OS_PADRAO] },
+				props: {
+					campos: campos ?? CAMPOS_CLIENTE_OS.map((c) => c.value),
+				},
 			};
 		case "veiculo":
 			return {
 				...base,
-				props: { campos: ["marca", "modelo", "placa", "renavam"] },
+				props: {
+					campos: campos ?? CAMPOS_VEICULO_OS.map((c) => c.value),
+				},
 			};
 		case "servicoRealizado":
 			return base;
 		case "itens":
 			return base;
+		case "personalizado":
+			return { ...base, props: { camposPersonalizados: [] } };
 		case "rodape":
 			return {
 				...base,
@@ -110,6 +123,10 @@ function BlocoSortable({
 	const coluna = bloco.coluna ?? "cheia";
 	const rotuloColuna =
 		OPCOES_COLUNA_BLOCO.find((o) => o.value === coluna)?.label ?? "Largura total";
+	const qtdCamposPersonalizados =
+		bloco.tipo === "personalizado"
+			? (bloco.props?.camposPersonalizados?.length ?? 0)
+			: 0;
 
 	return (
 		<div
@@ -134,7 +151,11 @@ function BlocoSortable({
 				onClick={onSelect}
 			>
 				<span className="block">{LABELS_BLOCO_MODELO_IMPRESSAO_OS[bloco.tipo]}</span>
-				<span className="block text-xs text-muted-foreground">{rotuloColuna}</span>
+				<span className="block text-xs text-muted-foreground">
+					{bloco.tipo === "personalizado"
+						? `${qtdCamposPersonalizados} campo${qtdCamposPersonalizados === 1 ? "" : "s"} · ${rotuloColuna}`
+						: rotuloColuna}
+				</span>
 			</button>
 			<Button
 				type="button"
@@ -219,33 +240,21 @@ export function EditorModeloImpressaoOs({
 
 	return (
 		<div className="grid gap-4 xl:grid-cols-[220px_minmax(0,1fr)_minmax(280px,360px)]">
-			{/* Paleta */}
-			<div className="rounded-lg border p-3 space-y-2 h-fit">
-				<p className="text-sm font-medium">Blocos</p>
-				<p className="text-xs text-muted-foreground">
-					Clique para adicionar ao modelo
-				</p>
-				<div className="flex flex-col gap-1.5">
-					{TIPOS_BLOCO_MODELO_IMPRESSAO_OS.map((tipo) => (
-						<Button
-							key={tipo}
-							type="button"
-							variant="outline"
-							size="sm"
-							className="justify-start gap-2"
-							disabled={somenteLeitura}
-							onClick={() => {
-								const bloco = criarBloco(tipo);
-								onLayoutChange([...layout, bloco]);
-								setBlocoSelecionadoId(bloco.id);
-							}}
-						>
-							<Plus className="h-3.5 w-3.5" />
-							{LABELS_BLOCO_MODELO_IMPRESSAO_OS[tipo]}
-						</Button>
-					))}
-				</div>
-			</div>
+			<PaletaBlocosImpressao
+				tipos={TIPOS_BLOCO_MODELO_IMPRESSAO_OS}
+				labels={LABELS_BLOCO_MODELO_IMPRESSAO_OS}
+				camposPorTipo={{
+					dadosOs: CAMPOS_DADOS_OS,
+					cliente: CAMPOS_CLIENTE_OS,
+					veiculo: CAMPOS_VEICULO_OS,
+				}}
+				criarBloco={criarBloco}
+				onAdicionar={(bloco) => {
+					onLayoutChange([...layout, bloco]);
+					setBlocoSelecionadoId(bloco.id);
+				}}
+				somenteLeitura={somenteLeitura}
+			/>
 
 			{/* Canvas + meta */}
 			<div className="space-y-4">
@@ -478,6 +487,28 @@ export function EditorModeloImpressaoOs({
 							<p className="text-sm text-muted-foreground">
 								Lista apenas os produtos da aba Itens (sem serviços).
 							</p>
+						)}
+						{blocoSelecionado.tipo === "personalizado" && (
+							<EditorCamposPersonalizadosOs
+								tituloSecao={blocoSelecionado.props?.tituloSecao ?? ""}
+								campos={blocoSelecionado.props?.camposPersonalizados ?? []}
+								onTituloSecaoChange={(tituloSecao) =>
+									atualizarBloco(blocoSelecionado.id, {
+										props: {
+											...blocoSelecionado.props,
+											tituloSecao,
+										},
+									})
+								}
+								onCamposChange={(camposPersonalizados) =>
+									atualizarBloco(blocoSelecionado.id, {
+										props: {
+											...blocoSelecionado.props,
+											camposPersonalizados,
+										},
+									})
+								}
+							/>
 						)}
 					</div>
 				)}

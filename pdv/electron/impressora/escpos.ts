@@ -106,14 +106,44 @@ export async function imprimirCupomNaoFiscal(
 	return enviarParaImpressora(texto);
 }
 
-export async function imprimirPreConta(idconta: string): Promise<{
+export type ContaPreContaImpressao = {
+	numero_mesa: number;
+	nomecliente?: string | null;
+	numeropessoas: number;
+	subtotal: number;
+	valordesconto: number;
+	valortaxaservico: number;
+	valorcouvert: number;
+	valorpago: number;
+	valorrestante: number;
+	status: string;
+	itens: Array<{
+		descricao: string;
+		quantidade: number;
+		precounitario: number;
+		precototal: number;
+	}>;
+};
+
+export async function imprimirPreConta(
+	idcontaOuConta: string | ContaPreContaImpressao,
+): Promise<{
 	ok: boolean;
 	modo: string;
 }> {
-	const { obterContaMesa } = await import("../db/repos");
-	const conta = await obterContaMesa(idconta);
-	if (!conta || conta.status !== "aberta") {
-		throw new Error("Conta inválida");
+	let conta: ContaPreContaImpressao;
+	if (typeof idcontaOuConta === "string") {
+		const { obterContaMesa } = await import("../db/repos");
+		const local = await obterContaMesa(idcontaOuConta);
+		if (!local || local.status !== "aberta") {
+			throw new Error("Conta inválida");
+		}
+		conta = local;
+	} else {
+		conta = idcontaOuConta;
+		if (conta.status !== "aberta") {
+			throw new Error("Conta inválida");
+		}
 	}
 	if (!conta.itens.length) {
 		throw new Error("Conta sem itens para conferência");

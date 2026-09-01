@@ -1,13 +1,17 @@
 import type { Financeiro } from "@/model/financeiro-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
 import { buscarEmpresasDoUsuario } from "@/repositories/entidade-repositories.js";
-import { listarFinanceiro } from "@/repositories/financeiro-repositories.js";
+import {
+	listarFinanceiro,
+	type OrdenarFinanceirosCampo,
+} from "@/repositories/financeiro-repositories.js";
 import { httpOk } from "@/util/http-util.js";
 
 type ListarFinanceirosParametros = {
 	idusuario: string;
 	saldo?: string | null | undefined;
 	emissao?: string | null | undefined;
+	documento?: string | null | undefined;
 	emitente?: string | null | undefined;
 	emissaoInicio?: string | null | undefined;
 	emissaoFim?: string | null | undefined;
@@ -15,6 +19,8 @@ type ListarFinanceirosParametros = {
 	vencimentoFim?: string | null | undefined;
 	status?: string | null | undefined;
 	tipo?: "P" | "R" | null | undefined;
+	ordenarPor?: OrdenarFinanceirosCampo | undefined;
+	ordem?: "asc" | "desc" | undefined;
 	page?: number;
 	limit?: number;
 };
@@ -33,6 +39,7 @@ export async function listarFinanceirosService({
 	idusuario,
 	saldo,
 	emissao,
+	documento,
 	emitente,
 	emissaoInicio,
 	emissaoFim,
@@ -40,6 +47,8 @@ export async function listarFinanceirosService({
 	vencimentoFim,
 	status,
 	tipo,
+	ordenarPor,
+	ordem,
 	page = 1,
 	limit = 10,
 }: ListarFinanceirosParametros): Promise<
@@ -63,6 +72,7 @@ export async function listarFinanceirosService({
 		idempresas,
 		saldo,
 		emissao,
+		documento,
 		emitente,
 		emissaoInicio,
 		emissaoFim,
@@ -70,6 +80,8 @@ export async function listarFinanceirosService({
 		vencimentoFim,
 		status,
 		tipo,
+		ordenarPor,
+		ordem,
 		page,
 		limit,
 	});

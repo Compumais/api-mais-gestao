@@ -1,9 +1,62 @@
-import { and, count, desc, eq, inArray, sql } from "drizzle-orm";
+import {
+	and,
+	asc,
+	count,
+	desc,
+	eq,
+	gte,
+	ilike,
+	inArray,
+	lte,
+	type SQL,
+	sql,
+} from "drizzle-orm";
 import type { NovaContaCorrenteLancamento } from "@/model/conta-corrente-lancamento-model.js";
 import type { ChaveLancamentoExistente } from "@/util/chave-lancamento-conta-corrente.js";
 import { montarChaveLancamentoExistente } from "@/util/chave-lancamento-conta-corrente.js";
 import * as schema from "../../drizzle/schema.js";
 import { db } from "./connection.js";
+
+export const ORDENAR_CONTA_CORRENTE_LANCAMENTOS_CAMPOS = [
+	"datahora",
+	"historico",
+	"valor",
+	"saldoatual",
+	"planocontasnome",
+	"documento",
+] as const;
+
+export type OrdenarContaCorrenteLancamentosCampo =
+	(typeof ORDENAR_CONTA_CORRENTE_LANCAMENTOS_CAMPOS)[number];
+
+const COLUNAS_ORDENACAO = {
+	datahora: schema.contacorrentelancamento.datahora,
+	historico: schema.contacorrentelancamento.historico,
+	valor: schema.contacorrentelancamento.valor,
+	saldoatual: schema.contacorrentelancamento.saldoatual,
+	planocontasnome: schema.planocontas.nome,
+	documento: schema.contacorrentelancamento.documento,
+} as const;
+
+function adicionarFiltroTexto(
+	where: SQL[],
+	coluna: Parameters<typeof ilike>[0],
+	valor: string | undefined,
+) {
+	if (valor?.trim()) {
+		where.push(ilike(coluna, `%${valor.trim()}%`));
+	}
+}
+
+function filtroDataDia(
+	coluna: typeof schema.contacorrentelancamento.datahora,
+	data: string,
+) {
+	return and(
+		gte(coluna, `${data}T00:00:00.000`),
+		lte(coluna, `${data}T23:59:59.999`),
+	);
+}
 
 export type { ChaveLancamentoExistente };
 
@@ -146,22 +199,77 @@ export interface LancamentoComRelacionamentos {
 
 export async function listarLancamentoContaCorrentePorEmpresa({
 	idcontacorrente,
+	historico,
+	documento,
+	planocontasnome,
+	datahora,
+	sentido,
+	ordenarPor,
+	ordem = "desc",
 	page = 1,
 	limit = 10,
 }: {
 	idcontacorrente: string;
+	historico?: string | undefined;
+	documento?: string | undefined;
+	planocontasnome?: string | undefined;
+	datahora?: string | undefined;
+	sentido?: "entrada" | "saida" | undefined;
+	ordenarPor?: OrdenarContaCorrenteLancamentosCampo | undefined;
+	ordem?: "asc" | "desc" | undefined;
 	page?: number;
 	limit?: number;
 }) {
 	const offset = (page - 1) * limit;
+	const where: SQL[] = [
+		eq(schema.contacorrentelancamento.idcontacorrente, idcontacorrente),
+	];
+
+	adicionarFiltroTexto(
+		where,
+		schema.contacorrentelancamento.historico,
+		historico,
+	);
+	adicionarFiltroTexto(
+		where,
+		schema.contacorrentelancamento.documento,
+		documento,
+	);
+	adicionarFiltroTexto(where, schema.planocontas.nome, planocontasnome);
+
+	if (datahora?.trim()) {
+		const condicao = filtroDataDia(
+			schema.contacorrentelancamento.datahora,
+			datahora.trim(),
+		);
+		if (condicao) {
+			where.push(condicao);
+		}
+	}
+
+	if (sentido === "entrada") {
+		where.push(inArray(schema.contacorrentelancamento.tipo, ["C", "E"]));
+	} else if (sentido === "saida") {
+		where.push(inArray(schema.contacorrentelancamento.tipo, ["D", "S"]));
+	}
+
+	const filtro = and(...where);
+
+	const ordenacao =
+		ordenarPor && COLUNAS_ORDENACAO[ordenarPor]
+			? ordem === "asc"
+				? asc(COLUNAS_ORDENACAO[ordenarPor])
+				: desc(COLUNAS_ORDENACAO[ordenarPor])
+			: desc(schema.contacorrentelancamento.datahora);
+
+	const joinPlano = sql`${schema.contacorrentelancamento.idplanocontas}::text = ${schema.planocontas.id}`;
 
 	const [totalCount, lancamentos] = await Promise.all([
 		db
 			.select({ value: count() })
 			.from(schema.contacorrentelancamento)
-			.where(
-				eq(schema.contacorrentelancamento.idcontacorrente, idcontacorrente),
-			),
+			.leftJoin(schema.planocontas, joinPlano)
+			.where(filtro),
 		db
 			.select({
 				id: schema.contacorrentelancamento.id,
@@ -196,10 +304,7 @@ export async function listarLancamentoContaCorrentePorEmpresa({
 				contacorrenteagencia: schema.contacorrente.agencia,
 			})
 			.from(schema.contacorrentelancamento)
-			.leftJoin(
-				schema.planocontas,
-				sql`${schema.contacorrentelancamento.idplanocontas}::text = ${schema.planocontas.id}`,
-			)
+			.leftJoin(schema.planocontas, joinPlano)
 			.leftJoin(
 				schema.contacorrente,
 				eq(
@@ -222,10 +327,8 @@ export async function listarLancamentoContaCorrentePorEmpresa({
 				schema.financeiro,
 				eq(sql`fl.idfinanceiro`, schema.financeiro.id),
 			)
-			.where(
-				eq(schema.contacorrentelancamento.idcontacorrente, idcontacorrente),
-			)
-			.orderBy(desc(schema.contacorrentelancamento.datahora))
+			.where(filtro)
+			.orderBy(ordenacao)
 			.limit(limit)
 			.offset(offset),
 	]);

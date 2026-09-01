@@ -1,19 +1,17 @@
 "use client";
 
-import { IconEye } from "@tabler/icons-react";
+import { IconChevronDown, IconLayoutColumns } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import {
-	type ColumnDef,
 	flexRender,
 	getCoreRowModel,
-	getPaginationRowModel,
-	getSortedRowModel,
-	type SortingState,
 	useReactTable,
 } from "@tanstack/react-table";
 import dayjs from "dayjs";
 import "dayjs/locale/pt-br";
-import { useState } from "react";
+import { useCallback, useId, useMemo, useState } from "react";
+import type { OrdenacaoColunaTabela } from "@/components/cabecalho-coluna-tabela";
+import { TableSkeleton } from "@/components/table-skeleton";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -22,6 +20,20 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import {
+	DropdownMenu,
+	DropdownMenuCheckboxItem,
+	DropdownMenuContent,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import {
 	Table,
 	TableBody,
@@ -32,88 +44,99 @@ import {
 } from "@/components/ui/table";
 import { useEmpresa } from "@/hooks/use-empresa";
 import {
+	TABELA_AUDITORIA,
+	useColunasTabelaPersistidas,
+} from "@/hooks/use-preferencias-ui-usuario";
+import {
 	formatarAcaoAuditoria,
 	formatarRecursoAuditoria,
 } from "@/lib/auditoria-utils";
 import { type Auditoria, auditoriaService } from "@/services/auditoria.service";
 import { PageContainer } from "../components/page-container";
-import { TableSkeleton } from "@/components/table-skeleton";
+import {
+	COLUNA_PARA_CAMPO_FILTRO_AUDITORIA,
+	type ConfigFiltroColunaAuditoria,
+	criarColunasAuditoria,
+	type FiltrosColunaAuditoriaState,
+	filtrosColunaAuditoriaVazios,
+	visibilidadePadraoColunasAuditoria,
+} from "./auditoria-colunas";
 
 dayjs.locale("pt-br");
 
-type ColumnsProps = {
-	onViewDetails: (auditoria: Auditoria) => void;
-};
+function rotuloColuna(column: {
+	id: string;
+	columnDef: { meta?: unknown; header?: unknown };
+}) {
+	const meta = column.columnDef.meta as { label?: string } | undefined;
+	if (meta?.label) return meta.label;
+	if (typeof column.columnDef.header === "string") {
+		return column.columnDef.header;
+	}
+	return column.id;
+}
 
-const createColumns = ({
-	onViewDetails,
-}: ColumnsProps): ColumnDef<Auditoria>[] => [
-	{
-		accessorKey: "acao",
-		header: "Ação",
-		cell: ({ row }) => (
-			<div className="font-medium">
-				{formatarAcaoAuditoria(row.getValue("acao") as string)}
-			</div>
-		),
-	},
-	{
-		accessorKey: "recurso",
-		header: "Recurso",
-		cell: ({ row }) => (
-			<div>{formatarRecursoAuditoria(row.getValue("recurso") as string)}</div>
-		),
-	},
-	{
-		accessorKey: "nomeusuario",
-		header: "Usuário",
-		cell: ({ row }) => (
-			<div className="text-muted-foreground">
-				{row.getValue("nomeusuario") || "-"}
-			</div>
-		),
-	},
-	{
-		accessorKey: "criadoem",
-		header: "Data/Hora",
-		cell: ({ row }) => {
-			const data = row.getValue("criadoem") as string;
-			return <div>{dayjs(data).format("DD/MM/YYYY HH:mm:ss")}</div>;
-		},
-	},
-	{
-		id: "acoes",
-		header: "Ações",
-		cell: ({ row }) => {
-			const auditoria = row.original;
-			return (
-				<div className="flex justify-end">
-					<Button
-						variant="ghost"
-						size="sm"
-						onClick={() => onViewDetails(auditoria)}
-						className="gap-2"
-					>
-						<IconEye className="size-4" />
-						Ver Detalhes
-					</Button>
-				</div>
-			);
-		},
-	},
-];
+function filtrosColunaAtivos(filtros: FiltrosColunaAuditoriaState) {
+	return Object.values(filtros).some((valor) => valor.trim() !== "");
+}
 
 export default function AuditoriaPage() {
 	const { localStorageEmpresa } = useEmpresa();
-	const [sorting, setSorting] = useState<SortingState>([]);
+	const idPorPagina = useId();
 	const [pagination, setPagination] = useState({
 		pageIndex: 0,
 		pageSize: 10,
 	});
+	const [filtrosColuna, setFiltrosColuna] =
+		useState<FiltrosColunaAuditoriaState>(filtrosColunaAuditoriaVazios);
+	const [ordenarPor, setOrdenarPor] = useState<string | null>(null);
+	const [ordem, setOrdem] = useState<"asc" | "desc" | null>(null);
 	const [selectedAuditoria, setSelectedAuditoria] = useState<Auditoria | null>(
 		null,
 	);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+	const visibilidadePadrao = useMemo(
+		() => visibilidadePadraoColunasAuditoria(),
+		[],
+	);
+	const { columnVisibility, onColumnVisibilityChange, isLoadingPreferencias } =
+		useColunasTabelaPersistidas(TABELA_AUDITORIA, visibilidadePadrao);
+
+	const onOrdenarColuna = useCallback(
+		(colunaId: string, direcao: OrdenacaoColunaTabela) => {
+			if (!direcao) {
+				setOrdenarPor(null);
+				setOrdem(null);
+			} else {
+				setOrdenarPor(colunaId);
+				setOrdem(direcao);
+			}
+			setPagination((p) => ({ ...p, pageIndex: 0 }));
+		},
+		[],
+	);
+
+	const onFiltrarColuna = useCallback((colunaId: string, valor: string) => {
+		const campo = COLUNA_PARA_CAMPO_FILTRO_AUDITORIA[colunaId];
+		if (!campo) return;
+		setFiltrosColuna((atual) => ({ ...atual, [campo]: valor }));
+		setPagination((p) => ({ ...p, pageIndex: 0 }));
+	}, []);
+
+	const configFiltroPorColuna = useMemo((): Record<
+		string,
+		ConfigFiltroColunaAuditoria
+	> => {
+		return {
+			acao: { tipo: "texto", placeholder: "Ação" },
+			recurso: { tipo: "texto", placeholder: "Recurso" },
+			nomeusuario: { tipo: "texto", placeholder: "Usuário" },
+			criadoem: { tipo: "data" },
+			idrecurso: { tipo: "texto", placeholder: "ID recurso" },
+			nomeempresa: { tipo: "texto", placeholder: "Empresa" },
+		};
+	}, []);
 
 	const { data, isLoading } = useQuery({
 		queryKey: [
@@ -121,6 +144,9 @@ export default function AuditoriaPage() {
 			localStorageEmpresa?.id,
 			pagination.pageIndex + 1,
 			pagination.pageSize,
+			filtrosColuna,
+			ordenarPor,
+			ordem,
 		],
 		queryFn: async () => {
 			if (!localStorageEmpresa) {
@@ -130,41 +156,108 @@ export default function AuditoriaPage() {
 				idempresa: localStorageEmpresa.id,
 				page: pagination.pageIndex + 1,
 				limit: pagination.pageSize,
+				...(filtrosColuna.acao ? { acao: filtrosColuna.acao } : {}),
+				...(filtrosColuna.recurso ? { recurso: filtrosColuna.recurso } : {}),
+				...(filtrosColuna.nomeusuario
+					? { nomeusuario: filtrosColuna.nomeusuario }
+					: {}),
+				...(filtrosColuna.criadoem
+					? { criadoem: filtrosColuna.criadoem }
+					: {}),
+				...(filtrosColuna.idrecurso
+					? { idrecurso: filtrosColuna.idrecurso }
+					: {}),
+				...(filtrosColuna.nomeempresa
+					? { nomeempresa: filtrosColuna.nomeempresa }
+					: {}),
+				...(ordenarPor ? { ordenarPor } : {}),
+				...(ordem ? { ordem } : {}),
 			});
 		},
 		enabled: !!localStorageEmpresa,
 	});
 
-	const handleViewDetails = (auditoria: Auditoria) => {
+	const handleViewDetails = useCallback((auditoria: Auditoria) => {
 		setSelectedAuditoria(auditoria);
 		setIsDialogOpen(true);
-	};
+	}, []);
 
-	const columns = createColumns({
-		onViewDetails: handleViewDetails,
-	});
+	const columns = useMemo(
+		() =>
+			criarColunasAuditoria({
+				filtros: filtrosColuna,
+				ordenarPor,
+				ordem,
+				onOrdenarColuna,
+				onFiltrarColuna,
+				configFiltroPorColuna,
+				onViewDetails: handleViewDetails,
+			}),
+		[
+			filtrosColuna,
+			ordenarPor,
+			ordem,
+			onOrdenarColuna,
+			onFiltrarColuna,
+			configFiltroPorColuna,
+			handleViewDetails,
+		],
+	);
 
 	const table = useReactTable({
 		data: data?.data || [],
 		columns,
 		state: {
-			sorting,
 			pagination,
+			columnVisibility,
 		},
-		onSortingChange: setSorting,
 		onPaginationChange: setPagination,
+		onColumnVisibilityChange,
 		getCoreRowModel: getCoreRowModel(),
-		getSortedRowModel: getSortedRowModel(),
-		getPaginationRowModel: getPaginationRowModel(),
 		manualPagination: true,
 		pageCount: data?.paginacao.totalPages ?? 0,
 	});
+
+	const colunasVisiveis = table.getVisibleLeafColumns();
+	const mostrarSkeleton = isLoading || isLoadingPreferencias;
+	const comFiltros = filtrosColunaAtivos(filtrosColuna) || !!ordenarPor;
 
 	return (
 		<PageContainer>
 			<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
 				<div className="flex items-center justify-between px-4">
 					<h1 className="text-2xl font-bold">Auditoria</h1>
+					{localStorageEmpresa && (
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button variant="outline" size="sm">
+									<IconLayoutColumns className="size-4" />
+									<span className="hidden lg:inline">Personalizar Colunas</span>
+									<span className="lg:hidden">Colunas</span>
+									<IconChevronDown className="size-4" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent
+								align="end"
+								className="max-h-72 w-56 overflow-y-auto"
+							>
+								{table
+									.getAllColumns()
+									.filter((column) => column.getCanHide())
+									.map((column) => (
+										<DropdownMenuCheckboxItem
+											key={column.id}
+											checked={column.getIsVisible()}
+											onCheckedChange={(value) =>
+												column.toggleVisibility(!!value)
+											}
+										>
+											{rotuloColuna(column)}
+										</DropdownMenuCheckboxItem>
+									))}
+							</DropdownMenuContent>
+						</DropdownMenu>
+					)}
 				</div>
 				<div className="rounded-lg border bg-card mx-4">
 					{!localStorageEmpresa ? (
@@ -173,13 +266,19 @@ export default function AuditoriaPage() {
 								Selecione uma empresa para visualizar os logs de auditoria
 							</p>
 						</div>
-					) : isLoading ? (
-						<TableSkeleton rows={10} columns={5}>
-							<TableHead>Ação</TableHead>
-							<TableHead>Recurso</TableHead>
-							<TableHead>Usuário</TableHead>
-							<TableHead>Data/Hora</TableHead>
-							<TableHead className="w-36 text-end">Ações</TableHead>
+					) : mostrarSkeleton ? (
+						<TableSkeleton
+							rows={10}
+							columns={colunasVisiveis.length || 5}
+						>
+							{colunasVisiveis.map((coluna) => (
+								<TableHead
+									key={coluna.id}
+									className={coluna.id === "acoes" ? "w-36 text-end" : undefined}
+								>
+									{rotuloColuna(coluna)}
+								</TableHead>
+							))}
 						</TableSkeleton>
 					) : (
 						<>
@@ -189,7 +288,9 @@ export default function AuditoriaPage() {
 										<TableRow key={headerGroup.id}>
 											{headerGroup.headers.map((header) => (
 												<TableHead
-													className={header.id === "acoes" ? "text-right" : ""}
+													className={
+														header.id === "acoes" ? "text-right" : ""
+													}
 													key={header.id}
 												>
 													{header.isPlaceholder
@@ -220,17 +321,42 @@ export default function AuditoriaPage() {
 									) : (
 										<TableRow>
 											<TableCell
-												colSpan={table.getAllColumns().length}
+												colSpan={colunasVisiveis.length}
 												className="h-24 text-center"
 											>
-												Nenhum log de auditoria encontrado.
+												{comFiltros
+													? "Nenhum log de auditoria encontrado para os filtros selecionados."
+													: "Nenhum log de auditoria encontrado."}
 											</TableCell>
 										</TableRow>
 									)}
 								</TableBody>
 							</Table>
-							{data && data.paginacao.totalPages > 1 && (
-								<div className="flex items-center justify-between px-4 py-4 border-t">
+							{data && data.paginacao.total > 0 && (
+								<div className="flex flex-col gap-4 border-t px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+									<div className="flex items-center gap-2">
+										<Label htmlFor={idPorPagina} className="text-sm">
+											Itens por página
+										</Label>
+										<Select
+											value={`${pagination.pageSize}`}
+											onValueChange={(value) => {
+												table.setPageSize(Number(value));
+												table.setPageIndex(0);
+											}}
+										>
+											<SelectTrigger id={idPorPagina} className="h-8 w-[72px]">
+												<SelectValue placeholder={pagination.pageSize} />
+											</SelectTrigger>
+											<SelectContent side="top">
+												{[10, 20, 30, 50, 100].map((tamanho) => (
+													<SelectItem key={tamanho} value={`${tamanho}`}>
+														{tamanho}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</div>
 									<div className="text-sm text-muted-foreground">
 										Página {pagination.pageIndex + 1} de{" "}
 										{data.paginacao.totalPages} ({data.paginacao.total}{" "}
