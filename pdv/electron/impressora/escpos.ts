@@ -195,10 +195,14 @@ export async function imprimirPedidoProducao(params: {
 		descricao: string;
 		observacao?: string | null;
 	}>;
+	reimpressao?: boolean;
 }): Promise<{ ok: boolean; modo: string }> {
 	const linhas: string[] = [];
 	linhas.push("================================");
 	linhas.push("     PEDIDO DE PRODUCAO");
+	if (params.reimpressao) {
+		linhas.push("     *** REIMPRESSAO ***");
+	}
 	linhas.push("================================");
 	linhas.push(params.origem);
 	if (params.cliente?.trim()) {

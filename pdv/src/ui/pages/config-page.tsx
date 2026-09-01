@@ -310,6 +310,11 @@ export function ConfigPage() {
 				impressora_tipo: config.impressora_tipo ?? "sistema",
 				impressora_host: config.impressora_host ?? "",
 				impressora_porta: config.impressora_porta ?? "9100",
+				impressao_producao_modo: config.impressao_producao_modo ?? "itens",
+				impressora_pedido_tipo: config.impressora_pedido_tipo ?? "",
+				impressora_pedido_nome: config.impressora_pedido_nome ?? "",
+				impressora_pedido_host: config.impressora_pedido_host ?? "",
+				impressora_pedido_porta: config.impressora_pedido_porta ?? "9100",
 				certificado_path: config.certificado_path ?? "",
 				certificado_senha: config.certificado_senha ?? "",
 				lan_habilitada: config.lan_habilitada ?? "1",
@@ -1117,6 +1122,116 @@ export function ConfigPage() {
 											<CardTitle>Impressoras de produção</CardTitle>
 										</CardHeader>
 										<CardContent className="grid gap-4">
+											<div className="grid gap-3 rounded-md border p-3 sm:grid-cols-2">
+												<div className="space-y-2 sm:col-span-2">
+													<Label htmlFor="impressao_producao_modo">
+														Imprimir produção
+													</Label>
+													<Select
+														id="impressao_producao_modo"
+														value={config.impressao_producao_modo ?? "itens"}
+														onChange={(e) =>
+															set("impressao_producao_modo", e.target.value)
+														}
+													>
+														<option value="itens">
+															Por itens (um cupom por grupo/setor)
+														</option>
+														<option value="pedido">
+															Por pedido (todos os produtos num cupom)
+														</option>
+													</Select>
+												</div>
+												{(config.impressao_producao_modo ?? "itens") ===
+												"pedido" ? (
+													<>
+														<div className="space-y-2">
+															<Label htmlFor="impressora_pedido_tipo">
+																Impressora do pedido
+															</Label>
+															<Select
+																id="impressora_pedido_tipo"
+																value={config.impressora_pedido_tipo ?? ""}
+																onChange={(e) =>
+																	set("impressora_pedido_tipo", e.target.value)
+																}
+															>
+																<option value="">
+																	Usar a primeira impressora dos itens
+																</option>
+																<option value="sistema">
+																	Sistema (USB / Windows)
+																</option>
+																<option value="rede">Rede (IP :9100)</option>
+															</Select>
+														</div>
+														{config.impressora_pedido_tipo === "sistema" ? (
+															<div className="space-y-2">
+																<Label htmlFor="impressora_pedido_nome">
+																	Impressora do Windows
+																</Label>
+																<Select
+																	id="impressora_pedido_nome"
+																	value={config.impressora_pedido_nome ?? ""}
+																	onChange={(e) =>
+																		set(
+																			"impressora_pedido_nome",
+																			e.target.value,
+																		)
+																	}
+																>
+																	<option value="">Selecione</option>
+																	{impressoras.map((p) => (
+																		<option key={p.name} value={p.name}>
+																			{p.name}
+																			{p.isDefault ? " (padrão)" : ""}
+																		</option>
+																	))}
+																</Select>
+															</div>
+														) : null}
+														{config.impressora_pedido_tipo === "rede" ? (
+															<>
+																<div className="space-y-2">
+																	<Label htmlFor="impressora_pedido_host">
+																		IP / hostname
+																	</Label>
+																	<Input
+																		id="impressora_pedido_host"
+																		value={config.impressora_pedido_host ?? ""}
+																		onChange={(e) =>
+																			set(
+																				"impressora_pedido_host",
+																				e.target.value,
+																			)
+																		}
+																		placeholder="192.168.1.80"
+																	/>
+																</div>
+																<div className="space-y-2">
+																	<Label htmlFor="impressora_pedido_porta">
+																		Porta
+																	</Label>
+																	<Input
+																		id="impressora_pedido_porta"
+																		type="number"
+																		min={1}
+																		value={
+																			config.impressora_pedido_porta ?? "9100"
+																		}
+																		onChange={(e) =>
+																			set(
+																				"impressora_pedido_porta",
+																				e.target.value,
+																			)
+																		}
+																	/>
+																</div>
+															</>
+														) : null}
+													</>
+												) : null}
+											</div>
 											{mapeamentoGourmet.length === 0 ? (
 												<p className="text-sm text-muted-foreground">
 													Nenhum grupo gourmet sincronizado. Sincronize o
@@ -1249,10 +1364,10 @@ export function ConfigPage() {
 												))
 											)}
 											<p className="text-xs text-muted-foreground">
-												Ao enviar o pedido (POS) ou lançar item (mesa) /
-												finalizar (balcão), os itens de cada grupo saem na
-												impressora mapeada — sem preço. Setor sem impressora não
-												imprime e não falha o pedido.
+												Por itens: cada grupo gourmet sai na impressora mapeada.
+												Por pedido: todos os produtos vão num único cupom,
+												independente do grupo. Sem impressora o pedido não
+												falha.
 											</p>
 										</CardContent>
 									</Card>

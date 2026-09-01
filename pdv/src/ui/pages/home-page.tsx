@@ -1,6 +1,7 @@
 import {
 	Bike,
 	Circle,
+	ClipboardList,
 	Clock3,
 	Receipt,
 	Settings,
@@ -431,6 +432,11 @@ export function HomePage() {
 						}}
 					/>
 					<SideButton
+						label="Pedidos"
+						icon={ClipboardList}
+						onClick={() => navigate("/pedidos")}
+					/>
+					<SideButton
 						label="Vendas"
 						icon={Receipt}
 						onClick={() => navigate("/vendas")}
@@ -584,6 +590,13 @@ export function HomePage() {
 						variant: "default",
 						onClick: () => navigate("/delivery"),
 						disabled: bloqueado,
+					},
+					{
+						key: "pedidos",
+						label: "Pedidos",
+						hotkey: "F7",
+						variant: "secondary",
+						onClick: () => navigate("/pedidos"),
 					},
 					{
 						key: "vendas",
