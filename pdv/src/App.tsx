@@ -15,6 +15,7 @@ import { DeliveryPage } from "@/ui/pages/delivery-page";
 import { HomeEntry } from "@/ui/pages/home-page";
 import { LoginPage } from "@/ui/pages/login-page";
 import { MesaContaPage } from "@/ui/pages/mesa-conta-page";
+import { PedidosPage } from "@/ui/pages/pedidos-page";
 import { VendasPage } from "@/ui/pages/vendas-page";
 
 export function App() {
@@ -48,6 +49,7 @@ export function App() {
 							<Route path="/mesas/:numero" element={<MesaContaPage />} />
 							<Route path="/delivery" element={<DeliveryPage />} />
 							<Route path="/delivery/:id" element={<MesaContaPage />} />
+							<Route path="/pedidos" element={<PedidosPage />} />
 						</Route>
 						<Route path="/balcao" element={<BalcaoPage />} />
 						<Route path="/vendas" element={<VendasPage />} />

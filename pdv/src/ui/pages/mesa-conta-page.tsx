@@ -30,6 +30,7 @@ import {
 	type ItemPizzaMeioAMeio,
 } from "@/ui/components/dialog-pizza-meio-a-meio";
 import { DialogQuantidadePeso } from "@/ui/components/dialog-quantidade-peso";
+import { DialogReimprimirPedidos } from "@/ui/components/dialog-reimprimir-pedidos";
 import { DialogRejeicaoNfce } from "@/ui/components/dialog-rejeicao-nfce";
 import { DialogSenhaGerencial } from "@/ui/components/dialog-senha-gerencial";
 import { FunctionBar } from "@/ui/components/function-bar";
@@ -136,6 +137,7 @@ export function MesaContaPage() {
 	const [fatiaValor, setFatiaValor] = useState<number | null>(null);
 	const [pagandoFatia, setPagandoFatia] = useState(false);
 	const [taxaEntregaEdit, setTaxaEntregaEdit] = useState("");
+	const [reimprimirAberto, setReimprimirAberto] = useState(false);
 
 	useEscapeFechaModal(confirmandoSaida, () => setConfirmandoSaida(false));
 	useEscapeFechaModal(Boolean(rejeicaoNfce), () => setRejeicaoNfce(null));
@@ -1079,6 +1081,14 @@ export function MesaContaPage() {
 								<Button
 									variant="outline"
 									size="sm"
+									disabled={!conta || loading}
+									onClick={() => setReimprimirAberto(true)}
+								>
+									Reimprimir
+								</Button>
+								<Button
+									variant="outline"
+									size="sm"
 									disabled={!itens.length || loading}
 									onClick={() => iniciarDivisao()}
 								>
@@ -1102,14 +1112,24 @@ export function MesaContaPage() {
 								</Button>
 							</div>
 						) : (
-							<Button
-								variant="outline"
-								size="sm"
-								disabled={!itens.length || loading}
-								onClick={() => void preConta()}
-							>
-								Pré-conta
-							</Button>
+							<div className="grid grid-cols-2 gap-2">
+								<Button
+									variant="outline"
+									size="sm"
+									disabled={!itens.length || loading}
+									onClick={() => void preConta()}
+								>
+									Pré-conta
+								</Button>
+								<Button
+									variant="outline"
+									size="sm"
+									disabled={!conta || loading}
+									onClick={() => setReimprimirAberto(true)}
+								>
+									Reimprimir
+								</Button>
+							</div>
 						)}
 						<div className="grid grid-cols-2 gap-2">
 							<Button
@@ -1294,6 +1314,13 @@ export function MesaContaPage() {
 				</div>
 			)}
 
+			<DialogReimprimirPedidos
+				aberto={reimprimirAberto}
+				idconta={conta?.id}
+				onFechar={() => setReimprimirAberto(false)}
+				onMensagem={setMsg}
+			/>
+
 			<FunctionBar
 				actions={[
 					{
@@ -1326,6 +1353,14 @@ export function MesaContaPage() {
 						variant: "outline",
 						disabled: !itens.length || loading,
 						onClick: () => void preConta(),
+					},
+					{
+						key: "reimprimir",
+						label: "Reimprimir",
+						hotkey: "F7",
+						variant: "outline",
+						disabled: !conta || loading,
+						onClick: () => setReimprimirAberto(true),
 					},
 					{
 						key: "desconto",

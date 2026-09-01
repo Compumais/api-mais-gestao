@@ -630,6 +630,14 @@ async function despachar(
 		return { status: 200, body: await localApi.limparFilaPedidos() };
 	}
 
+	if (method === "POST" && path === "/pos/pedidos/reimprimir") {
+		const clientOrderId = String(body.clientOrderId ?? body.id ?? "");
+		return {
+			status: 200,
+			body: await localApi.reimprimirPedidoProducao(clientOrderId),
+		};
+	}
+
 	if (method === "GET" && path === "/pos/delivery") {
 		const statusFiltro =
 			body.status != null ? String(body.status) : undefined;

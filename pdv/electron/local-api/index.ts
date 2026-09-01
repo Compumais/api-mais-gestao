@@ -133,6 +133,7 @@ import {
 	testarImpressora,
 } from "../impressora/escpos";
 import {
+	agruparLinhasPedidoFila,
 	imprimirProducaoPedido,
 	rotuloOrigemMesa,
 } from "../impressora/producao";
@@ -1266,6 +1267,63 @@ export const localApi = {
 
 	async listarPedidosFila(pendentes: boolean) {
 		return listarPedidosFila(pendentes);
+	},
+
+	async listarPedidosProducao(idconta?: string) {
+		const linhas = await listarPedidosFila(false);
+		const filtradas = idconta
+			? linhas.filter((linha) => linha.idconta === idconta)
+			: linhas;
+		const grupos = agruparLinhasPedidoFila(filtradas);
+		const pedidos = [];
+		for (const itens of grupos) {
+			const primeiro = itens[0];
+			if (!primeiro) {
+				continue;
+			}
+			const conta = await obterContaMesa(primeiro.idconta);
+			const origem = conta
+				? rotuloOrigemConta(conta)
+				: await rotuloOrigemMesa(primeiro.numero_mesa);
+			pedidos.push({
+				clientOrderId: primeiro.client_order_id,
+				idconta: primeiro.idconta,
+				numeroMesa: primeiro.numero_mesa,
+				nomecliente: primeiro.nomecliente,
+				origem,
+				criadoem: primeiro.criadoem,
+				status: itens.some((item) => item.status === "pendente")
+					? "pendente"
+					: "entregue",
+				itens: itens.map((item) => ({
+					id: item.id,
+					idproduto: item.idproduto,
+					descricao: item.descricao,
+					quantidade: item.quantidade,
+					observacao: item.observacao,
+				})),
+			});
+		}
+		return pedidos;
+	},
+
+	async reimprimirPedidoProducao(clientOrderId: string) {
+		const id = clientOrderId.trim();
+		if (!id) {
+			throw new Error("Pedido inválido");
+		}
+		const pedidos = await localApi.listarPedidosProducao();
+		const pedido = pedidos.find((item) => item.clientOrderId === id);
+		if (!pedido) {
+			throw new Error("Pedido não encontrado");
+		}
+		await imprimirProducaoPedido({
+			origem: pedido.origem,
+			cliente: pedido.nomecliente,
+			itens: pedido.itens,
+			reimpressao: true,
+		});
+		return { ok: true };
 	},
 
 	async marcarPedidoEntregue(id: string) {
