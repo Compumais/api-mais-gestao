@@ -20,6 +20,11 @@ import { tributacaoPorCfop } from "./tributacao-por-cfop.js";
 
 const LIMITE_BODY_IMPORTACAO = 20 * 1024 * 1024;
 
+// Restringe :id a UUID no path para que segmentos estáticos ausentes
+// (ex.: "catalogo-pdv") retornem 404 em vez de FST_ERR_VALIDATION.
+const ID_UUID_PARAM =
+	":id([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})";
+
 export async function produtosRotas(app: FastifyInstance) {
 	app.addHook("onRequest", verifyJwt);
 
@@ -61,7 +66,7 @@ export async function produtosRotas(app: FastifyInstance) {
 		bodyLimit: LIMITE_BODY_IMPORTACAO,
 		handler: importarProdutos,
 	});
-	app.patch("/produtos/inativar/:id", {
+	app.patch(`/produtos/inativar/${ID_UUID_PARAM}`, {
 		schema: schema.inativarProdutoSchema,
 		handler: inativarProduto,
 	});
@@ -69,18 +74,18 @@ export async function produtosRotas(app: FastifyInstance) {
 		schema: schema.alterarProdutosEmMassaSchema,
 		handler: alterarProdutosEmMassa,
 	});
-	app.get("/produtos/:id/lotes", {
+	app.get(`/produtos/${ID_UUID_PARAM}/lotes`, {
 		handler: listarLotesProduto,
 	});
-	app.get("/produtos/:id", {
+	app.get(`/produtos/${ID_UUID_PARAM}`, {
 		schema: schema.buscarProdutoSchema,
 		handler: buscarProduto,
 	});
-	app.put("/produtos/:id", {
+	app.put(`/produtos/${ID_UUID_PARAM}`, {
 		schema: schema.atualizarProdutoSchema,
 		handler: atualizarProduto,
 	});
-	app.delete("/produtos/:id", {
+	app.delete(`/produtos/${ID_UUID_PARAM}`, {
 		schema: schema.excluirProdutoSchema,
 		handler: excluirProduto,
 	});
