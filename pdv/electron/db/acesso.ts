@@ -55,6 +55,7 @@ export const CHAVES_CONFIG_GOURMET = [
 	"senha_gerencial",
 	"senha_gerencial_hash",
 	"senha_gerencial_salt",
+	"senha_gerencial_habilitada",
 	"tecnibra_habilitada",
 	"tecnibra_xml_path",
 	"tecnibra_intervalo_ms",

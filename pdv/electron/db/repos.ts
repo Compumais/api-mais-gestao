@@ -2267,7 +2267,7 @@ export async function cancelarItemConta(
 		throw new Error(erroInicial);
 	}
 
-	if (await senhaGerencialDefinida()) {
+	if (await senhaGerencialExigida()) {
 		await exigirSenhaGerencial(senha);
 	}
 
@@ -2786,11 +2786,32 @@ export async function aplicarAjustesConta(params: {
 	return atualizada;
 }
 
+export async function senhaGerencialDefinida(): Promise<boolean> {
+	const hash = await getConfig("senha_gerencial_hash", "");
+	return Boolean(hash);
+}
+
+/** Default sensato: habilitada quando a chave ainda não existe. */
+export async function senhaGerencialHabilitada(): Promise<boolean> {
+	const flag = await getConfig("senha_gerencial_habilitada", "1");
+	return flag !== "0";
+}
+
+/** Senha definida e flag habilitada — operações devem pedir/validar senha. */
+export async function senhaGerencialExigida(): Promise<boolean> {
+	return (
+		(await senhaGerencialDefinida()) && (await senhaGerencialHabilitada())
+	);
+}
+
 export async function exigirSenhaGerencial(senha?: string): Promise<void> {
 	const hash = await getConfig("senha_gerencial_hash", "");
 	const salt = await getConfig("senha_gerencial_salt", "");
 	if (!hash || !salt) {
 		throw new Error("Defina a senha gerencial nas configurações do PDV");
+	}
+	if (!(await senhaGerencialHabilitada())) {
+		return;
 	}
 	const { senhaGerencialConfere } = await import("./senha-gerencial");
 	if (!senha || !senhaGerencialConfere(senha, salt, hash)) {
@@ -2805,11 +2826,6 @@ export async function validarSenhaGerencial(senha: string): Promise<boolean> {
 	} catch {
 		return false;
 	}
-}
-
-export async function senhaGerencialDefinida(): Promise<boolean> {
-	const hash = await getConfig("senha_gerencial_hash", "");
-	return Boolean(hash);
 }
 
 export async function registrarPagamentoConta(params: {

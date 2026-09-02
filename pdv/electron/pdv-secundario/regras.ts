@@ -63,6 +63,7 @@ export const CHAVES_CONFIG_LOCAL = [
 	"tema",
 	"senha_gerencial_hash",
 	"senha_gerencial_salt",
+	"senha_gerencial_habilitada",
 ] as const;
 
 export type ResultadoNumeroPdv =

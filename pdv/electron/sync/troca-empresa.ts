@@ -29,6 +29,7 @@ const CHAVES_CONFIG_EMPRESA: Array<[string, string]> = [
 	["terminais_pdv_json", "[]"],
 	["senha_gerencial_hash", ""],
 	["senha_gerencial_salt", ""],
+	["senha_gerencial_habilitada", "1"],
 	["pix_chave", ""],
 	["qtd_mesas", "20"],
 	["modelo_atendimento", "mesa"],
