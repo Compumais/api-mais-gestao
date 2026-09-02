@@ -455,10 +455,19 @@ async function concluirFiscalVenda(vendaId: string) {
 			mensagem: "NFC-e não emitida para este meio de pagamento",
 		};
 	}
-	return emitirOuContingencia({
+	const resultado = await emitirOuContingencia({
 		idvenda: vendaId,
 		onlineEmitir: () => emitirNfceOnlineDaVenda(vendaId),
 	});
+	// Rejeição SEFAZ: comprovante não fiscal no lugar do DANFC-e / pedido de produção.
+	if (resultado.modo === "erro") {
+		try {
+			await imprimirCupomNaoFiscal(vendaId);
+		} catch {
+			// impressão não bloqueia o fechamento da venda
+		}
+	}
+	return resultado;
 }
 
 /**
@@ -1276,10 +1285,13 @@ export const localApi = {
 		});
 		const fiscal = await concluirFiscalVenda(venda.id);
 
-		void imprimirProducaoPedido({
-			origem: "Balcão",
-			itens: input.itens,
-		});
+		// Em rejeição NFC-e o cupom não fiscal já foi impresso; não imprime produção/pedido.
+		if (fiscal.modo !== "erro") {
+			void imprimirProducaoPedido({
+				origem: "Balcão",
+				itens: input.itens,
+			});
+		}
 
 		void processarOutbox();
 		return { venda, fiscal };
