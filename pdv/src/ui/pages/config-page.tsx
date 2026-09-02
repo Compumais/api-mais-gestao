@@ -381,6 +381,8 @@ export function ConfigPage() {
 				impressora_host: config.impressora_host ?? "",
 				impressora_porta: config.impressora_porta ?? "9100",
 				impressao_producao_modo: config.impressao_producao_modo ?? "itens",
+				impressao_producao_imprimir_grupo:
+					config.impressao_producao_imprimir_grupo === "0" ? "0" : "1",
 				impressora_pedido_tipo: config.impressora_pedido_tipo ?? "",
 				impressora_pedido_nome: config.impressora_pedido_nome ?? "",
 				impressora_pedido_host: config.impressora_pedido_host ?? "",
@@ -1429,6 +1431,37 @@ export function ConfigPage() {
 												</div>
 												{(config.impressao_producao_modo ?? "itens") ===
 												"pedido" ? (
+													<div className="space-y-2 sm:col-span-2">
+														<Label htmlFor="impressao_producao_imprimir_grupo">
+															Imprimir nome do grupo
+														</Label>
+														<Select
+															id="impressao_producao_imprimir_grupo"
+															value={
+																config.impressao_producao_imprimir_grupo ===
+																"0"
+																	? "0"
+																	: "1"
+															}
+															onChange={(e) =>
+																set(
+																	"impressao_producao_imprimir_grupo",
+																	e.target.value,
+																)
+															}
+														>
+															<option value="1">Habilitado</option>
+															<option value="0">Desabilitado</option>
+														</Select>
+														<p className="text-xs text-muted-foreground">
+															Habilitado: no cupom único, cada setor aparece
+															como cabeçalho (ex.: COZINHA). Desabilitado:
+															só a lista de itens.
+														</p>
+													</div>
+												) : null}
+												{(config.impressao_producao_modo ?? "itens") ===
+												"pedido" ? (
 													<>
 														<div className="space-y-2">
 															<Label htmlFor="impressora_pedido_tipo">
@@ -1651,8 +1684,8 @@ export function ConfigPage() {
 											<p className="text-xs text-muted-foreground">
 												Por itens: cada grupo gourmet sai na impressora mapeada.
 												Por pedido: todos os produtos vão num único cupom,
-												independente do grupo. Sem impressora o pedido não
-												falha.
+												independente do grupo; o nome do grupo no cupom é
+												opcional. Sem impressora o pedido não falha.
 											</p>
 										</CardContent>
 									</Card>

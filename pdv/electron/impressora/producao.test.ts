@@ -2,8 +2,10 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
 	agruparLinhasPedidoFila,
+	deveAgruparPorGrupoProducao,
 	montarCuponsProducao,
 	nomeGrupoProducao,
+	normalizarImprimirGrupoProducao,
 	normalizarModoImpressaoProducao,
 	ordenarItensPorGrupo,
 } from "./producao";
@@ -13,6 +15,20 @@ describe("impressão de produção", () => {
 		assert.equal(normalizarModoImpressaoProducao(undefined), "itens");
 		assert.equal(normalizarModoImpressaoProducao("itens"), "itens");
 		assert.equal(normalizarModoImpressaoProducao("pedido"), "pedido");
+	});
+
+	it("flag imprimir grupo default habilitado", () => {
+		assert.equal(normalizarImprimirGrupoProducao(undefined), true);
+		assert.equal(normalizarImprimirGrupoProducao("1"), true);
+		assert.equal(normalizarImprimirGrupoProducao(""), true);
+		assert.equal(normalizarImprimirGrupoProducao("0"), false);
+	});
+
+	it("agrupa por grupo só no modo pedido com flag on", () => {
+		assert.equal(deveAgruparPorGrupoProducao("pedido", true), true);
+		assert.equal(deveAgruparPorGrupoProducao("pedido", false), false);
+		assert.equal(deveAgruparPorGrupoProducao("itens", true), false);
+		assert.equal(deveAgruparPorGrupoProducao("itens", false), false);
 	});
 
 	it("agrupa linhas da fila pelo pedido", () => {
