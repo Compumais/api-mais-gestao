@@ -1,6 +1,6 @@
 import type { ColumnDef, VisibilityState } from "@tanstack/react-table";
 import dayjs from "dayjs";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, MoreHorizontal } from "lucide-react";
 import { rotuloPagamentoVenda } from "@/lib/pagamento";
 import { cn, money } from "@/lib/utils";
 import {
@@ -11,6 +11,12 @@ import {
 } from "@/ui/components/cabecalho-coluna-tabela";
 import { Badge } from "@/ui/components/ui/badge";
 import { Button } from "@/ui/components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/ui/components/ui/dropdown-menu";
 
 export type VendaListagem = {
 	id: string;
@@ -445,57 +451,61 @@ export function criarColunasVendas(
 				meta,
 				cell: ({ row }) => {
 					const v = row.original;
+					const ocupado = opcoes.retransmitindoId === v.id;
 					return (
-						<div className="flex justify-end gap-1">
-							{podeRetransmitir(v.nfce_status) ? (
-								<Button
-									size="sm"
-									variant="outline"
-									disabled={opcoes.retransmitindoId === v.id}
-									onClick={() => opcoes.onRetransmitir(v.id)}
-								>
-									{opcoes.retransmitindoId === v.id
-										? "Enviando…"
-										: "Retransmitir"}
-								</Button>
-							) : null}
-							{podeInutilizar(v.nfce_status) ? (
-								<Button
-									size="sm"
-									variant="outline"
-									disabled={opcoes.retransmitindoId === v.id}
-									onClick={() => opcoes.onInutilizar(v.id)}
-								>
-									Inutilizar
-								</Button>
-							) : null}
-							{podeCancelarNfce(v.nfce_status) ? (
-								<Button
-									size="sm"
-									variant="outline"
-									disabled={opcoes.retransmitindoId === v.id}
-									onClick={() => opcoes.onCancelarNfce(v.id)}
-								>
-									Cancelar NFC-e
-								</Button>
-							) : null}
-							{podeCancelarVendaNaoFiscal(v) ? (
-								<Button
-									size="sm"
-									variant="outline"
-									disabled={opcoes.retransmitindoId === v.id}
-									onClick={() => opcoes.onCancelarVendaNaoFiscal(v.id)}
-								>
-									Cancelar venda
-								</Button>
-							) : null}
-							<Button
-								size="sm"
-								variant="ghost"
-								onClick={() => opcoes.onReimprimir(v.id)}
-							>
-								Reimprimir
-							</Button>
+						<div className="flex justify-end">
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<Button
+										size="sm"
+										variant="outline"
+										disabled={ocupado}
+										aria-label="Ações da venda"
+									>
+										<MoreHorizontal className="size-4" />
+										{ocupado ? "Enviando…" : "Ações"}
+									</Button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent align="end" className="min-w-44">
+									{podeRetransmitir(v.nfce_status) ? (
+										<DropdownMenuItem
+											disabled={ocupado}
+											onClick={() => opcoes.onRetransmitir(v.id)}
+										>
+											Retransmitir
+										</DropdownMenuItem>
+									) : null}
+									{podeInutilizar(v.nfce_status) ? (
+										<DropdownMenuItem
+											disabled={ocupado}
+											onClick={() => opcoes.onInutilizar(v.id)}
+										>
+											Inutilizar
+										</DropdownMenuItem>
+									) : null}
+									{podeCancelarNfce(v.nfce_status) ? (
+										<DropdownMenuItem
+											disabled={ocupado}
+											onClick={() => opcoes.onCancelarNfce(v.id)}
+										>
+											Cancelar NFC-e
+										</DropdownMenuItem>
+									) : null}
+									{podeCancelarVendaNaoFiscal(v) ? (
+										<DropdownMenuItem
+											disabled={ocupado}
+											onClick={() => opcoes.onCancelarVendaNaoFiscal(v.id)}
+										>
+											Cancelar venda
+										</DropdownMenuItem>
+									) : null}
+									<DropdownMenuItem
+										onClick={() => opcoes.onReimprimir(v.id)}
+									>
+										Reimprimir
+									</DropdownMenuItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
 						</div>
 					);
 				},
