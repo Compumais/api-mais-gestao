@@ -6,6 +6,7 @@ import {
 	Keyboard,
 	LayoutGrid,
 	Printer,
+	RefreshCw,
 	Scale,
 	Settings2,
 	Ticket,
@@ -63,7 +64,8 @@ type AbaId =
 	| "balanca"
 	| "backup"
 	| "xml"
-	| "rede";
+	| "rede"
+	| "atualizar";
 
 type StatusFiscal = {
 	apelido: string;
@@ -121,6 +123,41 @@ type StatusBackup = {
 	ultimoErro: string;
 };
 
+type StatusUpdatePdv = {
+	local: string;
+	remoto: string | null;
+	disponivel: boolean;
+	artifact: string | null;
+	updateCheckEm: string | null;
+};
+
+type ResultadoUpdatePdv = {
+	ok: boolean;
+	atualizou?: boolean;
+	local?: string;
+	remoto?: string;
+	motivo?: string;
+};
+
+function mensagemMotivoUpdate(motivo?: string): string {
+	switch (motivo) {
+		case "atualizado":
+			return "Você já está na versão mais recente.";
+		case "manifesto_indisponivel":
+			return "Não foi possível consultar o servidor de atualizações.";
+		case "dev":
+			return "A instalação automática só funciona no PDV instalado (não em modo desenvolvimento).";
+		case "plataforma":
+			return "Atualização automática disponível apenas no Windows.";
+		case "adiado":
+			return "Atualização adiada.";
+		case "download_falhou":
+			return "Falha ao baixar a atualização.";
+		default:
+			return motivo ? `Verificação concluída (${motivo}).` : "Verificação concluída.";
+	}
+}
+
 function layoutEtiquetaPreview(config: Config): string {
 	const prefixo =
 		(config.etiqueta_balanca_prefixo ?? "2").replace(/\D/g, "").slice(0, 1) ||
@@ -153,6 +190,7 @@ const ABAS: Array<{
 	{ id: "backup", label: "Backup", icon: HardDrive },
 	{ id: "xml", label: "XMLs NFC-e", icon: FileDown },
 	{ id: "rede", label: "Rede / sync", icon: Wifi },
+	{ id: "atualizar", label: "Atualizar sistema", icon: RefreshCw },
 ];
 
 export function ConfigPage() {
@@ -198,6 +236,9 @@ export function ConfigPage() {
 	} | null>(null);
 	const [portasBalanca, setPortasBalanca] = useState<string[]>([]);
 	const [statusBackup, setStatusBackup] = useState<StatusBackup | null>(null);
+	const [statusUpdate, setStatusUpdate] = useState<StatusUpdatePdv | null>(
+		null,
+	);
 	const periodoXmlPadrao = obterPeriodoMesAtual();
 	const [xmlDataInicio, setXmlDataInicio] = useState(
 		periodoXmlPadrao.dataInicio,
@@ -283,6 +324,11 @@ export function ConfigPage() {
 				setStatusBackup(await pdvInvoke<StatusBackup>("statusBackup"));
 			} catch {
 				setStatusBackup(null);
+			}
+			try {
+				setStatusUpdate(await pdvInvoke<StatusUpdatePdv>("statusUpdatePdv"));
+			} catch {
+				setStatusUpdate(null);
 			}
 		})();
 	}, []);
@@ -740,6 +786,50 @@ export function ConfigPage() {
 			setMsg(
 				err instanceof Error ? err.message : "Não foi possível abrir a pasta",
 			);
+		}
+	}
+
+	async function carregarStatusUpdate() {
+		try {
+			setStatusUpdate(await pdvInvoke<StatusUpdatePdv>("statusUpdatePdv"));
+		} catch {
+			setStatusUpdate(null);
+		}
+	}
+
+	async function verificarAtualizarSistema() {
+		setTestando("update");
+		setMsg("");
+		try {
+			await carregarStatusUpdate();
+			const result = await pdvInvoke<ResultadoUpdatePdv>("verificarUpdatePdv");
+			await carregarStatusUpdate();
+			if (result.atualizou) {
+				setMsg(
+					result.remoto
+						? `Atualização ${result.remoto} iniciada. O PDV será reiniciado.`
+						: "Atualização iniciada. O PDV será reiniciado.",
+				);
+				return;
+			}
+			if (result.local || result.remoto) {
+				const partes = [
+					result.local ? `Local: ${result.local}` : null,
+					result.remoto ? `Remota: ${result.remoto}` : null,
+				].filter(Boolean);
+				setMsg(`${mensagemMotivoUpdate(result.motivo)} ${partes.join(" · ")}`);
+				return;
+			}
+			setMsg(mensagemMotivoUpdate(result.motivo));
+		} catch (err) {
+			setMsg(
+				err instanceof Error
+					? err.message
+					: "Falha ao verificar atualização do sistema",
+			);
+			await carregarStatusUpdate();
+		} finally {
+			setTestando(null);
 		}
 	}
 
@@ -2261,6 +2351,82 @@ export function ConfigPage() {
 									</CardContent>
 								</Card>
 							</>
+						)}
+
+						{aba === "atualizar" && (
+							<Card>
+								<CardHeader>
+									<CardTitle>Atualizar sistema</CardTitle>
+								</CardHeader>
+								<CardContent className="grid gap-4 sm:grid-cols-2">
+									<div className="space-y-1">
+										<p className="text-xs text-muted-foreground">
+											Versão instalada
+										</p>
+										<p className="text-sm font-medium">
+											{statusUpdate?.local || "—"}
+										</p>
+									</div>
+									<div className="space-y-1">
+										<p className="text-xs text-muted-foreground">
+											Versão disponível
+										</p>
+										<p className="text-sm font-medium">
+											{statusUpdate?.remoto || "—"}
+										</p>
+									</div>
+									<div className="space-y-1 sm:col-span-2">
+										<p className="text-xs text-muted-foreground">Status</p>
+										<p className="text-sm">
+											{statusUpdate == null
+												? "Não foi possível consultar o status de atualização."
+												: statusUpdate.disponivel
+													? `Nova versão ${statusUpdate.remoto} disponível.`
+													: statusUpdate.remoto
+														? "PDV atualizado."
+														: "Nenhuma versão remota encontrada (verifique a URL da API e a conexão)."}
+										</p>
+									</div>
+									<div className="space-y-1 sm:col-span-2">
+										<p className="text-xs text-muted-foreground">
+											Última verificação
+										</p>
+										<p className="text-sm">
+											{formatarDataCurta(
+												statusUpdate?.updateCheckEm ?? undefined,
+											)}
+										</p>
+									</div>
+									{statusUpdate?.artifact ? (
+										<div className="space-y-1 sm:col-span-2">
+											<p className="text-xs text-muted-foreground">
+												Artefato
+											</p>
+											<p className="text-sm break-all">
+												{statusUpdate.artifact}
+											</p>
+										</div>
+									) : null}
+									<div className="sm:col-span-2 flex flex-wrap items-center gap-2">
+										<Button
+											type="button"
+											disabled={testando !== null}
+											onClick={() => void verificarAtualizarSistema()}
+										>
+											<RefreshCw className="size-4" />
+											{testando === "update"
+												? "Verificando…"
+												: statusUpdate?.disponivel
+													? "Atualizar agora"
+													: "Verificar atualização"}
+										</Button>
+										<p className="text-xs text-muted-foreground">
+											Consulta a API, compara com a versão local e, se houver
+											nova versão no Windows instalado, baixa e instala o Setup.
+										</p>
+									</div>
+								</CardContent>
+							</Card>
 						)}
 
 						{msg && <p className="text-sm">{msg}</p>}
