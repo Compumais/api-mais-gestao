@@ -8,6 +8,8 @@ export type ItemProducao = {
 	descricao: string;
 	quantidade: number;
 	observacao?: string | null;
+	/** Nome do grupo para cabeçalho no cupom único (modo pedido). */
+	nomeGrupo?: string | null;
 };
 
 export type ModoImpressaoProducao = "itens" | "pedido";
@@ -15,6 +17,14 @@ export type ModoImpressaoProducao = "itens" | "pedido";
 export type CupomProducao = {
 	destino: DestinoImpressora;
 	itens: ItemProducao[];
+};
+
+export type ProdutoProducaoInfo = {
+	idgrupogourmet: string | null;
+	idgrupo: string | null;
+	descricao: string;
+	nomeGrupogourmet: string | null;
+	nomeGrupo: string | null;
 };
 
 export function normalizarModoImpressaoProducao(
@@ -37,6 +47,54 @@ export function agruparLinhasPedidoFila<
 	);
 }
 
+/** Preferência: grupo gourmet; senão grupo comum. */
+export function nomeGrupoProducao(
+	produto: Pick<
+		ProdutoProducaoInfo,
+		"nomeGrupogourmet" | "nomeGrupo" | "idgrupogourmet" | "idgrupo"
+	> | null,
+): string | null {
+	const gourmet =
+		produto?.nomeGrupogourmet?.trim() || produto?.idgrupogourmet?.trim();
+	if (gourmet) {
+		return gourmet;
+	}
+	const grupo = produto?.nomeGrupo?.trim() || produto?.idgrupo?.trim();
+	return grupo || null;
+}
+
+/**
+ * Ordena itens por nome de grupo (OUTROS por último), preservando ordem relativa
+ * dentro de cada grupo. Usado no cupom único (modo pedido).
+ */
+export function ordenarItensPorGrupo(itens: ItemProducao[]): ItemProducao[] {
+	const chave = (item: ItemProducao) => item.nomeGrupo?.trim() || "OUTROS";
+	const ordemPrimeira = new Map<string, number>();
+	itens.forEach((item, idx) => {
+		const k = chave(item);
+		if (!ordemPrimeira.has(k)) {
+			ordemPrimeira.set(k, idx);
+		}
+	});
+	return [...itens].sort((a, b) => {
+		const ka = chave(a);
+		const kb = chave(b);
+		const aOutros = ka === "OUTROS" ? 1 : 0;
+		const bOutros = kb === "OUTROS" ? 1 : 0;
+		if (aOutros !== bOutros) {
+			return aOutros - bOutros;
+		}
+		if (ka !== kb) {
+			const cmp = ka.localeCompare(kb, "pt-BR", { sensitivity: "base" });
+			if (cmp !== 0) {
+				return cmp;
+			}
+			return (ordemPrimeira.get(ka) ?? 0) - (ordemPrimeira.get(kb) ?? 0);
+		}
+		return 0;
+	});
+}
+
 export async function rotuloOrigemMesa(numero: number): Promise<string> {
 	const modelo = await getConfig("modelo_atendimento", "mesa");
 	const nome = modelo === "comanda" ? "Comanda" : "Mesa";
@@ -47,9 +105,7 @@ export async function montarCuponsProducao(params: {
 	modo: ModoImpressaoProducao;
 	itens: ItemProducao[];
 	destinoPedido: DestinoImpressora | null;
-	resolverProduto: (
-		idproduto: string,
-	) => Promise<{ idgrupogourmet: string | null; descricao: string } | null>;
+	resolverProduto: (idproduto: string) => Promise<ProdutoProducaoInfo | null>;
 	resolverDestinoGrupo: (idGrupo: string) => Promise<DestinoImpressora | null>;
 }): Promise<CupomProducao[]> {
 	const enriquecidos: ItemProducao[] = [];
@@ -62,7 +118,10 @@ export async function montarCuponsProducao(params: {
 			descricao: item.descricao?.trim() || produto?.descricao || "",
 		};
 		if (params.modo === "pedido") {
-			enriquecidos.push(linha);
+			enriquecidos.push({
+				...linha,
+				nomeGrupo: nomeGrupoProducao(produto),
+			});
 			continue;
 		}
 		const idGrupo = produto?.idgrupogourmet?.trim();
@@ -86,23 +145,45 @@ export async function montarCuponsProducao(params: {
 		if (!enriquecidos.length || !params.destinoPedido) {
 			return [];
 		}
-		return [{ destino: params.destinoPedido, itens: enriquecidos }];
+		return [
+			{
+				destino: params.destinoPedido,
+				itens: ordenarItensPorGrupo(enriquecidos),
+			},
+		];
 	}
 	return [...porDestino.values()];
 }
 
-async function resolverProduto(idproduto: string): Promise<{
-	idgrupogourmet: string | null;
-	descricao: string;
-} | null> {
-	return (
-		(await queryOne<{
-			idgrupogourmet: string | null;
-			descricao: string;
-		}>("SELECT idgrupogourmet, descricao FROM produto_cache WHERE id = $1", [
-			idproduto,
-		])) ?? null
+async function resolverProduto(
+	idproduto: string,
+): Promise<ProdutoProducaoInfo | null> {
+	const row = await queryOne<{
+		idgrupogourmet: string | null;
+		idgrupo: string | null;
+		descricao: string;
+		nome_grupogourmet: string | null;
+		nome_grupo: string | null;
+	}>(
+		`SELECT p.idgrupogourmet, p.idgrupo, p.descricao,
+			gg.nome AS nome_grupogourmet,
+			g.nome AS nome_grupo
+		 FROM produto_cache p
+		 LEFT JOIN grupo_gourmet gg ON gg.id = p.idgrupogourmet
+		 LEFT JOIN grupo g ON g.id = p.idgrupo
+		 WHERE p.id = $1`,
+		[idproduto],
 	);
+	if (!row) {
+		return null;
+	}
+	return {
+		idgrupogourmet: row.idgrupogourmet,
+		idgrupo: row.idgrupo,
+		descricao: row.descricao,
+		nomeGrupogourmet: row.nome_grupogourmet,
+		nomeGrupo: row.nome_grupo,
+	};
 }
 
 async function destinoConfiguradoPedido(): Promise<DestinoImpressora | null> {
@@ -164,6 +245,7 @@ export async function imprimirProducaoPedido(params: {
 			resolverProduto,
 			resolverDestinoGrupo: obterDestinoGrupoGourmet,
 		});
+		const cupomUnico = modo === "pedido";
 		for (const { destino, itens } of cupons) {
 			await imprimirPedidoProducao({
 				destino,
@@ -172,6 +254,8 @@ export async function imprimirProducaoPedido(params: {
 				observacaoPedido: params.observacaoPedido,
 				itens,
 				reimpressao: params.reimpressao,
+				agruparPorGrupo: cupomUnico,
+				fonteMenor: cupomUnico,
 			});
 		}
 	} catch {

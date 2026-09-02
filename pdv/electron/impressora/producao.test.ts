@@ -3,7 +3,9 @@ import { describe, it } from "node:test";
 import {
 	agruparLinhasPedidoFila,
 	montarCuponsProducao,
+	nomeGrupoProducao,
 	normalizarModoImpressaoProducao,
+	ordenarItensPorGrupo,
 } from "./producao";
 
 describe("impressão de produção", () => {
@@ -24,6 +26,64 @@ describe("impressão de produção", () => {
 		assert.equal(grupos[1]?.length, 2);
 	});
 
+	it("preferência de nome: gourmet sobre grupo", () => {
+		assert.equal(
+			nomeGrupoProducao({
+				nomeGrupogourmet: "Cozinha",
+				nomeGrupo: "Pizzas",
+				idgrupogourmet: "g1",
+				idgrupo: "p1",
+			}),
+			"Cozinha",
+		);
+		assert.equal(
+			nomeGrupoProducao({
+				nomeGrupogourmet: null,
+				nomeGrupo: "Bebidas",
+				idgrupogourmet: null,
+				idgrupo: "b1",
+			}),
+			"Bebidas",
+		);
+		assert.equal(
+			nomeGrupoProducao({
+				nomeGrupogourmet: null,
+				nomeGrupo: null,
+				idgrupogourmet: null,
+				idgrupo: null,
+			}),
+			null,
+		);
+	});
+
+	it("ordena itens por grupo com OUTROS no fim", () => {
+		const ordenados = ordenarItensPorGrupo([
+			{ idproduto: "1", descricao: "Talher", quantidade: 1, nomeGrupo: null },
+			{
+				idproduto: "2",
+				descricao: "Coca",
+				quantidade: 1,
+				nomeGrupo: "Bar",
+			},
+			{
+				idproduto: "3",
+				descricao: "Pizza",
+				quantidade: 1,
+				nomeGrupo: "Cozinha",
+			},
+			{
+				idproduto: "4",
+				descricao: "Suco",
+				quantidade: 1,
+				nomeGrupo: "Bar",
+			},
+		]);
+		assert.deepEqual(
+			ordenados.map((i) => i.descricao),
+			["Coca", "Suco", "Pizza", "Talher"],
+		);
+	});
+
 	it("modo itens separa cupons por grupo gourmet", async () => {
 		const cupons = await montarCuponsProducao({
 			modo: "itens",
@@ -35,12 +95,30 @@ describe("impressão de produção", () => {
 			destinoPedido: null,
 			resolverProduto: async (id) => {
 				if (id === "pizza") {
-					return { idgrupogourmet: "cozinha", descricao: "Calabresa" };
+					return {
+						idgrupogourmet: "cozinha",
+						idgrupo: null,
+						descricao: "Calabresa",
+						nomeGrupogourmet: "Cozinha",
+						nomeGrupo: null,
+					};
 				}
 				if (id === "refri") {
-					return { idgrupogourmet: "bar", descricao: "Coca" };
+					return {
+						idgrupogourmet: "bar",
+						idgrupo: null,
+						descricao: "Coca",
+						nomeGrupogourmet: "Bar",
+						nomeGrupo: null,
+					};
 				}
-				return { idgrupogourmet: null, descricao: "Talher" };
+				return {
+					idgrupogourmet: null,
+					idgrupo: null,
+					descricao: "Talher",
+					nomeGrupogourmet: null,
+					nomeGrupo: null,
+				};
 			},
 			resolverDestinoGrupo: async (idGrupo) => {
 				if (idGrupo === "cozinha") {
@@ -61,22 +139,41 @@ describe("impressão de produção", () => {
 		);
 	});
 
-	it("modo pedido emite um cupom com todos os produtos", async () => {
+	it("modo pedido emite um cupom agrupado por grupo gourmet/grupo", async () => {
 		const cupons = await montarCuponsProducao({
 			modo: "pedido",
 			itens: [
 				{ idproduto: "pizza", descricao: "Calabresa", quantidade: 1 },
 				{ idproduto: "refri", descricao: "", quantidade: 2 },
 				{ idproduto: "sem-grupo", descricao: "Talher", quantidade: 1 },
+				{ idproduto: "agua", descricao: "Agua", quantidade: 1 },
 			],
 			destinoPedido: { tipo: "sistema", nome: "Unica" },
 			resolverProduto: async (id) => {
-				if (id === "refri") {
-					return { idgrupogourmet: "bar", descricao: "Coca" };
+				if (id === "refri" || id === "agua") {
+					return {
+						idgrupogourmet: "bar",
+						idgrupo: "bebidas",
+						descricao: id === "refri" ? "Coca" : "Agua",
+						nomeGrupogourmet: "Bar",
+						nomeGrupo: "Bebidas",
+					};
+				}
+				if (id === "pizza") {
+					return {
+						idgrupogourmet: "cozinha",
+						idgrupo: "pizzas",
+						descricao: "Calabresa",
+						nomeGrupogourmet: "Cozinha",
+						nomeGrupo: "Pizzas",
+					};
 				}
 				return {
-					idgrupogourmet: id === "pizza" ? "cozinha" : null,
+					idgrupogourmet: null,
+					idgrupo: null,
 					descricao: id,
+					nomeGrupogourmet: null,
+					nomeGrupo: null,
 				};
 			},
 			resolverDestinoGrupo: async () => ({ tipo: "sistema", nome: "Ignorada" }),
@@ -84,8 +181,16 @@ describe("impressão de produção", () => {
 		assert.equal(cupons.length, 1);
 		assert.equal(cupons[0]?.destino.nome, "Unica");
 		assert.deepEqual(
-			cupons[0]?.itens.map((i) => i.descricao),
-			["Calabresa", "Coca", "Talher"],
+			cupons[0]?.itens.map((i) => ({
+				descricao: i.descricao,
+				nomeGrupo: i.nomeGrupo,
+			})),
+			[
+				{ descricao: "Coca", nomeGrupo: "Bar" },
+				{ descricao: "Agua", nomeGrupo: "Bar" },
+				{ descricao: "Calabresa", nomeGrupo: "Cozinha" },
+				{ descricao: "Talher", nomeGrupo: null },
+			],
 		);
 	});
 
@@ -94,7 +199,13 @@ describe("impressão de produção", () => {
 			modo: "pedido",
 			itens: [{ idproduto: "1", descricao: "X", quantidade: 1 }],
 			destinoPedido: null,
-			resolverProduto: async () => ({ idgrupogourmet: "g", descricao: "X" }),
+			resolverProduto: async () => ({
+				idgrupogourmet: "g",
+				idgrupo: null,
+				descricao: "X",
+				nomeGrupogourmet: "G",
+				nomeGrupo: null,
+			}),
 			resolverDestinoGrupo: async () => ({ tipo: "sistema", nome: "A" }),
 		});
 		assert.deepEqual(cupons, []);

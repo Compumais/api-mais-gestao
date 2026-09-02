@@ -225,9 +225,19 @@ export async function imprimirPedidoProducao(params: {
 		quantidade: number;
 		descricao: string;
 		observacao?: string | null;
+		nomeGrupo?: string | null;
 	}>;
 	reimpressao?: boolean;
+	/** Cabeçalho por grupo (modo pedido / cupom único). */
+	agruparPorGrupo?: boolean;
+	/** Fonte um pouco menor (Font B / HTML 11pt) — cupom único. */
+	fonteMenor?: boolean;
 }): Promise<{ ok: boolean; modo: string }> {
+	const fonteMenor = Boolean(params.fonteMenor);
+	const larguraDesc = fonteMenor ? 28 : 30;
+	const larguraObs = fonteMenor ? 26 : 28;
+	const larguraLinha = fonteMenor ? 30 : 32;
+
 	const linhas: string[] = [];
 	linhas.push("================================");
 	linhas.push("     PEDIDO DE PRODUCAO");
@@ -244,26 +254,49 @@ export async function imprimirPedidoProducao(params: {
 		linhas.push("--------------------------------");
 		linhas.push("Obs pedido:");
 		const obs = params.observacaoPedido.trim();
-		for (let i = 0; i < obs.length; i += 32) {
-			linhas.push(obs.slice(i, i + 32));
+		for (let i = 0; i < obs.length; i += larguraLinha) {
+			linhas.push(obs.slice(i, i + larguraLinha));
 		}
 	}
 	linhas.push("--------------------------------");
-	for (const item of params.itens) {
+
+	const emitirItem = (item: (typeof params.itens)[number]) => {
 		linhas.push(
-			`${formatarQtd(item.quantidade)}  ${item.descricao.slice(0, 30)}`,
+			`${formatarQtd(item.quantidade)}  ${item.descricao.slice(0, larguraDesc)}`,
 		);
 		if (item.observacao?.trim()) {
 			const obs = item.observacao.trim();
-			linhas.push(`   Obs: ${obs.slice(0, 28)}`);
-			for (let i = 28; i < obs.length; i += 32) {
-				linhas.push(`   ${obs.slice(i, i + 32)}`);
+			linhas.push(`   Obs: ${obs.slice(0, larguraObs)}`);
+			for (let i = larguraObs; i < obs.length; i += larguraLinha) {
+				linhas.push(`   ${obs.slice(i, i + larguraLinha)}`);
 			}
 		}
+	};
+
+	if (params.agruparPorGrupo) {
+		let grupoAtual: string | null = null;
+		for (const item of params.itens) {
+			const grupo = item.nomeGrupo?.trim() || "OUTROS";
+			if (grupo !== grupoAtual) {
+				if (grupoAtual !== null) {
+					linhas.push("--------------------------------");
+				}
+				linhas.push(`>> ${grupo.toUpperCase().slice(0, larguraLinha)}`);
+				grupoAtual = grupo;
+			}
+			emitirItem(item);
+		}
+	} else {
+		for (const item of params.itens) {
+			emitirItem(item);
+		}
 	}
+
 	linhas.push("================================");
 	linhas.push("\n\n\n");
-	return enviarParaImpressora(linhas.join("\n"), params.destino);
+	return enviarTextoImpressora(linhas.join("\n"), params.destino, {
+		fonteMenor,
+	});
 }
 
 export async function testarImpressora(
