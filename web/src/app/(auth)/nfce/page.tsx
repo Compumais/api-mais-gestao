@@ -1,6 +1,6 @@
 "use client";
 
-import { IconChevronDown, IconLayoutColumns } from "@tabler/icons-react";
+import { IconChevronDown, IconLayoutColumns, IconSend } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	flexRender,
@@ -230,6 +230,31 @@ export default function NfcePage() {
 		},
 	});
 
+	const transmitirPendentesMutation = useMutation({
+		mutationFn: () => nfceService.transmitirPendentes({ idempresa }),
+		onSuccess: (resultado) => {
+			if (resultado.total === 0) {
+				toast.info("Nenhuma NFC-e pendente para transmitir.");
+			} else if (resultado.falhas === 0) {
+				toast.success(
+					`${resultado.autorizadas} NFC-e pendente(s) autorizada(s) com sucesso.`,
+				);
+			} else if (resultado.autorizadas === 0) {
+				toast.error(
+					`Nenhuma NFC-e autorizada. ${resultado.falhas} falha(s) no lote.`,
+				);
+			} else {
+				toast.warning(
+					`Lote concluído: ${resultado.autorizadas} autorizada(s), ${resultado.falhas} falha(s).`,
+				);
+			}
+			queryClient.invalidateQueries({ queryKey: ["nfce", idempresa] });
+		},
+		onError: (error: Error) => {
+			toast.error(error.message || "Erro ao transmitir NFC-e pendentes");
+		},
+	});
+
 	const eventoMutation = useMutation({
 		mutationFn: async ({
 			tipo,
@@ -358,6 +383,22 @@ export default function NfcePage() {
 						</p>
 					</div>
 					<div className="flex w-full flex-wrap gap-2 sm:w-auto sm:items-center">
+						<Button
+							type="button"
+							variant="default"
+							size="sm"
+							disabled={
+								transmitirPendentesMutation.isPending ||
+								reemitirMutation.isPending ||
+								mostrarSkeleton
+							}
+							onClick={() => transmitirPendentesMutation.mutate()}
+						>
+							<IconSend className="size-4" />
+							{transmitirPendentesMutation.isPending
+								? "Transmitindo…"
+								: "Transmitir todas pendentes"}
+						</Button>
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
 								<Button variant="outline" size="sm">

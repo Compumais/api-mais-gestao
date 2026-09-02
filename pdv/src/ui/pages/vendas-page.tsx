@@ -87,6 +87,7 @@ export function VendasPage() {
 	const [vendas, setVendas] = useState<VendaListagem[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [retransmitindoId, setRetransmitindoId] = useState<string | null>(null);
+	const [transmitindoPendentes, setTransmitindoPendentes] = useState(false);
 	const [inutilizarVendaId, setInutilizarVendaId] = useState<string | null>(
 		null,
 	);
@@ -187,6 +188,43 @@ export function VendasPage() {
 			setMsg(err instanceof Error ? err.message : "Falha ao retransmitir");
 		} finally {
 			setRetransmitindoId(null);
+		}
+	}
+
+	async function transmitirTodasPendentes() {
+		setTransmitindoPendentes(true);
+		setMsg("");
+		try {
+			const result = await pdvInvoke<{
+				total: number;
+				sucesso: number;
+				falhas: number;
+				outboxProcessados: number;
+			}>("transmitirTodasNfcePendentes");
+			if (result.total === 0) {
+				setMsg(
+					result.outboxProcessados > 0
+						? `Fila sincronizada (${result.outboxProcessados}). Nenhuma NFC-e pendente para transmitir.`
+						: "Nenhuma NFC-e pendente para transmitir.",
+				);
+			} else if (result.falhas === 0) {
+				setMsg(`${result.sucesso} NFC-e transmitida(s) com sucesso.`);
+			} else if (result.sucesso === 0) {
+				setMsg(`${result.falhas} falha(s) na transmissão das pendentes.`);
+			} else {
+				setMsg(
+					`Lote: ${result.sucesso} ok · ${result.falhas} falha(s) de ${result.total}.`,
+				);
+			}
+			await load();
+		} catch (err) {
+			setMsg(
+				err instanceof Error
+					? err.message
+					: "Falha ao transmitir NFC-e pendentes",
+			);
+		} finally {
+			setTransmitindoPendentes(false);
 		}
 	}
 
@@ -353,9 +391,22 @@ export function VendasPage() {
 					<FunctionBar
 						actions={[
 							{
+								key: "transmitir-pendentes",
+								label: transmitindoPendentes
+									? "Transmitindo…"
+									: "Transmitir todas pendentes",
+								variant: "default",
+								onClick: () => void transmitirTodasPendentes(),
+								disabled:
+									loading ||
+									transmitindoPendentes ||
+									retransmitindoId != null ||
+									status?.modo === "secundario",
+							},
+							{
 								key: "nao-sincronizadas",
 								label: "Não sincronizadas",
-								variant: "default",
+								variant: "secondary",
 								onClick: () => navigate("/vendas/nao-sincronizadas"),
 							},
 							{
@@ -364,7 +415,7 @@ export function VendasPage() {
 								hotkey: teclas.sincronizar,
 								variant: "secondary",
 								onClick: () => void load(),
-								disabled: loading,
+								disabled: loading || transmitindoPendentes,
 							},
 							{
 								key: "voltar",

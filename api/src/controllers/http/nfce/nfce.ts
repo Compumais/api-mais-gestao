@@ -12,6 +12,7 @@ import { listarNfcePendentesService } from "@/service/nfce-emissao/listar-nfce-p
 import { reemitirNfceService } from "@/service/nfce-emissao/reemitir-nfce.js";
 import { retransmitirNfceVendaPdvService } from "@/service/nfce-emissao/retransmitir-nfce-venda-pdv.js";
 import { transmitirNfceContingenciaService } from "@/service/nfce-emissao/transmitir-nfce-contingencia.js";
+import { transmitirNfcePendentesLoteService } from "@/service/nfce-emissao/transmitir-nfce-pendentes-lote.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
 const queryListarSchema = z.object({
@@ -58,6 +59,11 @@ const bodyContingenciaSchema = z.object({
 	numero: z.coerce.number().int().positive(),
 	motivo: z.string().min(1).max(256),
 	datacontingencia: z.string().min(1),
+});
+
+const bodyTransmitirPendentesLoteSchema = z.object({
+	idempresa: z.string().uuid(),
+	limite: z.coerce.number().int().min(1).max(100).optional(),
 });
 
 const itemAtualizacaoSchema = z.object({
@@ -396,6 +402,40 @@ export async function transmitirNfceContingencia(
 				error: resultado.error,
 				code: resultado.code,
 			});
+		}
+
+		return reply.status(resultado.status).send(resultado.body);
+	} catch (error) {
+		console.error(error);
+		if (error instanceof z.ZodError) {
+			return reply.status(400).send({
+				error: "Erro de validação",
+				code: "VALIDATION_ERROR",
+				details: error.issues,
+			});
+		}
+		return reply.status(httpErroInterno().status).send(httpErroInterno());
+	}
+}
+
+export async function transmitirNfcePendentesLote(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
+	try {
+		if (!request.user) {
+			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
+		}
+
+		const body = bodyTransmitirPendentesLoteSchema.parse(request.body);
+		const resultado = await transmitirNfcePendentesLoteService({
+			idusuario: request.user.id,
+			idempresa: body.idempresa,
+			...(body.limite !== undefined ? { limite: body.limite } : {}),
+		});
+
+		if (!resultado.success) {
+			return reply.status(resultado.status).send(resultado);
 		}
 
 		return reply.status(resultado.status).send(resultado.body);
