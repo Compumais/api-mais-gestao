@@ -187,6 +187,7 @@ export async function aplicarAjustesContaRemoto(
 		numeropessoas?: number;
 		taxaAtiva?: boolean;
 		desconto?: number;
+		acrescimo?: number;
 		senha?: string;
 	},
 ) {

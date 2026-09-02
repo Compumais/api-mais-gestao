@@ -58,6 +58,7 @@ const bodyBaixaSchema = z.object({
 		valortroco: z.string().nullable().optional(),
 		valortotal: z.string().nullable().optional(),
 		desconto: z.string().nullable().optional(),
+		valoracrescimo: z.string().nullable().optional(),
 		valortaxaservico: z.string().nullable().optional(),
 		valorcouverartistico: z.string().nullable().optional(),
 		valorentrega: z.string().nullable().optional(),

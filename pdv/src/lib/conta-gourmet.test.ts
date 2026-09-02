@@ -13,20 +13,22 @@ describe("totalFatiaItensSelecionados", () => {
 	const totais = {
 		subtotal: 100,
 		valordesconto: 10,
+		valoracrescimo: 5,
 		valortaxaservico: 10,
 		valorcouvert: 0,
 		valorentrega: 0,
-		valortotal: 100,
+		valortotal: 105,
 	};
 
 	it("cobra o total da conta quando todos os itens estão selecionados", () => {
-		assert.equal(totalFatiaItensSelecionados(itens, ["a", "b"], totais), 100);
+		assert.equal(totalFatiaItensSelecionados(itens, ["a", "b"], totais), 105);
 	});
 
 	it("rateia ajustes proporcionalmente", () => {
 		const total = totalFatiaItensSelecionados(itens, ["a"], totais);
 		const rateio = ratearAjustesFatia(40, totais);
 		assert.equal(total, rateio.total);
-		assert.equal(total, 40);
+		assert.equal(total, 42);
+		assert.equal(rateio.acrescimo, 2);
 	});
 });

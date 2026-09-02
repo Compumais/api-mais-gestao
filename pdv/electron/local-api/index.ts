@@ -377,6 +377,7 @@ async function emitirNfceOnlineDaVenda(
 				valorcartao: sync.valorcartao,
 				valorprepago: sync.valorprepago,
 				desconto: venda.valordesconto ?? 0,
+				valoracrescimo: venda.valoracrescimo ?? 0,
 				valortaxaservico: venda.valortaxaservico ?? 0,
 				valorcouverartistico: venda.valorcouvert ?? 0,
 			},
@@ -1871,6 +1872,7 @@ export const localApi = {
 			numeropessoas?: number;
 			taxaAtiva?: boolean;
 			desconto?: number;
+			acrescimo?: number;
 			senha?: string;
 		},
 	) {

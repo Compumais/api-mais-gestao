@@ -9,12 +9,14 @@ export type AjustesContaGourmet = {
 	percentualTaxa: number;
 	couvertUnitario: number;
 	desconto: number;
+	acrescimo?: number;
 	valorentrega?: number;
 };
 
 export type TotaisContaGourmet = {
 	subtotal: number;
 	valordesconto: number;
+	valoracrescimo: number;
 	valortaxaservico: number;
 	valorcouvert: number;
 	valorentrega: number;
@@ -26,6 +28,7 @@ export type FatiaItensGourmet = {
 	ids: string[];
 	subtotal: number;
 	desconto: number;
+	acrescimo: number;
 	taxa: number;
 	couvert: number;
 	entrega: number;
@@ -57,6 +60,9 @@ export function recalcularTotaisConta(
 	const desconto = arredondarMoeda(
 		Math.min(Math.max(0, Number(ajustes.desconto) || 0), subtotal),
 	);
+	const acrescimo = arredondarMoeda(
+		Math.max(0, Number(ajustes.acrescimo) || 0),
+	);
 	const percentual = Math.max(0, Number(ajustes.percentualTaxa) || 0);
 	const valortaxaservico = ajustes.taxaAtiva
 		? arredondarMoeda(subtotal * (percentual / 100))
@@ -70,12 +76,18 @@ export function recalcularTotaisConta(
 	const valortotal = arredondarMoeda(
 		Math.max(
 			0,
-			subtotal - desconto + valortaxaservico + valorcouvert + valorentrega,
+			subtotal -
+				desconto +
+				acrescimo +
+				valortaxaservico +
+				valorcouvert +
+				valorentrega,
 		),
 	);
 	return {
 		subtotal,
 		valordesconto: desconto,
+		valoracrescimo: acrescimo,
 		valortaxaservico,
 		valorcouvert,
 		valorentrega,
@@ -116,6 +128,7 @@ export function ratearAjustes(
 	totais: TotaisContaGourmet,
 ): {
 	desconto: number;
+	acrescimo: number;
 	taxa: number;
 	couvert: number;
 	entrega: number;
@@ -123,15 +136,25 @@ export function ratearAjustes(
 } {
 	const fatia = arredondarMoeda(subtotalFatia);
 	if (totais.subtotal <= 0) {
-		return { desconto: 0, taxa: 0, couvert: 0, entrega: 0, total: 0 };
+		return {
+			desconto: 0,
+			acrescimo: 0,
+			taxa: 0,
+			couvert: 0,
+			entrega: 0,
+			total: 0,
+		};
 	}
 	const r = fatia / totais.subtotal;
 	const desconto = arredondarMoeda(totais.valordesconto * r);
+	const acrescimo = arredondarMoeda((totais.valoracrescimo || 0) * r);
 	const taxa = arredondarMoeda(totais.valortaxaservico * r);
 	const couvert = arredondarMoeda(totais.valorcouvert * r);
 	const entrega = arredondarMoeda((totais.valorentrega || 0) * r);
-	const total = arredondarMoeda(fatia - desconto + taxa + couvert + entrega);
-	return { desconto, taxa, couvert, entrega, total };
+	const total = arredondarMoeda(
+		fatia - desconto + acrescimo + taxa + couvert + entrega,
+	);
+	return { desconto, acrescimo, taxa, couvert, entrega, total };
 }
 
 export function partirPorItens(
@@ -146,6 +169,7 @@ export function partirPorItens(
 	const usados = new Set<string>();
 	const fatias: FatiaItensGourmet[] = [];
 	let accDesconto = 0;
+	let accAcrescimo = 0;
 	let accTaxa = 0;
 	let accCouvert = 0;
 	let accEntrega = 0;
@@ -171,6 +195,9 @@ export function partirPorItens(
 		const ultima = i === grupos.length - 1;
 		if (ultima) {
 			const desconto = arredondarMoeda(totais.valordesconto - accDesconto);
+			const acrescimo = arredondarMoeda(
+				(totais.valoracrescimo || 0) - accAcrescimo,
+			);
 			const taxa = arredondarMoeda(totais.valortaxaservico - accTaxa);
 			const couvert = arredondarMoeda(totais.valorcouvert - accCouvert);
 			const entrega = arredondarMoeda(
@@ -181,6 +208,7 @@ export function partirPorItens(
 				ids,
 				subtotal,
 				desconto,
+				acrescimo,
 				taxa,
 				couvert,
 				entrega,
@@ -189,6 +217,7 @@ export function partirPorItens(
 		} else {
 			const rateio = ratearAjustes(subtotal, totais);
 			accDesconto = arredondarMoeda(accDesconto + rateio.desconto);
+			accAcrescimo = arredondarMoeda(accAcrescimo + rateio.acrescimo);
 			accTaxa = arredondarMoeda(accTaxa + rateio.taxa);
 			accCouvert = arredondarMoeda(accCouvert + rateio.couvert);
 			accEntrega = arredondarMoeda(accEntrega + rateio.entrega);
@@ -197,6 +226,7 @@ export function partirPorItens(
 				ids,
 				subtotal,
 				desconto: rateio.desconto,
+				acrescimo: rateio.acrescimo,
 				taxa: rateio.taxa,
 				couvert: rateio.couvert,
 				entrega: rateio.entrega,

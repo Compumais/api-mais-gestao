@@ -218,6 +218,13 @@ export function rotuloModelo(modelo: ModeloAtendimento | undefined) {
 	return { singular: "Mesa", plural: "Mesas" };
 }
 
+export function tituloContaAtendimento(
+	modelo: ModeloAtendimento | undefined,
+	numero: number,
+): string {
+	return `${rotuloModelo(modelo).singular} ${numero}`;
+}
+
 export function rotaHomePdv(status: StatusPdv | null | undefined): string {
 	return status?.moduloGourmet ? "/" : "/balcao";
 }

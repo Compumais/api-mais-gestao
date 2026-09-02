@@ -692,6 +692,7 @@ async function baixarEstoqueVendaOutbox(params: {
 				valorcartao: params.sync.valorcartao,
 				valorprepago: params.sync.valorprepago,
 				desconto: Number(params.payload.valordesconto ?? 0),
+				valoracrescimo: Number(params.payload.valoracrescimo ?? 0),
 				valortaxaservico: Number(params.payload.valortaxaservico ?? 0),
 				valorcouverartistico: Number(params.payload.valorcouvert ?? 0),
 				valorentrega: Number(params.payload.valorentrega ?? 0),

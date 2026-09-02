@@ -165,6 +165,7 @@ export type VendaLocal = {
 	valorcartao: number;
 	valortroco: number;
 	valordesconto?: number;
+	valoracrescimo?: number;
 	valortaxaservico?: number;
 	valorcouvert?: number;
 	valorentrega?: number;
@@ -195,6 +196,7 @@ export type ContaMesaLocal = {
 	numeropessoas: number;
 	subtotal: number;
 	valordesconto: number;
+	valoracrescimo: number;
 	valortaxaservico: number;
 	valorcouvert: number;
 	valorentrega: number;
@@ -1404,6 +1406,7 @@ type ContaGourmetRow = {
 	valortotal: number;
 	numeropessoas?: number | null;
 	valordesconto?: number | null;
+	valoracrescimo?: number | null;
 	valortaxaservico?: number | null;
 	valorcouvert?: number | null;
 	taxa_ativa?: number | null;
@@ -1499,16 +1502,18 @@ async function persistirTotaisConta(
 			valortotal = $1,
 			numeropessoas = $2,
 			valordesconto = $3,
-			valortaxaservico = $4,
-			valorcouvert = $5,
-			taxa_ativa = $6,
-			valorentrega = $7,
+			valoracrescimo = $4,
+			valortaxaservico = $5,
+			valorcouvert = $6,
+			taxa_ativa = $7,
+			valorentrega = $8,
 			sync_status = 'pendente'
-		 WHERE id = $8`,
+		 WHERE id = $9`,
 		[
 			totais.valortotal,
 			totais.numeropessoas,
 			totais.valordesconto,
+			totais.valoracrescimo,
 			totais.valortaxaservico,
 			totais.valorcouvert,
 			taxaAtiva ? 1 : 0,
@@ -1553,6 +1558,7 @@ async function recalcularContaPersistida(
 		percentualTaxa,
 		couvertUnitario: valorcouvert / Math.max(1, pessoas),
 		desconto: Number(conta.valordesconto) || 0,
+		acrescimo: Number(conta.valoracrescimo) || 0,
 		valorentrega,
 	});
 	await persistirTotaisConta(
@@ -1584,6 +1590,7 @@ function montarContaLocal(
 		numeropessoas: Number(conta.numeropessoas) || 1,
 		subtotal,
 		valordesconto: arredondarMoeda(Number(conta.valordesconto) || 0),
+		valoracrescimo: arredondarMoeda(Number(conta.valoracrescimo) || 0),
 		valortaxaservico: arredondarMoeda(Number(conta.valortaxaservico) || 0),
 		valorcouvert: arredondarMoeda(Number(conta.valorcouvert) || 0),
 		valorentrega: arredondarMoeda(Number(conta.valorentrega) || 0),
@@ -2598,6 +2605,7 @@ export async function fecharContaMesa(params: {
 		troco: restante.troco,
 		total: conta.valortotal,
 		valordesconto: conta.valordesconto,
+		valoracrescimo: conta.valoracrescimo,
 		valortaxaservico: conta.valortaxaservico,
 		valorcouvert: conta.valorcouvert,
 		valorentrega: conta.valorentrega,
@@ -2614,6 +2622,7 @@ async function gravarVendaMesa(params: {
 	troco?: number;
 	total: number;
 	valordesconto: number;
+	valoracrescimo?: number;
 	valortaxaservico: number;
 	valorcouvert: number;
 	valorentrega?: number;
@@ -2644,15 +2653,16 @@ async function gravarVendaMesa(params: {
 	const valorentrega = arredondarMoeda(
 		params.valorentrega ?? params.conta.valorentrega ?? 0,
 	);
+	const valoracrescimo = arredondarMoeda(Number(params.valoracrescimo) || 0);
 
 	const venda = await withTransaction(async (client) => {
 		await execute(
 			`INSERT INTO venda (
 				id, idempresa, numeropdv, origem, idconta, status, meio_pagamento,
 				valortotal, valordinheiro, valorpix, valorcartao, valortroco,
-				valordesconto, valortaxaservico, valorcouvert, valorentrega,
+				valordesconto, valoracrescimo, valortaxaservico, valorcouvert, valorentrega,
 				criadoem, sync_status, nfce_status, idcliente, nomecliente, cnpjcpf
-			) VALUES ($1, $2, $3, $4, $5, 'fechada', $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, 'pendente', 'pendente', $17, $18, $19)`,
+			) VALUES ($1, $2, $3, $4, $5, 'fechada', $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, 'pendente', 'pendente', $18, $19, $20)`,
 			[
 				idVenda,
 				sessao.idempresa,
@@ -2666,6 +2676,7 @@ async function gravarVendaMesa(params: {
 				arredondarMoeda(sync.valorcartaocredito + sync.valorcartaodebito),
 				fechamento.troco,
 				params.valordesconto,
+				valoracrescimo,
 				params.valortaxaservico,
 				params.valorcouvert,
 				valorentrega,
@@ -2754,6 +2765,7 @@ async function gravarVendaMesa(params: {
 		valortotal: params.total,
 		valortroco: fechamento.troco,
 		valordesconto: params.valordesconto,
+		valoracrescimo,
 		valortaxaservico: params.valortaxaservico,
 		valorcouvert: params.valorcouvert,
 		valorentrega,
@@ -2771,6 +2783,7 @@ export async function aplicarAjustesConta(params: {
 	numeropessoas?: number;
 	taxaAtiva?: boolean;
 	desconto?: number;
+	acrescimo?: number;
 	senha?: string;
 }): Promise<ContaMesaLocal> {
 	const conta = await obterContaMesa(params.idconta);
@@ -2779,12 +2792,24 @@ export async function aplicarAjustesConta(params: {
 	}
 
 	let desconto = conta.valordesconto;
+	let acrescimo = conta.valoracrescimo;
+	let precisaSenha = false;
 	if (params.desconto !== undefined) {
 		const novo = arredondarMoeda(Math.max(0, Number(params.desconto) || 0));
 		if (Math.abs(novo - conta.valordesconto) > 0.009) {
-			await exigirSenhaGerencial(params.senha);
+			precisaSenha = true;
 			desconto = novo;
 		}
+	}
+	if (params.acrescimo !== undefined) {
+		const novo = arredondarMoeda(Math.max(0, Number(params.acrescimo) || 0));
+		if (Math.abs(novo - conta.valoracrescimo) > 0.009) {
+			precisaSenha = true;
+			acrescimo = novo;
+		}
+	}
+	if (precisaSenha) {
+		await exigirSenhaGerencial(params.senha);
 	}
 
 	const numeropessoas =
@@ -2805,11 +2830,19 @@ export async function aplicarAjustesConta(params: {
 		`UPDATE conta_mesa SET
 			numeropessoas = $1,
 			valordesconto = $2,
-			valorcouvert = $3,
-			taxa_ativa = $4,
+			valoracrescimo = $3,
+			valorcouvert = $4,
+			taxa_ativa = $5,
 			sync_status = 'pendente'
-		 WHERE id = $5`,
-		[numeropessoas, desconto, valorcouvert, taxaAtiva ? 1 : 0, params.idconta],
+		 WHERE id = $6`,
+		[
+			numeropessoas,
+			desconto,
+			acrescimo,
+			valorcouvert,
+			taxaAtiva ? 1 : 0,
+			params.idconta,
+		],
 	);
 	await recalcularContaPersistida(params.idconta);
 	const atualizada = await obterContaMesa(params.idconta);
@@ -2946,6 +2979,7 @@ export async function fecharFatiaItens(params: {
 	const totaisConta: TotaisContaGourmet = {
 		subtotal: conta.subtotal,
 		valordesconto: conta.valordesconto,
+		valoracrescimo: conta.valoracrescimo,
 		valortaxaservico: conta.valortaxaservico,
 		valorcouvert: conta.valorcouvert,
 		valorentrega: conta.valorentrega,
@@ -2974,6 +3008,7 @@ export async function fecharFatiaItens(params: {
 		troco: params.troco,
 		total: fatia.total,
 		valordesconto: fatia.desconto,
+		valoracrescimo: fatia.acrescimo,
 		valortaxaservico: fatia.taxa,
 		valorcouvert: fatia.couvert,
 		valorentrega: fatia.entrega,
@@ -2989,12 +3024,16 @@ export async function fecharFatiaItens(params: {
 	const descontoRestante = arredondarMoeda(
 		conta.valordesconto - fatia.desconto,
 	);
+	const acrescimoRestante = arredondarMoeda(
+		conta.valoracrescimo - fatia.acrescimo,
+	);
 	const couvertRestante = arredondarMoeda(conta.valorcouvert - fatia.couvert);
 	const entregaRestante = arredondarMoeda(conta.valorentrega - fatia.entrega);
 	await execute(
-		`UPDATE conta_mesa SET valordesconto = $1, valorcouvert = $2, valorentrega = $3, sync_status = 'pendente' WHERE id = $4`,
+		`UPDATE conta_mesa SET valordesconto = $1, valoracrescimo = $2, valorcouvert = $3, valorentrega = $4, sync_status = 'pendente' WHERE id = $5`,
 		[
 			Math.max(0, descontoRestante),
+			Math.max(0, acrescimoRestante),
 			Math.max(0, couvertRestante),
 			Math.max(0, entregaRestante),
 			conta.id,

@@ -587,6 +587,7 @@ async function despachar(
 					body.numeropessoas != null ? Number(body.numeropessoas) : undefined,
 				taxaAtiva: body.taxaAtiva != null ? Boolean(body.taxaAtiva) : undefined,
 				desconto: body.desconto != null ? Number(body.desconto) : undefined,
+				acrescimo: body.acrescimo != null ? Number(body.acrescimo) : undefined,
 				senha: body.senha != null ? String(body.senha) : undefined,
 			}),
 		};

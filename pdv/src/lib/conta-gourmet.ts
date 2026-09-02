@@ -8,6 +8,7 @@ export function arredondarMoeda(valor: number): number {
 export type TotaisContaParaFatia = {
 	subtotal: number;
 	valordesconto: number;
+	valoracrescimo?: number;
 	valortaxaservico: number;
 	valorcouvert: number;
 	valorentrega?: number;
@@ -20,6 +21,7 @@ export function ratearAjustesFatia(
 	totais: TotaisContaParaFatia,
 ): {
 	desconto: number;
+	acrescimo: number;
 	taxa: number;
 	couvert: number;
 	entrega: number;
@@ -27,15 +29,25 @@ export function ratearAjustesFatia(
 } {
 	const fatia = arredondarMoeda(subtotalFatia);
 	if (totais.subtotal <= 0) {
-		return { desconto: 0, taxa: 0, couvert: 0, entrega: 0, total: 0 };
+		return {
+			desconto: 0,
+			acrescimo: 0,
+			taxa: 0,
+			couvert: 0,
+			entrega: 0,
+			total: 0,
+		};
 	}
 	const r = fatia / totais.subtotal;
 	const desconto = arredondarMoeda(totais.valordesconto * r);
+	const acrescimo = arredondarMoeda((totais.valoracrescimo || 0) * r);
 	const taxa = arredondarMoeda(totais.valortaxaservico * r);
 	const couvert = arredondarMoeda(totais.valorcouvert * r);
 	const entrega = arredondarMoeda((totais.valorentrega || 0) * r);
-	const total = arredondarMoeda(fatia - desconto + taxa + couvert + entrega);
-	return { desconto, taxa, couvert, entrega, total };
+	const total = arredondarMoeda(
+		fatia - desconto + acrescimo + taxa + couvert + entrega,
+	);
+	return { desconto, acrescimo, taxa, couvert, entrega, total };
 }
 
 /** Total a cobrar pelos itens selecionados (com rateio de taxa/desconto/couvert/entrega). */

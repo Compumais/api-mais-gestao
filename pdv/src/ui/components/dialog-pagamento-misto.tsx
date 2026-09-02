@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	type BotaoMeioPagamento,
 	CHAVE_TECLADO_VIRTUAL_PAGAMENTO,
+	calcularAcrescimoInformado,
 	calcularDescontoInformado,
 	lancamentoTemSitef,
 	MEIOS_PAGAMENTO_PADRAO,
@@ -42,6 +43,7 @@ export type FechamentoMisto = {
 	troco: number;
 	cliente: ClienteVenda | null;
 	desconto: number;
+	acrescimo: number;
 	senhaGerencial: string | null;
 };
 
@@ -61,8 +63,10 @@ type DialogPagamentoMistoProps = {
 	confirmarLabel?: string;
 	nomeClienteHint?: string | null;
 	permitirDesconto?: boolean;
+	permitirAcrescimo?: boolean;
 	iniciarComDesconto?: boolean;
 	descontoJaAplicado?: number;
+	acrescimoJaAplicado?: number;
 	/** Itens da conta/venda — exibidos no lugar do teclado touch quando ele está oculto. */
 	itens?: ItemPagamentoResumo[];
 	onCancelar: () => void;
@@ -103,8 +107,10 @@ export function DialogPagamentoMisto({
 	confirmarLabel = "Confirmar",
 	nomeClienteHint = null,
 	permitirDesconto = true,
+	permitirAcrescimo = false,
 	iniciarComDesconto = false,
 	descontoJaAplicado = 0,
+	acrescimoJaAplicado = 0,
 	itens = [],
 	onCancelar,
 	onConfirmar,
@@ -125,17 +131,22 @@ export function DialogPagamentoMisto({
 		useState<BotaoMeioPagamento | null>(null);
 	const [mostrarTeclado, setMostrarTeclado] = useState(true);
 	const [descontoAplicado, setDescontoAplicado] = useState(0);
+	const [acrescimoAplicado, setAcrescimoAplicado] = useState(0);
 	const [senhaUsada, setSenhaUsada] = useState("");
-	const [painelDesconto, setPainelDesconto] = useState(false);
+	const [painelAjuste, setPainelAjuste] = useState<
+		null | "desconto" | "acrescimo"
+	>(null);
 	const [descontoInput, setDescontoInput] = useState("");
 	const [descontoPercentual, setDescontoPercentual] = useState(false);
+	const [acrescimoInput, setAcrescimoInput] = useState("");
+	const [acrescimoPercentual, setAcrescimoPercentual] = useState(false);
 	const [senhaDesconto, setSenhaDesconto] = useState("");
 	const [exigeSenhaDesconto, setExigeSenhaDesconto] = useState(true);
 	const { teclas, meios: teclasMeios } = useTeclasFuncao();
 
 	const totalLiquido = useMemo(
-		() => Math.max(0, total - descontoAplicado),
-		[total, descontoAplicado],
+		() => Math.max(0, total - descontoAplicado + acrescimoAplicado),
+		[total, descontoAplicado, acrescimoAplicado],
 	);
 	const restante = useMemo(
 		() => saldoRestante(totalLiquido, lancamentos),
@@ -165,11 +176,14 @@ export function DialogPagamentoMisto({
 		setSugestoes([]);
 		setPendenteBandeira(null);
 		setDescontoAplicado(0);
+		setAcrescimoAplicado(0);
 		setSenhaUsada("");
 		setDescontoInput("");
 		setDescontoPercentual(false);
+		setAcrescimoInput("");
+		setAcrescimoPercentual(false);
 		setSenhaDesconto("");
-		setPainelDesconto(permitirDesconto && iniciarComDesconto);
+		setPainelAjuste(permitirDesconto && iniciarComDesconto ? "desconto" : null);
 		void pdvInvoke<Record<string, string>>("getConfig")
 			.then((config) => {
 				setMostrarTeclado(
@@ -250,14 +264,20 @@ export function DialogPagamentoMisto({
 			troco: trocoEstimado(totalLiquido, lista),
 			cliente,
 			desconto: descontoAplicado,
+			acrescimo: acrescimoAplicado,
 			senhaGerencial: senhaUsada || null,
 		});
 	}
 
-	async function abrirPainelDesconto() {
-		if (!permitirDesconto || ocupado) return;
+	async function abrirPainelAjuste(tipo: "desconto" | "acrescimo") {
+		const permitido = tipo === "desconto" ? permitirDesconto : permitirAcrescimo;
+		if (!permitido || ocupado) return;
 		if (lancamentos.length) {
-			setErro("Remova os lançamentos para alterar o desconto");
+			setErro(
+				tipo === "desconto"
+					? "Remova os lançamentos para alterar o desconto"
+					: "Remova os lançamentos para alterar o acréscimo",
+			);
 			return;
 		}
 		setErro("");
@@ -268,23 +288,37 @@ export function DialogPagamentoMisto({
 		} catch {
 			setExigeSenhaDesconto(true);
 		}
-		setPainelDesconto(true);
+		setPainelAjuste(tipo);
 	}
 
-	async function aplicarDesconto() {
-		if (!permitirDesconto || ocupado) return;
+	async function abrirPainelDesconto() {
+		await abrirPainelAjuste("desconto");
+	}
+
+	async function aplicarAjuste(tipo: "desconto" | "acrescimo") {
+		const permitido = tipo === "desconto" ? permitirDesconto : permitirAcrescimo;
+		if (!permitido || ocupado) return;
 		if (lancamentos.length) {
-			setErro("Remova os lançamentos para alterar o desconto");
+			setErro(
+				tipo === "desconto"
+					? "Remova os lançamentos para alterar o desconto"
+					: "Remova os lançamentos para alterar o acréscimo",
+			);
 			return;
 		}
-		const informado = Number(descontoInput.replace(",", "."));
-		const calculado = calcularDescontoInformado(
-			total,
-			informado,
-			descontoPercentual,
+		const informado = Number(
+			(tipo === "desconto" ? descontoInput : acrescimoInput).replace(",", "."),
 		);
+		const calculado =
+			tipo === "desconto"
+				? calcularDescontoInformado(total, informado, descontoPercentual)
+				: calcularAcrescimoInformado(total, informado, acrescimoPercentual);
 		if (!(calculado > 0)) {
-			setErro("Informe um desconto válido");
+			setErro(
+				tipo === "desconto"
+					? "Informe um desconto válido"
+					: "Informe um acréscimo válido",
+			);
 			return;
 		}
 		setProcessando(true);
@@ -312,8 +346,12 @@ export function DialogPagamentoMisto({
 			} else {
 				setSenhaUsada("");
 			}
-			setDescontoAplicado(calculado);
-			setPainelDesconto(false);
+			if (tipo === "desconto") {
+				setDescontoAplicado(calculado);
+			} else {
+				setAcrescimoAplicado(calculado);
+			}
+			setPainelAjuste(null);
 			setSenhaDesconto("");
 			setErro("");
 		} catch (err) {
@@ -323,15 +361,28 @@ export function DialogPagamentoMisto({
 		}
 	}
 
-	function limparDesconto() {
+	function limparAjuste(tipo: "desconto" | "acrescimo") {
 		if (ocupado) return;
 		if (lancamentos.length) {
-			setErro("Remova os lançamentos para alterar o desconto");
+			setErro(
+				tipo === "desconto"
+					? "Remova os lançamentos para alterar o desconto"
+					: "Remova os lançamentos para alterar o acréscimo",
+			);
 			return;
 		}
-		setDescontoAplicado(0);
-		setSenhaUsada("");
-		setDescontoInput("");
+		if (tipo === "desconto") {
+			setDescontoAplicado(0);
+			setDescontoInput("");
+		} else {
+			setAcrescimoAplicado(0);
+			setAcrescimoInput("");
+		}
+		const outroAtivo =
+			tipo === "desconto" ? acrescimoAplicado > 0 : descontoAplicado > 0;
+		if (!outroAtivo) {
+			setSenhaUsada("");
+		}
 		setSenhaDesconto("");
 		setErro("");
 	}
@@ -571,12 +622,17 @@ export function DialogPagamentoMisto({
 								Desconto já na conta: {money(descontoJaAplicado)}
 							</p>
 						) : null}
+						{acrescimoJaAplicado > 0 ? (
+							<p className="text-xs text-muted-foreground">
+								Acréscimo já na conta: {money(acrescimoJaAplicado)}
+							</p>
+						) : null}
 					</div>
 					<div className="flex gap-2 text-center">
 						<div className="min-w-28 rounded-md border bg-background px-3 py-2">
 							<div className="text-[11px] text-muted-foreground">Total</div>
 							<div className="text-lg font-bold">{money(totalLiquido)}</div>
-							{descontoAplicado > 0 ? (
+							{descontoAplicado > 0 || acrescimoAplicado > 0 ? (
 								<div className="text-[10px] text-muted-foreground">
 									de {money(total)}
 								</div>
@@ -589,6 +645,16 @@ export function DialogPagamentoMisto({
 								</div>
 								<div className="text-lg font-bold text-emerald-700 dark:text-emerald-400">
 									-{money(descontoAplicado)}
+								</div>
+							</div>
+						) : null}
+						{acrescimoAplicado > 0 ? (
+							<div className="min-w-28 rounded-md border border-orange-500/40 bg-orange-500/10 px-3 py-2">
+								<div className="text-[11px] text-muted-foreground">
+									Acréscimo
+								</div>
+								<div className="text-lg font-bold text-orange-700 dark:text-orange-400">
+									+{money(acrescimoAplicado)}
 								</div>
 							</div>
 						) : null}
@@ -681,12 +747,12 @@ export function DialogPagamentoMisto({
 						</div>
 
 						{permitirDesconto ? (
-							painelDesconto ? (
+							painelAjuste === "desconto" ? (
 								<form
 									className="space-y-2 rounded-md border bg-background p-3"
 									onSubmit={(e) => {
 										e.preventDefault();
-										void aplicarDesconto();
+										void aplicarAjuste("desconto");
 									}}
 								>
 									<p className="text-sm font-medium">Desconto</p>
@@ -736,7 +802,7 @@ export function DialogPagamentoMisto({
 											className="flex-1"
 											disabled={ocupado}
 											onClick={() => {
-												setPainelDesconto(false);
+												setPainelAjuste(null);
 												setSenhaDesconto("");
 											}}
 										>
@@ -777,7 +843,7 @@ export function DialogPagamentoMisto({
 												size="sm"
 												variant="ghost"
 												disabled={ocupado}
-												onClick={() => limparDesconto()}
+												onClick={() => limparAjuste("desconto")}
 											>
 												Limpar
 											</Button>
@@ -787,7 +853,7 @@ export function DialogPagamentoMisto({
 											size="sm"
 											variant="outline"
 											disabled={ocupado}
-											onClick={() => abrirPainelDesconto()}
+											onClick={() => void abrirPainelAjuste("desconto")}
 										>
 											{descontoAplicado > 0 ? "Alterar" : "Desconto"}
 											{teclas.desconto ? (
@@ -795,6 +861,122 @@ export function DialogPagamentoMisto({
 													{teclas.desconto}
 												</span>
 											) : null}
+										</Button>
+									</div>
+								</div>
+							)
+						) : null}
+
+						{permitirAcrescimo ? (
+							painelAjuste === "acrescimo" ? (
+								<form
+									className="space-y-2 rounded-md border bg-background p-3"
+									onSubmit={(e) => {
+										e.preventDefault();
+										void aplicarAjuste("acrescimo");
+									}}
+								>
+									<p className="text-sm font-medium">Acréscimo</p>
+									<div className="flex gap-2">
+										<Button
+											type="button"
+											size="sm"
+											variant={acrescimoPercentual ? "outline" : "default"}
+											onClick={() => setAcrescimoPercentual(false)}
+										>
+											R$
+										</Button>
+										<Button
+											type="button"
+											size="sm"
+											variant={acrescimoPercentual ? "default" : "outline"}
+											onClick={() => setAcrescimoPercentual(true)}
+										>
+											%
+										</Button>
+									</div>
+									<Input
+										autoFocus
+										inputMode="decimal"
+										placeholder={
+											acrescimoPercentual
+												? "Percentual (ex.: 10)"
+												: "Valor em reais"
+										}
+										value={acrescimoInput}
+										onChange={(e) => setAcrescimoInput(e.target.value)}
+										disabled={ocupado}
+									/>
+									{exigeSenhaDesconto ? (
+										<Input
+											type="password"
+											placeholder="Senha gerencial"
+											value={senhaDesconto}
+											onChange={(e) => setSenhaDesconto(e.target.value)}
+											disabled={ocupado}
+										/>
+									) : null}
+									<div className="flex gap-2">
+										<Button
+											type="button"
+											variant="outline"
+											className="flex-1"
+											disabled={ocupado}
+											onClick={() => {
+												setPainelAjuste(null);
+												setSenhaDesconto("");
+											}}
+										>
+											Cancelar
+										</Button>
+										<Button
+											type="submit"
+											className="flex-1"
+											disabled={
+												ocupado ||
+												!acrescimoInput.trim() ||
+												(exigeSenhaDesconto && !senhaDesconto)
+											}
+										>
+											Aplicar
+										</Button>
+									</div>
+								</form>
+							) : (
+								<div className="flex items-center justify-between gap-2 rounded-md border bg-background px-3 py-2">
+									<div className="min-w-0 text-sm">
+										{acrescimoAplicado > 0 ? (
+											<span className="font-medium">
+												Acréscimo {money(acrescimoAplicado)}
+											</span>
+										) : (
+											<span className="text-muted-foreground">
+												{exigeSenhaDesconto
+													? "Acréscimo com senha gerencial"
+													: "Acréscimo"}
+											</span>
+										)}
+									</div>
+									<div className="flex shrink-0 gap-1">
+										{acrescimoAplicado > 0 ? (
+											<Button
+												type="button"
+												size="sm"
+												variant="ghost"
+												disabled={ocupado}
+												onClick={() => limparAjuste("acrescimo")}
+											>
+												Limpar
+											</Button>
+										) : null}
+										<Button
+											type="button"
+											size="sm"
+											variant="outline"
+											disabled={ocupado}
+											onClick={() => void abrirPainelAjuste("acrescimo")}
+										>
+											{acrescimoAplicado > 0 ? "Alterar" : "Acréscimo"}
 										</Button>
 									</div>
 								</div>

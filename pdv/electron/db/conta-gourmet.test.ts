@@ -30,10 +30,25 @@ describe("recalcularTotaisConta", () => {
 		);
 		assert.equal(totais.subtotal, 100);
 		assert.equal(totais.valordesconto, 8);
+		assert.equal(totais.valoracrescimo, 0);
 		assert.equal(totais.valortaxaservico, 10);
 		assert.equal(totais.valorcouvert, 10);
 		assert.equal(totais.valorentrega, 0);
 		assert.equal(totais.valortotal, 112);
+	});
+
+	it("soma acréscimo operacional ao total após desconto e taxas", () => {
+		const totais = recalcularTotaisConta([{ precototal: 100 }], {
+			numeropessoas: 1,
+			taxaAtiva: false,
+			percentualTaxa: 0,
+			couvertUnitario: 0,
+			desconto: 10,
+			acrescimo: 7,
+		});
+		assert.equal(totais.valordesconto, 10);
+		assert.equal(totais.valoracrescimo, 7);
+		assert.equal(totais.valortotal, 97);
 	});
 
 	it("inclui taxa de entrega no total", () => {
