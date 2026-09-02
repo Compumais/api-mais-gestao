@@ -71,6 +71,7 @@ import {
 	caixaAberto,
 	caixaAbertoOutroOperador,
 	calcularResumoTurnoAberto,
+	listarItensVendidosTurnoAberto,
 	concluirOutboxCriarVendaLocal,
 	contarOutboxPendentes,
 	criarVendaRapida,
@@ -129,6 +130,7 @@ import { emitirOuContingencia } from "../fiscal/contingencia";
 import { exportarXmlsNfce as gravarXmlsNfcePeriodo } from "../fiscal/exportar-xml-nfce";
 import {
 	imprimirComprovanteFechamentoCaixa,
+	imprimirItensVendidosTurno,
 	imprimirCupomNaoFiscal,
 	imprimirDanfce,
 	imprimirPreConta,
@@ -867,6 +869,32 @@ export const localApi = {
 
 	async resumoTurnoCaixa() {
 		return calcularResumoTurnoAberto();
+	},
+
+	async listarItensVendidosTurno() {
+		return listarItensVendidosTurnoAberto();
+	},
+
+	async imprimirItensVendidosTurno() {
+		const [caixa, sessao, itens] = await Promise.all([
+			caixaAberto(),
+			obterSessao(),
+			listarItensVendidosTurnoAberto(),
+		]);
+		if (!caixa) {
+			throw new Error("Nenhum caixa aberto para este operador");
+		}
+		return imprimirItensVendidosTurno({
+			nomeempresa: sessao.nomeempresa,
+			username: sessao.username,
+			numeropdv: caixa.numeropdv,
+			abertoem: caixa.abertoem,
+			emitidoem: new Date().toISOString(),
+			itens: itens.map((item) => ({
+				descricao: item.descricao,
+				quantidade: item.quantidade,
+			})),
+		});
 	},
 
 	async fecharCaixa(saldoinformado: number, observacao?: string) {

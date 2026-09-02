@@ -35,6 +35,10 @@ import {
 	type VendaParaResumoTurno,
 } from "./resumo-turno-caixa";
 import {
+	agruparItensVendidosTurno,
+	type ItemVendidoTurnoAgrupado,
+} from "./itens-vendidos-turno";
+import {
 	ehModalidadeEntrega,
 	gerarSenhaChamada,
 	normalizarModalidade,
@@ -54,6 +58,7 @@ export type {
 	StatusLancamentoPagamento,
 } from "./pagamento";
 export type { ResumoTurnoCaixa } from "./resumo-turno-caixa";
+export type { ItemVendidoTurnoAgrupado } from "./itens-vendidos-turno";
 
 export type SessaoLocal = {
 	token: string | null;
@@ -1142,6 +1147,37 @@ export async function calcularResumoTurno(caixa: {
 		valorabertura: caixa.valorabertura,
 		vendas,
 	});
+}
+
+export async function listarItensVendidosTurnoAberto(): Promise<
+	ItemVendidoTurnoAgrupado[]
+> {
+	const caixa = await caixaAberto();
+	if (!caixa) {
+		throw new Error("Nenhum caixa aberto para este operador");
+	}
+	return listarItensVendidosTurno(caixa);
+}
+
+export async function listarItensVendidosTurno(caixa: {
+	numeropdv: number;
+	abertoem: string;
+}): Promise<ItemVendidoTurnoAgrupado[]> {
+	const linhas = await query<{
+		idproduto: string;
+		descricao: string;
+		quantidade: number;
+	}>(
+		`SELECT iv.idproduto, iv.descricao, iv.quantidade
+		 FROM item_venda iv
+		 INNER JOIN venda v ON v.id = iv.idvenda
+		 WHERE v.numeropdv = $1
+		   AND v.criadoem >= $2
+		   AND v.status = 'fechada'
+		 ORDER BY iv.descricao`,
+		[caixa.numeropdv, caixa.abertoem],
+	);
+	return agruparItensVendidosTurno(linhas);
 }
 
 export async function calcularResumoTurnoAberto(): Promise<ResumoTurnoCaixa> {
