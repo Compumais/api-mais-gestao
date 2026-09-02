@@ -21,10 +21,13 @@ Este guia cobre deploy automático (GitHub Actions + SSH), execução da API em 
   .env.api
   .env.web
   web/                   # clone do projeto (para deploy da web via PM2)
+  pdv-updates/           # version.json + Setup.exe (auto-update do PDV)
   scripts/backup-postgres.sh
 
 /opt/backups/mais-gestao/
 ```
+
+O Nginx deve expor `/pdv/updates/` apontando para `/opt/mais-gestao/pdv-updates/` (ver `nginx/mais-gestao.conf`). Publique com `pdv/scripts/publicar-update-pdv.ps1`.
 
 ## 3) Variáveis de ambiente
 

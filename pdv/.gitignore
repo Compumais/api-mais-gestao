@@ -12,4 +12,3 @@ release
 .npm-cache
 installer/vendor/*.exe
 installer/vendor/*.zip
-installer/output/

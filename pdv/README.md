@@ -77,6 +77,22 @@ Também roda ao publicar a tag `pdv-v*` (exemplo: `git tag pdv-v0.1.2 && git pus
 
 No Windows, para gerar neste computador (sem GitHub Actions): escolha a opção **1** no menu, ou `pdv\scripts\gerar-instalador.bat local`, ou `npm run pack:release`.
 
+O script local faz **bump automático do patch** (consulta `installer/output` + `package.json`, ex.: `0.1.2` → `0.1.3`), gera o Setup Inno e grava `installer/output/version.json`. Commitar `pdv/package.json` e `pdv/installer/output/*` (somente o Setup mais recente).
+
+### Auto-update (API/VPS)
+
+Na abertura do PDV empacotado, o app consulta `{api_url}/pdv/updates/version.json`. Se a versão remota for maior, ofereceixa o Setup e instala com `/SILENT /NORESTART`.
+
+1. Gerar: `npm run pack:release`
+2. Commitar e enviar `installer/output/version.json` + `PDV-Mais-Gestao-Setup-*.exe`
+3. Publicar na VPS:
+
+```powershell
+pdv\scripts\publicar-update-pdv.ps1 -HostName api.compuchat.space -User deploy
+```
+
+Na VPS, sirva a pasta `/opt/mais-gestao/pdv-updates/` em `/pdv/updates/` (veja `nginx/mais-gestao.conf`).
+
 Se o PDV já estiver instalado, o setup compara a versão: pacote mais antigo é recusado; mesma versão repara os arquivos; versão mais nova só atualiza o aplicativo e **preserva o PostgreSQL e os dados**.
 
 ## Arquitetura

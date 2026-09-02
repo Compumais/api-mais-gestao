@@ -129,6 +129,10 @@ function Invoke-Local {
 		}
 	}
 
+	$bumpScript = Join-Path $pdvDir "scripts\bump-versao-instalador.ps1"
+	. $bumpScript
+	Invoke-BumpVersaoInstalador | Out-Null
+
 	Write-Host "Instalando dependencias..."
 	npm ci
 	if ($LASTEXITCODE -ne 0) {
@@ -145,7 +149,7 @@ function Invoke-Local {
 	}
 
 	Write-Host "Compilando instalador Inno Setup..."
-	& powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $pdvDir "installer\compilar-iss.ps1")
+	& powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $pdvDir "installer\compilar-iss.ps1") -NoBump
 	if ($LASTEXITCODE -ne 0) {
 		throw "compilar-iss.ps1 falhou com codigo $LASTEXITCODE"
 	}

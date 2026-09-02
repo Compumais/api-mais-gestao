@@ -465,7 +465,39 @@ async function concluirFiscalVenda(vendaId: string) {
  */
 export const localApi = {
 	async health() {
-		return { ok: true, app: "pdv-mais-gestao", version: "0.1.0" };
+		const { app } = await import("electron");
+		return {
+			ok: true,
+			app: "pdv-mais-gestao",
+			version: app.getVersion(),
+		};
+	},
+
+	async verificarUpdatePdv() {
+		const { verificarEAtualizarPdv } = await import(
+			"../update/verificar-update"
+		);
+		return verificarEAtualizarPdv();
+	},
+
+	async statusUpdatePdv() {
+		const { app } = await import("electron");
+		const { buscarManifestoUpdate } = await import(
+			"../update/verificar-update"
+		);
+		const { versaoRemotaMaior } = await import("../update/semver");
+		const local = app.getVersion();
+		const manifesto = await buscarManifestoUpdate();
+		const checkEm = await getConfig("update_check_em", "");
+		return {
+			local,
+			remoto: manifesto?.version ?? null,
+			disponivel: manifesto
+				? versaoRemotaMaior(local, manifesto.version)
+				: false,
+			artifact: manifesto?.artifact ?? null,
+			updateCheckEm: checkEm || null,
+		};
 	},
 
 	async getStatus() {
