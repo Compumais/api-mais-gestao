@@ -557,6 +557,7 @@ async function seedDefaults(database: Pool): Promise<void> {
 		["impressora_tipo", "sistema"],
 		["impressora_host", ""],
 		["impressora_porta", "9100"],
+		["impressora_fonte", "media"],
 		["certificado_path", ""],
 		["certificado_senha", ""],
 		["certificado_apelido", ""],

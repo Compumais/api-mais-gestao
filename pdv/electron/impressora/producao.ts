@@ -1,7 +1,13 @@
 import { getConfig, queryOne } from "../db/database";
 import { obterDestinoGrupoGourmet } from "../db/repos";
-import { chaveDestino, type DestinoImpressora, destinoPronto } from "./destino";
+import {
+	chaveDestino,
+	type DestinoImpressora,
+	destinoPronto,
+	obterTamanhoFonteConfig,
+} from "./destino";
 import { imprimirPedidoProducao } from "./escpos";
+import { reduzirTamanhoFonte } from "./fonte-impressao";
 
 export type ItemProducao = {
 	idproduto: string;
@@ -265,6 +271,10 @@ export async function imprimirProducaoPedido(params: {
 		});
 		const cupomUnico = modo === "pedido";
 		const agruparPorGrupo = deveAgruparPorGrupoProducao(modo, imprimirGrupo);
+		const tamanhoBase = await obterTamanhoFonteConfig();
+		const tamanhoFonte = cupomUnico
+			? reduzirTamanhoFonte(tamanhoBase)
+			: tamanhoBase;
 		for (const { destino, itens } of cupons) {
 			await imprimirPedidoProducao({
 				destino,
@@ -274,7 +284,7 @@ export async function imprimirProducaoPedido(params: {
 				itens,
 				reimpressao: params.reimpressao,
 				agruparPorGrupo,
-				fonteMenor: cupomUnico,
+				tamanhoFonte,
 			});
 		}
 	} catch {
