@@ -68,6 +68,13 @@ import {
 	upsertProdutos,
 } from "../db/repos";
 import { calcularConferenciaCaixa } from "../db/resumo-turno-caixa";
+import { persistirMeiosPagamentoNfceConfig } from "../fiscal/avaliar-emissao-nfce-venda";
+import {
+	avaliarEmissaoNfcePorPagamento,
+	CHAVE_CONFIG_MEIOS_NFCE,
+	parseMeiosPagamentoNfceConfig,
+	resumoPagamentoParaNfce,
+} from "../fiscal/meios-pagamento-nfce";
 import { puxarNfceDaRetaguarda } from "./nfce-retaguarda";
 import { atualizarCacheTerminaisPdv } from "./terminais-pdv";
 
@@ -293,8 +300,9 @@ async function puxarCatalogoDaEmpresa(idempresa: string): Promise<{
 
 	try {
 		const fiscal = await sincronizarFiscalPdv();
+		const cfg = await buscarNfceConfig(idempresa);
+		await persistirMeiosPagamentoNfceConfig(cfg.meiospagamentonfce);
 		if (!fiscal.ok) {
-			const cfg = await buscarNfceConfig(idempresa);
 			const ambiente = Number(cfg.ambiente ?? 2);
 			const cscId = ambiente === 1 ? cfg.idcsc_producao : cfg.idcsc_homologacao;
 			const cscToken =
@@ -458,6 +466,12 @@ export async function sincronizarFiscalPdv(): Promise<{
 		await setConfig("fiscal_sync_erro", "");
 		await setConfig("fiscal_ultima_sync", new Date().toISOString());
 		await cachearEmitenteDanfce(sessao.idempresa, fiscal.cnpj, fiscal.uf);
+		try {
+			const cfg = await buscarNfceConfig(sessao.idempresa);
+			await persistirMeiosPagamentoNfceConfig(cfg.meiospagamentonfce);
+		} catch {
+			// meios de pagamento NFC-e opcionais neste sync
+		}
 		return { ok: true };
 	} catch (err) {
 		const erro =
@@ -636,7 +650,14 @@ async function baixarEstoqueVendaOutbox(params: {
 	sync: ReturnType<typeof totaisParaSync>;
 	payload: Record<string, unknown>;
 }): Promise<void> {
-	const emitir = (await getConfig("emitir_nfce", "1")) === "1";
+	const emitirGlobal = (await getConfig("emitir_nfce", "1")) === "1";
+	const meios = parseMeiosPagamentoNfceConfig(
+		await getConfig(CHAVE_CONFIG_MEIOS_NFCE, ""),
+	);
+	const emitir =
+		emitirGlobal &&
+		avaliarEmissaoNfcePorPagamento(resumoPagamentoParaNfce(params.sync), meios)
+			.deveEmitir;
 	try {
 		const baixa = await baixaEstoqueVenda({
 			idempresa: params.idempresa,
@@ -668,6 +689,10 @@ async function baixarEstoqueVendaOutbox(params: {
 			return;
 		}
 		const nfce = extrairNfceDaBaixa(baixa);
+		if (!nfce.deveEmitirNfce) {
+			await atualizarVendaSync(params.idlocal, { nfce_status: "nao_fiscal" });
+			return;
+		}
 		const { aplicarEmissaoNfceNaVendaLocal } = await import(
 			"../fiscal/persistir-nfce-online"
 		);
