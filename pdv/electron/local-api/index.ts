@@ -189,6 +189,7 @@ import {
 	reiniciarBackupAgendado,
 	statusBackupPdv,
 } from "../sync/backup-agendado";
+import { executarCargaLocal } from "../sync/carga-local";
 import { puxarNfceDaRetaguarda } from "../sync/nfce-retaguarda";
 import {
 	processarOutbox,
@@ -1194,11 +1195,28 @@ export const localApi = {
 	},
 
 	async syncAgora() {
-		const pull = (await ehSecundario())
-			? await puxarDoPrincipal()
-			: await pullCatalogo();
+		const carga = await executarCargaLocal();
+		const pull = {
+			produtos: carga.produtos,
+			grupos: carga.grupos,
+			gruposGourmet: carga.gruposGourmet,
+			atalhos: carga.atalhos,
+			clientes: carga.clientes,
+			bandeiras: carga.bandeiras,
+			meiosPagamento: carga.meiosPagamento,
+			acessoNegado: carga.acessoNegado,
+		};
 		const outbox = await processarOutbox();
 		return { pull, outbox, pendentes: await contarOutboxPendentes() };
+	},
+
+	/** Processa só a fila outbox (sem nova carga de catálogo). */
+	async processarOutboxAgora() {
+		if (await ehSecundario()) {
+			return { outbox: null, pendentes: 0 };
+		}
+		const outbox = await processarOutbox();
+		return { outbox, pendentes: await contarOutboxPendentes() };
 	},
 
 	async sincronizarFiscalPdv() {
@@ -1230,28 +1248,7 @@ export const localApi = {
 	},
 
 	async cargaLocal() {
-		const sessao = await obterSessao();
-		if (!sessao.token || !sessao.idempresa) {
-			throw new Error(
-				"Faça login e selecione a empresa antes de carregar o catálogo.",
-			);
-		}
-		const secundario = await ehSecundario();
-		const pull = secundario ? await puxarDoPrincipal() : await pullCatalogo();
-		if (!secundario) {
-			void puxarNfceDaRetaguarda().catch(() => 0);
-		}
-		return {
-			ok: true as const,
-			origem: secundario ? ("principal" as const) : ("nuvem" as const),
-			produtos: pull.produtos,
-			grupos: pull.grupos,
-			gruposGourmet: pull.gruposGourmet,
-			atalhos: pull.atalhos,
-			clientes: pull.clientes,
-			bandeiras: pull.bandeiras,
-			meiosPagamento: pull.meiosPagamento,
-		};
+		return executarCargaLocal();
 	},
 
 	async testarPrincipal(params: {
