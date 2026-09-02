@@ -66,6 +66,7 @@ import {
 	upsertGruposGourmet,
 	upsertMeiosPagamento,
 	upsertProdutos,
+	marcarProdutosAusentesInativos,
 } from "../db/repos";
 import { calcularConferenciaCaixa } from "../db/resumo-turno-caixa";
 import { persistirMeiosPagamentoNfceConfig } from "../fiscal/avaliar-emissao-nfce-venda";
@@ -158,7 +159,7 @@ async function puxarCatalogoDaEmpresa(idempresa: string): Promise<{
 			}
 			await upsertGrupos(grupos);
 			totalGrupos += grupos.length;
-			if (grupos.length < 100 || page > 50) {
+			if (grupos.length < 100 || page >= 10_000) {
 				break;
 			}
 			page += 1;
@@ -179,7 +180,7 @@ async function puxarCatalogoDaEmpresa(idempresa: string): Promise<{
 			}
 			await upsertGruposGourmet(grupos);
 			totalGruposGourmet += grupos.length;
-			if (grupos.length < 100 || page > 50) {
+			if (grupos.length < 100 || page >= 10_000) {
 				break;
 			}
 			page += 1;
@@ -194,12 +195,16 @@ async function puxarCatalogoDaEmpresa(idempresa: string): Promise<{
 
 	let page = 1;
 	let total = 0;
+	const idsSincronizados: string[] = [];
+	const LIMITE_PAGINA = 100;
+	const LIMITE_PAGINAS = 10_000;
 	for (;;) {
-		const produtos = await listarProdutos({
+		const lote = await listarProdutos({
 			idempresa,
 			page,
-			limit: 100,
+			limit: LIMITE_PAGINA,
 		});
+		const produtos = lote.produtos;
 		if (!produtos.length) {
 			break;
 		}
@@ -214,14 +219,23 @@ async function puxarCatalogoDaEmpresa(idempresa: string): Promise<{
 				return { ...p, unidademedida: sigla };
 			}),
 		);
+		for (const p of produtos) {
+			idsSincronizados.push(p.id);
+		}
 		total += produtos.length;
-		if (produtos.length < 100) {
+		const totalPages = lote.paginacao.totalPages;
+		if (
+			produtos.length < LIMITE_PAGINA ||
+			(totalPages > 0 && page >= totalPages) ||
+			page >= LIMITE_PAGINAS
+		) {
 			break;
 		}
 		page += 1;
-		if (page > 50) {
-			break;
-		}
+	}
+
+	if (idsSincronizados.length) {
+		await marcarProdutosAusentesInativos(idsSincronizados);
 	}
 
 	const ids = await listarAtalhosRemotos(idempresa);
@@ -243,7 +257,7 @@ async function puxarCatalogoDaEmpresa(idempresa: string): Promise<{
 			}
 			await upsertClientes(clientes);
 			totalClientes += clientes.length;
-			if (clientes.length < 100 || page > 50) {
+			if (clientes.length < 100 || page >= 10_000) {
 				break;
 			}
 			page += 1;

@@ -223,6 +223,26 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 	if (!nomes.has("codigo")) {
 		await database.query("ALTER TABLE produto_cache ADD COLUMN codigo INTEGER");
 	}
+	const colunasFiscais: Array<{ nome: string; ddl: string }> = [
+		{ nome: "ncm", ddl: "ALTER TABLE produto_cache ADD COLUMN ncm TEXT" },
+		{ nome: "cest", ddl: "ALTER TABLE produto_cache ADD COLUMN cest TEXT" },
+		{ nome: "cfop", ddl: "ALTER TABLE produto_cache ADD COLUMN cfop TEXT" },
+		{ nome: "cst", ddl: "ALTER TABLE produto_cache ADD COLUMN cst TEXT" },
+		{ nome: "csosn", ddl: "ALTER TABLE produto_cache ADD COLUMN csosn TEXT" },
+		{
+			nome: "origem",
+			ddl: "ALTER TABLE produto_cache ADD COLUMN origem INTEGER",
+		},
+		{
+			nome: "aliquotaicms",
+			ddl: "ALTER TABLE produto_cache ADD COLUMN aliquotaicms TEXT",
+		},
+	];
+	for (const coluna of colunasFiscais) {
+		if (!nomes.has(coluna.nome)) {
+			await database.query(coluna.ddl);
+		}
+	}
 
 	const itemCols = await database.query<{ column_name: string }>(
 		`SELECT column_name
