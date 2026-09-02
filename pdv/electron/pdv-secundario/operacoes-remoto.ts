@@ -387,4 +387,14 @@ export async function inutilizarNfceRemoto(
 	);
 }
 
+export async function cancelarNfceRemoto(
+	vendaId: string,
+	justificativa: string,
+) {
+	return remoto(`/pos/vendas/${encodeURIComponent(vendaId)}/cancelar`, {
+		...jsonBody({ justificativa }),
+		timeoutMs: 60_000,
+	});
+}
+
 export { unwrapDataEnvelope };

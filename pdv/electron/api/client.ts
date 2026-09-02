@@ -900,6 +900,32 @@ export async function inutilizarNfceVendaPdv(body: {
 	);
 }
 
+export type ResultadoCancelamentoNfceApi = {
+	idnotafiscal: string;
+	status: number;
+	cStat?: string;
+	xMotivo?: string;
+	protocolo?: string;
+};
+
+export async function cancelarNfceVendaPdv(body: {
+	idempresa: string;
+	idvenda: string;
+	justificativa: string;
+}) {
+	return request<ResultadoCancelamentoNfceApi>(
+		`/nfce/venda/${body.idvenda}/cancelar`,
+		{
+			method: "POST",
+			body: {
+				idempresa: body.idempresa,
+				justificativa: body.justificativa,
+			},
+			timeoutMs: 60000,
+		},
+	);
+}
+
 export const STATUS_CAIXA_ABERTO = 0;
 export const STATUS_CAIXA_FECHADO = 1;
 

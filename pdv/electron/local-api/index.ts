@@ -5,6 +5,7 @@ import {
 	apiBaseUrl,
 	baixaEstoqueVenda,
 	buscarVendaPdvGourmet,
+	cancelarNfceVendaPdv,
 	criarItemVendaPdv,
 	criarVendaPdv,
 	extrairNfceDaBaixa,
@@ -2216,6 +2217,77 @@ export const localApi = {
 			modo: "inutilizada" as const,
 			mensagem:
 				resultado.xMotivo?.trim() || "Numeração da NFC-e inutilizada na SEFAZ",
+			idnotafiscal: resultado.idnotafiscal,
+			cStat: resultado.cStat,
+			protocolo: resultado.protocolo,
+		};
+	},
+
+	async cancelarNfce(vendaId: string, justificativa: string) {
+		if (await ehSecundario()) {
+			await garantirOperacaoSecundario();
+			return remoto.cancelarNfceRemoto(vendaId, justificativa);
+		}
+
+		const venda = await obterVenda(vendaId);
+		if (!venda) {
+			throw new Error("Venda não encontrada");
+		}
+
+		const online = await pingApi();
+		if (!online) {
+			throw new Error(
+				"Sem conexão com a retaguarda. Tente novamente quando estiver online.",
+			);
+		}
+
+		const sessao = await obterSessao();
+		if (!sessao.idempresa || !sessao.userid) {
+			throw new Error("Sessão inválida");
+		}
+
+		if (!venda.idremoto) {
+			await processarOutbox();
+		}
+		const vendaAtual = (await obterVenda(vendaId)) ?? venda;
+		if (!vendaAtual.idremoto) {
+			throw new Error(
+				"Venda ainda não está na retaguarda. Sincronize e tente novamente.",
+			);
+		}
+
+		let resultado: Awaited<ReturnType<typeof cancelarNfceVendaPdv>>;
+		try {
+			resultado = await cancelarNfceVendaPdv({
+				idempresa: sessao.idempresa,
+				idvenda: vendaAtual.idremoto,
+				justificativa,
+			});
+		} catch (err) {
+			if (
+				err instanceof ApiError &&
+				/não encontrada na retaguarda/i.test(err.message)
+			) {
+				throw new Error(
+					`${err.message} Envie a venda para a retaguarda em Vendas → Notas não sincronizadas e tente cancelar novamente.`,
+				);
+			}
+			throw err;
+		}
+
+		const nfce = await obterNfcePorVenda(vendaId);
+		if (nfce) {
+			await atualizarNfceLocalCampos(nfce.id, {
+				status: "cancelada",
+				transmitida: false,
+			});
+		}
+		await atualizarVendaSync(vendaId, { nfce_status: "cancelada" });
+
+		return {
+			modo: "cancelada" as const,
+			mensagem:
+				resultado.xMotivo?.trim() || "NFC-e cancelada na SEFAZ",
 			idnotafiscal: resultado.idnotafiscal,
 			cStat: resultado.cStat,
 			protocolo: resultado.protocolo,
