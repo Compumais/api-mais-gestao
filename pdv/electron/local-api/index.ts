@@ -124,6 +124,7 @@ import {
 	salvarMapeamentoImpressorasGourmet,
 	salvarSessao,
 	senhaGerencialDefinida,
+	senhaGerencialExigida,
 	transferirConta,
 	transferirItens,
 	validarSenhaGerencial,
@@ -707,6 +708,8 @@ export const localApi = {
 		try {
 			const config = await getAllConfig();
 			const definida = Boolean(config.senha_gerencial_hash);
+			const habilitada =
+				definida && config.senha_gerencial_habilitada !== "0" ? "1" : "0";
 			delete config.senha_gerencial_hash;
 			delete config.senha_gerencial_salt;
 			return {
@@ -714,6 +717,7 @@ export const localApi = {
 				database_url,
 				senha_gerencial: "",
 				senha_gerencial_definida: definida ? "1" : "0",
+				senha_gerencial_habilitada: habilitada,
 			};
 		} catch (err) {
 			if (isBancoIndisponivelError(err)) {
@@ -755,7 +759,14 @@ export const localApi = {
 				const { salt, hash } = hashSenhaGerencial(senha);
 				resto.senha_gerencial_salt = salt;
 				resto.senha_gerencial_hash = hash;
+				if (resto.senha_gerencial_habilitada === undefined) {
+					resto.senha_gerencial_habilitada = "1";
+				}
 			}
+		}
+		if (resto.senha_gerencial_habilitada !== undefined) {
+			resto.senha_gerencial_habilitada =
+				resto.senha_gerencial_habilitada === "0" ? "0" : "1";
 		}
 		if (Object.keys(resto).length) {
 			await validarIdentidadeAoSalvar(resto);
@@ -1867,6 +1878,10 @@ export const localApi = {
 
 	async senhaGerencialDefinida() {
 		return senhaGerencialDefinida();
+	},
+
+	async senhaGerencialExigida() {
+		return senhaGerencialExigida();
 	},
 
 	async imprimirPreConta(idconta: string) {

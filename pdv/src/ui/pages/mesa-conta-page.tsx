@@ -449,8 +449,8 @@ export function MesaContaPage() {
 		if (loading || pagando) return;
 		setSenhaCancelarItem("");
 		try {
-			const definida = await pdvInvoke<boolean>("senhaGerencialDefinida");
-			setExigeSenhaItem(Boolean(definida));
+			const exige = await pdvInvoke<boolean>("senhaGerencialExigida");
+			setExigeSenhaItem(Boolean(exige));
 		} catch {
 			setExigeSenhaItem(false);
 		}

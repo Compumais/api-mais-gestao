@@ -118,6 +118,7 @@ export function DialogPagamentoMisto({
 	const [descontoInput, setDescontoInput] = useState("");
 	const [descontoPercentual, setDescontoPercentual] = useState(false);
 	const [senhaDesconto, setSenhaDesconto] = useState("");
+	const [exigeSenhaDesconto, setExigeSenhaDesconto] = useState(true);
 	const { teclas, meios: teclasMeios } = useTeclasFuncao();
 
 	const totalLiquido = useMemo(
@@ -241,13 +242,20 @@ export function DialogPagamentoMisto({
 		});
 	}
 
-	function abrirPainelDesconto() {
+	async function abrirPainelDesconto() {
 		if (!permitirDesconto || ocupado) return;
 		if (lancamentos.length) {
 			setErro("Remova os lançamentos para alterar o desconto");
 			return;
 		}
 		setErro("");
+		setSenhaDesconto("");
+		try {
+			const exige = await pdvInvoke<boolean>("senhaGerencialExigida");
+			setExigeSenhaDesconto(Boolean(exige));
+		} catch {
+			setExigeSenhaDesconto(true);
+		}
 		setPainelDesconto(true);
 	}
 
@@ -274,16 +282,25 @@ export function DialogPagamentoMisto({
 				setErro("Defina a senha gerencial nas configurações do PDV");
 				return;
 			}
-			const ok = await pdvInvoke<boolean>(
-				"validarSenhaGerencial",
-				senhaDesconto,
-			);
-			if (!ok) {
-				setErro("Senha gerencial inválida");
-				return;
+			const exige = await pdvInvoke<boolean>("senhaGerencialExigida");
+			if (exige) {
+				if (!senhaDesconto.trim()) {
+					setErro("Informe a senha gerencial");
+					return;
+				}
+				const ok = await pdvInvoke<boolean>(
+					"validarSenhaGerencial",
+					senhaDesconto,
+				);
+				if (!ok) {
+					setErro("Senha gerencial inválida");
+					return;
+				}
+				setSenhaUsada(senhaDesconto);
+			} else {
+				setSenhaUsada("");
 			}
 			setDescontoAplicado(calculado);
-			setSenhaUsada(senhaDesconto);
 			setPainelDesconto(false);
 			setSenhaDesconto("");
 			setErro("");
@@ -691,13 +708,15 @@ export function DialogPagamentoMisto({
 										onChange={(e) => setDescontoInput(e.target.value)}
 										disabled={ocupado}
 									/>
-									<Input
-										type="password"
-										placeholder="Senha gerencial"
-										value={senhaDesconto}
-										onChange={(e) => setSenhaDesconto(e.target.value)}
-										disabled={ocupado}
-									/>
+									{exigeSenhaDesconto ? (
+										<Input
+											type="password"
+											placeholder="Senha gerencial"
+											value={senhaDesconto}
+											onChange={(e) => setSenhaDesconto(e.target.value)}
+											disabled={ocupado}
+										/>
+									) : null}
 									<div className="flex gap-2">
 										<Button
 											type="button"
@@ -715,7 +734,9 @@ export function DialogPagamentoMisto({
 											type="submit"
 											className="flex-1"
 											disabled={
-												ocupado || !descontoInput.trim() || !senhaDesconto
+												ocupado ||
+												!descontoInput.trim() ||
+												(exigeSenhaDesconto && !senhaDesconto)
 											}
 										>
 											Aplicar
@@ -731,7 +752,9 @@ export function DialogPagamentoMisto({
 											</span>
 										) : (
 											<span className="text-muted-foreground">
-												Desconto com senha gerencial
+												{exigeSenhaDesconto
+													? "Desconto com senha gerencial"
+													: "Desconto"}
 											</span>
 										)}
 									</div>

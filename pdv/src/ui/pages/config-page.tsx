@@ -369,6 +369,11 @@ export function ConfigPage() {
 				taxa_entrega_padrao: config.taxa_entrega_padrao ?? "0",
 				bairros_entrega: config.bairros_entrega ?? "[]",
 				senha_gerencial: config.senha_gerencial ?? "",
+				senha_gerencial_habilitada:
+					config.senha_gerencial_definida === "1" &&
+					config.senha_gerencial_habilitada !== "0"
+						? "1"
+						: "0",
 				impressora_nome: config.impressora_nome ?? "",
 				impressora_tipo: config.impressora_tipo ?? "sistema",
 				impressora_host: config.impressora_host ?? "",
@@ -1189,6 +1194,34 @@ export function ConfigPage() {
 													}
 												/>
 											</div>
+											{config.senha_gerencial_definida === "1" ? (
+												<div className="space-y-2 sm:col-span-2">
+													<Label htmlFor="senha_gerencial_habilitada">
+														Exigência da senha gerencial
+													</Label>
+													<Select
+														id="senha_gerencial_habilitada"
+														value={
+															config.senha_gerencial_habilitada === "0"
+																? "0"
+																: "1"
+														}
+														onChange={(e) =>
+															set(
+																"senha_gerencial_habilitada",
+																e.target.value,
+															)
+														}
+													>
+														<option value="1">Habilitada</option>
+														<option value="0">Desabilitada</option>
+													</Select>
+													<p className="text-xs text-muted-foreground">
+														Desabilitada: operações sensíveis (desconto,
+														cancelar item) não pedem senha.
+													</p>
+												</div>
+											) : null}
 										</>
 									) : null}
 									<div className="sm:col-span-2 flex flex-col gap-2 rounded-md border bg-secondary/30 p-3">
