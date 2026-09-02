@@ -129,6 +129,7 @@ type StatusUpdatePdv = {
 	disponivel: boolean;
 	artifact: string | null;
 	updateCheckEm: string | null;
+	erroConsulta?: string | null;
 };
 
 type ResultadoUpdatePdv = {
@@ -137,14 +138,16 @@ type ResultadoUpdatePdv = {
 	local?: string;
 	remoto?: string;
 	motivo?: string;
+	detalhe?: string;
 };
 
-function mensagemMotivoUpdate(motivo?: string): string {
+function mensagemMotivoUpdate(motivo?: string, detalhe?: string): string {
+	const sufixo = detalhe ? ` (${detalhe})` : "";
 	switch (motivo) {
 		case "atualizado":
 			return "Você já está na versão mais recente.";
 		case "manifesto_indisponivel":
-			return "Não foi possível consultar o servidor de atualizações.";
+			return `Não foi possível consultar o servidor de atualizações.${sufixo}`;
 		case "dev":
 			return "A instalação automática só funciona no PDV instalado (não em modo desenvolvimento).";
 		case "plataforma":
@@ -152,9 +155,11 @@ function mensagemMotivoUpdate(motivo?: string): string {
 		case "adiado":
 			return "Atualização adiada.";
 		case "download_falhou":
-			return "Falha ao baixar a atualização.";
+			return `Falha ao baixar a atualização.${sufixo}`;
 		default:
-			return motivo ? `Verificação concluída (${motivo}).` : "Verificação concluída.";
+			return motivo
+				? `Verificação concluída (${motivo}${detalhe ? `: ${detalhe}` : ""}).`
+				: "Verificação concluída.";
 	}
 }
 
@@ -826,10 +831,12 @@ export function ConfigPage() {
 					result.local ? `Local: ${result.local}` : null,
 					result.remoto ? `Remota: ${result.remoto}` : null,
 				].filter(Boolean);
-				setMsg(`${mensagemMotivoUpdate(result.motivo)} ${partes.join(" · ")}`);
+				setMsg(
+					`${mensagemMotivoUpdate(result.motivo, result.detalhe)} ${partes.join(" · ")}`,
+				);
 				return;
 			}
-			setMsg(mensagemMotivoUpdate(result.motivo));
+			setMsg(mensagemMotivoUpdate(result.motivo, result.detalhe));
 		} catch (err) {
 			setMsg(
 				err instanceof Error
@@ -2479,7 +2486,9 @@ export function ConfigPage() {
 													? `Nova versão ${statusUpdate.remoto} disponível.`
 													: statusUpdate.remoto
 														? "PDV atualizado."
-														: "Nenhuma versão remota encontrada (verifique a URL da API e a conexão)."}
+														: statusUpdate.erroConsulta
+															? `Nenhuma versão remota encontrada (${statusUpdate.erroConsulta}).`
+															: "Nenhuma versão remota encontrada (verifique a URL da API e a conexão)."}
 										</p>
 									</div>
 									<div className="space-y-1 sm:col-span-2">

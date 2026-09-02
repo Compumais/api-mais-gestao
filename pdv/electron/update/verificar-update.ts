@@ -16,6 +16,12 @@ export type ManifestoUpdatePdv = {
 	releasedAt?: string;
 };
 
+export type ResultadoBuscaManifesto = {
+	manifesto: ManifestoUpdatePdv | null;
+	erro?: string;
+	statusHttp?: number;
+};
+
 const TIMEOUT_MS = 12_000;
 
 async function apiBaseUrl(): Promise<string> {
@@ -29,9 +35,19 @@ async function apiBaseUrl(): Promise<string> {
 	}
 }
 
+function detalheErroFetch(err: unknown): string {
+	if (!(err instanceof Error)) return String(err);
+	if (err.name === "AbortError") return "timeout";
+	const cause = (err as Error & { cause?: unknown }).cause;
+	if (cause instanceof Error && cause.message) {
+		return `${err.message}: ${cause.message}`;
+	}
+	return err.message || "erro de rede";
+}
+
 export async function buscarManifestoUpdate(
 	baseUrl?: string,
-): Promise<ManifestoUpdatePdv | null> {
+): Promise<ResultadoBuscaManifesto> {
 	const base = (baseUrl ?? (await apiBaseUrl())).replace(/\/$/, "");
 	const ctrl = new AbortController();
 	const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
@@ -40,7 +56,13 @@ export async function buscarManifestoUpdate(
 			signal: ctrl.signal,
 			headers: { Accept: "application/json" },
 		});
-		if (!res.ok) return null;
+		if (!res.ok) {
+			return {
+				manifesto: null,
+				erro: `HTTP ${res.status}`,
+				statusHttp: res.status,
+			};
+		}
 		const json = (await res.json()) as ManifestoUpdatePdv;
 		if (
 			!json ||
@@ -48,11 +70,11 @@ export async function buscarManifestoUpdate(
 			typeof json.artifact !== "string" ||
 			typeof json.url !== "string"
 		) {
-			return null;
+			return { manifesto: null, erro: "manifesto inválido" };
 		}
-		return json;
-	} catch {
-		return null;
+		return { manifesto: json };
+	} catch (err) {
+		return { manifesto: null, erro: detalheErroFetch(err) };
 	} finally {
 		clearTimeout(timer);
 	}
@@ -99,6 +121,7 @@ export async function verificarEAtualizarPdv(opts?: {
 	local?: string;
 	remoto?: string;
 	motivo?: string;
+	detalhe?: string;
 }> {
 	if (!app.isPackaged) {
 		return { ok: true, atualizou: false, motivo: "dev" };
@@ -109,13 +132,14 @@ export async function verificarEAtualizarPdv(opts?: {
 
 	const local = app.getVersion();
 	const base = await apiBaseUrl();
-	const manifesto = await buscarManifestoUpdate(base);
+	const { manifesto, erro } = await buscarManifestoUpdate(base);
 	if (!manifesto) {
 		return {
 			ok: true,
 			atualizou: false,
 			local,
 			motivo: "manifesto_indisponivel",
+			detalhe: erro,
 		};
 	}
 
@@ -183,6 +207,7 @@ export async function verificarEAtualizarPdv(opts?: {
 			local,
 			remoto: manifesto.version,
 			motivo: "download_falhou",
+			detalhe: err instanceof Error ? err.message : String(err),
 		};
 	}
 
