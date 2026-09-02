@@ -650,6 +650,13 @@ export function BalcaoPage() {
 				titulo="Finalizar venda"
 				confirmarLabel="Confirmar"
 				iniciarComDesconto={iniciarComDesconto}
+				itens={itens.map((item) => ({
+					id: item.chave,
+					descricao: item.descricao,
+					quantidade: item.quantidade,
+					precototal: item.precototal,
+					observacao: item.observacao,
+				}))}
 				onCancelar={() => {
 					setPagando(false);
 					setIniciarComDesconto(false);
