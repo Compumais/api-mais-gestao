@@ -33,6 +33,21 @@ export function normalizarModoImpressaoProducao(
 	return valor === "pedido" ? "pedido" : "itens";
 }
 
+/** Default habilitado (`"1"` / ausente): imprime cabeçalho do grupo no cupom único. */
+export function normalizarImprimirGrupoProducao(
+	valor: string | null | undefined,
+): boolean {
+	return valor !== "0";
+}
+
+/** Cabeçalho do grupo só no modo pedido e quando a flag estiver habilitada. */
+export function deveAgruparPorGrupoProducao(
+	modo: ModoImpressaoProducao,
+	imprimirGrupo: boolean,
+): boolean {
+	return modo === "pedido" && imprimirGrupo;
+}
+
 export function agruparLinhasPedidoFila<
 	T extends { client_order_id: string; criadoem: string },
 >(linhas: T[]): T[][] {
@@ -237,6 +252,9 @@ export async function imprimirProducaoPedido(params: {
 		const modo = normalizarModoImpressaoProducao(
 			await getConfig("impressao_producao_modo", "itens"),
 		);
+		const imprimirGrupo = normalizarImprimirGrupoProducao(
+			await getConfig("impressao_producao_imprimir_grupo", "1"),
+		);
 		const cupons = await montarCuponsProducao({
 			modo,
 			itens: params.itens,
@@ -246,6 +264,7 @@ export async function imprimirProducaoPedido(params: {
 			resolverDestinoGrupo: obterDestinoGrupoGourmet,
 		});
 		const cupomUnico = modo === "pedido";
+		const agruparPorGrupo = deveAgruparPorGrupoProducao(modo, imprimirGrupo);
 		for (const { destino, itens } of cupons) {
 			await imprimirPedidoProducao({
 				destino,
@@ -254,7 +273,7 @@ export async function imprimirProducaoPedido(params: {
 				observacaoPedido: params.observacaoPedido,
 				itens,
 				reimpressao: params.reimpressao,
-				agruparPorGrupo: cupomUnico,
+				agruparPorGrupo,
 				fonteMenor: cupomUnico,
 			});
 		}
