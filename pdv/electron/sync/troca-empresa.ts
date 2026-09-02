@@ -33,6 +33,7 @@ const CHAVES_CONFIG_EMPRESA: Array<[string, string]> = [
 	["pix_chave", ""],
 	["qtd_mesas", "20"],
 	["modelo_atendimento", "mesa"],
+	["modal_abrir_mesa_habilitado", "1"],
 	["taxa_servico_percentual", "10"],
 	["couvert_valor", "0"],
 ];
