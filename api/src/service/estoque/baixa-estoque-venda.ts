@@ -87,80 +87,76 @@ export async function baixaEstoqueVendaService({
 	const avisos: string[] = [];
 	let movimentosRegistrados = 0;
 
-	if (homologacao) {
-		avisos.push(
-			"Ambiente de homologação NFC-e: estoque operacional/fiscal não foi movimentado.",
-		);
-	} else {
-		const movimentosExistentes =
-			await listarMovimentosEstoquePorIdOriginal(idvenda);
-		const itensJaBaixadosOperacional = new Set(
-			movimentosExistentes
-				.filter(
-					(movimento) =>
-						(movimento.cancelado ?? 0) === 0 &&
-						movimento.iditemoriginal &&
-						tipoEstoqueAfetouOperacional(movimento.tipoestoque),
-				)
-				.map((movimento) => movimento.iditemoriginal as string),
-		);
+	// Homologação NFC-e não impede a baixa operacional da venda real.
+	// O fiscal continua só após NFC-e autorizada em produção (complemento abaixo).
+	const movimentosExistentes =
+		await listarMovimentosEstoquePorIdOriginal(idvenda);
+	const itensJaBaixadosOperacional = new Set(
+		movimentosExistentes
+			.filter(
+				(movimento) =>
+					(movimento.cancelado ?? 0) === 0 &&
+					movimento.iditemoriginal &&
+					tipoEstoqueAfetouOperacional(movimento.tipoestoque),
+			)
+			.map((movimento) => movimento.iditemoriginal as string),
+	);
 
-		// Regra canônica PDV: na finalização baixa sempre o operacional.
-		// O fiscal só é baixado após NFC-e autorizada (complemento abaixo).
-		for (const item of itens) {
-			const qty = Number.parseFloat(item.quantidade);
-			if (Number.isNaN(qty) || qty <= 0) continue;
+	// Regra canônica PDV: na finalização baixa sempre o operacional.
+	// O fiscal só é baixado após NFC-e autorizada (complemento abaixo).
+	for (const item of itens) {
+		const qty = Number.parseFloat(item.quantidade);
+		if (Number.isNaN(qty) || qty <= 0) continue;
 
-			if (itensJaBaixadosOperacional.has(item.idproduto)) {
-				movimentosRegistrados++;
+		if (itensJaBaixadosOperacional.has(item.idproduto)) {
+			movimentosRegistrados++;
+			continue;
+		}
+
+		const precoUnit = Number.parseFloat(item.precounitario);
+		const valorTotal = (
+			qty * (Number.isNaN(precoUnit) ? 0 : precoUnit)
+		).toFixed(2);
+
+		try {
+			const producao = await garantirProducaoNaVendaService({
+				idempresa,
+				idproduto: item.idproduto,
+				quantidade: qty.toFixed(6),
+				idoriginal: idvenda,
+				tipoestoque: TIPO_ESTOQUE.OPERACIONAL,
+				idusuario,
+			});
+
+			if (!producao.success) {
+				avisos.push(
+					`Produção na venda falhou (${item.nomeproduto ?? item.idproduto}): ${producao.error ?? "erro"}`,
+				);
 				continue;
 			}
 
-			const precoUnit = Number.parseFloat(item.precounitario);
-			const valorTotal = (
-				qty * (Number.isNaN(precoUnit) ? 0 : precoUnit)
-			).toFixed(2);
+			const movimento = await registrarMovimentoEstoque({
+				idempresa,
+				idproduto: item.idproduto,
+				quantidade: qty.toFixed(6),
+				sentido: "saida",
+				tipoestoque: TIPO_ESTOQUE.OPERACIONAL,
+				tipodocumento: TIPO_DOCUMENTO_ESTOQUE.PDV,
+				idoriginal: idvenda,
+				iditemoriginal: item.idproduto,
+				valortotal: valorTotal,
+				permitirSemLote: true,
+			});
 
-			try {
-				const producao = await garantirProducaoNaVendaService({
-					idempresa,
-					idproduto: item.idproduto,
-					quantidade: qty.toFixed(6),
-					idoriginal: idvenda,
-					tipoestoque: TIPO_ESTOQUE.OPERACIONAL,
-					idusuario,
-				});
-
-				if (!producao.success) {
-					avisos.push(
-						`Produção na venda falhou (${item.nomeproduto ?? item.idproduto}): ${producao.error ?? "erro"}`,
-					);
-					continue;
-				}
-
-				const movimento = await registrarMovimentoEstoque({
-					idempresa,
-					idproduto: item.idproduto,
-					quantidade: qty.toFixed(6),
-					sentido: "saida",
-					tipoestoque: TIPO_ESTOQUE.OPERACIONAL,
-					tipodocumento: TIPO_DOCUMENTO_ESTOQUE.PDV,
-					idoriginal: idvenda,
-					iditemoriginal: item.idproduto,
-					valortotal: valorTotal,
-					permitirSemLote: true,
-				});
-
-				if (movimento) movimentosRegistrados++;
-			} catch (erro) {
-				console.error(
-					`[estoque] Falha ao baixar estoque do produto ${item.nomeproduto ?? item.idproduto}:`,
-					erro,
-				);
-				avisos.push(
-					`Falha ao baixar estoque: ${item.nomeproduto ?? item.idproduto}`,
-				);
-			}
+			if (movimento) movimentosRegistrados++;
+		} catch (erro) {
+			console.error(
+				`[estoque] Falha ao baixar estoque do produto ${item.nomeproduto ?? item.idproduto}:`,
+				erro,
+			);
+			avisos.push(
+				`Falha ao baixar estoque: ${item.nomeproduto ?? item.idproduto}`,
+			);
 		}
 	}
 
