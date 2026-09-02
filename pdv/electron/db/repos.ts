@@ -1840,6 +1840,39 @@ export async function atualizarVendaSync(
 	);
 }
 
+/** Marca venda local como cancelada (não fiscal / sem NFC-e SEFAZ). */
+export async function marcarVendaCanceladaLocal(idlocal: string): Promise<void> {
+	await execute(
+		`UPDATE venda SET status = 'cancelada', nfce_status = 'cancelada' WHERE id = $1`,
+		[idlocal],
+	);
+}
+
+/** Descarta outbox pendente de criar_venda para a venda local (antes do sync). */
+export async function cancelarOutboxCriarVendaPendente(
+	idlocal: string,
+): Promise<number> {
+	const pendentes = await query<{ id: string; payload: string }>(
+		`SELECT id, payload FROM outbox WHERE status = 'pendente' AND tipo = 'criar_venda'`,
+	);
+	const agora = new Date().toISOString();
+	let cancelados = 0;
+	for (const item of pendentes) {
+		try {
+			const payload = JSON.parse(item.payload) as { idlocal?: string };
+			if (payload.idlocal !== idlocal) continue;
+			await execute(
+				`UPDATE outbox SET status = 'cancelado', processadoem = $1 WHERE id = $2`,
+				[agora, item.id],
+			);
+			cancelados++;
+		} catch {
+			// payload inválido — ignora
+		}
+	}
+	return cancelados;
+}
+
 export async function limparContasVazias(): Promise<number> {
 	const vazias = await query<{ id: string; numero_mesa: number }>(
 		`SELECT c.id, c.numero_mesa

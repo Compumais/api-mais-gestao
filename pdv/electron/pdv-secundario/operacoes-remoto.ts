@@ -397,4 +397,20 @@ export async function cancelarNfceRemoto(
 	});
 }
 
+export async function cancelarVendaNaoFiscalRemoto(
+	vendaId: string,
+	opts?: { senha?: string; motivo?: string },
+) {
+	return remoto(
+		`/pos/vendas/${encodeURIComponent(vendaId)}/cancelar-nao-fiscal`,
+		{
+			...jsonBody({
+				senha: opts?.senha ?? "",
+				motivo: opts?.motivo ?? "",
+			}),
+			timeoutMs: 60_000,
+		},
+	);
+}
+
 export { unwrapDataEnvelope };

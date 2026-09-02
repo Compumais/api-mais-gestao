@@ -12,6 +12,7 @@ import { rotaHomePdv, rotuloModelo, type StatusContext } from "@/lib/pdv-types";
 import { money } from "@/lib/utils";
 import type { OrdenacaoColunaTabela } from "@/ui/components/cabecalho-coluna-tabela";
 import { DialogCancelarNfce } from "@/ui/components/dialog-cancelar-nfce";
+import { DialogCancelarVendaNaoFiscal } from "@/ui/components/dialog-cancelar-venda-nao-fiscal";
 import { DialogInutilizarNfce } from "@/ui/components/dialog-inutilizar-nfce";
 import { FunctionBar } from "@/ui/components/function-bar";
 import { PdvShell } from "@/ui/components/pdv-shell";
@@ -90,6 +91,9 @@ export function VendasPage() {
 		null,
 	);
 	const [cancelarVendaId, setCancelarVendaId] = useState<string | null>(null);
+	const [cancelarVendaNaoFiscalId, setCancelarVendaNaoFiscalId] = useState<
+		string | null
+	>(null);
 	const [msg, setMsg] = useState("");
 	const [pagination, setPagination] = useState({
 		pageIndex: 0,
@@ -260,7 +264,8 @@ export function VendasPage() {
 				retransmitindoId,
 				onRetransmitir: (id) => void retransmitir(id),
 				onInutilizar: setInutilizarVendaId,
-				onCancelar: setCancelarVendaId,
+				onCancelarNfce: setCancelarVendaId,
+				onCancelarVendaNaoFiscal: setCancelarVendaNaoFiscalId,
 				onReimprimir: (id) => void pdvInvoke("reimprimir", id),
 				idsExpandidos,
 				carregandoItensId,
@@ -331,6 +336,15 @@ export function VendasPage() {
 						aberto={cancelarVendaId != null}
 						vendaId={cancelarVendaId}
 						onFechar={() => setCancelarVendaId(null)}
+						onSucesso={(mensagem) => {
+							setMsg(mensagem);
+							void load();
+						}}
+					/>
+					<DialogCancelarVendaNaoFiscal
+						aberto={cancelarVendaNaoFiscalId != null}
+						vendaId={cancelarVendaNaoFiscalId}
+						onFechar={() => setCancelarVendaNaoFiscalId(null)}
 						onSucesso={(mensagem) => {
 							setMsg(mensagem);
 							void load();

@@ -23,6 +23,7 @@ export type VendaListagem = {
 	criadoem: string;
 	sync_status: string;
 	nfce_status: string;
+	status?: string;
 	idremoto?: string | null;
 	numero_mesa?: number | null;
 	senha_chamada?: string | null;
@@ -246,8 +247,26 @@ function podeInutilizar(status: string) {
 	return status === "erro";
 }
 
-function podeCancelar(status: string) {
+function podeCancelarNfce(status: string) {
 	return status === "autorizada";
+}
+
+const STATUS_CANCELAVEIS_NAO_FISCAL = new Set([
+	"nao_fiscal",
+	"nenhuma",
+	"erro",
+	"erro_config",
+	"inutilizada",
+]);
+
+export function podeCancelarVendaNaoFiscal(venda: {
+	nfce_status: string;
+	status?: string;
+}) {
+	if (venda.status === "cancelada" || venda.nfce_status === "cancelada") {
+		return false;
+	}
+	return STATUS_CANCELAVEIS_NAO_FISCAL.has(venda.nfce_status);
 }
 
 function chavePagamento(venda: VendaListagem): string {
@@ -370,7 +389,8 @@ export type OpcoesColunasVendas = {
 	retransmitindoId: string | null;
 	onRetransmitir: (id: string) => void;
 	onInutilizar: (id: string) => void;
-	onCancelar: (id: string) => void;
+	onCancelarNfce: (id: string) => void;
+	onCancelarVendaNaoFiscal: (id: string) => void;
 	onReimprimir: (id: string) => void;
 	idsExpandidos: Set<string>;
 	carregandoItensId: string | null;
@@ -449,14 +469,24 @@ export function criarColunasVendas(
 									Inutilizar
 								</Button>
 							) : null}
-							{podeCancelar(v.nfce_status) ? (
+							{podeCancelarNfce(v.nfce_status) ? (
 								<Button
 									size="sm"
 									variant="outline"
 									disabled={opcoes.retransmitindoId === v.id}
-									onClick={() => opcoes.onCancelar(v.id)}
+									onClick={() => opcoes.onCancelarNfce(v.id)}
 								>
 									Cancelar NFC-e
+								</Button>
+							) : null}
+							{podeCancelarVendaNaoFiscal(v) ? (
+								<Button
+									size="sm"
+									variant="outline"
+									disabled={opcoes.retransmitindoId === v.id}
+									onClick={() => opcoes.onCancelarVendaNaoFiscal(v.id)}
+								>
+									Cancelar venda
 								</Button>
 							) : null}
 							<Button

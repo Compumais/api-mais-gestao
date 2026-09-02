@@ -142,6 +142,43 @@ export const atualizarVendaPdvGourmetSchema: FastifySchema = {
 	},
 };
 
+export const cancelarVendaNaoFiscalPdvSchema: FastifySchema = {
+	tags: ["vendas-pdv-gourmet"],
+	summary: "Cancelar venda PDV sem NFC-e autorizada",
+	description:
+		"Estorna estoque e cancela títulos financeiros de venda não fiscal (ou sem NFC-e autorizada). Não envia evento à SEFAZ.",
+	security: [{ bearerAuth: [] }],
+	params: {
+		type: "object",
+		properties: { id: { type: "string", format: "uuid" } },
+		required: ["id"],
+	},
+	body: {
+		type: "object",
+		properties: {
+			idempresa: { type: "string", format: "uuid" },
+			motivo: { type: "string", maxLength: 255, nullable: true },
+		},
+		required: ["idempresa"],
+	},
+	response: {
+		200: {
+			type: "object",
+			properties: {
+				idvenda: { type: "string" },
+				titulosCancelados: { type: "number" },
+				movimentosEstornados: { type: "number" },
+				avisos: { type: "array", items: { type: "string" } },
+			},
+		},
+		404: {
+			type: "object",
+			properties: { error: { type: "string" }, code: { type: "string" } },
+		},
+		...respostasPadrao,
+	},
+};
+
 export const excluirVendaPdvGourmetSchema: FastifySchema = {
 	tags: ["vendas-pdv-gourmet"],
 	summary: "Excluir venda PDV gourmet",
