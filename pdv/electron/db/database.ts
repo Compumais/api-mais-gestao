@@ -543,6 +543,7 @@ async function seedDefaults(database: Pool): Promise<void> {
 		["numeropdv", "1"],
 		["qtd_mesas", "20"],
 		["modelo_atendimento", "mesa"],
+		["modal_abrir_mesa_habilitado", "1"],
 		["tempo_ociosidade_min", "15"],
 		["filtro_apenas_abertas", "0"],
 		["emitir_nfce", "1"],

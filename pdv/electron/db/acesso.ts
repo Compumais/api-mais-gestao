@@ -48,6 +48,7 @@ export function sessaoTemGourmet(valor: unknown): boolean {
 export const CHAVES_CONFIG_GOURMET = [
 	"modelo_atendimento",
 	"qtd_mesas",
+	"modal_abrir_mesa_habilitado",
 	"taxa_servico_percentual",
 	"couvert_valor",
 	"taxa_entrega_padrao",

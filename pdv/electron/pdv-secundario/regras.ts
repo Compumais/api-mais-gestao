@@ -3,6 +3,7 @@ export type ModoPdv = "principal" | "secundario";
 export const CHAVES_CONFIG_NEGOCIO = [
 	"qtd_mesas",
 	"modelo_atendimento",
+	"modal_abrir_mesa_habilitado",
 	"tempo_ociosidade_min",
 	"emitir_nfce",
 	"nfce_meios_pagamento",

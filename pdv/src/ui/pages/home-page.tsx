@@ -82,6 +82,8 @@ export function HomePage() {
 	const [novaNumero, setNovaNumero] = useState("");
 	const [dialogo, setDialogo] = useState<DialogoAbertura>(null);
 	const [nomeCliente, setNomeCliente] = useState("");
+	const [modalAbrirMesaHabilitado, setModalAbrirMesaHabilitado] =
+		useState(true);
 
 	useEscapeFechaModal(dialogo !== null, () => {
 		setDialogo(null);
@@ -98,6 +100,7 @@ export function HomePage() {
 	async function carregarPreferencias() {
 		const config = await pdvInvoke<Record<string, string>>("getConfig");
 		setApenasAbertas(config.filtro_apenas_abertas === "1");
+		setModalAbrirMesaHabilitado(config.modal_abrir_mesa_habilitado !== "0");
 	}
 
 	async function carregarTotalHoje() {
@@ -166,6 +169,10 @@ export function HomePage() {
 			setMsg(
 				status?.principalErro ?? "PDV principal offline. Operação bloqueada.",
 			);
+			return;
+		}
+		if (!modalAbrirMesaHabilitado) {
+			irParaConta(mesa.numero);
 			return;
 		}
 		if (mesa.status === "ocupada") {

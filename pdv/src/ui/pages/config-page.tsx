@@ -360,6 +360,8 @@ export function ConfigPage() {
 				pdv_principal_porta: config.pdv_principal_porta ?? "5050",
 				qtd_mesas: config.qtd_mesas ?? "20",
 				modelo_atendimento: config.modelo_atendimento ?? "mesa",
+				modal_abrir_mesa_habilitado:
+					config.modal_abrir_mesa_habilitado === "0" ? "0" : "1",
 				tempo_ociosidade_min: config.tempo_ociosidade_min ?? "15",
 				emitir_nfce: config.emitir_nfce ?? "1",
 				tema: config.tema ?? "light",
@@ -1081,6 +1083,33 @@ export function ConfigPage() {
 													<option value="15">15 minutos</option>
 													<option value="30">30 minutos</option>
 												</Select>
+											</div>
+											<div className="space-y-2 sm:col-span-2">
+												<Label htmlFor="modal_abrir_mesa_habilitado">
+													Modal ao abrir {rotulo.singular.toLowerCase()}
+												</Label>
+												<Select
+													id="modal_abrir_mesa_habilitado"
+													value={
+														config.modal_abrir_mesa_habilitado === "0"
+															? "0"
+															: "1"
+													}
+													onChange={(e) =>
+														set(
+															"modal_abrir_mesa_habilitado",
+															e.target.value,
+														)
+													}
+												>
+													<option value="1">Habilitado</option>
+													<option value="0">Desabilitado</option>
+												</Select>
+												<p className="text-xs text-muted-foreground">
+													Desabilitado: ao tocar em uma{" "}
+													{rotulo.singular.toLowerCase()} livre ou ocupada,
+													abre a conta direto, sem pedir nome ou confirmação.
+												</p>
 											</div>
 										</>
 									) : (
