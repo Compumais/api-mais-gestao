@@ -171,8 +171,8 @@ export function BarcodeInput({
 										className={cn(
 											"flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm transition-colors",
 											indice === indiceAtivo
-												? "bg-primary/10 ring-1 ring-primary"
-												: "hover:bg-primary/10",
+												? "bg-primary/30 font-medium text-primary ring-2 ring-primary"
+												: "hover:bg-primary/15",
 										)}
 										onMouseDown={(e) => e.preventDefault()}
 										onMouseEnter={() => setIndiceAtivo(indice)}

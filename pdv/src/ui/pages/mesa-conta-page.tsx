@@ -101,8 +101,8 @@ type LocationState = {
 
 function classeLinhaItemSelecionavel(marcado: boolean) {
 	return marcado
-		? "bg-primary/20 text-foreground ring-2 ring-primary"
-		: "bg-background ring-1 ring-foreground/10";
+		? "bg-primary/30 font-medium text-primary ring-2 ring-primary"
+		: "bg-background ring-1 ring-foreground/10 hover:bg-primary/15";
 }
 
 export function MesaContaPage() {
@@ -1106,7 +1106,7 @@ export function MesaContaPage() {
 														}}
 													/>
 													<span className="min-w-0">
-														<span className="block truncate font-medium text-foreground">
+														<span className="block truncate font-medium">
 															{formatarQuantidade(item.quantidade)}x{" "}
 															{item.descricao}
 														</span>
