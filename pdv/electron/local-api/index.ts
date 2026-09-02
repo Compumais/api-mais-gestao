@@ -6,6 +6,7 @@ import {
 	baixaEstoqueVenda,
 	buscarVendaPdvGourmet,
 	cancelarNfceVendaPdv,
+	cancelarVendaNaoFiscalPdv,
 	criarItemVendaPdv,
 	criarVendaPdv,
 	extrairNfceDaBaixa,
@@ -128,6 +129,9 @@ import {
 	transferirConta,
 	transferirItens,
 	validarSenhaGerencial,
+	exigirSenhaGerencial,
+	marcarVendaCanceladaLocal,
+	cancelarOutboxCriarVendaPendente,
 } from "../db/repos";
 import { avaliarEmissaoNfceDaVenda } from "../fiscal/avaliar-emissao-nfce-venda";
 import { emitirOuContingencia } from "../fiscal/contingencia";
@@ -438,11 +442,19 @@ async function emitirNfceOnlineDaVenda(
 	}
 }
 
+async function imprimirCupomNaoFiscalSeguro(vendaId: string) {
+	try {
+		await imprimirCupomNaoFiscal(vendaId);
+	} catch {
+		// impressão não bloqueia o fechamento da venda
+	}
+}
+
 async function concluirFiscalVenda(vendaId: string) {
 	const avaliacao = await avaliarEmissaoNfceDaVenda(vendaId);
 	if (!avaliacao.global) {
 		await emitirNfceOnlineDaVenda(vendaId, false);
-		await imprimirCupomNaoFiscal(vendaId);
+		await imprimirCupomNaoFiscalSeguro(vendaId);
 		return {
 			modo: "nao_fiscal" as const,
 			mensagem: "Venda registrada (cupom não fiscal)",
@@ -451,6 +463,7 @@ async function concluirFiscalVenda(vendaId: string) {
 	if (!avaliacao.porMeio) {
 		await emitirNfceOnlineDaVenda(vendaId, false);
 		await atualizarVendaSync(vendaId, { nfce_status: "nao_fiscal" });
+		await imprimirCupomNaoFiscalSeguro(vendaId);
 		return {
 			modo: "nao_fiscal" as const,
 			mensagem: "NFC-e não emitida para este meio de pagamento",
@@ -460,13 +473,9 @@ async function concluirFiscalVenda(vendaId: string) {
 		idvenda: vendaId,
 		onlineEmitir: () => emitirNfceOnlineDaVenda(vendaId),
 	});
-	// Rejeição SEFAZ: comprovante não fiscal no lugar do DANFC-e / pedido de produção.
-	if (resultado.modo === "erro") {
-		try {
-			await imprimirCupomNaoFiscal(vendaId);
-		} catch {
-			// impressão não bloqueia o fechamento da venda
-		}
+	// Não fiscal (meio/retaguarda) ou rejeição SEFAZ: comprovante no lugar do DANFC-e.
+	if (resultado.modo === "erro" || resultado.modo === "nao_fiscal") {
+		await imprimirCupomNaoFiscalSeguro(vendaId);
 	}
 	return resultado;
 }
@@ -2319,6 +2328,82 @@ export const localApi = {
 			idnotafiscal: resultado.idnotafiscal,
 			cStat: resultado.cStat,
 			protocolo: resultado.protocolo,
+		};
+	},
+
+	async cancelarVendaNaoFiscal(
+		vendaId: string,
+		opts?: { senha?: string; motivo?: string },
+	) {
+		if (await ehSecundario()) {
+			await garantirOperacaoSecundario();
+			return remoto.cancelarVendaNaoFiscalRemoto(vendaId, opts);
+		}
+
+		const venda = await obterVenda(vendaId);
+		if (!venda) {
+			throw new Error("Venda não encontrada");
+		}
+		if (venda.status === "cancelada" || venda.nfce_status === "cancelada") {
+			throw new Error("Venda já está cancelada");
+		}
+
+		const statusPermitidos = new Set([
+			"nao_fiscal",
+			"nenhuma",
+			"erro",
+			"erro_config",
+			"inutilizada",
+		]);
+		if (!statusPermitidos.has(venda.nfce_status)) {
+			if (venda.nfce_status === "autorizada") {
+				throw new Error(
+					"Esta venda possui NFC-e autorizada. Use Cancelar NFC-e.",
+				);
+			}
+			throw new Error(
+				"Só é possível cancelar vendas finalizadas sem NFC-e autorizada (não fiscal, rejeitada ou inutilizada).",
+			);
+		}
+
+		if (await senhaGerencialExigida()) {
+			await exigirSenhaGerencial(opts?.senha);
+		}
+
+		const motivo = opts?.motivo?.trim() || "Cancelamento de venda não fiscal";
+
+		if (!venda.idremoto) {
+			await cancelarOutboxCriarVendaPendente(vendaId);
+			await marcarVendaCanceladaLocal(vendaId);
+			return {
+				modo: "cancelada" as const,
+				mensagem: "Venda cancelada localmente (ainda não estava na retaguarda)",
+			};
+		}
+
+		const online = await pingApi();
+		if (!online) {
+			throw new Error(
+				"Sem conexão com a retaguarda. Tente novamente quando estiver online.",
+			);
+		}
+
+		const sessao = await obterSessao();
+		if (!sessao.idempresa || !sessao.userid) {
+			throw new Error("Sessão inválida");
+		}
+
+		await cancelarVendaNaoFiscalPdv({
+			idempresa: sessao.idempresa,
+			idvenda: venda.idremoto,
+			motivo,
+		});
+
+		await marcarVendaCanceladaLocal(vendaId);
+
+		return {
+			modo: "cancelada" as const,
+			mensagem: "Venda não fiscal cancelada (estoque/financeiro estornados)",
 		};
 	},
 };

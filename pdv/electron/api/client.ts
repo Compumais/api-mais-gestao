@@ -1097,6 +1097,28 @@ export async function cancelarNfceVendaPdv(body: {
 	);
 }
 
+export async function cancelarVendaNaoFiscalPdv(body: {
+	idempresa: string;
+	idvenda: string;
+	motivo?: string | null;
+}) {
+	return request<{
+		idvenda: string;
+		titulosCancelados: number;
+		movimentosEstornados: number;
+		avisos: string[];
+	}>(`/vendas-pdv-gourmet/${body.idvenda}/cancelar`, {
+		method: "POST",
+		body: {
+			idempresa: body.idempresa,
+			...(body.motivo != null && body.motivo !== ""
+				? { motivo: body.motivo }
+				: {}),
+		},
+		timeoutMs: 60000,
+	});
+}
+
 export const STATUS_CAIXA_ABERTO = 0;
 export const STATUS_CAIXA_FECHADO = 1;
 

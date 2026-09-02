@@ -933,6 +933,19 @@ async function despachar(
 		};
 	}
 
+	const cancelarNaoFiscalMatch = path.match(
+		/^\/pos\/vendas\/([^/]+)\/cancelar-nao-fiscal$/,
+	);
+	if (method === "POST" && cancelarNaoFiscalMatch) {
+		return {
+			status: 200,
+			body: await localApi.cancelarVendaNaoFiscal(cancelarNaoFiscalMatch[1], {
+				senha: body.senha != null ? String(body.senha) : undefined,
+				motivo: body.motivo != null ? String(body.motivo) : undefined,
+			}),
+		};
+	}
+
 	return undefined;
 }
 
