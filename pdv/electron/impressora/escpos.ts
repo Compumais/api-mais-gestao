@@ -14,10 +14,10 @@ import {
 	obterTamanhoFonteConfig,
 } from "./destino";
 import {
-	largurasLinhaCupom,
 	normalizarTamanhoFonte,
 	type TamanhoFonteImpressao,
 } from "./fonte-impressao";
+import { montarLinhasPedidoProducao } from "./pedido-producao-layout";
 
 export { imprimirDanfce } from "./danfce";
 
@@ -264,65 +264,15 @@ export async function imprimirPedidoProducao(params: {
 		params.tamanhoFonte !== undefined
 			? normalizarTamanhoFonte(params.tamanhoFonte)
 			: await obterTamanhoFonteConfig();
-	const { desc: larguraDesc, obs: larguraObs, linha: larguraLinha } =
-		largurasLinhaCupom(tamanhoFonte);
-
-	const linhas: string[] = [];
-	linhas.push("================================");
-	linhas.push("     PEDIDO DE PRODUCAO");
-	if (params.reimpressao) {
-		linhas.push("     *** REIMPRESSAO ***");
-	}
-	linhas.push("================================");
-	linhas.push(params.origem);
-	if (params.cliente?.trim()) {
-		linhas.push(`Cliente: ${params.cliente.trim()}`);
-	}
-	linhas.push(`Hora: ${new Date().toLocaleString("pt-BR")}`);
-	if (params.observacaoPedido?.trim()) {
-		linhas.push("--------------------------------");
-		linhas.push("Obs pedido:");
-		const obs = params.observacaoPedido.trim();
-		for (let i = 0; i < obs.length; i += larguraLinha) {
-			linhas.push(obs.slice(i, i + larguraLinha));
-		}
-	}
-	linhas.push("--------------------------------");
-
-	const emitirItem = (item: (typeof params.itens)[number]) => {
-		linhas.push(
-			`${formatarQtd(item.quantidade)}  ${item.descricao.slice(0, larguraDesc)}`,
-		);
-		if (item.observacao?.trim()) {
-			const obs = item.observacao.trim();
-			linhas.push(`   Obs: ${obs.slice(0, larguraObs)}`);
-			for (let i = larguraObs; i < obs.length; i += larguraLinha) {
-				linhas.push(`   ${obs.slice(i, i + larguraLinha)}`);
-			}
-		}
-	};
-
-	if (params.agruparPorGrupo) {
-		let grupoAtual: string | null = null;
-		for (const item of params.itens) {
-			const grupo = item.nomeGrupo?.trim() || "OUTROS";
-			if (grupo !== grupoAtual) {
-				if (grupoAtual !== null) {
-					linhas.push("--------------------------------");
-				}
-				linhas.push(`>> ${grupo.toUpperCase().slice(0, larguraLinha)}`);
-				grupoAtual = grupo;
-			}
-			emitirItem(item);
-		}
-	} else {
-		for (const item of params.itens) {
-			emitirItem(item);
-		}
-	}
-
-	linhas.push("================================");
-	linhas.push("\n\n\n");
+	const linhas = montarLinhasPedidoProducao({
+		origem: params.origem,
+		cliente: params.cliente,
+		observacaoPedido: params.observacaoPedido,
+		itens: params.itens,
+		reimpressao: params.reimpressao,
+		agruparPorGrupo: params.agruparPorGrupo,
+		tamanhoFonte,
+	});
 	return enviarTextoImpressora(linhas.join("\n"), params.destino, {
 		tamanhoFonte,
 	});
