@@ -49,6 +49,7 @@ import {
 	SYNC_OPCOES_FILTRO,
 	type VendaListagem,
 	visibilidadePadraoColunasVendas,
+	rotuloNumeracaoNfce,
 } from "./vendas-colunas";
 
 const CHAVE_COLUNAS_VENDAS = "pdv.vendas.colunas";
@@ -480,57 +481,89 @@ export function VendasPage() {
 															colSpan={colunasVisiveis.length}
 															className="whitespace-normal p-0"
 														>
-															{carregandoItens && !itens ? (
-																<p className="px-4 py-3 text-sm text-muted-foreground">
-																	Carregando produtos…
-																</p>
-															) : !itens || itens.length === 0 ? (
-																<p className="px-4 py-3 text-sm text-muted-foreground">
-																	Nenhum produto nesta venda.
-																</p>
-															) : (
-																<div className="px-4 py-3">
-																	<table className="w-full text-sm">
-																		<thead>
-																			<tr className="text-left text-muted-foreground">
-																				<th className="pb-2 font-medium">
-																					Produto
-																				</th>
-																				<th className="pb-2 pr-4 text-right font-medium">
-																					Qtd
-																				</th>
-																				<th className="pb-2 pr-4 text-right font-medium">
-																					Unit.
-																				</th>
-																				<th className="pb-2 text-right font-medium">
-																					Total
-																				</th>
-																			</tr>
-																		</thead>
-																		<tbody>
-																			{itens.map((item, index) => (
-																				<tr
-																					key={`${item.idproduto}-${index}`}
-																					className="border-t border-border/60"
-																				>
-																					<td className="py-1.5 pr-4">
-																						{item.descricao}
-																					</td>
-																					<td className="py-1.5 pr-4 text-right tabular-nums">
-																						{item.quantidade}
-																					</td>
-																					<td className="py-1.5 pr-4 text-right tabular-nums">
-																						{money(item.precounitario)}
-																					</td>
-																					<td className="py-1.5 text-right font-medium tabular-nums">
-																						{money(item.precototal)}
-																					</td>
+															{(() => {
+																const numeracao = rotuloNumeracaoNfce(
+																	row.original,
+																);
+																const cabecalhoNfce = numeracao ? (
+																	<p className="mb-2 text-sm text-muted-foreground">
+																		NFC-e{" "}
+																		<span className="font-mono tabular-nums text-foreground">
+																			{numeracao}
+																		</span>
+																		{row.original.nfce_chave ? (
+																			<span className="ml-2 break-all font-mono text-xs">
+																				· Chave {row.original.nfce_chave}
+																			</span>
+																		) : null}
+																	</p>
+																) : null;
+
+																if (carregandoItens && !itens) {
+																	return (
+																		<div className="px-4 py-3">
+																			{cabecalhoNfce}
+																			<p className="text-sm text-muted-foreground">
+																				Carregando produtos…
+																			</p>
+																		</div>
+																	);
+																}
+																if (!itens || itens.length === 0) {
+																	return (
+																		<div className="px-4 py-3">
+																			{cabecalhoNfce}
+																			<p className="text-sm text-muted-foreground">
+																				Nenhum produto nesta venda.
+																			</p>
+																		</div>
+																	);
+																}
+																return (
+																	<div className="px-4 py-3">
+																		{cabecalhoNfce}
+																		<table className="w-full text-sm">
+																			<thead>
+																				<tr className="text-left text-muted-foreground">
+																					<th className="pb-2 font-medium">
+																						Produto
+																					</th>
+																					<th className="pb-2 pr-4 text-right font-medium">
+																						Qtd
+																					</th>
+																					<th className="pb-2 pr-4 text-right font-medium">
+																						Unit.
+																					</th>
+																					<th className="pb-2 text-right font-medium">
+																						Total
+																					</th>
 																				</tr>
-																			))}
-																		</tbody>
-																	</table>
-																</div>
-															)}
+																			</thead>
+																			<tbody>
+																				{itens.map((item, index) => (
+																					<tr
+																						key={`${item.idproduto}-${index}`}
+																						className="border-t border-border/60"
+																					>
+																						<td className="py-1.5 pr-4">
+																							{item.descricao}
+																						</td>
+																						<td className="py-1.5 pr-4 text-right tabular-nums">
+																							{item.quantidade}
+																						</td>
+																						<td className="py-1.5 pr-4 text-right tabular-nums">
+																							{money(item.precounitario)}
+																						</td>
+																						<td className="py-1.5 text-right font-medium tabular-nums">
+																							{money(item.precototal)}
+																						</td>
+																					</tr>
+																				))}
+																			</tbody>
+																		</table>
+																	</div>
+																);
+															})()}
 														</TableCell>
 													</TableRow>
 												) : null}
