@@ -922,6 +922,17 @@ async function despachar(
 		};
 	}
 
+	const cancelarMatch = path.match(/^\/pos\/vendas\/([^/]+)\/cancelar$/);
+	if (method === "POST" && cancelarMatch) {
+		return {
+			status: 200,
+			body: await localApi.cancelarNfce(
+				cancelarMatch[1],
+				String(body.justificativa ?? ""),
+			),
+		};
+	}
+
 	return undefined;
 }
 

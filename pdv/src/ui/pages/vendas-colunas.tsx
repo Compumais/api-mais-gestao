@@ -229,6 +229,10 @@ function podeInutilizar(status: string) {
 	return status === "erro";
 }
 
+function podeCancelar(status: string) {
+	return status === "autorizada";
+}
+
 function chavePagamento(venda: VendaListagem): string {
 	const partes: string[] = [];
 	if ((Number(venda.valordinheiro) || 0) > 0.009) partes.push("DINHEIRO");
@@ -349,6 +353,7 @@ export type OpcoesColunasVendas = {
 	retransmitindoId: string | null;
 	onRetransmitir: (id: string) => void;
 	onInutilizar: (id: string) => void;
+	onCancelar: (id: string) => void;
 	onReimprimir: (id: string) => void;
 	idsExpandidos: Set<string>;
 	carregandoItensId: string | null;
@@ -425,6 +430,16 @@ export function criarColunasVendas(
 									onClick={() => opcoes.onInutilizar(v.id)}
 								>
 									Inutilizar
+								</Button>
+							) : null}
+							{podeCancelar(v.nfce_status) ? (
+								<Button
+									size="sm"
+									variant="outline"
+									disabled={opcoes.retransmitindoId === v.id}
+									onClick={() => opcoes.onCancelar(v.id)}
+								>
+									Cancelar NFC-e
 								</Button>
 							) : null}
 							<Button

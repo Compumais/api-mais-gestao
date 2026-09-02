@@ -5,6 +5,7 @@ import { atualizarVendaNfcePdvService } from "@/service/nfce-emissao/atualizar-v
 import { buscarDadosCupomNfceService } from "@/service/nfce-emissao/buscar-dados-cupom-nfce.js";
 import { buscarNfceParaEditarService } from "@/service/nfce-emissao/buscar-nfce-para-editar.js";
 import { cancelarNfceService } from "@/service/nfce-emissao/cancelar-nfce.js";
+import { cancelarNfceVendaPdvService } from "@/service/nfce-emissao/cancelar-nfce-venda-pdv.js";
 import { inutilizarNfcePorNotaService } from "@/service/nfce-emissao/inutilizar-nfce-por-nota.js";
 import { inutilizarNfceVendaPdvService } from "@/service/nfce-emissao/inutilizar-nfce-venda-pdv.js";
 import { listarNfcePendentesService } from "@/service/nfce-emissao/listar-nfce-pendentes.js";
@@ -393,6 +394,45 @@ export async function transmitirNfceContingencia(
 				error: resultado.error,
 				code: resultado.code,
 			});
+		}
+
+		return reply.status(resultado.status).send(resultado.body);
+	} catch (error) {
+		console.error(error);
+		if (error instanceof z.ZodError) {
+			return reply.status(400).send({
+				error: "Erro de validação",
+				code: "VALIDATION_ERROR",
+				details: error.issues,
+			});
+		}
+		return reply.status(httpErroInterno().status).send(httpErroInterno());
+	}
+}
+
+export async function cancelarNfceVenda(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
+	try {
+		if (!request.user) {
+			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
+		}
+
+		const { idvenda } = paramsVendaSchema.parse(request.params);
+		const { idempresa, justificativa } = bodyInutilizarSchema.parse(
+			request.body,
+		);
+
+		const resultado = await cancelarNfceVendaPdvService({
+			idvenda,
+			idempresa,
+			justificativa,
+			idusuario: request.user.id,
+		});
+
+		if (!resultado.success) {
+			return reply.status(resultado.status).send(resultado);
 		}
 
 		return reply.status(resultado.status).send(resultado.body);
