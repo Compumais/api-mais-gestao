@@ -5,10 +5,11 @@ import {
 	useReactTable,
 } from "@tanstack/react-table";
 import { ChevronDown, Columns3 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { pdvInvoke } from "@/lib/pdv-api";
 import { rotaHomePdv, rotuloModelo, type StatusContext } from "@/lib/pdv-types";
+import { money } from "@/lib/utils";
 import type { OrdenacaoColunaTabela } from "@/ui/components/cabecalho-coluna-tabela";
 import { DialogInutilizarNfce } from "@/ui/components/dialog-inutilizar-nfce";
 import { FunctionBar } from "@/ui/components/function-bar";
@@ -51,6 +52,14 @@ import {
 
 const CHAVE_COLUNAS_VENDAS = "pdv.vendas.colunas";
 
+type ItemVendaDetalhe = {
+	idproduto: string;
+	descricao: string;
+	quantidade: number;
+	precounitario: number;
+	precototal: number;
+};
+
 function carregarVisibilidadeColunas(): VisibilityState {
 	const padrao = visibilidadePadraoColunasVendas();
 	try {
@@ -91,6 +100,19 @@ export function VendasPage() {
 	const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
 		() => carregarVisibilidadeColunas(),
 	);
+	const [idsExpandidos, setIdsExpandidos] = useState<Set<string>>(
+		() => new Set(),
+	);
+	const [itensPorVenda, setItensPorVenda] = useState<
+		Record<string, ItemVendaDetalhe[]>
+	>({});
+	const [carregandoItensId, setCarregandoItensId] = useState<string | null>(
+		null,
+	);
+	const idsExpandidosRef = useRef(idsExpandidos);
+	const itensPorVendaRef = useRef(itensPorVenda);
+	idsExpandidosRef.current = idsExpandidos;
+	itensPorVendaRef.current = itensPorVenda;
 
 	useEffect(() => {
 		localStorage.setItem(CHAVE_COLUNAS_VENDAS, JSON.stringify(columnVisibility));
@@ -104,6 +126,45 @@ export function VendasPage() {
 			setLoading(false);
 		}
 	}
+
+	const onToggleExpandir = useCallback(async (id: string) => {
+		if (idsExpandidosRef.current.has(id)) {
+			setIdsExpandidos((atual) => {
+				const proximo = new Set(atual);
+				proximo.delete(id);
+				return proximo;
+			});
+			return;
+		}
+
+		setIdsExpandidos((atual) => new Set(atual).add(id));
+
+		if (itensPorVendaRef.current[id] !== undefined) return;
+
+		setCarregandoItensId(id);
+		try {
+			const detalhe = await pdvInvoke<{
+				itens?: ItemVendaDetalhe[];
+			} | null>("obterVenda", id);
+			setItensPorVenda((atual) => ({
+				...atual,
+				[id]: detalhe?.itens ?? [],
+			}));
+		} catch (err) {
+			setMsg(
+				err instanceof Error
+					? err.message
+					: "Falha ao carregar produtos da venda",
+			);
+			setIdsExpandidos((atual) => {
+				const proximo = new Set(atual);
+				proximo.delete(id);
+				return proximo;
+			});
+		} finally {
+			setCarregandoItensId(null);
+		}
+	}, []);
 
 	async function retransmitir(id: string) {
 		setRetransmitindoId(id);
@@ -197,6 +258,9 @@ export function VendasPage() {
 				onRetransmitir: (id) => void retransmitir(id),
 				onInutilizar: setInutilizarVendaId,
 				onReimprimir: (id) => void pdvInvoke("reimprimir", id),
+				idsExpandidos,
+				carregandoItensId,
+				onToggleExpandir: (id) => void onToggleExpandir(id),
 			}),
 		[
 			filtrosColuna,
@@ -206,6 +270,9 @@ export function VendasPage() {
 			onFiltrarColuna,
 			configFiltroPorColuna,
 			retransmitindoId,
+			idsExpandidos,
+			carregandoItensId,
+			onToggleExpandir,
 		],
 	);
 
@@ -378,18 +445,86 @@ export function VendasPage() {
 										</TableCell>
 									</TableRow>
 								) : (
-									table.getRowModel().rows.map((row) => (
-										<TableRow key={row.id}>
-											{row.getVisibleCells().map((cell) => (
-												<TableCell key={cell.id}>
-													{flexRender(
-														cell.column.columnDef.cell,
-														cell.getContext(),
-													)}
-												</TableCell>
-											))}
-										</TableRow>
-									))
+									table.getRowModel().rows.map((row) => {
+										const expandido = idsExpandidos.has(row.original.id);
+										const itens = itensPorVenda[row.original.id];
+										const carregandoItens =
+											carregandoItensId === row.original.id;
+										return (
+											<Fragment key={row.id}>
+												<TableRow>
+													{row.getVisibleCells().map((cell) => (
+														<TableCell key={cell.id}>
+															{flexRender(
+																cell.column.columnDef.cell,
+																cell.getContext(),
+															)}
+														</TableCell>
+													))}
+												</TableRow>
+												{expandido ? (
+													<TableRow className="bg-muted/30 hover:bg-muted/30">
+														<TableCell
+															colSpan={colunasVisiveis.length}
+															className="whitespace-normal p-0"
+														>
+															{carregandoItens && !itens ? (
+																<p className="px-4 py-3 text-sm text-muted-foreground">
+																	Carregando produtos…
+																</p>
+															) : !itens || itens.length === 0 ? (
+																<p className="px-4 py-3 text-sm text-muted-foreground">
+																	Nenhum produto nesta venda.
+																</p>
+															) : (
+																<div className="px-4 py-3">
+																	<table className="w-full text-sm">
+																		<thead>
+																			<tr className="text-left text-muted-foreground">
+																				<th className="pb-2 font-medium">
+																					Produto
+																				</th>
+																				<th className="pb-2 pr-4 text-right font-medium">
+																					Qtd
+																				</th>
+																				<th className="pb-2 pr-4 text-right font-medium">
+																					Unit.
+																				</th>
+																				<th className="pb-2 text-right font-medium">
+																					Total
+																				</th>
+																			</tr>
+																		</thead>
+																		<tbody>
+																			{itens.map((item, index) => (
+																				<tr
+																					key={`${item.idproduto}-${index}`}
+																					className="border-t border-border/60"
+																				>
+																					<td className="py-1.5 pr-4">
+																						{item.descricao}
+																					</td>
+																					<td className="py-1.5 pr-4 text-right tabular-nums">
+																						{item.quantidade}
+																					</td>
+																					<td className="py-1.5 pr-4 text-right tabular-nums">
+																						{money(item.precounitario)}
+																					</td>
+																					<td className="py-1.5 text-right font-medium tabular-nums">
+																						{money(item.precototal)}
+																					</td>
+																				</tr>
+																			))}
+																		</tbody>
+																	</table>
+																</div>
+															)}
+														</TableCell>
+													</TableRow>
+												) : null}
+											</Fragment>
+										);
+									})
 								)}
 							</TableBody>
 						</Table>

@@ -1,7 +1,8 @@
 import type { ColumnDef, VisibilityState } from "@tanstack/react-table";
 import dayjs from "dayjs";
+import { ChevronDown } from "lucide-react";
 import { rotuloPagamentoVenda } from "@/lib/pagamento";
-import { money } from "@/lib/utils";
+import { cn, money } from "@/lib/utils";
 import {
 	CabecalhoColunaTabela,
 	type OpcaoFiltroColunaTabela,
@@ -140,6 +141,12 @@ const DEFINICOES_COLUNAS: DefinicaoColuna[] = [
 	{ id: "sync_status", label: "Sync", visivelPadrao: true },
 	{ id: "nfce_status", label: "NFC-e", visivelPadrao: true },
 	{ id: "acoes", label: "Ações", visivelPadrao: true, enableHiding: false },
+	{
+		id: "expandir",
+		label: "Itens",
+		visivelPadrao: true,
+		enableHiding: false,
+	},
 ];
 
 export function visibilidadePadraoColunasVendas(): VisibilityState {
@@ -344,6 +351,9 @@ export type OpcoesColunasVendas = {
 	onRetransmitir: (id: string) => void;
 	onInutilizar: (id: string) => void;
 	onReimprimir: (id: string) => void;
+	idsExpandidos: Set<string>;
+	carregandoItensId: string | null;
+	onToggleExpandir: (id: string) => void;
 };
 
 function criarHeaderColuna(
@@ -424,6 +434,44 @@ export function criarColunasVendas(
 								onClick={() => opcoes.onReimprimir(v.id)}
 							>
 								Reimprimir
+							</Button>
+						</div>
+					);
+				},
+			});
+			continue;
+		}
+
+		if (def.id === "expandir") {
+			colunas.push({
+				id: "expandir",
+				header: () => <span className="sr-only">Itens</span>,
+				enableHiding: false,
+				enableSorting: false,
+				meta,
+				cell: ({ row }) => {
+					const id = row.original.id;
+					const expandido = opcoes.idsExpandidos.has(id);
+					const carregando = opcoes.carregandoItensId === id;
+					return (
+						<div className="flex justify-end">
+							<Button
+								type="button"
+								size="icon"
+								variant="ghost"
+								aria-expanded={expandido}
+								aria-label={
+									expandido ? "Recolher produtos da venda" : "Expandir produtos da venda"
+								}
+								disabled={carregando}
+								onClick={() => opcoes.onToggleExpandir(id)}
+							>
+								<ChevronDown
+									className={cn(
+										"size-4 transition-transform",
+										expandido ? "rotate-0" : "-rotate-90",
+									)}
+								/>
 							</Button>
 						</div>
 					);
