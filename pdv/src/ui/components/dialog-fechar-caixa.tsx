@@ -7,6 +7,18 @@ import { NumericKeypad } from "@/ui/components/numeric-keypad";
 import { Button } from "@/ui/components/ui/button";
 import { useEscapeFechaModal } from "@/ui/hooks/use-escape-fecha-modal";
 
+type Etapa = "conferencia" | "itens";
+
+type FechamentoCaixaResult = {
+	ok: true;
+	itensVendidos: ItemVendidoTurnoAgrupado[];
+	nomeempresa: string | null;
+	username: string | null;
+	numeropdv: number;
+	abertoem: string;
+	fechadoem: string;
+};
+
 function linhaItemVendido(item: ItemVendidoTurnoAgrupado): string {
 	const qtd = Number.isInteger(item.quantidade)
 		? String(item.quantidade)
@@ -51,10 +63,17 @@ export function DialogFecharCaixa({
 	onFechar: () => void;
 	onSucesso: () => void | Promise<void>;
 }) {
+	const [etapa, setEtapa] = useState<Etapa>("conferencia");
 	const [resumo, setResumo] = useState<ResumoTurnoCaixa | null>(null);
 	const [itensVendidos, setItensVendidos] = useState<ItemVendidoTurnoAgrupado[]>(
 		[],
 	);
+	const [metaImpressao, setMetaImpressao] = useState<{
+		nomeempresa: string | null;
+		username: string | null;
+		numeropdv: number;
+		abertoem: string;
+	} | null>(null);
 	const [carregando, setCarregando] = useState(false);
 	const [imprimindo, setImprimindo] = useState(false);
 	const [enviando, setEnviando] = useState(false);
@@ -62,12 +81,17 @@ export function DialogFecharCaixa({
 	const [digitos, setDigitos] = useState("0");
 	const [observacao, setObservacao] = useState("");
 
-	useEscapeFechaModal(aberto && !enviando, onFechar);
+	useEscapeFechaModal(
+		aberto && !enviando && etapa === "conferencia",
+		onFechar,
+	);
 
 	useEffect(() => {
 		if (!aberto) {
+			setEtapa("conferencia");
 			setResumo(null);
 			setItensVendidos([]);
+			setMetaImpressao(null);
 			setDigitos("0");
 			setObservacao("");
 			setErro(null);
@@ -77,15 +101,9 @@ export function DialogFecharCaixa({
 		let cancelado = false;
 		setCarregando(true);
 		setErro(null);
-		void Promise.all([
-			pdvInvoke<ResumoTurnoCaixa>("resumoTurnoCaixa"),
-			pdvInvoke<ItemVendidoTurnoAgrupado[]>("listarItensVendidosTurno"),
-		])
-			.then(([dadosResumo, dadosItens]) => {
-				if (!cancelado) {
-					setResumo(dadosResumo);
-					setItensVendidos(dadosItens);
-				}
+		void pdvInvoke<ResumoTurnoCaixa>("resumoTurnoCaixa")
+			.then((dados) => {
+				if (!cancelado) setResumo(dados);
 			})
 			.catch((err) => {
 				if (!cancelado) {
@@ -119,13 +137,19 @@ export function DialogFecharCaixa({
 		setEnviando(true);
 		setErro(null);
 		try {
-			await pdvInvoke(
+			const resultado = await pdvInvoke<FechamentoCaixaResult>(
 				"fecharCaixa",
 				saldoinformado,
 				observacao.trim() || undefined,
 			);
-			await onSucesso();
-			onFechar();
+			setItensVendidos(resultado.itensVendidos ?? []);
+			setMetaImpressao({
+				nomeempresa: resultado.nomeempresa,
+				username: resultado.username,
+				numeropdv: resultado.numeropdv,
+				abertoem: resultado.abertoem,
+			});
+			setEtapa("itens");
 		} catch (err) {
 			setErro(err instanceof Error ? err.message : "Erro ao fechar caixa");
 		} finally {
@@ -134,11 +158,20 @@ export function DialogFecharCaixa({
 	}
 
 	async function imprimirItens() {
-		if (imprimindo || enviando) return;
+		if (imprimindo || !metaImpressao) return;
 		setImprimindo(true);
 		setErro(null);
 		try {
-			await pdvInvoke("imprimirItensVendidosTurno");
+			await pdvInvoke("imprimirItensVendidosTurno", {
+				nomeempresa: metaImpressao.nomeempresa,
+				username: metaImpressao.username,
+				numeropdv: metaImpressao.numeropdv,
+				abertoem: metaImpressao.abertoem,
+				itens: itensVendidos.map((item) => ({
+					descricao: item.descricao,
+					quantidade: item.quantidade,
+				})),
+			});
 		} catch (err) {
 			setErro(
 				err instanceof Error
@@ -148,6 +181,69 @@ export function DialogFecharCaixa({
 		} finally {
 			setImprimindo(false);
 		}
+	}
+
+	async function concluir() {
+		await onSucesso();
+		onFechar();
+	}
+
+	if (etapa === "itens") {
+		return (
+			<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+				<div className="pdv-surface max-h-[95vh] w-[28rem] max-w-[95vw] space-y-4 overflow-y-auto p-5">
+					<div>
+						<h2 className="text-lg font-semibold">Caixa fechado</h2>
+						<p className="text-sm text-muted-foreground">
+							Itens vendidos no turno. Você pode imprimir a lista antes de
+							concluir.
+						</p>
+					</div>
+
+					<div className="space-y-2 rounded-lg border p-3">
+						<div className="flex items-center justify-between gap-2">
+							<p className="text-sm font-medium">Itens vendidos</p>
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								disabled={imprimindo}
+								onClick={() => void imprimirItens()}
+							>
+								<Printer className="mr-1.5 h-4 w-4" />
+								{imprimindo ? "Imprimindo..." : "Imprimir"}
+							</Button>
+						</div>
+						{itensVendidos.length === 0 ? (
+							<p className="text-sm text-muted-foreground">
+								Nenhum item vendido neste turno.
+							</p>
+						) : (
+							<ul className="max-h-64 space-y-1 overflow-y-auto text-sm">
+								{itensVendidos.map((item) => (
+									<li
+										key={item.idproduto || item.descricao}
+										className="font-medium tracking-wide"
+									>
+										{linhaItemVendido(item)}
+									</li>
+								))}
+							</ul>
+						)}
+					</div>
+
+					{erro ? <p className="text-sm text-destructive">{erro}</p> : null}
+
+					<Button
+						className="w-full"
+						disabled={imprimindo}
+						onClick={() => void concluir()}
+					>
+						Concluir
+					</Button>
+				</div>
+			</div>
+		);
 	}
 
 	return (
@@ -206,40 +302,6 @@ export function DialogFecharCaixa({
 						Não foi possível carregar o resumo do turno.
 					</p>
 				)}
-
-				{!carregando && resumo ? (
-					<div className="space-y-2 rounded-lg border p-3">
-						<div className="flex items-center justify-between gap-2">
-							<p className="text-sm font-medium">Itens vendidos no turno</p>
-							<Button
-								type="button"
-								variant="outline"
-								size="sm"
-								disabled={enviando || imprimindo}
-								onClick={() => void imprimirItens()}
-							>
-								<Printer className="mr-1.5 h-4 w-4" />
-								{imprimindo ? "Imprimindo..." : "Imprimir"}
-							</Button>
-						</div>
-						{itensVendidos.length === 0 ? (
-							<p className="text-sm text-muted-foreground">
-								Nenhum item vendido neste turno.
-							</p>
-						) : (
-							<ul className="max-h-40 space-y-1 overflow-y-auto text-sm">
-								{itensVendidos.map((item) => (
-									<li
-										key={item.idproduto || item.descricao}
-										className="font-medium tracking-wide"
-									>
-										{linhaItemVendido(item)}
-									</li>
-								))}
-							</ul>
-						)}
-					</div>
-				) : null}
 
 				<div className="space-y-2">
 					<p className="text-sm font-medium">

@@ -905,7 +905,23 @@ export const localApi = {
 		return listarItensVendidosTurnoAberto();
 	},
 
-	async imprimirItensVendidosTurno() {
+	async imprimirItensVendidosTurno(dados?: {
+		nomeempresa?: string | null;
+		username?: string | null;
+		numeropdv: number;
+		abertoem: string;
+		itens: Array<{ descricao: string; quantidade: number }>;
+	}) {
+		if (dados) {
+			return imprimirItensVendidosTurno({
+				nomeempresa: dados.nomeempresa,
+				username: dados.username,
+				numeropdv: dados.numeropdv,
+				abertoem: dados.abertoem,
+				emitidoem: new Date().toISOString(),
+				itens: dados.itens,
+			});
+		}
 		const [caixa, sessao, itens] = await Promise.all([
 			caixaAberto(),
 			obterSessao(),
@@ -958,7 +974,15 @@ export const localApi = {
 					: "Falha ao imprimir comprovante de caixa",
 			);
 		}
-		return { ok: true };
+		return {
+			ok: true as const,
+			itensVendidos: fechamento.itensVendidos,
+			nomeempresa: fechamento.nomeempresa,
+			username: fechamento.username,
+			numeropdv: fechamento.numeropdv,
+			abertoem: fechamento.abertoem,
+			fechadoem: fechamento.fechadoem,
+		};
 	},
 
 	async buscarProdutos(termo?: string) {

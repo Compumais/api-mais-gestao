@@ -1200,12 +1200,16 @@ export async function fecharCaixa(params: {
 	conferencia: ReturnType<typeof calcularConferenciaCaixa>;
 	observacao: string | null;
 	nomeempresa: string | null;
+	itensVendidos: ItemVendidoTurnoAgrupado[];
 }> {
 	const caixa = await caixaAberto();
 	if (!caixa) {
 		throw new Error("Nenhum caixa aberto para este operador");
 	}
-	const resumo = await calcularResumoTurno(caixa);
+	const [resumo, itensVendidos] = await Promise.all([
+		calcularResumoTurno(caixa),
+		listarItensVendidosTurno(caixa),
+	]);
 	const conferencia = calcularConferenciaCaixa(
 		params.saldoinformado,
 		resumo.saldoCaixaFisico,
@@ -1246,6 +1250,7 @@ export async function fecharCaixa(params: {
 		conferencia,
 		observacao,
 		nomeempresa: sessao.nomeempresa,
+		itensVendidos,
 	};
 }
 
