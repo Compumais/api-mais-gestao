@@ -77,6 +77,23 @@ export function isEmpresaAcessoNegado(err: unknown): boolean {
 	return /EMPRESA_ACESSO_NEGADO|não pertence à empresa/i.test(err.message);
 }
 
+/**
+ * `/produtos/catalogo-pdv` colide com `GET /produtos/:id` quando a rota estática
+ * ainda não existe na API: Fastify interpreta "catalogo-pdv" como params.id e
+ * responde 400 FST_ERR_VALIDATION (uuid), em vez de 404.
+ */
+export function isCatalogoPdvIndisponivel(err: unknown): boolean {
+	if (!(err instanceof ApiError)) return false;
+	if (err.status === 404) return true;
+	if (err.status !== 400) return false;
+	const msg = err.message;
+	return (
+		/FST_ERR_VALIDATION/i.test(msg) &&
+		/params\/id/i.test(msg) &&
+		/uuid/i.test(msg)
+	);
+}
+
 async function request<T>(
 	path: string,
 	options: {
@@ -365,12 +382,12 @@ export async function listarProdutos(params: {
 			},
 		};
 	} catch (err) {
-		if (!(err instanceof ApiError) || err.status !== 404) {
+		if (!isCatalogoPdvIndisponivel(err)) {
 			throw err;
 		}
 	}
 
-	// Fallback para APIs sem /produtos/catalogo-pdv
+	// Fallback para APIs sem /produtos/catalogo-pdv (404 ou colisão com :id)
 	let path = `/produtos?idempresa=${encodeURIComponent(params.idempresa)}&inativo=0&tipo=P&page=${page}&limit=${limit}`;
 	if (params.q?.trim()) {
 		path += `&q=${encodeURIComponent(params.q.trim())}`;
