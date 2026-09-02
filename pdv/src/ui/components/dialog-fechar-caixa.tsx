@@ -281,7 +281,14 @@ export function DialogFecharCaixa({
 								valor={resumo.pagamentos.dinheiro}
 							/>
 							<LinhaResumo label="↳ PIX" valor={resumo.pagamentos.pix} />
-							<LinhaResumo label="↳ Cartão" valor={resumo.pagamentos.cartao} />
+							<LinhaResumo
+								label="↳ Cartão débito"
+								valor={resumo.pagamentos.cartaodebito}
+							/>
+							<LinhaResumo
+								label="↳ Cartão crédito"
+								valor={resumo.pagamentos.cartaocredito}
+							/>
 							{resumo.pagamentos.prepago > 0 ? (
 								<LinhaResumo
 									label="↳ Pré-pago"

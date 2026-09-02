@@ -47,7 +47,8 @@ export function montarTextoComprovanteFechamentoCaixa(
 	linhas.push(`Vendas (${resumo.qtdVendas}): ${money(resumo.saldoapurado)}`);
 	linhas.push(`  Dinheiro: ${money(resumo.pagamentos.dinheiro)}`);
 	linhas.push(`  PIX: ${money(resumo.pagamentos.pix)}`);
-	linhas.push(`  Cartao: ${money(resumo.pagamentos.cartao)}`);
+	linhas.push(`  Cartao debito: ${money(resumo.pagamentos.cartaodebito)}`);
+	linhas.push(`  Cartao credito: ${money(resumo.pagamentos.cartaocredito)}`);
 	if (resumo.pagamentos.prepago > 0) {
 		linhas.push(`  Pre-pago: ${money(resumo.pagamentos.prepago)}`);
 	}

@@ -90,6 +90,8 @@ export type MeioPagamento = "DINHEIRO" | "PIX" | "CARTAO" | "OUTROS";
 export type PagamentosResumoTurno = {
 	dinheiro: number;
 	cartao: number;
+	cartaocredito: number;
+	cartaodebito: number;
 	pix: number;
 	prepago: number;
 	total: number;
