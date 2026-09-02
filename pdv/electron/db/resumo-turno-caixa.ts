@@ -8,12 +8,17 @@ export type VendaParaResumoTurno = {
 	valortroco: number;
 	lanc_dinheiro?: number;
 	lanc_pix?: number;
+	/** @deprecated Preferir lanc_cartaocredito / lanc_cartaodebito */
 	lanc_cartao?: number;
+	lanc_cartaocredito?: number;
+	lanc_cartaodebito?: number;
 };
 
 export type PagamentosResumoTurno = {
 	dinheiro: number;
 	cartao: number;
+	cartaocredito: number;
+	cartaodebito: number;
 	pix: number;
 	prepago: number;
 	total: number;
@@ -40,26 +45,47 @@ function numero(valor: unknown): number {
 	return Number.isFinite(n) ? arredondarDinheiro(n) : 0;
 }
 
+type ValoresMeiosVenda = {
+	valortotal: number;
+	valordinheiro: number;
+	valorpix: number;
+	valorcartaocredito: number;
+	valorcartaodebito: number;
+	valortroco: number;
+};
+
 export function valoresVendaParaResumo(
 	venda: VendaParaResumoTurno,
-): VendaParaResumoTurno {
+): ValoresMeiosVenda {
 	const lancDinheiro = numero(venda.lanc_dinheiro);
 	const lancPix = numero(venda.lanc_pix);
-	const lancCartao = numero(venda.lanc_cartao);
+	const lancCredito = numero(venda.lanc_cartaocredito);
+	const lancDebito = numero(venda.lanc_cartaodebito);
+	const lancCartaoLegado = numero(venda.lanc_cartao);
+	const temSplitCartao = lancCredito > 0 || lancDebito > 0;
+	const lancCartao = temSplitCartao
+		? arredondarDinheiro(lancCredito + lancDebito)
+		: lancCartaoLegado;
+
 	if (lancDinheiro + lancPix + lancCartao > 0) {
 		return {
 			valortotal: numero(venda.valortotal),
 			valordinheiro: lancDinheiro,
 			valorpix: lancPix,
-			valorcartao: lancCartao,
+			valorcartaocredito: temSplitCartao ? lancCredito : lancCartao,
+			valorcartaodebito: temSplitCartao ? lancDebito : 0,
 			valortroco: numero(venda.valortroco),
 		};
 	}
+	// Sem lançamentos: a coluna valorcartao guarda o total de cartão (crédito+débito).
+	// Sem forma NF-e não dá para separar — trata como crédito (padrão histórico).
+	const cartao = numero(venda.valorcartao);
 	return {
 		valortotal: numero(venda.valortotal),
 		valordinheiro: numero(venda.valordinheiro),
 		valorpix: numero(venda.valorpix),
-		valorcartao: numero(venda.valorcartao),
+		valorcartaocredito: cartao,
+		valorcartaodebito: 0,
 		valortroco: numero(venda.valortroco),
 	};
 }
@@ -71,7 +97,9 @@ export function pagamentosVendaTurno(
 	const dinheiroBruto = origem.valordinheiro;
 	const troco = origem.valortroco;
 	const dinheiro = Math.max(0, arredondarDinheiro(dinheiroBruto - troco));
-	const cartao = origem.valorcartao;
+	const cartaocredito = origem.valorcartaocredito;
+	const cartaodebito = origem.valorcartaodebito;
+	const cartao = arredondarDinheiro(cartaocredito + cartaodebito);
 	const pix = origem.valorpix;
 	const prepago = 0;
 	const totalInformado = numero(venda.valortotal);
@@ -80,7 +108,7 @@ export function pagamentosVendaTurno(
 			? totalInformado
 			: arredondarDinheiro(dinheiro + cartao + pix + prepago);
 
-	return { dinheiro, cartao, pix, prepago, total };
+	return { dinheiro, cartao, cartaocredito, cartaodebito, pix, prepago, total };
 }
 
 export function montarResumoTurnoCaixa(params: {
@@ -90,6 +118,8 @@ export function montarResumoTurnoCaixa(params: {
 	const pagamentos: PagamentosResumoTurno = {
 		dinheiro: 0,
 		cartao: 0,
+		cartaocredito: 0,
+		cartaodebito: 0,
 		pix: 0,
 		prepago: 0,
 		total: 0,
@@ -100,7 +130,15 @@ export function montarResumoTurnoCaixa(params: {
 		pagamentos.dinheiro = arredondarDinheiro(
 			pagamentos.dinheiro + parcela.dinheiro,
 		);
-		pagamentos.cartao = arredondarDinheiro(pagamentos.cartao + parcela.cartao);
+		pagamentos.cartaocredito = arredondarDinheiro(
+			pagamentos.cartaocredito + parcela.cartaocredito,
+		);
+		pagamentos.cartaodebito = arredondarDinheiro(
+			pagamentos.cartaodebito + parcela.cartaodebito,
+		);
+		pagamentos.cartao = arredondarDinheiro(
+			pagamentos.cartaocredito + pagamentos.cartaodebito,
+		);
 		pagamentos.pix = arredondarDinheiro(pagamentos.pix + parcela.pix);
 		pagamentos.prepago = arredondarDinheiro(
 			pagamentos.prepago + parcela.prepago,

@@ -19,6 +19,8 @@ describe("montarTextoComprovanteFechamentoCaixa", () => {
 					dinheiro: 40,
 					pix: 30,
 					cartao: 20,
+					cartaocredito: 12,
+					cartaodebito: 8,
 					prepago: 0,
 					total: 90,
 				},
@@ -37,7 +39,8 @@ describe("montarTextoComprovanteFechamentoCaixa", () => {
 		assert.match(texto, /FECHAMENTO DE CAIXA/);
 		assert.match(texto, /PDV: 2/);
 		assert.match(texto, /PIX/);
-		assert.match(texto, /Cartao/);
+		assert.match(texto, /Cartao debito/);
+		assert.match(texto, /Cartao credito/);
 		assert.match(texto, /Falta/);
 	});
 });

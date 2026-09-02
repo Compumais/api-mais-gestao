@@ -1192,7 +1192,23 @@ export async function calcularResumoTurno(caixa: {
 				WHERE p.idvenda = v.id
 					AND p.meio = 'CARTAO'
 					AND COALESCE(p.status, 'ok') = 'ok'
-			), 0) AS lanc_cartao
+					AND lpad(
+						regexp_replace(COALESCE(p.formapagamentonfe, ''), '[^0-9]', '', 'g'),
+						2,
+						'0'
+					) = '04'
+			), 0) AS lanc_cartaodebito,
+			COALESCE((
+				SELECT SUM(p.valor) FROM pagamento p
+				WHERE p.idvenda = v.id
+					AND p.meio = 'CARTAO'
+					AND COALESCE(p.status, 'ok') = 'ok'
+					AND lpad(
+						regexp_replace(COALESCE(p.formapagamentonfe, ''), '[^0-9]', '', 'g'),
+						2,
+						'0'
+					) IS DISTINCT FROM '04'
+			), 0) AS lanc_cartaocredito
 		 FROM venda v
 		 WHERE v.numeropdv = $1 AND v.criadoem >= $2 AND v.status = 'fechada'
 		 ORDER BY v.criadoem`,
@@ -1641,7 +1657,7 @@ export async function criarVendaRapida(params: {
 				total,
 				sync.valordinheiro,
 				sync.valorpix,
-				sync.valorcartaocredito,
+				arredondarMoeda(sync.valorcartaocredito + sync.valorcartaodebito),
 				fechamento.troco,
 				desconto,
 				agora,
@@ -1688,7 +1704,9 @@ export async function criarVendaRapida(params: {
 		pagamentos: fechamento.efetivos,
 		valordinheiro: sync.valordinheiro,
 		valorpix: sync.valorpix,
-		valorcartao: sync.valorcartaocredito,
+		valorcartao: arredondarMoeda(
+			sync.valorcartaocredito + sync.valorcartaodebito,
+		),
 		itens: params.itens,
 		valortotal: total,
 		valortroco: fechamento.troco,
@@ -2612,7 +2630,7 @@ async function gravarVendaMesa(params: {
 				params.total,
 				sync.valordinheiro,
 				sync.valorpix,
-				sync.valorcartaocredito,
+				arredondarMoeda(sync.valorcartaocredito + sync.valorcartaodebito),
 				fechamento.troco,
 				params.valordesconto,
 				params.valortaxaservico,
@@ -2690,7 +2708,9 @@ async function gravarVendaMesa(params: {
 		pagamentos: fechamento.efetivos,
 		valordinheiro: sync.valordinheiro,
 		valorpix: sync.valorpix,
-		valorcartao: sync.valorcartaocredito,
+		valorcartao: arredondarMoeda(
+			sync.valorcartaocredito + sync.valorcartaodebito,
+		),
 		itens: params.itens.map((i) => ({
 			idproduto: i.idproduto,
 			descricao: i.descricao,
