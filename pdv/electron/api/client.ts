@@ -663,6 +663,7 @@ export function extrairNfceDaBaixa(
 	baixa: Awaited<ReturnType<typeof baixaEstoqueVenda>>,
 ): {
 	emitida: boolean;
+	deveEmitirNfce: boolean;
 	chave?: string;
 	qrCode?: string;
 	protocolo?: string;
@@ -724,6 +725,7 @@ export function extrairNfceDaBaixa(
 
 	return {
 		emitida,
+		deveEmitirNfce: baixa.deveEmitirNfce !== false,
 		chave: nfce?.chave,
 		qrCode: nfce?.qrCode,
 		protocolo: nfce?.protocolo,
@@ -811,6 +813,12 @@ export async function buscarNfceConfig(idempresa: string) {
 		ultimaidserie?: string | null;
 		contingenciaativa?: boolean;
 		cnpj?: string | null;
+		meiospagamentonfce?: {
+			dinheiro?: boolean;
+			cartao?: boolean;
+			pix?: boolean;
+			prepago?: boolean;
+		};
 	}>(`/empresas/${idempresa}/nfce-configuracao`);
 }
 

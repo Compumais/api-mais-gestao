@@ -202,6 +202,7 @@ export async function emitirOuContingencia(params: {
 		cStat?: string;
 		erro?: string;
 		indisponivel?: boolean;
+		naoFiscal?: boolean;
 		xml?: string;
 		serie?: string;
 		numero?: number;
@@ -217,6 +218,13 @@ export async function emitirOuContingencia(params: {
 	}
 
 	const online = await params.onlineEmitir();
+	if (online.naoFiscal) {
+		await atualizarVendaSync(params.idvenda, { nfce_status: "nao_fiscal" });
+		return {
+			modo: "nao_fiscal",
+			mensagem: "NFC-e não emitida para este meio de pagamento",
+		};
+	}
 	if (online.ok) {
 		const { persistirNfceOnlineLocal } = await import(
 			"./persistir-nfce-online"
@@ -256,6 +264,17 @@ export async function emitirOuContingencia(params: {
 			modo: "erro",
 			cStat: online.cStat,
 			mensagem,
+		};
+	}
+
+	const { avaliarEmissaoNfceDaVenda } = await import(
+		"./avaliar-emissao-nfce-venda"
+	);
+	if (!(await avaliarEmissaoNfceDaVenda(params.idvenda)).deveEmitir) {
+		await atualizarVendaSync(params.idvenda, { nfce_status: "nao_fiscal" });
+		return {
+			modo: "nao_fiscal",
+			mensagem: "NFC-e não emitida para este meio de pagamento",
 		};
 	}
 

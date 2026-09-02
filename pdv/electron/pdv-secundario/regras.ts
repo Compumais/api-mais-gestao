@@ -5,6 +5,7 @@ export const CHAVES_CONFIG_NEGOCIO = [
 	"modelo_atendimento",
 	"tempo_ociosidade_min",
 	"emitir_nfce",
+	"nfce_meios_pagamento",
 	"pix_chave",
 	"api_url",
 	"taxa_servico_percentual",
