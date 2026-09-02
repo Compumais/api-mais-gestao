@@ -61,14 +61,23 @@ function paraLatin1(texto: string): Buffer {
 	return Buffer.from(bytes);
 }
 
-function montarEscpos(texto: string, qrcode?: string): Buffer {
+function montarEscpos(
+	texto: string,
+	qrcode?: string,
+	opcoes?: { fonteMenor?: boolean },
+): Buffer {
 	const init = Buffer.from([0x1b, 0x40]);
 	const codepage = Buffer.from([0x1b, 0x74, 0x10]);
+	/** Font B — tipicamente ~9x17 vs Font A 12x24 (fonte um pouco menor). */
+	const fontB = Buffer.from([0x1b, 0x4d, 0x01]);
 	const alignCenter = Buffer.from([0x1b, 0x61, 0x01]);
 	const alignLeft = Buffer.from([0x1b, 0x61, 0x00]);
 	const avanco = Buffer.from([0x1b, 0x64, 0x04]);
 	const corte = Buffer.from([0x1d, 0x56, 0x41, 0x03]);
 	const partes: Buffer[] = [init, codepage];
+	if (opcoes?.fonteMenor) {
+		partes.push(fontB);
+	}
 	const qr = qrcode?.trim() ?? "";
 	const chunks = texto.split(MARCADOR_QR_DANFCE);
 	chunks.forEach((chunk, idx) => {
@@ -136,7 +145,13 @@ function escapeHtml(value: string): string {
 		.replace(/>/g, "&gt;");
 }
 
-function htmlCupomSimples(texto: string): string {
+function htmlCupomSimples(
+	texto: string,
+	opcoes?: { fonteMenor?: boolean },
+): string {
+	const fonteMenor = Boolean(opcoes?.fonteMenor);
+	const fontSize = fonteMenor ? "11pt" : "15pt";
+	const lineHeight = fonteMenor ? "1.15" : "1.3";
 	return `<!DOCTYPE html>
 <html>
 <head>
@@ -150,7 +165,7 @@ function htmlCupomSimples(texto: string): string {
   pre {
     margin: 0; padding: 0;
     font-family: "Courier New", Courier, monospace;
-    font-size: 15pt; line-height: 1.3; font-weight: 600;
+    font-size: ${fontSize}; line-height: ${lineHeight}; font-weight: 600;
     white-space: pre-wrap; word-break: break-word;
   }
 </style>
@@ -223,8 +238,9 @@ async function enviarParaDestino(params: {
 	destino: DestinoImpressora;
 	qrcode?: string;
 	estrito?: boolean;
+	fonteMenor?: boolean;
 }): Promise<{ ok: boolean; modo: string }> {
-	const { texto, html, destino, qrcode, estrito } = params;
+	const { texto, html, destino, qrcode, estrito, fonteMenor } = params;
 	const textoArquivo = texto.replaceAll(
 		MARCADOR_QR_DANFCE,
 		qrcode ? "[QR CODE NFC-e]" : "",
@@ -250,7 +266,11 @@ async function enviarParaDestino(params: {
 			destino.host ?? "",
 			destino.porta,
 		);
-		await enviarRawTcp(host, porta, montarEscpos(texto, qrcode));
+		await enviarRawTcp(
+			host,
+			porta,
+			montarEscpos(texto, qrcode, { fonteMenor }),
+		);
 		return { ok: true, modo: "rede" };
 	}
 
@@ -268,13 +288,15 @@ async function enviarParaDestino(params: {
 export async function enviarTextoImpressora(
 	texto: string,
 	destino: DestinoImpressora,
-	opcoes?: { estrito?: boolean },
+	opcoes?: { estrito?: boolean; fonteMenor?: boolean },
 ): Promise<{ ok: boolean; modo: string }> {
+	const fonteMenor = Boolean(opcoes?.fonteMenor);
 	return enviarParaDestino({
 		texto,
-		html: htmlCupomSimples(texto),
+		html: htmlCupomSimples(texto, { fonteMenor }),
 		destino,
 		estrito: Boolean(opcoes?.estrito),
+		fonteMenor,
 	});
 }
 
