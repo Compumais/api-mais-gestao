@@ -20,7 +20,7 @@
 		"test:xml": "node ../api/node_modules/tsx/dist/cli.mjs --test electron/fiscal/datas-xml-nfce.test.ts",
 		"test:caixa": "node ../api/node_modules/tsx/dist/cli.mjs --test electron/db/resumo-turno-caixa.test.ts electron/db/itens-vendidos-turno.test.ts electron/impressora/comprovante-caixa.test.ts electron/impressora/danfce.test.ts",
 		"test:teclas": "node ../api/node_modules/tsx/dist/cli.mjs --test src/lib/teclas-funcao.test.ts src/lib/pagamento-forma-nfe.test.ts src/lib/conta-gourmet.test.ts src/lib/observacao-pedido.test.ts electron/db/pagamento.test.ts",
-		"test:producao": "node ../api/node_modules/tsx/dist/cli.mjs --test electron/impressora/producao.test.ts electron/impressora/fonte-impressao.test.ts",
+		"test:producao": "node ../api/node_modules/tsx/dist/cli.mjs --test electron/impressora/producao.test.ts electron/impressora/fonte-impressao.test.ts electron/impressora/pedido-producao-layout.test.ts",
 		"test:nfce-meios": "node ../api/node_modules/tsx/dist/cli.mjs --test electron/fiscal/meios-pagamento-nfce.test.ts",
 		"test:observacao": "node ../api/node_modules/tsx/dist/cli.mjs --test src/lib/observacao-item.test.ts",
 		"test:update": "node ../api/node_modules/tsx/dist/cli.mjs --test electron/update/semver.test.ts",
