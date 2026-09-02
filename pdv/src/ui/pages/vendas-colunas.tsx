@@ -221,8 +221,7 @@ function podeRetransmitir(status: string) {
 		status === "erro" ||
 		status === "erro_config" ||
 		status === "contingencia" ||
-		status === "pendente_contingencia" ||
-		status === "inutilizada"
+		status === "pendente_contingencia"
 	);
 }
 
