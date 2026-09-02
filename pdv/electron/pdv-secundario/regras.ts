@@ -39,6 +39,7 @@ export const CHAVES_CONFIG_LOCAL = [
 	"impressora_tipo",
 	"impressora_host",
 	"impressora_porta",
+	"impressora_fonte",
 	"certificado_path",
 	"certificado_senha",
 	"certificado_apelido",

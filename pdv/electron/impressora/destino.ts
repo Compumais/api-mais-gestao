@@ -1,9 +1,21 @@
 import { Buffer } from "node:buffer";
 import net from "node:net";
 import { BrowserWindow } from "electron";
-import { execute } from "../db/database";
+import { execute, getConfig } from "../db/database";
 import { MARCADOR_QR_DANFCE } from "./danfce-layout";
+import {
+	estiloHtmlFonte,
+	normalizarTamanhoFonte,
+	type TamanhoFonteImpressao,
+} from "./fonte-impressao";
 import { bytesQrEscpos } from "./qr-escpos";
+
+export type { TamanhoFonteImpressao } from "./fonte-impressao";
+export { normalizarTamanhoFonte } from "./fonte-impressao";
+
+export async function obterTamanhoFonteConfig(): Promise<TamanhoFonteImpressao> {
+	return normalizarTamanhoFonte(await getConfig("impressora_fonte", "media"));
+}
 
 export type TipoDestinoImpressora = "sistema" | "rede" | "arquivo";
 
@@ -64,19 +76,24 @@ function paraLatin1(texto: string): Buffer {
 function montarEscpos(
 	texto: string,
 	qrcode?: string,
-	opcoes?: { fonteMenor?: boolean },
+	opcoes?: { tamanhoFonte?: TamanhoFonteImpressao },
 ): Buffer {
 	const init = Buffer.from([0x1b, 0x40]);
 	const codepage = Buffer.from([0x1b, 0x74, 0x10]);
-	/** Font B — tipicamente ~9x17 vs Font A 12x24 (fonte um pouco menor). */
+	/** Font B — tipicamente ~9x17 vs Font A 12x24. */
 	const fontB = Buffer.from([0x1b, 0x4d, 0x01]);
+	/** GS ! — double width + double height. */
+	const tamanhoDuplo = Buffer.from([0x1d, 0x21, 0x11]);
 	const alignCenter = Buffer.from([0x1b, 0x61, 0x01]);
 	const alignLeft = Buffer.from([0x1b, 0x61, 0x00]);
 	const avanco = Buffer.from([0x1b, 0x64, 0x04]);
 	const corte = Buffer.from([0x1d, 0x56, 0x41, 0x03]);
 	const partes: Buffer[] = [init, codepage];
-	if (opcoes?.fonteMenor) {
+	const tamanho = normalizarTamanhoFonte(opcoes?.tamanhoFonte);
+	if (tamanho === "pequena") {
 		partes.push(fontB);
+	} else if (tamanho === "grande") {
+		partes.push(tamanhoDuplo);
 	}
 	const qr = qrcode?.trim() ?? "";
 	const chunks = texto.split(MARCADOR_QR_DANFCE);
@@ -147,11 +164,11 @@ function escapeHtml(value: string): string {
 
 function htmlCupomSimples(
 	texto: string,
-	opcoes?: { fonteMenor?: boolean },
+	opcoes?: { tamanhoFonte?: TamanhoFonteImpressao },
 ): string {
-	const fonteMenor = Boolean(opcoes?.fonteMenor);
-	const fontSize = fonteMenor ? "11pt" : "15pt";
-	const lineHeight = fonteMenor ? "1.15" : "1.3";
+	const { fontSize, lineHeight } = estiloHtmlFonte(
+		normalizarTamanhoFonte(opcoes?.tamanhoFonte),
+	);
 	return `<!DOCTYPE html>
 <html>
 <head>
@@ -238,9 +255,9 @@ async function enviarParaDestino(params: {
 	destino: DestinoImpressora;
 	qrcode?: string;
 	estrito?: boolean;
-	fonteMenor?: boolean;
+	tamanhoFonte?: TamanhoFonteImpressao;
 }): Promise<{ ok: boolean; modo: string }> {
-	const { texto, html, destino, qrcode, estrito, fonteMenor } = params;
+	const { texto, html, destino, qrcode, estrito, tamanhoFonte } = params;
 	const textoArquivo = texto.replaceAll(
 		MARCADOR_QR_DANFCE,
 		qrcode ? "[QR CODE NFC-e]" : "",
@@ -269,7 +286,7 @@ async function enviarParaDestino(params: {
 		await enviarRawTcp(
 			host,
 			porta,
-			montarEscpos(texto, qrcode, { fonteMenor }),
+			montarEscpos(texto, qrcode, { tamanhoFonte }),
 		);
 		return { ok: true, modo: "rede" };
 	}
@@ -288,15 +305,16 @@ async function enviarParaDestino(params: {
 export async function enviarTextoImpressora(
 	texto: string,
 	destino: DestinoImpressora,
-	opcoes?: { estrito?: boolean; fonteMenor?: boolean },
+	opcoes?: { estrito?: boolean; tamanhoFonte?: TamanhoFonteImpressao },
 ): Promise<{ ok: boolean; modo: string }> {
-	const fonteMenor = Boolean(opcoes?.fonteMenor);
+	const tamanhoFonte =
+		opcoes?.tamanhoFonte ?? (await obterTamanhoFonteConfig());
 	return enviarParaDestino({
 		texto,
-		html: htmlCupomSimples(texto, { fonteMenor }),
+		html: htmlCupomSimples(texto, { tamanhoFonte }),
 		destino,
 		estrito: Boolean(opcoes?.estrito),
-		fonteMenor,
+		tamanhoFonte,
 	});
 }
 

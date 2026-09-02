@@ -8,7 +8,16 @@ import {
 	montarTextoItensVendidosTurno,
 } from "./comprovante-caixa";
 import { linhasPagamentoCupom } from "./cupom-pagamentos";
-import { type DestinoImpressora, enviarTextoImpressora } from "./destino";
+import {
+	type DestinoImpressora,
+	enviarTextoImpressora,
+	obterTamanhoFonteConfig,
+} from "./destino";
+import {
+	largurasLinhaCupom,
+	normalizarTamanhoFonte,
+	type TamanhoFonteImpressao,
+} from "./fonte-impressao";
 
 export { imprimirDanfce } from "./danfce";
 
@@ -238,13 +247,18 @@ export async function imprimirPedidoProducao(params: {
 	reimpressao?: boolean;
 	/** Cabeçalho por grupo (modo pedido / cupom único). */
 	agruparPorGrupo?: boolean;
-	/** Fonte um pouco menor (Font B / HTML 11pt) — cupom único. */
-	fonteMenor?: boolean;
+	/**
+	 * Tamanho tipográfico. Se omitido, usa `impressora_fonte`.
+	 * Cupom único de produção tipicamente passa um degrau menor.
+	 */
+	tamanhoFonte?: TamanhoFonteImpressao;
 }): Promise<{ ok: boolean; modo: string }> {
-	const fonteMenor = Boolean(params.fonteMenor);
-	const larguraDesc = fonteMenor ? 28 : 30;
-	const larguraObs = fonteMenor ? 26 : 28;
-	const larguraLinha = fonteMenor ? 30 : 32;
+	const tamanhoFonte =
+		params.tamanhoFonte !== undefined
+			? normalizarTamanhoFonte(params.tamanhoFonte)
+			: await obterTamanhoFonteConfig();
+	const { desc: larguraDesc, obs: larguraObs, linha: larguraLinha } =
+		largurasLinhaCupom(tamanhoFonte);
 
 	const linhas: string[] = [];
 	linhas.push("================================");
@@ -303,7 +317,7 @@ export async function imprimirPedidoProducao(params: {
 	linhas.push("================================");
 	linhas.push("\n\n\n");
 	return enviarTextoImpressora(linhas.join("\n"), params.destino, {
-		fonteMenor,
+		tamanhoFonte,
 	});
 }
 

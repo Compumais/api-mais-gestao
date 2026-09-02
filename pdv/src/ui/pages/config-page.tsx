@@ -385,6 +385,7 @@ export function ConfigPage() {
 				impressora_tipo: config.impressora_tipo ?? "sistema",
 				impressora_host: config.impressora_host ?? "",
 				impressora_porta: config.impressora_porta ?? "9100",
+				impressora_fonte: config.impressora_fonte ?? "media",
 				impressao_producao_modo: config.impressao_producao_modo ?? "itens",
 				impressao_producao_imprimir_grupo:
 					config.impressao_producao_imprimir_grupo === "0" ? "0" : "1",
@@ -1313,6 +1314,36 @@ export function ConfigPage() {
 
 						{aba === "impressoras" && (
 							<>
+								<Card>
+									<CardHeader>
+										<CardTitle>Tamanho da fonte</CardTitle>
+									</CardHeader>
+									<CardContent className="grid gap-4 sm:grid-cols-2">
+										<div className="space-y-2">
+											<Label htmlFor="impressora_fonte">
+												Fonte dos cupons térmicos
+											</Label>
+											<Select
+												id="impressora_fonte"
+												value={config.impressora_fonte ?? "media"}
+												onChange={(e) =>
+													set("impressora_fonte", e.target.value)
+												}
+											>
+												<option value="pequena">Pequena</option>
+												<option value="media">Média</option>
+												<option value="grande">Grande</option>
+											</Select>
+										</div>
+										<p className="text-xs text-muted-foreground sm:col-span-2">
+											Aplica-se a cupom não fiscal, pré-conta, produção,
+											comprovantes e testes de impressão. DANFE/NFC-e mantém o
+											leiaute próprio. No modo produção por pedido, a fonte
+											reduz um degrau automaticamente.
+										</p>
+									</CardContent>
+								</Card>
+
 								<Card>
 									<CardHeader>
 										<CardTitle>Impressora fiscal / cupom</CardTitle>
