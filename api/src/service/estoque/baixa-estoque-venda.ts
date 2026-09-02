@@ -7,8 +7,9 @@ import {
 	emitirNfceVendaPdvService,
 	type ResultadoEmissaoNfcePdv,
 } from "@/service/nfce-emissao/emitir-nfce-venda-pdv.js";
-import { avaliarEmissaoNfcePorPagamento } from "@/util/avaliar-emissao-nfce-pagamento.js";
+import { garantirProducaoNaVendaService } from "@/service/producao/garantir-producao-na-venda.js";
 import { isAmbienteHomologacao } from "@/util/ambiente-sefaz.js";
+import { avaliarEmissaoNfcePorPagamento } from "@/util/avaliar-emissao-nfce-pagamento.js";
 import { httpOk, httpProibido } from "@/util/http-util.js";
 import { normalizarMeiosPagamentoNfce } from "@/util/nfce-config-padrao.js";
 import {
@@ -18,7 +19,6 @@ import {
 } from "@/util/tipo-estoque.js";
 import { complementarBaixaFiscalVendaPdv } from "./complementar-baixa-fiscal-venda-pdv.js";
 import { registrarMovimentoEstoque } from "./registrar-movimento-estoque.js";
-import { garantirProducaoNaVendaService } from "@/service/producao/garantir-producao-na-venda.js";
 
 export type ItemBaixaEstoqueVenda = {
 	idproduto: string;
@@ -42,6 +42,7 @@ export type BaixaEstoqueVendaParametros = {
 		valortroco?: string | null;
 		valortotal?: string | null;
 		desconto?: string | null;
+		valoracrescimo?: string | null;
 		valortaxaservico?: string | null;
 		valorcouverartistico?: string | null;
 		valorentrega?: string | null;

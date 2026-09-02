@@ -64,6 +64,21 @@ export function calcularDescontoInformado(
 	return arredondarDinheiro(Math.min(maximo, Math.max(0, bruto)));
 }
 
+/** Acréscimo operacional em R$ ou % sobre a base (total da conta). */
+export function calcularAcrescimoInformado(
+	base: number,
+	informado: number,
+	percentual: boolean,
+): number {
+	if (!(informado > 0)) return 0;
+	const referencia = arredondarDinheiro(Math.max(0, base));
+	if (percentual) {
+		if (!(referencia > 0)) return 0;
+		return arredondarDinheiro((referencia * informado) / 100);
+	}
+	return arredondarDinheiro(informado);
+}
+
 export function lancamentosEfetivos(
 	lancamentos: LancamentoPagamento[],
 ): LancamentoPagamento[] {

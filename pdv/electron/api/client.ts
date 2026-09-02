@@ -763,6 +763,7 @@ export async function baixaEstoqueVenda(body: {
 		valorcartao?: number | string;
 		valorprepago?: number | string;
 		desconto?: number | string;
+		valoracrescimo?: number | string;
 		valortaxaservico?: number | string;
 		valorcouverartistico?: number | string;
 		valorentrega?: number | string;
@@ -817,6 +818,7 @@ export async function baixaEstoqueVenda(body: {
 				valorcartao: asApiDecimal(body.pagamentos.valorcartao ?? 0),
 				valorprepago: asApiDecimal(body.pagamentos.valorprepago ?? 0),
 				desconto: asApiDecimal(body.pagamentos.desconto ?? 0),
+				valoracrescimo: asApiDecimal(body.pagamentos.valoracrescimo ?? 0),
 				valortaxaservico: asApiDecimal(body.pagamentos.valortaxaservico ?? 0),
 				valorcouverartistico: asApiDecimal(
 					body.pagamentos.valorcouverartistico ?? 0,

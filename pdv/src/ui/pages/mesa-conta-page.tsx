@@ -9,7 +9,11 @@ import {
 import { totalFatiaItensSelecionados } from "@/lib/conta-gourmet";
 import { normalizarObservacaoItem } from "@/lib/observacao-item";
 import { normalizarObservacaoPedido } from "@/lib/observacao-pedido";
-import { arredondarDinheiro } from "@/lib/pagamento";
+import {
+	arredondarDinheiro,
+	calcularAcrescimoInformado,
+	calcularDescontoInformado,
+} from "@/lib/pagamento";
 import { pdvInvoke } from "@/lib/pdv-api";
 import {
 	type GrupoLocal,
@@ -18,6 +22,7 @@ import {
 	type ProdutoLocal,
 	rotuloModelo,
 	type StatusContext,
+	tituloContaAtendimento,
 } from "@/lib/pdv-types";
 import { produtoEhPizza } from "@/lib/pizza-meio-a-meio";
 import { devePedirPeso, formatarQuantidade } from "@/lib/produto-kg";
@@ -57,6 +62,7 @@ type ContaMesa = {
 	numeropessoas?: number;
 	subtotal?: number;
 	valordesconto?: number;
+	valoracrescimo?: number;
 	valortaxaservico?: number;
 	valorcouvert?: number;
 	valorentrega?: number;
@@ -140,7 +146,11 @@ export function MesaContaPage() {
 	const [produtoPeso, setProdutoPeso] = useState<ProdutoLocal | null>(null);
 	const [mesas, setMesas] = useState<MesaResumo[]>([]);
 	const [senhaAberta, setSenhaAberta] = useState(false);
-	const [descontoPendente, setDescontoPendente] = useState("");
+	const [ajusteTipo, setAjusteTipo] = useState<"desconto" | "acrescimo">(
+		"desconto",
+	);
+	const [ajustePendente, setAjustePendente] = useState("");
+	const [ajustePercentual, setAjustePercentual] = useState(false);
 	const [destinoAberto, setDestinoAberto] = useState<
 		null | "transferir" | "juntar" | "itens"
 	>(null);
@@ -589,11 +599,25 @@ export function MesaContaPage() {
 		}
 		setLoading(true);
 		try {
-			if ((fechamento.desconto ?? 0) > 0.009) {
+			if (
+				(fechamento.desconto ?? 0) > 0.009 ||
+				(fechamento.acrescimo ?? 0) > 0.009
+			) {
 				await pdvInvoke<ContaMesa>("aplicarAjustesConta", conta.id, {
-					desconto: arredondarDinheiro(
-						(conta.valordesconto ?? 0) + fechamento.desconto,
-					),
+					...(fechamento.desconto > 0.009
+						? {
+								desconto: arredondarDinheiro(
+									(conta.valordesconto ?? 0) + fechamento.desconto,
+								),
+							}
+						: {}),
+					...(fechamento.acrescimo > 0.009
+						? {
+								acrescimo: arredondarDinheiro(
+									(conta.valoracrescimo ?? 0) + fechamento.acrescimo,
+								),
+							}
+						: {}),
 					senha: fechamento.senhaGerencial ?? "",
 				});
 			}
@@ -631,6 +655,7 @@ export function MesaContaPage() {
 		numeropessoas?: number;
 		taxaAtiva?: boolean;
 		desconto?: number;
+		acrescimo?: number;
 		senha?: string;
 	}) {
 		if (!conta) return;
@@ -650,16 +675,40 @@ export function MesaContaPage() {
 		}
 	}
 
-	function abrirDesconto() {
+	function abrirAjuste(tipo: "desconto" | "acrescimo") {
 		if (!conta?.itens.length || loading || pagando) return;
-		setDescontoPendente(conta.valordesconto ? String(conta.valordesconto) : "");
+		setAjusteTipo(tipo);
+		setAjustePercentual(false);
+		const atual =
+			tipo === "desconto"
+				? (conta.valordesconto ?? 0)
+				: (conta.valoracrescimo ?? 0);
+		setAjustePendente(atual ? String(atual) : "");
 		setSenhaAberta(true);
 	}
 
-	async function confirmarDesconto(senha: string) {
-		const valor = Number(descontoPendente.replace(",", "."));
+	function abrirDesconto() {
+		abrirAjuste("desconto");
+	}
+
+	function abrirAcrescimo() {
+		abrirAjuste("acrescimo");
+	}
+
+	async function confirmarAjuste(senha: string) {
+		if (!conta) return;
+		const informado = Number(ajustePendente.replace(",", "."));
+		const base = conta.subtotal ?? conta.valortotal;
+		const valor =
+			ajusteTipo === "desconto"
+				? calcularDescontoInformado(base, informado, ajustePercentual)
+				: calcularAcrescimoInformado(base, informado, ajustePercentual);
 		setSenhaAberta(false);
-		await aplicarAjustes({ desconto: valor, senha });
+		await aplicarAjustes(
+			ajusteTipo === "desconto"
+				? { desconto: valor, senha }
+				: { acrescimo: valor, senha },
+		);
 	}
 
 	async function preConta() {
@@ -735,6 +784,7 @@ export function MesaContaPage() {
 			{
 				subtotal: conta.subtotal ?? conta.valortotal,
 				valordesconto: conta.valordesconto ?? 0,
+				valoracrescimo: conta.valoracrescimo ?? 0,
 				valortaxaservico: conta.valortaxaservico ?? 0,
 				valorcouvert: conta.valorcouvert ?? 0,
 				valorentrega: conta.valorentrega ?? 0,
@@ -857,6 +907,7 @@ export function MesaContaPage() {
 			{
 				subtotal: conta.subtotal ?? conta.valortotal,
 				valordesconto: conta.valordesconto ?? 0,
+				valoracrescimo: conta.valoracrescimo ?? 0,
 				valortaxaservico: conta.valortaxaservico ?? 0,
 				valorcouvert: conta.valorcouvert ?? 0,
 				valorentrega: conta.valorentrega ?? 0,
@@ -872,7 +923,7 @@ export function MesaContaPage() {
 	const identificacao = nomeCliente || "Sem identificação";
 	const tituloConta = modoEntrega
 		? `${conta?.modalidade === "retirada" ? "Retirada" : "Delivery"} #${conta?.senha_chamada ?? "—"}`
-		: `${rotulo.singular} ${numeroMesa}`;
+		: tituloContaAtendimento(status?.modeloAtendimento, numeroMesa);
 
 	return (
 		<div className="flex h-screen flex-col">
@@ -1240,6 +1291,12 @@ export function MesaContaPage() {
 											<span>-{money(conta.valordesconto ?? 0)}</span>
 										</div>
 									)}
+									{(conta.valoracrescimo ?? 0) > 0 && (
+										<div className="flex justify-between text-xs text-muted-foreground">
+											<span>Acréscimo</span>
+											<span>+{money(conta.valoracrescimo ?? 0)}</span>
+										</div>
+									)}
 									{(conta.valortaxaservico ?? 0) > 0 && (
 										<div className="flex justify-between text-xs text-muted-foreground">
 											<span>Taxa serviço</span>
@@ -1463,15 +1520,17 @@ export function MesaContaPage() {
 				loading={loading}
 				titulo={
 					pagandoFatia && itensSel.length
-						? `Pagar ${itensSel.length} ${itensSel.length === 1 ? "item" : "itens"}`
+						? `${tituloConta} · ${itensSel.length} ${itensSel.length === 1 ? "item" : "itens"}`
 						: pagandoFatia
-							? "Receber fatia"
-							: "Receber / fechar conta"
+							? `${tituloConta} · fatia`
+							: tituloConta
 				}
 				confirmarLabel="Confirmar"
 				nomeClienteHint={nomeCliente}
 				permitirDesconto={!pagandoFatia}
+				permitirAcrescimo={!pagandoFatia}
 				descontoJaAplicado={conta?.valordesconto ?? 0}
+				acrescimoJaAplicado={conta?.valoracrescimo ?? 0}
 				itens={
 					pagandoFatia && itensSel.length > 0
 						? itens.filter((item) => itensSel.includes(item.id))
@@ -1491,14 +1550,44 @@ export function MesaContaPage() {
 
 			<DialogSenhaGerencial
 				aberto={senhaAberta}
+				titulo={ajusteTipo === "acrescimo" ? "Acréscimo" : "Desconto"}
+				subtitulo={
+					ajusteTipo === "acrescimo"
+						? "Informe o acréscimo e a senha gerencial."
+						: "Informe a senha para aplicar o desconto."
+				}
 				loading={loading}
 				onCancelar={() => setSenhaAberta(false)}
-				onConfirmar={(senha) => void confirmarDesconto(senha)}
+				onConfirmar={(senha) => void confirmarAjuste(senha)}
 			>
+				<div className="flex gap-2">
+					<Button
+						type="button"
+						size="sm"
+						variant={ajustePercentual ? "outline" : "default"}
+						onClick={() => setAjustePercentual(false)}
+					>
+						R$
+					</Button>
+					<Button
+						type="button"
+						size="sm"
+						variant={ajustePercentual ? "default" : "outline"}
+						onClick={() => setAjustePercentual(true)}
+					>
+						%
+					</Button>
+				</div>
 				<Input
-					placeholder="Valor do desconto (R$)"
-					value={descontoPendente}
-					onChange={(e) => setDescontoPendente(e.target.value)}
+					placeholder={
+						ajustePercentual
+							? "Percentual (ex.: 10)"
+							: ajusteTipo === "acrescimo"
+								? "Valor do acréscimo (R$)"
+								: "Valor do desconto (R$)"
+					}
+					value={ajustePendente}
+					onChange={(e) => setAjustePendente(e.target.value)}
 				/>
 			</DialogSenhaGerencial>
 
@@ -1744,6 +1833,13 @@ export function MesaContaPage() {
 						onClick: () => abrirDesconto(),
 					},
 					{
+						key: "acrescimo",
+						label: "Acréscimo",
+						variant: "outline",
+						disabled: !itens.length || loading || pagando || senhaAberta,
+						onClick: () => abrirAcrescimo(),
+					},
+					{
 						key: "receber",
 						label: "Receber",
 						hotkey: teclas.receber,
@@ -1851,6 +1947,12 @@ export function MesaContaPage() {
 						hotkey: teclas.desconto,
 						disabled: !itens.length || loading || pagando || senhaAberta,
 						onClick: () => abrirDesconto(),
+					},
+					{
+						key: "acrescimo",
+						label: "Acréscimo",
+						disabled: !itens.length || loading || pagando || senhaAberta,
+						onClick: () => abrirAcrescimo(),
 					},
 					...(modoEntrega
 						? [

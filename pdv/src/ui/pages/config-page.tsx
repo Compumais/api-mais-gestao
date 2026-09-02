@@ -1217,7 +1217,7 @@ export function ConfigPage() {
 											</div>
 											<div className="space-y-2 sm:col-span-2">
 												<Label htmlFor="senha_gerencial">
-													Senha gerencial (desconto)
+													Senha gerencial (desconto / acréscimo)
 												</Label>
 												<Input
 													id="senha_gerencial"
@@ -1257,7 +1257,7 @@ export function ConfigPage() {
 													</Select>
 													<p className="text-xs text-muted-foreground">
 														Desabilitada: operações sensíveis (desconto,
-														cancelar item) não pedem senha.
+														acréscimo, cancelar item) não pedem senha.
 													</p>
 												</div>
 											) : null}

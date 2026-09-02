@@ -373,12 +373,16 @@ export async function emitirNfceVendaPdvService({
 	const valorentrega = parseValorMonetario(
 		(pagamentos as { valorentrega?: string | null }).valorentrega,
 	);
+	const valoracrescimo = parseValorMonetario(
+		(pagamentos as { valoracrescimo?: string | null }).valoracrescimo,
+	);
 	const totaisFiscais = calcularTotaisFiscaisEmissaoNfe(
 		crt,
 		itensNormalizados,
 		{
 			...(desconto > 0 ? { desconto } : {}),
 			...(valorentrega > 0 ? { frete: valorentrega } : {}),
+			...(valoracrescimo > 0 ? { outrasDespesas: valoracrescimo } : {}),
 		},
 	);
 	const pagamentoNormalizado = normalizarPagamentoEmissaoNfe(pagamentoBruto, {
@@ -410,7 +414,14 @@ export async function emitirNfceVendaPdvService({
 		itens: itensNormalizados,
 		pagamento: pagamentoNormalizado,
 		natOp,
-		...(desconto > 0 ? { totais: { desconto } } : {}),
+		...(desconto > 0 || valoracrescimo > 0
+			? {
+					totais: {
+						...(desconto > 0 ? { desconto } : {}),
+						...(valoracrescimo > 0 ? { outrasDespesas: valoracrescimo } : {}),
+					},
+				}
+			: {}),
 		...(destinatarioResolvido?.destinatario
 			? { destinatario: destinatarioResolvido.destinatario }
 			: {}),
@@ -475,7 +486,7 @@ export async function emitirNfceVendaPdvService({
 		frete: null,
 		seguro: null,
 		descontosubtotal: desconto > 0 ? desconto.toFixed(2) : null,
-		outrasdespesas: null,
+		outrasdespesas: valoracrescimo > 0 ? valoracrescimo.toFixed(2) : null,
 		tipofrete: 9,
 		baseicms: totaisFiscais.baseIcms.toFixed(2),
 		icms: totaisFiscais.valorIcms.toFixed(2),

@@ -3,28 +3,28 @@ import type { HttpResponse } from "@/model/http-model.js";
 import type { NovoVendaPdvItem } from "@/model/venda-pdv-item-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { buscarNfceConfiguracaoPorEmpresa } from "@/repositories/nfce-configuracao-repositories.js";
+import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
 import { atualizarVendaPdvGourmet } from "@/repositories/venda-pdv-gourmet-repositories.js";
 import { substituirItensVendaPdv } from "@/repositories/venda-pdv-item-repositories.js";
-import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
+import { complementarBaixaFiscalVendaPdv } from "@/service/estoque/complementar-baixa-fiscal-venda-pdv.js";
+import { reajustarEstoqueVendaPdv } from "@/service/estoque/reajustar-estoque-venda-pdv.js";
 import {
 	emitirNfceVendaPdvService,
 	type ResultadoEmissaoNfcePdv,
 } from "@/service/nfce-emissao/emitir-nfce-venda-pdv.js";
 import { resolverVendaPorNotaFiscalNfce } from "@/service/nfce-emissao/resolver-venda-nfce.js";
-import { complementarBaixaFiscalVendaPdv } from "@/service/estoque/complementar-baixa-fiscal-venda-pdv.js";
-import { reajustarEstoqueVendaPdv } from "@/service/estoque/reajustar-estoque-venda-pdv.js";
 import { avaliarEmissaoNfcePorPagamento } from "@/util/avaliar-emissao-nfce-pagamento.js";
-import { NFE_STATUS } from "@/util/nfe-status.js";
-import { normalizarMeiosPagamentoNfce } from "@/util/nfce-config-padrao.js";
-import { parseValorMonetario } from "@/util/recebimentos-venda-util.js";
-import { TIPO_ESTOQUE } from "@/util/tipo-estoque.js";
-import type { PagamentosRegistro } from "@/util/pagamentos-pdv-util.js";
 import {
 	httpBadRequest,
 	httpNaoEncontrado,
 	httpOk,
 	httpProibido,
 } from "@/util/http-util.js";
+import { normalizarMeiosPagamentoNfce } from "@/util/nfce-config-padrao.js";
+import { NFE_STATUS } from "@/util/nfe-status.js";
+import type { PagamentosRegistro } from "@/util/pagamentos-pdv-util.js";
+import { parseValorMonetario } from "@/util/recebimentos-venda-util.js";
+import { TIPO_ESTOQUE } from "@/util/tipo-estoque.js";
 
 const STATUS_EDITAVEL_NFCE = new Set<number>([
 	NFE_STATUS.PENDENTE,
@@ -46,6 +46,7 @@ export type AtualizarVendaNfcePdvParametros = {
 	itens: ItemAtualizacaoVendaNfcePdv[];
 	pagamentos: PagamentosRegistro & {
 		desconto?: string | null;
+		valoracrescimo?: string | null;
 		valortaxaservico?: string | null;
 		valorcouverartistico?: string | null;
 		valorentrega?: string | null;
@@ -60,9 +61,7 @@ export type ResultadoAtualizacaoVendaNfcePdv = {
 	avisos: string[];
 };
 
-function calcularSubtotalItens(
-	itens: ItemAtualizacaoVendaNfcePdv[],
-): number {
+function calcularSubtotalItens(itens: ItemAtualizacaoVendaNfcePdv[]): number {
 	return itens.reduce((acc, item) => {
 		const qty = Number.parseFloat(item.quantidade);
 		const preco = Number.parseFloat(item.precounitario);
@@ -77,10 +76,11 @@ function calcularTotalComTaxas(
 	taxaServico: number,
 	couvert: number,
 	valorentrega = 0,
+	valoracrescimo = 0,
 ): number {
 	return Math.max(
 		0,
-		subtotal - desconto + taxaServico + couvert + valorentrega,
+		subtotal - desconto + taxaServico + couvert + valorentrega + valoracrescimo,
 	);
 }
 
@@ -95,7 +95,10 @@ function calcularTotalPago(pagamentos: PagamentosRegistro): number {
 	);
 }
 
-function calcularTroco(valortotal: number, pagamentos: PagamentosRegistro): number {
+function calcularTroco(
+	valortotal: number,
+	pagamentos: PagamentosRegistro,
+): number {
 	return Math.max(0, calcularTotalPago(pagamentos) - valortotal);
 }
 
@@ -121,7 +124,10 @@ export async function atualizarVendaNfcePdvService({
 		return httpBadRequest("Informe pelo menos um item na venda");
 	}
 
-	const resolvido = await resolverVendaPorNotaFiscalNfce(idnotafiscal, idempresa);
+	const resolvido = await resolverVendaPorNotaFiscalNfce(
+		idnotafiscal,
+		idempresa,
+	);
 	if (!resolvido) {
 		return httpNaoEncontrado();
 	}
@@ -142,6 +148,7 @@ export async function atualizarVendaNfcePdvService({
 	const taxaServico = parseValorMonetario(pagamentos.valortaxaservico);
 	const couvert = parseValorMonetario(pagamentos.valorcouverartistico);
 	const valorentrega = parseValorMonetario(pagamentos.valorentrega);
+	const valoracrescimo = parseValorMonetario(pagamentos.valoracrescimo);
 	const subtotal = calcularSubtotalItens(itens);
 	const valortotal = calcularTotalComTaxas(
 		subtotal,
@@ -149,6 +156,7 @@ export async function atualizarVendaNfcePdvService({
 		taxaServico,
 		couvert,
 		valorentrega,
+		valoracrescimo,
 	);
 	const pago = calcularTotalPago(pagamentos);
 
@@ -218,8 +226,13 @@ export async function atualizarVendaNfcePdvService({
 	});
 
 	const configNfce = await buscarNfceConfiguracaoPorEmpresa(idempresa);
-	const meiosConfig = normalizarMeiosPagamentoNfce(configNfce?.meiospagamentonfce);
-	const avaliacao = avaliarEmissaoNfcePorPagamento(pagamentosVenda, meiosConfig);
+	const meiosConfig = normalizarMeiosPagamentoNfce(
+		configNfce?.meiospagamentonfce,
+	);
+	const avaliacao = avaliarEmissaoNfcePorPagamento(
+		pagamentosVenda,
+		meiosConfig,
+	);
 
 	const avisos: string[] = [];
 	const itensEstoque = itens.map((item) => ({

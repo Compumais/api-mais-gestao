@@ -352,6 +352,11 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 				"ALTER TABLE conta_mesa ADD COLUMN valordesconto DOUBLE PRECISION NOT NULL DEFAULT 0",
 			);
 		}
+		if (!contaNomes.has("valoracrescimo")) {
+			await database.query(
+				"ALTER TABLE conta_mesa ADD COLUMN valoracrescimo DOUBLE PRECISION NOT NULL DEFAULT 0",
+			);
+		}
 		if (!contaNomes.has("valortaxaservico")) {
 			await database.query(
 				"ALTER TABLE conta_mesa ADD COLUMN valortaxaservico DOUBLE PRECISION NOT NULL DEFAULT 0",
@@ -459,6 +464,11 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 		if (!vendaNomes.has("valordesconto")) {
 			await database.query(
 				"ALTER TABLE venda ADD COLUMN valordesconto DOUBLE PRECISION NOT NULL DEFAULT 0",
+			);
+		}
+		if (!vendaNomes.has("valoracrescimo")) {
+			await database.query(
+				"ALTER TABLE venda ADD COLUMN valoracrescimo DOUBLE PRECISION NOT NULL DEFAULT 0",
 			);
 		}
 		if (!vendaNomes.has("valortaxaservico")) {

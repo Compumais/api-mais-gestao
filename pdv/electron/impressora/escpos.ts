@@ -77,6 +77,9 @@ async function montarTextoCupom(
 	if ((venda.valordesconto ?? 0) > 0) {
 		linhas.push(`Desconto: -${money(venda.valordesconto ?? 0)}`);
 	}
+	if ((venda.valoracrescimo ?? 0) > 0) {
+		linhas.push(`Acrescimo: ${money(venda.valoracrescimo ?? 0)}`);
+	}
 	if ((venda.valortaxaservico ?? 0) > 0) {
 		linhas.push(`Taxa servico: ${money(venda.valortaxaservico ?? 0)}`);
 	}
@@ -123,6 +126,7 @@ export type ContaPreContaImpressao = {
 	numeropessoas: number;
 	subtotal: number;
 	valordesconto: number;
+	valoracrescimo?: number;
 	valortaxaservico: number;
 	valorcouvert: number;
 	valorpago: number;
@@ -185,6 +189,9 @@ export async function imprimirPreConta(
 	linhas.push(`Subtotal: ${money(conta.subtotal)}`);
 	if (conta.valordesconto > 0) {
 		linhas.push(`Desconto: -${money(conta.valordesconto)}`);
+	}
+	if ((conta.valoracrescimo ?? 0) > 0) {
+		linhas.push(`Acrescimo: ${money(conta.valoracrescimo ?? 0)}`);
 	}
 	if (conta.valortaxaservico > 0) {
 		linhas.push(`Taxa servico: ${money(conta.valortaxaservico)}`);
