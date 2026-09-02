@@ -44,6 +44,13 @@ export type ProdutoLocal = {
 	espizza?: number | null;
 	imagem?: string | null;
 	caminhoimagem?: string | null;
+	ncm?: string | null;
+	cest?: string | null;
+	cfop?: string | null;
+	cst?: string | null;
+	csosn?: string | null;
+	origem?: number | null;
+	aliquotaicms?: string | null;
 };
 
 export type LeituraCodigoBarras = {

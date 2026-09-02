@@ -5,6 +5,7 @@ import { criarProximoCodigoSchema } from "../shared/proximo-codigo-schema.js";
 import { alterarProdutosEmMassa } from "./alterar-em-massa.js";
 import { atualizarProduto } from "./atualizar.js";
 import { buscarProduto } from "./buscar.js";
+import { listarCatalogoPdv } from "./catalogo-pdv.js";
 import { criarProduto } from "./criar.js";
 import * as schema from "./doc-schema/schema.js";
 import { excluirProduto } from "./excluir.js";
@@ -29,6 +30,10 @@ export async function produtosRotas(app: FastifyInstance) {
 	app.get("/produtos", {
 		schema: schema.listarProdutosSchema,
 		handler: listarProdutos,
+	});
+	app.get("/produtos/catalogo-pdv", {
+		schema: schema.listarCatalogoPdvSchema,
+		handler: listarCatalogoPdv,
 	});
 	app.get("/produtos/tributacao-por-cfop", {
 		schema: schema.tributacaoPorCfopSchema,

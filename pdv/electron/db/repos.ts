@@ -83,6 +83,13 @@ export type ProdutoLocal = {
 	espizza: number;
 	imagem: string | null;
 	caminhoimagem: string | null;
+	ncm: string | null;
+	cest: string | null;
+	cfop: string | null;
+	cst: string | null;
+	csosn: string | null;
+	origem: number | null;
+	aliquotaicms: string | null;
 };
 
 export type GrupoLocal = {
@@ -166,6 +173,10 @@ export type VendaLocal = {
 	sync_status: string;
 	nfce_status: string;
 	idnfce_local: string | null;
+	/** Numeração da NFC-e local (quando houver registro em nfce_local). */
+	nfce_serie?: number | null;
+	nfce_numero?: number | null;
+	nfce_chave?: string | null;
 	idcliente?: string | null;
 	nomecliente?: string | null;
 	cnpjcpf?: string | null;
@@ -292,7 +303,7 @@ export async function limparSessao(): Promise<void> {
 }
 
 const PRODUTO_SELECT =
-	"id, descricao, preco, unidademedida, idunidademedida, ean, codigo, idgrupo, idgrupogourmet, espizza, imagem, caminhoimagem";
+	"id, descricao, preco, unidademedida, idunidademedida, ean, codigo, idgrupo, idgrupogourmet, espizza, imagem, caminhoimagem, ncm, cest, cfop, cst, csosn, origem, aliquotaicms";
 
 function padraoIlike(termo: string): string {
 	return `%${termo.replace(/[\\%_]/g, (ch) => `\\${ch}`)}%`;
@@ -302,28 +313,42 @@ function padraoIlikePrefixo(termo: string): string {
 	return `${termo.replace(/[\\%_]/g, (ch) => `\\${ch}`)}%`;
 }
 
+export type ProdutoUpsertInput = {
+	id: string;
+	descricao: string;
+	preco: number;
+	unidademedida?: string | null;
+	idunidademedida?: string | null;
+	ean?: string | null;
+	codigo?: number | null;
+	idgrupo?: string | null;
+	idgrupogourmet?: string | null;
+	espizza?: number | null;
+	imagem?: string | null;
+	caminhoimagem?: string | null;
+	ncm?: string | null;
+	cest?: string | null;
+	cfop?: string | null;
+	cst?: string | null;
+	csosn?: string | null;
+	origem?: number | null;
+	aliquotaicms?: string | null;
+};
+
 export async function upsertProdutos(
-	produtos: Array<{
-		id: string;
-		descricao: string;
-		preco: number;
-		unidademedida?: string | null;
-		idunidademedida?: string | null;
-		ean?: string | null;
-		codigo?: number | null;
-		idgrupo?: string | null;
-		idgrupogourmet?: string | null;
-		espizza?: number | null;
-		imagem?: string | null;
-		caminhoimagem?: string | null;
-	}>,
+	produtos: ProdutoUpsertInput[],
 ): Promise<void> {
 	const agora = new Date().toISOString();
 	await withTransaction(async (client) => {
 		for (const p of produtos) {
 			await execute(
-				`INSERT INTO produto_cache (id, descricao, preco, unidademedida, idunidademedida, ean, codigo, idgrupo, idgrupogourmet, espizza, imagem, caminhoimagem, inativo, atualizadoem)
-				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 0, $13)
+				`INSERT INTO produto_cache (
+					id, descricao, preco, unidademedida, idunidademedida, ean, codigo,
+					idgrupo, idgrupogourmet, espizza, imagem, caminhoimagem,
+					ncm, cest, cfop, cst, csosn, origem, aliquotaicms,
+					inativo, atualizadoem
+				)
+				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, 0, $20)
 				 ON CONFLICT (id) DO UPDATE SET
 					descricao = excluded.descricao,
 					preco = excluded.preco,
@@ -336,6 +361,14 @@ export async function upsertProdutos(
 					espizza = excluded.espizza,
 					imagem = excluded.imagem,
 					caminhoimagem = excluded.caminhoimagem,
+					ncm = excluded.ncm,
+					cest = excluded.cest,
+					cfop = excluded.cfop,
+					cst = excluded.cst,
+					csosn = excluded.csosn,
+					origem = excluded.origem,
+					aliquotaicms = excluded.aliquotaicms,
+					inativo = 0,
 					atualizadoem = excluded.atualizadoem`,
 				[
 					p.id,
@@ -350,12 +383,34 @@ export async function upsertProdutos(
 					p.espizza ? 1 : 0,
 					p.imagem ?? null,
 					p.caminhoimagem ?? null,
+					p.ncm ?? null,
+					p.cest ?? null,
+					p.cfop ?? null,
+					p.cst ?? null,
+					p.csosn ?? null,
+					p.origem ?? null,
+					p.aliquotaicms ?? null,
 					agora,
 				],
 				client,
 			);
 		}
 	});
+}
+
+/** Marca como inativos os produtos locais que não vieram na carga completa. */
+export async function marcarProdutosAusentesInativos(
+	idsAtivos: string[],
+): Promise<void> {
+	if (!idsAtivos.length) {
+		await execute(`UPDATE produto_cache SET inativo = 1 WHERE inativo = 0`);
+		return;
+	}
+	await execute(
+		`UPDATE produto_cache SET inativo = 1
+		 WHERE inativo = 0 AND NOT (id = ANY($1::text[]))`,
+		[idsAtivos],
+	);
 }
 
 export async function upsertGrupos(
@@ -1648,9 +1703,19 @@ export async function listarVendas(limit = 100): Promise<VendaLocal[]> {
 	return query<VendaLocal>(
 		`SELECT v.*,
 			c.numero_mesa AS numero_mesa,
-			c.senha_chamada AS senha_chamada
+			c.senha_chamada AS senha_chamada,
+			n.serie AS nfce_serie,
+			n.numero AS nfce_numero,
+			n.chave AS nfce_chave
 		 FROM venda v
 		 LEFT JOIN conta_mesa c ON c.id = v.idconta
+		 LEFT JOIN LATERAL (
+			SELECT serie, numero, chave
+			FROM nfce_local
+			WHERE idvenda = v.id
+			ORDER BY criadoem DESC
+			LIMIT 1
+		 ) n ON true
 		 ORDER BY v.criadoem DESC
 		 LIMIT $1`,
 		[limit],
@@ -1675,9 +1740,19 @@ export async function listarVendasNaoSincronizadas(
 	return query<VendaLocal>(
 		`SELECT v.*,
 			c.numero_mesa AS numero_mesa,
-			c.senha_chamada AS senha_chamada
+			c.senha_chamada AS senha_chamada,
+			n.serie AS nfce_serie,
+			n.numero AS nfce_numero,
+			n.chave AS nfce_chave
 		 FROM venda v
 		 LEFT JOIN conta_mesa c ON c.id = v.idconta
+		 LEFT JOIN LATERAL (
+			SELECT serie, numero, chave
+			FROM nfce_local
+			WHERE idvenda = v.id
+			ORDER BY criadoem DESC
+			LIMIT 1
+		 ) n ON true
 		 WHERE v.sync_status = 'pendente'
 		    OR v.nfce_status IN ('pendente', 'pendente_contingencia', 'contingencia')
 		    OR (v.nfce_status = 'erro' AND v.idremoto IS NOT NULL)
@@ -1694,7 +1769,19 @@ export async function obterVenda(
 	| null
 > {
 	const venda = await queryOne<VendaLocal>(
-		"SELECT * FROM venda WHERE id = $1",
+		`SELECT v.*,
+			n.serie AS nfce_serie,
+			n.numero AS nfce_numero,
+			n.chave AS nfce_chave
+		 FROM venda v
+		 LEFT JOIN LATERAL (
+			SELECT serie, numero, chave
+			FROM nfce_local
+			WHERE idvenda = v.id
+			ORDER BY criadoem DESC
+			LIMIT 1
+		 ) n ON true
+		 WHERE v.id = $1`,
 		[id],
 	);
 	if (!venda) {

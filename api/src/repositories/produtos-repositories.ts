@@ -7,15 +7,24 @@ import {
 	gte,
 	ilike,
 	inArray,
+	isNull,
 	lte,
 	or,
 	type SQL,
 	sql,
 } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import type { NovoProduto, Produto } from "@/model/produto-model";
-import { departamento, produtos } from "@/repositories/schema.js";
+import {
+	cest,
+	cfop,
+	departamento,
+	ncm,
+	produtos,
+} from "@/repositories/schema.js";
 import { filtroRegistroAtivo } from "@/util/filtro-registro-ativo.js";
 import { inteiroValidoParaPostgres } from "@/util/texto-util.js";
+import { normalizarCodigoCest } from "@/util/validar-cest-item-emissao-nfe.js";
 import { db } from "./connection";
 import { ordenacaoCodigoNumericoAsc } from "./ordenacao-codigo.js";
 
@@ -440,4 +449,154 @@ export async function persistirImportacaoProdutos(parametros: {
 
 		return { criados, atualizados };
 	});
+}
+
+export type ProdutoCatalogoPdv = {
+	id: string;
+	descricao: string;
+	preco: string | null;
+	unidademedida: string | null;
+	idunidademedida: string | null;
+	ean: string | null;
+	codigo: number | null;
+	idgrupo: string | null;
+	idgrupogourmet: string | null;
+	espizza: number | null;
+	imagem: string | null;
+	caminhoimagem: string | null;
+	ncm: string | null;
+	cest: string | null;
+	cfop: string | null;
+	cst: string | null;
+	csosn: string | null;
+	origem: number | null;
+	aliquotaicms: string | null;
+};
+
+function digitosOuNulo(valor: string | number | null | undefined): string | null {
+	if (valor == null) return null;
+	const digitos = String(valor).replace(/\D/g, "");
+	return digitos || null;
+}
+
+function primeiroCodigoCfop(
+	...codigos: Array<string | null | undefined>
+): string | null {
+	for (const codigo of codigos) {
+		const digitos = digitosOuNulo(codigo);
+		if (digitos) return digitos;
+	}
+	return null;
+}
+
+export async function listarProdutosCatalogoPdv({
+	idempresa,
+	page = 1,
+	limit = 100,
+}: {
+	idempresa: string;
+	page?: number;
+	limit?: number;
+}): Promise<{ produtos: ProdutoCatalogoPdv[]; total: number }> {
+	const cfopNfce = alias(cfop, "cfop_nfce_pdv");
+	const cfopSaida = alias(cfop, "cfop_saida_pdv");
+	const cfopExterna = alias(cfop, "cfop_ext_pdv");
+
+	const condicoes: SQL[] = [eq(produtos.idempresa, idempresa)];
+	const filtroTipo = or(eq(produtos.tipo, "P"), isNull(produtos.tipo));
+	if (filtroTipo) {
+		condicoes.push(filtroTipo);
+	}
+	const filtroAtivo = filtroRegistroAtivo(produtos.inativo, 0);
+	if (filtroAtivo) {
+		condicoes.push(filtroAtivo);
+	}
+	const where = and(...condicoes);
+	const offset = (page - 1) * limit;
+
+	const [totalCount, rows] = await Promise.all([
+		db.select({ value: count() }).from(produtos).where(where),
+		db
+			.select({
+				id: produtos.id,
+				descricao: produtos.descricao,
+				nome: produtos.nome,
+				preco: produtos.preco,
+				unidademedida: produtos.unidademedida,
+				idunidademedida: produtos.idunidademedida,
+				ean: produtos.ean,
+				codigo: produtos.codigo,
+				idgrupo: produtos.idgrupo,
+				idgrupogourmet: produtos.idgrupogourmet,
+				espizza: produtos.espizza,
+				imagem: produtos.imagem,
+				caminhoimagem: produtos.caminhoimagem,
+				ncmProduto: produtos.ncm,
+				ncmCadastro: ncm.codigo,
+				cestCadastro: cest.codigo,
+				cestLegado: produtos.cest,
+				cfopNfceCodigo: cfopNfce.codigo,
+				cfopSaidaCodigo: cfopSaida.codigo,
+				cfopExternaCodigo: cfopExterna.codigo,
+				situacaotributaria: produtos.situacaotributaria,
+				tributacaosn: produtos.tributacaosn,
+				situacaotributariasn: produtos.situacaotributariasn,
+				origem: produtos.origem,
+				aliquotaicms: produtos.icmssaida,
+			})
+			.from(produtos)
+			.leftJoin(ncm, eq(produtos.idncm, ncm.id))
+			.leftJoin(cest, eq(produtos.idcest, cest.id))
+			.leftJoin(cfopNfce, eq(produtos.idcfopsaidanfce, cfopNfce.id))
+			.leftJoin(cfopSaida, eq(produtos.idcfopsaida, cfopSaida.id))
+			.leftJoin(cfopExterna, eq(produtos.idcfopsaidaexterna, cfopExterna.id))
+			.where(where)
+			.orderBy(ordenacaoCodigoNumericoAsc(produtos.codigo))
+			.limit(limit)
+			.offset(offset),
+	]);
+
+	const produtosCatalogo: ProdutoCatalogoPdv[] = rows.map((row) => {
+		const ncmResolvido =
+			digitosOuNulo(row.ncmProduto) ?? digitosOuNulo(row.ncmCadastro);
+		const cestResolvido =
+			normalizarCodigoCest(row.cestCadastro) ??
+			normalizarCodigoCest(row.cestLegado) ??
+			null;
+		const cst = digitosOuNulo(row.situacaotributaria);
+		const csosn =
+			digitosOuNulo(row.tributacaosn) ??
+			digitosOuNulo(row.situacaotributariasn);
+
+		return {
+			id: row.id,
+			descricao: row.descricao || row.nome || "",
+			preco: row.preco,
+			unidademedida: row.unidademedida,
+			idunidademedida: row.idunidademedida,
+			ean: row.ean,
+			codigo: row.codigo,
+			idgrupo: row.idgrupo,
+			idgrupogourmet: row.idgrupogourmet,
+			espizza: row.espizza,
+			imagem: row.imagem,
+			caminhoimagem: row.caminhoimagem,
+			ncm: ncmResolvido,
+			cest: cestResolvido,
+			cfop: primeiroCodigoCfop(
+				row.cfopNfceCodigo,
+				row.cfopSaidaCodigo,
+				row.cfopExternaCodigo,
+			),
+			cst,
+			csosn,
+			origem: row.origem,
+			aliquotaicms: row.aliquotaicms,
+		};
+	});
+
+	return {
+		produtos: produtosCatalogo,
+		total: totalCount[0]?.value ?? 0,
+	};
 }

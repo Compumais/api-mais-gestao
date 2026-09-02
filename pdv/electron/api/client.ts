@@ -259,10 +259,119 @@ export async function listarProdutos(params: {
 	q?: string;
 	page?: number;
 	limit?: number;
-}) {
+}): Promise<{
+	produtos: Array<{
+		id: string;
+		descricao: string;
+		preco: number;
+		unidademedida: string | null;
+		idunidademedida: string | null;
+		ean: string | null;
+		codigo: number | null;
+		idgrupo: string | null;
+		idgrupogourmet: string | null;
+		espizza: number;
+		imagem: string | null;
+		caminhoimagem: string | null;
+		ncm: string | null;
+		cest: string | null;
+		cfop: string | null;
+		cst: string | null;
+		csosn: string | null;
+		origem: number | null;
+		aliquotaicms: string | null;
+	}>;
+	paginacao: {
+		page: number;
+		limit: number;
+		total: number;
+		totalPages: number;
+	};
+}> {
 	const page = params.page ?? 1;
 	const limit = params.limit ?? 100;
-	let path = `/produtos?idempresa=${encodeURIComponent(params.idempresa)}&inativo=0&page=${page}&limit=${limit}`;
+
+	try {
+		const path = `/produtos/catalogo-pdv?idempresa=${encodeURIComponent(params.idempresa)}&page=${page}&limit=${limit}`;
+		const data = await request<{
+			data: Array<{
+				id: string;
+				descricao?: string;
+				nome?: string;
+				preco?: number | string | null;
+				unidademedida?: string | null;
+				idunidademedida?: string | null;
+				ean?: string | null;
+				codigo?: number | string | null;
+				idgrupo?: string | null;
+				idgrupogourmet?: string | null;
+				espizza?: number | null;
+				imagem?: string | null;
+				caminhoimagem?: string | null;
+				ncm?: string | null;
+				cest?: string | null;
+				cfop?: string | null;
+				cst?: string | null;
+				csosn?: string | null;
+				origem?: number | null;
+				aliquotaicms?: string | number | null;
+			}>;
+			paginacao?: {
+				page?: number;
+				limit?: number;
+				total?: number;
+				totalPages?: number;
+			};
+		}>(path, { timeoutMs: 60000 });
+
+		const produtos = (data.data ?? []).map((p) => ({
+			id: p.id,
+			descricao: p.descricao ?? p.nome ?? "",
+			preco: Number(p.preco ?? 0),
+			unidademedida: p.unidademedida ?? null,
+			idunidademedida: p.idunidademedida ?? null,
+			ean: p.ean ?? null,
+			codigo: Number(p.codigo) > 0 ? Number(p.codigo) : null,
+			idgrupo: p.idgrupo ?? null,
+			idgrupogourmet: p.idgrupogourmet ?? null,
+			espizza: Number(p.espizza ?? 0) === 1 ? 1 : 0,
+			imagem: p.imagem ?? null,
+			caminhoimagem: p.caminhoimagem ?? null,
+			ncm: p.ncm?.replace(/\D/g, "") || null,
+			cest: p.cest?.replace(/\D/g, "") || null,
+			cfop: p.cfop?.replace(/\D/g, "") || null,
+			cst: p.cst?.replace(/\D/g, "") || null,
+			csosn: p.csosn?.replace(/\D/g, "") || null,
+			origem: p.origem == null ? null : Number(p.origem),
+			aliquotaicms:
+				p.aliquotaicms == null || p.aliquotaicms === ""
+					? null
+					: String(p.aliquotaicms),
+		}));
+
+		const total = Number(data.paginacao?.total ?? produtos.length);
+		const totalPages = Number(
+			data.paginacao?.totalPages ??
+				(total > 0 ? Math.ceil(total / limit) : 0),
+		);
+
+		return {
+			produtos,
+			paginacao: {
+				page: Number(data.paginacao?.page ?? page),
+				limit: Number(data.paginacao?.limit ?? limit),
+				total,
+				totalPages,
+			},
+		};
+	} catch (err) {
+		if (!(err instanceof ApiError) || err.status !== 404) {
+			throw err;
+		}
+	}
+
+	// Fallback para APIs sem /produtos/catalogo-pdv
+	let path = `/produtos?idempresa=${encodeURIComponent(params.idempresa)}&inativo=0&tipo=P&page=${page}&limit=${limit}`;
 	if (params.q?.trim()) {
 		path += `&q=${encodeURIComponent(params.q.trim())}`;
 	}
@@ -282,10 +391,23 @@ export async function listarProdutos(params: {
 			espizza?: number | null;
 			imagem?: string | null;
 			caminhoimagem?: string | null;
+			ncm?: string | null;
+			cest?: string | number | null;
+			situacaotributaria?: string | null;
+			tributacaosn?: string | null;
+			situacaotributariasn?: string | null;
+			origem?: number | null;
+			icmssaida?: string | number | null;
 		}>;
-	}>(path);
+		paginacao?: {
+			page?: number;
+			limit?: number;
+			total?: number;
+			totalPages?: number;
+		};
+	}>(path, { timeoutMs: 60000 });
 
-	return (data.data ?? []).map((p) => ({
+	const produtos = (data.data ?? []).map((p) => ({
 		id: p.id,
 		descricao: p.descricao ?? p.nome ?? "",
 		preco: Number(p.preco ?? 0),
@@ -298,7 +420,39 @@ export async function listarProdutos(params: {
 		espizza: Number(p.espizza ?? 0) === 1 ? 1 : 0,
 		imagem: p.imagem ?? null,
 		caminhoimagem: p.caminhoimagem ?? null,
+		ncm: p.ncm?.replace(/\D/g, "") || null,
+		cest:
+			p.cest == null
+				? null
+				: String(p.cest).replace(/\D/g, "") || null,
+		cfop: null,
+		cst: p.situacaotributaria?.replace(/\D/g, "") || null,
+		csosn:
+			p.tributacaosn?.replace(/\D/g, "") ||
+			p.situacaotributariasn?.replace(/\D/g, "") ||
+			null,
+		origem: p.origem == null ? null : Number(p.origem),
+		aliquotaicms:
+			p.icmssaida == null || p.icmssaida === ""
+				? null
+				: String(p.icmssaida),
 	}));
+
+	const total = Number(data.paginacao?.total ?? produtos.length);
+	const totalPages = Number(
+		data.paginacao?.totalPages ??
+			(total > 0 ? Math.ceil(total / limit) : 0),
+	);
+
+	return {
+		produtos,
+		paginacao: {
+			page: Number(data.paginacao?.page ?? page),
+			limit: Number(data.paginacao?.limit ?? limit),
+			total,
+			totalPages,
+		},
+	};
 }
 
 export async function listarUnidadesMedida(idempresa: string) {

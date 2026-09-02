@@ -441,6 +441,37 @@ export const listarProdutosSchema: FastifySchema = {
 	},
 };
 
+export const listarCatalogoPdvSchema: FastifySchema = {
+	tags: ["produtos"],
+	summary: "Catálogo PDV com tributação",
+	description:
+		"Lista produtos ativos (tipo P) com NCM, CEST, CFOP NFC-e, CST/CSOSN e origem resolvidos para carga local do PDV.",
+	security: [{ bearerAuth: [] }],
+	querystring: {
+		type: "object",
+		properties: {
+			idempresa: { type: "string" },
+			page: { type: "number", default: 1 },
+			limit: { type: "number", default: 100 },
+		},
+		required: ["idempresa"],
+	},
+	response: {
+		200: { type: "object", additionalProperties: true },
+		400: {
+			type: "object",
+			properties: {
+				error: { type: "string" },
+				code: { type: "string" },
+				details: { type: "array" },
+			},
+		},
+		401: respostaErro,
+		403: respostaErro,
+		500: respostaErro,
+	},
+};
+
 export const buscarProdutoSchema: FastifySchema = {
 	tags: ["produtos"],
 	summary: "Buscar produto por ID",
