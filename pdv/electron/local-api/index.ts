@@ -1366,6 +1366,84 @@ export const localApi = {
 		};
 	},
 
+	/**
+	 * Processa outbox/contingência e retransmite em lote todas as NFC-e
+	 * locais ainda pendentes (contingência, pendente ou erro).
+	 */
+	async transmitirTodasNfcePendentes() {
+		if (await ehSecundario()) {
+			throw new Error(
+				"No PDV secundário a sincronização com a retaguarda é feita no PDV principal.",
+			);
+		}
+		const online = await pingApi();
+		if (!online) {
+			throw new Error(
+				"Sem conexão com a retaguarda. Verifique a internet e tente novamente.",
+			);
+		}
+
+		const outbox = await processarOutbox();
+		const vendas = await listarVendasNaoSincronizadas(100);
+		const elegiveis = vendas.filter((venda) => {
+			const status = venda.nfce_status;
+			return (
+				status === "pendente" ||
+				status === "pendente_contingencia" ||
+				status === "contingencia" ||
+				status === "erro" ||
+				status === "erro_config"
+			);
+		});
+
+		let sucesso = 0;
+		let falhas = 0;
+		const detalhes: Array<{
+			vendaId: string;
+			sucesso: boolean;
+			mensagem: string;
+		}> = [];
+
+		for (const venda of elegiveis) {
+			try {
+				const result = await localApi.retransmitirNfce(venda.id);
+				const ok = result.modo !== "erro";
+				if (ok) {
+					sucesso += 1;
+				} else {
+					falhas += 1;
+				}
+				detalhes.push({
+					vendaId: venda.id,
+					sucesso: ok,
+					mensagem: result.mensagem,
+				});
+			} catch (err) {
+				falhas += 1;
+				detalhes.push({
+					vendaId: venda.id,
+					sucesso: false,
+					mensagem:
+						err instanceof Error ? err.message : "Falha ao retransmitir NFC-e",
+				});
+			}
+		}
+
+		const nfceAtualizadas = await puxarNfceDaRetaguarda(80);
+		const outboxPendentes = await contarOutboxPendentes();
+
+		return {
+			outboxProcessados: outbox.processados,
+			outboxErros: outbox.erros,
+			outboxPendentes,
+			nfceAtualizadas,
+			total: elegiveis.length,
+			sucesso,
+			falhas,
+			detalhes,
+		};
+	},
+
 	async obterVenda(id: string) {
 		if (await ehSecundario()) {
 			await garantirOperacaoSecundario();

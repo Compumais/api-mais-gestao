@@ -35,6 +35,16 @@ type ResultadoEnvioRetaguarda = {
 	pendentes: number;
 };
 
+type ResultadoTransmitirPendentes = {
+	outboxProcessados: number;
+	outboxErros: number;
+	outboxPendentes: number;
+	nfceAtualizadas: number;
+	total: number;
+	sucesso: number;
+	falhas: number;
+};
+
 function montarMensagemEnvio(result: ResultadoEnvioRetaguarda): string {
 	const partes: string[] = [];
 	if (result.outboxProcessados > 0) {
@@ -59,6 +69,35 @@ function montarMensagemEnvio(result: ResultadoEnvioRetaguarda): string {
 	return partes.join(" · ");
 }
 
+function montarMensagemTransmitirPendentes(
+	result: ResultadoTransmitirPendentes,
+): string {
+	const partes: string[] = [];
+	if (result.outboxProcessados > 0) {
+		partes.push(
+			`${result.outboxProcessados} item(ns) da fila enviado(s) à retaguarda`,
+		);
+	}
+	if (result.total === 0) {
+		partes.push("Nenhuma NFC-e pendente para transmitir");
+	} else if (result.falhas === 0) {
+		partes.push(`${result.sucesso} NFC-e transmitida(s) com sucesso`);
+	} else if (result.sucesso === 0) {
+		partes.push(`${result.falhas} falha(s) na transmissão`);
+	} else {
+		partes.push(
+			`${result.sucesso} ok · ${result.falhas} falha(s) de ${result.total}`,
+		);
+	}
+	if (result.outboxErros > 0) {
+		partes.push(`${result.outboxErros} erro(s) na fila`);
+	}
+	if (result.outboxPendentes > 0) {
+		partes.push(`${result.outboxPendentes} ainda na fila`);
+	}
+	return partes.join(" · ");
+}
+
 export function NotasNaoSincronizadasPage() {
 	const navigate = useNavigate();
 	const { status } = useOutletContext<StatusContext>();
@@ -66,6 +105,7 @@ export function NotasNaoSincronizadasPage() {
 	const [vendas, setVendas] = useState<VendaListagem[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [enviando, setEnviando] = useState(false);
+	const [transmitindo, setTransmitindo] = useState(false);
 	const [msg, setMsg] = useState("");
 	const secundario = status?.modo === "secundario";
 
@@ -102,6 +142,28 @@ export function NotasNaoSincronizadasPage() {
 		}
 	}
 
+	async function transmitirTodasPendentes() {
+		setTransmitindo(true);
+		setMsg("");
+		try {
+			const result = await pdvInvoke<ResultadoTransmitirPendentes>(
+				"transmitirTodasNfcePendentes",
+			);
+			setMsg(montarMensagemTransmitirPendentes(result));
+			await load();
+		} catch (err) {
+			setMsg(
+				err instanceof Error
+					? err.message
+					: "Falha ao transmitir NFC-e pendentes",
+			);
+		} finally {
+			setTransmitindo(false);
+		}
+	}
+
+	const ocupado = enviando || transmitindo || loading;
+
 	return (
 		<PdvShell
 			status={status}
@@ -125,23 +187,30 @@ export function NotasNaoSincronizadasPage() {
 				<FunctionBar
 					actions={[
 						{
+							key: "transmitir-pendentes",
+							label: transmitindo
+								? "Transmitindo…"
+								: "Transmitir todas pendentes",
+							variant: "default",
+							onClick: () => void transmitirTodasPendentes(),
+							disabled:
+								ocupado || secundario || secundarioDesconectado(status),
+						},
+						{
 							key: "enviar",
 							label: enviando ? "Enviando…" : "Enviar para retaguarda",
 							hotkey: teclas.sincronizar,
-							variant: "default",
+							variant: "secondary",
 							onClick: () => void enviarParaRetaguarda(),
 							disabled:
-								enviando ||
-								loading ||
-								secundario ||
-								secundarioDesconectado(status),
+								ocupado || secundario || secundarioDesconectado(status),
 						},
 						{
 							key: "atualizar",
 							label: "Atualizar",
 							variant: "secondary",
 							onClick: () => void load(),
-							disabled: loading || enviando,
+							disabled: ocupado,
 						},
 						{
 							key: "voltar",
@@ -162,9 +231,9 @@ export function NotasNaoSincronizadasPage() {
 					</p>
 				) : (
 					<p className="text-sm text-muted-foreground">
-						Envia a fila local (vendas, contingência e NFC-e) para a API e
-						atualiza o status das notas já registradas na retaguarda. Necessário
-						antes de inutilizar numeração rejeitada.
+						“Transmitir todas pendentes” processa a fila local e reenvia as
+						NFC-e em contingência/pendentes à retaguarda e SEFAZ. “Enviar para
+						retaguarda” só sincroniza a fila sem forçar retransmissão.
 					</p>
 				)}
 				{msg ? (

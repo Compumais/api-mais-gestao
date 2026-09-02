@@ -36,6 +36,22 @@ export interface ResultadoReemissaoNfce {
 	pendencias?: Array<{ codigo: string; mensagem: string }>;
 }
 
+export interface ItemTransmitirPendentesLote {
+	idnotafiscal: string;
+	idvenda: string | null;
+	numeronotafiscal: string | null;
+	serie: string | null;
+	sucesso: boolean;
+	mensagem: string;
+}
+
+export interface ResultadoTransmitirPendentesLote {
+	total: number;
+	autorizadas: number;
+	falhas: number;
+	itens: ItemTransmitirPendentesLote[];
+}
+
 export interface DadosCupomNfceApi {
 	vendaId?: string;
 	empresaNome: string;
@@ -176,6 +192,20 @@ export const nfceService = {
 		const { data } = await api.post<ResultadoReemissaoNfce>(
 			`/nfce/${params.idnotafiscal}/reemitir`,
 			{ idempresa: params.idempresa },
+		);
+		return data;
+	},
+
+	async transmitirPendentes(params: {
+		idempresa: string;
+		limite?: number;
+	}): Promise<ResultadoTransmitirPendentesLote> {
+		const { data } = await api.post<ResultadoTransmitirPendentesLote>(
+			"/nfce/pendentes/transmitir",
+			{
+				idempresa: params.idempresa,
+				...(params.limite !== undefined ? { limite: params.limite } : {}),
+			},
 		);
 		return data;
 	},
