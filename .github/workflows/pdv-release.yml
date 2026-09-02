@@ -60,9 +60,10 @@ jobs:
 
       - name: Compactar executável portátil
         run: |
-          $zip = Join-Path "release" "PDV-Mais-Gestao-portable.zip"
+          $out = if (Test-Path "release-build\win-unpacked") { "release-build" } else { "release" }
+          $zip = Join-Path $out "PDV-Mais-Gestao-portable.zip"
           if (Test-Path $zip) { Remove-Item $zip -Force }
-          Compress-Archive -Path "release\win-unpacked\*" -DestinationPath $zip -Force
+          Compress-Archive -Path (Join-Path $out "win-unpacked\*") -DestinationPath $zip -Force
 
       - name: Publicar artefatos
         uses: actions/upload-artifact@v4
@@ -70,6 +71,8 @@ jobs:
           name: pdv-windows-${{ github.run_number }}
           if-no-files-found: error
           path: |
+            pdv/release-build/*.exe
+            pdv/release-build/*.zip
             pdv/release/*.exe
             pdv/release/*.zip
             pdv/installer/output/*.exe
@@ -81,6 +84,9 @@ jobs:
         with:
           generate_release_notes: true
           files: |
+            pdv/release-build/*.exe
+            pdv/release-build/*.zip
             pdv/release/*.exe
             pdv/release/*.zip
             pdv/installer/output/*.exe
+            pdv/installer/output/version.json

@@ -19,7 +19,9 @@
 #define MyAppExeName "PDV Mais Gestão.exe"
 #define MyAppGuid "7E4B9A21-6C3F-4D8E-B1A5-9F2C8E4D6A10"
 #define MyAppId "{{7E4B9A21-6C3F-4D8E-B1A5-9F2C8E4D6A10}"
-#define SourceDir "..\release\win-unpacked"
+#ifndef SourceDir
+  #define SourceDir "..\release\win-unpacked"
+#endif
 #define PostgresPort "5433"
 #define PostgresUser "pdv"
 #define PostgresPassword "pdv"

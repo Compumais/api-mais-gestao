@@ -154,14 +154,23 @@ function Invoke-Local {
 		throw "compilar-iss.ps1 falhou com codigo $LASTEXITCODE"
 	}
 
-	$zip = Join-Path $pdvDir "release\PDV-Mais-Gestao-portable.zip"
+	$zip = Join-Path $pdvDir "release-build\PDV-Mais-Gestao-portable.zip"
+	if (-not (Test-Path (Join-Path $pdvDir "release-build\win-unpacked"))) {
+		$zip = Join-Path $pdvDir "release\PDV-Mais-Gestao-portable.zip"
+	}
+	$unpackedZip = Join-Path $pdvDir "release-build\win-unpacked"
+	if (-not (Test-Path $unpackedZip)) {
+		$unpackedZip = Join-Path $pdvDir "release\win-unpacked"
+	}
 	if (Test-Path $zip) {
 		Remove-Item $zip -Force
 	}
-	Compress-Archive -Path (Join-Path $pdvDir "release\win-unpacked\*") -DestinationPath $zip -Force
+	Compress-Archive -Path (Join-Path $unpackedZip "*") -DestinationPath $zip -Force
 
 	Write-Host ""
 	Write-Host "Pacotes gerados:"
+	Get-ChildItem (Join-Path $pdvDir "release-build\*") -Include "*.exe", "*.zip" -File -ErrorAction SilentlyContinue |
+		ForEach-Object { Write-Host " - $($_.FullName)" }
 	Get-ChildItem (Join-Path $pdvDir "release\*") -Include "*.exe", "*.zip" -File -ErrorAction SilentlyContinue |
 		ForEach-Object { Write-Host " - $($_.FullName)" }
 	Get-ChildItem (Join-Path $pdvDir "installer\output") -Filter "*.exe" -ErrorAction SilentlyContinue |
