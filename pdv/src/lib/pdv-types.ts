@@ -97,6 +97,12 @@ export type ResumoTurnoCaixa = {
 	saldoCaixaFisico: number;
 };
 
+export type ItemVendidoTurnoAgrupado = {
+	idproduto: string;
+	descricao: string;
+	quantidade: number;
+};
+
 export type StatusLancamentoPagamento = "ok" | "pendente" | "cancelado";
 
 export type LancamentoPagamento = {

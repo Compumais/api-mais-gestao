@@ -1,10 +1,18 @@
 import { useEffect, useState } from "react";
+import { Printer } from "lucide-react";
 import { pdvInvoke } from "@/lib/pdv-api";
-import type { ResumoTurnoCaixa } from "@/lib/pdv-types";
+import type { ItemVendidoTurnoAgrupado, ResumoTurnoCaixa } from "@/lib/pdv-types";
 import { centavosToNumber, money } from "@/lib/utils";
 import { NumericKeypad } from "@/ui/components/numeric-keypad";
 import { Button } from "@/ui/components/ui/button";
 import { useEscapeFechaModal } from "@/ui/hooks/use-escape-fecha-modal";
+
+function linhaItemVendido(item: ItemVendidoTurnoAgrupado): string {
+	const qtd = Number.isInteger(item.quantidade)
+		? String(item.quantidade)
+		: item.quantidade.toFixed(3).replace(/\.?0+$/, "");
+	return `${qtd}X ${item.descricao.trim().toUpperCase()}`;
+}
 
 function LinhaResumo({
 	label,
@@ -44,7 +52,11 @@ export function DialogFecharCaixa({
 	onSucesso: () => void | Promise<void>;
 }) {
 	const [resumo, setResumo] = useState<ResumoTurnoCaixa | null>(null);
+	const [itensVendidos, setItensVendidos] = useState<ItemVendidoTurnoAgrupado[]>(
+		[],
+	);
 	const [carregando, setCarregando] = useState(false);
+	const [imprimindo, setImprimindo] = useState(false);
 	const [enviando, setEnviando] = useState(false);
 	const [erro, setErro] = useState<string | null>(null);
 	const [digitos, setDigitos] = useState("0");
@@ -55,6 +67,7 @@ export function DialogFecharCaixa({
 	useEffect(() => {
 		if (!aberto) {
 			setResumo(null);
+			setItensVendidos([]);
 			setDigitos("0");
 			setObservacao("");
 			setErro(null);
@@ -64,9 +77,15 @@ export function DialogFecharCaixa({
 		let cancelado = false;
 		setCarregando(true);
 		setErro(null);
-		void pdvInvoke<ResumoTurnoCaixa>("resumoTurnoCaixa")
-			.then((dados) => {
-				if (!cancelado) setResumo(dados);
+		void Promise.all([
+			pdvInvoke<ResumoTurnoCaixa>("resumoTurnoCaixa"),
+			pdvInvoke<ItemVendidoTurnoAgrupado[]>("listarItensVendidosTurno"),
+		])
+			.then(([dadosResumo, dadosItens]) => {
+				if (!cancelado) {
+					setResumo(dadosResumo);
+					setItensVendidos(dadosItens);
+				}
 			})
 			.catch((err) => {
 				if (!cancelado) {
@@ -111,6 +130,23 @@ export function DialogFecharCaixa({
 			setErro(err instanceof Error ? err.message : "Erro ao fechar caixa");
 		} finally {
 			setEnviando(false);
+		}
+	}
+
+	async function imprimirItens() {
+		if (imprimindo || enviando) return;
+		setImprimindo(true);
+		setErro(null);
+		try {
+			await pdvInvoke("imprimirItensVendidosTurno");
+		} catch (err) {
+			setErro(
+				err instanceof Error
+					? err.message
+					: "Não foi possível imprimir os itens vendidos",
+			);
+		} finally {
+			setImprimindo(false);
 		}
 	}
 
@@ -170,6 +206,40 @@ export function DialogFecharCaixa({
 						Não foi possível carregar o resumo do turno.
 					</p>
 				)}
+
+				{!carregando && resumo ? (
+					<div className="space-y-2 rounded-lg border p-3">
+						<div className="flex items-center justify-between gap-2">
+							<p className="text-sm font-medium">Itens vendidos no turno</p>
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								disabled={enviando || imprimindo}
+								onClick={() => void imprimirItens()}
+							>
+								<Printer className="mr-1.5 h-4 w-4" />
+								{imprimindo ? "Imprimindo..." : "Imprimir"}
+							</Button>
+						</div>
+						{itensVendidos.length === 0 ? (
+							<p className="text-sm text-muted-foreground">
+								Nenhum item vendido neste turno.
+							</p>
+						) : (
+							<ul className="max-h-40 space-y-1 overflow-y-auto text-sm">
+								{itensVendidos.map((item) => (
+									<li
+										key={item.idproduto || item.descricao}
+										className="font-medium tracking-wide"
+									>
+										{linhaItemVendido(item)}
+									</li>
+								))}
+							</ul>
+						)}
+					</div>
+				) : null}
 
 				<div className="space-y-2">
 					<p className="text-sm font-medium">

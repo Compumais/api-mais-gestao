@@ -2,6 +2,7 @@ import type {
 	ConferenciaCaixa,
 	ResumoTurnoCaixa,
 } from "../db/resumo-turno-caixa";
+import { formatarLinhaItemVendidoTurno } from "../db/itens-vendidos-turno";
 
 export type DadosComprovanteFechamentoCaixa = {
 	nomeempresa?: string | null;
@@ -64,6 +65,50 @@ export function montarTextoComprovanteFechamentoCaixa(
 		linhas.push("--------------------------------");
 		linhas.push("Obs:");
 		linhas.push(dados.observacao.trim().slice(0, 64));
+	}
+	linhas.push("================================");
+	linhas.push("\n\n\n");
+	return linhas.join("\n");
+}
+
+export type DadosItensVendidosTurno = {
+	nomeempresa?: string | null;
+	username?: string | null;
+	numeropdv: number;
+	abertoem: string;
+	emitidoem: string;
+	itens: Array<{ descricao: string; quantidade: number }>;
+};
+
+export function montarTextoItensVendidosTurno(
+	dados: DadosItensVendidosTurno,
+): string {
+	const linhas: string[] = [];
+	linhas.push("================================");
+	linhas.push("     ITENS VENDIDOS NO TURNO");
+	linhas.push("================================");
+	if (dados.nomeempresa?.trim()) {
+		linhas.push(dados.nomeempresa.trim().slice(0, 32));
+	}
+	linhas.push(`PDV: ${dados.numeropdv}`);
+	if (dados.username?.trim()) {
+		linhas.push(`Operador: ${dados.username.trim().slice(0, 22)}`);
+	}
+	linhas.push(`Turno desde: ${dataHora(dados.abertoem)}`);
+	linhas.push(`Emitido: ${dataHora(dados.emitidoem)}`);
+	linhas.push("--------------------------------");
+	if (!dados.itens.length) {
+		linhas.push("Nenhum item vendido neste turno.");
+	} else {
+		for (const item of dados.itens) {
+			linhas.push(
+				formatarLinhaItemVendidoTurno({
+					idproduto: "",
+					descricao: item.descricao,
+					quantidade: item.quantidade,
+				}),
+			);
+		}
 	}
 	linhas.push("================================");
 	linhas.push("\n\n\n");

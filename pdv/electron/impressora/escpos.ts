@@ -4,6 +4,8 @@ import { obterVenda } from "../db/repos";
 import {
 	type DadosComprovanteFechamentoCaixa,
 	montarTextoComprovanteFechamentoCaixa,
+	type DadosItensVendidosTurno,
+	montarTextoItensVendidosTurno,
 } from "./comprovante-caixa";
 import { linhasPagamentoCupom } from "./cupom-pagamentos";
 import { type DestinoImpressora, enviarTextoImpressora } from "./destino";
@@ -195,6 +197,12 @@ export async function imprimirComprovanteFechamentoCaixa(
 	dados: DadosComprovanteFechamentoCaixa,
 ): Promise<{ ok: boolean; modo: string }> {
 	return enviarParaImpressora(montarTextoComprovanteFechamentoCaixa(dados));
+}
+
+export async function imprimirItensVendidosTurno(
+	dados: DadosItensVendidosTurno,
+): Promise<{ ok: boolean; modo: string }> {
+	return enviarParaImpressora(montarTextoItensVendidosTurno(dados));
 }
 
 async function destinoFiscal(): Promise<DestinoImpressora> {
