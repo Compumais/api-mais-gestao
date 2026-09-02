@@ -68,8 +68,9 @@ export function DialogInutilizarNfce({
 			>
 				<h2 className="text-lg font-semibold">Inutilizar numeração NFC-e</h2>
 				<p className="text-sm text-muted-foreground">
-					Inutiliza a série/número do cupom (modelo 65) na SEFAZ. Depois você
-					pode retransmitir para emitir um novo número.
+					Inutiliza a série/número do cupom (modelo 65) na SEFAZ. Após a
+					confirmação, a numeração fica inutilizada e não poderá ser
+					retransmitida.
 				</p>
 				<textarea
 					autoFocus
