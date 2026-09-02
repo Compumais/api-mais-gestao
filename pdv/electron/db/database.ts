@@ -367,9 +367,7 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 			);
 		}
 		if (!contaNomes.has("referencia")) {
-			await database.query(
-				"ALTER TABLE conta_mesa ADD COLUMN referencia TEXT",
-			);
+			await database.query("ALTER TABLE conta_mesa ADD COLUMN referencia TEXT");
 		}
 		if (!contaNomes.has("valorentrega")) {
 			await database.query(
@@ -528,6 +526,10 @@ async function seedDefaults(database: Pool): Promise<void> {
 		["tempo_ociosidade_min", "15"],
 		["filtro_apenas_abertas", "0"],
 		["emitir_nfce", "1"],
+		[
+			"nfce_meios_pagamento",
+			'{"dinheiro":true,"cartao":true,"pix":true,"prepago":false}',
+		],
 		["tema", "light"],
 		["pix_chave", ""],
 		["impressora_nome", ""],

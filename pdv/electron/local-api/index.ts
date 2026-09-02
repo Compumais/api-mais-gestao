@@ -47,6 +47,7 @@ import {
 	pagamentosNativosParaApi,
 	totaisParaSync,
 } from "../db/pagamento";
+import { rotuloProducaoEntrega } from "../db/pedido-entrega";
 import {
 	abrirCaixa,
 	abrirContaMesa,
@@ -65,12 +66,12 @@ import {
 	buscarProdutoPorCodigo,
 	buscarProdutoPorEan,
 	buscarProdutosLocal,
-	cancelarContaMesa as cancelarContaMesaRepo,
-	cancelarItemConta as cancelarItemContaRepo,
 	type ClienteVenda,
 	caixaAberto,
 	caixaAbertoOutroOperador,
 	calcularResumoTurnoAberto,
+	cancelarContaMesa as cancelarContaMesaRepo,
+	cancelarItemConta as cancelarItemContaRepo,
 	concluirOutboxCriarVendaLocal,
 	contarOutboxPendentes,
 	criarVendaRapida,
@@ -79,8 +80,8 @@ import {
 	fecharCaixa,
 	fecharContaMesa,
 	fecharFatiaItens,
-	ingestPedidoDelivery,
 	type ItemCarrinho,
+	ingestPedidoDelivery,
 	juntarContas,
 	type LancamentoPagamento,
 	limparContasVazias,
@@ -125,6 +126,7 @@ import {
 	transferirItens,
 	validarSenhaGerencial,
 } from "../db/repos";
+import { avaliarEmissaoNfceDaVenda } from "../fiscal/avaliar-emissao-nfce-venda";
 import { emitirOuContingencia } from "../fiscal/contingencia";
 import { exportarXmlsNfce as gravarXmlsNfcePeriodo } from "../fiscal/exportar-xml-nfce";
 import {
@@ -140,7 +142,6 @@ import {
 	imprimirProducaoPedido,
 	rotuloOrigemMesa,
 } from "../impressora/producao";
-import { rotuloProducaoEntrega } from "../db/pedido-entrega";
 import {
 	configEtiquetaDeMapa,
 	montarLancamentoEtiqueta,
@@ -163,9 +164,9 @@ import {
 	statusTecnibra,
 	syncTecnibra,
 } from "../integracao/tecnibra/servico";
+import * as remoto from "../pdv-secundario/operacoes-remoto";
 import { assertNumeroPrincipalLivre } from "../pdv-secundario/registro";
 import { normalizarModoPdv, parseNumeroPdv } from "../pdv-secundario/regras";
-import * as remoto from "../pdv-secundario/operacoes-remoto";
 import {
 	buscarOpcoesPdvNoPrincipal,
 	ehSecundario,
@@ -280,6 +281,7 @@ async function emitirNfceOnlineDaVenda(
 	cStat?: string;
 	erro?: string;
 	indisponivel?: boolean;
+	naoFiscal?: boolean;
 	xml?: string;
 	serie?: string;
 	numero?: number;
@@ -375,9 +377,13 @@ async function emitirNfceOnlineDaVenda(
 		await concluirOutboxCriarVendaLocal(vendaId);
 		if (!emitirNfce) {
 			await atualizarVendaSync(vendaId, { nfce_status: "nao_fiscal" });
-			return { ok: true };
+			return { ok: true, naoFiscal: true };
 		}
 		const nfce = extrairNfceDaBaixa(baixa);
+		if (!nfce.deveEmitirNfce) {
+			await atualizarVendaSync(vendaId, { nfce_status: "nao_fiscal" });
+			return { ok: true, naoFiscal: true };
+		}
 		const { aplicarEmissaoNfceNaVendaLocal } = await import(
 			"../fiscal/persistir-nfce-online"
 		);
@@ -426,6 +432,30 @@ async function emitirNfceOnlineDaVenda(
 			erro: err instanceof Error ? err.message : "Falha emissão",
 		};
 	}
+}
+
+async function concluirFiscalVenda(vendaId: string) {
+	const avaliacao = await avaliarEmissaoNfceDaVenda(vendaId);
+	if (!avaliacao.global) {
+		await emitirNfceOnlineDaVenda(vendaId, false);
+		await imprimirCupomNaoFiscal(vendaId);
+		return {
+			modo: "nao_fiscal" as const,
+			mensagem: "Venda registrada (cupom não fiscal)",
+		};
+	}
+	if (!avaliacao.porMeio) {
+		await emitirNfceOnlineDaVenda(vendaId, false);
+		await atualizarVendaSync(vendaId, { nfce_status: "nao_fiscal" });
+		return {
+			modo: "nao_fiscal" as const,
+			mensagem: "NFC-e não emitida para este meio de pagamento",
+		};
+	}
+	return emitirOuContingencia({
+		idvenda: vendaId,
+		onlineEmitir: () => emitirNfceOnlineDaVenda(vendaId),
+	});
 }
 
 /**
@@ -1159,28 +1189,7 @@ export const localApi = {
 			cliente: input.cliente,
 			valordesconto: desconto,
 		});
-		const emitir = (await getConfig("emitir_nfce", "1")) === "1";
-
-		let fiscal: {
-			modo: "online" | "contingencia" | "nao_fiscal" | "erro";
-			mensagem: string;
-			chave?: string;
-			qrcode?: string;
-			cStat?: string;
-		} = {
-			modo: "nao_fiscal",
-			mensagem: "Cupom não fiscal",
-		};
-
-		if (emitir) {
-			fiscal = await emitirOuContingencia({
-				idvenda: venda.id,
-				onlineEmitir: () => emitirNfceOnlineDaVenda(venda.id),
-			});
-		} else {
-			await emitirNfceOnlineDaVenda(venda.id, false);
-			await imprimirCupomNaoFiscal(venda.id);
-		}
+		const fiscal = await concluirFiscalVenda(venda.id);
 
 		void imprimirProducaoPedido({
 			origem: "Balcão",
@@ -1583,42 +1592,7 @@ export const localApi = {
 			troco,
 			cliente,
 		});
-		const emitir = (await getConfig("emitir_nfce", "1")) === "1";
-		let fiscal: {
-			modo: "online" | "contingencia" | "nao_fiscal" | "erro";
-			mensagem: string;
-			cStat?: string;
-		} = {
-			modo: "nao_fiscal",
-			mensagem: "Conta fechada",
-		};
-
-		if (emitir) {
-			const result = await emitirOuContingencia({
-				idvenda: venda.id,
-				onlineEmitir: () => emitirNfceOnlineDaVenda(venda.id),
-			});
-			fiscal = {
-				modo: result.modo,
-				mensagem: result.mensagem,
-				cStat: result.cStat,
-			};
-			if (result.modo === "nao_fiscal") {
-				const nfce = await obterNfcePorVenda(venda.id);
-				if (nfce?.chave) {
-					await imprimirDanfce({
-						vendaId: venda.id,
-						chave: nfce.chave ?? undefined,
-						qrcode: nfce.qrcode ?? undefined,
-						contingencia: nfce.tpemis === 9,
-						motivo: nfce.motivo_contingencia ?? undefined,
-					});
-				}
-			}
-		} else {
-			await emitirNfceOnlineDaVenda(venda.id, false);
-			await imprimirCupomNaoFiscal(venda.id);
-		}
+		const fiscal = await concluirFiscalVenda(venda.id);
 
 		void processarOutbox();
 		avisarTecnibra();
@@ -1833,16 +1807,7 @@ export const localApi = {
 			troco,
 		});
 		if (result.venda) {
-			const emitir = (await getConfig("emitir_nfce", "1")) === "1";
-			if (emitir) {
-				await emitirOuContingencia({
-					idvenda: result.venda.id,
-					onlineEmitir: () => emitirNfceOnlineDaVenda(result.venda!.id),
-				});
-			} else {
-				await emitirNfceOnlineDaVenda(result.venda.id, false);
-				await imprimirCupomNaoFiscal(result.venda.id);
-			}
+			await concluirFiscalVenda(result.venda.id);
 			void processarOutbox();
 			avisarTecnibra();
 		}
@@ -1876,16 +1841,7 @@ export const localApi = {
 			troco,
 			cliente,
 		});
-		const emitir = (await getConfig("emitir_nfce", "1")) === "1";
-		if (emitir) {
-			await emitirOuContingencia({
-				idvenda: result.venda.id,
-				onlineEmitir: () => emitirNfceOnlineDaVenda(result.venda.id),
-			});
-		} else {
-			await emitirNfceOnlineDaVenda(result.venda.id, false);
-			await imprimirCupomNaoFiscal(result.venda.id);
-		}
+		await concluirFiscalVenda(result.venda.id);
 		void processarOutbox();
 		avisarTecnibra();
 		return result;
@@ -1895,10 +1851,7 @@ export const localApi = {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
 		if (await ehSecundario()) {
-			const conta = await remoto.transferirContaRemoto(
-				idconta,
-				numeroDestino,
-			);
+			const conta = await remoto.transferirContaRemoto(idconta, numeroDestino);
 			avisarTecnibra();
 			return conta;
 		}
