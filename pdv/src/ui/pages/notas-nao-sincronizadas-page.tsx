@@ -23,6 +23,7 @@ import {
 	badgeNfce,
 	badgeSync,
 	rotuloNfce,
+	rotuloNumeracaoNfce,
 	rotuloOrigem,
 	type VendaListagem,
 } from "./vendas-colunas";
@@ -199,7 +200,9 @@ export function NotasNaoSincronizadasPage() {
 									</TableCell>
 								</TableRow>
 							) : (
-								vendas.map((venda) => (
+								vendas.map((venda) => {
+									const numeracao = rotuloNumeracaoNfce(venda);
+									return (
 									<TableRow key={venda.id}>
 										<TableCell className="whitespace-nowrap text-sm">
 											{dayjs(venda.criadoem).format("DD/MM/YY HH:mm")}
@@ -216,12 +219,20 @@ export function NotasNaoSincronizadasPage() {
 											</Badge>
 										</TableCell>
 										<TableCell>
-											<Badge variant={badgeNfce(venda.nfce_status)}>
-												{rotuloNfce(venda.nfce_status)}
-											</Badge>
+											<div className="flex flex-col items-start gap-0.5">
+												<Badge variant={badgeNfce(venda.nfce_status)}>
+													{rotuloNfce(venda.nfce_status)}
+												</Badge>
+												{numeracao ? (
+													<span className="font-mono text-xs tabular-nums text-muted-foreground">
+														{numeracao}
+													</span>
+												) : null}
+											</div>
 										</TableCell>
 									</TableRow>
-								))
+									);
+								})
 							)}
 						</TableBody>
 					</Table>

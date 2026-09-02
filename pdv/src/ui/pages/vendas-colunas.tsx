@@ -26,6 +26,9 @@ export type VendaListagem = {
 	idremoto?: string | null;
 	numero_mesa?: number | null;
 	senha_chamada?: string | null;
+	nfce_serie?: number | null;
+	nfce_numero?: number | null;
+	nfce_chave?: string | null;
 };
 
 export function vendaPendenteSincronizacao(venda: {
@@ -199,6 +202,20 @@ export function rotuloNfce(status: string) {
 	if (status === "inutilizada") return "inutilizada";
 	if (status === "cancelada") return "cancelada";
 	return status;
+}
+
+/** Ex.: "Nº 123 · Série 1" — null quando não há numeração local. */
+export function rotuloNumeracaoNfce(venda: {
+	nfce_numero?: number | null;
+	nfce_serie?: number | null;
+}): string | null {
+	const numero = Number(venda.nfce_numero ?? 0);
+	if (!Number.isFinite(numero) || numero < 1) return null;
+	const serie = Number(venda.nfce_serie ?? 0);
+	if (Number.isFinite(serie) && serie >= 1) {
+		return `Nº ${numero} · Série ${serie}`;
+	}
+	return `Nº ${numero}`;
 }
 
 export function rotuloOrigem(origem: string) {
@@ -561,11 +578,21 @@ export function criarColunasVendas(
 					id: "nfce_status",
 					header,
 					meta,
-					cell: ({ row }) => (
-						<Badge variant={badgeNfce(row.original.nfce_status)}>
-							{rotuloNfce(row.original.nfce_status)}
-						</Badge>
-					),
+					cell: ({ row }) => {
+						const numeracao = rotuloNumeracaoNfce(row.original);
+						return (
+							<div className="flex flex-col items-start gap-0.5">
+								<Badge variant={badgeNfce(row.original.nfce_status)}>
+									{rotuloNfce(row.original.nfce_status)}
+								</Badge>
+								{numeracao ? (
+									<span className="font-mono text-xs tabular-nums text-muted-foreground">
+										{numeracao}
+									</span>
+								) : null}
+							</div>
+						);
+					},
 				});
 				break;
 			default:
