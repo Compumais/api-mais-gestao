@@ -201,17 +201,29 @@ begin
   Cmp := CompareVersion(InstalledVersion, '{#MyAppVersion}');
   if Cmp > 0 then
   begin
-    MsgBox('Ja existe uma versao mais recente do PDV Mais Gestao (' + InstalledVersion + ').' + #13#10 +
-      'Este pacote e a versao {#MyAppVersion} e nao sera instalado.', mbError, MB_OK);
+    if not WizardSilent then
+      MsgBox('Ja existe uma versao mais recente do PDV Mais Gestao (' + InstalledVersion + ').' + #13#10 +
+        'Este pacote e a versao {#MyAppVersion} e nao sera instalado.', mbError, MB_OK);
     Result := False;
     Exit;
   end;
 
   if Cmp = 0 then
   begin
+    if WizardSilent then
+    begin
+      Result := True;
+      Exit;
+    end;
     Result := MsgBox('A versao {#MyAppVersion} ja esta instalada.' + #13#10 + #13#10 +
       'Deseja reparar/atualizar os arquivos do aplicativo?' + #13#10 +
       'O PostgreSQL e os dados de venda serao mantidos.', mbConfirmation, MB_YESNO) = IDYES;
+    Exit;
+  end;
+
+  if WizardSilent then
+  begin
+    Result := True;
     Exit;
   end;
 

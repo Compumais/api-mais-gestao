@@ -23,10 +23,11 @@
 		"test:producao": "node ../api/node_modules/tsx/dist/cli.mjs --test electron/impressora/producao.test.ts",
 		"test:nfce-meios": "node ../api/node_modules/tsx/dist/cli.mjs --test electron/fiscal/meios-pagamento-nfce.test.ts",
 		"test:observacao": "node ../api/node_modules/tsx/dist/cli.mjs --test src/lib/observacao-item.test.ts",
+		"test:update": "node ../api/node_modules/tsx/dist/cli.mjs --test electron/update/semver.test.ts",
 		"postinstall": "electron-builder install-app-deps",
 		"pack:win": "npm run build && electron-builder --win",
 		"pack:dir": "npm run build && electron-builder --win --dir",
-		"pack:iss": "npm run pack:dir && powershell -NoProfile -ExecutionPolicy Bypass -File installer/compilar-iss.ps1",
+		"pack:iss": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/bump-versao-instalador.ps1 -Bump && npm run pack:dir && powershell -NoProfile -ExecutionPolicy Bypass -File installer/compilar-iss.ps1 -NoBump",
 		"pack:release": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/gerar-instalador.ps1"
 	},
 	"dependencies": {

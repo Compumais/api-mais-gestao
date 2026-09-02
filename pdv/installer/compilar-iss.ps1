@@ -1,8 +1,21 @@
-﻿$ErrorActionPreference = "Stop"
+﻿#Requires -Version 5.1
+param(
+	[switch]$Bump,
+	[switch]$NoBump
+)
+
+$ErrorActionPreference = "Stop"
 
 $installerDir = $PSScriptRoot
 $iss = Join-Path $installerDir "pdv-mais-gestao.iss"
 $unpacked = [System.IO.Path]::GetFullPath((Join-Path $installerDir "..\release\win-unpacked"))
+$bumpScript = [System.IO.Path]::GetFullPath((Join-Path $installerDir "..\scripts\bump-versao-instalador.ps1"))
+
+. $bumpScript
+
+if ($Bump -and -not $NoBump) {
+	Invoke-BumpVersaoInstalador | Out-Null
+}
 
 if (-not (Test-Path $iss)) {
 	throw "Script Inno Setup nao encontrado: $iss"
@@ -47,14 +60,14 @@ Opcional (instalador offline, sem download na maquina do cliente):
 }
 
 Write-Host "Compilando $iss com $iscc"
-$pkgPath = [System.IO.Path]::GetFullPath((Join-Path $installerDir "..\package.json"))
-$pkg = Get-Content -LiteralPath $pkgPath -Raw -Encoding UTF8 | ConvertFrom-Json
-$versao = [string]$pkg.version
+$versao = Get-VersaoPackageJson
 Write-Host "Versao do PDV: $versao"
 & $iscc "/DMyAppVersion=$versao" $iss
 if ($LASTEXITCODE -ne 0) {
 	throw "ISCC falhou com codigo $LASTEXITCODE"
 }
+
+Write-VersionJson -Version $versao
 
 $output = Join-Path $installerDir "output"
 Write-Host "Instalador gerado em: $output"

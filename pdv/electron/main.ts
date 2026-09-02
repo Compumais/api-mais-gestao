@@ -13,6 +13,7 @@ import {
 	pararBackupAgendado,
 } from "./sync/backup-agendado";
 import { iniciarSyncPeriodico, processarOutbox } from "./sync/outbox";
+import { verificarEAtualizarPdv } from "./update/verificar-update";
 
 // Linux/dev: chrome-sandbox costuma exigir root+setuid; evita abort do Electron.
 if (
@@ -89,12 +90,20 @@ app.whenReady().then(async () => {
 				err instanceof Error ? err.message : "Falha ao iniciar backup agendado",
 			);
 		});
+		void verificarEAtualizarPdv({ parent: mainWindow }).catch((err) => {
+			console.error(
+				err instanceof Error ? err.message : "Falha ao verificar atualização",
+			);
+		});
 	} catch (err) {
 		console.error(
 			err instanceof Error
 				? err.message
 				: "Falha ao conectar no PostgreSQL local",
 		);
+		void verificarEAtualizarPdv({ parent: mainWindow }).catch(() => {
+			/* offline / sem DB */
+		});
 	}
 
 	app.on("activate", () => {
