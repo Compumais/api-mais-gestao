@@ -498,7 +498,7 @@ export const localApi = {
 		);
 		const { versaoRemotaMaior } = await import("../update/semver");
 		const local = app.getVersion();
-		const manifesto = await buscarManifestoUpdate();
+		const { manifesto, erro } = await buscarManifestoUpdate();
 		const checkEm = await getConfig("update_check_em", "");
 		return {
 			local,
@@ -508,6 +508,7 @@ export const localApi = {
 				: false,
 			artifact: manifesto?.artifact ?? null,
 			updateCheckEm: checkEm || null,
+			erroConsulta: manifesto ? null : (erro ?? "indisponível"),
 		};
 	},
 

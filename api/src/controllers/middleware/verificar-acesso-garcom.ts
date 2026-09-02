@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { verificarPermissao } from "../../util/verificar-permissao.js";
 
-const PREFIXOS_PUBLICOS = ["/health", "/docs", "/api/auth"];
+const PREFIXOS_PUBLICOS = ["/health", "/docs", "/api/auth", "/pdv/updates"];
 
 type RotaGarcom = {
 	metodo?: string;

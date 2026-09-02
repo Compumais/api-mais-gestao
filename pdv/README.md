@@ -85,13 +85,14 @@ Na abertura do PDV empacotado, o app consulta `{api_url}/pdv/updates/version.jso
 
 1. Gerar: `npm run pack:release`
 2. Commitar e enviar `installer/output/version.json` + `PDV-Mais-Gestao-Setup-*.exe`
-3. Publicar na VPS:
+3. Atualizar o fallback embutido na API (`api/src/data/pdv-updates/version.json`) com a mesma versão
+4. Publicar artefatos na VPS:
 
 ```powershell
 pdv\scripts\publicar-update-pdv.ps1 -HostName api.compuchat.space -User deploy
 ```
 
-Na VPS, sirva a pasta `/opt/mais-gestao/pdv-updates/` em `/pdv/updates/` (veja `nginx/mais-gestao.conf`).
+A API Fastify expõe fallback público em `GET /pdv/updates/version.json` e `GET /pdv/updates/:arquivo` (lê `PDV_UPDATES_PATH`, padrão `/opt/mais-gestao/pdv-updates`, ou o manifesto embutido). Opcionalmente, sirva a pasta também pelo Nginx (`nginx/mais-gestao.conf`).
 
 Se o PDV já estiver instalado, o setup compara a versão: pacote mais antigo é recusado; mesma versão repara os arquivos; versão mais nova só atualiza o aplicativo e **preserva o PostgreSQL e os dados**.
 

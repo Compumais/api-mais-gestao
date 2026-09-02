@@ -52,6 +52,7 @@ import { financeiroRotas } from "./controllers/http/financeiro/rotas.js";
 import { financeiroLancamentoRotas } from "./controllers/http/financeirolancamento/rotas.js";
 import { gruposGourmetRotas } from "./controllers/http/grupo-gourmet/rotas.js";
 import { healthRotas } from "./controllers/http/health/rotas.js";
+import { pdvUpdatesRotas } from "./controllers/http/pdv-updates/rotas.js";
 import { hierarquiasRotas } from "./controllers/http/hierarquia/rotas.js";
 import { ibptRotas } from "./controllers/http/ibpt/rotas.js";
 import { iaRotas } from "./controllers/http/ia/rotas.js";
@@ -530,6 +531,7 @@ app.route({
 });
 
 app.register(healthRotas);
+app.register(pdvUpdatesRotas);
 app.register(adminRotas);
 app.register(informativosRotas);
 app.register(ajudaRotas);
