@@ -1,6 +1,6 @@
 {
 	"name": "pdv-mais-gestao",
-	"version": "0.1.2",
+	"version": "0.1.3",
 	"private": true,
 	"description": "PDV Híbrido Desktop Mais Gestão (Electron + PostgreSQL local)",
 	"author": "Mais Gestão",
@@ -73,7 +73,7 @@
 		"copyright": "Copyright © Mais Gestão",
 		"forceCodeSigning": false,
 		"directories": {
-			"output": "release"
+			"output": "release-build"
 		},
 		"files": [
 			"out/**/*",

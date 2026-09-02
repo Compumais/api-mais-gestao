@@ -8,7 +8,10 @@ $ErrorActionPreference = "Stop"
 
 $installerDir = $PSScriptRoot
 $iss = Join-Path $installerDir "pdv-mais-gestao.iss"
-$unpacked = [System.IO.Path]::GetFullPath((Join-Path $installerDir "..\release\win-unpacked"))
+$unpacked = [System.IO.Path]::GetFullPath((Join-Path $installerDir "..\release-build\win-unpacked"))
+if (-not (Test-Path $unpacked)) {
+	$unpacked = [System.IO.Path]::GetFullPath((Join-Path $installerDir "..\release\win-unpacked"))
+}
 $bumpScript = [System.IO.Path]::GetFullPath((Join-Path $installerDir "..\scripts\bump-versao-instalador.ps1"))
 
 . $bumpScript
@@ -62,7 +65,12 @@ Opcional (instalador offline, sem download na maquina do cliente):
 Write-Host "Compilando $iss com $iscc"
 $versao = Get-VersaoPackageJson
 Write-Host "Versao do PDV: $versao"
-& $iscc "/DMyAppVersion=$versao" $iss
+$sourceDirRel = if ($unpacked -like "*release-build*") {
+	"..\release-build\win-unpacked"
+} else {
+	"..\release\win-unpacked"
+}
+& $iscc "/DMyAppVersion=$versao" "/DSourceDir=$sourceDirRel" $iss
 if ($LASTEXITCODE -ne 0) {
 	throw "ISCC falhou com codigo $LASTEXITCODE"
 }
