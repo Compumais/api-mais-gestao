@@ -25,6 +25,7 @@ import type {
 	SitefPagarResultado,
 	SitefStatus,
 } from "@/lib/pdv-types";
+import { formatarQuantidade } from "@/lib/produto-kg";
 import {
 	resolverTeclasMeiosPagamento,
 	teclaCorresponde,
@@ -44,6 +45,14 @@ export type FechamentoMisto = {
 	senhaGerencial: string | null;
 };
 
+export type ItemPagamentoResumo = {
+	id: string;
+	descricao: string;
+	quantidade: number;
+	precototal: number;
+	observacao?: string | null;
+};
+
 type DialogPagamentoMistoProps = {
 	aberto: boolean;
 	total: number;
@@ -54,6 +63,8 @@ type DialogPagamentoMistoProps = {
 	permitirDesconto?: boolean;
 	iniciarComDesconto?: boolean;
 	descontoJaAplicado?: number;
+	/** Itens da conta/venda — exibidos no lugar do teclado touch quando ele está oculto. */
+	itens?: ItemPagamentoResumo[];
 	onCancelar: () => void;
 	onConfirmar: (fechamento: FechamentoMisto) => void;
 };
@@ -94,6 +105,7 @@ export function DialogPagamentoMisto({
 	permitirDesconto = true,
 	iniciarComDesconto = false,
 	descontoJaAplicado = 0,
+	itens = [],
 	onCancelar,
 	onConfirmar,
 }: DialogPagamentoMistoProps) {
@@ -807,7 +819,9 @@ export function DialogPagamentoMisto({
 							<p className="text-xs text-muted-foreground">
 								{mostrarTeclado
 									? "Teclado virtual e físico lançam o valor."
-									: "Digite o valor no teclado físico."}
+									: itens.length > 0
+										? "Itens da conta. Digite o valor no teclado físico."
+										: "Digite o valor no teclado físico."}
 							</p>
 							<Button
 								type="button"
@@ -818,13 +832,59 @@ export function DialogPagamentoMisto({
 								{mostrarTeclado ? "Ocultar teclado" : "Mostrar teclado"}
 							</Button>
 						</div>
-						<NumericKeypad
-							digits={digitos}
-							onChange={setDigitos}
-							disabled={ocupado}
-							onEnter={() => void aoEnter()}
-							mostrarBotoes={mostrarTeclado}
-						/>
+						{mostrarTeclado ? (
+							<NumericKeypad
+								digits={digitos}
+								onChange={setDigitos}
+								disabled={ocupado}
+								onEnter={() => void aoEnter()}
+							/>
+						) : (
+							<>
+								<NumericKeypad
+									digits={digitos}
+									onChange={setDigitos}
+									disabled={ocupado}
+									onEnter={() => void aoEnter()}
+									mostrarBotoes={false}
+								/>
+								<div className="flex min-h-[14.5rem] max-h-[18rem] flex-col overflow-hidden rounded-md border bg-background">
+									<div className="shrink-0 border-b px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+										Itens
+										{itens.length > 0 ? ` (${itens.length})` : ""}
+									</div>
+									<div className="min-h-0 flex-1 space-y-1 overflow-auto p-2">
+										{itens.length === 0 ? (
+											<p className="px-1 py-6 text-center text-sm text-muted-foreground">
+												Nenhum item na conta
+											</p>
+										) : (
+											itens.map((item) => (
+												<div
+													key={item.id}
+													className="flex items-start justify-between gap-2 rounded-md px-2 py-1.5 text-sm"
+												>
+													<span className="min-w-0">
+														<span className="block truncate font-medium">
+															{formatarQuantidade(item.quantidade)}x{" "}
+															{item.descricao}
+														</span>
+														{item.observacao ? (
+															<span className="block truncate text-xs text-muted-foreground">
+																{item.observacao}
+															</span>
+														) : null}
+													</span>
+													<span className="shrink-0 font-semibold tabular-nums">
+														{money(item.precototal)}
+													</span>
+												</div>
+											))
+										)}
+									</div>
+								</div>
+							</>
+						)}
 					</div>
 
 					<div className="space-y-3">

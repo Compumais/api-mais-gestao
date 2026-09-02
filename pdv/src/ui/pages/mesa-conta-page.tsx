@@ -1472,6 +1472,11 @@ export function MesaContaPage() {
 				nomeClienteHint={nomeCliente}
 				permitirDesconto={!pagandoFatia}
 				descontoJaAplicado={conta?.valordesconto ?? 0}
+				itens={
+					pagandoFatia && itensSel.length > 0
+						? itens.filter((item) => itensSel.includes(item.id))
+						: itens
+				}
 				onCancelar={() => {
 					setPagando(false);
 					setFatiaValor(null);
