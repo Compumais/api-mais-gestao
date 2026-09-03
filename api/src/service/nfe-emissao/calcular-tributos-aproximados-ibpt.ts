@@ -33,6 +33,49 @@ function arredondar2(valor: number): number {
 	return Math.round(valor * 100) / 100;
 }
 
+function tabelaIbptNaoExiste(erro: unknown): boolean {
+	let atual: unknown = erro;
+
+	for (let nivel = 0; nivel < 4 && atual; nivel += 1) {
+		if (typeof atual !== "object") break;
+
+		const objeto = atual as {
+			code?: unknown;
+			message?: unknown;
+			cause?: unknown;
+		};
+		const codigo = String(objeto.code ?? "");
+		const mensagem = String(objeto.message ?? "").toLowerCase();
+
+		if (
+			codigo === "42P01" ||
+			(mensagem.includes("does not exist") &&
+				(mensagem.includes("ibpt_importacao") ||
+					mensagem.includes("ibpt_aliquota")))
+		) {
+			return true;
+		}
+
+		atual = objeto.cause;
+	}
+
+	return false;
+}
+
+function resultadoSemTabelaIbpt(
+	itens: ItemPayloadNfe[],
+	pendencia: string,
+): ResultadoTributosAproximadosIbpt {
+	return {
+		itens,
+		totalFederal: 0,
+		totalEstadual: 0,
+		totalMunicipal: 0,
+		totalAproximado: 0,
+		pendencias: [pendencia],
+	};
+}
+
 export async function calcularTributosAproximadosIbpt(params: {
 	uf: string;
 	itens: ItemPayloadNfe[];
@@ -51,22 +94,41 @@ export async function calcularTributosAproximadosIbpt(params: {
 		};
 	}
 
-	const ultimaImportacao = await buscarUltimaImportacaoIbptPorUf(uf);
+	let ultimaImportacao: Awaited<
+		ReturnType<typeof buscarUltimaImportacaoIbptPorUf>
+	>;
+	try {
+		ultimaImportacao = await buscarUltimaImportacaoIbptPorUf(uf);
+	} catch (erro) {
+		if (tabelaIbptNaoExiste(erro)) {
+			return resultadoSemTabelaIbpt(
+				params.itens,
+				"Tabela IBPT ainda não instalada. A emissão pode continuar sem os tributos aproximados; aplique as migrations da API.",
+			);
+		}
+		throw erro;
+	}
+
 	if (!ultimaImportacao) {
-		return {
-			itens: params.itens,
-			totalFederal: 0,
-			totalEstadual: 0,
-			totalMunicipal: 0,
-			totalAproximado: 0,
-			pendencias: [
-				`Tabela IBPT não importada para a UF ${uf}. Importe em Configurações > NF-e.`,
-			],
-		};
+		return resultadoSemTabelaIbpt(
+			params.itens,
+			`Tabela IBPT não importada para a UF ${uf}. Importe em Configurações > NF-e.`,
+		);
 	}
 
 	const ncms = params.itens.map((item) => item.ncm);
-	const mapaAliquotas = await buscarIbptAliquotasPorNcms(uf, ncms);
+	let mapaAliquotas: Awaited<ReturnType<typeof buscarIbptAliquotasPorNcms>>;
+	try {
+		mapaAliquotas = await buscarIbptAliquotasPorNcms(uf, ncms);
+	} catch (erro) {
+		if (tabelaIbptNaoExiste(erro)) {
+			return resultadoSemTabelaIbpt(
+				params.itens,
+				"Tabela IBPT ainda não instalada. A emissão pode continuar sem os tributos aproximados; aplique as migrations da API.",
+			);
+		}
+		throw erro;
+	}
 
 	let totalFederal = 0;
 	let totalEstadual = 0;
