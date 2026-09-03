@@ -29,10 +29,17 @@ jobs:
           script: |
             set -e
             cd /opt/mais-gestao
+            git fetch origin main
+            git checkout main
+            git reset --hard origin/main
             export GHCR_REPOSITORY_LOWER="$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')"
             if [ -n "${{ secrets.GHCR_USERNAME }}" ] && [ -n "${{ secrets.GHCR_TOKEN }}" ]; then
               echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
             fi
+            docker compose -f /opt/mais-gestao/docker-compose.prod.yml up -d --wait postgres
+            docker compose -f /opt/mais-gestao/docker-compose.prod.yml exec -T postgres \
+              sh -c 'psql --single-transaction -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' \
+              < api/drizzle/0091_pdv_nfce_sync_robusto.sql
             docker compose -f /opt/mais-gestao/docker-compose.prod.yml pull api
             docker compose -f /opt/mais-gestao/docker-compose.prod.yml up -d api
             docker image prune -f
