@@ -177,6 +177,30 @@ export async function buscarNotaFiscalPorId(id: string) {
 	return registro;
 }
 
+/**
+ * Recupera NFC-e criada durante a emissão que ficou sem vínculo na venda.
+ * O id da venda é persistido no snapshot dadosimportacao antes do vínculo.
+ */
+export async function buscarNotaFiscalNfcePorVendaPdv(
+	idempresa: string,
+	idvenda: string,
+) {
+	const [registro] = await db
+		.select()
+		.from(notafiscal)
+		.where(
+			and(
+				eq(notafiscal.idempresa, idempresa),
+				eq(notafiscal.modelo, "65"),
+				sql`${notafiscal.dadosimportacao}->>'idvenda' = ${idvenda}`,
+			),
+		)
+		.orderBy(desc(notafiscal.datainclusao))
+		.limit(1);
+
+	return registro;
+}
+
 export async function listarItensPorNotaFiscal(idnotafiscal: string) {
 	return db
 		.select()
