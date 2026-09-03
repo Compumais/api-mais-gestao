@@ -2,6 +2,7 @@ import type { HttpResponse } from "@/model/http-model.js";
 import type { NotaFiscal } from "@/model/nota-fiscal-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
+	buscarNotaFiscalNfcePorVendaPdv,
 	buscarNotaFiscalPorChaveNfe,
 	buscarNotaFiscalPorId,
 } from "@/repositories/nota-fiscal-repositories.js";
@@ -226,6 +227,30 @@ async function reconciliarManifesto(
 
 	let acao: AcaoReconciliacaoNfce = "sincronizada";
 	let idnotafiscal = venda.idnotafiscalnfce ?? undefined;
+
+	if (!idnotafiscal) {
+		const notaOrfa = await buscarNotaFiscalNfcePorVendaPdv(
+			parametros.idempresa,
+			venda.id,
+		);
+		if (notaOrfa) {
+			try {
+				await atualizarVendaPdvGourmet(venda.id, {
+					idnotafiscalnfce: notaOrfa.id,
+				});
+			} catch {
+				return {
+					idvendalocal: manifesto.idvendalocal,
+					idvendaremoto: venda.id,
+					existeRetaguarda: true,
+					acao: "conflito",
+					mensagem: "NFC-e já vinculada a outra venda da retaguarda",
+				};
+			}
+			idnotafiscal = notaOrfa.id;
+			acao = "reconciliada";
+		}
+	}
 
 	if (!idnotafiscal && (manifesto.idnotafiscal || manifesto.chave)) {
 		let notaDoManifesto = manifesto.idnotafiscal

@@ -6,11 +6,11 @@ import * as terminalRepository from "@/repositories/terminal-pdv-repositories.js
 import * as vendaRepository from "@/repositories/venda-pdv-gourmet-repositories.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
 import * as reconciliarAutorizadaService from "./reconciliar-nfce-autorizada-sefaz.js";
-import * as contingenciaService from "./transmitir-nfce-contingencia.js";
 import {
 	reconciliarNfcePdvService,
 	statusCanonicoNfce,
 } from "./reconciliar-nfce-pdv.js";
+import * as contingenciaService from "./transmitir-nfce-contingencia.js";
 
 vi.mock("@/repositories/entidade-repositories.js");
 vi.mock("@/repositories/nota-fiscal-repositories.js");
@@ -202,6 +202,9 @@ describe("reconciliarNfcePdvService", () => {
 		vi.mocked(
 			reconciliacaoRepository.buscarVendaParaReconciliacaoNfce,
 		).mockResolvedValue(vendaSemNota as never);
+		vi.mocked(
+			notaRepository.buscarNotaFiscalNfcePorVendaPdv,
+		).mockResolvedValue(notaRejeitada as never);
 		vi.mocked(notaRepository.buscarNotaFiscalPorId).mockResolvedValue(
 			notaRejeitada as never,
 		);
@@ -216,13 +219,14 @@ describe("reconciliarNfcePdvService", () => {
 				{
 					idvendalocal: "venda-local-1",
 					idvendaremoto: vendaSemNota.id,
-					idnotafiscal: notaRejeitada.id,
 					statusLocal: "erro",
-					chave: chaveNfce,
 				},
 			],
 		});
 
+		expect(
+			notaRepository.buscarNotaFiscalNfcePorVendaPdv,
+		).toHaveBeenCalledWith(parametrosBase.idempresa, vendaSemNota.id);
 		expect(vendaRepository.atualizarVendaPdvGourmet).toHaveBeenCalledWith(
 			vendaSemNota.id,
 			{ idnotafiscalnfce: notaRejeitada.id },
