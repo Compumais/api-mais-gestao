@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import type { HttpResponse } from "@/model/http-model.js";
 import type { NovaNotaFiscal } from "@/model/nota-fiscal-model.js";
+import { buscarEmpresaPorId } from "@/repositories/empresa-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { avancarNumeroproximoSerieSeNecessario } from "@/repositories/nfe-serie-repositories.js";
 import {
@@ -11,6 +12,7 @@ import {
 import {
 	atualizarVendaPdvGourmet,
 	buscarVendaPdvGourmetPorId,
+	buscarVendaPdvGourmetPorNotaFiscalNfce,
 } from "@/repositories/venda-pdv-gourmet-repositories.js";
 import { arquivarXmlNotaFiscal } from "@/service/nota-fiscal/arquivar-xml-nota-fiscal.js";
 import { numeroFiscalPreenchido } from "@/util/completar-listagem-nfce.js";
@@ -21,6 +23,7 @@ import {
 import { decodificarChaveNfe } from "@/util/decodificar-chave-nfe.js";
 import { httpBadRequest, httpCriacao, httpProibido } from "@/util/http-util.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
+import { parseNFeXml } from "@/util/nfe-xml-parser.js";
 import {
 	formatarValorMonetario,
 	parseValorMonetario,
@@ -116,10 +119,83 @@ export async function transmitirNfceContingenciaService({
 		return httpBadRequest("XML de contingência obrigatório");
 	}
 
-	const chaveNorm = normalizarChave(chave);
+	let dadosXml: ReturnType<typeof parseNFeXml>;
+	try {
+		dadosXml = parseNFeXml(xml);
+	} catch {
+		return httpBadRequest("XML de contingência inválido");
+	}
+	if (dadosXml.modelo !== "65") {
+		return httpBadRequest("XML informado não é uma NFC-e modelo 65");
+	}
+	if (
+		!/<(?:\w+:)?Signature[\s>]/i.test(xml) ||
+		!/<(?:\w+:)?SignedInfo[\s>]/i.test(xml) ||
+		!/<(?:\w+:)?DigestValue>[^<]+<\/(?:\w+:)?DigestValue>/i.test(xml)
+	) {
+		return httpBadRequest("XML de contingência sem assinatura digital");
+	}
+	const chaveXml = normalizarChave(dadosXml.chavenfe);
+	const chaveInformada = normalizarChave(chave);
+	if (chaveInformada && chaveXml && chaveInformada !== chaveXml) {
+		return httpBadRequest("Chave informada diverge da chave contida no XML");
+	}
+	const chaveNorm = chaveXml ?? chaveInformada;
+	if (!chaveNorm) {
+		return httpBadRequest("XML de contingência sem chave NFC-e válida");
+	}
+	const serieXml = numeroPositivoXml(dadosXml.serie);
+	const numeroXml = numeroPositivoXml(
+		dadosXml.numeronotafiscal ?? dadosXml.numero,
+	);
+	if ((serieXml && serieXml !== serie) || (numeroXml && numeroXml !== numero)) {
+		return httpBadRequest("Série ou número informados divergem do XML");
+	}
+	const tpEmis = numeroTagXml(xml, "tpEmis");
+	if (tpEmis !== 9) {
+		return httpBadRequest("XML não foi emitido em contingência (tpEmis=9)");
+	}
+	const ambienteXml = numeroTagXml(xml, "tpAmb");
+	if (ambienteXml !== 1 && ambienteXml !== 2) {
+		return httpBadRequest("Ambiente da NFC-e inválido no XML");
+	}
+	const empresa = await buscarEmpresaPorId(idempresa);
+	const cnpjEmpresa = (empresa?.cnpj ?? "").replace(/\D/g, "");
+	const cnpjXml = (dadosXml.cnpjemissor ?? "").replace(/\D/g, "");
+	if (!cnpjEmpresa || cnpjXml !== cnpjEmpresa) {
+		return httpBadRequest("CNPJ emitente do XML diverge da empresa");
+	}
+
+	const venda = idvenda ? await buscarVendaPdvGourmetPorId(idvenda) : null;
 	if (chaveNorm) {
 		const existente = await buscarNotaFiscalPorChaveNfe(idempresa, chaveNorm);
 		if (existente?.modelo === "65") {
+			const vendaVinculada = await buscarVendaPdvGourmetPorNotaFiscalNfce(
+				existente.id,
+			);
+			const dadosImportacao =
+				existente.dadosimportacao &&
+				typeof existente.dadosimportacao === "object"
+					? (existente.dadosimportacao as Record<string, unknown>)
+					: null;
+			const idVendaOrigem =
+				typeof dadosImportacao?.idvenda === "string"
+					? dadosImportacao.idvenda
+					: null;
+			if (
+				idvenda &&
+				((vendaVinculada && vendaVinculada.id !== idvenda) ||
+					(idVendaOrigem &&
+						idVendaOrigem !== idvenda &&
+						idVendaOrigem !== venda?.idvendalocal))
+			) {
+				return httpBadRequest("NFC-e já vinculada a outra venda");
+			}
+			if (venda?.idempresa === idempresa && !venda.idnotafiscalnfce) {
+				await atualizarVendaPdvGourmet(venda.id, {
+					idnotafiscalnfce: existente.id,
+				});
+			}
 			return httpCriacao(
 				resultadoExistente(
 					existente.id,
@@ -130,7 +206,6 @@ export async function transmitirNfceContingenciaService({
 		}
 	}
 
-	const venda = idvenda ? await buscarVendaPdvGourmetPorId(idvenda) : null;
 	if (venda?.idempresa === idempresa && venda.idnotafiscalnfce) {
 		const notaVenda = await buscarNotaFiscalPorId(venda.idnotafiscalnfce);
 		if (notaVenda) {
@@ -170,7 +245,7 @@ export async function transmitirNfceContingenciaService({
 		modelo: "65",
 		serie: String(serieFinal),
 		numeronotafiscal: String(numeroFinal),
-		tipoambientenfe: 2,
+		tipoambientenfe: ambienteXml,
 		tipoorigem: 1,
 		status: NFE_STATUS.PENDENTE,
 		finalidadeemissaonfe: 1,
@@ -225,6 +300,17 @@ export async function transmitirNfceContingenciaService({
 		transmitida: false,
 		...(chaveNorm ? { chave: chaveNorm } : {}),
 	});
+}
+
+function numeroPositivoXml(valor?: string | number): number | null {
+	const numero = Number(valor);
+	return Number.isInteger(numero) && numero > 0 ? numero : null;
+}
+
+function numeroTagXml(xml: string, tag: string): number | null {
+	const match = xml.match(new RegExp(`<${tag}>(\\d+)</${tag}>`, "i"));
+	const numero = Number(match?.[1]);
+	return Number.isInteger(numero) ? numero : null;
 }
 
 function splitDataHoraContingencia(value: string): [string, string] {

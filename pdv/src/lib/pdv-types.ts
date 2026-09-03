@@ -158,6 +158,7 @@ export type ModeloAtendimento = "mesa" | "comanda";
 export type StatusPdv = {
 	online: boolean;
 	outboxPendentes: number;
+	outboxFalhasPermanentes?: number;
 	podeConfigurar: boolean;
 	moduloGourmet: boolean;
 	sessao: {
@@ -187,6 +188,15 @@ export type StatusPdv = {
 	principalOnline?: boolean | null;
 	principalErro?: string | null;
 	balancaHabilitada?: boolean;
+	nfceSyncUltimaOk?: string | null;
+	nfceSyncUltimoErro?: string | null;
+	nfceSyncUltimoResumo?: {
+		total: number;
+		atualizadas: number;
+		registradas: number;
+		conflitos: number;
+		falhas: number;
+	} | null;
 };
 
 export type BalancaStatus = {

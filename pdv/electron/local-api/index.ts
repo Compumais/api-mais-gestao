@@ -74,12 +74,14 @@ import {
 	calcularResumoTurnoAberto,
 	cancelarContaMesa as cancelarContaMesaRepo,
 	cancelarItemConta as cancelarItemContaRepo,
-	listarItensVendidosTurnoAberto,
+	cancelarOutboxCriarVendaPendente,
 	concluirOutboxCriarVendaLocal,
+	contarOutboxFalhasPermanentes,
 	contarOutboxPendentes,
 	criarVendaRapida,
 	enfileirarOutbox,
 	enviarPedidoConta,
+	exigirSenhaGerencial,
 	fecharCaixa,
 	fecharContaMesa,
 	fecharFatiaItens,
@@ -95,6 +97,7 @@ import {
 	listarCatalogoCarga,
 	listarGruposGourmetLocal,
 	listarGruposLocal,
+	listarItensVendidosTurnoAberto,
 	listarLancamentosVenda,
 	listarMapeamentoImpressorasGourmet,
 	listarMeiosPagamentoLocal,
@@ -109,12 +112,14 @@ import {
 	type MeioPagamento,
 	marcarNfceTransmitida,
 	marcarPedidoEntregue,
+	marcarVendaCanceladaLocal,
 	obterContaMesa,
 	obterContaPorNumero,
 	obterMesa,
 	obterNfcePorVenda,
 	obterNumeracaoNfce,
 	obterSessao,
+	obterSyncMeta,
 	obterVenda,
 	salvarAtalhos as persistirAtalhosLocal,
 	registrarPagamentoConta,
@@ -129,18 +134,15 @@ import {
 	transferirConta,
 	transferirItens,
 	validarSenhaGerencial,
-	exigirSenhaGerencial,
-	marcarVendaCanceladaLocal,
-	cancelarOutboxCriarVendaPendente,
 } from "../db/repos";
 import { avaliarEmissaoNfceDaVenda } from "../fiscal/avaliar-emissao-nfce-venda";
 import { emitirOuContingencia } from "../fiscal/contingencia";
 import { exportarXmlsNfce as gravarXmlsNfcePeriodo } from "../fiscal/exportar-xml-nfce";
 import {
 	imprimirComprovanteFechamentoCaixa,
-	imprimirItensVendidosTurno,
 	imprimirCupomNaoFiscal,
 	imprimirDanfce,
+	imprimirItensVendidosTurno,
 	imprimirPreConta,
 	listarImpressoras,
 	testarImpressora,
@@ -197,6 +199,7 @@ import {
 	sincronizarFiscalPdv as puxarFiscalRetaguarda,
 	statusConexao,
 } from "../sync/outbox";
+import { reconciliarNfce } from "../sync/reconciliar-nfce";
 import { obterTerminaisPdvLocais } from "../sync/terminais-pdv";
 import {
 	arquivarSeTrocaEmpresa,
@@ -209,6 +212,15 @@ export type {
 	MeioPagamento,
 	StatusLancamentoPagamento,
 } from "../db/pagamento";
+
+function parseJsonSeguro(valor: string | null): unknown {
+	if (!valor) return null;
+	try {
+		return JSON.parse(valor);
+	} catch {
+		return null;
+	}
+}
 
 function avisarTecnibra(): void {
 	void syncTecnibra();
@@ -321,6 +333,7 @@ async function emitirNfceOnlineDaVenda(
 			const criada = await criarVendaPdv({
 				idempresa: sessao.idempresa,
 				numeropdv: Number(await getConfig("numeropdv", "1")),
+				idvendalocal: venda.id,
 				usuarioquefechouvenda: sessao.userid,
 				vendalocal: VENDA_LOCAL_PDV_HIBRIDO,
 				valortotal: venda.valortotal,
@@ -343,6 +356,7 @@ async function emitirNfceOnlineDaVenda(
 				await criarItemVendaPdv({
 					idempresa: sessao.idempresa,
 					idvenda: idremoto,
+					iditemlocal: item.id,
 					idproduto: item.idproduto,
 					quantidade: item.quantidade,
 					precounitario: item.precounitario,
@@ -541,6 +555,17 @@ export const localApi = {
 		const caixaOutroOperador = caixa ? null : await caixaAbertoOutroOperador();
 		const modo = normalizarModoPdv(await getConfig("pdv_modo", "principal"));
 		const principal = modo === "secundario" ? statusPrincipalCache() : null;
+		const [
+			nfceSyncUltimaOk,
+			nfceSyncUltimoErro,
+			nfceSyncUltimoResumo,
+			outboxFalhasPermanentes,
+		] = await Promise.all([
+			obterSyncMeta("nfce_sync_ultima_ok"),
+			obterSyncMeta("nfce_sync_ultimo_erro"),
+			obterSyncMeta("nfce_sync_ultimo_resumo"),
+			contarOutboxFalhasPermanentes(),
+		]);
 		return {
 			...conexao,
 			podeConfigurar: podeConfigurarPdv(sessao.roles),
@@ -564,6 +589,10 @@ export const localApi = {
 			principalOnline: principal ? principal.online : null,
 			principalErro: principal?.erro ?? null,
 			balancaHabilitada: (await getConfig("balanca_habilitada", "0")) === "1",
+			outboxFalhasPermanentes,
+			nfceSyncUltimaOk,
+			nfceSyncUltimoErro: nfceSyncUltimoErro || null,
+			nfceSyncUltimoResumo: parseJsonSeguro(nfceSyncUltimoResumo),
 		};
 	},
 
@@ -1338,6 +1367,14 @@ export const localApi = {
 			);
 		}
 		return listarVendasNaoSincronizadas(100);
+	},
+
+	async sincronizarNfce() {
+		if (await ehSecundario()) {
+			await garantirOperacaoSecundario();
+			return remoto.sincronizarNfceRemoto();
+		}
+		return reconciliarNfce();
 	},
 
 	async enviarParaRetaguarda() {
@@ -2400,8 +2437,7 @@ export const localApi = {
 
 		return {
 			modo: "cancelada" as const,
-			mensagem:
-				resultado.xMotivo?.trim() || "NFC-e cancelada na SEFAZ",
+			mensagem: resultado.xMotivo?.trim() || "NFC-e cancelada na SEFAZ",
 			idnotafiscal: resultado.idnotafiscal,
 			cStat: resultado.cStat,
 			protocolo: resultado.protocolo,

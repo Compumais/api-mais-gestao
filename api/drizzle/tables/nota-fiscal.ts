@@ -389,6 +389,11 @@ export const notafiscal = pgTable(
 			"btree",
 			table.chavenfe.asc().nullsLast().op("text_ops"),
 		),
+		index("notafiscal_empresa_modelo_status_idx").on(
+			table.idempresa,
+			table.modelo,
+			table.status,
+		),
 		foreignKey({
 			columns: [table.idempresa],
 			foreignColumns: [empresa.id],

@@ -303,7 +303,10 @@ export async function listarNotasFiscaisPorEmpresa({
 	if (entradasaida?.trim()) {
 		const dia = entradasaida.trim();
 		where.push(
-			and(gte(notafiscal.entradasaida, dia), lte(notafiscal.entradasaida, dia))!,
+			and(
+				gte(notafiscal.entradasaida, dia),
+				lte(notafiscal.entradasaida, dia),
+			)!,
 		);
 	}
 
@@ -552,7 +555,10 @@ export async function atualizarNotaFiscal(
 ) {
 	const [registro] = await db
 		.update(notafiscal)
-		.set(dados)
+		.set({
+			...dados,
+			dataalteracao: dados.dataalteracao ?? new Date().toISOString(),
+		})
 		.where(eq(notafiscal.id, id))
 		.returning();
 
