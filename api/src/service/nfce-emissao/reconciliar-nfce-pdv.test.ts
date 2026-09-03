@@ -6,6 +6,7 @@ import * as terminalRepository from "@/repositories/terminal-pdv-repositories.js
 import * as vendaRepository from "@/repositories/venda-pdv-gourmet-repositories.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
 import * as reconciliarAutorizadaService from "./reconciliar-nfce-autorizada-sefaz.js";
+import * as contingenciaService from "./transmitir-nfce-contingencia.js";
 import {
 	reconciliarNfcePdvService,
 	statusCanonicoNfce,
@@ -189,6 +190,56 @@ describe("reconciliarNfcePdvService", () => {
 			idvendaremoto: vendaAntiga.id,
 			acao: "sincronizada",
 		});
+	});
+
+	it("recupera e vincula NFC-e rejeitada que ficou órfã da venda", async () => {
+		const vendaSemNota = { ...vendaBase, idnotafiscalnfce: null };
+		const notaRejeitada = {
+			...notaBase,
+			status: NFE_STATUS.REJEITADA,
+			mensagemtransmissaonfe: "Rejeição 778: Informado NCM inexistente",
+		};
+		vi.mocked(
+			reconciliacaoRepository.buscarVendaParaReconciliacaoNfce,
+		).mockResolvedValue(vendaSemNota as never);
+		vi.mocked(notaRepository.buscarNotaFiscalPorId).mockResolvedValue(
+			notaRejeitada as never,
+		);
+		vi.mocked(vendaRepository.atualizarVendaPdvGourmet).mockResolvedValue({
+			...vendaSemNota,
+			idnotafiscalnfce: notaRejeitada.id,
+		} as never);
+
+		const resultado = await reconciliarNfcePdvService({
+			...parametrosBase,
+			notas: [
+				{
+					idvendalocal: "venda-local-1",
+					idvendaremoto: vendaSemNota.id,
+					idnotafiscal: notaRejeitada.id,
+					statusLocal: "erro",
+					chave: chaveNfce,
+				},
+			],
+		});
+
+		expect(vendaRepository.atualizarVendaPdvGourmet).toHaveBeenCalledWith(
+			vendaSemNota.id,
+			{ idnotafiscalnfce: notaRejeitada.id },
+		);
+		expect(
+			contingenciaService.transmitirNfceContingenciaService,
+		).not.toHaveBeenCalled();
+		expect(resultado.success).toBe(true);
+		if (!resultado.success) return;
+		expect(resultado.body?.itens[0]).toMatchObject({
+			idvendalocal: "venda-local-1",
+			idvendaremoto: vendaSemNota.id,
+			idnotafiscal: notaRejeitada.id,
+			status: "rejeitada",
+			acao: "reconciliada",
+		});
+		expect(resultado.body?.resumo.reconciliadas).toBe(1);
 	});
 
 	it("consulta a SEFAZ quando o PDV autorizou a mesma chave pendente", async () => {
