@@ -676,6 +676,41 @@ export const exportarProdutosMgvSchema: FastifySchema = {
 	},
 };
 
+export const exportarProdutosSchema: FastifySchema = {
+	tags: ["produtos"],
+	summary: "Exportar cadastro completo de produtos",
+	description:
+		"Exporta em CSV ou XLSX todos os campos dos produtos da empresa, ativos e inativos. Inclui registros legados sem tipo, tratados como produtos.",
+	security: [{ bearerAuth: [] }],
+	querystring: {
+		type: "object",
+		properties: {
+			idempresa: {
+				type: "string",
+				format: "uuid",
+				description: "ID da empresa",
+			},
+			formato: {
+				type: "string",
+				enum: ["csv", "xlsx"],
+				default: "csv",
+				description: "Formato do arquivo",
+			},
+		},
+		required: ["idempresa"],
+	},
+	response: {
+		200: {
+			type: "string",
+			description: "Arquivo completo de produtos",
+		},
+		400: respostaErro,
+		401: respostaErro,
+		403: respostaErro,
+		500: respostaErro,
+	},
+};
+
 export const excluirProdutoSchema: FastifySchema = {
 	tags: ["produtos"],
 	summary: "Excluir produto",
@@ -826,7 +861,8 @@ export const alterarProdutosEmMassaSchema: FastifySchema = {
 					espizza: {
 						type: "number",
 						enum: [0, 1],
-						description: "1=produto pizza (habilita venda meio a meio no PDV/POS)",
+						description:
+							"1=produto pizza (habilita venda meio a meio no PDV/POS)",
 					},
 					idunidademedida: { type: "string", format: "uuid" },
 					preco: { anyOf: [{ type: "string" }, { type: "number" }] },
