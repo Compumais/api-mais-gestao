@@ -5,7 +5,9 @@ import type { HttpResponse } from "@/model/http-model.js";
 import { httpOk } from "@/util/http-util.js";
 import type { FormatoArquivoImportacao } from "@/util/plano-contas-importacao.js";
 import {
+	CABECALHO_TEMPLATE_PRODUTOS,
 	COLUNAS_ALIQUOTA_PRODUTO,
+	COLUNAS_BASE_TEMPLATE_PRODUTOS,
 	COLUNAS_FISCAIS_PRODUTO,
 } from "@/util/produtos-importacao.js";
 
@@ -14,28 +16,6 @@ type GerarTemplateProdutosResposta = {
 	contentType: string;
 	filename: string;
 };
-
-const CABECALHO_BASE = [
-	"Código",
-	"EAN",
-	"Referência",
-	"Nome",
-	"Grupo",
-	"Unidade",
-	"Preço",
-	"Custo",
-	"NCM",
-	"CEST",
-	"Origem",
-	"MVA",
-	"Estoque",
-];
-
-const CABECALHO = [
-	...CABECALHO_BASE,
-	...COLUNAS_FISCAIS_PRODUTO.map((coluna) => coluna.cabecalho),
-	...COLUNAS_ALIQUOTA_PRODUTO.map((coluna) => coluna.cabecalho),
-];
 
 const LINHA_EXEMPLO_BASE = [
 	"1",
@@ -72,7 +52,7 @@ async function gerarXlsx(): Promise<Buffer> {
 	const workbook = new ExcelJS.Workbook();
 	const planilha = workbook.addWorksheet("Produtos");
 
-	planilha.columns = CABECALHO.map((header, indice) => ({
+	planilha.columns = CABECALHO_TEMPLATE_PRODUTOS.map((header, indice) => ({
 		header,
 		key: `col${indice}`,
 		width: indice === 3 ? 32 : 18,
@@ -87,9 +67,9 @@ async function gerarXlsx(): Promise<Buffer> {
 	planilha.getColumn(1).numFmt = "0";
 	planilha.getColumn(2).numFmt = "@";
 
-	const primeiraColunaFiscal = CABECALHO_BASE.length + 1;
+	const primeiraColunaFiscal = COLUNAS_BASE_TEMPLATE_PRODUTOS.length + 1;
 	const ultimaColunaFiscal =
-		CABECALHO_BASE.length + COLUNAS_FISCAIS_PRODUTO.length;
+		COLUNAS_BASE_TEMPLATE_PRODUTOS.length + COLUNAS_FISCAIS_PRODUTO.length;
 	for (
 		let indice = primeiraColunaFiscal;
 		indice <= ultimaColunaFiscal;
@@ -104,7 +84,7 @@ async function gerarXlsx(): Promise<Buffer> {
 }
 
 function gerarCsv(): Buffer {
-	const conteudo = stringify([CABECALHO, ...LINHAS_EXEMPLO], {
+	const conteudo = stringify([CABECALHO_TEMPLATE_PRODUTOS, ...LINHAS_EXEMPLO], {
 		delimiter: ";",
 	});
 

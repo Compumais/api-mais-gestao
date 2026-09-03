@@ -2,13 +2,18 @@ import { Buffer } from "node:buffer";
 import { stringify } from "csv-stringify/sync";
 import ExcelJS from "exceljs";
 import type { HttpResponse } from "@/model/http-model.js";
-import type { Produto } from "@/model/produto-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
-	CAMPOS_PRODUTOS_EXPORTACAO,
 	listarTodosProdutosParaExportacao,
+	type ProdutoParaExportacao,
 } from "@/repositories/produtos-repositories.js";
 import { httpOk, httpProibido } from "@/util/http-util.js";
+import {
+	CABECALHO_TEMPLATE_PRODUTOS,
+	COLUNAS_ALIQUOTA_PRODUTO,
+	COLUNAS_BASE_TEMPLATE_PRODUTOS,
+	COLUNAS_FISCAIS_PRODUTO,
+} from "@/util/produtos-importacao.js";
 
 export type FormatoExportacaoProdutos = "csv" | "xlsx";
 
@@ -24,138 +29,121 @@ type ExportarProdutosResposta = {
 	filename: string;
 };
 
-const ROTULOS_CAMPOS: Partial<Record<keyof Produto, string>> = {
-	id: "ID",
-	idempresa: "ID da empresa",
-	codigo: "Código",
-	ean: "EAN",
-	eantributavel: "EAN tributável",
-	referencia: "Referência",
-	nome: "Nome",
-	descricao: "Descrição",
-	tipo: "Tipo",
-	preco: "Preço",
-	custoaquisicao: "Custo de aquisição",
-	datacadastro: "Data de cadastro",
-	dataalteracao: "Data de alteração",
-	dataalteracaopreco: "Data de alteração do preço",
-	dataultimacompra: "Data da última compra",
-	idunidademedida: "ID da unidade de medida",
-	unidademedida: "Unidade de medida",
-	fornecedor: "Fornecedor",
-	idfornecedor: "ID do fornecedor",
-	idgrupo: "ID do grupo",
-	idgrupogourmet: "ID do grupo gourmet",
-	inativo: "Inativo",
-	observacoes: "Observações",
-	origem: "Origem da mercadoria",
-	ncm: "NCM",
-	idncm: "ID do NCM",
-	cest: "CEST",
-	idcest: "ID do CEST",
-	idtaxauf: "ID da taxa por UF",
-	idcfopentrada: "ID do CFOP de entrada",
-	idcfopsaida: "ID do CFOP de saída",
-	idcfopsaidanfce: "ID do CFOP de saída NFC-e",
-	idcfopsaidaexterna: "ID do CFOP de saída externa",
-	situacaotributaria: "CST ICMS de saída",
-	situacaotributariasn: "CSOSN ICMS de saída",
-	situacaotributariasnentrada: "CST/CSOSN ICMS de entrada",
-	cstpis: "CST PIS de saída",
-	cstpisentrada: "CST PIS de entrada",
-	cstcofins: "CST COFINS de saída",
-	cstcofinsentrada: "CST COFINS de entrada",
-	cstipientrada: "CST IPI de entrada",
-	cstipisaida: "CST IPI de saída",
-	cstibs: "CST IBS/CBS",
-	classtributariaibs: "Classificação tributária IBS/CBS",
-	tributacao: "Tributação",
-	tributacaoespecial: "Tributação especial",
-	tributacaosn: "Tributação Simples Nacional",
-	aliquotaicmsinterna: "Alíquota interna de ICMS",
-	aliquotaicmsdiferencialentrada: "Alíquota diferencial de ICMS na entrada",
-	aliquotareducaoicmsnfcesat: "Redução de ICMS NFC-e/SAT",
-	aliquotafcpnf: "Alíquota FCP",
-	percentualmva: "Percentual MVA",
-	aliquotapis: "Alíquota PIS",
-	aliquotacofins: "Alíquota COFINS",
-	aliquotaiibs: "Alíquota IBS",
-	aliquotacbs: "Alíquota CBS",
-	quantidadepadrao: "Quantidade padrão",
-	quantidademinima: "Quantidade mínima",
-	quantidademaxima: "Quantidade máxima",
-};
-
-function obterRotulo(campo: keyof Produto): string {
-	return ROTULOS_CAMPOS[campo] ?? String(campo);
-}
-
-function normalizarValor(valor: unknown): string | number | boolean {
+function normalizarValor(valor: unknown): string | number {
 	if (valor == null) return "";
-	if (valor instanceof Date) return valor.toISOString();
-	if (typeof valor === "object") return JSON.stringify(valor);
-	if (typeof valor === "bigint") return valor.toString();
-	if (
-		typeof valor === "string" ||
-		typeof valor === "number" ||
-		typeof valor === "boolean"
-	) {
-		return valor;
-	}
+	if (typeof valor === "number" || typeof valor === "string") return valor;
 	return String(valor);
 }
 
-function campoDeveSerTexto(campo: keyof Produto): boolean {
-	return /(^id|codigo|ean|ncm|cest|cst|csosn|cfop|tributacao|referencia|fci)/i.test(
-		String(campo),
-	);
+function decimalImportacao(valor: unknown): string {
+	const normalizado = normalizarValor(valor);
+	return normalizado === "" ? "" : String(normalizado).replace(".", ",");
 }
 
-function montarLinhas(
-	produtos: Produto[],
-): Array<Array<string | number | boolean>> {
-	return produtos.map((produto) =>
-		CAMPOS_PRODUTOS_EXPORTACAO.map((campo) => {
-			const valor = normalizarValor(produto[campo]);
-			return campoDeveSerTexto(campo) && valor !== "" ? String(valor) : valor;
-		}),
-	);
+function valorBase(
+	produto: ProdutoParaExportacao,
+	campo: (typeof COLUNAS_BASE_TEMPLATE_PRODUTOS)[number]["campo"],
+): string | number {
+	switch (campo) {
+		case "codigo":
+			return normalizarValor(produto.codigo);
+		case "ean":
+			return normalizarValor(produto.ean);
+		case "referencia":
+			return normalizarValor(produto.referencia);
+		case "nome":
+			return normalizarValor(produto.nome);
+		case "grupo":
+			return normalizarValor(produto.grupo);
+		case "unidade":
+			return normalizarValor(produto.unidademedida);
+		case "preco":
+			return decimalImportacao(produto.preco);
+		case "custo":
+			return decimalImportacao(produto.custoaquisicao);
+		case "ncm":
+			return normalizarValor(produto.ncm || produto.ncmExportacao);
+		case "cest":
+			return normalizarValor(produto.cestExportacao ?? produto.cest);
+		case "origem":
+			return normalizarValor(produto.origem);
+		case "mva":
+			return decimalImportacao(produto.percentualmva);
+		case "estoque":
+			return normalizarValor(produto.quantidadepadrao);
+	}
 }
 
-function neutralizarFormulaCsv(
-	valor: string | number | boolean,
-): string | number | boolean {
+function valorFiscal(
+	produto: ProdutoParaExportacao,
+	campo: (typeof COLUNAS_FISCAIS_PRODUTO)[number]["campo"],
+): string | number {
+	const mapeamento = {
+		cfopentrada: produto.cfopEntradaExportacao,
+		tipoproduto: produto.tipoproduto,
+		situacaotributariasnentrada: produto.situacaotributariasnentrada,
+		cfopsaida: produto.cfopSaidaExportacao,
+		cfopnfce: produto.cfopNfceExportacao,
+		cst: produto.situacaotributaria,
+		csosn: produto.situacaotributariasn,
+		tributacaoespecial: produto.tributacaoespecial,
+		tributacaosn: produto.tributacaosn,
+		cstipientrada: produto.cstipientrada,
+		cstipisaida: produto.cstipisaida,
+		cstpisentrada: produto.cstpisentrada,
+		cstcofinsentrada: produto.cstcofinsentrada,
+		cstpis: produto.cstpis,
+		cstcofins: produto.cstcofins,
+	} satisfies Record<
+		(typeof COLUNAS_FISCAIS_PRODUTO)[number]["campo"],
+		unknown
+	>;
+	return normalizarValor(mapeamento[campo]);
+}
+
+function montarLinhas(produtos: ProdutoParaExportacao[]): Array<Array<string | number>> {
+	return produtos.map((produto) => [
+		...COLUNAS_BASE_TEMPLATE_PRODUTOS.map((coluna) =>
+			valorBase(produto, coluna.campo),
+		),
+		...COLUNAS_FISCAIS_PRODUTO.map((coluna) =>
+			valorFiscal(produto, coluna.campo),
+		),
+		...COLUNAS_ALIQUOTA_PRODUTO.map((coluna) =>
+			decimalImportacao(produto[coluna.campo]),
+		),
+	]);
+}
+
+function neutralizarFormulaCsv(valor: string | number): string | number {
 	if (typeof valor === "string" && /^[=+\-@\t\r]/.test(valor)) {
 		return `'${valor}`;
 	}
 	return valor;
 }
 
-function gerarCsv(linhas: Array<Array<string | number | boolean>>): Buffer {
-	const cabecalho = CAMPOS_PRODUTOS_EXPORTACAO.map(obterRotulo);
+function gerarCsv(linhas: Array<Array<string | number>>): Buffer {
 	const linhasSeguras = linhas.map((linha) => linha.map(neutralizarFormulaCsv));
-	const conteudo = stringify([cabecalho, ...linhasSeguras], { delimiter: ";" });
+	const conteudo = stringify(
+		[CABECALHO_TEMPLATE_PRODUTOS, ...linhasSeguras],
+		{ delimiter: ";" },
+	);
 	return Buffer.from(`\uFEFF${conteudo}`, "utf-8");
 }
 
-async function gerarXlsx(
-	linhas: Array<Array<string | number | boolean>>,
-): Promise<Buffer> {
+async function gerarXlsx(linhas: Array<Array<string | number>>): Promise<Buffer> {
 	const workbook = new ExcelJS.Workbook();
 	const planilha = workbook.addWorksheet("Produtos");
 
-	planilha.columns = CAMPOS_PRODUTOS_EXPORTACAO.map((campo) => {
-		const header = obterRotulo(campo);
-		return {
+	planilha.columns = CABECALHO_TEMPLATE_PRODUTOS.map((header, indice) => ({
 			header,
-			key: String(campo),
+			key: `col${indice}`,
 			width: Math.min(35, Math.max(12, header.length + 2)),
-		};
-	});
+		}));
 	planilha.views = [{ state: "frozen", ySplit: 1 }];
 	planilha.autoFilter = {
 		from: { row: 1, column: 1 },
-		to: { row: 1, column: CAMPOS_PRODUTOS_EXPORTACAO.length },
+		to: { row: 1, column: CABECALHO_TEMPLATE_PRODUTOS.length },
 	};
 	planilha.getRow(1).font = { bold: true };
 
@@ -163,11 +151,15 @@ async function gerarXlsx(
 		planilha.addRow(linha);
 	}
 
-	CAMPOS_PRODUTOS_EXPORTACAO.forEach((campo, indice) => {
-		if (campoDeveSerTexto(campo)) {
-			planilha.getColumn(indice + 1).numFmt = "@";
-		}
-	});
+	planilha.getColumn(2).numFmt = "@";
+	const primeiraColunaFiscal = COLUNAS_BASE_TEMPLATE_PRODUTOS.length + 1;
+	for (
+		let indice = primeiraColunaFiscal;
+		indice <= CABECALHO_TEMPLATE_PRODUTOS.length;
+		indice++
+	) {
+		planilha.getColumn(indice).numFmt = "@";
+	}
 
 	const conteudo = await workbook.xlsx.writeBuffer();
 	return Buffer.from(conteudo);
@@ -197,13 +189,13 @@ export async function exportarProdutosService({
 			content: await gerarXlsx(linhas),
 			contentType:
 				"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-			filename: "produtos-completo.xlsx",
+			filename: "produtos-para-importacao.xlsx",
 		});
 	}
 
 	return httpOk({
 		content: gerarCsv(linhas),
 		contentType: "text/csv; charset=utf-8",
-		filename: "produtos-completo.csv",
+		filename: "produtos-para-importacao.csv",
 	});
 }
