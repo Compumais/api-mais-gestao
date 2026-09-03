@@ -15,6 +15,7 @@ import { buscarTerminalPdvAtivoPorNumero } from "@/repositories/terminal-pdv-rep
 import { atualizarVendaPdvGourmet } from "@/repositories/venda-pdv-gourmet-repositories.js";
 import { httpBadRequest, httpOk, httpProibido } from "@/util/http-util.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
+import { emitirNfceVendaPdvService } from "./emitir-nfce-venda-pdv.js";
 import { reconciliarNfceAutorizadaSefaz } from "./reconciliar-nfce-autorizada-sefaz.js";
 import { transmitirNfceContingenciaService } from "./transmitir-nfce-contingencia.js";
 
@@ -293,6 +294,32 @@ async function reconciliarManifesto(
 			}
 
 			idnotafiscal = notaDoManifesto.id;
+			acao = "reconciliada";
+		}
+	}
+
+	if (
+		!idnotafiscal &&
+		(manifesto.statusLocal === "erro" ||
+			manifesto.statusLocal === "erro_config")
+	) {
+		const emissao = await emitirNfceVendaPdvService({
+			idusuario: parametros.idusuario,
+			idempresa: parametros.idempresa,
+			idvenda: venda.id,
+			pagamentos: {
+				valordinheiro: venda.valordinheiro,
+				valorcartao: venda.valorcartao,
+				valorcartaocredito: venda.valorcartaocredito,
+				valorcartaodebito: venda.valorcartaodebito,
+				valorpix: venda.valorpix,
+				valorprepago: venda.valorprepago,
+				valortroco: venda.valortroco,
+				valortotal: venda.valortotal,
+			},
+		});
+		if (emissao.success && emissao.body?.idnotafiscal) {
+			idnotafiscal = emissao.body.idnotafiscal;
 			acao = "reconciliada";
 		}
 	}
