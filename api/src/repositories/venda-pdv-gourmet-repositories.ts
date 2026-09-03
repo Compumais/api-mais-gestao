@@ -1,8 +1,8 @@
-import { and, count, desc, eq, gte, lte } from "drizzle-orm";
-import type { NovaVendaPdvGourmet } from "@/model/venda-pdv-gourmet-model";
-import type { NovoVendaPdvItem } from "@/model/venda-pdv-item-model";
-import { vendapdvitem, vendapdvgourmet } from "@/repositories/schema.js";
-import { db } from "./connection";
+import { and, count, desc, eq, gte, lte, sql } from "drizzle-orm";
+import type { NovaVendaPdvGourmet } from "@/model/venda-pdv-gourmet-model.js";
+import type { NovoVendaPdvItem } from "@/model/venda-pdv-item-model.js";
+import { vendapdvgourmet, vendapdvitem } from "@/repositories/schema.js";
+import { db, pool } from "./connection.js";
 
 export async function buscarVendaPdvGourmetPorId(id: string) {
 	const [registro] = await db
@@ -25,13 +25,95 @@ export async function buscarVendaPdvGourmetPorNotaFiscalNfce(
 	return registro;
 }
 
-export async function criarVendaPdvGourmet(dadosVendaPdvGourmet: NovaVendaPdvGourmet) {
+export async function buscarVendaPdvGourmetPorIdentidadeLocal(
+	idempresa: string,
+	numeropdv: number,
+	idvendalocal: string,
+) {
+	const [registro] = await db
+		.select()
+		.from(vendapdvgourmet)
+		.where(
+			and(
+				eq(vendapdvgourmet.idempresa, idempresa),
+				eq(vendapdvgourmet.numeropdv, numeropdv),
+				eq(vendapdvgourmet.idvendalocal, idvendalocal),
+			),
+		)
+		.limit(1);
+
+	return registro;
+}
+
+export async function executarComLockVendaPdvLocal<T>(
+	idempresa: string,
+	numeropdv: number,
+	idvendalocal: string,
+	executar: () => Promise<T>,
+): Promise<T> {
+	const cliente = await pool.connect();
+	const chave = `venda-pdv:${idempresa}:${numeropdv}:${idvendalocal}`;
+	try {
+		await cliente.query("SELECT pg_advisory_lock(hashtextextended($1, 0))", [
+			chave,
+		]);
+		try {
+			return await executar();
+		} finally {
+			await cliente.query(
+				"SELECT pg_advisory_unlock(hashtextextended($1, 0))",
+				[chave],
+			);
+		}
+	} finally {
+		cliente.release();
+	}
+}
+
+export async function criarVendaPdvGourmet(
+	dadosVendaPdvGourmet: NovaVendaPdvGourmet,
+) {
 	const [registro] = await db
 		.insert(vendapdvgourmet)
 		.values(dadosVendaPdvGourmet)
 		.returning();
 
 	return registro;
+}
+
+export async function criarOuBuscarVendaPdvGourmet(
+	dadosVendaPdvGourmet: NovaVendaPdvGourmet,
+): Promise<{
+	registro: typeof vendapdvgourmet.$inferSelect;
+	criada: boolean;
+} | null> {
+	if (!dadosVendaPdvGourmet.idvendalocal) {
+		const registro = await criarVendaPdvGourmet(dadosVendaPdvGourmet);
+		return registro ? { registro, criada: true } : null;
+	}
+
+	const [criada] = await db
+		.insert(vendapdvgourmet)
+		.values(dadosVendaPdvGourmet)
+		.onConflictDoNothing({
+			target: [
+				vendapdvgourmet.idempresa,
+				vendapdvgourmet.numeropdv,
+				vendapdvgourmet.idvendalocal,
+			],
+			where: sql`${vendapdvgourmet.idvendalocal} IS NOT NULL`,
+		})
+		.returning();
+	if (criada) {
+		return { registro: criada, criada: true };
+	}
+
+	const existente = await buscarVendaPdvGourmetPorIdentidadeLocal(
+		dadosVendaPdvGourmet.idempresa,
+		dadosVendaPdvGourmet.numeropdv,
+		dadosVendaPdvGourmet.idvendalocal,
+	);
+	return existente ? { registro: existente, criada: false } : null;
 }
 
 export async function criarVendaPdvGourmetComItens(

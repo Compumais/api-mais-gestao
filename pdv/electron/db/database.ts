@@ -495,6 +495,9 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 		if (!vendaNomes.has("cnpjcpf")) {
 			await database.query("ALTER TABLE venda ADD COLUMN cnpjcpf TEXT");
 		}
+		if (!vendaNomes.has("nfce_sync_em")) {
+			await database.query("ALTER TABLE venda ADD COLUMN nfce_sync_em TEXT");
+		}
 	}
 
 	await database.query(`
@@ -539,6 +542,55 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 		if (!caixaNomes.has("username")) {
 			await database.query("ALTER TABLE caixa_turno ADD COLUMN username TEXT");
 		}
+	}
+
+	const outboxCols = await database.query<{ column_name: string }>(
+		`SELECT column_name
+		 FROM information_schema.columns
+		 WHERE table_schema = 'public' AND table_name = 'outbox'`,
+	);
+	if (outboxCols.rows.length) {
+		const outboxNomes = new Set(outboxCols.rows.map((c) => c.column_name));
+		const migracoes = [
+			["idempotency_key", "ALTER TABLE outbox ADD COLUMN idempotency_key TEXT"],
+			[
+				"prioridade",
+				"ALTER TABLE outbox ADD COLUMN prioridade INTEGER NOT NULL DEFAULT 100",
+			],
+			[
+				"proxima_tentativa",
+				"ALTER TABLE outbox ADD COLUMN proxima_tentativa TEXT",
+			],
+			[
+				"classificacao_erro",
+				"ALTER TABLE outbox ADD COLUMN classificacao_erro TEXT",
+			],
+			["bloqueado_ate", "ALTER TABLE outbox ADD COLUMN bloqueado_ate TEXT"],
+			["worker_id", "ALTER TABLE outbox ADD COLUMN worker_id TEXT"],
+		] as const;
+		for (const [nome, ddl] of migracoes) {
+			if (!outboxNomes.has(nome)) {
+				await database.query(ddl);
+			}
+		}
+		await database.query(`
+			UPDATE outbox
+			SET prioridade = CASE
+				WHEN tipo = 'criar_venda' THEN 5
+				WHEN tipo = 'transmitir_nfce_contingencia' THEN 10
+				ELSE prioridade
+			END
+			WHERE status IN ('pendente', 'processando')
+		`);
+		await database.query(
+			"DROP INDEX IF EXISTS idx_outbox_idempotencia_pendente",
+		);
+		await database.query(`
+			CREATE UNIQUE INDEX idx_outbox_idempotencia_pendente
+			ON outbox(idempotency_key)
+			WHERE idempotency_key IS NOT NULL
+			  AND status IN ('pendente', 'processando')
+		`);
 	}
 }
 

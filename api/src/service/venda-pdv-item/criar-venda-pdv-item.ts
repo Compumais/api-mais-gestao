@@ -1,16 +1,18 @@
 import { v4 as uuidv4 } from "uuid";
+import type { HttpResponse } from "@/model/http-model.js";
 import type {
 	NovoVendaPdvItem,
 	VendaPdvItem,
 } from "@/model/venda-pdv-item-model.js";
-import type { HttpResponse } from "@/model/http-model.js";
+import { buscarAuditoriaPorRecurso } from "@/repositories/auditoria-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
-	criarVendaPdvItem,
+	criarOuBuscarVendaPdvItem,
 	excluirVendaPdvItem,
 } from "@/repositories/venda-pdv-item-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
 import {
+	httpBadRequest,
 	httpCriacao,
 	httpErro,
 	httpErroInterno,
@@ -35,30 +37,47 @@ export async function criarVendaPdvItemService({
 		return httpProibido();
 	}
 
-	const registro = await criarVendaPdvItem(dadosVendaPdvItem);
+	const criacao = await criarOuBuscarVendaPdvItem(dadosVendaPdvItem);
 
-	if (!registro) {
+	if (!criacao) {
 		return httpErro();
 	}
+	const { registro } = criacao;
+	if (
+		registro.idempresa !== dadosVendaPdvItem.idempresa ||
+		registro.idvenda !== dadosVendaPdvItem.idvenda ||
+		registro.idproduto !== dadosVendaPdvItem.idproduto
+	) {
+		return httpBadRequest(
+			"Identidade local do item já utilizada em outra venda",
+		);
+	}
 
-	const auditoriaId = uuidv4();
+	const auditoriaExistente = await buscarAuditoriaPorRecurso(
+		dadosVendaPdvItem.idempresa,
+		"venda_pdv_item",
+		registro.id,
+	);
+	const auditoria =
+		auditoriaExistente ??
+		(await criarAuditoriaService({
+			id: uuidv4(),
+			acao: "criar_venda_pdv_item",
+			idusuario,
+			recurso: "venda_pdv_item",
+			idrecurso: registro.id,
+			idempresa: dadosVendaPdvItem.idempresa,
+			criadoem: new Date().toISOString(),
+			metadados: {
+				idvenda: registro.idvenda,
+				idproduto: registro.idproduto,
+			},
+		}));
 
-	const auditoria = await criarAuditoriaService({
-		id: auditoriaId,
-		acao: "criar_venda_pdv_item",
-		idusuario,
-		recurso: "venda_pdv_item",
-		idrecurso: registro.id,
-		idempresa: dadosVendaPdvItem.idempresa,
-		criadoem: new Date().toISOString(),
-		metadados: {
-			idvenda: registro.idvenda,
-			idproduto: registro.idproduto,
-		},
-	});
-
-	if (!auditoria || !auditoria.success) {
-		await excluirVendaPdvItem(registro.id);
+	if (!auditoria || ("success" in auditoria && !auditoria.success)) {
+		if (criacao.criado) {
+			await excluirVendaPdvItem(registro.id);
+		}
 		return httpErroInterno();
 	}
 

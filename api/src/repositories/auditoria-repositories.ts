@@ -52,6 +52,25 @@ export async function criarAuditoria(dadosAuditoria: NovaAuditoria) {
 	return auditoria;
 }
 
+export async function buscarAuditoriaPorRecurso(
+	idempresa: string,
+	recurso: string,
+	idrecurso: string,
+) {
+	const [auditoria] = await db
+		.select()
+		.from(schema.auditLogs)
+		.where(
+			and(
+				eq(schema.auditLogs.idempresa, idempresa),
+				eq(schema.auditLogs.recurso, recurso),
+				eq(schema.auditLogs.idrecurso, idrecurso),
+			),
+		)
+		.limit(1);
+	return auditoria;
+}
+
 export async function excluirAuditoria({ id }: { id: string }) {
 	const [auditoria] = await db
 		.delete(schema.auditLogs)

@@ -368,8 +368,7 @@ export async function listarProdutos(params: {
 
 		const total = Number(data.paginacao?.total ?? produtos.length);
 		const totalPages = Number(
-			data.paginacao?.totalPages ??
-				(total > 0 ? Math.ceil(total / limit) : 0),
+			data.paginacao?.totalPages ?? (total > 0 ? Math.ceil(total / limit) : 0),
 		);
 
 		return {
@@ -438,10 +437,7 @@ export async function listarProdutos(params: {
 		imagem: p.imagem ?? null,
 		caminhoimagem: p.caminhoimagem ?? null,
 		ncm: p.ncm?.replace(/\D/g, "") || null,
-		cest:
-			p.cest == null
-				? null
-				: String(p.cest).replace(/\D/g, "") || null,
+		cest: p.cest == null ? null : String(p.cest).replace(/\D/g, "") || null,
 		cfop: null,
 		cst: p.situacaotributaria?.replace(/\D/g, "") || null,
 		csosn:
@@ -450,15 +446,12 @@ export async function listarProdutos(params: {
 			null,
 		origem: p.origem == null ? null : Number(p.origem),
 		aliquotaicms:
-			p.icmssaida == null || p.icmssaida === ""
-				? null
-				: String(p.icmssaida),
+			p.icmssaida == null || p.icmssaida === "" ? null : String(p.icmssaida),
 	}));
 
 	const total = Number(data.paginacao?.total ?? produtos.length);
 	const totalPages = Number(
-		data.paginacao?.totalPages ??
-			(total > 0 ? Math.ceil(total / limit) : 0),
+		data.paginacao?.totalPages ?? (total > 0 ? Math.ceil(total / limit) : 0),
 	);
 
 	return {
@@ -713,9 +706,71 @@ export async function buscarVendaPdvGourmet(id: string) {
 	}>(`/vendas-pdv-gourmet/${id}`);
 }
 
+export type ManifestoNfcePdv = {
+	idvendalocal: string;
+	idvendaremoto?: string;
+	idnotafiscal?: string;
+	statusLocal: string;
+	chave?: string;
+	serie?: number;
+	numero?: number;
+	protocolo?: string;
+	xml?: string;
+	motivoContingencia?: string;
+	dataContingencia?: string;
+};
+
+export type ItemReconciliacaoNfcePdv = {
+	idvendalocal: string;
+	idvendaremoto?: string;
+	existeRetaguarda: boolean;
+	idnotafiscal?: string;
+	status?: number | string;
+	chave?: string;
+	serie?: string | number;
+	numero?: string | number;
+	protocolo?: string;
+	atualizadoEm?: string;
+	acao: string;
+	mensagem?: string;
+};
+
+export type RespostaReconciliacaoNfcePdv = {
+	cicloId: string;
+	servidorEm: string;
+	proximoCursor?: string | null;
+	itens: ItemReconciliacaoNfcePdv[];
+	resumo: {
+		total: number;
+		atualizadas?: number;
+		registradas: number;
+		conflitos: number;
+		falhas?: number;
+		sincronizadas?: number;
+		reconciliadas?: number;
+		erros?: number;
+	};
+};
+
+export async function reconciliarNfcePdv(body: {
+	idempresa: string;
+	numeropdv: number;
+	cicloId: string;
+	cursor?: string;
+	limite?: number;
+	notas: ManifestoNfcePdv[];
+}): Promise<RespostaReconciliacaoNfcePdv> {
+	return request<RespostaReconciliacaoNfcePdv>("/nfce/pdv/reconciliar", {
+		method: "POST",
+		body,
+		timeoutMs: 60_000,
+	});
+}
+
 export async function criarItemVendaPdv(body: {
 	idempresa: string;
 	idvenda: string;
+	iditemlocal?: string;
 	idproduto: string;
 	quantidade: number | string;
 	precounitario: number | string;
@@ -730,6 +785,7 @@ export async function criarItemVendaPdv(body: {
 		body: {
 			idempresa: body.idempresa,
 			idvenda: body.idvenda,
+			...(body.iditemlocal ? { iditemlocal: body.iditemlocal } : {}),
 			idproduto: body.idproduto,
 			quantidade: asApiDecimal(body.quantidade),
 			precounitario: asApiDecimal(body.precounitario),

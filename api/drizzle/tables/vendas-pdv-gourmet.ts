@@ -8,6 +8,7 @@ import {
 	smallint,
 	text,
 	timestamp,
+	uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { condicaopagamento } from "./condicao-pagamento.js";
 import { contamesa } from "./conta-mesa.js";
@@ -25,6 +26,7 @@ export const vendapdvgourmet = pgTable(
 		idcontamesa: text(),
 		vendalocal: smallint().default(0), // 0=Não, 1=Balcão (web/gourmet), 2=POS (app), 3=PDV híbrido (Electron)
 		numeropdv: integer().notNull(),
+		idvendalocal: text(),
 		idvendaitem: text(),
 		valordinheiro: numeric123(),
 		valorcartao: numeric123(),
@@ -47,6 +49,9 @@ export const vendapdvgourmet = pgTable(
 		usuarioquefechouvenda: text().notNull(),
 	},
 	(table) => [
+		uniqueIndex("vendapdvgourmet_empresa_pdv_idlocal_key")
+			.on(table.idempresa, table.numeropdv, table.idvendalocal)
+			.where(sql`${table.idvendalocal} IS NOT NULL`),
 		foreignKey({
 			columns: [table.idempresa],
 			foreignColumns: [empresa.id],

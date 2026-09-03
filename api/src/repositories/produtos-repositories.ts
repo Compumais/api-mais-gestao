@@ -4,6 +4,7 @@ import {
 	count,
 	desc,
 	eq,
+	getTableColumns,
 	gte,
 	ilike,
 	inArray,
@@ -27,6 +28,10 @@ import { inteiroValidoParaPostgres } from "@/util/texto-util.js";
 import { normalizarCodigoCest } from "@/util/validar-cest-item-emissao-nfe.js";
 import { db } from "./connection";
 import { ordenacaoCodigoNumericoAsc } from "./ordenacao-codigo.js";
+
+export const CAMPOS_PRODUTOS_EXPORTACAO = Object.keys(
+	getTableColumns(produtos),
+) as Array<keyof Produto>;
 
 export const ORDENAR_PRODUTOS_CAMPOS = [
 	"codigo",
@@ -365,6 +370,19 @@ export async function listarProdutosParaExportacaoMgv(
 		.limit(LIMITE_EXPORTACAO_MGV);
 }
 
+export async function listarTodosProdutosParaExportacao(
+	idempresa: string,
+): Promise<Produto[]> {
+	// Cadastros legados sem tipo pertencem ao catálogo de produtos, como no PDV.
+	const filtroTipoProduto = or(eq(produtos.tipo, "P"), isNull(produtos.tipo));
+
+	return db
+		.select(getTableColumns(produtos))
+		.from(produtos)
+		.where(and(eq(produtos.idempresa, idempresa), filtroTipoProduto))
+		.orderBy(ordenacaoCodigoNumericoAsc(produtos.codigo), asc(produtos.nome));
+}
+
 export async function excluirProduto(id: string) {
 	const [produto] = await db
 		.delete(produtos)
@@ -473,7 +491,9 @@ export type ProdutoCatalogoPdv = {
 	aliquotaicms: string | null;
 };
 
-function digitosOuNulo(valor: string | number | null | undefined): string | null {
+function digitosOuNulo(
+	valor: string | number | null | undefined,
+): string | null {
 	if (valor == null) return null;
 	const digitos = String(valor).replace(/\D/g, "");
 	return digitos || null;

@@ -462,4 +462,15 @@ export const produtosService = {
 		});
 		return data;
 	},
+
+	async exportar(
+		idempresa: string,
+		formato: FormatoImportacaoProdutos,
+	): Promise<Blob> {
+		const { data } = await api.get<Blob>("/produtos/exportar", {
+			params: { idempresa, formato },
+			responseType: "blob",
+		});
+		return data;
+	},
 };
