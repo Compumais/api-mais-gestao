@@ -469,13 +469,16 @@ export async function listarNfcePorEmpresa({
 		eq(notafiscal.idempresa, idempresa),
 		eq(notafiscal.modelo, "65"),
 		ne(notafiscal.status, STATUS_RASCUNHO_IMPORTACAO),
-		// Ghosts sem número e sem chave válida (stub de timeout/contingência).
-		sql`not (
-			(
-				coalesce(${notafiscal.numeronotafiscal}, '') = ''
-				or ${notafiscal.numeronotafiscal} ~ '^0+$'
+		// Pendência de pré-validação é editável mesmo sem numeração fiscal.
+		sql`(
+			${notafiscal.dadosimportacao}->>'preValidacao' = 'true'
+			or not (
+				(
+					coalesce(${notafiscal.numeronotafiscal}, '') = ''
+					or ${notafiscal.numeronotafiscal} ~ '^0+$'
+				)
+				and length(regexp_replace(coalesce(${notafiscal.chavenfe}, ''), '[^0-9]', '', 'g')) <> 44
 			)
-			and length(regexp_replace(coalesce(${notafiscal.chavenfe}, ''), '[^0-9]', '', 'g')) <> 44
 		)`,
 	];
 
