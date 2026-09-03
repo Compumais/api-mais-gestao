@@ -7,6 +7,7 @@ import {
 } from "../util/pizza-meio-a-meio";
 import {
 	arredondarMoeda,
+	filtrarItensAbertosConta,
 	mensagemErroCancelarItem,
 	recalcularTotaisConta,
 	type TotaisContaGourmet,
@@ -222,6 +223,8 @@ export type ContaMesaLocal = {
 		precounitario: number;
 		precototal: number;
 		observacao: string | null;
+		/** 1 = já pago (permanece na lista da comanda com estilo riscado). */
+		pago: number;
 	}>;
 };
 
@@ -1434,18 +1437,40 @@ async function couvertConfig(): Promise<number> {
 	return Number.isFinite(n) && n >= 0 ? n : 0;
 }
 
-async function listarItensAbertos(
+async function listarItensDaConta(
 	idconta: string,
 	client?: PoolClient,
 ): Promise<ContaMesaLocal["itens"]> {
-	return query<ContaMesaLocal["itens"][number]>(
-		`SELECT id, idproduto, descricao, quantidade, precounitario, precototal, observacao
+	const rows = await query<{
+		id: string;
+		idproduto: string;
+		descricao: string;
+		quantidade: number;
+		precounitario: number;
+		precototal: number;
+		observacao: string | null;
+		pago: number | string | null;
+	}>(
+		`SELECT id, idproduto, descricao, quantidade, precounitario, precototal, observacao,
+		        COALESCE(pago, 0)::int as pago
 		 FROM item_conta
-		 WHERE idconta = $1 AND COALESCE(pago, 0) = 0
+		 WHERE idconta = $1
 		 ORDER BY criadoem`,
 		[idconta],
 		client,
 	);
+	return rows.map((row) => ({
+		...row,
+		pago: Number(row.pago) === 1 ? 1 : 0,
+	}));
+}
+
+/** Somente itens em aberto — usado no recálculo de totais da conta. */
+async function listarItensAbertos(
+	idconta: string,
+	client?: PoolClient,
+): Promise<ContaMesaLocal["itens"]> {
+	return filtrarItensAbertosConta(await listarItensDaConta(idconta, client));
 }
 
 async function somarPagoConta(
@@ -1575,8 +1600,9 @@ function montarContaLocal(
 	itens: ContaMesaLocal["itens"],
 	valorpago: number,
 ): ContaMesaLocal {
+	const itensAbertos = filtrarItensAbertosConta(itens);
 	const subtotal = arredondarMoeda(
-		itens.reduce((acc, i) => acc + Number(i.precototal), 0),
+		itensAbertos.reduce((acc, i) => acc + Number(i.precototal), 0),
 	);
 	const valortotal = arredondarMoeda(Number(conta.valortotal) || 0);
 	const modalidade = normalizarModalidade(conta.modalidade);
@@ -2142,7 +2168,11 @@ export async function obterContaPorNumero(
 		return null;
 	}
 	const conta = await obterContaMesa(mesa.idconta);
-	if (!conta || conta.status !== "aberta" || conta.itens.length === 0) {
+	if (
+		!conta ||
+		conta.status !== "aberta" ||
+		filtrarItensAbertosConta(conta.itens).length === 0
+	) {
 		return null;
 	}
 	return conta;
@@ -2169,7 +2199,7 @@ export async function abrirContaMesa(
 	}
 	if (mesa.status === "ocupada" && mesa.idconta) {
 		const existente = await obterContaMesa(mesa.idconta);
-		if (existente && existente.itens.length > 0) {
+		if (existente && filtrarItensAbertosConta(existente.itens).length > 0) {
 			return existente;
 		}
 		await limparContasVazias();
@@ -2218,7 +2248,7 @@ export async function obterContaMesa(
 	if (!conta) {
 		return null;
 	}
-	const itens = await listarItensAbertos(id);
+	const itens = await listarItensDaConta(id);
 	const valorpago = await somarPagoConta(id);
 	return montarContaLocal(conta, itens, valorpago);
 }
@@ -2579,7 +2609,8 @@ export async function fecharContaMesa(params: {
 	if (!conta || conta.status !== "aberta") {
 		throw new Error("Conta inválida");
 	}
-	if (!conta.itens.length) {
+	const itensAbertos = filtrarItensAbertosConta(conta.itens);
+	if (!itensAbertos.length) {
 		throw new Error("Conta sem itens");
 	}
 	const pode = podeFecharDelivery({
@@ -2600,7 +2631,7 @@ export async function fecharContaMesa(params: {
 	});
 	return gravarVendaMesa({
 		conta,
-		itens: conta.itens,
+		itens: itensAbertos,
 		lancamentos: [...jaPagos, ...restante.efetivos],
 		troco: restante.troco,
 		total: conta.valortotal,
@@ -2610,7 +2641,7 @@ export async function fecharContaMesa(params: {
 		valorcouvert: conta.valorcouvert,
 		valorentrega: conta.valorentrega,
 		fecharConta: true,
-		marcarItensIds: conta.itens.map((i) => i.id),
+		marcarItensIds: itensAbertos.map((i) => i.id),
 		cliente: params.cliente,
 	});
 }
@@ -2904,7 +2935,7 @@ export async function registrarPagamentoConta(params: {
 	if (!conta || conta.status !== "aberta") {
 		throw new Error("Conta inválida");
 	}
-	if (!conta.itens.length) {
+	if (!filtrarItensAbertosConta(conta.itens).length) {
 		throw new Error("Conta sem itens");
 	}
 	if (!(await caixaAberto())) {
@@ -2968,7 +2999,8 @@ export async function fecharFatiaItens(params: {
 		throw new Error("Conta inválida");
 	}
 	const ids = new Set(params.idsItens);
-	const itensFatia = conta.itens.filter((i) => ids.has(i.id));
+	const itensAbertos = filtrarItensAbertosConta(conta.itens);
+	const itensFatia = itensAbertos.filter((i) => ids.has(i.id));
 	if (!itensFatia.length) {
 		throw new Error("Selecione os itens desta fatia");
 	}
@@ -2987,12 +3019,12 @@ export async function fecharFatiaItens(params: {
 		numeropessoas: conta.numeropessoas,
 	};
 	const { partirPorItens } = await import("./conta-gourmet");
-	const restoIds = conta.itens.filter((i) => !ids.has(i.id)).map((i) => i.id);
+	const restoIds = itensAbertos.filter((i) => !ids.has(i.id)).map((i) => i.id);
 	const grupos = restoIds.length
 		? [params.idsItens, restoIds]
 		: [params.idsItens];
 	const fatias = partirPorItens(
-		conta.itens.map((i) => ({ id: i.id, precototal: i.precototal })),
+		itensAbertos.map((i) => ({ id: i.id, precototal: i.precototal })),
 		grupos,
 		totaisConta,
 	);
@@ -3063,7 +3095,7 @@ export async function transferirConta(
 	}
 	if (destino.status === "ocupada" && destino.idconta) {
 		const destConta = await obterContaMesa(destino.idconta);
-		if (destConta && destConta.itens.length > 0) {
+		if (destConta && filtrarItensAbertosConta(destConta.itens).length > 0) {
 			throw new Error("Destino já tem conta aberta. Use juntar mesas.");
 		}
 	}
@@ -3108,9 +3140,14 @@ export async function transferirItens(params: {
 		throw new Error("Conta de origem inválida");
 	}
 	const ids = new Set(params.idsItens);
-	const mover = origem.itens.filter((i) => ids.has(i.id));
+	const mover = filtrarItensAbertosConta(origem.itens).filter((i) =>
+		ids.has(i.id),
+	);
 	if (!mover.length) {
 		throw new Error("Selecione os itens para transferir");
+	}
+	if (mover.length !== ids.size) {
+		throw new Error("Há item inválido ou já pago na transferência");
 	}
 
 	let destino = await obterContaPorNumero(params.numeroDestino);
@@ -3134,7 +3171,7 @@ export async function transferirItens(params: {
 	const origemAtual = await obterContaMesa(origem.id);
 	if (
 		origemAtual &&
-		origemAtual.itens.length === 0 &&
+		filtrarItensAbertosConta(origemAtual.itens).length === 0 &&
 		origemAtual.valorpago <= 0
 	) {
 		await execute(
@@ -3695,7 +3732,7 @@ export async function listarPedidosEntrega(
 	);
 	const result: ContaMesaLocal[] = [];
 	for (const row of rows) {
-		const itens = await listarItensAbertos(row.id);
+		const itens = await listarItensDaConta(row.id);
 		const valorpago = await somarPagoConta(row.id);
 		result.push(montarContaLocal(row, itens, valorpago));
 	}

@@ -5,6 +5,20 @@ export function arredondarMoeda(valor: number): number {
 	return Math.round(valor * 100) / 100;
 }
 
+/** Item marcado como pago (pagamento parcial por itens). */
+export function itemContaEstaPago(item: {
+	pago?: number | boolean | null;
+}): boolean {
+	return Number(item.pago) === 1;
+}
+
+/** Itens ainda em aberto na conta (exclui os já pagos). */
+export function filtrarItensAbertosConta<
+	T extends { pago?: number | boolean | null },
+>(itens: T[]): T[] {
+	return itens.filter((item) => !itemContaEstaPago(item));
+}
+
 export type TotaisContaParaFatia = {
 	subtotal: number;
 	valordesconto: number;

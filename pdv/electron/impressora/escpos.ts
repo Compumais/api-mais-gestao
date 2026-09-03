@@ -137,6 +137,7 @@ export type ContaPreContaImpressao = {
 		quantidade: number;
 		precounitario: number;
 		precototal: number;
+		pago?: number | boolean | null;
 	}>;
 };
 
@@ -160,7 +161,8 @@ export async function imprimirPreConta(
 			throw new Error("Conta inválida");
 		}
 	}
-	if (!conta.itens.length) {
+	const itensAbertos = conta.itens.filter((item) => Number(item.pago) !== 1);
+	if (!itensAbertos.length) {
 		throw new Error("Conta sem itens para conferência");
 	}
 	const modelo =
@@ -179,7 +181,7 @@ export async function imprimirPreConta(
 	linhas.push(`Pessoas: ${conta.numeropessoas}`);
 	linhas.push(`Data: ${new Date().toLocaleString("pt-BR")}`);
 	linhas.push("--------------------------------");
-	for (const item of conta.itens) {
+	for (const item of itensAbertos) {
 		linhas.push(item.descricao.slice(0, 32));
 		linhas.push(
 			`  ${formatarQtd(item.quantidade)} x ${money(item.precounitario)} = ${money(item.precototal)}`,
