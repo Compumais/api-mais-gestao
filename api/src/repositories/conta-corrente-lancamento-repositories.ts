@@ -76,6 +76,23 @@ export async function criarContaCorrenteLancamento(
 	return contaCorrenteLancamento;
 }
 
+export async function buscarLancamentoContaPorDocumento(
+	idcontacorrente: string,
+	documento: string,
+) {
+	const [lancamento] = await db
+		.select()
+		.from(schema.contacorrentelancamento)
+		.where(
+			and(
+				eq(schema.contacorrentelancamento.idcontacorrente, idcontacorrente),
+				eq(schema.contacorrentelancamento.documento, documento),
+			),
+		)
+		.limit(1);
+	return lancamento;
+}
+
 export async function buscarContaCorrenteLancamentoPorId({
 	id,
 }: {

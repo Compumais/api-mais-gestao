@@ -7,6 +7,7 @@ import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 const criarVendaPdvItemBodySchema = z.object({
 	idempresa: z.string(),
 	idvenda: z.string(),
+	iditemlocal: z.string().uuid().optional(),
 	idproduto: z.string(),
 	quantidade: z.string(),
 	precounitario: z.string(),
@@ -27,9 +28,10 @@ export async function criarVendaPdvItem(
 		}
 
 		const dadosValidados = criarVendaPdvItemBodySchema.parse(request.body);
+		const { iditemlocal, ...dadosItem } = dadosValidados;
 
 		const resultado = await criarVendaPdvItemService({
-			dadosVendaPdvItem: { id: uuidv4(), ...dadosValidados },
+			dadosVendaPdvItem: { id: iditemlocal ?? uuidv4(), ...dadosItem },
 			idusuario: request.user.id,
 		});
 

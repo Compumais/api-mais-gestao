@@ -19,7 +19,7 @@ import {
 	type RowSelectionState,
 	useReactTable,
 } from "@tanstack/react-table";
-import { Download, FileSpreadsheet, FileText } from "lucide-react";
+import { Download, FileDown, FileSpreadsheet, FileText } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -89,6 +89,17 @@ function rotuloColuna(column: {
 
 function filtrosColunaAtivos(filtros: FiltrosColunaProdutosState) {
 	return Object.values(filtros).some((valor) => valor.trim() !== "");
+}
+
+function baixarArquivo(blob: Blob, nomeArquivo: string) {
+	const url = URL.createObjectURL(blob);
+	const link = document.createElement("a");
+	link.href = url;
+	link.download = nomeArquivo;
+	document.body.appendChild(link);
+	link.click();
+	link.remove();
+	URL.revokeObjectURL(url);
 }
 
 export default function ProdutosPage() {
@@ -474,18 +485,31 @@ export default function ProdutosPage() {
 			return { blob, formato };
 		},
 		onSuccess: ({ blob, formato }) => {
-			const url = URL.createObjectURL(blob);
-			const link = document.createElement("a");
-			link.href = url;
-			link.download = `modelo-produtos.${formato}`;
-			document.body.appendChild(link);
-			link.click();
-			link.remove();
-			URL.revokeObjectURL(url);
+			baixarArquivo(blob, `modelo-produtos.${formato}`);
 			toast.success("Modelo baixado com sucesso");
 		},
 		onError: (error: Error) => {
 			toast.error(error.message || "Erro ao baixar modelo");
+		},
+	});
+
+	const exportarProdutosMutation = useMutation({
+		mutationFn: async (formato: FormatoImportacaoProdutos) => {
+			if (!localStorageEmpresa) {
+				throw new Error("Empresa não selecionada");
+			}
+			const blob = await produtosService.exportar(
+				localStorageEmpresa.id,
+				formato,
+			);
+			return { blob, formato };
+		},
+		onSuccess: ({ blob, formato }) => {
+			baixarArquivo(blob, `produtos-completo.${formato}`);
+			toast.success("Produtos exportados com sucesso");
+		},
+		onError: (error: Error) => {
+			toast.error(error.message || "Erro ao exportar produtos");
 		},
 	});
 
@@ -522,7 +546,7 @@ export default function ProdutosPage() {
 								<DropdownMenuTrigger asChild>
 									<Button
 										variant="outline"
-										className="rounded-l-none"
+										className="rounded-none"
 										disabled={
 											!localStorageEmpresa || baixarModeloMutation.isPending
 										}
@@ -541,6 +565,34 @@ export default function ProdutosPage() {
 										onClick={() => baixarModeloMutation.mutate("xlsx")}
 									>
 										Modelo XLSX
+									</DropdownMenuItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<Button
+										variant="outline"
+										className="rounded-l-none"
+										disabled={
+											!localStorageEmpresa || exportarProdutosMutation.isPending
+										}
+									>
+										<FileDown className="h-4 w-4" aria-hidden="true" />
+										{exportarProdutosMutation.isPending
+											? "Exportando..."
+											: "Exportar"}
+									</Button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent align="end">
+									<DropdownMenuItem
+										onClick={() => exportarProdutosMutation.mutate("csv")}
+									>
+										Exportar CSV
+									</DropdownMenuItem>
+									<DropdownMenuItem
+										onClick={() => exportarProdutosMutation.mutate("xlsx")}
+									>
+										Exportar XLSX
 									</DropdownMenuItem>
 								</DropdownMenuContent>
 							</DropdownMenu>

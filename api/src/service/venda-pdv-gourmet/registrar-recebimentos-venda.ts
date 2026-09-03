@@ -1,5 +1,6 @@
 import type { VendaPdvGourmet } from "@/model/venda-pdv-gourmet-model.js";
 import { db } from "@/repositories/connection.js";
+import { buscarLancamentoContaPorDocumento } from "@/repositories/conta-corrente-lancamento-repositories.js";
 import {
 	buscarContaCorrenteCaixaPadrao,
 	criarContaCorrenteCaixaPadrao,
@@ -59,6 +60,11 @@ export async function registrarRecebimentosVendaService({
 		};
 	}
 
+	const documento = `PDV ${venda.numeropdv} ${venda.id}`.slice(0, 60);
+	if (await buscarLancamentoContaPorDocumento(caixa.id, documento)) {
+		return { success: true };
+	}
+
 	try {
 		await db.transaction(async (tx) => {
 			await inserirLancamentoCaixa(tx, {
@@ -67,7 +73,7 @@ export async function registrarRecebimentosVendaService({
 				idplanocontas: plano.id,
 				valor: valorPrepago,
 				historico: `Venda PDV #${venda.numeropdv} - Pré-pago`,
-				documento: `PDV ${venda.numeropdv}`,
+				documento,
 				datahora: formatarDataIso(new Date()),
 			});
 		});

@@ -5,12 +5,17 @@ import type {
 	VendaPdvGourmet,
 } from "@/model/venda-pdv-gourmet-model.js";
 import type { LancamentoPagamentoPdv } from "@/model/venda-pdv-pagamento-model.js";
+import { buscarAuditoriaPorRecurso } from "@/repositories/auditoria-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
-	criarVendaPdvGourmet,
+	criarOuBuscarVendaPdvGourmet,
 	excluirVendaPdvGourmet,
+	executarComLockVendaPdvLocal,
 } from "@/repositories/venda-pdv-gourmet-repositories.js";
-import { criarVendaPdvPagamentos } from "@/repositories/venda-pdv-pagamento-repositories.js";
+import {
+	criarVendaPdvPagamentos,
+	listarVendaPdvPagamentosPorVenda,
+} from "@/repositories/venda-pdv-pagamento-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
 import {
 	formaErpExigeCliente,
@@ -39,7 +44,22 @@ type CriarVendaPdvGourmetParametros = {
 	pagamentos?: LancamentoPagamentoPdv[] | undefined;
 };
 
-export async function criarVendaPdvGourmetService({
+export async function criarVendaPdvGourmetService(
+	parametros: CriarVendaPdvGourmetParametros,
+): Promise<HttpResponse<VendaPdvGourmet | null>> {
+	const { dadosVendaPdvGourmet } = parametros;
+	if (!dadosVendaPdvGourmet.idvendalocal) {
+		return criarVendaPdvGourmetSemLock(parametros);
+	}
+	return executarComLockVendaPdvLocal(
+		dadosVendaPdvGourmet.idempresa,
+		dadosVendaPdvGourmet.numeropdv,
+		dadosVendaPdvGourmet.idvendalocal,
+		() => criarVendaPdvGourmetSemLock(parametros),
+	);
+}
+
+async function criarVendaPdvGourmetSemLock({
 	dadosVendaPdvGourmet,
 	idusuario,
 	pagamentosErp,
@@ -59,11 +79,12 @@ export async function criarVendaPdvGourmetService({
 	const dadosComTotais = normalizarCamposPagamentoVendaPdv(
 		preencherTotaisDeLancamentos(dadosVendaPdvGourmet, pagamentos),
 	);
-	const registro = await criarVendaPdvGourmet(dadosComTotais);
+	const criacao = await criarOuBuscarVendaPdvGourmet(dadosComTotais);
 
-	if (!registro) {
+	if (!criacao) {
 		return httpErro();
 	}
+	const { registro } = criacao;
 
 	const lancamentosOk =
 		pagamentos?.filter(
@@ -72,43 +93,57 @@ export async function criarVendaPdvGourmetService({
 
 	if (lancamentosOk.length > 0) {
 		try {
-			await criarVendaPdvPagamentos(
-				lancamentosOk.map((item) => ({
-					id: uuidv4(),
-					idempresa: registro.idempresa,
-					idvenda: registro.id,
-					meio: item.meio,
-					valor: formatarValorMonetario(item.valor),
-					nsu: item.nsu ?? null,
-					autorizacao: item.autorizacao ?? null,
-					bandeira: item.bandeira ?? null,
-					status: item.status ?? "ok",
-				})),
+			const pagamentosExistentes = await listarVendaPdvPagamentosPorVenda(
+				registro.id,
 			);
+			if (pagamentosExistentes.length === 0) {
+				await criarVendaPdvPagamentos(
+					lancamentosOk.map((item) => ({
+						id: uuidv4(),
+						idempresa: registro.idempresa,
+						idvenda: registro.id,
+						meio: item.meio,
+						valor: formatarValorMonetario(item.valor),
+						nsu: item.nsu ?? null,
+						autorizacao: item.autorizacao ?? null,
+						bandeira: item.bandeira ?? null,
+						status: item.status ?? "ok",
+					})),
+				);
+			}
 		} catch {
-			await excluirVendaPdvGourmet(registro.id);
+			if (criacao.criada) {
+				await excluirVendaPdvGourmet(registro.id);
+			}
 			return httpErroInterno();
 		}
 	}
 
-	const auditoriaId = uuidv4();
+	const auditoriaExistente = await buscarAuditoriaPorRecurso(
+		dadosVendaPdvGourmet.idempresa,
+		"venda_pdv_gourmet",
+		registro.id,
+	);
+	const auditoria =
+		auditoriaExistente ??
+		(await criarAuditoriaService({
+			id: uuidv4(),
+			acao: "criar_venda_pdv_gourmet",
+			idusuario,
+			recurso: "venda_pdv_gourmet",
+			idrecurso: registro.id,
+			idempresa: dadosVendaPdvGourmet.idempresa,
+			criadoem: new Date().toISOString(),
+			metadados: {
+				numeropdv: registro.numeropdv,
+				idcontamesa: registro.idcontamesa,
+			},
+		}));
 
-	const auditoria = await criarAuditoriaService({
-		id: auditoriaId,
-		acao: "criar_venda_pdv_gourmet",
-		idusuario,
-		recurso: "venda_pdv_gourmet",
-		idrecurso: registro.id,
-		idempresa: dadosVendaPdvGourmet.idempresa,
-		criadoem: new Date().toISOString(),
-		metadados: {
-			numeropdv: registro.numeropdv,
-			idcontamesa: registro.idcontamesa,
-		},
-	});
-
-	if (!auditoria || !auditoria.success) {
-		await excluirVendaPdvGourmet(registro.id);
+	if (!auditoria || ("success" in auditoria && !auditoria.success)) {
+		if (criacao.criada) {
+			await excluirVendaPdvGourmet(registro.id);
+		}
 		return httpErroInterno();
 	}
 
@@ -118,7 +153,9 @@ export async function criarVendaPdvGourmetService({
 	});
 
 	if (!recebimentos.success) {
-		await excluirVendaPdvGourmet(registro.id);
+		if (criacao.criada) {
+			await excluirVendaPdvGourmet(registro.id);
+		}
 		return {
 			success: false,
 			status: 400,
@@ -146,7 +183,9 @@ export async function criarVendaPdvGourmetService({
 		).some(Boolean);
 
 		if (exigeCliente && !dadosVendaPdvGourmet.identidade?.trim()) {
-			await excluirVendaPdvGourmet(registro.id);
+			if (criacao.criada) {
+				await excluirVendaPdvGourmet(registro.id);
+			}
 			return {
 				success: false,
 				status: 400,
@@ -164,7 +203,9 @@ export async function criarVendaPdvGourmetService({
 		});
 
 		if (!contasReceber.success) {
-			await excluirVendaPdvGourmet(registro.id);
+			if (criacao.criada) {
+				await excluirVendaPdvGourmet(registro.id);
+			}
 			return {
 				success: false,
 				status: contasReceber.status,

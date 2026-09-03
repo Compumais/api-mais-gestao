@@ -3,39 +3,59 @@ import {
 	listarVendasComRemoto,
 	obterNfcePorVenda,
 	obterSessao,
+	obterVenda,
 } from "../db/repos";
 import { aplicarEmissaoNfceNaVendaLocal } from "../fiscal/persistir-nfce-online";
 
 export type NfceRetaguarda = {
 	idnotafiscal: string;
-	status: number | null;
+	status: number | string | null;
 	chave: string | null;
-	serie: string | null;
-	numero: string | null;
+	serie: string | number | null;
+	numero: string | number | null;
 	protocolo: string | null;
 };
 
 let sincronizando = false;
 
 export function statusNfceRetaguardaParaPdv(
-	status: number | null | undefined,
+	status: number | string | null | undefined,
 ): "autorizada" | "erro" | "inutilizada" | "cancelada" | "pendente" | null {
 	switch (status) {
 		case 100:
+		case "autorizada":
 			return "autorizada";
 		case 101:
 		case 135:
+		case "cancelada":
 			return "cancelada";
 		case 102:
+		case "inutilizada":
 			return "inutilizada";
 		case 110:
 		case 301:
+		case "rejeitada":
+		case "denegada":
+		case "erro":
 			return "erro";
 		case 90:
+		case "pendente":
 			return "pendente";
 		default:
 			return null;
 	}
+}
+
+const TERMINAIS_NFCE = new Set(["cancelada", "inutilizada"]);
+
+export function podeAplicarStatusNfce(
+	statusAtual: string,
+	statusRemoto: string,
+): boolean {
+	if (statusAtual === statusRemoto) return true;
+	if (TERMINAIS_NFCE.has(statusAtual)) return false;
+	if (statusAtual === "autorizada") return statusRemoto === "cancelada";
+	return true;
 }
 
 export async function puxarNfceDaRetaguarda(limite = 40): Promise<number> {
@@ -89,6 +109,10 @@ export async function aplicarNfceRetaguardaNaVendaLocal(
 ): Promise<void> {
 	const statusPdv = statusNfceRetaguardaParaPdv(nfce.status);
 	if (!statusPdv) {
+		return;
+	}
+	const venda = await obterVenda(vendaId);
+	if (!venda || !podeAplicarStatusNfce(venda.nfce_status, statusPdv)) {
 		return;
 	}
 

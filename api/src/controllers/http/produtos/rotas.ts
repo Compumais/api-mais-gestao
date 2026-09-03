@@ -9,6 +9,7 @@ import { listarCatalogoPdv } from "./catalogo-pdv.js";
 import { criarProduto } from "./criar.js";
 import * as schema from "./doc-schema/schema.js";
 import { excluirProduto } from "./excluir.js";
+import { exportarProdutos } from "./exportar.js";
 import { exportarProdutosMgv } from "./exportar-mgv.js";
 import { importarProdutos } from "./importar.js";
 import { previewImportacaoProdutos } from "./importar-preview.js";
@@ -35,6 +36,10 @@ export async function produtosRotas(app: FastifyInstance) {
 	app.get("/produtos", {
 		schema: schema.listarProdutosSchema,
 		handler: listarProdutos,
+	});
+	app.get("/produtos/exportar", {
+		schema: schema.exportarProdutosSchema,
+		handler: exportarProdutos,
 	});
 	app.get("/produtos/catalogo-pdv", {
 		schema: schema.listarCatalogoPdvSchema,

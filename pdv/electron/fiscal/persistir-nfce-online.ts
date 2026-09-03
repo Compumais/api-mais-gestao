@@ -85,13 +85,15 @@ async function gravarNfceLocal(
 ): Promise<boolean> {
 	const xml = await resolverXml(dados, status);
 	const daChave = serieNumeroDaChave(dados.chave);
-	const serie = Number(dados.serie ?? daChave.serie ?? 0);
-	const numero = Number(dados.numero ?? daChave.numero ?? 0);
+	const existente = await obterNfcePorVenda(dados.idvenda);
+	const serie = Number(dados.serie ?? daChave.serie ?? existente?.serie ?? 0);
+	const numero = Number(
+		dados.numero ?? daChave.numero ?? existente?.numero ?? 0,
+	);
 	if (!numeracaoValida(serie, numero)) {
 		return false;
 	}
 
-	const existente = await obterNfcePorVenda(dados.idvenda);
 	if (existente) {
 		await atualizarNfceLocalCampos(existente.id, {
 			xml: xml ?? null,

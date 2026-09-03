@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
+import type { NovoFinanceiro } from "@/model/financeiro-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
 import type { VendaPdvGourmet } from "@/model/venda-pdv-gourmet-model.js";
 import type { LancamentoPagamentoPdv } from "@/model/venda-pdv-pagamento-model.js";
@@ -7,7 +8,7 @@ import { buscarEmpresaPorId } from "@/repositories/empresa-repositories.js";
 import { buscarEntidadePorId } from "@/repositories/entidade-repositories.js";
 import {
 	buscarFinanceirosPorOrigem,
-	criarFinanceiro,
+	criarFinanceiros,
 } from "@/repositories/financeiro-repositories.js";
 import {
 	buscarTipoDocumentoFinanceiroPorId,
@@ -164,8 +165,7 @@ async function gerarParcelasPorCondicaoPdv(
 	const dataAtual = new Date().toISOString().substring(0, 10);
 	const dataRegistro = new Date().toISOString();
 
-	let parcelasGeradas = 0;
-
+	const dadosFinanceiros: NovoFinanceiro[] = [];
 	for (let i = 0; i < totalParcelas; i++) {
 		const parcelaAtual = i + 1;
 		const vencimento = calcularVencimento(dataAtual, prazosFinal[i] ?? 0);
@@ -178,7 +178,7 @@ async function gerarParcelasPorCondicaoPdv(
 			nomeCliente,
 		});
 
-		const financeiro = await criarFinanceiro({
+		dadosFinanceiros.push({
 			id: uuidv4(),
 			idempresa: parametros.venda.idempresa,
 			identidade: parametros.identidade ?? null,
@@ -202,13 +202,9 @@ async function gerarParcelasPorCondicaoPdv(
 			registro: dataRegistro,
 			currenttimemillis: Date.now(),
 		});
-
-		if (financeiro) {
-			parcelasGeradas++;
-		}
 	}
 
-	return parcelasGeradas;
+	return (await criarFinanceiros(dadosFinanceiros)).length;
 }
 
 export async function gerarContasReceberVendaPdvService(
@@ -285,8 +281,6 @@ export async function gerarContasReceberVendaPdvService(
 	const empresa = await buscarEmpresaPorId(parametros.venda.idempresa);
 	const dataEmissao = new Date().toISOString().substring(0, 10);
 	const dataRegistro = new Date().toISOString();
-	let parcelasGeradas = 0;
-
 	const idtipodocumentoPrincipal = formasComTipo[0]?.tipoDoc.id ?? null;
 	const idplanocontas: string | null =
 		formasComTipo[0]?.tipoDoc.idplanocontas ?? null;
@@ -314,6 +308,7 @@ export async function gerarContasReceberVendaPdvService(
 		}
 	}
 
+	const dadosFinanceiros: NovoFinanceiro[] = [];
 	for (const { forma, tipoDoc } of formasComTipo) {
 		const idplanocontasForma = tipoDoc.idplanocontas ?? idplanocontas;
 		const nomeTitulo = nomeCliente || tipoDoc.descricao?.trim() || "CONSUMIDOR";
@@ -333,7 +328,7 @@ export async function gerarContasReceberVendaPdvService(
 		const prazoDias = resolverPrazoDiasTipoDocumento(tipoDoc, prazoFallback);
 		const vencimento = adicionarDias(new Date(dataEmissao), prazoDias);
 
-		const financeiro = await criarFinanceiro({
+		dadosFinanceiros.push({
 			id: uuidv4(),
 			idempresa: parametros.venda.idempresa,
 			identidade: parametros.identidade?.trim() || null,
@@ -357,13 +352,10 @@ export async function gerarContasReceberVendaPdvService(
 			registro: dataRegistro,
 			currenttimemillis: Date.now(),
 		});
-
-		if (financeiro) {
-			parcelasGeradas++;
-		}
 	}
 
-	return httpOk({ parcelasGeradas });
+	const criados = await criarFinanceiros(dadosFinanceiros);
+	return httpOk({ parcelasGeradas: criados.length });
 }
 
 export async function formaErpExigeCliente(
