@@ -96,21 +96,23 @@ async function persistirFalhaPreValidacaoNfce({
 	idusuario,
 	idempresa,
 	venda,
-	reserva,
 	ambiente,
 	mensagem,
 }: {
 	idusuario: string;
 	idempresa: string;
 	venda: NonNullable<Awaited<ReturnType<typeof buscarVendaPdvGourmetPorId>>>;
-	reserva: NumeracaoEmissaoNfce;
 	ambiente: number;
 	mensagem: string;
 }): Promise<HttpResponse<ResultadoEmissaoNfcePdv>> {
 	const agora = agoraBrasiliaIsoOffset();
 	const valorVenda = parseValorMonetario(venda.valortotal);
+	const notaExistente = venda.idnotafiscalnfce
+		? await buscarNotaFiscalPorId(venda.idnotafiscalnfce)
+		: undefined;
+	const idnotafiscal = notaExistente?.id ?? uuidv4();
 	const dadosNota: NovaNotaFiscal = {
-		id: reserva.idnotafiscal,
+		id: idnotafiscal,
 		idempresa,
 		idusuarioinclusao: idusuario,
 		datainclusao: agora,
@@ -118,9 +120,6 @@ async function persistirFalhaPreValidacaoNfce({
 		datahoraemissao: agora,
 		currenttimemillis: Date.now(),
 		modelo: "65",
-		serie: reserva.serie,
-		idserie: reserva.idserie,
-		numeronotafiscal: String(reserva.numeroNf),
 		tipoambientenfe: ambiente,
 		tipoorigem: 1,
 		status: NFE_STATUS.REJEITADA,
@@ -136,22 +135,28 @@ async function persistirFalhaPreValidacaoNfce({
 		},
 	};
 
-	if (reserva.reemissao) {
-		await atualizarNotaFiscal(reserva.idnotafiscal, dadosNota);
+	if (notaExistente) {
+		await atualizarNotaFiscal(idnotafiscal, {
+			status: NFE_STATUS.REJEITADA,
+			mensagemtransmissaonfe: dadosNota.mensagemtransmissaonfe,
+			dadosimportacao: dadosNota.dadosimportacao,
+		});
 	} else {
 		await criarNotaFiscalComItens(dadosNota, []);
 	}
 
 	await atualizarVendaPdvGourmet(venda.id, {
-		idnotafiscalnfce: reserva.idnotafiscal,
+		idnotafiscalnfce: idnotafiscal,
 		deveemitirnfce: true,
 	});
 
 	return httpOk({
 		emitida: false,
-		idnotafiscal: reserva.idnotafiscal,
-		serie: reserva.serie,
-		numero: reserva.numeroNf,
+		idnotafiscal,
+		...(notaExistente?.serie ? { serie: notaExistente.serie } : {}),
+		...(Number(notaExistente?.numeronotafiscal) > 0
+			? { numero: Number(notaExistente?.numeronotafiscal) }
+			: {}),
 		erro: mensagem,
 	});
 }
@@ -177,7 +182,15 @@ async function resolverNumeracaoEmissaoNfce(
 				!Number.isFinite(numeroNf) ||
 				numeroNf <= 0
 			) {
-				return null;
+				const novaReserva = await reservarProximoNumeroSerie(serieParaUsar.id);
+				if (!novaReserva) return null;
+				return {
+					idnotafiscal: notaExistente.id,
+					numeroNf: novaReserva.numeroReservado,
+					serie: novaReserva.serie,
+					idserie: serieParaUsar.id,
+					reemissao: true,
+				};
 			}
 
 			let idserie = notaExistente.idserie ?? undefined;
@@ -378,21 +391,11 @@ export async function emitirNfceVendaPdvService({
 		return httpBadRequest("A venda PDV não possui itens para emissão da NFC-e");
 	}
 
-	const reserva = await resolverNumeracaoEmissaoNfce(
-		idempresa,
-		venda.idnotafiscalnfce,
-		serieParaUsar,
-	);
-	if (!reserva) {
-		return httpBadRequest("Não foi possível reservar numeração da série NFC-e");
-	}
-
 	if (pendenciasItens.length > 0) {
 		return persistirFalhaPreValidacaoNfce({
 			idusuario,
 			idempresa,
 			venda,
-			reserva,
 			ambiente: nfceConfiguracao.ambiente,
 			mensagem: pendenciasItens.join("; "),
 		});
@@ -410,7 +413,6 @@ export async function emitirNfceVendaPdvService({
 			idusuario,
 			idempresa,
 			venda,
-			reserva,
 			ambiente: nfceConfiguracao.ambiente,
 			mensagem: pendenciasCreditoSn.join("; "),
 		});
@@ -422,10 +424,18 @@ export async function emitirNfceVendaPdvService({
 			idusuario,
 			idempresa,
 			venda,
-			reserva,
 			ambiente: nfceConfiguracao.ambiente,
 			mensagem: pendenciasCest.join("; "),
 		});
+	}
+
+	const reserva = await resolverNumeracaoEmissaoNfce(
+		idempresa,
+		venda.idnotafiscalnfce,
+		serieParaUsar,
+	);
+	if (!reserva) {
+		return httpBadRequest("Não foi possível reservar numeração da série NFC-e");
 	}
 
 	const valorTotalVenda = Number.parseFloat(venda.valortotal ?? "0");

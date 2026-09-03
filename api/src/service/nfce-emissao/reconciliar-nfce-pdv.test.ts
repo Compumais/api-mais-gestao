@@ -204,6 +204,8 @@ describe("reconciliarNfcePdvService", () => {
 			id: "nfce-pre-validacao",
 			status: NFE_STATUS.REJEITADA,
 			chavenfe: null,
+			serie: null,
+			numeronotafiscal: null,
 			mensagemtransmissaonfe:
 				"Pré-validação NFC-e: Item 1: quantidade ou preço inválido",
 		};
@@ -216,8 +218,6 @@ describe("reconciliarNfcePdvService", () => {
 			body: {
 				emitida: false,
 				idnotafiscal: notaPreValidacao.id,
-				serie: "1",
-				numero: 10,
 				erro: "Item 1: quantidade ou preço inválido",
 			},
 		});
