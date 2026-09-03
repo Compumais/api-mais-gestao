@@ -80,7 +80,7 @@
 		"@types/node": "^25.9.2",
 		"@types/nodemailer": "^8.0.1",
 		"@types/pg": "^8.15.6",
-		"@vitest/coverage-v8": "^4.0.16",
+		"@vitest/coverage-v8": "^4.1.11",
 		"@vitest/ui": "^4.1.0",
 		"drizzle-kit": "^0.31.9",
 		"tsc-alias": "^1.8.10",
