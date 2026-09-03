@@ -9,6 +9,10 @@ import { cancelarNfceVendaPdvService } from "@/service/nfce-emissao/cancelar-nfc
 import { inutilizarNfcePorNotaService } from "@/service/nfce-emissao/inutilizar-nfce-por-nota.js";
 import { inutilizarNfceVendaPdvService } from "@/service/nfce-emissao/inutilizar-nfce-venda-pdv.js";
 import { listarNfcePendentesService } from "@/service/nfce-emissao/listar-nfce-pendentes.js";
+import {
+	reconciliarNfcePdvService,
+	STATUS_LOCAL_NFCE,
+} from "@/service/nfce-emissao/reconciliar-nfce-pdv.js";
 import { reemitirNfceService } from "@/service/nfce-emissao/reemitir-nfce.js";
 import { retransmitirNfceVendaPdvService } from "@/service/nfce-emissao/retransmitir-nfce-venda-pdv.js";
 import { transmitirNfceContingenciaService } from "@/service/nfce-emissao/transmitir-nfce-contingencia.js";
@@ -64,6 +68,32 @@ const bodyContingenciaSchema = z.object({
 const bodyTransmitirPendentesLoteSchema = z.object({
 	idempresa: z.string().uuid(),
 	limite: z.coerce.number().int().min(1).max(100).optional(),
+});
+
+const manifestoNfcePdvSchema = z.object({
+	idvendalocal: z.string().uuid(),
+	idvendaremoto: z.string().uuid().optional(),
+	idnotafiscal: z.string().uuid().optional(),
+	statusLocal: z.enum(STATUS_LOCAL_NFCE),
+	chave: z
+		.string()
+		.regex(/^\d{44}$/)
+		.optional(),
+	serie: z.coerce.number().int().positive().optional(),
+	numero: z.coerce.number().int().positive().optional(),
+	protocolo: z.string().optional(),
+	xml: z.string().min(1).max(1_000_000).optional(),
+	motivoContingencia: z.string().optional(),
+	dataContingencia: z.iso.datetime({ offset: true }).optional(),
+});
+
+const bodyReconciliarNfcePdvSchema = z.object({
+	idempresa: z.string().uuid(),
+	numeropdv: z.coerce.number().int().positive(),
+	cicloId: z.string().uuid(),
+	cursor: z.string().min(1).max(200).optional(),
+	limite: z.coerce.number().int().min(1).max(100).default(50),
+	notas: z.array(manifestoNfcePdvSchema).max(100).default([]),
 });
 
 const itemAtualizacaoSchema = z.object({
@@ -432,6 +462,44 @@ export async function transmitirNfcePendentesLote(
 			idusuario: request.user.id,
 			idempresa: body.idempresa,
 			...(body.limite !== undefined ? { limite: body.limite } : {}),
+		});
+
+		if (!resultado.success) {
+			return reply.status(resultado.status).send(resultado);
+		}
+
+		return reply.status(resultado.status).send(resultado.body);
+	} catch (error) {
+		console.error(error);
+		if (error instanceof z.ZodError) {
+			return reply.status(400).send({
+				error: "Erro de validação",
+				code: "VALIDATION_ERROR",
+				details: error.issues,
+			});
+		}
+		return reply.status(httpErroInterno().status).send(httpErroInterno());
+	}
+}
+
+export async function reconciliarNfcePdv(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
+	try {
+		if (!request.user) {
+			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
+		}
+
+		const body = bodyReconciliarNfcePdvSchema.parse(request.body);
+		const resultado = await reconciliarNfcePdvService({
+			idusuario: request.user.id,
+			idempresa: body.idempresa,
+			numeropdv: body.numeropdv,
+			cicloId: body.cicloId,
+			...(body.cursor ? { cursor: body.cursor } : {}),
+			limite: body.limite,
+			notas: body.notas,
 		});
 
 		if (!resultado.success) {

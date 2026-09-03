@@ -704,6 +704,10 @@ async function despachar(
 		return { status: 200, body: await localApi.listarVendas() };
 	}
 
+	if (method === "POST" && path === "/pos/nfce/sincronizar") {
+		return { status: 200, body: await localApi.sincronizarNfce() };
+	}
+
 	if (method === "GET" && path === "/pos/pedidos") {
 		const pendentes = String(body.pendentes ?? "1") !== "0";
 		return {
@@ -725,8 +729,7 @@ async function despachar(
 	}
 
 	if (method === "GET" && path === "/pos/delivery") {
-		const statusFiltro =
-			body.status != null ? String(body.status) : undefined;
+		const statusFiltro = body.status != null ? String(body.status) : undefined;
 		return {
 			status: 200,
 			body: { data: await localApi.listarPedidosEntrega(statusFiltro) },
@@ -735,21 +738,17 @@ async function despachar(
 
 	if (method === "POST" && path === "/pos/delivery") {
 		const modalidadeRaw = String(body.modalidade ?? "delivery");
-		const modalidade =
-			modalidadeRaw === "retirada" ? "retirada" : "delivery";
+		const modalidade = modalidadeRaw === "retirada" ? "retirada" : "delivery";
 		return {
 			status: 200,
 			body: await localApi.abrirPedidoEntrega({
 				modalidade,
-				nomecliente:
-					body.nomecliente != null ? String(body.nomecliente) : null,
+				nomecliente: body.nomecliente != null ? String(body.nomecliente) : null,
 				telefone: body.telefone != null ? String(body.telefone) : null,
 				endereco: body.endereco != null ? String(body.endereco) : null,
 				bairro: body.bairro != null ? String(body.bairro) : null,
-				complemento:
-					body.complemento != null ? String(body.complemento) : null,
-				referencia:
-					body.referencia != null ? String(body.referencia) : null,
+				complemento: body.complemento != null ? String(body.complemento) : null,
+				referencia: body.referencia != null ? String(body.referencia) : null,
 				valorentrega:
 					body.valorentrega != null ? Number(body.valorentrega) : null,
 				idcliente: body.idcliente != null ? String(body.idcliente) : null,
@@ -777,12 +776,10 @@ async function despachar(
 				idproduto: i.idproduto != null ? String(i.idproduto) : null,
 				ean: i.ean != null ? String(i.ean) : null,
 				codigo: i.codigo != null ? String(i.codigo) : null,
-				codigoproduto:
-					i.codigoproduto != null ? String(i.codigoproduto) : null,
+				codigoproduto: i.codigoproduto != null ? String(i.codigoproduto) : null,
 				nomeproduto: i.nomeproduto != null ? String(i.nomeproduto) : null,
 				quantidade: Number(i.quantidade ?? 1),
-				precounitario:
-					i.precounitario != null ? Number(i.precounitario) : null,
+				precounitario: i.precounitario != null ? Number(i.precounitario) : null,
 				observacao: i.observacao != null ? String(i.observacao) : null,
 			};
 		});
@@ -798,8 +795,7 @@ async function despachar(
 					: body.telefone != null
 						? String(body.telefone)
 						: null,
-			endereco:
-				contamesa.endereco != null ? String(contamesa.endereco) : null,
+			endereco: contamesa.endereco != null ? String(contamesa.endereco) : null,
 			bairro:
 				contamesa.enderecobairro != null
 					? String(contamesa.enderecobairro)
@@ -865,20 +861,11 @@ async function despachar(
 		};
 	}
 
-	const deliveryStatusMatch = path.match(
-		/^\/pos\/delivery\/([^/]+)\/status$/,
-	);
-	if (
-		(method === "PATCH" || method === "POST") &&
-		deliveryStatusMatch
-	) {
+	const deliveryStatusMatch = path.match(/^\/pos\/delivery\/([^/]+)\/status$/);
+	if ((method === "PATCH" || method === "POST") && deliveryStatusMatch) {
 		const status =
 			body.status != null
-				? (String(body.status) as
-						| "recebido"
-						| "producao"
-						| "saiu"
-						| "entregue")
+				? (String(body.status) as "recebido" | "producao" | "saiu" | "entregue")
 				: null;
 		return {
 			status: 200,

@@ -12,6 +12,7 @@ const valorPagamentoOptional = z
 const criarVendaPdvGourmetBodySchema = z.object({
 	idempresa: z.string(),
 	numeropdv: z.number().int(),
+	idvendalocal: z.string().uuid().optional(),
 	usuarioquefechouvenda: z.string(),
 	idcontamesa: z.string().optional(),
 	vendalocal: z.number().int().optional(),

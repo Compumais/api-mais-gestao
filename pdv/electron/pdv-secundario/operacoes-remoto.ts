@@ -154,7 +154,9 @@ export async function enviarPedidoContaRemoto(
 	clientOrderId: string,
 	itens: ItemPedidoInput[],
 	observacaoPedido?: string | null,
-): Promise<ContaMesaLocal & { pedidoNovo?: boolean; itensProducao?: unknown[] }> {
+): Promise<
+	ContaMesaLocal & { pedidoNovo?: boolean; itensProducao?: unknown[] }
+> {
 	return remoto(`/pos/contas/${encodeURIComponent(idconta)}/pedido`, {
 		method: "POST",
 		body: JSON.stringify({ clientOrderId, itens, observacaoPedido }),
@@ -349,6 +351,13 @@ export async function listarVendasRemoto(): Promise<VendaLocal[]> {
 	return remoto("/pos/vendas");
 }
 
+export async function sincronizarNfceRemoto() {
+	return remoto("/pos/nfce/sincronizar", {
+		...jsonBody({}),
+		timeoutMs: 90_000,
+	});
+}
+
 export async function obterVendaRemoto(id: string): Promise<VendaLocal | null> {
 	return remoto(`/pos/vendas/${encodeURIComponent(id)}`);
 }
@@ -379,13 +388,10 @@ export async function inutilizarNfceRemoto(
 	vendaId: string,
 	justificativa: string,
 ) {
-	return remoto(
-		`/pos/vendas/${encodeURIComponent(vendaId)}/inutilizar`,
-		{
-			...jsonBody({ justificativa }),
-			timeoutMs: 60_000,
-		},
-	);
+	return remoto(`/pos/vendas/${encodeURIComponent(vendaId)}/inutilizar`, {
+		...jsonBody({ justificativa }),
+		timeoutMs: 60_000,
+	});
 }
 
 export async function cancelarNfceRemoto(

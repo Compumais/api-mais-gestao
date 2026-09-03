@@ -23,6 +23,10 @@ import {
 	withTransaction,
 } from "./database";
 import {
+	agruparItensVendidosTurno,
+	type ItemVendidoTurnoAgrupado,
+} from "./itens-vendidos-turno";
+import {
 	type LancamentoPagamento,
 	type MeioPagamento,
 	type StatusLancamentoPagamento,
@@ -30,18 +34,9 @@ import {
 	validarFechamentoPagamentos,
 } from "./pagamento";
 import {
-	calcularConferenciaCaixa,
-	montarResumoTurnoCaixa,
-	type ResumoTurnoCaixa,
-	type VendaParaResumoTurno,
-} from "./resumo-turno-caixa";
-import {
-	agruparItensVendidosTurno,
-	type ItemVendidoTurnoAgrupado,
-} from "./itens-vendidos-turno";
-import {
 	ehModalidadeEntrega,
 	gerarSenhaChamada,
+	type ModalidadePedido,
 	normalizarModalidade,
 	origemVendaPorModalidade,
 	parseBairrosEntrega,
@@ -49,17 +44,22 @@ import {
 	proximoStatusEntrega,
 	resolverTaxaEntrega,
 	rotuloProducaoEntrega,
-	type ModalidadePedido,
 	type StatusEntrega,
 } from "./pedido-entrega";
+import {
+	calcularConferenciaCaixa,
+	montarResumoTurnoCaixa,
+	type ResumoTurnoCaixa,
+	type VendaParaResumoTurno,
+} from "./resumo-turno-caixa";
 
+export type { ItemVendidoTurnoAgrupado } from "./itens-vendidos-turno";
 export type {
 	LancamentoPagamento,
 	MeioPagamento,
 	StatusLancamentoPagamento,
 } from "./pagamento";
 export type { ResumoTurnoCaixa } from "./resumo-turno-caixa";
-export type { ItemVendidoTurnoAgrupado } from "./itens-vendidos-turno";
 
 export type SessaoLocal = {
 	token: string | null;
@@ -143,6 +143,7 @@ function dadosClienteVenda(cliente?: ClienteVenda | null): {
 }
 
 export type ItemCarrinho = {
+	id?: string;
 	idproduto: string;
 	descricao: string;
 	quantidade: number;
@@ -152,6 +153,8 @@ export type ItemCarrinho = {
 	idunidademedida?: string | null;
 	observacao?: string | null;
 };
+
+export type ItemCarrinhoPersistido = ItemCarrinho & { id: string };
 
 export type VendaLocal = {
 	id: string;
@@ -175,6 +178,7 @@ export type VendaLocal = {
 	sync_status: string;
 	nfce_status: string;
 	idnfce_local: string | null;
+	nfce_sync_em?: string | null;
 	/** Numeração da NFC-e local (quando houver registro em nfce_local). */
 	nfce_serie?: number | null;
 	nfce_numero?: number | null;
@@ -263,6 +267,12 @@ export type OutboxItem = {
 	status: string;
 	tentativas: number;
 	ultimo_erro: string | null;
+	idempotency_key: string | null;
+	prioridade: number;
+	proxima_tentativa: string | null;
+	classificacao_erro: string | null;
+	bloqueado_ate: string | null;
+	worker_id: string | null;
 	criadoem: string;
 };
 
@@ -965,44 +975,155 @@ export async function salvarAtalhos(ids: string[]): Promise<void> {
 	});
 }
 
+export function prioridadeOutbox(tipo: string): number {
+	if (tipo === "criar_venda") return 5;
+	if (tipo === "transmitir_nfce_contingencia") return 10;
+	return 100;
+}
+
 export async function enfileirarOutbox(
 	tipo: string,
 	payload: unknown,
 	client?: PoolClient,
 ): Promise<string> {
 	const id = uuidv4();
-	await execute(
-		`INSERT INTO outbox (id, tipo, payload, status, tentativas, criadoem)
-		 VALUES ($1, $2, $3, 'pendente', 0, $4)`,
-		[id, tipo, JSON.stringify(payload), new Date().toISOString()],
+	const chave = chaveIdempotenciaOutbox(tipo, payload);
+	const prioridade = prioridadeOutbox(tipo);
+	const row = await queryOne<{ id: string }>(
+		`INSERT INTO outbox (
+			id, tipo, payload, status, tentativas, idempotency_key, prioridade, criadoem
+		 ) VALUES ($1, $2, $3, 'pendente', 0, $4, $5, $6)
+		 ON CONFLICT (idempotency_key)
+		 WHERE idempotency_key IS NOT NULL AND status IN ('pendente', 'processando')
+		 DO UPDATE SET payload = excluded.payload,
+			prioridade = LEAST(outbox.prioridade, excluded.prioridade)
+		 RETURNING id`,
+		[
+			id,
+			tipo,
+			JSON.stringify(payload),
+			chave,
+			prioridade,
+			new Date().toISOString(),
+		],
 		client,
 	);
-	return id;
+	return row?.id ?? id;
+}
+
+export function chaveIdempotenciaOutbox(
+	tipo: string,
+	payload: unknown,
+): string | null {
+	if (!payload || typeof payload !== "object") return null;
+	const dados = payload as Record<string, unknown>;
+	const identidade = [
+		dados.idlocal,
+		dados.idvenda,
+		dados.idnfce_local,
+		dados.idnfce,
+		dados.chave,
+	]
+		.map((valor) => (valor == null ? "" : String(valor).trim()))
+		.find(Boolean);
+	return identidade ? `${tipo}:${identidade}` : null;
 }
 
 export async function listarOutboxPendentes(limit = 50): Promise<OutboxItem[]> {
 	return query<OutboxItem>(
-		`SELECT id, tipo, payload, status, tentativas, ultimo_erro, criadoem
-		 FROM outbox WHERE status = 'pendente'
-		 ORDER BY criadoem ASC LIMIT $1`,
-		[limit],
+		`SELECT id, tipo, payload, status, tentativas, ultimo_erro,
+		        idempotency_key, prioridade, proxima_tentativa,
+		        classificacao_erro, criadoem
+		 FROM outbox
+		 WHERE status = 'pendente'
+		   AND (proxima_tentativa IS NULL OR proxima_tentativa <= $1)
+		 ORDER BY prioridade ASC, criadoem ASC LIMIT $2`,
+		[new Date().toISOString(), limit],
 	);
 }
 
-export async function marcarOutboxConcluido(id: string): Promise<void> {
+export async function reivindicarOutboxPendentes(
+	workerId: string,
+	limit = 1,
+	leaseMs = 15 * 60_000,
+): Promise<OutboxItem[]> {
+	return withTransaction(async (client) => {
+		const agora = new Date();
+		const agoraIso = agora.toISOString();
+		const bloqueadoAte = new Date(agora.getTime() + leaseMs).toISOString();
+		await execute(
+			`UPDATE outbox
+			 SET status = 'pendente', worker_id = NULL, bloqueado_ate = NULL
+			 WHERE status = 'processando'
+			   AND (bloqueado_ate IS NULL OR bloqueado_ate <= $1)`,
+			[agoraIso],
+			client,
+		);
+		return query<OutboxItem>(
+			`WITH candidatos AS (
+				SELECT id
+				FROM outbox
+				WHERE status = 'pendente'
+				  AND (proxima_tentativa IS NULL OR proxima_tentativa <= $1)
+				ORDER BY prioridade ASC, criadoem ASC
+				FOR UPDATE SKIP LOCKED
+				LIMIT $2
+			 )
+			 UPDATE outbox AS o
+			 SET status = 'processando', worker_id = $3, bloqueado_ate = $4
+			 FROM candidatos
+			 WHERE o.id = candidatos.id
+			 RETURNING o.id, o.tipo, o.payload, o.status, o.tentativas,
+				o.ultimo_erro, o.idempotency_key, o.prioridade,
+				o.proxima_tentativa, o.classificacao_erro, o.bloqueado_ate,
+				o.worker_id, o.criadoem`,
+			[agoraIso, limit, workerId, bloqueadoAte],
+			client,
+		);
+	});
+}
+
+export async function marcarOutboxConcluido(
+	id: string,
+	workerId?: string,
+): Promise<void> {
 	await execute(
-		`UPDATE outbox SET status = 'concluido', processadoem = $1, ultimo_erro = NULL WHERE id = $2`,
-		[new Date().toISOString(), id],
+		`UPDATE outbox SET status = 'concluido', processadoem = $1,
+		 ultimo_erro = NULL, proxima_tentativa = NULL, classificacao_erro = NULL,
+		 worker_id = NULL, bloqueado_ate = NULL
+		 WHERE id = $2
+		   AND ($3::text IS NULL OR (status = 'processando' AND worker_id = $3))`,
+		[new Date().toISOString(), id, workerId ?? null],
 	);
 }
 
 export async function marcarOutboxErro(
 	id: string,
 	erro: string,
+	opcoes?: {
+		classificacao?: "transitorio" | "permanente";
+		proximaTentativa?: string | null;
+		workerId?: string;
+	},
 ): Promise<void> {
+	const permanente = opcoes?.classificacao === "permanente";
 	await execute(
-		`UPDATE outbox SET tentativas = tentativas + 1, ultimo_erro = $1 WHERE id = $2`,
-		[erro, id],
+		`UPDATE outbox SET tentativas = tentativas + 1, ultimo_erro = $1,
+		 classificacao_erro = $2, proxima_tentativa = $3,
+		 status = CASE WHEN $4 THEN 'cancelado' ELSE 'pendente' END,
+		 worker_id = NULL, bloqueado_ate = NULL,
+		 processadoem = CASE WHEN $4 THEN $5 ELSE processadoem END
+		 WHERE id = $6
+		   AND ($7::text IS NULL OR (status = 'processando' AND worker_id = $7))`,
+		[
+			erro,
+			opcoes?.classificacao ?? "transitorio",
+			opcoes?.proximaTentativa ?? null,
+			permanente,
+			new Date().toISOString(),
+			id,
+			opcoes?.workerId ?? null,
+		],
 	);
 }
 
@@ -1011,6 +1132,23 @@ export async function contarOutboxPendentes(): Promise<number> {
 		`SELECT COUNT(*)::int as total FROM outbox WHERE status = 'pendente'`,
 	);
 	return row?.total ?? 0;
+}
+
+export async function contarOutboxFalhasPermanentes(): Promise<number> {
+	const row = await queryOne<{ total: number }>(
+		`SELECT COUNT(*)::int AS total
+		 FROM outbox
+		 WHERE status = 'cancelado' AND classificacao_erro = 'permanente'`,
+	);
+	return row?.total ?? 0;
+}
+
+export async function obterSyncMeta(chave: string): Promise<string | null> {
+	const row = await queryOne<{ valor: string }>(
+		"SELECT valor FROM sync_meta WHERE chave = $1",
+		[chave],
+	);
+	return row?.valor ?? null;
 }
 
 /** Conclui outbox `criar_venda` já espelhado online (evita duplicar na retaguarda). */
@@ -1673,6 +1811,10 @@ export async function criarVendaRapida(params: {
 	const sync = totaisParaSync(fechamento.efetivos, fechamento.troco);
 	const numeropdv = Number(await getConfig("numeropdv", "1"));
 	const cliente = dadosClienteVenda(params.cliente);
+	const itensComId: ItemCarrinhoPersistido[] = params.itens.map((item) => ({
+		...item,
+		id: item.id ?? uuidv4(),
+	}));
 
 	const venda = await withTransaction(async (client) => {
 		await execute(
@@ -1701,12 +1843,12 @@ export async function criarVendaRapida(params: {
 			client,
 		);
 
-		for (const item of params.itens) {
+		for (const item of itensComId) {
 			await execute(
 				`INSERT INTO item_venda (id, idvenda, idproduto, descricao, quantidade, precounitario, precototal)
 				 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
 				[
-					uuidv4(),
+					item.id,
 					id,
 					item.idproduto,
 					item.descricao,
@@ -1740,7 +1882,7 @@ export async function criarVendaRapida(params: {
 		valorcartao: arredondarMoeda(
 			sync.valorcartaocredito + sync.valorcartaodebito,
 		),
-		itens: params.itens,
+		itens: itensComId,
 		valortotal: total,
 		valortroco: fechamento.troco,
 		valordesconto: desconto,
@@ -1784,6 +1926,46 @@ export async function listarVendasComRemoto(
 	);
 }
 
+export type VendaCandidataReconciliacaoNfce = {
+	id: string;
+	idremoto: string | null;
+	nfce_status: string;
+	idnfce: string | null;
+	serie: number | null;
+	numero: number | null;
+	chave: string | null;
+	protocolo: string | null;
+	xml: string | null;
+	motivo_contingencia: string | null;
+	data_contingencia: string | null;
+};
+
+export async function listarVendasCandidatasReconciliacaoNfce(): Promise<
+	VendaCandidataReconciliacaoNfce[]
+> {
+	return query<VendaCandidataReconciliacaoNfce>(
+		`SELECT v.id, v.idremoto, v.nfce_status,
+		        n.id AS idnfce, n.serie, n.numero, n.chave, n.protocolo, n.xml,
+		        n.motivo_contingencia, n.data_contingencia
+		 FROM venda v
+		 LEFT JOIN LATERAL (
+			SELECT id, serie, numero, chave, protocolo, xml,
+			       motivo_contingencia, data_contingencia
+			FROM nfce_local
+			WHERE idvenda = v.id
+			ORDER BY criadoem DESC
+			LIMIT 1
+		 ) n ON true
+		 WHERE (
+			v.nfce_status NOT IN ('nenhuma', 'nao_fiscal', 'autorizada', 'cancelada', 'inutilizada')
+			OR v.idremoto IS NULL
+			OR v.nfce_sync_em IS NULL
+		 )
+		   AND (v.nfce_status NOT IN ('nenhuma', 'nao_fiscal') OR n.id IS NOT NULL)
+		 ORDER BY v.criadoem ASC`,
+	);
+}
+
 /** Vendas com fila de sync ou NFC-e ainda não refletida na retaguarda. */
 export async function listarVendasNaoSincronizadas(
 	limit = 100,
@@ -1813,10 +1995,11 @@ export async function listarVendasNaoSincronizadas(
 	);
 }
 
-export async function obterVenda(
-	id: string,
-): Promise<
-	| (VendaLocal & { itens: ItemCarrinho[]; pagamentos: LancamentoPagamento[] })
+export async function obterVenda(id: string): Promise<
+	| (VendaLocal & {
+			itens: ItemCarrinhoPersistido[];
+			pagamentos: LancamentoPagamento[];
+	  })
 	| null
 > {
 	const venda = await queryOne<VendaLocal>(
@@ -1838,8 +2021,8 @@ export async function obterVenda(
 	if (!venda) {
 		return null;
 	}
-	const itens = await query<ItemCarrinho>(
-		`SELECT idproduto, descricao, quantidade, precounitario, precototal
+	const itens = await query<ItemCarrinhoPersistido>(
+		`SELECT id, idproduto, descricao, quantidade, precounitario, precototal
 		 FROM item_venda WHERE idvenda = $1`,
 		[id],
 	);
@@ -1862,6 +2045,10 @@ export async function atualizarVendaSync(
 	}
 	await execute(
 		`UPDATE venda SET idremoto = COALESCE($1, idremoto), sync_status = COALESCE($2, sync_status),
+		 nfce_sync_em = CASE
+			WHEN $3::text IS NOT NULL AND nfce_status IS DISTINCT FROM $3::text THEN NULL
+			ELSE nfce_sync_em
+		 END,
 		 nfce_status = COALESCE($3, nfce_status), idnfce_local = COALESCE($4, idnfce_local) WHERE id = $5`,
 		[
 			dados.idremoto ?? null,
@@ -1873,8 +2060,20 @@ export async function atualizarVendaSync(
 	);
 }
 
+export async function marcarVendaNfceSincronizada(
+	idlocal: string,
+	sincronizadaEm = new Date().toISOString(),
+): Promise<void> {
+	await execute("UPDATE venda SET nfce_sync_em = $1 WHERE id = $2", [
+		sincronizadaEm,
+		idlocal,
+	]);
+}
+
 /** Marca venda local como cancelada (não fiscal / sem NFC-e SEFAZ). */
-export async function marcarVendaCanceladaLocal(idlocal: string): Promise<void> {
+export async function marcarVendaCanceladaLocal(
+	idlocal: string,
+): Promise<void> {
 	await execute(
 		`UPDATE venda SET status = 'cancelada', nfce_status = 'cancelada' WHERE id = $1`,
 		[idlocal],
@@ -1998,7 +2197,11 @@ export async function cancelarContaMesa(idconta: string): Promise<void> {
 	const agora = new Date().toISOString();
 
 	await withTransaction(async (client) => {
-		await execute("DELETE FROM item_conta WHERE idconta = $1", [idconta], client);
+		await execute(
+			"DELETE FROM item_conta WHERE idconta = $1",
+			[idconta],
+			client,
+		);
 		await execute(
 			"DELETE FROM conta_pagamento WHERE idconta = $1",
 			[idconta],
@@ -2896,9 +3099,7 @@ export async function senhaGerencialHabilitada(): Promise<boolean> {
 
 /** Senha definida e flag habilitada — operações devem pedir/validar senha. */
 export async function senhaGerencialExigida(): Promise<boolean> {
-	return (
-		(await senhaGerencialDefinida()) && (await senhaGerencialHabilitada())
-	);
+	return (await senhaGerencialDefinida()) && (await senhaGerencialHabilitada());
 }
 
 export async function exigirSenhaGerencial(senha?: string): Promise<void> {
@@ -3551,9 +3752,7 @@ async function proximaSenhaChamadaDoDia(): Promise<string> {
 
 async function taxaEntregaConfig(bairro?: string | null): Promise<number> {
 	const padrao = Number(await getConfig("taxa_entrega_padrao", "0"));
-	const tabela = parseBairrosEntrega(
-		await getConfig("bairros_entrega", "[]"),
-	);
+	const tabela = parseBairrosEntrega(await getConfig("bairros_entrega", "[]"));
 	return resolverTaxaEntrega({
 		bairro,
 		padrao: Number.isFinite(padrao) ? padrao : 0,
@@ -3752,8 +3951,7 @@ export async function atualizarStatusEntrega(
 	}
 	const atual = (conta.status_entrega || "recebido") as StatusEntrega;
 	const proximo =
-		status ??
-		proximoStatusEntrega(atual, conta.modalidade as ModalidadePedido);
+		status ?? proximoStatusEntrega(atual, conta.modalidade as ModalidadePedido);
 	if (!proximo) {
 		throw new Error("Não há próximo status de entrega");
 	}
@@ -3764,11 +3962,7 @@ export async function atualizarStatusEntrega(
 			"saiu",
 			"entregue",
 		];
-		const ordemRetirada: StatusEntrega[] = [
-			"recebido",
-			"producao",
-			"entregue",
-		];
+		const ordemRetirada: StatusEntrega[] = ["recebido", "producao", "entregue"];
 		const ordem =
 			conta.modalidade === "retirada" ? ordemRetirada : ordemDelivery;
 		if (!ordem.includes(status)) {
@@ -3849,9 +4043,7 @@ export async function atualizarDadosEntrega(
 			dados.complemento !== undefined
 				? dados.complemento?.trim() || null
 				: null,
-			dados.referencia !== undefined
-				? dados.referencia?.trim() || null
-				: null,
+			dados.referencia !== undefined ? dados.referencia?.trim() || null : null,
 			dados.obs !== undefined ? dados.obs?.trim() || null : null,
 			idconta,
 		],
@@ -3986,7 +4178,8 @@ export async function ingestPedidoDelivery(params: {
 			quantidade: qtd,
 			observacao: item.observacao?.trim() || null,
 			precounitario:
-				item.precounitario != null && Number.isFinite(Number(item.precounitario))
+				item.precounitario != null &&
+				Number.isFinite(Number(item.precounitario))
 					? Number(item.precounitario)
 					: undefined,
 		});

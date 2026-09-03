@@ -211,6 +211,7 @@ CREATE TABLE IF NOT EXISTS venda (
 	sync_status TEXT NOT NULL DEFAULT 'pendente',
 	nfce_status TEXT NOT NULL DEFAULT 'nenhuma',
 	idnfce_local TEXT,
+	nfce_sync_em TEXT,
 	idcliente TEXT,
 	nomecliente TEXT,
 	cnpjcpf TEXT
@@ -290,6 +291,12 @@ CREATE TABLE IF NOT EXISTS outbox (
 	status TEXT NOT NULL DEFAULT 'pendente',
 	tentativas INTEGER NOT NULL DEFAULT 0,
 	ultimo_erro TEXT,
+	idempotency_key TEXT,
+	prioridade INTEGER NOT NULL DEFAULT 100,
+	proxima_tentativa TEXT,
+	classificacao_erro TEXT,
+	bloqueado_ate TEXT,
+	worker_id TEXT,
 	criadoem TEXT NOT NULL,
 	processadoem TEXT
 );
@@ -309,6 +316,10 @@ CREATE TABLE IF NOT EXISTS sync_meta (
  */
 export const SCHEMA_INDEXES_SQL = `
 CREATE INDEX IF NOT EXISTS idx_outbox_status ON outbox(status, criadoem);
+CREATE INDEX IF NOT EXISTS idx_outbox_processamento ON outbox(status, proxima_tentativa, prioridade, criadoem);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_outbox_idempotencia_pendente
+	ON outbox(idempotency_key)
+	WHERE idempotency_key IS NOT NULL AND status IN ('pendente', 'processando');
 CREATE INDEX IF NOT EXISTS idx_venda_criadoem ON venda(criadoem DESC);
 CREATE INDEX IF NOT EXISTS idx_produto_descricao ON produto_cache(descricao);
 CREATE INDEX IF NOT EXISTS idx_produto_grupo ON produto_cache(idgrupo);

@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { app } from "electron";
+import { v4 as uuidv4 } from "uuid";
 import {
 	ApiError,
 	atualizarFechamentoCaixaRemoto,
@@ -51,13 +52,14 @@ import {
 	contarOutboxPendentes,
 	type ItemCarrinho,
 	type LancamentoPagamento,
-	listarOutboxPendentes,
 	marcarNfceTransmitida,
 	marcarOutboxConcluido,
 	marcarOutboxErro,
+	marcarProdutosAusentesInativos,
 	obterCaixaTurno,
 	obterSessao,
 	obterVenda,
+	reivindicarOutboxPendentes,
 	salvarAtalhos,
 	salvarSessao,
 	upsertBandeirasCartao,
@@ -66,7 +68,6 @@ import {
 	upsertGruposGourmet,
 	upsertMeiosPagamento,
 	upsertProdutos,
-	marcarProdutosAusentesInativos,
 } from "../db/repos";
 import { calcularConferenciaCaixa } from "../db/resumo-turno-caixa";
 import { persistirMeiosPagamentoNfceConfig } from "../fiscal/avaliar-emissao-nfce-venda";
@@ -76,10 +77,61 @@ import {
 	parseMeiosPagamentoNfceConfig,
 	resumoPagamentoParaNfce,
 } from "../fiscal/meios-pagamento-nfce";
-import { puxarNfceDaRetaguarda } from "./nfce-retaguarda";
 import { atualizarCacheTerminaisPdv } from "./terminais-pdv";
 
 let syncing = false;
+const OUTBOX_WORKER_ID = uuidv4();
+
+export function atrasoBackoffOutboxMs(tentativasAnteriores: number): number {
+	return Math.min(15 * 60_000, 30_000 * 2 ** Math.max(0, tentativasAnteriores));
+}
+
+export function classificarErroOutbox(
+	err: unknown,
+): "transitorio" | "permanente" {
+	if (err instanceof ApiError) {
+		const status = err.status ?? 0;
+		if (
+			status === 0 ||
+			status === 401 ||
+			status === 403 ||
+			status === 408 ||
+			status === 409 ||
+			status === 429 ||
+			status >= 500
+		) {
+			return "transitorio";
+		}
+		if (status >= 400 && status < 500) return "permanente";
+	}
+	if (err instanceof SyntaxError || err instanceof TypeError)
+		return "permanente";
+	return "transitorio";
+}
+
+export function deveEmitirNfceNaBaixa(params: {
+	emitirGlobal: boolean;
+	statusNfceLocal?: string | null;
+	pagamentoDeveEmitir: boolean;
+}): boolean {
+	const possuiNfceLocal = [
+		"contingencia",
+		"transmitida",
+		"autorizada",
+	].includes(params.statusNfceLocal ?? "");
+	return params.emitirGlobal && !possuiNfceLocal && params.pagamentoDeveEmitir;
+}
+
+export async function sincronizarItensAntesDaBaixa<T>(
+	itens: T[],
+	sincronizarItem: (item: T) => Promise<void>,
+	baixarVenda: () => Promise<void>,
+): Promise<void> {
+	for (const item of itens) {
+		await sincronizarItem(item);
+	}
+	await baixarVenda();
+}
 
 export async function statusConexao(): Promise<{
 	online: boolean;
@@ -517,7 +569,9 @@ export async function processarOutbox(): Promise<{
 			return { processados, erros };
 		}
 
-		for (const item of await listarOutboxPendentes()) {
+		for (let indice = 0; indice < 10; indice++) {
+			const [item] = await reivindicarOutboxPendentes(OUTBOX_WORKER_ID, 1);
+			if (!item) break;
 			try {
 				const payload = JSON.parse(item.payload) as Record<string, unknown>;
 				if (item.tipo === "criar_venda") {
@@ -536,13 +590,24 @@ export async function processarOutbox(): Promise<{
 				} else if (item.tipo === "conta_mesa") {
 					// Espelhamento remoto best-effort; marcado concluído para não travar a fila
 				}
-				await marcarOutboxConcluido(item.id);
+				await marcarOutboxConcluido(item.id, OUTBOX_WORKER_ID);
 				processados += 1;
 			} catch (err) {
 				erros += 1;
+				const classificacao = classificarErroOutbox(err);
 				await marcarOutboxErro(
 					item.id,
 					err instanceof Error ? err.message : "Erro desconhecido",
+					{
+						classificacao,
+						workerId: OUTBOX_WORKER_ID,
+						proximaTentativa:
+							classificacao === "transitorio"
+								? new Date(
+										Date.now() + atrasoBackoffOutboxMs(item.tentativas),
+									).toISOString()
+								: null,
+					},
 				);
 			}
 		}
@@ -553,8 +618,6 @@ export async function processarOutbox(): Promise<{
 	} finally {
 		syncing = false;
 	}
-
-	void puxarNfceDaRetaguarda().catch(() => undefined);
 
 	return { processados, erros };
 }
@@ -668,10 +731,20 @@ async function baixarEstoqueVendaOutbox(params: {
 	const meios = parseMeiosPagamentoNfceConfig(
 		await getConfig(CHAVE_CONFIG_MEIOS_NFCE, ""),
 	);
-	const emitir =
-		emitirGlobal &&
-		avaliarEmissaoNfcePorPagamento(resumoPagamentoParaNfce(params.sync), meios)
-			.deveEmitir;
+	const vendaLocal = await obterVenda(params.idlocal);
+	const possuiNfceLocalPendente = [
+		"contingencia",
+		"transmitida",
+		"autorizada",
+	].includes(vendaLocal?.nfce_status ?? "");
+	const emitir = deveEmitirNfceNaBaixa({
+		emitirGlobal,
+		statusNfceLocal: vendaLocal?.nfce_status,
+		pagamentoDeveEmitir: avaliarEmissaoNfcePorPagamento(
+			resumoPagamentoParaNfce(params.sync),
+			meios,
+		).deveEmitir,
+	});
 	try {
 		const baixa = await baixaEstoqueVenda({
 			idempresa: params.idempresa,
@@ -700,7 +773,9 @@ async function baixarEstoqueVendaOutbox(params: {
 			emitirNfce: emitir,
 		});
 		if (!emitir) {
-			await atualizarVendaSync(params.idlocal, { nfce_status: "nao_fiscal" });
+			if (!possuiNfceLocalPendente) {
+				await atualizarVendaSync(params.idlocal, { nfce_status: "nao_fiscal" });
+			}
 			return;
 		}
 		const nfce = extrairNfceDaBaixa(baixa);
@@ -738,7 +813,6 @@ async function syncCriarVenda(
 	idempresa: string,
 	userid: string,
 ): Promise<void> {
-	const itens = payload.itens as ItemCarrinho[];
 	const total = Number(payload.valortotal ?? 0);
 	const idlocal = String(payload.idlocal);
 	const numeropdv = Number(await getConfig("numeropdv", "1"));
@@ -747,69 +821,72 @@ async function syncCriarVenda(
 	const sync = totaisParaSync(pagamentos, valortroco);
 
 	const local = await obterVenda(idlocal);
-	if (local?.idremoto) {
-		await baixarEstoqueVendaOutbox({
-			idlocal,
-			idremoto: local.idremoto,
+	if (!local) {
+		throw new Error(
+			`Venda local não encontrada para sincronização: ${idlocal}`,
+		);
+	}
+	const itens = local.itens;
+	let idremoto = local?.idremoto ?? null;
+	if (!idremoto) {
+		const pagamentosErp = pagamentosErpDosLancamentos(pagamentos);
+		const identidade = [payload.identidade, local?.idcliente]
+			.map((valor) => (typeof valor === "string" ? valor.trim() : ""))
+			.find(Boolean);
+		const venda = await criarVendaPdv({
 			idempresa,
-			itens,
-			total,
-			sync,
-			payload,
+			numeropdv,
+			idvendalocal: idlocal,
+			usuarioquefechouvenda: userid,
+			vendalocal: VENDA_LOCAL_PDV_HIBRIDO,
+			valortotal: total,
+			valortroco: sync.valortroco,
+			valordinheiro: sync.valordinheiro,
+			valorpix: sync.valorpix,
+			valorcartaocredito: sync.valorcartaocredito,
+			valorcartaodebito: sync.valorcartaodebito,
+			valorcartao: sync.valorcartao,
+			valorprepago: sync.valorprepago,
+			pagamentos: pagamentosNativosParaApi(pagamentos),
+			...(pagamentosErp.length ? { pagamentosErp } : {}),
+			...(identidade ? { identidade } : {}),
 		});
-		return;
+		idremoto = venda.id;
 	}
 
-	const pagamentosErp = pagamentosErpDosLancamentos(pagamentos);
-	const identidade = [payload.identidade, local?.idcliente]
-		.map((valor) => (typeof valor === "string" ? valor.trim() : ""))
-		.find(Boolean);
-	const venda = await criarVendaPdv({
-		idempresa,
-		numeropdv,
-		usuarioquefechouvenda: userid,
-		vendalocal: VENDA_LOCAL_PDV_HIBRIDO,
-		valortotal: total,
-		valortroco: sync.valortroco,
-		valordinheiro: sync.valordinheiro,
-		valorpix: sync.valorpix,
-		valorcartaocredito: sync.valorcartaocredito,
-		valorcartaodebito: sync.valorcartaodebito,
-		valorcartao: sync.valorcartao,
-		valorprepago: sync.valorprepago,
-		pagamentos: pagamentosNativosParaApi(pagamentos),
-		...(pagamentosErp.length ? { pagamentosErp } : {}),
-		...(identidade ? { identidade } : {}),
-	});
-
-	await atualizarVendaSync(idlocal, {
-		idremoto: venda.id,
-		sync_status: "sincronizado",
-	});
-
-	for (const item of itens) {
-		await criarItemVendaPdv({
-			idempresa,
-			idvenda: venda.id,
-			idproduto: item.idproduto,
-			quantidade: item.quantidade,
-			precounitario: item.precounitario,
-			precototal: item.precototal,
-			precopromocao: 0,
-			precoalterado: 0,
-			descricao: item.descricao,
-		});
-	}
-
-	await baixarEstoqueVendaOutbox({
-		idlocal,
-		idremoto: venda.id,
-		idempresa,
+	await sincronizarItensAntesDaBaixa(
 		itens,
-		total,
-		sync,
-		payload,
-	});
+		async (item) => {
+			await criarItemVendaPdv({
+				idempresa,
+				idvenda: idremoto,
+				iditemlocal: item.id,
+				idproduto: item.idproduto,
+				quantidade: item.quantidade,
+				precounitario: item.precounitario,
+				precototal: item.precototal,
+				precopromocao: 0,
+				precoalterado: 0,
+				descricao: item.descricao,
+			});
+		},
+		async () => {
+			await atualizarVendaSync(idlocal, {
+				idremoto,
+				sync_status: "sincronizado",
+			});
+
+			await baixarEstoqueVendaOutbox({
+				idlocal,
+				idremoto,
+				idempresa,
+				itens,
+				total,
+				sync,
+				payload,
+			});
+		},
+	);
 }
 
 async function syncTransmitirContingencia(

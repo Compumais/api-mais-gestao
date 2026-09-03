@@ -60,6 +60,13 @@ export async function criarFinanceiro(data: NovoFinanceiro) {
 	return financeiro;
 }
 
+export async function criarFinanceiros(dados: NovoFinanceiro[]) {
+	if (dados.length === 0) return [];
+	return db.transaction((tx) =>
+		tx.insert(schema.financeiro).values(dados).returning(),
+	);
+}
+
 export async function buscarFinanceiroPorId(id: string) {
 	const [financeiro] = await db
 		.select()

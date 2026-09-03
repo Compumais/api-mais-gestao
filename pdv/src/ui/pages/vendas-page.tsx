@@ -1,11 +1,18 @@
 import {
 	flexRender,
 	getCoreRowModel,
-	type VisibilityState,
 	useReactTable,
+	type VisibilityState,
 } from "@tanstack/react-table";
 import { ChevronDown, Columns3 } from "lucide-react";
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+	Fragment,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { pdvInvoke } from "@/lib/pdv-api";
 import { rotaHomePdv, rotuloModelo, type StatusContext } from "@/lib/pdv-types";
@@ -39,23 +46,24 @@ import {
 	COLUNA_PARA_CAMPO_FILTRO_VENDAS,
 	type ConfigFiltroColunaVendas,
 	criarColunasVendas,
-	filtrarVendas,
 	type FiltrosColunaVendasState,
+	filtrarVendas,
 	filtrosColunaVendasVazios,
 	NFCE_OPCOES_FILTRO,
-	ordenarVendas,
 	ORIGEM_OPCOES_FILTRO,
+	ordenarVendas,
 	PAGAMENTO_OPCOES_FILTRO,
 	rotuloColunaVendas,
+	rotuloNumeracaoNfce,
 	SYNC_OPCOES_FILTRO,
 	type VendaListagem,
 	visibilidadePadraoColunasVendas,
-	rotuloNumeracaoNfce,
 } from "./vendas-colunas";
 
 const CHAVE_COLUNAS_VENDAS = "pdv.vendas.colunas";
 
 type ItemVendaDetalhe = {
+	id: string;
 	idproduto: string;
 	descricao: string;
 	quantidade: number;
@@ -88,6 +96,7 @@ export function VendasPage() {
 	const [loading, setLoading] = useState(false);
 	const [retransmitindoId, setRetransmitindoId] = useState<string | null>(null);
 	const [transmitindoPendentes, setTransmitindoPendentes] = useState(false);
+	const [sincronizandoNfce, setSincronizandoNfce] = useState(false);
 	const [inutilizarVendaId, setInutilizarVendaId] = useState<string | null>(
 		null,
 	);
@@ -123,17 +132,20 @@ export function VendasPage() {
 	itensPorVendaRef.current = itensPorVenda;
 
 	useEffect(() => {
-		localStorage.setItem(CHAVE_COLUNAS_VENDAS, JSON.stringify(columnVisibility));
+		localStorage.setItem(
+			CHAVE_COLUNAS_VENDAS,
+			JSON.stringify(columnVisibility),
+		);
 	}, [columnVisibility]);
 
-	async function load() {
+	const load = useCallback(async () => {
 		setLoading(true);
 		try {
 			setVendas(await pdvInvoke<VendaListagem[]>("listarVendas"));
 		} finally {
 			setLoading(false);
 		}
-	}
+	}, []);
 
 	const onToggleExpandir = useCallback(async (id: string) => {
 		if (idsExpandidosRef.current.has(id)) {
@@ -174,22 +186,25 @@ export function VendasPage() {
 		}
 	}, []);
 
-	async function retransmitir(id: string) {
-		setRetransmitindoId(id);
-		setMsg("");
-		try {
-			const result = await pdvInvoke<{ modo: string; mensagem: string }>(
-				"retransmitirNfce",
-				id,
-			);
-			setMsg(result.mensagem);
-			await load();
-		} catch (err) {
-			setMsg(err instanceof Error ? err.message : "Falha ao retransmitir");
-		} finally {
-			setRetransmitindoId(null);
-		}
-	}
+	const retransmitir = useCallback(
+		async (id: string) => {
+			setRetransmitindoId(id);
+			setMsg("");
+			try {
+				const result = await pdvInvoke<{ modo: string; mensagem: string }>(
+					"retransmitirNfce",
+					id,
+				);
+				setMsg(result.mensagem);
+				await load();
+			} catch (err) {
+				setMsg(err instanceof Error ? err.message : "Falha ao retransmitir");
+			} finally {
+				setRetransmitindoId(null);
+			}
+		},
+		[load],
+	);
 
 	async function transmitirTodasPendentes() {
 		setTransmitindoPendentes(true);
@@ -228,10 +243,32 @@ export function VendasPage() {
 		}
 	}
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: deve rodar apenas uma vez ao montar
+	async function sincronizarNfce() {
+		if (sincronizandoNfce) return;
+		setSincronizandoNfce(true);
+		setMsg("");
+		try {
+			const result = await pdvInvoke<{
+				total: number;
+				atualizadas: number;
+				registradas: number;
+				conflitos: number;
+				falhas: number;
+			}>("sincronizarNfce");
+			setMsg(
+				`NFC-e sincronizadas: ${result.atualizadas} atualizada(s), ${result.registradas} registrada(s), ${result.conflitos} conflito(s), ${result.falhas} falha(s) em ${result.total}.`,
+			);
+		} catch (err) {
+			setMsg(err instanceof Error ? err.message : "Falha ao sincronizar NFC-e");
+		} finally {
+			await load();
+			setSincronizandoNfce(false);
+		}
+	}
+
 	useEffect(() => {
 		void load();
-	}, []);
+	}, [load]);
 
 	const onOrdenarColuna = useCallback(
 		(colunaId: string, direcao: OrdenacaoColunaTabela) => {
@@ -320,6 +357,7 @@ export function VendasPage() {
 			idsExpandidos,
 			carregandoItensId,
 			onToggleExpandir,
+			retransmitir,
 		],
 	);
 
@@ -391,6 +429,19 @@ export function VendasPage() {
 					<FunctionBar
 						actions={[
 							{
+								key: "sincronizar-nfce",
+								label: sincronizandoNfce
+									? "Sincronizando NFC-e…"
+									: "Sincronizar NFC-e",
+								variant: "secondary",
+								onClick: () => void sincronizarNfce(),
+								disabled:
+									loading ||
+									sincronizandoNfce ||
+									transmitindoPendentes ||
+									retransmitindoId != null,
+							},
+							{
 								key: "transmitir-pendentes",
 								label: transmitindoPendentes
 									? "Transmitindo…"
@@ -399,6 +450,7 @@ export function VendasPage() {
 								onClick: () => void transmitirTodasPendentes(),
 								disabled:
 									loading ||
+									sincronizandoNfce ||
 									transmitindoPendentes ||
 									retransmitindoId != null ||
 									status?.modo === "secundario",
@@ -415,7 +467,7 @@ export function VendasPage() {
 								hotkey: teclas.sincronizar,
 								variant: "secondary",
 								onClick: () => void load(),
-								disabled: loading || transmitindoPendentes,
+								disabled: loading || transmitindoPendentes || sincronizandoNfce,
 							},
 							{
 								key: "voltar",
@@ -605,9 +657,9 @@ export function VendasPage() {
 																				</tr>
 																			</thead>
 																			<tbody>
-																				{itens.map((item, index) => (
+																				{itens.map((item) => (
 																					<tr
-																						key={`${item.idproduto}-${index}`}
+																						key={item.id}
 																						className="border-t border-border/60"
 																					>
 																						<td className="py-1.5 pr-4">
