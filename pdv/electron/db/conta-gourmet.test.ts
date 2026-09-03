@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+	filtrarItensAbertosConta,
+	itemContaEstaPago,
 	mensagemErroCancelarItem,
 	partirPorItens,
 	partirPorPessoas,
@@ -178,6 +180,22 @@ describe("mensagemErroCancelarItem", () => {
 				totalAposCancelar: 0,
 			}),
 			null,
+		);
+	});
+});
+
+describe("itens pagos na comanda", () => {
+	it("filtra itens pagos da lista aberta", () => {
+		const itens = [
+			{ id: "a", pago: 0 },
+			{ id: "b", pago: 1 },
+			{ id: "c", pago: 0 },
+		];
+		assert.equal(itemContaEstaPago(itens[1]!), true);
+		assert.equal(itemContaEstaPago(itens[0]!), false);
+		assert.deepEqual(
+			filtrarItensAbertosConta(itens).map((i) => i.id),
+			["a", "c"],
 		);
 	});
 });

@@ -6,7 +6,11 @@ import {
 	useOutletContext,
 	useParams,
 } from "react-router-dom";
-import { totalFatiaItensSelecionados } from "@/lib/conta-gourmet";
+import {
+	filtrarItensAbertosConta,
+	itemContaEstaPago,
+	totalFatiaItensSelecionados,
+} from "@/lib/conta-gourmet";
 import { normalizarObservacaoItem } from "@/lib/observacao-item";
 import { normalizarObservacaoPedido } from "@/lib/observacao-pedido";
 import {
@@ -86,6 +90,7 @@ type ContaMesa = {
 		precounitario: number;
 		precototal: number;
 		observacao?: string | null;
+		pago?: number;
 	}>;
 };
 
@@ -109,6 +114,10 @@ function classeLinhaItemSelecionavel(marcado: boolean) {
 	return marcado
 		? "bg-primary/30 font-medium text-primary ring-2 ring-primary"
 		: "bg-background ring-1 ring-foreground/10 hover:bg-primary/15";
+}
+
+function classeLinhaItemPago() {
+	return "opacity-50 text-muted-foreground line-through decoration-foreground/50";
 }
 
 export function MesaContaPage() {
@@ -676,7 +685,13 @@ export function MesaContaPage() {
 	}
 
 	function abrirAjuste(tipo: "desconto" | "acrescimo") {
-		if (!conta?.itens.length || loading || pagando) return;
+		if (
+			!conta ||
+			filtrarItensAbertosConta(conta.itens).length === 0 ||
+			loading ||
+			pagando
+		)
+			return;
 		setAjusteTipo(tipo);
 		setAjustePercentual(false);
 		const atual =
@@ -779,7 +794,10 @@ export function MesaContaPage() {
 	function totalDosItensSelecionados(): number {
 		if (!conta || !itensSel.length) return 0;
 		return totalFatiaItensSelecionados(
-			conta.itens.map((i) => ({ id: i.id, precototal: i.precototal })),
+			filtrarItensAbertosConta(conta.itens).map((i) => ({
+				id: i.id,
+				precototal: i.precototal,
+			})),
 			itensSel,
 			{
 				subtotal: conta.subtotal ?? conta.valortotal,
@@ -794,7 +812,7 @@ export function MesaContaPage() {
 	}
 
 	function abrirPagarPorItens() {
-		if (!conta?.itens.length) return;
+		if (!conta || filtrarItensAbertosConta(conta.itens).length === 0) return;
 		setPagarItensAberto(true);
 	}
 
@@ -898,11 +916,15 @@ export function MesaContaPage() {
 	}
 
 	const itens = conta?.itens ?? [];
+	const itensAbertos = useMemo(
+		() => filtrarItensAbertosConta(itens),
+		[itens],
+	);
 	const total = conta?.valorrestante ?? conta?.valortotal ?? 0;
 	const totalSelecionado = useMemo(() => {
 		if (!conta || !itensSel.length) return 0;
 		return totalFatiaItensSelecionados(
-			conta.itens.map((i) => ({ id: i.id, precototal: i.precototal })),
+			itensAbertos.map((i) => ({ id: i.id, precototal: i.precototal })),
 			itensSel,
 			{
 				subtotal: conta.subtotal ?? conta.valortotal,
@@ -914,7 +936,7 @@ export function MesaContaPage() {
 				valortotal: conta.valortotal,
 			},
 		);
-	}, [conta, itensSel]);
+	}, [conta, itensAbertos, itensSel]);
 	const totalPagar = fatiaValor ?? total;
 	const totalFila = useMemo(
 		() => fila.reduce((acc, i) => acc + i.precototal, 0),
@@ -1126,29 +1148,42 @@ export function MesaContaPage() {
 											>
 												Limpar seleção
 											</button>
-										) : (
+										) : itensAbertos.length > 0 ? (
 											<button
 												type="button"
 												className="text-xs text-muted-foreground underline"
-												onClick={() => setItensSel(itens.map((i) => i.id))}
+												onClick={() =>
+													setItensSel(itensAbertos.map((i) => i.id))
+												}
 											>
 												Selecionar todos
 											</button>
-										)}
+										) : null}
 									</div>
 									{itens.map((item) => {
-										const marcado = itensSel.includes(item.id);
+										const pago = itemContaEstaPago(item);
+										const marcado = !pago && itensSel.includes(item.id);
 										return (
 											<div
 												key={item.id}
-												className={`mb-1 flex items-center justify-between gap-2 rounded-md px-2 py-2 text-sm ${classeLinhaItemSelecionavel(marcado)}`}
+												className={`mb-1 flex items-center justify-between gap-2 rounded-md px-2 py-2 text-sm ${
+													pago
+														? classeLinhaItemPago()
+														: classeLinhaItemSelecionavel(marcado)
+												}`}
 											>
-												<label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2">
+												<label
+													className={`flex min-w-0 flex-1 items-center gap-2 ${
+														pago ? "cursor-default" : "cursor-pointer"
+													}`}
+												>
 													<input
 														type="checkbox"
 														className="size-4 shrink-0 accent-primary"
 														checked={marcado}
+														disabled={pago}
 														onChange={(e) => {
+															if (pago) return;
 															setItensSel((prev) =>
 																e.target.checked
 																	? [...prev, item.id]
@@ -1160,9 +1195,10 @@ export function MesaContaPage() {
 														<span className="block truncate font-medium">
 															{formatarQuantidade(item.quantidade)}x{" "}
 															{item.descricao}
+															{pago ? " · pago" : ""}
 														</span>
 														{item.observacao ? (
-															<span className="block truncate text-xs text-muted-foreground">
+															<span className="block truncate text-xs text-muted-foreground no-underline opacity-100">
 																{item.observacao}
 															</span>
 														) : null}
@@ -1172,17 +1208,19 @@ export function MesaContaPage() {
 													<span className="font-semibold tabular-nums">
 														{money(item.precototal)}
 													</span>
-													<Button
-														type="button"
-														size="icon"
-														variant="ghost"
-														className="size-8 text-destructive"
-														disabled={loading}
-														aria-label={`Cancelar ${item.descricao}`}
-														onClick={() => void solicitarCancelarItem(item)}
-													>
-														<X className="size-4" />
-													</Button>
+													{!pago ? (
+														<Button
+															type="button"
+															size="icon"
+															variant="ghost"
+															className="size-8 text-destructive"
+															disabled={loading}
+															aria-label={`Cancelar ${item.descricao}`}
+															onClick={() => void solicitarCancelarItem(item)}
+														>
+															<X className="size-4" />
+														</Button>
+													) : null}
 												</span>
 											</div>
 										);
@@ -1353,7 +1391,7 @@ export function MesaContaPage() {
 								size="lg"
 								variant="secondary"
 								className="w-full"
-								disabled={!itens.length || fila.length > 0 || loading}
+								disabled={!itensAbertos.length || fila.length > 0 || loading}
 								onClick={() => {
 									setPagandoFatia(false);
 									setFatiaValor(null);
@@ -1533,8 +1571,8 @@ export function MesaContaPage() {
 				acrescimoJaAplicado={conta?.valoracrescimo ?? 0}
 				itens={
 					pagandoFatia && itensSel.length > 0
-						? itens.filter((item) => itensSel.includes(item.id))
-						: itens
+						? itensAbertos.filter((item) => itensSel.includes(item.id))
+						: itensAbertos
 				}
 				onCancelar={() => {
 					setPagando(false);
@@ -1699,7 +1737,8 @@ export function MesaContaPage() {
 							<Button
 								size="sm"
 								variant="outline"
-								onClick={() => setItensSel(itens.map((i) => i.id))}
+								disabled={itensAbertos.length === 0}
+								onClick={() => setItensSel(itensAbertos.map((i) => i.id))}
 							>
 								Todos
 							</Button>
@@ -1713,18 +1752,25 @@ export function MesaContaPage() {
 						</div>
 						<div className="min-h-0 flex-1 space-y-1 overflow-auto">
 							{itens.map((item) => {
-								const marcado = itensSel.includes(item.id);
+								const pago = itemContaEstaPago(item);
+								const marcado = !pago && itensSel.includes(item.id);
 								return (
 									<label
 										key={item.id}
-										className={`flex cursor-pointer items-center justify-between gap-2 rounded-md px-3 py-3 text-sm ${classeLinhaItemSelecionavel(marcado)}`}
+										className={`flex items-center justify-between gap-2 rounded-md px-3 py-3 text-sm ${
+											pago
+												? classeLinhaItemPago()
+												: `cursor-pointer ${classeLinhaItemSelecionavel(marcado)}`
+										}`}
 									>
 										<span className="flex min-w-0 flex-1 items-center gap-3">
 											<input
 												type="checkbox"
 												className="size-5 shrink-0 accent-primary"
 												checked={marcado}
+												disabled={pago}
 												onChange={(e) => {
+													if (pago) return;
 													setItensSel((prev) =>
 														e.target.checked
 															? [...prev, item.id]
@@ -1734,6 +1780,7 @@ export function MesaContaPage() {
 											/>
 											<span className="font-medium">
 												{formatarQuantidade(item.quantidade)}x {item.descricao}
+												{pago ? " · pago" : ""}
 											</span>
 										</span>
 										<span className="shrink-0 font-semibold tabular-nums">
@@ -1802,7 +1849,7 @@ export function MesaContaPage() {
 						label: "Pré-conta",
 						hotkey: "F6",
 						variant: "outline",
-						disabled: !itens.length || loading,
+						disabled: !itensAbertos.length || loading,
 						onClick: () => void preConta(),
 					},
 					{
@@ -1829,14 +1876,16 @@ export function MesaContaPage() {
 						label: "Desconto",
 						hotkey: teclas.desconto,
 						variant: "outline",
-						disabled: !itens.length || loading || pagando || senhaAberta,
+						disabled:
+							!itensAbertos.length || loading || pagando || senhaAberta,
 						onClick: () => abrirDesconto(),
 					},
 					{
 						key: "acrescimo",
 						label: "Acréscimo",
 						variant: "outline",
-						disabled: !itens.length || loading || pagando || senhaAberta,
+						disabled:
+							!itensAbertos.length || loading || pagando || senhaAberta,
 						onClick: () => abrirAcrescimo(),
 					},
 					{
@@ -1844,7 +1893,8 @@ export function MesaContaPage() {
 						label: "Receber",
 						hotkey: teclas.receber,
 						variant: "secondary",
-						disabled: !itens.length || fila.length > 0 || loading || pagando,
+						disabled:
+							!itensAbertos.length || fila.length > 0 || loading || pagando,
 						onClick: () => {
 							setPagandoFatia(false);
 							setFatiaValor(null);
@@ -1857,7 +1907,7 @@ export function MesaContaPage() {
 						hotkey: "F8",
 						variant: "outline",
 						disabled:
-							!itens.length ||
+							!itensAbertos.length ||
 							fila.length > 0 ||
 							loading ||
 							pagando ||
@@ -1924,14 +1974,15 @@ export function MesaContaPage() {
 							? `Pagar ${itensSel.length} itens (${money(totalSelecionado)})`
 							: "Pagar por itens",
 						hotkey: "F8",
-						disabled: !itens.length || fila.length > 0 || loading || pagando,
+						disabled:
+							!itensAbertos.length || fila.length > 0 || loading || pagando,
 						onClick: () => abrirPagarPorItens(),
 					},
 					{
 						key: "preconta",
 						label: "Pré-conta",
 						hotkey: "F6",
-						disabled: !itens.length || loading,
+						disabled: !itensAbertos.length || loading,
 						onClick: () => void preConta(),
 					},
 					{
@@ -1945,13 +1996,15 @@ export function MesaContaPage() {
 						key: "desconto",
 						label: "Desconto",
 						hotkey: teclas.desconto,
-						disabled: !itens.length || loading || pagando || senhaAberta,
+						disabled:
+							!itensAbertos.length || loading || pagando || senhaAberta,
 						onClick: () => abrirDesconto(),
 					},
 					{
 						key: "acrescimo",
 						label: "Acréscimo",
-						disabled: !itens.length || loading || pagando || senhaAberta,
+						disabled:
+							!itensAbertos.length || loading || pagando || senhaAberta,
 						onClick: () => abrirAcrescimo(),
 					},
 					...(modoEntrega
@@ -1973,19 +2026,19 @@ export function MesaContaPage() {
 								{
 									key: "dividir",
 									label: "Dividir",
-									disabled: !itens.length || loading,
+									disabled: !itensAbertos.length || loading,
 									onClick: () => iniciarDivisao(),
 								},
 								{
 									key: "transferir",
 									label: "Transferir",
-									disabled: !itens.length || loading,
+									disabled: !itensAbertos.length || loading,
 									onClick: () => setDestinoAberto("transferir"),
 								},
 								{
 									key: "juntar",
 									label: "Juntar",
-									disabled: !itens.length || loading,
+									disabled: !itensAbertos.length || loading,
 									onClick: () => setDestinoAberto("juntar"),
 								},
 								{

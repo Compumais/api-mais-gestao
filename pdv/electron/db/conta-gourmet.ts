@@ -242,6 +242,20 @@ export function valorRestante(total: number, pago: number): number {
 	return arredondarMoeda(Math.max(0, arredondarMoeda(total) - arredondarMoeda(pago)));
 }
 
+/** Item marcado como pago (pagamento parcial por itens). */
+export function itemContaEstaPago(item: {
+	pago?: number | boolean | null;
+}): boolean {
+	return Number(item.pago) === 1;
+}
+
+/** Itens ainda em aberto na conta (exclui os já pagos). */
+export function filtrarItensAbertosConta<
+	T extends { pago?: number | boolean | null },
+>(itens: T[]): T[] {
+	return itens.filter((item) => !itemContaEstaPago(item));
+}
+
 /** Regras de cancelar item já lançado (espelha exclusão da API / web gourmet). */
 export function mensagemErroCancelarItem(params: {
 	contaValida: boolean;
