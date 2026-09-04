@@ -1,6 +1,10 @@
 "use client";
 
-import { IconChevronDown, IconLayoutColumns, IconSend } from "@tabler/icons-react";
+import {
+	IconChevronDown,
+	IconLayoutColumns,
+	IconSend,
+} from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	flexRender,
@@ -39,13 +43,17 @@ import {
 import { useEmpresa } from "@/hooks/use-empresa";
 import { useNfceAmbientePdv } from "@/hooks/use-nfce-ambiente-pdv";
 import {
+	useInterpretarRejeicaoNfce,
+	useNfceDetalhes,
+} from "@/hooks/use-nfce-detalhes";
+import {
 	TABELA_NFCE,
 	useColunasTabelaPersistidas,
 } from "@/hooks/use-preferencias-ui-usuario";
-import {
-	type CupomNaoFiscalData,
-	type MeioPagamentoPdv,
-	type PagamentoParcialPdv,
+import type {
+	CupomNaoFiscalData,
+	MeioPagamentoPdv,
+	PagamentoParcialPdv,
 } from "@/lib/gourmet-utils";
 import {
 	type DadosCupomNfceApi,
@@ -56,6 +64,7 @@ import { PageContainer } from "../components/page-container";
 import { BotaoAlterarNumeracao } from "../configuracoes/components/dialog-alterar-numeracao";
 import { AvisoAmbienteNfe } from "../nota-fiscal-venda/components/aviso-ambiente-nfe";
 import { ModalEventoNfe } from "../nota-fiscal-venda/components/modal-evento-nfe";
+import { DialogDetalhesNfce } from "./components/dialog-detalhes-nfce";
 import {
 	COLUNA_PARA_CAMPO_FILTRO_NFCE,
 	type ConfigFiltroColunaNfce,
@@ -130,6 +139,7 @@ export default function NfcePage() {
 		tipo: "cancelar" | "inutilizar";
 		nota: NfceListagem;
 	} | null>(null);
+	const [detalhesNotaId, setDetalhesNotaId] = useState<string | null>(null);
 
 	const visibilidadePadrao = useMemo(() => visibilidadePadraoColunasNfce(), []);
 	const { columnVisibility, onColumnVisibilityChange, isLoadingPreferencias } =
@@ -188,9 +198,7 @@ export default function NfcePage() {
 				limit: pagination.pageSize,
 				...(filtrosColuna.numero ? { numero: filtrosColuna.numero } : {}),
 				...(filtrosColuna.idvenda ? { idvenda: filtrosColuna.idvenda } : {}),
-				...(filtrosColuna.chavenfe
-					? { chavenfe: filtrosColuna.chavenfe }
-					: {}),
+				...(filtrosColuna.chavenfe ? { chavenfe: filtrosColuna.chavenfe } : {}),
 				...(filtrosColuna.emissao
 					? {
 							dataInicio: filtrosColuna.emissao,
@@ -253,6 +261,20 @@ export default function NfcePage() {
 		onError: (error: Error) => {
 			toast.error(error.message || "Erro ao transmitir NFC-e pendentes");
 		},
+	});
+
+	const detalhesQuery = useNfceDetalhes({
+		idempresa,
+		idnotafiscal: detalhesNotaId,
+		enabled: detalhesNotaId != null,
+	});
+	const interpretacaoQuery = useInterpretarRejeicaoNfce({
+		idempresa,
+		idnotafiscal: detalhesNotaId,
+		enabled:
+			detalhesNotaId != null &&
+			detalhesQuery.data?.rejeicao != null &&
+			Boolean(detalhesQuery.data.iaDisponivel),
 	});
 
 	const eventoMutation = useMutation({
@@ -327,6 +349,7 @@ export default function NfcePage() {
 				onImprimir: (idnotafiscal) => {
 					void handleImprimirCupom(idnotafiscal);
 				},
+				onVerDetalhes: (idnotafiscal) => setDetalhesNotaId(idnotafiscal),
 				onCancelar: (nota) => setEventoModal({ tipo: "cancelar", nota }),
 				onInutilizar: (nota) => setEventoModal({ tipo: "inutilizar", nota }),
 			}),
@@ -438,10 +461,7 @@ export default function NfcePage() {
 
 				<div className="mx-4 rounded-lg border bg-card">
 					{mostrarSkeleton ? (
-						<TableSkeleton
-							columns={colunasVisiveis.length || 7}
-							rows={8}
-						>
+						<TableSkeleton columns={colunasVisiveis.length || 7} rows={8}>
 							{colunasVisiveis.map((coluna) => (
 								<TableHead key={coluna.id}>{rotuloColuna(coluna)}</TableHead>
 							))}
@@ -547,6 +567,23 @@ export default function NfcePage() {
 					)}
 				</div>
 			</div>
+
+			<DialogDetalhesNfce
+				open={detalhesNotaId != null}
+				onOpenChange={(aberto) => {
+					if (!aberto) setDetalhesNotaId(null);
+				}}
+				carregando={detalhesQuery.isLoading}
+				erro={detalhesQuery.error instanceof Error ? detalhesQuery.error : null}
+				detalhes={detalhesQuery.data}
+				interpretacao={interpretacaoQuery.data}
+				carregandoInterpretacao={interpretacaoQuery.isFetching}
+				erroInterpretacao={
+					interpretacaoQuery.error instanceof Error
+						? interpretacaoQuery.error
+						: null
+				}
+			/>
 
 			<ModalEventoNfe
 				open={eventoModal != null}
