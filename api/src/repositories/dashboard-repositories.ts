@@ -72,6 +72,7 @@ const formatarStatusFinanceiro = (status: string | null): string => {
 		A: "Aberto",
 		Q: "Quitado",
 		P: "Parcial",
+		S: "Substituído",
 		C: "Cancelado",
 	};
 

@@ -12,6 +12,7 @@ const financeiroItemResponseProperties = {
 	documento: { type: "string", nullable: true },
 	emitente: { type: "string", nullable: true },
 	status: { type: "string", nullable: true },
+	tipodocumentodescricao: { type: "string", nullable: true },
 	emissao: { type: "string", nullable: true },
 	vencimento: { type: "string", nullable: true },
 	vencimentooriginal: { type: "string", nullable: true },
@@ -175,6 +176,11 @@ export const listarFinanceirosSchema: FastifySchema = {
 				nullable: true,
 				description: "Filtro por documento (busca parcial)",
 			},
+			tipodocumentodescricao: {
+				type: "string",
+				nullable: true,
+				description: "Filtro por descrição do tipo de documento (busca parcial)",
+			},
 			emissaoInicio: {
 				type: "string",
 				format: "date",
@@ -201,10 +207,10 @@ export const listarFinanceirosSchema: FastifySchema = {
 			},
 			status: {
 				type: "string",
-				enum: ["A", "P", "C", "V"],
+				enum: ["A", "P", "Q", "S", "C", "V"],
 				nullable: true,
 				description:
-					"Filtro por status: A (Aberto), P (Pago), C (Cancelado), V (Vencido)",
+					"Filtro por status: A (Aberto), P (Pago), Q (Quitado), S (Substituído), C (Cancelado), V (Vencido)",
 			},
 			tipo: {
 				type: "string",
@@ -216,6 +222,7 @@ export const listarFinanceirosSchema: FastifySchema = {
 				type: "string",
 				enum: [
 					"documento",
+					"tipodocumentodescricao",
 					"emitente",
 					"parcela",
 					"status",

@@ -9,7 +9,8 @@ export interface Financeiro {
 	idorigem: number | null;
 	parcela: number | null;
 	documento: string | null;
-	idtipodocumentofinanceiro: number | null;
+	idtipodocumentofinanceiro: string | null;
+	tipodocumentodescricao?: string | null;
 	status: string | null;
 	emissao: string | null;
 	vencimento: string | null;
@@ -122,6 +123,7 @@ export interface ListarFinanceirosParams {
 	saldo?: string | null;
 	emissao?: string | null;
 	documento?: string | null;
+	tipodocumentodescricao?: string | null;
 	emitente?: string | null;
 	emissaoInicio?: string | null;
 	emissaoFim?: string | null;
@@ -141,7 +143,7 @@ export interface CriarFinanceiroData {
 	idorigem?: number | null;
 	parcela?: number | null;
 	documento?: string | null;
-	idtipodocumentofinanceiro?: number | null;
+	idtipodocumentofinanceiro?: string | null;
 	status?: string | null;
 	emissao?: string | null;
 	vencimento?: string | null;
@@ -190,7 +192,7 @@ export interface AtualizarFinanceiroData {
 	idorigem?: number | null;
 	parcela?: number | null;
 	documento?: string | null;
-	idtipodocumentofinanceiro?: number | null;
+	idtipodocumentofinanceiro?: string | null;
 	status?: string | null;
 	emissao?: string | null;
 	vencimento?: string | null;

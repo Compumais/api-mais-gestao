@@ -177,6 +177,30 @@ export async function buscarNotaFiscalPorId(id: string) {
 	return registro;
 }
 
+/**
+ * Recupera NFC-e criada durante a emissão que ficou sem vínculo na venda.
+ * O id da venda é persistido no snapshot dadosimportacao antes do vínculo.
+ */
+export async function buscarNotaFiscalNfcePorVendaPdv(
+	idempresa: string,
+	idvenda: string,
+) {
+	const [registro] = await db
+		.select()
+		.from(notafiscal)
+		.where(
+			and(
+				eq(notafiscal.idempresa, idempresa),
+				eq(notafiscal.modelo, "65"),
+				sql`${notafiscal.dadosimportacao}->>'idvenda' = ${idvenda}`,
+			),
+		)
+		.orderBy(desc(notafiscal.datainclusao))
+		.limit(1);
+
+	return registro;
+}
+
 export async function listarItensPorNotaFiscal(idnotafiscal: string) {
 	return db
 		.select()
@@ -445,13 +469,16 @@ export async function listarNfcePorEmpresa({
 		eq(notafiscal.idempresa, idempresa),
 		eq(notafiscal.modelo, "65"),
 		ne(notafiscal.status, STATUS_RASCUNHO_IMPORTACAO),
-		// Ghosts sem número e sem chave válida (stub de timeout/contingência).
-		sql`not (
-			(
-				coalesce(${notafiscal.numeronotafiscal}, '') = ''
-				or ${notafiscal.numeronotafiscal} ~ '^0+$'
+		// Pendência de pré-validação é editável mesmo sem numeração fiscal.
+		sql`(
+			${notafiscal.dadosimportacao}->>'preValidacao' = 'true'
+			or not (
+				(
+					coalesce(${notafiscal.numeronotafiscal}, '') = ''
+					or ${notafiscal.numeronotafiscal} ~ '^0+$'
+				)
+				and length(regexp_replace(coalesce(${notafiscal.chavenfe}, ''), '[^0-9]', '', 'g')) <> 44
 			)
-			and length(regexp_replace(coalesce(${notafiscal.chavenfe}, ''), '[^0-9]', '', 'g')) <> 44
 		)`,
 	];
 
