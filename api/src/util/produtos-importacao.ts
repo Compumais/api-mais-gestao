@@ -8,6 +8,23 @@ export type { FormatoArquivoImportacao };
 
 export const LIMITE_PRODUTOS_IMPORTACAO = 10000;
 
+export const COLUNAS_BASE_TEMPLATE_PRODUTOS = [
+	{ campo: "codigo", cabecalho: "Código" },
+	{ campo: "ean", cabecalho: "EAN" },
+	{ campo: "referencia", cabecalho: "Referência" },
+	{ campo: "nome", cabecalho: "Nome" },
+	{ campo: "grupo", cabecalho: "Grupo" },
+	{ campo: "unidade", cabecalho: "Unidade" },
+	{ campo: "preco", cabecalho: "Preço" },
+	{ campo: "custo", cabecalho: "Custo" },
+	{ campo: "ncm", cabecalho: "NCM" },
+	{ campo: "cest", cabecalho: "CEST" },
+	{ campo: "origem", cabecalho: "Origem" },
+	{ campo: "mva", cabecalho: "MVA" },
+	{ campo: "estoque", cabecalho: "Estoque" },
+	{ campo: "status", cabecalho: "Status" },
+] as const;
+
 export const COLUNAS_ALIQUOTA_PRODUTO = [
 	{
 		campo: "aliquotaicmsinterna",
@@ -209,6 +226,12 @@ export const COLUNAS_FISCAIS_PRODUTO = [
 
 export type CampoFiscalProduto =
 	(typeof COLUNAS_FISCAIS_PRODUTO)[number]["campo"];
+
+export const CABECALHO_TEMPLATE_PRODUTOS = [
+	...COLUNAS_BASE_TEMPLATE_PRODUTOS.map((coluna) => coluna.cabecalho),
+	...COLUNAS_FISCAIS_PRODUTO.map((coluna) => coluna.cabecalho),
+	...COLUNAS_ALIQUOTA_PRODUTO.map((coluna) => coluna.cabecalho),
+];
 
 type ColunaComCabecalho = {
 	campo: string;

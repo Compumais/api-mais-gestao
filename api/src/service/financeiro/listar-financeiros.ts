@@ -12,6 +12,7 @@ type ListarFinanceirosParametros = {
 	saldo?: string | null | undefined;
 	emissao?: string | null | undefined;
 	documento?: string | null | undefined;
+	tipodocumentodescricao?: string | null | undefined;
 	emitente?: string | null | undefined;
 	emissaoInicio?: string | null | undefined;
 	emissaoFim?: string | null | undefined;
@@ -25,8 +26,12 @@ type ListarFinanceirosParametros = {
 	limit?: number;
 };
 
+type FinanceiroListagem = Financeiro & {
+	tipodocumentodescricao: string | null;
+};
+
 type ListarFinanceirosResposta = {
-	data: Financeiro[];
+	data: FinanceiroListagem[];
 	paginacao: {
 		page: number;
 		limit: number;
@@ -40,6 +45,7 @@ export async function listarFinanceirosService({
 	saldo,
 	emissao,
 	documento,
+	tipodocumentodescricao,
 	emitente,
 	emissaoInicio,
 	emissaoFim,
@@ -73,6 +79,7 @@ export async function listarFinanceirosService({
 		saldo,
 		emissao,
 		documento,
+		tipodocumentodescricao,
 		emitente,
 		emissaoInicio,
 		emissaoFim,

@@ -1,7 +1,11 @@
 import type { HttpResponse } from "@/model/http-model.js";
 import type { NotaFiscal } from "@/model/nota-fiscal-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
-import { buscarNotaFiscalPorId } from "@/repositories/nota-fiscal-repositories.js";
+import {
+	buscarNotaFiscalNfcePorVendaPdv,
+	buscarNotaFiscalPorChaveNfe,
+	buscarNotaFiscalPorId,
+} from "@/repositories/nota-fiscal-repositories.js";
 import {
 	buscarVendaParaReconciliacaoNfce,
 	executarComLockReconciliacaoNfce,
@@ -11,6 +15,7 @@ import { buscarTerminalPdvAtivoPorNumero } from "@/repositories/terminal-pdv-rep
 import { atualizarVendaPdvGourmet } from "@/repositories/venda-pdv-gourmet-repositories.js";
 import { httpBadRequest, httpOk, httpProibido } from "@/util/http-util.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
+import { emitirNfceVendaPdvService } from "./emitir-nfce-venda-pdv.js";
 import { reconciliarNfceAutorizadaSefaz } from "./reconciliar-nfce-autorizada-sefaz.js";
 import { transmitirNfceContingenciaService } from "./transmitir-nfce-contingencia.js";
 
@@ -221,8 +226,103 @@ async function reconciliarManifesto(
 		}
 	}
 
-	let idnotafiscal = venda.idnotafiscalnfce ?? undefined;
 	let acao: AcaoReconciliacaoNfce = "sincronizada";
+	let idnotafiscal = venda.idnotafiscalnfce ?? undefined;
+
+	if (!idnotafiscal) {
+		const notaOrfa = await buscarNotaFiscalNfcePorVendaPdv(
+			parametros.idempresa,
+			venda.id,
+		);
+		if (notaOrfa) {
+			try {
+				await atualizarVendaPdvGourmet(venda.id, {
+					idnotafiscalnfce: notaOrfa.id,
+				});
+			} catch {
+				return {
+					idvendalocal: manifesto.idvendalocal,
+					idvendaremoto: venda.id,
+					existeRetaguarda: true,
+					acao: "conflito",
+					mensagem: "NFC-e já vinculada a outra venda da retaguarda",
+				};
+			}
+			idnotafiscal = notaOrfa.id;
+			acao = "reconciliada";
+		}
+	}
+
+	if (!idnotafiscal && (manifesto.idnotafiscal || manifesto.chave)) {
+		let notaDoManifesto = manifesto.idnotafiscal
+			? await buscarNotaFiscalPorId(manifesto.idnotafiscal)
+			: undefined;
+
+		if (!notaDoManifesto && manifesto.chave) {
+			notaDoManifesto = await buscarNotaFiscalPorChaveNfe(
+				parametros.idempresa,
+				manifesto.chave,
+			);
+		}
+
+		if (notaDoManifesto) {
+			if (
+				notaDoManifesto.idempresa !== parametros.idempresa ||
+				notaDoManifesto.modelo !== "65"
+			) {
+				return {
+					idvendalocal: manifesto.idvendalocal,
+					idvendaremoto: venda.id,
+					existeRetaguarda: true,
+					acao: "conflito",
+					mensagem: "NFC-e informada pelo PDV pertence a outro contexto fiscal",
+				};
+			}
+
+			try {
+				await atualizarVendaPdvGourmet(venda.id, {
+					idnotafiscalnfce: notaDoManifesto.id,
+				});
+			} catch {
+				return {
+					idvendalocal: manifesto.idvendalocal,
+					idvendaremoto: venda.id,
+					existeRetaguarda: true,
+					acao: "conflito",
+					mensagem: "NFC-e já vinculada a outra venda da retaguarda",
+				};
+			}
+
+			idnotafiscal = notaDoManifesto.id;
+			acao = "reconciliada";
+		}
+	}
+
+	if (
+		!idnotafiscal &&
+		(manifesto.statusLocal === "erro" ||
+			manifesto.statusLocal === "erro_config")
+	) {
+		const emissao = await emitirNfceVendaPdvService({
+			idusuario: parametros.idusuario,
+			idempresa: parametros.idempresa,
+			idvenda: venda.id,
+			pagamentos: {
+				valordinheiro: venda.valordinheiro,
+				valorcartao: venda.valorcartao,
+				valorcartaocredito: venda.valorcartaocredito,
+				valorcartaodebito: venda.valorcartaodebito,
+				valorpix: venda.valorpix,
+				valorprepago: venda.valorprepago,
+				valortroco: venda.valortroco,
+				valortotal: venda.valortotal,
+			},
+		});
+		if (emissao.success && emissao.body?.idnotafiscal) {
+			idnotafiscal = emissao.body.idnotafiscal;
+			acao = "reconciliada";
+		}
+	}
 
 	if (!idnotafiscal) {
 		const chave = normalizarChave(manifesto.chave);

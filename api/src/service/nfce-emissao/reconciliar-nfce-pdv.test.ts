@@ -5,17 +5,20 @@ import * as reconciliacaoRepository from "@/repositories/reconciliacao-nfce-pdv-
 import * as terminalRepository from "@/repositories/terminal-pdv-repositories.js";
 import * as vendaRepository from "@/repositories/venda-pdv-gourmet-repositories.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
+import * as emitirNfceService from "./emitir-nfce-venda-pdv.js";
 import * as reconciliarAutorizadaService from "./reconciliar-nfce-autorizada-sefaz.js";
 import {
 	reconciliarNfcePdvService,
 	statusCanonicoNfce,
 } from "./reconciliar-nfce-pdv.js";
+import * as contingenciaService from "./transmitir-nfce-contingencia.js";
 
 vi.mock("@/repositories/entidade-repositories.js");
 vi.mock("@/repositories/nota-fiscal-repositories.js");
 vi.mock("@/repositories/reconciliacao-nfce-pdv-repositories.js");
 vi.mock("@/repositories/terminal-pdv-repositories.js");
 vi.mock("@/repositories/venda-pdv-gourmet-repositories.js");
+vi.mock("./emitir-nfce-venda-pdv.js");
 vi.mock("./reconciliar-nfce-autorizada-sefaz.js");
 vi.mock("./transmitir-nfce-contingencia.js");
 
@@ -72,6 +75,9 @@ describe("reconciliarNfcePdvService", () => {
 			resultado: await executar(),
 		}));
 		vi.mocked(reconciliacaoRepository.listarDeltaNfcePdv).mockResolvedValue([]);
+		vi.mocked(
+			notaRepository.buscarNotaFiscalNfcePorVendaPdv,
+		).mockResolvedValue(undefined);
 	});
 
 	it("rejeita terminal PDV ausente ou inativo antes de adquirir o lock", async () => {
@@ -189,6 +195,114 @@ describe("reconciliarNfcePdvService", () => {
 			idvendaremoto: vendaAntiga.id,
 			acao: "sincronizada",
 		});
+	});
+
+	it("registra pré-validação rejeitada quando o manifesto não possui nota", async () => {
+		const vendaSemNota = { ...vendaBase, idnotafiscalnfce: null };
+		const notaPreValidacao = {
+			...notaBase,
+			id: "nfce-pre-validacao",
+			status: NFE_STATUS.REJEITADA,
+			chavenfe: null,
+			serie: null,
+			numeronotafiscal: null,
+			mensagemtransmissaonfe:
+				"Pré-validação NFC-e: Item 1: quantidade ou preço inválido",
+		};
+		vi.mocked(
+			reconciliacaoRepository.buscarVendaParaReconciliacaoNfce,
+		).mockResolvedValue(vendaSemNota as never);
+		vi.mocked(emitirNfceService.emitirNfceVendaPdvService).mockResolvedValue({
+			success: true,
+			status: 200,
+			body: {
+				emitida: false,
+				idnotafiscal: notaPreValidacao.id,
+				erro: "Item 1: quantidade ou preço inválido",
+			},
+		});
+		vi.mocked(notaRepository.buscarNotaFiscalPorId).mockResolvedValue(
+			notaPreValidacao as never,
+		);
+
+		const resultado = await reconciliarNfcePdvService({
+			...parametrosBase,
+			notas: [
+				{
+					idvendalocal: "venda-local-1",
+					idvendaremoto: vendaSemNota.id,
+					statusLocal: "erro",
+				},
+			],
+		});
+
+		expect(emitirNfceService.emitirNfceVendaPdvService).toHaveBeenCalledWith(
+			expect.objectContaining({
+				idempresa: parametrosBase.idempresa,
+				idvenda: vendaSemNota.id,
+			}),
+		);
+		expect(resultado.success).toBe(true);
+		if (!resultado.success) return;
+		expect(resultado.body?.itens[0]).toMatchObject({
+			idnotafiscal: notaPreValidacao.id,
+			status: "rejeitada",
+			acao: "reconciliada",
+		});
+	});
+
+	it("recupera e vincula NFC-e rejeitada que ficou órfã da venda", async () => {
+		const vendaSemNota = { ...vendaBase, idnotafiscalnfce: null };
+		const notaRejeitada = {
+			...notaBase,
+			status: NFE_STATUS.REJEITADA,
+			mensagemtransmissaonfe: "Rejeição 778: Informado NCM inexistente",
+		};
+		vi.mocked(
+			reconciliacaoRepository.buscarVendaParaReconciliacaoNfce,
+		).mockResolvedValue(vendaSemNota as never);
+		vi.mocked(
+			notaRepository.buscarNotaFiscalNfcePorVendaPdv,
+		).mockResolvedValue(notaRejeitada as never);
+		vi.mocked(notaRepository.buscarNotaFiscalPorId).mockResolvedValue(
+			notaRejeitada as never,
+		);
+		vi.mocked(vendaRepository.atualizarVendaPdvGourmet).mockResolvedValue({
+			...vendaSemNota,
+			idnotafiscalnfce: notaRejeitada.id,
+		} as never);
+
+		const resultado = await reconciliarNfcePdvService({
+			...parametrosBase,
+			notas: [
+				{
+					idvendalocal: "venda-local-1",
+					idvendaremoto: vendaSemNota.id,
+					statusLocal: "erro",
+				},
+			],
+		});
+
+		expect(
+			notaRepository.buscarNotaFiscalNfcePorVendaPdv,
+		).toHaveBeenCalledWith(parametrosBase.idempresa, vendaSemNota.id);
+		expect(vendaRepository.atualizarVendaPdvGourmet).toHaveBeenCalledWith(
+			vendaSemNota.id,
+			{ idnotafiscalnfce: notaRejeitada.id },
+		);
+		expect(
+			contingenciaService.transmitirNfceContingenciaService,
+		).not.toHaveBeenCalled();
+		expect(resultado.success).toBe(true);
+		if (!resultado.success) return;
+		expect(resultado.body?.itens[0]).toMatchObject({
+			idvendalocal: "venda-local-1",
+			idvendaremoto: vendaSemNota.id,
+			idnotafiscal: notaRejeitada.id,
+			status: "rejeitada",
+			acao: "reconciliada",
+		});
+		expect(resultado.body?.resumo.reconciliadas).toBe(1);
 	});
 
 	it("consulta a SEFAZ quando o PDV autorizou a mesma chave pendente", async () => {

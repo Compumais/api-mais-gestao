@@ -154,6 +154,7 @@ export default function ContasAReceberPage() {
 	> => {
 		return {
 			documento: { tipo: "texto", placeholder: "Documento" },
+			tipodocumento: { tipo: "texto", placeholder: "Tipo de documento" },
 			emitente: { tipo: "texto", placeholder: "Nome" },
 			parcela: { tipo: "nenhum" },
 			status: { tipo: "opcoes", opcoes: STATUS_OPCOES_FILTRO },
@@ -185,6 +186,9 @@ export default function ContasAReceberPage() {
 				limit: pagination.pageSize,
 				...(filtrosColuna.documento
 					? { documento: filtrosColuna.documento }
+					: {}),
+				...(filtrosColuna.tipodocumentodescricao
+					? { tipodocumentodescricao: filtrosColuna.tipodocumentodescricao }
 					: {}),
 				...(filtrosColuna.emitente
 					? { emitente: filtrosColuna.emitente }

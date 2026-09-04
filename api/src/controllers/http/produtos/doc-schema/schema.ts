@@ -678,9 +678,9 @@ export const exportarProdutosMgvSchema: FastifySchema = {
 
 export const exportarProdutosSchema: FastifySchema = {
 	tags: ["produtos"],
-	summary: "Exportar cadastro completo de produtos",
+	summary: "Exportar produtos no modelo de importação",
 	description:
-		"Exporta em CSV ou XLSX todos os campos dos produtos da empresa, ativos e inativos. A coluna Status usa os valores ativo ou inativo. Inclui registros legados sem tipo, tratados como produtos.",
+		"Exporta produtos em CSV ou XLSX com as mesmas colunas e ordem do modelo de importação, incluindo Status (ativo ou inativo), permitindo editar e reimportar o arquivo.",
 	security: [{ bearerAuth: [] }],
 	querystring: {
 		type: "object",
@@ -702,7 +702,7 @@ export const exportarProdutosSchema: FastifySchema = {
 	response: {
 		200: {
 			type: "string",
-			description: "Arquivo completo de produtos",
+			description: "Arquivo de produtos compatível com a importação",
 		},
 		400: respostaErro,
 		401: respostaErro,

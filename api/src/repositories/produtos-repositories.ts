@@ -20,6 +20,7 @@ import {
 	cest,
 	cfop,
 	departamento,
+	hierarquia,
 	ncm,
 	produtos,
 } from "@/repositories/schema.js";
@@ -28,10 +29,6 @@ import { inteiroValidoParaPostgres } from "@/util/texto-util.js";
 import { normalizarCodigoCest } from "@/util/validar-cest-item-emissao-nfe.js";
 import { db } from "./connection";
 import { ordenacaoCodigoNumericoAsc } from "./ordenacao-codigo.js";
-
-export const CAMPOS_PRODUTOS_EXPORTACAO = Object.keys(
-	getTableColumns(produtos),
-) as Array<keyof Produto>;
 
 export const ORDENAR_PRODUTOS_CAMPOS = [
 	"codigo",
@@ -370,15 +367,44 @@ export async function listarProdutosParaExportacaoMgv(
 		.limit(LIMITE_EXPORTACAO_MGV);
 }
 
+export type ProdutoParaExportacao = Produto & {
+	grupo: string | null;
+	ncmExportacao: string | null;
+	cestExportacao: string | number | null;
+	cfopEntradaExportacao: string | null;
+	cfopSaidaExportacao: string | null;
+	cfopNfceExportacao: string | null;
+};
+
 export async function listarTodosProdutosParaExportacao(
 	idempresa: string,
-): Promise<Produto[]> {
+): Promise<ProdutoParaExportacao[]> {
 	// Cadastros legados sem tipo pertencem ao catálogo de produtos, como no PDV.
 	const filtroTipoProduto = or(eq(produtos.tipo, "P"), isNull(produtos.tipo));
+	const grupoExportacao = alias(hierarquia, "grupo_exportacao_produtos");
+	const ncmExportacao = alias(ncm, "ncm_exportacao_produtos");
+	const cestExportacao = alias(cest, "cest_exportacao_produtos");
+	const cfopEntrada = alias(cfop, "cfop_entrada_exportacao_produtos");
+	const cfopSaida = alias(cfop, "cfop_saida_exportacao_produtos");
+	const cfopNfce = alias(cfop, "cfop_nfce_exportacao_produtos");
 
 	return db
-		.select(getTableColumns(produtos))
+		.select({
+			...getTableColumns(produtos),
+			grupo: grupoExportacao.nome,
+			ncmExportacao: ncmExportacao.codigo,
+			cestExportacao: cestExportacao.codigo,
+			cfopEntradaExportacao: cfopEntrada.codigo,
+			cfopSaidaExportacao: cfopSaida.codigo,
+			cfopNfceExportacao: cfopNfce.codigo,
+		})
 		.from(produtos)
+		.leftJoin(grupoExportacao, eq(produtos.idgrupo, grupoExportacao.id))
+		.leftJoin(ncmExportacao, eq(produtos.idncm, ncmExportacao.id))
+		.leftJoin(cestExportacao, eq(produtos.idcest, cestExportacao.id))
+		.leftJoin(cfopEntrada, eq(produtos.idcfopentrada, cfopEntrada.id))
+		.leftJoin(cfopSaida, eq(produtos.idcfopsaida, cfopSaida.id))
+		.leftJoin(cfopNfce, eq(produtos.idcfopsaidanfce, cfopNfce.id))
 		.where(and(eq(produtos.idempresa, idempresa), filtroTipoProduto))
 		.orderBy(ordenacaoCodigoNumericoAsc(produtos.codigo), asc(produtos.nome));
 }
