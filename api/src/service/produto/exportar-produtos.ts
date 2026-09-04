@@ -46,7 +46,7 @@ const ROTULOS_CAMPOS: Partial<Record<keyof Produto, string>> = {
 	idfornecedor: "ID do fornecedor",
 	idgrupo: "ID do grupo",
 	idgrupogourmet: "ID do grupo gourmet",
-	inativo: "Inativo",
+	inativo: "Status",
 	observacoes: "Observações",
 	origem: "Origem da mercadoria",
 	ncm: "NCM",
@@ -90,7 +90,17 @@ function obterRotulo(campo: keyof Produto): string {
 	return ROTULOS_CAMPOS[campo] ?? String(campo);
 }
 
-function normalizarValor(valor: unknown): string | number | boolean {
+function formatarStatus(valor: unknown): "ativo" | "inativo" {
+	return valor === 1 || valor === true ? "inativo" : "ativo";
+}
+
+function normalizarValor(
+	campo: keyof Produto,
+	valor: unknown,
+): string | number | boolean {
+	if (campo === "inativo") {
+		return formatarStatus(valor);
+	}
 	if (valor == null) return "";
 	if (valor instanceof Date) return valor.toISOString();
 	if (typeof valor === "object") return JSON.stringify(valor);
@@ -106,7 +116,7 @@ function normalizarValor(valor: unknown): string | number | boolean {
 }
 
 function campoDeveSerTexto(campo: keyof Produto): boolean {
-	return /(^id|codigo|ean|ncm|cest|cst|csosn|cfop|tributacao|referencia|fci)/i.test(
+	return /(^id|codigo|ean|ncm|cest|cst|csosn|cfop|tributacao|referencia|fci|inativo)/i.test(
 		String(campo),
 	);
 }
@@ -116,7 +126,7 @@ function montarLinhas(
 ): Array<Array<string | number | boolean>> {
 	return produtos.map((produto) =>
 		CAMPOS_PRODUTOS_EXPORTACAO.map((campo) => {
-			const valor = normalizarValor(produto[campo]);
+			const valor = normalizarValor(campo, produto[campo]);
 			return campoDeveSerTexto(campo) && valor !== "" ? String(valor) : valor;
 		}),
 	);

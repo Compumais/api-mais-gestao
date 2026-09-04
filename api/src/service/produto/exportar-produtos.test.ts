@@ -29,6 +29,7 @@ const produtoFiscal = {
 	ncm: "01012100",
 	cstibs: "200",
 	aliquotacbs: "0.9000",
+	inativo: 1,
 } as Produto;
 
 describe("exportarProdutosService", () => {
@@ -76,8 +77,10 @@ describe("exportarProdutosService", () => {
 			expect(csv.startsWith("\uFEFF")).toBe(true);
 			expect(csv).toContain("CST IBS/CBS");
 			expect(csv).toContain("Alíquota CBS");
+			expect(csv).toContain("Status");
 			expect(csv).toContain(";200;");
 			expect(csv).toContain("0.9000");
+			expect(csv).toContain("inativo");
 			expect(csv).toContain("'=2+2");
 			expect(resultado.body.filename).toBe("produtos-completo.csv");
 		}
@@ -106,8 +109,11 @@ describe("exportarProdutosService", () => {
 
 			const cabecalhos = planilha?.getRow(1).values as ExcelJS.CellValue[];
 			const colunaCstIbs = cabecalhos.indexOf("CST IBS/CBS");
+			const colunaStatus = cabecalhos.indexOf("Status");
 			expect(colunaCstIbs).toBeGreaterThan(0);
+			expect(colunaStatus).toBeGreaterThan(0);
 			expect(planilha?.getRow(2).getCell(colunaCstIbs).value).toBe("200");
+			expect(planilha?.getRow(2).getCell(colunaStatus).value).toBe("inativo");
 			expect(planilha?.views[0]).toMatchObject({ state: "frozen", ySplit: 1 });
 			expect(resultado.body.filename).toBe("produtos-completo.xlsx");
 		}

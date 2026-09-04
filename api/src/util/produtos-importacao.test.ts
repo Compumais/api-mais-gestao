@@ -159,6 +159,35 @@ describe("validarArquivoImportacaoProdutos", () => {
 
 		expect(resultado.produtos[0]?.erros.join(" ")).toContain("MVA");
 	});
+
+	it("aceita status ativo ou inativo e assume ativo quando a coluna está vazia", async () => {
+		const csv = [
+			"Nome;Grupo;Unidade;Preço;NCM;Status",
+			"Produto A;GERAL;UN;10,00;22021000;ativo",
+			"Produto B;GERAL;UN;12,00;22021000;inativo",
+			"Produto C;GERAL;UN;8,00;22021000;",
+		].join("\n");
+
+		const resultado = await validarArquivoImportacaoProdutos("csv", csv);
+
+		expect(resultado.errosGerais).toEqual([]);
+		expect(resultado.totalErros).toBe(0);
+		expect(resultado.produtos[0]?.inativo).toBe(0);
+		expect(resultado.produtos[1]?.inativo).toBe(1);
+		expect(resultado.produtos[2]?.inativo).toBe(0);
+	});
+
+	it("rejeita status diferente de ativo ou inativo", async () => {
+		const csv = [
+			"Nome;Grupo;Unidade;Preço;NCM;Status",
+			"Produto A;GERAL;UN;10,00;22021000;pendente",
+		].join("\n");
+
+		const resultado = await validarArquivoImportacaoProdutos("csv", csv);
+
+		expect(resultado.produtos[0]?.erros.join(" ")).toContain("Status");
+		expect(resultado.totalErros).toBeGreaterThan(0);
+	});
 });
 
 describe("template de importação de produtos", () => {
@@ -171,6 +200,7 @@ describe("template de importação de produtos", () => {
 		}
 
 		const csv = resposta.body?.content.toString("utf-8") ?? "";
+		expect(csv).toContain("Status");
 		for (const coluna of COLUNAS_FISCAIS_PRODUTO) {
 			expect(csv).toContain(coluna.cabecalho);
 		}
@@ -196,6 +226,7 @@ describe("template de importação de produtos", () => {
 			cstpis: "01",
 			cstcofins: "01",
 			mva: "40.00",
+			inativo: 0,
 		});
 	});
 });

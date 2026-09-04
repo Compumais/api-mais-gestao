@@ -59,6 +59,7 @@ function validacaoBase(): ResultadoValidacaoImportacaoProdutos {
 				origem: 0,
 				mva: "40.00",
 				estoque: 10,
+				inativo: 0,
 				ippt: "P",
 				...linhaFiscalVazia(),
 				aliquotas: {
@@ -285,5 +286,26 @@ describe("montarDadosProdutoImportacao", () => {
 		expect(dados.cstcofinsentrada).toBe("50");
 		expect(dados.cstpis).toBe("01");
 		expect(dados.cstcofins).toBe("01");
+	});
+
+	it("inativa o produto quando o status da planilha é inativo", () => {
+		const dados = montarDadosProdutoImportacao("emp-1", {
+			...validacaoBase().produtos[0],
+			inativo: 1,
+			acao: "atualizar",
+			idExistente: "prod-1",
+			codigoFinal: 10,
+			idgrupo: "grupo-1",
+			idunidademedida: "un-1",
+			unidademedida: "UN",
+			idncm: null,
+			idcest: null,
+			idcfopentrada: null,
+			idcfopsaida: null,
+			idcfopsaidanfce: null,
+			erros: [],
+		});
+
+		expect(dados.inativo).toBe(1);
 	});
 });

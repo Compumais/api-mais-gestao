@@ -680,7 +680,7 @@ export const exportarProdutosSchema: FastifySchema = {
 	tags: ["produtos"],
 	summary: "Exportar cadastro completo de produtos",
 	description:
-		"Exporta em CSV ou XLSX todos os campos dos produtos da empresa, ativos e inativos. Inclui registros legados sem tipo, tratados como produtos.",
+		"Exporta em CSV ou XLSX todos os campos dos produtos da empresa, ativos e inativos. A coluna Status usa os valores ativo ou inativo. Inclui registros legados sem tipo, tratados como produtos.",
 	security: [{ bearerAuth: [] }],
 	querystring: {
 		type: "object",
@@ -804,7 +804,7 @@ export const importarProdutosSchema: FastifySchema = {
 	tags: ["produtos"],
 	summary: "Importar produtos",
 	description:
-		"Cria ou atualiza produtos a partir de um arquivo CSV ou XLSX. Produtos existentes são identificados pelo código ou EAN.",
+		"Cria ou atualiza produtos a partir de um arquivo CSV ou XLSX. Produtos existentes são identificados pelo código ou EAN. A coluna Status aceita ativo ou inativo; inativo inativa o item.",
 	security: [{ bearerAuth: [] }],
 	body: corpoImportacaoProdutos,
 	response: {
@@ -919,7 +919,7 @@ export const templateProdutosSchema: FastifySchema = {
 	tags: ["produtos"],
 	summary: "Baixar modelo de importação de produtos",
 	description:
-		"Retorna um arquivo modelo (CSV ou XLSX) com as colunas de cadastro, MVA e alíquotas e uma linha de exemplo.",
+		"Retorna um arquivo modelo (CSV ou XLSX) com as colunas de cadastro (incluindo Status), MVA e alíquotas e uma linha de exemplo.",
 	security: [{ bearerAuth: [] }],
 	querystring: {
 		type: "object",

@@ -259,7 +259,7 @@ export function montarDadosProdutoImportacao(
 		ippt: produto.ippt ?? "P",
 		origem: produto.origem ?? 0,
 		ncm: produto.ncm,
-		inativo: 0,
+		inativo: produto.inativo,
 		...(produto.custo ? { custoaquisicao: produto.custo } : {}),
 		...(produto.idncm ? { idncm: produto.idncm } : {}),
 		...(produto.idcest && produto.cest

@@ -29,6 +29,7 @@ const CABECALHO_BASE = [
 	"Origem",
 	"MVA",
 	"Estoque",
+	"Status",
 ];
 
 const CABECALHO = [
@@ -51,6 +52,7 @@ const LINHA_EXEMPLO_BASE = [
 	"0",
 	"40,00",
 	"10",
+	"ativo",
 ];
 
 const LINHA_EXEMPLO_FISCAL = COLUNAS_FISCAIS_PRODUTO.map(

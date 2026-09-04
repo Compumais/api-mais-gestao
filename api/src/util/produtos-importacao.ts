@@ -230,6 +230,7 @@ const COLUNAS_BASE = [
 	"origem",
 	"mva",
 	"estoque",
+	"status",
 	"ippt",
 	...COLUNAS_FISCAIS_PRODUTO.map((coluna) => coluna.campo),
 	...COLUNAS_ALIQUOTA_PRODUTO.map((coluna) => coluna.campo),
@@ -265,6 +266,7 @@ export type LinhaImportacaoProduto = {
 	origem: number | null;
 	mva: string | null;
 	estoque: number | null;
+	inativo: 0 | 1;
 	ippt: "P" | "T" | null;
 	cfopSaida: string | null;
 	cfopEntrada: string | null;
@@ -358,6 +360,9 @@ function mapearColuna(cabecalho: string): ColunaImportacao | null {
 	}
 	if (["estoque", "saldo", "quantidade"].includes(normalizado))
 		return "estoque";
+	if (["status", "situacao", "inativo"].includes(normalizado)) {
+		return "status";
+	}
 	if (normalizado === "ippt") return "ippt";
 
 	for (const coluna of COLUNAS_FISCAIS_PRODUTO) {
@@ -489,6 +494,19 @@ function recortarCodigoFiscal(valor: string, max: number): string | null {
 	return texto.slice(0, max);
 }
 
+function converterStatus(valor: string): 0 | 1 | null {
+	const normalizado = normalizarTextoCabecalho(valor);
+
+	if (!normalizado || normalizado === "ativo") {
+		return 0;
+	}
+	if (normalizado === "inativo") {
+		return 1;
+	}
+
+	return null;
+}
+
 function recortarTipoProduto(valor: string): string | null {
 	const texto = valor.trim();
 	if (!texto) {
@@ -615,6 +633,12 @@ function validarLinha(
 		}
 	}
 
+	const statusTexto = celula(valores, indicePorColuna, "status");
+	const inativo = converterStatus(statusTexto);
+	if (inativo === null) {
+		erros.push("Status deve ser ativo ou inativo");
+	}
+
 	const ipptTexto = celula(valores, indicePorColuna, "ippt")
 		.trim()
 		.toUpperCase();
@@ -656,6 +680,7 @@ function validarLinha(
 		origem,
 		mva,
 		estoque,
+		inativo: inativo ?? 0,
 		ippt,
 		cfopSaida: recortarCodigoFiscal(
 			celula(valores, indicePorColuna, "cfopsaida"),
