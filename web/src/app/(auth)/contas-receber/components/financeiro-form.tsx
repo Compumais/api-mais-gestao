@@ -56,17 +56,17 @@ const formatDateForInput = (date?: string | null): string => {
 
 // Função auxiliar para mapear tipo documento string para idtipodocumentofinanceiro
 // Por enquanto, vamos usar um mapeamento simples. Isso pode ser ajustado conforme necessário
-const mapTipoDocumentoToId = (tipoDocumento: string): number | null => {
+const mapTipoDocumentoToId = (tipoDocumento: string): string | null => {
 	// Mapeamento básico - pode ser ajustado conforme a tabela tipodocumentofinanceiro
-	const mapping: Record<string, number> = {
-		"Cartão crédito": 1,
-		"Cartão débito": 2,
-		Cheque: 3,
-		"Cheque 3o": 4,
-		"Cheque a vista": 5,
-		Crediario: 6,
-		Duplicata: 7,
-		"Duplicata 3o": 8,
+	const mapping: Record<string, string> = {
+		"Cartão crédito": "1",
+		"Cartão débito": "2",
+		Cheque: "3",
+		"Cheque 3o": "4",
+		"Cheque a vista": "5",
+		Crediario: "6",
+		Duplicata: "7",
+		"Duplicata 3o": "8",
 	};
 	return mapping[tipoDocumento] || null;
 };

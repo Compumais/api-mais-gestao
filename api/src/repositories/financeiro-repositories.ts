@@ -4,6 +4,7 @@ import {
 	count,
 	desc,
 	eq,
+	getTableColumns,
 	gte,
 	ilike,
 	inArray,
@@ -16,6 +17,7 @@ import { db } from "./connection.js";
 
 export const ORDENAR_FINANCEIROS_CAMPOS = [
 	"documento",
+	"tipodocumentodescricao",
 	"emitente",
 	"parcela",
 	"status",
@@ -31,6 +33,7 @@ export type OrdenarFinanceirosCampo =
 
 const COLUNAS_ORDENACAO = {
 	documento: schema.financeiro.documento,
+	tipodocumentodescricao: schema.tipodocumentofinanceiro.descricao,
 	emitente: schema.financeiro.emitente,
 	parcela: schema.financeiro.parcela,
 	status: schema.financeiro.status,
@@ -140,6 +143,7 @@ interface ListarFinanceiroParametros {
 	saldo?: string | null | undefined;
 	emissao?: string | null | undefined;
 	documento?: string | null | undefined;
+	tipodocumentodescricao?: string | null | undefined;
 	emitente?: string | null | undefined;
 	emissaoInicio?: string | null | undefined;
 	emissaoFim?: string | null | undefined;
@@ -158,6 +162,7 @@ export async function listarFinanceiro({
 	saldo,
 	emissao,
 	documento,
+	tipodocumentodescricao,
 	emitente,
 	emissaoInicio,
 	emissaoFim,
@@ -181,6 +186,11 @@ export async function listarFinanceiro({
 	}
 
 	adicionarFiltroTexto(where, schema.financeiro.documento, documento);
+	adicionarFiltroTexto(
+		where,
+		schema.tipodocumentofinanceiro.descricao,
+		tipodocumentodescricao,
+	);
 	adicionarFiltroTexto(where, schema.financeiro.emitente, emitente);
 
 	if (emissaoInicio) {
@@ -214,15 +224,30 @@ export async function listarFinanceiro({
 				: desc(COLUNAS_ORDENACAO[ordenarPor])
 			: desc(schema.financeiro.currenttimemillis);
 
+	const condicao = and(
+		inArray(schema.financeiro.idempresa, idempresas),
+		...where,
+	);
+
+	const joinTipoDocumento = eq(
+		schema.financeiro.idtipodocumentofinanceiro,
+		schema.tipodocumentofinanceiro.id,
+	);
+
 	const [totalCount, financeiros] = await Promise.all([
 		db
 			.select({ value: count() })
 			.from(schema.financeiro)
-			.where(and(inArray(schema.financeiro.idempresa, idempresas), ...where)),
+			.leftJoin(schema.tipodocumentofinanceiro, joinTipoDocumento)
+			.where(condicao),
 		db
-			.select()
+			.select({
+				...getTableColumns(schema.financeiro),
+				tipodocumentodescricao: schema.tipodocumentofinanceiro.descricao,
+			})
 			.from(schema.financeiro)
-			.where(and(inArray(schema.financeiro.idempresa, idempresas), ...where))
+			.leftJoin(schema.tipodocumentofinanceiro, joinTipoDocumento)
+			.where(condicao)
 			.orderBy(ordenacao)
 			.limit(limit)
 			.offset(offset),

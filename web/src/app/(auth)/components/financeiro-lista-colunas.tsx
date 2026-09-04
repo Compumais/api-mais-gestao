@@ -22,6 +22,7 @@ export const STATUS_OPCOES_FILTRO: OpcaoFiltroColunaTabela[] = [
 
 export type FiltrosColunaFinanceiroState = {
 	documento: string;
+	tipodocumentodescricao: string;
 	emitente: string;
 	status: string;
 	emissao: string;
@@ -30,6 +31,7 @@ export type FiltrosColunaFinanceiroState = {
 
 export const filtrosColunaFinanceiroVazios: FiltrosColunaFinanceiroState = {
 	documento: "",
+	tipodocumentodescricao: "",
 	emitente: "",
 	status: "",
 	emissao: "",
@@ -43,6 +45,7 @@ export const COLUNA_PARA_CAMPO_FILTRO_FINANCEIRO: Record<
 	CampoFiltroColunaFinanceiro
 > = {
 	documento: "documento",
+	tipodocumento: "tipodocumentodescricao",
 	emitente: "emitente",
 	status: "status",
 	emissao: "emissao",
@@ -51,6 +54,7 @@ export const COLUNA_PARA_CAMPO_FILTRO_FINANCEIRO: Record<
 
 export const COLUNA_PARA_ORDENAR_FINANCEIRO: Record<string, string> = {
 	documento: "documento",
+	tipodocumento: "tipodocumentodescricao",
 	emitente: "emitente",
 	parcela: "parcela",
 	status: "status",
@@ -77,6 +81,7 @@ type DefinicaoColunaFinanceiro = {
 const DEFINICOES_BASE: DefinicaoColunaFinanceiro[] = [
 	{ id: "select", label: "Seleção", visivelPadrao: true, enableHiding: false },
 	{ id: "documento", label: "Documento", visivelPadrao: true },
+	{ id: "tipodocumento", label: "Tipo de documento", visivelPadrao: true },
 	{ id: "emitente", label: "Nome", visivelPadrao: true },
 	{ id: "parcela", label: "Parcela", visivelPadrao: true },
 	{ id: "status", label: "Status", visivelPadrao: true },
@@ -350,6 +355,19 @@ export function criarColunasFinanceiro(
 					cell: ({ row }) => (
 						<div className="font-medium">
 							{formatDocumento(row.original, opcoes.variante)}
+						</div>
+					),
+				});
+				break;
+			case "tipodocumento":
+				colunas.push({
+					id: "tipodocumento",
+					accessorKey: "tipodocumentodescricao",
+					header,
+					meta,
+					cell: ({ row }) => (
+						<div className="max-w-[180px] truncate">
+							{row.original.tipodocumentodescricao || "-"}
 						</div>
 					),
 				});
