@@ -201,10 +201,10 @@ export const listarFinanceirosSchema: FastifySchema = {
 			},
 			status: {
 				type: "string",
-				enum: ["A", "P", "C", "V"],
+				enum: ["A", "P", "Q", "S", "C", "V"],
 				nullable: true,
 				description:
-					"Filtro por status: A (Aberto), P (Pago), C (Cancelado), V (Vencido)",
+					"Filtro por status: A (Aberto), P (Pago), Q (Quitado), S (Substituído), C (Cancelado), V (Vencido)",
 			},
 			tipo: {
 				type: "string",

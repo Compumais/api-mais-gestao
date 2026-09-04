@@ -14,6 +14,8 @@ export type VarianteFinanceiroLista = "pagar" | "receber";
 export const STATUS_OPCOES_FILTRO: OpcaoFiltroColunaTabela[] = [
 	{ value: "A", label: "Aberto" },
 	{ value: "P", label: "Pago" },
+	{ value: "Q", label: "Quitado" },
+	{ value: "S", label: "Substituído" },
 	{ value: "C", label: "Cancelado" },
 	{ value: "V", label: "Vencido" },
 ];
@@ -183,6 +185,8 @@ export function getStatusBadge(status: string | null | undefined) {
 	> = {
 		A: { label: "Aberto", variant: "default" },
 		P: { label: "Pago", variant: "secondary" },
+		Q: { label: "Quitado", variant: "secondary" },
+		S: { label: "Substituído", variant: "outline" },
 		C: { label: "Cancelado", variant: "destructive" },
 		V: { label: "Vencido", variant: "destructive" },
 	};
