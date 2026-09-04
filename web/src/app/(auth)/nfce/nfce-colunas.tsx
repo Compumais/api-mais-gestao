@@ -1,4 +1,9 @@
-import { IconPencil, IconPrinter, IconRefresh } from "@tabler/icons-react";
+import {
+	IconEye,
+	IconPencil,
+	IconPrinter,
+	IconRefresh,
+} from "@tabler/icons-react";
 import type { ColumnDef, VisibilityState } from "@tanstack/react-table";
 import dayjs from "dayjs";
 import { Ban, FileX2 } from "lucide-react";
@@ -166,6 +171,7 @@ export type OpcoesColunasNfce = {
 	carregandoCupomId: string | null;
 	onRetransmitir: (idnotafiscal: string) => void;
 	onImprimir: (idnotafiscal: string) => void;
+	onVerDetalhes: (idnotafiscal: string) => void;
 	onCancelar: (nota: NfceListagem) => void;
 	onInutilizar: (nota: NfceListagem) => void;
 };
@@ -182,9 +188,7 @@ function criarHeaderColuna(
 	const filtroAtivo = valorFiltro.trim() !== "";
 	const ordenacaoCampo = COLUNA_PARA_ORDENAR_NFCE[def.id] ?? def.id;
 	const ordenacao: OrdenacaoColunaTabela =
-		opcoes.ordenarPor === ordenacaoCampo && opcoes.ordem
-			? opcoes.ordem
-			: false;
+		opcoes.ordenarPor === ordenacaoCampo && opcoes.ordem ? opcoes.ordem : false;
 
 	return (
 		<CabecalhoColunaTabela
@@ -226,11 +230,19 @@ export function criarColunasNfce(
 					const podeAlterar = podeReemitir;
 					const podeImprimir = nota.status === NFE_STATUS.AUTORIZADA;
 					const podeCancelar = notaPodeSerCancelada(notaEmitida).permitido;
-					const podeInutilizar =
-						notaPodeSerInutilizada(notaEmitida).permitido;
+					const podeInutilizar = notaPodeSerInutilizada(notaEmitida).permitido;
 
 					return (
 						<div className="flex flex-wrap items-center justify-end gap-1">
+							<Button
+								type="button"
+								size="sm"
+								variant="outline"
+								onClick={() => opcoes.onVerDetalhes(nota.idnotafiscal)}
+							>
+								<IconEye className="size-4" />
+								Ver detalhes
+							</Button>
 							{podeAlterar && (
 								<Button type="button" size="sm" variant="outline" asChild>
 									<Link href={`/nfce/editar?editarNfce=${nota.idnotafiscal}`}>

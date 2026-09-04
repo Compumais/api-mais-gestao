@@ -3,11 +3,17 @@ import { FEATURES_SAAS } from "@/constants/saas-catalog.js";
 import { verifyJwt } from "../../middleware/verify-jwt.js";
 import { requireFeature } from "../../middleware/verify-plano.js";
 import {
+	buscarDetalhesNfceSchema,
+	interpretarRejeicaoNfceSchema,
+} from "./doc-schema/schema.js";
+import {
 	atualizarVendaNfce,
 	buscarCupomNfce,
+	buscarDetalhesNfce,
 	buscarNfceParaEditar,
 	cancelarNfce,
 	cancelarNfceVenda,
+	interpretarRejeicaoNfce,
 	inutilizarNfcePorNota,
 	inutilizarNfceVenda,
 	listarNfcePendentes,
@@ -32,6 +38,16 @@ export async function nfceRotas(app: FastifyInstance) {
 		"/nfce/pdv/reconciliar",
 		{ bodyLimit: 10 * 1024 * 1024 },
 		reconciliarNfcePdv,
+	);
+	app.get(
+		"/nfce/:idnotafiscal/detalhes",
+		{ schema: buscarDetalhesNfceSchema },
+		buscarDetalhesNfce,
+	);
+	app.post(
+		"/nfce/:idnotafiscal/interpretar-rejeicao",
+		{ schema: interpretarRejeicaoNfceSchema },
+		interpretarRejeicaoNfce,
 	);
 	app.get("/nfce/:idnotafiscal/cupom", buscarCupomNfce);
 	app.get("/nfce/:idnotafiscal/editar", buscarNfceParaEditar);
