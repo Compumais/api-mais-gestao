@@ -396,6 +396,7 @@ export default function NovaEmissaoNfePage() {
 	} = form;
 	const itensValue = form.watch("itens");
 	const informacoesAdicionaisWatch = form.watch("informacoesAdicionais");
+	const localEntregaWatch = form.watch("localEntrega");
 	const observacoesComLotes = useMemo(
 		() =>
 			anexarRastrosInformacoesAdicionaisNfe(
@@ -426,12 +427,14 @@ export default function NovaEmissaoNfePage() {
 					rastros: item.rastros,
 				})),
 				informacoesAdicionais: informacoesAdicionaisWatch ?? "",
+				localEntrega: localEntregaWatch,
 				crt: empresaFiscal?.crt ?? 3,
 				uf: empresaFiscal?.uf ?? "",
 			}),
 		[
 			itensValue,
 			informacoesAdicionaisWatch,
+			localEntregaWatch,
 			empresaFiscal?.crt,
 			empresaFiscal?.uf,
 		],
@@ -1588,6 +1591,7 @@ export default function NovaEmissaoNfePage() {
 			return JSON.parse(chaveObservacoesDebounced) as {
 				itens: EmissaoNfeFormData["itens"];
 				informacoesAdicionais?: string;
+				localEntrega?: EmissaoNfeFormData["localEntrega"];
 			};
 		} catch {
 			return null;
@@ -1606,6 +1610,7 @@ export default function NovaEmissaoNfePage() {
 				informacoesAdicionais:
 					paramsObservacoesDebounced?.informacoesAdicionais,
 				itens: paramsObservacoesDebounced?.itens ?? [],
+				localEntrega: paramsObservacoesDebounced?.localEntrega,
 			}),
 		enabled:
 			!!empresa?.id &&
@@ -1858,6 +1863,10 @@ export default function NovaEmissaoNfePage() {
 		if (exigeLocalEntregaInterestadual) {
 			const local = dadosNormalizados.localEntrega;
 			if (
+				!local?.nomeEvento?.trim() ||
+				!local.dataInicioEvento?.trim() ||
+				!local.dataFimEvento?.trim() ||
+				!local.fundamentoLegal?.trim() ||
 				!local?.logradouro?.trim() ||
 				!local.numero?.trim() ||
 				!local.bairro?.trim() ||
@@ -1867,6 +1876,13 @@ export default function NovaEmissaoNfePage() {
 			) {
 				toast.error(
 					"Informe o endereço completo da feira para a remessa interestadual.",
+				);
+				return null;
+			}
+
+			if (local.dataFimEvento < local.dataInicioEvento) {
+				toast.error(
+					"A data final da feira deve ser igual ou posterior à data inicial.",
 				);
 				return null;
 			}
@@ -2357,8 +2373,8 @@ export default function NovaEmissaoNfePage() {
 											{idDestPreview.label}
 										</div>
 										<p className="text-xs text-muted-foreground mt-1">
-											Calculado automaticamente com base no destinatário
-											selecionado.
+											Calculado automaticamente pela UF do local de entrega
+											quando informado; caso contrário, pela UF do destinatário.
 										</p>
 									</Field>
 								)}
@@ -2378,13 +2394,98 @@ export default function NovaEmissaoNfePage() {
 									</div>
 
 									<div className="grid gap-4 md:grid-cols-2">
+										<Field
+											className="md:col-span-2"
+											data-invalid={!!errors.localEntrega?.nomeEvento}
+										>
+											<FieldLabel htmlFor="local-entrega-evento">
+												Nome do evento
+											</FieldLabel>
+											<Input
+												id="local-entrega-evento"
+												placeholder="Ex.: Festival da Cachaça de Brasília"
+												{...form.register("localEntrega.nomeEvento")}
+											/>
+											<FieldError
+												errors={
+													errors.localEntrega?.nomeEvento
+														? [errors.localEntrega.nomeEvento]
+														: []
+												}
+											/>
+										</Field>
+
+										<Field
+											data-invalid={!!errors.localEntrega?.dataInicioEvento}
+										>
+											<FieldLabel htmlFor="local-entrega-data-inicio">
+												Início do evento
+											</FieldLabel>
+											<Input
+												id="local-entrega-data-inicio"
+												type="date"
+												{...form.register("localEntrega.dataInicioEvento")}
+											/>
+											<FieldError
+												errors={
+													errors.localEntrega?.dataInicioEvento
+														? [errors.localEntrega.dataInicioEvento]
+														: []
+												}
+											/>
+										</Field>
+
+										<Field data-invalid={!!errors.localEntrega?.dataFimEvento}>
+											<FieldLabel htmlFor="local-entrega-data-fim">
+												Final do evento
+											</FieldLabel>
+											<Input
+												id="local-entrega-data-fim"
+												type="date"
+												{...form.register("localEntrega.dataFimEvento")}
+											/>
+											<FieldError
+												errors={
+													errors.localEntrega?.dataFimEvento
+														? [errors.localEntrega.dataFimEvento]
+														: []
+												}
+											/>
+										</Field>
+
+										<Field
+											className="md:col-span-2"
+											data-invalid={!!errors.localEntrega?.fundamentoLegal}
+										>
+											<FieldLabel htmlFor="local-entrega-fundamento">
+												Fundamento legal/tratamento tributário
+											</FieldLabel>
+											<Textarea
+												id="local-entrega-fundamento"
+												rows={3}
+												placeholder="Informe a legislação validada para a UF de origem, por exemplo: operação com suspensão do ICMS conforme..."
+												{...form.register("localEntrega.fundamentoLegal")}
+											/>
+											<p className="text-xs text-muted-foreground">
+												Este texto é de responsabilidade do emitente e será
+												incluído nas informações complementares da NF-e.
+											</p>
+											<FieldError
+												errors={
+													errors.localEntrega?.fundamentoLegal
+														? [errors.localEntrega.fundamentoLegal]
+														: []
+												}
+											/>
+										</Field>
+
 										<Field data-invalid={!!errors.localEntrega?.nome}>
 											<FieldLabel htmlFor="local-entrega-nome">
-												Nome da feira/recebedor
+												Nome do local/recebedor
 											</FieldLabel>
 											<Input
 												id="local-entrega-nome"
-												placeholder="Ex.: Feira Comercial 2026"
+												placeholder="Opcional"
 												{...form.register("localEntrega.nome")}
 											/>
 											<FieldError

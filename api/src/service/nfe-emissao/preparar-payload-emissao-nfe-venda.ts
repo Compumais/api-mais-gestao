@@ -50,6 +50,7 @@ import {
 	httpOk,
 	httpProibido,
 } from "@/util/http-util.js";
+import { montarObservacaoRemessaFeiraNfe } from "@/util/montar-observacao-remessa-feira-nfe.js";
 import { montarObservacoesLegaisNfe } from "@/util/montar-observacoes-legais-nfe.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
 import {
@@ -770,6 +771,9 @@ export async function prepararPayloadEmissaoNfeVenda(
 		crt,
 		itens: itensComIbpt,
 		tributosIbpt,
+		observacaoRemessaFeira: montarObservacaoRemessaFeiraNfe(
+			localEntregaNormalizado,
+		),
 	});
 
 	const infoAdic = observacoesLegais.informacoesAdicionais;

@@ -7,6 +7,10 @@ import {
 describe("montarSnapshotEmissaoNfe", () => {
 	it("preserva local de entrega e idDest para transmissão e reemissão", () => {
 		const localEntrega = {
+			nomeEvento: "Feira Comercial",
+			dataInicioEvento: "2026-09-10",
+			dataFimEvento: "2026-09-12",
+			fundamentoLegal: "Tratamento fiscal validado pelo emitente",
 			nome: "Feira Comercial",
 			logradouro: "Rua da Exposição",
 			numero: "100",

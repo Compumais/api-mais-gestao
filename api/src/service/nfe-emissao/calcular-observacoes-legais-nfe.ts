@@ -1,23 +1,28 @@
 import type { HttpResponse } from "@/model/http-model.js";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { buscarEmpresaFiscalPorEmpresa } from "@/repositories/empresa-fiscal-repositories.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { completarRastrosItensEmissao } from "@/service/lote/completar-rastros-emissao.js";
 import { calcularTributosAproximadosIbpt } from "@/service/nfe-emissao/calcular-tributos-aproximados-ibpt.js";
 import { aplicarTributacaoItensEmissaoNfe } from "@/service/nfe-emissao/calcular-tributos-itens-emissao-nfe.js";
-import type { ItemPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
-import { completarRastrosItensEmissao } from "@/service/lote/completar-rastros-emissao.js";
-import { montarObservacoesLegaisNfe } from "@/util/montar-observacoes-legais-nfe.js";
+import type {
+	ItemPayloadNfe,
+	LocalEntregaPayloadNfe,
+} from "@/service/nfe-emissao/contexto-emissao-nfe.js";
 import {
 	httpBadRequest,
 	httpNaoEncontrado,
 	httpOk,
 	httpProibido,
 } from "@/util/http-util.js";
+import { montarObservacaoRemessaFeiraNfe } from "@/util/montar-observacao-remessa-feira-nfe.js";
+import { montarObservacoesLegaisNfe } from "@/util/montar-observacoes-legais-nfe.js";
 
 export type ResultadoCalcularObservacoesLegaisNfe = {
 	informacoesAdicionais?: string;
 	textoUsuario?: string;
 	legendaSimples?: string;
 	textoIbpt?: string;
+	textoRemessaFeira?: string;
 	tributosIbpt: {
 		totalFederal: number;
 		totalEstadual: number;
@@ -34,6 +39,7 @@ export async function calcularObservacoesLegaisNfeService(params: {
 	idempresa: string;
 	informacoesAdicionais?: string;
 	itens: ItemPayloadNfe[];
+	localEntrega?: LocalEntregaPayloadNfe;
 }): Promise<HttpResponse<ResultadoCalcularObservacoesLegaisNfe>> {
 	const pertence = await verificarUsuarioPertenceEmpresa(
 		params.idusuario,
@@ -76,6 +82,9 @@ export async function calcularObservacoesLegaisNfeService(params: {
 		crt,
 		itens: tributosIbpt.itens,
 		tributosIbpt,
+		observacaoRemessaFeira: montarObservacaoRemessaFeiraNfe(
+			params.localEntrega,
+		),
 	});
 
 	return httpOk({
@@ -83,6 +92,7 @@ export async function calcularObservacoesLegaisNfeService(params: {
 		textoUsuario: observacoes.textoUsuario,
 		legendaSimples: observacoes.legendaSimples,
 		textoIbpt: observacoes.textoIbpt,
+		textoRemessaFeira: observacoes.textoRemessaFeira,
 		tributosIbpt: {
 			totalFederal: tributosIbpt.totalFederal,
 			totalEstadual: tributosIbpt.totalEstadual,

@@ -3,6 +3,10 @@ import type { LocalEntregaPayloadNfe } from "@/service/nfe-emissao/contexto-emis
 import { validarLocalEntregaCfopInterestadual } from "./validar-local-entrega-cfop-interestadual.js";
 
 const localFeira: LocalEntregaPayloadNfe = {
+	nomeEvento: "Feira Comercial",
+	dataInicioEvento: "2026-09-10",
+	dataFimEvento: "2026-09-12",
+	fundamentoLegal: "Tratamento fiscal validado pelo emitente",
 	nome: "Feira Comercial",
 	logradouro: "Rua da Exposição",
 	numero: "100",

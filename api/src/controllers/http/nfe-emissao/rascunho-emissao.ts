@@ -8,12 +8,12 @@ import {
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 import {
 	emitirNfeBodySchema,
-	localEntregaNfeSchema,
+	localEntregaNfeBaseSchema,
 } from "./emissao-nfe-body-schema.js";
 
 const salvarRascunhoNfeBodySchema = emitirNfeBodySchema.extend({
 	itens: emitirNfeBodySchema.shape.itens.min(0),
-	localEntrega: localEntregaNfeSchema.partial().optional(),
+	localEntrega: localEntregaNfeBaseSchema.partial().optional(),
 });
 
 const listarRascunhosQuerySchema = z.object({
