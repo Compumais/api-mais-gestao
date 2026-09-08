@@ -1,5 +1,32 @@
 import type { FastifySchema } from "fastify";
 
+/** AJV do Fastify não trata OpenAPI `nullable: true` em runtime; use anyOf + null. */
+function stringOuNull(opts?: {
+	maxLength?: number;
+	format?: string;
+	description?: string;
+}) {
+	const schemaString: Record<string, unknown> = { type: "string" };
+	if (opts?.maxLength != null) schemaString.maxLength = opts.maxLength;
+	if (opts?.format) schemaString.format = opts.format;
+	return {
+		anyOf: [schemaString, { type: "null" }],
+		...(opts?.description ? { description: opts.description } : {}),
+	};
+}
+
+function inteiroOuNull(opts?: {
+	enum?: readonly number[];
+	description?: string;
+}) {
+	const schemaInteiro: Record<string, unknown> = { type: "integer" };
+	if (opts?.enum) schemaInteiro.enum = [...opts.enum];
+	return {
+		anyOf: [schemaInteiro, { type: "null" }],
+		...(opts?.description ? { description: opts.description } : {}),
+	};
+}
+
 const propriedadesCamposGerais = {
 	codigo: { type: "string", maxLength: 20, description: "Código CFOP" },
 	descricao: {
@@ -7,110 +34,58 @@ const propriedadesCamposGerais = {
 		maxLength: 1024,
 		description: "Descrição da natureza",
 	},
-	tipoproduto: {
-		type: "string",
+	tipoproduto: stringOuNull({
 		maxLength: 2,
-		nullable: true,
 		description: "Tipo de produto SPED 0200 associado à natureza",
-	},
-	inativa: {
-		type: "integer",
+	}),
+	inativa: inteiroOuNull({
 		enum: [0, 1],
-		nullable: true,
 		description: "1 = inativa, 0 = ativa",
-	},
-	consideravenda: { type: "integer", enum: [0, 1], nullable: true },
-	considerarservico: { type: "integer", enum: [0, 1], nullable: true },
-	digitarimpostositemnotasaida: {
-		type: "integer",
+	}),
+	consideravenda: inteiroOuNull({ enum: [0, 1] }),
+	considerarservico: inteiroOuNull({ enum: [0, 1] }),
+	digitarimpostositemnotasaida: inteiroOuNull({ enum: [0, 1] }),
+	calcularimpostoaproximado: inteiroOuNull({ enum: [0, 1] }),
+	possuiincentivosfiscais: inteiroOuNull({ enum: [0, 1] }),
+	consideracustomedio: inteiroOuNull({ enum: [0, 1] }),
+	informartotaismanualmente: inteiroOuNull({ enum: [0, 1] }),
+	permitenotasemvalor: inteiroOuNull({ enum: [0, 1] }),
+	consumidorfinal: inteiroOuNull({ enum: [0, 1] }),
+	permitirbaixarlotevencido: inteiroOuNull({ enum: [0, 1] }),
+	naobaixarestoque: inteiroOuNull({ enum: [0, 1] }),
+	digitartotalitemmanualmente: inteiroOuNull({ enum: [0, 1] }),
+	considerainscricaoestadualsub: inteiroOuNull({ enum: [0, 1] }),
+	exigirdocumentoreferenciado: inteiroOuNull({ enum: [0, 1] }),
+	registrarproducaovenda: inteiroOuNull({ enum: [0, 1] }),
+	considerarproduto: inteiroOuNull({ enum: [0, 1] }),
+	naoconsiderapiscofinsproduto: inteiroOuNull({ enum: [0, 1] }),
+	utilizartodasoperacoes: inteiroOuNull({ enum: [0, 1] }),
+	interestadualdestmesmauf: inteiroOuNull({
 		enum: [0, 1],
-		nullable: true,
-	},
-	calcularimpostoaproximado: { type: "integer", enum: [0, 1], nullable: true },
-	possuiincentivosfiscais: { type: "integer", enum: [0, 1], nullable: true },
-	consideracustomedio: { type: "integer", enum: [0, 1], nullable: true },
-	informartotaismanualmente: { type: "integer", enum: [0, 1], nullable: true },
-	permitenotasemvalor: { type: "integer", enum: [0, 1], nullable: true },
-	consumidorfinal: { type: "integer", enum: [0, 1], nullable: true },
-	permitirbaixarlotevencido: { type: "integer", enum: [0, 1], nullable: true },
-	naobaixarestoque: { type: "integer", enum: [0, 1], nullable: true },
-	digitartotalitemmanualmente: {
-		type: "integer",
-		enum: [0, 1],
-		nullable: true,
-	},
-	considerainscricaoestadualsub: {
-		type: "integer",
-		enum: [0, 1],
-		nullable: true,
-	},
-	exigirdocumentoreferenciado: {
-		type: "integer",
-		enum: [0, 1],
-		nullable: true,
-	},
-	registrarproducaovenda: { type: "integer", enum: [0, 1], nullable: true },
-	considerarproduto: { type: "integer", enum: [0, 1], nullable: true },
-	naoconsiderapiscofinsproduto: {
-		type: "integer",
-		enum: [0, 1],
-		nullable: true,
-	},
-	utilizartodasoperacoes: { type: "integer", enum: [0, 1], nullable: true },
-	interestadualdestmesmauf: {
-		type: "integer",
-		enum: [0, 1],
-		nullable: true,
 		description:
 			"Permite CFOP interestadual (6xxx) para destinatário da mesma UF",
-	},
-	naoconsiderarvlnotafiscalitem: {
-		type: "string",
+	}),
+	naoconsiderarvlnotafiscalitem: stringOuNull({
 		maxLength: 3,
-		nullable: true,
 		description: 'Flag textual legada ("0" ou "1")',
-	},
-	consignacao: { type: "integer", enum: [0, 1], nullable: true },
-	consignacaoentrada: { type: "integer", enum: [0, 1], nullable: true },
-	presencaconsumidor: {
-		type: "integer",
-		enum: [0, 1, 2, 3, 5, 9],
-		nullable: true,
-	},
-	finalidadeemissaonfe: {
-		type: "integer",
-		enum: [1, 2, 3, 4, 5, 6, 7, 8, 9],
-		nullable: true,
-	},
-	tipovalorpreco: {
-		type: "integer",
+	}),
+	consignacao: inteiroOuNull({ enum: [0, 1] }),
+	consignacaoentrada: inteiroOuNull({ enum: [0, 1] }),
+	presencaconsumidor: inteiroOuNull({ enum: [0, 1, 2, 3, 5, 9] }),
+	finalidadeemissaonfe: inteiroOuNull({ enum: [1, 2, 3, 4, 5, 6, 7, 8, 9] }),
+	tipovalorpreco: inteiroOuNull({
 		enum: [0, 1, 2, 3],
-		nullable: true,
 		description: "0=venda, 1=custo, 2=custo médio, 3=custo aquisição",
-	},
-	integracao: {
-		type: "integer",
+	}),
+	integracao: inteiroOuNull({
 		enum: [0, 1, 2],
-		nullable: true,
 		description: "0=sem, 1=receber, 2=pagar",
-	},
-	idplanocontas: { type: "string", format: "uuid", nullable: true },
-	idtipodocumentofinanceiro: {
-		type: "string",
-		format: "uuid",
-		nullable: true,
-	},
-	idnaturezaoperacaoinversa: {
-		type: "string",
-		format: "uuid",
-		nullable: true,
-	},
-	idnaturezanaocontribuinte: {
-		type: "string",
-		format: "uuid",
-		nullable: true,
-	},
-	idnaturezadevolucao: { type: "string", format: "uuid", nullable: true },
+	}),
+	idplanocontas: stringOuNull({ format: "uuid" }),
+	idtipodocumentofinanceiro: stringOuNull({ format: "uuid" }),
+	idnaturezaoperacaoinversa: stringOuNull({ format: "uuid" }),
+	idnaturezanaocontribuinte: stringOuNull({ format: "uuid" }),
+	idnaturezadevolucao: stringOuNull({ format: "uuid" }),
 };
 
 const respostasErroPadrao = {
