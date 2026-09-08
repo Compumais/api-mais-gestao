@@ -62,6 +62,7 @@ export const CHAVES_CONFIG_GOURMET = [
 	"tecnibra_intervalo_ms",
 	"tecnibra_xml_root",
 	"tecnibra_xml_item",
+	"tecnibra_casas_comanda",
 ] as const;
 
 /** Preferências do operador — qualquer usuário logado pode gravar. */
