@@ -404,6 +404,7 @@ export function ConfigPage() {
 				tecnibra_intervalo_ms: config.tecnibra_intervalo_ms ?? "3000",
 				tecnibra_xml_root: config.tecnibra_xml_root ?? "Comandas",
 				tecnibra_xml_item: config.tecnibra_xml_item ?? "Comanda",
+				tecnibra_casas_comanda: config.tecnibra_casas_comanda ?? "1",
 				sitef_habilitado: config.sitef_habilitado ?? "0",
 				sitef_ip: config.sitef_ip ?? "127.0.0.1",
 				sitef_loja: config.sitef_loja ?? "00000000",
@@ -1859,6 +1860,25 @@ export function ConfigPage() {
 											}
 										/>
 									</div>
+									<div className="space-y-2">
+										<Label htmlFor="tecnibra_casas_comanda">
+											Casas da comanda
+										</Label>
+										<Select
+											id="tecnibra_casas_comanda"
+											value={config.tecnibra_casas_comanda ?? "1"}
+											onChange={(e) =>
+												set("tecnibra_casas_comanda", e.target.value)
+											}
+										>
+											<option value="1">1 — ex.: 1</option>
+											<option value="2">2 — ex.: 01</option>
+											<option value="3">3 — ex.: 001</option>
+											<option value="4">4 — ex.: 0001</option>
+											<option value="5">5 — ex.: 00001</option>
+											<option value="6">6 — ex.: 000001</option>
+										</Select>
+									</div>
 									<div className="space-y-2 sm:col-span-2">
 										<Label htmlFor="tecnibra_xml_path">Caminho do XML</Label>
 										<Input
@@ -1872,8 +1892,9 @@ export function ConfigPage() {
 									</div>
 									<p className="sm:col-span-2 text-xs text-muted-foreground">
 										A receptora lê este arquivo: comanda presente = saída
-										bloqueada; ausente = liberada. Pasta padrão da IHM:
-										C:\Tecnibra\IHM Receptora\Comandas.xml
+										bloqueada; ausente = liberada. O número da comanda vai com
+										zeros à esquerda conforme as casas (1, 01 ou 001). Pasta
+										padrão da IHM: C:\Tecnibra\IHM Receptora\Comandas.xml
 										{statusTecnibra
 											? ` — ${statusTecnibra.commandCount} pendente(s)${
 													statusTecnibra.lastError

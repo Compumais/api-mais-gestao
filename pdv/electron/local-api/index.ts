@@ -840,7 +840,8 @@ export const localApi = {
 			resto.tecnibra_xml_path !== undefined ||
 			resto.tecnibra_intervalo_ms !== undefined ||
 			resto.tecnibra_xml_root !== undefined ||
-			resto.tecnibra_xml_item !== undefined
+			resto.tecnibra_xml_item !== undefined ||
+			resto.tecnibra_casas_comanda !== undefined
 		) {
 			await reiniciarTecnibra();
 		}
