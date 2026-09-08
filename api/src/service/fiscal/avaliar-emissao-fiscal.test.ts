@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
+import type { ItemPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
 import { avaliarEmissaoFiscal } from "./avaliar-emissao-fiscal.js";
 import type { RegraFiscalResolvida } from "./resolver-regras-fiscais.js";
-import type { ItemPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
 
 const REGRAS_NACIONAIS: RegraFiscalResolvida[] = [
 	{
@@ -112,6 +112,25 @@ describe("avaliarEmissaoFiscal", () => {
 		).toBe(true);
 		expect(relatorio.classificacao_final).toBe("ERRO_DE_CONFIGURACAO");
 		expect(relatorio.permitir_transmissao).toBe(false);
+	});
+
+	it("venda interna com CFOP 6xxx liberada por interestadualdestmesmauf", () => {
+		const relatorio = avaliarEmissaoFiscal({
+			operacaoId: "cfop-uf-liberado",
+			dataOperacao: "2026-08-19",
+			crt: 1,
+			ufEmitente: "MG",
+			ufDestinatario: "MG",
+			idDest: 1,
+			itens: [itemBase({ cfop: "6914", csosn: "102", cest: undefined })],
+			cfopsInterestadualMesmaUf: new Set(["6914"]),
+			regras: REGRAS_NACIONAIS,
+		});
+
+		expect(
+			relatorio.validacoes.some((item) => item.code === "CFOP_IDDEST"),
+		).toBe(false);
+		expect(relatorio.permitir_transmissao).toBe(true);
 	});
 
 	it("CRT 1 com CST 00 é inconsistência", () => {

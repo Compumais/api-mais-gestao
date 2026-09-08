@@ -1,5 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
+import { atualizarCfopBodySchema } from "@/controllers/http/cfop/cfop-body-schema.js";
 import { atualizarCfopService } from "@/service/cfop/atualizar-cfop.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
@@ -7,13 +8,10 @@ const atualizarCfopParamsSchema = z.object({
 	id: z.string(),
 });
 
-const atualizarCfopBodySchema = z.looseObject({
-	codigo: z.string().max(20).optional(),
-	descricao: z.string().max(1024).optional(),
-	tipoproduto: z.string().max(2).optional().nullable(),
-});
-
-export async function atualizarCfop(request: FastifyRequest, reply: FastifyReply) {
+export async function atualizarCfop(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());

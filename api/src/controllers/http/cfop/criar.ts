@@ -1,15 +1,9 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { v4 as uuidv4 } from "uuid";
 import z from "zod";
+import { criarCfopBodySchema } from "@/controllers/http/cfop/cfop-body-schema.js";
 import { criarCfopService } from "@/service/cfop/criar-cfop.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
-
-const criarCfopBodySchema = z.looseObject({
-	idempresa: z.string(),
-	codigo: z.string().max(20).optional(),
-	descricao: z.string().max(1024).optional(),
-	tipoproduto: z.string().max(2).optional().nullable(),
-});
 
 export async function criarCfop(request: FastifyRequest, reply: FastifyReply) {
 	try {

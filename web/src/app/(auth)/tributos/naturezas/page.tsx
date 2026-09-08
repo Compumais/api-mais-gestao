@@ -39,14 +39,14 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { obterLabelTipoProduto } from "@/constants/tipo-produto";
 import { useEmpresa } from "@/hooks/use-empresa";
 import {
 	type Cfop,
-	type TipoMovimentoCfop,
 	cfopService,
 	inferirTipoMovimentoCfop,
+	type TipoMovimentoCfop,
 } from "@/services/cfop.service";
-import { obterLabelTipoProduto } from "@/constants/tipo-produto";
 
 const ROTA_BASE = "/tributos/naturezas";
 
@@ -68,7 +68,9 @@ const createColumns = ({
 		accessorKey: "descricao",
 		header: "Descrição",
 		cell: ({ row }) => (
-			<div className="max-w-xl truncate">{row.getValue("descricao") || "-"}</div>
+			<div className="max-w-xl truncate">
+				{row.getValue("descricao") || "-"}
+			</div>
 		),
 	},
 	{
