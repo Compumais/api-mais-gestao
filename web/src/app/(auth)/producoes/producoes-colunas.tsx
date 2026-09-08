@@ -6,6 +6,7 @@ import {
 	type TipoFiltroColunaTabela,
 } from "@/components/cabecalho-coluna-tabela";
 import { Badge } from "@/components/ui/badge";
+import { formatDateTimeBrasilia } from "@/lib/date";
 import type { RegistroProducao } from "@/services/producao.service";
 
 export const ORIGEM_OPCOES_FILTRO: OpcaoFiltroColunaTabela[] = [
@@ -97,9 +98,7 @@ function formatarQtd(valor: string) {
 }
 
 function formatarData(valor: string) {
-	const data = new Date(valor);
-	if (Number.isNaN(data.getTime())) return valor;
-	return data.toLocaleString("pt-BR");
+	return formatDateTimeBrasilia(valor);
 }
 
 export type OpcoesColunasProducoes = {

@@ -1,3 +1,4 @@
+import { formatDateTimeBrasilia } from "@/lib/date";
 import {
 	ORDEM_SERVICO_CAMPOS_EXTRA,
 	type OrdemServicoStatusCodigo,
@@ -31,12 +32,7 @@ export function formatarDataOs(data: string | null | undefined) {
 }
 
 export function formatarDataHoraOs(data: string | null | undefined) {
-	if (!data) return "—";
-	try {
-		return new Date(data).toLocaleString("pt-BR");
-	} catch {
-		return data;
-	}
+	return formatDateTimeBrasilia(data);
 }
 
 export function osEstaCancelada(

@@ -9,8 +9,6 @@ import {
 	getPaginationRowModel,
 	useReactTable,
 } from "@tanstack/react-table";
-import dayjs from "dayjs";
-import "dayjs/locale/pt-br";
 import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -37,6 +35,7 @@ import {
 } from "@/components/ui/table";
 import { TableSkeleton } from "@/components/table-skeleton";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { dataCivilBrasiliaIso, formatDateTimeBrasilia } from "@/lib/date";
 import {
 	formatCurrency,
 	STATUS_CAIXA,
@@ -46,8 +45,6 @@ import type { FechamentoCaixa } from "@/services/fechamento-caixa.service";
 import { fechamentoCaixaService } from "@/services/fechamento-caixa.service";
 import { usuariosService } from "@/services/usuarios.service";
 import { PageContainer } from "../components/page-container";
-
-dayjs.locale("pt-br");
 
 interface FiltrosState {
 	dataInicio: string;
@@ -75,9 +72,9 @@ function filtrarPorPeriodo(
 	return itens.filter((item) => {
 		const data = item.datacriacao ?? item.datahora;
 		if (!data) return true;
-		const dia = dayjs(data);
-		if (dataInicio && dia.isBefore(dayjs(dataInicio), "day")) return false;
-		if (dataFim && dia.isAfter(dayjs(dataFim), "day")) return false;
+		const dia = dataCivilBrasiliaIso(data);
+		if (dataInicio && dia && dia < dataInicio) return false;
+		if (dataFim && dia && dia > dataFim) return false;
 		return true;
 	});
 }
@@ -162,7 +159,7 @@ export default function FechamentosCaixaPage() {
 					(row.getValue("datacriacao") as string | null) ??
 					row.original.datahora;
 				if (!val) return <span className="text-muted-foreground">—</span>;
-				return <span>{dayjs(val).format("DD/MM/YYYY HH:mm")}</span>;
+				return <span>{formatDateTimeBrasilia(val)}</span>;
 			},
 		},
 		{

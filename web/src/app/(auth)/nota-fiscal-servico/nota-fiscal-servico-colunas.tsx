@@ -24,6 +24,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { NFE_STATUS, NFE_STATUS_LABELS } from "@/constants/nfe-status";
+import { formatDateTimeBrasilia } from "@/lib/date";
 import { maskCpfCnpj } from "@/lib/masks";
 import type { NotaFiscalServico } from "@/services/nfse-emissao.service";
 
@@ -115,7 +116,7 @@ function formatCurrency(value: string | null | undefined) {
 
 function formatDateTime(date: string | null | undefined) {
 	if (!date) return "-";
-	return new Date(date).toLocaleString("pt-BR");
+	return formatDateTimeBrasilia(date);
 }
 
 function notaPodeEditarOuRetransmitir(nota: NotaFiscalServico) {

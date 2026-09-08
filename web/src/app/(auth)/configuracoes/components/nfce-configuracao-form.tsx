@@ -2,12 +2,12 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import dayjs from "dayjs";
 import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import type { z } from "zod";
 import { Badge } from "@/components/ui/badge";
+import { formatDateOnlyDisplay } from "@/lib/date";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
@@ -404,7 +404,7 @@ function NfceConfiguracaoFormCampos({
 								<p className="text-muted-foreground">
 									Validade:{" "}
 									{cert.validadefim
-										? dayjs(cert.validadefim).format("DD/MM/YYYY")
+										? formatDateOnlyDisplay(cert.validadefim)
 										: "—"}
 								</p>
 							</div>

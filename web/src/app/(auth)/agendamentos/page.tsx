@@ -2,13 +2,13 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import dayjs from "dayjs";
 import { CalendarClock, Play, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { formatDateTimeBrasilia } from "@/lib/date";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Dialog,
@@ -405,7 +405,7 @@ export default function AgendamentosPage() {
 										</td>
 										<td className="p-3">
 											{item.proximaexecucao
-												? dayjs(item.proximaexecucao).format("DD/MM/YYYY HH:mm")
+												? formatDateTimeBrasilia(item.proximaexecucao)
 												: "—"}
 										</td>
 										<td className="p-3">{formatarStatus(item.statusultima)}</td>
@@ -786,7 +786,7 @@ export default function AgendamentosPage() {
 									<div className="flex justify-between gap-2">
 										<span className="font-medium">{ex.status}</span>
 										<span className="text-xs text-muted-foreground">
-											{dayjs(ex.iniciadoem).format("DD/MM/YYYY HH:mm")}
+											{formatDateTimeBrasilia(ex.iniciadoem)}
 										</span>
 									</div>
 									{ex.erro && (

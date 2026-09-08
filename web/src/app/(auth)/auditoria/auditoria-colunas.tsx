@@ -1,6 +1,5 @@
 import { IconEye } from "@tabler/icons-react";
 import type { ColumnDef, VisibilityState } from "@tanstack/react-table";
-import dayjs from "dayjs";
 import {
 	CabecalhoColunaTabela,
 	type OrdenacaoColunaTabela,
@@ -11,6 +10,7 @@ import {
 	formatarAcaoAuditoria,
 	formatarRecursoAuditoria,
 } from "@/lib/auditoria-utils";
+import { formatDateTimeBrasilia } from "@/lib/date";
 import type { Auditoria } from "@/services/auditoria.service";
 
 export type FiltrosColunaAuditoriaState = {
@@ -207,7 +207,11 @@ export function criarColunasAuditoria(
 					meta,
 					cell: ({ row }) => {
 						const data = row.getValue("criadoem") as string;
-						return <div>{dayjs(data).format("DD/MM/YYYY HH:mm:ss")}</div>;
+						return (
+							<div>
+								{formatDateTimeBrasilia(data, { comSegundos: true })}
+							</div>
+						);
 					},
 				});
 				break;

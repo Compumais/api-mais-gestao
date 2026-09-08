@@ -5,7 +5,6 @@ import {
 	IconRefresh,
 } from "@tabler/icons-react";
 import type { ColumnDef, VisibilityState } from "@tanstack/react-table";
-import dayjs from "dayjs";
 import { Ban, FileX2 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -20,6 +19,7 @@ import {
 	NFE_STATUS,
 	NFE_STATUS_LABELS,
 } from "@/constants/nfe-status";
+import { formatDateTimeBrasilia } from "@/lib/date";
 import { formatCurrency } from "@/lib/gourmet-utils";
 import type { NfceListagem } from "@/services/nfce.service";
 import type { NotaFiscalEmitida } from "@/services/nfe-emissao.service";
@@ -319,7 +319,7 @@ export function criarColunasNfce(
 					meta,
 					cell: ({ row }) => {
 						const data = obterDataExibicao(row.original);
-						return data ? dayjs(data).format("DD/MM/YYYY HH:mm") : "—";
+						return formatDateTimeBrasilia(data);
 					},
 				});
 				break;

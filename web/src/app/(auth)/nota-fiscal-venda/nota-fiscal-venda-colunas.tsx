@@ -14,6 +14,7 @@ import {
 	NFE_STATUS,
 	NFE_STATUS_LABELS,
 } from "@/constants/nfe-status";
+import { formatDateTimeBrasilia } from "@/lib/date";
 import type { NotaFiscalEmitida } from "@/services/nfe-emissao.service";
 import {
 	obterCodigoRejeicaoNota,
@@ -116,17 +117,7 @@ function formatCurrency(value: string | null | undefined) {
 
 function formatDateTime(date: string | null | undefined) {
 	if (!date) return "-";
-	try {
-		return new Date(date).toLocaleString("pt-BR", {
-			day: "2-digit",
-			month: "2-digit",
-			year: "numeric",
-			hour: "2-digit",
-			minute: "2-digit",
-		});
-	} catch {
-		return date;
-	}
+	return formatDateTimeBrasilia(date);
 }
 
 function obterDataExibicao(nota: NotaFiscalEmitida) {

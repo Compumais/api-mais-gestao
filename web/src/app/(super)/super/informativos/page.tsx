@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { formatDateTimeBrasilia } from "@/lib/date";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -98,7 +99,7 @@ export default function SuperInformativosPage() {
 										{item.conteudo}
 									</p>
 									<p className="text-xs text-muted-foreground mt-2">
-										{new Date(item.publicadoem).toLocaleString("pt-BR")}
+										{formatDateTimeBrasilia(item.publicadoem)}
 									</p>
 								</div>
 								<Button

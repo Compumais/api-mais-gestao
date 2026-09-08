@@ -1,4 +1,5 @@
 import { api } from "@/lib/axios";
+import { hojeBrasiliaIsoDate } from "@/lib/date";
 
 export interface GerarEfdParams {
 	idempresa: string;
@@ -133,10 +134,7 @@ export function periodoMesCivil(anoMes: string): {
 	const ano = Number.parseInt(anoTexto ?? "", 10);
 	const mes = Number.parseInt(mesTexto ?? "", 10);
 	if (!ano || !mes) {
-		const hoje = new Date();
-		return periodoMesCivil(
-			`${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}`,
-		);
+		return periodoMesCivil(hojeBrasiliaIsoDate().slice(0, 7));
 	}
 	const ultimoDia = new Date(ano, mes, 0).getDate();
 	return {
@@ -146,6 +144,5 @@ export function periodoMesCivil(anoMes: string): {
 }
 
 export function mesAtualAnoMes(): string {
-	const hoje = new Date();
-	return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}`;
+	return hojeBrasiliaIsoDate().slice(0, 7);
 }
