@@ -7,6 +7,7 @@ import {
 } from "@/repositories/cfop-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
+import { validarRelacionamentosCfop } from "@/service/cfop/validar-relacionamentos-cfop.js";
 import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
 
 type AtualizarCfopParametros = {
@@ -35,7 +36,32 @@ export async function atualizarCfopService({
 		return httpProibido();
 	}
 
-	const registroAtualizado = await atualizarCfop(cfopId, dados);
+	const {
+		id: _idIgnorado,
+		idempresa: _empresaIgnorada,
+		...dadosSeguros
+	} = dados as Partial<NovoCFOP> & { id?: string; idempresa?: string };
+
+	const erroRelacionamento = await validarRelacionamentosCfop({
+		idempresa: registroExistente.idempresa,
+		cfopIdAtual: cfopId,
+		relacionamentos: {
+			idplanocontas: dadosSeguros.idplanocontas,
+			idtipodocumentofinanceiro: dadosSeguros.idtipodocumentofinanceiro,
+			idnaturezaoperacaoinversa: dadosSeguros.idnaturezaoperacaoinversa,
+			idnaturezanaocontribuinte: dadosSeguros.idnaturezanaocontribuinte,
+			idnaturezadevolucao: dadosSeguros.idnaturezadevolucao,
+		},
+	});
+
+	if (erroRelacionamento) {
+		return erroRelacionamento as HttpResponse<CFOP | null>;
+	}
+
+	const registroAtualizado = await atualizarCfop(cfopId, {
+		...dadosSeguros,
+		currenttimemillis: Date.now(),
+	});
 
 	if (!registroAtualizado) {
 		return httpNaoEncontrado();
@@ -52,8 +78,8 @@ export async function atualizarCfopService({
 		idempresa: registroExistente.idempresa,
 		criadoem: new Date().toISOString(),
 		metadados: {
-			camposAlterados: Object.keys(dados),
-			valores: dados,
+			camposAlterados: Object.keys(dadosSeguros),
+			valores: dadosSeguros,
 		},
 	});
 

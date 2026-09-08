@@ -9,7 +9,11 @@ export default defineConfig({
 	test: {
 		environment: "node",
 		globals: true,
-		include: ["src/lib/*.test.ts"],
+		include: [
+			"src/lib/*.test.ts",
+			"src/util/*.test.ts",
+			"src/schemas/*.test.ts",
+		],
 		root: raizWeb,
 	},
 	resolve: {
