@@ -85,6 +85,7 @@ export const cfopCamposGeraisSchema = z.object({
 	considerarproduto: flag01,
 	naoconsiderapiscofinsproduto: flag01,
 	utilizartodasoperacoes: flag01,
+	interestadualdestmesmauf: flag01,
 	naoconsiderarvlnotafiscalitem: z
 		.union([
 			z.string().max(3),
