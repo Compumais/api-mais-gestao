@@ -111,6 +111,8 @@ export const listarVendasPdvGourmetSchema: FastifySchema = {
 			idempresa: { type: "string" },
 			idcontamesa: { type: "string" },
 			numeropdv: { type: "number" },
+			dataInicio: { type: "string" },
+			dataFim: { type: "string" },
 			page: { type: "number", default: 1 },
 			limit: { type: "number", default: 10 },
 		},

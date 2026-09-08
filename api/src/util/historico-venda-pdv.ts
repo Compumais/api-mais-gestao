@@ -78,3 +78,21 @@ export function documentoHistoricoVendaPdv(params: {
 	}
 	return "gerencial";
 }
+
+export function pareceIdentificadorOpacoOperador(valor: string): boolean {
+	const texto = valor.trim();
+	return /^[A-Za-z0-9_-]{20,}$/.test(texto) && !/\s/.test(texto);
+}
+
+export function nomeOperadorHistoricoVendaPdv(params: {
+	nome?: string | null;
+	email?: string | null;
+}): string | null {
+	for (const candidato of [params.nome, params.email]) {
+		const texto = candidato?.trim();
+		if (texto && !pareceIdentificadorOpacoOperador(texto)) {
+			return texto;
+		}
+	}
+	return null;
+}
