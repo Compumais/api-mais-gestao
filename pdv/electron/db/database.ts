@@ -594,9 +594,11 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 	}
 }
 
-/** Host antigo do seed que aponta para o front, não para a API. */
-const API_URL_LEGADA = "https://api.maisgestao.com.br";
-const API_URL_PADRAO = "https://api.compuchat.space";
+const API_URL_PADRAO = "https://maisgestao.compumais.com";
+const API_URLS_LEGADAS = new Set([
+	"https://api.maisgestao.com.br",
+	"https://api.compuchat.space",
+]);
 
 async function seedDefaults(database: Pool): Promise<void> {
 	const agora = new Date().toISOString();
@@ -663,7 +665,7 @@ async function seedDefaults(database: Pool): Promise<void> {
 	const apiAtual = await database.query<{ valor: string }>(
 		"SELECT valor FROM config WHERE chave = 'api_url'",
 	);
-	if (apiAtual.rows[0]?.valor === API_URL_LEGADA) {
+	if (API_URLS_LEGADAS.has(apiAtual.rows[0]?.valor ?? "")) {
 		await database.query(
 			"UPDATE config SET valor = $1 WHERE chave = 'api_url'",
 			[API_URL_PADRAO],
