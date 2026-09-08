@@ -1,7 +1,12 @@
 import { and, count, desc, eq, gte, lte, sql } from "drizzle-orm";
 import type { NovaVendaPdvGourmet } from "@/model/venda-pdv-gourmet-model.js";
 import type { NovoVendaPdvItem } from "@/model/venda-pdv-item-model.js";
-import { vendapdvgourmet, vendapdvitem } from "@/repositories/schema.js";
+import {
+	notafiscal,
+	usuarios,
+	vendapdvgourmet,
+	vendapdvitem,
+} from "@/repositories/schema.js";
 import { db, pool } from "./connection.js";
 
 export async function buscarVendaPdvGourmetPorId(id: string) {
@@ -202,14 +207,26 @@ export async function listarVendasPdvGourmet({
 
 	const offset = (page - 1) * limit;
 
-	const [totalCount, vendas] = await Promise.all([
+	const [totalCount, linhas] = await Promise.all([
 		db
 			.select({ value: count() })
 			.from(vendapdvgourmet)
 			.where(and(...where)),
 		db
-			.select()
+			.select({
+				venda: vendapdvgourmet,
+				operadorNome: usuarios.nome,
+				nfceStatus: notafiscal.status,
+				nfceChave: notafiscal.chavenfe,
+				nfceSerie: notafiscal.serie,
+				nfceNumero: notafiscal.numeronotafiscal,
+			})
 			.from(vendapdvgourmet)
+			.leftJoin(
+				usuarios,
+				eq(vendapdvgourmet.usuarioquefechouvenda, usuarios.id),
+			)
+			.leftJoin(notafiscal, eq(vendapdvgourmet.idnotafiscalnfce, notafiscal.id))
 			.where(and(...where))
 			.orderBy(desc(vendapdvgourmet.datacriacao))
 			.limit(limit)
@@ -217,7 +234,19 @@ export async function listarVendasPdvGourmet({
 	]);
 
 	return {
-		vendas,
+		vendas: linhas.map((linha) => ({
+			...linha.venda,
+			operadorNome: linha.operadorNome,
+			nfce: linha.venda.idnotafiscalnfce
+				? {
+						idnotafiscal: linha.venda.idnotafiscalnfce,
+						status: linha.nfceStatus,
+						chave: linha.nfceChave,
+						serie: linha.nfceSerie,
+						numero: linha.nfceNumero,
+					}
+				: null,
+		})),
 		total: totalCount[0]?.value ?? 0,
 	};
 }
