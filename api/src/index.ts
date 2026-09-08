@@ -108,7 +108,7 @@ import { getApiBaseUrl } from "./util/base-url.js";
 import { isOrigemCorsPermitida } from "./util/cors-origins.js";
 import { registrarAgendador } from "./worker/registrar-agendador.js";
 
-export const app = Fastify({ logger: true });
+export const app = Fastify({ logger: true, trustProxy: true });
 
 app.register(cors, {
 	origin: (origin, cb) => {

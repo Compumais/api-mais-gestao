@@ -26,12 +26,12 @@ const TIMEOUT_MS = 12_000;
 
 async function apiBaseUrl(): Promise<string> {
 	try {
-		return (await getConfig("api_url", "https://api.compuchat.space")).replace(
+		return (await getConfig("api_url", "https://maisgestao.compumais.com")).replace(
 			/\/$/,
 			"",
 		);
 	} catch {
-		return "https://api.compuchat.space";
+		return "https://maisgestao.compumais.com";
 	}
 }
 

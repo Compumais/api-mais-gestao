@@ -40,6 +40,7 @@ DATABASE_URL=postgresql://mais_gestao:<PASSWORD>@127.0.0.1:5432/mais_gestao
 BETTER_AUTH_SECRET=<GERAR_COM_openssl_rand_base64_32>
 BETTER_AUTH_URL=https://api.seudominio.com
 CLIENT_ORIGIN=https://app.seudominio.com
+CORS_ORIGINS=https://app.seudominio.com
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 ```

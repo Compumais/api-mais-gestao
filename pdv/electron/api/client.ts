@@ -45,7 +45,7 @@ export function asApiDecimal(
 }
 
 async function baseUrl(): Promise<string> {
-	return (await getConfig("api_url", "https://api.compuchat.space")).replace(
+	return (await getConfig("api_url", "https://maisgestao.compumais.com")).replace(
 		/\/$/,
 		"",
 	);
