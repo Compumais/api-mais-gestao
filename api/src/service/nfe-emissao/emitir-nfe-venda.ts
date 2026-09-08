@@ -17,6 +17,7 @@ import type {
 	DestinatarioPayloadNfe,
 	DocumentoReferenciadoPayloadNfe,
 	ItemPayloadNfe,
+	LocalEntregaPayloadNfe,
 	PagamentoPayloadNfe,
 	TotaisPayloadNfe,
 	TransportePayloadNfe,
@@ -164,6 +165,7 @@ function montarDadosNotaPersistencia(params: {
 	natOp?: string;
 	pagamento?: PagamentoPayloadNfe;
 	transporte?: TransportePayloadNfe;
+	localEntrega?: LocalEntregaPayloadNfe;
 	totaisComerciais?: TotaisPayloadNfe;
 	tipoDevolucao?: TipoDevolucaoNfe;
 	indPres?: number;
@@ -208,6 +210,7 @@ function montarDadosNotaPersistencia(params: {
 		natOp,
 		pagamento,
 		transporte,
+		localEntrega,
 		totaisComerciais,
 		tipoDevolucao,
 		indPres,
@@ -321,6 +324,7 @@ function montarDadosNotaPersistencia(params: {
 			gerarEstoque,
 			pagamento,
 			transporte,
+			localEntrega,
 			totais: totaisComerciais ?? {
 				frete: totais?.frete ?? vFrete,
 				seguro: totais?.seguro,
@@ -386,6 +390,7 @@ export async function emitirNfeVendaService(
 		identidade,
 		itensNormalizados,
 		transporteAjustado,
+		localEntrega,
 		natOpResolvida,
 		pagamentoNormalizado,
 		documentoReferenciado,
@@ -474,6 +479,7 @@ export async function emitirNfeVendaService(
 		idDest: ideEmissao.idDest,
 		pagamento: pagamentoNormalizado,
 		transporte: transporteAjustado,
+		localEntrega,
 		totaisComerciais: totais,
 		tipoDevolucao: tipoDevolucao ?? undefined,
 		idserie,

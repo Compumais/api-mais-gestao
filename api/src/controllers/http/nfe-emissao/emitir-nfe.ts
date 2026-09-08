@@ -44,6 +44,7 @@ export async function emitirNfe(request: FastifyRequest, reply: FastifyReply) {
 			totaisInformados: dados.totaisInformados,
 			pagamento: dados.pagamento,
 			transporte: dados.transporte,
+			localEntrega: dados.localEntrega,
 			informacoesAdicionais: dados.informacoesAdicionais,
 			documentoReferenciado: dados.documentoReferenciado,
 			idplanocontas: dados.idplanocontas,

@@ -4,6 +4,7 @@ import {
 	buscarNotaFiscalPorId,
 	listarItensPorNotaFiscal,
 } from "@/repositories/nota-fiscal-repositories.js";
+import type { LocalEntregaPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
 import {
 	emitirNfeVendaService,
 	type ResultadoEmissaoNfeVenda,
@@ -31,6 +32,20 @@ type TransmitirNfeVendaParametros = {
 	idnotafiscal: string;
 	confirmarProducao?: boolean;
 };
+
+function localEntregaCompleto(
+	local?: Partial<LocalEntregaPayloadNfe>,
+): local is LocalEntregaPayloadNfe {
+	return !!(
+		local?.logradouro &&
+		local.numero &&
+		local.bairro &&
+		local.codigoMunicipio &&
+		local.municipio &&
+		local.uf &&
+		local.cep
+	);
+}
 
 export async function transmitirNfeVendaService({
 	idusuario,
@@ -136,6 +151,9 @@ export async function transmitirNfeVendaService({
 		transporte: {
 			modFrete: nota.tipofrete ?? emissaoSalva?.transporte?.modFrete ?? 9,
 		},
+		localEntrega: localEntregaCompleto(emissaoSalva?.localEntrega)
+			? emissaoSalva.localEntrega
+			: undefined,
 		pagamento: normalizarPagamentoEmissaoNfe(
 			{
 				formas: [

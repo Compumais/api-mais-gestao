@@ -36,6 +36,7 @@ final class NfeEmissaoService
 		$totais      = $payloadNfe['totais']       ?? [];
 		$pagamento   = $payloadNfe['pagamento']    ?? [];
 		$transporte  = $payloadNfe['transporte']   ?? [];
+		$localEntrega = $payloadNfe['localEntrega'] ?? null;
 		$infoAdic    = $payloadNfe['informacoesAdicionais'] ?? '';
 		$refs        = $payloadNfe['documentosReferenciados'] ?? [];
 
@@ -155,6 +156,39 @@ final class NfeEmissaoService
 				'cPais'  => '1058',
 				'xPais'  => 'BRASIL',
 			]);
+		}
+
+		if (is_array($localEntrega) && !empty($localEntrega['uf'])) {
+			$documentoEntrega = preg_replace(
+				'/\D/',
+				'',
+				(string) ($localEntrega['cnpjcpf'] ?? '')
+			);
+			$entrega = [
+				'xNome'   => (string) ($localEntrega['nome'] ?? ''),
+				'xLgr'    => (string) ($localEntrega['logradouro'] ?? ''),
+				'nro'     => (string) ($localEntrega['numero'] ?? ''),
+				'xCpl'    => (string) ($localEntrega['complemento'] ?? ''),
+				'xBairro' => (string) ($localEntrega['bairro'] ?? ''),
+				'cMun'    => (string) ($localEntrega['codigoMunicipio'] ?? ''),
+				'xMun'    => (string) ($localEntrega['municipio'] ?? ''),
+				'UF'      => (string) $localEntrega['uf'],
+				'CEP'     => preg_replace('/\D/', '', (string) ($localEntrega['cep'] ?? '')),
+				'cPais'   => '1058',
+				'xPais'   => 'BRASIL',
+				'fone'    => preg_replace('/\D/', '', (string) ($localEntrega['telefone'] ?? '')),
+				'email'   => (string) ($localEntrega['email'] ?? ''),
+				'IE'      => preg_replace('/\D/', '', (string) ($localEntrega['ie'] ?? '')),
+			];
+			if (strlen((string) $documentoEntrega) === 14) {
+				$entrega['CNPJ'] = $documentoEntrega;
+			} elseif (strlen((string) $documentoEntrega) === 11) {
+				$entrega['CPF'] = $documentoEntrega;
+			}
+			$mk->tagentrega((object) array_filter(
+				$entrega,
+				static fn ($valor) => $valor !== '' && $valor !== null
+			));
 		}
 
 		// ── itens ────────────────────────────────────────────────────────────

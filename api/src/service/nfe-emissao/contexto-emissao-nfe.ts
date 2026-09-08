@@ -112,6 +112,22 @@ export type TransportePayloadNfe = {
 	modFrete?: number;
 };
 
+export type LocalEntregaPayloadNfe = {
+	cnpjcpf?: string;
+	nome?: string;
+	logradouro: string;
+	numero: string;
+	complemento?: string;
+	bairro: string;
+	codigoMunicipio: string;
+	municipio: string;
+	uf: string;
+	cep: string;
+	telefone?: string;
+	email?: string;
+	ie?: string;
+};
+
 export type DocumentoReferenciadoPayloadNfe = {
 	chave: string;
 	modelo?: string;
@@ -261,6 +277,7 @@ export async function montarPayloadGatewayEmissaoItens({
 	totais,
 	pagamento,
 	transporte,
+	localEntrega,
 	natOp,
 	informacoesAdicionais,
 	finNFe,
@@ -285,6 +302,7 @@ export async function montarPayloadGatewayEmissaoItens({
 	totais?: TotaisPayloadNfe;
 	pagamento?: PagamentoPayloadNfe;
 	transporte?: TransportePayloadNfe;
+	localEntrega?: LocalEntregaPayloadNfe;
 	natOp?: string;
 	informacoesAdicionais?: string;
 	finNFe?: number;
@@ -301,6 +319,7 @@ export async function montarPayloadGatewayEmissaoItens({
 	const ide = resolverIdeEmissaoNfe({
 		ufEmitente: empresaFiscal.uf,
 		ufDestinatario: destinatario?.estado,
+		ufLocalEntrega: localEntrega?.uf,
 		paisDestinatario: destinatario?.pais,
 		indPres,
 		finNFe,
@@ -375,6 +394,7 @@ export async function montarPayloadGatewayEmissaoItens({
 			totais: totais ?? {},
 			pagamento: pagamento ?? {},
 			transporte: transporte ?? {},
+			localEntrega,
 			informacoesAdicionais: informacoesAdicionais ?? "",
 		},
 	};

@@ -666,6 +666,13 @@
       "when": 1785021000000,
       "tag": "0092_ibpt_tabela",
       "breakpoints": true
+    },
+    {
+      "idx": 94,
+      "version": "7",
+      "when": 1785022000000,
+      "tag": "0093_cfop_6914_destino_feira",
+      "breakpoints": true
     }
   ]
 }

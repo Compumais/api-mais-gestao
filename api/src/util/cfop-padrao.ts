@@ -16,7 +16,9 @@ const cfopsPadrao = (conteudoCfopPadrao as CfopPadraoArquivo).cfoppadrao;
 
 export type TipoMovimentoCfop = "E" | "S";
 
-export function inferirTipoMovimentoCfop(codigo: string): TipoMovimentoCfop | null {
+export function inferirTipoMovimentoCfop(
+	codigo: string,
+): TipoMovimentoCfop | null {
 	const primeiroDigito = codigo.replace(/\D/g, "")[0];
 
 	if (!primeiroDigito) {
@@ -50,6 +52,7 @@ function montarCfop(
 		codigo: parametros.codigo,
 		descricao: parametros.descricao,
 		currenttimemillis: parametros.currenttimemillis,
+		interestadualdestmesmauf: parametros.codigo === "6914" ? 1 : 0,
 	};
 }
 
