@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { validarCoerenciaFiscalNfe } from "@/service/fiscal/validar-coerencia-fiscal-nfe.js";
 import {
 	calcularBaseIcmsSt,
 	calcularIcmsStItemEmissao,
@@ -10,7 +11,6 @@ import {
 import { calcularTotaisFiscaisEmissaoNfe } from "@/util/calcular-totais-fiscais-emissao-nfe.js";
 import { montarPisItemNfe } from "@/util/montar-grupo-pis-cofins-item-nfe.js";
 import { resolverCreditoIcmsSnItem } from "@/util/resolver-credito-icms-sn-item.js";
-import { validarCoerenciaFiscalNfe } from "@/service/fiscal/validar-coerencia-fiscal-nfe.js";
 
 describe("contrato fiscal painel × DANFE", () => {
 	it("Simples + CSOSN 202 + MVA 61,05%: BC 692,53 / ST 47,25 / vNF 477,25", () => {
@@ -135,9 +135,9 @@ describe("contrato fiscal painel × DANFE", () => {
 			],
 		});
 
-		expect(
-			semAliquota.some((v) => v.code === "ST_SEM_ALIQUOTA_INTERNA"),
-		).toBe(true);
+		expect(semAliquota.some((v) => v.code === "ST_SEM_ALIQUOTA_INTERNA")).toBe(
+			true,
+		);
 		expect(
 			semAliquota.find((v) => v.code === "ST_SEM_ALIQUOTA_INTERNA")?.status,
 		).toBe("INCONSISTENCIA");
@@ -168,6 +168,34 @@ describe("contrato fiscal painel × DANFE", () => {
 		expect(
 			divergente.find((v) => v.code === "ST_VALOR_DIVERGENTE")?.status,
 		).toBe("INCONSISTENCIA");
+	});
+
+	it("CSOSN 400 com MVA/ST zerados não gera ST_SEM_ALIQUOTA_INTERNA", () => {
+		const validacoes = validarCoerenciaFiscalNfe({
+			crt: 1,
+			idDest: 1,
+			itens: [
+				{
+					descricao: "PORTA WHISKY 7OZ",
+					ncm: "73239300",
+					cfop: "5102",
+					unidade: "UN",
+					quantidade: 1,
+					valorUnitario: 50,
+					csosn: "400",
+					percentualMvaSt: 0,
+					aliquotaIcmsSt: 0,
+					aliquotaIcmsProprioSt: 0,
+					baseIcmsSt: 0,
+					valorIcmsSt: 0,
+				},
+			],
+		});
+
+		expect(validacoes.some((v) => v.code === "CSOSN_AUSENTE")).toBe(false);
+		expect(validacoes.some((v) => v.code === "ST_SEM_ALIQUOTA_INTERNA")).toBe(
+			false,
+		);
 	});
 
 	it("deduz ICMS próprio com aliquotaIcmsProprioSt (NF 54: 0,88)", () => {

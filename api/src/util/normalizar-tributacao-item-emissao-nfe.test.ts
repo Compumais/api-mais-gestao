@@ -42,6 +42,36 @@ describe("normalizarItensEmissaoNfe", () => {
 		expect(item?.valorIcmsSt).toBe(2.52);
 	});
 
+	it("preserva CSOSN 400 e 300 no Simples", () => {
+		const [item400] = normalizarItensEmissaoNfe(1, [
+			{
+				descricao: "Item 400",
+				ncm: "73239300",
+				cfop: "6914",
+				unidade: "UN",
+				quantidade: 1,
+				valorUnitario: 50,
+				csosn: "400",
+			},
+		]);
+		const [item300] = normalizarItensEmissaoNfe(1, [
+			{
+				descricao: "Item 300",
+				ncm: "22084000",
+				cfop: "5102",
+				unidade: "UN",
+				quantidade: 1,
+				valorUnitario: 10,
+				csosn: "300",
+			},
+		]);
+
+		expect(item400?.csosn).toBe("400");
+		expect(item400?.cst).toBeUndefined();
+		expect(item300?.csosn).toBe("300");
+		expect(item300?.cst).toBeUndefined();
+	});
+
 	it("preenche CST PIS/COFINS vazio com 07 para o XML não sair sem filho", () => {
 		const [item] = normalizarItensEmissaoNfe(3, [
 			{
