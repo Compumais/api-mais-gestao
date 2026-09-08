@@ -217,21 +217,20 @@ export default function VendasPdvPage() {
 
 	// ── mapas de resolução ─────────────────────────────────────────────────────
 
-	const { data: usuariosData } = useQuery({
+	const { data: usuariosLista } = useQuery({
 		queryKey: ["usuarios-lista", empresa?.id],
-		queryFn: () =>
-			usuariosService.listar({ idempresa: empresa!.id, limit: 500 }),
+		queryFn: () => usuariosService.listarTodos({ idempresa: empresa!.id }),
 		enabled: !!empresa,
 		staleTime: 60_000,
 	});
 
 	const usuariosPorId = useMemo(() => {
 		const map: Record<string, string> = {};
-		for (const u of usuariosData?.data ?? []) {
+		for (const u of usuariosLista ?? []) {
 			map[u.id] = u.nome;
 		}
 		return map;
-	}, [usuariosData]);
+	}, [usuariosLista]);
 
 	const { data: produtosData } = useQuery({
 		queryKey: ["produtos-lista", empresa?.id],
