@@ -52,7 +52,6 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { anexarRastrosInformacoesAdicionaisNfe } from "@/util/montar-observacoes-lotes-nfe";
 import {
 	IND_PRES_NFE_PADRAO,
 	isIndPresNfeValido,
@@ -65,12 +64,14 @@ import {
 	NFE_STATUS,
 } from "@/constants/nfe-status";
 import { useEmpresa } from "@/hooks/use-empresa";
-import { getSessionToken } from "@/lib/auth-token";
 import { useNfeConfiguracao } from "@/hooks/use-nfe-configuracao";
+import { getSessionToken } from "@/lib/auth-token";
 import {
 	type EmissaoNfeFormData,
 	emissaoNfeFormSchema,
 } from "@/schemas/nfe-emissao.schema";
+import type { RelatorioAuditoriaFiscal } from "@/schemas/relatorio-fiscal.schema";
+import { extrairRelatorioFiscalErro } from "@/schemas/relatorio-fiscal.schema";
 import { cfopService } from "@/services/cfop.service";
 import { davService } from "@/services/dav.service";
 import { empresaFiscalService } from "@/services/empresa-fiscal.service";
@@ -107,14 +108,13 @@ import {
 	mapearItemNotaReemissaoParaForm,
 	prepararItemEmissaoFormulario,
 } from "@/util/mapear-produto-item-nfe";
+import { anexarRastrosInformacoesAdicionaisNfe } from "@/util/montar-observacoes-lotes-nfe";
 import {
 	obterCodigoRejeicaoNota,
 	obterMotivoRejeicaoNota,
 } from "@/util/nfe-rejeicao-util";
 import type { CardErroOperacaoNfe } from "@/util/normalizar-erro-operacao-nfe";
 import { normalizarErroOperacaoNfe } from "@/util/normalizar-erro-operacao-nfe";
-import { extrairRelatorioFiscalErro } from "@/schemas/relatorio-fiscal.schema";
-import type { RelatorioAuditoriaFiscal } from "@/schemas/relatorio-fiscal.schema";
 import { montarPagamentoEmissaoNfe } from "@/util/normalizar-pagamento-emissao-nfe";
 import { resolverContextoReemissaoNfe } from "@/util/resolver-contexto-reemissao-nfe";
 import { AvisoAmbienteNfe } from "../components/aviso-ambiente-nfe";
@@ -855,9 +855,7 @@ export default function NovaEmissaoNfePage() {
 			notaFiscal.finalidadeemissaonfe === 4 ||
 			!!notaFiscal.chavedocumentoreferenciado ||
 			!!contextoClone.documentoReferenciado;
-		setFormaPagamento(
-			ehDevolucaoClone ? "90" : contextoClone.formaPagamento,
-		);
+		setFormaPagamento(ehDevolucaoClone ? "90" : contextoClone.formaPagamento);
 
 		const cfopClone =
 			cfopsSaida?.find((c) => c.codigo === primeiroCfop) ??
@@ -884,10 +882,7 @@ export default function NovaEmissaoNfePage() {
 			}) ??
 			seriesAtivasClone.find((s) => s.padrao);
 
-		const origemLabel = [
-			notaFiscal.serie,
-			notaFiscal.numeronotafiscal,
-		]
+		const origemLabel = [notaFiscal.serie, notaFiscal.numeronotafiscal]
 			.filter(Boolean)
 			.join("-");
 		const infoBase = contextoClone.informacoesAdicionais?.trim() ?? "";
@@ -989,9 +984,7 @@ export default function NovaEmissaoNfePage() {
 			notaFiscal.finalidadeemissaonfe === 4 ||
 			!!notaFiscal.chavedocumentoreferenciado ||
 			!!contexto.documentoReferenciado;
-		setFormaPagamento(
-			ehDevolucao ? "90" : contexto.formaPagamento,
-		);
+		setFormaPagamento(ehDevolucao ? "90" : contexto.formaPagamento);
 
 		const cfopReemissao =
 			cfopsSaida?.find((c) => c.codigo === primeiroCfop) ??
@@ -1532,11 +1525,7 @@ export default function NovaEmissaoNfePage() {
 	);
 
 	const { data: calculoTributosApi } = useQuery({
-		queryKey: [
-			"nfe-calcular-tributos",
-			empresa?.id,
-			chaveCalculoDebounced,
-		],
+		queryKey: ["nfe-calcular-tributos", empresa?.id, chaveCalculoDebounced],
 		queryFn: () =>
 			calcularTributosNfe({
 				idempresa: empresa!.id,
@@ -1739,25 +1728,27 @@ export default function NovaEmissaoNfePage() {
 		},
 	});
 
-	const { mutate: salvarRascunho, isPending: isSalvandoRascunho } = useMutation({
-		mutationFn: salvarRascunhoEmissaoNfe,
-		onSuccess: (resultado) => {
-			void queryClient.invalidateQueries({
-				queryKey: ["rascunhos-emissao-nfe", empresa?.id],
-			});
-			toast.success("Rascunho salvo");
-			if (!rascunhoId) {
-				router.replace(
-					`/nota-fiscal-venda/nova?rascunho=${resultado.idnotafiscal}`,
-				);
-			}
+	const { mutate: salvarRascunho, isPending: isSalvandoRascunho } = useMutation(
+		{
+			mutationFn: salvarRascunhoEmissaoNfe,
+			onSuccess: (resultado) => {
+				void queryClient.invalidateQueries({
+					queryKey: ["rascunhos-emissao-nfe", empresa?.id],
+				});
+				toast.success("Rascunho salvo");
+				if (!rascunhoId) {
+					router.replace(
+						`/nota-fiscal-venda/nova?rascunho=${resultado.idnotafiscal}`,
+					);
+				}
+			},
+			onError: (erro: Error) => {
+				toast.error("Erro ao salvar rascunho", {
+					description: erro.message,
+				});
+			},
 		},
-		onError: (erro: Error) => {
-			toast.error("Erro ao salvar rascunho", {
-				description: erro.message,
-			});
-		},
-	});
+	);
 
 	const { mutate: descartarRascunho, isPending: isDescartandoRascunho } =
 		useMutation({
@@ -1940,11 +1931,7 @@ export default function NovaEmissaoNfePage() {
 			pagamento: montarPagamentoEmissaoNfe(formaPagamento, totalNF, {
 				forcarSemPagamento: isOperacaoDevolucao,
 			}),
-			...montarPayloadIntegracaoEmissao(
-				dados,
-				totalNF,
-				isOperacaoDevolucao,
-			),
+			...montarPayloadIntegracaoEmissao(dados, totalNF, isOperacaoDevolucao),
 		};
 	}
 
@@ -2029,30 +2016,30 @@ export default function NovaEmissaoNfePage() {
 							? "Continuar rascunho de NF-e"
 							: clonarId && notaClonar
 								? `Clonar NF-e ${[notaClonar.serie, notaClonar.numeronotafiscal].filter(Boolean).join("-")}`
-							: reemitirId && notaReemitir
-							? `Reemitir NF-e ${notaReemitir.serie}-${notaReemitir.numeronotafiscal}`
-							: isLotePedidos
-								? `Emitir NF-e de ${pedidosIds.length} pedidos`
-								: pedidoId
-									? "Emitir NF-e do pedido"
-									: "Nova NF-e — Modelo 55"}
+								: reemitirId && notaReemitir
+									? `Reemitir NF-e ${notaReemitir.serie}-${notaReemitir.numeronotafiscal}`
+									: isLotePedidos
+										? `Emitir NF-e de ${pedidosIds.length} pedidos`
+										: pedidoId
+											? "Emitir NF-e do pedido"
+											: "Nova NF-e — Modelo 55"}
 					</h1>
 					<p className="text-xs text-muted-foreground truncate">
 						{rascunhoId && notaRascunho
 							? "Rascunho salvo — revise e emita quando estiver pronto"
 							: clonarId && notaClonar
 								? `Nova numeração · origem série ${notaClonar.serie}, nº ${notaClonar.numeronotafiscal}`
-							: reemitirId && notaReemitir
-							? `Mesma numeração: série ${notaReemitir.serie}, nº ${notaReemitir.numeronotafiscal}`
-							: isLotePedidos
-								? contextoLote?.codigosPedidos?.length
-									? `Pedidos ${contextoLote.codigosPedidos.join(", ")} · revise e transmita a NF-e`
-									: `${pedidosIds.length} pedidos · revise e transmita a NF-e`
-								: pedidoId
-									? `Pedido ${pedidoId.slice(0, 8)} · revise e transmita a NF-e`
-									: serieSelecionada
-										? `Série ${serieSelecionada.serie} · Próximo nº ${serieSelecionada.numeroproximo}`
-										: "Nenhuma série selecionada"}
+								: reemitirId && notaReemitir
+									? `Mesma numeração: série ${notaReemitir.serie}, nº ${notaReemitir.numeronotafiscal}`
+									: isLotePedidos
+										? contextoLote?.codigosPedidos?.length
+											? `Pedidos ${contextoLote.codigosPedidos.join(", ")} · revise e transmita a NF-e`
+											: `${pedidosIds.length} pedidos · revise e transmita a NF-e`
+										: pedidoId
+											? `Pedido ${pedidoId.slice(0, 8)} · revise e transmita a NF-e`
+											: serieSelecionada
+												? `Série ${serieSelecionada.serie} · Próximo nº ${serieSelecionada.numeroproximo}`
+												: "Nenhuma série selecionada"}
 						{" · "}
 						<span
 							className={
@@ -2072,13 +2059,16 @@ export default function NovaEmissaoNfePage() {
 				{(pedidoId || isLotePedidos) && (
 					<div
 						className={`mb-6 rounded-lg border p-4 text-sm space-y-2 ${
-							(pedidoId &&
-								(erroContextoPedido ||
-									(!carregandoPedido &&
-										contextoPedido?.itens.length === 0))) ||
-							(isLotePedidos &&
-								(erroContextoLote ||
-									(!carregandoLote && contextoLote?.itens.length === 0)))
+							(
+								pedidoId &&
+									(erroContextoPedido ||
+										(!carregandoPedido && contextoPedido?.itens.length === 0))
+							) ||
+							(
+								isLotePedidos &&
+									(erroContextoLote ||
+										(!carregandoLote && contextoLote?.itens.length === 0))
+							)
 								? "border-destructive/40 bg-destructive/5 text-destructive"
 								: "border-blue-200 bg-blue-50 text-blue-950"
 						}`}
@@ -2129,9 +2119,9 @@ export default function NovaEmissaoNfePage() {
 							</p>
 						) : null}
 						{isLotePedidos &&
-							!carregandoLote &&
-							!erroContextoLote &&
-							contextoLote?.codigosPedidos?.length ? (
+						!carregandoLote &&
+						!erroContextoLote &&
+						contextoLote?.codigosPedidos?.length ? (
 							<p>
 								Pedidos: {contextoLote.codigosPedidos.join(", ")}. Os códigos
 								serão anexados nas observações da NF-e e no contas a receber.
@@ -2166,10 +2156,7 @@ export default function NovaEmissaoNfePage() {
 							<p className="text-xs leading-relaxed">
 								Origem: série {notaClonar.serie} nº{" "}
 								{notaClonar.numeronotafiscal}
-								{notaClonar.razaosocial
-									? ` — ${notaClonar.razaosocial}`
-									: ""}
-								.
+								{notaClonar.razaosocial ? ` — ${notaClonar.razaosocial}` : ""}.
 							</p>
 						)}
 					</div>
@@ -2514,10 +2501,19 @@ export default function NovaEmissaoNfePage() {
 												<p className="text-sm font-medium truncate">
 													{item.descricao}
 												</p>
-												{item.cfop && (
+												{(item.cfop || item.ncm || item.csosn || item.cst) && (
 													<p className="text-xs text-muted-foreground">
-														CFOP {item.cfop}
-														{item.ncm && ` · NCM ${item.ncm}`}
+														{[
+															item.cfop ? `CFOP ${item.cfop}` : null,
+															item.ncm ? `NCM ${item.ncm}` : null,
+															usaCsosn && item.csosn
+																? `CSOSN ${item.csosn}`
+																: !usaCsosn && item.cst
+																	? `CST ${item.cst}`
+																	: null,
+														]
+															.filter(Boolean)
+															.join(" · ")}
 													</p>
 												)}
 											</div>
@@ -2924,9 +2920,7 @@ export default function NovaEmissaoNfePage() {
 								variant="outline"
 								className="gap-2 text-destructive"
 								disabled={
-									isDescartandoRascunho ||
-									isPending ||
-									isSalvandoRascunho
+									isDescartandoRascunho || isPending || isSalvandoRascunho
 								}
 								onClick={() => descartarRascunho()}
 							>

@@ -1,8 +1,8 @@
-import type { ItemPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
 import {
-	CST_COM_ST,
 	CSOSN_COM_ST,
+	CST_COM_ST,
 } from "@/service/fiscal/indicadores-st-nfe.js";
+import type { ItemPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
 
 const CSOSN_ST_MVA = new Set(["201", "202", "203"]);
 
@@ -37,9 +37,7 @@ export function calcularValorIcmsSt(params: {
 	const stBruto = round2((params.baseIcmsSt * params.aliquotaIcmsSt) / 100);
 	const aliquotaProprio = params.aliquotaIcmsProprio ?? 0;
 	const icmsProprio =
-		aliquotaProprio > 0
-			? round2((params.vProd * aliquotaProprio) / 100)
-			: 0;
+		aliquotaProprio > 0 ? round2((params.vProd * aliquotaProprio) / 100) : 0;
 	return round2(Math.max(0, stBruto - icmsProprio));
 }
 
@@ -85,8 +83,9 @@ export function itemExigeCalculoSt(item: {
 
 	return (
 		item.percentualMvaSt != null &&
-		item.percentualMvaSt >= 0 &&
-		item.aliquotaIcmsSt != null
+		item.percentualMvaSt > 0 &&
+		item.aliquotaIcmsSt != null &&
+		item.aliquotaIcmsSt > 0
 	);
 }
 
@@ -147,7 +146,9 @@ export function calcularIcmsStItemEmissao(
 	};
 }
 
-export function recalcularIcmsStItemEmissao<T extends ItemPayloadNfe>(item: T): T {
+export function recalcularIcmsStItemEmissao<T extends ItemPayloadNfe>(
+	item: T,
+): T {
 	const csosn = item.csosn?.replace(/\D/g, "") ?? "";
 	if (csosn === "500" || !itemExigeCalculoSt(item)) {
 		return item;

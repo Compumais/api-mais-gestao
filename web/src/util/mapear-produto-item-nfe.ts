@@ -5,11 +5,14 @@ export function empresaUsaCsosn(crt?: number | null): boolean {
 	return crt === 1 || crt === 2 || crt === 4;
 }
 
+/** CSOSN oficiais: 101–103, 201–203, 300, 400, 500, 900. */
 export function ehCsosn(codigo: string): boolean {
 	return (
 		codigo.length === 3 &&
 		(codigo.startsWith("1") ||
 			codigo.startsWith("2") ||
+			codigo.startsWith("3") ||
+			codigo.startsWith("4") ||
 			codigo.startsWith("5") ||
 			codigo.startsWith("9"))
 	);
@@ -332,10 +335,7 @@ const CSOSN_ST_COM_MVA = new Set(["201", "202", "203"]);
  * dedução no cálculo de vICMSST — inclusive no Simples Nacional.
  */
 export function itemPrecisaAliquotaIcmsParaSt(
-	item: Pick<
-		ItemNfe,
-		"cst" | "csosn" | "percentualMvaSt" | "aliquotaIcmsSt"
-	>,
+	item: Pick<ItemNfe, "cst" | "csosn" | "percentualMvaSt" | "aliquotaIcmsSt">,
 ): boolean {
 	const cst = item.cst?.replace(/\D/g, "") ?? "";
 	const csosn = item.csosn?.replace(/\D/g, "") ?? "";
@@ -344,8 +344,9 @@ export function itemPrecisaAliquotaIcmsParaSt(
 	}
 	return (
 		item.percentualMvaSt != null &&
-		item.percentualMvaSt >= 0 &&
-		item.aliquotaIcmsSt != null
+		item.percentualMvaSt > 0 &&
+		item.aliquotaIcmsSt != null &&
+		item.aliquotaIcmsSt > 0
 	);
 }
 
@@ -590,7 +591,7 @@ export function sugerirIcmsStPeloMva(
 	item: ItemNfe,
 ): Pick<ItemNfe, "baseIcmsSt" | "valorIcmsSt"> {
 	const mva = item.percentualMvaSt;
-	if (mva == null || mva < 0) return {};
+	if (mva == null || mva <= 0) return {};
 
 	const vProd = round2(
 		(Number(item.quantidade) || 0) * (Number(item.valorUnitario) || 0),
@@ -598,9 +599,7 @@ export function sugerirIcmsStPeloMva(
 	if (vProd <= 0) return {};
 
 	const base =
-		item.baseIcmsSt != null
-			? item.baseIcmsSt
-			: round2(vProd * (1 + mva / 100));
+		item.baseIcmsSt != null ? item.baseIcmsSt : round2(vProd * (1 + mva / 100));
 	const stBruto =
 		item.aliquotaIcmsSt != null
 			? round2((base * item.aliquotaIcmsSt) / 100)
@@ -624,6 +623,8 @@ export function sugerirIcmsStPeloMva(
 
 	return {
 		...(item.baseIcmsSt == null ? { baseIcmsSt: base } : {}),
-		...(item.valorIcmsSt == null && valor != null ? { valorIcmsSt: valor } : {}),
+		...(item.valorIcmsSt == null && valor != null
+			? { valorIcmsSt: valor }
+			: {}),
 	};
 }
