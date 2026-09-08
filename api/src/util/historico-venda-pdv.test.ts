@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
 	documentoHistoricoVendaPdv,
 	meiosPagamentoHistoricoVendaPdv,
+	nomeOperadorHistoricoVendaPdv,
 	rotuloMeioPagamentoPdv,
 } from "./historico-venda-pdv.js";
 
@@ -42,5 +43,25 @@ describe("historico-venda-pdv", () => {
 		);
 		expect(documentoHistoricoVendaPdv({ deveemitirnfce: true })).toBe("fiscal");
 		expect(documentoHistoricoVendaPdv({})).toBe("gerencial");
+	});
+
+	it("usa nome do cadastro e nunca devolve o id opaco", () => {
+		expect(
+			nomeOperadorHistoricoVendaPdv({
+				nome: "Maria Silva",
+				email: "maria@empresa.com",
+			}),
+		).toBe("Maria Silva");
+		expect(
+			nomeOperadorHistoricoVendaPdv({
+				nome: "uxgD4bawBWokD04hn0wpElyRtkz6nuEn",
+				email: "maria@empresa.com",
+			}),
+		).toBe("maria@empresa.com");
+		expect(
+			nomeOperadorHistoricoVendaPdv({
+				nome: "uxgD4bawBWokD04hn0wpElyRtkz6nuEn",
+			}),
+		).toBeNull();
 	});
 });

@@ -44,6 +44,7 @@ import {
 import { formatDateTimeBrasilia } from "@/lib/date";
 import { formatCurrency } from "@/lib/gourmet-utils";
 import { produtosService } from "@/services/produtos.service";
+import { usuariosService } from "@/services/usuarios.service";
 import type { VendaPdvGourmet } from "@/services/venda-pdv-gourmet.service";
 import { vendaPdvGourmetService } from "@/services/venda-pdv-gourmet.service";
 import type { VendaPdvItem } from "@/services/venda-pdv-item.service";
@@ -86,9 +87,26 @@ function filtrosAtivos(filtros: FiltrosState): boolean {
 	return !!(filtros.dataInicio || filtros.dataFim || filtros.numeropdv);
 }
 
-function nomeOperador(venda: VendaPdvGourmet): string {
-	const nome = venda.operadorNome?.trim();
-	return nome || "—";
+function pareceIdentificadorOpaco(valor: string): boolean {
+	const texto = valor.trim();
+	return /^[A-Za-z0-9_-]{20,}$/.test(texto) && !/\s/.test(texto);
+}
+
+function nomeVisivelOperador(valor?: string | null): string | null {
+	const nome = valor?.trim();
+	if (!nome || pareceIdentificadorOpaco(nome)) return null;
+	return nome;
+}
+
+function nomeOperador(
+	venda: VendaPdvGourmet,
+	usuariosPorId: Record<string, string>,
+): string {
+	return (
+		nomeVisivelOperador(venda.operadorNome) ??
+		nomeVisivelOperador(usuariosPorId[venda.usuarioquefechouvenda]) ??
+		"—"
+	);
 }
 
 function documentoVenda(venda: VendaPdvGourmet): "fiscal" | "gerencial" {
@@ -125,12 +143,14 @@ function ItensVendaDialog({
 	open,
 	onOpenChange,
 	produtosPorId,
+	usuariosPorId,
 }: {
 	venda: VendaPdvGourmet | null;
 	idempresa: string;
 	open: boolean;
 	onOpenChange: (v: boolean) => void;
 	produtosPorId: Record<string, string>;
+	usuariosPorId: Record<string, string>;
 }) {
 	const { data, isLoading } = useQuery({
 		queryKey: ["vendas-pdv-item", venda?.id, idempresa],
@@ -157,10 +177,11 @@ function ItensVendaDialog({
 					<DialogDescription>
 						{venda && formatDateTimeBrasilia(venda.datacriacao)}{" "}
 						— {venda && tipoVenda(venda)}
-						{venda && nomeOperador(venda) !== "—" && (
+						{venda && nomeOperador(venda, usuariosPorId) !== "—" && (
 							<>
 								{" "}
-								• Operador: <strong>{nomeOperador(venda)}</strong>
+								• Operador:{" "}
+								<strong>{nomeOperador(venda, usuariosPorId)}</strong>
 							</>
 						)}
 					</DialogDescription>
@@ -288,6 +309,30 @@ export default function VendasPdvPage() {
 		enabled: !!empresa,
 	});
 
+	const precisaResolverOperadores = useMemo(
+		() =>
+			(data?.data ?? []).some(
+				(venda) => !nomeVisivelOperador(venda.operadorNome),
+			),
+		[data],
+	);
+
+	const { data: usuariosData } = useQuery({
+		queryKey: ["usuarios-lista-operadores", empresa?.id],
+		queryFn: () => usuariosService.listarTodos({ idempresa: empresa!.id }),
+		enabled: !!empresa && precisaResolverOperadores,
+		staleTime: 60_000,
+	});
+
+	const usuariosPorId = useMemo(() => {
+		const map: Record<string, string> = {};
+		for (const usuario of usuariosData ?? []) {
+			const nome = nomeVisivelOperador(usuario.nome);
+			if (nome) map[usuario.id] = nome;
+		}
+		return map;
+	}, [usuariosData]);
+
 	// ── handlers ───────────────────────────────────────────────────────────────
 
 	const handleAplicarFiltros = () => {
@@ -364,7 +409,7 @@ export default function VendasPdvPage() {
 			header: "Operador",
 			cell: ({ row }) => (
 				<span className="block max-w-[180px] truncate text-sm">
-					{nomeOperador(row.original)}
+					{nomeOperador(row.original, usuariosPorId)}
 				</span>
 			),
 		},
@@ -413,6 +458,7 @@ export default function VendasPdvPage() {
 			header: () => <span className="sr-only">Ações</span>,
 			cell: ({ row }) => {
 				const idNfce = idNfceVenda(row.original);
+				const fiscal = documentoVenda(row.original) === "fiscal";
 				return (
 					<div className="flex justify-end gap-1">
 						<Button
@@ -421,17 +467,23 @@ export default function VendasPdvPage() {
 							className="gap-1.5"
 							onClick={() => handleVerItens(row.original)}
 						>
-							<IconEye className="size-4" />
+							<IconEye className="size-4" aria-hidden="true" />
 							Ver itens
 						</Button>
-						{idNfce ? (
+						{fiscal ? (
 							<Button
 								variant="ghost"
 								size="sm"
 								className="gap-1.5"
+								disabled={!idNfce}
+								title={
+									idNfce
+										? "Visualizar NFC-e"
+										: "NFC-e ainda não vinculada a esta venda"
+								}
 								onClick={() => handleVerNfce(row.original)}
 							>
-								<IconFileInvoice className="size-4" />
+								<IconFileInvoice className="size-4" aria-hidden="true" />
 								Ver NFC-e
 							</Button>
 						) : null}
@@ -641,6 +693,7 @@ export default function VendasPdvPage() {
 					open={dialogItensAberto}
 					onOpenChange={setDialogItensAberto}
 					produtosPorId={produtosPorId}
+					usuariosPorId={usuariosPorId}
 				/>
 			)}
 

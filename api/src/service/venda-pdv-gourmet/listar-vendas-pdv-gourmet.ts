@@ -7,6 +7,7 @@ import {
 	type DocumentoVendaPdv,
 	documentoHistoricoVendaPdv,
 	meiosPagamentoHistoricoVendaPdv,
+	nomeOperadorHistoricoVendaPdv,
 } from "@/util/historico-venda-pdv.js";
 import { httpOk, httpProibido } from "@/util/http-util.js";
 
@@ -87,24 +88,30 @@ export async function listarVendasPdvGourmetService({
 		pagamentosPorVenda.set(pagamento.idvenda, lista);
 	}
 
-	const data: VendaPdvGourmetListagem[] = resultado.vendas.map((venda) => ({
-		...venda,
-		operadorNome: venda.operadorNome,
-		meiosPagamento: meiosPagamentoHistoricoVendaPdv({
-			pagamentos: pagamentosPorVenda.get(venda.id) ?? [],
-			valordinheiro: venda.valordinheiro,
-			valorpix: venda.valorpix,
-			valorcartaocredito: venda.valorcartaocredito,
-			valorcartaodebito: venda.valorcartaodebito,
-			valorcartao: venda.valorcartao,
-			valorprepago: venda.valorprepago,
-		}),
-		documento: documentoHistoricoVendaPdv({
-			idnotafiscalnfce: venda.idnotafiscalnfce,
-			deveemitirnfce: venda.deveemitirnfce,
-		}),
-		nfce: venda.nfce,
-	}));
+	const data: VendaPdvGourmetListagem[] = resultado.vendas.map((venda) => {
+		const { operadorEmail, ...vendaListagem } = venda;
+		return {
+			...vendaListagem,
+			operadorNome: nomeOperadorHistoricoVendaPdv({
+				nome: venda.operadorNome,
+				email: operadorEmail,
+			}),
+			meiosPagamento: meiosPagamentoHistoricoVendaPdv({
+				pagamentos: pagamentosPorVenda.get(venda.id) ?? [],
+				valordinheiro: venda.valordinheiro,
+				valorpix: venda.valorpix,
+				valorcartaocredito: venda.valorcartaocredito,
+				valorcartaodebito: venda.valorcartaodebito,
+				valorcartao: venda.valorcartao,
+				valorprepago: venda.valorprepago,
+			}),
+			documento: documentoHistoricoVendaPdv({
+				idnotafiscalnfce: venda.idnotafiscalnfce,
+				deveemitirnfce: venda.deveemitirnfce,
+			}),
+			nfce: venda.nfce,
+		};
+	});
 
 	const total = resultado.total ?? 0;
 	const totalPages = Math.ceil(total / limit);

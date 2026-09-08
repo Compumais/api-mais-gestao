@@ -240,6 +240,7 @@ export async function listarVendasPdvGourmet({
 			.select({
 				venda: vendapdvgourmet,
 				operadorNome: usuarios.nome,
+				operadorEmail: usuarios.email,
 				nfceStatus: notafiscal.status,
 				nfceChave: notafiscal.chavenfe,
 				nfceSerie: notafiscal.serie,
@@ -261,6 +262,7 @@ export async function listarVendasPdvGourmet({
 		vendas: linhas.map((linha) => ({
 			...linha.venda,
 			operadorNome: linha.operadorNome,
+			operadorEmail: linha.operadorEmail,
 			nfce: linha.venda.idnotafiscalnfce
 				? {
 						idnotafiscal: linha.venda.idnotafiscalnfce,
