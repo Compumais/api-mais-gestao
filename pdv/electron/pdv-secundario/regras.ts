@@ -51,6 +51,7 @@ export const CHAVES_CONFIG_LOCAL = [
 	"tecnibra_intervalo_ms",
 	"tecnibra_xml_root",
 	"tecnibra_xml_item",
+	"tecnibra_casas_comanda",
 	"sitef_habilitado",
 	"sitef_ip",
 	"sitef_loja",

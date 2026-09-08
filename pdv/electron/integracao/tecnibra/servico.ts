@@ -2,7 +2,11 @@ import { createHash } from "node:crypto";
 import { getConfig } from "../../db/database";
 import { listarNumerosComPendencia } from "../../db/repos";
 import { escreverArquivoAtomico } from "./escrever";
-import { gerarXmlComandas, normalizarNumerosComanda } from "./xml";
+import {
+	gerarXmlComandas,
+	normalizarCasasComanda,
+	normalizarNumerosComanda,
+} from "./xml";
 
 export type StatusTecnibra = {
 	enabled: boolean;
@@ -47,6 +51,7 @@ async function obterConfigTecnibra(): Promise<{
 	intervaloMs: number;
 	rootElement: string;
 	commandElement: string;
+	casas: number;
 }> {
 	const enabled = (await getConfig("tecnibra_habilitada", "0")) === "1";
 	const targetPath = (
@@ -67,6 +72,9 @@ async function obterConfigTecnibra(): Promise<{
 			(await getConfig("tecnibra_xml_root", "Comandas")).trim() || "Comandas",
 		commandElement:
 			(await getConfig("tecnibra_xml_item", "Comanda")).trim() || "Comanda",
+		casas: normalizarCasasComanda(
+			await getConfig("tecnibra_casas_comanda", "1"),
+		),
 	};
 }
 
@@ -89,10 +97,11 @@ export async function syncTecnibra(): Promise<void> {
 
 		const pendentes = normalizarNumerosComanda(
 			await listarNumerosComPendencia(),
+			cfg.casas,
 		);
 
 		const hash = createHash("sha256")
-			.update(JSON.stringify(pendentes))
+			.update(JSON.stringify({ pendentes, casas: cfg.casas }))
 			.digest("hex");
 		if (hash === ultimoHash && !status.lastError) {
 			status = {
@@ -107,6 +116,7 @@ export async function syncTecnibra(): Promise<void> {
 		const xml = gerarXmlComandas(pendentes, {
 			rootElement: cfg.rootElement,
 			commandElement: cfg.commandElement,
+			casas: cfg.casas,
 		});
 		await escreverArquivoAtomico(cfg.targetPath, xml);
 		ultimoHash = hash;
