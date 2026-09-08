@@ -46,7 +46,6 @@ jobs:
             docker image prune -f
 
   deploy-web:
-    needs: deploy-api
     if: >
       github.event_name == 'workflow_dispatch' ||
       (github.event.workflow_run.conclusion == 'success' &&
