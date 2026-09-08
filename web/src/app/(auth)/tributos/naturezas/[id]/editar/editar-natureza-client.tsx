@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { cfopService } from "@/services/cfop.service";
+import { valoresIniciaisNaturezaForm } from "@/util/cfop-natureza-mapper";
 import { NaturezaForm } from "../../components/natureza-form";
 
 type EditarNaturezaClientProps = {
@@ -39,11 +40,7 @@ export function EditarNaturezaClient({ id }: EditarNaturezaClientProps) {
 				<NaturezaForm
 					modo="editar"
 					naturezaId={id}
-					valoresIniciais={{
-						codigo: data.codigo ?? "",
-						descricao: data.descricao ?? "",
-						tipoproduto: data.tipoproduto ?? null,
-					}}
+					valoresIniciais={valoresIniciaisNaturezaForm(data)}
 				/>
 			</div>
 		</section>
