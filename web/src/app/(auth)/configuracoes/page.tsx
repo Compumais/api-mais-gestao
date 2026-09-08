@@ -7,6 +7,7 @@ import { useConfiguracao } from "@/hooks/use-configuracao";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { PageContainer } from "../components/page-container";
 import { DominioIntegracaoSection } from "./components/dominio-integracao-section";
+import { DownloadPdvSection } from "./components/download-pdv-section";
 import { EmpresaFiscalForm } from "./components/empresa-fiscal-form";
 import { ImpressaoForm } from "./components/impressao-form";
 import { IntegracaoForm } from "./components/integracao-form";
@@ -80,6 +81,7 @@ export default function ConfiguracoesPage() {
 							</TabsTrigger>
 							<TabsTrigger value="relatorios">Relatórios</TabsTrigger>
 							<TabsTrigger value="impressao">Impressão</TabsTrigger>
+							<TabsTrigger value="pdv">PDV</TabsTrigger>
 						</TabsList>
 
 						<TabsContent value="tema" className="mt-4">
@@ -96,9 +98,7 @@ export default function ConfiguracoesPage() {
 						</TabsContent>
 
 						<TabsContent value="empresa-fiscal" className="mt-4">
-							{conteudoEmpresa ?? (
-								<EmpresaFiscalForm idempresa={empresa!.id} />
-							)}
+							{conteudoEmpresa ?? <EmpresaFiscalForm idempresa={empresa!.id} />}
 						</TabsContent>
 
 						<TabsContent value="nfe" className="mt-4">
@@ -165,6 +165,10 @@ export default function ConfiguracoesPage() {
 									idempresa={empresa!.id}
 								/>
 							)}
+						</TabsContent>
+
+						<TabsContent value="pdv" className="mt-4">
+							<DownloadPdvSection />
 						</TabsContent>
 					</Tabs>
 				</div>
