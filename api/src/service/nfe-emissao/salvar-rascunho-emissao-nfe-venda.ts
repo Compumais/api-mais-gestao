@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from "uuid";
 import type { HttpResponse } from "@/model/http-model.js";
 import type { NovoNotaFiscalItem } from "@/model/nota-fiscal-item-model.js";
 import type { NovaNotaFiscal } from "@/model/nota-fiscal-model.js";
+import { buscarEmpresaFiscalPorEmpresa } from "@/repositories/empresa-fiscal-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	atualizarNotaFiscal,
@@ -13,6 +14,7 @@ import type {
 	DestinatarioPayloadNfe,
 	DocumentoReferenciadoPayloadNfe,
 	ItemPayloadNfe,
+	LocalEntregaPayloadNfe,
 	PagamentoPayloadNfe,
 	TotaisPayloadNfe,
 	TransportePayloadNfe,
@@ -37,6 +39,7 @@ import {
 } from "@/util/http-util.js";
 import { montarDestinatarioPorIdentidade } from "@/util/montar-destinatario-entidade-nfe.js";
 import { STATUS_RASCUNHO_IMPORTACAO } from "@/util/nota-fiscal-constants.js";
+import { resolverIdDestNfe } from "@/util/resolver-ide-emissao-nfe.js";
 
 export type SalvarRascunhoEmissaoNfeVendaParametros = {
 	idusuario: string;
@@ -50,6 +53,7 @@ export type SalvarRascunhoEmissaoNfeVendaParametros = {
 	totais?: TotaisPayloadNfe;
 	pagamento?: PagamentoPayloadNfe;
 	transporte?: TransportePayloadNfe;
+	localEntrega?: Partial<LocalEntregaPayloadNfe>;
 	informacoesAdicionais?: string;
 	documentoReferenciado?: DocumentoReferenciadoPayloadNfe;
 	idplanocontas?: string;
@@ -140,8 +144,10 @@ function montarDadosNotaRascunho(params: {
 	documentoReferenciado?: DocumentoReferenciadoPayloadNfe;
 	natOp?: string;
 	indPres?: number;
+	idDest?: number;
 	pagamento?: PagamentoPayloadNfe;
 	transporte?: TransportePayloadNfe;
+	localEntrega?: Partial<LocalEntregaPayloadNfe>;
 	totais?: TotaisPayloadNfe;
 	idserie?: string;
 	idplanocontas?: string;
@@ -211,6 +217,7 @@ function montarDadosNotaRascunho(params: {
 		dadosimportacao: montarSnapshotEmissaoNfe({
 			natOp: params.natOp,
 			indPres: params.indPres,
+			idDest: params.idDest,
 			idserienfe: params.idserie,
 			iddav: params.iddav,
 			iddavs: params.iddavs,
@@ -224,6 +231,7 @@ function montarDadosNotaRascunho(params: {
 			gerarEstoque: params.gerarEstoque,
 			pagamento: params.pagamento,
 			transporte: params.transporte,
+			localEntrega: params.localEntrega,
 			totais: params.totais,
 			documentoReferenciado: params.documentoReferenciado
 				? {
@@ -259,6 +267,13 @@ export async function salvarRascunhoEmissaoNfeVendaService(
 		params.iddestinatario,
 	);
 	const destinatario = destinatarioResolvido?.destinatario ?? null;
+	const empresaFiscal = await buscarEmpresaFiscalPorEmpresa(params.idempresa);
+	const idDest = resolverIdDestNfe({
+		ufEmitente: empresaFiscal?.uf,
+		ufDestinatario: destinatario?.estado,
+		ufLocalEntrega: params.localEntrega?.uf,
+		paisDestinatario: destinatario?.pais,
+	});
 
 	let idnotafiscal = params.idnotafiscal ?? uuidv4();
 	let atualizacao = false;
@@ -297,8 +312,10 @@ export async function salvarRascunhoEmissaoNfeVendaService(
 		documentoReferenciado: params.documentoReferenciado,
 		natOp: params.natOp,
 		indPres: params.indPres,
+		idDest,
 		pagamento: params.pagamento,
 		transporte: params.transporte,
+		localEntrega: params.localEntrega,
 		totais: params.totais,
 		idserie: params.idserienfe,
 		idplanocontas: params.idplanocontas,

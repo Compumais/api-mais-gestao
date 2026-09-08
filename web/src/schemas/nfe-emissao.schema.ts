@@ -92,6 +92,34 @@ export const transporteNfeSchema = z.object({
 	modFrete: z.number().optional(),
 });
 
+export const localEntregaNfeSchema = z.object({
+	cnpjcpf: z
+		.string()
+		.max(18)
+		.refine(
+			(valor) => !valor || [11, 14].includes(valor.replace(/\D/g, "").length),
+			"CNPJ/CPF inválido",
+		)
+		.optional(),
+	nome: z.string().max(60).optional(),
+	logradouro: z.string().min(2, "Informe o logradouro").max(60),
+	numero: z.string().min(1, "Informe o número").max(60),
+	complemento: z.string().max(60).optional(),
+	bairro: z.string().min(2, "Informe o bairro").max(60),
+	codigoMunicipio: z
+		.string()
+		.regex(/^\d{7}$/, "Selecione o município da feira"),
+	municipio: z.string().min(2).max(60),
+	uf: z.string().length(2, "Selecione a UF da feira"),
+	cep: z
+		.string()
+		.transform((valor) => valor.replace(/\D/g, ""))
+		.pipe(z.string().regex(/^\d{8}$/, "CEP deve ter 8 dígitos")),
+	telefone: z.string().max(20).optional(),
+	email: z.string().email().max(60).optional(),
+	ie: z.string().max(14).optional(),
+});
+
 export const documentoReferenciadoSchema = z
 	.object({
 		tipoDevolucao: z.enum(["compra", "venda"]).optional(),
@@ -124,6 +152,7 @@ export const emissaoNfeFormSchema = z.object({
 	totaisInformados: totaisInformadosNfeSchema,
 	pagamento: pagamentoNfeSchema.optional(),
 	transporte: transporteNfeSchema.optional(),
+	localEntrega: localEntregaNfeSchema.optional(),
 	informacoesAdicionais: z.string().max(2000).optional(),
 	documentoReferenciado: documentoReferenciadoSchema,
 	idplanocontas: z.string().uuid().optional(),

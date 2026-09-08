@@ -42,6 +42,7 @@ import {
 	FieldLegend,
 	FieldSet,
 } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import { MoneyInput } from "@/components/ui/money-input";
 import {
 	Select,
@@ -76,6 +77,7 @@ import { cfopService } from "@/services/cfop.service";
 import { davService } from "@/services/dav.service";
 import { empresaFiscalService } from "@/services/empresa-fiscal.service";
 import { entidadesService } from "@/services/entidades.service";
+import { localidadesService } from "@/services/localidades.service";
 import {
 	type NfeSerie,
 	nfeConfiguracaoService,
@@ -453,6 +455,21 @@ export default function NovaEmissaoNfePage() {
 		]);
 	const idDestinatario = form.watch("iddestinatario");
 	const idSerie = form.watch("idserienfe");
+	const localEntregaUf = form.watch("localEntrega.uf") ?? "";
+	const localEntregaMunicipioCodigo =
+		form.watch("localEntrega.codigoMunicipio") ?? "";
+
+	const { data: estadosLocalEntrega } = useQuery({
+		queryKey: ["localidades", "estados"],
+		queryFn: () => localidadesService.listarEstados(),
+	});
+
+	const { data: municipiosLocalEntrega } = useQuery({
+		queryKey: ["localidades", "municipios", localEntregaUf],
+		queryFn: () => localidadesService.listarMunicipios(localEntregaUf),
+		enabled: localEntregaUf.length === 2,
+		staleTime: 24 * 60 * 60 * 1000,
+	});
 	const documentoReferenciado = form.watch("documentoReferenciado");
 	const [
 		idtipodocumentoWatch,
@@ -623,17 +640,35 @@ export default function NovaEmissaoNfePage() {
 		[entidades, idDestinatario],
 	);
 
+	const cfopSelecionadoDestino = (
+		isDevolucaoVenda ? cfopsEntrada : cfopsSaida
+	)?.find((cfop) => cfop.codigo === cfopSaida);
+	const destinatarioMesmaUf =
+		!!empresaFiscal?.uf &&
+		!!entidadeSelecionada?.idestado &&
+		empresaFiscal.uf.toUpperCase() ===
+			entidadeSelecionada.idestado.toUpperCase();
+	const exigeLocalEntregaInterestadual =
+		destinatarioMesmaUf &&
+		cfopSaida.replace(/\D/g, "").startsWith("6") &&
+		cfopSelecionadoDestino?.interestadualdestmesmauf === 1;
+
 	const idDestPreview = useMemo(
 		() =>
 			resolverIdDestNfePreview({
 				ufEmitente: empresaFiscal?.uf,
 				ufDestinatario: entidadeSelecionada?.idestado,
+				ufLocalEntrega: exigeLocalEntregaInterestadual
+					? localEntregaUf
+					: undefined,
 				paisDestinatario: entidadeSelecionada?.pais,
 			}),
 		[
 			empresaFiscal?.uf,
 			entidadeSelecionada?.idestado,
 			entidadeSelecionada?.pais,
+			exigeLocalEntregaInterestadual,
+			localEntregaUf,
 		],
 	);
 
@@ -769,6 +804,7 @@ export default function NovaEmissaoNfePage() {
 			itens: itensForm,
 			totais: contextoReemissao.totais,
 			transporte: contextoReemissao.transporte,
+			localEntrega: contextoReemissao.localEntrega,
 			informacoesAdicionais: contextoReemissao.informacoesAdicionais,
 			documentoReferenciado: contextoReemissao.documentoReferenciado,
 			idtipodocumento: contextoReemissao.idtipodocumento,
@@ -910,6 +946,7 @@ export default function NovaEmissaoNfePage() {
 			itens: itensForm,
 			totais: contextoClone.totais,
 			transporte: contextoClone.transporte,
+			localEntrega: contextoClone.localEntrega,
 			informacoesAdicionais: infoClone || undefined,
 			documentoReferenciado: contextoClone.documentoReferenciado,
 			idtipodocumento: contextoClone.idtipodocumento,
@@ -1011,6 +1048,7 @@ export default function NovaEmissaoNfePage() {
 			itens: itensForm,
 			totais: contexto.totais,
 			transporte: contexto.transporte,
+			localEntrega: contexto.localEntrega,
 			informacoesAdicionais: contexto.informacoesAdicionais,
 			documentoReferenciado: contexto.documentoReferenciado,
 			idtipodocumento: contexto.idtipodocumento,
@@ -1808,7 +1846,41 @@ export default function NovaEmissaoNfePage() {
 			itens: dados.itens.map((item) =>
 				prepararItemEmissaoFormulario(item, usaCsosn),
 			),
+			localEntrega: dados.localEntrega
+				? {
+						...dados.localEntrega,
+						uf: dados.localEntrega.uf.trim().toUpperCase(),
+						cep: dados.localEntrega.cep.replace(/\D/g, ""),
+					}
+				: undefined,
 		};
+
+		if (exigeLocalEntregaInterestadual) {
+			const local = dadosNormalizados.localEntrega;
+			if (
+				!local?.logradouro?.trim() ||
+				!local.numero?.trim() ||
+				!local.bairro?.trim() ||
+				!local.codigoMunicipio?.trim() ||
+				!local.municipio?.trim() ||
+				!local.uf?.trim()
+			) {
+				toast.error(
+					"Informe o endereço completo da feira para a remessa interestadual.",
+				);
+				return null;
+			}
+
+			if (
+				local.uf.trim().toUpperCase() ===
+				empresaFiscal?.uf?.trim().toUpperCase()
+			) {
+				toast.error(
+					"A UF da feira deve ser diferente da UF do emitente para o CFOP interestadual.",
+				);
+				return null;
+			}
+		}
 
 		if (isOperacaoDevolucao) {
 			const chave =
@@ -1943,40 +2015,9 @@ export default function NovaEmissaoNfePage() {
 
 	function handleConfirmarProducao() {
 		setModalConfirmacaoAberto(false);
-		const dados = form.getValues();
-		const usaCsosn = empresaUsaCsosn(empresaFiscal?.crt ?? 3);
-		const cfopSelecionado = cfopsOperacao?.find((c) => c.codigo === cfopSaida);
-		const natOp =
-			dados.natOp?.trim() ||
-			cfopSelecionado?.descricao?.trim()?.slice(0, 60) ||
-			`Venda CFOP ${cfopSaida}`.slice(0, 60);
-
-		emitir({
-			...dados,
-			idempresa: empresa?.id ?? dados.idempresa,
-			idnotafiscal: clonarId
-				? undefined
-				: reemitirId
-					? (dados.idnotafiscal ?? reemitirId)
-					: rascunhoId
-						? (dados.idnotafiscal ?? rascunhoId)
-						: dados.idnotafiscal,
-			itens: (dados.itens ?? []).map((item) =>
-				prepararItemEmissaoFormulario(item, usaCsosn),
-			),
-			natOp,
-			confirmarProducao: true,
-			documentoReferenciado: isOperacaoDevolucao
-				? {
-						...dados.documentoReferenciado,
-						tipoDevolucao: tipoDevolucaoAtivo ?? undefined,
-					}
-				: dados.documentoReferenciado,
-			pagamento: montarPagamentoEmissaoNfe(formaPagamento, totalNF, {
-				forcarSemPagamento: isOperacaoDevolucao,
-			}),
-			...montarPayloadIntegracaoEmissao(dados, totalNF, isOperacaoDevolucao),
-		});
+		const dados = montarDadosEmissaoFormulario(form.getValues());
+		if (!dados) return;
+		emitir({ ...dados, confirmarProducao: true });
 	}
 
 	if (!empresa) {
@@ -2322,6 +2363,227 @@ export default function NovaEmissaoNfePage() {
 									</Field>
 								)}
 							</div>
+
+							{exigeLocalEntregaInterestadual && (
+								<div className="mt-4 rounded-md border border-amber-500/50 bg-amber-500/5 p-4">
+									<div className="mb-4">
+										<h3 className="font-medium">
+											Local de entrega diferente do destinatário
+										</h3>
+										<p className="text-xs text-muted-foreground mt-1">
+											O destinatário permanece sendo a própria empresa. Este
+											endereço será enviado no grupo entrega da NF-e e definirá
+											a operação como interestadual.
+										</p>
+									</div>
+
+									<div className="grid gap-4 md:grid-cols-2">
+										<Field data-invalid={!!errors.localEntrega?.nome}>
+											<FieldLabel htmlFor="local-entrega-nome">
+												Nome da feira/recebedor
+											</FieldLabel>
+											<Input
+												id="local-entrega-nome"
+												placeholder="Ex.: Feira Comercial 2026"
+												{...form.register("localEntrega.nome")}
+											/>
+											<FieldError
+												errors={
+													errors.localEntrega?.nome
+														? [errors.localEntrega.nome]
+														: []
+												}
+											/>
+										</Field>
+
+										<Field data-invalid={!!errors.localEntrega?.cnpjcpf}>
+											<FieldLabel htmlFor="local-entrega-documento">
+												CNPJ/CPF do recebedor
+											</FieldLabel>
+											<Input
+												id="local-entrega-documento"
+												placeholder="Opcional"
+												{...form.register("localEntrega.cnpjcpf")}
+											/>
+											<FieldError
+												errors={
+													errors.localEntrega?.cnpjcpf
+														? [errors.localEntrega.cnpjcpf]
+														: []
+												}
+											/>
+										</Field>
+
+										<Field data-invalid={!!errors.localEntrega?.cep}>
+											<FieldLabel htmlFor="local-entrega-cep">CEP</FieldLabel>
+											<Input
+												id="local-entrega-cep"
+												placeholder="00000000"
+												maxLength={9}
+												{...form.register("localEntrega.cep")}
+											/>
+											<FieldError
+												errors={
+													errors.localEntrega?.cep
+														? [errors.localEntrega.cep]
+														: []
+												}
+											/>
+										</Field>
+
+										<Field data-invalid={!!errors.localEntrega?.logradouro}>
+											<FieldLabel htmlFor="local-entrega-logradouro">
+												Logradouro
+											</FieldLabel>
+											<Input
+												id="local-entrega-logradouro"
+												{...form.register("localEntrega.logradouro")}
+											/>
+											<FieldError
+												errors={
+													errors.localEntrega?.logradouro
+														? [errors.localEntrega.logradouro]
+														: []
+												}
+											/>
+										</Field>
+
+										<Field data-invalid={!!errors.localEntrega?.numero}>
+											<FieldLabel htmlFor="local-entrega-numero">
+												Número
+											</FieldLabel>
+											<Input
+												id="local-entrega-numero"
+												{...form.register("localEntrega.numero")}
+											/>
+											<FieldError
+												errors={
+													errors.localEntrega?.numero
+														? [errors.localEntrega.numero]
+														: []
+												}
+											/>
+										</Field>
+
+										<Field data-invalid={!!errors.localEntrega?.complemento}>
+											<FieldLabel htmlFor="local-entrega-complemento">
+												Complemento
+											</FieldLabel>
+											<Input
+												id="local-entrega-complemento"
+												{...form.register("localEntrega.complemento")}
+											/>
+											<FieldError
+												errors={
+													errors.localEntrega?.complemento
+														? [errors.localEntrega.complemento]
+														: []
+												}
+											/>
+										</Field>
+
+										<Field data-invalid={!!errors.localEntrega?.bairro}>
+											<FieldLabel htmlFor="local-entrega-bairro">
+												Bairro
+											</FieldLabel>
+											<Input
+												id="local-entrega-bairro"
+												{...form.register("localEntrega.bairro")}
+											/>
+											<FieldError
+												errors={
+													errors.localEntrega?.bairro
+														? [errors.localEntrega.bairro]
+														: []
+												}
+											/>
+										</Field>
+
+										<Field data-invalid={!!errors.localEntrega?.uf}>
+											<FieldLabel>UF da feira</FieldLabel>
+											<Select
+												value={localEntregaUf}
+												onValueChange={(valor) => {
+													form.setValue("localEntrega.uf", valor, {
+														shouldValidate: true,
+													});
+													form.setValue("localEntrega.codigoMunicipio", "");
+													form.setValue("localEntrega.municipio", "");
+												}}
+											>
+												<SelectTrigger>
+													<SelectValue placeholder="Selecione a UF" />
+												</SelectTrigger>
+												<SelectContent>
+													{estadosLocalEntrega?.data.map((estado) => (
+														<SelectItem
+															key={estado.idestado}
+															value={estado.idestado}
+															disabled={
+																estado.idestado ===
+																empresaFiscal?.uf?.toUpperCase()
+															}
+														>
+															{estado.idestado} — {estado.nome}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+											<FieldError
+												errors={
+													errors.localEntrega?.uf
+														? [errors.localEntrega.uf]
+														: []
+												}
+											/>
+										</Field>
+
+										<Field
+											data-invalid={!!errors.localEntrega?.codigoMunicipio}
+										>
+											<FieldLabel>Município da feira</FieldLabel>
+											<Select
+												value={localEntregaMunicipioCodigo}
+												onValueChange={(valor) => {
+													const municipio = municipiosLocalEntrega?.data.find(
+														(item) => item.idcidade === valor,
+													);
+													form.setValue("localEntrega.codigoMunicipio", valor, {
+														shouldValidate: true,
+													});
+													form.setValue(
+														"localEntrega.municipio",
+														municipio?.nome ?? "",
+														{ shouldValidate: true },
+													);
+												}}
+												disabled={!localEntregaUf}
+											>
+												<SelectTrigger>
+													<SelectValue placeholder="Selecione o município" />
+												</SelectTrigger>
+												<SelectContent>
+													{municipiosLocalEntrega?.data.map((municipio) => (
+														<SelectItem
+															key={municipio.idcidade}
+															value={municipio.idcidade}
+														>
+															{municipio.nome}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+											<FieldError
+												errors={
+													errors.localEntrega?.codigoMunicipio
+														? [errors.localEntrega.codigoMunicipio]
+														: []
+												}
+											/>
+										</Field>
+									</div>
+								</div>
+							)}
 						</FieldSet>
 					</FieldGroup>
 

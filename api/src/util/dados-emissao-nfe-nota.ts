@@ -1,4 +1,7 @@
-import type { ItemPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
+import type {
+	ItemPayloadNfe,
+	LocalEntregaPayloadNfe,
+} from "@/service/nfe-emissao/contexto-emissao-nfe.js";
 import type { TipoDevolucaoNfe } from "@/util/cfop-devolucao-emissao-nfe.js";
 
 export type DadosTributacaoItemEmissaoNfe = {
@@ -103,6 +106,7 @@ export type DadosEmissaoNfeSalvos = {
 	transporte?: {
 		modFrete?: number;
 	};
+	localEntrega?: Partial<LocalEntregaPayloadNfe>;
 	totais?: {
 		frete?: number;
 		seguro?: number;
@@ -139,6 +143,7 @@ export function montarSnapshotEmissaoNfe(params: {
 	gerarEstoque?: boolean;
 	pagamento?: { formas?: Array<{ tPag?: string }> };
 	transporte?: { modFrete?: number };
+	localEntrega?: Partial<LocalEntregaPayloadNfe>;
 	totais?: {
 		frete?: number;
 		seguro?: number;
@@ -174,6 +179,7 @@ export function montarSnapshotEmissaoNfe(params: {
 			transporte: {
 				modFrete: params.transporte?.modFrete ?? 9,
 			},
+			localEntrega: params.localEntrega,
 			totais: {
 				frete: params.totais?.frete ?? 0,
 				seguro: params.totais?.seguro ?? 0,

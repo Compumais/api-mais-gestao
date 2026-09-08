@@ -6,10 +6,14 @@ import {
 	salvarRascunhoEmissaoNfeVendaService,
 } from "@/service/nfe-emissao/salvar-rascunho-emissao-nfe-venda.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
-import { emitirNfeBodySchema } from "./emissao-nfe-body-schema.js";
+import {
+	emitirNfeBodySchema,
+	localEntregaNfeSchema,
+} from "./emissao-nfe-body-schema.js";
 
 const salvarRascunhoNfeBodySchema = emitirNfeBodySchema.extend({
 	itens: emitirNfeBodySchema.shape.itens.min(0),
+	localEntrega: localEntregaNfeSchema.partial().optional(),
 });
 
 const listarRascunhosQuerySchema = z.object({
@@ -49,6 +53,7 @@ export async function salvarRascunhoEmissaoNfe(
 			totais: dados.totais,
 			pagamento: dados.pagamento,
 			transporte: dados.transporte,
+			localEntrega: dados.localEntrega,
 			informacoesAdicionais: dados.informacoesAdicionais,
 			documentoReferenciado: dados.documentoReferenciado
 				? {
