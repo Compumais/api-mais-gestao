@@ -7,8 +7,6 @@ import {
 	getCoreRowModel,
 	useReactTable,
 } from "@tanstack/react-table";
-import dayjs from "dayjs";
-import "dayjs/locale/pt-br";
 import { useCallback, useId, useMemo, useState } from "react";
 import type { OrdenacaoColunaTabela } from "@/components/cabecalho-coluna-tabela";
 import { TableSkeleton } from "@/components/table-skeleton";
@@ -51,6 +49,7 @@ import {
 	formatarAcaoAuditoria,
 	formatarRecursoAuditoria,
 } from "@/lib/auditoria-utils";
+import { formatDateTimeBrasilia } from "@/lib/date";
 import { type Auditoria, auditoriaService } from "@/services/auditoria.service";
 import { PageContainer } from "../components/page-container";
 import {
@@ -61,8 +60,6 @@ import {
 	filtrosColunaAuditoriaVazios,
 	visibilidadePadraoColunasAuditoria,
 } from "./auditoria-colunas";
-
-dayjs.locale("pt-br");
 
 function rotuloColuna(column: {
 	id: string;
@@ -448,9 +445,9 @@ export default function AuditoriaPage() {
 											Data/Hora
 										</label>
 										<p className="text-sm">
-											{dayjs(selectedAuditoria.criadoem).format(
-												"DD/MM/YYYY [às] HH:mm:ss",
-											)}
+											{formatDateTimeBrasilia(selectedAuditoria.criadoem, {
+												comSegundos: true,
+											})}
 										</p>
 									</div>
 									{selectedAuditoria.metadados ? (

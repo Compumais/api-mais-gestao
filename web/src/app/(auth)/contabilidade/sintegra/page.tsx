@@ -23,18 +23,13 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { inicioFimMesBrasilia } from "@/lib/date";
 import { gerarArquivoSintegra } from "@/services/sintegra.service";
 import { PageContainer } from "../../components/page-container";
 
 function obterPeriodoMesAtual() {
-	const hoje = new Date();
-	const primeiroDiaMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-	const ultimoDiaMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
-
-	return {
-		dataInicio: primeiroDiaMes.toISOString().split("T")[0],
-		dataFim: ultimoDiaMes.toISOString().split("T")[0],
-	};
+	const { inicio, fim } = inicioFimMesBrasilia();
+	return { dataInicio: inicio, dataFim: fim };
 }
 
 export default function GerarSintegraPage() {

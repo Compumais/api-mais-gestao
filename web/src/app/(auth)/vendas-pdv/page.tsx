@@ -15,8 +15,6 @@ import {
 	getPaginationRowModel,
 	useReactTable,
 } from "@tanstack/react-table";
-import dayjs from "dayjs";
-import "dayjs/locale/pt-br";
 import { useMemo, useState } from "react";
 import { TableSkeleton } from "@/components/table-skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +41,7 @@ import {
 	useInterpretarRejeicaoNfce,
 	useNfceDetalhes,
 } from "@/hooks/use-nfce-detalhes";
+import { formatDateTimeBrasilia } from "@/lib/date";
 import { formatCurrency } from "@/lib/gourmet-utils";
 import { produtosService } from "@/services/produtos.service";
 import type { VendaPdvGourmet } from "@/services/venda-pdv-gourmet.service";
@@ -51,8 +50,6 @@ import type { VendaPdvItem } from "@/services/venda-pdv-item.service";
 import { vendaPdvItemService } from "@/services/venda-pdv-item.service";
 import { PageContainer } from "../components/page-container";
 import { DialogDetalhesNfce } from "../nfce/components/dialog-detalhes-nfce";
-
-dayjs.locale("pt-br");
 
 // ─── tipos ───────────────────────────────────────────────────────────────────
 
@@ -158,7 +155,7 @@ function ItensVendaDialog({
 						Venda Nº {venda?.numeropdv}
 					</DialogTitle>
 					<DialogDescription>
-						{venda && dayjs(venda.datacriacao).format("DD/MM/YYYY [às] HH:mm")}{" "}
+						{venda && formatDateTimeBrasilia(venda.datacriacao)}{" "}
 						— {venda && tipoVenda(venda)}
 						{venda && nomeOperador(venda) !== "—" && (
 							<>
@@ -347,7 +344,7 @@ export default function VendasPdvPage() {
 			cell: ({ row }) => {
 				const val = row.getValue("datacriacao") as string | null;
 				if (!val) return <span className="text-muted-foreground">—</span>;
-				return <span>{dayjs(val).format("DD/MM/YYYY HH:mm")}</span>;
+				return <span>{formatDateTimeBrasilia(val)}</span>;
 			},
 		},
 		{

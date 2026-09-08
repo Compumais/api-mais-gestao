@@ -1,11 +1,11 @@
 "use client";
 
 import { IconFileTypePdf, IconPrinter } from "@tabler/icons-react";
-import dayjs from "dayjs";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { NFE_AMBIENTE_LABELS } from "@/constants/nfe-status";
+import { formatDateTimeBrasilia } from "@/lib/date";
 import {
 	calcularPrecoTotalItem,
 	formatCurrency,
@@ -95,7 +95,7 @@ export function CupomNaoFiscal({ dados, onFechar }: CupomNaoFiscalProps) {
 							<p className="mt-1 text-xs text-gray-600">{dados.contexto}</p>
 						)}
 						<p className="mt-1 text-xs">
-							{dayjs(dados.dataHora).format("DD/MM/YYYY HH:mm:ss")}
+							{formatDateTimeBrasilia(dados.dataHora, { comSegundos: true })}
 						</p>
 						{dados.vendaId && (
 							<p className="text-xs text-gray-600">

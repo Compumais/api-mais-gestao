@@ -1,7 +1,6 @@
 "use client";
 
 import { IconSparkles } from "@tabler/icons-react";
-import dayjs from "dayjs";
 import Link from "next/link";
 import { CardErroNfe } from "@/app/(auth)/nota-fiscal-venda/components/card-erro-nfe";
 import { StatusNfeBadge } from "@/app/(auth)/nota-fiscal-venda/components/status-nfe-badge";
@@ -23,6 +22,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { NFE_AMBIENTE_LABELS } from "@/constants/nfe-status";
+import { formatDateTimeBrasilia } from "@/lib/date";
 import { formatCurrency } from "@/lib/gourmet-utils";
 import type {
 	DetalhesNfce,
@@ -212,7 +212,7 @@ export function DialogDetalhesNfce({
 								<p className="text-xs text-muted-foreground">Emissão</p>
 								<p className="text-sm">
 									{dataEmissao
-										? dayjs(dataEmissao).format("DD/MM/YYYY HH:mm")
+										? formatDateTimeBrasilia(dataEmissao)
 										: "—"}
 								</p>
 							</div>

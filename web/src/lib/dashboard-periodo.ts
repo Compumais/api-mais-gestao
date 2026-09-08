@@ -1,4 +1,10 @@
-import dayjs from "dayjs";
+import {
+	adicionarDiasIso,
+	formatDateOnlyDisplay,
+	hojeBrasiliaIsoDate,
+	inicioFimMesBrasilia,
+	inicioFimMesDe,
+} from "@/lib/date";
 
 export type PeriodoPreset =
 	| "hoje"
@@ -114,29 +120,29 @@ export function periodoParaQuery(params: DashboardPeriodoParams) {
 }
 
 export function intervaloExibido(params: DashboardPeriodoParams) {
-	const hoje = dayjs();
+	const hoje = hojeBrasiliaIsoDate();
 	switch (params.preset) {
 		case "hoje":
-			return `${hoje.format("DD/MM/YYYY")}`;
-		case "ontem": {
-			const ontem = hoje.subtract(1, "day");
-			return ontem.format("DD/MM/YYYY");
-		}
+			return formatDateOnlyDisplay(hoje);
+		case "ontem":
+			return formatDateOnlyDisplay(adicionarDiasIso(hoje, -1));
 		case "7d":
-			return `${hoje.subtract(6, "day").format("DD/MM/YYYY")} – ${hoje.format("DD/MM/YYYY")}`;
+			return `${formatDateOnlyDisplay(adicionarDiasIso(hoje, -6))} – ${formatDateOnlyDisplay(hoje)}`;
 		case "30d":
-			return `${hoje.subtract(29, "day").format("DD/MM/YYYY")} – ${hoje.format("DD/MM/YYYY")}`;
-		case "mes_atual":
-			return `${hoje.startOf("month").format("DD/MM/YYYY")} – ${hoje.endOf("month").format("DD/MM/YYYY")}`;
+			return `${formatDateOnlyDisplay(adicionarDiasIso(hoje, -29))} – ${formatDateOnlyDisplay(hoje)}`;
+		case "mes_atual": {
+			const mes = inicioFimMesBrasilia();
+			return `${formatDateOnlyDisplay(mes.inicio)} – ${formatDateOnlyDisplay(hoje)}`;
+		}
 		case "mes_anterior": {
-			const ant = hoje.subtract(1, "month");
-			return `${ant.startOf("month").format("DD/MM/YYYY")} – ${ant.endOf("month").format("DD/MM/YYYY")}`;
+			const mesAnt = inicioFimMesDe(adicionarDiasIso(`${hoje.slice(0, 7)}-01`, -1));
+			return `${formatDateOnlyDisplay(mesAnt.inicio)} – ${formatDateOnlyDisplay(mesAnt.fim)}`;
 		}
 		case "ano_atual":
-			return `${hoje.startOf("year").format("DD/MM/YYYY")} – ${hoje.endOf("year").format("DD/MM/YYYY")}`;
+			return `${formatDateOnlyDisplay(`${hoje.slice(0, 4)}-01-01`)} – ${formatDateOnlyDisplay(hoje)}`;
 		case "personalizado":
 			if (params.dataInicio && params.dataFim) {
-				return `${dayjs(params.dataInicio).format("DD/MM/YYYY")} – ${dayjs(params.dataFim).format("DD/MM/YYYY")}`;
+				return `${formatDateOnlyDisplay(params.dataInicio)} – ${formatDateOnlyDisplay(params.dataFim)}`;
 			}
 			return "Período personalizado";
 		default:

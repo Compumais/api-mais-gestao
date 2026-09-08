@@ -2,7 +2,6 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import dayjs from "dayjs";
 import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -19,6 +18,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { NFE_CONFIG_PADRAO_LABEL } from "@/constants/nfe-config-padrao";
+import { formatDateOnlyDisplay, formatDateTimeBrasilia } from "@/lib/date";
 import {
 	type NfeConfiguracaoFormData,
 	nfeConfiguracaoSchema,
@@ -372,7 +372,7 @@ function NfeConfiguracaoFormCampos({
 								<p className="text-muted-foreground text-xs">
 									Chave {statusIbpt.chave}
 									{statusIbpt.importadoEm
-										? ` · ${dayjs(statusIbpt.importadoEm).format("DD/MM/YYYY HH:mm")}`
+										? ` · ${formatDateTimeBrasilia(statusIbpt.importadoEm)}`
 										: ""}
 								</p>
 							</>
@@ -456,7 +456,7 @@ function NfeConfiguracaoFormCampos({
 								<p className="text-muted-foreground">
 									Validade:{" "}
 									{cert.validadefim
-										? dayjs(cert.validadefim).format("DD/MM/YYYY")
+										? formatDateOnlyDisplay(cert.validadefim)
 										: "—"}
 								</p>
 							</div>

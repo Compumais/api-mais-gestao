@@ -2,13 +2,13 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { Combobox } from "@/components/ui/combobox";
-import { MoneyInput } from "@/components/ui/money-input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Combobox } from "@/components/ui/combobox";
 import {
 	Field,
 	FieldError,
@@ -16,6 +16,7 @@ import {
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { MoneyInput } from "@/components/ui/money-input";
 import {
 	Select,
 	SelectContent,
@@ -25,11 +26,12 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { extractDateOnly } from "@/lib/date";
 import {
-	type CriarFinanceiroFormData,
-	criarFinanceiroSchema,
 	type AtualizarFinanceiroFormData,
 	atualizarFinanceiroSchema,
+	type CriarFinanceiroFormData,
+	criarFinanceiroSchema,
 	TIPO_DOCUMENTO_OPTIONS,
 } from "@/schemas/financeiro.schema";
 import { bancosService } from "@/services/bancos.service";
@@ -40,19 +42,9 @@ import {
 	financeiroService,
 } from "@/services/financeiro.service";
 import { planoContasService } from "@/services/plano-contas.service";
-import { useRouter } from "next/navigation";
 
-const formatDateForInput = (date?: string | null): string => {
-	if (!date) {
-		return "";
-	}
-	try {
-		const d = new Date(date);
-		return d.toISOString().split("T")[0];
-	} catch {
-		return "";
-	}
-};
+const formatDateForInput = (date?: string | null): string =>
+	extractDateOnly(date) ?? "";
 
 // Função auxiliar para mapear tipo documento string para idtipodocumentofinanceiro
 // Por enquanto, vamos usar um mapeamento simples. Isso pode ser ajustado conforme necessário

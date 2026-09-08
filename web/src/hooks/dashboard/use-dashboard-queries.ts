@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDashboardFilters } from "@/hooks/dashboard/dashboard-filters-context";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { periodoParaQuery } from "@/lib/dashboard-periodo";
+import { hojeBrasiliaIsoDate } from "@/lib/date";
 import {
 	type ComparativoFlexivelModo,
 	dashboardService,
@@ -112,7 +113,7 @@ export function useDashboardDreAvancado(
 	opts?: { ano?: number; mes?: number; trimestre?: number },
 ) {
 	const { localStorageEmpresa: empresa } = useEmpresa();
-	const ano = opts?.ano ?? new Date().getFullYear();
+	const ano = opts?.ano ?? Number(hojeBrasiliaIsoDate().slice(0, 4));
 	return useQuery({
 		queryKey: [
 			"dashboard",

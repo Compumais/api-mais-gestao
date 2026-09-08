@@ -1,3 +1,8 @@
+import {
+	adicionarDiasIso,
+	hojeBrasiliaIsoDate,
+} from "@/util/data-hora-brasilia.js";
+
 export type PeriodoPreset =
 	| "hoje"
 	| "ontem"
@@ -25,55 +30,50 @@ export type KpiComVariacao = {
 	variacaoYoYPct: number | null;
 };
 
-function toDateString(value: Date): string {
-	const y = value.getFullYear();
-	const m = String(value.getMonth() + 1).padStart(2, "0");
-	const d = String(value.getDate()).padStart(2, "0");
-	return `${y}-${m}-${d}`;
+function inicioMesIso(dataIso: string): string {
+	return `${dataIso.slice(0, 7)}-01`;
 }
 
-function parseDateStr(value: string): Date {
-	const [y, m, d] = value.split("-").map(Number);
-	return new Date(y ?? 0, (m ?? 1) - 1, d ?? 1);
+function fimMesIso(dataIso: string): string {
+	const [ano, mes] = dataIso.split("-").map(Number);
+	return new Date(Date.UTC(ano ?? 0, mes ?? 1, 0)).toISOString().slice(0, 10);
 }
 
-function addDays(date: Date, days: number): Date {
-	const next = new Date(date);
-	next.setDate(next.getDate() + days);
-	return next;
+function inicioAnoIso(dataIso: string): string {
+	return `${dataIso.slice(0, 4)}-01-01`;
 }
 
-function startOfMonth(date: Date): Date {
-	return new Date(date.getFullYear(), date.getMonth(), 1);
+function deslocarAnoIso(dataIso: string, anos: number): string {
+	const [ano, mes, dia] = dataIso.split("-").map(Number);
+	const utc = new Date(Date.UTC((ano ?? 0) + anos, (mes ?? 1) - 1, dia ?? 1));
+	return utc.toISOString().slice(0, 10);
 }
 
-function endOfMonth(date: Date): Date {
-	return new Date(date.getFullYear(), date.getMonth() + 1, 0);
+function msUtcDaDataIso(dataIso: string): number {
+	const [ano, mes, dia] = dataIso.split("-").map(Number);
+	return Date.UTC(ano ?? 0, (mes ?? 1) - 1, dia ?? 1);
 }
 
-function diffDaysInclusive(inicio: Date, fim: Date): number {
-	const ms = fim.getTime() - inicio.getTime();
-	return Math.floor(ms / (1000 * 60 * 60 * 24)) + 1;
+function diffDaysInclusiveIso(inicio: string, fim: string): number {
+	return (
+		Math.floor((msUtcDaDataIso(fim) - msUtcDaDataIso(inicio)) / 86_400_000) + 1
+	);
 }
 
-function intervaloAnterior(inicio: Date, fim: Date): IntervaloDatas {
-	const dias = diffDaysInclusive(inicio, fim);
-	const fimAnterior = addDays(inicio, -1);
-	const inicioAnterior = addDays(fimAnterior, -(dias - 1));
+function intervaloAnterior(inicio: string, fim: string): IntervaloDatas {
+	const dias = diffDaysInclusiveIso(inicio, fim);
+	const fimAnterior = adicionarDiasIso(inicio, -1);
+	const inicioAnterior = adicionarDiasIso(fimAnterior, -(dias - 1));
 	return {
-		dataInicioStr: toDateString(inicioAnterior),
-		dataFimStr: toDateString(fimAnterior),
+		dataInicioStr: inicioAnterior,
+		dataFimStr: fimAnterior,
 	};
 }
 
-function intervaloYoY(inicio: Date, fim: Date): IntervaloDatas {
-	const inicioYoY = new Date(inicio);
-	inicioYoY.setFullYear(inicioYoY.getFullYear() - 1);
-	const fimYoY = new Date(fim);
-	fimYoY.setFullYear(fimYoY.getFullYear() - 1);
+function intervaloYoY(inicio: string, fim: string): IntervaloDatas {
 	return {
-		dataInicioStr: toDateString(inicioYoY),
-		dataFimStr: toDateString(fimYoY),
+		dataInicioStr: deslocarAnoIso(inicio, -1),
+		dataFimStr: deslocarAnoIso(fim, -1),
 	};
 }
 
@@ -83,6 +83,7 @@ export type ResolvePeriodoParams = {
 	dataFim?: string | undefined;
 	/** Compatibilidade com endpoints antigos baseados em dias */
 	dias?: number | undefined;
+	agora?: Date | undefined;
 };
 
 export function resolvePeriodo({
@@ -90,12 +91,12 @@ export function resolvePeriodo({
 	dataInicio,
 	dataFim,
 	dias,
+	agora,
 }: ResolvePeriodoParams): PeriodoResolvido {
-	const hoje = new Date();
-	hoje.setHours(0, 0, 0, 0);
+	const hoje = hojeBrasiliaIsoDate(agora);
 
-	let inicio: Date;
-	let fim: Date;
+	let inicio = hoje;
+	let fim = hoje;
 
 	const presetEfetivo: PeriodoPreset =
 		preset ??
@@ -113,63 +114,63 @@ export function resolvePeriodo({
 
 	switch (presetEfetivo) {
 		case "hoje":
-			inicio = new Date(hoje);
-			fim = new Date(hoje);
+			inicio = hoje;
+			fim = hoje;
 			break;
 		case "ontem":
-			inicio = addDays(hoje, -1);
-			fim = addDays(hoje, -1);
+			inicio = adicionarDiasIso(hoje, -1);
+			fim = adicionarDiasIso(hoje, -1);
 			break;
 		case "7d":
-			fim = new Date(hoje);
-			inicio = addDays(hoje, -6);
+			fim = hoje;
+			inicio = adicionarDiasIso(hoje, -6);
 			break;
 		case "30d":
-			fim = new Date(hoje);
-			inicio = addDays(hoje, -29);
+			fim = hoje;
+			inicio = adicionarDiasIso(hoje, -29);
 			break;
 		case "mes_atual":
-			inicio = startOfMonth(hoje);
-			fim = new Date(hoje);
+			inicio = inicioMesIso(hoje);
+			fim = hoje;
 			break;
 		case "mes_anterior": {
-			const ref = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
-			inicio = startOfMonth(ref);
-			fim = endOfMonth(ref);
+			const ref = adicionarDiasIso(inicioMesIso(hoje), -1);
+			inicio = inicioMesIso(ref);
+			fim = fimMesIso(ref);
 			break;
 		}
 		case "ano_atual":
-			inicio = new Date(hoje.getFullYear(), 0, 1);
-			fim = new Date(hoje);
+			inicio = inicioAnoIso(hoje);
+			fim = hoje;
 			break;
 		case "personalizado": {
 			if (dataInicio && dataFim) {
-				inicio = parseDateStr(dataInicio);
-				fim = parseDateStr(dataFim);
+				inicio = dataInicio;
+				fim = dataFim;
 			} else if (dias && dias > 0) {
-				fim = new Date(hoje);
-				inicio = addDays(hoje, -(dias - 1));
+				fim = hoje;
+				inicio = adicionarDiasIso(hoje, -(dias - 1));
 			} else {
-				fim = new Date(hoje);
-				inicio = addDays(hoje, -29);
+				fim = hoje;
+				inicio = adicionarDiasIso(hoje, -29);
 			}
 			break;
 		}
 		default:
-			fim = new Date(hoje);
-			inicio = addDays(hoje, -29);
+			fim = hoje;
+			inicio = adicionarDiasIso(hoje, -29);
 	}
 
-	if (inicio > fim) {
+	if (msUtcDaDataIso(inicio) > msUtcDaDataIso(fim)) {
 		const tmp = inicio;
 		inicio = fim;
 		fim = tmp;
 	}
 
 	return {
-		dataInicioStr: toDateString(inicio),
-		dataFimStr: toDateString(fim),
-		dias: diffDaysInclusive(inicio, fim),
+		dataInicioStr: inicio,
+		dataFimStr: fim,
+		dias: diffDaysInclusiveIso(inicio, fim),
 		periodoAnterior: intervaloAnterior(inicio, fim),
 		periodoYoY: intervaloYoY(inicio, fim),
 	};

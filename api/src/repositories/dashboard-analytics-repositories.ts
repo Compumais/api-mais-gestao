@@ -5,6 +5,11 @@ import {
 	type KpiComVariacao,
 	montarKpiComVariacao,
 } from "../util/dashboard-periodo.js";
+import {
+	adicionarDiasIso,
+	hojeBrasiliaIsoDate,
+	inicioFimMesDe,
+} from "../util/data-hora-brasilia.js";
 import { db } from "./connection.js";
 
 /* -------------------------------------------------------------------------- */
@@ -294,8 +299,8 @@ async function somarFaturamento(
 		SELECT COALESCE(SUM(valortotal::numeric), 0) as total
 		FROM vendapdvgourmet
 		WHERE idempresa = ${idempresa}
-			AND datacriacao >= ${dataInicioStr}::date
-			AND datacriacao < (${dataFimStr}::date + interval '1 day')
+			AND (datacriacao AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
+			AND (datacriacao AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
 	`);
 	return toNumber(rowsOf<{ total: string | number }>(result)[0]?.total);
 }
@@ -311,8 +316,8 @@ async function somarCmv(
 		JOIN vendapdvgourmet v ON v.id = vi.idvenda
 		JOIN produtos p ON p.id = vi.idproduto
 		WHERE vi.idempresa = ${idempresa}
-			AND v.datacriacao >= ${dataInicioStr}::date
-			AND v.datacriacao < (${dataFimStr}::date + interval '1 day')
+			AND (v.datacriacao AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
+			AND (v.datacriacao AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
 	`);
 	return toNumber(rowsOf<{ total: string | number }>(result)[0]?.total);
 }
@@ -332,8 +337,8 @@ async function somarMovimentacoesPorTipo(
 				tipos.map((t) => sql`${t}`),
 				sql`, `,
 			)})
-			AND ccl.datahora >= ${dataInicioStr}::date
-			AND ccl.datahora < (${dataFimStr}::date + interval '1 day')
+			AND (ccl.datahora AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
+			AND (ccl.datahora AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
 	`);
 	return toNumber(rowsOf<{ total: string | number }>(result)[0]?.total);
 }
@@ -384,7 +389,7 @@ async function somarFinanceiroAberto(
 		WHERE idempresa = ${idempresa}
 			AND tipo = ${tipo}
 			AND status = 'A'
-			${apenasVencido ? sql`AND vencimento < CURRENT_DATE` : sql``}
+			${apenasVencido ? sql`AND vencimento < ${hojeBrasiliaIsoDate()}::date` : sql``}
 	`);
 	return toNumber(rowsOf<{ total: string | number }>(result)[0]?.total);
 }
@@ -401,8 +406,8 @@ async function somarTitulosPrevistos(
 			AND tipo = ${tipo}
 			AND status = 'A'
 			AND vencimento IS NOT NULL
-			AND vencimento >= CURRENT_DATE
-			AND vencimento <= CURRENT_DATE + (${diasHorizonte}::int)
+			AND vencimento >= ${hojeBrasiliaIsoDate()}::date
+			AND vencimento <= ${hojeBrasiliaIsoDate()}::date + (${diasHorizonte}::int)
 	`);
 	return toNumber(rowsOf<{ total: string | number }>(result)[0]?.total);
 }
@@ -419,24 +424,24 @@ async function metricasVendasPeriodo(
 				COUNT(*)::int as quantidade
 			FROM vendapdvgourmet
 			WHERE idempresa = ${idempresa}
-				AND datacriacao >= ${dataInicioStr}::date
-				AND datacriacao < (${dataFimStr}::date + interval '1 day')
+				AND (datacriacao AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
+				AND (datacriacao AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
 		`),
 		db.execute(sql`
 			SELECT COALESCE(SUM(vi.quantidade::numeric), 0) as itens
 			FROM vendapdvitem vi
 			JOIN vendapdvgourmet v ON v.id = vi.idvenda
 			WHERE vi.idempresa = ${idempresa}
-				AND v.datacriacao >= ${dataInicioStr}::date
-				AND v.datacriacao < (${dataFimStr}::date + interval '1 day')
+				AND (v.datacriacao AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
+				AND (v.datacriacao AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
 		`),
 		db.execute(sql`
 			SELECT COUNT(DISTINCT identidade)::int as clientes
 			FROM vendapdvgourmet
 			WHERE idempresa = ${idempresa}
 				AND identidade IS NOT NULL
-				AND datacriacao >= ${dataInicioStr}::date
-				AND datacriacao < (${dataFimStr}::date + interval '1 day')
+				AND (datacriacao AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
+				AND (datacriacao AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
 		`),
 	]);
 
@@ -465,15 +470,15 @@ async function buscarEvolucaoFaturamento({
 }: ParametrosPeriodo): Promise<EvolucaoFaturamentoItem[]> {
 	const result = await db.execute(sql`
 		SELECT
-			DATE(datacriacao) as date,
+			DATE(datacriacao AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo') as date,
 			COALESCE(SUM(valortotal::numeric), 0) as total,
 			COUNT(*)::int as quantidade
 		FROM vendapdvgourmet
 		WHERE idempresa = ${idempresa}
-			AND datacriacao >= ${dataInicioStr}::date
-			AND datacriacao < (${dataFimStr}::date + interval '1 day')
-		GROUP BY DATE(datacriacao)
-		ORDER BY DATE(datacriacao)
+			AND (datacriacao AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
+			AND (datacriacao AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
+		GROUP BY DATE(datacriacao AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo')
+		ORDER BY DATE(datacriacao AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo')
 	`);
 
 	return rowsOf<{
@@ -503,8 +508,8 @@ async function buscarTopProdutosPeriodo(
 		JOIN vendapdvgourmet v ON v.id = vi.idvenda
 		LEFT JOIN produtos p ON p.id = vi.idproduto
 		WHERE vi.idempresa = ${idempresa}
-			AND v.datacriacao >= ${dataInicioStr}::date
-			AND v.datacriacao < (${dataFimStr}::date + interval '1 day')
+			AND (v.datacriacao AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
+			AND (v.datacriacao AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
 		GROUP BY vi.idproduto, p.nome, vi.descricao
 		ORDER BY total DESC
 		LIMIT ${limit}
@@ -539,8 +544,8 @@ async function buscarTopClientesPeriodo(
 		LEFT JOIN entidade e ON e.id = v.identidade
 		WHERE v.idempresa = ${idempresa}
 			AND v.identidade IS NOT NULL
-			AND v.datacriacao >= ${dataInicioStr}::date
-			AND v.datacriacao < (${dataFimStr}::date + interval '1 day')
+			AND (v.datacriacao AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
+			AND (v.datacriacao AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
 		GROUP BY v.identidade, e.nome
 		ORDER BY total DESC
 		LIMIT ${limit}
@@ -570,15 +575,15 @@ async function clientesNovosRecorrentes(
 			FROM vendapdvgourmet
 			WHERE idempresa = ${idempresa}
 				AND identidade IS NOT NULL
-				AND datacriacao >= ${dataInicioStr}::date
-				AND datacriacao < (${dataFimStr}::date + interval '1 day')
+				AND (datacriacao AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
+				AND (datacriacao AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
 		),
 		historico AS (
 			SELECT DISTINCT identidade
 			FROM vendapdvgourmet
 			WHERE idempresa = ${idempresa}
 				AND identidade IS NOT NULL
-				AND datacriacao < ${dataInicioStr}::date
+				AND (datacriacao AT TIME ZONE 'UTC') < (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
 		)
 		SELECT
 			COUNT(DISTINCT CASE WHEN h.identidade IS NULL THEN vp.identidade END)::int as novos,
@@ -656,8 +661,8 @@ async function matrizProdutosBase({
 		JOIN vendapdvgourmet v ON v.id = vi.idvenda
 		LEFT JOIN produtos p ON p.id = vi.idproduto
 		WHERE vi.idempresa = ${idempresa}
-			AND v.datacriacao >= ${dataInicioStr}::date
-			AND v.datacriacao < (${dataFimStr}::date + interval '1 day')
+			AND (v.datacriacao AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
+			AND (v.datacriacao AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
 		GROUP BY vi.idproduto, p.nome, vi.descricao
 	`);
 
@@ -687,14 +692,15 @@ async function agingFinanceiro(
 	idempresa: string,
 	tipo: "P" | "R",
 ): Promise<AgingBucket[]> {
+	const hoje = hojeBrasiliaIsoDate();
 	const result = await db.execute(sql`
 		SELECT
 			CASE
 				WHEN vencimento IS NULL THEN 'sem_vencimento'
-				WHEN vencimento >= CURRENT_DATE THEN 'a_vencer'
-				WHEN CURRENT_DATE - vencimento BETWEEN 1 AND 30 THEN '1_30'
-				WHEN CURRENT_DATE - vencimento BETWEEN 31 AND 60 THEN '31_60'
-				WHEN CURRENT_DATE - vencimento BETWEEN 61 AND 90 THEN '61_90'
+				WHEN vencimento >= ${hoje}::date THEN 'a_vencer'
+				WHEN ${hoje}::date - vencimento BETWEEN 1 AND 30 THEN '1_30'
+				WHEN ${hoje}::date - vencimento BETWEEN 31 AND 60 THEN '31_60'
+				WHEN ${hoje}::date - vencimento BETWEEN 61 AND 90 THEN '61_90'
 				ELSE '90_mais'
 			END as faixa,
 			COUNT(*)::int as quantidade,
@@ -910,14 +916,14 @@ export async function buscarVendasPorHora({
 }: ParametrosPeriodo): Promise<VendaPorHoraItem[]> {
 	const result = await db.execute(sql`
 		SELECT
-			EXTRACT(HOUR FROM datacriacao)::int as hora,
+			EXTRACT(HOUR FROM datacriacao AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo')::int as hora,
 			COALESCE(SUM(valortotal::numeric), 0) as total,
 			COUNT(*)::int as quantidade
 		FROM vendapdvgourmet
 		WHERE idempresa = ${idempresa}
-			AND datacriacao >= ${dataInicioStr}::date
-			AND datacriacao < (${dataFimStr}::date + interval '1 day')
-		GROUP BY EXTRACT(HOUR FROM datacriacao)
+			AND (datacriacao AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
+			AND (datacriacao AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
+		GROUP BY EXTRACT(HOUR FROM datacriacao AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo')
 		ORDER BY hora
 	`);
 
@@ -948,14 +954,14 @@ export async function buscarVendasPorDiaSemana({
 }: ParametrosPeriodo): Promise<VendaPorDiaSemanaItem[]> {
 	const result = await db.execute(sql`
 		SELECT
-			EXTRACT(DOW FROM datacriacao)::int as dia_semana,
+			EXTRACT(DOW FROM datacriacao AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo')::int as dia_semana,
 			COALESCE(SUM(valortotal::numeric), 0) as total,
 			COUNT(*)::int as quantidade
 		FROM vendapdvgourmet
 		WHERE idempresa = ${idempresa}
-			AND datacriacao >= ${dataInicioStr}::date
-			AND datacriacao < (${dataFimStr}::date + interval '1 day')
-		GROUP BY EXTRACT(DOW FROM datacriacao)
+			AND (datacriacao AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
+			AND (datacriacao AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
+		GROUP BY EXTRACT(DOW FROM datacriacao AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo')
 		ORDER BY dia_semana
 	`);
 
@@ -1064,13 +1070,13 @@ export async function buscarFinanceiroSaude({
 				f.identidade,
 				COALESCE(e.nome, f.emitente, 'Sem nome') as nome,
 				COALESCE(SUM(f.saldo::numeric), 0) as valor,
-				COALESCE(MAX(CURRENT_DATE - f.vencimento), 0)::int as dias_atraso
+				COALESCE(MAX(${hojeBrasiliaIsoDate()}::date - f.vencimento), 0)::int as dias_atraso
 			FROM financeiro f
 			LEFT JOIN entidade e ON e.id = f.identidade
 			WHERE f.idempresa = ${idempresa}
 				AND f.tipo = 'R'
 				AND f.status = 'A'
-				AND f.vencimento < CURRENT_DATE
+				AND f.vencimento < ${hojeBrasiliaIsoDate()}::date
 			GROUP BY f.identidade, e.nome, f.emitente
 			ORDER BY valor DESC
 			LIMIT 10
@@ -1131,8 +1137,7 @@ export async function buscarFluxoCaixa({
 	const saldoInicial = await buscarSaldoAtualCaixa(idempresa);
 
 	if (modo === "projetado") {
-		const hoje = new Date();
-		hoje.setHours(0, 0, 0, 0);
+		const hoje = hojeBrasiliaIsoDate();
 
 		const result = await db.execute(sql`
 			SELECT
@@ -1143,8 +1148,8 @@ export async function buscarFluxoCaixa({
 			WHERE idempresa = ${idempresa}
 				AND status = 'A'
 				AND vencimento IS NOT NULL
-				AND vencimento >= CURRENT_DATE
-				AND vencimento <= CURRENT_DATE + (${horizonteDias}::int)
+				AND vencimento >= ${hoje}::date
+				AND vencimento <= ${hoje}::date + (${horizonteDias}::int)
 			GROUP BY vencimento
 			ORDER BY vencimento
 		`);
@@ -1166,10 +1171,7 @@ export async function buscarFluxoCaixa({
 		let saldo = saldoInicial;
 		const dias: FluxoCaixaDia[] = [];
 		for (let i = 0; i <= horizonteDias; i++) {
-			const data = new Date(hoje);
-			data.setDate(data.getDate() + i);
-			const dateStr =
-				`${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, "0")}-${String(data.getDate()).padStart(2, "0")}`;
+			const dateStr = adicionarDiasIso(hoje, i);
 			const movimento = mapa.get(dateStr) ?? { entradas: 0, saidas: 0 };
 			saldo = saldo + movimento.entradas - movimento.saidas;
 			dias.push({
@@ -1185,16 +1187,16 @@ export async function buscarFluxoCaixa({
 
 	const result = await db.execute(sql`
 		SELECT
-			DATE(ccl.datahora) as date,
+			DATE(ccl.datahora AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo') as date,
 			COALESCE(SUM(CASE WHEN TRIM(ccl.tipo) IN ('E', 'C') THEN ccl.valor::numeric ELSE 0 END), 0) as entradas,
 			COALESCE(SUM(CASE WHEN TRIM(ccl.tipo) IN ('S', 'D') THEN ccl.valor::numeric ELSE 0 END), 0) as saidas
 		FROM contacorrentelancamento ccl
 		JOIN contacorrente cc ON cc.id = ccl.idcontacorrente
 		WHERE cc.idempresa = ${idempresa}
-			AND ccl.datahora >= ${dataInicioStr}::date
-			AND ccl.datahora < (${dataFimStr}::date + interval '1 day')
-		GROUP BY DATE(ccl.datahora)
-		ORDER BY DATE(ccl.datahora)
+			AND (ccl.datahora AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
+			AND (ccl.datahora AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
+		GROUP BY DATE(ccl.datahora AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo')
+		ORDER BY DATE(ccl.datahora AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo')
 	`);
 
 	const mapa = new Map(
@@ -1211,18 +1213,14 @@ export async function buscarFluxoCaixa({
 		]),
 	);
 
-	const inicio = new Date(`${dataInicioStr}T00:00:00`);
-	const fim = new Date(`${dataFimStr}T00:00:00`);
 	let saldo = saldoInicial;
 	const dias: FluxoCaixaDia[] = [];
 
 	for (
-		let cursor = new Date(inicio);
-		cursor <= fim;
-		cursor.setDate(cursor.getDate() + 1)
+		let dateStr = dataInicioStr;
+		dateStr <= dataFimStr;
+		dateStr = adicionarDiasIso(dateStr, 1)
 	) {
-		const dateStr =
-			`${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}-${String(cursor.getDate()).padStart(2, "0")}`;
 		const movimento = mapa.get(dateStr) ?? { entradas: 0, saidas: 0 };
 		saldo = saldo + movimento.entradas - movimento.saidas;
 		dias.push({
@@ -1246,8 +1244,9 @@ function resolverIntervaloDre(params: {
 	mes?: number;
 	trimestre?: number;
 }): { dataInicioStr: string; dataFimStr: string; referencia: string } {
-	const agora = new Date();
-	const ano = params.ano ?? agora.getFullYear();
+	const hoje = hojeBrasiliaIsoDate();
+	const ano = params.ano ?? Number(hoje.slice(0, 4));
+	const mesAtual = Number(hoje.slice(5, 7));
 
 	if (params.granularidade === "ano") {
 		return {
@@ -1258,10 +1257,10 @@ function resolverIntervaloDre(params: {
 	}
 
 	if (params.granularidade === "trimestre") {
-		const trimestre = params.trimestre ?? Math.floor(agora.getMonth() / 3) + 1;
+		const trimestre = params.trimestre ?? Math.floor((mesAtual - 1) / 3) + 1;
 		const mesInicio = (trimestre - 1) * 3 + 1;
 		const mesFim = mesInicio + 2;
-		const ultimoDia = new Date(ano, mesFim, 0).getDate();
+		const ultimoDia = new Date(Date.UTC(ano, mesFim, 0)).getUTCDate();
 		return {
 			dataInicioStr: `${ano}-${String(mesInicio).padStart(2, "0")}-01`,
 			dataFimStr: `${ano}-${String(mesFim).padStart(2, "0")}-${String(ultimoDia).padStart(2, "0")}`,
@@ -1269,8 +1268,8 @@ function resolverIntervaloDre(params: {
 		};
 	}
 
-	const mes = params.mes ?? agora.getMonth() + 1;
-	const ultimoDia = new Date(ano, mes, 0).getDate();
+	const mes = params.mes ?? mesAtual;
+	const ultimoDia = new Date(Date.UTC(ano, mes, 0)).getUTCDate();
 	return {
 		dataInicioStr: `${ano}-${String(mes).padStart(2, "0")}-01`,
 		dataFimStr: `${ano}-${String(mes).padStart(2, "0")}-${String(ultimoDia).padStart(2, "0")}`,
@@ -1309,8 +1308,8 @@ export async function buscarDreAvancado({
 			LEFT JOIN planocontas pc ON pc.id = ccl.idplanocontas
 			WHERE cc.idempresa = ${idempresa}
 				AND TRIM(ccl.tipo) IN ('E', 'C')
-				AND ccl.datahora >= ${dataInicioStr}::date
-				AND ccl.datahora < (${dataFimStr}::date + interval '1 day')
+				AND (ccl.datahora AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
+				AND (ccl.datahora AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
 			GROUP BY COALESCE(ccl.idplanocontas::text, 'sem-plano'), pc.nome
 			ORDER BY total DESC
 		`),
@@ -1324,8 +1323,8 @@ export async function buscarDreAvancado({
 			LEFT JOIN planocontas pc ON pc.id = ccl.idplanocontas
 			WHERE cc.idempresa = ${idempresa}
 				AND TRIM(ccl.tipo) IN ('S', 'D')
-				AND ccl.datahora >= ${dataInicioStr}::date
-				AND ccl.datahora < (${dataFimStr}::date + interval '1 day')
+				AND (ccl.datahora AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
+				AND (ccl.datahora AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
 			GROUP BY COALESCE(ccl.idplanocontas::text, 'sem-plano'), pc.nome
 			ORDER BY total DESC
 		`),
@@ -1406,36 +1405,32 @@ export async function buscarComparativoFlexivel({
 	dataInicioBStr?: string;
 	dataFimBStr?: string;
 }): Promise<ComparativoFlexivelResposta> {
-	const agora = new Date();
+	const hoje = hojeBrasiliaIsoDate();
+	const mesAtual = inicioFimMesDe(hoje);
 	let inicioA = dataInicioStr;
 	let fimA = dataFimStr;
 	let inicioB = dataInicioBStr ?? "";
 	let fimB = dataFimBStr ?? "";
 
 	if (modo === "ano_x_ano") {
-		const ano = agora.getFullYear();
+		const ano = Number(hoje.slice(0, 4));
 		inicioA = `${ano}-01-01`;
 		fimA = `${ano}-12-31`;
 		inicioB = `${ano - 1}-01-01`;
 		fimB = `${ano - 1}-12-31`;
 	} else if (modo === "mes_x_anterior") {
-		const mesAtualInicio = new Date(agora.getFullYear(), agora.getMonth(), 1);
-		const mesAtualFim = new Date(agora.getFullYear(), agora.getMonth() + 1, 0);
-		const mesAntInicio = new Date(agora.getFullYear(), agora.getMonth() - 1, 1);
-		const mesAntFim = new Date(agora.getFullYear(), agora.getMonth(), 0);
-		inicioA = toDateString(mesAtualInicio);
-		fimA = toDateString(mesAtualFim);
-		inicioB = toDateString(mesAntInicio);
-		fimB = toDateString(mesAntFim);
+		const mesAnt = inicioFimMesDe(adicionarDiasIso(mesAtual.inicio, -1));
+		inicioA = mesAtual.inicio;
+		fimA = mesAtual.fim;
+		inicioB = mesAnt.inicio;
+		fimB = mesAnt.fim;
 	} else if (modo === "mes_x_yoy") {
-		const mesAtualInicio = new Date(agora.getFullYear(), agora.getMonth(), 1);
-		const mesAtualFim = new Date(agora.getFullYear(), agora.getMonth() + 1, 0);
-		const mesYoYInicio = new Date(agora.getFullYear() - 1, agora.getMonth(), 1);
-		const mesYoYFim = new Date(agora.getFullYear() - 1, agora.getMonth() + 1, 0);
-		inicioA = toDateString(mesAtualInicio);
-		fimA = toDateString(mesAtualFim);
-		inicioB = toDateString(mesYoYInicio);
-		fimB = toDateString(mesYoYFim);
+		const [ano, mes] = hoje.split("-");
+		const mesYoY = inicioFimMesDe(`${Number(ano) - 1}-${mes}-01`);
+		inicioA = mesAtual.inicio;
+		fimA = mesAtual.fim;
+		inicioB = mesYoY.inicio;
+		fimB = mesYoY.fim;
 	}
 
 	const [
@@ -1504,8 +1499,8 @@ export async function buscarRentabilidade({
 			LEFT JOIN produtos p ON p.id = vi.idproduto
 			LEFT JOIN hierarquia h ON h.id = p.idgrupo
 			WHERE vi.idempresa = ${idempresa}
-				AND v.datacriacao >= ${dataInicioStr}::date
-				AND v.datacriacao < (${dataFimStr}::date + interval '1 day')
+				AND (v.datacriacao AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
+				AND (v.datacriacao AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
 			GROUP BY COALESCE(h.id, 'sem-categoria'), COALESCE(h.nome, 'Sem categoria')
 		`);
 
@@ -1599,7 +1594,7 @@ export async function buscarClientesAnalytics({
 					FROM vendapdvgourmet
 					WHERE idempresa = ${idempresa}
 						AND identidade IS NOT NULL
-						AND datacriacao < ${dataInicioStr}::date
+						AND (datacriacao AT TIME ZONE 'UTC') < (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
 				)
 				SELECT
 					v.identidade,
@@ -1612,8 +1607,8 @@ export async function buscarClientesAnalytics({
 				WHERE v.idempresa = ${idempresa}
 					AND v.identidade IS NOT NULL
 					AND h.identidade IS NULL
-					AND v.datacriacao >= ${dataInicioStr}::date
-					AND v.datacriacao < (${dataFimStr}::date + interval '1 day')
+					AND (v.datacriacao AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
+					AND (v.datacriacao AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
 				GROUP BY v.identidade, e.nome
 				ORDER BY total DESC
 				LIMIT 10
@@ -1624,7 +1619,7 @@ export async function buscarClientesAnalytics({
 					FROM vendapdvgourmet
 					WHERE idempresa = ${idempresa}
 						AND identidade IS NOT NULL
-						AND datacriacao < ${dataInicioStr}::date
+						AND (datacriacao AT TIME ZONE 'UTC') < (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
 				)
 				SELECT
 					v.identidade,
@@ -1636,8 +1631,8 @@ export async function buscarClientesAnalytics({
 				JOIN historico h ON h.identidade = v.identidade
 				WHERE v.idempresa = ${idempresa}
 					AND v.identidade IS NOT NULL
-					AND v.datacriacao >= ${dataInicioStr}::date
-					AND v.datacriacao < (${dataFimStr}::date + interval '1 day')
+					AND (v.datacriacao AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
+					AND (v.datacriacao AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
 				GROUP BY v.identidade, e.nome
 				ORDER BY total DESC
 				LIMIT 10
@@ -1694,15 +1689,15 @@ export async function buscarClientesRfm({
 		SELECT
 			v.identidade,
 			COALESCE(e.nome, 'Cliente sem nome') as nome,
-			(CURRENT_DATE - MAX(DATE(v.datacriacao)))::int as recencia_dias,
+			(${hojeBrasiliaIsoDate()}::date - MAX(DATE(v.datacriacao AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo')))::int as recencia_dias,
 			COUNT(*)::int as frequencia,
 			COALESCE(SUM(v.valortotal::numeric), 0) as monetario
 		FROM vendapdvgourmet v
 		LEFT JOIN entidade e ON e.id = v.identidade
 		WHERE v.idempresa = ${idempresa}
 			AND v.identidade IS NOT NULL
-			AND v.datacriacao >= ${dataInicioStr}::date
-			AND v.datacriacao < (${dataFimStr}::date + interval '1 day')
+			AND (v.datacriacao AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
+			AND (v.datacriacao AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
 		GROUP BY v.identidade, e.nome
 	`);
 

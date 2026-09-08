@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, count, desc, eq, gte, lt, lte, sql } from "drizzle-orm";
 import type { NovaVendaPdvGourmet } from "@/model/venda-pdv-gourmet-model.js";
 import type { NovoVendaPdvItem } from "@/model/venda-pdv-item-model.js";
 import {
@@ -7,6 +7,7 @@ import {
 	vendapdvgourmet,
 	vendapdvitem,
 } from "@/repositories/schema.js";
+import { limitesUtcDoPeriodoBrasilia } from "@/util/data-hora-brasilia.js";
 import { db, pool } from "./connection.js";
 
 export async function buscarVendaPdvGourmetPorId(id: string) {
@@ -195,14 +196,37 @@ export async function listarVendasPdvGourmet({
 	}
 
 	if (dataInicio) {
-		const inicio = /^\d{4}-\d{2}-\d{2}$/.test(dataInicio)
-			? `${dataInicio} 00:00:00.000`
-			: dataInicio.replace("T", " ").replace(/Z$/, "");
-		where.push(gte(vendapdvgourmet.datacriacao, inicio));
+		if (/^\d{4}-\d{2}-\d{2}$/.test(dataInicio)) {
+			where.push(
+				gte(
+					vendapdvgourmet.datacriacao,
+					limitesUtcDoPeriodoBrasilia(dataInicio, dataInicio).inicioUtc,
+				),
+			);
+		} else {
+			where.push(
+				gte(
+					vendapdvgourmet.datacriacao,
+					dataInicio.replace("T", " ").replace(/Z$/, ""),
+				),
+			);
+		}
 	}
 
 	if (dataFim) {
-		where.push(lte(vendapdvgourmet.datacriacao, `${dataFim} 23:59:59.999`));
+		const dia = /^\d{4}-\d{2}-\d{2}$/.test(dataFim)
+			? dataFim
+			: dataFim.slice(0, 10);
+		if (/^\d{4}-\d{2}-\d{2}$/.test(dia)) {
+			where.push(
+				lt(
+					vendapdvgourmet.datacriacao,
+					limitesUtcDoPeriodoBrasilia(dia, dia).fimUtcExclusivo,
+				),
+			);
+		} else {
+			where.push(lte(vendapdvgourmet.datacriacao, `${dataFim} 23:59:59.999`));
+		}
 	}
 
 	const offset = (page - 1) * limit;
@@ -270,7 +294,7 @@ export async function listarTodasVendasPdvGourmetTurno({
 			dataInicio instanceof Date
 				? dataInicio.toISOString().replace("T", " ").replace(/Z$/, "")
 				: /^\d{4}-\d{2}-\d{2}$/.test(dataInicio)
-					? `${dataInicio} 00:00:00.000`
+					? limitesUtcDoPeriodoBrasilia(dataInicio, dataInicio).inicioUtc
 					: dataInicio.replace("T", " ").replace(/Z$/, "");
 		where.push(gte(vendapdvgourmet.datacriacao, inicio));
 	}

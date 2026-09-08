@@ -1,5 +1,9 @@
 ﻿import { and, desc, eq, sql, sum } from "drizzle-orm";
 import * as schema from "../../drizzle/schema.js";
+import {
+	adicionarDiasIso,
+	hojeBrasiliaIsoDate,
+} from "../util/data-hora-brasilia.js";
 import { db } from "./connection.js";
 
 /* -------------------------------------------------------------------------- */
@@ -176,10 +180,8 @@ export async function buscarHistoricoFinanceiro({
 	idempresa: string;
 	dias: number;
 }): Promise<HistoricoFinanceiroItem[]> {
-	const dataInicio = new Date();
-	dataInicio.setDate(dataInicio.getDate() - dias);
-
-	const dataInicioStr = toDateString(dataInicio);
+	const hoje = hojeBrasiliaIsoDate();
+	const dataInicioStr = adicionarDiasIso(hoje, -dias);
 
 	const [pagar, receber] = await Promise.all([
 		buscarHistoricoPorTipo(idempresa, "P", dataInicioStr),
@@ -211,14 +213,9 @@ export async function buscarHistoricoFinanceiro({
 	processarDados(receber.rows, "contasReceber");
 
 	const resultado: HistoricoFinanceiroItem[] = [];
-	const hoje = new Date();
-	hoje.setHours(0, 0, 0, 0);
 
 	for (let i = dias - 1; i >= 0; i--) {
-		const data = new Date(hoje);
-		data.setDate(data.getDate() - i);
-
-		const dateStr = toDateString(data);
+		const dateStr = adicionarDiasIso(hoje, -i);
 		const dados = mapaDados.get(dateStr) || {
 			contasPagar: 0,
 			contasReceber: 0,
@@ -385,10 +382,9 @@ export async function buscarTopDespesasPorCategoria({
 	idempresa: string;
 	dias: number;
 }): Promise<TopPorCategoriaResposta> {
-	const dataInicio = new Date();
-	dataInicio.setDate(dataInicio.getDate() - dias);
-	const dataInicioStr = toDateString(dataInicio);
-	const dataFimStr = toDateString(new Date());
+	const hoje = hojeBrasiliaIsoDate();
+	const dataInicioStr = adicionarDiasIso(hoje, -dias);
+	const dataFimStr = hoje;
 
 	const result = await db.execute(sql`
 		SELECT 
@@ -402,8 +398,8 @@ export async function buscarTopDespesasPorCategoria({
 		WHERE cc.idempresa = ${idempresa}
 			AND TRIM(ccl.tipo) IN ('S', 'D')
 			AND ccl.idplanocontas IS NOT NULL
-			AND ccl.datahora >= ${dataInicioStr}::date
-			AND ccl.datahora <= ${dataFimStr}::date
+			AND (ccl.datahora AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
+			AND (ccl.datahora AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
 		GROUP BY ccl.idplanocontas, pc.codigo, pc.nome
 		ORDER BY total DESC
 		LIMIT 5
@@ -435,10 +431,9 @@ export async function buscarTopReceitasPorCategoria({
 	idempresa: string;
 	dias: number;
 }): Promise<TopPorCategoriaResposta> {
-	const dataInicio = new Date();
-	dataInicio.setDate(dataInicio.getDate() - dias);
-	const dataInicioStr = toDateString(dataInicio);
-	const dataFimStr = toDateString(new Date());
+	const hoje = hojeBrasiliaIsoDate();
+	const dataInicioStr = adicionarDiasIso(hoje, -dias);
+	const dataFimStr = hoje;
 
 	const result = await db.execute(sql`
 		SELECT 
@@ -452,8 +447,8 @@ export async function buscarTopReceitasPorCategoria({
 		WHERE cc.idempresa = ${idempresa}
 			AND TRIM(ccl.tipo) IN ('E', 'C')
 			AND ccl.idplanocontas IS NOT NULL
-			AND ccl.datahora >= ${dataInicioStr}::date
-			AND ccl.datahora <= ${dataFimStr}::date
+			AND (ccl.datahora AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
+			AND (ccl.datahora AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
 		GROUP BY ccl.idplanocontas, pc.codigo, pc.nome
 		ORDER BY total DESC
 		LIMIT 5
@@ -592,12 +587,10 @@ export interface ComparativoResposta {
 const MESES_VAZIOS = () => Array.from({ length: 12 }, () => 0);
 
 function obterIntervaloDias(dias: number) {
-	const dataFim = new Date();
-	const dataInicio = new Date();
-	dataInicio.setDate(dataInicio.getDate() - dias);
+	const hoje = hojeBrasiliaIsoDate();
 	return {
-		dataInicioStr: toDateString(dataInicio),
-		dataFimStr: toDateString(dataFim),
+		dataInicioStr: adicionarDiasIso(hoje, -dias),
+		dataFimStr: hoje,
 	};
 }
 
@@ -620,8 +613,8 @@ async function somarMovimentacoesPorTipo(
 		JOIN contacorrente cc ON cc.id = ccl.idcontacorrente
 		WHERE cc.idempresa = ${idempresa}
 			AND TRIM(ccl.tipo) IN (${sql.join(tipos.map((t) => sql`${t}`), sql`, `)})
-			AND ccl.datahora >= ${dataInicioStr}::date
-			AND ccl.datahora <= ${dataFimStr}::date
+			AND (ccl.datahora AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
+			AND (ccl.datahora AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
 	`);
 	const rows = (result.rows || result) as { total: string | number }[];
 	return toNumber(rows[0]?.total);
@@ -652,8 +645,8 @@ export async function buscarFinanceiroResumo({
 				FROM contacorrentelancamento ccl
 				JOIN contacorrente cc ON cc.id = ccl.idcontacorrente
 				WHERE cc.idempresa = ${idempresa}
-					AND ccl.datahora >= ${dataInicioStr}::date
-					AND ccl.datahora <= ${dataFimStr}::date
+					AND (ccl.datahora AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
+					AND (ccl.datahora AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
 			`),
 		]);
 
@@ -688,27 +681,27 @@ export async function buscarEvolucaoMensal({
 	const [receitasRows, despesasRows] = await Promise.all([
 		db.execute(sql`
 			SELECT
-				EXTRACT(MONTH FROM ccl.datahora)::int as mes,
+				EXTRACT(MONTH FROM ccl.datahora AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo')::int as mes,
 				COALESCE(SUM(ccl.valor::numeric), 0) as total
 			FROM contacorrentelancamento ccl
 			JOIN contacorrente cc ON cc.id = ccl.idcontacorrente
 			WHERE cc.idempresa = ${idempresa}
 				AND TRIM(ccl.tipo) IN ('E', 'C')
-				AND ccl.datahora >= ${intervalo.dataInicioStr}::date
-				AND ccl.datahora <= ${intervalo.dataFimStr}::date
-			GROUP BY EXTRACT(MONTH FROM ccl.datahora)
+				AND (ccl.datahora AT TIME ZONE 'UTC') >= (${intervalo.dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
+				AND (ccl.datahora AT TIME ZONE 'UTC') < ((${intervalo.dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
+			GROUP BY EXTRACT(MONTH FROM ccl.datahora AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo')
 		`),
 		db.execute(sql`
 			SELECT
-				EXTRACT(MONTH FROM ccl.datahora)::int as mes,
+				EXTRACT(MONTH FROM ccl.datahora AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo')::int as mes,
 				COALESCE(SUM(ccl.valor::numeric), 0) as total
 			FROM contacorrentelancamento ccl
 			JOIN contacorrente cc ON cc.id = ccl.idcontacorrente
 			WHERE cc.idempresa = ${idempresa}
 				AND TRIM(ccl.tipo) IN ('S', 'D')
-				AND ccl.datahora >= ${intervalo.dataInicioStr}::date
-				AND ccl.datahora <= ${intervalo.dataFimStr}::date
-			GROUP BY EXTRACT(MONTH FROM ccl.datahora)
+				AND (ccl.datahora AT TIME ZONE 'UTC') >= (${intervalo.dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
+				AND (ccl.datahora AT TIME ZONE 'UTC') < ((${intervalo.dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
+			GROUP BY EXTRACT(MONTH FROM ccl.datahora AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo')
 		`),
 	]);
 
@@ -771,8 +764,8 @@ export async function buscarTopDespesasValor({
 		LEFT JOIN planocontas pc ON pc.id = ccl.idplanocontas
 		WHERE cc.idempresa = ${idempresa}
 			AND TRIM(ccl.tipo) IN ('S', 'D')
-			AND ccl.datahora >= ${dataInicioStr}::date
-			AND ccl.datahora <= ${dataFimStr}::date
+			AND (ccl.datahora AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
+			AND (ccl.datahora AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
 		ORDER BY ccl.valor::numeric DESC
 		LIMIT ${limit}
 	`);
@@ -810,8 +803,8 @@ export async function buscarDadosVendas({
 				COUNT(*)::int as quantidade
 			FROM vendapdvgourmet
 			WHERE idempresa = ${idempresa}
-				AND datacriacao >= ${dataInicioStr}::date
-				AND datacriacao <= ${dataFimStr}::date + interval '1 day'
+				AND (datacriacao AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
+				AND (datacriacao AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
 		`),
 		db.execute(sql`
 			SELECT
@@ -819,8 +812,8 @@ export async function buscarDadosVendas({
 				COALESCE(SUM(COALESCE(sobra::numeric, 0) - COALESCE(falta::numeric, 0)), 0) as diferenca
 			FROM fechamentopdv
 			WHERE idempresa = ${idempresa}
-				AND datahora >= ${dataInicioStr}::timestamp
-				AND datahora <= ${dataFimStr}::timestamp + interval '1 day'
+				AND (datahora AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
+				AND (datahora AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
 		`),
 	]);
 
@@ -852,15 +845,15 @@ export async function buscarHistoricoVendas({
 
 	const result = await db.execute(sql`
 		SELECT
-			DATE(datacriacao) as date,
+			DATE(datacriacao AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo') as date,
 			COALESCE(SUM(valortotal::numeric), 0) as total,
 			COUNT(*)::int as quantidade
 		FROM vendapdvgourmet
 		WHERE idempresa = ${idempresa}
-			AND datacriacao >= ${dataInicioStr}::date
-			AND datacriacao <= ${dataFimStr}::date + interval '1 day'
-		GROUP BY DATE(datacriacao)
-		ORDER BY DATE(datacriacao)
+			AND (datacriacao AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
+			AND (datacriacao AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
+		GROUP BY DATE(datacriacao AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo')
+		ORDER BY DATE(datacriacao AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo')
 	`);
 
 	const rows = (result.rows || result) as {
@@ -880,13 +873,10 @@ export async function buscarHistoricoVendas({
 	}
 
 	const resultado: HistoricoVendasItem[] = [];
-	const hoje = new Date();
-	hoje.setHours(0, 0, 0, 0);
+	const hoje = hojeBrasiliaIsoDate();
 
 	for (let i = dias - 1; i >= 0; i--) {
-		const data = new Date(hoje);
-		data.setDate(data.getDate() - i);
-		const dateStr = toDateString(data);
+		const dateStr = adicionarDiasIso(hoje, -i);
 		resultado.push(
 			mapa.get(dateStr) ?? { date: dateStr, total: 0, quantidade: 0 },
 		);
@@ -916,8 +906,8 @@ export async function buscarTopProdutos({
 		JOIN vendapdvgourmet v ON v.id = vi.idvenda
 		JOIN produtos p ON p.id = vi.idproduto
 		WHERE vi.idempresa = ${idempresa}
-			AND v.datacriacao >= ${dataInicioStr}::date
-			AND v.datacriacao <= ${dataFimStr}::date + interval '1 day'
+			AND (v.datacriacao AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
+			AND (v.datacriacao AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
 		GROUP BY vi.idproduto, p.nome
 		ORDER BY total DESC
 		LIMIT ${limit}
@@ -995,7 +985,7 @@ async function buscarMovimentacoesPlanoContasPorMes(
 			pc.codigo,
 			pc.nome,
 			pc.tipoconta,
-			EXTRACT(MONTH FROM ccl.datahora)::int as mes,
+			EXTRACT(MONTH FROM ccl.datahora AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo')::int as mes,
 			COALESCE(SUM(ccl.valor::numeric), 0) as total
 		FROM contacorrentelancamento ccl
 		JOIN contacorrente cc ON cc.id = ccl.idcontacorrente
@@ -1003,9 +993,9 @@ async function buscarMovimentacoesPlanoContasPorMes(
 		WHERE cc.idempresa = ${idempresa}
 			AND TRIM(ccl.tipo) IN (${sql.join(tipos.map((t) => sql`${t}`), sql`, `)})
 			AND ccl.idplanocontas IS NOT NULL
-			AND ccl.datahora >= ${dataInicioStr}::date
-			AND ccl.datahora <= ${dataFimStr}::date
-		GROUP BY ccl.idplanocontas, pc.codigo, pc.nome, pc.tipoconta, EXTRACT(MONTH FROM ccl.datahora)
+			AND (ccl.datahora AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
+			AND (ccl.datahora AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
+		GROUP BY ccl.idplanocontas, pc.codigo, pc.nome, pc.tipoconta, EXTRACT(MONTH FROM ccl.datahora AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo')
 		ORDER BY pc.codigo, mes
 	`);
 
@@ -1059,7 +1049,7 @@ function agruparPlanoContasMensal(
 
 export async function buscarControlePlanoContas({
 	idempresa,
-	ano = new Date().getFullYear(),
+	ano = Number(hojeBrasiliaIsoDate().slice(0, 4)),
 }: {
 	idempresa: string;
 	ano?: number;
@@ -1100,7 +1090,7 @@ export async function buscarControlePlanoContas({
 
 export async function buscarDre({
 	idempresa,
-	ano = new Date().getFullYear(),
+	ano = Number(hojeBrasiliaIsoDate().slice(0, 4)),
 }: {
 	idempresa: string;
 	ano?: number;
@@ -1182,7 +1172,7 @@ export async function buscarDre({
 
 export async function buscarComparativo({
 	idempresa,
-	ano = new Date().getFullYear(),
+	ano = Number(hojeBrasiliaIsoDate().slice(0, 4)),
 }: {
 	idempresa: string;
 	ano?: number;
