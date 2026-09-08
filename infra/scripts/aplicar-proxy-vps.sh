@@ -5,6 +5,7 @@
 set -euo pipefail
 
 FRONT=maisgestao.compumais.com
+API_HOST=apimaisgestao.compumais.com
 OLD=api.compuchat.space
 API=http://127.0.0.1:3333
 WEB=http://127.0.0.1:3000
@@ -87,10 +88,13 @@ pick_cert() {
 }
 
 FRONT_PAIR="$(pick_cert "$FRONT")"
+API_PAIR="$(pick_cert "$API_HOST")"
 OLD_PAIR="$(pick_cert "$OLD")"
 FC="${FRONT_PAIR%%|*}"; FK="${FRONT_PAIR#*|}"
+AC="${API_PAIR%%|*}"; AK="${API_PAIR#*|}"
 OC="${OLD_PAIR%%|*}"; OK="${OLD_PAIR#*|}"
 echo "Front cert: $FC"
+echo "API cert: $AC"
 echo "Old API cert: $OC"
 
 cat > /etc/nginx/sites-available/maisgestao.compumais.com <<EOF
@@ -112,6 +116,26 @@ server {
     client_max_body_size 25m;
     include ${LOC};
     location / { proxy_pass ${WEB}; include ${SNIP}; }
+}
+EOF
+
+cat > /etc/nginx/sites-available/apimaisgestao.compumais.com <<EOF
+server {
+    listen 80;
+    listen [::]:80;
+    server_name ${API_HOST};
+    client_max_body_size 25m;
+    location / { proxy_pass ${API}; include ${SNIP}; }
+}
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name ${API_HOST};
+    ssl_certificate ${AC};
+    ssl_certificate_key ${AK};
+    client_max_body_size 25m;
+    location / { proxy_pass ${API}; include ${SNIP}; }
 }
 EOF
 
@@ -139,10 +163,12 @@ EOF
 if ! nginx -t 2>/dev/null; then
 	sed -i '/http2 on;/d; s/listen 443 ssl;/listen 443 ssl http2;/' \
 		/etc/nginx/sites-available/maisgestao.compumais.com \
+		/etc/nginx/sites-available/apimaisgestao.compumais.com \
 		/etc/nginx/sites-available/api.compuchat.space
 fi
 
 ln -sfn /etc/nginx/sites-available/maisgestao.compumais.com /etc/nginx/sites-enabled/maisgestao.compumais.com
+ln -sfn /etc/nginx/sites-available/apimaisgestao.compumais.com /etc/nginx/sites-enabled/apimaisgestao.compumais.com
 ln -sfn /etc/nginx/sites-available/api.compuchat.space /etc/nginx/sites-enabled/api.compuchat.space
 
 python3 - "$ENV_FILE" <<'PY'
@@ -153,9 +179,10 @@ path = Path(sys.argv[1])
 vals = {
 	"FRONTEND_URL": "https://maisgestao.compumais.com",
 	"CLIENT_ORIGIN": "https://maisgestao.compumais.com",
-	"CORS_ORIGINS": "https://maisgestao.compumais.com",
-	"API_URL": "https://maisgestao.compumais.com",
-	"BETTER_AUTH_URL": "https://maisgestao.compumais.com",
+	"CORS_ORIGINS": "https://maisgestao.compumais.com,https://mais.compuchat.space",
+	"API_URL": "https://apimaisgestao.compumais.com",
+	"BETTER_AUTH_URL": "https://apimaisgestao.compumais.com",
+	"COOKIE_DOMAIN": "compumais.com",
 }
 text = path.read_text() if path.exists() else ""
 lines = text.splitlines()
@@ -173,9 +200,6 @@ for line in lines:
 	key = line.split("=", 1)[0].strip()
 	if key in vals and not raw.lstrip().startswith("#"):
 		out.append(f"{prefix}{key}={vals[key]}")
-		seen.add(key)
-	elif key == "COOKIE_DOMAIN" and not raw.lstrip().startswith("#"):
-		out.append("# " + raw + "  # host-only cookies")
 		seen.add(key)
 	else:
 		out.append(raw)

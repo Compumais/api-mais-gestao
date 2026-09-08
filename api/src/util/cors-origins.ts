@@ -3,7 +3,10 @@ const LOCAL_ORIGINS = [
 	"http://127.0.0.1:3000",
 ] as const;
 
-const PRODUCAO_ORIGINS = ["https://maisgestao.compumais.com"] as const;
+const PRODUCAO_ORIGINS = [
+	"https://maisgestao.compumais.com",
+	"https://mais.compuchat.space",
+] as const;
 
 const DEFAULT_CLIENT_ORIGIN = LOCAL_ORIGINS[0];
 

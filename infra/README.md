@@ -53,6 +53,8 @@ NEXT_PUBLIC_API_URL=https://api.seudominio.com
 
 `CLIENT_ORIGIN` deve ser a URL do **frontend** (`app.seudominio.com`), não da API. Sem isso, o login trava na tela de carregamento por bloqueio de CORS / Better Auth.
 
+Em produção hoje: front `https://maisgestao.compumais.com` e API `https://apimaisgestao.compumais.com`. `API_URL` e `BETTER_AUTH_URL` devem permanecer no host da API.
+
 ## 4) Configuração do Nginx
 
 1. Copie `nginx/mais-gestao.conf` para `/etc/nginx/sites-available/mais-gestao`.

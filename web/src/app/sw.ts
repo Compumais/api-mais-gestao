@@ -22,6 +22,7 @@ const serwist = new Serwist({
 		{
 			matcher({ url }) {
 				return (
+					url.hostname === "apimaisgestao.compumais.com" ||
 					url.hostname === "api.compuchat.space" ||
 					url.pathname.startsWith("/api/") ||
 					url.pathname === "/health" ||

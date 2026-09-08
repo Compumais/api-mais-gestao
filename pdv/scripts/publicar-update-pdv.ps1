@@ -4,7 +4,7 @@
 	Publica version.json e o Setup.exe do PDV na VPS (/opt/mais-gestao/pdv-updates).
 
 .EXAMPLE
-	.\publicar-update-pdv.ps1 -HostName maisgestao.compumais.com -User deploy
+	.\publicar-update-pdv.ps1 -HostName apimaisgestao.compumais.com -User deploy
 #>
 param(
 	[Parameter(Mandatory = $true)]
