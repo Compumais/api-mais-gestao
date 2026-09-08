@@ -113,6 +113,10 @@ export type TransportePayloadNfe = {
 };
 
 export type LocalEntregaPayloadNfe = {
+	nomeEvento: string;
+	dataInicioEvento: string;
+	dataFimEvento: string;
+	fundamentoLegal: string;
 	cnpjcpf?: string;
 	nome?: string;
 	logradouro: string;

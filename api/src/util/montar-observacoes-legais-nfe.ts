@@ -1,13 +1,14 @@
+import type { ResultadoTributosAproximadosIbpt } from "@/service/nfe-emissao/calcular-tributos-aproximados-ibpt.js";
 import type { ItemPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
-import {
-	type ItemObservacaoLoteNfe,
-	anexarRastrosInformacoesAdicionaisNfe,
-} from "@/util/montar-observacoes-lotes-nfe.js";
 import {
 	montarLegendaSimplesNacionalNfe,
 	textoJaContemLegendaSimples,
 } from "@/util/montar-legenda-simples-nacional-nfe.js";
-import type { ResultadoTributosAproximadosIbpt } from "@/service/nfe-emissao/calcular-tributos-aproximados-ibpt.js";
+import { SECAO_REMESSA_FEIRA_NFE } from "@/util/montar-observacao-remessa-feira-nfe.js";
+import {
+	anexarRastrosInformacoesAdicionaisNfe,
+	type ItemObservacaoLoteNfe,
+} from "@/util/montar-observacoes-lotes-nfe.js";
 
 export const SECAO_TRIB_APROX_NFE = "--- Trib aprox ---";
 
@@ -18,23 +19,35 @@ function removerSecaoPorMarcador(
 	if (!texto?.trim()) return "";
 	const indice = texto.indexOf(marcador);
 	if (indice === -1) return texto.trim();
-	return texto.slice(0, indice).trim();
+	return texto
+		.slice(0, indice)
+		.trim()
+		.replace(/[.;]\s*$/, "");
 }
 
 function removerBlocosAutomaticos(texto?: string | null): string {
 	let base = texto?.trim() ?? "";
+	base = removerSecaoPorMarcador(base, SECAO_REMESSA_FEIRA_NFE);
 	base = removerSecaoPorMarcador(base, SECAO_TRIB_APROX_NFE);
 
 	if (textoJaContemLegendaSimples(base)) {
-		const indice = base.toUpperCase().indexOf("DOCUMENTO EMITIDO POR ME OU EPP");
+		const indice = base
+			.toUpperCase()
+			.indexOf("DOCUMENTO EMITIDO POR ME OU EPP");
 		if (indice > 0) {
-			base = base.slice(0, indice).trim().replace(/[.;]\s*$/, "");
+			base = base
+				.slice(0, indice)
+				.trim()
+				.replace(/[.;]\s*$/, "");
 		}
 	}
 
 	const indiceTrib = base.toUpperCase().indexOf("TRIB APROX");
 	if (indiceTrib > 0) {
-		base = base.slice(0, indiceTrib).trim().replace(/[.;]\s*$/, "");
+		base = base
+			.slice(0, indiceTrib)
+			.trim()
+			.replace(/[.;]\s*$/, "");
 	}
 
 	return base;
@@ -58,17 +71,22 @@ export function montarObservacoesLegaisNfe(params: {
 		ResultadoTributosAproximadosIbpt,
 		"texto" | "totalAproximado"
 	>;
+	observacaoRemessaFeira?: string;
 	limite?: number;
 }): {
 	informacoesAdicionais?: string;
 	textoUsuario: string;
 	legendaSimples?: string;
 	textoIbpt?: string;
+	textoRemessaFeira?: string;
 } {
 	const limite = params.limite ?? 2000;
 	const textoUsuario = removerBlocosAutomaticos(params.informacoesAdicionais);
 
-	const antesSimples = textoUsuario;
+	const textoRemessaFeira = params.observacaoRemessaFeira?.trim() || undefined;
+	const antesSimples = textoRemessaFeira
+		? anexarTexto(textoUsuario, textoRemessaFeira, limite)
+		: textoUsuario;
 	const legenda = montarLegendaSimplesNacionalNfe({
 		crt: params.crt,
 		itens: params.itens,
@@ -81,8 +99,7 @@ export function montarObservacoesLegaisNfe(params: {
 		legenda && resultado !== antesSimples ? legenda : undefined;
 
 	const textoIbpt =
-		params.tributosIbpt?.texto &&
-		(params.tributosIbpt.totalAproximado ?? 0) > 0
+		params.tributosIbpt?.texto && (params.tributosIbpt.totalAproximado ?? 0) > 0
 			? params.tributosIbpt.texto
 			: undefined;
 
@@ -101,5 +118,6 @@ export function montarObservacoesLegaisNfe(params: {
 		textoUsuario,
 		legendaSimples: legendaSimples || undefined,
 		textoIbpt,
+		textoRemessaFeira,
 	};
 }

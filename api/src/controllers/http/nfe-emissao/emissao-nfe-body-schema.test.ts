@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 import { localEntregaNfeSchema } from "./emissao-nfe-body-schema.js";
 
 const localValido = {
+	nomeEvento: "Feira Comercial",
+	dataInicioEvento: "2026-09-10",
+	dataFimEvento: "2026-09-12",
+	fundamentoLegal: "Tratamento fiscal validado pelo emitente",
 	nome: "Feira Comercial",
 	logradouro: "Rua da Exposição",
 	numero: "100",
@@ -23,5 +27,15 @@ describe("localEntregaNfeSchema", () => {
 		["UF", { ...localValido, uf: "S" }],
 	])("rejeita %s inválido", (_campo, valor) => {
 		expect(localEntregaNfeSchema.safeParse(valor).success).toBe(false);
+	});
+
+	it("rejeita período com data final anterior à inicial", () => {
+		expect(
+			localEntregaNfeSchema.safeParse({
+				...localValido,
+				dataInicioEvento: "2026-09-12",
+				dataFimEvento: "2026-09-10",
+			}).success,
+		).toBe(false);
 	});
 });

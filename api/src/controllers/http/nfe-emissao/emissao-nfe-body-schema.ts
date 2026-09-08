@@ -81,7 +81,11 @@ const totaisInformadosSchema = z
 	})
 	.optional();
 
-export const localEntregaNfeSchema = z.object({
+export const localEntregaNfeBaseSchema = z.object({
+	nomeEvento: z.string().min(2).max(120),
+	dataInicioEvento: z.iso.date(),
+	dataFimEvento: z.iso.date(),
+	fundamentoLegal: z.string().min(5).max(500),
 	cnpjcpf: z
 		.string()
 		.max(18)
@@ -106,6 +110,14 @@ export const localEntregaNfeSchema = z.object({
 	email: z.string().email().max(60).optional(),
 	ie: z.string().max(14).optional(),
 });
+
+export const localEntregaNfeSchema = localEntregaNfeBaseSchema.refine(
+	(local) => local.dataFimEvento >= local.dataInicioEvento,
+	{
+		message: "A data final da feira deve ser igual ou posterior à data inicial",
+		path: ["dataFimEvento"],
+	},
+);
 
 export const emitirNfeBodySchema = z.object({
 	idempresa: z.string().uuid(),

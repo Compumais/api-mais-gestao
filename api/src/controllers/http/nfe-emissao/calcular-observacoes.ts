@@ -2,12 +2,16 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import { calcularObservacoesLegaisNfeService } from "@/service/nfe-emissao/calcular-observacoes-legais-nfe.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
-import { itemNfeSchema } from "./emissao-nfe-body-schema.js";
+import {
+	itemNfeSchema,
+	localEntregaNfeSchema,
+} from "./emissao-nfe-body-schema.js";
 
 const calcularObservacoesNfeBodySchema = z.object({
 	idempresa: z.string().uuid(),
 	informacoesAdicionais: z.string().max(2000).optional(),
 	itens: z.array(itemNfeSchema).min(1),
+	localEntrega: localEntregaNfeSchema.optional(),
 });
 
 export async function calcularObservacoesNfe(
@@ -25,6 +29,7 @@ export async function calcularObservacoesNfe(
 			idempresa: dados.idempresa,
 			informacoesAdicionais: dados.informacoesAdicionais,
 			itens: dados.itens,
+			localEntrega: dados.localEntrega,
 		});
 
 		if (!resultado.success) {

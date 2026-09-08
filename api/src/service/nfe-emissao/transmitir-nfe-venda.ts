@@ -37,7 +37,11 @@ function localEntregaCompleto(
 	local?: Partial<LocalEntregaPayloadNfe>,
 ): local is LocalEntregaPayloadNfe {
 	return !!(
-		local?.logradouro &&
+		local?.nomeEvento &&
+		local.dataInicioEvento &&
+		local.dataFimEvento &&
+		local.fundamentoLegal &&
+		local.logradouro &&
 		local.numero &&
 		local.bairro &&
 		local.codigoMunicipio &&

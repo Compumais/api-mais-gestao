@@ -24,7 +24,17 @@ describe("montarObservacoesLegaisNfe", () => {
 		const resultado = montarObservacoesLegaisNfe({
 			informacoesAdicionais: "Pedido 999",
 			crt: 1,
-			itens: [{ descricao: "Produto", ncm: "22030000", cfop: "5102", unidade: "UN", quantidade: 1, valorUnitario: 100, csosn: "102" }],
+			itens: [
+				{
+					descricao: "Produto",
+					ncm: "22030000",
+					cfop: "5102",
+					unidade: "UN",
+					quantidade: 1,
+					valorUnitario: 100,
+					csosn: "102",
+				},
+			],
 			tributosIbpt: { texto: textoIbpt, totalAproximado: 15.75 },
 		});
 
@@ -41,7 +51,17 @@ describe("montarObservacoesLegaisNfe", () => {
 		const resultado = montarObservacoesLegaisNfe({
 			informacoesAdicionais: textoLongo,
 			crt: 1,
-			itens: [{ descricao: "Produto", ncm: "22030000", cfop: "5102", unidade: "UN", quantidade: 1, valorUnitario: 100, csosn: "102" }],
+			itens: [
+				{
+					descricao: "Produto",
+					ncm: "22030000",
+					cfop: "5102",
+					unidade: "UN",
+					quantidade: 1,
+					valorUnitario: 100,
+					csosn: "102",
+				},
+			],
 			limite: 2000,
 		});
 
@@ -54,9 +74,20 @@ describe("montarObservacoesLegaisNfe", () => {
 		const montado = montarObservacoesLegaisNfe({
 			informacoesAdicionais: "Obs cliente",
 			crt: 1,
-			itens: [{ descricao: "Produto", ncm: "22030000", cfop: "5102", unidade: "UN", quantidade: 1, valorUnitario: 100, csosn: "102" }],
+			itens: [
+				{
+					descricao: "Produto",
+					ncm: "22030000",
+					cfop: "5102",
+					unidade: "UN",
+					quantidade: 1,
+					valorUnitario: 100,
+					csosn: "102",
+				},
+			],
 			tributosIbpt: {
-				texto: "Trib aprox R$ 1,00 Federal Fonte: IBPT/empresometro.com.br MG ABCD12",
+				texto:
+					"Trib aprox R$ 1,00 Federal Fonte: IBPT/empresometro.com.br MG ABCD12",
 				totalAproximado: 1,
 			},
 		});
@@ -64,15 +95,50 @@ describe("montarObservacoesLegaisNfe", () => {
 		const regenerado = montarObservacoesLegaisNfe({
 			informacoesAdicionais: montado.informacoesAdicionais,
 			crt: 1,
-			itens: [{ descricao: "Produto", ncm: "22030000", cfop: "5102", unidade: "UN", quantidade: 1, valorUnitario: 100, csosn: "102" }],
+			itens: [
+				{
+					descricao: "Produto",
+					ncm: "22030000",
+					cfop: "5102",
+					unidade: "UN",
+					quantidade: 1,
+					valorUnitario: 100,
+					csosn: "102",
+				},
+			],
 			tributosIbpt: {
-				texto: "Trib aprox R$ 2,00 Federal Fonte: IBPT/empresometro.com.br MG ABCD12",
+				texto:
+					"Trib aprox R$ 2,00 Federal Fonte: IBPT/empresometro.com.br MG ABCD12",
 				totalAproximado: 2,
 			},
 		});
 
 		expect(regenerado.textoUsuario).toBe("Obs cliente");
 		expect(regenerado.informacoesAdicionais).toContain("R$ 2,00");
+	});
+
+	it("substitui a seção automática da feira sem duplicá-la", () => {
+		const montado = montarObservacoesLegaisNfe({
+			informacoesAdicionais: "Obs cliente",
+			crt: 3,
+			itens: [],
+			observacaoRemessaFeira:
+				"--- Remessa para feira --- Evento: Feira Antiga.",
+		});
+		const regenerado = montarObservacoesLegaisNfe({
+			informacoesAdicionais: montado.informacoesAdicionais,
+			crt: 3,
+			itens: [],
+			observacaoRemessaFeira:
+				"--- Remessa para feira --- Evento: Feira Atualizada.",
+		});
+
+		expect(regenerado.textoUsuario).toBe("Obs cliente");
+		expect(regenerado.informacoesAdicionais).not.toContain("Feira Antiga");
+		expect(regenerado.informacoesAdicionais).toContain("Feira Atualizada");
+		expect(
+			regenerado.informacoesAdicionais?.match(/--- Remessa para feira ---/g),
+		).toHaveLength(1);
 	});
 });
 

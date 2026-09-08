@@ -293,7 +293,9 @@ export async function previewDanfeNfe(
 	});
 
 	if (data.type && !data.type.includes("pdf")) {
-		throw new Error(await lerErroBlobPdf(data, "Erro ao gerar pré-visualização"));
+		throw new Error(
+			await lerErroBlobPdf(data, "Erro ao gerar pré-visualização"),
+		);
 	}
 
 	return data;
@@ -335,6 +337,7 @@ export type ResultadoCalcularObservacoesNfe = {
 	textoUsuario?: string;
 	legendaSimples?: string;
 	textoIbpt?: string;
+	textoRemessaFeira?: string;
 	tributosIbpt: {
 		totalFederal: number;
 		totalEstadual: number;
@@ -362,6 +365,7 @@ export async function calcularObservacoesNfe(params: {
 	idempresa: string;
 	informacoesAdicionais?: string;
 	itens: EmissaoNfeFormData["itens"];
+	localEntrega?: EmissaoNfeFormData["localEntrega"];
 }): Promise<ResultadoCalcularObservacoesNfe> {
 	const { data } = await api.post<ResultadoCalcularObservacoesNfe>(
 		"/nfe/emissao/calcular-observacoes",
