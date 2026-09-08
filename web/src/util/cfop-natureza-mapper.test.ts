@@ -70,6 +70,7 @@ describe("cfop-natureza-mapper", () => {
 			naoconsiderapiscofinsproduto: false,
 			naoconsiderarvlnotafiscalitem: false,
 			utilizartodasoperacoes: false,
+			interestadualdestmesmauf: false,
 			tipoConsignacao: "nenhuma",
 		});
 

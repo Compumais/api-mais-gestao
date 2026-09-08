@@ -26,6 +26,7 @@ export type CfopApiRegistro = {
 	considerarproduto?: number | null;
 	naoconsiderapiscofinsproduto?: number | null;
 	utilizartodasoperacoes?: number | null;
+	interestadualdestmesmauf?: number | null;
 	naoconsiderarvlnotafiscalitem?: string | null;
 	consignacao?: number | null;
 	consignacaoentrada?: number | null;
@@ -135,6 +136,9 @@ export function valoresIniciaisNaturezaForm(
 			registro?.naoconsiderarvlnotafiscalitem,
 		),
 		utilizartodasoperacoes: flagParaBoolean(registro?.utilizartodasoperacoes),
+		interestadualdestmesmauf: flagParaBoolean(
+			registro?.interestadualdestmesmauf,
+		),
 		tipoConsignacao: resolverTipoConsignacao({
 			consignacao: registro?.consignacao,
 			consignacaoentrada: registro?.consignacaoentrada,
@@ -201,6 +205,7 @@ export function mapearNaturezaFormParaApi(data: CfopFormData) {
 			data.naoconsiderarvlnotafiscalitem,
 		),
 		utilizartodasoperacoes: booleanParaFlag(data.utilizartodasoperacoes),
+		interestadualdestmesmauf: booleanParaFlag(data.interestadualdestmesmauf),
 		consignacao: consignacao.consignacao,
 		consignacaoentrada: consignacao.consignacaoentrada,
 		presencaconsumidor: data.presencaconsumidor ?? null,

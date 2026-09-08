@@ -57,6 +57,13 @@ const propriedadesCamposGerais = {
 		nullable: true,
 	},
 	utilizartodasoperacoes: { type: "integer", enum: [0, 1], nullable: true },
+	interestadualdestmesmauf: {
+		type: "integer",
+		enum: [0, 1],
+		nullable: true,
+		description:
+			"Permite CFOP interestadual (6xxx) para destinatário da mesma UF",
+	},
 	naoconsiderarvlnotafiscalitem: {
 		type: "string",
 		maxLength: 3,

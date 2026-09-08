@@ -43,6 +43,7 @@ export const cfopFormSchema = z.object({
 	naoconsiderapiscofinsproduto: z.boolean(),
 	naoconsiderarvlnotafiscalitem: z.boolean(),
 	utilizartodasoperacoes: z.boolean(),
+	interestadualdestmesmauf: z.boolean(),
 	tipoConsignacao: z.enum(["nenhuma", "entrada", "saida"]),
 	presencaconsumidor: z
 		.union([
@@ -108,6 +109,7 @@ export const cfopFormDefaultValues: CfopFormData = {
 	naoconsiderapiscofinsproduto: false,
 	naoconsiderarvlnotafiscalitem: false,
 	utilizartodasoperacoes: false,
+	interestadualdestmesmauf: false,
 	tipoConsignacao: "nenhuma",
 	presencaconsumidor: null,
 	finalidadeemissaonfe: null,

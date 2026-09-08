@@ -94,6 +94,10 @@ export const CHECKBOXES_GERAL_CFOP = [
 		name: "utilizartodasoperacoes",
 		label: "Utilizar em todos os locais de destino",
 	},
+	{
+		name: "interestadualdestmesmauf",
+		label: "Permitir CFOP interestadual para destinatário da mesma UF",
+	},
 ] as const;
 
 export const ABAS_NATUREZA_CFOP = [
