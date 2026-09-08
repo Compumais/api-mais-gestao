@@ -89,7 +89,7 @@ Na abertura do PDV empacotado, o app consulta `{api_url}/pdv/updates/version.jso
 4. Publicar artefatos na VPS:
 
 ```powershell
-pdv\scripts\publicar-update-pdv.ps1 -HostName maisgestao.compumais.com -User deploy
+pdv\scripts\publicar-update-pdv.ps1 -HostName apimaisgestao.compumais.com -User deploy
 ```
 
 A API Fastify expõe fallback público em `GET /pdv/updates/version.json` e `GET /pdv/updates/:arquivo` (lê `PDV_UPDATES_PATH`, padrão `/opt/mais-gestao/pdv-updates`, ou o manifesto embutido). Opcionalmente, sirva a pasta também pelo Nginx (`nginx/mais-gestao.conf`).

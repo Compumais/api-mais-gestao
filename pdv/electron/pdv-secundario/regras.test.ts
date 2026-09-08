@@ -106,7 +106,7 @@ describe("mesclarConfigNegocio", () => {
 			qtd_mesas: "20",
 			modelo_atendimento: "comanda",
 			pix_chave: "nova-chave",
-			api_url: "https://maisgestao.compumais.com",
+			api_url: "https://apimaisgestao.compumais.com",
 			tema: "light",
 			lan_porta: "5050",
 			etiqueta_balanca_habilitada: "1",
@@ -122,7 +122,7 @@ describe("mesclarConfigNegocio", () => {
 		assert.equal(m.qtd_mesas, "20");
 		assert.equal(m.modelo_atendimento, "comanda");
 		assert.equal(m.pix_chave, "nova-chave");
-		assert.equal(m.api_url, "https://maisgestao.compumais.com");
+		assert.equal(m.api_url, "https://apimaisgestao.compumais.com");
 		assert.equal(m.lan_porta, undefined);
 		assert.equal(m.etiqueta_balanca_habilitada, "1");
 		assert.equal(m.etiqueta_balanca_prefixo, "2");

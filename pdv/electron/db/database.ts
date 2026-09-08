@@ -594,10 +594,11 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 	}
 }
 
-const API_URL_PADRAO = "https://maisgestao.compumais.com";
+const API_URL_PADRAO = "https://apimaisgestao.compumais.com";
 const API_URLS_LEGADAS = new Set([
 	"https://api.maisgestao.com.br",
 	"https://api.compuchat.space",
+	"https://maisgestao.compumais.com",
 ]);
 
 async function seedDefaults(database: Pool): Promise<void> {

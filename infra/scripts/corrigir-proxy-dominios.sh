@@ -377,9 +377,10 @@ update_api_env() {
 	cp -a "$env_file" "${BACKUP_DIR}/$(basename "$env_file")"
 	upsert_env "FRONTEND_URL" "$FRONT_ORIGIN" "$env_file"
 	upsert_env "CLIENT_ORIGIN" "$FRONT_ORIGIN" "$env_file"
-	upsert_env "CORS_ORIGINS" "$FRONT_ORIGIN" "$env_file"
-	upsert_env "API_URL" "$FRONT_ORIGIN" "$env_file"
-	upsert_env "BETTER_AUTH_URL" "$FRONT_ORIGIN" "$env_file"
+	upsert_env "CORS_ORIGINS" "${FRONT_ORIGIN},https://mais.compuchat.space" "$env_file"
+	upsert_env "API_URL" "https://apimaisgestao.compumais.com" "$env_file"
+	upsert_env "BETTER_AUTH_URL" "https://apimaisgestao.compumais.com" "$env_file"
+	upsert_env "COOKIE_DOMAIN" "compumais.com" "$env_file"
 }
 
 reload_api() {
