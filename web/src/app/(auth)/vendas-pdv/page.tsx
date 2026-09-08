@@ -2,6 +2,7 @@
 
 import {
 	IconEye,
+	IconFileInvoice,
 	IconFilter,
 	IconReceipt,
 	IconX,
@@ -17,6 +18,7 @@ import {
 import dayjs from "dayjs";
 import "dayjs/locale/pt-br";
 import { useMemo, useState } from "react";
+import { TableSkeleton } from "@/components/table-skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,11 +28,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import {
-	Field,
-	FieldGroup,
-	FieldLabel,
-} from "@/components/ui/field";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
 	Table,
@@ -40,16 +38,19 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { TableSkeleton } from "@/components/table-skeleton";
 import { useEmpresa } from "@/hooks/use-empresa";
+import {
+	useInterpretarRejeicaoNfce,
+	useNfceDetalhes,
+} from "@/hooks/use-nfce-detalhes";
 import { formatCurrency } from "@/lib/gourmet-utils";
 import { produtosService } from "@/services/produtos.service";
 import type { VendaPdvGourmet } from "@/services/venda-pdv-gourmet.service";
 import { vendaPdvGourmetService } from "@/services/venda-pdv-gourmet.service";
-import { vendaPdvItemService } from "@/services/venda-pdv-item.service";
 import type { VendaPdvItem } from "@/services/venda-pdv-item.service";
-import { usuariosService } from "@/services/usuarios.service";
+import { vendaPdvItemService } from "@/services/venda-pdv-item.service";
 import { PageContainer } from "../components/page-container";
+import { DialogDetalhesNfce } from "../nfce/components/dialog-detalhes-nfce";
 
 dayjs.locale("pt-br");
 
@@ -88,6 +89,37 @@ function filtrosAtivos(filtros: FiltrosState): boolean {
 	return !!(filtros.dataInicio || filtros.dataFim || filtros.numeropdv);
 }
 
+function nomeOperador(venda: VendaPdvGourmet): string {
+	const nome = venda.operadorNome?.trim();
+	return nome || "—";
+}
+
+function documentoVenda(venda: VendaPdvGourmet): "fiscal" | "gerencial" {
+	if (venda.documento) return venda.documento;
+	if (venda.idnotafiscalnfce || venda.deveemitirnfce) return "fiscal";
+	return "gerencial";
+}
+
+function valorPago(valor?: string | null): boolean {
+	return Number.parseFloat(String(valor ?? "0").replace(",", ".")) > 0;
+}
+
+function meiosPagamentoVenda(venda: VendaPdvGourmet): string[] {
+	if (venda.meiosPagamento?.length) return venda.meiosPagamento;
+	const meios: string[] = [];
+	if (valorPago(venda.valordinheiro)) meios.push("Dinheiro");
+	if (valorPago(venda.valorpix)) meios.push("PIX");
+	if (valorPago(venda.valorcartaocredito)) meios.push("Cartão crédito");
+	if (valorPago(venda.valorcartaodebito)) meios.push("Cartão débito");
+	if (valorPago(venda.valorcartao)) meios.push("Cartão");
+	if (valorPago(venda.valorprepago)) meios.push("Pré-pago");
+	return meios;
+}
+
+function idNfceVenda(venda: VendaPdvGourmet): string | null {
+	return venda.nfce?.idnotafiscal ?? venda.idnotafiscalnfce ?? null;
+}
+
 // ─── dialog de itens ─────────────────────────────────────────────────────────
 
 function ItensVendaDialog({
@@ -96,14 +128,12 @@ function ItensVendaDialog({
 	open,
 	onOpenChange,
 	produtosPorId,
-	operadorNome,
 }: {
 	venda: VendaPdvGourmet | null;
 	idempresa: string;
 	open: boolean;
 	onOpenChange: (v: boolean) => void;
 	produtosPorId: Record<string, string>;
-	operadorNome: string;
 }) {
 	const { data, isLoading } = useQuery({
 		queryKey: ["vendas-pdv-item", venda?.id, idempresa],
@@ -130,8 +160,11 @@ function ItensVendaDialog({
 					<DialogDescription>
 						{venda && dayjs(venda.datacriacao).format("DD/MM/YYYY [às] HH:mm")}{" "}
 						— {venda && tipoVenda(venda)}
-						{operadorNome && (
-							<> &nbsp;•&nbsp; Operador: <strong>{operadorNome}</strong></>
+						{venda && nomeOperador(venda) !== "—" && (
+							<>
+								{" "}
+								• Operador: <strong>{nomeOperador(venda)}</strong>
+							</>
 						)}
 					</DialogDescription>
 				</DialogHeader>
@@ -214,24 +247,7 @@ export default function VendasPdvPage() {
 	const [vendaSelecionada, setVendaSelecionada] =
 		useState<VendaPdvGourmet | null>(null);
 	const [dialogItensAberto, setDialogItensAberto] = useState(false);
-
-	// ── mapas de resolução ─────────────────────────────────────────────────────
-
-	const { data: usuariosData } = useQuery({
-		queryKey: ["usuarios-lista", empresa?.id],
-		queryFn: () =>
-			usuariosService.listar({ idempresa: empresa!.id, limit: 500 }),
-		enabled: !!empresa,
-		staleTime: 60_000,
-	});
-
-	const usuariosPorId = useMemo(() => {
-		const map: Record<string, string> = {};
-		for (const u of usuariosData?.data ?? []) {
-			map[u.id] = u.nome;
-		}
-		return map;
-	}, [usuariosData]);
+	const [detalhesNotaId, setDetalhesNotaId] = useState<string | null>(null);
 
 	const { data: produtosData } = useQuery({
 		queryKey: ["produtos-lista", empresa?.id],
@@ -293,6 +309,26 @@ export default function VendasPdvPage() {
 		setDialogItensAberto(true);
 	};
 
+	const handleVerNfce = (venda: VendaPdvGourmet) => {
+		const id = idNfceVenda(venda);
+		if (id) setDetalhesNotaId(id);
+	};
+
+	const detalhesQuery = useNfceDetalhes({
+		idempresa: empresa?.id ?? "",
+		idnotafiscal: detalhesNotaId,
+		enabled: detalhesNotaId != null && !!empresa,
+	});
+	const interpretacaoQuery = useInterpretarRejeicaoNfce({
+		idempresa: empresa?.id ?? "",
+		idnotafiscal: detalhesNotaId,
+		enabled:
+			detalhesNotaId != null &&
+			!!empresa &&
+			detalhesQuery.data?.rejeicao != null &&
+			Boolean(detalhesQuery.data.iaDisponivel),
+	});
+
 	// ── colunas ────────────────────────────────────────────────────────────────
 
 	const columns: ColumnDef<VendaPdvGourmet>[] = [
@@ -327,34 +363,84 @@ export default function VendasPdvPage() {
 			},
 		},
 		{
-			accessorKey: "usuarioquefechouvenda",
+			id: "operador",
 			header: "Operador",
+			cell: ({ row }) => (
+				<span className="block max-w-[180px] truncate text-sm">
+					{nomeOperador(row.original)}
+				</span>
+			),
+		},
+		{
+			id: "pagamento",
+			header: "Pagamento",
 			cell: ({ row }) => {
-				const id = row.getValue("usuarioquefechouvenda") as string;
-				const nome = usuariosPorId[id] ?? id;
+				const meios = meiosPagamentoVenda(row.original);
+				if (meios.length === 0) {
+					return <span className="text-muted-foreground">—</span>;
+				}
 				return (
-					<span className="text-sm text-muted-foreground truncate max-w-[200px] block">
-						{nome}
-					</span>
+					<div className="flex flex-wrap gap-1">
+						{meios.map((meio) => (
+							<Badge key={meio} variant="outline">
+								{meio}
+							</Badge>
+						))}
+					</div>
 				);
 			},
 		},
 		{
+			id: "documento",
+			header: "Documento",
+			cell: ({ row }) => {
+				const documento = documentoVenda(row.original);
+				return (
+					<Badge variant={documento === "fiscal" ? "default" : "secondary"}>
+						{documento === "fiscal" ? "Fiscal" : "Gerencial"}
+					</Badge>
+				);
+			},
+		},
+		{
+			accessorKey: "valortotal",
+			header: () => <span className="block text-right">Total</span>,
+			cell: ({ row }) => (
+				<span className="block text-right tabular-nums font-medium">
+					{formatCurrency(row.original.valortotal)}
+				</span>
+			),
+		},
+		{
 			id: "acoes",
 			header: () => <span className="sr-only">Ações</span>,
-			cell: ({ row }) => (
-				<div className="flex justify-end">
-					<Button
-						variant="ghost"
-						size="sm"
-						className="gap-1.5"
-						onClick={() => handleVerItens(row.original)}
-					>
-						<IconEye className="size-4" />
-						Ver itens
-					</Button>
-				</div>
-			),
+			cell: ({ row }) => {
+				const idNfce = idNfceVenda(row.original);
+				return (
+					<div className="flex justify-end gap-1">
+						<Button
+							variant="ghost"
+							size="sm"
+							className="gap-1.5"
+							onClick={() => handleVerItens(row.original)}
+						>
+							<IconEye className="size-4" />
+							Ver itens
+						</Button>
+						{idNfce ? (
+							<Button
+								variant="ghost"
+								size="sm"
+								className="gap-1.5"
+								onClick={() => handleVerNfce(row.original)}
+							>
+								<IconFileInvoice className="size-4" />
+								Ver NFC-e
+							</Button>
+						) : null}
+					</div>
+				);
+			},
 		},
 	];
 
@@ -370,11 +456,6 @@ export default function VendasPdvPage() {
 	});
 
 	const comFiltros = filtrosAtivos(filtrosAplicados);
-
-	const operadorSelecionadoNome = vendaSelecionada
-		? (usuariosPorId[vendaSelecionada.usuarioquefechouvenda] ??
-			vendaSelecionada.usuarioquefechouvenda)
-		: "";
 
 	// ── render ─────────────────────────────────────────────────────────────────
 
@@ -454,7 +535,7 @@ export default function VendasPdvPage() {
 				</div>
 
 				{/* tabela */}
-				<div className="mx-4 rounded-lg border bg-card">
+				<div className="mx-4 overflow-x-auto rounded-lg border bg-card">
 					{!empresa ? (
 						<div className="flex items-center justify-center py-8">
 							<p className="text-muted-foreground">
@@ -462,11 +543,14 @@ export default function VendasPdvPage() {
 							</p>
 						</div>
 					) : isLoading ? (
-						<TableSkeleton rows={10} columns={5}>
+						<TableSkeleton rows={10} columns={8}>
 							<TableHead>Nº PDV</TableHead>
 							<TableHead>Data / Hora</TableHead>
 							<TableHead>Tipo</TableHead>
 							<TableHead>Operador</TableHead>
+							<TableHead>Pagamento</TableHead>
+							<TableHead>Documento</TableHead>
+							<TableHead>Total</TableHead>
 							<TableHead />
 						</TableSkeleton>
 					) : (
@@ -478,9 +562,7 @@ export default function VendasPdvPage() {
 											{hg.headers.map((header) => (
 												<TableHead
 													key={header.id}
-													className={
-														header.id === "acoes" ? "text-right" : ""
-													}
+													className={header.id === "acoes" ? "text-right" : ""}
 												>
 													{header.isPlaceholder
 														? null
@@ -525,8 +607,8 @@ export default function VendasPdvPage() {
 								<div className="flex items-center justify-between border-t px-4 py-3">
 									<p className="text-sm text-muted-foreground">
 										{data?.paginacao.total ?? 0} venda
-										{(data?.paginacao.total ?? 0) !== 1 ? "s" : ""} •{" "}
-										Página {pagination.pageIndex + 1} de{" "}
+										{(data?.paginacao.total ?? 0) !== 1 ? "s" : ""} • Página{" "}
+										{pagination.pageIndex + 1} de{" "}
 										{data?.paginacao.totalPages ?? 1}
 									</p>
 									<div className="flex gap-2">
@@ -562,9 +644,25 @@ export default function VendasPdvPage() {
 					open={dialogItensAberto}
 					onOpenChange={setDialogItensAberto}
 					produtosPorId={produtosPorId}
-					operadorNome={operadorSelecionadoNome}
 				/>
 			)}
+
+			<DialogDetalhesNfce
+				open={detalhesNotaId != null}
+				onOpenChange={(aberto) => {
+					if (!aberto) setDetalhesNotaId(null);
+				}}
+				carregando={detalhesQuery.isLoading}
+				erro={detalhesQuery.error instanceof Error ? detalhesQuery.error : null}
+				detalhes={detalhesQuery.data}
+				interpretacao={interpretacaoQuery.data}
+				carregandoInterpretacao={interpretacaoQuery.isFetching}
+				erroInterpretacao={
+					interpretacaoQuery.error instanceof Error
+						? interpretacaoQuery.error
+						: null
+				}
+			/>
 		</PageContainer>
 	);
 }
