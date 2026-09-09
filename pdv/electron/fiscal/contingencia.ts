@@ -287,6 +287,12 @@ export async function emitirOuContingencia(params: {
 export async function emitirContingencia(
 	idvenda: string,
 	motivo: string,
+	opcoes?: {
+		/** Reemissão por conflito: não bloqueia se a retaguarda já tiver NFC-e (trata à parte). */
+		forcarNovaNumeracao?: boolean;
+		/** Não imprime DANFC-e (o chamador imprime). */
+		silenciarImpressao?: boolean;
+	},
 ): Promise<ResultadoEmissaoLocal> {
 	const venda = await obterVenda(idvenda);
 	if (!venda) {
@@ -304,7 +310,7 @@ export async function emitirContingencia(
 		};
 	}
 
-	if (venda.idremoto) {
+	if (venda.idremoto && !opcoes?.forcarNovaNumeracao) {
 		try {
 			const remota = await buscarVendaPdvGourmet(venda.idremoto);
 			if (remota.idnotafiscalnfce || remota.nfce?.idnotafiscal) {
@@ -317,6 +323,36 @@ export async function emitirContingencia(
 			}
 		} catch {
 			// se a consulta falhar, segue para contingência local
+		}
+	}
+
+	if (venda.idremoto && opcoes?.forcarNovaNumeracao) {
+		try {
+			const remota = await buscarVendaPdvGourmet(venda.idremoto);
+			const idNotaRemota =
+				remota.idnotafiscalnfce ?? remota.nfce?.idnotafiscal ?? null;
+			if (idNotaRemota) {
+				const { aplicarNfceRetaguardaNaVendaLocal } = await import(
+					"../sync/nfce-retaguarda"
+				);
+				await aplicarNfceRetaguardaNaVendaLocal(idvenda, {
+					idnotafiscal: idNotaRemota,
+					status: remota.nfce?.status ?? "autorizada",
+					chave: remota.nfce?.chave ?? null,
+					serie: remota.nfce?.serie ?? null,
+					numero: remota.nfce?.numero ?? null,
+					protocolo: remota.nfce?.protocolo ?? null,
+				});
+				return {
+					modo: "online",
+					idnfce: idNotaRemota,
+					chave: remota.nfce?.chave ?? undefined,
+					mensagem:
+						"Esta venda já possui NFC-e na retaguarda. Status local sincronizado — não é necessário reemitir.",
+				};
+			}
+		} catch {
+			// retaguarda indisponível: segue com nova contingência local
 		}
 	}
 
@@ -410,13 +446,19 @@ export async function emitirContingencia(
 		datacontingencia: dh,
 	});
 
-	await imprimirDanfce({
-		chave,
-		qrcode,
-		contingencia: true,
-		motivo,
-		vendaId: idvenda,
-	});
+	if (!opcoes?.silenciarImpressao) {
+		try {
+			await imprimirDanfce({
+				chave,
+				qrcode,
+				contingencia: true,
+				motivo,
+				vendaId: idvenda,
+			});
+		} catch {
+			/* impressão best-effort — emissão já gravada */
+		}
+	}
 
 	return {
 		modo: "contingencia",

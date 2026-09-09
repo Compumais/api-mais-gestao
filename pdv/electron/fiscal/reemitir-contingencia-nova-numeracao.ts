@@ -22,7 +22,7 @@ export async function reemitirContingenciaComNovaNumeracao(params: {
 	idvenda: string;
 	motivo?: string;
 }): Promise<{
-	modo: "contingencia" | "erro";
+	modo: "contingencia" | "online" | "erro";
 	mensagem: string;
 	chave?: string;
 	numeroAnterior?: number;
@@ -66,47 +66,80 @@ export async function reemitirContingenciaComNovaNumeracao(params: {
 
 	const numeroAnterior = nfce.numero;
 	const serieAnterior = nfce.serie;
+	const idNfceAnterior = nfce.id;
 
-	await sincronizarFiscalPdv().catch(() => undefined);
-	await cancelarOutboxTransmitirContingenciaPendente(params.idvenda);
-	await atualizarNfceLocalCampos(nfce.id, { status: "conflito_numeracao" });
+	try {
+		await sincronizarFiscalPdv().catch(() => undefined);
+		await cancelarOutboxTransmitirContingenciaPendente(params.idvenda);
+		await atualizarNfceLocalCampos(idNfceAnterior, {
+			status: "conflito_numeracao",
+		});
 
-	await execute(
-		`UPDATE venda SET idnfce_local = NULL, nfce_status = 'pendente' WHERE id = $1`,
-		[params.idvenda],
-	);
+		await execute(
+			`UPDATE venda SET idnfce_local = NULL, nfce_status = 'pendente' WHERE id = $1`,
+			[params.idvenda],
+		);
 
-	const motivo =
-		params.motivo?.trim() ||
-		`Reemissão por conflito de numeração (nNF ${numeroAnterior} série ${serieAnterior} já utilizado)`;
+		const motivo =
+			params.motivo?.trim() ||
+			`Reemissão por conflito de numeração (nNF ${numeroAnterior} série ${serieAnterior} já utilizado)`;
 
-	const resultado = await emitirContingencia(params.idvenda, motivo);
-	if (resultado.modo !== "contingencia") {
+		const resultado = await emitirContingencia(params.idvenda, motivo, {
+			forcarNovaNumeracao: true,
+			silenciarImpressao: true,
+		});
+
+		if (resultado.modo === "online") {
+			return {
+				modo: "online",
+				mensagem: resultado.mensagem,
+				chave: resultado.chave,
+				numeroAnterior,
+				serie: serieAnterior,
+			};
+		}
+
+		if (resultado.modo !== "contingencia") {
+			await execute(
+				`UPDATE venda SET idnfce_local = $1, nfce_status = 'conflito_numeracao' WHERE id = $2`,
+				[idNfceAnterior, params.idvenda],
+			);
+			return {
+				modo: "erro",
+				mensagem: resultado.mensagem || "Falha ao reemitir contingência",
+				numeroAnterior,
+				serie: serieAnterior,
+			};
+		}
+
+		const nova = await obterNfcePorVenda(params.idvenda);
+		if (nova && nova.numero >= 1) {
+			await avancarNumeracaoNfceAposEmissao(nova.serie, nova.numero);
+		}
+
+		return {
+			modo: "contingencia",
+			mensagem: `NFC-e reemitida: nNF ${numeroAnterior} → ${nova?.numero ?? "?"} (série ${nova?.serie ?? serieAnterior}). Reimprima o DANFC-e.`,
+			chave: resultado.chave ?? nova?.chave ?? undefined,
+			numeroAnterior,
+			numeroNovo: nova?.numero,
+			serie: nova?.serie ?? serieAnterior,
+		};
+	} catch (err) {
 		await execute(
 			`UPDATE venda SET idnfce_local = $1, nfce_status = 'conflito_numeracao' WHERE id = $2`,
-			[nfce.id, params.idvenda],
-		);
+			[idNfceAnterior, params.idvenda],
+		).catch(() => undefined);
 		return {
 			modo: "erro",
-			mensagem: resultado.mensagem || "Falha ao reemitir contingência",
+			mensagem:
+				err instanceof Error
+					? err.message
+					: "Falha ao reemitir com nova numeração",
 			numeroAnterior,
 			serie: serieAnterior,
 		};
 	}
-
-	const nova = await obterNfcePorVenda(params.idvenda);
-	if (nova && nova.numero >= 1) {
-		await avancarNumeracaoNfceAposEmissao(nova.serie, nova.numero);
-	}
-
-	return {
-		modo: "contingencia",
-		mensagem: `NFC-e reemitida: nNF ${numeroAnterior} → ${nova?.numero ?? "?"} (série ${nova?.serie ?? serieAnterior}). Reimprima o DANFC-e.`,
-		chave: resultado.chave ?? nova?.chave ?? undefined,
-		numeroAnterior,
-		numeroNovo: nova?.numero,
-		serie: nova?.serie ?? serieAnterior,
-	};
 }
 
 /** Lista conflitos de numeração locais (após marcar órfãos). */
