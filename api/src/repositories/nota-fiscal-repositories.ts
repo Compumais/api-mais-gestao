@@ -380,6 +380,7 @@ export async function listarNotasFiscaisPorEmpresa({
 
 export const ORDENAR_NFCE_CAMPOS = [
 	"datahoraemissao",
+	"datahoraautorizacao",
 	"emissao",
 	"numeronotafiscal",
 	"idvenda",
@@ -399,6 +400,7 @@ const IDVENDA_NFCE_SQL = sql<string | null>`coalesce(
 
 const COLUNAS_ORDENACAO_NFCE = {
 	datahoraemissao: notafiscal.datahoraemissao,
+	datahoraautorizacao: notafiscal.datahoraautorizacao,
 	emissao: notafiscal.emissao,
 	numeronotafiscal: notafiscal.numeronotafiscal,
 	idvenda: IDVENDA_NFCE_SQL,
@@ -436,6 +438,7 @@ export type NfceListagem = {
 	valortotalnota: string | null;
 	emissao: string | null;
 	datahoraemissao: string | null;
+	datahoraautorizacao: string | null;
 	datainclusao: string | null;
 	tipoambientenfe: number | null;
 	mensagemtransmissaonfe: string | null;
@@ -557,6 +560,7 @@ export async function listarNfcePorEmpresa({
 				datacriacaovenda: vendapdvgourmet.datacriacao,
 				emissao: notafiscal.emissao,
 				datahoraemissao: notafiscal.datahoraemissao,
+				datahoraautorizacao: notafiscal.datahoraautorizacao,
 				datainclusao: notafiscal.datainclusao,
 				tipoambientenfe: notafiscal.tipoambientenfe,
 				mensagemtransmissaonfe: notafiscal.mensagemtransmissaonfe,

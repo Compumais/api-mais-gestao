@@ -91,6 +91,7 @@ export const COLUNA_PARA_CAMPO_FILTRO_NFCE: Record<
 
 export const COLUNA_PARA_ORDENAR_NFCE: Record<string, string> = {
 	dataEmissao: "datahoraemissao",
+	dataAutorizacao: "datahoraautorizacao",
 	numeronotafiscal: "numeronotafiscal",
 	idvenda: "idvenda",
 	valortotalnota: "valortotalnota",
@@ -113,7 +114,12 @@ type DefinicaoColuna = {
 };
 
 const DEFINICOES_COLUNAS: DefinicaoColuna[] = [
-	{ id: "dataEmissao", label: "Data", visivelPadrao: true },
+	{ id: "dataEmissao", label: "Data de emissão", visivelPadrao: true },
+	{
+		id: "dataAutorizacao",
+		label: "Data de autorização",
+		visivelPadrao: true,
+	},
 	{ id: "numeronotafiscal", label: "Número", visivelPadrao: true },
 	{ id: "idvenda", label: "Venda PDV", visivelPadrao: true },
 	{ id: "valortotalnota", label: "Valor", visivelPadrao: true },
@@ -156,8 +162,12 @@ function formatarValor(valor: string | null | undefined) {
 	return formatCurrency(n);
 }
 
-function obterDataExibicao(nota: NfceListagem) {
+function obterDataEmissaoExibicao(nota: NfceListagem) {
 	return nota.datahoraemissao ?? nota.emissao ?? nota.datainclusao;
+}
+
+function obterDataAutorizacaoExibicao(nota: NfceListagem) {
+	return nota.datahoraautorizacao;
 }
 
 export type OpcoesColunasNfce = {
@@ -318,8 +328,19 @@ export function criarColunasNfce(
 					header,
 					meta,
 					cell: ({ row }) => {
-						const data = obterDataExibicao(row.original);
-						return formatDateTimeBrasilia(data);
+						const data = obterDataEmissaoExibicao(row.original);
+						return data ? formatDateTimeBrasilia(data) : "—";
+					},
+				});
+				break;
+			case "dataAutorizacao":
+				colunas.push({
+					id: "dataAutorizacao",
+					header,
+					meta,
+					cell: ({ row }) => {
+						const data = obterDataAutorizacaoExibicao(row.original);
+						return data ? formatDateTimeBrasilia(data) : "—";
 					},
 				});
 				break;

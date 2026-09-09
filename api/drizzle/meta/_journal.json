@@ -680,6 +680,13 @@
       "when": 1788975600000,
       "tag": "0094_tipocobranca",
       "breakpoints": true
+    },
+    {
+      "idx": 96,
+      "version": "7",
+      "when": 1788979200000,
+      "tag": "0095_datahoraautorizacao_notafiscal",
+      "breakpoints": true
     }
   ]
 }

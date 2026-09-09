@@ -38,6 +38,7 @@ import {
 	hojeBrasiliaIsoDate,
 } from "@/util/data-hora-brasilia.js";
 import { extrairQrCodeNfceXml } from "@/util/extrair-qr-code-nfce-xml.js";
+import { resolverDataHoraAutorizacao } from "@/util/extrair-dh-recbto-xml.js";
 import {
 	httpBadRequest,
 	httpNaoEncontrado,
@@ -589,6 +590,13 @@ export async function emitirNfceVendaPdvService({
 		arquivoxmlautorizada:
 			statusPersistido === NFE_STATUS.AUTORIZADA
 				? (respostaGateway.xmlRetorno ?? null)
+				: null,
+		datahoraautorizacao:
+			statusPersistido === NFE_STATUS.AUTORIZADA
+				? resolverDataHoraAutorizacao({
+						xmlAutorizado: respostaGateway.xmlRetorno,
+						fallbackIso: agora,
+					})
 				: null,
 		mensagemtransmissaonfe: xMotivo,
 		codigostatusprotocolonfe: normalizarCodigoStatusNfe(cStat),
