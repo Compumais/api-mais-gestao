@@ -283,6 +283,13 @@ export const DATA = {
 					},
 				},
 				{
+					title: "Tipos de cobrança",
+					url: "/tipos-cobranca",
+					acesso: {
+						perfis: [...PERFIS_GESTAO],
+					},
+				},
+				{
 					title: "Conciliação",
 					url: "#",
 					acesso: {
