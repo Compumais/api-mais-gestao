@@ -1,5 +1,6 @@
 import { IconEye, IconFileInvoice } from "@tabler/icons-react";
 import type { ColumnDef } from "@tanstack/react-table";
+import { StatusNfeBadge } from "@/app/(auth)/nota-fiscal-venda/components/status-nfe-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDateTimeBrasilia } from "@/lib/date";
@@ -10,6 +11,7 @@ import {
 	idNfceVenda,
 	meiosPagamentoVenda,
 	nomeOperador,
+	rotuloFiscal,
 	rotuloNfce,
 	tipoVenda,
 } from "./vendas-pdv-helpers";
@@ -26,7 +28,7 @@ export function criarColunasVendasPdv(opcoes: {
 			accessorKey: "numeropdv",
 			header: "Nº PDV",
 			cell: ({ row }) => (
-				<span className="font-mono font-medium">
+				<span className="font-mono font-medium tabular-nums">
 					{row.getValue("numeropdv")}
 				</span>
 			),
@@ -60,7 +62,7 @@ export function criarColunasVendasPdv(opcoes: {
 			id: "operador",
 			header: "Operador",
 			cell: ({ row }) => (
-				<span className="block max-w-[160px] truncate text-sm">
+				<span className="block max-w-[140px] truncate text-sm">
 					{nomeOperador(row.original, usuariosPorId)}
 				</span>
 			),
@@ -74,9 +76,9 @@ export function criarColunasVendasPdv(opcoes: {
 					return <span className="text-muted-foreground">—</span>;
 				}
 				return (
-					<div className="flex flex-wrap gap-1">
+					<div className="flex max-w-[200px] flex-wrap gap-1">
 						{meios.map((meio) => (
-							<Badge key={meio} variant="outline">
+							<Badge key={meio} variant="outline" className="font-normal">
 								{meio}
 							</Badge>
 						))}
@@ -85,31 +87,51 @@ export function criarColunasVendasPdv(opcoes: {
 			},
 		},
 		{
-			id: "documento",
-			header: "Documento",
+			id: "fiscal",
+			header: "Fiscal",
 			cell: ({ row }) => {
-				const documento = documentoVenda(row.original);
-				const nfce = rotuloNfce(row.original);
-				if (documento === "fiscal") {
+				const fiscal = rotuloFiscal(row.original) === "Fiscal";
+				return (
+					<Badge variant={fiscal ? "default" : "secondary"}>
+						{fiscal ? "Fiscal" : "Não fiscal"}
+					</Badge>
+				);
+			},
+		},
+		{
+			id: "nfce",
+			header: "NFC-e",
+			cell: ({ row }) => {
+				const venda = row.original;
+				if (documentoVenda(venda) !== "fiscal") {
+					return <span className="text-muted-foreground">—</span>;
+				}
+				const status = venda.nfce?.status ?? null;
+				const numero = rotuloNfce(venda);
+				if (status == null && !idNfceVenda(venda)) {
 					return (
-						<div className="flex flex-col gap-0.5">
-							<Badge>Fiscal</Badge>
-							{nfce ? (
-								<span className="font-mono text-xs text-muted-foreground">
-									NFC-e {nfce}
-								</span>
-							) : null}
-						</div>
+						<Badge variant="outline" className="font-normal">
+							Sem NFC-e
+						</Badge>
 					);
 				}
-				return <Badge variant="secondary">Gerencial</Badge>;
+				return (
+					<div className="flex min-w-[140px] flex-col items-start gap-1">
+						<StatusNfeBadge status={status ?? 90} size="sm" />
+						{numero ? (
+							<span className="font-mono text-xs text-muted-foreground">
+								{numero}
+							</span>
+						) : null}
+					</div>
+				);
 			},
 		},
 		{
 			accessorKey: "valortotal",
 			header: () => <span className="block text-right">Total</span>,
 			cell: ({ row }) => (
-				<span className="block text-right font-medium tabular-nums">
+				<span className="block whitespace-nowrap text-right font-medium tabular-nums">
 					{formatCurrency(row.original.valortotal)}
 				</span>
 			),
@@ -121,7 +143,7 @@ export function criarColunasVendasPdv(opcoes: {
 				const idNfce = idNfceVenda(row.original);
 				const fiscal = documentoVenda(row.original) === "fiscal";
 				return (
-					<div className="flex justify-end gap-1">
+					<div className="flex justify-end gap-1 whitespace-nowrap">
 						<Button
 							variant="ghost"
 							size="sm"
@@ -139,13 +161,13 @@ export function criarColunasVendasPdv(opcoes: {
 								disabled={!idNfce}
 								title={
 									idNfce
-										? "Visualizar NFC-e"
+										? "Consultar NFC-e"
 										: "NFC-e ainda não vinculada a esta venda"
 								}
 								onClick={() => onVerNfce(row.original)}
 							>
 								<IconFileInvoice className="size-4" aria-hidden="true" />
-								NFC-e
+								Consultar
 							</Button>
 						) : null}
 					</div>
