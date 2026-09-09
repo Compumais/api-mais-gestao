@@ -1,8 +1,8 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { v4 as uuidv4 } from "uuid";
 import z from "zod";
-import { criarNotificacaoService } from "@/service/notificacoes/criar-notificacao.js";
 import { criarFinanceiroService } from "@/service/financeiro/criar-financeiro.js";
+import { criarNotificacaoService } from "@/service/notificacoes/criar-notificacao.js";
 
 const criarFinanceiroBodySchema = z.object({
 	idempresa: z.string().uuid(),
@@ -13,7 +13,9 @@ const criarFinanceiroBodySchema = z.object({
 		.union([z.string(), z.number()])
 		.optional()
 		.nullable()
-		.transform((valor) => (valor === null || valor === undefined ? valor : String(valor))),
+		.transform((valor) =>
+			valor === null || valor === undefined ? valor : String(valor),
+		),
 	parcela: z.number().optional().nullable(),
 	documento: z.string().max(60).optional().nullable(),
 	idtipodocumentofinanceiro: z.string().uuid().optional().nullable(),
@@ -53,6 +55,7 @@ const criarFinanceiroBodySchema = z.object({
 	remessagerada: z.number().optional().nullable(),
 	boletoimpresso: z.number().optional().nullable(),
 	currenttimemillis: z.number().optional().nullable(),
+	idtipocobranca: z.string().uuid().optional().nullable(),
 });
 
 export async function criarFinanceiro(

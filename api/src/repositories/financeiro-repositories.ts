@@ -151,6 +151,7 @@ interface ListarFinanceiroParametros {
 	vencimentoFim?: string | null | undefined;
 	status?: string | null | undefined;
 	tipo?: "P" | "R" | null | undefined;
+	idtipocobranca?: string | null | undefined;
 	ordenarPor?: OrdenarFinanceirosCampo | undefined;
 	ordem?: "asc" | "desc" | undefined;
 }
@@ -170,6 +171,7 @@ export async function listarFinanceiro({
 	vencimentoFim,
 	status,
 	tipo,
+	idtipocobranca,
 	ordenarPor,
 	ordem = "desc",
 }: ListarFinanceiroParametros) {
@@ -215,6 +217,10 @@ export async function listarFinanceiro({
 
 	if (tipo) {
 		where.push(eq(schema.financeiro.tipo, tipo));
+	}
+
+	if (idtipocobranca?.trim()) {
+		where.push(eq(schema.financeiro.idtipocobranca, idtipocobranca.trim()));
 	}
 
 	const ordenacao =

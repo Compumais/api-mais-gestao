@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -42,6 +42,7 @@ import {
 	financeiroService,
 } from "@/services/financeiro.service";
 import { planoContasService } from "@/services/plano-contas.service";
+import { tipoCobrancaService } from "@/services/tipo-cobranca.service";
 
 const formatDateForInput = (date?: string | null): string =>
 	extractDateOnly(date) ?? "";
@@ -191,6 +192,28 @@ export function FinanceiroForm({
 		},
 		enabled: !!empresa?.id,
 	});
+
+	const { data: tiposCobranca = [] } = useQuery({
+		queryKey: ["tipos-cobranca", empresa?.id, "form-financeiro"],
+		queryFn: async () => {
+			if (!empresa?.id) {
+				throw new Error("Empresa não selecionada");
+			}
+			return await tipoCobrancaService.listarTodos({
+				idempresa: empresa.id,
+			});
+		},
+		enabled: !!empresa?.id,
+	});
+
+	const opcoesTipoCobranca = useMemo(
+		() =>
+			tiposCobranca.map((tipoCobranca) => ({
+				value: tipoCobranca.id,
+				label: tipoCobranca.descricao,
+			})),
+		[tiposCobranca],
+	);
 
 	// Preencher formulário com dados existentes na edição
 	useEffect(() => {
@@ -488,15 +511,20 @@ export function FinanceiroForm({
 
 						<Field data-invalid={!!errors.tipoCobranca}>
 							<FieldLabel htmlFor="tipoCobranca">Tipo de Cobrança</FieldLabel>
-							<Input
-								id="tipoCobranca"
-								type="number"
-								placeholder="Tipo de cobrança"
-								aria-invalid={!!errors.tipoCobranca}
-								aria-describedby={
-									errors.tipoCobranca ? "tipoCobranca-error" : undefined
-								}
-								{...register("tipoCobranca", { valueAsNumber: true })}
+							<Controller
+								control={control}
+								name="tipoCobranca"
+								render={({ field }) => (
+									<Combobox
+										options={opcoesTipoCobranca}
+										value={field.value ?? ""}
+										onChange={(value) => field.onChange(value || null)}
+										placeholder="Selecione o tipo de cobrança"
+										searchPlaceholder="Buscar tipo de cobrança..."
+										emptyMessage="Nenhum tipo de cobrança encontrado."
+										disabled={!empresa?.id}
+									/>
+								)}
 							/>
 							<FieldError
 								errors={errors.tipoCobranca ? [errors.tipoCobranca] : []}
