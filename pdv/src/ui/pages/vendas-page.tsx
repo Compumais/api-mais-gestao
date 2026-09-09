@@ -22,6 +22,10 @@ import { DialogCancelarNfce } from "@/ui/components/dialog-cancelar-nfce";
 import { DialogCancelarVendaNaoFiscal } from "@/ui/components/dialog-cancelar-venda-nao-fiscal";
 import { DialogInutilizarNfce } from "@/ui/components/dialog-inutilizar-nfce";
 import { FunctionBar } from "@/ui/components/function-bar";
+import {
+	OverlayProgressoPdv,
+	type TipoOverlayProgressoPdv,
+} from "@/ui/components/overlay-progresso-pdv";
 import { PdvShell } from "@/ui/components/pdv-shell";
 import { Topbar } from "@/ui/components/topbar";
 import { Button } from "@/ui/components/ui/button";
@@ -97,6 +101,12 @@ export function VendasPage() {
 	const [retransmitindoId, setRetransmitindoId] = useState<string | null>(null);
 	const [transmitindoPendentes, setTransmitindoPendentes] = useState(false);
 	const [sincronizandoNfce, setSincronizandoNfce] = useState(false);
+
+	const overlayProgresso: TipoOverlayProgressoPdv | null = sincronizandoNfce
+		? "sincronizar-nfce"
+		: transmitindoPendentes
+			? "transmitir-pendentes"
+			: null;
 	const [inutilizarVendaId, setInutilizarVendaId] = useState<string | null>(
 		null,
 	);
@@ -331,6 +341,7 @@ export function VendasPage() {
 			valortotal: { tipo: "nenhum" },
 			sync_status: { tipo: "opcoes", opcoes: SYNC_OPCOES_FILTRO },
 			nfce_status: { tipo: "opcoes", opcoes: NFCE_OPCOES_FILTRO },
+			nfce_numero: { tipo: "texto", placeholder: "Nº ou série" },
 		};
 	}, []);
 
@@ -429,6 +440,10 @@ export function VendasPage() {
 			}
 			footer={
 				<>
+					<OverlayProgressoPdv
+						aberto={overlayProgresso != null}
+						tipo={overlayProgresso ?? "sincronizar-nfce"}
+					/>
 					<DialogInutilizarNfce
 						aberto={inutilizarVendaId != null}
 						vendaId={inutilizarVendaId}

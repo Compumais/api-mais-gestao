@@ -47,7 +47,8 @@ export function vendaPendenteSincronizacao(venda: {
 	if (
 		venda.nfce_status === "pendente" ||
 		venda.nfce_status === "pendente_contingencia" ||
-		venda.nfce_status === "contingencia"
+		venda.nfce_status === "contingencia" ||
+		venda.nfce_status === "conflito_numeracao"
 	) {
 		return true;
 	}
@@ -61,6 +62,7 @@ export type FiltrosColunaVendasState = {
 	pagamento: string;
 	sync_status: string;
 	nfce_status: string;
+	nfce_numero: string;
 };
 
 export const filtrosColunaVendasVazios: FiltrosColunaVendasState = {
@@ -70,6 +72,7 @@ export const filtrosColunaVendasVazios: FiltrosColunaVendasState = {
 	pagamento: "",
 	sync_status: "",
 	nfce_status: "",
+	nfce_numero: "",
 };
 
 export type CampoFiltroColunaVendas = keyof FiltrosColunaVendasState;
@@ -84,6 +87,7 @@ export const COLUNA_PARA_CAMPO_FILTRO_VENDAS: Record<
 	pagamento: "pagamento",
 	sync_status: "sync_status",
 	nfce_status: "nfce_status",
+	nfce_numero: "nfce_numero",
 };
 
 export const COLUNA_PARA_ORDENAR_VENDAS: Record<string, string> = {
@@ -94,6 +98,7 @@ export const COLUNA_PARA_ORDENAR_VENDAS: Record<string, string> = {
 	valortotal: "valortotal",
 	sync_status: "sync_status",
 	nfce_status: "nfce_status",
+	nfce_numero: "nfce_numero",
 };
 
 export type ConfigFiltroColunaVendas = {
@@ -150,7 +155,8 @@ const DEFINICOES_COLUNAS: DefinicaoColuna[] = [
 	{ id: "pagamento", label: "Pagamento", visivelPadrao: true },
 	{ id: "valortotal", label: "Total", visivelPadrao: true },
 	{ id: "sync_status", label: "Sync", visivelPadrao: true },
-	{ id: "nfce_status", label: "NFC-e", visivelPadrao: true },
+	{ id: "nfce_status", label: "Status NFC-e", visivelPadrao: true },
+	{ id: "nfce_numero", label: "Numeração", visivelPadrao: true },
 	{ id: "acoes", label: "Ações", visivelPadrao: true, enableHiding: false },
 	{
 		id: "expandir",
@@ -343,6 +349,19 @@ export function filtrarVendas(
 				return false;
 			}
 		}
+		if (filtros.nfce_numero.trim()) {
+			const termo = filtros.nfce_numero.trim().toLowerCase();
+			const numero = String(venda.nfce_numero ?? "");
+			const serie = String(venda.nfce_serie ?? "");
+			const rotulo = (rotuloNumeracaoNfce(venda) ?? "").toLowerCase();
+			if (
+				!numero.includes(termo) &&
+				!serie.includes(termo) &&
+				!rotulo.includes(termo)
+			) {
+				return false;
+			}
+		}
 		return true;
 	});
 }
@@ -385,6 +404,10 @@ export function ordenarVendas(
 			case "nfce_status":
 				va = a.nfce_status;
 				vb = b.nfce_status;
+				break;
+			case "nfce_numero":
+				va = Number(a.nfce_numero ?? 0);
+				vb = Number(b.nfce_numero ?? 0);
 				break;
 			default:
 				return 0;
@@ -641,19 +664,24 @@ export function criarColunasVendas(
 					id: "nfce_status",
 					header,
 					meta,
+					cell: ({ row }) => (
+						<Badge variant={badgeNfce(row.original.nfce_status)}>
+							{rotuloNfce(row.original.nfce_status)}
+						</Badge>
+					),
+				});
+				break;
+			case "nfce_numero":
+				colunas.push({
+					id: "nfce_numero",
+					header,
+					meta,
 					cell: ({ row }) => {
 						const numeracao = rotuloNumeracaoNfce(row.original);
-						return (
-							<div className="flex flex-col items-start gap-0.5">
-								<Badge variant={badgeNfce(row.original.nfce_status)}>
-									{rotuloNfce(row.original.nfce_status)}
-								</Badge>
-								{numeracao ? (
-									<span className="font-mono text-xs tabular-nums text-muted-foreground">
-										{numeracao}
-									</span>
-								) : null}
-							</div>
+						return numeracao ? (
+							<span className="font-mono text-sm tabular-nums">{numeracao}</span>
+						) : (
+							<span className="text-sm text-muted-foreground">—</span>
 						);
 					},
 				});

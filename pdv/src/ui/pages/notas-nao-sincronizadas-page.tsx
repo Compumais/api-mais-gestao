@@ -6,6 +6,10 @@ import { type StatusContext } from "@/lib/pdv-types";
 import { money } from "@/lib/utils";
 import { secundarioDesconectado } from "@/ui/components/aviso-secundario";
 import { FunctionBar } from "@/ui/components/function-bar";
+import {
+	OverlayProgressoPdv,
+	type TipoOverlayProgressoPdv,
+} from "@/ui/components/overlay-progresso-pdv";
 import { PdvShell } from "@/ui/components/pdv-shell";
 import { Topbar } from "@/ui/components/topbar";
 import { Badge } from "@/ui/components/ui/badge";
@@ -189,6 +193,12 @@ export function NotasNaoSincronizadasPage() {
 
 	const ocupado = enviando || transmitindo || loading;
 
+	const overlayProgresso: TipoOverlayProgressoPdv | null = transmitindo
+		? "transmitir-pendentes"
+		: enviando
+			? "enviar-retaguarda"
+			: null;
+
 	return (
 		<PdvShell
 			status={status}
@@ -209,43 +219,49 @@ export function NotasNaoSincronizadasPage() {
 				/>
 			}
 			footer={
-				<FunctionBar
-					actions={[
-						{
-							key: "transmitir-pendentes",
-							label: transmitindo
-								? "Transmitindo…"
-								: "Transmitir todas pendentes",
-							variant: "default",
-							onClick: () => void transmitirTodasPendentes(),
-							disabled:
-								ocupado || secundario || secundarioDesconectado(status),
-						},
-						{
-							key: "enviar",
-							label: enviando ? "Enviando…" : "Enviar para retaguarda",
-							hotkey: teclas.sincronizar,
-							variant: "secondary",
-							onClick: () => void enviarParaRetaguarda(),
-							disabled:
-								ocupado || secundario || secundarioDesconectado(status),
-						},
-						{
-							key: "atualizar",
-							label: "Atualizar",
-							variant: "secondary",
-							onClick: () => void load(),
-							disabled: ocupado,
-						},
-						{
-							key: "voltar",
-							label: "Voltar",
-							hotkey: "Escape",
-							variant: "outline",
-							onClick: () => navigate("/vendas"),
-						},
-					]}
-				/>
+				<>
+					<OverlayProgressoPdv
+						aberto={overlayProgresso != null}
+						tipo={overlayProgresso ?? "transmitir-pendentes"}
+					/>
+					<FunctionBar
+						actions={[
+							{
+								key: "transmitir-pendentes",
+								label: transmitindo
+									? "Transmitindo…"
+									: "Transmitir todas pendentes",
+								variant: "default",
+								onClick: () => void transmitirTodasPendentes(),
+								disabled:
+									ocupado || secundario || secundarioDesconectado(status),
+							},
+							{
+								key: "enviar",
+								label: enviando ? "Enviando…" : "Enviar para retaguarda",
+								hotkey: teclas.sincronizar,
+								variant: "secondary",
+								onClick: () => void enviarParaRetaguarda(),
+								disabled:
+									ocupado || secundario || secundarioDesconectado(status),
+							},
+							{
+								key: "atualizar",
+								label: "Atualizar",
+								variant: "secondary",
+								onClick: () => void load(),
+								disabled: ocupado,
+							},
+							{
+								key: "voltar",
+								label: "Voltar",
+								hotkey: "Escape",
+								variant: "outline",
+								onClick: () => navigate("/vendas"),
+							},
+						]}
+					/>
+				</>
 			}
 		>
 			<div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
@@ -276,21 +292,22 @@ export function NotasNaoSincronizadasPage() {
 								<TableHead>Origem</TableHead>
 								<TableHead className="text-right">Total</TableHead>
 								<TableHead>Sync</TableHead>
-								<TableHead>NFC-e</TableHead>
+								<TableHead>Status NFC-e</TableHead>
+								<TableHead>Numeração</TableHead>
 								<TableHead className="text-right">Ações</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
 							{loading ? (
 								<TableRow>
-									<TableCell colSpan={6} className="text-center text-sm">
+									<TableCell colSpan={7} className="text-center text-sm">
 										Carregando…
 									</TableCell>
 								</TableRow>
 							) : vendas.length === 0 ? (
 								<TableRow>
 									<TableCell
-										colSpan={6}
+										colSpan={7}
 										className="text-center text-sm text-muted-foreground"
 									>
 										Nenhuma venda pendente de sincronização.
@@ -316,16 +333,18 @@ export function NotasNaoSincronizadasPage() {
 											</Badge>
 										</TableCell>
 										<TableCell>
-											<div className="flex flex-col items-start gap-0.5">
-												<Badge variant={badgeNfce(venda.nfce_status)}>
-													{rotuloNfce(venda.nfce_status)}
-												</Badge>
-												{numeracao ? (
-													<span className="font-mono text-xs tabular-nums text-muted-foreground">
-														{numeracao}
-													</span>
-												) : null}
-											</div>
+											<Badge variant={badgeNfce(venda.nfce_status)}>
+												{rotuloNfce(venda.nfce_status)}
+											</Badge>
+										</TableCell>
+										<TableCell>
+											{numeracao ? (
+												<span className="font-mono text-sm tabular-nums">
+													{numeracao}
+												</span>
+											) : (
+												<span className="text-sm text-muted-foreground">—</span>
+											)}
 										</TableCell>
 										<TableCell className="text-right">
 											{venda.nfce_status === "conflito_numeracao" &&
