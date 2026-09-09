@@ -23,6 +23,7 @@ import {
 	hierarquia,
 	ncm,
 	produtos,
+	saldoestoque,
 } from "@/repositories/schema.js";
 import { filtroRegistroAtivo } from "@/util/filtro-registro-ativo.js";
 import { inteiroValidoParaPostgres } from "@/util/texto-util.js";
@@ -45,6 +46,9 @@ export const ORDENAR_PRODUTOS_CAMPOS = [
 	"datacadastro",
 	"codigolistalc11603",
 	"codigonbs",
+	"quantidade",
+	"quantidadefiscal",
+	"divergencia",
 ] as const;
 
 export type OrdenarProdutosCampo = (typeof ORDENAR_PRODUTOS_CAMPOS)[number];
@@ -65,6 +69,67 @@ const COLUNAS_ORDENACAO = {
 	codigolistalc11603: produtos.codigolistalc11603,
 	codigonbs: produtos.codigonbs,
 } as const;
+
+const expressaoDivergencia = sql`(
+	COALESCE(${saldoestoque.quantidade}::numeric, 0)
+	- COALESCE(${saldoestoque.quantidadefiscal}::numeric, 0)
+)`;
+
+function joinSaldoPorProduto() {
+	return and(
+		eq(saldoestoque.idempresa, produtos.idempresa),
+		eq(saldoestoque.codigoproduto, sql`${produtos.codigo}::text`),
+	);
+}
+
+function calcularDivergencia(
+	operacional: string | null | undefined,
+	fiscal: string | null | undefined,
+): string {
+	const op = Number.parseFloat(operacional ?? "0");
+	const fi = Number.parseFloat(fiscal ?? "0");
+	if (Number.isNaN(op) || Number.isNaN(fi)) return "0";
+	return (op - fi).toFixed(6);
+}
+
+function montarOrdenacaoProdutos(
+	ordenarPor: OrdenarProdutosCampo | undefined,
+	ordem: "asc" | "desc" = "asc",
+) {
+	if (!ordenarPor) {
+		return ordenacaoCodigoNumericoAsc(produtos.codigo);
+	}
+
+	if (ordenarPor === "quantidade") {
+		return ordem === "desc"
+			? desc(saldoestoque.quantidade)
+			: asc(saldoestoque.quantidade);
+	}
+	if (ordenarPor === "quantidadefiscal") {
+		return ordem === "desc"
+			? desc(saldoestoque.quantidadefiscal)
+			: asc(saldoestoque.quantidadefiscal);
+	}
+	if (ordenarPor === "divergencia") {
+		return ordem === "desc"
+			? sql`${expressaoDivergencia} DESC NULLS LAST`
+			: sql`${expressaoDivergencia} ASC NULLS LAST`;
+	}
+
+	const coluna =
+		COLUNAS_ORDENACAO[ordenarPor as keyof typeof COLUNAS_ORDENACAO];
+	if (!coluna) {
+		return ordenacaoCodigoNumericoAsc(produtos.codigo);
+	}
+	return ordem === "desc" ? desc(coluna) : asc(coluna);
+}
+
+export type ProdutoListagem = Produto & {
+	quantidade: string;
+	quantidadefiscal: string;
+	divergencia: string;
+	possuiSaldo: boolean;
+};
 
 function adicionarFiltroTexto(
 	where: SQL[],
@@ -117,6 +182,7 @@ export type ListarProdutosPorEmpresaParametros = {
 	datacadastro?: string | undefined;
 	codigolistalc11603?: string | undefined;
 	codigonbs?: string | undefined;
+	somenteDivergencia?: boolean | undefined;
 	ordenarPor?: OrdenarProdutosCampo | undefined;
 	ordem?: "asc" | "desc" | undefined;
 	page?: number;
@@ -141,6 +207,7 @@ export async function listarProdutosPorEmpresa({
 	datacadastro,
 	codigolistalc11603,
 	codigonbs,
+	somenteDivergencia,
 	ordenarPor,
 	ordem = "asc",
 	page = 1,
@@ -201,28 +268,50 @@ export async function listarProdutosPorEmpresa({
 		if (condicao) where.push(condicao);
 	}
 
+	if (somenteDivergencia === true) {
+		where.push(sql`${expressaoDivergencia} <> 0`);
+	} else if (somenteDivergencia === false) {
+		where.push(sql`${expressaoDivergencia} = 0`);
+	}
+
 	const offset = (page - 1) * limit;
+	const ordenacao = montarOrdenacaoProdutos(ordenarPor, ordem);
+	const joinSaldo = joinSaldoPorProduto();
 
-	const ordenacao =
-		ordenarPor && COLUNAS_ORDENACAO[ordenarPor]
-			? ordem === "desc"
-				? desc(COLUNAS_ORDENACAO[ordenarPor])
-				: asc(COLUNAS_ORDENACAO[ordenarPor])
-			: ordenacaoCodigoNumericoAsc(produtos.codigo);
-
-	const [totalCount, produtosListagem] = await Promise.all([
+	const [totalCount, rows] = await Promise.all([
 		db
 			.select({ value: count() })
 			.from(produtos)
+			.leftJoin(saldoestoque, joinSaldo)
 			.where(and(...where)),
 		db
-			.select()
+			.select({
+				...getTableColumns(produtos),
+				idsaldo: saldoestoque.id,
+				quantidadeSaldo: saldoestoque.quantidade,
+				quantidadefiscalSaldo: saldoestoque.quantidadefiscal,
+			})
 			.from(produtos)
+			.leftJoin(saldoestoque, joinSaldo)
 			.where(and(...where))
 			.orderBy(ordenacao)
 			.limit(limit)
 			.offset(offset),
 	]);
+
+	const produtosListagem: ProdutoListagem[] = rows.map((row) => {
+		const { idsaldo, quantidadeSaldo, quantidadefiscalSaldo, ...produto } = row;
+		const quantidade = quantidadeSaldo ?? "0";
+		const quantidadefiscal = quantidadefiscalSaldo ?? "0";
+
+		return {
+			...produto,
+			quantidade,
+			quantidadefiscal,
+			divergencia: calcularDivergencia(quantidade, quantidadefiscal),
+			possuiSaldo: idsaldo != null,
+		};
+	});
 
 	return {
 		produtos: produtosListagem,

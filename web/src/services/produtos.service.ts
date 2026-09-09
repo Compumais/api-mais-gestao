@@ -89,6 +89,10 @@ export interface Produto {
 	aliquotapisconfinssaidapreco?: string | null;
 	aliquotaiibs?: string | null;
 	aliquotacbs?: string | null;
+	quantidade?: string | null;
+	quantidadefiscal?: string | null;
+	divergencia?: string | null;
+	possuiSaldo?: boolean;
 }
 
 export interface ListarProdutosResponse {
@@ -320,6 +324,7 @@ export const produtosService = {
 		datacadastro?: string;
 		codigolistalc11603?: string;
 		codigonbs?: string;
+		somenteDivergencia?: boolean;
 		ordenarPor?: string;
 		ordem?: "asc" | "desc";
 	}): Promise<ListarProdutosResponse> {

@@ -119,7 +119,19 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 		url: "/produtos",
 		category: "Cadastros",
 		icon: IconListDetails,
-		keywords: ["produto", "produtos", "item", "catálogo", "catalogo"],
+		keywords: [
+			"produto",
+			"produtos",
+			"item",
+			"catálogo",
+			"catalogo",
+			"estoque",
+			"saldo",
+			"posição",
+			"posicao",
+			"inventário",
+			"inventario",
+		],
 	},
 	{
 		title: "Serviços",
@@ -198,7 +210,7 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 	// Estoque
 	{
 		title: "Posição de estoque",
-		url: "/estoque",
+		url: "/produtos",
 		category: "Estoque",
 		icon: IconPackage,
 		keywords: [
