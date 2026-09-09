@@ -2,10 +2,10 @@
 
 import { IconArrowRight, IconFileText, IconSearch } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
-import dayjs from "dayjs";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
+import { formatDataCivilBrasilia } from "@/lib/date";
 import {
 	ajudaService,
 	type AjudaPostPublico,
@@ -58,7 +58,7 @@ function PostCard({ post }: { post: AjudaPostPublico }) {
 				)}
 				<div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
 					<span>{post.autorNome || "Equipe Mais Gestão"}</span>
-					<span>{dayjs(post.atualizadoem).format("DD/MM/YYYY")}</span>
+					<span>{formatDataCivilBrasilia(post.atualizadoem)}</span>
 				</div>
 			</div>
 		</Link>
@@ -76,7 +76,7 @@ function PopularCard({ post }: { post: AjudaPostPublico }) {
 					{post.autorNome || "Ajuda"}
 				</span>
 				<span className="text-xs text-muted-foreground">
-					{dayjs(post.atualizadoem).format("DD/MM/YYYY")}
+					{formatDataCivilBrasilia(post.atualizadoem)}
 				</span>
 			</div>
 			<h3 className="mb-2 font-medium leading-snug text-card-foreground group-hover:text-primary">

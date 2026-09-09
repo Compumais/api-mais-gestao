@@ -9,6 +9,7 @@ import {
 } from "@/components/cabecalho-coluna-tabela";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { formatDataCivilBrasilia } from "@/lib/date";
 import type { NotaFiscal } from "@/services/nota-fiscal.service";
 
 const STATUS_CONFIRMADA = 1;
@@ -115,7 +116,7 @@ function formatCurrency(value: string | null | undefined) {
 
 function formatDate(date: string | null | undefined) {
 	if (!date) return "-";
-	return new Date(date).toLocaleDateString("pt-BR");
+	return formatDataCivilBrasilia(date);
 }
 
 function statusBadge(status: number | null | undefined) {

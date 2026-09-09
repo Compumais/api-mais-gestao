@@ -56,6 +56,7 @@ import {
 	pedidoPodeFaturarNfe,
 } from "@/constants/dav-status";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { formatDataCivilBrasilia } from "@/lib/date";
 import { davService, type PedidoDav } from "@/services/dav.service";
 import { entidadesService } from "@/services/entidades.service";
 import { PageContainer } from "../components/page-container";
@@ -70,11 +71,7 @@ const formatarMoeda = (valor: string | null | undefined) => {
 
 const formatarData = (data: string | null | undefined) => {
 	if (!data) return "—";
-	try {
-		return new Date(data).toLocaleDateString("pt-BR");
-	} catch {
-		return data;
-	}
+	return formatDataCivilBrasilia(data);
 };
 
 function obterStatusPedido(pedido: PedidoDav) {

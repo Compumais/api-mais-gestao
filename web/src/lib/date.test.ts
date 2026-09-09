@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
 	adicionarDiasIso,
+	anoMesBrasilia,
 	extractDateOnly,
+	formatDataCivilBrasilia,
+	formatDateCurtaBrasilia,
 	formatDateOnlyDisplay,
 	formatDateOnlyForInput,
 	formatDateTimeBrasilia,
-	anoMesBrasilia,
 	hojeBrasiliaIsoDate,
 	inicioFimMesBrasilia,
 } from "./date";
@@ -98,5 +100,23 @@ describe("calendário civil de Brasília", () => {
 			mes: 9,
 			trimestre: 3,
 		});
+	});
+});
+
+describe("formatDataCivilBrasilia", () => {
+	it("não desloca YYYY-MM-DD", () => {
+		expect(formatDataCivilBrasilia("2026-09-05")).toBe("05/09/2026");
+	});
+
+	it("converte instante UTC para o dia civil de Brasília", () => {
+		expect(formatDataCivilBrasilia("2026-09-05T01:50:00.000Z")).toBe(
+			"04/09/2026",
+		);
+	});
+});
+
+describe("formatDateCurtaBrasilia", () => {
+	it("abrevia date-only sem conversão", () => {
+		expect(formatDateCurtaBrasilia("2026-09-05")).toBe("05/09");
 	});
 });

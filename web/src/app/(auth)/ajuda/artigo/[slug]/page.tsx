@@ -2,10 +2,10 @@
 
 import { IconArrowLeft, IconArrowRight } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
-import dayjs from "dayjs";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { MarkdownContent } from "@/components/markdown-content";
+import { formatDataCivilBrasilia } from "@/lib/date";
 import { ajudaService } from "@/services/ajuda.service";
 import Image from "next/image"
 
@@ -65,7 +65,7 @@ export default function ArticlePage() {
 					<span>Por {post.autorNome || "Equipe Mais Gestão"}</span>
 					<span aria-hidden="true">•</span>
 					<span>
-						Atualizado em {dayjs(post.atualizadoem).format("DD/MM/YYYY")}
+						Atualizado em {formatDataCivilBrasilia(post.atualizadoem)}
 					</span>
 				</div>
 

@@ -67,6 +67,32 @@ function timestampNaiveUtc(instante: Date): string {
 	return instante.toISOString().replace("T", " ").replace("Z", "");
 }
 
+const TEM_OFFSET = /(?:Z|[+-]\d{2}:?\d{2})$/i;
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Serializa timestamp naive da API (UTC no banco) como ISO com `Z`,
+ * para o cliente não interpretar o relógio como horário local.
+ */
+export function timestampUtcIso(value?: string | Date | null): string | null {
+	if (value instanceof Date) {
+		return Number.isNaN(value.getTime()) ? null : value.toISOString();
+	}
+	if (!value) return null;
+	const raw = value.trim();
+	if (!raw) return null;
+	if (DATE_ONLY_PATTERN.test(raw)) return raw;
+
+	if (TEM_OFFSET.test(raw)) {
+		const comOffset = new Date(raw);
+		return Number.isNaN(comOffset.getTime()) ? null : comOffset.toISOString();
+	}
+
+	const iso = raw.includes("T") ? raw : raw.replace(" ", "T");
+	const comoUtc = new Date(iso.endsWith("Z") ? iso : `${iso}Z`);
+	return Number.isNaN(comoUtc.getTime()) ? null : comoUtc.toISOString();
+}
+
 /**
  * Limites UTC do período civil em Brasília: do 00:00 do início (inclusive)
  * até o 00:00 do dia seguinte ao fim (exclusive).

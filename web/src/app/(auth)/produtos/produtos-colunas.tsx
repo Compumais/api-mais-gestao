@@ -6,6 +6,7 @@ import {
 	type OrdenacaoColunaTabela,
 	type TipoFiltroColunaTabela,
 } from "@/components/cabecalho-coluna-tabela";
+import { formatDataCivilBrasilia } from "@/lib/date";
 import type { Produto } from "@/services/produtos.service";
 
 export type FiltrosColunaProdutosState = {
@@ -120,9 +121,7 @@ function formatarPreco(preco: string | null | undefined) {
 
 function formatarDataCadastro(valor: string | null | undefined) {
 	if (!valor) return "-";
-	const data = new Date(valor);
-	if (Number.isNaN(data.getTime())) return valor;
-	return new Intl.DateTimeFormat("pt-BR").format(data);
+	return formatDataCivilBrasilia(valor);
 }
 
 export type OpcoesColunasProdutos = {
