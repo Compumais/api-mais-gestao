@@ -25,7 +25,8 @@ const XML_DANFCE = `<?xml version="1.0" encoding="UTF-8"?>
       </ide>
       <emit>
         <CNPJ>10579611000190</CNPJ>
-        <xNome>COMPUMAIS</xNome>
+        <xNome>COMPUMAIS INFORMATICA LTDA</xNome>
+        <xFant>COMPUMAIS</xFant>
         <IE>0011058410008</IE>
         <CRT>1</CRT>
         <enderEmit>
@@ -34,6 +35,7 @@ const XML_DANFCE = `<?xml version="1.0" encoding="UTF-8"?>
           <xBairro>CENTRO</xBairro>
           <xMun>SACRAMENTO</xMun>
           <UF>MG</UF>
+          <CEP>38190000</CEP>
           <fone>3433511861</fone>
         </enderEmit>
       </emit>
@@ -63,7 +65,10 @@ const XML_DANFCE = `<?xml version="1.0" encoding="UTF-8"?>
           <vProd>20.00</vProd>
           <vDesc>0.00</vDesc>
           <vFrete>0.00</vFrete>
+          <vSeg>0.00</vSeg>
+          <vOutro>0.00</vOutro>
           <vNF>20.00</vNF>
+          <vTotTrib>1.23</vTotTrib>
         </ICMSTot>
       </total>
       <pag>
@@ -93,13 +98,17 @@ const XML_DANFCE = `<?xml version="1.0" encoding="UTF-8"?>
 describe("DANFE NFC-e", () => {
 	it("parseia XML autorizado no layout do cupom térmico", () => {
 		const dados = parseXmlDanfce(XML_DANFCE);
-		assert.equal(dados.emitente?.nome, "COMPUMAIS");
+		assert.equal(dados.emitente?.nome, "COMPUMAIS INFORMATICA LTDA");
+		assert.equal(dados.emitente?.fantasia, "COMPUMAIS");
 		assert.equal(dados.emitente?.cnpj, "10579611000190");
+		assert.equal(dados.emitente?.cep, "38190000");
 		assert.equal(dados.homologacao, true);
 		assert.equal(dados.contingencia, false);
 		assert.equal(dados.itens?.[0]?.codigo, "000001");
+		assert.equal(dados.itens?.[0]?.nItem, 1);
 		assert.equal(dados.valorPagar, 20);
-		assert.equal(dados.pagamentos?.[0]?.tipo, "CARTÃO DE CRÉDITO");
+		assert.equal(dados.vTotTrib, 1.23);
+		assert.equal(dados.pagamentos?.[0]?.tipo, "CARTAO DE CREDITO");
 		assert.equal(dados.numero, 102);
 		assert.equal(dados.serie, 10);
 		assert.equal(dados.protocolo, "131260000777040");
@@ -111,29 +120,37 @@ describe("DANFE NFC-e", () => {
 		const dados = juntarDadosDanfce(parseXmlDanfce(XML_DANFCE), {});
 		const texto = montarTextoDanfce(dados);
 		assert.match(texto, /COMPUMAIS/);
+		assert.match(texto, /COMPUMAIS INFORMATICA LTDA/);
 		assert.match(texto, /CNPJ: 10\.579\.611\/0001-90/);
 		assert.match(texto, /IE: 0011058410008/);
-		assert.match(texto, /SACRAMENTO-MG/);
+		assert.match(texto, /SACRAMENTO\/MG/);
+		assert.match(texto, /CEP 38190-000/);
 		assert.match(texto, /Fone: \(34\) 3351-1861/);
-		assert.match(texto, /Documento Auxiliar da Nota Fiscal de Consumidor/);
-		assert.match(texto, /Eletronica/);
-		assert.match(texto, /Não permite aproveitamento de crédito de ICMS/);
+		assert.match(texto, /DANFE NFC-e/);
+		assert.match(texto, /Documento Auxiliar da Nota Fiscal/);
+		assert.match(texto, /Consumidor Eletronica/);
+		assert.match(texto, /Nao permite aproveitamento de credito de ICMS/);
 		assert.match(texto, /SEM VALOR FISCAL/);
-		assert.match(texto, /Codigo Descricao/);
+		assert.match(texto, /# CODIGO DESCRICAO/);
 		assert.match(texto, /000001/);
-		assert.match(texto, /Valor a Pagar R\$/);
-		assert.match(texto, /FORMA PAGAMENTO/);
-		assert.match(texto, /CARTÃO DE CRÉDITO/);
-		assert.match(texto, /Consulte pela Chave de Acesso em:/);
+		assert.doesNotMatch(texto, /Desconto R\$/);
+		assert.doesNotMatch(texto, /Frete R\$/);
+		assert.match(texto, /Valor a pagar R\$/);
+		assert.match(texto, /FORMA DE PAGAMENTO/);
+		assert.match(texto, /CARTAO DE CREDITO/);
+		assert.match(texto, /Consulte pela Chave de Acesso em/);
 		assert.match(texto, /hportalsped\.fazenda\.mg\.gov\.br\/portalnfce/);
 		assert.match(texto, /3126 0810 5796 1100 0190 6501/);
 		assert.match(texto, /4949 7532/);
-		assert.match(texto, /CONSUMIDOR - CNPJ 99\.999\.999\/0001-91/);
-		assert.match(texto, /NFCe n\. 000000102 Série 010/);
-		assert.match(texto, /Protocolo de Autorização: 131 2600007770 40/);
-		assert.match(texto, /Data de Autorização: 18\/08\/2026 14:17:14/);
+		assert.match(texto, /CONSUMIDOR/);
+		assert.match(texto, /CNPJ: 99\.999\.999\/0001-91/);
+		assert.match(texto, /NFC-e n\. 000000102  Serie 010/);
+		assert.match(texto, /Protocolo de autorizacao:/);
+		assert.match(texto, /131 2600007770 40/);
+		assert.match(texto, /18\/08\/2026 14:17:14/);
 		assert.match(texto, /Lei Federal/);
 		assert.match(texto, /12\.741\/2012/);
+		assert.match(texto, /R\$ 1,23/);
 		assert.match(texto, /SIMPLES NACIONAL/);
 		assert.ok(texto.includes(MARCADOR_QR_DANFCE));
 	});
@@ -150,12 +167,9 @@ describe("DANFE NFC-e", () => {
 		);
 	});
 
-	it("mapeia tPag 03 para CARTÃO DE CRÉDITO", () => {
-		assert.equal(rotuloFormaPagamentoNfce("03"), "CARTÃO DE CRÉDITO");
-		assert.equal(
-			rotuloFormaPagamentoNfce(17),
-			"PAGAMENTO INSTANTÂNEO (PIX) - DINÂMICO",
-		);
+	it("mapeia tPag 03 para CARTAO DE CREDITO e 17 para PIX", () => {
+		assert.equal(rotuloFormaPagamentoNfce("03"), "CARTAO DE CREDITO");
+		assert.equal(rotuloFormaPagamentoNfce(17), "PIX");
 	});
 
 	it("usa fallback da venda quando o XML de contingência é incompleto", () => {
@@ -192,8 +206,8 @@ describe("DANFE NFC-e", () => {
 			pendenteAutorizacao: true,
 		});
 		const texto = montarTextoDanfce(dados);
-		assert.match(texto, /EMITIDA EM CONTINGÊNCIA/);
-		assert.match(texto, /Pendente de autorização/);
+		assert.match(texto, /EMITIDA EM CONTINGENCIA/);
+		assert.match(texto, /Pendente de autorizacao/);
 		assert.match(texto, /COMPUMAIS/);
 	});
 
@@ -234,9 +248,10 @@ describe("DANFE NFC-e", () => {
 	it("gera HTML com QR e destaque do valor a pagar", () => {
 		const dados = juntarDadosDanfce(parseXmlDanfce(XML_DANFCE), {});
 		const html = montarHtmlDanfce(dados, "<svg></svg>");
-		assert.match(html, /Valor a Pagar/);
+		assert.match(html, /Valor a pagar/);
 		assert.match(html, /data:image\/svg\+xml/);
-		assert.match(html, /CARTÃO DE CRÉDITO/);
+		assert.match(html, /CARTAO DE CREDITO/);
+		assert.match(html, /<pre>/);
 	});
 
 	it("gera SVG de QR Code a partir da URL da NFC-e", () => {
