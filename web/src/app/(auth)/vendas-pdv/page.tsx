@@ -44,7 +44,6 @@ import {
 import { formatDateTimeBrasilia } from "@/lib/date";
 import { formatCurrency } from "@/lib/gourmet-utils";
 import { produtosService } from "@/services/produtos.service";
-import { usuariosService } from "@/services/usuarios.service";
 import type { VendaPdvGourmet } from "@/services/venda-pdv-gourmet.service";
 import { vendaPdvGourmetService } from "@/services/venda-pdv-gourmet.service";
 import type { VendaPdvItem } from "@/services/venda-pdv-item.service";
@@ -98,15 +97,8 @@ function nomeVisivelOperador(valor?: string | null): string | null {
 	return nome;
 }
 
-function nomeOperador(
-	venda: VendaPdvGourmet,
-	usuariosPorId: Record<string, string>,
-): string {
-	return (
-		nomeVisivelOperador(venda.operadorNome) ??
-		nomeVisivelOperador(usuariosPorId[venda.usuarioquefechouvenda]) ??
-		"—"
-	);
+function nomeOperador(venda: VendaPdvGourmet): string {
+	return nomeVisivelOperador(venda.operadorNome) ?? "—";
 }
 
 function documentoVenda(venda: VendaPdvGourmet): "fiscal" | "gerencial" {
@@ -143,14 +135,12 @@ function ItensVendaDialog({
 	open,
 	onOpenChange,
 	produtosPorId,
-	usuariosPorId,
 }: {
 	venda: VendaPdvGourmet | null;
 	idempresa: string;
 	open: boolean;
 	onOpenChange: (v: boolean) => void;
 	produtosPorId: Record<string, string>;
-	usuariosPorId: Record<string, string>;
 }) {
 	const { data, isLoading } = useQuery({
 		queryKey: ["vendas-pdv-item", venda?.id, idempresa],
@@ -177,11 +167,10 @@ function ItensVendaDialog({
 					<DialogDescription>
 						{venda && formatDateTimeBrasilia(venda.datacriacao)}{" "}
 						— {venda && tipoVenda(venda)}
-						{venda && nomeOperador(venda, usuariosPorId) !== "—" && (
+						{venda && nomeOperador(venda) !== "—" && (
 							<>
 								{" "}
-								• Operador:{" "}
-								<strong>{nomeOperador(venda, usuariosPorId)}</strong>
+								• Operador: <strong>{nomeOperador(venda)}</strong>
 							</>
 						)}
 					</DialogDescription>
@@ -309,30 +298,6 @@ export default function VendasPdvPage() {
 		enabled: !!empresa,
 	});
 
-	const precisaResolverOperadores = useMemo(
-		() =>
-			(data?.data ?? []).some(
-				(venda) => !nomeVisivelOperador(venda.operadorNome),
-			),
-		[data],
-	);
-
-	const { data: usuariosData } = useQuery({
-		queryKey: ["usuarios-lista-operadores", empresa?.id],
-		queryFn: () => usuariosService.listarTodos({ idempresa: empresa!.id }),
-		enabled: !!empresa && precisaResolverOperadores,
-		staleTime: 60_000,
-	});
-
-	const usuariosPorId = useMemo(() => {
-		const map: Record<string, string> = {};
-		for (const usuario of usuariosData ?? []) {
-			const nome = nomeVisivelOperador(usuario.nome);
-			if (nome) map[usuario.id] = nome;
-		}
-		return map;
-	}, [usuariosData]);
-
 	// ── handlers ───────────────────────────────────────────────────────────────
 
 	const handleAplicarFiltros = () => {
@@ -409,7 +374,7 @@ export default function VendasPdvPage() {
 			header: "Operador",
 			cell: ({ row }) => (
 				<span className="block max-w-[180px] truncate text-sm">
-					{nomeOperador(row.original, usuariosPorId)}
+					{nomeOperador(row.original)}
 				</span>
 			),
 		},
@@ -693,7 +658,6 @@ export default function VendasPdvPage() {
 					open={dialogItensAberto}
 					onOpenChange={setDialogItensAberto}
 					produtosPorId={produtosPorId}
-					usuariosPorId={usuariosPorId}
 				/>
 			)}
 
