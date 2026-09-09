@@ -77,6 +77,21 @@ export function inicioFimMesBrasilia(agora: Date = new Date()): {
 	return inicioFimMesDe(hojeBrasiliaIsoDate(agora));
 }
 
+/** Ano, mês e trimestre civis atuais em Brasília. */
+export function anoMesBrasilia(agora: Date = new Date()): {
+	ano: number;
+	mes: number;
+	trimestre: number;
+} {
+	const [ano, mes] = hojeBrasiliaIsoDate(agora).split("-").map(Number);
+	const mesAtual = mes ?? 1;
+	return {
+		ano: ano ?? 0,
+		mes: mesAtual,
+		trimestre: Math.floor((mesAtual - 1) / 3) + 1,
+	};
+}
+
 /** Extrai a parte YYYY-MM-DD de uma string de data (com ou sem hora). */
 export function extractDateOnly(value?: string | null): string | null {
 	if (!value) return null;

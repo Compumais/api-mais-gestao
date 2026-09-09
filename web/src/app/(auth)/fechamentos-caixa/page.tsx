@@ -153,7 +153,7 @@ export default function FechamentosCaixaPage() {
 		},
 		{
 			accessorKey: "datacriacao",
-			header: "Data / Hora",
+			header: "Data / Hora (Brasília)",
 			cell: ({ row }) => {
 				const val =
 					(row.getValue("datacriacao") as string | null) ??

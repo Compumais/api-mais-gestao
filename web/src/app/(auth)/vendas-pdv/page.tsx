@@ -350,7 +350,7 @@ export default function VendasPdvPage() {
 		},
 		{
 			accessorKey: "datacriacao",
-			header: "Data / Hora",
+			header: "Data / Hora (Brasília)",
 			cell: ({ row }) => {
 				const val = row.getValue("datacriacao") as string | null;
 				if (!val) return <span className="text-muted-foreground">—</span>;
@@ -478,7 +478,13 @@ export default function VendasPdvPage() {
 			<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
 				{/* cabeçalho */}
 				<div className="flex items-center justify-between px-4">
-					<h1 className="text-2xl font-bold">Histórico de vendas PDV</h1>
+					<div className="space-y-1">
+						<h1 className="text-2xl font-bold">Histórico de vendas PDV</h1>
+						<p className="text-sm text-muted-foreground">
+							Operador pelo nome, pagamento, fiscal ou gerencial e NFC-e.
+							Horários em Brasília (GMT-3).
+						</p>
+					</div>
 					{comFiltros && (
 						<Badge variant="secondary" className="gap-1">
 							<IconFilter className="size-3" />
@@ -559,7 +565,7 @@ export default function VendasPdvPage() {
 					) : isLoading ? (
 						<TableSkeleton rows={10} columns={8}>
 							<TableHead>Nº PDV</TableHead>
-							<TableHead>Data / Hora</TableHead>
+							<TableHead>Data / Hora (Brasília)</TableHead>
 							<TableHead>Tipo</TableHead>
 							<TableHead>Operador</TableHead>
 							<TableHead>Pagamento</TableHead>
