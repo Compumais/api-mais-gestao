@@ -1,10 +1,13 @@
 "use client";
 
-import { IconSparkles } from "@tabler/icons-react";
+import { IconPrinter, IconSparkles } from "@tabler/icons-react";
 import Link from "next/link";
+import { useId, useState } from "react";
+import { toast } from "sonner";
 import { CardErroNfe } from "@/app/(auth)/nota-fiscal-venda/components/card-erro-nfe";
 import { StatusNfeBadge } from "@/app/(auth)/nota-fiscal-venda/components/status-nfe-badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
@@ -21,13 +24,17 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { NFE_AMBIENTE_LABELS } from "@/constants/nfe-status";
+import {
+	NFE_AMBIENTE_LABELS,
+	statusEhAutorizada,
+} from "@/constants/nfe-status";
 import { formatDateTimeBrasilia } from "@/lib/date";
 import { formatCurrency } from "@/lib/gourmet-utils";
 import type {
 	DetalhesNfce,
 	InterpretacaoRejeicaoNfce,
 } from "@/services/nfce.service";
+import { abrirDanfeNfe } from "@/services/nfe-emissao.service";
 
 export type DialogDetalhesNfceProps = {
 	open: boolean;
@@ -162,20 +169,56 @@ export function DialogDetalhesNfce({
 	carregandoInterpretacao,
 	erroInterpretacao,
 }: DialogDetalhesNfceProps) {
+	const [abrindoDanfe, setAbrindoDanfe] = useState(false);
+	const descricaoId = useId();
 	const nota = detalhes?.nota;
 	const dataEmissao = nota?.datahoraemissao ?? nota?.emissao;
+	const podeDanfe = statusEhAutorizada(nota?.status);
+
+	const handleAbrirDanfe = async () => {
+		if (!nota?.idnotafiscal) return;
+		setAbrindoDanfe(true);
+		try {
+			await abrirDanfeNfe(nota.idnotafiscal);
+		} catch (erroDanfe) {
+			toast.error(
+				erroDanfe instanceof Error
+					? erroDanfe.message
+					: "Não foi possível abrir o DANFC-e.",
+			);
+		} finally {
+			setAbrindoDanfe(false);
+		}
+	};
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent
 				className="flex max-h-[90vh] flex-col overflow-y-auto sm:max-w-3xl"
-				aria-describedby="detalhes-nfce-descricao"
+				aria-describedby={descricaoId}
 			>
 				<DialogHeader>
-					<DialogTitle className="text-lg">Detalhes da NFC-e</DialogTitle>
-					<DialogDescription id="detalhes-nfce-descricao">
-						Itens, meios de pagamento e rejeição SEFAZ, quando houver.
-					</DialogDescription>
+					<div className="flex flex-wrap items-start justify-between gap-3">
+						<div className="space-y-1">
+							<DialogTitle className="text-lg">Detalhes da NFC-e</DialogTitle>
+							<DialogDescription id={descricaoId}>
+								Itens, meios de pagamento e rejeição SEFAZ, quando houver.
+							</DialogDescription>
+						</div>
+						{podeDanfe ? (
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								className="gap-1.5"
+								disabled={abrindoDanfe}
+								onClick={() => void handleAbrirDanfe()}
+							>
+								<IconPrinter className="size-4" aria-hidden="true" />
+								{abrindoDanfe ? "Abrindo…" : "DANFC-e"}
+							</Button>
+						) : null}
+					</div>
 				</DialogHeader>
 
 				{carregando ? (
@@ -211,9 +254,7 @@ export function DialogDetalhesNfce({
 							<div>
 								<p className="text-xs text-muted-foreground">Emissão</p>
 								<p className="text-sm">
-									{dataEmissao
-										? formatDateTimeBrasilia(dataEmissao)
-										: "—"}
+									{dataEmissao ? formatDateTimeBrasilia(dataEmissao) : "—"}
 								</p>
 							</div>
 							<div>

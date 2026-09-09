@@ -3,6 +3,7 @@ import type { VendaPdvGourmet } from "@/model/venda-pdv-gourmet-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { listarVendasPdvGourmet } from "@/repositories/venda-pdv-gourmet-repositories.js";
 import { listarVendaPdvPagamentosPorVendas } from "@/repositories/venda-pdv-pagamento-repositories.js";
+import { timestampUtcIso } from "@/util/data-hora-brasilia.js";
 import {
 	type DocumentoVendaPdv,
 	documentoHistoricoVendaPdv,
@@ -92,6 +93,9 @@ export async function listarVendasPdvGourmetService({
 		const { operadorEmail, ...vendaListagem } = venda;
 		return {
 			...vendaListagem,
+			datacriacao: timestampUtcIso(venda.datacriacao) ?? venda.datacriacao,
+			dataalteracao:
+				timestampUtcIso(venda.dataalteracao) ?? venda.dataalteracao,
 			operadorNome: nomeOperadorHistoricoVendaPdv({
 				nome: venda.operadorNome,
 				email: operadorEmail,

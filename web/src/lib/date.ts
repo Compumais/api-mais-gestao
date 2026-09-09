@@ -136,6 +136,26 @@ export function dataCivilBrasiliaIso(
 	return hojeBrasiliaIsoDate(instant);
 }
 
+/** Dia civil em Brasília como DD/MM/YYYY (date-only sem conversão). */
+export function formatDataCivilBrasilia(value?: string | Date | null): string {
+	if (typeof value === "string" && DATE_ONLY_PATTERN.test(value.trim())) {
+		return formatDateOnlyDisplay(value.trim());
+	}
+	const iso = dataCivilBrasiliaIso(value);
+	return iso ? formatDateOnlyDisplay(iso) : value ? String(value) : "-";
+}
+
+/** DD/MM para eixos de gráfico (date-only sem conversão). */
+export function formatDateCurtaBrasilia(value?: string | Date | null): string {
+	const iso =
+		typeof value === "string" && DATE_ONLY_PATTERN.test(value.trim())
+			? value.trim()
+			: dataCivilBrasiliaIso(value);
+	if (!iso) return "—";
+	const [, mes, dia] = iso.split("-");
+	return `${dia}/${mes}`;
+}
+
 /** Exibe instante UTC da API no relógio de Brasília. */
 export function formatDateTimeBrasilia(
 	value?: string | Date | null,

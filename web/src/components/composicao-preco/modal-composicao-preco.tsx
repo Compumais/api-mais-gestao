@@ -31,6 +31,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { formatDataCivilBrasilia } from "@/lib/date";
 import { custoProdutoService } from "@/services/custo-produto.service";
 import {
 	calcularComposicaoPreco,
@@ -133,7 +134,7 @@ function formatarMoeda(valor: string | number | null | undefined): string {
 
 function formatarDataHistorico(data: string | null | undefined): string {
 	if (!data) return "—";
-	return new Date(data).toLocaleDateString("pt-BR");
+	return formatDataCivilBrasilia(data);
 }
 
 export type ModalComposicaoPrecoProps = {

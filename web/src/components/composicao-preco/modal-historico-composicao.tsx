@@ -19,6 +19,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { formatDataCivilBrasilia } from "@/lib/date";
 import {
 	type EntradaHistoricoComposicao,
 	custoProdutoService,
@@ -48,7 +49,7 @@ function formatarMoeda(valor: string | number | null | undefined): string {
 
 function formatarData(data: string | null | undefined): string {
 	if (!data) return "—";
-	return new Date(data).toLocaleDateString("pt-BR");
+	return formatDataCivilBrasilia(data);
 }
 
 function obterLabelOrigem(origem: number | null): string {

@@ -11,6 +11,7 @@ export interface FechamentoCaixa {
 	falta: string | null;
 	idoperacao: number | null;
 	idusuario: string | null;
+	operadorNome?: string | null;
 	idusuariofechamento: string | null;
 	idusuariosuprimento: string | null;
 	local: number | null;
@@ -89,9 +90,7 @@ export const fechamentoCaixaService = {
 	},
 
 	async buscar(id: number): Promise<FechamentoCaixa> {
-		const { data } = await api.get<FechamentoCaixa>(
-			`/fechamentos-caixa/${id}`,
-		);
+		const { data } = await api.get<FechamentoCaixa>(`/fechamentos-caixa/${id}`);
 		return data;
 	},
 

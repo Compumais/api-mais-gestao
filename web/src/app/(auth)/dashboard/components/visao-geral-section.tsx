@@ -38,11 +38,12 @@ import {
 } from "@/hooks/dashboard/use-dashboard-queries";
 import { useEntitlements } from "@/hooks/use-plano";
 import {
+	type DashboardTab,
 	formatCurrency,
 	formatNumber,
 	formatPercent,
-	type DashboardTab,
 } from "@/lib/dashboard-periodo";
+import { formatDataCivilBrasilia, formatDateCurtaBrasilia } from "@/lib/date";
 
 const evolucaoConfig = {
 	total: { label: "Faturamento", color: "var(--chart-1)" },
@@ -78,7 +79,9 @@ export function VisaoGeralSection() {
 				<KpiCard
 					titulo="Faturamento"
 					valor={formatCurrency(data.faturamento.valor)}
-					variacaoPeriodoAnteriorPct={data.faturamento.variacaoPeriodoAnteriorPct}
+					variacaoPeriodoAnteriorPct={
+						data.faturamento.variacaoPeriodoAnteriorPct
+					}
 					variacaoYoYPct={data.faturamento.variacaoYoYPct}
 					onClick={() => setTab("vendas")}
 				/>
@@ -86,7 +89,9 @@ export function VisaoGeralSection() {
 					titulo="Lucro bruto"
 					valor={formatCurrency(data.lucroBruto.valor)}
 					subtitulo={`Margem ${formatPercent(data.lucroBruto.margemBrutaPct)}`}
-					variacaoPeriodoAnteriorPct={data.lucroBruto.variacaoPeriodoAnteriorPct}
+					variacaoPeriodoAnteriorPct={
+						data.lucroBruto.variacaoPeriodoAnteriorPct
+					}
 					variacaoYoYPct={data.lucroBruto.variacaoYoYPct}
 					onClick={() => setTab(temCompleto ? "rentabilidade" : "vendas")}
 				/>
@@ -144,9 +149,24 @@ export function VisaoGeralSection() {
 					<ChartContainer config={evolucaoConfig} className="h-[280px] w-full">
 						<AreaChart data={data.evolucaoFaturamento}>
 							<CartesianGrid vertical={false} />
-							<XAxis dataKey="date" tickLine={false} axisLine={false} />
+							<XAxis
+								dataKey="date"
+								tickLine={false}
+								axisLine={false}
+								tickFormatter={(value) =>
+									formatDateCurtaBrasilia(String(value))
+								}
+							/>
 							<YAxis tickLine={false} axisLine={false} width={60} />
-							<ChartTooltip content={<ChartTooltipContent />} />
+							<ChartTooltip
+								content={
+									<ChartTooltipContent
+										labelFormatter={(value) =>
+											formatDataCivilBrasilia(String(value))
+										}
+									/>
+								}
+							/>
 							<Area
 								type="monotone"
 								dataKey="total"
@@ -183,7 +203,9 @@ export function VisaoGeralSection() {
 				<Card>
 					<CardHeader>
 						<CardTitle>Mini fluxo de caixa</CardTitle>
-						<CardDescription>Entradas e saídas previstas (30 dias)</CardDescription>
+						<CardDescription>
+							Entradas e saídas previstas (30 dias)
+						</CardDescription>
 					</CardHeader>
 					<CardContent className="space-y-3 text-sm">
 						<div className="flex justify-between">

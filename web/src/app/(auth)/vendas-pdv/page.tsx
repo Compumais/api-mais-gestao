@@ -1,31 +1,17 @@
 "use client";
 
-import {
-	IconEye,
-	IconFileInvoice,
-	IconFilter,
-	IconReceipt,
-	IconX,
-} from "@tabler/icons-react";
+import { IconFilter, IconX } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import {
-	type ColumnDef,
 	flexRender,
 	getCoreRowModel,
 	getPaginationRowModel,
 	useReactTable,
 } from "@tanstack/react-table";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { TableSkeleton } from "@/components/table-skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
@@ -41,17 +27,15 @@ import {
 	useInterpretarRejeicaoNfce,
 	useNfceDetalhes,
 } from "@/hooks/use-nfce-detalhes";
-import { formatDateTimeBrasilia } from "@/lib/date";
-import { formatCurrency } from "@/lib/gourmet-utils";
 import { produtosService } from "@/services/produtos.service";
+import { usuariosService } from "@/services/usuarios.service";
 import type { VendaPdvGourmet } from "@/services/venda-pdv-gourmet.service";
 import { vendaPdvGourmetService } from "@/services/venda-pdv-gourmet.service";
-import type { VendaPdvItem } from "@/services/venda-pdv-item.service";
-import { vendaPdvItemService } from "@/services/venda-pdv-item.service";
 import { PageContainer } from "../components/page-container";
 import { DialogDetalhesNfce } from "../nfce/components/dialog-detalhes-nfce";
-
-// ─── tipos ───────────────────────────────────────────────────────────────────
+import { ItensVendaDialog } from "./itens-venda-dialog";
+import { criarColunasVendasPdv } from "./vendas-pdv-colunas";
+import { filtrosAtivos, idNfceVenda } from "./vendas-pdv-helpers";
 
 interface FiltrosState {
 	dataInicio: string;
@@ -64,181 +48,6 @@ const filtrosVazios: FiltrosState = {
 	dataFim: "",
 	numeropdv: "",
 };
-
-// ─── helpers ─────────────────────────────────────────────────────────────────
-
-function tipoVenda(venda: VendaPdvGourmet) {
-	if (venda.idcontamesa) return "Mesa";
-	// vendalocal: 3 = PDV híbrido; 2 = app POS; 1 = balcão web/gourmet; 0/null = legado
-	if (venda.vendalocal === 3) return "PDV";
-	if (venda.vendalocal === 2) return "POS";
-	return "Balcão";
-}
-
-function calcularTotal(itens: VendaPdvItem[]): number {
-	return itens.reduce(
-		(acc, item) => acc + Number.parseFloat(item.precototal ?? "0"),
-		0,
-	);
-}
-
-function filtrosAtivos(filtros: FiltrosState): boolean {
-	return !!(filtros.dataInicio || filtros.dataFim || filtros.numeropdv);
-}
-
-function pareceIdentificadorOpaco(valor: string): boolean {
-	const texto = valor.trim();
-	return /^[A-Za-z0-9_-]{20,}$/.test(texto) && !/\s/.test(texto);
-}
-
-function nomeVisivelOperador(valor?: string | null): string | null {
-	const nome = valor?.trim();
-	if (!nome || pareceIdentificadorOpaco(nome)) return null;
-	return nome;
-}
-
-function nomeOperador(venda: VendaPdvGourmet): string {
-	return nomeVisivelOperador(venda.operadorNome) ?? "—";
-}
-
-function documentoVenda(venda: VendaPdvGourmet): "fiscal" | "gerencial" {
-	if (venda.documento) return venda.documento;
-	if (venda.idnotafiscalnfce || venda.deveemitirnfce) return "fiscal";
-	return "gerencial";
-}
-
-function valorPago(valor?: string | null): boolean {
-	return Number.parseFloat(String(valor ?? "0").replace(",", ".")) > 0;
-}
-
-function meiosPagamentoVenda(venda: VendaPdvGourmet): string[] {
-	if (venda.meiosPagamento?.length) return venda.meiosPagamento;
-	const meios: string[] = [];
-	if (valorPago(venda.valordinheiro)) meios.push("Dinheiro");
-	if (valorPago(venda.valorpix)) meios.push("PIX");
-	if (valorPago(venda.valorcartaocredito)) meios.push("Cartão crédito");
-	if (valorPago(venda.valorcartaodebito)) meios.push("Cartão débito");
-	if (valorPago(venda.valorcartao)) meios.push("Cartão");
-	if (valorPago(venda.valorprepago)) meios.push("Pré-pago");
-	return meios;
-}
-
-function idNfceVenda(venda: VendaPdvGourmet): string | null {
-	return venda.nfce?.idnotafiscal ?? venda.idnotafiscalnfce ?? null;
-}
-
-// ─── dialog de itens ─────────────────────────────────────────────────────────
-
-function ItensVendaDialog({
-	venda,
-	idempresa,
-	open,
-	onOpenChange,
-	produtosPorId,
-}: {
-	venda: VendaPdvGourmet | null;
-	idempresa: string;
-	open: boolean;
-	onOpenChange: (v: boolean) => void;
-	produtosPorId: Record<string, string>;
-}) {
-	const { data, isLoading } = useQuery({
-		queryKey: ["vendas-pdv-item", venda?.id, idempresa],
-		queryFn: () =>
-			vendaPdvItemService.listar({
-				idempresa,
-				idvenda: venda!.id,
-				limit: 100,
-			}),
-		enabled: !!venda && open,
-	});
-
-	const itens = data?.data ?? [];
-	const total = calcularTotal(itens);
-
-	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-				<DialogHeader>
-					<DialogTitle className="flex items-center gap-2">
-						<IconReceipt className="size-5" />
-						Venda Nº {venda?.numeropdv}
-					</DialogTitle>
-					<DialogDescription>
-						{venda && formatDateTimeBrasilia(venda.datacriacao)}{" "}
-						— {venda && tipoVenda(venda)}
-						{venda && nomeOperador(venda) !== "—" && (
-							<>
-								{" "}
-								• Operador: <strong>{nomeOperador(venda)}</strong>
-							</>
-						)}
-					</DialogDescription>
-				</DialogHeader>
-
-				{isLoading ? (
-					<div className="space-y-2">
-						{Array.from({ length: 3 }).map((_, i) => (
-							<div
-								key={i.toString()}
-								className="h-10 rounded bg-muted animate-pulse"
-							/>
-						))}
-					</div>
-				) : itens.length === 0 ? (
-					<p className="py-6 text-center text-sm text-muted-foreground">
-						Nenhum item encontrado para esta venda.
-					</p>
-				) : (
-					<>
-						<Table>
-							<TableHeader>
-								<TableRow>
-									<TableHead>Produto</TableHead>
-									<TableHead className="w-24 text-right">Qtd.</TableHead>
-									<TableHead className="w-32 text-right">Preço unit.</TableHead>
-									<TableHead className="w-32 text-right">Total</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{itens.map((item) => (
-									<TableRow key={item.id}>
-										<TableCell className="text-sm font-medium">
-											{produtosPorId[item.idproduto] ?? item.idproduto}
-										</TableCell>
-										<TableCell className="text-right text-sm">
-											{Number.parseFloat(item.quantidade).toLocaleString(
-												"pt-BR",
-												{ maximumFractionDigits: 3 },
-											)}
-										</TableCell>
-										<TableCell className="text-right text-sm">
-											{formatCurrency(item.precounitario)}
-										</TableCell>
-										<TableCell className="text-right font-medium">
-											{formatCurrency(item.precototal)}
-										</TableCell>
-									</TableRow>
-								))}
-							</TableBody>
-						</Table>
-
-						<div className="flex justify-end border-t pt-3">
-							<p className="text-sm font-semibold">
-								Total:{" "}
-								<span className="text-primary text-base">
-									{formatCurrency(total.toFixed(2))}
-								</span>
-							</p>
-						</div>
-					</>
-				)}
-			</DialogContent>
-		</Dialog>
-	);
-}
-
-// ─── página principal ─────────────────────────────────────────────────────────
 
 export default function VendasPdvPage() {
 	const { localStorageEmpresa: empresa } = useEmpresa();
@@ -258,8 +67,23 @@ export default function VendasPdvPage() {
 
 	const { data: produtosData } = useQuery({
 		queryKey: ["produtos-lista", empresa?.id],
-		queryFn: () =>
-			produtosService.listarTodos({ idempresa: empresa!.id, inativo: 0 }),
+		queryFn: async () => {
+			if (!empresa) throw new Error("Empresa não selecionada");
+			return produtosService.listarTodos({
+				idempresa: empresa.id,
+				inativo: 0,
+			});
+		},
+		enabled: !!empresa,
+		staleTime: 60_000,
+	});
+
+	const { data: usuariosLista } = useQuery({
+		queryKey: ["usuarios-lista", empresa?.id],
+		queryFn: async () => {
+			if (!empresa) throw new Error("Empresa não selecionada");
+			return usuariosService.listarTodos({ idempresa: empresa.id });
+		},
 		enabled: !!empresa,
 		staleTime: 60_000,
 	});
@@ -272,7 +96,13 @@ export default function VendasPdvPage() {
 		return map;
 	}, [produtosData]);
 
-	// ── vendas ─────────────────────────────────────────────────────────────────
+	const usuariosPorId = useMemo(() => {
+		const map: Record<string, string> = {};
+		for (const u of usuariosLista ?? []) {
+			map[u.id] = u.nome;
+		}
+		return map;
+	}, [usuariosLista]);
 
 	const { data, isLoading } = useQuery({
 		queryKey: [
@@ -298,8 +128,6 @@ export default function VendasPdvPage() {
 		enabled: !!empresa,
 	});
 
-	// ── handlers ───────────────────────────────────────────────────────────────
-
 	const handleAplicarFiltros = () => {
 		setPagination((p) => ({ ...p, pageIndex: 0 }));
 		setFiltrosAplicados({ ...filtros });
@@ -311,15 +139,15 @@ export default function VendasPdvPage() {
 		setPagination((p) => ({ ...p, pageIndex: 0 }));
 	};
 
-	const handleVerItens = (venda: VendaPdvGourmet) => {
+	const handleVerItens = useCallback((venda: VendaPdvGourmet) => {
 		setVendaSelecionada(venda);
 		setDialogItensAberto(true);
-	};
+	}, []);
 
-	const handleVerNfce = (venda: VendaPdvGourmet) => {
+	const handleVerNfce = useCallback((venda: VendaPdvGourmet) => {
 		const id = idNfceVenda(venda);
 		if (id) setDetalhesNotaId(id);
-	};
+	}, []);
 
 	const detalhesQuery = useNfceDetalhes({
 		idempresa: empresa?.id ?? "",
@@ -336,127 +164,15 @@ export default function VendasPdvPage() {
 			Boolean(detalhesQuery.data.iaDisponivel),
 	});
 
-	// ── colunas ────────────────────────────────────────────────────────────────
-
-	const columns: ColumnDef<VendaPdvGourmet>[] = [
-		{
-			accessorKey: "numeropdv",
-			header: "Nº PDV",
-			cell: ({ row }) => (
-				<span className="font-mono font-medium">
-					{row.getValue("numeropdv")}
-				</span>
-			),
-		},
-		{
-			accessorKey: "datacriacao",
-			header: "Data / Hora (Brasília)",
-			cell: ({ row }) => {
-				const val = row.getValue("datacriacao") as string | null;
-				if (!val) return <span className="text-muted-foreground">—</span>;
-				return <span>{formatDateTimeBrasilia(val)}</span>;
-			},
-		},
-		{
-			id: "tipo",
-			header: "Tipo",
-			cell: ({ row }) => {
-				const tipo = tipoVenda(row.original);
-				return (
-					<Badge variant={tipo === "Mesa" ? "secondary" : "outline"}>
-						{tipo}
-					</Badge>
-				);
-			},
-		},
-		{
-			id: "operador",
-			header: "Operador",
-			cell: ({ row }) => (
-				<span className="block max-w-[180px] truncate text-sm">
-					{nomeOperador(row.original)}
-				</span>
-			),
-		},
-		{
-			id: "pagamento",
-			header: "Pagamento",
-			cell: ({ row }) => {
-				const meios = meiosPagamentoVenda(row.original);
-				if (meios.length === 0) {
-					return <span className="text-muted-foreground">—</span>;
-				}
-				return (
-					<div className="flex flex-wrap gap-1">
-						{meios.map((meio) => (
-							<Badge key={meio} variant="outline">
-								{meio}
-							</Badge>
-						))}
-					</div>
-				);
-			},
-		},
-		{
-			id: "documento",
-			header: "Documento",
-			cell: ({ row }) => {
-				const documento = documentoVenda(row.original);
-				return (
-					<Badge variant={documento === "fiscal" ? "default" : "secondary"}>
-						{documento === "fiscal" ? "Fiscal" : "Gerencial"}
-					</Badge>
-				);
-			},
-		},
-		{
-			accessorKey: "valortotal",
-			header: () => <span className="block text-right">Total</span>,
-			cell: ({ row }) => (
-				<span className="block text-right tabular-nums font-medium">
-					{formatCurrency(row.original.valortotal)}
-				</span>
-			),
-		},
-		{
-			id: "acoes",
-			header: () => <span className="sr-only">Ações</span>,
-			cell: ({ row }) => {
-				const idNfce = idNfceVenda(row.original);
-				const fiscal = documentoVenda(row.original) === "fiscal";
-				return (
-					<div className="flex justify-end gap-1">
-						<Button
-							variant="ghost"
-							size="sm"
-							className="gap-1.5"
-							onClick={() => handleVerItens(row.original)}
-						>
-							<IconEye className="size-4" aria-hidden="true" />
-							Ver itens
-						</Button>
-						{fiscal ? (
-							<Button
-								variant="ghost"
-								size="sm"
-								className="gap-1.5"
-								disabled={!idNfce}
-								title={
-									idNfce
-										? "Visualizar NFC-e"
-										: "NFC-e ainda não vinculada a esta venda"
-								}
-								onClick={() => handleVerNfce(row.original)}
-							>
-								<IconFileInvoice className="size-4" aria-hidden="true" />
-								Ver NFC-e
-							</Button>
-						) : null}
-					</div>
-				);
-			},
-		},
-	];
+	const columns = useMemo(
+		() =>
+			criarColunasVendasPdv({
+				usuariosPorId,
+				onVerItens: handleVerItens,
+				onVerNfce: handleVerNfce,
+			}),
+		[usuariosPorId, handleVerItens, handleVerNfce],
+	);
 
 	const table = useReactTable({
 		data: data?.data ?? [],
@@ -471,29 +187,25 @@ export default function VendasPdvPage() {
 
 	const comFiltros = filtrosAtivos(filtrosAplicados);
 
-	// ── render ─────────────────────────────────────────────────────────────────
-
 	return (
 		<PageContainer>
 			<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-				{/* cabeçalho */}
 				<div className="flex items-center justify-between px-4">
 					<div className="space-y-1">
 						<h1 className="text-2xl font-bold">Histórico de vendas PDV</h1>
 						<p className="text-sm text-muted-foreground">
-							Operador pelo nome, pagamento, fiscal ou gerencial e NFC-e.
-							Horários em Brasília (GMT-3).
+							Operador, pagamento, fiscal ou gerencial. Horários em Brasília
+							(GMT−3).
 						</p>
 					</div>
 					{comFiltros && (
 						<Badge variant="secondary" className="gap-1">
-							<IconFilter className="size-3" />
+							<IconFilter className="size-3" aria-hidden="true" />
 							Filtros ativos
 						</Badge>
 					)}
 				</div>
 
-				{/* filtros */}
 				<div className="mx-4 rounded-lg border bg-card p-4">
 					<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
 						<Field>
@@ -538,7 +250,7 @@ export default function VendasPdvPage() {
 
 						<div className="flex items-end gap-2">
 							<Button onClick={handleAplicarFiltros} className="flex-1 gap-2">
-								<IconFilter className="size-4" />
+								<IconFilter className="size-4" aria-hidden="true" />
 								Filtrar
 							</Button>
 							{comFiltros && (
@@ -547,14 +259,13 @@ export default function VendasPdvPage() {
 									onClick={handleLimparFiltros}
 									aria-label="Limpar filtros"
 								>
-									<IconX className="size-4" />
+									<IconX className="size-4" aria-hidden="true" />
 								</Button>
 							)}
 						</div>
 					</div>
 				</div>
 
-				{/* tabela */}
 				<div className="mx-4 overflow-x-auto rounded-lg border bg-card">
 					{!empresa ? (
 						<div className="flex items-center justify-center py-8">
@@ -565,8 +276,8 @@ export default function VendasPdvPage() {
 					) : isLoading ? (
 						<TableSkeleton rows={10} columns={8}>
 							<TableHead>Nº PDV</TableHead>
-							<TableHead>Data / Hora (Brasília)</TableHead>
-							<TableHead>Tipo</TableHead>
+							<TableHead>Data / Hora</TableHead>
+							<TableHead>Origem</TableHead>
 							<TableHead>Operador</TableHead>
 							<TableHead>Pagamento</TableHead>
 							<TableHead>Documento</TableHead>
@@ -622,7 +333,6 @@ export default function VendasPdvPage() {
 								</TableBody>
 							</Table>
 
-							{/* paginação */}
 							{(data?.paginacao.totalPages ?? 0) > 0 && (
 								<div className="flex items-center justify-between border-t px-4 py-3">
 									<p className="text-sm text-muted-foreground">
@@ -656,7 +366,6 @@ export default function VendasPdvPage() {
 				</div>
 			</div>
 
-			{/* dialog de itens */}
 			{empresa && (
 				<ItensVendaDialog
 					venda={vendaSelecionada}
@@ -664,6 +373,7 @@ export default function VendasPdvPage() {
 					open={dialogItensAberto}
 					onOpenChange={setDialogItensAberto}
 					produtosPorId={produtosPorId}
+					usuariosPorId={usuariosPorId}
 				/>
 			)}
 

@@ -7,6 +7,7 @@ import {
 	type TipoFiltroColunaTabela,
 } from "@/components/cabecalho-coluna-tabela";
 import { Badge } from "@/components/ui/badge";
+import { formatDataCivilBrasilia } from "@/lib/date";
 import type { Financeiro } from "@/services/financeiro.service";
 
 export type VarianteFinanceiroLista = "pagar" | "receber";
@@ -127,7 +128,7 @@ export function formatCurrency(value: string | null | undefined) {
 
 export function formatDate(date: string | null | undefined) {
 	if (!date) return "-";
-	return new Date(date).toLocaleDateString("pt-BR");
+	return formatDataCivilBrasilia(date);
 }
 
 export function formatParcela(

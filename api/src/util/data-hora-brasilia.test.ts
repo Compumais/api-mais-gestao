@@ -5,6 +5,7 @@ import {
 	hojeBrasiliaIsoDate,
 	inicioFimMesDe,
 	limitesUtcDoPeriodoBrasilia,
+	timestampUtcIso,
 } from "@/util/data-hora-brasilia.js";
 
 describe("data-hora-brasilia", () => {
@@ -30,5 +31,15 @@ describe("data-hora-brasilia", () => {
 			inicio: "2026-09-01",
 			fim: "2026-09-30",
 		});
+	});
+
+	it("serializa timestamp naive como ISO UTC", () => {
+		expect(timestampUtcIso("2026-09-05 01:50:00")).toBe(
+			"2026-09-05T01:50:00.000Z",
+		);
+		expect(timestampUtcIso("2026-09-05T01:50:00-03:00")).toBe(
+			"2026-09-05T04:50:00.000Z",
+		);
+		expect(timestampUtcIso("2026-09-05")).toBe("2026-09-05");
 	});
 });
