@@ -12,9 +12,9 @@ import {
 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-	type RowSelectionState,
 	flexRender,
 	getCoreRowModel,
+	type RowSelectionState,
 	useReactTable,
 } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
@@ -67,7 +67,9 @@ import {
 import {
 	type Financeiro,
 	financeiroService,
+	type ListarFinanceirosResponse,
 } from "@/services/financeiro.service";
+import { tipoCobrancaService } from "@/services/tipo-cobranca.service";
 import {
 	COLUNA_PARA_CAMPO_FILTRO_FINANCEIRO,
 	type ConfigFiltroColunaFinanceiro,
@@ -79,6 +81,8 @@ import {
 	visibilidadePadraoColunasFinanceiro,
 } from "../components/financeiro-lista-colunas";
 import { PageContainer } from "../components/page-container";
+
+const QUERY_KEY_CONTAS_RECEBER = ["financeiro", "contas-receber"] as const;
 
 function rotuloColuna(column: {
 	id: string;
@@ -148,6 +152,28 @@ export default function ContasAReceberPage() {
 		setRowSelection({});
 	}, []);
 
+	const { data: tiposCobranca = [] } = useQuery({
+		queryKey: ["tipos-cobranca", empresa?.id, "lista-financeiro"],
+		queryFn: async () => {
+			if (!empresa) {
+				throw new Error("Empresa não selecionada");
+			}
+			return await tipoCobrancaService.listarTodos({
+				idempresa: empresa.id,
+			});
+		},
+		enabled: !!empresa,
+	});
+
+	const opcoesTipoCobranca = useMemo(
+		() =>
+			tiposCobranca.map((tipo) => ({
+				value: tipo.id,
+				label: tipo.descricao,
+			})),
+		[tiposCobranca],
+	);
+
 	const configFiltroPorColuna = useMemo((): Record<
 		string,
 		ConfigFiltroColunaFinanceiro
@@ -155,6 +181,7 @@ export default function ContasAReceberPage() {
 		return {
 			documento: { tipo: "texto", placeholder: "Documento" },
 			tipodocumento: { tipo: "texto", placeholder: "Tipo de documento" },
+			cobranca: { tipo: "opcoes", opcoes: opcoesTipoCobranca },
 			emitente: { tipo: "texto", placeholder: "Nome" },
 			parcela: { tipo: "nenhum" },
 			status: { tipo: "opcoes", opcoes: STATUS_OPCOES_FILTRO },
@@ -163,12 +190,11 @@ export default function ContasAReceberPage() {
 			valor: { tipo: "nenhum" },
 			saldo: { tipo: "nenhum" },
 		};
-	}, []);
+	}, [opcoesTipoCobranca]);
 
 	const { data, isLoading } = useQuery({
 		queryKey: [
-			"financeiro",
-			"contas-receber",
+			...QUERY_KEY_CONTAS_RECEBER,
 			empresa?.id,
 			pagination.pageIndex + 1,
 			pagination.pageSize,
@@ -190,9 +216,10 @@ export default function ContasAReceberPage() {
 				...(filtrosColuna.tipodocumentodescricao
 					? { tipodocumentodescricao: filtrosColuna.tipodocumentodescricao }
 					: {}),
-				...(filtrosColuna.emitente
-					? { emitente: filtrosColuna.emitente }
+				...(filtrosColuna.idtipocobranca
+					? { idtipocobranca: filtrosColuna.idtipocobranca }
 					: {}),
+				...(filtrosColuna.emitente ? { emitente: filtrosColuna.emitente } : {}),
 				...(filtrosColuna.status ? { status: filtrosColuna.status } : {}),
 				...(filtrosColuna.emissao
 					? {
@@ -212,6 +239,55 @@ export default function ContasAReceberPage() {
 		},
 		enabled: !!empresa,
 	});
+
+	const alterarCobrancaMutation = useMutation({
+		mutationFn: async ({
+			id,
+			idtipocobranca,
+		}: {
+			id: string;
+			idtipocobranca: string | null;
+		}) => {
+			return await financeiroService.atualizar(id, { idtipocobranca });
+		},
+		onMutate: async ({ id, idtipocobranca }) => {
+			await queryClient.cancelQueries({ queryKey: QUERY_KEY_CONTAS_RECEBER });
+			const snapshots = queryClient.getQueriesData<ListarFinanceirosResponse>({
+				queryKey: QUERY_KEY_CONTAS_RECEBER,
+			});
+
+			queryClient.setQueriesData<ListarFinanceirosResponse>(
+				{ queryKey: QUERY_KEY_CONTAS_RECEBER },
+				(atual) => {
+					if (!atual) return atual;
+					return {
+						...atual,
+						data: atual.data.map((item) =>
+							item.id === id ? { ...item, idtipocobranca } : item,
+						),
+					};
+				},
+			);
+
+			return { snapshots };
+		},
+		onError: (error: Error, _vars, context) => {
+			for (const [key, data] of context?.snapshots ?? []) {
+				queryClient.setQueryData(key, data);
+			}
+			toast.error(error.message || "Erro ao atualizar tipo de cobrança");
+		},
+		onSettled: () => {
+			void queryClient.invalidateQueries({ queryKey: ["financeiro"] });
+		},
+	});
+
+	const onAlterarCobranca = useCallback(
+		(financeiroId: string, idtipocobranca: string | null) => {
+			alterarCobrancaMutation.mutate({ id: financeiroId, idtipocobranca });
+		},
+		[alterarCobrancaMutation],
+	);
 
 	const deleteMutation = useMutation({
 		mutationFn: financeiroService.deletar,
@@ -304,8 +380,10 @@ export default function ContasAReceberPage() {
 				filtros: filtrosColuna,
 				ordenarPor,
 				ordem,
+				opcoesTipoCobranca,
 				onOrdenarColuna,
 				onFiltrarColuna,
+				onAlterarCobranca,
 				configFiltroPorColuna,
 				renderSelectHeader: (table) => (
 					<Checkbox
@@ -388,8 +466,10 @@ export default function ContasAReceberPage() {
 			filtrosColuna,
 			ordenarPor,
 			ordem,
+			opcoesTipoCobranca,
 			onOrdenarColuna,
 			onFiltrarColuna,
+			onAlterarCobranca,
 			configFiltroPorColuna,
 			handleEdit,
 			handleDelete,
@@ -508,10 +588,7 @@ export default function ContasAReceberPage() {
 							</p>
 						</div>
 					) : mostrarSkeleton ? (
-						<TableSkeleton
-							rows={10}
-							columns={colunasVisiveis.length || 11}
-						>
+						<TableSkeleton rows={10} columns={colunasVisiveis.length || 11}>
 							{colunasVisiveis.map((coluna) => (
 								<TableHead key={coluna.id}>{rotuloColuna(coluna)}</TableHead>
 							))}

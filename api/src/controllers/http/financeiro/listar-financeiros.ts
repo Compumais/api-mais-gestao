@@ -19,6 +19,7 @@ const listarFinanceirosQuerySchema = z.object({
 	vencimentoFim: textoOpcional,
 	status: z.enum(["A", "P", "Q", "S", "C", "V"]).optional().nullable(),
 	tipo: z.enum(["P", "R"]).optional().nullable(),
+	idtipocobranca: textoOpcional,
 	ordenarPor: z.enum(ORDENAR_FINANCEIROS_CAMPOS).optional(),
 	ordem: z.enum(["asc", "desc"]).optional(),
 });
