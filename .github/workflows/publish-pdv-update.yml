@@ -23,33 +23,42 @@ jobs:
           ref: ${{ inputs.ref || github.ref }}
 
       - name: Validar artefatos
+        id: meta
         working-directory: pdv/installer/output
         run: |
           set -euo pipefail
           test -f version.json
           artifact="$(python3 -c 'import json;print(json.load(open("version.json"))["artifact"])')"
           test -f "$artifact"
+          echo "artifact=$artifact" >> "$GITHUB_OUTPUT"
           echo "Publicando $artifact ($(stat -c%s "$artifact") bytes)"
 
-      - name: Enviar para VPS
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          source: "pdv/installer/output/version.json,pdv/installer/output/PDV-Mais-Gestao-Setup-*.exe"
-          target: "/opt/mais-gestao/pdv-updates"
-          strip_components: 3
-          overwrite: true
-
-      - name: Conferir remoto
+      - name: Publicar na VPS via SSH
         uses: appleboy/ssh-action@v1.2.0
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+          ARTIFACT: ${{ steps.meta.outputs.artifact }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          envs: GH_TOKEN,REPO,SHA,ARTIFACT
           script_stop: true
+          command_timeout: 20m
           script: |
             set -euo pipefail
-            ls -lh /opt/mais-gestao/pdv-updates/
-            cat /opt/mais-gestao/pdv-updates/version.json
+            mkdir -p /opt/mais-gestao/pdv-updates
+            cd /opt/mais-gestao/pdv-updates
+            AUTH="Authorization: Bearer ${GH_TOKEN}"
+            ACCEPT="Accept: application/vnd.github.raw+json"
+            API="https://api.github.com/repos/${REPO}/contents"
+            curl -fsSL -H "$AUTH" -H "$ACCEPT" \
+              -o version.json \
+              "${API}/pdv/installer/output/version.json?ref=${SHA}"
+            curl -fsSL -H "$AUTH" -H "$ACCEPT" \
+              -o "${ARTIFACT}" \
+              "${API}/pdv/installer/output/${ARTIFACT}?ref=${SHA}"
+            ls -lh version.json "${ARTIFACT}"
+            cat version.json
