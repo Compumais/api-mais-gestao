@@ -194,8 +194,8 @@ export default function VendasPdvPage() {
 					<div className="space-y-1">
 						<h1 className="text-2xl font-bold">Histórico de vendas PDV</h1>
 						<p className="text-sm text-muted-foreground">
-							Operador, pagamento, fiscal ou gerencial. Horários em Brasília
-							(GMT−3).
+							Pagamento, fiscal/não fiscal, status da NFC-e e consulta. Horários
+							em Brasília (GMT−3).
 						</p>
 					</div>
 					{comFiltros && (
@@ -274,19 +274,20 @@ export default function VendasPdvPage() {
 							</p>
 						</div>
 					) : isLoading ? (
-						<TableSkeleton rows={10} columns={8}>
+						<TableSkeleton rows={10} columns={9}>
 							<TableHead>Nº PDV</TableHead>
 							<TableHead>Data / Hora</TableHead>
 							<TableHead>Origem</TableHead>
 							<TableHead>Operador</TableHead>
 							<TableHead>Pagamento</TableHead>
-							<TableHead>Documento</TableHead>
+							<TableHead>Fiscal</TableHead>
+							<TableHead>NFC-e</TableHead>
 							<TableHead>Total</TableHead>
 							<TableHead />
 						</TableSkeleton>
 					) : (
 						<>
-							<Table>
+							<Table className="min-w-[960px]">
 								<TableHeader>
 									{table.getHeaderGroups().map((hg) => (
 										<TableRow key={hg.id}>
