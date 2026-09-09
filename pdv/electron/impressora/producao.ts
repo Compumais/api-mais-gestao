@@ -8,6 +8,7 @@ import {
 } from "./destino";
 import { imprimirPedidoProducao } from "./escpos";
 import { reduzirTamanhoFonte } from "./fonte-impressao";
+import { normalizarFormatoItemProducao } from "./pedido-producao-layout";
 
 export type ItemProducao = {
 	idproduto: string;
@@ -261,6 +262,9 @@ export async function imprimirProducaoPedido(params: {
 		const imprimirGrupo = normalizarImprimirGrupoProducao(
 			await getConfig("impressao_producao_imprimir_grupo", "1"),
 		);
+		const formatoItem = normalizarFormatoItemProducao(
+			await getConfig("impressao_producao_formato_item", "quantidade"),
+		);
 		const cupons = await montarCuponsProducao({
 			modo,
 			itens: params.itens,
@@ -284,6 +288,7 @@ export async function imprimirProducaoPedido(params: {
 				itens,
 				reimpressao: params.reimpressao,
 				agruparPorGrupo,
+				formatoItem,
 				tamanhoFonte,
 			});
 		}

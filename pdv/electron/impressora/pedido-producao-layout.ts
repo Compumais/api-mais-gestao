@@ -44,6 +44,37 @@ function formatarQtd(n: number): string {
 	return arred.toFixed(3).replace(".", ",");
 }
 
+export type FormatoItemProducao = "quantidade" | "unitario";
+
+export function normalizarFormatoItemProducao(
+	valor: string | null | undefined,
+): FormatoItemProducao {
+	return valor === "unitario" ? "unitario" : "quantidade";
+}
+
+/** Inteiro ≥ 2 vira N linhas de 1; fração ou 1 permanece numa linha. */
+export function expandirItensFormatoProducao<T extends { quantidade: number }>(
+	itens: T[],
+	formato: FormatoItemProducao,
+): T[] {
+	if (formato !== "unitario") {
+		return itens;
+	}
+	const saida: T[] = [];
+	for (const item of itens) {
+		const arred = Math.round(item.quantidade * 1000) / 1000;
+		if (!Number.isInteger(arred) || arred <= 1) {
+			saida.push(item);
+			continue;
+		}
+		const vezes = Math.min(arred, 200);
+		for (let i = 0; i < vezes; i++) {
+			saida.push({ ...item, quantidade: 1 });
+		}
+	}
+	return saida;
+}
+
 export type ItemPedidoProducaoLayout = {
 	quantidade: number;
 	descricao: string;
@@ -58,6 +89,7 @@ export function montarLinhasPedidoProducao(params: {
 	itens: ItemPedidoProducaoLayout[];
 	reimpressao?: boolean;
 	agruparPorGrupo?: boolean;
+	formatoItem?: FormatoItemProducao;
 	tamanhoFonte?: TamanhoFonteImpressao;
 	/** Relógio injetável para testes. */
 	agora?: Date;
@@ -87,6 +119,11 @@ export function montarLinhasPedidoProducao(params: {
 	}
 	linhas.push("--------------------------------");
 
+	const itens = expandirItensFormatoProducao(
+		params.itens,
+		normalizarFormatoItemProducao(params.formatoItem),
+	);
+
 	const emitirItem = (item: ItemPedidoProducaoLayout) => {
 		const prefixo = `${formatarQtd(item.quantidade)}  `;
 		linhas.push(
@@ -101,7 +138,7 @@ export function montarLinhasPedidoProducao(params: {
 
 	if (params.agruparPorGrupo) {
 		let grupoAtual: string | null = null;
-		for (const item of params.itens) {
+		for (const item of itens) {
 			const grupo = item.nomeGrupo?.trim() || "OUTROS";
 			if (grupo !== grupoAtual) {
 				if (grupoAtual !== null) {
@@ -115,7 +152,7 @@ export function montarLinhasPedidoProducao(params: {
 			emitirItem(item);
 		}
 	} else {
-		for (const item of params.itens) {
+		for (const item of itens) {
 			emitirItem(item);
 		}
 	}

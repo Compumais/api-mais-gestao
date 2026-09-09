@@ -17,7 +17,10 @@ import {
 	normalizarTamanhoFonte,
 	type TamanhoFonteImpressao,
 } from "./fonte-impressao";
-import { montarLinhasPedidoProducao } from "./pedido-producao-layout";
+import {
+	type FormatoItemProducao,
+	montarLinhasPedidoProducao,
+} from "./pedido-producao-layout";
 
 export { imprimirDanfce } from "./danfce";
 
@@ -256,6 +259,8 @@ export async function imprimirPedidoProducao(params: {
 	reimpressao?: boolean;
 	/** Cabeçalho por grupo (modo pedido / cupom único). */
 	agruparPorGrupo?: boolean;
+	/** quantidade = "6  Pastel"; unitario = 6 linhas de "1  Pastel". */
+	formatoItem?: FormatoItemProducao;
 	/**
 	 * Tamanho tipográfico. Se omitido, usa `impressora_fonte`.
 	 * Cupom único de produção tipicamente passa um degrau menor.
@@ -273,6 +278,7 @@ export async function imprimirPedidoProducao(params: {
 		itens: params.itens,
 		reimpressao: params.reimpressao,
 		agruparPorGrupo: params.agruparPorGrupo,
+		formatoItem: params.formatoItem,
 		tamanhoFonte,
 	});
 	return enviarTextoImpressora(linhas.join("\n"), params.destino, {
