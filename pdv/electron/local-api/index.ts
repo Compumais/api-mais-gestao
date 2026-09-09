@@ -139,6 +139,10 @@ import { avaliarEmissaoNfceDaVenda } from "../fiscal/avaliar-emissao-nfce-venda"
 import { emitirOuContingencia } from "../fiscal/contingencia";
 import { exportarXmlsNfce as gravarXmlsNfcePeriodo } from "../fiscal/exportar-xml-nfce";
 import {
+	listarConflitosNumeracaoNfceUi,
+	reemitirContingenciaComNovaNumeracao as executarReemitirContingenciaNovaNumeracao,
+} from "../fiscal/reemitir-contingencia-nova-numeracao";
+import {
 	imprimirComprovanteFechamentoCaixa,
 	imprimirCupomNaoFiscal,
 	imprimirDanfce,
@@ -1487,9 +1491,6 @@ export const localApi = {
 				"No PDV secundário a sincronização com a retaguarda é feita no PDV principal.",
 			);
 		}
-		const { listarConflitosNumeracaoNfceUi } = await import(
-			"../fiscal/reemitir-contingencia-nova-numeracao"
-		);
 		return listarConflitosNumeracaoNfceUi();
 	},
 
@@ -1499,10 +1500,7 @@ export const localApi = {
 				"No PDV secundário a sincronização com a retaguarda é feita no PDV principal.",
 			);
 		}
-		const { reemitirContingenciaComNovaNumeracao } = await import(
-			"../fiscal/reemitir-contingencia-nova-numeracao"
-		);
-		const resultado = await reemitirContingenciaComNovaNumeracao({
+		const resultado = await executarReemitirContingenciaNovaNumeracao({
 			idvenda: vendaId,
 		});
 		if (resultado.modo === "contingencia" && resultado.chave) {
