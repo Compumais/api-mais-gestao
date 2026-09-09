@@ -44,6 +44,7 @@ import {
 	agoraBrasiliaIsoOffset,
 	hojeBrasiliaIsoDate,
 } from "@/util/data-hora-brasilia.js";
+import { resolverDataHoraAutorizacao } from "@/util/extrair-dh-recbto-xml.js";
 import { httpOk } from "@/util/http-util.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
 import {
@@ -295,6 +296,13 @@ function montarDadosNotaPersistencia(params: {
 		arquivoxmlautorizada:
 			statusPersistido === NFE_STATUS.AUTORIZADA
 				? (resposta.xmlRetorno ?? null)
+				: null,
+		datahoraautorizacao:
+			statusPersistido === NFE_STATUS.AUTORIZADA
+				? resolverDataHoraAutorizacao({
+						xmlAutorizado: resposta.xmlRetorno,
+						fallbackIso: agora,
+					})
 				: null,
 		mensagemtransmissaonfe: mensagemTransmissao,
 		codigostatusprotocolonfe: cStatProtocolo,

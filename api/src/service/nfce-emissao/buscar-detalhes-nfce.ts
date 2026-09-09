@@ -65,6 +65,7 @@ export type DetalhesNfce = {
 		valortotalnota: string | null;
 		emissao: string | null;
 		datahoraemissao: string | null;
+		datahoraautorizacao: string | null;
 	};
 	itens: ItemDetalheNfce[];
 	pagamentos: PagamentoDetalheNfce[];
@@ -321,6 +322,7 @@ export async function buscarDetalhesNfceService({
 			valortotalnota: nota.valortotalnota,
 			emissao: nota.emissao,
 			datahoraemissao: nota.datahoraemissao,
+			datahoraautorizacao: nota.datahoraautorizacao ?? null,
 		},
 		itens,
 		pagamentos: venda ? montarPagamentos(venda) : [],
