@@ -31,14 +31,6 @@ const xmlContingencia = `<?xml version="1.0" encoding="UTF-8"?>
 		<emit><CNPJ>${cnpj}</CNPJ><xNome>Empresa Teste</xNome></emit>
 		<total><ICMSTot><vNF>18.00</vNF></ICMSTot></total>
 	</infNFe>
-	<Signature xmlns="http://www.w3.org/2000/09/xmldsig#">
-		<SignedInfo>
-			<Reference URI="#NFe${chave}">
-				<DigestValue>digest-unit-test</DigestValue>
-			</Reference>
-		</SignedInfo>
-		<SignatureValue>signature-unit-test</SignatureValue>
-	</Signature>
 </NFe>`;
 
 describe("transmitirNfceContingenciaService", () => {
@@ -230,6 +222,8 @@ describe("transmitirNfceContingenciaService", () => {
 				serie: "1",
 				numeronotafiscal: "4",
 				valortotalnota: "18.00",
+				arquivoxmlcontingencia: xmlContingencia,
+				arquivoxmlassinado: null,
 			}),
 			[],
 		);
