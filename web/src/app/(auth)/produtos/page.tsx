@@ -6,7 +6,9 @@ import {
 	IconCheck,
 	IconChevronDown,
 	IconDotsVertical,
+	IconHistory,
 	IconLayoutColumns,
+	IconPackage,
 	IconPencil,
 	IconPlus,
 	IconSearch,
@@ -23,9 +25,11 @@ import { Download, FileDown, FileSpreadsheet, FileText } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { AjusteEstoqueDialog } from "@/app/(auth)/produtos/components/ajuste-estoque-dialog";
 import { AlterarProdutosEmMassaDialog } from "@/app/(auth)/produtos/components/alterar-produtos-em-massa-dialog";
 import { ImportarProdutosDialog } from "@/app/(auth)/produtos/components/importar-produtos-dialog";
 import { ModalComposicaoPrecoProduto } from "@/app/(auth)/produtos/components/modal-composicao-preco-produto";
+import { MovimentosProdutoSheet } from "@/app/(auth)/produtos/components/movimentos-produto-sheet";
 import type { OrdenacaoColunaTabela } from "@/components/cabecalho-coluna-tabela";
 import { TableSkeleton } from "@/components/table-skeleton";
 import { Button } from "@/components/ui/button";
@@ -70,6 +74,7 @@ import {
 	COLUNA_PARA_CAMPO_FILTRO_PRODUTO,
 	type ConfigFiltroColunaProduto,
 	criarColunasProdutos,
+	DIVERGENCIA_OPCOES_FILTRO,
 	type FiltrosColunaProdutosState,
 	filtrosColunaProdutosVazios,
 	visibilidadePadraoColunasProdutos,
@@ -121,6 +126,10 @@ export default function ProdutosPage() {
 	const [produtoComposicao, setProdutoComposicao] = useState<Produto | null>(
 		null,
 	);
+	const [produtoMovimentos, setProdutoMovimentos] = useState<Produto | null>(
+		null,
+	);
+	const [ajusteAberto, setAjusteAberto] = useState(false);
 	const [filtrosColuna, setFiltrosColuna] =
 		useState<FiltrosColunaProdutosState>(filtrosColunaProdutosVazios);
 	const [ordenarPor, setOrdenarPor] = useState<string | null>(null);
@@ -204,6 +213,12 @@ export default function ProdutosPage() {
 			fornecedor: texto("Fornecedor"),
 			custoaquisicao: texto("Custo"),
 			datacadastro: { tipo: "data" },
+			quantidade: { tipo: "nenhum" },
+			quantidadefiscal: { tipo: "nenhum" },
+			divergencia: {
+				tipo: "opcoes",
+				opcoes: DIVERGENCIA_OPCOES_FILTRO,
+			},
 		};
 	}, []);
 
@@ -254,6 +269,11 @@ export default function ProdutosPage() {
 				...(filtrosColuna.datacadastro
 					? { datacadastro: filtrosColuna.datacadastro }
 					: {}),
+				...(filtrosColuna.divergencia === "com"
+					? { somenteDivergencia: true }
+					: filtrosColuna.divergencia === "sem"
+						? { somenteDivergencia: false }
+						: {}),
 				...(ordenarPor ? { ordenarPor } : {}),
 				...(ordem ? { ordem } : {}),
 			});
@@ -409,6 +429,12 @@ export default function ProdutosPage() {
 										Editar
 									</DropdownMenuItem>
 									<DropdownMenuItem
+										onClick={() => setProdutoMovimentos(produto)}
+									>
+										<IconHistory className="size-4" />
+										Movimentos
+									</DropdownMenuItem>
+									<DropdownMenuItem
 										onClick={() => setProdutoComposicao(produto)}
 									>
 										<IconCalculator className="size-4" />
@@ -475,6 +501,9 @@ export default function ProdutosPage() {
 	});
 
 	const colunasVisiveis = table.getVisibleLeafColumns();
+	const produtosSelecionados = table
+		.getSelectedRowModel()
+		.rows.map((row) => row.original);
 	const idsSelecionados = Object.keys(rowSelection).filter(
 		(id) => rowSelection[id],
 	);
@@ -597,6 +626,16 @@ export default function ProdutosPage() {
 								</DropdownMenuContent>
 							</DropdownMenu>
 						</div>
+						<Button
+							variant="outline"
+							className="gap-2"
+							onClick={() => setAjusteAberto(true)}
+							disabled={!localStorageEmpresa}
+						>
+							<IconPackage className="size-4" aria-hidden="true" />
+							Ajuste de estoque
+							{idsSelecionados.length > 0 ? ` (${idsSelecionados.length})` : ""}
+						</Button>
 						<Button
 							variant="outline"
 							className="gap-2"
@@ -823,6 +862,31 @@ export default function ProdutosPage() {
 						if (!aberto) setProdutoComposicao(null);
 					}}
 				/>
+			) : null}
+			{localStorageEmpresa ? (
+				<>
+					<MovimentosProdutoSheet
+						produto={produtoMovimentos}
+						idempresa={localStorageEmpresa.id}
+						onFechar={() => setProdutoMovimentos(null)}
+					/>
+					<AjusteEstoqueDialog
+						aberto={ajusteAberto}
+						onAbertoChange={setAjusteAberto}
+						idempresa={localStorageEmpresa.id}
+						produtosIniciais={produtosSelecionados}
+						onSucesso={() => {
+							setRowSelection({});
+							void queryClient.invalidateQueries({ queryKey: ["produtos"] });
+							void queryClient.invalidateQueries({
+								queryKey: ["estoque-movimentos"],
+							});
+							void queryClient.invalidateQueries({
+								queryKey: ["estoque-lotes"],
+							});
+						}}
+					/>
+				</>
 			) : null}
 		</PageContainer>
 	);

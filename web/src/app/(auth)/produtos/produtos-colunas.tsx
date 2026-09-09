@@ -6,8 +6,14 @@ import {
 	type OrdenacaoColunaTabela,
 	type TipoFiltroColunaTabela,
 } from "@/components/cabecalho-coluna-tabela";
+import { Badge } from "@/components/ui/badge";
 import { formatDataCivilBrasilia } from "@/lib/date";
 import type { Produto } from "@/services/produtos.service";
+
+export const DIVERGENCIA_OPCOES_FILTRO: OpcaoFiltroColunaTabela[] = [
+	{ value: "com", label: "Com divergência" },
+	{ value: "sem", label: "Sem divergência" },
+];
 
 export type FiltrosColunaProdutosState = {
 	codigo: string;
@@ -22,6 +28,7 @@ export type FiltrosColunaProdutosState = {
 	fornecedor: string;
 	custoaquisicao: string;
 	datacadastro: string;
+	divergencia: string;
 };
 
 export const filtrosColunaProdutosVazios: FiltrosColunaProdutosState = {
@@ -37,6 +44,7 @@ export const filtrosColunaProdutosVazios: FiltrosColunaProdutosState = {
 	fornecedor: "",
 	custoaquisicao: "",
 	datacadastro: "",
+	divergencia: "",
 };
 
 export type CampoFiltroColunaProdutos = keyof FiltrosColunaProdutosState;
@@ -57,6 +65,7 @@ export const COLUNA_PARA_CAMPO_FILTRO_PRODUTO: Record<
 	fornecedor: "fornecedor",
 	custoaquisicao: "custoaquisicao",
 	datacadastro: "datacadastro",
+	divergencia: "divergencia",
 };
 
 export type ConfigFiltroColunaProduto = {
@@ -78,6 +87,9 @@ const DEFINICOES_COLUNAS: DefinicaoColunaProduto[] = [
 	{ id: "nome", label: "Nome", visivelPadrao: true },
 	{ id: "preco", label: "Preço", visivelPadrao: true },
 	{ id: "inativo", label: "Situação", visivelPadrao: true },
+	{ id: "quantidade", label: "Operacional", visivelPadrao: true },
+	{ id: "quantidadefiscal", label: "Fiscal", visivelPadrao: true },
+	{ id: "divergencia", label: "Divergência", visivelPadrao: true },
 	{ id: "ean", label: "EAN", visivelPadrao: false },
 	{ id: "referencia", label: "Referência", visivelPadrao: false },
 	{ id: "ncm", label: "NCM", visivelPadrao: false },
@@ -117,6 +129,12 @@ function formatarPreco(preco: string | null | undefined) {
 		style: "currency",
 		currency: "BRL",
 	}).format(numero);
+}
+
+function formatarQuantidade(valor: string | null | undefined) {
+	const n = Number.parseFloat(valor ?? "0");
+	if (Number.isNaN(n)) return "0";
+	return n.toLocaleString("pt-BR", { maximumFractionDigits: 3 });
 }
 
 function formatarDataCadastro(valor: string | null | undefined) {
@@ -220,7 +238,16 @@ export function criarColunasProdutos(
 					accessorKey: "nome",
 					header,
 					meta,
-					cell: ({ row }) => <div>{row.original.nome}</div>,
+					cell: ({ row }) => (
+						<div className="flex items-center gap-2">
+							<span>{row.original.nome}</span>
+							{row.original.possuiSaldo === false && (
+								<Badge variant="secondary" className="text-xs">
+									Sem movimento
+								</Badge>
+							)}
+						</div>
+					),
 				});
 				break;
 			case "preco":
@@ -247,6 +274,42 @@ export function criarColunasProdutos(
 								}
 							>
 								{inativo ? "Inativo" : "Ativo"}
+							</span>
+						);
+					},
+				});
+				break;
+			case "quantidade":
+				colunas.push({
+					accessorKey: "quantidade",
+					header,
+					meta,
+					cell: ({ row }) => (
+						<div>{formatarQuantidade(row.original.quantidade)}</div>
+					),
+				});
+				break;
+			case "quantidadefiscal":
+				colunas.push({
+					accessorKey: "quantidadefiscal",
+					header,
+					meta,
+					cell: ({ row }) => (
+						<div>{formatarQuantidade(row.original.quantidadefiscal)}</div>
+					),
+				});
+				break;
+			case "divergencia":
+				colunas.push({
+					accessorKey: "divergencia",
+					header,
+					meta,
+					cell: ({ row }) => {
+						const div = Number.parseFloat(row.original.divergencia ?? "0");
+						const destacar = !Number.isNaN(div) && div !== 0;
+						return (
+							<span className={destacar ? "font-medium text-amber-600" : ""}>
+								{formatarQuantidade(row.original.divergencia)}
 							</span>
 						);
 					},

@@ -418,6 +418,7 @@ export const listarProdutosSchema: FastifySchema = {
 			datacadastro: { type: "string" },
 			codigolistalc11603: { type: "string" },
 			codigonbs: { type: "string" },
+			somenteDivergencia: { type: "string", enum: ["true", "false"] },
 			ordenarPor: { type: "string" },
 			ordem: { type: "string", enum: ["asc", "desc"] },
 			page: { type: "number", default: 1 },

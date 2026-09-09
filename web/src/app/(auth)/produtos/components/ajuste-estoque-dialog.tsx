@@ -22,11 +22,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import {
-	estoqueGestaoService,
-	type SaldoEstoqueGestao,
-} from "@/services/estoque-gestao.service";
-import { produtosService } from "@/services/produtos.service";
+import { estoqueGestaoService } from "@/services/estoque-gestao.service";
+import { type Produto, produtosService } from "@/services/produtos.service";
 
 export type TipoOperacaoAjuste = "entrada" | "saida" | "contagem";
 export type TipoEstoqueAjuste = "0" | "1" | "2";
@@ -44,7 +41,7 @@ type AjusteEstoqueDialogProps = {
 	aberto: boolean;
 	onAbertoChange: (aberto: boolean) => void;
 	idempresa: string;
-	produtosIniciais?: SaldoEstoqueGestao[];
+	produtosIniciais?: Produto[];
 	onSucesso: () => void;
 };
 
@@ -60,7 +57,7 @@ function formatarQtdExibicao(valor: string | null | undefined) {
 }
 
 function quantidadePadraoParaItem(
-	produto: SaldoEstoqueGestao,
+	produto: Produto,
 	tipooperacao: TipoOperacaoAjuste,
 	tipoestoque: TipoEstoqueAjuste,
 ): string {
@@ -69,11 +66,11 @@ function quantidadePadraoParaItem(
 	return produto.quantidade || "0";
 }
 
-function saldoParaItem(produto: SaldoEstoqueGestao): ItemAjusteEstoqueUi {
+function produtoParaItem(produto: Produto): ItemAjusteEstoqueUi {
 	return {
-		idproduto: produto.idproduto,
-		codigoproduto: produto.codigoproduto,
-		nomeproduto: produto.nomeproduto ?? "Produto",
+		idproduto: produto.id,
+		codigoproduto: produto.codigo != null ? String(produto.codigo) : null,
+		nomeproduto: produto.nome,
 		quantidadeAtualOperacional: produto.quantidade || "0",
 		quantidadeAtualFiscal: produto.quantidadefiscal || "0",
 		quantidade: "",
@@ -104,7 +101,7 @@ export function AjusteEstoqueDialog({
 		setBuscaAplicada("");
 		setItens(
 			produtosIniciais.map((produto) => ({
-				...saldoParaItem(produto),
+				...produtoParaItem(produto),
 				quantidade: quantidadePadraoParaItem(produto, "contagem", "2"),
 			})),
 		);
@@ -143,7 +140,9 @@ export function AjusteEstoqueDialog({
 				})),
 			}),
 		onSuccess: (resultado) => {
-			const falhas = resultado.resultados.filter((r) => !r.sucesso && r.mensagem);
+			const falhas = resultado.resultados.filter(
+				(r) => !r.sucesso && r.mensagem,
+			);
 			toast.success(
 				`Ajuste concluído: ${resultado.movimentosRegistrados} movimento(s) em ${resultado.itensProcessados} produto(s)`,
 			);
@@ -189,67 +188,25 @@ export function AjusteEstoqueDialog({
 		);
 	}
 
-	function adicionarProduto(produto: {
-		id: string;
-		codigo: number | null;
-		nome: string;
-		descricao?: string;
-	}) {
+	function adicionarProduto(produto: Produto) {
 		if (idsJaIncluidos.has(produto.id)) {
 			toast.message("Produto já está na lista");
 			return;
 		}
 
-		estoqueGestaoService
-			.listarSaldos({
-				idempresa,
-				busca: produto.codigo != null ? String(produto.codigo) : produto.nome,
-				page: 1,
-				limit: 20,
-			})
-			.then((resposta) => {
-				const saldo =
-					resposta.data.find((item) => item.idproduto === produto.id) ?? null;
-				const base: ItemAjusteEstoqueUi = saldo
-					? saldoParaItem(saldo)
-					: {
-							idproduto: produto.id,
-							codigoproduto:
-								produto.codigo != null ? String(produto.codigo) : null,
-							nomeproduto: produto.descricao || produto.nome,
-							quantidadeAtualOperacional: "0",
-							quantidadeAtualFiscal: "0",
-							quantidade: "",
-						};
-				setItens((atual) => [
-					...atual,
-					{
-						...base,
-						quantidade: quantidadePadraoParaItem(
-							{
-								id: null,
-								idproduto: base.idproduto,
-								idempresa,
-								codigoproduto: base.codigoproduto,
-								nomeproduto: base.nomeproduto,
-								quantidade: base.quantidadeAtualOperacional,
-								quantidadefiscal: base.quantidadeAtualFiscal,
-								divergencia: "0",
-								ncm: null,
-								unidademedida: null,
-								possuiSaldo: Boolean(saldo),
-							},
-							tipooperacao,
-							tipoestoque,
-						),
-					},
-				]);
-				setBusca("");
-				setBuscaAplicada("");
-			})
-			.catch(() => {
-				toast.error("Não foi possível carregar o saldo do produto");
-			});
+		setItens((atual) => [
+			...atual,
+			{
+				...produtoParaItem(produto),
+				quantidade: quantidadePadraoParaItem(
+					produto,
+					tipooperacao,
+					tipoestoque,
+				),
+			},
+		]);
+		setBusca("");
+		setBuscaAplicada("");
 	}
 
 	function removerItem(idproduto: string) {
@@ -268,7 +225,8 @@ export function AjusteEstoqueDialog({
 		itens.length > 0 &&
 		itens.every((item) => {
 			const qtd = parseQtd(item.quantidade);
-			if (tipooperacao === "contagem") return qtd >= 0 && item.quantidade.trim() !== "";
+			if (tipooperacao === "contagem")
+				return qtd >= 0 && item.quantidade.trim() !== "";
 			return qtd > 0;
 		}) &&
 		!mutation.isPending;
@@ -314,9 +272,7 @@ export function AjusteEstoqueDialog({
 						<Label>Aplicar em</Label>
 						<Select
 							value={tipoestoque}
-							onValueChange={(v) =>
-								atualizarTipoEstoque(v as TipoEstoqueAjuste)
-							}
+							onValueChange={(v) => atualizarTipoEstoque(v as TipoEstoqueAjuste)}
 						>
 							<SelectTrigger>
 								<SelectValue />
@@ -370,9 +326,7 @@ export function AjusteEstoqueDialog({
 					{buscaAplicada ? (
 						<div className="max-h-40 overflow-y-auto rounded border">
 							{buscandoProdutos ? (
-								<p className="p-3 text-sm text-muted-foreground">
-									Buscando...
-								</p>
+								<p className="p-3 text-sm text-muted-foreground">Buscando...</p>
 							) : (produtosBusca?.data ?? []).length === 0 ? (
 								<p className="p-3 text-sm text-muted-foreground">
 									Nenhum produto encontrado
@@ -387,7 +341,8 @@ export function AjusteEstoqueDialog({
 										onClick={() => adicionarProduto(produto)}
 									>
 										<span>
-											{produto.codigo ?? "—"} — {produto.descricao || produto.nome}
+											{produto.codigo ?? "—"} —{" "}
+											{produto.descricao || produto.nome}
 										</span>
 										{idsJaIncluidos.has(produto.id) ? (
 											<span className="text-xs text-muted-foreground">
@@ -403,9 +358,7 @@ export function AjusteEstoqueDialog({
 
 				<div className="space-y-2">
 					<div className="flex items-center justify-between">
-						<p className="text-sm font-medium">
-							Produtos ({itens.length})
-						</p>
+						<p className="text-sm font-medium">Produtos ({itens.length})</p>
 						{itens.length > 0 ? (
 							<Button
 								type="button"
@@ -420,8 +373,8 @@ export function AjusteEstoqueDialog({
 
 					{itens.length === 0 ? (
 						<p className="rounded border border-dashed p-6 text-center text-sm text-muted-foreground">
-							Selecione produtos na grade de estoque ou busque acima para montar
-							o ajuste em massa.
+							Selecione produtos na grade ou busque acima para montar o ajuste
+							em massa.
 						</p>
 					) : (
 						<div className="max-h-72 space-y-2 overflow-y-auto rounded border p-2">

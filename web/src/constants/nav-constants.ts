@@ -8,7 +8,6 @@ import {
 	IconHelp,
 	IconHistory,
 	IconListDetails,
-	IconPackage,
 	IconReceiptTax,
 	IconReportMoney,
 	IconScale,
@@ -205,14 +204,6 @@ export const DATA = {
 	] satisfies NavItem[],
 
 	navEstoque: [
-		{
-			title: "Posição de estoque",
-			url: "/estoque",
-			icon: IconPackage,
-			acesso: {
-				perfis: [...PERFIS_GESTAO],
-			},
-		},
 		{
 			title: "Fichas de produção",
 			url: "/fichas-producao",
