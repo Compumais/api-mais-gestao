@@ -194,6 +194,7 @@ function htmlCupomSimples(
 async function enviarSpoolerWindows(
 	html: string,
 	deviceNamePreferido?: string,
+	opcoes?: { alturaPaginaMicrons?: number },
 ): Promise<{ ok: boolean; modo: string }> {
 	const win = new BrowserWindow({
 		show: false,
@@ -218,7 +219,10 @@ async function enviarSpoolerWindows(
 					deviceName,
 					margins: { marginType: "none" },
 					scaleFactor: 100,
-					pageSize: { width: 80000, height: 297000 },
+					pageSize: {
+						width: 80000,
+						height: opcoes?.alturaPaginaMicrons ?? 297000,
+					},
 				},
 				(success, failureReason) => {
 					win.destroy();
@@ -256,8 +260,17 @@ async function enviarParaDestino(params: {
 	qrcode?: string;
 	estrito?: boolean;
 	tamanhoFonte?: TamanhoFonteImpressao;
+	alturaPaginaMicrons?: number;
 }): Promise<{ ok: boolean; modo: string }> {
-	const { texto, html, destino, qrcode, estrito, tamanhoFonte } = params;
+	const {
+		texto,
+		html,
+		destino,
+		qrcode,
+		estrito,
+		tamanhoFonte,
+		alturaPaginaMicrons,
+	} = params;
 	const textoArquivo = texto.replaceAll(
 		MARCADOR_QR_DANFCE,
 		qrcode ? "[QR CODE NFC-e]" : "",
@@ -292,7 +305,9 @@ async function enviarParaDestino(params: {
 	}
 
 	try {
-		return await enviarSpoolerWindows(html, destino.nome);
+		return await enviarSpoolerWindows(html, destino.nome, {
+			alturaPaginaMicrons,
+		});
 	} catch (err) {
 		if (estrito) {
 			throw err;
@@ -327,11 +342,17 @@ export async function enviarDanfceImpressora(
 	destino: DestinoImpressora,
 	opcoes?: { estrito?: boolean },
 ): Promise<{ ok: boolean; modo: string }> {
+	const linhas = params.texto.split("\n").length;
+	const temQr = Boolean(params.qrcode?.trim());
+	const alturaMm = linhas * 3.3 + (temQr ? 40 : 8) + 16;
 	return enviarParaDestino({
 		texto: params.texto,
 		html: params.html,
 		qrcode: params.qrcode,
 		destino,
 		estrito: Boolean(opcoes?.estrito),
+		alturaPaginaMicrons: Math.round(
+			Math.min(2000, Math.max(120, alturaMm)) * 1000,
+		),
 	});
 }

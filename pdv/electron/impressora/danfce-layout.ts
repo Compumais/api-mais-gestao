@@ -56,6 +56,12 @@ export function formatarFoneDanfce(fone: string): string {
 	return fone;
 }
 
+export function formatarCepDanfce(cep: string): string {
+	const d = onlyDigits(cep);
+	if (d.length === 8) return `${d.slice(0, 5)}-${d.slice(5)}`;
+	return cep;
+}
+
 export function formatarDataHoraDanfce(iso: string): string {
 	const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/);
 	if (m) {
@@ -96,6 +102,21 @@ function quebrar(texto: string, largura = LARGURA_DANFCE): string[] {
 	return linhas;
 }
 
+function quebrarComPrefixo(
+	prefixo: string,
+	texto: string,
+	largura = LARGURA_DANFCE,
+): string[] {
+	const indentLen = Math.min(prefixo.length, Math.max(0, largura - 8));
+	const indent = " ".repeat(indentLen);
+	const larguraPrimeira = Math.max(8, largura - prefixo.length);
+	const partes = quebrar(texto, larguraPrimeira);
+	if (!partes[0]) return [prefixo.trimEnd()];
+	return partes.map((parte, i) =>
+		i === 0 ? `${prefixo}${parte}` : `${indent}${parte}`,
+	);
+}
+
 function esquerdaDireita(
 	esquerda: string,
 	direita: string,
@@ -107,111 +128,167 @@ function esquerdaDireita(
 	return `${esq}${" ".repeat(Math.max(gap, largura - esq.length - direita.length))}${direita}`;
 }
 
-function sep(): string {
-	return "-".repeat(LARGURA_DANFCE);
+function sep(char = "-"): string {
+	return char.repeat(LARGURA_DANFCE);
 }
 
-function enderecoEmitente(emitente: EmitenteDanfce): string {
-	const partes = [
-		[emitente.logradouro, emitente.numero].filter(Boolean).join(", "),
-		emitente.bairro,
-		[emitente.municipio, emitente.uf].filter(Boolean).join("-"),
-	]
-		.map((p) => p?.trim())
-		.filter(Boolean);
-	return partes.join(", ");
+function nomeExibicao(emitente: EmitenteDanfce): string {
+	return (emitente.fantasia || emitente.nome || "EMITENTE").trim();
 }
 
-function linhaConsumidor(consumidor?: ConsumidorDanfce): string {
+function linhasEnderecoEmitente(emitente: EmitenteDanfce): string[] {
+	const rua = [emitente.logradouro, emitente.numero]
+		.filter(Boolean)
+		.join(", ");
+	const comComplemento = [rua, emitente.complemento]
+		.filter(Boolean)
+		.join(" - ");
+	const cidade = [emitente.municipio, emitente.uf].filter(Boolean).join("/");
+	const bairroCidade = [emitente.bairro, cidade].filter(Boolean).join(" - ");
+	const cep = emitente.cep
+		? `CEP ${formatarCepDanfce(emitente.cep)}`
+		: undefined;
+	const fone = emitente.fone
+		? `Fone: ${formatarFoneDanfce(emitente.fone)}`
+		: undefined;
+	const linhas: string[] = [];
+	if (comComplemento) linhas.push(...quebrar(comComplemento));
+	if (bairroCidade) linhas.push(...quebrar(bairroCidade));
+	if (cep) linhas.push(cep);
+	if (fone) linhas.push(fone);
+	return linhas;
+}
+
+function linhasConsumidor(consumidor?: ConsumidorDanfce): string[] {
 	if (!consumidor?.documento && !consumidor?.nome) {
-		return "CONSUMIDOR NAO IDENTIFICADO";
+		return ["CONSUMIDOR NAO IDENTIFICADO"];
 	}
+	const linhas: string[] = ["CONSUMIDOR"];
 	if (consumidor.tipo === "cnpj" && consumidor.documento) {
-		const nome = consumidor.nome ? ` - ${consumidor.nome}` : "";
-		return `CONSUMIDOR - CNPJ ${formatarCnpjDanfce(consumidor.documento)}${nome}`;
-	}
-	if (consumidor.tipo === "cpf" && consumidor.documento) {
-		const nome = consumidor.nome ? ` - ${consumidor.nome}` : "";
-		return `CONSUMIDOR - CPF ${formatarCpfDanfce(consumidor.documento)}${nome}`;
+		linhas.push(`CNPJ: ${formatarCnpjDanfce(consumidor.documento)}`);
+	} else if (consumidor.tipo === "cpf" && consumidor.documento) {
+		linhas.push(`CPF: ${formatarCpfDanfce(consumidor.documento)}`);
+	} else if (consumidor.documento) {
+		linhas.push(consumidor.documento);
 	}
 	if (consumidor.nome) {
-		return `CONSUMIDOR - ${consumidor.nome}`;
+		linhas.push(...quebrar(consumidor.nome));
 	}
-	return "CONSUMIDOR NAO IDENTIFICADO";
+	if (consumidor.endereco) {
+		linhas.push(...quebrar(consumidor.endereco));
+	}
+	return linhas;
 }
 
-function linhasItem(item: ItemDanfce): string[] {
-	const codigo = (item.codigo || "").slice(0, 10);
-	const desc = item.descricao || "";
-	const primeira = `${codigo}${codigo ? " " : ""}${desc}`.trim();
-	const linhas = quebrar(primeira);
+function linhasItem(item: ItemDanfce, indice: number): string[] {
+	const seq = String(item.nItem ?? indice);
+	const codigo = (item.codigo || "-").trim();
+	const prefixo = `${seq} ${codigo} `;
+	const desc = (item.descricao || "").trim() || "ITEM";
+	const linhas = quebrarComPrefixo(prefixo, desc);
 	const qtde = formatarQtdeDanfce(item.quantidade);
 	const un = (item.unidade || "UN").slice(0, 4);
-	const valores = `${qtde} ${un}  ${formatarMoedaDanfce(item.unitario)}  ${formatarMoedaDanfce(item.total)}`;
-	linhas.push(esquerdaDireita("", valores));
+	const valores = `${qtde} ${un} x ${formatarMoedaDanfce(item.unitario)}`;
+	linhas.push(esquerdaDireita(`  ${valores}`, formatarMoedaDanfce(item.total)));
+	if (item.desconto && item.desconto > 0) {
+		linhas.push(
+			esquerdaDireita("  desc. item", `-${formatarMoedaDanfce(item.desconto)}`),
+		);
+	}
 	return linhas;
+}
+
+function linhasChave(chave: string): string[] {
+	const grupos = formatarChaveDanfce(chave).split(" ").filter(Boolean);
+	if (!grupos.length) return [];
+	if (formatarChaveDanfce(chave).length <= LARGURA_DANFCE) {
+		return centralizar(formatarChaveDanfce(chave));
+	}
+	const meio = Math.ceil(grupos.length / 2);
+	return [
+		...centralizar(grupos.slice(0, meio).join(" ")),
+		...centralizar(grupos.slice(meio).join(" ")),
+	];
 }
 
 export function montarTextoDanfce(dados: DadosDanfce): string {
 	const linhas: string[] = [];
 	const emit = dados.emitente;
+	const titulo = nomeExibicao(emit);
+	const razao = emit.nome?.trim();
 
-	linhas.push(...centralizar(emit.nome || "EMITENTE"));
-	const ie = emit.ie ? ` | IE: ${emit.ie}` : "";
-	linhas.push(
-		...centralizar(
-			`CNPJ: ${emit.cnpj ? formatarCnpjDanfce(emit.cnpj) : "—"}${ie}`,
-		),
-	);
-	const endereco = enderecoEmitente(emit);
-	if (endereco) {
-		linhas.push(...centralizar(endereco));
+	linhas.push(sep("="));
+	linhas.push(...centralizar(titulo));
+	linhas.push(sep("="));
+	if (razao && razao !== titulo) {
+		linhas.push(...quebrar(razao));
 	}
-	if (emit.fone) {
-		linhas.push(...centralizar(`Fone: ${formatarFoneDanfce(emit.fone)}`));
+	if (emit.cnpj) {
+		linhas.push(`CNPJ: ${formatarCnpjDanfce(emit.cnpj)}`);
 	}
+	if (emit.ie) {
+		linhas.push(`IE: ${emit.ie}`);
+	}
+	linhas.push(...linhasEnderecoEmitente(emit));
 
 	linhas.push(sep());
-	linhas.push(
-		...centralizar(
-			"Documento Auxiliar da Nota Fiscal de Consumidor Eletronica",
-		),
-	);
-	linhas.push(...centralizar("Não permite aproveitamento de crédito de ICMS"));
+	linhas.push(...centralizar("DANFE NFC-e"));
+	linhas.push(...centralizar("Documento Auxiliar da Nota Fiscal"));
+	linhas.push(...centralizar("de Consumidor Eletronica"));
+	linhas.push(...centralizar("Nao permite aproveitamento de credito de ICMS"));
+
 	if (dados.contingencia) {
-		linhas.push(...centralizar("EMITIDA EM CONTINGÊNCIA"));
+		linhas.push(sep());
+		linhas.push(...centralizar("EMITIDA EM CONTINGENCIA"));
 		if (dados.pendenteAutorizacao) {
-			linhas.push(...centralizar("Pendente de autorização"));
+			linhas.push(...centralizar("Pendente de autorizacao"));
 		}
 	}
 	if (dados.homologacao) {
+		linhas.push(sep());
 		linhas.push(...centralizar("SEM VALOR FISCAL"));
-		linhas.push(...centralizar("Emitida em ambiente de Homologacao"));
+		linhas.push(...centralizar("EMITIDA EM AMBIENTE DE HOMOLOGACAO"));
 	}
 
 	linhas.push(sep());
-	linhas.push("Codigo Descricao Qtde UN Vl Unit Vl Total");
-	for (const item of dados.itens) {
-		linhas.push(...linhasItem(item));
-	}
+	linhas.push("# CODIGO DESCRICAO");
+	linhas.push(esquerdaDireita("  QTD UN x VL UNIT", "VL ITEM"));
+	linhas.push(sep());
+	dados.itens.forEach((item, idx) => {
+		linhas.push(...linhasItem(item, idx + 1));
+	});
 
 	linhas.push(sep());
 	linhas.push(
 		esquerdaDireita("Qtde total de itens", String(dados.itens.length)),
 	);
 	linhas.push(
-		esquerdaDireita("Valor Total R$", formatarMoedaDanfce(dados.valorProdutos)),
+		esquerdaDireita("Valor total R$", formatarMoedaDanfce(dados.valorProdutos)),
 	);
+	if (dados.desconto > 0) {
+		linhas.push(
+			esquerdaDireita("Desconto R$", formatarMoedaDanfce(dados.desconto)),
+		);
+	}
+	if (dados.frete > 0) {
+		linhas.push(esquerdaDireita("Frete R$", formatarMoedaDanfce(dados.frete)));
+	}
+	if (dados.seguro > 0) {
+		linhas.push(
+			esquerdaDireita("Seguro R$", formatarMoedaDanfce(dados.seguro)),
+		);
+	}
+	if (dados.outras > 0) {
+		linhas.push(
+			esquerdaDireita("Outras despesas R$", formatarMoedaDanfce(dados.outras)),
+		);
+	}
 	linhas.push(
-		esquerdaDireita("Desconto R$", formatarMoedaDanfce(dados.desconto)),
-	);
-	linhas.push(esquerdaDireita("Frete R$", formatarMoedaDanfce(dados.frete)));
-	linhas.push(
-		esquerdaDireita("Valor a Pagar R$", formatarMoedaDanfce(dados.valorPagar)),
+		esquerdaDireita("Valor a pagar R$", formatarMoedaDanfce(dados.valorPagar)),
 	);
 
 	linhas.push(sep());
-	linhas.push(esquerdaDireita("FORMA PAGAMENTO", "VALOR PAGO R$"));
+	linhas.push(esquerdaDireita("FORMA DE PAGAMENTO", "VALOR PAGO"));
 	if (dados.pagamentos.length) {
 		for (const pag of dados.pagamentos) {
 			linhas.push(esquerdaDireita(pag.tipo, formatarMoedaDanfce(pag.valor)));
@@ -220,64 +297,56 @@ export function montarTextoDanfce(dados: DadosDanfce): string {
 	linhas.push(esquerdaDireita("Troco R$", formatarMoedaDanfce(dados.troco)));
 
 	linhas.push(sep());
-	linhas.push(...centralizar("Consulte pela Chave de Acesso em:"));
+	linhas.push(...centralizar("Consulte pela Chave de Acesso em"));
 	if (dados.urlChave) {
 		linhas.push(...centralizar(dados.urlChave));
 	}
 	if (dados.chave) {
-		const grupos = formatarChaveDanfce(dados.chave).split(" ");
-		if (formatarChaveDanfce(dados.chave).length <= LARGURA_DANFCE) {
-			linhas.push(...centralizar(formatarChaveDanfce(dados.chave)));
-		} else {
-			const meio = Math.ceil(grupos.length / 2);
-			linhas.push(...centralizar(grupos.slice(0, meio).join(" ")));
-			linhas.push(...centralizar(grupos.slice(meio).join(" ")));
-		}
+		linhas.push(...linhasChave(dados.chave));
 	}
 
 	linhas.push(sep());
-	linhas.push(...centralizar(linhaConsumidor(dados.consumidor)));
-	if (dados.consumidor?.endereco) {
-		linhas.push(...centralizar(dados.consumidor.endereco));
-	}
+	linhas.push(...linhasConsumidor(dados.consumidor));
+
+	linhas.push(sep());
 	const numero = String(dados.numero || 0).padStart(9, "0");
 	const serie = String(dados.serie || 0).padStart(3, "0");
-	const dhEmi = dados.dhEmi ? ` ${formatarDataHoraDanfce(dados.dhEmi)}` : "";
-	linhas.push(...centralizar(`NFCe n. ${numero} Série ${serie}${dhEmi}`));
+	linhas.push(`NFC-e n. ${numero}  Serie ${serie}`);
+	if (dados.dhEmi) {
+		linhas.push(`Emissao: ${formatarDataHoraDanfce(dados.dhEmi)}`);
+	}
 	if (dados.protocolo) {
-		linhas.push(
-			...centralizar(
-				`Protocolo de Autorização: ${formatarProtocoloDanfce(dados.protocolo)}`,
-			),
-		);
+		linhas.push("Protocolo de autorizacao:");
+		linhas.push(formatarProtocoloDanfce(dados.protocolo));
 	}
 	if (dados.dhAutorizacao) {
-		linhas.push(
-			...centralizar(
-				`Data de Autorização: ${formatarDataHoraDanfce(dados.dhAutorizacao)}`,
-			),
-		);
+		linhas.push(formatarDataHoraDanfce(dados.dhAutorizacao));
 	}
 
-	linhas.push(sep());
+	linhas.push(sep("="));
 	if (dados.qrcode) {
 		linhas.push(MARCADOR_QR_DANFCE);
-		linhas.push(sep());
+		linhas.push(sep("="));
 	}
 
+	linhas.push(...centralizar("Tributos totais incidentes"));
+	linhas.push(...centralizar("(Lei Federal 12.741/2012)"));
 	const trib =
-		dados.vTotTrib != null && dados.vTotTrib > 0
-			? formatarMoedaDanfce(dados.vTotTrib)
-			: "------";
-	linhas.push(
-		...centralizar(
-			`Tributos totais Incidentes (Lei Federal 12.741/2012): R$ ${trib}`,
-		),
-	);
-	if (dados.infCpl) {
-		for (const trecho of dados.infCpl.split(";")) {
-			const t = trecho.trim();
-			if (t) linhas.push(...quebrar(t));
+		dados.vTotTrib != null
+			? `R$ ${formatarMoedaDanfce(dados.vTotTrib)}`
+			: "R$ 0,00";
+	linhas.push(...centralizar(trib));
+
+	const extras = [dados.infAdFisco, dados.infCpl]
+		.filter(Boolean)
+		.join("; ")
+		.split(";")
+		.map((t) => t.trim())
+		.filter(Boolean);
+	if (extras.length) {
+		linhas.push(sep());
+		for (const trecho of extras) {
+			linhas.push(...quebrar(trecho));
 		}
 	}
 
@@ -292,13 +361,16 @@ export function juntarDadosDanfce(
 ): DadosDanfce {
 	const emitente: EmitenteDanfce = {
 		nome: xml.emitente?.nome || fallback.emitente?.nome || "",
+		fantasia: xml.emitente?.fantasia || fallback.emitente?.fantasia,
 		cnpj: xml.emitente?.cnpj || fallback.emitente?.cnpj || "",
 		ie: xml.emitente?.ie || fallback.emitente?.ie,
 		logradouro: xml.emitente?.logradouro || fallback.emitente?.logradouro,
 		numero: xml.emitente?.numero || fallback.emitente?.numero,
+		complemento: xml.emitente?.complemento || fallback.emitente?.complemento,
 		bairro: xml.emitente?.bairro || fallback.emitente?.bairro,
 		municipio: xml.emitente?.municipio || fallback.emitente?.municipio,
 		uf: xml.emitente?.uf || fallback.emitente?.uf,
+		cep: xml.emitente?.cep || fallback.emitente?.cep,
 		fone: xml.emitente?.fone || fallback.emitente?.fone,
 		crt: xml.emitente?.crt ?? fallback.emitente?.crt,
 	};
@@ -326,6 +398,8 @@ export function juntarDadosDanfce(
 		valorProdutos: xml.valorProdutos ?? fallback.valorProdutos ?? 0,
 		desconto: xml.desconto ?? fallback.desconto ?? 0,
 		frete: xml.frete ?? fallback.frete ?? 0,
+		seguro: xml.seguro ?? fallback.seguro ?? 0,
+		outras: xml.outras ?? fallback.outras ?? 0,
 		valorPagar: xml.valorPagar ?? fallback.valorPagar ?? 0,
 		pagamentos,
 		troco: xml.troco || fallback.troco || 0,
@@ -348,5 +422,6 @@ export function juntarDadosDanfce(
 		qrcode,
 		vTotTrib: xml.vTotTrib ?? fallback.vTotTrib ?? null,
 		infCpl: xml.infCpl || fallback.infCpl,
+		infAdFisco: xml.infAdFisco || fallback.infAdFisco,
 	};
 }

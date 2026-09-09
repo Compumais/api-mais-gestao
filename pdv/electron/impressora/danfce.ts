@@ -115,6 +115,8 @@ export async function montarDadosDanfce(params: {
 		valorProdutos: venda.valortotal + (venda.valordesconto ?? 0),
 		desconto: venda.valordesconto ?? 0,
 		frete: 0,
+		seguro: 0,
+		outras: 0,
 		valorPagar: venda.valortotal,
 		pagamentos,
 		troco: venda.valortroco ?? 0,
