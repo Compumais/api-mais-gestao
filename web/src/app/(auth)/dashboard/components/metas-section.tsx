@@ -2,6 +2,7 @@
 
 import dayjs from "dayjs";
 import * as React from "react";
+import { inicioFimMesBrasilia } from "@/lib/date";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { Button } from "@/components/ui/button";
 import {
@@ -53,12 +54,9 @@ export function MetasSection() {
 	const excluir = useExcluirMetaDashboard();
 
 	const [tipo, setTipo] = React.useState<TipoMetaDashboard>("faturamento");
-	const [periodoInicio, setPeriodoInicio] = React.useState(
-		dayjs().startOf("month").format("YYYY-MM-DD"),
-	);
-	const [periodoFim, setPeriodoFim] = React.useState(
-		dayjs().endOf("month").format("YYYY-MM-DD"),
-	);
+	const mesBrasilia = inicioFimMesBrasilia();
+	const [periodoInicio, setPeriodoInicio] = React.useState(mesBrasilia.inicio);
+	const [periodoFim, setPeriodoFim] = React.useState(mesBrasilia.fim);
 	const [valorMeta, setValorMeta] = React.useState("");
 
 	const onSubmit = async (e: React.FormEvent) => {

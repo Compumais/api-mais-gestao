@@ -1,6 +1,5 @@
 "use client";
 
-import dayjs from "dayjs";
 import * as React from "react";
 import {
 	Card,
@@ -26,17 +25,15 @@ import {
 } from "@/components/ui/table";
 import { useDashboardDreAvancado } from "@/hooks/dashboard/use-dashboard-queries";
 import { formatCurrency, formatPercent } from "@/lib/dashboard-periodo";
+import { anoMesBrasilia } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
 export function DreSection() {
-	const agora = dayjs();
 	const [granularidade, setGranularidade] = React.useState<
 		"ano" | "trimestre" | "mes"
 	>("mes");
 
-	const ano = agora.year();
-	const mes = agora.month() + 1;
-	const trimestre = Math.floor(agora.month() / 3) + 1;
+	const { ano, mes, trimestre } = anoMesBrasilia();
 
 	const { data, isLoading } = useDashboardDreAvancado(granularidade, {
 		ano,

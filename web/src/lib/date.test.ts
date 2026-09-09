@@ -5,6 +5,7 @@ import {
 	formatDateOnlyDisplay,
 	formatDateOnlyForInput,
 	formatDateTimeBrasilia,
+	anoMesBrasilia,
 	hojeBrasiliaIsoDate,
 	inicioFimMesBrasilia,
 } from "./date";
@@ -89,5 +90,13 @@ describe("calendário civil de Brasília", () => {
 			fim: "2026-09-30",
 		});
 		expect(adicionarDiasIso("2026-09-08", -1)).toBe("2026-09-07");
+	});
+
+	it("resolve ano e mês civis de Brasília após 21h UTC", () => {
+		expect(anoMesBrasilia(new Date("2026-09-09T00:30:00.000Z"))).toEqual({
+			ano: 2026,
+			mes: 9,
+			trimestre: 3,
+		});
 	});
 });
