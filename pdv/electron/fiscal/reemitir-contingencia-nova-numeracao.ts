@@ -1,3 +1,5 @@
+import { buscarVendaPdvGourmet } from "../api/client";
+import { execute, query } from "../db/database";
 import {
 	atualizarNfceLocalCampos,
 	avancarNumeracaoNfceAposEmissao,
@@ -6,9 +8,9 @@ import {
 	obterNfcePorVenda,
 	obterVenda,
 } from "../db/repos";
-import { execute, query } from "../db/database";
 import { emitirContingencia } from "./contingencia";
 import { classificarConflitosNumeracao } from "./numeracao-nfce";
+import { aplicarNfceRetaguardaNaVendaLocal } from "../sync/nfce-retaguarda";
 import {
 	marcarConflitosNumeracaoNfceLocal,
 	sincronizarFiscalPdv,
@@ -70,6 +72,35 @@ export async function reemitirContingenciaComNovaNumeracao(params: {
 
 	try {
 		await sincronizarFiscalPdv().catch(() => undefined);
+
+		if (venda.idremoto) {
+			try {
+				const remota = await buscarVendaPdvGourmet(venda.idremoto);
+				const idNotaRemota =
+					remota.idnotafiscalnfce ?? remota.nfce?.idnotafiscal ?? null;
+				if (idNotaRemota) {
+					await aplicarNfceRetaguardaNaVendaLocal(params.idvenda, {
+						idnotafiscal: idNotaRemota,
+						status: remota.nfce?.status ?? "autorizada",
+						chave: remota.nfce?.chave ?? null,
+						serie: remota.nfce?.serie ?? null,
+						numero: remota.nfce?.numero ?? null,
+						protocolo: remota.nfce?.protocolo ?? null,
+					});
+					return {
+						modo: "online",
+						mensagem:
+							"Esta venda já possui NFC-e na retaguarda. Status local sincronizado — não é necessário reemitir.",
+						chave: remota.nfce?.chave ?? undefined,
+						numeroAnterior,
+						serie: serieAnterior,
+					};
+				}
+			} catch {
+				/* retaguarda indisponível: segue com nova contingência */
+			}
+		}
+
 		await cancelarOutboxTransmitirContingenciaPendente(params.idvenda);
 		await atualizarNfceLocalCampos(idNfceAnterior, {
 			status: "conflito_numeracao",
@@ -88,16 +119,6 @@ export async function reemitirContingenciaComNovaNumeracao(params: {
 			forcarNovaNumeracao: true,
 			silenciarImpressao: true,
 		});
-
-		if (resultado.modo === "online") {
-			return {
-				modo: "online",
-				mensagem: resultado.mensagem,
-				chave: resultado.chave,
-				numeroAnterior,
-				serie: serieAnterior,
-			};
-		}
 
 		if (resultado.modo !== "contingencia") {
 			await execute(

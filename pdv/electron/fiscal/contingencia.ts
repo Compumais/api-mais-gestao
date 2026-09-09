@@ -326,36 +326,6 @@ export async function emitirContingencia(
 		}
 	}
 
-	if (venda.idremoto && opcoes?.forcarNovaNumeracao) {
-		try {
-			const remota = await buscarVendaPdvGourmet(venda.idremoto);
-			const idNotaRemota =
-				remota.idnotafiscalnfce ?? remota.nfce?.idnotafiscal ?? null;
-			if (idNotaRemota) {
-				const { aplicarNfceRetaguardaNaVendaLocal } = await import(
-					"../sync/nfce-retaguarda"
-				);
-				await aplicarNfceRetaguardaNaVendaLocal(idvenda, {
-					idnotafiscal: idNotaRemota,
-					status: remota.nfce?.status ?? "autorizada",
-					chave: remota.nfce?.chave ?? null,
-					serie: remota.nfce?.serie ?? null,
-					numero: remota.nfce?.numero ?? null,
-					protocolo: remota.nfce?.protocolo ?? null,
-				});
-				return {
-					modo: "online",
-					idnfce: idNotaRemota,
-					chave: remota.nfce?.chave ?? undefined,
-					mensagem:
-						"Esta venda já possui NFC-e na retaguarda. Status local sincronizado — não é necessário reemitir.",
-				};
-			}
-		} catch {
-			// retaguarda indisponível: segue com nova contingência local
-		}
-	}
-
 	const numeracao = await obterNumeracaoNfce();
 	if (!numeracao.cnpj || !numeracao.csc_id || !numeracao.csc_token) {
 		await atualizarVendaSync(idvenda, { nfce_status: "erro_config" });
