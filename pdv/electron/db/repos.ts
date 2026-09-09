@@ -1017,13 +1017,23 @@ export function chaveIdempotenciaOutbox(
 ): string | null {
 	if (!payload || typeof payload !== "object") return null;
 	const dados = payload as Record<string, unknown>;
-	const identidade = [
-		dados.idlocal,
-		dados.idvenda,
-		dados.idnfce_local,
-		dados.idnfce,
-		dados.chave,
-	]
+	const ordem =
+		tipo === "transmitir_nfce_contingencia"
+			? [
+					dados.idnfce_local,
+					dados.idnfce,
+					dados.chave,
+					dados.idlocal,
+					dados.idvenda,
+				]
+			: [
+					dados.idlocal,
+					dados.idvenda,
+					dados.idnfce_local,
+					dados.idnfce,
+					dados.chave,
+				];
+	const identidade = ordem
 		.map((valor) => (valor == null ? "" : String(valor).trim()))
 		.find(Boolean);
 	return identidade ? `${tipo}:${identidade}` : null;

@@ -55,6 +55,13 @@ export function podeAplicarStatusNfce(
 	if (statusAtual === statusRemoto) return true;
 	if (TERMINAIS_NFCE.has(statusAtual)) return false;
 	if (statusAtual === "autorizada") return statusRemoto === "cancelada";
+	if (statusAtual === "conflito_numeracao") {
+		return (
+			statusRemoto === "autorizada" ||
+			statusRemoto === "cancelada" ||
+			statusRemoto === "inutilizada"
+		);
+	}
 	return true;
 }
 

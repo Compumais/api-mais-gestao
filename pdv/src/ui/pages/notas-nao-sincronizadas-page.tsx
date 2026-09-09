@@ -178,7 +178,11 @@ export function NotasNaoSincronizadasPage() {
 				"reemitirContingenciaComNovaNumeracao",
 				vendaId,
 			);
-			setMsg(result.mensagem);
+			setMsg(
+				result.modo === "erro"
+					? `Erro ao reemitir: ${result.mensagem}`
+					: result.mensagem,
+			);
 			await load();
 		} catch (err) {
 			setMsg(
