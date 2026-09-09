@@ -15,6 +15,7 @@ import {
 import { empresa } from "./empresas.js";
 import { entidade } from "./entidade.js";
 import { planocontas } from "./plano-contas.js";
+import { tipocobranca } from "./tipo-cobranca.js";
 import { tipodocumentofinanceiro } from "./tipo-documento-financeiro.js";
 
 export const financeiro = pgTable(
@@ -69,7 +70,6 @@ export const financeiro = pgTable(
 		remessagerada: smallint(),
 		boletoimpresso: smallint(),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-		idtipocobranca: text(),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 		idrepresentante: text(),
 		percentualcomissaofaturamento: numeric({ precision: 5, scale: 2 }),
@@ -92,6 +92,7 @@ export const financeiro = pgTable(
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 		idcarteirageradauboleto: text(),
 		tiporateiocentrocusto: smallint(),
+		idtipocobranca: text(),
 		nomeadministradora: varchar({ length: 50 }),
 		// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 		iddependente: text(),
@@ -203,6 +204,13 @@ export const financeiro = pgTable(
 			columns: [table.idplanocontas],
 			foreignColumns: [planocontas.id],
 			name: "financeiro_idplanocontas_fkey",
+		})
+			.onUpdate("cascade")
+			.onDelete("set null"),
+		foreignKey({
+			columns: [table.idtipocobranca],
+			foreignColumns: [tipocobranca.id],
+			name: "financeiro_idtipocobranca_fkey",
 		})
 			.onUpdate("cascade")
 			.onDelete("set null"),
