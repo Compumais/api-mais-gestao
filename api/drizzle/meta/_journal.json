@@ -673,6 +673,13 @@
       "when": 1785022000000,
       "tag": "0093_cfop_6914_destino_feira",
       "breakpoints": true
+    },
+    {
+      "idx": 95,
+      "version": "7",
+      "when": 1788975600000,
+      "tag": "0094_tipocobranca",
+      "breakpoints": true
     }
   ]
 }
