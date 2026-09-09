@@ -647,6 +647,47 @@ export async function buscarNotaFiscalRascunhoPorId(
 }
 
 /**
+ * Busca NFC-e (modelo 65) ativa pela série/número na empresa.
+ * Ignora status que não bloqueiam chave (rascunho/cancelada compra).
+ */
+export async function buscarNotaFiscalNfcePorSerieNumero(
+	idempresa: string,
+	serie: string | number,
+	numero: string | number,
+	tipoambientenfe?: number | null,
+) {
+	const serieNorm = String(serie).replace(/\D/g, "");
+	const numeroNorm = String(numero).replace(/\D/g, "");
+	if (!serieNorm || !numeroNorm) {
+		return undefined;
+	}
+
+	const where = [
+		eq(notafiscal.idempresa, idempresa),
+		eq(notafiscal.modelo, "65"),
+		eq(notafiscal.serie, serieNorm),
+		eq(notafiscal.numeronotafiscal, numeroNorm),
+		or(
+			isNull(notafiscal.status),
+			notInArray(notafiscal.status, [...STATUS_NF_QUE_NAO_BLOQUEIAM_CHAVE]),
+		),
+	];
+
+	if (tipoambientenfe === 1 || tipoambientenfe === 2) {
+		where.push(eq(notafiscal.tipoambientenfe, tipoambientenfe));
+	}
+
+	const [registro] = await db
+		.select()
+		.from(notafiscal)
+		.where(and(...where))
+		.orderBy(desc(notafiscal.datainclusao))
+		.limit(1);
+
+	return registro;
+}
+
+/**
  * Busca nota pela chave NF-e que ainda bloqueia reentrada
  * (ignora rascunho de importação e compra cancelada).
  */

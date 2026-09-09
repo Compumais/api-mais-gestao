@@ -5,6 +5,7 @@ import { buscarEmpresaPorId } from "@/repositories/empresa-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { avancarNumeroproximoSerieSeNecessario } from "@/repositories/nfe-serie-repositories.js";
 import {
+	buscarNotaFiscalNfcePorSerieNumero,
 	buscarNotaFiscalPorChaveNfe,
 	buscarNotaFiscalPorId,
 	criarNotaFiscalComItens,
@@ -225,6 +226,36 @@ export async function transmitirNfceContingenciaService({
 	);
 	if (serieFinal == null || numeroFinal == null) {
 		return httpBadRequest("Série ou número da NFC-e de contingência inválidos");
+	}
+
+	const existentePorNumero = await buscarNotaFiscalNfcePorSerieNumero(
+		idempresa,
+		serieFinal,
+		numeroFinal,
+	);
+	if (existentePorNumero?.modelo === "65") {
+		const chaveExistente = normalizarChave(existentePorNumero.chavenfe ?? undefined);
+		if (chaveExistente && chaveNorm && chaveExistente !== chaveNorm) {
+			return httpBadRequest(
+				`NFC-e série ${serieFinal} número ${numeroFinal} já utilizada (chave ${chaveExistente})`,
+				{ code: "NFCE_NUMERO_JA_USADO" },
+			);
+		}
+		if (chaveExistente && chaveNorm && chaveExistente === chaveNorm) {
+			return httpCriacao(
+				resultadoExistente(
+					existentePorNumero.id,
+					existentePorNumero.status,
+					chaveExistente,
+				),
+			);
+		}
+		if (!chaveNorm && chaveExistente) {
+			return httpBadRequest(
+				`NFC-e série ${serieFinal} número ${numeroFinal} já utilizada (chave ${chaveExistente})`,
+				{ code: "NFCE_NUMERO_JA_USADO" },
+			);
+		}
 	}
 
 	const idnotafiscal = uuidv4();

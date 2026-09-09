@@ -47,16 +47,20 @@ import {
 import {
 	atualizarCaixaIdRemoto,
 	atualizarNumeracaoNfce,
+	atualizarNfceLocalCampos,
 	atualizarVendaSync,
 	calcularResumoTurno,
 	contarOutboxPendentes,
 	type ItemCarrinho,
 	type LancamentoPagamento,
+	listarNfceLocalParaConflitoNumeracao,
 	marcarNfceTransmitida,
 	marcarOutboxConcluido,
 	marcarOutboxErro,
 	marcarProdutosAusentesInativos,
 	obterCaixaTurno,
+	obterMaxNumeroNfceLocal,
+	obterNumeracaoNfce,
 	obterSessao,
 	obterVenda,
 	reivindicarOutboxPendentes,
@@ -77,6 +81,10 @@ import {
 	parseMeiosPagamentoNfceConfig,
 	resumoPagamentoParaNfce,
 } from "../fiscal/meios-pagamento-nfce";
+import {
+	classificarConflitosNumeracao,
+	resolverProximoNumeroMonotonico,
+} from "../fiscal/numeracao-nfce";
 import { atualizarCacheTerminaisPdv } from "./terminais-pdv";
 
 let syncing = false;
@@ -504,9 +512,19 @@ export async function sincronizarFiscalPdv(): Promise<{
 	try {
 		const fiscal = await buscarPdvFiscal(sessao.idempresa, numeropdv);
 		const serie = Number(fiscal.serie);
+		const serieEfetiva =
+			Number.isFinite(serie) && serie > 0 ? serie : undefined;
+		const atual = await obterNumeracaoNfce();
+		const serieParaMax = serieEfetiva ?? atual.serie;
+		const maxLocal = await obterMaxNumeroNfceLocal(serieParaMax);
+		const proximo = resolverProximoNumeroMonotonico({
+			remoto: Number(fiscal.numeroproximo),
+			localAtual: atual.proximo_numero,
+			maxNumeroUsadoLocal: maxLocal,
+		});
 		await atualizarNumeracaoNfce({
-			...(Number.isFinite(serie) && serie > 0 ? { serie } : {}),
-			proximo_numero: fiscal.numeroproximo,
+			...(serieEfetiva ? { serie: serieEfetiva } : {}),
+			proximo_numero: proximo,
 			csc_id: fiscal.csc_id,
 			csc_token: fiscal.csc_token,
 			ambiente: fiscal.ambiente,
@@ -529,6 +547,7 @@ export async function sincronizarFiscalPdv(): Promise<{
 			await setConfig("certificado_validade", "");
 		}
 
+		await marcarConflitosNumeracaoNfceLocal();
 		await setConfig("fiscal_sync_erro", "");
 		await setConfig("fiscal_ultima_sync", new Date().toISOString());
 		await cachearEmitenteDanfce(sessao.idempresa, fiscal.cnpj, fiscal.uf);
@@ -545,6 +564,26 @@ export async function sincronizarFiscalPdv(): Promise<{
 		await setConfig("fiscal_sync_erro", erro);
 		return { ok: false, erro };
 	}
+}
+
+/** Marca NFC-e locais órfãs com o mesmo nNF de outra nota como conflito. */
+export async function marcarConflitosNumeracaoNfceLocal(): Promise<number> {
+	const registros = await listarNfceLocalParaConflitoNumeracao();
+	const conflitos = classificarConflitosNumeracao(registros);
+	let marcados = 0;
+	for (const conflito of conflitos) {
+		for (const id of conflito.idsOrfaos) {
+			await atualizarNfceLocalCampos(id, { status: "conflito_numeracao" });
+			const nfce = conflito.nfces.find((n) => n.id === id);
+			if (nfce) {
+				await atualizarVendaSync(nfce.idvenda, {
+					nfce_status: "conflito_numeracao",
+				});
+			}
+			marcados += 1;
+		}
+	}
+	return marcados;
 }
 
 export async function processarOutbox(): Promise<{
@@ -568,6 +607,8 @@ export async function processarOutbox(): Promise<{
 		if (!sessao.idempresa || !sessao.token || !sessao.userid) {
 			return { processados, erros };
 		}
+
+		await sincronizarFiscalPdv().catch(() => undefined);
 
 		for (let indice = 0; indice < 10; indice++) {
 			const [item] = await reivindicarOutboxPendentes(OUTBOX_WORKER_ID, 1);
@@ -899,32 +940,102 @@ async function syncTransmitirContingencia(
 		local &&
 		(local.nfce_status === "autorizada" ||
 			local.nfce_status === "erro" ||
-			local.nfce_status === "transmitida")
+			local.nfce_status === "transmitida" ||
+			local.nfce_status === "conflito_numeracao")
 	) {
-		if (payload.idnfce_local) {
+		if (
+			payload.idnfce_local &&
+			local.nfce_status !== "conflito_numeracao"
+		) {
 			await marcarNfceTransmitida(String(payload.idnfce_local));
+		}
+		if (local.nfce_status === "conflito_numeracao") {
+			throw new ApiError(
+				"NFC-e com conflito de numeração — reemita com nova numeração",
+				400,
+				"NFCE_NUMERO_JA_USADO",
+			);
 		}
 		return;
 	}
 
-	const result = await transmitirNfceContingencia({
-		idempresa,
-		idvenda: local?.idremoto ?? (idlocal || undefined),
-		xml: String(payload.xml),
-		chave: payload.chave ? String(payload.chave) : undefined,
-		serie: Number(payload.serie),
-		numero: Number(payload.numero),
-		motivo: String(payload.motivo ?? "Contingencia offline PDV"),
-		datacontingencia: String(payload.datacontingencia),
-	});
-
-	if (payload.idnfce_local) {
-		await marcarNfceTransmitida(String(payload.idnfce_local));
+	const serie = Number(payload.serie);
+	const numero = Number(payload.numero);
+	const chavePayload = payload.chave ? String(payload.chave) : "";
+	if (
+		Number.isFinite(serie) &&
+		Number.isFinite(numero) &&
+		numero >= 1 &&
+		payload.idnfce_local
+	) {
+		const { numeroNfceLocalJaUsado, atualizarNfceLocalCampos } = await import(
+			"../db/repos"
+		);
+		const colide = await numeroNfceLocalJaUsado(
+			serie,
+			numero,
+			String(payload.idnfce_local),
+		);
+		if (colide) {
+			await atualizarNfceLocalCampos(String(payload.idnfce_local), {
+				status: "conflito_numeracao",
+			});
+			if (idlocal) {
+				await atualizarVendaSync(idlocal, {
+					nfce_status: "conflito_numeracao",
+				});
+			}
+			throw new ApiError(
+				`Número ${numero} série ${serie} já usado por outra NFC-e local`,
+				400,
+				"NFCE_NUMERO_JA_USADO",
+			);
+		}
 	}
-	if (idlocal) {
-		await atualizarVendaSync(idlocal, {
-			nfce_status: result.transmitida ? "transmitida" : "contingencia",
+
+	try {
+		const result = await transmitirNfceContingencia({
+			idempresa,
+			idvenda: local?.idremoto ?? (idlocal || undefined),
+			xml: String(payload.xml),
+			chave: chavePayload || undefined,
+			serie,
+			numero,
+			motivo: String(payload.motivo ?? "Contingencia offline PDV"),
+			datacontingencia: String(payload.datacontingencia),
 		});
+
+		if (payload.idnfce_local) {
+			await marcarNfceTransmitida(String(payload.idnfce_local));
+		}
+		if (idlocal) {
+			await atualizarVendaSync(idlocal, {
+				nfce_status: result.transmitida ? "transmitida" : "contingencia",
+			});
+		}
+		if (Number.isFinite(serie) && Number.isFinite(numero) && numero >= 1) {
+			const { avancarNumeracaoNfceAposEmissao } = await import("../db/repos");
+			await avancarNumeracaoNfceAposEmissao(serie, numero);
+		}
+	} catch (err) {
+		if (
+			err instanceof ApiError &&
+			(/NFCE_NUMERO_JA_USADO/i.test(err.message) ||
+				err.code === "NFCE_NUMERO_JA_USADO")
+		) {
+			if (payload.idnfce_local) {
+				const { atualizarNfceLocalCampos } = await import("../db/repos");
+				await atualizarNfceLocalCampos(String(payload.idnfce_local), {
+					status: "conflito_numeracao",
+				});
+			}
+			if (idlocal) {
+				await atualizarVendaSync(idlocal, {
+					nfce_status: "conflito_numeracao",
+				});
+			}
+		}
+		throw err;
 	}
 }
 

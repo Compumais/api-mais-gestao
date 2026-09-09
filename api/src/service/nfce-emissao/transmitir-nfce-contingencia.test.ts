@@ -17,6 +17,7 @@ vi.mock("@/service/nota-fiscal/arquivar-xml-nota-fiscal.js");
 
 const cnpj = "12345678000190";
 const chave = "35260812345678000190650010000000049000000019";
+const chaveRival = "35260812345678000190650010000000049000000099";
 const xmlContingencia = `<?xml version="1.0" encoding="UTF-8"?>
 <NFe xmlns="http://www.portalfiscal.inf.br/nfe">
 	<infNFe Id="NFe${chave}" versao="4.00">
@@ -50,6 +51,9 @@ describe("transmitirNfceContingenciaService", () => {
 		vi.mocked(notaRepository.buscarNotaFiscalPorChaveNfe).mockResolvedValue(
 			undefined as never,
 		);
+		vi.mocked(
+			notaRepository.buscarNotaFiscalNfcePorSerieNumero,
+		).mockResolvedValue(undefined as never);
 		vi.mocked(vendaRepository.buscarVendaPdvGourmetPorId).mockResolvedValue(
 			undefined as never,
 		);
@@ -248,6 +252,41 @@ describe("transmitirNfceContingenciaService", () => {
 		});
 
 		expect(resultado.success).toBe(false);
+		expect(notaRepository.criarNotaFiscalComItens).not.toHaveBeenCalled();
+	});
+
+	it("recusa contingência quando série/número já existem com outra chave", async () => {
+		vi.mocked(notaRepository.buscarNotaFiscalPorChaveNfe).mockResolvedValue(
+			undefined as never,
+		);
+		vi.mocked(
+			notaRepository.buscarNotaFiscalNfcePorSerieNumero,
+		).mockResolvedValue({
+			id: "nf-rival",
+			modelo: "65",
+			status: NFE_STATUS.AUTORIZADA,
+			chavenfe: chaveRival,
+			serie: "1",
+			numeronotafiscal: "4",
+		} as never);
+
+		const resultado = await transmitirNfceContingenciaService({
+			idusuario: "user-1",
+			idempresa: "emp-1",
+			idvenda: "venda-1",
+			xml: xmlContingencia,
+			chave,
+			serie: 1,
+			numero: 4,
+			motivo: "teste",
+			datacontingencia: "2026-08-17T15:00:00-03:00",
+		});
+
+		expect(resultado.success).toBe(false);
+		if (!resultado.success) {
+			expect(resultado.code).toBe("NFCE_NUMERO_JA_USADO");
+			expect(resultado.error).toMatch(/já utilizada/i);
+		}
 		expect(notaRepository.criarNotaFiscalComItens).not.toHaveBeenCalled();
 	});
 });
