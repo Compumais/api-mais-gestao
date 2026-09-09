@@ -162,6 +162,31 @@ export function NotasNaoSincronizadasPage() {
 		}
 	}
 
+	async function reemitirNovaNumeracao(vendaId: string) {
+		const ok = window.confirm(
+			"Reemitir esta NFC-e com NOVA numeração e reimprimir o DANFC-e? O cupom antigo fica como conflito de numeração.",
+		);
+		if (!ok) return;
+		setTransmitindo(true);
+		setMsg("");
+		try {
+			const result = await pdvInvoke<{ modo: string; mensagem: string }>(
+				"reemitirContingenciaComNovaNumeracao",
+				vendaId,
+			);
+			setMsg(result.mensagem);
+			await load();
+		} catch (err) {
+			setMsg(
+				err instanceof Error
+					? err.message
+					: "Falha ao reemitir com nova numeração",
+			);
+		} finally {
+			setTransmitindo(false);
+		}
+	}
+
 	const ocupado = enviando || transmitindo || loading;
 
 	return (
@@ -232,8 +257,10 @@ export function NotasNaoSincronizadasPage() {
 				) : (
 					<p className="text-sm text-muted-foreground">
 						“Transmitir todas pendentes” processa a fila local e reenvia as
-						NFC-e em contingência/pendentes à retaguarda e SEFAZ. “Enviar para
-						retaguarda” só sincroniza a fila sem forçar retransmissão.
+						NFC-e em contingência/pendentes à retaguarda e SEFAZ. Cupons com
+						“conflito numeração” não sobem automaticamente — use “Reemitir com
+						nova numeração”. “Enviar para retaguarda” só sincroniza a fila sem
+						forçar retransmissão.
 					</p>
 				)}
 				{msg ? (
@@ -250,19 +277,20 @@ export function NotasNaoSincronizadasPage() {
 								<TableHead className="text-right">Total</TableHead>
 								<TableHead>Sync</TableHead>
 								<TableHead>NFC-e</TableHead>
+								<TableHead className="text-right">Ações</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
 							{loading ? (
 								<TableRow>
-									<TableCell colSpan={5} className="text-center text-sm">
+									<TableCell colSpan={6} className="text-center text-sm">
 										Carregando…
 									</TableCell>
 								</TableRow>
 							) : vendas.length === 0 ? (
 								<TableRow>
 									<TableCell
-										colSpan={5}
+										colSpan={6}
 										className="text-center text-sm text-muted-foreground"
 									>
 										Nenhuma venda pendente de sincronização.
@@ -298,6 +326,21 @@ export function NotasNaoSincronizadasPage() {
 													</span>
 												) : null}
 											</div>
+										</TableCell>
+										<TableCell className="text-right">
+											{venda.nfce_status === "conflito_numeracao" &&
+											!secundario ? (
+												<Button
+													size="sm"
+													variant="outline"
+													disabled={ocupado}
+													onClick={() =>
+														void reemitirNovaNumeracao(venda.id)
+													}
+												>
+													Nova numeração
+												</Button>
+											) : null}
 										</TableCell>
 									</TableRow>
 									);

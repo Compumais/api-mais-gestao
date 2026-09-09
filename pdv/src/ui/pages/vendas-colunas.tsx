@@ -127,6 +127,7 @@ export const NFCE_OPCOES_FILTRO: OpcaoFiltroColunaTabela[] = [
 	{ value: "transmitida", label: "Enviada (aguardando SEFAZ)" },
 	{ value: "pendente", label: "Pendente" },
 	{ value: "contingencia", label: "Contingência" },
+	{ value: "conflito_numeracao", label: "Conflito numeração" },
 	{ value: "erro", label: "Rejeitada" },
 	{ value: "erro_config", label: "Erro config" },
 	{ value: "inutilizada", label: "Inutilizada" },
@@ -195,7 +196,12 @@ export function badgeNfce(status: string) {
 		status === "pendente"
 	)
 		return "warning" as const;
-	if (status === "erro" || status === "erro_config" || status === "cancelada")
+	if (
+		status === "erro" ||
+		status === "erro_config" ||
+		status === "cancelada" ||
+		status === "conflito_numeracao"
+	)
 		return "destructive" as const;
 	return "outline" as const;
 }
@@ -208,6 +214,7 @@ export function rotuloNfce(status: string) {
 	if (status === "transmitida") return "enviada (aguardando SEFAZ)";
 	if (status === "inutilizada") return "inutilizada";
 	if (status === "cancelada") return "cancelada";
+	if (status === "conflito_numeracao") return "conflito numeração";
 	return status;
 }
 
@@ -247,6 +254,10 @@ function podeRetransmitir(status: string) {
 		status === "contingencia" ||
 		status === "pendente_contingencia"
 	);
+}
+
+function podeReemitirNovaNumeracao(status: string) {
+	return status === "conflito_numeracao";
 }
 
 function podeInutilizar(status: string) {
@@ -394,6 +405,7 @@ export type OpcoesColunasVendas = {
 	configFiltroPorColuna: Record<string, ConfigFiltroColunaVendas>;
 	retransmitindoId: string | null;
 	onRetransmitir: (id: string) => void;
+	onReemitirNovaNumeracao?: (id: string) => void;
 	onInutilizar: (id: string) => void;
 	onCancelarNfce: (id: string) => void;
 	onCancelarVendaNaoFiscal: (id: string) => void;
@@ -473,6 +485,17 @@ export function criarColunasVendas(
 											onClick={() => opcoes.onRetransmitir(v.id)}
 										>
 											Retransmitir
+										</DropdownMenuItem>
+									) : null}
+									{podeReemitirNovaNumeracao(v.nfce_status) &&
+									opcoes.onReemitirNovaNumeracao ? (
+										<DropdownMenuItem
+											disabled={ocupado}
+											onClick={() =>
+												opcoes.onReemitirNovaNumeracao?.(v.id)
+											}
+										>
+											Reemitir com nova numeração
 										</DropdownMenuItem>
 									) : null}
 									{podeInutilizar(v.nfce_status) ? (

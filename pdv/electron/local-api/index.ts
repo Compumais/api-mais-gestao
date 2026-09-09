@@ -196,6 +196,7 @@ import { puxarNfceDaRetaguarda } from "../sync/nfce-retaguarda";
 import {
 	processarOutbox,
 	pullCatalogo,
+	sincronizarFiscalPdv,
 	sincronizarFiscalPdv as puxarFiscalRetaguarda,
 	statusConexao,
 } from "../sync/outbox";
@@ -1419,6 +1420,7 @@ export const localApi = {
 		}
 
 		const outbox = await processarOutbox();
+		await sincronizarFiscalPdv().catch(() => undefined);
 		const vendas = await listarVendasNaoSincronizadas(100);
 		const elegiveis = vendas.filter((venda) => {
 			const status = venda.nfce_status;
@@ -1477,6 +1479,45 @@ export const localApi = {
 			falhas,
 			detalhes,
 		};
+	},
+
+	async listarConflitosNumeracaoNfce() {
+		if (await ehSecundario()) {
+			throw new Error(
+				"No PDV secundário a sincronização com a retaguarda é feita no PDV principal.",
+			);
+		}
+		const { listarConflitosNumeracaoNfceUi } = await import(
+			"../fiscal/reemitir-contingencia-nova-numeracao"
+		);
+		return listarConflitosNumeracaoNfceUi();
+	},
+
+	async reemitirContingenciaComNovaNumeracao(vendaId: string) {
+		if (await ehSecundario()) {
+			throw new Error(
+				"No PDV secundário a sincronização com a retaguarda é feita no PDV principal.",
+			);
+		}
+		const { reemitirContingenciaComNovaNumeracao } = await import(
+			"../fiscal/reemitir-contingencia-nova-numeracao"
+		);
+		const resultado = await reemitirContingenciaComNovaNumeracao({
+			idvenda: vendaId,
+		});
+		if (resultado.modo === "contingencia" && resultado.chave) {
+			try {
+				await imprimirDanfce({
+					vendaId,
+					chave: resultado.chave,
+					contingencia: true,
+					motivo: "Reemissão por conflito de numeração",
+				});
+			} catch {
+				/* impressão best-effort */
+			}
+		}
+		return resultado;
 	},
 
 	async obterVenda(id: string) {
@@ -2175,6 +2216,18 @@ export const localApi = {
 		const { aplicarEmissaoNfceNaVendaLocal } = await import(
 			"../fiscal/persistir-nfce-online"
 		);
+
+		if (
+			nfce &&
+			(nfce.status === "conflito_numeracao" ||
+				venda.nfce_status === "conflito_numeracao")
+		) {
+			return {
+				modo: "erro" as const,
+				mensagem:
+					"NFC-e com conflito de numeração. Use “Reemitir com nova numeração” em vez de retransmitir.",
+			};
+		}
 
 		if (
 			nfce &&

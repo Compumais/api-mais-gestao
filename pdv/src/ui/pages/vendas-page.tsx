@@ -206,6 +206,34 @@ export function VendasPage() {
 		[load],
 	);
 
+	const reemitirNovaNumeracao = useCallback(
+		async (id: string) => {
+			const ok = window.confirm(
+				"Esta NFC-e tem número duplicado. Reemitir com NOVA numeração e reimprimir o DANFC-e? O cupom antigo permanece arquivado como conflito.",
+			);
+			if (!ok) return;
+			setRetransmitindoId(id);
+			setMsg("");
+			try {
+				const result = await pdvInvoke<{ modo: string; mensagem: string }>(
+					"reemitirContingenciaComNovaNumeracao",
+					id,
+				);
+				setMsg(result.mensagem);
+				await load();
+			} catch (err) {
+				setMsg(
+					err instanceof Error
+						? err.message
+						: "Falha ao reemitir com nova numeração",
+				);
+			} finally {
+				setRetransmitindoId(null);
+			}
+		},
+		[load],
+	);
+
 	async function transmitirTodasPendentes() {
 		setTransmitindoPendentes(true);
 		setMsg("");
@@ -338,6 +366,7 @@ export function VendasPage() {
 				configFiltroPorColuna,
 				retransmitindoId,
 				onRetransmitir: (id) => void retransmitir(id),
+				onReemitirNovaNumeracao: (id) => void reemitirNovaNumeracao(id),
 				onInutilizar: setInutilizarVendaId,
 				onCancelarNfce: setCancelarVendaId,
 				onCancelarVendaNaoFiscal: setCancelarVendaNaoFiscalId,
@@ -358,6 +387,7 @@ export function VendasPage() {
 			carregandoItensId,
 			onToggleExpandir,
 			retransmitir,
+			reemitirNovaNumeracao,
 		],
 	);
 

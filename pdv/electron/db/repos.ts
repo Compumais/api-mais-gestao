@@ -1987,7 +1987,7 @@ export async function listarVendasNaoSincronizadas(
 			LIMIT 1
 		 ) n ON true
 		 WHERE v.sync_status = 'pendente'
-		    OR v.nfce_status IN ('pendente', 'pendente_contingencia', 'contingencia')
+		    OR v.nfce_status IN ('pendente', 'pendente_contingencia', 'contingencia', 'conflito_numeracao')
 		    OR (v.nfce_status = 'erro' AND v.idremoto IS NOT NULL)
 		 ORDER BY v.criadoem DESC
 		 LIMIT $1`,
@@ -3510,14 +3510,122 @@ export async function atualizarNumeracaoNfce(dados: {
 	);
 }
 
+/** Maior nNF já usado em nfce_local (opcionalmente filtrado pela série). */
+export async function obterMaxNumeroNfceLocal(
+	serie?: number,
+): Promise<number | null> {
+	const row =
+		serie != null && Number.isFinite(serie) && serie >= 1
+			? await queryOne<{ max: number | null }>(
+					`SELECT MAX(numero)::int AS max FROM nfce_local WHERE serie = $1`,
+					[serie],
+				)
+			: await queryOne<{ max: number | null }>(
+					`SELECT MAX(numero)::int AS max FROM nfce_local`,
+				);
+	const max = row?.max;
+	if (max == null || !Number.isFinite(max) || max < 1) {
+		return null;
+	}
+	return max;
+}
+
+export async function numeroNfceLocalJaUsado(
+	serie: number,
+	numero: number,
+	excluirId?: string,
+): Promise<boolean> {
+	const row = excluirId
+		? await queryOne<{ id: string }>(
+				`SELECT id FROM nfce_local
+				 WHERE serie = $1 AND numero = $2 AND id <> $3
+				 LIMIT 1`,
+				[serie, numero, excluirId],
+			)
+		: await queryOne<{ id: string }>(
+				`SELECT id FROM nfce_local WHERE serie = $1 AND numero = $2 LIMIT 1`,
+				[serie, numero],
+			);
+	return Boolean(row);
+}
+
+/**
+ * Reserva o próximo nNF livre na série atual, pulando números já presentes
+ * em nfce_local (evita colisão após rewind histórico do contador).
+ */
 export async function reservarNumeroNfce(): Promise<{
 	serie: number;
 	numero: number;
 }> {
 	const atual = await obterNumeracaoNfce();
-	const numero = atual.proximo_numero;
-	await atualizarNumeracaoNfce({ proximo_numero: numero + 1 });
-	return { serie: atual.serie, numero };
+	let numero = Math.max(1, Math.floor(atual.proximo_numero) || 1);
+	const serie = atual.serie;
+	const limite = numero + 10_000;
+	while (numero < limite) {
+		if (!(await numeroNfceLocalJaUsado(serie, numero))) {
+			await atualizarNumeracaoNfce({ proximo_numero: numero + 1 });
+			return { serie, numero };
+		}
+		numero += 1;
+	}
+	throw new Error(
+		"Não foi possível reservar um número NFC-e livre na série atual",
+	);
+}
+
+export async function listarNfceLocalParaConflitoNumeracao(): Promise<
+	Array<{
+		id: string;
+		idvenda: string;
+		serie: number;
+		numero: number;
+		chave: string | null;
+		status: string;
+		tpemis: number;
+		criadoem: string;
+	}>
+> {
+	return query<{
+		id: string;
+		idvenda: string;
+		serie: number;
+		numero: number;
+		chave: string | null;
+		status: string;
+		tpemis: number;
+		criadoem: string;
+	}>(
+		`SELECT id, idvenda, serie, numero, chave, status, tpemis, criadoem
+		 FROM nfce_local
+		 WHERE status NOT IN ('cancelada', 'inutilizada', 'conflito_numeracao')
+		 ORDER BY serie, numero, criadoem`,
+	);
+}
+
+export async function cancelarOutboxTransmitirContingenciaPendente(
+	idvenda: string,
+): Promise<number> {
+	const itens = await query<{ id: string; payload: string }>(
+		`SELECT id, payload FROM outbox
+		 WHERE status IN ('pendente', 'processando')
+		   AND tipo = 'transmitir_nfce_contingencia'`,
+	);
+	let cancelados = 0;
+	const agora = new Date().toISOString();
+	for (const item of itens) {
+		try {
+			const payload = JSON.parse(item.payload) as { idvenda?: string };
+			if (String(payload.idvenda ?? "") !== idvenda) continue;
+			await execute(
+				`UPDATE outbox SET status = 'cancelado', processadoem = $1 WHERE id = $2`,
+				[agora, item.id],
+			);
+			cancelados += 1;
+		} catch {
+			/* payload inválido */
+		}
+	}
+	return cancelados;
 }
 
 export async function avancarNumeracaoNfceAposEmissao(
