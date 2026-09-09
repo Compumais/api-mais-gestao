@@ -259,6 +259,13 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 		keywords: ["plano", "contas", "conta"],
 	},
 	{
+		title: "Tipos de cobrança",
+		url: "/tipos-cobranca",
+		category: "Financeiro",
+		icon: IconListDetails,
+		keywords: ["tipo", "cobrança", "cobranca", "tipos de cobrança"],
+	},
+	{
 		title: "Contas correntes",
 		url: "/contas-correntes",
 		category: "Financeiro",
