@@ -31,6 +31,7 @@ export const STATUS_LOCAL_NFCE = [
 	"erro_config",
 	"cancelada",
 	"inutilizada",
+	"conflito_numeracao",
 ] as const;
 
 export type StatusLocalNfce = (typeof STATUS_LOCAL_NFCE)[number];
@@ -322,6 +323,22 @@ async function reconciliarManifesto(
 			idnotafiscal = emissao.body.idnotafiscal;
 			acao = "reconciliada";
 		}
+	}
+
+	if (!idnotafiscal && manifesto.statusLocal === "conflito_numeracao") {
+		const chaveConflito = normalizarChave(manifesto.chave);
+		return {
+			idvendalocal: manifesto.idvendalocal,
+			idvendaremoto: venda.id,
+			existeRetaguarda: true,
+			status: "conflito_numeracao",
+			...(manifesto.serie ? { serie: manifesto.serie } : {}),
+			...(manifesto.numero ? { numero: manifesto.numero } : {}),
+			...(chaveConflito ? { chave: chaveConflito } : {}),
+			acao: "conflito",
+			mensagem:
+				"Numeração NFC-e em conflito no PDV — reemitir com nova numeração",
+		};
 	}
 
 	if (!idnotafiscal) {
