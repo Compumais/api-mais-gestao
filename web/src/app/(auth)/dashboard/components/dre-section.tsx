@@ -46,7 +46,7 @@ export function DreSection() {
 			? String(ano)
 			: granularidade === "trimestre"
 				? `${ano}-T${trimestre}`
-				: agora.format("YYYY-MM");
+				: `${ano}-${String(mes).padStart(2, "0")}`;
 
 	return (
 		<div className="flex flex-col gap-4 px-4 lg:px-6">
