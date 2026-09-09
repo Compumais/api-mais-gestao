@@ -389,6 +389,10 @@ export function ConfigPage() {
 				impressao_producao_modo: config.impressao_producao_modo ?? "itens",
 				impressao_producao_imprimir_grupo:
 					config.impressao_producao_imprimir_grupo === "0" ? "0" : "1",
+				impressao_producao_formato_item:
+					config.impressao_producao_formato_item === "unitario"
+						? "unitario"
+						: "quantidade",
 				impressora_pedido_tipo: config.impressora_pedido_tipo ?? "",
 				impressora_pedido_nome: config.impressora_pedido_nome ?? "",
 				impressora_pedido_host: config.impressora_pedido_host ?? "",
@@ -1467,6 +1471,40 @@ export function ConfigPage() {
 															Por pedido (todos os produtos num cupom)
 														</option>
 													</Select>
+												</div>
+												<div className="space-y-2 sm:col-span-2">
+													<Label htmlFor="impressao_producao_formato_item">
+														Como imprimir a quantidade
+													</Label>
+													<Select
+														id="impressao_producao_formato_item"
+														value={
+															config.impressao_producao_formato_item ===
+															"unitario"
+																? "unitario"
+																: "quantidade"
+														}
+														onChange={(e) =>
+															set(
+																"impressao_producao_formato_item",
+																e.target.value,
+															)
+														}
+													>
+														<option value="quantidade">
+															Quantidade na linha (6x Pastel de carne)
+														</option>
+														<option value="unitario">
+															Uma linha por unidade (Pastel de carne 6 vezes)
+														</option>
+													</Select>
+													<p className="text-xs text-muted-foreground">
+														Quantidade na linha: um item com 6 unidades sai
+														como &quot;6 Pastel de carne&quot;. Uma linha por
+														unidade: o mesmo item sai 6 vezes como &quot;1
+														Pastel de carne&quot;. Itens com quantidade
+														fracionada (ex.: 1,5 kg) continuam numa linha.
+													</p>
 												</div>
 												{(config.impressao_producao_modo ?? "itens") ===
 												"pedido" ? (
