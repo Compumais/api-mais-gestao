@@ -1,0 +1,55 @@
+# Publica version.json + Setup.exe do PDV em /opt/mais-gestao/pdv-updates na VPS.
+name: Publicar update PDV
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch ou SHA (vazio = branch do dispatch)"
+        required: false
+        type: string
+
+concurrency:
+  group: publish-pdv-update
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+
+      - name: Validar artefatos
+        working-directory: pdv/installer/output
+        run: |
+          set -euo pipefail
+          test -f version.json
+          artifact="$(python3 -c 'import json;print(json.load(open("version.json"))["artifact"])')"
+          test -f "$artifact"
+          echo "Publicando $artifact ($(stat -c%s "$artifact") bytes)"
+
+      - name: Enviar para VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "pdv/installer/output/version.json,pdv/installer/output/PDV-Mais-Gestao-Setup-*.exe"
+          target: "/opt/mais-gestao/pdv-updates"
+          strip_components: 3
+          overwrite: true
+
+      - name: Conferir remoto
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            ls -lh /opt/mais-gestao/pdv-updates/
+            cat /opt/mais-gestao/pdv-updates/version.json
