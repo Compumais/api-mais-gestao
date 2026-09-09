@@ -1,7 +1,10 @@
 import type { HttpResponse } from "@/model/http-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { buscarNotaFiscalPorId } from "@/repositories/nota-fiscal-repositories.js";
-import { buscarVendaPdvGourmetPorId } from "@/repositories/venda-pdv-gourmet-repositories.js";
+import {
+	atualizarVendaPdvGourmet,
+	buscarVendaPdvGourmetPorId,
+} from "@/repositories/venda-pdv-gourmet-repositories.js";
 import {
 	emitirNfceVendaPdvService,
 	type ResultadoEmissaoNfcePdv,
@@ -23,6 +26,8 @@ type RetransmitirNfceVendaPdvParametros = {
  * Retransmite NFC-e de uma venda PDV já persistida na retaguarda,
  * sem nova baixa de estoque. Cobre rejeição, pendência e primeira
  * emissão que falhou na validação (ainda sem nota).
+ * Após inutilização, desvincula a nota 102 e emite com nova numeração
+ * (preserva o registro inutilizado na listagem).
  */
 export async function retransmitirNfceVendaPdvService({
 	idusuario,
@@ -49,12 +54,15 @@ export async function retransmitirNfceVendaPdvService({
 		if (nota?.status === NFE_STATUS.AUTORIZADA) {
 			return httpBadRequest("NFC-e já autorizada não pode ser retransmitida");
 		}
-		if (
+		if (nota?.status === NFE_STATUS.INUTILIZADA) {
+			await atualizarVendaPdvGourmet(venda.id, {
+				idnotafiscalnfce: null,
+			});
+		} else if (
 			nota &&
 			nota.status !== NFE_STATUS.PENDENTE &&
 			nota.status !== NFE_STATUS.REJEITADA &&
-			nota.status !== NFE_STATUS.DENEGADA &&
-			nota.status !== NFE_STATUS.INUTILIZADA
+			nota.status !== NFE_STATUS.DENEGADA
 		) {
 			return httpBadRequest(
 				"Somente NFC-e pendentes, rejeitadas, denegadas ou inutilizadas podem ser retransmitidas",

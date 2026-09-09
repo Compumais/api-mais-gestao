@@ -1,4 +1,8 @@
-import { buscarVendaPdvGourmet } from "../api/client";
+import {
+	buscarVendaPdvGourmet,
+	pingApi,
+	registrarInutilizacaoNumeracaoNfce,
+} from "../api/client";
 import { execute, query } from "../db/database";
 import {
 	atualizarNfceLocalCampos,
@@ -6,6 +10,7 @@ import {
 	cancelarOutboxTransmitirContingenciaPendente,
 	listarNfceLocalParaConflitoNumeracao,
 	obterNfcePorVenda,
+	obterSessao,
 	obterVenda,
 } from "../db/repos";
 import { emitirContingencia } from "./contingencia";
@@ -105,6 +110,39 @@ export async function reemitirContingenciaComNovaNumeracao(params: {
 		await atualizarNfceLocalCampos(idNfceAnterior, {
 			status: "conflito_numeracao",
 		});
+
+		// Registra inutilização do nNF abandonado na retaguarda (aparece em /nfce)
+		if (
+			numeroAnterior >= 1 &&
+			serieAnterior >= 1 &&
+			(await pingApi())
+		) {
+			try {
+				const sessao = await obterSessao();
+				if (sessao.idempresa) {
+					const justificativaInut =
+						`Numeracao NFC-e abandonada por conflito (nNF ${numeroAnterior} serie ${serieAnterior}). Reemissao com nova numeracao.`.slice(
+							0,
+							255,
+						);
+					await registrarInutilizacaoNumeracaoNfce({
+						idempresa: sessao.idempresa,
+						serie: serieAnterior,
+						numero: numeroAnterior,
+						justificativa: justificativaInut,
+						...(venda.idremoto ? { idvenda: venda.idremoto } : {}),
+					});
+					await atualizarNfceLocalCampos(idNfceAnterior, {
+						status: "inutilizada",
+					});
+				}
+			} catch (err) {
+				console.warn(
+					"[reemitir-nova-numeracao] Falha ao registrar inutilização na retaguarda:",
+					err instanceof Error ? err.message : err,
+				);
+			}
+		}
 
 		await execute(
 			`UPDATE venda SET idnfce_local = NULL, nfce_status = 'pendente' WHERE id = $1`,

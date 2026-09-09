@@ -17,6 +17,7 @@ import { httpBadRequest, httpOk, httpProibido } from "@/util/http-util.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
 import { emitirNfceVendaPdvService } from "./emitir-nfce-venda-pdv.js";
 import { reconciliarNfceAutorizadaSefaz } from "./reconciliar-nfce-autorizada-sefaz.js";
+import { registrarInutilizacaoNumeracaoNfceService } from "./registrar-inutilizacao-numeracao-nfce.js";
 import { transmitirNfceContingenciaService } from "./transmitir-nfce-contingencia.js";
 
 export const STATUS_LOCAL_NFCE = [
@@ -223,6 +224,52 @@ async function reconciliarManifesto(
 				existeRetaguarda: true,
 				acao: "conflito",
 				mensagem: "Venda local já vinculada a outro registro da retaguarda",
+			};
+		}
+	}
+
+	// PDV com inutilizada + série/número: garante registro 102 na retaguarda
+	// (recupera buracos de numeração que nunca foram listados em /nfce)
+	if (
+		manifesto.statusLocal === "inutilizada" &&
+		manifesto.serie &&
+		manifesto.numero
+	) {
+		const registrada = await registrarInutilizacaoNumeracaoNfceService({
+			idusuario: parametros.idusuario,
+			idempresa: parametros.idempresa,
+			serie: manifesto.serie,
+			numero: manifesto.numero,
+			justificativa: `Reconciliacao PDV: numeracao NFC-e inutilizada no terminal (nNF ${manifesto.numero} serie ${manifesto.serie})`,
+		});
+		if (registrada.success && registrada.body) {
+			return {
+				idvendalocal: manifesto.idvendalocal,
+				idvendaremoto: venda.id,
+				existeRetaguarda: true,
+				idnotafiscal: registrada.body.idnotafiscal,
+				status: "inutilizada",
+				serie: manifesto.serie,
+				numero: manifesto.numero,
+				...(registrada.body.protocolo
+					? { protocolo: registrada.body.protocolo }
+					: {}),
+				acao: "reconciliada",
+				mensagem: registrada.body.xMotivo,
+			};
+		}
+		if (!registrada.success) {
+			return {
+				idvendalocal: manifesto.idvendalocal,
+				idvendaremoto: venda.id,
+				existeRetaguarda: true,
+				status: "inutilizada",
+				serie: manifesto.serie,
+				numero: manifesto.numero,
+				acao: "erro",
+				mensagem:
+					registrada.error ??
+					"Falha ao registrar inutilização da numeração na retaguarda",
 			};
 		}
 	}

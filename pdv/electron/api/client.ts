@@ -1136,6 +1136,26 @@ export async function inutilizarNfceVendaPdv(body: {
 	);
 }
 
+export async function registrarInutilizacaoNumeracaoNfce(body: {
+	idempresa: string;
+	serie: number;
+	numero: number;
+	justificativa: string;
+	idvenda?: string;
+}) {
+	return request<ResultadoInutilizacaoNfceApi>("/nfce/numeracao/inutilizar", {
+		method: "POST",
+		body: {
+			idempresa: body.idempresa,
+			serie: body.serie,
+			numero: body.numero,
+			justificativa: body.justificativa,
+			...(body.idvenda ? { idvenda: body.idvenda } : {}),
+		},
+		timeoutMs: 60000,
+	});
+}
+
 export type ResultadoCancelamentoNfceApi = {
 	idnotafiscal: string;
 	status: number;
