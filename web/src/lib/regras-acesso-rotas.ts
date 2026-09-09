@@ -105,6 +105,12 @@ export const REGRAS_ACESSO_ROTAS: Array<{
 		},
 	},
 	{
+		prefixo: "/tipos-cobranca",
+		acesso: {
+			perfis: ["proprietario", "admin", "financeiro"],
+		},
+	},
+	{
 		prefixo: "/contabilidade/efd-contribuicoes",
 		acesso: {
 			feature: "sped_efd",
