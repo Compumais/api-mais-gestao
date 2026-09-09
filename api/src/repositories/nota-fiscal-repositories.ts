@@ -473,8 +473,10 @@ export async function listarNfcePorEmpresa({
 		eq(notafiscal.modelo, "65"),
 		ne(notafiscal.status, STATUS_RASCUNHO_IMPORTACAO),
 		// Pendência de pré-validação é editável mesmo sem numeração fiscal.
+		// Inutilizadas (102) sempre listam — numeração pode estar só no protocolo.
 		sql`(
-			${notafiscal.dadosimportacao}->>'preValidacao' = 'true'
+			${notafiscal.status} = ${NFE_STATUS.INUTILIZADA}
+			or ${notafiscal.dadosimportacao}->>'preValidacao' = 'true'
 			or not (
 				(
 					coalesce(${notafiscal.numeronotafiscal}, '') = ''
@@ -515,12 +517,18 @@ export async function listarNfcePorEmpresa({
 	}
 
 	if (tipoambientenfe === 2) {
-		where.push(eq(notafiscal.tipoambientenfe, 2));
+		where.push(
+			or(
+				eq(notafiscal.tipoambientenfe, 2),
+				eq(notafiscal.status, NFE_STATUS.INUTILIZADA),
+			)!,
+		);
 	} else if (tipoambientenfe === 1) {
 		where.push(
 			or(
 				eq(notafiscal.tipoambientenfe, 1),
 				isNull(notafiscal.tipoambientenfe),
+				eq(notafiscal.status, NFE_STATUS.INUTILIZADA),
 			)!,
 		);
 	}

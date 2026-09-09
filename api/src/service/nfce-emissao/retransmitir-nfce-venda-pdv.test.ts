@@ -98,7 +98,7 @@ describe("retransmitirNfceVendaPdvService", () => {
 		expect(emitirService.emitirNfceVendaPdvService).not.toHaveBeenCalled();
 	});
 
-	it("permite retransmitir após numeração inutilizada", async () => {
+	it("após inutilizada desvincula a nota 102 e emite nova numeração", async () => {
 		vi.mocked(vendaRepository.buscarVendaPdvGourmetPorId).mockResolvedValue({
 			...vendaBase,
 			idnotafiscalnfce: "nf-1",
@@ -106,6 +106,10 @@ describe("retransmitirNfceVendaPdvService", () => {
 		vi.mocked(notaRepository.buscarNotaFiscalPorId).mockResolvedValue({
 			id: "nf-1",
 			status: NFE_STATUS.INUTILIZADA,
+		} as never);
+		vi.mocked(vendaRepository.atualizarVendaPdvGourmet).mockResolvedValue({
+			...vendaBase,
+			idnotafiscalnfce: null,
 		} as never);
 
 		const resultado = await retransmitirNfceVendaPdvService({
@@ -115,6 +119,10 @@ describe("retransmitirNfceVendaPdvService", () => {
 		});
 
 		expect(resultado.success).toBe(true);
+		expect(vendaRepository.atualizarVendaPdvGourmet).toHaveBeenCalledWith(
+			"venda-1",
+			{ idnotafiscalnfce: null },
+		);
 		expect(emitirService.emitirNfceVendaPdvService).toHaveBeenCalled();
 	});
 });

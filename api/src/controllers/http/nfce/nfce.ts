@@ -16,6 +16,7 @@ import {
 	STATUS_LOCAL_NFCE,
 } from "@/service/nfce-emissao/reconciliar-nfce-pdv.js";
 import { reemitirNfceService } from "@/service/nfce-emissao/reemitir-nfce.js";
+import { registrarInutilizacaoNumeracaoNfceService } from "@/service/nfce-emissao/registrar-inutilizacao-numeracao-nfce.js";
 import { retransmitirNfceVendaPdvService } from "@/service/nfce-emissao/retransmitir-nfce-venda-pdv.js";
 import { transmitirNfceContingenciaService } from "@/service/nfce-emissao/transmitir-nfce-contingencia.js";
 import { transmitirNfcePendentesLoteService } from "@/service/nfce-emissao/transmitir-nfce-pendentes-lote.js";
@@ -54,6 +55,14 @@ const bodyReemitirSchema = z.object({
 const bodyInutilizarSchema = z.object({
 	idempresa: z.string().uuid(),
 	justificativa: z.string().min(15).max(255),
+});
+
+const bodyInutilizarNumeracaoSchema = z.object({
+	idempresa: z.string().uuid(),
+	serie: z.coerce.number().int().positive(),
+	numero: z.coerce.number().int().positive(),
+	justificativa: z.string().min(15).max(255),
+	idvenda: z.string().uuid().optional(),
 });
 
 const bodyContingenciaSchema = z.object({
@@ -350,6 +359,45 @@ export async function inutilizarNfceVenda(
 			idempresa,
 			justificativa,
 			idusuario: request.user.id,
+		});
+
+		if (!resultado.success) {
+			return reply.status(resultado.status).send(resultado);
+		}
+
+		return reply.status(resultado.status).send(resultado.body);
+	} catch (error) {
+		console.error(error);
+		if (error instanceof z.ZodError) {
+			return reply.status(400).send({
+				error: "Erro de validação",
+				code: "VALIDATION_ERROR",
+				details: error.issues,
+			});
+		}
+		return reply.status(httpErroInterno().status).send(httpErroInterno());
+	}
+}
+
+export async function registrarInutilizacaoNumeracaoNfce(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
+	try {
+		if (!request.user) {
+			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
+		}
+
+		const { idempresa, serie, numero, justificativa, idvenda } =
+			bodyInutilizarNumeracaoSchema.parse(request.body);
+
+		const resultado = await registrarInutilizacaoNumeracaoNfceService({
+			idempresa,
+			serie,
+			numero,
+			justificativa,
+			idusuario: request.user.id,
+			...(idvenda ? { idvenda } : {}),
 		});
 
 		if (!resultado.success) {
