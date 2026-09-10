@@ -115,11 +115,11 @@ Para **DBM** (Database Monitoring), habilite `track_activity_query_size` e `pg_s
 
 ### Caminhos padrão de log
 
-Com o processo `mais-gestao-web`, o PM2 grava em:
+Com o processo `web-mais-gestao`, o PM2 grava em:
 
 ```
-/home/deploy/.pm2/logs/mais-gestao-web-out.log
-/home/deploy/.pm2/logs/mais-gestao-web-error.log
+/home/deploy/.pm2/logs/web-mais-gestao-out.log
+/home/deploy/.pm2/logs/web-mais-gestao-error.log
 ```
 
 O Agent faz tail via [`conf.d/pm2.d/conf.yaml`](./conf.d/pm2.d/conf.yaml).
@@ -131,7 +131,7 @@ cp /opt/mais-gestao/web/infra/datadog/ecosystem.config.cjs /opt/mais-gestao/web/
 # ou copie de infra/datadog/ecosystem.config.cjs após git pull
 
 cd /opt/mais-gestao/web
-pm2 delete mais-gestao-web 2>/dev/null || true
+pm2 delete web-mais-gestao 2>/dev/null || true
 pm2 start ecosystem.config.cjs
 pm2 save
 ```
@@ -139,14 +139,14 @@ pm2 save
 Confirme os arquivos de log:
 
 ```bash
-pm2 show mais-gestao-web | grep -E "out log|error log"
-ls -la /home/deploy/.pm2/logs/mais-gestao-web*
+pm2 show web-mais-gestao | grep -E "out log|error log"
+ls -la /home/deploy/.pm2/logs/web-mais-gestao*
 ```
 
 Permissões — o Agent (`dd-agent`) precisa ler os logs:
 
 ```bash
-sudo chmod o+r /home/deploy/.pm2/logs/mais-gestao-web-*.log
+sudo chmod o+r /home/deploy/.pm2/logs/web-mais-gestao-*.log
 # ou: sudo usermod -aG deploy dd-agent  (e chmod g+r nos logs)
 ```
 

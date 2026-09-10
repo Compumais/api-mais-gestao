@@ -3,7 +3,7 @@
 
 logs:
   - type: file
-    path: /home/deploy/.pm2/logs/mais-gestao-web-out.log
+    path: /home/deploy/.pm2/logs/web-mais-gestao-out.log
     service: web-mais-gestao
     source: nodejs
     tags:
@@ -11,7 +11,7 @@ logs:
       - component:stdout
 
   - type: file
-    path: /home/deploy/.pm2/logs/mais-gestao-web-error.log
+    path: /home/deploy/.pm2/logs/web-mais-gestao-error.log
     service: web-mais-gestao
     source: nodejs
     tags:

@@ -102,21 +102,21 @@ docker compose -f docker-compose.prod.yml up -d api
 ```bash
 cd /opt/mais-gestao/web
 pnpm install --frozen-lockfile
-pnpm run build:live
-pm2 start "pnpm start -- -p 3000" --name mais-gestao-web
+pnpm run build
+pm2 start "pnpm start -- -p 3000" --name web-mais-gestao
 pm2 save
 pm2 startup
 ```
 
-`build:live` compila em `.next-staging` e só publica em `.next` se o build passar.
-Se falhar, o site em produção continua com o build anterior.
+Nos deploys seguintes, `build:live` valida `web-mais-gestao`, compila em
+`.next-staging` e só então para brevemente o processo, publica `.next` e o
+reinicia. Se o build falhar, o site continua com o build anterior.
 
 Rollback (quando existir `.next-previous`):
 
 ```bash
 cd /opt/mais-gestao/web
 pnpm run build:rollback
-pm2 reload mais-gestao-web --update-env
 ```
 
 ## 7) Deploy automático
@@ -129,8 +129,7 @@ O workflow `.github/workflows/deploy.yml` executa:
 - Deploy da Web via SSH:
   - `git pull` (main)
   - `pnpm install --frozen-lockfile`
-  - `pnpm run build:live` (compila em staging e publica `.next` só se ok)
-  - `pm2 reload mais-gestao-web --update-env`
+  - `pnpm run build:live` (compila em staging, publica e reinicia `web-mais-gestao`)
 
 ## 8) Backup e restore do Postgres
 
@@ -159,7 +158,7 @@ gunzip -c /opt/backups/mais-gestao/backup-YYYYMMDD-HHMMSS.sql.gz | psql -h 127.0
 - Logs API: `docker logs -f mais-gestao-api`
 - Logs DB: `docker logs -f mais-gestao-db`
 - Status PM2: `pm2 status`
-- Logs Web PM2: `pm2 logs mais-gestao-web`
+- Logs Web PM2: `pm2 logs web-mais-gestao`
 
 ## 10) Datadog (monitoramento)
 
