@@ -9,6 +9,10 @@ const revision =
 export const { dynamic, dynamicParams, revalidate, generateStaticParams, GET } =
 	createSerwistRoute({
 		additionalPrecacheEntries: [{ url: "/~offline", revision }],
+		// Chunks do Next têm hash e são armazenados sob demanda pelas regras de
+		// runtime. Colocá-los no precache faz a instalação inteira falhar quando
+		// um deploy remove a geração anterior antes de o SW terminar de instalar.
+		globPatterns: ["public/**/*"],
 		swSrc: "src/app/sw.ts",
 		useNativeEsbuild: true,
 	});
