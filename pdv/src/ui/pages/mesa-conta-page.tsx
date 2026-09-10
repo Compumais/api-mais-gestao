@@ -32,6 +32,7 @@ import { produtoEhPizza } from "@/lib/pizza-meio-a-meio";
 import { devePedirPeso, formatarQuantidade } from "@/lib/produto-kg";
 import { money } from "@/lib/utils";
 import { AvisoSecundario } from "@/ui/components/aviso-secundario";
+import { AlertasOperacionaisPdv } from "@/ui/components/alertas-operacionais-pdv";
 import { BarcodeInput } from "@/ui/components/barcode-input";
 import { DialogEscolherMesa } from "@/ui/components/dialog-escolher-mesa";
 import { DialogMaisAcoesMesa } from "@/ui/components/dialog-mais-acoes-mesa";
@@ -976,6 +977,7 @@ export function MesaContaPage() {
 				<div className="grid min-h-0 min-w-0 flex-1 grid-cols-[1fr_340px] gap-3 overflow-hidden">
 					<div className="pdv-surface flex min-h-0 flex-col gap-3 overflow-hidden p-3">
 						<AvisoSecundario status={status} />
+						<AlertasOperacionaisPdv status={status} />
 						<div className="flex items-center justify-between gap-2">
 							<h2 className="text-sm font-semibold">Selecionar produtos</h2>
 							{grupoAtivo && (
