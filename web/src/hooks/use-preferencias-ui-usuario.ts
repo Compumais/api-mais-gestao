@@ -14,6 +14,27 @@ export type { LayoutMenuUsuario, PreferenciasUiUsuario };
 
 export const preferenciasUiQueryKey = ["preferencias-ui-usuario"] as const;
 
+const LAYOUT_MENU_STORAGE_KEY = "mais-gestao:layout-menu";
+
+function lerLayoutMenuStorage(): LayoutMenuUsuario | null {
+	if (typeof window === "undefined") return null;
+	try {
+		const valor = localStorage.getItem(LAYOUT_MENU_STORAGE_KEY);
+		if (valor === "topbar" || valor === "sidebar") return valor;
+	} catch {
+		/* ignore */
+	}
+	return null;
+}
+
+function gravarLayoutMenuStorage(valor: LayoutMenuUsuario) {
+	try {
+		localStorage.setItem(LAYOUT_MENU_STORAGE_KEY, valor);
+	} catch {
+		/* ignore */
+	}
+}
+
 export const TABELA_ORDENS_SERVICO = "ordens-servico";
 export const TABELA_PRODUTOS = "produtos";
 export const TABELA_SERVICOS = "servicos";
@@ -63,13 +84,37 @@ export function useAtualizarPreferenciasUiUsuario() {
 }
 
 export function useLayoutMenu() {
-	const { data: preferencias, isLoading } = usePreferenciasUiUsuario();
+	const queryClient = useQueryClient();
+	const { data: preferencias, isPending } = usePreferenciasUiUsuario();
 	const atualizar = useAtualizarPreferenciasUiUsuario();
+	const [layoutLocal, setLayoutLocal] = useState<LayoutMenuUsuario | null>(
+		() => lerLayoutMenuStorage(),
+	);
 
-	const layoutMenu = preferencias?.layoutMenu ?? "sidebar";
+	useEffect(() => {
+		if (!preferencias?.layoutMenu) return;
+		gravarLayoutMenuStorage(preferencias.layoutMenu);
+		setLayoutLocal(preferencias.layoutMenu);
+	}, [preferencias?.layoutMenu]);
+
+	const layoutMenu =
+		preferencias?.layoutMenu ?? layoutLocal ?? "sidebar";
+
+	/** Ainda sem preferência conhecida (nem servidor nem cache local). */
+	const isLoading =
+		isPending && !preferencias?.layoutMenu && layoutLocal === null;
 
 	const setLayoutMenu = useCallback(
 		(valor: LayoutMenuUsuario) => {
+			gravarLayoutMenuStorage(valor);
+			setLayoutLocal(valor);
+			queryClient.setQueryData<PreferenciasUiUsuario>(
+				preferenciasUiQueryKey,
+				(atual) => ({
+					...(atual ?? {}),
+					layoutMenu: valor,
+				}),
+			);
 			atualizar.mutate(
 				{ layoutMenu: valor },
 				{
@@ -79,7 +124,7 @@ export function useLayoutMenu() {
 				},
 			);
 		},
-		[atualizar],
+		[atualizar, queryClient],
 	);
 
 	return {
