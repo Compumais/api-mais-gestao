@@ -49,6 +49,7 @@ import { useTeclasFuncao } from "@/ui/hooks/use-teclas-funcao";
 import {
 	COLUNA_PARA_CAMPO_FILTRO_VENDAS,
 	type ConfigFiltroColunaVendas,
+	contarCuponsNaoSincronizadosRetaguarda,
 	criarColunasVendas,
 	type FiltrosColunaVendasState,
 	filtrarVendas,
@@ -249,6 +250,13 @@ export function VendasPage() {
 	);
 
 	async function transmitirTodasPendentes() {
+		const qtdNaoSinc = contarCuponsNaoSincronizadosRetaguarda(vendas);
+		if (qtdNaoSinc > 0) {
+			setMsg(
+				`Há ${qtdNaoSinc} cupom(ns) não sincronizado(s). Abra “Não sincronizadas” e use “Enviar para retaguarda” antes de transmitir.`,
+			);
+			return;
+		}
 		setTransmitindoPendentes(true);
 		setMsg("");
 		try {
@@ -353,6 +361,11 @@ export function VendasPage() {
 		const filtradas = filtrarVendas(vendas, filtrosColuna);
 		return ordenarVendas(filtradas, ordenarPor, ordem);
 	}, [vendas, filtrosColuna, ordenarPor, ordem]);
+
+	const qtdCuponsNaoSincronizados = useMemo(
+		() => contarCuponsNaoSincronizadosRetaguarda(vendas),
+		[vendas],
+	);
 
 	const pageCount = Math.max(
 		1,
@@ -502,7 +515,8 @@ export function VendasPage() {
 									sincronizandoNfce ||
 									transmitindoPendentes ||
 									retransmitindoId != null ||
-									status?.modo === "secundario",
+									status?.modo === "secundario" ||
+									qtdCuponsNaoSincronizados > 0,
 							},
 							{
 								key: "nao-sincronizadas",
@@ -535,6 +549,12 @@ export function VendasPage() {
 					{msg ? (
 						<p className="rounded-md bg-muted px-3 py-2 text-sm ring-1 ring-foreground/10">
 							{msg}
+						</p>
+					) : qtdCuponsNaoSincronizados > 0 ? (
+						<p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-950 dark:text-amber-100">
+							{qtdCuponsNaoSincronizados} cupom(ns) não sincronizado(s) com a
+							retaguarda — use “Não sincronizadas” → “Enviar para retaguarda”
+							antes de transmitir pendentes.
 						</p>
 					) : (
 						<p className="text-sm text-muted-foreground">

@@ -26,6 +26,7 @@ import { useTeclasFuncao } from "@/ui/hooks/use-teclas-funcao";
 import {
 	badgeNfce,
 	badgeSync,
+	contarCuponsNaoSincronizadosRetaguarda,
 	rotuloNfce,
 	rotuloNumeracaoNfce,
 	rotuloOrigem,
@@ -147,6 +148,13 @@ export function NotasNaoSincronizadasPage() {
 	}
 
 	async function transmitirTodasPendentes() {
+		const qtdNaoSinc = contarCuponsNaoSincronizadosRetaguarda(vendas);
+		if (qtdNaoSinc > 0) {
+			setMsg(
+				`Há ${qtdNaoSinc} cupom(ns) não sincronizado(s). Use “Enviar para retaguarda” antes de transmitir as pendentes.`,
+			);
+			return;
+		}
 		setTransmitindo(true);
 		setMsg("");
 		try {
@@ -196,6 +204,13 @@ export function NotasNaoSincronizadasPage() {
 	}
 
 	const ocupado = enviando || transmitindo || loading;
+	const qtdCuponsNaoSincronizados =
+		contarCuponsNaoSincronizadosRetaguarda(vendas);
+	const bloqueiaTransmitir =
+		ocupado ||
+		secundario ||
+		secundarioDesconectado(status) ||
+		qtdCuponsNaoSincronizados > 0;
 
 	const overlayProgresso: TipoOverlayProgressoPdv | null = transmitindo
 		? "transmitir-pendentes"
@@ -237,8 +252,7 @@ export function NotasNaoSincronizadasPage() {
 									: "Transmitir todas pendentes",
 								variant: "default",
 								onClick: () => void transmitirTodasPendentes(),
-								disabled:
-									ocupado || secundario || secundarioDesconectado(status),
+								disabled: bloqueiaTransmitir,
 							},
 							{
 								key: "enviar",
@@ -277,12 +291,18 @@ export function NotasNaoSincronizadasPage() {
 				) : (
 					<p className="text-sm text-muted-foreground">
 						“Transmitir todas pendentes” processa a fila local e reenvia as
-						NFC-e em contingência/pendentes à retaguarda e SEFAZ. Cupons com
-						“conflito numeração” não sobem automaticamente — use “Reemitir com
-						nova numeração”. “Enviar para retaguarda” só sincroniza a fila sem
-						forçar retransmissão.
+						NFC-e em contingência/pendentes à retaguarda e SEFAZ. Se houver
+						cupom com sync pendente, o botão fica bloqueado — use antes “Enviar
+						para retaguarda”. Cupons com “conflito numeração” não sobem
+						automaticamente — use “Reemitir com nova numeração”.
 					</p>
 				)}
+				{!secundario && qtdCuponsNaoSincronizados > 0 ? (
+					<p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-950 dark:text-amber-100">
+						{qtdCuponsNaoSincronizados} cupom(ns) com sync pendente — envie para
+						a retaguarda antes de transmitir as pendentes.
+					</p>
+				) : null}
 				{msg ? (
 					<p className="rounded-md bg-muted px-3 py-2 text-sm ring-1 ring-foreground/10">
 						{msg}
