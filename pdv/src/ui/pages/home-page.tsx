@@ -15,6 +15,7 @@ import {
 	AvisoSecundario,
 	secundarioDesconectado,
 } from "@/ui/components/aviso-secundario";
+import { AlertasOperacionaisPdv } from "@/ui/components/alertas-operacionais-pdv";
 import { DialogFecharCaixa } from "@/ui/components/dialog-fechar-caixa";
 import { FunctionBar } from "@/ui/components/function-bar";
 import { SideNav } from "@/ui/components/side-nav";
@@ -299,6 +300,7 @@ export function HomePage() {
 					</div>
 
 					<AvisoSecundario status={status} />
+					<AlertasOperacionaisPdv status={status} />
 					{msg && <p className="text-sm text-muted-foreground">{msg}</p>}
 
 					<div className="mb-1 flex flex-wrap gap-3 text-xs">
@@ -472,6 +474,14 @@ export function HomePage() {
 							]
 						: []),
 					{ label: "Fila", value: status?.outboxPendentes ?? 0 },
+					{
+						label: "NFC-e pendentes",
+						value: status?.nfcePendentesTransmissao ?? 0,
+						tone:
+							(status?.nfcePendentesTransmissao ?? 0) > 0
+								? ("warning" as const)
+								: ("default" as const),
+					},
 					{ label: "Livres", value: livres, tone: "success" },
 					{
 						label: "Consumindo",

@@ -78,6 +78,7 @@ import {
 	concluirOutboxCriarVendaLocal,
 	contarOutboxFalhasPermanentes,
 	contarOutboxPendentes,
+	contarNfcePendentesTransmissao,
 	criarVendaRapida,
 	enfileirarOutbox,
 	enviarPedidoConta,
@@ -565,11 +566,13 @@ export const localApi = {
 			nfceSyncUltimoErro,
 			nfceSyncUltimoResumo,
 			outboxFalhasPermanentes,
+			nfcePendentesTransmissao,
 		] = await Promise.all([
 			obterSyncMeta("nfce_sync_ultima_ok"),
 			obterSyncMeta("nfce_sync_ultimo_erro"),
 			obterSyncMeta("nfce_sync_ultimo_resumo"),
 			contarOutboxFalhasPermanentes(),
+			contarNfcePendentesTransmissao(),
 		]);
 		return {
 			...conexao,
@@ -595,6 +598,7 @@ export const localApi = {
 			principalErro: principal?.erro ?? null,
 			balancaHabilitada: (await getConfig("balanca_habilitada", "0")) === "1",
 			outboxFalhasPermanentes,
+			nfcePendentesTransmissao,
 			nfceSyncUltimaOk,
 			nfceSyncUltimoErro: nfceSyncUltimoErro || null,
 			nfceSyncUltimoResumo: parseJsonSeguro(nfceSyncUltimoResumo),

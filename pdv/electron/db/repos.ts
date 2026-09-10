@@ -1144,6 +1144,22 @@ export async function contarOutboxPendentes(): Promise<number> {
 	return row?.total ?? 0;
 }
 
+/** NFC-e locais ainda aguardando transmissão à SEFAZ (não inclui conflito de numeração). */
+export async function contarNfcePendentesTransmissao(): Promise<number> {
+	const row = await queryOne<{ total: number }>(
+		`SELECT COUNT(*)::int AS total
+		 FROM venda
+		 WHERE nfce_status IN (
+			'pendente',
+			'pendente_contingencia',
+			'contingencia',
+			'erro',
+			'erro_config'
+		 )`,
+	);
+	return row?.total ?? 0;
+}
+
 export async function contarOutboxFalhasPermanentes(): Promise<number> {
 	const row = await queryOne<{ total: number }>(
 		`SELECT COUNT(*)::int AS total
