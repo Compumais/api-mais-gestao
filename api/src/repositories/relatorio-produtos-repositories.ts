@@ -349,6 +349,56 @@ function baseProdutos(f: FiltrosRelatorioProdutos): SQL {
 	`;
 }
 
+/**
+ * Mantém o relatório de qualidade compatível com bancos anteriores à migration
+ * 0096. Esse relatório não usa marcas, EANs alternativos nem tabelas de preço,
+ * portanto não deve depender dessas relações apenas por compartilhar a base dos
+ * demais relatórios.
+ */
+function baseQualidadeProdutos(f: FiltrosRelatorioProdutos): SQL {
+	return sql`
+		WITH saldos AS (
+			SELECT se.idempresa, se.codigoproduto,
+				SUM(COALESCE(se.quantidade::numeric, 0)) estoque_operacional
+			FROM saldoestoque se
+			WHERE se.idempresa = ${f.idempresa}
+			GROUP BY se.idempresa, se.codigoproduto
+		), duplicados AS (
+			SELECT idempresa, codigo, COUNT(*) qtd_codigo
+			FROM produtos WHERE idempresa = ${f.idempresa} AND codigo IS NOT NULL
+			GROUP BY idempresa, codigo HAVING COUNT(*) > 1
+		), eans AS (
+			SELECT idempresa, ean, COUNT(*) qtd_ean
+			FROM produtos
+			WHERE idempresa = ${f.idempresa}
+				AND NULLIF(BTRIM(ean::text), '') IS NOT NULL
+			GROUP BY idempresa, ean HAVING COUNT(*) > 1
+		), base AS (
+			SELECT p.*, h.nome grupo_nome,
+				COALESCE(e.nome, p.fornecedor) fornecedor_nome,
+				n.codigo ncm_cadastro, ce.codigo::text cest_cadastro,
+				NULL::numeric custo_recente,
+				s.estoque_operacional,
+				COALESCE(d.qtd_codigo, 0) codigo_duplicado,
+				COALESCE(ed.qtd_ean, 0) ean_duplicado
+			FROM produtos p
+			LEFT JOIN hierarquia h ON h.id = p.idgrupo AND h.idempresa = p.idempresa
+			LEFT JOIN entidade e
+				ON e.id = COALESCE(p.idfornecedor, p.fornecedor)
+				AND e.idempresa = p.idempresa
+			LEFT JOIN ncm n ON n.id = p.idncm
+			LEFT JOIN cest ce ON ce.id = p.idcest
+			LEFT JOIN saldos s
+				ON s.idempresa = p.idempresa
+				AND s.codigoproduto = p.codigo::text
+			LEFT JOIN duplicados d
+				ON d.idempresa = p.idempresa AND d.codigo = p.codigo
+			LEFT JOIN eans ed ON ed.idempresa = p.idempresa AND ed.ean = p.ean
+			WHERE p.idempresa = ${f.idempresa} ${filtrosBase(f)}
+		)
+	`;
+}
+
 async function consultarBase(
 	tipo: TipoRelatorioProdutos,
 	f: FiltrosRelatorioProdutos,
@@ -356,7 +406,7 @@ async function consultarBase(
 	filtroExtra: SQL = sql``,
 ): Promise<ConsultaRelatorioProdutos> {
 	const resultado = await db.execute(sql`
-		${baseProdutos(f)}
+		${tipo === "qualidade" ? baseQualidadeProdutos(f) : baseProdutos(f)}
 		SELECT ${selecao}, COUNT(*) OVER()::int __total
 		FROM base b
 		WHERE 1=1 ${filtroExtra}
@@ -761,7 +811,7 @@ export async function consultarResumoQualidadeProdutos(
 	filtros: FiltrosRelatorioProdutos,
 ): Promise<Record<string, number>> {
 	const resultado = await db.execute(sql`
-		${baseProdutos(filtros)}
+		${baseQualidadeProdutos(filtros)}
 		SELECT
 			COUNT(*)::int total,
 			COUNT(*) FILTER (WHERE COALESCE(inativo, 0) = 0)::int ativos,
