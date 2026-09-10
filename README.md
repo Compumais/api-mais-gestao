@@ -94,12 +94,11 @@ Continuando a partir da pasta `api/` usada na etapa anterior:
 cd ../web
 pnpm install --frozen-lockfile
 pnpm run build:live
-pm2 reload mais-gestao-web --update-env
 ```
 
-`build:live` prepara e publica o build da web somente após a compilação
-terminar com sucesso. Não execute o `pm2 reload` se a instalação ou o build
-falhar.
+`build:live` valida o processo `web-mais-gestao`, compila em staging e, somente
+após o build terminar, para brevemente o processo, publica `.next` e o reinicia.
+Isso impede que o processo antigo tente carregar chunks do build novo.
 
 #### 5. Validar a publicação
 
