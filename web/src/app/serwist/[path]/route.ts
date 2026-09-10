@@ -13,6 +13,14 @@ export const { dynamic, dynamicParams, revalidate, generateStaticParams, GET } =
 		// runtime. Colocá-los no precache faz a instalação inteira falhar quando
 		// um deploy remove a geração anterior antes de o SW terminar de instalar.
 		globPatterns: ["public/**/*"],
+		manifestTransforms: [
+			async (entries) => ({
+				manifest: entries.filter(
+					(entry) => !/(?:^|\/)static\/chunks\//.test(entry.url),
+				),
+				warnings: [],
+			}),
+		],
 		swSrc: "src/app/sw.ts",
 		useNativeEsbuild: true,
 	});
