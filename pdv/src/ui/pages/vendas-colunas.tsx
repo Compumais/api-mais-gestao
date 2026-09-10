@@ -55,6 +55,19 @@ export function vendaPendenteSincronizacao(venda: {
 	return venda.nfce_status === "erro" && Boolean(venda.idremoto);
 }
 
+/** Venda ainda não enviada/confirmada na retaguarda (fila de sync). */
+export function cupomNaoSincronizadoRetaguarda(venda: {
+	sync_status: string;
+}): boolean {
+	return venda.sync_status === "pendente";
+}
+
+export function contarCuponsNaoSincronizadosRetaguarda(
+	vendas: Array<{ sync_status: string }>,
+): number {
+	return vendas.filter(cupomNaoSincronizadoRetaguarda).length;
+}
+
 export type FiltrosColunaVendasState = {
 	criadoem: string;
 	numero_mesa: string;

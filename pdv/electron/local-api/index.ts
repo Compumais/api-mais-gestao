@@ -1423,6 +1423,15 @@ export const localApi = {
 			);
 		}
 
+		const pendentesSync = (await listarVendasNaoSincronizadas(100)).filter(
+			(venda) => venda.sync_status === "pendente",
+		);
+		if (pendentesSync.length > 0) {
+			throw new Error(
+				`Há ${pendentesSync.length} cupom(ns) não sincronizado(s) com a retaguarda. Use "Enviar para retaguarda" antes de transmitir as pendentes.`,
+			);
+		}
+
 		const outbox = await processarOutbox();
 		await sincronizarFiscalPdv().catch(() => undefined);
 		const vendas = await listarVendasNaoSincronizadas(100);
