@@ -687,6 +687,13 @@
       "when": 1788979200000,
       "tag": "0095_datahoraautorizacao_notafiscal",
       "breakpoints": true
+    },
+    {
+      "idx": 97,
+      "version": "7",
+      "when": 1788991200000,
+      "tag": "0096_relatorios_produtos",
+      "breakpoints": true
     }
   ]
 }
