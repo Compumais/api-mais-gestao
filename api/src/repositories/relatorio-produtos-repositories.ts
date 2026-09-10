@@ -258,7 +258,7 @@ function paginacao(
 function filtrosBase(f: FiltrosRelatorioProdutos): SQL {
 	return sql`
 		${filtroSituacao(f.situacao)}
-		${f.q ? sql`AND (p.nome ILIKE ${`%${f.q}%`} OR p.descricao ILIKE ${`%${f.q}%`} OR p.codigo::text ILIKE ${`%${f.q}%`} OR COALESCE(p.ean, '') ILIKE ${`%${f.q}%`})` : sql``}
+		${f.q ? sql`AND (p.nome ILIKE ${`%${f.q}%`} OR p.descricao ILIKE ${`%${f.q}%`} OR p.codigo::text ILIKE ${`%${f.q}%`} OR COALESCE(p.ean::text, '') ILIKE ${`%${f.q}%`})` : sql``}
 		${f.grupo ? sql`AND (h.id = ${f.grupo} OR h.nome ILIKE ${`%${f.grupo}%`})` : sql``}
 		${f.fornecedor ? sql`AND (e.id = ${f.fornecedor} OR e.nome ILIKE ${`%${f.fornecedor}%`} OR COALESCE(p.fornecedor, '') ILIKE ${`%${f.fornecedor}%`})` : sql``}
 	`;
@@ -293,7 +293,7 @@ function baseProdutos(f: FiltrosRelatorioProdutos): SQL {
 			GROUP BY idempresa, codigo HAVING COUNT(*) > 1
 		), eans AS (
 			SELECT idempresa, ean, COUNT(*) qtd_ean
-			FROM produtos WHERE idempresa = ${f.idempresa} AND NULLIF(BTRIM(ean), '') IS NOT NULL
+			FROM produtos WHERE idempresa = ${f.idempresa} AND NULLIF(BTRIM(ean::text), '') IS NOT NULL
 			GROUP BY idempresa, ean HAVING COUNT(*) > 1
 		), eans_alternativos AS (
 			SELECT pe.idproduto,
@@ -368,7 +368,7 @@ async function consultarBase(
 function pendenciaBase(f: FiltrosRelatorioProdutos): SQL {
 	switch (f.pendencia) {
 		case "ean":
-			return sql`AND NULLIF(BTRIM(b.ean), '') IS NULL`;
+			return sql`AND NULLIF(BTRIM(b.ean::text), '') IS NULL`;
 		case "ncm":
 			return sql`AND COALESCE(NULLIF(BTRIM(b.ncm), ''), NULLIF(BTRIM(b.ncm_cadastro), '')) IS NULL`;
 		case "cest":
@@ -408,7 +408,7 @@ async function consultarProdutosBase(
 			b.codigo, b.nome,
 			CASE WHEN COALESCE(b.inativo, 0) = 0 THEN 'Ativo' ELSE 'Inativo' END status,
 			CONCAT_WS(', ',
-				CASE WHEN NULLIF(BTRIM(b.ean), '') IS NULL THEN 'Sem EAN' END,
+				CASE WHEN NULLIF(BTRIM(b.ean::text), '') IS NULL THEN 'Sem EAN' END,
 				CASE WHEN COALESCE(NULLIF(BTRIM(b.ncm), ''), NULLIF(BTRIM(b.ncm_cadastro), '')) IS NULL THEN 'Sem NCM' END,
 				CASE WHEN COALESCE(b.preco::numeric, 0) <= 0 THEN 'Sem preço' END,
 				CASE WHEN b.fornecedor_nome IS NULL THEN 'Sem fornecedor' END,
@@ -449,8 +449,8 @@ async function consultarProdutosBase(
 			b.codigo, b.nome, b.ean ean_principal, b.eantributavel ean_tributavel,
 			b.eans_alternativos,
 			CASE
-				WHEN NULLIF(BTRIM(b.ean), '') IS NULL THEN 'Vazio'
-				WHEN b.ean !~ '^[0-9]{8}$|^[0-9]{12,14}$' THEN 'Formato inválido'
+				WHEN NULLIF(BTRIM(b.ean::text), '') IS NULL THEN 'Vazio'
+				WHEN b.ean::text !~ '^[0-9]{8}$|^[0-9]{12,14}$' THEN 'Formato inválido'
 				WHEN b.ean_duplicado > 0 THEN 'Duplicado'
 				ELSE 'Validar dígito'
 			END situacao_ean,
@@ -766,7 +766,7 @@ export async function consultarResumoQualidadeProdutos(
 			COUNT(*)::int total,
 			COUNT(*) FILTER (WHERE COALESCE(inativo, 0) = 0)::int ativos,
 			COUNT(*) FILTER (WHERE COALESCE(inativo, 0) <> 0)::int inativos,
-			COUNT(*) FILTER (WHERE NULLIF(BTRIM(ean), '') IS NULL)::int sem_ean,
+			COUNT(*) FILTER (WHERE NULLIF(BTRIM(ean::text), '') IS NULL)::int sem_ean,
 			COUNT(*) FILTER (WHERE COALESCE(NULLIF(BTRIM(ncm), ''), NULLIF(BTRIM(ncm_cadastro), '')) IS NULL)::int sem_ncm,
 			COUNT(*) FILTER (WHERE COALESCE(cest_cadastro, cest::text) IS NULL)::int sem_cest,
 			COUNT(*) FILTER (WHERE COALESCE(preco::numeric, 0) <= 0)::int sem_preco,
