@@ -1,7 +1,9 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
 	Sheet,
 	SheetContent,
@@ -9,6 +11,7 @@ import {
 	SheetHeader,
 	SheetTitle,
 } from "@/components/ui/sheet";
+import { formatDataCivilBrasilia, formatDateTimeBrasilia } from "@/lib/date";
 import { estoqueGestaoService } from "@/services/estoque-gestao.service";
 import type { Produto } from "@/services/produtos.service";
 import { LotesProdutoEstoque } from "./lotes-produto-estoque";
@@ -39,7 +42,12 @@ export function MovimentosProdutoSheet({
 	const codigoProduto =
 		produto?.codigo != null ? String(produto.codigo) : undefined;
 
-	const { data: movimentosData, isLoading: carregandoMovimentos } = useQuery({
+	const {
+		data: movimentosData,
+		isLoading: carregandoMovimentos,
+		isError: erroMovimentos,
+		error: erro,
+	} = useQuery({
 		queryKey: ["estoque-movimentos", idempresa, codigoProduto],
 		queryFn: () =>
 			estoqueGestaoService.listarMovimentos({
@@ -69,9 +77,32 @@ export function MovimentosProdutoSheet({
 					/>
 
 					<div className="space-y-3">
-						<h3 className="text-sm font-semibold">Movimentos</h3>
+						<div className="flex items-center justify-between gap-2">
+							<h3 className="text-sm font-semibold">Movimentos</h3>
+							{produto ? (
+								<Button asChild size="sm" variant="outline">
+									<Link
+										href={`/produtos/relatorios/movimentacoes?q=${encodeURIComponent(
+											codigoProduto ?? produto.nome,
+										)}`}
+									>
+										Ver kardex completo
+									</Link>
+								</Button>
+							) : null}
+						</div>
 						{carregandoMovimentos ? (
-							<p className="text-sm text-muted-foreground">Carregando...</p>
+							<p className="text-sm text-muted-foreground" aria-live="polite">
+								Carregando...
+							</p>
+						) : erroMovimentos ? (
+							<p className="text-sm text-destructive" role="alert">
+								{erro.message}
+							</p>
+						) : (movimentosData?.data ?? []).length === 0 ? (
+							<p className="text-sm text-muted-foreground">
+								Nenhum movimento encontrado.
+							</p>
 						) : (
 							(movimentosData?.data ?? []).map((mov) => (
 								<div key={mov.id} className="rounded border p-3 text-sm">
@@ -86,8 +117,20 @@ export function MovimentosProdutoSheet({
 										</Badge>
 									</div>
 									<p className="text-muted-foreground mt-1">
-										{mov.datahora ?? mov.data ?? "—"}
+										{mov.datahora
+											? formatDateTimeBrasilia(mov.datahora)
+											: formatDataCivilBrasilia(mov.data)}
 									</p>
+									<dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+										<dt className="text-muted-foreground">Documento</dt>
+										<dd>{mov.tipodocumento ?? "—"}</dd>
+										<dt className="text-muted-foreground">Origem</dt>
+										<dd className="break-all">{mov.idoriginal ?? "—"}</dd>
+										<dt className="text-muted-foreground">Observação</dt>
+										<dd className="col-span-2 break-words">
+											{mov.observacao ?? "—"}
+										</dd>
+									</dl>
 								</div>
 							))
 						)}

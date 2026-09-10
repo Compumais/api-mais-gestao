@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import type { HttpResponse } from "@/model/http-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
-import { persistirImportacaoProdutos } from "@/repositories/produtos-repositories.js";
+import { persistirImportacaoProdutosComHistorico } from "@/repositories/produto-historico-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
 import {
 	montarDadosProdutoImportacao,
@@ -21,6 +21,7 @@ type ImportarProdutosParametros = {
 	formato: FormatoArquivoImportacao;
 	conteudo: string;
 	nomeArquivo?: string | undefined;
+	ip?: string | undefined;
 };
 
 export type ImportarProdutosResposta = {
@@ -35,6 +36,7 @@ export async function importarProdutosService({
 	formato,
 	conteudo,
 	nomeArquivo,
+	ip,
 }: ImportarProdutosParametros): Promise<
 	HttpResponse<ImportarProdutosResposta>
 > {
@@ -104,7 +106,10 @@ export async function importarProdutosService({
 			};
 		});
 
-	const persistido = await persistirImportacaoProdutos({ criar, atualizar });
+	const persistido = await persistirImportacaoProdutosComHistorico(
+		{ criar, atualizar },
+		{ idusuario, ip },
+	);
 
 	const porId = new Map(
 		resolvidos

@@ -1,5 +1,6 @@
 import type { Icon } from "@tabler/icons-react";
 import {
+	IconArrowsLeftRight,
 	IconBuildingFactory,
 	IconCashRegister,
 	IconCoins,
@@ -11,7 +12,6 @@ import {
 	IconReceiptTax,
 	IconReportMoney,
 	IconScale,
-	IconSearch,
 	IconSettings,
 	IconToolsKitchen2,
 	IconUsers,
@@ -144,6 +144,13 @@ export const DATA = {
 					url: "/produtos",
 				},
 				{
+					title: "Relatórios de produtos",
+					url: "/produtos/relatorios",
+					acesso: {
+						perfis: [...PERFIS_GESTAO],
+					},
+				},
+				{
 					title: "Serviços",
 					url: "/servicos",
 				},
@@ -204,6 +211,14 @@ export const DATA = {
 	] satisfies NavItem[],
 
 	navEstoque: [
+		{
+			title: "Movimentações de produtos",
+			url: "/produtos/relatorios/movimentacoes",
+			icon: IconArrowsLeftRight,
+			acesso: {
+				perfis: [...PERFIS_GESTAO],
+			},
+		},
 		{
 			title: "Fichas de produção",
 			url: "/fichas-producao",
