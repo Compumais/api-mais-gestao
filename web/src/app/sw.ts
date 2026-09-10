@@ -2,7 +2,11 @@
 /// <reference lib="webworker" />
 
 import { defaultCache } from "@serwist/turbopack/worker";
-import type { PrecacheEntry, RuntimeCaching, SerwistGlobalConfig } from "serwist";
+import type {
+	PrecacheEntry,
+	RuntimeCaching,
+	SerwistGlobalConfig,
+} from "serwist";
 import { NetworkOnly, Serwist } from "serwist";
 
 declare global {
@@ -58,24 +62,31 @@ const cacheSoDeAssets = defaultCache.filter((regra) => {
 	return nome == null || !CACHES_DE_PAGINA.includes(nome);
 });
 
+const precacheSemChunks = (self.__SW_MANIFEST ?? []).filter((entrada) => {
+	const url = typeof entrada === "string" ? entrada : entrada.url;
+	return !url.startsWith("/_next/static/chunks/");
+});
+
 self.addEventListener("activate", (evento) => {
 	evento.waitUntil(
-		caches.keys().then((chaves) =>
-			Promise.all(
-				chaves
-					.filter((chave) =>
-						CACHES_DE_PAGINA.some(
-							(nome) => chave === nome || chave.includes(nome),
-						),
-					)
-					.map((chave) => caches.delete(chave)),
+		caches
+			.keys()
+			.then((chaves) =>
+				Promise.all(
+					chaves
+						.filter((chave) =>
+							CACHES_DE_PAGINA.some(
+								(nome) => chave === nome || chave.includes(nome),
+							),
+						)
+						.map((chave) => caches.delete(chave)),
+				),
 			),
-		),
 	);
 });
 
 const serwist = new Serwist({
-	precacheEntries: self.__SW_MANIFEST,
+	precacheEntries: precacheSemChunks,
 	skipWaiting: true,
 	clientsClaim: true,
 	navigationPreload: false,
