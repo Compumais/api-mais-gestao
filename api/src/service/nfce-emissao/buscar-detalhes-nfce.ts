@@ -164,14 +164,17 @@ function montarRejeicao(nota: {
 	codigostatusprotocolonfe: number | null;
 	codigostatustransmissaonfe?: number | null;
 }): RejeicaoDetalheNfce | null {
+	const statusComRejeicao =
+		nota.status === NFE_STATUS.REJEITADA || nota.status === NFE_STATUS.DENEGADA;
+	if (!statusComRejeicao) {
+		return null;
+	}
+
 	const xMotivo = nota.mensagemtransmissaonfe?.trim() || null;
 	const cStatNumero =
 		nota.codigostatusprotocolonfe ?? nota.codigostatustransmissaonfe ?? null;
 	const cStat = cStatNumero != null ? String(cStatNumero) : null;
-	const statusComRejeicao =
-		nota.status === NFE_STATUS.REJEITADA || nota.status === NFE_STATUS.DENEGADA;
-
-	if (!statusComRejeicao && !xMotivo) {
+	if (!cStat && !xMotivo) {
 		return null;
 	}
 

@@ -265,4 +265,61 @@ describe("buscarDetalhesNfceService", () => {
 		expect(resultado.body?.iaDisponivel).toBe(false);
 		expect(resultado.body?.rejeicao).toBeNull();
 	});
+
+	it("não monta rejeição para NFC-e autorizada com cStat 100", async () => {
+		const { entidade, resolver, itemRepo, fiscalRepo, config, notaRepo } =
+			await mocks();
+
+		vi.mocked(entidade.verificarUsuarioPertenceEmpresa).mockResolvedValue(true);
+		vi.mocked(resolver.resolverVendaPorNotaFiscalNfce).mockResolvedValue({
+			nota: {
+				id: ID_NOTA,
+				idempresa: ID_EMPRESA,
+				modelo: "65",
+				numeronotafiscal: "22741",
+				serie: "1",
+				chavenfe: "35260812345678000190650010000001011000000010",
+				protocolonfe: "123",
+				status: NFE_STATUS.AUTORIZADA,
+				tipoambientenfe: 1,
+				valortotalnota: "37.00",
+				emissao: "2026-09-09",
+				datahoraemissao: "2026-09-09T20:00:00-03:00",
+				mensagemtransmissaonfe: "Autorizado o uso da NF-e",
+				codigostatusprotocolonfe: 100,
+			},
+			venda: {
+				id: ID_VENDA,
+				valordinheiro: null,
+				valorcartaocredito: "37.00",
+				valortroco: "0",
+				valortotal: "37.00",
+			},
+		} as never);
+		vi.mocked(itemRepo.listarItensPorVendaPdv).mockResolvedValue([]);
+		vi.mocked(notaRepo.listarItensPorNotaFiscal).mockResolvedValue([]);
+		vi.mocked(fiscalRepo.buscarEmpresaFiscalPorEmpresa).mockResolvedValue(
+			undefined,
+		);
+		vi.mocked(config.buscarConfiguracaoUsuarioService).mockResolvedValue({
+			success: true,
+			status: 200,
+			body: {
+				id: "cfg-1",
+				idusuario: ID_USUARIO,
+				integracoes: {},
+				criadoem: "",
+				atualizadoem: "",
+			},
+		});
+
+		const resultado = await buscarDetalhesNfceService({
+			idusuario: ID_USUARIO,
+			idempresa: ID_EMPRESA,
+			idnotafiscal: ID_NOTA,
+		});
+
+		expect(resultado.success).toBe(true);
+		expect(resultado.body?.rejeicao).toBeNull();
+	});
 });
