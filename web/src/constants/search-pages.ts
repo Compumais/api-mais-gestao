@@ -134,6 +134,21 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 		],
 	},
 	{
+		title: "Relatórios de produtos",
+		url: "/produtos/relatorios",
+		category: "Cadastros",
+		icon: IconChartBar,
+		keywords: [
+			"relatório",
+			"relatorio",
+			"produtos",
+			"qualidade",
+			"cadastro",
+			"preços",
+			"margem",
+		],
+	},
+	{
 		title: "Serviços",
 		url: "/servicos",
 		category: "Cadastros",
@@ -221,6 +236,13 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 			"inventário",
 			"inventario",
 		],
+	},
+	{
+		title: "Movimentações de produtos",
+		url: "/produtos/relatorios/movimentacoes",
+		category: "Estoque",
+		icon: IconArrowsLeftRight,
+		keywords: ["kardex", "movimentos", "entradas", "saídas", "estoque"],
 	},
 	{
 		title: "Fichas de produção",

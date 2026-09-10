@@ -34,6 +34,7 @@ const criarProdutoBodySchema = z
 		idunidademedida: z.string(),
 		fornecedor: z.string().optional().nullable(),
 		idgrupo: z.string().optional().nullable(),
+		idmarca: z.string().optional().nullable(),
 		idgrupogourmet: z
 			.string()
 			.optional()
@@ -151,6 +152,7 @@ export async function criarProduto(
 			idunidademedida: dadosValidados.idunidademedida,
 			fornecedor: dadosValidados.fornecedor ?? null,
 			idgrupo: dadosValidados.idgrupo ?? null,
+			idmarca: dadosValidados.idmarca ?? null,
 			idgrupogourmet: dadosValidados.idgrupogourmet ?? null,
 			preco,
 			tipo: dadosValidados.tipo,
@@ -184,6 +186,7 @@ export async function criarProduto(
 		const resultado = await criarProdutoService({
 			dadosProduto,
 			idusuario: request.user.id,
+			ip: request.ip,
 		});
 
 		if (!resultado.success) {

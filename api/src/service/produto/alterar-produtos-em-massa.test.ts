@@ -1,14 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as entidadeRepository from "@/repositories/entidade-repositories.js";
 import * as grupoGourmetRepository from "@/repositories/grupo-gourmet-repositories.js";
+import * as produtoHistoricoRepository from "@/repositories/produto-historico-repositories.js";
 import * as produtosRepository from "@/repositories/produtos-repositories.js";
 import * as unidadeMedidaRepository from "@/repositories/unidade-medida-repositories.js";
 import * as auditoriaService from "@/service/auditoria/criar-auditoria.js";
-import { alterarProdutosEmMassaService } from "./alterar-produtos-em-massa.js";
 import { camposAlteracaoEmMassaProdutoSchema } from "@/util/campos-alteracao-em-massa-produto.js";
+import { alterarProdutosEmMassaService } from "./alterar-produtos-em-massa.js";
 
 vi.mock("@/repositories/entidade-repositories");
 vi.mock("@/repositories/grupo-gourmet-repositories");
+vi.mock("@/repositories/produto-historico-repositories");
 vi.mock("@/repositories/produtos-repositories");
 vi.mock("@/repositories/unidade-medida-repositories");
 vi.mock("@/service/auditoria/criar-auditoria");
@@ -43,9 +45,9 @@ describe("alterarProdutosEmMassaService", () => {
 		vi.mocked(produtosRepository.buscarProdutosPorIds).mockResolvedValue([
 			produtoDaEmpresa(),
 		]);
-		vi.mocked(produtosRepository.atualizarProdutosEmMassa).mockResolvedValue([
-			produtoDaEmpresa(),
-		]);
+		vi.mocked(
+			produtoHistoricoRepository.atualizarProdutosEmMassaComHistorico,
+		).mockResolvedValue([produtoDaEmpresa()]);
 
 		const resultado = await alterarProdutosEmMassaService({
 			idusuario: USUARIO_ID,
@@ -58,15 +60,19 @@ describe("alterarProdutosEmMassaService", () => {
 		});
 
 		expect(resultado.success).toBe(true);
-		expect(produtosRepository.atualizarProdutosEmMassa).toHaveBeenCalledWith(
+		expect(
+			produtoHistoricoRepository.atualizarProdutosEmMassaComHistorico,
+		).toHaveBeenCalledWith(
 			[PRODUTO_ID],
 			{
 				percentualmva: "12.50",
 				cstpis: "01",
 			},
+			{ idusuario: USUARIO_ID, ip: undefined },
 		);
-		const persistidos = vi.mocked(produtosRepository.atualizarProdutosEmMassa)
-			.mock.calls[0]?.[1];
+		const persistidos = vi.mocked(
+			produtoHistoricoRepository.atualizarProdutosEmMassaComHistorico,
+		).mock.calls[0]?.[1];
 		expect(persistidos).not.toHaveProperty("preco");
 		expect(persistidos).not.toHaveProperty("ncm");
 		expect(persistidos).not.toHaveProperty("cstcofins");
@@ -90,7 +96,9 @@ describe("alterarProdutosEmMassaService", () => {
 
 		expect(resultado.success).toBe(false);
 		expect(resultado.status).toBe(403);
-		expect(produtosRepository.atualizarProdutosEmMassa).not.toHaveBeenCalled();
+		expect(
+			produtoHistoricoRepository.atualizarProdutosEmMassaComHistorico,
+		).not.toHaveBeenCalled();
 	});
 
 	it("rejeita lista de produtos vazia com 400", async () => {
@@ -110,9 +118,9 @@ describe("alterarProdutosEmMassaService", () => {
 		vi.mocked(produtosRepository.buscarProdutosPorIds).mockResolvedValue([
 			produtoDaEmpresa(),
 		]);
-		vi.mocked(produtosRepository.atualizarProdutosEmMassa).mockResolvedValue([
-			produtoDaEmpresa(),
-		]);
+		vi.mocked(
+			produtoHistoricoRepository.atualizarProdutosEmMassaComHistorico,
+		).mockResolvedValue([produtoDaEmpresa()]);
 		vi.mocked(
 			unidadeMedidaRepository.buscarUnidadeMedidaPorId,
 		).mockResolvedValue({
@@ -128,12 +136,15 @@ describe("alterarProdutosEmMassaService", () => {
 			campos: { idunidademedida: "un-1" },
 		});
 
-		expect(produtosRepository.atualizarProdutosEmMassa).toHaveBeenCalledWith(
+		expect(
+			produtoHistoricoRepository.atualizarProdutosEmMassaComHistorico,
+		).toHaveBeenCalledWith(
 			[PRODUTO_ID],
 			{
 				idunidademedida: "un-1",
 				unidademedida: "KG",
 			},
+			{ idusuario: USUARIO_ID, ip: undefined },
 		);
 	});
 
@@ -141,9 +152,9 @@ describe("alterarProdutosEmMassaService", () => {
 		vi.mocked(produtosRepository.buscarProdutosPorIds).mockResolvedValue([
 			produtoDaEmpresa(),
 		]);
-		vi.mocked(produtosRepository.atualizarProdutosEmMassa).mockResolvedValue([
-			produtoDaEmpresa(),
-		]);
+		vi.mocked(
+			produtoHistoricoRepository.atualizarProdutosEmMassaComHistorico,
+		).mockResolvedValue([produtoDaEmpresa()]);
 		vi.mocked(grupoGourmetRepository.buscarGrupoGourmetPorId).mockResolvedValue(
 			{
 				id: GRUPO_GOURMET_ID,
@@ -165,12 +176,15 @@ describe("alterarProdutosEmMassaService", () => {
 		});
 
 		expect(resultado.success).toBe(true);
-		expect(produtosRepository.atualizarProdutosEmMassa).toHaveBeenCalledWith(
+		expect(
+			produtoHistoricoRepository.atualizarProdutosEmMassaComHistorico,
+		).toHaveBeenCalledWith(
 			[PRODUTO_ID],
 			{
 				idgrupogourmet: GRUPO_GOURMET_ID,
 				espizza: 1,
 			},
+			{ idusuario: USUARIO_ID, ip: undefined },
 		);
 	});
 
@@ -178,9 +192,9 @@ describe("alterarProdutosEmMassaService", () => {
 		vi.mocked(produtosRepository.buscarProdutosPorIds).mockResolvedValue([
 			produtoDaEmpresa(),
 		]);
-		vi.mocked(produtosRepository.atualizarProdutosEmMassa).mockResolvedValue([
-			produtoDaEmpresa(),
-		]);
+		vi.mocked(
+			produtoHistoricoRepository.atualizarProdutosEmMassaComHistorico,
+		).mockResolvedValue([produtoDaEmpresa()]);
 
 		await alterarProdutosEmMassaService({
 			idusuario: USUARIO_ID,
@@ -191,13 +205,18 @@ describe("alterarProdutosEmMassaService", () => {
 			},
 		});
 
-		expect(produtosRepository.atualizarProdutosEmMassa).toHaveBeenCalledWith(
+		expect(
+			produtoHistoricoRepository.atualizarProdutosEmMassaComHistorico,
+		).toHaveBeenCalledWith(
 			[PRODUTO_ID],
 			{
 				idgrupogourmet: null,
 			},
+			{ idusuario: USUARIO_ID, ip: undefined },
 		);
-		expect(grupoGourmetRepository.buscarGrupoGourmetPorId).not.toHaveBeenCalled();
+		expect(
+			grupoGourmetRepository.buscarGrupoGourmetPorId,
+		).not.toHaveBeenCalled();
 	});
 
 	it("normaliza idgrupogourmet none para null no schema", () => {
@@ -233,6 +252,8 @@ describe("alterarProdutosEmMassaService", () => {
 
 		expect(resultado.success).toBe(false);
 		expect(resultado.status).toBe(403);
-		expect(produtosRepository.atualizarProdutosEmMassa).not.toHaveBeenCalled();
+		expect(
+			produtoHistoricoRepository.atualizarProdutosEmMassaComHistorico,
+		).not.toHaveBeenCalled();
 	});
 });

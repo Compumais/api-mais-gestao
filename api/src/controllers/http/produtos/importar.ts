@@ -29,6 +29,7 @@ export async function importarProdutos(
 			formato: dadosValidados.formato,
 			conteudo: dadosValidados.conteudo,
 			nomeArquivo: dadosValidados.nomeArquivo,
+			ip: request.ip,
 		});
 
 		if (!resultado.success) {

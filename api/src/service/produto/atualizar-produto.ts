@@ -3,9 +3,10 @@ import type { HttpResponse } from "@/model/http-model.js";
 import type { NovoProduto, Produto } from "@/model/produto-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
-	atualizarProduto,
-	buscarProdutoPorId,
-} from "@/repositories/produtos-repositories.js";
+	atualizarProdutoComHistorico,
+	resumirDadosHistorico,
+} from "@/repositories/produto-historico-repositories.js";
+import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
 import { validarUnidadeMedidaParaEmpresa } from "@/service/unidade-medida/validar-unidade-medida-empresa.js";
 import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
@@ -14,12 +15,14 @@ type AtualizarProdutoParametros = {
 	produtoId: string;
 	idusuario: string;
 	dados: Partial<NovoProduto>;
+	ip?: string | undefined;
 };
 
 export async function atualizarProdutoService({
 	produtoId,
 	idusuario,
 	dados,
+	ip,
 }: AtualizarProdutoParametros): Promise<HttpResponse<Produto | null>> {
 	const registroExistente = await buscarProdutoPorId(produtoId);
 
@@ -53,9 +56,10 @@ export async function atualizarProdutoService({
 		dadosAtualizacao.descricao = dadosAtualizacao.nome;
 	}
 
-	const registroAtualizado = await atualizarProduto(
+	const registroAtualizado = await atualizarProdutoComHistorico(
 		produtoId,
 		dadosAtualizacao,
+		{ idusuario, ip },
 	);
 
 	if (!registroAtualizado) {
@@ -74,7 +78,9 @@ export async function atualizarProdutoService({
 		criadoem: new Date().toISOString(),
 		metadados: {
 			camposAlterados: Object.keys(dados),
-			valores: dados,
+			valores: resumirDadosHistorico(
+				dados as unknown as Record<string, unknown>,
+			),
 		},
 	});
 
