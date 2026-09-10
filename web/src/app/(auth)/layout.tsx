@@ -79,8 +79,11 @@ function AuthLayoutShell({ children }: { children: React.ReactNode }) {
 	const { user } = useAuth();
 
 	const shell = (() => {
+		// Evita flash do menu lateral para quem usa topbar enquanto preferências carregam.
 		if (isLoading) {
-			return <LayoutSidebar>{children}</LayoutSidebar>;
+			return (
+				<div className="min-h-svh bg-background" aria-busy="true" />
+			);
 		}
 		if (layoutMenu === "topbar") {
 			return <LayoutTopbar>{children}</LayoutTopbar>;
