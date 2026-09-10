@@ -13,6 +13,12 @@ export const REGRAS_ACESSO_ROTAS: Array<{
 	acesso: AcessoNavegacao;
 }> = [
 	{
+		prefixo: "/produtos/relatorios",
+		acesso: {
+			perfis: ["proprietario", "admin", "financeiro"],
+		},
+	},
+	{
 		prefixo: "/ordens-servico",
 		acesso: {
 			feature: "ordem_servico",
