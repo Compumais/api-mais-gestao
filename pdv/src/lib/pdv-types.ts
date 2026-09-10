@@ -159,6 +159,7 @@ export type StatusPdv = {
 	online: boolean;
 	outboxPendentes: number;
 	outboxFalhasPermanentes?: number;
+	nfcePendentesTransmissao?: number;
 	podeConfigurar: boolean;
 	moduloGourmet: boolean;
 	sessao: {

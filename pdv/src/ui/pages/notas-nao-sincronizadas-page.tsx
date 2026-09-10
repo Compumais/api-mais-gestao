@@ -222,6 +222,7 @@ export function NotasNaoSincronizadasPage() {
 		<PdvShell
 			status={status}
 			onBlockedNavigate={setMsg}
+			esconderAtalhoAlertasVendas
 			topbar={
 				<Topbar
 					title="Notas não sincronizadas"

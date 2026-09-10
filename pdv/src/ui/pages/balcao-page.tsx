@@ -18,6 +18,7 @@ import {
 	AvisoSecundario,
 	secundarioDesconectado,
 } from "@/ui/components/aviso-secundario";
+import { AlertasOperacionaisPdv } from "@/ui/components/alertas-operacionais-pdv";
 import { BarcodeInput } from "@/ui/components/barcode-input";
 import { DialogFecharCaixa } from "@/ui/components/dialog-fechar-caixa";
 import { DialogObservacaoItem } from "@/ui/components/dialog-observacao-item";
@@ -434,6 +435,7 @@ export function BalcaoPage() {
 				<div className="grid min-h-0 min-w-0 flex-1 grid-cols-[1fr_360px] gap-3 overflow-hidden">
 				<div className="pdv-surface flex min-h-0 flex-col gap-3 overflow-hidden p-3">
 					<AvisoSecundario status={status} />
+					<AlertasOperacionaisPdv status={status} />
 					<BarcodeInput
 						onScan={(codigo) => void onBip(codigo)}
 						onProduto={(produto) => adicionarProdutoSimples(produto)}
