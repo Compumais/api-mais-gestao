@@ -60,7 +60,7 @@ export const TABELA_NFCE = "nfce";
 export const TABELA_AUDITORIA = "auditoria";
 
 export function usePreferenciasUiUsuario() {
-	return useQuery({
+	return useQuery<PreferenciasUiUsuario>({
 		queryKey: preferenciasUiQueryKey,
 		queryFn: () => configuracaoUsuarioService.buscarPreferenciasUi(),
 		staleTime: 1000 * 60 * 5,
@@ -91,18 +91,18 @@ export function useLayoutMenu() {
 		() => lerLayoutMenuStorage(),
 	);
 
-	useEffect(() => {
-		if (!preferencias?.layoutMenu) return;
-		gravarLayoutMenuStorage(preferencias.layoutMenu);
-		setLayoutLocal(preferencias.layoutMenu);
-	}, [preferencias?.layoutMenu]);
+	const layoutMenuServidor = preferencias?.layoutMenu;
 
-	const layoutMenu =
-		preferencias?.layoutMenu ?? layoutLocal ?? "sidebar";
+	useEffect(() => {
+		if (!layoutMenuServidor) return;
+		gravarLayoutMenuStorage(layoutMenuServidor);
+		setLayoutLocal(layoutMenuServidor);
+	}, [layoutMenuServidor]);
+
+	const layoutMenu = layoutMenuServidor ?? layoutLocal ?? "sidebar";
 
 	/** Ainda sem preferência conhecida (nem servidor nem cache local). */
-	const isLoading =
-		isPending && !preferencias?.layoutMenu && layoutLocal === null;
+	const isLoading = isPending && !layoutMenuServidor && layoutLocal === null;
 
 	const setLayoutMenu = useCallback(
 		(valor: LayoutMenuUsuario) => {
@@ -110,8 +110,8 @@ export function useLayoutMenu() {
 			setLayoutLocal(valor);
 			queryClient.setQueryData<PreferenciasUiUsuario>(
 				preferenciasUiQueryKey,
-				(atual) => ({
-					...(atual ?? {}),
+				(atual): PreferenciasUiUsuario => ({
+					colunasTabelas: atual?.colunasTabelas,
 					layoutMenu: valor,
 				}),
 			);
