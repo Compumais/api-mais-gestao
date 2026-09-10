@@ -5,13 +5,16 @@ import {
 	importarTabelaIbptService,
 	statusTabelaIbptService,
 } from "@/service/ibpt/importar-tabela-ibpt.js";
-import { httpErroInterno, httpNaoAutorizado, httpProibido } from "@/util/http-util.js";
+import {
+	httpErroInterno,
+	httpNaoAutorizado,
+	httpProibido,
+} from "@/util/http-util.js";
 
 const paramsSchema = z.object({ id: z.string().uuid() });
 
 const importarIbptBodySchema = z.object({
-	conteudo: z.union([z.string().min(1), z.record(z.string(), z.unknown())]),
-	uf: z.string().length(2).optional(),
+	uf: z.string().length(2),
 });
 
 export async function importarTabelaIbpt(
@@ -24,22 +27,14 @@ export async function importarTabelaIbpt(
 		}
 
 		const { id } = paramsSchema.parse(request.params);
-		const pertence = await verificarUsuarioPertenceEmpresa(
-			request.user.id,
-			id,
-		);
+		const pertence = await verificarUsuarioPertenceEmpresa(request.user.id, id);
 		if (!pertence) {
 			return reply.status(httpProibido().status).send(httpProibido());
 		}
 
 		const dados = importarIbptBodySchema.parse(request.body);
-		const conteudo =
-			typeof dados.conteudo === "string"
-				? JSON.parse(dados.conteudo)
-				: dados.conteudo;
 
 		const resultado = await importarTabelaIbptService({
-			conteudo,
 			uf: dados.uf,
 			idusuario: request.user.id,
 		});
@@ -58,12 +53,6 @@ export async function importarTabelaIbpt(
 				details: error.issues,
 			});
 		}
-		if (error instanceof SyntaxError) {
-			return reply.status(400).send({
-				error: "Arquivo IBPT inválido (JSON malformado)",
-				code: "INVALID_JSON",
-			});
-		}
 		return reply.status(httpErroInterno().status).send(httpErroInterno());
 	}
 }
@@ -78,14 +67,9 @@ export async function statusTabelaIbpt(
 		}
 
 		const { id } = paramsSchema.parse(request.params);
-		const query = z
-			.object({ uf: z.string().length(2) })
-			.parse(request.query);
+		const query = z.object({ uf: z.string().length(2) }).parse(request.query);
 
-		const pertence = await verificarUsuarioPertenceEmpresa(
-			request.user.id,
-			id,
-		);
+		const pertence = await verificarUsuarioPertenceEmpresa(request.user.id, id);
 		if (!pertence) {
 			return reply.status(httpProibido().status).send(httpProibido());
 		}

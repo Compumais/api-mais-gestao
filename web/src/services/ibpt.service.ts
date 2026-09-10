@@ -29,12 +29,11 @@ export const ibptService = {
 
 	async importar(
 		idempresa: string,
-		conteudo: string,
-		uf?: string,
+		uf: string,
 	): Promise<ResultadoImportacaoIbpt> {
 		const { data } = await api.post<ResultadoImportacaoIbpt>(
 			`/empresas/${idempresa}/ibpt/importar`,
-			{ conteudo, uf },
+			{ uf },
 		);
 		return data;
 	},

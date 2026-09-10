@@ -1,8 +1,8 @@
-import type { ItemPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
 import {
 	buscarIbptAliquotasPorNcms,
 	buscarUltimaImportacaoIbptPorUf,
 } from "@/repositories/ibpt-repositories.js";
+import type { ItemPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
 import {
 	montarTextoTributosAproximadosIbpt,
 	origemProdutoEhImportado,
@@ -112,7 +112,7 @@ export async function calcularTributosAproximadosIbpt(params: {
 	if (!ultimaImportacao) {
 		return resultadoSemTabelaIbpt(
 			params.itens,
-			`Tabela IBPT não importada para a UF ${uf}. Importe em Configurações > NF-e.`,
+			`Tabela IBPT não sincronizada para a UF ${uf}. Sincronize em Configurações > NF-e.`,
 		);
 	}
 
