@@ -8,9 +8,24 @@ import { gerarRelatorioFiscalComprasController } from "./fiscal-compras.js";
 import { gerarRelatorioFiscalContabilidadeController } from "./fiscal-contabilidade.js";
 import { gerarRelatorioFiscalVendasController } from "./fiscal-vendas.js";
 import { gerarRelatorioFluxoCaixaController } from "./fluxo-caixa.js";
+import {
+	consultarRelatorioProdutosController,
+	consultarRelatorioProdutosSchema,
+	exportarRelatorioProdutosController,
+	exportarRelatorioProdutosSchema,
+} from "./produtos.js";
 
 export async function relatoriosRotas(app: FastifyInstance) {
 	app.addHook("onRequest", verifyJwt);
+
+	app.get("/relatorios/produtos/:tipo/exportar", {
+		schema: exportarRelatorioProdutosSchema,
+		handler: exportarRelatorioProdutosController,
+	});
+	app.get("/relatorios/produtos/:tipo", {
+		schema: consultarRelatorioProdutosSchema,
+		handler: consultarRelatorioProdutosController,
+	});
 
 	app.post("/relatorios/fluxo-caixa", {
 		schema: {
