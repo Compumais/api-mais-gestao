@@ -1,7 +1,20 @@
 "use client";
 
-import { SerwistProvider } from "@serwist/turbopack/react";
+import { useEffect } from "react";
 
 export function PwaRoot({ children }: { children: React.ReactNode }) {
-	return <SerwistProvider swUrl="/serwist/sw.js">{children}</SerwistProvider>;
+	useEffect(() => {
+		if (!("serviceWorker" in navigator)) {
+			return;
+		}
+
+		void navigator.serviceWorker
+			.register("/serwist/sw.js", {
+				scope: "/",
+				updateViaCache: "none",
+			})
+			.catch(() => undefined);
+	}, []);
+
+	return children;
 }

@@ -42,6 +42,7 @@ const atualizarProdutoBodySchema = z.object({
 	idunidademedida: z.string().optional(),
 	fornecedor: z.string().optional().nullable(),
 	idgrupo: z.string().optional().nullable(),
+	idmarca: z.string().optional().nullable(),
 	idgrupogourmet: z
 		.string()
 		.optional()
@@ -181,6 +182,7 @@ export async function atualizarProduto(
 			produtoId: id,
 			idusuario: request.user.id,
 			dados,
+			ip: request.ip,
 		});
 
 		if (!resultado.success) {

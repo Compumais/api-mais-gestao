@@ -38,6 +38,7 @@ import {
 	hojeBrasiliaIsoDate,
 } from "@/util/data-hora-brasilia.js";
 import { extrairQrCodeNfceXml } from "@/util/extrair-qr-code-nfce-xml.js";
+import { resolverDataHoraAutorizacao } from "@/util/extrair-dh-recbto-xml.js";
 import {
 	httpBadRequest,
 	httpNaoEncontrado,
@@ -135,14 +136,35 @@ async function persistirFalhaPreValidacaoNfce({
 		},
 	};
 
-	if (notaExistente) {
+	const statusTerminal =
+		notaExistente?.status === NFE_STATUS.AUTORIZADA ||
+		notaExistente?.status === NFE_STATUS.CANCELADA ||
+		notaExistente?.status === NFE_STATUS.CANCELADA_FORA_PRAZO ||
+		notaExistente?.status === NFE_STATUS.INUTILIZADA;
+
+	if (notaExistente && !statusTerminal) {
 		await atualizarNotaFiscal(idnotafiscal, {
 			status: NFE_STATUS.REJEITADA,
 			mensagemtransmissaonfe: dadosNota.mensagemtransmissaonfe,
 			dadosimportacao: dadosNota.dadosimportacao,
 		});
 	} else {
-		await criarNotaFiscalComItens(dadosNota, []);
+		// Não sobrescreve nota terminal (ex.: inutilizada 102) — cria nova pendência
+		const idNova = statusTerminal ? uuidv4() : idnotafiscal;
+		await criarNotaFiscalComItens({ ...dadosNota, id: idNova }, []);
+		await atualizarVendaPdvGourmet(venda.id, {
+			idnotafiscalnfce: idNova,
+			deveemitirnfce: true,
+		});
+		return httpOk({
+			emitida: false,
+			idnotafiscal: idNova,
+			...(notaExistente?.serie ? { serie: notaExistente.serie } : {}),
+			...(Number(notaExistente?.numeronotafiscal) > 0
+				? { numero: Number(notaExistente?.numeronotafiscal) }
+				: {}),
+			erro: mensagem,
+		});
 	}
 
 	await atualizarVendaPdvGourmet(venda.id, {
@@ -589,6 +611,13 @@ export async function emitirNfceVendaPdvService({
 		arquivoxmlautorizada:
 			statusPersistido === NFE_STATUS.AUTORIZADA
 				? (respostaGateway.xmlRetorno ?? null)
+				: null,
+		datahoraautorizacao:
+			statusPersistido === NFE_STATUS.AUTORIZADA
+				? resolverDataHoraAutorizacao({
+						xmlAutorizado: respostaGateway.xmlRetorno,
+						fallbackIso: agora,
+					})
 				: null,
 		mensagemtransmissaonfe: xMotivo,
 		codigostatusprotocolonfe: normalizarCodigoStatusNfe(cStat),

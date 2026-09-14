@@ -44,7 +44,7 @@ describe("calcularTributosAproximadosIbpt", () => {
 		expect(resultado.pendencias[0]).toContain("ainda não instalada");
 	});
 
-	it("continua sem tributos quando a tabela da UF ainda não foi importada", async () => {
+	it("continua sem tributos quando a tabela da UF ainda não foi sincronizada", async () => {
 		buscarUltimaImportacaoIbptPorUf.mockResolvedValue(undefined);
 
 		const resultado = await calcularTributosAproximadosIbpt({
@@ -53,6 +53,6 @@ describe("calcularTributosAproximadosIbpt", () => {
 		});
 
 		expect(resultado.totalAproximado).toBe(0);
-		expect(resultado.pendencias[0]).toContain("não importada");
+		expect(resultado.pendencias[0]).toContain("não sincronizada");
 	});
 });

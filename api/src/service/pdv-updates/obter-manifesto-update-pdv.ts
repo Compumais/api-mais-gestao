@@ -76,26 +76,42 @@ async function arquivoExiste(caminho: string): Promise<boolean> {
 }
 
 /**
+ * Só anuncia uma versão se o Setup.exe do manifesto existir na mesma pasta
+ * (evita HTTP 404 no download quando o version.json embutido está à frente do artefato na VPS).
+ */
+async function manifestoComArtefato(
+	dir: string,
+): Promise<ManifestoUpdatePdv | null> {
+	const manifesto = await lerManifestoArquivo(join(dir, NOME_MANIFESTO));
+	if (!manifesto) return null;
+	if (!(await arquivoExiste(join(dir, manifesto.artifact)))) {
+		return null;
+	}
+	return manifesto;
+}
+
+/**
  * Lê version.json de PDV_UPDATES_PATH / pasta padrão VPS / output do instalador,
- * com fallback para o manifesto embutido no pacote da API.
+ * com fallback para o manifesto embutido no pacote da API (só se o artefato existir).
  */
 export async function obterManifestoUpdatePdvService(): Promise<
 	HttpResponse<ManifestoUpdatePdv>
 > {
 	for (const dir of diretoriosUpdatePdv()) {
-		const manifesto = await lerManifestoArquivo(join(dir, NOME_MANIFESTO));
+		const manifesto = await manifestoComArtefato(dir);
 		if (manifesto) {
 			return httpOk(manifesto);
 		}
 	}
 
-	const embutido = await lerManifestoArquivo(caminhoEmbutido());
+	const embutidoDir = dirname(caminhoEmbutido());
+	const embutido = await manifestoComArtefato(embutidoDir);
 	if (embutido) {
 		return httpOk(embutido);
 	}
 
 	return httpNaoEncontrado(
-		"Manifesto de atualização do PDV não encontrado. Publique version.json em PDV_UPDATES_PATH ou /opt/mais-gestao/pdv-updates/.",
+		"Manifesto de atualização do PDV não encontrado. Publique version.json e o Setup.exe em PDV_UPDATES_PATH ou /opt/mais-gestao/pdv-updates/.",
 	);
 }
 

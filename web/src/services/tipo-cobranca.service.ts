@@ -73,4 +73,24 @@ export const tipoCobrancaService = {
 	async deletar(id: string): Promise<void> {
 		await api.delete(`/tipos-cobranca/${id}`);
 	},
+
+	async listarTodos(params: { idempresa: string }): Promise<TipoCobranca[]> {
+		const limite = 100;
+		let page = 1;
+		let totalPages = 1;
+		const itens: TipoCobranca[] = [];
+
+		while (page <= totalPages) {
+			const resposta = await this.listar({
+				...params,
+				page,
+				limit: limite,
+			});
+			itens.push(...resposta.data);
+			totalPages = resposta.paginacao.totalPages;
+			page += 1;
+		}
+
+		return itens;
+	},
 };

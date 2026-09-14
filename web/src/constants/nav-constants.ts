@@ -12,7 +12,6 @@ import {
 	IconReceiptTax,
 	IconReportMoney,
 	IconScale,
-	IconSearch,
 	IconSettings,
 	IconToolsKitchen2,
 	IconUsers,
