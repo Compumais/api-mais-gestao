@@ -17,6 +17,7 @@ import { httpBadRequest, httpOk, httpProibido } from "@/util/http-util.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
 import { emitirNfceVendaPdvService } from "./emitir-nfce-venda-pdv.js";
 import { reconciliarNfceAutorizadaSefaz } from "./reconciliar-nfce-autorizada-sefaz.js";
+import { registrarInutilizacaoNumeracaoNfceService } from "./registrar-inutilizacao-numeracao-nfce.js";
 import { transmitirNfceContingenciaService } from "./transmitir-nfce-contingencia.js";
 
 export const STATUS_LOCAL_NFCE = [
@@ -31,6 +32,7 @@ export const STATUS_LOCAL_NFCE = [
 	"erro_config",
 	"cancelada",
 	"inutilizada",
+	"conflito_numeracao",
 ] as const;
 
 export type StatusLocalNfce = (typeof STATUS_LOCAL_NFCE)[number];
@@ -226,6 +228,52 @@ async function reconciliarManifesto(
 		}
 	}
 
+	// PDV com inutilizada + série/número: garante registro 102 na retaguarda
+	// (recupera buracos de numeração que nunca foram listados em /nfce)
+	if (
+		manifesto.statusLocal === "inutilizada" &&
+		manifesto.serie &&
+		manifesto.numero
+	) {
+		const registrada = await registrarInutilizacaoNumeracaoNfceService({
+			idusuario: parametros.idusuario,
+			idempresa: parametros.idempresa,
+			serie: manifesto.serie,
+			numero: manifesto.numero,
+			justificativa: `Reconciliacao PDV: numeracao NFC-e inutilizada no terminal (nNF ${manifesto.numero} serie ${manifesto.serie})`,
+		});
+		if (registrada.success && registrada.body) {
+			return {
+				idvendalocal: manifesto.idvendalocal,
+				idvendaremoto: venda.id,
+				existeRetaguarda: true,
+				idnotafiscal: registrada.body.idnotafiscal,
+				status: "inutilizada",
+				serie: manifesto.serie,
+				numero: manifesto.numero,
+				...(registrada.body.protocolo
+					? { protocolo: registrada.body.protocolo }
+					: {}),
+				acao: "reconciliada",
+				mensagem: registrada.body.xMotivo,
+			};
+		}
+		if (!registrada.success) {
+			return {
+				idvendalocal: manifesto.idvendalocal,
+				idvendaremoto: venda.id,
+				existeRetaguarda: true,
+				status: "inutilizada",
+				serie: manifesto.serie,
+				numero: manifesto.numero,
+				acao: "erro",
+				mensagem:
+					registrada.error ??
+					"Falha ao registrar inutilização da numeração na retaguarda",
+			};
+		}
+	}
+
 	let acao: AcaoReconciliacaoNfce = "sincronizada";
 	let idnotafiscal = venda.idnotafiscalnfce ?? undefined;
 
@@ -322,6 +370,22 @@ async function reconciliarManifesto(
 			idnotafiscal = emissao.body.idnotafiscal;
 			acao = "reconciliada";
 		}
+	}
+
+	if (!idnotafiscal && manifesto.statusLocal === "conflito_numeracao") {
+		const chaveConflito = normalizarChave(manifesto.chave);
+		return {
+			idvendalocal: manifesto.idvendalocal,
+			idvendaremoto: venda.id,
+			existeRetaguarda: true,
+			status: "conflito_numeracao",
+			...(manifesto.serie ? { serie: manifesto.serie } : {}),
+			...(manifesto.numero ? { numero: manifesto.numero } : {}),
+			...(chaveConflito ? { chave: chaveConflito } : {}),
+			acao: "conflito",
+			mensagem:
+				"Numeração NFC-e em conflito no PDV — reemitir com nova numeração",
+		};
 	}
 
 	if (!idnotafiscal) {

@@ -67,7 +67,6 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.2.0",
-		"@serwist/turbopack": "^9.5.12",
 		"@slicemachine/adapter-next": "^0.3.95",
 		"@tailwindcss/postcss": "^4",
 		"@types/node": "^20",
@@ -75,7 +74,6 @@
 		"@types/react-dom": "^19",
 		"babel-plugin-react-compiler": "1.0.0",
 		"esbuild": "^0.28.2",
-		"serwist": "^9.5.12",
 		"sharp": "^0.35.4",
 		"slice-machine-ui": "^2.21.1",
 		"tailwindcss": "^4",

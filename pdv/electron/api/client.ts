@@ -5,6 +5,7 @@ export class ApiError extends Error {
 	constructor(
 		message: string,
 		public status?: number,
+		public code?: string,
 	) {
 		super(message);
 		this.name = "ApiError";
@@ -137,7 +138,13 @@ async function request<T>(
 			}
 		}
 		if (!res.ok) {
-			throw new ApiError(mensagemErroApi(json, res.status), res.status);
+			const code =
+				json &&
+				typeof json === "object" &&
+				typeof (json as { code?: unknown }).code === "string"
+					? (json as { code: string }).code
+					: undefined;
+			throw new ApiError(mensagemErroApi(json, res.status), res.status, code);
 		}
 		return json as T;
 	} catch (err) {
@@ -1127,6 +1134,26 @@ export async function inutilizarNfceVendaPdv(body: {
 			timeoutMs: 60000,
 		},
 	);
+}
+
+export async function registrarInutilizacaoNumeracaoNfce(body: {
+	idempresa: string;
+	serie: number;
+	numero: number;
+	justificativa: string;
+	idvenda?: string;
+}) {
+	return request<ResultadoInutilizacaoNfceApi>("/nfce/numeracao/inutilizar", {
+		method: "POST",
+		body: {
+			idempresa: body.idempresa,
+			serie: body.serie,
+			numero: body.numero,
+			justificativa: body.justificativa,
+			...(body.idvenda ? { idvenda: body.idvenda } : {}),
+		},
+		timeoutMs: 60000,
+	});
 }
 
 export type ResultadoCancelamentoNfceApi = {

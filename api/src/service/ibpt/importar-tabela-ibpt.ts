@@ -1,21 +1,20 @@
+import { baixarTabelaIbptPorUf, IbptApiError } from "@/lib/ibpt-client.js";
 import type { HttpResponse } from "@/model/http-model.js";
 import {
-	contarAliquotasIbptPorUf,
 	buscarUltimaImportacaoIbptPorUf,
+	contarAliquotasIbptPorUf,
 	registrarImportacaoIbpt,
 	substituirAliquotasIbptPorUf,
 } from "@/repositories/ibpt-repositories.js";
+import { httpBadGateway, httpBadRequest, httpOk } from "@/util/http-util.js";
 import { parsearArquivoIbpt } from "@/util/parsear-arquivo-ibpt.js";
-import { httpBadRequest, httpOk } from "@/util/http-util.js";
 
 type ImportarTabelaIbptParametros = {
-	conteudo: unknown;
-	uf?: string;
+	uf: string;
 	idusuario?: string;
 };
 
 export async function importarTabelaIbptService({
-	conteudo,
 	uf,
 	idusuario,
 }: ImportarTabelaIbptParametros): Promise<
@@ -28,7 +27,8 @@ export async function importarTabelaIbptService({
 	}>
 > {
 	try {
-		const parseado = parsearArquivoIbpt(conteudo, uf);
+		const respostaApi = await baixarTabelaIbptPorUf(uf);
+		const parseado = parsearArquivoIbpt(respostaApi, uf);
 
 		await substituirAliquotasIbptPorUf(
 			parseado.uf,
@@ -65,8 +65,13 @@ export async function importarTabelaIbptService({
 			quantidadeRegistros: parseado.registros.length,
 		});
 	} catch (error) {
+		if (error instanceof IbptApiError) {
+			return httpBadGateway(error.message);
+		}
 		return httpBadRequest(
-			error instanceof Error ? error.message : "Falha ao importar tabela IBPT",
+			error instanceof Error
+				? error.message
+				: "Falha ao sincronizar tabela IBPT",
 		);
 	}
 }

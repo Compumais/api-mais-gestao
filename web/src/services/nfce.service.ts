@@ -14,6 +14,7 @@ export interface NfceListagem {
 	valortotalnota: string | null;
 	emissao: string | null;
 	datahoraemissao: string | null;
+	datahoraautorizacao: string | null;
 	datainclusao: string | null;
 	tipoambientenfe: number | null;
 	mensagemtransmissaonfe: string | null;
@@ -160,6 +161,7 @@ export interface DetalhesNfce {
 		valortotalnota: string | null;
 		emissao: string | null;
 		datahoraemissao: string | null;
+		datahoraautorizacao: string | null;
 	};
 	itens: ItemDetalheNfce[];
 	pagamentos: PagamentoDetalheNfce[];

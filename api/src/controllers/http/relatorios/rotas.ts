@@ -9,22 +9,93 @@ import { gerarRelatorioFiscalContabilidadeController } from "./fiscal-contabilid
 import { gerarRelatorioFiscalVendasController } from "./fiscal-vendas.js";
 import { gerarRelatorioFluxoCaixaController } from "./fluxo-caixa.js";
 import {
-	consultarRelatorioProdutosController,
-	consultarRelatorioProdutosSchema,
 	exportarRelatorioProdutosController,
-	exportarRelatorioProdutosSchema,
+	listarRelatorioProdutosController,
 } from "./produtos.js";
 
 export async function relatoriosRotas(app: FastifyInstance) {
 	app.addHook("onRequest", verifyJwt);
 
-	app.get("/relatorios/produtos/:tipo/exportar", {
-		schema: exportarRelatorioProdutosSchema,
-		handler: exportarRelatorioProdutosController,
-	});
 	app.get("/relatorios/produtos/:tipo", {
-		schema: consultarRelatorioProdutosSchema,
-		handler: consultarRelatorioProdutosController,
+		schema: {
+			tags: ["relatorios"],
+			summary: "Consultar relatório consolidado de produtos",
+			params: {
+				type: "object",
+				required: ["tipo"],
+				properties: {
+					tipo: {
+						type: "string",
+						enum: [
+							"qualidade",
+							"cadastro",
+							"ean",
+							"precos",
+							"estoque",
+							"fiscal",
+							"comercial",
+							"compras",
+							"movimentacoes",
+							"unidades",
+							"composicao",
+							"auditoria",
+						],
+					},
+				},
+			},
+			querystring: {
+				type: "object",
+				required: ["idempresa"],
+				properties: {
+					idempresa: { type: "string", format: "uuid" },
+					q: { type: "string" },
+					dataInicio: { type: "string", format: "date" },
+					dataFim: { type: "string", format: "date" },
+					situacao: { type: "string", enum: ["ativo", "inativo", "todos"] },
+					grupo: { type: "string" },
+					fornecedor: { type: "string" },
+					pendencia: { type: "string" },
+					origem: {
+						type: "string",
+						enum: ["pdv", "nota_fiscal", "acerto", "producao", "outro"],
+					},
+					tipoEstoque: {
+						type: "string",
+						enum: ["operacional", "fiscal", "ambos"],
+					},
+					diasSemMovimento: { type: "integer", minimum: 0 },
+					margemMin: { type: "number" },
+					margemMax: { type: "number" },
+					page: { type: "integer", minimum: 1, default: 1 },
+					limit: { type: "integer", minimum: 1, maximum: 200, default: 20 },
+					ordenarPor: { type: "string" },
+					ordem: { type: "string", enum: ["asc", "desc"], default: "asc" },
+				},
+			},
+		},
+		handler: listarRelatorioProdutosController,
+	});
+
+	app.get("/relatorios/produtos/:tipo/exportar", {
+		schema: {
+			tags: ["relatorios"],
+			summary: "Exportar relatório de produtos",
+			params: {
+				type: "object",
+				required: ["tipo"],
+				properties: { tipo: { type: "string" } },
+			},
+			querystring: {
+				type: "object",
+				required: ["idempresa", "formato"],
+				additionalProperties: true,
+				properties: {
+					idempresa: { type: "string", format: "uuid" },
+					formato: { type: "string", enum: ["csv", "xlsx", "pdf"] },
+				},
+			},
+		},
+		handler: exportarRelatorioProdutosController,
 	});
 
 	app.post("/relatorios/fluxo-caixa", {

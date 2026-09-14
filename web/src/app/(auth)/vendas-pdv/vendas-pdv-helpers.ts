@@ -41,6 +41,10 @@ export function documentoVenda(venda: VendaPdvGourmet): "fiscal" | "gerencial" {
 	return "gerencial";
 }
 
+export function rotuloFiscal(venda: VendaPdvGourmet): "Fiscal" | "Não fiscal" {
+	return documentoVenda(venda) === "fiscal" ? "Fiscal" : "Não fiscal";
+}
+
 function valorPago(valor?: string | null): boolean {
 	return Number.parseFloat(String(valor ?? "0").replace(",", ".")) > 0;
 }

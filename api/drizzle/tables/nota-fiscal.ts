@@ -126,6 +126,7 @@ export const notafiscal = pgTable(
 		dataextemporanea: date(),
 		datahoraconsultasituacao: timestamp({ precision: 3, mode: "string" }),
 		datahoraemissao: timestamp({ precision: 3, mode: "string" }),
+		datahoraautorizacao: timestamp({ precision: 3, mode: "string" }),
 		datahoraentradasaida: timestamp({ precision: 3, mode: "string" }),
 		datahoransu: timestamp({ precision: 3, mode: "string" }),
 		datainclusao: timestamp({ precision: 3, mode: "string" }),

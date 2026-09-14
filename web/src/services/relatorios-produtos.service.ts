@@ -1,14 +1,24 @@
 import { z } from "zod";
-import {
-	TIPOS_RELATORIO_PRODUTO,
-	type TipoRelatorioProduto,
-} from "@/constants/relatorios-produtos";
 import { api } from "@/lib/axios";
 
-const tipoSchema = z.enum(TIPOS_RELATORIO_PRODUTO);
-const valorCelula = z.union([z.string(), z.number(), z.null()]);
+export const tipoRelatorioProdutoSchema = z.enum([
+	"qualidade",
+	"cadastro",
+	"ean",
+	"precos",
+	"estoque",
+	"fiscal",
+	"comercial",
+	"compras",
+	"movimentacoes",
+	"unidades",
+	"composicao",
+	"auditoria",
+]);
 
-const colunaSchema = z.object({
+const valorRelatorioSchema = z.union([z.string(), z.number(), z.null()]);
+
+export const colunaRelatorioProdutoSchema = z.object({
 	chave: z.string().min(1),
 	label: z.string().min(1),
 	tipo: z
@@ -24,11 +34,11 @@ const colunaSchema = z.object({
 		.optional(),
 });
 
-const respostaSchema = z.object({
-	tipo: tipoSchema,
+export const relatorioProdutoSchema = z.object({
+	tipo: tipoRelatorioProdutoSchema,
 	titulo: z.string().min(1),
-	colunas: z.array(colunaSchema),
-	data: z.array(z.record(z.string(), valorCelula)),
+	colunas: z.array(colunaRelatorioProdutoSchema),
+	data: z.array(z.record(z.string(), valorRelatorioSchema)),
 	resumo: z.record(z.string(), z.union([z.string(), z.number()])),
 	paginacao: z.object({
 		page: z.number().int().positive(),
@@ -39,7 +49,7 @@ const respostaSchema = z.object({
 	avisos: z.array(z.string()).optional(),
 });
 
-export const filtrosRelatorioProdutosSchema = z.object({
+export const filtrosRelatorioProdutoSchema = z.object({
 	idempresa: z.string().uuid(),
 	q: z.string().trim().optional(),
 	dataInicio: z.string().optional(),
@@ -59,15 +69,20 @@ export const filtrosRelatorioProdutosSchema = z.object({
 	ordem: z.enum(["asc", "desc"]).optional(),
 });
 
-export type FiltrosRelatorioProdutos = z.infer<
-	typeof filtrosRelatorioProdutosSchema
+export type TipoRelatorioProduto = z.infer<typeof tipoRelatorioProdutoSchema>;
+export type ColunaRelatorioProduto = z.infer<
+	typeof colunaRelatorioProdutoSchema
 >;
-export type RelatorioProdutosResposta = z.infer<typeof respostaSchema>;
-export type FormatoExportacaoRelatorioProdutos = "csv" | "xlsx" | "pdf";
+export type RelatorioProduto = z.infer<typeof relatorioProdutoSchema>;
+export type FiltrosRelatorioProduto = z.input<
+	typeof filtrosRelatorioProdutoSchema
+>;
+export type FormatoExportacaoRelatorioProduto = "csv" | "xlsx" | "pdf";
 
-function paramsLimpos(filtros: FiltrosRelatorioProdutos) {
+function filtrosValidos(filtros: FiltrosRelatorioProduto) {
+	const validados = filtrosRelatorioProdutoSchema.parse(filtros);
 	return Object.fromEntries(
-		Object.entries(filtrosRelatorioProdutosSchema.parse(filtros)).filter(
+		Object.entries(validados).filter(
 			([, valor]) => valor !== undefined && valor !== "",
 		),
 	);
@@ -76,50 +91,29 @@ function paramsLimpos(filtros: FiltrosRelatorioProdutos) {
 export const relatoriosProdutosService = {
 	async consultar(
 		tipo: TipoRelatorioProduto,
-		filtros: FiltrosRelatorioProdutos,
-	): Promise<RelatorioProdutosResposta> {
-		const tipoValido = tipoSchema.parse(tipo);
-		const { data } = await api.get(`/relatorios/produtos/${tipoValido}`, {
-			params: paramsLimpos(filtros),
-		});
-		return respostaSchema.parse(data);
+		filtros: FiltrosRelatorioProduto,
+	): Promise<RelatorioProduto> {
+		const tipoValidado = tipoRelatorioProdutoSchema.parse(tipo);
+		const { data } = await api.get<unknown>(
+			`/relatorios/produtos/${tipoValidado}`,
+			{ params: filtrosValidos(filtros) },
+		);
+		return relatorioProdutoSchema.parse(data);
 	},
 
 	async exportar(
 		tipo: TipoRelatorioProduto,
-		formato: FormatoExportacaoRelatorioProdutos,
-		filtros: FiltrosRelatorioProdutos,
+		formato: FormatoExportacaoRelatorioProduto,
+		filtros: FiltrosRelatorioProduto,
 	): Promise<Blob> {
-		const tipoValido = tipoSchema.parse(tipo);
-		const { data } = await api.get(
-			`/relatorios/produtos/${tipoValido}/exportar`,
+		const tipoValidado = tipoRelatorioProdutoSchema.parse(tipo);
+		const { data } = await api.get<Blob>(
+			`/relatorios/produtos/${tipoValidado}/exportar`,
 			{
-				params: { ...paramsLimpos(filtros), formato },
+				params: { ...filtrosValidos(filtros), formato },
 				responseType: "blob",
 			},
 		);
 		return data;
 	},
 };
-
-export function baixarBlobRelatorio(blob: Blob, nomeArquivo: string) {
-	const url = URL.createObjectURL(blob);
-	const link = document.createElement("a");
-	link.href = url;
-	link.download = nomeArquivo;
-	document.body.appendChild(link);
-	link.click();
-	link.remove();
-	URL.revokeObjectURL(url);
-}
-
-export function formatarChaveResumo(chave: string): string {
-	return chave
-		.replace(/([a-z\d])([A-Z])/g, "$1 $2")
-		.replace(/[_-]+/g, " ")
-		.trim()
-		.split(" ")
-		.filter(Boolean)
-		.map((parte) => parte.charAt(0).toUpperCase() + parte.slice(1))
-		.join(" ");
-}

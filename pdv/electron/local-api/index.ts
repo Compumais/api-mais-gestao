@@ -78,6 +78,7 @@ import {
 	concluirOutboxCriarVendaLocal,
 	contarOutboxFalhasPermanentes,
 	contarOutboxPendentes,
+	contarNfcePendentesTransmissao,
 	criarVendaRapida,
 	enfileirarOutbox,
 	enviarPedidoConta,
@@ -139,6 +140,10 @@ import { avaliarEmissaoNfceDaVenda } from "../fiscal/avaliar-emissao-nfce-venda"
 import { emitirOuContingencia } from "../fiscal/contingencia";
 import { exportarXmlsNfce as gravarXmlsNfcePeriodo } from "../fiscal/exportar-xml-nfce";
 import {
+	listarConflitosNumeracaoNfceUi,
+	reemitirContingenciaComNovaNumeracao as executarReemitirContingenciaNovaNumeracao,
+} from "../fiscal/reemitir-contingencia-nova-numeracao";
+import {
 	imprimirComprovanteFechamentoCaixa,
 	imprimirCupomNaoFiscal,
 	imprimirDanfce,
@@ -196,6 +201,7 @@ import { puxarNfceDaRetaguarda } from "../sync/nfce-retaguarda";
 import {
 	processarOutbox,
 	pullCatalogo,
+	sincronizarFiscalPdv,
 	sincronizarFiscalPdv as puxarFiscalRetaguarda,
 	statusConexao,
 } from "../sync/outbox";
@@ -560,11 +566,13 @@ export const localApi = {
 			nfceSyncUltimoErro,
 			nfceSyncUltimoResumo,
 			outboxFalhasPermanentes,
+			nfcePendentesTransmissao,
 		] = await Promise.all([
 			obterSyncMeta("nfce_sync_ultima_ok"),
 			obterSyncMeta("nfce_sync_ultimo_erro"),
 			obterSyncMeta("nfce_sync_ultimo_resumo"),
 			contarOutboxFalhasPermanentes(),
+			contarNfcePendentesTransmissao(),
 		]);
 		return {
 			...conexao,
@@ -590,6 +598,7 @@ export const localApi = {
 			principalErro: principal?.erro ?? null,
 			balancaHabilitada: (await getConfig("balanca_habilitada", "0")) === "1",
 			outboxFalhasPermanentes,
+			nfcePendentesTransmissao,
 			nfceSyncUltimaOk,
 			nfceSyncUltimoErro: nfceSyncUltimoErro || null,
 			nfceSyncUltimoResumo: parseJsonSeguro(nfceSyncUltimoResumo),
@@ -1418,7 +1427,17 @@ export const localApi = {
 			);
 		}
 
+		const pendentesSync = (await listarVendasNaoSincronizadas(100)).filter(
+			(venda) => venda.sync_status === "pendente",
+		);
+		if (pendentesSync.length > 0) {
+			throw new Error(
+				`Há ${pendentesSync.length} cupom(ns) não sincronizado(s) com a retaguarda. Use "Enviar para retaguarda" antes de transmitir as pendentes.`,
+			);
+		}
+
 		const outbox = await processarOutbox();
+		await sincronizarFiscalPdv().catch(() => undefined);
 		const vendas = await listarVendasNaoSincronizadas(100);
 		const elegiveis = vendas.filter((venda) => {
 			const status = venda.nfce_status;
@@ -1477,6 +1496,39 @@ export const localApi = {
 			falhas,
 			detalhes,
 		};
+	},
+
+	async listarConflitosNumeracaoNfce() {
+		if (await ehSecundario()) {
+			throw new Error(
+				"No PDV secundário a sincronização com a retaguarda é feita no PDV principal.",
+			);
+		}
+		return listarConflitosNumeracaoNfceUi();
+	},
+
+	async reemitirContingenciaComNovaNumeracao(vendaId: string) {
+		if (await ehSecundario()) {
+			throw new Error(
+				"No PDV secundário a sincronização com a retaguarda é feita no PDV principal.",
+			);
+		}
+		const resultado = await executarReemitirContingenciaNovaNumeracao({
+			idvenda: vendaId,
+		});
+		if (resultado.modo === "contingencia" && resultado.chave) {
+			try {
+				await imprimirDanfce({
+					vendaId,
+					chave: resultado.chave,
+					contingencia: true,
+					motivo: "Reemissão por conflito de numeração",
+				});
+			} catch {
+				/* impressão best-effort */
+			}
+		}
+		return resultado;
 	},
 
 	async obterVenda(id: string) {
@@ -2175,6 +2227,18 @@ export const localApi = {
 		const { aplicarEmissaoNfceNaVendaLocal } = await import(
 			"../fiscal/persistir-nfce-online"
 		);
+
+		if (
+			nfce &&
+			(nfce.status === "conflito_numeracao" ||
+				venda.nfce_status === "conflito_numeracao")
+		) {
+			return {
+				modo: "erro" as const,
+				mensagem:
+					"NFC-e com conflito de numeração. Use “Reemitir com nova numeração” em vez de retransmitir.",
+			};
+		}
 
 		if (
 			nfce &&

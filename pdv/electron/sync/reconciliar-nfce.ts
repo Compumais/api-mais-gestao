@@ -84,6 +84,13 @@ async function aplicarResposta(
 			});
 		}
 		if (!item.existeRetaguarda || item.status == null) continue;
+		if (
+			item.acao === "erro" ||
+			item.acao === "conflito" ||
+			item.acao === "aguardando_venda"
+		) {
+			continue;
+		}
 		await aplicarNfceRetaguardaNaVendaLocal(item.idvendalocal, {
 			idnotafiscal: item.idnotafiscal ?? "",
 			status: item.status,
@@ -92,12 +99,7 @@ async function aplicarResposta(
 			numero: item.numero ?? null,
 			protocolo: item.protocolo ?? null,
 		});
-		if (
-			item.idnotafiscal &&
-			item.acao !== "erro" &&
-			item.acao !== "conflito" &&
-			item.acao !== "aguardando_venda"
-		) {
+		if (item.idnotafiscal) {
 			await marcarVendaNfceSincronizada(
 				item.idvendalocal,
 				item.atualizadoEm ?? resposta.servidorEm,

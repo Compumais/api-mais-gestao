@@ -173,6 +173,7 @@ export function DialogDetalhesNfce({
 	const descricaoId = useId();
 	const nota = detalhes?.nota;
 	const dataEmissao = nota?.datahoraemissao ?? nota?.emissao;
+	const dataAutorizacao = nota?.datahoraautorizacao;
 	const podeDanfe = statusEhAutorizada(nota?.status);
 
 	const handleAbrirDanfe = async () => {
@@ -255,6 +256,14 @@ export function DialogDetalhesNfce({
 								<p className="text-xs text-muted-foreground">Emissão</p>
 								<p className="text-sm">
 									{dataEmissao ? formatDateTimeBrasilia(dataEmissao) : "—"}
+								</p>
+							</div>
+							<div>
+								<p className="text-xs text-muted-foreground">Autorização</p>
+								<p className="text-sm">
+									{dataAutorizacao
+										? formatDateTimeBrasilia(dataAutorizacao)
+										: "—"}
 								</p>
 							</div>
 							<div>

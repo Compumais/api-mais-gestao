@@ -3,6 +3,7 @@ import {
 	char,
 	date,
 	foreignKey,
+	index,
 	integer,
 	numeric,
 	pgTable,
@@ -17,6 +18,7 @@ import { empresa } from "./empresas.js";
 import { entidade } from "./entidade.js";
 import { grupogourmet } from "./grupo-gourmet.js";
 import { hierarquia } from "./hierarquia.js";
+import { marca } from "./marca.js";
 import { ncm } from "./ncm.js";
 import { planocontas } from "./plano-contas.js";
 import { receitasemcontribuicao } from "./receitasem-contribuicao.js";
@@ -139,6 +141,7 @@ export const produtos = pgTable(
 		idenquadramentoipisaida: text(),
 		identificaconsumidor: text(),
 		idfabricante: text(),
+		idmarca: text(),
 		idfornecedor: text(),
 		idmotivorebaixa: text(),
 		idncm: text(),
@@ -233,6 +236,7 @@ export const produtos = pgTable(
 		tipoimpressaogourmet: varchar({ length: 40 }),
 	},
 	(table) => [
+		index("produtos_idmarca_idx").on(table.idmarca),
 		foreignKey({
 			columns: [table.idempresa],
 			foreignColumns: [empresa.id],
@@ -247,6 +251,13 @@ export const produtos = pgTable(
 		})
 			.onUpdate("cascade")
 			.onDelete("cascade"),
+		foreignKey({
+			columns: [table.idmarca],
+			foreignColumns: [marca.id],
+			name: "produtos_idmarca_fkey",
+		})
+			.onUpdate("cascade")
+			.onDelete("set null"),
 		foreignKey({
 			columns: [table.idcomprador],
 			foreignColumns: [entidade.id],

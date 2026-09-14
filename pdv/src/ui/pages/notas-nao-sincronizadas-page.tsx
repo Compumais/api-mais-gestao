@@ -6,6 +6,10 @@ import { type StatusContext } from "@/lib/pdv-types";
 import { money } from "@/lib/utils";
 import { secundarioDesconectado } from "@/ui/components/aviso-secundario";
 import { FunctionBar } from "@/ui/components/function-bar";
+import {
+	OverlayProgressoPdv,
+	type TipoOverlayProgressoPdv,
+} from "@/ui/components/overlay-progresso-pdv";
 import { PdvShell } from "@/ui/components/pdv-shell";
 import { Topbar } from "@/ui/components/topbar";
 import { Badge } from "@/ui/components/ui/badge";
@@ -22,6 +26,7 @@ import { useTeclasFuncao } from "@/ui/hooks/use-teclas-funcao";
 import {
 	badgeNfce,
 	badgeSync,
+	contarCuponsNaoSincronizadosRetaguarda,
 	rotuloNfce,
 	rotuloNumeracaoNfce,
 	rotuloOrigem,
@@ -143,6 +148,13 @@ export function NotasNaoSincronizadasPage() {
 	}
 
 	async function transmitirTodasPendentes() {
+		const qtdNaoSinc = contarCuponsNaoSincronizadosRetaguarda(vendas);
+		if (qtdNaoSinc > 0) {
+			setMsg(
+				`Há ${qtdNaoSinc} cupom(ns) não sincronizado(s). Use “Enviar para retaguarda” antes de transmitir as pendentes.`,
+			);
+			return;
+		}
 		setTransmitindo(true);
 		setMsg("");
 		try {
@@ -162,12 +174,55 @@ export function NotasNaoSincronizadasPage() {
 		}
 	}
 
+	async function reemitirNovaNumeracao(vendaId: string) {
+		const ok = window.confirm(
+			"Reemitir esta NFC-e com NOVA numeração e reimprimir o DANFC-e? O cupom antigo fica como conflito de numeração.",
+		);
+		if (!ok) return;
+		setTransmitindo(true);
+		setMsg("");
+		try {
+			const result = await pdvInvoke<{ modo: string; mensagem: string }>(
+				"reemitirContingenciaComNovaNumeracao",
+				vendaId,
+			);
+			setMsg(
+				result.modo === "erro"
+					? `Erro ao reemitir: ${result.mensagem}`
+					: result.mensagem,
+			);
+			await load();
+		} catch (err) {
+			setMsg(
+				err instanceof Error
+					? err.message
+					: "Falha ao reemitir com nova numeração",
+			);
+		} finally {
+			setTransmitindo(false);
+		}
+	}
+
 	const ocupado = enviando || transmitindo || loading;
+	const qtdCuponsNaoSincronizados =
+		contarCuponsNaoSincronizadosRetaguarda(vendas);
+	const bloqueiaTransmitir =
+		ocupado ||
+		secundario ||
+		secundarioDesconectado(status) ||
+		qtdCuponsNaoSincronizados > 0;
+
+	const overlayProgresso: TipoOverlayProgressoPdv | null = transmitindo
+		? "transmitir-pendentes"
+		: enviando
+			? "enviar-retaguarda"
+			: null;
 
 	return (
 		<PdvShell
 			status={status}
 			onBlockedNavigate={setMsg}
+			esconderAtalhoAlertasVendas
 			topbar={
 				<Topbar
 					title="Notas não sincronizadas"
@@ -184,43 +239,48 @@ export function NotasNaoSincronizadasPage() {
 				/>
 			}
 			footer={
-				<FunctionBar
-					actions={[
-						{
-							key: "transmitir-pendentes",
-							label: transmitindo
-								? "Transmitindo…"
-								: "Transmitir todas pendentes",
-							variant: "default",
-							onClick: () => void transmitirTodasPendentes(),
-							disabled:
-								ocupado || secundario || secundarioDesconectado(status),
-						},
-						{
-							key: "enviar",
-							label: enviando ? "Enviando…" : "Enviar para retaguarda",
-							hotkey: teclas.sincronizar,
-							variant: "secondary",
-							onClick: () => void enviarParaRetaguarda(),
-							disabled:
-								ocupado || secundario || secundarioDesconectado(status),
-						},
-						{
-							key: "atualizar",
-							label: "Atualizar",
-							variant: "secondary",
-							onClick: () => void load(),
-							disabled: ocupado,
-						},
-						{
-							key: "voltar",
-							label: "Voltar",
-							hotkey: "Escape",
-							variant: "outline",
-							onClick: () => navigate("/vendas"),
-						},
-					]}
-				/>
+				<>
+					<OverlayProgressoPdv
+						aberto={overlayProgresso != null}
+						tipo={overlayProgresso ?? "transmitir-pendentes"}
+					/>
+					<FunctionBar
+						actions={[
+							{
+								key: "transmitir-pendentes",
+								label: transmitindo
+									? "Transmitindo…"
+									: "Transmitir todas pendentes",
+								variant: "default",
+								onClick: () => void transmitirTodasPendentes(),
+								disabled: bloqueiaTransmitir,
+							},
+							{
+								key: "enviar",
+								label: enviando ? "Enviando…" : "Enviar para retaguarda",
+								hotkey: teclas.sincronizar,
+								variant: "secondary",
+								onClick: () => void enviarParaRetaguarda(),
+								disabled:
+									ocupado || secundario || secundarioDesconectado(status),
+							},
+							{
+								key: "atualizar",
+								label: "Atualizar",
+								variant: "secondary",
+								onClick: () => void load(),
+								disabled: ocupado,
+							},
+							{
+								key: "voltar",
+								label: "Voltar",
+								hotkey: "Escape",
+								variant: "outline",
+								onClick: () => navigate("/vendas"),
+							},
+						]}
+					/>
+				</>
 			}
 		>
 			<div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
@@ -232,10 +292,18 @@ export function NotasNaoSincronizadasPage() {
 				) : (
 					<p className="text-sm text-muted-foreground">
 						“Transmitir todas pendentes” processa a fila local e reenvia as
-						NFC-e em contingência/pendentes à retaguarda e SEFAZ. “Enviar para
-						retaguarda” só sincroniza a fila sem forçar retransmissão.
+						NFC-e em contingência/pendentes à retaguarda e SEFAZ. Se houver
+						cupom com sync pendente, o botão fica bloqueado — use antes “Enviar
+						para retaguarda”. Cupons com “conflito numeração” não sobem
+						automaticamente — use “Reemitir com nova numeração”.
 					</p>
 				)}
+				{!secundario && qtdCuponsNaoSincronizados > 0 ? (
+					<p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-950 dark:text-amber-100">
+						{qtdCuponsNaoSincronizados} cupom(ns) com sync pendente — envie para
+						a retaguarda antes de transmitir as pendentes.
+					</p>
+				) : null}
 				{msg ? (
 					<p className="rounded-md bg-muted px-3 py-2 text-sm ring-1 ring-foreground/10">
 						{msg}
@@ -249,20 +317,22 @@ export function NotasNaoSincronizadasPage() {
 								<TableHead>Origem</TableHead>
 								<TableHead className="text-right">Total</TableHead>
 								<TableHead>Sync</TableHead>
-								<TableHead>NFC-e</TableHead>
+								<TableHead>Status NFC-e</TableHead>
+								<TableHead>Numeração</TableHead>
+								<TableHead className="text-right">Ações</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
 							{loading ? (
 								<TableRow>
-									<TableCell colSpan={5} className="text-center text-sm">
+									<TableCell colSpan={7} className="text-center text-sm">
 										Carregando…
 									</TableCell>
 								</TableRow>
 							) : vendas.length === 0 ? (
 								<TableRow>
 									<TableCell
-										colSpan={5}
+										colSpan={7}
 										className="text-center text-sm text-muted-foreground"
 									>
 										Nenhuma venda pendente de sincronização.
@@ -288,16 +358,33 @@ export function NotasNaoSincronizadasPage() {
 											</Badge>
 										</TableCell>
 										<TableCell>
-											<div className="flex flex-col items-start gap-0.5">
-												<Badge variant={badgeNfce(venda.nfce_status)}>
-													{rotuloNfce(venda.nfce_status)}
-												</Badge>
-												{numeracao ? (
-													<span className="font-mono text-xs tabular-nums text-muted-foreground">
-														{numeracao}
-													</span>
-												) : null}
-											</div>
+											<Badge variant={badgeNfce(venda.nfce_status)}>
+												{rotuloNfce(venda.nfce_status)}
+											</Badge>
+										</TableCell>
+										<TableCell>
+											{numeracao ? (
+												<span className="font-mono text-sm tabular-nums">
+													{numeracao}
+												</span>
+											) : (
+												<span className="text-sm text-muted-foreground">—</span>
+											)}
+										</TableCell>
+										<TableCell className="text-right">
+											{venda.nfce_status === "conflito_numeracao" &&
+											!secundario ? (
+												<Button
+													size="sm"
+													variant="outline"
+													disabled={ocupado}
+													onClick={() =>
+														void reemitirNovaNumeracao(venda.id)
+													}
+												>
+													Nova numeração
+												</Button>
+											) : null}
 										</TableCell>
 									</TableRow>
 									);

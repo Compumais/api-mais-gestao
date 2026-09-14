@@ -380,6 +380,7 @@ export async function listarNotasFiscaisPorEmpresa({
 
 export const ORDENAR_NFCE_CAMPOS = [
 	"datahoraemissao",
+	"datahoraautorizacao",
 	"emissao",
 	"numeronotafiscal",
 	"idvenda",
@@ -399,6 +400,7 @@ const IDVENDA_NFCE_SQL = sql<string | null>`coalesce(
 
 const COLUNAS_ORDENACAO_NFCE = {
 	datahoraemissao: notafiscal.datahoraemissao,
+	datahoraautorizacao: notafiscal.datahoraautorizacao,
 	emissao: notafiscal.emissao,
 	numeronotafiscal: notafiscal.numeronotafiscal,
 	idvenda: IDVENDA_NFCE_SQL,
@@ -436,6 +438,7 @@ export type NfceListagem = {
 	valortotalnota: string | null;
 	emissao: string | null;
 	datahoraemissao: string | null;
+	datahoraautorizacao: string | null;
 	datainclusao: string | null;
 	tipoambientenfe: number | null;
 	mensagemtransmissaonfe: string | null;
@@ -470,8 +473,10 @@ export async function listarNfcePorEmpresa({
 		eq(notafiscal.modelo, "65"),
 		ne(notafiscal.status, STATUS_RASCUNHO_IMPORTACAO),
 		// Pendência de pré-validação é editável mesmo sem numeração fiscal.
+		// Inutilizadas (102) sempre listam — numeração pode estar só no protocolo.
 		sql`(
-			${notafiscal.dadosimportacao}->>'preValidacao' = 'true'
+			${notafiscal.status} = ${NFE_STATUS.INUTILIZADA}
+			or ${notafiscal.dadosimportacao}->>'preValidacao' = 'true'
 			or not (
 				(
 					coalesce(${notafiscal.numeronotafiscal}, '') = ''
@@ -512,12 +517,18 @@ export async function listarNfcePorEmpresa({
 	}
 
 	if (tipoambientenfe === 2) {
-		where.push(eq(notafiscal.tipoambientenfe, 2));
+		where.push(
+			or(
+				eq(notafiscal.tipoambientenfe, 2),
+				eq(notafiscal.status, NFE_STATUS.INUTILIZADA),
+			)!,
+		);
 	} else if (tipoambientenfe === 1) {
 		where.push(
 			or(
 				eq(notafiscal.tipoambientenfe, 1),
 				isNull(notafiscal.tipoambientenfe),
+				eq(notafiscal.status, NFE_STATUS.INUTILIZADA),
 			)!,
 		);
 	}
@@ -557,6 +568,7 @@ export async function listarNfcePorEmpresa({
 				datacriacaovenda: vendapdvgourmet.datacriacao,
 				emissao: notafiscal.emissao,
 				datahoraemissao: notafiscal.datahoraemissao,
+				datahoraautorizacao: notafiscal.datahoraautorizacao,
 				datainclusao: notafiscal.datainclusao,
 				tipoambientenfe: notafiscal.tipoambientenfe,
 				mensagemtransmissaonfe: notafiscal.mensagemtransmissaonfe,
@@ -641,6 +653,47 @@ export async function buscarNotaFiscalRascunhoPorId(
 				eq(notafiscal.status, STATUS_RASCUNHO_IMPORTACAO),
 			),
 		)
+		.limit(1);
+
+	return registro;
+}
+
+/**
+ * Busca NFC-e (modelo 65) ativa pela série/número na empresa.
+ * Ignora status que não bloqueiam chave (rascunho/cancelada compra).
+ */
+export async function buscarNotaFiscalNfcePorSerieNumero(
+	idempresa: string,
+	serie: string | number,
+	numero: string | number,
+	tipoambientenfe?: number | null,
+) {
+	const serieNorm = String(serie).replace(/\D/g, "");
+	const numeroNorm = String(numero).replace(/\D/g, "");
+	if (!serieNorm || !numeroNorm) {
+		return undefined;
+	}
+
+	const where = [
+		eq(notafiscal.idempresa, idempresa),
+		eq(notafiscal.modelo, "65"),
+		eq(notafiscal.serie, serieNorm),
+		eq(notafiscal.numeronotafiscal, numeroNorm),
+		or(
+			isNull(notafiscal.status),
+			notInArray(notafiscal.status, [...STATUS_NF_QUE_NAO_BLOQUEIAM_CHAVE]),
+		),
+	];
+
+	if (tipoambientenfe === 1 || tipoambientenfe === 2) {
+		where.push(eq(notafiscal.tipoambientenfe, tipoambientenfe));
+	}
+
+	const [registro] = await db
+		.select()
+		.from(notafiscal)
+		.where(and(...where))
+		.orderBy(desc(notafiscal.datainclusao))
 		.limit(1);
 
 	return registro;

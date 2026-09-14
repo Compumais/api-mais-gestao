@@ -7,6 +7,13 @@ import {
 	type TipoFiltroColunaTabela,
 } from "@/components/cabecalho-coluna-tabela";
 import { Badge } from "@/components/ui/badge";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { formatDataCivilBrasilia } from "@/lib/date";
 import type { Financeiro } from "@/services/financeiro.service";
 
@@ -24,6 +31,7 @@ export const STATUS_OPCOES_FILTRO: OpcaoFiltroColunaTabela[] = [
 export type FiltrosColunaFinanceiroState = {
 	documento: string;
 	tipodocumentodescricao: string;
+	idtipocobranca: string;
 	emitente: string;
 	status: string;
 	emissao: string;
@@ -33,6 +41,7 @@ export type FiltrosColunaFinanceiroState = {
 export const filtrosColunaFinanceiroVazios: FiltrosColunaFinanceiroState = {
 	documento: "",
 	tipodocumentodescricao: "",
+	idtipocobranca: "",
 	emitente: "",
 	status: "",
 	emissao: "",
@@ -47,6 +56,7 @@ export const COLUNA_PARA_CAMPO_FILTRO_FINANCEIRO: Record<
 > = {
 	documento: "documento",
 	tipodocumento: "tipodocumentodescricao",
+	cobranca: "idtipocobranca",
 	emitente: "emitente",
 	status: "status",
 	emissao: "emissao",
@@ -83,6 +93,7 @@ const DEFINICOES_BASE: DefinicaoColunaFinanceiro[] = [
 	{ id: "select", label: "Seleção", visivelPadrao: true, enableHiding: false },
 	{ id: "documento", label: "Documento", visivelPadrao: true },
 	{ id: "tipodocumento", label: "Tipo de documento", visivelPadrao: true },
+	{ id: "cobranca", label: "Cobrança", visivelPadrao: true },
 	{ id: "emitente", label: "Nome", visivelPadrao: true },
 	{ id: "parcela", label: "Parcela", visivelPadrao: true },
 	{ id: "status", label: "Status", visivelPadrao: true },
@@ -221,8 +232,13 @@ export type OpcoesColunasFinanceiro = {
 	filtros: FiltrosColunaFinanceiroState;
 	ordenarPor: string | null;
 	ordem: "asc" | "desc" | null;
+	opcoesTipoCobranca: OpcaoFiltroColunaTabela[];
 	onOrdenarColuna: (colunaId: string, direcao: OrdenacaoColunaTabela) => void;
 	onFiltrarColuna: (colunaId: string, valor: string) => void;
+	onAlterarCobranca: (
+		financeiroId: string,
+		idtipocobranca: string | null,
+	) => void;
 	configFiltroPorColuna: Record<string, ConfigFiltroColunaFinanceiro>;
 	renderSelectHeader: (table: {
 		getIsAllPageRowsSelected: () => boolean;
@@ -250,9 +266,7 @@ function criarHeaderColuna(
 	const filtroAtivo = valorFiltro.trim() !== "";
 	const ordenacaoCampo = COLUNA_PARA_ORDENAR_FINANCEIRO[def.id];
 	const ordenacao: OrdenacaoColunaTabela =
-		ordenacaoCampo &&
-		opcoes.ordenarPor === ordenacaoCampo &&
-		opcoes.ordem
+		ordenacaoCampo && opcoes.ordenarPor === ordenacaoCampo && opcoes.ordem
 			? opcoes.ordem
 			: false;
 
@@ -309,9 +323,7 @@ export function criarColunasFinanceiro(
 		if (def.id === "saldoSemJurosMulta") {
 			colunas.push({
 				id: "saldoSemJurosMulta",
-				header: () => (
-					<div className="text-right">{def.label}</div>
-				),
+				header: () => <div className="text-right">{def.label}</div>,
 				enableSorting: false,
 				meta,
 				cell: ({ row }) => {
@@ -371,6 +383,44 @@ export function criarColunasFinanceiro(
 							{row.original.tipodocumentodescricao || "-"}
 						</div>
 					),
+				});
+				break;
+			case "cobranca":
+				colunas.push({
+					id: "cobranca",
+					accessorKey: "idtipocobranca",
+					header,
+					meta,
+					cell: ({ row }) => {
+						const valorAtual = row.original.idtipocobranca ?? "";
+						return (
+							<Select
+								value={valorAtual || "__none__"}
+								onValueChange={(valor) => {
+									const novoValor = valor === "__none__" ? null : valor;
+									const atual = row.original.idtipocobranca ?? null;
+									if (novoValor === atual) return;
+									opcoes.onAlterarCobranca(row.original.id, novoValor);
+								}}
+							>
+								<SelectTrigger
+									size="sm"
+									className="h-8 min-w-[140px] max-w-[200px]"
+									aria-label="Tipo de cobrança"
+								>
+									<SelectValue placeholder="Sem cobrança" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="__none__">Sem cobrança</SelectItem>
+									{opcoes.opcoesTipoCobranca.map((opcao) => (
+										<SelectItem key={opcao.value} value={opcao.value}>
+											{opcao.label}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						);
+					},
 				});
 				break;
 			case "emitente":

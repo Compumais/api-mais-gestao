@@ -38,6 +38,7 @@ describe("listarNfcePendentesService", () => {
 					datacriacaovenda: "2026-08-18T13:32:00-03:00",
 					emissao: null,
 					datahoraemissao: null,
+					datahoraautorizacao: null,
 					datainclusao: null,
 					tipoambientenfe: 2,
 					mensagemtransmissaonfe: null,

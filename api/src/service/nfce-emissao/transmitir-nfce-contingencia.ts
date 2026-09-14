@@ -5,6 +5,7 @@ import { buscarEmpresaPorId } from "@/repositories/empresa-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { avancarNumeroproximoSerieSeNecessario } from "@/repositories/nfe-serie-repositories.js";
 import {
+	buscarNotaFiscalNfcePorSerieNumero,
 	buscarNotaFiscalPorChaveNfe,
 	buscarNotaFiscalPorId,
 	criarNotaFiscalComItens,
@@ -95,6 +96,7 @@ function resultadoExistente(
 /**
  * Recebe XML de NFC-e emitida em contingência offline (tpEmis=9) pelo PDV híbrido,
  * persiste como pendente de transmissão à SEFAZ e arquiva o XML.
+ * O XML pode chegar sem assinatura digital; a assinatura é feita na retaguarda/gateway.
  * Não cria outra nota se a chave ou a venda já tiverem NFC-e na retaguarda.
  */
 export async function transmitirNfceContingenciaService({
@@ -128,13 +130,8 @@ export async function transmitirNfceContingenciaService({
 	if (dadosXml.modelo !== "65") {
 		return httpBadRequest("XML informado não é uma NFC-e modelo 65");
 	}
-	if (
-		!/<(?:\w+:)?Signature[\s>]/i.test(xml) ||
-		!/<(?:\w+:)?SignedInfo[\s>]/i.test(xml) ||
-		!/<(?:\w+:)?DigestValue>[^<]+<\/(?:\w+:)?DigestValue>/i.test(xml)
-	) {
-		return httpBadRequest("XML de contingência sem assinatura digital");
-	}
+	// O PDV híbrido envia XML de contingência ainda sem Signature; a assinatura
+	// digital ocorre na retaguarda/gateway ao transmitir à SEFAZ.
 	const chaveXml = normalizarChave(dadosXml.chavenfe);
 	const chaveInformada = normalizarChave(chave);
 	if (chaveInformada && chaveXml && chaveInformada !== chaveXml) {
@@ -231,6 +228,36 @@ export async function transmitirNfceContingenciaService({
 		return httpBadRequest("Série ou número da NFC-e de contingência inválidos");
 	}
 
+	const existentePorNumero = await buscarNotaFiscalNfcePorSerieNumero(
+		idempresa,
+		serieFinal,
+		numeroFinal,
+	);
+	if (existentePorNumero?.modelo === "65") {
+		const chaveExistente = normalizarChave(existentePorNumero.chavenfe ?? undefined);
+		if (chaveExistente && chaveNorm && chaveExistente !== chaveNorm) {
+			return httpBadRequest(
+				`NFC-e série ${serieFinal} número ${numeroFinal} já utilizada (chave ${chaveExistente})`,
+				{ code: "NFCE_NUMERO_JA_USADO" },
+			);
+		}
+		if (chaveExistente && chaveNorm && chaveExistente === chaveNorm) {
+			return httpCriacao(
+				resultadoExistente(
+					existentePorNumero.id,
+					existentePorNumero.status,
+					chaveExistente,
+				),
+			);
+		}
+		if (!chaveNorm && chaveExistente) {
+			return httpBadRequest(
+				`NFC-e série ${serieFinal} número ${numeroFinal} já utilizada (chave ${chaveExistente})`,
+				{ code: "NFCE_NUMERO_JA_USADO" },
+			);
+		}
+	}
+
 	const idnotafiscal = uuidv4();
 	const [dataCont, horaCont] = splitDataHoraContingencia(datacontingencia);
 	const agora = agoraBrasiliaIsoOffset();
@@ -252,7 +279,7 @@ export async function transmitirNfceContingenciaService({
 		tipofrete: 9,
 		chavenfe: chaveNorm ?? null,
 		arquivoxmlcontingencia: xml,
-		arquivoxmlassinado: xml,
+		arquivoxmlassinado: null,
 		motivocontingencia: motivo.slice(0, 256),
 		datacontingencia: dataCont,
 		horacontingencia: horaCont,

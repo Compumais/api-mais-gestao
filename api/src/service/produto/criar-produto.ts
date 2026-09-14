@@ -2,10 +2,8 @@ import { v4 as uuidv4 } from "uuid";
 import type { HttpResponse } from "@/model/http-model.js";
 import type { NovoProduto, Produto } from "@/model/produto-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
-import {
-	criarProduto,
-	excluirProduto,
-} from "@/repositories/produtos-repositories.js";
+import { criarProdutoComHistorico } from "@/repositories/produto-historico-repositories.js";
+import { excluirProduto } from "@/repositories/produtos-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
 import { validarUnidadeMedidaParaEmpresa } from "@/service/unidade-medida/validar-unidade-medida-empresa.js";
 import {
@@ -18,11 +16,13 @@ import {
 type CriarProdutoParametros = {
 	dadosProduto: NovoProduto;
 	idusuario: string;
+	ip?: string | undefined;
 };
 
 export async function criarProdutoService({
 	dadosProduto,
 	idusuario,
+	ip,
 }: CriarProdutoParametros): Promise<HttpResponse<Produto | null>> {
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
 		idusuario,
@@ -46,7 +46,10 @@ export async function criarProdutoService({
 		return httpProibido();
 	}
 
-	const registro = await criarProduto(dadosProduto);
+	const registro = await criarProdutoComHistorico(dadosProduto, {
+		idusuario,
+		ip,
+	});
 
 	if (!registro) {
 		return httpErro();

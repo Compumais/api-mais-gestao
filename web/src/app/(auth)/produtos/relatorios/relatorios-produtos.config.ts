@@ -1,26 +1,6 @@
-export const TIPOS_RELATORIO_PRODUTO = [
-	"qualidade",
-	"cadastro",
-	"ean",
-	"precos",
-	"estoque",
-	"fiscal",
-	"comercial",
-	"compras",
-	"movimentacoes",
-	"unidades",
-	"composicao",
-	"auditoria",
-] as const;
+import type { TipoRelatorioProduto } from "@/services/relatorios-produtos.service";
 
-export type TipoRelatorioProduto = (typeof TIPOS_RELATORIO_PRODUTO)[number];
-
-export type OpcaoPendenciaRelatorioProduto = {
-	value: string;
-	label: string;
-};
-
-export type CampoFiltroRelatorioProduto =
+export type CampoFiltroRelatorio =
 	| "q"
 	| "dataInicio"
 	| "dataFim"
@@ -34,15 +14,15 @@ export type CampoFiltroRelatorioProduto =
 	| "origem"
 	| "tipoEstoque";
 
-export type DefinicaoRelatorioProduto = {
+export interface ConfiguracaoRelatorioProduto {
 	tipo: TipoRelatorioProduto;
 	titulo: string;
 	descricao: string;
-	filtros: CampoFiltroRelatorioProduto[];
-	opcoesPendencia?: OpcaoPendenciaRelatorioProduto[];
-};
+	filtros: CampoFiltroRelatorio[];
+	opcoesPendencia?: Array<{ value: string; label: string }>;
+}
 
-const PENDENCIAS_CADASTRO: OpcaoPendenciaRelatorioProduto[] = [
+const PENDENCIAS_CADASTRO = [
 	{ value: "ean", label: "Sem EAN" },
 	{ value: "ncm", label: "Sem NCM" },
 	{ value: "cest", label: "Sem CEST" },
@@ -52,9 +32,9 @@ const PENDENCIAS_CADASTRO: OpcaoPendenciaRelatorioProduto[] = [
 	{ value: "tributacao", label: "Sem tributação" },
 	{ value: "foto", label: "Sem foto" },
 	{ value: "duplicado", label: "Código ou EAN duplicado" },
-];
+] as const;
 
-export const RELATORIOS_PRODUTOS: DefinicaoRelatorioProduto[] = [
+export const RELATORIOS_PRODUTOS: ConfiguracaoRelatorioProduto[] = [
 	{
 		tipo: "qualidade",
 		titulo: "Qualidade do cadastro",
@@ -153,23 +133,5 @@ export const RELATORIOS_PRODUTOS: DefinicaoRelatorioProduto[] = [
 ];
 
 export const RELATORIO_PRODUTO_POR_TIPO = Object.fromEntries(
-	RELATORIOS_PRODUTOS.map((item) => [item.tipo, item]),
-) as Record<TipoRelatorioProduto, DefinicaoRelatorioProduto>;
-
-export const LINKS_RESUMO_QUALIDADE: Record<string, string> = {
-	total: "/produtos/relatorios/cadastro",
-	ativos: "/produtos/relatorios/cadastro?situacao=ativo",
-	inativos: "/produtos/relatorios/cadastro?situacao=inativo",
-	sem_ean: "/produtos/relatorios/ean?pendencia=ean",
-	sem_ncm: "/produtos/relatorios/fiscal?pendencia=ncm",
-	sem_cest: "/produtos/relatorios/fiscal?pendencia=cest",
-	sem_preco: "/produtos/relatorios/cadastro?pendencia=preco",
-	sem_fornecedor: "/produtos/relatorios/cadastro?pendencia=fornecedor",
-	sem_grupo: "/produtos/relatorios/cadastro?pendencia=grupo",
-	sem_tributacao: "/produtos/relatorios/fiscal?pendencia=tributacao",
-	sem_foto: "/produtos/relatorios/cadastro?pendencia=foto",
-	ean_duplicado: "/produtos/relatorios/ean?pendencia=duplicado",
-	codigo_duplicado: "/produtos/relatorios/cadastro?pendencia=duplicado",
-	estoque_negativo: "/produtos/relatorios/estoque?pendencia=negativo",
-	margem_baixa: "/produtos/relatorios/qualidade?pendencia=margem_baixa",
-};
+	RELATORIOS_PRODUTOS.map((relatorio) => [relatorio.tipo, relatorio]),
+) as Record<TipoRelatorioProduto, ConfiguracaoRelatorioProduto>;

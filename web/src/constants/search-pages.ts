@@ -142,10 +142,10 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 			"relatório",
 			"relatorio",
 			"produtos",
-			"cadastro",
 			"qualidade",
-			"ean",
-			"estoque",
+			"cadastro",
+			"preços",
+			"margem",
 		],
 	},
 	{
@@ -242,7 +242,7 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 		url: "/produtos/relatorios/movimentacoes",
 		category: "Estoque",
 		icon: IconArrowsLeftRight,
-		keywords: ["kardex", "movimentos", "entrada", "saída", "estoque"],
+		keywords: ["kardex", "movimentos", "entradas", "saídas", "estoque"],
 	},
 	{
 		title: "Fichas de produção",

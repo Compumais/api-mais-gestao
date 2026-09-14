@@ -22,6 +22,10 @@ import { DialogCancelarNfce } from "@/ui/components/dialog-cancelar-nfce";
 import { DialogCancelarVendaNaoFiscal } from "@/ui/components/dialog-cancelar-venda-nao-fiscal";
 import { DialogInutilizarNfce } from "@/ui/components/dialog-inutilizar-nfce";
 import { FunctionBar } from "@/ui/components/function-bar";
+import {
+	OverlayProgressoPdv,
+	type TipoOverlayProgressoPdv,
+} from "@/ui/components/overlay-progresso-pdv";
 import { PdvShell } from "@/ui/components/pdv-shell";
 import { Topbar } from "@/ui/components/topbar";
 import { Button } from "@/ui/components/ui/button";
@@ -45,6 +49,7 @@ import { useTeclasFuncao } from "@/ui/hooks/use-teclas-funcao";
 import {
 	COLUNA_PARA_CAMPO_FILTRO_VENDAS,
 	type ConfigFiltroColunaVendas,
+	contarCuponsNaoSincronizadosRetaguarda,
 	criarColunasVendas,
 	type FiltrosColunaVendasState,
 	filtrarVendas,
@@ -97,6 +102,12 @@ export function VendasPage() {
 	const [retransmitindoId, setRetransmitindoId] = useState<string | null>(null);
 	const [transmitindoPendentes, setTransmitindoPendentes] = useState(false);
 	const [sincronizandoNfce, setSincronizandoNfce] = useState(false);
+
+	const overlayProgresso: TipoOverlayProgressoPdv | null = sincronizandoNfce
+		? "sincronizar-nfce"
+		: transmitindoPendentes
+			? "transmitir-pendentes"
+			: null;
 	const [inutilizarVendaId, setInutilizarVendaId] = useState<string | null>(
 		null,
 	);
@@ -206,7 +217,46 @@ export function VendasPage() {
 		[load],
 	);
 
+	const reemitirNovaNumeracao = useCallback(
+		async (id: string) => {
+			const ok = window.confirm(
+				"Esta NFC-e tem número duplicado. Reemitir com NOVA numeração e reimprimir o DANFC-e? O cupom antigo permanece arquivado como conflito.",
+			);
+			if (!ok) return;
+			setRetransmitindoId(id);
+			setMsg("");
+			try {
+				const result = await pdvInvoke<{ modo: string; mensagem: string }>(
+					"reemitirContingenciaComNovaNumeracao",
+					id,
+				);
+				setMsg(
+					result.modo === "erro"
+						? `Erro ao reemitir: ${result.mensagem}`
+						: result.mensagem,
+				);
+				await load();
+			} catch (err) {
+				setMsg(
+					err instanceof Error
+						? err.message
+						: "Falha ao reemitir com nova numeração",
+				);
+			} finally {
+				setRetransmitindoId(null);
+			}
+		},
+		[load],
+	);
+
 	async function transmitirTodasPendentes() {
+		const qtdNaoSinc = contarCuponsNaoSincronizadosRetaguarda(vendas);
+		if (qtdNaoSinc > 0) {
+			setMsg(
+				`Há ${qtdNaoSinc} cupom(ns) não sincronizado(s). Abra “Não sincronizadas” e use “Enviar para retaguarda” antes de transmitir.`,
+			);
+			return;
+		}
 		setTransmitindoPendentes(true);
 		setMsg("");
 		try {
@@ -303,6 +353,7 @@ export function VendasPage() {
 			valortotal: { tipo: "nenhum" },
 			sync_status: { tipo: "opcoes", opcoes: SYNC_OPCOES_FILTRO },
 			nfce_status: { tipo: "opcoes", opcoes: NFCE_OPCOES_FILTRO },
+			nfce_numero: { tipo: "texto", placeholder: "Nº ou série" },
 		};
 	}, []);
 
@@ -310,6 +361,11 @@ export function VendasPage() {
 		const filtradas = filtrarVendas(vendas, filtrosColuna);
 		return ordenarVendas(filtradas, ordenarPor, ordem);
 	}, [vendas, filtrosColuna, ordenarPor, ordem]);
+
+	const qtdCuponsNaoSincronizados = useMemo(
+		() => contarCuponsNaoSincronizadosRetaguarda(vendas),
+		[vendas],
+	);
 
 	const pageCount = Math.max(
 		1,
@@ -338,6 +394,7 @@ export function VendasPage() {
 				configFiltroPorColuna,
 				retransmitindoId,
 				onRetransmitir: (id) => void retransmitir(id),
+				onReemitirNovaNumeracao: (id) => void reemitirNovaNumeracao(id),
 				onInutilizar: setInutilizarVendaId,
 				onCancelarNfce: setCancelarVendaId,
 				onCancelarVendaNaoFiscal: setCancelarVendaNaoFiscalId,
@@ -358,6 +415,7 @@ export function VendasPage() {
 			carregandoItensId,
 			onToggleExpandir,
 			retransmitir,
+			reemitirNovaNumeracao,
 		],
 	);
 
@@ -399,6 +457,10 @@ export function VendasPage() {
 			}
 			footer={
 				<>
+					<OverlayProgressoPdv
+						aberto={overlayProgresso != null}
+						tipo={overlayProgresso ?? "sincronizar-nfce"}
+					/>
 					<DialogInutilizarNfce
 						aberto={inutilizarVendaId != null}
 						vendaId={inutilizarVendaId}
@@ -453,7 +515,8 @@ export function VendasPage() {
 									sincronizandoNfce ||
 									transmitindoPendentes ||
 									retransmitindoId != null ||
-									status?.modo === "secundario",
+									status?.modo === "secundario" ||
+									qtdCuponsNaoSincronizados > 0,
 							},
 							{
 								key: "nao-sincronizadas",
@@ -486,6 +549,12 @@ export function VendasPage() {
 					{msg ? (
 						<p className="rounded-md bg-muted px-3 py-2 text-sm ring-1 ring-foreground/10">
 							{msg}
+						</p>
+					) : qtdCuponsNaoSincronizados > 0 ? (
+						<p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-950 dark:text-amber-100">
+							{qtdCuponsNaoSincronizados} cupom(ns) não sincronizado(s) com a
+							retaguarda — use “Não sincronizadas” → “Enviar para retaguarda”
+							antes de transmitir pendentes.
 						</p>
 					) : (
 						<p className="text-sm text-muted-foreground">

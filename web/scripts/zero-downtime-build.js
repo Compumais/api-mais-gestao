@@ -12,6 +12,7 @@ const root = path.join(__dirname, "..");
 const stagingDir = path.join(root, ".next-staging");
 const liveDir = path.join(root, ".next");
 const previousDir = path.join(root, ".next-previous");
+const pm2ProcessName = "web-mais-gestao";
 
 const log = (msg) => console.log(`[build:live] ${msg}`);
 
@@ -25,6 +26,28 @@ const commandExists = (cmd) => {
 	const checker = process.platform === "win32" ? "where" : "which";
 	const result = spawnSync(checker, [cmd], { stdio: "ignore" });
 	return result.status === 0;
+};
+
+const runPm2 = (args, errorMessage, stdio = "inherit") => {
+	const isWin = process.platform === "win32";
+	const pm2Cmd = isWin ? "pm2.cmd" : "pm2";
+	const result = spawnSync(pm2Cmd, args, { cwd: root, stdio });
+
+	if (result.status !== 0) {
+		throw new Error(errorMessage);
+	}
+};
+
+const assertPm2Process = () => {
+	if (!commandExists("pm2")) {
+		throw new Error("PM2 não encontrado no PATH; publicação cancelada.");
+	}
+
+	runPm2(
+		["describe", pm2ProcessName],
+		`Processo PM2 "${pm2ProcessName}" não existe; publicação cancelada.`,
+		"ignore",
+	);
 };
 
 const assertBuildId = (dir, label) => {
@@ -118,18 +141,54 @@ const publishStaging = () => {
 	log("Gerando backup da versão ao vivo em .next-previous...");
 	backupCurrentLive();
 
-	log("Publicando .next-staging → .next...");
-	publishToTarget(stagingDir, liveDir);
-	assertBuildId(liveDir, ".next");
+	let processStopped = false;
 
-	removeDir(stagingDir);
+	try {
+		log(`Parando temporariamente o processo PM2 "${pm2ProcessName}"...`);
+		runPm2(
+			["stop", pm2ProcessName],
+			`Falha ao parar o processo PM2 "${pm2ProcessName}".`,
+		);
+		processStopped = true;
+
+		log("Publicando .next-staging → .next...");
+		publishToTarget(stagingDir, liveDir);
+		assertBuildId(liveDir, ".next");
+
+		log(`Reiniciando o processo PM2 "${pm2ProcessName}"...`);
+		runPm2(
+			["restart", pm2ProcessName, "--update-env"],
+			`Build publicado, mas não foi possível reiniciar "${pm2ProcessName}".`,
+		);
+		processStopped = false;
+		removeDir(stagingDir);
+	} catch (error) {
+		if (processStopped) {
+			if (fs.existsSync(path.join(previousDir, "BUILD_ID"))) {
+				log("Falha na publicação — restaurando .next-previous...");
+				publishToTarget(previousDir, liveDir);
+			}
+
+			log(`Religando o processo PM2 "${pm2ProcessName}"...`);
+			runPm2(
+				["restart", pm2ProcessName, "--update-env"],
+				`Falha ao recuperar o processo PM2 "${pm2ProcessName}".`,
+			);
+		}
+
+		throw error;
+	}
 };
 
 const main = () => {
+	assertPm2Process();
+
 	const hasLiveSite = fs.existsSync(path.join(liveDir, "BUILD_ID"));
 
 	if (!hasLiveSite) {
-		log("Nenhum build publicado ainda — a primeira publicação ocorrerá ao final.");
+		log(
+			"Nenhum build publicado ainda — a primeira publicação ocorrerá ao final.",
+		);
 	} else {
 		log(
 			"Compilando em ./.next-staging (.next não será alterado até o build concluir)...",
@@ -149,8 +208,7 @@ const main = () => {
 	log("Publicando nova versão...");
 	publishStaging();
 
-	log("Concluído. Build publicado em .next sem downtime no disco.");
-	log("Reinicie/recarregue o PM2: pm2 reload mais-gestao-web --update-env");
+	log(`Concluído. Build publicado e processo "${pm2ProcessName}" reiniciado.`);
 };
 
 main();
