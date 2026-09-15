@@ -423,13 +423,16 @@ export const buscarProdutoNFSchema: FastifySchema = {
 	tags: ["nota-fiscal"],
 	summary: "Buscar produto para vincular na NF de compra",
 	description:
-		"Busca um produto por código, EAN ou descrição parcial. Útil para o front-end verificar se o produto existe antes de lançar a NF. Retorna encontrado=false quando não existe.",
+		"Busca produtos por código, EAN ou nome/descrição parcial (até 20 matches). Útil para o front-end listar e vincular o produto na NF. Retorna encontrado=false quando não existe.",
 	security: [{ bearerAuth: [] }],
 	querystring: {
 		type: "object",
 		properties: {
 			idempresa: { type: "string", description: "ID da empresa." },
-			q: { type: "string", description: "Busca por descrição parcial." },
+			q: {
+				type: "string",
+				description: "Busca parcial por nome ou descrição.",
+			},
 			codigo: { type: "string", description: "Código interno do produto." },
 			ean: { type: "string", description: "Código EAN/barras." },
 		},
@@ -440,10 +443,18 @@ export const buscarProdutoNFSchema: FastifySchema = {
 			type: "object",
 			properties: {
 				encontrado: { type: "boolean" },
-				produto: {
-					nullable: true,
-					type: "object",
-					additionalProperties: true,
+				produtos: {
+					type: "array",
+					items: {
+						type: "object",
+						properties: {
+							id: { type: "string" },
+							nome: { type: "string", nullable: true },
+							codigo: { type: "number", nullable: true },
+							ean: { type: ["string", "number"], nullable: true },
+							descricao: { type: "string", nullable: true },
+						},
+					},
 				},
 			},
 		},

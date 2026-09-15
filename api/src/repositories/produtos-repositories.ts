@@ -373,6 +373,80 @@ export async function buscarProdutoPorDescricao(
 	return produto;
 }
 
+export type BuscarProdutosParaVinculoNfParametros = {
+	idempresa: string;
+	q?: string | undefined;
+	codigo?: number | undefined;
+	ean?: string | undefined;
+	limit?: number;
+};
+
+export async function buscarProdutosParaVinculoNf({
+	idempresa,
+	q,
+	codigo,
+	ean,
+	limit = 20,
+}: BuscarProdutosParaVinculoNfParametros) {
+	const limite = Math.min(Math.max(limit, 1), 20);
+	const colunasResumo = {
+		id: produtos.id,
+		nome: produtos.nome,
+		codigo: produtos.codigo,
+		ean: produtos.ean,
+		descricao: produtos.descricao,
+	};
+
+	if (codigo !== undefined || ean) {
+		const alternativas = [];
+
+		if (codigo !== undefined) {
+			const codigoSeguro = inteiroValidoParaPostgres(codigo);
+			if (codigoSeguro !== undefined) {
+				alternativas.push(eq(produtos.codigo, codigoSeguro));
+			}
+		}
+
+		if (ean) {
+			alternativas.push(sql`cast(${produtos.ean} as text) = ${ean}`);
+		}
+
+		if (alternativas.length === 0) {
+			return [];
+		}
+
+		const condicaoAlternativas = or(...alternativas);
+		if (!condicaoAlternativas) return [];
+
+		return await db
+			.select(colunasResumo)
+			.from(produtos)
+			.where(and(eq(produtos.idempresa, idempresa), condicaoAlternativas))
+			.orderBy(asc(produtos.nome))
+			.limit(limite);
+	}
+
+	const termo = q?.trim();
+	if (!termo) {
+		return [];
+	}
+
+	const buscaTexto = or(
+		ilike(produtos.nome, `%${termo}%`),
+		ilike(produtos.descricao, `%${termo}%`),
+	);
+	if (!buscaTexto) {
+		return [];
+	}
+
+	return await db
+		.select(colunasResumo)
+		.from(produtos)
+		.where(and(eq(produtos.idempresa, idempresa), buscaTexto))
+		.orderBy(asc(produtos.nome))
+		.limit(limite);
+}
+
 export async function buscarProdutoPorNomeOuDescricao(
 	idempresa: string,
 	texto: string,

@@ -1,9 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import {
-	buscarProdutoPorCodigoOuEan,
-	buscarProdutoPorDescricao,
-} from "@/repositories/produtos-repositories.js";
+import { buscarProdutosParaVinculoNf } from "@/repositories/produtos-repositories.js";
 import { httpErroInterno } from "@/util/http-util.js";
 
 const buscarProdutoQuerySchema = z.object({
@@ -44,27 +41,28 @@ export async function buscarProdutoParaNF(
 			});
 		}
 
+		let produtos: Awaited<ReturnType<typeof buscarProdutosParaVinculoNf>> =
+			[];
+
 		if (query.codigo !== undefined || query.ean !== undefined) {
-			const produto = await buscarProdutoPorCodigoOuEan(
-				query.idempresa,
-				query.codigo,
-				query.ean,
-			);
-
-			if (produto) {
-				return reply.status(200).send({ produto, encontrado: true });
-			}
+			produtos = await buscarProdutosParaVinculoNf({
+				idempresa: query.idempresa,
+				codigo: query.codigo,
+				ean: query.ean,
+			});
 		}
 
-		if (query.q) {
-			const produto = await buscarProdutoPorDescricao(query.idempresa, query.q);
-
-			if (produto) {
-				return reply.status(200).send({ produto, encontrado: true });
-			}
+		if (produtos.length === 0 && query.q) {
+			produtos = await buscarProdutosParaVinculoNf({
+				idempresa: query.idempresa,
+				q: query.q,
+			});
 		}
 
-		return reply.status(200).send({ produto: null, encontrado: false });
+		return reply.status(200).send({
+			encontrado: produtos.length > 0,
+			produtos,
+		});
 	} catch (error) {
 		console.error(error);
 		if (error instanceof z.ZodError) {
