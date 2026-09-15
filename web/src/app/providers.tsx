@@ -2,6 +2,7 @@
 
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { ReactQueryProvider } from "@/lib/react-query";
 import { EmpresaProvider } from "@/provider/empresa-provider";
 
@@ -10,8 +11,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
 		<ThemeProvider attribute="class" defaultTheme="system" enableSystem>
 			<ReactQueryProvider>
 				<EmpresaProvider>
-					{children}
-					<Toaster duration={3000} position="top-right" />
+					<TooltipProvider delayDuration={0}>
+						{children}
+						<Toaster duration={3000} position="top-right" />
+					</TooltipProvider>
 				</EmpresaProvider>
 			</ReactQueryProvider>
 		</ThemeProvider>

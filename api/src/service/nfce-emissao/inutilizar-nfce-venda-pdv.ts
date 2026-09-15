@@ -52,6 +52,11 @@ export async function inutilizarNfceVendaPdvService({
 			"Somente NFC-e (modelo 65) podem ser inutilizadas por esta rota",
 		);
 	}
+	if (!nota.serie || !nota.numeronotafiscal) {
+		return httpBadRequest(
+			"Esta NFC-e ainda não possui numeração fiscal. Corrija os itens na retaguarda e retransmita; não há número a inutilizar.",
+		);
+	}
 
 	return inutilizarNfeVendaService({
 		idusuario,

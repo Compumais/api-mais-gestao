@@ -21,6 +21,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { inicioFimMesBrasilia } from "@/lib/date";
 import { useEmpresa } from "@/provider/empresa-provider";
 import { gerarRelatorioFormasDePagamento } from "@/services/relatorios.service";
 
@@ -81,11 +82,7 @@ export function FormasDePagamentoReportDialog({
 		gerarRelatorioMutation.mutate();
 	};
 
-	const hoje = new Date();
-	const primeiroDiaMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-	const ultimoDiaMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
-	const dataInicioPadrao = primeiroDiaMes.toISOString().split("T")[0];
-	const dataFimPadrao = ultimoDiaMes.toISOString().split("T")[0];
+	const { inicio: dataInicioPadrao, fim: dataFimPadrao } = inicioFimMesBrasilia();
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>

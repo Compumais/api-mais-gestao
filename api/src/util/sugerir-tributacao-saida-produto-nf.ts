@@ -31,6 +31,8 @@ function ehCsosn(codigo?: string): boolean {
 		valor.length === 3 &&
 		(valor.startsWith("1") ||
 			valor.startsWith("2") ||
+			valor.startsWith("3") ||
+			valor.startsWith("4") ||
 			valor.startsWith("5") ||
 			valor.startsWith("9"))
 	);

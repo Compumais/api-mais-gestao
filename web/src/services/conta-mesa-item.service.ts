@@ -16,6 +16,7 @@ export interface ContaMesaItem {
 	precounitario: string;
 	taxaservico: number | null;
 	unidademedida: string;
+	pago?: number | null;
 }
 
 export interface ListarContasMesaItemResponse {

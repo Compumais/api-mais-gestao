@@ -447,6 +447,19 @@ export async function atualizarItemRascunhoImportacaoNfService({
 		cofins: numeroOpcionalOuNulo(dadosMesclados.tributacao.cofins) ?? null,
 		ipi: numeroOpcionalOuNulo(dadosMesclados.tributacao.ipi) ?? null,
 		origem: dadosMesclados.tributacao.origem ?? 0,
+		situacaotributariaipi: dadosMesclados.tributacao.cstipi ?? null,
+		basepis: numeroOpcionalOuNulo(dadosMesclados.tributacao.basepis) ?? null,
+		basecofins:
+			numeroOpcionalOuNulo(dadosMesclados.tributacao.basecofins) ?? null,
+		baseicmsst:
+			numeroOpcionalOuNulo(dadosMesclados.tributacao.baseicmsst) ?? null,
+		valoricmsst: numeroOpcionalOuNulo(dadosMesclados.tributacao.icmsst) ?? null,
+		aliquotaicmsst:
+			numeroOpcionalOuNulo(dadosMesclados.tributacao.aliquotaicmsst) ?? null,
+		basefcp: numeroOpcionalOuNulo(dadosMesclados.tributacao.basefcp) ?? null,
+		valorfcp: numeroOpcionalOuNulo(dadosMesclados.tributacao.valorfcp) ?? null,
+		valorfcpst: numeroOpcionalOuNulo(dadosMesclados.tributacao.fcpst) ?? null,
+		cest: dadosMesclados.cestXml?.replace(/\D/g, "").slice(0, 7) || null,
 		dadosimportacao: dadosMesclados,
 	});
 

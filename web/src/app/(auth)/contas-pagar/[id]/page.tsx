@@ -115,11 +115,15 @@ export default function DetalhesContaPagarPage() {
 									? "Aberto"
 									: financeiro.status === "P"
 										? "Pago"
-										: financeiro.status === "C"
-											? "Cancelado"
-											: financeiro.status === "V"
-												? "Vencido"
-												: financeiro.status || "-"}
+										: financeiro.status === "Q"
+											? "Quitado"
+											: financeiro.status === "S"
+												? "Substituído"
+												: financeiro.status === "C"
+													? "Cancelado"
+													: financeiro.status === "V"
+														? "Vencido"
+														: financeiro.status || "-"}
 							</p>
 						</div>
 						<div>

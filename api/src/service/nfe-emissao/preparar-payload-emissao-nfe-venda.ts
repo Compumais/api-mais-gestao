@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import type { HttpResponse } from "@/model/http-model.js";
+import { buscarCfopPorCodigo } from "@/repositories/cfop-repositories.js";
 import {
 	buscarEntidadePorId,
 	verificarUsuarioPertenceEmpresa,
@@ -11,14 +12,19 @@ import {
 } from "@/repositories/nfe-serie-repositories.js";
 import { buscarNotaFiscalPorId } from "@/repositories/nota-fiscal-repositories.js";
 import { buscarTipoDocumentoFinanceiroPorId } from "@/repositories/tipo-documento-financeiro-repositories.js";
+import {
+	avaliarEmissaoFiscalService,
+	mensagemBloqueioFiscal,
+} from "@/service/fiscal/avaliar-emissao-fiscal-service.js";
 import { completarRastrosItensEmissao } from "@/service/lote/completar-rastros-emissao.js";
-import { anexarRastrosInformacoesAdicionaisNfe } from "@/util/montar-observacoes-lotes-nfe.js";
+import { calcularTributosAproximadosIbpt } from "@/service/nfe-emissao/calcular-tributos-aproximados-ibpt.js";
 import { aplicarTributacaoItensEmissaoNfe } from "@/service/nfe-emissao/calcular-tributos-itens-emissao-nfe.js";
 import {
 	carregarContextoEmissaoNfe,
 	type DestinatarioPayloadNfe,
 	type DocumentoReferenciadoPayloadNfe,
 	type ItemPayloadNfe,
+	type LocalEntregaPayloadNfe,
 	montarPayloadGatewayEmissaoItens,
 	type PagamentoPayloadNfe,
 	type TotaisPayloadNfe,
@@ -26,8 +32,8 @@ import {
 } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
 import { resolverDocumentoReferenciadoEmissao } from "@/service/nfe-emissao/resolver-documento-referenciado-emissao.js";
 import type { FormaPagamentoNfVenda } from "@/service/nota-fiscal/gerar-contas-receber-nf.js";
-import { calcularTotaisFiscaisEmissaoNfe } from "@/util/calcular-totais-fiscais-emissao-nfe.js";
 import { isAmbienteHomologacao } from "@/util/ambiente-sefaz.js";
+import { calcularTotaisFiscaisEmissaoNfe } from "@/util/calcular-totais-fiscais-emissao-nfe.js";
 import {
 	emissaoRequerDocumentoReferenciado,
 	FIN_NFE_DEVOLUCAO,
@@ -37,27 +43,26 @@ import {
 	type TipoDevolucaoNfe,
 } from "@/util/cfop-devolucao-emissao-nfe.js";
 import { extrairDadosEmissaoNfeSalvos } from "@/util/dados-emissao-nfe-nota.js";
+import { agoraBrasiliaIsoOffset } from "@/util/data-hora-brasilia.js";
 import {
 	httpBadRequest,
 	httpNaoEncontrado,
 	httpOk,
 	httpProibido,
 } from "@/util/http-util.js";
+import { montarObservacaoRemessaFeiraNfe } from "@/util/montar-observacao-remessa-feira-nfe.js";
+import { montarObservacoesLegaisNfe } from "@/util/montar-observacoes-legais-nfe.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
-import { STATUS_RASCUNHO_IMPORTACAO } from "@/util/nota-fiscal-constants.js";
 import {
 	normalizarIeParaNfe,
 	resolverIndIeDestNfe,
 } from "@/util/normalizar-ie-nfe.js";
 import { normalizarPagamentoEmissaoNfe } from "@/util/normalizar-pagamento-emissao-nfe.js";
+import { STATUS_RASCUNHO_IMPORTACAO } from "@/util/nota-fiscal-constants.js";
 import { resolverIdeEmissaoNfe } from "@/util/resolver-ide-emissao-nfe.js";
 import { resolverNatOpEmissaoNfe } from "@/util/resolver-nat-op-emissao-nfe.js";
-import { agoraBrasiliaIsoOffset } from "@/util/data-hora-brasilia.js";
 import { validarCestItensEmissaoNfe } from "@/util/validar-cest-item-emissao-nfe.js";
-import {
-	avaliarEmissaoFiscalService,
-	mensagemBloqueioFiscal,
-} from "@/service/fiscal/avaliar-emissao-fiscal-service.js";
+import { validarLocalEntregaCfopInterestadual } from "@/util/validar-local-entrega-cfop-interestadual.js";
 
 export const AVISO_PREVIEW_DANFE =
 	"*** PRÉ-VISUALIZAÇÃO - DOCUMENTO SEM VALOR FISCAL ***";
@@ -85,6 +90,7 @@ export type PrepararPayloadEmissaoNfeVendaParams = {
 	totaisInformados?: TotaisInformadosEmissaoNfe;
 	pagamento?: PagamentoPayloadNfe;
 	transporte?: TransportePayloadNfe;
+	localEntrega?: LocalEntregaPayloadNfe;
 	informacoesAdicionais?: string;
 	documentoReferenciado?: {
 		tipoDevolucao?: TipoDevolucaoNfe;
@@ -134,6 +140,7 @@ export type PayloadEmissaoNfeVendaPreparado = {
 	identidade?: string;
 	itensNormalizados: ItemPayloadNfe[];
 	transporteAjustado?: TransportePayloadNfe;
+	localEntrega?: LocalEntregaPayloadNfe;
 	natOpResolvida: string;
 	pagamentoNormalizado: PagamentoPayloadNfe;
 	documentoReferenciado?: DocumentoReferenciadoPayloadNfe;
@@ -165,6 +172,29 @@ type ResultadoPreparacaoComPendencias = {
 	pendencias: Array<{ codigo: string; mensagem: string }>;
 	idnotafiscal: "";
 };
+
+function normalizarUf(uf?: string | null): string {
+	return uf?.trim().toUpperCase() ?? "";
+}
+
+async function possuiCfopInterestadualDestinatarioMesmaUf(
+	idempresa: string,
+	itens: ItemPayloadNfe[],
+): Promise<boolean> {
+	const cfops = [
+		...new Set(
+			itens
+				.map((item) => item.cfop.replace(/\D/g, ""))
+				.filter((codigo) => codigo.startsWith("6")),
+		),
+	];
+
+	const naturezas = await Promise.all(
+		cfops.map((codigo) => buscarCfopPorCodigo(idempresa, codigo)),
+	);
+
+	return naturezas.some((natureza) => natureza?.interestadualdestmesmauf === 1);
+}
 
 function ajustarTransporteComFrete(
 	transporte: TransportePayloadNfe | undefined,
@@ -362,6 +392,7 @@ export async function prepararPayloadEmissaoNfeVenda(
 		totaisInformados,
 		pagamento,
 		transporte,
+		localEntrega,
 		informacoesAdicionais,
 		documentoReferenciado: documentoReferenciadoInput,
 		idplanocontas,
@@ -468,18 +499,11 @@ export async function prepararPayloadEmissaoNfeVenda(
 		gerarEstoqueResolvido = false;
 	}
 
-	if (
-		(!iddavsResolvidos || iddavsResolvidos.length === 0) &&
-		iddavResolvido
-	) {
+	if ((!iddavsResolvidos || iddavsResolvidos.length === 0) && iddavResolvido) {
 		iddavsResolvidos = [iddavResolvido];
 	}
 
-	if (
-		iddavsResolvidos &&
-		iddavsResolvidos.length > 0 &&
-		!iddavResolvido
-	) {
+	if (iddavsResolvidos && iddavsResolvidos.length > 0 && !iddavResolvido) {
 		iddavResolvido = iddavsResolvidos[0];
 	}
 
@@ -584,14 +608,12 @@ export async function prepararPayloadEmissaoNfeVenda(
 			: 1;
 
 	const crt = empresaFiscal.crt ?? 3;
-	const {
-		itens: itensTributados,
-		pendencias: pendenciasTributacao,
-	} = await aplicarTributacaoItensEmissaoNfe({
-		crt,
-		itens,
-		totais: totais ?? {},
-	});
+	const { itens: itensTributados, pendencias: pendenciasTributacao } =
+		await aplicarTributacaoItensEmissaoNfe({
+			crt,
+			itens,
+			totais: totais ?? {},
+		});
 
 	if (pendenciasTributacao.length > 0) {
 		return httpBadRequest(pendenciasTributacao.join("; "));
@@ -652,9 +674,41 @@ export async function prepararPayloadEmissaoNfeVenda(
 		},
 	);
 
+	const permiteInterestadualMesmaUf =
+		await possuiCfopInterestadualDestinatarioMesmaUf(
+			idempresa,
+			itensComRastros,
+		);
+
+	const erroLocalEntrega = validarLocalEntregaCfopInterestadual({
+		ufEmitente: empresaFiscal.uf,
+		ufDestinatario: destinatario?.estado,
+		localEntrega,
+		possuiCfopInterestadual: itensComRastros.some((item) =>
+			item.cfop.replace(/\D/g, "").startsWith("6"),
+		),
+		possuiCfopInterestadualDestinatarioMesmaUf: permiteInterestadualMesmaUf,
+	});
+	if (erroLocalEntrega) {
+		return httpBadRequest(erroLocalEntrega);
+	}
+
+	const localEntregaNormalizado = localEntrega
+		? {
+				...localEntrega,
+				uf: normalizarUf(localEntrega.uf),
+				cnpjcpf:
+					localEntrega.cnpjcpf?.replace(/\D/g, "") ||
+					destinatario?.cnpjcpf?.replace(/\D/g, ""),
+				nome: localEntrega.nome?.trim() || destinatario?.razaosocial?.trim(),
+				cep: localEntrega.cep.replace(/\D/g, ""),
+			}
+		: undefined;
+
 	const ideEmissao = resolverIdeEmissaoNfe({
 		ufEmitente: empresaFiscal.uf,
 		ufDestinatario: destinatario?.estado,
+		ufLocalEntrega: localEntregaNormalizado?.uf,
 		paisDestinatario: destinatario?.pais,
 		indPres:
 			indPres ??
@@ -665,28 +719,28 @@ export async function prepararPayloadEmissaoNfeVenda(
 
 	const { relatorio: relatorioFiscal, idAuditoria } =
 		await avaliarEmissaoFiscalService({
-		operacaoId: idnotafiscal,
-		idempresa,
-		idnotafiscal,
-		dataOperacao: agoraBrasiliaIsoOffset(),
-		crt,
-		ufEmitente: empresaFiscal.uf,
-		ufDestinatario: destinatario?.estado,
-		idDest: ideEmissao.idDest,
-		finNFe,
-		consumidorFinal: true,
-		indIEDest: destinatario?.indIEDest,
-		itens: itensComRastros,
-		totais: totais ?? {},
-		totaisInformados: totaisInformados ?? {
-			vProd: totaisFiscais.totalProdutos,
-			vNF: totaisFiscais.totalNota,
-			vDesc: totaisFiscais.desconto,
-			vFrete: totaisFiscais.frete,
-			vSeg: totaisFiscais.seguro,
-			vOutro: totaisFiscais.outrasDespesas,
-		},
-	});
+			operacaoId: idnotafiscal,
+			idempresa,
+			idnotafiscal,
+			dataOperacao: agoraBrasiliaIsoOffset(),
+			crt,
+			ufEmitente: empresaFiscal.uf,
+			ufDestinatario: localEntregaNormalizado?.uf ?? destinatario?.estado,
+			idDest: ideEmissao.idDest,
+			finNFe,
+			consumidorFinal: true,
+			indIEDest: destinatario?.indIEDest,
+			itens: itensComRastros,
+			totais: totais ?? {},
+			totaisInformados: totaisInformados ?? {
+				vProd: totaisFiscais.totalProdutos,
+				vNF: totaisFiscais.totalNota,
+				vDesc: totaisFiscais.desconto,
+				vFrete: totaisFiscais.frete,
+				vSeg: totaisFiscais.seguro,
+				vOutro: totaisFiscais.outrasDespesas,
+			},
+		});
 
 	if (!relatorioFiscal.permitir_transmissao) {
 		return httpBadRequest(mensagemBloqueioFiscal(relatorioFiscal), {
@@ -704,10 +758,25 @@ export async function prepararPayloadEmissaoNfeVenda(
 		opcoes.modo === "preview"
 			? anexarAvisoPreview(informacoesAdicionais)
 			: informacoesAdicionais;
-	const infoAdic = anexarRastrosInformacoesAdicionaisNfe(
-		infoAdicBase,
-		itensComRastros,
-	);
+
+	const tributosIbpt = await calcularTributosAproximadosIbpt({
+		uf: empresaFiscal.uf ?? "",
+		itens: itensComRastros,
+	});
+
+	const itensComIbpt = tributosIbpt.itens;
+
+	const observacoesLegais = montarObservacoesLegaisNfe({
+		informacoesAdicionais: infoAdicBase,
+		crt,
+		itens: itensComIbpt,
+		tributosIbpt,
+		observacaoRemessaFeira: montarObservacaoRemessaFeiraNfe(
+			localEntregaNormalizado,
+		),
+	});
+
+	const infoAdic = observacoesLegais.informacoesAdicionais;
 
 	const payloadGateway = await montarPayloadGatewayEmissaoItens({
 		empresa,
@@ -717,10 +786,11 @@ export async function prepararPayloadEmissaoNfeVenda(
 		numeroNf,
 		serie,
 		destinatario,
-		itens: itensComRastros,
+		itens: itensComIbpt,
 		totais,
 		pagamento: pagamentoNormalizado,
 		transporte: transporteAjustado,
+		localEntrega: localEntregaNormalizado,
 		natOp: natOpResolvida,
 		informacoesAdicionais: infoAdic,
 		finNFe,
@@ -746,8 +816,9 @@ export async function prepararPayloadEmissaoNfeVenda(
 		ambiente,
 		destinatario,
 		identidade,
-		itensNormalizados: itensComRastros,
+		itensNormalizados: itensComIbpt,
 		transporteAjustado,
+		localEntrega: localEntregaNormalizado,
 		natOpResolvida,
 		pagamentoNormalizado,
 		documentoReferenciado,

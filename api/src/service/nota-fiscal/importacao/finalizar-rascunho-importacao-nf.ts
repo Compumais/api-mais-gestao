@@ -512,6 +512,17 @@ export async function finalizarRascunhoImportacaoNfService({
 				cofins: numeroOpcionalOuNulo(dados.tributacao.cofins) ?? null,
 				ipi: numeroOpcionalOuNulo(dados.tributacao.ipi) ?? null,
 				origem: dados.tributacao.origem ?? 0,
+				situacaotributariaipi: dados.tributacao.cstipi ?? null,
+				basepis: numeroOpcionalOuNulo(dados.tributacao.basepis) ?? null,
+				basecofins: numeroOpcionalOuNulo(dados.tributacao.basecofins) ?? null,
+				baseicmsst: numeroOpcionalOuNulo(dados.tributacao.baseicmsst) ?? null,
+				valoricmsst: numeroOpcionalOuNulo(dados.tributacao.icmsst) ?? null,
+				aliquotaicmsst:
+					numeroOpcionalOuNulo(dados.tributacao.aliquotaicmsst) ?? null,
+				basefcp: numeroOpcionalOuNulo(dados.tributacao.basefcp) ?? null,
+				valorfcp: numeroOpcionalOuNulo(dados.tributacao.valorfcp) ?? null,
+				valorfcpst: numeroOpcionalOuNulo(dados.tributacao.fcpst) ?? null,
+				cest: dados.cestXml?.replace(/\D/g, "").slice(0, 7) || null,
 				custoaquisicao:
 					dados.custoContabilCalculado ?? dados.precounitarioEstoque,
 				gerarcreditoipi: flagsCredito.gerarcreditoipi,

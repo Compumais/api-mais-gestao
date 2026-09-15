@@ -1,4 +1,4 @@
-import { and, count, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq, inArray } from "drizzle-orm";
 import type { NovoContaMesaItem } from "@/model/conta-mesa-item-model";
 import { contamesaitem } from "@/repositories/schema.js";
 import { db } from "./connection";
@@ -76,4 +76,54 @@ export async function listarContasMesaItem({
 		itens,
 		total: totalCount[0]?.value ?? 0,
 	};
+}
+
+export async function listarItensPendentesPorConta(idcontamesa: string) {
+	return db
+		.select()
+		.from(contamesaitem)
+		.where(
+			and(
+				eq(contamesaitem.idcontamesa, idcontamesa),
+				eq(contamesaitem.pago, 0),
+			),
+		)
+		.orderBy(desc(contamesaitem.dataabertura));
+}
+
+export async function contarItensPendentes(idcontamesa: string) {
+	const [resultado] = await db
+		.select({ value: count() })
+		.from(contamesaitem)
+		.where(
+			and(
+				eq(contamesaitem.idcontamesa, idcontamesa),
+				eq(contamesaitem.pago, 0),
+			),
+		);
+
+	return resultado?.value ?? 0;
+}
+
+export async function marcarItensComoPagos(ids: string[]) {
+	if (ids.length === 0) {
+		return [];
+	}
+
+	return db
+		.update(contamesaitem)
+		.set({ pago: 1 })
+		.where(inArray(contamesaitem.id, ids))
+		.returning();
+}
+
+export async function buscarItensPorIds(ids: string[]) {
+	if (ids.length === 0) {
+		return [];
+	}
+
+	return db
+		.select()
+		.from(contamesaitem)
+		.where(inArray(contamesaitem.id, ids));
 }

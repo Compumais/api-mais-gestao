@@ -1,14 +1,23 @@
 import type { CondicaoPagamento } from "@/model/condicao-pagamento-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
-import { listarCondicoesPagamento } from "@/repositories/condicao-pagamento-repositories.js";
+import {
+	listarCondicoesPagamento,
+	type OrdenarCondicoesPagamentoCampo,
+} from "@/repositories/condicao-pagamento-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { httpOk, httpProibido } from "@/util/http-util.js";
 
 type ListarCondicaoPagamentosParametros = {
 	idusuario: string;
 	idempresa: string;
+	codigo?: string | undefined;
 	descricao?: string | undefined;
+	parcelas?: string | undefined;
+	prazos?: string | undefined;
+	escopo?: number | undefined;
 	inativo?: number | undefined;
+	ordenarPor?: OrdenarCondicoesPagamentoCampo | undefined;
+	ordem?: "asc" | "desc" | undefined;
 	page?: number;
 	limit?: number;
 };
@@ -26,8 +35,14 @@ type ListarCondicaoPagamentosResposta = {
 export async function listarCondicaoPagamentosService({
 	idusuario,
 	idempresa,
+	codigo,
 	descricao,
+	parcelas,
+	prazos,
+	escopo,
 	inativo,
+	ordenarPor,
+	ordem,
 	page = 1,
 	limit = 10,
 }: ListarCondicaoPagamentosParametros): Promise<
@@ -44,8 +59,14 @@ export async function listarCondicaoPagamentosService({
 
 	const resultado = await listarCondicoesPagamento({
 		idempresa,
+		codigo,
 		descricao,
+		parcelas,
+		prazos,
+		escopo,
 		inativo,
+		ordenarPor,
+		ordem,
 		page,
 		limit,
 	});

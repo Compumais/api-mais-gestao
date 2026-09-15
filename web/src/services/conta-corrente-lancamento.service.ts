@@ -74,6 +74,13 @@ export const contaCorrenteLancamentoService = {
 		idcontacorrente: string;
 		page?: number;
 		limit?: number;
+		historico?: string;
+		documento?: string;
+		planocontasnome?: string;
+		datahora?: string;
+		sentido?: "entrada" | "saida";
+		ordenarPor?: string;
+		ordem?: "asc" | "desc";
 	}): Promise<ListarContaCorrenteLancamentosResponse> {
 		const { data } = await api.get<ListarContaCorrenteLancamentosResponse>(
 			"/conta-corrente-lancamentos",

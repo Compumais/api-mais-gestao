@@ -3,6 +3,7 @@ import {
 	char,
 	date,
 	foreignKey,
+	index,
 	integer,
 	numeric,
 	pgTable,
@@ -17,6 +18,7 @@ import { empresa } from "./empresas.js";
 import { entidade } from "./entidade.js";
 import { grupogourmet } from "./grupo-gourmet.js";
 import { hierarquia } from "./hierarquia.js";
+import { marca } from "./marca.js";
 import { ncm } from "./ncm.js";
 import { planocontas } from "./plano-contas.js";
 import { receitasemcontribuicao } from "./receitasem-contribuicao.js";
@@ -29,8 +31,10 @@ export const produtos = pgTable(
 		id: text().primaryKey().notNull(),
 		idempresa: text().notNull(),
 		descricao: varchar({ length: 100 }).notNull(),
+		aliquotacbs: numeric({ precision: 7, scale: 4 }),
 		aliquotacofins: numeric({ precision: 12, scale: 2 }),
 		aliquotaconfinsentrada: numeric({ precision: 12, scale: 2 }),
+		aliquotaiibs: numeric({ precision: 7, scale: 4 }),
 		aliquotafcpnf: numeric({ precision: 12, scale: 2 }),
 		aliquotaicmsdiferencialentrada: numeric({ precision: 12, scale: 2 }),
 		aliquotaicmsinterna: numeric({ precision: 12, scale: 2 }),
@@ -60,6 +64,8 @@ export const produtos = pgTable(
 		cstcofinsentrada: varchar({ length: 2 }),
 		cstipientrada: varchar({ length: 3 }),
 		cstipisaida: varchar({ length: 3 }),
+		cstibs: varchar({ length: 3 }),
+		classtributariaibs: varchar({ length: 6 }),
 		cstpis: varchar({ length: 2 }),
 		cstpisentrada: varchar({ length: 2 }),
 		cstservico: numeric({ precision: 12, scale: 2 }),
@@ -135,6 +141,7 @@ export const produtos = pgTable(
 		idenquadramentoipisaida: text(),
 		identificaconsumidor: text(),
 		idfabricante: text(),
+		idmarca: text(),
 		idfornecedor: text(),
 		idmotivorebaixa: text(),
 		idncm: text(),
@@ -229,6 +236,7 @@ export const produtos = pgTable(
 		tipoimpressaogourmet: varchar({ length: 40 }),
 	},
 	(table) => [
+		index("produtos_idmarca_idx").on(table.idmarca),
 		foreignKey({
 			columns: [table.idempresa],
 			foreignColumns: [empresa.id],
@@ -243,6 +251,13 @@ export const produtos = pgTable(
 		})
 			.onUpdate("cascade")
 			.onDelete("cascade"),
+		foreignKey({
+			columns: [table.idmarca],
+			foreignColumns: [marca.id],
+			name: "produtos_idmarca_fkey",
+		})
+			.onUpdate("cascade")
+			.onDelete("set null"),
 		foreignKey({
 			columns: [table.idcomprador],
 			foreignColumns: [entidade.id],

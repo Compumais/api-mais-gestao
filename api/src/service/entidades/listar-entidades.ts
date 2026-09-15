@@ -2,6 +2,7 @@ import type { Entidade } from "@/model/entidade-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
 import {
 	listarEntidades,
+	type OrdenarEntidadesCampo,
 	verificarUsuarioPertenceEmpresa,
 } from "@/repositories/entidade-repositories.js";
 import { httpOk } from "@/util/http-util.js";
@@ -10,12 +11,29 @@ type ListarEntidadesParametros = {
 	idusuario: string;
 	nome?: string | undefined;
 	q?: string | undefined;
+	razaosocial?: string | undefined;
+	cnpjcpf?: string | undefined;
+	endereco?: string | undefined;
+	tipopessoa?: number | undefined;
+	indiedest?: number | undefined;
+	inscricaoestadual?: string | undefined;
+	rg?: string | undefined;
 	email?: string | undefined;
 	telefone?: string | undefined;
+	numeroendereco?: string | undefined;
+	complemento?: string | undefined;
+	bairro?: string | undefined;
+	cep?: string | undefined;
+	fax?: string | undefined;
+	nascimento?: string | undefined;
+	pais?: string | undefined;
+	criadoem?: string | undefined;
 	fornecedor?: number | undefined;
 	cliente?: number | undefined;
 	transportador?: number | undefined;
 	representante?: number | undefined;
+	ordenarPor?: OrdenarEntidadesCampo | undefined;
+	ordem?: "asc" | "desc" | undefined;
 	page?: number;
 	limit?: number;
 	idempresa: string;
@@ -36,12 +54,29 @@ export async function listarEntidadesService({
 	idempresa,
 	nome,
 	q,
+	razaosocial,
+	cnpjcpf,
+	endereco,
+	tipopessoa,
+	indiedest,
+	inscricaoestadual,
+	rg,
 	email,
 	telefone,
+	numeroendereco,
+	complemento,
+	bairro,
+	cep,
+	fax,
+	nascimento,
+	pais,
+	criadoem,
 	fornecedor,
 	cliente,
 	transportador,
 	representante,
+	ordenarPor,
+	ordem,
 	page = 1,
 	limit = 10,
 }: ListarEntidadesParametros): Promise<HttpResponse<ListarEntidadesResposta>> {
@@ -66,12 +101,29 @@ export async function listarEntidadesService({
 		idempresa,
 		nome,
 		q,
+		razaosocial,
+		cnpjcpf,
+		endereco,
+		tipopessoa,
+		indiedest,
+		inscricaoestadual,
+		rg,
 		email,
 		telefone,
+		numeroendereco,
+		complemento,
+		bairro,
+		cep,
+		fax,
+		nascimento,
+		pais,
+		criadoem,
 		fornecedor,
 		cliente,
 		transportador,
 		representante,
+		ordenarPor,
+		ordem,
 		page,
 		limit,
 	});

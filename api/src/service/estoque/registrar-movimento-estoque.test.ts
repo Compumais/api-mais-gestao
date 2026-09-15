@@ -82,4 +82,37 @@ describe("registrarMovimentoEstoque com lote", () => {
 			}),
 		);
 	});
+
+	it("permite saldo operacional negativo na saída sem lote", async () => {
+		vi.mocked(produtosRepository.buscarProdutoPorId).mockResolvedValue({
+			id: "prod-1",
+			codigo: 10,
+			nome: "Produto sem saldo",
+			controlalote: 0,
+		} as never);
+		vi.mocked(
+			saldoRepository.buscarSaldoEstoquePorCodigoProduto,
+		).mockResolvedValue({
+			id: 1,
+			quantidade: "2",
+			quantidadefiscal: "2",
+		} as never);
+
+		await registrarMovimentoEstoque({
+			idempresa: "emp-1",
+			idproduto: "prod-1",
+			quantidade: "5",
+			sentido: "saida",
+			tipoestoque: 0,
+			tipodocumento: 0,
+			permitirSemLote: true,
+		});
+
+		expect(saldoRepository.atualizarSaldoEstoque).toHaveBeenCalledWith(
+			1,
+			expect.objectContaining({
+				quantidade: "-3.000000",
+			}),
+		);
+	});
 });

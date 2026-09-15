@@ -63,19 +63,36 @@ O workflow **PDV instalador** gera, em um runner Windows:
 - instalador NSIS (`pdv/release/*.exe`)
 - instalador Inno Setup com PostgreSQL (`pdv/installer/output/*.exe`)
 
-Disparo manual (depois de enviar o código):
+Disparo manual (depois de enviar o código). No Linux use o `.sh`; o `.bat` é só para o `cmd.exe` do Windows:
 
 ```bash
 gh workflow run "PDV instalador"
 # Linux:
-bash scripts/gerar-instalador.sh
-# Windows:
-scripts\gerar-instalador.bat
+bash pdv/scripts/gerar-instalador.sh
+# Windows (dois cliques abre um menu e a janela permanece aberta):
+pdv\scripts\gerar-instalador.bat
 ```
 
 Também roda ao publicar a tag `pdv-v*` (exemplo: `git tag pdv-v0.1.2 && git push origin pdv-v0.1.2`), e nesse caso cria um GitHub Release com os arquivos.
 
-No Windows, para gerar neste computador (sem GitHub Actions): `scripts\gerar-instalador.bat local` ou `npm run pack:release`.
+No Windows, para gerar neste computador (sem GitHub Actions): escolha a opção **1** no menu, ou `pdv\scripts\gerar-instalador.bat local`, ou `npm run pack:release`.
+
+O script local faz **bump automático do patch** (consulta `installer/output` + `package.json`, ex.: `0.1.2` → `0.1.3`), gera o Setup Inno e grava `installer/output/version.json`. Commitar `pdv/package.json` e `pdv/installer/output/*` (somente o Setup mais recente).
+
+### Auto-update (API/VPS)
+
+Na abertura do PDV empacotado, o app consulta `{api_url}/pdv/updates/version.json`. Se a versão remota for maior, ofereceixa o Setup e instala com `/SILENT /NORESTART`.
+
+1. Gerar: `npm run pack:release`
+2. Commitar e enviar `installer/output/version.json` + `PDV-Mais-Gestao-Setup-*.exe`
+3. Atualizar o fallback embutido na API (`api/src/data/pdv-updates/version.json`) com a mesma versão
+4. Publicar artefatos na VPS:
+
+```powershell
+pdv\scripts\publicar-update-pdv.ps1 -HostName apimaisgestao.compumais.com -User deploy
+```
+
+A API Fastify expõe fallback público em `GET /pdv/updates/version.json` e `GET /pdv/updates/:arquivo` (lê `PDV_UPDATES_PATH`, padrão `/opt/mais-gestao/pdv-updates`, ou o manifesto embutido). Opcionalmente, sirva a pasta também pelo Nginx (`nginx/mais-gestao.conf`).
 
 Se o PDV já estiver instalado, o setup compara a versão: pacote mais antigo é recusado; mesma versão repara os arquivos; versão mais nova só atualiza o aplicativo e **preserva o PostgreSQL e os dados**.
 

@@ -1,16 +1,17 @@
 import type { HttpResponse } from "@/model/http-model.js";
 import type { UnidadeMedida } from "@/model/unidade-medida-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
-import { listarUnidadesMedida } from "@/repositories/unidade-medida-repositories.js";
+import {
+	type ListarUnidadesMedidaParametros,
+	listarUnidadesMedida,
+} from "@/repositories/unidade-medida-repositories.js";
 import { httpOk, httpProibido } from "@/util/http-util.js";
 
-type ListarUnidadeMedidasParametros = {
+type ListarUnidadeMedidasServiceParametros = Omit<
+	ListarUnidadesMedidaParametros,
+	never
+> & {
 	idusuario: string;
-	idempresa: string;
-	nome?: string | undefined;
-	q?: string | undefined;
-	page?: number;
-	limit?: number;
 };
 
 type ListarUnidadeMedidasResposta = {
@@ -26,11 +27,10 @@ type ListarUnidadeMedidasResposta = {
 export async function listarUnidadeMedidasService({
 	idusuario,
 	idempresa,
-	nome,
-	q,
 	page = 1,
 	limit = 10,
-}: ListarUnidadeMedidasParametros): Promise<
+	...filtros
+}: ListarUnidadeMedidasServiceParametros): Promise<
 	HttpResponse<ListarUnidadeMedidasResposta>
 > {
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
@@ -44,10 +44,9 @@ export async function listarUnidadeMedidasService({
 
 	const resultado = await listarUnidadesMedida({
 		idempresa,
-		nome,
-		q,
 		page,
 		limit,
+		...filtros,
 	});
 
 	const total = resultado.total ?? 0;

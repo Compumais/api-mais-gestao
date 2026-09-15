@@ -3,13 +3,15 @@ import {
 	IconBrandInstagram,
 	IconBrandLinkedin,
 	IconBrandTwitter,
+	IconCashRegister,
 	IconChartBar,
-	IconCheck,
-	IconCreditCard,
-	IconDashboard,
-	IconLock,
+	IconClipboardList,
+	IconFileInvoice,
+	IconPackage,
+	IconReceiptTax,
+	IconReportMoney,
 	IconShield,
-	IconTrendingUp,
+	IconToolsKitchen2,
 	IconUsers,
 } from "@tabler/icons-react";
 import type { Metadata } from "next";
@@ -20,19 +22,20 @@ import {
 	Card,
 	CardContent,
 	CardDescription,
-	CardFooter,
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import { LEGAL_CONTACT } from "@/constants/legal-contact";
+import { SolicitacaoDemonstracaoForm } from "./components/solicitacao-demonstracao-form";
 
 export const metadata: Metadata = {
-	title: "Mais Gestão - Controle Financeiro Completo para sua Empresa",
+	title: "Mais Gestão - Sistema de gestão para o seu negócio",
 	description:
-		"Plataforma SaaS multi-empresas para gestão financeira completa. Controle contas a pagar e receber, bancos, contas correntes, relatórios e muito mais. Planos Básico e Premium disponíveis.",
+		"Venda no caixa, controle estoque e acompanhe o financeiro. Módulos de Gourmet, emissão de NF-e e NFC-e e ordens de serviço conforme o seu negócio.",
 	openGraph: {
-		title: "Mais Gestão - Controle Financeiro Completo",
+		title: "Mais Gestão - Sistema de gestão para o seu negócio",
 		description:
-			"Plataforma SaaS multi-empresas para gestão financeira completa.",
+			"Sistema de gestão com módulos para restaurante, notas fiscais e ordens de serviço.",
 		type: "website",
 	},
 	robots: {
@@ -41,45 +44,120 @@ export const metadata: Metadata = {
 	},
 };
 
-const features = [
+const pilares = [
 	{
-		icon: IconDashboard,
-		title: "Dashboard Intuitivo",
+		title: "Vender com facilidade",
 		description:
-			"Visualize todas as informações financeiras em um único lugar com gráficos e métricas em tempo real.",
+			"Atenda no caixa, faça orçamentos e registre o pagamento. Sem passar a venda de um programa para outro.",
 	},
 	{
-		icon: IconCreditCard,
-		title: "Gestão de Contas",
+		title: "Saber o que tem e o que falta",
 		description:
-			"Controle completo de contas a pagar e receber, com lembretes automáticos e categorização inteligente.",
+			"Estoque atualizado a cada venda ou compra, e o caixa visível: o que pagar, o que receber e o saldo das contas.",
 	},
 	{
-		icon: IconChartBar,
-		title: "Relatórios Detalhados",
+		title: "Facilitar a vida do contador",
 		description:
-			"Gere relatórios financeiros completos com análises profundas para tomada de decisão estratégica.",
+			"O movimento do mês já está organizado. Você envia os arquivos e relatórios que a contabilidade precisa, sem montar planilha no fim do período.",
 	},
 	{
-		icon: IconUsers,
-		title: "Multi-empresas",
+		title: "Ligar só o que o negócio precisa",
 		description:
-			"Gerencie múltiplas empresas em uma única plataforma, com controle de acesso e permissões granulares.",
-	},
-	{
-		icon: IconTrendingUp,
-		title: "Análise de Performance",
-		description:
-			"Acompanhe indicadores financeiros e métricas de performance para otimizar seus resultados.",
-	},
-	{
-		icon: IconShield,
-		title: "Segurança Avançada",
-		description:
-			"Seus dados protegidos com criptografia de ponta a ponta e backups automáticos diários.",
+			"Gourmet, emissão de notas e ordens de serviço são módulos. Você usa o sistema e escolhe o que entra na sua operação.",
 	},
 ];
 
+const modulos = [
+	{
+		icon: IconToolsKitchen2,
+		title: "Gourmet",
+		paraQuem: "Restaurante e lanchonete",
+		description:
+			"Mesas, comanda e pedido pelo celular do garçom. Fecha a conta na hora, com o que foi consumido.",
+	},
+	{
+		icon: IconFileInvoice,
+		title: "Emissão de notas",
+		paraQuem: "NF-e e NFC-e",
+		description:
+			"Nota da venda para o cliente e cupom no caixa, sem outro programa. A nota de compra do fornecedor também entra no sistema.",
+	},
+	{
+		icon: IconClipboardList,
+		title: "Ordens de serviço",
+		paraQuem: "Oficina e assistência",
+		description:
+			"Abra o serviço, acompanhe o andamento e feche com o cliente. Do orçamento ao reparo, tudo no mesmo lugar.",
+	},
+];
+
+const capacidadesBase = [
+	{
+		icon: IconCashRegister,
+		title: "Caixa da loja",
+		description:
+			"Venda no computador, no celular ou na maquininha. Fecha o caixa no fim do dia e vê como o cliente pagou.",
+	},
+	{
+		icon: IconPackage,
+		title: "Estoque sob controle",
+		description:
+			"Saiba o que tem na prateleira, o que precisa comprar e o custo do produto. A venda baixa o estoque automaticamente.",
+	},
+	{
+		icon: IconChartBar,
+		title: "Financeiro do jeito que você usa",
+		description:
+			"Contas a pagar e a receber, contas bancárias e relatórios para entender se o mês fechou no azul.",
+	},
+	{
+		icon: IconReceiptTax,
+		title: "Impostos calculados para você",
+		description:
+			"O sistema aplica as regras da sua empresa na hora da venda. Menos erro na nota e menos surpresa na hora de emitir.",
+	},
+	{
+		icon: IconReportMoney,
+		title: "Relatórios para decidir e prestar contas",
+		description:
+			"Acompanhe vendas, compras e o resultado do período. Quando o contador pedir, os arquivos já saem prontos.",
+	},
+	{
+		icon: IconUsers,
+		title: "Equipe e mais de uma empresa",
+		description:
+			"Cada pessoa vê só o que precisa. Se você tem mais de um CNPJ, gerencia todos na mesma conta.",
+	},
+];
+
+const etapasContratacao = [
+	{
+		passo: "1",
+		title: "Peça uma demonstração",
+		description:
+			"Conte o tipo do seu negócio e se precisa de Gourmet, notas ou ordens de serviço.",
+	},
+	{
+		passo: "2",
+		title: "Veja o sistema na prática",
+		description:
+			"Mostramos o sistema e só os módulos que fazem sentido para você.",
+	},
+	{
+		passo: "3",
+		title: "Receba uma proposta do seu jeito",
+		description:
+			"Você monta o que vai usar: o sistema e, se quiser, Gourmet, emissão de notas e OS.",
+	},
+	{
+		passo: "4",
+		title: "Comece com a gente junto",
+		description:
+			"Ajudamos a cadastrar, treinar a equipe e colocar o sistema para rodar.",
+	},
+];
+
+/*
 const plans = [
 	{
 		name: "Básico",
@@ -147,76 +225,81 @@ const clients = [
 	{ name: "Velocity Partners", initials: "VP" },
 	{ name: "Catalyst Group", initials: "CG" },
 ];
+*/
 
 export default function Home() {
 	return (
 		<div className="flex min-h-screen flex-col">
-			{/* Header */}
 			<header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-				<div className="container h-16 mx-auto flex items-center justify-between px-4">
+				<div className="container mx-auto flex h-16 items-center justify-between px-4">
 					<div className="flex items-center gap-2">
-						<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
+						<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary font-bold text-primary-foreground">
 							MG
 						</div>
 						<span className="text-xl font-bold">Mais Gestão</span>
 					</div>
 
-					<nav className="flex items-center gap-4">
+					<nav className="flex items-center gap-2 sm:gap-4">
 						<Link
-							href="#features"
-							className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+							href="#sistema"
+							className="hidden text-sm font-medium text-muted-foreground transition-colors hover:text-foreground md:inline"
 						>
-							Funcionalidades
+							O sistema
 						</Link>
 						<Link
-							href="#pricing"
-							className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+							href="#modulos"
+							className="hidden text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline"
 						>
-							Planos
+							Módulos
+						</Link>
+						<Link
+							href="#demonstracao"
+							className="hidden text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline"
+						>
+							Demonstração
 						</Link>
 						<Button asChild variant="outline" size="sm">
 							<Link href="/entrar">Entrar</Link>
 						</Button>
 						<Button asChild size="sm">
-							<Link href="/registrar">Começar grátis</Link>
+							<Link href="#demonstracao">Solicitar demonstração</Link>
 						</Button>
 					</nav>
 				</div>
 			</header>
 
 			<main className="flex-1">
-				{/* Hero Section */}
 				<section className="relative overflow-hidden border-b bg-gradient-to-b from-background to-muted/20 py-20 md:py-32">
-					<div className="container px-4 mx-auto">
-						<div className="flex flex-col items-center justify-center max-w-3xl mx-auto text-center">
+					<div className="container mx-auto px-4">
+						<div className="mx-auto flex max-w-3xl flex-col items-center justify-center text-center">
 							<Badge
 								variant="secondary"
 								className="mb-4 animate-fade-in-up"
 								style={{ animationDelay: "0.1s" }}
 							>
-								Plataforma SaaS Multi-empresas
+								Sistema de gestão para o seu negócio
 							</Badge>
 							<h1
-								className="mb-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl animate-fade-in-up"
+								className="mb-6 animate-fade-in-up text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl"
 								style={{ animationDelay: "0.2s" }}
 							>
-								Controle Financeiro{" "}
-								<span className="text-primary">Completo</span> para sua Empresa
+								Venda, emita notas e controle o caixa{" "}
+								<span className="text-primary">em um só lugar</span>
 							</h1>
 							<p
-								className="mb-8 text-lg text-muted-foreground sm:text-xl md:text-2xl animate-fade-in-up"
+								className="mb-8 animate-fade-in-up text-lg text-muted-foreground sm:text-xl"
 								style={{ animationDelay: "0.3s" }}
 							>
-								Gerencie suas finanças com facilidade. Controle contas,
-								relatórios, bancos e muito mais em uma única plataforma
-								intuitiva e poderosa.
+								O Mais Gestão organiza o dia a dia da loja: venda, estoque e
+								caixa. Se o seu negócio precisa, você liga os módulos de
+								Gourmet, emissão de notas ou ordens de serviço.
 							</p>
 							<div
-								className="flex flex-col items-center justify-center gap-4 sm:flex-row animate-fade-in-up"
+								className="flex animate-fade-in-up flex-col items-center justify-center gap-4 sm:flex-row"
 								style={{ animationDelay: "0.4s" }}
 							>
 								<Button asChild size="lg" className="w-full sm:w-auto">
-									<Link href="/registrar">Começar grátis</Link>
+									<Link href="#demonstracao">Solicitar demonstração</Link>
 								</Button>
 								<Button
 									asChild
@@ -224,7 +307,7 @@ export default function Home() {
 									size="lg"
 									className="w-full sm:w-auto"
 								>
-									<Link href="#features">Conhecer funcionalidades</Link>
+									<Link href="#modulos">Ver os módulos</Link>
 								</Button>
 							</div>
 						</div>
@@ -232,31 +315,123 @@ export default function Home() {
 					<div className="absolute inset-0 -z-10 bg-grid-pattern opacity-5" />
 				</section>
 
-				{/* Features Section */}
-				<section id="features" className="py-20 md:py-32">
-					<div className="container px-4 mx-auto">
-						<div className="mx-auto max-w-2xl text-center mb-16">
+				<section id="sistema" className="py-20 md:py-32">
+					<div className="container mx-auto px-4">
+						<div className="mx-auto mb-16 max-w-3xl text-center">
 							<h2 className="mb-4 text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-								Tudo que você precisa para{" "}
-								<span className="text-primary">gerenciar suas finanças</span>
+								Um sistema para o dia a dia da{" "}
+								<span className="text-primary">sua empresa</span>
 							</h2>
 							<p className="text-lg text-muted-foreground">
-								Funcionalidades poderosas projetadas para simplificar sua gestão
-								financeira
+								Você atende o cliente, baixa o estoque e registra o pagamento no
+								mesmo lugar. Os módulos entram só se o seu negócio precisar:
+								restaurante, notas fiscais ou oficina.
 							</p>
 						</div>
-						<div className="mx-auto max-w-6xl grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-							{features.map((feature, index) => {
+						<div className="mx-auto grid max-w-6xl gap-6 md:grid-cols-2">
+							{pilares.map((pilar, index) => (
+								<Card
+									key={pilar.title}
+									className="animate-fade-in-up"
+									style={{ animationDelay: `${0.1 * index}s` }}
+								>
+									<CardHeader>
+										<CardTitle>{pilar.title}</CardTitle>
+									</CardHeader>
+									<CardContent>
+										<CardDescription className="text-base">
+											{pilar.description}
+										</CardDescription>
+									</CardContent>
+								</Card>
+							))}
+						</div>
+						<div className="mx-auto mt-12 flex max-w-4xl flex-wrap items-center justify-center gap-2">
+							{[
+								"Caixa e vendas",
+								"Estoque",
+								"Financeiro",
+								"Módulo Gourmet",
+								"Módulo de notas",
+								"Módulo de OS",
+							].map((item) => (
+								<Badge key={item} variant="secondary">
+									{item}
+								</Badge>
+							))}
+						</div>
+					</div>
+				</section>
+
+				<section id="modulos" className="border-t bg-muted/30 py-20 md:py-32">
+					<div className="container mx-auto px-4">
+						<div className="mx-auto mb-16 max-w-2xl text-center">
+							<h2 className="mb-4 text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
+								Módulos para o{" "}
+								<span className="text-primary">seu tipo de negócio</span>
+							</h2>
+							<p className="text-lg text-muted-foreground">
+								O sistema já cuida de venda, estoque e financeiro. Os módulos
+								abaixo entram só se você precisar — restaurante, notas fiscais
+								ou oficina.
+							</p>
+						</div>
+						<div className="mx-auto grid max-w-6xl gap-8 md:grid-cols-3">
+							{modulos.map((modulo, index) => {
+								const Icon = modulo.icon;
+								return (
+									<Card
+										key={modulo.title}
+										className="group animate-fade-in-up transition-all duration-300 hover:scale-105 hover:shadow-lg"
+										style={{ animationDelay: `${0.1 * index}s` }}
+									>
+										<CardHeader>
+											<div className="mb-4 flex items-center justify-between gap-3">
+												<div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+													<Icon className="h-6 w-6" aria-hidden="true" />
+												</div>
+												<Badge variant="secondary">Módulo</Badge>
+											</div>
+											<CardTitle>{modulo.title}</CardTitle>
+											<p className="text-sm font-medium text-primary">
+												{modulo.paraQuem}
+											</p>
+										</CardHeader>
+										<CardContent>
+											<CardDescription className="text-base">
+												{modulo.description}
+											</CardDescription>
+										</CardContent>
+									</Card>
+								);
+							})}
+						</div>
+					</div>
+				</section>
+
+				<section id="features" className="border-t py-20 md:py-32">
+					<div className="container mx-auto px-4">
+						<div className="mx-auto mb-16 max-w-2xl text-center">
+							<h2 className="mb-4 text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
+								O que já vem no <span className="text-primary">sistema</span>
+							</h2>
+							<p className="text-lg text-muted-foreground">
+								Para o dia a dia da loja, com ou sem os módulos. Tudo no mesmo
+								lugar, sem passar informação de um programa para outro.
+							</p>
+						</div>
+						<div className="mx-auto grid max-w-6xl gap-8 md:grid-cols-2 lg:grid-cols-3">
+							{capacidadesBase.map((feature, index) => {
 								const Icon = feature.icon;
 								return (
 									<Card
 										key={feature.title}
-										className="group transition-all duration-300 hover:shadow-lg hover:scale-105 animate-fade-in-up"
+										className="group animate-fade-in-up transition-all duration-300 hover:scale-105 hover:shadow-lg"
 										style={{ animationDelay: `${0.1 * index}s` }}
 									>
 										<CardHeader>
 											<div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
-												<Icon className="h-6 w-6" />
+												<Icon className="h-6 w-6" aria-hidden="true" />
 											</div>
 											<CardTitle>{feature.title}</CardTitle>
 										</CardHeader>
@@ -269,10 +444,20 @@ export default function Home() {
 								);
 							})}
 						</div>
+						<div className="mx-auto mt-12 flex max-w-xl items-start gap-3 rounded-lg border bg-muted/30 p-4">
+							<IconShield
+								className="mt-0.5 h-5 w-5 shrink-0 text-primary"
+								aria-hidden="true"
+							/>
+							<p className="text-sm text-muted-foreground">
+								Cada empresa fica separada, e cada pessoa da equipe vê só o que
+								precisa. Você acessa pelo navegador, de qualquer computador.
+							</p>
+						</div>
 					</div>
 				</section>
 
-				{/* Clients Section */}
+				{/*
 				<section className="border-t bg-background py-12 md:py-16">
 					<div className="container px-4 mx-auto">
 						<div className="mx-auto max-w-2xl text-center mb-12">
@@ -287,7 +472,6 @@ export default function Home() {
 						</div>
 						<div className="logo-slider-container">
 							<div className="logo-slider">
-								{/* Duplicar a lista para criar loop infinito */}
 								{[...clients, ...clients].map((client, index) => (
 									<div
 										key={`${client.name}-${index.toString()}`}
@@ -309,127 +493,78 @@ export default function Home() {
 						</div>
 					</div>
 				</section>
+				*/}
 
-				{/* Pricing Section */}
-				<section id="pricing" className="border-t bg-muted/30 py-20 md:py-32">
-					<div className="container px-4 mx-auto">
-						<div className="mx-auto max-w-2xl text-center mb-16">
+				<section
+					id="demonstracao"
+					className="border-t bg-background py-20 md:py-32"
+				>
+					<div className="container mx-auto px-4">
+						<div className="mx-auto mb-16 max-w-2xl text-center">
 							<h2 className="mb-4 text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-								Planos que se adaptam ao seu{" "}
-								<span className="text-primary">negócio</span>
+								Quer conhecer?{" "}
+								<span className="text-primary">Peça uma demonstração</span>
 							</h2>
 							<p className="text-lg text-muted-foreground">
-								Escolha o plano ideal para suas necessidades. Todos os planos
-								incluem suporte e atualizações regulares.
+								Não é um pacote único. Primeiro entendemos o seu negócio,
+								mostramos o sistema e os módulos que fazem sentido, e só então
+								montamos uma proposta.
 							</p>
 						</div>
-						<div className="mx-auto max-w-5xl grid gap-8 md:grid-cols-3">
-							{plans.map((plan, index) => (
-								<Card
-									key={plan.name}
-									className={`relative flex flex-col transition-all duration-300 hover:shadow-lg ${
-										plan.popular ? "border-primary shadow-lg md:scale-105" : ""
-									} ${
-										plan.comingSoon
-											? "opacity-60 grayscale"
-											: "animate-fade-in-up"
-									}`}
-									style={{
-										animationDelay: plan.comingSoon
-											? undefined
-											: `${0.1 * index}s`,
-									}}
-								>
-									{plan.popular && (
-										<div className="absolute -top-4 left-1/2 -translate-x-1/2">
-											<Badge variant="default">Mais Popular</Badge>
-										</div>
-									)}
-									{plan.comingSoon && (
-										<div className="absolute -top-4 right-4">
-											<Badge variant="outline" className="gap-1">
-												<IconLock className="h-3 w-3" />
-												Em breve
-											</Badge>
-										</div>
-									)}
-									<CardHeader>
-										<CardTitle className="text-2xl">{plan.name}</CardTitle>
-										<CardDescription>{plan.description}</CardDescription>
-										<div className="mt-4 flex items-baseline gap-1">
-											<span className="text-4xl font-bold">{plan.price}</span>
-											{plan.period && (
-												<span className="text-muted-foreground">
-													{plan.period}
+						<div className="mx-auto grid max-w-6xl items-start gap-10 lg:grid-cols-2">
+							<ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+								{etapasContratacao.map((etapa) => (
+									<li key={etapa.passo}>
+										<Card>
+											<CardHeader className="flex flex-row items-start gap-4 space-y-0">
+												<span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary font-bold text-primary-foreground">
+													{etapa.passo}
 												</span>
-											)}
-										</div>
-									</CardHeader>
-									<CardContent className="flex-1">
-										<ul className="space-y-3">
-											{plan.features.map((feature) => (
-												<li key={feature} className="flex items-start gap-2">
-													<IconCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-													<span className="text-sm">{feature}</span>
-												</li>
-											))}
-										</ul>
-									</CardContent>
-									<CardFooter>
-										<Button
-											asChild
-											variant={plan.popular ? "default" : "outline"}
-											className="w-full"
-											disabled={plan.comingSoon}
-										>
-											<Link href={plan.comingSoon ? "#" : "/registrar"}>
-												{plan.cta}
-											</Link>
-										</Button>
-									</CardFooter>
-								</Card>
-							))}
+												<div>
+													<CardTitle className="text-lg">
+														{etapa.title}
+													</CardTitle>
+													<CardDescription className="mt-1 text-base">
+														{etapa.description}
+													</CardDescription>
+												</div>
+											</CardHeader>
+										</Card>
+									</li>
+								))}
+							</ol>
+							<Card className="border-primary/40 shadow-lg">
+								<CardHeader>
+									<CardTitle className="text-2xl">
+										Solicitar demonstração
+									</CardTitle>
+									<CardDescription className="text-base">
+										Preencha seus dados. Abrimos o WhatsApp com a mensagem
+										pronta para conversar com a nossa equipe.
+									</CardDescription>
+								</CardHeader>
+								<CardContent>
+									<SolicitacaoDemonstracaoForm />
+								</CardContent>
+							</Card>
 						</div>
-					</div>
-				</section>
-
-				{/* CTA Section */}
-				<section className="border-t py-20 md:py-32">
-					<div className="container px-4 mx-auto">
-						<Card className="mx-auto max-w-3xl border-primary bg-gradient-to-br from-primary/5 to-primary/10">
-							<CardHeader className="text-center">
-								<CardTitle className="text-3xl md:text-4xl">
-									Pronto para começar?
-								</CardTitle>
-								<CardDescription className="text-lg">
-									Junte-se a centenas de empresas que já confiam no Mais Gestão
-									para gerenciar suas finanças.
-								</CardDescription>
-							</CardHeader>
-							<CardFooter className="justify-center">
-								<Button asChild size="lg">
-									<Link href="/registrar">Criar conta gratuita</Link>
-								</Button>
-							</CardFooter>
-						</Card>
 					</div>
 				</section>
 			</main>
 
-			{/* Footer */}
 			<footer className="border-t bg-muted/30">
-				<div className="container px-4 py-12 mx-auto max-w-6xl">
+				<div className="container mx-auto max-w-6xl px-4 py-12">
 					<div className="grid gap-8 md:grid-cols-4">
 						<div className="md:col-span-2">
 							<div className="mb-4 flex items-center gap-2">
-								<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
+								<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary font-bold text-primary-foreground">
 									MG
 								</div>
 								<span className="text-xl font-bold">Mais Gestão</span>
 							</div>
 							<p className="mb-4 text-sm text-muted-foreground">
-								Plataforma SaaS multi-empresas para controle financeiro
-								completo. Gerencie suas finanças com facilidade e segurança.
+								Sistema de gestão para lojas, com módulos de Gourmet, emissão de
+								notas e ordens de serviço conforme o seu negócio.
 							</p>
 							<div className="flex gap-4">
 								<Button
@@ -499,18 +634,26 @@ export default function Home() {
 							<ul className="space-y-2 text-sm">
 								<li>
 									<Link
-										href="#features"
+										href="#sistema"
 										className="text-muted-foreground transition-colors hover:text-foreground"
 									>
-										Funcionalidades
+										O sistema
 									</Link>
 								</li>
 								<li>
 									<Link
-										href="#pricing"
+										href="#modulos"
 										className="text-muted-foreground transition-colors hover:text-foreground"
 									>
-										Planos
+										Módulos
+									</Link>
+								</li>
+								<li>
+									<Link
+										href="#demonstracao"
+										className="text-muted-foreground transition-colors hover:text-foreground"
+									>
+										Solicitar demonstração
 									</Link>
 								</li>
 								<li>
@@ -544,10 +687,18 @@ export default function Home() {
 								</li>
 								<li>
 									<a
-										href="mailto:contato@compumais.com"
+										href={`mailto:${LEGAL_CONTACT.email}`}
 										className="text-muted-foreground transition-colors hover:text-foreground"
 									>
-										Contato
+										{LEGAL_CONTACT.email}
+									</a>
+								</li>
+								<li>
+									<a
+										href={`tel:+${LEGAL_CONTACT.whatsapp}`}
+										className="text-muted-foreground transition-colors hover:text-foreground"
+									>
+										{LEGAL_CONTACT.telefone}
 									</a>
 								</li>
 							</ul>

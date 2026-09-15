@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { VendaPdvGourmet } from "@/model/venda-pdv-gourmet-model.js";
+import * as auditoriaRepository from "@/repositories/auditoria-repositories.js";
 import * as entidadeRepository from "@/repositories/entidade-repositories.js";
 import * as vendaRepository from "@/repositories/venda-pdv-gourmet-repositories.js";
 import * as pagamentoRepository from "@/repositories/venda-pdv-pagamento-repositories.js";
@@ -8,6 +9,7 @@ import * as contasReceberService from "@/service/venda-pdv-gourmet/gerar-contas-
 import * as recebimentosService from "@/service/venda-pdv-gourmet/registrar-recebimentos-venda.js";
 import { criarVendaPdvGourmetService } from "./criar-venda-pdv-gourmet.js";
 
+vi.mock("@/repositories/auditoria-repositories.js");
 vi.mock("@/repositories/entidade-repositories.js");
 vi.mock("@/repositories/venda-pdv-gourmet-repositories.js");
 vi.mock("@/repositories/venda-pdv-pagamento-repositories.js");
@@ -21,6 +23,7 @@ const vendaBase: VendaPdvGourmet = {
 	idcontamesa: null,
 	vendalocal: 2,
 	numeropdv: 1,
+	idvendalocal: null,
 	idvendaitem: null,
 	valordinheiro: "0.00",
 	valorcartao: "0.00",
@@ -45,11 +48,21 @@ describe("criarVendaPdvGourmetService", () => {
 		vi.mocked(
 			entidadeRepository.verificarUsuarioPertenceEmpresa,
 		).mockResolvedValue(true);
-		vi.mocked(vendaRepository.criarVendaPdvGourmet).mockResolvedValue(
-			vendaBase,
+		vi.mocked(vendaRepository.executarComLockVendaPdvLocal).mockImplementation(
+			async (_idempresa, _numeropdv, _idvendalocal, executar) => executar(),
 		);
+		vi.mocked(vendaRepository.criarOuBuscarVendaPdvGourmet).mockResolvedValue({
+			registro: vendaBase,
+			criada: true,
+		});
+		vi.mocked(
+			pagamentoRepository.listarVendaPdvPagamentosPorVenda,
+		).mockResolvedValue([]);
 		vi.mocked(pagamentoRepository.criarVendaPdvPagamentos).mockResolvedValue(
 			[],
+		);
+		vi.mocked(auditoriaRepository.buscarAuditoriaPorRecurso).mockResolvedValue(
+			undefined,
 		);
 		vi.mocked(auditoriaService.criarAuditoriaService).mockResolvedValue({
 			success: true,
@@ -72,6 +85,38 @@ describe("criarVendaPdvGourmetService", () => {
 			status: 200,
 			body: { parcelasGeradas: 0 },
 		} as never);
+	});
+
+	it("repara efeitos ausentes sem duplicar pagamentos existentes", async () => {
+		vi.mocked(vendaRepository.criarOuBuscarVendaPdvGourmet).mockResolvedValue({
+			registro: vendaBase,
+			criada: false,
+		});
+		vi.mocked(
+			pagamentoRepository.listarVendaPdvPagamentosPorVenda,
+		).mockResolvedValue([{ id: "pagamento-1" }] as never);
+
+		const resultado = await criarVendaPdvGourmetService({
+			dadosVendaPdvGourmet: {
+				id: "nova-tentativa",
+				idempresa: "emp-1",
+				numeropdv: 1,
+				idvendalocal: "local-1",
+				usuarioquefechouvenda: "user-1",
+			},
+			idusuario: "user-1",
+			pagamentos: [{ meio: "DINHEIRO", valor: 100 }],
+		});
+
+		expect(resultado.success).toBe(true);
+		expect(pagamentoRepository.criarVendaPdvPagamentos).not.toHaveBeenCalled();
+		expect(auditoriaService.criarAuditoriaService).toHaveBeenCalledTimes(1);
+		expect(
+			recebimentosService.registrarRecebimentosVendaService,
+		).toHaveBeenCalledTimes(1);
+		expect(
+			contasReceberService.gerarContasReceberVendaPdvService,
+		).not.toHaveBeenCalled();
 	});
 
 	it("persiste NSU e o segundo cartão", async () => {

@@ -47,6 +47,8 @@ export const empresaFiscalConfigSchema = z.object({
 		vazioParaNull,
 		z.string().email("E-mail inválido").max(200).nullable(),
 	),
+	indperfil: z.enum(["A", "B", "C"]).optional().nullable(),
+	indativ: z.coerce.number().int().min(0).max(1).optional().nullable(),
 });
 
 export type EmpresaFiscalConfigFormData = z.infer<

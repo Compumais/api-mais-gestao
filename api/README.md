@@ -204,6 +204,29 @@ BETTER_AUTH_URL=http://localhost:3333
 
 **Nota**: Para produção, use valores seguros e não compartilhe o arquivo `.env`.
 
+### Integração IBPT
+
+A tabela de tributos aproximados é sincronizada pelo backend a partir da API
+pública `api-ibpt.seunegocionanuvem.com.br`. O fluxo usa
+`GET /api_ibpt_json.php?uf=XX`, que retorna a versão, a UF, o total e o array
+`ncm` com alíquotas e vigências. A documentação pública não exige autenticação
+e não informa limites de requisição; por isso, a aplicação faz o download
+completo somente quando o usuário aciona a sincronização em Configurações >
+NF-e e mantém os dados no PostgreSQL.
+
+Variáveis opcionais:
+
+```env
+IBPT_API_BASE_URL=https://api-ibpt.seunegocionanuvem.com.br
+IBPT_API_TIMEOUT_MS=30000
+```
+
+O endpoint interno `POST /empresas/:id/ibpt/importar` foi preservado para
+compatibilidade e agora recebe `{ "uf": "MG" }`, sem upload de arquivo ou
+credencial. O endpoint individual `api_ibpt.php?codigo=...&uf=...` não é usado,
+pois a emissão consulta a cópia local em lote para evitar dependência externa
+por item.
+
 4. **Inicie o banco de dados com Docker**
 
 ```bash

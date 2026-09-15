@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { hojeBrasiliaIsoDate } from "@/lib/date";
 import {
 	type NotaFiscalManualFormData,
 	notaFiscalManualSchema,
@@ -62,8 +63,8 @@ export function FormManualNotaFiscalCompra() {
 			serie: "1",
 			modelo: "55",
 			chavenfe: "",
-			emissao: new Date().toISOString().substring(0, 10),
-			entradasaida: new Date().toISOString().substring(0, 10),
+			emissao: hojeBrasiliaIsoDate(),
+			entradasaida: hojeBrasiliaIsoDate(),
 			valortotalnota: "",
 			observacao: "",
 			gerarCustos: true,

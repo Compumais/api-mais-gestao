@@ -9,16 +9,11 @@ import {
 	getPaginationRowModel,
 	useReactTable,
 } from "@tanstack/react-table";
-import dayjs from "dayjs";
-import "dayjs/locale/pt-br";
 import { useMemo, useState } from "react";
+import { TableSkeleton } from "@/components/table-skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Field,
-	FieldGroup,
-	FieldLabel,
-} from "@/components/ui/field";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
 	Select,
@@ -35,19 +30,18 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { TableSkeleton } from "@/components/table-skeleton";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { dataCivilBrasiliaIso, formatDateTimeBrasilia } from "@/lib/date";
 import {
 	formatCurrency,
 	STATUS_CAIXA,
 	STATUS_CAIXA_LABEL,
 } from "@/lib/gourmet-utils";
+import { nomeVisivelPessoa } from "@/lib/nome-visivel";
 import type { FechamentoCaixa } from "@/services/fechamento-caixa.service";
 import { fechamentoCaixaService } from "@/services/fechamento-caixa.service";
 import { usuariosService } from "@/services/usuarios.service";
 import { PageContainer } from "../components/page-container";
-
-dayjs.locale("pt-br");
 
 interface FiltrosState {
 	dataInicio: string;
@@ -64,7 +58,12 @@ const filtrosVazios: FiltrosState = {
 };
 
 function filtrosAtivos(filtros: FiltrosState): boolean {
-	return !!(filtros.dataInicio || filtros.dataFim || filtros.pdv || filtros.status);
+	return !!(
+		filtros.dataInicio ||
+		filtros.dataFim ||
+		filtros.pdv ||
+		filtros.status
+	);
 }
 
 function filtrarPorPeriodo(
@@ -75,9 +74,9 @@ function filtrarPorPeriodo(
 	return itens.filter((item) => {
 		const data = item.datacriacao ?? item.datahora;
 		if (!data) return true;
-		const dia = dayjs(data);
-		if (dataInicio && dia.isBefore(dayjs(dataInicio), "day")) return false;
-		if (dataFim && dia.isAfter(dayjs(dataFim), "day")) return false;
+		const dia = dataCivilBrasiliaIso(data);
+		if (dataInicio && dia && dia < dataInicio) return false;
+		if (dataFim && dia && dia > dataFim) return false;
 		return true;
 	});
 }
@@ -93,21 +92,23 @@ export default function FechamentosCaixaPage() {
 		pageSize: 15,
 	});
 
-	const { data: usuariosData } = useQuery({
+	const { data: usuariosLista } = useQuery({
 		queryKey: ["usuarios-lista", empresa?.id],
-		queryFn: () =>
-			usuariosService.listar({ idempresa: empresa!.id, limit: 500 }),
+		queryFn: async () => {
+			if (!empresa) throw new Error("Empresa não selecionada");
+			return usuariosService.listarTodos({ idempresa: empresa.id });
+		},
 		enabled: !!empresa,
 		staleTime: 60_000,
 	});
 
 	const usuariosPorId = useMemo(() => {
 		const map: Record<string, string> = {};
-		for (const u of usuariosData?.data ?? []) {
+		for (const u of usuariosLista ?? []) {
 			map[u.id] = u.nome;
 		}
 		return map;
-	}, [usuariosData]);
+	}, [usuariosLista]);
 
 	const { data, isLoading } = useQuery({
 		queryKey: [
@@ -120,9 +121,7 @@ export default function FechamentosCaixaPage() {
 			if (!empresa) throw new Error("Empresa não selecionada");
 			return fechamentoCaixaService.listar({
 				idempresa: empresa.id,
-				pdv: filtrosAplicados.pdv
-					? Number(filtrosAplicados.pdv)
-					: undefined,
+				pdv: filtrosAplicados.pdv ? Number(filtrosAplicados.pdv) : undefined,
 				status: filtrosAplicados.status
 					? Number(filtrosAplicados.status)
 					: undefined,
@@ -163,7 +162,7 @@ export default function FechamentosCaixaPage() {
 					(row.getValue("datacriacao") as string | null) ??
 					row.original.datahora;
 				if (!val) return <span className="text-muted-foreground">—</span>;
-				return <span>{dayjs(val).format("DD/MM/YYYY HH:mm")}</span>;
+				return <span>{formatDateTimeBrasilia(val)}</span>;
 			},
 		},
 		{
@@ -179,12 +178,10 @@ export default function FechamentosCaixaPage() {
 			cell: ({ row }) => {
 				const status = row.getValue("status") as number | null;
 				const label =
-					status != null ? STATUS_CAIXA_LABEL[status] ?? status : "—";
+					status != null ? (STATUS_CAIXA_LABEL[status] ?? status) : "—";
 				return (
 					<Badge
-						variant={
-							status === STATUS_CAIXA.ABERTO ? "default" : "secondary"
-						}
+						variant={status === STATUS_CAIXA.ABERTO ? "default" : "secondary"}
 					>
 						{label}
 					</Badge>
@@ -196,10 +193,12 @@ export default function FechamentosCaixaPage() {
 			header: "Operador",
 			cell: ({ row }) => {
 				const id = row.getValue("idusuario") as string | null;
-				if (!id) return "—";
+				const nome =
+					nomeVisivelPessoa(row.original.operadorNome) ??
+					(id ? nomeVisivelPessoa(usuariosPorId[id]) : null);
 				return (
-					<span className="text-sm text-muted-foreground">
-						{usuariosPorId[id] ?? id}
+					<span className="block max-w-[160px] truncate text-sm">
+						{nome ?? "—"}
 					</span>
 				);
 			},
@@ -251,7 +250,9 @@ export default function FechamentosCaixaPage() {
 						</span>
 					);
 				}
-				return <span className="text-right block text-muted-foreground">—</span>;
+				return (
+					<span className="text-right block text-muted-foreground">—</span>
+				);
 			},
 		},
 	];
@@ -284,7 +285,12 @@ export default function FechamentosCaixaPage() {
 		<PageContainer>
 			<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
 				<div className="flex items-center justify-between px-4">
-					<h1 className="text-2xl font-bold">Fechamentos de caixa</h1>
+					<div className="space-y-1">
+						<h1 className="text-2xl font-bold">Fechamentos de caixa</h1>
+						<p className="text-sm text-muted-foreground">
+							Horários em Brasília (GMT−3).
+						</p>
+					</div>
 					{comFiltros && (
 						<Badge variant="secondary" className="gap-1">
 							<IconFilter className="size-3" />
@@ -367,10 +373,7 @@ export default function FechamentosCaixaPage() {
 						</Field>
 
 						<div className="flex items-end gap-2">
-							<Button
-								onClick={handleAplicarFiltros}
-								className="flex-1 gap-2"
-							>
+							<Button onClick={handleAplicarFiltros} className="flex-1 gap-2">
 								<IconFilter className="size-4" />
 								Filtrar
 							</Button>

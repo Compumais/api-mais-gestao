@@ -8,8 +8,8 @@ import {
 	listarExecucoesAutomacaoService,
 } from "@/service/automacao/crud-automacao.js";
 import { executarAutomacaoManualService } from "@/service/automacao/executar-automacao.js";
-import { FUNCAO_ENVIO_FISCAL_CONTABILIDADE } from "@/service/automacao/funcoes/envio-fiscal-contabilidade.js";
 import { FUNCAO_ALERTA_PENDENCIAS_NF } from "@/service/automacao/funcoes/alerta-pendencias-nf.js";
+import { FUNCAO_ENVIO_FISCAL_CONTABILIDADE } from "@/service/automacao/funcoes/envio-fiscal-contabilidade.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
 const queryListarSchema = z.object({
@@ -24,6 +24,8 @@ const parametrosSchema = z
 	.object({
 		incluirSintegra: z.boolean().optional(),
 		incluirXml: z.boolean().optional(),
+		incluirEfdIcms: z.boolean().optional(),
+		incluirEfdContribuicoes: z.boolean().optional(),
 		finalidadeSintegra: z.enum(["1", "2", "3", "5"]).optional(),
 		incluirNfe: z.boolean().optional(),
 		incluirNfce: z.boolean().optional(),

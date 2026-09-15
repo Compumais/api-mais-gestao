@@ -1,7 +1,36 @@
-import { and, asc, count, eq, ilike } from "drizzle-orm";
+import {
+	and,
+	asc,
+	count,
+	desc,
+	eq,
+	ilike,
+	type SQL,
+	sql,
+} from "drizzle-orm";
 import type { NovoFatorConversao } from "@/model/fator-conversao-model.js";
 import { fatorconversao } from "@/repositories/schema.js";
 import { db } from "./connection";
+
+export const ORDENAR_FATORES_CONVERSAO_CAMPOS = ["nome", "fator"] as const;
+
+export type OrdenarFatoresConversaoCampo =
+	(typeof ORDENAR_FATORES_CONVERSAO_CAMPOS)[number];
+
+const COLUNAS_ORDENACAO = {
+	nome: fatorconversao.nome,
+	fator: fatorconversao.fator,
+} as const;
+
+function adicionarFiltroTexto(
+	where: SQL[],
+	coluna: Parameters<typeof ilike>[0],
+	valor: string | undefined,
+) {
+	if (valor?.trim()) {
+		where.push(ilike(coluna, `%${valor.trim()}%`));
+	}
+}
 
 export async function buscarFatorConversaoPorId(id: string) {
 	const [registro] = await db
@@ -57,6 +86,10 @@ export async function excluirFatorConversao(id: string) {
 export type ListarFatoresConversaoParametros = {
 	idempresa: string;
 	q?: string | undefined;
+	nome?: string | undefined;
+	fator?: string | undefined;
+	ordenarPor?: OrdenarFatoresConversaoCampo | undefined;
+	ordem?: "asc" | "desc" | undefined;
 	page?: number;
 	limit?: number;
 };
@@ -64,17 +97,31 @@ export type ListarFatoresConversaoParametros = {
 export async function listarFatoresConversao({
 	idempresa,
 	q,
+	nome,
+	fator,
+	ordenarPor,
+	ordem = "asc",
 	page = 1,
 	limit = 10,
 }: ListarFatoresConversaoParametros) {
-	const where = [eq(fatorconversao.idempresa, idempresa)];
+	const where: SQL[] = [eq(fatorconversao.idempresa, idempresa)];
 
 	if (q) {
 		where.push(ilike(fatorconversao.nome, `%${q}%`));
 	}
 
+	adicionarFiltroTexto(where, fatorconversao.nome, nome);
+	adicionarFiltroTexto(where, sql`${fatorconversao.fator}::text`, fator);
+
 	const offset = (page - 1) * limit;
 	const filtro = and(...where);
+
+	const ordenacao =
+		ordenarPor && COLUNAS_ORDENACAO[ordenarPor]
+			? ordem === "desc"
+				? desc(COLUNAS_ORDENACAO[ordenarPor])
+				: asc(COLUNAS_ORDENACAO[ordenarPor])
+			: asc(fatorconversao.nome);
 
 	const [totalCount, fatores] = await Promise.all([
 		db.select({ value: count() }).from(fatorconversao).where(filtro),
@@ -82,7 +129,7 @@ export async function listarFatoresConversao({
 			.select()
 			.from(fatorconversao)
 			.where(filtro)
-			.orderBy(asc(fatorconversao.nome))
+			.orderBy(ordenacao)
 			.limit(limit)
 			.offset(offset),
 	]);

@@ -1,7 +1,14 @@
-import bcrypt from "bcryptjs";
+import { auth } from "@/lib/auth.js";
 
-const SALT_ROUNDS = 10;
+type ContextoSenhaAuth = {
+	password: {
+		hash: (senha: string) => Promise<string>;
+	};
+};
 
 export async function hashSenha(senha: string): Promise<string> {
-	return bcrypt.hash(senha, SALT_ROUNDS);
+	const contexto = await (
+		auth as unknown as { $context: Promise<ContextoSenhaAuth> }
+	).$context;
+	return contexto.password.hash(senha);
 }

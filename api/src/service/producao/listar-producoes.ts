@@ -4,6 +4,7 @@ import {
 	buscarRegistroProducaoPorId,
 	listarItensRegistroProducao,
 	listarRegistrosProducao,
+	type OrdenarProducoesCampo,
 } from "@/repositories/registro-producao-repositories.js";
 import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
 import {
@@ -17,6 +18,11 @@ type ListarProducoesParametros = {
 	idempresa: string;
 	origem?: number | undefined;
 	idprodutoacabado?: string | undefined;
+	nome?: string | undefined;
+	codigo?: string | undefined;
+	datahora?: string | undefined;
+	ordenarPor?: OrdenarProducoesCampo | undefined;
+	ordem?: "asc" | "desc" | undefined;
 	page?: number;
 	limit?: number;
 };
@@ -26,6 +32,11 @@ export async function listarProducoesService({
 	idempresa,
 	origem,
 	idprodutoacabado,
+	nome,
+	codigo,
+	datahora,
+	ordenarPor,
+	ordem,
 	page = 1,
 	limit = 10,
 }: ListarProducoesParametros): Promise<HttpResponse<unknown>> {
@@ -41,6 +52,11 @@ export async function listarProducoesService({
 		idempresa,
 		origem,
 		idprodutoacabado,
+		nome,
+		codigo,
+		datahora,
+		ordenarPor,
+		ordem,
 		page,
 		limit,
 	});

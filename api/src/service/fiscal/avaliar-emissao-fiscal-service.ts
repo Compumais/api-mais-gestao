@@ -1,11 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
-import type { ItemPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
 import type { RelatorioAuditoriaFiscal } from "@/model/regra-fiscal-model.js";
-import {
-	avaliarEmissaoFiscal,
-	mensagemBloqueioFiscal,
-} from "@/service/fiscal/avaliar-emissao-fiscal.js";
-import type { RegraFiscalResolvida } from "@/service/fiscal/resolver-regras-fiscais.js";
+import { buscarCfopPorCodigo } from "@/repositories/cfop-repositories.js";
 import { buscarNotaFiscalPorId } from "@/repositories/nota-fiscal-repositories.js";
 import {
 	condicoesRegraFiscal,
@@ -14,7 +9,14 @@ import {
 	listarRegrasFiscaisValidas,
 	resultadoRegraFiscal,
 } from "@/repositories/regra-fiscal-repositories.js";
+import {
+	avaliarEmissaoFiscal,
+	mensagemBloqueioFiscal,
+} from "@/service/fiscal/avaliar-emissao-fiscal.js";
 import { garantirRegrasFiscaisOperacionaisSeed } from "@/service/fiscal/garantir-regras-fiscais-seed.js";
+import { normalizarCfop } from "@/service/fiscal/indicadores-st-nfe.js";
+import type { RegraFiscalResolvida } from "@/service/fiscal/resolver-regras-fiscais.js";
+import type { ItemPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
 
 export type AvaliarEmissaoFiscalServiceParams = {
 	operacaoId: string;
@@ -46,7 +48,9 @@ export type AvaliarEmissaoFiscalServiceParams = {
 	};
 };
 
-function mapearRegraBanco(regra: Awaited<ReturnType<typeof listarRegrasFiscaisValidas>>[number]): RegraFiscalResolvida {
+function mapearRegraBanco(
+	regra: Awaited<ReturnType<typeof listarRegrasFiscaisValidas>>[number],
+): RegraFiscalResolvida {
 	return {
 		id: regra.id,
 		ruleId: regra.ruleid,
@@ -60,6 +64,32 @@ function mapearRegraBanco(regra: Awaited<ReturnType<typeof listarRegrasFiscaisVa
 	};
 }
 
+async function carregarCfopsInterestadualMesmaUf(
+	idempresa: string,
+	itens: ItemPayloadNfe[],
+): Promise<Set<string>> {
+	const codigos = [
+		...new Set(
+			itens
+				.map((item) => normalizarCfop(item.cfop))
+				.filter((codigo) => codigo.length >= 4 && codigo.startsWith("6")),
+		),
+	];
+
+	const liberados = new Set<string>();
+
+	await Promise.all(
+		codigos.map(async (codigo) => {
+			const cfop = await buscarCfopPorCodigo(idempresa, codigo);
+			if (cfop?.interestadualdestmesmauf === 1) {
+				liberados.add(codigo);
+			}
+		}),
+	);
+
+	return liberados;
+}
+
 export type ResultadoAvaliacaoEmissaoFiscal = {
 	relatorio: RelatorioAuditoriaFiscal;
 	idAuditoria: string;
@@ -70,8 +100,14 @@ export async function avaliarEmissaoFiscalService(
 ): Promise<ResultadoAvaliacaoEmissaoFiscal> {
 	await garantirRegrasFiscaisOperacionaisSeed();
 	const regrasBanco = await listarRegrasFiscaisValidas();
+	const cfopsInterestadualMesmaUf = await carregarCfopsInterestadualMesmaUf(
+		params.idempresa,
+		params.itens,
+	);
+
 	const relatorio = avaliarEmissaoFiscal({
 		...params,
+		cfopsInterestadualMesmaUf,
 		regras: regrasBanco.map(mapearRegraBanco),
 	});
 

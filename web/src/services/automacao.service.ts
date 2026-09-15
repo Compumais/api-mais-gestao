@@ -4,6 +4,8 @@ import type { FuncaoAutomacao } from "@/schemas/automacao.schema";
 export type AutomacaoParametros = {
 	incluirSintegra?: boolean;
 	incluirXml?: boolean;
+	incluirEfdIcms?: boolean;
+	incluirEfdContribuicoes?: boolean;
 	finalidadeSintegra?: "1" | "2" | "3" | "5";
 	incluirNfe?: boolean;
 	incluirNfce?: boolean;

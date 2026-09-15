@@ -5,6 +5,8 @@ import {
 	apiBaseUrl,
 	baixaEstoqueVenda,
 	buscarVendaPdvGourmet,
+	cancelarNfceVendaPdv,
+	cancelarVendaNaoFiscalPdv,
 	criarItemVendaPdv,
 	criarVendaPdv,
 	extrairNfceDaBaixa,
@@ -47,16 +49,22 @@ import {
 	pagamentosNativosParaApi,
 	totaisParaSync,
 } from "../db/pagamento";
+import { rotuloProducaoEntrega } from "../db/pedido-entrega";
 import {
 	abrirCaixa,
 	abrirContaMesa,
+	abrirPedidoEntrega,
 	adicionarItemConta,
 	adicionarItemNaMesa,
 	aplicarAjustesConta,
+	aplicarTaxaEntrega,
+	atualizarDadosEntrega,
 	atualizarNfceLocalCampos,
 	atualizarNomeClienteConta,
+	atualizarStatusEntrega,
 	atualizarVendaSync,
 	buscarClientesLocal,
+	buscarClientesPdv,
 	buscarProdutoPorCodigo,
 	buscarProdutoPorEan,
 	buscarProdutosLocal,
@@ -64,15 +72,22 @@ import {
 	caixaAberto,
 	caixaAbertoOutroOperador,
 	calcularResumoTurnoAberto,
+	cancelarContaMesa as cancelarContaMesaRepo,
+	cancelarItemConta as cancelarItemContaRepo,
+	cancelarOutboxCriarVendaPendente,
 	concluirOutboxCriarVendaLocal,
+	contarOutboxFalhasPermanentes,
 	contarOutboxPendentes,
+	contarNfcePendentesTransmissao,
 	criarVendaRapida,
 	enfileirarOutbox,
 	enviarPedidoConta,
+	exigirSenhaGerencial,
 	fecharCaixa,
 	fecharContaMesa,
 	fecharFatiaItens,
 	type ItemCarrinho,
+	ingestPedidoDelivery,
 	juntarContas,
 	type LancamentoPagamento,
 	limparContasVazias,
@@ -83,47 +98,62 @@ import {
 	listarCatalogoCarga,
 	listarGruposGourmetLocal,
 	listarGruposLocal,
+	listarItensVendidosTurnoAberto,
 	listarLancamentosVenda,
 	listarMapeamentoImpressorasGourmet,
 	listarMeiosPagamentoLocal,
 	listarMesas,
+	listarPedidosEntrega,
 	listarPedidosFila,
 	listarPizzasLocal,
 	listarProdutosPorGrupo,
 	listarProdutosPorGrupoGourmet,
 	listarVendas,
+	listarVendasNaoSincronizadas,
 	type MeioPagamento,
 	marcarNfceTransmitida,
 	marcarPedidoEntregue,
+	marcarVendaCanceladaLocal,
 	obterContaMesa,
 	obterContaPorNumero,
 	obterMesa,
 	obterNfcePorVenda,
 	obterNumeracaoNfce,
 	obterSessao,
+	obterSyncMeta,
 	obterVenda,
 	salvarAtalhos as persistirAtalhosLocal,
 	registrarPagamentoConta,
+	rotuloOrigemConta,
 	type SessaoLocal,
+	salvarClientePdv,
 	salvarConfiguracoes,
 	salvarMapeamentoImpressorasGourmet,
 	salvarSessao,
 	senhaGerencialDefinida,
+	senhaGerencialExigida,
 	transferirConta,
 	transferirItens,
 	validarSenhaGerencial,
 } from "../db/repos";
+import { avaliarEmissaoNfceDaVenda } from "../fiscal/avaliar-emissao-nfce-venda";
 import { emitirOuContingencia } from "../fiscal/contingencia";
 import { exportarXmlsNfce as gravarXmlsNfcePeriodo } from "../fiscal/exportar-xml-nfce";
+import {
+	listarConflitosNumeracaoNfceUi,
+	reemitirContingenciaComNovaNumeracao as executarReemitirContingenciaNovaNumeracao,
+} from "../fiscal/reemitir-contingencia-nova-numeracao";
 import {
 	imprimirComprovanteFechamentoCaixa,
 	imprimirCupomNaoFiscal,
 	imprimirDanfce,
+	imprimirItensVendidosTurno,
 	imprimirPreConta,
 	listarImpressoras,
 	testarImpressora,
 } from "../impressora/escpos";
 import {
+	agruparLinhasPedidoFila,
 	imprimirProducaoPedido,
 	rotuloOrigemMesa,
 } from "../impressora/producao";
@@ -149,9 +179,11 @@ import {
 	statusTecnibra,
 	syncTecnibra,
 } from "../integracao/tecnibra/servico";
+import * as remoto from "../pdv-secundario/operacoes-remoto";
 import { assertNumeroPrincipalLivre } from "../pdv-secundario/registro";
 import { normalizarModoPdv, parseNumeroPdv } from "../pdv-secundario/regras";
 import {
+	buscarOpcoesPdvNoPrincipal,
 	ehSecundario,
 	garantirOperacaoSecundario,
 	puxarDoPrincipal,
@@ -164,13 +196,16 @@ import {
 	reiniciarBackupAgendado,
 	statusBackupPdv,
 } from "../sync/backup-agendado";
+import { executarCargaLocal } from "../sync/carga-local";
 import { puxarNfceDaRetaguarda } from "../sync/nfce-retaguarda";
 import {
 	processarOutbox,
 	pullCatalogo,
+	sincronizarFiscalPdv,
 	sincronizarFiscalPdv as puxarFiscalRetaguarda,
 	statusConexao,
 } from "../sync/outbox";
+import { reconciliarNfce } from "../sync/reconciliar-nfce";
 import { obterTerminaisPdvLocais } from "../sync/terminais-pdv";
 import {
 	arquivarSeTrocaEmpresa,
@@ -183,6 +218,15 @@ export type {
 	MeioPagamento,
 	StatusLancamentoPagamento,
 } from "../db/pagamento";
+
+function parseJsonSeguro(valor: string | null): unknown {
+	if (!valor) return null;
+	try {
+		return JSON.parse(valor);
+	} catch {
+		return null;
+	}
+}
 
 function avisarTecnibra(): void {
 	void syncTecnibra();
@@ -264,6 +308,7 @@ async function emitirNfceOnlineDaVenda(
 	cStat?: string;
 	erro?: string;
 	indisponivel?: boolean;
+	naoFiscal?: boolean;
 	xml?: string;
 	serie?: string;
 	numero?: number;
@@ -294,6 +339,7 @@ async function emitirNfceOnlineDaVenda(
 			const criada = await criarVendaPdv({
 				idempresa: sessao.idempresa,
 				numeropdv: Number(await getConfig("numeropdv", "1")),
+				idvendalocal: venda.id,
 				usuarioquefechouvenda: sessao.userid,
 				vendalocal: VENDA_LOCAL_PDV_HIBRIDO,
 				valortotal: venda.valortotal,
@@ -316,6 +362,7 @@ async function emitirNfceOnlineDaVenda(
 				await criarItemVendaPdv({
 					idempresa: sessao.idempresa,
 					idvenda: idremoto,
+					iditemlocal: item.id,
 					idproduto: item.idproduto,
 					quantidade: item.quantidade,
 					precounitario: item.precounitario,
@@ -351,6 +398,7 @@ async function emitirNfceOnlineDaVenda(
 				valorcartao: sync.valorcartao,
 				valorprepago: sync.valorprepago,
 				desconto: venda.valordesconto ?? 0,
+				valoracrescimo: venda.valoracrescimo ?? 0,
 				valortaxaservico: venda.valortaxaservico ?? 0,
 				valorcouverartistico: venda.valorcouvert ?? 0,
 			},
@@ -359,9 +407,13 @@ async function emitirNfceOnlineDaVenda(
 		await concluirOutboxCriarVendaLocal(vendaId);
 		if (!emitirNfce) {
 			await atualizarVendaSync(vendaId, { nfce_status: "nao_fiscal" });
-			return { ok: true };
+			return { ok: true, naoFiscal: true };
 		}
 		const nfce = extrairNfceDaBaixa(baixa);
+		if (!nfce.deveEmitirNfce) {
+			await atualizarVendaSync(vendaId, { nfce_status: "nao_fiscal" });
+			return { ok: true, naoFiscal: true };
+		}
 		const { aplicarEmissaoNfceNaVendaLocal } = await import(
 			"../fiscal/persistir-nfce-online"
 		);
@@ -412,12 +464,83 @@ async function emitirNfceOnlineDaVenda(
 	}
 }
 
+async function imprimirCupomNaoFiscalSeguro(vendaId: string) {
+	try {
+		await imprimirCupomNaoFiscal(vendaId);
+	} catch {
+		// impressão não bloqueia o fechamento da venda
+	}
+}
+
+async function concluirFiscalVenda(vendaId: string) {
+	const avaliacao = await avaliarEmissaoNfceDaVenda(vendaId);
+	if (!avaliacao.global) {
+		await emitirNfceOnlineDaVenda(vendaId, false);
+		await imprimirCupomNaoFiscalSeguro(vendaId);
+		return {
+			modo: "nao_fiscal" as const,
+			mensagem: "Venda registrada (cupom não fiscal)",
+		};
+	}
+	if (!avaliacao.porMeio) {
+		await emitirNfceOnlineDaVenda(vendaId, false);
+		await atualizarVendaSync(vendaId, { nfce_status: "nao_fiscal" });
+		await imprimirCupomNaoFiscalSeguro(vendaId);
+		return {
+			modo: "nao_fiscal" as const,
+			mensagem: "NFC-e não emitida para este meio de pagamento",
+		};
+	}
+	const resultado = await emitirOuContingencia({
+		idvenda: vendaId,
+		onlineEmitir: () => emitirNfceOnlineDaVenda(vendaId),
+	});
+	// Não fiscal (meio/retaguarda) ou rejeição SEFAZ: comprovante no lugar do DANFC-e.
+	if (resultado.modo === "erro" || resultado.modo === "nao_fiscal") {
+		await imprimirCupomNaoFiscalSeguro(vendaId);
+	}
+	return resultado;
+}
+
 /**
  * Fachada local-api: usada pela UI via IPC e exposta na LAN para o POS Android.
  */
 export const localApi = {
 	async health() {
-		return { ok: true, app: "pdv-mais-gestao", version: "0.1.0" };
+		const { app } = await import("electron");
+		return {
+			ok: true,
+			app: "pdv-mais-gestao",
+			version: app.getVersion(),
+		};
+	},
+
+	async verificarUpdatePdv() {
+		const { verificarEAtualizarPdv } = await import(
+			"../update/verificar-update"
+		);
+		return verificarEAtualizarPdv();
+	},
+
+	async statusUpdatePdv() {
+		const { app } = await import("electron");
+		const { buscarManifestoUpdate } = await import(
+			"../update/verificar-update"
+		);
+		const { versaoRemotaMaior } = await import("../update/semver");
+		const local = app.getVersion();
+		const { manifesto, erro } = await buscarManifestoUpdate();
+		const checkEm = await getConfig("update_check_em", "");
+		return {
+			local,
+			remoto: manifesto?.version ?? null,
+			disponivel: manifesto
+				? versaoRemotaMaior(local, manifesto.version)
+				: false,
+			artifact: manifesto?.artifact ?? null,
+			updateCheckEm: checkEm || null,
+			erroConsulta: manifesto ? null : (erro ?? "indisponível"),
+		};
 	},
 
 	async getStatus() {
@@ -438,6 +561,19 @@ export const localApi = {
 		const caixaOutroOperador = caixa ? null : await caixaAbertoOutroOperador();
 		const modo = normalizarModoPdv(await getConfig("pdv_modo", "principal"));
 		const principal = modo === "secundario" ? statusPrincipalCache() : null;
+		const [
+			nfceSyncUltimaOk,
+			nfceSyncUltimoErro,
+			nfceSyncUltimoResumo,
+			outboxFalhasPermanentes,
+			nfcePendentesTransmissao,
+		] = await Promise.all([
+			obterSyncMeta("nfce_sync_ultima_ok"),
+			obterSyncMeta("nfce_sync_ultimo_erro"),
+			obterSyncMeta("nfce_sync_ultimo_resumo"),
+			contarOutboxFalhasPermanentes(),
+			contarNfcePendentesTransmissao(),
+		]);
 		return {
 			...conexao,
 			podeConfigurar: podeConfigurarPdv(sessao.roles),
@@ -461,6 +597,11 @@ export const localApi = {
 			principalOnline: principal ? principal.online : null,
 			principalErro: principal?.erro ?? null,
 			balancaHabilitada: (await getConfig("balanca_habilitada", "0")) === "1",
+			outboxFalhasPermanentes,
+			nfcePendentesTransmissao,
+			nfceSyncUltimaOk,
+			nfceSyncUltimoErro: nfceSyncUltimoErro || null,
+			nfceSyncUltimoResumo: parseJsonSeguro(nfceSyncUltimoResumo),
 		};
 	},
 
@@ -617,6 +758,8 @@ export const localApi = {
 		try {
 			const config = await getAllConfig();
 			const definida = Boolean(config.senha_gerencial_hash);
+			const habilitada =
+				definida && config.senha_gerencial_habilitada !== "0" ? "1" : "0";
 			delete config.senha_gerencial_hash;
 			delete config.senha_gerencial_salt;
 			return {
@@ -624,6 +767,7 @@ export const localApi = {
 				database_url,
 				senha_gerencial: "",
 				senha_gerencial_definida: definida ? "1" : "0",
+				senha_gerencial_habilitada: habilitada,
 			};
 		} catch (err) {
 			if (isBancoIndisponivelError(err)) {
@@ -665,7 +809,14 @@ export const localApi = {
 				const { salt, hash } = hashSenhaGerencial(senha);
 				resto.senha_gerencial_salt = salt;
 				resto.senha_gerencial_hash = hash;
+				if (resto.senha_gerencial_habilitada === undefined) {
+					resto.senha_gerencial_habilitada = "1";
+				}
 			}
+		}
+		if (resto.senha_gerencial_habilitada !== undefined) {
+			resto.senha_gerencial_habilitada =
+				resto.senha_gerencial_habilitada === "0" ? "0" : "1";
 		}
 		if (Object.keys(resto).length) {
 			await validarIdentidadeAoSalvar(resto);
@@ -698,7 +849,8 @@ export const localApi = {
 			resto.tecnibra_xml_path !== undefined ||
 			resto.tecnibra_intervalo_ms !== undefined ||
 			resto.tecnibra_xml_root !== undefined ||
-			resto.tecnibra_xml_item !== undefined
+			resto.tecnibra_xml_item !== undefined ||
+			resto.tecnibra_casas_comanda !== undefined
 		) {
 			await reiniciarTecnibra();
 		}
@@ -853,6 +1005,48 @@ export const localApi = {
 		return calcularResumoTurnoAberto();
 	},
 
+	async listarItensVendidosTurno() {
+		return listarItensVendidosTurnoAberto();
+	},
+
+	async imprimirItensVendidosTurno(dados?: {
+		nomeempresa?: string | null;
+		username?: string | null;
+		numeropdv: number;
+		abertoem: string;
+		itens: Array<{ descricao: string; quantidade: number }>;
+	}) {
+		if (dados) {
+			return imprimirItensVendidosTurno({
+				nomeempresa: dados.nomeempresa,
+				username: dados.username,
+				numeropdv: dados.numeropdv,
+				abertoem: dados.abertoem,
+				emitidoem: new Date().toISOString(),
+				itens: dados.itens,
+			});
+		}
+		const [caixa, sessao, itens] = await Promise.all([
+			caixaAberto(),
+			obterSessao(),
+			listarItensVendidosTurnoAberto(),
+		]);
+		if (!caixa) {
+			throw new Error("Nenhum caixa aberto para este operador");
+		}
+		return imprimirItensVendidosTurno({
+			nomeempresa: sessao.nomeempresa,
+			username: sessao.username,
+			numeropdv: caixa.numeropdv,
+			abertoem: caixa.abertoem,
+			emitidoem: new Date().toISOString(),
+			itens: itens.map((item) => ({
+				descricao: item.descricao,
+				quantidade: item.quantidade,
+			})),
+		});
+	},
+
 	async fecharCaixa(saldoinformado: number, observacao?: string) {
 		const fechamento = await fecharCaixa({
 			saldoinformado: Number(saldoinformado) || 0,
@@ -884,7 +1078,15 @@ export const localApi = {
 					: "Falha ao imprimir comprovante de caixa",
 			);
 		}
-		return { ok: true };
+		return {
+			ok: true as const,
+			itensVendidos: fechamento.itensVendidos,
+			nomeempresa: fechamento.nomeempresa,
+			username: fechamento.username,
+			numeropdv: fechamento.numeropdv,
+			abertoem: fechamento.abertoem,
+			fechadoem: fechamento.fechadoem,
+		};
 	},
 
 	async buscarProdutos(termo?: string) {
@@ -1032,11 +1234,28 @@ export const localApi = {
 	},
 
 	async syncAgora() {
-		const pull = (await ehSecundario())
-			? await puxarDoPrincipal()
-			: await pullCatalogo();
+		const carga = await executarCargaLocal();
+		const pull = {
+			produtos: carga.produtos,
+			grupos: carga.grupos,
+			gruposGourmet: carga.gruposGourmet,
+			atalhos: carga.atalhos,
+			clientes: carga.clientes,
+			bandeiras: carga.bandeiras,
+			meiosPagamento: carga.meiosPagamento,
+			acessoNegado: carga.acessoNegado,
+		};
 		const outbox = await processarOutbox();
 		return { pull, outbox, pendentes: await contarOutboxPendentes() };
+	},
+
+	/** Processa só a fila outbox (sem nova carga de catálogo). */
+	async processarOutboxAgora() {
+		if (await ehSecundario()) {
+			return { outbox: null, pendentes: 0 };
+		}
+		const outbox = await processarOutbox();
+		return { outbox, pendentes: await contarOutboxPendentes() };
 	},
 
 	async sincronizarFiscalPdv() {
@@ -1068,28 +1287,7 @@ export const localApi = {
 	},
 
 	async cargaLocal() {
-		const sessao = await obterSessao();
-		if (!sessao.token || !sessao.idempresa) {
-			throw new Error(
-				"Faça login e selecione a empresa antes de carregar o catálogo.",
-			);
-		}
-		const secundario = await ehSecundario();
-		const pull = secundario ? await puxarDoPrincipal() : await pullCatalogo();
-		if (!secundario) {
-			void puxarNfceDaRetaguarda().catch(() => 0);
-		}
-		return {
-			ok: true as const,
-			origem: secundario ? ("principal" as const) : ("nuvem" as const),
-			produtos: pull.produtos,
-			grupos: pull.grupos,
-			gruposGourmet: pull.gruposGourmet,
-			atalhos: pull.atalhos,
-			clientes: pull.clientes,
-			bandeiras: pull.bandeiras,
-			meiosPagamento: pull.meiosPagamento,
-		};
+		return executarCargaLocal();
 	},
 
 	async testarPrincipal(params: {
@@ -1098,6 +1296,10 @@ export const localApi = {
 		numeropdv: string;
 	}) {
 		return testarConexaoPrincipal(params);
+	},
+
+	async buscarTerminaisPrincipal(params: { host: string; porta: string }) {
+		return buscarOpcoesPdvNoPrincipal(params);
 	},
 
 	async conectarPrincipal() {
@@ -1123,6 +1325,15 @@ export const localApi = {
 			? input.lancamentos
 			: [lancamentoUnico(input.meio ?? "DINHEIRO", total)];
 		await garantirOperacaoSecundario();
+		if (await ehSecundario()) {
+			const result = await remoto.criarVendaRapidaRemoto({
+				...input,
+				lancamentos,
+				valordesconto: desconto,
+			});
+			avisarTecnibra();
+			return result;
+		}
 		const venda = await criarVendaRapida({
 			itens: input.itens,
 			lancamentos,
@@ -1130,71 +1341,282 @@ export const localApi = {
 			cliente: input.cliente,
 			valordesconto: desconto,
 		});
-		const emitir = (await getConfig("emitir_nfce", "1")) === "1";
+		const fiscal = await concluirFiscalVenda(venda.id);
 
-		let fiscal: {
-			modo: "online" | "contingencia" | "nao_fiscal" | "erro";
-			mensagem: string;
-			chave?: string;
-			qrcode?: string;
-			cStat?: string;
-		} = {
-			modo: "nao_fiscal",
-			mensagem: "Cupom não fiscal",
-		};
-
-		if (emitir) {
-			fiscal = await emitirOuContingencia({
-				idvenda: venda.id,
-				onlineEmitir: () => emitirNfceOnlineDaVenda(venda.id),
+		// Em rejeição NFC-e o cupom não fiscal já foi impresso; não imprime produção/pedido.
+		if (fiscal.modo !== "erro") {
+			void imprimirProducaoPedido({
+				origem: "Balcão",
+				itens: input.itens,
 			});
-		} else {
-			await emitirNfceOnlineDaVenda(venda.id, false);
-			await imprimirCupomNaoFiscal(venda.id);
 		}
-
-		void imprimirProducaoPedido({
-			origem: "Balcão",
-			itens: input.itens,
-		});
 
 		void processarOutbox();
 		return { venda, fiscal };
 	},
 
 	async listarVendas() {
+		if (await ehSecundario()) {
+			await garantirOperacaoSecundario();
+			return remoto.listarVendasRemoto();
+		}
 		return listarVendas(200);
 	},
 
+	async listarVendasNaoSincronizadas() {
+		if (await ehSecundario()) {
+			await garantirOperacaoSecundario();
+			const vendas = await remoto.listarVendasRemoto();
+			return vendas.filter(
+				(v) =>
+					v.sync_status === "pendente" ||
+					v.nfce_status === "pendente" ||
+					v.nfce_status === "pendente_contingencia" ||
+					v.nfce_status === "contingencia" ||
+					(v.nfce_status === "erro" && v.idremoto),
+			);
+		}
+		return listarVendasNaoSincronizadas(100);
+	},
+
+	async sincronizarNfce() {
+		if (await ehSecundario()) {
+			await garantirOperacaoSecundario();
+			return remoto.sincronizarNfceRemoto();
+		}
+		return reconciliarNfce();
+	},
+
+	async enviarParaRetaguarda() {
+		if (await ehSecundario()) {
+			throw new Error(
+				"No PDV secundário a sincronização com a retaguarda é feita no PDV principal (onde fica o banco local).",
+			);
+		}
+		const online = await pingApi();
+		if (!online) {
+			throw new Error(
+				"Sem conexão com a retaguarda. Verifique a internet e tente novamente.",
+			);
+		}
+		const outbox = await processarOutbox();
+		const nfceAtualizadas = await puxarNfceDaRetaguarda(80);
+		const pendentes = await contarOutboxPendentes();
+		return {
+			outboxProcessados: outbox.processados,
+			outboxErros: outbox.erros,
+			nfceAtualizadas,
+			pendentes,
+		};
+	},
+
+	/**
+	 * Processa outbox/contingência e retransmite em lote todas as NFC-e
+	 * locais ainda pendentes (contingência, pendente ou erro).
+	 */
+	async transmitirTodasNfcePendentes() {
+		if (await ehSecundario()) {
+			throw new Error(
+				"No PDV secundário a sincronização com a retaguarda é feita no PDV principal.",
+			);
+		}
+		const online = await pingApi();
+		if (!online) {
+			throw new Error(
+				"Sem conexão com a retaguarda. Verifique a internet e tente novamente.",
+			);
+		}
+
+		const pendentesSync = (await listarVendasNaoSincronizadas(100)).filter(
+			(venda) => venda.sync_status === "pendente",
+		);
+		if (pendentesSync.length > 0) {
+			throw new Error(
+				`Há ${pendentesSync.length} cupom(ns) não sincronizado(s) com a retaguarda. Use "Enviar para retaguarda" antes de transmitir as pendentes.`,
+			);
+		}
+
+		const outbox = await processarOutbox();
+		await sincronizarFiscalPdv().catch(() => undefined);
+		const vendas = await listarVendasNaoSincronizadas(100);
+		const elegiveis = vendas.filter((venda) => {
+			const status = venda.nfce_status;
+			return (
+				status === "pendente" ||
+				status === "pendente_contingencia" ||
+				status === "contingencia" ||
+				status === "erro" ||
+				status === "erro_config"
+			);
+		});
+
+		let sucesso = 0;
+		let falhas = 0;
+		const detalhes: Array<{
+			vendaId: string;
+			sucesso: boolean;
+			mensagem: string;
+		}> = [];
+
+		for (const venda of elegiveis) {
+			try {
+				const result = await localApi.retransmitirNfce(venda.id);
+				const ok = result.modo !== "erro";
+				if (ok) {
+					sucesso += 1;
+				} else {
+					falhas += 1;
+				}
+				detalhes.push({
+					vendaId: venda.id,
+					sucesso: ok,
+					mensagem: result.mensagem,
+				});
+			} catch (err) {
+				falhas += 1;
+				detalhes.push({
+					vendaId: venda.id,
+					sucesso: false,
+					mensagem:
+						err instanceof Error ? err.message : "Falha ao retransmitir NFC-e",
+				});
+			}
+		}
+
+		const nfceAtualizadas = await puxarNfceDaRetaguarda(80);
+		const outboxPendentes = await contarOutboxPendentes();
+
+		return {
+			outboxProcessados: outbox.processados,
+			outboxErros: outbox.erros,
+			outboxPendentes,
+			nfceAtualizadas,
+			total: elegiveis.length,
+			sucesso,
+			falhas,
+			detalhes,
+		};
+	},
+
+	async listarConflitosNumeracaoNfce() {
+		if (await ehSecundario()) {
+			throw new Error(
+				"No PDV secundário a sincronização com a retaguarda é feita no PDV principal.",
+			);
+		}
+		return listarConflitosNumeracaoNfceUi();
+	},
+
+	async reemitirContingenciaComNovaNumeracao(vendaId: string) {
+		if (await ehSecundario()) {
+			throw new Error(
+				"No PDV secundário a sincronização com a retaguarda é feita no PDV principal.",
+			);
+		}
+		const resultado = await executarReemitirContingenciaNovaNumeracao({
+			idvenda: vendaId,
+		});
+		if (resultado.modo === "contingencia" && resultado.chave) {
+			try {
+				await imprimirDanfce({
+					vendaId,
+					chave: resultado.chave,
+					contingencia: true,
+					motivo: "Reemissão por conflito de numeração",
+				});
+			} catch {
+				/* impressão best-effort */
+			}
+		}
+		return resultado;
+	},
+
 	async obterVenda(id: string) {
+		if (await ehSecundario()) {
+			await garantirOperacaoSecundario();
+			return remoto.obterVendaRemoto(id);
+		}
 		return obterVenda(id);
 	},
 
 	async listarMesas() {
 		await assertModuloGourmet();
+		if (await ehSecundario()) {
+			await garantirOperacaoSecundario();
+			return remoto.listarMesasRemoto();
+		}
 		return listarMesas();
 	},
 
 	async obterMesa(numero: number) {
 		await assertModuloGourmet();
+		if (await ehSecundario()) {
+			await garantirOperacaoSecundario();
+			return remoto.obterMesaRemoto(numero);
+		}
 		return obterMesa(numero);
 	},
 
 	async obterContaPorNumero(numero: number) {
 		await assertModuloGourmet();
+		if (await ehSecundario()) {
+			await garantirOperacaoSecundario();
+			return remoto.obterContaPorNumeroRemoto(numero);
+		}
 		return obterContaPorNumero(numero);
 	},
 
 	async limparContasVazias() {
 		await assertModuloGourmet();
+		if (await ehSecundario()) {
+			await garantirOperacaoSecundario();
+			const removidas = await remoto.limparContasVaziasRemoto();
+			avisarTecnibra();
+			return removidas;
+		}
 		const removidas = await limparContasVazias();
 		avisarTecnibra();
 		return removidas;
 	},
 
+	async cancelarContaMesa(idconta: string) {
+		await assertModuloGourmet();
+		await garantirOperacaoSecundario();
+		if (await ehSecundario()) {
+			const result = await remoto.cancelarContaMesaRemoto(idconta);
+			avisarTecnibra();
+			return result;
+		}
+		await cancelarContaMesaRepo(idconta);
+		avisarTecnibra();
+		return { ok: true as const };
+	},
+
+	async cancelarItemConta(idconta: string, iditem: string, senha?: string) {
+		await assertModuloGourmet();
+		await garantirOperacaoSecundario();
+		if (await ehSecundario()) {
+			const conta = await remoto.cancelarItemContaRemoto(
+				idconta,
+				iditem,
+				senha,
+			);
+			avisarTecnibra();
+			return conta;
+		}
+		const conta = await cancelarItemContaRepo(idconta, iditem, senha);
+		avisarTecnibra();
+		return conta;
+	},
+
 	async abrirContaMesa(numero: number, nomecliente?: string) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
+		if (await ehSecundario()) {
+			const conta = await remoto.abrirContaMesaRemoto(numero, nomecliente);
+			avisarTecnibra();
+			return conta;
+		}
 		const conta = await abrirContaMesa(numero, nomecliente);
 		avisarTecnibra();
 		return conta;
@@ -1202,6 +1624,10 @@ export const localApi = {
 
 	async obterContaMesa(id: string) {
 		await assertModuloGourmet();
+		if (await ehSecundario()) {
+			await garantirOperacaoSecundario();
+			return remoto.obterContaMesaRemoto(id);
+		}
 		return obterContaMesa(id);
 	},
 
@@ -1212,10 +1638,16 @@ export const localApi = {
 			descricao: string;
 			quantidade: number;
 			precounitario: number;
+			observacao?: string | null;
 		},
 	) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
+		if (await ehSecundario()) {
+			const conta = await remoto.adicionarItemContaRemoto(idconta, item);
+			avisarTecnibra();
+			return conta;
+		}
 		const conta = await adicionarItemConta(idconta, item);
 		avisarTecnibra();
 		return conta;
@@ -1223,6 +1655,10 @@ export const localApi = {
 
 	async atualizarNomeClienteConta(idconta: string, nomecliente: string) {
 		await assertModuloGourmet();
+		if (await ehSecundario()) {
+			await garantirOperacaoSecundario();
+			return remoto.atualizarNomeClienteContaRemoto(idconta, nomecliente);
+		}
 		return atualizarNomeClienteConta(idconta, nomecliente);
 	},
 
@@ -1235,15 +1671,33 @@ export const localApi = {
 			observacao?: string | null;
 			idprodutomeio?: string | null;
 		}>,
+		observacaoPedido?: string | null,
 	) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
-		const conta = await enviarPedidoConta({ idconta, clientOrderId, itens });
+		const obs = observacaoPedido?.trim() || null;
+		if (await ehSecundario()) {
+			const conta = await remoto.enviarPedidoContaRemoto(
+				idconta,
+				clientOrderId,
+				itens,
+				obs,
+			);
+			avisarTecnibra();
+			return conta;
+		}
+		const conta = await enviarPedidoConta({
+			idconta,
+			clientOrderId,
+			itens,
+			observacaoPedido: obs,
+		});
 		if (conta.pedidoNovo) {
 			try {
 				void imprimirProducaoPedido({
-					origem: await rotuloOrigemMesa(conta.numero_mesa),
+					origem: rotuloOrigemConta(conta),
 					cliente: conta.nomecliente,
+					observacaoPedido: conta.observacaoPedido,
 					itens: conta.itensProducao,
 				});
 			} catch {
@@ -1255,15 +1709,86 @@ export const localApi = {
 	},
 
 	async listarPedidosFila(pendentes: boolean) {
+		if (await ehSecundario()) {
+			await garantirOperacaoSecundario();
+			return remoto.listarPedidosFilaRemoto(pendentes);
+		}
 		return listarPedidosFila(pendentes);
 	},
 
+	async listarPedidosProducao(idconta?: string) {
+		const linhas = await listarPedidosFila(false);
+		const filtradas = idconta
+			? linhas.filter((linha) => linha.idconta === idconta)
+			: linhas;
+		const grupos = agruparLinhasPedidoFila(filtradas);
+		const pedidos = [];
+		for (const itens of grupos) {
+			const primeiro = itens[0];
+			if (!primeiro) {
+				continue;
+			}
+			const conta = await obterContaMesa(primeiro.idconta);
+			const origem = conta
+				? rotuloOrigemConta(conta)
+				: await rotuloOrigemMesa(primeiro.numero_mesa);
+			pedidos.push({
+				clientOrderId: primeiro.client_order_id,
+				idconta: primeiro.idconta,
+				numeroMesa: primeiro.numero_mesa,
+				nomecliente: primeiro.nomecliente,
+				origem,
+				criadoem: primeiro.criadoem,
+				observacaoPedido: primeiro.observacao_pedido,
+				status: itens.some((item) => item.status === "pendente")
+					? "pendente"
+					: "entregue",
+				itens: itens.map((item) => ({
+					id: item.id,
+					idproduto: item.idproduto,
+					descricao: item.descricao,
+					quantidade: item.quantidade,
+					observacao: item.observacao,
+				})),
+			});
+		}
+		return pedidos;
+	},
+
+	async reimprimirPedidoProducao(clientOrderId: string) {
+		const id = clientOrderId.trim();
+		if (!id) {
+			throw new Error("Pedido inválido");
+		}
+		const pedidos = await localApi.listarPedidosProducao();
+		const pedido = pedidos.find((item) => item.clientOrderId === id);
+		if (!pedido) {
+			throw new Error("Pedido não encontrado");
+		}
+		await imprimirProducaoPedido({
+			origem: pedido.origem,
+			cliente: pedido.nomecliente,
+			observacaoPedido: pedido.observacaoPedido,
+			itens: pedido.itens,
+			reimpressao: true,
+		});
+		return { ok: true };
+	},
+
 	async marcarPedidoEntregue(id: string) {
+		if (await ehSecundario()) {
+			await garantirOperacaoSecundario();
+			return remoto.marcarPedidoEntregueRemoto(id);
+		}
 		await marcarPedidoEntregue(id);
 		return { ok: true };
 	},
 
 	async limparFilaPedidos() {
+		if (await ehSecundario()) {
+			await garantirOperacaoSecundario();
+			return remoto.limparFilaPedidosRemoto();
+		}
 		await limparFilaPedidos();
 		return { ok: true };
 	},
@@ -1275,11 +1800,21 @@ export const localApi = {
 			descricao: string;
 			quantidade: number;
 			precounitario: number;
+			observacao?: string | null;
 		},
 		nomecliente?: string,
 	) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
+		if (await ehSecundario()) {
+			const conta = await remoto.adicionarItemNaMesaRemoto(
+				numero,
+				item,
+				nomecliente,
+			);
+			avisarTecnibra();
+			return conta;
+		}
 		const conta = await adicionarItemNaMesa(numero, item, nomecliente);
 		try {
 			void imprimirProducaoPedido({
@@ -1290,6 +1825,7 @@ export const localApi = {
 						idproduto: item.idproduto,
 						descricao: item.descricao,
 						quantidade: item.quantidade,
+						observacao: item.observacao,
 					},
 				],
 			});
@@ -1308,12 +1844,15 @@ export const localApi = {
 	) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
+		const secundario = await ehSecundario();
 		let lancamentos: LancamentoPagamento[];
 		if (typeof lancamentosOuMeio === "string") {
 			if (!ehMeioPagamento(lancamentosOuMeio)) {
 				throw new Error("Meio de pagamento inválido");
 			}
-			const conta = await obterContaMesa(idconta);
+			const conta = secundario
+				? await remoto.obterContaMesaRemoto(idconta)
+				: await obterContaMesa(idconta);
 			if (!conta) {
 				throw new Error("Conta inválida");
 			}
@@ -1321,52 +1860,175 @@ export const localApi = {
 		} else {
 			lancamentos = lancamentosOuMeio;
 		}
+		if (secundario) {
+			const result = await remoto.fecharContaMesaRemoto(
+				idconta,
+				lancamentos,
+				troco,
+				cliente,
+			);
+			avisarTecnibra();
+			return result;
+		}
 		const venda = await fecharContaMesa({
 			idconta,
 			lancamentos,
 			troco,
 			cliente,
 		});
-		const emitir = (await getConfig("emitir_nfce", "1")) === "1";
-		let fiscal: {
-			modo: "online" | "contingencia" | "nao_fiscal" | "erro";
-			mensagem: string;
-			cStat?: string;
-		} = {
-			modo: "nao_fiscal",
-			mensagem: "Conta fechada",
-		};
-
-		if (emitir) {
-			const result = await emitirOuContingencia({
-				idvenda: venda.id,
-				onlineEmitir: () => emitirNfceOnlineDaVenda(venda.id),
-			});
-			fiscal = {
-				modo: result.modo,
-				mensagem: result.mensagem,
-				cStat: result.cStat,
-			};
-			if (result.modo === "nao_fiscal") {
-				const nfce = await obterNfcePorVenda(venda.id);
-				if (nfce?.chave) {
-					await imprimirDanfce({
-						vendaId: venda.id,
-						chave: nfce.chave ?? undefined,
-						qrcode: nfce.qrcode ?? undefined,
-						contingencia: nfce.tpemis === 9,
-						motivo: nfce.motivo_contingencia ?? undefined,
-					});
-				}
-			}
-		} else {
-			await emitirNfceOnlineDaVenda(venda.id, false);
-			await imprimirCupomNaoFiscal(venda.id);
-		}
+		const fiscal = await concluirFiscalVenda(venda.id);
 
 		void processarOutbox();
 		avisarTecnibra();
 		return { venda, fiscal };
+	},
+
+	async listarPedidosEntrega(statusFiltro?: string | null) {
+		await assertModuloGourmet();
+		if (await ehSecundario()) {
+			await garantirOperacaoSecundario();
+			return remoto.listarPedidosEntregaRemoto(statusFiltro);
+		}
+		return listarPedidosEntrega(statusFiltro);
+	},
+
+	async abrirPedidoEntrega(params: {
+		modalidade: "delivery" | "retirada";
+		nomecliente?: string | null;
+		telefone?: string | null;
+		endereco?: string | null;
+		bairro?: string | null;
+		complemento?: string | null;
+		referencia?: string | null;
+		valorentrega?: number | null;
+		idcliente?: string | null;
+		obs?: string | null;
+	}) {
+		await assertModuloGourmet();
+		await garantirOperacaoSecundario();
+		if (await ehSecundario()) {
+			const conta = await remoto.abrirPedidoEntregaRemoto(params);
+			avisarTecnibra();
+			return conta;
+		}
+		const conta = await abrirPedidoEntrega(params);
+		avisarTecnibra();
+		return conta;
+	},
+
+	async atualizarStatusEntrega(
+		idconta: string,
+		status?: "recebido" | "producao" | "saiu" | "entregue" | null,
+	) {
+		await assertModuloGourmet();
+		await garantirOperacaoSecundario();
+		if (await ehSecundario()) {
+			return remoto.atualizarStatusEntregaRemoto(idconta, status);
+		}
+		return atualizarStatusEntrega(idconta, status);
+	},
+
+	async aplicarTaxaEntrega(idconta: string, valorentrega: number) {
+		await assertModuloGourmet();
+		await garantirOperacaoSecundario();
+		if (await ehSecundario()) {
+			const conta = await remoto.aplicarTaxaEntregaRemoto(
+				idconta,
+				valorentrega,
+			);
+			avisarTecnibra();
+			return conta;
+		}
+		const conta = await aplicarTaxaEntrega(idconta, valorentrega);
+		avisarTecnibra();
+		return conta;
+	},
+
+	async atualizarDadosEntrega(
+		idconta: string,
+		dados: {
+			nomecliente?: string | null;
+			telefone?: string | null;
+			endereco?: string | null;
+			bairro?: string | null;
+			complemento?: string | null;
+			referencia?: string | null;
+			obs?: string | null;
+		},
+	) {
+		await assertModuloGourmet();
+		await garantirOperacaoSecundario();
+		if (await ehSecundario()) {
+			return remoto.atualizarDadosEntregaRemoto(idconta, dados);
+		}
+		return atualizarDadosEntrega(idconta, dados);
+	},
+
+	async buscarClientesPdv(termo?: string, limit?: number) {
+		await assertModuloGourmet();
+		return buscarClientesPdv(termo, limit);
+	},
+
+	async salvarClientePdv(params: {
+		id?: string;
+		nome: string;
+		telefone?: string | null;
+		cnpjcpf?: string | null;
+		endereco?: string | null;
+		bairro?: string | null;
+		complemento?: string | null;
+		referencia?: string | null;
+	}) {
+		await assertModuloGourmet();
+		await garantirOperacaoSecundario();
+		return salvarClientePdv(params);
+	},
+
+	async ingestPedidoDelivery(params: {
+		protocol: string;
+		modalidade?: "delivery" | "retirada";
+		nomecliente?: string | null;
+		telefone?: string | null;
+		endereco?: string | null;
+		bairro?: string | null;
+		complemento?: string | null;
+		referencia?: string | null;
+		documento?: string | null;
+		valorentrega?: number | null;
+		obs?: string | null;
+		itens: Array<{
+			idproduto?: string | null;
+			ean?: string | null;
+			codigo?: string | null;
+			codigoproduto?: string | null;
+			nomeproduto?: string | null;
+			quantidade: number;
+			precounitario?: number | null;
+			observacao?: string | null;
+		}>;
+	}) {
+		await assertModuloGourmet();
+		await garantirOperacaoSecundario();
+		const result = await ingestPedidoDelivery(params);
+		if (result.action === "created" && result.itensProducao.length) {
+			try {
+				void imprimirProducaoPedido({
+					origem:
+						rotuloOrigemConta(result.conta) ||
+						rotuloProducaoEntrega({
+							modalidade: result.conta.modalidade,
+							senhaChamada: result.conta.senha_chamada,
+							protocolo: result.conta.orderidintegracao,
+						}),
+					cliente: result.conta.nomecliente,
+					itens: result.itensProducao,
+				});
+			} catch {
+				// produção não falha o ingest
+			}
+		}
+		avisarTecnibra();
+		return result;
 	},
 
 	async aplicarAjustesConta(
@@ -1375,11 +2037,15 @@ export const localApi = {
 			numeropessoas?: number;
 			taxaAtiva?: boolean;
 			desconto?: number;
+			acrescimo?: number;
 			senha?: string;
 		},
 	) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
+		if (await ehSecundario()) {
+			return remoto.aplicarAjustesContaRemoto(idconta, ajustes);
+		}
 		return aplicarAjustesConta({ idconta, ...ajustes });
 	},
 
@@ -1391,9 +2057,20 @@ export const localApi = {
 		return senhaGerencialDefinida();
 	},
 
+	async senhaGerencialExigida() {
+		return senhaGerencialExigida();
+	},
+
 	async imprimirPreConta(idconta: string) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
+		if (await ehSecundario()) {
+			const conta = await remoto.obterContaMesaRemoto(idconta);
+			if (!conta) {
+				throw new Error("Conta inválida");
+			}
+			return imprimirPreConta(conta);
+		}
 		return imprimirPreConta(idconta);
 	},
 
@@ -1404,22 +2081,22 @@ export const localApi = {
 	) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
+		if (await ehSecundario()) {
+			const result = await remoto.registrarPagamentoContaRemoto(
+				idconta,
+				lancamentos,
+				troco,
+			);
+			avisarTecnibra();
+			return result;
+		}
 		const result = await registrarPagamentoConta({
 			idconta,
 			lancamentos,
 			troco,
 		});
 		if (result.venda) {
-			const emitir = (await getConfig("emitir_nfce", "1")) === "1";
-			if (emitir) {
-				await emitirOuContingencia({
-					idvenda: result.venda.id,
-					onlineEmitir: () => emitirNfceOnlineDaVenda(result.venda!.id),
-				});
-			} else {
-				await emitirNfceOnlineDaVenda(result.venda.id, false);
-				await imprimirCupomNaoFiscal(result.venda.id);
-			}
+			await concluirFiscalVenda(result.venda.id);
 			void processarOutbox();
 			avisarTecnibra();
 		}
@@ -1435,6 +2112,17 @@ export const localApi = {
 	) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
+		if (await ehSecundario()) {
+			const result = await remoto.fecharFatiaItensRemoto(
+				idconta,
+				idsItens,
+				lancamentos,
+				troco,
+				cliente,
+			);
+			avisarTecnibra();
+			return result;
+		}
 		const result = await fecharFatiaItens({
 			idconta,
 			idsItens,
@@ -1442,16 +2130,7 @@ export const localApi = {
 			troco,
 			cliente,
 		});
-		const emitir = (await getConfig("emitir_nfce", "1")) === "1";
-		if (emitir) {
-			await emitirOuContingencia({
-				idvenda: result.venda.id,
-				onlineEmitir: () => emitirNfceOnlineDaVenda(result.venda.id),
-			});
-		} else {
-			await emitirNfceOnlineDaVenda(result.venda.id, false);
-			await imprimirCupomNaoFiscal(result.venda.id);
-		}
+		await concluirFiscalVenda(result.venda.id);
 		void processarOutbox();
 		avisarTecnibra();
 		return result;
@@ -1460,6 +2139,11 @@ export const localApi = {
 	async transferirConta(idconta: string, numeroDestino: number) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
+		if (await ehSecundario()) {
+			const conta = await remoto.transferirContaRemoto(idconta, numeroDestino);
+			avisarTecnibra();
+			return conta;
+		}
 		const conta = await transferirConta(idconta, numeroDestino);
 		avisarTecnibra();
 		return conta;
@@ -1472,6 +2156,15 @@ export const localApi = {
 	) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
+		if (await ehSecundario()) {
+			const result = await remoto.transferirItensRemoto(
+				idcontaOrigem,
+				idsItens,
+				numeroDestino,
+			);
+			avisarTecnibra();
+			return result;
+		}
 		const result = await transferirItens({
 			idcontaOrigem,
 			idsItens,
@@ -1484,6 +2177,11 @@ export const localApi = {
 	async juntarContas(idOrigem: string, numeroDestino: number) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
+		if (await ehSecundario()) {
+			const conta = await remoto.juntarContasRemoto(idOrigem, numeroDestino);
+			avisarTecnibra();
+			return conta;
+		}
 		const mesa = await obterMesa(numeroDestino);
 		if (!mesa.idconta) {
 			throw new Error("Destino sem conta aberta");
@@ -1529,6 +2227,18 @@ export const localApi = {
 		const { aplicarEmissaoNfceNaVendaLocal } = await import(
 			"../fiscal/persistir-nfce-online"
 		);
+
+		if (
+			nfce &&
+			(nfce.status === "conflito_numeracao" ||
+				venda.nfce_status === "conflito_numeracao")
+		) {
+			return {
+				modo: "erro" as const,
+				mensagem:
+					"NFC-e com conflito de numeração. Use “Reemitir com nova numeração” em vez de retransmitir.",
+			};
+		}
 
 		if (
 			nfce &&
@@ -1659,6 +2369,11 @@ export const localApi = {
 	},
 
 	async inutilizarNfce(vendaId: string, justificativa: string) {
+		if (await ehSecundario()) {
+			await garantirOperacaoSecundario();
+			return remoto.inutilizarNfceRemoto(vendaId, justificativa);
+		}
+
 		const venda = await obterVenda(vendaId);
 		if (!venda) {
 			throw new Error("Venda não encontrada");
@@ -1686,11 +2401,24 @@ export const localApi = {
 			);
 		}
 
-		const resultado = await inutilizarNfceVendaPdv({
-			idempresa: sessao.idempresa,
-			idvenda: vendaAtual.idremoto,
-			justificativa,
-		});
+		let resultado: Awaited<ReturnType<typeof inutilizarNfceVendaPdv>>;
+		try {
+			resultado = await inutilizarNfceVendaPdv({
+				idempresa: sessao.idempresa,
+				idvenda: vendaAtual.idremoto,
+				justificativa,
+			});
+		} catch (err) {
+			if (
+				err instanceof ApiError &&
+				/não encontrada na retaguarda/i.test(err.message)
+			) {
+				throw new Error(
+					`${err.message} Envie a venda para a retaguarda em Vendas → Notas não sincronizadas e tente inutilizar novamente.`,
+				);
+			}
+			throw err;
+		}
 
 		const nfce = await obterNfcePorVenda(vendaId);
 		if (nfce) {
@@ -1708,6 +2436,152 @@ export const localApi = {
 			idnotafiscal: resultado.idnotafiscal,
 			cStat: resultado.cStat,
 			protocolo: resultado.protocolo,
+		};
+	},
+
+	async cancelarNfce(vendaId: string, justificativa: string) {
+		if (await ehSecundario()) {
+			await garantirOperacaoSecundario();
+			return remoto.cancelarNfceRemoto(vendaId, justificativa);
+		}
+
+		const venda = await obterVenda(vendaId);
+		if (!venda) {
+			throw new Error("Venda não encontrada");
+		}
+
+		const online = await pingApi();
+		if (!online) {
+			throw new Error(
+				"Sem conexão com a retaguarda. Tente novamente quando estiver online.",
+			);
+		}
+
+		const sessao = await obterSessao();
+		if (!sessao.idempresa || !sessao.userid) {
+			throw new Error("Sessão inválida");
+		}
+
+		if (!venda.idremoto) {
+			await processarOutbox();
+		}
+		const vendaAtual = (await obterVenda(vendaId)) ?? venda;
+		if (!vendaAtual.idremoto) {
+			throw new Error(
+				"Venda ainda não está na retaguarda. Sincronize e tente novamente.",
+			);
+		}
+
+		let resultado: Awaited<ReturnType<typeof cancelarNfceVendaPdv>>;
+		try {
+			resultado = await cancelarNfceVendaPdv({
+				idempresa: sessao.idempresa,
+				idvenda: vendaAtual.idremoto,
+				justificativa,
+			});
+		} catch (err) {
+			if (
+				err instanceof ApiError &&
+				/não encontrada na retaguarda/i.test(err.message)
+			) {
+				throw new Error(
+					`${err.message} Envie a venda para a retaguarda em Vendas → Notas não sincronizadas e tente cancelar novamente.`,
+				);
+			}
+			throw err;
+		}
+
+		const nfce = await obterNfcePorVenda(vendaId);
+		if (nfce) {
+			await atualizarNfceLocalCampos(nfce.id, {
+				status: "cancelada",
+				transmitida: false,
+			});
+		}
+		await atualizarVendaSync(vendaId, { nfce_status: "cancelada" });
+
+		return {
+			modo: "cancelada" as const,
+			mensagem: resultado.xMotivo?.trim() || "NFC-e cancelada na SEFAZ",
+			idnotafiscal: resultado.idnotafiscal,
+			cStat: resultado.cStat,
+			protocolo: resultado.protocolo,
+		};
+	},
+
+	async cancelarVendaNaoFiscal(
+		vendaId: string,
+		opts?: { senha?: string; motivo?: string },
+	) {
+		if (await ehSecundario()) {
+			await garantirOperacaoSecundario();
+			return remoto.cancelarVendaNaoFiscalRemoto(vendaId, opts);
+		}
+
+		const venda = await obterVenda(vendaId);
+		if (!venda) {
+			throw new Error("Venda não encontrada");
+		}
+		if (venda.status === "cancelada" || venda.nfce_status === "cancelada") {
+			throw new Error("Venda já está cancelada");
+		}
+
+		const statusPermitidos = new Set([
+			"nao_fiscal",
+			"nenhuma",
+			"erro",
+			"erro_config",
+			"inutilizada",
+		]);
+		if (!statusPermitidos.has(venda.nfce_status)) {
+			if (venda.nfce_status === "autorizada") {
+				throw new Error(
+					"Esta venda possui NFC-e autorizada. Use Cancelar NFC-e.",
+				);
+			}
+			throw new Error(
+				"Só é possível cancelar vendas finalizadas sem NFC-e autorizada (não fiscal, rejeitada ou inutilizada).",
+			);
+		}
+
+		if (await senhaGerencialExigida()) {
+			await exigirSenhaGerencial(opts?.senha);
+		}
+
+		const motivo = opts?.motivo?.trim() || "Cancelamento de venda não fiscal";
+
+		if (!venda.idremoto) {
+			await cancelarOutboxCriarVendaPendente(vendaId);
+			await marcarVendaCanceladaLocal(vendaId);
+			return {
+				modo: "cancelada" as const,
+				mensagem: "Venda cancelada localmente (ainda não estava na retaguarda)",
+			};
+		}
+
+		const online = await pingApi();
+		if (!online) {
+			throw new Error(
+				"Sem conexão com a retaguarda. Tente novamente quando estiver online.",
+			);
+		}
+
+		const sessao = await obterSessao();
+		if (!sessao.idempresa || !sessao.userid) {
+			throw new Error("Sessão inválida");
+		}
+
+		await cancelarVendaNaoFiscalPdv({
+			idempresa: sessao.idempresa,
+			idvenda: venda.idremoto,
+			motivo,
+		});
+
+		await marcarVendaCanceladaLocal(vendaId);
+
+		return {
+			modo: "cancelada" as const,
+			mensagem: "Venda não fiscal cancelada (estoque/financeiro estornados)",
 		};
 	},
 };

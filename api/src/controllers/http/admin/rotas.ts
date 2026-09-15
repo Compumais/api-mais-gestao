@@ -35,6 +35,7 @@ import {
 	inativarUsuarioAdminService,
 } from "@/service/admin/gerenciar-usuarios.js";
 import { listarUsuariosAdminService } from "@/service/admin/listar-usuarios.js";
+import { httpErroInterno } from "@/util/http-util.js";
 import { perfilUsuarioSchema } from "@/util/usuario-perfil.js";
 import { verifyJwt } from "../../middleware/verify-jwt.js";
 import { verifySuper } from "../../middleware/verify-super.js";
@@ -138,37 +139,63 @@ export async function adminRotas(app: FastifyInstance) {
 	});
 
 	app.patch("/admin/usuarios/:id", async (request, reply) => {
-		const params = z.object({ id: z.string() }).parse(request.params);
-		const body = z
-			.object({
-				nome: z.string().min(3).optional(),
-				email: z.string().email().optional(),
-				perfil: perfilUsuarioSchema.optional(),
-			})
-			.parse(request.body);
+		try {
+			const params = z.object({ id: z.string().min(1) }).parse(request.params);
+			const body = z
+				.object({
+					nome: z.string().min(3).optional(),
+					email: z.string().email().optional(),
+					perfil: perfilUsuarioSchema.optional(),
+				})
+				.parse(request.body);
 
-		return enviarResultado(
-			reply,
-			await atualizarUsuarioAdminService({
-				id: params.id,
-				...(body.nome !== undefined && { nome: body.nome }),
-				...(body.email !== undefined && { email: body.email }),
-				...(body.perfil !== undefined && { perfil: body.perfil }),
-			}),
-		);
+			return enviarResultado(
+				reply,
+				await atualizarUsuarioAdminService({
+					id: params.id,
+					...(body.nome !== undefined && { nome: body.nome }),
+					...(body.email !== undefined && { email: body.email }),
+					...(body.perfil !== undefined && { perfil: body.perfil }),
+				}),
+			);
+		} catch (error) {
+			console.error("Erro ao atualizar usuário admin:", error);
+			if (error instanceof z.ZodError) {
+				return reply.status(400).send({
+					error: "Erro de validação",
+					code: "VALIDATION_ERROR",
+					details: error.issues,
+				});
+			}
+			return reply.status(httpErroInterno().status).send(httpErroInterno());
+		}
 	});
 
 	app.patch("/admin/usuarios/:id/senha", async (request, reply) => {
-		const params = z.object({ id: z.string() }).parse(request.params);
-		const body = z.object({ novaSenha: z.string().min(6) }).parse(request.body);
+		try {
+			const params = z.object({ id: z.string().min(1) }).parse(request.params);
+			const body = z
+				.object({ novaSenha: z.string().min(6) })
+				.parse(request.body);
 
-		return enviarResultado(
-			reply,
-			await alterarSenhaUsuarioAdminService({
-				id: params.id,
-				novaSenha: body.novaSenha,
-			}),
-		);
+			return enviarResultado(
+				reply,
+				await alterarSenhaUsuarioAdminService({
+					id: params.id,
+					novaSenha: body.novaSenha,
+				}),
+			);
+		} catch (error) {
+			console.error("Erro ao alterar senha do usuário admin:", error);
+			if (error instanceof z.ZodError) {
+				return reply.status(400).send({
+					error: "Erro de validação",
+					code: "VALIDATION_ERROR",
+					details: error.issues,
+				});
+			}
+			return reply.status(httpErroInterno().status).send(httpErroInterno());
+		}
 	});
 
 	app.patch("/admin/usuarios/:id/inativar", async (request, reply) => {

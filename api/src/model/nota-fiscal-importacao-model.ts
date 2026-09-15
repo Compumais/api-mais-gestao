@@ -20,6 +20,11 @@ export type TributacaoImportacaoItem = {
 	mvaicmsst?: string | undefined;
 	fcpst?: string | undefined;
 	percentualdifericms?: string | undefined;
+	basepis?: string | undefined;
+	basecofins?: string | undefined;
+	aliquotaicmsst?: string | undefined;
+	basefcp?: string | undefined;
+	valorfcp?: string | undefined;
 };
 
 export type RateioCustoImportacaoItem = {

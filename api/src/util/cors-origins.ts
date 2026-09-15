@@ -3,6 +3,11 @@ const LOCAL_ORIGINS = [
 	"http://127.0.0.1:3000",
 ] as const;
 
+const PRODUCAO_ORIGINS = [
+	"https://maisgestao.compumais.com",
+	"https://mais.compuchat.space",
+] as const;
+
 const DEFAULT_CLIENT_ORIGIN = LOCAL_ORIGINS[0];
 
 function parseOriginsFromEnv(value: string | undefined): string[] {
@@ -19,7 +24,14 @@ export function getClientOrigins(): string[] {
 		process.env.CLIENT_ORIGIN || process.env.FRONTEND_URL,
 	);
 	const corsOrigins = parseOriginsFromEnv(process.env.CORS_ORIGINS);
-	return [...new Set([...LOCAL_ORIGINS, ...fromEnv, ...corsOrigins])];
+	return [
+		...new Set([
+			...LOCAL_ORIGINS,
+			...PRODUCAO_ORIGINS,
+			...fromEnv,
+			...corsOrigins,
+		]),
+	];
 }
 
 export function getPrimaryClientOrigin(): string {

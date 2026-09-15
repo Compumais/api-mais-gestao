@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+	calcularAcrescimoInformado,
 	calcularDescontoInformado,
 	ehPagamentoAPrazo,
 	meioDaFormaNfe,
@@ -86,15 +87,15 @@ describe("tecladoVirtualPagamentoAtivo", () => {
 	});
 });
 
-describe("calcularDescontoInformado", () => {
-	it("aplica valor em reais sem zerar a venda", () => {
-		assert.equal(calcularDescontoInformado(100, 10, false), 10);
-		assert.equal(calcularDescontoInformado(100, 100, false), 99.99);
-		assert.equal(calcularDescontoInformado(100, 0, false), 0);
+describe("calcularAcrescimoInformado", () => {
+	it("aplica valor em reais", () => {
+		assert.equal(calcularAcrescimoInformado(100, 10, false), 10);
+		assert.equal(calcularAcrescimoInformado(0, 5, false), 5);
+		assert.equal(calcularAcrescimoInformado(100, 0, false), 0);
 	});
 
-	it("aplica percentual sobre o subtotal", () => {
-		assert.equal(calcularDescontoInformado(80, 10, true), 8);
-		assert.equal(calcularDescontoInformado(80, 100, true), 79.99);
+	it("aplica percentual sobre a base", () => {
+		assert.equal(calcularAcrescimoInformado(80, 10, true), 8);
+		assert.equal(calcularAcrescimoInformado(0, 10, true), 0);
 	});
 });

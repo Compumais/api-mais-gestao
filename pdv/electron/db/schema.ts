@@ -49,6 +49,13 @@ CREATE TABLE IF NOT EXISTS produto_cache (
 	espizza INTEGER NOT NULL DEFAULT 0,
 	imagem TEXT,
 	caminhoimagem TEXT,
+	ncm TEXT,
+	cest TEXT,
+	cfop TEXT,
+	cst TEXT,
+	csosn TEXT,
+	origem INTEGER,
+	aliquotaicms TEXT,
 	inativo INTEGER NOT NULL DEFAULT 0,
 	atualizadoem TEXT NOT NULL
 );
@@ -120,11 +127,36 @@ CREATE TABLE IF NOT EXISTS conta_mesa (
 	valortotal DOUBLE PRECISION NOT NULL DEFAULT 0,
 	numeropessoas INTEGER NOT NULL DEFAULT 1,
 	valordesconto DOUBLE PRECISION NOT NULL DEFAULT 0,
+	valoracrescimo DOUBLE PRECISION NOT NULL DEFAULT 0,
 	valortaxaservico DOUBLE PRECISION NOT NULL DEFAULT 0,
 	valorcouvert DOUBLE PRECISION NOT NULL DEFAULT 0,
 	taxa_ativa INTEGER NOT NULL DEFAULT 0,
+	modalidade TEXT NOT NULL DEFAULT 'mesa',
+	telefone TEXT,
+	endereco TEXT,
+	bairro TEXT,
+	complemento TEXT,
+	referencia TEXT,
+	valorentrega DOUBLE PRECISION NOT NULL DEFAULT 0,
+	status_entrega TEXT,
+	senha_chamada TEXT,
+	idcliente TEXT,
+	orderidintegracao TEXT,
+	obs TEXT,
 	idremoto TEXT,
 	sync_status TEXT NOT NULL DEFAULT 'pendente'
+);
+
+CREATE TABLE IF NOT EXISTS cliente_pdv (
+	id TEXT PRIMARY KEY NOT NULL,
+	nome TEXT NOT NULL,
+	telefone TEXT,
+	cnpjcpf TEXT,
+	endereco TEXT,
+	bairro TEXT,
+	complemento TEXT,
+	referencia TEXT,
+	atualizadoem TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS item_conta (
@@ -150,6 +182,7 @@ CREATE TABLE IF NOT EXISTS pedido_fila (
 	descricao TEXT NOT NULL,
 	quantidade DOUBLE PRECISION NOT NULL,
 	observacao TEXT,
+	observacao_pedido TEXT,
 	status TEXT NOT NULL DEFAULT 'pendente',
 	criadoem TEXT NOT NULL,
 	entregueem TEXT
@@ -169,13 +202,16 @@ CREATE TABLE IF NOT EXISTS venda (
 	valorcartao DOUBLE PRECISION NOT NULL DEFAULT 0,
 	valortroco DOUBLE PRECISION NOT NULL DEFAULT 0,
 	valordesconto DOUBLE PRECISION NOT NULL DEFAULT 0,
+	valoracrescimo DOUBLE PRECISION NOT NULL DEFAULT 0,
 	valortaxaservico DOUBLE PRECISION NOT NULL DEFAULT 0,
 	valorcouvert DOUBLE PRECISION NOT NULL DEFAULT 0,
+	valorentrega DOUBLE PRECISION NOT NULL DEFAULT 0,
 	criadoem TEXT NOT NULL,
 	idremoto TEXT,
 	sync_status TEXT NOT NULL DEFAULT 'pendente',
 	nfce_status TEXT NOT NULL DEFAULT 'nenhuma',
 	idnfce_local TEXT,
+	nfce_sync_em TEXT,
 	idcliente TEXT,
 	nomecliente TEXT,
 	cnpjcpf TEXT
@@ -255,6 +291,12 @@ CREATE TABLE IF NOT EXISTS outbox (
 	status TEXT NOT NULL DEFAULT 'pendente',
 	tentativas INTEGER NOT NULL DEFAULT 0,
 	ultimo_erro TEXT,
+	idempotency_key TEXT,
+	prioridade INTEGER NOT NULL DEFAULT 100,
+	proxima_tentativa TEXT,
+	classificacao_erro TEXT,
+	bloqueado_ate TEXT,
+	worker_id TEXT,
 	criadoem TEXT NOT NULL,
 	processadoem TEXT
 );
@@ -274,6 +316,10 @@ CREATE TABLE IF NOT EXISTS sync_meta (
  */
 export const SCHEMA_INDEXES_SQL = `
 CREATE INDEX IF NOT EXISTS idx_outbox_status ON outbox(status, criadoem);
+CREATE INDEX IF NOT EXISTS idx_outbox_processamento ON outbox(status, proxima_tentativa, prioridade, criadoem);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_outbox_idempotencia_pendente
+	ON outbox(idempotency_key)
+	WHERE idempotency_key IS NOT NULL AND status IN ('pendente', 'processando');
 CREATE INDEX IF NOT EXISTS idx_venda_criadoem ON venda(criadoem DESC);
 CREATE INDEX IF NOT EXISTS idx_produto_descricao ON produto_cache(descricao);
 CREATE INDEX IF NOT EXISTS idx_produto_grupo ON produto_cache(idgrupo);
@@ -290,4 +336,7 @@ CREATE INDEX IF NOT EXISTS idx_cliente_nome ON cliente(nome);
 CREATE INDEX IF NOT EXISTS idx_cliente_cnpjcpf ON cliente(cnpjcpf);
 CREATE INDEX IF NOT EXISTS idx_bandeira_descricao ON bandeira_cartao(descricao);
 CREATE INDEX IF NOT EXISTS idx_meio_pagamento_descricao ON meio_pagamento(descricao);
+CREATE INDEX IF NOT EXISTS idx_conta_mesa_modalidade ON conta_mesa(modalidade, status);
+CREATE INDEX IF NOT EXISTS idx_cliente_pdv_telefone ON cliente_pdv(telefone);
+CREATE INDEX IF NOT EXISTS idx_cliente_pdv_nome ON cliente_pdv(nome);
 `;

@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { formatDateTimeBrasilia } from "@/lib/date";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -60,7 +61,7 @@ const LABEL_STATUS_MANIFESTACAO: Record<string, string> = {
 
 function formatarData(data: string | null | undefined) {
 	if (!data) return "-";
-	return new Date(data).toLocaleString("pt-BR");
+	return formatDateTimeBrasilia(data);
 }
 
 function formatarMoeda(valor: string | null | undefined) {

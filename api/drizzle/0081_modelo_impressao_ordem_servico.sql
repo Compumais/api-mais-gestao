@@ -14,7 +14,14 @@ CREATE TABLE IF NOT EXISTS "modeloimpressaoordemservico" (
 CREATE INDEX IF NOT EXISTS "modeloimpressaoordemservico_idempresa_idx"
 ON "modeloimpressaoordemservico" ("idempresa");
 
-ALTER TABLE "modeloimpressaoordemservico"
-ADD CONSTRAINT "modeloimpressaoordemservico_idempresa_fkey"
-FOREIGN KEY ("idempresa") REFERENCES "public"."empresas"("id")
-ON DELETE cascade ON UPDATE cascade;
+DO $$ BEGIN
+	IF NOT EXISTS (
+		SELECT 1 FROM pg_constraint
+		WHERE conname = 'modeloimpressaoordemservico_idempresa_fkey'
+	) THEN
+		ALTER TABLE "modeloimpressaoordemservico"
+		ADD CONSTRAINT "modeloimpressaoordemservico_idempresa_fkey"
+		FOREIGN KEY ("idempresa") REFERENCES "public"."empresas"("id")
+		ON DELETE cascade ON UPDATE cascade;
+	END IF;
+END $$;

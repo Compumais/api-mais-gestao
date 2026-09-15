@@ -1,8 +1,9 @@
 import { api } from "@/lib/axios";
+import type { CfopApiRegistro } from "@/util/cfop-natureza-mapper";
 
 export type TipoMovimentoCfop = "E" | "S";
 
-export interface Cfop {
+export interface Cfop extends CfopApiRegistro {
 	id: string;
 	idempresa: string;
 	codigo: string | null;
@@ -21,18 +22,17 @@ export interface ListarCfopsResponse {
 	};
 }
 
-export interface CriarCfopData {
+export type CriarCfopData = {
 	idempresa: string;
-	codigo: string;
-	descricao: string;
-	tipoproduto?: string | null;
-}
+} & ReturnType<
+	typeof import("@/util/cfop-natureza-mapper").mapearNaturezaFormParaApi
+>;
 
-export interface AtualizarCfopData {
-	codigo?: string;
-	descricao?: string;
-	tipoproduto?: string | null;
-}
+export type AtualizarCfopData = Partial<
+	ReturnType<
+		typeof import("@/util/cfop-natureza-mapper").mapearNaturezaFormParaApi
+	>
+>;
 
 export function inferirTipoMovimentoCfop(
 	codigo: string | null | undefined,

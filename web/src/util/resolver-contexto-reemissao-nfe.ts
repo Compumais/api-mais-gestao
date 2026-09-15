@@ -1,4 +1,7 @@
-import type { DocumentoReferenciadoNfe, EmissaoNfeFormData } from "@/schemas/nfe-emissao.schema";
+import type {
+	DocumentoReferenciadoNfe,
+	EmissaoNfeFormData,
+} from "@/schemas/nfe-emissao.schema";
 
 type NotaReemissao = {
 	idserie?: string | null;
@@ -27,6 +30,7 @@ type DadosEmissaoSalvos = {
 	gerarFinanceiro?: boolean;
 	gerarEstoque?: boolean;
 	transporte?: { modFrete?: number };
+	localEntrega?: Partial<NonNullable<EmissaoNfeFormData["localEntrega"]>>;
 	totais?: {
 		frete?: number;
 		seguro?: number;
@@ -44,7 +48,9 @@ function paraNumero(valor?: string | number | null): number {
 	return Number.isFinite(numero) ? numero : 0;
 }
 
-function extrairEmissaoSalva(dadosimportacao: unknown): DadosEmissaoSalvos | undefined {
+function extrairEmissaoSalva(
+	dadosimportacao: unknown,
+): DadosEmissaoSalvos | undefined {
 	if (!dadosimportacao || typeof dadosimportacao !== "object") return undefined;
 	const emissao = (dadosimportacao as { emissao?: DadosEmissaoSalvos }).emissao;
 	return emissao && typeof emissao === "object" ? emissao : undefined;
@@ -63,6 +69,7 @@ export function resolverContextoReemissaoNfe(notaFiscal: NotaReemissao): {
 	gerarEstoque: boolean;
 	totais: NonNullable<EmissaoNfeFormData["totais"]>;
 	transporte: NonNullable<EmissaoNfeFormData["transporte"]>;
+	localEntrega?: Partial<NonNullable<EmissaoNfeFormData["localEntrega"]>>;
 	documentoReferenciado?: DocumentoReferenciadoNfe;
 	informacoesAdicionais?: string;
 } {
@@ -80,10 +87,7 @@ export function resolverContextoReemissaoNfe(notaFiscal: NotaReemissao): {
 	};
 
 	const transporte = {
-		modFrete:
-			notaFiscal.tipofrete ??
-			emissao?.transporte?.modFrete ??
-			9,
+		modFrete: notaFiscal.tipofrete ?? emissao?.transporte?.modFrete ?? 9,
 	};
 
 	const documentoSalvo = emissao?.documentoReferenciado;
@@ -113,6 +117,7 @@ export function resolverContextoReemissaoNfe(notaFiscal: NotaReemissao): {
 		gerarEstoque: emissao?.gerarEstoque ?? true,
 		totais,
 		transporte,
+		localEntrega: emissao?.localEntrega,
 		documentoReferenciado,
 		informacoesAdicionais: notaFiscal.observacao ?? undefined,
 	};

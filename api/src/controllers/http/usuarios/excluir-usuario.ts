@@ -3,7 +3,7 @@ import z from "zod";
 import { excluirUsuarioService } from "@/service/usuarios/excluir-usuario.js";
 
 const excluirUsuarioParamsSchema = z.object({
-	id: z.string().uuid(),
+	id: z.string().min(1),
 });
 
 const excluirUsuarioQuerySchema = z.object({

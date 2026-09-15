@@ -150,4 +150,4 @@ Itens de taxa/couvert: **não** inventar produto fantasma no cupom de produção
 - KDS (Etapa 4)
 - Garçom autenticado, estorno com motivo, opcionais, CPF na NFC-e, mapa do salão (Etapa 5)
 - Reserva, planta, comissão
-- Compartilhar a **mesma** mesa aberta entre PDV principal e secundário (ainda contas locais por terminal)
+- ~~Compartilhar a **mesma** mesa aberta entre PDV principal e secundário~~ — feito via proxy LAN (`operacoes-remoto` no secundário)

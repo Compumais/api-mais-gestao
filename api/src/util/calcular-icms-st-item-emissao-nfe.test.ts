@@ -120,4 +120,17 @@ describe("calcular-icms-st-item-emissao-nfe", () => {
 			}),
 		).toEqual({});
 	});
+
+	it("não exige cálculo de ST com MVA e alíquota ST zerados", () => {
+		expect(
+			calcularIcmsStItemEmissao({
+				quantidade: 1,
+				valorUnitario: 50,
+				csosn: "400",
+				percentualMvaSt: 0,
+				aliquotaIcmsSt: 0,
+				aliquotaIcmsProprioSt: 0,
+			}),
+		).toEqual({});
+	});
 });

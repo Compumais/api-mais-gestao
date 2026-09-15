@@ -117,9 +117,9 @@ describe("gerarContasReceberVendaPdvService", () => {
 			idplanocontas: "plano-1",
 			descricao: "Boleto",
 		} as never);
-		vi.mocked(financeiroRepository.criarFinanceiro).mockResolvedValue({
-			id: "fin-1",
-		} as never);
+		vi.mocked(financeiroRepository.criarFinanceiros).mockResolvedValue([
+			{ id: "fin-1" },
+		] as never);
 
 		const resultado = await gerarContasReceberVendaPdvService({
 			venda: vendaBase,
@@ -131,7 +131,7 @@ describe("gerarContasReceberVendaPdvService", () => {
 		expect(resultado.success).toBe(true);
 		if (!resultado.success) return;
 		expect(resultado.body?.parcelasGeradas).toBe(1);
-		expect(financeiroRepository.criarFinanceiro).toHaveBeenCalledWith(
+		expect(financeiroRepository.criarFinanceiros).toHaveBeenCalledWith([
 			expect.objectContaining({
 				identidade: "cliente-1",
 				idorigem: "venda-1",
@@ -139,7 +139,7 @@ describe("gerarContasReceberVendaPdvService", () => {
 				totalparcelas: 1,
 				emitente: expect.stringContaining("Cliente PDV"),
 			}),
-		);
+		]);
 	});
 
 	it("gera recebível de cartão sem cliente e preenche nome/parcela", async () => {
@@ -153,9 +153,9 @@ describe("gerarContasReceberVendaPdvService", () => {
 			formapagamentonfe: "03",
 			descricao: "Cartão de crédito",
 		} as never);
-		vi.mocked(financeiroRepository.criarFinanceiro).mockResolvedValue({
-			id: "fin-cartao",
-		} as never);
+		vi.mocked(financeiroRepository.criarFinanceiros).mockResolvedValue([
+			{ id: "fin-cartao" },
+		] as never);
 
 		const resultado = await gerarContasReceberVendaPdvService({
 			venda: vendaBase,
@@ -166,7 +166,7 @@ describe("gerarContasReceberVendaPdvService", () => {
 		expect(resultado.success).toBe(true);
 		if (!resultado.success) return;
 		expect(resultado.body?.parcelasGeradas).toBe(1);
-		expect(financeiroRepository.criarFinanceiro).toHaveBeenCalledWith(
+		expect(financeiroRepository.criarFinanceiros).toHaveBeenCalledWith([
 			expect.objectContaining({
 				identidade: null,
 				parcela: 1,
@@ -174,7 +174,7 @@ describe("gerarContasReceberVendaPdvService", () => {
 				documento: "PDV 42",
 				emitente: expect.stringContaining("Cartão de crédito"),
 			}),
-		);
+		]);
 		expect(entidadeRepository.buscarEntidadePorId).not.toHaveBeenCalled();
 	});
 
@@ -198,7 +198,7 @@ describe("gerarContasReceberVendaPdvService", () => {
 		expect(resultado.success).toBe(true);
 		if (!resultado.success) return;
 		expect(resultado.body?.parcelasGeradas).toBe(0);
-		expect(financeiroRepository.criarFinanceiro).not.toHaveBeenCalled();
+		expect(financeiroRepository.criarFinanceiros).not.toHaveBeenCalled();
 	});
 
 	it("gera parcelas por condição de pagamento", async () => {
@@ -224,9 +224,11 @@ describe("gerarContasReceberVendaPdvService", () => {
 			prazodias: 30,
 			idplanocontas: "plano-1",
 		} as never);
-		vi.mocked(financeiroRepository.criarFinanceiro).mockResolvedValue({
-			id: "fin-novo",
-		} as never);
+		vi.mocked(financeiroRepository.criarFinanceiros).mockResolvedValue([
+			{ id: "fin-1" },
+			{ id: "fin-2" },
+			{ id: "fin-3" },
+		] as never);
 
 		const resultado = await gerarContasReceberVendaPdvService({
 			venda: vendaBase,
@@ -239,7 +241,10 @@ describe("gerarContasReceberVendaPdvService", () => {
 		expect(resultado.success).toBe(true);
 		if (!resultado.success) return;
 		expect(resultado.body?.parcelasGeradas).toBe(3);
-		expect(financeiroRepository.criarFinanceiro).toHaveBeenCalledTimes(3);
+		expect(financeiroRepository.criarFinanceiros).toHaveBeenCalledTimes(1);
+		expect(
+			vi.mocked(financeiroRepository.criarFinanceiros).mock.calls[0]?.[0],
+		).toHaveLength(3);
 	});
 
 	it("é idempotente quando já existem títulos", async () => {

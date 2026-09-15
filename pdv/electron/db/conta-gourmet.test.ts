@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+	filtrarItensAbertosConta,
+	itemContaEstaPago,
+	mensagemErroCancelarItem,
 	partirPorItens,
 	partirPorPessoas,
 	partirPorValor,
@@ -29,9 +32,38 @@ describe("recalcularTotaisConta", () => {
 		);
 		assert.equal(totais.subtotal, 100);
 		assert.equal(totais.valordesconto, 8);
+		assert.equal(totais.valoracrescimo, 0);
 		assert.equal(totais.valortaxaservico, 10);
 		assert.equal(totais.valorcouvert, 10);
+		assert.equal(totais.valorentrega, 0);
 		assert.equal(totais.valortotal, 112);
+	});
+
+	it("soma acréscimo operacional ao total após desconto e taxas", () => {
+		const totais = recalcularTotaisConta([{ precototal: 100 }], {
+			numeropessoas: 1,
+			taxaAtiva: false,
+			percentualTaxa: 0,
+			couvertUnitario: 0,
+			desconto: 10,
+			acrescimo: 7,
+		});
+		assert.equal(totais.valordesconto, 10);
+		assert.equal(totais.valoracrescimo, 7);
+		assert.equal(totais.valortotal, 97);
+	});
+
+	it("inclui taxa de entrega no total", () => {
+		const totais = recalcularTotaisConta([{ precototal: 40 }], {
+			numeropessoas: 1,
+			taxaAtiva: false,
+			percentualTaxa: 10,
+			couvertUnitario: 0,
+			desconto: 5,
+			valorentrega: 8,
+		});
+		assert.equal(totais.valorentrega, 8);
+		assert.equal(totais.valortotal, 43);
 	});
 
 	it("sem taxa e sem couvert o total é subtotal menos desconto", () => {
@@ -97,5 +129,73 @@ describe("senha gerencial", () => {
 		const { salt, hash } = hashSenhaGerencial("1234");
 		assert.equal(senhaGerencialConfere("1234", salt, hash), true);
 		assert.equal(senhaGerencialConfere("0000", salt, hash), false);
+	});
+});
+
+describe("mensagemErroCancelarItem", () => {
+	it("permite cancelar item aberto e não pago", () => {
+		assert.equal(
+			mensagemErroCancelarItem({
+				contaValida: true,
+				itemEncontrado: true,
+				itemPago: false,
+				valorPago: 0,
+				totalAposCancelar: 40,
+			}),
+			null,
+		);
+	});
+
+	it("recusa item já pago", () => {
+		assert.equal(
+			mensagemErroCancelarItem({
+				contaValida: true,
+				itemEncontrado: true,
+				itemPago: true,
+			}),
+			"Item já pago não pode ser cancelado",
+		);
+	});
+
+	it("recusa se o pago ficar maior que o total", () => {
+		assert.equal(
+			mensagemErroCancelarItem({
+				contaValida: true,
+				itemEncontrado: true,
+				itemPago: false,
+				valorPago: 50,
+				totalAposCancelar: 40,
+			}),
+			"Não é possível cancelar: o valor já pago ficaria maior que o total da conta.",
+		);
+	});
+
+	it("permite esvaziar a conta quando não há pagamento", () => {
+		assert.equal(
+			mensagemErroCancelarItem({
+				contaValida: true,
+				itemEncontrado: true,
+				itemPago: false,
+				valorPago: 0,
+				totalAposCancelar: 0,
+			}),
+			null,
+		);
+	});
+});
+
+describe("itens pagos na comanda", () => {
+	it("filtra itens pagos da lista aberta", () => {
+		const itens = [
+			{ id: "a", pago: 0 },
+			{ id: "b", pago: 1 },
+			{ id: "c", pago: 0 },
+		];
+		assert.equal(itemContaEstaPago(itens[1]!), true);
+		assert.equal(itemContaEstaPago(itens[0]!), false);
+		assert.deepEqual(
+			filtrarItensAbertosConta(itens).map((i) => i.id),
+			["a", "c"],
+		);
 	});
 });

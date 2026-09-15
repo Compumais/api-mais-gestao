@@ -1,17 +1,30 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
+import {
+	ORDENAR_TIPOS_DOCUMENTO_FINANCEIRO_CAMPOS,
+} from "@/repositories/tipo-documento-financeiro-repositories.js";
 import { listarTipoDocumentoFinanceirosService } from "@/service/tipo-documento-financeiro/listar-tipo-documento-financeiros.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
+const textoOpcional = z.string().optional();
+
 const listarTipoDocumentoFinanceirosQuerySchema = z.object({
 	idempresa: z.string(),
-	descricao: z.string().optional(),
+	descricao: textoOpcional,
+	formapagamentonfe: textoOpcional,
+	prazodias: textoOpcional,
+	destino: z.enum(["caixa", "recebivel", "contas_receber"]).optional(),
 	inativo: z.coerce.number().int().optional(),
+	ordenarPor: z.enum(ORDENAR_TIPOS_DOCUMENTO_FINANCEIRO_CAMPOS).optional(),
+	ordem: z.enum(["asc", "desc"]).optional(),
 	page: z.coerce.number().min(1).optional().default(1),
 	limit: z.coerce.number().min(1).max(100).optional().default(10),
 });
 
-export async function listarTipoDocumentoFinanceiros(request: FastifyRequest, reply: FastifyReply) {
+export async function listarTipoDocumentoFinanceiros(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
@@ -23,7 +36,12 @@ export async function listarTipoDocumentoFinanceiros(request: FastifyRequest, re
 			idusuario: request.user.id,
 			idempresa: query.idempresa,
 			descricao: query.descricao,
+			formapagamentonfe: query.formapagamentonfe,
+			prazodias: query.prazodias,
+			destino: query.destino,
 			inativo: query.inativo,
+			ordenarPor: query.ordenarPor,
+			ordem: query.ordem,
 			page: query.page,
 			limit: query.limit,
 		});

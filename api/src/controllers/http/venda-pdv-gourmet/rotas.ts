@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { verifyJwt } from "../../middleware/verify-jwt.js";
 import { atualizarVendaPdvGourmet } from "./atualizar.js";
 import { buscarVendaPdvGourmet } from "./buscar.js";
+import { cancelarVendaNaoFiscalPdv } from "./cancelar.js";
 import { criarVendaPdvGourmet } from "./criar.js";
 import * as schema from "./doc-schema/schema.js";
 import { excluirVendaPdvGourmet } from "./excluir.js";
@@ -25,6 +26,10 @@ export async function vendasPdvGourmetRotas(app: FastifyInstance) {
 	app.put("/vendas-pdv-gourmet/:id", {
 		schema: schema.atualizarVendaPdvGourmetSchema,
 		handler: atualizarVendaPdvGourmet,
+	});
+	app.post("/vendas-pdv-gourmet/:id/cancelar", {
+		schema: schema.cancelarVendaNaoFiscalPdvSchema,
+		handler: cancelarVendaNaoFiscalPdv,
 	});
 	app.delete("/vendas-pdv-gourmet/:id", {
 		schema: schema.excluirVendaPdvGourmetSchema,

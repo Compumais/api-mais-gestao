@@ -51,7 +51,10 @@ export const listarBandeirasCartaoSchema: FastifySchema = {
 		properties: {
 			idempresa: { type: "string", description: "ID da empresa" },
 			descricao: { type: "string" },
+			codigo: { type: "string" },
 			inativo: { type: "number" },
+			ordenarPor: { type: "string" },
+			ordem: { type: "string", enum: ["asc", "desc"] },
 			page: { type: "number", default: 1 },
 			limit: { type: "number", default: 10 },
 		},

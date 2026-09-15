@@ -5,11 +5,14 @@ export function empresaUsaCsosn(crt: number | null | undefined): boolean {
 	return crt === 1 || crt === 2 || crt === 4;
 }
 
-function ehCsosn(codigo: string): boolean {
+/** CSOSN oficiais: 101–103, 201–203, 300, 400, 500, 900. */
+export function ehCsosn(codigo: string): boolean {
 	return (
 		codigo.length === 3 &&
 		(codigo.startsWith("1") ||
 			codigo.startsWith("2") ||
+			codigo.startsWith("3") ||
+			codigo.startsWith("4") ||
 			codigo.startsWith("5") ||
 			codigo.startsWith("9"))
 	);

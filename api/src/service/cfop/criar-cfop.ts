@@ -4,6 +4,7 @@ import type { HttpResponse } from "@/model/http-model.js";
 import { criarCfop, excluirCfop } from "@/repositories/cfop-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
+import { validarRelacionamentosCfop } from "@/service/cfop/validar-relacionamentos-cfop.js";
 import {
 	httpCriacao,
 	httpErro,
@@ -27,6 +28,21 @@ export async function criarCfopService({
 
 	if (!usuarioPertenceEmpresa) {
 		return httpProibido();
+	}
+
+	const erroRelacionamento = await validarRelacionamentosCfop({
+		idempresa: dadosCfop.idempresa,
+		relacionamentos: {
+			idplanocontas: dadosCfop.idplanocontas,
+			idtipodocumentofinanceiro: dadosCfop.idtipodocumentofinanceiro,
+			idnaturezaoperacaoinversa: dadosCfop.idnaturezaoperacaoinversa,
+			idnaturezanaocontribuinte: dadosCfop.idnaturezanaocontribuinte,
+			idnaturezadevolucao: dadosCfop.idnaturezadevolucao,
+		},
+	});
+
+	if (erroRelacionamento) {
+		return erroRelacionamento as HttpResponse<CFOP | null>;
 	}
 
 	const registro = await criarCfop(dadosCfop);

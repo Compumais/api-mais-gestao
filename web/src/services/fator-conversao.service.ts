@@ -35,6 +35,10 @@ export const fatorConversaoService = {
 		page?: number;
 		limit?: number;
 		q?: string;
+		nome?: string;
+		fator?: string;
+		ordenarPor?: string;
+		ordem?: "asc" | "desc";
 	}): Promise<ListarFatoresConversaoResponse> {
 		const { data } = await api.get<ListarFatoresConversaoResponse>(
 			"/fatores-conversao",

@@ -23,6 +23,7 @@ export async function alterarProdutosEmMassa(
 			idempresa: body.idempresa,
 			ids: body.ids,
 			campos: body.campos,
+			ip: request.ip,
 		});
 
 		if (!resultado.success) {

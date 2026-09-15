@@ -73,6 +73,14 @@ const propriedadesImpostosProdutoBody = {
 		anyOf: [{ type: "string", maxLength: 3 }, { type: "null" }],
 		description: "CST IPI na saída",
 	},
+	cstibs: {
+		anyOf: [{ type: "string", maxLength: 3 }, { type: "null" }],
+		description: "CST IBS/CBS (grupo IBSCBS da NF-e)",
+	},
+	classtributariaibs: {
+		anyOf: [{ type: "string", maxLength: 6 }, { type: "null" }],
+		description: "Classificação tributária IBS/CBS (cClassTrib)",
+	},
 	percentualmva: {
 		anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
 		description: "Percentual de MVA (Margem de Valor Agregado) do produto",
@@ -116,6 +124,14 @@ const propriedadesImpostosProdutoBody = {
 	aliquotapisconfinssaidapreco: {
 		anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
 		description: "Alíquota PIS/COFINS na formação de preço de saída",
+	},
+	aliquotaiibs: {
+		anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
+		description: "Alíquota IBS (%)",
+	},
+	aliquotacbs: {
+		anyOf: [{ type: "string" }, { type: "number" }, { type: "null" }],
+		description: "Alíquota CBS (%)",
 	},
 };
 
@@ -257,6 +273,7 @@ const propriedadesProdutoResposta = {
 	idunidademedida: { type: "string", format: "uuid", nullable: true },
 	fornecedor: { anyOf: [{ type: "string", format: "uuid" }, { type: "null" }] },
 	idgrupo: { type: "string", format: "uuid", nullable: true },
+	idmarca: { type: "string", format: "uuid", nullable: true },
 	idgrupogourmet: { type: "string", format: "uuid", nullable: true },
 	preco: { type: "string", nullable: true },
 	tipo: { type: "string", enum: ["P", "S"], nullable: true },
@@ -327,6 +344,9 @@ export const criarProdutoSchema: FastifySchema = {
 			idunidademedida: { type: "string" },
 			fornecedor: { anyOf: [{ type: "string" }, { type: "null" }] },
 			idgrupo: { type: "string" },
+			idmarca: {
+				anyOf: [{ type: "string", format: "uuid" }, { type: "null" }],
+			},
 			idgrupogourmet: { anyOf: [{ type: "string" }, { type: "null" }] },
 			preco: { type: "string" },
 			tipo: { type: "string", enum: ["P", "S"] },
@@ -390,8 +410,54 @@ export const listarProdutosSchema: FastifySchema = {
 			q: { type: "string" },
 			inativo: { type: "number" },
 			tipo: { type: "string", enum: ["P", "S"] },
+			codigo: { type: "string" },
+			ean: { type: "string" },
+			referencia: { type: "string" },
+			ncm: { type: "string" },
+			unidademedida: { type: "string" },
+			tipoproduto: { type: "string" },
+			fornecedor: { type: "string" },
+			preco: { type: "string" },
+			custoaquisicao: { type: "string" },
+			datacadastro: { type: "string" },
+			codigolistalc11603: { type: "string" },
+			codigonbs: { type: "string" },
+			somenteDivergencia: { type: "string", enum: ["true", "false"] },
+			ordenarPor: { type: "string" },
+			ordem: { type: "string", enum: ["asc", "desc"] },
 			page: { type: "number", default: 1 },
 			limit: { type: "number", default: 10 },
+		},
+		required: ["idempresa"],
+	},
+	response: {
+		200: { type: "object", additionalProperties: true },
+		400: {
+			type: "object",
+			properties: {
+				error: { type: "string" },
+				code: { type: "string" },
+				details: { type: "array" },
+			},
+		},
+		401: respostaErro,
+		403: respostaErro,
+		500: respostaErro,
+	},
+};
+
+export const listarCatalogoPdvSchema: FastifySchema = {
+	tags: ["produtos"],
+	summary: "Catálogo PDV com tributação",
+	description:
+		"Lista produtos ativos (tipo P) com NCM, CEST, CFOP NFC-e, CST/CSOSN e origem resolvidos para carga local do PDV.",
+	security: [{ bearerAuth: [] }],
+	querystring: {
+		type: "object",
+		properties: {
+			idempresa: { type: "string" },
+			page: { type: "number", default: 1 },
+			limit: { type: "number", default: 100 },
 		},
 		required: ["idempresa"],
 	},
@@ -470,6 +536,9 @@ export const atualizarProdutoSchema: FastifySchema = {
 				anyOf: [{ type: "string", format: "uuid" }, { type: "null" }],
 			},
 			idgrupo: { type: "string", format: "uuid" },
+			idmarca: {
+				anyOf: [{ type: "string", format: "uuid" }, { type: "null" }],
+			},
 			idgrupogourmet: {
 				anyOf: [{ type: "string", format: "uuid" }, { type: "null" }],
 			},
@@ -615,6 +684,65 @@ export const exportarProdutosMgvSchema: FastifySchema = {
 	},
 };
 
+export const exportarProdutosSchema: FastifySchema = {
+	tags: ["produtos"],
+	summary: "Exportar produtos no modelo de importação",
+	description:
+		"Exporta produtos em CSV ou XLSX com as mesmas colunas e ordem do modelo de importação, incluindo Status (ativo ou inativo), permitindo editar e reimportar o arquivo. Com tipo=S, exporta a listagem de serviços em CSV. Respeita busca, filtros e ordenação da tela.",
+	security: [{ bearerAuth: [] }],
+	querystring: {
+		type: "object",
+		properties: {
+			idempresa: {
+				type: "string",
+				format: "uuid",
+				description: "ID da empresa",
+			},
+			formato: {
+				type: "string",
+				enum: ["csv", "xlsx"],
+				default: "csv",
+				description: "Formato do arquivo (ignorado para serviços)",
+			},
+			tipo: {
+				type: "string",
+				enum: ["P", "S"],
+				description:
+					"P exporta o modelo de importação; S exporta a listagem de serviços",
+			},
+			nome: { type: "string" },
+			q: { type: "string" },
+			inativo: { type: "number" },
+			codigo: { type: "string" },
+			ean: { type: "string" },
+			referencia: { type: "string" },
+			ncm: { type: "string" },
+			unidademedida: { type: "string" },
+			tipoproduto: { type: "string" },
+			fornecedor: { type: "string" },
+			preco: { type: "string" },
+			custoaquisicao: { type: "string" },
+			datacadastro: { type: "string" },
+			codigolistalc11603: { type: "string" },
+			codigonbs: { type: "string" },
+			somenteDivergencia: { type: "string", enum: ["true", "false"] },
+			ordenarPor: { type: "string" },
+			ordem: { type: "string", enum: ["asc", "desc"] },
+		},
+		required: ["idempresa"],
+	},
+	response: {
+		200: {
+			type: "string",
+			description: "Arquivo de produtos compatível com a importação",
+		},
+		400: respostaErro,
+		401: respostaErro,
+		403: respostaErro,
+		500: respostaErro,
+	},
+};
+
 export const excluirProdutoSchema: FastifySchema = {
 	tags: ["produtos"],
 	summary: "Excluir produto",
@@ -708,7 +836,7 @@ export const importarProdutosSchema: FastifySchema = {
 	tags: ["produtos"],
 	summary: "Importar produtos",
 	description:
-		"Cria ou atualiza produtos a partir de um arquivo CSV ou XLSX. Produtos existentes são identificados pelo código ou EAN.",
+		"Cria ou atualiza produtos a partir de um arquivo CSV ou XLSX. Produtos existentes são identificados pelo código ou EAN. A coluna Status aceita ativo ou inativo; inativo inativa o item.",
 	security: [{ bearerAuth: [] }],
 	body: corpoImportacaoProdutos,
 	response: {
@@ -756,6 +884,17 @@ export const alterarProdutosEmMassaSchema: FastifySchema = {
 				properties: {
 					idgrupo: {
 						anyOf: [{ type: "string", format: "uuid" }, { type: "null" }],
+					},
+					idgrupogourmet: {
+						anyOf: [{ type: "string", format: "uuid" }, { type: "null" }],
+						description:
+							"Grupo gourmet para cardápio de mesa/balcão e impressão por setor",
+					},
+					espizza: {
+						type: "number",
+						enum: [0, 1],
+						description:
+							"1=produto pizza (habilita venda meio a meio no PDV/POS)",
 					},
 					idunidademedida: { type: "string", format: "uuid" },
 					preco: { anyOf: [{ type: "string" }, { type: "number" }] },
@@ -812,7 +951,7 @@ export const templateProdutosSchema: FastifySchema = {
 	tags: ["produtos"],
 	summary: "Baixar modelo de importação de produtos",
 	description:
-		"Retorna um arquivo modelo (CSV ou XLSX) com as colunas de cadastro, MVA e alíquotas e uma linha de exemplo.",
+		"Retorna um arquivo modelo (CSV ou XLSX) com as colunas de cadastro (incluindo Status), MVA e alíquotas e uma linha de exemplo.",
 	security: [{ bearerAuth: [] }],
 	querystring: {
 		type: "object",

@@ -1,6 +1,6 @@
 "use client";
 
-import type { UseFormSetValue, UseFormWatch } from "react-hook-form";
+import { Controller, type Control } from "react-hook-form";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Label } from "@/components/ui/label";
@@ -20,19 +20,14 @@ type GrupoGourmetOpcao = {
 };
 
 type ProdutoAbaGourmetProps = {
-	setValue: UseFormSetValue<ProdutoFormData>;
-	watch: UseFormWatch<ProdutoFormData>;
+	control: Control<ProdutoFormData>;
 	gruposGourmet: GrupoGourmetOpcao[];
 };
 
 export function ProdutoAbaGourmet({
-	setValue,
-	watch,
+	control,
 	gruposGourmet,
 }: ProdutoAbaGourmetProps) {
-	const idgrupogourmet = watch("idgrupogourmet");
-	const espizza = watch("espizza");
-
 	return (
 		<FieldGroup>
 			<div className="space-y-4">
@@ -44,36 +39,46 @@ export function ProdutoAbaGourmet({
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 					<Field>
 						<FieldLabel htmlFor="idgrupogourmet">Grupo gourmet</FieldLabel>
-						<Select
-							value={idgrupogourmet || "none"}
-							onValueChange={(value) => setValue("idgrupogourmet", value)}
-						>
-							<SelectTrigger id="idgrupogourmet" className="w-full">
-								<SelectValue placeholder="Nenhum" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="none">Nenhum</SelectItem>
-								{gruposGourmet.map((grupo) => (
-									<SelectItem key={grupo.id} value={grupo.id}>
-										{grupo.nome || grupo.codigo || grupo.id}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
+						<Controller
+							name="idgrupogourmet"
+							control={control}
+							render={({ field }) => (
+								<Select
+									value={field.value || "none"}
+									onValueChange={field.onChange}
+								>
+									<SelectTrigger id="idgrupogourmet" className="w-full">
+										<SelectValue placeholder="Nenhum" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="none">Nenhum</SelectItem>
+										{gruposGourmet.map((grupo) => (
+											<SelectItem key={grupo.id} value={grupo.id}>
+												{grupo.nome || grupo.codigo || grupo.id}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							)}
+						/>
 						<p className="text-sm text-muted-foreground">
 							Usado no cardápio de mesa/balcão e na impressão por setor.
 						</p>
 					</Field>
 				</div>
 				<div className="flex items-center gap-3 rounded-lg border p-4">
-					<Checkbox
-						id="espizza"
-						checked={!!espizza}
-						onCheckedChange={(checked) =>
-							setValue("espizza", checked === true, {
-								shouldValidate: true,
-							})
-						}
+					<Controller
+						name="espizza"
+						control={control}
+						render={({ field }) => (
+							<Checkbox
+								id="espizza"
+								checked={!!field.value}
+								onCheckedChange={(checked) =>
+									field.onChange(checked === true)
+								}
+							/>
+						)}
 					/>
 					<div>
 						<Label htmlFor="espizza" className="cursor-pointer font-normal">

@@ -217,6 +217,13 @@ export async function inutilizarNfe(
 export async function listarNfesEmitidas(params: {
 	idempresa: string;
 	status?: number;
+	numero?: string;
+	razaosocial?: string;
+	chavenfe?: string;
+	dataInicio?: string;
+	dataFim?: string;
+	ordenarPor?: string;
+	ordem?: "asc" | "desc";
 	page?: number;
 	limit?: number;
 }): Promise<ListarNfesResponse> {
@@ -286,7 +293,9 @@ export async function previewDanfeNfe(
 	});
 
 	if (data.type && !data.type.includes("pdf")) {
-		throw new Error(await lerErroBlobPdf(data, "Erro ao gerar pré-visualização"));
+		throw new Error(
+			await lerErroBlobPdf(data, "Erro ao gerar pré-visualização"),
+		);
 	}
 
 	return data;
@@ -323,6 +332,23 @@ export type ResultadoCalcularTributosNfe = {
 	totaisFiscais: TotaisFiscaisCalculoApi;
 };
 
+export type ResultadoCalcularObservacoesNfe = {
+	informacoesAdicionais?: string;
+	textoUsuario?: string;
+	legendaSimples?: string;
+	textoIbpt?: string;
+	textoRemessaFeira?: string;
+	tributosIbpt: {
+		totalFederal: number;
+		totalEstadual: number;
+		totalMunicipal: number;
+		totalAproximado: number;
+		chave?: string;
+		fonte?: string;
+	};
+	pendencias: string[];
+};
+
 export async function calcularTributosNfe(params: {
 	idempresa: string;
 	itens: EmissaoNfeFormData["itens"];
@@ -330,6 +356,19 @@ export async function calcularTributosNfe(params: {
 }): Promise<ResultadoCalcularTributosNfe> {
 	const { data } = await api.post<ResultadoCalcularTributosNfe>(
 		"/nfe/emissao/calcular-tributos",
+		params,
+	);
+	return data;
+}
+
+export async function calcularObservacoesNfe(params: {
+	idempresa: string;
+	informacoesAdicionais?: string;
+	itens: EmissaoNfeFormData["itens"];
+	localEntrega?: EmissaoNfeFormData["localEntrega"];
+}): Promise<ResultadoCalcularObservacoesNfe> {
+	const { data } = await api.post<ResultadoCalcularObservacoesNfe>(
+		"/nfe/emissao/calcular-observacoes",
 		params,
 	);
 	return data;

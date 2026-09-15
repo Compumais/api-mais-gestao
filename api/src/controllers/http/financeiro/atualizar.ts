@@ -56,6 +56,7 @@ const atualizarFinanceiroBodySchema = z.object({
 	remessagerada: z.number().optional().nullable(),
 	boletoimpresso: z.number().optional().nullable(),
 	currenttimemillis: z.number().optional().nullable(),
+	idtipocobranca: z.string().uuid().optional().nullable(),
 });
 
 export async function atualizarFinanceiro(

@@ -2,30 +2,19 @@
 
 import {
 	IconChevronDown,
-	IconChevronLeft,
-	IconChevronRight,
-	IconChevronsLeft,
-	IconChevronsRight,
 	IconDotsVertical,
 	IconLayoutColumns,
 	IconPencil,
 	IconTrash,
 } from "@tabler/icons-react";
 import {
-	type ColumnDef,
-	type ColumnFiltersState,
 	flexRender,
 	getCoreRowModel,
-	getFilteredRowModel,
-	getPaginationRowModel,
-	getSortedRowModel,
-	type SortingState,
 	useReactTable,
-	type VisibilityState,
 } from "@tanstack/react-table";
-import { useState } from "react";
+import { useCallback, useId, useMemo, useState } from "react";
+import type { OrdenacaoColunaTabela } from "@/components/cabecalho-coluna-tabela";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
 	DropdownMenu,
 	DropdownMenuCheckboxItem,
@@ -50,127 +39,145 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { useDeletarContaCorrenteLancamento } from "@/hooks/use-conta-corrente-lancamento";
-import { formatDateOnlyDisplay } from "@/lib/date";
+import {
+	useContaCorrenteLancamentos,
+	useDeletarContaCorrenteLancamento,
+} from "@/hooks/use-conta-corrente-lancamento";
+import {
+	TABELA_MOVIMENTACOES,
+	useColunasTabelaPersistidas,
+} from "@/hooks/use-preferencias-ui-usuario";
 import type { ContaCorrenteLancamento } from "@/services/conta-corrente-lancamento.service";
+import {
+	COLUNA_PARA_CAMPO_FILTRO_MOVIMENTACAO,
+	type ConfigFiltroColunaMovimentacao,
+	criarColunasMovimentacoes,
+	type FiltrosColunaMovimentacoesState,
+	filtrosColunaMovimentacoesVazios,
+	SENTIDO_OPCOES_FILTRO,
+	visibilidadePadraoColunasMovimentacoes,
+} from "../movimentacoes-colunas";
 import { MovimentacoesTableSkeleton } from "./movimentacoes-table-skeleton";
 
 interface MovimentacoesTableProps {
-	data: ContaCorrenteLancamento[];
+	idcontacorrente: string;
 	onEdit: (lancamento: ContaCorrenteLancamento) => void;
-	isLoading?: boolean;
 }
 
-const formatCurrency = (value: string | null | undefined): string => {
-	if (!value) return "R$ 0,00";
-	const num = Number(value);
-	if (Number.isNaN(num)) return "R$ 0,00";
-	return new Intl.NumberFormat("pt-BR", {
-		style: "currency",
-		currency: "BRL",
-	}).format(num);
-};
+function rotuloColuna(column: {
+	id: string;
+	columnDef: { meta?: unknown; header?: unknown };
+}) {
+	const meta = column.columnDef.meta as { label?: string } | undefined;
+	if (meta?.label) return meta.label;
+	if (typeof column.columnDef.header === "string") {
+		return column.columnDef.header;
+	}
+	return column.id;
+}
+
+function filtrosColunaAtivos(filtros: FiltrosColunaMovimentacoesState) {
+	return Object.values(filtros).some((valor) => valor.trim() !== "");
+}
 
 export function MovimentacoesTable({
-	data,
+	idcontacorrente,
 	onEdit,
-	isLoading = false,
 }: MovimentacoesTableProps) {
-	const [sorting, setSorting] = useState<SortingState>([]);
-	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-	const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+	const idPorPagina = useId();
 	const [pagination, setPagination] = useState({
 		pageIndex: 0,
 		pageSize: 10,
 	});
+	const [filtrosColuna, setFiltrosColuna] =
+		useState<FiltrosColunaMovimentacoesState>(filtrosColunaMovimentacoesVazios);
+	const [ordenarPor, setOrdenarPor] = useState<string | null>(null);
+	const [ordem, setOrdem] = useState<"asc" | "desc" | null>(null);
+
+	const visibilidadePadrao = useMemo(
+		() => visibilidadePadraoColunasMovimentacoes(),
+		[],
+	);
+	const { columnVisibility, onColumnVisibilityChange, isLoadingPreferencias } =
+		useColunasTabelaPersistidas(TABELA_MOVIMENTACOES, visibilidadePadrao);
+
+	const onOrdenarColuna = useCallback(
+		(colunaId: string, direcao: OrdenacaoColunaTabela) => {
+			if (!direcao) {
+				setOrdenarPor(null);
+				setOrdem(null);
+			} else {
+				setOrdenarPor(colunaId);
+				setOrdem(direcao);
+			}
+			setPagination((p) => ({ ...p, pageIndex: 0 }));
+		},
+		[],
+	);
+
+	const onFiltrarColuna = useCallback((colunaId: string, valor: string) => {
+		const campo = COLUNA_PARA_CAMPO_FILTRO_MOVIMENTACAO[colunaId];
+		if (!campo) return;
+		setFiltrosColuna((atual) => ({ ...atual, [campo]: valor }));
+		setPagination((p) => ({ ...p, pageIndex: 0 }));
+	}, []);
+
+	const configFiltroPorColuna = useMemo((): Record<
+		string,
+		ConfigFiltroColunaMovimentacao
+	> => {
+		return {
+			datahora: { tipo: "data" },
+			historico: { tipo: "texto", placeholder: "Histórico" },
+			entrada: { tipo: "opcoes", opcoes: SENTIDO_OPCOES_FILTRO },
+			saida: { tipo: "nenhum" },
+			saldoatual: { tipo: "nenhum" },
+			planocontasnome: { tipo: "texto", placeholder: "Plano" },
+			documento: { tipo: "texto", placeholder: "Documento" },
+		};
+	}, []);
+
+	const { data, isLoading } = useContaCorrenteLancamentos({
+		idcontacorrente,
+		page: pagination.pageIndex + 1,
+		limit: pagination.pageSize,
+		historico: filtrosColuna.historico || undefined,
+		documento: filtrosColuna.documento || undefined,
+		planocontasnome: filtrosColuna.planocontasnome || undefined,
+		datahora: filtrosColuna.datahora || undefined,
+		sentido:
+			filtrosColuna.sentido === "entrada" || filtrosColuna.sentido === "saida"
+				? filtrosColuna.sentido
+				: undefined,
+		ordenarPor: ordenarPor ?? undefined,
+		ordem: ordem ?? undefined,
+	});
 
 	const { mutate: deletarLancamento } = useDeletarContaCorrenteLancamento();
 
-	const handleDelete = (id: string) => {
-		if (
-			confirm(
-				"Tem certeza que deseja excluir esta movimentação? Esta ação não pode ser desfeita.",
-			)
-		) {
-			deletarLancamento(id);
-		}
-	};
+	const handleDelete = useCallback(
+		(id: string) => {
+			if (
+				confirm(
+					"Tem certeza que deseja excluir esta movimentação? Esta ação não pode ser desfeita.",
+				)
+			) {
+				deletarLancamento(id);
+			}
+		},
+		[deletarLancamento],
+	);
 
-	const columns: ColumnDef<ContaCorrenteLancamento>[] = [
-		{
-			accessorKey: "datahora",
-			header: "Data",
-			cell: ({ row }) => (
-				<div className="min-w-[100px]">
-					{formatDateOnlyDisplay(row.getValue("datahora"))}
-				</div>
-			),
-		},
-		{
-			accessorKey: "historico",
-			header: "Histórico",
-			cell: ({ row }) => (
-				<div className="max-w-[200px] truncate">
-					{row.getValue("historico") || "-"}
-				</div>
-			),
-		},
-		{
-			id: "entrada",
-			header: () => <div className="text-right">Entrada</div>,
-			cell: ({ row }) => {
-				const tipo = row.original.tipo;
-				const valor = row.original.valor;
-				if (tipo === "C" || tipo === "E") {
-					return (
-						<div className="text-right font-medium text-green-600 dark:text-green-400">
-							{formatCurrency(valor)}
-						</div>
-					);
-				}
-				return <div className="text-right">-</div>;
-			},
-		},
-		{
-			id: "saida",
-			header: () => <div className="text-right">Saída</div>,
-			cell: ({ row }) => {
-				const tipo = row.original.tipo;
-				const valor = row.original.valor;
-				if (tipo === "D" || tipo === "S") {
-					return (
-						<div className="text-right font-medium text-red-600 dark:text-red-400">
-							{formatCurrency(valor)}
-						</div>
-					);
-				}
-				return <div className="text-right">-</div>;
-			},
-		},
-		{
-			accessorKey: "saldoatual",
-			header: () => <div className="text-right">Saldo</div>,
-			cell: ({ row }) => (
-				<div className="text-right font-semibold">
-					{formatCurrency(row.getValue("saldoatual"))}
-				</div>
-			),
-		},
-		{
-			accessorKey: "planocontasnome",
-			header: "Plano",
-			cell: ({ row }) => (
-				<div className="min-w-[150px]">
-					{row.getValue("planocontasnome") || "-"}
-				</div>
-			),
-		},
-		{
-			id: "actions",
-			header: "Ações",
-			cell: ({ row }) => {
-				const lancamento = row.original;
-				return (
+	const columns = useMemo(
+		() =>
+			criarColunasMovimentacoes({
+				filtros: filtrosColuna,
+				ordenarPor,
+				ordem,
+				onOrdenarColuna,
+				onFiltrarColuna,
+				configFiltroPorColuna,
+				renderAcoes: (lancamento) => (
 					<div className="flex justify-end">
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
@@ -199,105 +206,119 @@ export function MovimentacoesTable({
 							</DropdownMenuContent>
 						</DropdownMenu>
 					</div>
-				);
-			},
-			enableHiding: false,
-		},
-	];
+				),
+			}),
+		[
+			filtrosColuna,
+			ordenarPor,
+			ordem,
+			onOrdenarColuna,
+			onFiltrarColuna,
+			configFiltroPorColuna,
+			onEdit,
+			handleDelete,
+		],
+	);
 
 	const table = useReactTable({
-		data,
+		data: data?.data ?? [],
 		columns,
 		state: {
-			sorting,
-			columnFilters,
-			columnVisibility,
 			pagination,
+			columnVisibility,
 		},
-		onSortingChange: setSorting,
-		onColumnFiltersChange: setColumnFilters,
-		onColumnVisibilityChange: setColumnVisibility,
 		onPaginationChange: setPagination,
+		onColumnVisibilityChange,
 		getCoreRowModel: getCoreRowModel(),
-		getFilteredRowModel: getFilteredRowModel(),
-		getSortedRowModel: getSortedRowModel(),
-		getPaginationRowModel: getPaginationRowModel(),
+		getRowId: (row) => row.id,
+		manualPagination: true,
+		pageCount: data?.paginacao.totalPages ?? 0,
 	});
 
-	if (isLoading) {
+	const colunasVisiveis = table.getVisibleLeafColumns();
+	const mostrarSkeleton = isLoading || isLoadingPreferencias;
+	const comFiltros = filtrosColunaAtivos(filtrosColuna) || !!ordenarPor;
+
+	if (mostrarSkeleton) {
 		return <MovimentacoesTableSkeleton />;
 	}
 
 	return (
 		<div className="flex flex-col gap-4">
 			<div className="flex items-center justify-end">
-				<Label htmlFor="view-selector" className="sr-only">
-					Visualização
-				</Label>
-				<div className="flex items-center gap-2">
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button variant="outline" size="sm">
-								<IconLayoutColumns />
-								<span className="hidden lg:inline">Personalizar Colunas</span>
-								<span className="lg:hidden">Colunas</span>
-								<IconChevronDown />
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end" className="w-56">
-							{table
-								.getAllColumns()
-								.filter(
-									(column) =>
-										typeof column.accessorFn !== "undefined" &&
-										column.getCanHide(),
-								)
-								.map((column) => {
-									return (
-										<DropdownMenuCheckboxItem
-											key={column.id}
-											className="capitalize"
-											checked={column.getIsVisible()}
-											onCheckedChange={(value) =>
-												column.toggleVisibility(!!value)
-											}
-										>
-											{column.id === "entrada"
-												? "Entrada"
-												: column.id === "saida"
-													? "Saída"
-													: column.id === "cliente"
-														? "Cliente"
-														: column.id}
-										</DropdownMenuCheckboxItem>
-									);
-								})}
-						</DropdownMenuContent>
-					</DropdownMenu>
-				</div>
+				<DropdownMenu>
+					<DropdownMenuTrigger asChild>
+						<Button variant="outline" size="sm">
+							<IconLayoutColumns className="size-4" />
+							<span className="hidden lg:inline">Personalizar Colunas</span>
+							<span className="lg:hidden">Colunas</span>
+							<IconChevronDown className="size-4" />
+						</Button>
+					</DropdownMenuTrigger>
+					<DropdownMenuContent
+						align="end"
+						className="max-h-72 w-56 overflow-y-auto"
+					>
+						{table
+							.getAllColumns()
+							.filter((column) => column.getCanHide())
+							.map((column) => (
+								<DropdownMenuCheckboxItem
+									key={column.id}
+									checked={column.getIsVisible()}
+									onCheckedChange={(value) =>
+										column.toggleVisibility(!!value)
+									}
+								>
+									{rotuloColuna(column)}
+								</DropdownMenuCheckboxItem>
+							))}
+					</DropdownMenuContent>
+				</DropdownMenu>
 			</div>
-			<div className="overflow-hidden rounded-lg border">
+
+			<div className="overflow-hidden rounded-lg border bg-card">
 				<Table>
-					<TableHeader className="bg-muted sticky top-0 z-10">
+					<TableHeader>
 						{table.getHeaderGroups().map((headerGroup) => (
 							<TableRow key={headerGroup.id}>
-								{headerGroup.headers.map((header) => {
-									return (
-										<TableHead key={header.id} colSpan={header.colSpan}>
-											{header.isPlaceholder
-												? null
-												: flexRender(
-														header.column.columnDef.header,
-														header.getContext(),
-													)}
-										</TableHead>
-									);
-								})}
+								{headerGroup.headers.map((header) => (
+									<TableHead
+										key={header.id}
+										className={
+											header.id === "entrada" ||
+											header.id === "saida" ||
+											header.id === "saldoatual"
+												? "text-right"
+												: header.id === "acoes"
+													? "text-right"
+													: undefined
+										}
+									>
+										{header.isPlaceholder
+											? null
+											: flexRender(
+													header.column.columnDef.header,
+													header.getContext(),
+												)}
+									</TableHead>
+								))}
 							</TableRow>
 						))}
 					</TableHeader>
 					<TableBody>
-						{table.getRowModel().rows?.length ? (
+						{table.getRowModel().rows.length === 0 ? (
+							<TableRow>
+								<TableCell
+									colSpan={colunasVisiveis.length}
+									className="h-24 text-center"
+								>
+									{comFiltros
+										? "Nenhuma movimentação encontrada para os filtros selecionados."
+										: "Nenhum resultado encontrado."}
+								</TableCell>
+							</TableRow>
+						) : (
 							table.getRowModel().rows.map((row) => (
 								<TableRow key={row.id}>
 									{row.getVisibleCells().map((cell) => (
@@ -310,95 +331,58 @@ export function MovimentacoesTable({
 									))}
 								</TableRow>
 							))
-						) : (
-							<TableRow>
-								<TableCell
-									colSpan={columns.length}
-									className="h-24 text-center"
-								>
-									Nenhum resultado encontrado.
-								</TableCell>
-							</TableRow>
 						)}
 					</TableBody>
 				</Table>
-			</div>
-			<div className="flex items-center justify-between px-4">
-				<div className="text-muted-foreground hidden flex-1 text-sm lg:flex">
-					{table.getFilteredSelectedRowModel().rows.length} de{" "}
-					{table.getFilteredRowModel().rows.length} linha(s) selecionada(s).
-				</div>
-				<div className="flex w-full items-center gap-8 lg:w-fit">
-					<div className="hidden items-center gap-2 lg:flex">
-						<Label htmlFor="rows-per-page" className="text-sm font-medium">
-							Linhas por página
-						</Label>
-						<Select
-							value={`${table.getState().pagination.pageSize}`}
-							onValueChange={(value) => {
-								table.setPageSize(Number(value));
-							}}
-						>
-							<SelectTrigger size="sm" className="w-20" id="rows-per-page">
-								<SelectValue
-									placeholder={table.getState().pagination.pageSize}
-								/>
-							</SelectTrigger>
-							<SelectContent side="top">
-								{[10, 20, 30, 40, 50].map((pageSize) => (
-									<SelectItem key={pageSize} value={`${pageSize}`}>
-										{pageSize}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
+				{data && data.paginacao.total > 0 && (
+					<div className="flex flex-col gap-4 border-t px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+						<div className="flex items-center gap-2">
+							<Label htmlFor={idPorPagina} className="text-sm">
+								Itens por página
+							</Label>
+							<Select
+								value={`${pagination.pageSize}`}
+								onValueChange={(value) => {
+									table.setPageSize(Number(value));
+									table.setPageIndex(0);
+								}}
+							>
+								<SelectTrigger id={idPorPagina} className="h-8 w-[72px]">
+									<SelectValue placeholder={pagination.pageSize} />
+								</SelectTrigger>
+								<SelectContent side="top">
+									{[10, 20, 30, 50, 100].map((tamanho) => (
+										<SelectItem key={tamanho} value={`${tamanho}`}>
+											{tamanho}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
+						<div className="text-sm text-muted-foreground">
+							Página {pagination.pageIndex + 1} de {data.paginacao.totalPages} (
+							{data.paginacao.total} registros)
+						</div>
+						<div className="flex gap-2">
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={() => table.previousPage()}
+								disabled={!table.getCanPreviousPage()}
+							>
+								Anterior
+							</Button>
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={() => table.nextPage()}
+								disabled={!table.getCanNextPage()}
+							>
+								Próxima
+							</Button>
+						</div>
 					</div>
-					<div className="flex w-fit items-center justify-center text-sm font-medium">
-						Página {table.getState().pagination.pageIndex + 1} de{" "}
-						{table.getPageCount()}
-					</div>
-					<div className="ml-auto flex items-center gap-2 lg:ml-0">
-						<Button
-							variant="outline"
-							className="hidden h-8 w-8 p-0 lg:flex"
-							onClick={() => table.setPageIndex(0)}
-							disabled={!table.getCanPreviousPage()}
-						>
-							<span className="sr-only">Ir para primeira página</span>
-							<IconChevronsLeft />
-						</Button>
-						<Button
-							variant="outline"
-							className="size-8"
-							size="icon"
-							onClick={() => table.previousPage()}
-							disabled={!table.getCanPreviousPage()}
-						>
-							<span className="sr-only">Ir para página anterior</span>
-							<IconChevronLeft />
-						</Button>
-						<Button
-							variant="outline"
-							className="size-8"
-							size="icon"
-							onClick={() => table.nextPage()}
-							disabled={!table.getCanNextPage()}
-						>
-							<span className="sr-only">Ir para próxima página</span>
-							<IconChevronRight />
-						</Button>
-						<Button
-							variant="outline"
-							className="hidden size-8 lg:flex"
-							size="icon"
-							onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-							disabled={!table.getCanNextPage()}
-						>
-							<span className="sr-only">Ir para última página</span>
-							<IconChevronsRight />
-						</Button>
-					</div>
-				</div>
+				)}
 			</div>
 		</div>
 	);

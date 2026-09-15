@@ -1,10 +1,20 @@
 import type { HttpResponse } from "@/model/http-model.js";
 import type { LancamentoComRelacionamentos } from "@/repositories/conta-corrente-lancamento-repositories.js";
-import { listarLancamentoContaCorrentePorEmpresa } from "@/repositories/conta-corrente-lancamento-repositories.js";
+import {
+	listarLancamentoContaCorrentePorEmpresa,
+	type OrdenarContaCorrenteLancamentosCampo,
+} from "@/repositories/conta-corrente-lancamento-repositories.js";
 import { httpOk } from "@/util/http-util.js";
 
 interface ListarContaCorrenteLancamentosParametros {
 	idcontacorrente: string;
+	historico?: string | undefined;
+	documento?: string | undefined;
+	planocontasnome?: string | undefined;
+	datahora?: string | undefined;
+	sentido?: "entrada" | "saida" | undefined;
+	ordenarPor?: OrdenarContaCorrenteLancamentosCampo | undefined;
+	ordem?: "asc" | "desc" | undefined;
 	page?: number;
 	limit?: number;
 }
@@ -21,6 +31,13 @@ interface ListarContaCorrenteLancamentosResposta {
 
 export async function listarContaCorrenteLancamentosService({
 	idcontacorrente,
+	historico,
+	documento,
+	planocontasnome,
+	datahora,
+	sentido,
+	ordenarPor,
+	ordem,
 	page = 1,
 	limit = 10,
 }: ListarContaCorrenteLancamentosParametros): Promise<
@@ -28,6 +45,13 @@ export async function listarContaCorrenteLancamentosService({
 > {
 	const { lancamentos, total } = await listarLancamentoContaCorrentePorEmpresa({
 		idcontacorrente,
+		historico,
+		documento,
+		planocontasnome,
+		datahora,
+		sentido,
+		ordenarPor,
+		ordem,
 		page,
 		limit,
 	});

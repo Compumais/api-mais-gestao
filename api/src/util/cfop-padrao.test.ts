@@ -31,6 +31,13 @@ describe("montarCfopsPadrao", () => {
 		expect(codigos).toContain("5101");
 	});
 
+	it("habilita destino interestadual na mesma UF cadastral para o CFOP 6914", () => {
+		const cfops = montarCfopsPadrao(idempresa, timestampMillis);
+		const remessaFeira = cfops.find((registro) => registro.codigo === "6914");
+
+		expect(remessaFeira?.interestadualdestmesmauf).toBe(1);
+	});
+
 	it("deve gerar IDs únicos a cada montagem", () => {
 		const primeiroLote = montarCfopsPadrao(idempresa, timestampMillis);
 		const segundoLote = montarCfopsPadrao(idempresa, timestampMillis);

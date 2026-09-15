@@ -1,4 +1,4 @@
-import { asc, eq } from "drizzle-orm";
+import { asc, eq, inArray } from "drizzle-orm";
 import type { NovoVendaPdvPagamento } from "@/model/venda-pdv-pagamento-model.js";
 import { vendapdvpagamento } from "@/repositories/schema.js";
 import { db } from "./connection";
@@ -18,5 +18,16 @@ export async function listarVendaPdvPagamentosPorVenda(idvenda: string) {
 		.select()
 		.from(vendapdvpagamento)
 		.where(eq(vendapdvpagamento.idvenda, idvenda))
+		.orderBy(asc(vendapdvpagamento.criadoem));
+}
+
+export async function listarVendaPdvPagamentosPorVendas(idsVenda: string[]) {
+	if (idsVenda.length === 0) {
+		return [];
+	}
+	return db
+		.select()
+		.from(vendapdvpagamento)
+		.where(inArray(vendapdvpagamento.idvenda, idsVenda))
 		.orderBy(asc(vendapdvpagamento.criadoem));
 }

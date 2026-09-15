@@ -1,22 +1,21 @@
 import { v4 as uuidv4 } from "uuid";
-import type { AutomacaoParametros } from "../../../drizzle/tables/automacao.js";
 import type { HttpResponse } from "@/model/http-model.js";
 import {
+	type Automacao,
 	atualizarAutomacao,
 	buscarAutomacaoPorId,
 	criarAutomacao,
 	excluirAutomacao,
 	listarAutomacoesPorEmpresa,
-	type Automacao,
 } from "@/repositories/automacao-repositories.js";
-import { listarExecucoesTarefas } from "@/repositories/tarefa-execucao-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { listarExecucoesTarefas } from "@/repositories/tarefa-execucao-repositories.js";
 import {
 	calcularProximaExecucao,
 	type RecorrenciaAutomacao,
 } from "@/service/automacao/calcular-proxima-execucao.js";
-import { FUNCAO_ENVIO_FISCAL_CONTABILIDADE } from "@/service/automacao/funcoes/envio-fiscal-contabilidade.js";
 import { FUNCAO_ALERTA_PENDENCIAS_NF } from "@/service/automacao/funcoes/alerta-pendencias-nf.js";
+import { FUNCAO_ENVIO_FISCAL_CONTABILIDADE } from "@/service/automacao/funcoes/envio-fiscal-contabilidade.js";
 import {
 	httpBadRequest,
 	httpCriacao,
@@ -25,6 +24,7 @@ import {
 	httpProibido,
 	httpSemConteudo,
 } from "@/util/http-util.js";
+import type { AutomacaoParametros } from "../../../drizzle/tables/automacao.js";
 
 const FUNCOES_VALIDAS = new Set([
 	FUNCAO_ENVIO_FISCAL_CONTABILIDADE,
@@ -133,6 +133,8 @@ export async function criarAutomacaoService({
 		parametros: dados.parametros ?? {
 			incluirSintegra: true,
 			incluirXml: true,
+			incluirEfdIcms: false,
+			incluirEfdContribuicoes: false,
 			finalidadeSintegra: "1",
 		},
 		proximaexecucao: proxima,
@@ -176,9 +178,7 @@ export async function atualizarAutomacaoService({
 		diasemana:
 			dados.diasemana !== undefined ? dados.diasemana : existente.diasemana,
 		parametros:
-			dados.parametros !== undefined
-				? dados.parametros
-				: existente.parametros,
+			dados.parametros !== undefined ? dados.parametros : existente.parametros,
 		proximaexecucao: dados.proximaexecucao,
 	};
 
@@ -240,11 +240,7 @@ export async function listarExecucoesAutomacaoService({
 }: {
 	idusuario: string;
 	id: string;
-}): Promise<
-	HttpResponse<
-		Awaited<ReturnType<typeof listarExecucoesTarefas>>
-	>
-> {
+}): Promise<HttpResponse<Awaited<ReturnType<typeof listarExecucoesTarefas>>>> {
 	const existente = await buscarAutomacaoPorId(id);
 	if (!existente) return httpNaoEncontrado();
 

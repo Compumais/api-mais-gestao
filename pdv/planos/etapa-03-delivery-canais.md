@@ -142,7 +142,7 @@ No outbox `criar_venda`, incluir `origem` (`delivery` \| `retirada`) e `valorent
 - Pedido delivery sem endereço é recusado
 - Grade de mesas **não** lista delivery; painel próprio
 - POS **não** precisa das telas ainda; LAN API já existe para a leva seguinte
-- PDV secundário puxa taxa/bairros do principal; pedidos de delivery **não** são compartilhados entre máquinas (igual mesas hoje)
+- PDV secundário puxa taxa/bairros do principal; mesas/comandas/delivery/fila são operados no principal via proxy LAN (`operacoes-remoto`)
 
 ## Leva B (depois)
 
@@ -156,5 +156,5 @@ Ingestão iFood / 99Food / Aiqfome para o mesmo `pedido_fila` e catálogo. Item 
 - Drive-thru, totem, fidelidade (P2)
 - KDS avançado (Etapa 4) — esta leva só reutiliza `pedido_fila` e a impressão já existentes
 - Garçom autenticado, estorno auditado, opcionais, CPF na NFC-e como feature isolada (Etapa 5)
-- Compartilhar o mesmo pedido delivery entre PDV principal e secundário
+- ~~Compartilhar o mesmo pedido delivery entre PDV principal e secundário~~ — feito via proxy LAN
 - Implementar os três marketplaces na mesma sprint que o delivery próprio

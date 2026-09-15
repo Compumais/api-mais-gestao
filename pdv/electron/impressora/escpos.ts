@@ -4,9 +4,23 @@ import { obterVenda } from "../db/repos";
 import {
 	type DadosComprovanteFechamentoCaixa,
 	montarTextoComprovanteFechamentoCaixa,
+	type DadosItensVendidosTurno,
+	montarTextoItensVendidosTurno,
 } from "./comprovante-caixa";
 import { linhasPagamentoCupom } from "./cupom-pagamentos";
-import { type DestinoImpressora, enviarTextoImpressora } from "./destino";
+import {
+	type DestinoImpressora,
+	enviarTextoImpressora,
+	obterTamanhoFonteConfig,
+} from "./destino";
+import {
+	normalizarTamanhoFonte,
+	type TamanhoFonteImpressao,
+} from "./fonte-impressao";
+import {
+	type FormatoItemProducao,
+	montarLinhasPedidoProducao,
+} from "./pedido-producao-layout";
 
 export { imprimirDanfce } from "./danfce";
 
@@ -66,6 +80,9 @@ async function montarTextoCupom(
 	if ((venda.valordesconto ?? 0) > 0) {
 		linhas.push(`Desconto: -${money(venda.valordesconto ?? 0)}`);
 	}
+	if ((venda.valoracrescimo ?? 0) > 0) {
+		linhas.push(`Acrescimo: ${money(venda.valoracrescimo ?? 0)}`);
+	}
 	if ((venda.valortaxaservico ?? 0) > 0) {
 		linhas.push(`Taxa servico: ${money(venda.valortaxaservico ?? 0)}`);
 	}
@@ -106,16 +123,49 @@ export async function imprimirCupomNaoFiscal(
 	return enviarParaImpressora(texto);
 }
 
-export async function imprimirPreConta(idconta: string): Promise<{
+export type ContaPreContaImpressao = {
+	numero_mesa: number;
+	nomecliente?: string | null;
+	numeropessoas: number;
+	subtotal: number;
+	valordesconto: number;
+	valoracrescimo?: number;
+	valortaxaservico: number;
+	valorcouvert: number;
+	valorpago: number;
+	valorrestante: number;
+	status: string;
+	itens: Array<{
+		descricao: string;
+		quantidade: number;
+		precounitario: number;
+		precototal: number;
+		pago?: number | boolean | null;
+	}>;
+};
+
+export async function imprimirPreConta(
+	idcontaOuConta: string | ContaPreContaImpressao,
+): Promise<{
 	ok: boolean;
 	modo: string;
 }> {
-	const { obterContaMesa } = await import("../db/repos");
-	const conta = await obterContaMesa(idconta);
-	if (!conta || conta.status !== "aberta") {
-		throw new Error("Conta inválida");
+	let conta: ContaPreContaImpressao;
+	if (typeof idcontaOuConta === "string") {
+		const { obterContaMesa } = await import("../db/repos");
+		const local = await obterContaMesa(idcontaOuConta);
+		if (!local || local.status !== "aberta") {
+			throw new Error("Conta inválida");
+		}
+		conta = local;
+	} else {
+		conta = idcontaOuConta;
+		if (conta.status !== "aberta") {
+			throw new Error("Conta inválida");
+		}
 	}
-	if (!conta.itens.length) {
+	const itensAbertos = conta.itens.filter((item) => Number(item.pago) !== 1);
+	if (!itensAbertos.length) {
 		throw new Error("Conta sem itens para conferência");
 	}
 	const modelo =
@@ -134,7 +184,7 @@ export async function imprimirPreConta(idconta: string): Promise<{
 	linhas.push(`Pessoas: ${conta.numeropessoas}`);
 	linhas.push(`Data: ${new Date().toLocaleString("pt-BR")}`);
 	linhas.push("--------------------------------");
-	for (const item of conta.itens) {
+	for (const item of itensAbertos) {
 		linhas.push(item.descricao.slice(0, 32));
 		linhas.push(
 			`  ${formatarQtd(item.quantidade)} x ${money(item.precounitario)} = ${money(item.precototal)}`,
@@ -144,6 +194,9 @@ export async function imprimirPreConta(idconta: string): Promise<{
 	linhas.push(`Subtotal: ${money(conta.subtotal)}`);
 	if (conta.valordesconto > 0) {
 		linhas.push(`Desconto: -${money(conta.valordesconto)}`);
+	}
+	if ((conta.valoracrescimo ?? 0) > 0) {
+		linhas.push(`Acrescimo: ${money(conta.valoracrescimo ?? 0)}`);
 	}
 	if (conta.valortaxaservico > 0) {
 		linhas.push(`Taxa servico: ${money(conta.valortaxaservico)}`);
@@ -165,6 +218,12 @@ export async function imprimirComprovanteFechamentoCaixa(
 	dados: DadosComprovanteFechamentoCaixa,
 ): Promise<{ ok: boolean; modo: string }> {
 	return enviarParaImpressora(montarTextoComprovanteFechamentoCaixa(dados));
+}
+
+export async function imprimirItensVendidosTurno(
+	dados: DadosItensVendidosTurno,
+): Promise<{ ok: boolean; modo: string }> {
+	return enviarParaImpressora(montarTextoItensVendidosTurno(dados));
 }
 
 async function destinoFiscal(): Promise<DestinoImpressora> {
@@ -190,33 +249,41 @@ export async function imprimirPedidoProducao(params: {
 	destino: DestinoImpressora;
 	origem: string;
 	cliente?: string | null;
+	observacaoPedido?: string | null;
 	itens: Array<{
 		quantidade: number;
 		descricao: string;
 		observacao?: string | null;
+		nomeGrupo?: string | null;
 	}>;
+	reimpressao?: boolean;
+	/** Cabeçalho por grupo (modo pedido / cupom único). */
+	agruparPorGrupo?: boolean;
+	/** quantidade = "6  Pastel"; unitario = 6 linhas de "1  Pastel". */
+	formatoItem?: FormatoItemProducao;
+	/**
+	 * Tamanho tipográfico. Se omitido, usa `impressora_fonte`.
+	 * Cupom único de produção tipicamente passa um degrau menor.
+	 */
+	tamanhoFonte?: TamanhoFonteImpressao;
 }): Promise<{ ok: boolean; modo: string }> {
-	const linhas: string[] = [];
-	linhas.push("================================");
-	linhas.push("     PEDIDO DE PRODUCAO");
-	linhas.push("================================");
-	linhas.push(params.origem);
-	if (params.cliente?.trim()) {
-		linhas.push(`Cliente: ${params.cliente.trim()}`);
-	}
-	linhas.push(`Hora: ${new Date().toLocaleString("pt-BR")}`);
-	linhas.push("--------------------------------");
-	for (const item of params.itens) {
-		linhas.push(
-			`${formatarQtd(item.quantidade)}  ${item.descricao.slice(0, 30)}`,
-		);
-		if (item.observacao?.trim()) {
-			linhas.push(`   Obs: ${item.observacao.trim().slice(0, 28)}`);
-		}
-	}
-	linhas.push("================================");
-	linhas.push("\n\n\n");
-	return enviarParaImpressora(linhas.join("\n"), params.destino);
+	const tamanhoFonte =
+		params.tamanhoFonte !== undefined
+			? normalizarTamanhoFonte(params.tamanhoFonte)
+			: await obterTamanhoFonteConfig();
+	const linhas = montarLinhasPedidoProducao({
+		origem: params.origem,
+		cliente: params.cliente,
+		observacaoPedido: params.observacaoPedido,
+		itens: params.itens,
+		reimpressao: params.reimpressao,
+		agruparPorGrupo: params.agruparPorGrupo,
+		formatoItem: params.formatoItem,
+		tamanhoFonte,
+	});
+	return enviarTextoImpressora(linhas.join("\n"), params.destino, {
+		tamanhoFonte,
+	});
 }
 
 export async function testarImpressora(

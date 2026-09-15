@@ -27,6 +27,7 @@ import {
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { formatDataCivilBrasilia, formatDateCurtaBrasilia } from "@/lib/date";
 import { dashboardService } from "@/services/dashboard.service";
 
 export const description = "Gráfico de contas a pagar e receber";
@@ -231,25 +232,15 @@ export function ChartAreaInteractive() {
 							axisLine={false}
 							tickMargin={8}
 							minTickGap={32}
-							tickFormatter={(value) => {
-								const date = new Date(value);
-								return date.toLocaleDateString("pt-BR", {
-									month: "short",
-									day: "numeric",
-								});
-							}}
+							tickFormatter={(value) => formatDateCurtaBrasilia(String(value))}
 						/>
 						<ChartTooltip
 							cursor={false}
 							content={
 								<ChartTooltipContent
-									labelFormatter={(value) => {
-										return new Date(value).toLocaleDateString("pt-BR", {
-											month: "long",
-											day: "numeric",
-											year: "numeric",
-										});
-									}}
+									labelFormatter={(value) =>
+										formatDataCivilBrasilia(String(value))
+									}
 									indicator="dot"
 									formatter={(value) => {
 										return new Intl.NumberFormat("pt-BR", {

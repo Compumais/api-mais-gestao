@@ -1,8 +1,14 @@
-import { and, count, desc, eq, gte, lte } from "drizzle-orm";
-import type { NovaVendaPdvGourmet } from "@/model/venda-pdv-gourmet-model";
-import type { NovoVendaPdvItem } from "@/model/venda-pdv-item-model";
-import { vendapdvitem, vendapdvgourmet } from "@/repositories/schema.js";
-import { db } from "./connection";
+import { and, count, desc, eq, gte, lt, lte, sql } from "drizzle-orm";
+import type { NovaVendaPdvGourmet } from "@/model/venda-pdv-gourmet-model.js";
+import type { NovoVendaPdvItem } from "@/model/venda-pdv-item-model.js";
+import {
+	notafiscal,
+	usuarios,
+	vendapdvgourmet,
+	vendapdvitem,
+} from "@/repositories/schema.js";
+import { limitesUtcDoPeriodoBrasilia } from "@/util/data-hora-brasilia.js";
+import { db, pool } from "./connection.js";
 
 export async function buscarVendaPdvGourmetPorId(id: string) {
 	const [registro] = await db
@@ -25,13 +31,95 @@ export async function buscarVendaPdvGourmetPorNotaFiscalNfce(
 	return registro;
 }
 
-export async function criarVendaPdvGourmet(dadosVendaPdvGourmet: NovaVendaPdvGourmet) {
+export async function buscarVendaPdvGourmetPorIdentidadeLocal(
+	idempresa: string,
+	numeropdv: number,
+	idvendalocal: string,
+) {
+	const [registro] = await db
+		.select()
+		.from(vendapdvgourmet)
+		.where(
+			and(
+				eq(vendapdvgourmet.idempresa, idempresa),
+				eq(vendapdvgourmet.numeropdv, numeropdv),
+				eq(vendapdvgourmet.idvendalocal, idvendalocal),
+			),
+		)
+		.limit(1);
+
+	return registro;
+}
+
+export async function executarComLockVendaPdvLocal<T>(
+	idempresa: string,
+	numeropdv: number,
+	idvendalocal: string,
+	executar: () => Promise<T>,
+): Promise<T> {
+	const cliente = await pool.connect();
+	const chave = `venda-pdv:${idempresa}:${numeropdv}:${idvendalocal}`;
+	try {
+		await cliente.query("SELECT pg_advisory_lock(hashtextextended($1, 0))", [
+			chave,
+		]);
+		try {
+			return await executar();
+		} finally {
+			await cliente.query(
+				"SELECT pg_advisory_unlock(hashtextextended($1, 0))",
+				[chave],
+			);
+		}
+	} finally {
+		cliente.release();
+	}
+}
+
+export async function criarVendaPdvGourmet(
+	dadosVendaPdvGourmet: NovaVendaPdvGourmet,
+) {
 	const [registro] = await db
 		.insert(vendapdvgourmet)
 		.values(dadosVendaPdvGourmet)
 		.returning();
 
 	return registro;
+}
+
+export async function criarOuBuscarVendaPdvGourmet(
+	dadosVendaPdvGourmet: NovaVendaPdvGourmet,
+): Promise<{
+	registro: typeof vendapdvgourmet.$inferSelect;
+	criada: boolean;
+} | null> {
+	if (!dadosVendaPdvGourmet.idvendalocal) {
+		const registro = await criarVendaPdvGourmet(dadosVendaPdvGourmet);
+		return registro ? { registro, criada: true } : null;
+	}
+
+	const [criada] = await db
+		.insert(vendapdvgourmet)
+		.values(dadosVendaPdvGourmet)
+		.onConflictDoNothing({
+			target: [
+				vendapdvgourmet.idempresa,
+				vendapdvgourmet.numeropdv,
+				vendapdvgourmet.idvendalocal,
+			],
+			where: sql`${vendapdvgourmet.idvendalocal} IS NOT NULL`,
+		})
+		.returning();
+	if (criada) {
+		return { registro: criada, criada: true };
+	}
+
+	const existente = await buscarVendaPdvGourmetPorIdentidadeLocal(
+		dadosVendaPdvGourmet.idempresa,
+		dadosVendaPdvGourmet.numeropdv,
+		dadosVendaPdvGourmet.idvendalocal,
+	);
+	return existente ? { registro: existente, criada: false } : null;
 }
 
 export async function criarVendaPdvGourmetComItens(
@@ -108,26 +196,62 @@ export async function listarVendasPdvGourmet({
 	}
 
 	if (dataInicio) {
-		const inicio = /^\d{4}-\d{2}-\d{2}$/.test(dataInicio)
-			? `${dataInicio} 00:00:00.000`
-			: dataInicio.replace("T", " ").replace(/Z$/, "");
-		where.push(gte(vendapdvgourmet.datacriacao, inicio));
+		if (/^\d{4}-\d{2}-\d{2}$/.test(dataInicio)) {
+			where.push(
+				gte(
+					vendapdvgourmet.datacriacao,
+					limitesUtcDoPeriodoBrasilia(dataInicio, dataInicio).inicioUtc,
+				),
+			);
+		} else {
+			where.push(
+				gte(
+					vendapdvgourmet.datacriacao,
+					dataInicio.replace("T", " ").replace(/Z$/, ""),
+				),
+			);
+		}
 	}
 
 	if (dataFim) {
-		where.push(lte(vendapdvgourmet.datacriacao, `${dataFim} 23:59:59.999`));
+		const dia = /^\d{4}-\d{2}-\d{2}$/.test(dataFim)
+			? dataFim
+			: dataFim.slice(0, 10);
+		if (/^\d{4}-\d{2}-\d{2}$/.test(dia)) {
+			where.push(
+				lt(
+					vendapdvgourmet.datacriacao,
+					limitesUtcDoPeriodoBrasilia(dia, dia).fimUtcExclusivo,
+				),
+			);
+		} else {
+			where.push(lte(vendapdvgourmet.datacriacao, `${dataFim} 23:59:59.999`));
+		}
 	}
 
 	const offset = (page - 1) * limit;
 
-	const [totalCount, vendas] = await Promise.all([
+	const [totalCount, linhas] = await Promise.all([
 		db
 			.select({ value: count() })
 			.from(vendapdvgourmet)
 			.where(and(...where)),
 		db
-			.select()
+			.select({
+				venda: vendapdvgourmet,
+				operadorNome: usuarios.nome,
+				operadorEmail: usuarios.email,
+				nfceStatus: notafiscal.status,
+				nfceChave: notafiscal.chavenfe,
+				nfceSerie: notafiscal.serie,
+				nfceNumero: notafiscal.numeronotafiscal,
+			})
 			.from(vendapdvgourmet)
+			.leftJoin(
+				usuarios,
+				eq(vendapdvgourmet.usuarioquefechouvenda, usuarios.id),
+			)
+			.leftJoin(notafiscal, eq(vendapdvgourmet.idnotafiscalnfce, notafiscal.id))
 			.where(and(...where))
 			.orderBy(desc(vendapdvgourmet.datacriacao))
 			.limit(limit)
@@ -135,7 +259,20 @@ export async function listarVendasPdvGourmet({
 	]);
 
 	return {
-		vendas,
+		vendas: linhas.map((linha) => ({
+			...linha.venda,
+			operadorNome: linha.operadorNome,
+			operadorEmail: linha.operadorEmail,
+			nfce: linha.venda.idnotafiscalnfce
+				? {
+						idnotafiscal: linha.venda.idnotafiscalnfce,
+						status: linha.nfceStatus,
+						chave: linha.nfceChave,
+						serie: linha.nfceSerie,
+						numero: linha.nfceNumero,
+					}
+				: null,
+		})),
 		total: totalCount[0]?.value ?? 0,
 	};
 }
@@ -159,7 +296,7 @@ export async function listarTodasVendasPdvGourmetTurno({
 			dataInicio instanceof Date
 				? dataInicio.toISOString().replace("T", " ").replace(/Z$/, "")
 				: /^\d{4}-\d{2}-\d{2}$/.test(dataInicio)
-					? `${dataInicio} 00:00:00.000`
+					? limitesUtcDoPeriodoBrasilia(dataInicio, dataInicio).inicioUtc
 					: dataInicio.replace("T", " ").replace(/Z$/, "");
 		where.push(gte(vendapdvgourmet.datacriacao, inicio));
 	}

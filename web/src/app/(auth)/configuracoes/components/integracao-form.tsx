@@ -1,8 +1,9 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format } from "date-fns";
-import { useState, useEffect } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/hooks/use-auth";
 import {
 	useAtualizarSecaoConfiguracao,
 	useAtualizarWebhook,
@@ -39,22 +41,22 @@ import {
 	useDeletarWebhook,
 } from "@/hooks/use-configuracao";
 import {
+	useAtualizarConfiguracaoUsuario,
+	useConfiguracaoUsuario,
+} from "@/hooks/use-configuracao-usuario";
+import { useEmpresa } from "@/hooks/use-empresa";
+import { formatDataCivilBrasilia, formatDateTimeBrasilia } from "@/lib/date";
+import {
 	type CriarChaveApiFormData,
 	type CriarWebhookFormData,
 	criarChaveApiSchema,
 	criarWebhookSchema,
 } from "@/schemas/configuracao.schema";
-import type { Configuracao } from "@/services/configuracao.service";
-import { useAuth } from "@/hooks/use-auth";
 import {
-	useConfiguracaoUsuario,
-	useAtualizarConfiguracaoUsuario,
-} from "@/hooks/use-configuracao-usuario";
-import {
-	atualizarConfiguracaoUsuarioSchema,
 	type AtualizarConfiguracaoUsuarioFormData,
+	atualizarConfiguracaoUsuarioSchema,
 } from "@/schemas/configuracao-usuario.schema";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import type { Configuracao } from "@/services/configuracao.service";
 import {
 	iaService,
 	MODELOS_GEMINI,
@@ -62,8 +64,6 @@ import {
 	MODELOS_OPENROUTER,
 	type ProvedorIa,
 } from "@/services/ia.service";
-import { useEmpresa } from "@/hooks/use-empresa";
-import { useMutation } from "@tanstack/react-query";
 
 interface IntegracaoFormProps {
 	configuracao: Configuracao | undefined;
@@ -408,12 +408,11 @@ export function IntegracaoForm({
 								<div>
 									<p className="font-medium">{chave.nome}</p>
 									<p className="text-muted-foreground text-sm">
-										Criada em: {format(new Date(chave.criadoEm), "dd/MM/yyyy")}
+										Criada em: {formatDataCivilBrasilia(chave.criadoEm)}
 									</p>
 									{chave.ultimoUso && (
 										<p className="text-muted-foreground text-sm">
-											Último uso:{" "}
-											{format(new Date(chave.ultimoUso), "dd/MM/yyyy HH:mm")}
+											Último uso: {formatDateTimeBrasilia(chave.ultimoUso)}
 										</p>
 									)}
 								</div>
@@ -595,7 +594,9 @@ export function IntegracaoForm({
 						<Field>
 							<FieldLabel>Provedor preferido da Atena</FieldLabel>
 							<Select
-								value={formIntegracoesGlobais.watch("provedorPreferido") || "auto"}
+								value={
+									formIntegracoesGlobais.watch("provedorPreferido") || "auto"
+								}
 								onValueChange={(value) =>
 									formIntegracoesGlobais.setValue(
 										"provedorPreferido",
@@ -608,7 +609,9 @@ export function IntegracaoForm({
 									<SelectValue placeholder="Selecione" />
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value="auto">Automático (Gemini → OpenAI)</SelectItem>
+									<SelectItem value="auto">
+										Automático (Gemini → OpenAI)
+									</SelectItem>
 									<SelectItem value="gemini">Forçar Gemini</SelectItem>
 									<SelectItem value="openai">Forçar OpenAI</SelectItem>
 									<SelectItem value="openrouter">Forçar OpenRouter</SelectItem>

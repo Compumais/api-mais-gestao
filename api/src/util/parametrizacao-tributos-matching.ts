@@ -23,6 +23,8 @@ export function extrairCstOuCsosn(situacao?: string | undefined): {
 		valor.length === 3 &&
 		(valor.startsWith("1") ||
 			valor.startsWith("2") ||
+			valor.startsWith("3") ||
+			valor.startsWith("4") ||
 			valor.startsWith("5") ||
 			valor.startsWith("9"))
 	) {
@@ -128,7 +130,9 @@ export function regraParametrizacaoCasaComNota(
 	return true;
 }
 
-export function scoreEspecificidadeRegra(regra: RegraMatchParametrizacao): number {
+export function scoreEspecificidadeRegra(
+	regra: RegraMatchParametrizacao,
+): number {
 	return (
 		(regra.ncm?.trim() ? 8 : 0) +
 		(regra.cstentrada?.trim() ? 4 : 0) +

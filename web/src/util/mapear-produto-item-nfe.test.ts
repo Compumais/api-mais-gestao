@@ -1,9 +1,19 @@
 import { describe, expect, it } from "vitest";
 import type { ItemNfe } from "@/schemas/nfe-emissao.schema";
 import {
+	ehCsosn,
 	itemPrecisaAliquotaIcmsParaSt,
 	sugerirIcmsStPeloMva,
 } from "./mapear-produto-item-nfe";
+
+describe("ehCsosn", () => {
+	it("reconhece CSOSN 300 e 400", () => {
+		expect(ehCsosn("300")).toBe(true);
+		expect(ehCsosn("400")).toBe(true);
+		expect(ehCsosn("102")).toBe(true);
+		expect(ehCsosn("00")).toBe(false);
+	});
+});
 
 describe("sugerirIcmsStPeloMva", () => {
 	it("deduz ICMS próprio no cálculo de ST (NF 54: 0,88)", () => {
@@ -63,6 +73,22 @@ describe("sugerirIcmsStPeloMva", () => {
 
 		expect(resultado.valorIcmsSt).toBeUndefined();
 	});
+
+	it("não sugere ST com MVA zerado", () => {
+		expect(
+			sugerirIcmsStPeloMva({
+				descricao: "Produto",
+				ncm: "73239300",
+				cfop: "6914",
+				unidade: "UN",
+				quantidade: 1,
+				valorUnitario: 50,
+				csosn: "400",
+				percentualMvaSt: 0,
+				aliquotaIcmsSt: 0,
+			}),
+		).toEqual({});
+	});
 });
 
 describe("itemPrecisaAliquotaIcmsParaSt", () => {
@@ -78,5 +104,15 @@ describe("itemPrecisaAliquotaIcmsParaSt", () => {
 
 	it("não exige para CSOSN 102 sem MVA", () => {
 		expect(itemPrecisaAliquotaIcmsParaSt({ csosn: "102" })).toBe(false);
+	});
+
+	it("não exige para CSOSN 400 com MVA e alíquota ST zerados", () => {
+		expect(
+			itemPrecisaAliquotaIcmsParaSt({
+				csosn: "400",
+				percentualMvaSt: 0,
+				aliquotaIcmsSt: 0,
+			}),
+		).toBe(false);
 	});
 });

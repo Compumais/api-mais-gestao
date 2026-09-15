@@ -1,17 +1,26 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
+import { ORDENAR_TIPOS_PROBLEMA_CAMPOS } from "@/repositories/tipo-problema-repositories.js";
 import { listarTipoProblemasService } from "@/service/tipo-problema/listar-tipo-problemas.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
+const textoOpcional = z.string().optional();
+
 const listarTipoProblemasQuerySchema = z.object({
 	idempresa: z.string(),
-	descricao: z.string().optional(),
+	descricao: textoOpcional,
+	codigo: textoOpcional,
 	inativo: z.coerce.number().int().optional(),
+	ordenarPor: z.enum(ORDENAR_TIPOS_PROBLEMA_CAMPOS).optional(),
+	ordem: z.enum(["asc", "desc"]).optional(),
 	page: z.coerce.number().min(1).optional().default(1),
 	limit: z.coerce.number().min(1).max(100).optional().default(10),
 });
 
-export async function listarTipoProblemas(request: FastifyRequest, reply: FastifyReply) {
+export async function listarTipoProblemas(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
@@ -23,7 +32,10 @@ export async function listarTipoProblemas(request: FastifyRequest, reply: Fastif
 			idusuario: request.user.id,
 			idempresa: query.idempresa,
 			descricao: query.descricao,
+			codigo: query.codigo,
 			inativo: query.inativo,
+			ordenarPor: query.ordenarPor,
+			ordem: query.ordem,
 			page: query.page,
 			limit: query.limit,
 		});

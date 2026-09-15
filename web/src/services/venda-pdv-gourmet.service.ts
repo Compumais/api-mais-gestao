@@ -1,6 +1,14 @@
 import { api } from "@/lib/axios";
 import type { Paginacao } from "@/services/conta-mesa.service";
 
+export interface NfceHistoricoVendaPdv {
+	idnotafiscal: string;
+	status: number | null;
+	chave: string | null;
+	serie: string | null;
+	numero: string | null;
+}
+
 export interface VendaPdvGourmet {
 	id: string;
 	idempresa: string;
@@ -16,11 +24,17 @@ export interface VendaPdvGourmet {
 	valorprepago: string | null;
 	valortroco: string | null;
 	valortotal: string | null;
+	deveemitirnfce?: boolean;
+	idnotafiscalnfce?: string | null;
 	datacriacao: string | null;
 	dataalteracao: string | null;
 	usuarioquefechouvenda: string;
 	identidade?: string | null;
 	idcondicaopagto?: string | null;
+	operadorNome?: string | null;
+	meiosPagamento?: string[];
+	documento?: "fiscal" | "gerencial";
+	nfce?: NfceHistoricoVendaPdv | null;
 }
 
 export interface ListarVendasPdvGourmetResponse {
@@ -85,7 +99,9 @@ export const vendaPdvGourmetService = {
 	},
 
 	async buscar(id: string): Promise<VendaPdvGourmet> {
-		const { data } = await api.get<VendaPdvGourmet>(`/vendas-pdv-gourmet/${id}`);
+		const { data } = await api.get<VendaPdvGourmet>(
+			`/vendas-pdv-gourmet/${id}`,
+		);
 		return data;
 	},
 

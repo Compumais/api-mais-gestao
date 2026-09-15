@@ -130,6 +130,8 @@ function codigoCsosnProduto(
 			codigo.length === 3 &&
 			(codigo.startsWith("1") ||
 				codigo.startsWith("2") ||
+				codigo.startsWith("3") ||
+				codigo.startsWith("4") ||
 				codigo.startsWith("5") ||
 				codigo.startsWith("9"))
 		) {

@@ -1,18 +1,18 @@
-import type { ItemPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
 import type {
 	NivelConfiancaFiscal,
 	RelatorioAuditoriaFiscal,
 	ValidacaoFiscalItem,
 } from "@/model/regra-fiscal-model.js";
-import { classificarOperacaoFiscal } from "@/service/fiscal/classificar-operacao-fiscal.js";
 import { classificacaoFinalFiscal } from "@/service/fiscal/classificar-inconsistencia-fiscal.js";
+import { classificarOperacaoFiscal } from "@/service/fiscal/classificar-operacao-fiscal.js";
+import { cfopIndicaSt } from "@/service/fiscal/indicadores-st-nfe.js";
 import {
 	type RegraFiscalResolvida,
 	resolverRegrasFiscais,
 } from "@/service/fiscal/resolver-regras-fiscais.js";
 import { validarCoerenciaFiscalNfe } from "@/service/fiscal/validar-coerencia-fiscal-nfe.js";
 import { validarTotaisNfe } from "@/service/fiscal/validar-totais-nfe.js";
-import { cfopIndicaSt } from "@/service/fiscal/indicadores-st-nfe.js";
+import type { ItemPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
 
 export type AvaliarEmissaoFiscalParams = {
 	operacaoId: string;
@@ -26,6 +26,8 @@ export type AvaliarEmissaoFiscalParams = {
 	contribuinteIcms?: boolean;
 	indIEDest?: number | null;
 	itens: ItemPayloadNfe[];
+	/** Códigos CFOP (só dígitos) com interestadualdestmesmauf=1 */
+	cfopsInterestadualMesmaUf?: ReadonlySet<string>;
 	totais?: {
 		frete?: number;
 		seguro?: number;
@@ -76,6 +78,7 @@ export function avaliarEmissaoFiscal(
 			crt: params.crt,
 			idDest: operacao.idDest,
 			itens: params.itens,
+			cfopsInterestadualMesmaUf: params.cfopsInterestadualMesmaUf,
 		}),
 	];
 
@@ -179,14 +182,16 @@ export function avaliarEmissaoFiscal(
 		...regrasOperacaoPorItem.flat().map((regra) => regra.ruleId),
 	];
 
-	const fontes = [...regrasEstruturais, ...regrasOperacaoPorItem.flat()].flatMap(
-		(regra) =>
-			(regra.fontes ?? []).map((fonte) => ({
-				orgao: fonte.orgao,
-				documento: [fonte.tipo, fonte.numero].filter(Boolean).join(" "),
-				url: fonte.url,
-				vigencia: fonte.vigencia_inicio,
-			})),
+	const fontes = [
+		...regrasEstruturais,
+		...regrasOperacaoPorItem.flat(),
+	].flatMap((regra) =>
+		(regra.fontes ?? []).map((fonte) => ({
+			orgao: fonte.orgao,
+			documento: [fonte.tipo, fonte.numero].filter(Boolean).join(" "),
+			url: fonte.url,
+			vigencia: fonte.vigencia_inicio,
+		})),
 	);
 
 	const item0 = params.itens[0];
@@ -241,7 +246,9 @@ export function avaliarEmissaoFiscal(
 	};
 }
 
-export function mensagemBloqueioFiscal(relatorio: RelatorioAuditoriaFiscal): string {
+export function mensagemBloqueioFiscal(
+	relatorio: RelatorioAuditoriaFiscal,
+): string {
 	const atencoes = relatorio.validacoes
 		.filter((item) => item.status !== "VALIDO")
 		.map((item) => item.message);

@@ -9,13 +9,17 @@ export type AjustesContaGourmet = {
 	percentualTaxa: number;
 	couvertUnitario: number;
 	desconto: number;
+	acrescimo?: number;
+	valorentrega?: number;
 };
 
 export type TotaisContaGourmet = {
 	subtotal: number;
 	valordesconto: number;
+	valoracrescimo: number;
 	valortaxaservico: number;
 	valorcouvert: number;
+	valorentrega: number;
 	valortotal: number;
 	numeropessoas: number;
 };
@@ -24,8 +28,10 @@ export type FatiaItensGourmet = {
 	ids: string[];
 	subtotal: number;
 	desconto: number;
+	acrescimo: number;
 	taxa: number;
 	couvert: number;
+	entrega: number;
 	total: number;
 };
 
@@ -54,6 +60,9 @@ export function recalcularTotaisConta(
 	const desconto = arredondarMoeda(
 		Math.min(Math.max(0, Number(ajustes.desconto) || 0), subtotal),
 	);
+	const acrescimo = arredondarMoeda(
+		Math.max(0, Number(ajustes.acrescimo) || 0),
+	);
 	const percentual = Math.max(0, Number(ajustes.percentualTaxa) || 0);
 	const valortaxaservico = ajustes.taxaAtiva
 		? arredondarMoeda(subtotal * (percentual / 100))
@@ -61,14 +70,27 @@ export function recalcularTotaisConta(
 	const valorcouvert = arredondarMoeda(
 		Math.max(0, Number(ajustes.couvertUnitario) || 0) * numeropessoas,
 	);
+	const valorentrega = arredondarMoeda(
+		Math.max(0, Number(ajustes.valorentrega) || 0),
+	);
 	const valortotal = arredondarMoeda(
-		Math.max(0, subtotal - desconto + valortaxaservico + valorcouvert),
+		Math.max(
+			0,
+			subtotal -
+				desconto +
+				acrescimo +
+				valortaxaservico +
+				valorcouvert +
+				valorentrega,
+		),
 	);
 	return {
 		subtotal,
 		valordesconto: desconto,
+		valoracrescimo: acrescimo,
 		valortaxaservico,
 		valorcouvert,
+		valorentrega,
 		valortotal,
 		numeropessoas,
 	};
@@ -104,17 +126,35 @@ export function partirPorValor(total: number, valores: number[]): number[] {
 export function ratearAjustes(
 	subtotalFatia: number,
 	totais: TotaisContaGourmet,
-): { desconto: number; taxa: number; couvert: number; total: number } {
+): {
+	desconto: number;
+	acrescimo: number;
+	taxa: number;
+	couvert: number;
+	entrega: number;
+	total: number;
+} {
 	const fatia = arredondarMoeda(subtotalFatia);
 	if (totais.subtotal <= 0) {
-		return { desconto: 0, taxa: 0, couvert: 0, total: 0 };
+		return {
+			desconto: 0,
+			acrescimo: 0,
+			taxa: 0,
+			couvert: 0,
+			entrega: 0,
+			total: 0,
+		};
 	}
 	const r = fatia / totais.subtotal;
 	const desconto = arredondarMoeda(totais.valordesconto * r);
+	const acrescimo = arredondarMoeda((totais.valoracrescimo || 0) * r);
 	const taxa = arredondarMoeda(totais.valortaxaservico * r);
 	const couvert = arredondarMoeda(totais.valorcouvert * r);
-	const total = arredondarMoeda(fatia - desconto + taxa + couvert);
-	return { desconto, taxa, couvert, total };
+	const entrega = arredondarMoeda((totais.valorentrega || 0) * r);
+	const total = arredondarMoeda(
+		fatia - desconto + acrescimo + taxa + couvert + entrega,
+	);
+	return { desconto, acrescimo, taxa, couvert, entrega, total };
 }
 
 export function partirPorItens(
@@ -129,8 +169,10 @@ export function partirPorItens(
 	const usados = new Set<string>();
 	const fatias: FatiaItensGourmet[] = [];
 	let accDesconto = 0;
+	let accAcrescimo = 0;
 	let accTaxa = 0;
 	let accCouvert = 0;
+	let accEntrega = 0;
 	let accTotal = 0;
 
 	for (let i = 0; i < grupos.length; i += 1) {
@@ -153,22 +195,41 @@ export function partirPorItens(
 		const ultima = i === grupos.length - 1;
 		if (ultima) {
 			const desconto = arredondarMoeda(totais.valordesconto - accDesconto);
+			const acrescimo = arredondarMoeda(
+				(totais.valoracrescimo || 0) - accAcrescimo,
+			);
 			const taxa = arredondarMoeda(totais.valortaxaservico - accTaxa);
 			const couvert = arredondarMoeda(totais.valorcouvert - accCouvert);
+			const entrega = arredondarMoeda(
+				(totais.valorentrega || 0) - accEntrega,
+			);
 			const total = arredondarMoeda(totais.valortotal - accTotal);
-			fatias.push({ ids, subtotal, desconto, taxa, couvert, total });
+			fatias.push({
+				ids,
+				subtotal,
+				desconto,
+				acrescimo,
+				taxa,
+				couvert,
+				entrega,
+				total,
+			});
 		} else {
 			const rateio = ratearAjustes(subtotal, totais);
 			accDesconto = arredondarMoeda(accDesconto + rateio.desconto);
+			accAcrescimo = arredondarMoeda(accAcrescimo + rateio.acrescimo);
 			accTaxa = arredondarMoeda(accTaxa + rateio.taxa);
 			accCouvert = arredondarMoeda(accCouvert + rateio.couvert);
+			accEntrega = arredondarMoeda(accEntrega + rateio.entrega);
 			accTotal = arredondarMoeda(accTotal + rateio.total);
 			fatias.push({
 				ids,
 				subtotal,
 				desconto: rateio.desconto,
+				acrescimo: rateio.acrescimo,
 				taxa: rateio.taxa,
 				couvert: rateio.couvert,
+				entrega: rateio.entrega,
 				total: rateio.total,
 			});
 		}
@@ -179,4 +240,45 @@ export function partirPorItens(
 
 export function valorRestante(total: number, pago: number): number {
 	return arredondarMoeda(Math.max(0, arredondarMoeda(total) - arredondarMoeda(pago)));
+}
+
+/** Item marcado como pago (pagamento parcial por itens). */
+export function itemContaEstaPago(item: {
+	pago?: number | boolean | null;
+}): boolean {
+	return Number(item.pago) === 1;
+}
+
+/** Itens ainda em aberto na conta (exclui os já pagos). */
+export function filtrarItensAbertosConta<
+	T extends { pago?: number | boolean | null },
+>(itens: T[]): T[] {
+	return itens.filter((item) => !itemContaEstaPago(item));
+}
+
+/** Regras de cancelar item já lançado (espelha exclusão da API / web gourmet). */
+export function mensagemErroCancelarItem(params: {
+	contaValida: boolean;
+	itemEncontrado: boolean;
+	itemPago: boolean;
+	valorPago?: number;
+	totalAposCancelar?: number;
+}): string | null {
+	if (!params.contaValida) {
+		return "Conta inválida";
+	}
+	if (!params.itemEncontrado) {
+		return "Item não encontrado na conta";
+	}
+	if (params.itemPago) {
+		return "Item já pago não pode ser cancelado";
+	}
+	if (
+		params.valorPago != null &&
+		params.totalAposCancelar != null &&
+		params.valorPago > params.totalAposCancelar + 0.009
+	) {
+		return "Não é possível cancelar: o valor já pago ficaria maior que o total da conta.";
+	}
+	return null;
 }

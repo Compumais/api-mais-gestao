@@ -29,6 +29,8 @@ const bodySchema = z.object({
 	regimetributario: z
 		.union([z.enum(["SN", "LP", "LR"]), z.literal(""), z.null()])
 		.optional(),
+	indperfil: z.enum(["A", "B", "C"]).nullable().optional(),
+	indativ: z.coerce.number().int().min(0).max(1).nullable().optional(),
 });
 
 export async function buscarEmpresaFiscal(

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
 	destinatarioEhExterior,
-	resolverIdeEmissaoNfe,
 	resolverIdDestNfe,
+	resolverIdeEmissaoNfe,
 	resolverIndPresNfe,
 } from "./resolver-ide-emissao-nfe.js";
 
@@ -27,6 +27,17 @@ describe("resolverIdDestNfe", () => {
 			resolverIdDestNfe({
 				ufEmitente: "MG",
 				ufDestinatario: "SP",
+				paisDestinatario: "Brasil",
+			}),
+		).toBe(2);
+	});
+
+	it("prioriza a UF do local de entrega sobre a UF cadastral do destinatário", () => {
+		expect(
+			resolverIdDestNfe({
+				ufEmitente: "MG",
+				ufDestinatario: "MG",
+				ufLocalEntrega: "SP",
 				paisDestinatario: "Brasil",
 			}),
 		).toBe(2);

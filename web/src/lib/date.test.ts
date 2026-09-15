@@ -1,8 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
+	adicionarDiasIso,
+	anoMesBrasilia,
 	extractDateOnly,
+	formatDataCivilBrasilia,
+	formatDateCurtaBrasilia,
 	formatDateOnlyDisplay,
 	formatDateOnlyForInput,
+	formatDateTimeBrasilia,
+	hojeBrasiliaIsoDate,
+	inicioFimMesBrasilia,
 } from "./date";
 
 describe("formatDateOnlyDisplay", () => {
@@ -44,5 +51,72 @@ describe("consistência tabela x formulário", () => {
 		expect(exibicao).toBe("21/06/2026");
 		expect(input).toBe("2026-06-21");
 		expect(extractDateOnly(input)).toBe("2026-06-21");
+	});
+});
+
+describe("formatDateTimeBrasilia", () => {
+	it("converte timestamp UTC sem fuso para o relógio de Brasília", () => {
+		expect(formatDateTimeBrasilia("2026-09-08 16:50:00")).toBe(
+			"08/09/2026 13:50",
+		);
+		expect(formatDateTimeBrasilia("2026-09-08T16:50:00.000Z")).toBe(
+			"08/09/2026 13:50",
+		);
+	});
+
+	it("respeita offset explícito e segundos opcionais", () => {
+		expect(formatDateTimeBrasilia("2026-09-08T13:50:00-03:00")).toBe(
+			"08/09/2026 13:50",
+		);
+		expect(
+			formatDateTimeBrasilia("2026-09-08T16:50:07.000Z", { comSegundos: true }),
+		).toBe("08/09/2026 13:50:07");
+	});
+
+	it("retorna travessão para valor vazio", () => {
+		expect(formatDateTimeBrasilia(null)).toBe("—");
+		expect(formatDateTimeBrasilia(undefined)).toBe("—");
+	});
+});
+
+describe("calendário civil de Brasília", () => {
+	it("resolve o dia civil após 21h UTC", () => {
+		expect(hojeBrasiliaIsoDate(new Date("2026-09-09T00:30:00.000Z"))).toBe(
+			"2026-09-08",
+		);
+	});
+
+	it("calcula o mês e soma dias sem fuso do runtime", () => {
+		expect(inicioFimMesBrasilia(new Date("2026-09-08T16:00:00.000Z"))).toEqual({
+			inicio: "2026-09-01",
+			fim: "2026-09-30",
+		});
+		expect(adicionarDiasIso("2026-09-08", -1)).toBe("2026-09-07");
+	});
+
+	it("resolve ano e mês civis de Brasília após 21h UTC", () => {
+		expect(anoMesBrasilia(new Date("2026-09-09T00:30:00.000Z"))).toEqual({
+			ano: 2026,
+			mes: 9,
+			trimestre: 3,
+		});
+	});
+});
+
+describe("formatDataCivilBrasilia", () => {
+	it("não desloca YYYY-MM-DD", () => {
+		expect(formatDataCivilBrasilia("2026-09-05")).toBe("05/09/2026");
+	});
+
+	it("converte instante UTC para o dia civil de Brasília", () => {
+		expect(formatDataCivilBrasilia("2026-09-05T01:50:00.000Z")).toBe(
+			"04/09/2026",
+		);
+	});
+});
+
+describe("formatDateCurtaBrasilia", () => {
+	it("abrevia date-only sem conversão", () => {
+		expect(formatDateCurtaBrasilia("2026-09-05")).toBe("05/09");
 	});
 });

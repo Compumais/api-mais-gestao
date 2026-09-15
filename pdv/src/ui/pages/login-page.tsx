@@ -41,6 +41,11 @@ export function LoginPage() {
 	const [empresas, setEmpresas] = useState<Empresa[]>([]);
 	const [username, setUsername] = useState("");
 	const [terminaisPdv, setTerminaisPdv] = useState<TerminalPdvOpcao[]>([]);
+	const [terminaisBuscados, setTerminaisBuscados] = useState(false);
+	const [buscandoTerminais, setBuscandoTerminais] = useState(false);
+	const [numeropdvPrincipal, setNumeropdvPrincipal] = useState<number | null>(
+		null,
+	);
 
 	useEffect(() => {
 		void (async () => {
@@ -54,12 +59,14 @@ export function LoginPage() {
 			if (modoCfg === "secundario") {
 				setMostrarConexao(true);
 			}
-			try {
-				setTerminaisPdv(
-					await pdvInvoke<TerminalPdvOpcao[]>("listarTerminaisPdv"),
-				);
-			} catch {
-				setTerminaisPdv([]);
+			if (modoCfg !== "secundario") {
+				try {
+					setTerminaisPdv(
+						await pdvInvoke<TerminalPdvOpcao[]>("listarTerminaisPdv"),
+					);
+				} catch {
+					setTerminaisPdv([]);
+				}
 			}
 			try {
 				const status = await pdvInvoke<{
@@ -108,6 +115,11 @@ export function LoginPage() {
 		if (modo === "secundario" && !principalHost.trim()) {
 			throw new Error("Informe o IP do PDV principal.");
 		}
+		if (modo === "secundario" && !numeroPdv.trim()) {
+			throw new Error(
+				"Busque os números no principal e selecione o deste PDV secundário.",
+			);
+		}
 		if (modo === "principal" && !apiUrl.trim()) {
 			throw new Error("Informe a URL da API");
 		}
@@ -133,11 +145,56 @@ export function LoginPage() {
 		}
 	}
 
+	async function onBuscarTerminaisPrincipal() {
+		setErro("");
+		setOkConexao("");
+		if (!principalHost.trim()) {
+			setErro("Informe o IP do PDV principal.");
+			return;
+		}
+		setBuscandoTerminais(true);
+		try {
+			const result = await pdvInvoke<{
+				numeropdvPrincipal: number;
+				terminais: TerminalPdvOpcao[];
+				mensagem: string;
+			}>("buscarTerminaisPrincipal", {
+				host: principalHost.trim(),
+				porta: principalPorta.trim() || "5050",
+			});
+			setTerminaisPdv(result.terminais);
+			setNumeropdvPrincipal(result.numeropdvPrincipal);
+			setTerminaisBuscados(true);
+			const livre = result.terminais.find((t) => t.disponivel !== false);
+			if (livre) {
+				setNumeroPdv(String(livre.numeropdv));
+			} else {
+				setNumeroPdv("");
+			}
+			setOkConexao(result.mensagem);
+		} catch (err) {
+			setTerminaisBuscados(false);
+			setTerminaisPdv([]);
+			setNumeropdvPrincipal(null);
+			setErro(
+				err instanceof Error
+					? err.message
+					: "Falha ao buscar números no principal",
+			);
+		} finally {
+			setBuscandoTerminais(false);
+		}
+	}
+
 	async function onTestarPrincipal() {
 		setErro("");
 		setOkConexao("");
 		if (!principalHost.trim()) {
 			setErro("Informe o IP do PDV principal.");
+			return;
+		}
+		if (!numeroPdv.trim()) {
+			setErro("Busque os números no principal e selecione o deste PDV.");
 			return;
 		}
 		setTestando(true);
@@ -246,15 +303,28 @@ export function LoginPage() {
 										: "Configurar conexão / PDV secundário"}
 								</button>
 								{mostrarConexao && (
-									<div className="space-y-3 rounded-md border p-3">
+									<div className="space-y-3 rounded-md bg-muted/50 p-3 ring-1 ring-foreground/10">
 										<div className="space-y-2">
 											<Label htmlFor="pdv_modo">Este PDV</Label>
 											<Select
 												id="pdv_modo"
 												value={modo}
-												onChange={(e) =>
-													setModo(normalizarModo(e.target.value))
-												}
+												onChange={(e) => {
+													const proximo = normalizarModo(e.target.value);
+													setModo(proximo);
+													setTerminaisBuscados(false);
+													setTerminaisPdv([]);
+													setNumeropdvPrincipal(null);
+													setOkConexao("");
+													setErro("");
+													if (proximo === "principal") {
+														void pdvInvoke<TerminalPdvOpcao[]>(
+															"listarTerminaisPdv",
+														)
+															.then(setTerminaisPdv)
+															.catch(() => setTerminaisPdv([]));
+													}
+												}}
 											>
 												<option value="principal">
 													Principal (banco local)
@@ -264,25 +334,22 @@ export function LoginPage() {
 												</option>
 											</Select>
 										</div>
-										<div className="space-y-2">
-											<Label htmlFor="numeropdv">Número do PDV</Label>
-											<SelectNumeroPdv
-												value={numeroPdv}
-												terminais={terminaisPdv}
-												onChange={setNumeroPdv}
-											/>
-										</div>
 										{modo === "secundario" ? (
 											<>
 												<div className="space-y-2">
 													<Label htmlFor="pdv_principal_host">
-														IP do PDV principal
+														1. IP do PDV principal
 													</Label>
 													<Input
 														id="pdv_principal_host"
 														placeholder="192.168.1.10"
 														value={principalHost}
-														onChange={(e) => setPrincipalHost(e.target.value)}
+														onChange={(e) => {
+															setPrincipalHost(e.target.value);
+															setTerminaisBuscados(false);
+															setTerminaisPdv([]);
+															setNumeropdvPrincipal(null);
+														}}
 													/>
 												</div>
 												<div className="space-y-2">
@@ -294,9 +361,54 @@ export function LoginPage() {
 														type="number"
 														min={1}
 														value={principalPorta}
-														onChange={(e) => setPrincipalPorta(e.target.value)}
+														onChange={(e) => {
+															setPrincipalPorta(e.target.value);
+															setTerminaisBuscados(false);
+															setTerminaisPdv([]);
+															setNumeropdvPrincipal(null);
+														}}
 													/>
 												</div>
+												<div className="flex flex-wrap gap-2">
+													<Button
+														type="button"
+														variant="secondary"
+														size="sm"
+														disabled={
+															buscandoTerminais ||
+															loading ||
+															!principalHost.trim()
+														}
+														onClick={() => void onBuscarTerminaisPrincipal()}
+													>
+														{buscandoTerminais
+															? "Buscando…"
+															: "2. Buscar números no principal"}
+													</Button>
+												</div>
+												{terminaisBuscados ? (
+													<div className="space-y-2">
+														<Label htmlFor="numeropdv">
+															3. Número deste PDV secundário
+															{numeropdvPrincipal
+																? ` (principal é o nº ${numeropdvPrincipal})`
+																: ""}
+														</Label>
+														<SelectNumeroPdv
+															value={numeroPdv}
+															terminais={terminaisPdv}
+															somenteDisponiveis
+															onChange={setNumeroPdv}
+															ajuda="Só aparecem números cadastrados no retaguarda que não são o do principal e não estão em uso."
+														/>
+													</div>
+												) : (
+													<p className="text-xs text-muted-foreground">
+														Depois de informar o IP, busque os números no
+														principal para escolher um PDV livre (evita
+														conflito com o nº do principal).
+													</p>
+												)}
 												<p className="text-xs text-muted-foreground">
 													Produtos e configurações de negócio vêm do principal.
 													A URL da API também é puxada de lá ao conectar.
@@ -315,20 +427,30 @@ export function LoginPage() {
 												</div>
 											</>
 										) : (
-											<div className="space-y-2">
-												<Label htmlFor="api_url">URL da API</Label>
-												<Input
-													id="api_url"
-													type="url"
-													placeholder="https://api.seudominio.com"
-													value={apiUrl}
-													onChange={(e) => setApiUrl(e.target.value)}
-												/>
-												<p className="text-xs text-muted-foreground">
-													Ex.: https://api.compuchat.space ou
-													http://localhost:3333
-												</p>
-											</div>
+											<>
+												<div className="space-y-2">
+													<Label htmlFor="numeropdv">Número do PDV</Label>
+													<SelectNumeroPdv
+														value={numeroPdv}
+														terminais={terminaisPdv}
+														onChange={setNumeroPdv}
+													/>
+												</div>
+												<div className="space-y-2">
+													<Label htmlFor="api_url">URL da API</Label>
+													<Input
+														id="api_url"
+														type="url"
+														placeholder="https://api.seudominio.com"
+														value={apiUrl}
+														onChange={(e) => setApiUrl(e.target.value)}
+													/>
+													<p className="text-xs text-muted-foreground">
+														Ex.: https://api.compuchat.space ou
+														http://localhost:3333
+													</p>
+												</div>
+											</>
 										)}
 										<div className="flex flex-wrap gap-2">
 											<Button
@@ -345,7 +467,12 @@ export function LoginPage() {
 													type="button"
 													variant="outline"
 													size="sm"
-													disabled={testando || loading}
+													disabled={
+														testando ||
+														loading ||
+														!terminaisBuscados ||
+														!numeroPdv.trim()
+													}
 													onClick={() => void onTestarPrincipal()}
 												>
 													{testando ? "Testando…" : "Testar principal"}
@@ -377,7 +504,7 @@ export function LoginPage() {
 									/>
 								</div>
 								{okConexao && (
-									<p className="text-sm text-emerald-700">{okConexao}</p>
+									<p className="text-sm text-primary">{okConexao}</p>
 								)}
 								{erro && <p className="text-sm text-destructive">{erro}</p>}
 								<Button className="w-full" size="lg" disabled={loading}>

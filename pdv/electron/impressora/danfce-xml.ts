@@ -1,10 +1,12 @@
 export type ItemDanfce = {
+	nItem?: number;
 	codigo: string;
 	descricao: string;
 	quantidade: number;
 	unidade: string;
 	unitario: number;
 	total: number;
+	desconto?: number;
 };
 
 export type PagamentoDanfce = {
@@ -14,13 +16,16 @@ export type PagamentoDanfce = {
 
 export type EmitenteDanfce = {
 	nome: string;
+	fantasia?: string;
 	cnpj: string;
 	ie?: string;
 	logradouro?: string;
 	numero?: string;
+	complemento?: string;
 	bairro?: string;
 	municipio?: string;
 	uf?: string;
+	cep?: string;
 	fone?: string;
 	crt?: number;
 };
@@ -41,6 +46,8 @@ export type DadosDanfce = {
 	valorProdutos: number;
 	desconto: number;
 	frete: number;
+	seguro: number;
+	outras: number;
 	valorPagar: number;
 	pagamentos: PagamentoDanfce[];
 	troco: number;
@@ -55,6 +62,7 @@ export type DadosDanfce = {
 	qrcode?: string;
 	vTotTrib?: number | null;
 	infCpl?: string;
+	infAdFisco?: string;
 };
 
 function tag(xml: string, nome: string): string | null {
@@ -88,26 +96,27 @@ function numeroXml(valor: string | null | undefined): number {
 	return Number.isFinite(n) ? n : 0;
 }
 
+/** Rótulos curtos para caber no cupom de 80 mm. */
 const ROTULO_TPAG: Record<string, string> = {
 	"01": "Dinheiro",
 	"02": "Cheque",
-	"03": "Cartão de Crédito",
-	"04": "Cartão de Débito",
-	"05": "Cartão da Loja/Outros Crediários",
-	"10": "Vale Alimentação",
-	"11": "Vale Refeição",
+	"03": "Cartao de Credito",
+	"04": "Cartao de Debito",
+	"05": "Credito Loja",
+	"10": "Vale Alimentacao",
+	"11": "Vale Refeicao",
 	"12": "Vale Presente",
-	"13": "Vale Combustível",
-	"15": "Boleto Bancário",
-	"16": "Depósito Bancário",
-	"17": "Pagamento Instantâneo (PIX) - Dinâmico",
-	"18": "Transferência bancária, Carteira Digital",
-	"19": "Programa fidelidade, Cashback, Créd Virt",
-	"20": "Pagamento Instantâneo (PIX) - Estático",
-	"21": "Crédito em Loja",
-	"22": "Pagamento Eletrônico não Informado",
+	"13": "Vale Combustivel",
+	"15": "Boleto",
+	"16": "Deposito Bancario",
+	"17": "PIX",
+	"18": "Transferencia",
+	"19": "Fidelidade",
+	"20": "PIX",
+	"21": "Credito em Loja",
+	"22": "Pagto Eletronico",
 	"90": "Sem pagamento",
-	"91": "Pagamento Posterior",
+	"91": "Pagto Posterior",
 	"99": "Outros",
 };
 
@@ -118,17 +127,28 @@ export function rotuloFormaPagamentoNfce(tPag: string | number): string {
 }
 
 function parseItens(xml: string): ItemDanfce[] {
-	return blocos(xml, "det").map((det) => {
+	const re = /<(?:[\w.]+:)?det\b([^>]*)>([\s\S]*?)<\/(?:[\w.]+:)?det>/gi;
+	const itens: ItemDanfce[] = [];
+	let indice = 0;
+	for (const m of xml.matchAll(re)) {
+		indice += 1;
+		const attrs = m[1] ?? "";
+		const det = m[2] ?? "";
+		const nItemAttr = attrs.match(/nItem\s*=\s*["']?(\d+)/i)?.[1];
 		const prod = bloco(det, "prod") ?? det;
-		return {
+		const desconto = numeroXml(tag(prod, "vDesc"));
+		itens.push({
+			nItem: nItemAttr ? Number(nItemAttr) : indice,
 			codigo: tag(prod, "cProd") ?? "",
 			descricao: tag(prod, "xProd") ?? "",
 			quantidade: numeroXml(tag(prod, "qCom")),
 			unidade: tag(prod, "uCom") ?? "UN",
 			unitario: numeroXml(tag(prod, "vUnCom")),
 			total: numeroXml(tag(prod, "vProd")),
-		};
-	});
+			...(desconto > 0 ? { desconto } : {}),
+		});
+	}
+	return itens;
 }
 
 function parsePagamentos(xml: string): PagamentoDanfce[] {
@@ -164,7 +184,8 @@ function parseConsumidor(xml: string): ConsumidorDanfce | undefined {
 				[tag(ender, "xLgr"), tag(ender, "nro")].filter(Boolean).join(", "),
 				tag(ender, "xCpl"),
 				tag(ender, "xBairro"),
-				[tag(ender, "xMun"), tag(ender, "UF")].filter(Boolean).join("-"),
+				[tag(ender, "xMun"), tag(ender, "UF")].filter(Boolean).join("/"),
+				tag(ender, "CEP") ? `CEP ${tag(ender, "CEP")}` : "",
 			]
 				.map((p) => p?.trim())
 				.filter(Boolean)
@@ -176,8 +197,13 @@ function parseConsumidor(xml: string): ConsumidorDanfce | undefined {
 				? { tipo: "cpf" as const, documento: cpf }
 				: {}),
 		...(nome ? { nome } : {}),
-		...(partes.length ? { endereco: partes.join(" ") } : {}),
+		...(partes.length ? { endereco: partes.join(" - ") } : {}),
 	};
+}
+
+function opcional(valor: string | null): string | undefined {
+	const t = valor?.trim();
+	return t ? t : undefined;
 }
 
 function parseEmitente(xml: string): EmitenteDanfce | null {
@@ -188,22 +214,34 @@ function parseEmitente(xml: string): EmitenteDanfce | null {
 	const cnpj = tag(emit, "CNPJ");
 	if (!nome && !cnpj) return null;
 	const crt = numeroXml(tag(emit, "CRT"));
+	const fantasia = opcional(tag(emit, "xFant"));
 	return {
 		nome: nome ?? "",
 		cnpj: cnpj ?? "",
-		...(tag(emit, "IE") ? { ie: tag(emit, "IE") ?? undefined } : {}),
-		...(tag(ender, "xLgr")
-			? { logradouro: tag(ender, "xLgr") ?? undefined }
+		...(fantasia && fantasia !== nome ? { fantasia } : {}),
+		...(opcional(tag(emit, "IE")) ? { ie: opcional(tag(emit, "IE")) } : {}),
+		...(opcional(tag(ender, "xLgr"))
+			? { logradouro: opcional(tag(ender, "xLgr")) }
 			: {}),
-		...(tag(ender, "nro") ? { numero: tag(ender, "nro") ?? undefined } : {}),
-		...(tag(ender, "xBairro")
-			? { bairro: tag(ender, "xBairro") ?? undefined }
+		...(opcional(tag(ender, "nro"))
+			? { numero: opcional(tag(ender, "nro")) }
 			: {}),
-		...(tag(ender, "xMun")
-			? { municipio: tag(ender, "xMun") ?? undefined }
+		...(opcional(tag(ender, "xCpl"))
+			? { complemento: opcional(tag(ender, "xCpl")) }
 			: {}),
-		...(tag(ender, "UF") ? { uf: tag(ender, "UF") ?? undefined } : {}),
-		...(tag(ender, "fone") ? { fone: tag(ender, "fone") ?? undefined } : {}),
+		...(opcional(tag(ender, "xBairro"))
+			? { bairro: opcional(tag(ender, "xBairro")) }
+			: {}),
+		...(opcional(tag(ender, "xMun"))
+			? { municipio: opcional(tag(ender, "xMun")) }
+			: {}),
+		...(opcional(tag(ender, "UF")) ? { uf: opcional(tag(ender, "UF")) } : {}),
+		...(opcional(tag(ender, "CEP"))
+			? { cep: opcional(tag(ender, "CEP")) }
+			: {}),
+		...(opcional(tag(ender, "fone"))
+			? { fone: opcional(tag(ender, "fone")) }
+			: {}),
 		...(crt > 0 ? { crt } : {}),
 	};
 }
@@ -230,6 +268,8 @@ export function parseXmlDanfce(
 	const vNF = numeroXml(tag(icmsTot, "vNF"));
 	const vDesc = numeroXml(tag(icmsTot, "vDesc"));
 	const vFrete = numeroXml(tag(icmsTot, "vFrete"));
+	const vSeg = numeroXml(tag(icmsTot, "vSeg"));
+	const vOutro = numeroXml(tag(icmsTot, "vOutro"));
 	const vProd = numeroXml(tag(icmsTot, "vProd"));
 	const vTotTribRaw = tag(icmsTot, "vTotTrib");
 	const qrCode = tag(xml, "qrCode") ?? undefined;
@@ -239,6 +279,7 @@ export function parseXmlDanfce(
 	const nNF = numeroXml(tag(ide, "nNF"));
 	const serie = numeroXml(tag(ide, "serie"));
 	const infCpl = tag(xml, "infCpl") ?? undefined;
+	const infAdFisco = tag(xml, "infAdFisco") ?? undefined;
 
 	return {
 		...(emitente ? { emitente } : {}),
@@ -255,6 +296,8 @@ export function parseXmlDanfce(
 			? {
 					desconto: vDesc,
 					frete: vFrete,
+					seguro: vSeg,
+					outras: vOutro,
 					vTotTrib: vTotTribRaw != null ? numeroXml(vTotTribRaw) : null,
 				}
 			: {}),
@@ -275,5 +318,6 @@ export function parseXmlDanfce(
 			: {}),
 		...(qrCode ? { qrcode: qrCode } : {}),
 		...(infCpl ? { infCpl } : {}),
+		...(infAdFisco ? { infAdFisco } : {}),
 	};
 }

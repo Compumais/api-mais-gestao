@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
+	type BuscarProdutoNfResponse,
 	notaFiscalService,
 	type NotaFiscalItemImportacao,
 } from "@/services/nota-fiscal.service";
@@ -35,9 +36,9 @@ export function LocalizarProdutoDialog({
 	const queryClient = useQueryClient();
 	const eanXml = item.dadosimportacao?.eanXml ?? "";
 	const [busca, setBusca] = useState("");
-	const [resultado, setResultado] = useState<
-		Awaited<ReturnType<typeof notaFiscalService.buscarProduto>> | null
-	>(null);
+	const [resultado, setResultado] = useState<BuscarProdutoNfResponse | null>(
+		null,
+	);
 
 	const { mutate: buscar, isPending: buscando } = useMutation({
 		mutationFn: (params: { q?: string; ean?: string; codigo?: string }) =>
@@ -109,6 +110,8 @@ export function LocalizarProdutoDialog({
 		buscar({ q: termo });
 	};
 
+	const produtos = resultado?.produtos ?? [];
+
 	return (
 		<Dialog open={aberto} onOpenChange={onAbertoChange}>
 			<DialogContent>
@@ -145,31 +148,39 @@ export function LocalizarProdutoDialog({
 						Buscar
 					</Button>
 				</div>
-				{resultado?.encontrado && resultado.produto ? (
-					<div className="rounded-md border p-3 text-sm">
-						<p className="font-medium">{resultado.produto.nome}</p>
-						<p className="text-muted-foreground">
-							Cód: {resultado.produto.codigo ?? "-"} | EAN:{" "}
-							{resultado.produto.ean ?? "-"}
-						</p>
-						{eanXml &&
-						resultado.produto.ean &&
-						String(resultado.produto.ean) !== eanXml ? (
-							<p className="text-amber-600 dark:text-amber-400 mt-1">
-								Atenção: o EAN do estoque difere do EAN da nota.
-							</p>
-						) : null}
-						<Button
-							type="button"
-							className="mt-2"
-							size="sm"
-							onClick={() => {
-								if (resultado.produto) vincular(resultado.produto.id);
-							}}
-							disabled={vinculando}
-						>
-							Vincular este produto
-						</Button>
+				{resultado?.encontrado && produtos.length > 0 ? (
+					<div className="max-h-72 space-y-2 overflow-y-auto">
+						{produtos.map((produto) => {
+							const eanProduto = produto.ean != null ? String(produto.ean) : "";
+							const eanDivergente =
+								Boolean(eanXml) && Boolean(eanProduto) && eanProduto !== eanXml;
+
+							return (
+								<div
+									key={produto.id}
+									className="rounded-md border p-3 text-sm"
+								>
+									<p className="font-medium">{produto.nome ?? "-"}</p>
+									<p className="text-muted-foreground">
+										Cód: {produto.codigo ?? "-"} | EAN: {produto.ean ?? "-"}
+									</p>
+									{eanDivergente ? (
+										<p className="mt-1 text-amber-600 dark:text-amber-400">
+											Atenção: o EAN do estoque difere do EAN da nota.
+										</p>
+									) : null}
+									<Button
+										type="button"
+										className="mt-2"
+										size="sm"
+										onClick={() => vincular(produto.id)}
+										disabled={vinculando}
+									>
+										Vincular
+									</Button>
+								</div>
+							);
+						})}
 					</div>
 				) : resultado ? (
 					<p className="text-sm text-muted-foreground">
@@ -177,7 +188,11 @@ export function LocalizarProdutoDialog({
 					</p>
 				) : null}
 				<DialogFooter>
-					<Button type="button" variant="outline" onClick={() => onAbertoChange(false)}>
+					<Button
+						type="button"
+						variant="outline"
+						onClick={() => onAbertoChange(false)}
+					>
 						Fechar
 					</Button>
 				</DialogFooter>

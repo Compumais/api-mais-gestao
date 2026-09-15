@@ -1,16 +1,17 @@
 import type { Hierarquia } from "@/model/hierarquia-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
-import { listarHierarquias } from "@/repositories/hierarquia-repositories.js";
+import {
+	type ListarHierarquiasParametros,
+	listarHierarquias,
+} from "@/repositories/hierarquia-repositories.js";
 import { httpOk, httpProibido } from "@/util/http-util.js";
 
-type ListarHierarquiasParametros = {
+type ListarHierarquiasServiceParametros = Omit<
+	ListarHierarquiasParametros,
+	never
+> & {
 	idusuario: string;
-	idempresa: string;
-	nome?: string | undefined;
-	q?: string | undefined;
-	page?: number;
-	limit?: number;
 };
 
 type ListarHierarquiasResposta = {
@@ -26,11 +27,10 @@ type ListarHierarquiasResposta = {
 export async function listarHierarquiasService({
 	idusuario,
 	idempresa,
-	nome,
-	q,
 	page = 1,
 	limit = 10,
-}: ListarHierarquiasParametros): Promise<
+	...filtros
+}: ListarHierarquiasServiceParametros): Promise<
 	HttpResponse<ListarHierarquiasResposta>
 > {
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
@@ -44,10 +44,9 @@ export async function listarHierarquiasService({
 
 	const resultado = await listarHierarquias({
 		idempresa,
-		nome,
-		q,
 		page,
 		limit,
+		...filtros,
 	});
 
 	const total = resultado.total ?? 0;

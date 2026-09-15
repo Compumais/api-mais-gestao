@@ -18,8 +18,10 @@ export type PagamentosRegistro = {
 	valortroco?: string | null;
 	valortotal?: string | null;
 	desconto?: string | null;
+	valoracrescimo?: string | null;
 	valortaxaservico?: string | null;
 	valorcouverartistico?: string | null;
+	valorentrega?: string | null;
 };
 
 export function pagamentosResumoVazio(): PagamentosResumo {

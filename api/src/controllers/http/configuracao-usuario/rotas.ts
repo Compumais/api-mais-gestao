@@ -1,7 +1,9 @@
 import type { FastifyInstance } from "fastify";
 import { verifyJwt } from "../../middleware/verify-jwt.js";
 import { atualizarConfiguracaoUsuario } from "./atualizar.js";
+import { atualizarPreferenciasUiUsuario } from "./atualizar-preferencias-ui.js";
 import { buscarConfiguracaoUsuario } from "./buscar.js";
+import { buscarPreferenciasUiUsuario } from "./buscar-preferencias-ui.js";
 import * as schema from "./doc-schema/schema.js";
 
 export async function configuracaoUsuarioRotas(app: FastifyInstance) {
@@ -15,5 +17,15 @@ export async function configuracaoUsuarioRotas(app: FastifyInstance) {
 	app.put("/configuracoes-usuario", {
 		schema: schema.atualizarConfiguracaoUsuarioSchema,
 		handler: atualizarConfiguracaoUsuario,
+	});
+
+	app.get("/configuracoes-usuario/preferencias-ui", {
+		schema: schema.buscarPreferenciasUiUsuarioSchema,
+		handler: buscarPreferenciasUiUsuario,
+	});
+
+	app.put("/configuracoes-usuario/preferencias-ui", {
+		schema: schema.atualizarPreferenciasUiUsuarioSchema,
+		handler: atualizarPreferenciasUiUsuario,
 	});
 }

@@ -49,6 +49,7 @@ export interface AtualizarUsuarioData {
 	perfil?: string | string[];
 	empresasIds?: string[];
 	idempresa: string;
+	password?: string;
 }
 
 export const usuariosService = {

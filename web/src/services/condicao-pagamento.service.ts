@@ -46,8 +46,14 @@ export const condicaoPagamentoService = {
 		idempresa: string;
 		page?: number;
 		limit?: number;
+		codigo?: string;
 		descricao?: string;
+		parcelas?: string;
+		prazos?: string;
+		escopo?: number;
 		inativo?: number;
+		ordenarPor?: string;
+		ordem?: "asc" | "desc";
 	}): Promise<ListarCondicoesPagamentoResponse> {
 		const { data } = await api.get<ListarCondicoesPagamentoResponse>(
 			"/condicoes-pagamento",

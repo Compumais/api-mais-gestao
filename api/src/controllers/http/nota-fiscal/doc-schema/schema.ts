@@ -164,8 +164,40 @@ export const listarNotasFiscaisSchema: FastifySchema = {
 			status: { type: "number" },
 			tipoorigem: { type: "number", description: "0=Compra (entrada)." },
 			idcfop: { type: "string" },
-			dataInicio: { type: "string", description: "Filtro data emissão início (YYYY-MM-DD)." },
-			dataFim: { type: "string", description: "Filtro data emissão fim (YYYY-MM-DD)." },
+			dataInicio: {
+				type: "string",
+				description: "Filtro data emissão início (YYYY-MM-DD).",
+			},
+			dataFim: {
+				type: "string",
+				description: "Filtro data emissão fim (YYYY-MM-DD).",
+			},
+			entradasaida: {
+				type: "string",
+				description: "Filtro dia entrada/saída (YYYY-MM-DD).",
+			},
+			razaosocial: { type: "string" },
+			chavenfe: { type: "string" },
+			serie: { type: "string" },
+			numeronfse: { type: "string" },
+			ordenarPor: {
+				type: "string",
+				enum: [
+					"numeronotafiscal",
+					"numero",
+					"serie",
+					"razaosocial",
+					"emissao",
+					"entradasaida",
+					"valortotalnota",
+					"status",
+					"chavenfe",
+					"numeronfse",
+					"tipoambientenfe",
+					"datainclusao",
+				],
+			},
+			ordem: { type: "string", enum: ["asc", "desc"] },
 			page: { type: "number", default: 1 },
 			limit: { type: "number", default: 10 },
 		},
@@ -391,13 +423,16 @@ export const buscarProdutoNFSchema: FastifySchema = {
 	tags: ["nota-fiscal"],
 	summary: "Buscar produto para vincular na NF de compra",
 	description:
-		"Busca um produto por código, EAN ou descrição parcial. Útil para o front-end verificar se o produto existe antes de lançar a NF. Retorna encontrado=false quando não existe.",
+		"Busca produtos por código, EAN ou nome/descrição parcial (até 20 matches). Útil para o front-end listar e vincular o produto na NF. Retorna encontrado=false quando não existe.",
 	security: [{ bearerAuth: [] }],
 	querystring: {
 		type: "object",
 		properties: {
 			idempresa: { type: "string", description: "ID da empresa." },
-			q: { type: "string", description: "Busca por descrição parcial." },
+			q: {
+				type: "string",
+				description: "Busca parcial por nome ou descrição.",
+			},
 			codigo: { type: "string", description: "Código interno do produto." },
 			ean: { type: "string", description: "Código EAN/barras." },
 		},
@@ -408,10 +443,18 @@ export const buscarProdutoNFSchema: FastifySchema = {
 			type: "object",
 			properties: {
 				encontrado: { type: "boolean" },
-				produto: {
-					nullable: true,
-					type: "object",
-					additionalProperties: true,
+				produtos: {
+					type: "array",
+					items: {
+						type: "object",
+						properties: {
+							id: { type: "string" },
+							nome: { type: "string", nullable: true },
+							codigo: { type: "number", nullable: true },
+							ean: { type: ["string", "number"], nullable: true },
+							descricao: { type: "string", nullable: true },
+						},
+					},
 				},
 			},
 		},

@@ -126,6 +126,7 @@ export const notafiscal = pgTable(
 		dataextemporanea: date(),
 		datahoraconsultasituacao: timestamp({ precision: 3, mode: "string" }),
 		datahoraemissao: timestamp({ precision: 3, mode: "string" }),
+		datahoraautorizacao: timestamp({ precision: 3, mode: "string" }),
 		datahoraentradasaida: timestamp({ precision: 3, mode: "string" }),
 		datahoransu: timestamp({ precision: 3, mode: "string" }),
 		datainclusao: timestamp({ precision: 3, mode: "string" }),
@@ -388,6 +389,11 @@ export const notafiscal = pgTable(
 		index("notafiscal_chavenfe_idx").using(
 			"btree",
 			table.chavenfe.asc().nullsLast().op("text_ops"),
+		),
+		index("notafiscal_empresa_modelo_status_idx").on(
+			table.idempresa,
+			table.modelo,
+			table.status,
 		),
 		foreignKey({
 			columns: [table.idempresa],

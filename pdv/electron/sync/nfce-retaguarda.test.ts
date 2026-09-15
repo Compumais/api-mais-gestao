@@ -9,6 +9,7 @@ describe("status NFC-e da retaguarda", () => {
 		assert.equal(statusNfceRetaguardaParaPdv(110), "erro");
 		assert.equal(statusNfceRetaguardaParaPdv(101), "cancelada");
 		assert.equal(statusNfceRetaguardaParaPdv(90), "pendente");
+		assert.equal(statusNfceRetaguardaParaPdv("autorizada"), "autorizada");
 		assert.equal(statusNfceRetaguardaParaPdv(null), null);
 	});
 

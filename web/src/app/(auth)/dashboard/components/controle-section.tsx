@@ -25,6 +25,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { hojeBrasiliaIsoDate } from "@/lib/date";
 import { dashboardService } from "@/services/dashboard.service";
 
 const MESES = [
@@ -51,7 +52,7 @@ const formatCurrency = (value: number) =>
 
 export function ControleSection() {
 	const { localStorageEmpresa: empresa } = useEmpresa();
-	const anoAtual = new Date().getFullYear();
+	const anoAtual = Number(hojeBrasiliaIsoDate().slice(0, 4));
 	const [ano, setAno] = React.useState(String(anoAtual));
 
 	const anosDisponiveis = React.useMemo(

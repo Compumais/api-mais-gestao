@@ -2,6 +2,7 @@ node_modules
 dist
 out
 release
+release-build
 *.log
 .DS_Store
 .env
@@ -12,4 +13,3 @@ release
 .npm-cache
 installer/vendor/*.exe
 installer/vendor/*.zip
-installer/output/

@@ -4,6 +4,7 @@ import {
 	type DadosDestinatarioNfe,
 	montarCamposDestinatarioNfe,
 } from "@/util/destinatario-nfe-util";
+import { cn } from "@/lib/utils";
 
 type ResumoDestinatarioNfeProps = {
 	dados: DadosDestinatarioNfe;
@@ -18,21 +19,23 @@ export function ResumoDestinatarioNfe({
 
 	if (variant === "compact") {
 		return (
-			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3 text-sm">
+			<div className="grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
 				{campos.map((campo) => (
 					<div
 						key={campo.label}
-						className={campo.fullWidth ? "sm:col-span-2 lg:col-span-3" : undefined}
+						className={cn(
+							"min-w-0 overflow-hidden",
+							campo.fullWidth && "sm:col-span-2 lg:col-span-3",
+						)}
 					>
-						<span className="text-xs font-medium uppercase text-muted-foreground block">
+						<span className="block text-xs font-medium uppercase text-muted-foreground">
 							{campo.label}
 						</span>
 						<span
-							className={
-								campo.mono
-									? "font-mono text-foreground"
-									: "text-foreground"
-							}
+							className={cn(
+								"break-all text-foreground",
+								campo.mono && "font-mono",
+							)}
 						>
 							{campo.valor}
 						</span>
@@ -43,16 +46,21 @@ export function ResumoDestinatarioNfe({
 	}
 
 	return (
-		<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+		<div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
 			{campos.map((campo) => (
 				<div
 					key={campo.label}
-					className={campo.fullWidth ? "sm:col-span-2 lg:col-span-3" : undefined}
+					className={cn(
+						"min-w-0 overflow-hidden",
+						campo.fullWidth && "sm:col-span-2 lg:col-span-3",
+					)}
 				>
-					<p className="text-muted-foreground text-xs font-medium uppercase">
+					<p className="text-xs font-medium uppercase text-muted-foreground">
 						{campo.label}
 					</p>
-					<p className={campo.mono ? "font-mono" : undefined}>{campo.valor}</p>
+					<p className={cn("break-all", campo.mono && "font-mono")}>
+						{campo.valor}
+					</p>
 				</div>
 			))}
 		</div>

@@ -11,6 +11,7 @@ import { obterSessao } from "../db/repos";
 import { localApi } from "../local-api";
 import {
 	handshakeTerminal,
+	numerosOcupadosPorSecundarios,
 	tokenTerminalValido,
 } from "../pdv-secundario/registro";
 import {
@@ -25,6 +26,7 @@ const ROTAS_PUBLICAS = new Set([
 	"GET /pos/health",
 	"POST /pos/login",
 	"GET /pos/pdv/identidade",
+	"GET /pos/pdv/terminais",
 	"POST /pos/pdv/handshake",
 ]);
 
@@ -296,7 +298,9 @@ async function despachar(
 	if (
 		path === "/pos/mesas" ||
 		path.startsWith("/pos/mesas/") ||
-		path.startsWith("/pos/contas/")
+		path.startsWith("/pos/contas/") ||
+		path === "/pos/delivery" ||
+		path.startsWith("/pos/delivery/")
 	) {
 		const sessao = await obterSessao();
 		if (!sessaoTemGourmet(sessao.modulogourmet)) {
@@ -324,6 +328,31 @@ async function despachar(
 				numeropdv,
 				lanPorta:
 					portaAtual || Number(await getConfig("lan_porta", "5050")) || 5050,
+			},
+		};
+	}
+
+	if (method === "GET" && path === "/pos/pdv/terminais") {
+		const modo = normalizarModoPdv(await getConfig("pdv_modo", "principal"));
+		if (modo === "secundario") {
+			return {
+				status: 400,
+				body: {
+					error:
+						"Este endereço é um PDV secundário. Informe o IP do principal.",
+				},
+			};
+		}
+		const numeropdvPrincipal =
+			parseNumeroPdv(await getConfig("numeropdv", "1")) || 1;
+		const terminais = await localApi.listarTerminaisPdv();
+		const ocupados = await numerosOcupadosPorSecundarios();
+		return {
+			status: 200,
+			body: {
+				numeropdvPrincipal,
+				terminais,
+				ocupados,
 			},
 		};
 	}
@@ -403,6 +432,11 @@ async function despachar(
 		return { status: 200, body: { data: await localApi.listarMesas() } };
 	}
 
+	if (method === "POST" && path === "/pos/mesas/limpar-vazias") {
+		const removidas = await localApi.limparContasVazias();
+		return { status: 200, body: { removidas } };
+	}
+
 	const mesaMatch = path.match(/^\/pos\/mesas\/(\d+)$/);
 	if (method === "GET" && mesaMatch) {
 		return {
@@ -474,6 +508,11 @@ async function despachar(
 				contaPedidoMatch[1],
 				String(body.clientOrderId ?? ""),
 				itens,
+				body.observacaoPedido != null
+					? String(body.observacaoPedido)
+					: body.obsPedido != null
+						? String(body.obsPedido)
+						: null,
 			),
 		};
 	}
@@ -489,16 +528,53 @@ async function despachar(
 		};
 	}
 
+	const contaItemCancelarMatch = path.match(
+		/^\/pos\/contas\/([^/]+)\/itens\/([^/]+)\/cancelar$/,
+	);
+	if (method === "POST" && contaItemCancelarMatch) {
+		return {
+			status: 200,
+			body: await localApi.cancelarItemConta(
+				contaItemCancelarMatch[1],
+				contaItemCancelarMatch[2],
+				body.senha != null ? String(body.senha) : undefined,
+			),
+		};
+	}
+
 	const contaFecharMatch = path.match(/^\/pos\/contas\/([^/]+)\/fechar$/);
 	if (method === "POST" && contaFecharMatch) {
 		const lancamentos = lancamentosDeBody(body);
+		const cliente =
+			body.cliente && typeof body.cliente === "object"
+				? (body.cliente as {
+						id?: string;
+						nome?: string;
+						cnpjcpf?: string | null;
+					})
+				: null;
 		return {
 			status: 200,
 			body: await localApi.fecharContaMesa(
 				contaFecharMatch[1],
 				lancamentos.length ? lancamentos : meioDeBody(body),
 				body.troco != null ? Number(body.troco) : undefined,
+				cliente?.id
+					? {
+							id: String(cliente.id),
+							nome: String(cliente.nome ?? ""),
+							cnpjcpf: cliente.cnpjcpf != null ? String(cliente.cnpjcpf) : null,
+						}
+					: null,
 			),
+		};
+	}
+
+	const contaCancelarMatch = path.match(/^\/pos\/contas\/([^/]+)\/cancelar$/);
+	if (method === "POST" && contaCancelarMatch) {
+		return {
+			status: 200,
+			body: await localApi.cancelarContaMesa(contaCancelarMatch[1]),
 		};
 	}
 
@@ -511,6 +587,7 @@ async function despachar(
 					body.numeropessoas != null ? Number(body.numeropessoas) : undefined,
 				taxaAtiva: body.taxaAtiva != null ? Boolean(body.taxaAtiva) : undefined,
 				desconto: body.desconto != null ? Number(body.desconto) : undefined,
+				acrescimo: body.acrescimo != null ? Number(body.acrescimo) : undefined,
 				senha: body.senha != null ? String(body.senha) : undefined,
 			}),
 		};
@@ -587,6 +664,17 @@ async function despachar(
 		};
 	}
 
+	const contaTaxaMatch = path.match(/^\/pos\/contas\/([^/]+)\/taxa-entrega$/);
+	if (method === "POST" && contaTaxaMatch) {
+		return {
+			status: 200,
+			body: await localApi.aplicarTaxaEntrega(
+				contaTaxaMatch[1],
+				Number(body.valorentrega ?? 0),
+			),
+		};
+	}
+
 	if (method === "POST" && path === "/pos/vendas/rapida") {
 		const itensRaw = Array.isArray(body.itens) ? body.itens : [];
 		const itens = itensRaw.map((item) => {
@@ -616,6 +704,10 @@ async function despachar(
 		return { status: 200, body: await localApi.listarVendas() };
 	}
 
+	if (method === "POST" && path === "/pos/nfce/sincronizar") {
+		return { status: 200, body: await localApi.sincronizarNfce() };
+	}
+
 	if (method === "GET" && path === "/pos/pedidos") {
 		const pendentes = String(body.pendentes ?? "1") !== "0";
 		return {
@@ -626,6 +718,162 @@ async function despachar(
 
 	if (method === "POST" && path === "/pos/pedidos/limpar-fila") {
 		return { status: 200, body: await localApi.limparFilaPedidos() };
+	}
+
+	if (method === "POST" && path === "/pos/pedidos/reimprimir") {
+		const clientOrderId = String(body.clientOrderId ?? body.id ?? "");
+		return {
+			status: 200,
+			body: await localApi.reimprimirPedidoProducao(clientOrderId),
+		};
+	}
+
+	if (method === "GET" && path === "/pos/delivery") {
+		const statusFiltro = body.status != null ? String(body.status) : undefined;
+		return {
+			status: 200,
+			body: { data: await localApi.listarPedidosEntrega(statusFiltro) },
+		};
+	}
+
+	if (method === "POST" && path === "/pos/delivery") {
+		const modalidadeRaw = String(body.modalidade ?? "delivery");
+		const modalidade = modalidadeRaw === "retirada" ? "retirada" : "delivery";
+		return {
+			status: 200,
+			body: await localApi.abrirPedidoEntrega({
+				modalidade,
+				nomecliente: body.nomecliente != null ? String(body.nomecliente) : null,
+				telefone: body.telefone != null ? String(body.telefone) : null,
+				endereco: body.endereco != null ? String(body.endereco) : null,
+				bairro: body.bairro != null ? String(body.bairro) : null,
+				complemento: body.complemento != null ? String(body.complemento) : null,
+				referencia: body.referencia != null ? String(body.referencia) : null,
+				valorentrega:
+					body.valorentrega != null ? Number(body.valorentrega) : null,
+				idcliente: body.idcliente != null ? String(body.idcliente) : null,
+				obs: body.obs != null ? String(body.obs) : null,
+			}),
+		};
+	}
+
+	if (method === "POST" && path === "/pos/delivery/ingest") {
+		const contamesa = (body.contamesa ?? body) as Record<string, unknown>;
+		const itensRaw = Array.isArray(body.itens) ? body.itens : [];
+		const protocol = String(
+			body.protocol ??
+				contamesa.orderidintegracao ??
+				body.orderidintegracao ??
+				"",
+		);
+		const modalidadeRaw = String(
+			body.modalidade ??
+				(Number(contamesa.retiradanobalcao) === 1 ? "retirada" : "delivery"),
+		);
+		const itens = itensRaw.map((item) => {
+			const i = item as Record<string, unknown>;
+			return {
+				idproduto: i.idproduto != null ? String(i.idproduto) : null,
+				ean: i.ean != null ? String(i.ean) : null,
+				codigo: i.codigo != null ? String(i.codigo) : null,
+				codigoproduto: i.codigoproduto != null ? String(i.codigoproduto) : null,
+				nomeproduto: i.nomeproduto != null ? String(i.nomeproduto) : null,
+				quantidade: Number(i.quantidade ?? 1),
+				precounitario: i.precounitario != null ? Number(i.precounitario) : null,
+				observacao: i.observacao != null ? String(i.observacao) : null,
+			};
+		});
+		const result = await localApi.ingestPedidoDelivery({
+			protocol,
+			modalidade: modalidadeRaw === "retirada" ? "retirada" : "delivery",
+			nomecliente: String(
+				contamesa.nomecliente ?? contamesa.nome ?? body.nomecliente ?? "",
+			),
+			telefone:
+				contamesa.telefone != null
+					? String(contamesa.telefone)
+					: body.telefone != null
+						? String(body.telefone)
+						: null,
+			endereco: contamesa.endereco != null ? String(contamesa.endereco) : null,
+			bairro:
+				contamesa.enderecobairro != null
+					? String(contamesa.enderecobairro)
+					: contamesa.bairro != null
+						? String(contamesa.bairro)
+						: null,
+			complemento:
+				contamesa.enderecocomplemento != null
+					? String(contamesa.enderecocomplemento)
+					: contamesa.complemento != null
+						? String(contamesa.complemento)
+						: null,
+			referencia:
+				contamesa.enderecoreferencia != null
+					? String(contamesa.enderecoreferencia)
+					: null,
+			documento:
+				contamesa.documento != null ? String(contamesa.documento) : null,
+			valorentrega:
+				contamesa.valorentrega != null
+					? Number(contamesa.valorentrega)
+					: body.valorentrega != null
+						? Number(body.valorentrega)
+						: null,
+			obs: contamesa.obs != null ? String(contamesa.obs) : null,
+			itens,
+		});
+		return {
+			status: 200,
+			body: {
+				action: result.action,
+				idconta: result.conta.id,
+				conta: result.conta,
+				maisGestaoContaId: result.conta.id,
+				maisGestaoAction: result.action,
+				protocol,
+			},
+		};
+	}
+
+	const deliveryIdMatch = path.match(/^\/pos\/delivery\/([^/]+)$/);
+	if (method === "GET" && deliveryIdMatch) {
+		return {
+			status: 200,
+			body: await localApi.obterContaMesa(deliveryIdMatch[1]),
+		};
+	}
+	if (method === "PATCH" && deliveryIdMatch) {
+		return {
+			status: 200,
+			body: await localApi.atualizarDadosEntrega(deliveryIdMatch[1], {
+				nomecliente:
+					body.nomecliente != null ? String(body.nomecliente) : undefined,
+				telefone: body.telefone != null ? String(body.telefone) : undefined,
+				endereco: body.endereco != null ? String(body.endereco) : undefined,
+				bairro: body.bairro != null ? String(body.bairro) : undefined,
+				complemento:
+					body.complemento != null ? String(body.complemento) : undefined,
+				referencia:
+					body.referencia != null ? String(body.referencia) : undefined,
+				obs: body.obs != null ? String(body.obs) : undefined,
+			}),
+		};
+	}
+
+	const deliveryStatusMatch = path.match(/^\/pos\/delivery\/([^/]+)\/status$/);
+	if ((method === "PATCH" || method === "POST") && deliveryStatusMatch) {
+		const status =
+			body.status != null
+				? (String(body.status) as "recebido" | "producao" | "saiu" | "entregue")
+				: null;
+		return {
+			status: 200,
+			body: await localApi.atualizarStatusEntrega(
+				deliveryStatusMatch[1],
+				status,
+			),
+		};
 	}
 
 	const pedidoEntregueMatch = path.match(/^\/pos\/pedidos\/([^/]+)\/entregue$/);
@@ -662,6 +910,30 @@ async function despachar(
 		};
 	}
 
+	const cancelarMatch = path.match(/^\/pos\/vendas\/([^/]+)\/cancelar$/);
+	if (method === "POST" && cancelarMatch) {
+		return {
+			status: 200,
+			body: await localApi.cancelarNfce(
+				cancelarMatch[1],
+				String(body.justificativa ?? ""),
+			),
+		};
+	}
+
+	const cancelarNaoFiscalMatch = path.match(
+		/^\/pos\/vendas\/([^/]+)\/cancelar-nao-fiscal$/,
+	);
+	if (method === "POST" && cancelarNaoFiscalMatch) {
+		return {
+			status: 200,
+			body: await localApi.cancelarVendaNaoFiscal(cancelarNaoFiscalMatch[1], {
+				senha: body.senha != null ? String(body.senha) : undefined,
+				motivo: body.motivo != null ? String(body.motivo) : undefined,
+			}),
+		};
+	}
+
 	return undefined;
 }
 
@@ -670,12 +942,14 @@ function itemDeBody(body: Record<string, unknown>): {
 	descricao: string;
 	quantidade: number;
 	precounitario: number;
+	observacao?: string | null;
 } {
 	return {
 		idproduto: String(body.idproduto ?? ""),
 		descricao: String(body.descricao ?? ""),
 		quantidade: Number(body.quantidade ?? 0),
 		precounitario: Number(body.precounitario ?? 0),
+		observacao: body.observacao != null ? String(body.observacao) : null,
 	};
 }
 

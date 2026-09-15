@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { app } from "electron";
+import { v4 as uuidv4 } from "uuid";
 import {
 	ApiError,
 	atualizarFechamentoCaixaRemoto,
@@ -46,18 +47,23 @@ import {
 import {
 	atualizarCaixaIdRemoto,
 	atualizarNumeracaoNfce,
+	atualizarNfceLocalCampos,
 	atualizarVendaSync,
 	calcularResumoTurno,
 	contarOutboxPendentes,
 	type ItemCarrinho,
 	type LancamentoPagamento,
-	listarOutboxPendentes,
+	listarNfceLocalParaConflitoNumeracao,
 	marcarNfceTransmitida,
 	marcarOutboxConcluido,
 	marcarOutboxErro,
+	marcarProdutosAusentesInativos,
 	obterCaixaTurno,
+	obterMaxNumeroNfceLocal,
+	obterNumeracaoNfce,
 	obterSessao,
 	obterVenda,
+	reivindicarOutboxPendentes,
 	salvarAtalhos,
 	salvarSessao,
 	upsertBandeirasCartao,
@@ -68,10 +74,72 @@ import {
 	upsertProdutos,
 } from "../db/repos";
 import { calcularConferenciaCaixa } from "../db/resumo-turno-caixa";
-import { puxarNfceDaRetaguarda } from "./nfce-retaguarda";
+import { persistirMeiosPagamentoNfceConfig } from "../fiscal/avaliar-emissao-nfce-venda";
+import {
+	avaliarEmissaoNfcePorPagamento,
+	CHAVE_CONFIG_MEIOS_NFCE,
+	parseMeiosPagamentoNfceConfig,
+	resumoPagamentoParaNfce,
+} from "../fiscal/meios-pagamento-nfce";
+import {
+	classificarConflitosNumeracao,
+	resolverProximoNumeroMonotonico,
+} from "../fiscal/numeracao-nfce";
 import { atualizarCacheTerminaisPdv } from "./terminais-pdv";
 
 let syncing = false;
+const OUTBOX_WORKER_ID = uuidv4();
+
+export function atrasoBackoffOutboxMs(tentativasAnteriores: number): number {
+	return Math.min(15 * 60_000, 30_000 * 2 ** Math.max(0, tentativasAnteriores));
+}
+
+export function classificarErroOutbox(
+	err: unknown,
+): "transitorio" | "permanente" {
+	if (err instanceof ApiError) {
+		const status = err.status ?? 0;
+		if (
+			status === 0 ||
+			status === 401 ||
+			status === 403 ||
+			status === 408 ||
+			status === 409 ||
+			status === 429 ||
+			status >= 500
+		) {
+			return "transitorio";
+		}
+		if (status >= 400 && status < 500) return "permanente";
+	}
+	if (err instanceof SyntaxError || err instanceof TypeError)
+		return "permanente";
+	return "transitorio";
+}
+
+export function deveEmitirNfceNaBaixa(params: {
+	emitirGlobal: boolean;
+	statusNfceLocal?: string | null;
+	pagamentoDeveEmitir: boolean;
+}): boolean {
+	const possuiNfceLocal = [
+		"contingencia",
+		"transmitida",
+		"autorizada",
+	].includes(params.statusNfceLocal ?? "");
+	return params.emitirGlobal && !possuiNfceLocal && params.pagamentoDeveEmitir;
+}
+
+export async function sincronizarItensAntesDaBaixa<T>(
+	itens: T[],
+	sincronizarItem: (item: T) => Promise<void>,
+	baixarVenda: () => Promise<void>,
+): Promise<void> {
+	for (const item of itens) {
+		await sincronizarItem(item);
+	}
+	await baixarVenda();
+}
 
 export async function statusConexao(): Promise<{
 	online: boolean;
@@ -151,7 +219,7 @@ async function puxarCatalogoDaEmpresa(idempresa: string): Promise<{
 			}
 			await upsertGrupos(grupos);
 			totalGrupos += grupos.length;
-			if (grupos.length < 100 || page > 50) {
+			if (grupos.length < 100 || page >= 10_000) {
 				break;
 			}
 			page += 1;
@@ -172,7 +240,7 @@ async function puxarCatalogoDaEmpresa(idempresa: string): Promise<{
 			}
 			await upsertGruposGourmet(grupos);
 			totalGruposGourmet += grupos.length;
-			if (grupos.length < 100 || page > 50) {
+			if (grupos.length < 100 || page >= 10_000) {
 				break;
 			}
 			page += 1;
@@ -187,12 +255,16 @@ async function puxarCatalogoDaEmpresa(idempresa: string): Promise<{
 
 	let page = 1;
 	let total = 0;
+	const idsSincronizados: string[] = [];
+	const LIMITE_PAGINA = 100;
+	const LIMITE_PAGINAS = 10_000;
 	for (;;) {
-		const produtos = await listarProdutos({
+		const lote = await listarProdutos({
 			idempresa,
 			page,
-			limit: 100,
+			limit: LIMITE_PAGINA,
 		});
+		const produtos = lote.produtos;
 		if (!produtos.length) {
 			break;
 		}
@@ -207,14 +279,23 @@ async function puxarCatalogoDaEmpresa(idempresa: string): Promise<{
 				return { ...p, unidademedida: sigla };
 			}),
 		);
+		for (const p of produtos) {
+			idsSincronizados.push(p.id);
+		}
 		total += produtos.length;
-		if (produtos.length < 100) {
+		const totalPages = lote.paginacao.totalPages;
+		if (
+			produtos.length < LIMITE_PAGINA ||
+			(totalPages > 0 && page >= totalPages) ||
+			page >= LIMITE_PAGINAS
+		) {
 			break;
 		}
 		page += 1;
-		if (page > 50) {
-			break;
-		}
+	}
+
+	if (idsSincronizados.length) {
+		await marcarProdutosAusentesInativos(idsSincronizados);
 	}
 
 	const ids = await listarAtalhosRemotos(idempresa);
@@ -236,7 +317,7 @@ async function puxarCatalogoDaEmpresa(idempresa: string): Promise<{
 			}
 			await upsertClientes(clientes);
 			totalClientes += clientes.length;
-			if (clientes.length < 100 || page > 50) {
+			if (clientes.length < 100 || page >= 10_000) {
 				break;
 			}
 			page += 1;
@@ -293,8 +374,9 @@ async function puxarCatalogoDaEmpresa(idempresa: string): Promise<{
 
 	try {
 		const fiscal = await sincronizarFiscalPdv();
+		const cfg = await buscarNfceConfig(idempresa);
+		await persistirMeiosPagamentoNfceConfig(cfg.meiospagamentonfce);
 		if (!fiscal.ok) {
-			const cfg = await buscarNfceConfig(idempresa);
 			const ambiente = Number(cfg.ambiente ?? 2);
 			const cscId = ambiente === 1 ? cfg.idcsc_producao : cfg.idcsc_homologacao;
 			const cscToken =
@@ -430,9 +512,19 @@ export async function sincronizarFiscalPdv(): Promise<{
 	try {
 		const fiscal = await buscarPdvFiscal(sessao.idempresa, numeropdv);
 		const serie = Number(fiscal.serie);
+		const serieEfetiva =
+			Number.isFinite(serie) && serie > 0 ? serie : undefined;
+		const atual = await obterNumeracaoNfce();
+		const serieParaMax = serieEfetiva ?? atual.serie;
+		const maxLocal = await obterMaxNumeroNfceLocal(serieParaMax);
+		const proximo = resolverProximoNumeroMonotonico({
+			remoto: Number(fiscal.numeroproximo),
+			localAtual: atual.proximo_numero,
+			maxNumeroUsadoLocal: maxLocal,
+		});
 		await atualizarNumeracaoNfce({
-			...(Number.isFinite(serie) && serie > 0 ? { serie } : {}),
-			proximo_numero: fiscal.numeroproximo,
+			...(serieEfetiva ? { serie: serieEfetiva } : {}),
+			proximo_numero: proximo,
 			csc_id: fiscal.csc_id,
 			csc_token: fiscal.csc_token,
 			ambiente: fiscal.ambiente,
@@ -455,9 +547,16 @@ export async function sincronizarFiscalPdv(): Promise<{
 			await setConfig("certificado_validade", "");
 		}
 
+		await marcarConflitosNumeracaoNfceLocal();
 		await setConfig("fiscal_sync_erro", "");
 		await setConfig("fiscal_ultima_sync", new Date().toISOString());
 		await cachearEmitenteDanfce(sessao.idempresa, fiscal.cnpj, fiscal.uf);
+		try {
+			const cfg = await buscarNfceConfig(sessao.idempresa);
+			await persistirMeiosPagamentoNfceConfig(cfg.meiospagamentonfce);
+		} catch {
+			// meios de pagamento NFC-e opcionais neste sync
+		}
 		return { ok: true };
 	} catch (err) {
 		const erro =
@@ -465,6 +564,26 @@ export async function sincronizarFiscalPdv(): Promise<{
 		await setConfig("fiscal_sync_erro", erro);
 		return { ok: false, erro };
 	}
+}
+
+/** Marca NFC-e locais órfãs com o mesmo nNF de outra nota como conflito. */
+export async function marcarConflitosNumeracaoNfceLocal(): Promise<number> {
+	const registros = await listarNfceLocalParaConflitoNumeracao();
+	const conflitos = classificarConflitosNumeracao(registros);
+	let marcados = 0;
+	for (const conflito of conflitos) {
+		for (const id of conflito.idsOrfaos) {
+			await atualizarNfceLocalCampos(id, { status: "conflito_numeracao" });
+			const nfce = conflito.nfces.find((n) => n.id === id);
+			if (nfce) {
+				await atualizarVendaSync(nfce.idvenda, {
+					nfce_status: "conflito_numeracao",
+				});
+			}
+			marcados += 1;
+		}
+	}
+	return marcados;
 }
 
 export async function processarOutbox(): Promise<{
@@ -489,7 +608,11 @@ export async function processarOutbox(): Promise<{
 			return { processados, erros };
 		}
 
-		for (const item of await listarOutboxPendentes()) {
+		await sincronizarFiscalPdv().catch(() => undefined);
+
+		for (let indice = 0; indice < 10; indice++) {
+			const [item] = await reivindicarOutboxPendentes(OUTBOX_WORKER_ID, 1);
+			if (!item) break;
 			try {
 				const payload = JSON.parse(item.payload) as Record<string, unknown>;
 				if (item.tipo === "criar_venda") {
@@ -508,13 +631,24 @@ export async function processarOutbox(): Promise<{
 				} else if (item.tipo === "conta_mesa") {
 					// Espelhamento remoto best-effort; marcado concluído para não travar a fila
 				}
-				await marcarOutboxConcluido(item.id);
+				await marcarOutboxConcluido(item.id, OUTBOX_WORKER_ID);
 				processados += 1;
 			} catch (err) {
 				erros += 1;
+				const classificacao = classificarErroOutbox(err);
 				await marcarOutboxErro(
 					item.id,
 					err instanceof Error ? err.message : "Erro desconhecido",
+					{
+						classificacao,
+						workerId: OUTBOX_WORKER_ID,
+						proximaTentativa:
+							classificacao === "transitorio"
+								? new Date(
+										Date.now() + atrasoBackoffOutboxMs(item.tentativas),
+									).toISOString()
+								: null,
+					},
 				);
 			}
 		}
@@ -525,8 +659,6 @@ export async function processarOutbox(): Promise<{
 	} finally {
 		syncing = false;
 	}
-
-	void puxarNfceDaRetaguarda().catch(() => undefined);
 
 	return { processados, erros };
 }
@@ -636,7 +768,24 @@ async function baixarEstoqueVendaOutbox(params: {
 	sync: ReturnType<typeof totaisParaSync>;
 	payload: Record<string, unknown>;
 }): Promise<void> {
-	const emitir = (await getConfig("emitir_nfce", "1")) === "1";
+	const emitirGlobal = (await getConfig("emitir_nfce", "1")) === "1";
+	const meios = parseMeiosPagamentoNfceConfig(
+		await getConfig(CHAVE_CONFIG_MEIOS_NFCE, ""),
+	);
+	const vendaLocal = await obterVenda(params.idlocal);
+	const possuiNfceLocalPendente = [
+		"contingencia",
+		"transmitida",
+		"autorizada",
+	].includes(vendaLocal?.nfce_status ?? "");
+	const emitir = deveEmitirNfceNaBaixa({
+		emitirGlobal,
+		statusNfceLocal: vendaLocal?.nfce_status,
+		pagamentoDeveEmitir: avaliarEmissaoNfcePorPagamento(
+			resumoPagamentoParaNfce(params.sync),
+			meios,
+		).deveEmitir,
+	});
 	try {
 		const baixa = await baixaEstoqueVenda({
 			idempresa: params.idempresa,
@@ -657,16 +806,24 @@ async function baixarEstoqueVendaOutbox(params: {
 				valorcartao: params.sync.valorcartao,
 				valorprepago: params.sync.valorprepago,
 				desconto: Number(params.payload.valordesconto ?? 0),
+				valoracrescimo: Number(params.payload.valoracrescimo ?? 0),
 				valortaxaservico: Number(params.payload.valortaxaservico ?? 0),
 				valorcouverartistico: Number(params.payload.valorcouvert ?? 0),
+				valorentrega: Number(params.payload.valorentrega ?? 0),
 			},
 			emitirNfce: emitir,
 		});
 		if (!emitir) {
-			await atualizarVendaSync(params.idlocal, { nfce_status: "nao_fiscal" });
+			if (!possuiNfceLocalPendente) {
+				await atualizarVendaSync(params.idlocal, { nfce_status: "nao_fiscal" });
+			}
 			return;
 		}
 		const nfce = extrairNfceDaBaixa(baixa);
+		if (!nfce.deveEmitirNfce) {
+			await atualizarVendaSync(params.idlocal, { nfce_status: "nao_fiscal" });
+			return;
+		}
 		const { aplicarEmissaoNfceNaVendaLocal } = await import(
 			"../fiscal/persistir-nfce-online"
 		);
@@ -697,7 +854,6 @@ async function syncCriarVenda(
 	idempresa: string,
 	userid: string,
 ): Promise<void> {
-	const itens = payload.itens as ItemCarrinho[];
 	const total = Number(payload.valortotal ?? 0);
 	const idlocal = String(payload.idlocal);
 	const numeropdv = Number(await getConfig("numeropdv", "1"));
@@ -706,69 +862,72 @@ async function syncCriarVenda(
 	const sync = totaisParaSync(pagamentos, valortroco);
 
 	const local = await obterVenda(idlocal);
-	if (local?.idremoto) {
-		await baixarEstoqueVendaOutbox({
-			idlocal,
-			idremoto: local.idremoto,
+	if (!local) {
+		throw new Error(
+			`Venda local não encontrada para sincronização: ${idlocal}`,
+		);
+	}
+	const itens = local.itens;
+	let idremoto = local?.idremoto ?? null;
+	if (!idremoto) {
+		const pagamentosErp = pagamentosErpDosLancamentos(pagamentos);
+		const identidade = [payload.identidade, local?.idcliente]
+			.map((valor) => (typeof valor === "string" ? valor.trim() : ""))
+			.find(Boolean);
+		const venda = await criarVendaPdv({
 			idempresa,
-			itens,
-			total,
-			sync,
-			payload,
+			numeropdv,
+			idvendalocal: idlocal,
+			usuarioquefechouvenda: userid,
+			vendalocal: VENDA_LOCAL_PDV_HIBRIDO,
+			valortotal: total,
+			valortroco: sync.valortroco,
+			valordinheiro: sync.valordinheiro,
+			valorpix: sync.valorpix,
+			valorcartaocredito: sync.valorcartaocredito,
+			valorcartaodebito: sync.valorcartaodebito,
+			valorcartao: sync.valorcartao,
+			valorprepago: sync.valorprepago,
+			pagamentos: pagamentosNativosParaApi(pagamentos),
+			...(pagamentosErp.length ? { pagamentosErp } : {}),
+			...(identidade ? { identidade } : {}),
 		});
-		return;
+		idremoto = venda.id;
 	}
 
-	const pagamentosErp = pagamentosErpDosLancamentos(pagamentos);
-	const identidade = [payload.identidade, local?.idcliente]
-		.map((valor) => (typeof valor === "string" ? valor.trim() : ""))
-		.find(Boolean);
-	const venda = await criarVendaPdv({
-		idempresa,
-		numeropdv,
-		usuarioquefechouvenda: userid,
-		vendalocal: VENDA_LOCAL_PDV_HIBRIDO,
-		valortotal: total,
-		valortroco: sync.valortroco,
-		valordinheiro: sync.valordinheiro,
-		valorpix: sync.valorpix,
-		valorcartaocredito: sync.valorcartaocredito,
-		valorcartaodebito: sync.valorcartaodebito,
-		valorcartao: sync.valorcartao,
-		valorprepago: sync.valorprepago,
-		pagamentos: pagamentosNativosParaApi(pagamentos),
-		...(pagamentosErp.length ? { pagamentosErp } : {}),
-		...(identidade ? { identidade } : {}),
-	});
-
-	await atualizarVendaSync(idlocal, {
-		idremoto: venda.id,
-		sync_status: "sincronizado",
-	});
-
-	for (const item of itens) {
-		await criarItemVendaPdv({
-			idempresa,
-			idvenda: venda.id,
-			idproduto: item.idproduto,
-			quantidade: item.quantidade,
-			precounitario: item.precounitario,
-			precototal: item.precototal,
-			precopromocao: 0,
-			precoalterado: 0,
-			descricao: item.descricao,
-		});
-	}
-
-	await baixarEstoqueVendaOutbox({
-		idlocal,
-		idremoto: venda.id,
-		idempresa,
+	await sincronizarItensAntesDaBaixa(
 		itens,
-		total,
-		sync,
-		payload,
-	});
+		async (item) => {
+			await criarItemVendaPdv({
+				idempresa,
+				idvenda: idremoto,
+				iditemlocal: item.id,
+				idproduto: item.idproduto,
+				quantidade: item.quantidade,
+				precounitario: item.precounitario,
+				precototal: item.precototal,
+				precopromocao: 0,
+				precoalterado: 0,
+				descricao: item.descricao,
+			});
+		},
+		async () => {
+			await atualizarVendaSync(idlocal, {
+				idremoto,
+				sync_status: "sincronizado",
+			});
+
+			await baixarEstoqueVendaOutbox({
+				idlocal,
+				idremoto,
+				idempresa,
+				itens,
+				total,
+				sync,
+				payload,
+			});
+		},
+	);
 }
 
 async function syncTransmitirContingencia(
@@ -781,32 +940,102 @@ async function syncTransmitirContingencia(
 		local &&
 		(local.nfce_status === "autorizada" ||
 			local.nfce_status === "erro" ||
-			local.nfce_status === "transmitida")
+			local.nfce_status === "transmitida" ||
+			local.nfce_status === "conflito_numeracao")
 	) {
-		if (payload.idnfce_local) {
+		if (
+			payload.idnfce_local &&
+			local.nfce_status !== "conflito_numeracao"
+		) {
 			await marcarNfceTransmitida(String(payload.idnfce_local));
+		}
+		if (local.nfce_status === "conflito_numeracao") {
+			throw new ApiError(
+				"NFC-e com conflito de numeração — reemita com nova numeração",
+				400,
+				"NFCE_NUMERO_JA_USADO",
+			);
 		}
 		return;
 	}
 
-	const result = await transmitirNfceContingencia({
-		idempresa,
-		idvenda: local?.idremoto ?? (idlocal || undefined),
-		xml: String(payload.xml),
-		chave: payload.chave ? String(payload.chave) : undefined,
-		serie: Number(payload.serie),
-		numero: Number(payload.numero),
-		motivo: String(payload.motivo ?? "Contingencia offline PDV"),
-		datacontingencia: String(payload.datacontingencia),
-	});
-
-	if (payload.idnfce_local) {
-		await marcarNfceTransmitida(String(payload.idnfce_local));
+	const serie = Number(payload.serie);
+	const numero = Number(payload.numero);
+	const chavePayload = payload.chave ? String(payload.chave) : "";
+	if (
+		Number.isFinite(serie) &&
+		Number.isFinite(numero) &&
+		numero >= 1 &&
+		payload.idnfce_local
+	) {
+		const { numeroNfceLocalJaUsado, atualizarNfceLocalCampos } = await import(
+			"../db/repos"
+		);
+		const colide = await numeroNfceLocalJaUsado(
+			serie,
+			numero,
+			String(payload.idnfce_local),
+		);
+		if (colide) {
+			await atualizarNfceLocalCampos(String(payload.idnfce_local), {
+				status: "conflito_numeracao",
+			});
+			if (idlocal) {
+				await atualizarVendaSync(idlocal, {
+					nfce_status: "conflito_numeracao",
+				});
+			}
+			throw new ApiError(
+				`Número ${numero} série ${serie} já usado por outra NFC-e local`,
+				400,
+				"NFCE_NUMERO_JA_USADO",
+			);
+		}
 	}
-	if (idlocal) {
-		await atualizarVendaSync(idlocal, {
-			nfce_status: result.transmitida ? "transmitida" : "contingencia",
+
+	try {
+		const result = await transmitirNfceContingencia({
+			idempresa,
+			idvenda: local?.idremoto ?? (idlocal || undefined),
+			xml: String(payload.xml),
+			chave: chavePayload || undefined,
+			serie,
+			numero,
+			motivo: String(payload.motivo ?? "Contingencia offline PDV"),
+			datacontingencia: String(payload.datacontingencia),
 		});
+
+		if (payload.idnfce_local) {
+			await marcarNfceTransmitida(String(payload.idnfce_local));
+		}
+		if (idlocal) {
+			await atualizarVendaSync(idlocal, {
+				nfce_status: result.transmitida ? "transmitida" : "contingencia",
+			});
+		}
+		if (Number.isFinite(serie) && Number.isFinite(numero) && numero >= 1) {
+			const { avancarNumeracaoNfceAposEmissao } = await import("../db/repos");
+			await avancarNumeracaoNfceAposEmissao(serie, numero);
+		}
+	} catch (err) {
+		if (
+			err instanceof ApiError &&
+			(/NFCE_NUMERO_JA_USADO/i.test(err.message) ||
+				err.code === "NFCE_NUMERO_JA_USADO")
+		) {
+			if (payload.idnfce_local) {
+				const { atualizarNfceLocalCampos } = await import("../db/repos");
+				await atualizarNfceLocalCampos(String(payload.idnfce_local), {
+					status: "conflito_numeracao",
+				});
+			}
+			if (idlocal) {
+				await atualizarVendaSync(idlocal, {
+					nfce_status: "conflito_numeracao",
+				});
+			}
+		}
+		throw err;
 	}
 }
 

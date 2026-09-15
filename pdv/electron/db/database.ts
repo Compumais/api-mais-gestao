@@ -223,6 +223,26 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 	if (!nomes.has("codigo")) {
 		await database.query("ALTER TABLE produto_cache ADD COLUMN codigo INTEGER");
 	}
+	const colunasFiscais: Array<{ nome: string; ddl: string }> = [
+		{ nome: "ncm", ddl: "ALTER TABLE produto_cache ADD COLUMN ncm TEXT" },
+		{ nome: "cest", ddl: "ALTER TABLE produto_cache ADD COLUMN cest TEXT" },
+		{ nome: "cfop", ddl: "ALTER TABLE produto_cache ADD COLUMN cfop TEXT" },
+		{ nome: "cst", ddl: "ALTER TABLE produto_cache ADD COLUMN cst TEXT" },
+		{ nome: "csosn", ddl: "ALTER TABLE produto_cache ADD COLUMN csosn TEXT" },
+		{
+			nome: "origem",
+			ddl: "ALTER TABLE produto_cache ADD COLUMN origem INTEGER",
+		},
+		{
+			nome: "aliquotaicms",
+			ddl: "ALTER TABLE produto_cache ADD COLUMN aliquotaicms TEXT",
+		},
+	];
+	for (const coluna of colunasFiscais) {
+		if (!nomes.has(coluna.nome)) {
+			await database.query(coluna.ddl);
+		}
+	}
 
 	const itemCols = await database.query<{ column_name: string }>(
 		`SELECT column_name
@@ -232,6 +252,22 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 	const itemNomes = new Set(itemCols.rows.map((c) => c.column_name));
 	if (!itemNomes.has("observacao")) {
 		await database.query("ALTER TABLE item_conta ADD COLUMN observacao TEXT");
+	}
+
+	const pedidoFilaCols = await database.query<{ column_name: string }>(
+		`SELECT column_name
+		 FROM information_schema.columns
+		 WHERE table_schema = 'public' AND table_name = 'pedido_fila'`,
+	);
+	if (pedidoFilaCols.rows.length) {
+		const pedidoFilaNomes = new Set(
+			pedidoFilaCols.rows.map((c) => c.column_name),
+		);
+		if (!pedidoFilaNomes.has("observacao_pedido")) {
+			await database.query(
+				"ALTER TABLE pedido_fila ADD COLUMN observacao_pedido TEXT",
+			);
+		}
 	}
 
 	const gourmetCols = await database.query<{ column_name: string }>(
@@ -316,6 +352,11 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 				"ALTER TABLE conta_mesa ADD COLUMN valordesconto DOUBLE PRECISION NOT NULL DEFAULT 0",
 			);
 		}
+		if (!contaNomes.has("valoracrescimo")) {
+			await database.query(
+				"ALTER TABLE conta_mesa ADD COLUMN valoracrescimo DOUBLE PRECISION NOT NULL DEFAULT 0",
+			);
+		}
 		if (!contaNomes.has("valortaxaservico")) {
 			await database.query(
 				"ALTER TABLE conta_mesa ADD COLUMN valortaxaservico DOUBLE PRECISION NOT NULL DEFAULT 0",
@@ -331,7 +372,81 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 				"ALTER TABLE conta_mesa ADD COLUMN taxa_ativa INTEGER NOT NULL DEFAULT 0",
 			);
 		}
+		if (!contaNomes.has("modalidade")) {
+			await database.query(
+				"ALTER TABLE conta_mesa ADD COLUMN modalidade TEXT NOT NULL DEFAULT 'mesa'",
+			);
+		}
+		if (!contaNomes.has("telefone")) {
+			await database.query("ALTER TABLE conta_mesa ADD COLUMN telefone TEXT");
+		}
+		if (!contaNomes.has("endereco")) {
+			await database.query("ALTER TABLE conta_mesa ADD COLUMN endereco TEXT");
+		}
+		if (!contaNomes.has("bairro")) {
+			await database.query("ALTER TABLE conta_mesa ADD COLUMN bairro TEXT");
+		}
+		if (!contaNomes.has("complemento")) {
+			await database.query(
+				"ALTER TABLE conta_mesa ADD COLUMN complemento TEXT",
+			);
+		}
+		if (!contaNomes.has("referencia")) {
+			await database.query("ALTER TABLE conta_mesa ADD COLUMN referencia TEXT");
+		}
+		if (!contaNomes.has("valorentrega")) {
+			await database.query(
+				"ALTER TABLE conta_mesa ADD COLUMN valorentrega DOUBLE PRECISION NOT NULL DEFAULT 0",
+			);
+		}
+		if (!contaNomes.has("status_entrega")) {
+			await database.query(
+				"ALTER TABLE conta_mesa ADD COLUMN status_entrega TEXT",
+			);
+		}
+		if (!contaNomes.has("senha_chamada")) {
+			await database.query(
+				"ALTER TABLE conta_mesa ADD COLUMN senha_chamada TEXT",
+			);
+		}
+		if (!contaNomes.has("idcliente")) {
+			await database.query("ALTER TABLE conta_mesa ADD COLUMN idcliente TEXT");
+		}
+		if (!contaNomes.has("orderidintegracao")) {
+			await database.query(
+				"ALTER TABLE conta_mesa ADD COLUMN orderidintegracao TEXT",
+			);
+		}
+		if (!contaNomes.has("obs")) {
+			await database.query("ALTER TABLE conta_mesa ADD COLUMN obs TEXT");
+		}
 	}
+
+	await database.query(`
+		CREATE UNIQUE INDEX IF NOT EXISTS idx_conta_mesa_orderidintegracao_aberta
+		ON conta_mesa (orderidintegracao)
+		WHERE orderidintegracao IS NOT NULL AND status = 'aberta'
+	`);
+
+	await database.query(`
+		CREATE TABLE IF NOT EXISTS cliente_pdv (
+			id TEXT PRIMARY KEY NOT NULL,
+			nome TEXT NOT NULL,
+			telefone TEXT,
+			cnpjcpf TEXT,
+			endereco TEXT,
+			bairro TEXT,
+			complemento TEXT,
+			referencia TEXT,
+			atualizadoem TEXT NOT NULL
+		)
+	`);
+	await database.query(
+		`CREATE INDEX IF NOT EXISTS idx_cliente_pdv_telefone ON cliente_pdv(telefone)`,
+	);
+	await database.query(
+		`CREATE INDEX IF NOT EXISTS idx_cliente_pdv_nome ON cliente_pdv(nome)`,
+	);
 
 	if (!itemNomes.has("pago")) {
 		await database.query(
@@ -351,6 +466,11 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 				"ALTER TABLE venda ADD COLUMN valordesconto DOUBLE PRECISION NOT NULL DEFAULT 0",
 			);
 		}
+		if (!vendaNomes.has("valoracrescimo")) {
+			await database.query(
+				"ALTER TABLE venda ADD COLUMN valoracrescimo DOUBLE PRECISION NOT NULL DEFAULT 0",
+			);
+		}
 		if (!vendaNomes.has("valortaxaservico")) {
 			await database.query(
 				"ALTER TABLE venda ADD COLUMN valortaxaservico DOUBLE PRECISION NOT NULL DEFAULT 0",
@@ -361,6 +481,11 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 				"ALTER TABLE venda ADD COLUMN valorcouvert DOUBLE PRECISION NOT NULL DEFAULT 0",
 			);
 		}
+		if (!vendaNomes.has("valorentrega")) {
+			await database.query(
+				"ALTER TABLE venda ADD COLUMN valorentrega DOUBLE PRECISION NOT NULL DEFAULT 0",
+			);
+		}
 		if (!vendaNomes.has("idcliente")) {
 			await database.query("ALTER TABLE venda ADD COLUMN idcliente TEXT");
 		}
@@ -369,6 +494,9 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 		}
 		if (!vendaNomes.has("cnpjcpf")) {
 			await database.query("ALTER TABLE venda ADD COLUMN cnpjcpf TEXT");
+		}
+		if (!vendaNomes.has("nfce_sync_em")) {
+			await database.query("ALTER TABLE venda ADD COLUMN nfce_sync_em TEXT");
 		}
 	}
 
@@ -415,11 +543,63 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 			await database.query("ALTER TABLE caixa_turno ADD COLUMN username TEXT");
 		}
 	}
+
+	const outboxCols = await database.query<{ column_name: string }>(
+		`SELECT column_name
+		 FROM information_schema.columns
+		 WHERE table_schema = 'public' AND table_name = 'outbox'`,
+	);
+	if (outboxCols.rows.length) {
+		const outboxNomes = new Set(outboxCols.rows.map((c) => c.column_name));
+		const migracoes = [
+			["idempotency_key", "ALTER TABLE outbox ADD COLUMN idempotency_key TEXT"],
+			[
+				"prioridade",
+				"ALTER TABLE outbox ADD COLUMN prioridade INTEGER NOT NULL DEFAULT 100",
+			],
+			[
+				"proxima_tentativa",
+				"ALTER TABLE outbox ADD COLUMN proxima_tentativa TEXT",
+			],
+			[
+				"classificacao_erro",
+				"ALTER TABLE outbox ADD COLUMN classificacao_erro TEXT",
+			],
+			["bloqueado_ate", "ALTER TABLE outbox ADD COLUMN bloqueado_ate TEXT"],
+			["worker_id", "ALTER TABLE outbox ADD COLUMN worker_id TEXT"],
+		] as const;
+		for (const [nome, ddl] of migracoes) {
+			if (!outboxNomes.has(nome)) {
+				await database.query(ddl);
+			}
+		}
+		await database.query(`
+			UPDATE outbox
+			SET prioridade = CASE
+				WHEN tipo = 'criar_venda' THEN 5
+				WHEN tipo = 'transmitir_nfce_contingencia' THEN 10
+				ELSE prioridade
+			END
+			WHERE status IN ('pendente', 'processando')
+		`);
+		await database.query(
+			"DROP INDEX IF EXISTS idx_outbox_idempotencia_pendente",
+		);
+		await database.query(`
+			CREATE UNIQUE INDEX idx_outbox_idempotencia_pendente
+			ON outbox(idempotency_key)
+			WHERE idempotency_key IS NOT NULL
+			  AND status IN ('pendente', 'processando')
+		`);
+	}
 }
 
-/** Host antigo do seed que aponta para o front, não para a API. */
-const API_URL_LEGADA = "https://api.maisgestao.com.br";
-const API_URL_PADRAO = "https://api.compuchat.space";
+const API_URL_PADRAO = "https://apimaisgestao.compumais.com";
+const API_URLS_LEGADAS = new Set([
+	"https://api.maisgestao.com.br",
+	"https://api.compuchat.space",
+	"https://maisgestao.compumais.com",
+]);
 
 async function seedDefaults(database: Pool): Promise<void> {
 	const agora = new Date().toISOString();
@@ -428,15 +608,22 @@ async function seedDefaults(database: Pool): Promise<void> {
 		["numeropdv", "1"],
 		["qtd_mesas", "20"],
 		["modelo_atendimento", "mesa"],
+		["modal_abrir_mesa_habilitado", "1"],
 		["tempo_ociosidade_min", "15"],
 		["filtro_apenas_abertas", "0"],
 		["emitir_nfce", "1"],
+		[
+			"nfce_meios_pagamento",
+			'{"dinheiro":true,"cartao":true,"pix":true,"prepago":false}',
+		],
 		["tema", "light"],
 		["pix_chave", ""],
 		["impressora_nome", ""],
 		["impressora_tipo", "sistema"],
 		["impressora_host", ""],
 		["impressora_porta", "9100"],
+		["impressora_fonte", "media"],
+		["impressao_producao_formato_item", "quantidade"],
 		["certificado_path", ""],
 		["certificado_senha", ""],
 		["certificado_apelido", ""],
@@ -453,6 +640,7 @@ async function seedDefaults(database: Pool): Promise<void> {
 		["tecnibra_intervalo_ms", "3000"],
 		["tecnibra_xml_root", "Comandas"],
 		["tecnibra_xml_item", "Comanda"],
+		["tecnibra_casas_comanda", "1"],
 		["taxa_servico_percentual", "10"],
 		["couvert_valor", "0"],
 		["balanca_habilitada", "0"],
@@ -465,6 +653,8 @@ async function seedDefaults(database: Pool): Promise<void> {
 		["etiqueta_balanca_conteudo", "preco"],
 		["etiqueta_balanca_centavos", "1"],
 		["etiqueta_balanca_indicador_uso", "0"],
+		["taxa_entrega_padrao", "0"],
+		["bairros_entrega", "[]"],
 	];
 
 	for (const [chave, valor] of defaults) {
@@ -477,7 +667,7 @@ async function seedDefaults(database: Pool): Promise<void> {
 	const apiAtual = await database.query<{ valor: string }>(
 		"SELECT valor FROM config WHERE chave = 'api_url'",
 	);
-	if (apiAtual.rows[0]?.valor === API_URL_LEGADA) {
+	if (API_URLS_LEGADAS.has(apiAtual.rows[0]?.valor ?? "")) {
 		await database.query(
 			"UPDATE config SET valor = $1 WHERE chave = 'api_url'",
 			[API_URL_PADRAO],

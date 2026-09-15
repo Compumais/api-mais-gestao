@@ -1,7 +1,7 @@
 import z from "zod";
 import { isIndPresNfeValido } from "@/constants/ind-pres-nfe.js";
 
-const itemNfeSchema = z.object({
+export const itemNfeSchema = z.object({
 	idproduto: z.string().uuid().optional(),
 	codigoProduto: z.string().optional(),
 	ean: z.string().optional(),
@@ -81,6 +81,44 @@ const totaisInformadosSchema = z
 	})
 	.optional();
 
+export const localEntregaNfeBaseSchema = z.object({
+	nomeEvento: z.string().min(2).max(120),
+	dataInicioEvento: z.iso.date(),
+	dataFimEvento: z.iso.date(),
+	fundamentoLegal: z.string().min(5).max(500),
+	cnpjcpf: z
+		.string()
+		.max(18)
+		.refine(
+			(valor) => !valor || [11, 14].includes(valor.replace(/\D/g, "").length),
+			"CNPJ/CPF inválido",
+		)
+		.optional(),
+	nome: z.string().max(60).optional(),
+	logradouro: z.string().min(2).max(60),
+	numero: z.string().min(1).max(60),
+	complemento: z.string().max(60).optional(),
+	bairro: z.string().min(2).max(60),
+	codigoMunicipio: z.string().regex(/^\d{7}$/, "Município IBGE inválido"),
+	municipio: z.string().min(2).max(60),
+	uf: z
+		.string()
+		.length(2)
+		.transform((valor) => valor.toUpperCase()),
+	cep: z.string().regex(/^\d{8}$/, "CEP deve ter 8 dígitos"),
+	telefone: z.string().max(20).optional(),
+	email: z.string().email().max(60).optional(),
+	ie: z.string().max(14).optional(),
+});
+
+export const localEntregaNfeSchema = localEntregaNfeBaseSchema.refine(
+	(local) => local.dataFimEvento >= local.dataInicioEvento,
+	{
+		message: "A data final da feira deve ser igual ou posterior à data inicial",
+		path: ["dataFimEvento"],
+	},
+);
+
 export const emitirNfeBodySchema = z.object({
 	idempresa: z.string().uuid(),
 	idnotafiscal: z.string().uuid().optional(),
@@ -111,6 +149,7 @@ export const emitirNfeBodySchema = z.object({
 		})
 		.optional(),
 	transporte: z.object({ modFrete: z.number().optional() }).optional(),
+	localEntrega: localEntregaNfeSchema.optional(),
 	informacoesAdicionais: z.string().max(2000).optional(),
 	documentoReferenciado: documentoReferenciadoSchema,
 	idplanocontas: z.string().uuid().optional(),

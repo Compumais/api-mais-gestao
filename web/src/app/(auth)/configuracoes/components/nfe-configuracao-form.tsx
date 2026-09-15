@@ -2,8 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import dayjs from "dayjs";
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import type { z } from "zod";
@@ -19,10 +18,13 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { NFE_CONFIG_PADRAO_LABEL } from "@/constants/nfe-config-padrao";
+import { formatDateOnlyDisplay, formatDateTimeBrasilia } from "@/lib/date";
 import {
 	type NfeConfiguracaoFormData,
 	nfeConfiguracaoSchema,
 } from "@/schemas/nfe-configuracao.schema";
+import { empresaFiscalService } from "@/services/empresa-fiscal.service";
+import { ibptService } from "@/services/ibpt.service";
 import {
 	nfeConfiguracaoService,
 	type ResultadoEmissaoTeste,
@@ -71,6 +73,7 @@ function NfeConfiguracaoFormCampos({
 	>;
 }) {
 	const queryClient = useQueryClient();
+	const formularioId = useId();
 	const arquivoRef = useRef<HTMLInputElement>(null);
 	const [senhaCert, setSenhaCert] = useState("");
 	const [apelidoCert, setApelidoCert] = useState("");
@@ -88,6 +91,19 @@ function NfeConfiguracaoFormCampos({
 	useQuery({
 		queryKey: ["nfe-series", idempresa],
 		queryFn: () => nfeConfiguracaoService.listarSeries(idempresa),
+	});
+
+	const { data: empresaFiscal } = useQuery({
+		queryKey: ["empresa-fiscal", idempresa],
+		queryFn: () => empresaFiscalService.buscar(idempresa),
+	});
+
+	const ufEmpresa = empresaFiscal?.uf?.toUpperCase() ?? "";
+
+	const { data: statusIbpt, isLoading: statusIbptLoading } = useQuery({
+		queryKey: ["ibpt-status", idempresa, ufEmpresa],
+		queryFn: () => ibptService.status(idempresa, ufEmpresa),
+		enabled: ufEmpresa.length === 2,
 	});
 
 	const form = useForm<
@@ -204,6 +220,20 @@ function NfeConfiguracaoFormCampos({
 		onError: () => toast.error("Falha na emissão de teste"),
 	});
 
+	const importarIbptMutation = useMutation({
+		mutationFn: () => ibptService.importar(idempresa, ufEmpresa),
+		onSuccess: (data) => {
+			toast.success(
+				`Tabela IBPT sincronizada: ${data.quantidadeRegistros} registros (UF ${data.uf})`,
+			);
+			queryClient.invalidateQueries({
+				queryKey: ["ibpt-status", idempresa, ufEmpresa],
+			});
+		},
+		onError: (e: Error) =>
+			toast.error(e.message || "Erro ao sincronizar tabela IBPT"),
+	});
+
 	const ambiente = ambienteSefaz(form.watch("ambiente"));
 
 	return (
@@ -252,30 +282,38 @@ function NfeConfiguracaoFormCampos({
 						<h2 className="text-lg font-semibold mb-4">Responsável técnico</h2>
 						<div className="grid gap-4 md:grid-cols-2">
 							<Field>
-								<FieldLabel htmlFor="infresptec_cnpj">CNPJ</FieldLabel>
+								<FieldLabel htmlFor={`${formularioId}-infresptec-cnpj`}>
+									CNPJ
+								</FieldLabel>
 								<Input
-									id="infresptec_cnpj"
+									id={`${formularioId}-infresptec-cnpj`}
 									{...form.register("infresptec_cnpj")}
 								/>
 							</Field>
 							<Field>
-								<FieldLabel htmlFor="infresptec_nome">Nome</FieldLabel>
+								<FieldLabel htmlFor={`${formularioId}-infresptec-nome`}>
+									Nome
+								</FieldLabel>
 								<Input
-									id="infresptec_nome"
+									id={`${formularioId}-infresptec-nome`}
 									{...form.register("infresptec_nome")}
 								/>
 							</Field>
 							<Field>
-								<FieldLabel htmlFor="infresptec_email">E-mail</FieldLabel>
+								<FieldLabel htmlFor={`${formularioId}-infresptec-email`}>
+									E-mail
+								</FieldLabel>
 								<Input
-									id="infresptec_email"
+									id={`${formularioId}-infresptec-email`}
 									{...form.register("infresptec_email")}
 								/>
 							</Field>
 							<Field>
-								<FieldLabel htmlFor="infresptec_fone">Telefone</FieldLabel>
+								<FieldLabel htmlFor={`${formularioId}-infresptec-fone`}>
+									Telefone
+								</FieldLabel>
 								<Input
-									id="infresptec_fone"
+									id={`${formularioId}-infresptec-fone`}
 									{...form.register("infresptec_fone")}
 								/>
 							</Field>
@@ -291,21 +329,86 @@ function NfeConfiguracaoFormCampos({
 			</form>
 
 			<div className="rounded-lg border bg-card p-6">
+				<h2 className="text-lg font-semibold mb-4">
+					Tabela de tributos aproximados (IBPT)
+				</h2>
+				<p className="text-muted-foreground text-sm mb-4">
+					Sincronize diretamente com a{" "}
+					<a
+						href="https://api-ibpt.seunegocionanuvem.com.br/"
+						target="_blank"
+						rel="noreferrer"
+						className="underline"
+					>
+						API pública de tributação IBPT
+					</a>{" "}
+					para a UF da empresa (
+					{ufEmpresa || "configure a UF em Empresa fiscal"}). A API não exige
+					credencial.
+				</p>
+
+				{ufEmpresa.length === 2 && (
+					<div className="mb-4 rounded-md border bg-muted/40 p-3 text-sm space-y-1">
+						{statusIbptLoading ? (
+							<p className="text-muted-foreground">Consultando status...</p>
+						) : statusIbpt?.importado ? (
+							<>
+								<p>
+									<Badge variant="secondary" className="mr-2">
+										Sincronizada
+									</Badge>
+									UF {statusIbpt.uf} — {statusIbpt.quantidadeRegistros}{" "}
+									registros
+								</p>
+								<p className="text-muted-foreground text-xs">
+									Versão {statusIbpt.versao ?? statusIbpt.chave}
+									{statusIbpt.importadoEm
+										? ` · ${formatDateTimeBrasilia(statusIbpt.importadoEm)}`
+										: ""}
+								</p>
+							</>
+						) : (
+							<p className="text-amber-700 dark:text-amber-300">
+								Nenhuma tabela sincronizada para a UF {ufEmpresa}. Os tributos
+								aproximados não serão calculados até a sincronização.
+							</p>
+						)}
+					</div>
+				)}
+
+				<Button
+					type="button"
+					variant="secondary"
+					className="mt-3"
+					onClick={() => importarIbptMutation.mutate()}
+					disabled={ufEmpresa.length !== 2 || importarIbptMutation.isPending}
+				>
+					{importarIbptMutation.isPending
+						? "Sincronizando..."
+						: "Sincronizar tabela IBPT"}
+				</Button>
+			</div>
+
+			<div className="rounded-lg border bg-card p-6">
 				<h2 className="text-lg font-semibold mb-4">Certificado digital A1</h2>
 
 				<div className="grid gap-4 md:grid-cols-2">
 					<Field>
-						<FieldLabel htmlFor="apelido-cert">Apelido</FieldLabel>
+						<FieldLabel htmlFor={`${formularioId}-apelido-cert`}>
+							Apelido
+						</FieldLabel>
 						<Input
-							id="apelido-cert"
+							id={`${formularioId}-apelido-cert`}
 							value={apelidoCert}
 							onChange={(e) => setApelidoCert(e.target.value)}
 						/>
 					</Field>
 					<Field>
-						<FieldLabel htmlFor="senha-cert">Senha do certificado</FieldLabel>
+						<FieldLabel htmlFor={`${formularioId}-senha-cert`}>
+							Senha do certificado
+						</FieldLabel>
 						<Input
-							id="senha-cert"
+							id={`${formularioId}-senha-cert`}
 							type="password"
 							value={senhaCert}
 							onChange={(e) => setSenhaCert(e.target.value)}
@@ -313,8 +416,13 @@ function NfeConfiguracaoFormCampos({
 					</Field>
 				</div>
 				<Field>
-					<FieldLabel htmlFor="pfx">Arquivo .pfx</FieldLabel>
-					<Input id="pfx" ref={arquivoRef} type="file" accept=".pfx,.p12" />
+					<FieldLabel htmlFor={`${formularioId}-pfx`}>Arquivo .pfx</FieldLabel>
+					<Input
+						id={`${formularioId}-pfx`}
+						ref={arquivoRef}
+						type="file"
+						accept=".pfx,.p12"
+					/>
 				</Field>
 				<Button
 					type="button"
@@ -336,7 +444,7 @@ function NfeConfiguracaoFormCampos({
 								<p className="text-muted-foreground">
 									Validade:{" "}
 									{cert.validadefim
-										? dayjs(cert.validadefim).format("DD/MM/YYYY")
+										? formatDateOnlyDisplay(cert.validadefim)
 										: "—"}
 								</p>
 							</div>

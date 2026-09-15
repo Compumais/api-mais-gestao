@@ -8,10 +8,10 @@ import {
 	IconTrash,
 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import dayjs from "dayjs";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { formatDateTimeBrasilia } from "@/lib/date";
 import {
 	Table,
 	TableBody,
@@ -105,7 +105,7 @@ export default function SuperCmsPage() {
 									{post.subtitulo || "—"}
 								</TableCell>
 								<TableCell>
-									{dayjs(post.atualizadoem).format("DD/MM/YYYY HH:mm")}
+									{formatDateTimeBrasilia(post.atualizadoem)}
 								</TableCell>
 								<TableCell>{post.autorNome || "—"}</TableCell>
 								<TableCell>

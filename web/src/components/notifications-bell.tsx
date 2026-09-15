@@ -1,7 +1,6 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import dayjs from "dayjs";
 import { BellIcon, CheckIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -17,6 +16,7 @@ import {
 	DropdownMenuContent,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { formatDateTimeBrasilia } from "@/lib/date";
 import type { Notificacao } from "@/services/notificacoes.service";
 import {
 	type ListarNotificacoesParams,
@@ -165,7 +165,7 @@ export function NotificationsBell() {
 												{n.titulo}
 											</p>
 											<p className="text-xs text-muted-foreground">
-												{dayjs(n.criadoem).format("DD/MM/YYYY HH:mm")}
+												{formatDateTimeBrasilia(n.criadoem)}
 											</p>
 										</button>
 										{!n.lida && (
@@ -199,9 +199,7 @@ export function NotificationsBell() {
 							</DialogHeader>
 							<div className="space-y-2 text-sm">
 								<p className="text-muted-foreground">
-									{dayjs(modalNotificacao.criadoem).format(
-										"DD/MM/YYYY [às] HH:mm",
-									)}
+									{formatDateTimeBrasilia(modalNotificacao.criadoem)}
 								</p>
 								{modalNotificacao.detalhes &&
 									Object.keys(modalNotificacao.detalhes).length > 0 && (

@@ -1,7 +1,10 @@
 import type { HttpResponse } from "@/model/http-model.js";
 import type { NotaFiscal } from "@/model/nota-fiscal-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
-import { listarNotasFiscaisPorEmpresa } from "@/repositories/nota-fiscal-repositories.js";
+import {
+	listarNotasFiscaisPorEmpresa,
+	type OrdenarNotasFiscaisCampo,
+} from "@/repositories/nota-fiscal-repositories.js";
 import { httpOk, httpProibido } from "@/util/http-util.js";
 
 type ListarNotasFiscaisParametros = {
@@ -15,8 +18,15 @@ type ListarNotasFiscaisParametros = {
 	idcfop?: string | undefined;
 	dataInicio?: string | undefined;
 	dataFim?: string | undefined;
+	entradasaida?: string | undefined;
+	razaosocial?: string | undefined;
+	chavenfe?: string | undefined;
+	serie?: string | undefined;
+	numeronfse?: string | undefined;
 	tipoambientenfe?: number | undefined;
 	rascunho?: boolean | undefined;
+	ordenarPor?: OrdenarNotasFiscaisCampo | undefined;
+	ordem?: "asc" | "desc" | undefined;
 	page?: number;
 	limit?: number;
 };
@@ -42,8 +52,15 @@ export async function listarNotasFiscaisService({
 	idcfop,
 	dataInicio,
 	dataFim,
+	entradasaida,
+	razaosocial,
+	chavenfe,
+	serie,
+	numeronfse,
 	tipoambientenfe,
 	rascunho = false,
+	ordenarPor,
+	ordem,
 	page = 1,
 	limit = 10,
 }: ListarNotasFiscaisParametros): Promise<
@@ -68,9 +85,16 @@ export async function listarNotasFiscaisService({
 		idcfop,
 		dataInicio,
 		dataFim,
+		entradasaida,
+		razaosocial,
+		chavenfe,
+		serie,
+		numeronfse,
 		tipoambientenfe,
 		somenteRascunhos: rascunho,
 		excluirRascunhos: !rascunho,
+		ordenarPor,
+		ordem,
 		page,
 		limit,
 	});

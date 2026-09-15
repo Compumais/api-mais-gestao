@@ -1,4 +1,6 @@
 import { api } from "@/lib/axios";
+import type { FecharContaFormData } from "@/schemas/fechar-conta.schema";
+import type { VendaPdvGourmet } from "@/services/venda-pdv-gourmet.service";
 
 export interface ContaMesa {
 	id: string;
@@ -120,5 +122,32 @@ export const contaMesaService = {
 
 	async deletar(id: string): Promise<void> {
 		await api.delete(`/contas-mesa/${id}`);
+	},
+
+	async fecharFatiaItens(
+		id: string,
+		dados: {
+			idempresa: string;
+			numeropdv: number;
+			idsItens: string[];
+			pagamento: FecharContaFormData;
+		},
+	): Promise<{
+		venda: VendaPdvGourmet;
+		contaFechada: boolean;
+		todosItensPagos: boolean;
+		conta: ContaMesa | null;
+	}> {
+		const { pagamento, ...resto } = dados;
+		const { data } = await api.post<{
+			venda: VendaPdvGourmet;
+			contaFechada: boolean;
+			todosItensPagos: boolean;
+			conta: ContaMesa | null;
+		}>(`/contas-mesa/${id}/fatia-itens`, {
+			...resto,
+			...pagamento,
+		});
+		return data;
 	},
 };

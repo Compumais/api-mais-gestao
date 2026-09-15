@@ -1,13 +1,20 @@
 import type { HttpResponse } from "@/model/http-model.js";
 import type { FatorConversao } from "@/model/fator-conversao-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
-import { listarFatoresConversao } from "@/repositories/fator-conversao-repositories.js";
+import {
+	listarFatoresConversao,
+	type OrdenarFatoresConversaoCampo,
+} from "@/repositories/fator-conversao-repositories.js";
 import { httpOk, httpProibido } from "@/util/http-util.js";
 
 type ListarFatoresConversaoParametros = {
 	idusuario: string;
 	idempresa: string;
 	q?: string | undefined;
+	nome?: string | undefined;
+	fator?: string | undefined;
+	ordenarPor?: OrdenarFatoresConversaoCampo | undefined;
+	ordem?: "asc" | "desc" | undefined;
 	page?: number;
 	limit?: number;
 };
@@ -26,6 +33,10 @@ export async function listarFatoresConversaoService({
 	idusuario,
 	idempresa,
 	q,
+	nome,
+	fator,
+	ordenarPor,
+	ordem,
 	page = 1,
 	limit = 10,
 }: ListarFatoresConversaoParametros): Promise<
@@ -43,6 +54,10 @@ export async function listarFatoresConversaoService({
 	const resultado = await listarFatoresConversao({
 		idempresa,
 		q,
+		nome,
+		fator,
+		ordenarPor,
+		ordem,
 		page,
 		limit,
 	});

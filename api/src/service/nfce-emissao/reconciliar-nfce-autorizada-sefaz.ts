@@ -5,6 +5,7 @@ import { enfileirarEnvioDominioSilencioso } from "@/service/dominio/enfileirar-e
 import { montarCredenciaisGatewayNfce } from "@/service/nfce-emissao/montar-credenciais-gateway-nfce.js";
 import { arquivarXmlNotaFiscal } from "@/service/nota-fiscal/arquivar-xml-nota-fiscal.js";
 import { extrairQrCodeNfceXml } from "@/util/extrair-qr-code-nfce-xml.js";
+import { resolverDataHoraAutorizacao } from "@/util/extrair-dh-recbto-xml.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
 import { obterXmlAutorizadoNotaFiscal } from "@/util/obter-xml-nota-fiscal.js";
 import {
@@ -27,6 +28,21 @@ function extrairProtocoloProtNFe(protNFe: unknown): string | undefined {
 	return nProt != null && String(nProt).trim() !== ""
 		? String(nProt).trim()
 		: undefined;
+}
+
+function extrairDhRecbtoProtNFe(protNFe: unknown): string | null {
+	if (!protNFe || typeof protNFe !== "object") {
+		return null;
+	}
+	const rec = protNFe as Record<string, unknown>;
+	const inf =
+		rec.infProt && typeof rec.infProt === "object"
+			? (rec.infProt as Record<string, unknown>)
+			: rec;
+	const dh = inf.dhRecbto;
+	if (dh == null || String(dh).trim() === "") return null;
+	const bruto = String(dh).trim();
+	return Number.isFinite(Date.parse(bruto)) ? bruto : null;
 }
 
 function montarResultadoAutorizado(
@@ -96,6 +112,12 @@ export async function reconciliarNfceAutorizadaSefaz(
 		const xmlConsulta = resposta.xml?.trim() || undefined;
 		const xmlAutorizado =
 			xmlConsulta ?? (await obterXmlAutorizadoNotaFiscal(nota.id)) ?? undefined;
+		const datahoraautorizacao =
+			extrairDhRecbtoProtNFe(resposta.protNFe) ??
+			resolverDataHoraAutorizacao({
+				xmlAutorizado,
+				fallbackIso: new Date().toISOString(),
+			});
 
 		await atualizarNotaFiscal(nota.id, {
 			status: NFE_STATUS.AUTORIZADA,
@@ -104,6 +126,7 @@ export async function reconciliarNfceAutorizadaSefaz(
 				resposta.xMotivo?.trim() || "Autorizado o uso da NF-e",
 			codigostatusprotocolonfe: normalizarCodigoStatusNfe(resposta.cStat),
 			arquivoxmlautorizada: xmlAutorizado ?? nota.arquivoxmlautorizada,
+			datahoraautorizacao,
 		});
 
 		if (xmlAutorizado) {

@@ -3,8 +3,10 @@ export type ModoPdv = "principal" | "secundario";
 export const CHAVES_CONFIG_NEGOCIO = [
 	"qtd_mesas",
 	"modelo_atendimento",
+	"modal_abrir_mesa_habilitado",
 	"tempo_ociosidade_min",
 	"emitir_nfce",
+	"nfce_meios_pagamento",
 	"pix_chave",
 	"api_url",
 	"taxa_servico_percentual",
@@ -16,6 +18,8 @@ export const CHAVES_CONFIG_NEGOCIO = [
 	"etiqueta_balanca_conteudo",
 	"etiqueta_balanca_centavos",
 	"etiqueta_balanca_indicador_uso",
+	"taxa_entrega_padrao",
+	"bairros_entrega",
 ] as const;
 
 export type ChaveConfigNegocio = (typeof CHAVES_CONFIG_NEGOCIO)[number];
@@ -35,6 +39,14 @@ export const CHAVES_CONFIG_LOCAL = [
 	"impressora_tipo",
 	"impressora_host",
 	"impressora_porta",
+	"impressora_fonte",
+	"impressao_producao_modo",
+	"impressao_producao_imprimir_grupo",
+	"impressao_producao_formato_item",
+	"impressora_pedido_tipo",
+	"impressora_pedido_nome",
+	"impressora_pedido_host",
+	"impressora_pedido_porta",
 	"certificado_path",
 	"certificado_senha",
 	"certificado_apelido",
@@ -46,6 +58,7 @@ export const CHAVES_CONFIG_LOCAL = [
 	"tecnibra_intervalo_ms",
 	"tecnibra_xml_root",
 	"tecnibra_xml_item",
+	"tecnibra_casas_comanda",
 	"sitef_habilitado",
 	"sitef_ip",
 	"sitef_loja",
@@ -60,6 +73,7 @@ export const CHAVES_CONFIG_LOCAL = [
 	"tema",
 	"senha_gerencial_hash",
 	"senha_gerencial_salt",
+	"senha_gerencial_habilitada",
 ] as const;
 
 export type ResultadoNumeroPdv =

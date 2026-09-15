@@ -1,7 +1,9 @@
 "use client";
 
 import {
+	IconChevronDown,
 	IconDotsVertical,
+	IconLayoutColumns,
 	IconPencil,
 	IconPlus,
 	IconSearch,
@@ -9,28 +11,33 @@ import {
 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-	type ColumnDef,
 	flexRender,
 	getCoreRowModel,
-	getPaginationRowModel,
-	getSortedRowModel,
-	type SortingState,
 	useReactTable,
 } from "@tanstack/react-table";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { toast } from "sonner";
+import type { OrdenacaoColunaTabela } from "@/components/cabecalho-coluna-tabela";
 import { TableSkeleton } from "@/components/table-skeleton";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
 	DropdownMenu,
+	DropdownMenuCheckboxItem,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import {
 	Table,
 	TableBody,
@@ -41,104 +48,64 @@ import {
 } from "@/components/ui/table";
 import { useEmpresa } from "@/hooks/use-empresa";
 import {
-	type UnidadeMedida,
+	TABELA_UNIDADE_MEDIDA,
+	useColunasTabelaPersistidas,
+} from "@/hooks/use-preferencias-ui-usuario";
+import {
 	isUnidadeMedidaGlobal,
+	type UnidadeMedida,
 	unidadeMedidaService,
 } from "@/services/unidade-medida.service";
 import { PageContainer } from "../components/page-container";
+import {
+	COLUNA_PARA_CAMPO_FILTRO_UNIDADE_MEDIDA,
+	type ConfigFiltroColunaUnidadeMedida,
+	criarColunasUnidadeMedida,
+	type FiltrosColunaUnidadeMedidaState,
+	filtrosColunaUnidadeMedidaVazios,
+	ORIGEM_UNIDADE_MEDIDA_OPCOES,
+	visibilidadePadraoColunasUnidadeMedida,
+} from "./unidade-medida-colunas";
 
-type ColumnsProps = {
-	onEdit: (unidadeMedida: UnidadeMedida) => void;
-	onDelete: (id: string) => void;
-};
+function rotuloColuna(column: {
+	id: string;
+	columnDef: { meta?: unknown; header?: unknown };
+}) {
+	const meta = column.columnDef.meta as { label?: string } | undefined;
+	if (meta?.label) return meta.label;
+	if (typeof column.columnDef.header === "string") {
+		return column.columnDef.header;
+	}
+	return column.id;
+}
 
-const createColumns = ({
-	onEdit,
-	onDelete,
-}: ColumnsProps): ColumnDef<UnidadeMedida>[] => [
-	{
-		accessorKey: "codigo",
-		header: "Código",
-		cell: ({ row }) => <div>{row.getValue("codigo") || "-"}</div>,
-	},
-	{
-		accessorKey: "nome",
-		header: "Nome",
-		cell: ({ row }) => <div>{row.getValue("nome") || "-"}</div>,
-	},
-	{
-		id: "origem",
-		header: "Origem",
-		cell: ({ row }) => {
-			const unidadeMedida = row.original;
-			return isUnidadeMedidaGlobal(unidadeMedida) ? (
-				<Badge variant="secondary">Sistema</Badge>
-			) : (
-				<Badge variant="outline">Empresa</Badge>
-			);
-		},
-	},
-	{
-		id: "acoes",
-		header: "Ações",
-		cell: ({ row }) => {
-			const unidadeMedida = row.original;
-			const isGlobal = isUnidadeMedidaGlobal(unidadeMedida);
-
-			if (isGlobal) {
-				return (
-					<div className="flex justify-end text-sm text-muted-foreground">
-						Somente leitura
-					</div>
-				);
-			}
-
-			return (
-				<div className="flex justify-end">
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon"
-								className="h-8 w-8"
-								aria-label="Abrir menu de ações"
-							>
-								<IconDotsVertical className="size-4" />
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end">
-							<DropdownMenuItem onClick={() => onEdit(unidadeMedida)}>
-								<IconPencil className="size-4" />
-								Editar
-							</DropdownMenuItem>
-							<DropdownMenuSeparator />
-							<DropdownMenuItem
-								variant="destructive"
-								onClick={() => onDelete(unidadeMedida.id)}
-							>
-								<IconTrash className="size-4" />
-								Excluir
-							</DropdownMenuItem>
-						</DropdownMenuContent>
-					</DropdownMenu>
-				</div>
-			);
-		},
-	},
-];
+function filtrosColunaAtivos(filtros: FiltrosColunaUnidadeMedidaState) {
+	return Object.values(filtros).some((valor) => valor.trim() !== "");
+}
 
 export default function UnidadeMedidaPage() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const queryClient = useQueryClient();
 	const { localStorageEmpresa } = useEmpresa();
+	const idPorPagina = useId();
 	const qAplicado = searchParams.get("q")?.trim() ?? "";
 	const [qInput, setQInput] = useState(qAplicado);
-	const [sorting, setSorting] = useState<SortingState>([]);
 	const [pagination, setPagination] = useState({
 		pageIndex: 0,
 		pageSize: 10,
 	});
+	const [filtrosColuna, setFiltrosColuna] =
+		useState<FiltrosColunaUnidadeMedidaState>(filtrosColunaUnidadeMedidaVazios);
+	const [ordenarPor, setOrdenarPor] = useState<string | null>(null);
+	const [ordem, setOrdem] = useState<"asc" | "desc" | null>(null);
+
+	const visibilidadePadrao = useMemo(
+		() => visibilidadePadraoColunasUnidadeMedida(),
+		[],
+	);
+	const { columnVisibility, onColumnVisibilityChange, isLoadingPreferencias } =
+		useColunasTabelaPersistidas(TABELA_UNIDADE_MEDIDA, visibilidadePadrao);
 
 	useEffect(() => {
 		setQInput(qAplicado);
@@ -147,15 +114,52 @@ export default function UnidadeMedidaPage() {
 	const handleBuscar = () => {
 		const termo = qInput.trim();
 		setPagination((p) => ({ ...p, pageIndex: 0 }));
-
 		const params = new URLSearchParams();
-		if (termo) {
-			params.set("q", termo);
-		}
-
+		if (termo) params.set("q", termo);
 		const query = params.toString();
 		router.replace(query ? `/unidade-medida?${query}` : "/unidade-medida");
 	};
+
+	const onOrdenarColuna = useCallback(
+		(colunaId: string, direcao: OrdenacaoColunaTabela) => {
+			if (!direcao) {
+				setOrdenarPor(null);
+				setOrdem(null);
+			} else {
+				setOrdenarPor(colunaId);
+				setOrdem(direcao);
+			}
+			setPagination((p) => ({ ...p, pageIndex: 0 }));
+		},
+		[],
+	);
+
+	const onFiltrarColuna = useCallback((colunaId: string, valor: string) => {
+		const campo = COLUNA_PARA_CAMPO_FILTRO_UNIDADE_MEDIDA[colunaId];
+		if (!campo) return;
+		setFiltrosColuna((atual) => ({ ...atual, [campo]: valor }));
+		setPagination((p) => ({ ...p, pageIndex: 0 }));
+	}, []);
+
+	const configFiltroPorColuna = useMemo((): Record<
+		string,
+		ConfigFiltroColunaUnidadeMedida
+	> => {
+		const texto = (placeholder?: string): ConfigFiltroColunaUnidadeMedida => ({
+			tipo: "texto",
+			placeholder,
+		});
+		return {
+			codigo: texto("Ex: UN"),
+			nome: texto("Nome da unidade"),
+			origem: {
+				tipo: "opcoes",
+				opcoes: ORIGEM_UNIDADE_MEDIDA_OPCOES,
+			},
+			casasdecimais: texto("Casas decimais"),
+			tipovalor: texto("Tipo valor"),
+		};
+	}, []);
 
 	const { data, isLoading } = useQuery({
 		queryKey: [
@@ -164,6 +168,9 @@ export default function UnidadeMedidaPage() {
 			qAplicado,
 			pagination.pageIndex + 1,
 			pagination.pageSize,
+			filtrosColuna,
+			ordenarPor,
+			ordem,
 		],
 		queryFn: async () => {
 			if (!localStorageEmpresa) {
@@ -174,6 +181,21 @@ export default function UnidadeMedidaPage() {
 				page: pagination.pageIndex + 1,
 				limit: pagination.pageSize,
 				...(qAplicado ? { q: qAplicado } : {}),
+				...(filtrosColuna.nome ? { nome: filtrosColuna.nome } : {}),
+				...(filtrosColuna.codigo ? { codigo: filtrosColuna.codigo } : {}),
+				...(filtrosColuna.origem
+					? {
+							origem: filtrosColuna.origem as "sistema" | "empresa",
+						}
+					: {}),
+				...(filtrosColuna.casasdecimais
+					? { casasdecimais: filtrosColuna.casasdecimais }
+					: {}),
+				...(filtrosColuna.tipovalor
+					? { tipovalor: filtrosColuna.tipovalor }
+					: {}),
+				...(ordenarPor ? { ordenarPor } : {}),
+				...(ordem ? { ordem } : {}),
 			});
 		},
 		enabled: !!localStorageEmpresa,
@@ -190,42 +212,109 @@ export default function UnidadeMedidaPage() {
 		},
 	});
 
-	const handleEdit = (unidadeMedida: UnidadeMedida) => {
-		router.push(`/unidade-medida/${unidadeMedida.id}/editar`);
-	};
+	const handleEdit = useCallback(
+		(unidadeMedida: UnidadeMedida) => {
+			router.push(`/unidade-medida/${unidadeMedida.id}/editar`);
+		},
+		[router],
+	);
 
-	const handleDelete = (id: string) => {
-		toast.message("Tem certeza que deseja excluir esta unidade de medida?", {
-			position: "top-center",
-			duration: 3000,
-			action: {
-				label: "Excluir",
-				onClick: () => deletarUnidadeMedida(id),
-			},
-			description: "Esta ação não pode ser desfeita.",
-		});
-	};
+	const handleDelete = useCallback(
+		(id: string) => {
+			toast.message("Tem certeza que deseja excluir esta unidade de medida?", {
+				position: "top-center",
+				duration: 3000,
+				action: {
+					label: "Excluir",
+					onClick: () => deletarUnidadeMedida(id),
+				},
+				description: "Esta ação não pode ser desfeita.",
+			});
+		},
+		[deletarUnidadeMedida],
+	);
 
-	const columns = createColumns({
-		onEdit: handleEdit,
-		onDelete: handleDelete,
-	});
+	const columns = useMemo(
+		() =>
+			criarColunasUnidadeMedida({
+				filtros: filtrosColuna,
+				ordenarPor,
+				ordem,
+				onOrdenarColuna,
+				onFiltrarColuna,
+				configFiltroPorColuna,
+				renderAcoes: (unidadeMedida) => {
+					if (isUnidadeMedidaGlobal(unidadeMedida)) {
+						return (
+							<div className="flex justify-end text-sm text-muted-foreground">
+								Somente leitura
+							</div>
+						);
+					}
+
+					return (
+						<div className="flex justify-end">
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon"
+										className="h-8 w-8"
+										aria-label="Abrir menu de ações"
+									>
+										<IconDotsVertical className="size-4" />
+									</Button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent align="end">
+									<DropdownMenuItem onClick={() => handleEdit(unidadeMedida)}>
+										<IconPencil className="size-4" />
+										Editar
+									</DropdownMenuItem>
+									<DropdownMenuSeparator />
+									<DropdownMenuItem
+										variant="destructive"
+										onClick={() => handleDelete(unidadeMedida.id)}
+									>
+										<IconTrash className="size-4" />
+										Excluir
+									</DropdownMenuItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
+						</div>
+					);
+				},
+			}),
+		[
+			filtrosColuna,
+			ordenarPor,
+			ordem,
+			onOrdenarColuna,
+			onFiltrarColuna,
+			configFiltroPorColuna,
+			handleEdit,
+			handleDelete,
+		],
+	);
 
 	const table = useReactTable({
 		data: data?.data || [],
 		columns,
 		state: {
-			sorting,
 			pagination,
+			columnVisibility,
 		},
-		onSortingChange: setSorting,
 		onPaginationChange: setPagination,
+		onColumnVisibilityChange,
 		getCoreRowModel: getCoreRowModel(),
-		getSortedRowModel: getSortedRowModel(),
-		getPaginationRowModel: getPaginationRowModel(),
+		getRowId: (row) => row.id,
 		manualPagination: true,
 		pageCount: data?.paginacao.totalPages ?? 0,
 	});
+
+	const colunasVisiveis = table.getVisibleLeafColumns();
+	const mostrarSkeleton = isLoading || isLoadingPreferencias;
+	const comFiltros =
+		!!qAplicado || filtrosColunaAtivos(filtrosColuna) || !!ordenarPor;
 
 	return (
 		<PageContainer>
@@ -241,41 +330,78 @@ export default function UnidadeMedidaPage() {
 						Cadastrar Nova Unidade
 					</Button>
 				</div>
-				<div className="flex gap-2 px-4">
-					<Input
-						value={qInput}
-						onChange={(event) => setQInput(event.target.value)}
-						onKeyDown={(event) => {
-							if (event.key === "Enter") {
-								handleBuscar();
-							}
-						}}
-						placeholder="Buscar por nome ou código..."
-						disabled={!localStorageEmpresa}
-						className="max-w-md"
-					/>
-					<Button
-						onClick={handleBuscar}
-						disabled={!localStorageEmpresa}
-						className="gap-2"
-					>
-						<IconSearch className="size-4" />
-						Buscar
-					</Button>
+				<div className="flex flex-wrap items-center justify-between gap-2 px-4">
+					<div className="flex gap-2">
+						<Input
+							value={qInput}
+							onChange={(event) => setQInput(event.target.value)}
+							onKeyDown={(event) => {
+								if (event.key === "Enter") handleBuscar();
+							}}
+							placeholder="Buscar por nome ou código..."
+							disabled={!localStorageEmpresa}
+							className="max-w-md"
+						/>
+						<Button
+							onClick={handleBuscar}
+							disabled={!localStorageEmpresa}
+							className="gap-2"
+						>
+							<IconSearch className="size-4" />
+							Buscar
+						</Button>
+					</div>
+					{localStorageEmpresa && (
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button variant="outline" size="sm">
+									<IconLayoutColumns className="size-4" />
+									<span className="hidden lg:inline">Personalizar Colunas</span>
+									<span className="lg:hidden">Colunas</span>
+									<IconChevronDown className="size-4" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent
+								align="end"
+								className="max-h-72 w-56 overflow-y-auto"
+							>
+								{table
+									.getAllColumns()
+									.filter((column) => column.getCanHide())
+									.map((column) => (
+										<DropdownMenuCheckboxItem
+											key={column.id}
+											checked={column.getIsVisible()}
+											onCheckedChange={(value) =>
+												column.toggleVisibility(!!value)
+											}
+										>
+											{rotuloColuna(column)}
+										</DropdownMenuCheckboxItem>
+									))}
+							</DropdownMenuContent>
+						</DropdownMenu>
+					)}
 				</div>
-				<div className="rounded-lg border bg-card mx-4">
+				<div className="mx-4 rounded-lg border bg-card">
 					{!localStorageEmpresa ? (
 						<div className="flex items-center justify-center py-8">
 							<p className="text-muted-foreground">
 								Selecione uma empresa para visualizar as unidades de medida
 							</p>
 						</div>
-					) : isLoading ? (
-						<TableSkeleton rows={10}>
-							<TableHead className="w-[120px]">Código</TableHead>
-							<TableHead>Nome</TableHead>
-							<TableHead className="w-[120px]">Origem</TableHead>
-							<TableHead className="w-12 text-end">Ações</TableHead>
+					) : mostrarSkeleton ? (
+						<TableSkeleton columns={colunasVisiveis.length || 4} rows={10}>
+							{colunasVisiveis.map((coluna) => (
+								<TableHead
+									key={coluna.id}
+									className={
+										coluna.id === "acoes" ? "w-12 text-end" : undefined
+									}
+								>
+									{rotuloColuna(coluna)}
+								</TableHead>
+							))}
 						</TableSkeleton>
 					) : (
 						<>
@@ -316,17 +442,42 @@ export default function UnidadeMedidaPage() {
 									) : (
 										<TableRow>
 											<TableCell
-												colSpan={table.getAllColumns().length}
+												colSpan={colunasVisiveis.length}
 												className="h-24 text-center"
 											>
-												Nenhuma unidade de medida encontrada.
+												{comFiltros
+													? "Nenhuma unidade de medida encontrada para os filtros selecionados."
+													: "Nenhuma unidade de medida encontrada."}
 											</TableCell>
 										</TableRow>
 									)}
 								</TableBody>
 							</Table>
-							{data && data.paginacao.totalPages > 1 && (
-								<div className="flex items-center justify-between px-4 py-4 border-t">
+							{data && data.paginacao.total > 0 && (
+								<div className="flex flex-col gap-4 border-t px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+									<div className="flex items-center gap-2">
+										<Label htmlFor={idPorPagina} className="text-sm">
+											Itens por página
+										</Label>
+										<Select
+											value={`${pagination.pageSize}`}
+											onValueChange={(value) => {
+												table.setPageSize(Number(value));
+												table.setPageIndex(0);
+											}}
+										>
+											<SelectTrigger id={idPorPagina} className="h-8 w-[72px]">
+												<SelectValue placeholder={pagination.pageSize} />
+											</SelectTrigger>
+											<SelectContent side="top">
+												{[10, 20, 30, 50, 100].map((tamanho) => (
+													<SelectItem key={tamanho} value={`${tamanho}`}>
+														{tamanho}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</div>
 									<div className="text-sm text-muted-foreground">
 										Página {pagination.pageIndex + 1} de{" "}
 										{data.paginacao.totalPages} ({data.paginacao.total}{" "}

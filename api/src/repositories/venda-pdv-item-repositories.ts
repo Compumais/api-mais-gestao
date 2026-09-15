@@ -21,6 +21,19 @@ export async function criarVendaPdvItem(dadosVendaPdvItem: NovoVendaPdvItem) {
 	return registro;
 }
 
+export async function criarOuBuscarVendaPdvItem(
+	dadosVendaPdvItem: NovoVendaPdvItem,
+) {
+	const [criado] = await db
+		.insert(vendapdvitem)
+		.values(dadosVendaPdvItem)
+		.onConflictDoNothing({ target: vendapdvitem.id })
+		.returning();
+	if (criado) return { registro: criado, criado: true };
+	const existente = await buscarVendaPdvItemPorId(dadosVendaPdvItem.id);
+	return existente ? { registro: existente, criado: false } : null;
+}
+
 export async function atualizarVendaPdvItem(
 	id: string,
 	dadosVendaPdvItem: Partial<NovoVendaPdvItem>,

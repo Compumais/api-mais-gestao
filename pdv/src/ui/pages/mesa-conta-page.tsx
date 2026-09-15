@@ -1,3 +1,4 @@
+import { X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
 	useLocation,
@@ -5,7 +6,18 @@ import {
 	useOutletContext,
 	useParams,
 } from "react-router-dom";
-import { arredondarDinheiro } from "@/lib/pagamento";
+import {
+	filtrarItensAbertosConta,
+	itemContaEstaPago,
+	totalFatiaItensSelecionados,
+} from "@/lib/conta-gourmet";
+import { normalizarObservacaoItem } from "@/lib/observacao-item";
+import { normalizarObservacaoPedido } from "@/lib/observacao-pedido";
+import {
+	arredondarDinheiro,
+	calcularAcrescimoInformado,
+	calcularDescontoInformado,
+} from "@/lib/pagamento";
 import { pdvInvoke } from "@/lib/pdv-api";
 import {
 	type GrupoLocal,
@@ -14,13 +26,18 @@ import {
 	type ProdutoLocal,
 	rotuloModelo,
 	type StatusContext,
+	tituloContaAtendimento,
 } from "@/lib/pdv-types";
 import { produtoEhPizza } from "@/lib/pizza-meio-a-meio";
 import { devePedirPeso, formatarQuantidade } from "@/lib/produto-kg";
 import { money } from "@/lib/utils";
 import { AvisoSecundario } from "@/ui/components/aviso-secundario";
+import { AlertasOperacionaisPdv } from "@/ui/components/alertas-operacionais-pdv";
 import { BarcodeInput } from "@/ui/components/barcode-input";
 import { DialogEscolherMesa } from "@/ui/components/dialog-escolher-mesa";
+import { DialogMaisAcoesMesa } from "@/ui/components/dialog-mais-acoes-mesa";
+import { DialogObservacaoItem } from "@/ui/components/dialog-observacao-item";
+import { DialogObservacaoPedido } from "@/ui/components/dialog-observacao-pedido";
 import {
 	DialogPagamentoMisto,
 	type FechamentoMisto,
@@ -30,10 +47,12 @@ import {
 	type ItemPizzaMeioAMeio,
 } from "@/ui/components/dialog-pizza-meio-a-meio";
 import { DialogQuantidadePeso } from "@/ui/components/dialog-quantidade-peso";
+import { DialogReimprimirPedidos } from "@/ui/components/dialog-reimprimir-pedidos";
 import { DialogRejeicaoNfce } from "@/ui/components/dialog-rejeicao-nfce";
 import { DialogSenhaGerencial } from "@/ui/components/dialog-senha-gerencial";
 import { FunctionBar } from "@/ui/components/function-bar";
 import { ProdutoCard } from "@/ui/components/produto-card";
+import { SideNav } from "@/ui/components/side-nav";
 import { Topbar } from "@/ui/components/topbar";
 import { Button } from "@/ui/components/ui/button";
 import { Input } from "@/ui/components/ui/input";
@@ -48,11 +67,22 @@ type ContaMesa = {
 	numeropessoas?: number;
 	subtotal?: number;
 	valordesconto?: number;
+	valoracrescimo?: number;
 	valortaxaservico?: number;
 	valorcouvert?: number;
+	valorentrega?: number;
 	taxa_ativa?: number;
 	valorpago?: number;
 	valorrestante?: number;
+	modalidade?: "mesa" | "delivery" | "retirada";
+	telefone?: string | null;
+	endereco?: string | null;
+	bairro?: string | null;
+	complemento?: string | null;
+	referencia?: string | null;
+	status_entrega?: string | null;
+	senha_chamada?: string | null;
+	orderidintegracao?: string | null;
 	itens: Array<{
 		id: string;
 		idproduto: string;
@@ -60,6 +90,8 @@ type ContaMesa = {
 		quantidade: number;
 		precounitario: number;
 		precototal: number;
+		observacao?: string | null;
+		pago?: number;
 	}>;
 };
 
@@ -72,17 +104,32 @@ type ItemFila = {
 	precounitario: number;
 	precototal: number;
 	pesado?: boolean;
+	observacao?: string | null;
 };
 
 type LocationState = {
 	nomecliente?: string | null;
 };
 
+function classeLinhaItemSelecionavel(marcado: boolean) {
+	return marcado
+		? "bg-primary/30 font-medium text-primary ring-2 ring-primary"
+		: "bg-background ring-1 ring-foreground/10 hover:bg-primary/15";
+}
+
+function classeLinhaItemPago() {
+	return "opacity-50 text-muted-foreground line-through decoration-foreground/50";
+}
+
 export function MesaContaPage() {
-	const { numero } = useParams<{ numero: string }>();
+	const { numero, id: idContaParam } = useParams<{
+		numero?: string;
+		id?: string;
+	}>();
 	const navigate = useNavigate();
 	const location = useLocation();
 	const { status } = useOutletContext<StatusContext>();
+	const modoEntrega = Boolean(idContaParam);
 	const numeroMesa = Number(numero);
 	const rotulo = rotuloModelo(status?.modeloAtendimento);
 	const nomeDoState = (location.state as LocationState | null)?.nomecliente;
@@ -99,6 +146,7 @@ export function MesaContaPage() {
 	const [fila, setFila] = useState<ItemFila[]>([]);
 	const [pagando, setPagando] = useState(false);
 	const [confirmandoSaida, setConfirmandoSaida] = useState(false);
+	const [confirmandoCancelar, setConfirmandoCancelar] = useState(false);
 	const [rejeicaoNfce, setRejeicaoNfce] = useState<string | null>(null);
 	const [vendaRejeitadaId, setVendaRejeitadaId] = useState<string | null>(null);
 	const [msg, setMsg] = useState("");
@@ -108,11 +156,16 @@ export function MesaContaPage() {
 	const [produtoPeso, setProdutoPeso] = useState<ProdutoLocal | null>(null);
 	const [mesas, setMesas] = useState<MesaResumo[]>([]);
 	const [senhaAberta, setSenhaAberta] = useState(false);
-	const [descontoPendente, setDescontoPendente] = useState("");
+	const [ajusteTipo, setAjusteTipo] = useState<"desconto" | "acrescimo">(
+		"desconto",
+	);
+	const [ajustePendente, setAjustePendente] = useState("");
+	const [ajustePercentual, setAjustePercentual] = useState(false);
 	const [destinoAberto, setDestinoAberto] = useState<
 		null | "transferir" | "juntar" | "itens"
 	>(null);
 	const [dividirAberto, setDividirAberto] = useState(false);
+	const [pagarItensAberto, setPagarItensAberto] = useState(false);
 	const [modoDividir, setModoDividir] = useState<"pessoas" | "valor" | "itens">(
 		"pessoas",
 	);
@@ -121,13 +174,29 @@ export function MesaContaPage() {
 	const [itensSel, setItensSel] = useState<string[]>([]);
 	const [fatiaValor, setFatiaValor] = useState<number | null>(null);
 	const [pagandoFatia, setPagandoFatia] = useState(false);
+	const [taxaEntregaEdit, setTaxaEntregaEdit] = useState("");
+	const [reimprimirAberto, setReimprimirAberto] = useState(false);
+	const [obsFilaChave, setObsFilaChave] = useState<string | null>(null);
+	const [obsPedidoAberto, setObsPedidoAberto] = useState(false);
+	const [maisAcoesAberto, setMaisAcoesAberto] = useState(false);
+	const [itemCancelar, setItemCancelar] = useState<
+		ContaMesa["itens"][number] | null
+	>(null);
+	const [senhaCancelarItem, setSenhaCancelarItem] = useState("");
+	const [exigeSenhaItem, setExigeSenhaItem] = useState(false);
 
 	useEscapeFechaModal(confirmandoSaida, () => setConfirmandoSaida(false));
+	useEscapeFechaModal(confirmandoCancelar, () => setConfirmandoCancelar(false));
 	useEscapeFechaModal(Boolean(rejeicaoNfce), () => setRejeicaoNfce(null));
 	useEscapeFechaModal(Boolean(pizzaPrimeiro), () => setPizzaPrimeiro(null));
+	useEscapeFechaModal(dividirAberto, () => setDividirAberto(false));
+	useEscapeFechaModal(pagarItensAberto, () => setPagarItensAberto(false));
 	useEscapeFechaModal(Boolean(produtoPeso), () => setProdutoPeso(null));
+	useEscapeFechaModal(Boolean(obsFilaChave), () => setObsFilaChave(null));
+	useEscapeFechaModal(obsPedidoAberto, () => setObsPedidoAberto(false));
+	useEscapeFechaModal(Boolean(itemCancelar), () => setItemCancelar(null));
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: iniciar deve reexecutar apenas quando a mesa muda
+	// biome-ignore lint/correctness/useExhaustiveDependencies: iniciar deve reexecutar apenas quando a mesa/conta muda
 	useEffect(() => {
 		void iniciar();
 		void Promise.all([
@@ -137,13 +206,22 @@ export function MesaContaPage() {
 			setGrupos(g);
 			setAtalhos(a);
 		});
-	}, [numeroMesa]);
+	}, [numeroMesa, idContaParam]);
 
 	// Intercepta Escape global quando há itens na fila (antes do voltar automático).
 	useEffect(() => {
 		function onKeyDown(e: KeyboardEvent) {
 			if (e.key !== "Escape") return;
-			if (pagando || confirmandoSaida) return;
+			if (
+				pagando ||
+				confirmandoSaida ||
+				confirmandoCancelar ||
+				obsFilaChave ||
+				obsPedidoAberto ||
+				maisAcoesAberto ||
+				itemCancelar
+			)
+				return;
 			if (fila.length === 0) return;
 			e.preventDefault();
 			e.stopImmediatePropagation();
@@ -151,30 +229,54 @@ export function MesaContaPage() {
 		}
 		window.addEventListener("keydown", onKeyDown, true);
 		return () => window.removeEventListener("keydown", onKeyDown, true);
-	}, [fila.length, pagando, confirmandoSaida]);
+	}, [
+		fila.length,
+		pagando,
+		confirmandoSaida,
+		confirmandoCancelar,
+		obsFilaChave,
+		obsPedidoAberto,
+		maisAcoesAberto,
+		itemCancelar,
+	]);
 
 	async function iniciar() {
 		setPronto(false);
 		setMsg("");
 		setFila([]);
 		try {
-			const existente = await pdvInvoke<ContaMesa | null>(
-				"obterContaPorNumero",
-				numeroMesa,
-			);
-			if (existente) {
+			if (modoEntrega && idContaParam) {
+				const existente = await pdvInvoke<ContaMesa | null>(
+					"obterContaMesa",
+					idContaParam,
+				);
+				if (!existente) {
+					throw new Error("Pedido não encontrado");
+				}
 				setConta(existente);
 				setNomeCliente(existente.nomecliente);
+				setTaxaEntregaEdit(String(existente.valorentrega ?? 0));
 			} else {
-				setConta(null);
-				setNomeCliente(nomeDoState ?? null);
+				const existente = await pdvInvoke<ContaMesa | null>(
+					"obterContaPorNumero",
+					numeroMesa,
+				);
+				if (existente) {
+					setConta(existente);
+					setNomeCliente(existente.nomecliente);
+				} else {
+					setConta(null);
+					setNomeCliente(nomeDoState ?? null);
+				}
+				setMesas(await pdvInvoke<MesaResumo[]>("listarMesas"));
 			}
-			setMesas(await pdvInvoke<MesaResumo[]>("listarMesas"));
 		} catch (err) {
 			setMsg(
 				err instanceof Error
 					? err.message
-					: `Erro ao carregar a ${rotulo.singular.toLowerCase()}`,
+					: modoEntrega
+						? "Erro ao carregar o pedido"
+						: `Erro ao carregar a ${rotulo.singular.toLowerCase()}`,
 			);
 		} finally {
 			setPronto(true);
@@ -232,7 +334,11 @@ export function MesaContaPage() {
 		}
 		setFila((prev) => {
 			const idx = prev.findIndex(
-				(i) => i.idproduto === produto.id && !i.idprodutomeio && !i.pesado,
+				(i) =>
+					i.idproduto === produto.id &&
+					!i.idprodutomeio &&
+					!i.pesado &&
+					!i.observacao?.trim(),
 			);
 			if (idx >= 0) {
 				const atual = prev[idx];
@@ -316,34 +422,136 @@ export function MesaContaPage() {
 		);
 	}
 
+	function aplicarObservacaoFila(observacao: string | null) {
+		const chave = obsFilaChave;
+		setObsFilaChave(null);
+		if (!chave) return;
+		setFila((prev) =>
+			prev.map((item) =>
+				item.chave === chave ? { ...item, observacao } : item,
+			),
+		);
+	}
+
 	function limparFila() {
+		if (fila.length === 0) return;
 		setFila([]);
-		setMsg("Fila cancelada.");
-	}
-
-	function cancelarFila() {
-		if (fila.length === 0) return;
-		limparFila();
 		setGrupoAtivo(null);
+		setMsg("Fila limpa.");
 	}
 
-	async function confirmarFilaNaConta() {
-		if (fila.length === 0) return;
+	function solicitarCancelarMesa() {
+		if (modoEntrega || loading || pagando) return;
+		if (!conta && fila.length === 0) return;
+		setConfirmandoCancelar(true);
+	}
+
+	async function confirmarCancelarMesa() {
+		setConfirmandoCancelar(false);
 		setLoading(true);
 		setMsg("");
 		try {
+			if (conta?.id) {
+				await pdvInvoke("cancelarContaMesa", conta.id);
+			}
+			setFila([]);
+			setConta(null);
+			setGrupoAtivo(null);
+			navigate("/", { replace: true });
+		} catch (err) {
+			setMsg(err instanceof Error ? err.message : "Falha ao cancelar");
+		} finally {
+			setLoading(false);
+		}
+	}
+
+	async function solicitarCancelarItem(item: ContaMesa["itens"][number]) {
+		if (loading || pagando) return;
+		setSenhaCancelarItem("");
+		try {
+			const exige = await pdvInvoke<boolean>("senhaGerencialExigida");
+			setExigeSenhaItem(Boolean(exige));
+		} catch {
+			setExigeSenhaItem(false);
+		}
+		setItemCancelar(item);
+	}
+
+	async function confirmarCancelarItem() {
+		if (!conta || !itemCancelar) return;
+		if (exigeSenhaItem && !senhaCancelarItem.trim()) return;
+		const alvo = itemCancelar;
+		setLoading(true);
+		setMsg("");
+		try {
+			const atualizada = await pdvInvoke<ContaMesa>(
+				"cancelarItemConta",
+				conta.id,
+				alvo.id,
+				exigeSenhaItem ? senhaCancelarItem : undefined,
+			);
+			setConta(atualizada);
+			setItensSel((prev) => prev.filter((id) => id !== alvo.id));
+			setItemCancelar(null);
+			setSenhaCancelarItem("");
+			setMsg(
+				`Item cancelado: ${formatarQuantidade(alvo.quantidade)}x ${alvo.descricao}.`,
+			);
+		} catch (err) {
+			setMsg(err instanceof Error ? err.message : "Falha ao cancelar item");
+		} finally {
+			setLoading(false);
+		}
+	}
+
+	async function confirmarFilaNaConta(observacaoPedido?: string | null) {
+		if (fila.length === 0) return;
+		setObsPedidoAberto(false);
+		setLoading(true);
+		setMsg("");
+		const obsPedido = normalizarObservacaoPedido(observacaoPedido);
+		const itensPayload = fila.map((item) => ({
+			idproduto: item.idproduto,
+			quantidade: item.quantidade,
+			observacao: normalizarObservacaoItem(item.observacao),
+			idprodutomeio: item.idprodutomeio ?? null,
+		}));
+		try {
 			let atualizada: ContaMesa | null = conta;
-			for (const item of fila) {
+			if (modoEntrega) {
+				if (!conta?.id) {
+					throw new Error("Pedido inválido");
+				}
 				atualizada = await pdvInvoke<ContaMesa>(
-					"adicionarItemNaMesa",
-					numeroMesa,
-					{
-						idproduto: item.idproduto,
-						descricao: item.descricao,
-						quantidade: item.quantidade,
-						precounitario: item.precounitario,
-					},
-					nomeCliente ?? undefined,
+					"enviarPedidoConta",
+					conta.id,
+					crypto.randomUUID(),
+					itensPayload,
+					obsPedido,
+				);
+				if (conta.status_entrega === "recebido") {
+					atualizada = await pdvInvoke<ContaMesa>(
+						"atualizarStatusEntrega",
+						conta.id,
+						"producao",
+					);
+				}
+			} else {
+				let idconta = conta?.id;
+				if (!idconta) {
+					const aberta = await pdvInvoke<ContaMesa>(
+						"abrirContaMesa",
+						numeroMesa,
+						nomeCliente ?? undefined,
+					);
+					idconta = aberta.id;
+				}
+				atualizada = await pdvInvoke<ContaMesa>(
+					"enviarPedidoConta",
+					idconta,
+					crypto.randomUUID(),
+					itensPayload,
+					obsPedido,
 				);
 			}
 			if (atualizada) {
@@ -358,6 +566,11 @@ export function MesaContaPage() {
 		} finally {
 			setLoading(false);
 		}
+	}
+
+	function solicitarEnviarFila() {
+		if (fila.length === 0 || loading) return;
+		setObsPedidoAberto(true);
 	}
 
 	async function onBip(codigo: string) {
@@ -396,11 +609,25 @@ export function MesaContaPage() {
 		}
 		setLoading(true);
 		try {
-			if ((fechamento.desconto ?? 0) > 0.009) {
+			if (
+				(fechamento.desconto ?? 0) > 0.009 ||
+				(fechamento.acrescimo ?? 0) > 0.009
+			) {
 				await pdvInvoke<ContaMesa>("aplicarAjustesConta", conta.id, {
-					desconto: arredondarDinheiro(
-						(conta.valordesconto ?? 0) + fechamento.desconto,
-					),
+					...(fechamento.desconto > 0.009
+						? {
+								desconto: arredondarDinheiro(
+									(conta.valordesconto ?? 0) + fechamento.desconto,
+								),
+							}
+						: {}),
+					...(fechamento.acrescimo > 0.009
+						? {
+								acrescimo: arredondarDinheiro(
+									(conta.valoracrescimo ?? 0) + fechamento.acrescimo,
+								),
+							}
+						: {}),
 					senha: fechamento.senhaGerencial ?? "",
 				});
 			}
@@ -422,7 +649,7 @@ export function MesaContaPage() {
 				return;
 			}
 			setMsg(result.fiscal.mensagem);
-			navigate("/", { replace: true });
+			navigate(modoEntrega ? "/delivery" : "/", { replace: true });
 		} catch (err) {
 			setPagando(false);
 			const texto =
@@ -438,6 +665,7 @@ export function MesaContaPage() {
 		numeropessoas?: number;
 		taxaAtiva?: boolean;
 		desconto?: number;
+		acrescimo?: number;
 		senha?: string;
 	}) {
 		if (!conta) return;
@@ -457,16 +685,46 @@ export function MesaContaPage() {
 		}
 	}
 
-	function abrirDesconto() {
-		if (!conta?.itens.length || loading || pagando) return;
-		setDescontoPendente(conta.valordesconto ? String(conta.valordesconto) : "");
+	function abrirAjuste(tipo: "desconto" | "acrescimo") {
+		if (
+			!conta ||
+			filtrarItensAbertosConta(conta.itens).length === 0 ||
+			loading ||
+			pagando
+		)
+			return;
+		setAjusteTipo(tipo);
+		setAjustePercentual(false);
+		const atual =
+			tipo === "desconto"
+				? (conta.valordesconto ?? 0)
+				: (conta.valoracrescimo ?? 0);
+		setAjustePendente(atual ? String(atual) : "");
 		setSenhaAberta(true);
 	}
 
-	async function confirmarDesconto(senha: string) {
-		const valor = Number(descontoPendente.replace(",", "."));
+	function abrirDesconto() {
+		abrirAjuste("desconto");
+	}
+
+	function abrirAcrescimo() {
+		abrirAjuste("acrescimo");
+	}
+
+	async function confirmarAjuste(senha: string) {
+		if (!conta) return;
+		const informado = Number(ajustePendente.replace(",", "."));
+		const base = conta.subtotal ?? conta.valortotal;
+		const valor =
+			ajusteTipo === "desconto"
+				? calcularDescontoInformado(base, informado, ajustePercentual)
+				: calcularAcrescimoInformado(base, informado, ajustePercentual);
 		setSenhaAberta(false);
-		await aplicarAjustes({ desconto: valor, senha });
+		await aplicarAjustes(
+			ajusteTipo === "desconto"
+				? { desconto: valor, senha }
+				: { acrescimo: valor, senha },
+		);
 	}
 
 	async function preConta() {
@@ -534,18 +792,55 @@ export function MesaContaPage() {
 		setDividirAberto(true);
 	}
 
+	function totalDosItensSelecionados(): number {
+		if (!conta || !itensSel.length) return 0;
+		return totalFatiaItensSelecionados(
+			filtrarItensAbertosConta(conta.itens).map((i) => ({
+				id: i.id,
+				precototal: i.precototal,
+			})),
+			itensSel,
+			{
+				subtotal: conta.subtotal ?? conta.valortotal,
+				valordesconto: conta.valordesconto ?? 0,
+				valoracrescimo: conta.valoracrescimo ?? 0,
+				valortaxaservico: conta.valortaxaservico ?? 0,
+				valorcouvert: conta.valorcouvert ?? 0,
+				valorentrega: conta.valorentrega ?? 0,
+				valortotal: conta.valortotal,
+			},
+		);
+	}
+
+	function abrirPagarPorItens() {
+		if (!conta || filtrarItensAbertosConta(conta.itens).length === 0) return;
+		setPagarItensAberto(true);
+	}
+
+	function confirmarSelecaoItensParaPagamento() {
+		if (!conta) return;
+		if (!itensSel.length) {
+			setMsg("Selecione os itens que esta pessoa vai pagar.");
+			return;
+		}
+		const valor = totalDosItensSelecionados();
+		if (valor <= 0) {
+			setMsg("O valor dos itens selecionados é zero.");
+			return;
+		}
+		setFatiaValor(valor);
+		setPagarItensAberto(false);
+		setDividirAberto(false);
+		setPagandoFatia(true);
+		setPagando(true);
+		setMsg("");
+	}
+
 	function abrirPagamentoFatia() {
 		if (!conta) return;
 		const restante = conta.valorrestante ?? conta.valortotal;
 		if (modoDividir === "itens") {
-			if (!itensSel.length) {
-				setMsg("Marque os itens desta fatia.");
-				return;
-			}
-			setFatiaValor(null);
-			setDividirAberto(false);
-			setPagandoFatia(true);
-			setPagando(true);
+			confirmarSelecaoItensParaPagamento();
 			return;
 		}
 		if (modoDividir === "pessoas") {
@@ -567,7 +862,7 @@ export function MesaContaPage() {
 		if (!conta) return;
 		setLoading(true);
 		try {
-			if (itensSel.length && fatiaValor == null) {
+			if (itensSel.length > 0) {
 				const result = await pdvInvoke<{
 					conta: ContaMesa | null;
 					venda: { id: string };
@@ -580,13 +875,17 @@ export function MesaContaPage() {
 					fechamento.cliente,
 				);
 				setPagando(false);
+				setPagandoFatia(false);
+				setFatiaValor(null);
 				setItensSel([]);
 				if (!result.conta) {
 					navigate("/", { replace: true });
 					return;
 				}
 				setConta(result.conta);
-				setMsg("Fatia recebida.");
+				setMsg(
+					`Itens recebidos. Restante ${money(result.conta.valorrestante ?? 0)}.`,
+				);
 				return;
 			}
 			const result = await pdvInvoke<{
@@ -599,6 +898,7 @@ export function MesaContaPage() {
 				fechamento.troco,
 			);
 			setPagando(false);
+			setPagandoFatia(false);
 			setFatiaValor(null);
 			if (result.venda) {
 				navigate("/", { replace: true });
@@ -617,18 +917,41 @@ export function MesaContaPage() {
 	}
 
 	const itens = conta?.itens ?? [];
+	const itensAbertos = useMemo(
+		() => filtrarItensAbertosConta(itens),
+		[itens],
+	);
 	const total = conta?.valorrestante ?? conta?.valortotal ?? 0;
+	const totalSelecionado = useMemo(() => {
+		if (!conta || !itensSel.length) return 0;
+		return totalFatiaItensSelecionados(
+			itensAbertos.map((i) => ({ id: i.id, precototal: i.precototal })),
+			itensSel,
+			{
+				subtotal: conta.subtotal ?? conta.valortotal,
+				valordesconto: conta.valordesconto ?? 0,
+				valoracrescimo: conta.valoracrescimo ?? 0,
+				valortaxaservico: conta.valortaxaservico ?? 0,
+				valorcouvert: conta.valorcouvert ?? 0,
+				valorentrega: conta.valorentrega ?? 0,
+				valortotal: conta.valortotal,
+			},
+		);
+	}, [conta, itensAbertos, itensSel]);
 	const totalPagar = fatiaValor ?? total;
 	const totalFila = useMemo(
 		() => fila.reduce((acc, i) => acc + i.precototal, 0),
 		[fila],
 	);
 	const identificacao = nomeCliente || "Sem identificação";
+	const tituloConta = modoEntrega
+		? `${conta?.modalidade === "retirada" ? "Retirada" : "Delivery"} #${conta?.senha_chamada ?? "—"}`
+		: tituloContaAtendimento(status?.modeloAtendimento, numeroMesa);
 
 	return (
 		<div className="flex h-screen flex-col">
 			<Topbar
-				title={`${rotulo.singular} ${numeroMesa}`}
+				title={tituloConta}
 				subtitle={
 					conta
 						? identificacao
@@ -650,362 +973,461 @@ export function MesaContaPage() {
 				}
 			/>
 
-			<div className="grid flex-1 grid-cols-[1fr_320px] gap-3 overflow-hidden p-3">
-				<div className="flex min-h-0 flex-col gap-3 overflow-hidden rounded-lg border bg-card p-3">
-					<AvisoSecundario status={status} />
-					<div className="flex items-center justify-between gap-2">
-						<h2 className="text-sm font-semibold">Selecionar produtos</h2>
-						{grupoAtivo && (
-							<Button
-								variant="secondary"
-								size="sm"
-								onClick={() => setGrupoAtivo(null)}
-							>
-								Trocar grupo
-							</Button>
-						)}
-					</div>
-					<BarcodeInput
-						onScan={(codigo) => void onBip(codigo)}
-						onProduto={(produto) => enfileirarProduto(produto)}
-						pausado={
-							pagando ||
-							confirmandoSaida ||
-							Boolean(rejeicaoNfce) ||
-							Boolean(pizzaPrimeiro) ||
-							Boolean(produtoPeso) ||
-							senhaAberta
-						}
-					/>
+			<div className="flex min-h-0 flex-1 gap-3 overflow-hidden bg-muted/30 p-3">
+				<div className="grid min-h-0 min-w-0 flex-1 grid-cols-[1fr_340px] gap-3 overflow-hidden">
+					<div className="pdv-surface flex min-h-0 flex-col gap-3 overflow-hidden p-3">
+						<AvisoSecundario status={status} />
+						<AlertasOperacionaisPdv status={status} />
+						<div className="flex items-center justify-between gap-2">
+							<h2 className="text-sm font-semibold">Selecionar produtos</h2>
+							{grupoAtivo && (
+								<Button
+									variant="secondary"
+									size="sm"
+									onClick={() => setGrupoAtivo(null)}
+								>
+									Trocar grupo
+								</Button>
+							)}
+						</div>
+						<BarcodeInput
+							onScan={(codigo) => void onBip(codigo)}
+							onProduto={(produto) => enfileirarProduto(produto)}
+							pausado={
+								pagando ||
+								confirmandoSaida ||
+								confirmandoCancelar ||
+								Boolean(rejeicaoNfce) ||
+								Boolean(pizzaPrimeiro) ||
+								Boolean(produtoPeso) ||
+								Boolean(obsFilaChave) ||
+								obsPedidoAberto ||
+								maisAcoesAberto ||
+								senhaAberta ||
+								Boolean(itemCancelar)
+							}
+						/>
 
-					{!pronto ? (
-						<p className="text-sm text-muted-foreground">Carregando...</p>
-					) : !grupoAtivo ? (
-						<div className="flex flex-1 flex-col gap-3 overflow-auto">
-							{atalhos.length > 0 && (
+						{!pronto ? (
+							<p className="text-sm text-muted-foreground">Carregando...</p>
+						) : !grupoAtivo ? (
+							<div className="flex flex-1 flex-col gap-3 overflow-auto">
+								{atalhos.length > 0 && (
+									<div>
+										<h2 className="mb-2 text-sm font-semibold">Atalhos</h2>
+										<div className="grid auto-rows-min grid-cols-3 gap-2 sm:grid-cols-4">
+											{atalhos.map((p) => (
+												<ProdutoCard
+													key={`atalho-${p.id}`}
+													produto={p}
+													destaque
+													disabled={loading}
+													onClick={() => enfileirarProduto(p)}
+												/>
+											))}
+										</div>
+									</div>
+								)}
 								<div>
-									<h2 className="mb-2 text-sm font-semibold">Atalhos</h2>
+									<h2 className="mb-2 text-sm font-semibold">
+										Escolha o grupo
+									</h2>
 									<div className="grid auto-rows-min grid-cols-3 gap-2 sm:grid-cols-4">
-										{atalhos.map((p) => (
-											<ProdutoCard
-												key={`atalho-${p.id}`}
-												produto={p}
-												destaque
-												disabled={loading}
-												onClick={() => enfileirarProduto(p)}
-											/>
+										{grupos.map((g) => (
+											<button
+												key={g.id}
+												type="button"
+												onClick={() => void abrirGrupo(g)}
+												className="rounded-lg bg-background p-4 text-sm font-semibold ring-1 ring-foreground/10 transition hover:ring-primary"
+											>
+												{g.nome}
+											</button>
 										))}
+										{grupos.length === 0 && atalhos.length === 0 && (
+											<p className="col-span-full text-sm text-muted-foreground">
+												Nenhum grupo ou atalho sincronizado ainda. Use a bipagem
+												para enfileirar produtos.
+											</p>
+										)}
 									</div>
 								</div>
-							)}
-							<div>
-								<h2 className="mb-2 text-sm font-semibold">Escolha o grupo</h2>
-								<div className="grid auto-rows-min grid-cols-3 gap-2 sm:grid-cols-4">
-									{grupos.map((g) => (
-										<button
-											key={g.id}
-											type="button"
-											onClick={() => void abrirGrupo(g)}
-											className="rounded-lg border bg-background p-4 text-sm font-semibold transition hover:border-primary"
-										>
-											{g.nome}
-										</button>
-									))}
-									{grupos.length === 0 && atalhos.length === 0 && (
-										<p className="col-span-full text-sm text-muted-foreground">
-											Nenhum grupo ou atalho sincronizado ainda. Use a bipagem
-											para enfileirar produtos.
-										</p>
-									)}
-								</div>
 							</div>
-						</div>
-					) : (
-						<div className="grid flex-1 auto-rows-min grid-cols-3 gap-2 overflow-auto sm:grid-cols-4">
-							{produtos.map((p) => (
-								<ProdutoCard
-									key={p.id}
-									produto={p}
-									disabled={loading}
-									onClick={() => enfileirarProduto(p)}
-								/>
+						) : (
+							<div className="grid flex-1 auto-rows-min grid-cols-3 gap-2 overflow-auto sm:grid-cols-4">
+								{produtos.map((p) => (
+									<ProdutoCard
+										key={p.id}
+										produto={p}
+										disabled={loading}
+										onClick={() => enfileirarProduto(p)}
+									/>
+								))}
+								{produtos.length === 0 && (
+									<p className="col-span-full text-sm text-muted-foreground">
+										Sem produtos neste grupo.
+									</p>
+								)}
+							</div>
+						)}
+					</div>
+
+					<div className="pdv-surface flex min-h-0 flex-col overflow-hidden p-3">
+						<h2 className="mb-2 shrink-0 text-sm font-semibold">
+							Fila ({fila.length} {fila.length === 1 ? "item" : "itens"})
+						</h2>
+
+						<div className="min-h-0 flex-1 space-y-1 overflow-auto">
+							{fila.map((item) => (
+								<div
+									key={item.chave}
+									className="rounded-md border bg-background px-2 py-2 text-sm"
+								>
+									<div className="flex items-start justify-between gap-2">
+										<div className="line-clamp-2 min-w-0 font-medium">
+											{item.descricao}
+										</div>
+										<Button
+											size="sm"
+											variant={item.observacao ? "secondary" : "outline"}
+											disabled={loading}
+											onClick={() => setObsFilaChave(item.chave)}
+										>
+											Obs
+										</Button>
+									</div>
+									{item.observacao ? (
+										<p className="mt-1 text-xs text-muted-foreground">
+											{item.observacao}
+										</p>
+									) : null}
+									<div className="mt-1 flex items-center justify-between gap-2">
+										<div className="flex items-center gap-1">
+											<Button
+												size="sm"
+												variant="outline"
+												disabled={loading}
+												onClick={() => alterarQtdFila(item.chave, -1)}
+											>
+												-
+											</Button>
+											<span className="min-w-10 text-center tabular-nums">
+												{formatarQuantidade(item.quantidade)}
+												{item.pesado ? " kg" : ""}
+											</span>
+											<Button
+												size="sm"
+												variant="outline"
+												disabled={loading || item.pesado}
+												onClick={() => alterarQtdFila(item.chave, 1)}
+											>
+												+
+											</Button>
+										</div>
+										<span className="font-semibold text-primary">
+											{money(item.precototal)}
+										</span>
+									</div>
+								</div>
 							))}
-							{produtos.length === 0 && (
-								<p className="col-span-full text-sm text-muted-foreground">
-									Sem produtos neste grupo.
+							{fila.length === 0 && (
+								<p className="text-sm text-muted-foreground">
+									Selecione produtos à esquerda para montar a fila. Depois
+									clique em Adicionar itens.
 								</p>
 							)}
-						</div>
-					)}
-				</div>
 
-				<div className="flex min-h-0 flex-col rounded-lg border bg-card p-3">
-					<h2 className="mb-2 text-sm font-semibold">
-						Fila ({fila.length} {fila.length === 1 ? "item" : "itens"})
-					</h2>
-
-					<div className="min-h-0 flex-1 space-y-1 overflow-auto">
-						{fila.map((item) => (
-							<div
-								key={item.chave}
-								className="rounded-md border bg-background px-2 py-2 text-sm"
-							>
-								<div className="line-clamp-2 font-medium">{item.descricao}</div>
-								<div className="mt-1 flex items-center justify-between gap-2">
-									<div className="flex items-center gap-1">
-										<Button
-											size="sm"
-											variant="outline"
-											disabled={loading}
-											onClick={() => alterarQtdFila(item.chave, -1)}
-										>
-											-
-										</Button>
-										<span className="min-w-10 text-center tabular-nums">
-											{formatarQuantidade(item.quantidade)}
-											{item.pesado ? " kg" : ""}
-										</span>
-										<Button
-											size="sm"
-											variant="outline"
-											disabled={loading || item.pesado}
-											onClick={() => alterarQtdFila(item.chave, 1)}
-										>
-											+
-										</Button>
+							{itens.length > 0 && (
+								<div className="mt-3 border-t pt-3">
+									<div className="mb-2 flex items-center justify-between gap-2">
+										<h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+											Já na conta
+										</h3>
+										{itensSel.length > 0 ? (
+											<button
+												type="button"
+												className="text-xs text-primary underline"
+												onClick={() => setItensSel([])}
+											>
+												Limpar seleção
+											</button>
+										) : itensAbertos.length > 0 ? (
+											<button
+												type="button"
+												className="text-xs text-muted-foreground underline"
+												onClick={() =>
+													setItensSel(itensAbertos.map((i) => i.id))
+												}
+											>
+												Selecionar todos
+											</button>
+										) : null}
 									</div>
-									<span className="font-semibold text-primary">
-										{money(item.precototal)}
-									</span>
-								</div>
-							</div>
-						))}
-						{fila.length === 0 && (
-							<p className="text-sm text-muted-foreground">
-								Selecione produtos à esquerda para montar a fila. Depois clique
-								em Adicionar itens.
-							</p>
-						)}
-
-						{itens.length > 0 && (
-							<div className="mt-3 border-t pt-3">
-								<h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-									Já na conta
-								</h3>
-								{itens.map((item) => (
-									<label
-										key={item.id}
-										className="flex items-center justify-between gap-2 py-0.5 text-xs text-muted-foreground"
-									>
-										<span className="flex min-w-0 flex-1 items-center gap-1">
-											<input
-												type="checkbox"
-												className="size-3 accent-primary"
-												checked={itensSel.includes(item.id)}
-												onChange={(e) => {
-													setItensSel((prev) =>
-														e.target.checked
-															? [...prev, item.id]
-															: prev.filter((id) => id !== item.id),
-													);
-												}}
-											/>
-											<span className="truncate">
-												{formatarQuantidade(item.quantidade)}x {item.descricao}
+									{itens.map((item) => {
+										const pago = itemContaEstaPago(item);
+										const marcado = !pago && itensSel.includes(item.id);
+										return (
+											<div
+												key={item.id}
+												className={`mb-1 flex items-center justify-between gap-2 rounded-md px-2 py-2 text-sm ${
+													pago
+														? classeLinhaItemPago()
+														: classeLinhaItemSelecionavel(marcado)
+												}`}
+											>
+												<label
+													className={`flex min-w-0 flex-1 items-center gap-2 ${
+														pago ? "cursor-default" : "cursor-pointer"
+													}`}
+												>
+													<input
+														type="checkbox"
+														className="size-4 shrink-0 accent-primary"
+														checked={marcado}
+														disabled={pago}
+														onChange={(e) => {
+															if (pago) return;
+															setItensSel((prev) =>
+																e.target.checked
+																	? [...prev, item.id]
+																	: prev.filter((id) => id !== item.id),
+															);
+														}}
+													/>
+													<span className="min-w-0">
+														<span className="block truncate font-medium">
+															{formatarQuantidade(item.quantidade)}x{" "}
+															{item.descricao}
+															{pago ? " · pago" : ""}
+														</span>
+														{item.observacao ? (
+															<span className="block truncate text-xs text-muted-foreground no-underline opacity-100">
+																{item.observacao}
+															</span>
+														) : null}
+													</span>
+												</label>
+												<span className="flex shrink-0 items-center gap-1">
+													<span className="font-semibold tabular-nums">
+														{money(item.precototal)}
+													</span>
+													{!pago ? (
+														<Button
+															type="button"
+															size="icon"
+															variant="ghost"
+															className="size-8 text-destructive"
+															disabled={loading}
+															aria-label={`Cancelar ${item.descricao}`}
+															onClick={() => void solicitarCancelarItem(item)}
+														>
+															<X className="size-4" />
+														</Button>
+													) : null}
+												</span>
+											</div>
+										);
+									})}
+									{itensSel.length > 0 && (
+										<div className="mt-2 flex items-center justify-between rounded-md bg-primary/10 px-2 py-1.5 text-sm font-semibold">
+											<span>
+												{itensSel.length}{" "}
+												{itensSel.length === 1 ? "item" : "itens"}
 											</span>
-										</span>
-										<span>{money(item.precototal)}</span>
-									</label>
-								))}
-							</div>
-						)}
-					</div>
-
-					<div className="mt-2 space-y-1 border-t pt-2 text-sm">
-						{fila.length > 0 && (
-							<div className="flex justify-between font-medium">
-								<span>Subtotal fila</span>
-								<span className="text-primary">{money(totalFila)}</span>
-							</div>
-						)}
-						{conta && (
-							<>
-								<div className="flex items-center justify-between gap-2 text-xs">
-									<span>Pessoas</span>
-									<Input
-										type="number"
-										min={1}
-										className="h-8 w-16"
-										value={conta.numeropessoas ?? 1}
-										disabled={!conta || loading}
-										onChange={(e) =>
-											void aplicarAjustes({
-												numeropessoas: Number(e.target.value),
-											})
-										}
-									/>
+											<span className="text-primary">
+												{money(totalSelecionado)}
+											</span>
+										</div>
+									)}
 								</div>
-								<label className="flex items-center justify-between text-xs">
-									<span>Taxa de serviço</span>
-									<input
-										type="checkbox"
-										className="size-4 accent-primary"
-										checked={conta.taxa_ativa === 1}
-										disabled={!conta || loading}
-										onChange={(e) =>
-											void aplicarAjustes({ taxaAtiva: e.target.checked })
-										}
-									/>
-								</label>
-								{(conta.subtotal ?? 0) > 0 && (
-									<div className="flex justify-between text-xs text-muted-foreground">
-										<span>Subtotal</span>
-										<span>{money(conta.subtotal ?? 0)}</span>
-									</div>
-								)}
-								{(conta.valordesconto ?? 0) > 0 && (
-									<div className="flex justify-between text-xs text-muted-foreground">
-										<span>Desconto</span>
-										<span>-{money(conta.valordesconto ?? 0)}</span>
-									</div>
-								)}
-								{(conta.valortaxaservico ?? 0) > 0 && (
-									<div className="flex justify-between text-xs text-muted-foreground">
-										<span>Taxa serviço</span>
-										<span>{money(conta.valortaxaservico ?? 0)}</span>
-									</div>
-								)}
-								{(conta.valorcouvert ?? 0) > 0 && (
-									<div className="flex justify-between text-xs text-muted-foreground">
-										<span>Couvert</span>
-										<span>{money(conta.valorcouvert ?? 0)}</span>
-									</div>
-								)}
-								{(conta.valorpago ?? 0) > 0 && (
-									<div className="flex justify-between text-xs text-muted-foreground">
-										<span>Já pago</span>
-										<span>{money(conta.valorpago ?? 0)}</span>
-									</div>
-								)}
-							</>
-						)}
-						<div className="flex justify-between text-lg font-bold">
-							<span>A pagar</span>
-							<span className="text-primary">{money(total)}</span>
+							)}
 						</div>
-					</div>
-					{msg && (
-						<p
-							className={
-								rejeicaoNfce
-									? "mt-2 text-sm text-destructive"
-									: "mt-2 text-sm text-muted-foreground"
-							}
-						>
-							{msg}
-						</p>
-					)}
-					<div className="mt-3 grid gap-2">
-						<div className="grid grid-cols-2 gap-2">
-							<Button
-								size="lg"
-								variant="outline"
-								className="w-full"
-								disabled={fila.length === 0 || loading}
-								onClick={() => cancelarFila()}
+
+						<div className="mt-2 shrink-0 space-y-1 border-t pt-2 text-sm">
+							{fila.length > 0 && (
+								<div className="flex justify-between font-medium">
+									<span>Subtotal fila</span>
+									<span className="text-primary">{money(totalFila)}</span>
+								</div>
+							)}
+							{conta && (
+								<>
+									{modoEntrega ? (
+										<div className="space-y-0.5 text-xs text-muted-foreground">
+											{conta.telefone ? <div>Tel: {conta.telefone}</div> : null}
+											{conta.endereco ? (
+												<div className="line-clamp-2">
+													{conta.endereco}
+													{conta.bairro ? ` — ${conta.bairro}` : ""}
+												</div>
+											) : null}
+											<div>
+												Status: {conta.status_entrega ?? "recebido"}
+												{conta.orderidintegracao
+													? ` · ${conta.orderidintegracao}`
+													: ""}
+											</div>
+											<div className="flex items-center justify-between gap-2 pt-1">
+												<span>Taxa entrega</span>
+												<Input
+													className="h-8 w-20"
+													value={taxaEntregaEdit}
+													disabled={loading}
+													onChange={(e) => setTaxaEntregaEdit(e.target.value)}
+													onBlur={() => {
+														const n = Number(taxaEntregaEdit.replace(",", "."));
+														if (!Number.isFinite(n) || !conta) return;
+														void pdvInvoke<ContaMesa>(
+															"aplicarTaxaEntrega",
+															conta.id,
+															n,
+														).then((c) => {
+															setConta(c);
+															setTaxaEntregaEdit(String(c.valorentrega ?? 0));
+														});
+													}}
+												/>
+											</div>
+										</div>
+									) : (
+										<div className="flex items-center justify-between gap-3 text-xs">
+											<div className="flex items-center gap-1.5">
+												<span>Pessoas</span>
+												<Input
+													type="number"
+													min={1}
+													className="h-8 w-14"
+													value={conta.numeropessoas ?? 1}
+													disabled={!conta || loading}
+													onChange={(e) =>
+														void aplicarAjustes({
+															numeropessoas: Number(e.target.value),
+														})
+													}
+												/>
+											</div>
+											<label className="flex items-center gap-1.5">
+												<span>Taxa</span>
+												<input
+													type="checkbox"
+													className="size-4 accent-primary"
+													checked={conta.taxa_ativa === 1}
+													disabled={!conta || loading}
+													onChange={(e) =>
+														void aplicarAjustes({ taxaAtiva: e.target.checked })
+													}
+												/>
+											</label>
+										</div>
+									)}
+									{(conta.subtotal ?? 0) > 0 && (
+										<div className="flex justify-between text-xs text-muted-foreground">
+											<span>Subtotal</span>
+											<span>{money(conta.subtotal ?? 0)}</span>
+										</div>
+									)}
+									{(conta.valordesconto ?? 0) > 0 && (
+										<div className="flex justify-between text-xs text-muted-foreground">
+											<span>Desconto</span>
+											<span>-{money(conta.valordesconto ?? 0)}</span>
+										</div>
+									)}
+									{(conta.valoracrescimo ?? 0) > 0 && (
+										<div className="flex justify-between text-xs text-muted-foreground">
+											<span>Acréscimo</span>
+											<span>+{money(conta.valoracrescimo ?? 0)}</span>
+										</div>
+									)}
+									{(conta.valortaxaservico ?? 0) > 0 && (
+										<div className="flex justify-between text-xs text-muted-foreground">
+											<span>Taxa serviço</span>
+											<span>{money(conta.valortaxaservico ?? 0)}</span>
+										</div>
+									)}
+									{(conta.valorcouvert ?? 0) > 0 && (
+										<div className="flex justify-between text-xs text-muted-foreground">
+											<span>Couvert</span>
+											<span>{money(conta.valorcouvert ?? 0)}</span>
+										</div>
+									)}
+									{(conta.valorentrega ?? 0) > 0 && (
+										<div className="flex justify-between text-xs text-muted-foreground">
+											<span>Entrega</span>
+											<span>{money(conta.valorentrega ?? 0)}</span>
+										</div>
+									)}
+									{(conta.valorpago ?? 0) > 0 && (
+										<div className="flex justify-between text-xs text-muted-foreground">
+											<span>Já pago</span>
+											<span>{money(conta.valorpago ?? 0)}</span>
+										</div>
+									)}
+								</>
+							)}
+							<div className="flex justify-between text-lg font-bold">
+								<span>A pagar</span>
+								<span className="text-primary">{money(total)}</span>
+							</div>
+						</div>
+						{msg ? (
+							<p
+								className={
+									rejeicaoNfce
+										? "mt-1 shrink-0 line-clamp-2 text-sm text-destructive"
+										: "mt-1 shrink-0 line-clamp-2 text-sm text-muted-foreground"
+								}
 							>
-								Cancelar
-							</Button>
+								{msg}
+							</p>
+						) : null}
+						<div className="mt-2 grid shrink-0 grid-cols-2 gap-2">
 							<Button
 								size="lg"
 								variant="default"
 								className="w-full"
 								disabled={fila.length === 0 || loading}
-								onClick={() => void confirmarFilaNaConta()}
+								onClick={() => solicitarEnviarFila()}
 							>
 								{loading ? "Adicionando..." : "Adicionar itens"}
 							</Button>
-						</div>
-						<Button
-							size="lg"
-							variant="secondary"
-							className="w-full"
-							onClick={() => tentarSair()}
-						>
-							Voltar às {rotulo.plural.toLowerCase()}
-						</Button>
-						<Button
-							size="lg"
-							variant="outline"
-							className="w-full"
-							disabled={!itens.length || fila.length > 0}
-							onClick={() => {
-								setPagandoFatia(false);
-								setFatiaValor(null);
-								setPagando(true);
-							}}
-						>
-							Receber / Fechar conta
-						</Button>
-						<div className="grid grid-cols-2 gap-2">
 							<Button
-								variant="outline"
-								size="sm"
-								disabled={!itens.length || loading}
-								onClick={() => void preConta()}
+								size="lg"
+								variant="secondary"
+								className="w-full"
+								disabled={!itensAbertos.length || fila.length > 0 || loading}
+								onClick={() => {
+									setPagandoFatia(false);
+									setFatiaValor(null);
+									setPagando(true);
+								}}
 							>
-								Pré-conta
+								Receber
 							</Button>
 							<Button
+								size="lg"
 								variant="outline"
-								size="sm"
-								disabled={!itens.length || loading}
-								onClick={() => iniciarDivisao()}
+								className="w-full"
+								onClick={() => tentarSair()}
 							>
-								Dividir
+								Voltar
 							</Button>
 							<Button
+								size="lg"
 								variant="outline"
-								size="sm"
-								disabled={!itens.length || loading}
-								onClick={() => setDestinoAberto("transferir")}
+								className="w-full"
+								disabled={loading || pagando}
+								onClick={() => setMaisAcoesAberto(true)}
 							>
-								Transferir
-							</Button>
-							<Button
-								variant="outline"
-								size="sm"
-								disabled={!itens.length || loading}
-								onClick={() => setDestinoAberto("juntar")}
-							>
-								Juntar
-							</Button>
-						</div>
-						<div className="grid grid-cols-2 gap-2">
-							<Button
-								variant="outline"
-								size="sm"
-								disabled={!itens.length || loading}
-								onClick={() => abrirDesconto()}
-							>
-								Desconto
-							</Button>
-							<Button
-								variant="outline"
-								size="sm"
-								disabled={!itensSel.length || loading}
-								onClick={() => setDestinoAberto("itens")}
-							>
-								Mover itens
+								Mais ações
 							</Button>
 						</div>
 					</div>
 				</div>
+				<SideNav status={status} />
 			</div>
 
 			{confirmandoSaida && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-					<div className="w-96 space-y-4 rounded-lg border bg-card p-5">
+					<div className="pdv-surface w-96 space-y-4 p-5">
 						<h2 className="text-lg font-semibold">Itens na fila</h2>
 						<p className="text-sm text-muted-foreground">
 							Há {fila.length}{" "}
@@ -1033,6 +1455,90 @@ export function MesaContaPage() {
 				</div>
 			)}
 
+			{confirmandoCancelar && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+					<div className="pdv-surface w-96 space-y-4 p-5">
+						<h2 className="text-lg font-semibold">
+							Cancelar {rotulo.singular}
+						</h2>
+						<p className="text-sm text-muted-foreground">
+							{conta
+								? `Os itens da ${rotulo.singular.toLowerCase()} serão desconsiderados, ela será liberada e removida da catraca. Esta ação não pode ser desfeita.`
+								: `Há itens apenas na fila. Ao cancelar, a fila será descartada e você voltará ao salão.`}
+						</p>
+						<div className="flex gap-2">
+							<Button
+								variant="outline"
+								className="flex-1"
+								onClick={() => setConfirmandoCancelar(false)}
+							>
+								Voltar
+							</Button>
+							<Button
+								variant="destructive"
+								className="flex-1"
+								disabled={loading}
+								onClick={() => void confirmarCancelarMesa()}
+							>
+								Confirmar cancelamento
+							</Button>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{itemCancelar && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+					<form
+						className="pdv-surface w-96 space-y-4 p-5"
+						onSubmit={(e) => {
+							e.preventDefault();
+							void confirmarCancelarItem();
+						}}
+					>
+						<h2 className="text-lg font-semibold">Cancelar item</h2>
+						<p className="text-sm text-muted-foreground">
+							Remover da conta{" "}
+							<span className="font-medium text-foreground">
+								{formatarQuantidade(itemCancelar.quantidade)}x{" "}
+								{itemCancelar.descricao}
+							</span>{" "}
+							({money(itemCancelar.precototal)})? Esta ação não pode ser
+							desfeita.
+						</p>
+						{exigeSenhaItem ? (
+							<Input
+								type="password"
+								autoFocus
+								value={senhaCancelarItem}
+								onChange={(e) => setSenhaCancelarItem(e.target.value)}
+								placeholder="Senha gerencial"
+							/>
+						) : null}
+						<div className="flex gap-2">
+							<Button
+								type="button"
+								variant="outline"
+								className="flex-1"
+								onClick={() => setItemCancelar(null)}
+							>
+								Voltar
+							</Button>
+							<Button
+								type="submit"
+								variant="destructive"
+								className="flex-1"
+								disabled={
+									loading || (exigeSenhaItem && !senhaCancelarItem.trim())
+								}
+							>
+								Cancelar item
+							</Button>
+						</div>
+					</form>
+				</div>
+			)}
+
 			{rejeicaoNfce && (
 				<DialogRejeicaoNfce
 					mensagem={rejeicaoNfce}
@@ -1052,11 +1558,24 @@ export function MesaContaPage() {
 				aberto={pagando}
 				total={totalPagar}
 				loading={loading}
-				titulo={pagandoFatia ? "Receber fatia" : "Receber / fechar conta"}
+				titulo={
+					pagandoFatia && itensSel.length
+						? `${tituloConta} · ${itensSel.length} ${itensSel.length === 1 ? "item" : "itens"}`
+						: pagandoFatia
+							? `${tituloConta} · fatia`
+							: tituloConta
+				}
 				confirmarLabel="Confirmar"
 				nomeClienteHint={nomeCliente}
 				permitirDesconto={!pagandoFatia}
+				permitirAcrescimo={!pagandoFatia}
 				descontoJaAplicado={conta?.valordesconto ?? 0}
+				acrescimoJaAplicado={conta?.valoracrescimo ?? 0}
+				itens={
+					pagandoFatia && itensSel.length > 0
+						? itensAbertos.filter((item) => itensSel.includes(item.id))
+						: itensAbertos
+				}
 				onCancelar={() => {
 					setPagando(false);
 					setFatiaValor(null);
@@ -1071,14 +1590,44 @@ export function MesaContaPage() {
 
 			<DialogSenhaGerencial
 				aberto={senhaAberta}
+				titulo={ajusteTipo === "acrescimo" ? "Acréscimo" : "Desconto"}
+				subtitulo={
+					ajusteTipo === "acrescimo"
+						? "Informe o acréscimo e a senha gerencial."
+						: "Informe a senha para aplicar o desconto."
+				}
 				loading={loading}
 				onCancelar={() => setSenhaAberta(false)}
-				onConfirmar={(senha) => void confirmarDesconto(senha)}
+				onConfirmar={(senha) => void confirmarAjuste(senha)}
 			>
+				<div className="flex gap-2">
+					<Button
+						type="button"
+						size="sm"
+						variant={ajustePercentual ? "outline" : "default"}
+						onClick={() => setAjustePercentual(false)}
+					>
+						R$
+					</Button>
+					<Button
+						type="button"
+						size="sm"
+						variant={ajustePercentual ? "default" : "outline"}
+						onClick={() => setAjustePercentual(true)}
+					>
+						%
+					</Button>
+				</div>
 				<Input
-					placeholder="Valor do desconto (R$)"
-					value={descontoPendente}
-					onChange={(e) => setDescontoPendente(e.target.value)}
+					placeholder={
+						ajustePercentual
+							? "Percentual (ex.: 10)"
+							: ajusteTipo === "acrescimo"
+								? "Valor do acréscimo (R$)"
+								: "Valor do desconto (R$)"
+					}
+					value={ajustePendente}
+					onChange={(e) => setAjustePendente(e.target.value)}
 				/>
 			</DialogSenhaGerencial>
 
@@ -1101,7 +1650,7 @@ export function MesaContaPage() {
 
 			{dividirAberto && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-					<div className="w-[28rem] max-w-[95vw] space-y-4 rounded-lg border bg-card p-5">
+					<div className="pdv-surface w-[28rem] max-w-[95vw] space-y-4 p-5">
 						<h2 className="text-lg font-semibold">Dividir conta</h2>
 						<div className="flex gap-2">
 							<Button
@@ -1142,9 +1691,17 @@ export function MesaContaPage() {
 							/>
 						)}
 						{modoDividir === "itens" && (
-							<p className="text-sm text-muted-foreground">
-								Marque os itens na lista da conta e depois receba esta fatia.
-							</p>
+							<div className="space-y-2">
+								<p className="text-sm text-muted-foreground">
+									Marque na lista da conta (painel direito) os itens desta
+									pessoa, ou use o botão &quot;Pagar por itens&quot;.
+								</p>
+								{itensSel.length > 0 ? (
+									<p className="text-sm font-semibold text-primary">
+										{itensSel.length} selecionado(s) · {money(totalSelecionado)}
+									</p>
+								) : null}
+							</div>
 						)}
 						<div className="flex gap-2">
 							<Button
@@ -1156,6 +1713,103 @@ export function MesaContaPage() {
 							</Button>
 							<Button className="flex-1" onClick={() => abrirPagamentoFatia()}>
 								Receber fatia
+							</Button>
+						</div>
+					</div>
+				</div>
+			)}
+
+			<DialogReimprimirPedidos
+				aberto={reimprimirAberto}
+				idconta={conta?.id}
+				onFechar={() => setReimprimirAberto(false)}
+				onMensagem={setMsg}
+			/>
+			{pagarItensAberto && conta && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3">
+					<div className="pdv-surface flex max-h-[90vh] w-[28rem] max-w-[95vw] flex-col space-y-3 p-5">
+						<div>
+							<h2 className="text-lg font-semibold">Pagar por itens</h2>
+							<p className="text-sm text-muted-foreground">
+								Selecione o que esta pessoa consumiu. Taxa, desconto e demais
+								ajustes são rateados automaticamente.
+							</p>
+						</div>
+						<div className="flex gap-2">
+							<Button
+								size="sm"
+								variant="outline"
+								disabled={itensAbertos.length === 0}
+								onClick={() => setItensSel(itensAbertos.map((i) => i.id))}
+							>
+								Todos
+							</Button>
+							<Button
+								size="sm"
+								variant="outline"
+								onClick={() => setItensSel([])}
+							>
+								Nenhum
+							</Button>
+						</div>
+						<div className="min-h-0 flex-1 space-y-1 overflow-auto">
+							{itens.map((item) => {
+								const pago = itemContaEstaPago(item);
+								const marcado = !pago && itensSel.includes(item.id);
+								return (
+									<label
+										key={item.id}
+										className={`flex items-center justify-between gap-2 rounded-md px-3 py-3 text-sm ${
+											pago
+												? classeLinhaItemPago()
+												: `cursor-pointer ${classeLinhaItemSelecionavel(marcado)}`
+										}`}
+									>
+										<span className="flex min-w-0 flex-1 items-center gap-3">
+											<input
+												type="checkbox"
+												className="size-5 shrink-0 accent-primary"
+												checked={marcado}
+												disabled={pago}
+												onChange={(e) => {
+													if (pago) return;
+													setItensSel((prev) =>
+														e.target.checked
+															? [...prev, item.id]
+															: prev.filter((id) => id !== item.id),
+													);
+												}}
+											/>
+											<span className="font-medium">
+												{formatarQuantidade(item.quantidade)}x {item.descricao}
+												{pago ? " · pago" : ""}
+											</span>
+										</span>
+										<span className="shrink-0 font-semibold tabular-nums">
+											{money(item.precototal)}
+										</span>
+									</label>
+								);
+							})}
+						</div>
+						<div className="flex items-center justify-between border-t pt-2 text-base font-bold">
+							<span>A receber nesta fatia</span>
+							<span className="text-primary">{money(totalSelecionado)}</span>
+						</div>
+						<div className="flex gap-2">
+							<Button
+								variant="outline"
+								className="flex-1"
+								onClick={() => setPagarItensAberto(false)}
+							>
+								Cancelar
+							</Button>
+							<Button
+								className="flex-1"
+								disabled={!itensSel.length || loading}
+								onClick={() => confirmarSelecaoItensParaPagamento()}
+							>
+								Receber itens
 							</Button>
 						</div>
 					</div>
@@ -1177,43 +1831,90 @@ export function MesaContaPage() {
 						hotkey: "F4",
 						variant: "default",
 						disabled: fila.length === 0 || loading,
-						onClick: () => void confirmarFilaNaConta(),
+						onClick: () => solicitarEnviarFila(),
 					},
 					{
 						key: "cancelar",
-						label: "Cancelar",
+						label: `Cancelar ${rotulo.singular}`,
 						hotkey: "F3",
 						variant: "outline",
-						disabled: fila.length === 0 || loading,
-						onClick: () => cancelarFila(),
+						disabled:
+							modoEntrega ||
+							loading ||
+							pagando ||
+							confirmandoCancelar ||
+							(!conta && fila.length === 0),
+						onClick: () => solicitarCancelarMesa(),
 					},
 					{
 						key: "preconta",
 						label: "Pré-conta",
 						hotkey: "F6",
 						variant: "outline",
-						disabled: !itens.length || loading,
+						disabled: !itensAbertos.length || loading,
 						onClick: () => void preConta(),
+					},
+					{
+						key: "reimprimir",
+						label: "Reimprimir",
+						hotkey: "F7",
+						variant: "outline",
+						disabled: !conta || loading,
+						onClick: () => setReimprimirAberto(true),
+					},
+					{
+						key: "observacao",
+						label: "Observação",
+						hotkey: "F5",
+						variant: "outline",
+						disabled: fila.length === 0 || loading,
+						onClick: () => {
+							const ultimo = fila[fila.length - 1];
+							if (ultimo) setObsFilaChave(ultimo.chave);
+						},
 					},
 					{
 						key: "desconto",
 						label: "Desconto",
 						hotkey: teclas.desconto,
 						variant: "outline",
-						disabled: !itens.length || loading || pagando || senhaAberta,
+						disabled:
+							!itensAbertos.length || loading || pagando || senhaAberta,
 						onClick: () => abrirDesconto(),
+					},
+					{
+						key: "acrescimo",
+						label: "Acréscimo",
+						variant: "outline",
+						disabled:
+							!itensAbertos.length || loading || pagando || senhaAberta,
+						onClick: () => abrirAcrescimo(),
 					},
 					{
 						key: "receber",
 						label: "Receber",
 						hotkey: teclas.receber,
 						variant: "secondary",
-						disabled: !itens.length || fila.length > 0 || loading || pagando,
+						disabled:
+							!itensAbertos.length || fila.length > 0 || loading || pagando,
 						onClick: () => {
 							setPagandoFatia(false);
 							setFatiaValor(null);
 							setPagando(true);
 						},
+					},
+					{
+						key: "pagar-itens",
+						label: "Pagar itens",
+						hotkey: "F8",
+						variant: "outline",
+						disabled:
+							!itensAbertos.length ||
+							fila.length > 0 ||
+							loading ||
+							pagando ||
+							pagarItensAberto,
+						onClick: () => abrirPagarPorItens(),
 					},
 					{
 						key: "voltar",
@@ -1239,6 +1940,147 @@ export function MesaContaPage() {
 					onConfirmar={confirmarPeso}
 				/>
 			)}
+			<DialogMaisAcoesMesa
+				aberto={maisAcoesAberto}
+				onFechar={() => setMaisAcoesAberto(false)}
+				acoes={[
+					{
+						key: "observacao",
+						label: "Observação",
+						hotkey: "F5",
+						disabled: fila.length === 0 || loading,
+						onClick: () => {
+							const ultimo = fila[fila.length - 1];
+							if (ultimo) setObsFilaChave(ultimo.chave);
+						},
+					},
+					{
+						key: "limpar-fila",
+						label: "Limpar fila",
+						disabled: fila.length === 0 || loading,
+						onClick: () => limparFila(),
+					},
+					{
+						key: "cancelar-item",
+						label: "Cancelar item",
+						variant: "destructive" as const,
+						disabled: itensSel.length !== 1 || loading || pagando,
+						onClick: () => {
+							const item = itens.find((i) => i.id === itensSel[0]);
+							if (item) void solicitarCancelarItem(item);
+						},
+					},
+					{
+						key: "pagar-itens",
+						label: itensSel.length
+							? `Pagar ${itensSel.length} itens (${money(totalSelecionado)})`
+							: "Pagar por itens",
+						hotkey: "F8",
+						disabled:
+							!itensAbertos.length || fila.length > 0 || loading || pagando,
+						onClick: () => abrirPagarPorItens(),
+					},
+					{
+						key: "preconta",
+						label: "Pré-conta",
+						hotkey: "F6",
+						disabled: !itensAbertos.length || loading,
+						onClick: () => void preConta(),
+					},
+					{
+						key: "reimprimir",
+						label: "Reimprimir",
+						hotkey: "F7",
+						disabled: !conta || loading,
+						onClick: () => setReimprimirAberto(true),
+					},
+					{
+						key: "desconto",
+						label: "Desconto",
+						hotkey: teclas.desconto,
+						disabled:
+							!itensAbertos.length || loading || pagando || senhaAberta,
+						onClick: () => abrirDesconto(),
+					},
+					{
+						key: "acrescimo",
+						label: "Acréscimo",
+						disabled:
+							!itensAbertos.length || loading || pagando || senhaAberta,
+						onClick: () => abrirAcrescimo(),
+					},
+					...(modoEntrega
+						? [
+								{
+									key: "avancar-status",
+									label: "Avançar status",
+									disabled: !conta || loading,
+									onClick: () => {
+										if (!conta) return;
+										void pdvInvoke<ContaMesa>(
+											"atualizarStatusEntrega",
+											conta.id,
+										).then(setConta);
+									},
+								},
+							]
+						: [
+								{
+									key: "dividir",
+									label: "Dividir",
+									disabled: !itensAbertos.length || loading,
+									onClick: () => iniciarDivisao(),
+								},
+								{
+									key: "transferir",
+									label: "Transferir",
+									disabled: !itensAbertos.length || loading,
+									onClick: () => setDestinoAberto("transferir"),
+								},
+								{
+									key: "juntar",
+									label: "Juntar",
+									disabled: !itensAbertos.length || loading,
+									onClick: () => setDestinoAberto("juntar"),
+								},
+								{
+									key: "mover-itens",
+									label: "Mover itens",
+									disabled: !itensSel.length || loading,
+									onClick: () => setDestinoAberto("itens"),
+								},
+								{
+									key: "cancelar",
+									label: `Cancelar ${rotulo.singular}`,
+									hotkey: "F3",
+									variant: "destructive" as const,
+									disabled:
+										loading ||
+										pagando ||
+										confirmandoCancelar ||
+										(!conta && fila.length === 0),
+									onClick: () => solicitarCancelarMesa(),
+								},
+							]),
+				]}
+			/>
+			<DialogObservacaoItem
+				aberto={Boolean(obsFilaChave)}
+				descricao={
+					fila.find((item) => item.chave === obsFilaChave)?.descricao ?? ""
+				}
+				valorInicial={
+					fila.find((item) => item.chave === obsFilaChave)?.observacao
+				}
+				onCancelar={() => setObsFilaChave(null)}
+				onConfirmar={aplicarObservacaoFila}
+			/>
+			<DialogObservacaoPedido
+				aberto={obsPedidoAberto}
+				loading={loading}
+				onCancelar={() => setObsPedidoAberto(false)}
+				onConfirmar={(observacao) => void confirmarFilaNaConta(observacao)}
+			/>
 		</div>
 	);
 }

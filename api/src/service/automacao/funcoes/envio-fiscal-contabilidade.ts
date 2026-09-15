@@ -1,14 +1,18 @@
 import type { HttpResponse } from "@/model/http-model.js";
+import type { Automacao } from "@/repositories/automacao-repositories.js";
 import { buscarContabilidadePorEmpresa } from "@/repositories/contabilidade-empresa-repositories.js";
 import { buscarEmpresaPorId } from "@/repositories/empresa-repositories.js";
-import { contarNfcePendentesNoPeriodo } from "@/repositories/nota-fiscal-repositories.js";
-import { listarNotasParaExportacaoXmlContabilidade } from "@/repositories/nota-fiscal-repositories.js";
-import type { Automacao } from "@/repositories/automacao-repositories.js";
+import {
+	contarNfcePendentesNoPeriodo,
+	listarNotasParaExportacaoXmlContabilidade,
+} from "@/repositories/nota-fiscal-repositories.js";
 import { periodoMesAnterior } from "@/service/automacao/calcular-proxima-execucao.js";
 import { montarArquivosXmlContabilidade } from "@/service/contabilidade/montar-arquivos-xml-contabilidade.js";
+import { gerarArquivoEfdContribuicoes } from "@/service/efd-contribuicoes/gerar-efd-contribuicoes.js";
+import { gerarArquivoEfdIcms } from "@/service/efd-icms/gerar-efd-icms.js";
+import { enviarEmailService } from "@/service/email/enviar-email.js";
 import { criarNotificacaoAgendadaService } from "@/service/notificacoes/criar-notificacao-agendada.js";
 import { gerarArquivoSintegra } from "@/service/sintegra/gerar-sintegra.js";
-import { enviarEmailService } from "@/service/email/enviar-email.js";
 import { compactarXmlsFiscais } from "@/util/compactar-xmls-fiscais.js";
 import { httpBadRequest, httpOk } from "@/util/http-util.js";
 
@@ -30,11 +34,18 @@ export async function executarEnvioFiscalContabilidade(
 	const params = automacao.parametros ?? {};
 	const incluirSintegra = params.incluirSintegra !== false;
 	const incluirXml = params.incluirXml !== false;
+	const incluirEfdIcms = params.incluirEfdIcms === true;
+	const incluirEfdContribuicoes = params.incluirEfdContribuicoes === true;
 
-	if (!incluirSintegra && !incluirXml) {
+	if (
+		!incluirSintegra &&
+		!incluirXml &&
+		!incluirEfdIcms &&
+		!incluirEfdContribuicoes
+	) {
 		return httpOk({
 			status: "falha",
-			mensagem: "Nenhum anexo selecionado (SINTEGRA/XML)",
+			mensagem: "Nenhum anexo selecionado (SINTEGRA/XML/EFD)",
 		});
 	}
 
@@ -66,7 +77,9 @@ export async function executarEnvioFiscalContabilidade(
 		});
 	}
 
-	const contabilidade = await buscarContabilidadePorEmpresa(automacao.idempresa);
+	const contabilidade = await buscarContabilidadePorEmpresa(
+		automacao.idempresa,
+	);
 	if (!contabilidade?.ativo || !contabilidade.emailprincipal) {
 		return httpOk({
 			status: "falha",
@@ -106,6 +119,60 @@ export async function executarEnvioFiscalContabilidade(
 		} catch (erro) {
 			const msg =
 				erro instanceof Error ? erro.message : "Falha ao gerar SINTEGRA";
+			return httpOk({
+				status: "falha",
+				mensagem: msg,
+				detalhes: resumo,
+			});
+		}
+	}
+
+	if (incluirEfdIcms) {
+		try {
+			const efd = await gerarArquivoEfdIcms({
+				idempresa: automacao.idempresa,
+				dataInicio,
+				dataFim,
+				finalidade: "0",
+			});
+			anexos.push({
+				filename: efd.filename,
+				content: Buffer.from(efd.conteudo, "utf-8"),
+				contentType: "text/plain",
+			});
+			resumo.efdIcmsLinhas = efd.totalLinhas;
+			resumo.efdIcmsAlertas = efd.alertas;
+		} catch (erro) {
+			const msg =
+				erro instanceof Error ? erro.message : "Falha ao gerar EFD ICMS/IPI";
+			return httpOk({
+				status: "falha",
+				mensagem: msg,
+				detalhes: resumo,
+			});
+		}
+	}
+
+	if (incluirEfdContribuicoes) {
+		try {
+			const efd = await gerarArquivoEfdContribuicoes({
+				idempresa: automacao.idempresa,
+				dataInicio,
+				dataFim,
+				finalidade: "0",
+			});
+			anexos.push({
+				filename: efd.filename,
+				content: Buffer.from(efd.conteudo, "utf-8"),
+				contentType: "text/plain",
+			});
+			resumo.efdContribuicoesLinhas = efd.totalLinhas;
+			resumo.efdContribuicoesAlertas = efd.alertas;
+		} catch (erro) {
+			const msg =
+				erro instanceof Error
+					? erro.message
+					: "Falha ao gerar EFD-Contribuições";
 			return httpOk({
 				status: "falha",
 				mensagem: msg,
@@ -168,9 +235,9 @@ export async function executarEnvioFiscalContabilidade(
 	const texto = [
 		`Segue em anexo a documentação fiscal do período ${dataInicio} a ${dataFim}.`,
 		incluirSintegra ? "- Arquivo SINTEGRA" : null,
-		incluirXml
-			? "- ZIP com XMLs (NF-e / NFC-e), inclusive canceladas"
-			: null,
+		incluirEfdIcms ? "- Arquivo EFD ICMS/IPI" : null,
+		incluirEfdContribuicoes ? "- Arquivo EFD-Contribuições" : null,
+		incluirXml ? "- ZIP com XMLs (NF-e / NFC-e), inclusive canceladas" : null,
 		"",
 		"Enviado automaticamente pelo Mais Gestão.",
 	]
@@ -192,9 +259,7 @@ export async function executarEnvioFiscalContabilidade(
 			return httpOk({
 				status: "falha",
 				mensagem:
-					typeof envio.error === "string"
-						? envio.error
-						: "Falha no envio SMTP",
+					typeof envio.error === "string" ? envio.error : "Falha no envio SMTP",
 				detalhes: { ...resumo, destinatario },
 			});
 		}
