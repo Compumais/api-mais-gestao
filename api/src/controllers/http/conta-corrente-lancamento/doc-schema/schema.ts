@@ -198,6 +198,29 @@ export const listarContaCorrenteLancamentoSchema: FastifySchema = {
 				type: "string",
 				description: "ID da conta corrente para filtrar os lançamentos",
 			},
+			historico: { type: "string" },
+			documento: { type: "string" },
+			planocontasnome: { type: "string" },
+			datahora: {
+				type: "string",
+				description: "Filtro por data (YYYY-MM-DD)",
+			},
+			sentido: {
+				type: "string",
+				enum: ["entrada", "saida"],
+			},
+			ordenarPor: {
+				type: "string",
+				enum: [
+					"datahora",
+					"historico",
+					"valor",
+					"saldoatual",
+					"planocontasnome",
+					"documento",
+				],
+			},
+			ordem: { type: "string", enum: ["asc", "desc"] },
 			page: {
 				type: "number",
 				description: "Número da página (padrão: 1)",

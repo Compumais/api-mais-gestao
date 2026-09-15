@@ -102,6 +102,8 @@ export const camposAliquotaProdutoSchema = {
 	aliquotaconfinsentrada: campoPercentualOpcional(),
 	aliquotapisconfinsentradapreco: campoPercentualOpcional(),
 	aliquotapisconfinssaidapreco: campoPercentualOpcional(),
+	aliquotaiibs: campoPercentualOpcional(4),
+	aliquotacbs: campoPercentualOpcional(4),
 };
 
 export const camposImpostosProdutoSchema = {
@@ -139,6 +141,26 @@ export const camposImpostosProdutoSchema = {
 			const texto = valor?.trim();
 			return texto ? texto : null;
 		}),
+	cstibs: z
+		.string()
+		.max(3)
+		.optional()
+		.nullable()
+		.transform((valor) => {
+			if (valor === undefined) return undefined;
+			const texto = valor?.trim();
+			return texto ? texto : null;
+		}),
+	classtributariaibs: z
+		.string()
+		.max(6)
+		.optional()
+		.nullable()
+		.transform((valor) => {
+			if (valor === undefined) return undefined;
+			const texto = valor?.trim();
+			return texto ? texto : null;
+		}),
 	percentualmva: campoPercentualOpcional(),
 	...camposAliquotaProdutoSchema,
 };
@@ -160,6 +182,8 @@ export type CamposImpostosProduto = {
 	cstcofins?: string | null | undefined;
 	cstipientrada?: string | null | undefined;
 	cstipisaida?: string | null | undefined;
+	cstibs?: string | null | undefined;
+	classtributariaibs?: string | null | undefined;
 	cfopvendaecf?: number | null | undefined;
 	percentualmva?: string | null | undefined;
 	aliquotaicmsinterna?: string | null | undefined;
@@ -174,6 +198,8 @@ export type CamposImpostosProduto = {
 	aliquotaconfinsentrada?: string | null | undefined;
 	aliquotapisconfinsentradapreco?: string | null | undefined;
 	aliquotapisconfinssaidapreco?: string | null | undefined;
+	aliquotaiibs?: string | null | undefined;
+	aliquotacbs?: string | null | undefined;
 };
 
 export function montarCamposImpostosProduto(

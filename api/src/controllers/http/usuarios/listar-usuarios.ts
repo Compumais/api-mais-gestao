@@ -4,7 +4,7 @@ import { listarUsuariosService } from "@/service/usuarios/listar-usuarios.js";
 
 const listarUsuariosQuerySchema = z.object({
 	page: z.coerce.number().min(1).optional().default(1),
-	limit: z.coerce.number().min(1).max(100).optional().default(10),
+	limit: z.coerce.number().min(1).max(500).optional().default(10),
 	nome: z.string().optional(),
 	email: z.string().optional(),
 	idempresa: z.string().uuid(),

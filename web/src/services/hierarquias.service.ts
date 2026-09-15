@@ -53,6 +53,14 @@ export const hierarquiasService = {
 		limit?: number;
 		nome?: string;
 		q?: string;
+		codigo?: string;
+		ncm?: string;
+		classe?: number;
+		origem?: number;
+		comissao?: string;
+		enviamobile?: number;
+		ordenarPor?: string;
+		ordem?: "asc" | "desc";
 	}): Promise<ListarHierarquiasResponse> {
 		const { data } = await api.get<ListarHierarquiasResponse>("/hierarquias", {
 			params,
@@ -109,9 +117,7 @@ export const hierarquiasService = {
 		await api.delete(`/hierarquias/${id}`);
 	},
 
-	async buscarProximoCodigo(
-		idempresa: string,
-	): Promise<{ codigo: string }> {
+	async buscarProximoCodigo(idempresa: string): Promise<{ codigo: string }> {
 		const { data } = await api.get<{ codigo: string }>(
 			"/hierarquias/proximo-codigo",
 			{ params: { idempresa } },

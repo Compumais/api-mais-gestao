@@ -1,8 +1,8 @@
 import {
 	ID_DEST_NFE,
 	IND_PRES_NFE_PADRAO,
-	isIndPresNfeValido,
 	type IndPresNfe,
+	isIndPresNfeValido,
 } from "@/constants/ind-pres-nfe.js";
 
 const PAISES_BRASIL = new Set(["br", "brasil", "1058"]);
@@ -31,6 +31,7 @@ export function destinatarioEhExterior(params: {
 export function resolverIdDestNfe(params: {
 	ufEmitente?: string | null;
 	ufDestinatario?: string | null;
+	ufLocalEntrega?: string | null;
 	paisDestinatario?: string | null;
 }): number {
 	if (
@@ -43,7 +44,9 @@ export function resolverIdDestNfe(params: {
 	}
 
 	const ufEmitente = normalizarUf(params.ufEmitente);
-	const ufDestinatario = normalizarUf(params.ufDestinatario);
+	const ufDestinatario = normalizarUf(
+		params.ufLocalEntrega || params.ufDestinatario,
+	);
 
 	if (!ufDestinatario) {
 		return ID_DEST_NFE.INTERNA;
@@ -75,6 +78,7 @@ export function resolverIndPresNfe(params: {
 export function resolverIdeEmissaoNfe(params: {
 	ufEmitente?: string | null;
 	ufDestinatario?: string | null;
+	ufLocalEntrega?: string | null;
 	paisDestinatario?: string | null;
 	indPres?: number | null;
 	finNFe?: number | null;
@@ -83,6 +87,7 @@ export function resolverIdeEmissaoNfe(params: {
 		idDest: resolverIdDestNfe({
 			ufEmitente: params.ufEmitente,
 			ufDestinatario: params.ufDestinatario,
+			ufLocalEntrega: params.ufLocalEntrega,
 			paisDestinatario: params.paisDestinatario,
 		}),
 		indPres: resolverIndPresNfe({

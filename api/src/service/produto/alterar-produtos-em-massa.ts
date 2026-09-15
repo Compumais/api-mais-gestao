@@ -3,10 +3,12 @@ import type { HttpResponse } from "@/model/http-model.js";
 import type { NovoProduto } from "@/model/produto-model.js";
 import { buscarCfopPorId } from "@/repositories/cfop-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { buscarGrupoGourmetPorId } from "@/repositories/grupo-gourmet-repositories.js";
 import {
-	atualizarProdutosEmMassa,
-	buscarProdutosPorIds,
-} from "@/repositories/produtos-repositories.js";
+	atualizarProdutosEmMassaComHistorico,
+	resumirDadosHistorico,
+} from "@/repositories/produto-historico-repositories.js";
+import { buscarProdutosPorIds } from "@/repositories/produtos-repositories.js";
 import { buscarUnidadeMedidaPorId } from "@/repositories/unidade-medida-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
 import { unidadeMedidaPertenceEmpresa } from "@/service/unidade-medida/validar-unidade-medida-empresa.js";
@@ -28,6 +30,7 @@ type AlterarProdutosEmMassaParametros = {
 	idempresa: string;
 	ids: string[];
 	campos: CamposAlteracaoEmMassaProduto;
+	ip?: string | undefined;
 };
 
 export async function alterarProdutosEmMassaService({
@@ -35,6 +38,7 @@ export async function alterarProdutosEmMassaService({
 	idempresa,
 	ids,
 	campos,
+	ip,
 }: AlterarProdutosEmMassaParametros): Promise<
 	HttpResponse<AlterarProdutosEmMassaResposta>
 > {
@@ -92,9 +96,10 @@ export async function alterarProdutosEmMassaService({
 		return httpBadRequest("Nenhum dos produtos foi encontrado");
 	}
 
-	const atualizados = await atualizarProdutosEmMassa(
+	const atualizados = await atualizarProdutosEmMassaComHistorico(
 		idsValidos,
 		dadosPersistencia,
+		{ idusuario, ip },
 	);
 
 	await criarAuditoriaService({
@@ -108,7 +113,9 @@ export async function alterarProdutosEmMassaService({
 		metadados: {
 			ids: idsValidos,
 			campos: Object.keys(dadosPersistencia),
-			valores: dadosPersistencia,
+			valores: resumirDadosHistorico(
+				dadosPersistencia as unknown as Record<string, unknown>,
+			),
 		},
 	});
 
@@ -134,6 +141,16 @@ async function enriquecerCamposAlteracaoEmMassa(
 		}
 
 		enriquecidos.unidademedida = unidade.codigo?.slice(0, 6) ?? null;
+	}
+
+	if (enriquecidos.idgrupogourmet && "idgrupogourmet" in dados) {
+		const grupoGourmet = await buscarGrupoGourmetPorId(
+			enriquecidos.idgrupogourmet,
+		);
+
+		if (!grupoGourmet || grupoGourmet.idempresa !== idempresa) {
+			return httpProibido();
+		}
 	}
 
 	if (enriquecidos.idcfopsaidanfce) {

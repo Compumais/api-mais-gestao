@@ -26,6 +26,8 @@ const criarOrdemServicoBodySchema = z.object({
 	idtipodocumentofinanceiro: z.string().uuid().optional().nullable(),
 	problemadescrito: z.string().optional().nullable(),
 	laudotecnico: z.string().optional().nullable(),
+	servicoexecutado: z.string().optional().nullable(),
+	serviconaoexecutado: z.string().optional().nullable(),
 	observacao: z.string().optional().nullable(),
 	agendamento: z.string().optional().nullable(),
 	previsaoconclusao: z.string().optional().nullable(),
@@ -37,6 +39,15 @@ const criarOrdemServicoBodySchema = z.object({
 	renavam: z.string().max(11).optional().nullable(),
 	...extrasSchema,
 });
+
+function isPostgresForeignKeyError(error: unknown): boolean {
+	return (
+		!!error &&
+		typeof error === "object" &&
+		"code" in error &&
+		error.code === "23503"
+	);
+}
 
 export async function criarOrdemServico(
 	request: FastifyRequest,
@@ -65,6 +76,12 @@ export async function criarOrdemServico(
 				error: "Erro de validação",
 				code: "VALIDATION_ERROR",
 				details: error.issues,
+			});
+		}
+		if (isPostgresForeignKeyError(error)) {
+			return reply.status(400).send({
+				error: "Referência inválida ao criar ordem de serviço",
+				code: "FOREIGN_KEY_VIOLATION",
 			});
 		}
 		return reply.status(httpErroInterno().status).send(httpErroInterno());

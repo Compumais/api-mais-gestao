@@ -49,6 +49,8 @@ describe("inutilizarNfceVendaPdvService", () => {
 			id: "nfce-1",
 			modelo: "65",
 			status: NFE_STATUS.REJEITADA,
+			serie: "1",
+			numeronotafiscal: "10",
 		} as never);
 		vi.mocked(inutilizarService.inutilizarNfeVendaService).mockResolvedValue({
 			success: true,
@@ -92,6 +94,30 @@ describe("inutilizarNfceVendaPdvService", () => {
 		});
 
 		expect(resultado.success).toBe(false);
+		expect(inutilizarService.inutilizarNfeVendaService).not.toHaveBeenCalled();
+	});
+
+	it("recusa inutilização de pendência pré-emissão sem numeração", async () => {
+		vi.mocked(notaRepository.buscarNotaFiscalPorId).mockResolvedValue({
+			id: "nfce-1",
+			modelo: "65",
+			status: NFE_STATUS.REJEITADA,
+			serie: null,
+			numeronotafiscal: null,
+		} as never);
+
+		const resultado = await inutilizarNfceVendaPdvService({
+			idusuario: "user-1",
+			idempresa: "emp-1",
+			idvenda: "venda-1",
+			justificativa: "Item com valor zero",
+		});
+
+		expect(resultado).toMatchObject({
+			success: false,
+			status: 400,
+			error: expect.stringContaining("não possui numeração fiscal"),
+		});
 		expect(inutilizarService.inutilizarNfeVendaService).not.toHaveBeenCalled();
 	});
 });

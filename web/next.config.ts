@@ -1,16 +1,12 @@
-import type { NextConfig } from "next";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import type { NextConfig } from "next";
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 
-const origensDevPermitidas =
-	process.env.NEXT_ALLOWED_DEV_ORIGINS?.split(",")
-		.map((origem) => origem.trim())
-		.filter(Boolean) ?? [
-		"http://localhost:3000",
-		"http://127.0.0.1:3000",
-	];
+const origensDevPermitidas = process.env.NEXT_ALLOWED_DEV_ORIGINS?.split(",")
+	.map((origem) => origem.trim())
+	.filter(Boolean) ?? ["http://localhost:3000", "http://127.0.0.1:3000"];
 
 const nextConfig: NextConfig = {
 	distDir: process.env.NEXT_DIST_DIR || ".next",
@@ -19,6 +15,23 @@ const nextConfig: NextConfig = {
 	},
 	allowedDevOrigins: origensDevPermitidas,
 	reactCompiler: true,
+	async headers() {
+		return [
+			{
+				source: "/serwist/sw.js",
+				headers: [
+					{
+						key: "Cache-Control",
+						value: "no-cache, no-store, must-revalidate",
+					},
+					{
+						key: "Service-Worker-Allowed",
+						value: "/",
+					},
+				],
+			},
+		];
+	},
 	async redirects() {
 		return [
 			{

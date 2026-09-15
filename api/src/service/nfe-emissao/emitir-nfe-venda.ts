@@ -9,14 +9,15 @@ import {
 	criarNotaFiscalComItens,
 	substituirItensNotaFiscal,
 } from "@/repositories/nota-fiscal-repositories.js";
+import { vincularAuditoriaFiscalNfeNota } from "@/repositories/regra-fiscal-repositories.js";
 import { enfileirarEnvioDominioSilencioso } from "@/service/dominio/enfileirar-envio-dominio.js";
 import { persistirLotesItensNotaEmissao } from "@/service/lote/persistir-lotes-itens-nota-emissao.js";
-import { vincularAuditoriaFiscalNfeNota } from "@/repositories/regra-fiscal-repositories.js";
 import { salvarUltimaPreferenciaEmissaoNfe } from "@/service/nfe-configuracao/salvar-ultima-preferencia-emissao-nfe.js";
 import type {
 	DestinatarioPayloadNfe,
 	DocumentoReferenciadoPayloadNfe,
 	ItemPayloadNfe,
+	LocalEntregaPayloadNfe,
 	PagamentoPayloadNfe,
 	TotaisPayloadNfe,
 	TransportePayloadNfe,
@@ -30,6 +31,7 @@ import { arquivarXmlNotaFiscal } from "@/service/nota-fiscal/arquivar-xml-nota-f
 import type { FormaPagamentoNfVenda } from "@/service/nota-fiscal/gerar-contas-receber-nf.js";
 import { integrarNotaFiscalVendaAutorizadaService } from "@/service/nota-fiscal/integrar-nota-fiscal-venda-autorizada.js";
 import type { calcularTotaisFiscaisEmissaoNfe } from "@/util/calcular-totais-fiscais-emissao-nfe.js";
+import { camposTributariosItemEmissao } from "@/util/campos-tributarios-item-emissao.js";
 import {
 	FIN_NFE_NORMAL,
 	type TipoDevolucaoNfe,
@@ -42,6 +44,7 @@ import {
 	agoraBrasiliaIsoOffset,
 	hojeBrasiliaIsoDate,
 } from "@/util/data-hora-brasilia.js";
+import { resolverDataHoraAutorizacao } from "@/util/extrair-dh-recbto-xml.js";
 import { httpOk } from "@/util/http-util.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
 import {
@@ -101,6 +104,7 @@ function montarItensPersistencia(
 		id: uuidv4(),
 		idnotafiscal,
 		idproduto: item.idproduto ?? null,
+		produto: item.codigoProduto?.trim().slice(0, 20) || null,
 		descricao: item.descricao,
 		quantidade: String(item.quantidade),
 		precounitario: String(item.valorUnitario),
@@ -123,6 +127,7 @@ function montarItensPersistencia(
 		contador: index + 1,
 		tipo: "P",
 		currenttimemillis: Date.now(),
+		...camposTributariosItemEmissao(item),
 		dadosimportacao: montarDadosImportacaoItemEmissaoNfe(item) ?? null,
 		...resumoLotePrincipal(item),
 	}));
@@ -161,6 +166,7 @@ function montarDadosNotaPersistencia(params: {
 	natOp?: string;
 	pagamento?: PagamentoPayloadNfe;
 	transporte?: TransportePayloadNfe;
+	localEntrega?: LocalEntregaPayloadNfe;
 	totaisComerciais?: TotaisPayloadNfe;
 	tipoDevolucao?: TipoDevolucaoNfe;
 	indPres?: number;
@@ -205,6 +211,7 @@ function montarDadosNotaPersistencia(params: {
 		natOp,
 		pagamento,
 		transporte,
+		localEntrega,
 		totaisComerciais,
 		tipoDevolucao,
 		indPres,
@@ -290,6 +297,13 @@ function montarDadosNotaPersistencia(params: {
 			statusPersistido === NFE_STATUS.AUTORIZADA
 				? (resposta.xmlRetorno ?? null)
 				: null,
+		datahoraautorizacao:
+			statusPersistido === NFE_STATUS.AUTORIZADA
+				? resolverDataHoraAutorizacao({
+						xmlAutorizado: resposta.xmlRetorno,
+						fallbackIso: agora,
+					})
+				: null,
 		mensagemtransmissaonfe: mensagemTransmissao,
 		codigostatusprotocolonfe: cStatProtocolo,
 		codigostatustransmissaonfe: cStatTransmissao,
@@ -318,6 +332,7 @@ function montarDadosNotaPersistencia(params: {
 			gerarEstoque,
 			pagamento,
 			transporte,
+			localEntrega,
 			totais: totaisComerciais ?? {
 				frete: totais?.frete ?? vFrete,
 				seguro: totais?.seguro,
@@ -383,6 +398,7 @@ export async function emitirNfeVendaService(
 		identidade,
 		itensNormalizados,
 		transporteAjustado,
+		localEntrega,
 		natOpResolvida,
 		pagamentoNormalizado,
 		documentoReferenciado,
@@ -471,6 +487,7 @@ export async function emitirNfeVendaService(
 		idDest: ideEmissao.idDest,
 		pagamento: pagamentoNormalizado,
 		transporte: transporteAjustado,
+		localEntrega,
 		totaisComerciais: totais,
 		tipoDevolucao: tipoDevolucao ?? undefined,
 		idserie,
@@ -505,10 +522,9 @@ export async function emitirNfeVendaService(
 	}
 
 	if (idAuditoriaFiscal) {
-		await vincularAuditoriaFiscalNfeNota(
-			idAuditoriaFiscal,
-			idnotafiscal,
-		).catch(console.error);
+		await vincularAuditoriaFiscalNfeNota(idAuditoriaFiscal, idnotafiscal).catch(
+			console.error,
+		);
 	}
 
 	await persistirLotesItensNotaEmissao({

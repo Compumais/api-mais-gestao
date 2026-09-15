@@ -32,23 +32,35 @@ export const OPCOES_IND_PRES_NFE = IND_PRES_NFE_VALORES.map((valor) => ({
 export function resolverIdDestNfePreview(params: {
 	ufEmitente?: string | null;
 	ufDestinatario?: string | null;
+	ufLocalEntrega?: string | null;
 	paisDestinatario?: string | null;
 }): { idDest: number; label: string } | null {
 	const ufEmitente = params.ufEmitente?.trim().toUpperCase() ?? "";
-	const ufDestinatario = params.ufDestinatario?.trim().toUpperCase() ?? "";
+	const ufDestinatario =
+		(params.ufLocalEntrega || params.ufDestinatario)?.trim().toUpperCase() ??
+		"";
 	const pais = params.paisDestinatario?.trim().toLowerCase() ?? "";
 
 	if (!ufDestinatario && !pais) {
 		return null;
 	}
 
-	if (ufDestinatario === "EX" || (pais && !["br", "brasil", "1058"].includes(pais))) {
-		return { idDest: 3, label: ID_DEST_NFE_LABELS[3] ?? "Operação com exterior" };
+	if (
+		ufDestinatario === "EX" ||
+		(pais && !["br", "brasil", "1058"].includes(pais))
+	) {
+		return {
+			idDest: 3,
+			label: ID_DEST_NFE_LABELS[3] ?? "Operação com exterior",
+		};
 	}
 
 	if (!ufDestinatario || !ufEmitente || ufEmitente === ufDestinatario) {
 		return { idDest: 1, label: ID_DEST_NFE_LABELS[1] ?? "Operação interna" };
 	}
 
-	return { idDest: 2, label: ID_DEST_NFE_LABELS[2] ?? "Operação interestadual" };
+	return {
+		idDest: 2,
+		label: ID_DEST_NFE_LABELS[2] ?? "Operação interestadual",
+	};
 }

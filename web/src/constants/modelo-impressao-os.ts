@@ -1,4 +1,7 @@
-import type { TipoBlocoModeloImpressaoOs } from "@/schemas/modelo-impressao-os.schema";
+import type {
+	TipoBlocoModeloImpressaoOs,
+	TipoCampoPersonalizadoOs,
+} from "@/schemas/modelo-impressao-os.schema";
 
 export const LABELS_BLOCO_MODELO_IMPRESSAO_OS: Record<
 	TipoBlocoModeloImpressaoOs,
@@ -12,10 +15,12 @@ export const LABELS_BLOCO_MODELO_IMPRESSAO_OS: Record<
 	veiculo: "Veículo",
 	problema: "Problema descrito",
 	laudo: "Laudo técnico",
+	servicoRealizado: "Serviços realizados",
 	observacao: "Observação",
-	itens: "Itens",
+	itens: "Itens (produtos)",
 	totais: "Totais",
 	extras: "Campos extras",
+	personalizado: "Bloco personalizado",
 	assinaturas: "Assinaturas",
 	rodape: "Rodapé",
 };
@@ -32,7 +37,13 @@ export const CAMPOS_DADOS_OS = [
 export const CAMPOS_CLIENTE_OS = [
 	{ value: "nomecliente", label: "Nome" },
 	{ value: "cnpjcpfcliente", label: "CNPJ/CPF" },
+	{ value: "enderecocompleto", label: "Endereço completo" },
+	{ value: "telefone", label: "Telefone" },
+	{ value: "email", label: "E-mail" },
+	{ value: "inscricaoestadual", label: "Inscrição estadual" },
 ] as const;
+
+export const CAMPOS_CLIENTE_OS_PADRAO = CAMPOS_CLIENTE_OS.map((c) => c.value);
 
 export const CAMPOS_VEICULO_OS = [
 	{ value: "marca", label: "Marca" },
@@ -40,3 +51,20 @@ export const CAMPOS_VEICULO_OS = [
 	{ value: "placa", label: "Placa" },
 	{ value: "renavam", label: "RENAVAM" },
 ] as const;
+
+export const OPCOES_COLUNA_BLOCO = [
+	{ value: "cheia", label: "Largura total" },
+	{ value: "esquerda", label: "Coluna 1" },
+	{ value: "direita", label: "Coluna 2" },
+] as const;
+
+export const LABELS_CAMPO_PERSONALIZADO_OS: Record<
+	TipoCampoPersonalizadoOs,
+	string
+> = {
+	assinatura: "Assinatura",
+	data: "Data",
+	observacao: "Observação",
+	textoFixo: "Texto fixo",
+	status: "Status",
+};

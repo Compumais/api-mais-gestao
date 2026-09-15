@@ -21,10 +21,13 @@ Este guia cobre deploy automático (GitHub Actions + SSH), execução da API em 
   .env.api
   .env.web
   web/                   # clone do projeto (para deploy da web via PM2)
+  pdv-updates/           # version.json + Setup.exe (auto-update do PDV)
   scripts/backup-postgres.sh
 
 /opt/backups/mais-gestao/
 ```
+
+O Nginx deve expor `/pdv/updates/` apontando para `/opt/mais-gestao/pdv-updates/` (ver `nginx/mais-gestao.conf`). Publique com `pdv/scripts/publicar-update-pdv.ps1`.
 
 ## 3) Variáveis de ambiente
 
@@ -37,6 +40,7 @@ DATABASE_URL=postgresql://mais_gestao:<PASSWORD>@127.0.0.1:5432/mais_gestao
 BETTER_AUTH_SECRET=<GERAR_COM_openssl_rand_base64_32>
 BETTER_AUTH_URL=https://api.seudominio.com
 CLIENT_ORIGIN=https://app.seudominio.com
+CORS_ORIGINS=https://app.seudominio.com
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 ```
@@ -48,6 +52,8 @@ NEXT_PUBLIC_API_URL=https://api.seudominio.com
 ```
 
 `CLIENT_ORIGIN` deve ser a URL do **frontend** (`app.seudominio.com`), não da API. Sem isso, o login trava na tela de carregamento por bloqueio de CORS / Better Auth.
+
+Em produção hoje: front `https://maisgestao.compumais.com` e API `https://apimaisgestao.compumais.com`. `API_URL` e `BETTER_AUTH_URL` devem permanecer no host da API.
 
 ## 4) Configuração do Nginx
 
@@ -96,21 +102,21 @@ docker compose -f docker-compose.prod.yml up -d api
 ```bash
 cd /opt/mais-gestao/web
 pnpm install --frozen-lockfile
-pnpm run build:live
-pm2 start "pnpm start -- -p 3000" --name mais-gestao-web
+pnpm run build
+pm2 start "pnpm start -- -p 3000" --name web-mais-gestao
 pm2 save
 pm2 startup
 ```
 
-`build:live` compila em `.next-staging` e só publica em `.next` se o build passar.
-Se falhar, o site em produção continua com o build anterior.
+Nos deploys seguintes, `build:live` valida `web-mais-gestao`, compila em
+`.next-staging` e só então para brevemente o processo, publica `.next` e o
+reinicia. Se o build falhar, o site continua com o build anterior.
 
 Rollback (quando existir `.next-previous`):
 
 ```bash
 cd /opt/mais-gestao/web
 pnpm run build:rollback
-pm2 reload mais-gestao-web --update-env
 ```
 
 ## 7) Deploy automático
@@ -123,8 +129,7 @@ O workflow `.github/workflows/deploy.yml` executa:
 - Deploy da Web via SSH:
   - `git pull` (main)
   - `pnpm install --frozen-lockfile`
-  - `pnpm run build:live` (compila em staging e publica `.next` só se ok)
-  - `pm2 reload mais-gestao-web --update-env`
+  - `pnpm run build:live` (compila em staging, publica e reinicia `web-mais-gestao`)
 
 ## 8) Backup e restore do Postgres
 
@@ -153,7 +158,7 @@ gunzip -c /opt/backups/mais-gestao/backup-YYYYMMDD-HHMMSS.sql.gz | psql -h 127.0
 - Logs API: `docker logs -f mais-gestao-api`
 - Logs DB: `docker logs -f mais-gestao-db`
 - Status PM2: `pm2 status`
-- Logs Web PM2: `pm2 logs mais-gestao-web`
+- Logs Web PM2: `pm2 logs web-mais-gestao`
 
 ## 10) Datadog (monitoramento)
 

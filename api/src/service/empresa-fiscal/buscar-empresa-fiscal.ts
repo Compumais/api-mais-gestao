@@ -48,6 +48,8 @@ export type EmpresaFiscalBody = {
 	telefone?: string | null;
 	email?: string | null;
 	regimetributario?: string | null;
+	indperfil?: string | null;
+	indativ?: number | null;
 };
 
 type BuscarEmpresaFiscalParametros = {
@@ -97,6 +99,8 @@ function hidratarFiscalComEmpresa(
 			derivarRegimeTributarioDoCrt(crt),
 		crt,
 		indicadorie: inteiroOuNulo(fiscal.indicadorie) ?? 1,
+		indperfil: fiscal.indperfil === "B" || fiscal.indperfil === "C" ? fiscal.indperfil : "A",
+		indativ: inteiroOuNulo(fiscal.indativ) ?? 1,
 	};
 }
 
@@ -138,6 +142,8 @@ export async function buscarEmpresaFiscalService({
 			uf: empresa.idestado || null,
 			codigomunicipioibge: empresa.idcidade || null,
 			crt: empresa.regimetributario ? crtPadrao : null,
+			indperfil: "A",
+			indativ: 1,
 			criadoem: agora,
 			atualizadoem: agora,
 		});
@@ -215,6 +221,16 @@ export async function atualizarEmpresaFiscalService({
 			dados.indicadorie !== undefined
 				? (inteiroOuNulo(dados.indicadorie) ?? 1)
 				: dados.indicadorie,
+		indperfil:
+			dados.indperfil !== undefined
+				? dados.indperfil === "B" || dados.indperfil === "C"
+					? dados.indperfil
+					: "A"
+				: dados.indperfil,
+		indativ:
+			dados.indativ !== undefined
+				? (inteiroOuNulo(dados.indativ) ?? 1)
+				: dados.indativ,
 		regimetributario:
 			regimeDerivado !== undefined ? regimeDerivado : dados.regimetributario,
 		atualizadoem: agora,

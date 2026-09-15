@@ -76,4 +76,36 @@ describe("listarProdutosService", () => {
 			expect.objectContaining({ tipo: "P" }),
 		);
 	});
+
+	it("repassa filtro somenteDivergencia ao repositório", async () => {
+		vi.mocked(
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(true);
+		vi.mocked(produtosRepository.listarProdutosPorEmpresa).mockResolvedValue({
+			produtos: [
+				{
+					id: "prod-1",
+					idempresa: "empresa-1",
+					nome: "Produto",
+					tipo: "P",
+					quantidade: "10",
+					quantidadefiscal: "8",
+					divergencia: "2.000000",
+					possuiSaldo: true,
+				} as never,
+			],
+			total: 1,
+		});
+
+		await listarProdutosService({
+			idusuario: "usuario-1",
+			idempresa: "empresa-1",
+			tipo: "P",
+			somenteDivergencia: true,
+		});
+
+		expect(produtosRepository.listarProdutosPorEmpresa).toHaveBeenCalledWith(
+			expect.objectContaining({ somenteDivergencia: true }),
+		);
+	});
 });

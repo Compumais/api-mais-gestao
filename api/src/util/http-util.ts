@@ -18,11 +18,13 @@ export function httpNaoAutorizado() {
 	};
 }
 
-export function httpNaoEncontrado() {
+export function httpNaoEncontrado(
+	error?: string,
+): HttpResponse<never> {
 	return {
-		success: false,
+		success: false as const,
 		status: 404,
-		error: "Recurso não encontrado",
+		error: error || "Recurso não encontrado",
 		code: "NOT_FOUND_ERROR",
 	};
 }

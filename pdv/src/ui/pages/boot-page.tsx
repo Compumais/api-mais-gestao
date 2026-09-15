@@ -5,6 +5,23 @@ import { pdvInvoke } from "@/lib/pdv-api";
 import { rotaHomePdv, type StatusPdv } from "@/lib/pdv-types";
 import { Button } from "@/ui/components/ui/button";
 
+type ResultadoCarga = {
+	produtos: number;
+	grupos: number;
+	gruposGourmet?: number;
+	atalhos: number;
+	clientes?: number;
+	bandeiras?: number;
+	meiosPagamento?: number;
+	acessoNegado?: boolean;
+	origem?: "nuvem" | "principal";
+	reutilizado?: boolean;
+};
+
+/**
+ * Boot na abertura do PDV: valida sessão e dispara a mesma carga local do
+ * botão em Config (catálogo). Falha na carga não impede o uso (dados locais).
+ */
 export function BootPage() {
 	const navigate = useNavigate();
 	const [mensagens, setMensagens] = useState<
@@ -13,6 +30,7 @@ export function BootPage() {
 	const [erro, setErro] = useState("");
 	const [status, setStatus] = useState<StatusPdv | null>(null);
 	const proximoId = useRef(0);
+	const iniciou = useRef(false);
 
 	function addMsg(texto: string) {
 		const id = proximoId.current++;
@@ -21,8 +39,55 @@ export function BootPage() {
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: deve rodar apenas uma vez ao montar
 	useEffect(() => {
+		if (iniciou.current) return;
+		iniciou.current = true;
 		void iniciar();
 	}, []);
+
+	async function carregarCatalogoAutomatico(modo: StatusPdv["modo"]): Promise<{
+		ok: boolean;
+		acessoNegado?: boolean;
+	}> {
+		addMsg(
+			modo === "secundario"
+				? "Carga local automática (PDV principal)..."
+				: "Carga local automática (nuvem)...",
+		);
+		try {
+			const carga = await pdvInvoke<ResultadoCarga>("cargaLocal");
+			if (carga.acessoNegado) {
+				return { ok: false, acessoNegado: true };
+			}
+			const origem =
+				carga.origem === "principal" ? "PDV principal" : "nuvem (API)";
+			addMsg(
+				`Carga da ${origem}: ${carga.produtos} produtos · ${carga.grupos} grupos · ${carga.gruposGourmet ?? 0} gourmet · ${carga.atalhos} atalhos · ${carga.clientes ?? 0} clientes`,
+			);
+			return { ok: true };
+		} catch (err) {
+			const mensagem =
+				err instanceof Error ? err.message : "Falha na carga local automática";
+			console.error("[pdv] carga automática na abertura:", mensagem);
+			addMsg(`${mensagem} — seguindo com dados locais.`);
+			return { ok: false };
+		}
+	}
+
+	async function processarFilaSePossivel(modo: StatusPdv["modo"]) {
+		if (modo === "secundario") return;
+		try {
+			const fila = await pdvInvoke<{
+				pendentes: number;
+			}>("processarOutboxAgora");
+			if (fila.pendentes > 0) {
+				addMsg(
+					`${fila.pendentes} registro(s) pendente(s) na fila de sincronização.`,
+				);
+			}
+		} catch {
+			// fila opcional; carga já ocorreu (ou falhou de forma isolada)
+		}
+	}
 
 	async function iniciar() {
 		try {
@@ -59,12 +124,15 @@ export function BootPage() {
 				);
 				try {
 					await pdvInvoke("conectarPrincipal");
-					const sync = await pdvInvoke<{
-						pull: { produtos: number; grupos: number; atalhos: number };
-					}>("syncAgora");
-					addMsg(
-						`Catálogo do principal: ${sync.pull.produtos} produtos · ${sync.pull.grupos} grupos · ${sync.pull.atalhos} atalhos`,
-					);
+					const carga = await carregarCatalogoAutomatico("secundario");
+					if (carga.acessoNegado) {
+						addMsg(
+							"Usuário sem acesso à empresa anterior. Selecione a empresa correta.",
+						);
+						marcarBootPendente();
+						navigate("/login", { replace: true });
+						return;
+					}
 				} catch (err) {
 					const mensagem =
 						err instanceof Error
@@ -80,36 +148,16 @@ export function BootPage() {
 				}
 			} else if (statusAtual.online) {
 				addMsg("Conectando à API...");
-				addMsg("Sincronizando produtos, grupos e atalhos...");
-				try {
-					const sync = await pdvInvoke<{
-						pull: {
-							produtos: number;
-							atalhos: number;
-							grupos: number;
-							acessoNegado?: boolean;
-						};
-						pendentes: number;
-					}>("syncAgora");
-					if (sync.pull.acessoNegado) {
-						addMsg(
-							"Usuário sem acesso à empresa anterior. Selecione a empresa correta.",
-						);
-						marcarBootPendente();
-						navigate("/login", { replace: true });
-						return;
-					}
+				const carga = await carregarCatalogoAutomatico("principal");
+				if (carga.acessoNegado) {
 					addMsg(
-						`${sync.pull.produtos} produtos · ${sync.pull.grupos} grupos · ${sync.pull.atalhos} atalhos`,
+						"Usuário sem acesso à empresa anterior. Selecione a empresa correta.",
 					);
-					if (sync.pendentes > 0) {
-						addMsg(
-							`${sync.pendentes} registro(s) pendente(s) na fila de sincronização.`,
-						);
-					}
-				} catch {
-					addMsg("Falha ao sincronizar agora — seguindo com dados locais.");
+					marcarBootPendente();
+					navigate("/login", { replace: true });
+					return;
 				}
+				await processarFilaSePossivel("principal");
 			} else {
 				addMsg("Sem conexão com a API — operando em modo offline.");
 			}

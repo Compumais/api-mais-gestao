@@ -60,7 +60,7 @@ export function DialogInutilizarNfce({
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
 			<form
-				className="w-[28rem] max-w-[95vw] space-y-4 rounded-lg border bg-card p-5"
+				className="pdv-surface w-[28rem] max-w-[95vw] space-y-4 p-5"
 				onSubmit={(e) => {
 					e.preventDefault();
 					void confirmar();
@@ -68,8 +68,9 @@ export function DialogInutilizarNfce({
 			>
 				<h2 className="text-lg font-semibold">Inutilizar numeração NFC-e</h2>
 				<p className="text-sm text-muted-foreground">
-					Inutiliza a série/número do cupom (modelo 65) na SEFAZ. Depois você
-					pode retransmitir para emitir um novo número.
+					Inutiliza a série/número do cupom (modelo 65) na SEFAZ. Após a
+					confirmação, a numeração fica inutilizada e não poderá ser
+					retransmitida.
 				</p>
 				<textarea
 					autoFocus

@@ -1,6 +1,8 @@
 import { and, count, desc, eq, ilike } from "drizzle-orm";
 import type { NovoFechamentoCaixa } from "@/model/fechamento-caixa-model";
-import { fechamentopdv } from "@/repositories/schema.js";
+import { fechamentopdv, usuarios } from "@/repositories/schema.js";
+import { timestampUtcIso } from "@/util/data-hora-brasilia.js";
+import { nomeOperadorHistoricoVendaPdv } from "@/util/historico-venda-pdv.js";
 import { db } from "./connection";
 
 export type AtualizarFechamentoCaixaDados = {
@@ -106,14 +108,19 @@ export async function listarFechamentosCaixa({
 
 	const offset = (page - 1) * limit;
 
-	const [totalCount, fechamentosCaixa] = await Promise.all([
+	const [totalCount, linhas] = await Promise.all([
 		db
 			.select({ value: count() })
 			.from(fechamentopdv)
 			.where(and(...where)),
 		db
-			.select()
+			.select({
+				fechamento: fechamentopdv,
+				operadorNome: usuarios.nome,
+				operadorEmail: usuarios.email,
+			})
 			.from(fechamentopdv)
+			.leftJoin(usuarios, eq(fechamentopdv.idusuario, usuarios.id))
 			.where(and(...where))
 			.orderBy(desc(fechamentopdv.id))
 			.limit(limit)
@@ -121,7 +128,15 @@ export async function listarFechamentosCaixa({
 	]);
 
 	return {
-		fechamentosCaixa,
+		fechamentosCaixa: linhas.map((linha) => ({
+			...linha.fechamento,
+			datahora:
+				timestampUtcIso(linha.fechamento.datahora) ?? linha.fechamento.datahora,
+			operadorNome: nomeOperadorHistoricoVendaPdv({
+				nome: linha.operadorNome,
+				email: linha.operadorEmail,
+			}),
+		})),
 		total: totalCount[0]?.value ?? 0,
 	};
 }

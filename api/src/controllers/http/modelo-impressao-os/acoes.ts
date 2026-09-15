@@ -30,22 +30,38 @@ const tiposBloco = z.enum([
 	"veiculo",
 	"problema",
 	"laudo",
+	"servicoRealizado",
 	"observacao",
 	"itens",
 	"totais",
 	"extras",
+	"personalizado",
 	"assinaturas",
 	"rodape",
 ]);
 
+const colunaBloco = z.enum(["cheia", "esquerda", "direita"]);
+
+const campoPersonalizadoSchema = z.object({
+	id: z.string().min(1),
+	tipo: z.enum(["assinatura", "data", "observacao", "textoFixo", "status"]),
+	rotulo: z.string().max(120),
+	valor: z.string().max(5000).optional(),
+	coluna: colunaBloco.default("cheia"),
+});
+
 const blocoSchema = z.object({
 	id: z.string().min(1),
 	tipo: tiposBloco,
+	coluna: colunaBloco.optional(),
 	props: z
 		.object({
 			titulo: z.string().max(200).optional(),
 			texto: z.string().max(5000).optional(),
 			campos: z.array(z.string()).optional(),
+			mostrarResponsavel: z.boolean().optional(),
+			tituloSecao: z.string().max(200).optional(),
+			camposPersonalizados: z.array(campoPersonalizadoSchema).optional(),
 		})
 		.optional(),
 });

@@ -31,12 +31,14 @@ import { aplicarCreditoIcmsSnItensEmissao } from "@/service/nfe-emissao/aplicar-
 import { enriquecerItensEmissaoComProduto } from "@/service/nfe-emissao/enriquecer-itens-emissao-produto.js";
 import { arquivarXmlNotaFiscal } from "@/service/nota-fiscal/arquivar-xml-nota-fiscal.js";
 import { calcularTotaisFiscaisEmissaoNfe } from "@/util/calcular-totais-fiscais-emissao-nfe.js";
+import { camposTributariosItemEmissao } from "@/util/campos-tributarios-item-emissao.js";
 import { montarDadosImportacaoItemEmissaoNfe } from "@/util/dados-emissao-nfe-nota.js";
 import {
 	agoraBrasiliaIsoOffset,
 	hojeBrasiliaIsoDate,
 } from "@/util/data-hora-brasilia.js";
 import { extrairQrCodeNfceXml } from "@/util/extrair-qr-code-nfce-xml.js";
+import { resolverDataHoraAutorizacao } from "@/util/extrair-dh-recbto-xml.js";
 import {
 	httpBadRequest,
 	httpNaoEncontrado,
@@ -91,6 +93,96 @@ type NumeracaoEmissaoNfce = {
 	reemissao: boolean;
 };
 
+async function persistirFalhaPreValidacaoNfce({
+	idusuario,
+	idempresa,
+	venda,
+	ambiente,
+	mensagem,
+}: {
+	idusuario: string;
+	idempresa: string;
+	venda: NonNullable<Awaited<ReturnType<typeof buscarVendaPdvGourmetPorId>>>;
+	ambiente: number;
+	mensagem: string;
+}): Promise<HttpResponse<ResultadoEmissaoNfcePdv>> {
+	const agora = agoraBrasiliaIsoOffset();
+	const valorVenda = parseValorMonetario(venda.valortotal);
+	const notaExistente = venda.idnotafiscalnfce
+		? await buscarNotaFiscalPorId(venda.idnotafiscalnfce)
+		: undefined;
+	const idnotafiscal = notaExistente?.id ?? uuidv4();
+	const dadosNota: NovaNotaFiscal = {
+		id: idnotafiscal,
+		idempresa,
+		idusuarioinclusao: idusuario,
+		datainclusao: agora,
+		emissao: hojeBrasiliaIsoDate(),
+		datahoraemissao: agora,
+		currenttimemillis: Date.now(),
+		modelo: "65",
+		tipoambientenfe: ambiente,
+		tipoorigem: 1,
+		status: NFE_STATUS.REJEITADA,
+		valortotalnota: valorVenda > 0 ? valorVenda.toFixed(2) : null,
+		totalproduto: valorVenda > 0 ? valorVenda.toFixed(2) : null,
+		mensagemtransmissaonfe: `Pré-validação NFC-e: ${mensagem}`,
+		finalidadeemissaonfe: 1,
+		tipofrete: 9,
+		dadosimportacao: {
+			origem: "pdv-gourmet",
+			idvenda: venda.id,
+			preValidacao: true,
+		},
+	};
+
+	const statusTerminal =
+		notaExistente?.status === NFE_STATUS.AUTORIZADA ||
+		notaExistente?.status === NFE_STATUS.CANCELADA ||
+		notaExistente?.status === NFE_STATUS.CANCELADA_FORA_PRAZO ||
+		notaExistente?.status === NFE_STATUS.INUTILIZADA;
+
+	if (notaExistente && !statusTerminal) {
+		await atualizarNotaFiscal(idnotafiscal, {
+			status: NFE_STATUS.REJEITADA,
+			mensagemtransmissaonfe: dadosNota.mensagemtransmissaonfe,
+			dadosimportacao: dadosNota.dadosimportacao,
+		});
+	} else {
+		// Não sobrescreve nota terminal (ex.: inutilizada 102) — cria nova pendência
+		const idNova = statusTerminal ? uuidv4() : idnotafiscal;
+		await criarNotaFiscalComItens({ ...dadosNota, id: idNova }, []);
+		await atualizarVendaPdvGourmet(venda.id, {
+			idnotafiscalnfce: idNova,
+			deveemitirnfce: true,
+		});
+		return httpOk({
+			emitida: false,
+			idnotafiscal: idNova,
+			...(notaExistente?.serie ? { serie: notaExistente.serie } : {}),
+			...(Number(notaExistente?.numeronotafiscal) > 0
+				? { numero: Number(notaExistente?.numeronotafiscal) }
+				: {}),
+			erro: mensagem,
+		});
+	}
+
+	await atualizarVendaPdvGourmet(venda.id, {
+		idnotafiscalnfce: idnotafiscal,
+		deveemitirnfce: true,
+	});
+
+	return httpOk({
+		emitida: false,
+		idnotafiscal,
+		...(notaExistente?.serie ? { serie: notaExistente.serie } : {}),
+		...(Number(notaExistente?.numeronotafiscal) > 0
+			? { numero: Number(notaExistente?.numeronotafiscal) }
+			: {}),
+		erro: mensagem,
+	});
+}
+
 async function resolverNumeracaoEmissaoNfce(
 	idempresa: string,
 	idnotafiscalVenda: string | null | undefined,
@@ -112,7 +204,15 @@ async function resolverNumeracaoEmissaoNfce(
 				!Number.isFinite(numeroNf) ||
 				numeroNf <= 0
 			) {
-				return null;
+				const novaReserva = await reservarProximoNumeroSerie(serieParaUsar.id);
+				if (!novaReserva) return null;
+				return {
+					idnotafiscal: notaExistente.id,
+					numeroNf: novaReserva.numeroReservado,
+					serie: novaReserva.serie,
+					idserie: serieParaUsar.id,
+					reemissao: true,
+				};
 			}
 
 			let idserie = notaExistente.idserie ?? undefined;
@@ -198,6 +298,7 @@ function montarItensPersistencia(
 		contador: index + 1,
 		tipo: "P",
 		currenttimemillis: Date.now(),
+		...camposTributariosItemEmissao(item),
 		dadosimportacao: montarDadosImportacaoItemEmissaoNfe(item) ?? null,
 	}));
 }
@@ -308,24 +409,18 @@ export async function emitirNfceVendaPdvService({
 	const { itens: itensBrutos, pendencias: pendenciasItens } =
 		await montarItensEmissaoPdv(idvenda, crt);
 
-	if (itensBrutos.length === 0) {
+	if (itensBrutos.length === 0 && pendenciasItens.length === 0) {
 		return httpBadRequest("A venda PDV não possui itens para emissão da NFC-e");
 	}
 
 	if (pendenciasItens.length > 0) {
-		return httpOk({
-			emitida: false,
-			erro: pendenciasItens.join("; "),
+		return persistirFalhaPreValidacaoNfce({
+			idusuario,
+			idempresa,
+			venda,
+			ambiente: nfceConfiguracao.ambiente,
+			mensagem: pendenciasItens.join("; "),
 		});
-	}
-
-	const reserva = await resolverNumeracaoEmissaoNfce(
-		idempresa,
-		venda.idnotafiscalnfce,
-		serieParaUsar,
-	);
-	if (!reserva) {
-		return httpBadRequest("Não foi possível reservar numeração da série NFC-e");
 	}
 
 	const itensEnriquecidos = await enriquecerItensEmissaoComProduto(itensBrutos);
@@ -336,18 +431,33 @@ export async function emitirNfceVendaPdvService({
 		await aplicarCreditoIcmsSnItensEmissao(itensTributacao);
 
 	if (pendenciasCreditoSn.length > 0) {
-		return httpOk({
-			emitida: false,
-			erro: pendenciasCreditoSn.join("; "),
+		return persistirFalhaPreValidacaoNfce({
+			idusuario,
+			idempresa,
+			venda,
+			ambiente: nfceConfiguracao.ambiente,
+			mensagem: pendenciasCreditoSn.join("; "),
 		});
 	}
 
 	const pendenciasCest = validarCestItensEmissaoNfe(itensNormalizados);
 	if (pendenciasCest.length > 0) {
-		return httpOk({
-			emitida: false,
-			erro: pendenciasCest.join("; "),
+		return persistirFalhaPreValidacaoNfce({
+			idusuario,
+			idempresa,
+			venda,
+			ambiente: nfceConfiguracao.ambiente,
+			mensagem: pendenciasCest.join("; "),
 		});
+	}
+
+	const reserva = await resolverNumeracaoEmissaoNfce(
+		idempresa,
+		venda.idnotafiscalnfce,
+		serieParaUsar,
+	);
+	if (!reserva) {
+		return httpBadRequest("Não foi possível reservar numeração da série NFC-e");
 	}
 
 	const valorTotalVenda = Number.parseFloat(venda.valortotal ?? "0");
@@ -368,10 +478,20 @@ export async function emitirNfceVendaPdvService({
 	);
 
 	const desconto = parseValorMonetario(pagamentos.desconto);
+	const valorentrega = parseValorMonetario(
+		(pagamentos as { valorentrega?: string | null }).valorentrega,
+	);
+	const valoracrescimo = parseValorMonetario(
+		(pagamentos as { valoracrescimo?: string | null }).valoracrescimo,
+	);
 	const totaisFiscais = calcularTotaisFiscaisEmissaoNfe(
 		crt,
 		itensNormalizados,
-		desconto > 0 ? { desconto } : {},
+		{
+			...(desconto > 0 ? { desconto } : {}),
+			...(valorentrega > 0 ? { frete: valorentrega } : {}),
+			...(valoracrescimo > 0 ? { outrasDespesas: valoracrescimo } : {}),
+		},
 	);
 	const pagamentoNormalizado = normalizarPagamentoEmissaoNfe(pagamentoBruto, {
 		finNFe: 1,
@@ -402,7 +522,14 @@ export async function emitirNfceVendaPdvService({
 		itens: itensNormalizados,
 		pagamento: pagamentoNormalizado,
 		natOp,
-		...(desconto > 0 ? { totais: { desconto } } : {}),
+		...(desconto > 0 || valoracrescimo > 0
+			? {
+					totais: {
+						...(desconto > 0 ? { desconto } : {}),
+						...(valoracrescimo > 0 ? { outrasDespesas: valoracrescimo } : {}),
+					},
+				}
+			: {}),
 		...(destinatarioResolvido?.destinatario
 			? { destinatario: destinatarioResolvido.destinatario }
 			: {}),
@@ -467,19 +594,30 @@ export async function emitirNfceVendaPdvService({
 		frete: null,
 		seguro: null,
 		descontosubtotal: desconto > 0 ? desconto.toFixed(2) : null,
-		outrasdespesas: null,
+		outrasdespesas: valoracrescimo > 0 ? valoracrescimo.toFixed(2) : null,
 		tipofrete: 9,
 		baseicms: totaisFiscais.baseIcms.toFixed(2),
 		icms: totaisFiscais.valorIcms.toFixed(2),
 		ipi: null,
 		pis: totaisFiscais.valorPis.toFixed(2),
 		cofins: totaisFiscais.valorCofins.toFixed(2),
-		baseicmssubstituicao: null,
-		icmssubstituicao: null,
+		baseicmssubstituicao:
+			totaisFiscais.baseIcmsSt > 0 ? totaisFiscais.baseIcmsSt.toFixed(2) : null,
+		icmssubstituicao:
+			totaisFiscais.valorIcmsSt > 0
+				? totaisFiscais.valorIcmsSt.toFixed(2)
+				: null,
 		arquivoxmlassinado: respostaGateway.xmlEnviado ?? null,
 		arquivoxmlautorizada:
 			statusPersistido === NFE_STATUS.AUTORIZADA
 				? (respostaGateway.xmlRetorno ?? null)
+				: null,
+		datahoraautorizacao:
+			statusPersistido === NFE_STATUS.AUTORIZADA
+				? resolverDataHoraAutorizacao({
+						xmlAutorizado: respostaGateway.xmlRetorno,
+						fallbackIso: agora,
+					})
 				: null,
 		mensagemtransmissaonfe: xMotivo,
 		codigostatusprotocolonfe: normalizarCodigoStatusNfe(cStat),

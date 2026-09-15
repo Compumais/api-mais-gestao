@@ -9,7 +9,8 @@ export interface Financeiro {
 	idorigem: number | null;
 	parcela: number | null;
 	documento: string | null;
-	idtipodocumentofinanceiro: number | null;
+	idtipodocumentofinanceiro: string | null;
+	tipodocumentodescricao?: string | null;
 	status: string | null;
 	emissao: string | null;
 	vencimento: string | null;
@@ -39,7 +40,7 @@ export interface Financeiro {
 	numerocheque: string | null;
 	remessagerada: number | null;
 	boletoimpresso: number | null;
-	idtipocobranca: number | null;
+	idtipocobranca: string | null;
 	idrepresentante: number | null;
 	percentualcomissaofaturamento: string | null;
 	percentualcomissaoquitacao: string | null;
@@ -121,6 +122,8 @@ export interface ListarFinanceirosParams {
 	limit?: number;
 	saldo?: string | null;
 	emissao?: string | null;
+	documento?: string | null;
+	tipodocumentodescricao?: string | null;
 	emitente?: string | null;
 	emissaoInicio?: string | null;
 	emissaoFim?: string | null;
@@ -128,6 +131,9 @@ export interface ListarFinanceirosParams {
 	vencimentoFim?: string | null;
 	status?: string | null;
 	tipo?: string | null; // P ou R
+	idtipocobranca?: string | null;
+	ordenarPor?: string;
+	ordem?: "asc" | "desc";
 }
 
 export interface CriarFinanceiroData {
@@ -138,7 +144,7 @@ export interface CriarFinanceiroData {
 	idorigem?: number | null;
 	parcela?: number | null;
 	documento?: string | null;
-	idtipodocumentofinanceiro?: number | null;
+	idtipodocumentofinanceiro?: string | null;
 	status?: string | null;
 	emissao?: string | null;
 	vencimento?: string | null;
@@ -169,7 +175,7 @@ export interface CriarFinanceiroData {
 	remessagerada?: number | null;
 	boletoimpresso?: number | null;
 	currenttimemillis?: number | null;
-	idtipocobranca?: number | null;
+	idtipocobranca?: string | null;
 	entrada?: string | null;
 	datareferencia?: string | null;
 	idportador?: number | null;
@@ -187,7 +193,7 @@ export interface AtualizarFinanceiroData {
 	idorigem?: number | null;
 	parcela?: number | null;
 	documento?: string | null;
-	idtipodocumentofinanceiro?: number | null;
+	idtipodocumentofinanceiro?: string | null;
 	status?: string | null;
 	emissao?: string | null;
 	vencimento?: string | null;
@@ -218,7 +224,7 @@ export interface AtualizarFinanceiroData {
 	remessagerada?: number | null;
 	boletoimpresso?: number | null;
 	currenttimemillis?: number | null;
-	idtipocobranca?: number | null;
+	idtipocobranca?: string | null;
 	entrada?: string | null;
 	datareferencia?: string | null;
 	idportador?: number | null;

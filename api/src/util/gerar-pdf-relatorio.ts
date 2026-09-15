@@ -10,8 +10,9 @@ export type GerarPdfRelatorioParams = {
 	titulo: string;
 	empresaNome: string;
 	empresaCnpj: string;
-	periodoInicio: string;
-	periodoFim: string;
+	periodoInicio?: string;
+	periodoFim?: string;
+	periodoLabel?: string;
 	colunas: ColunaPdfRelatorio[];
 	linhas: string[][];
 	resumoLinhas?: string[];
@@ -62,8 +63,7 @@ export function gerarPdfRelatorio(
 		});
 		doc.on("error", reject);
 
-		const larguraUtil =
-			doc.page.width - MARGEM * 2;
+		const larguraUtil = doc.page.width - MARGEM * 2;
 		const larguraColunas = params.colunas.reduce((s, c) => s + c.width, 0);
 		const escala =
 			larguraColunas > larguraUtil ? larguraUtil / larguraColunas : 1;
@@ -76,13 +76,20 @@ export function gerarPdfRelatorio(
 		doc
 			.fontSize(10)
 			.fillColor("#374151")
-			.text(`${params.empresaNome} — CNPJ ${formatarCnpj(params.empresaCnpj)}`, {
-				align: "center",
-			});
-		doc.text(
-			`Período: ${formatarDataBr(params.periodoInicio)} a ${formatarDataBr(params.periodoFim)}`,
-			{ align: "center" },
-		);
+			.text(
+				`${params.empresaNome} — CNPJ ${formatarCnpj(params.empresaCnpj)}`,
+				{
+					align: "center",
+				},
+			);
+		if (params.periodoInicio && params.periodoFim) {
+			doc.text(
+				`Período: ${formatarDataBr(params.periodoInicio)} a ${formatarDataBr(params.periodoFim)}`,
+				{ align: "center" },
+			);
+		} else if (params.periodoLabel) {
+			doc.text(params.periodoLabel, { align: "center" });
+		}
 		doc.text(`Emitido em: ${new Date().toLocaleString("pt-BR")}`, {
 			align: "center",
 		});
@@ -102,9 +109,7 @@ export function gerarPdfRelatorio(
 		let x = MARGEM;
 		for (const coluna of params.colunas) {
 			const w = coluna.width * escala;
-			doc
-				.rect(x, yCabecalho, w, 18)
-				.fill("#dc2626");
+			doc.rect(x, yCabecalho, w, 18).fill("#dc2626");
 			doc.fillColor("#ffffff").text(coluna.label, x + 4, yCabecalho + 5, {
 				width: w - 8,
 				align: coluna.align ?? "left",

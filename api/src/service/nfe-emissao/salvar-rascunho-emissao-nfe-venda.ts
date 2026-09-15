@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from "uuid";
 import type { HttpResponse } from "@/model/http-model.js";
 import type { NovoNotaFiscalItem } from "@/model/nota-fiscal-item-model.js";
 import type { NovaNotaFiscal } from "@/model/nota-fiscal-model.js";
+import { buscarEmpresaFiscalPorEmpresa } from "@/repositories/empresa-fiscal-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	atualizarNotaFiscal,
@@ -13,11 +14,14 @@ import type {
 	DestinatarioPayloadNfe,
 	DocumentoReferenciadoPayloadNfe,
 	ItemPayloadNfe,
+	LocalEntregaPayloadNfe,
 	PagamentoPayloadNfe,
 	TotaisPayloadNfe,
 	TransportePayloadNfe,
 } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
 import type { FormaPagamentoNfVenda } from "@/service/nota-fiscal/gerar-contas-receber-nf.js";
+import { camposTributariosItemEmissao } from "@/util/campos-tributarios-item-emissao.js";
+import { FIN_NFE_NORMAL } from "@/util/cfop-devolucao-emissao-nfe.js";
 import {
 	montarDadosImportacaoItemEmissaoNfe,
 	montarSnapshotEmissaoNfe,
@@ -26,8 +30,6 @@ import {
 	agoraBrasiliaIsoOffset,
 	hojeBrasiliaIsoDate,
 } from "@/util/data-hora-brasilia.js";
-import { FIN_NFE_NORMAL } from "@/util/cfop-devolucao-emissao-nfe.js";
-import { montarDestinatarioPorIdentidade } from "@/util/montar-destinatario-entidade-nfe.js";
 import {
 	httpBadRequest,
 	httpCriacao,
@@ -35,7 +37,9 @@ import {
 	httpOk,
 	httpProibido,
 } from "@/util/http-util.js";
+import { montarDestinatarioPorIdentidade } from "@/util/montar-destinatario-entidade-nfe.js";
 import { STATUS_RASCUNHO_IMPORTACAO } from "@/util/nota-fiscal-constants.js";
+import { resolverIdDestNfe } from "@/util/resolver-ide-emissao-nfe.js";
 
 export type SalvarRascunhoEmissaoNfeVendaParametros = {
 	idusuario: string;
@@ -49,6 +53,7 @@ export type SalvarRascunhoEmissaoNfeVendaParametros = {
 	totais?: TotaisPayloadNfe;
 	pagamento?: PagamentoPayloadNfe;
 	transporte?: TransportePayloadNfe;
+	localEntrega?: Partial<LocalEntregaPayloadNfe>;
 	informacoesAdicionais?: string;
 	documentoReferenciado?: DocumentoReferenciadoPayloadNfe;
 	idplanocontas?: string;
@@ -95,6 +100,7 @@ function montarItensRascunho(
 		id: uuidv4(),
 		idnotafiscal,
 		idproduto: item.idproduto ?? null,
+		produto: item.codigoProduto?.trim().slice(0, 20) || null,
 		descricao: item.descricao,
 		quantidade: String(item.quantidade),
 		precounitario: String(item.valorUnitario),
@@ -117,6 +123,7 @@ function montarItensRascunho(
 		contador: index + 1,
 		tipo: "P",
 		currenttimemillis: Date.now(),
+		...camposTributariosItemEmissao(item),
 		dadosimportacao: montarDadosImportacaoItemEmissaoNfe(item) ?? null,
 		...resumoLotePrincipal(item),
 	}));
@@ -137,8 +144,10 @@ function montarDadosNotaRascunho(params: {
 	documentoReferenciado?: DocumentoReferenciadoPayloadNfe;
 	natOp?: string;
 	indPres?: number;
+	idDest?: number;
 	pagamento?: PagamentoPayloadNfe;
 	transporte?: TransportePayloadNfe;
+	localEntrega?: Partial<LocalEntregaPayloadNfe>;
 	totais?: TotaisPayloadNfe;
 	idserie?: string;
 	idplanocontas?: string;
@@ -201,12 +210,14 @@ function montarDadosNotaRascunho(params: {
 		modelodocumentoreferenciado: params.documentoReferenciado ? "55" : null,
 		seriedocumentoreferenciado: params.documentoReferenciado?.serie ?? null,
 		numerodocumentoreferenciado: params.documentoReferenciado?.numero ?? null,
-		datadocumentoreferenciado: params.documentoReferenciado?.dataEmissao ?? null,
+		datadocumentoreferenciado:
+			params.documentoReferenciado?.dataEmissao ?? null,
 		tiponotadocumentoreferenciado: params.documentoReferenciado ? "NFE" : null,
 		idserie: params.idserie ?? null,
 		dadosimportacao: montarSnapshotEmissaoNfe({
 			natOp: params.natOp,
 			indPres: params.indPres,
+			idDest: params.idDest,
 			idserienfe: params.idserie,
 			iddav: params.iddav,
 			iddavs: params.iddavs,
@@ -220,6 +231,7 @@ function montarDadosNotaRascunho(params: {
 			gerarEstoque: params.gerarEstoque,
 			pagamento: params.pagamento,
 			transporte: params.transporte,
+			localEntrega: params.localEntrega,
 			totais: params.totais,
 			documentoReferenciado: params.documentoReferenciado
 				? {
@@ -255,6 +267,13 @@ export async function salvarRascunhoEmissaoNfeVendaService(
 		params.iddestinatario,
 	);
 	const destinatario = destinatarioResolvido?.destinatario ?? null;
+	const empresaFiscal = await buscarEmpresaFiscalPorEmpresa(params.idempresa);
+	const idDest = resolverIdDestNfe({
+		ufEmitente: empresaFiscal?.uf,
+		ufDestinatario: destinatario?.estado,
+		ufLocalEntrega: params.localEntrega?.uf,
+		paisDestinatario: destinatario?.pais,
+	});
 
 	let idnotafiscal = params.idnotafiscal ?? uuidv4();
 	let atualizacao = false;
@@ -265,7 +284,9 @@ export async function salvarRascunhoEmissaoNfeVendaService(
 			return httpNaoEncontrado();
 		}
 		if (existente.tipoorigem !== 1) {
-			return httpBadRequest("Somente rascunhos de NF-e de venda podem ser editados");
+			return httpBadRequest(
+				"Somente rascunhos de NF-e de venda podem ser editados",
+			);
 		}
 		if (existente.status !== STATUS_RASCUNHO_IMPORTACAO) {
 			return httpBadRequest(
@@ -291,8 +312,10 @@ export async function salvarRascunhoEmissaoNfeVendaService(
 		documentoReferenciado: params.documentoReferenciado,
 		natOp: params.natOp,
 		indPres: params.indPres,
+		idDest,
 		pagamento: params.pagamento,
 		transporte: params.transporte,
+		localEntrega: params.localEntrega,
 		totais: params.totais,
 		idserie: params.idserienfe,
 		idplanocontas: params.idplanocontas,

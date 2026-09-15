@@ -28,8 +28,6 @@ import { codigosReduzidosContaContabilRotas } from "./controllers/http/codigo-re
 import { condicoesPagamentoRotas } from "./controllers/http/condicao-pagamento/rotas.js";
 import { configuracaoRotas } from "./controllers/http/configuracao/rotas.js";
 import { configuracaoOrdemServicoRotas } from "./controllers/http/configuracao-ordem-servico/rotas.js";
-import { modeloImpressaoOsRotas } from "./controllers/http/modelo-impressao-os/rotas.js";
-import { modeloImpressaoPedidoRotas } from "./controllers/http/modelo-impressao-pedido/rotas.js";
 import { configuracaoUsuarioRotas } from "./controllers/http/configuracao-usuario/rotas.js";
 import { contaContabilRotas } from "./controllers/http/conta-contabil/rotas.js";
 import { contaCorrenteLancamentoRotas } from "./controllers/http/conta-corrente-lancamento/rotas.js";
@@ -42,6 +40,7 @@ import { dashboardRotas } from "./controllers/http/dashboard/rotas.js";
 import { davsRotas } from "./controllers/http/dav/rotas.js";
 import { departamentosRotas } from "./controllers/http/departamento/rotas.js";
 import { dominioRotas } from "./controllers/http/dominio/rotas.js";
+import { efdRotas } from "./controllers/http/efd-icms/rotas.js";
 import { emailRotas } from "./controllers/http/email/rotas.js";
 import { empresaFiscalRotas } from "./controllers/http/empresa-fiscal/rotas.js";
 import { empresasRotas } from "./controllers/http/empresas/rotas.js";
@@ -50,20 +49,23 @@ import { entidadesContaContabilRotas } from "./controllers/http/entidade-conta-c
 import { entidadesRotas } from "./controllers/http/entidades/rotas.js";
 import { estoqueRotas } from "./controllers/http/estoque/rotas.js";
 import { fatoresConversaoRotas } from "./controllers/http/fator-conversao/rotas.js";
-import { fichasProducaoRotas } from "./controllers/http/ficha-producao/rotas.js";
-import { producoesRotas } from "./controllers/http/producao/rotas.js";
 import { fechamentosCaixaRotas } from "./controllers/http/fechamento-caixa/rotas.js";
+import { fichasProducaoRotas } from "./controllers/http/ficha-producao/rotas.js";
 import { financeiroRotas } from "./controllers/http/financeiro/rotas.js";
 import { financeiroLancamentoRotas } from "./controllers/http/financeirolancamento/rotas.js";
 import { gruposGourmetRotas } from "./controllers/http/grupo-gourmet/rotas.js";
 import { healthRotas } from "./controllers/http/health/rotas.js";
+import { pdvUpdatesRotas } from "./controllers/http/pdv-updates/rotas.js";
 import { hierarquiasRotas } from "./controllers/http/hierarquia/rotas.js";
+import { ibptRotas } from "./controllers/http/ibpt/rotas.js";
 import { iaRotas } from "./controllers/http/ia/rotas.js";
 import { informativosRotas } from "./controllers/http/informativos/rotas.js";
 import { integracoesContabilConfiguracaoRotas } from "./controllers/http/integracao-contabil-configuracao/rotas.js";
 import { locaisEstoqueRotas } from "./controllers/http/local-estoque/rotas.js";
 import { locaisRetiradaRotas } from "./controllers/http/local-retirada/rotas.js";
 import { localidadesRotas } from "./controllers/http/localidade/rotas.js";
+import { modeloImpressaoOsRotas } from "./controllers/http/modelo-impressao-os/rotas.js";
+import { modeloImpressaoPedidoRotas } from "./controllers/http/modelo-impressao-pedido/rotas.js";
 import { motivosRebaixaRotas } from "./controllers/http/motivo-rebaixa/rotas.js";
 import { movimentosEstoqueRotas } from "./controllers/http/movimento-estoque/rotas.js";
 import { nfceRotas } from "./controllers/http/nfce/rotas.js";
@@ -81,12 +83,13 @@ import { objetosRotas } from "./controllers/http/objeto/rotas.js";
 import { operacoesFiscaisRotas } from "./controllers/http/operacao-fiscal/rotas.js";
 import { ordensServicoRotas } from "./controllers/http/ordem-servico/rotas.js";
 import { parametrizacaoTributosRotas } from "./controllers/http/parametrizacao-tributos/rotas.js";
-import { regraFiscalRotas } from "./controllers/http/regra-fiscal/rotas.js";
 import { planoContasRotas } from "./controllers/http/plano-contas/rotas.js";
 import { planosContasContaContabilRotas } from "./controllers/http/plano-contas-conta-contabil/rotas.js";
 import { planosRotas } from "./controllers/http/planos/rotas.js";
+import { producoesRotas } from "./controllers/http/producao/rotas.js";
 import { produtosRotas } from "./controllers/http/produtos/rotas.js";
 import { receitasSemContribuicaoRotas } from "./controllers/http/receita-sem-contribuicao/rotas.js";
+import { regraFiscalRotas } from "./controllers/http/regra-fiscal/rotas.js";
 import { relatoriosRotas } from "./controllers/http/relatorios/rotas.js";
 import { saldosEstoqueRotas } from "./controllers/http/saldo-estoque/rotas.js";
 import { servicosNfseRotas } from "./controllers/http/servicos-nfse/rotas.js";
@@ -94,6 +97,7 @@ import { sintegraRotas } from "./controllers/http/sintegra/rotas.js";
 import { tarefasRotas } from "./controllers/http/tarefas/rotas.js";
 import { taxaUfRotas } from "./controllers/http/taxauf/rotas.js";
 import { terminalPdvRotas } from "./controllers/http/terminal-pdv/rotas.js";
+import { tiposCobrancaRotas } from "./controllers/http/tipo-cobranca/rotas.js";
 import { tiposDocumentoFinanceiroRotas } from "./controllers/http/tipo-documento-financeiro/rotas.js";
 import { tiposOrdemServicoEventoRotas } from "./controllers/http/tipo-ordem-servico-evento/rotas.js";
 import { tiposProblemaRotas } from "./controllers/http/tipo-problema/rotas.js";
@@ -108,7 +112,7 @@ import { getApiBaseUrl } from "./util/base-url.js";
 import { isOrigemCorsPermitida } from "./util/cors-origins.js";
 import { registrarAgendador } from "./worker/registrar-agendador.js";
 
-export const app = Fastify({ logger: true });
+export const app = Fastify({ logger: true, trustProxy: true });
 
 app.register(cors, {
 	origin: (origin, cb) => {
@@ -207,6 +211,10 @@ await app.register(swagger, {
 			{
 				name: "contabilidade",
 				description: "Operações de contabilidade e exportação fiscal",
+			},
+			{
+				name: "efd",
+				description: "EFD ICMS/IPI e EFD-Contribuições",
 			},
 			{
 				name: "dominio",
@@ -527,6 +535,7 @@ app.route({
 });
 
 app.register(healthRotas);
+app.register(pdvUpdatesRotas);
 app.register(adminRotas);
 app.register(informativosRotas);
 app.register(ajudaRotas);
@@ -583,6 +592,7 @@ app.register(condicoesPagamentoRotas);
 app.register(departamentosRotas);
 app.register(enquadramentosIpiRotas);
 app.register(hierarquiasRotas);
+app.register(ibptRotas);
 app.register(gruposGourmetRotas);
 app.register(locaisRetiradaRotas);
 app.register(locaisEstoqueRotas);
@@ -590,6 +600,7 @@ app.register(saldosEstoqueRotas);
 app.register(movimentosEstoqueRotas);
 app.register(motivosRebaixaRotas);
 app.register(receitasSemContribuicaoRotas);
+app.register(tiposCobrancaRotas);
 app.register(tiposDocumentoFinanceiroRotas);
 app.register(bandeirasCartaoRotas);
 app.register(fatoresConversaoRotas);
@@ -611,6 +622,7 @@ app.register(contabilidadeRotas);
 app.register(dominioRotas);
 app.register(automacaoRotas);
 app.register(sintegraRotas);
+app.register(efdRotas);
 app.register(entidadesContaContabilRotas);
 app.register(integracoesContabilConfiguracaoRotas);
 app.register(planosContasContaContabilRotas);

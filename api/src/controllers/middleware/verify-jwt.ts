@@ -7,7 +7,12 @@ import { normalizarPerfilArray } from "../../util/usuario-perfil.js";
 import { verificarUsuarioPodeAcessarPlataforma } from "../../util/verificar-acesso-plataforma.js";
 import { isSuper } from "../../util/verificar-super.js";
 
-const ROTAS_SEM_VERIFICACAO_ACESSO = ["/health", "/docs", "/api/auth"];
+const ROTAS_SEM_VERIFICACAO_ACESSO = [
+	"/health",
+	"/docs",
+	"/api/auth",
+	"/pdv/updates",
+];
 
 /**
  * Converte headers do Fastify para Headers do Web API

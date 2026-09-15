@@ -2,13 +2,13 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { Combobox } from "@/components/ui/combobox";
-import { MoneyInput } from "@/components/ui/money-input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Combobox } from "@/components/ui/combobox";
 import {
 	Field,
 	FieldError,
@@ -16,6 +16,7 @@ import {
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { MoneyInput } from "@/components/ui/money-input";
 import {
 	Select,
 	SelectContent,
@@ -25,11 +26,12 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { extractDateOnly } from "@/lib/date";
 import {
-	type CriarFinanceiroFormData,
-	criarFinanceiroSchema,
 	type AtualizarFinanceiroFormData,
 	atualizarFinanceiroSchema,
+	type CriarFinanceiroFormData,
+	criarFinanceiroSchema,
 	TIPO_DOCUMENTO_OPTIONS,
 } from "@/schemas/financeiro.schema";
 import { bancosService } from "@/services/bancos.service";
@@ -40,33 +42,24 @@ import {
 	financeiroService,
 } from "@/services/financeiro.service";
 import { planoContasService } from "@/services/plano-contas.service";
-import { useRouter } from "next/navigation";
+import { tipoCobrancaService } from "@/services/tipo-cobranca.service";
 
-const formatDateForInput = (date?: string | null): string => {
-	if (!date) {
-		return "";
-	}
-	try {
-		const d = new Date(date);
-		return d.toISOString().split("T")[0];
-	} catch {
-		return "";
-	}
-};
+const formatDateForInput = (date?: string | null): string =>
+	extractDateOnly(date) ?? "";
 
 // Função auxiliar para mapear tipo documento string para idtipodocumentofinanceiro
 // Por enquanto, vamos usar um mapeamento simples. Isso pode ser ajustado conforme necessário
-const mapTipoDocumentoToId = (tipoDocumento: string): number | null => {
+const mapTipoDocumentoToId = (tipoDocumento: string): string | null => {
 	// Mapeamento básico - pode ser ajustado conforme a tabela tipodocumentofinanceiro
-	const mapping: Record<string, number> = {
-		"Cartão crédito": 1,
-		"Cartão débito": 2,
-		Cheque: 3,
-		"Cheque 3o": 4,
-		"Cheque a vista": 5,
-		Crediario: 6,
-		Duplicata: 7,
-		"Duplicata 3o": 8,
+	const mapping: Record<string, string> = {
+		"Cartão crédito": "1",
+		"Cartão débito": "2",
+		Cheque: "3",
+		"Cheque 3o": "4",
+		"Cheque a vista": "5",
+		Crediario: "6",
+		Duplicata: "7",
+		"Duplicata 3o": "8",
 	};
 	return mapping[tipoDocumento] || null;
 };
@@ -199,6 +192,28 @@ export function FinanceiroForm({
 		},
 		enabled: !!empresa?.id,
 	});
+
+	const { data: tiposCobranca = [] } = useQuery({
+		queryKey: ["tipos-cobranca", empresa?.id, "form-financeiro"],
+		queryFn: async () => {
+			if (!empresa?.id) {
+				throw new Error("Empresa não selecionada");
+			}
+			return await tipoCobrancaService.listarTodos({
+				idempresa: empresa.id,
+			});
+		},
+		enabled: !!empresa?.id,
+	});
+
+	const opcoesTipoCobranca = useMemo(
+		() =>
+			tiposCobranca.map((tipoCobranca) => ({
+				value: tipoCobranca.id,
+				label: tipoCobranca.descricao,
+			})),
+		[tiposCobranca],
+	);
 
 	// Preencher formulário com dados existentes na edição
 	useEffect(() => {
@@ -496,15 +511,20 @@ export function FinanceiroForm({
 
 						<Field data-invalid={!!errors.tipoCobranca}>
 							<FieldLabel htmlFor="tipoCobranca">Tipo de Cobrança</FieldLabel>
-							<Input
-								id="tipoCobranca"
-								type="number"
-								placeholder="Tipo de cobrança"
-								aria-invalid={!!errors.tipoCobranca}
-								aria-describedby={
-									errors.tipoCobranca ? "tipoCobranca-error" : undefined
-								}
-								{...register("tipoCobranca", { valueAsNumber: true })}
+							<Controller
+								control={control}
+								name="tipoCobranca"
+								render={({ field }) => (
+									<Combobox
+										options={opcoesTipoCobranca}
+										value={field.value ?? ""}
+										onChange={(value) => field.onChange(value || null)}
+										placeholder="Selecione o tipo de cobrança"
+										searchPlaceholder="Buscar tipo de cobrança..."
+										emptyMessage="Nenhum tipo de cobrança encontrado."
+										disabled={!empresa?.id}
+									/>
+								)}
 							/>
 							<FieldError
 								errors={errors.tipoCobranca ? [errors.tipoCobranca] : []}

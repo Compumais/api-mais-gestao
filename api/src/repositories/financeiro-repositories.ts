@@ -1,7 +1,58 @@
-import { and, count, desc, eq, gte, ilike, inArray, lte } from "drizzle-orm";
+import {
+	and,
+	asc,
+	count,
+	desc,
+	eq,
+	getTableColumns,
+	gte,
+	ilike,
+	inArray,
+	lte,
+	type SQL,
+} from "drizzle-orm";
 import type { NovoFinanceiro } from "@/model/financeiro-model.js";
 import * as schema from "@/repositories/schema.js";
 import { db } from "./connection.js";
+
+export const ORDENAR_FINANCEIROS_CAMPOS = [
+	"documento",
+	"tipodocumentodescricao",
+	"emitente",
+	"parcela",
+	"status",
+	"emissao",
+	"vencimento",
+	"valor",
+	"saldo",
+	"currenttimemillis",
+] as const;
+
+export type OrdenarFinanceirosCampo =
+	(typeof ORDENAR_FINANCEIROS_CAMPOS)[number];
+
+const COLUNAS_ORDENACAO = {
+	documento: schema.financeiro.documento,
+	tipodocumentodescricao: schema.tipodocumentofinanceiro.descricao,
+	emitente: schema.financeiro.emitente,
+	parcela: schema.financeiro.parcela,
+	status: schema.financeiro.status,
+	emissao: schema.financeiro.emissao,
+	vencimento: schema.financeiro.vencimento,
+	valor: schema.financeiro.valor,
+	saldo: schema.financeiro.saldo,
+	currenttimemillis: schema.financeiro.currenttimemillis,
+} as const;
+
+function adicionarFiltroTexto(
+	where: SQL[],
+	coluna: Parameters<typeof ilike>[0],
+	valor: string | null | undefined,
+) {
+	if (valor?.trim()) {
+		where.push(ilike(coluna, `%${valor.trim()}%`));
+	}
+}
 
 export async function criarFinanceiro(data: NovoFinanceiro) {
 	const [financeiro] = await db
@@ -10,6 +61,13 @@ export async function criarFinanceiro(data: NovoFinanceiro) {
 		.returning();
 
 	return financeiro;
+}
+
+export async function criarFinanceiros(dados: NovoFinanceiro[]) {
+	if (dados.length === 0) return [];
+	return db.transaction((tx) =>
+		tx.insert(schema.financeiro).values(dados).returning(),
+	);
 }
 
 export async function buscarFinanceiroPorId(id: string) {
@@ -84,6 +142,8 @@ interface ListarFinanceiroParametros {
 	limit?: number;
 	saldo?: string | null | undefined;
 	emissao?: string | null | undefined;
+	documento?: string | null | undefined;
+	tipodocumentodescricao?: string | null | undefined;
 	emitente?: string | null | undefined;
 	emissaoInicio?: string | null | undefined;
 	emissaoFim?: string | null | undefined;
@@ -91,6 +151,9 @@ interface ListarFinanceiroParametros {
 	vencimentoFim?: string | null | undefined;
 	status?: string | null | undefined;
 	tipo?: "P" | "R" | null | undefined;
+	idtipocobranca?: string | null | undefined;
+	ordenarPor?: OrdenarFinanceirosCampo | undefined;
+	ordem?: "asc" | "desc" | undefined;
 }
 
 export async function listarFinanceiro({
@@ -99,6 +162,8 @@ export async function listarFinanceiro({
 	limit = 10,
 	saldo,
 	emissao,
+	documento,
+	tipodocumentodescricao,
 	emitente,
 	emissaoInicio,
 	emissaoFim,
@@ -106,10 +171,13 @@ export async function listarFinanceiro({
 	vencimentoFim,
 	status,
 	tipo,
+	idtipocobranca,
+	ordenarPor,
+	ordem = "desc",
 }: ListarFinanceiroParametros) {
 	const offset = (page - 1) * limit;
 
-	const where = [];
+	const where: SQL[] = [];
 
 	if (saldo) {
 		where.push(ilike(schema.financeiro.saldo, saldo));
@@ -119,9 +187,13 @@ export async function listarFinanceiro({
 		where.push(ilike(schema.financeiro.emissao, emissao));
 	}
 
-	if (emitente?.trim()) {
-		where.push(ilike(schema.financeiro.emitente, `%${emitente.trim()}%`));
-	}
+	adicionarFiltroTexto(where, schema.financeiro.documento, documento);
+	adicionarFiltroTexto(
+		where,
+		schema.tipodocumentofinanceiro.descricao,
+		tipodocumentodescricao,
+	);
+	adicionarFiltroTexto(where, schema.financeiro.emitente, emitente);
 
 	if (emissaoInicio) {
 		where.push(gte(schema.financeiro.emissao, emissaoInicio));
@@ -147,16 +219,42 @@ export async function listarFinanceiro({
 		where.push(eq(schema.financeiro.tipo, tipo));
 	}
 
+	if (idtipocobranca?.trim()) {
+		where.push(eq(schema.financeiro.idtipocobranca, idtipocobranca.trim()));
+	}
+
+	const ordenacao =
+		ordenarPor && COLUNAS_ORDENACAO[ordenarPor]
+			? ordem === "asc"
+				? asc(COLUNAS_ORDENACAO[ordenarPor])
+				: desc(COLUNAS_ORDENACAO[ordenarPor])
+			: desc(schema.financeiro.currenttimemillis);
+
+	const condicao = and(
+		inArray(schema.financeiro.idempresa, idempresas),
+		...where,
+	);
+
+	const joinTipoDocumento = eq(
+		schema.financeiro.idtipodocumentofinanceiro,
+		schema.tipodocumentofinanceiro.id,
+	);
+
 	const [totalCount, financeiros] = await Promise.all([
 		db
 			.select({ value: count() })
 			.from(schema.financeiro)
-			.where(and(inArray(schema.financeiro.idempresa, idempresas), ...where)),
+			.leftJoin(schema.tipodocumentofinanceiro, joinTipoDocumento)
+			.where(condicao),
 		db
-			.select()
+			.select({
+				...getTableColumns(schema.financeiro),
+				tipodocumentodescricao: schema.tipodocumentofinanceiro.descricao,
+			})
 			.from(schema.financeiro)
-			.where(and(inArray(schema.financeiro.idempresa, idempresas), ...where))
-			.orderBy(desc(schema.financeiro.currenttimemillis))
+			.leftJoin(schema.tipodocumentofinanceiro, joinTipoDocumento)
+			.where(condicao)
+			.orderBy(ordenacao)
 			.limit(limit)
 			.offset(offset),
 	]);

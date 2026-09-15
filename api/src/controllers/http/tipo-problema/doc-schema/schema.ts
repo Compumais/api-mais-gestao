@@ -9,8 +9,12 @@ export const criarTipoProblemaSchema: FastifySchema = {
 		type: "object",
 		properties: {
 			idempresa: { type: "string", description: "ID da empresa" },
-			descricao: { type: "string" },
-			inativo: { type: "string" }
+			codigo: { type: "string", maxLength: 6, nullable: true },
+			descricao: { type: "string", maxLength: 50 },
+			inativo: {
+				type: "number",
+				description: "Status: 0 = ativo, 1 = inativo",
+			},
 		},
 		required: ["idempresa"],
 	},
@@ -111,7 +115,18 @@ export const listarTipoProblemasSchema: FastifySchema = {
 		properties: {
 			idempresa: { type: "string", description: "ID da empresa" },
 			descricao: { type: "string", description: "Filtro opcional por descricao" },
+			codigo: { type: "string", description: "Filtro opcional por codigo" },
 			inativo: { type: "number", description: "Filtro opcional por inativo" },
+			ordenarPor: {
+				type: "string",
+				enum: ["descricao", "codigo", "inativo"],
+				description: "Campo de ordenação",
+			},
+			ordem: {
+				type: "string",
+				enum: ["asc", "desc"],
+				description: "Direção da ordenação",
+			},
 			page: { type: "number", default: 1 },
 			limit: { type: "number", default: 10 },
 		},

@@ -1,0 +1,231 @@
+"use client";
+
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { OnChangeFn, VisibilityState } from "@tanstack/react-table";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import {
+	configuracaoUsuarioService,
+	type LayoutMenuUsuario,
+	type PreferenciasUiUsuario,
+} from "@/services/configuracao-usuario.service";
+
+export type { LayoutMenuUsuario, PreferenciasUiUsuario };
+
+export const preferenciasUiQueryKey = ["preferencias-ui-usuario"] as const;
+
+const LAYOUT_MENU_STORAGE_KEY = "mais-gestao:layout-menu";
+
+function lerLayoutMenuStorage(): LayoutMenuUsuario | null {
+	if (typeof window === "undefined") return null;
+	try {
+		const valor = localStorage.getItem(LAYOUT_MENU_STORAGE_KEY);
+		if (valor === "topbar" || valor === "sidebar") return valor;
+	} catch {
+		/* ignore */
+	}
+	return null;
+}
+
+function gravarLayoutMenuStorage(valor: LayoutMenuUsuario) {
+	try {
+		localStorage.setItem(LAYOUT_MENU_STORAGE_KEY, valor);
+	} catch {
+		/* ignore */
+	}
+}
+
+export const TABELA_ORDENS_SERVICO = "ordens-servico";
+export const TABELA_PRODUTOS = "produtos";
+export const TABELA_SERVICOS = "servicos";
+export const TABELA_GRUPOS = "grupos";
+export const TABELA_UNIDADE_MEDIDA = "unidade-medida";
+export const TABELA_CLIENTES = "clientes";
+export const TABELA_FORNECEDORES = "fornecedores";
+export const TABELA_FATOR_CONVERSAO = "fator-conversao";
+export const TABELA_CONDICOES_PAGAMENTO = "condicoes-pagamento";
+export const TABELA_FORMAS_ERP = "formas-erp";
+export const TABELA_BANDEIRAS_CARTAO = "bandeiras-cartao";
+export const TABELA_TIPOS_PROBLEMA = "tipos-problema";
+export const TABELA_TIPOS_COBRANCA = "tipos-cobranca";
+export const TABELA_FICHAS_PRODUCAO = "fichas-producao";
+export const TABELA_PRODUCOES = "producoes";
+export const TABELA_CONTAS_PAGAR = "contas-pagar";
+export const TABELA_CONTAS_RECEBER = "contas-receber";
+export const TABELA_MOVIMENTACOES = "movimentacoes";
+export const TABELA_NOTA_FISCAL_PRODUTO = "nota-fiscal-produto";
+export const TABELA_NOTA_FISCAL_SERVICO = "nota-fiscal-servico";
+export const TABELA_NOTA_FISCAL_COMPRA = "nota-fiscal-compra";
+export const TABELA_NFCE = "nfce";
+export const TABELA_AUDITORIA = "auditoria";
+
+export function usePreferenciasUiUsuario() {
+	return useQuery<PreferenciasUiUsuario>({
+		queryKey: preferenciasUiQueryKey,
+		queryFn: () => configuracaoUsuarioService.buscarPreferenciasUi(),
+		staleTime: 1000 * 60 * 5,
+		refetchOnWindowFocus: false,
+	});
+}
+
+export function useAtualizarPreferenciasUiUsuario() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: (dados: PreferenciasUiUsuario) =>
+			configuracaoUsuarioService.atualizarPreferenciasUi(dados),
+		onSuccess: (dados) => {
+			queryClient.setQueryData(preferenciasUiQueryKey, dados);
+		},
+		onError: (error: Error) => {
+			toast.error(error.message || "Erro ao salvar preferências de UI");
+		},
+	});
+}
+
+export function useLayoutMenu() {
+	const queryClient = useQueryClient();
+	const { data: preferencias, isPending } = usePreferenciasUiUsuario();
+	const atualizar = useAtualizarPreferenciasUiUsuario();
+	const [layoutLocal, setLayoutLocal] = useState<LayoutMenuUsuario | null>(
+		() => lerLayoutMenuStorage(),
+	);
+
+	const layoutMenuServidor = preferencias?.layoutMenu;
+
+	useEffect(() => {
+		if (!layoutMenuServidor) return;
+		gravarLayoutMenuStorage(layoutMenuServidor);
+		setLayoutLocal(layoutMenuServidor);
+	}, [layoutMenuServidor]);
+
+	const layoutMenu = layoutMenuServidor ?? layoutLocal ?? "sidebar";
+
+	/** Ainda sem preferência conhecida (nem servidor nem cache local). */
+	const isLoading = isPending && !layoutMenuServidor && layoutLocal === null;
+
+	const setLayoutMenu = useCallback(
+		(valor: LayoutMenuUsuario) => {
+			gravarLayoutMenuStorage(valor);
+			setLayoutLocal(valor);
+			queryClient.setQueryData<PreferenciasUiUsuario>(
+				preferenciasUiQueryKey,
+				(atual): PreferenciasUiUsuario => ({
+					colunasTabelas: atual?.colunasTabelas,
+					layoutMenu: valor,
+				}),
+			);
+			atualizar.mutate(
+				{ layoutMenu: valor },
+				{
+					onSuccess: () => {
+						toast.success("Layout de menu atualizado");
+					},
+				},
+			);
+		},
+		[atualizar, queryClient],
+	);
+
+	return {
+		layoutMenu,
+		isLoading,
+		setLayoutMenu,
+		isSaving: atualizar.isPending,
+	};
+}
+
+type UseColunasTabelaPersistidasOpcoes = {
+	/** Só hidrata depois que defaults (ex.: config da empresa) estiverem prontos. */
+	enabled?: boolean;
+};
+
+/**
+ * Estado de visibilidade de colunas com persistência debounced no servidor.
+ */
+export function useColunasTabelaPersistidas(
+	chaveTabela: string,
+	visibilidadePadrao: VisibilityState,
+	opcoes: UseColunasTabelaPersistidasOpcoes = {},
+) {
+	const { enabled = true } = opcoes;
+	const { data: preferencias, isLoading } = usePreferenciasUiUsuario();
+	const atualizar = useAtualizarPreferenciasUiUsuario();
+	const [columnVisibility, setColumnVisibility] =
+		useState<VisibilityState>(visibilidadePadrao);
+	const [hidrato, setHidrato] = useState(false);
+	const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const atualizarRef = useRef(atualizar);
+
+	useEffect(() => {
+		atualizarRef.current = atualizar;
+	}, [atualizar]);
+
+	// Hidrata uma vez a partir do servidor (não reaplicar após saves).
+	useEffect(() => {
+		if (!enabled || isLoading || hidrato) return;
+		const salvas = preferencias?.colunasTabelas?.[chaveTabela];
+		setColumnVisibility({
+			...visibilidadePadrao,
+			...(salvas ?? {}),
+		});
+		setHidrato(true);
+	}, [
+		enabled,
+		isLoading,
+		hidrato,
+		preferencias,
+		chaveTabela,
+		visibilidadePadrao,
+	]);
+
+	// Quando o catálogo padrão muda (ex.: config/extras), preenche só chaves novas.
+	useEffect(() => {
+		if (!hidrato) return;
+		setColumnVisibility((prev) => ({
+			...visibilidadePadrao,
+			...prev,
+		}));
+	}, [visibilidadePadrao, hidrato]);
+
+	const persistir = useCallback(
+		(visibilidade: VisibilityState) => {
+			if (debounceRef.current) {
+				clearTimeout(debounceRef.current);
+			}
+			debounceRef.current = setTimeout(() => {
+				atualizarRef.current.mutate({
+					colunasTabelas: {
+						[chaveTabela]: visibilidade as Record<string, boolean>,
+					},
+				});
+			}, 400);
+		},
+		[chaveTabela],
+	);
+
+	useEffect(() => {
+		return () => {
+			if (debounceRef.current) {
+				clearTimeout(debounceRef.current);
+			}
+		};
+	}, []);
+
+	const onColumnVisibilityChange: OnChangeFn<VisibilityState> = useCallback(
+		(updater) => {
+			setColumnVisibility((prev) => {
+				const next = typeof updater === "function" ? updater(prev) : updater;
+				persistir(next);
+				return next;
+			});
+		},
+		[persistir],
+	);
+
+	return {
+		columnVisibility,
+		onColumnVisibilityChange,
+		isLoadingPreferencias: !enabled || isLoading || !hidrato,
+	};
+}

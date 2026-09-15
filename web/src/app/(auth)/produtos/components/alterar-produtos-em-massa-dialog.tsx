@@ -38,6 +38,7 @@ import {
 	valoresPadraoAlteracaoEmMassa,
 } from "@/schemas/alterar-produtos-em-massa.schema";
 import { cestService } from "@/services/cest.service";
+import { gruposGourmetService } from "@/services/grupos-gourmet.service";
 import { hierarquiasService } from "@/services/hierarquias.service";
 import { produtosService } from "@/services/produtos.service";
 import {
@@ -183,6 +184,15 @@ export function AlterarProdutosEmMassaDialog({
 		queryFn: async () => {
 			if (!empresa) throw new Error("Empresa não selecionada");
 			return cestService.listarTodos({ idempresa: empresa.id });
+		},
+		enabled: aberto && !!empresa,
+	});
+
+	const { data: gruposGourmet = [] } = useQuery({
+		queryKey: ["grupos-gourmet", empresa?.id, "todos"],
+		queryFn: async () => {
+			if (!empresa) throw new Error("Empresa não selecionada");
+			return gruposGourmetService.listarTodos({ idempresa: empresa.id });
 		},
 		enabled: aberto && !!empresa,
 	});
@@ -539,6 +549,66 @@ export function AlterarProdutosEmMassaDialog({
 						</section>
 
 						<section className="space-y-3">
+							<h3 className="text-sm font-semibold">Gourmet</h3>
+							<LinhaCampo
+								id="idgrupogourmet"
+								label="Grupo gourmet"
+								alterar={valores.idgrupogourmet?.alterar ?? false}
+								onAlterar={(alterar) =>
+									setValue("idgrupogourmet.alterar", alterar)
+								}
+							>
+								<Controller
+									name="idgrupogourmet.valor"
+									control={control}
+									render={({ field }) => (
+										<Select
+											value={field.value || "none"}
+											onValueChange={field.onChange}
+										>
+											<SelectTrigger id="idgrupogourmet" className="w-full">
+												<SelectValue placeholder="Nenhum" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="none">Nenhum</SelectItem>
+												{gruposGourmet.map((grupo) => (
+													<SelectItem key={grupo.id} value={grupo.id}>
+														{grupo.nome || grupo.codigo || grupo.id}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									)}
+								/>
+							</LinhaCampo>
+							<LinhaCampo
+								id="espizza"
+								label="É pizza"
+								alterar={valores.espizza?.alterar ?? false}
+								onAlterar={(alterar) => setValue("espizza.alterar", alterar)}
+							>
+								<Controller
+									name="espizza.valor"
+									control={control}
+									render={({ field }) => (
+										<Select
+											value={field.value?.toString()}
+											onValueChange={(valor) => field.onChange(Number(valor))}
+										>
+											<SelectTrigger id="espizza" className="w-full">
+												<SelectValue placeholder="Selecione" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="0">Não</SelectItem>
+												<SelectItem value="1">Sim</SelectItem>
+											</SelectContent>
+										</Select>
+									)}
+								/>
+							</LinhaCampo>
+						</section>
+
+						<section className="space-y-3">
 							<h3 className="text-sm font-semibold">Impostos</h3>
 							<LinhaCampo
 								id="percentualmva"
@@ -864,6 +934,68 @@ export function AlterarProdutosEmMassaDialog({
 											onChange={field.onChange}
 										/>
 									)}
+								/>
+							</LinhaCampo>
+						</section>
+
+						<section className="space-y-3">
+							<h3 className="text-sm font-semibold">IBS / CBS</h3>
+							<LinhaCampo
+								id="cstibs"
+								label="CST IBS/CBS"
+								alterar={valores.cstibs?.alterar ?? false}
+								onAlterar={(alterar) => setValue("cstibs.alterar", alterar)}
+							>
+								<Input
+									id="cstibs"
+									placeholder="Ex.: 000"
+									maxLength={3}
+									{...register("cstibs.valor")}
+								/>
+							</LinhaCampo>
+							<LinhaCampo
+								id="classtributariaibs"
+								label="Classificação tributária"
+								alterar={valores.classtributariaibs?.alterar ?? false}
+								onAlterar={(alterar) =>
+									setValue("classtributariaibs.alterar", alterar)
+								}
+							>
+								<Input
+									id="classtributariaibs"
+									placeholder="Ex.: 000001"
+									maxLength={6}
+									{...register("classtributariaibs.valor")}
+								/>
+							</LinhaCampo>
+							<LinhaCampo
+								id="aliquotaiibs"
+								label="Alíquota IBS (%)"
+								alterar={valores.aliquotaiibs?.alterar ?? false}
+								onAlterar={(alterar) =>
+									setValue("aliquotaiibs.alterar", alterar)
+								}
+							>
+								<Input
+									id="aliquotaiibs"
+									placeholder="Ex.: 0,10"
+									inputMode="decimal"
+									{...register("aliquotaiibs.valor")}
+								/>
+							</LinhaCampo>
+							<LinhaCampo
+								id="aliquotacbs"
+								label="Alíquota CBS (%)"
+								alterar={valores.aliquotacbs?.alterar ?? false}
+								onAlterar={(alterar) =>
+									setValue("aliquotacbs.alterar", alterar)
+								}
+							>
+								<Input
+									id="aliquotacbs"
+									placeholder="Ex.: 0,90"
+									inputMode="decimal"
+									{...register("aliquotacbs.valor")}
 								/>
 							</LinhaCampo>
 						</section>

@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { CarrinhoComanda } from "../../components/carrinho-comanda";
-import { PagamentoPdvDialog } from "../../components/pagamento-pdv-dialog";
+import { FecharContaMesaDialog } from "../../components/fechar-conta-mesa-dialog";
 import { ProdutoTabela } from "../../components/produto-tabela";
 import { PdvHeader } from "../../components/pdv-header";
 import {
@@ -28,6 +28,7 @@ import {
 	buildContaMesaItemFromProduto,
 	buildCupomNfceInfo,
 	calcularTotalContaMesaItens,
+	filtrarItensPendentesContaMesa,
 	STATUS_MESA,
 } from "@/lib/gourmet-utils";
 import type { FecharContaFormData } from "@/schemas/fechar-conta.schema";
@@ -43,7 +44,7 @@ export default function ContaMesaPage() {
 	const queryClient = useQueryClient();
 	const { user } = useAuth();
 	const { localStorageEmpresa: empresa } = useEmpresa();
-	const { fecharConta } = useFecharVenda();
+	const { fecharFatiaItens, finalizarMesaConta } = useFecharVenda();
 	const { ambiente: ambienteNfce } = useNfceAmbientePdv();
 	const { saldoPorCodigo } = useSaldosEstoque(empresa?.id);
 	const { estaAberto } = useCaixaPdv();
@@ -77,7 +78,8 @@ export default function ContaMesaPage() {
 	});
 
 	const itens = itensData?.data ?? [];
-	const subtotal = calcularTotalContaMesaItens(itens);
+	const itensPendentes = filtrarItensPendentesContaMesa(itens);
+	const subtotal = calcularTotalContaMesaItens(itensPendentes);
 
 	const { mutate: adicionarItem, isPending: isAdding } = useMutation({
 		mutationFn: async (produto: Produto) => {
@@ -166,7 +168,11 @@ export default function ContaMesaPage() {
 		},
 	});
 
-	const handleConfirmarVenda = async (pagamento: FecharContaFormData) => {
+	const handleConfirmarFatia = async (
+		idsItens: string[],
+		itensFatia: ContaMesaItem[],
+		pagamento: FecharContaFormData,
+	) => {
 		if (!estaAberto) {
 			throw new Error("Abra o caixa antes de realizar vendas");
 		}
@@ -175,22 +181,44 @@ export default function ContaMesaPage() {
 			throw new Error("Empresa ou usuário não selecionado");
 		}
 
-		const resultado = await fecharConta.mutateAsync({
+		const resultado = await fecharFatiaItens.mutateAsync({
 			idempresa: empresa.id,
 			userId: user.id,
 			idcontamesa: contaId,
-			itens,
-			subtotal,
+			idsItens,
+			itensFatia,
 			pagamento,
 		});
 
 		return {
 			vendaId: resultado.venda.id,
+			contaFechada: resultado.contaFechada,
+			todosItensPagos: resultado.todosItensPagos,
 			nfce: buildCupomNfceInfo(resultado.baixa.emissaoNfce, ambienteNfce),
 		};
 	};
 
-	const handleVendaConcluida = () => {
+	const handleFinalizarVenda = async () => {
+		if (!estaAberto) {
+			toast.error("Abra o caixa antes de realizar vendas");
+			return;
+		}
+
+		if (!empresa?.id || !user?.id) {
+			toast.error("Empresa ou usuário não selecionado");
+			return;
+		}
+
+		if (itensPendentes.length > 0) {
+			toast.error("Ainda há itens pendentes de pagamento");
+			return;
+		}
+
+		await finalizarMesaConta.mutateAsync({
+			idempresa: empresa.id,
+			userId: user.id,
+			idcontamesa: contaId,
+		});
 		router.push("/gourmet");
 	};
 
@@ -253,27 +281,28 @@ export default function ContaMesaPage() {
 							}
 							setPagamentoDialogAberto(true);
 						}}
+						onFinalizarVenda={() => void handleFinalizarVenda()}
 						onCancelarMesa={() => setCancelarDialogAberto(true)}
-						isUpdating={isUpdating || isAdding || fecharConta.isPending}
+						isUpdating={
+							isUpdating ||
+							isAdding ||
+							fecharFatiaItens.isPending ||
+							finalizarMesaConta.isPending
+						}
+						isFinalizando={finalizarMesaConta.isPending}
 					/>
 				</div>
 			</main>
 
-			<PagamentoPdvDialog
+			<FecharContaMesaDialog
 				open={pagamentoDialogAberto}
 				onOpenChange={setPagamentoDialogAberto}
-				subtotal={subtotal}
-				itens={itens.map((item) => ({
-					nome: item.nomeproduto,
-					quantidade: item.quantidade,
-					precounitario: item.precounitario,
-				}))}
+				conta={conta}
+				itens={itens}
 				empresaNome={empresa?.nome ?? "Empresa"}
 				contexto={`Mesa ${conta.numeromesa}`}
-				titulo="Fechar conta"
-				onConfirmarVenda={handleConfirmarVenda}
-				onVendaConcluida={handleVendaConcluida}
-				isPending={fecharConta.isPending}
+				onConfirmarFatia={handleConfirmarFatia}
+				isPending={fecharFatiaItens.isPending}
 			/>
 
 			<AlertDialog

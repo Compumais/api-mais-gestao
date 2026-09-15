@@ -6,9 +6,9 @@ import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
 const criarTipoProblemaBodySchema = z.object({
 	idempresa: z.string(),
-	codigo: z.string().max(6).optional(),
+	codigo: z.string().max(6).optional().nullable(),
 	descricao: z.string().max(50).optional(),
-	inativo: z.number().int().optional()
+	inativo: z.coerce.number().int().min(0).max(1).optional(),
 });
 
 export async function criarTipoProblema(request: FastifyRequest, reply: FastifyReply) {

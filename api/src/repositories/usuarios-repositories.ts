@@ -1,6 +1,17 @@
-import { and, desc, eq, ilike, inArray, isNotNull, lte, ne, sql } from "drizzle-orm";
+import {
+	and,
+	desc,
+	eq,
+	ilike,
+	inArray,
+	isNotNull,
+	lte,
+	ne,
+	sql,
+} from "drizzle-orm";
 import * as schema from "../../drizzle/schema.js";
 import { db } from "./connection.js";
+import { executarComControleAcessoPrivilegiado } from "./controle-acesso-contexto.js";
 
 type Usuario = typeof schema.usuarios.$inferSelect;
 
@@ -13,7 +24,9 @@ export async function buscarUsuarioPorId(id: string): Promise<Usuario | null> {
 	return usuario || null;
 }
 
-export async function buscarUsuarioPorEmail(email: string): Promise<Usuario | null> {
+export async function buscarUsuarioPorEmail(
+	email: string,
+): Promise<Usuario | null> {
 	const [usuario] = await db
 		.select()
 		.from(schema.usuarios)
@@ -101,7 +114,7 @@ export async function atualizarUsuarioAdmin(
 	}>,
 ): Promise<Usuario | null> {
 	const updateData: Record<string, unknown> = {
-		atualizadoem: new Date().toISOString(),
+		atualizadoem: new Date(),
 	};
 
 	if (dados.nome !== undefined) updateData.nome = dados.nome;
@@ -110,31 +123,53 @@ export async function atualizarUsuarioAdmin(
 	if (dados.ativo !== undefined) updateData.ativo = dados.ativo;
 	if (dados.plano !== undefined) updateData.plano = dados.plano;
 
-	const [usuario] = await db
-		.update(schema.usuarios)
-		.set(updateData)
-		.where(eq(schema.usuarios.id, id))
-		.returning();
+	return executarComControleAcessoPrivilegiado(async (tx) => {
+		const [usuario] = await tx
+			.update(schema.usuarios)
+			.set(updateData)
+			.where(eq(schema.usuarios.id, id))
+			.returning();
 
-	return usuario || null;
+		return usuario || null;
+	});
 }
 
-export async function atualizarSenhaContaUsuario(
+export async function atualizarOuCriarSenhaContaUsuario(
 	idusuario: string,
 	senhaHash: string,
 ): Promise<void> {
-	await db
-		.update(schema.contas)
-		.set({
-			password: senhaHash,
-			atualizadoem: new Date(),
-		})
+	const agora = new Date();
+	const [conta] = await db
+		.select({ id: schema.contas.id })
+		.from(schema.contas)
 		.where(
 			and(
 				eq(schema.contas.idusuario, idusuario),
 				eq(schema.contas.idprovedor, "credential"),
 			),
-		);
+		)
+		.limit(1);
+
+	if (conta) {
+		await db
+			.update(schema.contas)
+			.set({
+				password: senhaHash,
+				atualizadoem: agora,
+			})
+			.where(eq(schema.contas.id, conta.id));
+		return;
+	}
+
+	await db.insert(schema.contas).values({
+		id: crypto.randomUUID(),
+		idconta: idusuario,
+		idprovedor: "credential",
+		idusuario,
+		password: senhaHash,
+		criadoem: agora,
+		atualizadoem: agora,
+	});
 }
 
 export async function inativarSessoesUsuario(idusuario: string): Promise<void> {
@@ -277,7 +312,9 @@ export async function listarIdsUsuariosFinanceirosPorEmpresa(
 	return rows.map((r) => r.idusuario);
 }
 
-export async function listarUsuariosComPlanoProximoVencido(dataReferencia: Date) {
+export async function listarUsuariosComPlanoProximoVencido(
+	dataReferencia: Date,
+) {
 	const dataStr = dataReferencia.toISOString().slice(0, 10);
 
 	return db

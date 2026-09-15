@@ -17,24 +17,35 @@ import {
 	verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Plus, Trash2 } from "lucide-react";
+import { GripVertical, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
 	CAMPOS_CLIENTE_PEDIDO,
+	CAMPOS_CLIENTE_PEDIDO_PADRAO,
 	CAMPOS_DADOS_PEDIDO,
 	LABELS_BLOCO_MODELO_IMPRESSAO_PEDIDO,
+	OPCOES_COLUNA_BLOCO_PEDIDO,
 } from "@/constants/modelo-impressao-pedido";
+import type { ColunaBlocoModeloImpressao } from "@/schemas/modelo-impressao-os.schema";
 import type {
 	BlocoModeloImpressaoPedido,
 	LayoutModeloImpressaoPedido,
 	TipoBlocoModeloImpressaoPedido,
 } from "@/schemas/modelo-impressao-pedido.schema";
 import { TIPOS_BLOCO_MODELO_IMPRESSAO_PEDIDO } from "@/schemas/modelo-impressao-pedido.schema";
+import { PaletaBlocosImpressao } from "@/components/modelo-impressao/paleta-blocos-impressao";
 import { PreviewModeloImpressaoPedido } from "./preview-modelo-impressao-pedido";
 
 function novoId() {
@@ -43,8 +54,13 @@ function novoId() {
 
 function criarBloco(
 	tipo: TipoBlocoModeloImpressaoPedido,
+	campos?: string[],
 ): BlocoModeloImpressaoPedido {
-	const base: BlocoModeloImpressaoPedido = { id: novoId(), tipo };
+	const base: BlocoModeloImpressaoPedido = {
+		id: novoId(),
+		tipo,
+		coluna: "cheia",
+	};
 	switch (tipo) {
 		case "titulo":
 			return { ...base, props: { titulo: "Pedido" } };
@@ -53,12 +69,16 @@ function criarBloco(
 		case "dadosPedido":
 			return {
 				...base,
-				props: { campos: ["codigo", "status", "data"] },
+				props: {
+					campos: campos ?? CAMPOS_DADOS_PEDIDO.map((c) => c.value),
+				},
 			};
 		case "cliente":
 			return {
 				...base,
-				props: { campos: ["nomecliente", "cnpjcpfcliente"] },
+				props: {
+					campos: campos ?? CAMPOS_CLIENTE_PEDIDO.map((c) => c.value),
+				},
 			};
 		case "rodape":
 			return {
@@ -89,6 +109,11 @@ function BlocoSortable({
 		transition,
 	};
 
+	const coluna = bloco.coluna ?? "cheia";
+	const rotuloColuna =
+		OPCOES_COLUNA_BLOCO_PEDIDO.find((o) => o.value === coluna)?.label ??
+		"Largura total";
+
 	return (
 		<div
 			ref={setNodeRef}
@@ -111,7 +136,10 @@ function BlocoSortable({
 				className="flex-1 text-left text-sm"
 				onClick={onSelect}
 			>
-				{LABELS_BLOCO_MODELO_IMPRESSAO_PEDIDO[bloco.tipo]}
+				<span className="block">
+					{LABELS_BLOCO_MODELO_IMPRESSAO_PEDIDO[bloco.tipo]}
+				</span>
+				<span className="block text-xs text-muted-foreground">{rotuloColuna}</span>
 			</button>
 			<Button
 				type="button"
@@ -195,32 +223,20 @@ export function EditorModeloImpressaoPedido({
 
 	return (
 		<div className="grid gap-4 xl:grid-cols-[220px_minmax(0,1fr)_minmax(280px,360px)]">
-			<div className="rounded-lg border p-3 space-y-2 h-fit">
-				<p className="text-sm font-medium">Blocos</p>
-				<p className="text-xs text-muted-foreground">
-					Clique para adicionar ao modelo
-				</p>
-				<div className="flex flex-col gap-1.5">
-					{TIPOS_BLOCO_MODELO_IMPRESSAO_PEDIDO.map((tipo) => (
-						<Button
-							key={tipo}
-							type="button"
-							variant="outline"
-							size="sm"
-							className="justify-start gap-2"
-							disabled={somenteLeitura}
-							onClick={() => {
-								const bloco = criarBloco(tipo);
-								onLayoutChange([...layout, bloco]);
-								setBlocoSelecionadoId(bloco.id);
-							}}
-						>
-							<Plus className="h-3.5 w-3.5" aria-hidden="true" />
-							{LABELS_BLOCO_MODELO_IMPRESSAO_PEDIDO[tipo]}
-						</Button>
-					))}
-				</div>
-			</div>
+			<PaletaBlocosImpressao
+				tipos={TIPOS_BLOCO_MODELO_IMPRESSAO_PEDIDO}
+				labels={LABELS_BLOCO_MODELO_IMPRESSAO_PEDIDO}
+				camposPorTipo={{
+					dadosPedido: CAMPOS_DADOS_PEDIDO,
+					cliente: CAMPOS_CLIENTE_PEDIDO,
+				}}
+				criarBloco={criarBloco}
+				onAdicionar={(bloco) => {
+					onLayoutChange([...layout, bloco]);
+					setBlocoSelecionadoId(bloco.id);
+				}}
+				somenteLeitura={somenteLeitura}
+			/>
 
 			<div className="space-y-4">
 				<div className="rounded-lg border p-4 space-y-3">
@@ -256,6 +272,9 @@ export function EditorModeloImpressaoPedido({
 
 				<div className="rounded-lg border p-3 space-y-2">
 					<p className="text-sm font-medium">Layout</p>
+					<p className="text-xs text-muted-foreground">
+						Use colunas para colocar blocos lado a lado e caber em uma folha A4.
+					</p>
 					{layout.length === 0 ? (
 						<p className="text-sm text-muted-foreground py-6 text-center">
 							Adicione blocos pela paleta à esquerda
@@ -300,6 +319,28 @@ export function EditorModeloImpressaoPedido({
 							Propriedades —{" "}
 							{LABELS_BLOCO_MODELO_IMPRESSAO_PEDIDO[blocoSelecionado.tipo]}
 						</p>
+						<div className="space-y-1">
+							<Label>Coluna no layout</Label>
+							<Select
+								value={blocoSelecionado.coluna ?? "cheia"}
+								onValueChange={(v) =>
+									atualizarBloco(blocoSelecionado.id, {
+										coluna: v as ColunaBlocoModeloImpressao,
+									})
+								}
+							>
+								<SelectTrigger>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									{OPCOES_COLUNA_BLOCO_PEDIDO.map((opcao) => (
+										<SelectItem key={opcao.value} value={opcao.value}>
+											{opcao.label}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
 						{(blocoSelecionado.tipo === "titulo" ||
 							blocoSelecionado.tipo === "rodape") && (
 							<div className="space-y-1">
@@ -382,13 +423,13 @@ export function EditorModeloImpressaoPedido({
 									>
 										<Checkbox
 											checked={(
-												blocoSelecionado.props?.campos ?? []
+												blocoSelecionado.props?.campos ??
+												CAMPOS_CLIENTE_PEDIDO_PADRAO
 											).includes(campo.value)}
 											onCheckedChange={() =>
-												toggleCampo(
-													campo.value,
-													CAMPOS_CLIENTE_PEDIDO.map((c) => c.value),
-												)
+												toggleCampo(campo.value, [
+													...CAMPOS_CLIENTE_PEDIDO_PADRAO,
+												])
 											}
 										/>
 										{campo.label}
@@ -401,8 +442,8 @@ export function EditorModeloImpressaoPedido({
 			</div>
 
 			<div className="rounded-lg border bg-muted/30 p-3 overflow-auto max-h-[80vh]">
-				<p className="text-sm font-medium mb-3">Preview</p>
-				<PreviewModeloImpressaoPedido layout={layout} />
+				<p className="text-sm font-medium mb-3">Preview (1 folha A4)</p>
+				<PreviewModeloImpressaoPedido layout={layout} mostrarLimiteFolha />
 			</div>
 		</div>
 	);

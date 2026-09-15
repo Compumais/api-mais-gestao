@@ -5,6 +5,7 @@ export class ApiError extends Error {
 	constructor(
 		message: string,
 		public status?: number,
+		public code?: string,
 	) {
 		super(message);
 		this.name = "ApiError";
@@ -45,7 +46,7 @@ export function asApiDecimal(
 }
 
 async function baseUrl(): Promise<string> {
-	return (await getConfig("api_url", "https://api.compuchat.space")).replace(
+	return (await getConfig("api_url", "https://apimaisgestao.compumais.com")).replace(
 		/\/$/,
 		"",
 	);
@@ -75,6 +76,23 @@ export function isEmpresaAcessoNegado(err: unknown): boolean {
 		return false;
 	}
 	return /EMPRESA_ACESSO_NEGADO|não pertence à empresa/i.test(err.message);
+}
+
+/**
+ * `/produtos/catalogo-pdv` colide com `GET /produtos/:id` quando a rota estática
+ * ainda não existe na API: Fastify interpreta "catalogo-pdv" como params.id e
+ * responde 400 FST_ERR_VALIDATION (uuid), em vez de 404.
+ */
+export function isCatalogoPdvIndisponivel(err: unknown): boolean {
+	if (!(err instanceof ApiError)) return false;
+	if (err.status === 404) return true;
+	if (err.status !== 400) return false;
+	const msg = err.message;
+	return (
+		/FST_ERR_VALIDATION/i.test(msg) &&
+		/params\/id/i.test(msg) &&
+		/uuid/i.test(msg)
+	);
 }
 
 async function request<T>(
@@ -120,7 +138,13 @@ async function request<T>(
 			}
 		}
 		if (!res.ok) {
-			throw new ApiError(mensagemErroApi(json, res.status), res.status);
+			const code =
+				json &&
+				typeof json === "object" &&
+				typeof (json as { code?: unknown }).code === "string"
+					? (json as { code: string }).code
+					: undefined;
+			throw new ApiError(mensagemErroApi(json, res.status), res.status, code);
 		}
 		return json as T;
 	} catch (err) {
@@ -259,10 +283,118 @@ export async function listarProdutos(params: {
 	q?: string;
 	page?: number;
 	limit?: number;
-}) {
+}): Promise<{
+	produtos: Array<{
+		id: string;
+		descricao: string;
+		preco: number;
+		unidademedida: string | null;
+		idunidademedida: string | null;
+		ean: string | null;
+		codigo: number | null;
+		idgrupo: string | null;
+		idgrupogourmet: string | null;
+		espizza: number;
+		imagem: string | null;
+		caminhoimagem: string | null;
+		ncm: string | null;
+		cest: string | null;
+		cfop: string | null;
+		cst: string | null;
+		csosn: string | null;
+		origem: number | null;
+		aliquotaicms: string | null;
+	}>;
+	paginacao: {
+		page: number;
+		limit: number;
+		total: number;
+		totalPages: number;
+	};
+}> {
 	const page = params.page ?? 1;
 	const limit = params.limit ?? 100;
-	let path = `/produtos?idempresa=${encodeURIComponent(params.idempresa)}&inativo=0&page=${page}&limit=${limit}`;
+
+	try {
+		const path = `/produtos/catalogo-pdv?idempresa=${encodeURIComponent(params.idempresa)}&page=${page}&limit=${limit}`;
+		const data = await request<{
+			data: Array<{
+				id: string;
+				descricao?: string;
+				nome?: string;
+				preco?: number | string | null;
+				unidademedida?: string | null;
+				idunidademedida?: string | null;
+				ean?: string | null;
+				codigo?: number | string | null;
+				idgrupo?: string | null;
+				idgrupogourmet?: string | null;
+				espizza?: number | null;
+				imagem?: string | null;
+				caminhoimagem?: string | null;
+				ncm?: string | null;
+				cest?: string | null;
+				cfop?: string | null;
+				cst?: string | null;
+				csosn?: string | null;
+				origem?: number | null;
+				aliquotaicms?: string | number | null;
+			}>;
+			paginacao?: {
+				page?: number;
+				limit?: number;
+				total?: number;
+				totalPages?: number;
+			};
+		}>(path, { timeoutMs: 60000 });
+
+		const produtos = (data.data ?? []).map((p) => ({
+			id: p.id,
+			descricao: p.descricao ?? p.nome ?? "",
+			preco: Number(p.preco ?? 0),
+			unidademedida: p.unidademedida ?? null,
+			idunidademedida: p.idunidademedida ?? null,
+			ean: p.ean ?? null,
+			codigo: Number(p.codigo) > 0 ? Number(p.codigo) : null,
+			idgrupo: p.idgrupo ?? null,
+			idgrupogourmet: p.idgrupogourmet ?? null,
+			espizza: Number(p.espizza ?? 0) === 1 ? 1 : 0,
+			imagem: p.imagem ?? null,
+			caminhoimagem: p.caminhoimagem ?? null,
+			ncm: p.ncm?.replace(/\D/g, "") || null,
+			cest: p.cest?.replace(/\D/g, "") || null,
+			cfop: p.cfop?.replace(/\D/g, "") || null,
+			cst: p.cst?.replace(/\D/g, "") || null,
+			csosn: p.csosn?.replace(/\D/g, "") || null,
+			origem: p.origem == null ? null : Number(p.origem),
+			aliquotaicms:
+				p.aliquotaicms == null || p.aliquotaicms === ""
+					? null
+					: String(p.aliquotaicms),
+		}));
+
+		const total = Number(data.paginacao?.total ?? produtos.length);
+		const totalPages = Number(
+			data.paginacao?.totalPages ?? (total > 0 ? Math.ceil(total / limit) : 0),
+		);
+
+		return {
+			produtos,
+			paginacao: {
+				page: Number(data.paginacao?.page ?? page),
+				limit: Number(data.paginacao?.limit ?? limit),
+				total,
+				totalPages,
+			},
+		};
+	} catch (err) {
+		if (!isCatalogoPdvIndisponivel(err)) {
+			throw err;
+		}
+	}
+
+	// Fallback para APIs sem /produtos/catalogo-pdv (404 ou colisão com :id)
+	let path = `/produtos?idempresa=${encodeURIComponent(params.idempresa)}&inativo=0&tipo=P&page=${page}&limit=${limit}`;
 	if (params.q?.trim()) {
 		path += `&q=${encodeURIComponent(params.q.trim())}`;
 	}
@@ -282,10 +414,23 @@ export async function listarProdutos(params: {
 			espizza?: number | null;
 			imagem?: string | null;
 			caminhoimagem?: string | null;
+			ncm?: string | null;
+			cest?: string | number | null;
+			situacaotributaria?: string | null;
+			tributacaosn?: string | null;
+			situacaotributariasn?: string | null;
+			origem?: number | null;
+			icmssaida?: string | number | null;
 		}>;
-	}>(path);
+		paginacao?: {
+			page?: number;
+			limit?: number;
+			total?: number;
+			totalPages?: number;
+		};
+	}>(path, { timeoutMs: 60000 });
 
-	return (data.data ?? []).map((p) => ({
+	const produtos = (data.data ?? []).map((p) => ({
 		id: p.id,
 		descricao: p.descricao ?? p.nome ?? "",
 		preco: Number(p.preco ?? 0),
@@ -298,7 +443,33 @@ export async function listarProdutos(params: {
 		espizza: Number(p.espizza ?? 0) === 1 ? 1 : 0,
 		imagem: p.imagem ?? null,
 		caminhoimagem: p.caminhoimagem ?? null,
+		ncm: p.ncm?.replace(/\D/g, "") || null,
+		cest: p.cest == null ? null : String(p.cest).replace(/\D/g, "") || null,
+		cfop: null,
+		cst: p.situacaotributaria?.replace(/\D/g, "") || null,
+		csosn:
+			p.tributacaosn?.replace(/\D/g, "") ||
+			p.situacaotributariasn?.replace(/\D/g, "") ||
+			null,
+		origem: p.origem == null ? null : Number(p.origem),
+		aliquotaicms:
+			p.icmssaida == null || p.icmssaida === "" ? null : String(p.icmssaida),
 	}));
+
+	const total = Number(data.paginacao?.total ?? produtos.length);
+	const totalPages = Number(
+		data.paginacao?.totalPages ?? (total > 0 ? Math.ceil(total / limit) : 0),
+	);
+
+	return {
+		produtos,
+		paginacao: {
+			page: Number(data.paginacao?.page ?? page),
+			limit: Number(data.paginacao?.limit ?? limit),
+			total,
+			totalPages,
+		},
+	};
 }
 
 export async function listarUnidadesMedida(idempresa: string) {
@@ -542,9 +713,71 @@ export async function buscarVendaPdvGourmet(id: string) {
 	}>(`/vendas-pdv-gourmet/${id}`);
 }
 
+export type ManifestoNfcePdv = {
+	idvendalocal: string;
+	idvendaremoto?: string;
+	idnotafiscal?: string;
+	statusLocal: string;
+	chave?: string;
+	serie?: number;
+	numero?: number;
+	protocolo?: string;
+	xml?: string;
+	motivoContingencia?: string;
+	dataContingencia?: string;
+};
+
+export type ItemReconciliacaoNfcePdv = {
+	idvendalocal: string;
+	idvendaremoto?: string;
+	existeRetaguarda: boolean;
+	idnotafiscal?: string;
+	status?: number | string;
+	chave?: string;
+	serie?: string | number;
+	numero?: string | number;
+	protocolo?: string;
+	atualizadoEm?: string;
+	acao: string;
+	mensagem?: string;
+};
+
+export type RespostaReconciliacaoNfcePdv = {
+	cicloId: string;
+	servidorEm: string;
+	proximoCursor?: string | null;
+	itens: ItemReconciliacaoNfcePdv[];
+	resumo: {
+		total: number;
+		atualizadas?: number;
+		registradas: number;
+		conflitos: number;
+		falhas?: number;
+		sincronizadas?: number;
+		reconciliadas?: number;
+		erros?: number;
+	};
+};
+
+export async function reconciliarNfcePdv(body: {
+	idempresa: string;
+	numeropdv: number;
+	cicloId: string;
+	cursor?: string;
+	limite?: number;
+	notas: ManifestoNfcePdv[];
+}): Promise<RespostaReconciliacaoNfcePdv> {
+	return request<RespostaReconciliacaoNfcePdv>("/nfce/pdv/reconciliar", {
+		method: "POST",
+		body,
+		timeoutMs: 60_000,
+	});
+}
+
 export async function criarItemVendaPdv(body: {
 	idempresa: string;
 	idvenda: string;
+	iditemlocal?: string;
 	idproduto: string;
 	quantidade: number | string;
 	precounitario: number | string;
@@ -559,6 +792,7 @@ export async function criarItemVendaPdv(body: {
 		body: {
 			idempresa: body.idempresa,
 			idvenda: body.idvenda,
+			...(body.iditemlocal ? { iditemlocal: body.iditemlocal } : {}),
 			idproduto: body.idproduto,
 			quantidade: asApiDecimal(body.quantidade),
 			precounitario: asApiDecimal(body.precounitario),
@@ -592,8 +826,10 @@ export async function baixaEstoqueVenda(body: {
 		valorcartao?: number | string;
 		valorprepago?: number | string;
 		desconto?: number | string;
+		valoracrescimo?: number | string;
 		valortaxaservico?: number | string;
 		valorcouverartistico?: number | string;
+		valorentrega?: number | string;
 	};
 	emitirNfce?: boolean;
 }) {
@@ -645,10 +881,12 @@ export async function baixaEstoqueVenda(body: {
 				valorcartao: asApiDecimal(body.pagamentos.valorcartao ?? 0),
 				valorprepago: asApiDecimal(body.pagamentos.valorprepago ?? 0),
 				desconto: asApiDecimal(body.pagamentos.desconto ?? 0),
+				valoracrescimo: asApiDecimal(body.pagamentos.valoracrescimo ?? 0),
 				valortaxaservico: asApiDecimal(body.pagamentos.valortaxaservico ?? 0),
 				valorcouverartistico: asApiDecimal(
 					body.pagamentos.valorcouverartistico ?? 0,
 				),
+				valorentrega: asApiDecimal(body.pagamentos.valorentrega ?? 0),
 			},
 			...(body.emitirNfce === false ? { emitirNfce: false } : {}),
 		},
@@ -661,6 +899,7 @@ export function extrairNfceDaBaixa(
 	baixa: Awaited<ReturnType<typeof baixaEstoqueVenda>>,
 ): {
 	emitida: boolean;
+	deveEmitirNfce: boolean;
 	chave?: string;
 	qrCode?: string;
 	protocolo?: string;
@@ -722,6 +961,7 @@ export function extrairNfceDaBaixa(
 
 	return {
 		emitida,
+		deveEmitirNfce: baixa.deveEmitirNfce !== false,
 		chave: nfce?.chave,
 		qrCode: nfce?.qrCode,
 		protocolo: nfce?.protocolo,
@@ -809,6 +1049,12 @@ export async function buscarNfceConfig(idempresa: string) {
 		ultimaidserie?: string | null;
 		contingenciaativa?: boolean;
 		cnpj?: string | null;
+		meiospagamentonfce?: {
+			dinheiro?: boolean;
+			cartao?: boolean;
+			pix?: boolean;
+			prepago?: boolean;
+		};
 	}>(`/empresas/${idempresa}/nfce-configuracao`);
 }
 
@@ -888,6 +1134,74 @@ export async function inutilizarNfceVendaPdv(body: {
 			timeoutMs: 60000,
 		},
 	);
+}
+
+export async function registrarInutilizacaoNumeracaoNfce(body: {
+	idempresa: string;
+	serie: number;
+	numero: number;
+	justificativa: string;
+	idvenda?: string;
+}) {
+	return request<ResultadoInutilizacaoNfceApi>("/nfce/numeracao/inutilizar", {
+		method: "POST",
+		body: {
+			idempresa: body.idempresa,
+			serie: body.serie,
+			numero: body.numero,
+			justificativa: body.justificativa,
+			...(body.idvenda ? { idvenda: body.idvenda } : {}),
+		},
+		timeoutMs: 60000,
+	});
+}
+
+export type ResultadoCancelamentoNfceApi = {
+	idnotafiscal: string;
+	status: number;
+	cStat?: string;
+	xMotivo?: string;
+	protocolo?: string;
+};
+
+export async function cancelarNfceVendaPdv(body: {
+	idempresa: string;
+	idvenda: string;
+	justificativa: string;
+}) {
+	return request<ResultadoCancelamentoNfceApi>(
+		`/nfce/venda/${body.idvenda}/cancelar`,
+		{
+			method: "POST",
+			body: {
+				idempresa: body.idempresa,
+				justificativa: body.justificativa,
+			},
+			timeoutMs: 60000,
+		},
+	);
+}
+
+export async function cancelarVendaNaoFiscalPdv(body: {
+	idempresa: string;
+	idvenda: string;
+	motivo?: string | null;
+}) {
+	return request<{
+		idvenda: string;
+		titulosCancelados: number;
+		movimentosEstornados: number;
+		avisos: string[];
+	}>(`/vendas-pdv-gourmet/${body.idvenda}/cancelar`, {
+		method: "POST",
+		body: {
+			idempresa: body.idempresa,
+			...(body.motivo != null && body.motivo !== ""
+				? { motivo: body.motivo }
+				: {}),
+		},
+		timeoutMs: 60000,
+	});
 }
 
 export const STATUS_CAIXA_ABERTO = 0;

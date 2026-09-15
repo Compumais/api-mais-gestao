@@ -243,13 +243,13 @@ export interface BuscarNotaFiscalResponse {
 
 export interface BuscarProdutoNfResponse {
 	encontrado: boolean;
-	produto: {
+	produtos: Array<{
 		id: string;
 		codigo: number | null;
 		ean: number | string | null;
-		nome: string;
-		descricao: string;
-	} | null;
+		nome: string | null;
+		descricao: string | null;
+	}>;
 }
 
 export const notaFiscalService = {
@@ -258,7 +258,16 @@ export const notaFiscalService = {
 		page?: number;
 		limit?: number;
 		numero?: string;
+		serie?: string;
+		razaosocial?: string;
+		chavenfe?: string;
+		status?: number;
 		tipoorigem?: number;
+		dataInicio?: string;
+		dataFim?: string;
+		entradasaida?: string;
+		ordenarPor?: string;
+		ordem?: "asc" | "desc";
 	}): Promise<ListarNotasFiscaisResponse> {
 		const { data } = await api.get<ListarNotasFiscaisResponse>(
 			"/notas-fiscais",

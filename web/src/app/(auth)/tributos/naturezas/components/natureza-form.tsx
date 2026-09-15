@@ -1,33 +1,29 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { NaturezaAbaGeral } from "@/app/(auth)/tributos/naturezas/components/natureza-aba-geral";
 import { Button } from "@/components/ui/button";
-import {
-	Field,
-	FieldError,
-	FieldGroup,
-	FieldLabel,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import {
-	OPCOES_TIPO_PRODUTO,
-	sugerirTipoprodutoPorCodigoCfop,
-} from "@/constants/tipo-produto";
+import { FieldGroup } from "@/components/ui/field";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ABAS_NATUREZA_CFOP } from "@/constants/cfop-natureza";
 import { useEmpresa } from "@/hooks/use-empresa";
-import { type CfopFormData, cfopFormSchema } from "@/schemas/cfop.schema";
+import {
+	type CfopFormData,
+	cfopFormDefaultValues,
+	cfopFormSchema,
+} from "@/schemas/cfop.schema";
 import { cfopService } from "@/services/cfop.service";
+import { planoContasService } from "@/services/plano-contas.service";
+import { tipoDocumentoFinanceiroService } from "@/services/tipo-documento-financeiro.service";
+import {
+	mapearNaturezaFormParaApi,
+	valoresIniciaisNaturezaForm,
+} from "@/util/cfop-natureza-mapper";
 
 const ROTA_LISTAGEM = "/tributos/naturezas";
 
@@ -48,9 +44,8 @@ export function NaturezaForm(props: NaturezaFormProps) {
 	const form = useForm<CfopFormData>({
 		resolver: zodResolver(cfopFormSchema),
 		defaultValues: {
-			codigo: "",
-			descricao: "",
-			tipoproduto: null,
+			...cfopFormDefaultValues,
+			...props.valoresIniciais,
 		},
 	});
 
@@ -58,29 +53,58 @@ export function NaturezaForm(props: NaturezaFormProps) {
 		register,
 		handleSubmit,
 		control,
-		setValue,
-		watch,
 		formState: { errors },
+		reset,
 	} = form;
-
-	const codigo = watch("codigo");
 
 	useEffect(() => {
 		if (!isEdicao) return;
 		if (!props.valoresIniciais) return;
-		form.reset({
-			...form.getValues(),
+		reset({
+			...cfopFormDefaultValues,
 			...props.valoresIniciais,
 		});
-	}, [isEdicao, props.valoresIniciais, form]);
+	}, [isEdicao, props.valoresIniciais, reset]);
 
-	useEffect(() => {
-		if (isEdicao) return;
-		const sugerido = sugerirTipoprodutoPorCodigoCfop(codigo);
-		if (sugerido) {
-			setValue("tipoproduto", sugerido, { shouldValidate: true });
-		}
-	}, [codigo, isEdicao, setValue]);
+	const { data: planosContas = [], isLoading: carregandoPlanos } = useQuery({
+		queryKey: ["plano-contas", "natureza-form", empresa?.id],
+		queryFn: async () => {
+			if (!empresa) return [];
+			const resposta = await planoContasService.listar({
+				idempresa: empresa.id,
+				page: 1,
+				limit: 100,
+				listarTudo: true,
+			});
+			return resposta.data.filter((plano) => plano.inativo !== 1);
+		},
+		enabled: !!empresa,
+	});
+
+	const { data: tiposDocumento = [], isLoading: carregandoTipos } = useQuery({
+		queryKey: ["tipos-documento-financeiro", "natureza-form", empresa?.id],
+		queryFn: async () => {
+			if (!empresa) return [];
+			const tipos = await tipoDocumentoFinanceiroService.listarTodos({
+				idempresa: empresa.id,
+				inativo: 0,
+			});
+			return tipos.filter((tipo) => tipo.inativo !== 1);
+		},
+		enabled: !!empresa,
+	});
+
+	const { data: naturezas = [], isLoading: carregandoNaturezas } = useQuery({
+		queryKey: ["cfops", "relacionadas", empresa?.id, props.naturezaId],
+		queryFn: async () => {
+			if (!empresa) return [];
+			const registros = await cfopService.listarTodos({
+				idempresa: empresa.id,
+			});
+			return registros.filter((item) => item.id !== props.naturezaId);
+		},
+		enabled: !!empresa,
+	});
 
 	const { mutate: criarNatureza, isPending: isPendingCriar } = useMutation({
 		mutationFn: cfopService.criar,
@@ -106,6 +130,11 @@ export function NaturezaForm(props: NaturezaFormProps) {
 			},
 			onSuccess: () => {
 				queryClient.invalidateQueries({ queryKey: ["cfops"] });
+				if (props.naturezaId) {
+					queryClient.invalidateQueries({
+						queryKey: ["cfop", props.naturezaId],
+					});
+				}
 				toast.success("Natureza atualizada com sucesso!");
 				router.push(ROTA_LISTAGEM);
 			},
@@ -120,95 +149,70 @@ export function NaturezaForm(props: NaturezaFormProps) {
 			return;
 		}
 
+		const payload = mapearNaturezaFormParaApi(data);
+
 		if (!isEdicao) {
 			criarNatureza({
 				idempresa: empresa.id,
-				codigo: data.codigo,
-				descricao: data.descricao,
-				tipoproduto: data.tipoproduto ?? null,
+				...payload,
 			});
 			return;
 		}
 
-		atualizarNatureza({
-			codigo: data.codigo,
-			descricao: data.descricao,
-			tipoproduto: data.tipoproduto ?? null,
-		});
+		atualizarNatureza(payload);
 	};
+
+	const carregandoRelacionados =
+		carregandoPlanos || carregandoTipos || carregandoNaturezas;
 
 	return (
 		<form onSubmit={handleSubmit(onSubmit)}>
 			<FieldGroup>
-				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-					<Field data-invalid={!!errors.codigo}>
-						<FieldLabel htmlFor="codigo">Código CFOP</FieldLabel>
-						<Input
-							id="codigo"
-							placeholder="Ex: 1101"
-							maxLength={20}
-							aria-invalid={!!errors.codigo}
-							aria-describedby={errors.codigo ? "codigo-error" : undefined}
-							{...register("codigo")}
-						/>
-						<p className="text-sm text-muted-foreground">
-							1, 2 ou 3 = entrada · 5, 6 ou 7 = saída
-						</p>
-						<FieldError errors={errors.codigo ? [errors.codigo] : []} />
-					</Field>
-
-					<Field data-invalid={!!errors.tipoproduto}>
-						<FieldLabel htmlFor="tipoproduto">Tipo de produto</FieldLabel>
-						<Controller
-							name="tipoproduto"
-							control={control}
-							render={({ field }) => (
-								<Select
-									value={field.value ?? "none"}
-									onValueChange={(valor) =>
-										field.onChange(valor === "none" ? null : valor)
-									}
+				<Tabs defaultValue="geral" className="w-full">
+					<div className="mb-4 overflow-x-auto">
+						<TabsList className="h-auto min-w-max flex-wrap justify-start gap-1">
+							{ABAS_NATUREZA_CFOP.map((aba) => (
+								<TabsTrigger
+									key={aba.value}
+									value={aba.value}
+									disabled={!aba.enabled}
+									className="px-3"
 								>
-									<SelectTrigger id="tipoproduto" className="w-full">
-										<SelectValue placeholder="Selecione o tipo" />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="none">Não informado</SelectItem>
-										{OPCOES_TIPO_PRODUTO.map((opcao) => (
-											<SelectItem key={opcao.value} value={opcao.value}>
-												{opcao.label}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							)}
-						/>
-						<p className="text-sm text-muted-foreground">
-							Define o tipoproduto sugerido nos produtos com este CFOP de
-							entrada
-						</p>
-						<FieldError
-							errors={errors.tipoproduto ? [errors.tipoproduto] : []}
-						/>
-					</Field>
+									{aba.label}
+								</TabsTrigger>
+							))}
+						</TabsList>
+					</div>
 
-					<Field data-invalid={!!errors.descricao} className="md:col-span-2">
-						<FieldLabel htmlFor="descricao">Descrição</FieldLabel>
-						<Input
-							id="descricao"
-							placeholder="Descrição da natureza de operação"
-							maxLength={1024}
-							aria-invalid={!!errors.descricao}
-							aria-describedby={
-								errors.descricao ? "descricao-error" : undefined
-							}
-							{...register("descricao")}
+					<TabsContent value="geral" className="mt-0">
+						<NaturezaAbaGeral
+							control={control}
+							errors={errors}
+							register={register}
+							planosContas={planosContas}
+							tiposDocumento={tiposDocumento}
+							naturezas={naturezas}
+							carregandoRelacionados={carregandoRelacionados}
 						/>
-						<FieldError errors={errors.descricao ? [errors.descricao] : []} />
-					</Field>
-				</div>
+					</TabsContent>
 
-				<div className="flex justify-end gap-2 mt-6">
+					{ABAS_NATUREZA_CFOP.filter((aba) => aba.value !== "geral").map(
+						(aba) => (
+							<TabsContent key={aba.value} value={aba.value}>
+								<p className="text-sm text-muted-foreground">
+									Aba {aba.label} em breve.
+									{"subabas" in aba && aba.subabas
+										? ` Subabas previstas: ${aba.subabas
+												.map((subaba) => subaba.label)
+												.join(", ")}.`
+										: null}
+								</p>
+							</TabsContent>
+						),
+					)}
+				</Tabs>
+
+				<div className="mt-6 flex justify-end gap-2">
 					<Button type="button" variant="outline" onClick={() => router.back()}>
 						Cancelar
 					</Button>
@@ -226,3 +230,5 @@ export function NaturezaForm(props: NaturezaFormProps) {
 		</form>
 	);
 }
+
+export { valoresIniciaisNaturezaForm };

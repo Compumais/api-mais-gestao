@@ -1,5 +1,6 @@
 import type { Icon } from "@tabler/icons-react";
 import {
+	IconArrowsLeftRight,
 	IconBuildingFactory,
 	IconCashRegister,
 	IconCoins,
@@ -8,11 +9,9 @@ import {
 	IconHelp,
 	IconHistory,
 	IconListDetails,
-	IconPackage,
 	IconReceiptTax,
 	IconReportMoney,
 	IconScale,
-	IconSearch,
 	IconSettings,
 	IconShoppingCart,
 	IconToolsKitchen2,
@@ -49,11 +48,6 @@ export const DATA = {
 			title: "Dashboard",
 			url: "/dashboard",
 			icon: IconDashboard,
-		},
-		{
-			title: "Pesquisar",
-			url: "#",
-			icon: IconSearch,
 		},
 	] satisfies NavItem[],
 
@@ -151,6 +145,13 @@ export const DATA = {
 					url: "/produtos",
 				},
 				{
+					title: "Relatórios de produtos",
+					url: "/produtos/relatorios",
+					acesso: {
+						perfis: [...PERFIS_GESTAO],
+					},
+				},
+				{
 					title: "Serviços",
 					url: "/servicos",
 				},
@@ -212,9 +213,9 @@ export const DATA = {
 
 	navEstoque: [
 		{
-			title: "Posição de estoque",
-			url: "/estoque",
-			icon: IconPackage,
+			title: "Movimentações de produtos",
+			url: "/produtos/relatorios/movimentacoes",
+			icon: IconArrowsLeftRight,
 			acesso: {
 				perfis: [...PERFIS_GESTAO],
 			},
@@ -266,68 +267,76 @@ export const DATA = {
 
 	navFinanceiro: [
 		{
-			title: "Contas a receber",
-			url: "/contas-receber",
+			title: "Financeiro",
 			icon: IconCoins,
 			acesso: {
 				perfis: [...PERFIS_GESTAO],
 			},
-		},
-		{
-			title: "Contas a pagar",
-			url: "/contas-pagar",
-			icon: IconCoins,
-			acesso: {
-				perfis: [...PERFIS_GESTAO],
-			},
-		},
-		{
-			title: "Contas correntes",
-			url: "/contas-correntes",
-			icon: IconCoins,
-			acesso: {
-				perfis: [...PERFIS_GESTAO],
-			},
-		},
-		{
-			title: "Movimentações",
-			url: "/movimentacoes",
-			icon: IconCoins,
-			acesso: {
-				perfis: [...PERFIS_GESTAO],
-			},
-		},
-		{
-			title: "Plano de contas",
-			url: "/plano-contas",
-			icon: IconCoins,
-			acesso: {
-				perfis: [...PERFIS_GESTAO],
-			},
-		},
-		{
-			title: "Budget",
-			url: "/budget",
-			icon: IconCoins,
-			acesso: {
-				perfis: [...PERFIS_GESTAO],
-			},
-		},
-		{
-			title: "Conciliação",
-			url: "#",
-			icon: IconCoins,
-			acesso: {
-				perfis: [...PERFIS_GESTAO],
-			},
-		},
-		{
-			title: "Relatórios",
-			url: "/relatorios",
-			icon: IconCoins,
-			acesso: {
-				perfis: [...PERFIS_GESTAO],
-			},
+			items: [
+				{
+					title: "Contas a receber",
+					url: "/contas-receber",
+					acesso: {
+						perfis: [...PERFIS_GESTAO],
+					},
+				},
+				{
+					title: "Contas a pagar",
+					url: "/contas-pagar",
+					acesso: {
+						perfis: [...PERFIS_GESTAO],
+					},
+				},
+				{
+					title: "Contas correntes",
+					url: "/contas-correntes",
+					acesso: {
+						perfis: [...PERFIS_GESTAO],
+					},
+				},
+				{
+					title: "Movimentações",
+					url: "/movimentacoes",
+					acesso: {
+						perfis: [...PERFIS_GESTAO],
+					},
+				},
+				{
+					title: "Plano de contas",
+					url: "/plano-contas",
+					acesso: {
+						perfis: [...PERFIS_GESTAO],
+					},
+				},
+				{
+					title: "Budget",
+					url: "/budget",
+					acesso: {
+						perfis: [...PERFIS_GESTAO],
+					},
+				},
+				{
+					title: "Tipos de cobrança",
+					url: "/tipos-cobranca",
+					acesso: {
+						perfis: [...PERFIS_GESTAO],
+					},
+				},
+				{
+					title: "Conciliação",
+					url: "#",
+					acesso: {
+						perfis: [...PERFIS_GESTAO],
+					},
+				},
+				{
+					title: "Relatórios",
+					url: "/relatorios",
+					acesso: {
+						perfis: [...PERFIS_GESTAO],
+					},
+				},
+			],
 		},
 	] satisfies NavItem[],
 
@@ -459,6 +468,21 @@ export const DATA = {
 				{
 					title: "Gerar SINTEGRA",
 					url: "/contabilidade/sintegra",
+				},
+				{
+					title: "Gerar EFD ICMS/IPI",
+					url: "/contabilidade/efd",
+					acesso: { feature: "sped_efd" },
+				},
+				{
+					title: "Gerar EFD-Contribuições",
+					url: "/contabilidade/efd-contribuicoes",
+					acesso: { feature: "sped_efd" },
+				},
+				{
+					title: "Apuração EFD",
+					url: "/contabilidade/apuracao-efd",
+					acesso: { feature: "sped_efd" },
 				},
 				{
 					title: "Exportar XMLs fiscais",

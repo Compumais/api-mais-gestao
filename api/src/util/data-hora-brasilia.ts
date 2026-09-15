@@ -42,3 +42,69 @@ export function agoraBrasiliaIsoOffset(agora: Date = new Date()): string {
 export function hojeBrasiliaIsoDate(agora: Date = new Date()): string {
 	return agoraBrasiliaIsoOffset(agora).slice(0, 10);
 }
+
+/** Soma dias a uma data civil `yyyy-MM-dd` sem depender do fuso do runtime. */
+export function adicionarDiasIso(dataIso: string, dias: number): string {
+	const [ano, mes, dia] = dataIso.split("-").map(Number);
+	return new Date(Date.UTC(ano ?? 0, (mes ?? 1) - 1, (dia ?? 1) + dias))
+		.toISOString()
+		.slice(0, 10);
+}
+
+/** Primeiro e último dia do mês civil de uma data `yyyy-MM-dd`. */
+export function inicioFimMesDe(dataIso: string): {
+	inicio: string;
+	fim: string;
+} {
+	const [ano, mes] = dataIso.split("-").map(Number);
+	return {
+		inicio: `${dataIso.slice(0, 7)}-01`,
+		fim: new Date(Date.UTC(ano ?? 0, mes ?? 1, 0)).toISOString().slice(0, 10),
+	};
+}
+
+function timestampNaiveUtc(instante: Date): string {
+	return instante.toISOString().replace("T", " ").replace("Z", "");
+}
+
+const TEM_OFFSET = /(?:Z|[+-]\d{2}:?\d{2})$/i;
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Serializa timestamp naive da API (UTC no banco) como ISO com `Z`,
+ * para o cliente não interpretar o relógio como horário local.
+ */
+export function timestampUtcIso(value?: string | Date | null): string | null {
+	if (value instanceof Date) {
+		return Number.isNaN(value.getTime()) ? null : value.toISOString();
+	}
+	if (!value) return null;
+	const raw = value.trim();
+	if (!raw) return null;
+	if (DATE_ONLY_PATTERN.test(raw)) return raw;
+
+	if (TEM_OFFSET.test(raw)) {
+		const comOffset = new Date(raw);
+		return Number.isNaN(comOffset.getTime()) ? null : comOffset.toISOString();
+	}
+
+	const iso = raw.includes("T") ? raw : raw.replace(" ", "T");
+	const comoUtc = new Date(iso.endsWith("Z") ? iso : `${iso}Z`);
+	return Number.isNaN(comoUtc.getTime()) ? null : comoUtc.toISOString();
+}
+
+/**
+ * Limites UTC do período civil em Brasília: do 00:00 do início (inclusive)
+ * até o 00:00 do dia seguinte ao fim (exclusive).
+ */
+export function limitesUtcDoPeriodoBrasilia(
+	dataInicio: string,
+	dataFim: string,
+): { inicioUtc: string; fimUtcExclusivo: string } {
+	const inicio = new Date(`${dataInicio}T00:00:00-03:00`);
+	const fim = new Date(`${adicionarDiasIso(dataFim, 1)}T00:00:00-03:00`);
+	return {
+		inicioUtc: timestampNaiveUtc(inicio),
+		fimUtcExclusivo: timestampNaiveUtc(fim),
+	};
+}

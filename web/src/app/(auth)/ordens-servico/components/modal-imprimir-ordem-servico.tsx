@@ -2,6 +2,7 @@
 
 import { Printer } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +26,8 @@ import type {
 	OrdemServico,
 	OrdemServicoItem,
 } from "@/services/ordem-servico.service";
+import { usuariosService } from "@/services/usuarios.service";
+import { carregarDadosClienteImpressao } from "@/util/carregar-dados-cliente-impressao";
 import {
 	imprimirHtmlModeloOs,
 	renderizarHtmlModeloImpressaoOs,
@@ -50,6 +53,27 @@ export function ModalImprimirOrdemServico({
 	const { data: modelos = [], isLoading } = useModelosImpressaoOs(idempresa);
 	const [modeloId, setModeloId] = useState<string>("");
 
+	const { data: cliente } = useQuery({
+		queryKey: [
+			"cliente-impressao-os",
+			ordem.idcliente,
+			ordem.nomecliente,
+			ordem.cnpjcpfcliente,
+		],
+		queryFn: () =>
+			carregarDadosClienteImpressao(ordem.idcliente, {
+				nome: ordem.nomecliente,
+				cnpjcpf: ordem.cnpjcpfcliente,
+			}),
+		enabled: open,
+	});
+
+	const { data: usuarios = [] } = useQuery({
+		queryKey: ["usuarios-impressao-os", idempresa],
+		queryFn: () => usuariosService.listarTodos({ idempresa }),
+		enabled: open && !!idempresa,
+	});
+
 	useEffect(() => {
 		if (!open || modelos.length === 0) return;
 		const primario = modelos.find((m) => m.primario);
@@ -61,13 +85,27 @@ export function ModalImprimirOrdemServico({
 		[modelos, modeloId],
 	);
 
+	const tecnicoResponsavel = useMemo(() => {
+		if (ordem.idultimotecnico) {
+			const nome = usuarios.find((u) => u.id === ordem.idultimotecnico)?.nome;
+			if (nome?.trim()) return nome.trim();
+		}
+		const doItem = itens.find((i) => i.nometecnico?.trim())?.nometecnico;
+		return doItem?.trim() || null;
+	}, [ordem.idultimotecnico, usuarios, itens]);
+
 	const dadosPreview = useMemo(
 		() => ({
 			empresa,
 			ordem,
 			itens,
+			cliente: cliente ?? {
+				nome: ordem.nomecliente,
+				cnpjcpf: ordem.cnpjcpfcliente,
+			},
+			tecnicoResponsavel,
 		}),
-		[empresa, ordem, itens],
+		[empresa, ordem, itens, cliente, tecnicoResponsavel],
 	);
 
 	function handleImprimir() {
@@ -131,6 +169,7 @@ export function ModalImprimirOrdemServico({
 							<PreviewModeloImpressaoOs
 								layout={modeloSelecionado.layout}
 								dados={dadosPreview}
+								mostrarLimiteFolha={false}
 							/>
 						</div>
 					)}

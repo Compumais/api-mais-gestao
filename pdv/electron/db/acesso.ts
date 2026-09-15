@@ -48,16 +48,21 @@ export function sessaoTemGourmet(valor: unknown): boolean {
 export const CHAVES_CONFIG_GOURMET = [
 	"modelo_atendimento",
 	"qtd_mesas",
+	"modal_abrir_mesa_habilitado",
 	"taxa_servico_percentual",
 	"couvert_valor",
+	"taxa_entrega_padrao",
+	"bairros_entrega",
 	"senha_gerencial",
 	"senha_gerencial_hash",
 	"senha_gerencial_salt",
+	"senha_gerencial_habilitada",
 	"tecnibra_habilitada",
 	"tecnibra_xml_path",
 	"tecnibra_intervalo_ms",
 	"tecnibra_xml_root",
 	"tecnibra_xml_item",
+	"tecnibra_casas_comanda",
 ] as const;
 
 /** Preferências do operador — qualquer usuário logado pode gravar. */

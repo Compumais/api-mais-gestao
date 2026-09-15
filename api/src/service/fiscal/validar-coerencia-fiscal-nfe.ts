@@ -1,15 +1,15 @@
-import type { ItemPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
-import type { ValidacaoFiscalItem } from "@/model/regra-fiscal-model.js";
 import { ID_DEST_NFE } from "@/constants/ind-pres-nfe.js";
-import { empresaUsaCsosn } from "@/util/normalizar-tributacao-item-emissao-nfe.js";
-import {
-	calcularIcmsStItemEmissao,
-	itemExigeCalculoSt,
-} from "@/util/calcular-icms-st-item-emissao-nfe.js";
+import type { ValidacaoFiscalItem } from "@/model/regra-fiscal-model.js";
 import {
 	cfopIndicaSt,
 	normalizarCfop,
 } from "@/service/fiscal/indicadores-st-nfe.js";
+import type { ItemPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
+import {
+	calcularIcmsStItemEmissao,
+	itemExigeCalculoSt,
+} from "@/util/calcular-icms-st-item-emissao-nfe.js";
+import { empresaUsaCsosn } from "@/util/normalizar-tributacao-item-emissao-nfe.js";
 import { itemEmissaoRequerCest } from "@/util/validar-cest-item-emissao-nfe.js";
 
 function ncmValido(ncm?: string | null): boolean {
@@ -22,10 +22,32 @@ function primeiroDigitoCfopEsperado(idDest: number): string {
 	return "5";
 }
 
+function cfopCompativelComIdDest(params: {
+	cfop: string;
+	idDest: number;
+	permiteInterestadualMesmaUf?: boolean;
+}): boolean {
+	const digitoEsperado = primeiroDigitoCfopEsperado(params.idDest);
+	if (params.cfop[0] === digitoEsperado) return true;
+
+	// Natureza marcada: permite CFOP 6xxx com destinatário da mesma UF (idDest=1).
+	if (
+		params.idDest === ID_DEST_NFE.INTERNA &&
+		params.cfop[0] === "6" &&
+		params.permiteInterestadualMesmaUf
+	) {
+		return true;
+	}
+
+	return false;
+}
+
 export function validarCoerenciaFiscalNfe(params: {
 	crt: number;
 	idDest: number;
 	itens: ItemPayloadNfe[];
+	/** Códigos CFOP (só dígitos) com interestadualdestmesmauf=1 */
+	cfopsInterestadualMesmaUf?: ReadonlySet<string>;
 }): ValidacaoFiscalItem[] {
 	const validacoes: ValidacaoFiscalItem[] = [];
 	const usaCsosn = empresaUsaCsosn(params.crt);
@@ -46,7 +68,14 @@ export function validarCoerenciaFiscalNfe(params: {
 				message: `Item ${posicao}: informe o CFOP`,
 				tipoInconsistencia: "ERRO_DE_CADASTRO",
 			});
-		} else if (cfop[0] !== digitoEsperado) {
+		} else if (
+			!cfopCompativelComIdDest({
+				cfop,
+				idDest: params.idDest,
+				permiteInterestadualMesmaUf:
+					params.cfopsInterestadualMesmaUf?.has(cfop) === true,
+			})
+		) {
 			validacoes.push({
 				status: "INCONSISTENCIA",
 				code: "CFOP_IDDEST",
@@ -54,7 +83,11 @@ export function validarCoerenciaFiscalNfe(params: {
 				expected: `${digitoEsperado}xxx`,
 				actual: cfop,
 				message: `Item ${posicao}: CFOP ${cfop} incompatível com operação ${
-					params.idDest === 2 ? "interestadual" : params.idDest === 3 ? "exterior" : "interna"
+					params.idDest === 2
+						? "interestadual"
+						: params.idDest === 3
+							? "exterior"
+							: "interna"
 				}`,
 				tipoInconsistencia: "ERRO_DE_PARAMETRIZACAO_FISCAL",
 			});

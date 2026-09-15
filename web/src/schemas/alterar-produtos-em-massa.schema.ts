@@ -13,6 +13,8 @@ function campoAlteracao<T extends z.ZodTypeAny>(valor: T) {
 export const alterarProdutosEmMassaFormSchema = z
 	.object({
 		idgrupo: campoAlteracao(z.string().nullable()),
+		idgrupogourmet: campoAlteracao(z.string().nullable()),
+		espizza: campoAlteracao(z.number().int().min(0).max(1)),
 		idunidademedida: campoAlteracao(z.string().nullable()),
 		preco: campoAlteracao(z.string()),
 		custoaquisicao: campoAlteracao(z.string().nullable()),
@@ -39,6 +41,8 @@ export const alterarProdutosEmMassaFormSchema = z
 		cstcofinsentrada: campoAlteracao(z.string().nullable()),
 		cstpis: campoAlteracao(z.string().nullable()),
 		cstcofins: campoAlteracao(z.string().nullable()),
+		cstibs: campoAlteracao(z.string().nullable()),
+		classtributariaibs: campoAlteracao(z.string().nullable()),
 		aliquotaicmsinterna: campoAlteracao(percentualOpcional),
 		aliquotaicmsdiferencialentrada: campoAlteracao(percentualOpcional),
 		aliquotareducaoicmsnfcesat: campoAlteracao(percentualOpcional),
@@ -51,6 +55,8 @@ export const alterarProdutosEmMassaFormSchema = z
 		aliquotaconfinsentrada: campoAlteracao(percentualOpcional),
 		aliquotapisconfinssaidapreco: campoAlteracao(percentualOpcional),
 		aliquotapisconfinsentradapreco: campoAlteracao(percentualOpcional),
+		aliquotaiibs: campoAlteracao(percentualOpcional),
+		aliquotacbs: campoAlteracao(percentualOpcional),
 	})
 	.superRefine((dados, ctx) => {
 		const algumMarcado = Object.values(dados).some((campo) => campo.alterar);
@@ -73,6 +79,8 @@ function valorOuNulo(valor: string | null | undefined): string | null {
 
 export const valoresPadraoAlteracaoEmMassa: AlterarProdutosEmMassaFormData = {
 	idgrupo: { alterar: false, valor: null },
+	idgrupogourmet: { alterar: false, valor: "none" },
+	espizza: { alterar: false, valor: 0 },
 	idunidademedida: { alterar: false, valor: null },
 	preco: { alterar: false, valor: "" },
 	custoaquisicao: { alterar: false, valor: null },
@@ -99,6 +107,8 @@ export const valoresPadraoAlteracaoEmMassa: AlterarProdutosEmMassaFormData = {
 	cstcofinsentrada: { alterar: false, valor: null },
 	cstpis: { alterar: false, valor: null },
 	cstcofins: { alterar: false, valor: null },
+	cstibs: { alterar: false, valor: "" },
+	classtributariaibs: { alterar: false, valor: "" },
 	aliquotaicmsinterna: { alterar: false, valor: "" },
 	aliquotaicmsdiferencialentrada: { alterar: false, valor: "" },
 	aliquotareducaoicmsnfcesat: { alterar: false, valor: "" },
@@ -111,6 +121,8 @@ export const valoresPadraoAlteracaoEmMassa: AlterarProdutosEmMassaFormData = {
 	aliquotaconfinsentrada: { alterar: false, valor: "" },
 	aliquotapisconfinssaidapreco: { alterar: false, valor: "" },
 	aliquotapisconfinsentradapreco: { alterar: false, valor: "" },
+	aliquotaiibs: { alterar: false, valor: "" },
+	aliquotacbs: { alterar: false, valor: "" },
 };
 
 export function montarCamposAlteracaoEmMassa(
@@ -119,6 +131,12 @@ export function montarCamposAlteracaoEmMassa(
 	const campos: AtualizarProdutoData = {};
 
 	if (dados.idgrupo.alterar) campos.idgrupo = dados.idgrupo.valor || null;
+	if (dados.idgrupogourmet.alterar) {
+		const valor = dados.idgrupogourmet.valor;
+		campos.idgrupogourmet =
+			valor && valor !== "none" ? valor : null;
+	}
+	if (dados.espizza.alterar) campos.espizza = dados.espizza.valor;
 	if (dados.idunidademedida.alterar) {
 		campos.idunidademedida = dados.idunidademedida.valor || undefined;
 	}
@@ -131,7 +149,8 @@ export function montarCamposAlteracaoEmMassa(
 	if (dados.idcest.alterar) campos.idcest = dados.idcest.valor || null;
 	if (dados.ippt.alterar) campos.ippt = dados.ippt.valor;
 	if (dados.inativo.alterar) campos.inativo = dados.inativo.valor;
-	if (dados.controlalote.alterar) campos.controlalote = dados.controlalote.valor;
+	if (dados.controlalote.alterar)
+		campos.controlalote = dados.controlalote.valor;
 	if (dados.controlavalidade.alterar) {
 		campos.controlavalidade = dados.controlavalidade.valor;
 	}
@@ -181,6 +200,10 @@ export function montarCamposAlteracaoEmMassa(
 	}
 	if (dados.cstpis.alterar) campos.cstpis = dados.cstpis.valor;
 	if (dados.cstcofins.alterar) campos.cstcofins = dados.cstcofins.valor;
+	if (dados.cstibs.alterar) campos.cstibs = valorOuNulo(dados.cstibs.valor);
+	if (dados.classtributariaibs.alterar) {
+		campos.classtributariaibs = valorOuNulo(dados.classtributariaibs.valor);
+	}
 	if (dados.aliquotaicmsinterna.alterar) {
 		campos.aliquotaicmsinterna = valorOuNulo(dados.aliquotaicmsinterna.valor);
 	}
@@ -226,6 +249,12 @@ export function montarCamposAlteracaoEmMassa(
 		campos.aliquotapisconfinsentradapreco = valorOuNulo(
 			dados.aliquotapisconfinsentradapreco.valor,
 		);
+	}
+	if (dados.aliquotaiibs.alterar) {
+		campos.aliquotaiibs = valorOuNulo(dados.aliquotaiibs.valor);
+	}
+	if (dados.aliquotacbs.alterar) {
+		campos.aliquotacbs = valorOuNulo(dados.aliquotacbs.valor);
 	}
 
 	return campos;

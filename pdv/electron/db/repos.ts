@@ -7,6 +7,8 @@ import {
 } from "../util/pizza-meio-a-meio";
 import {
 	arredondarMoeda,
+	filtrarItensAbertosConta,
+	mensagemErroCancelarItem,
 	recalcularTotaisConta,
 	type TotaisContaGourmet,
 	valorRestante,
@@ -21,6 +23,10 @@ import {
 	withTransaction,
 } from "./database";
 import {
+	agruparItensVendidosTurno,
+	type ItemVendidoTurnoAgrupado,
+} from "./itens-vendidos-turno";
+import {
 	type LancamentoPagamento,
 	type MeioPagamento,
 	type StatusLancamentoPagamento,
@@ -28,12 +34,26 @@ import {
 	validarFechamentoPagamentos,
 } from "./pagamento";
 import {
+	ehModalidadeEntrega,
+	gerarSenhaChamada,
+	type ModalidadePedido,
+	normalizarModalidade,
+	origemVendaPorModalidade,
+	parseBairrosEntrega,
+	podeFecharDelivery,
+	proximoStatusEntrega,
+	resolverTaxaEntrega,
+	rotuloProducaoEntrega,
+	type StatusEntrega,
+} from "./pedido-entrega";
+import {
 	calcularConferenciaCaixa,
 	montarResumoTurnoCaixa,
 	type ResumoTurnoCaixa,
 	type VendaParaResumoTurno,
 } from "./resumo-turno-caixa";
 
+export type { ItemVendidoTurnoAgrupado } from "./itens-vendidos-turno";
 export type {
 	LancamentoPagamento,
 	MeioPagamento,
@@ -64,6 +84,13 @@ export type ProdutoLocal = {
 	espizza: number;
 	imagem: string | null;
 	caminhoimagem: string | null;
+	ncm: string | null;
+	cest: string | null;
+	cfop: string | null;
+	cst: string | null;
+	csosn: string | null;
+	origem: number | null;
+	aliquotaicms: string | null;
 };
 
 export type GrupoLocal = {
@@ -116,6 +143,7 @@ function dadosClienteVenda(cliente?: ClienteVenda | null): {
 }
 
 export type ItemCarrinho = {
+	id?: string;
 	idproduto: string;
 	descricao: string;
 	quantidade: number;
@@ -123,7 +151,10 @@ export type ItemCarrinho = {
 	precototal: number;
 	unidademedida?: string | null;
 	idunidademedida?: string | null;
+	observacao?: string | null;
 };
+
+export type ItemCarrinhoPersistido = ItemCarrinho & { id: string };
 
 export type VendaLocal = {
 	id: string;
@@ -138,16 +169,26 @@ export type VendaLocal = {
 	valorcartao: number;
 	valortroco: number;
 	valordesconto?: number;
+	valoracrescimo?: number;
 	valortaxaservico?: number;
 	valorcouvert?: number;
+	valorentrega?: number;
 	criadoem: string;
 	idremoto: string | null;
 	sync_status: string;
 	nfce_status: string;
 	idnfce_local: string | null;
+	nfce_sync_em?: string | null;
+	/** Numeração da NFC-e local (quando houver registro em nfce_local). */
+	nfce_serie?: number | null;
+	nfce_numero?: number | null;
+	nfce_chave?: string | null;
 	idcliente?: string | null;
 	nomecliente?: string | null;
 	cnpjcpf?: string | null;
+	idconta?: string | null;
+	numero_mesa?: number | null;
+	senha_chamada?: string | null;
 };
 
 export type ContaMesaLocal = {
@@ -160,11 +201,24 @@ export type ContaMesaLocal = {
 	numeropessoas: number;
 	subtotal: number;
 	valordesconto: number;
+	valoracrescimo: number;
 	valortaxaservico: number;
 	valorcouvert: number;
+	valorentrega: number;
 	taxa_ativa: number;
 	valorpago: number;
 	valorrestante: number;
+	modalidade: "mesa" | "delivery" | "retirada";
+	telefone: string | null;
+	endereco: string | null;
+	bairro: string | null;
+	complemento: string | null;
+	referencia: string | null;
+	status_entrega: string | null;
+	senha_chamada: string | null;
+	idcliente: string | null;
+	orderidintegracao: string | null;
+	obs: string | null;
 	itens: Array<{
 		id: string;
 		idproduto: string;
@@ -173,7 +227,21 @@ export type ContaMesaLocal = {
 		precounitario: number;
 		precototal: number;
 		observacao: string | null;
+		/** 1 = já pago (permanece na lista da comanda com estilo riscado). */
+		pago: number;
 	}>;
+};
+
+export type ClientePdvLocal = {
+	id: string;
+	nome: string;
+	telefone: string | null;
+	cnpjcpf: string | null;
+	endereco: string | null;
+	bairro: string | null;
+	complemento: string | null;
+	referencia: string | null;
+	atualizadoem: string;
 };
 
 export type PedidoFilaLocal = {
@@ -186,6 +254,7 @@ export type PedidoFilaLocal = {
 	descricao: string;
 	quantidade: number;
 	observacao: string | null;
+	observacao_pedido: string | null;
 	status: string;
 	criadoem: string;
 	entregueem: string | null;
@@ -198,6 +267,12 @@ export type OutboxItem = {
 	status: string;
 	tentativas: number;
 	ultimo_erro: string | null;
+	idempotency_key: string | null;
+	prioridade: number;
+	proxima_tentativa: string | null;
+	classificacao_erro: string | null;
+	bloqueado_ate: string | null;
+	worker_id: string | null;
 	criadoem: string;
 };
 
@@ -243,7 +318,7 @@ export async function limparSessao(): Promise<void> {
 }
 
 const PRODUTO_SELECT =
-	"id, descricao, preco, unidademedida, idunidademedida, ean, codigo, idgrupo, idgrupogourmet, espizza, imagem, caminhoimagem";
+	"id, descricao, preco, unidademedida, idunidademedida, ean, codigo, idgrupo, idgrupogourmet, espizza, imagem, caminhoimagem, ncm, cest, cfop, cst, csosn, origem, aliquotaicms";
 
 function padraoIlike(termo: string): string {
 	return `%${termo.replace(/[\\%_]/g, (ch) => `\\${ch}`)}%`;
@@ -253,28 +328,42 @@ function padraoIlikePrefixo(termo: string): string {
 	return `${termo.replace(/[\\%_]/g, (ch) => `\\${ch}`)}%`;
 }
 
+export type ProdutoUpsertInput = {
+	id: string;
+	descricao: string;
+	preco: number;
+	unidademedida?: string | null;
+	idunidademedida?: string | null;
+	ean?: string | null;
+	codigo?: number | null;
+	idgrupo?: string | null;
+	idgrupogourmet?: string | null;
+	espizza?: number | null;
+	imagem?: string | null;
+	caminhoimagem?: string | null;
+	ncm?: string | null;
+	cest?: string | null;
+	cfop?: string | null;
+	cst?: string | null;
+	csosn?: string | null;
+	origem?: number | null;
+	aliquotaicms?: string | null;
+};
+
 export async function upsertProdutos(
-	produtos: Array<{
-		id: string;
-		descricao: string;
-		preco: number;
-		unidademedida?: string | null;
-		idunidademedida?: string | null;
-		ean?: string | null;
-		codigo?: number | null;
-		idgrupo?: string | null;
-		idgrupogourmet?: string | null;
-		espizza?: number | null;
-		imagem?: string | null;
-		caminhoimagem?: string | null;
-	}>,
+	produtos: ProdutoUpsertInput[],
 ): Promise<void> {
 	const agora = new Date().toISOString();
 	await withTransaction(async (client) => {
 		for (const p of produtos) {
 			await execute(
-				`INSERT INTO produto_cache (id, descricao, preco, unidademedida, idunidademedida, ean, codigo, idgrupo, idgrupogourmet, espizza, imagem, caminhoimagem, inativo, atualizadoem)
-				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 0, $13)
+				`INSERT INTO produto_cache (
+					id, descricao, preco, unidademedida, idunidademedida, ean, codigo,
+					idgrupo, idgrupogourmet, espizza, imagem, caminhoimagem,
+					ncm, cest, cfop, cst, csosn, origem, aliquotaicms,
+					inativo, atualizadoem
+				)
+				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, 0, $20)
 				 ON CONFLICT (id) DO UPDATE SET
 					descricao = excluded.descricao,
 					preco = excluded.preco,
@@ -287,6 +376,14 @@ export async function upsertProdutos(
 					espizza = excluded.espizza,
 					imagem = excluded.imagem,
 					caminhoimagem = excluded.caminhoimagem,
+					ncm = excluded.ncm,
+					cest = excluded.cest,
+					cfop = excluded.cfop,
+					cst = excluded.cst,
+					csosn = excluded.csosn,
+					origem = excluded.origem,
+					aliquotaicms = excluded.aliquotaicms,
+					inativo = 0,
 					atualizadoem = excluded.atualizadoem`,
 				[
 					p.id,
@@ -301,12 +398,34 @@ export async function upsertProdutos(
 					p.espizza ? 1 : 0,
 					p.imagem ?? null,
 					p.caminhoimagem ?? null,
+					p.ncm ?? null,
+					p.cest ?? null,
+					p.cfop ?? null,
+					p.cst ?? null,
+					p.csosn ?? null,
+					p.origem ?? null,
+					p.aliquotaicms ?? null,
 					agora,
 				],
 				client,
 			);
 		}
 	});
+}
+
+/** Marca como inativos os produtos locais que não vieram na carga completa. */
+export async function marcarProdutosAusentesInativos(
+	idsAtivos: string[],
+): Promise<void> {
+	if (!idsAtivos.length) {
+		await execute(`UPDATE produto_cache SET inativo = 1 WHERE inativo = 0`);
+		return;
+	}
+	await execute(
+		`UPDATE produto_cache SET inativo = 1
+		 WHERE inativo = 0 AND NOT (id = ANY($1::text[]))`,
+		[idsAtivos],
+	);
 }
 
 export async function upsertGrupos(
@@ -856,44 +975,165 @@ export async function salvarAtalhos(ids: string[]): Promise<void> {
 	});
 }
 
+export function prioridadeOutbox(tipo: string): number {
+	if (tipo === "criar_venda") return 5;
+	if (tipo === "transmitir_nfce_contingencia") return 10;
+	return 100;
+}
+
 export async function enfileirarOutbox(
 	tipo: string,
 	payload: unknown,
 	client?: PoolClient,
 ): Promise<string> {
 	const id = uuidv4();
-	await execute(
-		`INSERT INTO outbox (id, tipo, payload, status, tentativas, criadoem)
-		 VALUES ($1, $2, $3, 'pendente', 0, $4)`,
-		[id, tipo, JSON.stringify(payload), new Date().toISOString()],
+	const chave = chaveIdempotenciaOutbox(tipo, payload);
+	const prioridade = prioridadeOutbox(tipo);
+	const row = await queryOne<{ id: string }>(
+		`INSERT INTO outbox (
+			id, tipo, payload, status, tentativas, idempotency_key, prioridade, criadoem
+		 ) VALUES ($1, $2, $3, 'pendente', 0, $4, $5, $6)
+		 ON CONFLICT (idempotency_key)
+		 WHERE idempotency_key IS NOT NULL AND status IN ('pendente', 'processando')
+		 DO UPDATE SET payload = excluded.payload,
+			prioridade = LEAST(outbox.prioridade, excluded.prioridade)
+		 RETURNING id`,
+		[
+			id,
+			tipo,
+			JSON.stringify(payload),
+			chave,
+			prioridade,
+			new Date().toISOString(),
+		],
 		client,
 	);
-	return id;
+	return row?.id ?? id;
+}
+
+export function chaveIdempotenciaOutbox(
+	tipo: string,
+	payload: unknown,
+): string | null {
+	if (!payload || typeof payload !== "object") return null;
+	const dados = payload as Record<string, unknown>;
+	const ordem =
+		tipo === "transmitir_nfce_contingencia"
+			? [
+					dados.idnfce_local,
+					dados.idnfce,
+					dados.chave,
+					dados.idlocal,
+					dados.idvenda,
+				]
+			: [
+					dados.idlocal,
+					dados.idvenda,
+					dados.idnfce_local,
+					dados.idnfce,
+					dados.chave,
+				];
+	const identidade = ordem
+		.map((valor) => (valor == null ? "" : String(valor).trim()))
+		.find(Boolean);
+	return identidade ? `${tipo}:${identidade}` : null;
 }
 
 export async function listarOutboxPendentes(limit = 50): Promise<OutboxItem[]> {
 	return query<OutboxItem>(
-		`SELECT id, tipo, payload, status, tentativas, ultimo_erro, criadoem
-		 FROM outbox WHERE status = 'pendente'
-		 ORDER BY criadoem ASC LIMIT $1`,
-		[limit],
+		`SELECT id, tipo, payload, status, tentativas, ultimo_erro,
+		        idempotency_key, prioridade, proxima_tentativa,
+		        classificacao_erro, criadoem
+		 FROM outbox
+		 WHERE status = 'pendente'
+		   AND (proxima_tentativa IS NULL OR proxima_tentativa <= $1)
+		 ORDER BY prioridade ASC, criadoem ASC LIMIT $2`,
+		[new Date().toISOString(), limit],
 	);
 }
 
-export async function marcarOutboxConcluido(id: string): Promise<void> {
+export async function reivindicarOutboxPendentes(
+	workerId: string,
+	limit = 1,
+	leaseMs = 15 * 60_000,
+): Promise<OutboxItem[]> {
+	return withTransaction(async (client) => {
+		const agora = new Date();
+		const agoraIso = agora.toISOString();
+		const bloqueadoAte = new Date(agora.getTime() + leaseMs).toISOString();
+		await execute(
+			`UPDATE outbox
+			 SET status = 'pendente', worker_id = NULL, bloqueado_ate = NULL
+			 WHERE status = 'processando'
+			   AND (bloqueado_ate IS NULL OR bloqueado_ate <= $1)`,
+			[agoraIso],
+			client,
+		);
+		return query<OutboxItem>(
+			`WITH candidatos AS (
+				SELECT id
+				FROM outbox
+				WHERE status = 'pendente'
+				  AND (proxima_tentativa IS NULL OR proxima_tentativa <= $1)
+				ORDER BY prioridade ASC, criadoem ASC
+				FOR UPDATE SKIP LOCKED
+				LIMIT $2
+			 )
+			 UPDATE outbox AS o
+			 SET status = 'processando', worker_id = $3, bloqueado_ate = $4
+			 FROM candidatos
+			 WHERE o.id = candidatos.id
+			 RETURNING o.id, o.tipo, o.payload, o.status, o.tentativas,
+				o.ultimo_erro, o.idempotency_key, o.prioridade,
+				o.proxima_tentativa, o.classificacao_erro, o.bloqueado_ate,
+				o.worker_id, o.criadoem`,
+			[agoraIso, limit, workerId, bloqueadoAte],
+			client,
+		);
+	});
+}
+
+export async function marcarOutboxConcluido(
+	id: string,
+	workerId?: string,
+): Promise<void> {
 	await execute(
-		`UPDATE outbox SET status = 'concluido', processadoem = $1, ultimo_erro = NULL WHERE id = $2`,
-		[new Date().toISOString(), id],
+		`UPDATE outbox SET status = 'concluido', processadoem = $1,
+		 ultimo_erro = NULL, proxima_tentativa = NULL, classificacao_erro = NULL,
+		 worker_id = NULL, bloqueado_ate = NULL
+		 WHERE id = $2
+		   AND ($3::text IS NULL OR (status = 'processando' AND worker_id = $3))`,
+		[new Date().toISOString(), id, workerId ?? null],
 	);
 }
 
 export async function marcarOutboxErro(
 	id: string,
 	erro: string,
+	opcoes?: {
+		classificacao?: "transitorio" | "permanente";
+		proximaTentativa?: string | null;
+		workerId?: string;
+	},
 ): Promise<void> {
+	const permanente = opcoes?.classificacao === "permanente";
 	await execute(
-		`UPDATE outbox SET tentativas = tentativas + 1, ultimo_erro = $1 WHERE id = $2`,
-		[erro, id],
+		`UPDATE outbox SET tentativas = tentativas + 1, ultimo_erro = $1,
+		 classificacao_erro = $2, proxima_tentativa = $3,
+		 status = CASE WHEN $4 THEN 'cancelado' ELSE 'pendente' END,
+		 worker_id = NULL, bloqueado_ate = NULL,
+		 processadoem = CASE WHEN $4 THEN $5 ELSE processadoem END
+		 WHERE id = $6
+		   AND ($7::text IS NULL OR (status = 'processando' AND worker_id = $7))`,
+		[
+			erro,
+			opcoes?.classificacao ?? "transitorio",
+			opcoes?.proximaTentativa ?? null,
+			permanente,
+			new Date().toISOString(),
+			id,
+			opcoes?.workerId ?? null,
+		],
 	);
 }
 
@@ -902,6 +1142,39 @@ export async function contarOutboxPendentes(): Promise<number> {
 		`SELECT COUNT(*)::int as total FROM outbox WHERE status = 'pendente'`,
 	);
 	return row?.total ?? 0;
+}
+
+/** NFC-e locais ainda aguardando transmissão à SEFAZ (não inclui conflito de numeração). */
+export async function contarNfcePendentesTransmissao(): Promise<number> {
+	const row = await queryOne<{ total: number }>(
+		`SELECT COUNT(*)::int AS total
+		 FROM venda
+		 WHERE nfce_status IN (
+			'pendente',
+			'pendente_contingencia',
+			'contingencia',
+			'erro',
+			'erro_config'
+		 )`,
+	);
+	return row?.total ?? 0;
+}
+
+export async function contarOutboxFalhasPermanentes(): Promise<number> {
+	const row = await queryOne<{ total: number }>(
+		`SELECT COUNT(*)::int AS total
+		 FROM outbox
+		 WHERE status = 'cancelado' AND classificacao_erro = 'permanente'`,
+	);
+	return row?.total ?? 0;
+}
+
+export async function obterSyncMeta(chave: string): Promise<string | null> {
+	const row = await queryOne<{ valor: string }>(
+		"SELECT valor FROM sync_meta WHERE chave = $1",
+		[chave],
+	);
+	return row?.valor ?? null;
 }
 
 /** Conclui outbox `criar_venda` já espelhado online (evita duplicar na retaguarda). */
@@ -1088,7 +1361,23 @@ export async function calcularResumoTurno(caixa: {
 				WHERE p.idvenda = v.id
 					AND p.meio = 'CARTAO'
 					AND COALESCE(p.status, 'ok') = 'ok'
-			), 0) AS lanc_cartao
+					AND lpad(
+						regexp_replace(COALESCE(p.formapagamentonfe, ''), '[^0-9]', '', 'g'),
+						2,
+						'0'
+					) = '04'
+			), 0) AS lanc_cartaodebito,
+			COALESCE((
+				SELECT SUM(p.valor) FROM pagamento p
+				WHERE p.idvenda = v.id
+					AND p.meio = 'CARTAO'
+					AND COALESCE(p.status, 'ok') = 'ok'
+					AND lpad(
+						regexp_replace(COALESCE(p.formapagamentonfe, ''), '[^0-9]', '', 'g'),
+						2,
+						'0'
+					) IS DISTINCT FROM '04'
+			), 0) AS lanc_cartaocredito
 		 FROM venda v
 		 WHERE v.numeropdv = $1 AND v.criadoem >= $2 AND v.status = 'fechada'
 		 ORDER BY v.criadoem`,
@@ -1098,6 +1387,37 @@ export async function calcularResumoTurno(caixa: {
 		valorabertura: caixa.valorabertura,
 		vendas,
 	});
+}
+
+export async function listarItensVendidosTurnoAberto(): Promise<
+	ItemVendidoTurnoAgrupado[]
+> {
+	const caixa = await caixaAberto();
+	if (!caixa) {
+		throw new Error("Nenhum caixa aberto para este operador");
+	}
+	return listarItensVendidosTurno(caixa);
+}
+
+export async function listarItensVendidosTurno(caixa: {
+	numeropdv: number;
+	abertoem: string;
+}): Promise<ItemVendidoTurnoAgrupado[]> {
+	const linhas = await query<{
+		idproduto: string;
+		descricao: string;
+		quantidade: number;
+	}>(
+		`SELECT iv.idproduto, iv.descricao, iv.quantidade
+		 FROM item_venda iv
+		 INNER JOIN venda v ON v.id = iv.idvenda
+		 WHERE v.numeropdv = $1
+		   AND v.criadoem >= $2
+		   AND v.status = 'fechada'
+		 ORDER BY iv.descricao`,
+		[caixa.numeropdv, caixa.abertoem],
+	);
+	return agruparItensVendidosTurno(linhas);
 }
 
 export async function calcularResumoTurnoAberto(): Promise<ResumoTurnoCaixa> {
@@ -1120,12 +1440,16 @@ export async function fecharCaixa(params: {
 	conferencia: ReturnType<typeof calcularConferenciaCaixa>;
 	observacao: string | null;
 	nomeempresa: string | null;
+	itensVendidos: ItemVendidoTurnoAgrupado[];
 }> {
 	const caixa = await caixaAberto();
 	if (!caixa) {
 		throw new Error("Nenhum caixa aberto para este operador");
 	}
-	const resumo = await calcularResumoTurno(caixa);
+	const [resumo, itensVendidos] = await Promise.all([
+		calcularResumoTurno(caixa),
+		listarItensVendidosTurno(caixa),
+	]);
 	const conferencia = calcularConferenciaCaixa(
 		params.saldoinformado,
 		resumo.saldoCaixaFisico,
@@ -1166,6 +1490,7 @@ export async function fecharCaixa(params: {
 		conferencia,
 		observacao,
 		nomeempresa: sessao.nomeempresa,
+		itensVendidos,
 	};
 }
 
@@ -1248,9 +1573,22 @@ type ContaGourmetRow = {
 	valortotal: number;
 	numeropessoas?: number | null;
 	valordesconto?: number | null;
+	valoracrescimo?: number | null;
 	valortaxaservico?: number | null;
 	valorcouvert?: number | null;
 	taxa_ativa?: number | null;
+	modalidade?: string | null;
+	telefone?: string | null;
+	endereco?: string | null;
+	bairro?: string | null;
+	complemento?: string | null;
+	referencia?: string | null;
+	valorentrega?: number | null;
+	status_entrega?: string | null;
+	senha_chamada?: string | null;
+	idcliente?: string | null;
+	orderidintegracao?: string | null;
+	obs?: string | null;
 };
 
 async function percentualTaxaConfig(): Promise<number> {
@@ -1263,18 +1601,40 @@ async function couvertConfig(): Promise<number> {
 	return Number.isFinite(n) && n >= 0 ? n : 0;
 }
 
-async function listarItensAbertos(
+async function listarItensDaConta(
 	idconta: string,
 	client?: PoolClient,
 ): Promise<ContaMesaLocal["itens"]> {
-	return query<ContaMesaLocal["itens"][number]>(
-		`SELECT id, idproduto, descricao, quantidade, precounitario, precototal, observacao
+	const rows = await query<{
+		id: string;
+		idproduto: string;
+		descricao: string;
+		quantidade: number;
+		precounitario: number;
+		precototal: number;
+		observacao: string | null;
+		pago: number | string | null;
+	}>(
+		`SELECT id, idproduto, descricao, quantidade, precounitario, precototal, observacao,
+		        COALESCE(pago, 0)::int as pago
 		 FROM item_conta
-		 WHERE idconta = $1 AND COALESCE(pago, 0) = 0
+		 WHERE idconta = $1
 		 ORDER BY criadoem`,
 		[idconta],
 		client,
 	);
+	return rows.map((row) => ({
+		...row,
+		pago: Number(row.pago) === 1 ? 1 : 0,
+	}));
+}
+
+/** Somente itens em aberto — usado no recálculo de totais da conta. */
+async function listarItensAbertos(
+	idconta: string,
+	client?: PoolClient,
+): Promise<ContaMesaLocal["itens"]> {
+	return filtrarItensAbertosConta(await listarItensDaConta(idconta, client));
 }
 
 async function somarPagoConta(
@@ -1331,18 +1691,22 @@ async function persistirTotaisConta(
 			valortotal = $1,
 			numeropessoas = $2,
 			valordesconto = $3,
-			valortaxaservico = $4,
-			valorcouvert = $5,
-			taxa_ativa = $6,
+			valoracrescimo = $4,
+			valortaxaservico = $5,
+			valorcouvert = $6,
+			taxa_ativa = $7,
+			valorentrega = $8,
 			sync_status = 'pendente'
-		 WHERE id = $7`,
+		 WHERE id = $9`,
 		[
 			totais.valortotal,
 			totais.numeropessoas,
 			totais.valordesconto,
+			totais.valoracrescimo,
 			totais.valortaxaservico,
 			totais.valorcouvert,
 			taxaAtiva ? 1 : 0,
+			totais.valorentrega || 0,
 			idconta,
 		],
 		client,
@@ -1362,20 +1726,34 @@ async function recalcularContaPersistida(
 		throw new Error("Conta inválida");
 	}
 	const itens = await listarItensAbertos(idconta, client);
-	const percentualTaxa = await percentualTaxaConfig();
-	const pessoas = Number(conta.numeropessoas) || 1;
-	const valorcouvert = Number(conta.valorcouvert) || 0;
+	const modalidade = normalizarModalidade(conta.modalidade);
+	const percentualTaxa = ehModalidadeEntrega(modalidade)
+		? 0
+		: await percentualTaxaConfig();
+	const pessoas = ehModalidadeEntrega(modalidade)
+		? 1
+		: Number(conta.numeropessoas) || 1;
+	const valorcouvert = ehModalidadeEntrega(modalidade)
+		? 0
+		: Number(conta.valorcouvert) || 0;
+	const valorentrega = ehModalidadeEntrega(modalidade)
+		? arredondarMoeda(Number(conta.valorentrega) || 0)
+		: 0;
 	const totais = recalcularTotaisConta(itens, {
 		numeropessoas: pessoas,
-		taxaAtiva: Number(conta.taxa_ativa) === 1,
+		taxaAtiva: ehModalidadeEntrega(modalidade)
+			? false
+			: Number(conta.taxa_ativa) === 1,
 		percentualTaxa,
 		couvertUnitario: valorcouvert / Math.max(1, pessoas),
 		desconto: Number(conta.valordesconto) || 0,
+		acrescimo: Number(conta.valoracrescimo) || 0,
+		valorentrega,
 	});
 	await persistirTotaisConta(
 		idconta,
 		totais,
-		Number(conta.taxa_ativa) === 1,
+		ehModalidadeEntrega(modalidade) ? false : Number(conta.taxa_ativa) === 1,
 		client,
 	);
 	return totais;
@@ -1386,10 +1764,12 @@ function montarContaLocal(
 	itens: ContaMesaLocal["itens"],
 	valorpago: number,
 ): ContaMesaLocal {
+	const itensAbertos = filtrarItensAbertosConta(itens);
 	const subtotal = arredondarMoeda(
-		itens.reduce((acc, i) => acc + Number(i.precototal), 0),
+		itensAbertos.reduce((acc, i) => acc + Number(i.precototal), 0),
 	);
 	const valortotal = arredondarMoeda(Number(conta.valortotal) || 0);
+	const modalidade = normalizarModalidade(conta.modalidade);
 	return {
 		id: conta.id,
 		numero_mesa: conta.numero_mesa,
@@ -1400,11 +1780,24 @@ function montarContaLocal(
 		numeropessoas: Number(conta.numeropessoas) || 1,
 		subtotal,
 		valordesconto: arredondarMoeda(Number(conta.valordesconto) || 0),
+		valoracrescimo: arredondarMoeda(Number(conta.valoracrescimo) || 0),
 		valortaxaservico: arredondarMoeda(Number(conta.valortaxaservico) || 0),
 		valorcouvert: arredondarMoeda(Number(conta.valorcouvert) || 0),
+		valorentrega: arredondarMoeda(Number(conta.valorentrega) || 0),
 		taxa_ativa: Number(conta.taxa_ativa) === 1 ? 1 : 0,
 		valorpago,
 		valorrestante: valorRestante(valortotal, valorpago),
+		modalidade,
+		telefone: conta.telefone ?? null,
+		endereco: conta.endereco ?? null,
+		bairro: conta.bairro ?? null,
+		complemento: conta.complemento ?? null,
+		referencia: conta.referencia ?? null,
+		status_entrega: conta.status_entrega ?? null,
+		senha_chamada: conta.senha_chamada ?? null,
+		idcliente: conta.idcliente ?? null,
+		orderidintegracao: conta.orderidintegracao ?? null,
+		obs: conta.obs ?? null,
 		itens,
 	};
 }
@@ -1444,6 +1837,10 @@ export async function criarVendaRapida(params: {
 	const sync = totaisParaSync(fechamento.efetivos, fechamento.troco);
 	const numeropdv = Number(await getConfig("numeropdv", "1"));
 	const cliente = dadosClienteVenda(params.cliente);
+	const itensComId: ItemCarrinhoPersistido[] = params.itens.map((item) => ({
+		...item,
+		id: item.id ?? uuidv4(),
+	}));
 
 	const venda = await withTransaction(async (client) => {
 		await execute(
@@ -1461,7 +1858,7 @@ export async function criarVendaRapida(params: {
 				total,
 				sync.valordinheiro,
 				sync.valorpix,
-				sync.valorcartaocredito,
+				arredondarMoeda(sync.valorcartaocredito + sync.valorcartaodebito),
 				fechamento.troco,
 				desconto,
 				agora,
@@ -1472,12 +1869,12 @@ export async function criarVendaRapida(params: {
 			client,
 		);
 
-		for (const item of params.itens) {
+		for (const item of itensComId) {
 			await execute(
 				`INSERT INTO item_venda (id, idvenda, idproduto, descricao, quantidade, precounitario, precototal)
 				 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
 				[
-					uuidv4(),
+					item.id,
 					id,
 					item.idproduto,
 					item.descricao,
@@ -1508,8 +1905,10 @@ export async function criarVendaRapida(params: {
 		pagamentos: fechamento.efetivos,
 		valordinheiro: sync.valordinheiro,
 		valorpix: sync.valorpix,
-		valorcartao: sync.valorcartaocredito,
-		itens: params.itens,
+		valorcartao: arredondarMoeda(
+			sync.valorcartaocredito + sync.valorcartaodebito,
+		),
+		itens: itensComId,
 		valortotal: total,
 		valortroco: fechamento.troco,
 		valordesconto: desconto,
@@ -1521,7 +1920,23 @@ export async function criarVendaRapida(params: {
 
 export async function listarVendas(limit = 100): Promise<VendaLocal[]> {
 	return query<VendaLocal>(
-		`SELECT * FROM venda ORDER BY criadoem DESC LIMIT $1`,
+		`SELECT v.*,
+			c.numero_mesa AS numero_mesa,
+			c.senha_chamada AS senha_chamada,
+			n.serie AS nfce_serie,
+			n.numero AS nfce_numero,
+			n.chave AS nfce_chave
+		 FROM venda v
+		 LEFT JOIN conta_mesa c ON c.id = v.idconta
+		 LEFT JOIN LATERAL (
+			SELECT serie, numero, chave
+			FROM nfce_local
+			WHERE idvenda = v.id
+			ORDER BY criadoem DESC
+			LIMIT 1
+		 ) n ON true
+		 ORDER BY v.criadoem DESC
+		 LIMIT $1`,
 		[limit],
 	);
 }
@@ -1537,21 +1952,103 @@ export async function listarVendasComRemoto(
 	);
 }
 
-export async function obterVenda(
-	id: string,
-): Promise<
-	| (VendaLocal & { itens: ItemCarrinho[]; pagamentos: LancamentoPagamento[] })
+export type VendaCandidataReconciliacaoNfce = {
+	id: string;
+	idremoto: string | null;
+	nfce_status: string;
+	idnfce: string | null;
+	serie: number | null;
+	numero: number | null;
+	chave: string | null;
+	protocolo: string | null;
+	xml: string | null;
+	motivo_contingencia: string | null;
+	data_contingencia: string | null;
+};
+
+export async function listarVendasCandidatasReconciliacaoNfce(): Promise<
+	VendaCandidataReconciliacaoNfce[]
+> {
+	return query<VendaCandidataReconciliacaoNfce>(
+		`SELECT v.id, v.idremoto, v.nfce_status,
+		        n.id AS idnfce, n.serie, n.numero, n.chave, n.protocolo, n.xml,
+		        n.motivo_contingencia, n.data_contingencia
+		 FROM venda v
+		 LEFT JOIN LATERAL (
+			SELECT id, serie, numero, chave, protocolo, xml,
+			       motivo_contingencia, data_contingencia
+			FROM nfce_local
+			WHERE idvenda = v.id
+			ORDER BY criadoem DESC
+			LIMIT 1
+		 ) n ON true
+		 WHERE (
+			v.nfce_status NOT IN ('nenhuma', 'nao_fiscal', 'autorizada', 'cancelada', 'inutilizada')
+			OR v.idremoto IS NULL
+			OR v.nfce_sync_em IS NULL
+		 )
+		   AND (v.nfce_status NOT IN ('nenhuma', 'nao_fiscal') OR n.id IS NOT NULL)
+		 ORDER BY v.criadoem ASC`,
+	);
+}
+
+/** Vendas com fila de sync ou NFC-e ainda não refletida na retaguarda. */
+export async function listarVendasNaoSincronizadas(
+	limit = 100,
+): Promise<VendaLocal[]> {
+	return query<VendaLocal>(
+		`SELECT v.*,
+			c.numero_mesa AS numero_mesa,
+			c.senha_chamada AS senha_chamada,
+			n.serie AS nfce_serie,
+			n.numero AS nfce_numero,
+			n.chave AS nfce_chave
+		 FROM venda v
+		 LEFT JOIN conta_mesa c ON c.id = v.idconta
+		 LEFT JOIN LATERAL (
+			SELECT serie, numero, chave
+			FROM nfce_local
+			WHERE idvenda = v.id
+			ORDER BY criadoem DESC
+			LIMIT 1
+		 ) n ON true
+		 WHERE v.sync_status = 'pendente'
+		    OR v.nfce_status IN ('pendente', 'pendente_contingencia', 'contingencia', 'conflito_numeracao')
+		    OR (v.nfce_status = 'erro' AND v.idremoto IS NOT NULL)
+		 ORDER BY v.criadoem DESC
+		 LIMIT $1`,
+		[limit],
+	);
+}
+
+export async function obterVenda(id: string): Promise<
+	| (VendaLocal & {
+			itens: ItemCarrinhoPersistido[];
+			pagamentos: LancamentoPagamento[];
+	  })
 	| null
 > {
 	const venda = await queryOne<VendaLocal>(
-		"SELECT * FROM venda WHERE id = $1",
+		`SELECT v.*,
+			n.serie AS nfce_serie,
+			n.numero AS nfce_numero,
+			n.chave AS nfce_chave
+		 FROM venda v
+		 LEFT JOIN LATERAL (
+			SELECT serie, numero, chave
+			FROM nfce_local
+			WHERE idvenda = v.id
+			ORDER BY criadoem DESC
+			LIMIT 1
+		 ) n ON true
+		 WHERE v.id = $1`,
 		[id],
 	);
 	if (!venda) {
 		return null;
 	}
-	const itens = await query<ItemCarrinho>(
-		`SELECT idproduto, descricao, quantidade, precounitario, precototal
+	const itens = await query<ItemCarrinhoPersistido>(
+		`SELECT id, idproduto, descricao, quantidade, precounitario, precototal
 		 FROM item_venda WHERE idvenda = $1`,
 		[id],
 	);
@@ -1574,6 +2071,10 @@ export async function atualizarVendaSync(
 	}
 	await execute(
 		`UPDATE venda SET idremoto = COALESCE($1, idremoto), sync_status = COALESCE($2, sync_status),
+		 nfce_sync_em = CASE
+			WHEN $3::text IS NOT NULL AND nfce_status IS DISTINCT FROM $3::text THEN NULL
+			ELSE nfce_sync_em
+		 END,
 		 nfce_status = COALESCE($3, nfce_status), idnfce_local = COALESCE($4, idnfce_local) WHERE id = $5`,
 		[
 			dados.idremoto ?? null,
@@ -1583,6 +2084,51 @@ export async function atualizarVendaSync(
 			idlocal,
 		],
 	);
+}
+
+export async function marcarVendaNfceSincronizada(
+	idlocal: string,
+	sincronizadaEm = new Date().toISOString(),
+): Promise<void> {
+	await execute("UPDATE venda SET nfce_sync_em = $1 WHERE id = $2", [
+		sincronizadaEm,
+		idlocal,
+	]);
+}
+
+/** Marca venda local como cancelada (não fiscal / sem NFC-e SEFAZ). */
+export async function marcarVendaCanceladaLocal(
+	idlocal: string,
+): Promise<void> {
+	await execute(
+		`UPDATE venda SET status = 'cancelada', nfce_status = 'cancelada' WHERE id = $1`,
+		[idlocal],
+	);
+}
+
+/** Descarta outbox pendente de criar_venda para a venda local (antes do sync). */
+export async function cancelarOutboxCriarVendaPendente(
+	idlocal: string,
+): Promise<number> {
+	const pendentes = await query<{ id: string; payload: string }>(
+		`SELECT id, payload FROM outbox WHERE status = 'pendente' AND tipo = 'criar_venda'`,
+	);
+	const agora = new Date().toISOString();
+	let cancelados = 0;
+	for (const item of pendentes) {
+		try {
+			const payload = JSON.parse(item.payload) as { idlocal?: string };
+			if (payload.idlocal !== idlocal) continue;
+			await execute(
+				`UPDATE outbox SET status = 'cancelado', processadoem = $1 WHERE id = $2`,
+				[agora, item.id],
+			);
+			cancelados++;
+		} catch {
+			// payload inválido — ignora
+		}
+	}
+	return cancelados;
 }
 
 export async function limparContasVazias(): Promise<number> {
@@ -1602,12 +2148,14 @@ export async function limparContasVazias(): Promise<number> {
 
 	await withTransaction(async (client) => {
 		for (const conta of vazias) {
-			await execute(
-				`UPDATE mesa SET status = 'livre', idconta = NULL, nomecliente = NULL
-				 WHERE numero = $1 AND (idconta = $2 OR idconta IS NULL)`,
-				[conta.numero_mesa, conta.id],
-				client,
-			);
+			if (conta.numero_mesa > 0) {
+				await execute(
+					`UPDATE mesa SET status = 'livre', idconta = NULL, nomecliente = NULL
+					 WHERE numero = $1 AND (idconta = $2 OR idconta IS NULL)`,
+					[conta.numero_mesa, conta.id],
+					client,
+				);
+			}
 			await execute("DELETE FROM conta_mesa WHERE id = $1", [conta.id], client);
 
 			const pendentes = await query<{ id: string; payload: string }>(
@@ -1647,6 +2195,81 @@ export async function limparContasVazias(): Promise<number> {
 		);
 	});
 	return vazias.length;
+}
+
+/** Descarta itens, libera a mesa/comanda e cancela outbox pendente da conta. */
+export async function cancelarContaMesa(idconta: string): Promise<void> {
+	const conta = await obterContaMesa(idconta);
+	if (!conta || conta.status !== "aberta") {
+		throw new Error("Conta inválida");
+	}
+	if (conta.modalidade && conta.modalidade !== "mesa") {
+		throw new Error("Cancelamento disponível apenas para mesa/comanda");
+	}
+	if (conta.valorpago > 0) {
+		throw new Error(
+			"Conta com pagamento parcial não pode ser cancelada. Finalize ou estorne os pagamentos.",
+		);
+	}
+
+	const rotulo =
+		(await getConfig("modelo_atendimento", "mesa")) === "comanda"
+			? "Comanda"
+			: "Mesa";
+	const numero = conta.numero_mesa;
+	if (numero <= 0) {
+		throw new Error(`${rotulo} inválida para cancelamento`);
+	}
+	const agora = new Date().toISOString();
+
+	await withTransaction(async (client) => {
+		await execute(
+			"DELETE FROM item_conta WHERE idconta = $1",
+			[idconta],
+			client,
+		);
+		await execute(
+			"DELETE FROM conta_pagamento WHERE idconta = $1",
+			[idconta],
+			client,
+		);
+		await execute(
+			`UPDATE pedido_fila SET status = 'entregue', entregueem = $1
+			 WHERE idconta = $2 AND status = 'pendente'`,
+			[agora, idconta],
+			client,
+		);
+		await execute(
+			`UPDATE mesa SET status = 'livre', idconta = NULL, nomecliente = NULL
+			 WHERE numero = $1 AND (idconta = $2 OR idconta IS NULL)`,
+			[numero, idconta],
+			client,
+		);
+		await execute("DELETE FROM conta_mesa WHERE id = $1", [idconta], client);
+
+		const pendentes = await query<{ id: string; payload: string }>(
+			`SELECT id, payload FROM outbox WHERE status = 'pendente' AND tipo = 'conta_mesa'`,
+			[],
+			client,
+		);
+		for (const o of pendentes) {
+			try {
+				const p = JSON.parse(o.payload) as {
+					idlocal?: string;
+					idconta?: string;
+				};
+				if (p.idlocal === idconta || p.idconta === idconta) {
+					await execute(
+						`UPDATE outbox SET status = 'cancelado', processadoem = $1 WHERE id = $2`,
+						[agora, o.id],
+						client,
+					);
+				}
+			} catch {
+				// payload inválido: ignora
+			}
+		}
+	});
 }
 
 export async function listarMesas(): Promise<
@@ -1774,7 +2397,11 @@ export async function obterContaPorNumero(
 		return null;
 	}
 	const conta = await obterContaMesa(mesa.idconta);
-	if (!conta || conta.status !== "aberta" || conta.itens.length === 0) {
+	if (
+		!conta ||
+		conta.status !== "aberta" ||
+		filtrarItensAbertosConta(conta.itens).length === 0
+	) {
 		return null;
 	}
 	return conta;
@@ -1801,7 +2428,7 @@ export async function abrirContaMesa(
 	}
 	if (mesa.status === "ocupada" && mesa.idconta) {
 		const existente = await obterContaMesa(mesa.idconta);
-		if (existente && existente.itens.length > 0) {
+		if (existente && filtrarItensAbertosConta(existente.itens).length > 0) {
 			return existente;
 		}
 		await limparContasVazias();
@@ -1813,8 +2440,9 @@ export async function abrirContaMesa(
 		await execute(
 			`INSERT INTO conta_mesa (
 				id, numero_mesa, idempresa, status, nomecliente, abertoem, valortotal,
-				numeropessoas, valordesconto, valortaxaservico, valorcouvert, taxa_ativa, sync_status
-			) VALUES ($1, $2, $3, 'aberta', $4, $5, 0, 1, 0, 0, 0, 0, 'pendente')`,
+				numeropessoas, valordesconto, valortaxaservico, valorcouvert, taxa_ativa,
+				modalidade, valorentrega, sync_status
+			) VALUES ($1, $2, $3, 'aberta', $4, $5, 0, 1, 0, 0, 0, 0, 'mesa', 0, 'pendente')`,
 			[id, numero, sessao.idempresa, nomecliente ?? null, agora],
 			client,
 		);
@@ -1849,7 +2477,7 @@ export async function obterContaMesa(
 	if (!conta) {
 		return null;
 	}
-	const itens = await listarItensAbertos(id);
+	const itens = await listarItensDaConta(id);
 	const valorpago = await somarPagoConta(id);
 	return montarContaLocal(conta, itens, valorpago);
 }
@@ -1910,6 +2538,72 @@ export async function adicionarItemConta(
 	return atualizada;
 }
 
+/** Remove item não pago da conta e recalcula totais. Não fecha a mesa se ficar vazia. */
+export async function cancelarItemConta(
+	idconta: string,
+	iditem: string,
+	senha?: string,
+): Promise<ContaMesaLocal> {
+	const conta = await obterContaMesa(idconta);
+	const item = await queryOne<{
+		id: string;
+		idconta: string;
+		descricao: string;
+		quantidade: number;
+		pago: number;
+	}>(
+		`SELECT id, idconta, descricao, quantidade, COALESCE(pago, 0)::int as pago
+		 FROM item_conta WHERE id = $1`,
+		[iditem],
+	);
+
+	const erroInicial = mensagemErroCancelarItem({
+		contaValida: Boolean(conta && conta.status === "aberta"),
+		itemEncontrado: Boolean(item && item.idconta === idconta),
+		itemPago: Number(item?.pago) === 1,
+	});
+	if (erroInicial) {
+		throw new Error(erroInicial);
+	}
+
+	if (await senhaGerencialExigida()) {
+		await exigirSenhaGerencial(senha);
+	}
+
+	await withTransaction(async (client) => {
+		await execute(
+			`DELETE FROM item_conta
+			 WHERE id = $1 AND idconta = $2 AND COALESCE(pago, 0) = 0`,
+			[iditem, idconta],
+			client,
+		);
+		const totais = await recalcularContaPersistida(idconta, client);
+		const valorpago = await somarPagoConta(idconta, client);
+		const erroTotal = mensagemErroCancelarItem({
+			contaValida: true,
+			itemEncontrado: true,
+			itemPago: false,
+			valorPago: valorpago,
+			totalAposCancelar: totais.valortotal,
+		});
+		if (erroTotal) {
+			throw new Error(erroTotal);
+		}
+	});
+
+	await enfileirarOutbox("conta_mesa", {
+		acao: "cancelar_item",
+		idconta,
+		iditem,
+	});
+
+	const atualizada = await obterContaMesa(idconta);
+	if (!atualizada) {
+		throw new Error("Falha ao cancelar item");
+	}
+	return atualizada;
+}
+
 /** Cria a conta na primeira inserção; se já existir conta aberta, só lança o item. */
 export async function adicionarItemNaMesa(
 	numero: number,
@@ -1918,6 +2612,7 @@ export async function adicionarItemNaMesa(
 		descricao: string;
 		quantidade: number;
 		precounitario: number;
+		observacao?: string | null;
 	},
 	nomecliente?: string,
 ): Promise<ContaMesaLocal> {
@@ -1956,6 +2651,7 @@ export async function atualizarNomeClienteConta(
 export async function enviarPedidoConta(params: {
 	idconta: string;
 	clientOrderId: string;
+	observacaoPedido?: string | null;
 	itens: Array<{
 		idproduto: string;
 		quantidade: number;
@@ -1965,6 +2661,7 @@ export async function enviarPedidoConta(params: {
 }): Promise<
 	ContaMesaLocal & {
 		pedidoNovo: boolean;
+		observacaoPedido: string | null;
 		itensProducao: Array<{
 			idproduto: string;
 			descricao: string;
@@ -1980,6 +2677,7 @@ export async function enviarPedidoConta(params: {
 	if (!params.itens.length) {
 		throw new Error("Pedido sem itens");
 	}
+	const observacaoPedido = params.observacaoPedido?.trim() || null;
 	const existente = await queryOne<{ id: string }>(
 		"SELECT id FROM pedido_fila WHERE client_order_id = $1 LIMIT 1",
 		[clientOrderId],
@@ -1989,7 +2687,12 @@ export async function enviarPedidoConta(params: {
 		if (!conta) {
 			throw new Error("Conta inválida");
 		}
-		return { ...conta, pedidoNovo: false, itensProducao: [] };
+		return {
+			...conta,
+			pedidoNovo: false,
+			observacaoPedido,
+			itensProducao: [],
+		};
 	}
 
 	const conta = await obterContaMesa(params.idconta);
@@ -2049,8 +2752,8 @@ export async function enviarPedidoConta(params: {
 		await execute(
 			`INSERT INTO pedido_fila (
 				id, client_order_id, idconta, numero_mesa, nomecliente,
-				idproduto, descricao, quantidade, observacao, status, criadoem
-			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pendente', $10)`,
+				idproduto, descricao, quantidade, observacao, observacao_pedido, status, criadoem
+			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pendente', $11)`,
 			[
 				uuidv4(),
 				clientOrderId,
@@ -2061,6 +2764,7 @@ export async function enviarPedidoConta(params: {
 				descricao,
 				quantidade,
 				linha.observacao?.trim() || null,
+				observacaoPedido,
 				agora,
 			],
 		);
@@ -2076,7 +2780,7 @@ export async function enviarPedidoConta(params: {
 	if (!atualizada) {
 		throw new Error("Falha ao enviar pedido");
 	}
-	return { ...atualizada, pedidoNovo: true, itensProducao };
+	return { ...atualizada, pedidoNovo: true, observacaoPedido, itensProducao };
 }
 
 export async function listarPedidosFila(
@@ -2088,7 +2792,7 @@ export async function listarPedidosFila(
 	if (pendentes) {
 		return query<PedidoFilaLocal>(
 			`SELECT id, client_order_id, idconta, numero_mesa, nomecliente, idproduto,
-				descricao, quantidade, observacao, status, criadoem, entregueem
+				descricao, quantidade, observacao, observacao_pedido, status, criadoem, entregueem
 			 FROM pedido_fila
 			 WHERE criadoem >= $1 AND status = 'pendente'
 			 ORDER BY criadoem`,
@@ -2097,7 +2801,7 @@ export async function listarPedidosFila(
 	}
 	return query<PedidoFilaLocal>(
 		`SELECT id, client_order_id, idconta, numero_mesa, nomecliente, idproduto,
-			descricao, quantidade, observacao, status, criadoem, entregueem
+			descricao, quantidade, observacao, observacao_pedido, status, criadoem, entregueem
 		 FROM pedido_fila
 		 WHERE criadoem >= $1
 		 ORDER BY criadoem`,
@@ -2134,8 +2838,16 @@ export async function fecharContaMesa(params: {
 	if (!conta || conta.status !== "aberta") {
 		throw new Error("Conta inválida");
 	}
-	if (!conta.itens.length) {
+	const itensAbertos = filtrarItensAbertosConta(conta.itens);
+	if (!itensAbertos.length) {
 		throw new Error("Conta sem itens");
+	}
+	const pode = podeFecharDelivery({
+		modalidade: conta.modalidade,
+		endereco: conta.endereco,
+	});
+	if (!pode.ok) {
+		throw new Error(pode.motivo);
 	}
 	if (!(await caixaAberto())) {
 		throw new Error("Abra o caixa antes de receber");
@@ -2148,15 +2860,17 @@ export async function fecharContaMesa(params: {
 	});
 	return gravarVendaMesa({
 		conta,
-		itens: conta.itens,
+		itens: itensAbertos,
 		lancamentos: [...jaPagos, ...restante.efetivos],
 		troco: restante.troco,
 		total: conta.valortotal,
 		valordesconto: conta.valordesconto,
+		valoracrescimo: conta.valoracrescimo,
 		valortaxaservico: conta.valortaxaservico,
 		valorcouvert: conta.valorcouvert,
+		valorentrega: conta.valorentrega,
 		fecharConta: true,
-		marcarItensIds: conta.itens.map((i) => i.id),
+		marcarItensIds: itensAbertos.map((i) => i.id),
 		cliente: params.cliente,
 	});
 }
@@ -2168,8 +2882,10 @@ async function gravarVendaMesa(params: {
 	troco?: number;
 	total: number;
 	valordesconto: number;
+	valoracrescimo?: number;
 	valortaxaservico: number;
 	valorcouvert: number;
+	valorentrega?: number;
 	fecharConta: boolean;
 	marcarItensIds: string[];
 	cliente?: ClienteVenda | null;
@@ -2193,29 +2909,37 @@ async function gravarVendaMesa(params: {
 	const sync = totaisParaSync(fechamento.efetivos, fechamento.troco);
 	const cliente = dadosClienteVenda(params.cliente);
 	const nomecliente = cliente.nomecliente ?? params.conta.nomecliente ?? null;
+	const origem = origemVendaPorModalidade(params.conta.modalidade);
+	const valorentrega = arredondarMoeda(
+		params.valorentrega ?? params.conta.valorentrega ?? 0,
+	);
+	const valoracrescimo = arredondarMoeda(Number(params.valoracrescimo) || 0);
 
 	const venda = await withTransaction(async (client) => {
 		await execute(
 			`INSERT INTO venda (
 				id, idempresa, numeropdv, origem, idconta, status, meio_pagamento,
 				valortotal, valordinheiro, valorpix, valorcartao, valortroco,
-				valordesconto, valortaxaservico, valorcouvert,
+				valordesconto, valoracrescimo, valortaxaservico, valorcouvert, valorentrega,
 				criadoem, sync_status, nfce_status, idcliente, nomecliente, cnpjcpf
-			) VALUES ($1, $2, $3, 'mesa', $4, 'fechada', $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'pendente', 'pendente', $15, $16, $17)`,
+			) VALUES ($1, $2, $3, $4, $5, 'fechada', $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, 'pendente', 'pendente', $18, $19, $20)`,
 			[
 				idVenda,
 				sessao.idempresa,
 				numeropdv,
+				origem,
 				params.conta.id,
 				fechamento.meio,
 				params.total,
 				sync.valordinheiro,
 				sync.valorpix,
-				sync.valorcartaocredito,
+				arredondarMoeda(sync.valorcartaocredito + sync.valorcartaodebito),
 				fechamento.troco,
 				params.valordesconto,
+				valoracrescimo,
 				params.valortaxaservico,
 				params.valorcouvert,
+				valorentrega,
 				agora,
 				cliente.idcliente,
 				nomecliente,
@@ -2262,11 +2986,13 @@ async function gravarVendaMesa(params: {
 				[agora, params.conta.id],
 				client,
 			);
-			await execute(
-				`UPDATE mesa SET status = 'livre', idconta = NULL, nomecliente = NULL WHERE numero = $1`,
-				[params.conta.numero_mesa],
-				client,
-			);
+			if (params.conta.numero_mesa > 0) {
+				await execute(
+					`UPDATE mesa SET status = 'livre', idconta = NULL, nomecliente = NULL WHERE numero = $1`,
+					[params.conta.numero_mesa],
+					client,
+				);
+			}
 		}
 
 		const row = await queryOne<VendaLocal>(
@@ -2286,7 +3012,9 @@ async function gravarVendaMesa(params: {
 		pagamentos: fechamento.efetivos,
 		valordinheiro: sync.valordinheiro,
 		valorpix: sync.valorpix,
-		valorcartao: sync.valorcartaocredito,
+		valorcartao: arredondarMoeda(
+			sync.valorcartaocredito + sync.valorcartaodebito,
+		),
 		itens: params.itens.map((i) => ({
 			idproduto: i.idproduto,
 			descricao: i.descricao,
@@ -2297,9 +3025,11 @@ async function gravarVendaMesa(params: {
 		valortotal: params.total,
 		valortroco: fechamento.troco,
 		valordesconto: params.valordesconto,
+		valoracrescimo,
 		valortaxaservico: params.valortaxaservico,
 		valorcouvert: params.valorcouvert,
-		origem: "mesa",
+		valorentrega,
+		origem,
 		idconta_local: params.conta.id,
 		numero_mesa: params.conta.numero_mesa,
 		identidade: cliente.idcliente,
@@ -2313,6 +3043,7 @@ export async function aplicarAjustesConta(params: {
 	numeropessoas?: number;
 	taxaAtiva?: boolean;
 	desconto?: number;
+	acrescimo?: number;
 	senha?: string;
 }): Promise<ContaMesaLocal> {
 	const conta = await obterContaMesa(params.idconta);
@@ -2321,12 +3052,24 @@ export async function aplicarAjustesConta(params: {
 	}
 
 	let desconto = conta.valordesconto;
+	let acrescimo = conta.valoracrescimo;
+	let precisaSenha = false;
 	if (params.desconto !== undefined) {
 		const novo = arredondarMoeda(Math.max(0, Number(params.desconto) || 0));
 		if (Math.abs(novo - conta.valordesconto) > 0.009) {
-			await exigirSenhaGerencial(params.senha);
+			precisaSenha = true;
 			desconto = novo;
 		}
+	}
+	if (params.acrescimo !== undefined) {
+		const novo = arredondarMoeda(Math.max(0, Number(params.acrescimo) || 0));
+		if (Math.abs(novo - conta.valoracrescimo) > 0.009) {
+			precisaSenha = true;
+			acrescimo = novo;
+		}
+	}
+	if (precisaSenha) {
+		await exigirSenhaGerencial(params.senha);
 	}
 
 	const numeropessoas =
@@ -2347,11 +3090,19 @@ export async function aplicarAjustesConta(params: {
 		`UPDATE conta_mesa SET
 			numeropessoas = $1,
 			valordesconto = $2,
-			valorcouvert = $3,
-			taxa_ativa = $4,
+			valoracrescimo = $3,
+			valorcouvert = $4,
+			taxa_ativa = $5,
 			sync_status = 'pendente'
-		 WHERE id = $5`,
-		[numeropessoas, desconto, valorcouvert, taxaAtiva ? 1 : 0, params.idconta],
+		 WHERE id = $6`,
+		[
+			numeropessoas,
+			desconto,
+			acrescimo,
+			valorcouvert,
+			taxaAtiva ? 1 : 0,
+			params.idconta,
+		],
 	);
 	await recalcularContaPersistida(params.idconta);
 	const atualizada = await obterContaMesa(params.idconta);
@@ -2361,11 +3112,30 @@ export async function aplicarAjustesConta(params: {
 	return atualizada;
 }
 
+export async function senhaGerencialDefinida(): Promise<boolean> {
+	const hash = await getConfig("senha_gerencial_hash", "");
+	return Boolean(hash);
+}
+
+/** Default sensato: habilitada quando a chave ainda não existe. */
+export async function senhaGerencialHabilitada(): Promise<boolean> {
+	const flag = await getConfig("senha_gerencial_habilitada", "1");
+	return flag !== "0";
+}
+
+/** Senha definida e flag habilitada — operações devem pedir/validar senha. */
+export async function senhaGerencialExigida(): Promise<boolean> {
+	return (await senhaGerencialDefinida()) && (await senhaGerencialHabilitada());
+}
+
 export async function exigirSenhaGerencial(senha?: string): Promise<void> {
 	const hash = await getConfig("senha_gerencial_hash", "");
 	const salt = await getConfig("senha_gerencial_salt", "");
 	if (!hash || !salt) {
 		throw new Error("Defina a senha gerencial nas configurações do PDV");
+	}
+	if (!(await senhaGerencialHabilitada())) {
+		return;
 	}
 	const { senhaGerencialConfere } = await import("./senha-gerencial");
 	if (!senha || !senhaGerencialConfere(senha, salt, hash)) {
@@ -2382,11 +3152,6 @@ export async function validarSenhaGerencial(senha: string): Promise<boolean> {
 	}
 }
 
-export async function senhaGerencialDefinida(): Promise<boolean> {
-	const hash = await getConfig("senha_gerencial_hash", "");
-	return Boolean(hash);
-}
-
 export async function registrarPagamentoConta(params: {
 	idconta: string;
 	lancamentos: LancamentoPagamento[];
@@ -2397,7 +3162,7 @@ export async function registrarPagamentoConta(params: {
 	if (!conta || conta.status !== "aberta") {
 		throw new Error("Conta inválida");
 	}
-	if (!conta.itens.length) {
+	if (!filtrarItensAbertosConta(conta.itens).length) {
 		throw new Error("Conta sem itens");
 	}
 	if (!(await caixaAberto())) {
@@ -2461,7 +3226,8 @@ export async function fecharFatiaItens(params: {
 		throw new Error("Conta inválida");
 	}
 	const ids = new Set(params.idsItens);
-	const itensFatia = conta.itens.filter((i) => ids.has(i.id));
+	const itensAbertos = filtrarItensAbertosConta(conta.itens);
+	const itensFatia = itensAbertos.filter((i) => ids.has(i.id));
 	if (!itensFatia.length) {
 		throw new Error("Selecione os itens desta fatia");
 	}
@@ -2472,18 +3238,20 @@ export async function fecharFatiaItens(params: {
 	const totaisConta: TotaisContaGourmet = {
 		subtotal: conta.subtotal,
 		valordesconto: conta.valordesconto,
+		valoracrescimo: conta.valoracrescimo,
 		valortaxaservico: conta.valortaxaservico,
 		valorcouvert: conta.valorcouvert,
+		valorentrega: conta.valorentrega,
 		valortotal: conta.valortotal,
 		numeropessoas: conta.numeropessoas,
 	};
 	const { partirPorItens } = await import("./conta-gourmet");
-	const restoIds = conta.itens.filter((i) => !ids.has(i.id)).map((i) => i.id);
+	const restoIds = itensAbertos.filter((i) => !ids.has(i.id)).map((i) => i.id);
 	const grupos = restoIds.length
 		? [params.idsItens, restoIds]
 		: [params.idsItens];
 	const fatias = partirPorItens(
-		conta.itens.map((i) => ({ id: i.id, precototal: i.precototal })),
+		itensAbertos.map((i) => ({ id: i.id, precototal: i.precototal })),
 		grupos,
 		totaisConta,
 	);
@@ -2499,8 +3267,10 @@ export async function fecharFatiaItens(params: {
 		troco: params.troco,
 		total: fatia.total,
 		valordesconto: fatia.desconto,
+		valoracrescimo: fatia.acrescimo,
 		valortaxaservico: fatia.taxa,
 		valorcouvert: fatia.couvert,
+		valorentrega: fatia.entrega,
 		fecharConta: restoIds.length === 0,
 		marcarItensIds: params.idsItens,
 		cliente: params.cliente,
@@ -2513,10 +3283,20 @@ export async function fecharFatiaItens(params: {
 	const descontoRestante = arredondarMoeda(
 		conta.valordesconto - fatia.desconto,
 	);
+	const acrescimoRestante = arredondarMoeda(
+		conta.valoracrescimo - fatia.acrescimo,
+	);
 	const couvertRestante = arredondarMoeda(conta.valorcouvert - fatia.couvert);
+	const entregaRestante = arredondarMoeda(conta.valorentrega - fatia.entrega);
 	await execute(
-		`UPDATE conta_mesa SET valordesconto = $1, valorcouvert = $2, sync_status = 'pendente' WHERE id = $3`,
-		[Math.max(0, descontoRestante), Math.max(0, couvertRestante), conta.id],
+		`UPDATE conta_mesa SET valordesconto = $1, valoracrescimo = $2, valorcouvert = $3, valorentrega = $4, sync_status = 'pendente' WHERE id = $5`,
+		[
+			Math.max(0, descontoRestante),
+			Math.max(0, acrescimoRestante),
+			Math.max(0, couvertRestante),
+			Math.max(0, entregaRestante),
+			conta.id,
+		],
 	);
 	await recalcularContaPersistida(conta.id);
 	return { conta: await obterContaMesa(conta.id), venda };
@@ -2542,7 +3322,7 @@ export async function transferirConta(
 	}
 	if (destino.status === "ocupada" && destino.idconta) {
 		const destConta = await obterContaMesa(destino.idconta);
-		if (destConta && destConta.itens.length > 0) {
+		if (destConta && filtrarItensAbertosConta(destConta.itens).length > 0) {
 			throw new Error("Destino já tem conta aberta. Use juntar mesas.");
 		}
 	}
@@ -2587,9 +3367,14 @@ export async function transferirItens(params: {
 		throw new Error("Conta de origem inválida");
 	}
 	const ids = new Set(params.idsItens);
-	const mover = origem.itens.filter((i) => ids.has(i.id));
+	const mover = filtrarItensAbertosConta(origem.itens).filter((i) =>
+		ids.has(i.id),
+	);
 	if (!mover.length) {
 		throw new Error("Selecione os itens para transferir");
+	}
+	if (mover.length !== ids.size) {
+		throw new Error("Há item inválido ou já pago na transferência");
 	}
 
 	let destino = await obterContaPorNumero(params.numeroDestino);
@@ -2613,7 +3398,7 @@ export async function transferirItens(params: {
 	const origemAtual = await obterContaMesa(origem.id);
 	if (
 		origemAtual &&
-		origemAtual.itens.length === 0 &&
+		filtrarItensAbertosConta(origemAtual.itens).length === 0 &&
 		origemAtual.valorpago <= 0
 	) {
 		await execute(
@@ -2751,14 +3536,122 @@ export async function atualizarNumeracaoNfce(dados: {
 	);
 }
 
+/** Maior nNF já usado em nfce_local (opcionalmente filtrado pela série). */
+export async function obterMaxNumeroNfceLocal(
+	serie?: number,
+): Promise<number | null> {
+	const row =
+		serie != null && Number.isFinite(serie) && serie >= 1
+			? await queryOne<{ max: number | null }>(
+					`SELECT MAX(numero)::int AS max FROM nfce_local WHERE serie = $1`,
+					[serie],
+				)
+			: await queryOne<{ max: number | null }>(
+					`SELECT MAX(numero)::int AS max FROM nfce_local`,
+				);
+	const max = row?.max;
+	if (max == null || !Number.isFinite(max) || max < 1) {
+		return null;
+	}
+	return max;
+}
+
+export async function numeroNfceLocalJaUsado(
+	serie: number,
+	numero: number,
+	excluirId?: string,
+): Promise<boolean> {
+	const row = excluirId
+		? await queryOne<{ id: string }>(
+				`SELECT id FROM nfce_local
+				 WHERE serie = $1 AND numero = $2 AND id <> $3
+				 LIMIT 1`,
+				[serie, numero, excluirId],
+			)
+		: await queryOne<{ id: string }>(
+				`SELECT id FROM nfce_local WHERE serie = $1 AND numero = $2 LIMIT 1`,
+				[serie, numero],
+			);
+	return Boolean(row);
+}
+
+/**
+ * Reserva o próximo nNF livre na série atual, pulando números já presentes
+ * em nfce_local (evita colisão após rewind histórico do contador).
+ */
 export async function reservarNumeroNfce(): Promise<{
 	serie: number;
 	numero: number;
 }> {
 	const atual = await obterNumeracaoNfce();
-	const numero = atual.proximo_numero;
-	await atualizarNumeracaoNfce({ proximo_numero: numero + 1 });
-	return { serie: atual.serie, numero };
+	let numero = Math.max(1, Math.floor(atual.proximo_numero) || 1);
+	const serie = atual.serie;
+	const limite = numero + 10_000;
+	while (numero < limite) {
+		if (!(await numeroNfceLocalJaUsado(serie, numero))) {
+			await atualizarNumeracaoNfce({ proximo_numero: numero + 1 });
+			return { serie, numero };
+		}
+		numero += 1;
+	}
+	throw new Error(
+		"Não foi possível reservar um número NFC-e livre na série atual",
+	);
+}
+
+export async function listarNfceLocalParaConflitoNumeracao(): Promise<
+	Array<{
+		id: string;
+		idvenda: string;
+		serie: number;
+		numero: number;
+		chave: string | null;
+		status: string;
+		tpemis: number;
+		criadoem: string;
+	}>
+> {
+	return query<{
+		id: string;
+		idvenda: string;
+		serie: number;
+		numero: number;
+		chave: string | null;
+		status: string;
+		tpemis: number;
+		criadoem: string;
+	}>(
+		`SELECT id, idvenda, serie, numero, chave, status, tpemis, criadoem
+		 FROM nfce_local
+		 WHERE status NOT IN ('cancelada', 'inutilizada', 'conflito_numeracao')
+		 ORDER BY serie, numero, criadoem`,
+	);
+}
+
+export async function cancelarOutboxTransmitirContingenciaPendente(
+	idvenda: string,
+): Promise<number> {
+	const itens = await query<{ id: string; payload: string }>(
+		`SELECT id, payload FROM outbox
+		 WHERE status IN ('pendente', 'processando')
+		   AND tipo = 'transmitir_nfce_contingencia'`,
+	);
+	let cancelados = 0;
+	const agora = new Date().toISOString();
+	for (const item of itens) {
+		try {
+			const payload = JSON.parse(item.payload) as { idvenda?: string };
+			if (String(payload.idvenda ?? "") !== idvenda) continue;
+			await execute(
+				`UPDATE outbox SET status = 'cancelado', processadoem = $1 WHERE id = $2`,
+				[agora, item.id],
+			);
+			cancelados += 1;
+		} catch {
+			/* payload inválido */
+		}
+	}
+	return cancelados;
 }
 
 export async function avancarNumeracaoNfceAposEmissao(
@@ -2975,4 +3868,500 @@ export async function listarNfceComXml(): Promise<
 		 WHERE xml IS NOT NULL AND btrim(xml) <> ''
 		 ORDER BY criadoem`,
 	);
+}
+
+async function proximaSenhaChamadaDoDia(): Promise<string> {
+	const inicio = new Date();
+	inicio.setHours(0, 0, 0, 0);
+	const row = await queryOne<{ total: number | string }>(
+		`SELECT COUNT(*)::int as total
+		 FROM conta_mesa
+		 WHERE modalidade IN ('delivery', 'retirada')
+		   AND abertoem >= $1
+		   AND senha_chamada IS NOT NULL`,
+		[inicio.toISOString()],
+	);
+	return gerarSenhaChamada((Number(row?.total) || 0) + 1);
+}
+
+async function taxaEntregaConfig(bairro?: string | null): Promise<number> {
+	const padrao = Number(await getConfig("taxa_entrega_padrao", "0"));
+	const tabela = parseBairrosEntrega(await getConfig("bairros_entrega", "[]"));
+	return resolverTaxaEntrega({
+		bairro,
+		padrao: Number.isFinite(padrao) ? padrao : 0,
+		tabelaBairros: tabela,
+	});
+}
+
+export async function buscarClientesPdv(
+	termo = "",
+	limit = 30,
+): Promise<ClientePdvLocal[]> {
+	const q = termo.trim();
+	if (!q) {
+		return query<ClientePdvLocal>(
+			`SELECT id, nome, telefone, cnpjcpf, endereco, bairro, complemento, referencia, atualizadoem
+			 FROM cliente_pdv ORDER BY atualizadoem DESC LIMIT $1`,
+			[limit],
+		);
+	}
+	const like = `%${q.replace(/[%_\\]/g, "\\$&")}%`;
+	return query<ClientePdvLocal>(
+		`SELECT id, nome, telefone, cnpjcpf, endereco, bairro, complemento, referencia, atualizadoem
+		 FROM cliente_pdv
+		 WHERE nome ILIKE $1 ESCAPE '\\'
+		    OR telefone ILIKE $1 ESCAPE '\\'
+		    OR COALESCE(cnpjcpf, '') ILIKE $1 ESCAPE '\\'
+		 ORDER BY nome
+		 LIMIT $2`,
+		[like, limit],
+	);
+}
+
+export async function salvarClientePdv(params: {
+	id?: string;
+	nome: string;
+	telefone?: string | null;
+	cnpjcpf?: string | null;
+	endereco?: string | null;
+	bairro?: string | null;
+	complemento?: string | null;
+	referencia?: string | null;
+}): Promise<ClientePdvLocal> {
+	const nome = params.nome.trim();
+	if (!nome) {
+		throw new Error("Informe o nome do cliente");
+	}
+	const id = params.id?.trim() || uuidv4();
+	const agora = new Date().toISOString();
+	await execute(
+		`INSERT INTO cliente_pdv (
+			id, nome, telefone, cnpjcpf, endereco, bairro, complemento, referencia, atualizadoem
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		ON CONFLICT (id) DO UPDATE SET
+			nome = excluded.nome,
+			telefone = excluded.telefone,
+			cnpjcpf = excluded.cnpjcpf,
+			endereco = excluded.endereco,
+			bairro = excluded.bairro,
+			complemento = excluded.complemento,
+			referencia = excluded.referencia,
+			atualizadoem = excluded.atualizadoem`,
+		[
+			id,
+			nome,
+			params.telefone?.trim() || null,
+			params.cnpjcpf?.trim() || null,
+			params.endereco?.trim() || null,
+			params.bairro?.trim() || null,
+			params.complemento?.trim() || null,
+			params.referencia?.trim() || null,
+			agora,
+		],
+	);
+	const row = await queryOne<ClientePdvLocal>(
+		`SELECT id, nome, telefone, cnpjcpf, endereco, bairro, complemento, referencia, atualizadoem
+		 FROM cliente_pdv WHERE id = $1`,
+		[id],
+	);
+	if (!row) {
+		throw new Error("Falha ao salvar cliente");
+	}
+	return row;
+}
+
+export async function abrirPedidoEntrega(params: {
+	modalidade: "delivery" | "retirada";
+	nomecliente?: string | null;
+	telefone?: string | null;
+	endereco?: string | null;
+	bairro?: string | null;
+	complemento?: string | null;
+	referencia?: string | null;
+	valorentrega?: number | null;
+	idcliente?: string | null;
+	obs?: string | null;
+	orderidintegracao?: string | null;
+}): Promise<ContaMesaLocal> {
+	const sessao = await obterSessao();
+	if (!sessao.idempresa) {
+		throw new Error("Empresa não selecionada");
+	}
+	const modalidade = params.modalidade;
+	if (modalidade !== "delivery" && modalidade !== "retirada") {
+		throw new Error("Modalidade inválida");
+	}
+	const endereco = params.endereco?.trim() || null;
+	const pode = podeFecharDelivery({ modalidade, endereco });
+	if (modalidade === "delivery" && !pode.ok) {
+		throw new Error(pode.motivo);
+	}
+
+	const bairro = params.bairro?.trim() || null;
+	const valorentrega =
+		params.valorentrega != null && Number.isFinite(Number(params.valorentrega))
+			? arredondarMoeda(Math.max(0, Number(params.valorentrega)))
+			: modalidade === "delivery"
+				? await taxaEntregaConfig(bairro)
+				: 0;
+
+	const id = uuidv4();
+	const agora = new Date().toISOString();
+	const senha = await proximaSenhaChamadaDoDia();
+	const orderid = params.orderidintegracao?.trim() || null;
+
+	await execute(
+		`INSERT INTO conta_mesa (
+			id, numero_mesa, idempresa, status, nomecliente, abertoem, valortotal,
+			numeropessoas, valordesconto, valortaxaservico, valorcouvert, taxa_ativa,
+			modalidade, telefone, endereco, bairro, complemento, referencia,
+			valorentrega, status_entrega, senha_chamada, idcliente, orderidintegracao,
+			obs, sync_status
+		) VALUES (
+			$1, 0, $2, 'aberta', $3, $4, $5, 1, 0, 0, 0, 0,
+			$6, $7, $8, $9, $10, $11, $12, 'recebido', $13, $14, $15, $16, 'pendente'
+		)`,
+		[
+			id,
+			sessao.idempresa,
+			params.nomecliente?.trim() || null,
+			agora,
+			valorentrega,
+			modalidade,
+			params.telefone?.trim() || null,
+			endereco,
+			bairro,
+			params.complemento?.trim() || null,
+			params.referencia?.trim() || null,
+			valorentrega,
+			senha,
+			params.idcliente?.trim() || null,
+			orderid,
+			params.obs?.trim() || null,
+		],
+	);
+
+	const criada = await obterContaMesa(id);
+	if (!criada) {
+		throw new Error("Falha ao abrir pedido de entrega");
+	}
+	return criada;
+}
+
+export async function listarPedidosEntrega(
+	statusFiltro?: string | null,
+): Promise<ContaMesaLocal[]> {
+	const params: unknown[] = [];
+	let where =
+		"WHERE modalidade IN ('delivery', 'retirada') AND status = 'aberta'";
+	if (statusFiltro?.trim()) {
+		params.push(statusFiltro.trim());
+		where += ` AND status_entrega = $${params.length}`;
+	}
+	const rows = await query<ContaGourmetRow>(
+		`SELECT * FROM conta_mesa ${where} ORDER BY abertoem DESC`,
+		params,
+	);
+	const result: ContaMesaLocal[] = [];
+	for (const row of rows) {
+		const itens = await listarItensDaConta(row.id);
+		const valorpago = await somarPagoConta(row.id);
+		result.push(montarContaLocal(row, itens, valorpago));
+	}
+	return result;
+}
+
+export async function atualizarStatusEntrega(
+	idconta: string,
+	status?: StatusEntrega | null,
+): Promise<ContaMesaLocal> {
+	const conta = await obterContaMesa(idconta);
+	if (!conta || conta.status !== "aberta") {
+		throw new Error("Conta inválida");
+	}
+	if (!ehModalidadeEntrega(conta.modalidade)) {
+		throw new Error("Conta não é delivery/retirada");
+	}
+	const atual = (conta.status_entrega || "recebido") as StatusEntrega;
+	const proximo =
+		status ?? proximoStatusEntrega(atual, conta.modalidade as ModalidadePedido);
+	if (!proximo) {
+		throw new Error("Não há próximo status de entrega");
+	}
+	if (status) {
+		const ordemDelivery: StatusEntrega[] = [
+			"recebido",
+			"producao",
+			"saiu",
+			"entregue",
+		];
+		const ordemRetirada: StatusEntrega[] = ["recebido", "producao", "entregue"];
+		const ordem =
+			conta.modalidade === "retirada" ? ordemRetirada : ordemDelivery;
+		if (!ordem.includes(status)) {
+			throw new Error("Status de entrega inválido");
+		}
+	}
+	await execute(
+		`UPDATE conta_mesa SET status_entrega = $1, sync_status = 'pendente' WHERE id = $2`,
+		[proximo, idconta],
+	);
+	const atualizada = await obterContaMesa(idconta);
+	if (!atualizada) {
+		throw new Error("Falha ao atualizar status");
+	}
+	return atualizada;
+}
+
+export async function aplicarTaxaEntrega(
+	idconta: string,
+	valorentrega: number,
+): Promise<ContaMesaLocal> {
+	const conta = await obterContaMesa(idconta);
+	if (!conta || conta.status !== "aberta") {
+		throw new Error("Conta inválida");
+	}
+	if (!ehModalidadeEntrega(conta.modalidade)) {
+		throw new Error("Conta não é delivery/retirada");
+	}
+	await execute(
+		`UPDATE conta_mesa SET valorentrega = $1, sync_status = 'pendente' WHERE id = $2`,
+		[arredondarMoeda(Math.max(0, Number(valorentrega) || 0)), idconta],
+	);
+	await recalcularContaPersistida(idconta);
+	const atualizada = await obterContaMesa(idconta);
+	if (!atualizada) {
+		throw new Error("Falha ao aplicar taxa de entrega");
+	}
+	return atualizada;
+}
+
+export async function atualizarDadosEntrega(
+	idconta: string,
+	dados: {
+		nomecliente?: string | null;
+		telefone?: string | null;
+		endereco?: string | null;
+		bairro?: string | null;
+		complemento?: string | null;
+		referencia?: string | null;
+		obs?: string | null;
+	},
+): Promise<ContaMesaLocal> {
+	const conta = await obterContaMesa(idconta);
+	if (!conta || conta.status !== "aberta") {
+		throw new Error("Conta inválida");
+	}
+	if (!ehModalidadeEntrega(conta.modalidade)) {
+		throw new Error("Conta não é delivery/retirada");
+	}
+	await execute(
+		`UPDATE conta_mesa SET
+			nomecliente = COALESCE($1, nomecliente),
+			telefone = COALESCE($2, telefone),
+			endereco = COALESCE($3, endereco),
+			bairro = COALESCE($4, bairro),
+			complemento = COALESCE($5, complemento),
+			referencia = COALESCE($6, referencia),
+			obs = COALESCE($7, obs),
+			sync_status = 'pendente'
+		 WHERE id = $8`,
+		[
+			dados.nomecliente !== undefined
+				? dados.nomecliente?.trim() || null
+				: null,
+			dados.telefone !== undefined ? dados.telefone?.trim() || null : null,
+			dados.endereco !== undefined ? dados.endereco?.trim() || null : null,
+			dados.bairro !== undefined ? dados.bairro?.trim() || null : null,
+			dados.complemento !== undefined
+				? dados.complemento?.trim() || null
+				: null,
+			dados.referencia !== undefined ? dados.referencia?.trim() || null : null,
+			dados.obs !== undefined ? dados.obs?.trim() || null : null,
+			idconta,
+		],
+	);
+	const atualizada = await obterContaMesa(idconta);
+	if (!atualizada) {
+		throw new Error("Falha ao atualizar dados de entrega");
+	}
+	return atualizada;
+}
+
+export function rotuloOrigemConta(conta: ContaMesaLocal): string {
+	if (ehModalidadeEntrega(conta.modalidade)) {
+		return rotuloProducaoEntrega({
+			modalidade: conta.modalidade,
+			senhaChamada: conta.senha_chamada,
+			protocolo: conta.orderidintegracao,
+		});
+	}
+	return `Mesa ${conta.numero_mesa}`;
+}
+
+async function resolverProdutoIngest(codigoOuId: string): Promise<{
+	id: string;
+	descricao: string;
+	preco: number;
+} | null> {
+	const chave = codigoOuId.trim();
+	if (!chave) return null;
+	const porId = await buscarProdutoPorId(chave);
+	if (porId) {
+		return { id: porId.id, descricao: porId.descricao, preco: porId.preco };
+	}
+	const porEan = await buscarProdutoPorEan(chave);
+	if (porEan) {
+		return { id: porEan.id, descricao: porEan.descricao, preco: porEan.preco };
+	}
+	const codigoNum = Number(chave);
+	if (Number.isInteger(codigoNum) && codigoNum > 0) {
+		const porCodigo = await buscarProdutoPorCodigo(codigoNum);
+		if (porCodigo) {
+			return {
+				id: porCodigo.id,
+				descricao: porCodigo.descricao,
+				preco: porCodigo.preco,
+			};
+		}
+	}
+	return null;
+}
+
+export async function ingestPedidoDelivery(params: {
+	protocol: string;
+	modalidade?: "delivery" | "retirada";
+	nomecliente?: string | null;
+	telefone?: string | null;
+	endereco?: string | null;
+	bairro?: string | null;
+	complemento?: string | null;
+	referencia?: string | null;
+	documento?: string | null;
+	valorentrega?: number | null;
+	obs?: string | null;
+	itens: Array<{
+		idproduto?: string | null;
+		ean?: string | null;
+		codigo?: string | null;
+		codigoproduto?: string | null;
+		nomeproduto?: string | null;
+		quantidade: number;
+		precounitario?: number | null;
+		observacao?: string | null;
+	}>;
+}): Promise<{
+	action: "created" | "already_exists";
+	conta: ContaMesaLocal;
+	itensProducao: Array<{
+		idproduto: string;
+		descricao: string;
+		quantidade: number;
+		observacao?: string | null;
+	}>;
+}> {
+	const protocol = params.protocol.trim();
+	if (!protocol) {
+		throw new Error("Protocolo obrigatório");
+	}
+	const existente = await queryOne<ContaGourmetRow>(
+		`SELECT * FROM conta_mesa
+		 WHERE orderidintegracao = $1 AND status = 'aberta'
+		 LIMIT 1`,
+		[protocol],
+	);
+	if (existente) {
+		const conta = await obterContaMesa(existente.id);
+		if (!conta) {
+			throw new Error("Conta existente inválida");
+		}
+		return { action: "already_exists", conta, itensProducao: [] };
+	}
+
+	if (!params.itens.length) {
+		throw new Error("Pedido sem itens");
+	}
+
+	const faltantes: string[] = [];
+	const resolvidos: Array<{
+		idproduto: string;
+		quantidade: number;
+		observacao?: string | null;
+		precounitario?: number;
+	}> = [];
+
+	for (const item of params.itens) {
+		const chave =
+			item.idproduto?.trim() ||
+			item.ean?.trim() ||
+			item.codigo?.trim() ||
+			item.codigoproduto?.trim() ||
+			"";
+		const produto = await resolverProdutoIngest(chave);
+		if (!produto) {
+			faltantes.push(chave || item.nomeproduto || "(sem código)");
+			continue;
+		}
+		const qtd = Number(item.quantidade);
+		if (!Number.isFinite(qtd) || qtd <= 0) {
+			throw new Error(`Quantidade inválida para ${produto.descricao}`);
+		}
+		resolvidos.push({
+			idproduto: produto.id,
+			quantidade: qtd,
+			observacao: item.observacao?.trim() || null,
+			precounitario:
+				item.precounitario != null &&
+				Number.isFinite(Number(item.precounitario))
+					? Number(item.precounitario)
+					: undefined,
+		});
+	}
+
+	if (faltantes.length) {
+		throw new Error(
+			`Produtos não encontrados no catálogo local: ${faltantes.join(", ")}`,
+		);
+	}
+
+	const modalidade = params.modalidade === "retirada" ? "retirada" : "delivery";
+	const conta = await abrirPedidoEntrega({
+		modalidade,
+		nomecliente: params.nomecliente,
+		telefone: params.telefone,
+		endereco: params.endereco,
+		bairro: params.bairro,
+		complemento: params.complemento,
+		referencia: params.referencia,
+		valorentrega: params.valorentrega,
+		obs: params.obs,
+		orderidintegracao: protocol,
+	});
+
+	const enviado = await enviarPedidoConta({
+		idconta: conta.id,
+		clientOrderId: protocol,
+		itens: resolvidos.map((r) => ({
+			idproduto: r.idproduto,
+			quantidade: r.quantidade,
+			observacao: r.observacao,
+		})),
+	});
+
+	await execute(
+		`UPDATE conta_mesa SET status_entrega = 'producao', sync_status = 'pendente' WHERE id = $1`,
+		[conta.id],
+	);
+
+	const atualizada = await obterContaMesa(conta.id);
+	if (!atualizada) {
+		throw new Error("Falha ao ingerir pedido");
+	}
+
+	return {
+		action: "created",
+		conta: atualizada,
+		itensProducao: enviado.itensProducao,
+	};
 }

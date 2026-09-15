@@ -12,7 +12,14 @@ type CampoTributoCabecalho =
 	| "icms"
 	| "ipi"
 	| "pis"
-	| "cofins";
+	| "cofins"
+	| "baseicmssubstituicao"
+	| "icmssubstituicao"
+	| "icmsfundopobreza"
+	| "icmsfundopobrezast"
+	| "basecalculoicmsdifal"
+	| "icmsdestino"
+	| "icmsremetente";
 
 function tributoVazio(valor: string | null | undefined): boolean {
 	if (valor === null || valor === undefined || valor === "") {
@@ -48,6 +55,15 @@ function montarTributacaoItem(itemXml: ItemNFeXml) {
 		cofins: itemXml.cofins,
 		ipi: itemXml.ipi,
 		origem: itemXml.origem,
+		baseicmsst: itemXml.baseicmsst,
+		icmsst: itemXml.icmsst,
+		fcpst: itemXml.fcpst,
+		cstipi: itemXml.cstipi,
+		basepis: itemXml.basepis,
+		basecofins: itemXml.basecofins,
+		aliquotaicmsst: itemXml.aliquotaicmsst,
+		basefcp: itemXml.basefcp,
+		valorfcp: itemXml.valorfcp,
 	};
 }
 
@@ -92,6 +108,26 @@ export function reidratarTributosRascunhoImportacao(
 		ipi: mesclarTributo(nota.ipi, dadosXml.ipi) ?? nota.ipi,
 		pis: mesclarTributo(nota.pis, dadosXml.pis) ?? nota.pis,
 		cofins: mesclarTributo(nota.cofins, dadosXml.cofins) ?? nota.cofins,
+		baseicmssubstituicao:
+			mesclarTributo(nota.baseicmssubstituicao, dadosXml.baseicmssubstituicao) ??
+			nota.baseicmssubstituicao,
+		icmssubstituicao:
+			mesclarTributo(nota.icmssubstituicao, dadosXml.icmssubstituicao) ??
+			nota.icmssubstituicao,
+		icmsfundopobreza:
+			mesclarTributo(nota.icmsfundopobreza, dadosXml.icmsfundopobreza) ??
+			nota.icmsfundopobreza,
+		icmsfundopobrezast:
+			mesclarTributo(nota.icmsfundopobrezast, dadosXml.icmsfundopobrezast) ??
+			nota.icmsfundopobrezast,
+		basecalculoicmsdifal:
+			mesclarTributo(nota.basecalculoicmsdifal, dadosXml.basecalculoicmsdifal) ??
+			nota.basecalculoicmsdifal,
+		icmsdestino:
+			mesclarTributo(nota.icmsdestino, dadosXml.icmsdestino) ?? nota.icmsdestino,
+		icmsremetente:
+			mesclarTributo(nota.icmsremetente, dadosXml.icmsremetente) ??
+			nota.icmsremetente,
 	};
 
 	const itensReidratados = itens.map((item, indice) => {
@@ -186,6 +222,20 @@ export function reidratarTributosRascunhoImportacao(
 			cofins: mesclarTributo(item.cofins, itemXml.cofins) ?? item.cofins,
 			ipi: mesclarTributo(item.ipi, itemXml.ipi) ?? item.ipi,
 			origem: item.origem ?? itemXml.origem ?? 0,
+			situacaotributariaipi:
+				item.situacaotributariaipi ?? itemXml.cstipi ?? null,
+			basepis: mesclarTributo(item.basepis, itemXml.basepis) ?? item.basepis,
+			basecofins:
+				mesclarTributo(item.basecofins, itemXml.basecofins) ?? item.basecofins,
+			baseicmsst:
+				mesclarTributo(item.baseicmsst, itemXml.baseicmsst) ?? item.baseicmsst,
+			valoricmsst:
+				mesclarTributo(item.valoricmsst, itemXml.icmsst) ?? item.valoricmsst,
+			aliquotaicmsst: item.aliquotaicmsst ?? itemXml.aliquotaicmsst ?? null,
+			basefcp: mesclarTributo(item.basefcp, itemXml.basefcp) ?? item.basefcp,
+			valorfcp: mesclarTributo(item.valorfcp, itemXml.valorfcp) ?? item.valorfcp,
+			valorfcpst: mesclarTributo(item.valorfcpst, itemXml.fcpst) ?? item.valorfcpst,
+			cest: item.cest ?? itemXml.cest?.replace(/\D/g, "").slice(0, 7) ?? null,
 			dadosimportacao,
 		};
 	});
@@ -205,5 +255,12 @@ export function extrairTributosCabecalhoXml(
 		ipi: dadosXml.ipi ?? null,
 		pis: dadosXml.pis ?? null,
 		cofins: dadosXml.cofins ?? null,
+		baseicmssubstituicao: dadosXml.baseicmssubstituicao ?? null,
+		icmssubstituicao: dadosXml.icmssubstituicao ?? null,
+		icmsfundopobreza: dadosXml.icmsfundopobreza ?? null,
+		icmsfundopobrezast: dadosXml.icmsfundopobrezast ?? null,
+		basecalculoicmsdifal: dadosXml.basecalculoicmsdifal ?? null,
+		icmsdestino: dadosXml.icmsdestino ?? null,
+		icmsremetente: dadosXml.icmsremetente ?? null,
 	};
 }

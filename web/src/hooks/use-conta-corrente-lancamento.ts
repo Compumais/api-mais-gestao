@@ -2,23 +2,42 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { contaCorrenteLancamentoService } from "@/services/conta-corrente-lancamento.service";
-import type {
-	AtualizarContaCorrenteLancamentoData,
-	CriarContaCorrenteLancamentoData,
+import {
+	type AtualizarContaCorrenteLancamentoData,
+	contaCorrenteLancamentoService,
+	type CriarContaCorrenteLancamentoData,
 } from "@/services/conta-corrente-lancamento.service";
 
 interface UseContaCorrenteLancamentosParams {
 	idcontacorrente: string;
 	page?: number;
 	limit?: number;
+	historico?: string;
+	documento?: string;
+	planocontasnome?: string;
+	datahora?: string;
+	sentido?: "entrada" | "saida";
+	ordenarPor?: string;
+	ordem?: "asc" | "desc";
 	enabled?: boolean;
 }
 
 export function useContaCorrenteLancamentos(
 	params: UseContaCorrenteLancamentosParams,
 ) {
-	const { idcontacorrente, page = 1, limit = 10, enabled = true } = params;
+	const {
+		idcontacorrente,
+		page = 1,
+		limit = 10,
+		historico,
+		documento,
+		planocontasnome,
+		datahora,
+		sentido,
+		ordenarPor,
+		ordem,
+		enabled = true,
+	} = params;
 
 	return useQuery({
 		queryKey: [
@@ -27,12 +46,26 @@ export function useContaCorrenteLancamentos(
 			idcontacorrente,
 			page,
 			limit,
+			historico,
+			documento,
+			planocontasnome,
+			datahora,
+			sentido,
+			ordenarPor,
+			ordem,
 		],
 		queryFn: () =>
 			contaCorrenteLancamentoService.listar({
 				idcontacorrente,
 				page,
 				limit,
+				...(historico ? { historico } : {}),
+				...(documento ? { documento } : {}),
+				...(planocontasnome ? { planocontasnome } : {}),
+				...(datahora ? { datahora } : {}),
+				...(sentido ? { sentido } : {}),
+				...(ordenarPor ? { ordenarPor } : {}),
+				...(ordem ? { ordem } : {}),
 			}),
 		enabled: !!idcontacorrente && enabled,
 		staleTime: 0,
@@ -62,7 +95,7 @@ export function useCriarContaCorrenteLancamento() {
 		mutationFn: (dados: CriarContaCorrenteLancamentoData) =>
 			contaCorrenteLancamentoService.criar(dados),
 		onSuccess: () => {
-			queryClient.invalidateQueries({
+			void queryClient.invalidateQueries({
 				queryKey: ["conta-corrente-lancamentos"],
 			});
 			toast.success("Movimentação criada com sucesso!");
@@ -85,7 +118,7 @@ export function useAtualizarContaCorrenteLancamento() {
 			dados: AtualizarContaCorrenteLancamentoData;
 		}) => contaCorrenteLancamentoService.atualizar(id, dados),
 		onSuccess: () => {
-			queryClient.invalidateQueries({
+			void queryClient.invalidateQueries({
 				queryKey: ["conta-corrente-lancamentos"],
 			});
 			toast.success("Movimentação atualizada com sucesso!");
@@ -102,7 +135,7 @@ export function useDeletarContaCorrenteLancamento() {
 	return useMutation({
 		mutationFn: (id: string) => contaCorrenteLancamentoService.deletar(id),
 		onSuccess: () => {
-			queryClient.invalidateQueries({
+			void queryClient.invalidateQueries({
 				queryKey: ["conta-corrente-lancamentos"],
 			});
 			toast.success("Movimentação excluída com sucesso!");

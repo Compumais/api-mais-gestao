@@ -50,6 +50,8 @@ export interface Produto {
 	cstcofinsentrada?: string | number | null;
 	cstpis?: string | number | null;
 	cstcofins?: string | number | null;
+	cstibs?: string | null;
+	classtributariaibs?: string | null;
 	cstipientrada?: string | null;
 	cstipisaida?: string | null;
 	itemrapido?: number | null;
@@ -85,6 +87,12 @@ export interface Produto {
 	aliquotaconfinsentrada?: string | null;
 	aliquotapisconfinsentradapreco?: string | null;
 	aliquotapisconfinssaidapreco?: string | null;
+	aliquotaiibs?: string | null;
+	aliquotacbs?: string | null;
+	quantidade?: string | null;
+	quantidadefiscal?: string | null;
+	divergencia?: string | null;
+	possuiSaldo?: boolean;
 }
 
 export interface ListarProdutosResponse {
@@ -136,6 +144,8 @@ type CamposAliquotaProduto = {
 	aliquotaconfinsentrada?: string | null;
 	aliquotapisconfinsentradapreco?: string | null;
 	aliquotapisconfinssaidapreco?: string | null;
+	aliquotaiibs?: string | null;
+	aliquotacbs?: string | null;
 };
 
 export interface CriarProdutoData
@@ -184,6 +194,8 @@ export interface CriarProdutoData
 	cstcofins?: string | null;
 	cstipientrada?: string | null;
 	cstipisaida?: string | null;
+	cstibs?: string | null;
+	classtributariaibs?: string | null;
 }
 
 export interface TributacaoPorCfopResponse {
@@ -287,18 +299,37 @@ export interface AtualizarProdutoData
 	cstcofins?: string | null;
 	cstipientrada?: string | null;
 	cstipisaida?: string | null;
+	cstibs?: string | null;
+	classtributariaibs?: string | null;
 }
 
+export type ListarProdutosParams = {
+	idempresa: string;
+	page?: number;
+	limit?: number;
+	nome?: string;
+	q?: string;
+	inativo?: number;
+	tipo?: "P" | "S";
+	codigo?: string;
+	ean?: string;
+	referencia?: string;
+	ncm?: string;
+	unidademedida?: string;
+	tipoproduto?: string;
+	fornecedor?: string;
+	preco?: string;
+	custoaquisicao?: string;
+	datacadastro?: string;
+	codigolistalc11603?: string;
+	codigonbs?: string;
+	somenteDivergencia?: boolean;
+	ordenarPor?: string;
+	ordem?: "asc" | "desc";
+};
+
 export const produtosService = {
-	async listar(params: {
-		idempresa: string;
-		page?: number;
-		limit?: number;
-		nome?: string;
-		q?: string;
-		inativo?: number;
-		tipo?: "P" | "S";
-	}): Promise<ListarProdutosResponse> {
+	async listar(params: ListarProdutosParams): Promise<ListarProdutosResponse> {
 		const { data } = await api.get<ListarProdutosResponse>("/produtos", {
 			params,
 		});
@@ -434,6 +465,18 @@ export const produtosService = {
 	async baixarTemplate(formato: FormatoImportacaoProdutos): Promise<Blob> {
 		const { data } = await api.get<Blob>("/produtos/template", {
 			params: { formato },
+			responseType: "blob",
+		});
+		return data;
+	},
+
+	async exportar(
+		idempresa: string,
+		formato: FormatoImportacaoProdutos,
+		filtros?: Omit<ListarProdutosParams, "idempresa" | "page" | "limit">,
+	): Promise<Blob> {
+		const { data } = await api.get<Blob>("/produtos/exportar", {
+			params: { idempresa, formato, ...filtros },
 			responseType: "blob",
 		});
 		return data;

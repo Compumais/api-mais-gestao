@@ -1,12 +1,4 @@
-import {
-	Circle,
-	Clock3,
-	Receipt,
-	Settings,
-	ShoppingCart,
-	UtensilsCrossed,
-} from "lucide-react";
-import type { ComponentType } from "react";
+import { Circle, Clock3, UtensilsCrossed } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { marcarBootPendente } from "@/lib/boot-state";
@@ -23,8 +15,10 @@ import {
 	AvisoSecundario,
 	secundarioDesconectado,
 } from "@/ui/components/aviso-secundario";
+import { AlertasOperacionaisPdv } from "@/ui/components/alertas-operacionais-pdv";
 import { DialogFecharCaixa } from "@/ui/components/dialog-fechar-caixa";
 import { FunctionBar } from "@/ui/components/function-bar";
+import { SideNav } from "@/ui/components/side-nav";
 import { StatusBar } from "@/ui/components/status-bar";
 import { Topbar } from "@/ui/components/topbar";
 import { Badge } from "@/ui/components/ui/badge";
@@ -44,34 +38,6 @@ type DialogoAbertura =
 			valortotal: number;
 	  };
 
-function SideButton({
-	label,
-	icon: Icon,
-	onClick,
-	active,
-}: {
-	label: string;
-	icon: ComponentType<{ className?: string }>;
-	onClick: () => void;
-	active?: boolean;
-}) {
-	return (
-		<button
-			type="button"
-			onClick={onClick}
-			className={cn(
-				"flex flex-1 flex-col items-center justify-center gap-2 rounded-lg border-2 py-4 text-sm font-semibold transition",
-				active
-					? "border-primary bg-primary text-primary-foreground"
-					: "border-border bg-card hover:border-primary",
-			)}
-		>
-			<Icon className="size-7" />
-			{label}
-		</button>
-	);
-}
-
 function iconeStatus(status: StatusAtividadeMesa) {
 	if (status === "consumindo") return UtensilsCrossed;
 	if (status === "ociosa") return Clock3;
@@ -86,12 +52,12 @@ function rotuloStatus(status: StatusAtividadeMesa) {
 
 function classeMesa(status: StatusAtividadeMesa) {
 	if (status === "consumindo") {
-		return "border-primary bg-primary text-primary-foreground";
+		return "bg-primary text-primary-foreground ring-primary";
 	}
 	if (status === "ociosa") {
-		return "border-accent bg-accent text-accent-foreground";
+		return "bg-accent text-accent-foreground ring-foreground/15";
 	}
-	return "border-border bg-card text-muted-foreground";
+	return "bg-card text-muted-foreground ring-foreground/10";
 }
 
 /** Home: mesas se a empresa tem Gourmet; senão, só o balcão. */
@@ -117,6 +83,8 @@ export function HomePage() {
 	const [novaNumero, setNovaNumero] = useState("");
 	const [dialogo, setDialogo] = useState<DialogoAbertura>(null);
 	const [nomeCliente, setNomeCliente] = useState("");
+	const [modalAbrirMesaHabilitado, setModalAbrirMesaHabilitado] =
+		useState(true);
 
 	useEscapeFechaModal(dialogo !== null, () => {
 		setDialogo(null);
@@ -133,6 +101,7 @@ export function HomePage() {
 	async function carregarPreferencias() {
 		const config = await pdvInvoke<Record<string, string>>("getConfig");
 		setApenasAbertas(config.filtro_apenas_abertas === "1");
+		setModalAbrirMesaHabilitado(config.modal_abrir_mesa_habilitado !== "0");
 	}
 
 	async function carregarTotalHoje() {
@@ -201,6 +170,10 @@ export function HomePage() {
 			setMsg(
 				status?.principalErro ?? "PDV principal offline. Operação bloqueada.",
 			);
+			return;
+		}
+		if (!modalAbrirMesaHabilitado) {
+			irParaConta(mesa.numero);
 			return;
 		}
 		if (mesa.status === "ocupada") {
@@ -282,8 +255,8 @@ export function HomePage() {
 				}
 			/>
 
-			<div className="flex flex-1 gap-3 overflow-hidden p-3">
-				<div className="flex flex-1 flex-col gap-3 overflow-hidden rounded-lg border bg-card p-3">
+			<div className="flex min-h-0 flex-1 gap-3 overflow-hidden bg-muted/30 p-3">
+				<div className="pdv-surface flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden p-3">
 					<div className="flex flex-wrap items-end gap-3">
 						<label className="flex items-center gap-2 text-sm">
 							<input
@@ -327,6 +300,7 @@ export function HomePage() {
 					</div>
 
 					<AvisoSecundario status={status} />
+					<AlertasOperacionaisPdv status={status} />
 					{msg && <p className="text-sm text-muted-foreground">{msg}</p>}
 
 					<div className="mb-1 flex flex-wrap gap-3 text-xs">
@@ -365,7 +339,7 @@ export function HomePage() {
 									type="button"
 									onClick={() => solicitarAbertura(mesa)}
 									className={cn(
-										"flex h-28 flex-col items-center justify-center gap-1 rounded-lg border-2 text-center transition hover:brightness-110",
+										"flex h-28 flex-col items-center justify-center gap-1 rounded-lg text-center ring-1 transition hover:brightness-110",
 										classeMesa(mesa.statusAtividade),
 									)}
 								>
@@ -394,45 +368,16 @@ export function HomePage() {
 					</div>
 				</div>
 
-				<aside className="flex w-48 flex-col gap-2">
-					<SideButton
-						label={rotulo.plural}
-						icon={UtensilsCrossed}
-						active
-						onClick={() => void carregarMesas()}
-					/>
-					<SideButton
-						label="Balcão"
-						icon={ShoppingCart}
-						onClick={() => {
-							if (bloqueado) {
-								setMsg(
-									status?.principalErro ??
-										"PDV principal offline. Operação bloqueada.",
-								);
-								return;
-							}
-							navigate("/balcao");
-						}}
-					/>
-					<SideButton
-						label="Vendas"
-						icon={Receipt}
-						onClick={() => navigate("/vendas")}
-					/>
-					{status?.podeConfigurar ? (
-						<SideButton
-							label="Config"
-							icon={Settings}
-							onClick={() => navigate("/config")}
-						/>
-					) : null}
-				</aside>
+				<SideNav
+					status={status}
+					onBlocked={setMsg}
+					onMesasActiveClick={() => void carregarMesas()}
+				/>
 			</div>
 
 			{dialogo?.tipo === "nome" && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-					<div className="w-96 space-y-4 rounded-lg border bg-card p-5">
+					<div className="pdv-surface w-96 space-y-4 p-5">
 						<h2 className="text-lg font-semibold">
 							Abrir {rotulo.singular.toLowerCase()} {dialogo.numero}
 						</h2>
@@ -473,7 +418,7 @@ export function HomePage() {
 
 			{dialogo?.tipo === "continuar" && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-					<div className="w-96 space-y-4 rounded-lg border bg-card p-5">
+					<div className="pdv-surface w-96 space-y-4 p-5">
 						<h2 className="text-lg font-semibold">
 							{rotulo.singular} {dialogo.numero} já está aberta
 						</h2>
@@ -529,6 +474,14 @@ export function HomePage() {
 							]
 						: []),
 					{ label: "Fila", value: status?.outboxPendentes ?? 0 },
+					{
+						label: "NFC-e pendentes",
+						value: status?.nfcePendentesTransmissao ?? 0,
+						tone:
+							(status?.nfcePendentesTransmissao ?? 0) > 0
+								? ("warning" as const)
+								: ("default" as const),
+					},
 					{ label: "Livres", value: livres, tone: "success" },
 					{
 						label: "Consumindo",
@@ -561,6 +514,21 @@ export function HomePage() {
 						variant: "default",
 						onClick: () => navigate("/balcao"),
 						disabled: bloqueado,
+					},
+					{
+						key: "delivery",
+						label: "Delivery",
+						hotkey: "F6",
+						variant: "default",
+						onClick: () => navigate("/delivery"),
+						disabled: bloqueado,
+					},
+					{
+						key: "pedidos",
+						label: "Pedidos",
+						hotkey: "F7",
+						variant: "secondary",
+						onClick: () => navigate("/pedidos"),
 					},
 					{
 						key: "vendas",

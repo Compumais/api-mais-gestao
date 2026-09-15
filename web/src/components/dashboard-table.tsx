@@ -22,6 +22,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { formatDataCivilBrasilia } from "@/lib/date";
 import type {
 	UltimaMovimentacao,
 	UltimasMovimentacoes,
@@ -129,9 +130,7 @@ function TransactionTable({
 						<TableRow key={item.id}>
 							<TableCell className="font-medium">{item.descricao}</TableCell>
 							<TableCell>
-								{item.data
-									? new Date(item.data).toLocaleDateString("pt-BR")
-									: "-"}
+								{item.data ? formatDataCivilBrasilia(item.data) : "-"}
 							</TableCell>
 							<TableCell>
 								<StatusBadge status={item.status} type={type} />

@@ -13,6 +13,11 @@ import {
 	pararBackupAgendado,
 } from "./sync/backup-agendado";
 import { iniciarSyncPeriodico, processarOutbox } from "./sync/outbox";
+import {
+	iniciarReconciliacaoNfcePeriodica,
+	reconciliarNfce,
+} from "./sync/reconciliar-nfce";
+import { verificarEAtualizarPdv } from "./update/verificar-update";
 
 // Linux/dev: chrome-sandbox costuma exigir root+setuid; evita abort do Electron.
 if (
@@ -24,6 +29,7 @@ if (
 
 let mainWindow: BrowserWindow | null = null;
 let syncTimer: NodeJS.Timeout | null = null;
+let pararSyncNfce: (() => void) | null = null;
 
 function createWindow(): void {
 	mainWindow = new BrowserWindow({
@@ -78,6 +84,8 @@ app.whenReady().then(async () => {
 	try {
 		await initDb();
 		void processarOutbox();
+		void reconciliarNfce();
+		pararSyncNfce = iniciarReconciliacaoNfcePeriodica(60_000, 5_000).parar;
 		await restartLanServer();
 		await iniciarTecnibra().catch((err) => {
 			console.error(
@@ -89,12 +97,20 @@ app.whenReady().then(async () => {
 				err instanceof Error ? err.message : "Falha ao iniciar backup agendado",
 			);
 		});
+		void verificarEAtualizarPdv({ parent: mainWindow }).catch((err) => {
+			console.error(
+				err instanceof Error ? err.message : "Falha ao verificar atualização",
+			);
+		});
 	} catch (err) {
 		console.error(
 			err instanceof Error
 				? err.message
 				: "Falha ao conectar no PostgreSQL local",
 		);
+		void verificarEAtualizarPdv({ parent: mainWindow }).catch(() => {
+			/* offline / sem DB */
+		});
 	}
 
 	app.on("activate", () => {
@@ -108,6 +124,8 @@ app.on("window-all-closed", () => {
 	if (syncTimer) {
 		clearInterval(syncTimer);
 	}
+	pararSyncNfce?.();
+	pararSyncNfce = null;
 	pararTecnibra();
 	pararBackupAgendado();
 	void encerrarLanServer();
@@ -115,4 +133,9 @@ app.on("window-all-closed", () => {
 	if (process.platform !== "darwin") {
 		app.quit();
 	}
+});
+
+app.on("before-quit", () => {
+	pararSyncNfce?.();
+	pararSyncNfce = null;
 });

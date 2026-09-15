@@ -14,6 +14,7 @@ export interface NfceListagem {
 	valortotalnota: string | null;
 	emissao: string | null;
 	datahoraemissao: string | null;
+	datahoraautorizacao: string | null;
 	datainclusao: string | null;
 	tipoambientenfe: number | null;
 	mensagemtransmissaonfe: string | null;
@@ -34,6 +35,22 @@ export interface ResultadoReemissaoNfce {
 	xMotivo?: string;
 	erro?: string;
 	pendencias?: Array<{ codigo: string; mensagem: string }>;
+}
+
+export interface ItemTransmitirPendentesLote {
+	idnotafiscal: string;
+	idvenda: string | null;
+	numeronotafiscal: string | null;
+	serie: string | null;
+	sucesso: boolean;
+	mensagem: string;
+}
+
+export interface ResultadoTransmitirPendentesLote {
+	total: number;
+	autorizadas: number;
+	falhas: number;
+	itens: ItemTransmitirPendentesLote[];
 }
 
 export interface DadosCupomNfceApi {
@@ -107,10 +124,82 @@ export interface ResultadoAtualizacaoVendaNfce {
 	emissaoNfce?: ResultadoReemissaoNfce;
 }
 
+export interface ItemDetalheNfce {
+	nome: string;
+	codigo: number | null;
+	quantidade: string;
+	precounitario: string;
+	valortotal: string;
+	unidade: string | null;
+	ncm: string | null;
+	cfop: string | null;
+	cst: string | null;
+	csosn: string | null;
+}
+
+export interface PagamentoDetalheNfce {
+	meio: string;
+	label: string;
+	valor: number;
+}
+
+export interface RejeicaoDetalheNfce {
+	cStat: string | null;
+	xMotivo: string | null;
+}
+
+export interface DetalhesNfce {
+	nota: {
+		idnotafiscal: string;
+		idvenda: string | null;
+		numeronotafiscal: string | null;
+		serie: string | null;
+		chavenfe: string | null;
+		protocolonfe: string | null;
+		status: number | null;
+		tipoambientenfe: number | null;
+		valortotalnota: string | null;
+		emissao: string | null;
+		datahoraemissao: string | null;
+		datahoraautorizacao: string | null;
+	};
+	itens: ItemDetalheNfce[];
+	pagamentos: PagamentoDetalheNfce[];
+	troco: number;
+	rejeicao: RejeicaoDetalheNfce | null;
+	contextoFiscal: {
+		crt: number | null;
+		uf: string | null;
+	};
+	iaDisponivel: boolean;
+}
+
+export type MotivoNaoInterpretadoRejeicao =
+	| "sem_chave"
+	| "sem_rejeicao"
+	| "erro_ia";
+
+export interface InterpretacaoRejeicaoNfce {
+	interpretado: boolean;
+	motivoNaoInterpretado: MotivoNaoInterpretadoRejeicao | null;
+	mensagem: string | null;
+	provedor: string | null;
+	classificacao: "PROVAVEL" | "INDETERMINADA" | null;
+	explicacao: string | null;
+	comoCorrigir: string | null;
+}
+
 export const nfceService = {
 	async listar(params: {
 		idempresa: string;
 		status?: number;
+		numero?: string;
+		chavenfe?: string;
+		idvenda?: string;
+		dataInicio?: string;
+		dataFim?: string;
+		ordenarPor?: string;
+		ordem?: "asc" | "desc";
 		page?: number;
 		limit?: number;
 	}): Promise<{ data: NfceListagem[]; paginacao: Paginacao }> {
@@ -168,6 +257,42 @@ export const nfceService = {
 	}): Promise<ResultadoReemissaoNfce> {
 		const { data } = await api.post<ResultadoReemissaoNfce>(
 			`/nfce/${params.idnotafiscal}/reemitir`,
+			{ idempresa: params.idempresa },
+		);
+		return data;
+	},
+
+	async transmitirPendentes(params: {
+		idempresa: string;
+		limite?: number;
+	}): Promise<ResultadoTransmitirPendentesLote> {
+		const { data } = await api.post<ResultadoTransmitirPendentesLote>(
+			"/nfce/pendentes/transmitir",
+			{
+				idempresa: params.idempresa,
+				...(params.limite !== undefined ? { limite: params.limite } : {}),
+			},
+		);
+		return data;
+	},
+
+	async buscarDetalhes(params: {
+		idempresa: string;
+		idnotafiscal: string;
+	}): Promise<DetalhesNfce> {
+		const { data } = await api.get<DetalhesNfce>(
+			`/nfce/${params.idnotafiscal}/detalhes`,
+			{ params: { idempresa: params.idempresa } },
+		);
+		return data;
+	},
+
+	async interpretarRejeicao(params: {
+		idempresa: string;
+		idnotafiscal: string;
+	}): Promise<InterpretacaoRejeicaoNfce> {
+		const { data } = await api.post<InterpretacaoRejeicaoNfce>(
+			`/nfce/${params.idnotafiscal}/interpretar-rejeicao`,
 			{ idempresa: params.idempresa },
 		);
 		return data;

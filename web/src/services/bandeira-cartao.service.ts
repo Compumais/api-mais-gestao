@@ -25,6 +25,9 @@ export const bandeiraCartaoService = {
 		limit?: number;
 		inativo?: number;
 		descricao?: string;
+		codigo?: string;
+		ordenarPor?: string;
+		ordem?: "asc" | "desc";
 	}): Promise<ListarBandeirasCartaoResponse> {
 		const { data } = await api.get<ListarBandeirasCartaoResponse>(
 			"/bandeiras-cartao",

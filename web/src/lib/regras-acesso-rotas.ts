@@ -13,6 +13,12 @@ export const REGRAS_ACESSO_ROTAS: Array<{
 	acesso: AcessoNavegacao;
 }> = [
 	{
+		prefixo: "/produtos/relatorios",
+		acesso: {
+			perfis: ["proprietario", "admin", "financeiro"],
+		},
+	},
+	{
 		prefixo: "/ordens-servico",
 		acesso: {
 			feature: "ordem_servico",
@@ -101,6 +107,33 @@ export const REGRAS_ACESSO_ROTAS: Array<{
 	{
 		prefixo: "/plano-contas",
 		acesso: {
+			perfis: ["proprietario", "admin", "financeiro"],
+		},
+	},
+	{
+		prefixo: "/tipos-cobranca",
+		acesso: {
+			perfis: ["proprietario", "admin", "financeiro"],
+		},
+	},
+	{
+		prefixo: "/contabilidade/efd-contribuicoes",
+		acesso: {
+			feature: "sped_efd",
+			perfis: ["proprietario", "admin", "financeiro"],
+		},
+	},
+	{
+		prefixo: "/contabilidade/efd",
+		acesso: {
+			feature: "sped_efd",
+			perfis: ["proprietario", "admin", "financeiro"],
+		},
+	},
+	{
+		prefixo: "/contabilidade/apuracao-efd",
+		acesso: {
+			feature: "sped_efd",
 			perfis: ["proprietario", "admin", "financeiro"],
 		},
 	},

@@ -7,6 +7,7 @@ import { buscarContaMesa } from "./buscar.js";
 import { criarContaMesa } from "./criar.js";
 import * as schema from "./doc-schema/schema.js";
 import { excluirContaMesa } from "./excluir.js";
+import { fecharFatiaItensContaMesa } from "./fechar-fatia-itens.js";
 import { listarContasMesa } from "./listar.js";
 
 export async function contasMesaRotas(app: FastifyInstance) {
@@ -28,6 +29,10 @@ export async function contasMesaRotas(app: FastifyInstance) {
 	app.put("/contas-mesa/:id", {
 		schema: schema.atualizarContaMesaSchema,
 		handler: atualizarContaMesa,
+	});
+	app.post("/contas-mesa/:id/fatia-itens", {
+		schema: schema.fecharFatiaItensContaMesaSchema,
+		handler: fecharFatiaItensContaMesa,
 	});
 	app.delete("/contas-mesa/:id", {
 		schema: schema.excluirContaMesaSchema,

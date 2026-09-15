@@ -1,11 +1,11 @@
 "use client";
 
 import { IconFileTypePdf, IconPrinter } from "@tabler/icons-react";
-import dayjs from "dayjs";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { NFE_AMBIENTE_LABELS } from "@/constants/nfe-status";
+import { formatDateTimeBrasilia } from "@/lib/date";
 import {
 	calcularPrecoTotalItem,
 	formatCurrency,
@@ -95,7 +95,7 @@ export function CupomNaoFiscal({ dados, onFechar }: CupomNaoFiscalProps) {
 							<p className="mt-1 text-xs text-gray-600">{dados.contexto}</p>
 						)}
 						<p className="mt-1 text-xs">
-							{dayjs(dados.dataHora).format("DD/MM/YYYY HH:mm:ss")}
+							{formatDateTimeBrasilia(dados.dataHora, { comSegundos: true })}
 						</p>
 						{dados.vendaId && (
 							<p className="text-xs text-gray-600">
@@ -110,16 +110,26 @@ export function CupomNaoFiscal({ dados, onFechar }: CupomNaoFiscalProps) {
 								item.quantidade,
 								item.precounitario,
 							);
+							const pago = item.pago === true;
 							return (
 								<div
 									key={`${item.nome}-${index}`}
 									className="border-b border-dashed border-gray-300 pb-2"
 								>
-									<p className="font-medium">
+									<p
+										className={`font-medium ${pago ? "line-through text-gray-500" : ""}`}
+									>
 										{item.codigo != null ? `${item.codigo} — ` : ""}
 										{item.nome}
+										{pago && (
+											<span className="ml-1 text-[10px] no-underline">
+												(pago)
+											</span>
+										)}
 									</p>
-									<div className="mt-1 flex justify-between text-gray-700">
+									<div
+										className={`mt-1 flex justify-between ${pago ? "text-gray-500 line-through" : "text-gray-700"}`}
+									>
 										<span>
 											{parseValor(item.quantidade)} x{" "}
 											{formatCurrency(item.precounitario)}

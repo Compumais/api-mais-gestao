@@ -75,7 +75,13 @@ export const fichaProducaoService = {
 		page?: number;
 		limit?: number;
 		q?: string;
+		codigo?: string;
+		nome?: string;
 		ativo?: number;
+		permiteproducaomassa?: number;
+		producaonavenda?: number;
+		ordenarPor?: string;
+		ordem?: "asc" | "desc";
 	}): Promise<ListarFichasProducaoResponse> {
 		const { data } = await api.get<ListarFichasProducaoResponse>(
 			"/fichas-producao",

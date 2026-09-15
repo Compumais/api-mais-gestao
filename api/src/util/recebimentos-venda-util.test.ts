@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
 	adicionarDias,
 	formatarValorMonetario,
+	normalizarValorPagamentoParaBanco,
 	parseValorMonetario,
 } from "@/util/recebimentos-venda-util.js";
 
@@ -14,6 +15,13 @@ describe("recebimentos-venda-util", () => {
 
 	it("deve formatar valor monetário com duas casas", () => {
 		expect(formatarValorMonetario(12.3)).toBe("12.30");
+	});
+
+	it("deve normalizar valores vazios para o banco", () => {
+		expect(normalizarValorPagamentoParaBanco("")).toBe("0.00");
+		expect(normalizarValorPagamentoParaBanco(undefined)).toBe("0.00");
+		expect(normalizarValorPagamentoParaBanco("648.53")).toBe("648.53");
+		expect(normalizarValorPagamentoParaBanco("113.12")).toBe("113.12");
 	});
 
 	it("deve adicionar dias à data base", () => {

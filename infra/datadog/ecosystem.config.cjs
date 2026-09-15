@@ -7,18 +7,16 @@
  *
  * Deploy atômico (na pasta web):
  *   pnpm run build:live
- *   pm2 reload mais-gestao-web --update-env
  *
  * Rollback:
  *   pnpm run build:rollback
- *   pm2 reload mais-gestao-web --update-env
  *
  * Os nomes dos arquivos de log devem bater com infra/datadog/conf.d/pm2.d/conf.yaml.
  */
 module.exports = {
 	apps: [
 		{
-			name: "mais-gestao-web",
+			name: "web-mais-gestao",
 			cwd: "/opt/mais-gestao/web",
 			script: "pnpm",
 			args: "start -- -p 3000",
@@ -27,8 +25,8 @@ module.exports = {
 				NODE_ENV: "production",
 			},
 			// PM2 grava em ~/.pm2/logs/ por padrão — Datadog faz tail desses arquivos.
-			out_file: "/home/deploy/.pm2/logs/mais-gestao-web-out.log",
-			error_file: "/home/deploy/.pm2/logs/mais-gestao-web-error.log",
+			out_file: "/home/deploy/.pm2/logs/web-mais-gestao-out.log",
+			error_file: "/home/deploy/.pm2/logs/web-mais-gestao-error.log",
 			merge_logs: false,
 			autorestart: true,
 			max_restarts: 10,

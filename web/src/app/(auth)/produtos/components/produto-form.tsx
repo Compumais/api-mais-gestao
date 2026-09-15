@@ -140,6 +140,8 @@ function buildProdutoPayload(
 	payload.cstcofins = textoOuNulo(data.cstcofins);
 	payload.cstipientrada = textoOuNulo(data.cstipientrada);
 	payload.cstipisaida = textoOuNulo(data.cstipisaida);
+	payload.cstibs = textoOuNulo(data.cstibs);
+	payload.classtributariaibs = textoOuNulo(data.classtributariaibs);
 	payload.percentualmva = textoOuNulo(data.percentualmva);
 	payload.aliquotaicmsinterna = textoOuNulo(data.aliquotaicmsinterna);
 	payload.aliquotaicmsdiferencialentrada = textoOuNulo(
@@ -161,6 +163,8 @@ function buildProdutoPayload(
 	payload.aliquotapisconfinsentradapreco = textoOuNulo(
 		data.aliquotapisconfinsentradapreco,
 	);
+	payload.aliquotaiibs = textoOuNulo(data.aliquotaiibs);
+	payload.aliquotacbs = textoOuNulo(data.aliquotacbs);
 	payload.aliquotaiss = textoOuNulo(data.aliquotaiss);
 
 	return payload;
@@ -215,6 +219,8 @@ export function ProdutoForm(props: ProdutoFormProps) {
 			cstcofins: null,
 			cstipientrada: null,
 			cstipisaida: null,
+			cstibs: null,
+			classtributariaibs: null,
 			percentualmva: null,
 			aliquotaicmsinterna: null,
 			aliquotaicmsdiferencialentrada: null,
@@ -229,6 +235,8 @@ export function ProdutoForm(props: ProdutoFormProps) {
 			aliquotapisconfinssaidapreco: null,
 			aliquotapisconfinsentradapreco: null,
 			aliquotaiss: null,
+			aliquotaiibs: null,
+			aliquotacbs: null,
 			observacoes: null,
 			enviamobile: false,
 			quantidadepadrao: 0,
@@ -300,14 +308,33 @@ export function ProdutoForm(props: ProdutoFormProps) {
 		enabled: !!empresa,
 	});
 
-	const { data: gruposGourmetData } = useQuery({
-		queryKey: ["grupos-gourmet", empresa?.id],
+	const idgrupogourmetInicial =
+		isEdicao && props.valoresIniciais?.idgrupogourmet
+			? props.valoresIniciais.idgrupogourmet
+			: null;
+
+	const { data: gruposGourmet = [] } = useQuery({
+		queryKey: ["grupos-gourmet", empresa?.id, "todos", idgrupogourmetInicial],
 		queryFn: async () => {
 			if (!empresa) throw new Error("Empresa não selecionada");
-			return await gruposGourmetService.listar({
+			const registros = await gruposGourmetService.listarTodos({
 				idempresa: empresa.id,
-				limit: 100,
 			});
+			if (
+				idgrupogourmetInicial &&
+				idgrupogourmetInicial !== "none" &&
+				!registros.some((grupo) => grupo.id === idgrupogourmetInicial)
+			) {
+				try {
+					const grupo = await gruposGourmetService.buscar(idgrupogourmetInicial);
+					if (grupo.idempresa === empresa.id) {
+						return [...registros, grupo];
+					}
+				} catch {
+					// grupo removido ou inacessível
+				}
+			}
+			return registros;
 		},
 		enabled: !!empresa,
 	});
@@ -838,9 +865,8 @@ export function ProdutoForm(props: ProdutoFormProps) {
 					className="data-[state=inactive]:hidden"
 				>
 					<ProdutoAbaGourmet
-						setValue={setValue}
-						watch={watch}
-						gruposGourmet={gruposGourmetData?.data ?? []}
+						control={control}
+						gruposGourmet={gruposGourmet}
 					/>
 				</TabsContent>
 

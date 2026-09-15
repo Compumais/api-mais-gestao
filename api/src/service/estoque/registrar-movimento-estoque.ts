@@ -43,7 +43,8 @@ function parseQuantidade(valor: string): number {
 }
 
 function formatarQuantidade(valor: number): string {
-	return Math.max(0, valor).toFixed(6);
+	// Vendas/ajustes podem deixar o saldo negativo — não clampamos em zero.
+	return valor.toFixed(6);
 }
 
 async function resolverOuCriarSaldo(

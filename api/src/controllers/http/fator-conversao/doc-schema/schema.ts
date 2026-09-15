@@ -41,6 +41,10 @@ export const listarFatoresConversaoSchema: FastifySchema = {
 		properties: {
 			idempresa: { type: "string" },
 			q: { type: "string" },
+			nome: { type: "string" },
+			fator: { type: "string" },
+			ordenarPor: { type: "string" },
+			ordem: { type: "string", enum: ["asc", "desc"] },
 			page: { type: "number", default: 1 },
 			limit: { type: "number", default: 10 },
 		},

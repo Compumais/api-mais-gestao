@@ -44,6 +44,13 @@ export type ProdutoLocal = {
 	espizza?: number | null;
 	imagem?: string | null;
 	caminhoimagem?: string | null;
+	ncm?: string | null;
+	cest?: string | null;
+	cfop?: string | null;
+	cst?: string | null;
+	csosn?: string | null;
+	origem?: number | null;
+	aliquotaicms?: string | null;
 };
 
 export type LeituraCodigoBarras = {
@@ -83,6 +90,8 @@ export type MeioPagamento = "DINHEIRO" | "PIX" | "CARTAO" | "OUTROS";
 export type PagamentosResumoTurno = {
 	dinheiro: number;
 	cartao: number;
+	cartaocredito: number;
+	cartaodebito: number;
 	pix: number;
 	prepago: number;
 	total: number;
@@ -95,6 +104,12 @@ export type ResumoTurnoCaixa = {
 	suprimento: number;
 	saldoapurado: number;
 	saldoCaixaFisico: number;
+};
+
+export type ItemVendidoTurnoAgrupado = {
+	idproduto: string;
+	descricao: string;
+	quantidade: number;
 };
 
 export type StatusLancamentoPagamento = "ok" | "pendente" | "cancelado";
@@ -143,6 +158,8 @@ export type ModeloAtendimento = "mesa" | "comanda";
 export type StatusPdv = {
 	online: boolean;
 	outboxPendentes: number;
+	outboxFalhasPermanentes?: number;
+	nfcePendentesTransmissao?: number;
 	podeConfigurar: boolean;
 	moduloGourmet: boolean;
 	sessao: {
@@ -172,6 +189,15 @@ export type StatusPdv = {
 	principalOnline?: boolean | null;
 	principalErro?: string | null;
 	balancaHabilitada?: boolean;
+	nfceSyncUltimaOk?: string | null;
+	nfceSyncUltimoErro?: string | null;
+	nfceSyncUltimoResumo?: {
+		total: number;
+		atualizadas: number;
+		registradas: number;
+		conflitos: number;
+		falhas: number;
+	} | null;
 };
 
 export type BalancaStatus = {
@@ -201,6 +227,13 @@ export function rotuloModelo(modelo: ModeloAtendimento | undefined) {
 		return { singular: "Comanda", plural: "Comandas" };
 	}
 	return { singular: "Mesa", plural: "Mesas" };
+}
+
+export function tituloContaAtendimento(
+	modelo: ModeloAtendimento | undefined,
+	numero: number,
+): string {
+	return `${rotuloModelo(modelo).singular} ${numero}`;
 }
 
 export function rotaHomePdv(status: StatusPdv | null | undefined): string {

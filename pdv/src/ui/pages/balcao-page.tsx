@@ -9,6 +9,7 @@ import {
 	rotuloModelo,
 	type StatusContext,
 } from "@/lib/pdv-types";
+import { normalizarObservacaoItem } from "@/lib/observacao-item";
 import { produtoEhPizza } from "@/lib/pizza-meio-a-meio";
 import { devePedirPeso, formatarQuantidade } from "@/lib/produto-kg";
 import { teclaCorresponde } from "@/lib/teclas-funcao";
@@ -17,8 +18,10 @@ import {
 	AvisoSecundario,
 	secundarioDesconectado,
 } from "@/ui/components/aviso-secundario";
+import { AlertasOperacionaisPdv } from "@/ui/components/alertas-operacionais-pdv";
 import { BarcodeInput } from "@/ui/components/barcode-input";
 import { DialogFecharCaixa } from "@/ui/components/dialog-fechar-caixa";
+import { DialogObservacaoItem } from "@/ui/components/dialog-observacao-item";
 import {
 	DialogPagamentoMisto,
 	type FechamentoMisto,
@@ -31,6 +34,7 @@ import { DialogQuantidadePeso } from "@/ui/components/dialog-quantidade-peso";
 import { DialogRejeicaoNfce } from "@/ui/components/dialog-rejeicao-nfce";
 import { FunctionBar } from "@/ui/components/function-bar";
 import { ProdutoCard } from "@/ui/components/produto-card";
+import { SideNav } from "@/ui/components/side-nav";
 import { Topbar } from "@/ui/components/topbar";
 import { Button } from "@/ui/components/ui/button";
 import { useEscapeFechaModal } from "@/ui/hooks/use-escape-fecha-modal";
@@ -45,6 +49,7 @@ type Item = {
 	precounitario: number;
 	precototal: number;
 	pesado?: boolean;
+	observacao?: string | null;
 };
 
 export function BalcaoPage() {
@@ -66,12 +71,14 @@ export function BalcaoPage() {
 	const [loading, setLoading] = useState(false);
 	const [pizzaPrimeiro, setPizzaPrimeiro] = useState<ProdutoLocal | null>(null);
 	const [produtoPeso, setProdutoPeso] = useState<ProdutoLocal | null>(null);
+	const [obsFilaChave, setObsFilaChave] = useState<string | null>(null);
 	const [fechando, setFechando] = useState(false);
 	const [iniciarComDesconto, setIniciarComDesconto] = useState(false);
 
 	useEscapeFechaModal(Boolean(rejeicaoNfce), () => setRejeicaoNfce(null));
 	useEscapeFechaModal(Boolean(pizzaPrimeiro), () => setPizzaPrimeiro(null));
 	useEscapeFechaModal(Boolean(produtoPeso), () => setProdutoPeso(null));
+	useEscapeFechaModal(Boolean(obsFilaChave), () => setObsFilaChave(null));
 
 	const total = useMemo(
 		() => itens.reduce((acc, i) => acc + i.precototal, 0),
@@ -121,7 +128,11 @@ export function BalcaoPage() {
 		}
 		setItens((prev) => {
 			const existente = prev.find(
-				(i) => i.idproduto === produto.id && !i.idprodutomeio && !i.pesado,
+				(i) =>
+					i.idproduto === produto.id &&
+					!i.idprodutomeio &&
+					!i.pesado &&
+					!i.observacao?.trim(),
 			);
 			if (existente) {
 				return prev.map((i) =>
@@ -166,6 +177,17 @@ export function BalcaoPage() {
 	function confirmarMeioAMeio(item: ItemPizzaMeioAMeio) {
 		adicionarLinha(item);
 		setPizzaPrimeiro(null);
+	}
+
+	function aplicarObservacaoFila(observacao: string | null) {
+		const chave = obsFilaChave;
+		setObsFilaChave(null);
+		if (!chave) return;
+		setItens((prev) =>
+			prev.map((item) =>
+				item.chave === chave ? { ...item, observacao } : item,
+			),
+		);
 	}
 
 	function venderPizzaInteira(produto: ProdutoLocal) {
@@ -222,6 +244,47 @@ export function BalcaoPage() {
 		);
 	}
 
+	async function retirarDepois() {
+		if (bloqueado) {
+			setMsg(
+				status?.principalErro ?? "PDV principal offline. Operação bloqueada.",
+			);
+			return;
+		}
+		if (!itens.length) return;
+		setLoading(true);
+		setMsg("");
+		try {
+			const conta = await pdvInvoke<{ id: string }>("abrirPedidoEntrega", {
+				modalidade: "retirada",
+				nomecliente: null,
+				telefone: null,
+				endereco: null,
+				bairro: null,
+				valorentrega: 0,
+			});
+			await pdvInvoke(
+				"enviarPedidoConta",
+				conta.id,
+				crypto.randomUUID(),
+				itens.map((item) => ({
+					idproduto: item.idproduto,
+					quantidade: item.quantidade,
+					observacao: normalizarObservacaoItem(item.observacao),
+					idprodutomeio: item.idprodutomeio ?? null,
+				})),
+			);
+			setItens([]);
+			navigate(`/delivery/${conta.id}`);
+		} catch (err) {
+			setMsg(
+				err instanceof Error ? err.message : "Erro ao abrir retirada",
+			);
+		} finally {
+			setLoading(false);
+		}
+	}
+
 	async function finalizar(fechamento: FechamentoMisto) {
 		if (bloqueado) {
 			setMsg(
@@ -273,7 +336,14 @@ export function BalcaoPage() {
 	useEffect(() => {
 		function onKeyDown(e: KeyboardEvent) {
 			if (e.defaultPrevented) return;
-			if (pagando || fechando || pizzaPrimeiro || produtoPeso || rejeicaoNfce) {
+			if (
+				pagando ||
+				fechando ||
+				pizzaPrimeiro ||
+				produtoPeso ||
+				obsFilaChave ||
+				rejeicaoNfce
+			) {
 				return;
 			}
 			if (teclaCorresponde(e, teclas.desconto)) {
@@ -314,6 +384,7 @@ export function BalcaoPage() {
 		gourmet,
 		itens.length,
 		navigate,
+		obsFilaChave,
 		pagando,
 		pizzaPrimeiro,
 		produtoPeso,
@@ -360,9 +431,11 @@ export function BalcaoPage() {
 				}
 			/>
 
-			<div className="grid flex-1 grid-cols-[1fr_360px] gap-3 overflow-hidden p-3">
-				<div className="flex flex-col gap-3 overflow-hidden rounded-lg border bg-card p-3">
+			<div className="flex min-h-0 flex-1 gap-3 overflow-hidden bg-muted/30 p-3">
+				<div className="grid min-h-0 min-w-0 flex-1 grid-cols-[1fr_360px] gap-3 overflow-hidden">
+				<div className="pdv-surface flex min-h-0 flex-col gap-3 overflow-hidden p-3">
 					<AvisoSecundario status={status} />
+					<AlertasOperacionaisPdv status={status} />
 					<BarcodeInput
 						onScan={(codigo) => void onBip(codigo)}
 						onProduto={(produto) => adicionarProdutoSimples(produto)}
@@ -371,7 +444,8 @@ export function BalcaoPage() {
 							fechando ||
 							Boolean(rejeicaoNfce) ||
 							Boolean(pizzaPrimeiro) ||
-							Boolean(produtoPeso)
+							Boolean(produtoPeso) ||
+							Boolean(obsFilaChave)
 						}
 					/>
 
@@ -400,7 +474,7 @@ export function BalcaoPage() {
 											key={g.id}
 											type="button"
 											onClick={() => void abrirGrupo(g)}
-											className="rounded-lg border bg-background p-4 text-sm font-semibold transition hover:border-primary"
+											className="rounded-lg bg-background p-4 text-sm font-semibold ring-1 ring-foreground/10 transition hover:ring-primary"
 										>
 											{g.nome}
 										</button>
@@ -444,12 +518,28 @@ export function BalcaoPage() {
 					)}
 				</div>
 
-				<div className="flex flex-col rounded-lg border bg-card p-3">
+				<div className="pdv-surface flex flex-col p-3">
 					<h2 className="mb-2 text-sm font-semibold">Fila</h2>
 					<div className="flex-1 space-y-2 overflow-auto">
 						{itens.map((item) => (
 							<div key={item.chave} className="rounded-md border p-2">
-								<div className="text-sm font-medium">{item.descricao}</div>
+								<div className="flex items-start justify-between gap-2">
+									<div className="min-w-0 text-sm font-medium">
+										{item.descricao}
+									</div>
+									<Button
+										size="sm"
+										variant={item.observacao ? "secondary" : "outline"}
+										onClick={() => setObsFilaChave(item.chave)}
+									>
+										Obs
+									</Button>
+								</div>
+								{item.observacao ? (
+									<p className="mt-1 text-xs text-muted-foreground">
+										{item.observacao}
+									</p>
+								) : null}
 								<div className="mt-1 flex items-center justify-between gap-2">
 									<div className="flex items-center gap-1">
 										<Button
@@ -514,6 +604,17 @@ export function BalcaoPage() {
 							{teclas.desconto}
 						</span>
 					</Button>
+					{status?.moduloGourmet ? (
+						<Button
+							size="lg"
+							variant="secondary"
+							className="mt-2 w-full"
+							disabled={!itens.length || bloqueado || loading}
+							onClick={() => void retirarDepois()}
+						>
+							Retirar depois
+						</Button>
+					) : null}
 					<Button
 						size="xl"
 						className="mt-2 w-full"
@@ -529,6 +630,8 @@ export function BalcaoPage() {
 						</span>
 					</Button>
 				</div>
+				</div>
+				<SideNav status={status} onBlocked={setMsg} />
 			</div>
 
 			{rejeicaoNfce && (
@@ -549,6 +652,13 @@ export function BalcaoPage() {
 				titulo="Finalizar venda"
 				confirmarLabel="Confirmar"
 				iniciarComDesconto={iniciarComDesconto}
+				itens={itens.map((item) => ({
+					id: item.chave,
+					descricao: item.descricao,
+					quantidade: item.quantidade,
+					precototal: item.precototal,
+					observacao: item.observacao,
+				}))}
 				onCancelar={() => {
 					setPagando(false);
 					setIniciarComDesconto(false);
@@ -574,6 +684,17 @@ export function BalcaoPage() {
 					onConfirmar={confirmarPeso}
 				/>
 			)}
+			<DialogObservacaoItem
+				aberto={Boolean(obsFilaChave)}
+				descricao={
+					itens.find((item) => item.chave === obsFilaChave)?.descricao ?? ""
+				}
+				valorInicial={
+					itens.find((item) => item.chave === obsFilaChave)?.observacao
+				}
+				onCancelar={() => setObsFilaChave(null)}
+				onConfirmar={aplicarObservacaoFila}
+			/>
 
 			<DialogFecharCaixa
 				aberto={fechando}
