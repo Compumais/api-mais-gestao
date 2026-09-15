@@ -20,6 +20,7 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { BotaoExportarCsv } from "@/components/botao-exportar-csv";
 import type { OrdenacaoColunaTabela } from "@/components/cabecalho-coluna-tabela";
 import { TableSkeleton } from "@/components/table-skeleton";
 import { Button } from "@/components/ui/button";
@@ -53,6 +54,7 @@ import {
 	TABELA_SERVICOS,
 	useColunasTabelaPersistidas,
 } from "@/hooks/use-preferencias-ui-usuario";
+import { baixarArquivo } from "@/lib/baixar-arquivo";
 import { type Produto, produtosService } from "@/services/produtos.service";
 import { PageContainer } from "../components/page-container";
 import {
@@ -78,6 +80,48 @@ function rotuloColuna(column: {
 
 function filtrosColunaAtivos(filtros: FiltrosColunaServicosState) {
 	return Object.values(filtros).some((valor) => valor.trim() !== "");
+}
+
+function montarParamsFiltroServicos(params: {
+	idempresa: string;
+	qAplicado: string;
+	filtrosColuna: FiltrosColunaServicosState;
+	ordenarPor: string | null;
+	ordem: "asc" | "desc" | null;
+}) {
+	const { idempresa, qAplicado, filtrosColuna, ordenarPor, ordem } = params;
+	return {
+		idempresa,
+		tipo: "S" as const,
+		...(qAplicado ? { q: qAplicado } : {}),
+		...(filtrosColuna.nome ? { nome: filtrosColuna.nome } : {}),
+		...(filtrosColuna.inativo !== ""
+			? { inativo: Number(filtrosColuna.inativo) }
+			: {}),
+		...(filtrosColuna.codigo ? { codigo: filtrosColuna.codigo } : {}),
+		...(filtrosColuna.referencia
+			? { referencia: filtrosColuna.referencia }
+			: {}),
+		...(filtrosColuna.unidademedida
+			? { unidademedida: filtrosColuna.unidademedida }
+			: {}),
+		...(filtrosColuna.tipoproduto
+			? { tipoproduto: filtrosColuna.tipoproduto }
+			: {}),
+		...(filtrosColuna.preco ? { preco: filtrosColuna.preco } : {}),
+		...(filtrosColuna.custoaquisicao
+			? { custoaquisicao: filtrosColuna.custoaquisicao }
+			: {}),
+		...(filtrosColuna.datacadastro
+			? { datacadastro: filtrosColuna.datacadastro }
+			: {}),
+		...(filtrosColuna.codigolistalc11603
+			? { codigolistalc11603: filtrosColuna.codigolistalc11603 }
+			: {}),
+		...(filtrosColuna.codigonbs ? { codigonbs: filtrosColuna.codigonbs } : {}),
+		...(ordenarPor ? { ordenarPor } : {}),
+		...(ordem ? { ordem } : {}),
+	};
 }
 
 export default function ServicosPage() {
@@ -183,40 +227,15 @@ export default function ServicosPage() {
 				throw new Error("Empresa não selecionada");
 			}
 			return await produtosService.listar({
-				idempresa: localStorageEmpresa.id,
+				...montarParamsFiltroServicos({
+					idempresa: localStorageEmpresa.id,
+					qAplicado,
+					filtrosColuna,
+					ordenarPor,
+					ordem,
+				}),
 				page: pagination.pageIndex + 1,
 				limit: pagination.pageSize,
-				tipo: "S",
-				...(qAplicado ? { q: qAplicado } : {}),
-				...(filtrosColuna.nome ? { nome: filtrosColuna.nome } : {}),
-				...(filtrosColuna.inativo !== ""
-					? { inativo: Number(filtrosColuna.inativo) }
-					: {}),
-				...(filtrosColuna.codigo ? { codigo: filtrosColuna.codigo } : {}),
-				...(filtrosColuna.referencia
-					? { referencia: filtrosColuna.referencia }
-					: {}),
-				...(filtrosColuna.unidademedida
-					? { unidademedida: filtrosColuna.unidademedida }
-					: {}),
-				...(filtrosColuna.tipoproduto
-					? { tipoproduto: filtrosColuna.tipoproduto }
-					: {}),
-				...(filtrosColuna.preco ? { preco: filtrosColuna.preco } : {}),
-				...(filtrosColuna.custoaquisicao
-					? { custoaquisicao: filtrosColuna.custoaquisicao }
-					: {}),
-				...(filtrosColuna.datacadastro
-					? { datacadastro: filtrosColuna.datacadastro }
-					: {}),
-				...(filtrosColuna.codigolistalc11603
-					? { codigolistalc11603: filtrosColuna.codigolistalc11603 }
-					: {}),
-				...(filtrosColuna.codigonbs
-					? { codigonbs: filtrosColuna.codigonbs }
-					: {}),
-				...(ordenarPor ? { ordenarPor } : {}),
-				...(ordem ? { ordem } : {}),
 			});
 		},
 		enabled: !!localStorageEmpresa,
@@ -232,6 +251,29 @@ export default function ServicosPage() {
 		},
 		onError: (error: Error) => {
 			toast.error(error.message || "Erro ao excluir serviço");
+		},
+	});
+
+	const exportarServicosMutation = useMutation({
+		mutationFn: async () => {
+			if (!localStorageEmpresa) {
+				throw new Error("Empresa não selecionada");
+			}
+			const { idempresa, ...filtros } = montarParamsFiltroServicos({
+				idempresa: localStorageEmpresa.id,
+				qAplicado,
+				filtrosColuna,
+				ordenarPor,
+				ordem,
+			});
+			return produtosService.exportar(idempresa, "csv", filtros);
+		},
+		onSuccess: (blob) => {
+			baixarArquivo(blob, "servicos.csv");
+			toast.success("Serviços exportados com sucesso");
+		},
+		onError: (error: Error) => {
+			toast.error(error.message || "Erro ao exportar serviços");
 		},
 	});
 
@@ -405,16 +447,23 @@ export default function ServicosPage() {
 	return (
 		<PageContainer>
 			<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-				<div className="flex items-center justify-between px-4">
+				<div className="flex items-center justify-between gap-2 px-4">
 					<h1 className="text-2xl font-bold">Serviços</h1>
-					<Button
-						onClick={() => router.push("/servicos/novo")}
-						className="gap-2"
-						disabled={!localStorageEmpresa}
-					>
-						<IconPlus className="size-4" />
-						Incluir Novo Serviço
-					</Button>
+					<div className="flex flex-wrap items-center gap-2">
+						<BotaoExportarCsv
+							onExportar={() => exportarServicosMutation.mutate()}
+							isPending={exportarServicosMutation.isPending}
+							disabled={!localStorageEmpresa}
+						/>
+						<Button
+							onClick={() => router.push("/servicos/novo")}
+							className="gap-2"
+							disabled={!localStorageEmpresa}
+						>
+							<IconPlus className="size-4" />
+							Incluir Novo Serviço
+						</Button>
+					</div>
 				</div>
 				<div className="flex flex-wrap items-center justify-between gap-2 px-4">
 					<div className="flex gap-2">

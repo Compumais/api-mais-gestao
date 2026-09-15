@@ -13,6 +13,7 @@ import {
 	sql,
 } from "drizzle-orm";
 import type { NovaEntidade } from "@/model/entidade-model.js";
+import { LIMITE_EXPORTACAO_CSV } from "@/util/csv.js";
 import {
 	empresa as schemaEmpresa,
 	entidade as schemaEntidade,
@@ -289,7 +290,12 @@ export type ListarEntidadesParametros = {
 	limit?: number;
 };
 
-export async function listarEntidades({
+export type FiltrosExportacaoEntidades = Omit<
+	ListarEntidadesParametros,
+	"page" | "limit"
+>;
+
+function montarFiltrosEntidades({
 	idempresa,
 	nome,
 	q,
@@ -316,9 +322,7 @@ export async function listarEntidades({
 	representante,
 	ordenarPor,
 	ordem = "asc",
-	page = 1,
-	limit = 10,
-}: ListarEntidadesParametros) {
+}: FiltrosExportacaoEntidades) {
 	const where: SQL[] = [];
 
 	where.push(eq(schemaEntidade.idempresa, idempresa));
@@ -388,14 +392,23 @@ export async function listarEntidades({
 		if (condicao) where.push(condicao);
 	}
 
-	const offset = (page - 1) * limit;
-
 	const ordenacao =
 		ordenarPor && COLUNAS_ORDENACAO[ordenarPor]
 			? ordem === "desc"
 				? desc(COLUNAS_ORDENACAO[ordenarPor])
 				: asc(COLUNAS_ORDENACAO[ordenarPor])
 			: desc(schemaEntidade.criadoem);
+
+	return { where, ordenacao };
+}
+
+export async function listarEntidades({
+	page = 1,
+	limit = 10,
+	...filtros
+}: ListarEntidadesParametros) {
+	const { where, ordenacao } = montarFiltrosEntidades(filtros);
+	const offset = (page - 1) * limit;
 
 	const [totalCount, entidades] = await Promise.all([
 		db
@@ -415,4 +428,17 @@ export async function listarEntidades({
 		entidades,
 		total: totalCount[0]?.value ?? 0,
 	};
+}
+
+export async function listarTodasEntidadesParaExportacao(
+	filtros: FiltrosExportacaoEntidades,
+) {
+	const { where, ordenacao } = montarFiltrosEntidades(filtros);
+
+	return db
+		.select()
+		.from(schemaEntidade)
+		.where(and(...where))
+		.orderBy(ordenacao)
+		.limit(LIMITE_EXPORTACAO_CSV);
 }

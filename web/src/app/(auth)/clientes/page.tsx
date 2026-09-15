@@ -18,6 +18,7 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { BotaoExportarCsv } from "@/components/botao-exportar-csv";
 import type { OrdenacaoColunaTabela } from "@/components/cabecalho-coluna-tabela";
 import { TableSkeleton } from "@/components/table-skeleton";
 import { Button } from "@/components/ui/button";
@@ -51,10 +52,8 @@ import {
 	TABELA_CLIENTES,
 	useColunasTabelaPersistidas,
 } from "@/hooks/use-preferencias-ui-usuario";
-import {
-	type Entidade,
-	entidadesService,
-} from "@/services/entidades.service";
+import { baixarArquivo } from "@/lib/baixar-arquivo";
+import { type Entidade, entidadesService } from "@/services/entidades.service";
 import { PageContainer } from "../components/page-container";
 import {
 	COLUNA_PARA_CAMPO_FILTRO_CLIENTE,
@@ -81,6 +80,55 @@ function rotuloColuna(column: {
 
 function filtrosColunaAtivos(filtros: FiltrosColunaClientesState) {
 	return Object.values(filtros).some((valor) => valor.trim() !== "");
+}
+
+function montarParamsFiltroClientes(params: {
+	idempresa: string;
+	qAplicado: string;
+	filtrosColuna: FiltrosColunaClientesState;
+	ordenarPor: string | null;
+	ordem: "asc" | "desc" | null;
+}) {
+	const { idempresa, qAplicado, filtrosColuna, ordenarPor, ordem } = params;
+	return {
+		idempresa,
+		cliente: 1 as const,
+		...(qAplicado ? { q: qAplicado } : {}),
+		...(filtrosColuna.nome ? { nome: filtrosColuna.nome } : {}),
+		...(filtrosColuna.razaosocial
+			? { razaosocial: filtrosColuna.razaosocial }
+			: {}),
+		...(filtrosColuna.cnpjcpf ? { cnpjcpf: filtrosColuna.cnpjcpf } : {}),
+		...(filtrosColuna.endereco ? { endereco: filtrosColuna.endereco } : {}),
+		...(filtrosColuna.tipopessoa !== ""
+			? { tipopessoa: Number(filtrosColuna.tipopessoa) }
+			: {}),
+		...(filtrosColuna.indiedest !== ""
+			? { indiedest: Number(filtrosColuna.indiedest) }
+			: {}),
+		...(filtrosColuna.inscricaoestadual
+			? { inscricaoestadual: filtrosColuna.inscricaoestadual }
+			: {}),
+		...(filtrosColuna.rg ? { rg: filtrosColuna.rg } : {}),
+		...(filtrosColuna.email ? { email: filtrosColuna.email } : {}),
+		...(filtrosColuna.telefone ? { telefone: filtrosColuna.telefone } : {}),
+		...(filtrosColuna.numeroendereco
+			? { numeroendereco: filtrosColuna.numeroendereco }
+			: {}),
+		...(filtrosColuna.complemento
+			? { complemento: filtrosColuna.complemento }
+			: {}),
+		...(filtrosColuna.bairro ? { bairro: filtrosColuna.bairro } : {}),
+		...(filtrosColuna.cep ? { cep: filtrosColuna.cep } : {}),
+		...(filtrosColuna.fax ? { fax: filtrosColuna.fax } : {}),
+		...(filtrosColuna.nascimento
+			? { nascimento: filtrosColuna.nascimento }
+			: {}),
+		...(filtrosColuna.pais ? { pais: filtrosColuna.pais } : {}),
+		...(filtrosColuna.criadoem ? { criadoem: filtrosColuna.criadoem } : {}),
+		...(ordenarPor ? { ordenarPor } : {}),
+		...(ordem ? { ordem } : {}),
+	};
 }
 
 export default function ClientesPage() {
@@ -197,51 +245,15 @@ export default function ClientesPage() {
 				throw new Error("Empresa não selecionada");
 			}
 			return await entidadesService.listar({
-				idempresa: localStorageEmpresa.id,
-				cliente: 1,
+				...montarParamsFiltroClientes({
+					idempresa: localStorageEmpresa.id,
+					qAplicado,
+					filtrosColuna,
+					ordenarPor,
+					ordem,
+				}),
 				page: pagination.pageIndex + 1,
 				limit: pagination.pageSize,
-				...(qAplicado ? { q: qAplicado } : {}),
-				...(filtrosColuna.nome ? { nome: filtrosColuna.nome } : {}),
-				...(filtrosColuna.razaosocial
-					? { razaosocial: filtrosColuna.razaosocial }
-					: {}),
-				...(filtrosColuna.cnpjcpf ? { cnpjcpf: filtrosColuna.cnpjcpf } : {}),
-				...(filtrosColuna.endereco
-					? { endereco: filtrosColuna.endereco }
-					: {}),
-				...(filtrosColuna.tipopessoa !== ""
-					? { tipopessoa: Number(filtrosColuna.tipopessoa) }
-					: {}),
-				...(filtrosColuna.indiedest !== ""
-					? { indiedest: Number(filtrosColuna.indiedest) }
-					: {}),
-				...(filtrosColuna.inscricaoestadual
-					? { inscricaoestadual: filtrosColuna.inscricaoestadual }
-					: {}),
-				...(filtrosColuna.rg ? { rg: filtrosColuna.rg } : {}),
-				...(filtrosColuna.email ? { email: filtrosColuna.email } : {}),
-				...(filtrosColuna.telefone
-					? { telefone: filtrosColuna.telefone }
-					: {}),
-				...(filtrosColuna.numeroendereco
-					? { numeroendereco: filtrosColuna.numeroendereco }
-					: {}),
-				...(filtrosColuna.complemento
-					? { complemento: filtrosColuna.complemento }
-					: {}),
-				...(filtrosColuna.bairro ? { bairro: filtrosColuna.bairro } : {}),
-				...(filtrosColuna.cep ? { cep: filtrosColuna.cep } : {}),
-				...(filtrosColuna.fax ? { fax: filtrosColuna.fax } : {}),
-				...(filtrosColuna.nascimento
-					? { nascimento: filtrosColuna.nascimento }
-					: {}),
-				...(filtrosColuna.pais ? { pais: filtrosColuna.pais } : {}),
-				...(filtrosColuna.criadoem
-					? { criadoem: filtrosColuna.criadoem }
-					: {}),
-				...(ordenarPor ? { ordenarPor } : {}),
-				...(ordem ? { ordem } : {}),
 			});
 		},
 		enabled: !!localStorageEmpresa,
@@ -255,6 +267,30 @@ export default function ClientesPage() {
 		},
 		onError: (error: Error) => {
 			toast.error(error.message || "Erro ao excluir cliente");
+		},
+	});
+
+	const exportarClientesMutation = useMutation({
+		mutationFn: async () => {
+			if (!localStorageEmpresa) {
+				throw new Error("Empresa não selecionada");
+			}
+			return entidadesService.exportar(
+				montarParamsFiltroClientes({
+					idempresa: localStorageEmpresa.id,
+					qAplicado,
+					filtrosColuna,
+					ordenarPor,
+					ordem,
+				}),
+			);
+		},
+		onSuccess: (blob) => {
+			baixarArquivo(blob, "clientes.csv");
+			toast.success("Clientes exportados com sucesso");
+		},
+		onError: (error: Error) => {
+			toast.error(error.message || "Erro ao exportar clientes");
 		},
 	});
 
@@ -355,16 +391,23 @@ export default function ClientesPage() {
 	return (
 		<PageContainer>
 			<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-				<div className="flex items-center justify-between px-4">
+				<div className="flex items-center justify-between gap-2 px-4">
 					<h1 className="text-2xl font-bold">Clientes</h1>
-					<Button
-						onClick={() => router.push("/clientes/novo")}
-						className="gap-2"
-						disabled={!localStorageEmpresa}
-					>
-						<IconPlus className="size-4" />
-						Cadastrar Novo Cliente
-					</Button>
+					<div className="flex flex-wrap items-center gap-2">
+						<BotaoExportarCsv
+							onExportar={() => exportarClientesMutation.mutate()}
+							isPending={exportarClientesMutation.isPending}
+							disabled={!localStorageEmpresa}
+						/>
+						<Button
+							onClick={() => router.push("/clientes/novo")}
+							className="gap-2"
+							disabled={!localStorageEmpresa}
+						>
+							<IconPlus className="size-4" />
+							Cadastrar Novo Cliente
+						</Button>
+					</div>
 				</div>
 				<div className="flex flex-wrap items-center justify-between gap-2 px-4">
 					<div className="flex gap-2">
