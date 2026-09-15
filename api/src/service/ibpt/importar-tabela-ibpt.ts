@@ -14,6 +14,16 @@ type ImportarTabelaIbptParametros = {
 	idusuario?: string;
 };
 
+function mensagemErroImportacaoIbpt(error: unknown): string {
+	if (!(error instanceof Error)) {
+		return "Falha ao sincronizar tabela IBPT";
+	}
+	if (error.message.startsWith("Failed query:")) {
+		return "Falha ao gravar a tabela IBPT no banco. Tente sincronizar novamente.";
+	}
+	return error.message;
+}
+
 export async function importarTabelaIbptService({
 	uf,
 	idusuario,
@@ -68,11 +78,7 @@ export async function importarTabelaIbptService({
 		if (error instanceof IbptApiError) {
 			return httpBadGateway(error.message);
 		}
-		return httpBadRequest(
-			error instanceof Error
-				? error.message
-				: "Falha ao sincronizar tabela IBPT",
-		);
+		return httpBadRequest(mensagemErroImportacaoIbpt(error));
 	}
 }
 

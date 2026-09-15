@@ -78,6 +78,48 @@ describe("importarTabelaIbptService", () => {
 		);
 	});
 
+	it("envia um único NCM quando a API traz mercadoria e serviço com o mesmo código", async () => {
+		baixarTabelaIbptPorUf.mockResolvedValue({
+			versao: "26.2.A",
+			uf: "MG",
+			total: 2,
+			ncm: [
+				{
+					codigo: "11090000",
+					nacionalfederal: "13.45",
+					importadosfederal: "15.45",
+					estadual: "18",
+					municipal: "0",
+					chave: "26.2.A",
+				},
+				{
+					codigo: "11090000",
+					nacionalfederal: "13.45",
+					importadosfederal: "15.45",
+					estadual: "0",
+					municipal: "5",
+					chave: "26.2.A",
+				},
+			],
+		});
+
+		const resultado = await importarTabelaIbptService({ uf: "MG" });
+
+		expect(resultado.success).toBe(true);
+		expect(resultado.body).toMatchObject({ quantidadeRegistros: 1 });
+		expect(substituirAliquotasIbptPorUf).toHaveBeenCalledWith(
+			"MG",
+			expect.arrayContaining([
+				expect.objectContaining({
+					ncm: "11090000",
+					aliquotaEstadual: "18",
+					aliquotaMunicipal: "0",
+				}),
+			]),
+		);
+		expect(substituirAliquotasIbptPorUf.mock.calls[0]?.[1]).toHaveLength(1);
+	});
+
 	it("retorna bad gateway quando a API externa falha", async () => {
 		baixarTabelaIbptPorUf.mockRejectedValue(
 			new IbptApiError("API IBPT retornou status 503"),
@@ -91,5 +133,32 @@ describe("importarTabelaIbptService", () => {
 			code: "BAD_GATEWAY_ERROR",
 		});
 		expect(substituirAliquotasIbptPorUf).not.toHaveBeenCalled();
+	});
+
+	it("não devolve o SQL cru quando a gravação da tabela falha", async () => {
+		baixarTabelaIbptPorUf.mockResolvedValue({
+			versao: "26.2.A",
+			uf: "MG",
+			total: 1,
+			ncm: [
+				{
+					codigo: "19059090",
+					nacionalfederal: "13.45",
+					chave: "26.2.A",
+				},
+			],
+		});
+		substituirAliquotasIbptPorUf.mockRejectedValue(
+			new Error("Failed query: insert into \"ibpt_aliquota\" values ($1)"),
+		);
+
+		const resultado = await importarTabelaIbptService({ uf: "MG" });
+
+		expect(resultado).toMatchObject({
+			success: false,
+			status: 400,
+			code: "BAD_REQUEST_ERROR",
+			error: "Falha ao gravar a tabela IBPT no banco. Tente sincronizar novamente.",
+		});
 	});
 });
