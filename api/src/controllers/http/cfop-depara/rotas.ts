@@ -1,10 +1,10 @@
 import type { FastifyInstance } from "fastify";
 import { verifyJwt } from "../../middleware/verify-jwt.js";
+import { atualizarCfopDePara } from "./atualizar.js";
 import { criarCfopDePara } from "./criar.js";
 import * as schema from "./doc-schema/schema.js";
 import { excluirCfopDePara } from "./excluir.js";
 import { listarCfopDePara } from "./listar.js";
-import { atualizarCfopDePara } from "./atualizar.js";
 
 export async function cfopDeParaRotas(app: FastifyInstance) {
 	app.addHook("onRequest", verifyJwt);

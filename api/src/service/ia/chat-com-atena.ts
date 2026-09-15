@@ -3,10 +3,10 @@ import type { IntegracoesUsuario } from "@/repositories/configuracao-usuario-rep
 import { buscarConfiguracaoUsuarioService } from "@/service/configuracao-usuario/buscar-configuracao-usuario.js";
 import {
 	fetchWithTimeout,
-	mensagemErroIaAmigavel,
 	MODELOS_GEMINI,
-	resolverProvedor,
+	mensagemErroIaAmigavel,
 	type ProvedorIa,
+	resolverProvedor,
 } from "@/service/ia/provedores.js";
 import {
 	executarToolPorNome,

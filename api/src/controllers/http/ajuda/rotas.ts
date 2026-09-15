@@ -1,10 +1,10 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { verifyJwt } from "../../middleware/verify-jwt.js";
 import {
 	buscarAjudaPostPublicoPorSlugService,
 	listarAjudaPostsPublicosService,
 } from "@/service/ajuda/listar-ajuda-posts.js";
+import { verifyJwt } from "../../middleware/verify-jwt.js";
 
 export async function ajudaRotas(app: FastifyInstance) {
 	app.addHook("onRequest", verifyJwt);

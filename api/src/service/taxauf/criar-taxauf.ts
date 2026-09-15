@@ -1,15 +1,14 @@
 import { v4 as uuidv4 } from "uuid";
-import type { TaxaUf } from "@/model/taxauf-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
+import type { TaxaUf } from "@/model/taxauf-model.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	buscarTaxaUfDuplicada,
 	criarTaxaUf,
 	excluirTaxaUf,
 	type NovaTaxaUf,
 } from "@/repositories/taxauf-repositories.js";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
-import type { TaxaUfBody } from "@/util/taxauf-body-schema.js";
 import {
 	httpCriacao,
 	httpErro,
@@ -17,6 +16,7 @@ import {
 	httpProibido,
 	httpRecursoExistente,
 } from "@/util/http-util.js";
+import type { TaxaUfBody } from "@/util/taxauf-body-schema.js";
 
 type CriarTaxaUfParametros = {
 	dados: TaxaUfBody & { id: string };

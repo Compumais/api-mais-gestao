@@ -1,11 +1,11 @@
 import { and, count, desc, eq, ilike, or, sql } from "drizzle-orm";
-import { auditoriafiscalnfe, regrafiscal, regrafiscalhistorico } from "@/repositories/schema.js";
 import type {
 	CondicoesRegraFiscal,
 	FontesRegraFiscal,
 	ResultadoRegraFiscal,
 	StatusRegraFiscal,
 } from "@/model/regra-fiscal-model.js";
+import { auditoriafiscalnfe, regrafiscal, regrafiscalhistorico } from "@/repositories/schema.js";
 import { db } from "./connection";
 
 export type RegraFiscal = typeof regrafiscal.$inferSelect;

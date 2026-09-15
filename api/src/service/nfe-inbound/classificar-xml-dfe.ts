@@ -1,9 +1,8 @@
 import { XMLParser } from "fast-xml-parser";
 import type {
-	MetadadosDocumentoInbound,
-	TipoDocumentoInbound,
+	MetadadosDocumentoInbound,StatusManifestacaoInbound, 
+	TipoDocumentoInbound
 } from "@/model/nfe-inbound-model.js";
-import type { StatusManifestacaoInbound } from "@/model/nfe-inbound-model.js";
 
 export type DocumentoXmlClassificado = {
 	tipo: TipoDocumentoInbound;

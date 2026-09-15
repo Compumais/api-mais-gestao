@@ -28,8 +28,8 @@ import {
 	formatCurrency,
 	formatPercent,
 } from "@/lib/dashboard-periodo";
-import type { ComparativoFlexivelModo } from "@/services/dashboard.service";
 import { cn } from "@/lib/utils";
+import type { ComparativoFlexivelModo } from "@/services/dashboard.service";
 
 export function ComparativoSection() {
 	const [modo, setModo] =

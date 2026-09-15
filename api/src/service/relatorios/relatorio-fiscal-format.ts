@@ -1,7 +1,7 @@
 import type { RelatorioFiscalNotaItem } from "@/repositories/nota-fiscal-repositories.js";
 import {
-	gerarPdfRelatorio,
 	type ColunaPdfRelatorio,
+	gerarPdfRelatorio,
 } from "@/util/gerar-pdf-relatorio.js";
 
 export type FormatoRelatorioFiscal = "pdf" | "txt" | "html";

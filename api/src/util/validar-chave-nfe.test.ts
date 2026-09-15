@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { normalizarChaveNfe, validarChaveNfe } from "@/util/validar-chave-nfe.js";
 import { CHAVE_NFE } from "@/service/nfe-inbound/__fixtures__/xml-dfe.fixtures.js";
+import { normalizarChaveNfe, validarChaveNfe } from "@/util/validar-chave-nfe.js";
 
 describe("validarChaveNfe", () => {
 	it("deve aceitar chave com 44 dígitos", () => {

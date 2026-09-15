@@ -111,13 +111,15 @@ async function seedBudget() {
 		);
 	}
 
+	const empresaId = empresa.id;
+
 	console.log(`  Empresa: ${empresa.nome}`);
-	console.log(`  ID: ${empresa.id}`);
+	console.log(`  ID: ${empresaId}`);
 	console.log(`  Ano: ${ano}\n`);
 
-	await criarPlanoContasPadraoService(empresa.id);
+	await criarPlanoContasPadraoService(empresaId);
 
-	const existentes = await contarBudgets(empresa.id, ano);
+	const existentes = await contarBudgets(empresaId, ano);
 
 	if (existentes > 0 && !forcar) {
 		console.log(
@@ -131,21 +133,19 @@ async function seedBudget() {
 		await db
 			.delete(schema.budget)
 			.where(
-				and(
-					eq(schema.budget.idempresa, empresa.id),
-					eq(schema.budget.ano, ano),
-				),
+				and(eq(schema.budget.idempresa, empresaId), eq(schema.budget.ano, ano)),
 			);
 	}
 
 	const planosCache = new Map<string, string>();
 
 	async function resolverPlano(codigo: string): Promise<string> {
-		if (planosCache.has(codigo)) {
-			return planosCache.get(codigo)!;
+		const cached = planosCache.get(codigo);
+		if (cached) {
+			return cached;
 		}
 
-		const plano = await buscarPlanoContasPorCodigo(empresa.id, codigo);
+		const plano = await buscarPlanoContasPorCodigo(empresaId, codigo);
 
 		if (!plano) {
 			throw new Error(`Plano de contas não encontrado: ${codigo}`);
@@ -167,7 +167,7 @@ async function seedBudget() {
 
 			await db.insert(schema.budget).values({
 				id: uuidv4(),
-				idempresa: empresa.id,
+				idempresa: empresaId,
 				idplanocontas,
 				ano,
 				periodicidade: "M",
@@ -185,7 +185,7 @@ async function seedBudget() {
 
 		await db.insert(schema.budget).values({
 			id: uuidv4(),
-			idempresa: empresa.id,
+			idempresa: empresaId,
 			idplanocontas,
 			ano,
 			periodicidade: "A",

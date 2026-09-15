@@ -4,18 +4,18 @@ import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-reposit
 import { buscarNotaFiscalPorId } from "@/repositories/nota-fiscal-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
 import {
-	enviarEmailService,
 	type AnexoEmail,
+	enviarEmailService,
 	type ResultadoEnvioEmail,
 } from "@/service/email/enviar-email.js";
 import { gerarDanfeNfeService } from "@/service/nfe-emissao/gerar-danfe-nfe.js";
-import { obterXmlAutorizadoNotaFiscal } from "@/util/obter-xml-nota-fiscal.js";
-import { NFE_STATUS } from "@/util/nfe-status.js";
 import {
 	httpBadRequest,
 	httpNaoEncontrado,
 	httpProibido,
 } from "@/util/http-util.js";
+import { NFE_STATUS } from "@/util/nfe-status.js";
+import { obterXmlAutorizadoNotaFiscal } from "@/util/obter-xml-nota-fiscal.js";
 
 type EnviarEmailNotaFiscalVendaParametros = {
 	idusuario: string;

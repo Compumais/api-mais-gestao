@@ -1,9 +1,9 @@
 import { v4 as uuidv4 } from "uuid";
-import type {
-	PlanoContasContaContabil,
-	NovoPlanoContasContaContabil,
-} from "@/model/plano-contas-conta-contabil-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
+import type {
+	NovoPlanoContasContaContabil,
+	PlanoContasContaContabil,
+} from "@/model/plano-contas-conta-contabil-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	criarPlanoContasContaContabil,

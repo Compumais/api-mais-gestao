@@ -19,8 +19,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
-	nfeConfiguracaoService,
 	type NfeSerie,
+	nfeConfiguracaoService,
 } from "@/services/nfe-configuracao.service";
 
 interface NfeSeriesSectionProps {

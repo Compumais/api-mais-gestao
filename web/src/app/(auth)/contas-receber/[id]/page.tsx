@@ -1,8 +1,9 @@
 "use client";
 
+import { IconArrowLeft } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
-import { useParams, useRouter } from "next/navigation";
 import dayjs from "dayjs";
+import { useParams, useRouter } from "next/navigation";
 import { PageContainer } from "@/app/(auth)/components/page-container";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,7 +14,6 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { financeiroService } from "@/services/financeiro.service";
-import { IconArrowLeft } from "@tabler/icons-react";
 
 const formatCurrency = (value: string | null | undefined) => {
 	if (!value) return "R$ 0,00";

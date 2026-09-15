@@ -5,8 +5,8 @@ import {
 	formatarDataAaaammdd,
 	formatarDecimal,
 	formatarInscricaoEstadual,
-	formatarNumeroDocumento,
 	formatarNumerico,
+	formatarNumeroDocumento,
 	formatarSerie,
 	montarLinha,
 } from "../formatador-campo.js";

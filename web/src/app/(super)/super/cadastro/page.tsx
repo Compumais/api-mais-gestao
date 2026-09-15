@@ -15,8 +15,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { formatarPerfilLabel } from "@/lib/perfis";
 import { maskCep } from "@/lib/masks";
+import { formatarPerfilLabel } from "@/lib/perfis";
 import { adminService } from "@/services/admin.service";
 import { localidadesService } from "@/services/localidades.service";
 

@@ -3,8 +3,8 @@
 import { Copy, Pencil, Plus, Star, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
 	useDefinirPrimarioModeloImpressaoOs,
 	useDuplicarModeloImpressaoOs,

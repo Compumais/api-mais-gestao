@@ -4,6 +4,7 @@ import { IconArrowLeft } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { TableSkeleton } from "@/components/table-skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +23,6 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { TableSkeleton } from "@/components/table-skeleton";
 import { MESES_BUDGET } from "@/constants/budget-constants";
 import { useEmpresa } from "@/hooks/use-empresa";
 import {

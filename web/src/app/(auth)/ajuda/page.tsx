@@ -1,4 +1,4 @@
-import { Metadata } from "next";
+import type { Metadata } from "next";
 import { AjudaHomeContent } from "./components/ajuda-home-content";
 
 export const metadata: Metadata = {

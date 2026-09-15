@@ -20,6 +20,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
+import { TableSkeleton } from "@/components/table-skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -45,7 +46,6 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { TableSkeleton } from "@/components/table-skeleton";
 import { nomeMesBudget } from "@/constants/budget-constants";
 import { useEmpresa } from "@/hooks/use-empresa";
 import {

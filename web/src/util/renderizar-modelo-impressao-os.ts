@@ -1,5 +1,5 @@
-import { obterStatusPadraoPorNumero } from "@/constants/ordem-servico-status";
 import { CAMPOS_CLIENTE_OS_PADRAO } from "@/constants/modelo-impressao-os";
+import { obterStatusPadraoPorNumero } from "@/constants/ordem-servico-status";
 import type {
 	BlocoModeloImpressaoOs,
 	CampoPersonalizadoOs,

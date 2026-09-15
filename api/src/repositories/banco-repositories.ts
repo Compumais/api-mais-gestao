@@ -1,8 +1,8 @@
 import { and, count, eq, ilike, isNull, or } from "drizzle-orm";
 import type { NovoBanco } from "@/model/banco-model.js";
 import * as schema from "../../drizzle/schema.js";
-import { ordenacaoCodigoVarcharAsc } from "./ordenacao-codigo.js";
 import { db } from "./connection.js";
+import { ordenacaoCodigoVarcharAsc } from "./ordenacao-codigo.js";
 
 export async function criarBanco(dadosBanco: NovoBanco) {
 	const [banco] = await db.insert(schema.banco).values(dadosBanco).returning();

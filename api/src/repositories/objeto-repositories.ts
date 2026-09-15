@@ -1,8 +1,8 @@
 import { and, count, desc, eq, ilike } from "drizzle-orm";
 import type { NovoObjeto } from "@/model/objeto-model";
 import { objeto } from "@/repositories/schema.js";
-import { db } from "./connection";
 import type { AtualizacaoParcial } from "@/util/type-util";
+import { db } from "./connection";
 
 type NovoObjetoDados = Pick<NovoObjeto, "id" | "idempresa"> &
 	AtualizacaoParcial<Omit<NovoObjeto, "id" | "idempresa">>;

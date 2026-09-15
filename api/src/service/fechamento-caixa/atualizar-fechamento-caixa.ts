@@ -1,17 +1,17 @@
+import { eq } from "drizzle-orm";
 import type { FechamentoCaixa } from "@/model/fechamento-caixa-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
+import { db } from "@/repositories/connection.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	type AtualizarFechamentoCaixaDados,
 	buscarFechamentoCaixaPorId,
 } from "@/repositories/fechamento-caixa-repositories.js";
-import { db } from "@/repositories/connection.js";
 import { fechamentopdv } from "@/repositories/schema.js";
 import {
 	consolidarRecebimentosFechamentoCaixa,
 	STATUS_CAIXA_FECHADO,
 } from "@/service/fechamento-caixa/consolidar-recebimentos-fechamento.js";
-import { eq } from "drizzle-orm";
 import {
 	httpBadRequest,
 	httpNaoEncontrado,

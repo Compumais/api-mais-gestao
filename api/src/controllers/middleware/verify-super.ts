@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { verificarAcessoSuper } from "@/util/verificar-super.js";
 import { normalizarPerfilArray } from "@/util/usuario-perfil.js";
+import { verificarAcessoSuper } from "@/util/verificar-super.js";
 
 export async function verifySuper(
 	request: FastifyRequest,

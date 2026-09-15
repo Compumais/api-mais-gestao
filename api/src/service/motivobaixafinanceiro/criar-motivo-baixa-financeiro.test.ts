@@ -4,8 +4,8 @@ import type {
 	MotivoBaixaFinanceiro,
 	NovoMotivoBaixaFinanceiro,
 } from "@/model/motivo-baixa-financeiro-model.js";
-import * as motivoBaixaFinanceiroRepository from "@/repositories/motivo-baixa-financeiro-repositories.js";
 import * as entidadeRepository from "@/repositories/entidade-repositories.js";
+import * as motivoBaixaFinanceiroRepository from "@/repositories/motivo-baixa-financeiro-repositories.js";
 import * as auditoriaService from "@/service/auditoria/criar-auditoria.js";
 import { criarMotivoBaixaFinanceiroService } from "./criar-motivo-baixa-financeiro.js";
 

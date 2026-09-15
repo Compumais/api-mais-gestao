@@ -1,5 +1,5 @@
-import type { IntegracaoContabilConfiguracao } from "@/model/integracao-contabil-configuracao-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
+import type { IntegracaoContabilConfiguracao } from "@/model/integracao-contabil-configuracao-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { buscarIntegracaoContabilConfiguracaoPorId } from "@/repositories/integracao-contabil-configuracao-repositories.js";
 import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";

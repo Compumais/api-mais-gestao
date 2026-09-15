@@ -107,7 +107,7 @@ export async function verifyJwt(request: FastifyRequest, reply: FastifyReply) {
 	try {
 		// Tenta primeiro usar cookies (padrão do Better Auth)
 		const headers = fastifyHeadersToWebHeaders(request.headers);
-		let session = await auth.api.getSession({ headers });
+		const session = await auth.api.getSession({ headers });
 
 		// Se não houver sessão via cookies, tenta usar token do header Authorization
 		if (!session?.user) {

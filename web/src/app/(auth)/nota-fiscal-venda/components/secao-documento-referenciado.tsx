@@ -1,19 +1,18 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { FileUp, Link2, Search } from "lucide-react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
 	Field,
 	FieldDescription,
 	FieldLabel,
-	FieldSet,
 	FieldLegend,
+	FieldSet,
 } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import {
 	Select,
 	SelectContent,
@@ -21,14 +20,15 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { notaFiscalService } from "@/services/nota-fiscal.service";
-import { listarNfesEmitidas, resolverReferenciaEmissao } from "@/services/nfe-emissao.service";
+import { Textarea } from "@/components/ui/textarea";
 import { NFE_STATUS } from "@/constants/nfe-status";
+import type { DocumentoReferenciadoResolvido } from "@/services/nfe-emissao.service";
+import { listarNfesEmitidas, resolverReferenciaEmissao } from "@/services/nfe-emissao.service";
+import { notaFiscalService } from "@/services/nota-fiscal.service";
 import {
 	LABEL_TIPO_DEVOLUCAO,
 	type TipoDevolucaoNfe,
 } from "@/util/cfop-devolucao-util";
-import type { DocumentoReferenciadoResolvido } from "@/services/nfe-emissao.service";
 
 type ModoReferencia = "nota" | "chave" | "xml";
 

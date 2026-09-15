@@ -5,13 +5,13 @@ import type { NotaFiscalItem } from "@/model/nota-fiscal-item-model.js";
 import type { NotaFiscal } from "@/model/nota-fiscal-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { buscarPrimeiroLocalEstoqueEmpresa } from "@/repositories/local-estoque-repositories.js";
+import { listarMovimentosEstoquePorDocumento } from "@/repositories/movimento-estoque-repositories.js";
 import {
 	atualizarItemNotaFiscal,
 	atualizarNotaFiscal,
 	buscarNotaFiscalPorId,
 	listarItensPorNotaFiscal,
 } from "@/repositories/nota-fiscal-repositories.js";
-import { listarMovimentosEstoquePorDocumento } from "@/repositories/movimento-estoque-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
 import { estornarIntegracaoNotaFiscalCompraService } from "@/service/nota-fiscal/estornar-integracao-nota-fiscal-compra.js";
 import { gerarContasPagarNfService } from "@/service/nota-fiscal/gerar-contas-pagar-nf.js";

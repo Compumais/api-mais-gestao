@@ -19,6 +19,8 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { EditorCamposPersonalizadosOs } from "@/components/modelo-impressao/editor-campos-personalizados-os";
+import { PaletaBlocosImpressao } from "@/components/modelo-impressao/paleta-blocos-impressao";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -46,8 +48,6 @@ import type {
 	TipoBlocoModeloImpressaoOs,
 } from "@/schemas/modelo-impressao-os.schema";
 import { TIPOS_BLOCO_MODELO_IMPRESSAO_OS } from "@/schemas/modelo-impressao-os.schema";
-import { PaletaBlocosImpressao } from "@/components/modelo-impressao/paleta-blocos-impressao";
-import { EditorCamposPersonalizadosOs } from "@/components/modelo-impressao/editor-campos-personalizados-os";
 import { PreviewModeloImpressaoOs } from "./preview-modelo-impressao-os";
 
 function novoId() {

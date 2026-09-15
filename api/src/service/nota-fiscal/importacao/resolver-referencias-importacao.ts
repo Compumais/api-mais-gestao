@@ -1,14 +1,14 @@
-import { buscarCfopPorCodigo } from "@/repositories/cfop-repositories.js";
+import { buscarCestPorCodigo } from "@/repositories/cest-repositories.js";
 import {
 	buscarCfopEntradaPorCodigoSaida,
 	buscarCfopSaidaPorEntrada,
 } from "@/repositories/cfop-depara-repositories.js";
-import { buscarCestPorCodigo } from "@/repositories/cest-repositories.js";
+import { buscarCfopPorCodigo } from "@/repositories/cfop-repositories.js";
 import { buscarNcmPorCodigo } from "@/repositories/ncm-repositories.js";
 import { buscarUnidadeMedidaPorSigla } from "@/repositories/unidade-medida-repositories.js";
+import { inferirCodigoCfopSaida } from "@/util/cfop-depara-util.js";
 import { sugerirCodigoCfopEntradaPorCfopXml } from "@/util/cfop-entrada-depara-planilha.js";
 import { isCfopEntrada } from "@/util/cfop-entrada-validacao.js";
-import { inferirCodigoCfopSaida } from "@/util/cfop-depara-util.js";
 
 export async function resolverCfopImportacao(
 	idempresa: string,

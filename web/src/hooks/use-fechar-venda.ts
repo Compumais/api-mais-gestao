@@ -2,24 +2,24 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { BaixaEstoqueVendaError } from "@/lib/avaliar-resultado-baixa-estoque";
+import { baixarEstoqueVenda } from "@/lib/estoque-venda";
 import {
+	type CarrinhoLocalItem,
 	calcularPrecoTotalItem,
 	calcularTotalComTaxas,
 	calcularTotalPago,
 	calcularTroco,
-	type CarrinhoLocalItem,
 	getNumeropdv,
-	parseValor,
 	pagamentoCobreTotal,
+	parseValor,
 	STATUS_MESA,
 } from "@/lib/gourmet-utils";
-import type { ContaMesaItem } from "@/services/conta-mesa-item.service";
+import type { FecharContaFormData } from "@/schemas/fechar-conta.schema";
 import { contaMesaService } from "@/services/conta-mesa.service";
+import type { ContaMesaItem } from "@/services/conta-mesa-item.service";
 import { vendaPdvGourmetService } from "@/services/venda-pdv-gourmet.service";
 import { vendaPdvItemService } from "@/services/venda-pdv-item.service";
-import type { FecharContaFormData } from "@/schemas/fechar-conta.schema";
-import { baixarEstoqueVenda } from "@/lib/estoque-venda";
-import { BaixaEstoqueVendaError } from "@/lib/avaliar-resultado-baixa-estoque";
 
 interface FecharContaParams {
 	idempresa: string;

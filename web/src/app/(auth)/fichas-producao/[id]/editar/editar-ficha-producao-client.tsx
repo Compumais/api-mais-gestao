@@ -2,8 +2,8 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { PageContainer } from "@/app/(auth)/components/page-container";
-import { FichaProducaoForm } from "../../components/ficha-producao-form";
 import { fichaProducaoService } from "@/services/ficha-producao.service";
+import { FichaProducaoForm } from "../../components/ficha-producao-form";
 
 type EditarFichaProducaoClientProps = {
 	id: string;

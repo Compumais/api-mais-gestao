@@ -28,8 +28,8 @@ import {
 } from "@/lib/markdown-toolbar";
 import {
 	AJUDA_IMAGEM_MAX_BYTES,
-	ajudaPostFormSchema,
 	type AjudaPostFormData,
+	ajudaPostFormSchema,
 } from "@/schemas/ajuda-post.schema";
 
 function lerArquivoComoDataUrl(file: File): Promise<string> {

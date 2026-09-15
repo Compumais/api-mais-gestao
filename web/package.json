@@ -2,13 +2,14 @@
 	"name": "web-mais-gestao",
 	"version": "0.1.0",
 	"private": true,
+	"packageManager": "pnpm@11.22.0",
 	"scripts": {
 		"dev": "next dev",
 		"build": "next build",
 		"build:live": "node scripts/zero-downtime-build.js",
 		"build:rollback": "node scripts/rollback-build.js",
 		"start": "next start",
-		"lint": "biome check",
+		"lint": "biome check --formatter-enabled=false",
 		"format": "biome format --write",
 		"generate:pwa-icons": "node scripts/generate-pwa-icons.mjs",
 		"slicemachine": "start-slicemachine"

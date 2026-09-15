@@ -60,14 +60,14 @@ import {
 	COLUNA_PARA_CAMPO_FILTRO_FORMAS_ERP,
 	type ConfigFiltroColunaFormasErp,
 	criarColunasFormasErp,
-	type DestinoFinanceiroForma,
 	DESTINO_OPCOES_FILTRO,
+	type DestinoFinanceiroForma,
 	destinoDaForma,
-	flagsDoDestino,
 	type FiltrosColunaFormasErpState,
-	filtrosColunaFormasErpVazios,
 	FORMAS_NFE,
 	FORMAS_NFE_OPCOES_FILTRO,
+	filtrosColunaFormasErpVazios,
+	flagsDoDestino,
 	visibilidadePadraoColunasFormasErp,
 } from "../formas-erp-colunas";
 

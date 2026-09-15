@@ -1,7 +1,7 @@
 import type { ContaMesa } from "@/model/conta-mesa-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { listarContasMesa } from "@/repositories/conta-mesa-repositories.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { httpOk, httpProibido } from "@/util/http-util.js";
 
 type ListarContasMesaParametros = {

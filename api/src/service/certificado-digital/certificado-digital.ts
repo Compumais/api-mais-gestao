@@ -1,15 +1,15 @@
 import { v4 as uuidv4 } from "uuid";
-import type { CertificadoDigitalResumo } from "@/model/nfe-emissao-model.js";
+import { obterInfoCertificadoGateway } from "@/lib/nfe-gateway-client.js";
 import type { HttpResponse } from "@/model/http-model.js";
-import { buscarEmpresaPorId } from "@/repositories/empresa-repositories.js";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import type { CertificadoDigitalResumo } from "@/model/nfe-emissao-model.js";
 import {
 	ativarCertificadoDigital,
 	criarCertificadoDigital,
 	excluirCertificadoDigital,
 	listarCertificadosDigitaisPorEmpresa,
 } from "@/repositories/certificado-digital-repositories.js";
-import { obterInfoCertificadoGateway } from "@/lib/nfe-gateway-client.js";
+import { buscarEmpresaPorId } from "@/repositories/empresa-repositories.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	criptografarTexto,
 	gerarThumbprint,

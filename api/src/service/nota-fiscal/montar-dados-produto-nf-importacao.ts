@@ -2,8 +2,8 @@ import type { DadosImportacaoItem } from "@/model/nota-fiscal-importacao-model.j
 import { buscarCfopPorId } from "@/repositories/cfop-repositories.js";
 import type { DadosProdutoNF } from "@/service/nota-fiscal/vincular-ou-criar-produto.js";
 import type { ConfigRegimeImportacaoNf } from "@/util/regime-tributario-empresa.js";
-import { sugerirTipoprodutoPorCodigoCfop } from "@/util/tipo-produto.js";
 import { normalizarCodigoBarras, truncarTexto } from "@/util/texto-util.js";
+import { sugerirTipoprodutoPorCodigoCfop } from "@/util/tipo-produto.js";
 
 export function parseQuantidadePadraoImportacao(
 	quantidadeEstoque: string | undefined,

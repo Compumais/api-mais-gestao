@@ -2,13 +2,13 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { buscarNotaFiscalPorId } from "@/repositories/nota-fiscal-repositories.js";
-import { obterXmlNotaFiscal } from "@/util/obter-xml-nota-fiscal.js";
 import {
 	httpErroInterno,
 	httpNaoAutorizado,
 	httpNaoEncontrado,
 	httpProibido,
 } from "@/util/http-util.js";
+import { obterXmlNotaFiscal } from "@/util/obter-xml-nota-fiscal.js";
 
 const baixarXmlParamsSchema = z.object({
 	id: z.string().uuid(),

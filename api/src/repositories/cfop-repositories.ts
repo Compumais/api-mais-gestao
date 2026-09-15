@@ -1,7 +1,7 @@
 import { and, count, eq, ilike, or, sql } from "drizzle-orm";
 import type { NovoCFOP } from "@/model/cfop-model";
-import type { TipoMovimentoCfop } from "@/util/cfop-padrao.js";
 import { cfop } from "@/repositories/schema.js";
+import type { TipoMovimentoCfop } from "@/util/cfop-padrao.js";
 import { db } from "./connection";
 
 export type { NovoCFOP };

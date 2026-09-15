@@ -1,7 +1,9 @@
 import type { FastifyInstance } from "fastify";
 
 import { verifyJwt } from "../../middleware/verify-jwt.js";
-
+import { aplicarGrupoPadraoRascunhoImportacao } from "./aplicar-grupo-padrao-rascunho.js";
+import { atualizarNotaFiscal } from "./atualizar.js";
+import { atualizarNotaFiscalCompra } from "./atualizar-compra.js";
 import {
 
 	atualizarItemRascunhoImportacao,
@@ -9,31 +11,26 @@ import {
 	atualizarRascunhoImportacao,
 
 } from "./atualizar-rascunho.js";
-
-import { aplicarGrupoPadraoRascunhoImportacao } from "./aplicar-grupo-padrao-rascunho.js";
-import { cadastrarItensEmMassaRascunhoImportacao } from "./cadastrar-itens-em-massa-rascunho.js";
-
-import { atualizarNotaFiscal } from "./atualizar.js";
-import { atualizarNotaFiscalCompra } from "./atualizar-compra.js";
-import { buscarRascunhoImportacao } from "./buscar-rascunho.js";
-import { buscarNotaFiscal } from "./buscar.js";
 import { baixarXmlNotaFiscal } from "./baixar-xml.js";
-import { cancelarNotaFiscalCompra } from "./cancelar-compra.js";
-import { gerarDanfeNotaFiscal } from "./gerar-danfe.js";
-import { enviarEmailNotaFiscal } from "./enviar-email.js";
+import { buscarNotaFiscal } from "./buscar.js";
 import { buscarProdutoParaNF } from "./buscar-produto.js";
-import { criarRascunhoImportacaoXml } from "./criar-rascunho-xml.js";
-import { importarNotaFiscalPorChave } from "./importar-por-chave.js";
+import { buscarRascunhoImportacao } from "./buscar-rascunho.js";
+import { cadastrarItensEmMassaRascunhoImportacao } from "./cadastrar-itens-em-massa-rascunho.js";
+import { cancelarNotaFiscalCompra } from "./cancelar-compra.js";
 import { criarNotaFiscal } from "./criar.js";
+import { criarRascunhoImportacaoXml } from "./criar-rascunho-xml.js";
 import * as schema from "./doc-schema/schema.js";
+import { enviarEmailNotaFiscal } from "./enviar-email.js";
 import { excluirNotaFiscal } from "./excluir.js";
 import {
 	excluirRascunhoImportacao,
 	finalizarRascunhoImportacao,
 } from "./finalizar-rascunho.js";
+import { gerarDanfeNotaFiscal } from "./gerar-danfe.js";
+import { importarNotaFiscalPorChave } from "./importar-por-chave.js";
 import { importarXmlNF } from "./importar-xml.js";
-import { listarRascunhosImportacao } from "./listar-rascunhos.js";
 import { listarNotasFiscais } from "./listar.js";
+import { listarRascunhosImportacao } from "./listar-rascunhos.js";
 
 export async function notasFiscaisRotas(app: FastifyInstance) {
 	app.addHook("onRequest", verifyJwt);

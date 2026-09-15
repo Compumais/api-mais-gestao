@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import * as notaFiscalRepo from "@/repositories/nota-fiscal-repositories.js";
-import * as nfeInboundRepo from "@/repositories/nfe-inbound-repositories.js";
 import * as entidadeRepo from "@/repositories/entidade-repositories.js";
+import * as nfeInboundRepo from "@/repositories/nfe-inbound-repositories.js";
+import * as notaFiscalRepo from "@/repositories/nota-fiscal-repositories.js";
 import * as criarRascunho from "@/service/nota-fiscal/importacao/criar-rascunho-importacao-nf.js";
+import { CHAVE_NFE, XML_PROC_NFE } from "./__fixtures__/xml-dfe.fixtures.js";
 import { importPurchaseInvoiceService } from "./import-purchase-invoice.js";
-import { XML_PROC_NFE, CHAVE_NFE } from "./__fixtures__/xml-dfe.fixtures.js";
 
 vi.mock("@/repositories/nota-fiscal-repositories.js");
 vi.mock("@/repositories/nfe-inbound-repositories.js");

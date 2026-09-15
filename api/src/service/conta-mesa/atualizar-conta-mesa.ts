@@ -1,11 +1,11 @@
 import { v4 as uuidv4 } from "uuid";
 import type { ContaMesa, NovaContaMesa } from "@/model/conta-mesa-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	atualizarContaMesa,
 	buscarContaMesaPorId,
 } from "@/repositories/conta-mesa-repositories.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
 import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
 

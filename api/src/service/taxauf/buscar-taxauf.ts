@@ -1,7 +1,7 @@
-import type { TaxaUf } from "@/model/taxauf-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
-import { buscarTaxaUfPorId } from "@/repositories/taxauf-repositories.js";
+import type { TaxaUf } from "@/model/taxauf-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { buscarTaxaUfPorId } from "@/repositories/taxauf-repositories.js";
 import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
 
 type BuscarTaxaUfParametros = {

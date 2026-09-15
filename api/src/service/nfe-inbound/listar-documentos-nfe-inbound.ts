@@ -8,9 +8,9 @@ import type {
 } from "@/model/nfe-inbound-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
+	atualizarNfeInboundDocumento,
 	listarNfeInboundDocumentos,
 	obterOuCriarEmpresaNfeSync,
-	atualizarNfeInboundDocumento,
 } from "@/repositories/nfe-inbound-repositories.js";
 import { buscarNotasFiscaisPorChavesNfe } from "@/repositories/nota-fiscal-repositories.js";
 import {

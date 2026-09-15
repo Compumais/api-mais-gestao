@@ -17,7 +17,7 @@ import {
 	SheetTitle,
 } from "@/components/ui/sheet";
 import type { NavItem } from "@/constants/nav-constants";
-import { useNavFiltrada, type NavSecaoTopbar } from "@/hooks/use-nav-filtrada";
+import { type NavSecaoTopbar, useNavFiltrada } from "@/hooks/use-nav-filtrada";
 import { NavFixadosProvider } from "@/hooks/use-nav-fixados";
 import { useSearchDialog } from "@/hooks/use-search-dialog";
 import {

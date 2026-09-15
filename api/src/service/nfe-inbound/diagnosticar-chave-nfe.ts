@@ -1,5 +1,5 @@
-import type { HttpResponse } from "@/model/http-model.js";
 import { consultarDistribuicaoDfePorChaveGateway } from "@/lib/nfe-gateway-client.js";
+import type { HttpResponse } from "@/model/http-model.js";
 import { buscarCertificadoAtivoPorEmpresa } from "@/repositories/certificado-digital-repositories.js";
 import { buscarEmpresaFiscalPorEmpresa } from "@/repositories/empresa-fiscal-repositories.js";
 import { buscarEmpresaPorId } from "@/repositories/empresa-repositories.js";
@@ -10,8 +10,8 @@ import {
 	decodificarChaveNfe,
 	validarEstruturaChaveNfe,
 } from "@/util/decodificar-chave-nfe.js";
-import { obterCodigoUfIbge } from "@/util/montar-config-sped-nfe.js";
 import { httpBadRequest, httpOk, httpProibido } from "@/util/http-util.js";
+import { obterCodigoUfIbge } from "@/util/montar-config-sped-nfe.js";
 import { validarChaveNfe } from "@/util/validar-chave-nfe.js";
 import { validarPreConsultaChaveNfe } from "./validar-pre-consulta-chave-nfe.js";
 

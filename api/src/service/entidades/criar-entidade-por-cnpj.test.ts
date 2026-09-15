@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Entidade } from "@/model/entidade-model.js";
 import type { ConsultaCnpjEntidade } from "@/model/consulta-cnpj-model.js";
+import type { Entidade } from "@/model/entidade-model.js";
 import * as entidadeRepository from "@/repositories/entidade-repositories.js";
 import * as consultarCnpjEntidade from "@/service/entidades/consultar-cnpj-entidade.js";
 import * as criarEntidade from "@/service/entidades/criar-entidade.js";

@@ -2,9 +2,8 @@ import type { CFOP } from "@/model/cfop-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
 import { listarCfops } from "@/repositories/cfop-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
-import { httpOk, httpProibido } from "@/util/http-util.js";
-
 import type { TipoMovimentoCfop } from "@/util/cfop-padrao.js";
+import { httpOk, httpProibido } from "@/util/http-util.js";
 
 type ListarCfopsParametros = {
 	idusuario: string;

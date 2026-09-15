@@ -1,12 +1,11 @@
 import { v4 as uuidv4 } from "uuid";
-import type { StatusImportacaoInbound } from "@/model/nfe-inbound-model.js";
-import type { StatusManifestacaoInbound } from "@/model/nfe-inbound-model.js";
-import { buscarNotaFiscalPorChaveNfe } from "@/repositories/nota-fiscal-repositories.js";
+import type { StatusImportacaoInbound, StatusManifestacaoInbound } from "@/model/nfe-inbound-model.js";
 import {
+	atualizarStatusManifestacaoPorChave,
 	buscarNfeInboundDocumentoPorChave,
 	upsertNfeInboundDocumento,
-	atualizarStatusManifestacaoPorChave,
 } from "@/repositories/nfe-inbound-repositories.js";
+import { buscarNotaFiscalPorChaveNfe } from "@/repositories/nota-fiscal-repositories.js";
 import type { DocumentoXmlClassificado } from "./classificar-xml-dfe.js";
 
 export async function persistirDocumentoInbound({
@@ -41,7 +40,7 @@ export async function persistirDocumentoInbound({
 	}
 
 	let statusimportacao: StatusImportacaoInbound = "aguardando_xml";
-	let statusmanifestacao: StatusManifestacaoInbound =
+	const statusmanifestacao: StatusManifestacaoInbound =
 		(existente?.statusmanifestacao as StatusManifestacaoInbound | undefined) ??
 		"sem_manifestacao";
 

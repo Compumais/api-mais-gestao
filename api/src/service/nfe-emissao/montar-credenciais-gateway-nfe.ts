@@ -1,6 +1,5 @@
-import { montarConfigJsonSpedNfe } from "@/util/montar-config-sped-nfe.js";
-import { descriptografarCredenciaisCertificado } from "@/util/montar-config-sped-nfe.js";
 import { carregarContextoEmissaoNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
+import { descriptografarCredenciaisCertificado, montarConfigJsonSpedNfe } from "@/util/montar-config-sped-nfe.js";
 
 export async function montarCredenciaisGatewayNfe(idempresa: string) {
 	const contexto = await carregarContextoEmissaoNfe(idempresa);

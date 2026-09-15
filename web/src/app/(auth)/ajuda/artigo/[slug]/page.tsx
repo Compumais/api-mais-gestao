@@ -2,12 +2,12 @@
 
 import { IconArrowLeft, IconArrowRight } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
+import Image from "next/image"
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { MarkdownContent } from "@/components/markdown-content";
 import { formatDataCivilBrasilia } from "@/lib/date";
 import { ajudaService } from "@/services/ajuda.service";
-import Image from "next/image"
 
 export default function ArticlePage() {
 	const params = useParams<{ slug: string }>();

@@ -1,9 +1,10 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import { Printer } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { PreviewModeloImpressaoPedido } from "@/app/(auth)/configuracoes/modelos-impressao-pedido/components/preview-modelo-impressao-pedido";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -19,10 +20,9 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { PreviewModeloImpressaoPedido } from "@/app/(auth)/configuracoes/modelos-impressao-pedido/components/preview-modelo-impressao-pedido";
 import { useModelosImpressaoPedido } from "@/hooks/use-modelo-impressao-pedido";
-import type { Empresa } from "@/services/empresas.service";
 import type { PedidoDav, PedidoDavItem } from "@/services/dav.service";
+import type { Empresa } from "@/services/empresas.service";
 import { carregarDadosClienteImpressao } from "@/util/carregar-dados-cliente-impressao";
 import {
 	imprimirHtmlModeloPedido,

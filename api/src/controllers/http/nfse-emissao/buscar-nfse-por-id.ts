@@ -1,5 +1,5 @@
-import z from "zod";
 import type { FastifyReply, FastifyRequest } from "fastify";
+import z from "zod";
 import { buscarNotaFiscalService } from "@/service/nota-fiscal/buscar-nota-fiscal.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 

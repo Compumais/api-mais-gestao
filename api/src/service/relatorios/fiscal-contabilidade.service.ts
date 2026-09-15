@@ -6,12 +6,12 @@ import {
 import {
 	calcularTotaisFiscais,
 	classificarDocumentoFiscal,
+	type FormatoRelatorioFiscal,
 	formatCurrency,
 	formatDate,
 	gerarRelatorioFiscal,
 	obterNumeroDocumento,
 	parseDecimal,
-	type FormatoRelatorioFiscal,
 	type RelatorioFiscalOutput,
 } from "@/service/relatorios/relatorio-fiscal-format.js";
 

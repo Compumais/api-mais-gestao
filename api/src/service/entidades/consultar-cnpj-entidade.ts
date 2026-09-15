@@ -17,7 +17,6 @@ import {
 	buscarMunicipiosBrasilApi,
 	normalizarNomeLocalidade,
 } from "@/service/localidade/brasil-api-client.js";
-import { mapearBrasilApiParaOpenCnpjDados } from "@/util/mapear-brasilapi-cnpj.js";
 import { normalizarCnpj } from "@/util/criptografia-certificado.js";
 import {
 	httpBadGateway,
@@ -25,10 +24,11 @@ import {
 	httpNaoEncontrado,
 	httpOk,
 } from "@/util/http-util.js";
+import { mapearBrasilApiParaOpenCnpjDados } from "@/util/mapear-brasilapi-cnpj.js";
 import {
+	type LocalidadeConsultaCnpj,
 	mapearEntidadeConsultaCnpj,
 	mapearExtrasConsultaCnpj,
-	type LocalidadeConsultaCnpj,
 } from "@/util/mapear-consulta-cnpj-entidade.js";
 
 type ObterConsultaCnpjParametros = {

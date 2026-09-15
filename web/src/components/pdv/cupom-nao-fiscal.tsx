@@ -7,11 +7,11 @@ import { Button } from "@/components/ui/button";
 import { NFE_AMBIENTE_LABELS } from "@/constants/nfe-status";
 import { formatDateTimeBrasilia } from "@/lib/date";
 import {
+	type CupomNaoFiscalData,
 	calcularPrecoTotalItem,
 	formatCurrency,
 	montarUrlImagemQrCodeNfce,
 	parseValor,
-	type CupomNaoFiscalData,
 } from "@/lib/gourmet-utils";
 import { abrirDanfeNfe } from "@/services/nfe-emissao.service";
 

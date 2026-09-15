@@ -2,8 +2,8 @@ import {
 	formatarAlfanumerico,
 	formatarDataAaaammdd,
 	formatarDecimal,
-	formatarNumeroDocumento,
 	formatarNumerico,
+	formatarNumeroDocumento,
 	formatarSerie,
 	montarLinha,
 } from "../formatador-campo.js";

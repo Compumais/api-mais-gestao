@@ -69,7 +69,7 @@ export function calcularProximaExecucao({
 
 	if (recorrencia === "semanal") {
 		const alvo = diasemana ?? 1; // 0=domingo
-		let candidata = aplicarHorario(base, horario);
+		const candidata = aplicarHorario(base, horario);
 		const diaAtual = candidata.getDay();
 		let delta = (alvo - diaAtual + 7) % 7;
 		if (

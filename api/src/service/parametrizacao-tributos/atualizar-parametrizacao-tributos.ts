@@ -1,12 +1,12 @@
 import type { HttpResponse } from "@/model/http-model.js";
 import { buscarCfopPorId } from "@/repositories/cfop-repositories.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	atualizarParametrizacaoTributos,
 	buscarParametrizacaoTributosDuplicada,
 	buscarParametrizacaoTributosPorId,
 	type ParametrizacaoTributos,
 } from "@/repositories/parametrizacao-tributos-repositories.js";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import type { DadosParametrizacaoTributos } from "@/service/parametrizacao-tributos/criar-parametrizacao-tributos.js";
 import {
 	httpErro,

@@ -1,11 +1,12 @@
 import { v4 as uuidv4 } from "uuid";
+import type { NovoCustoProduto } from "@/model/custo-produto-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
+import { TIPO_ITEM_PRODUCAO } from "@/model/registro-producao-item-model.js";
 import {
 	ORIGEM_PRODUCAO,
 	type OrigemProducao,
 } from "@/model/registro-producao-model.js";
-import { TIPO_ITEM_PRODUCAO } from "@/model/registro-producao-item-model.js";
-import type { NovoCustoProduto } from "@/model/custo-produto-model.js";
+import { criarCustoProduto } from "@/repositories/custo-produto-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	buscarFichaProducaoPorId,
@@ -15,11 +16,10 @@ import {
 	atualizarProduto,
 	buscarProdutoPorId,
 } from "@/repositories/produtos-repositories.js";
-import { criarCustoProduto } from "@/repositories/custo-produto-repositories.js";
 import { criarRegistroProducaoComItens } from "@/repositories/registro-producao-repositories.js";
 import { buscarSaldoEstoquePorCodigoProduto } from "@/repositories/saldo-estoque-repositories.js";
-import { registrarMovimentoEstoque } from "@/service/estoque/registrar-movimento-estoque.js";
 import { calcularCustoMedio } from "@/service/custo-produto/calcular-custo-medio.js";
+import { registrarMovimentoEstoque } from "@/service/estoque/registrar-movimento-estoque.js";
 import {
 	httpBadRequest,
 	httpCriacao,
@@ -31,9 +31,9 @@ import {
 import {
 	TIPO_DOCUMENTO_ESTOQUE,
 	TIPO_ESTOQUE,
+	type TipoEstoque,
 	tipoEstoqueAfetouFiscal,
 	tipoEstoqueAfetouOperacional,
-	type TipoEstoque,
 } from "@/util/tipo-estoque.js";
 
 /** origem em custoproduto / produtos.origemcusto: 2 = produção */

@@ -1,9 +1,9 @@
 import { gzipSync } from "node:zlib";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import * as consultarDistribuicao from "./consultar-distribuicao-dfe.js";
-import { XML_RES_NFE } from "./__fixtures__/xml-dfe.fixtures.js";
-import { sincronizarEmpresaNfeInboundService } from "./nfe-inbound-sync.service.js";
 import * as nfeInboundRepo from "@/repositories/nfe-inbound-repositories.js";
+import { XML_RES_NFE } from "./__fixtures__/xml-dfe.fixtures.js";
+import * as consultarDistribuicao from "./consultar-distribuicao-dfe.js";
+import { sincronizarEmpresaNfeInboundService } from "./nfe-inbound-sync.service.js";
 
 vi.mock("./consultar-distribuicao-dfe.js");
 vi.mock("@/repositories/nfe-inbound-repositories.js");

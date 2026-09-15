@@ -5,10 +5,10 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { ProdutoTabela } from "@/app/(gourmet)/gourmet/components/produto-tabela";
 import { AbrirCaixaDialog } from "@/components/pdv/abrir-caixa-dialog";
 import { CarrinhoVendaRapida } from "@/components/pdv/carrinho-venda-rapida";
 import { PagamentoPdvDialog } from "@/components/pdv/pagamento-pdv-dialog";
-import { ProdutoTabela } from "@/app/(gourmet)/gourmet/components/produto-tabela";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,13 +27,13 @@ import {
 import {
 	buildContaMesaItemFromProduto,
 	buildCupomNfceInfo,
-	calcularSubtotalItens,
 	type CarrinhoLocalItem,
+	calcularSubtotalItens,
 	vendaPagamentosToFecharContaForm,
 } from "@/lib/gourmet-utils";
 import type { FecharContaFormData } from "@/schemas/fechar-conta.schema";
 import { nfceService } from "@/services/nfce.service";
-import { produtosService, type Produto } from "@/services/produtos.service";
+import { type Produto, produtosService } from "@/services/produtos.service";
 
 export function EditarNfcePdv() {
 	const router = useRouter();

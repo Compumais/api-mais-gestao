@@ -5,8 +5,8 @@ import {
 	MODELOS_OPENAI,
 	MODELOS_OPENROUTER,
 	type ProvedorIa,
-	testarConexaoIa,
 	type ResultadoTesteIa,
+	testarConexaoIa,
 } from "@/service/ia/provedores.js";
 import { httpBadRequest, httpOk } from "@/util/http-util.js";
 

@@ -1,6 +1,7 @@
 import type { HttpResponse } from "@/model/http-model.js";
 import type { PedidoCompraCompleto } from "@/model/pedido-compra-model.js";
 import { STATUS_PEDIDO_COMPRA } from "@/model/pedido-compra-model.js";
+import { buscarCotacaoCompraPorId } from "@/repositories/cotacao-compra-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	atualizarPedidoCompra,
@@ -8,7 +9,6 @@ import {
 	listarItensPedidoCompraEnriquecidos,
 	listarPedidosCompra,
 } from "@/repositories/pedido-compra-repositories.js";
-import { buscarCotacaoCompraPorId } from "@/repositories/cotacao-compra-repositories.js";
 import {
 	httpBadRequest,
 	httpNaoEncontrado,

@@ -1,7 +1,7 @@
 import { listarMovimentosEstoquePorIdOriginal } from "@/repositories/movimento-estoque-repositories.js";
-import { TIPO_DOCUMENTO_ESTOQUE, TIPO_ESTOQUE, type TipoEstoque } from "@/util/tipo-estoque.js";
 import type { ItemBaixaEstoqueVenda } from "@/service/estoque/baixa-estoque-venda.js";
 import { registrarMovimentoEstoque } from "@/service/estoque/registrar-movimento-estoque.js";
+import { TIPO_DOCUMENTO_ESTOQUE, TIPO_ESTOQUE, type TipoEstoque } from "@/util/tipo-estoque.js";
 
 type ReajustarEstoqueVendaPdvParametros = {
 	idempresa: string;

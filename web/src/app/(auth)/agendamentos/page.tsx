@@ -8,7 +8,6 @@ import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { formatDateTimeBrasilia } from "@/lib/date";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Dialog,
@@ -27,6 +26,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { formatDateTimeBrasilia } from "@/lib/date";
 import {
 	type AutomacaoFormData,
 	automacaoFormSchema,

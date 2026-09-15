@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { enviarRelatorioFiscal } from "./enviar-relatorio-fiscal.js";
 import { gerarRelatorioFiscalCompras } from "@/service/relatorios/fiscal-compras.service.js";
+import { enviarRelatorioFiscal } from "./enviar-relatorio-fiscal.js";
 
 const schema = z.object({
 	idempresa: z.string().uuid(),

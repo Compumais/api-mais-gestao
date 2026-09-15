@@ -5,9 +5,6 @@ import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { PagamentoPdvDialog } from "@/components/pdv/pagamento-pdv-dialog";
-import { ComandaSheet } from "../../components/comanda-sheet";
-import { GarcomHeader } from "../../components/garcom-header";
-import { ProdutoCardsGrupo } from "../../components/produto-cards-grupo";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useEmpresa } from "@/hooks/use-empresa";
@@ -23,10 +20,13 @@ import {
 	STATUS_MESA,
 } from "@/lib/gourmet-utils";
 import type { FecharContaFormData } from "@/schemas/fechar-conta.schema";
-import { contaMesaItemService } from "@/services/conta-mesa-item.service";
-import type { ContaMesaItem } from "@/services/conta-mesa-item.service";
 import { contaMesaService } from "@/services/conta-mesa.service";
+import type { ContaMesaItem } from "@/services/conta-mesa-item.service";
+import { contaMesaItemService } from "@/services/conta-mesa-item.service";
 import type { Produto } from "@/services/produtos.service";
+import { ComandaSheet } from "../../components/comanda-sheet";
+import { GarcomHeader } from "../../components/garcom-header";
+import { ProdutoCardsGrupo } from "../../components/produto-cards-grupo";
 
 export default function GarcomComandaPage() {
 	const params = useParams<{ id: string }>();

@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { CampoCfopProduto } from "@/app/(auth)/produtos/components/campo-cfop-produto";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -27,7 +28,6 @@ import {
 	type CfopDePara,
 	cfopDeParaService,
 } from "@/services/cfop-depara.service";
-import { CampoCfopProduto } from "@/app/(auth)/produtos/components/campo-cfop-produto";
 
 type ModalCfopDeParaProps = {
 	aberto: boolean;

@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Empresa } from "@/model/empresa-model.js";
 import * as empresaRepository from "@/repositories/empresa-repositories.js";
-import * as planoContasPadraoService from "../planocontas/criar-plano-contas-padrao.js";
 import * as cfopsPadraoService from "../cfop/criar-cfops-padrao.js";
-import * as taxasPadraoService from "../taxauf/criar-taxas-padrao.js";
-import * as parametrizacaoPadraoService from "../parametrizacao-tributos/criar-parametrizacao-tributos-padrao.js";
 import * as fatoresConversaoPadraoService from "../fator-conversao/criar-fatores-conversao-padrao.js";
-import * as tiposDocumentoFinanceiroPadraoService from "../tipo-documento-financeiro/criar-tipos-documento-financeiro-padrao.js";
+import * as parametrizacaoPadraoService from "../parametrizacao-tributos/criar-parametrizacao-tributos-padrao.js";
+import * as planoContasPadraoService from "../planocontas/criar-plano-contas-padrao.js";
 import * as planoEfetivoService from "../planos/buscar-plano-efetivo.js";
+import * as taxasPadraoService from "../taxauf/criar-taxas-padrao.js";
+import * as tiposDocumentoFinanceiroPadraoService from "../tipo-documento-financeiro/criar-tipos-documento-financeiro-padrao.js";
 import { criarEmpresaService } from "./criar-empresa.js";
 
 vi.mock("@/repositories/empresa-repositories");

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { MotivoBaixaFinanceiro } from "@/model/motivo-baixa-financeiro-model.js";
-import * as motivoBaixaFinanceiroRepository from "@/repositories/motivo-baixa-financeiro-repositories.js";
 import * as entidadeRepository from "@/repositories/entidade-repositories.js";
+import * as motivoBaixaFinanceiroRepository from "@/repositories/motivo-baixa-financeiro-repositories.js";
 import * as auditoriaService from "@/service/auditoria/criar-auditoria.js";
 import { excluirMotivoBaixaFinanceiroService } from "./excluir-motivo-baixa-financeiro.js";
 

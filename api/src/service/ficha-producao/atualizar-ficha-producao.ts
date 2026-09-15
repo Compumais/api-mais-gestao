@@ -10,7 +10,6 @@ import {
 } from "@/repositories/ficha-producao-repositories.js";
 import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
-import type { ItemFichaProducaoInput } from "./criar-ficha-producao.js";
 import {
 	httpBadRequest,
 	httpErroInterno,
@@ -18,6 +17,7 @@ import {
 	httpOk,
 	httpProibido,
 } from "@/util/http-util.js";
+import type { ItemFichaProducaoInput } from "./criar-ficha-producao.js";
 
 type AtualizarFichaProducaoParametros = {
 	id: string;

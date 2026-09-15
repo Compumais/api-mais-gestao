@@ -2,14 +2,14 @@ import type { HttpResponse } from "@/model/http-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
 import { listarItensPorVendaPdv } from "@/repositories/venda-pdv-item-repositories.js";
-import { NFE_STATUS } from "@/util/nfe-status.js";
+import { resolverVendaPorNotaFiscalNfce } from "@/service/nfce-emissao/resolver-venda-nfce.js";
 import {
 	httpBadRequest,
 	httpNaoEncontrado,
 	httpOk,
 	httpProibido,
 } from "@/util/http-util.js";
-import { resolverVendaPorNotaFiscalNfce } from "@/service/nfce-emissao/resolver-venda-nfce.js";
+import { NFE_STATUS } from "@/util/nfe-status.js";
 
 const STATUS_EDITAVEL_NFCE = new Set<number>([
 	NFE_STATUS.PENDENTE,

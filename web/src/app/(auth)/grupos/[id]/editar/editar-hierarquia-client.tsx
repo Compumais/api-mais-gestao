@@ -1,8 +1,8 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { hierarquiasService } from "@/services/hierarquias.service";
 import type { HierarquiaFormData } from "@/schemas/hierarquia.schema";
+import { hierarquiasService } from "@/services/hierarquias.service";
 import { HierarquiaForm } from "../../components/hierarquia-form";
 
 type EditarHierarquiaClientProps = {

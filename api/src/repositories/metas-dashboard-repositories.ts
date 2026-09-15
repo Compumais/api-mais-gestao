@@ -1,7 +1,7 @@
 import { and, desc, eq } from "drizzle-orm";
 import * as schema from "../../drizzle/schema.js";
-import { calcularRealizadoMeta } from "./dashboard-analytics-repositories.js";
 import { db } from "./connection.js";
+import { calcularRealizadoMeta } from "./dashboard-analytics-repositories.js";
 
 export type MetaDashboard = typeof schema.metasDashboard.$inferSelect;
 export type NovaMetaDashboard = typeof schema.metasDashboard.$inferInsert;

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { MotivoBaixaFinanceiro } from "@/model/motivo-baixa-financeiro-model.js";
-import * as motivoBaixaFinanceiroRepository from "@/repositories/motivo-baixa-financeiro-repositories.js";
 import * as entidadeRepository from "@/repositories/entidade-repositories.js";
+import * as motivoBaixaFinanceiroRepository from "@/repositories/motivo-baixa-financeiro-repositories.js";
 import { buscarMotivoBaixaFinanceiroService } from "./buscar-motivo-baixa-financeiro.js";
 
 vi.mock("@/repositories/entidade-repositories");

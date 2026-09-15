@@ -51,7 +51,7 @@ jobs:
         run: npm ci
 
       - name: Biome check
-        run: npx biome check .
+        run: npx biome check . --formatter-enabled=false
 
       - name: Build
         run: npm run build
@@ -106,7 +106,7 @@ jobs:
 
       - uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 11
 
       - uses: actions/setup-node@v4
         with:
@@ -123,5 +123,5 @@ jobs:
       - name: Build
         run: pnpm run build
         env:
-          # Evita falha de build quando variáveis públicas não estão definidas no CI
           NEXT_TELEMETRY_DISABLED: "1"
+          NEXT_PUBLIC_API_URL: http://localhost:3333

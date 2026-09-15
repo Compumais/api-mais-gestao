@@ -1,10 +1,5 @@
 import { randomUUID } from "node:crypto";
 import {
-	createCustomer,
-	createSubscription,
-	getCustomerByEmail,
-} from "@/service/asaas/asaas.service.js";
-import {
 	buscarClienteAsaas,
 	criarClienteAsaas,
 } from "@/repositories/assinatura-repositories.js";
@@ -14,6 +9,11 @@ import {
 	upsertUsuarioModulo,
 } from "@/repositories/saas-catalog-repositories.js";
 import { buscarUsuarioPorId } from "@/repositories/usuarios-repositories.js";
+import {
+	createCustomer,
+	createSubscription,
+	getCustomerByEmail,
+} from "@/service/asaas/asaas.service.js";
 
 export async function contratarModuloService(params: {
 	idusuario: string;

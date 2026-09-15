@@ -1,5 +1,5 @@
-import type { TipoOperacaoFiscal } from "@/model/regra-fiscal-model.js";
 import { ID_DEST_NFE } from "@/constants/ind-pres-nfe.js";
+import type { TipoOperacaoFiscal } from "@/model/regra-fiscal-model.js";
 import { itemIndicaSt } from "@/service/fiscal/indicadores-st-nfe.js";
 
 export type ItemClassificacaoFiscal = {

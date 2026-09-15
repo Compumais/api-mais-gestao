@@ -1,8 +1,8 @@
 "use client";
 
 import { IconSearch } from "@tabler/icons-react";
-import { Button } from "./ui/button";
 import { useSearchDialog } from "@/hooks/use-search-dialog";
+import { Button } from "./ui/button";
 
 export function SearchButton() {
 	const { setOpen } = useSearchDialog();

@@ -3,8 +3,8 @@ import {
 	normalizarCsosnSaida,
 	normalizarCstSaida,
 } from "@/util/parametrizacao-tributos-matching.js";
-import type { SugestaoTributacaoSaidaProduto } from "@/util/sugerir-tributacao-saida-produto-nf.js";
 import { codigoCfopParaInteiro } from "@/util/preencher-tributacao-produto-cfop.js";
+import type { SugestaoTributacaoSaidaProduto } from "@/util/sugerir-tributacao-saida-produto-nf.js";
 import { truncarTexto } from "@/util/texto-util.js";
 
 export type ResultadoParametrizacaoImportacao = {

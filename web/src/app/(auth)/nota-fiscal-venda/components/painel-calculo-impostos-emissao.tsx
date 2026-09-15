@@ -1,11 +1,11 @@
 "use client";
 
+import { ChevronDown } from "lucide-react";
 import {
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { ChevronDown } from "lucide-react";
 import type { TotaisFiscaisEmissaoNfe } from "@/util/calcular-totais-fiscais-emissao-nfe";
 
 type PainelCalculoImpostosEmissaoProps = {

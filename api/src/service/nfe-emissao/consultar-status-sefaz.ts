@@ -1,6 +1,6 @@
 import { XMLParser } from "fast-xml-parser";
-import type { HttpResponse } from "@/model/http-model.js";
 import { consultarStatusSefazGateway } from "@/lib/nfe-gateway-client.js";
+import type { HttpResponse } from "@/model/http-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	carregarContextoEmissaoNfe,

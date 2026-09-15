@@ -1,6 +1,6 @@
 import { consultarDistribuicaoDfeGateway } from "@/lib/nfe-gateway-client.js";
-import { montarCredenciaisGatewayNfe } from "@/service/nfe-emissao/montar-credenciais-gateway-nfe.js";
 import { buscarEmpresaFiscalPorEmpresa } from "@/repositories/empresa-fiscal-repositories.js";
+import { montarCredenciaisGatewayNfe } from "@/service/nfe-emissao/montar-credenciais-gateway-nfe.js";
 import { obterCodigoUfIbge } from "@/util/montar-config-sped-nfe.js";
 import { tratarErroSefazDfe } from "./tratar-erros-sefaz-dfe.js";
 

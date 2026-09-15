@@ -1,6 +1,5 @@
 "use client";
 
-import type { RelatorioAuditoriaFiscal } from "@/schemas/relatorio-fiscal.schema";
 import {
 	Dialog,
 	DialogContent,
@@ -8,6 +7,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import type { RelatorioAuditoriaFiscal } from "@/schemas/relatorio-fiscal.schema";
 
 type DialogRelatorioFiscalProps = {
 	aberto: boolean;

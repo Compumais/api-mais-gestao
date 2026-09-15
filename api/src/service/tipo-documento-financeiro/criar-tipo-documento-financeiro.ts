@@ -1,9 +1,9 @@
 import { v4 as uuidv4 } from "uuid";
-import type {
-	TipoDocumentoFinanceiro,
-	NovoTipoDocumentoFinanceiro,
-} from "@/model/tipo-documento-financeiro-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
+import type {
+	NovoTipoDocumentoFinanceiro,
+	TipoDocumentoFinanceiro,
+} from "@/model/tipo-documento-financeiro-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	criarTipoDocumentoFinanceiro,

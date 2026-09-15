@@ -5,12 +5,12 @@ import {
 } from "@/repositories/nota-fiscal-repositories.js";
 import {
 	calcularTotaisFiscais,
+	type FormatoRelatorioFiscal,
 	formatCurrency,
 	formatDate,
 	gerarRelatorioFiscal,
 	obterNumeroDocumento,
 	parseDecimal,
-	type FormatoRelatorioFiscal,
 	type RelatorioFiscalOutput,
 } from "@/service/relatorios/relatorio-fiscal-format.js";
 

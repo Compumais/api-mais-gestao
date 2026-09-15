@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, lte } from "drizzle-orm";
-import type { AutomacaoParametros } from "../../drizzle/tables/automacao.js";
 import * as schema from "../../drizzle/schema.js";
+import type { AutomacaoParametros } from "../../drizzle/tables/automacao.js";
 import { db } from "./connection.js";
 
 export type Automacao = typeof schema.automacao.$inferSelect;

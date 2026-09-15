@@ -1,14 +1,14 @@
 import { v4 as uuidv4 } from "uuid";
-import type { HttpResponse } from "@/model/http-model.js";
 import { emitirNfeHomologacaoGateway } from "@/lib/nfe-gateway-client.js";
+import type { HttpResponse } from "@/model/http-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { reservarProximoNumeroSerie } from "@/repositories/nfe-serie-repositories.js";
 import { criarNotaFiscalComItens } from "@/repositories/nota-fiscal-repositories.js";
-import { arquivarXmlNotaFiscal } from "@/service/nota-fiscal/arquivar-xml-nota-fiscal.js";
 import {
 	carregarContextoEmissaoNfe,
 	montarPayloadGatewayEmissao,
 } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
-import { reservarProximoNumeroSerie } from "@/repositories/nfe-serie-repositories.js";
+import { arquivarXmlNotaFiscal } from "@/service/nota-fiscal/arquivar-xml-nota-fiscal.js";
 import { httpBadRequest, httpErro, httpOk, httpProibido } from "@/util/http-util.js";
 
 const TIPO_ORIGEM_EMISSAO_VENDA = 1;

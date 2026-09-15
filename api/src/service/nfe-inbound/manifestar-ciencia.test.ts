@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as gateway from "@/lib/nfe-gateway-client.js";
-import * as credenciais from "@/service/nfe-emissao/montar-credenciais-gateway-nfe.js";
 import * as nfeInboundRepo from "@/repositories/nfe-inbound-repositories.js";
+import * as credenciais from "@/service/nfe-emissao/montar-credenciais-gateway-nfe.js";
 import { manifestarCienciaOperacaoService } from "./manifestar-ciencia-operacao.js";
 import * as syncService from "./nfe-inbound-sync.service.js";
 

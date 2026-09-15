@@ -5,13 +5,13 @@ import {
 	emitirNfceVendaPdvService,
 	type ResultadoEmissaoNfcePdv,
 } from "@/service/nfce-emissao/emitir-nfce-venda-pdv.js";
-import { resolverVendaPorNotaFiscalNfce } from "@/service/nfce-emissao/resolver-venda-nfce.js";
-import { NFE_STATUS } from "@/util/nfe-status.js";
+import { resolverVendaPorNotaFiscalNfce } from "@/service/nfce-emissao/resolver-venda-nfce.js";
 import {
 	httpBadRequest,
 	httpNaoEncontrado,
 	httpProibido,
-} from "@/util/http-util.js";
+} from "@/util/http-util.js";
+import { NFE_STATUS } from "@/util/nfe-status.js";
 
 type ReemitirNfceParametros = {
 	idusuario: string;

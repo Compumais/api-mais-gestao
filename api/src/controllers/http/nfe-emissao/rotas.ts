@@ -2,9 +2,9 @@ import type { FastifyInstance } from "fastify";
 import { FEATURES_SAAS } from "@/constants/saas-catalog.js";
 import { verifyJwt } from "../../middleware/verify-jwt.js";
 import { requireFeature } from "../../middleware/verify-plano.js";
-import { cancelarNfe } from "./cancelar-nfe.js";
 import { calcularObservacoesNfe } from "./calcular-observacoes.js";
 import { calcularTributosNfe } from "./calcular-tributos.js";
+import { cancelarNfe } from "./cancelar-nfe.js";
 import { emitirNfe, listarNfesEmitidas } from "./emitir-nfe.js";
 import { inutilizarNfe } from "./inutilizar-nfe.js";
 import {
@@ -12,12 +12,12 @@ import {
 	emitirNfeHomologacaoTeste,
 } from "./nfe-emissao.js";
 import { previewDanfeNfe } from "./preview-danfe.js";
-import { resolverReferenciaEmissao } from "./resolver-referencia.js";
 import {
 	excluirRascunhoEmissaoNfe,
 	listarRascunhosEmissaoNfe,
 	salvarRascunhoEmissaoNfe,
 } from "./rascunho-emissao.js";
+import { resolverReferenciaEmissao } from "./resolver-referencia.js";
 import { transmitirNfe } from "./transmitir-nfe.js";
 
 export async function nfeEmissaoRotas(app: FastifyInstance) {

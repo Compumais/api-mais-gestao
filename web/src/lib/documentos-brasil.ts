@@ -58,7 +58,7 @@ function modulo11(ie: string, pesos: number[], posicoes: number[]): boolean {
 	for (let i = 0; i < pesos.length; i++) {
 		soma += Number(base[i]) * pesos[i]!;
 	}
-	let resto = soma % 11;
+	const resto = soma % 11;
 	const digito = resto < 2 ? 0 : 11 - resto;
 	return digito === Number(ie[posicoes[0]!]);
 }

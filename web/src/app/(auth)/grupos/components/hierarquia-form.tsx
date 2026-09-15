@@ -26,8 +26,8 @@ import {
 import { useEmpresa } from "@/hooks/use-empresa";
 import { useProximoCodigo } from "@/hooks/use-proximo-codigo";
 import {
-	type HierarquiaFormData,
 	FOTO_GRUPO_MAX_BYTES,
+	type HierarquiaFormData,
 	hierarquiaFormSchema,
 } from "@/schemas/hierarquia.schema";
 import { hierarquiasService } from "@/services/hierarquias.service";

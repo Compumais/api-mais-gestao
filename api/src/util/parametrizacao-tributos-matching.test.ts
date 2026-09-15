@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { ParametrizacaoTributos } from "@/repositories/parametrizacao-tributos-repositories.js";
 import {
 	campoTributacaoAusenteOuInvalido,
 	cstsEntradaCoincidem,
@@ -9,7 +10,6 @@ import {
 	regraParametrizacaoCasaComNota,
 } from "./parametrizacao-tributos-matching.js";
 import { aplicarParametrizacaoTributosImportacao } from "./resolver-parametrizacao-tributos-importacao.js";
-import type { ParametrizacaoTributos } from "@/repositories/parametrizacao-tributos-repositories.js";
 import { mesclarSugestaoTributacaoSaidaProduto } from "./sugerir-tributacao-saida-produto-nf.js";
 
 describe("normalizarCodigoCfop", () => {

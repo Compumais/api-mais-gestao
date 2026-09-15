@@ -2,8 +2,8 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { v4 as uuidv4 } from "uuid";
 import z from "zod";
 import { buscarContaCorrentePorId } from "@/repositories/conta-corrente-repositories.js";
-import { criarNotificacaoService } from "@/service/notificacoes/criar-notificacao.js";
 import { criarContaCorrenteLancamentoService } from "@/service/contacorrentelancamento/criar-conta-corrente-lancamento.js";
+import { criarNotificacaoService } from "@/service/notificacoes/criar-notificacao.js";
 import {
 	httpErroInterno,
 	httpNaoAutorizado,

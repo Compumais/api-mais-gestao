@@ -4,10 +4,10 @@ import { IconMinus, IconPlus, IconTrash } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
+	type CarrinhoLocalItem,
 	calcularSubtotalItens,
 	formatCurrency,
 	parseValor,
-	type CarrinhoLocalItem,
 } from "@/lib/gourmet-utils";
 
 interface CarrinhoVendaRapidaProps {

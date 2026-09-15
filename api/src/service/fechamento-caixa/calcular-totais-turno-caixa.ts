@@ -4,9 +4,9 @@ import { listarTodasVendasPdvGourmetTurno } from "@/repositories/venda-pdv-gourm
 import { listarVendasPdvItem } from "@/repositories/venda-pdv-item-repositories.js";
 import {
 	extrairPagamentosResumo,
+	type PagamentosResumo,
 	pagamentosResumoVazio,
 	somarPagamentosResumo,
-	type PagamentosResumo,
 } from "@/util/pagamentos-pdv-util.js";
 import { parseValorMonetario } from "@/util/recebimentos-venda-util.js";
 

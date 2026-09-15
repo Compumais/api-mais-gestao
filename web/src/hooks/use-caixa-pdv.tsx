@@ -3,26 +3,26 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	createContext,
+	type ReactNode,
 	useCallback,
 	useContext,
 	useMemo,
-	type ReactNode,
 } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { useEmpresa } from "@/hooks/use-empresa";
 import {
+	extrairPagamentosResumo,
 	getNumeropdv,
+	type PagamentosResumo,
+	pagamentosResumoVazio,
 	parseValor,
 	STATUS_CAIXA,
-	extrairPagamentosResumo,
 	somarPagamentosResumo,
-	pagamentosResumoVazio,
-	type PagamentosResumo,
 } from "@/lib/gourmet-utils";
+import { type ContaMesa, contaMesaService } from "@/services/conta-mesa.service";
 import type { FechamentoCaixa } from "@/services/fechamento-caixa.service";
 import { fechamentoCaixaService } from "@/services/fechamento-caixa.service";
-import { contaMesaService, type ContaMesa } from "@/services/conta-mesa.service";
 import type { VendaPdvGourmet } from "@/services/venda-pdv-gourmet.service";
 import { vendaPdvGourmetService } from "@/services/venda-pdv-gourmet.service";
 import { vendaPdvItemService } from "@/services/venda-pdv-item.service";

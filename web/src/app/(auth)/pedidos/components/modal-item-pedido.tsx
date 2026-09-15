@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Loader2, Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { Loader2, Search } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import {
+	BlocoLotesItemNfe,
+	type RastroItemLote,
+} from "@/app/(auth)/nota-fiscal-venda/components/bloco-lotes-item-nfe";
 import { Button } from "@/components/ui/button";
-import { MoneyInput } from "@/components/ui/money-input";
 import {
 	Dialog,
 	DialogContent,
@@ -15,12 +18,9 @@ import {
 } from "@/components/ui/dialog";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import {
-	BlocoLotesItemNfe,
-	type RastroItemLote,
-} from "@/app/(auth)/nota-fiscal-venda/components/bloco-lotes-item-nfe";
-import { produtosService } from "@/services/produtos.service";
+import { MoneyInput } from "@/components/ui/money-input";
 import type { PedidoDavItem, PedidoDavItemRastro } from "@/services/dav.service";
+import { produtosService } from "@/services/produtos.service";
 
 type DadosItemPedido = {
 	idproduto: string;

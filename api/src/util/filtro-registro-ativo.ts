@@ -1,5 +1,5 @@
-import { eq, isNull, or, type SQL } from "drizzle-orm";
 import type { AnyColumn } from "drizzle-orm";
+import { eq, isNull, or, type SQL } from "drizzle-orm";
 
 export function filtroRegistroAtivo(
 	coluna: AnyColumn,

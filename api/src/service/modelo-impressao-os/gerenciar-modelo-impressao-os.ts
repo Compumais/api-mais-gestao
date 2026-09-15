@@ -1,7 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import type { HttpResponse } from "@/model/http-model.js";
 import type { ModeloImpressaoOrdemServico } from "@/model/modelo-impressao-ordem-servico-model.js";
-import type { LayoutModeloImpressaoOs } from "@/repositories/schema.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	atualizarModeloImpressaoOs,
@@ -12,7 +11,7 @@ import {
 	limparPrimarioModelosImpressaoOs,
 	listarModelosImpressaoOs,
 } from "@/repositories/modelo-impressao-os-repositories.js";
-import { SEEDS_MODELO_IMPRESSAO_OS } from "@/util/modelo-impressao-os-seeds.js";
+import type { LayoutModeloImpressaoOs } from "@/repositories/schema.js";
 import {
 	httpBadRequest,
 	httpCriacao,
@@ -21,6 +20,7 @@ import {
 	httpProibido,
 	httpSemConteudo,
 } from "@/util/http-util.js";
+import { SEEDS_MODELO_IMPRESSAO_OS } from "@/util/modelo-impressao-os-seeds.js";
 
 type AcessoEmpresa = {
 	idempresa: string;

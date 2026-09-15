@@ -1,9 +1,10 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import { Printer } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { PreviewModeloImpressaoOs } from "@/app/(auth)/configuracoes/modelos-impressao/components/preview-modelo-impressao-os";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -20,7 +21,6 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { useModelosImpressaoOs } from "@/hooks/use-modelo-impressao-os";
-import { PreviewModeloImpressaoOs } from "@/app/(auth)/configuracoes/modelos-impressao/components/preview-modelo-impressao-os";
 import type { Empresa } from "@/services/empresas.service";
 import type {
 	OrdemServico,

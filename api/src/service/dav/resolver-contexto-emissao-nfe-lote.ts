@@ -4,8 +4,8 @@ import {
 } from "@/repositories/dav-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { buscarTipoDocumentoFinanceiroPorId } from "@/repositories/tipo-documento-financeiro-repositories.js";
-import type { ItemPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
 import { montarItensEmissaoDav } from "@/service/dav/montar-itens-emissao-dav.js";
+import type { ItemPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
 import {
 	httpBadRequest,
 	httpNaoEncontrado,

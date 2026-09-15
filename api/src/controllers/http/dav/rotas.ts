@@ -3,18 +3,18 @@ import { verifyJwt } from "../../middleware/verify-jwt.js";
 import { atualizarDav } from "./atualizar.js";
 import { buscarDav } from "./buscar.js";
 import { cancelarDav } from "./cancelar.js";
+import { contextoEmissaoNfePedido } from "./contexto-emissao-nfe.js";
+import { contextoEmissaoNfeLote } from "./contexto-emissao-nfe-lote.js";
 import { criarDav } from "./criar.js";
 import * as schema from "./doc-schema/schema.js";
 import { excluirDav } from "./excluir.js";
-import { faturarDavNfe } from "./faturar-nfe.js";
 import { faturarDavNfce } from "./faturar-nfce.js";
-import { contextoEmissaoNfePedido } from "./contexto-emissao-nfe.js";
-import { contextoEmissaoNfeLote } from "./contexto-emissao-nfe-lote.js";
-import { listarDavs } from "./listar.js";
-import { criarDavItem } from "./itens/criar.js";
-import { listarDavItens } from "./itens/listar.js";
+import { faturarDavNfe } from "./faturar-nfe.js";
 import { atualizarDavItem } from "./itens/atualizar.js";
+import { criarDavItem } from "./itens/criar.js";
 import { excluirDavItem } from "./itens/excluir.js";
+import { listarDavItens } from "./itens/listar.js";
+import { listarDavs } from "./listar.js";
 
 export async function davsRotas(app: FastifyInstance) {
 	app.addHook("onRequest", verifyJwt);

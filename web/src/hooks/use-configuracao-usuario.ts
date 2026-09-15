@@ -2,9 +2,9 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { configuracaoUsuarioService } from "@/services/configuracao-usuario.service";
-import type { IntegracoesUsuario } from "@/services/configuracao-usuario.service";
 import { useEmpresa } from "@/hooks/use-empresa";
+import type { IntegracoesUsuario } from "@/services/configuracao-usuario.service";
+import { configuracaoUsuarioService } from "@/services/configuracao-usuario.service";
 
 export function useConfiguracaoUsuario(idempresa?: string) {
 	const { localStorageEmpresa } = useEmpresa();

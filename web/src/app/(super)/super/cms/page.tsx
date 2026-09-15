@@ -11,7 +11,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { formatDateTimeBrasilia } from "@/lib/date";
 import {
 	Table,
 	TableBody,
@@ -20,6 +19,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { formatDateTimeBrasilia } from "@/lib/date";
 import { adminService } from "@/services/admin.service";
 
 export default function SuperCmsPage() {

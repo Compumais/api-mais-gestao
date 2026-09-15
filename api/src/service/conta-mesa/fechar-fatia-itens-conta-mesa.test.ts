@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ContaMesa } from "@/model/conta-mesa-model.js";
 import type { ContaMesaItem } from "@/model/conta-mesa-item-model.js";
+import type { ContaMesa } from "@/model/conta-mesa-model.js";
 import type { VendaPdvGourmet } from "@/model/venda-pdv-gourmet-model.js";
-import * as entidadeRepository from "@/repositories/entidade-repositories.js";
-import * as contaMesaRepository from "@/repositories/conta-mesa-repositories.js";
 import * as contaMesaItemRepository from "@/repositories/conta-mesa-item-repositories.js";
-import * as vendaPdvItemRepository from "@/repositories/venda-pdv-item-repositories.js";
+import * as contaMesaRepository from "@/repositories/conta-mesa-repositories.js";
+import * as entidadeRepository from "@/repositories/entidade-repositories.js";
 import * as vendaPdvGourmetRepository from "@/repositories/venda-pdv-gourmet-repositories.js";
+import * as vendaPdvItemRepository from "@/repositories/venda-pdv-item-repositories.js";
 import * as criarVendaService from "@/service/venda-pdv-gourmet/criar-venda-pdv-gourmet.js";
 import { fecharFatiaItensContaMesaService } from "./fechar-fatia-itens-conta-mesa.js";
 

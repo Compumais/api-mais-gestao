@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { saldoEstoqueService } from "@/services/saldo-estoque.service";
 
 /**

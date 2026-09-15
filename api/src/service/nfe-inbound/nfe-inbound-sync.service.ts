@@ -11,7 +11,8 @@ import { compararNsu, normalizarNsu } from "@/util/lock-empresa.js";
 import { classificarXmlDfe } from "./classificar-xml-dfe.js";
 import {
 	consultarDistribuicaoDfe,
-	ErroConsultaDistribuicaoDfe,
+	type ErroConsultaDistribuicaoDfe,
+	type ResultadoConsultaDistribuicaoDfe,
 } from "./consultar-distribuicao-dfe.js";
 import { importPurchaseInvoiceService } from "./import-purchase-invoice.js";
 import { persistirDocumentoInbound } from "./persistir-documento-inbound.js";
@@ -94,7 +95,7 @@ export async function sincronizarEmpresaNfeInboundService({
 		while (iteracoes < MAX_ITERACOES_PAGINACAO && quantidadeXml < MAX_DOCZIP_POR_EXECUCAO) {
 			iteracoes += 1;
 
-			let resultadoDistribuicao;
+			let resultadoDistribuicao: ResultadoConsultaDistribuicaoDfe;
 
 			try {
 				resultadoDistribuicao = await consultarDistribuicaoDfe({

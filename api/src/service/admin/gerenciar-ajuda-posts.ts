@@ -6,7 +6,7 @@ import {
 	excluirAjudaPost,
 	listarAjudaPostsAdmin,
 } from "@/repositories/ajuda-posts-repositories.js";
-import { httpNaoEncontrado, httpOk, httpCriacao } from "@/util/http-util.js";
+import { httpCriacao, httpNaoEncontrado, httpOk } from "@/util/http-util.js";
 
 export async function listarAjudaPostsAdminService(): Promise<
 	HttpResponse<unknown>

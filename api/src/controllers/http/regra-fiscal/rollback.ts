@@ -1,8 +1,8 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import { rollbackRegraFiscalService } from "@/service/regra-fiscal/rollback-regra-fiscal.js";
-import { rollbackRegraFiscalBodySchema } from "./body-schema.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
+import { rollbackRegraFiscalBodySchema } from "./body-schema.js";
 
 const paramsSchema = z.object({ id: z.string().uuid() });
 
