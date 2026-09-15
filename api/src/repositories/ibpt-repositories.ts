@@ -124,7 +124,13 @@ export async function substituirAliquotasIbptPorUf(
 				uf: ufNormalizada,
 				importadoEm: agora,
 			}));
-			await tx.insert(schema.ibptAliquota).values(fatia);
+			await tx.insert(schema.ibptAliquota).values(fatia).onConflictDoNothing({
+				target: [
+					schema.ibptAliquota.uf,
+					schema.ibptAliquota.ncm,
+					schema.ibptAliquota.ex,
+				],
+			});
 		}
 	});
 }

@@ -39,11 +39,60 @@ function normalizarEx(valor: unknown): string {
 	return texto || "0";
 }
 
+function ehRegistroDeServicoIbpt(item: Record<string, unknown>): boolean {
+	const tipo = item.tipo ?? item.Tipo ?? item.tipoItem ?? item.tipoCodigo;
+	if (tipo === undefined || tipo === null || tipo === "") return false;
+	const normalizado = String(tipo).trim().toLowerCase();
+	return (
+		normalizado === "1" ||
+		normalizado === "2" ||
+		normalizado === "nbs" ||
+		normalizado === "lc116"
+	);
+}
+
+function chaveRegistroIbpt(registro: RegistroIbptParseado): string {
+	return `${registro.ncm}:${registro.ex}`;
+}
+
+function preferirRegistroMercadoria(
+	atual: RegistroIbptParseado,
+	proximo: RegistroIbptParseado,
+): RegistroIbptParseado {
+	if (proximo.aliquotaEstadual !== atual.aliquotaEstadual) {
+		return proximo.aliquotaEstadual > atual.aliquotaEstadual ? proximo : atual;
+	}
+	if (proximo.aliquotaMunicipal !== atual.aliquotaMunicipal) {
+		return proximo.aliquotaMunicipal > atual.aliquotaMunicipal
+			? proximo
+			: atual;
+	}
+	return atual;
+}
+
+function consolidarRegistrosIbpt(
+	registros: RegistroIbptParseado[],
+): RegistroIbptParseado[] {
+	const unicos = new Map<string, RegistroIbptParseado>();
+	for (const registro of registros) {
+		const chave = chaveRegistroIbpt(registro);
+		const existente = unicos.get(chave);
+		if (!existente) {
+			unicos.set(chave, registro);
+			continue;
+		}
+		unicos.set(chave, preferirRegistroMercadoria(existente, registro));
+	}
+	return [...unicos.values()];
+}
+
 function mapearRegistroGenerico(
 	item: Record<string, unknown>,
 	ufFallback: string,
 	meta: { chave?: string; fonte?: string; versao?: string },
 ): RegistroIbptParseado | null {
+	if (ehRegistroDeServicoIbpt(item)) return null;
+
 	const ncm = normalizarNcm(item.codigo ?? item.Codigo ?? item.ncm ?? item.NCM);
 	if (ncm.length !== 8) return null;
 
@@ -161,11 +210,13 @@ export function parsearArquivoIbpt(
 		if (registro) registros.push(registro);
 	}
 
-	if (registros.length === 0) {
+	const registrosUnicos = consolidarRegistrosIbpt(registros);
+
+	if (registrosUnicos.length === 0) {
 		throw new Error("Nenhum registro IBPT válido encontrado no arquivo");
 	}
 
-	const chave = registros[0]?.chave ?? meta.chave;
+	const chave = registrosUnicos[0]?.chave ?? meta.chave;
 	if (!chave) {
 		throw new Error("Chave IBPT não encontrada no arquivo");
 	}
@@ -173,9 +224,9 @@ export function parsearArquivoIbpt(
 	return {
 		uf,
 		chave,
-		fonte: registros[0]?.fonte ?? meta.fonte,
-		versao: registros[0]?.versao ?? meta.versao,
-		registros,
+		fonte: registrosUnicos[0]?.fonte ?? meta.fonte,
+		versao: registrosUnicos[0]?.versao ?? meta.versao,
+		registros: registrosUnicos,
 	};
 }
 
