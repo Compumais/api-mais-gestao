@@ -1,7 +1,7 @@
-import z from "zod";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
+import z from "zod";
 import { retransmitirNfseService } from "@/service/nfse-emissao/retransmitir-nfse.js";
+import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
 export async function retransmitirNfse(
 	request: FastifyRequest,

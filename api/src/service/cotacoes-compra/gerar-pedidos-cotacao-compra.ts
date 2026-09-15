@@ -1,8 +1,8 @@
 import { v4 as uuidv4 } from "uuid";
 import { STATUS_COTACAO_COMPRA } from "@/model/cotacao-compra-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
-import { STATUS_PEDIDO_COMPRA } from "@/model/pedido-compra-model.js";
 import type { PedidoCompraCompleto } from "@/model/pedido-compra-model.js";
+import { STATUS_PEDIDO_COMPRA } from "@/model/pedido-compra-model.js";
 import {
 	atualizarCotacaoCompra,
 	buscarCotacaoCompraPorId,

@@ -9,7 +9,7 @@ import { NavAbasAbertasBar } from "@/components/nav-abas-abertas-bar";
 import { NavMenuMobileSheet } from "@/components/nav-menu-mobile-sheet";
 import { NavUserTopbar } from "@/components/nav-user-topbar";
 import { Button } from "@/components/ui/button";
-import { useNavFiltrada, type NavSecaoTopbar } from "@/hooks/use-nav-filtrada";
+import { type NavSecaoTopbar, useNavFiltrada } from "@/hooks/use-nav-filtrada";
 import { NavFixadosProvider } from "@/hooks/use-nav-fixados";
 import { useSearchDialog } from "@/hooks/use-search-dialog";
 import {

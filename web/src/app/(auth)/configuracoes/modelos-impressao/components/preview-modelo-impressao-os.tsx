@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import type { LayoutModeloImpressaoOs } from "@/schemas/modelo-impressao-os.schema";
 import {
 	CSS_MODELO_IMPRESSAO_OS,
-	type DadosPreviewModeloImpressaoOs,
 	DADOS_AMOSTRA_MODELO_IMPRESSAO_OS,
+	type DadosPreviewModeloImpressaoOs,
 	renderizarHtmlModeloImpressaoOs,
 } from "@/util/renderizar-modelo-impressao-os";
 

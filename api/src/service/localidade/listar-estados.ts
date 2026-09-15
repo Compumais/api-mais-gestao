@@ -1,6 +1,6 @@
 import { ESTADOS_BRASIL } from "@/constants/estados-brasil.js";
-import type { Estado } from "@/model/localidade-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
+import type { Estado } from "@/model/localidade-model.js";
 import { httpOk } from "@/util/http-util.js";
 
 type ListarEstadosResposta = {

@@ -1,13 +1,13 @@
 import type { HttpResponse } from "@/model/http-model.js";
 import {
-	buscarCfopPorId,
-} from "@/repositories/cfop-repositories.js";
-import {
 	buscarCfopDeParaDuplicado,
-	criarCfopDePara,
 	type CfopDePara,
+	criarCfopDePara,
 	type NovoCfopDePara,
 } from "@/repositories/cfop-depara-repositories.js";
+import {
+	buscarCfopPorId,
+} from "@/repositories/cfop-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	httpCriacao,

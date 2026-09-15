@@ -1,12 +1,12 @@
 import {
-	MEIOS_PAGAMENTO_PDV,
-	type PagamentosFechar,
-} from "@/lib/gourmet-utils";
-import {
 	type MeioPagamentoPdv,
 	type MeiosPagamentoNfceConfig,
 	normalizarMeiosPagamentoNfce,
 } from "@/constants/meios-pagamento-nfce";
+import {
+	MEIOS_PAGAMENTO_PDV,
+	type PagamentosFechar,
+} from "@/lib/gourmet-utils";
 
 export type ResultadoAvaliacaoEmissaoNfce = {
 	deveEmitir: boolean;

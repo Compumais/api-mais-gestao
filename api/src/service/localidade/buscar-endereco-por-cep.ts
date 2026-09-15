@@ -1,6 +1,6 @@
-import type { EnderecoPorCep } from "@/model/localidade-model.js";
-import type { HttpResponse } from "@/model/http-model.js";
 import { buscarEstadoPorSigla } from "@/constants/estados-brasil.js";
+import type { HttpResponse } from "@/model/http-model.js";
+import type { EnderecoPorCep } from "@/model/localidade-model.js";
 import {
 	buscarCepBrasilApi,
 	buscarMunicipiosBrasilApi,

@@ -2,9 +2,9 @@ import { v4 as uuidv4 } from "uuid";
 import { z } from "zod/v4";
 import { buscarDavService } from "@/service/dav/buscar-dav.js";
 import { criarDavService } from "@/service/dav/criar-dav.js";
-import { listarDavsService } from "@/service/dav/listar-davs.js";
 import { faturarDavNfceService } from "@/service/dav/faturar-dav-nfce.js";
 import { faturarDavNfeService } from "@/service/dav/faturar-dav-nfe.js";
+import { listarDavsService } from "@/service/dav/listar-davs.js";
 import type { DefinicaoTool } from "./tipos.js";
 import { exigirConfirmacao, httpParaResultadoTool } from "./util-tools.js";
 

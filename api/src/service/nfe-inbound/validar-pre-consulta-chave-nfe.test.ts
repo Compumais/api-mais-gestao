@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { calcularDigitoVerificadorChaveNfe } from "@/util/decodificar-chave-nfe.js";
 import {
 	CHAVE_NFE,
 } from "@/service/nfe-inbound/__fixtures__/xml-dfe.fixtures.js";
 import { validarPreConsultaChaveNfe } from "@/service/nfe-inbound/validar-pre-consulta-chave-nfe.js";
+import { calcularDigitoVerificadorChaveNfe } from "@/util/decodificar-chave-nfe.js";
 
 const XML_COM_DESTINATARIO = `<?xml version="1.0" encoding="UTF-8"?>
 <nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">

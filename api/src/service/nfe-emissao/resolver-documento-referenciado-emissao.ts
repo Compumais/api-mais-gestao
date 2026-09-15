@@ -1,25 +1,25 @@
 import type { HttpResponse } from "@/model/http-model.js";
-import { buscarNotaFiscalXmlPorNota } from "@/repositories/nota-fiscal-xml-repositories.js";
+import { buscarCfopSaidaPorEntrada } from "@/repositories/cfop-depara-repositories.js";
+import { buscarCfopPorCodigo } from "@/repositories/cfop-repositories.js";
 import {
 	buscarNotaFiscalPorId,
 	listarItensPorNotaFiscal,
 } from "@/repositories/nota-fiscal-repositories.js";
-import { buscarCfopSaidaPorEntrada } from "@/repositories/cfop-depara-repositories.js";
-import { buscarCfopPorCodigo } from "@/repositories/cfop-repositories.js";
+import { buscarNotaFiscalXmlPorNota } from "@/repositories/nota-fiscal-xml-repositories.js";
 import {
 	inferirCodigoCfopDevolucaoEntrada,
 	inferirCodigoCfopDevolucaoSaida,
 	type TipoDevolucaoNfe,
 } from "@/util/cfop-devolucao-emissao-nfe.js";
-import { parseNFeXml } from "@/util/nfe-xml-parser.js";
 import { extrairTributacaoItemEmissaoNfe } from "@/util/dados-emissao-nfe-nota.js";
-import { STATUS_RASCUNHO_IMPORTACAO } from "@/util/nota-fiscal-constants.js";
-import { NFE_STATUS } from "@/util/nfe-status.js";
 import {
 	httpBadRequest,
 	httpNaoEncontrado,
 	httpOk,
 } from "@/util/http-util.js";
+import { NFE_STATUS } from "@/util/nfe-status.js";
+import { parseNFeXml } from "@/util/nfe-xml-parser.js";
+import { STATUS_RASCUNHO_IMPORTACAO } from "@/util/nota-fiscal-constants.js";
 
 export type DocumentoReferenciadoEmissao = {
 	chave: string;

@@ -4,10 +4,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-import { CarrinhoComanda } from "../../components/carrinho-comanda";
-import { FecharContaMesaDialog } from "../../components/fechar-conta-mesa-dialog";
-import { ProdutoTabela } from "../../components/produto-tabela";
-import { PdvHeader } from "../../components/pdv-header";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -32,11 +28,15 @@ import {
 	STATUS_MESA,
 } from "@/lib/gourmet-utils";
 import type { FecharContaFormData } from "@/schemas/fechar-conta.schema";
-import { contaMesaItemService } from "@/services/conta-mesa-item.service";
-import type { ContaMesaItem } from "@/services/conta-mesa-item.service";
 import { contaMesaService } from "@/services/conta-mesa.service";
-import { produtosService } from "@/services/produtos.service";
+import type { ContaMesaItem } from "@/services/conta-mesa-item.service";
+import { contaMesaItemService } from "@/services/conta-mesa-item.service";
 import type { Produto } from "@/services/produtos.service";
+import { produtosService } from "@/services/produtos.service";
+import { CarrinhoComanda } from "../../components/carrinho-comanda";
+import { FecharContaMesaDialog } from "../../components/fechar-conta-mesa-dialog";
+import { PdvHeader } from "../../components/pdv-header";
+import { ProdutoTabela } from "../../components/produto-tabela";
 
 export default function ContaMesaPage() {
 	const params = useParams<{ id: string }>();

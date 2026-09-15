@@ -2,11 +2,11 @@ import { api } from "@/lib/axios";
 
 import {
 
-	nfeConfiguracaoService,
-
 	type CertificadoDigitalResumo,
 
 	type NfeSerie,
+
+	nfeConfiguracaoService,
 
 } from "@/services/nfe-configuracao.service";
 

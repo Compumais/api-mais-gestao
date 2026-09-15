@@ -1,8 +1,8 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import { atualizarRegraFiscalService } from "@/service/regra-fiscal/atualizar-regra-fiscal.js";
-import { atualizarRegraFiscalBodySchema } from "./body-schema.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
+import { atualizarRegraFiscalBodySchema } from "./body-schema.js";
 
 const paramsSchema = z.object({ id: z.string().uuid() });
 

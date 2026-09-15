@@ -1,5 +1,5 @@
-import type { CfopDePara } from "@/repositories/cfop-depara-repositories.js";
 import type { HttpResponse } from "@/model/http-model.js";
+import type { CfopDePara } from "@/repositories/cfop-depara-repositories.js";
 import {
 	buscarCfopDeParaPorId,
 	excluirCfopDePara,

@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { obterTributacaoSugeridaPorCfop } from "@/service/produto/enriquecer-campos-impostos-produto.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { obterTributacaoSugeridaPorCfop } from "@/service/produto/enriquecer-campos-impostos-produto.js";
 import {
 	httpErroInterno,
 	httpNaoAutorizado,

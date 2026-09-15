@@ -14,7 +14,6 @@ const nextConfig: NextConfig = {
 		root,
 	},
 	allowedDevOrigins: origensDevPermitidas,
-	reactCompiler: true,
 	async headers() {
 		return [
 			{

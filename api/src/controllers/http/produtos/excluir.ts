@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import z from "zod";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { excluirProdutoService } from "@/service/produto/excluir-produto.js";
 import {
 	httpErroInterno,

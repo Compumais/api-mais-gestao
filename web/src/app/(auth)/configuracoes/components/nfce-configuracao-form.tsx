@@ -7,7 +7,6 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import type { z } from "zod";
 import { Badge } from "@/components/ui/badge";
-import { formatDateOnlyDisplay } from "@/lib/date";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
@@ -26,6 +25,7 @@ import {
 	resolverValorMeioPagamentoNfce,
 } from "@/constants/meios-pagamento-nfce";
 import { NFCE_CONFIG_PADRAO_LABEL } from "@/constants/nfce-config-padrao";
+import { formatDateOnlyDisplay } from "@/lib/date";
 import { MEIOS_PAGAMENTO_PDV } from "@/lib/gourmet-utils";
 import {
 	type NfceConfiguracaoFormData,

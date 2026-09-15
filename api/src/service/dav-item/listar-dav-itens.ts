@@ -1,8 +1,8 @@
 import type { DavItem } from "@/model/dav-item-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
-import { buscarDavPorId } from "@/repositories/dav-repositories.js";
 import { listarLotesPorDavItens } from "@/repositories/dav-item-lote-repositories.js";
 import { listarItensPorDav } from "@/repositories/dav-item-repositories.js";
+import { buscarDavPorId } from "@/repositories/dav-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	httpBadRequest,

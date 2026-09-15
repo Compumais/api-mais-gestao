@@ -15,6 +15,7 @@ import {
 } from "@/service/nota-fiscal/gerar-contas-receber-nf.js";
 import { registrarMovimentosEstoqueNf } from "@/service/nota-fiscal/registrar-movimentos-estoque-nf.js";
 import { registrarVendaDashboardNfVenda } from "@/service/nota-fiscal/registrar-venda-dashboard-nf-venda.js";
+import { permiteIntegracaoOperacionalNota } from "@/util/ambiente-sefaz.js";
 import {
 	FIN_NFE_DEVOLUCAO,
 	resolverTipoDevolucaoEmissao,
@@ -23,7 +24,6 @@ import { extrairDadosEmissaoNfeSalvos } from "@/util/dados-emissao-nfe-nota.js";
 import { explodirItensMovimentoPorLote } from "@/util/explodir-itens-movimento-lote-nf.js";
 import { httpBadRequest, httpOk } from "@/util/http-util.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
-import { permiteIntegracaoOperacionalNota } from "@/util/ambiente-sefaz.js";
 
 export type IntegrarNotaFiscalVendaAutorizadaParametros = {
 	idusuario: string;

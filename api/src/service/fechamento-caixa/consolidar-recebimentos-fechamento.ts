@@ -1,10 +1,10 @@
 import { eq } from "drizzle-orm";
 import type { FechamentoCaixa } from "@/model/fechamento-caixa-model.js";
+import type { db } from "@/repositories/connection.js";
 import {
 	buscarContaCorrenteCaixaPadrao,
 	criarContaCorrenteCaixaPadrao,
 } from "@/repositories/conta-corrente-repositories.js";
-import { db } from "@/repositories/connection.js";
 import { buscarPlanoContasPorCodigo } from "@/repositories/plano-contas-repositories.js";
 import { fechamentopdv } from "@/repositories/schema.js";
 import { inserirLancamentoCaixa } from "@/service/conta-corrente/inserir-lancamento-caixa.js";

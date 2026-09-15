@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import * as davRepository from "@/repositories/dav-repositories.js";
-import * as davItemRepository from "@/repositories/dav-item-repositories.js";
-import * as produtosRepository from "@/repositories/produtos-repositories.js";
 import * as cfopRepository from "@/repositories/cfop-repositories.js";
+import * as davItemRepository from "@/repositories/dav-item-repositories.js";
+import * as davRepository from "@/repositories/dav-repositories.js";
 import * as entidadeRepository from "@/repositories/entidade-repositories.js";
-import * as emitirNfe from "@/service/nfe-emissao/emitir-nfe-venda.js";
+import * as produtosRepository from "@/repositories/produtos-repositories.js";
 import { faturarDavNfeService } from "@/service/dav/faturar-dav-nfe.js";
+import * as emitirNfe from "@/service/nfe-emissao/emitir-nfe-venda.js";
 
 vi.mock("@/repositories/dav-repositories.js");
 vi.mock("@/repositories/dav-item-repositories.js");

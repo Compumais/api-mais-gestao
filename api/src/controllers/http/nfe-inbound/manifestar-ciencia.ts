@@ -1,14 +1,14 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { buscarNfeInboundDocumentoPorId } from "@/repositories/nfe-inbound-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { buscarNfeInboundDocumentoPorId } from "@/repositories/nfe-inbound-repositories.js";
 import { manifestarCienciaOperacaoService } from "@/service/nfe-inbound/manifestar-ciencia-operacao.js";
 import {
+	httpBadRequest,
 	httpErroInterno,
 	httpNaoAutorizado,
 	httpNaoEncontrado,
 	httpProibido,
-	httpBadRequest,
 } from "@/util/http-util.js";
 
 const paramsSchema = z.object({

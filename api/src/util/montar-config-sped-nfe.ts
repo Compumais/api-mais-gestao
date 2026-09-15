@@ -1,8 +1,6 @@
 import { buscarEstadoPorSigla } from "@/constants/estados-brasil.js";
-import type { CertificadoDigital } from "@/model/nfe-emissao-model.js";
 import type { Empresa } from "@/model/empresa-model.js";
-import type { EmpresaFiscal } from "@/model/nfe-emissao-model.js";
-import type { NfeConfiguracao } from "@/model/nfe-emissao-model.js";
+import type { CertificadoDigital, EmpresaFiscal, NfeConfiguracao } from "@/model/nfe-emissao-model.js";
 import { descriptografarTexto } from "@/util/criptografia-certificado.js";
 import { NFE_CONFIG_PADRAO } from "@/util/nfe-config-padrao.js";
 

@@ -1,6 +1,6 @@
-import { FC } from "react";
-import { Content } from "@prismicio/client";
-import { SliceComponentProps } from "@prismicio/react";
+import type { Content } from "@prismicio/client";
+import type { SliceComponentProps } from "@prismicio/react";
+import type { FC } from "react";
 
 /**
  * Props for `Ajuda`.

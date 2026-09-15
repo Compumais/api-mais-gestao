@@ -1,16 +1,16 @@
 "use client";
 
+import { IconArrowLeft, IconCash, IconLogout } from "@tabler/icons-react";
 import Link from "next/link";
 import { useState } from "react";
-import { IconArrowLeft, IconCash, IconLogout } from "@tabler/icons-react";
 import { CPlusIcon } from "@/components/icons/c-plus";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { NFE_AMBIENTE_LABELS } from "@/constants/nfe-status";
 import { useAuth } from "@/hooks/use-auth";
 import { useCaixaPdv } from "@/hooks/use-caixa-pdv";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { useNfceAmbientePdv } from "@/hooks/use-nfce-ambiente-pdv";
-import { NFE_AMBIENTE_LABELS } from "@/constants/nfe-status";
 import { getDefaultRouteForUser, isGarcom } from "@/lib/perfis";
 import { AbrirCaixaDialog } from "./abrir-caixa-dialog";
 import { FecharCaixaDialog } from "./fechar-caixa-dialog";

@@ -32,9 +32,9 @@ import type { PagamentoPayloadNfe } from "@/service/nfe-emissao/contexto-emissao
 import { enriquecerItensEmissaoComProduto } from "@/service/nfe-emissao/enriquecer-itens-emissao-produto.js";
 import { arquivarXmlNotaFiscal } from "@/service/nota-fiscal/arquivar-xml-nota-fiscal.js";
 import { integrarNotaFiscalVendaAutorizadaService } from "@/service/nota-fiscal/integrar-nota-fiscal-venda-autorizada.js";
+import { isAmbienteHomologacao } from "@/util/ambiente-sefaz.js";
 import { calcularTotaisFiscaisEmissaoNfe } from "@/util/calcular-totais-fiscais-emissao-nfe.js";
 import { camposTributariosItemEmissao } from "@/util/campos-tributarios-item-emissao.js";
-import { isAmbienteHomologacao } from "@/util/ambiente-sefaz.js";
 import {
 	complementarCardPagamentoNfe,
 	exigeGrupoCard,
@@ -46,8 +46,8 @@ import {
 	agoraBrasiliaIsoOffset,
 	hojeBrasiliaIsoDate,
 } from "@/util/data-hora-brasilia.js";
-import { extrairQrCodeNfceXml } from "@/util/extrair-qr-code-nfce-xml.js";
 import { resolverDataHoraAutorizacao } from "@/util/extrair-dh-recbto-xml.js";
+import { extrairQrCodeNfceXml } from "@/util/extrair-qr-code-nfce-xml.js";
 import {
 	httpBadRequest,
 	httpNaoEncontrado,

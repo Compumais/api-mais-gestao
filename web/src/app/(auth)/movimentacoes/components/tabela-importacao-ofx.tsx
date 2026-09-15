@@ -22,9 +22,9 @@ import {
 	classeStatusImportacaoOfx,
 	formatarDataOfx,
 	formatarValorOfx,
+	type LinhaImportacaoOfx,
 	labelStatusImportacaoOfx,
 	labelTipoOfx,
-	type LinhaImportacaoOfx,
 	tipomovimentoPorTipoOfx,
 	truncarDocumento,
 } from "@/util/ofx-importacao";

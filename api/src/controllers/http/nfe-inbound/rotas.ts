@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { verifyJwt } from "../../middleware/verify-jwt.js";
 import { baixarXmlNfeInbound } from "./baixar-xml.js";
+import { diagnosticarChaveNfeInbound } from "./diagnosticar-chave.js";
 import {
 	baixarXmlNfeInboundSchema,
 	diagnosticarChaveNfeInboundGetSchema,
@@ -11,7 +12,6 @@ import {
 	obterStatusSyncNfeInboundSchema,
 	sincronizarNfeInboundSchema,
 } from "./doc-schema/schema.js";
-import { diagnosticarChaveNfeInbound } from "./diagnosticar-chave.js";
 import { importarDocumentoNfeInbound } from "./importar-documento.js";
 import { listarDocumentosNfeInbound } from "./listar-documentos.js";
 import { manifestarCienciaNfeInbound } from "./manifestar-ciencia.js";

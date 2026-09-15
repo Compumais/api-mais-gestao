@@ -14,8 +14,8 @@ import {
 import { Input } from "@/components/ui/input";
 import {
 	type BuscarProdutoNfResponse,
-	notaFiscalService,
 	type NotaFiscalItemImportacao,
+	notaFiscalService,
 } from "@/services/nota-fiscal.service";
 
 type LocalizarProdutoDialogProps = {

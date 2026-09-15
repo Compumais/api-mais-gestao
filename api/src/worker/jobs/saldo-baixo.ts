@@ -1,10 +1,10 @@
 import { eq, sql } from "drizzle-orm";
-import * as schema from "../../../drizzle/schema.js";
 import { db } from "@/repositories/connection.js";
 import { criarNotificacaoAgendadaService } from "@/service/notificacoes/criar-notificacao-agendada.js";
 import { listarEmpresasComConfiguracaoNotificacoes } from "@/worker/repositories/empresas-configuracao.js";
 import type { JobContext, JobResult } from "@/worker/types.js";
 import { formatarDataIso } from "@/worker/util/configuracao-notificacoes.js";
+import * as schema from "../../../drizzle/schema.js";
 
 async function calcularSaldoTotalEmpresa(idempresa: string): Promise<number> {
 	const contas = await db

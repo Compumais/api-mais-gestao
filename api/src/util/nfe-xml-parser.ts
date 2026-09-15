@@ -1,5 +1,5 @@
 import { XMLParser } from "fast-xml-parser";
-import { normalizarCodigoBarras, inteiroValidoParaPostgres } from "@/util/texto-util.js";
+import { inteiroValidoParaPostgres, normalizarCodigoBarras } from "@/util/texto-util.js";
 
 export type ItemNFeXml = {
 	codigoproduto?: number | undefined;

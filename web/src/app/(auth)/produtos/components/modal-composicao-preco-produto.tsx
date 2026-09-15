@@ -4,9 +4,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 import { ModalComposicaoPreco } from "@/components/composicao-preco/modal-composicao-preco";
 import {
-	estadoComposicaoPadrao,
 	type BasePrecoComposicao,
 	type EstadoComposicaoPreco,
+	estadoComposicaoPadrao,
 } from "@/components/composicao-preco/tipos";
 import {
 	Dialog,
@@ -15,8 +15,8 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import {
-	type EntradaHistoricoComposicao,
 	custoProdutoService,
+	type EntradaHistoricoComposicao,
 } from "@/services/custo-produto.service";
 import {
 	type Produto,

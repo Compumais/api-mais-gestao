@@ -15,7 +15,6 @@ import {
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
 	Table,
 	TableBody,
@@ -24,6 +23,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
 import { formatarQuantidade, labelProdutoCotacao } from "@/constants/compras-constants";
 import { useEmpresa } from "@/hooks/use-empresa";
 import {

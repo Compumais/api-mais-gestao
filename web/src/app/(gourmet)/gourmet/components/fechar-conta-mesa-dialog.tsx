@@ -3,14 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { PagamentoPdvDialog } from "@/components/pdv/pagamento-pdv-dialog";
 import {
+	type ConfirmacaoVendaPdvResult,
 	calcularTotalFatiaSelecionada,
 	filtrarItensPendentesContaMesa,
 	parseValor,
-	type ConfirmacaoVendaPdvResult,
 } from "@/lib/gourmet-utils";
 import type { FecharContaFormData } from "@/schemas/fechar-conta.schema";
-import type { ContaMesaItem } from "@/services/conta-mesa-item.service";
 import type { ContaMesa } from "@/services/conta-mesa.service";
+import type { ContaMesaItem } from "@/services/conta-mesa-item.service";
 
 interface FecharContaMesaDialogProps {
 	open: boolean;

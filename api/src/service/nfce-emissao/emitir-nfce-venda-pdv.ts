@@ -37,8 +37,8 @@ import {
 	agoraBrasiliaIsoOffset,
 	hojeBrasiliaIsoDate,
 } from "@/util/data-hora-brasilia.js";
-import { extrairQrCodeNfceXml } from "@/util/extrair-qr-code-nfce-xml.js";
 import { resolverDataHoraAutorizacao } from "@/util/extrair-dh-recbto-xml.js";
+import { extrairQrCodeNfceXml } from "@/util/extrair-qr-code-nfce-xml.js";
 import {
 	httpBadRequest,
 	httpNaoEncontrado,

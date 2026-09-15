@@ -1,12 +1,12 @@
 import { DAV_STATUS_LABELS } from "@/constants/dav-status";
 import { CAMPOS_CLIENTE_PEDIDO_PADRAO } from "@/constants/modelo-impressao-pedido";
+import type { ColunaBlocoModeloImpressao } from "@/schemas/modelo-impressao-os.schema";
 import type {
 	BlocoModeloImpressaoPedido,
 	LayoutModeloImpressaoPedido,
 } from "@/schemas/modelo-impressao-pedido.schema";
-import type { ColunaBlocoModeloImpressao } from "@/schemas/modelo-impressao-os.schema";
-import type { Empresa } from "@/services/empresas.service";
 import type { PedidoDav, PedidoDavItem } from "@/services/dav.service";
+import type { Empresa } from "@/services/empresas.service";
 import {
 	CSS_MODELO_IMPRESSAO_OS,
 	type DadosClienteImpressao,

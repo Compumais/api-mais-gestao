@@ -6,7 +6,9 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
+import type { z } from "zod";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Field,
 	FieldError,
@@ -21,15 +23,13 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { useProximoCodigo } from "@/hooks/use-proximo-codigo";
-import { z } from "zod";
 import {
+	type CondicaoPagamentoFormData,
 	condicaoPagamentoFormSchema,
 	ESCOPO_CONDICAO_PAGAMENTO,
 	ESCOPO_CONDICAO_PAGAMENTO_OPCOES,
-	type CondicaoPagamentoFormData,
 } from "@/schemas/condicao-pagamento.schema";
 import { condicaoPagamentoService } from "@/services/condicao-pagamento.service";
 

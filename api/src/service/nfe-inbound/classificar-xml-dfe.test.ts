@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { classificarXmlDfe } from "./classificar-xml-dfe.js";
 import {
 	CHAVE_NFE,
 	XML_PROC_EVENTO,
 	XML_PROC_NFE,
 	XML_RES_NFE,
 } from "./__fixtures__/xml-dfe.fixtures.js";
+import { classificarXmlDfe } from "./classificar-xml-dfe.js";
 
 describe("classificarXmlDfe", () => {
 	it("deve classificar resNFe", () => {

@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
-import { verifyJwt } from "../../middleware/verify-jwt.js";
 import { listarInformativosPublicosService } from "@/service/admin/gerenciar-informativos.js";
+import { verifyJwt } from "../../middleware/verify-jwt.js";
 
 export async function informativosRotas(app: FastifyInstance) {
 	app.addHook("onRequest", verifyJwt);

@@ -1,8 +1,8 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { CotacaoCompraForm } from "../../components/cotacao-form";
 import { cotacoesCompraService } from "@/services/cotacoes-compra.service";
+import { CotacaoCompraForm } from "../../components/cotacao-form";
 
 export function EditarCotacaoClient({ id }: { id: string }) {
 	const { data, isLoading } = useQuery({

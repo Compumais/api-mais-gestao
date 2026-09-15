@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { OpenCnpjDados } from "@/model/consulta-cnpj-model.js";
 import * as openCnpjClient from "@/lib/opencnpj-client.js";
+import type { OpenCnpjDados } from "@/model/consulta-cnpj-model.js";
 import * as entidadeRepository from "@/repositories/entidade-repositories.js";
 import * as brasilApiClient from "@/service/localidade/brasil-api-client.js";
 import { consultarCnpjEntidadeService } from "./consultar-cnpj-entidade.js";

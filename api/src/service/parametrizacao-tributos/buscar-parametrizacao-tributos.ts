@@ -1,9 +1,9 @@
 import type { HttpResponse } from "@/model/http-model.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	buscarParametrizacaoTributosPorId,
 	type ParametrizacaoTributos,
 } from "@/repositories/parametrizacao-tributos-repositories.js";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
 
 type BuscarParametrizacaoTributosParametros = {

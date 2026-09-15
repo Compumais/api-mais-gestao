@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import {
-	entidadesService,
 	type ConsultaCnpjEntidadeResposta,
+	entidadesService,
 } from "@/services/entidades.service";
 
 type ConsultarCnpjParametros = {

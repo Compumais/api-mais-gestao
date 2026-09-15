@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { PageContainer } from "@/app/(auth)/components/page-container";
 import { FinanceiroForm } from "../../components/financeiro-form";
 

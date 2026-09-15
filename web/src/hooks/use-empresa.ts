@@ -1,1 +1,1 @@
-export { useEmpresa, type Empresa } from "@/provider/empresa-provider";
+export { type Empresa, useEmpresa } from "@/provider/empresa-provider";

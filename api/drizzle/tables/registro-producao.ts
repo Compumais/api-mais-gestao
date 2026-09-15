@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
 	bigint,
 	foreignKey,
@@ -8,7 +9,6 @@ import {
 	text,
 	timestamp,
 } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
 import { empresa } from "./empresas.js";
 import { fichaproducao } from "./ficha-producao.js";
 import { produtos } from "./produtos.js";

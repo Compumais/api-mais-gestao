@@ -1,8 +1,10 @@
+import type { HttpResponse } from "@/model/http-model.js";
 import {
+	type Automacao,
 	atualizarAutomacao,
 	buscarAutomacaoPorId,
-	type Automacao,
 } from "@/repositories/automacao-repositories.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	finalizarExecucao,
 	registrarInicioExecucao,
@@ -12,22 +14,20 @@ import {
 	type RecorrenciaAutomacao,
 } from "@/service/automacao/calcular-proxima-execucao.js";
 import {
+	executarAlertaPendenciasNf,
+	FUNCAO_ALERTA_PENDENCIAS_NF,
+} from "@/service/automacao/funcoes/alerta-pendencias-nf.js";
+import {
 	executarEnvioFiscalContabilidade,
 	FUNCAO_ENVIO_FISCAL_CONTABILIDADE,
 	type ResultadoFuncaoAutomacao,
 } from "@/service/automacao/funcoes/envio-fiscal-contabilidade.js";
-import {
-	executarAlertaPendenciasNf,
-	FUNCAO_ALERTA_PENDENCIAS_NF,
-} from "@/service/automacao/funcoes/alerta-pendencias-nf.js";
 import { criarNotificacaoAgendadaService } from "@/service/notificacoes/criar-notificacao-agendada.js";
-import type { HttpResponse } from "@/model/http-model.js";
 import {
 	httpNaoEncontrado,
 	httpOk,
 	httpProibido,
 } from "@/util/http-util.js";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 
 const RETRY_PENDENCIA_MS = 6 * 60 * 60 * 1000;
 

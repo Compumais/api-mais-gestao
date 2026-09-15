@@ -1,6 +1,5 @@
 "use client";
 
-import { Metadata } from "next";
 import {
 	IconDotsVertical,
 	IconPencil,
@@ -18,9 +17,11 @@ import {
 	type SortingState,
 	useReactTable,
 } from "@tanstack/react-table";
+import { Metadata } from "next";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
+import { TableSkeleton } from "@/components/table-skeleton";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -42,7 +43,6 @@ import { useEmpresa } from "@/hooks/use-empresa";
 import { type Banco, bancosService } from "@/services/bancos.service";
 import { isBancoPadrao } from "@/util/bancos-padrao";
 import { PageContainer } from "../components/page-container";
-import { TableSkeleton } from "@/components/table-skeleton";
 
 type ColumnsProps = {
 	onEdit: (banco: Banco) => void;

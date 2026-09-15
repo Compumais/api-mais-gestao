@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { IconArrowLeft, IconLogout } from "@tabler/icons-react";
+import Link from "next/link";
 import { CPlusIcon } from "@/components/icons/c-plus";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";

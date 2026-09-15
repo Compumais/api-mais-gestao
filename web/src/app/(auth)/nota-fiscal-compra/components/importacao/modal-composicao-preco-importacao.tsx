@@ -4,8 +4,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 import { ModalComposicaoPreco } from "@/components/composicao-preco/modal-composicao-preco";
 import {
-	estadoComposicaoPadrao,
 	type EstadoComposicaoPreco,
+	estadoComposicaoPadrao,
 } from "@/components/composicao-preco/tipos";
 import {
 	type DadosImportacaoItem,

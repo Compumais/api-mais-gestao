@@ -12,13 +12,15 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Checkbox } from "@/components/ui/checkbox";
+import { AvisoAmbienteNfe } from "@/app/(auth)/nota-fiscal-venda/components/aviso-ambiente-nfe";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { Combobox } from "@/components/ui/combobox";
 import {
 	Dialog,
 	DialogContent,
@@ -32,7 +34,6 @@ import {
 	FieldLabel,
 } from "@/components/ui/field";
 import { MoneyInput } from "@/components/ui/money-input";
-import { Combobox } from "@/components/ui/combobox";
 import {
 	Select,
 	SelectContent,
@@ -41,38 +42,37 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { useNfceAmbientePdv } from "@/hooks/use-nfce-ambiente-pdv";
 import {
-	extrairPagamentosErpForm,
-	isPagamentoMeioPdv,
-	pagamentoPdvExigeCliente,
-	calcularTotalComTaxas,
-	calcularTroco,
 	arredondarMoeda,
-	fecharContaFormToPagamentosParciais,
-	formatCurrency,
-	itemContaMesaEstaPago,
-	MEIOS_PAGAMENTO_PDV,
-	pagamentoCobreTotal,
-	pagamentosToFecharContaForm,
-	parseValor,
-	totalPagamentosParciais,
 	type ConfirmacaoVendaPdvResult,
 	type CupomItemLinha,
 	type CupomNaoFiscalData,
+	calcularTotalComTaxas,
+	calcularTroco,
+	extrairPagamentosErpForm,
+	fecharContaFormToPagamentosParciais,
+	formatCurrency,
+	isPagamentoMeioPdv,
+	itemContaMesaEstaPago,
+	MEIOS_PAGAMENTO_PDV,
 	type MeioPagamentoPdv,
 	type PagamentoParcialPdv,
+	pagamentoCobreTotal,
+	pagamentoPdvExigeCliente,
+	pagamentosToFecharContaForm,
+	parseValor,
+	totalPagamentosParciais,
 } from "@/lib/gourmet-utils";
 import { ESCOPO_CONDICAO_PAGAMENTO } from "@/schemas/condicao-pagamento.schema";
 import type { FecharContaFormData } from "@/schemas/fechar-conta.schema";
-import type { ContaMesaItem } from "@/services/conta-mesa-item.service";
 import { condicaoPagamentoService } from "@/services/condicao-pagamento.service";
+import type { ContaMesaItem } from "@/services/conta-mesa-item.service";
 import { entidadesService } from "@/services/entidades.service";
 import {
-	tipoDocumentoFinanceiroService,
 	type TipoDocumentoFinanceiro,
+	tipoDocumentoFinanceiroService,
 } from "@/services/tipo-documento-financeiro.service";
-import { AvisoAmbienteNfe } from "@/app/(auth)/nota-fiscal-venda/components/aviso-ambiente-nfe";
-import { useNfceAmbientePdv } from "@/hooks/use-nfce-ambiente-pdv";
 import { CupomNaoFiscal } from "./cupom-nao-fiscal";
 
 const ICONES_MEIO: Record<MeioPagamentoPdv, typeof IconCash> = {

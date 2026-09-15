@@ -1,3 +1,3 @@
-import type { TaxaUf, NovaTaxaUf } from "@/repositories/taxauf-repositories.js";
+import type { NovaTaxaUf, TaxaUf } from "@/repositories/taxauf-repositories.js";
 
 export type { TaxaUf, NovaTaxaUf };

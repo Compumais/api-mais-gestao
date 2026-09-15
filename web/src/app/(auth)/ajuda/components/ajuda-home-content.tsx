@@ -7,8 +7,8 @@ import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { formatDataCivilBrasilia } from "@/lib/date";
 import {
-	ajudaService,
 	type AjudaPostPublico,
+	ajudaService,
 } from "@/services/ajuda.service";
 
 function filtrarPosts(posts: AjudaPostPublico[], query: string) {

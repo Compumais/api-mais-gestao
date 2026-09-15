@@ -1,17 +1,17 @@
 import type { HttpResponse } from "@/model/http-model.js";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { buscarEmpresaFiscalPorEmpresa } from "@/repositories/empresa-fiscal-repositories.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { aplicarCreditoIcmsSnItensEmissao } from "@/service/nfe-emissao/aplicar-credito-icms-sn-itens.js";
 import type {
 	ItemPayloadNfe,
 	TotaisPayloadNfe,
 } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
 import { enriquecerItensEmissaoComProduto } from "@/service/nfe-emissao/enriquecer-itens-emissao-produto.js";
+import { recalcularIcmsStItensEmissao } from "@/util/calcular-icms-st-item-emissao-nfe.js";
 import {
 	calcularTotaisFiscaisEmissaoNfe,
 	type TotaisFiscaisEmissaoNfe,
 } from "@/util/calcular-totais-fiscais-emissao-nfe.js";
-import { recalcularIcmsStItensEmissao } from "@/util/calcular-icms-st-item-emissao-nfe.js";
 import {
 	httpBadRequest,
 	httpNaoEncontrado,

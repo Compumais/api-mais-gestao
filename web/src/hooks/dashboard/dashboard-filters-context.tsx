@@ -5,8 +5,8 @@ import * as React from "react";
 import {
 	type DashboardPeriodoParams,
 	type DashboardTab,
-	type PeriodoPreset,
 	isDashboardTab,
+	type PeriodoPreset,
 } from "@/lib/dashboard-periodo";
 
 type DashboardFiltersContextValue = {

@@ -3,9 +3,9 @@
 import { IconArrowLeft } from "@tabler/icons-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { PageContainer } from "@/app/(auth)/components/page-container";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PageContainer } from "@/app/(auth)/components/page-container";
 import { FormImportarChaveNotaFiscalCompra } from "../components/form-importar-chave";
 import { FormImportarXmlNotaFiscalCompra } from "../components/form-importar-xml";
 

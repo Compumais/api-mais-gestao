@@ -1,5 +1,5 @@
-import type { ReceitaSemContribuicao } from "@/model/receita-sem-contribuicao-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
+import type { ReceitaSemContribuicao } from "@/model/receita-sem-contribuicao-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { buscarReceitaSemContribuicaoPorId } from "@/repositories/receita-sem-contribuicao-repositories.js";
 import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";

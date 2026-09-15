@@ -2,7 +2,6 @@
 
 import dayjs from "dayjs";
 import * as React from "react";
-import { inicioFimMesBrasilia } from "@/lib/date";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,6 +37,7 @@ import {
 	formatNumber,
 	formatPercent,
 } from "@/lib/dashboard-periodo";
+import { inicioFimMesBrasilia } from "@/lib/date";
 import type { TipoMetaDashboard } from "@/services/dashboard.service";
 
 const TIPOS: { value: TipoMetaDashboard; label: string }[] = [

@@ -1,8 +1,8 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { criarTiposDocumentoFinanceiroPadraoService } from "@/service/tipo-documento-financeiro/criar-tipos-documento-financeiro-padrao.js";
 import { listarTipoDocumentoFinanceirosService } from "@/service/tipo-documento-financeiro/listar-tipo-documento-financeiros.js";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { httpErroInterno, httpNaoAutorizado, httpOk, httpProibido } from "@/util/http-util.js";
 
 const popularPadraoBodySchema = z.object({

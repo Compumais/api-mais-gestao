@@ -42,8 +42,8 @@ import {
 	type TipoEntidadePrincipal,
 } from "@/schemas/entidades.schema";
 import {
-	entidadesService,
 	type ConsultaCnpjEntidadeResposta,
+	entidadesService,
 } from "@/services/entidades.service";
 import { localidadesService } from "@/services/localidades.service";
 import { planoContasService } from "@/services/plano-contas.service";

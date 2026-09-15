@@ -1,8 +1,8 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import { listarRegrasFiscaisService } from "@/service/regra-fiscal/listar-regras-fiscais.js";
-import { statusRegraFiscalSchema } from "./body-schema.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
+import { statusRegraFiscalSchema } from "./body-schema.js";
 
 const querySchema = z.object({
 	page: z.coerce.number().min(1).optional().default(1),

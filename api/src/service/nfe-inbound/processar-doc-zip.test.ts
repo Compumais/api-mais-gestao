@@ -1,10 +1,10 @@
 import { gzipSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
+import { XML_RES_NFE } from "./__fixtures__/xml-dfe.fixtures.js";
 import {
 	ErroProcessamentoDocZip,
 	processarDocZip,
 } from "./processar-doc-zip.js";
-import { XML_RES_NFE } from "./__fixtures__/xml-dfe.fixtures.js";
 
 describe("processarDocZip", () => {
 	it("deve descompactar docZip válido (base64 + gzip)", () => {

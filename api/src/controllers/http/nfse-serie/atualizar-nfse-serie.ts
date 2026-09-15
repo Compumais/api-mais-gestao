@@ -1,7 +1,7 @@
-import z from "zod";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
+import z from "zod";
 import { atualizarNfseSerieService } from "@/service/nfse-serie/nfse-serie.js";
+import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
 const criarBodySchema = z.object({
     idempresa: z.string().uuid(),

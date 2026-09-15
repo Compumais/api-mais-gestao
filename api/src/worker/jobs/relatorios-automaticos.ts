@@ -5,8 +5,8 @@ import type { JobContext, JobResult } from "@/worker/types.js";
 import {
 	adicionarDias,
 	deveExecutarNoHorario,
-	formatarDataIso,
 	type FrequenciaAgendamento,
+	formatarDataIso,
 } from "@/worker/util/configuracao-notificacoes.js";
 
 function formatarMoeda(valor: number): string {

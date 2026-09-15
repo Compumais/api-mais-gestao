@@ -1,7 +1,7 @@
+import { listarMovimentosEstoquePorDocumento } from "@/repositories/movimento-estoque-repositories.js";
+import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
 import { registrarMovimentoEstoque } from "@/service/estoque/registrar-movimento-estoque.js";
 import { garantirProducaoNaVendaService } from "@/service/producao/garantir-producao-na-venda.js";
-import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
-import { listarMovimentosEstoquePorDocumento } from "@/repositories/movimento-estoque-repositories.js";
 import { TIPO_DOCUMENTO_ESTOQUE, TIPO_ESTOQUE } from "@/util/tipo-estoque.js";
 
 export type ItemMovimentoEstoqueNf = {

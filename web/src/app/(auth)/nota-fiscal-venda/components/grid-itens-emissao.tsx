@@ -1,12 +1,12 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import { ChevronDown, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { ChevronDown, ChevronRight, Plus, Trash2 } from "lucide-react";
+import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { MoneyInput } from "@/components/ui/money-input";
-import { Combobox } from "@/components/ui/combobox";
 import type { ItemNfe } from "@/schemas/nfe-emissao.schema";
 import { produtosService } from "@/services/produtos.service";
 

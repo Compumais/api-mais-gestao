@@ -33,6 +33,8 @@ import {
 } from "@/constants/nfe-status";
 import { useNfeConfiguracao } from "@/hooks/use-nfe-configuracao";
 import { api } from "@/lib/axios";
+import type { RelatorioAuditoriaFiscal } from "@/schemas/relatorio-fiscal.schema";
+import { extrairRelatorioFiscalErro } from "@/schemas/relatorio-fiscal.schema";
 import { entidadesService } from "@/services/entidades.service";
 import {
 	abrirDanfeNfe,
@@ -50,8 +52,6 @@ import {
 	notaPodeSerCancelada,
 	notaPodeSerInutilizada,
 } from "@/util/validar-eventos-nfe";
-import { extrairRelatorioFiscalErro } from "@/schemas/relatorio-fiscal.schema";
-import type { RelatorioAuditoriaFiscal } from "@/schemas/relatorio-fiscal.schema";
 import { PageContainer } from "../../components/page-container";
 import { AvisoAmbienteNfe } from "../components/aviso-ambiente-nfe";
 import { CardErroNfe } from "../components/card-erro-nfe";

@@ -19,8 +19,8 @@ import {
 	type CfopDePara,
 	cfopDeParaService,
 } from "@/services/cfop-depara.service";
-import { ModalCfopDePara } from "./components/modal-cfop-depara";
 import { PainelFluxoTributacaoImportacao } from "../components/painel-fluxo-tributacao-importacao";
+import { ModalCfopDePara } from "./components/modal-cfop-depara";
 
 export default function CfopDeParaPage() {
 	const queryClient = useQueryClient();

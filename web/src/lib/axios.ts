@@ -7,12 +7,6 @@ import { getSessionToken } from "@/lib/auth-token";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
-if (!apiUrl) {
-	throw new Error(
-		"NEXT_PUBLIC_API_URL não está definida nas variáveis de ambiente. Configure a variável no arquivo .env.local",
-	);
-}
-
 function obterEmpresaSelecionadaId(): string | null {
 	if (typeof window === "undefined") return null;
 	try {
@@ -26,7 +20,7 @@ function obterEmpresaSelecionadaId(): string | null {
 }
 
 export const api = axios.create({
-	baseURL: apiUrl,
+	baseURL: apiUrl || undefined,
 	headers: {
 		"Content-Type": "application/json",
 	},

@@ -10,8 +10,8 @@ import {
 	type SQL,
 	sql,
 } from "drizzle-orm";
-import type { NovoRegistroProducao } from "@/model/registro-producao-model.js";
 import type { NovoRegistroProducaoItem } from "@/model/registro-producao-item-model.js";
+import type { NovoRegistroProducao } from "@/model/registro-producao-model.js";
 import {
 	produtos,
 	registroproducao,

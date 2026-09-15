@@ -20,6 +20,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
+import { TableSkeleton } from "@/components/table-skeleton";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -43,7 +44,6 @@ import {
 	contasCorrentesService,
 } from "@/services/contas-correntes.service";
 import { PageContainer } from "../components/page-container";
-import { TableSkeleton } from "@/components/table-skeleton";
 
 type ColumnsProps = {
 	onEdit: (contaCorrente: ContaCorrenteListItem) => void;

@@ -4,8 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
 	type AtualizarContaCorrenteLancamentoData,
-	contaCorrenteLancamentoService,
 	type CriarContaCorrenteLancamentoData,
+	contaCorrenteLancamentoService,
 } from "@/services/conta-corrente-lancamento.service";
 
 interface UseContaCorrenteLancamentosParams {

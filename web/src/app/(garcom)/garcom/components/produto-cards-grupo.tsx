@@ -8,12 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
 	filtrarProdutosPorBusca,
-	getSaldoProduto,
 	type GrupoProdutos,
+	getSaldoProduto,
 } from "@/lib/garcom-utils";
 import { formatCurrency } from "@/lib/gourmet-utils";
-import type { Produto } from "@/services/produtos.service";
 import { cn } from "@/lib/utils";
+import type { Produto } from "@/services/produtos.service";
 import { GrupoImagem } from "./grupo-imagem";
 
 interface ProdutoCardsGrupoProps {

@@ -1,5 +1,5 @@
-import type { LancamentoPagamentoPdv } from "@/model/venda-pdv-pagamento-model.js";
 import type { NovaVendaPdvGourmet } from "@/model/venda-pdv-gourmet-model.js";
+import type { LancamentoPagamentoPdv } from "@/model/venda-pdv-pagamento-model.js";
 import {
 	formatarValorMonetario,
 	normalizarValorPagamentoParaBanco,

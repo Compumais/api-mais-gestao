@@ -1,9 +1,9 @@
 import { v4 as uuidv4 } from "uuid";
-import type { HttpResponse } from "@/model/http-model.js";
 import type {
 	FatorConversao,
 	NovoFatorConversao,
 } from "@/model/fator-conversao-model.js";
+import type { HttpResponse } from "@/model/http-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	criarFatorConversao,

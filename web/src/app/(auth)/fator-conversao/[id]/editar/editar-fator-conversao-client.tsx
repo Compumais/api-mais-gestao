@@ -1,8 +1,8 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { FatorConversaoForm } from "../../components/fator-conversao-form";
 import { fatorConversaoService } from "@/services/fator-conversao.service";
+import { FatorConversaoForm } from "../../components/fator-conversao-form";
 
 type EditarFatorConversaoClientProps = {
 	id: string;

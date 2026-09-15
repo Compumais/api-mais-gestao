@@ -1,10 +1,10 @@
 "use client";
 
+import { cn } from "@/lib/utils";
 import {
 	type DadosDestinatarioNfe,
 	montarCamposDestinatarioNfe,
 } from "@/util/destinatario-nfe-util";
-import { cn } from "@/lib/utils";
 
 type ResumoDestinatarioNfeProps = {
 	dados: DadosDestinatarioNfe;

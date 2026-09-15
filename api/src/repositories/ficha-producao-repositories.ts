@@ -1,6 +1,6 @@
 import { and, asc, count, desc, eq, ilike, or, type SQL, sql } from "drizzle-orm";
-import type { NovaFichaProducao } from "@/model/ficha-producao-model.js";
 import type { NovoFichaProducaoItem } from "@/model/ficha-producao-item-model.js";
+import type { NovaFichaProducao } from "@/model/ficha-producao-model.js";
 import {
 	fichaproducao,
 	fichaproducaoitem,

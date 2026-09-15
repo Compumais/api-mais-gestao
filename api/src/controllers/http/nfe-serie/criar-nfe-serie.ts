@@ -1,5 +1,5 @@
-import z from "zod";
 import type { FastifyReply, FastifyRequest } from "fastify";
+import z from "zod";
 import { criarNfeSerieService } from "@/service/nfe-serie/nfe-serie.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 

@@ -1,8 +1,8 @@
 import { and, count, eq, ilike, or } from "drizzle-orm";
 import type { NovoGrupoGourmet } from "@/model/grupo-gourmet-model";
 import { grupogourmet, produtos } from "@/repositories/schema.js";
-import { ordenacaoCodigoVarcharAsc } from "./ordenacao-codigo.js";
 import { db } from "./connection";
+import { ordenacaoCodigoVarcharAsc } from "./ordenacao-codigo.js";
 
 export async function buscarGrupoGourmetPorId(id: string) {
 	const [registro] = await db

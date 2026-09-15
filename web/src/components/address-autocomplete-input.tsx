@@ -3,12 +3,12 @@
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
 import {
+	type EnderecoSugestao,
 	isGooglePlacesDisponivel,
 	useGooglePlacesAutocomplete,
-	type EnderecoSugestao,
 } from "@/hooks/use-google-places";
+import { cn } from "@/lib/utils";
 
 type AddressAutocompleteInputProps = {
 	id?: string;

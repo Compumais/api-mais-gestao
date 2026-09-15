@@ -1,10 +1,10 @@
 import type { DavItem, NovoDavItem } from "@/model/dav-item-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
-import { buscarDavPorId } from "@/repositories/dav-repositories.js";
 import {
 	atualizarDavItem,
 	buscarDavItemPorId,
 } from "@/repositories/dav-item-repositories.js";
+import { buscarDavPorId } from "@/repositories/dav-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	type RastroDavItemInput,

@@ -1,8 +1,8 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import { atualizarTaxaUfService } from "@/service/taxauf/atualizar-taxauf.js";
-import { taxaUfAtualizacaoBodySchema } from "@/util/taxauf-body-schema.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
+import { taxaUfAtualizacaoBodySchema } from "@/util/taxauf-body-schema.js";
 
 const atualizarTaxaUfQuerySchema = z.object({
 	idempresa: z.string(),

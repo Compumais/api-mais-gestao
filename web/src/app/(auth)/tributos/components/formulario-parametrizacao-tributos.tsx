@@ -13,8 +13,8 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { ParametrizacaoTributosFormData } from "@/schemas/parametrizacao-tributos.schema";
 import { OPCOES_TIPO_PRODUTO } from "@/constants/tipo-produto";
+import type { ParametrizacaoTributosFormData } from "@/schemas/parametrizacao-tributos.schema";
 import {
 	OPCOES_CSOSN,
 	OPCOES_CST_ICMS,

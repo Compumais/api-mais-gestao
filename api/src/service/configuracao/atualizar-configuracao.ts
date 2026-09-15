@@ -1,5 +1,5 @@
-import type { HttpResponse } from "@/model/http-model.js";
 import type { NovaConfiguracao } from "@/model/configuracao-model.js";
+import type { HttpResponse } from "@/model/http-model.js";
 import {
 	atualizarConfiguracao,
 	buscarConfiguracaoPorEmpresa,
@@ -7,8 +7,8 @@ import {
 } from "@/repositories/configuracao-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { httpOk, httpProibido } from "@/util/http-util.js";
-import { validarEParsearConfiguracaoNotificacoes } from "./validar-configuracao.js";
 import { normalizarConfiguracaoNotificacoes } from "@/worker/util/configuracao-notificacoes.js";
+import { validarEParsearConfiguracaoNotificacoes } from "./validar-configuracao.js";
 
 interface AtualizarConfiguracaoParametros {
 	idempresa: string;

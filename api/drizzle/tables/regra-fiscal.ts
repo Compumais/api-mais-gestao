@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
 	boolean,
 	foreignKey,
@@ -10,7 +11,6 @@ import {
 	uniqueIndex,
 	varchar,
 } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
 import { empresa } from "./empresas.js";
 import { notafiscal } from "./nota-fiscal.js";
 import { usuarios } from "./usuarios.js";

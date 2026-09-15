@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import type { LayoutModeloImpressaoPedido } from "@/schemas/modelo-impressao-pedido.schema";
 import {
 	CSS_MODELO_IMPRESSAO_PEDIDO,
-	type DadosPreviewModeloImpressaoPedido,
 	DADOS_AMOSTRA_MODELO_IMPRESSAO_PEDIDO,
+	type DadosPreviewModeloImpressaoPedido,
 	renderizarHtmlModeloImpressaoPedido,
 } from "@/util/renderizar-modelo-impressao-pedido";
 

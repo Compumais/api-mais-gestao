@@ -1,12 +1,12 @@
 import type { HttpResponse } from "@/model/http-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
 import {
 	buscarRegistroProducaoPorId,
 	listarItensRegistroProducao,
 	listarRegistrosProducao,
 	type OrdenarProducoesCampo,
 } from "@/repositories/registro-producao-repositories.js";
-import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
 import {
 	httpNaoEncontrado,
 	httpOk,

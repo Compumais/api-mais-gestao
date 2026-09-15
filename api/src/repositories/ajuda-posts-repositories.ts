@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, ne } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
-import * as schema from "../../drizzle/schema.js";
 import { gerarSlug } from "@/util/gerar-slug.js";
+import * as schema from "../../drizzle/schema.js";
 import { db } from "./connection.js";
 
 export type AjudaPost = typeof schema.ajudaposts.$inferSelect;

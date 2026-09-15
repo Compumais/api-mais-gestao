@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ORIGEM_PRODUCAO } from "@/model/registro-producao-model.js";
+import * as custoRepo from "@/repositories/custo-produto-repositories.js";
 import * as entidadeRepo from "@/repositories/entidade-repositories.js";
 import * as fichaRepo from "@/repositories/ficha-producao-repositories.js";
-import * as custoRepo from "@/repositories/custo-produto-repositories.js";
 import * as produtoRepo from "@/repositories/produtos-repositories.js";
 import * as registroRepo from "@/repositories/registro-producao-repositories.js";
 import * as saldoRepo from "@/repositories/saldo-estoque-repositories.js";

@@ -1,7 +1,7 @@
-import type { TaxaUf } from "@/model/taxauf-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
-import { listarTaxaUf } from "@/repositories/taxauf-repositories.js";
+import type { TaxaUf } from "@/model/taxauf-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { listarTaxaUf } from "@/repositories/taxauf-repositories.js";
 import { httpOk, httpProibido } from "@/util/http-util.js";
 
 type ListarTaxaUfParametros = {

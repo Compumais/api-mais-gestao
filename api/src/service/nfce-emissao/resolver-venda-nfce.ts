@@ -1,10 +1,10 @@
+import type { NotaFiscal } from "@/model/nota-fiscal-model.js";
+import type { VendaPdvGourmet } from "@/model/venda-pdv-gourmet-model.js";
 import { buscarNotaFiscalPorId } from "@/repositories/nota-fiscal-repositories.js";
 import {
 	buscarVendaPdvGourmetPorId,
 	buscarVendaPdvGourmetPorNotaFiscalNfce,
 } from "@/repositories/venda-pdv-gourmet-repositories.js";
-import type { VendaPdvGourmet } from "@/model/venda-pdv-gourmet-model.js";
-import type { NotaFiscal } from "@/model/nota-fiscal-model.js";
 
 function extrairIdVendaDadosImportacao(dados: unknown): string | null {
 	if (!dados || typeof dados !== "object") return null;

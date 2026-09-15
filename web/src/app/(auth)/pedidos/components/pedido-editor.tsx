@@ -1,8 +1,5 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import {
@@ -17,7 +14,11 @@ import {
 	Trash2,
 	XCircle,
 } from "lucide-react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { CamposIntegracaoNfVenda } from "@/app/(auth)/nota-fiscal-venda/components/campos-integracao-nf-venda";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -31,9 +32,15 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
+import {
+	Field,
+	FieldGroup,
+	FieldLabel,
+	FieldLegend,
+	FieldSet,
+} from "@/components/ui/field";
 import { MoneyInput } from "@/components/ui/money-input";
 import { Separator } from "@/components/ui/separator";
-import { Textarea } from "@/components/ui/textarea";
 import {
 	Table,
 	TableBody,
@@ -42,14 +49,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import {
-	Field,
-	FieldGroup,
-	FieldLabel,
-	FieldLegend,
-	FieldSet,
-} from "@/components/ui/field";
-import { useEmpresa } from "@/hooks/use-empresa";
+import { Textarea } from "@/components/ui/textarea";
 import {
 	DAV_STATUS,
 	pedidoEhOrigemPos,
@@ -57,16 +57,16 @@ import {
 	pedidoPodeEmitirNfce,
 	pedidoPodeFaturarNfe,
 } from "@/constants/dav-status";
+import { useEmpresa } from "@/hooks/use-empresa";
 import { salvarNovoPedidoDavSchema } from "@/schemas/dav.schema";
-import { entidadesService } from "@/services/entidades.service";
 import {
-	davService,
 	type AtualizarPedidoData,
+	davService,
 	type PedidoDav,
 	type PedidoDavItem,
 } from "@/services/dav.service";
+import { entidadesService } from "@/services/entidades.service";
 import { produtosService } from "@/services/produtos.service";
-import { CamposIntegracaoNfVenda } from "@/app/(auth)/nota-fiscal-venda/components/campos-integracao-nf-venda";
 import { PageContainer } from "../../components/page-container";
 import { ModalImprimirPedido } from "./modal-imprimir-pedido";
 import { ModalItemPedido } from "./modal-item-pedido";

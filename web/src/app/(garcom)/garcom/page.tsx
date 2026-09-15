@@ -1,19 +1,19 @@
 "use client";
 
+import { IconPlus } from "@tabler/icons-react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { IconPlus } from "@tabler/icons-react";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/hooks/use-auth";
+import { useEmpresa } from "@/hooks/use-empresa";
+import { calcularTotalContaMesaItens, STATUS_MESA } from "@/lib/gourmet-utils";
+import { isGarcom } from "@/lib/perfis";
+import { contaMesaService } from "@/services/conta-mesa.service";
+import { contaMesaItemService } from "@/services/conta-mesa-item.service";
 import { AbrirMesaGarcomDialog } from "./components/abrir-mesa-garcom-dialog";
 import { GarcomHeader } from "./components/garcom-header";
 import { MesaCardGarcom } from "./components/mesa-card-garcom";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useEmpresa } from "@/hooks/use-empresa";
-import { useAuth } from "@/hooks/use-auth";
-import { isGarcom } from "@/lib/perfis";
-import { calcularTotalContaMesaItens, STATUS_MESA } from "@/lib/gourmet-utils";
-import { contaMesaItemService } from "@/services/conta-mesa-item.service";
-import { contaMesaService } from "@/services/conta-mesa.service";
 
 export default function GarcomPage() {
 	const { localStorageEmpresa: empresa } = useEmpresa();

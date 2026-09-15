@@ -1,7 +1,7 @@
-import z from "zod";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
+import z from "zod";
 import { consultarNfseService } from "@/service/nfse-emissao/consultar-nfse.js";
+import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
 export async function consultarNfse(
     request: FastifyRequest,

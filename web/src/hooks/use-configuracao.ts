@@ -2,12 +2,12 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { configuracaoService } from "@/services/configuracao.service";
 import type {
+	AtualizarWebhookData,
 	CriarChaveApiData,
 	CriarWebhookData,
-	AtualizarWebhookData,
 } from "@/services/configuracao.service";
+import { configuracaoService } from "@/services/configuracao.service";
 
 type AtualizarConfiguracaoData = Parameters<
 	typeof configuracaoService.atualizar

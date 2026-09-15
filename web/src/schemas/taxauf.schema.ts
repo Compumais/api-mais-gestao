@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { type UfBrasil, UFS_BRASIL } from "@/util/ufs-brasil";
+import { UFS_BRASIL, type UfBrasil } from "@/util/ufs-brasil";
 
 const campoNumericoOpcional = z
 	.string()

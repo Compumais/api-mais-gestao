@@ -1,16 +1,16 @@
-import type {
-	AcaoExecutada,
-	ContextoTool,
-	DefinicaoTool,
-	ResultadoTool,
-} from "./tipos.js";
+import { sanitizarSchemaGemini } from "@/service/ia/provedores.js";
 import { toolsClientes } from "./clientes.js";
 import { toolsContabilidade } from "./contabilidade.js";
 import { toolsDashboard } from "./dashboard.js";
 import { toolsFiscal } from "./fiscal.js";
 import { toolsPedidos } from "./pedidos.js";
 import { toolsRelatorios } from "./relatorios.js";
-import { sanitizarSchemaGemini } from "@/service/ia/provedores.js";
+import type {
+	AcaoExecutada,
+	ContextoTool,
+	DefinicaoTool,
+	ResultadoTool,
+} from "./tipos.js";
 import { zodParaJsonSchema } from "./util-tools.js";
 
 const TOOLS: DefinicaoTool[] = [

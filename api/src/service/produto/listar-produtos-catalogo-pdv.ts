@@ -1,8 +1,8 @@
 import type { HttpResponse } from "@/model/http-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
-	type ProdutoCatalogoPdv,
 	listarProdutosCatalogoPdv,
+	type ProdutoCatalogoPdv,
 } from "@/repositories/produtos-repositories.js";
 import { httpOk, httpProibido } from "@/util/http-util.js";
 

@@ -17,8 +17,8 @@ import {
 } from "@/components/ui/field";
 import { MoneyInput } from "@/components/ui/money-input";
 import { Textarea } from "@/components/ui/textarea";
-import { useCaixaPdv } from "@/hooks/use-caixa-pdv";
 import type { ResumoTurnoCaixa } from "@/hooks/use-caixa-pdv";
+import { useCaixaPdv } from "@/hooks/use-caixa-pdv";
 import { formatCurrency, parseValor } from "@/lib/gourmet-utils";
 
 interface FecharCaixaDialogProps {

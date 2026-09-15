@@ -1,9 +1,9 @@
 import type { HttpResponse } from "@/model/http-model.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	listarParametrizacaoTributos,
 	type ParametrizacaoTributos,
 } from "@/repositories/parametrizacao-tributos-repositories.js";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { httpOk, httpProibido } from "@/util/http-util.js";
 
 type ListarParametrizacaoTributosParametros = {

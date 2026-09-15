@@ -1,10 +1,10 @@
+import { randomUUID } from "node:crypto";
 import { buscarEmpresaPorId } from "@/repositories/empresa-repositories.js";
 import {
 	criarNotificacao,
 	existeNotificacaoParaRecurso,
 } from "@/repositories/notificacoes-repositories.js";
 import { listarIdsUsuariosFinanceirosPorEmpresa } from "@/repositories/usuarios-repositories.js";
-import { randomUUID } from "node:crypto";
 
 export type TipoNotificacao =
 	| "plano_contas"

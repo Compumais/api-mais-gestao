@@ -1,11 +1,11 @@
 import type { HttpResponse } from "@/model/http-model.js";
-import { buscarCfopPorId } from "@/repositories/cfop-repositories.js";
 import {
 	atualizarCfopDePara,
 	buscarCfopDeParaDuplicado,
 	buscarCfopDeParaPorId,
 	type CfopDePara,
 } from "@/repositories/cfop-depara-repositories.js";
+import { buscarCfopPorId } from "@/repositories/cfop-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	httpErro,

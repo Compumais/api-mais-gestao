@@ -1,8 +1,8 @@
-import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
-import { httpNaoEncontrado, httpProibido } from "@/util/http-util.js";
 import type { HttpResponse } from "@/model/http-model.js";
 import type { Produto } from "@/model/produto-model.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
+import { httpNaoEncontrado, httpProibido } from "@/util/http-util.js";
 
 type ValidarAcessoProdutoResultado =
 	| { sucesso: true; produto: Produto }

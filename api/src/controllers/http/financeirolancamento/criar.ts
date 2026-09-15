@@ -2,8 +2,8 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { v4 as uuidv4 } from "uuid";
 import z from "zod";
 import { buscarFinanceiroPorId } from "@/repositories/financeiro-repositories.js";
-import { criarNotificacaoService } from "@/service/notificacoes/criar-notificacao.js";
 import { criarFinanceiroLancamentoService } from "@/service/financeirolancamento/criar-financeiro-lancamento.js";
+import { criarNotificacaoService } from "@/service/notificacoes/criar-notificacao.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
 const criarFinanceiroLancamentoBodySchema = z.object({

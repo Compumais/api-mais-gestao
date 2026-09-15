@@ -233,23 +233,15 @@ export type TextBlcokSlice = prismic.SharedSlice<
 >;
 
 declare module "@prismicio/client" {
-	interface CreateClient {
-		(
+	type CreateClient = (
 			repositoryNameOrEndpoint: string,
-			options?: prismic.ClientConfig,
-		): prismic.Client<AllDocumentTypes>;
-	}
+			options?: prismic.ClientConfig,) => prismic.Client<AllDocumentTypes>
 
-	interface CreateWriteClient {
-		(
+	type CreateWriteClient = (
 			repositoryNameOrEndpoint: string,
-			options: prismic.WriteClientConfig,
-		): prismic.WriteClient<AllDocumentTypes>;
-	}
+			options: prismic.WriteClientConfig,) => prismic.WriteClient<AllDocumentTypes>
 
-	interface CreateMigration {
-		(): prismic.Migration<AllDocumentTypes>;
-	}
+	type CreateMigration = () => prismic.Migration<AllDocumentTypes>
 
 	namespace Content {
 		export type {

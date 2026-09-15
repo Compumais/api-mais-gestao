@@ -1,6 +1,6 @@
 import type { DadosImportacaoItem } from "@/model/nota-fiscal-importacao-model.js";
-import type { NotaFiscal } from "@/model/nota-fiscal-model.js";
 import type { NotaFiscalItem } from "@/model/nota-fiscal-item-model.js";
+import type { NotaFiscal } from "@/model/nota-fiscal-model.js";
 import {
 	type ItemNFeXml,
 	type NFeXmlParsed,

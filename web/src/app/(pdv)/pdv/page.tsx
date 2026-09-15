@@ -19,12 +19,12 @@ import { useSaldosEstoque } from "@/hooks/use-saldos-estoque";
 import {
 	buildContaMesaItemFromProduto,
 	buildCupomNfceInfo,
-	calcularSubtotalItens,
 	type CarrinhoLocalItem,
+	calcularSubtotalItens,
 } from "@/lib/gourmet-utils";
 import type { FecharContaFormData } from "@/schemas/fechar-conta.schema";
-import { produtosService } from "@/services/produtos.service";
 import type { Produto } from "@/services/produtos.service";
+import { produtosService } from "@/services/produtos.service";
 
 export default function PdvPage() {
 	const router = useRouter();

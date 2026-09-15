@@ -2,10 +2,10 @@ import { v4 as uuidv4 } from "uuid";
 import type { Entidade } from "@/model/entidade-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
 import { buscarEntidadePorCnpj } from "@/repositories/entidade-repositories.js";
-import { criarEntidadeService } from "@/service/entidades/criar-entidade.js";
 import { obterConsultaCnpjEntidade } from "@/service/entidades/consultar-cnpj-entidade.js";
+import { criarEntidadeService } from "@/service/entidades/criar-entidade.js";
 import { normalizarCnpj } from "@/util/criptografia-certificado.js";
-import { httpRecursoExistente, httpNaoEncontrado } from "@/util/http-util.js";
+import { httpNaoEncontrado, httpRecursoExistente } from "@/util/http-util.js";
 
 type CriarEntidadePorCnpjParametros = {
 	cnpj: string;

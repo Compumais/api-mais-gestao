@@ -6,8 +6,8 @@ import {
 	criarConfiguracaoEmailSmtp,
 } from "@/repositories/configuracao-email-smtp-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
-import {
-	type ConfiguracaoEmailSmtpPublica,
+import type {
+	ConfiguracaoEmailSmtpPublica,
 } from "@/service/email/buscar-configuracao-smtp.js";
 import { criptografarTexto } from "@/util/criptografia-certificado.js";
 import {

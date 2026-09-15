@@ -1,8 +1,8 @@
 import type { ContaMesaItem } from "@/model/conta-mesa-item-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
-import { buscarContaMesaPorId } from "@/repositories/conta-mesa-repositories.js";
 import { buscarContaMesaItemPorId } from "@/repositories/conta-mesa-item-repositories.js";
+import { buscarContaMesaPorId } from "@/repositories/conta-mesa-repositories.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
 
 type BuscarContaMesaItemParametros = {

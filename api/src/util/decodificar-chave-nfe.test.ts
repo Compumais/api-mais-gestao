@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { CHAVE_NFE } from "@/service/nfe-inbound/__fixtures__/xml-dfe.fixtures.js";
 import {
 	calcularDigitoVerificadorChaveNfe,
 	decodificarChaveNfe,
 	validarEstruturaChaveNfe,
 } from "@/util/decodificar-chave-nfe.js";
-import { CHAVE_NFE } from "@/service/nfe-inbound/__fixtures__/xml-dfe.fixtures.js";
 
 describe("decodificarChaveNfe", () => {
 	it("deve decodificar campos da chave NF-e", () => {

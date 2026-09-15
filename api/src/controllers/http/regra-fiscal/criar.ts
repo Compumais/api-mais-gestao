@@ -2,8 +2,8 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { v4 as uuidv4 } from "uuid";
 import z from "zod";
 import { criarRegraFiscalService } from "@/service/regra-fiscal/criar-regra-fiscal.js";
-import { criarRegraFiscalBodySchema } from "./body-schema.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
+import { criarRegraFiscalBodySchema } from "./body-schema.js";
 
 export async function criarRegraFiscal(
 	request: FastifyRequest,

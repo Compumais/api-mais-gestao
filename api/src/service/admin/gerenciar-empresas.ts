@@ -4,17 +4,17 @@ import type { HttpResponse } from "@/model/http-model.js";
 import { db } from "@/repositories/connection.js";
 import { executarComControleAcessoPrivilegiado } from "@/repositories/controle-acesso-contexto.js";
 import {
-	criarEmpresa,
 	buscarEmpresaPorCnpj,
+	criarEmpresa,
 } from "@/repositories/empresa-repositories.js";
 import { buscarUsuarioPorId } from "@/repositories/usuarios-repositories.js";
 import { popularDadosPadraoEmpresa } from "@/service/empresa/popular-dados-padrao-empresa.js";
+import { normalizarCnpj } from "@/util/criptografia-certificado.js";
 import {
 	httpNaoEncontrado,
 	httpOk,
 	httpRecursoExistente,
 } from "@/util/http-util.js";
-import { normalizarCnpj } from "@/util/criptografia-certificado.js";
 import { normalizarPerfilArray } from "@/util/usuario-perfil.js";
 import * as schema from "../../../drizzle/schema.js";
 

@@ -21,8 +21,8 @@ import {
 } from "@/components/ui/table";
 import { formatDataCivilBrasilia } from "@/lib/date";
 import {
-	type EntradaHistoricoComposicao,
 	custoProdutoService,
+	type EntradaHistoricoComposicao,
 } from "@/services/custo-produto.service";
 
 type ModalHistoricoComposicaoProps = {

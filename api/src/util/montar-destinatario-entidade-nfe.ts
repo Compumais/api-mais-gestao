@@ -1,5 +1,5 @@
-import type { DestinatarioPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
 import { buscarEntidadePorId } from "@/repositories/entidade-repositories.js";
+import type { DestinatarioPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
 import {
 	normalizarIeParaNfe,
 	resolverIndIeDestNfe,

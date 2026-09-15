@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import * as notaFiscalRepo from "@/repositories/nota-fiscal-repositories.js";
 import * as nfeInboundRepo from "@/repositories/nfe-inbound-repositories.js";
-import { persistirDocumentoInbound } from "./persistir-documento-inbound.js";
-import { classificarXmlDfe } from "./classificar-xml-dfe.js";
+import * as notaFiscalRepo from "@/repositories/nota-fiscal-repositories.js";
 import {
 	XML_PROC_NFE,
 	XML_RES_NFE,
 } from "./__fixtures__/xml-dfe.fixtures.js";
+import { classificarXmlDfe } from "./classificar-xml-dfe.js";
+import { persistirDocumentoInbound } from "./persistir-documento-inbound.js";
 
 vi.mock("@/repositories/nfe-inbound-repositories.js");
 vi.mock("@/repositories/nota-fiscal-repositories.js");

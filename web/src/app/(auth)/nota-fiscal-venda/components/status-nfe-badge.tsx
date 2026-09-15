@@ -1,7 +1,7 @@
 "use client";
 
-import { cn } from "@/lib/utils";
 import { NFE_STATUS, obterLabelStatus } from "@/constants/nfe-status";
+import { cn } from "@/lib/utils";
 
 interface StatusNfeBadgeProps {
 	status: number | null | undefined;

@@ -5,27 +5,24 @@ import type {
 	DuplicataImportacaoNf,
 	FornecedorSugeridoImportacao,
 } from "@/model/nota-fiscal-importacao-model.js";
-import type { NotaFiscal } from "@/model/nota-fiscal-model.js";
-import type { NotaFiscalItem } from "@/model/nota-fiscal-item-model.js";
-import type { NovaNotaFiscal } from "@/model/nota-fiscal-model.js";
-import type { NovoNotaFiscalItem } from "@/model/nota-fiscal-item-model.js";
-import { buscarEntidadePorCnpj } from "@/repositories/entidade-repositories.js";
-import { criarNotaFiscalComItens } from "@/repositories/nota-fiscal-repositories.js";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import type { NotaFiscalItem, NovoNotaFiscalItem } from "@/model/nota-fiscal-item-model.js";
+import type { NotaFiscal, NovaNotaFiscal } from "@/model/nota-fiscal-model.js";
 import { buscarCfopPorId } from "@/repositories/cfop-repositories.js";
+import { buscarEntidadePorCnpj, verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { criarNotaFiscalComItens } from "@/repositories/nota-fiscal-repositories.js";
 import { resolverTipoprodutoPorCfopEntrada } from "@/service/nota-fiscal/montar-dados-produto-nf-importacao.js";
 import { buscarProdutoParaNf } from "@/service/nota-fiscal/vincular-ou-criar-produto.js";
+import { recalcularDadosConversao } from "@/util/calculo-importacao-nf.js";
+import { isCfopEntrada } from "@/util/cfop-entrada-validacao.js";
+import { resolverDataEntradaImportacao } from "@/util/data-competencia-nota-fiscal.js";
 import {
 	httpBadRequest,
 	httpCriacao,
 	httpErroInterno,
 	httpProibido,
 } from "@/util/http-util.js";
-import { isCfopEntrada } from "@/util/cfop-entrada-validacao.js";
-import { recalcularDadosConversao } from "@/util/calculo-importacao-nf.js";
-import { resolverDataEntradaImportacao } from "@/util/data-competencia-nota-fiscal.js";
-import { STATUS_RASCUNHO_IMPORTACAO } from "@/util/nota-fiscal-constants.js";
 import { parseNFeXml } from "@/util/nfe-xml-parser.js";
+import { STATUS_RASCUNHO_IMPORTACAO } from "@/util/nota-fiscal-constants.js";
 import {
 	extrairMensagemErroBanco,
 	idOpcionalOuNulo,

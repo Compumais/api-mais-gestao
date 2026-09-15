@@ -1,13 +1,13 @@
 import { v4 as uuidv4 } from "uuid";
-import type {
-	ReceitaSemContribuicao,
-	NovoReceitaSemContribuicao,
-} from "@/model/receita-sem-contribuicao-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
+import type {
+	NovoReceitaSemContribuicao,
+	ReceitaSemContribuicao,
+} from "@/model/receita-sem-contribuicao-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
-	buscarReceitaSemContribuicaoPorId,
 	atualizarReceitaSemContribuicao,
+	buscarReceitaSemContribuicaoPorId,
 } from "@/repositories/receita-sem-contribuicao-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
 import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";

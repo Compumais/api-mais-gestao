@@ -4,8 +4,8 @@ import {
 	buscarCadastroContabilidade,
 	salvarCadastroContabilidade,
 } from "./cadastro.js";
-import { exportarXmlsContabilidade } from "./exportar-xmls.js";
 import { exportarXmlsContabilidadeSchema } from "./doc-schema/schema.js";
+import { exportarXmlsContabilidade } from "./exportar-xmls.js";
 
 export async function contabilidadeRotas(app: FastifyInstance) {
 	app.addHook("onRequest", verifyJwt);

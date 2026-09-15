@@ -1,3 +1,4 @@
+import type { PagamentoPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
 import {
 	complementarCardPagamentoNfe,
 	montarCardPagamentoNfce,
@@ -6,7 +7,6 @@ import {
 	TPAG_PIX,
 } from "@/util/card-pagamento-nfce.js";
 import { extrairPagamentosResumo, type PagamentosRegistro } from "@/util/pagamentos-pdv-util.js";
-import type { PagamentoPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
 
 const TPAG_DINHEIRO = "01";
 const TPAG_OUTROS = "99";

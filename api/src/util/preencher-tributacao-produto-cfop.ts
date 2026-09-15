@@ -1,4 +1,4 @@
-import { buscarCfopPorId } from "@/repositories/cfop-repositories.js";
+import type { buscarCfopPorId } from "@/repositories/cfop-repositories.js";
 import type { CamposImpostosProduto } from "@/util/campos-impostos-produto.js";
 
 type CfopRegistro = NonNullable<Awaited<ReturnType<typeof buscarCfopPorId>>>;

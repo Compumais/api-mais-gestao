@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import * as obterXml from "@/util/obter-xml-nota-fiscal.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
+import * as obterXml from "@/util/obter-xml-nota-fiscal.js";
 import { montarArquivosXmlContabilidade } from "./montar-arquivos-xml-contabilidade.js";
 
 vi.mock("@/util/obter-xml-nota-fiscal.js");

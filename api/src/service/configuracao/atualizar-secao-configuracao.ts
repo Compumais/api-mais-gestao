@@ -6,11 +6,11 @@ import {
 } from "@/repositories/configuracao-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { httpOk, httpProibido } from "@/util/http-util.js";
+import { normalizarConfiguracaoNotificacoes } from "@/worker/util/configuracao-notificacoes.js";
 import {
 	type SecaoConfiguracao,
 	validarDadosSecaoConfiguracao,
 } from "./validar-configuracao.js";
-import { normalizarConfiguracaoNotificacoes } from "@/worker/util/configuracao-notificacoes.js";
 
 interface AtualizarSecaoConfiguracaoParametros {
 	idempresa: string;
