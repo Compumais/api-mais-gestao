@@ -243,13 +243,13 @@ export interface BuscarNotaFiscalResponse {
 
 export interface BuscarProdutoNfResponse {
 	encontrado: boolean;
-	produto: {
+	produtos: Array<{
 		id: string;
 		codigo: number | null;
 		ean: number | string | null;
-		nome: string;
-		descricao: string;
-	} | null;
+		nome: string | null;
+		descricao: string | null;
+	}>;
 }
 
 export const notaFiscalService = {
