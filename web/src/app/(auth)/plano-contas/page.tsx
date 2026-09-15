@@ -22,22 +22,12 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useEmpresa } from "@/hooks/use-empresa";
+import { baixarArquivo } from "@/lib/baixar-arquivo";
 import {
 	type FormatoImportacaoPlanoContas,
 	planoContasService,
 } from "@/services/plano-contas.service";
 import { PageContainer } from "../components/page-container";
-
-function baixarArquivo(blob: Blob, nomeArquivo: string) {
-	const url = URL.createObjectURL(blob);
-	const link = document.createElement("a");
-	link.href = url;
-	link.download = nomeArquivo;
-	document.body.appendChild(link);
-	link.click();
-	link.remove();
-	URL.revokeObjectURL(url);
-}
 
 export default function PlanoContasPage() {
 	const router = useRouter();

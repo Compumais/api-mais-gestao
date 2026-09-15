@@ -174,6 +174,41 @@ export const entidadesService = {
 		return data;
 	},
 
+	async exportar(params: {
+		idempresa: string;
+		nome?: string;
+		fornecedor?: number;
+		cliente?: number;
+		transportador?: number;
+		representante?: number;
+		q?: string;
+		razaosocial?: string;
+		cnpjcpf?: string;
+		endereco?: string;
+		tipopessoa?: number;
+		indiedest?: number;
+		inscricaoestadual?: string;
+		rg?: string;
+		email?: string;
+		telefone?: string;
+		numeroendereco?: string;
+		complemento?: string;
+		bairro?: string;
+		cep?: string;
+		fax?: string;
+		nascimento?: string;
+		pais?: string;
+		criadoem?: string;
+		ordenarPor?: string;
+		ordem?: "asc" | "desc";
+	}): Promise<Blob> {
+		const { data } = await api.get<Blob>("/entidades/exportar", {
+			params,
+			responseType: "blob",
+		});
+		return data;
+	},
+
 	async listarTodos(params: {
 		idempresa: string;
 		nome?: string;

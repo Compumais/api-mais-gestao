@@ -144,3 +144,73 @@ describe("exportarProdutosService", () => {
 		}
 	});
 });
+
+describe("exportarProdutosService filtros e serviços", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it("encaminha busca e filtros da listagem para o repositório", async () => {
+		vi.mocked(
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(true);
+		vi.mocked(
+			produtosRepository.listarTodosProdutosParaExportacao,
+		).mockResolvedValue([]);
+
+		await exportarProdutosService({
+			idusuario: "usuario-1",
+			idempresa: "empresa-1",
+			formato: "csv",
+			tipo: "P",
+			q: "coca",
+			nome: "Refri",
+		});
+
+		expect(
+			produtosRepository.listarTodosProdutosParaExportacao,
+		).toHaveBeenCalledWith({
+			idempresa: "empresa-1",
+			tipo: "P",
+			q: "coca",
+			nome: "Refri",
+		});
+	});
+
+	it("gera CSV de serviços com colunas da listagem", async () => {
+		vi.mocked(
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(true);
+		vi.mocked(
+			produtosRepository.listarTodosProdutosParaExportacao,
+		).mockResolvedValue([
+			{
+				...produtoFiscal,
+				tipo: "S",
+				nome: "=CMD",
+				inativo: 0,
+				codigolistalc11603: "1.01",
+				codigonbs: "123",
+			} as ProdutoParaExportacao,
+		]);
+
+		const resultado = await exportarProdutosService({
+			idusuario: "usuario-1",
+			idempresa: "empresa-1",
+			formato: "xlsx",
+			tipo: "S",
+		});
+
+		expect(resultado.success).toBe(true);
+		if (resultado.success && resultado.body) {
+			const csv = resultado.body.content.toString("utf-8");
+			expect(csv.startsWith("\uFEFF")).toBe(true);
+			expect(csv).toContain("Código");
+			expect(csv).toContain("LC 116");
+			expect(csv).toContain("Ativo");
+			expect(csv).toContain("'=CMD");
+			expect(resultado.body.filename).toBe("servicos.csv");
+			expect(resultado.body.contentType).toBe("text/csv; charset=utf-8");
+		}
+	});
+});

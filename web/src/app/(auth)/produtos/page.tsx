@@ -64,6 +64,7 @@ import {
 	TABELA_PRODUTOS,
 	useColunasTabelaPersistidas,
 } from "@/hooks/use-preferencias-ui-usuario";
+import { baixarArquivo } from "@/lib/baixar-arquivo";
 import {
 	type FormatoImportacaoProdutos,
 	type Produto,
@@ -96,15 +97,52 @@ function filtrosColunaAtivos(filtros: FiltrosColunaProdutosState) {
 	return Object.values(filtros).some((valor) => valor.trim() !== "");
 }
 
-function baixarArquivo(blob: Blob, nomeArquivo: string) {
-	const url = URL.createObjectURL(blob);
-	const link = document.createElement("a");
-	link.href = url;
-	link.download = nomeArquivo;
-	document.body.appendChild(link);
-	link.click();
-	link.remove();
-	URL.revokeObjectURL(url);
+function montarParamsFiltroProdutos(params: {
+	idempresa: string;
+	qAplicado: string;
+	filtrosColuna: FiltrosColunaProdutosState;
+	ordenarPor: string | null;
+	ordem: "asc" | "desc" | null;
+}) {
+	const { idempresa, qAplicado, filtrosColuna, ordenarPor, ordem } = params;
+	return {
+		idempresa,
+		tipo: "P" as const,
+		...(qAplicado ? { q: qAplicado } : {}),
+		...(filtrosColuna.nome ? { nome: filtrosColuna.nome } : {}),
+		...(filtrosColuna.inativo !== ""
+			? { inativo: Number(filtrosColuna.inativo) }
+			: {}),
+		...(filtrosColuna.codigo ? { codigo: filtrosColuna.codigo } : {}),
+		...(filtrosColuna.ean ? { ean: filtrosColuna.ean } : {}),
+		...(filtrosColuna.referencia
+			? { referencia: filtrosColuna.referencia }
+			: {}),
+		...(filtrosColuna.ncm ? { ncm: filtrosColuna.ncm } : {}),
+		...(filtrosColuna.unidademedida
+			? { unidademedida: filtrosColuna.unidademedida }
+			: {}),
+		...(filtrosColuna.tipoproduto
+			? { tipoproduto: filtrosColuna.tipoproduto }
+			: {}),
+		...(filtrosColuna.fornecedor
+			? { fornecedor: filtrosColuna.fornecedor }
+			: {}),
+		...(filtrosColuna.preco ? { preco: filtrosColuna.preco } : {}),
+		...(filtrosColuna.custoaquisicao
+			? { custoaquisicao: filtrosColuna.custoaquisicao }
+			: {}),
+		...(filtrosColuna.datacadastro
+			? { datacadastro: filtrosColuna.datacadastro }
+			: {}),
+		...(filtrosColuna.divergencia === "com"
+			? { somenteDivergencia: true }
+			: filtrosColuna.divergencia === "sem"
+				? { somenteDivergencia: false }
+				: {}),
+		...(ordenarPor ? { ordenarPor } : {}),
+		...(ordem ? { ordem } : {}),
+	};
 }
 
 export default function ProdutosPage() {
@@ -238,44 +276,15 @@ export default function ProdutosPage() {
 				throw new Error("Empresa não selecionada");
 			}
 			return await produtosService.listar({
-				idempresa: localStorageEmpresa.id,
+				...montarParamsFiltroProdutos({
+					idempresa: localStorageEmpresa.id,
+					qAplicado,
+					filtrosColuna,
+					ordenarPor,
+					ordem,
+				}),
 				page: pagination.pageIndex + 1,
 				limit: pagination.pageSize,
-				tipo: "P",
-				...(qAplicado ? { q: qAplicado } : {}),
-				...(filtrosColuna.nome ? { nome: filtrosColuna.nome } : {}),
-				...(filtrosColuna.inativo !== ""
-					? { inativo: Number(filtrosColuna.inativo) }
-					: {}),
-				...(filtrosColuna.codigo ? { codigo: filtrosColuna.codigo } : {}),
-				...(filtrosColuna.ean ? { ean: filtrosColuna.ean } : {}),
-				...(filtrosColuna.referencia
-					? { referencia: filtrosColuna.referencia }
-					: {}),
-				...(filtrosColuna.ncm ? { ncm: filtrosColuna.ncm } : {}),
-				...(filtrosColuna.unidademedida
-					? { unidademedida: filtrosColuna.unidademedida }
-					: {}),
-				...(filtrosColuna.tipoproduto
-					? { tipoproduto: filtrosColuna.tipoproduto }
-					: {}),
-				...(filtrosColuna.fornecedor
-					? { fornecedor: filtrosColuna.fornecedor }
-					: {}),
-				...(filtrosColuna.preco ? { preco: filtrosColuna.preco } : {}),
-				...(filtrosColuna.custoaquisicao
-					? { custoaquisicao: filtrosColuna.custoaquisicao }
-					: {}),
-				...(filtrosColuna.datacadastro
-					? { datacadastro: filtrosColuna.datacadastro }
-					: {}),
-				...(filtrosColuna.divergencia === "com"
-					? { somenteDivergencia: true }
-					: filtrosColuna.divergencia === "sem"
-						? { somenteDivergencia: false }
-						: {}),
-				...(ordenarPor ? { ordenarPor } : {}),
-				...(ordem ? { ordem } : {}),
 			});
 		},
 		enabled: !!localStorageEmpresa,
@@ -527,10 +536,14 @@ export default function ProdutosPage() {
 			if (!localStorageEmpresa) {
 				throw new Error("Empresa não selecionada");
 			}
-			const blob = await produtosService.exportar(
-				localStorageEmpresa.id,
-				formato,
-			);
+			const { idempresa, ...filtros } = montarParamsFiltroProdutos({
+				idempresa: localStorageEmpresa.id,
+				qAplicado,
+				filtrosColuna,
+				ordenarPor,
+				ordem,
+			});
+			const blob = await produtosService.exportar(idempresa, formato, filtros);
 			return { blob, formato };
 		},
 		onSuccess: ({ blob, formato }) => {

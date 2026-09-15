@@ -303,31 +303,33 @@ export interface AtualizarProdutoData
 	classtributariaibs?: string | null;
 }
 
+export type ListarProdutosParams = {
+	idempresa: string;
+	page?: number;
+	limit?: number;
+	nome?: string;
+	q?: string;
+	inativo?: number;
+	tipo?: "P" | "S";
+	codigo?: string;
+	ean?: string;
+	referencia?: string;
+	ncm?: string;
+	unidademedida?: string;
+	tipoproduto?: string;
+	fornecedor?: string;
+	preco?: string;
+	custoaquisicao?: string;
+	datacadastro?: string;
+	codigolistalc11603?: string;
+	codigonbs?: string;
+	somenteDivergencia?: boolean;
+	ordenarPor?: string;
+	ordem?: "asc" | "desc";
+};
+
 export const produtosService = {
-	async listar(params: {
-		idempresa: string;
-		page?: number;
-		limit?: number;
-		nome?: string;
-		q?: string;
-		inativo?: number;
-		tipo?: "P" | "S";
-		codigo?: string;
-		ean?: string;
-		referencia?: string;
-		ncm?: string;
-		unidademedida?: string;
-		tipoproduto?: string;
-		fornecedor?: string;
-		preco?: string;
-		custoaquisicao?: string;
-		datacadastro?: string;
-		codigolistalc11603?: string;
-		codigonbs?: string;
-		somenteDivergencia?: boolean;
-		ordenarPor?: string;
-		ordem?: "asc" | "desc";
-	}): Promise<ListarProdutosResponse> {
+	async listar(params: ListarProdutosParams): Promise<ListarProdutosResponse> {
 		const { data } = await api.get<ListarProdutosResponse>("/produtos", {
 			params,
 		});
@@ -471,9 +473,10 @@ export const produtosService = {
 	async exportar(
 		idempresa: string,
 		formato: FormatoImportacaoProdutos,
+		filtros?: Omit<ListarProdutosParams, "idempresa" | "page" | "limit">,
 	): Promise<Blob> {
 		const { data } = await api.get<Blob>("/produtos/exportar", {
-			params: { idempresa, formato },
+			params: { idempresa, formato, ...filtros },
 			responseType: "blob",
 		});
 		return data;

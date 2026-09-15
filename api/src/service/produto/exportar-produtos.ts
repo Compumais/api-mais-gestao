@@ -1,12 +1,14 @@
 import { Buffer } from "node:buffer";
-import { stringify } from "csv-stringify/sync";
 import ExcelJS from "exceljs";
 import type { HttpResponse } from "@/model/http-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
+	type FiltrosExportacaoProdutos,
 	listarTodosProdutosParaExportacao,
 	type ProdutoParaExportacao,
 } from "@/repositories/produtos-repositories.js";
+import { CONTENT_TYPE_CSV, gerarCsv } from "@/util/csv.js";
+import { hojeBrasiliaIsoDate } from "@/util/data-hora-brasilia.js";
 import { httpOk, httpProibido } from "@/util/http-util.js";
 import {
 	CABECALHO_TEMPLATE_PRODUTOS,
@@ -17,8 +19,7 @@ import {
 
 export type FormatoExportacaoProdutos = "csv" | "xlsx";
 
-type ExportarProdutosParametros = {
-	idempresa: string;
+type ExportarProdutosParametros = FiltrosExportacaoProdutos & {
 	idusuario: string;
 	formato: FormatoExportacaoProdutos;
 };
@@ -28,6 +29,20 @@ type ExportarProdutosResposta = {
 	contentType: string;
 	filename: string;
 };
+
+const COLUNAS_EXPORTACAO_SERVICOS = [
+	"Código",
+	"Nome",
+	"Preço",
+	"Situação",
+	"Referência",
+	"Unidade",
+	"Tipo",
+	"Custo",
+	"Data cadastro",
+	"LC 116",
+	"NBS",
+] as const;
 
 function normalizarValor(valor: unknown): string | number {
 	if (valor == null) return "";
@@ -42,6 +57,23 @@ function decimalImportacao(valor: unknown): string {
 
 function formatarStatus(valor: unknown): "ativo" | "inativo" {
 	return valor === 1 || valor === true ? "inativo" : "ativo";
+}
+
+function formatarSituacaoListagem(valor: unknown): "Ativo" | "Inativo" {
+	return valor === 1 || valor === true ? "Inativo" : "Ativo";
+}
+
+function formatarDataCsv(valor: string | null | undefined): string {
+	if (!valor) return "";
+	const iso = valor.trim();
+	if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+		const [ano, mes, dia] = iso.split("-");
+		return `${dia}/${mes}/${ano}`;
+	}
+	const instante = new Date(iso);
+	if (Number.isNaN(instante.getTime())) return valor;
+	const [ano, mes, dia] = hojeBrasiliaIsoDate(instante).split("-");
+	return `${dia}/${mes}/${ano}`;
 }
 
 function valorBase(
@@ -123,19 +155,22 @@ function montarLinhas(
 	]);
 }
 
-function neutralizarFormulaCsv(valor: string | number): string | number {
-	if (typeof valor === "string" && /^[=+\-@\t\r]/.test(valor)) {
-		return `'${valor}`;
-	}
-	return valor;
-}
-
-function gerarCsv(linhas: Array<Array<string | number>>): Buffer {
-	const linhasSeguras = linhas.map((linha) => linha.map(neutralizarFormulaCsv));
-	const conteudo = stringify([CABECALHO_TEMPLATE_PRODUTOS, ...linhasSeguras], {
-		delimiter: ";",
-	});
-	return Buffer.from(`\uFEFF${conteudo}`, "utf-8");
+function montarLinhasServicos(
+	servicos: ProdutoParaExportacao[],
+): Array<Array<string | number>> {
+	return servicos.map((servico) => [
+		normalizarValor(servico.codigo),
+		normalizarValor(servico.nome),
+		decimalImportacao(servico.preco),
+		formatarSituacaoListagem(servico.inativo),
+		normalizarValor(servico.referencia),
+		normalizarValor(servico.unidademedida),
+		normalizarValor(servico.tipoproduto),
+		decimalImportacao(servico.custoaquisicao),
+		formatarDataCsv(servico.datacadastro),
+		normalizarValor(servico.codigolistalc11603),
+		normalizarValor(servico.codigonbs),
+	]);
 }
 
 async function gerarXlsx(
@@ -175,22 +210,34 @@ async function gerarXlsx(
 }
 
 export async function exportarProdutosService({
-	idempresa,
 	idusuario,
 	formato,
+	...filtros
 }: ExportarProdutosParametros): Promise<
 	HttpResponse<ExportarProdutosResposta>
 > {
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
 		idusuario,
-		idempresa,
+		filtros.idempresa,
 	);
 
 	if (!usuarioPertenceEmpresa) {
 		return httpProibido();
 	}
 
-	const produtos = await listarTodosProdutosParaExportacao(idempresa);
+	const produtos = await listarTodosProdutosParaExportacao(filtros);
+
+	if (filtros.tipo === "S") {
+		return httpOk({
+			content: gerarCsv({
+				colunas: [...COLUNAS_EXPORTACAO_SERVICOS],
+				linhas: montarLinhasServicos(produtos),
+			}),
+			contentType: CONTENT_TYPE_CSV,
+			filename: "servicos.csv",
+		});
+	}
+
 	const linhas = montarLinhas(produtos);
 
 	if (formato === "xlsx") {
@@ -203,8 +250,12 @@ export async function exportarProdutosService({
 	}
 
 	return httpOk({
-		content: gerarCsv(linhas),
-		contentType: "text/csv; charset=utf-8",
+		content: gerarCsv({
+			colunas: [...CABECALHO_TEMPLATE_PRODUTOS],
+			linhas,
+			quoted: false,
+		}),
+		contentType: CONTENT_TYPE_CSV,
 		filename: "produtos-para-importacao.csv",
 	});
 }

@@ -25,6 +25,7 @@ import {
 	produtos,
 	saldoestoque,
 } from "@/repositories/schema.js";
+import { LIMITE_EXPORTACAO_CSV } from "@/util/csv.js";
 import { filtroRegistroAtivo } from "@/util/filtro-registro-ativo.js";
 import { inteiroValidoParaPostgres } from "@/util/texto-util.js";
 import { normalizarCodigoCest } from "@/util/validar-cest-item-emissao-nfe.js";
@@ -189,7 +190,7 @@ export type ListarProdutosPorEmpresaParametros = {
 	limit?: number;
 };
 
-export async function listarProdutosPorEmpresa({
+function montarWhereProdutosListagem({
 	idempresas,
 	nome,
 	q,
@@ -208,19 +209,11 @@ export async function listarProdutosPorEmpresa({
 	codigolistalc11603,
 	codigonbs,
 	somenteDivergencia,
-	ordenarPor,
-	ordem = "asc",
-	page = 1,
-	limit = 10,
-}: ListarProdutosPorEmpresaParametros) {
+}: Omit<
+	ListarProdutosPorEmpresaParametros,
+	"page" | "limit" | "ordenarPor" | "ordem"
+>): SQL[] {
 	const where: SQL[] = [];
-
-	if (idempresas.length === 0) {
-		return {
-			produtos: [],
-			total: 0,
-		};
-	}
 
 	where.push(inArray(produtos.idempresa, idempresas));
 
@@ -273,6 +266,73 @@ export async function listarProdutosPorEmpresa({
 	} else if (somenteDivergencia === false) {
 		where.push(sql`${expressaoDivergencia} = 0`);
 	}
+
+	return where;
+}
+
+function precisaJoinSaldo(params: {
+	somenteDivergencia?: boolean | undefined;
+	ordenarPor?: OrdenarProdutosCampo | undefined;
+}) {
+	return (
+		params.somenteDivergencia !== undefined ||
+		params.ordenarPor === "quantidade" ||
+		params.ordenarPor === "quantidadefiscal" ||
+		params.ordenarPor === "divergencia"
+	);
+}
+
+export async function listarProdutosPorEmpresa({
+	idempresas,
+	nome,
+	q,
+	inativo,
+	tipo,
+	codigo,
+	ean,
+	referencia,
+	ncm,
+	unidademedida,
+	tipoproduto,
+	fornecedor,
+	preco,
+	custoaquisicao,
+	datacadastro,
+	codigolistalc11603,
+	codigonbs,
+	somenteDivergencia,
+	ordenarPor,
+	ordem = "asc",
+	page = 1,
+	limit = 10,
+}: ListarProdutosPorEmpresaParametros) {
+	if (idempresas.length === 0) {
+		return {
+			produtos: [],
+			total: 0,
+		};
+	}
+
+	const where = montarWhereProdutosListagem({
+		idempresas,
+		nome,
+		q,
+		inativo,
+		tipo,
+		codigo,
+		ean,
+		referencia,
+		ncm,
+		unidademedida,
+		tipoproduto,
+		fornecedor,
+		preco,
+		custoaquisicao,
+		datacadastro,
+		codigolistalc11603,
+		codigonbs,
+		somenteDivergencia,
+	});
 
 	const offset = (page - 1) * limit;
 	const ordenacao = montarOrdenacaoProdutos(ordenarPor, ordem);
@@ -539,19 +599,46 @@ export type ProdutoParaExportacao = Produto & {
 	cfopNfceExportacao: string | null;
 };
 
-export async function listarTodosProdutosParaExportacao(
-	idempresa: string,
-): Promise<ProdutoParaExportacao[]> {
-	// Cadastros legados sem tipo pertencem ao catálogo de produtos, como no PDV.
-	const filtroTipoProduto = or(eq(produtos.tipo, "P"), isNull(produtos.tipo));
+export type FiltrosExportacaoProdutos = Omit<
+	ListarProdutosPorEmpresaParametros,
+	"idempresas" | "page" | "limit"
+> & {
+	idempresa: string;
+};
+
+export async function listarTodosProdutosParaExportacao({
+	idempresa,
+	tipo,
+	ordenarPor,
+	ordem = "asc",
+	...filtros
+}: FiltrosExportacaoProdutos): Promise<ProdutoParaExportacao[]> {
+	const where = montarWhereProdutosListagem({
+		idempresas: [idempresa],
+		tipo,
+		...filtros,
+	});
+
+	if (!tipo) {
+		const filtroTipoProduto = or(eq(produtos.tipo, "P"), isNull(produtos.tipo));
+		if (filtroTipoProduto) where.push(filtroTipoProduto);
+	}
+
 	const grupoExportacao = alias(hierarquia, "grupo_exportacao_produtos");
 	const ncmExportacao = alias(ncm, "ncm_exportacao_produtos");
 	const cestExportacao = alias(cest, "cest_exportacao_produtos");
 	const cfopEntrada = alias(cfop, "cfop_entrada_exportacao_produtos");
 	const cfopSaida = alias(cfop, "cfop_saida_exportacao_produtos");
 	const cfopNfce = alias(cfop, "cfop_nfce_exportacao_produtos");
+	const ordenacao = ordenarPor
+		? montarOrdenacaoProdutos(ordenarPor, ordem)
+		: ordenacaoCodigoNumericoAsc(produtos.codigo);
+	const usarJoinSaldo = precisaJoinSaldo({
+		somenteDivergencia: filtros.somenteDivergencia,
+		ordenarPor,
+	});
 
-	return db
+	const consulta = db
 		.select({
 			...getTableColumns(produtos),
 			grupo: grupoExportacao.nome,
@@ -567,9 +654,16 @@ export async function listarTodosProdutosParaExportacao(
 		.leftJoin(cestExportacao, eq(produtos.idcest, cestExportacao.id))
 		.leftJoin(cfopEntrada, eq(produtos.idcfopentrada, cfopEntrada.id))
 		.leftJoin(cfopSaida, eq(produtos.idcfopsaida, cfopSaida.id))
-		.leftJoin(cfopNfce, eq(produtos.idcfopsaidanfce, cfopNfce.id))
-		.where(and(eq(produtos.idempresa, idempresa), filtroTipoProduto))
-		.orderBy(ordenacaoCodigoNumericoAsc(produtos.codigo), asc(produtos.nome));
+		.leftJoin(cfopNfce, eq(produtos.idcfopsaidanfce, cfopNfce.id));
+
+	const consultaComSaldo = usarJoinSaldo
+		? consulta.leftJoin(saldoestoque, joinSaldoPorProduto())
+		: consulta;
+
+	return consultaComSaldo
+		.where(and(...where))
+		.orderBy(ordenacao, asc(produtos.nome))
+		.limit(LIMITE_EXPORTACAO_CSV);
 }
 
 export async function excluirProduto(id: string) {
