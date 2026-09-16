@@ -9,6 +9,8 @@ export type NotaNfceParaResumo = {
 	baseIcms: string | null;
 	valorIcms: string | null;
 	aliquota: string | null;
+	/** Cancelada: entra na faixa numérica do dia, mas não soma valores. */
+	cancelada?: boolean;
 };
 
 function parseNumero(valor: string | null | undefined): number {
@@ -71,6 +73,7 @@ export function agregarResumoNfceDiario(
 		const chave = `${data}|${serie}|${modelo}`;
 		const numeroAtual = parseNumeroDocumento(nota.numero);
 		const numeroRaw = nota.numero ?? "0";
+		const cancelada = Boolean(nota.cancelada);
 		const existente = agrupados.get(chave);
 
 		if (!existente) {
@@ -82,9 +85,9 @@ export function agregarResumoNfceDiario(
 				numeroMax: numeroAtual,
 				numeroInicialRaw: numeroRaw,
 				numeroFinalRaw: numeroRaw,
-				valorTotal: parseNumero(nota.valorTotal),
-				baseIcms: parseNumero(nota.baseIcms),
-				valorIcms: parseNumero(nota.valorIcms),
+				valorTotal: cancelada ? 0 : parseNumero(nota.valorTotal),
+				baseIcms: cancelada ? 0 : parseNumero(nota.baseIcms),
+				valorIcms: cancelada ? 0 : parseNumero(nota.valorIcms),
 				aliquota: nota.aliquota ?? "0",
 			});
 			continue;
@@ -99,9 +102,11 @@ export function agregarResumoNfceDiario(
 			existente.numeroFinalRaw = numeroRaw;
 		}
 
-		existente.valorTotal += parseNumero(nota.valorTotal);
-		existente.baseIcms += parseNumero(nota.baseIcms);
-		existente.valorIcms += parseNumero(nota.valorIcms);
+		if (!cancelada) {
+			existente.valorTotal += parseNumero(nota.valorTotal);
+			existente.baseIcms += parseNumero(nota.baseIcms);
+			existente.valorIcms += parseNumero(nota.valorIcms);
+		}
 	}
 
 	return [...agrupados.values()]

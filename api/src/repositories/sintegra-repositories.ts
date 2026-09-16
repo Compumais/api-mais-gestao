@@ -399,20 +399,39 @@ export async function listarResumoNfceDiarioSintegra({
 			baseIcms: notafiscal.baseicms,
 			valorIcms: notafiscal.icms,
 			aliquota: notafiscal.aliquotaicms,
+			status: notafiscal.status,
+			cancelamento: notafiscal.cancelamento,
 		})
 		.from(notafiscal)
 		.where(
 			and(
 				eq(notafiscal.idempresa, idempresa),
 				eq(notafiscal.modelo, "65"),
-				eq(notafiscal.status, NFE_STATUS.AUTORIZADA),
+				or(
+					eq(notafiscal.status, NFE_STATUS.AUTORIZADA),
+					eq(notafiscal.status, NFE_STATUS.CANCELADA),
+					eq(notafiscal.status, NFE_STATUS.CANCELADA_FORA_PRAZO),
+				),
 				gte(dataEmissaoSql, dataInicio),
 				lte(dataEmissaoSql, dataFim),
 			),
 		)
 		.orderBy(dataEmissaoSql, notafiscal.serie, notafiscal.numero);
 
-	return agregarResumoNfceDiario(notas);
+	return agregarResumoNfceDiario(
+		notas.map((nota) => ({
+			emissao: nota.emissao,
+			modelo: nota.modelo,
+			serie: nota.serie,
+			numero: nota.numero,
+			valorTotal: nota.valorTotal,
+			baseIcms: nota.baseIcms,
+			valorIcms: nota.valorIcms,
+			aliquota: nota.aliquota,
+			cancelada:
+				statusEhCancelada(nota.status) || Boolean(nota.cancelamento),
+		})),
+	);
 }
 
 export function agruparItensRegistro50(
