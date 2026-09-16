@@ -69,4 +69,48 @@ describe("agregarResumoNfceDiario", () => {
 			valorOutras: "60.00",
 		});
 	});
+
+	it("inclui cancelada na faixa numérica sem somar valor", () => {
+		const resumos = agregarResumoNfceDiario([
+			{
+				emissao: "2026-09-01",
+				modelo: "65",
+				serie: "1",
+				numero: "22731",
+				valorTotal: "11.00",
+				baseIcms: "0",
+				valorIcms: "0",
+				aliquota: "0",
+			},
+			{
+				emissao: "2026-09-01",
+				modelo: "65",
+				serie: "1",
+				numero: "22739",
+				valorTotal: "50.00",
+				baseIcms: "0",
+				valorIcms: "0",
+				aliquota: "0",
+				cancelada: true,
+			},
+			{
+				emissao: "2026-09-01",
+				modelo: "65",
+				serie: "1",
+				numero: "22741",
+				valorTotal: "20.00",
+				baseIcms: "0",
+				valorIcms: "0",
+				aliquota: "0",
+			},
+		]);
+
+		expect(resumos).toHaveLength(1);
+		expect(resumos[0]).toMatchObject({
+			numeroInicial: "22731",
+			numeroFinal: "22741",
+			valorTotal: "31.00",
+			valorOutras: "31.00",
+		});
+	});
 });
