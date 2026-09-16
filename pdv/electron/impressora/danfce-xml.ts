@@ -178,6 +178,15 @@ function parseConsumidor(xml: string): ConsumidorDanfce | undefined {
 	const cnpj = tag(dest, "CNPJ");
 	const cpf = tag(dest, "CPF");
 	const nome = tag(dest, "xNome") ?? undefined;
+	const cnpjLimpo = cnpj?.replace(/\D/g, "") ?? "";
+	// CNPJ fictício SEFAZ: em produção era usado como "não identificado".
+	// Em homologação o xNome traz "HOMOLOGACAO" e deve permanecer visível.
+	if (
+		cnpjLimpo === "99999999000191" &&
+		!(nome ?? "").toUpperCase().includes("HOMOLOGACAO")
+	) {
+		return undefined;
+	}
 	const ender = bloco(dest, "enderDest");
 	const partes = ender
 		? [
