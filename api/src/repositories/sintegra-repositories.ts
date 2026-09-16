@@ -12,6 +12,10 @@ import {
 	saldoestoque,
 	unidademedida,
 } from "@/repositories/schema.js";
+import {
+	agregarResumoNfceDiario,
+	classificarValoresSemIcms,
+} from "@/service/sintegra/agregar-resumo-nfce.js";
 import type {
 	DadosContribuinteSintegra,
 	InventarioSintegra,
@@ -383,6 +387,8 @@ export async function listarResumoNfceDiarioSintegra({
 	dataInicio,
 	dataFim,
 }: ListarDadosSintegraParametros): Promise<ResumoNfceDiarioSintegra[]> {
+	const dataEmissaoSql = sql<string>`left(${notafiscal.emissao}::text, 10)`;
+
 	const notas = await db
 		.select({
 			emissao: notafiscal.emissao,
@@ -400,47 +406,13 @@ export async function listarResumoNfceDiarioSintegra({
 				eq(notafiscal.idempresa, idempresa),
 				eq(notafiscal.modelo, "65"),
 				eq(notafiscal.status, NFE_STATUS.AUTORIZADA),
-				gte(notafiscal.emissao, dataInicio),
-				lte(notafiscal.emissao, dataFim),
+				gte(dataEmissaoSql, dataInicio),
+				lte(dataEmissaoSql, dataFim),
 			),
 		)
-		.orderBy(notafiscal.emissao);
+		.orderBy(dataEmissaoSql, notafiscal.serie, notafiscal.numero);
 
-	const agrupados = new Map<string, ResumoNfceDiarioSintegra>();
-
-	for (const nota of notas) {
-		const data = nota.emissao?.slice(0, 10) ?? "";
-		const chave = `${data}|${nota.serie ?? ""}|${nota.modelo ?? "65"}`;
-		const existente = agrupados.get(chave);
-		const numeroAtual = nota.numero ?? "0";
-
-		if (!existente) {
-			agrupados.set(chave, {
-				data,
-				modelo: nota.modelo ?? "65",
-				serie: nota.serie ?? "",
-				numeroInicial: numeroAtual,
-				numeroFinal: numeroAtual,
-				valorTotal: nota.valorTotal ?? "0",
-				baseIcms: nota.baseIcms ?? "0",
-				valorIcms: nota.valorIcms ?? "0",
-				valorIsento: "0",
-				valorOutras: "0",
-				aliquota: nota.aliquota ?? "0",
-			});
-			continue;
-		}
-
-		agrupados.set(chave, {
-			...existente,
-			numeroFinal: numeroAtual,
-			valorTotal: String(parseNumero(existente.valorTotal) + parseNumero(nota.valorTotal)),
-			baseIcms: String(parseNumero(existente.baseIcms) + parseNumero(nota.baseIcms)),
-			valorIcms: String(parseNumero(existente.valorIcms) + parseNumero(nota.valorIcms)),
-		});
-	}
-
-	return [...agrupados.values()].sort((a, b) => a.data.localeCompare(b.data));
+	return agregarResumoNfceDiario(notas);
 }
 
 export function agruparItensRegistro50(
@@ -460,15 +432,21 @@ export function agruparItensRegistro50(
 	for (const nota of notas) {
 		const itensNota = itensPorNota.get(nota.id) ?? [];
 		if (itensNota.length === 0) {
+			const valorTotal = parseNumero(nota.valorTotal);
+			const baseIcms = parseNumero(nota.baseIcms);
+			const { valorIsento, valorOutras } = classificarValoresSemIcms({
+				valorTotal,
+				baseIcms,
+			});
 			agrupamentos.push({
 				nota,
 				cfop: nota.cfopCodigo ?? "0000",
 				aliquota: "0",
-				valorTotal: parseNumero(nota.valorTotal),
-				baseIcms: parseNumero(nota.baseIcms),
+				valorTotal,
+				baseIcms,
 				valorIcms: parseNumero(nota.valorIcms),
-				valorIsento: 0,
-				valorOutras: 0,
+				valorIsento,
+				valorOutras,
 			});
 			continue;
 		}
@@ -493,9 +471,15 @@ export function agruparItensRegistro50(
 				(total, item) => total + parseNumero(item.baseIcms),
 				0,
 			);
+			const valorIcmsCalculado = baseIcms * (parseNumero(aliquota) / 100);
 			const valorIcms =
-				baseIcms * (parseNumero(aliquota) / 100) ||
-				grupoItens.reduce((total, item) => total + parseNumero(item.baseIcms), 0);
+				valorIcmsCalculado > 0
+					? valorIcmsCalculado
+					: parseNumero(nota.valorIcms);
+			const { valorIsento, valorOutras } = classificarValoresSemIcms({
+				valorTotal,
+				baseIcms,
+			});
 
 			agrupamentos.push({
 				nota,
@@ -504,8 +488,8 @@ export function agruparItensRegistro50(
 				valorTotal,
 				baseIcms,
 				valorIcms,
-				valorIsento: 0,
-				valorOutras: 0,
+				valorIsento,
+				valorOutras,
 			});
 		}
 	}
