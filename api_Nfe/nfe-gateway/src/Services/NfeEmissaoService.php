@@ -12,6 +12,37 @@ use NFePHP\NFe\Make;
 
 final class NfeEmissaoService
 {
+	/** CNPJ padrão SEFAZ para ambiente de homologação (não usar em NFC-e de produção). */
+	public const CNPJ_DESTINATARIO_HOMOLOGACAO = '99999999000191';
+
+	/**
+	 * NFC-e em produção sem consumidor identificado deve omitir o grupo dest.
+	 */
+	public static function deveOmitirDestinatarioNfce(
+		int $mod,
+		int $tpAmb,
+		?string $cnpjCpf,
+	): bool {
+		if ($mod !== 65) {
+			return false;
+		}
+		if ($tpAmb === 2) {
+			return false;
+		}
+
+		return !self::documentoDestinatarioIdentificado($cnpjCpf);
+	}
+
+	public static function documentoDestinatarioIdentificado(?string $cnpjCpf): bool
+	{
+		$doc = preg_replace('/\D/', '', (string) ($cnpjCpf ?? '')) ?? '';
+		if ($doc === '' || $doc === self::CNPJ_DESTINATARIO_HOMOLOGACAO) {
+			return false;
+		}
+
+		return strlen($doc) === 11 || strlen($doc) === 14;
+	}
+
 	/**
 	 * Monta e assina o XML da NF-e sem transmitir à SEFAZ.
 	 *
@@ -116,46 +147,53 @@ final class NfeEmissaoService
 		]);
 
 		// ── destinatário ────────────────────────────────────────────────────
-		$cnpjDest = preg_replace('/\D/', '', (string) ($destinatario['cnpjcpf'] ?? ''));
-		$isCnpj   = strlen($cnpjDest) === 14;
-		$isCpf    = strlen($cnpjDest) === 11;
+		// NFC-e (mod. 65) em produção sem CPF/CNPJ: omitir o grupo dest (MOC/NT).
+		// Não usar CNPJ fictício 99999999000191 em cupom de produção.
+		$documentoDest = preg_replace('/\D/', '', (string) ($destinatario['cnpjcpf'] ?? '')) ?? '';
+		if (!self::deveOmitirDestinatarioNfce($mod, $tpAmb, $documentoDest)) {
+			$isCnpj = strlen($documentoDest) === 14;
+			$isCpf  = strlen($documentoDest) === 11;
+			$documentoIdentificado = self::documentoDestinatarioIdentificado($documentoDest);
 
-		$indIEDest = (int) ($destinatario['indIEDest'] ?? 9);
-		$destObj = (object) [
-			'xNome'     => (string) ($destinatario['razaosocial'] ?? 'CONSUMIDOR NAO IDENTIFICADO'),
-			'indIEDest' => $indIEDest,
-		];
-		if ($tpAmb === 2) {
-			// Homologação: CNPJ/nome padrão SEFAZ; IE real não pode ir com CNPJ fictício.
-			$destObj->CNPJ      = '99999999000191';
-			$destObj->xNome     = 'NF-E EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL';
-			$destObj->indIEDest = 9;
-			$indIEDest          = 9;
-		} elseif ($isCnpj) {
-			$destObj->CNPJ = $cnpjDest;
-		} elseif ($isCpf) {
-			$destObj->CPF = $cnpjDest;
-		} else {
-			$destObj->CNPJ = '99999999000191';
-		}
-		$ieDest = self::normalizarIeDestinatario($indIEDest, $destinatario['ie'] ?? null);
-		if ($ieDest !== null && $ieDest !== '') {
-			$destObj->IE = $ieDest;
-		}
-		$mk->tagdest($destObj);
+			$indIEDest = (int) ($destinatario['indIEDest'] ?? 9);
+			$destObj = (object) [
+				'xNome'     => (string) ($destinatario['razaosocial'] ?? 'CONSUMIDOR NAO IDENTIFICADO'),
+				'indIEDest' => $indIEDest,
+			];
+			if ($tpAmb === 2) {
+				// Homologação: CNPJ/nome padrão SEFAZ; IE real não pode ir com CNPJ fictício.
+				$destObj->CNPJ      = self::CNPJ_DESTINATARIO_HOMOLOGACAO;
+				$destObj->xNome     = 'NF-E EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL';
+				$destObj->indIEDest = 9;
+				$indIEDest          = 9;
+			} elseif ($documentoIdentificado && $isCnpj) {
+				$destObj->CNPJ = $documentoDest;
+			} elseif ($documentoIdentificado && $isCpf) {
+				$destObj->CPF = $documentoDest;
+			} else {
+				// NF-e (55): destinatário segue obrigatório; mantém CNPJ de homologação
+				// apenas como fallback legado quando o payload vier sem documento.
+				$destObj->CNPJ = self::CNPJ_DESTINATARIO_HOMOLOGACAO;
+			}
+			$ieDest = self::normalizarIeDestinatario($indIEDest, $destinatario['ie'] ?? null);
+			if ($ieDest !== null && $ieDest !== '') {
+				$destObj->IE = $ieDest;
+			}
+			$mk->tagdest($destObj);
 
-		if (!empty($destinatario['logradouro']) || $tpAmb === 2) {
-			$mk->tagenderDest((object) [
-				'xLgr'   => (string) ($destinatario['logradouro'] ?? 'RUA TESTE'),
-				'nro'    => (string) ($destinatario['numero'] ?? '100'),
-				'xBairro' => (string) ($destinatario['bairro'] ?? 'CENTRO'),
-				'cMun'   => (string) ($destinatario['codigomunicipioibge'] ?? $emitente['codigoMunicipio'] ?? '3550308'),
-				'xMun'   => (string) ($destinatario['cidade'] ?? 'MUNICIPIO'),
-				'UF'     => (string) ($destinatario['estado'] ?? $emitente['uf'] ?? 'SP'),
-				'CEP'    => preg_replace('/\D/', '', (string) ($destinatario['cep'] ?? '01001000')),
-				'cPais'  => '1058',
-				'xPais'  => 'BRASIL',
-			]);
+			if (!empty($destinatario['logradouro']) || $tpAmb === 2) {
+				$mk->tagenderDest((object) [
+					'xLgr'   => (string) ($destinatario['logradouro'] ?? 'RUA TESTE'),
+					'nro'    => (string) ($destinatario['numero'] ?? '100'),
+					'xBairro' => (string) ($destinatario['bairro'] ?? 'CENTRO'),
+					'cMun'   => (string) ($destinatario['codigomunicipioibge'] ?? $emitente['codigoMunicipio'] ?? '3550308'),
+					'xMun'   => (string) ($destinatario['cidade'] ?? 'MUNICIPIO'),
+					'UF'     => (string) ($destinatario['estado'] ?? $emitente['uf'] ?? 'SP'),
+					'CEP'    => preg_replace('/\D/', '', (string) ($destinatario['cep'] ?? '01001000')),
+					'cPais'  => '1058',
+					'xPais'  => 'BRASIL',
+				]);
+			}
 		}
 
 		if (is_array($localEntrega) && !empty($localEntrega['uf'])) {
@@ -565,6 +603,185 @@ final class NfeEmissaoService
 			'cStatLote'   => $cStatLote,
 			'xMotivo'     => $xMotivo,
 			'protocolo'   => $protocolo,
+		];
+	}
+
+	/**
+	 * Assina e transmite uma NFC-e de contingência já montada, sem remontar infNFe.
+	 *
+	 * @param array<string, mixed> $configJson
+	 * @return array<string, string>
+	 */
+	public static function validarXmlContingenciaPreMontado(
+		array $configJson,
+		string $xml,
+		string $chaveInformada
+	): array {
+		return self::validarXmlContingencia($configJson, $xml, $chaveInformada);
+	}
+
+	/**
+	 * Assina e transmite uma NFC-e de contingência já montada, sem remontar infNFe.
+	 *
+	 * @param array<string, mixed> $configJson
+	 * @return array<string, string>
+	 */
+	public static function transmitirXmlContingencia(
+		array $configJson,
+		string $pfxBase64,
+		string $senha,
+		string $xml,
+		string $chaveInformada
+	): array {
+		$validacao = self::validarXmlContingencia(
+			$configJson,
+			$xml,
+			$chaveInformada,
+		);
+
+		$tools = SpedNfeFactory::criarTools($configJson, $pfxBase64, $senha);
+		$tools->model(65);
+		$xmlAssinado = $tools->signNFe($xml);
+
+		$validacaoAssinada = self::validarXmlContingencia(
+			$configJson,
+			$xmlAssinado,
+			$validacao['chave'],
+		);
+		if (!hash_equals($validacao['hashInfNFe'], $validacaoAssinada['hashInfNFe'])) {
+			throw new \RuntimeException('A assinatura modificou o conteúdo imutável de infNFe');
+		}
+
+		$idLote = str_pad((string) random_int(1, 99999999), 15, '0', STR_PAD_LEFT);
+		$retorno = $tools->sefazEnviaLote([$xmlAssinado], $idLote, 1);
+		$std = (new Standardize($retorno))->toStd();
+		$cStatLote = (string) ($std->cStat ?? '');
+		$xMotivoLote = (string) ($std->xMotivo ?? '');
+		$cStat = $cStatLote;
+		$xMotivo = $xMotivoLote;
+		$protocolo = '';
+		$chave = $validacao['chave'];
+		$xmlAutorizado = '';
+
+		$infProt = self::extrairInfProt($std);
+		if ($infProt !== null) {
+			$cStat = (string) ($infProt->cStat ?? $cStatLote);
+			$xMotivo = (string) ($infProt->xMotivo ?? $xMotivoLote);
+			$protocolo = (string) ($infProt->nProt ?? '');
+			$chaveRetornada = preg_replace('/\D/', '', (string) ($infProt->chNFe ?? '')) ?? '';
+			if ($chaveRetornada !== '' && $chaveRetornada !== $chave) {
+				throw new \RuntimeException('SEFAZ retornou protocolo para chave divergente');
+			}
+		}
+
+		if ($cStat === '100') {
+			$xmlAutorizado = Complements::toAuthorize($xmlAssinado, $retorno);
+		}
+
+		return [
+			'xmlAssinado' => $xmlAssinado,
+			'xmlAutorizado' => $xmlAutorizado,
+			'xmlRetorno' => $retorno,
+			'chave' => $chave,
+			'cStat' => $cStat,
+			'cStatLote' => $cStatLote,
+			'xMotivo' => $xMotivo,
+			'protocolo' => $protocolo,
+		];
+	}
+
+	/**
+	 * @param array<string, mixed> $configJson
+	 * @return array{chave: string, hashInfNFe: string}
+	 */
+	private static function validarXmlContingencia(
+		array $configJson,
+		string $xml,
+		string $chaveInformada
+	): array {
+		if (trim($xml) === '') {
+			throw new \InvalidArgumentException('XML de contingência obrigatório');
+		}
+
+		$anterior = libxml_use_internal_errors(true);
+		$dom = new \DOMDocument();
+		$carregado = $dom->loadXML($xml, LIBXML_NONET | LIBXML_NOBLANKS);
+		libxml_clear_errors();
+		libxml_use_internal_errors($anterior);
+		if (!$carregado) {
+			throw new \InvalidArgumentException('XML de contingência inválido');
+		}
+
+		$xpath = new \DOMXPath($dom);
+		$xpath->registerNamespace('nfe', 'http://www.portalfiscal.inf.br/nfe');
+		$infNFe = $xpath->query('//nfe:NFe/nfe:infNFe')->item(0);
+		if (!$infNFe instanceof \DOMElement) {
+			throw new \InvalidArgumentException('XML sem infNFe no leiaute oficial');
+		}
+
+		$id = $infNFe->getAttribute('Id');
+		if (!preg_match('/^NFe(\d{44})$/', $id, $match)) {
+			throw new \InvalidArgumentException('Id de infNFe inválido');
+		}
+		$chave = $match[1];
+		$chavePayload = preg_replace('/\D/', '', $chaveInformada) ?? '';
+		if ($chavePayload !== '' && $chavePayload !== $chave) {
+			throw new \InvalidArgumentException('Chave informada diverge de infNFe/@Id');
+		}
+		if (substr($chave, 20, 2) !== '65') {
+			throw new \InvalidArgumentException('Chave informada não pertence ao modelo 65');
+		}
+
+		$valor = static function (\DOMXPath $xpath, string $expressao): string {
+			return trim((string) $xpath->evaluate("string($expressao)"));
+		};
+		if ($valor($xpath, '//nfe:infNFe/nfe:ide/nfe:mod') !== '65') {
+			throw new \InvalidArgumentException('XML informado não é NFC-e modelo 65');
+		}
+		if ($valor($xpath, '//nfe:infNFe/nfe:ide/nfe:tpEmis') !== '9') {
+			throw new \InvalidArgumentException('XML deve preservar tpEmis=9');
+		}
+
+		$ambienteXml = $valor($xpath, '//nfe:infNFe/nfe:ide/nfe:tpAmb');
+		$ambienteConfig = (string) ($configJson['tpAmb'] ?? '');
+		if (!in_array($ambienteXml, ['1', '2'], true) || $ambienteXml !== $ambienteConfig) {
+			throw new \InvalidArgumentException('Ambiente do XML diverge da configuração');
+		}
+
+		$cnpjXml = preg_replace(
+			'/\D/',
+			'',
+			$valor($xpath, '//nfe:infNFe/nfe:emit/nfe:CNPJ'),
+		) ?? '';
+		$cnpjConfig = preg_replace('/\D/', '', (string) ($configJson['cnpj'] ?? '')) ?? '';
+		if (strlen($cnpjXml) !== 14 || $cnpjXml !== $cnpjConfig) {
+			throw new \InvalidArgumentException('Emitente do XML diverge da configuração');
+		}
+
+		foreach ([
+			'//nfe:infNFe/nfe:ide/nfe:dhEmi',
+			'//nfe:infNFe/nfe:ide/nfe:dhCont',
+			'//nfe:infNFe/nfe:emit/nfe:enderEmit',
+			'//nfe:infNFe/nfe:det',
+			'//nfe:infNFe/nfe:total/nfe:ICMSTot',
+			'//nfe:infNFe/nfe:transp',
+			'//nfe:infNFe/nfe:pag/nfe:detPag',
+		] as $obrigatorio) {
+			if ($xpath->query($obrigatorio)->length === 0) {
+				throw new \InvalidArgumentException(
+					'XML legado/incompleto requer revisão manual; campo ausente: ' . $obrigatorio,
+				);
+			}
+		}
+
+		$canonico = $infNFe->C14N(true, false);
+		if (!is_string($canonico)) {
+			throw new \RuntimeException('Não foi possível canonizar infNFe');
+		}
+
+		return [
+			'chave' => $chave,
+			'hashInfNFe' => hash('sha256', $canonico),
 		];
 	}
 

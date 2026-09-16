@@ -155,6 +155,84 @@ describe("DANFE NFC-e", () => {
 		assert.ok(texto.includes(MARCADOR_QR_DANFCE));
 	});
 
+	it("trata CNPJ fictício de produção como consumidor não identificado", () => {
+		const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc>
+  <NFe>
+    <infNFe Id="NFe31260956259933000152650010000227311993681834" versao="4.00">
+      <ide>
+        <serie>1</serie>
+        <nNF>22731</nNF>
+        <dhEmi>2026-09-01T18:15:47-03:00</dhEmi>
+        <tpAmb>1</tpAmb>
+        <tpEmis>1</tpEmis>
+      </ide>
+      <emit>
+        <CNPJ>56259933000152</CNPJ>
+        <xNome>Vinicius Eduardo da Costa LTDA</xNome>
+      </emit>
+      <dest>
+        <CNPJ>99999999000191</CNPJ>
+        <xNome>CONSUMIDOR NAO IDENTIFICADO</xNome>
+        <indIEDest>9</indIEDest>
+      </dest>
+      <det nItem="1">
+        <prod>
+          <cProd>6</cProd>
+          <xProd>PASTEL</xProd>
+          <qCom>1.0000</qCom>
+          <uCom>UN</uCom>
+          <vUnCom>11.00</vUnCom>
+          <vProd>11.00</vProd>
+        </prod>
+      </det>
+      <total><ICMSTot><vNF>11.00</vNF><vProd>11.00</vProd><vDesc>0.00</vDesc></ICMSTot></total>
+      <pag><detPag><tPag>01</tPag><vPag>11.00</vPag></detPag></pag>
+    </infNFe>
+  </NFe>
+</nfeProc>`;
+		const dados = juntarDadosDanfce(parseXmlDanfce(xml), {});
+		const texto = montarTextoDanfce(dados);
+		assert.match(texto, /CONSUMIDOR NAO IDENTIFICADO/);
+		assert.doesNotMatch(texto, /99\.999\.999\/0001-91/);
+	});
+
+	it("omite grupo dest e imprime consumidor não identificado", () => {
+		const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc>
+  <NFe>
+    <infNFe Id="NFe31260956259933000152650010000227311993681834" versao="4.00">
+      <ide>
+        <serie>1</serie>
+        <nNF>22731</nNF>
+        <dhEmi>2026-09-01T18:15:47-03:00</dhEmi>
+        <tpAmb>1</tpAmb>
+        <tpEmis>1</tpEmis>
+      </ide>
+      <emit>
+        <CNPJ>56259933000152</CNPJ>
+        <xNome>Vinicius Eduardo da Costa LTDA</xNome>
+      </emit>
+      <det nItem="1">
+        <prod>
+          <cProd>6</cProd>
+          <xProd>PASTEL</xProd>
+          <qCom>1.0000</qCom>
+          <uCom>UN</uCom>
+          <vUnCom>11.00</vUnCom>
+          <vProd>11.00</vProd>
+        </prod>
+      </det>
+      <total><ICMSTot><vNF>11.00</vNF><vProd>11.00</vProd><vDesc>0.00</vDesc></ICMSTot></total>
+      <pag><detPag><tPag>01</tPag><vPag>11.00</vPag></detPag></pag>
+    </infNFe>
+  </NFe>
+</nfeProc>`;
+		const dados = juntarDadosDanfce(parseXmlDanfce(xml), {});
+		const texto = montarTextoDanfce(dados);
+		assert.match(texto, /CONSUMIDOR NAO IDENTIFICADO/);
+	});
+
 	it("formata chave, CNPJ e protocolo como no DANFE", () => {
 		assert.equal(
 			formatarChaveDanfce("31260810579611000190650100000001021349497532"),
