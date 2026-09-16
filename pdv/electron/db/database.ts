@@ -641,6 +641,7 @@ async function seedDefaults(database: Pool): Promise<void> {
 		["tecnibra_xml_root", "Comandas"],
 		["tecnibra_xml_item", "Comanda"],
 		["tecnibra_casas_comanda", "1"],
+		["tecnibra_ignorar_dv_comanda", "0"],
 		["taxa_servico_percentual", "10"],
 		["couvert_valor", "0"],
 		["balanca_habilitada", "0"],
