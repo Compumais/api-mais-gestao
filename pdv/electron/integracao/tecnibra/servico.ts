@@ -5,6 +5,7 @@ import { escreverArquivoAtomico } from "./escrever";
 import {
 	gerarXmlComandas,
 	normalizarCasasComanda,
+	normalizarIgnorarDigitoVerificador,
 	normalizarNumerosComanda,
 } from "./xml";
 
@@ -52,6 +53,7 @@ async function obterConfigTecnibra(): Promise<{
 	rootElement: string;
 	commandElement: string;
 	casas: number;
+	ignorarDigitoVerificador: boolean;
 }> {
 	const enabled = (await getConfig("tecnibra_habilitada", "0")) === "1";
 	const targetPath = (
@@ -75,6 +77,9 @@ async function obterConfigTecnibra(): Promise<{
 		casas: normalizarCasasComanda(
 			await getConfig("tecnibra_casas_comanda", "1"),
 		),
+		ignorarDigitoVerificador: normalizarIgnorarDigitoVerificador(
+			await getConfig("tecnibra_ignorar_dv_comanda", "0"),
+		),
 	};
 }
 
@@ -95,13 +100,21 @@ export async function syncTecnibra(): Promise<void> {
 			return;
 		}
 
+		const brutos = await listarNumerosComPendencia();
 		const pendentes = normalizarNumerosComanda(
-			await listarNumerosComPendencia(),
+			brutos,
 			cfg.casas,
+			cfg.ignorarDigitoVerificador,
 		);
 
 		const hash = createHash("sha256")
-			.update(JSON.stringify({ pendentes, casas: cfg.casas }))
+			.update(
+				JSON.stringify({
+					pendentes,
+					casas: cfg.casas,
+					ignorarDigitoVerificador: cfg.ignorarDigitoVerificador,
+				}),
+			)
 			.digest("hex");
 		if (hash === ultimoHash && !status.lastError) {
 			status = {
@@ -113,10 +126,11 @@ export async function syncTecnibra(): Promise<void> {
 			return;
 		}
 
-		const xml = gerarXmlComandas(pendentes, {
+		const xml = gerarXmlComandas(brutos, {
 			rootElement: cfg.rootElement,
 			commandElement: cfg.commandElement,
 			casas: cfg.casas,
+			ignorarDigitoVerificador: cfg.ignorarDigitoVerificador,
 		});
 		await escreverArquivoAtomico(cfg.targetPath, xml);
 		ultimoHash = hash;

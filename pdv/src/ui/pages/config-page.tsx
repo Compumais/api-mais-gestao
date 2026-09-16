@@ -409,6 +409,7 @@ export function ConfigPage() {
 				tecnibra_xml_root: config.tecnibra_xml_root ?? "Comandas",
 				tecnibra_xml_item: config.tecnibra_xml_item ?? "Comanda",
 				tecnibra_casas_comanda: config.tecnibra_casas_comanda ?? "1",
+				tecnibra_ignorar_dv_comanda: config.tecnibra_ignorar_dv_comanda ?? "0",
 				sitef_habilitado: config.sitef_habilitado ?? "0",
 				sitef_ip: config.sitef_ip ?? "127.0.0.1",
 				sitef_loja: config.sitef_loja ?? "00000000",
@@ -1917,6 +1918,21 @@ export function ConfigPage() {
 											<option value="6">6 — ex.: 000001</option>
 										</Select>
 									</div>
+									<div className="space-y-2">
+										<Label htmlFor="tecnibra_ignorar_dv_comanda">
+											Ignorar dígito verificador
+										</Label>
+										<Select
+											id="tecnibra_ignorar_dv_comanda"
+											value={config.tecnibra_ignorar_dv_comanda ?? "0"}
+											onChange={(e) =>
+												set("tecnibra_ignorar_dv_comanda", e.target.value)
+											}
+										>
+											<option value="0">Não</option>
+											<option value="1">Sim — remove o último dígito</option>
+										</Select>
+									</div>
 									<div className="space-y-2 sm:col-span-2">
 										<Label htmlFor="tecnibra_xml_path">Caminho do XML</Label>
 										<Input
@@ -1930,9 +1946,11 @@ export function ConfigPage() {
 									</div>
 									<p className="sm:col-span-2 text-xs text-muted-foreground">
 										A receptora lê este arquivo: comanda presente = saída
-										bloqueada; ausente = liberada. O número da comanda vai com
-										zeros à esquerda conforme as casas (1, 01 ou 001). Pasta
-										padrão da IHM: C:\Tecnibra\IHM Receptora\Comandas.xml
+										bloqueada; ausente = liberada. O número vai ao XML com zeros
+										à esquerda conforme as casas (1, 01 ou 001). Com &quot;ignorar
+										dígito verificador&quot;, o último dígito é removido antes
+										(ex.: 1015 → 101 → 0101 com 4 casas). Pasta padrão da IHM:
+										C:\Tecnibra\IHM Receptora\Comandas.xml
 										{statusTecnibra
 											? ` — ${statusTecnibra.commandCount} pendente(s)${
 													statusTecnibra.lastError
