@@ -120,7 +120,7 @@ export async function gerarArquivoSintegra(
 
 	if (resumosNfce.length > 0) {
 		validacao.alertas.push(
-			"NFC-e (modelo 65) informadas no registro 61; demais modelos permanecem nos registros 50/54.",
+			`Informativo: ${resumosNfce.length} resumo(s) diário(s) de NFC-e (modelo 65) gerados no registro 61.`,
 		);
 	}
 

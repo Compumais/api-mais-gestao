@@ -96,9 +96,18 @@ export function validarDadosSintegra({
 		}
 	}
 
-	alertas.push(
-		"Registro 60 (ECF) não gerado: o ERP não possui integração com redução Z/PAF.",
-	);
+	// ECF (reg. 60) só existe com PAF/Redução Z. NFC-e usa o registro 61.
+	const soNfce =
+		notas.length > 0 && notas.every((nota) => nota.modelo === "65");
+	if (soNfce) {
+		alertas.push(
+			"Informativo: registro 60 (ECF) não se aplica — este contribuinte emite NFC-e, que vai no registro 61.",
+		);
+	} else {
+		alertas.push(
+			"Informativo: registro 60 (ECF) não gerado — o ERP não integra Redução Z/PAF. Cupom fiscal ECF antigo exigiria esse registro.",
+		);
+	}
 
 	return { erros, alertas };
 }
