@@ -58,12 +58,17 @@ export function validarDadosSintegra({
 		alertas.push("Nenhuma nota fiscal encontrada no período informado.");
 	}
 
-	const notasSemParticipante = notas.filter(
-		(nota) => !nota.cnpjCpf?.replace(/\D/g, ""),
-	);
+	const cnpjConsumidorNaoIdentificado = "99999999000191";
+	const notasSemParticipante = notas.filter((nota) => {
+		// NFC-e (mod. 65) vai no registro 61 sem CNPJ/IE do destinatário.
+		if (nota.modelo === "65") return false;
+		const doc = nota.cnpjCpf?.replace(/\D/g, "") ?? "";
+		if (!doc || doc === cnpjConsumidorNaoIdentificado) return true;
+		return false;
+	});
 	if (notasSemParticipante.length > 0) {
 		alertas.push(
-			`${notasSemParticipante.length} nota(s) sem CNPJ/CPF do participante.`,
+			`${notasSemParticipante.length} nota(s) modelo 55/outros sem CNPJ/CPF do participante (registros 50/54).`,
 		);
 	}
 
