@@ -1,4 +1,14 @@
-import { and, eq, gte, inArray, isNotNull, lte, ne, or, sql } from "drizzle-orm";
+import {
+	and,
+	eq,
+	gte,
+	inArray,
+	isNotNull,
+	lte,
+	ne,
+	or,
+	sql,
+} from "drizzle-orm";
 import {
 	cfop,
 	empresa,
@@ -24,6 +34,7 @@ import type {
 	ProdutoSintegra,
 	ResumoNfceDiarioSintegra,
 } from "@/service/sintegra/tipos-sintegra.js";
+import { condicaoAmbienteFiscalProducao } from "@/util/ambiente-sefaz.js";
 import { obterDataCompetenciaNotaFiscal } from "@/util/data-competencia-nota-fiscal.js";
 import { NFE_STATUS, statusEhCancelada } from "@/util/nfe-status.js";
 import { STATUS_NF_CONFIRMADA } from "@/util/nota-fiscal-constants.js";
@@ -122,10 +133,26 @@ export async function listarNotasSintegra({
 			serie: notafiscal.serie,
 			numero: notafiscal.numero,
 			numeronotafiscal: notafiscal.numeronotafiscal,
-			cnpjCpf: sql<string | null>`coalesce(${entidade.cnpjcpf}, ${notafiscal.cnpjcpf})`,
-			inscricaoEstadual: sql<string | null>`coalesce(${entidade.inscricaoestadual}, ${notafiscal.inscricaoestadual})`,
-			uf: sql<string | null>`coalesce(${notafiscal.estado}, ${empresafiscal.uf})`,
-			cfopCodigo: cfop.codigo,
+			cnpjCpf: sql<
+				string | null
+			>`coalesce(${entidade.cnpjcpf}, ${notafiscal.cnpjcpf})`,
+			inscricaoEstadual: sql<
+				string | null
+			>`coalesce(${entidade.inscricaoestadual}, ${notafiscal.inscricaoestadual})`,
+			uf: sql<
+				string | null
+			>`coalesce(${notafiscal.estado}, ${empresafiscal.uf})`,
+			cfopCodigo: sql<string | null>`coalesce(
+				${cfop.codigo},
+				(
+					select coalesce(nullif(nfi.cfop, ''), cfi.codigo)
+					from notafiscalitem nfi
+					left join cfop cfi on cfi.id = nfi.idcfop
+					where nfi.idnotafiscal = ${notafiscal.id}
+					order by nfi.contador
+					limit 1
+				)
+			)`,
 			valorTotal: notafiscal.valortotalnota,
 			baseIcms: notafiscal.baseicms,
 			valorIcms: notafiscal.icms,
@@ -146,6 +173,7 @@ export async function listarNotasSintegra({
 				gte(dataCompetenciaSql, dataInicio),
 				lte(dataCompetenciaSql, dataFim),
 				ne(notafiscal.status, STATUS_RASCUNHO_IMPORTACAO),
+				condicaoAmbienteFiscalProducao(notafiscal.tipoambientenfe),
 				or(
 					and(
 						eq(notafiscal.tipoorigem, 0),
@@ -158,10 +186,7 @@ export async function listarNotasSintegra({
 							eq(notafiscal.status, NFE_STATUS.CANCELADA),
 							eq(notafiscal.status, NFE_STATUS.CANCELADA_FORA_PRAZO),
 						),
-						or(
-							isNotNull(notafiscal.chavenfe),
-							eq(notafiscal.modelo, "65"),
-						),
+						or(isNotNull(notafiscal.chavenfe), eq(notafiscal.modelo, "65")),
 					),
 				),
 			),
@@ -211,11 +236,17 @@ export async function listarItensNotasSintegra(
 			id: notafiscalitem.id,
 			idnotafiscal: notafiscalitem.idnotafiscal,
 			contador: notafiscalitem.contador,
-			cnpjCpf: sql<string | null>`coalesce(${entidade.cnpjcpf}, ${notafiscal.cnpjcpf})`,
+			cnpjCpf: sql<
+				string | null
+			>`coalesce(${entidade.cnpjcpf}, ${notafiscal.cnpjcpf})`,
 			modelo: notafiscal.modelo,
 			serie: notafiscal.serie,
-			numero: sql<string | null>`coalesce(${notafiscal.numero}, ${notafiscal.numeronotafiscal})`,
-			cfop: sql<string | null>`coalesce(${notafiscalitem.cfop}, ${cfop.codigo})`,
+			numero: sql<
+				string | null
+			>`coalesce(${notafiscal.numero}, ${notafiscal.numeronotafiscal})`,
+			cfop: sql<
+				string | null
+			>`coalesce(${notafiscalitem.cfop}, ${cfop.codigo})`,
 			cst: notafiscalitem.situacaotributaria,
 			csosn: notafiscalitem.situacaotributariasn,
 			codigoProduto: sql<string | null>`${produtos.codigo}::text`,
@@ -268,7 +299,9 @@ export async function listarProdutosSintegra(
 			codigo: sql<string>`${produtos.codigo}::text`,
 			descricao: produtos.descricao,
 			ncm: ncm.codigo,
-			unidade: sql<string | null>`coalesce(${unidademedida.codigo}, ${produtos.unidademedida})`,
+			unidade: sql<
+				string | null
+			>`coalesce(${unidademedida.codigo}, ${produtos.unidademedida})`,
 			aliquotaIcms: produtos.aliquotaicmsinterna,
 			aliquotaIpi: sql<string | null>`'0'`,
 			reducaoBaseIcms: produtos.aliquotareducaoicmsnfcesat,
@@ -339,7 +372,8 @@ export async function listarInventarioFiscalSintegra({
 			codigoProduto: registro.codigoproduto,
 			quantidade: registro.quantidade,
 			valorTotal: registro.valortotal,
-			codigoPosse: (registro.codigoposse ?? "1") as InventarioSintegra["codigoPosse"],
+			codigoPosse: (registro.codigoposse ??
+				"1") as InventarioSintegra["codigoPosse"],
 			cnpjPossuidor: registro.cnpjpossuidor,
 			inscricaoEstadualPossuidor: registro.inscricaoestadualpossuidor,
 			ufPossuidor: registro.ufpossuidor,
@@ -394,7 +428,9 @@ export async function listarResumoNfceDiarioSintegra({
 			emissao: notafiscal.emissao,
 			modelo: notafiscal.modelo,
 			serie: notafiscal.serie,
-			numero: sql<string | null>`coalesce(${notafiscal.numero}, ${notafiscal.numeronotafiscal})`,
+			numero: sql<
+				string | null
+			>`coalesce(${notafiscal.numero}, ${notafiscal.numeronotafiscal})`,
 			valorTotal: notafiscal.valortotalnota,
 			baseIcms: notafiscal.baseicms,
 			valorIcms: notafiscal.icms,
@@ -428,8 +464,7 @@ export async function listarResumoNfceDiarioSintegra({
 			baseIcms: nota.baseIcms,
 			valorIcms: nota.valorIcms,
 			aliquota: nota.aliquota,
-			cancelada:
-				statusEhCancelada(nota.status) || Boolean(nota.cancelamento),
+			cancelada: statusEhCancelada(nota.status) || Boolean(nota.cancelamento),
 		})),
 	);
 }
@@ -520,7 +555,9 @@ export function agruparItensRegistro50(
 	});
 }
 
-export function somarIpiPorNota(itens: ItemNotaSintegra[]): Map<string, number> {
+export function somarIpiPorNota(
+	itens: ItemNotaSintegra[],
+): Map<string, number> {
 	const mapa = new Map<string, number>();
 	for (const item of itens) {
 		const atual = mapa.get(item.idnotafiscal) ?? 0;

@@ -8,10 +8,14 @@ export type NovaNfeSerie = typeof nfeserie.$inferInsert;
 export async function listarNfeSeriesPorEmpresa(
 	idempresa: string,
 	modelo?: string,
+	ambiente?: number,
 ) {
 	const where = [eq(nfeserie.idempresa, idempresa)];
 	if (modelo) {
 		where.push(eq(nfeserie.modelo, modelo));
+	}
+	if (ambiente === 1 || ambiente === 2) {
+		where.push(eq(nfeserie.ambiente, ambiente));
 	}
 
 	return db
@@ -29,7 +33,11 @@ export async function buscarNfeSeriePorId(id: string) {
 	return registro;
 }
 
-export async function buscarNfeSeriePadrao(idempresa: string, modelo = "55") {
+export async function buscarNfeSeriePadrao(
+	idempresa: string,
+	modelo = "55",
+	ambiente = 1,
+) {
 	const [registro] = await db
 		.select()
 		.from(nfeserie)
@@ -37,6 +45,7 @@ export async function buscarNfeSeriePadrao(idempresa: string, modelo = "55") {
 			and(
 				eq(nfeserie.idempresa, idempresa),
 				eq(nfeserie.modelo, modelo),
+				eq(nfeserie.ambiente, ambiente),
 				eq(nfeserie.padrao, true),
 				eq(nfeserie.ativo, true),
 			),
@@ -48,6 +57,11 @@ export async function buscarNfeSeriePadrao(idempresa: string, modelo = "55") {
 export async function criarNfeSerie(dados: NovaNfeSerie) {
 	const [registro] = await db.insert(nfeserie).values(dados).returning();
 	return registro;
+}
+
+export async function criarNfeSeries(dados: NovaNfeSerie[]) {
+	if (dados.length === 0) return [];
+	return db.transaction((tx) => tx.insert(nfeserie).values(dados).returning());
 }
 
 export async function atualizarNfeSerie(
@@ -75,26 +89,45 @@ export async function excluirNfeSerie(id: string) {
 export async function contarNfeSeriesPorEmpresaModelo(
 	idempresa: string,
 	modelo: string,
+	ambiente?: number,
 ) {
+	const where = [
+		eq(nfeserie.idempresa, idempresa),
+		eq(nfeserie.modelo, modelo),
+	];
+	if (ambiente === 1 || ambiente === 2) {
+		where.push(eq(nfeserie.ambiente, ambiente));
+	}
 	const [resultado] = await db
 		.select({ value: count() })
 		.from(nfeserie)
-		.where(and(eq(nfeserie.idempresa, idempresa), eq(nfeserie.modelo, modelo)));
+		.where(and(...where));
 
 	return resultado?.value ?? 0;
 }
 
-export async function desmarcarSeriesPadrao(idempresa: string, modelo: string) {
+export async function desmarcarSeriesPadrao(
+	idempresa: string,
+	modelo: string,
+	ambiente: number,
+) {
 	await db
 		.update(nfeserie)
 		.set({ padrao: false, atualizadoem: new Date().toISOString() })
-		.where(and(eq(nfeserie.idempresa, idempresa), eq(nfeserie.modelo, modelo)));
+		.where(
+			and(
+				eq(nfeserie.idempresa, idempresa),
+				eq(nfeserie.modelo, modelo),
+				eq(nfeserie.ambiente, ambiente),
+			),
+		);
 }
 
 export async function buscarNfeSeriePorNumeroSerie(
 	idempresa: string,
 	modelo: string,
 	serie: string,
+	ambiente: number,
 ) {
 	const [registro] = await db
 		.select()
@@ -104,6 +137,7 @@ export async function buscarNfeSeriePorNumeroSerie(
 				eq(nfeserie.idempresa, idempresa),
 				eq(nfeserie.modelo, modelo),
 				eq(nfeserie.serie, serie),
+				eq(nfeserie.ambiente, ambiente),
 			),
 		)
 		.limit(1);
@@ -142,6 +176,7 @@ export async function avancarNumeroproximoSerieSeNecessario(
 	modelo: string,
 	serie: string,
 	numeroUsado: number,
+	ambiente: number,
 ) {
 	if (!Number.isFinite(numeroUsado) || numeroUsado < 1) {
 		return;
@@ -156,6 +191,7 @@ export async function avancarNumeroproximoSerieSeNecessario(
 					eq(nfeserie.idempresa, idempresa),
 					eq(nfeserie.modelo, modelo),
 					eq(nfeserie.serie, serie),
+					eq(nfeserie.ambiente, ambiente),
 				),
 			)
 			.for("update");
@@ -180,12 +216,14 @@ export async function buscarNfeSerieDuplicada(
 	idempresa: string,
 	modelo: string,
 	serie: string,
+	ambiente: number,
 	excluirId?: string,
 ) {
 	const where = [
 		eq(nfeserie.idempresa, idempresa),
 		eq(nfeserie.modelo, modelo),
 		eq(nfeserie.serie, serie),
+		eq(nfeserie.ambiente, ambiente),
 	];
 
 	const [registro] = await db

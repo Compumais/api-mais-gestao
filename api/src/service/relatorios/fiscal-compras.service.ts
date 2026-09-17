@@ -61,6 +61,7 @@ export async function gerarRelatorioFiscalCompras(
 		exibirProdutos: true,
 		colunas: COLUNAS,
 		resumoLinhas: [
+			"Ambiente: Produção",
 			`Documentos: ${notas.length}`,
 			`Valor total: ${formatCurrency(totais.valor)}`,
 			`ICMS total: ${formatCurrency(totais.icms)}`,

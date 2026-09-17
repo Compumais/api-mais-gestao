@@ -89,8 +89,13 @@ function NfeConfiguracaoFormCampos({
 	});
 
 	useQuery({
-		queryKey: ["nfe-series", idempresa],
-		queryFn: () => nfeConfiguracaoService.listarSeries(idempresa),
+		queryKey: ["nfe-series", idempresa, ambienteSefaz(config.ambiente)],
+		queryFn: () =>
+			nfeConfiguracaoService.listarSeries(
+				idempresa,
+				"55",
+				ambienteSefaz(config.ambiente),
+			),
 	});
 
 	const { data: empresaFiscal } = useQuery({
@@ -476,6 +481,7 @@ function NfeConfiguracaoFormCampos({
 			<NfeSeriesSection
 				idempresa={idempresa}
 				modelo="55"
+				ambiente={ambiente}
 				titulo="Série modelo 55"
 				queryKey="nfe-series"
 			/>

@@ -32,7 +32,10 @@ import type { PagamentoPayloadNfe } from "@/service/nfe-emissao/contexto-emissao
 import { enriquecerItensEmissaoComProduto } from "@/service/nfe-emissao/enriquecer-itens-emissao-produto.js";
 import { arquivarXmlNotaFiscal } from "@/service/nota-fiscal/arquivar-xml-nota-fiscal.js";
 import { integrarNotaFiscalVendaAutorizadaService } from "@/service/nota-fiscal/integrar-nota-fiscal-venda-autorizada.js";
-import { isAmbienteHomologacao } from "@/util/ambiente-sefaz.js";
+import {
+	isAmbienteHomologacao,
+	resolverAmbienteSefaz,
+} from "@/util/ambiente-sefaz.js";
 import { calcularTotaisFiscaisEmissaoNfe } from "@/util/calcular-totais-fiscais-emissao-nfe.js";
 import { camposTributariosItemEmissao } from "@/util/campos-tributarios-item-emissao.js";
 import {
@@ -115,6 +118,7 @@ async function resolverNumeracaoEmissaoNfce(
 					idempresa,
 					"65",
 					notaExistente.serie,
+					resolverAmbienteSefaz(notaExistente.tipoambientenfe),
 				);
 				idserie = serieRegistrada?.id;
 			}
@@ -323,7 +327,12 @@ export async function faturarDavNfceService({
 	}
 
 	const serieParaUsar =
-		seriePadrao ?? (await buscarNfeSeriePadrao(idempresa, "65"));
+		seriePadrao ??
+		(await buscarNfeSeriePadrao(
+			idempresa,
+			"65",
+			resolverAmbienteSefaz(nfceConfiguracao.ambiente),
+		));
 	if (!serieParaUsar) {
 		return httpOk({
 			emitida: false,

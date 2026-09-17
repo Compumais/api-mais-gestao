@@ -43,6 +43,7 @@ type ParametrosBase = {
 export type NfeSerieBody = {
 	modelo?: string;
 	serie: string;
+	ambiente?: 1 | 2;
 	numeroproximo?: number;
 	padrao?: boolean;
 	ativo?: boolean;
@@ -52,7 +53,8 @@ export async function listarNfeSeriesService({
 	idempresa,
 	idusuario,
 	modelo,
-}: ParametrosBase & { modelo?: string }): Promise<
+	ambiente = 1,
+}: ParametrosBase & { modelo?: string; ambiente?: 1 | 2 }): Promise<
 	HttpResponse<{ data: Array<NfeSerie & { ultimonumero: number | null }> }>
 > {
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
@@ -64,7 +66,7 @@ export async function listarNfeSeriesService({
 		return httpProibido();
 	}
 
-	const data = await listarNfeSeriesPorEmpresa(idempresa, modelo);
+	const data = await listarNfeSeriesPorEmpresa(idempresa, modelo, ambiente);
 	const ultimos = await buscarUltimoNumeroPorSeries(
 		data.map((serie) => serie.id),
 	);
@@ -93,10 +95,12 @@ export async function criarNfeSerieService({
 	}
 
 	const modelo = dados.modelo ?? "55";
+	const ambiente = dados.ambiente ?? 1;
 	const duplicado = await buscarNfeSerieDuplicada(
 		idempresa,
 		modelo,
 		dados.serie,
+		ambiente,
 	);
 
 	if (duplicado) {
@@ -107,7 +111,7 @@ export async function criarNfeSerieService({
 	const padrao = dados.padrao ?? false;
 
 	if (padrao) {
-		await desmarcarSeriesPadrao(idempresa, modelo);
+		await desmarcarSeriesPadrao(idempresa, modelo, ambiente);
 	}
 
 	const registro = await criarNfeSerie({
@@ -115,6 +119,7 @@ export async function criarNfeSerieService({
 		idempresa,
 		modelo,
 		serie: dados.serie,
+		ambiente,
 		numeroproximo: dados.numeroproximo ?? 1,
 		padrao,
 		ativo: dados.ativo ?? true,
@@ -156,6 +161,7 @@ export async function atualizarNfeSerieService({
 			idempresa,
 			dados.modelo ?? existente.modelo,
 			dados.serie,
+			dados.ambiente ?? existente.ambiente,
 			id,
 		);
 		if (duplicado) {
@@ -164,7 +170,11 @@ export async function atualizarNfeSerieService({
 	}
 
 	if (dados.padrao) {
-		await desmarcarSeriesPadrao(idempresa, dados.modelo ?? existente.modelo);
+		await desmarcarSeriesPadrao(
+			idempresa,
+			dados.modelo ?? existente.modelo,
+			dados.ambiente ?? existente.ambiente,
+		);
 	}
 
 	const registro = await atualizarNfeSerie(id, {
@@ -241,6 +251,7 @@ export async function excluirNfeSerieService({
 		const restantes = await listarNfeSeriesPorEmpresa(
 			idempresa,
 			existente.modelo,
+			existente.ambiente,
 		);
 		const proximaPadrao =
 			restantes.find((serie) => serie.ativo) ?? restantes[0];

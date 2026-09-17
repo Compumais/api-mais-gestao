@@ -11,6 +11,7 @@ import {
 } from "@/repositories/dominio-envio-repositories.js";
 import { buscarDominioIntegracaoPorEmpresa } from "@/repositories/dominio-integracao-repositories.js";
 import { buscarNotaFiscalPorId } from "@/repositories/nota-fiscal-repositories.js";
+import { permiteIntegracaoOperacionalNota } from "@/util/ambiente-sefaz.js";
 import { descriptografarChaveDominio } from "@/util/mascarar-chave-dominio.js";
 import {
 	obterXmlAutorizadoNotaFiscal,
@@ -70,6 +71,21 @@ async function processarEnvioPendente(
 	);
 	if (!reivindicado) return "ignorado";
 
+	const nota = await buscarNotaFiscalPorId(envio.idnotafiscal);
+	if (
+		!nota ||
+		nota.idempresa !== envio.idempresa ||
+		!permiteIntegracaoOperacionalNota(nota.tipoambientenfe)
+	) {
+		await atualizarDominioEnvio(reivindicado.id, {
+			status: "ignorado",
+			proximatentativa: null,
+			mensagemretorno: "Documento de homologação não é enviado ao Domínio",
+			atualizadoem: agora.toISOString(),
+		});
+		return "ignorado";
+	}
+
 	const integracao = await buscarDominioIntegracaoPorEmpresa(envio.idempresa);
 	if (!integracao?.habilitado) {
 		await marcarErro(reivindicado, "Integração Domínio desabilitada", agora);
@@ -86,7 +102,6 @@ async function processarEnvioPendente(
 		return "erro";
 	}
 
-	const nota = await buscarNotaFiscalPorId(envio.idnotafiscal);
 	const xml = await obterXmlPorTipo(
 		envio.idnotafiscal,
 		envio.tipo as DominioEnvioTipo,

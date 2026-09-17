@@ -26,6 +26,7 @@ import {
 interface NfeSeriesSectionProps {
 	idempresa: string;
 	modelo: "55" | "65";
+	ambiente: 1 | 2;
 	titulo: string;
 	descricao?: string;
 	queryKey: string;
@@ -48,6 +49,7 @@ const formInicial = (): FormSerie => ({
 export function NfeSeriesSection({
 	idempresa,
 	modelo,
+	ambiente,
 	titulo,
 	descricao,
 	queryKey,
@@ -58,12 +60,15 @@ export function NfeSeriesSection({
 	const [serieExcluindo, setSerieExcluindo] = useState<NfeSerie | null>(null);
 
 	const { data: series = [], isLoading } = useQuery({
-		queryKey: [queryKey, idempresa],
-		queryFn: () => nfeConfiguracaoService.listarSeries(idempresa, modelo),
+		queryKey: [queryKey, idempresa, ambiente],
+		queryFn: () =>
+			nfeConfiguracaoService.listarSeries(idempresa, modelo, ambiente),
 	});
 
 	const invalidarSeries = () => {
-		queryClient.invalidateQueries({ queryKey: [queryKey, idempresa] });
+		queryClient.invalidateQueries({
+			queryKey: [queryKey, idempresa, ambiente],
+		});
 	};
 
 	const criarMutation = useMutation({
@@ -77,6 +82,7 @@ export function NfeSeriesSection({
 			return nfeConfiguracaoService.criarSerie({
 				idempresa,
 				modelo,
+				ambiente,
 				serie,
 				numeroproximo: novaSerie.numeroproximo,
 				padrao: novaSerie.padrao,
@@ -148,6 +154,9 @@ export function NfeSeriesSection({
 	return (
 		<div className="rounded-lg border bg-card p-6">
 			<h2 className="mb-1 text-lg font-semibold">{titulo}</h2>
+			<Badge variant="outline" className="mb-3">
+				{ambiente === 1 ? "Produção" : "Homologação"}
+			</Badge>
 			{descricao ? (
 				<p className="mb-4 text-sm text-muted-foreground">{descricao}</p>
 			) : (
@@ -188,10 +197,7 @@ export function NfeSeriesSection({
 								setNovaSerie((s) => ({ ...s, padrao: checked === true }))
 							}
 						/>
-						<label
-							htmlFor={`serie-padrao-nova-${modelo}`}
-							className="text-sm"
-						>
+						<label htmlFor={`serie-padrao-nova-${modelo}`} className="text-sm">
 							Série padrão
 						</label>
 					</div>
@@ -217,10 +223,7 @@ export function NfeSeriesSection({
 						const editando = serieEditando?.id === serie.id;
 
 						return (
-							<li
-								key={serie.id}
-								className="rounded border p-3"
-							>
+							<li key={serie.id} className="rounded border p-3">
 								{editando ? (
 									<div className="grid gap-3 md:grid-cols-4">
 										<Field>
@@ -260,9 +263,7 @@ export function NfeSeriesSection({
 													checked={serieEditando.padrao}
 													onCheckedChange={(checked) =>
 														setSerieEditando((s) =>
-															s
-																? { ...s, padrao: checked === true }
-																: s,
+															s ? { ...s, padrao: checked === true } : s,
 														)
 													}
 												/>
@@ -371,8 +372,8 @@ export function NfeSeriesSection({
 					<AlertDialogHeader>
 						<AlertDialogTitle>Excluir série?</AlertDialogTitle>
 						<AlertDialogDescription>
-							A série {serieExcluindo?.serie} será removida permanentemente.
-							Não é possível excluir séries que já tenham notas fiscais emitidas.
+							A série {serieExcluindo?.serie} será removida permanentemente. Não
+							é possível excluir séries que já tenham notas fiscais emitidas.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>

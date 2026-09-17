@@ -7,6 +7,8 @@ import {
 	criarDominioEnvio,
 } from "@/repositories/dominio-envio-repositories.js";
 import { buscarDominioIntegracaoPorEmpresa } from "@/repositories/dominio-integracao-repositories.js";
+import { buscarNotaFiscalPorId } from "@/repositories/nota-fiscal-repositories.js";
+import { permiteIntegracaoOperacionalNota } from "@/util/ambiente-sefaz.js";
 import { httpOk } from "@/util/http-util.js";
 
 type EnfileirarEnvioDominioParametros = {
@@ -30,6 +32,15 @@ export async function enfileirarEnvioDominioService({
 }: EnfileirarEnvioDominioParametros): Promise<
 	HttpResponse<DominioEnvio | null>
 > {
+	const nota = await buscarNotaFiscalPorId(idnotafiscal);
+	if (
+		!nota ||
+		nota.idempresa !== idempresa ||
+		!permiteIntegracaoOperacionalNota(nota.tipoambientenfe)
+	) {
+		return httpOk(null);
+	}
+
 	const integracao = await buscarDominioIntegracaoPorEmpresa(idempresa);
 	if (!integracao?.habilitado || !integracao.integrationkey) {
 		return httpOk(null);

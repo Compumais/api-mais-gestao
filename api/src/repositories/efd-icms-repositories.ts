@@ -1,4 +1,4 @@
-import { and, eq, gte, inArray, isNull, lte, ne, or, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, lte, ne, or, sql } from "drizzle-orm";
 import {
 	cfop,
 	empresa,
@@ -20,7 +20,7 @@ import type {
 	ParticipanteEfd,
 	ProdutoEfd,
 } from "@/service/efd-icms/tipos-efd-icms.js";
-import { AMBIENTE_SEFAZ } from "@/util/ambiente-sefaz.js";
+import { condicaoAmbienteFiscalProducao } from "@/util/ambiente-sefaz.js";
 import { obterDataCompetenciaNotaFiscal } from "@/util/data-competencia-nota-fiscal.js";
 import { NFE_STATUS, statusEhCancelada } from "@/util/nfe-status.js";
 import { STATUS_NF_CONFIRMADA } from "@/util/nota-fiscal-constants.js";
@@ -196,10 +196,7 @@ export async function listarNotasEfd({
 				gte(dataCompetenciaSql, dataInicio),
 				lte(dataCompetenciaSql, dataFim),
 				ne(notafiscal.status, STATUS_RASCUNHO_IMPORTACAO),
-				or(
-					isNull(notafiscal.tipoambientenfe),
-					ne(notafiscal.tipoambientenfe, AMBIENTE_SEFAZ.HOMOLOGACAO),
-				),
+				condicaoAmbienteFiscalProducao(notafiscal.tipoambientenfe),
 				or(
 					and(
 						eq(notafiscal.tipoorigem, 0),

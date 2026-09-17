@@ -251,6 +251,7 @@ CREATE TABLE IF NOT EXISTS nfce_local (
 	idvenda TEXT NOT NULL,
 	serie INTEGER NOT NULL,
 	numero INTEGER NOT NULL,
+	ambiente INTEGER NOT NULL DEFAULT 2 CHECK (ambiente IN (1, 2)),
 	chave TEXT,
 	tpemis INTEGER NOT NULL DEFAULT 1,
 	status TEXT NOT NULL DEFAULT 'pendente',
@@ -264,14 +265,14 @@ CREATE TABLE IF NOT EXISTS nfce_local (
 );
 
 CREATE TABLE IF NOT EXISTS numeracao_nfce (
-	id INTEGER PRIMARY KEY CHECK (id = 1),
+	id INTEGER PRIMARY KEY CHECK (id IN (1, 2)),
 	serie INTEGER NOT NULL DEFAULT 1,
 	proximo_numero INTEGER NOT NULL DEFAULT 1,
 	csc_id TEXT,
 	csc_token TEXT,
 	cnpj TEXT,
 	uf TEXT,
-	ambiente INTEGER NOT NULL DEFAULT 2,
+	ambiente INTEGER NOT NULL CHECK (ambiente IN (1, 2) AND ambiente = id),
 	atualizadoem TEXT NOT NULL
 );
 

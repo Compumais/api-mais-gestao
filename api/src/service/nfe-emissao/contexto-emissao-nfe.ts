@@ -3,6 +3,7 @@ import { buscarEmpresaFiscalPorEmpresa } from "@/repositories/empresa-fiscal-rep
 import { buscarEmpresaPorId } from "@/repositories/empresa-repositories.js";
 import { buscarNfeConfiguracaoPorEmpresa } from "@/repositories/nfe-configuracao-repositories.js";
 import { buscarNfeSeriePadrao } from "@/repositories/nfe-serie-repositories.js";
+import { resolverAmbienteSefaz } from "@/util/ambiente-sefaz.js";
 import { agoraBrasiliaIsoOffset } from "@/util/data-hora-brasilia.js";
 import {
 	descriptografarCredenciaisCertificado,
@@ -146,7 +147,11 @@ export async function carregarContextoEmissaoNfe(idempresa: string) {
 	const empresaFiscal = await buscarEmpresaFiscalPorEmpresa(idempresa);
 	const nfeConfiguracao = await buscarNfeConfiguracaoPorEmpresa(idempresa);
 	const certificadoAtivo = await buscarCertificadoAtivoPorEmpresa(idempresa);
-	const seriePadrao = await buscarNfeSeriePadrao(idempresa, "55");
+	const seriePadrao = await buscarNfeSeriePadrao(
+		idempresa,
+		"55",
+		resolverAmbienteSefaz(nfeConfiguracao?.ambiente),
+	);
 
 	const pendencias = validarPreRequisitosEmissaoNfe({
 		empresa: empresa!,

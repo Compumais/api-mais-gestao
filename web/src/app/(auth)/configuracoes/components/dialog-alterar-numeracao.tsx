@@ -24,6 +24,7 @@ import {
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { nfceConfiguracaoService } from "@/services/nfce-configuracao.service";
 import { nfeConfiguracaoService } from "@/services/nfe-configuracao.service";
 import { terminalPdvService } from "@/services/terminal-pdv.service";
 
@@ -79,10 +80,30 @@ export function DialogAlterarNumeracao({
 		}
 	}, [aberto, abaInicial]);
 
-	const seriesQuery = useQuery({
-		queryKey: ["nfe-series", idempresa, "55"],
-		queryFn: () => nfeConfiguracaoService.listarSeries(idempresa, "55"),
+	const nfeConfigQuery = useQuery({
+		queryKey: ["nfe-configuracao", idempresa],
+		queryFn: () => nfeConfiguracaoService.buscar(idempresa),
 		enabled: aberto,
+	});
+	const nfceConfigQuery = useQuery({
+		queryKey: ["nfce-configuracao", idempresa],
+		queryFn: () => nfceConfiguracaoService.buscar(idempresa),
+		enabled: aberto,
+	});
+	const ambienteNfe = nfeConfigQuery.data?.ambiente === 1 ? 1 : 2;
+	const ambienteNfce = nfceConfigQuery.data?.ambiente === 1 ? 1 : 2;
+
+	const seriesQuery = useQuery({
+		queryKey: ["nfe-series", idempresa, "55", ambienteNfe],
+		queryFn: () =>
+			nfeConfiguracaoService.listarSeries(idempresa, "55", ambienteNfe),
+		enabled: aberto && Boolean(nfeConfigQuery.data),
+	});
+	const seriesNfceQuery = useQuery({
+		queryKey: ["nfce-series", idempresa, ambienteNfce],
+		queryFn: () =>
+			nfeConfiguracaoService.listarSeries(idempresa, "65", ambienteNfce),
+		enabled: aberto && Boolean(nfceConfigQuery.data),
 	});
 
 	const terminaisQuery = useQuery({
@@ -92,6 +113,7 @@ export function DialogAlterarNumeracao({
 	});
 
 	const series = seriesQuery.data ?? [];
+	const seriesNfce = seriesNfceQuery.data ?? [];
 	const terminais = terminaisQuery.data ?? [];
 
 	useEffect(() => {
@@ -101,10 +123,15 @@ export function DialogAlterarNumeracao({
 			proximo[serie.id] = String(serie.numeroproximo);
 		}
 		for (const terminal of terminais) {
-			proximo[terminal.idnfeserie] = String(terminal.numeroproximo);
+			const serieAmbiente = seriesNfce.find(
+				(serie) => serie.serie === terminal.serie,
+			);
+			if (serieAmbiente) {
+				proximo[serieAmbiente.id] = String(serieAmbiente.numeroproximo);
+			}
 		}
 		setValores(proximo);
-	}, [aberto, series, terminais]);
+	}, [aberto, series, seriesNfce, terminais]);
 
 	const salvarMutation = useMutation({
 		mutationFn: (params: { idserie: string; numeroproximo: number }) =>
@@ -137,7 +164,12 @@ export function DialogAlterarNumeracao({
 		salvarMutation.mutate({ idserie, numeroproximo });
 	}
 
-	const carregando = seriesQuery.isLoading || terminaisQuery.isLoading;
+	const carregando =
+		seriesQuery.isLoading ||
+		seriesNfceQuery.isLoading ||
+		terminaisQuery.isLoading ||
+		nfeConfigQuery.isLoading ||
+		nfceConfigQuery.isLoading;
 
 	return (
 		<>
@@ -193,29 +225,38 @@ export function DialogAlterarNumeracao({
 									Nenhum PDV cadastrado. Cadastre em Configurações → NFC-e.
 								</p>
 							) : (
-								terminais.map((terminal) => (
-									<LinhaNumeracao
-										key={terminal.id}
-										titulo={`PDV ${terminal.numeropdv}${
-											terminal.descricao ? ` — ${terminal.descricao}` : ""
-										} · série ${terminal.serie}`}
-										ultimo={ultimoNumero(terminal)}
-										valor={
-											valores[terminal.idnfeserie] ??
-											String(terminal.numeroproximo)
-										}
-										onChange={(valor) =>
-											setValores((prev) => ({
-												...prev,
-												[terminal.idnfeserie]: valor,
-											}))
-										}
-										salvando={salvarMutation.isPending}
-										onSalvar={() =>
-											tentarSalvar(terminal.idnfeserie, ultimoNumero(terminal))
-										}
-									/>
-								))
+								terminais.map((terminal) => {
+									const serieAmbiente = seriesNfce.find(
+										(serie) => serie.serie === terminal.serie,
+									);
+									if (!serieAmbiente) return null;
+									return (
+										<LinhaNumeracao
+											key={terminal.id}
+											titulo={`PDV ${terminal.numeropdv}${
+												terminal.descricao ? ` — ${terminal.descricao}` : ""
+											} · série ${terminal.serie}`}
+											ultimo={ultimoNumero(serieAmbiente)}
+											valor={
+												valores[serieAmbiente.id] ??
+												String(serieAmbiente.numeroproximo)
+											}
+											onChange={(valor) =>
+												setValores((prev) => ({
+													...prev,
+													[serieAmbiente.id]: valor,
+												}))
+											}
+											salvando={salvarMutation.isPending}
+											onSalvar={() =>
+												tentarSalvar(
+													serieAmbiente.id,
+													ultimoNumero(serieAmbiente),
+												)
+											}
+										/>
+									);
+								})
 							)}
 						</TabsContent>
 					</Tabs>

@@ -4,19 +4,19 @@ import { atualizarNfeSerieService } from "@/service/nfe-serie/nfe-serie.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
 const criarBodySchema = z.object({
-    idempresa: z.string().uuid(),
-    modelo: z.string().max(2).optional(),
-    serie: z.string().min(1).max(3),
-    numeroproximo: z.number().int().min(1).optional(),
-    padrao: z.boolean().optional(),
-    ativo: z.boolean().optional(),
+	idempresa: z.string().uuid(),
+	modelo: z.string().max(2).optional(),
+	serie: z.string().min(1).max(3),
+	ambiente: z.number().int().min(1).max(2).optional(),
+	numeroproximo: z.number().int().min(1).optional(),
+	padrao: z.boolean().optional(),
+	ativo: z.boolean().optional(),
 });
 
 const atualizarBodySchema = criarBodySchema
 	.omit({ idempresa: true })
 	.partial()
-	.extend({ idempresa: z.string().uuid()
-});
+	.extend({ idempresa: z.string().uuid() });
 
 export async function atualizarNfeSerie(
 	request: FastifyRequest,
@@ -35,7 +35,9 @@ export async function atualizarNfeSerie(
 			id,
 			idempresa,
 			idusuario: request.user.id,
-			dados: resto as Partial<Parameters<typeof atualizarNfeSerieService>[0]["dados"]>,
+			dados: resto as Partial<
+				Parameters<typeof atualizarNfeSerieService>[0]["dados"]
+			>,
 		});
 
 		if (!resultado.success) {

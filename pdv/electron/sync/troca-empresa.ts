@@ -25,6 +25,7 @@ const CHAVES_CONFIG_EMPRESA: Array<[string, string]> = [
 	["certificado_validade", ""],
 	["fiscal_ultima_sync", ""],
 	["fiscal_sync_erro", ""],
+	["fiscal_ambiente_ativo", "2"],
 	["emitente_danfce_json", ""],
 	["terminais_pdv_json", "[]"],
 	["senha_gerencial_hash", ""],
@@ -160,9 +161,9 @@ async function limparDadosOperacionais(): Promise<void> {
 				csc_token = NULL,
 				cnpj = NULL,
 				uf = NULL,
-				ambiente = 2,
+				ambiente = id,
 				atualizadoem = $1
-			 WHERE id = 1`,
+			 WHERE id IN (1, 2)`,
 			[new Date().toISOString()],
 			client,
 		);

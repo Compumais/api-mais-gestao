@@ -31,6 +31,7 @@ import { transmitirNfceContingenciaService } from "@/service/nfce-emissao/transm
 import { aplicarCreditoIcmsSnItensEmissao } from "@/service/nfe-emissao/aplicar-credito-icms-sn-itens.js";
 import { enriquecerItensEmissaoComProduto } from "@/service/nfe-emissao/enriquecer-itens-emissao-produto.js";
 import { arquivarXmlNotaFiscal } from "@/service/nota-fiscal/arquivar-xml-nota-fiscal.js";
+import { resolverAmbienteSefaz } from "@/util/ambiente-sefaz.js";
 import { calcularTotaisFiscaisEmissaoNfe } from "@/util/calcular-totais-fiscais-emissao-nfe.js";
 import { camposTributariosItemEmissao } from "@/util/campos-tributarios-item-emissao.js";
 import { montarDadosImportacaoItemEmissaoNfe } from "@/util/dados-emissao-nfe-nota.js";
@@ -222,6 +223,7 @@ async function resolverNumeracaoEmissaoNfce(
 					idempresa,
 					"65",
 					notaExistente.serie,
+					resolverAmbienteSefaz(notaExistente.tipoambientenfe),
 				);
 				idserie = serieRegistrada?.id;
 			}
@@ -363,9 +365,7 @@ export async function emitirNfceVendaPdvService({
 				cStat: contingencia.body?.cStat,
 				xMotivo: contingencia.body?.motivo,
 				protocolo: contingencia.body?.protocolo,
-				xml:
-					contingencia.body?.xmlAutorizado ??
-					contingencia.body?.xmlAssinado,
+				xml: contingencia.body?.xmlAutorizado ?? contingencia.body?.xmlAssinado,
 				serie: notaExistente.serie ?? undefined,
 				numero,
 			});
@@ -438,8 +438,16 @@ export async function emitirNfceVendaPdvService({
 		});
 	}
 
-	const serieParaUsar = await buscarNfeSeriePorId(terminal.idnfeserie);
-	if (!serieParaUsar || serieParaUsar.modelo !== "65" || !serieParaUsar.ativo) {
+	const serieVinculada = await buscarNfeSeriePorId(terminal.idnfeserie);
+	const serieParaUsar = serieVinculada
+		? await buscarNfeSeriePorNumeroSerie(
+				idempresa,
+				"65",
+				serieVinculada.serie,
+				resolverAmbienteSefaz(nfceConfiguracao.ambiente),
+			)
+		: undefined;
+	if (!serieParaUsar?.ativo) {
 		return httpOk({
 			emitida: false,
 			pendencias: [

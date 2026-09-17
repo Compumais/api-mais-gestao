@@ -300,9 +300,14 @@ export default function NovaEmissaoNfePage() {
 	});
 
 	const { data: seriesData } = useQuery({
-		queryKey: ["nfe-series", empresa?.id],
-		queryFn: () => nfeConfiguracaoService.listarSeries(empresa?.id ?? "", "55"),
-		enabled: !!empresa,
+		queryKey: ["nfe-series", empresa?.id, nfeConfiguracao?.ambiente],
+		queryFn: () =>
+			nfeConfiguracaoService.listarSeries(
+				empresa?.id ?? "",
+				"55",
+				nfeConfiguracao?.ambiente === 1 ? 1 : 2,
+			),
+		enabled: Boolean(empresa && nfeConfiguracao),
 	});
 
 	const { data: dadosOrigemNota, isLoading: carregandoOrigemNota } = useQuery({

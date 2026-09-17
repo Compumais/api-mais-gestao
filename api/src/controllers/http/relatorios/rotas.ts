@@ -346,6 +346,10 @@ export async function relatoriosRotas(app: FastifyInstance) {
 			body: relatorioBodySchema,
 			response: relatorioResponseSchema,
 		},
+		preHandler: [
+			resolveEmpresaContext,
+			requireFeature(FEATURES_SAAS.NOTAS_FISCAIS),
+		],
 		handler: gerarRelatorioFiscalComprasController,
 	});
 
@@ -358,6 +362,10 @@ export async function relatoriosRotas(app: FastifyInstance) {
 			body: relatorioBodySchema,
 			response: relatorioResponseSchema,
 		},
+		preHandler: [
+			resolveEmpresaContext,
+			requireFeature(FEATURES_SAAS.NOTAS_FISCAIS),
+		],
 		handler: gerarRelatorioFiscalVendasController,
 	});
 
@@ -370,6 +378,10 @@ export async function relatoriosRotas(app: FastifyInstance) {
 			body: relatorioBodySchema,
 			response: relatorioResponseSchema,
 		},
+		preHandler: [
+			resolveEmpresaContext,
+			requireFeature(FEATURES_SAAS.NOTAS_FISCAIS),
+		],
 		handler: gerarRelatorioFiscalContabilidadeController,
 	});
 }
