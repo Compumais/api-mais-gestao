@@ -21,9 +21,7 @@ export const pedidoCompraFormSchema = z.object({
 	comoCotacao: z.boolean(),
 	tituloCotacao: z.string().max(120).optional().nullable(),
 	validade: z.string().optional().nullable(),
-	itens: z
-		.array(pedidoCompraItemSchema)
-		.min(1, "Inclua ao menos um produto"),
+	itens: z.array(pedidoCompraItemSchema).min(1, "Inclua ao menos um produto"),
 });
 
 export type PedidoCompraFormData = z.infer<typeof pedidoCompraFormSchema>;

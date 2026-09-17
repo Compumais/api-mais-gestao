@@ -101,7 +101,10 @@ export async function criarPedidoCompraService({
 	}> = [];
 
 	for (let i = 0; i < itens.length; i++) {
-		const item = itens[i]!;
+		const item = itens[i];
+		if (!item) {
+			return httpBadRequest(`Item ${i + 1} inválido`);
+		}
 		if (ids.has(item.idproduto)) {
 			return httpBadRequest("Produto duplicado no pedido");
 		}
@@ -109,7 +112,9 @@ export async function criarPedidoCompraService({
 
 		const produto = await buscarProdutoPorId(item.idproduto);
 		if (!produto || produto.idempresa !== idempresa) {
-			return httpBadRequest(`Produto não encontrado na empresa (item ${i + 1})`);
+			return httpBadRequest(
+				`Produto não encontrado na empresa (item ${i + 1})`,
+			);
 		}
 
 		const quantidade = Number.parseFloat(normalizarDecimal(item.quantidade));

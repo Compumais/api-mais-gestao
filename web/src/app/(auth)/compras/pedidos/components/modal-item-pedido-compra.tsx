@@ -91,7 +91,9 @@ export function ModalItemPedidoCompra({
 			setBusca(itemParaEditar.nomeproduto || itemParaEditar.descricao || "");
 			setQuantidade(itemParaEditar.quantidade);
 			setPrecounitario(itemParaEditar.precounitario);
-			setNomeproduto(itemParaEditar.nomeproduto || itemParaEditar.descricao || "");
+			setNomeproduto(
+				itemParaEditar.nomeproduto || itemParaEditar.descricao || "",
+			);
 			setCodigoproduto(itemParaEditar.codigoproduto ?? null);
 			return;
 		}
@@ -127,8 +129,9 @@ export function ModalItemPedidoCompra({
 		qtd > 0 &&
 		Number.isFinite(preco) &&
 		preco >= 0;
-	const totalItem =
-		podeConfirmar ? (Math.round(qtd * preco * 100) / 100).toFixed(2) : "0.00";
+	const totalItem = podeConfirmar
+		? (Math.round(qtd * preco * 100) / 100).toFixed(2)
+		: "0.00";
 
 	function handleConfirmar() {
 		if (!podeConfirmar) return;
@@ -216,7 +219,9 @@ export function ModalItemPedidoCompra({
 							/>
 						</Field>
 						<Field>
-							<FieldLabel htmlFor="preco-pedido-compra">Preço unitário</FieldLabel>
+							<FieldLabel htmlFor="preco-pedido-compra">
+								Preço unitário
+							</FieldLabel>
 							<MoneyInput
 								id="preco-pedido-compra"
 								value={precounitario}

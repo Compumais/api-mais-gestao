@@ -47,24 +47,24 @@ const cabecalho = {
 describe("criarPedidoCompraService", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		vi.mocked(entidadeRepository.verificarUsuarioPertenceEmpresa).mockResolvedValue(
-			true,
-		);
+		vi.mocked(
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(true);
 		vi.mocked(entidadeRepository.buscarEntidadePorId).mockResolvedValue(
 			fornecedor,
 		);
 		vi.mocked(produtoRepository.buscarProdutoPorId).mockResolvedValue(
 			produto as never,
 		);
-		vi.mocked(pedidoRepository.buscarProximoCodigoPedidoCompra).mockResolvedValue(
-			1,
-		);
+		vi.mocked(
+			pedidoRepository.buscarProximoCodigoPedidoCompra,
+		).mockResolvedValue(1);
 		vi.mocked(pedidoRepository.criarPedidosCompraEmLote).mockResolvedValue([
 			{ cabecalho, itens: [] },
 		]);
-		vi.mocked(pedidoRepository.listarItensPedidoCompraEnriquecidos).mockResolvedValue(
-			[],
-		);
+		vi.mocked(
+			pedidoRepository.listarItensPedidoCompraEnriquecidos,
+		).mockResolvedValue([]);
 		vi.mocked(auditoriaService.criarAuditoriaService).mockResolvedValue({
 			success: true,
 			status: 201,

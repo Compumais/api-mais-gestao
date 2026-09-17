@@ -23,27 +23,29 @@ const pedido = {
 describe("converterPedidoCompraCotacaoService", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		vi.mocked(pedidoRepository.buscarPedidoCompraPorId).mockResolvedValue(pedido);
-		vi.mocked(entidadeRepository.verificarUsuarioPertenceEmpresa).mockResolvedValue(
-			true,
+		vi.mocked(pedidoRepository.buscarPedidoCompraPorId).mockResolvedValue(
+			pedido,
 		);
-		vi.mocked(pedidoRepository.listarItensPedidoCompraEnriquecidos).mockResolvedValue(
-			[
-				{
-					id: "item-1",
-					idpedidocompra: pedido.id,
-					idproduto: "cccccccc-cccc-cccc-cccc-cccccccccccc",
-					descricao: "Farinha",
-					quantidade: "2.000000",
-					precounitario: "10.00",
-					total: "20.00",
-					idcotacaoitem: null,
-					codigoproduto: 1,
-					nomeproduto: "Farinha",
-					descricaoproduto: "Farinha",
-				},
-			],
-		);
+		vi.mocked(
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(true);
+		vi.mocked(
+			pedidoRepository.listarItensPedidoCompraEnriquecidos,
+		).mockResolvedValue([
+			{
+				id: "item-1",
+				idpedidocompra: pedido.id,
+				idproduto: "cccccccc-cccc-cccc-cccc-cccccccccccc",
+				descricao: "Farinha",
+				quantidade: "2.000000",
+				precounitario: "10.00",
+				total: "20.00",
+				idcotacaoitem: null,
+				codigoproduto: 1,
+				nomeproduto: "Farinha",
+				descricaoproduto: "Farinha",
+			},
+		]);
 		vi.mocked(cotacaoService.criarCotacaoCompraService).mockResolvedValue({
 			success: true,
 			status: 201,
