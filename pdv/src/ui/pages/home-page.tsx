@@ -1,6 +1,7 @@
 import { Circle, Clock3, UtensilsCrossed } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
+import type { LeituraComandaNormalizada } from "@/lib/comanda-scanner";
 import { marcarBootPendente } from "@/lib/boot-state";
 import { pdvInvoke } from "@/lib/pdv-api";
 import {
@@ -25,6 +26,7 @@ import { Badge } from "@/ui/components/ui/badge";
 import { Button } from "@/ui/components/ui/button";
 import { Input } from "@/ui/components/ui/input";
 import { useEscapeFechaModal } from "@/ui/hooks/use-escape-fecha-modal";
+import { useLeitorComanda } from "@/ui/hooks/use-leitor-comanda";
 import { useTeclasFuncao } from "@/ui/hooks/use-teclas-funcao";
 import { BalcaoPage } from "@/ui/pages/balcao-page";
 
@@ -93,6 +95,15 @@ export function HomePage() {
 
 	const rotulo = rotuloModelo(status?.modeloAtendimento);
 	const bloqueado = secundarioDesconectado(status);
+
+	useLeitorComanda({
+		ativo:
+			status?.modeloAtendimento === "comanda" &&
+			!bloqueado &&
+			!loading &&
+			dialogo === null,
+		onLeitura: abrirComandaLida,
+	});
 
 	async function carregarMesas() {
 		setMesas(await pdvInvoke<MesaResumo[]>("listarMesas"));
@@ -211,6 +222,33 @@ export function HomePage() {
 				err instanceof Error
 					? err.message
 					: `Erro ao abrir ${rotulo.singular.toLowerCase()}`,
+			);
+		} finally {
+			setLoading(false);
+		}
+	}
+
+	async function abrirComandaLida(leitura: LeituraComandaNormalizada) {
+		const numero = Number(leitura.codigoConsulta);
+		if (!Number.isSafeInteger(numero) || numero < 1) {
+			setMsg(
+				`Código de comanda inválido: "${leitura.codigoOriginal}". Tente realizar a leitura novamente.`,
+			);
+			return;
+		}
+
+		setLoading(true);
+		setMsg("");
+		try {
+			// Somente o código sem DV consulta a mesa. O original permanece intacto
+			// em `leitura.codigoOriginal` e não é substituído no fluxo da catraca.
+			const mesa = await pdvInvoke<MesaConsulta>("obterMesa", numero);
+			solicitarAbertura(mesa);
+		} catch (err) {
+			const detalhe =
+				err instanceof Error ? err.message : "Comanda não encontrada";
+			setMsg(
+				`Não foi possível abrir a comanda lida "${leitura.codigoOriginal}" (consulta ${leitura.codigoConsulta}). ${detalhe}`,
 			);
 		} finally {
 			setLoading(false);
