@@ -121,6 +121,7 @@ export async function listarPedidosCompra({
 				codigo: schema.pedidocompra.codigo,
 				idcotacao: schema.pedidocompra.idcotacao,
 				idproposta: schema.pedidocompra.idproposta,
+				identidade: schema.pedidocompra.identidade,
 				fornecedornome: schema.pedidocompra.fornecedornome,
 				fornecedortelefone: schema.pedidocompra.fornecedortelefone,
 				valortotal: schema.pedidocompra.valortotal,

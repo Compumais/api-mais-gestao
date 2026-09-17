@@ -715,6 +715,13 @@
       "when": 1788994200000,
       "tag": "0099_cotacao_item_nao_cadastrado",
       "breakpoints": true
+    },
+    {
+      "idx": 101,
+      "version": "7",
+      "when": 1788995200000,
+      "tag": "0100_pedido_compra_identidade",
+      "breakpoints": true
     }
   ]
 }

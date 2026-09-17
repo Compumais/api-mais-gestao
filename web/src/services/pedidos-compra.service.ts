@@ -20,6 +20,7 @@ export interface PedidoCompra {
 	codigo: number;
 	idcotacao: string | null;
 	idproposta: string | null;
+	identidade?: string | null;
 	fornecedornome: string;
 	fornecedortelefone: string;
 	valortotal: string;
@@ -58,6 +59,35 @@ export const pedidosCompraService = {
 
 	async buscar(id: string): Promise<PedidoCompra> {
 		const { data } = await api.get<PedidoCompra>(`/pedidos-compra/${id}`);
+		return data;
+	},
+
+	async criar(dados: {
+		idempresa: string;
+		identidade: string;
+		fornecedortelefone?: string | null;
+		observacao?: string | null;
+		comoCotacao?: boolean;
+		tituloCotacao?: string | null;
+		validade?: string | null;
+		itens: Array<{
+			idproduto: string;
+			quantidade: string;
+			precounitario: string;
+		}>;
+	}): Promise<PedidoCompra> {
+		const { data } = await api.post<PedidoCompra>("/pedidos-compra", dados);
+		return data;
+	},
+
+	async converterCotacao(
+		id: string,
+		dados?: { titulo?: string | null; validade?: string | null },
+	): Promise<PedidoCompra> {
+		const { data } = await api.post<PedidoCompra>(
+			`/pedidos-compra/${id}/converter-cotacao`,
+			dados ?? {},
+		);
 		return data;
 	},
 
