@@ -142,7 +142,7 @@ export function AppTopbar() {
 	return (
 		<NavFixadosProvider userId={user?.id}>
 			<div ref={navRef} className="relative">
-				<header className="sticky top-0 z-40 shrink-0 bg-primary text-primary-foreground shadow-sm">
+				<header className="shrink-0 bg-primary text-primary-foreground shadow-sm">
 					<div className="flex h-14 items-center gap-2 px-3 sm:px-4">
 						<Button
 							variant="ghost"
