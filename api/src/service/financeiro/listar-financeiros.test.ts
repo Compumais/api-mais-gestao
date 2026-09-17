@@ -409,6 +409,31 @@ describe("listarFinanceirosService", () => {
 		}
 	});
 
+	it("deve encaminhar filtro de identidade e tipo receber", async () => {
+		vi.mocked(entidadeRepository.buscarEmpresasDoUsuario).mockResolvedValue([
+			"empresa-123",
+		]);
+		vi.mocked(financeiroRepository.listarFinanceiro).mockResolvedValue({
+			financeiros: [financeirosMock[0]!],
+			total: 1,
+		});
+
+		const resultado = await listarFinanceirosService({
+			idusuario: "usuario-123",
+			identidade: "cliente-123",
+			tipo: "R",
+		});
+
+		expect(resultado.success).toBe(true);
+		expect(financeiroRepository.listarFinanceiro).toHaveBeenCalledWith(
+			expect.objectContaining({
+				idempresas: ["empresa-123"],
+				identidade: "cliente-123",
+				tipo: "R",
+			}),
+		);
+	});
+
 	it("deve retornar estrutura de resposta correta com data e paginacao", async () => {
 		vi.mocked(entidadeRepository.buscarEmpresasDoUsuario).mockResolvedValue([
 			"empresa-123",

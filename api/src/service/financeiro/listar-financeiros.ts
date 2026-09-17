@@ -20,6 +20,7 @@ type ListarFinanceirosParametros = {
 	vencimentoFim?: string | null | undefined;
 	status?: string | null | undefined;
 	tipo?: "P" | "R" | null | undefined;
+	identidade?: string | null | undefined;
 	idtipocobranca?: string | null | undefined;
 	ordenarPor?: OrdenarFinanceirosCampo | undefined;
 	ordem?: "asc" | "desc" | undefined;
@@ -54,6 +55,7 @@ export async function listarFinanceirosService({
 	vencimentoFim,
 	status,
 	tipo,
+	identidade,
 	idtipocobranca,
 	ordenarPor,
 	ordem,
@@ -89,6 +91,7 @@ export async function listarFinanceirosService({
 		vencimentoFim,
 		status,
 		tipo,
+		identidade,
 		idtipocobranca,
 		ordenarPor,
 		ordem,
