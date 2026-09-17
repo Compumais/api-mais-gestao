@@ -224,9 +224,7 @@ export function PedidoCompraForm() {
 								</SelectTrigger>
 								<SelectContent>
 									<SelectItem value="pedido">Pedido de compra</SelectItem>
-									<SelectItem value="cotacao">
-										Cotação / orçamento
-									</SelectItem>
+									<SelectItem value="cotacao">Cotação / orçamento</SelectItem>
 								</SelectContent>
 							</Select>
 							<p className="text-xs text-muted-foreground">

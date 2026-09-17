@@ -46,12 +46,14 @@ export default function PedidosCompraPage() {
 
 	const { data, isLoading } = useQuery({
 		queryKey: ["pedidos-compra", empresa?.id, pagination.pageIndex],
-		queryFn: () =>
-			pedidosCompraService.listar({
-				idempresa: empresa!.id,
+		queryFn: () => {
+			if (!empresa) throw new Error("Empresa não selecionada");
+			return pedidosCompraService.listar({
+				idempresa: empresa.id,
 				page: pagination.pageIndex + 1,
 				limit: pagination.pageSize,
-			}),
+			});
+		},
 		enabled: !!empresa,
 	});
 
@@ -184,7 +186,10 @@ export default function PedidosCompraPage() {
 									))
 								) : (
 									<TableRow>
-										<TableCell colSpan={columns.length} className="h-24 text-center">
+										<TableCell
+											colSpan={columns.length}
+											className="h-24 text-center"
+										>
 											Nenhum pedido de compra.
 										</TableCell>
 									</TableRow>

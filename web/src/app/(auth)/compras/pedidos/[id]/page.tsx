@@ -82,7 +82,9 @@ export default function DetalhePedidoCompraPage() {
 		<PageContainer>
 			<div className="print-pedido flex flex-col gap-4 py-4 md:py-6">
 				<div className="flex flex-wrap items-center justify-between gap-2 px-4 print:hidden">
-					<h1 className="text-2xl font-bold">Pedido de compra #{data.codigo}</h1>
+					<h1 className="text-2xl font-bold">
+						Pedido de compra #{data.codigo}
+					</h1>
 					<div className="flex gap-2">
 						<Button variant="outline" onClick={() => window.print()}>
 							<IconPrinter className="size-4" />
