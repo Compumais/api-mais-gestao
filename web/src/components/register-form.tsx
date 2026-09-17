@@ -2,8 +2,6 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
-
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -56,7 +54,7 @@ export function RegisterForm({
 	return (
 		<div className={cn("flex flex-col gap-6", className)} {...props}>
 			<Card className="overflow-hidden p-0">
-				<CardContent className="grid p-0 md:grid-cols-2">
+				<CardContent className="p-0">
 					<form className="p-6 md:p-8" onSubmit={handleSubmit(onSubmit)}>
 						<FieldGroup>
 							<div className="flex flex-col items-center gap-2 text-center">
@@ -140,15 +138,6 @@ export function RegisterForm({
 							</FieldDescription>
 						</FieldGroup>
 					</form>
-					<div className="bg-muted relative hidden md:block">
-						<Image
-							src="/register-image.png"
-							alt="Image"
-							width={500}
-							height={500}
-							className="absolute inset-0 h-full w-full object-cover right-1/2 dark:brightness-[0.7]"
-						/>
-					</div>
 				</CardContent>
 			</Card>
 			<FieldDescription className="px-6 text-center">
