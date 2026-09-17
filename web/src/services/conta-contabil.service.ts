@@ -61,16 +61,41 @@ export interface AtualizarContaContabilData {
 	inativo?: number;
 }
 
+export type SituacaoCodigoReduzido = "com" | "sem";
+
+export type ListarContasContabeisParams = {
+	idempresa?: string;
+	descricao?: string;
+	q?: string;
+	codigoreduzido?: string;
+	codigoextenso?: string;
+	natureza?: string;
+	tipocontacontabil?: string;
+	inativo?: number;
+	situacaoCodigo?: SituacaoCodigoReduzido;
+	ordenarPor?: string;
+	ordem?: "asc" | "desc";
+	page?: number;
+	limit?: number;
+};
+
 export const contaContabilService = {
-	async listar(params?: {
-		idempresa?: string;
-		descricao?: string;
-		page?: number;
-		limit?: number;
-	}): Promise<ListarContasContabeisResponse> {
+	async listar(
+		params?: ListarContasContabeisParams,
+	): Promise<ListarContasContabeisResponse> {
 		const { data } = await api.get<ListarContasContabeisResponse>(
 			"/conta-contabil",
 			{ params },
+		);
+		return data;
+	},
+
+	async buscarProximoCodigoReduzido(
+		idempresa: string,
+	): Promise<{ codigo: string }> {
+		const { data } = await api.get<{ codigo: string }>(
+			"/conta-contabil/proximo-codigo-reduzido",
+			{ params: { idempresa } },
 		);
 		return data;
 	},

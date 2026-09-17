@@ -1,11 +1,23 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
+import { ORDENAR_CONTA_CONTABIL_CAMPOS } from "@/repositories/conta-contabil-repositories.js";
 import { listarContasContabeisService } from "@/service/contacontabil/listar-contas-contabeis.js";
 import { httpNaoAutorizado } from "@/util/http-util.js";
 
+const textoOpcional = z.string().optional();
+
 const listarContasContabeisQuerySchema = z.object({
 	idempresa: z.string(),
-	descricao: z.string().optional(),
+	descricao: textoOpcional,
+	q: textoOpcional,
+	codigoreduzido: textoOpcional,
+	codigoextenso: textoOpcional,
+	natureza: textoOpcional,
+	tipocontacontabil: textoOpcional,
+	inativo: z.coerce.number().int().min(0).max(1).optional(),
+	situacaoCodigo: z.enum(["com", "sem"]).optional(),
+	ordenarPor: z.enum(ORDENAR_CONTA_CONTABIL_CAMPOS).optional(),
+	ordem: z.enum(["asc", "desc"]).optional(),
 	page: z.coerce.number().min(1).optional().default(1),
 	limit: z.coerce.number().min(1).max(100).optional().default(10),
 });
@@ -25,6 +37,15 @@ export async function listarContasContabeis(
 			idusuario: request.user.id,
 			idempresa: query.idempresa,
 			descricao: query.descricao,
+			q: query.q,
+			codigoreduzido: query.codigoreduzido,
+			codigoextenso: query.codigoextenso,
+			natureza: query.natureza,
+			tipocontacontabil: query.tipocontacontabil,
+			inativo: query.inativo,
+			situacaoCodigo: query.situacaoCodigo,
+			ordenarPor: query.ordenarPor,
+			ordem: query.ordem,
 			page: query.page,
 			limit: query.limit,
 		});

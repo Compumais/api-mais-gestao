@@ -1,6 +1,10 @@
 import type { ContaContabil } from "@/model/conta-contabil-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
-import { listarContasContabeis } from "@/repositories/conta-contabil-repositories.js";
+import {
+	listarContasContabeis,
+	type OrdenarContaContabilCampo,
+	type SituacaoCodigoReduzido,
+} from "@/repositories/conta-contabil-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { httpOk } from "@/util/http-util.js";
 
@@ -8,6 +12,15 @@ type ListarContasContabeisParametros = {
 	idusuario: string;
 	idempresa: string;
 	descricao?: string | undefined;
+	q?: string | undefined;
+	codigoreduzido?: string | undefined;
+	codigoextenso?: string | undefined;
+	natureza?: string | undefined;
+	tipocontacontabil?: string | undefined;
+	inativo?: number | undefined;
+	situacaoCodigo?: SituacaoCodigoReduzido | undefined;
+	ordenarPor?: OrdenarContaContabilCampo | undefined;
+	ordem?: "asc" | "desc" | undefined;
 	page?: number;
 	limit?: number;
 };
@@ -26,6 +39,15 @@ export async function listarContasContabeisService({
 	idusuario,
 	idempresa,
 	descricao,
+	q,
+	codigoreduzido,
+	codigoextenso,
+	natureza,
+	tipocontacontabil,
+	inativo,
+	situacaoCodigo,
+	ordenarPor,
+	ordem,
 	page = 1,
 	limit = 10,
 }: ListarContasContabeisParametros): Promise<
@@ -51,6 +73,15 @@ export async function listarContasContabeisService({
 	const { contasContabeis, total } = await listarContasContabeis({
 		idempresa,
 		descricao,
+		q,
+		codigoreduzido,
+		codigoextenso,
+		natureza,
+		tipocontacontabil,
+		inativo,
+		situacaoCodigo,
+		ordenarPor,
+		ordem,
 		page,
 		limit,
 	});

@@ -111,6 +111,12 @@ export const REGRAS_ACESSO_ROTAS: Array<{
 		},
 	},
 	{
+		prefixo: "/codigo-reduzidos",
+		acesso: {
+			perfis: ["proprietario", "admin", "financeiro"],
+		},
+	},
+	{
 		prefixo: "/tipos-cobranca",
 		acesso: {
 			perfis: ["proprietario", "admin", "financeiro"],

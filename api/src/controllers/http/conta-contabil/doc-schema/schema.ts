@@ -170,7 +170,7 @@ export const listarContasContabeisSchema: FastifySchema = {
 	tags: ["conta-contabil"],
 	summary: "Listar contas contábeis",
 	description:
-		"Lista as contas contábeis de uma empresa com paginação e filtro por descrição.",
+		"Lista as contas contábeis de uma empresa com paginação, busca e filtros de código reduzido.",
 	security: [{ bearerAuth: [] }],
 	querystring: {
 		type: "object",
@@ -182,6 +182,44 @@ export const listarContasContabeisSchema: FastifySchema = {
 			descricao: {
 				type: "string",
 				description: "Filtro opcional por descrição",
+			},
+			q: {
+				type: "string",
+				description: "Busca por descrição, código reduzido ou código extenso",
+			},
+			codigoreduzido: {
+				type: "string",
+				description: "Filtro por código reduzido",
+			},
+			codigoextenso: {
+				type: "string",
+				description: "Filtro por código extenso",
+			},
+			natureza: {
+				type: "string",
+				description: "Filtro por natureza (D/C)",
+			},
+			tipocontacontabil: {
+				type: "string",
+				description: "Filtro por tipo (S/A)",
+			},
+			inativo: {
+				type: "number",
+				description: "Filtro por status: 0 = ativo, 1 = inativo",
+			},
+			situacaoCodigo: {
+				type: "string",
+				enum: ["com", "sem"],
+				description: "Filtra contas com ou sem código reduzido",
+			},
+			ordenarPor: {
+				type: "string",
+				description: "Campo de ordenação",
+			},
+			ordem: {
+				type: "string",
+				enum: ["asc", "desc"],
+				description: "Direção da ordenação",
 			},
 			page: {
 				type: "number",
@@ -288,6 +326,7 @@ export const atualizarContaContabilSchema: FastifySchema = {
 			codigoreduzido: {
 				type: "string",
 				maxLength: 20,
+				nullable: true,
 				description: "Código reduzido",
 			},
 			inativo: {
@@ -334,6 +373,66 @@ export const atualizarContaContabilSchema: FastifySchema = {
 			},
 		},
 		404: {
+			type: "object",
+			properties: {
+				error: { type: "string" },
+				code: { type: "string" },
+			},
+		},
+		409: {
+			type: "object",
+			properties: {
+				error: { type: "string" },
+				code: { type: "string" },
+			},
+		},
+		500: {
+			type: "object",
+			properties: {
+				error: { type: "string" },
+				code: { type: "string" },
+			},
+		},
+	},
+};
+
+export const proximoCodigoReduzidoContaContabilSchema: FastifySchema = {
+	tags: ["conta-contabil"],
+	summary: "Buscar próximo código reduzido",
+	description:
+		"Retorna o próximo código reduzido sequencial sugerido para a empresa (MAX + 1).",
+	security: [{ bearerAuth: [] }],
+	querystring: {
+		type: "object",
+		properties: {
+			idempresa: { type: "string", description: "ID da empresa" },
+		},
+		required: ["idempresa"],
+	},
+	response: {
+		200: {
+			type: "object",
+			properties: {
+				codigo: { type: "string" },
+			},
+			required: ["codigo"],
+		},
+		400: {
+			type: "object",
+			properties: {
+				error: { type: "string" },
+				code: { type: "string" },
+				details: { type: "array" },
+			},
+		},
+		401: {
+			type: "object",
+			properties: {
+				error: { type: "string" },
+				code: { type: "string" },
+			},
+		},
+		403: {
 			type: "object",
 			properties: {
 				error: { type: "string" },
