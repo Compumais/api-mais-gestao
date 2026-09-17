@@ -859,9 +859,8 @@ export function ProdutoForm(props: ProdutoFormProps) {
 					className="data-[state=inactive]:hidden"
 				>
 					<ProdutoAbaBalanca
+						control={control}
 						register={register}
-						setValue={setValue}
-						watch={watch}
 						errors={errors}
 					/>
 				</TabsContent>
