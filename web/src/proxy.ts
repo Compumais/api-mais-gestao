@@ -30,6 +30,7 @@ function hasSessionCookie(request: NextRequest) {
 function isPublicPath(pathname: string) {
 	if (PUBLIC_ROUTES.has(pathname)) return true;
 	if (pathname.startsWith("/cotacao-compra/")) return true;
+	if (pathname.startsWith("/brand/")) return true;
 	return false;
 }
 
@@ -54,6 +55,6 @@ export function proxy(request: NextRequest) {
 
 export const config = {
 	matcher: [
-		"/((?!api|_next/static|_next/image|favicon.ico|manifest.webmanifest|serwist|icons|apple-touch-icon|sw.js).*)",
+		"/((?!api|_next/static|_next/image|favicon.ico|manifest.webmanifest|serwist|icons|brand|apple-touch-icon|sw.js).*)",
 	],
 };

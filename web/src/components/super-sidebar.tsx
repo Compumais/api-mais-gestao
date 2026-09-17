@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/sidebar";
 import { SUPER_NAV } from "@/constants/super-nav-constants";
 import { useAuth } from "@/hooks/use-auth";
-import { CPlusIcon } from "./icons/c-plus";
+import { LogoMaisGestao } from "./logo-mais-gestao";
 
 export function SuperSidebar({
 	...props
@@ -29,9 +29,9 @@ export function SuperSidebar({
 		<Sidebar collapsible="icon" {...props}>
 			<SidebarHeader>
 				<SidebarMenu className="flex flex-row items-center gap-1 select-none">
-					<CPlusIcon size={32} />
+					<LogoMaisGestao className="h-8 max-w-[9rem] group-data-[collapsible=icon]:hidden" />
 					<h1 className="text-base font-semibold mb-0.5 group-data-[collapsible=icon]:hidden">
-						Admin Plataforma
+						Admin
 					</h1>
 				</SidebarMenu>
 			</SidebarHeader>

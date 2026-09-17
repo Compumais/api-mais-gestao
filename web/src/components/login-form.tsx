@@ -36,6 +36,7 @@ import {
 } from "@/provider/empresa-provider";
 import { authService, type LoginResponse } from "@/services/auth.service";
 import { GoogleIcon } from "./icons/google-icon";
+import { LogoMaisGestao } from "./logo-mais-gestao";
 
 const loginSchema = z.object({
 	email: z
@@ -203,6 +204,7 @@ export function LoginForm({
 					<form className="p-6 md:p-8" onSubmit={handleSubmit(onSubmit)}>
 						<FieldGroup>
 							<div className="flex flex-col items-center gap-2 text-center">
+								<LogoMaisGestao className="h-14" prioridade />
 								<h1 className="text-2xl font-bold">Bem-vindo de volta</h1>
 								<p className="text-muted-foreground text-balance">
 									Faça login na sua conta Mais Gestão

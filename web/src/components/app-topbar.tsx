@@ -5,6 +5,7 @@ import { ChevronDown, Menu } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { LogoMaisGestao } from "@/components/logo-mais-gestao";
 import { NavMenuMobileSheet } from "@/components/nav-menu-mobile-sheet";
 import { NavUserTopbar } from "@/components/nav-user-topbar";
 import { Button } from "@/components/ui/button";
@@ -154,11 +155,8 @@ export function AppTopbar() {
 							<Menu className="size-5" />
 						</Button>
 
-						<Link href="/dashboard" className="shrink-0 select-none leading-tight">
-							<div className="text-sm font-semibold">Mais Gestão</div>
-							<div className="text-[0.65rem] opacity-80">
-								Gestão Financeira & Fiscal
-							</div>
+						<Link href="/dashboard" className="shrink-0 select-none">
+							<LogoMaisGestao variante="branco" className="h-9" prioridade />
 						</Link>
 
 						<nav

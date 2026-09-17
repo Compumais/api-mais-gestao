@@ -3,7 +3,7 @@
 import { IconArrowLeft, IconCash, IconLogout } from "@tabler/icons-react";
 import Link from "next/link";
 import { useState } from "react";
-import { CPlusIcon } from "@/components/icons/c-plus";
+import { LogoMaisGestao } from "@/components/logo-mais-gestao";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { NFE_AMBIENTE_LABELS } from "@/constants/nfe-status";
@@ -45,10 +45,7 @@ export function PdvHeader({
 						href={homeHref}
 						className="flex items-center gap-2 text-primary shrink-0"
 					>
-						<CPlusIcon size={28} />
-						{!isGarcomUser && (
-							<span className="hidden font-semibold sm:inline">Mais Gestão</span>
-						)}
+						<LogoMaisGestao className="h-7" />
 					</Link>
 					<span className="text-muted-foreground">/</span>
 					<h1 className="text-sm font-semibold sm:text-base truncate">
