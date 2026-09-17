@@ -4,7 +4,7 @@ import {
 	listarEstoqueGestaoPorProdutos,
 	type OrdenarEstoqueSaldosCampo,
 } from "@/repositories/estoque-gestao-repositories.js";
-import { listarMovimentosEstoque } from "@/repositories/movimento-estoque-repositories.js";
+import { listarHistoricoMovimentosProduto } from "@/repositories/movimento-estoque-repositories.js";
 import { buscarProdutoPorCodigoOuEan } from "@/repositories/produtos-repositories.js";
 import { httpOk, httpProibido } from "@/util/http-util.js";
 
@@ -157,7 +157,7 @@ export async function listarMovimentosEstoqueGestaoService({
 		}
 	}
 
-	const { movimentos, total } = await listarMovimentosEstoque({
+	const { movimentos, total } = await listarHistoricoMovimentosProduto({
 		idempresa,
 		idproduto: idprodutoFiltro,
 		tipoestoque,

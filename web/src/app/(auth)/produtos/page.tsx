@@ -28,9 +28,9 @@ import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AjusteEstoqueDialog } from "@/app/(auth)/produtos/components/ajuste-estoque-dialog";
 import { AlterarProdutosEmMassaDialog } from "@/app/(auth)/produtos/components/alterar-produtos-em-massa-dialog";
+import { HistoricoProdutoModal } from "@/app/(auth)/produtos/components/historico-produto-modal";
 import { ImportarProdutosDialog } from "@/app/(auth)/produtos/components/importar-produtos-dialog";
 import { ModalComposicaoPrecoProduto } from "@/app/(auth)/produtos/components/modal-composicao-preco-produto";
-import { MovimentosProdutoSheet } from "@/app/(auth)/produtos/components/movimentos-produto-sheet";
 import type { OrdenacaoColunaTabela } from "@/components/cabecalho-coluna-tabela";
 import { TableSkeleton } from "@/components/table-skeleton";
 import { Button } from "@/components/ui/button";
@@ -445,7 +445,7 @@ export default function ProdutosPage() {
 										onClick={() => setProdutoMovimentos(produto)}
 									>
 										<IconHistory className="size-4" />
-										Movimentos
+										Histórico
 									</DropdownMenuItem>
 									<DropdownMenuItem
 										onClick={() => setProdutoComposicao(produto)}
@@ -885,7 +885,7 @@ export default function ProdutosPage() {
 			) : null}
 			{localStorageEmpresa ? (
 				<>
-					<MovimentosProdutoSheet
+					<HistoricoProdutoModal
 						produto={produtoMovimentos}
 						idempresa={localStorageEmpresa.id}
 						onFechar={() => setProdutoMovimentos(null)}
