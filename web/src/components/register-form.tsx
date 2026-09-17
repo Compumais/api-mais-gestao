@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import { type RegisterFormData, registerSchema } from "@/schemas/auth.schema";
 import { authService } from "@/services/auth.service";
 import { GoogleIcon } from "./icons/google-icon";
+import { LogoMaisGestao } from "./logo-mais-gestao";
 
 export function RegisterForm({
 	className,
@@ -59,6 +60,7 @@ export function RegisterForm({
 					<form className="p-6 md:p-8" onSubmit={handleSubmit(onSubmit)}>
 						<FieldGroup>
 							<div className="flex flex-col items-center gap-2 text-center">
+								<LogoMaisGestao className="h-14" prioridade />
 								<h1 className="text-2xl font-bold">Bem-vindo ao Mais Gestão</h1>
 								<p className="text-muted-foreground text-balance">
 									Faça seu cadastro na plataforma Mais Gestão

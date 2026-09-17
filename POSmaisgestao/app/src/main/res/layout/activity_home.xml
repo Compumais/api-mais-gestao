@@ -47,10 +47,12 @@
             android:padding="24dp">
 
             <ImageView
-                android:layout_width="64dp"
-                android:layout_height="64dp"
+                android:layout_width="180dp"
+                android:layout_height="100dp"
+                android:adjustViewBounds="true"
                 android:contentDescription="@string/brand_name"
-                android:src="@drawable/ic_c_plus_brand" />
+                android:scaleType="fitCenter"
+                android:src="@drawable/logo_mais_gestao_colorido" />
 
             <TextView
                 android:id="@+id/txtEmpresaHome"

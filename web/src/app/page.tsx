@@ -16,6 +16,7 @@ import {
 } from "@tabler/icons-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { LogoMaisGestao } from "@/components/logo-mais-gestao";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -232,12 +233,9 @@ export default function Home() {
 		<div className="flex min-h-screen flex-col">
 			<header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
 				<div className="container mx-auto flex h-16 items-center justify-between px-4">
-					<div className="flex items-center gap-2">
-						<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary font-bold text-primary-foreground">
-							MG
-						</div>
-						<span className="text-xl font-bold">Mais Gestão</span>
-					</div>
+					<Link href="/" className="flex items-center" aria-label="Mais Gestão">
+						<LogoMaisGestao className="h-10" prioridade />
+					</Link>
 
 					<nav className="flex items-center gap-2 sm:gap-4">
 						<Link
@@ -556,11 +554,8 @@ export default function Home() {
 				<div className="container mx-auto max-w-6xl px-4 py-12">
 					<div className="grid gap-8 md:grid-cols-4">
 						<div className="md:col-span-2">
-							<div className="mb-4 flex items-center gap-2">
-								<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary font-bold text-primary-foreground">
-									MG
-								</div>
-								<span className="text-xl font-bold">Mais Gestão</span>
+							<div className="mb-4">
+								<LogoMaisGestao className="h-12" />
 							</div>
 							<p className="mb-4 text-sm text-muted-foreground">
 								Sistema de gestão para lojas, com módulos de Gourmet, emissão de

@@ -2,7 +2,7 @@
 
 import { IconArrowLeft, IconLogout } from "@tabler/icons-react";
 import Link from "next/link";
-import { CPlusIcon } from "@/components/icons/c-plus";
+import { LogoMaisGestao } from "@/components/logo-mais-gestao";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useEmpresa } from "@/hooks/use-empresa";
@@ -30,7 +30,7 @@ export function GarcomHeader({
 					href={homeHref}
 					className="flex shrink-0 items-center gap-1.5 text-primary"
 				>
-					<CPlusIcon size={24} />
+					<LogoMaisGestao className="h-7" />
 				</Link>
 				<div className="min-w-0">
 					<h1 className="truncate text-sm font-semibold sm:text-base">{titulo}</h1>

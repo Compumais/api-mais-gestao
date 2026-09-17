@@ -1,7 +1,7 @@
 import { IconCalculator, IconReceipt, IconSearch } from "@tabler/icons-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CPlusIcon } from "@/components/icons/c-plus";
+import { LogoMaisGestao } from "@/components/logo-mais-gestao";
 import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = {
@@ -19,6 +19,7 @@ export default function NotFound() {
 			<div className="flex max-w-2xl flex-col items-center gap-8 text-center">
 				{/* Logo e número 404 */}
 				<div className="flex flex-col items-center gap-6">
+					<LogoMaisGestao className="h-14" prioridade />
 					<div className="flex items-center justify-centers gap-4">
 						<div className="text-6xl font-bold text-muted-foreground/70">
 							404

@@ -4,6 +4,7 @@ import { marcarBootPendente } from "@/lib/boot-state";
 import { pdvInvoke } from "@/lib/pdv-api";
 import { rotaHomePdv, type StatusContext } from "@/lib/pdv-types";
 import { centavosToNumber, money } from "@/lib/utils";
+import { LogoMaisGestao } from "@/ui/components/logo-mais-gestao";
 import { NumericKeypad } from "@/ui/components/numeric-keypad";
 import { Button } from "@/ui/components/ui/button";
 
@@ -45,6 +46,7 @@ export function AberturaCaixaPage() {
 	return (
 		<div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-muted/40 p-6">
 			<div className="text-center">
+				<LogoMaisGestao className="mx-auto mb-3 h-14" />
 				<h1 className="text-2xl font-bold text-primary">Abertura de caixa</h1>
 				<p className="text-sm text-muted-foreground">
 					Turno de {status?.sessao.username ?? "operador"}. Informe o suprimento

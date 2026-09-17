@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useNavFiltrada } from "@/hooks/use-nav-filtrada";
 import { NavFixadosProvider } from "@/hooks/use-nav-fixados";
-import { CPlusIcon } from "./icons/c-plus";
+import { LogoMaisGestao } from "./logo-mais-gestao";
 import { NavDocuments } from "./nav-documents";
 import { NavFixados } from "./nav-fixados";
 
@@ -42,10 +42,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 			<Sidebar collapsible="icon" {...props}>
 				<SidebarHeader>
 					<SidebarMenu className="flex flex-row items-center gap-1 select-none">
-						<CPlusIcon size={32} />
-						<h1 className="text-base font-semibold mb-0.5 group-data-[collapsible=icon]:hidden">
-							Mais Gestão
-						</h1>
+						<LogoMaisGestao className="h-8 max-w-[9rem] group-data-[collapsible=icon]:hidden" />
 					</SidebarMenu>
 				</SidebarHeader>
 				<SidebarContent>

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
+import { LogoMaisGestao } from "@/ui/components/logo-mais-gestao";
 
 type TopbarProps = {
 	title: string;
@@ -17,13 +18,16 @@ export function Topbar({ title, subtitle, right }: TopbarProps) {
 
 	return (
 		<header className="flex h-14 shrink-0 items-center justify-between gap-3 bg-primary px-4 text-primary-foreground shadow-sm">
-			<div className="min-w-0">
-				<div className="truncate text-sm font-semibold tracking-tight">
-					{title}
+			<div className="flex min-w-0 items-center gap-3">
+				<LogoMaisGestao variante="branco" className="h-8 shrink-0" />
+				<div className="min-w-0">
+					<div className="truncate text-sm font-semibold tracking-tight">
+						{title}
+					</div>
+					{subtitle && (
+						<div className="truncate text-[0.65rem] opacity-80">{subtitle}</div>
+					)}
 				</div>
-				{subtitle && (
-					<div className="truncate text-[0.65rem] opacity-80">{subtitle}</div>
-				)}
 			</div>
 			<div className="flex items-center gap-4">
 				{right}

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { marcarBootConcluido, marcarBootPendente } from "@/lib/boot-state";
 import { pdvInvoke } from "@/lib/pdv-api";
 import { rotaHomePdv, type StatusPdv } from "@/lib/pdv-types";
+import { LogoMaisGestao } from "@/ui/components/logo-mais-gestao";
 import { Button } from "@/ui/components/ui/button";
 
 type ResultadoCarga = {
@@ -179,8 +180,8 @@ export function BootPage() {
 	return (
 		<div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-primary p-6 text-primary-foreground">
 			<div className="text-center">
-				<div className="text-3xl font-bold">Mais Gestão</div>
-				<div className="text-sm opacity-80">PDV Híbrido · iniciando</div>
+				<LogoMaisGestao variante="branco" className="mx-auto h-16" />
+				<div className="mt-2 text-sm opacity-80">PDV Híbrido · iniciando</div>
 			</div>
 			<div className="w-full max-w-md space-y-2 rounded-lg bg-black/15 p-4 font-mono text-sm">
 				{mensagens.map((m) => (

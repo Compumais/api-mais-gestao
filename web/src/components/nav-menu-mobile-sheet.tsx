@@ -25,6 +25,7 @@ import {
 	rotaNavEstaAtiva,
 } from "@/lib/nav-rota-ativa";
 import { cn } from "@/lib/utils";
+import { LogoMaisGestao } from "./logo-mais-gestao";
 import { NavFixados } from "./nav-fixados";
 
 function secaoTemRotaAtiva(
@@ -212,8 +213,9 @@ export function NavMenuMobileSheet({
 			<SheetContent side="left" className="flex w-[min(100vw-2rem,18rem)] flex-col p-0">
 				<SheetHeader className="border-b px-4 py-3 text-left">
 					<div>
-						<SheetTitle className="text-base">Mais Gestão</SheetTitle>
-						<SheetDescription className="text-xs">
+						<SheetTitle className="sr-only">Mais Gestão</SheetTitle>
+						<LogoMaisGestao className="h-8" />
+						<SheetDescription className="mt-1 text-xs">
 							Gestão Financeira & Fiscal
 						</SheetDescription>
 					</div>

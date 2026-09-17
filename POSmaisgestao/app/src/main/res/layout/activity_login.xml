@@ -14,22 +14,14 @@
         android:padding="24dp">
 
         <ImageView
-            android:layout_width="72dp"
-            android:layout_height="72dp"
+            android:layout_width="220dp"
+            android:layout_height="124dp"
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="40dp"
+            android:adjustViewBounds="true"
             android:contentDescription="@string/brand_name"
-            android:src="@drawable/ic_c_plus_brand" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:gravity="center"
-            android:text="@string/brand_name"
-            android:textColor="@color/primary"
-            android:textSize="28sp"
-            android:textStyle="bold" />
+            android:scaleType="fitCenter"
+            android:src="@drawable/logo_mais_gestao_colorido" />
 
         <TextView
             android:layout_width="match_parent"

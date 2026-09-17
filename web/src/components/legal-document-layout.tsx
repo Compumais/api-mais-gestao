@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LogoMaisGestao } from "@/components/logo-mais-gestao";
 import { Button } from "@/components/ui/button";
 import { LEGAL_CONTACT } from "@/constants/legal-contact";
 
@@ -17,11 +18,8 @@ export function LegalDocumentLayout({
 		<div className="flex min-h-screen flex-col">
 			<header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
 				<div className="container mx-auto flex h-16 items-center justify-between px-4">
-					<Link href="/" className="flex items-center gap-2">
-						<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary font-bold text-primary-foreground">
-							MG
-						</div>
-						<span className="text-xl font-bold">Mais Gestão</span>
+					<Link href="/" className="flex items-center" aria-label="Mais Gestão">
+						<LogoMaisGestao className="h-10" prioridade />
 					</Link>
 					<nav className="flex items-center gap-2">
 						<Button asChild variant="outline" size="sm">

@@ -13,6 +13,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/ui/components/ui/card";
+import { LogoMaisGestao } from "@/ui/components/logo-mais-gestao";
 import { Input } from "@/ui/components/ui/input";
 import { Label } from "@/ui/components/ui/label";
 import { Select } from "@/ui/components/ui/select";
@@ -262,8 +263,8 @@ export function LoginPage() {
 		<div className="grid min-h-screen grid-cols-1 lg:grid-cols-[1.1fr_1fr]">
 			<div className="hidden flex-col justify-between bg-primary p-10 text-primary-foreground lg:flex">
 				<div>
-					<div className="text-3xl font-bold">Mais Gestão</div>
-					<div className="text-sm opacity-80">PDV Híbrido · Desktop</div>
+					<LogoMaisGestao variante="branco" className="h-16" />
+					<div className="mt-2 text-sm opacity-80">PDV Híbrido · Desktop</div>
 				</div>
 				<div className="space-y-2 rounded-lg bg-black/15 p-4 font-mono text-xs">
 					<div>› Aguardando autenticação...</div>
@@ -283,6 +284,7 @@ export function LoginPage() {
 			<div className="flex items-center justify-center p-6">
 				<Card className="w-full max-w-sm">
 					<CardHeader>
+						<LogoMaisGestao className="mb-2 h-12 lg:hidden" />
 						<CardTitle className="text-2xl text-primary">
 							Acesso ao sistema
 						</CardTitle>
