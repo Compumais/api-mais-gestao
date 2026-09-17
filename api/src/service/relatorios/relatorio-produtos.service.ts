@@ -9,6 +9,7 @@ import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-reposit
 import {
 	consultarDisponibilidadePrecosProdutos,
 	consultarRelatorioProdutos,
+	consultarResumoInventarioProdutos,
 	consultarResumoQualidadeProdutos,
 } from "@/repositories/relatorio-produtos-repositories.js";
 
@@ -114,6 +115,26 @@ const definicoes: Record<TipoRelatorioProdutos, DefinicaoRelatorio> = {
 		],
 		avisos: [
 			"Saldo legado é associado por idempresa + código textual do produto; saldoestoque.idproduto permanece bigint nesta entrega.",
+		],
+	},
+	inventario: {
+		titulo: "Inventário de estoque",
+		colunas: [
+			c("codigo", "Código"),
+			c("ean", "EAN"),
+			c("nome", "Produto"),
+			c("unidade", "Un."),
+			c("grupo", "Grupo"),
+			c("status", "Status"),
+			c("quantidade_operacional", "Qtd. operacional", "numero"),
+			c("quantidade_fiscal", "Qtd. fiscal", "numero"),
+			c("valor_unitario", "Custo médio", "moeda"),
+			c("valor_operacional", "Valor operacional", "moeda"),
+			c("valor_fiscal", "Valor fiscal", "moeda"),
+			c("contagem", "Contagem física"),
+		],
+		avisos: [
+			"Quantidades refletem o saldo atual. O custo médio usa o histórico mais recente; produtos sem custo entram com valor zero. A coluna de contagem física fica em branco para preenchimento na impressão.",
 		],
 	},
 	fiscal: {
@@ -267,6 +288,7 @@ const filtrosPermitidos: Record<TipoRelatorioProdutos, ReadonlySet<string>> = {
 		"pendencia",
 		"diasSemMovimento",
 	]),
+	inventario: new Set(["q", "situacao", "grupo", "tipoEstoque", "pendencia"]),
 	fiscal: new Set(["q", "situacao", "grupo", "fornecedor", "pendencia"]),
 	comercial: new Set([
 		"q",
@@ -346,17 +368,21 @@ export async function gerarRelatorioProdutos(params: {
 	if (!pertence)
 		throw new ErroRelatorioProdutos("Usuário não pertence à empresa", 403);
 
-	const [consulta, resumoQualidade, disponibilidadePrecos] = await Promise.all([
-		consultarRelatorioProdutos(params.tipo, params.filtros),
-		params.tipo === "qualidade"
-			? consultarResumoQualidadeProdutos(params.filtros)
-			: Promise.resolve(undefined),
-		params.tipo === "precos"
-			? consultarDisponibilidadePrecosProdutos(
-					params.filtros.idempresa,
-				).catch(() => ({ tabelas: 0, promocoes: 0 }))
-			: Promise.resolve(undefined),
-	]);
+	const [consulta, resumoQualidade, resumoInventario, disponibilidadePrecos] =
+		await Promise.all([
+			consultarRelatorioProdutos(params.tipo, params.filtros),
+			params.tipo === "qualidade"
+				? consultarResumoQualidadeProdutos(params.filtros)
+				: Promise.resolve(undefined),
+			params.tipo === "inventario"
+				? consultarResumoInventarioProdutos(params.filtros)
+				: Promise.resolve(undefined),
+			params.tipo === "precos"
+				? consultarDisponibilidadePrecosProdutos(
+						params.filtros.idempresa,
+					).catch(() => ({ tabelas: 0, promocoes: 0 }))
+				: Promise.resolve(undefined),
+		]);
 	const definicao = definicoes[params.tipo];
 	const avisos = [...(definicao.avisos ?? [])];
 	if (disponibilidadePrecos?.tabelas === 0) {
@@ -370,7 +396,7 @@ export async function gerarRelatorioProdutos(params: {
 		titulo: definicao.titulo,
 		colunas: definicao.colunas,
 		data: consulta.linhas,
-		resumo: resumoQualidade ?? { total: consulta.total },
+		resumo: resumoQualidade ?? resumoInventario ?? { total: consulta.total },
 		paginacao: {
 			page: params.filtros.page,
 			limit: params.filtros.limit,

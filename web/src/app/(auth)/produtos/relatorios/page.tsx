@@ -69,8 +69,8 @@ export default function RelatoriosProdutosPage() {
 				<header>
 					<h1 className="text-2xl font-bold">Relatórios de produtos</h1>
 					<p className="mt-1 text-sm text-muted-foreground">
-						Consulte qualidade, cadastro, estoque e desempenho do catálogo em
-						visões consolidadas.
+						Consulte qualidade, cadastro, estoque, inventário e desempenho do
+						catálogo em visões consolidadas.
 					</p>
 				</header>
 

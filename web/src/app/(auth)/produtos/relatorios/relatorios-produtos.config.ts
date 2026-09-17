@@ -81,6 +81,18 @@ export const RELATORIOS_PRODUTOS: ConfiguracaoRelatorioProduto[] = [
 		],
 	},
 	{
+		tipo: "inventario",
+		titulo: "Inventário de estoque",
+		descricao:
+			"Listagem para conferência física e valoração do saldo operacional e fiscal.",
+		filtros: ["q", "situacao", "grupo", "tipoEstoque", "pendencia"],
+		opcoesPendencia: [
+			{ value: "com_estoque", label: "Com estoque" },
+			{ value: "sem_estoque", label: "Sem estoque" },
+			{ value: "negativo", label: "Estoque negativo" },
+		],
+	},
+	{
 		tipo: "fiscal",
 		titulo: "Parâmetros fiscais",
 		descricao:

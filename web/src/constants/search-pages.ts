@@ -146,6 +146,9 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 			"cadastro",
 			"preços",
 			"margem",
+			"estoque",
+			"inventário",
+			"inventario",
 		],
 	},
 	{
@@ -235,6 +238,21 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 			"posicao",
 			"inventário",
 			"inventario",
+		],
+	},
+	{
+		title: "Inventário de estoque",
+		url: "/produtos/relatorios/inventario",
+		category: "Estoque",
+		icon: IconPackage,
+		keywords: [
+			"inventário",
+			"inventario",
+			"estoque",
+			"contagem",
+			"saldo",
+			"valoração",
+			"valoracao",
 		],
 	},
 	{

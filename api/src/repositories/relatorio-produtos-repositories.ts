@@ -140,6 +140,20 @@ const ORDENACOES: Record<TipoRelatorioProdutos, Record<string, string>> = {
 		ultima_saida: "ultima_saida",
 		dias_sem_movimento: "dias_sem_movimento",
 	},
+	inventario: {
+		codigo: "codigo",
+		ean: "ean",
+		nome: "nome",
+		unidade: "unidade",
+		grupo: "grupo",
+		status: "status",
+		quantidade_operacional: "quantidade_operacional",
+		quantidade_fiscal: "quantidade_fiscal",
+		valor_unitario: "valor_unitario",
+		valor_operacional: "valor_operacional",
+		valor_fiscal: "valor_fiscal",
+		contagem: "contagem",
+	},
 	fiscal: {
 		codigo: "codigo",
 		nome: "nome",
@@ -391,6 +405,21 @@ async function consultarBase(
 	return extrairConsulta(resultado);
 }
 
+function quantidadeInventario(f: FiltrosRelatorioProdutos): SQL {
+	if (f.tipoEstoque === "fiscal") {
+		return sql`COALESCE(b.estoque_fiscal, 0)`;
+	}
+	return sql`COALESCE(b.estoque_operacional, 0)`;
+}
+
+function filtroInventario(f: FiltrosRelatorioProdutos): SQL {
+	const quantidade = quantidadeInventario(f);
+	if (f.pendencia === "com_estoque") return sql`AND ${quantidade} > 0`;
+	if (f.pendencia === "sem_estoque") return sql`AND ${quantidade} = 0`;
+	if (f.pendencia === "negativo") return sql`AND ${quantidade} < 0`;
+	return sql``;
+}
+
 function pendenciaBase(f: FiltrosRelatorioProdutos): SQL {
 	switch (f.pendencia) {
 		case "ean":
@@ -531,6 +560,24 @@ async function consultarProdutosBase(
 			${f.pendencia === "negativo" ? sql`AND COALESCE(b.estoque_operacional, 0) < 0` : sql``}
 			${f.diasSemMovimento !== undefined ? sql`AND (b.ultimo_movimento IS NULL OR CURRENT_DATE - b.ultimo_movimento::date >= ${f.diasSemMovimento})` : sql``}
 		`,
+		);
+	}
+
+	if (tipo === "inventario") {
+		return consultarBase(
+			tipo,
+			f,
+			sql`
+			b.codigo, b.ean, b.nome, b.unidademedida unidade, b.grupo_nome grupo,
+			CASE WHEN COALESCE(b.inativo, 0) = 0 THEN 'Ativo' ELSE 'Inativo' END status,
+			COALESCE(b.estoque_operacional, 0)::numeric quantidade_operacional,
+			COALESCE(b.estoque_fiscal, 0)::numeric quantidade_fiscal,
+			COALESCE(b.custo_medio_recente::numeric, b.customedioinicial::numeric, 0) valor_unitario,
+			ROUND(COALESCE(b.estoque_operacional, 0) * COALESCE(b.custo_medio_recente::numeric, b.customedioinicial::numeric, 0), 2) valor_operacional,
+			ROUND(COALESCE(b.estoque_fiscal, 0) * COALESCE(b.custo_medio_recente::numeric, b.customedioinicial::numeric, 0), 2) valor_fiscal,
+			NULL::text contagem
+		`,
+			filtroInventario(f),
 		);
 	}
 
@@ -769,9 +816,15 @@ export async function consultarRelatorioProdutos(
 	filtros: FiltrosRelatorioProdutos,
 ): Promise<ConsultaRelatorioProdutos> {
 	if (
-		["qualidade", "cadastro", "ean", "precos", "estoque", "fiscal"].includes(
-			tipo,
-		)
+		[
+			"qualidade",
+			"cadastro",
+			"ean",
+			"precos",
+			"estoque",
+			"inventario",
+			"fiscal",
+		].includes(tipo)
 	) {
 		return consultarProdutosBase(tipo, filtros);
 	}
@@ -781,6 +834,34 @@ export async function consultarRelatorioProdutos(
 	if (tipo === "unidades") return consultarUnidades(filtros);
 	if (tipo === "composicao") return consultarComposicao(filtros);
 	return consultarAuditoria(filtros);
+}
+
+export async function consultarResumoInventarioProdutos(
+	filtros: FiltrosRelatorioProdutos,
+): Promise<Record<string, number>> {
+	const resultado = await db.execute(sql`
+		${baseProdutos(filtros)}
+		SELECT
+			COUNT(*)::int total,
+			COALESCE(SUM(COALESCE(estoque_operacional, 0)), 0)::numeric quantidade_operacional,
+			COALESCE(SUM(COALESCE(estoque_fiscal, 0)), 0)::numeric quantidade_fiscal,
+			COALESCE(SUM(ROUND(
+				COALESCE(estoque_operacional, 0)
+				* COALESCE(custo_medio_recente::numeric, customedioinicial::numeric, 0),
+				2
+			)), 0)::numeric valor_operacional,
+			COALESCE(SUM(ROUND(
+				COALESCE(estoque_fiscal, 0)
+				* COALESCE(custo_medio_recente::numeric, customedioinicial::numeric, 0),
+				2
+			)), 0)::numeric valor_fiscal
+		FROM base b
+		WHERE 1=1 ${filtroInventario(filtros)}
+	`);
+	const linha = rowsOf<Record<string, unknown>>(resultado)[0] ?? {};
+	return Object.fromEntries(
+		Object.entries(linha).map(([chave, valor]) => [chave, Number(valor ?? 0)]),
+	);
 }
 
 export async function consultarResumoQualidadeProdutos(

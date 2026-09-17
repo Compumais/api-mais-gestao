@@ -6,6 +6,7 @@ export const tiposRelatorioProdutos = [
 	"ean",
 	"precos",
 	"estoque",
+	"inventario",
 	"fiscal",
 	"comercial",
 	"compras",

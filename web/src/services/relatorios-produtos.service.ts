@@ -7,6 +7,7 @@ export const tipoRelatorioProdutoSchema = z.enum([
 	"ean",
 	"precos",
 	"estoque",
+	"inventario",
 	"fiscal",
 	"comercial",
 	"compras",
