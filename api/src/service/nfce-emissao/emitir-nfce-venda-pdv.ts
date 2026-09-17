@@ -27,6 +27,7 @@ import {
 } from "@/service/nfce-emissao/contexto-emissao-nfce.js";
 import { montarItensEmissaoPdv } from "@/service/nfce-emissao/montar-itens-emissao-pdv.js";
 import { reconciliarNfceAutorizadaSefaz } from "@/service/nfce-emissao/reconciliar-nfce-autorizada-sefaz.js";
+import { transmitirNfceContingenciaService } from "@/service/nfce-emissao/transmitir-nfce-contingencia.js";
 import { aplicarCreditoIcmsSnItensEmissao } from "@/service/nfe-emissao/aplicar-credito-icms-sn-itens.js";
 import { enriquecerItensEmissaoComProduto } from "@/service/nfe-emissao/enriquecer-itens-emissao-produto.js";
 import { arquivarXmlNotaFiscal } from "@/service/nota-fiscal/arquivar-xml-nota-fiscal.js";
@@ -324,6 +325,51 @@ export async function emitirNfceVendaPdvService({
 
 	if (venda.idnotafiscalnfce) {
 		const notaExistente = await buscarNotaFiscalPorId(venda.idnotafiscalnfce);
+		const xmlContingencia = notaExistente?.arquivoxmlcontingencia?.trim();
+		const ehContingencia =
+			Boolean(xmlContingencia) &&
+			/<tpEmis>\s*9\s*<\/tpEmis>/i.test(xmlContingencia ?? "");
+		if (notaExistente && xmlContingencia && ehContingencia) {
+			const serie = Number(notaExistente.serie);
+			const numero = Number(notaExistente.numeronotafiscal);
+			if (
+				!notaExistente.chavenfe ||
+				!Number.isInteger(serie) ||
+				!Number.isInteger(numero)
+			) {
+				return httpBadRequest(
+					"NFC-e de contingência com identidade incompleta; revisão manual obrigatória",
+				);
+			}
+			const contingencia = await transmitirNfceContingenciaService({
+				idusuario,
+				idempresa,
+				idvenda,
+				xml: xmlContingencia,
+				chave: notaExistente.chavenfe,
+				serie,
+				numero,
+				motivo:
+					notaExistente.motivocontingencia ?? "Contingência offline NFC-e",
+				datacontingencia: `${notaExistente.datacontingencia ?? ""}T${notaExistente.horacontingencia ?? "00:00:00"}`,
+			});
+			if (!contingencia.success) {
+				return contingencia as HttpResponse<ResultadoEmissaoNfcePdv>;
+			}
+			return httpOk({
+				emitida: contingencia.body?.transmitida ?? false,
+				idnotafiscal: notaExistente.id,
+				chave: notaExistente.chavenfe,
+				cStat: contingencia.body?.cStat,
+				xMotivo: contingencia.body?.motivo,
+				protocolo: contingencia.body?.protocolo,
+				xml:
+					contingencia.body?.xmlAutorizado ??
+					contingencia.body?.xmlAssinado,
+				serie: notaExistente.serie ?? undefined,
+				numero,
+			});
+		}
 		if (notaExistente?.status === NFE_STATUS.AUTORIZADA) {
 			const resultadoExistente: ResultadoEmissaoNfcePdv = {
 				emitida: true,

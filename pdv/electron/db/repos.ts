@@ -91,6 +91,10 @@ export type ProdutoLocal = {
 	csosn: string | null;
 	origem: number | null;
 	aliquotaicms: string | null;
+	pis_cst: string | null;
+	aliquotapis: string | null;
+	cofins_cst: string | null;
+	aliquotacofins: string | null;
 };
 
 export type GrupoLocal = {
@@ -183,6 +187,11 @@ export type VendaLocal = {
 	nfce_serie?: number | null;
 	nfce_numero?: number | null;
 	nfce_chave?: string | null;
+	nfce_data_contingencia?: string | null;
+	nfce_ultimo_erro?: string | null;
+	nfce_revisao_manual?: number | null;
+	outbox_tentativas?: number | null;
+	outbox_ultimo_erro?: string | null;
 	idcliente?: string | null;
 	nomecliente?: string | null;
 	cnpjcpf?: string | null;
@@ -318,7 +327,7 @@ export async function limparSessao(): Promise<void> {
 }
 
 const PRODUTO_SELECT =
-	"id, descricao, preco, unidademedida, idunidademedida, ean, codigo, idgrupo, idgrupogourmet, espizza, imagem, caminhoimagem, ncm, cest, cfop, cst, csosn, origem, aliquotaicms";
+	"id, descricao, preco, unidademedida, idunidademedida, ean, codigo, idgrupo, idgrupogourmet, espizza, imagem, caminhoimagem, ncm, cest, cfop, cst, csosn, origem, aliquotaicms, pis_cst, aliquotapis, cofins_cst, aliquotacofins";
 
 function padraoIlike(termo: string): string {
 	return `%${termo.replace(/[\\%_]/g, (ch) => `\\${ch}`)}%`;
@@ -348,6 +357,10 @@ export type ProdutoUpsertInput = {
 	csosn?: string | null;
 	origem?: number | null;
 	aliquotaicms?: string | null;
+	pis_cst?: string | null;
+	aliquotapis?: string | null;
+	cofins_cst?: string | null;
+	aliquotacofins?: string | null;
 };
 
 export async function upsertProdutos(
@@ -361,9 +374,10 @@ export async function upsertProdutos(
 					id, descricao, preco, unidademedida, idunidademedida, ean, codigo,
 					idgrupo, idgrupogourmet, espizza, imagem, caminhoimagem,
 					ncm, cest, cfop, cst, csosn, origem, aliquotaicms,
+					pis_cst, aliquotapis, cofins_cst, aliquotacofins,
 					inativo, atualizadoem
 				)
-				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, 0, $20)
+				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, 0, $24)
 				 ON CONFLICT (id) DO UPDATE SET
 					descricao = excluded.descricao,
 					preco = excluded.preco,
@@ -383,6 +397,10 @@ export async function upsertProdutos(
 					csosn = excluded.csosn,
 					origem = excluded.origem,
 					aliquotaicms = excluded.aliquotaicms,
+					pis_cst = excluded.pis_cst,
+					aliquotapis = excluded.aliquotapis,
+					cofins_cst = excluded.cofins_cst,
+					aliquotacofins = excluded.aliquotacofins,
 					inativo = 0,
 					atualizadoem = excluded.atualizadoem`,
 				[
@@ -405,6 +423,10 @@ export async function upsertProdutos(
 					p.csosn ?? null,
 					p.origem ?? null,
 					p.aliquotaicms ?? null,
+					p.pis_cst ?? null,
+					p.aliquotapis ?? null,
+					p.cofins_cst ?? null,
+					p.aliquotacofins ?? null,
 					agora,
 				],
 				client,
@@ -1020,11 +1042,11 @@ export function chaveIdempotenciaOutbox(
 	const ordem =
 		tipo === "transmitir_nfce_contingencia"
 			? [
+					dados.idvenda,
+					dados.idlocal,
 					dados.idnfce_local,
 					dados.idnfce,
 					dados.chave,
-					dados.idlocal,
-					dados.idvenda,
 				]
 			: [
 					dados.idlocal,
@@ -1925,11 +1947,16 @@ export async function listarVendas(limit = 100): Promise<VendaLocal[]> {
 			c.senha_chamada AS senha_chamada,
 			n.serie AS nfce_serie,
 			n.numero AS nfce_numero,
-			n.chave AS nfce_chave
+			n.chave AS nfce_chave,
+			n.data_contingencia AS nfce_data_contingencia,
+			n.ultimo_erro AS nfce_ultimo_erro,
+			n.revisao_manual AS nfce_revisao_manual,
+			o.tentativas AS outbox_tentativas,
+			o.ultimo_erro AS outbox_ultimo_erro
 		 FROM venda v
 		 LEFT JOIN conta_mesa c ON c.id = v.idconta
 		 LEFT JOIN LATERAL (
-			SELECT serie, numero, chave
+			SELECT serie, numero, chave, data_contingencia, ultimo_erro, revisao_manual
 			FROM nfce_local
 			WHERE idvenda = v.id
 			ORDER BY criadoem DESC
@@ -2012,8 +2039,16 @@ export async function listarVendasNaoSincronizadas(
 			ORDER BY criadoem DESC
 			LIMIT 1
 		 ) n ON true
+		 LEFT JOIN LATERAL (
+			SELECT tentativas, ultimo_erro
+			FROM outbox
+			WHERE status IN ('pendente', 'processando')
+			  AND payload LIKE '%' || v.id || '%'
+			ORDER BY criadoem DESC
+			LIMIT 1
+		 ) o ON true
 		 WHERE v.sync_status = 'pendente'
-		    OR v.nfce_status IN ('pendente', 'pendente_contingencia', 'contingencia', 'conflito_numeracao')
+		    OR v.nfce_status IN ('pendente', 'pendente_contingencia', 'contingencia', 'conflito_numeracao', 'conflito_identidade', 'revisao_manual')
 		    OR (v.nfce_status = 'erro' AND v.idremoto IS NOT NULL)
 		 ORDER BY v.criadoem DESC
 		 LIMIT $1`,
@@ -3716,13 +3751,16 @@ export async function salvarNfceLocal(dados: {
 	protocolo?: string;
 	motivo_contingencia?: string;
 	data_contingencia?: string;
+	xml_sha256?: string;
+	revisao_manual?: boolean;
 	transmitida?: boolean;
 }): Promise<void> {
 	await execute(
 		`INSERT INTO nfce_local (
 			id, idvenda, serie, numero, chave, tpemis, status, xml, qrcode, protocolo,
-			motivo_contingencia, data_contingencia, transmitida, criadoem
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+			motivo_contingencia, data_contingencia, xml_sha256, revisao_manual,
+			transmitida, criadoem
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
 		[
 			dados.id,
 			dados.idvenda,
@@ -3736,6 +3774,8 @@ export async function salvarNfceLocal(dados: {
 			dados.protocolo ?? null,
 			dados.motivo_contingencia ?? null,
 			dados.data_contingencia ?? null,
+			dados.xml_sha256 ?? null,
+			dados.revisao_manual ? 1 : 0,
 			dados.transmitida ? 1 : 0,
 			new Date().toISOString(),
 		],
@@ -3763,6 +3803,11 @@ export async function obterNfcePorVenda(idvenda: string): Promise<{
 	numero: number;
 	protocolo: string | null;
 	motivo_contingencia: string | null;
+	data_contingencia: string | null;
+	xml_sha256: string | null;
+	xml_autorizado: string | null;
+	revisao_manual: number;
+	ultimo_erro: string | null;
 } | null> {
 	return (
 		(await queryOne<{
@@ -3776,8 +3821,15 @@ export async function obterNfcePorVenda(idvenda: string): Promise<{
 			numero: number;
 			protocolo: string | null;
 			motivo_contingencia: string | null;
+			data_contingencia: string | null;
+			xml_sha256: string | null;
+			xml_autorizado: string | null;
+			revisao_manual: number;
+			ultimo_erro: string | null;
 		}>(
-			`SELECT id, chave, qrcode, status, tpemis, xml, serie, numero, protocolo, motivo_contingencia
+			`SELECT id, chave, qrcode, status, tpemis, xml, serie, numero, protocolo,
+			        motivo_contingencia, data_contingencia, xml_sha256, xml_autorizado,
+			        revisao_manual, ultimo_erro
 			 FROM nfce_local WHERE idvenda = $1 ORDER BY criadoem DESC LIMIT 1`,
 			[idvenda],
 		)) ?? null
@@ -3795,6 +3847,9 @@ export async function atualizarNfceLocalCampos(
 		numero?: number;
 		status?: string;
 		transmitida?: boolean;
+		xmlAutorizado?: string | null;
+		ultimoErro?: string | null;
+		revisaoManual?: boolean;
 	},
 ): Promise<void> {
 	const atual = await queryOne<{
@@ -3806,35 +3861,45 @@ export async function atualizarNfceLocalCampos(
 		numero: number;
 		status: string;
 		transmitida: number;
+		tpemis: number;
 	}>(
-		`SELECT xml, chave, qrcode, protocolo, serie, numero, status, transmitida FROM nfce_local WHERE id = $1`,
+		`SELECT xml, chave, qrcode, protocolo, serie, numero, status, transmitida, tpemis
+		 FROM nfce_local WHERE id = $1`,
 		[id],
 	);
 	if (!atual) return;
+	const identidadeImutavel = atual.tpemis === 9 && Boolean(atual.xml?.trim());
 	await execute(
 		`UPDATE nfce_local SET xml = $1, chave = $2, qrcode = $3, protocolo = $4,
-			serie = $5, numero = $6, status = $7, transmitida = $8 WHERE id = $9`,
+			serie = $5, numero = $6, status = $7, transmitida = $8,
+			xml_autorizado = COALESCE($9, xml_autorizado),
+			ultimo_erro = $10,
+			revisao_manual = COALESCE($11, revisao_manual)
+		 WHERE id = $12`,
 		[
-			dados.xml ?? atual.xml,
-			dados.chave ?? atual.chave,
-			dados.qrcode ?? atual.qrcode,
+			identidadeImutavel ? atual.xml : (dados.xml ?? atual.xml),
+			identidadeImutavel ? atual.chave : (dados.chave ?? atual.chave),
+			identidadeImutavel ? atual.qrcode : (dados.qrcode ?? atual.qrcode),
 			dados.protocolo ?? atual.protocolo,
-			dados.serie ?? atual.serie,
-			dados.numero ?? atual.numero,
+			identidadeImutavel ? atual.serie : (dados.serie ?? atual.serie),
+			identidadeImutavel ? atual.numero : (dados.numero ?? atual.numero),
 			dados.status ?? atual.status,
 			dados.transmitida != null
 				? dados.transmitida
 					? 1
 					: 0
 				: atual.transmitida,
+			dados.xmlAutorizado ?? null,
+			dados.ultimoErro ?? null,
+			dados.revisaoManual == null ? null : dados.revisaoManual ? 1 : 0,
 			id,
 		],
 	);
 	await persistirXmlNfceEmDisco({
-		chave: dados.chave ?? atual.chave,
-		serie: dados.serie ?? atual.serie,
-		numero: dados.numero ?? atual.numero,
-		xml: dados.xml ?? atual.xml,
+		chave: identidadeImutavel ? atual.chave : (dados.chave ?? atual.chave),
+		serie: identidadeImutavel ? atual.serie : (dados.serie ?? atual.serie),
+		numero: identidadeImutavel ? atual.numero : (dados.numero ?? atual.numero),
+		xml: identidadeImutavel ? atual.xml : (dados.xml ?? atual.xml),
 	});
 }
 

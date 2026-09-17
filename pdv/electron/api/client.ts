@@ -271,10 +271,15 @@ export async function buscarEmpresaFiscal(idempresa: string) {
 		inscricaoestadual?: string | null;
 		logradouro?: string | null;
 		numero?: string | null;
+		complemento?: string | null;
 		bairro?: string | null;
+		municipio?: string | null;
+		codigomunicipio?: string | number | null;
+		cep?: string | null;
 		uf?: string | null;
 		telefone?: string | null;
 		crt?: number | null;
+		timezone?: string | null;
 	}>(`/empresas/${idempresa}/fiscal`);
 }
 
@@ -304,6 +309,10 @@ export async function listarProdutos(params: {
 		csosn: string | null;
 		origem: number | null;
 		aliquotaicms: string | null;
+		pis_cst: string | null;
+		aliquotapis: string | null;
+		cofins_cst: string | null;
+		aliquotacofins: string | null;
 	}>;
 	paginacao: {
 		page: number;
@@ -339,6 +348,10 @@ export async function listarProdutos(params: {
 				csosn?: string | null;
 				origem?: number | null;
 				aliquotaicms?: string | number | null;
+				pis_cst?: string | null;
+				aliquotapis?: string | number | null;
+				cofins_cst?: string | null;
+				aliquotacofins?: string | number | null;
 			}>;
 			paginacao?: {
 				page?: number;
@@ -371,6 +384,16 @@ export async function listarProdutos(params: {
 				p.aliquotaicms == null || p.aliquotaicms === ""
 					? null
 					: String(p.aliquotaicms),
+			pis_cst: p.pis_cst?.replace(/\D/g, "") || null,
+			aliquotapis:
+				p.aliquotapis == null || p.aliquotapis === ""
+					? null
+					: String(p.aliquotapis),
+			cofins_cst: p.cofins_cst?.replace(/\D/g, "") || null,
+			aliquotacofins:
+				p.aliquotacofins == null || p.aliquotacofins === ""
+					? null
+					: String(p.aliquotacofins),
 		}));
 
 		const total = Number(data.paginacao?.total ?? produtos.length);
@@ -421,6 +444,10 @@ export async function listarProdutos(params: {
 			situacaotributariasn?: string | null;
 			origem?: number | null;
 			icmssaida?: string | number | null;
+			piscst?: string | null;
+			pisaliquota?: string | number | null;
+			cofinscst?: string | null;
+			cofinsaliquota?: string | number | null;
 		}>;
 		paginacao?: {
 			page?: number;
@@ -454,6 +481,16 @@ export async function listarProdutos(params: {
 		origem: p.origem == null ? null : Number(p.origem),
 		aliquotaicms:
 			p.icmssaida == null || p.icmssaida === "" ? null : String(p.icmssaida),
+		pis_cst: p.piscst?.replace(/\D/g, "") || null,
+		aliquotapis:
+			p.pisaliquota == null || p.pisaliquota === ""
+				? null
+				: String(p.pisaliquota),
+		cofins_cst: p.cofinscst?.replace(/\D/g, "") || null,
+		aliquotacofins:
+			p.cofinsaliquota == null || p.cofinsaliquota === ""
+				? null
+				: String(p.cofinsaliquota),
 	}));
 
 	const total = Number(data.paginacao?.total ?? produtos.length);
@@ -670,7 +707,13 @@ export async function criarVendaPdv(
 		(item) =>
 			item.meio === "DINHEIRO" || item.meio === "PIX" || item.meio === "CARTAO",
 	);
-	return request<{ id: string }>("/vendas-pdv-gourmet", {
+	return request<{
+		id?: string;
+		idremoto?: string;
+		idvendalocal?: string;
+		criada?: boolean;
+		recuperada?: boolean;
+	}>("/vendas-pdv-gourmet", {
 		method: "POST",
 		body: {
 			...resto,
@@ -695,6 +738,30 @@ export async function criarVendaPdv(
 					}
 				: {}),
 		},
+	});
+}
+
+/**
+ * Reconcilia um POST de venda cujo resultado foi ambíguo (timeout/queda).
+ * A retaguarda deve localizar pela chave idempotente empresa + PDV + venda local.
+ */
+export async function buscarVendaPdvPorIdLocal(params: {
+	idempresa: string;
+	numeropdv: number;
+	idvendalocal: string;
+}) {
+	const query = new URLSearchParams({
+		idempresa: params.idempresa,
+		numeropdv: String(params.numeropdv),
+		idvendalocal: params.idvendalocal,
+	});
+	return request<{
+		id?: string;
+		idremoto?: string;
+		idvendalocal?: string;
+		encontrada?: boolean;
+	}>(`/vendas-pdv-gourmet/por-id-local?${query.toString()}`, {
+		timeoutMs: 20_000,
 	});
 }
 

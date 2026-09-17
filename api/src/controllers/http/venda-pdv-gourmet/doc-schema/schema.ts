@@ -43,6 +43,7 @@ export const criarVendaPdvGourmetSchema: FastifySchema = {
 		properties: {
 			idempresa: { type: "string" },
 			numeropdv: { type: "number" },
+			idvendalocal: { type: "string", format: "uuid" },
 			usuarioquefechouvenda: { type: "string" },
 			idcontamesa: { type: "string", nullable: true },
 			vendalocal: { type: "number", nullable: true },
@@ -78,6 +79,31 @@ export const criarVendaPdvGourmetSchema: FastifySchema = {
 	},
 	response: {
 		201: { type: "object", additionalProperties: true },
+		...respostasPadrao,
+	},
+};
+
+export const buscarVendaPdvPorIdentidadeLocalSchema: FastifySchema = {
+	tags: ["vendas-pdv-gourmet"],
+	summary: "Localizar venda pela identidade local do PDV",
+	description:
+		"Lookup idempotente após timeout, pela combinação empresa + PDV + idvendalocal.",
+	security: [{ bearerAuth: [] }],
+	querystring: {
+		type: "object",
+		properties: {
+			idempresa: { type: "string", format: "uuid" },
+			numeropdv: { type: "number", minimum: 1 },
+			idvendalocal: { type: "string", format: "uuid" },
+		},
+		required: ["idempresa", "numeropdv", "idvendalocal"],
+	},
+	response: {
+		200: { type: "object", additionalProperties: true },
+		404: {
+			type: "object",
+			properties: { error: { type: "string" }, code: { type: "string" } },
+		},
 		...respostasPadrao,
 	},
 };

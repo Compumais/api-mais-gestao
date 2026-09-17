@@ -56,6 +56,10 @@ CREATE TABLE IF NOT EXISTS produto_cache (
 	csosn TEXT,
 	origem INTEGER,
 	aliquotaicms TEXT,
+	pis_cst TEXT,
+	aliquotapis TEXT,
+	cofins_cst TEXT,
+	aliquotacofins TEXT,
 	inativo INTEGER NOT NULL DEFAULT 0,
 	atualizadoem TEXT NOT NULL
 );
@@ -268,6 +272,10 @@ CREATE TABLE IF NOT EXISTS nfce_local (
 	protocolo TEXT,
 	motivo_contingencia TEXT,
 	data_contingencia TEXT,
+	xml_sha256 TEXT,
+	xml_autorizado TEXT,
+	revisao_manual INTEGER NOT NULL DEFAULT 0,
+	ultimo_erro TEXT,
 	transmitida INTEGER NOT NULL DEFAULT 0,
 	criadoem TEXT NOT NULL
 );

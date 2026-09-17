@@ -117,6 +117,11 @@ describe("criarVendaPdvGourmetService", () => {
 		expect(
 			contasReceberService.gerarContasReceberVendaPdvService,
 		).not.toHaveBeenCalled();
+		expect(resultado.body).toMatchObject({
+			idremoto: "venda-1",
+			criada: false,
+			recuperada: true,
+		});
 	});
 
 	it("persiste NSU e o segundo cartão", async () => {

@@ -237,9 +237,52 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 			nome: "aliquotaicms",
 			ddl: "ALTER TABLE produto_cache ADD COLUMN aliquotaicms TEXT",
 		},
+		{ nome: "pis_cst", ddl: "ALTER TABLE produto_cache ADD COLUMN pis_cst TEXT" },
+		{
+			nome: "aliquotapis",
+			ddl: "ALTER TABLE produto_cache ADD COLUMN aliquotapis TEXT",
+		},
+		{
+			nome: "cofins_cst",
+			ddl: "ALTER TABLE produto_cache ADD COLUMN cofins_cst TEXT",
+		},
+		{
+			nome: "aliquotacofins",
+			ddl: "ALTER TABLE produto_cache ADD COLUMN aliquotacofins TEXT",
+		},
 	];
 	for (const coluna of colunasFiscais) {
 		if (!nomes.has(coluna.nome)) {
+			await database.query(coluna.ddl);
+		}
+	}
+
+	const nfceCols = await database.query<{ column_name: string }>(
+		`SELECT column_name
+		 FROM information_schema.columns
+		 WHERE table_schema = 'public' AND table_name = 'nfce_local'`,
+	);
+	const nfceNomes = new Set(nfceCols.rows.map((c) => c.column_name));
+	const colunasNfce: Array<{ nome: string; ddl: string }> = [
+		{
+			nome: "xml_sha256",
+			ddl: "ALTER TABLE nfce_local ADD COLUMN xml_sha256 TEXT",
+		},
+		{
+			nome: "xml_autorizado",
+			ddl: "ALTER TABLE nfce_local ADD COLUMN xml_autorizado TEXT",
+		},
+		{
+			nome: "revisao_manual",
+			ddl: "ALTER TABLE nfce_local ADD COLUMN revisao_manual INTEGER NOT NULL DEFAULT 0",
+		},
+		{
+			nome: "ultimo_erro",
+			ddl: "ALTER TABLE nfce_local ADD COLUMN ultimo_erro TEXT",
+		},
+	];
+	for (const coluna of colunasNfce) {
+		if (!nfceNomes.has(coluna.nome)) {
 			await database.query(coluna.ddl);
 		}
 	}

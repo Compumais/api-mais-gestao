@@ -1,20 +1,27 @@
+import { createHash } from "node:crypto";
 import { v4 as uuidv4 } from "uuid";
+import {
+	consultarSituacaoChaveSefazGateway,
+	transmitirXmlNfceContingenciaGateway,
+} from "@/lib/nfe-gateway-client.js";
 import type { HttpResponse } from "@/model/http-model.js";
-import type { NovaNotaFiscal } from "@/model/nota-fiscal-model.js";
+import type { NotaFiscal, NovaNotaFiscal } from "@/model/nota-fiscal-model.js";
 import { buscarEmpresaPorId } from "@/repositories/empresa-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
-import { avancarNumeroproximoSerieSeNecessario } from "@/repositories/nfe-serie-repositories.js";
 import {
+	atualizarNotaFiscal,
 	buscarNotaFiscalNfcePorSerieNumero,
 	buscarNotaFiscalPorChaveNfe,
 	buscarNotaFiscalPorId,
-	criarNotaFiscalComItens,
+	registrarNotaFiscalContingenciaPdv,
 } from "@/repositories/nota-fiscal-repositories.js";
 import {
 	atualizarVendaPdvGourmet,
 	buscarVendaPdvGourmetPorId,
 	buscarVendaPdvGourmetPorNotaFiscalNfce,
 } from "@/repositories/venda-pdv-gourmet-repositories.js";
+import { montarCredenciaisGatewayNfce } from "@/service/nfce-emissao/montar-credenciais-gateway-nfce.js";
+import { reconciliarNfceAutorizadaSefaz } from "@/service/nfce-emissao/reconciliar-nfce-autorizada-sefaz.js";
 import { arquivarXmlNotaFiscal } from "@/service/nota-fiscal/arquivar-xml-nota-fiscal.js";
 import { numeroFiscalPreenchido } from "@/util/completar-listagem-nfce.js";
 import {
@@ -25,6 +32,7 @@ import { decodificarChaveNfe } from "@/util/decodificar-chave-nfe.js";
 import { httpBadRequest, httpCriacao, httpProibido } from "@/util/http-util.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
 import { parseNFeXml } from "@/util/nfe-xml-parser.js";
+import { normalizarCodigoStatusNfe } from "@/util/resolver-status-emissao-nfe.js";
 import {
 	formatarValorMonetario,
 	parseValorMonetario,
@@ -47,7 +55,17 @@ export type TransmitirNfceContingenciaResultado = {
 	status: string;
 	transmitida: boolean;
 	chave?: string;
+	hashXml?: string;
+	cStat?: string;
+	motivo?: string;
+	protocolo?: string;
+	xmlAssinado?: string;
+	xmlAutorizado?: string;
+	revisaoManual?: boolean;
 };
+
+const CSTATS_TRANSITORIOS = new Set(["103", "104", "105", "108", "109"]);
+const CSTATS_CHAVE_NAO_LOCALIZADA = new Set(["217"]);
 
 function normalizarChave(chave?: string): string | undefined {
 	const digits = (chave ?? "").replace(/\D/g, "");
@@ -83,6 +101,7 @@ function resultadoExistente(
 	idnotafiscal: string,
 	statusNota: number | null | undefined,
 	chave?: string | null,
+	hashXml?: string,
 ): TransmitirNfceContingenciaResultado {
 	const autorizada = statusNota === NFE_STATUS.AUTORIZADA;
 	return {
@@ -90,6 +109,258 @@ function resultadoExistente(
 		status: autorizada ? "autorizada" : "pendente_transmissao",
 		transmitida: autorizada,
 		...(chave ? { chave } : {}),
+		...(hashXml ? { hashXml } : {}),
+	};
+}
+
+function hashXml(xml: string): string {
+	return createHash("sha256").update(xml, "utf8").digest("hex");
+}
+
+function dadosImportacaoNota(
+	nota: Pick<NotaFiscal, "dadosimportacao">,
+): Record<string, unknown> {
+	return nota.dadosimportacao && typeof nota.dadosimportacao === "object"
+		? (nota.dadosimportacao as Record<string, unknown>)
+		: {};
+}
+
+function detectarPendenciasXmlLegado(xml: string): string[] {
+	const obrigatorios = [
+		"dhEmi",
+		"dhCont",
+		"enderEmit",
+		"IE",
+		"CRT",
+		"det",
+		"NCM",
+		"CFOP",
+		"imposto",
+		"ICMSTot",
+		"transp",
+		"pag",
+		"detPag",
+	];
+	return obrigatorios.filter(
+		(tag) => !new RegExp(`<${tag}(?:\\s|>)`, "i").test(xml),
+	);
+}
+
+function extrairProtocoloConsulta(protNFe: unknown): string | undefined {
+	if (!protNFe || typeof protNFe !== "object") return undefined;
+	const registro = protNFe as Record<string, unknown>;
+	const inf =
+		registro.infProt && typeof registro.infProt === "object"
+			? (registro.infProt as Record<string, unknown>)
+			: registro;
+	const protocolo = String(inf.nProt ?? "").trim();
+	return protocolo || undefined;
+}
+
+async function processarTransmissaoNota(
+	nota: NotaFiscal,
+	xml: string,
+	hash: string,
+): Promise<TransmitirNfceContingenciaResultado> {
+	if (nota.status === NFE_STATUS.AUTORIZADA) {
+		return resultadoExistente(nota.id, nota.status, nota.chavenfe, hash);
+	}
+
+	const pendenciasLegado = detectarPendenciasXmlLegado(xml);
+	if (pendenciasLegado.length > 0) {
+		const motivo = `XML legado/incompleto requer revisão manual: ${pendenciasLegado.join(", ")}`;
+		await atualizarNotaFiscal(nota.id, {
+			status: NFE_STATUS.PENDENTE,
+			mensagemtransmissaonfe: motivo,
+			dadosimportacao: {
+				...dadosImportacaoNota(nota),
+				xmlSha256: hash,
+				revisaoManual: true,
+				pendenciasXml: pendenciasLegado,
+			},
+		});
+		return {
+			idnotafiscal: nota.id,
+			status: "revisao_manual",
+			transmitida: false,
+			chave: nota.chavenfe ?? undefined,
+			hashXml: hash,
+			motivo,
+			revisaoManual: true,
+		};
+	}
+
+	const credenciais = await montarCredenciaisGatewayNfce(nota.idempresa);
+	if (!credenciais.ok) {
+		const motivo = credenciais.pendencias.map((item) => item.mensagem).join("; ");
+		await atualizarNotaFiscal(nota.id, {
+			status: NFE_STATUS.PENDENTE,
+			mensagemtransmissaonfe: motivo,
+		});
+		return {
+			idnotafiscal: nota.id,
+			status: "pendente_transmissao",
+			transmitida: false,
+			chave: nota.chavenfe ?? undefined,
+			hashXml: hash,
+			motivo,
+		};
+	}
+
+	const chave = normalizarChave(nota.chavenfe ?? undefined);
+	if (!chave) {
+		throw new Error("Nota de contingência persistida sem chave válida");
+	}
+
+	const consultaInicial = await consultarSituacaoChaveSefazGateway({
+		...credenciais,
+		chaveNfe: chave,
+	});
+	if (consultaInicial.cStat === "100") {
+		const reconciliada = await reconciliarNfceAutorizadaSefaz(nota);
+		return {
+			idnotafiscal: nota.id,
+			status: "autorizada",
+			transmitida: true,
+			chave,
+			hashXml: hash,
+			cStat: "100",
+			motivo: consultaInicial.xMotivo,
+			protocolo:
+				extrairProtocoloConsulta(consultaInicial.protNFe) ??
+				reconciliada?.protocolo,
+			...(reconciliada?.xml ? { xmlAutorizado: reconciliada.xml } : {}),
+		};
+	}
+	if (
+		!consultaInicial.cStat ||
+		(!CSTATS_CHAVE_NAO_LOCALIZADA.has(consultaInicial.cStat) &&
+			!CSTATS_TRANSITORIOS.has(consultaInicial.cStat))
+	) {
+		const motivo =
+			consultaInicial.xMotivo ??
+			consultaInicial.erro ??
+			"Consulta pré-envio inconclusiva";
+		await atualizarNotaFiscal(nota.id, {
+			status: NFE_STATUS.PENDENTE,
+			mensagemtransmissaonfe: motivo,
+		});
+		return {
+			idnotafiscal: nota.id,
+			status: "pendente_transmissao",
+			transmitida: false,
+			chave,
+			hashXml: hash,
+			...(consultaInicial.cStat ? { cStat: consultaInicial.cStat } : {}),
+			motivo,
+		};
+	}
+	if (CSTATS_TRANSITORIOS.has(consultaInicial.cStat)) {
+		return {
+			idnotafiscal: nota.id,
+			status: "pendente_transmissao",
+			transmitida: false,
+			chave,
+			hashXml: hash,
+			cStat: consultaInicial.cStat,
+			motivo: consultaInicial.xMotivo,
+		};
+	}
+
+	const transmissao = await transmitirXmlNfceContingenciaGateway({
+		...credenciais,
+		xml,
+		chave,
+	});
+	if (transmissao.cStat === "100") {
+		const xmlAutorizado =
+			transmissao.xmlAutorizado?.trim() || transmissao.xmlRetorno?.trim();
+		await atualizarNotaFiscal(nota.id, {
+			status: NFE_STATUS.AUTORIZADA,
+			arquivoxmlassinado: transmissao.xmlAssinado ?? null,
+			arquivoxmlautorizada: xmlAutorizado ?? null,
+			protocolonfe: transmissao.protocolo ?? null,
+			codigostatusprotocolonfe: 100,
+			mensagemtransmissaonfe:
+				transmissao.xMotivo ?? "Autorizado o uso da NFC-e",
+			dadosimportacao: {
+				...dadosImportacaoNota(nota),
+				xmlSha256: hash,
+				tpEmis: 9,
+			},
+		});
+		if (xmlAutorizado) {
+			await arquivarXmlNotaFiscal({
+				idnotafiscal: nota.id,
+				idempresa: nota.idempresa,
+				xml: xmlAutorizado,
+				chavenfe: chave,
+				protocolonfe: transmissao.protocolo,
+				tipo: "autorizado",
+			}).catch(console.error);
+		}
+		return {
+			idnotafiscal: nota.id,
+			status: "autorizada",
+			transmitida: true,
+			chave,
+			hashXml: hash,
+			cStat: "100",
+			motivo: transmissao.xMotivo,
+			protocolo: transmissao.protocolo,
+			xmlAssinado: transmissao.xmlAssinado,
+			xmlAutorizado,
+		};
+	}
+
+	if (!transmissao.cStat || transmissao.cStat === "204") {
+		const reconciliada = await reconciliarNfceAutorizadaSefaz({
+			...nota,
+			arquivoxmlassinado:
+				transmissao.xmlAssinado ?? nota.arquivoxmlassinado,
+		});
+		if (reconciliada) {
+			return {
+				idnotafiscal: nota.id,
+				status: "autorizada",
+				transmitida: true,
+				chave,
+				hashXml: hash,
+				cStat: "100",
+				protocolo: reconciliada.protocolo,
+				xmlAssinado: transmissao.xmlAssinado,
+				xmlAutorizado: reconciliada.xml,
+			};
+		}
+	}
+
+	const cStat = transmissao.cStat;
+	const pendente = !cStat || CSTATS_TRANSITORIOS.has(cStat) || cStat === "204";
+	const motivo =
+		transmissao.xMotivo ??
+		transmissao.erro ??
+		(pendente ? "Transmissão inconclusiva" : "NFC-e rejeitada pela SEFAZ");
+	await atualizarNotaFiscal(nota.id, {
+		status: pendente ? NFE_STATUS.PENDENTE : NFE_STATUS.REJEITADA,
+		arquivoxmlassinado:
+			transmissao.xmlAssinado ?? nota.arquivoxmlassinado,
+		mensagemtransmissaonfe: motivo,
+		codigostatusprotocolonfe: normalizarCodigoStatusNfe(cStat),
+		dadosimportacao: {
+			...dadosImportacaoNota(nota),
+			xmlSha256: hash,
+			tpEmis: 9,
+		},
+	});
+	return {
+		idnotafiscal: nota.id,
+		status: pendente ? "pendente_transmissao" : "rejeitada",
+		transmitida: false,
+		chave,
+		hashXml: hash,
+		...(cStat ? { cStat } : {}),
+		motivo,
+		xmlAssinado: transmissao.xmlAssinado,
 	};
 }
 
@@ -120,6 +391,7 @@ export async function transmitirNfceContingenciaService({
 	if (!xml.trim()) {
 		return httpBadRequest("XML de contingência obrigatório");
 	}
+	const hash = hashXml(xml);
 
 	let dadosXml: ReturnType<typeof parseNFeXml>;
 	try {
@@ -193,26 +465,38 @@ export async function transmitirNfceContingenciaService({
 					idnotafiscalnfce: existente.id,
 				});
 			}
-			return httpCriacao(
-				resultadoExistente(
-					existente.id,
-					existente.status,
-					existente.chavenfe ?? chaveNorm,
-				),
-			);
+			const hashPersistido = dadosImportacaoNota(existente).xmlSha256;
+			if (
+				typeof hashPersistido === "string" &&
+				hashPersistido !== hash
+			) {
+				return httpBadRequest(
+					"Conflito de hash: a chave já foi registrada com outro XML",
+					{ code: "NFCE_CONTINGENCIA_HASH_DIVERGENTE" },
+				);
+			}
+			return httpCriacao(await processarTransmissaoNota(existente, xml, hash));
 		}
 	}
 
 	if (venda?.idempresa === idempresa && venda.idnotafiscalnfce) {
 		const notaVenda = await buscarNotaFiscalPorId(venda.idnotafiscalnfce);
 		if (notaVenda) {
-			return httpCriacao(
-				resultadoExistente(
-					notaVenda.id,
-					notaVenda.status,
-					notaVenda.chavenfe ?? chaveNorm,
-				),
-			);
+			if (
+				normalizarChave(notaVenda.chavenfe ?? undefined) !== chaveNorm
+			) {
+				return httpBadRequest(
+					"Venda já vinculada a NFC-e com identidade fiscal divergente",
+				);
+			}
+			const hashPersistido = dadosImportacaoNota(notaVenda).xmlSha256;
+			if (typeof hashPersistido === "string" && hashPersistido !== hash) {
+				return httpBadRequest(
+					"Conflito de hash: a venda já foi registrada com outro XML",
+					{ code: "NFCE_CONTINGENCIA_HASH_DIVERGENTE" },
+				);
+			}
+			return httpCriacao(await processarTransmissaoNota(notaVenda, xml, hash));
 		}
 	}
 
@@ -242,12 +526,16 @@ export async function transmitirNfceContingenciaService({
 			);
 		}
 		if (chaveExistente && chaveNorm && chaveExistente === chaveNorm) {
+			const hashPersistido =
+				dadosImportacaoNota(existentePorNumero).xmlSha256;
+			if (typeof hashPersistido === "string" && hashPersistido !== hash) {
+				return httpBadRequest(
+					"Conflito de hash: série/número já registrados com outro XML",
+					{ code: "NFCE_CONTINGENCIA_HASH_DIVERGENTE" },
+				);
+			}
 			return httpCriacao(
-				resultadoExistente(
-					existentePorNumero.id,
-					existentePorNumero.status,
-					chaveExistente,
-				),
+				await processarTransmissaoNota(existentePorNumero, xml, hash),
 			);
 		}
 		if (!chaveNorm && chaveExistente) {
@@ -293,22 +581,17 @@ export async function transmitirNfceContingenciaService({
 			origem: "pdv-hibrido-contingencia",
 			idvenda: idvenda ?? null,
 			tpEmis: 9,
+			xmlSha256: hash,
 		},
 	};
 
-	await criarNotaFiscalComItens(dadosNota, []);
-
-	await avancarNumeroproximoSerieSeNecessario(
-		idempresa,
-		"65",
-		String(serieFinal),
+	const notaCriada = await registrarNotaFiscalContingenciaPdv(
+		dadosNota,
+		idvenda,
 		numeroFinal,
 	);
-
-	if (idvenda && venda?.idempresa === idempresa && !venda.idnotafiscalnfce) {
-		await atualizarVendaPdvGourmet(idvenda, {
-			idnotafiscalnfce: idnotafiscal,
-		});
+	if (!notaCriada) {
+		throw new Error("Não foi possível registrar a NFC-e de contingência");
 	}
 
 	if (chaveNorm) {
@@ -321,12 +604,9 @@ export async function transmitirNfceContingenciaService({
 		}).catch(console.error);
 	}
 
-	return httpCriacao<TransmitirNfceContingenciaResultado>({
-		idnotafiscal,
-		status: "pendente_transmissao",
-		transmitida: false,
-		...(chaveNorm ? { chave: chaveNorm } : {}),
-	});
+	return httpCriacao<TransmitirNfceContingenciaResultado>(
+		await processarTransmissaoNota(notaCriada, xml, hash),
+	);
 }
 
 function numeroPositivoXml(valor?: string | number): number | null {

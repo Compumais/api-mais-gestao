@@ -95,8 +95,26 @@ async function gravarNfceLocal(
 	}
 
 	if (existente) {
+		if (
+			existente.tpemis === 9 &&
+			dados.chave &&
+			existente.chave &&
+			dados.chave !== existente.chave
+		) {
+			await atualizarNfceLocalCampos(existente.id, {
+				status: "conflito_identidade",
+				revisaoManual: true,
+				ultimoErro: `Retaguarda devolveu chave divergente (${dados.chave})`,
+			});
+			await atualizarVendaSync(dados.idvenda, {
+				nfce_status: "conflito_identidade",
+			});
+			return false;
+		}
 		await atualizarNfceLocalCampos(existente.id, {
-			xml: xml ?? null,
+			...(existente.tpemis === 9
+				? { xmlAutorizado: xml ?? null }
+				: { xml: xml ?? null }),
 			chave: dados.chave ?? null,
 			qrcode: dados.qrCode ?? null,
 			protocolo: dados.protocolo ?? null,
