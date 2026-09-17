@@ -30,6 +30,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 		navComprasItems,
 		navFinanceiroItems,
 		navFiscalItems,
+		navRelatoriosItems,
 		navContabilidadeItems,
 		navSistemaItems,
 		navSecondaryItems,
@@ -86,6 +87,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 									label="Fiscal e tributário"
 									items={navFiscalItems}
 								/>
+							)}
+
+							{!isUsuarioRestrito && navRelatoriosItems.length > 0 && (
+								<NavDocuments label="Relatórios" items={navRelatoriosItems} />
 							)}
 
 							{!isUsuarioRestrito && navContabilidadeItems.length > 0 && (

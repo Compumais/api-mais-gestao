@@ -7,6 +7,10 @@ const TAB_EXCLUSIVO_POR_PATH: Record<string, string[]> = {
 	"/configuracoes": ["integracoes-contabeis"],
 };
 
+const QUERY_EXCLUSIVA_POR_PATH: Record<string, string[]> = {
+	"/relatorios": ["abrir"],
+};
+
 export function rotaNavEstaAtiva(
 	pathname: string,
 	search: string,
@@ -34,6 +38,11 @@ export function rotaNavEstaAtiva(
 	if (tabsExclusivos?.length) {
 		const tabAtual = paramsAtuais.get("tab");
 		if (tabAtual && tabsExclusivos.includes(tabAtual)) return false;
+	}
+
+	const queriesExclusivas = QUERY_EXCLUSIVA_POR_PATH[path];
+	if (queriesExclusivas?.some((chave) => paramsAtuais.get(chave))) {
+		return false;
 	}
 
 	return true;

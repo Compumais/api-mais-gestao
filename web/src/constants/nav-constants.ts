@@ -9,6 +9,7 @@ import {
 	IconHelp,
 	IconHistory,
 	IconListDetails,
+	IconPackage,
 	IconReceiptTax,
 	IconReportMoney,
 	IconScale,
@@ -143,13 +144,6 @@ export const DATA = {
 				{
 					title: "Produtos",
 					url: "/produtos",
-				},
-				{
-					title: "Relatórios de produtos",
-					url: "/produtos/relatorios",
-					acesso: {
-						perfis: [...PERFIS_GESTAO],
-					},
 				},
 				{
 					title: "Serviços",
@@ -329,12 +323,136 @@ export const DATA = {
 						perfis: [...PERFIS_GESTAO],
 					},
 				},
+			],
+		},
+	] satisfies NavItem[],
+
+	navRelatorios: [
+		{
+			title: "Produtos",
+			icon: IconListDetails,
+			acesso: {
+				perfis: [...PERFIS_GESTAO],
+			},
+			items: [
 				{
-					title: "Relatórios",
+					title: "Visão geral",
+					url: "/produtos/relatorios",
+				},
+				{
+					title: "Qualidade do cadastro",
+					url: "/produtos/relatorios/qualidade",
+				},
+				{
+					title: "Cadastro",
+					url: "/produtos/relatorios/cadastro",
+				},
+				{
+					title: "EAN e identificação",
+					url: "/produtos/relatorios/ean",
+				},
+				{
+					title: "Preços e margens",
+					url: "/produtos/relatorios/precos",
+				},
+				{
+					title: "Parâmetros fiscais",
+					url: "/produtos/relatorios/fiscal",
+				},
+				{
+					title: "Comercial",
+					url: "/produtos/relatorios/comercial",
+				},
+				{
+					title: "Compras",
+					url: "/produtos/relatorios/compras",
+				},
+				{
+					title: "Unidades e conversões",
+					url: "/produtos/relatorios/unidades",
+				},
+				{
+					title: "Composição",
+					url: "/produtos/relatorios/composicao",
+				},
+				{
+					title: "Auditoria",
+					url: "/produtos/relatorios/auditoria",
+				},
+			],
+		},
+		{
+			title: "Estoque",
+			icon: IconPackage,
+			acesso: {
+				perfis: [...PERFIS_GESTAO],
+			},
+			items: [
+				{
+					title: "Posição de estoque",
+					url: "/produtos/relatorios/estoque",
+				},
+				{
+					title: "Inventário de estoque",
+					url: "/produtos/relatorios/inventario",
+				},
+				{
+					title: "Movimentações de produtos",
+					url: "/produtos/relatorios/movimentacoes",
+				},
+			],
+		},
+		{
+			title: "Financeiro",
+			icon: IconCoins,
+			acesso: {
+				perfis: [...PERFIS_GESTAO],
+			},
+			items: [
+				{
+					title: "Central financeira",
 					url: "/relatorios",
-					acesso: {
-						perfis: [...PERFIS_GESTAO],
-					},
+				},
+				{
+					title: "DRE Gerencial",
+					url: "/relatorios?abrir=dre",
+				},
+				{
+					title: "Despesas por categoria",
+					url: "/relatorios?abrir=despesas",
+				},
+				{
+					title: "Fluxo de caixa",
+					url: "/relatorios?abrir=fluxo-caixa",
+				},
+				{
+					title: "Contas a pagar",
+					url: "/relatorios?abrir=contas-pagar",
+				},
+				{
+					title: "Contas a receber",
+					url: "/relatorios?abrir=contas-receber",
+				},
+			],
+		},
+		{
+			title: "Fiscal",
+			icon: IconReceiptTax,
+			acesso: {
+				perfis: [...PERFIS_GESTAO],
+			},
+			items: [
+				{
+					title: "Relatórios fiscais",
+					url: "/relatorios/fiscais",
+				},
+				{
+					title: "Relatório de compras",
+					url: "/relatorios/fiscais/compras",
+				},
+				{
+					title: "Relatório de vendas",
+					url: "/relatorios/fiscais/vendas",
 				},
 			],
 		},
