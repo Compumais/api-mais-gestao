@@ -38,6 +38,20 @@ type ResultadoEnvioRetaguarda = {
 	outboxErros: number;
 	nfceAtualizadas: number;
 	pendentes: number;
+	totalVendas: number;
+	vendasConfirmadas: number;
+	restantes: number;
+	primeiraFalha?: {
+		idvenda?: string;
+		idremoto?: string;
+		mensagem: string;
+	};
+	detalhes: Array<{
+		idvenda?: string;
+		idremoto?: string;
+		sucesso: boolean;
+		mensagem: string;
+	}>;
 };
 
 type ResultadoTransmitirPendentes = {
@@ -52,6 +66,19 @@ type ResultadoTransmitirPendentes = {
 
 function montarMensagemEnvio(result: ResultadoEnvioRetaguarda): string {
 	const partes: string[] = [];
+	if (result.totalVendas > 0) {
+		partes.push(
+			`vendas confirmadas ${result.vendasConfirmadas}/${result.totalVendas}`,
+		);
+		const ultima = [...result.detalhes]
+			.reverse()
+			.find((item) => item.sucesso && item.idvenda);
+		if (ultima) {
+			partes.push(
+				`${ultima.idvenda} → remoto ${ultima.idremoto ?? "não informado"}`,
+			);
+		}
+	}
 	if (result.outboxProcessados > 0) {
 		partes.push(
 			`${result.outboxProcessados} item(ns) da fila enviado(s) à retaguarda`,
@@ -67,6 +94,11 @@ function montarMensagemEnvio(result: ResultadoEnvioRetaguarda): string {
 	}
 	if (result.pendentes > 0) {
 		partes.push(`${result.pendentes} ainda pendente(s) na fila`);
+	}
+	if (result.primeiraFalha) {
+		partes.push(
+			`parado em ${result.primeiraFalha.idvenda ?? "venda"}: ${result.primeiraFalha.mensagem}`,
+		);
 	}
 	if (!partes.length) {
 		return "Nenhuma alteração — verifique a conexão ou se ainda há itens pendentes.";
@@ -361,6 +393,28 @@ export function NotasNaoSincronizadasPage() {
 											<Badge variant={badgeNfce(venda.nfce_status)}>
 												{rotuloNfce(venda.nfce_status)}
 											</Badge>
+											{venda.nfce_data_contingencia ? (
+												<div className="mt-1 text-xs text-muted-foreground">
+													dhCont{" "}
+													{dayjs(venda.nfce_data_contingencia).format(
+														"DD/MM/YY HH:mm:ss",
+													)}
+												</div>
+											) : null}
+											{(venda.nfce_ultimo_erro ||
+												venda.outbox_ultimo_erro) ? (
+												<div
+													className="mt-1 max-w-72 truncate text-xs text-destructive"
+													title={
+														venda.nfce_ultimo_erro ??
+														venda.outbox_ultimo_erro ??
+														""
+													}
+												>
+													{venda.nfce_ultimo_erro ??
+														venda.outbox_ultimo_erro}
+												</div>
+											) : null}
 										</TableCell>
 										<TableCell>
 											{numeracao ? (
@@ -370,6 +424,11 @@ export function NotasNaoSincronizadasPage() {
 											) : (
 												<span className="text-sm text-muted-foreground">—</span>
 											)}
+											{venda.outbox_tentativas ? (
+												<div className="text-xs text-muted-foreground">
+													{venda.outbox_tentativas} tentativa(s)
+												</div>
+											) : null}
 										</TableCell>
 										<TableCell className="text-right">
 											{venda.nfce_status === "conflito_numeracao" &&

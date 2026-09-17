@@ -204,6 +204,7 @@ import {
 	sincronizarFiscalPdv,
 	sincronizarFiscalPdv as puxarFiscalRetaguarda,
 	statusConexao,
+	validarConfirmacaoVenda,
 } from "../sync/outbox";
 import { reconciliarNfce } from "../sync/reconciliar-nfce";
 import { obterTerminaisPdvLocais } from "../sync/terminais-pdv";
@@ -356,7 +357,7 @@ async function emitirNfceOnlineDaVenda(
 					? { identidade: venda.idcliente.trim() }
 					: {}),
 			});
-			idremoto = criada.id;
+			idremoto = validarConfirmacaoVenda(criada, venda.id);
 
 			for (const item of venda.itens) {
 				await criarItemVendaPdv({
@@ -1406,6 +1407,11 @@ export const localApi = {
 		return {
 			outboxProcessados: outbox.processados,
 			outboxErros: outbox.erros,
+			totalVendas: outbox.totalVendas,
+			vendasConfirmadas: outbox.vendasConfirmadas,
+			restantes: outbox.restantes,
+			primeiraFalha: outbox.primeiraFalha,
+			detalhes: outbox.detalhes,
 			nfceAtualizadas,
 			pendentes,
 		};
@@ -2247,6 +2253,18 @@ export const localApi = {
 			nfce.status !== "transmitida" &&
 			nfce.status !== "autorizada"
 		) {
+			const { xmlContingenciaEhLegado } = await import(
+				"../fiscal/contingencia"
+			);
+			if (
+				nfce.revisao_manual === 1 ||
+				!nfce.xml ||
+				xmlContingenciaEhLegado(nfce.xml)
+			) {
+				throw new Error(
+					"XML de contingência legado ou incompleto. Transmissão automática bloqueada; encaminhe para revisão manual.",
+				);
+			}
 			let notaRemotaJaExiste = false;
 			if (venda.idremoto) {
 				try {
@@ -2258,6 +2276,11 @@ export const localApi = {
 			}
 
 			if (!notaRemotaJaExiste) {
+				if (!venda.idremoto || venda.sync_status !== "sincronizado") {
+					throw new Error(
+						"Venda ainda não confirmada na retaguarda. Envie o cupom antes de transmitir a contingência.",
+					);
+				}
 				await processarOutbox();
 				const depois = await obterNfcePorVenda(vendaId);
 				if (
@@ -2275,17 +2298,24 @@ export const localApi = {
 						"XML de contingência não encontrado para retransmitir",
 					);
 				}
+				if (!nfce.data_contingencia) {
+					throw new Error(
+						"Data original da contingência não encontrada. Transmissão bloqueada para preservar dhCont.",
+					);
+				}
 				const result = await transmitirNfceContingencia({
 					idempresa: sessao.idempresa,
-					idvenda: venda.idremoto ?? undefined,
+					idvenda: venda.idremoto,
 					xml: nfce.xml,
 					chave: nfce.chave ?? undefined,
 					serie: nfce.serie,
 					numero: nfce.numero,
 					motivo: nfce.motivo_contingencia ?? "Contingencia offline PDV",
-					datacontingencia: new Date().toISOString(),
+					datacontingencia: nfce.data_contingencia,
 				});
-				await marcarNfceTransmitida(nfce.id);
+				if (result.transmitida) {
+					await marcarNfceTransmitida(nfce.id);
+				}
 				await atualizarVendaSync(vendaId, {
 					nfce_status: result.transmitida ? "transmitida" : "contingencia",
 				});

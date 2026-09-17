@@ -36,6 +36,11 @@ export type VendaListagem = {
 	nfce_serie?: number | null;
 	nfce_numero?: number | null;
 	nfce_chave?: string | null;
+	nfce_data_contingencia?: string | null;
+	nfce_ultimo_erro?: string | null;
+	nfce_revisao_manual?: number | null;
+	outbox_tentativas?: number | null;
+	outbox_ultimo_erro?: string | null;
 };
 
 export function vendaPendenteSincronizacao(venda: {
@@ -48,7 +53,9 @@ export function vendaPendenteSincronizacao(venda: {
 		venda.nfce_status === "pendente" ||
 		venda.nfce_status === "pendente_contingencia" ||
 		venda.nfce_status === "contingencia" ||
-		venda.nfce_status === "conflito_numeracao"
+		venda.nfce_status === "conflito_numeracao" ||
+		venda.nfce_status === "conflito_identidade" ||
+		venda.nfce_status === "revisao_manual"
 	) {
 		return true;
 	}
@@ -146,6 +153,8 @@ export const NFCE_OPCOES_FILTRO: OpcaoFiltroColunaTabela[] = [
 	{ value: "pendente", label: "Pendente" },
 	{ value: "contingencia", label: "Contingência" },
 	{ value: "conflito_numeracao", label: "Conflito numeração" },
+	{ value: "conflito_identidade", label: "Conflito identidade fiscal" },
+	{ value: "revisao_manual", label: "Revisão manual" },
 	{ value: "erro", label: "Rejeitada" },
 	{ value: "erro_config", label: "Erro config" },
 	{ value: "inutilizada", label: "Inutilizada" },

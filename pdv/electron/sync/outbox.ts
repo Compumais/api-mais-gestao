@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { app } from "electron";
@@ -10,6 +11,7 @@ import {
 	buscarEmpresaFiscal,
 	buscarNfceConfig,
 	buscarPdvFiscal,
+	buscarVendaPdvPorIdLocal,
 	criarFechamentoCaixaRemoto,
 	criarItemVendaPdv,
 	criarVendaPdv,
@@ -87,7 +89,25 @@ import {
 } from "../fiscal/numeracao-nfce";
 import { atualizarCacheTerminaisPdv } from "./terminais-pdv";
 
-let syncing = false;
+export type DetalheCicloOutbox = {
+	tipo: string;
+	idvenda?: string;
+	idremoto?: string;
+	sucesso: boolean;
+	mensagem: string;
+};
+
+export type ResultadoCicloOutbox = {
+	processados: number;
+	erros: number;
+	totalVendas: number;
+	vendasConfirmadas: number;
+	restantes: number;
+	primeiraFalha?: DetalheCicloOutbox;
+	detalhes: DetalheCicloOutbox[];
+};
+
+let cicloEmAndamento: Promise<ResultadoCicloOutbox> | null = null;
 const OUTBOX_WORKER_ID = uuidv4();
 
 export function atrasoBackoffOutboxMs(tentativasAnteriores: number): number {
@@ -448,8 +468,12 @@ async function cachearEmitenteDanfce(
 	let ie: string | undefined;
 	let logradouro: string | undefined;
 	let numero: string | undefined;
+	let complemento: string | undefined;
 	let bairro: string | undefined;
 	let municipio: string | undefined;
+	let codigoMunicipio: string | undefined;
+	let cep: string | undefined;
+	let timezone: string | undefined;
 	let fone: string | undefined;
 	let crt: number | undefined;
 	let cnpjFinal = cnpj ?? undefined;
@@ -460,7 +484,15 @@ async function cachearEmitenteDanfce(
 		ie = fiscal.inscricaoestadual ?? undefined;
 		logradouro = fiscal.logradouro ?? undefined;
 		numero = fiscal.numero ?? undefined;
+		complemento = fiscal.complemento ?? undefined;
 		bairro = fiscal.bairro ?? undefined;
+		municipio = fiscal.municipio ?? undefined;
+		codigoMunicipio =
+			fiscal.codigomunicipio == null
+				? undefined
+				: String(fiscal.codigomunicipio);
+		cep = fiscal.cep ?? undefined;
+		timezone = fiscal.timezone ?? undefined;
 		ufFinal = fiscal.uf ?? ufFinal;
 		fone = fiscal.telefone ?? undefined;
 		if (fiscal.crt != null && Number.isFinite(fiscal.crt)) {
@@ -489,8 +521,12 @@ async function cachearEmitenteDanfce(
 			ie,
 			logradouro,
 			numero,
+			complemento,
 			bairro,
 			municipio,
+			codigoMunicipio,
+			cep,
+			timezone,
 			uf: ufFinal,
 			fone,
 			crt,
@@ -586,37 +622,55 @@ export async function marcarConflitosNumeracaoNfceLocal(): Promise<number> {
 	return marcados;
 }
 
-export async function processarOutbox(): Promise<{
-	processados: number;
-	erros: number;
-}> {
-	if (syncing) {
-		return { processados: 0, erros: 0 };
+export function processarOutbox(): Promise<ResultadoCicloOutbox> {
+	if (cicloEmAndamento) {
+		return cicloEmAndamento;
 	}
-	syncing = true;
+	cicloEmAndamento = executarCicloOutbox().finally(() => {
+		cicloEmAndamento = null;
+	});
+	return cicloEmAndamento;
+}
+
+async function executarCicloOutbox(): Promise<ResultadoCicloOutbox> {
 	let processados = 0;
 	let erros = 0;
+	let vendasConfirmadas = 0;
+	const detalhes: DetalheCicloOutbox[] = [];
+	const totalVendas = await contarVendasCriarPendentes();
 
 	try {
 		const online = await pingApi();
 		if (!online) {
-			return { processados, erros };
+			return montarResultado();
 		}
 
 		const sessao = await obterSessao();
 		if (!sessao.idempresa || !sessao.token || !sessao.userid) {
-			return { processados, erros };
+			return montarResultado();
 		}
 
 		await sincronizarFiscalPdv().catch(() => undefined);
 
-		for (let indice = 0; indice < 10; indice++) {
+		for (;;) {
 			const [item] = await reivindicarOutboxPendentes(OUTBOX_WORKER_ID, 1);
 			if (!item) break;
 			try {
 				const payload = JSON.parse(item.payload) as Record<string, unknown>;
 				if (item.tipo === "criar_venda") {
-					await syncCriarVenda(payload, sessao.idempresa, sessao.userid);
+					const confirmacao = await syncCriarVenda(
+						payload,
+						sessao.idempresa,
+						sessao.userid,
+					);
+					vendasConfirmadas += 1;
+					detalhes.push({
+						tipo: item.tipo,
+						idvenda: confirmacao.idvendalocal,
+						idremoto: confirmacao.idremoto,
+						sucesso: true,
+						mensagem: "Venda confirmada pela retaguarda",
+					});
 				} else if (item.tipo === "transmitir_nfce_contingencia") {
 					await syncTransmitirContingencia(payload, sessao.idempresa);
 				} else if (item.tipo === "atalhos_pdv") {
@@ -636,6 +690,18 @@ export async function processarOutbox(): Promise<{
 			} catch (err) {
 				erros += 1;
 				const classificacao = classificarErroOutbox(err);
+				const detalhe: DetalheCicloOutbox = {
+					tipo: item.tipo,
+					idvenda:
+						typeof JSON.parse(item.payload).idlocal === "string"
+							? JSON.parse(item.payload).idlocal
+							: typeof JSON.parse(item.payload).idvenda === "string"
+								? JSON.parse(item.payload).idvenda
+								: undefined,
+					sucesso: false,
+					mensagem: err instanceof Error ? err.message : "Erro desconhecido",
+				};
+				detalhes.push(detalhe);
 				await marcarOutboxErro(
 					item.id,
 					err instanceof Error ? err.message : "Erro desconhecido",
@@ -650,17 +716,43 @@ export async function processarOutbox(): Promise<{
 								: null,
 					},
 				);
+				// Venda não confirmada é uma barreira FIFO: não permite que
+				// dependências fiscais nem vendas posteriores avancem neste ciclo.
+				if (item.tipo === "criar_venda") {
+					break;
+				}
 			}
 		}
 	} catch (err) {
 		if (!isBancoIndisponivelError(err)) {
 			throw err;
 		}
-	} finally {
-		syncing = false;
 	}
 
-	return { processados, erros };
+	return montarResultado();
+
+	function montarResultado(): ResultadoCicloOutbox {
+		const primeiraFalha = detalhes.find((detalhe) => !detalhe.sucesso);
+		return {
+			processados,
+			erros,
+			totalVendas,
+			vendasConfirmadas,
+			restantes: Math.max(0, totalVendas - vendasConfirmadas),
+			...(primeiraFalha ? { primeiraFalha } : {}),
+			detalhes,
+		};
+	}
+}
+
+async function contarVendasCriarPendentes(): Promise<number> {
+	const { queryOne } = await import("../db/database");
+	const row = await queryOne<{ total: number }>(
+		`SELECT COUNT(*)::int AS total
+		 FROM outbox
+		 WHERE tipo = 'criar_venda' AND status IN ('pendente', 'processando')`,
+	);
+	return row?.total ?? 0;
 }
 
 function moneyApi(valor: unknown): string {
@@ -853,7 +945,7 @@ async function syncCriarVenda(
 	payload: Record<string, unknown>,
 	idempresa: string,
 	userid: string,
-): Promise<void> {
+): Promise<{ idvendalocal: string; idremoto: string }> {
 	const total = Number(payload.valortotal ?? 0);
 	const idlocal = String(payload.idlocal);
 	const numeropdv = Number(await getConfig("numeropdv", "1"));
@@ -874,25 +966,40 @@ async function syncCriarVenda(
 		const identidade = [payload.identidade, local?.idcliente]
 			.map((valor) => (typeof valor === "string" ? valor.trim() : ""))
 			.find(Boolean);
-		const venda = await criarVendaPdv({
-			idempresa,
-			numeropdv,
-			idvendalocal: idlocal,
-			usuarioquefechouvenda: userid,
-			vendalocal: VENDA_LOCAL_PDV_HIBRIDO,
-			valortotal: total,
-			valortroco: sync.valortroco,
-			valordinheiro: sync.valordinheiro,
-			valorpix: sync.valorpix,
-			valorcartaocredito: sync.valorcartaocredito,
-			valorcartaodebito: sync.valorcartaodebito,
-			valorcartao: sync.valorcartao,
-			valorprepago: sync.valorprepago,
-			pagamentos: pagamentosNativosParaApi(pagamentos),
-			...(pagamentosErp.length ? { pagamentosErp } : {}),
-			...(identidade ? { identidade } : {}),
-		});
-		idremoto = venda.id;
+		try {
+			const venda = await criarVendaPdv({
+				idempresa,
+				numeropdv,
+				idvendalocal: idlocal,
+				usuarioquefechouvenda: userid,
+				vendalocal: VENDA_LOCAL_PDV_HIBRIDO,
+				valortotal: total,
+				valortroco: sync.valortroco,
+				valordinheiro: sync.valordinheiro,
+				valorpix: sync.valorpix,
+				valorcartaocredito: sync.valorcartaocredito,
+				valorcartaodebito: sync.valorcartaodebito,
+				valorcartao: sync.valorcartao,
+				valorprepago: sync.valorprepago,
+				pagamentos: pagamentosNativosParaApi(pagamentos),
+				...(pagamentosErp.length ? { pagamentosErp } : {}),
+				...(identidade ? { identidade } : {}),
+			});
+			idremoto = validarConfirmacaoVenda(venda, idlocal);
+		} catch (err) {
+			if (
+				!(err instanceof ApiError) ||
+				(err.status !== 0 && err.status !== 408 && (err.status ?? 0) < 500)
+			) {
+				throw err;
+			}
+			const reconciliada = await buscarVendaPdvPorIdLocal({
+				idempresa,
+				numeropdv,
+				idvendalocal: idlocal,
+			});
+			idremoto = validarConfirmacaoVenda(reconciliada, idlocal);
+		}
 	}
 
 	await sincronizarItensAntesDaBaixa(
@@ -928,6 +1035,28 @@ async function syncCriarVenda(
 			});
 		},
 	);
+	return { idvendalocal: idlocal, idremoto };
+}
+
+export function validarConfirmacaoVenda(
+	resposta: {
+		id?: string;
+		idremoto?: string;
+		idvendalocal?: string;
+		encontrada?: boolean;
+	},
+	idvendalocal: string,
+): string {
+	const confirmado = resposta.idvendalocal?.trim();
+	const idremoto = (resposta.idremoto ?? resposta.id)?.trim();
+	if (confirmado !== idvendalocal || !idremoto) {
+		throw new ApiError(
+			`Retaguarda não confirmou a venda local ${idvendalocal} com idremoto`,
+			409,
+			"VENDA_PDV_NAO_CONFIRMADA",
+		);
+	}
+	return idremoto;
 }
 
 async function syncTransmitirContingencia(
@@ -936,32 +1065,60 @@ async function syncTransmitirContingencia(
 ): Promise<void> {
 	const idlocal = payload.idvenda ? String(payload.idvenda) : "";
 	const local = idlocal ? await obterVenda(idlocal) : null;
+	if (!local?.idremoto || local.sync_status !== "sincronizado") {
+		throw new ApiError(
+			"Venda ainda não confirmada na retaguarda; transmissão da contingência adiada",
+			409,
+			"VENDA_PDV_NAO_CONFIRMADA",
+		);
+	}
 	if (
-		local &&
-		(local.nfce_status === "autorizada" ||
-			local.nfce_status === "erro" ||
-			local.nfce_status === "transmitida" ||
-			local.nfce_status === "conflito_numeracao")
+		local.nfce_status === "autorizada" ||
+		local.nfce_status === "transmitida"
 	) {
-		if (
-			payload.idnfce_local &&
-			local.nfce_status !== "conflito_numeracao"
-		) {
+		if (payload.idnfce_local) {
 			await marcarNfceTransmitida(String(payload.idnfce_local));
-		}
-		if (local.nfce_status === "conflito_numeracao") {
-			throw new ApiError(
-				"NFC-e com conflito de numeração — reemita com nova numeração",
-				400,
-				"NFCE_NUMERO_JA_USADO",
-			);
 		}
 		return;
 	}
-
+	if (local.nfce_status === "conflito_numeracao") {
+		throw new ApiError(
+			"NFC-e com conflito de numeração — reemita com nova numeração",
+			400,
+			"NFCE_NUMERO_JA_USADO",
+		);
+	}
+	const xml = String(payload.xml ?? "");
+	const chavePayload = payload.chave ? String(payload.chave) : "";
+	const { xmlContingenciaEhLegado } = await import("../fiscal/contingencia");
+	const hashCalculado = createHash("sha256").update(xml, "utf8").digest("hex");
+	const hashEsperado = String(payload.xmlSha256 ?? "");
+	if (
+		!xml.trim() ||
+		xmlContingenciaEhLegado(xml) ||
+		!chavePayload ||
+		!xml.includes(`Id="NFe${chavePayload}"`) ||
+		!/<mod>65<\/mod>/.test(xml) ||
+		!/<tpEmis>9<\/tpEmis>/.test(xml) ||
+		(hashEsperado && hashEsperado !== hashCalculado)
+	) {
+		if (payload.idnfce_local) {
+			await atualizarNfceLocalCampos(String(payload.idnfce_local), {
+				status: "revisao_manual",
+				revisaoManual: true,
+				ultimoErro:
+					"XML legado, incompleto ou divergente; transmissão automática bloqueada",
+			});
+		}
+		await atualizarVendaSync(idlocal, { nfce_status: "revisao_manual" });
+		throw new ApiError(
+			"XML de contingência legado, incompleto ou divergente; encaminhado para revisão manual",
+			422,
+			"NFCE_XML_REVISAO_MANUAL",
+		);
+	}
 	const serie = Number(payload.serie);
 	const numero = Number(payload.numero);
-	const chavePayload = payload.chave ? String(payload.chave) : "";
 	if (
 		Number.isFinite(serie) &&
 		Number.isFinite(numero) &&
@@ -996,8 +1153,8 @@ async function syncTransmitirContingencia(
 	try {
 		const result = await transmitirNfceContingencia({
 			idempresa,
-			idvenda: local?.idremoto ?? (idlocal || undefined),
-			xml: String(payload.xml),
+			idvenda: local.idremoto,
+			xml,
 			chave: chavePayload || undefined,
 			serie,
 			numero,
@@ -1005,7 +1162,7 @@ async function syncTransmitirContingencia(
 			datacontingencia: String(payload.datacontingencia),
 		});
 
-		if (payload.idnfce_local) {
+		if (payload.idnfce_local && result.transmitida) {
 			await marcarNfceTransmitida(String(payload.idnfce_local));
 		}
 		if (idlocal) {
@@ -1016,6 +1173,14 @@ async function syncTransmitirContingencia(
 		if (Number.isFinite(serie) && Number.isFinite(numero) && numero >= 1) {
 			const { avancarNumeracaoNfceAposEmissao } = await import("../db/repos");
 			await avancarNumeracaoNfceAposEmissao(serie, numero);
+		}
+		if (!result.transmitida) {
+			throw new ApiError(
+				result.erro ??
+					"Retaguarda não confirmou a transmissão/autorização da NFC-e",
+				503,
+				"NFCE_TRANSMISSAO_NAO_CONFIRMADA",
+			);
 		}
 	} catch (err) {
 		if (

@@ -224,11 +224,24 @@ export function HomePage() {
 			const result = await pdvInvoke<{
 				pull: { produtos: number; grupos: number; atalhos: number };
 				pendentes: number;
+				outbox: {
+					totalVendas: number;
+					vendasConfirmadas: number;
+					restantes: number;
+					primeiraFalha?: { idvenda?: string; mensagem: string };
+				};
 			}>("syncAgora");
 			await refresh();
 			await carregarMesas();
+			const vendas =
+				result.outbox.totalVendas > 0
+					? ` · vendas ${result.outbox.vendasConfirmadas}/${result.outbox.totalVendas} confirmadas`
+					: "";
+			const falha = result.outbox.primeiraFalha
+				? ` · primeira falha: ${result.outbox.primeiraFalha.idvenda ?? "venda"} — ${result.outbox.primeiraFalha.mensagem}`
+				: "";
 			setMsg(
-				`Sincronizado: ${result.pull.produtos} produtos · ${result.pull.grupos} grupos · fila ${result.pendentes}`,
+				`Catálogo: ${result.pull.produtos} produtos · ${result.pull.grupos} grupos${vendas} · fila ${result.pendentes}${falha}`,
 			);
 		} catch (err) {
 			setMsg(err instanceof Error ? err.message : "Falha ao sincronizar");

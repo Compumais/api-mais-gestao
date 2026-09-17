@@ -25,6 +25,7 @@ import type { NovaNotaFiscal } from "@/model/nota-fiscal-model";
 import {
 	cfop,
 	entidade,
+	nfeserie,
 	notafiscal,
 	notafiscalitem,
 	produtos,
@@ -166,6 +167,58 @@ export async function criarNotaFiscalComItens(
 		}
 
 		return { notaFiscal: notaCriada, itens: itensCriados };
+	});
+}
+
+export async function registrarNotaFiscalContingenciaPdv(
+	notaFiscal: NovaNotaFiscal,
+	idvenda: string | undefined,
+	numeroUsado: number,
+) {
+	return db.transaction(async (tx) => {
+		const [notaCriada] = await tx
+			.insert(notafiscal)
+			.values(notaFiscal)
+			.returning();
+		if (!notaCriada) {
+			return null;
+		}
+
+		const [serie] = await tx
+			.select()
+			.from(nfeserie)
+			.where(
+				and(
+					eq(nfeserie.idempresa, notaFiscal.idempresa),
+					eq(nfeserie.modelo, "65"),
+					eq(nfeserie.serie, String(notaFiscal.serie)),
+				),
+			)
+			.for("update");
+		if (serie && numeroUsado >= serie.numeroproximo) {
+			await tx
+				.update(nfeserie)
+				.set({
+					numeroproximo: numeroUsado + 1,
+					atualizadoem: new Date().toISOString(),
+				})
+				.where(eq(nfeserie.id, serie.id));
+		}
+
+		if (idvenda) {
+			await tx
+				.update(vendapdvgourmet)
+				.set({ idnotafiscalnfce: notaCriada.id })
+				.where(
+					and(
+						eq(vendapdvgourmet.id, idvenda),
+						eq(vendapdvgourmet.idempresa, notaFiscal.idempresa),
+						isNull(vendapdvgourmet.idnotafiscalnfce),
+					),
+				);
+		}
+
+		return notaCriada;
 	});
 }
 

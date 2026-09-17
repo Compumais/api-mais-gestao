@@ -11,6 +11,8 @@ export type NfeGatewayStatusResposta = NfeGatewayRespostaBase & {
 
 export type NfeGatewayEmissaoResposta = NfeGatewayRespostaBase & {
 	xmlEnviado?: string;
+	xmlAssinado?: string;
+	xmlAutorizado?: string;
 	xmlRetorno?: string;
 	chave?: string;
 	cStat?: string;
@@ -236,6 +238,19 @@ export async function emitirNfeGateway(
 	payload: PayloadGateway,
 ): Promise<NfeGatewayEmissaoResposta> {
 	return chamarNfeGateway<NfeGatewayEmissaoResposta>("/nfe/emissao", payload);
+}
+
+export async function transmitirXmlNfceContingenciaGateway(payload: {
+	configJson: Record<string, unknown>;
+	pfxBase64: string;
+	senha: string;
+	xml: string;
+	chave: string;
+}): Promise<NfeGatewayEmissaoResposta> {
+	return chamarNfeGateway<NfeGatewayEmissaoResposta>(
+		"/nfce/contingencia/transmitir",
+		payload,
+	);
 }
 
 export async function cancelarNfeGateway(payload: {

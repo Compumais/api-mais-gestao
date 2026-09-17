@@ -44,9 +44,15 @@ type CriarVendaPdvGourmetParametros = {
 	pagamentos?: LancamentoPagamentoPdv[] | undefined;
 };
 
+export type ConfirmacaoCriacaoVendaPdv = VendaPdvGourmet & {
+	idremoto: string;
+	criada: boolean;
+	recuperada: boolean;
+};
+
 export async function criarVendaPdvGourmetService(
 	parametros: CriarVendaPdvGourmetParametros,
-): Promise<HttpResponse<VendaPdvGourmet | null>> {
+): Promise<HttpResponse<ConfirmacaoCriacaoVendaPdv | null>> {
 	const { dadosVendaPdvGourmet } = parametros;
 	if (!dadosVendaPdvGourmet.idvendalocal) {
 		return criarVendaPdvGourmetSemLock(parametros);
@@ -65,7 +71,7 @@ async function criarVendaPdvGourmetSemLock({
 	pagamentosErp,
 	pagamentos,
 }: CriarVendaPdvGourmetParametros): Promise<
-	HttpResponse<VendaPdvGourmet | null>
+	HttpResponse<ConfirmacaoCriacaoVendaPdv | null>
 > {
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
 		idusuario,
@@ -215,7 +221,12 @@ async function criarVendaPdvGourmetSemLock({
 		}
 	}
 
-	return httpCriacao<VendaPdvGourmet>(registro);
+	return httpCriacao<ConfirmacaoCriacaoVendaPdv>({
+		...registro,
+		idremoto: registro.id,
+		criada: criacao.criada,
+		recuperada: !criacao.criada,
+	});
 }
 
 function preencherTotaisDeLancamentos(

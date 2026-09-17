@@ -230,6 +230,27 @@ try {
         ]);
     }
 
+    if ($method === 'POST' && $path === '/nfce/contingencia/transmitir') {
+        $configJson = $body['configJson'] ?? [];
+        $pfxBase64 = (string) ($body['pfxBase64'] ?? '');
+        $senha = (string) ($body['senha'] ?? '');
+        $xml = (string) ($body['xml'] ?? '');
+        $chave = (string) ($body['chave'] ?? '');
+
+        $resultado = NfeEmissaoService::transmitirXmlContingencia(
+            is_array($configJson) ? $configJson : [],
+            $pfxBase64,
+            $senha,
+            $xml,
+            $chave,
+        );
+
+        jsonResponse([
+            'sucesso' => ($resultado['cStat'] ?? '') === '100',
+            ...$resultado,
+        ]);
+    }
+
     if ($method === 'POST' && $path === '/nfe/cancelar') {
         $configJson = $body['configJson'] ?? [];
         $pfxBase64 = (string) ($body['pfxBase64'] ?? '');
