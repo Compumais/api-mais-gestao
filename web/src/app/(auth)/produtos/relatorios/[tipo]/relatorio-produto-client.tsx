@@ -46,6 +46,7 @@ import { TabelaRelatorioProduto } from "../components/tabela-relatorio-produto";
 import {
 	baixarBlobRelatorio,
 	formatarChaveResumo,
+	formatarValorResumo,
 } from "../relatorio-produto-formatters";
 import { RELATORIO_PRODUTO_POR_TIPO } from "../relatorios-produtos.config";
 
@@ -285,7 +286,9 @@ export function RelatorioProdutoClient({
 											<CardTitle>{formatarChaveResumo(chave)}</CardTitle>
 										</CardHeader>
 										<CardContent>
-											<strong className="text-xl">{valor}</strong>
+											<strong className="text-xl">
+												{formatarValorResumo(chave, valor)}
+											</strong>
 										</CardContent>
 									</Card>
 								))}

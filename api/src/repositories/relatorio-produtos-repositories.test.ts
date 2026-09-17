@@ -49,6 +49,36 @@ describe("queries do relatório de qualidade", () => {
 	});
 });
 
+describe("queries do relatório de inventário", () => {
+	beforeEach(() => {
+		executar.mockReset();
+		executar.mockResolvedValue({ rows: [] });
+	});
+
+	it("lista saldo atual sem depender da migration 0096", async () => {
+		await consultarRelatorioProdutos("inventario", {
+			...filtros,
+			situacao: "ativo",
+			pendencia: "com_estoque",
+			tipoEstoque: "fiscal",
+		});
+
+		expect(executar).toHaveBeenCalledTimes(1);
+		const texto = obterSql(executar.mock.calls[0][0] as SQL);
+
+		expect(texto).toContain("FROM produtos p");
+		expect(texto).toContain("FROM saldoestoque se");
+		expect(texto).toContain("quantidade_operacional");
+		expect(texto).toContain("quantidade_fiscal");
+		expect(texto).toContain("valor_operacional");
+		expect(texto).toContain("NULL::text contagem");
+		expect(texto).toContain("COALESCE(b.estoque_fiscal, 0) > 0");
+		expect(texto).not.toMatch(
+			/\b(marca|produto_ean|tabela_preco|tabela_preco_item)\b/,
+		);
+	});
+});
+
 describe("queries do relatório de cadastro", () => {
 	beforeEach(() => {
 		executar.mockReset();

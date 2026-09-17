@@ -32,6 +32,7 @@ export async function relatoriosRotas(app: FastifyInstance) {
 							"ean",
 							"precos",
 							"estoque",
+							"inventario",
 							"fiscal",
 							"comercial",
 							"compras",

@@ -13,6 +13,7 @@ vi.mock("@/repositories/entidade-repositories.js", () => ({
 vi.mock("@/repositories/relatorio-produtos-repositories.js", () => ({
 	consultarRelatorioProdutos: vi.fn(),
 	consultarResumoQualidadeProdutos: vi.fn(),
+	consultarResumoInventarioProdutos: vi.fn(),
 	consultarDisponibilidadePrecosProdutos: vi.fn(),
 }));
 vi.mock("@/repositories/empresa-repositories.js", () => ({
@@ -118,6 +119,41 @@ describe("gerarRelatorioProdutos", () => {
 				origem: "nota_fiscal",
 				tipoEstoque: "fiscal",
 			}),
+		);
+	});
+
+	it("monta inventário de estoque com resumo de quantidades e valores", async () => {
+		vi.mocked(
+			relatorioRepository.consultarResumoInventarioProdutos,
+		).mockResolvedValue({
+			total: 3,
+			quantidade_operacional: 12,
+			quantidade_fiscal: 10,
+			valor_operacional: 240,
+			valor_fiscal: 200,
+		});
+
+		const resultado = await gerarRelatorioProdutos({
+			tipo: "inventario",
+			filtros: { ...filtros, situacao: "ativo", pendencia: "com_estoque" },
+			idusuario: "usuario-1",
+		});
+
+		expect(resultado.tipo).toBe("inventario");
+		expect(resultado.titulo).toBe("Inventário de estoque");
+		expect(resultado.resumo).toEqual({
+			total: 3,
+			quantidade_operacional: 12,
+			quantidade_fiscal: 10,
+			valor_operacional: 240,
+			valor_fiscal: 200,
+		});
+		expect(resultado.colunas.map((coluna) => coluna.chave)).toContain(
+			"contagem",
+		);
+		expect(relatorioRepository.consultarRelatorioProdutos).toHaveBeenCalledWith(
+			"inventario",
+			expect.objectContaining({ pendencia: "com_estoque" }),
 		);
 	});
 

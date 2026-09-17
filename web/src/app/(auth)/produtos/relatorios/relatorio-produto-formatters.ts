@@ -53,6 +53,18 @@ export function formatarValorRelatorio(
 	return String(valor);
 }
 
+export function formatarValorResumo(
+	chave: string,
+	valor: string | number,
+): string | number {
+	if (typeof valor !== "number") return valor;
+	if (chave.startsWith("valor_")) return formatarValorRelatorio(valor, "moeda");
+	if (chave.startsWith("quantidade_")) {
+		return formatarValorRelatorio(valor, "numero");
+	}
+	return valor;
+}
+
 export function formatarChaveResumo(chave: string): string {
 	const texto = chave
 		.replace(/([a-z\d])([A-Z])/g, "$1 $2")
