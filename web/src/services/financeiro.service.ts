@@ -131,6 +131,7 @@ export interface ListarFinanceirosParams {
 	vencimentoFim?: string | null;
 	status?: string | null;
 	tipo?: string | null; // P ou R
+	identidade?: string | null;
 	idtipocobranca?: string | null;
 	ordenarPor?: string;
 	ordem?: "asc" | "desc";

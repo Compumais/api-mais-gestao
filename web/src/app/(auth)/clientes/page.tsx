@@ -3,6 +3,7 @@
 import {
 	IconChevronDown,
 	IconDotsVertical,
+	IconHistory,
 	IconLayoutColumns,
 	IconPencil,
 	IconPlus,
@@ -65,6 +66,7 @@ import {
 	TIPOPESSOA_OPCOES_FILTRO,
 	visibilidadePadraoColunasClientes,
 } from "./clientes-colunas";
+import { HistoricoClienteModal } from "./components/historico-cliente-modal";
 
 function rotuloColuna(column: {
 	id: string;
@@ -147,6 +149,9 @@ export default function ClientesPage() {
 		useState<FiltrosColunaClientesState>(filtrosColunaClientesVazios);
 	const [ordenarPor, setOrdenarPor] = useState<string | null>(null);
 	const [ordem, setOrdem] = useState<"asc" | "desc" | null>(null);
+	const [clienteHistorico, setClienteHistorico] = useState<Entidade | null>(
+		null,
+	);
 
 	const visibilidadePadrao = useMemo(
 		() => visibilidadePadraoColunasClientes(),
@@ -342,6 +347,12 @@ export default function ClientesPage() {
 								<DropdownMenuItem onClick={() => handleEdit(entidade)}>
 									<IconPencil className="size-4" />
 									Editar
+								</DropdownMenuItem>
+								<DropdownMenuItem
+									onClick={() => setClienteHistorico(entidade)}
+								>
+									<IconHistory className="size-4" />
+									Histórico
 								</DropdownMenuItem>
 								<DropdownMenuSeparator />
 								<DropdownMenuItem
@@ -588,6 +599,10 @@ export default function ClientesPage() {
 					)}
 				</div>
 			</div>
+			<HistoricoClienteModal
+				cliente={clienteHistorico}
+				onFechar={() => setClienteHistorico(null)}
+			/>
 		</PageContainer>
 	);
 }

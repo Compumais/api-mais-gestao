@@ -233,6 +233,12 @@ export const listarFinanceirosSchema: FastifySchema = {
 				nullable: true,
 				description: "Filtro por tipo: P (pagar) ou R (receber)",
 			},
+			identidade: {
+				type: "string",
+				format: "uuid",
+				nullable: true,
+				description: "Filtro por cliente ou fornecedor (entidade)",
+			},
 			idtipocobranca: {
 				type: "string",
 				nullable: true,
