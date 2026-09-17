@@ -160,6 +160,65 @@ export async function atualizarEntidade(
 	return entidade;
 }
 
+export async function listarDocumentosEntidadesEmpresa(idempresa: string) {
+	return db
+		.select({
+			id: schemaEntidade.id,
+			cnpjcpf: schemaEntidade.cnpjcpf,
+		})
+		.from(schemaEntidade)
+		.where(eq(schemaEntidade.idempresa, idempresa));
+}
+
+export type DadosAtualizacaoImportacaoEntidade = {
+	nome: string;
+	cnpjcpf: string;
+	razaosocial?: string | null;
+	tipopessoa?: number | null;
+	indiedest?: number | null;
+	inscricaoestadual?: string | null;
+	rg?: string | null;
+	email?: string | null;
+	telefone?: string | null;
+	endereco?: string | null;
+	numeroendereco?: string | null;
+	complemento?: string | null;
+	bairro?: string | null;
+	cep?: string | null;
+	fax?: string | null;
+	nascimento?: string | null;
+	pais?: string | null;
+	atualizadoem: string;
+	cliente?: number;
+	fornecedor?: number;
+};
+
+export async function persistirImportacaoEntidades(params: {
+	criar: NovaEntidade[];
+	atualizar: Array<{ id: string; dados: DadosAtualizacaoImportacaoEntidade }>;
+}) {
+	return db.transaction(async (tx) => {
+		const criados =
+			params.criar.length > 0
+				? await tx.insert(schemaEntidade).values(params.criar).returning()
+				: [];
+
+		const atualizados = [];
+		for (const item of params.atualizar) {
+			const [entidade] = await tx
+				.update(schemaEntidade)
+				.set(item.dados)
+				.where(eq(schemaEntidade.id, item.id))
+				.returning();
+			if (entidade) {
+				atualizados.push(entidade);
+			}
+		}
+
+		return { criados, atualizados };
+	});
+}
+
 export async function excluirEntidade(id: string) {
 	const [entidade] = await db
 		.delete(schemaEntidade)

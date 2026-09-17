@@ -8,7 +8,10 @@ import { criarEntidadePorCnpj } from "./criar-por-cnpj.js";
 import * as schema from "./doc-schema/schemas.js";
 import { excluirEntidade } from "./excluir.js";
 import { exportarEntidades } from "./exportar.js";
+import { importarEntidades } from "./importar.js";
+import { previewImportacaoEntidades } from "./importar-preview.js";
 import { listarEntidades } from "./listar-entidades.js";
+import { templateEntidades } from "./template.js";
 
 export async function entidadesRotas(app: FastifyInstance) {
 	app.addHook("onRequest", verifyJwt);
@@ -24,6 +27,18 @@ export async function entidadesRotas(app: FastifyInstance) {
 	app.get("/entidades/exportar", {
 		schema: schema.exportarEntidadesSchema,
 		handler: exportarEntidades,
+	});
+	app.get("/entidades/template", {
+		schema: schema.templateEntidadesSchema,
+		handler: templateEntidades,
+	});
+	app.post("/entidades/importar/preview", {
+		schema: schema.previewImportacaoEntidadesSchema,
+		handler: previewImportacaoEntidades,
+	});
+	app.post("/entidades/importar", {
+		schema: schema.importarEntidadesSchema,
+		handler: importarEntidades,
 	});
 	app.get("/entidades/cnpj/:cnpj", {
 		schema: schema.consultarCnpjEntidadeSchema,
