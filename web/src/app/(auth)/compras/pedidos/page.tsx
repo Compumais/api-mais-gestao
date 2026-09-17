@@ -1,6 +1,6 @@
 "use client";
 
-import { IconDotsVertical, IconEye } from "@tabler/icons-react";
+import { IconDotsVertical, IconEye, IconPlus } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import {
 	type ColumnDef,
@@ -63,9 +63,19 @@ export default function PedidosCompraPage() {
 			id: "cotacao",
 			header: "Cotação",
 			cell: ({ row }) =>
-				row.original.cotacaocodigo
-					? `#${row.original.cotacaocodigo} ${row.original.cotacaotitulo ?? ""}`
-					: "—",
+				row.original.idcotacao ? (
+					<button
+						type="button"
+						className="text-left hover:underline"
+						onClick={() =>
+							router.push(`/compras/cotacoes/${row.original.idcotacao}`)
+						}
+					>
+						#{row.original.cotacaocodigo} {row.original.cotacaotitulo ?? ""}
+					</button>
+				) : (
+					"—"
+				),
 		},
 		{
 			accessorKey: "valortotal",
@@ -125,8 +135,15 @@ export default function PedidosCompraPage() {
 	return (
 		<PageContainer>
 			<div className="flex flex-col gap-4 py-4 md:py-6">
-				<div className="px-4">
+				<div className="flex items-center justify-between px-4">
 					<h1 className="text-2xl font-bold">Pedidos de compra</h1>
+					<Button
+						className="gap-2"
+						onClick={() => router.push("/compras/pedidos/novo")}
+					>
+						<IconPlus className="size-4" />
+						Novo pedido
+					</Button>
 				</div>
 				<div className="mx-4 rounded-lg border bg-card">
 					{!empresa ? (
@@ -174,6 +191,31 @@ export default function PedidosCompraPage() {
 								)}
 							</TableBody>
 						</Table>
+					)}
+					{data && data.paginacao.totalPages > 1 && (
+						<div className="flex items-center justify-between border-t px-4 py-4">
+							<span className="text-sm text-muted-foreground">
+								Página {pagination.pageIndex + 1} de {data.paginacao.totalPages}
+							</span>
+							<div className="flex gap-2">
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={() => table.previousPage()}
+									disabled={!table.getCanPreviousPage()}
+								>
+									Anterior
+								</Button>
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={() => table.nextPage()}
+									disabled={!table.getCanNextPage()}
+								>
+									Próxima
+								</Button>
+							</div>
+						</div>
 					)}
 				</div>
 			</div>
