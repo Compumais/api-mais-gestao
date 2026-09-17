@@ -2,7 +2,7 @@
 
 import { IconPrinter } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { PageContainer } from "@/app/(auth)/components/page-container";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +25,7 @@ import { pedidosCompraService } from "@/services/pedidos-compra.service";
 
 export default function DetalhePedidoCompraPage() {
 	const params = useParams<{ id: string }>();
+	const router = useRouter();
 	const queryClient = useQueryClient();
 	const id = params.id;
 
@@ -39,6 +40,20 @@ export default function DetalhePedidoCompraPage() {
 			queryClient.invalidateQueries({ queryKey: ["pedido-compra", id] });
 			queryClient.invalidateQueries({ queryKey: ["pedidos-compra"] });
 			toast.success("Pedido cancelado");
+		},
+		onError: (error: Error) => toast.error(error.message),
+	});
+
+	const { mutate: converterCotacao, isPending: convertendo } = useMutation({
+		mutationFn: () => pedidosCompraService.converterCotacao(id),
+		onSuccess: (pedido) => {
+			queryClient.invalidateQueries({ queryKey: ["pedido-compra", id] });
+			queryClient.invalidateQueries({ queryKey: ["pedidos-compra"] });
+			queryClient.invalidateQueries({ queryKey: ["cotacoes-compra"] });
+			toast.success("Pedido convertido em cotação");
+			if (pedido.idcotacao) {
+				router.push(`/compras/cotacoes/${pedido.idcotacao}`);
+			}
 		},
 		onError: (error: Error) => toast.error(error.message),
 	});
@@ -73,6 +88,25 @@ export default function DetalhePedidoCompraPage() {
 							<IconPrinter className="size-4" />
 							Imprimir
 						</Button>
+						{data.idcotacao && (
+							<Button
+								variant="outline"
+								onClick={() =>
+									router.push(`/compras/cotacoes/${data.idcotacao}`)
+								}
+							>
+								Ver cotação
+							</Button>
+						)}
+						{data.status === "A" && !data.idcotacao && (
+							<Button
+								variant="outline"
+								onClick={() => converterCotacao()}
+								disabled={convertendo}
+							>
+								Converter em cotação
+							</Button>
+						)}
 						{data.status === "A" && (
 							<Button
 								variant="destructive"
@@ -103,9 +137,19 @@ export default function DetalhePedidoCompraPage() {
 						</p>
 						<p>
 							<strong>Cotação:</strong>{" "}
-							{data.cotacaocodigo
-								? `#${data.cotacaocodigo} ${data.cotacaotitulo ?? ""}`
-								: "—"}
+							{data.idcotacao ? (
+								<button
+									type="button"
+									className="hover:underline"
+									onClick={() =>
+										router.push(`/compras/cotacoes/${data.idcotacao}`)
+									}
+								>
+									#{data.cotacaocodigo} {data.cotacaotitulo ?? ""}
+								</button>
+							) : (
+								"—"
+							)}
 						</p>
 						<p>
 							<strong>Total:</strong> {formatarMoeda(data.valortotal)}
