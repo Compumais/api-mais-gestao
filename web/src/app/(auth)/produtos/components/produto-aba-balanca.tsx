@@ -1,10 +1,10 @@
 "use client";
 
-import type {
-	FieldErrors,
-	UseFormRegister,
-	UseFormSetValue,
-	UseFormWatch,
+import {
+	type Control,
+	Controller,
+	type FieldErrors,
+	type UseFormRegister,
 } from "react-hook-form";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -19,20 +19,16 @@ import { Label } from "@/components/ui/label";
 import type { ProdutoFormData } from "@/schemas/produtos.schema";
 
 type ProdutoAbaBalancaProps = {
+	control: Control<ProdutoFormData>;
 	register: UseFormRegister<ProdutoFormData>;
-	setValue: UseFormSetValue<ProdutoFormData>;
-	watch: UseFormWatch<ProdutoFormData>;
 	errors: FieldErrors<ProdutoFormData>;
 };
 
 export function ProdutoAbaBalanca({
+	control,
 	register,
-	setValue,
-	watch,
 	errors,
 }: ProdutoAbaBalancaProps) {
-	const exportaBalanca = watch("exportaBalanca");
-
 	return (
 		<FieldGroup>
 			<div className="space-y-4">
@@ -42,14 +38,19 @@ export function ProdutoAbaBalanca({
 					dias de validade a etiqueta deve usar.
 				</p>
 				<div className="flex items-center gap-3 rounded-lg border p-4">
-					<Checkbox
-						id="exportaBalanca"
-						checked={!!exportaBalanca}
-						onCheckedChange={(checked) =>
-							setValue("exportaBalanca", checked === true, {
-								shouldValidate: true,
-							})
-						}
+					<Controller
+						name="exportaBalanca"
+						control={control}
+						render={({ field }) => (
+							<Checkbox
+								id="exportaBalanca"
+								type="button"
+								checked={!!field.value}
+								onCheckedChange={(checked) =>
+									field.onChange(checked === true)
+								}
+							/>
+						)}
 					/>
 					<div>
 						<Label
