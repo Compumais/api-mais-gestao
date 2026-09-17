@@ -9,7 +9,7 @@ export default function RelatorioFiscalVendasPage() {
 		<PageContainer>
 			<FiscalReportPage
 				titulo="Relatório de vendas"
-				descricao="Listagem analítica das NF-e de saída e NFC-e autorizadas no período, com subtotais por modelo."
+				descricao="Listagem analítica das NF-e de saída e NFC-e autorizadas no período, com os produtos de cada documento."
 				gerarRelatorio={gerarRelatorioFiscalVendas}
 			/>
 		</PageContainer>

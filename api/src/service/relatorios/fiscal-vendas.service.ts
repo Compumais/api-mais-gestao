@@ -1,9 +1,11 @@
 import { buscarEmpresaPorId } from "@/repositories/empresa-repositories.js";
 import {
+	listarItensRelatorioFiscal,
 	listarNotasRelatorioFiscalVendas,
 	type RelatorioFiscalNotaItem,
 } from "@/repositories/nota-fiscal-repositories.js";
 import {
+	anexarProdutosNasNotas,
 	calcularTotaisFiscais,
 	type FormatoRelatorioFiscal,
 	formatCurrency,
@@ -57,13 +59,19 @@ export async function gerarRelatorioFiscalVendas(
 		throw new Error("Empresa não encontrada");
 	}
 
+	const produtos = await listarItensRelatorioFiscal(
+		notas.map((nota) => nota.id),
+	);
+	const notasComProdutos = anexarProdutosNasNotas(notas, produtos);
+
 	return gerarRelatorioFiscal({
 		...params,
 		titulo: "Relatório Fiscal de Vendas",
 		prefixoArquivo: "fiscal-vendas",
 		empresaNome: empresa.nome,
 		empresaCnpj: empresa.cnpj,
-		notas,
+		notas: notasComProdutos,
+		exibirProdutos: true,
 		colunas: COLUNAS,
 		resumoLinhas: calcularResumoVendas(notas),
 		montarLinha: (nota: RelatorioFiscalNotaItem) => [

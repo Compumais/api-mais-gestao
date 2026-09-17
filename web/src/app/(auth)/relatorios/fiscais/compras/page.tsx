@@ -9,7 +9,7 @@ export default function RelatorioFiscalComprasPage() {
 		<PageContainer>
 			<FiscalReportPage
 				titulo="Relatório de compras"
-				descricao="Listagem analítica das notas fiscais de entrada confirmadas no período, com fornecedor, CFOP e impostos."
+				descricao="Listagem analítica das notas fiscais de entrada confirmadas no período, com os produtos de cada documento."
 				gerarRelatorio={gerarRelatorioFiscalCompras}
 			/>
 		</PageContainer>

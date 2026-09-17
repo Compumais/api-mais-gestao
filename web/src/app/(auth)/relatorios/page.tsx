@@ -108,7 +108,7 @@ const reports = [
 	{
 		title: "Relatório de compras",
 		description:
-			"Notas fiscais de entrada confirmadas no período, com fornecedor, CFOP e impostos.",
+			"Notas fiscais de entrada confirmadas no período, com os produtos de cada documento.",
 		icon: IconShoppingCart,
 		href: "/relatorios/fiscais/compras",
 		color: "text-sky-600",
@@ -116,7 +116,7 @@ const reports = [
 	{
 		title: "Relatório de vendas",
 		description:
-			"NF-e de saída e NFC-e autorizadas no período, com subtotais por modelo.",
+			"NF-e de saída e NFC-e autorizadas no período, com os produtos de cada documento.",
 		icon: IconFileInvoice,
 		href: "/relatorios/fiscais/vendas",
 		color: "text-violet-600",

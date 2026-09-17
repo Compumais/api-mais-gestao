@@ -27,6 +27,8 @@ import {
 	entidade,
 	notafiscal,
 	notafiscalitem,
+	produtos,
+	unidademedida,
 	vendapdvgourmet,
 } from "@/repositories/schema.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
@@ -953,6 +955,24 @@ export type RelatorioFiscalNotaItem = {
 	cfopDescricao: string | null;
 };
 
+export type RelatorioFiscalProdutoItem = {
+	id: string;
+	idnotafiscal: string;
+	codigo: string | null;
+	descricao: string | null;
+	quantidade: string | null;
+	unidade: string | null;
+	precounitario: string | null;
+	total: string | null;
+	cfop: string | null;
+	baseicms: string | null;
+	icms: string | null;
+};
+
+export type RelatorioFiscalNotaComProdutos = RelatorioFiscalNotaItem & {
+	produtos: RelatorioFiscalProdutoItem[];
+};
+
 export type ListarNotasRelatorioFiscalParametros = {
 	idempresa: string;
 	dataInicio: string;
@@ -1064,6 +1084,44 @@ export async function listarNotasRelatorioFiscalContabilidade({
 			),
 		)
 		.orderBy(desc(notafiscal.emissao));
+}
+
+export async function listarItensRelatorioFiscal(
+	idsNotas: string[],
+): Promise<RelatorioFiscalProdutoItem[]> {
+	if (idsNotas.length === 0) return [];
+
+	return db
+		.select({
+			id: notafiscalitem.id,
+			idnotafiscal: notafiscalitem.idnotafiscal,
+			codigo: sql<
+				string | null
+			>`coalesce(nullif(${notafiscalitem.produto}, ''), ${produtos.codigo}::text)`,
+			descricao: sql<
+				string | null
+			>`coalesce(nullif(${notafiscalitem.descricao}, ''), ${produtos.descricao}, ${produtos.nome})`,
+			quantidade: notafiscalitem.quantidade,
+			unidade: sql<
+				string | null
+			>`coalesce(nullif(${notafiscalitem.unidade}, ''), ${unidademedida.codigo})`,
+			precounitario: notafiscalitem.precounitario,
+			total: notafiscalitem.total,
+			cfop: sql<
+				string | null
+			>`coalesce(${notafiscalitem.cfop}, ${cfop.codigo})`,
+			baseicms: notafiscalitem.baseicms,
+			icms: notafiscalitem.icms,
+		})
+		.from(notafiscalitem)
+		.leftJoin(produtos, eq(notafiscalitem.idproduto, produtos.id))
+		.leftJoin(cfop, eq(notafiscalitem.idcfop, cfop.id))
+		.leftJoin(
+			unidademedida,
+			eq(notafiscalitem.idunidademedida, unidademedida.id),
+		)
+		.where(inArray(notafiscalitem.idnotafiscal, idsNotas))
+		.orderBy(notafiscalitem.idnotafiscal, notafiscalitem.contador);
 }
 
 const STATUS_NOTA_PENDENTE_CORRECAO = [90, 110, 301] as const;
