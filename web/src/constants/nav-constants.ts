@@ -447,6 +447,13 @@ export const DATA = {
 					url: "/relatorios/fiscais",
 				},
 				{
+					title: "Notas fiscais",
+					url: "/relatorios/notas-fiscais",
+					acesso: {
+						feature: "notas_fiscais",
+					},
+				},
+				{
 					title: "Relatório de compras",
 					url: "/relatorios/fiscais/compras",
 				},

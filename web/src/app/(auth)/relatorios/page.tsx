@@ -187,6 +187,15 @@ const reports: RelatorioHub[] = [
 	},
 	{
 		modulo: "Fiscal",
+		title: "Relatório de Notas Fiscais",
+		description:
+			"NF-e e NFC-e emitidas, autorizadas, canceladas e inutilizadas, separadas por ambiente.",
+		icon: IconFileInvoice,
+		href: "/relatorios/notas-fiscais",
+		color: "text-emerald-600",
+	},
+	{
+		modulo: "Fiscal",
 		title: "Relatório de compras",
 		description:
 			"Notas fiscais de entrada confirmadas no período, com os produtos de cada documento.",
