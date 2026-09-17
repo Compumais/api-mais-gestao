@@ -1,5 +1,8 @@
 import type { FastifyInstance } from "fastify";
+import { FEATURES_SAAS } from "@/constants/saas-catalog.js";
+import { resolveEmpresaContext } from "../../middleware/resolve-empresa-context.js";
 import { verifyJwt } from "../../middleware/verify-jwt.js";
+import { requireFeature } from "../../middleware/verify-plano.js";
 import { gerarRelatorioContasPagarController } from "./contas-pagar.js";
 import { gerarRelatorioContasReceberController } from "./contas-receber.js";
 import { gerarRelatorioDespesasPorCategoriaController } from "./despesas-por-categoria.js";
@@ -9,12 +12,72 @@ import { gerarRelatorioFiscalContabilidadeController } from "./fiscal-contabilid
 import { gerarRelatorioFiscalVendasController } from "./fiscal-vendas.js";
 import { gerarRelatorioFluxoCaixaController } from "./fluxo-caixa.js";
 import {
+	exportarRelatorioNotasFiscaisController,
+	listarRelatorioNotasFiscaisController,
+} from "./notas-fiscais.js";
+import {
 	exportarRelatorioProdutosController,
 	listarRelatorioProdutosController,
 } from "./produtos.js";
 
 export async function relatoriosRotas(app: FastifyInstance) {
 	app.addHook("onRequest", verifyJwt);
+
+	const queryRelatorioNotasFiscais = {
+		type: "object" as const,
+		required: ["idempresa", "dataInicio", "dataFim"],
+		properties: {
+			idempresa: { type: "string", format: "uuid" },
+			dataInicio: { type: "string", format: "date" },
+			dataFim: { type: "string", format: "date" },
+			ambiente: { type: "string", enum: ["todos", "1", "2"] },
+			status: {
+				type: "string",
+				enum: ["todos", "pendente", "autorizada", "cancelada", "inutilizada"],
+			},
+			modelo: { type: "string", enum: ["todos", "55", "65"] },
+			serie: { type: "string", maxLength: 6 },
+			numeroChave: { type: "string", maxLength: 60 },
+			destinatario: { type: "string", maxLength: 120 },
+			page: { type: "integer", minimum: 1, default: 1 },
+			limit: { type: "integer", minimum: 1, maximum: 200, default: 20 },
+		},
+	};
+
+	app.get("/relatorios/notas-fiscais", {
+		schema: {
+			tags: ["relatorios"],
+			summary: "Listar notas fiscais emitidas e eventos",
+			description:
+				"Lista NF-e/NFC-e de saída e inutilizações, separadas por ambiente, com paginação e resumos.",
+			querystring: queryRelatorioNotasFiscais,
+		},
+		preHandler: [
+			resolveEmpresaContext,
+			requireFeature(FEATURES_SAAS.NOTAS_FISCAIS),
+		],
+		handler: listarRelatorioNotasFiscaisController,
+	});
+
+	app.get("/relatorios/notas-fiscais/exportar", {
+		schema: {
+			tags: ["relatorios"],
+			summary: "Exportar relatório de notas fiscais",
+			querystring: {
+				...queryRelatorioNotasFiscais,
+				required: [...queryRelatorioNotasFiscais.required, "formato"],
+				properties: {
+					...queryRelatorioNotasFiscais.properties,
+					formato: { type: "string", enum: ["csv", "xlsx", "pdf"] },
+				},
+			},
+		},
+		preHandler: [
+			resolveEmpresaContext,
+			requireFeature(FEATURES_SAAS.NOTAS_FISCAIS),
+		],
+		handler: exportarRelatorioNotasFiscaisController,
+	});
 
 	app.get("/relatorios/produtos/:tipo", {
 		schema: {
