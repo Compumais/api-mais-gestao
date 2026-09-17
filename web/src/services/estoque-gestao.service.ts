@@ -27,6 +27,14 @@ export interface MovimentoEstoqueGestao {
 	datahora: string | null;
 	observacao: string | null;
 	idoriginal: string | null;
+	valortotal: string | null;
+	cancelado: number | null;
+	documentoNumero: string | null;
+	documentoSerie: string | null;
+	documentoModelo: string | null;
+	cfop: string | null;
+	numeropdv: number | null;
+	idvendalocal: string | null;
 }
 
 export interface ResultadoBaixaEstoqueVenda {

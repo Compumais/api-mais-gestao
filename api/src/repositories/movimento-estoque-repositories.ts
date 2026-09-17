@@ -1,6 +1,11 @@
 import { and, count, desc, eq, ilike } from "drizzle-orm";
 import type { NovoMovimentoEstoque } from "@/model/movimento-estoque-model";
-import { movimentoestoque } from "@/repositories/schema.js";
+import {
+	movimentoestoque,
+	notafiscal,
+	notafiscalitem,
+	vendapdvgourmet,
+} from "@/repositories/schema.js";
 import { db } from "./connection";
 
 export async function criarMovimentoEstoque(dadosMovimentoEstoque: NovoMovimentoEstoque) {
@@ -143,6 +148,96 @@ export async function listarMovimentosEstoque({
 		db
 			.select()
 			.from(movimentoestoque)
+			.where(and(...where))
+			.orderBy(desc(movimentoestoque.id))
+			.limit(limit)
+			.offset(offset),
+	]);
+
+	return {
+		movimentos,
+		total: totalCount[0]?.value ?? 0,
+	};
+}
+
+export type HistoricoMovimentoEstoque = {
+	id: number;
+	idempresa: string;
+	idproduto: string | null;
+	tipodocumento: number | null;
+	tipoestoque: number | null;
+	quantidadeentrada: string | null;
+	quantidadesaida: string | null;
+	data: string | null;
+	datahora: string | null;
+	observacao: string | null;
+	idoriginal: string | null;
+	valortotal: string | null;
+	cancelado: number | null;
+	documentoNumero: string | null;
+	documentoSerie: string | null;
+	documentoModelo: string | null;
+	cfop: string | null;
+	numeropdv: number | null;
+	idvendalocal: string | null;
+};
+
+export async function listarHistoricoMovimentosProduto({
+	idempresa,
+	idproduto,
+	tipoestoque,
+	page = 1,
+	limit = 10,
+}: ListarMovimentosEstoqueParametros) {
+	const where = [eq(movimentoestoque.idempresa, idempresa)];
+
+	if (idproduto) {
+		where.push(eq(movimentoestoque.idproduto, idproduto));
+	}
+
+	if (tipoestoque !== undefined) {
+		where.push(eq(movimentoestoque.tipoestoque, tipoestoque));
+	}
+
+	const offset = (page - 1) * limit;
+
+	const [totalCount, movimentos] = await Promise.all([
+		db
+			.select({ value: count() })
+			.from(movimentoestoque)
+			.where(and(...where)),
+		db
+			.select({
+				id: movimentoestoque.id,
+				idempresa: movimentoestoque.idempresa,
+				idproduto: movimentoestoque.idproduto,
+				tipodocumento: movimentoestoque.tipodocumento,
+				tipoestoque: movimentoestoque.tipoestoque,
+				quantidadeentrada: movimentoestoque.quantidadeentrada,
+				quantidadesaida: movimentoestoque.quantidadesaida,
+				data: movimentoestoque.data,
+				datahora: movimentoestoque.datahora,
+				observacao: movimentoestoque.observacao,
+				idoriginal: movimentoestoque.idoriginal,
+				valortotal: movimentoestoque.valortotal,
+				cancelado: movimentoestoque.cancelado,
+				documentoNumero: notafiscal.numero,
+				documentoSerie: notafiscal.serie,
+				documentoModelo: notafiscal.modelo,
+				cfop: notafiscalitem.cfop,
+				numeropdv: vendapdvgourmet.numeropdv,
+				idvendalocal: vendapdvgourmet.idvendalocal,
+			})
+			.from(movimentoestoque)
+			.leftJoin(notafiscal, eq(movimentoestoque.idoriginal, notafiscal.id))
+			.leftJoin(
+				notafiscalitem,
+				eq(movimentoestoque.iditemoriginal, notafiscalitem.id),
+			)
+			.leftJoin(
+				vendapdvgourmet,
+				eq(movimentoestoque.idoriginal, vendapdvgourmet.id),
+			)
 			.where(and(...where))
 			.orderBy(desc(movimentoestoque.id))
 			.limit(limit)
