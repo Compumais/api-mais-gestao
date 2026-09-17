@@ -8,6 +8,7 @@ import {
 } from "@/repositories/entidade-repositories.js";
 import { CONTENT_TYPE_CSV, gerarCsv } from "@/util/csv.js";
 import { hojeBrasiliaIsoDate } from "@/util/data-hora-brasilia.js";
+import { COLUNAS_EXPORTACAO_ENTIDADES } from "@/util/entidades-importacao.js";
 import { httpBadRequest, httpOk, httpProibido } from "@/util/http-util.js";
 
 type ExportarEntidadesParametros = FiltrosExportacaoEntidades & {
@@ -19,27 +20,6 @@ type ExportarEntidadesResposta = {
 	contentType: string;
 	filename: string;
 };
-
-const COLUNAS_EXPORTACAO_ENTIDADES = [
-	"Nome",
-	"Razão Social",
-	"CNPJ/CPF",
-	"Endereço",
-	"Tipo de pessoa",
-	"Indicador IE",
-	"Inscrição estadual",
-	"RG",
-	"E-mail",
-	"Telefone",
-	"Nº",
-	"Complemento",
-	"Bairro",
-	"CEP",
-	"Fax",
-	"Nascimento",
-	"País",
-	"Data cadastro",
-] as const;
 
 function texto(valor: string | number | null | undefined): string {
 	if (valor == null) return "";

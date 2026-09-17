@@ -8,6 +8,7 @@ import {
 	IconPencil,
 	IconPlus,
 	IconSearch,
+	IconSettings,
 	IconTrash,
 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -16,10 +17,11 @@ import {
 	getCoreRowModel,
 	useReactTable,
 } from "@tanstack/react-table";
+import { Download, FileDown, FileSpreadsheet, FileText } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { BotaoExportarCsv } from "@/components/botao-exportar-csv";
+import { ImportarClientesDialog } from "@/app/(auth)/clientes/components/importar-clientes-dialog";
 import type { OrdenacaoColunaTabela } from "@/components/cabecalho-coluna-tabela";
 import { TableSkeleton } from "@/components/table-skeleton";
 import { Button } from "@/components/ui/button";
@@ -29,6 +31,9 @@ import {
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuSeparator,
+	DropdownMenuSub,
+	DropdownMenuSubContent,
+	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -54,7 +59,11 @@ import {
 	useColunasTabelaPersistidas,
 } from "@/hooks/use-preferencias-ui-usuario";
 import { baixarArquivo } from "@/lib/baixar-arquivo";
-import { type Entidade, entidadesService } from "@/services/entidades.service";
+import {
+	type Entidade,
+	entidadesService,
+	type FormatoImportacaoEntidades,
+} from "@/services/entidades.service";
 import { PageContainer } from "../components/page-container";
 import {
 	COLUNA_PARA_CAMPO_FILTRO_CLIENTE,
@@ -152,6 +161,8 @@ export default function ClientesPage() {
 	const [clienteHistorico, setClienteHistorico] = useState<Entidade | null>(
 		null,
 	);
+	const [formatoImportacao, setFormatoImportacao] =
+		useState<FormatoImportacaoEntidades | null>(null);
 
 	const visibilidadePadrao = useMemo(
 		() => visibilidadePadraoColunasClientes(),
@@ -275,6 +286,20 @@ export default function ClientesPage() {
 		},
 	});
 
+	const baixarModeloMutation = useMutation({
+		mutationFn: async (formato: FormatoImportacaoEntidades) => {
+			const blob = await entidadesService.baixarTemplate(formato, "cliente");
+			return { blob, formato };
+		},
+		onSuccess: ({ blob, formato }) => {
+			baixarArquivo(blob, `modelo-clientes.${formato}`);
+			toast.success("Modelo baixado com sucesso");
+		},
+		onError: (error: Error) => {
+			toast.error(error.message || "Erro ao baixar modelo");
+		},
+	});
+
 	const exportarClientesMutation = useMutation({
 		mutationFn: async () => {
 			if (!localStorageEmpresa) {
@@ -348,9 +373,7 @@ export default function ClientesPage() {
 									<IconPencil className="size-4" />
 									Editar
 								</DropdownMenuItem>
-								<DropdownMenuItem
-									onClick={() => setClienteHistorico(entidade)}
-								>
+								<DropdownMenuItem onClick={() => setClienteHistorico(entidade)}>
 									<IconHistory className="size-4" />
 									Histórico
 								</DropdownMenuItem>
@@ -405,11 +428,67 @@ export default function ClientesPage() {
 				<div className="flex items-center justify-between gap-2 px-4">
 					<h1 className="text-2xl font-bold">Clientes</h1>
 					<div className="flex flex-wrap items-center gap-2">
-						<BotaoExportarCsv
-							onExportar={() => exportarClientesMutation.mutate()}
-							isPending={exportarClientesMutation.isPending}
-							disabled={!localStorageEmpresa}
-						/>
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button
+									variant="outline"
+									size="icon"
+									aria-label="Ações"
+									disabled={!localStorageEmpresa}
+								>
+									<IconSettings className="size-4" aria-hidden="true" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="end" className="min-w-56">
+								<DropdownMenuItem
+									onClick={() => setFormatoImportacao("csv")}
+									disabled={!localStorageEmpresa}
+								>
+									<FileText className="h-4 w-4" aria-hidden="true" />
+									Importar CSV
+								</DropdownMenuItem>
+								<DropdownMenuItem
+									onClick={() => setFormatoImportacao("xlsx")}
+									disabled={!localStorageEmpresa}
+								>
+									<FileSpreadsheet className="h-4 w-4" aria-hidden="true" />
+									Importar XLSX
+								</DropdownMenuItem>
+								<DropdownMenuSub>
+									<DropdownMenuSubTrigger
+										disabled={
+											!localStorageEmpresa || baixarModeloMutation.isPending
+										}
+									>
+										<Download className="h-4 w-4" aria-hidden="true" />
+										Baixar modelo
+									</DropdownMenuSubTrigger>
+									<DropdownMenuSubContent>
+										<DropdownMenuItem
+											onClick={() => baixarModeloMutation.mutate("csv")}
+										>
+											Modelo CSV
+										</DropdownMenuItem>
+										<DropdownMenuItem
+											onClick={() => baixarModeloMutation.mutate("xlsx")}
+										>
+											Modelo XLSX
+										</DropdownMenuItem>
+									</DropdownMenuSubContent>
+								</DropdownMenuSub>
+								<DropdownMenuItem
+									onClick={() => exportarClientesMutation.mutate()}
+									disabled={
+										!localStorageEmpresa || exportarClientesMutation.isPending
+									}
+								>
+									<FileDown className="h-4 w-4" aria-hidden="true" />
+									{exportarClientesMutation.isPending
+										? "Exportando..."
+										: "Exportar CSV"}
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
 						<Button
 							onClick={() => router.push("/clientes/novo")}
 							className="gap-2"
@@ -602,6 +681,10 @@ export default function ClientesPage() {
 			<HistoricoClienteModal
 				cliente={clienteHistorico}
 				onFechar={() => setClienteHistorico(null)}
+			/>
+			<ImportarClientesDialog
+				formato={formatoImportacao}
+				onFechar={() => setFormatoImportacao(null)}
 			/>
 		</PageContainer>
 	);

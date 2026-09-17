@@ -106,6 +106,40 @@ export interface ConsultaCnpjEntidadeResposta {
 	jaCadastrada: { id: string } | null;
 }
 
+export type FormatoImportacaoEntidades = "csv" | "xlsx";
+
+export interface ImportacaoEntidadesData {
+	idempresa: string;
+	formato: FormatoImportacaoEntidades;
+	conteudo: string;
+	nomeArquivo?: string;
+	cliente?: number;
+	fornecedor?: number;
+}
+
+export interface EntidadePreviewImportacao {
+	linha: number;
+	nome: string;
+	cnpjcpf: string;
+	acao: "criar" | "atualizar";
+	erros: string[];
+}
+
+export interface PreviewImportacaoEntidadesResponse {
+	totalEntidades: number;
+	totalCriar: number;
+	totalAtualizar: number;
+	totalErros: number;
+	errosGerais: string[];
+	entidades: EntidadePreviewImportacao[];
+}
+
+export interface ImportarEntidadesResponse {
+	totalImportados: number;
+	totalCriados: number;
+	totalAtualizados: number;
+}
+
 export interface AtualizarEntidadeData {
 	nome?: string;
 	cnpjcpf?: string;
@@ -170,6 +204,48 @@ export const entidadesService = {
 				limit: 10,
 				...params,
 			},
+		});
+		return data;
+	},
+
+	async previewImportacao(
+		dados: ImportacaoEntidadesData,
+	): Promise<PreviewImportacaoEntidadesResponse> {
+		const { data } = await api.post<PreviewImportacaoEntidadesResponse>(
+			"/entidades/importar/preview",
+			dados,
+		);
+		return data;
+	},
+
+	async importar(
+		dados: ImportacaoEntidadesData,
+		onUploadProgress?: (percentual: number) => void,
+	): Promise<ImportarEntidadesResponse> {
+		const { data } = await api.post<ImportarEntidadesResponse>(
+			"/entidades/importar",
+			dados,
+			{
+				onUploadProgress: (evento) => {
+					if (onUploadProgress && evento.total) {
+						onUploadProgress(Math.round((evento.loaded / evento.total) * 100));
+					}
+				},
+			},
+		);
+		return data;
+	},
+
+	async baixarTemplate(
+		formato: FormatoImportacaoEntidades,
+		tipo: "cliente" | "fornecedor",
+	): Promise<Blob> {
+		const { data } = await api.get<Blob>("/entidades/template", {
+			params: {
+				formato,
+				...(tipo === "cliente" ? { cliente: 1 } : { fornecedor: 1 }),
+			},
+			responseType: "blob",
 		});
 		return data;
 	},

@@ -804,3 +804,137 @@ export const exportarEntidadesSchema: FastifySchema = {
 		},
 	},
 };
+
+const respostaErroEntidade = {
+	type: "object",
+	properties: {
+		error: { type: "string" },
+		code: { type: "string" },
+		details: { type: "array" },
+	},
+};
+
+const corpoImportacaoEntidades = {
+	type: "object",
+	properties: {
+		idempresa: {
+			type: "string",
+			format: "uuid",
+			description: "ID da empresa",
+		},
+		formato: {
+			type: "string",
+			enum: ["csv", "xlsx"],
+			description: "Formato do arquivo",
+		},
+		conteudo: {
+			type: "string",
+			description: "Conteúdo do arquivo: texto para CSV ou base64 para XLSX",
+		},
+		nomeArquivo: {
+			type: "string",
+			nullable: true,
+			description: "Nome do arquivo original (para validar a extensão)",
+		},
+		cliente: {
+			type: "number",
+			enum: [0, 1],
+			description: "1 para importar como clientes",
+		},
+		fornecedor: {
+			type: "number",
+			enum: [0, 1],
+			description: "1 para importar como fornecedores",
+		},
+	},
+	required: ["idempresa", "formato", "conteudo"],
+};
+
+export const templateEntidadesSchema: FastifySchema = {
+	tags: ["entidades"],
+	summary: "Baixar modelo de importação de entidades",
+	description:
+		"Retorna um arquivo modelo (CSV ou XLSX) com as colunas de cadastro de clientes ou fornecedores e uma linha de exemplo.",
+	security: [{ bearerAuth: [] }],
+	querystring: {
+		type: "object",
+		properties: {
+			formato: {
+				type: "string",
+				enum: ["csv", "xlsx"],
+				default: "csv",
+				description: "Formato do arquivo modelo",
+			},
+			cliente: { type: "number", enum: [0, 1] },
+			fornecedor: { type: "number", enum: [0, 1] },
+		},
+	},
+	response: {
+		400: respostaErroEntidade,
+		401: respostaErroEntidade,
+		500: respostaErroEntidade,
+	},
+};
+
+export const previewImportacaoEntidadesSchema: FastifySchema = {
+	tags: ["entidades"],
+	summary: "Preview da importação de entidades",
+	description:
+		"Valida um arquivo CSV ou XLSX de clientes ou fornecedores e retorna os registros encontrados, a ação (criar ou atualizar) e os erros de validação, sem persistir nada. Cadastros existentes são identificados pelo CNPJ/CPF.",
+	security: [{ bearerAuth: [] }],
+	body: corpoImportacaoEntidades,
+	response: {
+		200: {
+			type: "object",
+			description: "Resultado da validação do arquivo",
+			properties: {
+				totalEntidades: { type: "number" },
+				totalCriar: { type: "number" },
+				totalAtualizar: { type: "number" },
+				totalErros: { type: "number" },
+				errosGerais: { type: "array", items: { type: "string" } },
+				entidades: {
+					type: "array",
+					items: {
+						type: "object",
+						properties: {
+							linha: { type: "number" },
+							nome: { type: "string" },
+							cnpjcpf: { type: "string" },
+							acao: { type: "string", enum: ["criar", "atualizar"] },
+							erros: { type: "array", items: { type: "string" } },
+						},
+					},
+				},
+			},
+		},
+		400: respostaErroEntidade,
+		401: respostaErroEntidade,
+		403: respostaErroEntidade,
+		500: respostaErroEntidade,
+	},
+};
+
+export const importarEntidadesSchema: FastifySchema = {
+	tags: ["entidades"],
+	summary: "Importar entidades",
+	description:
+		"Cria ou atualiza clientes ou fornecedores a partir de um arquivo CSV ou XLSX. Cadastros existentes são identificados pelo CNPJ/CPF.",
+	security: [{ bearerAuth: [] }],
+	body: corpoImportacaoEntidades,
+	response: {
+		200: {
+			type: "object",
+			description: "Entidades importadas com sucesso",
+			properties: {
+				totalImportados: { type: "number" },
+				totalCriados: { type: "number" },
+				totalAtualizados: { type: "number" },
+			},
+		},
+		400: respostaErroEntidade,
+		401: respostaErroEntidade,
+		403: respostaErroEntidade,
+		500: respostaErroEntidade,
+	},
+};
