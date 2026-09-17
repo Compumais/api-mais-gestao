@@ -91,6 +91,32 @@ export function ProdutoAbaGourmet({
 					</div>
 				</div>
 			</div>
+
+			<div className="mt-6 space-y-4">
+				<h2 className="text-lg font-semibold">Garçom (mobile)</h2>
+				<div className="flex items-center gap-3 rounded-lg border p-4">
+					<Controller
+						name="enviamobile"
+						control={control}
+						render={({ field }) => (
+							<Checkbox
+								id="enviamobile"
+								checked={!!field.value}
+								onCheckedChange={(checked) =>
+									field.onChange(checked === true)
+								}
+							/>
+						)}
+					/>
+					<Label htmlFor="enviamobile" className="cursor-pointer font-normal">
+						Exibir no garçom (mobile)
+					</Label>
+				</div>
+				<p className="text-sm text-muted-foreground">
+					Produtos marcados aparecem na tela do garçom, desde que o grupo
+					também esteja habilitado.
+				</p>
+			</div>
 		</FieldGroup>
 	);
 }

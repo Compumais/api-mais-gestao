@@ -268,7 +268,6 @@ export function ProdutoForm(props: ProdutoFormProps) {
 	const ippt = watch("ippt");
 	const preco = watch("preco");
 	const custoaquisicao = watch("custoaquisicao");
-	const enviamobile = watch("enviamobile");
 	const controlalote = watch("controlalote");
 	const controlavalidade = watch("controlavalidade");
 	const codigo = watch("codigo");
@@ -839,31 +838,6 @@ export function ProdutoForm(props: ProdutoFormProps) {
 									dos dias de validade da balança.
 								</p>
 							</div>
-						</div>
-
-						<div className="mt-6 space-y-4">
-							<h2 className="text-lg font-semibold">Garçom (mobile)</h2>
-							<div className="flex items-center gap-3 rounded-lg border p-4">
-								<Checkbox
-									id="enviamobile"
-									checked={!!enviamobile}
-									onCheckedChange={(checked) =>
-										setValue("enviamobile", checked === true, {
-											shouldValidate: true,
-										})
-									}
-								/>
-								<Label
-									htmlFor="enviamobile"
-									className="cursor-pointer font-normal"
-								>
-									Exibir no garçom (mobile)
-								</Label>
-							</div>
-							<p className="text-sm text-muted-foreground">
-								Produtos marcados aparecem na tela do garçom, desde que o grupo
-								também esteja habilitado.
-							</p>
 						</div>
 					</FieldGroup>
 				</TabsContent>
