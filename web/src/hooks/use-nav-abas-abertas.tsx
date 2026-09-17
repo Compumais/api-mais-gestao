@@ -86,7 +86,9 @@ export function NavAbasAbertasProvider({
 
 	const ativarAba = React.useCallback(
 		(href: string) => {
-			router.push(href);
+			React.startTransition(() => {
+				router.push(href);
+			});
 		},
 		[router],
 	);

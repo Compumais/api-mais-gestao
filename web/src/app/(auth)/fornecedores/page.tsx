@@ -229,7 +229,7 @@ export default function FornecedoresPage() {
 		};
 	}, []);
 
-	const { data, isLoading } = useQuery({
+	const { data, isLoading, isError, error } = useQuery({
 		queryKey: [
 			"fornecedores",
 			localStorageEmpresa?.id,
@@ -526,9 +526,13 @@ export default function FornecedoresPage() {
 												colSpan={colunasVisiveis.length}
 												className="h-24 text-center"
 											>
-												{comFiltros
-													? "Nenhum fornecedor encontrado para os filtros selecionados."
-													: "Nenhum fornecedor encontrado."}
+												{isError
+													? error instanceof Error
+														? error.message
+														: "Erro ao listar entidades"
+													: comFiltros
+														? "Nenhum fornecedor encontrado para os filtros selecionados."
+														: "Nenhum fornecedor encontrado."}
 											</TableCell>
 										</TableRow>
 									)}

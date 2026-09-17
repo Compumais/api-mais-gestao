@@ -97,46 +97,56 @@ export async function listarEntidadesService({
 		});
 	}
 
-	const { entidades, total } = await listarEntidades({
-		idempresa,
-		nome,
-		q,
-		razaosocial,
-		cnpjcpf,
-		endereco,
-		tipopessoa,
-		indiedest,
-		inscricaoestadual,
-		rg,
-		email,
-		telefone,
-		numeroendereco,
-		complemento,
-		bairro,
-		cep,
-		fax,
-		nascimento,
-		pais,
-		criadoem,
-		fornecedor,
-		cliente,
-		transportador,
-		representante,
-		ordenarPor,
-		ordem,
-		page,
-		limit,
-	});
-
-	const totalPages = Math.ceil(total / limit);
-
-	return httpOk<ListarEntidadesResposta>({
-		data: entidades,
-		paginacao: {
+	try {
+		const { entidades, total } = await listarEntidades({
+			idempresa,
+			nome,
+			q,
+			razaosocial,
+			cnpjcpf,
+			endereco,
+			tipopessoa,
+			indiedest,
+			inscricaoestadual,
+			rg,
+			email,
+			telefone,
+			numeroendereco,
+			complemento,
+			bairro,
+			cep,
+			fax,
+			nascimento,
+			pais,
+			criadoem,
+			fornecedor,
+			cliente,
+			transportador,
+			representante,
+			ordenarPor,
+			ordem,
 			page,
 			limit,
-			total,
-			totalPages,
-		},
-	});
+		});
+
+		const totalPages = Math.ceil(total / limit);
+
+		return httpOk<ListarEntidadesResposta>({
+			data: entidades,
+			paginacao: {
+				page,
+				limit,
+				total,
+				totalPages,
+			},
+		});
+	} catch (error) {
+		console.error("Erro ao listar entidades:", error);
+		return {
+			success: false as const,
+			status: 500,
+			error: "Erro ao listar entidades",
+			code: "LIST_ENTIDADE_ERROR",
+		};
+	}
 }

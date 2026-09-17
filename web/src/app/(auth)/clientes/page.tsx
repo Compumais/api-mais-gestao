@@ -245,7 +245,7 @@ export default function ClientesPage() {
 		};
 	}, []);
 
-	const { data, isLoading } = useQuery({
+	const { data, isLoading, isError, error } = useQuery({
 		queryKey: [
 			"entidades",
 			localStorageEmpresa?.id,
@@ -616,9 +616,13 @@ export default function ClientesPage() {
 												colSpan={colunasVisiveis.length}
 												className="h-24 text-center"
 											>
-												{comFiltros
-													? "Nenhum cliente encontrado para os filtros selecionados."
-													: "Nenhum cliente encontrado."}
+												{isError
+													? error instanceof Error
+														? error.message
+														: "Erro ao listar entidades"
+													: comFiltros
+														? "Nenhum cliente encontrado para os filtros selecionados."
+														: "Nenhum cliente encontrado."}
 											</TableCell>
 										</TableRow>
 									)}

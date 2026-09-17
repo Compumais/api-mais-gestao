@@ -57,7 +57,11 @@ export async function listarEntidades(
 		});
 
 		if (!resultado.success) {
-			return reply.status(resultado.status).send(resultado);
+			const status = resultado.status === 409 ? 500 : resultado.status;
+			return reply.status(status).send({
+				error: resultado.error,
+				code: resultado.code,
+			});
 		}
 
 		return reply.status(resultado.status).send(resultado.body);
