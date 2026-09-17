@@ -66,9 +66,11 @@ function LayoutTopbar({ children }: { children: React.ReactNode }) {
 				} as React.CSSProperties
 			}
 		>
-			<AppTopbar />
+			<div className="sticky top-0 z-40">
+				<AppTopbar />
+				<SiteHeaderTopbar />
+			</div>
 			<PwaInstallPrompt />
-			<SiteHeaderTopbar />
 			<main className="flex flex-1 flex-col">
 				<NavAbasKeepAlive>{children}</NavAbasKeepAlive>
 			</main>
