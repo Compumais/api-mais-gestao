@@ -279,10 +279,28 @@ function filtrosBase(f: FiltrosRelatorioProdutos): SQL {
 }
 
 /**
- * Cadastro, EAN, preços, estoque e fiscal não podem depender da migration 0096
- * (marca, produto_ean, tabela_preco). Sem essas tabelas a API responde 500 e o
- * browser relata CORS porque a resposta de erro não leva Access-Control-Allow-Origin.
+ * Nunca use SELECT p.*: imagem/icone TOAST estouram memória, o proxy devolve
+ * 500 sem CORS e o browser relata "Access-Control-Allow-Origin".
+ * Também não dependa da migration 0096 (marca, produto_ean, tabela_preco).
  */
+function colunasProdutoRelatorio(): SQL {
+	return sql`
+		p.id, p.idempresa, p.codigo, p.nome, p.descricao, p.ean, p.eantributavel,
+		p.unidademedida, p.inativo, p.preco, p.custoaquisicao, p.customedioinicial,
+		p.precoultimacompra, p.dataalteracaopreco, p.datacadastro, p.dataalteracao,
+		p.caminhoimagem,
+		CASE
+			WHEN p.imagem IS NOT NULL OR NULLIF(p.caminhoimagem, '') IS NOT NULL
+			THEN COALESCE(NULLIF(p.caminhoimagem, ''), 'cadastrada')
+		END imagem,
+		p.ncm, p.cest, p.origem, p.situacaotributaria, p.tributacaosn,
+		p.situacaotributariasn, p.cstpis, p.aliquotapis, p.cstcofins, p.aliquotacofins,
+		p.percentualipisaida, p.cstibs, p.classtributariaibs, p.aliquotaiibs, p.aliquotacbs,
+		p.idbeneficiofiscalnf, p.idbeneficiofiscaloperacao,
+		p.idgrupo, p.idfornecedor, p.fornecedor, p.idncm, p.idcest, p.idcfopsaida
+	`;
+}
+
 function baseProdutos(f: FiltrosRelatorioProdutos): SQL {
 	return sql`
 		WITH custos AS (
@@ -290,6 +308,10 @@ function baseProdutos(f: FiltrosRelatorioProdutos): SQL {
 				cp.precocompra, cp.freteconhecimento, cp.fretesegurooutrasdesp, cp.desconto,
 				cp.datahora, cp.idnotafiscal
 			FROM custoproduto cp
+			WHERE EXISTS (
+				SELECT 1 FROM produtos px
+				WHERE px.id = cp.idproduto AND px.idempresa = ${f.idempresa}
+			)
 			ORDER BY cp.idproduto, cp.datahora DESC
 		), saldos AS (
 			SELECT se.idempresa, se.codigoproduto,
@@ -315,7 +337,8 @@ function baseProdutos(f: FiltrosRelatorioProdutos): SQL {
 			FROM produtos WHERE idempresa = ${f.idempresa} AND NULLIF(BTRIM(ean::text), '') IS NOT NULL
 			GROUP BY idempresa, ean HAVING COUNT(*) > 1
 		), base AS (
-			SELECT p.*, h.nome grupo_nome,
+			SELECT ${colunasProdutoRelatorio()},
+				h.nome grupo_nome,
 				NULL::text marca_nome,
 				COALESCE(e.nome, p.fornecedor) fornecedor_nome,
 				n.codigo ncm_cadastro, ce.codigo::text cest_cadastro, cf.codigo cfop_saida,
@@ -364,7 +387,7 @@ function baseQualidadeProdutos(f: FiltrosRelatorioProdutos): SQL {
 				AND NULLIF(BTRIM(ean::text), '') IS NOT NULL
 			GROUP BY idempresa, ean HAVING COUNT(*) > 1
 		), base AS (
-			SELECT p.*, h.nome grupo_nome,
+			SELECT ${colunasProdutoRelatorio()}, h.nome grupo_nome,
 				COALESCE(e.nome, p.fornecedor) fornecedor_nome,
 				n.codigo ncm_cadastro, ce.codigo::text cest_cadastro,
 				NULL::numeric custo_recente,
