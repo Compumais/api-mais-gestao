@@ -12,6 +12,7 @@ import {
 	IconPencil,
 	IconPlus,
 	IconSearch,
+	IconSettings,
 	IconTrash,
 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -40,6 +41,9 @@ import {
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuSeparator,
+	DropdownMenuSub,
+	DropdownMenuSubContent,
+	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -565,56 +569,56 @@ export default function ProdutosPage() {
 				<div className="flex flex-wrap items-center justify-between gap-2 px-4">
 					<h1 className="text-2xl font-bold">Produtos</h1>
 					<div className="flex flex-wrap items-center gap-2">
-						<div className="inline-flex -space-x-px rounded-md shadow-xs">
-							<Button
-								variant="outline"
-								className="rounded-r-none"
-								onClick={() => setFormatoImportacao("csv")}
-								disabled={!localStorageEmpresa}
-							>
-								<FileText className="h-4 w-4" aria-hidden="true" />
-								Importar CSV
-							</Button>
-							<Button
-								variant="outline"
-								className="rounded-none"
-								onClick={() => setFormatoImportacao("xlsx")}
-								disabled={!localStorageEmpresa}
-							>
-								<FileSpreadsheet className="h-4 w-4" aria-hidden="true" />
-								Importar XLSX
-							</Button>
-							<DropdownMenu>
-								<DropdownMenuTrigger asChild>
-									<Button
-										variant="outline"
-										className="rounded-none"
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button
+									variant="outline"
+									size="icon"
+									aria-label="Ações"
+									disabled={!localStorageEmpresa}
+								>
+									<IconSettings className="size-4" aria-hidden="true" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="end" className="min-w-56">
+								<DropdownMenuItem
+									onClick={() => setFormatoImportacao("csv")}
+									disabled={!localStorageEmpresa}
+								>
+									<FileText className="h-4 w-4" aria-hidden="true" />
+									Importar CSV
+								</DropdownMenuItem>
+								<DropdownMenuItem
+									onClick={() => setFormatoImportacao("xlsx")}
+									disabled={!localStorageEmpresa}
+								>
+									<FileSpreadsheet className="h-4 w-4" aria-hidden="true" />
+									Importar XLSX
+								</DropdownMenuItem>
+								<DropdownMenuSub>
+									<DropdownMenuSubTrigger
 										disabled={
 											!localStorageEmpresa || baixarModeloMutation.isPending
 										}
 									>
 										<Download className="h-4 w-4" aria-hidden="true" />
 										Baixar modelo
-									</Button>
-								</DropdownMenuTrigger>
-								<DropdownMenuContent align="end">
-									<DropdownMenuItem
-										onClick={() => baixarModeloMutation.mutate("csv")}
-									>
-										Modelo CSV
-									</DropdownMenuItem>
-									<DropdownMenuItem
-										onClick={() => baixarModeloMutation.mutate("xlsx")}
-									>
-										Modelo XLSX
-									</DropdownMenuItem>
-								</DropdownMenuContent>
-							</DropdownMenu>
-							<DropdownMenu>
-								<DropdownMenuTrigger asChild>
-									<Button
-										variant="outline"
-										className="rounded-l-none"
+									</DropdownMenuSubTrigger>
+									<DropdownMenuSubContent>
+										<DropdownMenuItem
+											onClick={() => baixarModeloMutation.mutate("csv")}
+										>
+											Modelo CSV
+										</DropdownMenuItem>
+										<DropdownMenuItem
+											onClick={() => baixarModeloMutation.mutate("xlsx")}
+										>
+											Modelo XLSX
+										</DropdownMenuItem>
+									</DropdownMenuSubContent>
+								</DropdownMenuSub>
+								<DropdownMenuSub>
+									<DropdownMenuSubTrigger
 										disabled={
 											!localStorageEmpresa || exportarProdutosMutation.isPending
 										}
@@ -623,42 +627,45 @@ export default function ProdutosPage() {
 										{exportarProdutosMutation.isPending
 											? "Exportando..."
 											: "Exportar"}
-									</Button>
-								</DropdownMenuTrigger>
-								<DropdownMenuContent align="end">
-									<DropdownMenuItem
-										onClick={() => exportarProdutosMutation.mutate("csv")}
-									>
-										Exportar CSV
-									</DropdownMenuItem>
-									<DropdownMenuItem
-										onClick={() => exportarProdutosMutation.mutate("xlsx")}
-									>
-										Exportar XLSX
-									</DropdownMenuItem>
-								</DropdownMenuContent>
-							</DropdownMenu>
-						</div>
-						<Button
-							variant="outline"
-							className="gap-2"
-							onClick={() => setAjusteAberto(true)}
-							disabled={!localStorageEmpresa}
-						>
-							<IconPackage className="size-4" aria-hidden="true" />
-							Ajuste de estoque
-							{idsSelecionados.length > 0 ? ` (${idsSelecionados.length})` : ""}
-						</Button>
-						<Button
-							variant="outline"
-							className="gap-2"
-							onClick={() => setDialogAlteracaoAberto(true)}
-							disabled={!localStorageEmpresa || idsSelecionados.length === 0}
-						>
-							<IconPencil className="size-4" aria-hidden="true" />
-							Alterar em massa
-							{idsSelecionados.length > 0 ? ` (${idsSelecionados.length})` : ""}
-						</Button>
+									</DropdownMenuSubTrigger>
+									<DropdownMenuSubContent>
+										<DropdownMenuItem
+											onClick={() => exportarProdutosMutation.mutate("csv")}
+										>
+											Exportar CSV
+										</DropdownMenuItem>
+										<DropdownMenuItem
+											onClick={() => exportarProdutosMutation.mutate("xlsx")}
+										>
+											Exportar XLSX
+										</DropdownMenuItem>
+									</DropdownMenuSubContent>
+								</DropdownMenuSub>
+								<DropdownMenuSeparator />
+								<DropdownMenuItem
+									onClick={() => setAjusteAberto(true)}
+									disabled={!localStorageEmpresa}
+								>
+									<IconPackage className="size-4" aria-hidden="true" />
+									Ajuste de estoque
+									{idsSelecionados.length > 0
+										? ` (${idsSelecionados.length})`
+										: ""}
+								</DropdownMenuItem>
+								<DropdownMenuItem
+									onClick={() => setDialogAlteracaoAberto(true)}
+									disabled={
+										!localStorageEmpresa || idsSelecionados.length === 0
+									}
+								>
+									<IconPencil className="size-4" aria-hidden="true" />
+									Alterar em massa
+									{idsSelecionados.length > 0
+										? ` (${idsSelecionados.length})`
+										: ""}
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
 						<Button
 							onClick={() => router.push("/produtos/novo")}
 							className="gap-2"
