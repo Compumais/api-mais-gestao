@@ -76,7 +76,7 @@ function TopbarSecaoPainel({
 							{item.items?.map((sub) => {
 								const ativo = rotaNavEstaAtiva(pathname, search, sub.url);
 								return (
-									<li key={sub.url}>
+									<li key={`${sub.url}-${sub.title}`}>
 										<Link
 											href={sub.url}
 											onClick={onNavigate}

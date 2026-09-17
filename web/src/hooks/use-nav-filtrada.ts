@@ -102,6 +102,11 @@ export function useNavFiltrada() {
 		[ctxAcesso],
 	);
 
+	const navRelatoriosItems = useMemo(
+		() => filtrarNavItems(DATA.navRelatorios, ctxAcesso),
+		[ctxAcesso],
+	);
+
 	const navContabilidadeItems = useMemo(
 		() => filtrarNavItems(DATA.navContabilidade, ctxAcesso),
 		[ctxAcesso],
@@ -127,6 +132,7 @@ export function useNavFiltrada() {
 				navComprasItems,
 				navFinanceiroItems,
 				navFiscalItems,
+				navRelatoriosItems,
 				navContabilidadeItems,
 				navSistemaItems,
 				navSecondaryItems,
@@ -139,6 +145,7 @@ export function useNavFiltrada() {
 			navComprasItems,
 			navFinanceiroItems,
 			navFiscalItems,
+			navRelatoriosItems,
 			navContabilidadeItems,
 			navSistemaItems,
 			navSecondaryItems,
@@ -174,6 +181,9 @@ export function useNavFiltrada() {
 		if (!isUsuarioRestrito && navFiscalItems.length > 0) {
 			secoes.push({ label: "Fiscal e tributário", items: navFiscalItems });
 		}
+		if (!isUsuarioRestrito && navRelatoriosItems.length > 0) {
+			secoes.push({ label: "Relatórios", items: navRelatoriosItems });
+		}
 		if (!isUsuarioRestrito && navContabilidadeItems.length > 0) {
 			secoes.push({ label: "Contabilidade", items: navContabilidadeItems });
 		}
@@ -194,6 +204,7 @@ export function useNavFiltrada() {
 		navComprasItems,
 		navFinanceiroItems,
 		navFiscalItems,
+		navRelatoriosItems,
 		navContabilidadeItems,
 		navSistemaItems,
 		navSecondaryItems,
@@ -210,6 +221,7 @@ export function useNavFiltrada() {
 		navComprasItems,
 		navFinanceiroItems,
 		navFiscalItems,
+		navRelatoriosItems,
 		navContabilidadeItems,
 		navSistemaItems,
 		navSecondaryItems,

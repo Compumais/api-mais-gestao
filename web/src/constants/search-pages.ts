@@ -136,7 +136,7 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 	{
 		title: "Relatórios de produtos",
 		url: "/produtos/relatorios",
-		category: "Cadastros",
+		category: "Relatórios",
 		icon: IconChartBar,
 		keywords: [
 			"relatório",
@@ -396,7 +396,7 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 	{
 		title: "Relatórios",
 		url: "/relatorios",
-		category: "Financeiro",
+		category: "Relatórios",
 		icon: IconChartBar,
 		keywords: ["relatório", "relatorios", "relatorio", "report"],
 	},
@@ -606,7 +606,7 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 	{
 		title: "Relatórios fiscais",
 		url: "/relatorios/fiscais",
-		category: "Contabilidade",
+		category: "Relatórios",
 		icon: IconChartBar,
 		keywords: [
 			"relatório",
@@ -620,14 +620,14 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 	{
 		title: "Relatório de compras",
 		url: "/relatorios/fiscais/compras",
-		category: "Contabilidade",
+		category: "Relatórios",
 		icon: IconChartBar,
 		keywords: ["relatório", "relatorio", "compras", "nf-e entrada", "pdf"],
 	},
 	{
 		title: "Relatório de vendas",
 		url: "/relatorios/fiscais/vendas",
-		category: "Contabilidade",
+		category: "Relatórios",
 		icon: IconChartBar,
 		keywords: ["relatório", "relatorio", "vendas", "nf-e", "nfce", "pdf"],
 	},
