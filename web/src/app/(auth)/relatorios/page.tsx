@@ -283,14 +283,15 @@ export default function RelatoriosPage() {
 								</Card>
 							);
 
-							if (report.dialogo) {
+							const dialogo = report.dialogo;
+							if (dialogo) {
 								return (
 									<button
 										key={report.title}
 										type="button"
 										className="group w-full cursor-pointer border-0 bg-transparent p-0 text-left"
 										onClick={() => {
-											abrir(report.dialogo);
+											abrir(dialogo);
 										}}
 									>
 										{CardContent}
