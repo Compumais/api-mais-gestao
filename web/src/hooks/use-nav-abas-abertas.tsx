@@ -15,8 +15,12 @@ import {
 type NavAbasAbertasContextValue = {
 	abas: AbaAberta[];
 	ativaId: string;
+	hidratado: boolean;
 	ativarAba: (href: string) => void;
 	fecharAba: (id: string) => void;
+	lerRascunho: <T>(id: string) => T | undefined;
+	salvarRascunho: (id: string, dados: unknown) => void;
+	limparRascunho: (id: string) => void;
 };
 
 const NavAbasAbertasContext =
@@ -37,6 +41,7 @@ export function NavAbasAbertasProvider({
 	const storageKey = userId ? chaveNavAbasAbertas(userId) : null;
 	const [abas, setAbas] = React.useState<AbaAberta[]>([]);
 	const [hidratado, setHidratado] = React.useState(false);
+	const rascunhosRef = React.useRef(new Map<string, unknown>());
 
 	React.useEffect(() => {
 		if (!storageKey) {
@@ -86,9 +91,23 @@ export function NavAbasAbertasProvider({
 		[router],
 	);
 
+	const lerRascunho = React.useCallback(<T,>(id: string) => {
+		return rascunhosRef.current.get(id) as T | undefined;
+	}, []);
+
+	const salvarRascunho = React.useCallback((id: string, dados: unknown) => {
+		if (!id) return;
+		rascunhosRef.current.set(id, dados);
+	}, []);
+
+	const limparRascunho = React.useCallback((id: string) => {
+		rascunhosRef.current.delete(id);
+	}, []);
+
 	const fecharAba = React.useCallback(
 		(id: string) => {
 			const resultado = fecharAbaAberta(abas, id, pathname);
+			rascunhosRef.current.delete(id);
 			persistir(resultado.abas);
 			if (resultado.navegarPara) {
 				router.push(resultado.navegarPara);
@@ -101,10 +120,23 @@ export function NavAbasAbertasProvider({
 		() => ({
 			abas,
 			ativaId: pathname,
+			hidratado,
 			ativarAba,
 			fecharAba,
+			lerRascunho,
+			salvarRascunho,
+			limparRascunho,
 		}),
-		[abas, pathname, ativarAba, fecharAba],
+		[
+			abas,
+			pathname,
+			hidratado,
+			ativarAba,
+			fecharAba,
+			lerRascunho,
+			salvarRascunho,
+			limparRascunho,
+		],
 	);
 
 	return (
