@@ -30,6 +30,7 @@ import {
 import { useConsultaCnpjEntidade } from "@/hooks/use-consulta-cnpj-entidade";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { isGooglePlacesDisponivel } from "@/hooks/use-google-places";
+import { useRascunhoAbaForm } from "@/hooks/use-rascunho-aba-form";
 import { maskCep, maskCpfCnpj, maskPhone } from "@/lib/masks";
 import {
 	type CriarEntidadeFormData,
@@ -126,6 +127,7 @@ export function EntidadeForm({
 			tipoPrincipal: config.tipoPrincipal,
 		}),
 	});
+	const { limparRascunho } = useRascunhoAbaForm(form);
 
 	const {
 		register,
@@ -428,6 +430,7 @@ export function EntidadeForm({
 		mutationFn: entidadesService.criar,
 		onSuccess: () => {
 			invalidarListagens();
+			limparRascunho();
 			toast.success(config.mensagens.criadoSucesso);
 			router.push(config.rotaListagem);
 		},
@@ -451,6 +454,7 @@ export function EntidadeForm({
 			if (entidadeId) {
 				queryClient.invalidateQueries({ queryKey: ["entidade", entidadeId] });
 			}
+			limparRascunho();
 			toast.success(config.mensagens.atualizadoSucesso);
 			router.push(config.rotaListagem);
 		},

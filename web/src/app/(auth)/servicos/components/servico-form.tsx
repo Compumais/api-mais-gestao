@@ -33,6 +33,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { useProximoCodigo } from "@/hooks/use-proximo-codigo";
+import { useRascunhoAbaForm } from "@/hooks/use-rascunho-aba-form";
 import { buildServicoPayload } from "@/schemas/servicos.mapper";
 import {
 	OPCOES_EXIGIBILIDADE_ISS,
@@ -71,6 +72,7 @@ export function ServicoForm(props: ServicoFormProps) {
 			...(isEdicao && props.valoresIniciais ? props.valoresIniciais : {}),
 		},
 	});
+	const { limparRascunho } = useRascunhoAbaForm(form);
 
 	const {
 		register,
@@ -130,6 +132,7 @@ export function ServicoForm(props: ServicoFormProps) {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["produtos"] });
 			queryClient.invalidateQueries({ queryKey: ["servicos"] });
+			limparRascunho();
 			toast.success("Serviço cadastrado com sucesso!");
 			router.push("/servicos");
 		},
@@ -164,6 +167,7 @@ export function ServicoForm(props: ServicoFormProps) {
 					queryClient.setQueryData(["produto", props.servicoId], servico);
 					queryClient.setQueryData(["servico", props.servicoId], servico);
 				}
+				limparRascunho();
 				toast.success("Serviço atualizado com sucesso!");
 				router.push("/servicos");
 			},
@@ -216,7 +220,11 @@ export function ServicoForm(props: ServicoFormProps) {
 					<TabsTrigger value="gourmet">Gourmet</TabsTrigger>
 				</TabsList>
 
-				<TabsContent value="geral">
+				<TabsContent
+					value="geral"
+					forceMount
+					className="data-[state=inactive]:hidden"
+				>
 					<FieldGroup>
 						<div className="space-y-4">
 							<div className="grid grid-cols-1 gap-4 md:grid-cols-4">
@@ -712,7 +720,11 @@ export function ServicoForm(props: ServicoFormProps) {
 					</Tabs>
 				</TabsContent>
 
-				<TabsContent value="gourmet">
+				<TabsContent
+					value="gourmet"
+					forceMount
+					className="data-[state=inactive]:hidden"
+				>
 					<div className="flex flex-col gap-4 rounded-lg border p-4 md:flex-row md:items-end">
 						<div className="flex items-center gap-2">
 							<Checkbox

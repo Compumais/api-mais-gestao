@@ -3,6 +3,7 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppTopbar } from "@/components/app-topbar";
 import { NavAbasAbertasBar } from "@/components/nav-abas-abertas-bar";
+import { NavAbasKeepAlive } from "@/components/nav-abas-keep-alive";
 import { ProtectedRoute } from "@/components/protected-route";
 import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
 import { SearchDialog } from "@/components/search-dialog";
@@ -48,7 +49,7 @@ function LayoutSidebar({ children }: { children: React.ReactNode }) {
 				<PwaInstallPrompt />
 				<SiteHeader />
 				<NavAbasAbertasBar variante="sidebar" />
-				{children}
+				<NavAbasKeepAlive>{children}</NavAbasKeepAlive>
 			</SidebarInset>
 			<LayoutComum>{null}</LayoutComum>
 		</SidebarProvider>
@@ -68,7 +69,9 @@ function LayoutTopbar({ children }: { children: React.ReactNode }) {
 			<AppTopbar />
 			<PwaInstallPrompt />
 			<SiteHeaderTopbar />
-			<main className="flex flex-1 flex-col">{children}</main>
+			<main className="flex flex-1 flex-col">
+				<NavAbasKeepAlive>{children}</NavAbasKeepAlive>
+			</main>
 			<LayoutComum>{null}</LayoutComum>
 		</div>
 	);

@@ -30,6 +30,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { useProximoCodigo } from "@/hooks/use-proximo-codigo";
+import { useRascunhoAbaForm } from "@/hooks/use-rascunho-aba-form";
 import {
 	type ProdutoFormData,
 	produtoFormSchema,
@@ -256,6 +257,8 @@ export function ProdutoForm(props: ProdutoFormProps) {
 		formState: { errors },
 	} = form;
 
+	const { limparRascunho } = useRascunhoAbaForm(form);
+
 	const idunidademedida = watch("idunidademedida");
 	const fornecedor = watch("fornecedor");
 	const idgrupo = watch("idgrupo");
@@ -356,6 +359,7 @@ export function ProdutoForm(props: ProdutoFormProps) {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["produtos"] });
 			queryClient.invalidateQueries({ queryKey: ["saldos-estoque"] });
+			limparRascunho();
 			toast.success("Produto cadastrado com sucesso!");
 			router.push("/produtos");
 		},
@@ -388,6 +392,7 @@ export function ProdutoForm(props: ProdutoFormProps) {
 				if (props.produtoId) {
 					queryClient.setQueryData(["produto", props.produtoId], produto);
 				}
+				limparRascunho();
 				toast.success("Produto atualizado com sucesso!");
 				router.push("/produtos");
 			},
@@ -442,7 +447,11 @@ export function ProdutoForm(props: ProdutoFormProps) {
 					<TabsTrigger value="impostos">Impostos</TabsTrigger>
 				</TabsList>
 
-				<TabsContent value="geral">
+				<TabsContent
+					value="geral"
+					forceMount
+					className="data-[state=inactive]:hidden"
+				>
 					<FieldGroup>
 						<div className="space-y-4">
 							<h2 className="text-lg font-semibold">Dados do Produto</h2>
