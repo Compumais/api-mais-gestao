@@ -17,9 +17,21 @@ infraestrutura, consulte também [`infra/README.md`](infra/README.md).
 > **Não existe deploy automatizado em uso na produção.** Um `git push` apenas
 > atualiza o repositório remoto e **não implanta** a alteração na VPS.
 
-Após o commit e o push, um responsável deve acessar a VPS e executar
-manualmente a atualização, as migrações necessárias, a instalação, o build e
-o reinício dos processos.
+Após o commit e o push, acesse a VPS no clone do monorepo e rode o script
+completo (API + Web, na ordem certa, com `next build`):
+
+```bash
+cd /caminho/do/clone
+./up.sh
+```
+
+O `up.sh` faz pull fast-forward, instala dependências, aplica migrations,
+compila a API, recarrega o PM2 `api-mais-gestao` e só então publica a Web com
+`pnpm run build:live` (processo `web-mais-gestao`). Não republica PDV/POS.
+
+Detalhes e variáveis (`SKIP_PULL`, `SKIP_MIGRATE`, `MIGRATE_SQL`) estão no
+cabeçalho de [`up.sh`](./up.sh). Os passos abaixo descrevem o mesmo fluxo,
+caso precise executá-lo à mão.
 
 Arquivos em `.github/workflows/`, inclusive workflows com nome de deploy,
 **não representam o fluxo operacional atual de produção** e não devem ser
