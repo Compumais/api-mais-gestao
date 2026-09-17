@@ -154,6 +154,9 @@ gunzip -c /opt/backups/mais-gestao/backup-YYYYMMDD-HHMMSS.sql.gz | psql -h 127.0
 
 ## 9) Operação rápida
 
+Subida completa (pull + migrations + build API + `build:live` da Web) no clone
+do monorepo na VPS: `./up.sh`. Não republica PDV/POS. Ver o cabeçalho do script.
+
 - Health check: `curl -s https://api.seudominio.com/health` (200 = API e banco OK; 503 = banco indisponível)
 - Logs API: `docker logs -f mais-gestao-api`
 - Logs DB: `docker logs -f mais-gestao-db`
