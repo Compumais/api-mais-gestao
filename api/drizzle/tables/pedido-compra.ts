@@ -12,6 +12,7 @@ import {
 import { cotacaocompra } from "./cotacao-compra.js";
 import { cotacaocompraproposta } from "./cotacao-compra-proposta.js";
 import { empresa } from "./empresas.js";
+import { entidade } from "./entidade.js";
 
 export const pedidocompra = pgTable(
 	"pedidocompra",
@@ -21,6 +22,7 @@ export const pedidocompra = pgTable(
 		codigo: integer().notNull(),
 		idcotacao: text(),
 		idproposta: text(),
+		identidade: text(),
 		fornecedornome: varchar({ length: 120 }).notNull(),
 		fornecedortelefone: varchar({ length: 20 }).notNull(),
 		valortotal: numeric({ precision: 12, scale: 2 }).notNull(),
@@ -51,6 +53,13 @@ export const pedidocompra = pgTable(
 			columns: [table.idproposta],
 			foreignColumns: [cotacaocompraproposta.id],
 			name: "pedidocompra_idproposta_fkey",
+		})
+			.onUpdate("cascade")
+			.onDelete("restrict"),
+		foreignKey({
+			columns: [table.identidade],
+			foreignColumns: [entidade.id],
+			name: "pedidocompra_identidade_fkey",
 		})
 			.onUpdate("cascade")
 			.onDelete("restrict"),
