@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavAbasAbertasOpcional } from "@/hooks/use-nav-abas-abertas";
 import { cn } from "@/lib/utils";
 
-type Variante = "topbar" | "sidebar";
+type Variante = "topbar" | "sidebar" | "header";
 
 export function NavAbasAbertasBar({
 	variante = "topbar",
@@ -57,6 +57,8 @@ export function NavAbasAbertasBar({
 
 	const { abas, ativaId, ativarAba, fecharAba } = ctx;
 	const isTopbar = variante === "topbar";
+	const isHeader = variante === "header";
+	const tomClaro = !isTopbar;
 
 	const rolar = (dir: -1 | 1) => {
 		scrollerRef.current?.scrollBy({ left: dir * 180, behavior: "smooth" });
@@ -65,10 +67,12 @@ export function NavAbasAbertasBar({
 	return (
 		<div
 			className={cn(
-				"flex h-9 shrink-0 items-center gap-1 px-1.5 sm:px-2",
-				isTopbar
-					? "border-t border-primary-foreground/15 bg-black/20"
-					: "border-b bg-muted/60",
+				"flex items-center gap-1",
+				isHeader
+					? "min-w-0 flex-1"
+					: "h-9 shrink-0 px-1.5 sm:px-2",
+				isTopbar && "border-t border-primary-foreground/15 bg-black/20",
+				variante === "sidebar" && "border-b bg-muted/60",
 			)}
 			role="tablist"
 			aria-label="Abas abertas"
@@ -77,9 +81,9 @@ export function NavAbasAbertasBar({
 				type="button"
 				className={cn(
 					"inline-flex size-7 shrink-0 items-center justify-center rounded-md transition-colors disabled:opacity-30",
-					isTopbar
-						? "text-primary-foreground/80 hover:bg-primary-foreground/10"
-						: "text-muted-foreground hover:bg-muted hover:text-foreground",
+					tomClaro
+						? "text-muted-foreground hover:bg-muted hover:text-foreground"
+						: "text-primary-foreground/80 hover:bg-primary-foreground/10",
 				)}
 				aria-label="Rolar abas para a esquerda"
 				disabled={!podeEsquerda}
@@ -103,12 +107,12 @@ export function NavAbasAbertasBar({
 							className={cn(
 								"group flex h-7 max-w-56 shrink-0 items-center gap-1 rounded-md px-2 text-[0.7rem] font-semibold uppercase tracking-wide transition-colors",
 								ativa
-									? isTopbar
-										? "bg-background text-foreground shadow-sm"
-										: "bg-foreground text-background"
-									: isTopbar
-										? "bg-primary-foreground/15 text-primary-foreground/90 hover:bg-primary-foreground/25"
-										: "bg-background/80 text-muted-foreground hover:bg-background hover:text-foreground",
+									? tomClaro
+										? "bg-foreground text-background"
+										: "bg-background text-foreground shadow-sm"
+									: tomClaro
+										? "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+										: "bg-primary-foreground/15 text-primary-foreground/90 hover:bg-primary-foreground/25",
 							)}
 						>
 							<button
@@ -127,9 +131,9 @@ export function NavAbasAbertasBar({
 									"inline-flex size-4 shrink-0 items-center justify-center rounded-full opacity-70 transition-opacity hover:opacity-100",
 									ativa
 										? "hover:bg-foreground/10"
-										: isTopbar
-											? "hover:bg-primary-foreground/20"
-											: "hover:bg-muted",
+										: tomClaro
+											? "hover:bg-muted"
+											: "hover:bg-primary-foreground/20",
 								)}
 								aria-label={`Fechar aba ${aba.title}`}
 								onClick={(event) => {
@@ -148,9 +152,9 @@ export function NavAbasAbertasBar({
 				type="button"
 				className={cn(
 					"inline-flex size-7 shrink-0 items-center justify-center rounded-md transition-colors disabled:opacity-30",
-					isTopbar
-						? "text-primary-foreground/80 hover:bg-primary-foreground/10"
-						: "text-muted-foreground hover:bg-muted hover:text-foreground",
+					tomClaro
+						? "text-muted-foreground hover:bg-muted hover:text-foreground"
+						: "text-primary-foreground/80 hover:bg-primary-foreground/10",
 				)}
 				aria-label="Rolar abas para a direita"
 				disabled={!podeDireita}

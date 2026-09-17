@@ -5,7 +5,6 @@ import { ChevronDown, Menu } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { NavAbasAbertasBar } from "@/components/nav-abas-abertas-bar";
 import { NavMenuMobileSheet } from "@/components/nav-menu-mobile-sheet";
 import { NavUserTopbar } from "@/components/nav-user-topbar";
 import { Button } from "@/components/ui/button";
@@ -208,7 +207,6 @@ export function AppTopbar() {
 							/>
 						</div>
 					</div>
-					<NavAbasAbertasBar variante="topbar" />
 				</header>
 
 				{secaoAtual ? (
