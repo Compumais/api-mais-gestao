@@ -15,6 +15,7 @@ export const DOMINIO_ENVIO_STATUS = [
 	"aguardando_processamento",
 	"armazenado",
 	"erro",
+	"ignorado",
 ] as const;
 export type DominioEnvioStatus = (typeof DOMINIO_ENVIO_STATUS)[number];
 

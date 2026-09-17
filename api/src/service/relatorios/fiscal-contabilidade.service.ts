@@ -35,7 +35,9 @@ const COLUNAS = [
 
 function calcularResumoContabilidade(notas: RelatorioFiscalNotaItem[]) {
 	const compras = notas.filter((n) => n.tipoorigem === 0);
-	const vendasNfe = notas.filter((n) => n.modelo === "55" && n.tipoorigem === 1);
+	const vendasNfe = notas.filter(
+		(n) => n.modelo === "55" && n.tipoorigem === 1,
+	);
 	const nfce = notas.filter((n) => n.modelo === "65");
 	const totalCompras = calcularTotaisFiscais(compras);
 	const totalVendasNfe = calcularTotaisFiscais(vendasNfe);
@@ -43,6 +45,7 @@ function calcularResumoContabilidade(notas: RelatorioFiscalNotaItem[]) {
 	const totalGeral = calcularTotaisFiscais(notas);
 
 	return [
+		"Ambiente: Produção",
 		`NF-e Compra: ${compras.length} — ${formatCurrency(totalCompras.valor)}`,
 		`NF-e Venda: ${vendasNfe.length} — ${formatCurrency(totalVendasNfe.valor)}`,
 		`NFC-e: ${nfce.length} — ${formatCurrency(totalNfce.valor)}`,

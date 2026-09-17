@@ -9,6 +9,7 @@ import type {
 	PagamentoPayloadNfe,
 	TotaisPayloadNfe,
 } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
+import { resolverAmbienteSefaz } from "@/util/ambiente-sefaz.js";
 import { agoraBrasiliaIsoOffset } from "@/util/data-hora-brasilia.js";
 import { montarConfigJsonSpedNfce } from "@/util/montar-config-sped-nfce.js";
 import {
@@ -27,7 +28,11 @@ export async function carregarContextoEmissaoNfce(idempresa: string) {
 	const empresaFiscal = await buscarEmpresaFiscalPorEmpresa(idempresa);
 	const nfceConfiguracao = await buscarNfceConfiguracaoPorEmpresa(idempresa);
 	const certificadoAtivo = await buscarCertificadoAtivoPorEmpresa(idempresa);
-	const seriePadrao = await buscarNfeSeriePadrao(idempresa, "65");
+	const seriePadrao = await buscarNfeSeriePadrao(
+		idempresa,
+		"65",
+		resolverAmbienteSefaz(nfceConfiguracao?.ambiente),
+	);
 
 	const pendencias = validarPreRequisitosEmissaoNfce({
 		empresa: empresa!,
@@ -139,8 +144,7 @@ export async function montarPayloadGatewayEmissaoNfce({
 				complemento: empresaFiscal.complemento ?? "",
 				bairro: empresaFiscal.bairro,
 				codigoMunicipio: empresaFiscal.codigomunicipioibge,
-				municipio:
-					nomeMunicipioEmitente ?? empresaFiscal.codigomunicipioibge,
+				municipio: nomeMunicipioEmitente ?? empresaFiscal.codigomunicipioibge,
 				uf: empresaFiscal.uf,
 				cep: empresaFiscal.cep?.replace(/\D/g, ""),
 				telefone: empresaFiscal.telefone ?? "",

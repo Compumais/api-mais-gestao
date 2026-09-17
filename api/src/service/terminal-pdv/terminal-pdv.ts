@@ -6,7 +6,7 @@ import {
 	buscarNfeSeriePorId,
 	buscarNfeSeriePorNumeroSerie,
 	contarNfeSeriesPorEmpresaModelo,
-	criarNfeSerie,
+	criarNfeSeries,
 	desmarcarSeriesPadrao,
 } from "@/repositories/nfe-serie-repositories.js";
 import { buscarUltimoNumeroPorSeries } from "@/repositories/nota-fiscal-repositories.js";
@@ -81,6 +81,7 @@ async function resolverSerieDoTerminal({
 		idempresa,
 		"65",
 		numeroSerie,
+		1,
 	);
 	if (existente) {
 		const ocupada = await buscarTerminalPdvPorSerie(existente.id);
@@ -92,24 +93,35 @@ async function resolverSerieDoTerminal({
 		return existente;
 	}
 
-	const totalModelo65 = await contarNfeSeriesPorEmpresaModelo(idempresa, "65");
+	const totalModelo65 = await contarNfeSeriesPorEmpresaModelo(
+		idempresa,
+		"65",
+		1,
+	);
 	const padrao = totalModelo65 === 0;
 	if (padrao) {
-		await desmarcarSeriesPadrao(idempresa, "65");
+		await Promise.all([
+			desmarcarSeriesPadrao(idempresa, "65", 1),
+			desmarcarSeriesPadrao(idempresa, "65", 2),
+		]);
 	}
 
 	const agora = new Date().toISOString();
-	const criada = await criarNfeSerie({
-		id: uuidv4(),
-		idempresa,
-		modelo: "65",
-		serie: numeroSerie,
-		numeroproximo: 1,
-		padrao,
-		ativo: true,
-		criadoem: agora,
-		atualizadoem: agora,
-	});
+	const seriesCriadas = await criarNfeSeries(
+		([1, 2] as const).map((ambiente) => ({
+			id: uuidv4(),
+			idempresa,
+			modelo: "65",
+			serie: numeroSerie,
+			ambiente,
+			numeroproximo: 1,
+			padrao,
+			ativo: true,
+			criadoem: agora,
+			atualizadoem: agora,
+		})),
+	);
+	const criada = seriesCriadas.find((serie) => serie.ambiente === 1);
 
 	if (!criada) {
 		return httpErro();

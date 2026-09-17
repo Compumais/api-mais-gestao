@@ -3,11 +3,11 @@ import z from "zod";
 import { criarNfeSerieService } from "@/service/nfe-serie/nfe-serie.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
-
 const criarBodySchema = z.object({
 	idempresa: z.string().uuid(),
 	modelo: z.string().max(2).optional(),
 	serie: z.string().min(1).max(3),
+	ambiente: z.number().int().min(1).max(2).optional(),
 	numeroproximo: z.number().int().min(1).optional(),
 	padrao: z.boolean().optional(),
 	ativo: z.boolean().optional(),
@@ -30,6 +30,9 @@ export async function criarNfeSerie(
 			dados: {
 				serie: dados.serie,
 				...(dados.modelo !== undefined ? { modelo: dados.modelo } : {}),
+				...(dados.ambiente !== undefined
+					? { ambiente: dados.ambiente as 1 | 2 }
+					: {}),
 				...(dados.numeroproximo !== undefined
 					? { numeroproximo: dados.numeroproximo }
 					: {}),

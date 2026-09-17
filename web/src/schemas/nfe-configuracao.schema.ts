@@ -28,6 +28,7 @@ export type NfeConfiguracaoFormData = z.infer<typeof nfeConfiguracaoSchema>;
 
 export const nfeSerieSchema = z.object({
 	serie: z.string().min(1).max(3),
+	ambiente: z.union([z.literal(1), z.literal(2)]),
 	numeroproximo: z.number().int().min(1),
 	padrao: z.boolean(),
 	ativo: z.boolean(),

@@ -237,7 +237,10 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 			nome: "aliquotaicms",
 			ddl: "ALTER TABLE produto_cache ADD COLUMN aliquotaicms TEXT",
 		},
-		{ nome: "pis_cst", ddl: "ALTER TABLE produto_cache ADD COLUMN pis_cst TEXT" },
+		{
+			nome: "pis_cst",
+			ddl: "ALTER TABLE produto_cache ADD COLUMN pis_cst TEXT",
+		},
 		{
 			nome: "aliquotapis",
 			ddl: "ALTER TABLE produto_cache ADD COLUMN aliquotapis TEXT",
@@ -265,6 +268,10 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 	const nfceNomes = new Set(nfceCols.rows.map((c) => c.column_name));
 	const colunasNfce: Array<{ nome: string; ddl: string }> = [
 		{
+			nome: "ambiente",
+			ddl: "ALTER TABLE nfce_local ADD COLUMN ambiente INTEGER NOT NULL DEFAULT 2",
+		},
+		{
 			nome: "xml_sha256",
 			ddl: "ALTER TABLE nfce_local ADD COLUMN xml_sha256 TEXT",
 		},
@@ -286,6 +293,50 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 			await database.query(coluna.ddl);
 		}
 	}
+	if (!nfceNomes.has("ambiente")) {
+		await database.query(
+			`UPDATE nfce_local
+			 SET ambiente = COALESCE(
+				(SELECT ambiente FROM numeracao_nfce WHERE id = 1),
+				2
+			 )`,
+		);
+	}
+	await database.query(
+		"ALTER TABLE nfce_local DROP CONSTRAINT IF EXISTS nfce_local_ambiente_check",
+	);
+	await database.query(
+		`ALTER TABLE nfce_local
+		 ADD CONSTRAINT nfce_local_ambiente_check CHECK (ambiente IN (1, 2))`,
+	);
+
+	await database.query(
+		"ALTER TABLE numeracao_nfce DROP CONSTRAINT IF EXISTS numeracao_nfce_id_check",
+	);
+	await database.query(
+		"ALTER TABLE numeracao_nfce DROP CONSTRAINT IF EXISTS numeracao_nfce_ambiente_check",
+	);
+	await database.query(
+		`INSERT INTO numeracao_nfce (
+			id, serie, proximo_numero, csc_id, csc_token, cnpj, uf, ambiente, atualizadoem
+		)
+		SELECT 2, serie, proximo_numero, csc_id, csc_token, cnpj, uf, 2, atualizadoem
+		FROM numeracao_nfce
+		WHERE id = 1
+		ON CONFLICT (id) DO NOTHING`,
+	);
+	await database.query(
+		"UPDATE numeracao_nfce SET ambiente = id WHERE id IN (1, 2)",
+	);
+	await database.query(
+		`ALTER TABLE numeracao_nfce
+		 ADD CONSTRAINT numeracao_nfce_id_check CHECK (id IN (1, 2))`,
+	);
+	await database.query(
+		`ALTER TABLE numeracao_nfce
+		 ADD CONSTRAINT numeracao_nfce_ambiente_check
+		 CHECK (ambiente IN (1, 2) AND ambiente = id)`,
+	);
 
 	const itemCols = await database.query<{ column_name: string }>(
 		`SELECT column_name
@@ -673,6 +724,7 @@ async function seedDefaults(database: Pool): Promise<void> {
 		["certificado_validade", ""],
 		["fiscal_ultima_sync", ""],
 		["fiscal_sync_erro", ""],
+		["fiscal_ambiente_ativo", "2"],
 		["lan_habilitada", "1"],
 		["lan_porta", "5050"],
 		["pdv_modo", "principal"],
@@ -728,13 +780,13 @@ async function seedDefaults(database: Pool): Promise<void> {
 		);
 	}
 
-	const num = await database.query<{ id: number }>(
-		"SELECT id FROM numeracao_nfce WHERE id = 1",
-	);
-	if (!num.rows[0]) {
+	for (const ambiente of [1, 2]) {
 		await database.query(
-			"INSERT INTO numeracao_nfce (id, serie, proximo_numero, ambiente, atualizadoem) VALUES (1, 1, 1, 2, $1)",
-			[agora],
+			`INSERT INTO numeracao_nfce (
+				id, serie, proximo_numero, ambiente, atualizadoem
+			) VALUES ($1, 1, 1, $1, $2)
+			ON CONFLICT (id) DO NOTHING`,
+			[ambiente, agora],
 		);
 	}
 

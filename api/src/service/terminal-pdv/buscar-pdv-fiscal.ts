@@ -4,7 +4,10 @@ import { buscarEmpresaFiscalPorEmpresa } from "@/repositories/empresa-fiscal-rep
 import { buscarEmpresaPorId } from "@/repositories/empresa-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { buscarNfceConfiguracaoPorEmpresa } from "@/repositories/nfce-configuracao-repositories.js";
-import { buscarNfeSeriePorId } from "@/repositories/nfe-serie-repositories.js";
+import {
+	buscarNfeSeriePorId,
+	buscarNfeSeriePorNumeroSerie,
+} from "@/repositories/nfe-serie-repositories.js";
 import { buscarTerminalPdvAtivoPorNumero } from "@/repositories/terminal-pdv-repositories.js";
 import {
 	httpBadRequest,
@@ -67,8 +70,12 @@ export async function buscarPdvFiscalService({
 		);
 	}
 
-	const serie = await buscarNfeSeriePorId(terminal.idnfeserie);
-	if (!serie || serie.idempresa !== idempresa || serie.modelo !== "65") {
+	const serieVinculada = await buscarNfeSeriePorId(terminal.idnfeserie);
+	if (
+		!serieVinculada ||
+		serieVinculada.idempresa !== idempresa ||
+		serieVinculada.modelo !== "65"
+	) {
 		return httpBadRequest("Série NFC-e do terminal inválida ou inativa", {
 			codigoErro: "TERMINAL_PDV_AUSENTE",
 		});
@@ -81,6 +88,18 @@ export async function buscarPdvFiscalService({
 	]);
 
 	const ambiente = nfceConfig?.ambiente ?? 2;
+	const serie = await buscarNfeSeriePorNumeroSerie(
+		idempresa,
+		"65",
+		serieVinculada.serie,
+		ambiente,
+	);
+	if (!serie?.ativo) {
+		return httpBadRequest(
+			"Série NFC-e do terminal não está configurada no ambiente atual",
+			{ codigoErro: "TERMINAL_PDV_AUSENTE" },
+		);
+	}
 	const csc_id =
 		ambiente === 1
 			? (nfceConfig?.idcsc_producao ?? null)

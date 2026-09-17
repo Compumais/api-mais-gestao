@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as dominioEnvioRepo from "@/repositories/dominio-envio-repositories.js";
 import * as dominioIntegracaoRepo from "@/repositories/dominio-integracao-repositories.js";
+import * as notaFiscalRepo from "@/repositories/nota-fiscal-repositories.js";
 import {
 	enfileirarEnvioDominioService,
 	enfileirarEnvioDominioSilencioso,
@@ -8,10 +9,35 @@ import {
 
 vi.mock("@/repositories/dominio-envio-repositories.js");
 vi.mock("@/repositories/dominio-integracao-repositories.js");
+vi.mock("@/repositories/nota-fiscal-repositories.js");
 
 describe("enfileirarEnvioDominioService", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		vi.mocked(notaFiscalRepo.buscarNotaFiscalPorId).mockResolvedValue({
+			id: "nf-1",
+			idempresa: "emp-1",
+			tipoambientenfe: 1,
+		} as never);
+	});
+
+	it("não enfileira documento de homologação", async () => {
+		vi.mocked(notaFiscalRepo.buscarNotaFiscalPorId).mockResolvedValue({
+			id: "nf-1",
+			idempresa: "emp-1",
+			tipoambientenfe: 2,
+		} as never);
+
+		const resultado = await enfileirarEnvioDominioService({
+			idempresa: "emp-1",
+			idnotafiscal: "nf-1",
+			tipo: "autorizada",
+		});
+
+		expect(resultado.body).toBeNull();
+		expect(
+			dominioIntegracaoRepo.buscarDominioIntegracaoPorEmpresa,
+		).not.toHaveBeenCalled();
 	});
 
 	it("não enfileira quando a integração está desabilitada", async () => {

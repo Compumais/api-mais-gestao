@@ -48,8 +48,8 @@ import {
 } from "../db/pagamento";
 import {
 	atualizarCaixaIdRemoto,
-	atualizarNumeracaoNfce,
 	atualizarNfceLocalCampos,
+	atualizarNumeracaoNfce,
 	atualizarVendaSync,
 	calcularResumoTurno,
 	contarOutboxPendentes,
@@ -550,9 +550,12 @@ export async function sincronizarFiscalPdv(): Promise<{
 		const serie = Number(fiscal.serie);
 		const serieEfetiva =
 			Number.isFinite(serie) && serie > 0 ? serie : undefined;
-		const atual = await obterNumeracaoNfce();
+		const atual = await obterNumeracaoNfce(fiscal.ambiente);
 		const serieParaMax = serieEfetiva ?? atual.serie;
-		const maxLocal = await obterMaxNumeroNfceLocal(serieParaMax);
+		const maxLocal = await obterMaxNumeroNfceLocal(
+			serieParaMax,
+			fiscal.ambiente,
+		);
 		const proximo = resolverProximoNumeroMonotonico({
 			remoto: Number(fiscal.numeroproximo),
 			localAtual: atual.proximo_numero,
@@ -1128,9 +1131,11 @@ async function syncTransmitirContingencia(
 		const { numeroNfceLocalJaUsado, atualizarNfceLocalCampos } = await import(
 			"../db/repos"
 		);
+		const ambiente = (await obterNumeracaoNfce()).ambiente;
 		const colide = await numeroNfceLocalJaUsado(
 			serie,
 			numero,
+			ambiente,
 			String(payload.idnfce_local),
 		);
 		if (colide) {

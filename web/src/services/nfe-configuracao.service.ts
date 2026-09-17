@@ -38,6 +38,7 @@ export interface NfeSerie {
 	idempresa: string;
 	modelo: string;
 	serie: string;
+	ambiente: 1 | 2;
 	numeroproximo: number;
 	padrao: boolean;
 	ativo: boolean;
@@ -126,11 +127,16 @@ export const nfeConfiguracaoService = {
 		});
 	},
 
-	async listarSeries(idempresa: string, modelo?: string): Promise<NfeSerie[]> {
+	async listarSeries(
+		idempresa: string,
+		modelo?: string,
+		ambiente: 1 | 2 = 1,
+	): Promise<NfeSerie[]> {
 		const { data } = await api.get<{ data: NfeSerie[] }>("/nfe-series", {
 			params: {
 				idempresa,
 				...(modelo ? { modelo } : {}),
+				ambiente,
 			},
 		});
 		return data.data;

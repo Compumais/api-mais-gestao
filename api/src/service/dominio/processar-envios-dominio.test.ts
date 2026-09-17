@@ -99,6 +99,8 @@ describe("processarEnviosDominioService", () => {
 		} as never);
 		vi.mocked(notaFiscalRepo.buscarNotaFiscalPorId).mockResolvedValue({
 			id: "nf-1",
+			idempresa: "emp-1",
+			tipoambientenfe: 1,
 			chavenfe: "35240100000000000000550010000000011000000011",
 		} as never);
 		vi.mocked(xmlNota.obterXmlAutorizadoNotaFiscal).mockResolvedValue(
@@ -125,6 +127,31 @@ describe("processarEnviosDominioService", () => {
 				status: "aguardando_processamento",
 				idloteapi: "lote-novo",
 			}),
+		);
+	});
+
+	it("encerra sem envio uma pendência antiga de homologação", async () => {
+		vi.mocked(dominioEnvioRepo.listarDominioEnviosPendentes).mockResolvedValue([
+			envioPendente,
+		]);
+		vi.mocked(dominioEnvioRepo.reivindicarDominioEnvio).mockResolvedValue(
+			envioPendente,
+		);
+		vi.mocked(notaFiscalRepo.buscarNotaFiscalPorId).mockResolvedValue({
+			id: "nf-1",
+			idempresa: "emp-1",
+			tipoambientenfe: 2,
+		} as never);
+
+		const resultado = await processarEnviosDominioService(
+			new Date("2026-01-01T00:00:00.000Z"),
+		);
+
+		expect(resultado.ignorados).toBe(1);
+		expect(dominioClient.enviarXmlLoteDominio).not.toHaveBeenCalled();
+		expect(dominioEnvioRepo.atualizarDominioEnvio).toHaveBeenCalledWith(
+			"env-1",
+			expect.objectContaining({ status: "ignorado" }),
 		);
 	});
 });

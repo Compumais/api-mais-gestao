@@ -436,6 +436,7 @@ function NfceConfiguracaoFormCampos({
 			<NfeSeriesSection
 				idempresa={idempresa}
 				modelo="65"
+				ambiente={ambiente}
 				titulo="Série modelo 65"
 				descricao="Numeração utilizada pelo PDV na emissão de cupons fiscais eletrônicos."
 				queryKey="nfce-series"

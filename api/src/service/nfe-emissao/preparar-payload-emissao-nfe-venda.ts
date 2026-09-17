@@ -32,7 +32,10 @@ import {
 } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
 import { resolverDocumentoReferenciadoEmissao } from "@/service/nfe-emissao/resolver-documento-referenciado-emissao.js";
 import type { FormaPagamentoNfVenda } from "@/service/nota-fiscal/gerar-contas-receber-nf.js";
-import { isAmbienteHomologacao } from "@/util/ambiente-sefaz.js";
+import {
+	isAmbienteHomologacao,
+	resolverAmbienteSefaz,
+} from "@/util/ambiente-sefaz.js";
 import { calcularTotaisFiscaisEmissaoNfe } from "@/util/calcular-totais-fiscais-emissao-nfe.js";
 import {
 	emissaoRequerDocumentoReferenciado,
@@ -261,7 +264,12 @@ async function resolverNumeracaoEmissao({
 			let serieParaUsar = seriePadrao;
 			if (idserienfe) {
 				const serieBuscada = await buscarNfeSeriePorId(idserienfe);
-				if (serieBuscada) serieParaUsar = serieBuscada;
+				if (
+					serieBuscada &&
+					(!seriePadrao || serieBuscada.ambiente === seriePadrao.ambiente)
+				) {
+					serieParaUsar = serieBuscada;
+				}
 			}
 			if (!serieParaUsar && notaExistente.idserie) {
 				const serieSalva = await buscarNfeSeriePorId(notaExistente.idserie);
@@ -319,6 +327,7 @@ async function resolverNumeracaoEmissao({
 				idempresa,
 				"55",
 				notaExistente.serie,
+				resolverAmbienteSefaz(notaExistente.tipoambientenfe),
 			);
 			idserie = serieRegistrada?.id;
 		}
@@ -339,7 +348,12 @@ async function resolverNumeracaoEmissao({
 	let serieParaUsar = seriePadrao;
 	if (idserienfe) {
 		const serieBuscada = await buscarNfeSeriePorId(idserienfe);
-		if (serieBuscada) serieParaUsar = serieBuscada;
+		if (
+			serieBuscada &&
+			(!seriePadrao || serieBuscada.ambiente === seriePadrao.ambiente)
+		) {
+			serieParaUsar = serieBuscada;
+		}
 	}
 
 	if (!serieParaUsar) {

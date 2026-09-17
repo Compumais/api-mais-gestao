@@ -67,5 +67,6 @@ describe("gerarRelatorioFiscalVendas", () => {
 		]);
 		expect(String(resultado.content)).toContain("Número: 100");
 		expect(String(resultado.content)).toContain("PASTEL DE CARNE");
+		expect(String(resultado.content)).toContain("Ambiente: Produção");
 	});
 });

@@ -1,3 +1,4 @@
+import { type SQL, type SQLWrapper, sql } from "drizzle-orm";
 import { normalizarAmbienteSefaz } from "@/util/normalizar-dados-empresa-fiscal.js";
 
 /** tpAmb SEFAZ: 1 = produção, 2 = homologação */
@@ -6,7 +7,8 @@ export const AMBIENTE_SEFAZ = {
 	HOMOLOGACAO: 2,
 } as const;
 
-export type AmbienteSefaz = (typeof AMBIENTE_SEFAZ)[keyof typeof AMBIENTE_SEFAZ];
+export type AmbienteSefaz =
+	(typeof AMBIENTE_SEFAZ)[keyof typeof AMBIENTE_SEFAZ];
 
 export function resolverAmbienteSefaz(
 	ambiente: number | null | undefined,
@@ -35,4 +37,12 @@ export function permiteIntegracaoOperacionalNota(
 ): boolean {
 	if (tipoambientenfe == null) return true;
 	return isAmbienteProducao(tipoambientenfe);
+}
+
+/**
+ * Documentos legados sem ambiente persistido são tratados como produção.
+ * Use este predicado somente em consultas destinadas à escrituração/contabilidade.
+ */
+export function condicaoAmbienteFiscalProducao(coluna: SQLWrapper): SQL {
+	return sql`(${coluna} is null or ${coluna} <> ${AMBIENTE_SEFAZ.HOMOLOGACAO})`;
 }

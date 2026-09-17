@@ -3519,7 +3519,11 @@ export async function salvarConfiguracoes(
 	return result;
 }
 
-export async function obterNumeracaoNfce(): Promise<{
+async function ambienteNumeracaoNfceAtivo(): Promise<1 | 2> {
+	return Number(await getConfig("fiscal_ambiente_ativo", "2")) === 1 ? 1 : 2;
+}
+
+export async function obterNumeracaoNfce(ambiente?: number): Promise<{
 	serie: number;
 	proximo_numero: number;
 	csc_id: string | null;
@@ -3528,6 +3532,10 @@ export async function obterNumeracaoNfce(): Promise<{
 	uf: string | null;
 	ambiente: number;
 }> {
+	const ambienteEfetivo =
+		ambiente === 1 || ambiente === 2
+			? ambiente
+			: await ambienteNumeracaoNfceAtivo();
 	const row = await queryOne<{
 		serie: number;
 		proximo_numero: number;
@@ -3536,7 +3544,7 @@ export async function obterNumeracaoNfce(): Promise<{
 		cnpj: string | null;
 		uf: string | null;
 		ambiente: number;
-	}>("SELECT * FROM numeracao_nfce WHERE id = 1");
+	}>("SELECT * FROM numeracao_nfce WHERE ambiente = $1", [ambienteEfetivo]);
 	if (!row) {
 		throw new Error("Numeração NFC-e não inicializada");
 	}
@@ -3552,37 +3560,50 @@ export async function atualizarNumeracaoNfce(dados: {
 	uf?: string | null;
 	ambiente?: number;
 }): Promise<void> {
-	const atual = await obterNumeracaoNfce();
+	const ambiente =
+		dados.ambiente === 1 || dados.ambiente === 2
+			? dados.ambiente
+			: await ambienteNumeracaoNfceAtivo();
+	const atual = await obterNumeracaoNfce(ambiente);
 	await execute(
 		`UPDATE numeracao_nfce SET
 			serie = $1, proximo_numero = $2, csc_id = $3, csc_token = $4,
 			cnpj = $5, uf = $6, ambiente = $7, atualizadoem = $8
-		 WHERE id = 1`,
+		 WHERE ambiente = $7`,
 		[
 			dados.serie ?? atual.serie,
 			dados.proximo_numero ?? atual.proximo_numero,
-			dados.csc_id ?? atual.csc_id,
-			dados.csc_token ?? atual.csc_token,
-			dados.cnpj ?? atual.cnpj,
-			dados.uf ?? atual.uf,
-			dados.ambiente ?? atual.ambiente,
+			dados.csc_id !== undefined ? dados.csc_id : atual.csc_id,
+			dados.csc_token !== undefined ? dados.csc_token : atual.csc_token,
+			dados.cnpj !== undefined ? dados.cnpj : atual.cnpj,
+			dados.uf !== undefined ? dados.uf : atual.uf,
+			ambiente,
 			new Date().toISOString(),
 		],
 	);
+	await setConfig("fiscal_ambiente_ativo", String(ambiente));
 }
 
-/** Maior nNF já usado em nfce_local (opcionalmente filtrado pela série). */
+/** Maior nNF já usado no ambiente atual (opcionalmente filtrado pela série). */
 export async function obterMaxNumeroNfceLocal(
 	serie?: number,
+	ambiente?: number,
 ): Promise<number | null> {
+	const ambienteEfetivo =
+		ambiente === 1 || ambiente === 2
+			? ambiente
+			: await ambienteNumeracaoNfceAtivo();
 	const row =
 		serie != null && Number.isFinite(serie) && serie >= 1
 			? await queryOne<{ max: number | null }>(
-					`SELECT MAX(numero)::int AS max FROM nfce_local WHERE serie = $1`,
-					[serie],
+					`SELECT MAX(numero)::int AS max
+					 FROM nfce_local WHERE serie = $1 AND ambiente = $2`,
+					[serie, ambienteEfetivo],
 				)
 			: await queryOne<{ max: number | null }>(
-					`SELECT MAX(numero)::int AS max FROM nfce_local`,
+					`SELECT MAX(numero)::int AS max
+					 FROM nfce_local WHERE ambiente = $1`,
+					[ambienteEfetivo],
 				);
 	const max = row?.max;
 	if (max == null || !Number.isFinite(max) || max < 1) {
@@ -3594,18 +3615,20 @@ export async function obterMaxNumeroNfceLocal(
 export async function numeroNfceLocalJaUsado(
 	serie: number,
 	numero: number,
+	ambiente: number,
 	excluirId?: string,
 ): Promise<boolean> {
 	const row = excluirId
 		? await queryOne<{ id: string }>(
 				`SELECT id FROM nfce_local
-				 WHERE serie = $1 AND numero = $2 AND id <> $3
+				 WHERE serie = $1 AND numero = $2 AND ambiente = $3 AND id <> $4
 				 LIMIT 1`,
-				[serie, numero, excluirId],
+				[serie, numero, ambiente, excluirId],
 			)
 		: await queryOne<{ id: string }>(
-				`SELECT id FROM nfce_local WHERE serie = $1 AND numero = $2 LIMIT 1`,
-				[serie, numero],
+				`SELECT id FROM nfce_local
+				 WHERE serie = $1 AND numero = $2 AND ambiente = $3 LIMIT 1`,
+				[serie, numero, ambiente],
 			);
 	return Boolean(row);
 }
@@ -3623,8 +3646,11 @@ export async function reservarNumeroNfce(): Promise<{
 	const serie = atual.serie;
 	const limite = numero + 10_000;
 	while (numero < limite) {
-		if (!(await numeroNfceLocalJaUsado(serie, numero))) {
-			await atualizarNumeracaoNfce({ proximo_numero: numero + 1 });
+		if (!(await numeroNfceLocalJaUsado(serie, numero, atual.ambiente))) {
+			await atualizarNumeracaoNfce({
+				ambiente: atual.ambiente,
+				proximo_numero: numero + 1,
+			});
 			return { serie, numero };
 		}
 		numero += 1;
@@ -3646,6 +3672,7 @@ export async function listarNfceLocalParaConflitoNumeracao(): Promise<
 		criadoem: string;
 	}>
 > {
+	const ambiente = await ambienteNumeracaoNfceAtivo();
 	return query<{
 		id: string;
 		idvenda: string;
@@ -3658,8 +3685,10 @@ export async function listarNfceLocalParaConflitoNumeracao(): Promise<
 	}>(
 		`SELECT id, idvenda, serie, numero, chave, status, tpemis, criadoem
 		 FROM nfce_local
-		 WHERE status NOT IN ('cancelada', 'inutilizada', 'conflito_numeracao')
+		 WHERE ambiente = $1
+		   AND status NOT IN ('cancelada', 'inutilizada', 'conflito_numeracao')
 		 ORDER BY serie, numero, criadoem`,
+		[ambiente],
 	);
 }
 
@@ -3706,6 +3735,7 @@ export async function avancarNumeracaoNfceAposEmissao(
 	const proximo = numero + 1;
 	if (atual.serie !== serie) {
 		await atualizarNumeracaoNfce({
+			ambiente: atual.ambiente,
 			serie,
 			proximo_numero: Math.max(proximo, atual.proximo_numero),
 		});
@@ -3713,7 +3743,10 @@ export async function avancarNumeracaoNfceAposEmissao(
 	}
 
 	if (proximo > atual.proximo_numero) {
-		await atualizarNumeracaoNfce({ proximo_numero: proximo });
+		await atualizarNumeracaoNfce({
+			ambiente: atual.ambiente,
+			proximo_numero: proximo,
+		});
 	}
 }
 
@@ -3743,6 +3776,7 @@ export async function salvarNfceLocal(dados: {
 	idvenda: string;
 	serie: number;
 	numero: number;
+	ambiente?: number;
 	chave?: string;
 	tpemis: number;
 	status: string;
@@ -3755,17 +3789,22 @@ export async function salvarNfceLocal(dados: {
 	revisao_manual?: boolean;
 	transmitida?: boolean;
 }): Promise<void> {
+	const ambiente =
+		dados.ambiente === 1 || dados.ambiente === 2
+			? dados.ambiente
+			: (await obterNumeracaoNfce()).ambiente;
 	await execute(
 		`INSERT INTO nfce_local (
-			id, idvenda, serie, numero, chave, tpemis, status, xml, qrcode, protocolo,
+			id, idvenda, serie, numero, ambiente, chave, tpemis, status, xml, qrcode, protocolo,
 			motivo_contingencia, data_contingencia, xml_sha256, revisao_manual,
 			transmitida, criadoem
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
 		[
 			dados.id,
 			dados.idvenda,
 			dados.serie,
 			dados.numero,
+			ambiente,
 			dados.chave ?? null,
 			dados.tpemis,
 			dados.status,

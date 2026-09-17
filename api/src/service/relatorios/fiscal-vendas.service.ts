@@ -41,6 +41,7 @@ function calcularResumoVendas(notas: RelatorioFiscalNotaItem[]) {
 	const totalGeral = calcularTotaisFiscais(notas);
 
 	return [
+		"Ambiente: Produção",
 		`NF-e (55): ${nfe.length} documento(s) — ${formatCurrency(totalNfe.valor)}`,
 		`NFC-e (65): ${nfce.length} documento(s) — ${formatCurrency(totalNfce.valor)}`,
 		`Total geral: ${notas.length} documento(s) — ${formatCurrency(totalGeral.valor)}`,

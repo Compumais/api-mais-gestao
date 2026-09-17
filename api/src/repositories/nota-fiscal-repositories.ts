@@ -32,6 +32,10 @@ import {
 	unidademedida,
 	vendapdvgourmet,
 } from "@/repositories/schema.js";
+import {
+	condicaoAmbienteFiscalProducao,
+	resolverAmbienteSefaz,
+} from "@/util/ambiente-sefaz.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
 import {
 	STATUS_NF_CONFIRMADA,
@@ -192,6 +196,10 @@ export async function registrarNotaFiscalContingenciaPdv(
 					eq(nfeserie.idempresa, notaFiscal.idempresa),
 					eq(nfeserie.modelo, "65"),
 					eq(nfeserie.serie, String(notaFiscal.serie)),
+					eq(
+						nfeserie.ambiente,
+						resolverAmbienteSefaz(notaFiscal.tipoambientenfe),
+					),
 				),
 			)
 			.for("update");
@@ -976,6 +984,7 @@ export async function listarNotasParaExportacaoXmlContabilidade({
 		.where(
 			and(
 				eq(notafiscal.idempresa, idempresa),
+				condicaoAmbienteFiscalProducao(notafiscal.tipoambientenfe),
 				inArray(notafiscal.status, [...STATUS_XML_EXPORTACAO_CONTABILIDADE]),
 				gte(notafiscal.emissao, dataInicio),
 				lte(notafiscal.emissao, dataFim),
@@ -1049,7 +1058,15 @@ const COLUNAS_RELATORIO_FISCAL = {
 	parceiroNome: sql<
 		string | null
 	>`coalesce(${entidade.razaosocial}, ${entidade.nome})`,
-	cfopCodigo: cfop.codigo,
+	cfopCodigo: sql<string | null>`coalesce(
+		${cfop.codigo},
+		(
+			select string_agg(distinct coalesce(nullif(nfi.cfop, ''), cfi.codigo), ', ')
+			from notafiscalitem nfi
+			left join cfop cfi on cfi.id = nfi.idcfop
+			where nfi.idnotafiscal = ${notafiscal.id}
+		)
+	)`,
 	cfopDescricao: cfop.descricao,
 };
 
@@ -1063,6 +1080,7 @@ function filtrosPeriodoRelatorio(
 		gte(notafiscal.emissao, dataInicio),
 		lte(notafiscal.emissao, dataFim),
 		ne(notafiscal.status, STATUS_RASCUNHO_IMPORTACAO),
+		condicaoAmbienteFiscalProducao(notafiscal.tipoambientenfe),
 	];
 }
 
@@ -1189,6 +1207,7 @@ export type ContarNotasPendentesCorrecaoParametros = {
 	idempresa: string;
 	incluirNfe?: boolean;
 	incluirNfce?: boolean;
+	somenteProducao?: boolean;
 	dataInicio?: string;
 	dataFim?: string;
 };
@@ -1204,6 +1223,7 @@ export async function contarNotasFiscaisPendentesCorrecao({
 	idempresa,
 	incluirNfe = true,
 	incluirNfce = true,
+	somenteProducao = false,
 	dataInicio,
 	dataFim,
 }: ContarNotasPendentesCorrecaoParametros): Promise<ContagemNotasPendentesCorrecao> {
@@ -1220,6 +1240,9 @@ export async function contarNotasFiscaisPendentesCorrecao({
 		inArray(notafiscal.modelo, modelos),
 		inArray(notafiscal.status, [...STATUS_NOTA_PENDENTE_CORRECAO]),
 	];
+	if (somenteProducao) {
+		condicoes.push(condicaoAmbienteFiscalProducao(notafiscal.tipoambientenfe));
+	}
 
 	if (dataInicio) {
 		condicoes.push(gte(notafiscal.emissao, dataInicio));
@@ -1257,6 +1280,7 @@ export async function contarNfcePendentesNoPeriodo({
 		idempresa,
 		incluirNfe: false,
 		incluirNfce: true,
+		somenteProducao: true,
 		dataInicio,
 		dataFim,
 	});
