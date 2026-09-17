@@ -71,8 +71,12 @@ api.interceptors.response.use(
 
 		const erro = new Error(message) as Error & {
 			code?: string;
+			status?: number;
 			relatorioFiscal?: unknown;
 		};
+		if (typeof error.response?.status === "number") {
+			erro.status = error.response.status;
+		}
 		if (typeof data?.code === "string") {
 			erro.code = data.code;
 		}

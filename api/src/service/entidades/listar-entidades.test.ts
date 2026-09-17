@@ -277,6 +277,28 @@ describe("listarEntidadesService", () => {
 		}
 	});
 
+	it("deve retornar 500 — e nunca 409 — quando a consulta ao banco falhar", async () => {
+		vi.mocked(
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(true);
+		vi.mocked(entidadeRepository.listarEntidades).mockRejectedValue(
+			new Error("duplicate key value violates unique constraint"),
+		);
+
+		const resultado = await listarEntidadesService({
+			idusuario: "usuario-123",
+			idempresa: "empresa-123",
+		});
+
+		expect(resultado.success).toBe(false);
+		if (!resultado.success) {
+			expect(resultado.status).toBe(500);
+			expect(resultado.status).not.toBe(409);
+			expect(resultado.error).toBe("Erro ao listar entidades");
+			expect(resultado.code).toBe("LIST_ENTIDADE_ERROR");
+		}
+	});
+
 	it("deve usar valores padrão de paginação quando não fornecidos", async () => {
 		vi.mocked(
 			entidadeRepository.verificarUsuarioPertenceEmpresa,
