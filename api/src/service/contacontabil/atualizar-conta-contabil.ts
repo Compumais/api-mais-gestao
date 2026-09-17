@@ -5,14 +5,17 @@ import type {
 import type { HttpResponse } from "@/model/http-model.js";
 import {
 	atualizarContaContabil,
+	buscarContaContabilPorCodigoReduzido,
 	buscarContaContabilPorId,
 } from "@/repositories/conta-contabil-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { normalizarCodigoReduzido } from "@/service/contacontabil/codigo-reduzido.js";
 import {
 	httpErroInterno,
 	httpNaoEncontrado,
 	httpOk,
 	httpProibido,
+	httpRecursoExistente,
 } from "@/util/http-util.js";
 
 type AtualizarContaContabilParametros = {
@@ -41,8 +44,25 @@ export async function atualizarContaContabilService({
 		return httpProibido();
 	}
 
+	const codigoReduzido = normalizarCodigoReduzido(dados.codigoreduzido);
+	if (codigoReduzido) {
+		const conflito = await buscarContaContabilPorCodigoReduzido(
+			contaExistente.idempresa,
+			codigoReduzido,
+			id,
+		);
+		if (conflito) {
+			return httpRecursoExistente(
+				"Já existe uma conta contábil com este código reduzido",
+			);
+		}
+	}
+
 	const contaContabil = await atualizarContaContabil(id, {
 		...dados,
+		...(dados.codigoreduzido !== undefined
+			? { codigoreduzido: codigoReduzido }
+			: {}),
 		dataultimaalteracao: new Date().toISOString(),
 		idultimousuarioalteracao: idusuario,
 		currenttimemillis: Date.now(),

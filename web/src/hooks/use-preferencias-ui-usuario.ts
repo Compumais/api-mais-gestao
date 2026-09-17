@@ -40,6 +40,7 @@ export const TABELA_PRODUTOS = "produtos";
 export const TABELA_SERVICOS = "servicos";
 export const TABELA_GRUPOS = "grupos";
 export const TABELA_UNIDADE_MEDIDA = "unidade-medida";
+export const TABELA_CODIGOS_REDUZIDOS = "codigos-reduzidos";
 export const TABELA_CLIENTES = "clientes";
 export const TABELA_FORNECEDORES = "fornecedores";
 export const TABELA_FATOR_CONVERSAO = "fator-conversao";

@@ -3,12 +3,17 @@ import type {
 	NovaContaContabil,
 } from "@/model/conta-contabil-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
-import { criarContaContabil } from "@/repositories/conta-contabil-repositories.js";
+import {
+	buscarContaContabilPorCodigoReduzido,
+	criarContaContabil,
+} from "@/repositories/conta-contabil-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { normalizarCodigoReduzido } from "@/service/contacontabil/codigo-reduzido.js";
 import {
 	httpCriacao,
 	httpErroInterno,
 	httpProibido,
+	httpRecursoExistente,
 } from "@/util/http-util.js";
 
 type CriarContaContabilParametros = {
@@ -36,10 +41,26 @@ export async function criarContaContabilService({
 		return httpProibido();
 	}
 
+	const codigoReduzido = normalizarCodigoReduzido(
+		dadosContaContabil.codigoreduzido,
+	);
+	if (codigoReduzido) {
+		const conflito = await buscarContaContabilPorCodigoReduzido(
+			dadosContaContabil.idempresa,
+			codigoReduzido,
+		);
+		if (conflito) {
+			return httpRecursoExistente(
+				"Já existe uma conta contábil com este código reduzido",
+			);
+		}
+	}
+
 	const agora = new Date().toISOString();
 
 	const contaContabil = await criarContaContabil({
 		...dadosContaContabil,
+		codigoreduzido: codigoReduzido ?? null,
 		currenttimemillis: Date.now(),
 		datacadastro: agora,
 		dataultimaalteracao: agora,

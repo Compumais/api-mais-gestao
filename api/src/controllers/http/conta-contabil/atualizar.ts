@@ -8,10 +8,10 @@ const atualizarContaContabilParamsSchema = z.object({
 });
 
 const atualizarContaContabilBodySchema = z.object({
-	descricao: z.string().max(100),
+	descricao: z.string().max(100).optional(),
 	natureza: z.string().max(1).optional(),
 	tipocontacontabil: z.string().max(1).optional(),
-	codigoreduzido: z.string().max(20).optional(),
+	codigoreduzido: z.string().max(20).optional().nullable(),
 	codigocontareferencial: z.string().max(60).optional(),
 	codigoextenso: z.string().max(85).optional(),
 	contaglutinadora: z.number().int().optional(),

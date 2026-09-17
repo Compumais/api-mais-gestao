@@ -6,6 +6,7 @@ import { criarContaContabil } from "./criar.js";
 import * as schema from "./doc-schema/schema.js";
 import { excluirContaContabil } from "./excluir.js";
 import { listarContasContabeis } from "./listar.js";
+import { buscarProximoCodigoReduzido } from "./proximo-codigo-reduzido.js";
 
 export async function contaContabilRotas(app: FastifyInstance) {
 	app.addHook("onRequest", verifyJwt);
@@ -17,6 +18,10 @@ export async function contaContabilRotas(app: FastifyInstance) {
 	app.get("/conta-contabil", {
 		schema: schema.listarContasContabeisSchema,
 		handler: listarContasContabeis,
+	});
+	app.get("/conta-contabil/proximo-codigo-reduzido", {
+		schema: schema.proximoCodigoReduzidoContaContabilSchema,
+		handler: buscarProximoCodigoReduzido,
 	});
 	app.get("/conta-contabil/:id", {
 		schema: schema.buscarContaContabilSchema,
