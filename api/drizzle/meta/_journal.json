@@ -722,6 +722,13 @@
       "when": 1788995200000,
       "tag": "0100_pedido_compra_identidade",
       "breakpoints": true
+    },
+    {
+      "idx": 102,
+      "version": "7",
+      "when": 1788996200000,
+      "tag": "0101_nfeserie_ambiente",
+      "breakpoints": true
     }
   ]
 }
