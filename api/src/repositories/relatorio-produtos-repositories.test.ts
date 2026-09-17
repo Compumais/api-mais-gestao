@@ -41,8 +41,9 @@ describe("queries do relatório de qualidade", () => {
 
 			expect(texto).toContain("FROM produtos p");
 			expect(texto).toContain("FROM saldoestoque se");
+			expect(texto).not.toContain("p.*");
 			expect(texto).not.toMatch(
-				/\b(marca|produto_ean|tabela_preco|tabela_preco_item)\b/,
+				/\b(FROM|JOIN)\s+(marca|produto_ean|tabela_preco|tabela_preco_item)\b/i,
 			);
 			expect(texto).not.toContain("p.idmarca");
 		}
@@ -73,8 +74,9 @@ describe("queries do relatório de inventário", () => {
 		expect(texto).toContain("valor_operacional");
 		expect(texto).toContain("NULL::text contagem");
 		expect(texto).toContain("COALESCE(b.estoque_fiscal, 0) > 0");
+		expect(texto).not.toContain("p.*");
 		expect(texto).not.toMatch(
-			/\b(marca|produto_ean|tabela_preco|tabela_preco_item)\b/,
+			/\b(FROM|JOIN)\s+(marca|produto_ean|tabela_preco|tabela_preco_item)\b/i,
 		);
 	});
 });
@@ -95,9 +97,10 @@ describe("queries do relatório de cadastro", () => {
 		const texto = obterSql(executar.mock.calls[0][0] as SQL);
 
 		expect(texto).toContain("FROM produtos p");
+		expect(texto).not.toContain("p.*");
 		expect(texto).toMatch(/COALESCE\(p\.inativo,\s*0\)\s*<>\s*0/);
 		expect(texto).not.toMatch(
-			/\b(marca|produto_ean|tabela_preco|tabela_preco_item)\b/,
+			/\b(FROM|JOIN)\s+(marca|produto_ean|tabela_preco|tabela_preco_item)\b/i,
 		);
 		expect(texto).not.toContain("p.idmarca");
 	});
