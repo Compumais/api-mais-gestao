@@ -22,16 +22,27 @@ public final class CodigoScanHelper {
     private final Listener listener;
     private final ActivityResultLauncher<ScanOptions> scanLauncher;
     private final ActivityResultLauncher<String> permissionLauncher;
+    private final int promptResId;
 
     public CodigoScanHelper(
             ComponentActivity activity,
             ActivityResultLauncher<ScanOptions> scanLauncher,
             ActivityResultLauncher<String> permissionLauncher,
             Listener listener) {
+        this(activity, scanLauncher, permissionLauncher, listener, R.string.escanear_codigo);
+    }
+
+    public CodigoScanHelper(
+            ComponentActivity activity,
+            ActivityResultLauncher<ScanOptions> scanLauncher,
+            ActivityResultLauncher<String> permissionLauncher,
+            Listener listener,
+            int promptResId) {
         this.activity = activity;
         this.scanLauncher = scanLauncher;
         this.permissionLauncher = permissionLauncher;
         this.listener = listener;
+        this.promptResId = promptResId;
     }
 
     public static ActivityResultLauncher<ScanOptions> registrarScan(
@@ -69,7 +80,7 @@ public final class CodigoScanHelper {
     public void abrirCamera() {
         ScanOptions options = new ScanOptions();
         options.setDesiredBarcodeFormats(ScanOptions.ALL_CODE_TYPES);
-        options.setPrompt(activity.getString(R.string.escanear_codigo));
+        options.setPrompt(activity.getString(promptResId));
         options.setBeepEnabled(true);
         options.setOrientationLocked(true);
         options.setCaptureActivity(CodigoCaptureActivity.class);

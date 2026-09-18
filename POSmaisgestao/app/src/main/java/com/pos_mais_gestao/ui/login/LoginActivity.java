@@ -6,6 +6,7 @@ import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.RadioGroup;
 import android.widget.Toast;
+import androidx.activity.result.ActivityResultLauncher;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
@@ -16,7 +17,10 @@ import com.pos_mais_gestao.data.api.ApiClient;
 import com.pos_mais_gestao.data.api.ApiException;
 import com.pos_mais_gestao.data.local.PrefsStore;
 import com.pos_mais_gestao.ui.empresa.EmpresaActivity;
+import com.pos_mais_gestao.util.CodigoScanHelper;
+import com.pos_mais_gestao.util.PosConnectionQrParser;
 import com.pos_mais_gestao.util.SoftInputHelper;
+import com.journeyapps.barcodescanner.ScanOptions;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -31,6 +35,15 @@ public class LoginActivity extends AppCompatActivity {
     private RadioGroup radioGrupoConexao;
     private MaterialButton btnEntrar;
     private ProgressBar progressLogin;
+    private CodigoScanHelper scanHelper;
+    private final ActivityResultLauncher<ScanOptions> scanLauncher =
+            CodigoScanHelper.registrarScan(this, this::aplicarQrPdv);
+    private final ActivityResultLauncher<String> cameraPermissionLauncher =
+            CodigoScanHelper.registrarPermissao(this, () -> {
+                if (scanHelper != null) {
+                    scanHelper.abrirCamera();
+                }
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,6 +62,13 @@ public class LoginActivity extends AppCompatActivity {
         radioGrupoConexao = findViewById(R.id.radioGrupoConexao);
         btnEntrar = findViewById(R.id.btnEntrar);
         progressLogin = findViewById(R.id.progressLogin);
+        MaterialButton btnLerQrPdv = findViewById(R.id.btnLerQrPdv);
+        scanHelper = new CodigoScanHelper(
+                this,
+                scanLauncher,
+                cameraPermissionLauncher,
+                this::aplicarQrPdv,
+                R.string.escanear_qr_pdv);
 
         inputUrlApi.setText(prefs.getBaseUrl());
         if (prefs.isModoPdvLocal()) {
@@ -64,6 +84,18 @@ public class LoginActivity extends AppCompatActivity {
         });
         SoftInputHelper.hideOnStart(this);
         btnEntrar.setOnClickListener(v -> entrar());
+        btnLerQrPdv.setOnClickListener(v -> scanHelper.iniciar());
+    }
+
+    private void aplicarQrPdv(String conteudo) {
+        try {
+            String url = PosConnectionQrParser.parse(conteudo);
+            radioGrupoConexao.check(R.id.radioConexaoPdv);
+            inputUrlApi.setText(url);
+            Toast.makeText(this, R.string.qr_pdv_lido_login, Toast.LENGTH_LONG).show();
+        } catch (IllegalArgumentException error) {
+            Toast.makeText(this, error.getMessage(), Toast.LENGTH_LONG).show();
+        }
     }
 
     private void aplicarHintModo(boolean local) {

@@ -6,6 +6,7 @@ import {
 	Keyboard,
 	LayoutGrid,
 	Printer,
+	QrCode,
 	RefreshCw,
 	Scale,
 	Settings2,
@@ -111,6 +112,12 @@ type StatusLan = {
 	motivo?: string;
 };
 
+type ConexaoQrPos = {
+	url: string;
+	conteudo: string;
+	svg: string;
+};
+
 type StatusBackup = {
 	habilitado: boolean;
 	pasta: string;
@@ -210,6 +217,7 @@ export function ConfigPage() {
 		MapeamentoGourmet[]
 	>([]);
 	const [statusLan, setStatusLan] = useState<StatusLan | null>(null);
+	const [conexoesQrPos, setConexoesQrPos] = useState<ConexaoQrPos[]>([]);
 	const [statusFiscal, setStatusFiscal] = useState<StatusFiscal | null>(null);
 	const [testando, setTestando] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
@@ -288,8 +296,12 @@ export function ConfigPage() {
 			}
 			try {
 				setStatusLan(await pdvInvoke<StatusLan>("statusLan"));
+				setConexoesQrPos(
+					await pdvInvoke<ConexaoQrPos[]>("conexoesQrPos"),
+				);
 			} catch {
 				setStatusLan(null);
+				setConexoesQrPos([]);
 			}
 			try {
 				setStatusFiscal(await pdvInvoke<StatusFiscal>("statusFiscalPdv"));
@@ -464,8 +476,12 @@ export function ConfigPage() {
 			}
 			try {
 				setStatusLan(await pdvInvoke<StatusLan>("statusLan"));
+				setConexoesQrPos(
+					await pdvInvoke<ConexaoQrPos[]>("conexoesQrPos"),
+				);
 			} catch {
 				setStatusLan(null);
+				setConexoesQrPos([]);
 			}
 			try {
 				setStatusBackup(await pdvInvoke<StatusBackup>("statusBackup"));
@@ -621,6 +637,11 @@ export function ConfigPage() {
 		try {
 			const lan = await pdvInvoke<StatusLan>("reiniciarLan");
 			setStatusLan(lan);
+			setConexoesQrPos(
+				lan.ouvindo
+					? await pdvInvoke<ConexaoQrPos[]>("conexoesQrPos")
+					: [],
+			);
 			setMsg(
 				lan.ouvindo
 					? `API LAN ouvindo em 0.0.0.0:${lan.porta}`
@@ -2490,6 +2511,42 @@ export function ConfigPage() {
 														? "Reiniciando…"
 														: "Reiniciar API LAN"}
 												</Button>
+											</div>
+										) : null}
+										{!modoSecundario && conexoesQrPos.length > 0 ? (
+											<div className="sm:col-span-2 space-y-3 rounded-md border bg-secondary/30 p-3">
+												<div className="flex items-center gap-2">
+													<QrCode className="size-5" />
+													<div>
+														<p className="text-sm font-medium">
+															Conectar maquininha POS
+														</p>
+														<p className="text-xs text-muted-foreground">
+															No POS, toque em “Ler QR do PDV” e depois
+															entre com seu usuário. O QR não contém senha
+															nem token.
+														</p>
+													</div>
+												</div>
+												<div className="grid gap-3 sm:grid-cols-2">
+													{conexoesQrPos.map((conexao) => (
+														<div
+															key={conexao.url}
+															className="flex flex-col items-center gap-2 rounded-md border bg-white p-3 text-black"
+														>
+															<img
+																src={`data:image/svg+xml,${encodeURIComponent(
+																	conexao.svg,
+																)}`}
+																alt={`QR para conectar em ${conexao.url}`}
+																className="size-44"
+															/>
+															<p className="break-all font-mono text-xs">
+																{conexao.url}
+															</p>
+														</div>
+													))}
+												</div>
 											</div>
 										) : null}
 									</CardContent>

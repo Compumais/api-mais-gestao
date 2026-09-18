@@ -200,6 +200,11 @@
     <string name="conexao_cloud">API cloud</string>
     <string name="conexao_pdv_local">PDV local (LAN)</string>
     <string name="url_pdv_local">URL do PDV (ex.: http://192.168.0.10:5050)</string>
+    <string name="ler_qr_pdv">Ler QR do PDV</string>
+    <string name="escanear_qr_pdv">Aponte para o QR exibido nas configurações do PDV</string>
+    <string name="qr_pdv_lido_login">PDV encontrado. Entre com seu usuário para conectar.</string>
+    <string name="login_pdv_necessario">Faça login no PDV local antes de carregar o catálogo.</string>
+    <string name="sessao_pdv_expirada">A sessão do PDV mudou ou expirou. Entre novamente.</string>
     <string name="testar_pdv">Testar conexão</string>
     <string name="carregar_catalogo">Carregar catálogo</string>
     <string name="pdv_ok">PDV local respondendo</string>

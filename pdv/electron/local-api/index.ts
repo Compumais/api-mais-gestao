@@ -157,6 +157,7 @@ import {
 	imprimirProducaoPedido,
 	rotuloOrigemMesa,
 } from "../impressora/producao";
+import { svgQrCode } from "../impressora/qr-svg";
 import {
 	configEtiquetaDeMapa,
 	montarLancamentoEtiqueta,
@@ -977,6 +978,23 @@ export const localApi = {
 			erro: atual.erro,
 			motivo: atual.motivo,
 		};
+	},
+
+	async conexoesQrPos() {
+		const { statusLanAtual } = await import("../lan-api/server");
+		const atual = statusLanAtual();
+		if (!atual.ouvindo || atual.porta <= 0) {
+			return [];
+		}
+		return atual.ips.map((ip) => {
+			const url = `http://${ip}:${atual.porta}`;
+			const conteudo = `mgpos://connect?v=1&url=${encodeURIComponent(url)}`;
+			return {
+				url,
+				conteudo,
+				svg: svgQrCode(conteudo),
+			};
+		});
 	},
 
 	async reiniciarLan() {
