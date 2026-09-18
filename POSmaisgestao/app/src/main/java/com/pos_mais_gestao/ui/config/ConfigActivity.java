@@ -31,8 +31,11 @@ import com.pos_mais_gestao.hardware.ImpressoraInfo;
 import com.pos_mais_gestao.ui.atalhos.AtalhosActivity;
 import com.pos_mais_gestao.ui.empresa.EmpresaActivity;
 import com.pos_mais_gestao.ui.login.LoginActivity;
+import com.pos_mais_gestao.util.CodigoScanHelper;
+import com.pos_mais_gestao.util.PosConnectionQrParser;
 import com.pos_mais_gestao.util.SoftInputHelper;
 import com.pos_mais_gestao.util.ThemeHelper;
+import com.journeyapps.barcodescanner.ScanOptions;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -48,6 +51,7 @@ public class ConfigActivity extends AppCompatActivity {
     private LinearLayout blocoAcoesPdv;
     private MaterialButton btnTestarPdv;
     private MaterialButton btnCarregarCatalogo;
+    private MaterialButton btnLerQrPdv;
     private TextInputEditText inputPdv;
     private TextInputEditText inputMesas;
     private TextInputLayout layoutMesas;
@@ -66,6 +70,16 @@ public class ConfigActivity extends AppCompatActivity {
     private String impressoraIdSelecionada = "";
     private String impressoraNomeSelecionada;
     private String impressoraTipoSelecionada = ImpressoraInfo.TIPO_NENHUMA;
+    private CodigoScanHelper scanHelper;
+
+    private final ActivityResultLauncher<ScanOptions> scanLauncher =
+            CodigoScanHelper.registrarScan(this, this::aplicarQrPdv);
+    private final ActivityResultLauncher<String> cameraPermissionLauncher =
+            CodigoScanHelper.registrarPermissao(this, () -> {
+                if (scanHelper != null) {
+                    scanHelper.abrirCamera();
+                }
+            });
 
     private final ActivityResultLauncher<String> bluetoothPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
@@ -91,6 +105,7 @@ public class ConfigActivity extends AppCompatActivity {
         blocoAcoesPdv = findViewById(R.id.blocoAcoesPdv);
         btnTestarPdv = findViewById(R.id.btnTestarPdv);
         btnCarregarCatalogo = findViewById(R.id.btnCarregarCatalogo);
+        btnLerQrPdv = findViewById(R.id.btnLerQrPdv);
         inputPdv = findViewById(R.id.inputNumeroPdv);
         inputMesas = findViewById(R.id.inputQuantidadeMesas);
         layoutMesas = findViewById(R.id.layoutQuantidadeMesas);
@@ -110,6 +125,12 @@ public class ConfigActivity extends AppCompatActivity {
         MaterialButton btnTrocarEmpresa = findViewById(R.id.btnTrocarEmpresa);
         MaterialButton btnLogout = findViewById(R.id.btnLogout);
         MaterialButton btnAtualizarImpressoras = findViewById(R.id.btnAtualizarImpressoras);
+        scanHelper = new CodigoScanHelper(
+                this,
+                scanLauncher,
+                cameraPermissionLauncher,
+                this::aplicarQrPdv,
+                R.string.escanear_qr_pdv);
 
         inputUrl.setText(prefs.getBaseUrl());
         if (prefs.isModoPdvLocal()) {
@@ -141,6 +162,7 @@ public class ConfigActivity extends AppCompatActivity {
         btnSalvar.setOnClickListener(v -> salvar());
         btnTestarPdv.setOnClickListener(v -> testarPdv());
         btnCarregarCatalogo.setOnClickListener(v -> carregarCatalogo());
+        btnLerQrPdv.setOnClickListener(v -> scanHelper.iniciar());
         btnAtalhos.setOnClickListener(v -> startActivity(new Intent(this, AtalhosActivity.class)));
         btnAtualizarImpressoras.setOnClickListener(v -> solicitarPermissaoECarregar());
         btnTrocarEmpresa.setOnClickListener(v -> trocarEmpresa());
@@ -264,6 +286,10 @@ public class ConfigActivity extends AppCompatActivity {
 
     private void salvar() {
         String url = inputUrl.getText() == null ? "" : inputUrl.getText().toString().trim();
+        boolean local = modoPdvLocal();
+        boolean conexaoMudou = prefs.isModoPdvLocal() != local
+                || !prefs.getBaseUrl().equals(normalizarUrl(url));
+        boolean precisaLogin = conexaoMudou || !prefs.isLoggedIn();
         String pdvStr = inputPdv.getText() == null ? "1" : inputPdv.getText().toString().trim();
         String mesasStr = inputMesas.getText() == null ? "20" : inputMesas.getText().toString().trim();
         if (url.isEmpty()) {
@@ -287,9 +313,12 @@ public class ConfigActivity extends AppCompatActivity {
             Toast.makeText(this, R.string.pix_chave_obrigatoria, Toast.LENGTH_SHORT).show();
             return;
         }
+        if (conexaoMudou) {
+            prefs.logout();
+        }
         prefs.setBaseUrl(url);
-        prefs.setConexaoModo(modoPdvLocal() ? PrefsStore.MODO_PDV_LOCAL : PrefsStore.MODO_CLOUD);
-        if (!modoPdvLocal()) {
+        prefs.setConexaoModo(local ? PrefsStore.MODO_PDV_LOCAL : PrefsStore.MODO_CLOUD);
+        if (!local) {
             prefs.setNumeroPdv(pdv);
             prefs.setQuantidadeMesas(mesas);
         }
@@ -304,6 +333,10 @@ public class ConfigActivity extends AppCompatActivity {
         prefs.setTema(tema);
         ThemeHelper.aplicar(tema);
         Toast.makeText(this, "Configurações salvas", Toast.LENGTH_SHORT).show();
+        if (precisaLogin) {
+            abrirLogin();
+            return;
+        }
         finish();
     }
 
@@ -335,6 +368,7 @@ public class ConfigActivity extends AppCompatActivity {
     private void aplicarModoUi(boolean local) {
         layoutUrlApi.setHint(local ? getString(R.string.url_pdv_local) : getString(R.string.url_api));
         blocoAcoesPdv.setVisibility(local ? View.VISIBLE : View.GONE);
+        btnLerQrPdv.setVisibility(local ? View.VISIBLE : View.GONE);
         int cupom = local ? View.GONE : View.VISIBLE;
         ocultarCard(switchEmitirNfce, cupom);
         ocultarCard(switchPixQr, cupom);
@@ -397,8 +431,38 @@ public class ConfigActivity extends AppCompatActivity {
 
     private void aplicarUrlModoLocal() {
         String url = inputUrl.getText() == null ? "" : inputUrl.getText().toString().trim();
+        boolean mudouConexao = !prefs.isModoPdvLocal() || !prefs.getBaseUrl().equals(normalizarUrl(url));
+        if (mudouConexao) {
+            prefs.logout();
+        }
         prefs.setBaseUrl(url);
         prefs.setConexaoModo(PrefsStore.MODO_PDV_LOCAL);
+    }
+
+    private String normalizarUrl(String url) {
+        return url == null ? "" : url.trim().replaceAll("/+$", "");
+    }
+
+    private void aplicarQrPdv(String conteudo) {
+        try {
+            String url = PosConnectionQrParser.parse(conteudo);
+            prefs.logout();
+            prefs.setBaseUrl(url);
+            prefs.setConexaoModo(PrefsStore.MODO_PDV_LOCAL);
+            inputUrl.setText(url);
+            radioGrupoConexao.check(R.id.radioConexaoPdv);
+            Toast.makeText(this, R.string.qr_pdv_lido_login, Toast.LENGTH_LONG).show();
+            abrirLogin();
+        } catch (IllegalArgumentException error) {
+            Toast.makeText(this, error.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void abrirLogin() {
+        Intent intent = new Intent(this, LoginActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
 
     private void testarPdv() {
@@ -427,6 +491,11 @@ public class ConfigActivity extends AppCompatActivity {
 
     private void carregarCatalogo() {
         aplicarUrlModoLocal();
+        if (!prefs.isLoggedIn()) {
+            Toast.makeText(this, R.string.login_pdv_necessario, Toast.LENGTH_LONG).show();
+            abrirLogin();
+            return;
+        }
         btnCarregarCatalogo.setEnabled(false);
         executor.execute(() -> {
             try {
@@ -440,6 +509,12 @@ public class ConfigActivity extends AppCompatActivity {
             } catch (ApiException e) {
                 runOnUiThread(() -> {
                     btnCarregarCatalogo.setEnabled(true);
+                    if (e.getStatusCode() == 401) {
+                        prefs.logout();
+                        Toast.makeText(this, R.string.sessao_pdv_expirada, Toast.LENGTH_LONG).show();
+                        abrirLogin();
+                        return;
+                    }
                     Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
                 });
             }
