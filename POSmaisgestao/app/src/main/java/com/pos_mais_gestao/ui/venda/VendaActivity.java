@@ -35,6 +35,8 @@ import com.pos_mais_gestao.ui.pagamento.PagamentoActivity;
 import com.pos_mais_gestao.util.CodigoScanHelper;
 import com.pos_mais_gestao.util.MoneyFormat;
 import com.pos_mais_gestao.util.ProdutoBuscaHelper;
+import com.pos_mais_gestao.util.ProdutoQuantidade;
+import com.pos_mais_gestao.util.QuantidadeProdutoDialog;
 import com.pos_mais_gestao.util.SoftInputHelper;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -207,6 +209,13 @@ public class VendaActivity extends AppCompatActivity {
     private void adicionarProduto(Produto produto) {
         if (produto.isEspizza()) {
             dialogPizza(produto);
+            return;
+        }
+        if (ProdutoQuantidade.vendidoPorQuilograma(produto)) {
+            QuantidadeProdutoDialog.mostrar(this, quantidade -> {
+                Carrinho.getInstance().adicionar(produto, quantidade);
+                atualizarCarrinho();
+            });
             return;
         }
         Carrinho.getInstance().adicionar(produto);

@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.pos_mais_gestao.R;
 import com.pos_mais_gestao.domain.ItemCarrinho;
 import com.pos_mais_gestao.util.MoneyFormat;
+import com.pos_mais_gestao.util.ProdutoQuantidade;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,7 +46,7 @@ public class CarrinhoAdapter extends RecyclerView.Adapter<CarrinhoAdapter.VH> {
     public void onBindViewHolder(@NonNull VH holder, int position) {
         ItemCarrinho item = itens.get(position);
         holder.txtNome.setText(item.getDescricaoExibicao());
-        holder.txtQtd.setText(item.getQuantidade().stripTrailingZeros().toPlainString());
+        holder.txtQtd.setText(ProdutoQuantidade.exibir(item.getQuantidade()));
         holder.txtTotal.setText(MoneyFormat.format(item.getSubtotal()));
         holder.btnMais.setOnClickListener(v -> listener.onMais(item));
         holder.btnMenos.setOnClickListener(v -> listener.onMenos(item));

@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.pos_mais_gestao.R;
 import com.pos_mais_gestao.data.api.ContaMesaItemDto;
 import com.pos_mais_gestao.util.MoneyFormat;
+import com.pos_mais_gestao.util.ProdutoQuantidade;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,7 +46,8 @@ public class ContaItemAdapter extends RecyclerView.Adapter<ContaItemAdapter.VH> 
     public void onBindViewHolder(@NonNull VH holder, int position) {
         ContaMesaItemDto item = itens.get(position);
         holder.txtNome.setText(item.nomeproduto != null ? item.nomeproduto : "—");
-        holder.txtQtd.setText(item.quantidade != null ? item.quantidade : "1");
+        holder.txtQtd.setText(ProdutoQuantidade.exibir(
+                item.quantidade != null ? item.quantidade : "1"));
         BigDecimal preco = BigDecimal.ZERO;
         try {
             if (item.precounitario != null) {

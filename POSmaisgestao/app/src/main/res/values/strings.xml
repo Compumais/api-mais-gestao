@@ -274,4 +274,7 @@
     <string name="informe_nome_cliente">Informe o nome do cliente</string>
     <string name="nome_atualizado">Nome atualizado</string>
     <string name="conta_nao_aberta">Conta ainda não aberta.</string>
+    <string name="informar_peso">Informe o peso</string>
+    <string name="peso_quantidade_kg">Peso/quantidade (kg), ex.: 0,350</string>
+    <string name="peso_quantidade_invalido">Informe uma quantidade maior que zero</string>
 </resources>

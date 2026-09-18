@@ -1723,7 +1723,7 @@ public class ApiClient {
         for (SacolaLinha linha : linhas) {
             JsonObject i = new JsonObject();
             i.addProperty("idproduto", linha.produto.getId());
-            i.addProperty("quantidade", linha.quantidade.doubleValue());
+            i.addProperty("quantidade", linha.quantidade);
             if (linha.produtoMeio != null) {
                 i.addProperty("idprodutomeio", linha.produtoMeio.getId());
             }
@@ -2324,7 +2324,7 @@ public class ApiClient {
             JsonObject i = new JsonObject();
             i.addProperty("idproduto", item.getProdutoFiscal().getId());
             i.addProperty("descricao", item.getDescricaoExibicao());
-            i.addProperty("quantidade", item.getQuantidade().doubleValue());
+            i.addProperty("quantidade", item.getQuantidade());
             i.addProperty("precounitario", item.getPrecoUnitario().doubleValue());
             i.addProperty("precototal", item.getSubtotal().doubleValue());
             itensJson.add(i);
@@ -2470,11 +2470,12 @@ public class ApiClient {
         return new JsonArray();
     }
 
-    private static double parseQuantidade(String qty) {
+    private static BigDecimal parseQuantidade(String qty) {
         try {
-            return new BigDecimal(qty.replace(",", ".")).doubleValue();
+            BigDecimal quantidade = new BigDecimal(qty.replace(",", "."));
+            return quantidade.compareTo(BigDecimal.ZERO) > 0 ? quantidade : BigDecimal.ONE;
         } catch (Exception e) {
-            return 1d;
+            return BigDecimal.ONE;
         }
     }
 
