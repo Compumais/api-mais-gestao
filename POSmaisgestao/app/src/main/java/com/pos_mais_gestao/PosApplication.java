@@ -11,6 +11,7 @@ import com.pos_mais_gestao.hardware.EscPosPrinter;
 import com.pos_mais_gestao.hardware.ImpressoraPos;
 import com.pos_mais_gestao.hardware.PagamentoHardware;
 import com.pos_mais_gestao.hardware.StubPagamentoHardware;
+import com.pos_mais_gestao.hardware.balanca.BalancaManager;
 import com.pos_mais_gestao.util.ThemeHelper;
 import com.pos_mais_gestao.util.WindowInsetsHelper;
 
@@ -20,6 +21,7 @@ public class PosApplication extends Application {
     private OutboxSync outboxSync;
     private ImpressoraPos impressoraPos;
     private PagamentoHardware pagamentoHardware;
+    private BalancaManager balancaManager;
 
     @Override
     public void onCreate() {
@@ -30,6 +32,7 @@ public class PosApplication extends Application {
         outboxSync = new OutboxSync(this, apiClient);
         impressoraPos = new EscPosPrinter(this);
         pagamentoHardware = new StubPagamentoHardware();
+        balancaManager = new BalancaManager(this, prefsStore);
         registerActivityLifecycleCallbacks(new ActivityLifecycleCallbacks() {
             @Override
             public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
@@ -76,5 +79,9 @@ public class PosApplication extends Application {
 
     public PagamentoHardware getPagamentoHardware() {
         return pagamentoHardware;
+    }
+
+    public BalancaManager getBalancaManager() {
+        return balancaManager;
     }
 }

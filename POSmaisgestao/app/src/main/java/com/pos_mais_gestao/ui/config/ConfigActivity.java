@@ -125,6 +125,7 @@ public class ConfigActivity extends AppCompatActivity {
         MaterialButton btnTrocarEmpresa = findViewById(R.id.btnTrocarEmpresa);
         MaterialButton btnLogout = findViewById(R.id.btnLogout);
         MaterialButton btnAtualizarImpressoras = findViewById(R.id.btnAtualizarImpressoras);
+        MaterialButton btnConfigBalanca = findViewById(R.id.btnConfigBalanca);
         scanHelper = new CodigoScanHelper(
                 this,
                 scanLauncher,
@@ -165,6 +166,8 @@ public class ConfigActivity extends AppCompatActivity {
         btnLerQrPdv.setOnClickListener(v -> scanHelper.iniciar());
         btnAtalhos.setOnClickListener(v -> startActivity(new Intent(this, AtalhosActivity.class)));
         btnAtualizarImpressoras.setOnClickListener(v -> solicitarPermissaoECarregar());
+        btnConfigBalanca.setOnClickListener(v ->
+                startActivity(new Intent(this, BalancaConfigActivity.class)));
         btnTrocarEmpresa.setOnClickListener(v -> trocarEmpresa());
         btnLogout.setOnClickListener(v -> {
             prefs.logout();

@@ -91,6 +91,12 @@
             android:exported="false"
             android:windowSoftInputMode="stateHidden|adjustResize" />
         <activity
+            android:name=".ui.config.BalancaConfigActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.config.BalancaDiagnosticoActivity"
+            android:exported="false" />
+        <activity
             android:name=".ui.atalhos.AtalhosActivity"
             android:exported="false"
             android:windowSoftInputMode="stateHidden|adjustResize" />
@@ -104,6 +110,9 @@
             android:name=".ui.produtos.ProdutosActivity"
             android:exported="false"
             android:windowSoftInputMode="stateHidden|adjustResize" />
+        <receiver
+            android:name=".hardware.balanca.usb.BalancaUsbPermissionReceiver"
+            android:exported="false" />
     </application>
 
 </manifest>
