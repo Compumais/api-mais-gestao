@@ -30,6 +30,8 @@ type DadosEmissaoSalvos = {
 	gerarFinanceiro?: boolean;
 	gerarEstoque?: boolean;
 	transporte?: { modFrete?: number };
+	informarEnderecoEntregaManual?: boolean;
+	enderecoEntrega?: EmissaoNfeFormData["enderecoEntrega"];
 	localEntrega?: Partial<NonNullable<EmissaoNfeFormData["localEntrega"]>>;
 	totais?: {
 		frete?: number;
@@ -69,6 +71,8 @@ export function resolverContextoReemissaoNfe(notaFiscal: NotaReemissao): {
 	gerarEstoque: boolean;
 	totais: NonNullable<EmissaoNfeFormData["totais"]>;
 	transporte: NonNullable<EmissaoNfeFormData["transporte"]>;
+	informarEnderecoEntregaManual: boolean;
+	enderecoEntrega?: EmissaoNfeFormData["enderecoEntrega"];
 	localEntrega?: Partial<NonNullable<EmissaoNfeFormData["localEntrega"]>>;
 	documentoReferenciado?: DocumentoReferenciadoNfe;
 	informacoesAdicionais?: string;
@@ -79,7 +83,9 @@ export function resolverContextoReemissaoNfe(notaFiscal: NotaReemissao): {
 		frete: paraNumero(notaFiscal.frete ?? emissao?.totais?.frete),
 		seguro: paraNumero(notaFiscal.seguro ?? emissao?.totais?.seguro),
 		desconto: paraNumero(
-			notaFiscal.descontosubtotal ?? emissao?.totais?.desconto,
+			emissao?.totais
+				? emissao.totais.desconto
+				: notaFiscal.descontosubtotal,
 		),
 		outrasDespesas: paraNumero(
 			notaFiscal.outrasdespesas ?? emissao?.totais?.outrasDespesas,
@@ -117,6 +123,9 @@ export function resolverContextoReemissaoNfe(notaFiscal: NotaReemissao): {
 		gerarEstoque: emissao?.gerarEstoque ?? true,
 		totais,
 		transporte,
+		informarEnderecoEntregaManual:
+			emissao?.informarEnderecoEntregaManual ?? false,
+		enderecoEntrega: emissao?.enderecoEntrega,
 		localEntrega: emissao?.localEntrega,
 		documentoReferenciado,
 		informacoesAdicionais: notaFiscal.observacao ?? undefined,

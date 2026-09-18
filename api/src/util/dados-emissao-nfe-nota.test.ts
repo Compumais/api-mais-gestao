@@ -32,4 +32,28 @@ describe("montarSnapshotEmissaoNfe", () => {
 			localEntrega,
 		);
 	});
+
+	it("preserva o desconto global separado do endereço resolvido", () => {
+		const endereco = {
+			logradouro: "Rua do Cliente",
+			numero: "20",
+			bairro: "Centro",
+			codigoMunicipio: "3550308",
+			municipio: "São Paulo",
+			uf: "SP",
+			cep: "01001000",
+		};
+		const snapshot = montarSnapshotEmissaoNfe({
+			informarEnderecoEntregaManual: false,
+			enderecoEntregaResolvido: endereco,
+			totais: { desconto: 4 },
+		});
+
+		expect(snapshot.emissao?.totais?.desconto).toBe(4);
+		expect(snapshot.emissao?.informarEnderecoEntregaManual).toBe(false);
+		expect(snapshot.emissao?.enderecoEntregaResolvido).toEqual(endereco);
+		expect(extrairDadosEmissaoNfeSalvos(snapshot)?.enderecoEntregaResolvido).toEqual(
+			endereco,
+		);
+	});
 });

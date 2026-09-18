@@ -53,6 +53,8 @@ export async function salvarRascunhoEmissaoNfe(
 			totais: dados.totais,
 			pagamento: dados.pagamento,
 			transporte: dados.transporte,
+			informarEnderecoEntregaManual: dados.informarEnderecoEntregaManual,
+			enderecoEntrega: dados.enderecoEntrega,
 			localEntrega: dados.localEntrega,
 			informacoesAdicionais: dados.informacoesAdicionais,
 			documentoReferenciado: dados.documentoReferenciado

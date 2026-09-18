@@ -26,8 +26,8 @@ describe("calcularTotaisFiscaisEmissaoNfe", () => {
 
 		expect(totais.baseIcms).toBe(200);
 		expect(totais.valorIcms).toBe(36);
-		expect(totais.valorPis).toBe(3.3);
-		expect(totais.valorCofins).toBe(15.2);
+		expect(totais.valorPis).toBe(3.22);
+		expect(totais.valorCofins).toBe(14.82);
 		expect(totais.valorIpi).toBe(10);
 		expect(totais.valorIcmsSt).toBe(5);
 		expect(totais.valorFcpSt).toBe(2);
@@ -169,5 +169,56 @@ describe("calcularTotaisFiscaisEmissaoNfe", () => {
 
 		expect(totais.valorPis).toBe(0);
 		expect(totais.valorCofins).toBe(0);
+	});
+
+	it("usa base automática líquida quando há desconto e preserva base informada", () => {
+		const automatica = calcularTotaisFiscaisEmissaoNfe(
+			3,
+			[
+				{
+					quantidade: 1,
+					valorUnitario: 100,
+					desconto: 10,
+					cst: "00",
+					aliquotaIcms: 18,
+				},
+			],
+			{},
+		);
+		expect(automatica.baseIcms).toBe(90);
+		expect(automatica.valorIcms).toBe(16.2);
+		expect(automatica.desconto).toBe(10);
+		expect(automatica.totalNota).toBe(90);
+
+		const explicita = calcularTotaisFiscaisEmissaoNfe(
+			3,
+			[
+				{
+					quantidade: 1,
+					valorUnitario: 100,
+					desconto: 10,
+					baseIcms: 100,
+					aliquotaIcms: 18,
+				},
+			],
+			{},
+		);
+		expect(explicita.baseIcms).toBe(100);
+		expect(explicita.valorIcms).toBe(18);
+	});
+
+	it("soma desconto do item com o desconto global no total da nota", () => {
+		const totais = calcularTotaisFiscaisEmissaoNfe(
+			3,
+			[
+				{ quantidade: 1, valorUnitario: 50, desconto: 5 },
+				{ quantidade: 2, valorUnitario: 25, desconto: 0 },
+			],
+			{ desconto: 10 },
+		);
+
+		expect(totais.desconto).toBe(15);
+		expect(totais.totalProdutos).toBe(100);
+		expect(totais.totalNota).toBe(85);
 	});
 });

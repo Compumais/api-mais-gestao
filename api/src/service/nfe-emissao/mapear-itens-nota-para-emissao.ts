@@ -122,6 +122,9 @@ export async function mapearItensNotaParaEmissao(
 			unidade: item.unidade ?? "UN",
 			quantidade: quantidade > 0 ? quantidade : 1,
 			valorUnitario: valorUnitario > 0 ? valorUnitario : 0.01,
+			...(item.desconto != null && Number(item.desconto) > 0
+				? { desconto: Number(item.desconto) }
+				: {}),
 			...tributacao,
 			orig: item.origem ?? 0,
 			cstPis: normalizarCstPisCofins(item.cstpis),

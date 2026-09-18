@@ -31,6 +31,7 @@ export type ItemPayloadNfe = {
 	unidade: string;
 	quantidade: number;
 	valorUnitario: number;
+	desconto?: number;
 	cst?: string;
 	csosn?: string;
 	orig?: number;
@@ -111,6 +112,19 @@ export type TotaisPayloadNfe = {
 
 export type TransportePayloadNfe = {
 	modFrete?: number;
+};
+
+export type EnderecoEntregaPayloadNfe = {
+	cnpjcpf?: string;
+	nome?: string;
+	logradouro: string;
+	numero: string;
+	complemento?: string;
+	bairro: string;
+	codigoMunicipio: string;
+	municipio: string;
+	uf: string;
+	cep: string;
 };
 
 export type LocalEntregaPayloadNfe = {
@@ -287,6 +301,7 @@ export async function montarPayloadGatewayEmissaoItens({
 	pagamento,
 	transporte,
 	localEntrega,
+	enderecoEntrega,
 	natOp,
 	informacoesAdicionais,
 	finNFe,
@@ -312,6 +327,7 @@ export async function montarPayloadGatewayEmissaoItens({
 	pagamento?: PagamentoPayloadNfe;
 	transporte?: TransportePayloadNfe;
 	localEntrega?: LocalEntregaPayloadNfe;
+	enderecoEntrega?: EnderecoEntregaPayloadNfe;
 	natOp?: string;
 	informacoesAdicionais?: string;
 	finNFe?: number;
@@ -404,6 +420,7 @@ export async function montarPayloadGatewayEmissaoItens({
 			pagamento: pagamento ?? {},
 			transporte: transporte ?? {},
 			localEntrega,
+			enderecoEntrega,
 			informacoesAdicionais: informacoesAdicionais ?? "",
 		},
 	};

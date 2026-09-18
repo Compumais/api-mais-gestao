@@ -11,6 +11,8 @@ describe("contrato do local de entrega com o gateway", () => {
 		const codigoGateway = await readFile(caminhoGateway, "utf8");
 
 		expect(codigoGateway).toContain("$payloadNfe['localEntrega']");
+		expect(codigoGateway).toContain("$payloadNfe['enderecoEntrega']");
+		expect(codigoGateway).toContain("distribuirDescontoCombinado");
 		expect(codigoGateway).toContain("$mk->tagentrega");
 		expect(codigoGateway).toContain("'cMun'");
 		expect(codigoGateway).toContain("'UF'");

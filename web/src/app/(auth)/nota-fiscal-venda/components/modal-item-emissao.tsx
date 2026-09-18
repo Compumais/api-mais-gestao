@@ -385,27 +385,40 @@ export function ModalItemEmissao({
 	}
 
 	const totalItem = (item.quantidade || 0) * (item.valorUnitario || 0);
+	const descontoItem = Math.min(
+		Math.max(0, item.desconto ?? 0),
+		Math.round(totalItem * 100) / 100,
+	);
+	const liquidoItem = Math.round((totalItem - descontoItem) * 100) / 100;
 
 	function handleConfirmar() {
+		const bruto = Math.round(totalItem * 100) / 100;
+		const descontoInformado = Math.round(Math.max(0, item.desconto ?? 0) * 100) / 100;
+		if (descontoInformado > bruto + 0.001) {
+			toast.error("O desconto do item não pode ser maior que o valor bruto.");
+			return;
+		}
+
 		const tributacao = normalizarTributacaoItemFormulario(item, usaCsosn);
 		const gtin = normalizarGtinItemFormulario({ ...item, ...tributacao });
 		const itemFinal = {
 			...item,
 			...tributacao,
 			...gtin,
+			desconto: descontoInformado > 0 ? descontoInformado : undefined,
 			...sugerirIcmsStPeloMva({ ...item, ...tributacao }),
 		};
 
 		if (!usaCsosn) {
-			if (itemFinal.baseIcms == null) {
-				itemFinal.baseIcms = totalItem;
-			}
-			if (itemFinal.valorIcms == null && itemFinal.aliquotaIcms != null) {
+			if (
+				itemFinal.valorIcms == null &&
+				itemFinal.aliquotaIcms != null &&
+				itemFinal.baseIcms != null &&
+				descontoInformado === 0
+			) {
 				itemFinal.valorIcms =
 					Math.round(
-						(((itemFinal.baseIcms ?? totalItem) * itemFinal.aliquotaIcms) /
-							100) *
-							100,
+						((itemFinal.baseIcms * itemFinal.aliquotaIcms) / 100) * 100,
 					) / 100;
 			}
 		} else {
@@ -529,12 +542,16 @@ export function ModalItemEmissao({
 					</div>
 
 					{/* Campos do item */}
-					<div className="grid grid-cols-3 gap-3">
+					<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
 						<div className="space-y-1">
-							<span className="text-sm font-medium text-muted-foreground block">
+							<label
+								className="text-sm font-medium text-muted-foreground block"
+								htmlFor="item-quantidade"
+							>
 								Quantidade
-							</span>
+							</label>
 							<Input
+								id="item-quantidade"
 								type="number"
 								min="0.001"
 								step="0.001"
@@ -546,10 +563,14 @@ export function ModalItemEmissao({
 						</div>
 
 						<div className="space-y-1">
-							<span className="text-sm font-medium text-muted-foreground block">
+							<label
+								className="text-sm font-medium text-muted-foreground block"
+								htmlFor="item-unidade"
+							>
 								Unidade
-							</span>
+							</label>
 							<Input
+								id="item-unidade"
 								value={item.unidade}
 								maxLength={6}
 								onChange={(e) =>
@@ -559,17 +580,41 @@ export function ModalItemEmissao({
 						</div>
 
 						<div className="space-y-1">
-							<span className="text-sm font-medium text-muted-foreground block">
+							<label
+								className="text-sm font-medium text-muted-foreground block"
+								htmlFor="item-valor-unitario"
+							>
 								Vlr Unitário
-							</span>
+							</label>
 							<MoneyInput
+								id="item-valor-unitario"
 								value={String(item.valorUnitario ?? 0)}
 								onChange={(v) =>
 									atualizarCampo("valorUnitario", v ? parseFloat(v) : 0)
 								}
 							/>
 						</div>
+
+						<div className="space-y-1">
+							<label
+								className="text-sm font-medium text-muted-foreground block"
+								htmlFor="item-desconto"
+							>
+								Desconto
+							</label>
+							<MoneyInput
+								id="item-desconto"
+								value={String(item.desconto ?? 0)}
+								onChange={(v) =>
+									atualizarCampo("desconto", v ? parseFloat(v) : 0)
+								}
+							/>
+						</div>
 					</div>
+					<p className="text-xs text-muted-foreground">
+						Bruto {formatarMoeda(totalItem)} · Desconto{" "}
+						{formatarMoeda(descontoItem)} · Líquido {formatarMoeda(liquidoItem)}
+					</p>
 
 					{item.controlaLote ? (
 						<BlocoLotesItemNfe

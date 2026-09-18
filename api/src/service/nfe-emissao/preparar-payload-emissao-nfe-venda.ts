@@ -23,6 +23,7 @@ import {
 	carregarContextoEmissaoNfe,
 	type DestinatarioPayloadNfe,
 	type DocumentoReferenciadoPayloadNfe,
+	type EnderecoEntregaPayloadNfe,
 	type ItemPayloadNfe,
 	type LocalEntregaPayloadNfe,
 	montarPayloadGatewayEmissaoItens,
@@ -47,6 +48,7 @@ import {
 } from "@/util/cfop-devolucao-emissao-nfe.js";
 import { extrairDadosEmissaoNfeSalvos } from "@/util/dados-emissao-nfe-nota.js";
 import { agoraBrasiliaIsoOffset } from "@/util/data-hora-brasilia.js";
+import { resolverEnderecoEntregaNfe } from "@/util/endereco-entrega-nfe.js";
 import {
 	httpBadRequest,
 	httpNaoEncontrado,
@@ -93,6 +95,9 @@ export type PrepararPayloadEmissaoNfeVendaParams = {
 	totaisInformados?: TotaisInformadosEmissaoNfe;
 	pagamento?: PagamentoPayloadNfe;
 	transporte?: TransportePayloadNfe;
+	informarEnderecoEntregaManual?: boolean;
+	enderecoEntrega?: EnderecoEntregaPayloadNfe;
+	enderecoEntregaPersistido?: EnderecoEntregaPayloadNfe;
 	localEntrega?: LocalEntregaPayloadNfe;
 	informacoesAdicionais?: string;
 	documentoReferenciado?: {
@@ -155,6 +160,9 @@ export type PayloadEmissaoNfeVendaPreparado = {
 	vProd: number;
 	vFrete: number;
 	vDesc: number;
+	informarEnderecoEntregaManual?: boolean;
+	enderecoEntrega?: EnderecoEntregaPayloadNfe;
+	enderecoEntregaResolvido?: EnderecoEntregaPayloadNfe;
 	payloadGateway: Awaited<ReturnType<typeof montarPayloadGatewayEmissaoItens>>;
 	idplanocontasResolvido?: string;
 	idcondicaopagtoResolvido?: string;
@@ -406,6 +414,9 @@ export async function prepararPayloadEmissaoNfeVenda(
 		totaisInformados,
 		pagamento,
 		transporte,
+		informarEnderecoEntregaManual,
+		enderecoEntrega,
+		enderecoEntregaPersistido,
 		localEntrega,
 		informacoesAdicionais,
 		documentoReferenciado: documentoReferenciadoInput,
@@ -652,12 +663,12 @@ export async function prepararPayloadEmissaoNfeVenda(
 		0,
 	);
 	const vFrete = totais?.frete ?? 0;
-	const vDesc = totais?.desconto ?? 0;
 	const totaisFiscais = calcularTotaisFiscaisEmissaoNfe(
 		crt,
 		itensComRastros,
 		totais ?? {},
 	);
+	const vDesc = totaisFiscais.desconto;
 
 	let pagamentoResolvido = pagamento;
 	if (
@@ -719,10 +730,19 @@ export async function prepararPayloadEmissaoNfeVenda(
 			}
 		: undefined;
 
+	const enderecoEntregaResolvido =
+		enderecoEntregaPersistido ??
+		(await resolverEnderecoEntregaNfe({
+			informarManual: informarEnderecoEntregaManual,
+			enderecoInformado: enderecoEntrega,
+			destinatario,
+		}));
+
 	const ideEmissao = resolverIdeEmissaoNfe({
 		ufEmitente: empresaFiscal.uf,
 		ufDestinatario: destinatario?.estado,
-		ufLocalEntrega: localEntregaNormalizado?.uf,
+		ufLocalEntrega:
+			localEntregaNormalizado?.uf ?? enderecoEntregaResolvido?.uf,
 		paisDestinatario: destinatario?.pais,
 		indPres:
 			indPres ??
@@ -805,6 +825,9 @@ export async function prepararPayloadEmissaoNfeVenda(
 		pagamento: pagamentoNormalizado,
 		transporte: transporteAjustado,
 		localEntrega: localEntregaNormalizado,
+		enderecoEntrega: localEntregaNormalizado
+			? undefined
+			: enderecoEntregaResolvido,
 		natOp: natOpResolvida,
 		informacoesAdicionais: infoAdic,
 		finNFe,
@@ -844,6 +867,9 @@ export async function prepararPayloadEmissaoNfeVenda(
 		vProd,
 		vFrete,
 		vDesc,
+		informarEnderecoEntregaManual,
+		enderecoEntrega,
+		enderecoEntregaResolvido,
 		payloadGateway,
 		idplanocontasResolvido,
 		idcondicaopagtoResolvido,

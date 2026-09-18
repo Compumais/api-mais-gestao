@@ -4,7 +4,7 @@ import {
 	buscarNotaFiscalPorId,
 	listarItensPorNotaFiscal,
 } from "@/repositories/nota-fiscal-repositories.js";
-import type { LocalEntregaPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
+import type { EnderecoEntregaPayloadNfe, LocalEntregaPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
 import {
 	emitirNfeVendaService,
 	type ResultadoEmissaoNfeVenda,
@@ -146,7 +146,7 @@ export async function transmitirNfeVendaService({
 			frete: Number(nota.frete ?? emissaoSalva?.totais?.frete ?? 0),
 			seguro: Number(nota.seguro ?? emissaoSalva?.totais?.seguro ?? 0),
 			desconto: Number(
-				nota.descontosubtotal ?? emissaoSalva?.totais?.desconto ?? 0,
+				emissaoSalva?.totais?.desconto ?? nota.descontosubtotal ?? 0,
 			),
 			outrasDespesas: Number(
 				nota.outrasdespesas ?? emissaoSalva?.totais?.outrasDespesas ?? 0,
@@ -155,6 +155,12 @@ export async function transmitirNfeVendaService({
 		transporte: {
 			modFrete: nota.tipofrete ?? emissaoSalva?.transporte?.modFrete ?? 9,
 		},
+		informarEnderecoEntregaManual:
+			emissaoSalva?.informarEnderecoEntregaManual,
+		enderecoEntrega: emissaoSalva?.enderecoEntrega as
+			| EnderecoEntregaPayloadNfe
+			| undefined,
+		enderecoEntregaPersistido: emissaoSalva?.enderecoEntregaResolvido,
 		localEntrega: localEntregaCompleto(emissaoSalva?.localEntrega)
 			? emissaoSalva.localEntrega
 			: undefined,

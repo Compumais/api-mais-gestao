@@ -13,6 +13,7 @@ import {
 import type {
 	DestinatarioPayloadNfe,
 	DocumentoReferenciadoPayloadNfe,
+	EnderecoEntregaPayloadNfe,
 	ItemPayloadNfe,
 	LocalEntregaPayloadNfe,
 	PagamentoPayloadNfe,
@@ -30,6 +31,8 @@ import {
 	agoraBrasiliaIsoOffset,
 	hojeBrasiliaIsoDate,
 } from "@/util/data-hora-brasilia.js";
+import { distribuirDescontosEmissaoNfe } from "@/util/distribuir-descontos-emissao-nfe.js";
+import { resolverEnderecoEntregaNfe } from "@/util/endereco-entrega-nfe.js";
 import {
 	httpBadRequest,
 	httpCriacao,
@@ -53,6 +56,8 @@ export type SalvarRascunhoEmissaoNfeVendaParametros = {
 	totais?: TotaisPayloadNfe;
 	pagamento?: PagamentoPayloadNfe;
 	transporte?: TransportePayloadNfe;
+	informarEnderecoEntregaManual?: boolean;
+	enderecoEntrega?: EnderecoEntregaPayloadNfe;
 	localEntrega?: Partial<LocalEntregaPayloadNfe>;
 	informacoesAdicionais?: string;
 	documentoReferenciado?: DocumentoReferenciadoPayloadNfe;
@@ -105,6 +110,10 @@ function montarItensRascunho(
 		quantidade: String(item.quantidade),
 		precounitario: String(item.valorUnitario),
 		total: String(item.quantidade * item.valorUnitario),
+		desconto:
+			item.desconto != null && item.desconto > 0
+				? item.desconto.toFixed(2)
+				: null,
 		cfop: item.cfop,
 		ncm: item.ncm,
 		unidade: item.unidade,
@@ -147,6 +156,9 @@ function montarDadosNotaRascunho(params: {
 	idDest?: number;
 	pagamento?: PagamentoPayloadNfe;
 	transporte?: TransportePayloadNfe;
+	informarEnderecoEntregaManual?: boolean;
+	enderecoEntrega?: EnderecoEntregaPayloadNfe;
+	enderecoEntregaResolvido?: EnderecoEntregaPayloadNfe;
 	localEntrega?: Partial<LocalEntregaPayloadNfe>;
 	totais?: TotaisPayloadNfe;
 	idserie?: string;
@@ -231,6 +243,9 @@ function montarDadosNotaRascunho(params: {
 			gerarEstoque: params.gerarEstoque,
 			pagamento: params.pagamento,
 			transporte: params.transporte,
+			informarEnderecoEntregaManual: params.informarEnderecoEntregaManual,
+			enderecoEntrega: params.enderecoEntrega,
+			enderecoEntregaResolvido: params.enderecoEntregaResolvido,
 			localEntrega: params.localEntrega,
 			totais: params.totais,
 			documentoReferenciado: params.documentoReferenciado
@@ -260,18 +275,27 @@ export async function salvarRascunhoEmissaoNfeVendaService(
 		0,
 	);
 	const vFrete = params.totais?.frete ?? 0;
-	const vDesc = params.totais?.desconto ?? 0;
+	const distribuicaoDesconto = distribuirDescontosEmissaoNfe(
+		params.itens,
+		params.totais?.desconto ?? 0,
+	);
+	const vDesc = distribuicaoDesconto.descontoTotal;
 	const agora = agoraBrasiliaIsoOffset();
 	const dataEmissao = hojeBrasiliaIsoDate();
 	const destinatarioResolvido = await montarDestinatarioPorIdentidade(
 		params.iddestinatario,
 	);
 	const destinatario = destinatarioResolvido?.destinatario ?? null;
+	const enderecoEntregaResolvido = await resolverEnderecoEntregaNfe({
+		informarManual: params.informarEnderecoEntregaManual,
+		enderecoInformado: params.enderecoEntrega,
+		destinatario,
+	});
 	const empresaFiscal = await buscarEmpresaFiscalPorEmpresa(params.idempresa);
 	const idDest = resolverIdDestNfe({
 		ufEmitente: empresaFiscal?.uf,
 		ufDestinatario: destinatario?.estado,
-		ufLocalEntrega: params.localEntrega?.uf,
+		ufLocalEntrega: params.localEntrega?.uf ?? enderecoEntregaResolvido?.uf,
 		paisDestinatario: destinatario?.pais,
 	});
 
@@ -315,6 +339,9 @@ export async function salvarRascunhoEmissaoNfeVendaService(
 		idDest,
 		pagamento: params.pagamento,
 		transporte: params.transporte,
+		informarEnderecoEntregaManual: params.informarEnderecoEntregaManual,
+		enderecoEntrega: params.enderecoEntrega,
+		enderecoEntregaResolvido,
 		localEntrega: params.localEntrega,
 		totais: params.totais,
 		idserie: params.idserienfe,

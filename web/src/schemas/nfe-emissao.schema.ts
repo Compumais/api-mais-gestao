@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { isIndPresNfeValido } from "@/constants/ind-pres-nfe";
+import { distribuirDescontosEmissaoNfe } from "@/util/distribuir-descontos-emissao-nfe";
 
 export const itemNfeSchema = z.object({
 	idproduto: z.string().uuid().optional(),
@@ -20,6 +21,7 @@ export const itemNfeSchema = z.object({
 	valorUnitario: z.coerce
 		.number({ error: "Valor inválido" })
 		.positive("Valor deve ser positivo"),
+	desconto: z.coerce.number().min(0, "Desconto não pode ser negativo").optional(),
 	cst: z.string().optional(),
 	csosn: z.string().optional(),
 	orig: z.number().default(0),
@@ -90,6 +92,22 @@ export const pagamentoNfeSchema = z.object({
 
 export const transporteNfeSchema = z.object({
 	modFrete: z.number().optional(),
+});
+
+export const enderecoEntregaNfeSchema = z.object({
+	logradouro: z.string().min(2, "Informe o logradouro").max(60),
+	numero: z.string().min(1, "Informe o número").max(60),
+	complemento: z.string().max(60).optional(),
+	bairro: z.string().min(2, "Informe o bairro").max(60),
+	codigoMunicipio: z
+		.string()
+		.regex(/^\d{7}$/, "Selecione o município"),
+	municipio: z.string().min(2, "Informe o município").max(60),
+	uf: z.string().length(2, "Selecione a UF"),
+	cep: z
+		.string()
+		.transform((valor) => valor.replace(/\D/g, ""))
+		.pipe(z.string().regex(/^\d{8}$/, "CEP deve ter 8 dígitos")),
 });
 
 export const localEntregaNfeSchema = z
@@ -164,6 +182,8 @@ export const emissaoNfeFormSchema = z.object({
 	totaisInformados: totaisInformadosNfeSchema,
 	pagamento: pagamentoNfeSchema.optional(),
 	transporte: transporteNfeSchema.optional(),
+	informarEnderecoEntregaManual: z.boolean().optional().default(false),
+	enderecoEntrega: enderecoEntregaNfeSchema.optional(),
 	localEntrega: localEntregaNfeSchema.optional(),
 	informacoesAdicionais: z.string().max(2000).optional(),
 	documentoReferenciado: documentoReferenciadoSchema,
@@ -177,12 +197,32 @@ export const emissaoNfeFormSchema = z.object({
 	iddav: z.string().uuid().optional(),
 	iddavs: z.array(z.string().uuid()).min(1).optional(),
 	codigosPedidos: z.array(z.number().int()).optional(),
+}).superRefine((dados, ctx) => {
+	const distribuicao = distribuirDescontosEmissaoNfe(
+		dados.itens,
+		dados.totais?.desconto ?? 0,
+	);
+	for (const erro of distribuicao.erros) {
+		ctx.addIssue({
+			code: "custom",
+			message: erro.mensagem,
+			path: erro.caminho,
+		});
+	}
+	if (dados.informarEnderecoEntregaManual && !dados.enderecoEntrega) {
+		ctx.addIssue({
+			code: "custom",
+			message: "Informe o endereço completo de entrega",
+			path: ["enderecoEntrega"],
+		});
+	}
 });
 
 export type EmissaoNfeFormData = z.infer<typeof emissaoNfeFormSchema>;
 export type ItemNfe = z.infer<typeof itemNfeSchema>;
 export type TotaisNfe = z.infer<typeof totaisNfeSchema>;
 export type PagamentoNfe = z.infer<typeof pagamentoNfeSchema>;
+export type EnderecoEntregaNfe = z.infer<typeof enderecoEntregaNfeSchema>;
 export type DocumentoReferenciadoNfe = z.infer<
 	typeof documentoReferenciadoSchema
 >;
