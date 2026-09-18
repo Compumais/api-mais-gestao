@@ -191,6 +191,43 @@ export async function apiBaseUrl(): Promise<string> {
 	return baseUrl();
 }
 
+export async function baixarImagemProduto(
+	referencia: string,
+): Promise<{ conteudo: Buffer; tipo: string }> {
+	if (!/^\/produtos\/[0-9a-f-]{36}\/imagem(?:\?|$)/i.test(referencia)) {
+		throw new ApiError("Referência de imagem de produto inválida", 400);
+	}
+	const token = (await obterSessao()).token;
+	if (!token) throw new ApiError("Sem token de sessão", 401);
+	const controller = new AbortController();
+	const timer = setTimeout(() => controller.abort(), 30_000);
+	try {
+		const resposta = await fetch(`${await baseUrl()}${referencia}`, {
+			headers: { Authorization: `Bearer ${token}` },
+			signal: controller.signal,
+		});
+		if (!resposta.ok) {
+			throw new ApiError(`Falha ao baixar imagem: HTTP ${resposta.status}`, resposta.status);
+		}
+		const tipo = resposta.headers.get("content-type")?.split(";")[0] ?? "";
+		if (!["image/jpeg", "image/png", "image/webp"].includes(tipo)) {
+			throw new ApiError("API retornou formato de imagem inválido", 415);
+		}
+		return {
+			conteudo: Buffer.from(await resposta.arrayBuffer()),
+			tipo,
+		};
+	} catch (erro) {
+		if (erro instanceof ApiError) throw erro;
+		throw new ApiError(
+			erro instanceof Error ? erro.message : "Falha ao baixar imagem",
+			0,
+		);
+	} finally {
+		clearTimeout(timer);
+	}
+}
+
 export async function loginEmail(email: string, password: string) {
 	const data = await request<{
 		token?: string;
@@ -302,6 +339,7 @@ export async function listarProdutos(params: {
 		espizza: number;
 		imagem: string | null;
 		caminhoimagem: string | null;
+		imagemurl: string | null;
 		ncm: string | null;
 		cest: string | null;
 		cfop: string | null;
@@ -341,6 +379,7 @@ export async function listarProdutos(params: {
 				espizza?: number | null;
 				imagem?: string | null;
 				caminhoimagem?: string | null;
+				imagemurl?: string | null;
 				ncm?: string | null;
 				cest?: string | null;
 				cfop?: string | null;
@@ -374,6 +413,7 @@ export async function listarProdutos(params: {
 			espizza: Number(p.espizza ?? 0) === 1 ? 1 : 0,
 			imagem: p.imagem ?? null,
 			caminhoimagem: p.caminhoimagem ?? null,
+			imagemurl: p.imagemurl ?? null,
 			ncm: p.ncm?.replace(/\D/g, "") || null,
 			cest: p.cest?.replace(/\D/g, "") || null,
 			cfop: p.cfop?.replace(/\D/g, "") || null,
@@ -470,6 +510,9 @@ export async function listarProdutos(params: {
 		espizza: Number(p.espizza ?? 0) === 1 ? 1 : 0,
 		imagem: p.imagem ?? null,
 		caminhoimagem: p.caminhoimagem ?? null,
+		imagemurl: p.caminhoimagem?.startsWith("/produtos/")
+			? p.caminhoimagem
+			: null,
 		ncm: p.ncm?.replace(/\D/g, "") || null,
 		cest: p.cest == null ? null : String(p.cest).replace(/\D/g, "") || null,
 		cfop: null,

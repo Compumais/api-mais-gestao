@@ -13,6 +13,11 @@ import { exportarProdutos } from "./exportar.js";
 import { exportarProdutosMgv } from "./exportar-mgv.js";
 import { importarProdutos } from "./importar.js";
 import { previewImportacaoProdutos } from "./importar-preview.js";
+import {
+	deleteImagemProduto,
+	downloadImagemProduto,
+	uploadImagemProduto,
+} from "./imagem.js";
 import { inativarProduto } from "./inativar.js";
 import { listarProdutos } from "./listar.js";
 import { listarLotesProduto } from "./lotes.js";
@@ -20,6 +25,7 @@ import { templateProdutos } from "./template.js";
 import { tributacaoPorCfop } from "./tributacao-por-cfop.js";
 
 const LIMITE_BODY_IMPORTACAO = 20 * 1024 * 1024;
+const LIMITE_IMAGEM_PRODUTO = 5 * 1024 * 1024;
 
 // Restringe :id a UUID no path para que segmentos estáticos ausentes
 // (ex.: "catalogo-pdv") retornem 404 em vez de FST_ERR_VALIDATION.
@@ -27,6 +33,11 @@ const ID_UUID_PARAM =
 	":id([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})";
 
 export async function produtosRotas(app: FastifyInstance) {
+	app.addContentTypeParser(
+		["image/jpeg", "image/png", "image/webp"],
+		{ parseAs: "buffer", bodyLimit: LIMITE_IMAGEM_PRODUTO },
+		(_request, body, done) => done(null, body),
+	);
 	app.addHook("onRequest", verifyJwt);
 
 	app.post("/produtos", {
@@ -85,6 +96,16 @@ export async function produtosRotas(app: FastifyInstance) {
 	app.get(`/produtos/${ID_UUID_PARAM}`, {
 		schema: schema.buscarProdutoSchema,
 		handler: buscarProduto,
+	});
+	app.get(`/produtos/${ID_UUID_PARAM}/imagem`, {
+		handler: downloadImagemProduto,
+	});
+	app.put(`/produtos/${ID_UUID_PARAM}/imagem`, {
+		bodyLimit: LIMITE_IMAGEM_PRODUTO,
+		handler: uploadImagemProduto,
+	});
+	app.delete(`/produtos/${ID_UUID_PARAM}/imagem`, {
+		handler: deleteImagemProduto,
 	});
 	app.put(`/produtos/${ID_UUID_PARAM}`, {
 		schema: schema.atualizarProdutoSchema,

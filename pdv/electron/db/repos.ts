@@ -84,6 +84,7 @@ export type ProdutoLocal = {
 	espizza: number;
 	imagem: string | null;
 	caminhoimagem: string | null;
+	imagemremota: string | null;
 	ncm: string | null;
 	cest: string | null;
 	cfop: string | null;
@@ -327,7 +328,7 @@ export async function limparSessao(): Promise<void> {
 }
 
 const PRODUTO_SELECT =
-	"id, descricao, preco, unidademedida, idunidademedida, ean, codigo, idgrupo, idgrupogourmet, espizza, imagem, caminhoimagem, ncm, cest, cfop, cst, csosn, origem, aliquotaicms, pis_cst, aliquotapis, cofins_cst, aliquotacofins";
+	"id, descricao, preco, unidademedida, idunidademedida, ean, codigo, idgrupo, idgrupogourmet, espizza, imagem, caminhoimagem, imagemremota, ncm, cest, cfop, cst, csosn, origem, aliquotaicms, pis_cst, aliquotapis, cofins_cst, aliquotacofins";
 
 function padraoIlike(termo: string): string {
 	return `%${termo.replace(/[\\%_]/g, (ch) => `\\${ch}`)}%`;
@@ -350,6 +351,7 @@ export type ProdutoUpsertInput = {
 	espizza?: number | null;
 	imagem?: string | null;
 	caminhoimagem?: string | null;
+	imagemremota?: string | null;
 	ncm?: string | null;
 	cest?: string | null;
 	cfop?: string | null;
@@ -372,12 +374,12 @@ export async function upsertProdutos(
 			await execute(
 				`INSERT INTO produto_cache (
 					id, descricao, preco, unidademedida, idunidademedida, ean, codigo,
-					idgrupo, idgrupogourmet, espizza, imagem, caminhoimagem,
+					idgrupo, idgrupogourmet, espizza, imagem, caminhoimagem, imagemremota,
 					ncm, cest, cfop, cst, csosn, origem, aliquotaicms,
 					pis_cst, aliquotapis, cofins_cst, aliquotacofins,
 					inativo, atualizadoem
 				)
-				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, 0, $24)
+				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, 0, $25)
 				 ON CONFLICT (id) DO UPDATE SET
 					descricao = excluded.descricao,
 					preco = excluded.preco,
@@ -390,6 +392,7 @@ export async function upsertProdutos(
 					espizza = excluded.espizza,
 					imagem = excluded.imagem,
 					caminhoimagem = excluded.caminhoimagem,
+					imagemremota = excluded.imagemremota,
 					ncm = excluded.ncm,
 					cest = excluded.cest,
 					cfop = excluded.cfop,
@@ -416,6 +419,7 @@ export async function upsertProdutos(
 					p.espizza ? 1 : 0,
 					p.imagem ?? null,
 					p.caminhoimagem ?? null,
+					p.imagemremota ?? null,
 					p.ncm ?? null,
 					p.cest ?? null,
 					p.cfop ?? null,

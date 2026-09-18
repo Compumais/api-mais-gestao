@@ -87,6 +87,7 @@ import {
 	classificarConflitosNumeracao,
 	resolverProximoNumeroMonotonico,
 } from "../fiscal/numeracao-nfce";
+import { sincronizarImagensProdutos } from "./imagens-produtos";
 import { atualizarCacheTerminaisPdv } from "./terminais-pdv";
 
 export type DetalheCicloOutbox = {
@@ -288,17 +289,16 @@ async function puxarCatalogoDaEmpresa(idempresa: string): Promise<{
 		if (!produtos.length) {
 			break;
 		}
-		await upsertProdutos(
-			produtos.map((p) => {
-				const atual = p.unidademedida?.trim();
-				if (atual) return p;
-				const unidade = p.idunidademedida
-					? mapaUnidades.get(p.idunidademedida)
-					: undefined;
-				const sigla = unidade?.codigo?.trim() || unidade?.nome?.trim() || null;
-				return { ...p, unidademedida: sigla };
-			}),
-		);
+		const produtosNormalizados = produtos.map((p) => {
+			const atual = p.unidademedida?.trim();
+			if (atual) return p;
+			const unidade = p.idunidademedida
+				? mapaUnidades.get(p.idunidademedida)
+				: undefined;
+			const sigla = unidade?.codigo?.trim() || unidade?.nome?.trim() || null;
+			return { ...p, unidademedida: sigla };
+		});
+		await upsertProdutos(await sincronizarImagensProdutos(produtosNormalizados));
 		for (const p of produtos) {
 			idsSincronizados.push(p.id);
 		}

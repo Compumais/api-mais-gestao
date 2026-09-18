@@ -37,6 +37,7 @@ export type CatalogoPrincipal = {
 		espizza?: number | null;
 		imagem?: string | null;
 		caminhoimagem?: string | null;
+		imagemremota?: string | null;
 	}>;
 	atalhos: Array<{ id: string }>;
 	clientes?: Array<{

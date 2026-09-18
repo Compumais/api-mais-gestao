@@ -765,6 +765,7 @@ export type ProdutoCatalogoPdv = {
 	espizza: number | null;
 	imagem: string | null;
 	caminhoimagem: string | null;
+	imagemurl: string | null;
 	ncm: string | null;
 	cest: string | null;
 	cfop: string | null;
@@ -884,6 +885,9 @@ export async function listarProdutosCatalogoPdv({
 			espizza: row.espizza,
 			imagem: row.imagem,
 			caminhoimagem: row.caminhoimagem,
+			imagemurl: row.caminhoimagem?.startsWith("/produtos/")
+				? row.caminhoimagem
+				: null,
 			ncm: ncmResolvido,
 			cest: cestResolvido,
 			cfop: primeiroCodigoCfop(

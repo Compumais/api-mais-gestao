@@ -93,6 +93,8 @@ export interface Produto {
 	quantidadefiscal?: string | null;
 	divergencia?: string | null;
 	possuiSaldo?: boolean;
+	imagem?: string | null;
+	caminhoimagem?: string | null;
 }
 
 export interface ListarProdutosResponse {
@@ -383,6 +385,28 @@ export const produtosService = {
 	): Promise<Produto> {
 		const { data } = await api.put<Produto>(`/produtos/${id}`, dados, {
 			params: { idempresa },
+		});
+		return data;
+	},
+
+	async enviarImagem(id: string, arquivo: File): Promise<Produto> {
+		const { data } = await api.put<Produto>(
+			`/produtos/${id}/imagem`,
+			arquivo,
+			{ headers: { "Content-Type": arquivo.type } },
+		);
+		return data;
+	},
+
+	async removerImagem(id: string): Promise<Produto> {
+		const { data } = await api.delete<Produto>(`/produtos/${id}/imagem`);
+		return data;
+	},
+
+	async baixarImagem(id: string, versao?: string | null): Promise<Blob> {
+		const { data } = await api.get<Blob>(`/produtos/${id}/imagem`, {
+			params: versao ? { v: versao } : undefined,
+			responseType: "blob",
 		});
 		return data;
 	},
