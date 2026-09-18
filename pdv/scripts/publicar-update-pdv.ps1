@@ -33,6 +33,19 @@ $setupPath = Join-Path $outputDir $artifact
 if (-not (Test-Path -LiteralPath $setupPath)) {
 	throw "Setup nao encontrado: $setupPath"
 }
+$sha256 = [string]$manifest.sha256
+$size = [long]$manifest.size
+$setup = Get-Item -LiteralPath $setupPath
+if (-not $sha256 -or $sha256 -notmatch '^[a-fA-F0-9]{64}$') {
+	throw "version.json sem sha256 valido"
+}
+if ($size -le 0 -or $setup.Length -ne $size) {
+	throw "Tamanho do Setup diverge do manifesto: arquivo=$($setup.Length), manifesto=$size"
+}
+$hashLocal = (Get-FileHash -LiteralPath $setupPath -Algorithm SHA256).Hash.ToLowerInvariant()
+if ($hashLocal -ne $sha256.ToLowerInvariant()) {
+	throw "SHA-256 do Setup diverge do manifesto"
+}
 
 $sshTarget = "{0}@{1}" -f $User, $HostName
 $scpArgs = @()
@@ -48,10 +61,24 @@ if ($LASTEXITCODE -ne 0) {
 	throw "ssh mkdir falhou com codigo $LASTEXITCODE"
 }
 
-Write-Host "Enviando $artifact e version.json para ${sshTarget}:$RemoteDir ..."
-& scp @scpArgs $manifestPath $setupPath "${sshTarget}:${RemoteDir}/"
+Write-Host "Enviando $artifact para ${sshTarget}:$RemoteDir ..."
+& scp @scpArgs $setupPath "${sshTarget}:${RemoteDir}/${artifact}.tmp"
 if ($LASTEXITCODE -ne 0) {
-	throw "scp falhou com codigo $LASTEXITCODE"
+	throw "scp do Setup falhou com codigo $LASTEXITCODE"
+}
+& ssh @sshArgs $sshTarget "set -e; test `"`$(stat -c%s '$RemoteDir/${artifact}.tmp')`" = '$size'; test `"`$(sha256sum '$RemoteDir/${artifact}.tmp' | cut -d' ' -f1)`" = '$($sha256.ToLowerInvariant())'; chmod 0644 '$RemoteDir/${artifact}.tmp'; mv -f '$RemoteDir/${artifact}.tmp' '$RemoteDir/$artifact'"
+if ($LASTEXITCODE -ne 0) {
+	throw "validacao remota do Setup falhou com codigo $LASTEXITCODE"
+}
+
+Write-Host "Ativando version.json por ultimo ..."
+& scp @scpArgs $manifestPath "${sshTarget}:${RemoteDir}/version.json.tmp"
+if ($LASTEXITCODE -ne 0) {
+	throw "scp do manifesto falhou com codigo $LASTEXITCODE"
+}
+& ssh @sshArgs $sshTarget "set -e; chmod 0644 '$RemoteDir/version.json.tmp'; mv -f '$RemoteDir/version.json.tmp' '$RemoteDir/version.json'; find '$RemoteDir' -maxdepth 1 -type f -name 'PDV-Mais-Gestao-Setup-*.exe' ! -name '$artifact' -delete"
+if ($LASTEXITCODE -ne 0) {
+	throw "ativacao remota do manifesto falhou com codigo $LASTEXITCODE"
 }
 
 Write-Host "Publicado:"

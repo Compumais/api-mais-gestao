@@ -29,36 +29,64 @@ jobs:
           set -euo pipefail
           test -f version.json
           artifact="$(python3 -c 'import json;print(json.load(open("version.json"))["artifact"])')"
+          sha256="$(python3 -c 'import json;print(json.load(open("version.json"))["sha256"])')"
+          size="$(python3 -c 'import json;print(json.load(open("version.json"))["size"])')"
           test -f "$artifact"
+          test "$(sha256sum "$artifact" | cut -d' ' -f1)" = "$sha256"
+          test "$(stat -c%s "$artifact")" = "$size"
           echo "artifact=$artifact" >> "$GITHUB_OUTPUT"
+          echo "sha256=$sha256" >> "$GITHUB_OUTPUT"
+          echo "size=$size" >> "$GITHUB_OUTPUT"
           echo "Publicando $artifact ($(stat -c%s "$artifact") bytes)"
 
-      - name: Publicar na VPS via SSH
+      - name: Enviar artefatos para a VPS
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "pdv/installer/output/version.json,pdv/installer/output/${{ steps.meta.outputs.artifact }}"
+          target: "/tmp/pdv-update-${{ github.run_id }}"
+          strip_components: 3
+          overwrite: true
+
+      - name: Ativar atualização na VPS
         uses: appleboy/ssh-action@v1.2.0
         env:
-          GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
-          SHA: ${{ github.sha }}
           ARTIFACT: ${{ steps.meta.outputs.artifact }}
+          SHA256: ${{ steps.meta.outputs.sha256 }}
+          SIZE: ${{ steps.meta.outputs.size }}
+          STAGING: /tmp/pdv-update-${{ github.run_id }}
         with:
-          host: ${{ secrets.VPS_HOST || 'apimaisgestao.compumais.com' }}
-          username: ${{ secrets.VPS_USER || 'deploy' }}
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: GH_TOKEN,REPO,SHA,ARTIFACT
+          envs: ARTIFACT,SHA256,SIZE,STAGING
           script_stop: true
-          command_timeout: 20m
+          command_timeout: 5m
           script: |
             set -euo pipefail
-            mkdir -p /opt/mais-gestao/pdv-updates
-            cd /opt/mais-gestao/pdv-updates
-            AUTH="Authorization: Bearer ${GH_TOKEN}"
-            ACCEPT="Accept: application/vnd.github.raw+json"
-            API="https://api.github.com/repos/${REPO}/contents"
-            curl -fsSL -H "$AUTH" -H "$ACCEPT" \
-              -o version.json \
-              "${API}/pdv/installer/output/version.json?ref=${SHA}"
-            curl -fsSL -H "$AUTH" -H "$ACCEPT" \
-              -o "${ARTIFACT}" \
-              "${API}/pdv/installer/output/${ARTIFACT}?ref=${SHA}"
-            ls -lh version.json "${ARTIFACT}"
-            cat version.json
+            test -f "${STAGING}/version.json"
+            test -f "${STAGING}/${ARTIFACT}"
+            test "$(sha256sum "${STAGING}/${ARTIFACT}" | cut -d' ' -f1)" = "${SHA256}"
+            test "$(stat -c%s "${STAGING}/${ARTIFACT}")" = "${SIZE}"
+            install -d -m 0755 /opt/mais-gestao/pdv-updates
+            install -m 0644 "${STAGING}/${ARTIFACT}" "/opt/mais-gestao/pdv-updates/${ARTIFACT}.tmp"
+            mv -f "/opt/mais-gestao/pdv-updates/${ARTIFACT}.tmp" "/opt/mais-gestao/pdv-updates/${ARTIFACT}"
+            install -m 0644 "${STAGING}/version.json" "/opt/mais-gestao/pdv-updates/version.json.tmp"
+            mv -f "/opt/mais-gestao/pdv-updates/version.json.tmp" "/opt/mais-gestao/pdv-updates/version.json"
+            rm -rf "${STAGING}"
+            find /opt/mais-gestao/pdv-updates -maxdepth 1 -type f -name 'PDV-Mais-Gestao-Setup-*.exe' ! -name "${ARTIFACT}" -delete
+            test "$(sha256sum "/opt/mais-gestao/pdv-updates/${ARTIFACT}" | cut -d' ' -f1)" = "${SHA256}"
+            test "$(stat -c%s "/opt/mais-gestao/pdv-updates/${ARTIFACT}")" = "${SIZE}"
+            cat /opt/mais-gestao/pdv-updates/version.json
+            curl -fsSL --retry 3 --retry-all-errors \
+              "https://apimaisgestao.compumais.com/pdv/updates/version.json" \
+              -o /tmp/pdv-version-publicado.json
+            test "$(python3 -c 'import json;print(json.load(open("/tmp/pdv-version-publicado.json"))["artifact"])')" = "${ARTIFACT}"
+            curl -fsSL --retry 3 --retry-all-errors \
+              "https://apimaisgestao.compumais.com/pdv/updates/${ARTIFACT}" \
+              -o "/tmp/${ARTIFACT}"
+            test "$(sha256sum "/tmp/${ARTIFACT}" | cut -d' ' -f1)" = "${SHA256}"
+            test "$(stat -c%s "/tmp/${ARTIFACT}")" = "${SIZE}"
+            rm -f /tmp/pdv-version-publicado.json "/tmp/${ARTIFACT}"

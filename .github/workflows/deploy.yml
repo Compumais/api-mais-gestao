@@ -29,6 +29,10 @@ jobs:
           script: |
             set -e
             cd /opt/mais-gestao
+            DEPLOY_SHA='${{ github.event.workflow_run.head_sha }}'
+            if [ -z "$DEPLOY_SHA" ]; then DEPLOY_SHA='${{ github.sha }}'; fi
+            curl -fsSL "https://raw.githubusercontent.com/${{ github.repository }}/$DEPLOY_SHA/docker-compose.prod.yml" \
+              -o /opt/mais-gestao/docker-compose.prod.yml
             export GHCR_REPOSITORY_LOWER="$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')"
             if [ -n "${{ secrets.GHCR_USERNAME }}" ] && [ -n "${{ secrets.GHCR_TOKEN }}" ]; then
               echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
@@ -36,8 +40,6 @@ jobs:
             docker compose -f /opt/mais-gestao/docker-compose.prod.yml up -d postgres
             docker compose -f /opt/mais-gestao/docker-compose.prod.yml exec -T postgres \
               sh -c 'until pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do sleep 2; done'
-            DEPLOY_SHA='${{ github.event.workflow_run.head_sha }}'
-            if [ -z "$DEPLOY_SHA" ]; then DEPLOY_SHA='${{ github.sha }}'; fi
             curl -fsSL "https://raw.githubusercontent.com/${{ github.repository }}/$DEPLOY_SHA/api/drizzle/0091_pdv_nfce_sync_robusto.sql" \
               | docker compose -f /opt/mais-gestao/docker-compose.prod.yml exec -T postgres \
                 sh -c 'psql --single-transaction -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
