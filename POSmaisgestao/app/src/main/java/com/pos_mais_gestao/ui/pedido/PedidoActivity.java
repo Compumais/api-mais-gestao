@@ -38,6 +38,8 @@ import com.pos_mais_gestao.ui.mesas.MesasActivity;
 import com.pos_mais_gestao.util.MoneyFormat;
 import com.pos_mais_gestao.util.PizzaMeioAMeio;
 import com.pos_mais_gestao.util.ProdutoImagemHelper;
+import com.pos_mais_gestao.util.ProdutoQuantidade;
+import com.pos_mais_gestao.util.QuantidadeProdutoDialog;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -215,6 +217,11 @@ public class PedidoActivity extends AppCompatActivity {
             dialogPizza(produto);
             return;
         }
+        if (ProdutoQuantidade.vendidoPorQuilograma(produto)) {
+            QuantidadeProdutoDialog.mostrar(
+                    this, quantidade -> dialogObservacao(produto, null, null, quantidade));
+            return;
+        }
         dialogObservacao(produto, null, null);
     }
 
@@ -248,6 +255,14 @@ public class PedidoActivity extends AppCompatActivity {
     }
 
     private void dialogObservacao(Produto produto, Produto produtoMeio, SacolaLinha existente) {
+        dialogObservacao(produto, produtoMeio, existente, BigDecimal.ONE);
+    }
+
+    private void dialogObservacao(
+            Produto produto,
+            Produto produtoMeio,
+            SacolaLinha existente,
+            BigDecimal quantidade) {
         View view = LayoutInflater.from(this).inflate(R.layout.dialog_observation, null);
         TextView txt = view.findViewById(R.id.txtObsProduct);
         TextInputEditText input = view.findViewById(R.id.inputObservation);
@@ -264,7 +279,7 @@ public class PedidoActivity extends AppCompatActivity {
                 .setView(view)
                 .setNegativeButton(R.string.pular, (d, w) -> {
                     if (existente == null) {
-                        sacola.add(new SacolaLinha(produto, produtoMeio, BigDecimal.ONE, null));
+                        sacola.add(new SacolaLinha(produto, produtoMeio, quantidade, null));
                     }
                     atualizarSacolaUi();
                 })
@@ -274,7 +289,7 @@ public class PedidoActivity extends AppCompatActivity {
                         existente.observacao = obs.isEmpty() ? null : obs;
                     } else {
                         sacola.add(new SacolaLinha(
-                                produto, produtoMeio, BigDecimal.ONE, obs.isEmpty() ? null : obs));
+                                produto, produtoMeio, quantidade, obs.isEmpty() ? null : obs));
                     }
                     atualizarSacolaUi();
                 })
@@ -403,7 +418,9 @@ public class PedidoActivity extends AppCompatActivity {
         if (produto == null) {
             return;
         }
-        sacola.add(new SacolaLinha(produto, MoneyFormat.parse(item.quantidade).max(BigDecimal.ONE), item.observacao));
+        BigDecimal quantidade = ProdutoQuantidade.normalizar(item.quantidade);
+        sacola.add(new SacolaLinha(
+                produto, quantidade != null ? quantidade : BigDecimal.ONE, item.observacao));
         atualizarSacolaUi();
     }
 
@@ -502,7 +519,8 @@ public class PedidoActivity extends AppCompatActivity {
         @Override
         public void onBindViewHolder(@NonNull VH holder, int position) {
             SacolaLinha linha = sacola.get(position);
-            holder.txtName.setText("1x " + linha.descricaoCupom());
+            holder.txtName.setText(
+                    ProdutoQuantidade.exibir(linha.quantidade) + "x " + linha.descricaoCupom());
             holder.txtPrice.setText(MoneyFormat.format(linha.subtotal()));
             if (linha.observacao != null && !linha.observacao.isEmpty()) {
                 holder.txtDetail.setText(linha.observacao);
@@ -555,12 +573,11 @@ public class PedidoActivity extends AppCompatActivity {
         @Override
         public void onBindViewHolder(@NonNull VH holder, int position) {
             ContaMesaItemDto item = itens.get(position);
-            holder.txtQtd.setText(item.quantidade != null ? item.quantidade : "1");
+            holder.txtQtd.setText(ProdutoQuantidade.exibir(
+                    item.quantidade != null ? item.quantidade : "1"));
             holder.txtProduto.setText(item.nomeproduto);
-            BigDecimal qtd = MoneyFormat.parse(item.quantidade);
-            if (qtd.compareTo(BigDecimal.ZERO) <= 0) {
-                qtd = BigDecimal.ONE;
-            }
+            BigDecimal qtd = ProdutoQuantidade.normalizar(item.quantidade);
+            qtd = qtd != null ? qtd : BigDecimal.ONE;
             holder.txtValor.setText(MoneyFormat.format(MoneyFormat.parse(item.precounitario).multiply(qtd)));
             if (item.observacao != null && !item.observacao.trim().isEmpty()) {
                 holder.txtDetalhe.setVisibility(View.VISIBLE);

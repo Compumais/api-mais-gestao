@@ -35,6 +35,8 @@ import com.pos_mais_gestao.util.CodigoScanHelper;
 import com.pos_mais_gestao.util.MoneyFormat;
 import com.pos_mais_gestao.util.PizzaMeioAMeio;
 import com.pos_mais_gestao.util.ProdutoBuscaHelper;
+import com.pos_mais_gestao.util.ProdutoQuantidade;
+import com.pos_mais_gestao.util.QuantidadeProdutoDialog;
 import com.pos_mais_gestao.util.SoftInputHelper;
 import java.math.BigDecimal;
 import java.util.List;
@@ -215,6 +217,11 @@ public class ContaMesaActivity extends AppCompatActivity {
             dialogPizza(produto);
             return;
         }
+        if (ProdutoQuantidade.vendidoPorQuilograma(produto)) {
+            QuantidadeProdutoDialog.mostrar(
+                    this, quantidade -> lancarProdutoNaConta(produto, quantidade));
+            return;
+        }
         lancarProdutoNaConta(produto);
     }
 
@@ -263,8 +270,12 @@ public class ContaMesaActivity extends AppCompatActivity {
     }
 
     private void lancarProdutoNaConta(Produto produto) {
+        lancarProdutoNaConta(produto, BigDecimal.valueOf(quantidadeSelecionada));
+    }
+
+    private void lancarProdutoNaConta(Produto produto, BigDecimal quantidade) {
         progress.setVisibility(View.VISIBLE);
-        String qty = String.valueOf(quantidadeSelecionada);
+        String qty = quantidade.stripTrailingZeros().toPlainString();
         executor.execute(() -> {
             try {
                 api.adicionarItemMesa(idConta, produto, qty);

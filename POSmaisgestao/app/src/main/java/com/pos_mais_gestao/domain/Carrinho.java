@@ -24,13 +24,20 @@ public class Carrinho {
     }
 
     public void adicionar(Produto produto) {
+        adicionar(produto, BigDecimal.ONE);
+    }
+
+    public void adicionar(Produto produto, BigDecimal quantidade) {
+        if (quantidade == null || quantidade.compareTo(BigDecimal.ZERO) <= 0) {
+            return;
+        }
         for (ItemCarrinho item : itens) {
             if (!item.isMeioAMeio() && item.getProduto().getId().equals(produto.getId())) {
-                item.incrementar();
+                item.setQuantidade(item.getQuantidade().add(quantidade));
                 return;
             }
         }
-        itens.add(new ItemCarrinho(produto, BigDecimal.ONE));
+        itens.add(new ItemCarrinho(produto, quantidade));
     }
 
     public void adicionarMeioAMeio(Produto primeiro, Produto segundo) {
