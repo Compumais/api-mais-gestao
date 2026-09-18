@@ -68,6 +68,7 @@ final class NfeEmissaoService
 		$pagamento   = $payloadNfe['pagamento']    ?? [];
 		$transporte  = $payloadNfe['transporte']   ?? [];
 		$localEntrega = $payloadNfe['localEntrega'] ?? null;
+		$enderecoEntrega = $payloadNfe['enderecoEntrega'] ?? null;
 		$infoAdic    = $payloadNfe['informacoesAdicionais'] ?? '';
 		$refs        = $payloadNfe['documentosReferenciados'] ?? [];
 
@@ -196,27 +197,34 @@ final class NfeEmissaoService
 			}
 		}
 
+		$entregaFonte = null;
 		if (is_array($localEntrega) && !empty($localEntrega['uf'])) {
+			$entregaFonte = $localEntrega;
+		} elseif (is_array($enderecoEntrega) && !empty($enderecoEntrega['uf'])) {
+			$entregaFonte = $enderecoEntrega;
+		}
+
+		if (is_array($entregaFonte)) {
 			$documentoEntrega = preg_replace(
 				'/\D/',
 				'',
-				(string) ($localEntrega['cnpjcpf'] ?? '')
+				(string) ($entregaFonte['cnpjcpf'] ?? '')
 			);
 			$entrega = [
-				'xNome'   => (string) ($localEntrega['nome'] ?? ''),
-				'xLgr'    => (string) ($localEntrega['logradouro'] ?? ''),
-				'nro'     => (string) ($localEntrega['numero'] ?? ''),
-				'xCpl'    => (string) ($localEntrega['complemento'] ?? ''),
-				'xBairro' => (string) ($localEntrega['bairro'] ?? ''),
-				'cMun'    => (string) ($localEntrega['codigoMunicipio'] ?? ''),
-				'xMun'    => (string) ($localEntrega['municipio'] ?? ''),
-				'UF'      => (string) $localEntrega['uf'],
-				'CEP'     => preg_replace('/\D/', '', (string) ($localEntrega['cep'] ?? '')),
+				'xNome'   => (string) ($entregaFonte['nome'] ?? ''),
+				'xLgr'    => (string) ($entregaFonte['logradouro'] ?? ''),
+				'nro'     => (string) ($entregaFonte['numero'] ?? ''),
+				'xCpl'    => (string) ($entregaFonte['complemento'] ?? ''),
+				'xBairro' => (string) ($entregaFonte['bairro'] ?? ''),
+				'cMun'    => (string) ($entregaFonte['codigoMunicipio'] ?? ''),
+				'xMun'    => (string) ($entregaFonte['municipio'] ?? ''),
+				'UF'      => (string) $entregaFonte['uf'],
+				'CEP'     => preg_replace('/\D/', '', (string) ($entregaFonte['cep'] ?? '')),
 				'cPais'   => '1058',
 				'xPais'   => 'BRASIL',
-				'fone'    => preg_replace('/\D/', '', (string) ($localEntrega['telefone'] ?? '')),
-				'email'   => (string) ($localEntrega['email'] ?? ''),
-				'IE'      => preg_replace('/\D/', '', (string) ($localEntrega['ie'] ?? '')),
+				'fone'    => preg_replace('/\D/', '', (string) ($entregaFonte['telefone'] ?? '')),
+				'email'   => (string) ($entregaFonte['email'] ?? ''),
+				'IE'      => preg_replace('/\D/', '', (string) ($entregaFonte['ie'] ?? '')),
 			];
 			if (strlen((string) $documentoEntrega) === 14) {
 				$entrega['CNPJ'] = $documentoEntrega;
@@ -278,6 +286,7 @@ final class NfeEmissaoService
 			$vSegItem = (float) ($item['vSeg'] ?? 0);
 			$vDescItem = (float) ($item['vDesc'] ?? 0);
 			$vOutroItem = (float) ($item['vOutro'] ?? 0);
+			$vProdLiquido = round(max(0, $vProd - $vDescItem), 2);
 			$vFreteSomadoItens = round($vFreteSomadoItens + $vFreteItem, 2);
 			$vSegSomadoItens = round($vSegSomadoItens + $vSegItem, 2);
 			$vDescSomadoItens = round($vDescSomadoItens + $vDescItem, 2);
@@ -338,7 +347,10 @@ final class NfeEmissaoService
 				$mk->tagICMSSN(self::montarTagIcmsSn($nItem, $orig, $csosn, $item, $vProd));
 			} else {
 				$cstIcms = !empty($cst) ? $cst : '00';
-				$vBC     = (float) ($item['baseIcms'] ?? $vProd);
+				$temBaseInformada = array_key_exists('baseIcms', $item)
+					&& $item['baseIcms'] !== null
+					&& $item['baseIcms'] !== '';
+				$vBC     = $temBaseInformada ? (float) $item['baseIcms'] : $vProdLiquido;
 				$pICMS   = (float) ($item['aliquotaIcms'] ?? 0);
 				$vICMS   = array_key_exists('valorIcms', $item)
 					? round((float) $item['valorIcms'], 2)
@@ -398,8 +410,8 @@ final class NfeEmissaoService
 			$vIcmsMonoRetTotal += $vIcmsMonoRet;
 			$vIcmsMonoRetenTotal += $vIcmsMonoReten;
 
-			$pis = MontarPisCofinsItemNfe::montarPis($nItem, $item, $vProd, $qCom);
-			$cofins = MontarPisCofinsItemNfe::montarCofins($nItem, $item, $vProd, $qCom);
+			$pis = MontarPisCofinsItemNfe::montarPis($nItem, $item, $vProdLiquido, $qCom);
+			$cofins = MontarPisCofinsItemNfe::montarCofins($nItem, $item, $vProdLiquido, $qCom);
 			$vPisTotal += round((float) ($pis->vPIS ?? 0), 2);
 			$vCofinsTotal += round((float) ($cofins->vCOFINS ?? 0), 2);
 
@@ -925,9 +937,9 @@ final class NfeEmissaoService
 		$acumulado = [
 			'frete' => 0.0,
 			'seguro' => 0.0,
-			'desconto' => 0.0,
 			'outrasDespesas' => 0.0,
 		];
+		$descontos = self::distribuirDescontoCombinado($itens, (float) ($totaisComerciais['desconto'] ?? 0));
 
 		foreach ($itens as $indice => $item) {
 			$isUltimo = $indice === $quantidade - 1;
@@ -951,12 +963,86 @@ final class NfeEmissaoService
 			$resultado[] = array_merge($item, [
 				'vFrete' => $valoresItem['frete'],
 				'vSeg' => $valoresItem['seguro'],
-				'vDesc' => $valoresItem['desconto'],
+				'vDesc' => $descontos[$indice] ?? 0.0,
 				'vOutro' => $valoresItem['outrasDespesas'],
 			]);
 		}
 
 		return $resultado;
+	}
+
+	/**
+	 * Soma o desconto explícito do item com a parcela do desconto global.
+	 * O global é rateado pela capacidade restante e o último item elegível
+	 * recebe o centavo de fechamento. Nenhuma linha ultrapassa o bruto.
+	 *
+	 * @param array<int, array<string, mixed>> $itens
+	 * @return list<float>
+	 */
+	private static function distribuirDescontoCombinado(array $itens, float $descontoGlobal): array
+	{
+		$bases = [];
+		$capacidadeTotal = 0.0;
+		foreach ($itens as $item) {
+			$bruto = round(
+				(float) ($item['quantidade'] ?? 1) * (float) ($item['valorUnitario'] ?? 0),
+				2
+			);
+			$explicito = round(max(0, (float) ($item['desconto'] ?? 0)), 2);
+			if ($explicito > $bruto) {
+				$explicito = $bruto;
+			}
+			$capacidade = round($bruto - $explicito, 2);
+			$bases[] = [
+				'bruto' => $bruto,
+				'explicito' => $explicito,
+				'capacidade' => $capacidade,
+			];
+			$capacidadeTotal = round($capacidadeTotal + $capacidade, 2);
+		}
+
+		$global = round(max(0, $descontoGlobal), 2);
+		if ($global > $capacidadeTotal) {
+			$global = $capacidadeTotal;
+		}
+
+		$ultimoElegivel = -1;
+		foreach ($bases as $indice => $base) {
+			if ($base['capacidade'] > 0) {
+				$ultimoElegivel = $indice;
+			}
+		}
+
+		$rateios = array_fill(0, count($bases), 0.0);
+		if ($global > 0 && $capacidadeTotal > 0 && $ultimoElegivel >= 0) {
+			$acumulado = 0.0;
+			foreach ($bases as $indice => $base) {
+				if ($base['capacidade'] <= 0) {
+					continue;
+				}
+				if ($indice === $ultimoElegivel) {
+					$rateios[$indice] = round($global - $acumulado, 2);
+				} else {
+					$valor = round($global * $base['capacidade'] / $capacidadeTotal, 2);
+					$rateios[$indice] = min($valor, $base['capacidade']);
+					$acumulado = round($acumulado + $rateios[$indice], 2);
+				}
+			}
+			if ($rateios[$ultimoElegivel] > $bases[$ultimoElegivel]['capacidade']) {
+				$rateios[$ultimoElegivel] = $bases[$ultimoElegivel]['capacidade'];
+			}
+			if ($rateios[$ultimoElegivel] < 0) {
+				$rateios[$ultimoElegivel] = 0.0;
+			}
+		}
+
+		$efetivos = [];
+		foreach ($bases as $indice => $base) {
+			$efetivo = round($base['explicito'] + $rateios[$indice], 2);
+			$efetivos[] = min($efetivo, $base['bruto']);
+		}
+
+		return $efetivos;
 	}
 
 	/**

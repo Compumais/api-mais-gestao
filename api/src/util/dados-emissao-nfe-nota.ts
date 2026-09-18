@@ -1,4 +1,5 @@
 import type {
+	EnderecoEntregaPayloadNfe,
 	ItemPayloadNfe,
 	LocalEntregaPayloadNfe,
 } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
@@ -106,6 +107,9 @@ export type DadosEmissaoNfeSalvos = {
 	transporte?: {
 		modFrete?: number;
 	};
+	informarEnderecoEntregaManual?: boolean;
+	enderecoEntrega?: Partial<EnderecoEntregaPayloadNfe>;
+	enderecoEntregaResolvido?: EnderecoEntregaPayloadNfe;
 	localEntrega?: Partial<LocalEntregaPayloadNfe>;
 	totais?: {
 		frete?: number;
@@ -143,6 +147,9 @@ export function montarSnapshotEmissaoNfe(params: {
 	gerarEstoque?: boolean;
 	pagamento?: { formas?: Array<{ tPag?: string }> };
 	transporte?: { modFrete?: number };
+	informarEnderecoEntregaManual?: boolean;
+	enderecoEntrega?: Partial<EnderecoEntregaPayloadNfe>;
+	enderecoEntregaResolvido?: EnderecoEntregaPayloadNfe;
 	localEntrega?: Partial<LocalEntregaPayloadNfe>;
 	totais?: {
 		frete?: number;
@@ -179,6 +186,9 @@ export function montarSnapshotEmissaoNfe(params: {
 			transporte: {
 				modFrete: params.transporte?.modFrete ?? 9,
 			},
+			informarEnderecoEntregaManual: params.informarEnderecoEntregaManual,
+			enderecoEntrega: params.enderecoEntrega,
+			enderecoEntregaResolvido: params.enderecoEntregaResolvido,
 			localEntrega: params.localEntrega,
 			totais: {
 				frete: params.totais?.frete ?? 0,

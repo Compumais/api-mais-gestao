@@ -33,6 +33,7 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Combobox } from "@/components/ui/combobox";
 import {
 	Field,
@@ -104,6 +105,7 @@ import {
 	LABEL_TIPO_DEVOLUCAO,
 	type TipoDevolucaoNfe,
 } from "@/util/cfop-devolucao-util";
+import { distribuirDescontosEmissaoNfe } from "@/util/distribuir-descontos-emissao-nfe";
 import { extrairPrimeiraMensagemErroForm } from "@/util/extrair-mensagem-erro-form";
 import {
 	empresaUsaCsosn,
@@ -391,6 +393,7 @@ export default function NovaEmissaoNfePage() {
 			indPres: IND_PRES_NFE_PADRAO,
 			itens: [],
 			totais: { frete: 0, seguro: 0, desconto: 0, outrasDespesas: 0 },
+			informarEnderecoEntregaManual: false,
 			gerarFinanceiro: true,
 			gerarEstoque: true,
 		},
@@ -466,6 +469,11 @@ export default function NovaEmissaoNfePage() {
 	const localEntregaUf = form.watch("localEntrega.uf") ?? "";
 	const localEntregaMunicipioCodigo =
 		form.watch("localEntrega.codigoMunicipio") ?? "";
+	const informarEnderecoEntregaManual =
+		form.watch("informarEnderecoEntregaManual") ?? false;
+	const enderecoEntregaUf = form.watch("enderecoEntrega.uf") ?? "";
+	const enderecoEntregaMunicipioCodigo =
+		form.watch("enderecoEntrega.codigoMunicipio") ?? "";
 
 	const { data: estadosLocalEntrega } = useQuery({
 		queryKey: ["localidades", "estados"],
@@ -476,6 +484,12 @@ export default function NovaEmissaoNfePage() {
 		queryKey: ["localidades", "municipios", localEntregaUf],
 		queryFn: () => localidadesService.listarMunicipios(localEntregaUf),
 		enabled: localEntregaUf.length === 2,
+		staleTime: 24 * 60 * 60 * 1000,
+	});
+	const { data: municipiosEnderecoEntrega } = useQuery({
+		queryKey: ["localidades", "municipios", "entrega", enderecoEntregaUf],
+		queryFn: () => localidadesService.listarMunicipios(enderecoEntregaUf),
+		enabled: informarEnderecoEntregaManual && enderecoEntregaUf.length === 2,
 		staleTime: 24 * 60 * 60 * 1000,
 	});
 	const documentoReferenciado = form.watch("documentoReferenciado");
@@ -812,6 +826,9 @@ export default function NovaEmissaoNfePage() {
 			itens: itensForm,
 			totais: contextoReemissao.totais,
 			transporte: contextoReemissao.transporte,
+			informarEnderecoEntregaManual:
+				contextoReemissao.informarEnderecoEntregaManual,
+			enderecoEntrega: contextoReemissao.enderecoEntrega,
 			localEntrega: contextoReemissao.localEntrega,
 			informacoesAdicionais: contextoReemissao.informacoesAdicionais,
 			documentoReferenciado: contextoReemissao.documentoReferenciado,
@@ -954,6 +971,9 @@ export default function NovaEmissaoNfePage() {
 			itens: itensForm,
 			totais: contextoClone.totais,
 			transporte: contextoClone.transporte,
+			informarEnderecoEntregaManual:
+				contextoClone.informarEnderecoEntregaManual,
+			enderecoEntrega: contextoClone.enderecoEntrega,
 			localEntrega: contextoClone.localEntrega,
 			informacoesAdicionais: infoClone || undefined,
 			documentoReferenciado: contextoClone.documentoReferenciado,
@@ -1056,6 +1076,8 @@ export default function NovaEmissaoNfePage() {
 			itens: itensForm,
 			totais: contexto.totais,
 			transporte: contexto.transporte,
+			informarEnderecoEntregaManual: contexto.informarEnderecoEntregaManual,
+			enderecoEntrega: contexto.enderecoEntrega,
 			localEntrega: contexto.localEntrega,
 			informacoesAdicionais: contexto.informacoesAdicionais,
 			documentoReferenciado: contexto.documentoReferenciado,
@@ -1500,6 +1522,7 @@ export default function NovaEmissaoNfePage() {
 					idproduto: item.idproduto,
 					quantidade: item.quantidade,
 					valorUnitario: item.valorUnitario,
+					desconto: item.desconto,
 					cst: item.cst,
 					csosn: item.csosn,
 					cstPis: item.cstPis,
@@ -1631,6 +1654,10 @@ export default function NovaEmissaoNfePage() {
 	const totaisFiscais: TotaisFiscaisEmissaoNfe =
 		calculoTributosApi?.totaisFiscais ?? totaisFiscaisLocais;
 
+	const distribuicaoDescontos = useMemo(
+		() => distribuirDescontosEmissaoNfe(itensValue ?? [], descontoWatch ?? 0),
+		[itensValue, descontoWatch],
+	);
 	const totalProdutos = totaisFiscais.totalProdutos;
 	const totalFrete = totaisFiscais.frete;
 	const totalDesconto = totaisFiscais.desconto;
@@ -2824,7 +2851,7 @@ export default function NovaEmissaoNfePage() {
 											<span className="text-right">ICMS</span>
 										</>
 									)}
-									<span className="text-right">Total</span>
+									<span className="text-right">Líquido</span>
 									<span />
 								</div>
 							)}
@@ -2845,12 +2872,17 @@ export default function NovaEmissaoNfePage() {
 								)}
 
 								{itensValue.map((item, index) => {
-									const total =
+									const linhaDesconto = distribuicaoDescontos.linhas[index];
+									const bruto =
+										linhaDesconto?.bruto ??
 										(item.quantidade || 0) * (item.valorUnitario || 0);
+									const liquido = linhaDesconto?.liquido ?? bruto;
+									const descontoLinha = linhaDesconto?.descontoEfetivo ?? 0;
 									const usaCsosn = empresaUsaCsosn(empresaFiscal?.crt);
 									const icms = calcularIcmsItemEmissao(
 										empresaFiscal?.crt ?? 3,
 										item,
+										liquido,
 									);
 									return (
 										<div
@@ -2884,6 +2916,12 @@ export default function NovaEmissaoNfePage() {
 															.join(" · ")}
 													</p>
 												)}
+												{descontoLinha > 0 && (
+													<p className="text-xs text-muted-foreground">
+														Bruto {formatarMoeda(bruto)} · Desconto{" "}
+														{formatarMoeda(descontoLinha)}
+													</p>
+												)}
 											</div>
 											<span className="text-sm text-center text-muted-foreground">
 												{item.unidade}
@@ -2905,7 +2943,7 @@ export default function NovaEmissaoNfePage() {
 												</>
 											)}
 											<span className="text-sm font-semibold text-right">
-												{formatarMoeda(total)}
+												{formatarMoeda(liquido)}
 											</span>
 											<div className="flex items-center justify-end gap-1">
 												<Button
@@ -3010,7 +3048,7 @@ export default function NovaEmissaoNfePage() {
 									/>
 								</Field>
 								<Field>
-									<FieldLabel>Desconto</FieldLabel>
+									<FieldLabel>Desconto da nota</FieldLabel>
 									<Controller
 										control={form.control}
 										name="totais.desconto"
@@ -3021,6 +3059,18 @@ export default function NovaEmissaoNfePage() {
 											/>
 										)}
 									/>
+									{distribuicaoDescontos.descontoItens > 0 && (
+										<p className="text-xs text-muted-foreground">
+											Itens: {formatarMoeda(distribuicaoDescontos.descontoItens)}
+											{" · "}
+											Total: {formatarMoeda(distribuicaoDescontos.descontoTotal)}
+										</p>
+									)}
+									{errors.totais?.desconto && (
+										<p className="text-xs text-destructive">
+											{errors.totais.desconto.message}
+										</p>
+									)}
 								</Field>
 								<Field>
 									<FieldLabel>Outras Despesas</FieldLabel>
@@ -3114,6 +3164,173 @@ export default function NovaEmissaoNfePage() {
 									)}
 								/>
 							</Field>
+							<div className="mt-4 space-y-3">
+								<label className="flex items-center gap-2 text-sm">
+									<Checkbox
+										checked={informarEnderecoEntregaManual}
+										onCheckedChange={(marcado) => {
+											form.setValue(
+												"informarEnderecoEntregaManual",
+												marcado === true,
+												{ shouldValidate: true },
+											);
+											if (marcado !== true) {
+												form.setValue("enderecoEntrega", undefined, {
+													shouldValidate: true,
+												});
+											}
+										}}
+									/>
+									Informar endereço de entrega manualmente
+								</label>
+								{!informarEnderecoEntregaManual && (
+									<p className="text-xs text-muted-foreground">
+										Se o destinatário tiver endereço completo, ele será usado
+										como local de entrega. Caso contrário, o DANFE não exibe
+										endereço de entrega.
+									</p>
+								)}
+								{informarEnderecoEntregaManual && (
+									<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+										<Field data-invalid={!!errors.enderecoEntrega?.cep}>
+											<FieldLabel htmlFor="endereco-entrega-cep">CEP</FieldLabel>
+											<Input
+												id="endereco-entrega-cep"
+												{...form.register("enderecoEntrega.cep")}
+											/>
+											<FieldError errors={errors.enderecoEntrega?.cep ? [errors.enderecoEntrega.cep] : []} />
+										</Field>
+										<Field data-invalid={!!errors.enderecoEntrega?.logradouro}>
+											<FieldLabel htmlFor="endereco-entrega-logradouro">
+												Logradouro
+											</FieldLabel>
+											<Input
+												id="endereco-entrega-logradouro"
+												{...form.register("enderecoEntrega.logradouro")}
+											/>
+											<FieldError
+												errors={
+													errors.enderecoEntrega?.logradouro
+														? [errors.enderecoEntrega.logradouro]
+														: []
+												}
+											/>
+										</Field>
+										<Field data-invalid={!!errors.enderecoEntrega?.numero}>
+											<FieldLabel htmlFor="endereco-entrega-numero">
+												Número
+											</FieldLabel>
+											<Input
+												id="endereco-entrega-numero"
+												{...form.register("enderecoEntrega.numero")}
+											/>
+											<FieldError
+												errors={
+													errors.enderecoEntrega?.numero
+														? [errors.enderecoEntrega.numero]
+														: []
+												}
+											/>
+										</Field>
+										<Field>
+											<FieldLabel htmlFor="endereco-entrega-complemento">
+												Complemento
+											</FieldLabel>
+											<Input
+												id="endereco-entrega-complemento"
+												{...form.register("enderecoEntrega.complemento")}
+											/>
+										</Field>
+										<Field data-invalid={!!errors.enderecoEntrega?.bairro}>
+											<FieldLabel htmlFor="endereco-entrega-bairro">
+												Bairro
+											</FieldLabel>
+											<Input
+												id="endereco-entrega-bairro"
+												{...form.register("enderecoEntrega.bairro")}
+											/>
+											<FieldError
+												errors={
+													errors.enderecoEntrega?.bairro
+														? [errors.enderecoEntrega.bairro]
+														: []
+												}
+											/>
+										</Field>
+										<Field data-invalid={!!errors.enderecoEntrega?.uf}>
+											<FieldLabel>UF</FieldLabel>
+											<Select
+												value={enderecoEntregaUf}
+												onValueChange={(valor) => {
+													form.setValue("enderecoEntrega.uf", valor, {
+														shouldValidate: true,
+													});
+													form.setValue("enderecoEntrega.codigoMunicipio", "");
+													form.setValue("enderecoEntrega.municipio", "");
+												}}
+											>
+												<SelectTrigger>
+													<SelectValue placeholder="Selecione a UF" />
+												</SelectTrigger>
+												<SelectContent>
+													{estadosLocalEntrega?.data.map((estado) => (
+														<SelectItem
+															key={estado.idestado}
+															value={estado.idestado}
+														>
+															{estado.idestado} — {estado.nome}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+										</Field>
+										<Field
+											data-invalid={!!errors.enderecoEntrega?.codigoMunicipio}
+										>
+											<FieldLabel>Município</FieldLabel>
+											<Select
+												value={enderecoEntregaMunicipioCodigo}
+												onValueChange={(valor) => {
+													const municipio =
+														municipiosEnderecoEntrega?.data.find(
+															(item) => item.idcidade === valor,
+														);
+													form.setValue(
+														"enderecoEntrega.codigoMunicipio",
+														valor,
+														{ shouldValidate: true },
+													);
+													form.setValue(
+														"enderecoEntrega.municipio",
+														municipio?.nome ?? "",
+														{ shouldValidate: true },
+													);
+												}}
+												disabled={!enderecoEntregaUf}
+											>
+												<SelectTrigger>
+													<SelectValue placeholder="Selecione o município" />
+												</SelectTrigger>
+												<SelectContent>
+													{municipiosEnderecoEntrega?.data.map((municipio) => (
+														<SelectItem
+															key={municipio.idcidade}
+															value={municipio.idcidade}
+														>
+															{municipio.nome}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+										</Field>
+									</div>
+								)}
+								{errors.enderecoEntrega?.message && (
+									<p className="text-sm text-destructive">
+										{errors.enderecoEntrega.message}
+									</p>
+								)}
+							</div>
 						</FieldSet>
 					</FieldGroup>
 

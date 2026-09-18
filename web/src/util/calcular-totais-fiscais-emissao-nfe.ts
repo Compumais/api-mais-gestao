@@ -1,6 +1,9 @@
+import { distribuirDescontosEmissaoNfe } from "@/util/distribuir-descontos-emissao-nfe";
+
 export type ItemTributacaoEmissaoNfe = {
 	quantidade: number;
 	valorUnitario: number;
+	desconto?: number;
 	cst?: string;
 	csosn?: string;
 	cstPis?: string;
@@ -70,6 +73,7 @@ function valorProdutoItem(item: ItemTributacaoEmissaoNfe): number {
 function calcularIcmsItem(
 	crt: number,
 	item: ItemTributacaoEmissaoNfe,
+	liquido: number,
 ): { base: number; valor: number } {
 	const crtNumero = Number(crt);
 
@@ -79,7 +83,7 @@ function calcularIcmsItem(
 		return { base: 0, valor: 0 };
 	}
 
-	const base = round2(paraNumero(item.baseIcms) || valorProdutoItem(item));
+	const base = round2(paraNumero(item.baseIcms) || liquido);
 	const valor =
 		item.valorIcms !== undefined
 			? round2(paraNumero(item.valorIcms))
@@ -90,23 +94,24 @@ function calcularIcmsItem(
 export function calcularIcmsItemEmissao(
 	crt: number,
 	item: ItemTributacaoEmissaoNfe,
+	liquido?: number,
 ): { base: number; valor: number } {
-	return calcularIcmsItem(crt, item);
+	return calcularIcmsItem(crt, item, liquido ?? valorProdutoItem(item));
 }
 
 function calcularPisCofinsItem(
 	item: ItemTributacaoEmissaoNfe,
+	liquido: number,
 ): { pis: number; cofins: number } {
-	const vProd = valorProdutoItem(item);
 	const cstPis = item.cstPis ?? "07";
 	const cstCof = item.cstCofins ?? "07";
 	const tributavel = ["01", "02", "03"].includes(cstPis);
 	const tributavelCof = ["01", "02", "03"].includes(cstCof);
 
 	return {
-		pis: tributavel ? round2((vProd * (item.aliquotaPis ?? 0)) / 100) : 0,
+		pis: tributavel ? round2((liquido * (item.aliquotaPis ?? 0)) / 100) : 0,
 		cofins: tributavelCof
-			? round2((vProd * (item.aliquotaCofins ?? 0)) / 100)
+			? round2((liquido * (item.aliquotaCofins ?? 0)) / 100)
 			: 0,
 	};
 }
@@ -130,12 +135,14 @@ export function calcularTotaisFiscaisEmissaoNfe(
 	let valorPis = 0;
 	let valorCofins = 0;
 	let totalProdutos = 0;
+	const distribuicao = distribuirDescontosEmissaoNfe(itens, totais.desconto);
 
-	for (const item of itens) {
+	for (const [index, item] of itens.entries()) {
 		const vProd = valorProdutoItem(item);
+		const liquido = distribuicao.linhas[index]?.liquido ?? vProd;
 		totalProdutos += vProd;
 
-		const icms = calcularIcmsItem(crt, item);
+		const icms = calcularIcmsItem(crt, item, liquido);
 		baseIcms += icms.base;
 		valorIcms += icms.valor;
 
@@ -149,14 +156,14 @@ export function calcularTotaisFiscaisEmissaoNfe(
 		valorIcmsMonoRet += paraNumero(item.valorIcmsMonoRet);
 		valorIcmsMonoReten += paraNumero(item.valorIcmsMonoReten);
 
-		const pisCofins = calcularPisCofinsItem(item);
+		const pisCofins = calcularPisCofinsItem(item, liquido);
 		valorPis += pisCofins.pis;
 		valorCofins += pisCofins.cofins;
 	}
 
 	const frete = paraNumero(totais.frete);
 	const seguro = paraNumero(totais.seguro);
-	const desconto = paraNumero(totais.desconto);
+	const desconto = distribuicao.descontoTotal;
 	const outrasDespesas = paraNumero(totais.outrasDespesas);
 
 	const totalNota = round2(

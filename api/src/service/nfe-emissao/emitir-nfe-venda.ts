@@ -16,6 +16,7 @@ import { salvarUltimaPreferenciaEmissaoNfe } from "@/service/nfe-configuracao/sa
 import type {
 	DestinatarioPayloadNfe,
 	DocumentoReferenciadoPayloadNfe,
+	EnderecoEntregaPayloadNfe,
 	ItemPayloadNfe,
 	LocalEntregaPayloadNfe,
 	PagamentoPayloadNfe,
@@ -109,6 +110,10 @@ function montarItensPersistencia(
 		quantidade: String(item.quantidade),
 		precounitario: String(item.valorUnitario),
 		total: String(item.quantidade * item.valorUnitario),
+		desconto:
+			item.desconto != null && item.desconto > 0
+				? item.desconto.toFixed(2)
+				: null,
 		cfop: item.cfop,
 		ncm: item.ncm,
 		unidade: item.unidade,
@@ -166,6 +171,9 @@ function montarDadosNotaPersistencia(params: {
 	natOp?: string;
 	pagamento?: PagamentoPayloadNfe;
 	transporte?: TransportePayloadNfe;
+	informarEnderecoEntregaManual?: boolean;
+	enderecoEntrega?: EnderecoEntregaPayloadNfe;
+	enderecoEntregaResolvido?: EnderecoEntregaPayloadNfe;
 	localEntrega?: LocalEntregaPayloadNfe;
 	totaisComerciais?: TotaisPayloadNfe;
 	tipoDevolucao?: TipoDevolucaoNfe;
@@ -211,6 +219,9 @@ function montarDadosNotaPersistencia(params: {
 		natOp,
 		pagamento,
 		transporte,
+		informarEnderecoEntregaManual,
+		enderecoEntrega,
+		enderecoEntregaResolvido,
 		localEntrega,
 		totaisComerciais,
 		tipoDevolucao,
@@ -332,6 +343,9 @@ function montarDadosNotaPersistencia(params: {
 			gerarEstoque,
 			pagamento,
 			transporte,
+			informarEnderecoEntregaManual,
+			enderecoEntrega,
+			enderecoEntregaResolvido,
 			localEntrega,
 			totais: totaisComerciais ?? {
 				frete: totais?.frete ?? vFrete,
@@ -399,6 +413,9 @@ export async function emitirNfeVendaService(
 		itensNormalizados,
 		transporteAjustado,
 		localEntrega,
+		informarEnderecoEntregaManual,
+		enderecoEntrega,
+		enderecoEntregaResolvido,
 		natOpResolvida,
 		pagamentoNormalizado,
 		documentoReferenciado,
@@ -487,6 +504,9 @@ export async function emitirNfeVendaService(
 		idDest: ideEmissao.idDest,
 		pagamento: pagamentoNormalizado,
 		transporte: transporteAjustado,
+		informarEnderecoEntregaManual,
+		enderecoEntrega,
+		enderecoEntregaResolvido,
 		localEntrega,
 		totaisComerciais: totais,
 		tipoDevolucao: tipoDevolucao ?? undefined,

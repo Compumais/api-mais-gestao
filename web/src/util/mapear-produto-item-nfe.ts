@@ -286,6 +286,10 @@ export function prepararItemEmissaoFormulario(
 		unidade: String(item.unidade ?? "UN"),
 		quantidade: Number(item.quantidade) || 0,
 		valorUnitario: Number(item.valorUnitario) || 0,
+		desconto:
+			item.desconto != null && Number(item.desconto) > 0
+				? Number(item.desconto)
+				: undefined,
 		aliquotaPis:
 			item.aliquotaPis != null ? Number(item.aliquotaPis) : undefined,
 		aliquotaCofins:
