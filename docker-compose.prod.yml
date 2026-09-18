@@ -12,6 +12,8 @@ services:
       - "host.docker.internal:host-gateway"
     ports:
       - "127.0.0.1:3333:3333"
+    volumes:
+      - /opt/mais-gestao/pdv-updates:/opt/mais-gestao/pdv-updates:ro
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3333/health >/dev/null 2>&1 || exit 1"]
       interval: 30s

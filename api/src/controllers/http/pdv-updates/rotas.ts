@@ -17,6 +17,8 @@ export async function pdvUpdatesRotas(app: FastifyInstance) {
 						artifact: { type: "string" },
 						url: { type: "string" },
 						releasedAt: { type: "string" },
+						sha256: { type: "string" },
+						size: { type: "number" },
 					},
 					required: ["version", "artifact", "url"],
 				},

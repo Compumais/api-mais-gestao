@@ -1,11 +1,12 @@
-import { createWriteStream } from "node:fs";
-import { mkdir, unlink } from "node:fs/promises";
+import { spawn } from "node:child_process";
+import { createHash } from "node:crypto";
+import { createReadStream, createWriteStream } from "node:fs";
+import { mkdir, stat, unlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { pipeline } from "node:stream/promises";
 import { Readable } from "node:stream";
-import { app, dialog, type BrowserWindow } from "electron";
-import { spawn } from "node:child_process";
+import { pipeline } from "node:stream/promises";
+import { app, type BrowserWindow, dialog } from "electron";
 import { getConfig, setConfig } from "../db/database";
 import { versaoRemotaMaior } from "./semver";
 
@@ -14,6 +15,8 @@ export type ManifestoUpdatePdv = {
 	artifact: string;
 	url: string;
 	releasedAt?: string;
+	sha256?: string;
+	size?: number;
 };
 
 export type ResultadoBuscaManifesto = {
@@ -26,10 +29,9 @@ const TIMEOUT_MS = 12_000;
 
 async function apiBaseUrl(): Promise<string> {
 	try {
-		return (await getConfig("api_url", "https://apimaisgestao.compumais.com")).replace(
-			/\/$/,
-			"",
-		);
+		return (
+			await getConfig("api_url", "https://apimaisgestao.compumais.com")
+		).replace(/\/$/, "");
 	} catch {
 		return "https://apimaisgestao.compumais.com";
 	}
@@ -68,7 +70,14 @@ export async function buscarManifestoUpdate(
 			!json ||
 			typeof json.version !== "string" ||
 			typeof json.artifact !== "string" ||
-			typeof json.url !== "string"
+			typeof json.url !== "string" ||
+			(json.sha256 !== undefined &&
+				(typeof json.sha256 !== "string" ||
+					!/^[a-f0-9]{64}$/i.test(json.sha256))) ||
+			(json.size !== undefined &&
+				(typeof json.size !== "number" ||
+					!Number.isSafeInteger(json.size) ||
+					json.size <= 0))
 		) {
 			return { manifesto: null, erro: "manifesto inválido" };
 		}
@@ -84,28 +93,67 @@ function urlDownload(base: string, manifesto: ManifestoUpdatePdv): string {
 	if (/^https?:\/\//i.test(manifesto.url)) return manifesto.url;
 	const path = manifesto.url.startsWith("/")
 		? manifesto.url
-		: `/pdv/updates/${manifesto.artifact}`;
+		: `/pdv/updates/${encodeURIComponent(manifesto.artifact)}`;
 	return `${base.replace(/\/$/, "")}${path}`;
 }
 
-async function baixarArquivo(url: string, destino: string): Promise<void> {
-	const res = await fetch(url);
-	if (!res.ok || !res.body) {
-		throw new Error(`Falha ao baixar atualização (HTTP ${res.status})`);
-	}
-	const nodeStream = Readable.fromWeb(
-		res.body as import("node:stream/web").ReadableStream,
-	);
-	await pipeline(nodeStream, createWriteStream(destino));
+async function sha256Arquivo(caminho: string): Promise<string> {
+	const hash = createHash("sha256");
+	const arquivo = createReadStream(caminho);
+	for await (const chunk of arquivo) hash.update(chunk);
+	return hash.digest("hex");
 }
 
-function iniciarInstalador(setupPath: string): void {
-	const child = spawn(setupPath, ["/SILENT", "/NORESTART"], {
-		detached: true,
-		stdio: "ignore",
-		windowsHide: true,
+async function baixarArquivo(
+	url: string,
+	destino: string,
+	manifesto: ManifestoUpdatePdv,
+): Promise<void> {
+	const ctrl = new AbortController();
+	const timer = setTimeout(() => ctrl.abort(), 10 * 60_000);
+	try {
+		const res = await fetch(url, { signal: ctrl.signal });
+		if (!res.ok || !res.body) {
+			throw new Error(`Falha ao baixar atualização (HTTP ${res.status})`);
+		}
+		const nodeStream = Readable.fromWeb(
+			res.body as import("node:stream/web").ReadableStream,
+		);
+		await pipeline(nodeStream, createWriteStream(destino, { flags: "wx" }));
+
+		const tamanho = (await stat(destino)).size;
+		if (manifesto.size !== undefined && tamanho !== manifesto.size) {
+			throw new Error(
+				`Atualização incompleta: esperado ${manifesto.size} bytes, recebido ${tamanho}`,
+			);
+		}
+		if (manifesto.sha256) {
+			const hash = await sha256Arquivo(destino);
+			if (hash.toLowerCase() !== manifesto.sha256.toLowerCase()) {
+				throw new Error("Checksum SHA-256 da atualização não confere");
+			}
+		}
+	} catch (err) {
+		await unlink(destino).catch(() => undefined);
+		throw err;
+	} finally {
+		clearTimeout(timer);
+	}
+}
+
+async function iniciarInstalador(setupPath: string): Promise<void> {
+	await new Promise<void>((resolve, reject) => {
+		const child = spawn(setupPath, ["/SILENT", "/NORESTART"], {
+			detached: true,
+			stdio: "ignore",
+			windowsHide: true,
+		});
+		child.once("error", reject);
+		child.once("spawn", () => {
+			child.unref();
+			resolve();
+		});
 	});
-	child.unref();
 }
 
 /**
@@ -185,6 +233,19 @@ export async function verificarEAtualizarPdv(opts?: {
 
 	const dir = join(tmpdir(), "pdv-mais-gestao-update");
 	await mkdir(dir, { recursive: true });
+	if (
+		manifesto.artifact !== manifesto.artifact.replace(/[^A-Za-z0-9._-]/g, "") ||
+		!manifesto.artifact.toLowerCase().endsWith(".exe")
+	) {
+		return {
+			ok: false,
+			atualizou: false,
+			local,
+			remoto: manifesto.version,
+			motivo: "manifesto_invalido",
+			detalhe: "Nome de artefato inválido",
+		};
+	}
 	const setupPath = join(dir, manifesto.artifact);
 	try {
 		await unlink(setupPath);
@@ -193,12 +254,13 @@ export async function verificarEAtualizarPdv(opts?: {
 	}
 
 	try {
-		await baixarArquivo(urlDownload(base, manifesto), setupPath);
+		await baixarArquivo(urlDownload(base, manifesto), setupPath, manifesto);
+		await iniciarInstalador(setupPath);
 	} catch (err) {
 		await dialog.showMessageBox({
 			type: "error",
 			title: "Atualização do PDV",
-			message: "Não foi possível baixar a atualização",
+			message: "Não foi possível instalar a atualização",
 			detail: err instanceof Error ? err.message : String(err),
 		});
 		return {
@@ -211,7 +273,6 @@ export async function verificarEAtualizarPdv(opts?: {
 		};
 	}
 
-	iniciarInstalador(setupPath);
 	app.quit();
 	return {
 		ok: true,

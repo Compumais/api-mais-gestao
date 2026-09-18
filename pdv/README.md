@@ -81,7 +81,7 @@ O script local faz **bump automático do patch** (consulta `installer/output` + 
 
 ### Auto-update (API/VPS)
 
-Na abertura do PDV empacotado, o app consulta `{api_url}/pdv/updates/version.json`. Se a versão remota for maior, ofereceixa o Setup e instala com `/SILENT /NORESTART`.
+Na abertura do PDV empacotado, o app consulta `{api_url}/pdv/updates/version.json`. Se a versão remota for maior, baixa o Setup, valida tamanho e SHA-256 e instala com `/SILENT /NORESTART`.
 
 1. Gerar: `npm run pack:release`
 2. Commitar e enviar `installer/output/version.json` + `PDV-Mais-Gestao-Setup-*.exe`
@@ -93,6 +93,8 @@ pdv\scripts\publicar-update-pdv.ps1 -HostName apimaisgestao.compumais.com -User 
 ```
 
 A API Fastify expõe fallback público em `GET /pdv/updates/version.json` e `GET /pdv/updates/:arquivo` (lê `PDV_UPDATES_PATH`, padrão `/opt/mais-gestao/pdv-updates`, ou o manifesto embutido). Opcionalmente, sirva a pasta também pelo Nginx (`nginx/mais-gestao.conf`).
+
+Os scripts enviam o artefato antes do manifesto e ativam ambos por rename atômico, evitando anunciar um arquivo ausente ou parcial.
 
 Se o PDV já estiver instalado, o setup compara a versão: pacote mais antigo é recusado; mesma versão repara os arquivos; versão mais nova só atualiza o aplicativo e **preserva o PostgreSQL e os dados**.
 

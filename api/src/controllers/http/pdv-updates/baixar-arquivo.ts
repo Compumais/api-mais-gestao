@@ -1,4 +1,4 @@
-import { createReadStream } from "node:fs";
+import { open, stat } from "node:fs/promises";
 import { basename } from "node:path";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { resolverArquivoUpdatePdvService } from "@/service/pdv-updates/obter-manifesto-update-pdv.js";
@@ -30,15 +30,15 @@ export async function baixarArquivoUpdatePdv(
 
 		const { caminho, contentType } = resultado.body;
 		const nome = basename(caminho);
+		const arquivo = await open(caminho, "r");
+		const tamanho = (await stat(caminho)).size;
 		reply.header("Cache-Control", "no-cache");
 		reply.header("Content-Type", contentType);
+		reply.header("Content-Length", tamanho);
 		if (!nome.endsWith(".json")) {
-			reply.header(
-				"Content-Disposition",
-				`attachment; filename="${nome}"`,
-			);
+			reply.header("Content-Disposition", `attachment; filename="${nome}"`);
 		}
-		return reply.send(createReadStream(caminho));
+		return reply.send(arquivo.createReadStream());
 	} catch (error) {
 		console.error(error);
 		return reply.status(500).send({

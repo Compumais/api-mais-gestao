@@ -1,3 +1,4 @@
+import { constants } from "node:fs";
 import { access, readFile } from "node:fs/promises";
 import { dirname, isAbsolute, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -9,6 +10,8 @@ export type ManifestoUpdatePdv = {
 	artifact: string;
 	url: string;
 	releasedAt?: string;
+	sha256?: string;
+	size?: number;
 };
 
 const NOME_MANIFESTO = "version.json";
@@ -42,7 +45,13 @@ function manifestoValido(json: unknown): json is ManifestoUpdatePdv {
 	return (
 		typeof m.version === "string" &&
 		typeof m.artifact === "string" &&
-		typeof m.url === "string"
+		typeof m.url === "string" &&
+		(m.sha256 === undefined ||
+			(typeof m.sha256 === "string" && /^[a-f0-9]{64}$/i.test(m.sha256))) &&
+		(m.size === undefined ||
+			(typeof m.size === "number" &&
+				Number.isSafeInteger(m.size) &&
+				m.size > 0))
 	);
 }
 
@@ -60,6 +69,8 @@ async function lerManifestoArquivo(
 			...(typeof json.releasedAt === "string"
 				? { releasedAt: json.releasedAt }
 				: {}),
+			...(typeof json.sha256 === "string" ? { sha256: json.sha256 } : {}),
+			...(typeof json.size === "number" ? { size: json.size } : {}),
 		};
 	} catch {
 		return null;
@@ -68,7 +79,7 @@ async function lerManifestoArquivo(
 
 async function arquivoExiste(caminho: string): Promise<boolean> {
 	try {
-		await access(caminho);
+		await access(caminho, constants.R_OK);
 		return true;
 	} catch {
 		return false;

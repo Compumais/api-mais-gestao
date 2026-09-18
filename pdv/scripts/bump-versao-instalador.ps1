@@ -130,11 +130,18 @@ function Write-VersionJson {
 	param([Parameter(Mandatory = $true)][string]$Version)
 	New-Item -ItemType Directory -Force -Path $Script:OutputDir | Out-Null
 	$artifact = "{0}{1}.exe" -f $Script:SetupPrefix, $Version
+	$setupPath = Join-Path $Script:OutputDir $artifact
+	if (-not (Test-Path -LiteralPath $setupPath)) {
+		throw "Setup nao encontrado para gerar manifesto: $setupPath"
+	}
+	$setup = Get-Item -LiteralPath $setupPath
 	$manifest = [ordered]@{
 		version    = $Version
 		artifact   = $artifact
 		url        = "/pdv/updates/$artifact"
 		releasedAt = (Get-Date).ToUniversalTime().ToString("o")
+		sha256     = (Get-FileHash -LiteralPath $setupPath -Algorithm SHA256).Hash.ToLowerInvariant()
+		size       = $setup.Length
 	}
 	$path = Join-Path $Script:OutputDir "version.json"
 	$json = $manifest | ConvertTo-Json -Depth 4
