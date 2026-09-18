@@ -28,6 +28,7 @@ import com.pos_mais_gestao.data.local.PrefsStore;
 import com.pos_mais_gestao.domain.Carrinho;
 import com.pos_mais_gestao.domain.ItemCarrinho;
 import com.pos_mais_gestao.domain.Produto;
+import com.pos_mais_gestao.hardware.balanca.BalancaManager;
 import com.pos_mais_gestao.ui.atalhos.AtalhosActivity;
 import com.pos_mais_gestao.ui.config.ConfigActivity;
 import com.pos_mais_gestao.ui.login.LoginActivity;
@@ -56,7 +57,20 @@ public class VendaActivity extends AppCompatActivity {
     private TextInputEditText inputBusca;
     private MaterialButton btnPagar;
     private MaterialButton btnCarregarMais;
+    private TextView txtStatusBalanca;
+    private BalancaManager balancaManager;
     private boolean mostrandoBusca;
+    private boolean pesagemEmAndamento;
+    private final BalancaManager.Listener balancaListener = diagnostico -> {
+        if (txtStatusBalanca == null || balancaManager == null) {
+            return;
+        }
+        boolean habilitada = balancaManager.isHabilitada();
+        txtStatusBalanca.setVisibility(habilitada ? View.VISIBLE : View.GONE);
+        if (habilitada) {
+            txtStatusBalanca.setText(getString(R.string.balanca_status_venda, diagnostico.mensagem));
+        }
+    };
 
     private final ActivityResultLauncher<ScanOptions> scanLauncher =
             CodigoScanHelper.registrarScan(this, this::aoCodigoEscaneado);
@@ -76,6 +90,7 @@ public class VendaActivity extends AppCompatActivity {
         PosApplication app = (PosApplication) getApplication();
         prefs = app.getPrefsStore();
         api = app.getApiClient();
+        balancaManager = app.getBalancaManager();
         scanHelper = new CodigoScanHelper(this, scanLauncher, cameraPermissionLauncher, this::aoCodigoEscaneado);
 
         MaterialToolbar toolbar = findViewById(R.id.toolbarVenda);
@@ -87,6 +102,7 @@ public class VendaActivity extends AppCompatActivity {
         txtVazio = findViewById(R.id.txtVazio);
         btnPagar = findViewById(R.id.btnPagar);
         btnCarregarMais = findViewById(R.id.btnCarregarMais);
+        txtStatusBalanca = findViewById(R.id.txtStatusBalanca);
         inputBusca = findViewById(R.id.inputBusca);
         MaterialButton btnEscanear = findViewById(R.id.btnEscanear);
         btnEscanear.setOnClickListener(v -> scanHelper.iniciar());
@@ -176,6 +192,21 @@ public class VendaActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        balancaManager.adicionarListener(balancaListener);
+        if (balancaManager.isHabilitada()) {
+            balancaManager.conectar();
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        balancaManager.removerListener(balancaListener);
+        super.onStop();
+    }
+
     private void aoCodigoEscaneado(String codigo) {
         SoftInputHelper.hideKeyboard(this);
         inputBusca.setText(codigo);
@@ -212,13 +243,33 @@ public class VendaActivity extends AppCompatActivity {
             return;
         }
         if (ProdutoQuantidade.vendidoPorQuilograma(produto)) {
-            QuantidadeProdutoDialog.mostrar(this, quantidade -> {
-                Carrinho.getInstance().adicionar(produto, quantidade);
-                atualizarCarrinho();
-            });
+            if (balancaManager.isHabilitada()) {
+                if (pesagemEmAndamento) {
+                    return;
+                }
+                pesagemEmAndamento = true;
+                PesagemBalancaDialog.mostrar(
+                        this,
+                        produto,
+                        balancaManager,
+                        quantidade -> adicionarProdutoPesado(produto, quantidade),
+                        () -> mostrarPesoManual(produto),
+                        () -> pesagemEmAndamento = false);
+            } else {
+                mostrarPesoManual(produto);
+            }
             return;
         }
         Carrinho.getInstance().adicionar(produto);
+        atualizarCarrinho();
+    }
+
+    private void mostrarPesoManual(Produto produto) {
+        QuantidadeProdutoDialog.mostrar(this, quantidade -> adicionarProdutoPesado(produto, quantidade));
+    }
+
+    private void adicionarProdutoPesado(Produto produto, java.math.BigDecimal quantidade) {
+        Carrinho.getInstance().adicionar(produto, quantidade);
         atualizarCarrinho();
     }
 

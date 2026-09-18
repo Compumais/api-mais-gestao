@@ -51,6 +51,16 @@
     </LinearLayout>
 
     <TextView
+        android:id="@+id/txtStatusBalanca"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="4dp"
+        android:textColor="@color/muted_foreground"
+        android:textSize="13sp"
+        android:visibility="gone" />
+
+    <TextView
         android:id="@+id/lblSecao"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

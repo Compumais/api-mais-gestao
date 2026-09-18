@@ -31,6 +31,30 @@ cd POSmaisgestao
 ./gradlew assembleDebug
 ```
 
+### Balança Toledo Prix 3 Fit
+
+Suporte a Prix 3 Fit configurada em **Prt3, 2400 baud, 8N1**, conectada ao
+Android por cabo OTG e conversor USB-Serial compatível (CDC ACM, FTDI, PL2303
+ou CH340/CH341).
+
+1. Na balança, confirme `C14 = Prt3` e `C15 = 2400`.
+2. Conecte o conversor USB-Serial ao cabo da balança e ao Android via OTG.
+3. Abra **Configurações → Periféricos → Balança**.
+4. Selecione o conversor, habilite a balança e autorize o acesso USB.
+5. Use **Testar leitura de peso** com um peso estável.
+
+Produtos cadastrados em KG usam a leitura automaticamente na venda rápida.
+Com a integração desabilitada, desconectada ou cancelada, a digitação manual
+continua disponível. O diagnóstico mostra VID/PID, driver, última leitura e,
+quando habilitado, os bytes TX/RX; ele nunca inclui dados de venda ou pagamento.
+
+Sem hardware, execute `./gradlew testDebugUnitTest`: os testes cobrem frames
+Prt3 normais, zero, instável, negativo, sobrecarga, ruído e fragmentação.
+
+O USB direto opcional da balança não é tratado como HID. Esta implementação
+depende de um conversor USB-Serial reconhecido; use a tela de diagnóstico para
+confirmar o chipset/VID/PID no primeiro teste físico.
+
 ---
 
 ## API

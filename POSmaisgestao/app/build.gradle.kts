@@ -43,6 +43,7 @@ dependencies {
     implementation(libs.recyclerview)
     implementation(libs.zxing.android.embedded)
     implementation(libs.coil)
+    implementation(libs.usb.serial)
     testImplementation(libs.junit)
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(libs.ext.junit)

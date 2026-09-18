@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.pos_mais_gestao.domain.Produto;
+import com.pos_mais_gestao.domain.balanca.BalancaConfig;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -33,6 +34,15 @@ public class PrefsStore {
     private static final String KEY_CIDADE_PIX = "cidade_pix";
     private static final String KEY_CONEXAO_MODO = "conexao_modo";
     private static final String KEY_MODELO_ATENDIMENTO = "modelo_atendimento";
+    private static final String KEY_BALANCA_HABILITADA = "balanca_habilitada";
+    private static final String KEY_BALANCA_VENDOR_ID = "balanca_vendor_id";
+    private static final String KEY_BALANCA_PRODUCT_ID = "balanca_product_id";
+    private static final String KEY_BALANCA_SERIAL = "balanca_serial";
+    private static final String KEY_BALANCA_BAUD = "balanca_baud";
+    private static final String KEY_BALANCA_DATA_BITS = "balanca_data_bits";
+    private static final String KEY_BALANCA_STOP_BITS = "balanca_stop_bits";
+    private static final String KEY_BALANCA_PARITY = "balanca_parity";
+    private static final String KEY_BALANCA_LOG_HEX = "balanca_log_hex";
     public static final String MODO_CLOUD = "cloud";
     public static final String MODO_PDV_LOCAL = "pdv_local";
     public static final String MODELO_MESA = "mesa";
@@ -88,6 +98,44 @@ public class PrefsStore {
 
     public boolean isModeloComanda() {
         return isModoPdvLocal() && MODELO_COMANDA.equals(getModeloAtendimento());
+    }
+
+    public BalancaConfig getBalancaConfig() {
+        return new BalancaConfig(
+                prefs.getBoolean(KEY_BALANCA_HABILITADA, false),
+                prefs.getInt(KEY_BALANCA_VENDOR_ID, -1),
+                prefs.getInt(KEY_BALANCA_PRODUCT_ID, -1),
+                prefs.getString(KEY_BALANCA_SERIAL, ""),
+                prefs.getInt(KEY_BALANCA_BAUD, BalancaConfig.BAUD_PADRAO),
+                prefs.getInt(KEY_BALANCA_DATA_BITS, 8),
+                prefs.getInt(KEY_BALANCA_STOP_BITS, 1),
+                prefs.getInt(KEY_BALANCA_PARITY, 0),
+                prefs.getBoolean(KEY_BALANCA_LOG_HEX, false));
+    }
+
+    public void setBalancaHabilitada(boolean habilitada) {
+        prefs.edit().putBoolean(KEY_BALANCA_HABILITADA, habilitada).apply();
+    }
+
+    public void setBalancaDispositivo(int vendorId, int productId, String serial) {
+        prefs.edit()
+                .putInt(KEY_BALANCA_VENDOR_ID, vendorId)
+                .putInt(KEY_BALANCA_PRODUCT_ID, productId)
+                .putString(KEY_BALANCA_SERIAL, serial == null ? "" : serial)
+                .apply();
+    }
+
+    public void setBalancaSerialConfig(int baud, int dataBits, int stopBits, int parity) {
+        prefs.edit()
+                .putInt(KEY_BALANCA_BAUD, baud)
+                .putInt(KEY_BALANCA_DATA_BITS, dataBits)
+                .putInt(KEY_BALANCA_STOP_BITS, stopBits)
+                .putInt(KEY_BALANCA_PARITY, parity)
+                .apply();
+    }
+
+    public void setBalancaLogHex(boolean habilitado) {
+        prefs.edit().putBoolean(KEY_BALANCA_LOG_HEX, habilitado).apply();
     }
 
     public String getUrlPadraoCloud() {
