@@ -119,7 +119,51 @@ async function registrarMigrationsComoAplicadas(
 	return registradas;
 }
 
+async function aplicarHashesAusentes(pool: Pool) {
+	await garantirTabelaMigrations(pool);
+	const migrations = await carregarMigrations();
+	const hashesAplicados = await listarHashesAplicados(pool);
+
+	for (const { entrada, arquivo } of migrations) {
+		if (!arquivo) {
+			throw new Error(`Arquivo da migration ${entrada.tag} não encontrado`);
+		}
+		if (hashesAplicados.has(arquivo.hash)) continue;
+
+		const client = await pool.connect();
+		try {
+			await client.query("BEGIN");
+			for (const statement of arquivo.sql) {
+				const sql = statement.trim();
+				if (!sql) continue;
+				await client.query(sql);
+			}
+			await client.query(
+				`INSERT INTO drizzle.__drizzle_migrations (hash, created_at) VALUES ($1, $2)`,
+				[arquivo.hash, entrada.when],
+			);
+			await client.query("COMMIT");
+			hashesAplicados.add(arquivo.hash);
+			console.log(`  ✓ aplicada: ${entrada.tag}`);
+		} catch (erro) {
+			await client.query("ROLLBACK");
+			throw erro;
+		} finally {
+			client.release();
+		}
+	}
+
+	for (const { entrada, arquivo } of migrations) {
+		if (!arquivo || !hashesAplicados.has(arquivo.hash)) continue;
+		await pool.query(
+			`UPDATE drizzle.__drizzle_migrations SET created_at = $2 WHERE hash = $1`,
+			[arquivo.hash, entrada.when],
+		);
+	}
+}
+
 async function executarDrizzleMigrate(pool: Pool) {
+	await aplicarHashesAusentes(pool);
 	const db = drizzle(pool);
 	await migrate(db, { migrationsFolder });
 }
