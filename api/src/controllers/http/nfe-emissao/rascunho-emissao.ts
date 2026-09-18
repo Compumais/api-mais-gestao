@@ -7,14 +7,17 @@ import {
 } from "@/service/nfe-emissao/salvar-rascunho-emissao-nfe-venda.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 import {
-	emitirNfeBodySchema,
+	emitirNfeCamposSchema,
 	localEntregaNfeBaseSchema,
+	refinarEmissaoNfeBody,
 } from "./emissao-nfe-body-schema.js";
 
-const salvarRascunhoNfeBodySchema = emitirNfeBodySchema.safeExtend({
-	itens: emitirNfeBodySchema.shape.itens.min(0),
-	localEntrega: localEntregaNfeBaseSchema.partial().optional(),
-});
+const salvarRascunhoNfeBodySchema = emitirNfeCamposSchema
+	.extend({
+		itens: emitirNfeCamposSchema.shape.itens.min(0),
+		localEntrega: localEntregaNfeBaseSchema.partial().optional(),
+	})
+	.superRefine(refinarEmissaoNfeBody);
 
 const listarRascunhosQuerySchema = z.object({
 	idempresa: z.string().uuid(),
