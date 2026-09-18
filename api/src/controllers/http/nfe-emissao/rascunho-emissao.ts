@@ -11,7 +11,7 @@ import {
 	localEntregaNfeBaseSchema,
 } from "./emissao-nfe-body-schema.js";
 
-const salvarRascunhoNfeBodySchema = emitirNfeBodySchema.extend({
+const salvarRascunhoNfeBodySchema = emitirNfeBodySchema.safeExtend({
 	itens: emitirNfeBodySchema.shape.itens.min(0),
 	localEntrega: localEntregaNfeBaseSchema.partial().optional(),
 });
