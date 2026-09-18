@@ -117,6 +117,8 @@ export function EditarProdutoClient({ id }: EditarProdutoClientProps) {
 			modo="editar"
 			produtoId={id}
 			valoresIniciais={valoresIniciais}
+			referenciaImagemInicial={data.caminhoimagem}
+			imagemLegadaInicial={data.imagem}
 		/>
 	);
 }

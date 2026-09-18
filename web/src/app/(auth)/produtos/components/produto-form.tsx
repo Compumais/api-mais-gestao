@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { type Resolver, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,7 @@ import { useProximoCodigo } from "@/hooks/use-proximo-codigo";
 import { useRascunhoAbaForm } from "@/hooks/use-rascunho-aba-form";
 import {
 	type ProdutoFormData,
+	produtoImagemArquivoSchema,
 	produtoFormSchema,
 } from "@/schemas/produtos.schema";
 import { entidadesService } from "@/services/entidades.service";
@@ -49,11 +50,14 @@ import {
 import { ProdutoAbaBalanca } from "./produto-aba-balanca";
 import { ProdutoAbaGourmet } from "./produto-aba-gourmet";
 import { ProdutoAbaImpostos } from "./produto-aba-impostos";
+import { ProdutoImagemCampo } from "./produto-imagem-campo";
 
 type ProdutoFormProps = {
 	modo?: "criar" | "editar";
 	produtoId?: string;
 	valoresIniciais?: Partial<ProdutoFormData>;
+	referenciaImagemInicial?: string | null;
+	imagemLegadaInicial?: string | null;
 };
 
 function textoOuNulo(valor: string | null | undefined): string | null {
@@ -178,6 +182,9 @@ export function ProdutoForm(props: ProdutoFormProps) {
 
 	const modo = props.modo ?? "criar";
 	const isEdicao = modo === "editar";
+	const [arquivoImagem, setArquivoImagem] = useState<File | null>(null);
+	const [removerImagemAtual, setRemoverImagemAtual] = useState(false);
+	const [erroImagem, setErroImagem] = useState<string | null>(null);
 
 	const form = useForm<ProdutoFormData>({
 		resolver: zodResolver(produtoFormSchema) as Resolver<ProdutoFormData>,
@@ -354,7 +361,29 @@ export function ProdutoForm(props: ProdutoFormProps) {
 	});
 
 	const { mutate: criarProduto, isPending: isPendingCriar } = useMutation({
-		mutationFn: produtosService.criar,
+		mutationFn: async ({
+			dados,
+			imagem,
+		}: {
+			dados: CriarProdutoData;
+			imagem: File | null;
+		}) => {
+			const produto = await produtosService.criar(dados);
+			if (imagem) {
+				try {
+					return await produtosService.enviarImagem(produto.id, imagem);
+				} catch (erro) {
+					const falha = new Error(
+						`Produto cadastrado, mas a imagem não foi enviada: ${
+							erro instanceof Error ? erro.message : "erro desconhecido"
+						}`,
+					) as Error & { produtoId: string };
+					falha.produtoId = produto.id;
+					throw falha;
+				}
+			}
+			return produto;
+		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["produtos"] });
 			queryClient.invalidateQueries({ queryKey: ["saldos-estoque"] });
@@ -364,6 +393,8 @@ export function ProdutoForm(props: ProdutoFormProps) {
 		},
 		onError: (error: Error) => {
 			toast.error(error.message || "Erro ao cadastrar produto");
+			const produtoId = (error as Error & { produtoId?: string }).produtoId;
+			if (produtoId) router.push(`/produtos/${produtoId}/editar`);
 		},
 	});
 
@@ -372,18 +403,29 @@ export function ProdutoForm(props: ProdutoFormProps) {
 			mutationFn: async ({
 				idempresa,
 				dados,
+				imagem,
+				removerImagem,
 			}: {
 				idempresa: string;
 				dados: Parameters<typeof produtosService.atualizar>[1];
+				imagem: File | null;
+				removerImagem: boolean;
 			}) => {
 				if (!isEdicao || !props.produtoId) {
 					throw new Error("ID do produto é obrigatório para editar");
 				}
-				return await produtosService.atualizar(
+				const produto = await produtosService.atualizar(
 					props.produtoId,
 					dados,
 					idempresa,
 				);
+				if (imagem) {
+					return await produtosService.enviarImagem(props.produtoId, imagem);
+				}
+				if (removerImagem) {
+					return await produtosService.removerImagem(props.produtoId);
+				}
+				return produto;
 			},
 			onSuccess: (produto) => {
 				queryClient.invalidateQueries({ queryKey: ["produtos"] });
@@ -407,16 +449,33 @@ export function ProdutoForm(props: ProdutoFormProps) {
 		}
 
 		const payloadBase = buildProdutoPayload(getValues());
+		if (arquivoImagem) {
+			const resultadoImagem =
+				produtoImagemArquivoSchema.safeParse(arquivoImagem);
+			if (!resultadoImagem.success) {
+				setErroImagem(resultadoImagem.error.issues[0]?.message ?? "Imagem inválida");
+				return;
+			}
+		}
+		setErroImagem(null);
 
 		if (!isEdicao) {
 			criarProduto({
-				idempresa: empresa.id,
-				...payloadBase,
+				dados: {
+					idempresa: empresa.id,
+					...payloadBase,
+				},
+				imagem: arquivoImagem,
 			});
 			return;
 		}
 
-		atualizarProduto({ idempresa: empresa.id, dados: payloadBase });
+		atualizarProduto({
+			idempresa: empresa.id,
+			dados: payloadBase,
+			imagem: arquivoImagem,
+			removerImagem: removerImagemAtual,
+		});
 	};
 
 	const unidadesGlobais =
@@ -515,6 +574,32 @@ export function ProdutoForm(props: ProdutoFormProps) {
 									/>
 									<FieldError errors={errors.nome ? [errors.nome] : []} />
 								</Field>
+
+								<ProdutoImagemCampo
+									produtoId={props.produtoId}
+									nomeProduto={watch("nome")}
+									arquivo={arquivoImagem}
+									referenciaAtual={props.referenciaImagemInicial}
+									imagemLegada={props.imagemLegadaInicial}
+									removerAtual={removerImagemAtual}
+									erro={erroImagem}
+									onArquivoChange={(arquivo) => {
+										setArquivoImagem(arquivo);
+										if (arquivo) {
+											const resultado =
+												produtoImagemArquivoSchema.safeParse(arquivo);
+											setErroImagem(
+												resultado.success
+													? null
+													: (resultado.error.issues[0]?.message ??
+															"Imagem inválida"),
+											);
+										} else {
+											setErroImagem(null);
+										}
+									}}
+									onRemoverAtualChange={setRemoverImagemAtual}
+								/>
 
 								<Field data-invalid={!!errors.idunidademedida}>
 									<FieldLabel htmlFor="idunidademedida">Unidade *</FieldLabel>

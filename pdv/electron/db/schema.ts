@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS produto_cache (
 	espizza INTEGER NOT NULL DEFAULT 0,
 	imagem TEXT,
 	caminhoimagem TEXT,
+	imagemremota TEXT,
 	ncm TEXT,
 	cest TEXT,
 	cfop TEXT,

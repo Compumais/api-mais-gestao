@@ -210,6 +210,11 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 			"ALTER TABLE produto_cache ADD COLUMN caminhoimagem TEXT",
 		);
 	}
+	if (!nomes.has("imagemremota")) {
+		await database.query(
+			"ALTER TABLE produto_cache ADD COLUMN imagemremota TEXT",
+		);
+	}
 	if (!nomes.has("idgrupogourmet")) {
 		await database.query(
 			"ALTER TABLE produto_cache ADD COLUMN idgrupogourmet TEXT",

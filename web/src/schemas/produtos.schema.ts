@@ -1,5 +1,29 @@
 import { z } from "zod";
 
+export const TAMANHO_MAXIMO_IMAGEM_PRODUTO = 5 * 1024 * 1024;
+export const TIPOS_IMAGEM_PRODUTO = [
+	"image/jpeg",
+	"image/png",
+	"image/webp",
+] as const;
+
+export const produtoImagemArquivoSchema = z
+	.custom<File>(
+		(valor) => typeof File !== "undefined" && valor instanceof File,
+		"Selecione uma imagem válida",
+	)
+	.refine(
+		(arquivo) =>
+			TIPOS_IMAGEM_PRODUTO.includes(
+				arquivo.type as (typeof TIPOS_IMAGEM_PRODUTO)[number],
+			),
+		"Use uma imagem JPEG, PNG ou WebP",
+	)
+	.refine(
+		(arquivo) => arquivo.size <= TAMANHO_MAXIMO_IMAGEM_PRODUTO,
+		"A imagem deve ter no máximo 5 MB",
+	);
+
 function numeroInteiroOpcional() {
 	return z.preprocess((valor) => {
 		if (valor === "" || valor === null || valor === undefined) return null;

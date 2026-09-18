@@ -30,6 +30,7 @@ describe("listarProdutosCatalogoPdvService", () => {
 					espizza: 0,
 					imagem: null,
 					caminhoimagem: null,
+					imagemurl: null,
 					ncm: "22021000",
 					cest: "0300100",
 					cfop: "5102",
