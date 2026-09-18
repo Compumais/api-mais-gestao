@@ -159,7 +159,7 @@ export const localEntregaNfeSchema = localEntregaNfeBaseSchema.refine(
 	},
 );
 
-export const emitirNfeBodySchema = z.object({
+export const emitirNfeCamposSchema = z.object({
 	idempresa: z.string().uuid(),
 	idnotafiscal: z.string().uuid().optional(),
 	iddestinatario: z.string().uuid().optional(),
@@ -212,7 +212,21 @@ export const emitirNfeBodySchema = z.object({
 		.optional(),
 	gerarFinanceiro: z.boolean().optional().default(true),
 	gerarEstoque: z.boolean().optional().default(true),
-}).superRefine((dados, ctx) => {
+});
+
+export function refinarEmissaoNfeBody(
+	dados: {
+		itens: Array<{
+			quantidade: number;
+			valorUnitario: number;
+			desconto?: number;
+		}>;
+		totais?: { desconto?: number };
+		informarEnderecoEntregaManual?: boolean;
+		enderecoEntrega?: unknown;
+	},
+	ctx: z.RefinementCtx,
+) {
 	validarDescontosEmissao(dados, ctx);
 	if (dados.informarEnderecoEntregaManual && !dados.enderecoEntrega) {
 		ctx.addIssue({
@@ -221,7 +235,10 @@ export const emitirNfeBodySchema = z.object({
 			path: ["enderecoEntrega"],
 		});
 	}
-});
+}
+
+export const emitirNfeBodySchema =
+	emitirNfeCamposSchema.superRefine(refinarEmissaoNfeBody);
 
 export type EmitirNfeBody = z.infer<typeof emitirNfeBodySchema>;
 
