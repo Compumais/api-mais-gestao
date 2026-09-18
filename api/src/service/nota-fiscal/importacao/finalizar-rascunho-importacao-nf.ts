@@ -235,6 +235,23 @@ export async function finalizarRascunhoImportacaoNfService({
 		}
 	}
 
+	const produtosVinculados = new Map<
+		string,
+		NonNullable<Awaited<ReturnType<typeof buscarProdutoPorId>>>
+	>();
+	for (const item of itensComDados) {
+		const dados = item.dadosimportacao;
+		if (dados?.statusVinculo !== "vinculado" || !dados.idproduto) continue;
+
+		const produto = await buscarProdutoPorId(dados.idproduto);
+		if (!produto || produto.idempresa !== idempresa) {
+			return httpBadRequest(
+				`Item ${item.contador ?? "?"} (${dados.descricaoFornecedor}): o produto vinculado não existe ou não pertence à empresa. Vincule o item novamente.`,
+			);
+		}
+		produtosVinculados.set(item.id, produto);
+	}
+
 	const identidadeFornecedor = await vincularOuCriarFornecedorNf({
 		idempresa,
 		identidade: nota.identidade,
@@ -325,7 +342,7 @@ export async function finalizarRascunhoImportacaoNfService({
 		};
 
 		if (dados.statusVinculo === "vinculado" && dados.idproduto) {
-			const produtoAtual = await buscarProdutoPorId(dados.idproduto);
+			const produtoAtual = produtosVinculados.get(item.id);
 			const dadosProduto = montarDadosProdutoNfImportacao(
 				dados,
 				idempresa,

@@ -24,6 +24,15 @@ export async function finalizarRascunhoImportacao(
 	request: FastifyRequest,
 	reply: FastifyReply,
 ) {
+	let contextoFinalizacao:
+		| {
+				idRascunho: string;
+				idempresa: string;
+				gerarCustos: boolean;
+				gerarFinanceiro: boolean;
+		  }
+		| undefined;
+
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
@@ -31,6 +40,12 @@ export async function finalizarRascunhoImportacao(
 
 		const { id } = paramsSchema.parse(request.params);
 		const dados = finalizarBodySchema.parse(request.body);
+		contextoFinalizacao = {
+			idRascunho: id,
+			idempresa: dados.idempresa,
+			gerarCustos: dados.gerarCustos,
+			gerarFinanceiro: dados.gerarFinanceiro,
+		};
 
 		const resultado = await finalizarRascunhoImportacaoNfService({
 			idusuario: request.user.id,
@@ -49,7 +64,6 @@ export async function finalizarRascunhoImportacao(
 
 		return reply.status(resultado.status).send(resultado.body);
 	} catch (error) {
-		console.error(error);
 		if (error instanceof z.ZodError) {
 			return reply.status(400).send({
 				error: "Erro de validação",
@@ -57,6 +71,15 @@ export async function finalizarRascunhoImportacao(
 				details: error.issues,
 			});
 		}
+
+		request.log.error(
+			{
+				err: error,
+				idusuario: request.user?.id,
+				...contextoFinalizacao,
+			},
+			"Falha ao finalizar rascunho de nota fiscal de entrada",
+		);
 		return reply.status(httpErroInterno().status).send(httpErroInterno());
 	}
 }
