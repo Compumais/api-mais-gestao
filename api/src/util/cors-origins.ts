@@ -1,3 +1,5 @@
+import type { FastifyCorsOptions } from "@fastify/cors";
+
 const LOCAL_ORIGINS = [
 	"http://localhost:3000",
 	"http://127.0.0.1:3000",
@@ -82,3 +84,32 @@ export function isOrigemCorsPermitida(origin?: string): boolean {
 	}
 	return isOriginAllowed(origin);
 }
+
+export const corsOptions: FastifyCorsOptions = {
+	origin: (origin, cb) => {
+		if (isOrigemCorsPermitida(origin)) {
+			cb(null, true);
+			return;
+		}
+		cb(new Error("Not allowed by CORS"), false);
+	},
+	methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+	allowedHeaders: [
+		"Content-Type",
+		"Authorization",
+		"X-Empresa-Id",
+		"X-Requested-With",
+		"X-File-Name",
+		"Accept",
+		"Origin",
+	],
+	credentials: true,
+	exposedHeaders: [
+		"Content-Disposition",
+		"X-Sintegra-Alertas",
+		"X-Sintegra-Total-Linhas",
+		"X-Mgv-Alertas",
+		"X-Mgv-Total-Linhas",
+	],
+	maxAge: 86400,
+};
