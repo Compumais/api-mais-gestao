@@ -1,22 +1,24 @@
 @echo off
-setlocal EnableExtensions
+setlocal EnableExtensions DisableDelayedExpansion
 title PDV Mais Gestao - Gerar instalador
+chcp 65001 >nul
+
+set "ERR=0"
+set "PAUSE_AT_END=1"
+if not "%~1"=="" set "PAUSE_AT_END=0"
 
 pushd "%~dp0..\.."
 if errorlevel 1 (
 	echo Nao foi possivel abrir a pasta do repositorio.
-	echo.
-	pause
-	exit /b 1
+	set "ERR=1"
+	goto :end
 )
 
 where powershell >nul 2>&1
 if errorlevel 1 (
 	echo PowerShell nao encontrado. Instale o Windows PowerShell 5.1.
-	echo.
-	pause
-	popd
-	exit /b 1
+	set "ERR=1"
+	goto :end
 )
 
 if /i "%~1"=="local" goto :local
@@ -41,13 +43,13 @@ goto :cancel
 :local
 echo.
 echo Gerando instalador neste computador...
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0gerar-instalador.ps1"
+powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0gerar-instalador.ps1"
 goto :done
 
 :dispatch
 echo.
 echo Disparando GitHub Actions...
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0gerar-instalador.ps1" -Dispatch
+powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0gerar-instalador.ps1" -Dispatch
 goto :done
 
 :cancel
@@ -59,9 +61,8 @@ set "ERR=%ERRORLEVEL%"
 
 :end
 echo.
-if not "%ERR%"=="0" if not "%ERR%"=="" echo Falhou com codigo %ERR%.
+if not "%ERR%"=="0" echo Falhou com codigo %ERR%.
 echo.
-pause
-popd
-if "%ERR%"=="" exit /b 0
+if "%PAUSE_AT_END%"=="1" pause
+popd >nul 2>&1
 exit /b %ERR%
