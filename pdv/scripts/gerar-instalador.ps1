@@ -7,6 +7,15 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+try {
+	$utf8 = New-Object System.Text.UTF8Encoding $false
+	[Console]::InputEncoding = $utf8
+	[Console]::OutputEncoding = $utf8
+	$global:OutputEncoding = $utf8
+} catch {
+	# Hosts sem console (por exemplo, alguns runners) podem nao expor os encodings.
+}
+
 function Test-GhDisponivel {
 	return [bool](Get-Command gh -ErrorAction SilentlyContinue)
 }
@@ -85,13 +94,22 @@ function Invoke-Dispatch {
 function Get-PdvElectronTravando {
 	param([string]$PdvDir)
 	$distMarker = Join-Path $PdvDir "node_modules\electron\dist"
+	$pdvPrefix = $PdvDir.TrimEnd("\") + "\"
 	$procs = @()
 	try {
 		$procs = Get-CimInstance Win32_Process -ErrorAction SilentlyContinue |
 			Where-Object {
-				$_.Name -match '^(electron|PDV Mais Gestao|PDV Mais Gestão)\.exe$' -and
-				$_.CommandLine -and
-				($_.CommandLine -like "*$distMarker*" -or $_.CommandLine -like "*pdv*electron*")
+				$nomeElectron = $_.Name -ieq "electron.exe"
+				$nomePdv = $_.Name -like "PDV Mais Gest*.exe"
+				$exeLocal = $_.ExecutablePath -and $_.ExecutablePath.StartsWith(
+					$pdvPrefix,
+					[System.StringComparison]::OrdinalIgnoreCase
+				)
+				$cmdElectronLocal = $_.CommandLine -and $_.CommandLine.IndexOf(
+					$distMarker,
+					[System.StringComparison]::OrdinalIgnoreCase
+				) -ge 0
+				($nomeElectron -or $nomePdv) -and ($exeLocal -or $cmdElectronLocal)
 			}
 	} catch {
 		$procs = @()
@@ -99,11 +117,44 @@ function Get-PdvElectronTravando {
 	return @($procs)
 }
 
+function Get-IsccPath {
+	$isccCandidates = @()
+	$isccCmd = Get-Command "iscc" -ErrorAction SilentlyContinue
+	if ($isccCmd) {
+		$isccCandidates += $isccCmd.Source
+	}
+	$isccCandidates += @(
+		"${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe",
+		"${env:ProgramFiles}\Inno Setup 6\ISCC.exe",
+		"${env:LocalAppData}\Programs\Inno Setup 6\ISCC.exe",
+		"${env:ProgramFiles}\Inno Setup 7\ISCC.exe",
+		"${env:ProgramFiles(x86)}\Inno Setup 7\ISCC.exe",
+		"${env:LocalAppData}\Programs\Inno Setup 7\ISCC.exe"
+	)
+	return $isccCandidates | Where-Object { $_ -and (Test-Path -LiteralPath $_) } | Select-Object -First 1
+}
+
 function Invoke-Local {
 	$pdvDir = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
 	Set-Location $pdvDir
 
 	$env:CSC_IDENTITY_AUTO_DISCOVERY = "false"
+	Remove-Item Env:npm_config_devdir -ErrorAction SilentlyContinue
+
+	$npm = Get-Command "npm.cmd" -ErrorAction SilentlyContinue
+	if (-not $npm) {
+		throw "npm.cmd nao encontrado no PATH. Instale o Node.js 20 ou superior."
+	}
+	$nodeVersionText = (& node --version 2>$null)
+	if ($LASTEXITCODE -ne 0 -or $nodeVersionText -notmatch '^v(\d+)') {
+		throw "Nao foi possivel identificar a versao do Node.js."
+	}
+	if ([int]$Matches[1] -lt 20) {
+		throw "Node.js 20 ou superior e obrigatorio. Versao encontrada: $nodeVersionText"
+	}
+	if (-not (Get-IsccPath)) {
+		throw "Inno Setup 6 ou 7 nao encontrado. Instale com: winget install --id JRSoftware.InnoSetup -e"
+	}
 
 	$travados = Get-PdvElectronTravando -PdvDir $pdvDir
 	if ($travados.Count -gt 0) {
@@ -131,10 +182,10 @@ function Invoke-Local {
 
 	$bumpScript = Join-Path $pdvDir "scripts\bump-versao-instalador.ps1"
 	. $bumpScript
-	Invoke-BumpVersaoInstalador | Out-Null
+	$versao = Invoke-BumpVersaoInstalador
 
 	Write-Host "Instalando dependencias..."
-	npm ci
+	& $npm.Source ci
 	if ($LASTEXITCODE -ne 0) {
 		if ($LASTEXITCODE -eq -4082 -or $LASTEXITCODE -eq 4082) {
 			Write-Host "Dica: EBUSY costuma ser PDV/Electron aberto. Feche o app e rode de novo."
@@ -142,30 +193,42 @@ function Invoke-Local {
 		throw "npm ci falhou com codigo $LASTEXITCODE"
 	}
 
-	Write-Host "Gerando executavel e instalador NSIS..."
-	npm run pack:win
-	if ($LASTEXITCODE -ne 0) {
-		throw "pack:win falhou com codigo $LASTEXITCODE"
-	}
+	$tempBuild = Join-Path ([System.IO.Path]::GetTempPath()) ("pdv-mais-gestao-build-{0}" -f $PID)
+	$unpacked = Join-Path $tempBuild "win-unpacked"
+	try {
+		New-Item -ItemType Directory -Force -Path $tempBuild | Out-Null
 
-	Write-Host "Compilando instalador Inno Setup..."
-	& powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $pdvDir "installer\compilar-iss.ps1") -NoBump
-	if ($LASTEXITCODE -ne 0) {
-		throw "compilar-iss.ps1 falhou com codigo $LASTEXITCODE"
-	}
+		Write-Host "Gerando executavel e instalador NSIS fora do workspace..."
+		& $npm.Source run build
+		if ($LASTEXITCODE -ne 0) {
+			throw "build falhou com codigo $LASTEXITCODE"
+		}
 
-	$zip = Join-Path $pdvDir "release-build\PDV-Mais-Gestao-portable.zip"
-	if (-not (Test-Path (Join-Path $pdvDir "release-build\win-unpacked"))) {
-		$zip = Join-Path $pdvDir "release\PDV-Mais-Gestao-portable.zip"
+		$electronBuilder = Join-Path $pdvDir "node_modules\.bin\electron-builder.cmd"
+		& $electronBuilder --win "--config.directories.output=$tempBuild"
+		if ($LASTEXITCODE -ne 0) {
+			throw "electron-builder falhou com codigo $LASTEXITCODE"
+		}
+
+		$releaseBuild = Join-Path $pdvDir "release-build"
+		New-Item -ItemType Directory -Force -Path $releaseBuild | Out-Null
+		$nsis = Join-Path $tempBuild "PDV-Mais-Gestao-Setup-$versao.exe"
+		if (-not (Test-Path -LiteralPath $nsis)) {
+			throw "Instalador NSIS nao encontrado: $nsis"
+		}
+		Copy-Item -LiteralPath $nsis -Destination $releaseBuild -Force
+
+		Write-Host "Compilando instalador Inno Setup..."
+		& (Join-Path $pdvDir "installer\compilar-iss.ps1") -NoBump -SourceDir $unpacked
+
+		$zip = Join-Path $releaseBuild "PDV-Mais-Gestao-portable.zip"
+		if (Test-Path -LiteralPath $zip) {
+			Remove-Item -LiteralPath $zip -Force
+		}
+		Compress-Archive -Path (Join-Path $unpacked "*") -DestinationPath $zip -Force
+	} finally {
+		Remove-Item -LiteralPath $tempBuild -Recurse -Force -ErrorAction SilentlyContinue
 	}
-	$unpackedZip = Join-Path $pdvDir "release-build\win-unpacked"
-	if (-not (Test-Path $unpackedZip)) {
-		$unpackedZip = Join-Path $pdvDir "release\win-unpacked"
-	}
-	if (Test-Path $zip) {
-		Remove-Item $zip -Force
-	}
-	Compress-Archive -Path (Join-Path $unpackedZip "*") -DestinationPath $zip -Force
 
 	Write-Host ""
 	Write-Host "Pacotes gerados:"
