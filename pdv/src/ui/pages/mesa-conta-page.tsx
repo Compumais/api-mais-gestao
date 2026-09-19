@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { ChevronLeft, ShoppingCart, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
 	useLocation,
@@ -959,6 +959,18 @@ export function MesaContaPage() {
 	const tituloConta = modoEntrega
 		? `${conta?.modalidade === "retirada" ? "Retirada" : "Delivery"} #${conta?.senha_chamada ?? "—"}`
 		: tituloContaAtendimento(status?.modeloAtendimento, numeroMesa);
+	const leitorPausado =
+		pagando ||
+		confirmandoSaida ||
+		confirmandoCancelar ||
+		Boolean(rejeicaoNfce) ||
+		Boolean(pizzaPrimeiro) ||
+		Boolean(produtoPeso) ||
+		Boolean(obsFilaChave) ||
+		obsPedidoAberto ||
+		maisAcoesAberto ||
+		senhaAberta ||
+		Boolean(itemCancelar);
 
 	return (
 		<div className="flex h-screen flex-col">
@@ -969,58 +981,50 @@ export function MesaContaPage() {
 						? identificacao
 						: `${identificacao} · aguardando primeiro lançamento`
 				}
-				right={
-					<div className="flex gap-2">
-						<Button
-							variant="secondary"
-							size="sm"
-							onClick={() => focarProdutos()}
-						>
-							Selecionar produtos
-						</Button>
-						<Button variant="outline" size="sm" onClick={() => tentarSair()}>
-							Voltar
-						</Button>
-					</div>
+				status={status}
+				onExit={() => tentarSair()}
+				exitLabel="Voltar"
+				center={
+					<BarcodeInput
+						className="h-10 border-white/15 bg-white/10 text-white shadow-inner placeholder:text-white/55 focus-visible:border-white/30 focus-visible:ring-white/15"
+						placeholder="Digite o código, nome do produto ou use o leitor..."
+						onScan={(codigo) => void onBip(codigo)}
+						onProduto={(produto) => enfileirarProduto(produto)}
+						resultadosExternos
+						onBuscaChange={setBuscaProdutos}
+						pausado={leitorPausado}
+					/>
 				}
 			/>
 
-			<div className="flex min-h-0 flex-1 gap-3 overflow-hidden bg-muted/30 p-3">
-				<div className="grid min-h-0 min-w-0 flex-1 grid-cols-[1fr_340px] gap-3 overflow-hidden">
+			<div className="flex min-h-0 flex-1 overflow-hidden bg-muted/35">
+				<SideNav status={status} />
+				<div className="min-h-0 min-w-0 flex-1 overflow-hidden p-2.5">
+				<div className="grid h-full min-h-0 min-w-0 grid-cols-[minmax(0,1fr)_370px] gap-2.5 overflow-hidden">
 					<div className="pdv-surface flex min-h-0 flex-col gap-3 overflow-hidden p-3">
 						<AvisoSecundario status={status} />
 						<AlertasOperacionaisPdv status={status} />
 						<div className="flex items-center justify-between gap-2">
-							<h2 className="text-sm font-semibold">Selecionar produtos</h2>
+							<div>
+								<h2 className="text-sm font-semibold">
+									{grupoAtivo ? grupoAtivo.nome : "Catálogo de produtos"}
+								</h2>
+								<p className="text-xs text-muted-foreground">
+									Selecione um grupo ou pesquise pelo nome e código
+								</p>
+							</div>
 							{grupoAtivo && (
 								<Button
 									variant="secondary"
 									size="sm"
+									className="gap-1.5"
 									onClick={() => setGrupoAtivo(null)}
 								>
+									<ChevronLeft className="size-4" />
 									Trocar grupo
 								</Button>
 							)}
 						</div>
-						<BarcodeInput
-							onScan={(codigo) => void onBip(codigo)}
-							onProduto={(produto) => enfileirarProduto(produto)}
-							resultadosExternos
-							onBuscaChange={setBuscaProdutos}
-							pausado={
-								pagando ||
-								confirmandoSaida ||
-								confirmandoCancelar ||
-								Boolean(rejeicaoNfce) ||
-								Boolean(pizzaPrimeiro) ||
-								Boolean(produtoPeso) ||
-								Boolean(obsFilaChave) ||
-								obsPedidoAberto ||
-								maisAcoesAberto ||
-								senhaAberta ||
-								Boolean(itemCancelar)
-							}
-						/>
 
 						{!pronto ? (
 							<p className="text-sm text-muted-foreground">Carregando...</p>
@@ -1029,7 +1033,7 @@ export function MesaContaPage() {
 								<h2 className="shrink-0 text-sm font-semibold">
 									Resultados para “{buscaProdutos.termo}”
 								</h2>
-								<div className="grid flex-1 auto-rows-min grid-cols-3 gap-2 overflow-auto sm:grid-cols-4">
+								<div className="grid flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-2 overflow-auto">
 									{buscaProdutos.produtos.map((produto) => (
 										<ProdutoCard
 											key={produto.id}
@@ -1056,8 +1060,10 @@ export function MesaContaPage() {
 						) : modoCatalogo === "grupos" ? (
 							<div className="flex flex-1 flex-col gap-3 overflow-auto">
 								<div>
-									<h2 className="mb-2 text-sm font-semibold">Grupos Gourmet</h2>
-									<div className="grid auto-rows-min grid-cols-[repeat(auto-fill,minmax(9.5rem,1fr))] gap-3">
+									<h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+										Categorias
+									</h2>
+									<div className="grid auto-rows-min grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-3">
 										{grupos.map((grupo) => (
 											<GrupoGourmetCard
 												key={grupo.id}
@@ -1076,7 +1082,7 @@ export function MesaContaPage() {
 								</div>
 							</div>
 						) : (
-							<div className="grid flex-1 auto-rows-min grid-cols-3 gap-2 overflow-auto sm:grid-cols-4">
+							<div className="grid flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-2 overflow-auto">
 								{carregandoProdutos ? (
 									<p className="col-span-full text-sm text-muted-foreground">
 										Carregando produtos…
@@ -1101,9 +1107,22 @@ export function MesaContaPage() {
 					</div>
 
 					<div className="pdv-surface flex min-h-0 flex-col overflow-hidden p-3">
-						<h2 className="mb-2 shrink-0 text-sm font-semibold">
-							Fila ({fila.length} {fila.length === 1 ? "item" : "itens"})
-						</h2>
+						<div className="mb-2 flex shrink-0 items-center justify-between border-b pb-2">
+							<div className="flex items-center gap-2">
+								<div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+									<ShoppingCart className="size-4" />
+								</div>
+								<div>
+									<h2 className="text-sm font-semibold">Itens da conta</h2>
+									<p className="text-[11px] text-muted-foreground">
+										{tituloConta} · {identificacao}
+									</p>
+								</div>
+							</div>
+							<span className="rounded-full bg-muted px-2 py-1 text-[10px] font-semibold">
+								{fila.length + itens.length} itens
+							</span>
+						</div>
 
 						<div className="min-h-0 flex-1 space-y-1 overflow-auto">
 							{fila.map((item) => (
@@ -1451,11 +1470,11 @@ export function MesaContaPage() {
 						</div>
 					</div>
 				</div>
-				<SideNav status={status} />
+				</div>
 			</div>
 
 			{confirmandoSaida && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-[2px]">
 					<div className="pdv-surface w-96 space-y-4 p-5">
 						<h2 className="text-lg font-semibold">Itens na fila</h2>
 						<p className="text-sm text-muted-foreground">
@@ -1485,7 +1504,7 @@ export function MesaContaPage() {
 			)}
 
 			{confirmandoCancelar && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-[2px]">
 					<div className="pdv-surface w-96 space-y-4 p-5">
 						<h2 className="text-lg font-semibold">
 							Cancelar {rotulo.singular}
@@ -1517,7 +1536,7 @@ export function MesaContaPage() {
 			)}
 
 			{itemCancelar && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-[2px]">
 					<form
 						className="pdv-surface w-96 space-y-4 p-5"
 						onSubmit={(e) => {
@@ -1678,7 +1697,7 @@ export function MesaContaPage() {
 			/>
 
 			{dividirAberto && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-[2px]">
 					<div className="pdv-surface w-[28rem] max-w-[95vw] space-y-4 p-5">
 						<h2 className="text-lg font-semibold">Dividir conta</h2>
 						<div className="flex gap-2">
@@ -1755,7 +1774,7 @@ export function MesaContaPage() {
 				onMensagem={setMsg}
 			/>
 			{pagarItensAberto && conta && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3">
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-3 backdrop-blur-[2px]">
 					<div className="pdv-surface flex max-h-[90vh] w-[28rem] max-w-[95vw] flex-col space-y-3 p-5">
 						<div>
 							<h2 className="text-lg font-semibold">Pagar por itens</h2>
@@ -1851,7 +1870,7 @@ export function MesaContaPage() {
 						key: "produtos",
 						label: "Produtos",
 						hotkey: "F2",
-						variant: "secondary",
+						variant: "success",
 						onClick: () => focarProdutos(),
 					},
 					{

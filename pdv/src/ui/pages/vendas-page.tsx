@@ -439,8 +439,9 @@ export function VendasPage() {
 			onBlockedNavigate={setMsg}
 			topbar={
 				<Topbar
-					title="Vendas do PDV"
+					title="Histórico de vendas"
 					subtitle="Histórico local com status de sincronização e NFC-e"
+					status={status}
 					right={
 						<Button
 							variant="secondary"
@@ -545,7 +546,7 @@ export function VendasPage() {
 			}
 		>
 			<div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
-				<div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
+				<div className="flex shrink-0 flex-wrap items-center justify-between gap-2 rounded-lg border bg-card p-2 shadow-sm">
 					{msg ? (
 						<p className="rounded-md bg-muted px-3 py-2 text-sm ring-1 ring-foreground/10">
 							{msg}
@@ -557,7 +558,7 @@ export function VendasPage() {
 							antes de transmitir pendentes.
 						</p>
 					) : (
-						<p className="text-sm text-muted-foreground">
+						<p className="px-1 text-sm font-medium text-muted-foreground">
 							{loading
 								? "Carregando…"
 								: `${vendasFiltradas.length} venda${vendasFiltradas.length === 1 ? "" : "s"}`}
@@ -610,14 +611,14 @@ export function VendasPage() {
 					</div>
 				</div>
 
-				<div className="pdv-surface flex min-h-0 flex-1 flex-col overflow-hidden">
+				<div className="pdv-surface flex min-h-0 flex-1 flex-col overflow-hidden border shadow-sm">
 					<div className="min-h-0 flex-1 overflow-auto">
-						<Table>
-							<TableHeader className="sticky top-0 z-10 bg-card">
+						<Table className="text-xs">
+							<TableHeader className="sticky top-0 z-10 bg-muted/95 uppercase tracking-wide text-muted-foreground backdrop-blur">
 								{table.getHeaderGroups().map((headerGroup) => (
 									<TableRow key={headerGroup.id}>
 										{headerGroup.headers.map((header) => (
-											<TableHead key={header.id}>
+											<TableHead key={header.id} className="h-9 py-1 font-semibold">
 												{header.isPlaceholder
 													? null
 													: flexRender(
@@ -651,9 +652,9 @@ export function VendasPage() {
 											carregandoItensId === row.original.id;
 										return (
 											<Fragment key={row.id}>
-												<TableRow>
+												<TableRow className="hover:bg-muted/40">
 													{row.getVisibleCells().map((cell) => (
-														<TableCell key={cell.id}>
+														<TableCell key={cell.id} className="px-2 py-1.5">
 															{flexRender(
 																cell.column.columnDef.cell,
 																cell.getContext(),

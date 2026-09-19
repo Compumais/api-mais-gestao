@@ -47,7 +47,7 @@ export function DialogRejeicaoNfce({
 	}
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+		<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-[2px]">
 			<div className="pdv-surface w-[28rem] max-w-[95vw] space-y-4 p-5 ring-destructive/40">
 				<h2 className="text-lg font-semibold text-destructive">
 					{sucesso ? "NFC-e" : "NFC-e rejeitada"}

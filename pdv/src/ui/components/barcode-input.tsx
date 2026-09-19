@@ -1,3 +1,4 @@
+import { Search } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
 	type EstadoBuscaProdutos,
@@ -172,6 +173,10 @@ export function BarcodeInput({
 
 	return (
 		<div className="relative">
+			<Search
+				className="pointer-events-none absolute left-3 top-1/2 z-10 size-4 -translate-y-1/2 text-muted-foreground"
+				aria-hidden
+			/>
 			<input
 				ref={ref}
 				value={valor}
@@ -182,7 +187,7 @@ export function BarcodeInput({
 				autoComplete="off"
 				disabled={pausado}
 				className={cn(
-					"flex h-11 w-full rounded-md border border-input bg-background px-3 font-mono text-sm outline-none focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+					"flex h-11 w-full rounded-lg border border-input bg-background pl-10 pr-3 text-sm shadow-sm outline-none transition placeholder:text-muted-foreground/80 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/25",
 					className,
 				)}
 			/>

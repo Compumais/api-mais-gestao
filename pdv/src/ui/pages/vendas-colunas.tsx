@@ -234,6 +234,40 @@ export function badgeNfce(status: string) {
 	return "outline" as const;
 }
 
+export function classeBadgeSync(status: string) {
+	if (status === "sincronizado") {
+		return "border border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
+	}
+	if (status === "pendente") {
+		return "border border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-300";
+	}
+	return "";
+}
+
+export function classeBadgeNfce(status: string) {
+	if (status === "autorizada") {
+		return "border border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
+	}
+	if (
+		status === "transmitida" ||
+		status === "contingencia" ||
+		status === "pendente_contingencia" ||
+		status === "pendente"
+	) {
+		return "border border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-300";
+	}
+	if (
+		status === "erro" ||
+		status === "erro_config" ||
+		status === "cancelada" ||
+		status === "conflito_numeracao" ||
+		status === "conflito_identidade"
+	) {
+		return "border border-destructive/25 bg-destructive/10 text-destructive";
+	}
+	return "";
+}
+
 export function rotuloNfce(status: string) {
 	if (status === "erro") return "rejeitada";
 	if (status === "erro_config") return "erro config";
@@ -243,6 +277,10 @@ export function rotuloNfce(status: string) {
 	if (status === "inutilizada") return "inutilizada";
 	if (status === "cancelada") return "cancelada";
 	if (status === "conflito_numeracao") return "conflito numeração";
+	if (status === "conflito_identidade") return "conflito fiscal";
+	if (status === "revisao_manual") return "revisão manual";
+	if (status === "nao_fiscal") return "não fiscal";
+	if (status === "nenhuma") return "sem NFC-e";
 	return status;
 }
 
@@ -516,6 +554,7 @@ export function criarColunasVendas(
 									<Button
 										size="sm"
 										variant="outline"
+										className="min-w-24"
 										disabled={ocupado}
 										aria-label="Ações da venda"
 									>
@@ -648,7 +687,11 @@ export function criarColunasVendas(
 					id: "origem",
 					header,
 					meta,
-					cell: ({ row }) => rotuloOrigem(row.original.origem),
+					cell: ({ row }) => (
+						<Badge variant="outline" className="font-normal">
+							{rotuloOrigem(row.original.origem)}
+						</Badge>
+					),
 				});
 				break;
 			case "pagamento":
@@ -675,7 +718,10 @@ export function criarColunasVendas(
 					header,
 					meta,
 					cell: ({ row }) => (
-						<Badge variant={badgeSync(row.original.sync_status)}>
+						<Badge
+							variant={badgeSync(row.original.sync_status)}
+							className={classeBadgeSync(row.original.sync_status)}
+						>
 							{row.original.sync_status}
 						</Badge>
 					),
@@ -687,7 +733,10 @@ export function criarColunasVendas(
 					header,
 					meta,
 					cell: ({ row }) => (
-						<Badge variant={badgeNfce(row.original.nfce_status)}>
+						<Badge
+							variant={badgeNfce(row.original.nfce_status)}
+							className={classeBadgeNfce(row.original.nfce_status)}
+						>
 							{rotuloNfce(row.original.nfce_status)}
 						</Badge>
 					),

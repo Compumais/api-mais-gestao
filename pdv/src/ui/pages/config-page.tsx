@@ -893,6 +893,7 @@ export function ConfigPage() {
 			<Topbar
 				title="Configurações do PDV"
 				subtitle="API, hardware, fiscal e preferências locais"
+				status={status}
 				right={
 					<Button
 						variant="secondary"
@@ -904,32 +905,34 @@ export function ConfigPage() {
 				}
 			/>
 
-			<div className="flex min-h-0 flex-1 bg-muted/30">
-				<nav className="flex w-56 shrink-0 flex-col gap-1 border-r border-sidebar-border bg-sidebar p-2 text-sidebar-foreground">
-					{abasVisiveis.map((item) => {
-						const Icon = item.icon;
-						const ativa = aba === item.id;
-						return (
-							<button
-								key={item.id}
-								type="button"
-								onClick={() => setAba(item.id)}
-								className={cn(
-									"flex items-center gap-2 rounded-md px-3 py-2.5 text-left text-sm font-medium transition",
-									ativa
-										? "bg-sidebar-primary text-sidebar-primary-foreground"
-										: "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-								)}
-							>
-								<Icon className="size-4 shrink-0" />
-								{item.label}
-							</button>
-						);
-					})}
-				</nav>
+			<div className="flex min-h-0 flex-1 bg-slate-100 dark:bg-slate-950/40">
+				<aside className="w-56 shrink-0 border-r border-sidebar-border bg-sidebar p-2 text-sidebar-foreground shadow-sm">
+					<nav className="pdv-scrollbar flex h-full flex-col gap-1 overflow-y-auto">
+						{abasVisiveis.map((item) => {
+							const Icon = item.icon;
+							const ativa = aba === item.id;
+							return (
+								<button
+									key={item.id}
+									type="button"
+									onClick={() => setAba(item.id)}
+									className={cn(
+										"pdv-touch flex w-full shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold transition sm:text-sm",
+										ativa
+											? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
+											: "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+									)}
+								>
+									<Icon className="size-4 shrink-0" />
+									{item.label}
+								</button>
+							);
+						})}
+					</nav>
+				</aside>
 
-				<div className="min-h-0 flex-1 overflow-auto p-4">
-					<div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
+				<div className="pdv-scrollbar min-h-0 min-w-0 flex-1 overflow-auto p-3 sm:p-5">
+					<div className="mx-auto flex w-full max-w-5xl flex-col gap-4 [&_[data-slot=card]]:border-t-4 [&_[data-slot=card]]:border-t-blue-600 [&_[data-slot=card]]:shadow-sm [&_[data-slot=card-header]]:border-b [&_[data-slot=card-header]]:border-border/70 [&_[data-slot=card-header]]:pb-3 [&_[data-slot=card-title]]:text-base [&_[data-slot=card-title]]:font-bold [&_[data-slot=card-title]]:text-slate-900 dark:[&_[data-slot=card-title]]:text-slate-100">
 						{aba === "geral" && (
 							<Card>
 								<CardHeader>

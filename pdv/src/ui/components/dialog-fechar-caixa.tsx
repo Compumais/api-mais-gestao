@@ -190,7 +190,7 @@ export function DialogFecharCaixa({
 
 	if (etapa === "itens") {
 		return (
-			<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+			<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-[2px]">
 				<div className="pdv-surface max-h-[95vh] w-[28rem] max-w-[95vw] space-y-4 overflow-y-auto p-5">
 					<div>
 						<h2 className="text-lg font-semibold">Caixa fechado</h2>
@@ -247,7 +247,7 @@ export function DialogFecharCaixa({
 	}
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+		<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-[2px]">
 			<div className="pdv-surface max-h-[95vh] w-[28rem] max-w-[95vw] space-y-4 overflow-y-auto p-5">
 				<div>
 					<h2 className="text-lg font-semibold">Fechar caixa</h2>

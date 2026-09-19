@@ -1,4 +1,5 @@
 import dayjs from "dayjs";
+import { AlertTriangle, FileWarning, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { pdvInvoke } from "@/lib/pdv-api";
@@ -26,6 +27,8 @@ import { useTeclasFuncao } from "@/ui/hooks/use-teclas-funcao";
 import {
 	badgeNfce,
 	badgeSync,
+	classeBadgeNfce,
+	classeBadgeSync,
 	contarCuponsNaoSincronizadosRetaguarda,
 	rotuloNfce,
 	rotuloNumeracaoNfce,
@@ -259,13 +262,14 @@ export function NotasNaoSincronizadasPage() {
 				<Topbar
 					title="Notas não sincronizadas"
 					subtitle="Vendas e NFC-e pendentes de envio à retaguarda"
+					status={status}
 					right={
 						<Button
 							variant="secondary"
 							size="sm"
 							onClick={() => navigate("/vendas")}
 						>
-							Voltar às vendas
+							Voltar ao histórico
 						</Button>
 					}
 				/>
@@ -316,13 +320,43 @@ export function NotasNaoSincronizadasPage() {
 			}
 		>
 			<div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+				<div className="flex shrink-0 flex-wrap items-center gap-3 rounded-lg border bg-card p-2 shadow-sm">
+					<div className="flex min-w-0 items-center gap-2 px-1">
+						<div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-300">
+							<FileWarning className="size-5" />
+						</div>
+						<div>
+							<p className="text-sm font-semibold">
+								{loading
+									? "Carregando pendências…"
+									: `${vendas.length} pendência${vendas.length === 1 ? "" : "s"} operacional${vendas.length === 1 ? "" : "is"}`}
+							</p>
+							<p className="text-xs text-muted-foreground">
+								{qtdCuponsNaoSincronizados} aguardando retaguarda
+							</p>
+						</div>
+					</div>
+					<Button
+						size="sm"
+						variant="outline"
+						className="ml-auto"
+						disabled={ocupado}
+						onClick={() => void load()}
+					>
+						<RefreshCw className={loading ? "animate-spin" : ""} />
+						Atualizar
+					</Button>
+				</div>
 				{secundario ? (
-					<p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-950 dark:text-amber-100">
-						No PDV secundário a sincronização com a retaguarda é feita no PDV
-						principal. Abra o principal para enviar as notas pendentes.
-					</p>
+					<div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-950 dark:text-amber-100">
+						<AlertTriangle className="mt-0.5 size-4 shrink-0" />
+						<p>
+							No PDV secundário a sincronização com a retaguarda é feita no
+							PDV principal. Abra o principal para enviar as notas pendentes.
+						</p>
+					</div>
 				) : (
-					<p className="text-sm text-muted-foreground">
+					<p className="rounded-md border bg-muted/35 px-3 py-2 text-xs text-muted-foreground">
 						“Transmitir todas pendentes” processa a fila local e reenvia as
 						NFC-e em contingência/pendentes à retaguarda e SEFAZ. Se houver
 						cupom com sync pendente, o botão fica bloqueado — use antes “Enviar
@@ -341,17 +375,17 @@ export function NotasNaoSincronizadasPage() {
 						{msg}
 					</p>
 				) : null}
-				<div className="min-h-0 flex-1 overflow-auto rounded-md border">
-					<Table>
-						<TableHeader>
+				<div className="pdv-surface min-h-0 flex-1 overflow-auto border shadow-sm">
+					<Table className="text-xs">
+						<TableHeader className="sticky top-0 z-10 bg-muted/95 uppercase tracking-wide text-muted-foreground backdrop-blur">
 							<TableRow>
-								<TableHead>Data</TableHead>
-								<TableHead>Origem</TableHead>
-								<TableHead className="text-right">Total</TableHead>
-								<TableHead>Sync</TableHead>
-								<TableHead>Status NFC-e</TableHead>
-								<TableHead>Numeração</TableHead>
-								<TableHead className="text-right">Ações</TableHead>
+								<TableHead className="h-9 font-semibold">Data</TableHead>
+								<TableHead className="h-9 font-semibold">Origem</TableHead>
+								<TableHead className="h-9 text-right font-semibold">Total</TableHead>
+								<TableHead className="h-9 font-semibold">Sync</TableHead>
+								<TableHead className="h-9 font-semibold">Status NFC-e</TableHead>
+								<TableHead className="h-9 font-semibold">Numeração</TableHead>
+								<TableHead className="h-9 text-right font-semibold">Ações</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
@@ -374,23 +408,29 @@ export function NotasNaoSincronizadasPage() {
 								vendas.map((venda) => {
 									const numeracao = rotuloNumeracaoNfce(venda);
 									return (
-									<TableRow key={venda.id}>
-										<TableCell className="whitespace-nowrap text-sm">
+									<TableRow key={venda.id} className="hover:bg-muted/40">
+										<TableCell className="whitespace-nowrap py-1.5 text-xs">
 											{dayjs(venda.criadoem).format("DD/MM/YY HH:mm")}
 										</TableCell>
-										<TableCell className="text-sm">
+										<TableCell className="py-1.5 text-xs">
 											{rotuloOrigem(venda.origem)}
 										</TableCell>
-										<TableCell className="text-right text-sm">
+										<TableCell className="py-1.5 text-right text-sm font-semibold tabular-nums">
 											{money(venda.valortotal)}
 										</TableCell>
-										<TableCell>
-											<Badge variant={badgeSync(venda.sync_status)}>
+										<TableCell className="py-1.5">
+											<Badge
+												variant={badgeSync(venda.sync_status)}
+												className={classeBadgeSync(venda.sync_status)}
+											>
 												{venda.sync_status}
 											</Badge>
 										</TableCell>
-										<TableCell>
-											<Badge variant={badgeNfce(venda.nfce_status)}>
+										<TableCell className="py-1.5">
+											<Badge
+												variant={badgeNfce(venda.nfce_status)}
+												className={classeBadgeNfce(venda.nfce_status)}
+											>
 												{rotuloNfce(venda.nfce_status)}
 											</Badge>
 											{venda.nfce_data_contingencia ? (
@@ -416,7 +456,7 @@ export function NotasNaoSincronizadasPage() {
 												</div>
 											) : null}
 										</TableCell>
-										<TableCell>
+										<TableCell className="py-1.5">
 											{numeracao ? (
 												<span className="font-mono text-sm tabular-nums">
 													{numeracao}
@@ -430,7 +470,7 @@ export function NotasNaoSincronizadasPage() {
 												</div>
 											) : null}
 										</TableCell>
-										<TableCell className="text-right">
+										<TableCell className="py-1.5 text-right">
 											{venda.nfce_status === "conflito_numeracao" &&
 											!secundario ? (
 												<Button

@@ -27,9 +27,9 @@ export function GrupoGourmetCard({
 			type="button"
 			disabled={disabled}
 			onClick={onClick}
-			className="group flex min-h-36 flex-col overflow-hidden rounded-xl bg-background text-left ring-1 ring-foreground/15 transition hover:-translate-y-0.5 hover:shadow-md hover:ring-2 hover:ring-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:pointer-events-none disabled:opacity-50"
+			className="group flex h-16 w-44 shrink-0 items-center gap-2.5 overflow-hidden rounded-xl bg-background p-2 text-left ring-1 ring-foreground/15 transition hover:bg-primary/5 hover:shadow-sm hover:ring-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:pointer-events-none disabled:opacity-50"
 		>
-			<div className="relative flex aspect-[16/9] w-full items-center justify-center overflow-hidden bg-muted">
+			<div className="relative flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted">
 				{src && !imagemFalhou ? (
 					<img
 						src={src}
@@ -39,15 +39,12 @@ export function GrupoGourmetCard({
 						onError={() => setImagemFalhou(true)}
 					/>
 				) : (
-					<div className="flex flex-col items-center gap-1 text-muted-foreground/60">
+					<div className="flex items-center justify-center text-muted-foreground/60">
 						{imagemFalhou ? (
-							<ImageOff className="size-8" aria-hidden />
+							<ImageOff className="size-5" aria-hidden />
 						) : (
-							<UtensilsCrossed className="size-8" aria-hidden />
+							<UtensilsCrossed className="size-5" aria-hidden />
 						)}
-						<span className="text-[10px] font-medium uppercase tracking-wide">
-							Sem imagem
-						</span>
 					</div>
 				)}
 				<div
@@ -57,8 +54,10 @@ export function GrupoGourmetCard({
 					)}
 				/>
 			</div>
-			<span className="flex min-h-12 w-full items-center px-3 py-2 text-sm font-semibold leading-tight">
-				<span className="line-clamp-2">{grupo.nome}</span>
+			<span className="min-w-0 flex-1">
+				<span className="line-clamp-2 text-xs font-semibold leading-tight">
+					{grupo.nome}
+				</span>
 			</span>
 		</button>
 	);

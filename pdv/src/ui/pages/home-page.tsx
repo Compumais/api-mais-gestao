@@ -1,4 +1,11 @@
-import { Circle, Clock3, UtensilsCrossed } from "lucide-react";
+import {
+	Circle,
+	Clock3,
+	LayoutGrid,
+	Plus,
+	Search,
+	UtensilsCrossed,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import type { LeituraComandaNormalizada } from "@/lib/comanda-scanner";
@@ -22,7 +29,6 @@ import { FunctionBar } from "@/ui/components/function-bar";
 import { SideNav } from "@/ui/components/side-nav";
 import { StatusBar } from "@/ui/components/status-bar";
 import { Topbar } from "@/ui/components/topbar";
-import { Badge } from "@/ui/components/ui/badge";
 import { Button } from "@/ui/components/ui/button";
 import { Input } from "@/ui/components/ui/input";
 import { useEscapeFechaModal } from "@/ui/hooks/use-escape-fecha-modal";
@@ -39,6 +45,8 @@ type DialogoAbertura =
 			nomecliente: string | null;
 			valortotal: number;
 	  };
+
+type FiltroMesa = "todos" | StatusAtividadeMesa;
 
 function iconeStatus(status: StatusAtividadeMesa) {
 	if (status === "consumindo") return UtensilsCrossed;
@@ -81,6 +89,7 @@ export function HomePage() {
 	const [msg, setMsg] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [fechando, setFechando] = useState(false);
+	const [filtro, setFiltro] = useState<FiltroMesa>("todos");
 	const [apenasAbertas, setApenasAbertas] = useState(false);
 	const [novaNumero, setNovaNumero] = useState("");
 	const [dialogo, setDialogo] = useState<DialogoAbertura>(null);
@@ -115,6 +124,17 @@ export function HomePage() {
 		setModalAbrirMesaHabilitado(config.modal_abrir_mesa_habilitado !== "0");
 	}
 
+	async function alternarFiltroAbertas(marcado: boolean) {
+		setApenasAbertas(marcado);
+		try {
+			await pdvInvoke("saveConfig", {
+				filtro_apenas_abertas: marcado ? "1" : "0",
+			});
+		} catch {
+			// Preferência visual: se falhar o save, mantém o estado local.
+		}
+	}
+
 	async function carregarTotalHoje() {
 		const vendas =
 			await pdvInvoke<Array<{ valortotal: number; criadoem: string }>>(
@@ -140,8 +160,19 @@ export function HomePage() {
 	}, []);
 
 	const mesasVisiveis = useMemo(
-		() => (apenasAbertas ? mesas.filter((m) => m.status === "ocupada") : mesas),
-		[apenasAbertas, mesas],
+		() => {
+			const termo = novaNumero.trim().toLocaleLowerCase("pt-BR");
+			return mesas.filter((mesa) => {
+				if (apenasAbertas && mesa.status !== "ocupada") return false;
+				if (filtro !== "todos" && mesa.statusAtividade !== filtro) return false;
+				if (!termo) return true;
+				return (
+					String(mesa.numero).includes(termo) ||
+					mesa.nomecliente?.toLocaleLowerCase("pt-BR").includes(termo)
+				);
+			});
+		},
+		[apenasAbertas, filtro, mesas, novaNumero],
 	);
 
 	const livres = mesas.filter((m) => m.status === "livre").length;
@@ -150,17 +181,9 @@ export function HomePage() {
 		(m) => m.statusAtividade === "consumindo",
 	).length;
 	const ociosas = mesas.filter((m) => m.statusAtividade === "ociosa").length;
-
-	async function alternarFiltroAbertas(marcado: boolean) {
-		setApenasAbertas(marcado);
-		try {
-			await pdvInvoke("saveConfig", {
-				filtro_apenas_abertas: marcado ? "1" : "0",
-			});
-		} catch {
-			// Preferência visual: se falhar o save, mantém o estado local.
-		}
-	}
+	const numeroInformado = Number(novaNumero);
+	const podeAbrirNumero =
+		Number.isInteger(numeroInformado) && numeroInformado >= 1;
 
 	function irParaConta(numero: number, nome?: string | null) {
 		setDialogo(null);
@@ -299,89 +322,92 @@ export function HomePage() {
 			<Topbar
 				title={rotulo.plural}
 				subtitle={status?.sessao.nomeempresa ?? ""}
-				right={
-					<Badge variant={status?.online ? "success" : "warning"}>
-						{status?.online ? "Online" : "Offline"}
-					</Badge>
+				status={status}
+				onExit={() => void sair()}
+				center={
+					<div className="mx-auto flex max-w-xl items-center rounded-xl border border-white/15 bg-white/10 px-3 text-white shadow-inner">
+						<Search className="size-4 shrink-0 opacity-70" />
+						<input
+							type="text"
+							inputMode="search"
+							className="h-10 min-w-0 flex-1 bg-transparent px-3 text-sm outline-none placeholder:text-white/55"
+							value={novaNumero}
+							onChange={(e) => setNovaNumero(e.target.value)}
+							onKeyDown={(e) => {
+								if (e.key === "Enter" && podeAbrirNumero) void abrirNova();
+							}}
+							placeholder={`Buscar ou abrir ${rotulo.singular.toLowerCase()}...`}
+						/>
+						{podeAbrirNumero ? (
+							<button
+								type="button"
+								className="rounded-md bg-white/12 px-2 py-1 text-[10px] font-semibold hover:bg-white/20"
+								onClick={() => void abrirNova()}
+								disabled={loading || bloqueado}
+							>
+								Enter para abrir
+							</button>
+						) : null}
+					</div>
 				}
 			/>
 
-			<div className="flex min-h-0 flex-1 gap-3 overflow-hidden bg-muted/30 p-3">
-				<div className="pdv-surface flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden p-3">
-					<div className="flex flex-wrap items-end gap-3">
-						<label className="flex items-center gap-2 text-sm">
+			<div className="flex min-h-0 flex-1 overflow-hidden bg-muted/35">
+				<SideNav
+					status={status}
+					onBlocked={setMsg}
+					onMesasActiveClick={() => void carregarMesas()}
+				/>
+				<div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2.5 overflow-hidden p-2.5">
+					<div className="pdv-surface flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden p-3">
+					<div className="flex flex-wrap items-center gap-2">
+						{(
+							[
+								["todos", "Todas", LayoutGrid, mesas.length],
+								["livre", "Livres", Circle, livres],
+								["consumindo", "Consumindo", UtensilsCrossed, consumindo],
+								["ociosa", "Ociosas", Clock3, ociosas],
+							] as const
+						).map(([valor, label, Icon, quantidade]) => (
+							<Button
+								key={valor}
+								size="sm"
+								variant={filtro === valor ? "default" : "outline"}
+								className="gap-2"
+								onClick={() => setFiltro(valor)}
+							>
+								<Icon className="size-4" />
+								{label}
+								<span className="rounded-full bg-black/10 px-1.5 text-[10px]">
+									{quantidade}
+								</span>
+							</Button>
+						))}
+						<label className="ml-1 flex min-h-8 items-center gap-2 rounded-md px-2 text-xs font-medium text-muted-foreground hover:bg-muted">
 							<input
 								type="checkbox"
 								className="size-4 accent-primary"
 								checked={apenasAbertas}
 								onChange={(e) => void alternarFiltroAbertas(e.target.checked)}
 							/>
-							Exibir apenas {rotulo.plural.toLowerCase()} abertas
+							Apenas abertas
 						</label>
-
-						<div className="ml-auto flex items-end gap-2">
-							<div className="space-y-1">
-								<label
-									htmlFor="nova-comanda"
-									className="text-xs text-muted-foreground"
-								>
-									Abrir {rotulo.singular.toLowerCase()} nº
-								</label>
-								<Input
-									id="nova-comanda"
-									type="number"
-									min={1}
-									className="h-9 w-28"
-									value={novaNumero}
-									onChange={(e) => setNovaNumero(e.target.value)}
-									onKeyDown={(e) => {
-										if (e.key === "Enter") void abrirNova();
-									}}
-									placeholder="Ex: 12"
-								/>
-							</div>
-							<Button
-								size="sm"
-								disabled={loading || bloqueado || !novaNumero}
-								onClick={() => void abrirNova()}
-							>
-								Abrir
-							</Button>
-						</div>
+						<Button
+							size="sm"
+							className="ml-auto gap-2"
+							disabled={loading || bloqueado || !podeAbrirNumero}
+							onClick={() => void abrirNova()}
+						>
+							<Plus className="size-4" />
+							Abrir {rotulo.singular.toLowerCase()}
+						</Button>
 					</div>
 
 					<AvisoSecundario status={status} />
 					<AlertasOperacionaisPdv status={status} />
 					{msg && <p className="text-sm text-muted-foreground">{msg}</p>}
 
-					<div className="mb-1 flex flex-wrap gap-3 text-xs">
-						<span
-							className={cn(
-								"inline-flex items-center gap-1 rounded-md border px-2 py-0.5",
-								classeMesa("livre"),
-							)}
-						>
-							<Circle className="size-3.5" /> Livre
-						</span>
-						<span
-							className={cn(
-								"inline-flex items-center gap-1 rounded-md border px-2 py-0.5",
-								classeMesa("consumindo"),
-							)}
-						>
-							<UtensilsCrossed className="size-3.5" /> Consumindo
-						</span>
-						<span
-							className={cn(
-								"inline-flex items-center gap-1 rounded-md border px-2 py-0.5",
-								classeMesa("ociosa"),
-							)}
-						>
-							<Clock3 className="size-3.5" /> Ociosa
-						</span>
-					</div>
-
-					<div className="grid flex-1 auto-rows-min grid-cols-4 gap-3 overflow-auto sm:grid-cols-5 xl:grid-cols-6">
+					<div className="grid flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-3 overflow-auto p-0.5">
 						{mesasVisiveis.map((mesa) => {
 							const Icon = iconeStatus(mesa.statusAtividade);
 							return (
@@ -390,12 +416,14 @@ export function HomePage() {
 									type="button"
 									onClick={() => solicitarAbertura(mesa)}
 									className={cn(
-										"flex h-28 flex-col items-center justify-center gap-1 rounded-lg text-center ring-1 transition hover:brightness-110",
+										"group relative flex h-28 flex-col items-center justify-center gap-1 overflow-hidden rounded-xl text-center ring-1 transition hover:-translate-y-0.5 hover:shadow-md hover:brightness-105",
 										classeMesa(mesa.statusAtividade),
 									)}
 								>
-									<Icon className="size-5" />
-									<span className="text-lg font-bold">{mesa.numero}</span>
+									<Icon className="size-5 opacity-80" />
+									<span className="text-xl font-bold tabular-nums">
+										{String(mesa.numero).padStart(2, "0")}
+									</span>
 									<span className="text-[11px]">
 										{mesa.status === "ocupada"
 											? mesa.nomecliente || rotuloStatus(mesa.statusAtividade)
@@ -412,22 +440,17 @@ export function HomePage() {
 						{mesasVisiveis.length === 0 && (
 							<p className="col-span-full text-sm text-muted-foreground">
 								{apenasAbertas
-									? `Nenhuma ${rotulo.singular.toLowerCase()} aberta. Use o campo acima para abrir uma nova.`
-									: `Nenhuma ${rotulo.singular.toLowerCase()} configurada. Ajuste a quantidade em Configurações.`}
+									? `Nenhuma ${rotulo.singular.toLowerCase()} aberta neste filtro.`
+									: `Nenhuma ${rotulo.singular.toLowerCase()} encontrada neste filtro.`}
 							</p>
 						)}
 					</div>
+					</div>
 				</div>
-
-				<SideNav
-					status={status}
-					onBlocked={setMsg}
-					onMesasActiveClick={() => void carregarMesas()}
-				/>
 			</div>
 
 			{dialogo?.tipo === "nome" && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-[2px]">
 					<div className="pdv-surface w-96 space-y-4 p-5">
 						<h2 className="text-lg font-semibold">
 							Abrir {rotulo.singular.toLowerCase()} {dialogo.numero}
@@ -468,7 +491,7 @@ export function HomePage() {
 			)}
 
 			{dialogo?.tipo === "continuar" && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-[2px]">
 					<div className="pdv-surface w-96 space-y-4 p-5">
 						<h2 className="text-lg font-semibold">
 							{rotulo.singular} {dialogo.numero} já está aberta

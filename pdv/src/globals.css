@@ -19,6 +19,10 @@
 	--color-accent-foreground: var(--accent-foreground);
 	--color-destructive: var(--destructive);
 	--color-destructive-foreground: var(--destructive-foreground);
+	--color-success: var(--success);
+	--color-success-foreground: var(--success-foreground);
+	--color-warning: var(--warning);
+	--color-warning-foreground: var(--warning-foreground);
 	--color-border: var(--border);
 	--color-input: var(--input);
 	--color-ring: var(--ring);
@@ -71,7 +75,7 @@
 	--card-foreground: oklch(0.153 0.006 107.1);
 	--popover: oklch(1 0 0);
 	--popover-foreground: oklch(0.153 0.006 107.1);
-	--primary: oklch(0.488 0.243 264.376);
+	--primary: oklch(0.56 0.22 257);
 	--primary-foreground: oklch(0.97 0.014 254.604);
 	/* Secondary um pouco mais escuro para botões legíveis no PDV */
 	--secondary: oklch(0.92 0.008 286);
@@ -83,6 +87,10 @@
 	--accent-foreground: oklch(0.228 0.013 107.4);
 	--destructive: oklch(0.577 0.245 27.325);
 	--destructive-foreground: oklch(1 0 0);
+	--success: oklch(0.58 0.17 151);
+	--success-foreground: oklch(0.99 0 0);
+	--warning: oklch(0.76 0.16 72);
+	--warning-foreground: oklch(0.24 0.05 58);
 	/* Bordas e inputs mais visíveis contra fundo branco */
 	--border: oklch(0.78 0.012 106.5);
 	--input: oklch(0.78 0.012 106.5);
@@ -92,13 +100,13 @@
 	--chart-3: oklch(0.546 0.245 262.881);
 	--chart-4: oklch(0.488 0.243 264.376);
 	--chart-5: oklch(0.424 0.199 265.638);
-	--sidebar: oklch(0.97 0.004 106.5);
-	--sidebar-foreground: oklch(0.153 0.006 107.1);
-	--sidebar-primary: oklch(0.546 0.245 262.881);
+	--sidebar: oklch(0.25 0.085 251);
+	--sidebar-foreground: oklch(0.94 0.018 246);
+	--sidebar-primary: oklch(0.58 0.22 257);
 	--sidebar-primary-foreground: oklch(0.97 0.014 254.604);
-	--sidebar-accent: oklch(0.92 0.008 106.5);
-	--sidebar-accent-foreground: oklch(0.228 0.013 107.4);
-	--sidebar-border: oklch(0.78 0.012 106.5);
+	--sidebar-accent: oklch(0.33 0.08 251);
+	--sidebar-accent-foreground: oklch(0.99 0 0);
+	--sidebar-border: oklch(1 0 0 / 12%);
 	--sidebar-ring: oklch(0.55 0.04 264);
 	--font-sans: Inter, "Segoe UI", ui-sans-serif, system-ui, sans-serif;
 	--font-serif: "Source Serif 4", ui-serif, Georgia, serif;
@@ -136,6 +144,10 @@
 	--accent-foreground: oklch(0.988 0.003 106.5);
 	--destructive: oklch(0.704 0.191 22.216);
 	--destructive-foreground: oklch(1 0 0);
+	--success: oklch(0.68 0.16 151);
+	--success-foreground: oklch(0.18 0.04 151);
+	--warning: oklch(0.78 0.15 72);
+	--warning-foreground: oklch(0.2 0.04 58);
 	--border: oklch(1 0 0 / 10%);
 	--input: oklch(1 0 0 / 15%);
 	--ring: oklch(0.58 0.031 107.3);
@@ -144,7 +156,7 @@
 	--chart-3: oklch(0.546 0.245 262.881);
 	--chart-4: oklch(0.488 0.243 264.376);
 	--chart-5: oklch(0.424 0.199 265.638);
-	--sidebar: oklch(0.228 0.013 107.4);
+	--sidebar: oklch(0.2 0.07 251);
 	--sidebar-foreground: oklch(0.988 0.003 106.5);
 	--sidebar-primary: oklch(0.623 0.214 259.815);
 	--sidebar-primary-foreground: oklch(0.97 0.014 254.604);
@@ -179,6 +191,7 @@
 		letter-spacing: var(--tracking-normal);
 		margin: 0;
 		min-height: 100vh;
+		overflow: hidden;
 	}
 	#root {
 		min-height: 100vh;
@@ -188,6 +201,16 @@
 /* Painel de conteúdo alinhado ao SidebarInset da retaguarda */
 @layer components {
 	.pdv-surface {
-		@apply rounded-xl bg-card text-card-foreground shadow-sm ring-1 ring-foreground/20;
+		@apply rounded-xl bg-card text-card-foreground shadow-sm ring-1 ring-border;
+	}
+	.pdv-panel-header {
+		@apply flex min-h-11 items-center justify-between gap-3 border-b border-border px-3 py-2;
+	}
+	.pdv-scrollbar {
+		scrollbar-width: thin;
+		scrollbar-color: color-mix(in oklch, var(--muted-foreground) 45%, transparent) transparent;
+	}
+	.pdv-touch {
+		@apply min-h-11 min-w-11 touch-manipulation;
 	}
 }

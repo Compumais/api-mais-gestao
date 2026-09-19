@@ -178,25 +178,38 @@ export function BootPage() {
 	}
 
 	return (
-		<div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-primary p-6 text-primary-foreground">
+		<div className="relative flex min-h-screen flex-col items-center justify-center gap-7 overflow-hidden bg-sidebar p-6 text-sidebar-foreground">
+			<div className="pointer-events-none absolute -right-24 -top-24 size-96 rounded-full bg-blue-500/15 blur-3xl" />
+			<div className="pointer-events-none absolute -bottom-32 -left-24 size-96 rounded-full bg-cyan-400/10 blur-3xl" />
 			<div className="text-center">
 				<LogoMaisGestao variante="branco" className="mx-auto h-16" />
-				<div className="mt-2 text-sm opacity-80">PDV Híbrido · iniciando</div>
+				<div className="mt-3 text-xs font-semibold uppercase tracking-[0.2em] opacity-60">
+					PDV Híbrido · iniciando
+				</div>
 			</div>
-			<div className="w-full max-w-md space-y-2 rounded-lg bg-black/15 p-4 font-mono text-sm">
+			<div className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-2xl backdrop-blur-sm">
+				<div className="flex items-center gap-2 border-b border-white/10 px-5 py-3">
+					<span className="size-2 animate-pulse rounded-full bg-cyan-300" />
+					<span className="text-xs font-semibold uppercase tracking-[0.16em] opacity-65">
+						Preparando terminal
+					</span>
+				</div>
+				<div className="max-h-72 space-y-2 overflow-auto p-5 font-mono text-sm">
 				{mensagens.map((m) => (
 					<div key={m.id} className="flex items-start gap-2">
-						<span className="opacity-70">›</span>
-						<span>{m.texto}</span>
+						<span className="text-cyan-300">›</span>
+						<span className="text-sidebar-foreground/85">{m.texto}</span>
 					</div>
 				))}
 				{erro && <div className="text-red-200">Erro: {erro}</div>}
+				</div>
 			</div>
 			{erro && (
-				<div className="flex gap-2">
+				<div className="relative flex flex-wrap justify-center gap-2">
 					{status?.podeConfigurar ? (
 						<Button
 							variant="secondary"
+							className="pdv-touch"
 							onClick={() => navigate("/config", { replace: true })}
 						>
 							Ir para configurações
@@ -204,6 +217,7 @@ export function BootPage() {
 					) : null}
 					<Button
 						variant="secondary"
+						className="pdv-touch"
 						onClick={() => navigate("/login", { replace: true })}
 					>
 						Ir para o login

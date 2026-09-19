@@ -1,4 +1,12 @@
-import { Bike, Package, Phone, Plus } from "lucide-react";
+import {
+	Bike,
+	Clock3,
+	MapPin,
+	Package,
+	Phone,
+	Plus,
+	RefreshCw,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { pdvInvoke } from "@/lib/pdv-api";
@@ -8,6 +16,7 @@ import { AvisoSecundario } from "@/ui/components/aviso-secundario";
 import { FunctionBar } from "@/ui/components/function-bar";
 import { PdvShell } from "@/ui/components/pdv-shell";
 import { Topbar } from "@/ui/components/topbar";
+import { Badge } from "@/ui/components/ui/badge";
 import { Button } from "@/ui/components/ui/button";
 import { Input } from "@/ui/components/ui/input";
 import { Label } from "@/ui/components/ui/label";
@@ -50,6 +59,13 @@ function rotuloStatus(status: string | null) {
 		default:
 			return "Recebido";
 	}
+}
+
+function varianteStatus(status: string | null) {
+	if (status === "entregue") return "success" as const;
+	if (status === "saiu") return "default" as const;
+	if (status === "producao") return "warning" as const;
+	return "secondary" as const;
 }
 
 function tempoAberto(iso: string) {
@@ -178,7 +194,11 @@ export function DeliveryPage() {
 			status={status}
 			onBlockedNavigate={setMsg}
 			topbar={
-				<Topbar title={titulo} subtitle="Pedidos de entrega e retirada" />
+				<Topbar
+					title={titulo}
+					subtitle="Pedidos de entrega e retirada"
+					status={status}
+				/>
 			}
 			footer={
 				<>
@@ -210,7 +230,7 @@ export function DeliveryPage() {
 					/>
 
 					{abrir ? (
-						<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+						<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-[2px]">
 							<div className="pdv-surface max-h-[90vh] w-full max-w-lg overflow-auto p-4">
 								<h2 className="mb-3 text-lg font-semibold">Novo pedido</h2>
 								<div className="mb-3 flex gap-2">
@@ -343,40 +363,59 @@ export function DeliveryPage() {
 					</p>
 				) : null}
 
-				<div className="flex shrink-0 flex-wrap items-center gap-2">
-					<Button
-						variant={filtro === "" ? "default" : "outline"}
-						onClick={() => setFiltro("")}
-					>
-						Todos
-					</Button>
-					{["recebido", "producao", "saiu"].map((s) => (
+				<div className="flex shrink-0 flex-wrap items-center gap-2 rounded-lg border bg-card p-2 shadow-sm">
+					<div className="flex flex-wrap items-center gap-1.5">
 						<Button
-							key={s}
-							variant={filtro === s ? "default" : "outline"}
-							onClick={() => setFiltro(s)}
+							size="sm"
+							variant={filtro === "" ? "default" : "ghost"}
+							onClick={() => setFiltro("")}
 						>
-							{rotuloStatus(s)}
+							Todos
+							<Badge
+								variant={filtro === "" ? "secondary" : "outline"}
+								className="ml-1"
+							>
+								{pedidos.length}
+							</Badge>
 						</Button>
-					))}
-					<div className="ml-auto">
-						<Button onClick={() => setAbrir(true)}>
+						{["recebido", "producao", "saiu"].map((s) => (
+							<Button
+								key={s}
+								size="sm"
+								variant={filtro === s ? "default" : "ghost"}
+								onClick={() => setFiltro(s)}
+							>
+								{rotuloStatus(s)}
+							</Button>
+						))}
+					</div>
+					<div className="ml-auto flex items-center gap-2">
+						<Button
+							size="sm"
+							variant="outline"
+							disabled={loading}
+							onClick={() => void carregar()}
+						>
+							<RefreshCw className={loading ? "animate-spin" : ""} />
+							Atualizar
+						</Button>
+						<Button size="sm" onClick={() => setAbrir(true)}>
 							<Plus className="mr-1 size-4" />
 							Novo pedido
 						</Button>
 					</div>
 				</div>
 
-				<div className="pdv-surface min-h-0 flex-1 overflow-auto">
+				<div className="pdv-surface min-h-0 flex-1 overflow-auto border shadow-sm">
 					<table className="w-full text-sm">
-						<thead className="sticky top-0 bg-muted/80 text-left">
+						<thead className="sticky top-0 z-10 bg-muted/95 text-left text-xs uppercase tracking-wide text-muted-foreground backdrop-blur">
 							<tr>
-								<th className="px-3 py-2">Senha</th>
-								<th className="px-3 py-2">Cliente</th>
-								<th className="px-3 py-2">Tipo</th>
-								<th className="px-3 py-2">Status</th>
-								<th className="px-3 py-2">Total</th>
-								<th className="px-3 py-2">Tempo</th>
+								<th className="px-3 py-2.5 font-semibold">Senha</th>
+								<th className="px-3 py-2.5 font-semibold">Cliente</th>
+								<th className="px-3 py-2.5 font-semibold">Tipo</th>
+								<th className="px-3 py-2.5 font-semibold">Status</th>
+								<th className="px-3 py-2.5 text-right font-semibold">Total</th>
+								<th className="px-3 py-2.5 font-semibold">Tempo</th>
 								<th className="px-3 py-2" />
 							</tr>
 						</thead>
@@ -384,12 +423,12 @@ export function DeliveryPage() {
 							{pedidos.map((p) => (
 								<tr
 									key={p.id}
-									className="border-t border-border hover:bg-muted/40"
+									className="border-t border-border/70 transition-colors hover:bg-muted/40"
 								>
-									<td className="px-3 py-2 font-mono font-semibold">
+									<td className="px-3 py-2.5 font-mono text-base font-bold text-primary">
 										#{p.senha_chamada ?? "—"}
 									</td>
-									<td className="px-3 py-2">
+									<td className="px-3 py-2.5">
 										<div className="font-medium">
 											{p.nomecliente || "Sem nome"}
 										</div>
@@ -400,32 +439,38 @@ export function DeliveryPage() {
 											</div>
 										) : null}
 										{p.modalidade === "delivery" && p.endereco ? (
-											<div className="text-xs text-muted-foreground">
+											<div className="flex max-w-80 items-center gap-1 truncate text-xs text-muted-foreground">
+												<MapPin className="size-3 shrink-0" />
 												{p.endereco}
 												{p.bairro ? ` — ${p.bairro}` : ""}
 											</div>
 										) : null}
 									</td>
-									<td className="px-3 py-2">
-										<span className="inline-flex items-center gap-1">
+									<td className="px-3 py-2.5">
+										<span className="inline-flex items-center gap-1.5 font-medium">
 											{p.modalidade === "delivery" ? (
-												<Bike className="size-3.5" />
+												<Bike className="size-4 text-primary" />
 											) : (
-												<Package className="size-3.5" />
+												<Package className="size-4 text-primary" />
 											)}
 											{p.modalidade === "delivery" ? "Delivery" : "Retirada"}
 										</span>
 									</td>
-									<td className="px-3 py-2">
-										{rotuloStatus(p.status_entrega)}
+									<td className="px-3 py-2.5">
+										<Badge variant={varianteStatus(p.status_entrega)}>
+											{rotuloStatus(p.status_entrega)}
+										</Badge>
 									</td>
-									<td className="px-3 py-2 font-semibold">
+									<td className="px-3 py-2.5 text-right font-bold tabular-nums">
 										{money(p.valortotal)}
 									</td>
-									<td className="px-3 py-2 text-muted-foreground">
-										{tempoAberto(p.abertoem)}
+									<td className="px-3 py-2.5 text-muted-foreground">
+										<span className="inline-flex items-center gap-1 whitespace-nowrap">
+											<Clock3 className="size-3.5" />
+											{tempoAberto(p.abertoem)}
+										</span>
 									</td>
-									<td className="px-3 py-2 text-right">
+									<td className="px-3 py-2.5 text-right">
 										<div className="flex justify-end gap-1">
 											<Button
 												size="sm"
@@ -436,6 +481,7 @@ export function DeliveryPage() {
 											</Button>
 											<Button
 												size="sm"
+												className="min-w-20"
 												onClick={() => navigate(`/delivery/${p.id}`)}
 											>
 												Abrir

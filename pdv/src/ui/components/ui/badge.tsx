@@ -22,8 +22,9 @@ function Badge({
 				variant === "secondary" && "bg-secondary text-secondary-foreground",
 				variant === "destructive" && "bg-destructive/10 text-destructive",
 				variant === "outline" && "border border-border text-foreground",
-				variant === "success" && "bg-primary/10 text-primary",
-				variant === "warning" && "bg-muted text-muted-foreground",
+				variant === "success" && "bg-success/12 text-success",
+				variant === "warning" &&
+					"bg-warning/18 text-warning-foreground ring-1 ring-warning/25",
 				className,
 			)}
 			{...props}

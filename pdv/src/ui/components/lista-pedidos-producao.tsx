@@ -1,3 +1,4 @@
+import { ChefHat, Clock3, Printer, RefreshCw, UserRound } from "lucide-react";
 import { useEffect, useState } from "react";
 import { pdvInvoke } from "@/lib/pdv-api";
 import { formatarQuantidade } from "@/lib/produto-kg";
@@ -70,65 +71,107 @@ export function ListaPedidosProducao({
 	}
 
 	if (loading && pedidos.length === 0) {
-		return <p className="text-sm text-muted-foreground">Carregando pedidos…</p>;
+		return (
+			<div className="flex h-32 items-center justify-center gap-2 text-sm text-muted-foreground">
+				<RefreshCw className="size-4 animate-spin" />
+				Carregando pedidos…
+			</div>
+		);
 	}
 
 	if (pedidos.length === 0) {
 		return (
-			<p className="text-sm text-muted-foreground">
-				Nenhum pedido de produção neste dia.
-			</p>
+			<div className="flex h-40 flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
+				<ChefHat className="size-8 opacity-50" />
+				<p>Nenhum pedido de produção neste dia.</p>
+			</div>
 		);
 	}
 
 	return (
-		<div className="space-y-3">
-			{pedidos.map((pedido) => (
-				<div
-					key={pedido.clientOrderId}
-					className="space-y-2 rounded-md border p-3"
+		<div>
+			<div className="sticky top-0 z-10 flex items-center justify-between border-b bg-muted/95 px-3 py-2 backdrop-blur">
+				<div>
+					<p className="text-sm font-semibold">Produção de hoje</p>
+					<p className="text-xs text-muted-foreground">
+						{pedidos.length} pedido{pedidos.length === 1 ? "" : "s"} enviado
+						{pedidos.length === 1 ? "" : "s"} à cozinha
+					</p>
+				</div>
+				<Button
+					size="sm"
+					variant="outline"
+					disabled={loading}
+					onClick={() => void carregar()}
 				>
-					<div className="flex flex-wrap items-start justify-between gap-2">
-						<div>
-							<p className="font-semibold">{pedido.origem}</p>
-							<p className="text-xs text-muted-foreground">
+					<RefreshCw className={loading ? "animate-spin" : ""} />
+					Atualizar
+				</Button>
+			</div>
+			<div className="divide-y divide-border/70">
+				{pedidos.map((pedido) => (
+					<article
+						key={pedido.clientOrderId}
+						className="grid gap-3 px-3 py-3 transition-colors hover:bg-muted/35 md:grid-cols-[minmax(180px,0.8fr)_minmax(280px,2fr)_auto]"
+					>
+						<div className="min-w-0">
+							<div className="flex items-center gap-2">
+								<span className="font-mono text-base font-bold text-primary">
+									{pedido.numeroMesa > 0
+										? `Mesa ${pedido.numeroMesa}`
+										: pedido.origem}
+								</span>
+								<Badge
+									variant={
+										pedido.status === "pendente" ? "warning" : "success"
+									}
+								>
+									{pedido.status === "pendente" ? "Pendente" : "Entregue"}
+								</Badge>
+							</div>
+							<p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+								<Clock3 className="size-3" />
 								{new Date(pedido.criadoem).toLocaleString("pt-BR")}
-								{pedido.nomecliente ? ` · ${pedido.nomecliente}` : ""}
 							</p>
+							{pedido.nomecliente ? (
+								<p className="mt-1 flex items-center gap-1 truncate text-xs text-muted-foreground">
+									<UserRound className="size-3" />
+									{pedido.nomecliente}
+								</p>
+							) : null}
 						</div>
-						<div className="flex items-center gap-2">
-							<Badge
-								variant={pedido.status === "pendente" ? "warning" : "success"}
-							>
-								{pedido.status === "pendente" ? "Pendente" : "Entregue"}
-							</Badge>
+						<ul className="grid content-start gap-x-4 gap-y-1 text-sm sm:grid-cols-2">
+							{pedido.itens.map((item) => (
+								<li key={item.id} className="min-w-0">
+									<span className="font-semibold text-primary">
+										{formatarQuantidade(item.quantidade)}×
+									</span>{" "}
+									<span className="font-medium">{item.descricao}</span>
+									{item.observacao ? (
+										<div className="pl-5 text-xs text-muted-foreground">
+											{item.observacao}
+										</div>
+									) : null}
+								</li>
+							))}
+						</ul>
+						<div className="flex items-center justify-end">
 							<Button
 								size="sm"
 								variant="outline"
+								className="min-w-28"
 								disabled={reimprimindo === pedido.clientOrderId}
 								onClick={() => void reimprimir(pedido.clientOrderId)}
 							>
+								<Printer className="size-4" />
 								{reimprimindo === pedido.clientOrderId
 									? "Imprimindo…"
 									: "Reimprimir"}
 							</Button>
 						</div>
-					</div>
-					<ul className="space-y-1 text-sm">
-						{pedido.itens.map((item) => (
-							<li key={item.id}>
-								{formatarQuantidade(item.quantidade)} × {item.descricao}
-								{item.observacao ? (
-									<span className="text-muted-foreground">
-										{" "}
-										· {item.observacao}
-									</span>
-								) : null}
-							</li>
-						))}
-					</ul>
-				</div>
-			))}
+					</article>
+				))}
+			</div>
 		</div>
 	);
 }

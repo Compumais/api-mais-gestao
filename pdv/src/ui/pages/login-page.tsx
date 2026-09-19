@@ -260,13 +260,24 @@ export function LoginPage() {
 	}
 
 	return (
-		<div className="grid min-h-screen grid-cols-1 lg:grid-cols-[1.1fr_1fr]">
-			<div className="hidden flex-col justify-between bg-primary p-10 text-primary-foreground lg:flex">
+		<div className="grid h-screen grid-cols-1 overflow-hidden bg-slate-100 dark:bg-slate-950 lg:grid-cols-[minmax(24rem,0.9fr)_1.1fr]">
+			<div className="hidden flex-col justify-between bg-sidebar p-10 text-sidebar-foreground lg:flex xl:p-14">
 				<div>
 					<LogoMaisGestao variante="branco" className="h-16" />
-					<div className="mt-2 text-sm opacity-80">PDV Híbrido · Desktop</div>
+					<div className="mt-3 text-xs font-semibold uppercase tracking-[0.2em] opacity-60">
+						PDV Híbrido · Desktop
+					</div>
 				</div>
-				<div className="space-y-2 rounded-lg bg-black/15 p-4 font-mono text-xs">
+				<div>
+					<h1 className="max-w-md text-4xl font-bold leading-tight">
+						Operação rápida, segura e conectada.
+					</h1>
+					<p className="mt-4 max-w-md text-sm leading-6 opacity-70">
+						Acesse seu terminal para iniciar o turno e sincronizar os dados da
+						empresa.
+					</p>
+				</div>
+				<div className="space-y-2 rounded-xl border border-white/10 bg-white/5 p-4 font-mono text-xs">
 					<div>› Aguardando autenticação...</div>
 					<div>
 						› Modo:{" "}
@@ -281,23 +292,26 @@ export function LoginPage() {
 				<div className="text-xs opacity-70">v0.1.0</div>
 			</div>
 
-			<div className="flex items-center justify-center p-6">
-				<Card className="w-full max-w-sm">
-					<CardHeader>
+			<div className="pdv-scrollbar flex min-h-0 items-center justify-center overflow-y-auto p-4 sm:p-8">
+				<Card className="w-full max-w-md border-t-4 border-t-blue-600 py-0 shadow-xl ring-slate-950/10">
+					<CardHeader className="border-b bg-slate-50 px-6 py-5 dark:bg-slate-900/50">
 						<LogoMaisGestao className="mb-2 h-12 lg:hidden" />
-						<CardTitle className="text-2xl text-primary">
+						<p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
+							Bem-vindo
+						</p>
+						<CardTitle className="text-2xl font-bold text-slate-950 dark:text-slate-50">
 							Acesso ao sistema
 						</CardTitle>
 						<p className="text-sm text-muted-foreground">
 							Entre com sua conta Mais Gestão.
 						</p>
 					</CardHeader>
-					<CardContent>
+					<CardContent className="p-6">
 						{empresas.length === 0 ? (
 							<form className="space-y-4" onSubmit={(e) => void onLogin(e)}>
 								<button
 									type="button"
-									className="text-xs text-muted-foreground underline underline-offset-2"
+									className="pdv-touch rounded-md px-2 text-xs font-medium text-primary underline underline-offset-4 hover:bg-blue-50 dark:hover:bg-blue-950/30"
 									onClick={() => setMostrarConexao((v) => !v)}
 								>
 									{mostrarConexao
@@ -305,7 +319,7 @@ export function LoginPage() {
 										: "Configurar conexão / PDV secundário"}
 								</button>
 								{mostrarConexao && (
-									<div className="space-y-3 rounded-md bg-muted/50 p-3 ring-1 ring-foreground/10">
+									<div className="space-y-3 rounded-xl border border-blue-200 bg-blue-50/70 p-4 dark:border-blue-900 dark:bg-blue-950/20">
 										<div className="space-y-2">
 											<Label htmlFor="pdv_modo">Este PDV</Label>
 											<Select
@@ -509,7 +523,7 @@ export function LoginPage() {
 									<p className="text-sm text-primary">{okConexao}</p>
 								)}
 								{erro && <p className="text-sm text-destructive">{erro}</p>}
-								<Button className="w-full" size="lg" disabled={loading}>
+								<Button className="pdv-touch w-full" size="lg" disabled={loading}>
 									{loading ? "Entrando..." : "Entrar"}
 								</Button>
 							</form>
@@ -522,7 +536,7 @@ export function LoginPage() {
 									<Button
 										key={empresa.id}
 										variant="outline"
-										className="h-14 w-full justify-start text-left"
+										className="pdv-touch h-14 w-full justify-start border-blue-200 bg-white text-left hover:bg-blue-50 dark:border-blue-900 dark:bg-card dark:hover:bg-blue-950/30"
 										disabled={loading}
 										onClick={() => void selecionar(empresa)}
 									>

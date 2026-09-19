@@ -21,6 +21,7 @@ export function PedidosPage() {
 				<Topbar
 					title="Pedidos de produção"
 					subtitle="Reimprimir cupons enviados à cozinha hoje"
+					status={status}
 				/>
 			}
 			footer={
@@ -35,7 +36,7 @@ export function PedidosPage() {
 						},
 						{
 							key: "historico",
-							label: "Vendas",
+							label: "Histórico de vendas",
 							hotkey: teclas.historico,
 							variant: "secondary",
 							onClick: () => navigate("/vendas"),
@@ -49,7 +50,7 @@ export function PedidosPage() {
 					{msg}
 				</p>
 			) : null}
-			<div className="min-h-0 flex-1 overflow-y-auto">
+			<div className="min-h-0 flex-1 overflow-y-auto rounded-lg border bg-card shadow-sm">
 				<ListaPedidosProducao onMensagem={setMsg} />
 			</div>
 		</PdvShell>

@@ -24,6 +24,15 @@ describe("resolverSrcImagemProduto", () => {
 		);
 	});
 
+	it("converte caminho absoluto do Windows em file URL", () => {
+		assert.equal(
+			resolverSrcImagemProduto({
+				caminhoimagem: "C:\\Mais Gestão\\produto-imagens\\produto 1.png",
+			}),
+			"file:///C:/Mais%20Gest%C3%A3o/produto-imagens/produto%201.png",
+		);
+	});
+
 	it("retorna nulo quando o produto não possui imagem", () => {
 		assert.equal(resolverSrcImagemProduto({}), null);
 	});

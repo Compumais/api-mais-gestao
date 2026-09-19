@@ -1,3 +1,11 @@
+import {
+	ArrowLeft,
+	MessageSquareText,
+	Minus,
+	Plus,
+	ShoppingCart,
+	Tag,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { marcarBootPendente } from "@/lib/boot-state";
@@ -19,7 +27,6 @@ import { produtoEhPizza } from "@/lib/pizza-meio-a-meio";
 import { devePedirPeso, formatarQuantidade } from "@/lib/produto-kg";
 import { teclaCorresponde } from "@/lib/teclas-funcao";
 import { money } from "@/lib/utils";
-import { AlertasOperacionaisPdv } from "@/ui/components/alertas-operacionais-pdv";
 import {
 	AvisoSecundario,
 	secundarioDesconectado,
@@ -39,8 +46,8 @@ import { DialogQuantidadePeso } from "@/ui/components/dialog-quantidade-peso";
 import { DialogRejeicaoNfce } from "@/ui/components/dialog-rejeicao-nfce";
 import { FunctionBar } from "@/ui/components/function-bar";
 import { GrupoGourmetCard } from "@/ui/components/grupo-gourmet-card";
+import { PdvShell } from "@/ui/components/pdv-shell";
 import { ProdutoCard } from "@/ui/components/produto-card";
-import { SideNav } from "@/ui/components/side-nav";
 import { Topbar } from "@/ui/components/topbar";
 import { Button } from "@/ui/components/ui/button";
 import { useEscapeFechaModal } from "@/ui/hooks/use-escape-fecha-modal";
@@ -416,46 +423,74 @@ export function BalcaoPage() {
 		teclas.sair,
 	]);
 
-	return (
-		<div className="flex h-screen flex-col">
-			<Topbar
-				title={gourmet ? "Balcão" : "PDV"}
-				subtitle={
-					gourmet ? "Venda rápida" : (status?.sessao.nomeempresa ?? "Venda")
-				}
-				right={
-					gourmet ? (
-						<Button variant="secondary" size="sm" onClick={() => navigate(-1)}>
-							Voltar às {rotulo.plural.toLowerCase()}
-						</Button>
-					) : (
-						<div className="flex gap-2">
-							{status?.podeConfigurar ? (
-								<Button
-									variant="secondary"
-									size="sm"
-									onClick={() => navigate("/config")}
-								>
-									Configurações
-								</Button>
-							) : null}
-							<Button
-								variant="secondary"
-								size="sm"
-								onClick={() => navigate("/vendas")}
-							>
-								Histórico
-							</Button>
-						</div>
-					)
-				}
-			/>
+	const rodape = !gourmet ? (
+		<FunctionBar
+			actions={[
+				{
+					key: "historico",
+					label: "Histórico",
+					hotkey: teclas.historico,
+					variant: "secondary",
+					disabled: pagando,
+					onClick: () => navigate("/vendas"),
+				},
+				{
+					key: "desconto",
+					label: "Desconto",
+					hotkey: teclas.desconto,
+					variant: "outline",
+					disabled: pagando || !itens.length || bloqueado,
+					onClick: () => {
+						setIniciarComDesconto(true);
+						setPagando(true);
+					},
+				},
+				...(status?.podeConfigurar
+					? [
+							{
+								key: "config",
+								label: "Config",
+								hotkey: "F4",
+								variant: "outline" as const,
+								disabled: pagando,
+								onClick: () => navigate("/config"),
+							},
+						]
+					: []),
+				{
+					key: "fechar-caixa",
+					label: "Fechar caixa",
+					hotkey: teclas.fechar_caixa,
+					variant: "destructive" as const,
+					disabled: pagando,
+					onClick: () => setFechando(true),
+				},
+				{
+					key: "sair",
+					label: "Sair",
+					hotkey: teclas.sair,
+					variant: "outline" as const,
+					disabled: pagando,
+					onClick: () => void sair(),
+				},
+			]}
+		/>
+	) : null;
 
-			<div className="flex min-h-0 flex-1 gap-3 overflow-hidden bg-muted/30 p-3">
-				<div className="grid min-h-0 min-w-0 flex-1 grid-cols-[1fr_360px] gap-3 overflow-hidden">
-					<div className="pdv-surface flex min-h-0 flex-col gap-3 overflow-hidden p-3">
-						<AvisoSecundario status={status} />
-						<AlertasOperacionaisPdv status={status} />
+	return (
+		<PdvShell
+			status={status}
+			onBlockedNavigate={setMsg}
+			footer={rodape}
+			topbar={
+				<Topbar
+					title={gourmet ? "Balcão" : "PDV"}
+					subtitle={
+						gourmet
+							? "Venda rápida"
+							: (status?.sessao.nomeempresa ?? "Venda")
+					}
+					center={
 						<BarcodeInput
 							onScan={(codigo) => void onBip(codigo)}
 							onProduto={(produto) => adicionarProdutoSimples(produto)}
@@ -469,14 +504,36 @@ export function BalcaoPage() {
 								Boolean(produtoPeso) ||
 								Boolean(obsFilaChave)
 							}
+							className="border-white/15 bg-white text-foreground shadow-none"
 						/>
+					}
+					right={
+						gourmet ? (
+							<Button
+								variant="secondary"
+								size="sm"
+								onClick={() => navigate(-1)}
+							>
+								<ArrowLeft className="size-4" />
+								{rotulo.plural}
+							</Button>
+						) : null
+					}
+					status={status}
+					onExit={() => void sair()}
+				/>
+			}
+		>
+			<div className="grid min-h-0 min-w-0 flex-1 grid-cols-[minmax(0,1fr)_minmax(320px,360px)] gap-2.5 overflow-hidden">
+				<section className="pdv-surface flex min-h-0 min-w-0 flex-col gap-3 overflow-hidden p-3">
+					<AvisoSecundario status={status} />
 
-						{modoCatalogo === "busca" ? (
+					{modoCatalogo === "busca" ? (
 							<div className="flex min-h-0 flex-1 flex-col gap-2">
-								<h2 className="shrink-0 text-sm font-semibold">
+								<h2 className="shrink-0 text-base font-semibold">
 									Resultados para “{buscaProdutos.termo}”
 								</h2>
-								<div className="grid flex-1 auto-rows-min grid-cols-3 gap-2 overflow-auto sm:grid-cols-4 lg:grid-cols-5">
+								<div className="grid flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(10.5rem,1fr))] gap-3 overflow-auto p-0.5">
 									{buscaProdutos.produtos.map((produto) => (
 										<ProdutoCard
 											key={produto.id}
@@ -501,11 +558,35 @@ export function BalcaoPage() {
 								</div>
 							</div>
 						) : modoCatalogo === "grupos" ? (
-							<div className="flex flex-1 flex-col gap-3 overflow-auto">
+							<div className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto">
+								<div className="shrink-0">
+									<h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+										{gourmet ? "Categorias gourmet" : "Categorias"}
+									</h2>
+									<div className="flex gap-2 overflow-x-auto p-0.5 pb-2">
+										{grupos.map((g) => (
+											<GrupoGourmetCard
+												key={g.id}
+												grupo={g}
+												disabled={carregandoProdutos}
+												onClick={() => void abrirGrupo(g)}
+											/>
+										))}
+										{grupos.length === 0 &&
+											(gourmet || atalhos.length === 0) && (
+												<p className="py-3 text-sm text-muted-foreground">
+													Nenhum grupo ou atalho sincronizado ainda. Bipe o
+													produto normalmente.
+												</p>
+											)}
+									</div>
+								</div>
 								{!gourmet && atalhos.length > 0 && (
-									<div>
-										<h2 className="mb-2 text-sm font-semibold">Atalhos</h2>
-										<div className="grid auto-rows-min grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5">
+									<div className="min-h-0">
+										<h2 className="mb-2 text-base font-semibold">
+											Acesso rápido
+										</h2>
+										<div className="grid auto-rows-min grid-cols-[repeat(auto-fill,minmax(10.5rem,1fr))] gap-3">
 											{atalhos.map((p) => (
 												<ProdutoCard
 													key={`atalho-${p.id}`}
@@ -517,44 +598,38 @@ export function BalcaoPage() {
 										</div>
 									</div>
 								)}
-								<div>
-									<h2 className="mb-2 text-sm font-semibold">
-										{gourmet ? "Grupos Gourmet" : "Grupos"}
-									</h2>
-									<div className="grid auto-rows-min grid-cols-[repeat(auto-fill,minmax(9.5rem,1fr))] gap-3">
-										{grupos.map((g) => (
-											<GrupoGourmetCard
-												key={g.id}
-												grupo={g}
-												disabled={carregandoProdutos}
-												onClick={() => void abrirGrupo(g)}
-											/>
-										))}
-										{grupos.length === 0 &&
-											(gourmet || atalhos.length === 0) && (
-												<p className="col-span-full text-sm text-muted-foreground">
-													Nenhum grupo ou atalho sincronizado ainda. Bipe o
-													produto normalmente.
-												</p>
-											)}
-									</div>
-								</div>
 							</div>
 						) : (
 							<>
-								<div className="flex items-center justify-between">
-									<h2 className="text-sm font-semibold">
-										{grupoAtivo?.nome ?? "Produtos"}
-									</h2>
+								<div className="flex shrink-0 items-end justify-between gap-3">
+									<div className="min-w-0">
+										<p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+											Categoria
+										</p>
+										<h2 className="truncate text-base font-semibold">
+											{grupoAtivo?.nome ?? "Produtos"}
+										</h2>
+									</div>
 									<Button
 										variant="ghost"
 										size="sm"
 										onClick={() => setGrupoAtivo(null)}
 									>
-										Voltar aos grupos
+										<ArrowLeft className="size-4" />
+										Categorias
 									</Button>
 								</div>
-								<div className="grid flex-1 auto-rows-min grid-cols-3 gap-2 overflow-auto sm:grid-cols-4 lg:grid-cols-5">
+								<div className="flex shrink-0 gap-2 overflow-x-auto p-0.5 pb-2">
+									{grupos.map((g) => (
+										<GrupoGourmetCard
+											key={g.id}
+											grupo={g}
+											disabled={carregandoProdutos}
+											onClick={() => void abrirGrupo(g)}
+										/>
+									))}
+								</div>
+								<div className="grid flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(10.5rem,1fr))] gap-3 overflow-auto p-0.5">
 									{carregandoProdutos ? (
 										<p className="col-span-full text-sm text-muted-foreground">
 											Carregando produtos…
@@ -576,106 +651,149 @@ export function BalcaoPage() {
 								</div>
 							</>
 						)}
+				</section>
+
+				<aside className="pdv-surface flex min-h-0 flex-col overflow-hidden">
+					<div className="flex h-14 shrink-0 items-center justify-between border-b px-4">
+						<div className="flex items-center gap-2">
+							<div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+								<ShoppingCart className="size-4" />
+							</div>
+							<div>
+								<h2 className="text-sm font-bold">Carrinho</h2>
+								<p className="text-[11px] text-muted-foreground">
+									{itens.length} {itens.length === 1 ? "item" : "itens"}
+								</p>
+							</div>
+						</div>
 					</div>
 
-					<div className="pdv-surface flex flex-col p-3">
-						<h2 className="mb-2 text-sm font-semibold">Fila</h2>
-						<div className="flex-1 space-y-2 overflow-auto">
-							{itens.map((item) => (
-								<div key={item.chave} className="rounded-md border p-2">
-									<div className="flex items-start justify-between gap-2">
-										<div className="min-w-0 text-sm font-medium">
+					<div className="min-h-0 flex-1 space-y-2 overflow-auto p-3">
+						{itens.map((item) => (
+							<div
+								key={item.chave}
+								className="rounded-xl border bg-background p-3 shadow-sm"
+							>
+								<div className="flex items-start justify-between gap-3">
+									<div className="min-w-0">
+										<div className="line-clamp-2 text-sm font-semibold leading-tight">
 											{item.descricao}
 										</div>
+										<p className="mt-1 text-xs text-muted-foreground">
+											{money(item.precounitario)} un.
+										</p>
+									</div>
+									<Button
+										size="icon"
+										variant={item.observacao ? "secondary" : "ghost"}
+										className="size-8 shrink-0"
+										title="Adicionar observação"
+										onClick={() => setObsFilaChave(item.chave)}
+									>
+										<MessageSquareText className="size-4" />
+										<span className="sr-only">Observação</span>
+									</Button>
+								</div>
+								{item.observacao ? (
+									<p className="mt-2 rounded-md bg-muted px-2 py-1.5 text-xs text-muted-foreground">
+										{item.observacao}
+									</p>
+								) : null}
+								<div className="mt-3 flex items-center justify-between gap-2">
+									<div className="flex items-center rounded-lg border bg-muted/40 p-0.5">
 										<Button
-											size="sm"
-											variant={item.observacao ? "secondary" : "outline"}
-											onClick={() => setObsFilaChave(item.chave)}
+											size="icon"
+											variant="ghost"
+											className="size-7"
+											onClick={() => alterarQtd(item.chave, -1)}
 										>
-											Obs
+											<Minus className="size-3.5" />
+											<span className="sr-only">Diminuir quantidade</span>
+										</Button>
+										<span className="min-w-12 text-center text-xs font-semibold tabular-nums">
+											{formatarQuantidade(item.quantidade)}
+											{item.pesado ? " kg" : ""}
+										</span>
+										<Button
+											size="icon"
+											variant="ghost"
+											className="size-7"
+											disabled={item.pesado}
+											onClick={() => alterarQtd(item.chave, 1)}
+										>
+											<Plus className="size-3.5" />
+											<span className="sr-only">Aumentar quantidade</span>
 										</Button>
 									</div>
-									{item.observacao ? (
-										<p className="mt-1 text-xs text-muted-foreground">
-											{item.observacao}
-										</p>
-									) : null}
-									<div className="mt-1 flex items-center justify-between gap-2">
-										<div className="flex items-center gap-1">
-											<Button
-												size="sm"
-												variant="outline"
-												onClick={() => alterarQtd(item.chave, -1)}
-											>
-												-
-											</Button>
-											<span className="min-w-10 text-center text-sm tabular-nums">
-												{formatarQuantidade(item.quantidade)}
-												{item.pesado ? " kg" : ""}
-											</span>
-											<Button
-												size="sm"
-												variant="outline"
-												disabled={item.pesado}
-												onClick={() => alterarQtd(item.chave, 1)}
-											>
-												+
-											</Button>
-										</div>
-										<span className="text-sm font-semibold">
-											{money(item.precototal)}
-										</span>
-									</div>
+									<span className="text-sm font-bold">
+										{money(item.precototal)}
+									</span>
 								</div>
-							))}
-							{itens.length === 0 && (
-								<p className="text-sm text-muted-foreground">
-									Fila vazia — bipe ou selecione um produto
+							</div>
+						))}
+						{itens.length === 0 && (
+							<div className="flex h-full min-h-44 flex-col items-center justify-center text-center">
+								<div className="mb-3 flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
+									<ShoppingCart className="size-5" />
+								</div>
+								<p className="text-sm font-semibold">Carrinho vazio</p>
+								<p className="mt-1 max-w-48 text-xs text-muted-foreground">
+									Bipe um código ou selecione um produto no catálogo.
 								</p>
-							)}
-						</div>
-						<div className="mt-2 flex justify-between border-t pt-2 text-lg font-bold">
-							<span>Total</span>
-							<span className="text-primary">{money(total)}</span>
-						</div>
+							</div>
+						)}
+					</div>
+
+					<div className="shrink-0 border-t bg-muted/20 p-3">
 						{msg && (
 							<p
 								className={
 									rejeicaoNfce
-										? "mt-2 text-sm text-destructive"
-										: "mt-2 text-sm text-muted-foreground"
+										? "mb-2 text-xs text-destructive"
+										: "mb-2 text-xs text-muted-foreground"
 								}
 							>
 								{msg}
 							</p>
 						)}
-						<Button
-							size="lg"
-							variant="outline"
-							className="mt-3 w-full"
-							disabled={!itens.length || bloqueado}
-							onClick={() => {
-								setIniciarComDesconto(true);
-								setPagando(true);
-							}}
-						>
-							Desconto
-							<span className="ml-2 text-xs font-semibold opacity-80">
-								{teclas.desconto}
+						<div className="mb-3 flex items-end justify-between">
+							<div>
+								<p className="text-xs text-muted-foreground">Total da venda</p>
+								<p className="text-[11px] text-muted-foreground">
+									{itens.length} {itens.length === 1 ? "produto" : "produtos"}
+								</p>
+							</div>
+							<span className="text-2xl font-extrabold tracking-tight text-primary">
+								{money(total)}
 							</span>
-						</Button>
-						{status?.moduloGourmet ? (
+						</div>
+						<div className="grid grid-cols-2 gap-2">
 							<Button
-								size="lg"
-								variant="secondary"
-								className="mt-2 w-full"
-								disabled={!itens.length || bloqueado || loading}
-								onClick={() => void retirarDepois()}
+								variant="outline"
+								disabled={!itens.length || bloqueado}
+								onClick={() => {
+									setIniciarComDesconto(true);
+									setPagando(true);
+								}}
 							>
-								Retirar depois
+								<Tag className="size-4" />
+								Desconto
+								<span className="text-[10px] opacity-65">{teclas.desconto}</span>
 							</Button>
-						) : null}
+							{status?.moduloGourmet ? (
+								<Button
+									variant="secondary"
+									disabled={!itens.length || bloqueado || loading}
+									onClick={() => void retirarDepois()}
+								>
+									Retirar depois
+								</Button>
+							) : (
+								<div />
+							)}
+						</div>
 						<Button
+							variant="success"
 							size="xl"
 							className="mt-2 w-full"
 							disabled={!itens.length}
@@ -684,14 +802,13 @@ export function BalcaoPage() {
 								setPagando(true);
 							}}
 						>
-							Finalizar
+							Finalizar venda
 							<span className="ml-2 text-xs font-semibold opacity-80">
 								{teclas.finalizar}
 							</span>
 						</Button>
 					</div>
-				</div>
-				<SideNav status={status} onBlocked={setMsg} />
+				</aside>
 			</div>
 
 			{rejeicaoNfce && (
@@ -764,60 +881,6 @@ export function BalcaoPage() {
 					navigate("/abertura-caixa", { replace: true });
 				}}
 			/>
-
-			{!gourmet ? (
-				<FunctionBar
-					actions={[
-						{
-							key: "historico",
-							label: "Histórico",
-							hotkey: teclas.historico,
-							variant: "secondary",
-							disabled: pagando,
-							onClick: () => navigate("/vendas"),
-						},
-						{
-							key: "desconto",
-							label: "Desconto",
-							hotkey: teclas.desconto,
-							variant: "outline",
-							disabled: pagando || !itens.length || bloqueado,
-							onClick: () => {
-								setIniciarComDesconto(true);
-								setPagando(true);
-							},
-						},
-						...(status?.podeConfigurar
-							? [
-									{
-										key: "config",
-										label: "Config",
-										hotkey: "F4",
-										variant: "outline" as const,
-										disabled: pagando,
-										onClick: () => navigate("/config"),
-									},
-								]
-							: []),
-						{
-							key: "fechar-caixa",
-							label: "Fechar caixa",
-							hotkey: teclas.fechar_caixa,
-							variant: "destructive" as const,
-							disabled: pagando,
-							onClick: () => setFechando(true),
-						},
-						{
-							key: "sair",
-							label: "Sair",
-							hotkey: teclas.sair,
-							variant: "outline" as const,
-							disabled: pagando,
-							onClick: () => void sair(),
-						},
-					]}
-				/>
-			) : null}
-		</div>
+		</PdvShell>
 	);
 }
