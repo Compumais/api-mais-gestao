@@ -4,6 +4,7 @@ import { BrowserWindow } from "electron";
 import { execute, getConfig } from "../db/database";
 import { MARCADOR_QR_DANFCE } from "./danfce-layout";
 import {
+	ajustarTextoAoTamanhoFonte,
 	estiloHtmlFonte,
 	normalizarTamanhoFonte,
 	type TamanhoFonteImpressao,
@@ -324,9 +325,10 @@ export async function enviarTextoImpressora(
 ): Promise<{ ok: boolean; modo: string }> {
 	const tamanhoFonte =
 		opcoes?.tamanhoFonte ?? (await obterTamanhoFonteConfig());
+	const textoAjustado = ajustarTextoAoTamanhoFonte(texto, tamanhoFonte);
 	return enviarParaDestino({
-		texto,
-		html: htmlCupomSimples(texto, { tamanhoFonte }),
+		texto: textoAjustado,
+		html: htmlCupomSimples(textoAjustado, { tamanhoFonte }),
 		destino,
 		estrito: Boolean(opcoes?.estrito),
 		tamanhoFonte,
