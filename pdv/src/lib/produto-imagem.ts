@@ -1,10 +1,24 @@
 /** Resolve src de imagem do produto (mesma regra do POS Android). */
 
+function urlCacheProduto(referencia: string): string | null {
+	const caminho = referencia.replaceAll("\\", "/").split(/[?#]/, 1)[0];
+	const match = caminho.match(/\/produto-imagens\/([^/]+)$/i);
+	if (!match) return null;
+
+	try {
+		return `pdv-image://produto/${encodeURIComponent(decodeURIComponent(match[1]))}`;
+	} catch {
+		return null;
+	}
+}
+
 function primeiraUrl(...candidatos: Array<string | null | undefined>): string | null {
 	for (const c of candidatos) {
 		if (!c) continue;
 		const v = c.trim();
 		if (!v) continue;
+		const cacheProduto = urlCacheProduto(v);
+		if (cacheProduto) return cacheProduto;
 		if (/^[a-zA-Z]:[\\/]/.test(v)) {
 			return encodeURI(`file:///${v.replaceAll("\\", "/")}`);
 		}
@@ -14,7 +28,8 @@ function primeiraUrl(...candidatos: Array<string | null | undefined>): string | 
 		if (
 			v.startsWith("http://") ||
 			v.startsWith("https://") ||
-			v.startsWith("file://")
+			v.startsWith("file://") ||
+			v.startsWith("pdv-image://")
 		) {
 			return v;
 		}
