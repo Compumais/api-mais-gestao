@@ -91,32 +91,6 @@ function Invoke-Dispatch {
 	Write-Host "Artefatos baixados em pdv\release"
 }
 
-function Get-PdvElectronTravando {
-	param([string]$PdvDir)
-	$distMarker = Join-Path $PdvDir "node_modules\electron\dist"
-	$pdvPrefix = $PdvDir.TrimEnd("\") + "\"
-	$procs = @()
-	try {
-		$procs = Get-CimInstance Win32_Process -ErrorAction SilentlyContinue |
-			Where-Object {
-				$nomeElectron = $_.Name -ieq "electron.exe"
-				$nomePdv = $_.Name -like "PDV Mais Gest*.exe"
-				$exeLocal = $_.ExecutablePath -and $_.ExecutablePath.StartsWith(
-					$pdvPrefix,
-					[System.StringComparison]::OrdinalIgnoreCase
-				)
-				$cmdElectronLocal = $_.CommandLine -and $_.CommandLine.IndexOf(
-					$distMarker,
-					[System.StringComparison]::OrdinalIgnoreCase
-				) -ge 0
-				($nomeElectron -or $nomePdv) -and ($exeLocal -or $cmdElectronLocal)
-			}
-	} catch {
-		$procs = @()
-	}
-	return @($procs)
-}
-
 function Get-IsccPath {
 	$isccCandidates = @()
 	$isccCmd = Get-Command "iscc" -ErrorAction SilentlyContinue
@@ -134,9 +108,71 @@ function Get-IsccPath {
 	return $isccCandidates | Where-Object { $_ -and (Test-Path -LiteralPath $_) } | Select-Object -First 1
 }
 
+function Copy-PdvSourceToTemp {
+	param(
+		[Parameter(Mandatory = $true)][string]$Source,
+		[Parameter(Mandatory = $true)][string]$Destination
+	)
+
+	$robocopy = Get-Command "robocopy.exe" -ErrorAction SilentlyContinue
+	if (-not $robocopy) {
+		throw "robocopy.exe nao encontrado. Ele e necessario para criar a copia isolada do build."
+	}
+
+	New-Item -ItemType Directory -Force -Path $Destination | Out-Null
+	$excludedDirectories = @(
+		(Join-Path $Source ".git"),
+		(Join-Path $Source ".npm-cache"),
+		(Join-Path $Source "node_modules"),
+		(Join-Path $Source "out"),
+		(Join-Path $Source "release"),
+		(Join-Path $Source "release-build"),
+		(Join-Path $Source "installer\output")
+	)
+	$arguments = @(
+		$Source,
+		$Destination,
+		"/E",
+		"/COPY:DAT",
+		"/DCOPY:DAT",
+		"/R:2",
+		"/W:1",
+		"/NFL",
+		"/NDL",
+		"/NJH",
+		"/NJS",
+		"/NP",
+		"/XD"
+	) + $excludedDirectories
+
+	& $robocopy.Source @arguments
+	$robocopyExitCode = $LASTEXITCODE
+	if ($robocopyExitCode -ge 8) {
+		throw "Falha ao copiar o PDV para o diretorio temporario (robocopy: $robocopyExitCode)."
+	}
+}
+
+function Remove-BuildTemp {
+	param([Parameter(Mandatory = $true)][string]$Path)
+
+	for ($attempt = 1; $attempt -le 5; $attempt++) {
+		if (-not (Test-Path -LiteralPath $Path)) {
+			return
+		}
+		Remove-Item -LiteralPath $Path -Recurse -Force -ErrorAction SilentlyContinue
+		if (-not (Test-Path -LiteralPath $Path)) {
+			return
+		}
+		[GC]::Collect()
+		[GC]::WaitForPendingFinalizers()
+		Start-Sleep -Milliseconds (250 * $attempt)
+	}
+	throw "Nao foi possivel limpar o diretorio temporario: $Path"
+}
+
 function Invoke-Local {
 	$pdvDir = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
-	Set-Location $pdvDir
+	$originalLocation = Get-Location
 
 	$env:CSC_IDENTITY_AUTO_DISCOVERY = "false"
 	Remove-Item Env:npm_config_devdir -ErrorAction SilentlyContinue
@@ -156,55 +192,44 @@ function Invoke-Local {
 		throw "Inno Setup 6 ou 7 nao encontrado. Instale com: winget install --id JRSoftware.InnoSetup -e"
 	}
 
-	$travados = Get-PdvElectronTravando -PdvDir $pdvDir
-	if ($travados.Count -gt 0) {
-		Write-Host ""
-		Write-Host "O PDV (Electron) esta em execucao e trava os arquivos do Electron."
-		Write-Host "Feche a janela do PDV (npm run dev / instalado) e rode de novo."
-		Write-Host "Processos:"
-		foreach ($p in $travados) {
-			Write-Host (" - PID {0} {1}" -f $p.ProcessId, $p.Name)
-		}
-		Write-Host ""
-		$resp = Read-Host "Encerrar esses processos agora e continuar? (S/N)"
-		if ($resp -notmatch '^[sS]') {
-			throw "Abortado: feche o PDV antes de gerar o instalador."
-		}
-		foreach ($p in $travados) {
-			Stop-Process -Id $p.ProcessId -Force -ErrorAction SilentlyContinue
-		}
-		Start-Sleep -Seconds 2
-		$ainda = Get-PdvElectronTravando -PdvDir $pdvDir
-		if ($ainda.Count -gt 0) {
-			throw "Ainda ha processos Electron ativos. Feche o PDV manualmente e tente de novo."
-		}
-	}
-
 	$bumpScript = Join-Path $pdvDir "scripts\bump-versao-instalador.ps1"
 	. $bumpScript
 	$versao = Invoke-BumpVersaoInstalador
 
-	Write-Host "Instalando dependencias..."
-	& $npm.Source ci
-	if ($LASTEXITCODE -ne 0) {
-		if ($LASTEXITCODE -eq -4082 -or $LASTEXITCODE -eq 4082) {
-			Write-Host "Dica: EBUSY costuma ser PDV/Electron aberto. Feche o app e rode de novo."
-		}
-		throw "npm ci falhou com codigo $LASTEXITCODE"
-	}
-
-	$tempBuild = Join-Path ([System.IO.Path]::GetTempPath()) ("pdv-mais-gestao-build-{0}" -f $PID)
+	$tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) (
+		"pdv-mais-gestao-build-{0}-{1}" -f $PID, [guid]::NewGuid().ToString("N")
+	)
+	$tempSource = Join-Path $tempRoot "source"
+	$tempBuild = Join-Path $tempRoot "artifacts"
 	$unpacked = Join-Path $tempBuild "win-unpacked"
 	try {
+		Write-Host "Criando copia isolada do PDV em:"
+		Write-Host " - $tempSource"
+		Write-Host "O node_modules do workspace nao sera lido, limpo ou alterado."
+		Copy-PdvSourceToTemp -Source $pdvDir -Destination $tempSource
 		New-Item -ItemType Directory -Force -Path $tempBuild | Out-Null
+		Set-Location $tempSource
 
-		Write-Host "Gerando executavel e instalador NSIS fora do workspace..."
+		$npmCache = (& $npm.Source config get cache 2>$null | Select-Object -Last 1)
+		if ($LASTEXITCODE -eq 0 -and $npmCache) {
+			$env:npm_config_cache = [string]$npmCache
+			Write-Host "Cache npm reutilizado: $env:npm_config_cache"
+		}
+
+		Write-Host "Instalando dependencias somente na copia temporaria..."
+		Write-Host "O postinstall recompilara os modulos nativos para o Electron."
+		& $npm.Source ci --no-audit --no-fund
+		if ($LASTEXITCODE -ne 0) {
+			throw "npm ci falhou na copia temporaria com codigo $LASTEXITCODE"
+		}
+
+		Write-Host "Gerando executavel e instalador NSIS na copia temporaria..."
 		& $npm.Source run build
 		if ($LASTEXITCODE -ne 0) {
 			throw "build falhou com codigo $LASTEXITCODE"
 		}
 
-		$electronBuilder = Join-Path $pdvDir "node_modules\.bin\electron-builder.cmd"
+		$electronBuilder = Join-Path $tempSource "node_modules\.bin\electron-builder.cmd"
 		& $electronBuilder --win "--config.directories.output=$tempBuild"
 		if ($LASTEXITCODE -ne 0) {
 			throw "electron-builder falhou com codigo $LASTEXITCODE"
@@ -227,7 +252,9 @@ function Invoke-Local {
 		}
 		Compress-Archive -Path (Join-Path $unpacked "*") -DestinationPath $zip -Force
 	} finally {
-		Remove-Item -LiteralPath $tempBuild -Recurse -Force -ErrorAction SilentlyContinue
+		Set-Location $originalLocation
+		Write-Host "Limpando copia temporaria..."
+		Remove-BuildTemp -Path $tempRoot
 	}
 
 	Write-Host ""
