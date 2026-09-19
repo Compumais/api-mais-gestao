@@ -10,10 +10,10 @@ import {
 } from "./xml";
 
 describe("gerarXmlComandas", () => {
-	it("lista vazia gera raiz auto-fechada", () => {
+	it("lista vazia mantém o container Comandas com abertura e fechamento explícitos", () => {
 		assert.equal(
 			gerarXmlComandas([]),
-			`<?xml version="1.0" encoding="UTF-8"?>\n<Comandas />\n`,
+			`<?xml version="1.0" encoding="UTF-8"?>\n<Comandas>\n</Comandas>\n`,
 		);
 	});
 
