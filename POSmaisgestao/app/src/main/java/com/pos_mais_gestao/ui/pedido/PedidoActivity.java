@@ -63,9 +63,11 @@ public class PedidoActivity extends AppCompatActivity {
     private String idConta;
     private int numero;
     private String nomeCliente;
-    private String grupoAtivo = "";
+    private String grupoAtivo;
     private String busca = "";
     private ProdutoAdapter produtoAdapter;
+    private GrupoGourmetAdapter grupoAdapter;
+    private RecyclerView listProducts;
     private CartAdapter cartAdapter;
     private MaterialToolbar toolbar;
     private TextView txtSacolaCount;
@@ -128,9 +130,10 @@ public class PedidoActivity extends AppCompatActivity {
         btnOrderStatusOk.setOnClickListener(v -> voltarMesas());
 
         produtoAdapter = new ProdutoAdapter();
-        RecyclerView listProducts = findViewById(R.id.listProducts);
+        grupoAdapter = new GrupoGourmetAdapter(this::selecionarGrupo);
+        listProducts = findViewById(R.id.listProducts);
         listProducts.setLayoutManager(new GridLayoutManager(this, 2));
-        listProducts.setAdapter(produtoAdapter);
+        listProducts.setAdapter(grupoAdapter);
 
         cartAdapter = new CartAdapter();
         RecyclerView listCart = findViewById(R.id.listCart);
@@ -176,13 +179,13 @@ public class PedidoActivity extends AppCompatActivity {
 
     private void montarChips() {
         chipGroups.removeAllViews();
-        Chip todos = new Chip(this, null, com.google.android.material.R.attr.chipStyle);
-        todos.setText(R.string.chip_todos);
-        todos.setCheckable(true);
-        todos.setChecked(true);
-        todos.setId(View.generateViewId());
-        todos.setTag("");
-        chipGroups.addView(todos);
+        Chip gruposChip = new Chip(this, null, com.google.android.material.R.attr.chipStyle);
+        gruposChip.setText(R.string.grupos);
+        gruposChip.setCheckable(true);
+        gruposChip.setChecked(true);
+        gruposChip.setId(View.generateViewId());
+        gruposChip.setTag(null);
+        chipGroups.addView(gruposChip);
         List<CatalogDb.GrupoRow> grupos = catalog.listarGruposGourmet();
         for (CatalogDb.GrupoRow g : grupos) {
             Chip chip = new Chip(this, null, com.google.android.material.R.attr.chipStyle);
@@ -197,15 +200,34 @@ public class PedidoActivity extends AppCompatActivity {
                 return;
             }
             View chip = group.findViewById(checkedIds.get(0));
-            grupoAtivo = chip != null && chip.getTag() != null ? String.valueOf(chip.getTag()) : "";
+            grupoAtivo = chip != null && chip.getTag() != null ? String.valueOf(chip.getTag()) : null;
             recarregarProdutos();
         });
     }
 
     private void recarregarProdutos() {
+        String termo = CatalogoGourmetFiltro.normalizarBusca(busca);
+        if (CatalogoGourmetFiltro.mostrarCardsDeGrupo(grupoAtivo, termo)) {
+            grupoAdapter.setGrupos(catalog.listarGruposGourmet());
+            listProducts.setAdapter(grupoAdapter);
+            return;
+        }
         produtos.clear();
-        produtos.addAll(catalog.listarPorGrupoGourmet(grupoAtivo, busca, 200));
+        // A pesquisa é global e não herda o filtro da aba atualmente selecionada.
+        produtos.addAll(catalog.listarPorGrupoGourmet(
+                CatalogoGourmetFiltro.grupoParaConsulta(grupoAtivo, termo), termo, 200));
+        listProducts.setAdapter(produtoAdapter);
         produtoAdapter.notifyDataSetChanged();
+    }
+
+    private void selecionarGrupo(CatalogDb.GrupoRow grupo) {
+        for (int i = 0; i < chipGroups.getChildCount(); i++) {
+            View view = chipGroups.getChildAt(i);
+            if (view instanceof Chip && grupo.id.equals(view.getTag())) {
+                chipGroups.check(view.getId());
+                return;
+            }
+        }
     }
 
     private void adicionarProduto(Produto produto) {

@@ -1,4 +1,10 @@
 import { useEffect, useRef, useState } from "react";
+import {
+	type EstadoBuscaProdutos,
+	pareceCodigoBarras,
+	podeBuscarProdutos,
+	termoBuscaProduto,
+} from "@/lib/catalogo-produtos";
 import { pdvInvoke } from "@/lib/pdv-api";
 import type { ProdutoLocal } from "@/lib/pdv-types";
 import { cn, money } from "@/lib/utils";
@@ -10,11 +16,10 @@ type BarcodeInputProps = {
 	className?: string;
 	/** Quando um modal está aberto, não recaptura o foco nem trata teclas. */
 	pausado?: boolean;
+	/** Exibe os resultados no catálogo da tela, em vez da lista flutuante. */
+	resultadosExternos?: boolean;
+	onBuscaChange?: (estado: EstadoBuscaProdutos) => void;
 };
-
-function pareceCodigoBarras(valor: string): boolean {
-	return /^\d{8,}$/.test(valor);
-}
 
 /** Input sempre focado para leitura de leitor de código de barras (Enter dispara a busca). */
 export function BarcodeInput({
@@ -23,6 +28,8 @@ export function BarcodeInput({
 	placeholder = "Bipe o código, busque pelo nome ou pressione Enter...",
 	className,
 	pausado = false,
+	resultadosExternos = false,
+	onBuscaChange,
 }: BarcodeInputProps) {
 	const [valor, setValor] = useState("");
 	const [resultados, setResultados] = useState<ProdutoLocal[]>([]);
@@ -30,6 +37,20 @@ export function BarcodeInput({
 	const [buscando, setBuscando] = useState(false);
 	const ref = useRef<HTMLInputElement>(null);
 	const itemAtivoRef = useRef<HTMLButtonElement | null>(null);
+	const onBuscaChangeRef = useRef(onBuscaChange);
+	const buscaHabilitada = Boolean(onProduto) && !pausado;
+
+	useEffect(() => {
+		onBuscaChangeRef.current = onBuscaChange;
+	}, [onBuscaChange]);
+
+	useEffect(() => {
+		onBuscaChangeRef.current?.({
+			termo: termoBuscaProduto(valor),
+			produtos: resultados,
+			buscando,
+		});
+	}, [valor, resultados, buscando]);
 
 	useEffect(() => {
 		if (pausado) return;
@@ -37,15 +58,18 @@ export function BarcodeInput({
 	}, [pausado]);
 
 	useEffect(() => {
-		if (!onProduto || pausado) {
+		if (!buscaHabilitada) {
 			setResultados([]);
+			setBuscando(false);
 			return;
 		}
 		const termo = valor.trim();
-		if (termo.length < 2 || pareceCodigoBarras(termo)) {
+		if (!podeBuscarProdutos(termo)) {
 			setResultados([]);
+			setBuscando(false);
 			return;
 		}
+		let ativo = true;
 		const timer = window.setTimeout(() => {
 			void (async () => {
 				setBuscando(true);
@@ -54,17 +78,22 @@ export function BarcodeInput({
 						"buscarProdutos",
 						termo,
 					);
-					setResultados(lista);
-					setIndiceAtivo(0);
+					if (ativo) {
+						setResultados(lista);
+						setIndiceAtivo(0);
+					}
 				} catch {
-					setResultados([]);
+					if (ativo) setResultados([]);
 				} finally {
-					setBuscando(false);
+					if (ativo) setBuscando(false);
 				}
 			})();
 		}, 250);
-		return () => window.clearTimeout(timer);
-	}, [valor, onProduto, pausado]);
+		return () => {
+			ativo = false;
+			window.clearTimeout(timer);
+		};
+	}, [valor, buscaHabilitada]);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: o botão ativo está num ref atualizado no render
 	useEffect(() => {
@@ -77,6 +106,13 @@ export function BarcodeInput({
 			if (pausado) return;
 			ref.current?.focus();
 		}, 50);
+	}
+
+	function alterarValor(novoValor: string) {
+		setValor(novoValor);
+		setResultados([]);
+		setBuscando(podeBuscarProdutos(novoValor));
+		setIndiceAtivo(0);
 	}
 
 	function escolherProduto(produto: ProdutoLocal) {
@@ -118,12 +154,12 @@ export function BarcodeInput({
 	function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
 		if (pausado) return;
 
-		if (e.key === "ArrowDown" && resultados.length > 0) {
+		if (!resultadosExternos && e.key === "ArrowDown" && resultados.length > 0) {
 			e.preventDefault();
 			setIndiceAtivo((i) => Math.min(i + 1, resultados.length - 1));
 			return;
 		}
-		if (e.key === "ArrowUp" && resultados.length > 0) {
+		if (!resultadosExternos && e.key === "ArrowUp" && resultados.length > 0) {
 			e.preventDefault();
 			setIndiceAtivo((i) => Math.max(i - 1, 0));
 			return;
@@ -139,7 +175,7 @@ export function BarcodeInput({
 			<input
 				ref={ref}
 				value={valor}
-				onChange={(e) => setValor(e.target.value)}
+				onChange={(e) => alterarValor(e.target.value)}
 				onKeyDown={onKeyDown}
 				onBlur={refocar}
 				placeholder={placeholder}
@@ -152,6 +188,7 @@ export function BarcodeInput({
 			/>
 			{onProduto &&
 			!pausado &&
+			!resultadosExternos &&
 			valor.trim().length >= 2 &&
 			!pareceCodigoBarras(valor.trim()) ? (
 				<div className="absolute top-full z-20 mt-1 max-h-64 w-full overflow-auto rounded-md border bg-popover shadow-md">

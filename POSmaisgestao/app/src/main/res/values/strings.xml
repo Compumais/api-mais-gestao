@@ -8,6 +8,7 @@
     <string name="url_api">URL da API</string>
     <string name="selecione_empresa">Selecione a empresa</string>
     <string name="buscar_produto">Buscar produto (nome, código ou EAN)</string>
+    <string name="grupos">Grupos</string>
     <string name="atalhos">Atalhos</string>
     <string name="carrinho">Carrinho</string>
     <string name="pagar">Pagar</string>

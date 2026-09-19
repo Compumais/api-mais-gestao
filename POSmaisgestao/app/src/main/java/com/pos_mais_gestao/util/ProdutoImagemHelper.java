@@ -8,7 +8,9 @@ import androidx.annotation.Nullable;
 import coil.Coil;
 import coil.request.ImageRequest;
 import com.pos_mais_gestao.R;
+import com.pos_mais_gestao.data.local.PrefsStore;
 import com.pos_mais_gestao.domain.Produto;
+import okhttp3.Headers;
 
 public final class ProdutoImagemHelper {
     private ProdutoImagemHelper() {}
@@ -40,23 +42,30 @@ public final class ProdutoImagemHelper {
             }
         }
 
-        String url = primeiraUrl(caminhoImagem, imagem);
-        if (url == null) {
+        String referencia = primeiraReferencia(caminhoImagem, imagem);
+        if (referencia == null) {
             return;
         }
 
-        ImageRequest request = new ImageRequest.Builder(imageView.getContext())
+        PrefsStore prefs = new PrefsStore(imageView.getContext());
+        String url = resolverUrl(prefs.getBaseUrl(), referencia);
+        ImageRequest.Builder builder = new ImageRequest.Builder(imageView.getContext())
                 .data(url)
                 .target(imageView)
                 .placeholder(R.drawable.ic_produto_placeholder)
                 .error(R.drawable.ic_produto_placeholder)
-                .crossfade(true)
-                .build();
-        Coil.imageLoader(imageView.getContext()).enqueue(request);
+                .crossfade(true);
+        String token = prefs.getToken();
+        if (token != null && !token.trim().isEmpty() && url.startsWith(prefs.getBaseUrl())) {
+            builder.headers(new Headers.Builder()
+                    .add("Authorization", "Bearer " + token.trim())
+                    .build());
+        }
+        Coil.imageLoader(imageView.getContext()).enqueue(builder.build());
     }
 
     @Nullable
-    private static String primeiraUrl(String... candidatos) {
+    private static String primeiraReferencia(String... candidatos) {
         if (candidatos == null) {
             return null;
         }
@@ -71,12 +80,18 @@ public final class ProdutoImagemHelper {
             if (v.startsWith("http://") || v.startsWith("https://") || v.startsWith("file://")) {
                 return v;
             }
-            // caminho relativo comum
             if (v.startsWith("/") && !v.startsWith("//")) {
                 return v;
             }
         }
         return null;
+    }
+
+    static String resolverUrl(String baseUrl, String referencia) {
+        if (referencia.startsWith("/") && !referencia.startsWith("//")) {
+            return baseUrl.replaceAll("/+$", "") + referencia;
+        }
+        return referencia;
     }
 
     @Nullable

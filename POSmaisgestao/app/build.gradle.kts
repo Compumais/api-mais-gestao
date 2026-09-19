@@ -44,6 +44,7 @@ dependencies {
     implementation(libs.zxing.android.embedded)
     implementation(libs.coil)
     implementation(libs.usb.serial)
+    implementation(libs.security.crypto)
     testImplementation(libs.junit)
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(libs.ext.junit)

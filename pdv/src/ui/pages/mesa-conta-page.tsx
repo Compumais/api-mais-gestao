@@ -7,6 +7,11 @@ import {
 	useParams,
 } from "react-router-dom";
 import {
+	ESTADO_BUSCA_PRODUTOS_VAZIO,
+	type EstadoBuscaProdutos,
+	obterModoCatalogoProdutos,
+} from "@/lib/catalogo-produtos";
+import {
 	filtrarItensAbertosConta,
 	itemContaEstaPago,
 	totalFatiaItensSelecionados,
@@ -31,8 +36,8 @@ import {
 import { produtoEhPizza } from "@/lib/pizza-meio-a-meio";
 import { devePedirPeso, formatarQuantidade } from "@/lib/produto-kg";
 import { money } from "@/lib/utils";
-import { AvisoSecundario } from "@/ui/components/aviso-secundario";
 import { AlertasOperacionaisPdv } from "@/ui/components/alertas-operacionais-pdv";
+import { AvisoSecundario } from "@/ui/components/aviso-secundario";
 import { BarcodeInput } from "@/ui/components/barcode-input";
 import { DialogEscolherMesa } from "@/ui/components/dialog-escolher-mesa";
 import { DialogMaisAcoesMesa } from "@/ui/components/dialog-mais-acoes-mesa";
@@ -51,6 +56,7 @@ import { DialogReimprimirPedidos } from "@/ui/components/dialog-reimprimir-pedid
 import { DialogRejeicaoNfce } from "@/ui/components/dialog-rejeicao-nfce";
 import { DialogSenhaGerencial } from "@/ui/components/dialog-senha-gerencial";
 import { FunctionBar } from "@/ui/components/function-bar";
+import { GrupoGourmetCard } from "@/ui/components/grupo-gourmet-card";
 import { ProdutoCard } from "@/ui/components/produto-card";
 import { SideNav } from "@/ui/components/side-nav";
 import { Topbar } from "@/ui/components/topbar";
@@ -140,9 +146,12 @@ export function MesaContaPage() {
 		nomeDoState ?? null,
 	);
 	const [grupos, setGrupos] = useState<GrupoLocal[]>([]);
-	const [atalhos, setAtalhos] = useState<ProdutoLocal[]>([]);
 	const [grupoAtivo, setGrupoAtivo] = useState<GrupoLocal | null>(null);
 	const [produtos, setProdutos] = useState<ProdutoLocal[]>([]);
+	const [carregandoProdutos, setCarregandoProdutos] = useState(false);
+	const [buscaProdutos, setBuscaProdutos] = useState<EstadoBuscaProdutos>(
+		ESTADO_BUSCA_PRODUTOS_VAZIO,
+	);
 	const [fila, setFila] = useState<ItemFila[]>([]);
 	const [pagando, setPagando] = useState(false);
 	const [confirmandoSaida, setConfirmandoSaida] = useState(false);
@@ -199,13 +208,7 @@ export function MesaContaPage() {
 	// biome-ignore lint/correctness/useExhaustiveDependencies: iniciar deve reexecutar apenas quando a mesa/conta muda
 	useEffect(() => {
 		void iniciar();
-		void Promise.all([
-			pdvInvoke<GrupoLocal[]>("listarGruposGourmet"),
-			pdvInvoke<ProdutoLocal[]>("listarAtalhos"),
-		]).then(([g, a]) => {
-			setGrupos(g);
-			setAtalhos(a);
-		});
+		void pdvInvoke<GrupoLocal[]>("listarGruposGourmet").then(setGrupos);
 	}, [numeroMesa, idContaParam]);
 
 	// Intercepta Escape global quando há itens na fila (antes do voltar automático).
@@ -307,12 +310,20 @@ export function MesaContaPage() {
 
 	async function abrirGrupo(grupo: GrupoLocal) {
 		setGrupoAtivo(grupo);
-		setProdutos(
-			await pdvInvoke<ProdutoLocal[]>(
-				"listarProdutosPorGrupoGourmet",
-				grupo.id,
-			),
-		);
+		setProdutos([]);
+		setCarregandoProdutos(true);
+		try {
+			setProdutos(
+				await pdvInvoke<ProdutoLocal[]>(
+					"listarProdutosPorGrupoGourmet",
+					grupo.id,
+				),
+			);
+		} catch (err) {
+			setMsg(err instanceof Error ? err.message : "Erro ao carregar produtos");
+		} finally {
+			setCarregandoProdutos(false);
+		}
 	}
 
 	function enfileirarProduto(produto: {
@@ -917,10 +928,7 @@ export function MesaContaPage() {
 	}
 
 	const itens = conta?.itens ?? [];
-	const itensAbertos = useMemo(
-		() => filtrarItensAbertosConta(itens),
-		[itens],
-	);
+	const itensAbertos = useMemo(() => filtrarItensAbertosConta(itens), [itens]);
 	const total = conta?.valorrestante ?? conta?.valortotal ?? 0;
 	const totalSelecionado = useMemo(() => {
 		if (!conta || !itensSel.length) return 0;
@@ -942,6 +950,10 @@ export function MesaContaPage() {
 	const totalFila = useMemo(
 		() => fila.reduce((acc, i) => acc + i.precototal, 0),
 		[fila],
+	);
+	const modoCatalogo = obterModoCatalogoProdutos(
+		buscaProdutos.termo,
+		Boolean(grupoAtivo),
 	);
 	const identificacao = nomeCliente || "Sem identificação";
 	const tituloConta = modoEntrega
@@ -993,6 +1005,8 @@ export function MesaContaPage() {
 						<BarcodeInput
 							onScan={(codigo) => void onBip(codigo)}
 							onProduto={(produto) => enfileirarProduto(produto)}
+							resultadosExternos
+							onBuscaChange={setBuscaProdutos}
 							pausado={
 								pagando ||
 								confirmandoSaida ||
@@ -1010,49 +1024,51 @@ export function MesaContaPage() {
 
 						{!pronto ? (
 							<p className="text-sm text-muted-foreground">Carregando...</p>
-						) : !grupoAtivo ? (
+						) : modoCatalogo === "busca" ? (
+							<div className="flex min-h-0 flex-1 flex-col gap-2">
+								<h2 className="shrink-0 text-sm font-semibold">
+									Resultados para “{buscaProdutos.termo}”
+								</h2>
+								<div className="grid flex-1 auto-rows-min grid-cols-3 gap-2 overflow-auto sm:grid-cols-4">
+									{buscaProdutos.produtos.map((produto) => (
+										<ProdutoCard
+											key={produto.id}
+											produto={produto}
+											disabled={loading}
+											onClick={() => enfileirarProduto(produto)}
+										/>
+									))}
+									{buscaProdutos.buscando ? (
+										<p className="col-span-full text-sm text-muted-foreground">
+											Buscando produtos…
+										</p>
+									) : buscaProdutos.termo.length < 2 ? (
+										<p className="col-span-full text-sm text-muted-foreground">
+											Digite ao menos dois caracteres para pesquisar.
+										</p>
+									) : buscaProdutos.produtos.length === 0 ? (
+										<p className="col-span-full text-sm text-muted-foreground">
+											Nenhum produto encontrado.
+										</p>
+									) : null}
+								</div>
+							</div>
+						) : modoCatalogo === "grupos" ? (
 							<div className="flex flex-1 flex-col gap-3 overflow-auto">
-								{atalhos.length > 0 && (
-									<div>
-										<h2 className="mb-2 text-sm font-semibold">Atalhos</h2>
-										<div className="grid auto-rows-min grid-cols-3 gap-2 sm:grid-cols-4">
-											{atalhos.map((p) => (
-												<ProdutoCard
-													key={`atalho-${p.id}`}
-													produto={p}
-													destaque
-													disabled={loading}
-													onClick={() => enfileirarProduto(p)}
-												/>
-											))}
-										</div>
-									</div>
-								)}
 								<div>
-									<h2 className="mb-2 text-sm font-semibold">
-										Escolha o grupo
-									</h2>
-									<div className="grid auto-rows-min grid-cols-3 gap-2 sm:grid-cols-4">
-										{grupos.map((g) => (
-											<button
-												key={g.id}
-												type="button"
-												onClick={() => void abrirGrupo(g)}
-												className="overflow-hidden rounded-lg bg-background text-sm font-semibold ring-1 ring-foreground/10 transition hover:ring-primary"
-											>
-												{g.caminhoimagem ? (
-													<img
-														src={g.caminhoimagem}
-														alt=""
-														className="h-20 w-full object-cover"
-													/>
-												) : null}
-												<span className="block p-3">{g.nome}</span>
-											</button>
+									<h2 className="mb-2 text-sm font-semibold">Grupos Gourmet</h2>
+									<div className="grid auto-rows-min grid-cols-[repeat(auto-fill,minmax(9.5rem,1fr))] gap-3">
+										{grupos.map((grupo) => (
+											<GrupoGourmetCard
+												key={grupo.id}
+												grupo={grupo}
+												disabled={carregandoProdutos}
+												onClick={() => void abrirGrupo(grupo)}
+											/>
 										))}
-										{grupos.length === 0 && atalhos.length === 0 && (
+										{grupos.length === 0 && (
 											<p className="col-span-full text-sm text-muted-foreground">
-												Nenhum grupo ou atalho sincronizado ainda. Use a bipagem
+												Nenhum grupo gourmet sincronizado ainda. Use a bipagem
 												para enfileirar produtos.
 											</p>
 										)}
@@ -1061,15 +1077,21 @@ export function MesaContaPage() {
 							</div>
 						) : (
 							<div className="grid flex-1 auto-rows-min grid-cols-3 gap-2 overflow-auto sm:grid-cols-4">
-								{produtos.map((p) => (
-									<ProdutoCard
-										key={p.id}
-										produto={p}
-										disabled={loading}
-										onClick={() => enfileirarProduto(p)}
-									/>
-								))}
-								{produtos.length === 0 && (
+								{carregandoProdutos ? (
+									<p className="col-span-full text-sm text-muted-foreground">
+										Carregando produtos…
+									</p>
+								) : (
+									produtos.map((p) => (
+										<ProdutoCard
+											key={p.id}
+											produto={p}
+											disabled={loading}
+											onClick={() => enfileirarProduto(p)}
+										/>
+									))
+								)}
+								{!carregandoProdutos && produtos.length === 0 && (
 									<p className="col-span-full text-sm text-muted-foreground">
 										Sem produtos neste grupo.
 									</p>
@@ -1885,16 +1907,14 @@ export function MesaContaPage() {
 						label: "Desconto",
 						hotkey: teclas.desconto,
 						variant: "outline",
-						disabled:
-							!itensAbertos.length || loading || pagando || senhaAberta,
+						disabled: !itensAbertos.length || loading || pagando || senhaAberta,
 						onClick: () => abrirDesconto(),
 					},
 					{
 						key: "acrescimo",
 						label: "Acréscimo",
 						variant: "outline",
-						disabled:
-							!itensAbertos.length || loading || pagando || senhaAberta,
+						disabled: !itensAbertos.length || loading || pagando || senhaAberta,
 						onClick: () => abrirAcrescimo(),
 					},
 					{
@@ -2005,15 +2025,13 @@ export function MesaContaPage() {
 						key: "desconto",
 						label: "Desconto",
 						hotkey: teclas.desconto,
-						disabled:
-							!itensAbertos.length || loading || pagando || senhaAberta,
+						disabled: !itensAbertos.length || loading || pagando || senhaAberta,
 						onClick: () => abrirDesconto(),
 					},
 					{
 						key: "acrescimo",
 						label: "Acréscimo",
-						disabled:
-							!itensAbertos.length || loading || pagando || senhaAberta,
+						disabled: !itensAbertos.length || loading || pagando || senhaAberta,
 						onClick: () => abrirAcrescimo(),
 					},
 					...(modoEntrega

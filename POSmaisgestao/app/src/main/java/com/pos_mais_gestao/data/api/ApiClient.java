@@ -76,6 +76,15 @@ public class ApiClient {
         aplicarConfigPdv(localPdv.status());
     }
 
+    /** Confirma o token salvo sem descartar a sessão em falhas transitórias de rede. */
+    public void validarSessao() throws ApiException {
+        if (isLocal()) {
+            aplicarConfigPdv(localPdv.status());
+            return;
+        }
+        getJson("/api/auth/get-session");
+    }
+
     public int carregarCatalogo() throws ApiException {
         if (!isLocal()) {
             throw new ApiException("Carga de catálogo só no modo PDV local");

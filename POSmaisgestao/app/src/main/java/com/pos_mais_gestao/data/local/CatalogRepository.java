@@ -36,7 +36,13 @@ public class CatalogRepository {
                 String id = texto(obj, "id");
                 String nome = texto(obj, "nome");
                 if (id != null && nome != null) {
-                    gruposGourmet.add(new CatalogDb.GrupoRow(id, nome));
+                    String imagem = texto(obj, "imagem");
+                    String caminho = referenciaImagemLan(
+                            id,
+                            "/pos/imagens/grupos-gourmet/",
+                            texto(obj, "caminhoimagem"),
+                            texto(obj, "imagemremota"));
+                    gruposGourmet.add(new CatalogDb.GrupoRow(id, nome, imagem, caminho));
                 }
             }
         }
@@ -61,7 +67,11 @@ public class CatalogRepository {
                         texto(obj, "idgrupo"),
                         texto(obj, "idgrupogourmet"),
                         texto(obj, "imagem"),
-                        texto(obj, "caminhoimagem"),
+                        referenciaImagemLan(
+                                id,
+                                "/pos/imagens/produtos/",
+                                texto(obj, "caminhoimagem"),
+                                texto(obj, "imagemremota")),
                         flag(obj, "espizza")));
             }
         }
@@ -126,6 +136,18 @@ public class CatalogRepository {
 
     public int contarProdutos() {
         return db.contarProdutos();
+    }
+
+    private static String referenciaImagemLan(String id, String prefixo, String... candidatos) {
+        if (id == null || candidatos == null) {
+            return null;
+        }
+        for (String candidato : candidatos) {
+            if (candidato != null && !candidato.trim().isEmpty()) {
+                return prefixo + id;
+            }
+        }
+        return null;
     }
 
     private static String texto(JsonObject obj, String key) {
