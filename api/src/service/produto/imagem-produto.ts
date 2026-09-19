@@ -1,9 +1,16 @@
 import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import { v4 as uuidv4 } from "uuid";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import {
+	buscarImagemProdutoPorId,
+	criarImagemProduto,
+	definirImagemPrincipal,
+	excluirImagemProduto,
+	listarImagensProduto,
+	proximaOrdemImagemProduto,
+} from "@/repositories/produto-imagem-repositories.js";
 import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
-import { atualizarProdutoService } from "./atualizar-produto.js";
 
 export const TAMANHO_MAXIMO_IMAGEM_PRODUTO = 5 * 1024 * 1024;
 export const TIPOS_IMAGEM_PRODUTO = [
@@ -110,8 +117,16 @@ function tokenReferencia(caminho: string | null | undefined): string | null {
 	}
 }
 
-function caminhoArquivo(idproduto: string, token: string, extensao: string) {
+function caminhoArquivoLegado(
+	idproduto: string,
+	token: string,
+	extensao: string,
+) {
 	return join(diretorioImagens(), `${idproduto}-${token}${extensao}`);
+}
+
+function caminhoArquivo(chave: string) {
+	return join(diretorioImagens(), chave);
 }
 
 async function obterProdutoAutorizado(idproduto: string, idusuario: string) {
@@ -129,7 +144,7 @@ async function obterProdutoAutorizado(idproduto: string, idusuario: string) {
 	return produto;
 }
 
-async function removerArquivoGerenciado(
+async function removerArquivoGerenciadoLegado(
 	idproduto: string,
 	referencia: string | null | undefined,
 ) {
@@ -137,9 +152,48 @@ async function removerArquivoGerenciado(
 	if (!token || !/^[0-9a-f-]{36}$/i.test(token)) return;
 	await Promise.all(
 		Object.values(EXTENSOES).map((extensao) =>
-			rm(caminhoArquivo(idproduto, token, extensao), { force: true }),
+			rm(caminhoArquivoLegado(idproduto, token, extensao), { force: true }),
 		),
 	);
+}
+
+async function lerArquivoLegado(
+	idproduto: string,
+	referencia: string | null | undefined,
+) {
+	const token = tokenReferencia(referencia);
+	if (!token || !/^[0-9a-f-]{36}$/i.test(token)) return null;
+	for (const extensao of Object.values(EXTENSOES)) {
+		try {
+			return {
+				conteudo: await readFile(
+					caminhoArquivoLegado(idproduto, token, extensao),
+				),
+				tipo: TIPOS_POR_EXTENSAO[extensao] ?? "application/octet-stream",
+				etag: token,
+			};
+		} catch (erro) {
+			if ((erro as NodeJS.ErrnoException).code !== "ENOENT") throw erro;
+		}
+	}
+	return null;
+}
+
+function sanitizarNomeArquivo(nome: string | undefined): string | null {
+	if (!nome) return null;
+	return (
+		basename(nome)
+			.replace(/[^\p{L}\p{N}._ -]/gu, "_")
+			.slice(0, 255) || null
+	);
+}
+
+export async function listarGaleriaProduto(params: {
+	idproduto: string;
+	idusuario: string;
+}) {
+	await obterProdutoAutorizado(params.idproduto, params.idusuario);
+	return listarImagensProduto(params.idproduto);
 }
 
 export async function salvarImagemProduto(params: {
@@ -147,6 +201,8 @@ export async function salvarImagemProduto(params: {
 	idusuario: string;
 	conteudo: Buffer;
 	tipoInformado: string | undefined;
+	nomeArquivo?: string | undefined;
+	tornarPrincipal?: boolean | undefined;
 	ip?: string;
 }) {
 	const produto = await obterProdutoAutorizado(
@@ -159,32 +215,102 @@ export async function salvarImagemProduto(params: {
 	);
 
 	const token = uuidv4();
+	const idimagem = uuidv4();
 	const extensao = EXTENSOES[tipoDetectado];
-	const diretorio = diretorioImagens();
-	const destino = caminhoArquivo(params.idproduto, token, extensao);
+	const chave = `${params.idproduto}/${idimagem}-${token}${extensao}`;
+	const destino = caminhoArquivo(chave);
 	const temporario = `${destino}.tmp`;
-	await mkdir(diretorio, { recursive: true });
+	await mkdir(dirname(destino), { recursive: true });
 	await writeFile(temporario, params.conteudo, { flag: "wx" });
 	await rename(temporario, destino);
 
-	const referencia = `/produtos/${params.idproduto}/imagem?v=${token}`;
-	const resultado = await atualizarProdutoService({
-		produtoId: params.idproduto,
-		idusuario: params.idusuario,
-		dados: { caminhoimagem: referencia, imagem: null },
-		ip: params.ip,
-	});
-	if (!resultado.success || !resultado.body) {
+	const existentes = await listarImagensProduto(params.idproduto);
+	const tornarPrincipal =
+		params.tornarPrincipal === true ||
+		!existentes.some((imagem) => imagem.principal);
+	const referencia = `/produtos/${params.idproduto}/imagens/${idimagem}/arquivo?v=${token}`;
+	const criada = await criarImagemProduto(
+		{
+			id: idimagem,
+			idproduto: params.idproduto,
+			idempresa: produto.idempresa,
+			ordem: await proximaOrdemImagemProduto(params.idproduto),
+			principal: tornarPrincipal,
+			nomearquivo: sanitizarNomeArquivo(params.nomeArquivo),
+			tipomime: tipoDetectado,
+			tamanho: params.conteudo.length,
+			referencia,
+			chavearmazenamento: chave,
+			origem: "gerenciada",
+		},
+		tornarPrincipal,
+	);
+	if (!criada) {
 		await rm(destino, { force: true });
 		throw new ErroImagemProduto(
 			"Não foi possível vincular a imagem ao produto",
-			resultado.status,
+			500,
 			"IMAGEM_NAO_VINCULADA",
 		);
 	}
+	return criada;
+}
 
-	await removerArquivoGerenciado(params.idproduto, produto.caminhoimagem);
-	return resultado.body;
+export async function salvarImagemPrincipalProduto(
+	params: Parameters<typeof salvarImagemProduto>[0],
+) {
+	await salvarImagemProduto({ ...params, tornarPrincipal: true });
+	const produto = await buscarProdutoPorId(params.idproduto);
+	if (!produto) {
+		throw new ErroImagemProduto(
+			"Produto não encontrado após vincular a imagem",
+			404,
+			"NOT_FOUND",
+		);
+	}
+	return produto;
+}
+
+export async function tornarImagemPrincipal(params: {
+	idproduto: string;
+	idimagem: string;
+	idusuario: string;
+}) {
+	await obterProdutoAutorizado(params.idproduto, params.idusuario);
+	const imagem = await definirImagemPrincipal(
+		params.idproduto,
+		params.idimagem,
+	);
+	if (!imagem) {
+		throw new ErroImagemProduto("Imagem não encontrada", 404, "NOT_FOUND");
+	}
+	return imagem;
+}
+
+export async function removerImagemGaleriaProduto(params: {
+	idproduto: string;
+	idimagem: string;
+	idusuario: string;
+}) {
+	await obterProdutoAutorizado(params.idproduto, params.idusuario);
+	const resultado = await excluirImagemProduto(
+		params.idproduto,
+		params.idimagem,
+	);
+	if (!resultado) {
+		throw new ErroImagemProduto("Imagem não encontrada", 404, "NOT_FOUND");
+	}
+	if (resultado.removida.chavearmazenamento) {
+		await rm(caminhoArquivo(resultado.removida.chavearmazenamento), {
+			force: true,
+		});
+	} else if (resultado.removida.origem === "legada") {
+		await removerArquivoGerenciadoLegado(
+			params.idproduto,
+			resultado.removida.referencia,
+		);
+	}
+	return resultado;
 }
 
 export async function removerImagemProduto(params: {
@@ -192,25 +318,70 @@ export async function removerImagemProduto(params: {
 	idusuario: string;
 	ip?: string;
 }) {
+	await obterProdutoAutorizado(params.idproduto, params.idusuario);
+	const imagens = await listarImagensProduto(params.idproduto);
+	const principal = imagens.find((imagem) => imagem.principal);
+	if (!principal) {
+		throw new ErroImagemProduto("Imagem não encontrada", 404, "NOT_FOUND");
+	}
+	await removerImagemGaleriaProduto({
+		idproduto: params.idproduto,
+		idimagem: principal.id,
+		idusuario: params.idusuario,
+	});
+	return buscarProdutoPorId(params.idproduto);
+}
+
+export async function lerArquivoImagemProduto(params: {
+	idproduto: string;
+	idimagem: string;
+	idusuario: string;
+}) {
 	const produto = await obterProdutoAutorizado(
 		params.idproduto,
 		params.idusuario,
 	);
-	const resultado = await atualizarProdutoService({
-		produtoId: params.idproduto,
-		idusuario: params.idusuario,
-		dados: { caminhoimagem: null, imagem: null },
-		ip: params.ip,
-	});
-	if (!resultado.success || !resultado.body) {
+	const imagem = await buscarImagemProdutoPorId(
+		params.idproduto,
+		params.idimagem,
+	);
+	if (!imagem) {
 		throw new ErroImagemProduto(
-			"Não foi possível remover a imagem do produto",
-			resultado.status,
-			"IMAGEM_NAO_REMOVIDA",
+			"Imagem não encontrada",
+			404,
+			"IMAGEM_NAO_ENCONTRADA",
 		);
 	}
-	await removerArquivoGerenciado(params.idproduto, produto.caminhoimagem);
-	return resultado.body;
+	if (imagem.chavearmazenamento) {
+		try {
+			return {
+				conteudo: await readFile(caminhoArquivo(imagem.chavearmazenamento)),
+				tipo: imagem.tipomime ?? "application/octet-stream",
+				etag: tokenReferencia(imagem.referencia) ?? imagem.id,
+			};
+		} catch (erro) {
+			if ((erro as NodeJS.ErrnoException).code !== "ENOENT") throw erro;
+		}
+	}
+	const legado = await lerArquivoLegado(params.idproduto, imagem.referencia);
+	if (legado) return legado;
+	if (imagem.origem === "legada" && produto.imagem) {
+		const texto = produto.imagem.replace(/^data:image\/[^;]+;base64,/, "");
+		return {
+			conteudo: Buffer.from(texto, "base64"),
+			tipo: produto.imagem.startsWith("data:image/png")
+				? "image/png"
+				: produto.imagem.startsWith("data:image/webp")
+					? "image/webp"
+					: "image/jpeg",
+			etag: imagem.id,
+		};
+	}
+	throw new ErroImagemProduto(
+		"Imagem não encontrada",
+		404,
+		"IMAGEM_NAO_ENCONTRADA",
+	);
 }
 
 export async function lerImagemProduto(params: {
@@ -221,29 +392,19 @@ export async function lerImagemProduto(params: {
 		params.idproduto,
 		params.idusuario,
 	);
-	const token = tokenReferencia(produto.caminhoimagem);
-	if (!token || !/^[0-9a-f-]{36}$/i.test(token)) {
-		throw new ErroImagemProduto(
-			"Imagem não encontrada",
-			404,
-			"IMAGEM_NAO_ENCONTRADA",
-		);
+	const imagens = await listarImagensProduto(params.idproduto);
+	const principal = imagens.find((imagem) => imagem.principal);
+	if (principal) {
+		return lerArquivoImagemProduto({
+			...params,
+			idimagem: principal.id,
+		});
 	}
-
-	for (const extensao of Object.values(EXTENSOES)) {
-		try {
-			const conteudo = await readFile(
-				caminhoArquivo(params.idproduto, token, extensao),
-			);
-			return {
-				conteudo,
-				tipo: TIPOS_POR_EXTENSAO[extensao] ?? "application/octet-stream",
-				etag: token,
-			};
-		} catch (erro) {
-			if ((erro as NodeJS.ErrnoException).code !== "ENOENT") throw erro;
-		}
-	}
+	const legado = await lerArquivoLegado(
+		params.idproduto,
+		produto.caminhoimagem,
+	);
+	if (legado) return legado;
 	throw new ErroImagemProduto(
 		"Imagem não encontrada",
 		404,
