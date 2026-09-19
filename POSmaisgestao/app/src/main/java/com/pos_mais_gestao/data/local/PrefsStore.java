@@ -14,6 +14,7 @@ import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.UUID;
 
 public class PrefsStore {
     private static final String PREFS = "pos_mais_gestao";
@@ -39,6 +40,8 @@ public class PrefsStore {
     private static final String KEY_CIDADE_PIX = "cidade_pix";
     private static final String KEY_CONEXAO_MODO = "conexao_modo";
     private static final String KEY_MODELO_ATENDIMENTO = "modelo_atendimento";
+    private static final String KEY_MODAL_ABRIR_MESA = "modal_abrir_mesa_habilitado";
+    private static final String KEY_TERMINAL_ID = "terminal_id";
     private static final String KEY_BALANCA_HABILITADA = "balanca_habilitada";
     private static final String KEY_BALANCA_VENDOR_ID = "balanca_vendor_id";
     private static final String KEY_BALANCA_PRODUCT_ID = "balanca_product_id";
@@ -134,6 +137,24 @@ public class PrefsStore {
 
     public boolean isModeloComanda() {
         return isModoPdvLocal() && MODELO_COMANDA.equals(getModeloAtendimento());
+    }
+
+    public boolean isModalAbrirMesaHabilitado() {
+        return prefs.getBoolean(KEY_MODAL_ABRIR_MESA, true);
+    }
+
+    public void setModalAbrirMesaHabilitado(boolean habilitado) {
+        prefs.edit().putBoolean(KEY_MODAL_ABRIR_MESA, habilitado).apply();
+    }
+
+    public String getTerminalId() {
+        String atual = prefs.getString(KEY_TERMINAL_ID, null);
+        if (atual != null && !atual.trim().isEmpty()) {
+            return atual.trim();
+        }
+        String gerado = UUID.randomUUID().toString();
+        prefs.edit().putString(KEY_TERMINAL_ID, gerado).commit();
+        return gerado;
     }
 
     public BalancaConfig getBalancaConfig() {

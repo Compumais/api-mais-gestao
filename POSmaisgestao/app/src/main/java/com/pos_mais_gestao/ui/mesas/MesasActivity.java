@@ -52,6 +52,7 @@ public class MesasActivity extends AppCompatActivity {
     private String busca = "";
     private boolean online = true;
     private volatile boolean syncing;
+    private boolean abrindoConta;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -239,12 +240,41 @@ public class MesasActivity extends AppCompatActivity {
             return;
         }
         if (prefs.isModoPdvLocal()) {
-            Intent intent = new Intent(this, OccupyActivity.class);
-            intent.putExtra(OccupyActivity.EXTRA_NUMERO, item.numero);
-            startActivity(intent);
+            if (AberturaMesaPolicy.devePedirNome(
+                    prefs.isModalAbrirMesaHabilitado(), item.isOcupada())) {
+                Intent intent = new Intent(this, OccupyActivity.class);
+                intent.putExtra(OccupyActivity.EXTRA_NUMERO, item.numero);
+                startActivity(intent);
+            } else {
+                abrirMesaLocalDireto(item.numero);
+            }
         } else {
             dialogAbrirMesaCloud(item.numero);
         }
+    }
+
+    private void abrirMesaLocalDireto(int numero) {
+        if (abrindoConta) {
+            return;
+        }
+        abrindoConta = true;
+        executor.execute(() -> {
+            try {
+                ContaMesaDto conta = api.abrirMesa(numero, null);
+                runOnUiThread(() -> {
+                    abrindoConta = false;
+                    abrirPedido(conta, false);
+                });
+            } catch (ApiException e) {
+                runOnUiThread(() -> {
+                    abrindoConta = false;
+                    if (e.getStatusCode() == 401) {
+                        OfflineBanner.bind(this, false, e.getMessage());
+                    }
+                    Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
+                });
+            }
+        });
     }
 
     private void abrirPedido(ContaMesaDto mesa, boolean browse) {

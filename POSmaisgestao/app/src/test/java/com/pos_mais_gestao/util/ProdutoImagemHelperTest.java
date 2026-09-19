@@ -27,6 +27,21 @@ public class ProdutoImagemHelperTest {
     }
 
     @Test
+    public void modoLocalNuncaUsaHostWebDaImagem() {
+        assertEquals(
+                "http://192.168.1.10:5050/pos/imagens/produtos/abc",
+                ProdutoImagemHelper.resolverUrlLocal(
+                        "http://192.168.1.10:5050",
+                        "https://cdn.exemplo.com/produto.webp",
+                        "/pos/imagens/produtos/abc"));
+        assertNull(
+                ProdutoImagemHelper.resolverUrlLocal(
+                        "http://192.168.1.10:5050",
+                        "https://cdn.exemplo.com/produto.webp",
+                        null));
+    }
+
+    @Test
     public void trocaProtocoloElectronPeloEndpointHttpDoPrincipal() {
         assertEquals(
                 "http://192.168.1.10:5050/pos/imagens/produtos/abc",

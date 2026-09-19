@@ -148,12 +148,16 @@ public class CatalogRepository {
                 continue;
             }
             String referencia = candidato.trim();
-            if (referencia.startsWith("/pos/imagens/")
-                    || referencia.startsWith("http://")
-                    || referencia.startsWith("https://")) {
+            if (referencia.startsWith("file:")) {
                 return referencia;
             }
-            if (referencia.startsWith("pdv-image://")
+            if (referencia.startsWith("/pos/imagens/")
+                    || referencia.startsWith("file:")) {
+                return referencia;
+            }
+            if (referencia.startsWith("http://")
+                    || referencia.startsWith("https://")
+                    || referencia.startsWith("pdv-image://")
                     || referencia.startsWith("file://")
                     || referencia.matches("^[a-zA-Z]:[\\\\/].*")) {
                 return prefixo + codificarSegmento(id);

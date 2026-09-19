@@ -1,10 +1,10 @@
+import { readFile } from "node:fs/promises";
 import {
 	createServer,
 	type IncomingMessage,
 	type Server,
 	type ServerResponse,
 } from "node:http";
-import { readFile } from "node:fs/promises";
 import { app } from "electron";
 import { sessaoTemGourmet } from "../db/acesso";
 import { getAllConfig, getConfig } from "../db/database";
@@ -18,6 +18,7 @@ import { localApi } from "../local-api";
 import {
 	handshakeTerminal,
 	numerosOcupadosPorSecundarios,
+	registrarTerminalPos,
 	tokenTerminalValido,
 } from "../pdv-secundario/registro";
 import {
@@ -303,9 +304,7 @@ async function tentarEnviarImagemCatalogo(
 	}
 
 	const id = decodeURIComponent((produtoMatch ?? grupoMatch)?.[1] ?? "");
-	const tipo: TipoImagemCatalogo = produtoMatch
-		? "produtos"
-		: "grupos-gourmet";
+	const tipo: TipoImagemCatalogo = produtoMatch ? "produtos" : "grupos-gourmet";
 	const referencia = produtoMatch
 		? (await buscarProdutoPorId(id))?.caminhoimagem
 		: (await listarGruposGourmetLocal()).find((grupo) => grupo.id === id)
@@ -334,14 +333,27 @@ async function tentarEnviarImagemCatalogo(
 }
 
 function tipoImagem(conteudo: Buffer): string {
-	if (conteudo.length >= 8 && conteudo.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) {
+	if (
+		conteudo.length >= 8 &&
+		conteudo
+			.subarray(0, 8)
+			.equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
+	) {
 		return "image/png";
 	}
-	if (conteudo.length >= 3 && conteudo[0] === 0xff && conteudo[1] === 0xd8 && conteudo[2] === 0xff) {
+	if (
+		conteudo.length >= 3 &&
+		conteudo[0] === 0xff &&
+		conteudo[1] === 0xd8 &&
+		conteudo[2] === 0xff
+	) {
 		return "image/jpeg";
 	}
-	if (conteudo.length >= 12 && conteudo.subarray(0, 4).toString("ascii") === "RIFF"
-		&& conteudo.subarray(8, 12).toString("ascii") === "WEBP") {
+	if (
+		conteudo.length >= 12 &&
+		conteudo.subarray(0, 4).toString("ascii") === "RIFF" &&
+		conteudo.subarray(8, 12).toString("ascii") === "WEBP"
+	) {
 		return "image/webp";
 	}
 	return "application/octet-stream";
@@ -463,12 +475,20 @@ async function despachar(
 	if (method === "POST" && path === "/pos/login") {
 		const email = String(body.email ?? "");
 		const password = String(body.password ?? "");
+		const identificador = String(body.identificador ?? "").trim();
+		if (!identificador) {
+			return {
+				status: 400,
+				body: { error: "Identificador do POS ausente. Atualize o aplicativo." },
+			};
+		}
 		const result = await localApi.login(email, password);
 		const sessao = await obterSessao();
+		const token = await registrarTerminalPos(identificador);
 		return {
 			status: 200,
 			body: {
-				token: sessao.token,
+				token,
 				userid: sessao.userid,
 				username: result.username,
 				empresas: result.empresas,

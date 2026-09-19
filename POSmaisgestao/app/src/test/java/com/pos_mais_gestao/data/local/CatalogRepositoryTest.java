@@ -28,9 +28,9 @@ public class CatalogRepositoryTest {
     }
 
     @Test
-    public void usaUrlRemotaComoFallback() {
+    public void converteUrlRemotaEmEndpointDoPdv() {
         assertEquals(
-                "https://cdn.exemplo/abc.webp",
+                "/pos/imagens/produtos/abc",
                 CatalogRepository.referenciaImagemLan(
                         "abc",
                         "/pos/imagens/produtos/",
@@ -45,5 +45,15 @@ public class CatalogRepositoryTest {
                         "abc",
                         "/pos/imagens/produtos/",
                         "../../segredo.png"));
+    }
+
+    @Test
+    public void preservaArquivoDoCacheAndroid() {
+        String arquivo =
+                "file:/data/user/0/com.pos_mais_gestao/files/catalog-images/imagem.png";
+        assertEquals(
+                arquivo,
+                CatalogRepository.referenciaImagemLan(
+                        "abc", "/pos/imagens/produtos/", arquivo));
     }
 }

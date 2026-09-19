@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { join } from "node:path";
-import { pathToFileURL } from "node:url";
 import { describe, it } from "node:test";
+import { pathToFileURL } from "node:url";
 import {
 	prepararCatalogoParaLan,
 	resolverArquivoImagemCatalogo,
@@ -17,11 +17,11 @@ describe("imagens do catálogo na API LAN", () => {
 				"pdv-image://produto/cache.webp",
 				"https://api.exemplo/imagem",
 			),
-			"/pos/imagens/produtos/produto%20com%2Fespa%C3%A7o",
+			"/pos/imagens/produtos/produto%20com%2Fespa%C3%A7o?v=cache",
 		);
 	});
 
-	it("usa a URL remota quando não existe cache local", () => {
+	it("não expõe URL web ao POS quando não existe cache local", () => {
 		assert.equal(
 			urlImagemCatalogoLan(
 				"produtos",
@@ -29,7 +29,7 @@ describe("imagens do catálogo na API LAN", () => {
 				null,
 				"https://cdn.exemplo/produto.webp",
 			),
-			"https://cdn.exemplo/produto.webp",
+			"/pos/imagens/produtos/abc",
 		);
 	});
 
@@ -55,12 +55,12 @@ describe("imagens do catálogo na API LAN", () => {
 		assert.equal(catalogo.atualizadoem, "2026-09-19");
 		assert.equal(
 			(catalogo.produtos as Array<Record<string, unknown>>)[0].caminhoimagem,
-			"/pos/imagens/produtos/p1",
+			"/pos/imagens/produtos/p1?v=p1",
 		);
 		assert.equal(
 			(catalogo.gruposGourmet as Array<Record<string, unknown>>)[0]
 				.caminhoimagem,
-			"/pos/imagens/grupos-gourmet/g1",
+			"/pos/imagens/grupos-gourmet/g1?v=g1",
 		);
 	});
 

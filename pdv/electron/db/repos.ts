@@ -22,6 +22,7 @@ import {
 	setConfig,
 	withTransaction,
 } from "./database";
+import { mesaTemContaAberta } from "./estado-mesa";
 import {
 	agruparItensVendidosTurno,
 	type ItemVendidoTurnoAgrupado,
@@ -2333,8 +2334,6 @@ export async function listarMesas(): Promise<
 		qtdItens: number;
 	}>
 > {
-	await limparContasVazias();
-
 	const limiarMin = Number(await getConfig("tempo_ociosidade_min", "15"));
 	const limiarMs = (limiarMin === 30 ? 30 : 15) * 60 * 1000;
 	const agora = Date.now();
@@ -2365,8 +2364,11 @@ export async function listarMesas(): Promise<
 	);
 
 	return rows.map((row) => {
-		const realmenteOcupada =
-			row.status === "ocupada" && row.idconta && row.qtd_itens > 0;
+		const realmenteOcupada = mesaTemContaAberta({
+			statusMesa: row.status,
+			idconta: row.idconta,
+			abertoem: row.abertoem,
+		});
 		let statusAtividade: "livre" | "consumindo" | "ociosa" = "livre";
 		if (realmenteOcupada) {
 			const referencia = row.ultimo_lancamento ?? row.abertoem;
@@ -2436,7 +2438,6 @@ export async function obterMesa(numero: number): Promise<{
 export async function obterContaPorNumero(
 	numero: number,
 ): Promise<ContaMesaLocal | null> {
-	await limparContasVazias();
 	const mesa = await queryOne<{ status: string; idconta: string | null }>(
 		"SELECT status, idconta FROM mesa WHERE numero = $1",
 		[numero],
@@ -2445,11 +2446,7 @@ export async function obterContaPorNumero(
 		return null;
 	}
 	const conta = await obterContaMesa(mesa.idconta);
-	if (
-		!conta ||
-		conta.status !== "aberta" ||
-		filtrarItensAbertosConta(conta.itens).length === 0
-	) {
+	if (!conta || conta.status !== "aberta") {
 		return null;
 	}
 	return conta;
@@ -2463,49 +2460,57 @@ export async function abrirContaMesa(
 	if (!sessao.idempresa) {
 		throw new Error("Empresa não selecionada");
 	}
-	const mesa = await queryOne<{ status: string; idconta: string | null }>(
-		"SELECT * FROM mesa WHERE numero = $1",
-		[numero],
-	);
-	if (!mesa) {
-		const rotulo =
-			(await getConfig("modelo_atendimento", "mesa")) === "comanda"
-				? "Comanda"
-				: "Mesa";
-		throw new Error(`${rotulo} não encontrada`);
-	}
-	if (mesa.status === "ocupada" && mesa.idconta) {
-		const existente = await obterContaMesa(mesa.idconta);
-		if (existente && filtrarItensAbertosConta(existente.itens).length > 0) {
-			return existente;
+	const id = await withTransaction(async (client) => {
+		const mesa = await queryOne<{ status: string; idconta: string | null }>(
+			"SELECT status, idconta FROM mesa WHERE numero = $1 FOR UPDATE",
+			[numero],
+			client,
+		);
+		if (!mesa) {
+			const rotulo =
+				(await getConfig("modelo_atendimento", "mesa")) === "comanda"
+					? "Comanda"
+					: "Mesa";
+			throw new Error(`${rotulo} não encontrada`);
 		}
-		await limparContasVazias();
-	}
+		if (mesa.status === "ocupada" && mesa.idconta) {
+			const existente = await queryOne<{ status: string }>(
+				"SELECT status FROM conta_mesa WHERE id = $1",
+				[mesa.idconta],
+				client,
+			);
+			if (existente?.status === "aberta") {
+				return mesa.idconta;
+			}
+		}
 
-	const id = uuidv4();
-	const agora = new Date().toISOString();
-	await withTransaction(async (client) => {
+		const novoId = uuidv4();
+		const agora = new Date().toISOString();
 		await execute(
 			`INSERT INTO conta_mesa (
 				id, numero_mesa, idempresa, status, nomecliente, abertoem, valortotal,
 				numeropessoas, valordesconto, valortaxaservico, valorcouvert, taxa_ativa,
 				modalidade, valorentrega, sync_status
 			) VALUES ($1, $2, $3, 'aberta', $4, $5, 0, 1, 0, 0, 0, 0, 'mesa', 0, 'pendente')`,
-			[id, numero, sessao.idempresa, nomecliente ?? null, agora],
+			[novoId, numero, sessao.idempresa, nomecliente ?? null, agora],
 			client,
 		);
 		await execute(
 			`UPDATE mesa SET status = 'ocupada', idconta = $1, nomecliente = $2 WHERE numero = $3`,
-			[id, nomecliente ?? null, numero],
+			[novoId, nomecliente ?? null, numero],
 			client,
 		);
-	});
-
-	await enfileirarOutbox("conta_mesa", {
-		acao: "abrir",
-		idlocal: id,
-		numero,
-		nomecliente: nomecliente ?? null,
+		await enfileirarOutbox(
+			"conta_mesa",
+			{
+				acao: "abrir",
+				idlocal: novoId,
+				numero,
+				nomecliente: nomecliente ?? null,
+			},
+			client,
+		);
+		return novoId;
 	});
 
 	const criada = await obterContaMesa(id);
@@ -2748,11 +2753,12 @@ export async function enviarPedidoConta(params: {
 		throw new Error("Conta inválida");
 	}
 
-	const itensProducao: Array<{
+	const itensResolvidos: Array<{
 		idproduto: string;
 		descricao: string;
 		quantidade: number;
-		observacao?: string | null;
+		precounitario: number;
+		observacao: string | null;
 	}> = [];
 
 	for (const linha of params.itens) {
@@ -2789,46 +2795,110 @@ export async function enviarPedidoConta(params: {
 			quantidade = 1;
 		}
 
-		await adicionarItemConta(params.idconta, {
+		itensResolvidos.push({
 			idproduto,
 			descricao,
 			quantidade,
 			precounitario,
-			observacao: linha.observacao,
-		});
-		const agora = new Date().toISOString();
-		await execute(
-			`INSERT INTO pedido_fila (
-				id, client_order_id, idconta, numero_mesa, nomecliente,
-				idproduto, descricao, quantidade, observacao, observacao_pedido, status, criadoem
-			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pendente', $11)`,
-			[
-				uuidv4(),
-				clientOrderId,
-				conta.id,
-				conta.numero_mesa,
-				conta.nomecliente,
-				idproduto,
-				descricao,
-				quantidade,
-				linha.observacao?.trim() || null,
-				observacaoPedido,
-				agora,
-			],
-		);
-		itensProducao.push({
-			idproduto,
-			descricao,
-			quantidade,
-			observacao: linha.observacao,
+			observacao: linha.observacao?.trim() || null,
 		});
 	}
+
+	const pedidoNovo = await withTransaction(async (client) => {
+		await execute(
+			"SELECT pg_advisory_xact_lock(hashtext($1))",
+			[clientOrderId],
+			client,
+		);
+		const duplicado = await queryOne<{ id: string }>(
+			"SELECT id FROM pedido_fila WHERE client_order_id = $1 LIMIT 1",
+			[clientOrderId],
+			client,
+		);
+		if (duplicado) return false;
+
+		const contaTravada = await queryOne<ContaGourmetRow>(
+			"SELECT * FROM conta_mesa WHERE id = $1 FOR UPDATE",
+			[params.idconta],
+			client,
+		);
+		if (!contaTravada || contaTravada.status !== "aberta") {
+			throw new Error("Conta inválida ou já encerrada");
+		}
+
+		const agora = new Date().toISOString();
+		for (const item of itensResolvidos) {
+			const idItem = uuidv4();
+			const precototal = item.quantidade * item.precounitario;
+			await execute(
+				`INSERT INTO item_conta (
+					id, idconta, idproduto, descricao, quantidade, precounitario,
+					precototal, observacao, criadoem
+				) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+				[
+					idItem,
+					params.idconta,
+					item.idproduto,
+					item.descricao,
+					item.quantidade,
+					item.precounitario,
+					precototal,
+					item.observacao,
+					agora,
+				],
+				client,
+			);
+			await execute(
+				`INSERT INTO pedido_fila (
+					id, client_order_id, idconta, numero_mesa, nomecliente,
+					idproduto, descricao, quantidade, observacao, observacao_pedido,
+					status, criadoem
+				) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pendente', $11)`,
+				[
+					uuidv4(),
+					clientOrderId,
+					params.idconta,
+					contaTravada.numero_mesa,
+					contaTravada.nomecliente,
+					item.idproduto,
+					item.descricao,
+					item.quantidade,
+					item.observacao,
+					observacaoPedido,
+					agora,
+				],
+				client,
+			);
+		}
+		await execute(
+			"UPDATE conta_mesa SET sync_status = 'pendente' WHERE id = $1",
+			[params.idconta],
+			client,
+		);
+		await recalcularContaPersistida(params.idconta, client);
+		await enfileirarOutbox(
+			"conta_mesa",
+			{
+				acao: "pedido",
+				idconta: params.idconta,
+				clientOrderId,
+				itens: itensResolvidos,
+			},
+			client,
+		);
+		return true;
+	});
 
 	const atualizada = await obterContaMesa(params.idconta);
 	if (!atualizada) {
 		throw new Error("Falha ao enviar pedido");
 	}
-	return { ...atualizada, pedidoNovo: true, observacaoPedido, itensProducao };
+	return {
+		...atualizada,
+		pedidoNovo,
+		observacaoPedido,
+		itensProducao: pedidoNovo ? itensResolvidos : [],
+	};
 }
 
 export async function listarPedidosFila(
