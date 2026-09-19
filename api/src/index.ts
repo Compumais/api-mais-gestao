@@ -109,38 +109,12 @@ import { resolveEmpresaContext } from "./controllers/middleware/resolve-empresa-
 import { verificarAcessoGarcom } from "./controllers/middleware/verificar-acesso-garcom.js";
 import { verifyJwt } from "./controllers/middleware/verify-jwt.js";
 import { getApiBaseUrl } from "./util/base-url.js";
-import { isOrigemCorsPermitida } from "./util/cors-origins.js";
+import { corsOptions } from "./util/cors-origins.js";
 import { registrarAgendador } from "./worker/registrar-agendador.js";
 
 export const app = Fastify({ logger: true, trustProxy: true });
 
-app.register(cors, {
-	origin: (origin, cb) => {
-		if (isOrigemCorsPermitida(origin)) {
-			cb(null, true);
-			return;
-		}
-		cb(new Error("Not allowed by CORS"), false);
-	},
-	methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-	allowedHeaders: [
-		"Content-Type",
-		"Authorization",
-		"X-Empresa-Id",
-		"X-Requested-With",
-		"Accept",
-		"Origin",
-	],
-	credentials: true, // Necessário para cookies do Better Auth
-	exposedHeaders: [
-		"Content-Disposition",
-		"X-Sintegra-Alertas",
-		"X-Sintegra-Total-Linhas",
-		"X-Mgv-Alertas",
-		"X-Mgv-Total-Linhas",
-	],
-	maxAge: 86400,
-});
+app.register(cors, corsOptions);
 
 await app.register(swagger, {
 	openapi: {
