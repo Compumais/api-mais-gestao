@@ -16,6 +16,7 @@ const migrations: MigrationPlanejavel[] = [
 		hash: "hash-0102",
 	},
 	{ tag: "0103_futura", hash: "hash-0103" },
+	{ tag: "0104_futura", hash: "hash-0104" },
 ];
 
 describe("planejarMigrationsProducao", () => {
@@ -49,6 +50,7 @@ describe("planejarMigrationsProducao", () => {
 		expect(plano.pendentes.map(({ tag }) => tag)).toEqual([
 			PRIMEIRA_MIGRATION_APLICAVEL_PRODUCAO,
 			"0103_futura",
+			"0104_futura",
 		]);
 	});
 
@@ -63,7 +65,27 @@ describe("planejarMigrationsProducao", () => {
 			"0028_controle_acesso",
 			"0101_nfeserie_ambiente",
 		]);
-		expect(plano.pendentes.map(({ tag }) => tag)).toEqual(["0103_futura"]);
+		expect(plano.pendentes.map(({ tag }) => tag)).toEqual([
+			"0103_futura",
+			"0104_futura",
+		]);
+	});
+
+	it("retoma da 0104 quando a 0103 já foi aplicada", () => {
+		const plano = planejarMigrationsProducao(
+			migrations,
+			new Set([
+				"hash-0000",
+				"hash-0028",
+				"hash-0101",
+				"hash-0102",
+				"hash-0103",
+			]),
+			true,
+		);
+
+		expect(plano.baseline).toEqual([]);
+		expect(plano.pendentes.map(({ tag }) => tag)).toEqual(["0104_futura"]);
 	});
 
 	it("não cria baseline para banco vazio", () => {

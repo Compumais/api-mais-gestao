@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS "produtoimagem" (
 		FOREIGN KEY ("idproduto") REFERENCES "public"."produtos"("id")
 		ON DELETE cascade ON UPDATE cascade,
 	CONSTRAINT "produtoimagem_idempresa_fkey"
-		FOREIGN KEY ("idempresa") REFERENCES "public"."empresa"("id")
+		FOREIGN KEY ("idempresa") REFERENCES "public"."empresas"("id")
 		ON DELETE cascade ON UPDATE cascade
 );
 
