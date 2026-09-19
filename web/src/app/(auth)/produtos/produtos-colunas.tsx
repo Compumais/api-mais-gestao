@@ -85,6 +85,7 @@ const DEFINICOES_COLUNAS: DefinicaoColunaProduto[] = [
 	{ id: "select", label: "Seleção", visivelPadrao: true, enableHiding: false },
 	{ id: "codigo", label: "Código", visivelPadrao: true },
 	{ id: "nome", label: "Nome", visivelPadrao: true },
+	{ id: "imagem", label: "Imagem", visivelPadrao: true },
 	{ id: "preco", label: "Preço", visivelPadrao: true },
 	{ id: "inativo", label: "Situação", visivelPadrao: true },
 	{ id: "quantidade", label: "Operacional", visivelPadrao: true },
@@ -248,6 +249,25 @@ export function criarColunasProdutos(
 							)}
 						</div>
 					),
+				});
+				break;
+			case "imagem":
+				colunas.push({
+					id: "imagem",
+					header: "Imagem",
+					meta,
+					enableSorting: false,
+					cell: ({ row }) => {
+						const possuiImagem = Boolean(
+							row.original.caminhoimagem?.trim() ||
+								row.original.imagem?.trim(),
+						);
+						return (
+							<Badge variant={possuiImagem ? "default" : "secondary"}>
+								{possuiImagem ? "Com imagem" : "Sem imagem"}
+							</Badge>
+						);
+					},
 				});
 				break;
 			case "preco":
