@@ -1,5 +1,6 @@
 import type { ColumnDef, VisibilityState } from "@tanstack/react-table";
 import type { ReactNode } from "react";
+import { ProdutoImagemMiniatura } from "@/app/(auth)/produtos/components/produto-imagem-miniatura";
 import {
 	CabecalhoColunaTabela,
 	type OpcaoFiltroColunaTabela,
@@ -257,17 +258,14 @@ export function criarColunasProdutos(
 					header: "Imagem",
 					meta,
 					enableSorting: false,
-					cell: ({ row }) => {
-						const possuiImagem = Boolean(
-							row.original.caminhoimagem?.trim() ||
-								row.original.imagem?.trim(),
-						);
-						return (
-							<Badge variant={possuiImagem ? "default" : "secondary"}>
-								{possuiImagem ? "Com imagem" : "Sem imagem"}
-							</Badge>
-						);
-					},
+					cell: ({ row }) => (
+						<ProdutoImagemMiniatura
+							produtoId={row.original.id}
+							nomeProduto={row.original.nome}
+							referencia={row.original.caminhoimagem}
+							imagemLegada={row.original.imagem}
+						/>
+					),
 				});
 				break;
 			case "preco":
