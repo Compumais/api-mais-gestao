@@ -116,7 +116,7 @@ export function gerarXmlComandas(
 		),
 	);
 	if (numeros.length === 0) {
-		return `<?xml version="1.0" encoding="UTF-8"?>\n<${root} />\n`;
+		return `<?xml version="1.0" encoding="UTF-8"?>\n<${root}>\n</${root}>\n`;
 	}
 	const corpo = numeros
 		.map((numero) => `    <${item}>${escapeXml(numero)}</${item}>`)
