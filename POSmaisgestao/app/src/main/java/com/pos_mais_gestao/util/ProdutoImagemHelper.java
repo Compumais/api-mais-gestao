@@ -10,6 +10,7 @@ import coil.request.ImageRequest;
 import com.pos_mais_gestao.R;
 import com.pos_mais_gestao.data.local.PrefsStore;
 import com.pos_mais_gestao.domain.Produto;
+import java.nio.charset.StandardCharsets;
 import okhttp3.Headers;
 
 public final class ProdutoImagemHelper {
@@ -23,11 +24,35 @@ public final class ProdutoImagemHelper {
         if (produto == null) {
             return;
         }
-        carregar(imageView, produto.getImagem(), produto.getCaminhoImagem());
+        carregar(
+                imageView,
+                produto.getImagem(),
+                produto.getCaminhoImagem(),
+                "/pos/imagens/produtos/" + codificarSegmento(produto.getId()));
     }
 
     public static void carregar(
             ImageView imageView, @Nullable String imagem, @Nullable String caminhoImagem) {
+        carregar(imageView, imagem, caminhoImagem, null);
+    }
+
+    public static void carregarGrupo(
+            ImageView imageView,
+            String idGrupo,
+            @Nullable String imagem,
+            @Nullable String caminhoImagem) {
+        carregar(
+                imageView,
+                imagem,
+                caminhoImagem,
+                "/pos/imagens/grupos-gourmet/" + codificarSegmento(idGrupo));
+    }
+
+    private static void carregar(
+            ImageView imageView,
+            @Nullable String imagem,
+            @Nullable String caminhoImagem,
+            @Nullable String fallbackLan) {
         if (imageView == null) {
             return;
         }
@@ -48,7 +73,10 @@ public final class ProdutoImagemHelper {
         }
 
         PrefsStore prefs = new PrefsStore(imageView.getContext());
-        String url = resolverUrl(prefs.getBaseUrl(), referencia);
+        String url = resolverUrl(prefs.getBaseUrl(), referencia, fallbackLan);
+        if (url == null) {
+            return;
+        }
         ImageRequest.Builder builder = new ImageRequest.Builder(imageView.getContext())
                 .data(url)
                 .target(imageView)
@@ -56,7 +84,9 @@ public final class ProdutoImagemHelper {
                 .error(R.drawable.ic_produto_placeholder)
                 .crossfade(true);
         String token = prefs.getToken();
-        if (token != null && !token.trim().isEmpty() && url.startsWith(prefs.getBaseUrl())) {
+        if (token != null
+                && !token.trim().isEmpty()
+                && pertenceAoServidor(url, prefs.getBaseUrl())) {
             builder.headers(new Headers.Builder()
                     .add("Authorization", "Bearer " + token.trim())
                     .build());
@@ -77,7 +107,11 @@ public final class ProdutoImagemHelper {
             if (v.isEmpty()) {
                 continue;
             }
-            if (v.startsWith("http://") || v.startsWith("https://") || v.startsWith("file://")) {
+            if (v.startsWith("http://")
+                    || v.startsWith("https://")
+                    || v.startsWith("file://")
+                    || v.startsWith("pdv-image://")
+                    || v.matches("^[a-zA-Z]:[\\\\/].*")) {
                 return v;
             }
             if (v.startsWith("/") && !v.startsWith("//")) {
@@ -88,10 +122,51 @@ public final class ProdutoImagemHelper {
     }
 
     static String resolverUrl(String baseUrl, String referencia) {
+        return resolverUrl(baseUrl, referencia, null);
+    }
+
+    @Nullable
+    static String resolverUrl(String baseUrl, String referencia, @Nullable String fallbackLan) {
+        if (referencia.startsWith("pdv-image://")
+                || referencia.startsWith("file://")
+                || referencia.matches("^[a-zA-Z]:[\\\\/].*")) {
+            if (fallbackLan == null) {
+                return null;
+            }
+            referencia = fallbackLan;
+        }
         if (referencia.startsWith("/") && !referencia.startsWith("//")) {
             return baseUrl.replaceAll("/+$", "") + referencia;
         }
-        return referencia;
+        return referencia.startsWith("http://") || referencia.startsWith("https://")
+                ? referencia
+                : null;
+    }
+
+    static boolean pertenceAoServidor(String url, String baseUrl) {
+        String base = baseUrl.replaceAll("/+$", "");
+        return url.equals(base) || url.startsWith(base + "/");
+    }
+
+    private static String codificarSegmento(String valor) {
+        StringBuilder resultado = new StringBuilder();
+        for (byte item : (valor == null ? "" : valor).getBytes(StandardCharsets.UTF_8)) {
+            int b = item & 0xff;
+            if ((b >= 'a' && b <= 'z')
+                    || (b >= 'A' && b <= 'Z')
+                    || (b >= '0' && b <= '9')
+                    || b == '-'
+                    || b == '.'
+                    || b == '_'
+                    || b == '~') {
+                resultado.append((char) b);
+            } else {
+                resultado.append('%');
+                resultado.append("0123456789ABCDEF".charAt(b >>> 4));
+                resultado.append("0123456789ABCDEF".charAt(b & 0x0f));
+            }
+        }
+        return resultado.toString();
     }
 
     @Nullable

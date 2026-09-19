@@ -46,7 +46,8 @@ final class GrupoGourmetAdapter extends RecyclerView.Adapter<GrupoGourmetAdapter
         CatalogDb.GrupoRow grupo = grupos.get(position);
         holder.nome.setText(grupo.nome);
         holder.preco.setVisibility(View.GONE);
-        ProdutoImagemHelper.carregar(holder.imagem, grupo.imagem, grupo.caminhoimagem);
+        ProdutoImagemHelper.carregarGrupo(
+                holder.imagem, grupo.id, grupo.imagem, grupo.caminhoimagem);
         holder.itemView.setOnClickListener(v -> listener.onClick(grupo));
     }
 

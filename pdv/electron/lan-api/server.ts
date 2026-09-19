@@ -5,7 +5,7 @@ import {
 	type ServerResponse,
 } from "node:http";
 import { readFile } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
+import { app } from "electron";
 import { sessaoTemGourmet } from "../db/acesso";
 import { getAllConfig, getConfig } from "../db/database";
 import { lancamentosDeBody } from "../db/pagamento";
@@ -26,6 +26,11 @@ import {
 	parseNumeroPdv,
 } from "../pdv-secundario/regras";
 import { garantirRegraFirewall } from "./firewall";
+import {
+	prepararCatalogoParaLan,
+	resolverArquivoImagemCatalogo,
+	type TipoImagemCatalogo,
+} from "./imagens";
 import { listarIpsLan } from "./ips";
 
 const ROTAS_PUBLICAS = new Set([
@@ -298,17 +303,23 @@ async function tentarEnviarImagemCatalogo(
 	}
 
 	const id = decodeURIComponent((produtoMatch ?? grupoMatch)?.[1] ?? "");
+	const tipo: TipoImagemCatalogo = produtoMatch
+		? "produtos"
+		: "grupos-gourmet";
 	const referencia = produtoMatch
 		? (await buscarProdutoPorId(id))?.caminhoimagem
 		: (await listarGruposGourmetLocal()).find((grupo) => grupo.id === id)
 				?.caminhoimagem;
-	if (!referencia || !referencia.startsWith("file://")) {
+	const arquivo = referencia
+		? resolverArquivoImagemCatalogo(app.getPath("userData"), tipo, referencia)
+		: null;
+	if (!arquivo) {
 		enviarJson(res, 404, { error: "Imagem não disponível no cache local" });
 		return true;
 	}
 
 	try {
-		const conteudo = await readFile(fileURLToPath(referencia));
+		const conteudo = await readFile(arquivo);
 		res.writeHead(200, {
 			"Content-Type": tipoImagem(conteudo),
 			"Content-Length": conteudo.length,
@@ -443,7 +454,10 @@ async function despachar(
 	}
 
 	if (method === "GET" && path === "/pos/pdv/catalogo") {
-		return { status: 200, body: await localApi.catalogoCarga() };
+		return {
+			status: 200,
+			body: prepararCatalogoParaLan(await localApi.catalogoCarga()),
+		};
 	}
 
 	if (method === "POST" && path === "/pos/login") {
@@ -484,7 +498,10 @@ async function despachar(
 	}
 
 	if (method === "GET" && path === "/pos/sync") {
-		return { status: 200, body: await localApi.catalogoCarga() };
+		return {
+			status: 200,
+			body: prepararCatalogoParaLan(await localApi.catalogoCarga()),
+		};
 	}
 
 	if (method === "GET" && path === "/pos/mesas") {
