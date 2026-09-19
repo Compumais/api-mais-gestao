@@ -4,6 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.pos_mais_gestao.domain.Produto;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -138,16 +139,48 @@ public class CatalogRepository {
         return db.contarProdutos();
     }
 
-    private static String referenciaImagemLan(String id, String prefixo, String... candidatos) {
+    static String referenciaImagemLan(String id, String prefixo, String... candidatos) {
         if (id == null || candidatos == null) {
             return null;
         }
         for (String candidato : candidatos) {
-            if (candidato != null && !candidato.trim().isEmpty()) {
-                return prefixo + id;
+            if (candidato == null || candidato.trim().isEmpty()) {
+                continue;
+            }
+            String referencia = candidato.trim();
+            if (referencia.startsWith("/pos/imagens/")
+                    || referencia.startsWith("http://")
+                    || referencia.startsWith("https://")) {
+                return referencia;
+            }
+            if (referencia.startsWith("pdv-image://")
+                    || referencia.startsWith("file://")
+                    || referencia.matches("^[a-zA-Z]:[\\\\/].*")) {
+                return prefixo + codificarSegmento(id);
             }
         }
         return null;
+    }
+
+    private static String codificarSegmento(String valor) {
+        StringBuilder resultado = new StringBuilder();
+        for (byte item : valor.getBytes(StandardCharsets.UTF_8)) {
+            int b = item & 0xff;
+            if ((b >= 'a' && b <= 'z')
+                    || (b >= 'A' && b <= 'Z')
+                    || (b >= '0' && b <= '9')
+                    || b == '-'
+                    || b == '.'
+                    || b == '_'
+                    || b == '~') {
+                resultado.append((char) b);
+            } else {
+                resultado.append('%');
+                resultado.append("0123456789ABCDEF".charAt(b >>> 4));
+                resultado.append("0123456789ABCDEF".charAt(b & 0x0f));
+            }
+        }
+        return resultado.toString();
     }
 
     private static String texto(JsonObject obj, String key) {
