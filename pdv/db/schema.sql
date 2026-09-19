@@ -18,6 +18,8 @@ CREATE TABLE IF NOT EXISTS sessao (
 CREATE TABLE IF NOT EXISTS grupo (
 	id TEXT PRIMARY KEY NOT NULL,
 	nome TEXT NOT NULL,
+	caminhoimagem TEXT,
+	imagemremota TEXT,
 	atualizadoem TEXT NOT NULL
 );
 

@@ -9,7 +9,9 @@ type EditarGrupoGourmetClientProps = {
 	id: string;
 };
 
-export function EditarGrupoGourmetClient({ id }: EditarGrupoGourmetClientProps) {
+export function EditarGrupoGourmetClient({
+	id,
+}: EditarGrupoGourmetClientProps) {
 	const { data, isLoading } = useQuery({
 		queryKey: ["grupo-gourmet", id],
 		queryFn: () => gruposGourmetService.buscar(id),
@@ -41,6 +43,7 @@ export function EditarGrupoGourmetClient({ id }: EditarGrupoGourmetClientProps) 
 			modo="editar"
 			grupoId={id}
 			valoresIniciais={valoresIniciais}
+			referenciaImagemInicial={data.caminhoimagem}
 		/>
 	);
 }

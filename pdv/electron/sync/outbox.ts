@@ -88,6 +88,7 @@ import {
 	resolverProximoNumeroMonotonico,
 } from "../fiscal/numeracao-nfce";
 import { sincronizarImagensProdutos } from "./imagens-produtos";
+import { sincronizarImagensGruposGourmet } from "./imagens-grupos-gourmet";
 import { atualizarCacheTerminaisPdv } from "./terminais-pdv";
 
 export type DetalheCicloOutbox = {
@@ -259,7 +260,9 @@ async function puxarCatalogoDaEmpresa(idempresa: string): Promise<{
 			if (!grupos.length) {
 				break;
 			}
-			await upsertGruposGourmet(grupos);
+			await upsertGruposGourmet(
+				await sincronizarImagensGruposGourmet(grupos),
+			);
 			totalGruposGourmet += grupos.length;
 			if (grupos.length < 100 || page >= 10_000) {
 				break;

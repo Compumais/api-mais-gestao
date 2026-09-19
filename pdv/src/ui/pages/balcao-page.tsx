@@ -474,9 +474,16 @@ export function BalcaoPage() {
 											key={g.id}
 											type="button"
 											onClick={() => void abrirGrupo(g)}
-											className="rounded-lg bg-background p-4 text-sm font-semibold ring-1 ring-foreground/10 transition hover:ring-primary"
+											className="overflow-hidden rounded-lg bg-background text-sm font-semibold ring-1 ring-foreground/10 transition hover:ring-primary"
 										>
-											{g.nome}
+											{g.caminhoimagem ? (
+												<img
+													src={g.caminhoimagem}
+													alt=""
+													className="h-20 w-full object-cover"
+												/>
+											) : null}
+											<span className="block p-3">{g.nome}</span>
 										</button>
 									))}
 									{grupos.length === 0 && atalhos.length === 0 && (

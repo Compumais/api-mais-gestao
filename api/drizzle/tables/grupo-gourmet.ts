@@ -16,6 +16,7 @@ export const grupogourmet = pgTable(
 		codigo: varchar({ length: 30 }),
 		nome: varchar({ length: 60 }).notNull(),
 		inativo: integer().default(0).notNull(),
+		caminhoimagem: varchar({ length: 255 }),
 	},
 	(table) => [
 		index("grupogourmet_idempresa_idx").using(
