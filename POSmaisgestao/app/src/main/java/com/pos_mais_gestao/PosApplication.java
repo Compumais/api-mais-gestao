@@ -28,7 +28,7 @@ public class PosApplication extends Application {
         super.onCreate();
         prefsStore = new PrefsStore(this);
         ThemeHelper.aplicar(ThemeHelper.normalizar(prefsStore.getTema()));
-        apiClient = new ApiClient(prefsStore, new CatalogRepository(this));
+        apiClient = new ApiClient(this, prefsStore, new CatalogRepository(this));
         outboxSync = new OutboxSync(this, apiClient);
         impressoraPos = new EscPosPrinter(this);
         pagamentoHardware = new StubPagamentoHardware();

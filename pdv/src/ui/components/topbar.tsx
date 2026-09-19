@@ -11,6 +11,7 @@ import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import type { StatusPdv } from "@/lib/pdv-types";
 import { LogoMaisGestao } from "@/ui/components/logo-mais-gestao";
+import { PosConnectionDialog } from "@/ui/components/pos-connection-dialog";
 import { useSidebarState } from "@/ui/hooks/use-sidebar-state";
 
 type TopbarProps = {
@@ -46,7 +47,9 @@ export function Topbar({
 				<button
 					type="button"
 					onClick={alternar}
-					aria-label={recolhida ? "Expandir menu lateral" : "Recolher menu lateral"}
+					aria-label={
+						recolhida ? "Expandir menu lateral" : "Recolher menu lateral"
+					}
 					title={recolhida ? "Expandir menu lateral" : "Recolher menu lateral"}
 					aria-pressed={recolhida}
 					className="pdv-touch -ml-1 flex shrink-0 items-center justify-center rounded-lg text-sidebar-foreground/80 transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
@@ -68,6 +71,9 @@ export function Topbar({
 			</div>
 			<div className="min-w-0 flex-1">{center}</div>
 			<div className="flex shrink-0 items-center gap-2">
+				{status && status.modo !== "secundario" ? (
+					<PosConnectionDialog />
+				) : null}
 				{right}
 				{status ? (
 					<>

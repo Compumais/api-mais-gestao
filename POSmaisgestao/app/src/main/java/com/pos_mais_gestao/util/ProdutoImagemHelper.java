@@ -73,7 +73,9 @@ public final class ProdutoImagemHelper {
         }
 
         PrefsStore prefs = new PrefsStore(imageView.getContext());
-        String url = resolverUrl(prefs.getBaseUrl(), referencia, fallbackLan);
+        String url = prefs.isModoPdvLocal()
+                ? resolverUrlLocal(prefs.getBaseUrl(), referencia, fallbackLan)
+                : resolverUrl(prefs.getBaseUrl(), referencia, fallbackLan);
         if (url == null) {
             return;
         }
@@ -109,7 +111,7 @@ public final class ProdutoImagemHelper {
             }
             if (v.startsWith("http://")
                     || v.startsWith("https://")
-                    || v.startsWith("file://")
+                    || v.startsWith("file:")
                     || v.startsWith("pdv-image://")
                     || v.matches("^[a-zA-Z]:[\\\\/].*")) {
                 return v;
@@ -121,14 +123,17 @@ public final class ProdutoImagemHelper {
         return null;
     }
 
-    static String resolverUrl(String baseUrl, String referencia) {
+    public static String resolverUrl(String baseUrl, String referencia) {
         return resolverUrl(baseUrl, referencia, null);
     }
 
     @Nullable
-    static String resolverUrl(String baseUrl, String referencia, @Nullable String fallbackLan) {
+    public static String resolverUrl(
+            String baseUrl, String referencia, @Nullable String fallbackLan) {
+        if (referencia.startsWith("file:")) {
+            return referencia;
+        }
         if (referencia.startsWith("pdv-image://")
-                || referencia.startsWith("file://")
                 || referencia.matches("^[a-zA-Z]:[\\\\/].*")) {
             if (fallbackLan == null) {
                 return null;
@@ -143,7 +148,19 @@ public final class ProdutoImagemHelper {
                 : null;
     }
 
-    static boolean pertenceAoServidor(String url, String baseUrl) {
+    @Nullable
+    public static String resolverUrlLocal(
+            String baseUrl, String referencia, @Nullable String fallbackLan) {
+        String resolvida = resolverUrl(baseUrl, referencia, fallbackLan);
+        if (resolvida == null
+                || resolvida.startsWith("file:")
+                || pertenceAoServidor(resolvida, baseUrl)) {
+            return resolvida;
+        }
+        return fallbackLan == null ? null : resolverUrl(baseUrl, fallbackLan, null);
+    }
+
+    public static boolean pertenceAoServidor(String url, String baseUrl) {
         String base = baseUrl.replaceAll("/+$", "");
         return url.equals(base) || url.startsWith(base + "/");
     }

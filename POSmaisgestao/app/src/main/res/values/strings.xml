@@ -208,8 +208,11 @@
     <string name="sessao_pdv_expirada">A sessão do PDV mudou ou expirou. Entre novamente.</string>
     <string name="testar_pdv">Testar conexão</string>
     <string name="carregar_catalogo">Carregar catálogo</string>
+    <string name="catalogo_sincronizando">Sincronizando catálogo…</string>
+    <string name="catalogo_imagens_progresso">Imagens %1$d/%2$d</string>
     <string name="pdv_ok">PDV local respondendo</string>
     <string name="catalogo_carregado">Catálogo carregado: %1$d produtos</string>
+    <string name="catalogo_carregado_com_imagens">Catálogo: %1$d produtos. Imagens: %2$d baixadas, %3$d em cache, %4$d falharam.</string>
     <string name="abra_caixa_no_pdv">Abra o caixa no PDV desktop</string>
     <string name="caixa_somente_pdv">Caixa e cupom ficam no PDV neste modo</string>
     <string name="pdv_indisponivel">PDV local indisponível. Verifique IP, porta e se o desktop está ligado.</string>

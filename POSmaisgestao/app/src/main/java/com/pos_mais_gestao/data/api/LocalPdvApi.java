@@ -8,6 +8,7 @@ import com.pos_mais_gestao.data.local.PrefsStore;
 import java.math.BigDecimal;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -19,12 +20,26 @@ import okhttp3.ResponseBody;
 public class LocalPdvApi {
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
 
-    private final PrefsStore prefsStore;
+    private final Supplier<String> baseUrl;
+    private final Supplier<String> bearerToken;
+    private final Supplier<String> terminalId;
     private final OkHttpClient httpClient;
     private final OkHttpClient pingClient;
 
     public LocalPdvApi(PrefsStore prefsStore) {
-        this.prefsStore = prefsStore;
+        this(
+                prefsStore::getBaseUrl,
+                prefsStore::getToken,
+                prefsStore::getTerminalId);
+    }
+
+    LocalPdvApi(
+            Supplier<String> baseUrl,
+            Supplier<String> bearerToken,
+            Supplier<String> terminalId) {
+        this.baseUrl = baseUrl;
+        this.bearerToken = bearerToken;
+        this.terminalId = terminalId;
         this.httpClient = new OkHttpClient.Builder()
                 .connectTimeout(8, TimeUnit.SECONDS)
                 .readTimeout(30, TimeUnit.SECONDS)
@@ -44,6 +59,7 @@ public class LocalPdvApi {
         JsonObject body = new JsonObject();
         body.addProperty("email", email);
         body.addProperty("password", password);
+        body.addProperty("identificador", terminalId.get());
         return post("/pos/login", body.toString(), false);
     }
 
@@ -165,14 +181,14 @@ public class LocalPdvApi {
     }
 
     private void aplicarAuth(Request.Builder builder) {
-        String token = prefsStore.getToken();
+        String token = bearerToken.get();
         if (token != null && !token.isEmpty()) {
             builder.header("Authorization", "Bearer " + token);
         }
     }
 
     private String base() {
-        return prefsStore.getBaseUrl();
+        return baseUrl.get().replaceAll("/+$", "");
     }
 
     private JsonObject execute(OkHttpClient client, Request request) throws ApiException {

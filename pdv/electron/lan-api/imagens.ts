@@ -1,5 +1,5 @@
-import { fileURLToPath } from "node:url";
 import { extname, isAbsolute, join, relative, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 export type TipoImagemCatalogo = "produtos" | "grupos-gourmet";
 
@@ -12,11 +12,6 @@ function texto(valor: unknown): string | null {
 	return typeof valor === "string" && valor.trim() ? valor.trim() : null;
 }
 
-function referenciaHttp(valor: unknown): string | null {
-	const referencia = texto(valor);
-	return referencia && /^https?:\/\//i.test(referencia) ? referencia : null;
-}
-
 function ehReferenciaCacheLocal(valor: unknown): boolean {
 	const referencia = texto(valor);
 	return Boolean(
@@ -27,16 +22,34 @@ function ehReferenciaCacheLocal(valor: unknown): boolean {
 	);
 }
 
+function versaoReferenciaLocal(valor: unknown): string | null {
+	const referencia = texto(valor);
+	if (!referencia) return null;
+	try {
+		const nome = referencia.startsWith("pdv-image://")
+			? decodeURIComponent(new URL(referencia).pathname.slice(1))
+			: referencia.replaceAll("\\", "/").split("/").at(-1);
+		return nome?.replace(/\.[^.]+$/, "") || null;
+	} catch {
+		return null;
+	}
+}
+
 export function urlImagemCatalogoLan(
 	tipo: TipoImagemCatalogo,
 	id: string,
 	caminhoLocal: unknown,
 	referenciaRemota: unknown,
 ): string | null {
+	const rota = `/pos/imagens/${tipo}/${encodeURIComponent(id)}`;
 	if (ehReferenciaCacheLocal(caminhoLocal)) {
-		return `/pos/imagens/${tipo}/${encodeURIComponent(id)}`;
+		const versao = versaoReferenciaLocal(caminhoLocal);
+		return versao ? `${rota}?v=${encodeURIComponent(versao)}` : rota;
 	}
-	return referenciaHttp(caminhoLocal) ?? referenciaHttp(referenciaRemota);
+	if (texto(caminhoLocal) || texto(referenciaRemota)) {
+		return rota;
+	}
+	return null;
 }
 
 export function prepararCatalogoParaLan(catalogo: unknown): unknown {
@@ -102,7 +115,9 @@ export function resolverArquivoImagemCatalogo(
 	}
 
 	if (!dentroDoDiretorio(caminho, diretorio)) return null;
-	if (![".jpg", ".jpeg", ".png", ".webp"].includes(extname(caminho).toLowerCase())) {
+	if (
+		![".jpg", ".jpeg", ".png", ".webp"].includes(extname(caminho).toLowerCase())
+	) {
 		return null;
 	}
 	return caminho;

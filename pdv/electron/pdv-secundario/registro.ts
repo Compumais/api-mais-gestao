@@ -10,6 +10,13 @@ export type TerminalPdv = {
 };
 
 const CHAVE = "pdv_terminais";
+const CHAVE_POS = "pos_terminais_lan";
+
+type TerminalPos = {
+	identificador: string;
+	token: string;
+	vistoem: string;
+};
 
 export async function lerTerminais(): Promise<TerminalPdv[]> {
 	const raw = await getConfig(CHAVE, "[]");
@@ -47,6 +54,59 @@ async function salvarTerminais(terminais: TerminalPdv[]): Promise<void> {
 	await setConfig(CHAVE, JSON.stringify(terminais));
 }
 
+async function lerTerminaisPos(): Promise<TerminalPos[]> {
+	const raw = await getConfig(CHAVE_POS, "[]");
+	try {
+		const parsed: unknown = JSON.parse(raw);
+		if (!Array.isArray(parsed)) return [];
+		return parsed
+			.map((item) => {
+				if (!item || typeof item !== "object") return null;
+				const terminal = item as Record<string, unknown>;
+				const identificador = String(terminal.identificador ?? "").trim();
+				const token = String(terminal.token ?? "").trim();
+				if (!identificador || !token) return null;
+				return {
+					identificador,
+					token,
+					vistoem: String(terminal.vistoem ?? ""),
+				};
+			})
+			.filter((item): item is TerminalPos => item !== null);
+	} catch {
+		return [];
+	}
+}
+
+export async function registrarTerminalPos(
+	identificadorInformado: string,
+): Promise<string> {
+	const identificador = identificadorInformado.trim();
+	if (!identificador) {
+		throw new Error("Identificador do POS ausente.");
+	}
+	const terminais = await lerTerminaisPos();
+	const existente = terminais.find(
+		(terminal) => terminal.identificador === identificador,
+	);
+	const token = existente?.token || uuidv4();
+	const atualizado: TerminalPos = {
+		identificador,
+		token,
+		vistoem: new Date().toISOString(),
+	};
+	await setConfig(
+		CHAVE_POS,
+		JSON.stringify([
+			...terminais.filter(
+				(terminal) => terminal.identificador !== identificador,
+			),
+			atualizado,
+		]),
+	);
+	return token;
+}
+
 export async function numerosOcupadosPorSecundarios(
 	excetoIdentificador?: string,
 ): Promise<number[]> {
@@ -60,8 +120,14 @@ export async function tokenTerminalValido(token: string): Promise<boolean> {
 	if (!token.trim()) {
 		return false;
 	}
-	const terminais = await lerTerminais();
-	return terminais.some((t) => t.token === token);
+	const [terminaisPdv, terminaisPos] = await Promise.all([
+		lerTerminais(),
+		lerTerminaisPos(),
+	]);
+	return (
+		terminaisPdv.some((terminal) => terminal.token === token) ||
+		terminaisPos.some((terminal) => terminal.token === token)
+	);
 }
 
 export async function handshakeTerminal(params: {

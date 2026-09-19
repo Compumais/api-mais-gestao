@@ -500,18 +500,32 @@ public class ConfigActivity extends AppCompatActivity {
             return;
         }
         btnCarregarCatalogo.setEnabled(false);
+        btnCarregarCatalogo.setText(R.string.catalogo_sincronizando);
         executor.execute(() -> {
             try {
-                int total = api.carregarCatalogo();
+                ApiClient.CatalogSyncResult resultado = api.carregarCatalogo(
+                        (concluido, total) -> runOnUiThread(() ->
+                                btnCarregarCatalogo.setText(
+                                        getString(R.string.catalogo_imagens_progresso, concluido, total))));
                 runOnUiThread(() -> {
                     btnCarregarCatalogo.setEnabled(true);
+                    btnCarregarCatalogo.setText(R.string.carregar_catalogo);
                     atualizarCamposOrigemPdv();
-                    Toast.makeText(this, getString(R.string.catalogo_carregado, total), Toast.LENGTH_LONG)
+                    Toast.makeText(
+                                    this,
+                                    getString(
+                                            R.string.catalogo_carregado_com_imagens,
+                                            resultado.produtos,
+                                            resultado.imagensBaixadas,
+                                            resultado.imagensReutilizadas,
+                                            resultado.imagensFalhas),
+                                    Toast.LENGTH_LONG)
                             .show();
                 });
             } catch (ApiException e) {
                 runOnUiThread(() -> {
                     btnCarregarCatalogo.setEnabled(true);
+                    btnCarregarCatalogo.setText(R.string.carregar_catalogo);
                     if (e.getStatusCode() == 401) {
                         prefs.logout();
                         Toast.makeText(this, R.string.sessao_pdv_expirada, Toast.LENGTH_LONG).show();

@@ -76,9 +76,9 @@ import {
 	cancelarItemConta as cancelarItemContaRepo,
 	cancelarOutboxCriarVendaPendente,
 	concluirOutboxCriarVendaLocal,
+	contarNfcePendentesTransmissao,
 	contarOutboxFalhasPermanentes,
 	contarOutboxPendentes,
-	contarNfcePendentesTransmissao,
 	criarVendaRapida,
 	enfileirarOutbox,
 	enviarPedidoConta,
@@ -140,8 +140,8 @@ import { avaliarEmissaoNfceDaVenda } from "../fiscal/avaliar-emissao-nfce-venda"
 import { emitirOuContingencia } from "../fiscal/contingencia";
 import { exportarXmlsNfce as gravarXmlsNfcePeriodo } from "../fiscal/exportar-xml-nfce";
 import {
-	listarConflitosNumeracaoNfceUi,
 	reemitirContingenciaComNovaNumeracao as executarReemitirContingenciaNovaNumeracao,
+	listarConflitosNumeracaoNfceUi,
 } from "../fiscal/reemitir-contingencia-nova-numeracao";
 import {
 	imprimirComprovanteFechamentoCaixa,
@@ -157,7 +157,6 @@ import {
 	imprimirProducaoPedido,
 	rotuloOrigemMesa,
 } from "../impressora/producao";
-import { svgQrCode } from "../impressora/qr-svg";
 import {
 	configEtiquetaDeMapa,
 	montarLancamentoEtiqueta,
@@ -180,6 +179,8 @@ import {
 	statusTecnibra,
 	syncTecnibra,
 } from "../integracao/tecnibra/servico";
+import { modalAbrirMesaHabilitado } from "../lan-api/config-pos";
+import { criarConexoesQrPos } from "../lan-api/qr-pos";
 import * as remoto from "../pdv-secundario/operacoes-remoto";
 import { assertNumeroPrincipalLivre } from "../pdv-secundario/registro";
 import { normalizarModoPdv, parseNumeroPdv } from "../pdv-secundario/regras";
@@ -202,8 +203,8 @@ import { puxarNfceDaRetaguarda } from "../sync/nfce-retaguarda";
 import {
 	processarOutbox,
 	pullCatalogo,
-	sincronizarFiscalPdv,
 	sincronizarFiscalPdv as puxarFiscalRetaguarda,
+	sincronizarFiscalPdv,
 	statusConexao,
 	validarConfirmacaoVenda,
 } from "../sync/outbox";
@@ -593,6 +594,9 @@ export const localApi = {
 				(await getConfig("modelo_atendimento", "mesa")) === "comanda"
 					? "comanda"
 					: "mesa",
+			modalAbrirMesaHabilitado: modalAbrirMesaHabilitado(
+				await getConfig("modal_abrir_mesa_habilitado", "1"),
+			),
 			qtdMesas: Math.max(1, Number(await getConfig("qtd_mesas", "20")) || 20),
 			numeropdv: Math.max(1, Number(await getConfig("numeropdv", "1")) || 1),
 			modo,
@@ -986,15 +990,7 @@ export const localApi = {
 		if (!atual.ouvindo || atual.porta <= 0) {
 			return [];
 		}
-		return atual.ips.map((ip) => {
-			const url = `http://${ip}:${atual.porta}`;
-			const conteudo = `mgpos://connect?v=1&url=${encodeURIComponent(url)}`;
-			return {
-				url,
-				conteudo,
-				svg: svgQrCode(conteudo),
-			};
-		});
+		return criarConexoesQrPos(atual.ips, atual.porta);
 	},
 
 	async reiniciarLan() {

@@ -1,5 +1,6 @@
 package com.pos_mais_gestao.data.api;
 
+import android.content.Context;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -7,6 +8,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.pos_mais_gestao.data.local.CatalogRepository;
 import com.pos_mais_gestao.data.local.PrefsStore;
+import com.pos_mais_gestao.data.sync.CatalogImageCache;
+import com.pos_mais_gestao.data.sync.CatalogImageSync;
 import com.pos_mais_gestao.domain.ItemCarrinho;
 import com.pos_mais_gestao.domain.LancamentoPagamento;
 import com.pos_mais_gestao.domain.MeioPagamento;
@@ -43,13 +46,15 @@ public class ApiClient {
     private final PrefsStore prefsStore;
     private final CatalogRepository catalog;
     private final LocalPdvApi localPdv;
+    private final CatalogImageSync catalogImageSync;
     private final Gson gson = new Gson();
     private final OkHttpClient httpClient;
 
-    public ApiClient(PrefsStore prefsStore, CatalogRepository catalog) {
+    public ApiClient(Context context, PrefsStore prefsStore, CatalogRepository catalog) {
         this.prefsStore = prefsStore;
         this.catalog = catalog;
         this.localPdv = new LocalPdvApi(prefsStore);
+        this.catalogImageSync = new CatalogImageSync(context, prefsStore);
         this.httpClient = new OkHttpClient.Builder()
                 .connectTimeout(20, TimeUnit.SECONDS)
                 .readTimeout(30, TimeUnit.SECONDS)
@@ -63,6 +68,13 @@ public class ApiClient {
 
     private boolean isLocal() {
         return prefsStore.isModoPdvLocal();
+    }
+
+    private void exigirModoCloud() throws ApiException {
+        if (isLocal()) {
+            throw new ApiException(
+                    "Operação da API web bloqueada: o POS está configurado para o PDV local");
+        }
     }
 
     public void pingPdv() throws ApiException {
@@ -85,15 +97,38 @@ public class ApiClient {
         getJson("/api/auth/get-session");
     }
 
-    public int carregarCatalogo() throws ApiException {
+    public static final class CatalogSyncResult {
+        public final int produtos;
+        public final int imagensTotal;
+        public final int imagensBaixadas;
+        public final int imagensReutilizadas;
+        public final int imagensFalhas;
+
+        CatalogSyncResult(int produtos, CatalogImageCache.SyncResult imagens) {
+            this.produtos = produtos;
+            this.imagensTotal = imagens.total;
+            this.imagensBaixadas = imagens.baixadas;
+            this.imagensReutilizadas = imagens.reutilizadas;
+            this.imagensFalhas = imagens.falhas;
+        }
+    }
+
+    public CatalogSyncResult carregarCatalogo(
+            CatalogImageCache.ProgressListener progressListener) throws ApiException {
         if (!isLocal()) {
             throw new ApiException("Carga de catálogo só no modo PDV local");
         }
         JsonObject payload = localPdv.sync();
+        CatalogImageCache.SyncResult imagens =
+                catalogImageSync.sync(payload, progressListener);
         int total = catalog.gravarSync(payload);
         prefsStore.setAtalhos(catalog.listarAtalhos());
         sincronizarConfigPdv();
-        return total;
+        return new CatalogSyncResult(total, imagens);
+    }
+
+    public int carregarCatalogo() throws ApiException {
+        return carregarCatalogo(null).produtos;
     }
 
     public void selecionarEmpresaNoPdv(String id, String nome) throws ApiException {
@@ -2315,6 +2350,11 @@ public class ApiClient {
             return;
         }
         prefsStore.setModeloAtendimento(texto(status, "modeloAtendimento"));
+        if (status.has("modalAbrirMesaHabilitado")
+                && !status.get("modalAbrirMesaHabilitado").isJsonNull()) {
+            prefsStore.setModalAbrirMesaHabilitado(
+                    flag(status, "modalAbrirMesaHabilitado"));
+        }
         Integer qtd = inteiro(status, "qtdMesas");
         if (qtd != null) {
             prefsStore.setQuantidadeMesas(qtd);
@@ -2534,6 +2574,7 @@ public class ApiClient {
     }
 
     private void deleteJson(String path) throws ApiException {
+        exigirModoCloud();
         Request.Builder builder = new Request.Builder().url(prefsStore.getBaseUrl() + path).delete();
         String token = prefsStore.getToken();
         if (token != null && !token.isEmpty()) {
@@ -2553,6 +2594,7 @@ public class ApiClient {
     }
 
     private JsonObject getJson(String path) throws ApiException {
+        exigirModoCloud();
         Request.Builder builder = new Request.Builder().url(prefsStore.getBaseUrl() + path).get();
         String token = prefsStore.getToken();
         if (token != null && !token.isEmpty()) {
@@ -2562,6 +2604,7 @@ public class ApiClient {
     }
 
     private JsonObject postJson(String path, String jsonBody, boolean autenticado) throws ApiException {
+        exigirModoCloud();
         RequestBody body = RequestBody.create(jsonBody, JSON);
         Request.Builder builder = new Request.Builder()
                 .url(prefsStore.getBaseUrl() + path)
@@ -2577,6 +2620,7 @@ public class ApiClient {
     }
 
     private JsonObject putJson(String path, String jsonBody) throws ApiException {
+        exigirModoCloud();
         RequestBody body = RequestBody.create(jsonBody, JSON);
         Request.Builder builder = new Request.Builder()
                 .url(prefsStore.getBaseUrl() + path)
