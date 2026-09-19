@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { marcarBootPendente } from "@/lib/boot-state";
+import {
+	ESTADO_BUSCA_PRODUTOS_VAZIO,
+	type EstadoBuscaProdutos,
+	obterModoCatalogoProdutos,
+} from "@/lib/catalogo-produtos";
+import { normalizarObservacaoItem } from "@/lib/observacao-item";
 import { pdvInvoke } from "@/lib/pdv-api";
 import {
 	type GrupoLocal,
@@ -9,16 +15,15 @@ import {
 	rotuloModelo,
 	type StatusContext,
 } from "@/lib/pdv-types";
-import { normalizarObservacaoItem } from "@/lib/observacao-item";
 import { produtoEhPizza } from "@/lib/pizza-meio-a-meio";
 import { devePedirPeso, formatarQuantidade } from "@/lib/produto-kg";
 import { teclaCorresponde } from "@/lib/teclas-funcao";
 import { money } from "@/lib/utils";
+import { AlertasOperacionaisPdv } from "@/ui/components/alertas-operacionais-pdv";
 import {
 	AvisoSecundario,
 	secundarioDesconectado,
 } from "@/ui/components/aviso-secundario";
-import { AlertasOperacionaisPdv } from "@/ui/components/alertas-operacionais-pdv";
 import { BarcodeInput } from "@/ui/components/barcode-input";
 import { DialogFecharCaixa } from "@/ui/components/dialog-fechar-caixa";
 import { DialogObservacaoItem } from "@/ui/components/dialog-observacao-item";
@@ -33,6 +38,7 @@ import {
 import { DialogQuantidadePeso } from "@/ui/components/dialog-quantidade-peso";
 import { DialogRejeicaoNfce } from "@/ui/components/dialog-rejeicao-nfce";
 import { FunctionBar } from "@/ui/components/function-bar";
+import { GrupoGourmetCard } from "@/ui/components/grupo-gourmet-card";
 import { ProdutoCard } from "@/ui/components/produto-card";
 import { SideNav } from "@/ui/components/side-nav";
 import { Topbar } from "@/ui/components/topbar";
@@ -63,6 +69,10 @@ export function BalcaoPage() {
 	const [atalhos, setAtalhos] = useState<ProdutoLocal[]>([]);
 	const [grupoAtivo, setGrupoAtivo] = useState<GrupoLocal | null>(null);
 	const [produtos, setProdutos] = useState<ProdutoLocal[]>([]);
+	const [carregandoProdutos, setCarregandoProdutos] = useState(false);
+	const [buscaProdutos, setBuscaProdutos] = useState<EstadoBuscaProdutos>(
+		ESTADO_BUSCA_PRODUTOS_VAZIO,
+	);
 	const [itens, setItens] = useState<Item[]>([]);
 	const [pagando, setPagando] = useState(false);
 	const [rejeicaoNfce, setRejeicaoNfce] = useState<string | null>(null);
@@ -84,6 +94,10 @@ export function BalcaoPage() {
 		() => itens.reduce((acc, i) => acc + i.precototal, 0),
 		[itens],
 	);
+	const modoCatalogo = obterModoCatalogoProdutos(
+		buscaProdutos.termo,
+		Boolean(grupoAtivo),
+	);
 
 	useEffect(() => {
 		const listarGrupos = gourmet ? "listarGruposGourmet" : "listarGrupos";
@@ -98,12 +112,20 @@ export function BalcaoPage() {
 
 	async function abrirGrupo(grupo: GrupoLocal) {
 		setGrupoAtivo(grupo);
-		setProdutos(
-			await pdvInvoke<ProdutoLocal[]>(
-				gourmet ? "listarProdutosPorGrupoGourmet" : "listarProdutosPorGrupo",
-				grupo.id,
-			),
-		);
+		setProdutos([]);
+		setCarregandoProdutos(true);
+		try {
+			setProdutos(
+				await pdvInvoke<ProdutoLocal[]>(
+					gourmet ? "listarProdutosPorGrupoGourmet" : "listarProdutosPorGrupo",
+					grupo.id,
+				),
+			);
+		} catch (err) {
+			setMsg(err instanceof Error ? err.message : "Erro ao carregar produtos");
+		} finally {
+			setCarregandoProdutos(false);
+		}
 	}
 
 	function adicionarLinha(item: Item) {
@@ -277,9 +299,7 @@ export function BalcaoPage() {
 			setItens([]);
 			navigate(`/delivery/${conta.id}`);
 		} catch (err) {
-			setMsg(
-				err instanceof Error ? err.message : "Erro ao abrir retirada",
-			);
+			setMsg(err instanceof Error ? err.message : "Erro ao abrir retirada");
 		} finally {
 			setLoading(false);
 		}
@@ -433,210 +453,243 @@ export function BalcaoPage() {
 
 			<div className="flex min-h-0 flex-1 gap-3 overflow-hidden bg-muted/30 p-3">
 				<div className="grid min-h-0 min-w-0 flex-1 grid-cols-[1fr_360px] gap-3 overflow-hidden">
-				<div className="pdv-surface flex min-h-0 flex-col gap-3 overflow-hidden p-3">
-					<AvisoSecundario status={status} />
-					<AlertasOperacionaisPdv status={status} />
-					<BarcodeInput
-						onScan={(codigo) => void onBip(codigo)}
-						onProduto={(produto) => adicionarProdutoSimples(produto)}
-						pausado={
-							pagando ||
-							fechando ||
-							Boolean(rejeicaoNfce) ||
-							Boolean(pizzaPrimeiro) ||
-							Boolean(produtoPeso) ||
-							Boolean(obsFilaChave)
-						}
-					/>
+					<div className="pdv-surface flex min-h-0 flex-col gap-3 overflow-hidden p-3">
+						<AvisoSecundario status={status} />
+						<AlertasOperacionaisPdv status={status} />
+						<BarcodeInput
+							onScan={(codigo) => void onBip(codigo)}
+							onProduto={(produto) => adicionarProdutoSimples(produto)}
+							resultadosExternos
+							onBuscaChange={setBuscaProdutos}
+							pausado={
+								pagando ||
+								fechando ||
+								Boolean(rejeicaoNfce) ||
+								Boolean(pizzaPrimeiro) ||
+								Boolean(produtoPeso) ||
+								Boolean(obsFilaChave)
+							}
+						/>
 
-					{!grupoAtivo ? (
-						<div className="flex flex-1 flex-col gap-3 overflow-auto">
-							{atalhos.length > 0 && (
+						{modoCatalogo === "busca" ? (
+							<div className="flex min-h-0 flex-1 flex-col gap-2">
+								<h2 className="shrink-0 text-sm font-semibold">
+									Resultados para “{buscaProdutos.termo}”
+								</h2>
+								<div className="grid flex-1 auto-rows-min grid-cols-3 gap-2 overflow-auto sm:grid-cols-4 lg:grid-cols-5">
+									{buscaProdutos.produtos.map((produto) => (
+										<ProdutoCard
+											key={produto.id}
+											produto={produto}
+											disabled={loading}
+											onClick={() => adicionarProdutoSimples(produto)}
+										/>
+									))}
+									{buscaProdutos.buscando ? (
+										<p className="col-span-full text-sm text-muted-foreground">
+											Buscando produtos…
+										</p>
+									) : buscaProdutos.termo.length < 2 ? (
+										<p className="col-span-full text-sm text-muted-foreground">
+											Digite ao menos dois caracteres para pesquisar.
+										</p>
+									) : buscaProdutos.produtos.length === 0 ? (
+										<p className="col-span-full text-sm text-muted-foreground">
+											Nenhum produto encontrado.
+										</p>
+									) : null}
+								</div>
+							</div>
+						) : modoCatalogo === "grupos" ? (
+							<div className="flex flex-1 flex-col gap-3 overflow-auto">
+								{!gourmet && atalhos.length > 0 && (
+									<div>
+										<h2 className="mb-2 text-sm font-semibold">Atalhos</h2>
+										<div className="grid auto-rows-min grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5">
+											{atalhos.map((p) => (
+												<ProdutoCard
+													key={`atalho-${p.id}`}
+													produto={p}
+													destaque
+													onClick={() => adicionarProdutoSimples(p)}
+												/>
+											))}
+										</div>
+									</div>
+								)}
 								<div>
-									<h2 className="mb-2 text-sm font-semibold">Atalhos</h2>
-									<div className="grid auto-rows-min grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5">
-										{atalhos.map((p) => (
-											<ProdutoCard
-												key={`atalho-${p.id}`}
-												produto={p}
-												destaque
-												onClick={() => adicionarProdutoSimples(p)}
+									<h2 className="mb-2 text-sm font-semibold">
+										{gourmet ? "Grupos Gourmet" : "Grupos"}
+									</h2>
+									<div className="grid auto-rows-min grid-cols-[repeat(auto-fill,minmax(9.5rem,1fr))] gap-3">
+										{grupos.map((g) => (
+											<GrupoGourmetCard
+												key={g.id}
+												grupo={g}
+												disabled={carregandoProdutos}
+												onClick={() => void abrirGrupo(g)}
 											/>
 										))}
+										{grupos.length === 0 &&
+											(gourmet || atalhos.length === 0) && (
+												<p className="col-span-full text-sm text-muted-foreground">
+													Nenhum grupo ou atalho sincronizado ainda. Bipe o
+													produto normalmente.
+												</p>
+											)}
 									</div>
 								</div>
-							)}
-							<div>
-								<h2 className="mb-2 text-sm font-semibold">Grupos</h2>
-								<div className="grid auto-rows-min grid-cols-3 gap-2 sm:grid-cols-4">
-									{grupos.map((g) => (
-										<button
-											key={g.id}
-											type="button"
-											onClick={() => void abrirGrupo(g)}
-											className="overflow-hidden rounded-lg bg-background text-sm font-semibold ring-1 ring-foreground/10 transition hover:ring-primary"
-										>
-											{g.caminhoimagem ? (
-												<img
-													src={g.caminhoimagem}
-													alt=""
-													className="h-20 w-full object-cover"
-												/>
-											) : null}
-											<span className="block p-3">{g.nome}</span>
-										</button>
-									))}
-									{grupos.length === 0 && atalhos.length === 0 && (
+							</div>
+						) : (
+							<>
+								<div className="flex items-center justify-between">
+									<h2 className="text-sm font-semibold">
+										{grupoAtivo?.nome ?? "Produtos"}
+									</h2>
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={() => setGrupoAtivo(null)}
+									>
+										Voltar aos grupos
+									</Button>
+								</div>
+								<div className="grid flex-1 auto-rows-min grid-cols-3 gap-2 overflow-auto sm:grid-cols-4 lg:grid-cols-5">
+									{carregandoProdutos ? (
 										<p className="col-span-full text-sm text-muted-foreground">
-											Nenhum grupo ou atalho sincronizado ainda. Bipe o produto
-											normalmente.
+											Carregando produtos…
+										</p>
+									) : (
+										produtos.map((p) => (
+											<ProdutoCard
+												key={p.id}
+												produto={p}
+												onClick={() => adicionarProdutoSimples(p)}
+											/>
+										))
+									)}
+									{!carregandoProdutos && produtos.length === 0 && (
+										<p className="col-span-full text-sm text-muted-foreground">
+											Sem produtos neste grupo.
 										</p>
 									)}
 								</div>
-							</div>
-						</div>
-					) : (
-						<>
-							<div className="flex items-center justify-between">
-								<h2 className="text-sm font-semibold">{grupoAtivo.nome}</h2>
-								<Button
-									variant="ghost"
-									size="sm"
-									onClick={() => setGrupoAtivo(null)}
-								>
-									Voltar aos grupos
-								</Button>
-							</div>
-							<div className="grid flex-1 auto-rows-min grid-cols-3 gap-2 overflow-auto sm:grid-cols-4 lg:grid-cols-5">
-								{produtos.map((p) => (
-									<ProdutoCard
-										key={p.id}
-										produto={p}
-										onClick={() => adicionarProdutoSimples(p)}
-									/>
-								))}
-								{produtos.length === 0 && (
-									<p className="col-span-full text-sm text-muted-foreground">
-										Sem produtos neste grupo.
-									</p>
-								)}
-							</div>
-						</>
-					)}
-				</div>
-
-				<div className="pdv-surface flex flex-col p-3">
-					<h2 className="mb-2 text-sm font-semibold">Fila</h2>
-					<div className="flex-1 space-y-2 overflow-auto">
-						{itens.map((item) => (
-							<div key={item.chave} className="rounded-md border p-2">
-								<div className="flex items-start justify-between gap-2">
-									<div className="min-w-0 text-sm font-medium">
-										{item.descricao}
-									</div>
-									<Button
-										size="sm"
-										variant={item.observacao ? "secondary" : "outline"}
-										onClick={() => setObsFilaChave(item.chave)}
-									>
-										Obs
-									</Button>
-								</div>
-								{item.observacao ? (
-									<p className="mt-1 text-xs text-muted-foreground">
-										{item.observacao}
-									</p>
-								) : null}
-								<div className="mt-1 flex items-center justify-between gap-2">
-									<div className="flex items-center gap-1">
-										<Button
-											size="sm"
-											variant="outline"
-											onClick={() => alterarQtd(item.chave, -1)}
-										>
-											-
-										</Button>
-										<span className="min-w-10 text-center text-sm tabular-nums">
-											{formatarQuantidade(item.quantidade)}
-											{item.pesado ? " kg" : ""}
-										</span>
-										<Button
-											size="sm"
-											variant="outline"
-											disabled={item.pesado}
-											onClick={() => alterarQtd(item.chave, 1)}
-										>
-											+
-										</Button>
-									</div>
-									<span className="text-sm font-semibold">
-										{money(item.precototal)}
-									</span>
-								</div>
-							</div>
-						))}
-						{itens.length === 0 && (
-							<p className="text-sm text-muted-foreground">
-								Fila vazia — bipe ou selecione um produto
-							</p>
+							</>
 						)}
 					</div>
-					<div className="mt-2 flex justify-between border-t pt-2 text-lg font-bold">
-						<span>Total</span>
-						<span className="text-primary">{money(total)}</span>
-					</div>
-					{msg && (
-						<p
-							className={
-								rejeicaoNfce
-									? "mt-2 text-sm text-destructive"
-									: "mt-2 text-sm text-muted-foreground"
-							}
-						>
-							{msg}
-						</p>
-					)}
-					<Button
-						size="lg"
-						variant="outline"
-						className="mt-3 w-full"
-						disabled={!itens.length || bloqueado}
-						onClick={() => {
-							setIniciarComDesconto(true);
-							setPagando(true);
-						}}
-					>
-						Desconto
-						<span className="ml-2 text-xs font-semibold opacity-80">
-							{teclas.desconto}
-						</span>
-					</Button>
-					{status?.moduloGourmet ? (
+
+					<div className="pdv-surface flex flex-col p-3">
+						<h2 className="mb-2 text-sm font-semibold">Fila</h2>
+						<div className="flex-1 space-y-2 overflow-auto">
+							{itens.map((item) => (
+								<div key={item.chave} className="rounded-md border p-2">
+									<div className="flex items-start justify-between gap-2">
+										<div className="min-w-0 text-sm font-medium">
+											{item.descricao}
+										</div>
+										<Button
+											size="sm"
+											variant={item.observacao ? "secondary" : "outline"}
+											onClick={() => setObsFilaChave(item.chave)}
+										>
+											Obs
+										</Button>
+									</div>
+									{item.observacao ? (
+										<p className="mt-1 text-xs text-muted-foreground">
+											{item.observacao}
+										</p>
+									) : null}
+									<div className="mt-1 flex items-center justify-between gap-2">
+										<div className="flex items-center gap-1">
+											<Button
+												size="sm"
+												variant="outline"
+												onClick={() => alterarQtd(item.chave, -1)}
+											>
+												-
+											</Button>
+											<span className="min-w-10 text-center text-sm tabular-nums">
+												{formatarQuantidade(item.quantidade)}
+												{item.pesado ? " kg" : ""}
+											</span>
+											<Button
+												size="sm"
+												variant="outline"
+												disabled={item.pesado}
+												onClick={() => alterarQtd(item.chave, 1)}
+											>
+												+
+											</Button>
+										</div>
+										<span className="text-sm font-semibold">
+											{money(item.precototal)}
+										</span>
+									</div>
+								</div>
+							))}
+							{itens.length === 0 && (
+								<p className="text-sm text-muted-foreground">
+									Fila vazia — bipe ou selecione um produto
+								</p>
+							)}
+						</div>
+						<div className="mt-2 flex justify-between border-t pt-2 text-lg font-bold">
+							<span>Total</span>
+							<span className="text-primary">{money(total)}</span>
+						</div>
+						{msg && (
+							<p
+								className={
+									rejeicaoNfce
+										? "mt-2 text-sm text-destructive"
+										: "mt-2 text-sm text-muted-foreground"
+								}
+							>
+								{msg}
+							</p>
+						)}
 						<Button
 							size="lg"
-							variant="secondary"
-							className="mt-2 w-full"
-							disabled={!itens.length || bloqueado || loading}
-							onClick={() => void retirarDepois()}
+							variant="outline"
+							className="mt-3 w-full"
+							disabled={!itens.length || bloqueado}
+							onClick={() => {
+								setIniciarComDesconto(true);
+								setPagando(true);
+							}}
 						>
-							Retirar depois
+							Desconto
+							<span className="ml-2 text-xs font-semibold opacity-80">
+								{teclas.desconto}
+							</span>
 						</Button>
-					) : null}
-					<Button
-						size="xl"
-						className="mt-2 w-full"
-						disabled={!itens.length}
-						onClick={() => {
-							setIniciarComDesconto(false);
-							setPagando(true);
-						}}
-					>
-						Finalizar
-						<span className="ml-2 text-xs font-semibold opacity-80">
-							{teclas.finalizar}
-						</span>
-					</Button>
-				</div>
+						{status?.moduloGourmet ? (
+							<Button
+								size="lg"
+								variant="secondary"
+								className="mt-2 w-full"
+								disabled={!itens.length || bloqueado || loading}
+								onClick={() => void retirarDepois()}
+							>
+								Retirar depois
+							</Button>
+						) : null}
+						<Button
+							size="xl"
+							className="mt-2 w-full"
+							disabled={!itens.length}
+							onClick={() => {
+								setIniciarComDesconto(false);
+								setPagando(true);
+							}}
+						>
+							Finalizar
+							<span className="ml-2 text-xs font-semibold opacity-80">
+								{teclas.finalizar}
+							</span>
+						</Button>
+					</div>
 				</div>
 				<SideNav status={status} onBlocked={setMsg} />
 			</div>

@@ -4,10 +4,16 @@ import {
 	type Server,
 	type ServerResponse,
 } from "node:http";
+import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import { sessaoTemGourmet } from "../db/acesso";
 import { getAllConfig, getConfig } from "../db/database";
 import { lancamentosDeBody } from "../db/pagamento";
-import { obterSessao } from "../db/repos";
+import {
+	buscarProdutoPorId,
+	listarGruposGourmetLocal,
+	obterSessao,
+} from "../db/repos";
 import { localApi } from "../local-api";
 import {
 	handshakeTerminal,
@@ -260,6 +266,10 @@ async function tratarRequisicao(
 			return;
 		}
 
+		if (method === "GET" && (await tentarEnviarImagemCatalogo(path, res))) {
+			return;
+		}
+
 		const body =
 			method === "GET" || method === "HEAD"
 				? Object.fromEntries(url.searchParams.entries())
@@ -275,6 +285,55 @@ async function tratarRequisicao(
 		const status = statusDeErro(err);
 		enviarJson(res, status, { error: mensagem });
 	}
+}
+
+async function tentarEnviarImagemCatalogo(
+	path: string,
+	res: ServerResponse,
+): Promise<boolean> {
+	const produtoMatch = path.match(/^\/pos\/imagens\/produtos\/([^/]+)$/);
+	const grupoMatch = path.match(/^\/pos\/imagens\/grupos-gourmet\/([^/]+)$/);
+	if (!produtoMatch && !grupoMatch) {
+		return false;
+	}
+
+	const id = decodeURIComponent((produtoMatch ?? grupoMatch)?.[1] ?? "");
+	const referencia = produtoMatch
+		? (await buscarProdutoPorId(id))?.caminhoimagem
+		: (await listarGruposGourmetLocal()).find((grupo) => grupo.id === id)
+				?.caminhoimagem;
+	if (!referencia || !referencia.startsWith("file://")) {
+		enviarJson(res, 404, { error: "Imagem não disponível no cache local" });
+		return true;
+	}
+
+	try {
+		const conteudo = await readFile(fileURLToPath(referencia));
+		res.writeHead(200, {
+			"Content-Type": tipoImagem(conteudo),
+			"Content-Length": conteudo.length,
+			"Cache-Control": "private, max-age=3600",
+			...CABECALHOS_CORS,
+		});
+		res.end(conteudo);
+	} catch {
+		enviarJson(res, 404, { error: "Imagem não encontrada no cache local" });
+	}
+	return true;
+}
+
+function tipoImagem(conteudo: Buffer): string {
+	if (conteudo.length >= 8 && conteudo.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) {
+		return "image/png";
+	}
+	if (conteudo.length >= 3 && conteudo[0] === 0xff && conteudo[1] === 0xd8 && conteudo[2] === 0xff) {
+		return "image/jpeg";
+	}
+	if (conteudo.length >= 12 && conteudo.subarray(0, 4).toString("ascii") === "RIFF"
+		&& conteudo.subarray(8, 12).toString("ascii") === "WEBP") {
+		return "image/webp";
+	}
+	return "application/octet-stream";
 }
 
 async function autorizar(req: IncomingMessage): Promise<boolean> {

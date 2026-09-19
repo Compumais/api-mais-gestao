@@ -12,7 +12,7 @@ import java.util.List;
 
 public class CatalogDb extends SQLiteOpenHelper {
     private static final String DB = "pos_catalogo.db";
-    private static final int VERSION = 3;
+    private static final int VERSION = 4;
     private static final String COLUNAS_PRODUTO =
             "id, descricao, preco, unidademedida, idunidademedida, ean, imagem, caminhoimagem, espizza";
 
@@ -29,7 +29,9 @@ public class CatalogDb extends SQLiteOpenHelper {
         db.execSQL(
                 "CREATE TABLE catalogo_grupo_gourmet ("
                         + "id TEXT PRIMARY KEY NOT NULL,"
-                        + "nome TEXT NOT NULL)");
+                        + "nome TEXT NOT NULL,"
+                        + "imagem TEXT,"
+                        + "caminhoimagem TEXT)");
         db.execSQL(
                 "CREATE TABLE catalogo_produto ("
                         + "id TEXT PRIMARY KEY NOT NULL,"
@@ -74,6 +76,10 @@ public class CatalogDb extends SQLiteOpenHelper {
             db.execSQL(
                     "ALTER TABLE catalogo_produto ADD COLUMN espizza INTEGER NOT NULL DEFAULT 0");
         }
+        if (oldVersion < 4) {
+            db.execSQL("ALTER TABLE catalogo_grupo_gourmet ADD COLUMN imagem TEXT");
+            db.execSQL("ALTER TABLE catalogo_grupo_gourmet ADD COLUMN caminhoimagem TEXT");
+        }
     }
 
     public void substituirCarga(
@@ -99,6 +105,8 @@ public class CatalogDb extends SQLiteOpenHelper {
                 ContentValues values = new ContentValues();
                 values.put("id", g.id);
                 values.put("nome", g.nome);
+                values.put("imagem", g.imagem);
+                values.put("caminhoimagem", g.caminhoimagem);
                 db.insert("catalogo_grupo_gourmet", null, values);
             }
             for (ProdutoRow p : produtos) {
@@ -207,14 +215,14 @@ public class CatalogDb extends SQLiteOpenHelper {
     public List<GrupoRow> listarGruposGourmet() {
         List<GrupoRow> grupos = new ArrayList<>();
         try (Cursor c = getReadableDatabase().rawQuery(
-                "SELECT g.id, g.nome FROM catalogo_grupo_gourmet g"
+                "SELECT g.id, g.nome, g.imagem, g.caminhoimagem FROM catalogo_grupo_gourmet g"
                         + " WHERE EXISTS (SELECT 1 FROM catalogo_produto p"
                         + " WHERE p.idgrupogourmet = g.id AND p.idgrupogourmet IS NOT NULL"
                         + " AND p.idgrupogourmet <> '')"
                         + " ORDER BY g.nome",
                 null)) {
             while (c.moveToNext()) {
-                grupos.add(new GrupoRow(c.getString(0), c.getString(1)));
+                grupos.add(new GrupoRow(c.getString(0), c.getString(1), c.getString(2), c.getString(3)));
             }
         }
         return grupos;
@@ -352,10 +360,18 @@ public class CatalogDb extends SQLiteOpenHelper {
     public static class GrupoRow {
         public final String id;
         public final String nome;
+        public final String imagem;
+        public final String caminhoimagem;
 
         public GrupoRow(String id, String nome) {
+            this(id, nome, null, null);
+        }
+
+        public GrupoRow(String id, String nome, String imagem, String caminhoimagem) {
             this.id = id;
             this.nome = nome;
+            this.imagem = imagem;
+            this.caminhoimagem = caminhoimagem;
         }
     }
 

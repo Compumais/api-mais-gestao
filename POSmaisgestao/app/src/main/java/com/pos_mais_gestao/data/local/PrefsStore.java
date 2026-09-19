@@ -2,17 +2,22 @@ package com.pos_mais_gestao.data.local;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import androidx.security.crypto.EncryptedSharedPreferences;
+import androidx.security.crypto.MasterKeys;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.pos_mais_gestao.domain.Produto;
 import com.pos_mais_gestao.domain.balanca.BalancaConfig;
+import java.io.IOException;
 import java.lang.reflect.Type;
+import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 public class PrefsStore {
     private static final String PREFS = "pos_mais_gestao";
+    private static final String SECURE_PREFS = "pos_mais_gestao_session";
     private static final String KEY_BASE_URL = "base_url";
     private static final String KEY_TOKEN = "session_token";
     private static final String KEY_USER_ID = "user_id";
@@ -52,10 +57,41 @@ public class PrefsStore {
     private static final int DEFAULT_QUANTIDADE_MESAS = 20;
 
     private final SharedPreferences prefs;
+    private final SharedPreferences sessionPrefs;
     private final Gson gson = new Gson();
 
     public PrefsStore(Context context) {
-        prefs = context.getApplicationContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        Context appContext = context.getApplicationContext();
+        prefs = appContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        sessionPrefs = criarPreferenciasSeguras(appContext);
+        migrarTokenLegado();
+    }
+
+    private SharedPreferences criarPreferenciasSeguras(Context context) {
+        try {
+            String masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC);
+            return EncryptedSharedPreferences.create(
+                    SECURE_PREFS,
+                    masterKeyAlias,
+                    context,
+                    EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                    EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM);
+        } catch (GeneralSecurityException | IOException error) {
+            // Mantém o app utilizável em aparelhos com Keystore indisponível.
+            return prefs;
+        }
+    }
+
+    private void migrarTokenLegado() {
+        if (sessionPrefs == prefs || sessionPrefs.contains(KEY_TOKEN)) {
+            return;
+        }
+        String tokenLegado = prefs.getString(KEY_TOKEN, null);
+        if (tokenLegado != null && !tokenLegado.trim().isEmpty()) {
+            if (sessionPrefs.edit().putString(KEY_TOKEN, tokenLegado).commit()) {
+                prefs.edit().remove(KEY_TOKEN).apply();
+            }
+        }
     }
 
     public String getBaseUrl() {
@@ -147,11 +183,18 @@ public class PrefsStore {
     }
 
     public String getToken() {
-        return prefs.getString(KEY_TOKEN, null);
+        return sessionPrefs.getString(KEY_TOKEN, null);
     }
 
     public void setToken(String token) {
-        prefs.edit().putString(KEY_TOKEN, token).apply();
+        SharedPreferences.Editor editor = sessionPrefs.edit();
+        if (token == null || token.trim().isEmpty()) {
+            editor.remove(KEY_TOKEN);
+        } else {
+            editor.putString(KEY_TOKEN, token.trim());
+        }
+        // A sessão precisa chegar ao disco antes de a Activity de login terminar.
+        editor.commit();
     }
 
     public void setUser(String id, String name) {
@@ -290,6 +333,7 @@ public class PrefsStore {
     }
 
     public void logout() {
+        sessionPrefs.edit().remove(KEY_TOKEN).commit();
         prefs.edit()
                 .remove(KEY_TOKEN)
                 .remove(KEY_USER_ID)
