@@ -121,6 +121,7 @@ export * from "./tables/plano-saas-features.js";
 export * from "./tables/planos-saas.js";
 export * from "./tables/prioridades.js";
 export * from "./tables/produto-fornecedor.js";
+export * from "./tables/produto-imagem.js";
 export * from "./tables/produto-relatorio-estruturas.js";
 export * from "./tables/produtos.js";
 export * from "./tables/receita-sem-contribuicao.js";

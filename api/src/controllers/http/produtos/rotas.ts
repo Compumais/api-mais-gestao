@@ -11,13 +11,18 @@ import * as schema from "./doc-schema/schema.js";
 import { excluirProduto } from "./excluir.js";
 import { exportarProdutos } from "./exportar.js";
 import { exportarProdutosMgv } from "./exportar-mgv.js";
-import { importarProdutos } from "./importar.js";
-import { previewImportacaoProdutos } from "./importar-preview.js";
 import {
+	adicionarImagemProduto,
+	definirPrincipalImagemProduto,
+	deleteImagemGaleriaProduto,
 	deleteImagemProduto,
+	downloadArquivoImagemProduto,
 	downloadImagemProduto,
+	listarImagensProduto,
 	uploadImagemProduto,
 } from "./imagem.js";
+import { importarProdutos } from "./importar.js";
+import { previewImportacaoProdutos } from "./importar-preview.js";
 import { inativarProduto } from "./inativar.js";
 import { listarProdutos } from "./listar.js";
 import { listarLotesProduto } from "./lotes.js";
@@ -106,6 +111,22 @@ export async function produtosRotas(app: FastifyInstance) {
 	});
 	app.delete(`/produtos/${ID_UUID_PARAM}/imagem`, {
 		handler: deleteImagemProduto,
+	});
+	app.get(`/produtos/${ID_UUID_PARAM}/imagens`, {
+		handler: listarImagensProduto,
+	});
+	app.post(`/produtos/${ID_UUID_PARAM}/imagens`, {
+		bodyLimit: LIMITE_IMAGEM_PRODUTO,
+		handler: adicionarImagemProduto,
+	});
+	app.get(`/produtos/${ID_UUID_PARAM}/imagens/:idimagem/arquivo`, {
+		handler: downloadArquivoImagemProduto,
+	});
+	app.patch(`/produtos/${ID_UUID_PARAM}/imagens/:idimagem/principal`, {
+		handler: definirPrincipalImagemProduto,
+	});
+	app.delete(`/produtos/${ID_UUID_PARAM}/imagens/:idimagem`, {
+		handler: deleteImagemGaleriaProduto,
 	});
 	app.put(`/produtos/${ID_UUID_PARAM}`, {
 		schema: schema.atualizarProdutoSchema,

@@ -33,7 +33,6 @@ import { useProximoCodigo } from "@/hooks/use-proximo-codigo";
 import { useRascunhoAbaForm } from "@/hooks/use-rascunho-aba-form";
 import {
 	type ProdutoFormData,
-	produtoImagemArquivoSchema,
 	produtoFormSchema,
 } from "@/schemas/produtos.schema";
 import { entidadesService } from "@/services/entidades.service";
@@ -49,15 +48,13 @@ import {
 } from "@/services/unidade-medida.service";
 import { ProdutoAbaBalanca } from "./produto-aba-balanca";
 import { ProdutoAbaGourmet } from "./produto-aba-gourmet";
+import { ProdutoAbaImagens } from "./produto-aba-imagens";
 import { ProdutoAbaImpostos } from "./produto-aba-impostos";
-import { ProdutoImagemCampo } from "./produto-imagem-campo";
 
 type ProdutoFormProps = {
 	modo?: "criar" | "editar";
 	produtoId?: string;
 	valoresIniciais?: Partial<ProdutoFormData>;
-	referenciaImagemInicial?: string | null;
-	imagemLegadaInicial?: string | null;
 };
 
 function textoOuNulo(valor: string | null | undefined): string | null {
@@ -182,9 +179,7 @@ export function ProdutoForm(props: ProdutoFormProps) {
 
 	const modo = props.modo ?? "criar";
 	const isEdicao = modo === "editar";
-	const [arquivoImagem, setArquivoImagem] = useState<File | null>(null);
-	const [removerImagemAtual, setRemoverImagemAtual] = useState(false);
-	const [erroImagem, setErroImagem] = useState<string | null>(null);
+	const [arquivosImagem, setArquivosImagem] = useState<File[]>([]);
 
 	const form = useForm<ProdutoFormData>({
 		resolver: zodResolver(produtoFormSchema) as Resolver<ProdutoFormData>,
@@ -335,7 +330,9 @@ export function ProdutoForm(props: ProdutoFormProps) {
 				!registros.some((grupo) => grupo.id === idgrupogourmetInicial)
 			) {
 				try {
-					const grupo = await gruposGourmetService.buscar(idgrupogourmetInicial);
+					const grupo = await gruposGourmetService.buscar(
+						idgrupogourmetInicial,
+					);
 					if (grupo.idempresa === empresa.id) {
 						return [...registros, grupo];
 					}
@@ -363,18 +360,21 @@ export function ProdutoForm(props: ProdutoFormProps) {
 	const { mutate: criarProduto, isPending: isPendingCriar } = useMutation({
 		mutationFn: async ({
 			dados,
-			imagem,
+			imagens,
 		}: {
 			dados: CriarProdutoData;
-			imagem: File | null;
+			imagens: File[];
 		}) => {
 			const produto = await produtosService.criar(dados);
-			if (imagem) {
+			if (imagens.length > 0) {
 				try {
-					return await produtosService.enviarImagem(produto.id, imagem);
+					for (const imagem of imagens) {
+						await produtosService.adicionarImagem(produto.id, imagem);
+					}
+					return await produtosService.buscar(produto.id);
 				} catch (erro) {
 					const falha = new Error(
-						`Produto cadastrado, mas a imagem não foi enviada: ${
+						`Produto cadastrado, mas nem todas as imagens foram enviadas: ${
 							erro instanceof Error ? erro.message : "erro desconhecido"
 						}`,
 					) as Error & { produtoId: string };
@@ -403,29 +403,18 @@ export function ProdutoForm(props: ProdutoFormProps) {
 			mutationFn: async ({
 				idempresa,
 				dados,
-				imagem,
-				removerImagem,
 			}: {
 				idempresa: string;
 				dados: Parameters<typeof produtosService.atualizar>[1];
-				imagem: File | null;
-				removerImagem: boolean;
 			}) => {
 				if (!isEdicao || !props.produtoId) {
 					throw new Error("ID do produto é obrigatório para editar");
 				}
-				const produto = await produtosService.atualizar(
+				return await produtosService.atualizar(
 					props.produtoId,
 					dados,
 					idempresa,
 				);
-				if (imagem) {
-					return await produtosService.enviarImagem(props.produtoId, imagem);
-				}
-				if (removerImagem) {
-					return await produtosService.removerImagem(props.produtoId);
-				}
-				return produto;
 			},
 			onSuccess: (produto) => {
 				queryClient.invalidateQueries({ queryKey: ["produtos"] });
@@ -449,15 +438,6 @@ export function ProdutoForm(props: ProdutoFormProps) {
 		}
 
 		const payloadBase = buildProdutoPayload(getValues());
-		if (arquivoImagem) {
-			const resultadoImagem =
-				produtoImagemArquivoSchema.safeParse(arquivoImagem);
-			if (!resultadoImagem.success) {
-				setErroImagem(resultadoImagem.error.issues[0]?.message ?? "Imagem inválida");
-				return;
-			}
-		}
-		setErroImagem(null);
 
 		if (!isEdicao) {
 			criarProduto({
@@ -465,7 +445,7 @@ export function ProdutoForm(props: ProdutoFormProps) {
 					idempresa: empresa.id,
 					...payloadBase,
 				},
-				imagem: arquivoImagem,
+				imagens: arquivosImagem,
 			});
 			return;
 		}
@@ -473,8 +453,6 @@ export function ProdutoForm(props: ProdutoFormProps) {
 		atualizarProduto({
 			idempresa: empresa.id,
 			dados: payloadBase,
-			imagem: arquivoImagem,
-			removerImagem: removerImagemAtual,
 		});
 	};
 
@@ -498,8 +476,9 @@ export function ProdutoForm(props: ProdutoFormProps) {
 	return (
 		<form onSubmit={handleSubmit(onSubmit)}>
 			<Tabs defaultValue="geral" className="w-full">
-				<TabsList className="mb-6 grid w-full grid-cols-2 md:grid-cols-4">
+				<TabsList className="mb-6 grid w-full grid-cols-2 md:grid-cols-5">
 					<TabsTrigger value="geral">Geral</TabsTrigger>
+					<TabsTrigger value="imagens">Imagens</TabsTrigger>
 					<TabsTrigger value="gourmet">Gourmet</TabsTrigger>
 					<TabsTrigger value="balanca">Balança</TabsTrigger>
 					<TabsTrigger value="impostos">Impostos</TabsTrigger>
@@ -574,32 +553,6 @@ export function ProdutoForm(props: ProdutoFormProps) {
 									/>
 									<FieldError errors={errors.nome ? [errors.nome] : []} />
 								</Field>
-
-								<ProdutoImagemCampo
-									produtoId={props.produtoId}
-									nomeProduto={watch("nome")}
-									arquivo={arquivoImagem}
-									referenciaAtual={props.referenciaImagemInicial}
-									imagemLegada={props.imagemLegadaInicial}
-									removerAtual={removerImagemAtual}
-									erro={erroImagem}
-									onArquivoChange={(arquivo) => {
-										setArquivoImagem(arquivo);
-										if (arquivo) {
-											const resultado =
-												produtoImagemArquivoSchema.safeParse(arquivo);
-											setErroImagem(
-												resultado.success
-													? null
-													: (resultado.error.issues[0]?.message ??
-															"Imagem inválida"),
-											);
-										} else {
-											setErroImagem(null);
-										}
-									}}
-									onRemoverAtualChange={setRemoverImagemAtual}
-								/>
 
 								<Field data-invalid={!!errors.idunidademedida}>
 									<FieldLabel htmlFor="idunidademedida">Unidade *</FieldLabel>
@@ -928,14 +881,24 @@ export function ProdutoForm(props: ProdutoFormProps) {
 				</TabsContent>
 
 				<TabsContent
+					value="imagens"
+					forceMount
+					className="data-[state=inactive]:hidden"
+				>
+					<ProdutoAbaImagens
+						produtoId={props.produtoId}
+						nomeProduto={watch("nome")}
+						arquivosPendentes={arquivosImagem}
+						onArquivosPendentesChange={setArquivosImagem}
+					/>
+				</TabsContent>
+
+				<TabsContent
 					value="gourmet"
 					forceMount
 					className="data-[state=inactive]:hidden"
 				>
-					<ProdutoAbaGourmet
-						control={control}
-						gruposGourmet={gruposGourmet}
-					/>
+					<ProdutoAbaGourmet control={control} gruposGourmet={gruposGourmet} />
 				</TabsContent>
 
 				<TabsContent

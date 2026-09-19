@@ -97,6 +97,21 @@ export interface Produto {
 	caminhoimagem?: string | null;
 }
 
+export interface ProdutoImagem {
+	id: string;
+	idproduto: string;
+	idempresa: string;
+	ordem: number;
+	principal: boolean;
+	nomearquivo: string | null;
+	tipomime: string | null;
+	tamanho: number | null;
+	referencia: string;
+	origem: "gerenciada" | "legada";
+	criadoem: string;
+	atualizadoem: string;
+}
+
 export interface ListarProdutosResponse {
 	data: Produto[];
 	paginacao: {
@@ -390,11 +405,9 @@ export const produtosService = {
 	},
 
 	async enviarImagem(id: string, arquivo: File): Promise<Produto> {
-		const { data } = await api.put<Produto>(
-			`/produtos/${id}/imagem`,
-			arquivo,
-			{ headers: { "Content-Type": arquivo.type } },
-		);
+		const { data } = await api.put<Produto>(`/produtos/${id}/imagem`, arquivo, {
+			headers: { "Content-Type": arquivo.type },
+		});
 		return data;
 	},
 
@@ -409,6 +422,54 @@ export const produtosService = {
 			responseType: "blob",
 		});
 		return data;
+	},
+
+	async listarImagens(id: string): Promise<ProdutoImagem[]> {
+		const { data } = await api.get<ProdutoImagem[]>(`/produtos/${id}/imagens`);
+		return data;
+	},
+
+	async adicionarImagem(id: string, arquivo: File): Promise<ProdutoImagem> {
+		const { data } = await api.post<ProdutoImagem>(
+			`/produtos/${id}/imagens`,
+			arquivo,
+			{
+				headers: {
+					"Content-Type": arquivo.type,
+					"X-File-Name": encodeURIComponent(arquivo.name),
+				},
+			},
+		);
+		return data;
+	},
+
+	async baixarArquivoImagem(
+		id: string,
+		idimagem: string,
+		versao?: string | null,
+	): Promise<Blob> {
+		const { data } = await api.get<Blob>(
+			`/produtos/${id}/imagens/${idimagem}/arquivo`,
+			{
+				params: versao ? { v: versao } : undefined,
+				responseType: "blob",
+			},
+		);
+		return data;
+	},
+
+	async definirImagemPrincipal(
+		id: string,
+		idimagem: string,
+	): Promise<ProdutoImagem> {
+		const { data } = await api.patch<ProdutoImagem>(
+			`/produtos/${id}/imagens/${idimagem}/principal`,
+		);
+		return data;
+	},
+
+	async removerImagemGaleria(id: string, idimagem: string): Promise<void> {
+		await api.delete(`/produtos/${id}/imagens/${idimagem}`);
 	},
 
 	async alterarEmMassa(
