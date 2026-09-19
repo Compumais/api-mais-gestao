@@ -70,13 +70,27 @@ Opcional (instalador offline, sem download na maquina do cliente):
 Write-Host "Compilando $iss com $iscc"
 $versao = Get-VersaoPackageJson
 Write-Host "Versao do PDV: $versao"
-& $iscc "/DMyAppVersion=$versao" "/DSourceDir=$unpacked" $iss
-if ($LASTEXITCODE -ne 0) {
-	throw "ISCC falhou com codigo $LASTEXITCODE"
+$stagingDir = Join-Path ([System.IO.Path]::GetTempPath()) ("pdv-mais-gestao-inno-{0}-{1}" -f $PID, [guid]::NewGuid().ToString("N"))
+try {
+	New-Item -ItemType Directory -Force -Path $stagingDir | Out-Null
+	& $iscc "/DMyAppVersion=$versao" "/DSourceDir=$unpacked" "/O$stagingDir" $iss
+	if ($LASTEXITCODE -ne 0) {
+		throw "ISCC falhou com codigo $LASTEXITCODE"
+	}
+
+	$artifact = "PDV-Mais-Gestao-Setup-$versao.exe"
+	$stagedSetup = Join-Path $stagingDir $artifact
+	if (-not (Test-Path -LiteralPath $stagedSetup -PathType Leaf)) {
+		throw "ISCC concluiu sem gerar o setup esperado: $stagedSetup"
+	}
+	$publishedSetup = Publish-InstallerArtifact -Source $stagedSetup -Version $versao
+	$releaseBuildDir = [System.IO.Path]::GetFullPath((Join-Path $installerDir "..\release-build"))
+	$releaseSetup = Publish-InstallerArtifact -Source $stagedSetup -Version $versao -DestinationDirectory $releaseBuildDir
+	Write-VersionJson -Version $versao
+
+	Write-Host "Instalador final sincronizado:"
+	Write-Host " - $publishedSetup"
+	Write-Host " - $releaseSetup"
+} finally {
+	Remove-Item -LiteralPath $stagingDir -Recurse -Force -ErrorAction SilentlyContinue
 }
-
-Write-VersionJson -Version $versao
-
-$output = Join-Path $installerDir "output"
-Write-Host "Instalador gerado em: $output"
-Get-ChildItem $output -Filter "*.exe" | ForEach-Object { Write-Host " - $($_.FullName)" }

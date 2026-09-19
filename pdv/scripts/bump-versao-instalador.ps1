@@ -114,25 +114,91 @@ function Invoke-BumpVersaoInstalador {
 	return $nova
 }
 
-function Clear-OldSetups {
-	param([Parameter(Mandatory = $true)][string]$KeepVersion)
-	if (-not (Test-Path -LiteralPath $Script:OutputDir)) { return }
-	$keepName = "{0}{1}.exe" -f $Script:SetupPrefix, $KeepVersion
-	Get-ChildItem -LiteralPath $Script:OutputDir -Filter "$Script:SetupPrefix*.exe" -File -ErrorAction SilentlyContinue |
-		Where-Object { $_.Name -ne $keepName } |
-		ForEach-Object {
-			Write-Host "Removendo setup antigo: $($_.Name)"
-			Remove-Item -LiteralPath $_.FullName -Force
+function Publish-FileAtomically {
+	param(
+		[Parameter(Mandatory = $true)][string]$Source,
+		[Parameter(Mandatory = $true)][string]$Destination
+	)
+	$destinationDir = Split-Path -Parent $Destination
+	New-Item -ItemType Directory -Force -Path $destinationDir | Out-Null
+	$temporary = Join-Path $destinationDir (".{0}.{1}.tmp" -f ([System.IO.Path]::GetFileName($Destination)), [guid]::NewGuid().ToString("N"))
+	$backup = "$temporary.bak"
+	try {
+		Copy-Item -LiteralPath $Source -Destination $temporary -Force
+		if (Test-Path -LiteralPath $Destination) {
+			[System.IO.File]::Replace($temporary, $Destination, $backup, $true)
+			Remove-Item -LiteralPath $backup -Force -ErrorAction SilentlyContinue
+		} else {
+			[System.IO.File]::Move($temporary, $Destination)
 		}
+	} finally {
+		Remove-Item -LiteralPath $temporary -Force -ErrorAction SilentlyContinue
+		Remove-Item -LiteralPath $backup -Force -ErrorAction SilentlyContinue
+	}
+}
+
+function Publish-InstallerArtifact {
+	param(
+		[Parameter(Mandatory = $true)][string]$Source,
+		[Parameter(Mandatory = $true)][string]$Version,
+		[string]$DestinationDirectory = $Script:OutputDir
+	)
+	if (-not (Test-Semver $Version)) {
+		throw "Versao invalida para publicar setup: $Version"
+	}
+	if (-not (Test-Path -LiteralPath $Source -PathType Leaf)) {
+		throw "Setup de origem nao encontrado: $Source"
+	}
+	$artifact = "{0}{1}.exe" -f $Script:SetupPrefix, $Version
+	$destination = Join-Path $DestinationDirectory $artifact
+	Publish-FileAtomically -Source $Source -Destination $destination
+	Write-Host "Setup publicado atomicamente: $destination"
+	return $destination
 }
 
 function Write-VersionJson {
 	param([Parameter(Mandatory = $true)][string]$Version)
 	New-Item -ItemType Directory -Force -Path $Script:OutputDir | Out-Null
 	$artifact = "{0}{1}.exe" -f $Script:SetupPrefix, $Version
+	$previousArtifact = $null
+	$path = Join-Path $Script:OutputDir "version.json"
+	if (Test-Path -LiteralPath $path) {
+		try {
+			$previousManifest = Get-Content -LiteralPath $path -Raw -Encoding UTF8 | ConvertFrom-Json
+			$previousArtifact = [string]$previousManifest.artifact
+		} catch {
+			Write-Host "Aviso: version.json anterior invalido; nenhum setup antigo sera removido"
+		}
+	}
 	$setupPath = Join-Path $Script:OutputDir $artifact
 	if (-not (Test-Path -LiteralPath $setupPath)) {
 		throw "Setup nao encontrado para gerar manifesto: $setupPath"
+	}
+	$artifactToRemove = $null
+	if (
+		$previousArtifact -and
+		$previousArtifact -ne $artifact -and
+		$previousArtifact -match '^PDV-Mais-Gestao-Setup-\d+\.\d+\.\d+\.exe$' -and
+		[System.IO.Path]::GetFileName($previousArtifact) -eq $previousArtifact -and
+		(Test-Path -LiteralPath (Join-Path $Script:OutputDir $previousArtifact) -PathType Leaf)
+	) {
+		$artifactToRemove = $previousArtifact
+	} else {
+		$previousVersions = @(
+			Get-ChildItem -LiteralPath $Script:OutputDir -Filter "$Script:SetupPrefix*.exe" -File -ErrorAction SilentlyContinue |
+				ForEach-Object {
+					if (
+						$_.Name -match '^PDV-Mais-Gestao-Setup-(\d+\.\d+\.\d+)\.exe$' -and
+						(Compare-Semver $Matches[1] $Version) -lt 0
+					) {
+						$Matches[1]
+					}
+				}
+		)
+		$previousVersion = Get-MaxVersao $previousVersions
+		if ($previousVersion) {
+			$artifactToRemove = "{0}{1}.exe" -f $Script:SetupPrefix, $previousVersion
+		}
 	}
 	$setup = Get-Item -LiteralPath $setupPath
 	$manifest = [ordered]@{
@@ -143,12 +209,24 @@ function Write-VersionJson {
 		sha256     = (Get-FileHash -LiteralPath $setupPath -Algorithm SHA256).Hash.ToLowerInvariant()
 		size       = $setup.Length
 	}
-	$path = Join-Path $Script:OutputDir "version.json"
 	$json = $manifest | ConvertTo-Json -Depth 4
 	$utf8NoBom = New-Object System.Text.UTF8Encoding $false
-	[System.IO.File]::WriteAllText($path, $json + "`n", $utf8NoBom)
+	$manifestTemporary = Join-Path $Script:OutputDir (".version.json.{0}.tmp" -f [guid]::NewGuid().ToString("N"))
+	try {
+		[System.IO.File]::WriteAllText($manifestTemporary, $json + "`n", $utf8NoBom)
+		Publish-FileAtomically -Source $manifestTemporary -Destination $path
+	} finally {
+		Remove-Item -LiteralPath $manifestTemporary -Force -ErrorAction SilentlyContinue
+	}
 	Write-Host "Manifesto escrito: $path"
-	Clear-OldSetups -KeepVersion $Version
+
+	if ($artifactToRemove) {
+		$previousPath = Join-Path $Script:OutputDir $artifactToRemove
+		if (Test-Path -LiteralPath $previousPath -PathType Leaf) {
+			Write-Host "Removendo apenas o setup anterior: $artifactToRemove"
+			Remove-Item -LiteralPath $previousPath -Force
+		}
+	}
 }
 
 # Execucao direta (nao quando importado via dot-sourcing sem flags)
