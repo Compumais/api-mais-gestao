@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+	ajustarTextoAoTamanhoFonte,
 	estiloHtmlFonte,
 	largurasLinhaCupom,
 	normalizarTamanhoFonte,
-	reduzirTamanhoFonte,
 } from "./fonte-impressao";
 
 describe("fonte de impressão", () => {
@@ -17,18 +17,30 @@ describe("fonte de impressão", () => {
 		assert.equal(normalizarTamanhoFonte("gigante"), "media");
 	});
 
-	it("reduz um degrau para cupom único de produção", () => {
-		assert.equal(reduzirTamanhoFonte("grande"), "media");
-		assert.equal(reduzirTamanhoFonte("media"), "pequena");
-		assert.equal(reduzirTamanhoFonte("pequena"), "pequena");
-	});
-
 	it("define larguras e estilo HTML por tamanho", () => {
 		assert.equal(largurasLinhaCupom("media").linha, 32);
-		assert.equal(largurasLinhaCupom("pequena").linha, 30);
+		assert.equal(largurasLinhaCupom("pequena").linha, 42);
 		assert.equal(largurasLinhaCupom("grande").linha, 16);
 		assert.equal(estiloHtmlFonte("pequena").fontSize, "11pt");
 		assert.equal(estiloHtmlFonte("media").fontSize, "15pt");
 		assert.equal(estiloHtmlFonte("grande").fontSize, "20pt");
+	});
+
+	it("preserva o layout padrão de instalações antigas", () => {
+		const texto = `${"=".repeat(32)}\nProduto com descricao`;
+		assert.equal(ajustarTextoAoTamanhoFonte(texto, undefined), texto);
+		assert.equal(ajustarTextoAoTamanhoFonte(texto, "valor-invalido"), texto);
+	});
+
+	it("gera linhas diferentes para fonte pequena e grande", () => {
+		const texto = `${"=".repeat(32)}\nProduto artesanal com queijo bacon e molho especial`;
+		const pequena = ajustarTextoAoTamanhoFonte(texto, "pequena").split("\n");
+		const grande = ajustarTextoAoTamanhoFonte(texto, "grande").split("\n");
+
+		assert.equal(pequena[0]?.length, 32);
+		assert.equal(grande[0], "=".repeat(16));
+		assert.ok(pequena.every((linha) => linha.length <= 42));
+		assert.ok(grande.every((linha) => linha.length <= 16));
+		assert.ok(grande.length > pequena.length);
 	});
 });

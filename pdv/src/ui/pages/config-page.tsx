@@ -46,6 +46,38 @@ import { Select } from "@/ui/components/ui/select";
 
 type Config = Record<string, string>;
 
+type TamanhoFonteImpressao = "pequena" | "media" | "grande";
+
+const OPCOES_FONTE_IMPRESSAO: Array<{
+	valor: TamanhoFonteImpressao;
+	rotulo: string;
+	descricao: string;
+	preview: string;
+}> = [
+	{
+		valor: "pequena",
+		rotulo: "Pequena",
+		descricao: "Mais conteúdo por linha (ESC/POS fonte B)",
+		preview: "42 caracteres por linha",
+	},
+	{
+		valor: "media",
+		rotulo: "Padrão",
+		descricao: "Tamanho original e compatível com instalações antigas",
+		preview: "32 caracteres por linha",
+	},
+	{
+		valor: "grande",
+		rotulo: "Grande",
+		descricao: "Largura e altura duplas para maior leitura",
+		preview: "16 caracteres por linha",
+	},
+];
+
+function normalizarFonteImpressao(valor?: string): TamanhoFonteImpressao {
+	return valor === "pequena" || valor === "grande" ? valor : "media";
+}
+
 type MapeamentoGourmet = {
 	idgrupogourmet: string;
 	nome: string;
@@ -397,7 +429,7 @@ export function ConfigPage() {
 				impressora_tipo: config.impressora_tipo ?? "sistema",
 				impressora_host: config.impressora_host ?? "",
 				impressora_porta: config.impressora_porta ?? "9100",
-				impressora_fonte: config.impressora_fonte ?? "media",
+				impressora_fonte: normalizarFonteImpressao(config.impressora_fonte),
 				impressao_producao_modo: config.impressao_producao_modo ?? "itens",
 				impressao_producao_imprimir_grupo:
 					config.impressao_producao_imprimir_grupo === "0" ? "0" : "1",
@@ -1348,28 +1380,63 @@ export function ConfigPage() {
 									<CardHeader>
 										<CardTitle>Tamanho da fonte</CardTitle>
 									</CardHeader>
-									<CardContent className="grid gap-4 sm:grid-cols-2">
-										<div className="space-y-2">
-											<Label htmlFor="impressora_fonte">
+									<CardContent className="space-y-4">
+										<fieldset className="space-y-3">
+											<legend className="text-sm font-medium">
 												Fonte dos cupons térmicos
-											</Label>
-											<Select
-												id="impressora_fonte"
-												value={config.impressora_fonte ?? "media"}
-												onChange={(e) =>
-													set("impressora_fonte", e.target.value)
-												}
-											>
-												<option value="pequena">Pequena</option>
-												<option value="media">Média</option>
-												<option value="grande">Grande</option>
-											</Select>
-										</div>
-										<p className="text-xs text-muted-foreground sm:col-span-2">
-											Aplica-se a cupom não fiscal, pré-conta, produção,
-											comprovantes e testes de impressão. DANFE/NFC-e mantém o
-											leiaute próprio. No modo produção por pedido, a fonte
-											reduz um degrau automaticamente.
+											</legend>
+											<div className="grid gap-3 sm:grid-cols-3">
+												{OPCOES_FONTE_IMPRESSAO.map((opcao) => {
+													const selecionada =
+														normalizarFonteImpressao(
+															config.impressora_fonte,
+														) === opcao.valor;
+													return (
+														<button
+															key={opcao.valor}
+															type="button"
+															aria-pressed={selecionada}
+															onClick={() =>
+																set("impressora_fonte", opcao.valor)
+															}
+															className={cn(
+																"min-h-28 rounded-lg border p-4 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/30",
+																selecionada
+																	? "border-primary bg-primary/10"
+																	: "border-border bg-background hover:bg-muted",
+															)}
+														>
+															<span className="block text-base font-semibold">
+																{opcao.rotulo}
+															</span>
+															<span className="mt-1 block text-xs text-muted-foreground">
+																{opcao.descricao}
+															</span>
+															<span
+																className={cn(
+																	"mt-3 block font-mono leading-tight",
+																	opcao.valor === "pequena"
+																		? "text-xs"
+																		: opcao.valor === "grande"
+																			? "text-xl font-bold"
+																			: "text-base",
+																)}
+															>
+																Abc 123
+															</span>
+															<span className="mt-1 block text-[11px] text-muted-foreground">
+																{opcao.preview}
+															</span>
+														</button>
+													);
+												})}
+											</div>
+										</fieldset>
+										<p className="text-xs text-muted-foreground">
+											Uma única configuração vale para cupom não fiscal,
+											pré-conta, produção/cozinha, comprovantes e teste de
+											impressão. O DANFC-e mantém fonte, dimensões fiscais, QR
+											Code e código de barras próprios.
 										</p>
 									</CardContent>
 								</Card>

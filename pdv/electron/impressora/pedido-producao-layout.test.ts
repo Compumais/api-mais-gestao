@@ -65,6 +65,38 @@ describe("layout pedido de produção", () => {
 		assert.ok(linhasItem.every((l) => l.length <= 32));
 	});
 
+	it("gera a produção nas larguras pequena e grande", () => {
+		const params = {
+			origem: "Mesa 1",
+			itens: [
+				{
+					quantidade: 2,
+					descricao: "Hamburguer artesanal com cheddar e bacon",
+				},
+			],
+			agora: new Date("2026-09-02T12:00:00.000Z"),
+		};
+		const pequena = montarLinhasPedidoProducao({
+			...params,
+			tamanhoFonte: "pequena",
+		});
+		const grande = montarLinhasPedidoProducao({
+			...params,
+			tamanhoFonte: "grande",
+		});
+		const itemPequeno = pequena.filter((linha) => linha.includes("Hamburguer"));
+		const inicioGrande = grande.findIndex((linha) => linha.startsWith("2  "));
+		const fimGrande = grande.findIndex(
+			(linha, indice) => indice > inicioGrande && linha.startsWith("="),
+		);
+		const itemGrande = grande.slice(inicioGrande, fimGrande);
+
+		assert.equal(itemPequeno.length, 1);
+		assert.ok(itemGrande.length >= 2);
+		assert.ok(itemPequeno.every((linha) => linha.length <= 42));
+		assert.ok(itemGrande.every((linha) => linha.length <= 16));
+	});
+
 	it("formato quantidade imprime 6x na mesma linha", () => {
 		const linhas = montarLinhasPedidoProducao({
 			origem: "Mesa 3",

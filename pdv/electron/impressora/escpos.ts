@@ -154,7 +154,7 @@ export async function imprimirPreConta(
 	if (typeof idcontaOuConta === "string") {
 		const { obterContaMesa } = await import("../db/repos");
 		const local = await obterContaMesa(idcontaOuConta);
-		if (!local || local.status !== "aberta") {
+		if (local?.status !== "aberta") {
 			throw new Error("Conta inválida");
 		}
 		conta = local;
@@ -263,7 +263,6 @@ export async function imprimirPedidoProducao(params: {
 	formatoItem?: FormatoItemProducao;
 	/**
 	 * Tamanho tipográfico. Se omitido, usa `impressora_fonte`.
-	 * Cupom único de produção tipicamente passa um degrau menor.
 	 */
 	tamanhoFonte?: TamanhoFonteImpressao;
 }): Promise<{ ok: boolean; modo: string }> {

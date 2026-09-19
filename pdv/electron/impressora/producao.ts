@@ -7,7 +7,6 @@ import {
 	obterTamanhoFonteConfig,
 } from "./destino";
 import { imprimirPedidoProducao } from "./escpos";
-import { reduzirTamanhoFonte } from "./fonte-impressao";
 import { normalizarFormatoItemProducao } from "./pedido-producao-layout";
 
 export type ItemProducao = {
@@ -273,12 +272,8 @@ export async function imprimirProducaoPedido(params: {
 			resolverProduto,
 			resolverDestinoGrupo: obterDestinoGrupoGourmet,
 		});
-		const cupomUnico = modo === "pedido";
 		const agruparPorGrupo = deveAgruparPorGrupoProducao(modo, imprimirGrupo);
-		const tamanhoBase = await obterTamanhoFonteConfig();
-		const tamanhoFonte = cupomUnico
-			? reduzirTamanhoFonte(tamanhoBase)
-			: tamanhoBase;
+		const tamanhoFonte = await obterTamanhoFonteConfig();
 		for (const { destino, itens } of cupons) {
 			await imprimirPedidoProducao({
 				destino,
