@@ -25,6 +25,8 @@ CREATE TABLE IF NOT EXISTS grupo (
 CREATE TABLE IF NOT EXISTS grupo_gourmet (
 	id TEXT PRIMARY KEY NOT NULL,
 	nome TEXT NOT NULL,
+	caminhoimagem TEXT,
+	imagemremota TEXT,
 	atualizadoem TEXT NOT NULL
 );
 

@@ -23,7 +23,12 @@ export type IdentidadePrincipal = {
 
 export type CatalogoPrincipal = {
 	grupos: Array<{ id: string; nome: string }>;
-	gruposGourmet: Array<{ id: string; nome: string }>;
+	gruposGourmet: Array<{
+		id: string;
+		nome: string;
+		caminhoimagem?: string | null;
+		imagemremota?: string | null;
+	}>;
 	produtos: Array<{
 		id: string;
 		descricao: string;

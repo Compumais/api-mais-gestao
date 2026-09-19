@@ -101,6 +101,8 @@ export type ProdutoLocal = {
 export type GrupoLocal = {
 	id: string;
 	nome: string;
+	caminhoimagem?: string | null;
+	imagemremota?: string | null;
 };
 
 export type ClienteLocal = {
@@ -483,18 +485,25 @@ export async function listarGruposLocal(): Promise<GrupoLocal[]> {
 }
 
 export async function upsertGruposGourmet(
-	grupos: Array<{ id: string; nome: string }>,
+	grupos: Array<{
+		id: string;
+		nome: string;
+		caminhoimagem?: string | null;
+		imagemremota?: string | null;
+	}>,
 ): Promise<void> {
 	const agora = new Date().toISOString();
 	await withTransaction(async (client) => {
 		for (const g of grupos) {
 			await execute(
-				`INSERT INTO grupo_gourmet (id, nome, atualizadoem)
-				 VALUES ($1, $2, $3)
+				`INSERT INTO grupo_gourmet (id, nome, caminhoimagem, imagemremota, atualizadoem)
+				 VALUES ($1, $2, $3, $4, $5)
 				 ON CONFLICT (id) DO UPDATE SET
 					nome = excluded.nome,
+					caminhoimagem = excluded.caminhoimagem,
+					imagemremota = excluded.imagemremota,
 					atualizadoem = excluded.atualizadoem`,
-				[g.id, g.nome, agora],
+				[g.id, g.nome, g.caminhoimagem ?? null, g.imagemremota ?? null, agora],
 				client,
 			);
 		}
@@ -503,7 +512,7 @@ export async function upsertGruposGourmet(
 
 export async function listarGruposGourmetLocal(): Promise<GrupoLocal[]> {
 	return query<GrupoLocal>(
-		`SELECT DISTINCT g.id, g.nome
+		`SELECT DISTINCT g.id, g.nome, g.caminhoimagem, g.imagemremota
 		 FROM grupo_gourmet g
 		 JOIN produto_cache p ON p.idgrupogourmet = g.id AND p.inativo = 0
 		 ORDER BY g.nome`,
@@ -967,7 +976,7 @@ export async function listarCatalogoCarga(): Promise<{
 		"SELECT id, nome FROM grupo ORDER BY nome",
 	);
 	const gruposGourmet = await query<GrupoLocal>(
-		"SELECT id, nome FROM grupo_gourmet ORDER BY nome",
+		"SELECT id, nome, caminhoimagem, imagemremota FROM grupo_gourmet ORDER BY nome",
 	);
 	const produtos = await query<ProdutoLocal>(
 		`SELECT ${PRODUTO_SELECT} FROM produto_cache WHERE inativo = 0 ORDER BY descricao`,

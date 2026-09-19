@@ -228,6 +228,27 @@ export async function baixarImagemProduto(
 	}
 }
 
+export async function baixarImagemGrupoGourmet(
+	referencia: string,
+): Promise<{ conteudo: Buffer; tipo: string }> {
+	if (!/^\/grupos-gourmet\/[0-9a-f-]{36}\/imagem(?:\?|$)/i.test(referencia)) {
+		throw new ApiError("Referência de imagem de grupo gourmet inválida", 400);
+	}
+	const token = (await obterSessao()).token;
+	if (!token) throw new ApiError("Sem token de sessão", 401);
+	const resposta = await fetch(`${await baseUrl()}${referencia}`, {
+		headers: { Authorization: `Bearer ${token}` },
+	});
+	if (!resposta.ok) {
+		throw new ApiError(`Falha ao baixar imagem: HTTP ${resposta.status}`, resposta.status);
+	}
+	const tipo = resposta.headers.get("content-type")?.split(";")[0] ?? "";
+	if (!["image/jpeg", "image/png", "image/webp"].includes(tipo)) {
+		throw new ApiError("API retornou formato de imagem inválido", 415);
+	}
+	return { conteudo: Buffer.from(await resposta.arrayBuffer()), tipo };
+}
+
 export async function loginEmail(email: string, password: string) {
 	const data = await request<{
 		token?: string;
@@ -608,12 +629,21 @@ export async function listarGruposGourmet(params: {
 	const limit = params.limit ?? 100;
 	const path = `/grupos-gourmet?idempresa=${encodeURIComponent(params.idempresa)}&page=${page}&limit=${limit}`;
 	const data = await request<{
-		data: Array<{ id: string; nome?: string | null; inativo?: number | null }>;
+		data: Array<{
+			id: string;
+			nome?: string | null;
+			inativo?: number | null;
+			caminhoimagem?: string | null;
+		}>;
 	}>(path);
 
 	return (data.data ?? [])
 		.filter((g) => g.nome && g.inativo !== 1)
-		.map((g) => ({ id: g.id, nome: String(g.nome) }));
+		.map((g) => ({
+			id: g.id,
+			nome: String(g.nome),
+			imagemremota: g.caminhoimagem ?? null,
+		}));
 }
 
 export async function listarClientes(params: {

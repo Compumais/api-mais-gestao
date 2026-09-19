@@ -11,6 +11,7 @@ import {
 	upsertProdutos,
 } from "../db/repos";
 import { sincronizarImagensProdutos } from "../sync/imagens-produtos";
+import { sincronizarImagensGruposGourmet } from "../sync/imagens-grupos-gourmet";
 import {
 	handshakePrincipal,
 	NumeroPdvDuplicadoError,
@@ -180,7 +181,14 @@ export async function puxarDoPrincipal(): Promise<{
 		await upsertGrupos(catalogo.grupos);
 	}
 	if (catalogo.gruposGourmet?.length) {
-		await upsertGruposGourmet(catalogo.gruposGourmet);
+		await upsertGruposGourmet(
+			await sincronizarImagensGruposGourmet(
+				catalogo.gruposGourmet.map((grupo) => ({
+					...grupo,
+					imagemremota: grupo.imagemremota ?? null,
+				})),
+			),
+		);
 	}
 	if (catalogo.produtos?.length) {
 		await upsertProdutos(

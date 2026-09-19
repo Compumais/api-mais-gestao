@@ -369,6 +369,21 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 		}
 	}
 
+	const grupoGourmetCols = await database.query<{ column_name: string }>(
+		`SELECT column_name
+		 FROM information_schema.columns
+		 WHERE table_schema = 'public' AND table_name = 'grupo_gourmet'`,
+	);
+	const grupoGourmetNomes = new Set(
+		grupoGourmetCols.rows.map((c) => c.column_name),
+	);
+	if (!grupoGourmetNomes.has("caminhoimagem")) {
+		await database.query("ALTER TABLE grupo_gourmet ADD COLUMN caminhoimagem TEXT");
+	}
+	if (!grupoGourmetNomes.has("imagemremota")) {
+		await database.query("ALTER TABLE grupo_gourmet ADD COLUMN imagemremota TEXT");
+	}
+
 	const gourmetCols = await database.query<{ column_name: string }>(
 		`SELECT column_name
 		 FROM information_schema.columns

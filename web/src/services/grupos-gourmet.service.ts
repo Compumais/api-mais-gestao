@@ -6,6 +6,7 @@ export interface GrupoGourmet {
 	codigo: string | null;
 	nome: string;
 	inativo: number;
+	caminhoimagem: string | null;
 }
 
 export interface ListarGruposGourmetResponse {
@@ -81,11 +82,38 @@ export const gruposGourmetService = {
 		id: string,
 		dados: AtualizarGrupoGourmetData,
 	): Promise<GrupoGourmet> {
-		const { data } = await api.put<GrupoGourmet>(`/grupos-gourmet/${id}`, dados);
+		const { data } = await api.put<GrupoGourmet>(
+			`/grupos-gourmet/${id}`,
+			dados,
+		);
 		return data;
 	},
 
 	async deletar(id: string): Promise<void> {
 		await api.delete(`/grupos-gourmet/${id}`);
+	},
+
+	async enviarImagem(id: string, arquivo: File): Promise<GrupoGourmet> {
+		const { data } = await api.put<GrupoGourmet>(
+			`/grupos-gourmet/${id}/imagem`,
+			arquivo,
+			{ headers: { "Content-Type": arquivo.type } },
+		);
+		return data;
+	},
+
+	async removerImagem(id: string): Promise<GrupoGourmet> {
+		const { data } = await api.delete<GrupoGourmet>(
+			`/grupos-gourmet/${id}/imagem`,
+		);
+		return data;
+	},
+
+	async baixarImagem(id: string, versao?: string | null): Promise<Blob> {
+		const { data } = await api.get<Blob>(`/grupos-gourmet/${id}/imagem`, {
+			params: versao ? { v: versao } : undefined,
+			responseType: "blob",
+		});
+		return data;
 	},
 };

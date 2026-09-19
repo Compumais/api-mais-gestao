@@ -1,6 +1,8 @@
 export type GrupoLocal = {
 	id: string;
 	nome: string;
+	caminhoimagem?: string | null;
+	imagemremota?: string | null;
 };
 
 export type ClienteLocal = {
