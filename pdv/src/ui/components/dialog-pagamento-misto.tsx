@@ -608,52 +608,55 @@ export function DialogPagamentoMisto({
 	if (!aberto) return null;
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3">
-			<div className="pdv-surface flex max-h-[95vh] w-[56rem] max-w-[96vw] flex-col overflow-hidden">
-				<div className="flex items-start justify-between gap-3 border-b px-5 py-4">
+		<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-3 backdrop-blur-[2px]">
+			<div className="pdv-surface flex max-h-[96vh] w-[64rem] max-w-[98vw] flex-col overflow-hidden ring-slate-950/20">
+				<div className="flex flex-col gap-4 bg-sidebar px-5 py-4 text-sidebar-foreground sm:flex-row sm:items-start sm:justify-between">
 					<div>
-						<h2 className="text-lg font-semibold">{titulo}</h2>
-						<p className="text-xs text-muted-foreground">
+						<p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-sidebar-foreground/60">
+							Fechamento da venda
+						</p>
+						<h2 className="text-xl font-bold">{titulo}</h2>
+						<p className="mt-1 max-w-md text-xs text-sidebar-foreground/70">
 							Informe o valor e escolha o meio. Enter lança em dinheiro e
 							confirma quando o restante zerar.
 						</p>
 						{descontoJaAplicado > 0 ? (
-							<p className="text-xs text-muted-foreground">
+							<p className="text-xs text-sidebar-foreground/70">
 								Desconto já na conta: {money(descontoJaAplicado)}
 							</p>
 						) : null}
 						{acrescimoJaAplicado > 0 ? (
-							<p className="text-xs text-muted-foreground">
+							<p className="text-xs text-sidebar-foreground/70">
 								Acréscimo já na conta: {money(acrescimoJaAplicado)}
 							</p>
 						) : null}
 					</div>
-					<div className="flex gap-2 text-center">
-						<div className="min-w-28 rounded-md border bg-background px-3 py-2">
-							<div className="text-[11px] text-muted-foreground">Total</div>
+					<div className="grid grid-cols-2 gap-2 text-center sm:flex">
+						<div className="min-w-28 rounded-lg border border-white/10 bg-white/10 px-3 py-2">
+							<div className="text-[11px] text-sidebar-foreground/65">Total</div>
 							<div className="text-lg font-bold">{money(totalLiquido)}</div>
 							{descontoAplicado > 0 || acrescimoAplicado > 0 ? (
-								<div className="text-[10px] text-muted-foreground">
+								<div className="text-[10px] text-sidebar-foreground/60">
 									de {money(total)}
 								</div>
 							) : null}
 						</div>
 						{descontoAplicado > 0 ? (
-							<div className="min-w-28 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2">
-								<div className="text-[11px] text-muted-foreground">
+							<div className="min-w-28 rounded-lg border border-emerald-300/30 bg-emerald-400/15 px-3 py-2">
+								<div className="text-[11px] text-emerald-100/80">
 									Desconto
 								</div>
-								<div className="text-lg font-bold text-emerald-700 dark:text-emerald-400">
+								<div className="text-lg font-bold text-emerald-200">
 									-{money(descontoAplicado)}
 								</div>
 							</div>
 						) : null}
 						{acrescimoAplicado > 0 ? (
-							<div className="min-w-28 rounded-md border border-orange-500/40 bg-orange-500/10 px-3 py-2">
-								<div className="text-[11px] text-muted-foreground">
+							<div className="min-w-28 rounded-lg border border-orange-300/30 bg-orange-400/15 px-3 py-2">
+								<div className="text-[11px] text-orange-100/80">
 									Acréscimo
 								</div>
-								<div className="text-lg font-bold text-orange-700 dark:text-orange-400">
+								<div className="text-lg font-bold text-orange-200">
 									+{money(acrescimoAplicado)}
 								</div>
 							</div>
@@ -661,16 +664,16 @@ export function DialogPagamentoMisto({
 						<div
 							className={
 								restante > 0
-									? "min-w-28 rounded-md border border-amber-500/50 bg-amber-500/10 px-3 py-2"
-									: "min-w-28 rounded-md border border-primary/40 bg-primary/10 px-3 py-2"
+									? "min-w-28 rounded-lg border border-amber-300/40 bg-amber-400/20 px-3 py-2"
+									: "min-w-28 rounded-lg border border-blue-300/40 bg-blue-400/20 px-3 py-2"
 							}
 						>
-							<div className="text-[11px] text-muted-foreground">Restante</div>
+							<div className="text-[11px] text-sidebar-foreground/70">Restante</div>
 							<div
 								className={
 									restante > 0
-										? "text-lg font-bold text-amber-700 dark:text-amber-400"
-										: "text-lg font-bold text-primary"
+										? "text-lg font-bold text-amber-200"
+										: "text-lg font-bold text-blue-100"
 								}
 							>
 								{money(restante)}
@@ -679,7 +682,7 @@ export function DialogPagamentoMisto({
 					</div>
 				</div>
 
-				<div className="grid min-h-0 flex-1 gap-4 overflow-auto p-5 lg:grid-cols-[minmax(0,1fr)_20rem]">
+				<div className="pdv-scrollbar grid min-h-0 flex-1 gap-4 overflow-auto bg-slate-50 p-4 dark:bg-slate-950/30 lg:grid-cols-[minmax(0,1fr)_21rem]">
 					<div className="space-y-3">
 						<div className="space-y-1">
 							<p className="text-xs font-medium text-muted-foreground">
@@ -983,11 +986,11 @@ export function DialogPagamentoMisto({
 							)
 						) : null}
 
-						<div className="rounded-md border bg-background px-3 py-3 text-center">
-							<div className="text-xs text-muted-foreground">
+						<div className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-4 text-center shadow-sm dark:border-blue-900 dark:bg-blue-950/30">
+							<div className="text-xs font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-300">
 								Valor a lançar
 							</div>
-							<div className="text-3xl font-bold text-primary">
+							<div className="text-4xl font-black tabular-nums text-primary">
 								{money(centavosToNumber(digitos))}
 							</div>
 							{troco > 0 ? (
@@ -1103,7 +1106,7 @@ export function DialogPagamentoMisto({
 										<Button
 											key={botao.id}
 											variant="outline"
-											className="h-auto min-h-14 py-2"
+											className="pdv-touch h-auto min-h-16 border-blue-200 bg-white py-2.5 shadow-sm hover:border-primary hover:bg-blue-50 dark:border-blue-900 dark:bg-card dark:hover:bg-blue-950/40"
 											disabled={
 												ocupado || (restante <= 0 && botao.meio !== "DINHEIRO")
 											}
@@ -1190,18 +1193,23 @@ export function DialogPagamentoMisto({
 					</div>
 				</div>
 
-				{erro && <p className="px-5 pb-2 text-sm text-destructive">{erro}</p>}
-				<div className="flex gap-2 border-t px-5 py-4">
+				{erro && (
+					<p className="border-t border-red-200 bg-red-50 px-5 py-2 text-sm font-medium text-destructive dark:border-red-950 dark:bg-red-950/30">
+						{erro}
+					</p>
+				)}
+				<div className="flex gap-3 border-t bg-card px-5 py-3">
 					<Button
 						variant="outline"
-						className="flex-1"
+						className="pdv-touch flex-1"
 						disabled={ocupado}
 						onClick={() => void fecharDialog()}
 					>
 						Cancelar
 					</Button>
 					<Button
-						className="flex-1"
+						variant="success"
+						className="pdv-touch flex-[1.4]"
 						disabled={ocupado || !podeFechar}
 						onClick={() => confirmarFechamento(lancamentos)}
 					>

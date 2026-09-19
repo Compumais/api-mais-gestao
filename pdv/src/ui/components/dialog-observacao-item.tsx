@@ -30,7 +30,7 @@ export function DialogObservacaoItem({
 	if (!aberto) return null;
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+		<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-[2px]">
 			<form
 				className="pdv-surface w-full max-w-md space-y-4 p-5"
 				onSubmit={(e) => {

@@ -24,7 +24,7 @@ export function DialogMaisAcoesMesa({
 	if (!aberto) return null;
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3">
+		<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-3 backdrop-blur-[2px]">
 			<div className="pdv-surface w-[28rem] max-w-[95vw] space-y-3 p-5">
 				<div>
 					<h2 className="text-lg font-semibold">Mais ações</h2>

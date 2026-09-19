@@ -5,6 +5,12 @@ function primeiraUrl(...candidatos: Array<string | null | undefined>): string | 
 		if (!c) continue;
 		const v = c.trim();
 		if (!v) continue;
+		if (/^[a-zA-Z]:[\\/]/.test(v)) {
+			return encodeURI(`file:///${v.replaceAll("\\", "/")}`);
+		}
+		if (v.startsWith("\\\\")) {
+			return encodeURI(`file:${v.replaceAll("\\", "/")}`);
+		}
 		if (
 			v.startsWith("http://") ||
 			v.startsWith("https://") ||

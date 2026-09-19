@@ -1,3 +1,4 @@
+import { Plus, ShoppingBag } from "lucide-react";
 import { useEffect, useState } from "react";
 import { resolverSrcImagemProduto } from "@/lib/produto-imagem";
 import type { ProdutoLocal } from "@/lib/pdv-types";
@@ -32,10 +33,12 @@ export function ProdutoCard({
 }: ProdutoCardProps) {
 	const src = resolverSrcImagemProduto(produto);
 	const [falhou, setFalhou] = useState(false);
+	const [carregou, setCarregou] = useState(false);
 	const mostrarImg = Boolean(src) && !falhou;
 
 	useEffect(() => {
 		setFalhou(false);
+		setCarregou(false);
 	}, [produto.id, src]);
 
 	return (
@@ -44,50 +47,108 @@ export function ProdutoCard({
 			disabled={disabled}
 			onClick={onClick}
 			className={cn(
-				"flex flex-col items-center gap-2 rounded-lg p-3 text-center ring-1 transition disabled:pointer-events-none disabled:opacity-50",
+				"group flex min-h-56 flex-col overflow-hidden rounded-xl text-left ring-1 transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50",
 				destaque
-					? "bg-primary text-primary-foreground ring-primary hover:bg-primary/80"
-					: "bg-background ring-foreground/20 hover:ring-primary",
+					? "bg-primary text-primary-foreground ring-primary hover:bg-primary/90"
+					: "bg-background ring-foreground/15 hover:ring-primary",
 			)}
 		>
 			<div
 				className={cn(
-					"flex h-16 w-16 items-center justify-center overflow-hidden rounded-md",
+					"relative flex h-28 w-full items-center justify-center overflow-hidden",
 					destaque ? "bg-primary-foreground/15" : "bg-muted",
 				)}
 			>
+				{!mostrarImg || !carregou ? (
+					<PlaceholderIcon
+						className={cn(
+							"h-10 w-10 opacity-35",
+							destaque ? "text-primary-foreground" : "text-muted-foreground",
+						)}
+					/>
+				) : null}
 				{mostrarImg ? (
 					<img
 						src={src ?? undefined}
 						alt=""
-						className="h-full w-full object-cover"
-						loading="lazy"
-						onError={() => setFalhou(true)}
-					/>
-				) : (
-					<PlaceholderIcon
 						className={cn(
-							"h-8 w-8 opacity-40",
-							destaque ? "text-primary-foreground" : "text-muted-foreground",
+							"absolute inset-0 h-full w-full object-cover transition duration-200 group-hover:scale-105",
+							carregou ? "opacity-100" : "opacity-0",
 						)}
+						loading="lazy"
+						onLoad={() => setCarregou(true)}
+						onError={() => {
+							setCarregou(false);
+							setFalhou(true);
+						}}
 					/>
-				)}
+				) : null}
+				{destaque ? (
+					<span className="absolute left-2 top-2 rounded-full bg-primary-foreground/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
+						Atalho
+					</span>
+				) : null}
 			</div>
-			<div
-				className={cn(
-					"line-clamp-2 w-full text-sm font-semibold",
-					destaque ? "text-primary-foreground" : "",
-				)}
-			>
-				{produto.descricao}
-			</div>
-			<div
-				className={cn(
-					"text-sm font-bold",
-					destaque ? "text-primary-foreground" : "text-primary",
-				)}
-			>
-				{money(produto.preco)}
+			<div className="flex w-full flex-1 flex-col p-3">
+				<div
+					className={cn(
+						"line-clamp-2 min-h-10 w-full text-sm font-semibold leading-tight",
+						destaque ? "text-primary-foreground" : "text-foreground",
+					)}
+				>
+					{produto.descricao}
+				</div>
+				<div
+					className={cn(
+						"mt-1 min-h-4 truncate text-[11px]",
+						destaque
+							? "text-primary-foreground/70"
+							: "text-muted-foreground",
+					)}
+				>
+					{produto.codigo != null
+						? `Cód. ${produto.codigo}`
+						: produto.ean
+							? `EAN ${produto.ean}`
+							: null}
+				</div>
+				<div className="mt-auto flex items-end justify-between gap-2 pt-3">
+					<div>
+						<div
+							className={cn(
+								"text-[10px] font-medium uppercase tracking-wide",
+								destaque
+									? "text-primary-foreground/65"
+									: "text-muted-foreground",
+							)}
+						>
+							Preço
+						</div>
+						<div
+							className={cn(
+								"text-base font-bold",
+								destaque ? "text-primary-foreground" : "text-primary",
+							)}
+						>
+							{money(produto.preco)}
+						</div>
+					</div>
+					<span
+						className={cn(
+							"flex size-9 shrink-0 items-center justify-center rounded-lg transition",
+							destaque
+								? "bg-primary-foreground text-primary"
+								: "bg-primary text-primary-foreground group-hover:bg-primary/90",
+						)}
+						aria-hidden
+					>
+						{destaque ? (
+							<ShoppingBag className="size-4" />
+						) : (
+							<Plus className="size-5" />
+						)}
+					</span>
+				</div>
 			</div>
 		</button>
 	);

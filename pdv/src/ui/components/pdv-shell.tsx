@@ -32,10 +32,17 @@ export function PdvShell({
 	esconderAtalhoAlertasVendas = false,
 }: PdvShellProps) {
 	return (
-		<div className="flex h-screen flex-col">
+		<div className="flex h-screen flex-col overflow-hidden bg-muted/35">
 			{topbar}
-			<div className="flex min-h-0 flex-1 gap-3 overflow-hidden bg-muted/30 p-3">
-				<div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2 overflow-hidden">
+			<div className="flex min-h-0 flex-1 overflow-hidden">
+				{sideNav ? (
+					<SideNav
+						status={status}
+						onBlocked={onBlockedNavigate}
+						onMesasActiveClick={onMesasActiveClick}
+					/>
+				) : null}
+				<div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2 overflow-hidden p-2.5">
 					<AlertasOperacionaisPdv
 						status={status}
 						esconderAtalhoVendas={esconderAtalhoAlertasVendas}
@@ -44,13 +51,6 @@ export function PdvShell({
 						{children}
 					</div>
 				</div>
-				{sideNav ? (
-					<SideNav
-						status={status}
-						onBlocked={onBlockedNavigate}
-						onMesasActiveClick={onMesasActiveClick}
-					/>
-				) : null}
 			</div>
 			{footer}
 		</div>

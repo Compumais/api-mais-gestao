@@ -4,7 +4,10 @@ import {
 	Receipt,
 	Settings,
 	ShoppingCart,
+	UserRound,
 	UtensilsCrossed,
+	Wifi,
+	WifiOff,
 } from "lucide-react";
 import type { ComponentType } from "react";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
@@ -15,6 +18,7 @@ import {
 } from "@/lib/pdv-types";
 import { cn } from "@/lib/utils";
 import { secundarioDesconectado } from "@/ui/components/aviso-secundario";
+import { useSidebarState } from "@/ui/hooks/use-sidebar-state";
 
 type SideNavProps = {
 	/** Callback quando a navegação é bloqueada (PDV secundário offline). */
@@ -29,25 +33,31 @@ function SideButton({
 	icon: Icon,
 	onClick,
 	active,
+	recolhida,
 }: {
 	label: string;
 	icon: ComponentType<{ className?: string }>;
 	onClick: () => void;
 	active?: boolean;
+	recolhida: boolean;
 }) {
 	return (
 		<button
 			type="button"
 			onClick={onClick}
+			aria-label={label}
+			title={recolhida ? label : undefined}
+			aria-current={active ? "page" : undefined}
 			className={cn(
-				"flex flex-1 flex-col items-center justify-center gap-1 rounded-md py-2.5 text-xs font-semibold transition ring-1",
+				"pdv-touch flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-xs font-semibold transition",
+				recolhida && "justify-center gap-0 px-0",
 				active
-					? "bg-sidebar-primary text-sidebar-primary-foreground ring-sidebar-primary"
-					: "bg-card text-sidebar-foreground ring-sidebar-border hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+					? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
+					: "text-sidebar-foreground/82 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
 			)}
 		>
-			<Icon className="size-5" />
-			{label}
+			<Icon className="size-[18px] shrink-0" />
+			<span className={cn("truncate", recolhida && "sr-only")}>{label}</span>
 		</button>
 	);
 }
@@ -72,12 +82,14 @@ export function SideNav({
 	const bloqueado = secundarioDesconectado(status);
 	const rotulo = rotuloModelo(status?.modeloAtendimento);
 	const path = location.pathname;
+	const { recolhida } = useSidebarState();
 
 	const mesasAtivo = path === "/" || path.startsWith("/mesas/");
 	const balcaoAtivo = path === "/balcao" || (!gourmet && path === "/");
 	const deliveryAtivo = path === "/delivery" || path.startsWith("/delivery/");
 	const pedidosAtivo = path === "/pedidos" || path.startsWith("/pedidos/");
 	const vendasAtivo = path === "/vendas" || path.startsWith("/vendas/");
+	const configAtivo = path === "/config";
 
 	function tentarNavegar(destino: string) {
 		if (bloqueado) {
@@ -88,68 +100,120 @@ export function SideNav({
 	}
 
 	return (
-		<aside className="flex w-36 shrink-0 flex-col gap-1.5 rounded-xl bg-sidebar p-1.5 text-sidebar-foreground ring-1 ring-sidebar-border shadow-sm">
-			{gourmet ? (
+		<aside
+			className={cn(
+				"flex shrink-0 flex-col bg-sidebar p-2 text-sidebar-foreground shadow-lg transition-[width] duration-150",
+				recolhida ? "w-16" : "w-48",
+			)}
+		>
+			<nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto py-1">
+				{gourmet ? (
+					<SideButton
+						label={rotulo.plural}
+						icon={UtensilsCrossed}
+						active={mesasAtivo}
+						recolhida={recolhida}
+						onClick={() => {
+							if (mesasAtivo) {
+								onMesasActiveClick?.();
+								return;
+							}
+							navigate("/");
+						}}
+					/>
+				) : null}
 				<SideButton
-					label={rotulo.plural}
-					icon={UtensilsCrossed}
-					active={mesasAtivo}
+					label="Balcão"
+					icon={ShoppingCart}
+					active={balcaoAtivo}
+					recolhida={recolhida}
 					onClick={() => {
-						if (mesasAtivo) {
-							onMesasActiveClick?.();
-							return;
-						}
-						navigate("/");
+						if (balcaoAtivo) return;
+						tentarNavegar("/balcao");
 					}}
 				/>
-			) : null}
-			<SideButton
-				label="Balcão"
-				icon={ShoppingCart}
-				active={balcaoAtivo}
-				onClick={() => {
-					if (balcaoAtivo) return;
-					tentarNavegar("/balcao");
-				}}
-			/>
-			{gourmet ? (
+				{gourmet ? (
+					<SideButton
+						label="Delivery"
+						icon={Bike}
+						active={deliveryAtivo}
+						recolhida={recolhida}
+						onClick={() => {
+							if (deliveryAtivo && path === "/delivery") return;
+							tentarNavegar("/delivery");
+						}}
+					/>
+				) : null}
+				{gourmet ? (
+					<SideButton
+						label="Pedidos"
+						icon={ClipboardList}
+						active={pedidosAtivo}
+						recolhida={recolhida}
+						onClick={() => {
+							if (pedidosAtivo) return;
+							tentarNavegar("/pedidos");
+						}}
+					/>
+				) : null}
 				<SideButton
-					label="Delivery"
-					icon={Bike}
-					active={deliveryAtivo}
+					label="Histórico de vendas"
+					icon={Receipt}
+					active={vendasAtivo}
+					recolhida={recolhida}
 					onClick={() => {
-						if (deliveryAtivo && path === "/delivery") return;
-						tentarNavegar("/delivery");
+						if (vendasAtivo) return;
+						navigate("/vendas");
 					}}
 				/>
-			) : null}
-			{gourmet ? (
-				<SideButton
-					label="Pedidos"
-					icon={ClipboardList}
-					active={pedidosAtivo}
-					onClick={() => {
-						if (pedidosAtivo) return;
-						tentarNavegar("/pedidos");
-					}}
-				/>
-			) : null}
-			<SideButton
-				label="Vendas"
-				icon={Receipt}
-				active={vendasAtivo}
-				onClick={() => {
-					if (vendasAtivo) return;
-					navigate("/vendas");
-				}}
-			/>
-			{status?.podeConfigurar ? (
-				<SideButton
-					label="Config"
-					icon={Settings}
-					onClick={() => navigate("/config")}
-				/>
-			) : null}
+				{status?.podeConfigurar ? (
+					<SideButton
+						label="Configurações"
+						icon={Settings}
+						active={configAtivo}
+						recolhida={recolhida}
+						onClick={() => navigate("/config")}
+					/>
+				) : null}
+			</nav>
+			<div
+				className={cn(
+					"mt-2 rounded-lg border border-sidebar-border bg-black/10 p-2.5",
+					recolhida && "px-1.5",
+				)}
+				title={
+					recolhida
+						? `${status?.caixa?.username ?? status?.sessao.username ?? "Operador"} · Caixa ${status?.caixa?.numeropdv ?? status?.numeropdv ?? "—"}`
+						: undefined
+				}
+			>
+				<div
+					className={cn(
+						"flex items-center gap-2",
+						recolhida && "justify-center",
+					)}
+				>
+					<div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-sidebar-primary">
+						<UserRound className="size-4" />
+					</div>
+					<div className={cn("min-w-0 flex-1", recolhida && "hidden")}>
+						<div className="truncate text-xs font-semibold">
+							{status?.caixa?.username ??
+								status?.sessao.username ??
+								"Operador"}
+						</div>
+						<div className="truncate text-[10px] opacity-65">
+							Caixa {status?.caixa?.numeropdv ?? status?.numeropdv ?? "—"}
+						</div>
+					</div>
+					{!recolhida &&
+						(status?.online ? (
+							<Wifi className="size-3.5 text-emerald-300" />
+						) : (
+							<WifiOff className="size-3.5 text-amber-300" />
+						))}
+				</div>
+			</div>
 		</aside>
 	);
 }
