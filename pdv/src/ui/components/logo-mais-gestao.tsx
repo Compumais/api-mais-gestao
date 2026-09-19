@@ -1,9 +1,13 @@
 import { cn } from "@/lib/utils";
 
 const FONTES = {
-	colorido: "/brand/mais-gestao-colorido.png",
-	branco: "/brand/mais-gestao-branco.png",
+	colorido: "brand/mais-gestao-colorido.png",
+	branco: "brand/mais-gestao-branco.png",
 } as const;
+
+function urlAsset(caminho: string): string {
+	return new URL(caminho, document.baseURI).href;
+}
 
 export function LogoMaisGestao({
 	variante = "colorido",
@@ -14,7 +18,7 @@ export function LogoMaisGestao({
 }) {
 	return (
 		<img
-			src={FONTES[variante]}
+			src={urlAsset(FONTES[variante])}
 			alt="Mais Gestão"
 			className={cn("h-10 w-auto object-contain", className)}
 		/>

@@ -7,9 +7,9 @@ import {
 	writeFile,
 } from "node:fs/promises";
 import { join } from "node:path";
-import { pathToFileURL } from "node:url";
 import { app } from "electron";
 import { baixarImagemProduto } from "../api/client";
+import { urlImagemLocal } from "./protocolo-imagens";
 
 type ProdutoComImagem = {
 	id: string;
@@ -75,7 +75,7 @@ async function referenciaCacheExistente(
 		const arquivo = (await readdir(diretorioCache())).find((nome) =>
 			nome.startsWith(prefixo),
 		);
-		return arquivo ? pathToFileURL(join(diretorioCache(), arquivo)).href : null;
+		return arquivo ? urlImagemLocal("produto", arquivo) : null;
 	} catch {
 		return null;
 	}
@@ -109,7 +109,7 @@ export async function sincronizarImagemProduto<T extends ProdutoComImagem>(
 	await removerVersoesAnteriores(produto.id, nomeArquivo);
 	return {
 		...produto,
-		caminhoimagem: pathToFileURL(join(diretorioCache(), nomeArquivo)).href,
+		caminhoimagem: urlImagemLocal("produto", nomeArquivo),
 		imagemremota: referencia,
 	};
 }

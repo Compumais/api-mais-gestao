@@ -17,7 +17,13 @@ import {
 	iniciarReconciliacaoNfcePeriodica,
 	reconciliarNfce,
 } from "./sync/reconciliar-nfce";
+import {
+	registrarEsquemaImagemLocal,
+	registrarProtocoloImagemLocal,
+} from "./sync/protocolo-imagens";
 import { verificarEAtualizarPdv } from "./update/verificar-update";
+
+registrarEsquemaImagemLocal();
 
 // Linux/dev: chrome-sandbox costuma exigir root+setuid; evita abort do Electron.
 if (
@@ -77,6 +83,7 @@ function registerIpc(): void {
 }
 
 app.whenReady().then(async () => {
+	registrarProtocoloImagemLocal();
 	registerIpc();
 	createWindow();
 	syncTimer = iniciarSyncPeriodico(20000);
