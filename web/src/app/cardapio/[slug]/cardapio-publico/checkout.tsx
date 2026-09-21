@@ -23,7 +23,6 @@ type Props = {
 	subtotal: number;
 	taxa: number;
 	total: number;
-	cor: string;
 	enviando: boolean;
 	onVoltar: () => void;
 	onNome: (valor: string) => void;
@@ -37,6 +36,10 @@ type Props = {
 	onEnviar: () => void;
 };
 
+const campoClass =
+	"border-neutral-300 bg-white text-neutral-950 placeholder:text-neutral-500";
+const labelClass = "text-sm font-semibold text-neutral-950";
+
 export function CardapioPublicoCheckout({
 	data,
 	sacola,
@@ -46,7 +49,6 @@ export function CardapioPublicoCheckout({
 	subtotal,
 	taxa,
 	total,
-	cor,
 	enviando,
 	onVoltar,
 	onNome,
@@ -56,31 +58,30 @@ export function CardapioPublicoCheckout({
 	onEnviar,
 }: Props) {
 	return (
-		<main className="mx-auto max-w-xl px-4 py-6">
+		<main className="mx-auto max-w-xl px-4 py-6 text-neutral-950">
 			<button
 				type="button"
-				className="mb-4 text-sm"
-				style={{ color: cor }}
+				className="mb-4 text-sm font-semibold text-neutral-900 underline-offset-2 hover:underline"
 				onClick={onVoltar}
 			>
 				← Voltar ao cardápio
 			</button>
-			<h1 className="text-2xl font-bold">Finalizar pedido</h1>
+			<h1 className="text-2xl font-black tracking-tight">Finalizar pedido</h1>
 			<ul className="mt-4 space-y-3">
 				{sacola.map((item) => (
 					<li
 						key={item.chave}
-						className="flex items-start justify-between rounded-xl bg-white p-3"
+						className="flex items-start justify-between rounded-xl border border-neutral-200 bg-white p-3"
 					>
 						<div>
-							<p className="font-medium">{item.nome}</p>
-							<p className="text-sm text-zinc-500">
+							<p className="font-bold uppercase">{item.nome}</p>
+							<p className="text-sm font-medium text-neutral-700">
 								{item.quantidade} × {formatarMoeda(item.preco)}
 							</p>
 						</div>
 						<button
 							type="button"
-							className="text-sm text-zinc-500"
+							className="text-sm font-semibold text-red-700"
 							onClick={() => onRemover(item.chave)}
 						>
 							Remover
@@ -88,22 +89,38 @@ export function CardapioPublicoCheckout({
 					</li>
 				))}
 			</ul>
-			<div className="mt-6 space-y-4 rounded-xl bg-white p-4">
-				<div>
-					<Label htmlFor="nome">Nome</Label>
+			<div className="mt-6 space-y-4 rounded-xl border border-neutral-200 bg-white p-4">
+				<div className="space-y-1.5">
+					<Label htmlFor="nome" className={labelClass}>
+						Nome
+					</Label>
 					<Input
 						id="nome"
 						value={nome}
 						onChange={(event) => onNome(event.target.value)}
+						className={campoClass}
+						autoComplete="name"
+						required
 					/>
 				</div>
-				<div>
-					<Label htmlFor="telefone">Telefone</Label>
+				<div className="space-y-1.5">
+					<Label htmlFor="telefone" className={labelClass}>
+						Telefone (WhatsApp)
+					</Label>
 					<Input
 						id="telefone"
+						type="tel"
+						inputMode="tel"
 						value={telefone}
 						onChange={(event) => onTelefone(event.target.value)}
+						placeholder="(00) 00000-0000"
+						className={campoClass}
+						autoComplete="tel"
+						required
 					/>
+					<p className="text-xs font-medium text-neutral-600">
+						Usaremos este número para contato e integração com WhatsApp.
+					</p>
 				</div>
 				{[...data.camposfinalizacao]
 					.sort((a, b) => a.ordem - b.ordem)
@@ -125,8 +142,8 @@ export function CardapioPublicoCheckout({
 									: null,
 							].filter(Boolean) as Array<{ id: string; label: string }>;
 							return (
-								<div key={campo.id}>
-									<Label>{campo.rotulo}</Label>
+								<div key={campo.id} className="space-y-1.5">
+									<Label className={labelClass}>{campo.rotulo}</Label>
 									<Select
 										value={respostas[campo.id] || opcoes[0]?.id}
 										onValueChange={(value) =>
@@ -137,7 +154,7 @@ export function CardapioPublicoCheckout({
 											}))
 										}
 									>
-										<SelectTrigger>
+										<SelectTrigger className={campoClass}>
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>
@@ -154,8 +171,8 @@ export function CardapioPublicoCheckout({
 						if (campo.tipo === "endereco") {
 							return (
 								<div key={campo.id} className="grid gap-3">
-									<div>
-										<Label>Endereço</Label>
+									<div className="space-y-1.5">
+										<Label className={labelClass}>Endereço</Label>
 										<Input
 											value={respostas.endereco ?? ""}
 											onChange={(event) =>
@@ -164,11 +181,12 @@ export function CardapioPublicoCheckout({
 													endereco: event.target.value,
 												}))
 											}
+											className={campoClass}
 										/>
 									</div>
 									<div className="grid grid-cols-2 gap-3">
-										<div>
-											<Label>Número</Label>
+										<div className="space-y-1.5">
+											<Label className={labelClass}>Número</Label>
 											<Input
 												value={respostas.numero ?? ""}
 												onChange={(event) =>
@@ -177,10 +195,11 @@ export function CardapioPublicoCheckout({
 														numero: event.target.value,
 													}))
 												}
+												className={campoClass}
 											/>
 										</div>
-										<div>
-											<Label>Bairro</Label>
+										<div className="space-y-1.5">
+											<Label className={labelClass}>Bairro</Label>
 											{data.bairrosentrega.length ? (
 												<Select
 													value={respostas.bairro ?? ""}
@@ -191,7 +210,7 @@ export function CardapioPublicoCheckout({
 														}))
 													}
 												>
-													<SelectTrigger>
+													<SelectTrigger className={campoClass}>
 														<SelectValue placeholder="Selecione" />
 													</SelectTrigger>
 													<SelectContent>
@@ -214,12 +233,13 @@ export function CardapioPublicoCheckout({
 															bairro: event.target.value,
 														}))
 													}
+													className={campoClass}
 												/>
 											)}
 										</div>
 									</div>
-									<div>
-										<Label>Complemento</Label>
+									<div className="space-y-1.5">
+										<Label className={labelClass}>Complemento</Label>
 										<Input
 											value={respostas.complemento ?? ""}
 											onChange={(event) =>
@@ -228,10 +248,11 @@ export function CardapioPublicoCheckout({
 													complemento: event.target.value,
 												}))
 											}
+											className={campoClass}
 										/>
 									</div>
-									<div>
-										<Label>Referência</Label>
+									<div className="space-y-1.5">
+										<Label className={labelClass}>Referência</Label>
 										<Input
 											value={respostas.referencia ?? ""}
 											onChange={(event) =>
@@ -240,6 +261,7 @@ export function CardapioPublicoCheckout({
 													referencia: event.target.value,
 												}))
 											}
+											className={campoClass}
 										/>
 									</div>
 								</div>
@@ -247,8 +269,8 @@ export function CardapioPublicoCheckout({
 						}
 						if (campo.tipo === "pagamento") {
 							return (
-								<div key={campo.id}>
-									<Label>{campo.rotulo}</Label>
+								<div key={campo.id} className="space-y-1.5">
+									<Label className={labelClass}>{campo.rotulo}</Label>
 									<Select
 										value={respostas[campo.id] ?? ""}
 										onValueChange={(value) =>
@@ -259,7 +281,7 @@ export function CardapioPublicoCheckout({
 											}))
 										}
 									>
-										<SelectTrigger>
+										<SelectTrigger className={campoClass}>
 											<SelectValue placeholder="Selecione" />
 										</SelectTrigger>
 										<SelectContent>
@@ -275,8 +297,8 @@ export function CardapioPublicoCheckout({
 						}
 						if (campo.tipo === "observacao") {
 							return (
-								<div key={campo.id}>
-									<Label>{campo.rotulo}</Label>
+								<div key={campo.id} className="space-y-1.5">
+									<Label className={labelClass}>{campo.rotulo}</Label>
 									<Textarea
 										value={respostas[campo.id] ?? ""}
 										onChange={(event) =>
@@ -286,14 +308,15 @@ export function CardapioPublicoCheckout({
 												observacao: event.target.value,
 											}))
 										}
+										className={campoClass}
 									/>
 								</div>
 							);
 						}
 						if (campo.tipo === "select") {
 							return (
-								<div key={campo.id}>
-									<Label>{campo.rotulo}</Label>
+								<div key={campo.id} className="space-y-1.5">
+									<Label className={labelClass}>{campo.rotulo}</Label>
 									<Select
 										value={respostas[campo.id] ?? ""}
 										onValueChange={(value) =>
@@ -303,7 +326,7 @@ export function CardapioPublicoCheckout({
 											}))
 										}
 									>
-										<SelectTrigger>
+										<SelectTrigger className={campoClass}>
 											<SelectValue placeholder="Selecione" />
 										</SelectTrigger>
 										<SelectContent>
@@ -318,8 +341,8 @@ export function CardapioPublicoCheckout({
 							);
 						}
 						return (
-							<div key={campo.id}>
-								<Label>{campo.rotulo}</Label>
+							<div key={campo.id} className="space-y-1.5">
+								<Label className={labelClass}>{campo.rotulo}</Label>
 								<Input
 									value={respostas[campo.id] ?? ""}
 									onChange={(event) =>
@@ -331,31 +354,33 @@ export function CardapioPublicoCheckout({
 												: {}),
 										}))
 									}
+									className={campoClass}
 								/>
 							</div>
 						);
 					})}
 				{data.mensagemrodape ? (
-					<p className="text-sm text-zinc-500">{data.mensagemrodape}</p>
+					<p className="text-sm font-medium text-neutral-700">
+						{data.mensagemrodape}
+					</p>
 				) : null}
 			</div>
-			<div className="mt-4 rounded-xl bg-white p-4 text-sm">
-				<div className="flex justify-between">
+			<div className="mt-4 rounded-xl border border-neutral-200 bg-white p-4 text-sm font-medium">
+				<div className="flex justify-between text-neutral-800">
 					<span>Subtotal</span>
 					<span>{formatarMoeda(subtotal)}</span>
 				</div>
-				<div className="mt-1 flex justify-between">
+				<div className="mt-1 flex justify-between text-neutral-800">
 					<span>Entrega</span>
 					<span>{formatarMoeda(taxa)}</span>
 				</div>
-				<div className="mt-2 flex justify-between font-semibold">
+				<div className="mt-2 flex justify-between text-base font-bold text-neutral-950">
 					<span>Total</span>
 					<span>{formatarMoeda(total)}</span>
 				</div>
 			</div>
 			<Button
-				className="mt-4 w-full"
-				style={{ background: cor }}
+				className="mt-4 w-full bg-neutral-950 text-white hover:bg-neutral-800"
 				disabled={enviando || sacola.length === 0}
 				onClick={onEnviar}
 			>

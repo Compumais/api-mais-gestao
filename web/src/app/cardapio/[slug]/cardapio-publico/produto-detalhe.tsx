@@ -43,15 +43,23 @@ export function ProdutoDetalhe({
 		: produto.descricao;
 
 	return (
-		<div>
+		<div className="text-neutral-950">
 			<div className="flex items-start justify-between gap-3">
-				<h2 className="text-xl font-bold">{produto.descricao}</h2>
-				<button type="button" onClick={onFechar} className="text-zinc-500">
+				<h2 className="text-xl font-black uppercase tracking-tight">
+					{produto.descricao}
+				</h2>
+				<button
+					type="button"
+					onClick={onFechar}
+					className="text-sm font-semibold text-neutral-700"
+				>
 					Fechar
 				</button>
 			</div>
 			{produto.observacoes ? (
-				<p className="mt-2 text-sm text-zinc-600">{produto.observacoes}</p>
+				<p className="mt-2 text-sm font-medium text-neutral-700">
+					{produto.observacoes}
+				</p>
 			) : null}
 			{produto.espizza === 1 ? (
 				<div className="mt-4">
@@ -101,8 +109,8 @@ export function ProdutoDetalhe({
 				<strong>{formatarMoeda(preco * qtd)}</strong>
 			</div>
 			<Button
-				className="mt-5 w-full"
-				style={{ background: cor }}
+				className="mt-5 w-full bg-neutral-950 text-white hover:bg-neutral-800"
+				style={{ background: cor || "#111111" }}
 				onClick={() =>
 					onAdicionar({
 						chave: crypto.randomUUID(),

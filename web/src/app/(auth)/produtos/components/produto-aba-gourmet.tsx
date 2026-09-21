@@ -120,6 +120,10 @@ export function ProdutoAbaGourmet({
 
 			<div className="mt-6 space-y-4">
 				<h2 className="text-lg font-semibold">Cardápio delivery</h2>
+				<p className="text-sm text-muted-foreground">
+					Produtos vinculados a um grupo gourmet aparecem no cardápio delivery
+					público.
+				</p>
 				<div className="flex items-center gap-3 rounded-lg border p-4">
 					<Controller
 						name="exibircardapiodelivery"
@@ -138,13 +142,9 @@ export function ProdutoAbaGourmet({
 						htmlFor="exibircardapiodelivery"
 						className="cursor-pointer font-normal"
 					>
-						Exibir no cardápio delivery
+						Marcado para cardápio delivery
 					</Label>
 				</div>
-				<p className="text-sm text-muted-foreground">
-					Produtos marcados entram no cardápio público, desde que tenham grupo
-					gourmet.
-				</p>
 			</div>
 		</FieldGroup>
 	);
