@@ -20,7 +20,7 @@ export const criarUsuarioSchema = z.object({
 	email: z.email("Email inválido"),
 	password: z
 		.string()
-		.min(6, "Senha deve ter no mínimo 6 caracteres")
+		.min(8, "Senha deve ter no mínimo 8 caracteres")
 		.max(100, "Senha deve ter no máximo 100 caracteres"),
 	perfil: perfilUsuarioSchema,
 	empresasIds: z.array(z.uuid()).optional(),
