@@ -26,6 +26,8 @@ O que chega ao ERP é a `venda` gerada no recebimento (`criar_venda`), com `idco
 
 Catálogo gourmet: `GET /grupos-gourmet` no pull. Não há endpoint de mesa na API dentro do `pdv/` (**não confirmado** rota remota de mesa/comanda).
 
+Cardápio público: poller `electron/sync/pedidos-cardapio.ts` (4s) quando `sessao.modulogourmet`. `GET /cardapio-delivery/pedidos-pendentes` → `ingestPedidoDelivery` (já imprime produção) → `POST .../ack`. Pizza meio a meio chega em `idprodutomeio`. Pedido aparece em `/delivery` com `orderidintegracao = protocolo`. Se o PDV estiver offline, o pedido fica `pendente` na nuvem.
+
 POS Android opera mesa pela LAN do PDV, não pela API. Ver [lan-pos.md](lan-pos.md).
 
 ## Dados locais que não podem ser apagados no schema

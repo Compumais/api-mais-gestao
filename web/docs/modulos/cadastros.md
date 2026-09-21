@@ -15,6 +15,7 @@ Pastas em `src/app/(auth)/`:
 - `/servicos`, `/servicos/novo`, `/servicos/[id]/editar`
 - `/grupos`, `/grupos/novo`, `/grupos/[id]/editar`
 - `/grupos-gourmet`, `/grupos-gourmet/novo`, `/grupos-gourmet/[id]/editar`
+- `/cardapio-delivery` — config do cardápio público (módulo gourmet)
 - `/unidade-medida`, `/unidade-medida/novo`, `/unidade-medida/[id]/editar`
 - `/fator-conversao`, `/fator-conversao/novo`, `/fator-conversao/[id]/editar`
 - `/meios-pagamento`, novo e `[id]/editar` — cadastro geral usado no financeiro e no PDV
@@ -31,6 +32,7 @@ Pastas em `src/app/(auth)/`:
 - `src/services/unidades-medida.service.ts` e `src/services/unidade-medida.service.ts` — `["unidades-medida"]`, `["unidade-medida", id]`.
 - `src/services/fator-conversao.service.ts` — `["fatores-conversao"]` (também lida na importação de NF de compra).
 - `src/services/grupos-gourmet.service.ts` — `["grupos-gourmet"]`.
+- `src/services/cardapio-delivery.service.ts` — `["cardapio-delivery", empresa.id]`. Schema: `cardapio-delivery.schema.ts`.
 - `src/services/bancos.service.ts`, `src/services/condicao-pagamento.service.ts`, `src/services/bandeira-cartao.service.ts`.
 - `src/hooks/use-consulta-cnpj-entidade.ts` — consulta CNPJ no formulário de entidade. Não duplicar a regra cadastral da Receita no front.
 - Schemas: `entidades.schema.ts`, `produtos.schema.ts`, `servicos.schema.ts`, `hierarquia.schema.ts`, `unidade-medida.schema.ts`, `fator-conversao.schema.ts`, `grupo-gourmet.schema.ts`, `condicao-pagamento.schema.ts`, `bancos.schema.ts`, `alterar-produtos-em-massa.schema.ts`.
@@ -55,6 +57,7 @@ Invalidar o prefixo errado deixa outra tela com cadastro velho:
 - Fornecedores, catálogo, meios de pagamento: menu com `PERFIS_GESTAO` (`proprietario`, `admin`, `financeiro`). Guard de rota para esses prefixos: **não confirmado** em `REGRAS_ACESSO_ROTAS`.
 - Bancos: menu `PERFIS_ADMIN` (`proprietario`, `admin`).
 - `/grupos-gourmet`: guard `modulo: "gourmet"`.
+- `/cardapio-delivery`: guard `modulo: "gourmet"`.
 - `/produtos/relatorios`: guard só perfis de gestão. Detalhe em [estoque.md](estoque.md).
 
 ## O que não remover
@@ -70,3 +73,4 @@ Invalidar o prefixo errado deixa outra tela com cadastro velho:
 - Unificar compradores e clientes no mesmo cache sem o `idempresa`: as duas telas chamam o mesmo service com chaves diferentes.
 - Remover fator de conversão do cadastro e quebrar a célula de conversão na importação de XML (`["fatores-conversao", idempresa, "importacao-nf"]`).
 - Apagar grupos gourmet achando que é só cosmético: o módulo gourmet e o produto dependem da chave.
+- Esquecer `exibircardapiodelivery` no produto: o cardápio público fica vazio mesmo com grupos gourmet.

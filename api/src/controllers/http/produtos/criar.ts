@@ -52,6 +52,7 @@ const criarProdutoBodySchema = z
 		tipoproduto: z.string().max(2).optional().nullable(),
 		observacoes: z.string().optional().nullable(),
 		enviamobile: z.number().int().min(0).max(1).optional(),
+		exibircardapiodelivery: z.number().int().min(0).max(1).optional(),
 		espizza: z.number().int().min(0).max(1).optional(),
 		exportaBalanca: z.number().int().min(0).max(1).optional(),
 		diasValidade: z
@@ -163,6 +164,7 @@ export async function criarProduto(
 			tipoproduto: dadosValidados.tipoproduto ?? (ehServico ? "09" : null),
 			observacoes: dadosValidados.observacoes ?? null,
 			enviamobile: dadosValidados.enviamobile ?? 0,
+			exibircardapiodelivery: dadosValidados.exibircardapiodelivery ?? 0,
 			espizza: dadosValidados.espizza ?? 0,
 			exportaBalanca: dadosValidados.exportaBalanca ?? 0,
 			diasValidade: dadosValidados.diasValidade ?? 0,

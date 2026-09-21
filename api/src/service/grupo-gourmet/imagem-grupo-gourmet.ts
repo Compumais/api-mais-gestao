@@ -151,3 +151,42 @@ export async function lerImagemGrupoGourmet(params: {
 		"IMAGEM_NAO_ENCONTRADA",
 	);
 }
+
+export async function lerImagemGrupoGourmetDaEmpresa(params: {
+	id: string;
+	idempresa: string;
+}) {
+	const grupo = await buscarGrupoGourmetPorId(params.id);
+	if (!grupo || grupo.idempresa !== params.idempresa) {
+		throw new ErroImagemProduto(
+			"Imagem não encontrada",
+			404,
+			"IMAGEM_NAO_ENCONTRADA",
+		);
+	}
+	const token = tokenReferencia(grupo.caminhoimagem);
+	if (!token || !/^[0-9a-f-]{36}$/i.test(token)) {
+		throw new ErroImagemProduto(
+			"Imagem não encontrada",
+			404,
+			"IMAGEM_NAO_ENCONTRADA",
+		);
+	}
+	for (const [tipo, extensao] of Object.entries(EXTENSOES)) {
+		try {
+			return {
+				conteudo: await readFile(caminhoArquivo(params.id, token, extensao)),
+				tipo,
+				etag: token,
+			};
+		} catch (erro) {
+			if ((erro as NodeJS.ErrnoException).code !== "ENOENT") throw erro;
+		}
+	}
+	throw new ErroImagemProduto(
+		"Imagem não encontrada",
+		404,
+		"IMAGEM_NAO_ENCONTRADA",
+	);
+}
+

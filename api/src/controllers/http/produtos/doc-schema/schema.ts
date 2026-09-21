@@ -285,6 +285,12 @@ const propriedadesProdutoResposta = {
 	ncm: { type: "string", nullable: true },
 	observacoes: { anyOf: [{ type: "string" }, { type: "null" }] },
 	enviamobile: { type: "number", enum: [0, 1], nullable: true },
+	exibircardapiodelivery: {
+		type: "number",
+		enum: [0, 1],
+		nullable: true,
+		description: "1=exibe o produto no cardápio público de delivery",
+	},
 	espizza: {
 		type: "number",
 		enum: [0, 1],
@@ -363,6 +369,7 @@ export const criarProdutoSchema: FastifySchema = {
 			ncm: { type: "string" },
 			observacoes: { anyOf: [{ type: "string" }, { type: "null" }] },
 			enviamobile: { type: "number", enum: [0, 1] },
+			exibircardapiodelivery: { type: "number", enum: [0, 1] },
 			espizza: { type: "number", enum: [0, 1] },
 			exportaBalanca: { type: "number", enum: [0, 1] },
 			diasValidade: { type: "number" },
@@ -552,6 +559,7 @@ export const atualizarProdutoSchema: FastifySchema = {
 			ncm: { type: "string" },
 			observacoes: { anyOf: [{ type: "string" }, { type: "null" }] },
 			enviamobile: { type: "number", enum: [0, 1] },
+			exibircardapiodelivery: { type: "number", enum: [0, 1] },
 			espizza: { type: "number", enum: [0, 1] },
 			exportaBalanca: { type: "number", enum: [0, 1] },
 			diasValidade: { type: "number" },

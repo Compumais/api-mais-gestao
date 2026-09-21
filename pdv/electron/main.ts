@@ -13,6 +13,7 @@ import {
 	pararBackupAgendado,
 } from "./sync/backup-agendado";
 import { iniciarSyncPeriodico, processarOutbox } from "./sync/outbox";
+import { iniciarPollerCardapioDelivery } from "./sync/pedidos-cardapio";
 import {
 	iniciarReconciliacaoNfcePeriodica,
 	reconciliarNfce,
@@ -36,6 +37,7 @@ if (
 let mainWindow: BrowserWindow | null = null;
 let syncTimer: NodeJS.Timeout | null = null;
 let pararSyncNfce: (() => void) | null = null;
+let pararPollerCardapio: (() => void) | null = null;
 
 function createWindow(): void {
 	mainWindow = new BrowserWindow({
@@ -93,6 +95,7 @@ app.whenReady().then(async () => {
 		void processarOutbox();
 		void reconciliarNfce();
 		pararSyncNfce = iniciarReconciliacaoNfcePeriodica(60_000, 5_000).parar;
+		pararPollerCardapio = iniciarPollerCardapioDelivery();
 		await restartLanServer();
 		await iniciarTecnibra().catch((err) => {
 			console.error(
@@ -133,6 +136,8 @@ app.on("window-all-closed", () => {
 	}
 	pararSyncNfce?.();
 	pararSyncNfce = null;
+	pararPollerCardapio?.();
+	pararPollerCardapio = null;
 	pararTecnibra();
 	pararBackupAgendado();
 	void encerrarLanServer();
@@ -145,4 +150,6 @@ app.on("window-all-closed", () => {
 app.on("before-quit", () => {
 	pararSyncNfce?.();
 	pararSyncNfce = null;
+	pararPollerCardapio?.();
+	pararPollerCardapio = null;
 });

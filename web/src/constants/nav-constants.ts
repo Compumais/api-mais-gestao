@@ -173,6 +173,11 @@ export const DATA = {
 					url: "/grupos-gourmet",
 					acesso: { modulo: "gourmet" },
 				},
+				{
+					title: "Cardápio delivery",
+					url: "/cardapio-delivery",
+					acesso: { modulo: "gourmet" },
+				},
 			],
 		},
 		{

@@ -28,7 +28,7 @@ electron/preload.ts          window.pdv
 electron/local-api/          contrato da UI e da LAN
 electron/db/                 pool, schema, repos
 electron/api/client.ts       HTTP da API
-electron/sync/               outbox, catálogo, NFC-e, backup
+electron/sync/               outbox, catálogo, NFC-e, backup, cardápio delivery
 electron/fiscal/             XML, número, contingência
 electron/lan-api/            HTTP :lan_porta para POS e secundário
 electron/pdv-secundario/     modo principal/secundário

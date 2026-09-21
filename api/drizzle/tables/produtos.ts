@@ -121,6 +121,7 @@ export const produtos = pgTable(
 		referencia: varchar({ length: 60 }),
 		inativo: integer().default(0), // 0=Ativo, 1=Inativo
 		enviamobile: integer().default(0), // 0=Não exibe no garçom, 1=Exibe no garçom
+		exibircardapiodelivery: integer().default(0), // 0=Não exibe no cardápio delivery, 1=Exibe
 		espizza: integer().default(0), // 0=Não, 1=Pizza (habilita venda meio a meio)
 		idcfopsaida: text(),
 		idcfopsaidadevolucaoexterna: text(),

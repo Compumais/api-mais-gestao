@@ -182,6 +182,21 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 		keywords: ["gourmet", "cozinha", "bar", "mesa", "impressora", "grupo"],
 	},
 	{
+		title: "Cardápio delivery",
+		url: "/cardapio-delivery",
+		category: "Cadastros",
+		icon: IconListDetails,
+		keywords: [
+			"cardapio",
+			"cardápio",
+			"delivery",
+			"gourmet",
+			"menu",
+			"publico",
+			"público",
+		],
+	},
+	{
 		title: "Unidades de medida",
 		url: "/unidade-medida",
 		category: "Cadastros",

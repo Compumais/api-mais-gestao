@@ -4437,6 +4437,7 @@ export async function ingestPedidoDelivery(params: {
 		quantidade: number;
 		precounitario?: number | null;
 		observacao?: string | null;
+		idprodutomeio?: string | null;
 	}>;
 }): Promise<{
 	action: "created" | "already_exists";
@@ -4476,6 +4477,7 @@ export async function ingestPedidoDelivery(params: {
 		quantidade: number;
 		observacao?: string | null;
 		precounitario?: number;
+		idprodutomeio?: string | null;
 	}> = [];
 
 	for (const item of params.itens) {
@@ -4498,6 +4500,7 @@ export async function ingestPedidoDelivery(params: {
 			idproduto: produto.id,
 			quantidade: qtd,
 			observacao: item.observacao?.trim() || null,
+			idprodutomeio: item.idprodutomeio?.trim() || null,
 			precounitario:
 				item.precounitario != null &&
 				Number.isFinite(Number(item.precounitario))
@@ -4533,6 +4536,7 @@ export async function ingestPedidoDelivery(params: {
 			idproduto: r.idproduto,
 			quantidade: r.quantidade,
 			observacao: r.observacao,
+			idprodutomeio: r.idprodutomeio,
 		})),
 	});
 
