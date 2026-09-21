@@ -523,14 +523,14 @@ public class ApiClient {
         if (isLocal()) {
             ContaMesaDto conta = mapearContaLocal(localPdv.obterConta(idConta));
             if (conta == null || conta.id == null) {
-                throw new ApiException("Conta da mesa não encontrada");
+                throw new ApiException("Conta da " + rotuloConta() + " não encontrada");
             }
             return conta;
         }
         JsonObject obj = buscarContaMesaJson(idConta);
         ContaMesaDto conta = gson.fromJson(obj, ContaMesaDto.class);
         if (conta == null || conta.id == null) {
-            throw new ApiException("Conta da mesa não encontrada");
+            throw new ApiException("Conta da " + rotuloConta() + " não encontrada");
         }
         return conta;
     }
@@ -1072,7 +1072,7 @@ public class ApiClient {
             MeioPagamento meioLegado)
             throws ApiException {
         if (idConta == null || idConta.isEmpty()) {
-            throw new ApiException("Conta da mesa inválida");
+            throw new ApiException("Conta da " + rotuloConta() + " inválida");
         }
         if (isLocal()) {
             if (lancamentos != null && !lancamentos.isEmpty()) {
@@ -1092,12 +1092,12 @@ public class ApiClient {
 
         List<ContaMesaItemDto> itensMesa = listarItensMesa(idConta);
         if (itensMesa == null || itensMesa.isEmpty()) {
-            throw new ApiException("Comanda vazia — lance itens antes de fechar");
+            throw new ApiException(rotuloContaTitulo() + " vazia — lance itens antes de fechar");
         }
 
         List<ItemCarrinho> itens = converterItensMesa(itensMesa);
         if (itens.isEmpty()) {
-            throw new ApiException("Comanda sem itens válidos");
+            throw new ApiException(rotuloContaTitulo() + " sem itens válidos");
         }
 
         BigDecimal total = totalItens(itens);
@@ -1194,7 +1194,7 @@ public class ApiClient {
                 && (resultado.mensagemNfce == null
                         || resultado.mensagemNfce.equals("Venda registrada")
                         || resultado.mensagemNfce.startsWith("Venda registrada ("))) {
-            resultado.mensagemNfce = "Mesa fechada";
+            resultado.mensagemNfce = rotuloContaTitulo() + " fechada";
         }
         return resultado;
     }
@@ -1767,7 +1767,8 @@ public class ApiClient {
         for (SacolaLinha linha : linhas) {
             JsonObject i = new JsonObject();
             i.addProperty("idproduto", linha.produto.getId());
-            i.addProperty("quantidade", linha.quantidade);
+            BigDecimal qtdEnvio = linha.quantidade != null ? linha.quantidade : BigDecimal.ONE;
+            i.addProperty("quantidade", new BigDecimal(qtdEnvio.toPlainString()));
             if (linha.produtoMeio != null) {
                 i.addProperty("idprodutomeio", linha.produtoMeio.getId());
             }
@@ -1832,7 +1833,7 @@ public class ApiClient {
         if (isLocal()) {
             ContaMesaDto mesa = mapearContaLocal(localPdv.abrirMesa(numeroMesa, nomeCliente));
             if (mesa == null || mesa.id == null) {
-                throw new ApiException("Não foi possível abrir a mesa");
+                throw new ApiException("Não foi possível abrir a " + rotuloConta());
             }
             return mesa;
         }
@@ -1853,7 +1854,7 @@ public class ApiClient {
         JsonObject response = postJson("/contas-mesa", body.toString(), true);
         ContaMesaDto mesa = gson.fromJson(response, ContaMesaDto.class);
         if (mesa == null || mesa.id == null) {
-            throw new ApiException("Não foi possível abrir a mesa");
+            throw new ApiException("Não foi possível abrir a " + rotuloConta());
         }
         return mesa;
     }
@@ -2345,15 +2346,21 @@ public class ApiClient {
         }
     }
 
+    private String rotuloConta() {
+        return prefsStore.isModeloComanda() ? "comanda" : "mesa";
+    }
+
+    private String rotuloContaTitulo() {
+        return prefsStore.isModeloComanda() ? "Comanda" : "Mesa";
+    }
+
     private void aplicarConfigPdv(JsonObject status) {
         if (status == null) {
             return;
         }
-        prefsStore.setModeloAtendimento(texto(status, "modeloAtendimento"));
-        if (status.has("modalAbrirMesaHabilitado")
-                && !status.get("modalAbrirMesaHabilitado").isJsonNull()) {
-            prefsStore.setModalAbrirMesaHabilitado(
-                    flag(status, "modalAbrirMesaHabilitado"));
+        String modelo = texto(status, "modeloAtendimento");
+        if (PrefsStore.MODELO_MESA.equals(modelo) || PrefsStore.MODELO_COMANDA.equals(modelo)) {
+            prefsStore.setModeloAtendimento(modelo);
         }
         Integer qtd = inteiro(status, "qtdMesas");
         if (qtd != null) {

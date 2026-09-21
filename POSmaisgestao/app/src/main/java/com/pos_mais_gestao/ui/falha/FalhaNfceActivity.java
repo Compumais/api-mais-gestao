@@ -83,7 +83,11 @@ public class FalhaNfceActivity extends AppCompatActivity {
         btnFichas.setOnClickListener(v -> imprimirFichas());
 
         MaterialButton btnNova = findViewById(R.id.btnNovaVendaFalha);
-        btnNova.setText(voltarMesas ? R.string.voltar_mesas : R.string.nova_venda);
+        btnNova.setText(voltarMesas
+                ? (((PosApplication) getApplication()).getPrefsStore().isModeloComanda()
+                        ? R.string.voltar_comandas
+                        : R.string.voltar_mesas)
+                : R.string.nova_venda);
         btnNova.setOnClickListener(v -> irAdiante());
 
         MaterialButton btnInicio = findViewById(R.id.btnInicioFalha);

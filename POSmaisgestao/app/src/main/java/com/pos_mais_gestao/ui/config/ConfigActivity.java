@@ -59,6 +59,7 @@ public class ConfigActivity extends AppCompatActivity {
     private SwitchMaterial switchEmitirNfce;
     private SwitchMaterial switchFichasEvento;
     private SwitchMaterial switchPixQr;
+    private SwitchMaterial switchPedirNomeCliente;
     private TextInputEditText inputChavePix;
     private TextInputEditText inputNomePix;
     private TextInputEditText inputCidadePix;
@@ -113,6 +114,7 @@ public class ConfigActivity extends AppCompatActivity {
         switchEmitirNfce = findViewById(R.id.switchEmitirNfcePos);
         switchFichasEvento = findViewById(R.id.switchFichasEvento);
         switchPixQr = findViewById(R.id.switchPixQr);
+        switchPedirNomeCliente = findViewById(R.id.switchPedirNomeCliente);
         inputChavePix = findViewById(R.id.inputChavePix);
         inputNomePix = findViewById(R.id.inputNomePix);
         inputCidadePix = findViewById(R.id.inputCidadePix);
@@ -150,6 +152,7 @@ public class ConfigActivity extends AppCompatActivity {
         switchEmitirNfce.setChecked(prefs.isEmitirNfcePos());
         switchFichasEvento.setChecked(prefs.isImprimirFichasEvento());
         switchPixQr.setChecked(prefs.isPixQrHabilitado());
+        switchPedirNomeCliente.setChecked(prefs.isModalAbrirMesaHabilitado());
         inputChavePix.setText(prefs.getChavePix());
         inputNomePix.setText(prefs.getNomePix());
         inputCidadePix.setText(prefs.getCidadePix());
@@ -328,6 +331,7 @@ public class ConfigActivity extends AppCompatActivity {
         prefs.setEmitirNfcePos(switchEmitirNfce.isChecked());
         prefs.setImprimirFichasEvento(switchFichasEvento.isChecked());
         prefs.setPixQrHabilitado(switchPixQr.isChecked());
+        prefs.setModalAbrirMesaHabilitado(switchPedirNomeCliente.isChecked());
         prefs.setChavePix(chavePix);
         prefs.setNomePix(inputNomePix.getText() == null ? "" : inputNomePix.getText().toString());
         prefs.setCidadePix(inputCidadePix.getText() == null ? "" : inputCidadePix.getText().toString());

@@ -6,8 +6,10 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+import com.pos_mais_gestao.PosApplication;
 import com.pos_mais_gestao.R;
 import com.pos_mais_gestao.data.api.VendaResumoDto;
+import com.pos_mais_gestao.data.local.PrefsStore;
 import com.pos_mais_gestao.util.MoneyFormat;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -56,7 +58,10 @@ public class VendaAdapter extends RecyclerView.Adapter<VendaAdapter.VH> {
         String tipo;
         if (pdv) {
             if (venda.mesa) {
-                tipo = holder.itemView.getContext().getString(R.string.tipo_venda_mesa);
+                PrefsStore prefs = ((PosApplication) holder.itemView.getContext()
+                        .getApplicationContext()).getPrefsStore();
+                tipo = holder.itemView.getContext().getString(
+                        prefs.isModeloComanda() ? R.string.tipo_venda_comanda : R.string.tipo_venda_mesa);
             } else {
                 tipo = holder.itemView.getContext().getString(R.string.tipo_venda_pos);
             }
