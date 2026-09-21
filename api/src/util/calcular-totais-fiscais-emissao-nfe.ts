@@ -74,6 +74,13 @@ function valorProdutoItem(item: ItemTributacaoEmissaoNfe): number {
 	return round2(item.quantidade * item.valorUnitario);
 }
 
+/** Grupo ICMS40 (leiaute 4.00): CST 40/41/50 sem vBC/pICMS/vICMS. Aceita "040". */
+function cstSemIcmsProprio(cst?: string): boolean {
+	const digitos = (cst ?? "").replace(/\D/g, "");
+	if (!digitos) return false;
+	return ["40", "41", "50"].includes(digitos.slice(-2));
+}
+
 function calcularIcmsItem(
 	crt: number,
 	item: ItemTributacaoEmissaoNfe,
@@ -84,6 +91,11 @@ function calcularIcmsItem(
 	// Simples Nacional (CRT 1/2/4): ICMS próprio não é destacado (vBC/vICMS = 0).
 	// Crédito SN e ST usam campos próprios e não passam por este cálculo.
 	if ([1, 2, 4].includes(crtNumero)) {
+		return { base: 0, valor: 0 };
+	}
+
+	// Grupo ICMS40: isenta / não tributada / suspensão — sem base nem valor.
+	if (cstSemIcmsProprio(item.cst)) {
 		return { base: 0, valor: 0 };
 	}
 

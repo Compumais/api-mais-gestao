@@ -32,11 +32,8 @@ import type { ItemNfe } from "@/schemas/nfe-emissao.schema";
 import { cestService } from "@/services/cest.service";
 import { produtosService } from "@/services/produtos.service";
 import { taxaUfService } from "@/services/taxauf.service";
-import {
-	OPCOES_CSOSN,
-	OPCOES_CST_ICMS,
-	OPCOES_CST_PIS_COFINS,
-} from "@/util/cst-produto-util";
+import { OPCOES_CSOSN, OPCOES_CST_ICMS, OPCOES_CST_PIS_COFINS } from "@/util/cst-produto-util";
+import { cstSemIcmsProprio } from "@/util/calcular-totais-fiscais-emissao-nfe";
 import {
 	codigoCfopPorId,
 	empresaUsaCsosn,
@@ -410,7 +407,11 @@ export function ModalItemEmissao({
 		};
 
 		if (!usaCsosn) {
-			if (
+			if (cstSemIcmsProprio(itemFinal.cst)) {
+				// Grupo ICMS40: não persiste base/valor de ICMS próprio.
+				itemFinal.baseIcms = undefined;
+				itemFinal.valorIcms = undefined;
+			} else if (
 				itemFinal.valorIcms == null &&
 				itemFinal.aliquotaIcms != null &&
 				itemFinal.baseIcms != null &&

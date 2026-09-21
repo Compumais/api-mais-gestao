@@ -221,4 +221,74 @@ describe("calcularTotaisFiscaisEmissaoNfe", () => {
 		expect(totais.totalProdutos).toBe(100);
 		expect(totais.totalNota).toBe(85);
 	});
+
+	it("CST 40 (grupo ICMS40) zera base e valor de ICMS próprio", () => {
+		const totais = calcularTotaisFiscaisEmissaoNfe(
+			3,
+			[
+				{
+					quantidade: 1,
+					valorUnitario: 100,
+					cst: "40",
+					baseIcms: 100,
+					aliquotaIcms: 18,
+					valorIcms: 18,
+				},
+			],
+			{},
+		);
+
+		expect(totais.baseIcms).toBe(0);
+		expect(totais.valorIcms).toBe(0);
+		expect(totais.totalProdutos).toBe(100);
+		expect(totais.totalNota).toBe(100);
+	});
+
+	it("CST 040 (com origem) também zera ICMS próprio", () => {
+		const totais = calcularTotaisFiscaisEmissaoNfe(
+			3,
+			[
+				{
+					quantidade: 2,
+					valorUnitario: 50,
+					cst: "040",
+					baseIcms: 100,
+					aliquotaIcms: 12,
+				},
+			],
+			{},
+		);
+
+		expect(totais.baseIcms).toBe(0);
+		expect(totais.valorIcms).toBe(0);
+		expect(totais.totalProdutos).toBe(100);
+	});
+
+	it("mistura CST 40 e CST 00: totais de ICMS só do item tributado", () => {
+		const totais = calcularTotaisFiscaisEmissaoNfe(
+			3,
+			[
+				{
+					quantidade: 1,
+					valorUnitario: 100,
+					cst: "40",
+					baseIcms: 100,
+					aliquotaIcms: 18,
+				},
+				{
+					quantidade: 1,
+					valorUnitario: 50,
+					cst: "00",
+					baseIcms: 50,
+					aliquotaIcms: 18,
+				},
+			],
+			{},
+		);
+
+		expect(totais.baseIcms).toBe(50);
+		expect(totais.valorIcms).toBe(9);
+		expect(totais.totalProdutos).toBe(150);
+		expect(totais.totalNota).toBe(150);
+	});
 });
