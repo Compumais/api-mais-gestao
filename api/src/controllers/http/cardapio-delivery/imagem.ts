@@ -9,9 +9,11 @@ import { ErroImagemProduto } from "@/service/produto/imagem-produto.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
 const querySchema = z.object({ idempresa: z.string().min(1) });
-const slugTipoSchema = z.object({
-	slug: z.string().min(2),
+const tipoSchema = z.object({
 	tipo: z.enum(["logo", "banner"]),
+});
+const slugSchema = z.object({
+	slug: z.string().min(2),
 });
 
 function responderErro(erro: unknown, reply: FastifyReply) {

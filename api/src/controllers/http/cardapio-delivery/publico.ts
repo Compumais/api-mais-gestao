@@ -72,6 +72,9 @@ export async function buscarProdutosCardapioPublico(
 		if (!resultado.success) {
 			return reply.status(resultado.status).send(resultado);
 		}
+		if (!resultado.body) {
+			return reply.status(httpErroInterno().status).send(httpErroInterno());
+		}
 		return reply.status(resultado.status).send({
 			grupos: resultado.body.grupos,
 			produtos: resultado.body.produtos,

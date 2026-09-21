@@ -12,12 +12,12 @@ export function CardapioPublicoSucesso({
 	onNovoPedido: () => void;
 }) {
 	return (
-		<main className="mx-auto max-w-md px-4 py-16 text-center">
-			<h1 className="text-2xl font-bold">Pedido recebido</h1>
-			<p className="mt-2 text-zinc-600">
-				Protocolo <strong>{pedido.protocolo}</strong>
+		<main className="mx-auto max-w-md px-4 py-16 text-center text-neutral-950">
+			<h1 className="text-2xl font-black">Pedido recebido</h1>
+			<p className="mt-2 font-medium text-neutral-700">
+				Protocolo <strong className="text-neutral-950">{pedido.protocolo}</strong>
 			</p>
-			<p className="mt-1 text-lg font-semibold">{formatarMoeda(pedido.total)}</p>
+			<p className="mt-1 text-lg font-bold">{formatarMoeda(pedido.total)}</p>
 			{pedido.pixCopiaCola ? (
 				<div className="mt-6 rounded-xl bg-white p-4">
 					<p className="text-sm font-medium">Pague com PIX</p>

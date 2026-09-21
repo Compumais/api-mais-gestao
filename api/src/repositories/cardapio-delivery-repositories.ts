@@ -158,7 +158,6 @@ export async function listarProdutosCardapioPublico(idempresa: string) {
 	const filtroGrupoAtivo = filtroRegistroAtivo(grupogourmet.inativo, 0);
 	const condicoes = [
 		eq(produtos.idempresa, idempresa),
-		eq(produtos.exibircardapiodelivery, 1),
 		isNotNull(produtos.idgrupogourmet),
 		eq(grupogourmet.idempresa, idempresa),
 	];
@@ -208,7 +207,6 @@ export async function buscarProdutosCardapioPorIds(
 	const condicoes = [
 		eq(produtos.idempresa, idempresa),
 		inArray(produtos.id, ids),
-		eq(produtos.exibircardapiodelivery, 1),
 		isNotNull(produtos.idgrupogourmet),
 	];
 	if (filtroAtivo) condicoes.push(filtroAtivo);
