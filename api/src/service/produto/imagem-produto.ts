@@ -411,3 +411,41 @@ export async function lerImagemProduto(params: {
 		"IMAGEM_NAO_ENCONTRADA",
 	);
 }
+
+export async function lerImagemProdutoDaEmpresa(params: {
+	idproduto: string;
+	idempresa: string;
+}) {
+	const produto = await buscarProdutoPorId(params.idproduto);
+	if (!produto || produto.idempresa !== params.idempresa) {
+		throw new ErroImagemProduto(
+			"Imagem não encontrada",
+			404,
+			"IMAGEM_NAO_ENCONTRADA",
+		);
+	}
+	const imagens = await listarImagensProduto(params.idproduto);
+	const principal = imagens.find((imagem) => imagem.principal) ?? imagens[0];
+	if (principal?.chavearmazenamento) {
+		try {
+			return {
+				conteudo: await readFile(caminhoArquivo(principal.chavearmazenamento)),
+				tipo: principal.tipomime ?? "application/octet-stream",
+				etag: tokenReferencia(principal.referencia) ?? principal.id,
+			};
+		} catch (erro) {
+			if ((erro as NodeJS.ErrnoException).code !== "ENOENT") throw erro;
+		}
+	}
+	const legado = await lerArquivoLegado(
+		params.idproduto,
+		principal?.referencia ?? produto.caminhoimagem,
+	);
+	if (legado) return legado;
+	throw new ErroImagemProduto(
+		"Imagem não encontrada",
+		404,
+		"IMAGEM_NAO_ENCONTRADA",
+	);
+}
+

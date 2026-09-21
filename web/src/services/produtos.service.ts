@@ -29,6 +29,7 @@ export interface Produto {
 	observacoes: string | null;
 	inativo: number | null;
 	enviamobile?: number | null;
+	exibircardapiodelivery?: number | null;
 	datacadastro: string;
 	quantidadepadrao?: number | null;
 	quantidademinima?: number | null;
@@ -192,6 +193,7 @@ export interface CriarProdutoData
 	tipoproduto?: string | null;
 	observacoes?: string | null;
 	enviamobile?: number | null;
+	exibircardapiodelivery?: number | null;
 	quantidadepadrao?: number | null;
 	quantidademinima?: number | null;
 	quantidademaxima?: number | null;
@@ -297,6 +299,7 @@ export interface AtualizarProdutoData
 	tipoproduto?: string | null;
 	observacoes?: string | null;
 	enviamobile?: number | null;
+	exibircardapiodelivery?: number | null;
 	quantidadepadrao?: number | null;
 	quantidademinima?: number | null;
 	quantidademaxima?: number | null;

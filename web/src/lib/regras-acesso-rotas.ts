@@ -67,6 +67,12 @@ export const REGRAS_ACESSO_ROTAS: Array<{
 		},
 	},
 	{
+		prefixo: "/cardapio-delivery",
+		acesso: {
+			modulo: "gourmet",
+		},
+	},
+	{
 		prefixo: "/gourmet",
 		acesso: {
 			modulo: "gourmet",

@@ -30,6 +30,7 @@ function hasSessionCookie(request: NextRequest) {
 function isPublicPath(pathname: string) {
 	if (PUBLIC_ROUTES.has(pathname)) return true;
 	if (pathname.startsWith("/cotacao-compra/")) return true;
+	if (pathname.startsWith("/cardapio/")) return true;
 	if (pathname.startsWith("/brand/")) return true;
 	return false;
 }

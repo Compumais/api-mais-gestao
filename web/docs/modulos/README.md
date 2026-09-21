@@ -6,7 +6,7 @@ Leia antes [../../AGENTS.md](../../AGENTS.md) (deste pacote) e o [AGENTS.md da r
 
 | Arquivo | Pastas / rotas |
 | --- | --- |
-| [publico.md](publico.md) | `/`, login, páginas legais, cotação pública |
+| [publico.md](publico.md) | `/`, login, páginas legais, cotação pública, cardápio delivery |
 | [acesso.md](acesso.md) | Sessão, empresa ativa, guards, menu |
 | [dashboard.md](dashboard.md) | `(auth)/dashboard` |
 | [cadastros.md](cadastros.md) | Clientes, fornecedores, produtos, serviços, grupos, unidades |

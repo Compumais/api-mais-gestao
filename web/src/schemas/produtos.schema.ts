@@ -185,6 +185,7 @@ export const produtoFormSchema = z.object({
 	aliquotacbs: percentualOpcional(),
 	observacoes: z.string().optional().nullable(),
 	enviamobile: z.boolean().optional(),
+	exibircardapiodelivery: z.boolean().optional(),
 	exportaBalanca: z.boolean().optional(),
 	controlalote: z.boolean().optional(),
 	controlavalidade: z.boolean().optional(),

@@ -2026,6 +2026,7 @@ export const localApi = {
 			quantidade: number;
 			precounitario?: number | null;
 			observacao?: string | null;
+			idprodutomeio?: string | null;
 		}>;
 	}) {
 		await assertModuloGourmet();

@@ -727,6 +727,56 @@ export async function listarTiposDocumentoFinanceiro(params: {
 		}));
 }
 
+export type PedidoCardapioPendentePdv = {
+	id: string;
+	protocolo: string;
+	modalidade: "delivery" | "retirada";
+	nomecliente: string;
+	telefone: string;
+	documento: string | null;
+	endereco: string | null;
+	bairro: string | null;
+	complemento: string | null;
+	referencia: string | null;
+	valorentrega: number;
+	obs: string | null;
+	itens: Array<{
+		idproduto: string;
+		quantidade: number;
+		observacao: string | null;
+		idprodutomeio: string | null;
+		nomeproduto: string | null;
+		precounitario: number | null;
+	}>;
+};
+
+export async function listarPedidosCardapioPendentes(idempresa: string) {
+	const data = await request<{ data: PedidoCardapioPendentePdv[] }>(
+		`/cardapio-delivery/pedidos-pendentes?idempresa=${encodeURIComponent(idempresa)}`,
+	);
+	return data.data ?? [];
+}
+
+export async function ackPedidoCardapioDelivery(params: {
+	id: string;
+	idempresa: string;
+	sucesso: boolean;
+	idcontamensalocal?: string | null;
+	mensagemerro?: string | null;
+}) {
+	return request<{ id: string; status: string }>(
+		`/cardapio-delivery/pedidos/${params.id}/ack?idempresa=${encodeURIComponent(params.idempresa)}`,
+		{
+			method: "POST",
+			body: {
+				sucesso: params.sucesso,
+				idcontamensalocal: params.idcontamensalocal ?? null,
+				mensagemerro: params.mensagemerro ?? null,
+			},
+		},
+	);
+}
+
 export async function listarAtalhosRemotos(idempresa: string) {
 	const data = await request<{
 		data?: Array<{ idproduto: string }>;

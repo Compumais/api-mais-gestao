@@ -75,6 +75,7 @@ function buildProdutoPayload(
 				? data.idgrupogourmet
 				: null,
 		espizza: data.espizza ? 1 : 0,
+		exibircardapiodelivery: data.exibircardapiodelivery ? 1 : 0,
 		exportaBalanca: data.exportaBalanca ? 1 : 0,
 		controlalote: data.controlalote ? 1 : 0,
 		controlavalidade: data.controlavalidade ? 1 : 0,
@@ -194,6 +195,7 @@ export function ProdutoForm(props: ProdutoFormProps) {
 			idgrupo: "",
 			idgrupogourmet: "none",
 			espizza: false,
+			exibircardapiodelivery: false,
 			exportaBalanca: false,
 			controlalote: false,
 			controlavalidade: false,

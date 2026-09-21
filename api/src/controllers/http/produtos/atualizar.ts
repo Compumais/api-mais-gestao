@@ -61,6 +61,7 @@ const atualizarProdutoBodySchema = z.object({
 	tipoproduto: z.string().max(2).optional().nullable(),
 	observacoes: z.string().optional().nullable(),
 	enviamobile: z.number().int().min(0).max(1).optional(),
+	exibircardapiodelivery: z.number().int().min(0).max(1).optional(),
 	espizza: z.number().int().min(0).max(1).optional(),
 	exportaBalanca: z.number().int().min(0).max(1).optional(),
 	diasValidade: z
