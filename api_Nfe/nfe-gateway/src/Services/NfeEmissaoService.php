@@ -346,29 +346,49 @@ final class NfeEmissaoService
 
 				$mk->tagICMSSN(self::montarTagIcmsSn($nItem, $orig, $csosn, $item, $vProd));
 			} else {
-				$cstIcms = !empty($cst) ? $cst : '00';
-				$temBaseInformada = array_key_exists('baseIcms', $item)
-					&& $item['baseIcms'] !== null
-					&& $item['baseIcms'] !== '';
-				$vBC     = $temBaseInformada ? (float) $item['baseIcms'] : $vProdLiquido;
-				$pICMS   = (float) ($item['aliquotaIcms'] ?? 0);
-				$vICMS   = array_key_exists('valorIcms', $item)
-					? round((float) $item['valorIcms'], 2)
-					: round($vBC * $pICMS / 100, 2);
-				if ($pICMS <= 0 && $vBC > 0 && $vICMS > 0) {
-					$pICMS = round($vICMS / $vBC * 100, 4);
+				$cstDigitos = preg_replace('/\D/', '', $cst);
+				$cstIcms = ($cstDigitos !== null && $cstDigitos !== '')
+					? substr(str_pad($cstDigitos, 2, '0', STR_PAD_LEFT), -2)
+					: '00';
+				// Grupo ICMS40 (leiaute 4.00): CST 40/41/50 sem vBC/pICMS/vICMS.
+				if (in_array($cstIcms, ['40', '41', '50'], true)) {
+					$tagIcms40 = [
+						'item' => $nItem,
+						'orig' => $orig,
+						'CST'  => $cstIcms,
+					];
+					$vIcmsDesonItem = round((float) ($item['valorIcmsDesonerado'] ?? 0), 2);
+					if ($vIcmsDesonItem > 0) {
+						$tagIcms40['vICMSDeson'] = $vIcmsDesonItem;
+						if (isset($item['motDesICMS']) && $item['motDesICMS'] !== '' && $item['motDesICMS'] !== null) {
+							$tagIcms40['motDesICMS'] = (int) $item['motDesICMS'];
+						}
+					}
+					$mk->tagICMS((object) $tagIcms40);
+				} else {
+					$temBaseInformada = array_key_exists('baseIcms', $item)
+						&& $item['baseIcms'] !== null
+						&& $item['baseIcms'] !== '';
+					$vBC     = $temBaseInformada ? (float) $item['baseIcms'] : $vProdLiquido;
+					$pICMS   = (float) ($item['aliquotaIcms'] ?? 0);
+					$vICMS   = array_key_exists('valorIcms', $item)
+						? round((float) $item['valorIcms'], 2)
+						: round($vBC * $pICMS / 100, 2);
+					if ($pICMS <= 0 && $vBC > 0 && $vICMS > 0) {
+						$pICMS = round($vICMS / $vBC * 100, 4);
+					}
+					$vIcmsTotal += $vICMS;
+					$vBcTotal += $vBC;
+					$mk->tagICMS((object) [
+						'item'  => $nItem,
+						'orig'  => $orig,
+						'CST'   => $cstIcms,
+						'modBC' => 3,
+						'vBC'   => $vBC,
+						'pICMS' => $pICMS,
+						'vICMS' => $vICMS,
+					]);
 				}
-				$vIcmsTotal += $vICMS;
-				$vBcTotal += $vBC;
-				$mk->tagICMS((object) [
-					'item'  => $nItem,
-					'orig'  => $orig,
-					'CST'   => $cstIcms,
-					'modBC' => 3,
-					'vBC'   => $vBC,
-					'pICMS' => $pICMS,
-					'vICMS' => $vICMS,
-				]);
 			}
 
 			$vIPI = round((float) ($item['valorIpi'] ?? 0), 2);
