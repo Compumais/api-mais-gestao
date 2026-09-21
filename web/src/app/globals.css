@@ -289,3 +289,56 @@
     }
   }
 }
+
+/* Cardápio público: ignora dark mode do sistema (texto claro em card branco). */
+.cardapio-publico {
+	color-scheme: light;
+	--background: #f5f5f5;
+	--foreground: #0a0a0a;
+	--card: #ffffff;
+	--card-foreground: #0a0a0a;
+	--popover: #ffffff;
+	--popover-foreground: #0a0a0a;
+	--primary: #0a0a0a;
+	--primary-foreground: #ffffff;
+	--secondary: #f5f5f5;
+	--secondary-foreground: #0a0a0a;
+	--muted: #f5f5f5;
+	--muted-foreground: #404040;
+	--accent: #f5f5f5;
+	--accent-foreground: #0a0a0a;
+	--destructive: #b91c1c;
+	--destructive-foreground: #ffffff;
+	--border: #d4d4d4;
+	--input: #d4d4d4;
+	--ring: #737373;
+	color: #0a0a0a;
+	background-color: #f5f5f5;
+}
+
+.cardapio-publico input,
+.cardapio-publico textarea,
+.cardapio-publico select,
+.cardapio-publico button,
+.cardapio-publico label,
+.cardapio-publico p,
+.cardapio-publico h1,
+.cardapio-publico h2,
+.cardapio-publico h3,
+.cardapio-publico span,
+.cardapio-publico li {
+	color: inherit;
+}
+
+.cardapio-publico [data-slot="input"],
+.cardapio-publico [data-slot="select-trigger"],
+.cardapio-publico textarea {
+	color: #0a0a0a !important;
+	background-color: #ffffff !important;
+	border-color: #d4d4d4 !important;
+}
+
+.cardapio-publico [data-slot="select-value"],
+.cardapio-publico [data-placeholder] {
+	color: #0a0a0a !important;
+}

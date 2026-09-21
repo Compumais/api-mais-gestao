@@ -227,7 +227,10 @@ export function CardapioPublicoClient({ slug }: { slug: string }) {
 		data.grupos.find((grupo) => grupo.id === grupoAtivo)?.nome ?? "Cardápio";
 
 	return (
-		<div className="min-h-svh bg-neutral-100 text-neutral-950 pb-24">
+		<div
+			className="min-h-svh pb-24"
+			style={{ color: "#0a0a0a", backgroundColor: "#f5f5f5" }}
+		>
 			{view === "menu" && (
 				<>
 					<header className="border-b border-neutral-200 bg-[#f3ebe0]">

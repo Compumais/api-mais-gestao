@@ -1,8 +1,7 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
 	Select,
 	SelectContent,
@@ -10,7 +9,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import type { CardapioPublico } from "@/services/cardapio-publico.service";
 import { formatarMoeda, type ItemSacola } from "./tipos";
 
@@ -36,9 +34,29 @@ type Props = {
 	onEnviar: () => void;
 };
 
-const campoClass =
-	"border-neutral-300 bg-white text-neutral-950 placeholder:text-neutral-500";
-const labelClass = "text-sm font-semibold text-neutral-950";
+const TEXTO = "#0a0a0a";
+const TEXTO_SEC = "#262626";
+const BORDA = "#d4d4d4";
+const FUNDO = "#ffffff";
+
+const campoStyle: CSSProperties = {
+	color: TEXTO,
+	backgroundColor: FUNDO,
+	border: `1px solid ${BORDA}`,
+	borderRadius: 8,
+	width: "100%",
+	padding: "10px 12px",
+	fontSize: 16,
+	fontWeight: 500,
+};
+
+const labelStyle: CSSProperties = {
+	color: TEXTO,
+	fontSize: 14,
+	fontWeight: 700,
+	display: "block",
+	marginBottom: 6,
+};
 
 export function CardapioPublicoCheckout({
 	data,
@@ -58,30 +76,86 @@ export function CardapioPublicoCheckout({
 	onEnviar,
 }: Props) {
 	return (
-		<main className="mx-auto max-w-xl px-4 py-6 text-neutral-950">
+		<main
+			className="mx-auto max-w-xl px-4 py-6"
+			style={{ color: TEXTO, backgroundColor: "#f5f5f5" }}
+		>
 			<button
 				type="button"
-				className="mb-4 text-sm font-semibold text-neutral-900 underline-offset-2 hover:underline"
+				style={{
+					color: TEXTO,
+					fontSize: 14,
+					fontWeight: 700,
+					marginBottom: 16,
+					textDecoration: "underline",
+					background: "none",
+					border: 0,
+					padding: 0,
+					cursor: "pointer",
+				}}
 				onClick={onVoltar}
 			>
 				← Voltar ao cardápio
 			</button>
-			<h1 className="text-2xl font-black tracking-tight">Finalizar pedido</h1>
-			<ul className="mt-4 space-y-3">
+			<h1
+				style={{
+					color: TEXTO,
+					fontSize: 28,
+					fontWeight: 900,
+					letterSpacing: "-0.02em",
+					margin: 0,
+				}}
+			>
+				Finalizar pedido
+			</h1>
+			<ul className="mt-4 space-y-3" style={{ listStyle: "none", padding: 0 }}>
 				{sacola.map((item) => (
 					<li
 						key={item.chave}
-						className="flex items-start justify-between rounded-xl border border-neutral-200 bg-white p-3"
+						style={{
+							display: "flex",
+							justifyContent: "space-between",
+							alignItems: "flex-start",
+							gap: 12,
+							borderRadius: 12,
+							border: `1px solid ${BORDA}`,
+							background: FUNDO,
+							padding: 12,
+							color: TEXTO,
+						}}
 					>
 						<div>
-							<p className="font-bold uppercase">{item.nome}</p>
-							<p className="text-sm font-medium text-neutral-700">
+							<p
+								style={{
+									margin: 0,
+									color: TEXTO,
+									fontWeight: 800,
+									textTransform: "uppercase",
+								}}
+							>
+								{item.nome}
+							</p>
+							<p
+								style={{
+									margin: "4px 0 0",
+									color: TEXTO_SEC,
+									fontSize: 14,
+									fontWeight: 600,
+								}}
+							>
 								{item.quantidade} × {formatarMoeda(item.preco)}
 							</p>
 						</div>
 						<button
 							type="button"
-							className="text-sm font-semibold text-red-700"
+							style={{
+								color: "#b91c1c",
+								fontSize: 14,
+								fontWeight: 700,
+								background: "none",
+								border: 0,
+								cursor: "pointer",
+							}}
 							onClick={() => onRemover(item.chave)}
 						>
 							Remover
@@ -89,36 +163,52 @@ export function CardapioPublicoCheckout({
 					</li>
 				))}
 			</ul>
-			<div className="mt-6 space-y-4 rounded-xl border border-neutral-200 bg-white p-4">
-				<div className="space-y-1.5">
-					<Label htmlFor="nome" className={labelClass}>
+			<div
+				className="mt-6 space-y-4"
+				style={{
+					borderRadius: 12,
+					border: `1px solid ${BORDA}`,
+					background: FUNDO,
+					padding: 16,
+					color: TEXTO,
+				}}
+			>
+				<div>
+					<label htmlFor="nome" style={labelStyle}>
 						Nome
-					</Label>
-					<Input
+					</label>
+					<input
 						id="nome"
 						value={nome}
 						onChange={(event) => onNome(event.target.value)}
-						className={campoClass}
+						style={campoStyle}
 						autoComplete="name"
 						required
 					/>
 				</div>
-				<div className="space-y-1.5">
-					<Label htmlFor="telefone" className={labelClass}>
+				<div>
+					<label htmlFor="telefone" style={labelStyle}>
 						Telefone (WhatsApp)
-					</Label>
-					<Input
+					</label>
+					<input
 						id="telefone"
 						type="tel"
 						inputMode="tel"
 						value={telefone}
 						onChange={(event) => onTelefone(event.target.value)}
 						placeholder="(00) 00000-0000"
-						className={campoClass}
+						style={campoStyle}
 						autoComplete="tel"
 						required
 					/>
-					<p className="text-xs font-medium text-neutral-600">
+					<p
+						style={{
+							margin: "6px 0 0",
+							color: TEXTO_SEC,
+							fontSize: 12,
+							fontWeight: 600,
+						}}
+					>
 						Usaremos este número para contato e integração com WhatsApp.
 					</p>
 				</div>
@@ -142,8 +232,8 @@ export function CardapioPublicoCheckout({
 									: null,
 							].filter(Boolean) as Array<{ id: string; label: string }>;
 							return (
-								<div key={campo.id} className="space-y-1.5">
-									<Label className={labelClass}>{campo.rotulo}</Label>
+								<div key={campo.id}>
+									<span style={labelStyle}>{campo.rotulo}</span>
 									<Select
 										value={respostas[campo.id] || opcoes[0]?.id}
 										onValueChange={(value) =>
@@ -154,7 +244,10 @@ export function CardapioPublicoCheckout({
 											}))
 										}
 									>
-										<SelectTrigger className={campoClass}>
+										<SelectTrigger
+											className="h-11 w-full"
+											style={{ ...campoStyle, height: 44 }}
+										>
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>
@@ -171,9 +264,12 @@ export function CardapioPublicoCheckout({
 						if (campo.tipo === "endereco") {
 							return (
 								<div key={campo.id} className="grid gap-3">
-									<div className="space-y-1.5">
-										<Label className={labelClass}>Endereço</Label>
-										<Input
+									<div>
+										<label htmlFor="endereco" style={labelStyle}>
+											Endereço
+										</label>
+										<input
+											id="endereco"
 											value={respostas.endereco ?? ""}
 											onChange={(event) =>
 												onRespostas((atual) => ({
@@ -181,13 +277,16 @@ export function CardapioPublicoCheckout({
 													endereco: event.target.value,
 												}))
 											}
-											className={campoClass}
+											style={campoStyle}
 										/>
 									</div>
 									<div className="grid grid-cols-2 gap-3">
-										<div className="space-y-1.5">
-											<Label className={labelClass}>Número</Label>
-											<Input
+										<div>
+											<label htmlFor="numero" style={labelStyle}>
+												Número
+											</label>
+											<input
+												id="numero"
 												value={respostas.numero ?? ""}
 												onChange={(event) =>
 													onRespostas((atual) => ({
@@ -195,11 +294,11 @@ export function CardapioPublicoCheckout({
 														numero: event.target.value,
 													}))
 												}
-												className={campoClass}
+												style={campoStyle}
 											/>
 										</div>
-										<div className="space-y-1.5">
-											<Label className={labelClass}>Bairro</Label>
+										<div>
+											<span style={labelStyle}>Bairro</span>
 											{data.bairrosentrega.length ? (
 												<Select
 													value={respostas.bairro ?? ""}
@@ -210,7 +309,10 @@ export function CardapioPublicoCheckout({
 														}))
 													}
 												>
-													<SelectTrigger className={campoClass}>
+													<SelectTrigger
+														className="h-11 w-full"
+														style={{ ...campoStyle, height: 44 }}
+													>
 														<SelectValue placeholder="Selecione" />
 													</SelectTrigger>
 													<SelectContent>
@@ -225,7 +327,7 @@ export function CardapioPublicoCheckout({
 													</SelectContent>
 												</Select>
 											) : (
-												<Input
+												<input
 													value={respostas.bairro ?? ""}
 													onChange={(event) =>
 														onRespostas((atual) => ({
@@ -233,14 +335,17 @@ export function CardapioPublicoCheckout({
 															bairro: event.target.value,
 														}))
 													}
-													className={campoClass}
+													style={campoStyle}
 												/>
 											)}
 										</div>
 									</div>
-									<div className="space-y-1.5">
-										<Label className={labelClass}>Complemento</Label>
-										<Input
+									<div>
+										<label htmlFor="complemento" style={labelStyle}>
+											Complemento
+										</label>
+										<input
+											id="complemento"
 											value={respostas.complemento ?? ""}
 											onChange={(event) =>
 												onRespostas((atual) => ({
@@ -248,12 +353,15 @@ export function CardapioPublicoCheckout({
 													complemento: event.target.value,
 												}))
 											}
-											className={campoClass}
+											style={campoStyle}
 										/>
 									</div>
-									<div className="space-y-1.5">
-										<Label className={labelClass}>Referência</Label>
-										<Input
+									<div>
+										<label htmlFor="referencia" style={labelStyle}>
+											Referência
+										</label>
+										<input
+											id="referencia"
 											value={respostas.referencia ?? ""}
 											onChange={(event) =>
 												onRespostas((atual) => ({
@@ -261,7 +369,7 @@ export function CardapioPublicoCheckout({
 													referencia: event.target.value,
 												}))
 											}
-											className={campoClass}
+											style={campoStyle}
 										/>
 									</div>
 								</div>
@@ -269,8 +377,8 @@ export function CardapioPublicoCheckout({
 						}
 						if (campo.tipo === "pagamento") {
 							return (
-								<div key={campo.id} className="space-y-1.5">
-									<Label className={labelClass}>{campo.rotulo}</Label>
+								<div key={campo.id}>
+									<span style={labelStyle}>{campo.rotulo}</span>
 									<Select
 										value={respostas[campo.id] ?? ""}
 										onValueChange={(value) =>
@@ -281,7 +389,10 @@ export function CardapioPublicoCheckout({
 											}))
 										}
 									>
-										<SelectTrigger className={campoClass}>
+										<SelectTrigger
+											className="h-11 w-full"
+											style={{ ...campoStyle, height: 44 }}
+										>
 											<SelectValue placeholder="Selecione" />
 										</SelectTrigger>
 										<SelectContent>
@@ -297,9 +408,12 @@ export function CardapioPublicoCheckout({
 						}
 						if (campo.tipo === "observacao") {
 							return (
-								<div key={campo.id} className="space-y-1.5">
-									<Label className={labelClass}>{campo.rotulo}</Label>
-									<Textarea
+								<div key={campo.id}>
+									<label htmlFor={campo.id} style={labelStyle}>
+										{campo.rotulo}
+									</label>
+									<textarea
+										id={campo.id}
 										value={respostas[campo.id] ?? ""}
 										onChange={(event) =>
 											onRespostas((atual) => ({
@@ -308,15 +422,16 @@ export function CardapioPublicoCheckout({
 												observacao: event.target.value,
 											}))
 										}
-										className={campoClass}
+										rows={3}
+										style={{ ...campoStyle, resize: "vertical" }}
 									/>
 								</div>
 							);
 						}
 						if (campo.tipo === "select") {
 							return (
-								<div key={campo.id} className="space-y-1.5">
-									<Label className={labelClass}>{campo.rotulo}</Label>
+								<div key={campo.id}>
+									<span style={labelStyle}>{campo.rotulo}</span>
 									<Select
 										value={respostas[campo.id] ?? ""}
 										onValueChange={(value) =>
@@ -326,7 +441,10 @@ export function CardapioPublicoCheckout({
 											}))
 										}
 									>
-										<SelectTrigger className={campoClass}>
+										<SelectTrigger
+											className="h-11 w-full"
+											style={{ ...campoStyle, height: 44 }}
+										>
 											<SelectValue placeholder="Selecione" />
 										</SelectTrigger>
 										<SelectContent>
@@ -341,9 +459,12 @@ export function CardapioPublicoCheckout({
 							);
 						}
 						return (
-							<div key={campo.id} className="space-y-1.5">
-								<Label className={labelClass}>{campo.rotulo}</Label>
-								<Input
+							<div key={campo.id}>
+								<label htmlFor={campo.id} style={labelStyle}>
+									{campo.rotulo}
+								</label>
+								<input
+									id={campo.id}
 									value={respostas[campo.id] ?? ""}
 									onChange={(event) =>
 										onRespostas((atual) => ({
@@ -354,33 +475,72 @@ export function CardapioPublicoCheckout({
 												: {}),
 										}))
 									}
-									className={campoClass}
+									style={campoStyle}
 								/>
 							</div>
 						);
 					})}
 				{data.mensagemrodape ? (
-					<p className="text-sm font-medium text-neutral-700">
+					<p style={{ color: TEXTO_SEC, fontSize: 14, fontWeight: 600 }}>
 						{data.mensagemrodape}
 					</p>
 				) : null}
 			</div>
-			<div className="mt-4 rounded-xl border border-neutral-200 bg-white p-4 text-sm font-medium">
-				<div className="flex justify-between text-neutral-800">
+			<div
+				className="mt-4"
+				style={{
+					borderRadius: 12,
+					border: `1px solid ${BORDA}`,
+					background: FUNDO,
+					padding: 16,
+					color: TEXTO,
+					fontSize: 14,
+					fontWeight: 600,
+				}}
+			>
+				<div
+					style={{
+						display: "flex",
+						justifyContent: "space-between",
+						color: TEXTO,
+					}}
+				>
 					<span>Subtotal</span>
 					<span>{formatarMoeda(subtotal)}</span>
 				</div>
-				<div className="mt-1 flex justify-between text-neutral-800">
+				<div
+					style={{
+						display: "flex",
+						justifyContent: "space-between",
+						marginTop: 4,
+						color: TEXTO,
+					}}
+				>
 					<span>Entrega</span>
 					<span>{formatarMoeda(taxa)}</span>
 				</div>
-				<div className="mt-2 flex justify-between text-base font-bold text-neutral-950">
+				<div
+					style={{
+						display: "flex",
+						justifyContent: "space-between",
+						marginTop: 8,
+						color: TEXTO,
+						fontSize: 16,
+						fontWeight: 800,
+					}}
+				>
 					<span>Total</span>
 					<span>{formatarMoeda(total)}</span>
 				</div>
 			</div>
 			<Button
-				className="mt-4 w-full bg-neutral-950 text-white hover:bg-neutral-800"
+				className="mt-4 w-full"
+				style={{
+					backgroundColor: "#0a0a0a",
+					color: "#ffffff",
+					fontWeight: 700,
+					height: 48,
+				}}
 				disabled={enviando || sacola.length === 0}
 				onClick={onEnviar}
 			>
