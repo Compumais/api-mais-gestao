@@ -6,8 +6,9 @@ import {
 	Phone,
 	Plus,
 	RefreshCw,
+	Settings,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { pdvInvoke } from "@/lib/pdv-api";
 import type { StatusContext } from "@/lib/pdv-types";
@@ -97,7 +98,7 @@ export function DeliveryPage() {
 
 	useEscapeFechaModal(abrir, () => setAbrir(false));
 
-	async function carregar() {
+	const carregar = useCallback(async () => {
 		setLoading(true);
 		setMsg("");
 		try {
@@ -111,11 +112,15 @@ export function DeliveryPage() {
 		} finally {
 			setLoading(false);
 		}
-	}
+	}, [filtro]);
 
 	useEffect(() => {
 		void carregar();
-	}, [filtro]);
+		const timer = window.setInterval(() => {
+			void carregar();
+		}, 4000);
+		return () => window.clearInterval(timer);
+	}, [carregar]);
 
 	async function buscarClientes(termo: string) {
 		try {
@@ -218,6 +223,13 @@ export function DeliveryPage() {
 								variant: "secondary",
 								onClick: () => void carregar(),
 								disabled: loading,
+							},
+							{
+								key: "config",
+								label: "Impressoras",
+								hotkey: "F8",
+								variant: "outline",
+								onClick: () => navigate("/config?aba=delivery"),
 							},
 							{
 								key: "voltar",
@@ -390,6 +402,16 @@ export function DeliveryPage() {
 						))}
 					</div>
 					<div className="ml-auto flex items-center gap-2">
+						{status?.podeConfigurar ? (
+							<Button
+								size="sm"
+								variant="outline"
+								onClick={() => navigate("/config?aba=delivery")}
+							>
+								<Settings className="mr-1 size-4" />
+								Config. delivery
+							</Button>
+						) : null}
 						<Button
 							size="sm"
 							variant="outline"

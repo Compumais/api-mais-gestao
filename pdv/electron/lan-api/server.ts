@@ -832,6 +832,13 @@ async function despachar(
 		};
 	}
 
+	if (method === "GET" && path === "/pos/delivery/novos-count") {
+		return {
+			status: 200,
+			body: { total: await localApi.contarPedidosEntregaNovos() },
+		};
+	}
+
 	if (method === "POST" && path === "/pos/delivery") {
 		const modalidadeRaw = String(body.modalidade ?? "delivery");
 		const modalidade = modalidadeRaw === "retirada" ? "retirada" : "delivery";

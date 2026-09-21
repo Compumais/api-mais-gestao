@@ -1,4 +1,5 @@
 import {
+	Bike,
 	CloudDownload,
 	CreditCard,
 	FileDown,
@@ -14,7 +15,7 @@ import {
 	Wifi,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate, useOutletContext } from "react-router-dom";
+import { useNavigate, useOutletContext, useSearchParams } from "react-router-dom";
 import { pdvInvoke } from "@/lib/pdv-api";
 import {
 	type LeituraCodigoBarras,
@@ -26,6 +27,7 @@ import { serializarTeclasFuncao } from "@/lib/teclas-funcao";
 import { aplicarTema } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { ConfigAtalhos } from "@/ui/components/config-atalhos";
+import { ConfigDeliveryTab } from "@/ui/components/config-delivery-tab";
 import { ConfigTeclasFuncao } from "@/ui/components/config-teclas-funcao";
 import { FunctionBar } from "@/ui/components/function-bar";
 import {
@@ -89,6 +91,7 @@ type MapeamentoGourmet = {
 
 type AbaId =
 	| "geral"
+	| "delivery"
 	| "atalhos"
 	| "teclas"
 	| "impressoras"
@@ -225,6 +228,7 @@ const ABAS: Array<{
 	icon: typeof Settings2;
 }> = [
 	{ id: "geral", label: "Geral", icon: Settings2 },
+	{ id: "delivery", label: "Delivery", icon: Bike },
 	{ id: "atalhos", label: "Atalhos", icon: LayoutGrid },
 	{ id: "teclas", label: "Teclas", icon: Keyboard },
 	{ id: "impressoras", label: "Impressoras", icon: Printer },
@@ -239,8 +243,12 @@ const ABAS: Array<{
 
 export function ConfigPage() {
 	const navigate = useNavigate();
+	const [searchParams] = useSearchParams();
 	const { refresh, status } = useOutletContext<StatusContext>();
-	const [aba, setAba] = useState<AbaId>("geral");
+	const abaInicial = (searchParams.get("aba") as AbaId | null) ?? "geral";
+	const [aba, setAba] = useState<AbaId>(
+		ABAS.some((item) => item.id === abaInicial) ? abaInicial : "geral",
+	);
 	const [config, setConfig] = useState<Config>({});
 	const [impressoras, setImpressoras] = useState<
 		Array<{ name: string; isDefault: boolean }>
@@ -304,9 +312,19 @@ export function ConfigPage() {
 	);
 	const modoSecundario = (config.pdv_modo ?? "principal") === "secundario";
 	const gourmet = Boolean(status?.moduloGourmet);
-	const abasVisiveis = gourmet
-		? ABAS
-		: ABAS.filter((item) => item.id !== "tecnibra");
+	const abasVisiveis = ABAS.filter((item) => {
+		if (item.id === "tecnibra" && !gourmet) return false;
+		if (item.id === "delivery" && !gourmet) return false;
+		return true;
+	});
+
+	useEffect(() => {
+		const pedida = searchParams.get("aba") as AbaId | null;
+		if (pedida && ABAS.some((item) => item.id === pedida)) {
+			if (pedida === "delivery" && !gourmet) return;
+			setAba(pedida);
+		}
+	}, [searchParams, gourmet]);
 
 	useEffect(() => {
 		void (async () => {
@@ -1373,6 +1391,31 @@ export function ConfigPage() {
 								</CardContent>
 							</Card>
 						)}
+
+						{aba === "delivery" && gourmet ? (
+							<ConfigDeliveryTab
+								config={config}
+								set={set}
+								impressoras={impressoras}
+								mapeamentoGourmet={mapeamentoGourmet}
+								atualizarGourmet={atualizarGourmet}
+								testando={testando}
+								onTestarImpressora={(params) => {
+									const tipo =
+										params.destino === "rede"
+											? "rede"
+											: params.destino === "arquivo"
+												? "arquivo"
+												: "sistema";
+									void testarDestino(`gourmet-delivery`, {
+										tipo,
+										nome: params.nome,
+										host: params.host,
+										porta: params.porta,
+									});
+								}}
+							/>
+						) : null}
 
 						{aba === "impressoras" && (
 							<>

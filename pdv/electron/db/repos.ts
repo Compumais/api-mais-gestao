@@ -4259,6 +4259,18 @@ export async function listarPedidosEntrega(
 	return result;
 }
 
+/** Pedidos delivery/retirada ainda em "recebido" (novos, aguardando operador). */
+export async function contarPedidosEntregaNovos(): Promise<number> {
+	const rows = await query<{ total: string }>(
+		`SELECT COUNT(*)::text AS total
+		 FROM conta_mesa
+		 WHERE modalidade IN ('delivery', 'retirada')
+		   AND status = 'aberta'
+		   AND COALESCE(NULLIF(TRIM(status_entrega), ''), 'recebido') = 'recebido'`,
+	);
+	return Number(rows[0]?.total ?? 0);
+}
+
 export async function atualizarStatusEntrega(
 	idconta: string,
 	status?: StatusEntrega | null,

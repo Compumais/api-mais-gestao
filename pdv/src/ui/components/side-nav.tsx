@@ -10,7 +10,9 @@ import {
 	WifiOff,
 } from "lucide-react";
 import type { ComponentType } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
+import { pdvInvoke } from "@/lib/pdv-api";
 import {
 	rotuloModelo,
 	type StatusContext,
@@ -34,30 +36,46 @@ function SideButton({
 	onClick,
 	active,
 	recolhida,
+	badge,
 }: {
 	label: string;
 	icon: ComponentType<{ className?: string }>;
 	onClick: () => void;
 	active?: boolean;
 	recolhida: boolean;
+	badge?: number;
 }) {
 	return (
 		<button
 			type="button"
 			onClick={onClick}
-			aria-label={label}
+			aria-label={
+				badge && badge > 0 ? `${label} (${badge} novos)` : label
+			}
 			title={recolhida ? label : undefined}
 			aria-current={active ? "page" : undefined}
 			className={cn(
-				"pdv-touch flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-xs font-semibold transition",
+				"pdv-touch relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-xs font-semibold transition",
 				recolhida && "justify-center gap-0 px-0",
 				active
 					? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
 					: "text-sidebar-foreground/82 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
 			)}
 		>
-			<Icon className="size-[18px] shrink-0" />
+			<span className="relative shrink-0">
+				<Icon className="size-[18px]" />
+				{badge && badge > 0 ? (
+					<span className="absolute -top-1.5 -right-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-white">
+						{badge > 99 ? "99+" : badge}
+					</span>
+				) : null}
+			</span>
 			<span className={cn("truncate", recolhida && "sr-only")}>{label}</span>
+			{!recolhida && badge && badge > 0 ? (
+				<span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-bold text-white">
+					{badge > 99 ? "99+" : badge}
+				</span>
+			) : null}
 		</button>
 	);
 }
@@ -83,6 +101,31 @@ export function SideNav({
 	const rotulo = rotuloModelo(status?.modeloAtendimento);
 	const path = location.pathname;
 	const { recolhida } = useSidebarState();
+	const [novosDelivery, setNovosDelivery] = useState(0);
+
+	useEffect(() => {
+		if (!gourmet || bloqueado) {
+			setNovosDelivery(0);
+			return;
+		}
+		let cancelado = false;
+		async function atualizarBadge() {
+			try {
+				const total = await pdvInvoke<number>("contarPedidosEntregaNovos");
+				if (!cancelado) setNovosDelivery(Number(total) || 0);
+			} catch {
+				if (!cancelado) setNovosDelivery(0);
+			}
+		}
+		void atualizarBadge();
+		const timer = window.setInterval(() => {
+			void atualizarBadge();
+		}, 4000);
+		return () => {
+			cancelado = true;
+			window.clearInterval(timer);
+		};
+	}, [gourmet, bloqueado, path]);
 
 	const mesasAtivo = path === "/" || path.startsWith("/mesas/");
 	const balcaoAtivo = path === "/balcao" || (!gourmet && path === "/");
@@ -138,6 +181,7 @@ export function SideNav({
 						icon={Bike}
 						active={deliveryAtivo}
 						recolhida={recolhida}
+						badge={novosDelivery}
 						onClick={() => {
 							if (deliveryAtivo && path === "/delivery") return;
 							tentarNavegar("/delivery");

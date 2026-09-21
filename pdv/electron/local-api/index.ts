@@ -104,6 +104,7 @@ import {
 	listarMeiosPagamentoLocal,
 	listarMesas,
 	listarPedidosEntrega,
+	contarPedidosEntregaNovos,
 	listarPedidosFila,
 	listarPizzasLocal,
 	listarProdutosPorGrupo,
@@ -1911,6 +1912,15 @@ export const localApi = {
 			return remoto.listarPedidosEntregaRemoto(statusFiltro);
 		}
 		return listarPedidosEntrega(statusFiltro);
+	},
+
+	async contarPedidosEntregaNovos() {
+		await assertModuloGourmet();
+		if (await ehSecundario()) {
+			await garantirOperacaoSecundario();
+			return remoto.contarPedidosEntregaNovosRemoto();
+		}
+		return contarPedidosEntregaNovos();
 	},
 
 	async abrirPedidoEntrega(params: {

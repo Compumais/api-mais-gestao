@@ -303,6 +303,15 @@ export async function listarPedidosEntregaRemoto(statusFiltro?: string | null) {
 	return unwrapDataEnvelope(body);
 }
 
+export async function contarPedidosEntregaNovosRemoto(): Promise<number> {
+	const body = await remoto<{ total?: number; data?: { total?: number } }>(
+		"/pos/delivery/novos-count",
+	);
+	if (typeof body.total === "number") return body.total;
+	if (typeof body.data?.total === "number") return body.data.total;
+	return 0;
+}
+
 export async function abrirPedidoEntregaRemoto(params: {
 	modalidade: "delivery" | "retirada";
 	nomecliente?: string | null;
