@@ -20,6 +20,7 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 import com.pos_mais_gestao.PosApplication;
 import com.pos_mais_gestao.R;
 import com.pos_mais_gestao.data.api.ApiClient;
@@ -93,6 +94,7 @@ public class MesasActivity extends AppCompatActivity {
         RecyclerView lista = findViewById(R.id.listaMesas);
         lista.setLayoutManager(new GridLayoutManager(this, 3));
         lista.setAdapter(adapter);
+        aplicarRotulos();
 
         TextInputEditText search = findViewById(R.id.inputSearch);
         search.addTextChangedListener(new TextWatcher() {
@@ -141,7 +143,7 @@ public class MesasActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        adapter.setModeloComanda(prefs.isModeloComanda());
+        aplicarRotulos();
         carregar(false);
         if (prefs.isModoPdvLocal()) {
             pollHandler.removeCallbacks(pollTick);
@@ -187,6 +189,7 @@ public class MesasActivity extends AppCompatActivity {
                     OfflineBanner.bind(this, true, null);
                     todas.clear();
                     todas.addAll(grade);
+                    aplicarRotulos();
                     aplicarFiltro();
                 });
             } catch (ApiException e) {
@@ -248,8 +251,11 @@ public class MesasActivity extends AppCompatActivity {
             } else {
                 abrirMesaLocalDireto(item.numero);
             }
-        } else {
+        } else if (AberturaMesaPolicy.devePedirNome(
+                prefs.isModalAbrirMesaHabilitado(), item.isOcupada())) {
             dialogAbrirMesaCloud(item.numero);
+        } else {
+            abrirMesaCloudDireto(item.numero);
         }
     }
 
@@ -277,6 +283,28 @@ public class MesasActivity extends AppCompatActivity {
         });
     }
 
+    private void abrirMesaCloudDireto(int numeroMesa) {
+        executor.execute(() -> {
+            try {
+                ContaMesaDto mesa = api.abrirMesa(numeroMesa, null);
+                runOnUiThread(() -> abrirContaCloud(mesa));
+            } catch (ApiException e) {
+                runOnUiThread(() ->
+                        Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show());
+            }
+        });
+    }
+
+    private void aplicarRotulos() {
+        boolean comanda = prefs.isModeloComanda();
+        adapter.setModeloComanda(comanda);
+        TextInputLayout busca = findViewById(R.id.layoutBuscaMesa);
+        if (busca != null) {
+            busca.setHint(getString(comanda ? R.string.buscar_comanda : R.string.buscar_mesa));
+        }
+        txtSemMesas.setText(comanda ? R.string.sem_comandas : R.string.sem_mesas);
+    }
+
     private void abrirPedido(ContaMesaDto mesa, boolean browse) {
         Intent intent = new Intent(this, PedidoActivity.class);
         intent.putExtra(PedidoActivity.EXTRA_ID_CONTA, mesa.id);
@@ -301,6 +329,12 @@ public class MesasActivity extends AppCompatActivity {
         TextView txtMesa = view.findViewById(R.id.txtMesaDialog);
         TextInputEditText inputNome = view.findViewById(R.id.inputNomeClienteMesa);
         txtMesa.setText(getString(prefs.isModeloComanda() ? R.string.comanda_n : R.string.mesa_n, numeroMesa));
+        TextView txtAjuda = view.findViewById(R.id.txtAjudaNomeCliente);
+        if (txtAjuda != null) {
+            txtAjuda.setText(prefs.isModeloComanda()
+                    ? R.string.nome_cliente_comanda_ajuda
+                    : R.string.nome_cliente_mesa_ajuda);
+        }
         new AlertDialog.Builder(this)
                 .setTitle(prefs.isModeloComanda() ? R.string.abrir_comanda : R.string.abrir_mesa)
                 .setView(view)

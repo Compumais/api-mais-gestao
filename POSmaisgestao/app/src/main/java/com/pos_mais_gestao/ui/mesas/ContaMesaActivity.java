@@ -21,6 +21,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 import com.journeyapps.barcodescanner.ScanOptions;
 import com.pos_mais_gestao.PosApplication;
 import com.pos_mais_gestao.R;
@@ -66,8 +67,9 @@ public class ContaMesaActivity extends AppCompatActivity {
     private TextView txtTotalConta;
     private TextInputEditText inputBusca;
     private MaterialButton btnFecharConta;
+    private TextInputLayout layoutQuantidadeItem;
+    private TextInputEditText inputQuantidadeItem;
     private BigDecimal totalAtual = BigDecimal.ZERO;
-    private int quantidadeSelecionada = 1;
 
     private final ActivityResultLauncher<ScanOptions> scanLauncher =
             CodigoScanHelper.registrarScan(this, this::aoCodigoEscaneado);
@@ -102,6 +104,10 @@ public class ContaMesaActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         toolbar.setNavigationOnClickListener(v -> finish());
         atualizarTituloMesa();
+        TextView txtItens = findViewById(R.id.txtItensConta);
+        if (txtItens != null) {
+            txtItens.setText(prefs.isModeloComanda() ? R.string.itens_comanda : R.string.itens_mesa);
+        }
 
         progress = findViewById(R.id.progressConta);
         lblSecao = findViewById(R.id.lblSecaoConta);
@@ -114,6 +120,8 @@ public class ContaMesaActivity extends AppCompatActivity {
         MaterialButton btnQty1 = findViewById(R.id.btnQty1);
         MaterialButton btnQty2 = findViewById(R.id.btnQty2);
         MaterialButton btnQty5 = findViewById(R.id.btnQty5);
+        layoutQuantidadeItem = findViewById(R.id.layoutQuantidadeItem);
+        inputQuantidadeItem = findViewById(R.id.inputQuantidadeItem);
 
         btnQty1.setOnClickListener(v -> selecionarQty(1, btnQty1, btnQty2, btnQty5));
         btnQty2.setOnClickListener(v -> selecionarQty(2, btnQty1, btnQty2, btnQty5));
@@ -203,7 +211,8 @@ public class ContaMesaActivity extends AppCompatActivity {
     }
 
     private void selecionarQty(int qty, MaterialButton... botoes) {
-        quantidadeSelecionada = qty;
+        inputQuantidadeItem.setText(String.valueOf(qty));
+        layoutQuantidadeItem.setError(null);
         for (MaterialButton botao : botoes) {
             boolean ativo = (botao.getId() == R.id.btnQty1 && qty == 1)
                     || (botao.getId() == R.id.btnQty2 && qty == 2)
@@ -270,7 +279,25 @@ public class ContaMesaActivity extends AppCompatActivity {
     }
 
     private void lancarProdutoNaConta(Produto produto) {
-        lancarProdutoNaConta(produto, BigDecimal.valueOf(quantidadeSelecionada));
+        BigDecimal quantidade = quantidadeInformada();
+        if (quantidade == null) {
+            return;
+        }
+        lancarProdutoNaConta(produto, quantidade);
+    }
+
+    private BigDecimal quantidadeInformada() {
+        String texto = inputQuantidadeItem.getText() == null
+                ? ""
+                : inputQuantidadeItem.getText().toString();
+        BigDecimal quantidade = ProdutoQuantidade.normalizar(texto);
+        if (quantidade == null) {
+            layoutQuantidadeItem.setError(getString(R.string.peso_quantidade_invalido));
+            inputQuantidadeItem.requestFocus();
+            return null;
+        }
+        layoutQuantidadeItem.setError(null);
+        return new BigDecimal(quantidade.toPlainString());
     }
 
     private void lancarProdutoNaConta(Produto produto, BigDecimal quantidade) {
@@ -344,6 +371,12 @@ public class ContaMesaActivity extends AppCompatActivity {
         TextView txtMesa = view.findViewById(R.id.txtMesaDialog);
         TextInputEditText inputNome = view.findViewById(R.id.inputNomeClienteMesa);
         txtMesa.setText(getString(prefs.isModeloComanda() ? R.string.comanda_n : R.string.mesa_n, numeroMesa));
+        TextView txtAjuda = view.findViewById(R.id.txtAjudaNomeCliente);
+        if (txtAjuda != null) {
+            txtAjuda.setText(prefs.isModeloComanda()
+                    ? R.string.nome_cliente_comanda_ajuda
+                    : R.string.nome_cliente_mesa_ajuda);
+        }
         if (nomeCliente != null) {
             inputNome.setText(nomeCliente);
         }
@@ -383,7 +416,9 @@ public class ContaMesaActivity extends AppCompatActivity {
 
     private void irParaPagamento() {
         if (totalAtual.compareTo(BigDecimal.ZERO) <= 0) {
-            Toast.makeText(this, R.string.comanda_vazia, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, prefs.isModeloComanda()
+                    ? R.string.nenhum_item_comanda
+                    : R.string.nenhum_item_mesa, Toast.LENGTH_SHORT).show();
             return;
         }
         Intent intent = new Intent(this, PagamentoActivity.class);

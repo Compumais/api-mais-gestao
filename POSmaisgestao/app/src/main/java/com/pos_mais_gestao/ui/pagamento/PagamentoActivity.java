@@ -309,12 +309,16 @@ public class PagamentoActivity extends AppCompatActivity {
     private boolean validarVendaAberta() {
         if (modoMesa) {
             if (idConta == null || idConta.isEmpty()) {
-                Toast.makeText(this, R.string.conta_mesa_invalida, Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, prefs.isModeloComanda()
+                        ? R.string.conta_comanda_invalida
+                        : R.string.conta_mesa_invalida, Toast.LENGTH_SHORT).show();
                 finish();
                 return false;
             }
             if (totalVenda.compareTo(BigDecimal.ZERO) <= 0) {
-                Toast.makeText(this, R.string.comanda_vazia, Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, prefs.isModeloComanda()
+                        ? R.string.nenhum_item_comanda
+                        : R.string.nenhum_item_mesa, Toast.LENGTH_SHORT).show();
                 finish();
                 return false;
             }
@@ -359,7 +363,9 @@ public class PagamentoActivity extends AppCompatActivity {
 
                 if (!prefs.isModoPdvLocal() && !outboxSync.temRede()) {
                     if (modoMesa) {
-                        throw new ApiException(getString(R.string.fechar_mesa_requer_rede));
+                        throw new ApiException(getString(prefs.isModeloComanda()
+                                ? R.string.fechar_comanda_requer_rede
+                                : R.string.fechar_mesa_requer_rede));
                     }
                     outboxSync.enfileirarVenda(snapshot, pags, troco);
                     ArrayList<ItemFicha> fichasOffline = fichas;
@@ -447,7 +453,9 @@ public class PagamentoActivity extends AppCompatActivity {
         anexarFichas(intent, fichas);
         if (modoMesa) {
             intent.putExtra(SucessoActivity.EXTRA_VOLTAR_MESAS, true);
-            intent.putExtra(SucessoActivity.EXTRA_TITULO, getString(R.string.mesa_fechada_titulo));
+            intent.putExtra(SucessoActivity.EXTRA_TITULO, getString(prefs.isModeloComanda()
+                    ? R.string.comanda_fechada_titulo
+                    : R.string.mesa_fechada_titulo));
         } else {
             intent.putExtra(
                     SucessoActivity.EXTRA_TITULO,

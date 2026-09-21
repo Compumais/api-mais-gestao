@@ -68,6 +68,9 @@ public class PedidosActivity extends AppCompatActivity {
         list.setAdapter(adapter);
 
         CheckBox chk = findViewById(R.id.chkAgruparMesa);
+        chk.setText(prefs.isModeloComanda()
+                ? R.string.agrupar_por_comanda
+                : R.string.agrupar_por_mesa);
         chk.setOnCheckedChangeListener((b, checked) -> {
             groupByMesa = checked;
             rebuild();

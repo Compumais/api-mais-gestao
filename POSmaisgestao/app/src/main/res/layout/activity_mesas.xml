@@ -24,6 +24,7 @@
         <include layout="@layout/include_offline_banner" />
 
         <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/layoutBuscaMesa"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="@string/buscar_mesa">

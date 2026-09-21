@@ -23,6 +23,7 @@ import com.google.android.material.button.MaterialButton;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 import com.pos_mais_gestao.PosApplication;
 import com.pos_mais_gestao.R;
 import com.pos_mais_gestao.data.api.ApiClient;
@@ -168,6 +169,9 @@ public class PedidoActivity extends AppCompatActivity {
         } else {
             atualizarHeader();
             btnTrocarNome.setVisibility(View.VISIBLE);
+            btnOrderStatusOk.setText(prefs.isModeloComanda()
+                    ? R.string.voltar_as_comandas
+                    : R.string.voltar_as_mesas);
         }
     }
 
@@ -232,7 +236,9 @@ public class PedidoActivity extends AppCompatActivity {
 
     private void adicionarProduto(Produto produto) {
         if (browseOnly) {
-            Toast.makeText(this, R.string.abra_mesa_para_pedir, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, prefs.isModeloComanda()
+                    ? R.string.abra_comanda_para_pedir
+                    : R.string.abra_mesa_para_pedir, Toast.LENGTH_SHORT).show();
             return;
         }
         if (produto.isEspizza()) {
@@ -296,26 +302,80 @@ public class PedidoActivity extends AppCompatActivity {
         if (existente != null && existente.observacao != null) {
             input.setText(existente.observacao);
         }
-        new AlertDialog.Builder(this)
-                .setTitle(R.string.observacao)
+        TextInputLayout layoutQuantidade = view.findViewById(R.id.layoutQuantidadeItem);
+        TextInputEditText inputQuantidade = view.findViewById(R.id.inputQuantidadeItem);
+        boolean incluindo = existente == null;
+        boolean pedirQuantidade = incluindo && !ProdutoQuantidade.vendidoPorQuilograma(produto);
+        if (pedirQuantidade) {
+            layoutQuantidade.setVisibility(View.VISIBLE);
+            inputQuantidade.setText(ProdutoQuantidade.exibir(
+                    quantidade != null ? quantidade : BigDecimal.ONE));
+        } else {
+            layoutQuantidade.setVisibility(View.GONE);
+        }
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(pedirQuantidade ? R.string.incluir_item : R.string.observacao)
                 .setView(view)
-                .setNegativeButton(R.string.pular, (d, w) -> {
-                    if (existente == null) {
-                        sacola.add(new SacolaLinha(produto, produtoMeio, quantidade, null));
-                    }
-                    atualizarSacolaUi();
-                })
-                .setPositiveButton(R.string.salvar, (d, w) -> {
-                    String obs = input.getText() == null ? "" : input.getText().toString().trim();
-                    if (existente != null) {
-                        existente.observacao = obs.isEmpty() ? null : obs;
-                    } else {
-                        sacola.add(new SacolaLinha(
-                                produto, produtoMeio, quantidade, obs.isEmpty() ? null : obs));
-                    }
-                    atualizarSacolaUi();
-                })
-                .show();
+                .setNegativeButton(R.string.pular, null)
+                .setPositiveButton(R.string.salvar, null)
+                .create();
+        dialog.setOnShowListener(ignored -> {
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setOnClickListener(v -> {
+                BigDecimal qtd = quantidadeDaInclusao(
+                        layoutQuantidade, inputQuantidade, pedirQuantidade, quantidade);
+                if (qtd == null) {
+                    return;
+                }
+                if (incluindo) {
+                    sacola.add(new SacolaLinha(produto, produtoMeio, qtd, null));
+                }
+                atualizarSacolaUi();
+                dialog.dismiss();
+            });
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+                BigDecimal qtd = quantidadeDaInclusao(
+                        layoutQuantidade, inputQuantidade, pedirQuantidade, quantidade);
+                if (qtd == null) {
+                    return;
+                }
+                String obs = input.getText() == null ? "" : input.getText().toString().trim();
+                if (existente != null) {
+                    existente.observacao = obs.isEmpty() ? null : obs;
+                } else {
+                    sacola.add(new SacolaLinha(
+                            produto, produtoMeio, qtd, obs.isEmpty() ? null : obs));
+                }
+                atualizarSacolaUi();
+                dialog.dismiss();
+            });
+            if (pedirQuantidade) {
+                inputQuantidade.requestFocus();
+                if (inputQuantidade.getText() != null) {
+                    inputQuantidade.selectAll();
+                }
+            }
+        });
+        dialog.show();
+    }
+
+    private BigDecimal quantidadeDaInclusao(
+            TextInputLayout layout,
+            TextInputEditText input,
+            boolean pedirQuantidade,
+            BigDecimal fallback) {
+        if (!pedirQuantidade) {
+            BigDecimal qtd = ProdutoQuantidade.normalizar(
+                    fallback != null ? fallback.toPlainString() : null);
+            return qtd != null ? new BigDecimal(qtd.toPlainString()) : BigDecimal.ONE;
+        }
+        String texto = input.getText() == null ? "" : input.getText().toString();
+        BigDecimal qtd = ProdutoQuantidade.normalizar(texto);
+        if (qtd == null) {
+            layout.setError(getString(R.string.peso_quantidade_invalido));
+            return null;
+        }
+        layout.setError(null);
+        return new BigDecimal(qtd.toPlainString());
     }
 
     private void atualizarSacolaUi() {

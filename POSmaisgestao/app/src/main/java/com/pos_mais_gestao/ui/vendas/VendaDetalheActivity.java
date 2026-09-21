@@ -69,7 +69,9 @@ public class VendaDetalheActivity extends AppCompatActivity {
         boolean pdv = venda.tipo == VendaResumoDto.Tipo.PDV;
         if (pdv) {
             String tipo = venda.mesa
-                    ? getString(R.string.tipo_venda_mesa)
+                    ? getString(((PosApplication) getApplication()).getPrefsStore().isModeloComanda()
+                            ? R.string.tipo_venda_comanda
+                            : R.string.tipo_venda_mesa)
                     : getString(R.string.tipo_venda_pos);
             if (venda.numeropdv != null) {
                 tipo = tipo + " · PDV " + venda.numeropdv;

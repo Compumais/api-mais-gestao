@@ -2792,7 +2792,7 @@ export async function enviarPedidoConta(params: {
 			idproduto = montado.idproduto;
 			descricao = montado.descricao;
 			precounitario = montado.precounitario;
-			quantidade = 1;
+			quantidade = qtd;
 		}
 
 		itensResolvidos.push({
