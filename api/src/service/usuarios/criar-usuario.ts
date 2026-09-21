@@ -14,6 +14,7 @@ import {
 	httpCriacao,
 	httpErroInterno,
 	httpProibido,
+	httpRecursoExistente,
 } from "@/util/http-util.js";
 import {
 	perfisPersistidosIguais,
@@ -32,6 +33,27 @@ type CriarUsuarioParametros = {
 	perfil: string | string[];
 	empresasIds?: string[];
 };
+
+function respostaErroAuth(error: unknown): HttpResponse<Usuario | null> | null {
+	if (!error || typeof error !== "object" || !("body" in error)) return null;
+	const body = (error as { body?: { code?: unknown } }).body;
+	const code = typeof body?.code === "string" ? body.code : "";
+	if (code === "PASSWORD_TOO_SHORT") {
+		return {
+			success: false,
+			status: 400,
+			error: "A senha deve ter no mínimo 8 caracteres",
+			code: "PASSWORD_TOO_SHORT",
+		};
+	}
+	if (
+		code === "USER_ALREADY_EXISTS" ||
+		code === "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL"
+	) {
+		return httpRecursoExistente("Já existe um usuário com este e-mail");
+	}
+	return null;
+}
 
 async function rollbackCriacaoUsuario(novoUsuarioId: string) {
 	try {
@@ -175,6 +197,6 @@ export async function criarUsuarioService({
 		if (novoUsuarioId) {
 			await rollbackCriacaoUsuario(novoUsuarioId);
 		}
-		return httpErroInterno();
+		return respostaErroAuth(error) ?? httpErroInterno();
 	}
 }
