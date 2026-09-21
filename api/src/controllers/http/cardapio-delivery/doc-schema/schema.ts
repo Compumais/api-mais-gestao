@@ -99,6 +99,25 @@ export const criarPedidoCardapioPublicoSchema: FastifySchema = {
 	},
 };
 
+export const listarMeusPedidosCardapioPublicoSchema: FastifySchema = {
+	tags: ["cardapio-delivery"],
+	summary: "Últimos pedidos do cliente no cardápio público",
+	params: {
+		type: "object",
+		properties: { slug: { type: "string" } },
+		required: ["slug"],
+	},
+	querystring: {
+		type: "object",
+		properties: { telefone: { type: "string" } },
+		required: ["telefone"],
+	},
+	response: {
+		200: { type: "object", additionalProperties: true },
+		...respostasErro,
+	},
+};
+
 export const listarPedidosPendentesSchema: FastifySchema = {
 	tags: ["cardapio-delivery"],
 	summary: "Pedidos pendentes para o PDV",

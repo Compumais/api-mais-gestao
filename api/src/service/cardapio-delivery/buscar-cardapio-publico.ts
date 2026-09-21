@@ -4,6 +4,7 @@ import { buscarEmpresaPorId } from "@/repositories/empresa-repositories.js";
 import {
 	buscarCardapioDeliveryPorSlug,
 	listarGruposGourmetCardapio,
+	listarIdsMaisPedidosCardapio,
 	listarProdutosCardapioPublico,
 } from "@/repositories/cardapio-delivery-repositories.js";
 import { buscarTipoDocumentoFinanceiroPorId } from "@/repositories/tipo-documento-financeiro-repositories.js";
@@ -54,6 +55,7 @@ export type CardapioPublico = {
 	meiospagamento: CardapioPublicoMeio[];
 	grupos: CardapioPublicoGrupo[];
 	produtos: CardapioPublicoProduto[];
+	maisPedidos: CardapioPublicoProduto[];
 };
 
 function urlPublica(
@@ -62,6 +64,25 @@ function urlPublica(
 	tem: boolean,
 ): string | null {
 	return tem ? `/publico/cardapio/${slug}/${caminho}` : null;
+}
+
+function mapearProduto(
+	slug: string,
+	produto: Awaited<ReturnType<typeof listarProdutosCardapioPublico>>[number],
+): CardapioPublicoProduto {
+	return {
+		id: produto.id,
+		descricao: produto.descricao,
+		observacoes: produto.observacoes,
+		preco: numberFromDecimal(produto.preco),
+		espizza: Number(produto.espizza) === 1 ? 1 : 0,
+		idgrupogourmet: produto.idgrupogourmet,
+		imagemurl: urlPublica(
+			slug,
+			`produtos/${produto.id}/imagem`,
+			produto.temimagem,
+		),
+	};
 }
 
 export async function buscarCardapioPublicoService(
@@ -76,10 +97,21 @@ export async function buscarCardapioPublicoService(
 	if (!empresa) return httpNaoEncontrado("Cardápio indisponível");
 
 	const horario = avaliarHorarioCardapio(cardapio.horario);
-	const [produtos, grupos] = await Promise.all([
+	const [produtos, grupos, ranking] = await Promise.all([
 		listarProdutosCardapioPublico(cardapio.idempresa),
 		listarGruposGourmetCardapio(cardapio.idempresa),
+		listarIdsMaisPedidosCardapio(cardapio.idempresa, 8),
 	]);
+
+	const produtosMapeados = produtos.map((produto) =>
+		mapearProduto(slug, produto),
+	);
+	const porId = new Map(
+		produtosMapeados.map((produto) => [produto.id, produto]),
+	);
+	const maisPedidos = ranking
+		.map((linha) => porId.get(linha.idproduto))
+		.filter((produto): produto is CardapioPublicoProduto => Boolean(produto));
 
 	const idsGruposUsados = new Set(produtos.map((p) => p.idgrupogourmet));
 	const gruposVisiveis = grupos
@@ -126,19 +158,7 @@ export async function buscarCardapioPublicoService(
 		camposfinalizacao: cardapio.camposfinalizacao ?? [],
 		meiospagamento: meios,
 		grupos: gruposVisiveis,
-		produtos: produtos.map((produto) => ({
-			id: produto.id,
-			descricao: produto.descricao,
-			observacoes: produto.observacoes,
-			preco: numberFromDecimal(produto.preco),
-			espizza: Number(produto.espizza) === 1 ? 1 : 0,
-			idgrupogourmet: produto.idgrupogourmet,
-			imagemurl: urlPublica(
-				slug,
-				`produtos/${produto.id}/imagem`,
-				produto.temimagem,
-			),
-		})),
+		produtos: produtosMapeados,
+		maisPedidos,
 	});
 }
-

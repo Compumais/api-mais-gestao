@@ -18,6 +18,7 @@ import {
 	criarPedidoCardapioPublico,
 	downloadImagemGrupoCardapioPublica,
 	downloadImagemProdutoCardapioPublica,
+	listarMeusPedidosCardapioPublico,
 } from "./publico.js";
 
 const LIMITE_IMAGEM = 5 * 1024 * 1024;
@@ -42,6 +43,10 @@ export async function cardapioDeliveryRotas(app: FastifyInstance) {
 	app.post("/publico/cardapio/:slug/pedidos", {
 		schema: schema.criarPedidoCardapioPublicoSchema,
 		handler: criarPedidoCardapioPublico,
+	});
+	app.get("/publico/cardapio/:slug/meus-pedidos", {
+		schema: schema.listarMeusPedidosCardapioPublicoSchema,
+		handler: listarMeusPedidosCardapioPublico,
 	});
 	app.get("/publico/cardapio/:slug/logo", {
 		handler: downloadImagemCardapioPublica,

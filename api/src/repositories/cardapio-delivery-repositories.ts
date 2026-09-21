@@ -248,6 +248,67 @@ export async function protocoloCardapioExiste(protocolo: string) {
 	return Number(resultado?.value ?? 0) > 0;
 }
 
+export async function listarIdsMaisPedidosCardapio(
+	idempresa: string,
+	limit = 8,
+): Promise<Array<{ idproduto: string; quantidade: number }>> {
+	const resultado = await db.execute<{
+		idproduto: string;
+		quantidade: string | number;
+	}>(sql`
+		SELECT
+			item->>'idproduto' AS idproduto,
+			SUM(COALESCE((item->>'quantidade')::numeric, 0)) AS quantidade
+		FROM pedidocardapiodelivery p
+		CROSS JOIN LATERAL jsonb_array_elements(p.itens) AS item
+		WHERE p.idempresa = ${idempresa}
+			AND p.status <> 'erro'
+			AND COALESCE(item->>'idproduto', '') <> ''
+		GROUP BY item->>'idproduto'
+		ORDER BY quantidade DESC
+		LIMIT ${limit}
+	`);
+	const rows = (resultado.rows || resultado) as Array<{
+		idproduto: string;
+		quantidade: string | number;
+	}>;
+	return rows.map((row) => ({
+		idproduto: String(row.idproduto),
+		quantidade: Number(row.quantidade) || 0,
+	}));
+}
+
+export async function listarPedidosCardapioPorTelefone(
+	idempresa: string,
+	telefoneDigitos: string,
+	limit = 5,
+) {
+	const digitos = telefoneDigitos.replace(/\D/g, "");
+	if (digitos.length < 10) return [];
+	const sufixo = digitos.slice(-11);
+	return db
+		.select({
+			id: pedidocardapiodelivery.id,
+			protocolo: pedidocardapiodelivery.protocolo,
+			status: pedidocardapiodelivery.status,
+			modalidade: pedidocardapiodelivery.modalidade,
+			nomecliente: pedidocardapiodelivery.nomecliente,
+			telefone: pedidocardapiodelivery.telefone,
+			total: pedidocardapiodelivery.total,
+			itens: pedidocardapiodelivery.itens,
+			criadoem: pedidocardapiodelivery.criadoem,
+		})
+		.from(pedidocardapiodelivery)
+		.where(
+			and(
+				eq(pedidocardapiodelivery.idempresa, idempresa),
+				sql`regexp_replace(${pedidocardapiodelivery.telefone}, '[^0-9]', '', 'g') LIKE ${`%${sufixo}`}`,
+			),
+		)
+		.orderBy(desc(pedidocardapiodelivery.criadoem))
+		.limit(limit);
+}
+
 export async function listarPedidosCardapioRecentes(
 	idempresa: string,
 	limit = 5,
