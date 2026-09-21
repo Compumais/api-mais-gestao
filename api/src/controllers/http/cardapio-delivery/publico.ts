@@ -2,6 +2,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import { buscarCardapioPublicoService } from "@/service/cardapio-delivery/buscar-cardapio-publico.js";
 import { criarPedidoCardapioPublicoService } from "@/service/cardapio-delivery/criar-pedido-cardapio-publico.js";
+import { listarMeusPedidosCardapioPublicoService } from "@/service/cardapio-delivery/listar-meus-pedidos-cardapio-publico.js";
 import { lerImagemGrupoGourmetDaEmpresa } from "@/service/grupo-gourmet/imagem-grupo-gourmet.js";
 import {
 	ErroImagemProduto,
@@ -106,6 +107,36 @@ export async function criarPedidoCardapioPublico(
 			telefone: body.telefone,
 			respostas: body.respostas,
 			itens: body.itens,
+		});
+		if (!resultado.success) {
+			return reply.status(resultado.status).send(resultado);
+		}
+		return reply.status(resultado.status).send(resultado.body);
+	} catch (error) {
+		console.error(error);
+		if (error instanceof z.ZodError) {
+			return reply.status(400).send({
+				error: "Erro de validação",
+				code: "VALIDATION_ERROR",
+				details: error.issues,
+			});
+		}
+		return reply.status(httpErroInterno().status).send(httpErroInterno());
+	}
+}
+
+export async function listarMeusPedidosCardapioPublico(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
+	try {
+		const { slug } = slugParams.parse(request.params);
+		const query = z
+			.object({ telefone: z.string().min(8).max(30) })
+			.parse(request.query);
+		const resultado = await listarMeusPedidosCardapioPublicoService({
+			slug,
+			telefone: query.telefone,
 		});
 		if (!resultado.success) {
 			return reply.status(resultado.status).send(resultado);

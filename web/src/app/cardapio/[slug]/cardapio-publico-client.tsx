@@ -16,11 +16,14 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
 	type CardapioPublicoProduto,
+	type MeuPedidoCardapio,
 	cardapioPublicoService,
 	urlMidiaCardapio,
 } from "@/services/cardapio-publico.service";
 import { CardapioPublicoCheckout } from "./cardapio-publico/checkout";
 import { ProdutoDetalhe } from "./cardapio-publico/produto-detalhe";
+import { SecaoMaisPedidos } from "./cardapio-publico/secao-mais-pedidos";
+import { SecaoMeusPedidos } from "./cardapio-publico/secao-meus-pedidos";
 import { CardapioPublicoSucesso } from "./cardapio-publico/sucesso";
 import {
 	formatarMoeda,
@@ -44,8 +47,18 @@ export function CardapioPublicoClient({ slug }: { slug: string }) {
 	const [view, setView] = useState<"menu" | "checkout" | "sucesso">("menu");
 	const [nome, setNome] = useState("");
 	const [telefone, setTelefone] = useState("");
+	const [telefoneConsulta, setTelefoneConsulta] = useState("");
 	const [respostas, setRespostas] = useState<Record<string, string>>({});
 	const [pedidoOk, setPedidoOk] = useState<PedidoSucesso | null>(null);
+
+	useEffect(() => {
+		const local = cardapioPublicoService.lerClienteLocal(slug);
+		if (local.nome) setNome(local.nome);
+		if (local.telefone) {
+			setTelefone(local.telefone);
+			setTelefoneConsulta(local.telefone);
+		}
+	}, [slug]);
 
 	useEffect(() => {
 		if (!data?.grupos.length) return;
@@ -57,11 +70,30 @@ export function CardapioPublicoClient({ slug }: { slug: string }) {
 		});
 	}, [data]);
 
+	const digitosConsulta = telefoneConsulta.replace(/\D/g, "");
+	const {
+		data: meusPedidos = [],
+		isFetching: carregandoMeusPedidos,
+		refetch: refetchMeusPedidos,
+	} = useQuery({
+		queryKey: ["cardapio-meus-pedidos", slug, digitosConsulta],
+		queryFn: () =>
+			cardapioPublicoService.listarMeusPedidos(slug, digitosConsulta),
+		enabled: digitosConsulta.length >= 10,
+	});
+
 	const cor = data?.corprimaria || "#111111";
 	const pizzas = useMemo(
 		() => (data?.produtos ?? []).filter((p) => p.espizza === 1),
 		[data],
 	);
+	const produtosPorId = useMemo(() => {
+		const mapa = new Map<string, CardapioPublicoProduto>();
+		for (const produto of data?.produtos ?? []) {
+			mapa.set(produto.id, produto);
+		}
+		return mapa;
+	}, [data]);
 
 	const produtosFiltrados = useMemo(() => {
 		const termo = busca.trim().toLowerCase();
@@ -143,6 +175,58 @@ export function CardapioPublicoClient({ slug }: { slug: string }) {
 		});
 	};
 
+	const adicionarProdutoRapido = (produto: CardapioPublicoProduto) => {
+		if (produto.espizza === 1) {
+			setProdutoAberto(produto);
+			return;
+		}
+		alterarQuantidadeSimples(produto, 1);
+		toast.success(`${produto.descricao} adicionado`);
+	};
+
+	const pedirNovamente = (pedido: MeuPedidoCardapio) => {
+		const novos: ItemSacola[] = [];
+		let ignorados = 0;
+		for (const item of pedido.itens) {
+			const produto = produtosPorId.get(item.idproduto);
+			if (!produto) {
+				ignorados += 1;
+				continue;
+			}
+			const segundo = item.idprodutomeio
+				? produtosPorId.get(item.idprodutomeio)
+				: null;
+			const preco = segundo
+				? Math.max(produto.preco, segundo.preco)
+				: produto.preco;
+			const nomeItem = segundo
+				? `Pizza meio a meio: ${produto.descricao} / ${segundo.descricao}`
+				: produto.descricao;
+			novos.push({
+				chave: crypto.randomUUID(),
+				idproduto: produto.id,
+				idprodutomeio: item.idprodutomeio,
+				nome: nomeItem,
+				preco,
+				quantidade: item.quantidade,
+				observacao: "",
+			});
+		}
+		if (novos.length === 0) {
+			toast.error("Nenhum item deste pedido está disponível no cardápio");
+			return;
+		}
+		setSacola((atual) => [...atual, ...novos]);
+		if (ignorados > 0) {
+			toast.message(
+				`${novos.length} item(ns) adicionados; ${ignorados} indisponível(is)`,
+			);
+		} else {
+			toast.success("Itens adicionados ao carrinho");
+		}
+		abrirCheckout();
+	};
+
 	const abrirCheckout = () => {
 		if (!data) return;
 		const padrao = data.habilitadelivery === 1 ? "delivery" : "retirada";
@@ -177,6 +261,8 @@ export function CardapioPublicoClient({ slug }: { slug: string }) {
 			});
 		},
 		onSuccess: (pedido) => {
+			cardapioPublicoService.salvarClienteLocal(slug, nome, telefone);
+			setTelefoneConsulta(telefone.replace(/\D/g, ""));
 			setPedidoOk({
 				protocolo: pedido.protocolo,
 				total: pedido.total,
@@ -339,6 +425,32 @@ export function CardapioPublicoClient({ slug }: { slug: string }) {
 								</button>
 							) : null}
 						</label>
+
+						{!busca ? (
+							<>
+								<SecaoMaisPedidos
+									produtos={data.maisPedidos ?? []}
+									cor={cor}
+									onAdicionar={adicionarProdutoRapido}
+								/>
+								<SecaoMeusPedidos
+									pedidos={meusPedidos}
+									carregando={carregandoMeusPedidos}
+									telefone={telefoneConsulta}
+									onTelefone={setTelefoneConsulta}
+									onBuscar={() => {
+										const digitos = telefoneConsulta.replace(/\D/g, "");
+										if (digitos.length < 10) {
+											toast.error("Informe um telefone com DDD");
+											return;
+										}
+										setTelefone(digitos);
+										void refetchMeusPedidos();
+									}}
+									onPedirNovamente={pedirNovamente}
+								/>
+							</>
+						) : null}
 
 						<nav
 							className="sticky top-0 z-10 -mx-4 mt-4 flex gap-5 overflow-x-auto border-b border-neutral-300 bg-neutral-100/95 px-4 backdrop-blur"
