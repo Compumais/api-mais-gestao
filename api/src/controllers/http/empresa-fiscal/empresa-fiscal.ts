@@ -9,6 +9,7 @@ import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 const paramsSchema = z.object({ id: z.string().uuid() });
 
 const bodySchema = z.object({
+	cnpj: z.string().max(18).nullable().optional(),
 	razaosocial: z.string().max(60).nullable().optional(),
 	nomefantasia: z.string().max(60).nullable().optional(),
 	inscricaoestadual: z.string().max(20).nullable().optional(),

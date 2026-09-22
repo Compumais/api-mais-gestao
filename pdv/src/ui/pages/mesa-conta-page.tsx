@@ -1,4 +1,4 @@
-import { ChevronLeft, ShoppingCart, X } from "lucide-react";
+import { ChevronLeft, MessageCircle, ShoppingCart, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
 	useLocation,
@@ -23,7 +23,7 @@ import {
 	calcularAcrescimoInformado,
 	calcularDescontoInformado,
 } from "@/lib/pagamento";
-import { pdvInvoke } from "@/lib/pdv-api";
+import { onWhatsappEvent, pdvInvoke } from "@/lib/pdv-api";
 import {
 	type GrupoLocal,
 	type LeituraCodigoBarras,
@@ -38,6 +38,7 @@ import { devePedirPeso, formatarQuantidade } from "@/lib/produto-kg";
 import { money } from "@/lib/utils";
 import { AlertasOperacionaisPdv } from "@/ui/components/alertas-operacionais-pdv";
 import { AvisoSecundario } from "@/ui/components/aviso-secundario";
+import { ChatWhatsappPedido } from "@/ui/components/chat-whatsapp-pedido";
 import { BarcodeInput } from "@/ui/components/barcode-input";
 import { DialogEscolherMesa } from "@/ui/components/dialog-escolher-mesa";
 import { DialogMaisAcoesMesa } from "@/ui/components/dialog-mais-acoes-mesa";
@@ -187,6 +188,8 @@ export function MesaContaPage() {
 	const [reimprimirAberto, setReimprimirAberto] = useState(false);
 	const [obsFilaChave, setObsFilaChave] = useState<string | null>(null);
 	const [obsPedidoAberto, setObsPedidoAberto] = useState(false);
+	const [chatWhatsappAberto, setChatWhatsappAberto] = useState(false);
+	const [naoLidasWhatsapp, setNaoLidasWhatsapp] = useState(0);
 	const [maisAcoesAberto, setMaisAcoesAberto] = useState(false);
 	const [itemCancelar, setItemCancelar] = useState<
 		ContaMesa["itens"][number] | null
@@ -210,6 +213,25 @@ export function MesaContaPage() {
 		void iniciar();
 		void pdvInvoke<GrupoLocal[]>("listarGruposGourmet").then(setGrupos);
 	}, [numeroMesa, idContaParam]);
+
+	useEffect(() => {
+		if (!modoEntrega || !idContaParam) return;
+		async function carregarNaoLidas() {
+			try {
+				const rows = await pdvInvoke<
+					Array<{ idconta: string; nao_lidas: number }>
+				>("whatsapp.naoLidasPorConta");
+				const row = rows.find((r) => r.idconta === idContaParam);
+				setNaoLidasWhatsapp(Number(row?.nao_lidas) || 0);
+			} catch {
+				setNaoLidasWhatsapp(0);
+			}
+		}
+		void carregarNaoLidas();
+		return onWhatsappEvent(() => {
+			void carregarNaoLidas();
+		});
+	}, [modoEntrega, idContaParam]);
 
 	// Intercepta Escape global quando há itens na fila (antes do voltar automático).
 	useEffect(() => {
@@ -978,6 +1000,7 @@ export function MesaContaPage() {
 		Boolean(produtoPeso) ||
 		Boolean(obsFilaChave) ||
 		obsPedidoAberto ||
+		chatWhatsappAberto ||
 		maisAcoesAberto ||
 		senhaAberta ||
 		Boolean(itemCancelar);
@@ -1129,9 +1152,32 @@ export function MesaContaPage() {
 									</p>
 								</div>
 							</div>
-							<span className="rounded-full bg-muted px-2 py-1 text-[10px] font-semibold">
-								{fila.length + itens.length} itens
-							</span>
+							<div className="flex items-center gap-2">
+								{modoEntrega ? (
+									<Button
+										size="sm"
+										variant="outline"
+										className="relative"
+										disabled={!conta?.telefone}
+										title={
+											conta?.telefone
+												? "Conversar no WhatsApp"
+												: "Pedido sem telefone"
+										}
+										onClick={() => setChatWhatsappAberto(true)}
+									>
+										<MessageCircle className="size-4" />
+										{naoLidasWhatsapp > 0 ? (
+											<span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
+												{naoLidasWhatsapp}
+											</span>
+										) : null}
+									</Button>
+								) : null}
+								<span className="rounded-full bg-muted px-2 py-1 text-[10px] font-semibold">
+									{fila.length + itens.length} itens
+								</span>
+							</div>
 						</div>
 
 						<div className="min-h-0 flex-1 space-y-1 overflow-auto">
@@ -2140,6 +2186,23 @@ export function MesaContaPage() {
 				onCancelar={() => setObsPedidoAberto(false)}
 				onConfirmar={(dados) => void confirmarFilaNaConta(dados)}
 			/>
+			{modoEntrega && chatWhatsappAberto && conta ? (
+				<ChatWhatsappPedido
+					aberto
+					idconta={conta.id}
+					telefone={conta.telefone ?? null}
+					nomecliente={conta.nomecliente ?? nomeCliente}
+					onFechar={() => {
+						setChatWhatsappAberto(false);
+						void pdvInvoke<Array<{ idconta: string; nao_lidas: number }>>(
+							"whatsapp.naoLidasPorConta",
+						).then((rows) => {
+							const row = rows.find((r) => r.idconta === conta.id);
+							setNaoLidasWhatsapp(Number(row?.nao_lidas) || 0);
+						});
+					}}
+				/>
+			) : null}
 		</div>
 	);
 }

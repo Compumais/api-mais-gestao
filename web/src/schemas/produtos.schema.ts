@@ -100,7 +100,10 @@ export const produtoFormSchema = z.object({
 	idcfopentrada: z.string().optional().nullable(),
 	idcfopsaida: z.string().optional().nullable(),
 	idcfopsaidanfce: z.string().optional().nullable(),
-	idcest: z.string().optional().nullable(),
+	idcest: z.preprocess(
+		(valor) => (valor === "" ? null : valor),
+		z.string().optional().nullable(),
+	),
 	idtaxauf: z.string().optional().nullable(),
 	situacaotributariasnentrada: z
 		.string()

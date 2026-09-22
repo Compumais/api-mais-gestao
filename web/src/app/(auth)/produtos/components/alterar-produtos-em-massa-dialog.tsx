@@ -433,7 +433,9 @@ export function AlterarProdutosEmMassaDialog({
 											}))}
 											value={field.value ?? ""}
 											onChange={(valor) => field.onChange(valor || null)}
-											placeholder="Selecione o CEST"
+											allowEmpty
+											emptyLabel="Sem CEST"
+											placeholder="Opcional — selecione se aplicável"
 											searchPlaceholder="Buscar CEST..."
 											emptyMessage="Nenhum CEST encontrado"
 										/>

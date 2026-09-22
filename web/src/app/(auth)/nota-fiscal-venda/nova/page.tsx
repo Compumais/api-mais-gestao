@@ -19,6 +19,7 @@ import {
 	Controller,
 	type FieldErrors,
 	type Resolver,
+	useFieldArray,
 	useForm,
 } from "react-hook-form";
 import { toast } from "sonner";
@@ -397,6 +398,16 @@ export default function NovaEmissaoNfePage() {
 			gerarFinanceiro: true,
 			gerarEstoque: true,
 		},
+	});
+
+	const {
+		append: appendItem,
+		remove: removeItem,
+		update: updateItem,
+		replace: replaceItens,
+	} = useFieldArray({
+		control: form.control,
+		name: "itens",
 	});
 
 	const {
@@ -1364,10 +1375,7 @@ export default function NovaEmissaoNfePage() {
 		if (propagarItens) {
 			const itens = form.getValues("itens") ?? [];
 			if (itens.length > 0) {
-				form.setValue(
-					"itens",
-					itens.map((item) => ({ ...item, cfop: codigo })),
-				);
+				replaceItens(itens.map((item) => ({ ...item, cfop: codigo })));
 			}
 		}
 	}
@@ -1426,7 +1434,7 @@ export default function NovaEmissaoNfePage() {
 				valorIcmsMonoReten: item.valorIcmsMonoReten,
 			}));
 
-			form.setValue("itens", itensImportados);
+			replaceItens(itensImportados);
 
 			const cfopAtual = cfopSaida;
 			const diverge =
@@ -1484,21 +1492,30 @@ export default function NovaEmissaoNfePage() {
 		novoItem: import("@/schemas/nfe-emissao.schema").ItemNfe,
 	) {
 		if (itemEditando !== null) {
-			const novosItens = itensValue.map((it, i) =>
-				i === itemEditando.index ? novoItem : it,
-			);
-			form.setValue("itens", novosItens, { shouldDirty: true });
+			updateItem(itemEditando.index, novoItem);
 			setItemEditando(null);
 		} else {
-			form.setValue("itens", [...itensValue, novoItem], { shouldDirty: true });
+			appendItem(novoItem);
 		}
+		void form.trigger("itens");
 	}
 
 	function removerItem(index: number) {
-		form.setValue(
-			"itens",
-			itensValue.filter((_, i) => i !== index),
-		);
+		removeItem(index);
+		void form.trigger("itens");
+	}
+
+	function resolverItensEmissaoFormulario(
+		dados: EmissaoNfeFormData,
+	): EmissaoNfeFormData {
+		const itensForm = form.getValues("itens") ?? [];
+		const itens =
+			(dados.itens?.length ?? 0) > 0
+				? dados.itens
+				: itensForm.length > 0
+					? itensForm
+					: [];
+		return { ...dados, itens };
 	}
 
 	function abrirEdicao(index: number) {
@@ -1848,6 +1865,15 @@ export default function NovaEmissaoNfePage() {
 		});
 
 	function handleInvalidSubmit(erros: FieldErrors<EmissaoNfeFormData>) {
+		const itensForm = form.getValues("itens") ?? [];
+		if (itensForm.length > 0 && erros.itens?.message === "Informe ao menos um item") {
+			toast.error("Não foi possível emitir a NF-e", {
+				description:
+					"Revise os itens da nota (descrição, NCM, CFOP, quantidade, valor e tributação).",
+			});
+			return;
+		}
+
 		const mensagem =
 			extrairPrimeiraMensagemErroForm(erros) ??
 			"Verifique os campos obrigatórios da nota.";
@@ -1857,8 +1883,17 @@ export default function NovaEmissaoNfePage() {
 	}
 
 	function montarDadosEmissaoFormulario(
-		dados: EmissaoNfeFormData,
+		dadosEntrada: EmissaoNfeFormData,
 	): EmissaoNfeFormData | null {
+		const dados = resolverItensEmissaoFormulario(dadosEntrada);
+
+		if ((dados.itens?.length ?? 0) === 0) {
+			toast.error("Informe ao menos um item na nota.", {
+				description: "Adicione produtos na seção Itens antes de emitir.",
+			});
+			return null;
+		}
+
 		if (!cfopSaida) {
 			toast.error("Selecione o CFOP de saída (natureza da operação).");
 			return null;
@@ -1982,17 +2017,16 @@ export default function NovaEmissaoNfePage() {
 	}
 
 	function handlePreview() {
-		const dados = montarDadosEmissaoFormulario(form.getValues());
+		const dados = montarDadosEmissaoFormulario(
+			resolverItensEmissaoFormulario(form.getValues()),
+		);
 		if (!dados) return;
-		if ((dados.itens?.length ?? 0) === 0) {
-			toast.error("Adicione ao menos um item para pré-visualizar.");
-			return;
-		}
 		setErroPreview(null);
 		gerarPreview(dados);
 	}
 
-	function handleSubmit(dados: EmissaoNfeFormData) {
+	function handleSubmit(dadosBrutos: EmissaoNfeFormData) {
+		const dados = resolverItensEmissaoFormulario(dadosBrutos);
 		const dadosComPagamento = montarDadosEmissaoFormulario(dados);
 		if (!dadosComPagamento) return;
 
@@ -2063,9 +2097,31 @@ export default function NovaEmissaoNfePage() {
 
 	function handleConfirmarProducao() {
 		setModalConfirmacaoAberto(false);
-		const dados = montarDadosEmissaoFormulario(form.getValues());
-		if (!dados) return;
-		emitir({ ...dados, confirmarProducao: true });
+		form.handleSubmit(
+			(dadosBrutos) => {
+				const dados = resolverItensEmissaoFormulario(dadosBrutos);
+				const dadosComPagamento = montarDadosEmissaoFormulario({
+					...dados,
+					confirmarProducao: true,
+				});
+				if (!dadosComPagamento) return;
+
+				if (
+					!isOperacaoDevolucao &&
+					dadosComPagamento.gerarFinanceiro &&
+					!dadosComPagamento.idtipodocumento &&
+					!dadosComPagamento.idcondicaopagto
+				) {
+					toast.error(
+						"Informe o meio de pagamento (ERP) ou a condição de pagamento para gerar o financeiro.",
+					);
+					return;
+				}
+
+				emitir({ ...dadosComPagamento, confirmarProducao: true });
+			},
+			handleInvalidSubmit,
+		)();
 	}
 
 	if (!empresa) {

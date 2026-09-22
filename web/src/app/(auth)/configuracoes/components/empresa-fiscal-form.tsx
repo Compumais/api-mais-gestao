@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import type { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,8 @@ import {
 	type EmpresaFiscalConfigFormData,
 	empresaFiscalConfigSchema,
 } from "@/schemas/empresa-fiscal-config.schema";
+import { useEmpresa } from "@/hooks/use-empresa";
+import { maskCpfCnpj } from "@/lib/masks";
 import { empresaFiscalService } from "@/services/empresa-fiscal.service";
 import { localidadesService } from "@/services/localidades.service";
 
@@ -58,6 +60,7 @@ interface EmpresaFiscalFormProps {
 
 export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 	const queryClient = useQueryClient();
+	const { localStorageEmpresa: empresaSelecionada } = useEmpresa();
 
 	const { data: fiscal, isLoading } = useQuery({
 		queryKey: ["empresa-fiscal", idempresa],
@@ -76,6 +79,7 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 	>({
 		resolver: zodResolver(empresaFiscalConfigSchema),
 		defaultValues: {
+			cnpj: "",
 			indicadorie: 1,
 			codigopais: "1058",
 			crt: undefined,
@@ -118,7 +122,10 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 				? crtNumero
 				: undefined;
 
+		const cnpjBruto =
+			fiscal.cnpj ?? empresaSelecionada?.cnpj ?? "";
 		form.reset({
+			cnpj: cnpjBruto ? maskCpfCnpj(cnpjBruto) : "",
 			razaosocial: fiscal.razaosocial ?? "",
 			nomefantasia: fiscal.nomefantasia ?? "",
 			inscricaoestadual: fiscal.inscricaoestadual ?? "",
@@ -144,7 +151,7 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 			telefone: fiscal.telefone ?? "",
 			email: fiscal.email ?? "",
 		});
-	}, [fiscal, estadosData, form]);
+	}, [fiscal, estadosData, form, empresaSelecionada?.cnpj]);
 
 	// Radix Select só exibe o label depois que as options existem; remonta e
 	// reafirma o valor salvo quando a lista de municípios da UF carrega.
@@ -320,6 +327,26 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 					<div className="border-t pt-6">
 						<h2 className="text-lg font-semibold mb-4">Identificação</h2>
 						<div className="grid gap-4 md:grid-cols-2 mb-4">
+							<Field data-invalid={!!errors.cnpj}>
+								<FieldLabel htmlFor="cnpj">CNPJ *</FieldLabel>
+								<Controller
+									control={form.control}
+									name="cnpj"
+									render={({ field }) => (
+										<Input
+											id="cnpj"
+											placeholder="00.000.000/0000-00"
+											value={field.value ?? ""}
+											onChange={(event) =>
+												field.onChange(maskCpfCnpj(event.target.value))
+											}
+											onBlur={field.onBlur}
+											aria-invalid={!!errors.cnpj}
+										/>
+									)}
+								/>
+								<FieldError errors={errors.cnpj ? [errors.cnpj] : []} />
+							</Field>
 							<Field data-invalid={!!errors.razaosocial}>
 								<FieldLabel htmlFor="razaosocial">Razão social</FieldLabel>
 								<Input id="razaosocial" {...form.register("razaosocial")} />

@@ -572,6 +572,47 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 		`CREATE INDEX IF NOT EXISTS idx_cliente_pdv_nome ON cliente_pdv(nome)`,
 	);
 
+	await database.query(`
+		CREATE TABLE IF NOT EXISTS whatsapp_sessao (
+			id INTEGER PRIMARY KEY CHECK (id = 1),
+			status TEXT NOT NULL DEFAULT 'desconectado',
+			ultimo_qr TEXT,
+			ultimo_erro TEXT,
+			atualizadoem TEXT NOT NULL
+		)
+	`);
+	await database.query(`
+		CREATE TABLE IF NOT EXISTS whatsapp_conversa (
+			id TEXT PRIMARY KEY NOT NULL,
+			idconta TEXT,
+			telefone_e164 TEXT NOT NULL,
+			nao_lidas INTEGER NOT NULL DEFAULT 0,
+			ultima_mensagem_em TEXT,
+			criadoem TEXT NOT NULL
+		)
+	`);
+	await database.query(`
+		CREATE TABLE IF NOT EXISTS whatsapp_mensagem (
+			id TEXT PRIMARY KEY NOT NULL,
+			idconversa TEXT NOT NULL,
+			direcao TEXT NOT NULL,
+			corpo TEXT NOT NULL,
+			status_envio TEXT,
+			wa_message_id TEXT,
+			lida INTEGER NOT NULL DEFAULT 0,
+			criadoem TEXT NOT NULL
+		)
+	`);
+	await database.query(
+		`CREATE INDEX IF NOT EXISTS idx_whatsapp_conversa_telefone ON whatsapp_conversa(telefone_e164)`,
+	);
+	await database.query(
+		`CREATE INDEX IF NOT EXISTS idx_whatsapp_conversa_idconta ON whatsapp_conversa(idconta)`,
+	);
+	await database.query(
+		`CREATE INDEX IF NOT EXISTS idx_whatsapp_mensagem_conversa ON whatsapp_mensagem(idconversa, criadoem)`,
+	);
+
 	if (!itemNomes.has("pago")) {
 		await database.query(
 			"ALTER TABLE item_conta ADD COLUMN pago INTEGER NOT NULL DEFAULT 0",
@@ -782,6 +823,17 @@ async function seedDefaults(database: Pool): Promise<void> {
 		["etiqueta_balanca_indicador_uso", "0"],
 		["taxa_entrega_padrao", "0"],
 		["bairros_entrega", "[]"],
+		["whatsapp_habilitado", "0"],
+		[
+			"whatsapp_msg_producao",
+			"Olá {nome}, recebemos seu pedido #{protocolo} e já estamos preparando.",
+		],
+		["whatsapp_msg_saiu", "Seu pedido #{protocolo} saiu para entrega."],
+		[
+			"whatsapp_msg_retirada_pronta",
+			"Seu pedido #{protocolo} está pronto para retirada.",
+		],
+		["whatsapp_msg_entregue", "Pedido #{protocolo} entregue. Obrigado!"],
 	];
 
 	for (const [chave, valor] of defaults) {

@@ -2,6 +2,24 @@ import { z } from "zod";
 import { isIndPresNfeValido } from "@/constants/ind-pres-nfe";
 import { distribuirDescontosEmissaoNfe } from "@/util/distribuir-descontos-emissao-nfe";
 
+const cestItemEmissaoSchema = z.preprocess(
+	(valor) => {
+		if (valor == null || valor === "") return undefined;
+		const digitos = String(valor).replace(/\D/g, "");
+		return digitos.length > 0 ? digitos : undefined;
+	},
+	z
+		.string()
+		.regex(/^\d{7}$/, "CEST deve ter 7 dígitos")
+		.optional(),
+);
+
+const listaUuidNaoVaziaOpcional = z.preprocess(
+	(valor) =>
+		Array.isArray(valor) && valor.length === 0 ? undefined : valor,
+	z.array(z.string().uuid()).min(1).optional(),
+);
+
 export const itemNfeSchema = z.object({
 	idproduto: z.string().uuid().optional(),
 	codigoProduto: z.string().optional(),
@@ -9,10 +27,7 @@ export const itemNfeSchema = z.object({
 	eanTributavel: z.string().optional(),
 	descricao: z.string().min(1, "Descrição obrigatória"),
 	ncm: z.string().min(1, "NCM obrigatório"),
-	cest: z
-		.string()
-		.regex(/^\d{7}$/, "CEST deve ter 7 dígitos")
-		.optional(),
+	cest: cestItemEmissaoSchema,
 	cfop: z.string().min(4, "CFOP obrigatório"),
 	unidade: z.string().min(1, "Unidade obrigatória"),
 	quantidade: z.coerce
@@ -195,7 +210,7 @@ export const emissaoNfeFormSchema = z.object({
 	gerarFinanceiro: z.boolean().optional().default(true),
 	gerarEstoque: z.boolean().optional().default(true),
 	iddav: z.string().uuid().optional(),
-	iddavs: z.array(z.string().uuid()).min(1).optional(),
+	iddavs: listaUuidNaoVaziaOpcional,
 	codigosPedidos: z.array(z.number().int()).optional(),
 }).superRefine((dados, ctx) => {
 	const distribuicao = distribuirDescontosEmissaoNfe(

@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import { pdvInvoke } from "@/lib/pdv-api";
 import { Button } from "@/ui/components/ui/button";
 import {
 	Card,
@@ -20,6 +22,16 @@ export type MapeamentoGourmetDelivery = {
 
 type ConfigDelivery = Record<string, string>;
 
+type StatusWhatsapp = {
+	habilitado: boolean;
+	status: string;
+	ultimoQr: string | null;
+	ultimoErro: string | null;
+	conectado: boolean;
+	indisponivel?: boolean;
+	motivo?: string;
+};
+
 type Props = {
 	config: ConfigDelivery;
 	set: (chave: string, valor: string) => void;
@@ -38,6 +50,13 @@ type Props = {
 	}) => void;
 };
 
+function rotuloStatusWa(status: string) {
+	if (status === "conectado") return "Conectado";
+	if (status === "aguardando_qr") return "Aguardando QR";
+	if (status === "erro") return "Erro";
+	return "Desconectado";
+}
+
 export function ConfigDeliveryTab({
 	config,
 	set,
@@ -47,6 +66,34 @@ export function ConfigDeliveryTab({
 	testando,
 	onTestarImpressora,
 }: Props) {
+	const [waStatus, setWaStatus] = useState<StatusWhatsapp | null>(null);
+	const [waSvg, setWaSvg] = useState<string | null>(null);
+	const [waLoading, setWaLoading] = useState(false);
+
+	async function carregarWhatsapp() {
+		try {
+			const st = await pdvInvoke<StatusWhatsapp>("whatsapp.status");
+			setWaStatus(st);
+			if (st.status === "aguardando_qr") {
+				const qr = await pdvInvoke<{ svg: string | null }>("whatsapp.obterQr");
+				setWaSvg(qr.svg);
+			} else {
+				setWaSvg(null);
+			}
+		} catch {
+			setWaStatus(null);
+			setWaSvg(null);
+		}
+	}
+
+	useEffect(() => {
+		void carregarWhatsapp();
+		const timer = setInterval(() => {
+			void carregarWhatsapp();
+		}, 3000);
+		return () => clearInterval(timer);
+	}, []);
+
 	return (
 		<>
 			<Card>
@@ -83,6 +130,134 @@ export function ConfigDeliveryTab({
 							onChange={(e) => set("bairros_entrega", e.target.value)}
 							placeholder='[{"bairro":"Centro","taxa":8}]'
 						/>
+					</div>
+				</CardContent>
+			</Card>
+
+			<Card>
+				<CardHeader>
+					<CardTitle>WhatsApp (Baileys local)</CardTitle>
+				</CardHeader>
+				<CardContent className="grid gap-4 sm:grid-cols-2">
+					<p className="sm:col-span-2 text-sm text-muted-foreground">
+						Conecte o WhatsApp deste PDV principal para enviar atualizações de
+						status e conversar com o cliente em cada pedido de delivery.
+					</p>
+					<div className="space-y-2">
+						<Label htmlFor="whatsapp_habilitado">Integração</Label>
+						<Select
+							id="whatsapp_habilitado"
+							value={config.whatsapp_habilitado === "1" ? "1" : "0"}
+							onChange={(e) => set("whatsapp_habilitado", e.target.value)}
+						>
+							<option value="0">Desabilitado</option>
+							<option value="1">Habilitado</option>
+						</Select>
+					</div>
+					<div className="space-y-2">
+						<Label>Status da sessão</Label>
+						<p className="text-sm font-medium">
+							{waStatus?.indisponivel
+								? waStatus.motivo
+								: rotuloStatusWa(waStatus?.status ?? "desconectado")}
+							{waStatus?.ultimoErro ? ` — ${waStatus.ultimoErro}` : ""}
+						</p>
+					</div>
+					<div className="flex flex-wrap gap-2 sm:col-span-2">
+						<Button
+							type="button"
+							variant="secondary"
+							size="sm"
+							disabled={waLoading || waStatus?.indisponivel}
+							onClick={() => {
+								setWaLoading(true);
+								void pdvInvoke("whatsapp.reconectar")
+									.then(() => carregarWhatsapp())
+									.finally(() => setWaLoading(false));
+							}}
+						>
+							{waLoading ? "Aguarde…" : "Conectar / gerar QR"}
+						</Button>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							disabled={waLoading || waStatus?.indisponivel}
+							onClick={() => {
+								setWaLoading(true);
+								void pdvInvoke("whatsapp.desconectar")
+									.then(() => carregarWhatsapp())
+									.finally(() => setWaLoading(false));
+							}}
+						>
+							Desconectar
+						</Button>
+					</div>
+					{waSvg ? (
+						<div className="sm:col-span-2 rounded-md border bg-white p-4">
+							<p className="mb-2 text-sm text-muted-foreground">
+								Escaneie o QR no WhatsApp do celular (Aparelhos conectados).
+							</p>
+							<div
+								className="mx-auto w-fit"
+								// QR SVG gerado localmente pelo PDV
+								dangerouslySetInnerHTML={{ __html: waSvg }}
+							/>
+						</div>
+					) : null}
+
+					<div className="space-y-2 sm:col-span-2">
+						<Label htmlFor="whatsapp_msg_producao">
+							Msg. pedido em produção
+						</Label>
+						<Input
+							id="whatsapp_msg_producao"
+							value={
+								config.whatsapp_msg_producao ??
+								"Olá {nome}, recebemos seu pedido #{protocolo} e já estamos preparando."
+							}
+							onChange={(e) => set("whatsapp_msg_producao", e.target.value)}
+						/>
+					</div>
+					<div className="space-y-2 sm:col-span-2">
+						<Label htmlFor="whatsapp_msg_saiu">Msg. saiu para entrega</Label>
+						<Input
+							id="whatsapp_msg_saiu"
+							value={
+								config.whatsapp_msg_saiu ??
+								"Seu pedido #{protocolo} saiu para entrega."
+							}
+							onChange={(e) => set("whatsapp_msg_saiu", e.target.value)}
+						/>
+					</div>
+					<div className="space-y-2 sm:col-span-2">
+						<Label htmlFor="whatsapp_msg_retirada_pronta">
+							Msg. pronto para retirada
+						</Label>
+						<Input
+							id="whatsapp_msg_retirada_pronta"
+							value={
+								config.whatsapp_msg_retirada_pronta ??
+								"Seu pedido #{protocolo} está pronto para retirada."
+							}
+							onChange={(e) =>
+								set("whatsapp_msg_retirada_pronta", e.target.value)
+							}
+						/>
+					</div>
+					<div className="space-y-2 sm:col-span-2">
+						<Label htmlFor="whatsapp_msg_entregue">Msg. entregue</Label>
+						<Input
+							id="whatsapp_msg_entregue"
+							value={
+								config.whatsapp_msg_entregue ??
+								"Pedido #{protocolo} entregue. Obrigado!"
+							}
+							onChange={(e) => set("whatsapp_msg_entregue", e.target.value)}
+						/>
+						<p className="text-xs text-muted-foreground">
+							Use {"{nome}"} e {"{protocolo}"} nos textos.
+						</p>
 					</div>
 				</CardContent>
 			</Card>

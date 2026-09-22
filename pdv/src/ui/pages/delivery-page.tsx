@@ -2,6 +2,7 @@ import {
 	Bike,
 	Clock3,
 	MapPin,
+	MessageCircle,
 	Package,
 	Phone,
 	Plus,
@@ -10,10 +11,11 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
-import { pdvInvoke } from "@/lib/pdv-api";
+import { onWhatsappEvent, pdvInvoke } from "@/lib/pdv-api";
 import type { StatusContext } from "@/lib/pdv-types";
 import { money } from "@/lib/utils";
 import { AvisoSecundario } from "@/ui/components/aviso-secundario";
+import { ChatWhatsappPedido } from "@/ui/components/chat-whatsapp-pedido";
 import { FunctionBar } from "@/ui/components/function-bar";
 import { PdvShell } from "@/ui/components/pdv-shell";
 import { Topbar } from "@/ui/components/topbar";
@@ -95,8 +97,25 @@ export function DeliveryPage() {
 	const [taxa, setTaxa] = useState("");
 	const [clientes, setClientes] = useState<ClientePdv[]>([]);
 	const [idcliente, setIdcliente] = useState<string | null>(null);
+	const [chatConta, setChatConta] = useState<ContaEntrega | null>(null);
+	const [naoLidasMap, setNaoLidasMap] = useState<Record<string, number>>({});
 
 	useEscapeFechaModal(abrir, () => setAbrir(false));
+
+	const carregarNaoLidas = useCallback(async () => {
+		try {
+			const rows = await pdvInvoke<Array<{ idconta: string; nao_lidas: number }>>(
+				"whatsapp.naoLidasPorConta",
+			);
+			const mapa: Record<string, number> = {};
+			for (const row of rows) {
+				mapa[row.idconta] = Number(row.nao_lidas) || 0;
+			}
+			setNaoLidasMap(mapa);
+		} catch {
+			setNaoLidasMap({});
+		}
+	}, []);
 
 	const carregar = useCallback(async () => {
 		setLoading(true);
@@ -107,12 +126,13 @@ export function DeliveryPage() {
 				filtro || null,
 			);
 			setPedidos(data);
+			void carregarNaoLidas();
 		} catch (err) {
 			setMsg(err instanceof Error ? err.message : "Erro ao listar delivery");
 		} finally {
 			setLoading(false);
 		}
-	}, [filtro]);
+	}, [filtro, carregarNaoLidas]);
 
 	useEffect(() => {
 		void carregar();
@@ -121,6 +141,12 @@ export function DeliveryPage() {
 		}, 4000);
 		return () => window.clearInterval(timer);
 	}, [carregar]);
+
+	useEffect(() => {
+		return onWhatsappEvent(() => {
+			void carregarNaoLidas();
+		});
+	}, [carregarNaoLidas]);
 
 	async function buscarClientes(termo: string) {
 		try {
@@ -497,6 +523,25 @@ export function DeliveryPage() {
 											<Button
 												size="sm"
 												variant="outline"
+												className="relative"
+												disabled={!p.telefone}
+												title={
+													p.telefone
+														? "Conversar no WhatsApp"
+														: "Pedido sem telefone"
+												}
+												onClick={() => setChatConta(p)}
+											>
+												<MessageCircle className="size-4" />
+												{(naoLidasMap[p.id] ?? 0) > 0 ? (
+													<span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
+														{naoLidasMap[p.id]}
+													</span>
+												) : null}
+											</Button>
+											<Button
+												size="sm"
+												variant="outline"
 												onClick={() => void avancarStatus(p.id)}
 											>
 												Avançar
@@ -526,6 +571,18 @@ export function DeliveryPage() {
 					</table>
 				</div>
 			</div>
+			{chatConta ? (
+				<ChatWhatsappPedido
+					aberto
+					idconta={chatConta.id}
+					telefone={chatConta.telefone}
+					nomecliente={chatConta.nomecliente}
+					onFechar={() => {
+						setChatConta(null);
+						void carregarNaoLidas();
+					}}
+				/>
+			) : null}
 		</PdvShell>
 	);
 }

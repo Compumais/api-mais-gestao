@@ -21,6 +21,8 @@ Rotas confirmadas no servidor (além das públicas): `GET /pos/pdv/config-negoci
 
 `GET /pos/pdv/catalogo` devolve o cache local, não a API.
 
+`GET /pos/produtos/ean/:ean` (Bearer) resolve um produto ativo no cache local por EAN ou id. Resposta `200` com `{ produto: { id, descricao, preco, unidademedida, idunidademedida, ean, codigo } }` ou `404` se não houver match. Usado pela estação de pesagem Flutter (`estacao-balanca/`).
+
 ## Contrato com a API
 
 A LAN não é a API. O POS fala com o PDV. O PDV fala com a API pela outbox quando a venda é gravada no principal.

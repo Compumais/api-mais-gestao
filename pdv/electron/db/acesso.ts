@@ -65,6 +65,11 @@ export const CHAVES_CONFIG_GOURMET = [
 	"tecnibra_xml_item",
 	"tecnibra_casas_comanda",
 	"tecnibra_ignorar_dv_comanda",
+	"whatsapp_habilitado",
+	"whatsapp_msg_producao",
+	"whatsapp_msg_saiu",
+	"whatsapp_msg_retirada_pronta",
+	"whatsapp_msg_entregue",
 ] as const;
 
 /** Preferências do operador — qualquer usuário logado pode gravar. */

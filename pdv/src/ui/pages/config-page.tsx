@@ -439,6 +439,12 @@ export function ConfigPage() {
 				couvert_valor: config.couvert_valor ?? "0",
 				taxa_entrega_padrao: config.taxa_entrega_padrao ?? "0",
 				bairros_entrega: config.bairros_entrega ?? "[]",
+				whatsapp_habilitado: config.whatsapp_habilitado === "1" ? "1" : "0",
+				whatsapp_msg_producao: config.whatsapp_msg_producao ?? "",
+				whatsapp_msg_saiu: config.whatsapp_msg_saiu ?? "",
+				whatsapp_msg_retirada_pronta:
+					config.whatsapp_msg_retirada_pronta ?? "",
+				whatsapp_msg_entregue: config.whatsapp_msg_entregue ?? "",
 				senha_gerencial: config.senha_gerencial ?? "",
 				senha_gerencial_habilitada:
 					config.senha_gerencial_definida === "1" &&

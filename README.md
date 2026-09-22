@@ -6,6 +6,7 @@ Monorepo da plataforma Mais Gestão. Os pacotes principais são:
 - `web/`: aplicação Next.js;
 - `pdv/`: PDV desktop;
 - `POSmaisgestao/`: aplicativo Android;
+- `estacao-balanca/`: estação Flutter (Windows/Android) de pesagem Prix e lançamento em comandas via LAN do PDV;
 - `api_Nfe/`: gateways fiscais;
 - `infra/`: arquivos e referências de infraestrutura.
 

@@ -301,17 +301,21 @@ export function ProdutoAbaImpostos({
 								control={control}
 								render={({ field }) => (
 									<Field data-invalid={!!errors.idcest}>
-										<FieldLabel htmlFor="idcest">CEST</FieldLabel>
+										<FieldLabel htmlFor="idcest">
+											CEST <span className="font-normal text-muted-foreground">(opcional)</span>
+										</FieldLabel>
 										<Combobox
 											options={opcoesCest}
 											value={field.value ?? ""}
 											onChange={(valor) => field.onChange(valor || null)}
+											allowEmpty
+											emptyLabel="Sem CEST"
 											placeholder={
 												carregandoCests
 													? "Carregando..."
 													: erroCests
 														? "Erro ao carregar CEST"
-														: "Selecione o CEST"
+														: "Opcional — selecione se aplicável"
 											}
 											disabled={carregandoCests || erroCests}
 											searchPlaceholder="Buscar CEST..."

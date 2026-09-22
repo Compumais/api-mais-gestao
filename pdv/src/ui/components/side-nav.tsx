@@ -12,7 +12,7 @@ import {
 import type { ComponentType } from "react";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
-import { pdvInvoke } from "@/lib/pdv-api";
+import { pdvInvoke, onWhatsappEvent } from "@/lib/pdv-api";
 import {
 	rotuloModelo,
 	type StatusContext,
@@ -111,8 +111,13 @@ export function SideNav({
 		let cancelado = false;
 		async function atualizarBadge() {
 			try {
-				const total = await pdvInvoke<number>("contarPedidosEntregaNovos");
-				if (!cancelado) setNovosDelivery(Number(total) || 0);
+				const [novos, naoLidas] = await Promise.all([
+					pdvInvoke<number>("contarPedidosEntregaNovos"),
+					pdvInvoke<number>("whatsapp.contarNaoLidas"),
+				]);
+				if (!cancelado) {
+					setNovosDelivery((Number(novos) || 0) + (Number(naoLidas) || 0));
+				}
 			} catch {
 				if (!cancelado) setNovosDelivery(0);
 			}
@@ -121,9 +126,13 @@ export function SideNav({
 		const timer = window.setInterval(() => {
 			void atualizarBadge();
 		}, 4000);
+		const offWa = onWhatsappEvent(() => {
+			void atualizarBadge();
+		});
 		return () => {
 			cancelado = true;
 			window.clearInterval(timer);
+			offWa();
 		};
 	}, [gourmet, bloqueado, path]);
 
