@@ -320,6 +320,34 @@ CREATE TABLE IF NOT EXISTS sync_meta (
 	valor TEXT NOT NULL,
 	atualizadoem TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS whatsapp_sessao (
+	id INTEGER PRIMARY KEY CHECK (id = 1),
+	status TEXT NOT NULL DEFAULT 'desconectado',
+	ultimo_qr TEXT,
+	ultimo_erro TEXT,
+	atualizadoem TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS whatsapp_conversa (
+	id TEXT PRIMARY KEY NOT NULL,
+	idconta TEXT,
+	telefone_e164 TEXT NOT NULL,
+	nao_lidas INTEGER NOT NULL DEFAULT 0,
+	ultima_mensagem_em TEXT,
+	criadoem TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS whatsapp_mensagem (
+	id TEXT PRIMARY KEY NOT NULL,
+	idconversa TEXT NOT NULL,
+	direcao TEXT NOT NULL,
+	corpo TEXT NOT NULL,
+	status_envio TEXT,
+	wa_message_id TEXT,
+	lida INTEGER NOT NULL DEFAULT 0,
+	criadoem TEXT NOT NULL
+);
 `;
 
 /**
@@ -353,4 +381,7 @@ CREATE INDEX IF NOT EXISTS idx_meio_pagamento_descricao ON meio_pagamento(descri
 CREATE INDEX IF NOT EXISTS idx_conta_mesa_modalidade ON conta_mesa(modalidade, status);
 CREATE INDEX IF NOT EXISTS idx_cliente_pdv_telefone ON cliente_pdv(telefone);
 CREATE INDEX IF NOT EXISTS idx_cliente_pdv_nome ON cliente_pdv(nome);
+CREATE INDEX IF NOT EXISTS idx_whatsapp_conversa_telefone ON whatsapp_conversa(telefone_e164);
+CREATE INDEX IF NOT EXISTS idx_whatsapp_conversa_idconta ON whatsapp_conversa(idconta);
+CREATE INDEX IF NOT EXISTS idx_whatsapp_mensagem_conversa ON whatsapp_mensagem(idconversa, criadoem);
 `;

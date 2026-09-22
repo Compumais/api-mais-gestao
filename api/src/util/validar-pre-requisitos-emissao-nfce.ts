@@ -40,6 +40,14 @@ export function validarPreRequisitosEmissaoNfce({
 }): PendenciaPreRequisitoNfce[] {
 	const pendencias: PendenciaPreRequisitoNfce[] = [];
 
+	const cnpjEmitente = normalizarCnpj(empresa.cnpj ?? "");
+	if (cnpjEmitente.length !== 14) {
+		pendencias.push({
+			codigo: "CNPJ_EMPRESA",
+			mensagem: "CNPJ da empresa não cadastrado (Configurações → Empresa fiscal)",
+		});
+	}
+
 	if (!empresaFiscal) {
 		pendencias.push({
 			codigo: "EMPRESA_FISCAL_AUSENTE",

@@ -1,5 +1,6 @@
 export type PdvApi = {
 	invoke: <T = unknown>(method: string, ...args: unknown[]) => Promise<T>;
+	onWhatsappEvent?: (callback: (payload: unknown) => void) => () => void;
 };
 
 declare global {
@@ -16,4 +17,13 @@ export function pdvInvoke<T = unknown>(
 		return Promise.reject(new Error("Bridge PDV indisponível"));
 	}
 	return window.pdv.invoke<T>(method, ...args);
+}
+
+export function onWhatsappEvent(
+	callback: (payload: unknown) => void,
+): () => void {
+	if (!window.pdv?.onWhatsappEvent) {
+		return () => undefined;
+	}
+	return window.pdv.onWhatsappEvent(callback);
 }

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { somenteDigitos, validarCnpj } from "@/lib/documentos-brasil";
 
 function vazioParaNull(valor: unknown): string | null {
 	if (valor == null) return null;
@@ -7,6 +8,11 @@ function vazioParaNull(valor: unknown): string | null {
 }
 
 export const empresaFiscalConfigSchema = z.object({
+	cnpj: z
+		.string()
+		.min(1, "CNPJ é obrigatório")
+		.refine((valor) => somenteDigitos(valor).length === 14, "CNPJ inválido")
+		.refine((valor) => validarCnpj(valor), "CNPJ inválido"),
 	razaosocial: z.preprocess(vazioParaNull, z.string().max(60).nullable()),
 	nomefantasia: z.preprocess(vazioParaNull, z.string().max(60).nullable()),
 	inscricaoestadual: z.preprocess(vazioParaNull, z.string().max(20).nullable()),

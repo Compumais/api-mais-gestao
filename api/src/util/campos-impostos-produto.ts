@@ -110,7 +110,15 @@ export const camposImpostosProdutoSchema = {
 	idcfopentrada: z.string().optional().nullable(),
 	idcfopsaida: z.string().optional().nullable(),
 	idcfopsaidanfce: z.string().optional().nullable(),
-	idcest: z.string().optional().nullable(),
+	idcest: z
+		.string()
+		.optional()
+		.nullable()
+		.transform((valor) => {
+			if (valor === undefined) return undefined;
+			const texto = valor?.trim();
+			return texto ? texto : null;
+		}),
 	idtaxauf: z.string().optional().nullable(),
 	situacaotributariasnentrada: campoCstIcmsOpcional,
 	situacaotributaria: campoCstIcmsOpcional,

@@ -180,6 +180,26 @@ import {
 	statusTecnibra,
 	syncTecnibra,
 } from "../integracao/tecnibra/servico";
+import {
+	desconectarWhatsapp,
+	enviarTextoWhatsapp,
+	iniciarWhatsapp,
+	notificarStatusPedidoWhatsapp,
+	reconectarWhatsapp,
+	statusWhatsapp,
+} from "../integracao/whatsapp/servico";
+import { svgQrCode } from "../impressora/qr-svg";
+import {
+	buscarConversaPorConta,
+	buscarConversaPorTelefone,
+	contarNaoLidasWhatsapp,
+	listarMensagensConversa,
+	marcarConversaLida,
+	naoLidasPorConta,
+	obterOuCriarConversa,
+	obterWhatsappSessao,
+} from "../db/whatsapp-chat";
+import { normalizarTelefoneE164 } from "../integracao/whatsapp/normalizar-telefone";
 import { modalAbrirMesaHabilitado } from "../lan-api/config-pos";
 import { criarConexoesQrPos } from "../lan-api/qr-pos";
 import * as remoto from "../pdv-secundario/operacoes-remoto";
@@ -865,6 +885,15 @@ export const localApi = {
 			await reiniciarTecnibra();
 		}
 		if (
+			resto.whatsapp_habilitado !== undefined ||
+			resto.whatsapp_msg_producao !== undefined ||
+			resto.whatsapp_msg_saiu !== undefined ||
+			resto.whatsapp_msg_retirada_pronta !== undefined ||
+			resto.whatsapp_msg_entregue !== undefined
+		) {
+			await reconectarWhatsapp().catch(() => undefined);
+		}
+		if (
 			resto.sitef_habilitado !== undefined ||
 			resto.sitef_ip !== undefined ||
 			resto.sitef_loja !== undefined ||
@@ -902,6 +931,145 @@ export const localApi = {
 
 	async statusTecnibra() {
 		return statusTecnibra();
+	},
+
+	async "whatsapp.status"() {
+		if (await ehSecundario()) {
+			return {
+				...statusWhatsapp(),
+				habilitado: false,
+				status: "desconectado" as const,
+				indisponivel: true,
+				motivo: "WhatsApp só no PDV principal",
+			};
+		}
+		const sessao = isDbReady() ? await obterWhatsappSessao() : null;
+		const runtime = statusWhatsapp();
+		return {
+			...runtime,
+			status: sessao?.status ?? runtime.status,
+			ultimoQr: sessao?.ultimo_qr ?? runtime.ultimoQr,
+			ultimoErro: sessao?.ultimo_erro ?? runtime.ultimoErro,
+			atualizadoem: sessao?.atualizadoem ?? runtime.atualizadoem,
+			indisponivel: false,
+		};
+	},
+
+	async "whatsapp.obterQr"() {
+		if (await ehSecundario()) {
+			throw new Error("WhatsApp só no PDV principal");
+		}
+		const st = await localApi["whatsapp.status"]();
+		const qr = st.ultimoQr;
+		if (!qr) {
+			return { qr: null, svg: null, status: st.status };
+		}
+		return { qr, svg: svgQrCode(qr), status: st.status };
+	},
+
+	async "whatsapp.reconectar"() {
+		if (await ehSecundario()) {
+			throw new Error("WhatsApp só no PDV principal");
+		}
+		await reconectarWhatsapp();
+		return localApi["whatsapp.status"]();
+	},
+
+	async "whatsapp.desconectar"() {
+		if (await ehSecundario()) {
+			throw new Error("WhatsApp só no PDV principal");
+		}
+		await desconectarWhatsapp();
+		return localApi["whatsapp.status"]();
+	},
+
+	async "whatsapp.iniciar"() {
+		if (await ehSecundario()) {
+			throw new Error("WhatsApp só no PDV principal");
+		}
+		await iniciarWhatsapp();
+		return localApi["whatsapp.status"]();
+	},
+
+	async "whatsapp.listarMensagens"(params: {
+		idconta?: string;
+		telefone?: string;
+	}) {
+		await assertModuloGourmet();
+		const telefone = normalizarTelefoneE164(params.telefone ?? "");
+		let conversa = params.idconta
+			? await buscarConversaPorConta(params.idconta)
+			: null;
+		if (!conversa && telefone) {
+			conversa = await buscarConversaPorTelefone(telefone);
+		}
+		if (!conversa && telefone) {
+			conversa = await obterOuCriarConversa({
+				telefoneE164: telefone,
+				idconta: params.idconta ?? null,
+			});
+		}
+		if (!conversa) {
+			return { conversa: null, mensagens: [] };
+		}
+		const mensagens = await listarMensagensConversa(conversa.id);
+		return { conversa, mensagens };
+	},
+
+	async "whatsapp.enviarMensagem"(params: {
+		idconta?: string;
+		telefone?: string;
+		corpo: string;
+	}) {
+		await assertModuloGourmet();
+		if (await ehSecundario()) {
+			throw new Error("WhatsApp só no PDV principal");
+		}
+		let telefone = normalizarTelefoneE164(params.telefone ?? "");
+		if (!telefone && params.idconta) {
+			const conta = await obterContaMesa(params.idconta);
+			telefone = normalizarTelefoneE164(conta?.telefone ?? "");
+		}
+		if (!telefone) {
+			throw new Error("Informe o telefone do cliente");
+		}
+		return enviarTextoWhatsapp({
+			telefoneE164: telefone,
+			corpo: params.corpo,
+			idconta: params.idconta ?? null,
+		});
+	},
+
+	async "whatsapp.marcarLidas"(params: { idconta?: string; telefone?: string }) {
+		await assertModuloGourmet();
+		const telefone = normalizarTelefoneE164(params.telefone ?? "");
+		let conversa = params.idconta
+			? await buscarConversaPorConta(params.idconta)
+			: null;
+		if (!conversa && telefone) {
+			conversa = await buscarConversaPorTelefone(telefone);
+		}
+		if (!conversa) return { ok: true };
+		await marcarConversaLida(conversa.id);
+		return { ok: true };
+	},
+
+	async "whatsapp.contarNaoLidas"() {
+		if (!(await isDbReady())) return 0;
+		try {
+			return await contarNaoLidasWhatsapp();
+		} catch {
+			return 0;
+		}
+	},
+
+	async "whatsapp.naoLidasPorConta"() {
+		if (!(await isDbReady())) return [];
+		try {
+			return await naoLidasPorConta();
+		} catch {
+			return [];
+		}
 	},
 
 	async "sitef.status"() {
@@ -1972,7 +2140,18 @@ export const localApi = {
 		if (await ehSecundario()) {
 			return remoto.atualizarStatusEntregaRemoto(idconta, status);
 		}
-		return atualizarStatusEntrega(idconta, status);
+		const atualizada = await atualizarStatusEntrega(idconta, status);
+		void notificarStatusPedidoWhatsapp({
+			idconta: atualizada.id,
+			telefone: atualizada.telefone,
+			nomecliente: atualizada.nomecliente,
+			protocolo: atualizada.orderidintegracao ?? atualizada.senha_chamada,
+			modalidade: atualizada.modalidade,
+			statusEntrega: atualizada.status_entrega || "recebido",
+		}).catch(() => {
+			// notificação não falha o avanço de status
+		});
+		return atualizada;
 	},
 
 	async aplicarTaxaEntrega(idconta: string, valorentrega: number) {
@@ -2074,6 +2253,18 @@ export const localApi = {
 			} catch {
 				// produção não falha o ingest
 			}
+		}
+		if (result.action === "created") {
+			void notificarStatusPedidoWhatsapp({
+				idconta: result.conta.id,
+				telefone: result.conta.telefone,
+				nomecliente: result.conta.nomecliente,
+				protocolo: result.conta.orderidintegracao ?? result.conta.senha_chamada,
+				modalidade: result.conta.modalidade,
+				statusEntrega: result.conta.status_entrega || "producao",
+			}).catch(() => {
+				// notificação não falha o ingest
+			});
 		}
 		avisarTecnibra();
 		return result;

@@ -4,6 +4,7 @@ import type { RegimeTributarioEmpresa } from "@/services/empresas.service";
 export interface EmpresaFiscal {
 	id: string;
 	idempresa: string;
+	cnpj?: string | null;
 	razaosocial?: string | null;
 	nomefantasia?: string | null;
 	inscricaoestadual?: string | null;

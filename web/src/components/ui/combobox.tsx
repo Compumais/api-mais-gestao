@@ -11,6 +11,9 @@ interface ComboboxProps {
 	emptyMessage?: string;
 	className?: string;
 	disabled?: boolean;
+	/** Permite limpar a seleção (ex.: campos opcionais). */
+	allowEmpty?: boolean;
+	emptyLabel?: string;
 }
 
 export function Combobox({
@@ -22,6 +25,8 @@ export function Combobox({
 	emptyMessage = "Nenhum item encontrado.",
 	className,
 	disabled = false,
+	allowEmpty = false,
+	emptyLabel = "Nenhum",
 }: ComboboxProps) {
 	const [open, setOpen] = React.useState(false);
 	const [search, setSearch] = React.useState("");
@@ -51,6 +56,10 @@ export function Combobox({
 	const filteredOptions = options.filter((option) =>
 		option.label.toLowerCase().includes(search.toLowerCase()),
 	);
+
+	const exibirOpcaoVazia =
+		allowEmpty &&
+		(emptyLabel.toLowerCase().includes(search.toLowerCase()) || search === "");
 
 	const selectedLabel =
 		options.find((option) => option.value === value)?.label ??
@@ -93,7 +102,24 @@ export function Combobox({
 						/>
 					</div>
 					<div className="max-h-[200px] overflow-y-auto p-1">
-						{filteredOptions.length === 0 ? (
+						{exibirOpcaoVazia && (
+							<div
+								className={cn(
+									"relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground text-muted-foreground",
+									!value && "bg-accent text-accent-foreground",
+								)}
+								onClick={() => {
+									onChange("");
+									setOpen(false);
+								}}
+							>
+								<Check
+									className={cn("mr-2 h-4 w-4", !value ? "opacity-100" : "opacity-0")}
+								/>
+								{emptyLabel}
+							</div>
+						)}
+						{filteredOptions.length === 0 && !exibirOpcaoVazia ? (
 							<div className="py-6 text-center text-sm text-muted-foreground">
 								{emptyMessage}
 							</div>

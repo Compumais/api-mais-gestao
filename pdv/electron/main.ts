@@ -3,6 +3,10 @@ import { app, BrowserWindow, ipcMain, shell } from "electron";
 import { closeDb, initDb } from "./db/database";
 import { iniciarTecnibra, pararTecnibra } from "./integracao/tecnibra/servico";
 import {
+	iniciarWhatsapp,
+	pararWhatsapp,
+} from "./integracao/whatsapp/servico";
+import {
 	encerrarLanServer,
 	restartLanServer,
 	startLanServer,
@@ -102,6 +106,11 @@ app.whenReady().then(async () => {
 				err instanceof Error ? err.message : "Falha ao iniciar Tecnibra",
 			);
 		});
+		await iniciarWhatsapp().catch((err) => {
+			console.error(
+				err instanceof Error ? err.message : "Falha ao iniciar WhatsApp",
+			);
+		});
 		await iniciarBackupAgendado().catch((err) => {
 			console.error(
 				err instanceof Error ? err.message : "Falha ao iniciar backup agendado",
@@ -139,6 +148,7 @@ app.on("window-all-closed", () => {
 	pararPollerCardapio?.();
 	pararPollerCardapio = null;
 	pararTecnibra();
+	void pararWhatsapp();
 	pararBackupAgendado();
 	void encerrarLanServer();
 	void closeDb();

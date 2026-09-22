@@ -11,6 +11,7 @@ import {
 	buscarEmpresaPorId,
 } from "@/repositories/empresa-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import { normalizarCnpj } from "@/util/criptografia-certificado.js";
 import {
 	httpBadRequest,
 	httpErro,
@@ -29,7 +30,12 @@ import {
 	normalizarRegimeTributario,
 } from "@/util/regime-tributario-empresa.js";
 
+export type EmpresaFiscalResponse = EmpresaFiscal & {
+	cnpj: string | null;
+};
+
 export type EmpresaFiscalBody = {
+	cnpj?: string | null;
 	razaosocial?: string | null;
 	nomefantasia?: string | null;
 	inscricaoestadual?: string | null;
@@ -66,7 +72,7 @@ type AtualizarEmpresaFiscalParametros = {
 function hidratarFiscalComEmpresa(
 	fiscal: EmpresaFiscal,
 	empresa: NonNullable<Awaited<ReturnType<typeof buscarEmpresaPorId>>>,
-): EmpresaFiscal {
+): EmpresaFiscalResponse {
 	const crt =
 		normalizarCrt(fiscal.crt) ??
 		(empresa.regimetributario === "SN"
@@ -77,6 +83,7 @@ function hidratarFiscalComEmpresa(
 
 	return {
 		...fiscal,
+		cnpj: empresa.cnpj?.trim() || null,
 		razaosocial: fiscal.razaosocial || empresa.nome || null,
 		telefone: fiscal.telefone || empresa.telefone || null,
 		email: fiscal.email || empresa.email || null,
@@ -107,7 +114,7 @@ function hidratarFiscalComEmpresa(
 export async function buscarEmpresaFiscalService({
 	idempresa,
 	idusuario,
-}: BuscarEmpresaFiscalParametros): Promise<HttpResponse<EmpresaFiscal | null>> {
+}: BuscarEmpresaFiscalParametros): Promise<HttpResponse<EmpresaFiscalResponse | null>> {
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
 		idusuario,
 		idempresa,
@@ -149,7 +156,7 @@ export async function buscarEmpresaFiscalService({
 		});
 	}
 
-	return httpOk<EmpresaFiscal | null>(
+	return httpOk<EmpresaFiscalResponse | null>(
 		fiscal ? hidratarFiscalComEmpresa(fiscal, empresa) : null,
 	);
 }
@@ -159,7 +166,7 @@ export async function atualizarEmpresaFiscalService({
 	idusuario,
 	dados,
 }: AtualizarEmpresaFiscalParametros): Promise<
-	HttpResponse<EmpresaFiscal | null>
+	HttpResponse<EmpresaFiscalResponse | null>
 > {
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
 		idusuario,
@@ -170,13 +177,20 @@ export async function atualizarEmpresaFiscalService({
 		return httpProibido();
 	}
 
-	const empresa = await buscarEmpresaPorId(idempresa);
+	let empresa = await buscarEmpresaPorId(idempresa);
 	if (!empresa) {
 		return httpNaoEncontrado();
 	}
 
 	if (dados.crt != null && normalizarCrt(dados.crt) == null) {
 		return httpBadRequest("CRT inválido. Informe um valor entre 1 e 4.");
+	}
+
+	if (dados.cnpj !== undefined && dados.cnpj !== null) {
+		const cnpjDigitos = normalizarCnpj(dados.cnpj);
+		if (cnpjDigitos.length !== 14) {
+			return httpBadRequest("CNPJ inválido. Informe 14 dígitos.");
+		}
 	}
 
 	const crtNormalizado = normalizarCrt(dados.crt);
@@ -209,8 +223,24 @@ export async function atualizarEmpresaFiscalService({
 	const agora = new Date().toISOString();
 	let fiscal = await buscarEmpresaFiscalPorEmpresa(idempresa);
 
+	if (dados.cnpj !== undefined) {
+		const cnpjSalvar =
+			dados.cnpj === null || String(dados.cnpj).trim() === ""
+				? null
+				: normalizarCnpj(dados.cnpj);
+		if (cnpjSalvar) {
+			await atualizarEmpresa(idempresa, {
+				cnpj: cnpjSalvar,
+				atualizadoem: agora,
+			});
+		}
+		empresa = (await buscarEmpresaPorId(idempresa)) ?? empresa;
+	}
+
+	const { cnpj: _cnpjIgnorado, ...dadosFiscal } = dados;
+
 	const payload = {
-		...dados,
+		...dadosFiscal,
 		crt: dados.crt !== undefined ? crtNormalizado : dados.crt,
 		uf: dados.uf !== undefined ? normalizarUfFiscal(dados.uf) : dados.uf,
 		codigomunicipioibge:
@@ -251,5 +281,7 @@ export async function atualizarEmpresaFiscalService({
 		return httpErro();
 	}
 
-	return httpOk<EmpresaFiscal>(hidratarFiscalComEmpresa(fiscal, empresa));
+	return httpOk<EmpresaFiscalResponse>(
+		hidratarFiscalComEmpresa(fiscal, empresa),
+	);
 }
