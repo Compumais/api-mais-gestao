@@ -254,6 +254,10 @@
     <string name="enviar_pedido">Enviar pedido</string>
     <string name="enviando_pedido">Enviando pedido…</string>
     <string name="pedido_concluido">Pedido concluído</string>
+    <string name="mesa_local_titulo">Mesa e localização</string>
+    <string name="mesa_local_ajuda">Informe a mesa e a localização para imprimir no pedido de produção.</string>
+    <string name="mesa_fisica">Mesa</string>
+    <string name="localizacao_pedido">Localização</string>
     <string name="voltar_as_mesas">Voltar às mesas</string>
     <string name="voltar_as_comandas">Voltar às comandas</string>
     <string name="adicionar">Adicionar</string>

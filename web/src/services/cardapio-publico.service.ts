@@ -81,6 +81,27 @@ export type MeuPedidoCardapio = {
 
 const chaveTelefone = (slug: string) => `cardapio:${slug}:telefone`;
 const chaveNome = (slug: string) => `cardapio:${slug}:nome`;
+const cookieTelefone = (slug: string) =>
+	`cardapio_tel_${slug.replace(/[^a-zA-Z0-9_-]/g, "_")}`;
+const COOKIE_TELEFONE_MAX_AGE = 60 * 60 * 24 * 180; // 180 dias
+
+function lerCookie(nome: string): string {
+	if (typeof document === "undefined") return "";
+	const alvo = `${nome}=`;
+	const partes = document.cookie.split(";");
+	for (const parte of partes) {
+		const item = parte.trim();
+		if (item.startsWith(alvo)) {
+			return decodeURIComponent(item.slice(alvo.length));
+		}
+	}
+	return "";
+}
+
+function gravarCookie(nome: string, valor: string, maxAge = COOKIE_TELEFONE_MAX_AGE) {
+	if (typeof document === "undefined") return;
+	document.cookie = `${nome}=${encodeURIComponent(valor)}; path=/; max-age=${maxAge}; SameSite=Lax`;
+}
 
 export const cardapioPublicoService = {
 	async buscar(slug: string): Promise<CardapioPublico> {
@@ -129,9 +150,17 @@ export const cardapioPublicoService = {
 	lerClienteLocal(slug: string): { nome: string; telefone: string } {
 		if (typeof window === "undefined") return { nome: "", telefone: "" };
 		try {
+			const telefoneCookie = lerCookie(cookieTelefone(slug)).replace(/\D/g, "");
+			const telefoneLocal =
+				localStorage.getItem(chaveTelefone(slug))?.replace(/\D/g, "") ?? "";
+			const telefone = telefoneCookie || telefoneLocal;
+			// Migra telefone antigo do localStorage para cookie
+			if (telefone && !telefoneCookie) {
+				gravarCookie(cookieTelefone(slug), telefone);
+			}
 			return {
 				nome: localStorage.getItem(chaveNome(slug)) ?? "",
-				telefone: localStorage.getItem(chaveTelefone(slug)) ?? "",
+				telefone,
 			};
 		} catch {
 			return { nome: "", telefone: "" };
@@ -140,11 +169,27 @@ export const cardapioPublicoService = {
 
 	salvarClienteLocal(slug: string, nome: string, telefone: string) {
 		if (typeof window === "undefined") return;
+		const digitos = telefone.replace(/\D/g, "");
 		try {
 			localStorage.setItem(chaveNome(slug), nome);
-			localStorage.setItem(chaveTelefone(slug), telefone.replace(/\D/g, ""));
+			localStorage.setItem(chaveTelefone(slug), digitos);
 		} catch {
 			// ignore quota / private mode
+		}
+		if (digitos) {
+			gravarCookie(cookieTelefone(slug), digitos);
+		}
+	},
+
+	salvarTelefoneCookie(slug: string, telefone: string) {
+		if (typeof window === "undefined") return;
+		const digitos = telefone.replace(/\D/g, "");
+		if (!digitos) return;
+		gravarCookie(cookieTelefone(slug), digitos);
+		try {
+			localStorage.setItem(chaveTelefone(slug), digitos);
+		} catch {
+			// ignore
 		}
 	},
 };

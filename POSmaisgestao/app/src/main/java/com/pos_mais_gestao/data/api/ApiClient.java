@@ -1752,7 +1752,12 @@ public class ApiClient {
         return mesas;
     }
 
-    public void enviarPedidoMesa(String idConta, String clientOrderId, List<SacolaLinha> linhas)
+    public void enviarPedidoMesa(
+            String idConta,
+            String clientOrderId,
+            List<SacolaLinha> linhas,
+            String mesaFisica,
+            String localizacao)
             throws ApiException {
         if (!isLocal()) {
             throw new ApiException("Envio de pedido só no modo PDV local");
@@ -1780,7 +1785,18 @@ public class ApiClient {
         JsonObject body = new JsonObject();
         body.addProperty("clientOrderId", clientOrderId);
         body.add("itens", itens);
+        if (mesaFisica != null && !mesaFisica.trim().isEmpty()) {
+            body.addProperty("mesaFisica", mesaFisica.trim());
+        }
+        if (localizacao != null && !localizacao.trim().isEmpty()) {
+            body.addProperty("localizacao", localizacao.trim());
+        }
         localPdv.enviarPedido(idConta, body);
+    }
+
+    public void enviarPedidoMesa(String idConta, String clientOrderId, List<SacolaLinha> linhas)
+            throws ApiException {
+        enviarPedidoMesa(idConta, clientOrderId, linhas, null, null);
     }
 
     public List<PedidoFilaDto> listarPedidosFila(boolean pendentes) throws ApiException {
@@ -2369,6 +2385,12 @@ public class ApiClient {
         Integer pdv = inteiro(status, "numeropdv");
         if (pdv != null) {
             prefsStore.setNumeroPdv(pdv);
+        }
+        if (status.has("comandaPedirMesaLocal") && !status.get("comandaPedirMesaLocal").isJsonNull()) {
+            prefsStore.setComandaPedirMesaLocal(status.get("comandaPedirMesaLocal").getAsBoolean());
+        }
+        if (status.has("modalAbrirMesaHabilitado") && !status.get("modalAbrirMesaHabilitado").isJsonNull()) {
+            prefsStore.setModalAbrirMesaHabilitado(status.get("modalAbrirMesaHabilitado").getAsBoolean());
         }
     }
 

@@ -598,6 +598,8 @@ export const localApi = {
 			modalAbrirMesaHabilitado: modalAbrirMesaHabilitado(
 				await getConfig("modal_abrir_mesa_habilitado", "1"),
 			),
+			comandaPedirMesaLocal:
+				(await getConfig("comanda_pedir_mesa_local", "0")) === "1",
 			qtdMesas: Math.max(1, Number(await getConfig("qtd_mesas", "20")) || 20),
 			numeropdv: Math.max(1, Number(await getConfig("numeropdv", "1")) || 1),
 			modo,
@@ -1694,16 +1696,22 @@ export const localApi = {
 			idprodutomeio?: string | null;
 		}>,
 		observacaoPedido?: string | null,
+		mesaFisica?: string | null,
+		localizacao?: string | null,
 	) {
 		await assertModuloGourmet();
 		await garantirOperacaoSecundario();
 		const obs = observacaoPedido?.trim() || null;
+		const mesa = mesaFisica?.trim() || null;
+		const local = localizacao?.trim() || null;
 		if (await ehSecundario()) {
 			const conta = await remoto.enviarPedidoContaRemoto(
 				idconta,
 				clientOrderId,
 				itens,
 				obs,
+				mesa,
+				local,
 			);
 			avisarTecnibra();
 			return conta;
@@ -1713,13 +1721,17 @@ export const localApi = {
 			clientOrderId,
 			itens,
 			observacaoPedido: obs,
+			mesaFisica: mesa,
+			localizacao: local,
 		});
 		if (conta.pedidoNovo) {
 			try {
 				void imprimirProducaoPedido({
-					origem: rotuloOrigemConta(conta),
+					origem: await rotuloOrigemConta(conta),
 					cliente: conta.nomecliente,
 					observacaoPedido: conta.observacaoPedido,
+					mesaFisica: conta.mesaFisica,
+					localizacao: conta.localizacao,
 					itens: conta.itensProducao,
 				});
 			} catch {
@@ -1752,7 +1764,7 @@ export const localApi = {
 			}
 			const conta = await obterContaMesa(primeiro.idconta);
 			const origem = conta
-				? rotuloOrigemConta(conta)
+				? await rotuloOrigemConta(conta)
 				: await rotuloOrigemMesa(primeiro.numero_mesa);
 			pedidos.push({
 				clientOrderId: primeiro.client_order_id,
@@ -1762,6 +1774,8 @@ export const localApi = {
 				origem,
 				criadoem: primeiro.criadoem,
 				observacaoPedido: primeiro.observacao_pedido,
+				mesaFisica: primeiro.mesa_fisica,
+				localizacao: primeiro.localizacao,
 				status: itens.some((item) => item.status === "pendente")
 					? "pendente"
 					: "entregue",
@@ -1791,6 +1805,8 @@ export const localApi = {
 			origem: pedido.origem,
 			cliente: pedido.nomecliente,
 			observacaoPedido: pedido.observacaoPedido,
+			mesaFisica: pedido.mesaFisica,
+			localizacao: pedido.localizacao,
 			itens: pedido.itens,
 			reimpressao: true,
 		});
@@ -2046,7 +2062,7 @@ export const localApi = {
 			try {
 				void imprimirProducaoPedido({
 					origem:
-						rotuloOrigemConta(result.conta) ||
+						(await rotuloOrigemConta(result.conta)) ||
 						rotuloProducaoEntrega({
 							modalidade: result.conta.modalidade,
 							senhaChamada: result.conta.senha_chamada,

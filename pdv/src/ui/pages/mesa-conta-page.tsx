@@ -515,12 +515,18 @@ export function MesaContaPage() {
 		}
 	}
 
-	async function confirmarFilaNaConta(observacaoPedido?: string | null) {
+	async function confirmarFilaNaConta(dados?: {
+		observacao?: string | null;
+		mesaFisica?: string | null;
+		localizacao?: string | null;
+	}) {
 		if (fila.length === 0) return;
 		setObsPedidoAberto(false);
 		setLoading(true);
 		setMsg("");
-		const obsPedido = normalizarObservacaoPedido(observacaoPedido);
+		const obsPedido = normalizarObservacaoPedido(dados?.observacao);
+		const mesaFisica = dados?.mesaFisica?.trim() || null;
+		const localizacao = dados?.localizacao?.trim() || null;
 		const itensPayload = fila.map((item) => ({
 			idproduto: item.idproduto,
 			quantidade: item.quantidade,
@@ -539,6 +545,8 @@ export function MesaContaPage() {
 					crypto.randomUUID(),
 					itensPayload,
 					obsPedido,
+					mesaFisica,
+					localizacao,
 				);
 				if (conta.status_entrega === "recebido") {
 					atualizada = await pdvInvoke<ContaMesa>(
@@ -563,6 +571,8 @@ export function MesaContaPage() {
 					crypto.randomUUID(),
 					itensPayload,
 					obsPedido,
+					mesaFisica,
+					localizacao,
 				);
 			}
 			if (atualizada) {
@@ -2122,8 +2132,13 @@ export function MesaContaPage() {
 			<DialogObservacaoPedido
 				aberto={obsPedidoAberto}
 				loading={loading}
+				pedirMesaLocal={
+					!modoEntrega &&
+					status?.modeloAtendimento === "comanda" &&
+					Boolean(status?.comandaPedirMesaLocal)
+				}
 				onCancelar={() => setObsPedidoAberto(false)}
-				onConfirmar={(observacao) => void confirmarFilaNaConta(observacao)}
+				onConfirmar={(dados) => void confirmarFilaNaConta(dados)}
 			/>
 		</div>
 	);

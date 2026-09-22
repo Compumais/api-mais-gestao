@@ -35,6 +35,7 @@ const CHAVES_CONFIG_EMPRESA: Array<[string, string]> = [
 	["qtd_mesas", "20"],
 	["modelo_atendimento", "mesa"],
 	["modal_abrir_mesa_habilitado", "1"],
+	["comanda_pedir_mesa_local", "0"],
 	["taxa_servico_percentual", "10"],
 	["couvert_valor", "0"],
 ];

@@ -429,6 +429,8 @@ export function ConfigPage() {
 				modelo_atendimento: config.modelo_atendimento ?? "mesa",
 				modal_abrir_mesa_habilitado:
 					config.modal_abrir_mesa_habilitado === "0" ? "0" : "1",
+				comanda_pedir_mesa_local:
+					config.comanda_pedir_mesa_local === "1" ? "1" : "0",
 				tempo_ociosidade_min: config.tempo_ociosidade_min ?? "15",
 				emitir_nfce: config.emitir_nfce ?? "1",
 				tema: config.tema ?? "light",
@@ -1201,6 +1203,35 @@ export function ConfigPage() {
 													abre a conta direto, sem pedir nome ou confirmação.
 												</p>
 											</div>
+											{(config.modelo_atendimento ?? "mesa") === "comanda" ? (
+												<div className="space-y-2 sm:col-span-2">
+													<Label htmlFor="comanda_pedir_mesa_local">
+														Pedir mesa e localização ao enviar pedido
+													</Label>
+													<Select
+														id="comanda_pedir_mesa_local"
+														value={
+															config.comanda_pedir_mesa_local === "1"
+																? "1"
+																: "0"
+														}
+														onChange={(e) =>
+															set(
+																"comanda_pedir_mesa_local",
+																e.target.value,
+															)
+														}
+													>
+														<option value="0">Desabilitado</option>
+														<option value="1">Habilitado</option>
+													</Select>
+													<p className="text-xs text-muted-foreground">
+														Ao finalizar cada pedido da comanda, pede o
+														número da mesa e a localização para imprimir no
+														cupom de produção (PDV e POS).
+													</p>
+												</div>
+											) : null}
 										</>
 									) : (
 										<p className="sm:col-span-2 text-xs text-muted-foreground">

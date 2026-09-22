@@ -367,6 +367,16 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 				"ALTER TABLE pedido_fila ADD COLUMN observacao_pedido TEXT",
 			);
 		}
+		if (!pedidoFilaNomes.has("mesa_fisica")) {
+			await database.query(
+				"ALTER TABLE pedido_fila ADD COLUMN mesa_fisica TEXT",
+			);
+		}
+		if (!pedidoFilaNomes.has("localizacao")) {
+			await database.query(
+				"ALTER TABLE pedido_fila ADD COLUMN localizacao TEXT",
+			);
+		}
 	}
 
 	const grupoGourmetCols = await database.query<{ column_name: string }>(
@@ -723,6 +733,7 @@ async function seedDefaults(database: Pool): Promise<void> {
 		["qtd_mesas", "20"],
 		["modelo_atendimento", "mesa"],
 		["modal_abrir_mesa_habilitado", "1"],
+		["comanda_pedir_mesa_local", "0"],
 		["tempo_ociosidade_min", "15"],
 		["filtro_apenas_abertas", "0"],
 		["emitir_nfce", "1"],

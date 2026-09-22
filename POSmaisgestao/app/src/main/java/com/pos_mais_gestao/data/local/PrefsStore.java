@@ -41,6 +41,7 @@ public class PrefsStore {
     private static final String KEY_CONEXAO_MODO = "conexao_modo";
     private static final String KEY_MODELO_ATENDIMENTO = "modelo_atendimento";
     private static final String KEY_MODAL_ABRIR_MESA = "modal_abrir_mesa_habilitado";
+    private static final String KEY_COMANDA_PEDIR_MESA_LOCAL = "comanda_pedir_mesa_local";
     private static final String KEY_TERMINAL_ID = "terminal_id";
     private static final String KEY_BALANCA_HABILITADA = "balanca_habilitada";
     private static final String KEY_BALANCA_VENDOR_ID = "balanca_vendor_id";
@@ -145,6 +146,14 @@ public class PrefsStore {
 
     public void setModalAbrirMesaHabilitado(boolean habilitado) {
         prefs.edit().putBoolean(KEY_MODAL_ABRIR_MESA, habilitado).apply();
+    }
+
+    public boolean isComandaPedirMesaLocal() {
+        return isModeloComanda() && prefs.getBoolean(KEY_COMANDA_PEDIR_MESA_LOCAL, false);
+    }
+
+    public void setComandaPedirMesaLocal(boolean habilitado) {
+        prefs.edit().putBoolean(KEY_COMANDA_PEDIR_MESA_LOCAL, habilitado).apply();
     }
 
     public String getTerminalId() {

@@ -13,6 +13,9 @@ export type PedidoProducaoResumo = {
 	origem: string;
 	criadoem: string;
 	status: string;
+	observacaoPedido?: string | null;
+	mesaFisica?: string | null;
+	localizacao?: string | null;
 	itens: Array<{
 		id: string;
 		idproduto: string;
@@ -117,9 +120,7 @@ export function ListaPedidosProducao({
 						<div className="min-w-0">
 							<div className="flex items-center gap-2">
 								<span className="font-mono text-base font-bold text-primary">
-									{pedido.numeroMesa > 0
-										? `Mesa ${pedido.numeroMesa}`
-										: pedido.origem}
+									{pedido.origem}
 								</span>
 								<Badge
 									variant={
@@ -129,6 +130,18 @@ export function ListaPedidosProducao({
 									{pedido.status === "pendente" ? "Pendente" : "Entregue"}
 								</Badge>
 							</div>
+							{(pedido.mesaFisica || pedido.localizacao) && (
+								<p className="mt-1 text-xs text-muted-foreground">
+									{[
+										pedido.mesaFisica
+											? `Mesa ${pedido.mesaFisica}`
+											: null,
+										pedido.localizacao || null,
+									]
+										.filter(Boolean)
+										.join(" · ")}
+								</p>
+							)}
 							<p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
 								<Clock3 className="size-3" />
 								{new Date(pedido.criadoem).toLocaleString("pt-BR")}

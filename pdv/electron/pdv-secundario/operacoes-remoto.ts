@@ -154,12 +154,20 @@ export async function enviarPedidoContaRemoto(
 	clientOrderId: string,
 	itens: ItemPedidoInput[],
 	observacaoPedido?: string | null,
+	mesaFisica?: string | null,
+	localizacao?: string | null,
 ): Promise<
 	ContaMesaLocal & { pedidoNovo?: boolean; itensProducao?: unknown[] }
 > {
 	return remoto(`/pos/contas/${encodeURIComponent(idconta)}/pedido`, {
 		method: "POST",
-		body: JSON.stringify({ clientOrderId, itens, observacaoPedido }),
+		body: JSON.stringify({
+			clientOrderId,
+			itens,
+			observacaoPedido,
+			mesaFisica,
+			localizacao,
+		}),
 	});
 }
 

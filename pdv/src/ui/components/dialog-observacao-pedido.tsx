@@ -4,25 +4,41 @@ import {
 	normalizarObservacaoPedido,
 } from "@/lib/observacao-pedido";
 import { Button } from "@/ui/components/ui/button";
+import { Input } from "@/ui/components/ui/input";
 import { Label } from "@/ui/components/ui/label";
 import { useEscapeFechaModal } from "@/ui/hooks/use-escape-fecha-modal";
+
+export type ConfirmacaoObservacaoPedido = {
+	observacao: string | null;
+	mesaFisica: string | null;
+	localizacao: string | null;
+};
 
 export function DialogObservacaoPedido({
 	aberto,
 	loading,
+	pedirMesaLocal,
 	onCancelar,
 	onConfirmar,
 }: {
 	aberto: boolean;
 	loading?: boolean;
+	/** Em modo comanda: pede mesa física e localização para a impressão. */
+	pedirMesaLocal?: boolean;
 	onCancelar: () => void;
-	onConfirmar: (observacao: string | null) => void;
+	onConfirmar: (dados: ConfirmacaoObservacaoPedido) => void;
 }) {
 	const [texto, setTexto] = useState("");
+	const [mesaFisica, setMesaFisica] = useState("");
+	const [localizacao, setLocalizacao] = useState("");
 	useEscapeFechaModal(aberto, onCancelar);
 
 	useEffect(() => {
-		if (aberto) setTexto("");
+		if (aberto) {
+			setTexto("");
+			setMesaFisica("");
+			setLocalizacao("");
+		}
 	}, [aberto]);
 
 	if (!aberto) return null;
@@ -33,20 +49,61 @@ export function DialogObservacaoPedido({
 				className="pdv-surface w-full max-w-md space-y-4 p-5"
 				onSubmit={(e) => {
 					e.preventDefault();
-					onConfirmar(normalizarObservacaoPedido(texto));
+					onConfirmar({
+						observacao: normalizarObservacaoPedido(texto),
+						mesaFisica: pedirMesaLocal
+							? mesaFisica.trim() || null
+							: null,
+						localizacao: pedirMesaLocal
+							? localizacao.trim() || null
+							: null,
+					});
 				}}
 			>
 				<div>
-					<h2 className="text-lg font-semibold">Observação do pedido</h2>
+					<h2 className="text-lg font-semibold">
+						{pedirMesaLocal
+							? "Finalizar envio do pedido"
+							: "Observação do pedido"}
+					</h2>
 					<p className="text-sm text-muted-foreground">
-						Será impressa junto com o pedido de produção (opcional).
+						{pedirMesaLocal
+							? "Mesa e localização serão impressas no pedido de produção."
+							: "Será impressa junto com o pedido de produção (opcional)."}
 					</p>
 				</div>
+				{pedirMesaLocal ? (
+					<div className="grid gap-3 sm:grid-cols-2">
+						<div className="space-y-1.5">
+							<Label htmlFor="mesa-fisica-pedido">Mesa</Label>
+							<Input
+								id="mesa-fisica-pedido"
+								autoFocus
+								value={mesaFisica}
+								disabled={loading}
+								maxLength={40}
+								placeholder="Ex.: 12"
+								onChange={(e) => setMesaFisica(e.target.value)}
+							/>
+						</div>
+						<div className="space-y-1.5">
+							<Label htmlFor="localizacao-pedido">Localização</Label>
+							<Input
+								id="localizacao-pedido"
+								value={localizacao}
+								disabled={loading}
+								maxLength={80}
+								placeholder="Ex.: salão, terraço"
+								onChange={(e) => setLocalizacao(e.target.value)}
+							/>
+						</div>
+					</div>
+				) : null}
 				<div className="space-y-1.5">
 					<Label htmlFor="observacao-pedido">Observação</Label>
 					<textarea
 						id="observacao-pedido"
-						autoFocus
+						autoFocus={!pedirMesaLocal}
 						rows={4}
 						maxLength={LIMITE_OBSERVACAO_PEDIDO}
 						value={texto}

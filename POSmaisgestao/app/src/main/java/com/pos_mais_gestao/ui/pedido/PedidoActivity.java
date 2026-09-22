@@ -510,6 +510,40 @@ public class PedidoActivity extends AppCompatActivity {
         if (idConta == null || sacola.isEmpty()) {
             return;
         }
+        PrefsStore prefs = ((PosApplication) getApplication()).getPrefsStore();
+        if (prefs.isComandaPedirMesaLocal()) {
+            dialogMesaLocalAntesEnvio();
+            return;
+        }
+        executarEnvioPedido(null, null);
+    }
+
+    private void dialogMesaLocalAntesEnvio() {
+        View view = LayoutInflater.from(this).inflate(R.layout.dialog_mesa_local_pedido, null);
+        TextInputEditText inputMesa = view.findViewById(R.id.inputMesaFisica);
+        TextInputEditText inputLocal = view.findViewById(R.id.inputLocalizacaoPedido);
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.mesa_local_titulo)
+                .setView(view)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(R.string.enviar_pedido, (d, w) -> {
+                    String mesa = inputMesa.getText() != null
+                            ? inputMesa.getText().toString().trim()
+                            : "";
+                    String local = inputLocal.getText() != null
+                            ? inputLocal.getText().toString().trim()
+                            : "";
+                    executarEnvioPedido(
+                            mesa.isEmpty() ? null : mesa,
+                            local.isEmpty() ? null : local);
+                })
+                .show();
+    }
+
+    private void executarEnvioPedido(String mesaFisica, String localizacao) {
+        if (idConta == null || sacola.isEmpty()) {
+            return;
+        }
         panelOrderStatus.setVisibility(View.VISIBLE);
         progressOrder.setVisibility(View.VISIBLE);
         imgOrderStatus.setVisibility(View.GONE);
@@ -520,7 +554,7 @@ public class PedidoActivity extends AppCompatActivity {
         List<SacolaLinha> envio = new ArrayList<>(sacola);
         executor.execute(() -> {
             try {
-                api.enviarPedidoMesa(idConta, clientId, envio);
+                api.enviarPedidoMesa(idConta, clientId, envio, mesaFisica, localizacao);
                 runOnUiThread(() -> {
                     sacola.clear();
                     atualizarSacolaUi();
