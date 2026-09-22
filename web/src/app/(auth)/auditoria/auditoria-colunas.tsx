@@ -107,9 +107,7 @@ function criarHeaderColuna(
 	const filtroAtivo = valorFiltro.trim() !== "";
 	const ordenacaoCampo = COLUNA_PARA_ORDENAR_AUDITORIA[def.id] ?? def.id;
 	const ordenacao: OrdenacaoColunaTabela =
-		opcoes.ordenarPor === ordenacaoCampo && opcoes.ordem
-			? opcoes.ordem
-			: false;
+		opcoes.ordenarPor === ordenacaoCampo && opcoes.ordem ? opcoes.ordem : false;
 
 	return (
 		<CabecalhoColunaTabela
@@ -208,9 +206,7 @@ export function criarColunasAuditoria(
 					cell: ({ row }) => {
 						const data = row.getValue("criadoem") as string;
 						return (
-							<div>
-								{formatDateTimeBrasilia(data, { comSegundos: true })}
-							</div>
+							<div>{formatDateTimeBrasilia(data, { comSegundos: true })}</div>
 						);
 					},
 				});

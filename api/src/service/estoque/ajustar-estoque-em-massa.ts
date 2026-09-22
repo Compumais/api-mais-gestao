@@ -4,11 +4,7 @@ import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-reposit
 import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
 import { buscarSaldoEstoquePorCodigoProduto } from "@/repositories/saldo-estoque-repositories.js";
 import { registrarMovimentoEstoque } from "@/service/estoque/registrar-movimento-estoque.js";
-import {
-	httpBadRequest,
-	httpOk,
-	httpProibido,
-} from "@/util/http-util.js";
+import { httpBadRequest, httpOk, httpProibido } from "@/util/http-util.js";
 import {
 	TIPO_DOCUMENTO_ESTOQUE,
 	TIPO_ESTOQUE,

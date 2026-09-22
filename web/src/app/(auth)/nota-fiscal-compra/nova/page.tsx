@@ -3,6 +3,7 @@
 import { IconArrowLeft } from "@tabler/icons-react";
 import Link from "next/link";
 import { PageContainer } from "@/app/(auth)/components/page-container";
+import { BlocoErrorBoundary } from "@/components/bloco-error-boundary";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FormImportarChaveNotaFiscalCompra } from "../components/form-importar-chave";
@@ -30,21 +31,36 @@ export default function NovaNotaFiscalCompraPage() {
 							<TabsTrigger value="xml">Importar XML</TabsTrigger>
 						</TabsList>
 						<TabsContent value="manual">
-							<FormManualNotaFiscalCompra />
+							<BlocoErrorBoundary
+								titulo="Erro no lançamento manual"
+								variante="painel"
+							>
+								<FormManualNotaFiscalCompra />
+							</BlocoErrorBoundary>
 						</TabsContent>
 						<TabsContent value="chave">
 							<p className="mb-4 text-sm text-muted-foreground">
 								Informe a chave de 44 dígitos para buscar o XML na SEFAZ e criar
 								um rascunho de importação.
 							</p>
-							<FormImportarChaveNotaFiscalCompra />
+							<BlocoErrorBoundary
+								titulo="Erro na importação por chave"
+								variante="painel"
+							>
+								<FormImportarChaveNotaFiscalCompra />
+							</BlocoErrorBoundary>
 						</TabsContent>
 						<TabsContent value="xml">
 							<p className="mb-4 text-sm text-muted-foreground">
-								A importação cria um rascunho para revisão de produtos, conversão e
-								tributos antes de confirmar a NF.
+								A importação cria um rascunho para revisão de produtos,
+								conversão e tributos antes de confirmar a NF.
 							</p>
-							<FormImportarXmlNotaFiscalCompra />
+							<BlocoErrorBoundary
+								titulo="Erro na importação de XML"
+								variante="painel"
+							>
+								<FormImportarXmlNotaFiscalCompra />
+							</BlocoErrorBoundary>
 						</TabsContent>
 					</Tabs>
 				</div>

@@ -1000,476 +1000,482 @@ export function MesaContaPage() {
 			<div className="flex min-h-0 flex-1 overflow-hidden bg-muted/35">
 				<SideNav status={status} />
 				<div className="min-h-0 min-w-0 flex-1 overflow-hidden p-2.5">
-				<div className="grid h-full min-h-0 min-w-0 grid-cols-[minmax(0,1fr)_370px] gap-2.5 overflow-hidden">
-					<div className="pdv-surface flex min-h-0 flex-col gap-3 overflow-hidden p-3">
-						<AvisoSecundario status={status} />
-						<AlertasOperacionaisPdv status={status} />
-						<div className="flex items-center justify-between gap-2">
-							<div>
-								<h2 className="text-sm font-semibold">
-									{grupoAtivo ? grupoAtivo.nome : "Catálogo de produtos"}
-								</h2>
-								<p className="text-xs text-muted-foreground">
-									Selecione um grupo ou pesquise pelo nome e código
-								</p>
-							</div>
-							{grupoAtivo && (
-								<Button
-									variant="secondary"
-									size="sm"
-									className="gap-1.5"
-									onClick={() => setGrupoAtivo(null)}
-								>
-									<ChevronLeft className="size-4" />
-									Trocar grupo
-								</Button>
-							)}
-						</div>
-
-						{!pronto ? (
-							<p className="text-sm text-muted-foreground">Carregando...</p>
-						) : modoCatalogo === "busca" ? (
-							<div className="flex min-h-0 flex-1 flex-col gap-2">
-								<h2 className="shrink-0 text-sm font-semibold">
-									Resultados para “{buscaProdutos.termo}”
-								</h2>
-								<div className="grid flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-2 overflow-auto">
-									{buscaProdutos.produtos.map((produto) => (
-										<ProdutoCard
-											key={produto.id}
-											produto={produto}
-											disabled={loading}
-											onClick={() => enfileirarProduto(produto)}
-										/>
-									))}
-									{buscaProdutos.buscando ? (
-										<p className="col-span-full text-sm text-muted-foreground">
-											Buscando produtos…
-										</p>
-									) : buscaProdutos.termo.length < 2 ? (
-										<p className="col-span-full text-sm text-muted-foreground">
-											Digite ao menos dois caracteres para pesquisar.
-										</p>
-									) : buscaProdutos.produtos.length === 0 ? (
-										<p className="col-span-full text-sm text-muted-foreground">
-											Nenhum produto encontrado.
-										</p>
-									) : null}
-								</div>
-							</div>
-						) : modoCatalogo === "grupos" ? (
-							<div className="flex flex-1 flex-col gap-3 overflow-auto">
+					<div className="grid h-full min-h-0 min-w-0 grid-cols-[minmax(0,1fr)_370px] gap-2.5 overflow-hidden">
+						<div className="pdv-surface flex min-h-0 flex-col gap-3 overflow-hidden p-3">
+							<AvisoSecundario status={status} />
+							<AlertasOperacionaisPdv status={status} />
+							<div className="flex items-center justify-between gap-2">
 								<div>
-									<h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-										Categorias
+									<h2 className="text-sm font-semibold">
+										{grupoAtivo ? grupoAtivo.nome : "Catálogo de produtos"}
 									</h2>
-									<div className="grid auto-rows-min grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-3">
-										{grupos.map((grupo) => (
-											<GrupoGourmetCard
-												key={grupo.id}
-												grupo={grupo}
-												disabled={carregandoProdutos}
-												onClick={() => void abrirGrupo(grupo)}
+									<p className="text-xs text-muted-foreground">
+										Selecione um grupo ou pesquise pelo nome e código
+									</p>
+								</div>
+								{grupoAtivo && (
+									<Button
+										variant="secondary"
+										size="sm"
+										className="gap-1.5"
+										onClick={() => setGrupoAtivo(null)}
+									>
+										<ChevronLeft className="size-4" />
+										Trocar grupo
+									</Button>
+								)}
+							</div>
+
+							{!pronto ? (
+								<p className="text-sm text-muted-foreground">Carregando...</p>
+							) : modoCatalogo === "busca" ? (
+								<div className="flex min-h-0 flex-1 flex-col gap-2">
+									<h2 className="shrink-0 text-sm font-semibold">
+										Resultados para “{buscaProdutos.termo}”
+									</h2>
+									<div className="grid flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-2 overflow-auto">
+										{buscaProdutos.produtos.map((produto) => (
+											<ProdutoCard
+												key={produto.id}
+												produto={produto}
+												disabled={loading}
+												onClick={() => enfileirarProduto(produto)}
 											/>
 										))}
-										{grupos.length === 0 && (
+										{buscaProdutos.buscando ? (
 											<p className="col-span-full text-sm text-muted-foreground">
-												Nenhum grupo gourmet sincronizado ainda. Use a bipagem
-												para enfileirar produtos.
+												Buscando produtos…
 											</p>
-										)}
-									</div>
-								</div>
-							</div>
-						) : (
-							<div className="grid flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-2 overflow-auto">
-								{carregandoProdutos ? (
-									<p className="col-span-full text-sm text-muted-foreground">
-										Carregando produtos…
-									</p>
-								) : (
-									produtos.map((p) => (
-										<ProdutoCard
-											key={p.id}
-											produto={p}
-											disabled={loading}
-											onClick={() => enfileirarProduto(p)}
-										/>
-									))
-								)}
-								{!carregandoProdutos && produtos.length === 0 && (
-									<p className="col-span-full text-sm text-muted-foreground">
-										Sem produtos neste grupo.
-									</p>
-								)}
-							</div>
-						)}
-					</div>
-
-					<div className="pdv-surface flex min-h-0 flex-col overflow-hidden p-3">
-						<div className="mb-2 flex shrink-0 items-center justify-between border-b pb-2">
-							<div className="flex items-center gap-2">
-								<div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-									<ShoppingCart className="size-4" />
-								</div>
-								<div>
-									<h2 className="text-sm font-semibold">Itens da conta</h2>
-									<p className="text-[11px] text-muted-foreground">
-										{tituloConta} · {identificacao}
-									</p>
-								</div>
-							</div>
-							<span className="rounded-full bg-muted px-2 py-1 text-[10px] font-semibold">
-								{fila.length + itens.length} itens
-							</span>
-						</div>
-
-						<div className="min-h-0 flex-1 space-y-1 overflow-auto">
-							{fila.map((item) => (
-								<div
-									key={item.chave}
-									className="rounded-md border bg-background px-2 py-2 text-sm"
-								>
-									<div className="flex items-start justify-between gap-2">
-										<div className="line-clamp-2 min-w-0 font-medium">
-											{item.descricao}
-										</div>
-										<Button
-											size="sm"
-											variant={item.observacao ? "secondary" : "outline"}
-											disabled={loading}
-											onClick={() => setObsFilaChave(item.chave)}
-										>
-											Obs
-										</Button>
-									</div>
-									{item.observacao ? (
-										<p className="mt-1 text-xs text-muted-foreground">
-											{item.observacao}
-										</p>
-									) : null}
-									<div className="mt-1 flex items-center justify-between gap-2">
-										<div className="flex items-center gap-1">
-											<Button
-												size="sm"
-												variant="outline"
-												disabled={loading}
-												onClick={() => alterarQtdFila(item.chave, -1)}
-											>
-												-
-											</Button>
-											<span className="min-w-10 text-center tabular-nums">
-												{formatarQuantidade(item.quantidade)}
-												{item.pesado ? " kg" : ""}
-											</span>
-											<Button
-												size="sm"
-												variant="outline"
-												disabled={loading || item.pesado}
-												onClick={() => alterarQtdFila(item.chave, 1)}
-											>
-												+
-											</Button>
-										</div>
-										<span className="font-semibold text-primary">
-											{money(item.precototal)}
-										</span>
-									</div>
-								</div>
-							))}
-							{fila.length === 0 && (
-								<p className="text-sm text-muted-foreground">
-									Selecione produtos à esquerda para montar a fila. Depois
-									clique em Adicionar itens.
-								</p>
-							)}
-
-							{itens.length > 0 && (
-								<div className="mt-3 border-t pt-3">
-									<div className="mb-2 flex items-center justify-between gap-2">
-										<h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-											Já na conta
-										</h3>
-										{itensSel.length > 0 ? (
-											<button
-												type="button"
-												className="text-xs text-primary underline"
-												onClick={() => setItensSel([])}
-											>
-												Limpar seleção
-											</button>
-										) : itensAbertos.length > 0 ? (
-											<button
-												type="button"
-												className="text-xs text-muted-foreground underline"
-												onClick={() =>
-													setItensSel(itensAbertos.map((i) => i.id))
-												}
-											>
-												Selecionar todos
-											</button>
+										) : buscaProdutos.termo.length < 2 ? (
+											<p className="col-span-full text-sm text-muted-foreground">
+												Digite ao menos dois caracteres para pesquisar.
+											</p>
+										) : buscaProdutos.produtos.length === 0 ? (
+											<p className="col-span-full text-sm text-muted-foreground">
+												Nenhum produto encontrado.
+											</p>
 										) : null}
 									</div>
-									{itens.map((item) => {
-										const pago = itemContaEstaPago(item);
-										const marcado = !pago && itensSel.includes(item.id);
-										return (
-											<div
-												key={item.id}
-												className={`mb-1 flex items-center justify-between gap-2 rounded-md px-2 py-2 text-sm ${
-													pago
-														? classeLinhaItemPago()
-														: classeLinhaItemSelecionavel(marcado)
-												}`}
-											>
-												<label
-													className={`flex min-w-0 flex-1 items-center gap-2 ${
-														pago ? "cursor-default" : "cursor-pointer"
-													}`}
-												>
-													<input
-														type="checkbox"
-														className="size-4 shrink-0 accent-primary"
-														checked={marcado}
-														disabled={pago}
-														onChange={(e) => {
-															if (pago) return;
-															setItensSel((prev) =>
-																e.target.checked
-																	? [...prev, item.id]
-																	: prev.filter((id) => id !== item.id),
-															);
-														}}
-													/>
-													<span className="min-w-0">
-														<span className="block truncate font-medium">
-															{formatarQuantidade(item.quantidade)}x{" "}
-															{item.descricao}
-															{pago ? " · pago" : ""}
-														</span>
-														{item.observacao ? (
-															<span className="block truncate text-xs text-muted-foreground no-underline opacity-100">
-																{item.observacao}
-															</span>
-														) : null}
-													</span>
-												</label>
-												<span className="flex shrink-0 items-center gap-1">
-													<span className="font-semibold tabular-nums">
-														{money(item.precototal)}
-													</span>
-													{!pago ? (
-														<Button
-															type="button"
-															size="icon"
-															variant="ghost"
-															className="size-8 text-destructive"
-															disabled={loading}
-															aria-label={`Cancelar ${item.descricao}`}
-															onClick={() => void solicitarCancelarItem(item)}
-														>
-															<X className="size-4" />
-														</Button>
-													) : null}
-												</span>
-											</div>
-										);
-									})}
-									{itensSel.length > 0 && (
-										<div className="mt-2 flex items-center justify-between rounded-md bg-primary/10 px-2 py-1.5 text-sm font-semibold">
-											<span>
-												{itensSel.length}{" "}
-												{itensSel.length === 1 ? "item" : "itens"}
-											</span>
-											<span className="text-primary">
-												{money(totalSelecionado)}
-											</span>
+								</div>
+							) : modoCatalogo === "grupos" ? (
+								<div className="flex flex-1 flex-col gap-3 overflow-auto">
+									<div>
+										<h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+											Categorias
+										</h2>
+										<div className="grid auto-rows-min grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-3">
+											{grupos.map((grupo) => (
+												<GrupoGourmetCard
+													key={grupo.id}
+													grupo={grupo}
+													disabled={carregandoProdutos}
+													onClick={() => void abrirGrupo(grupo)}
+												/>
+											))}
+											{grupos.length === 0 && (
+												<p className="col-span-full text-sm text-muted-foreground">
+													Nenhum grupo gourmet sincronizado ainda. Use a bipagem
+													para enfileirar produtos.
+												</p>
+											)}
 										</div>
+									</div>
+								</div>
+							) : (
+								<div className="grid flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-2 overflow-auto">
+									{carregandoProdutos ? (
+										<p className="col-span-full text-sm text-muted-foreground">
+											Carregando produtos…
+										</p>
+									) : (
+										produtos.map((p) => (
+											<ProdutoCard
+												key={p.id}
+												produto={p}
+												disabled={loading}
+												onClick={() => enfileirarProduto(p)}
+											/>
+										))
+									)}
+									{!carregandoProdutos && produtos.length === 0 && (
+										<p className="col-span-full text-sm text-muted-foreground">
+											Sem produtos neste grupo.
+										</p>
 									)}
 								</div>
 							)}
 						</div>
 
-						<div className="mt-2 shrink-0 space-y-1 border-t pt-2 text-sm">
-							{fila.length > 0 && (
-								<div className="flex justify-between font-medium">
-									<span>Subtotal fila</span>
-									<span className="text-primary">{money(totalFila)}</span>
+						<div className="pdv-surface flex min-h-0 flex-col overflow-hidden p-3">
+							<div className="mb-2 flex shrink-0 items-center justify-between border-b pb-2">
+								<div className="flex items-center gap-2">
+									<div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+										<ShoppingCart className="size-4" />
+									</div>
+									<div>
+										<h2 className="text-sm font-semibold">Itens da conta</h2>
+										<p className="text-[11px] text-muted-foreground">
+											{tituloConta} · {identificacao}
+										</p>
+									</div>
 								</div>
-							)}
-							{conta && (
-								<>
-									{modoEntrega ? (
-										<div className="space-y-0.5 text-xs text-muted-foreground">
-											{conta.telefone ? <div>Tel: {conta.telefone}</div> : null}
-											{conta.endereco ? (
-												<div className="line-clamp-2">
-													{conta.endereco}
-													{conta.bairro ? ` — ${conta.bairro}` : ""}
-												</div>
-											) : null}
-											<div>
-												Status: {conta.status_entrega ?? "recebido"}
-												{conta.orderidintegracao
-													? ` · ${conta.orderidintegracao}`
-													: ""}
+								<span className="rounded-full bg-muted px-2 py-1 text-[10px] font-semibold">
+									{fila.length + itens.length} itens
+								</span>
+							</div>
+
+							<div className="min-h-0 flex-1 space-y-1 overflow-auto">
+								{fila.map((item) => (
+									<div
+										key={item.chave}
+										className="rounded-md border bg-background px-2 py-2 text-sm"
+									>
+										<div className="flex items-start justify-between gap-2">
+											<div className="line-clamp-2 min-w-0 font-medium">
+												{item.descricao}
 											</div>
-											<div className="flex items-center justify-between gap-2 pt-1">
-												<span>Taxa entrega</span>
-												<Input
-													className="h-8 w-20"
-													value={taxaEntregaEdit}
+											<Button
+												size="sm"
+												variant={item.observacao ? "secondary" : "outline"}
+												disabled={loading}
+												onClick={() => setObsFilaChave(item.chave)}
+											>
+												Obs
+											</Button>
+										</div>
+										{item.observacao ? (
+											<p className="mt-1 text-xs text-muted-foreground">
+												{item.observacao}
+											</p>
+										) : null}
+										<div className="mt-1 flex items-center justify-between gap-2">
+											<div className="flex items-center gap-1">
+												<Button
+													size="sm"
+													variant="outline"
 													disabled={loading}
-													onChange={(e) => setTaxaEntregaEdit(e.target.value)}
-													onBlur={() => {
-														const n = Number(taxaEntregaEdit.replace(",", "."));
-														if (!Number.isFinite(n) || !conta) return;
-														void pdvInvoke<ContaMesa>(
-															"aplicarTaxaEntrega",
-															conta.id,
-															n,
-														).then((c) => {
-															setConta(c);
-															setTaxaEntregaEdit(String(c.valorentrega ?? 0));
-														});
-													}}
-												/>
+													onClick={() => alterarQtdFila(item.chave, -1)}
+												>
+													-
+												</Button>
+												<span className="min-w-10 text-center tabular-nums">
+													{formatarQuantidade(item.quantidade)}
+													{item.pesado ? " kg" : ""}
+												</span>
+												<Button
+													size="sm"
+													variant="outline"
+													disabled={loading || item.pesado}
+													onClick={() => alterarQtdFila(item.chave, 1)}
+												>
+													+
+												</Button>
 											</div>
+											<span className="font-semibold text-primary">
+												{money(item.precototal)}
+											</span>
 										</div>
-									) : (
-										<div className="flex items-center justify-between gap-3 text-xs">
-											<div className="flex items-center gap-1.5">
-												<span>Pessoas</span>
-												<Input
-													type="number"
-													min={1}
-													className="h-8 w-14"
-													value={conta.numeropessoas ?? 1}
-													disabled={!conta || loading}
-													onChange={(e) =>
-														void aplicarAjustes({
-															numeropessoas: Number(e.target.value),
-														})
+									</div>
+								))}
+								{fila.length === 0 && (
+									<p className="text-sm text-muted-foreground">
+										Selecione produtos à esquerda para montar a fila. Depois
+										clique em Adicionar itens.
+									</p>
+								)}
+
+								{itens.length > 0 && (
+									<div className="mt-3 border-t pt-3">
+										<div className="mb-2 flex items-center justify-between gap-2">
+											<h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+												Já na conta
+											</h3>
+											{itensSel.length > 0 ? (
+												<button
+													type="button"
+													className="text-xs text-primary underline"
+													onClick={() => setItensSel([])}
+												>
+													Limpar seleção
+												</button>
+											) : itensAbertos.length > 0 ? (
+												<button
+													type="button"
+													className="text-xs text-muted-foreground underline"
+													onClick={() =>
+														setItensSel(itensAbertos.map((i) => i.id))
 													}
-												/>
+												>
+													Selecionar todos
+												</button>
+											) : null}
+										</div>
+										{itens.map((item) => {
+											const pago = itemContaEstaPago(item);
+											const marcado = !pago && itensSel.includes(item.id);
+											return (
+												<div
+													key={item.id}
+													className={`mb-1 flex items-center justify-between gap-2 rounded-md px-2 py-2 text-sm ${
+														pago
+															? classeLinhaItemPago()
+															: classeLinhaItemSelecionavel(marcado)
+													}`}
+												>
+													<label
+														className={`flex min-w-0 flex-1 items-center gap-2 ${
+															pago ? "cursor-default" : "cursor-pointer"
+														}`}
+													>
+														<input
+															type="checkbox"
+															className="size-4 shrink-0 accent-primary"
+															checked={marcado}
+															disabled={pago}
+															onChange={(e) => {
+																if (pago) return;
+																setItensSel((prev) =>
+																	e.target.checked
+																		? [...prev, item.id]
+																		: prev.filter((id) => id !== item.id),
+																);
+															}}
+														/>
+														<span className="min-w-0">
+															<span className="block truncate font-medium">
+																{formatarQuantidade(item.quantidade)}x{" "}
+																{item.descricao}
+																{pago ? " · pago" : ""}
+															</span>
+															{item.observacao ? (
+																<span className="block truncate text-xs text-muted-foreground no-underline opacity-100">
+																	{item.observacao}
+																</span>
+															) : null}
+														</span>
+													</label>
+													<span className="flex shrink-0 items-center gap-1">
+														<span className="font-semibold tabular-nums">
+															{money(item.precototal)}
+														</span>
+														{!pago ? (
+															<Button
+																type="button"
+																size="icon"
+																variant="ghost"
+																className="size-8 text-destructive"
+																disabled={loading}
+																aria-label={`Cancelar ${item.descricao}`}
+																onClick={() => void solicitarCancelarItem(item)}
+															>
+																<X className="size-4" />
+															</Button>
+														) : null}
+													</span>
+												</div>
+											);
+										})}
+										{itensSel.length > 0 && (
+											<div className="mt-2 flex items-center justify-between rounded-md bg-primary/10 px-2 py-1.5 text-sm font-semibold">
+												<span>
+													{itensSel.length}{" "}
+													{itensSel.length === 1 ? "item" : "itens"}
+												</span>
+												<span className="text-primary">
+													{money(totalSelecionado)}
+												</span>
 											</div>
-											<label className="flex items-center gap-1.5">
-												<span>Taxa</span>
-												<input
-													type="checkbox"
-													className="size-4 accent-primary"
-													checked={conta.taxa_ativa === 1}
-													disabled={!conta || loading}
-													onChange={(e) =>
-														void aplicarAjustes({ taxaAtiva: e.target.checked })
-													}
-												/>
-											</label>
-										</div>
-									)}
-									{(conta.subtotal ?? 0) > 0 && (
-										<div className="flex justify-between text-xs text-muted-foreground">
-											<span>Subtotal</span>
-											<span>{money(conta.subtotal ?? 0)}</span>
-										</div>
-									)}
-									{(conta.valordesconto ?? 0) > 0 && (
-										<div className="flex justify-between text-xs text-muted-foreground">
-											<span>Desconto</span>
-											<span>-{money(conta.valordesconto ?? 0)}</span>
-										</div>
-									)}
-									{(conta.valoracrescimo ?? 0) > 0 && (
-										<div className="flex justify-between text-xs text-muted-foreground">
-											<span>Acréscimo</span>
-											<span>+{money(conta.valoracrescimo ?? 0)}</span>
-										</div>
-									)}
-									{(conta.valortaxaservico ?? 0) > 0 && (
-										<div className="flex justify-between text-xs text-muted-foreground">
-											<span>Taxa serviço</span>
-											<span>{money(conta.valortaxaservico ?? 0)}</span>
-										</div>
-									)}
-									{(conta.valorcouvert ?? 0) > 0 && (
-										<div className="flex justify-between text-xs text-muted-foreground">
-											<span>Couvert</span>
-											<span>{money(conta.valorcouvert ?? 0)}</span>
-										</div>
-									)}
-									{(conta.valorentrega ?? 0) > 0 && (
-										<div className="flex justify-between text-xs text-muted-foreground">
-											<span>Entrega</span>
-											<span>{money(conta.valorentrega ?? 0)}</span>
-										</div>
-									)}
-									{(conta.valorpago ?? 0) > 0 && (
-										<div className="flex justify-between text-xs text-muted-foreground">
-											<span>Já pago</span>
-											<span>{money(conta.valorpago ?? 0)}</span>
-										</div>
-									)}
-								</>
-							)}
-							<div className="flex justify-between text-lg font-bold">
-								<span>A pagar</span>
-								<span className="text-primary">{money(total)}</span>
+										)}
+									</div>
+								)}
+							</div>
+
+							<div className="mt-2 shrink-0 space-y-1 border-t pt-2 text-sm">
+								{fila.length > 0 && (
+									<div className="flex justify-between font-medium">
+										<span>Subtotal fila</span>
+										<span className="text-primary">{money(totalFila)}</span>
+									</div>
+								)}
+								{conta && (
+									<>
+										{modoEntrega ? (
+											<div className="space-y-0.5 text-xs text-muted-foreground">
+												{conta.telefone ? (
+													<div>Tel: {conta.telefone}</div>
+												) : null}
+												{conta.endereco ? (
+													<div className="line-clamp-2">
+														{conta.endereco}
+														{conta.bairro ? ` — ${conta.bairro}` : ""}
+													</div>
+												) : null}
+												<div>
+													Status: {conta.status_entrega ?? "recebido"}
+													{conta.orderidintegracao
+														? ` · ${conta.orderidintegracao}`
+														: ""}
+												</div>
+												<div className="flex items-center justify-between gap-2 pt-1">
+													<span>Taxa entrega</span>
+													<Input
+														className="h-8 w-20"
+														value={taxaEntregaEdit}
+														disabled={loading}
+														onChange={(e) => setTaxaEntregaEdit(e.target.value)}
+														onBlur={() => {
+															const n = Number(
+																taxaEntregaEdit.replace(",", "."),
+															);
+															if (!Number.isFinite(n) || !conta) return;
+															void pdvInvoke<ContaMesa>(
+																"aplicarTaxaEntrega",
+																conta.id,
+																n,
+															).then((c) => {
+																setConta(c);
+																setTaxaEntregaEdit(String(c.valorentrega ?? 0));
+															});
+														}}
+													/>
+												</div>
+											</div>
+										) : (
+											<div className="flex items-center justify-between gap-3 text-xs">
+												<div className="flex items-center gap-1.5">
+													<span>Pessoas</span>
+													<Input
+														type="number"
+														min={1}
+														className="h-8 w-14"
+														value={conta.numeropessoas ?? 1}
+														disabled={!conta || loading}
+														onChange={(e) =>
+															void aplicarAjustes({
+																numeropessoas: Number(e.target.value),
+															})
+														}
+													/>
+												</div>
+												<label className="flex items-center gap-1.5">
+													<span>Taxa</span>
+													<input
+														type="checkbox"
+														className="size-4 accent-primary"
+														checked={conta.taxa_ativa === 1}
+														disabled={!conta || loading}
+														onChange={(e) =>
+															void aplicarAjustes({
+																taxaAtiva: e.target.checked,
+															})
+														}
+													/>
+												</label>
+											</div>
+										)}
+										{(conta.subtotal ?? 0) > 0 && (
+											<div className="flex justify-between text-xs text-muted-foreground">
+												<span>Subtotal</span>
+												<span>{money(conta.subtotal ?? 0)}</span>
+											</div>
+										)}
+										{(conta.valordesconto ?? 0) > 0 && (
+											<div className="flex justify-between text-xs text-muted-foreground">
+												<span>Desconto</span>
+												<span>-{money(conta.valordesconto ?? 0)}</span>
+											</div>
+										)}
+										{(conta.valoracrescimo ?? 0) > 0 && (
+											<div className="flex justify-between text-xs text-muted-foreground">
+												<span>Acréscimo</span>
+												<span>+{money(conta.valoracrescimo ?? 0)}</span>
+											</div>
+										)}
+										{(conta.valortaxaservico ?? 0) > 0 && (
+											<div className="flex justify-between text-xs text-muted-foreground">
+												<span>Taxa serviço</span>
+												<span>{money(conta.valortaxaservico ?? 0)}</span>
+											</div>
+										)}
+										{(conta.valorcouvert ?? 0) > 0 && (
+											<div className="flex justify-between text-xs text-muted-foreground">
+												<span>Couvert</span>
+												<span>{money(conta.valorcouvert ?? 0)}</span>
+											</div>
+										)}
+										{(conta.valorentrega ?? 0) > 0 && (
+											<div className="flex justify-between text-xs text-muted-foreground">
+												<span>Entrega</span>
+												<span>{money(conta.valorentrega ?? 0)}</span>
+											</div>
+										)}
+										{(conta.valorpago ?? 0) > 0 && (
+											<div className="flex justify-between text-xs text-muted-foreground">
+												<span>Já pago</span>
+												<span>{money(conta.valorpago ?? 0)}</span>
+											</div>
+										)}
+									</>
+								)}
+								<div className="flex justify-between text-lg font-bold">
+									<span>A pagar</span>
+									<span className="text-primary">{money(total)}</span>
+								</div>
+							</div>
+							{msg ? (
+								<p
+									className={
+										rejeicaoNfce
+											? "mt-1 shrink-0 line-clamp-2 text-sm text-destructive"
+											: "mt-1 shrink-0 line-clamp-2 text-sm text-muted-foreground"
+									}
+								>
+									{msg}
+								</p>
+							) : null}
+							<div className="mt-2 grid shrink-0 grid-cols-2 gap-2">
+								<Button
+									size="lg"
+									variant="default"
+									className="w-full"
+									disabled={fila.length === 0 || loading}
+									onClick={() => solicitarEnviarFila()}
+								>
+									{loading ? "Adicionando..." : "Adicionar itens"}
+								</Button>
+								<Button
+									size="lg"
+									variant="secondary"
+									className="w-full"
+									disabled={!itensAbertos.length || fila.length > 0 || loading}
+									onClick={() => {
+										setPagandoFatia(false);
+										setFatiaValor(null);
+										setPagando(true);
+									}}
+								>
+									Receber
+								</Button>
+								<Button
+									size="lg"
+									variant="outline"
+									className="w-full"
+									onClick={() => tentarSair()}
+								>
+									Voltar
+								</Button>
+								<Button
+									size="lg"
+									variant="outline"
+									className="w-full"
+									disabled={loading || pagando}
+									onClick={() => setMaisAcoesAberto(true)}
+								>
+									Mais ações
+								</Button>
 							</div>
 						</div>
-						{msg ? (
-							<p
-								className={
-									rejeicaoNfce
-										? "mt-1 shrink-0 line-clamp-2 text-sm text-destructive"
-										: "mt-1 shrink-0 line-clamp-2 text-sm text-muted-foreground"
-								}
-							>
-								{msg}
-							</p>
-						) : null}
-						<div className="mt-2 grid shrink-0 grid-cols-2 gap-2">
-							<Button
-								size="lg"
-								variant="default"
-								className="w-full"
-								disabled={fila.length === 0 || loading}
-								onClick={() => solicitarEnviarFila()}
-							>
-								{loading ? "Adicionando..." : "Adicionar itens"}
-							</Button>
-							<Button
-								size="lg"
-								variant="secondary"
-								className="w-full"
-								disabled={!itensAbertos.length || fila.length > 0 || loading}
-								onClick={() => {
-									setPagandoFatia(false);
-									setFatiaValor(null);
-									setPagando(true);
-								}}
-							>
-								Receber
-							</Button>
-							<Button
-								size="lg"
-								variant="outline"
-								className="w-full"
-								onClick={() => tentarSair()}
-							>
-								Voltar
-							</Button>
-							<Button
-								size="lg"
-								variant="outline"
-								className="w-full"
-								disabled={loading || pagando}
-								onClick={() => setMaisAcoesAberto(true)}
-							>
-								Mais ações
-							</Button>
-						</div>
 					</div>
-				</div>
 				</div>
 			</div>
 

@@ -17,10 +17,7 @@ export function SecaoMaisPedidos({
 
 	return (
 		<section className="mt-5">
-			<h2
-				className="text-lg font-bold"
-				style={{ color: "#0a0a0a" }}
-			>
+			<h2 className="text-lg font-bold" style={{ color: "#0a0a0a" }}>
 				Os mais pedidos
 			</h2>
 			<ul className="-mx-4 mt-3 flex gap-3 overflow-x-auto px-4 pb-2">

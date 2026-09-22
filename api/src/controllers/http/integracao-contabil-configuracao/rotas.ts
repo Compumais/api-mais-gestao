@@ -7,7 +7,9 @@ import * as schema from "./doc-schema/schema.js";
 import { excluirIntegracaoContabilConfiguracao } from "./excluir.js";
 import { listarIntegracaoContabilConfiguracaos } from "./listar.js";
 
-export async function integracoesContabilConfiguracaoRotas(app: FastifyInstance) {
+export async function integracoesContabilConfiguracaoRotas(
+	app: FastifyInstance,
+) {
 	app.addHook("onRequest", verifyJwt);
 
 	app.post("/integracoes-contabil-configuracao", {

@@ -42,7 +42,8 @@ const respostaErroPadrao = {
 export const criarSaldoEstoqueSchema: FastifySchema = {
 	tags: ["saldos-estoque"],
 	summary: "Criar saldo de estoque",
-	description: "Cria um novo registro de saldo de estoque na empresa do usuário autenticado",
+	description:
+		"Cria um novo registro de saldo de estoque na empresa do usuário autenticado",
 	security: [{ bearerAuth: [] }],
 	body: {
 		type: "object",

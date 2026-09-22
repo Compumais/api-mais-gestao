@@ -183,7 +183,8 @@ export function EntidadeForm({
 		}
 
 		if (indiedest === 2) {
-			const ieAtual = getValues("inscricaoestadual")?.trim().toUpperCase() ?? "";
+			const ieAtual =
+				getValues("inscricaoestadual")?.trim().toUpperCase() ?? "";
 			if (!ieAtual || ieAtual === "ISENTA") {
 				setValue("inscricaoestadual", "ISENTO", { shouldValidate: true });
 			}
@@ -449,15 +450,15 @@ export function EntidadeForm({
 				}
 				return await entidadesService.atualizar(entidadeId, dados);
 			},
-		onSuccess: () => {
-			invalidarListagens();
-			if (entidadeId) {
-				queryClient.invalidateQueries({ queryKey: ["entidade", entidadeId] });
-			}
-			limparRascunho();
-			toast.success(config.mensagens.atualizadoSucesso);
-			router.push(config.rotaListagem);
-		},
+			onSuccess: () => {
+				invalidarListagens();
+				if (entidadeId) {
+					queryClient.invalidateQueries({ queryKey: ["entidade", entidadeId] });
+				}
+				limparRascunho();
+				toast.success(config.mensagens.atualizadoSucesso);
+				router.push(config.rotaListagem);
+			},
 			onError: (error: Error) => {
 				toast.error(error.message || config.mensagens.erroAtualizar);
 			},
@@ -673,9 +674,7 @@ export function EntidadeForm({
 						</Field>
 
 						<Field data-invalid={!!errors.indiedest}>
-							<FieldLabel htmlFor="indiedest">
-								Indicador IE (NF-e)
-							</FieldLabel>
+							<FieldLabel htmlFor="indiedest">Indicador IE (NF-e)</FieldLabel>
 							<Controller
 								control={control}
 								name="indiedest"
@@ -711,9 +710,7 @@ export function EntidadeForm({
 									</Select>
 								)}
 							/>
-							<FieldError
-								errors={errors.indiedest ? [errors.indiedest] : []}
-							/>
+							<FieldError errors={errors.indiedest ? [errors.indiedest] : []} />
 						</Field>
 
 						<Field data-invalid={!!errors.inscricaoestadual}>
@@ -735,7 +732,9 @@ export function EntidadeForm({
 										}
 										readOnly={ieSomenteLeitura}
 										className={
-											ieSomenteLeitura ? "bg-muted cursor-not-allowed" : undefined
+											ieSomenteLeitura
+												? "bg-muted cursor-not-allowed"
+												: undefined
 										}
 										aria-invalid={!!errors.inscricaoestadual}
 										aria-describedby={

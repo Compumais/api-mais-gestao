@@ -9,10 +9,7 @@ export async function buscarCestPorId(id: string) {
 	return registro;
 }
 
-export async function buscarCestPorCodigo(
-	idempresa: string,
-	codigo: string,
-) {
+export async function buscarCestPorCodigo(idempresa: string, codigo: string) {
 	const codigoNormalizado = codigo.replace(/\D/g, "");
 
 	const [registroEmpresa] = await db
@@ -59,7 +56,11 @@ export async function criarCestsEmLote(dadosCests: NovoCEST[]) {
 
 	const registrosCriados = [];
 
-	for (let indice = 0; indice < dadosCests.length; indice += TAMANHO_LOTE_CEST) {
+	for (
+		let indice = 0;
+		indice < dadosCests.length;
+		indice += TAMANHO_LOTE_CEST
+	) {
 		const lote = dadosCests.slice(indice, indice + TAMANHO_LOTE_CEST);
 		const registros = await db
 			.insert(cest)
@@ -112,9 +113,7 @@ export async function listarCests({
 	page = 1,
 	limit = 10,
 }: ListarCestsParametros) {
-	const where = [
-		or(eq(cest.idempresa, idempresa), isNull(cest.idempresa)),
-	];
+	const where = [or(eq(cest.idempresa, idempresa), isNull(cest.idempresa))];
 
 	if (descricao) {
 		where.push(ilike(cest.descricao, `%${descricao}%`));

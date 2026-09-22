@@ -1,12 +1,4 @@
-import {
-	and,
-	asc,
-	count,
-	desc,
-	eq,
-	ilike,
-	type SQL,
-} from "drizzle-orm";
+import { and, asc, count, desc, eq, ilike, type SQL } from "drizzle-orm";
 import type { NovoTipoProblema } from "@/model/tipo-problema-model";
 import { tipoproblema } from "@/repositories/schema.js";
 import { filtroRegistroAtivo } from "@/util/filtro-registro-ativo.js";

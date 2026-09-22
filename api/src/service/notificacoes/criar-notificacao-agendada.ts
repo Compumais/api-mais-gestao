@@ -33,8 +33,9 @@ export async function criarNotificacaoAgendadaService(
 		destinatarios.add(empresa.idproprietario);
 	}
 
-	const idsFinanceiros =
-		await listarIdsUsuariosFinanceirosPorEmpresa(params.idempresa);
+	const idsFinanceiros = await listarIdsUsuariosFinanceirosPorEmpresa(
+		params.idempresa,
+	);
 	for (const id of idsFinanceiros) {
 		destinatarios.add(id);
 	}

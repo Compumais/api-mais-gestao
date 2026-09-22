@@ -5,8 +5,7 @@ import type { ModeloImpressaoOsFormData } from "@/schemas/modelo-impressao-os.sc
 import { modeloImpressaoOsService } from "@/services/modelo-impressao-os.service";
 
 export const modeloImpressaoOsKeys = {
-	lista: (idempresa: string) =>
-		["modelos-impressao-os", idempresa] as const,
+	lista: (idempresa: string) => ["modelos-impressao-os", idempresa] as const,
 	detalhe: (idempresa: string, id: string) =>
 		["modelo-impressao-os", idempresa, id] as const,
 };
@@ -74,8 +73,7 @@ export function useAtualizarModeloImpressaoOs(idempresa: string) {
 export function useExcluirModeloImpressaoOs(idempresa: string) {
 	const queryClient = useQueryClient();
 	return useMutation({
-		mutationFn: (id: string) =>
-			modeloImpressaoOsService.excluir(idempresa, id),
+		mutationFn: (id: string) => modeloImpressaoOsService.excluir(idempresa, id),
 		onSuccess: () => {
 			void queryClient.invalidateQueries({
 				queryKey: modeloImpressaoOsKeys.lista(idempresa),

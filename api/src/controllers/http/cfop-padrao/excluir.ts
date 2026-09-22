@@ -7,7 +7,10 @@ const excluirCfopPadraoParamsSchema = z.object({
 	id: z.string(),
 });
 
-export async function excluirCfopPadrao(request: FastifyRequest, reply: FastifyReply) {
+export async function excluirCfopPadrao(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());

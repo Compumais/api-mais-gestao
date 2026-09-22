@@ -22,12 +22,15 @@ export async function resolverReferenciaEmissao(
 
 		const dados = resolverReferenciaBodySchema.parse(request.body);
 
-		const resultado = await resolverDocumentoReferenciadoEmissao(dados.idempresa, {
-			tipoDevolucao: dados.tipoDevolucao,
-			idnotafiscalReferenciada: dados.idnotafiscalReferenciada,
-			chaveNfe: dados.chaveNfe,
-			xml: dados.xml,
-		});
+		const resultado = await resolverDocumentoReferenciadoEmissao(
+			dados.idempresa,
+			{
+				tipoDevolucao: dados.tipoDevolucao,
+				idnotafiscalReferenciada: dados.idnotafiscalReferenciada,
+				chaveNfe: dados.chaveNfe,
+				xml: dados.xml,
+			},
+		);
 
 		if (!resultado.success) {
 			return reply.status(resultado.status).send(resultado);

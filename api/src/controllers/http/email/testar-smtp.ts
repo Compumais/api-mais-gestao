@@ -8,10 +8,7 @@ const bodySchema = z.object({
 	destinatario: z.string().email(),
 });
 
-export async function testarSmtp(
-	request: FastifyRequest,
-	reply: FastifyReply,
-) {
+export async function testarSmtp(request: FastifyRequest, reply: FastifyReply) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());

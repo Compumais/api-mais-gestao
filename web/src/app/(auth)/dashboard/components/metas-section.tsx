@@ -130,7 +130,11 @@ export function MetasSection() {
 							/>
 						</label>
 						<div className="flex items-end">
-							<Button type="submit" disabled={criar.isPending} className="w-full">
+							<Button
+								type="submit"
+								disabled={criar.isPending}
+								className="w-full"
+							>
 								Salvar meta
 							</Button>
 						</div>
@@ -148,10 +152,7 @@ export function MetasSection() {
 							dayjs(meta.periodoFim).diff(dayjs(meta.periodoInicio), "day") + 1;
 						const diasPassados = Math.min(
 							diasTotais,
-							Math.max(
-								1,
-								dayjs().diff(dayjs(meta.periodoInicio), "day") + 1,
-							),
+							Math.max(1, dayjs().diff(dayjs(meta.periodoInicio), "day") + 1),
 						);
 						const ritmo = meta.valorRealizado / diasPassados;
 						const projecao = ritmo * diasTotais;
@@ -160,7 +161,8 @@ export function MetasSection() {
 							<Card key={meta.id}>
 								<CardHeader>
 									<CardDescription>
-										{TIPOS.find((t) => t.value === meta.tipo)?.label ?? meta.tipo}
+										{TIPOS.find((t) => t.value === meta.tipo)?.label ??
+											meta.tipo}
 									</CardDescription>
 									<CardTitle className="text-lg">
 										Meta {formatCurrency(Number(meta.valorMeta))}

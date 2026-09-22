@@ -205,16 +205,17 @@ export default function PedidosPage() {
 		},
 	});
 
-	const { mutateAsync: emitirNfcePedido, isPending: emitindoNfce } = useMutation({
-		mutationFn: async (pedido: PedidoDav) => {
-			if (!empresa) throw new Error("Empresa não selecionada");
-			return davService.faturarNfce(pedido.id, {
-				idempresa: empresa.id,
-				gerarFinanceiro: true,
-				gerarEstoque: true,
-			});
-		},
-	});
+	const { mutateAsync: emitirNfcePedido, isPending: emitindoNfce } =
+		useMutation({
+			mutationFn: async (pedido: PedidoDav) => {
+				if (!empresa) throw new Error("Empresa não selecionada");
+				return davService.faturarNfce(pedido.id, {
+					idempresa: empresa.id,
+					gerarFinanceiro: true,
+					gerarEstoque: true,
+				});
+			},
+		});
 
 	const pedidos = data?.data ?? [];
 	const totalPages = data?.paginacao.totalPages ?? 1;
@@ -300,8 +301,7 @@ export default function PedidosPage() {
 				cell: ({ row }) => {
 					const pedido = row.original;
 					const podeCancelar =
-						!pedidoJaFaturado(pedido) &&
-						pedido.status !== DAV_STATUS.CANCELADO;
+						!pedidoJaFaturado(pedido) && pedido.status !== DAV_STATUS.CANCELADO;
 					return (
 						<div className="flex justify-end gap-2">
 							{pedido.idnfce && (
@@ -435,9 +435,7 @@ export default function PedidosPage() {
 			setRowSelection({});
 			if (ok > 0) {
 				toast.success(
-					ok === 1
-						? "NFC-e autorizada"
-						: `${ok} NFC-e autorizadas`,
+					ok === 1 ? "NFC-e autorizada" : `${ok} NFC-e autorizadas`,
 				);
 			}
 			if (falhas === 0 && ok === 0) {

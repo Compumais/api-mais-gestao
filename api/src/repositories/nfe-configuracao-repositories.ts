@@ -15,10 +15,7 @@ export async function buscarNfeConfiguracaoPorEmpresa(idempresa: string) {
 }
 
 export async function criarNfeConfiguracao(dados: NovaNfeConfiguracao) {
-	const [registro] = await db
-		.insert(nfeconfiguracao)
-		.values(dados)
-		.returning();
+	const [registro] = await db.insert(nfeconfiguracao).values(dados).returning();
 
 	return registro;
 }

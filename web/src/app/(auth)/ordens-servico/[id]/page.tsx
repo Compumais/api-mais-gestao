@@ -20,6 +20,7 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { BlocoErrorBoundary } from "@/components/bloco-error-boundary";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ORDEM_SERVICO_CAMPOS_EXTRA } from "@/constants/ordem-servico-status";
@@ -119,11 +120,7 @@ export default function OrdemServicoDetalhePage({
 	const atualizar = useAtualizarOrdemServico(id);
 	const excluir = useExcluirOrdemServico();
 
-	const form = useForm<
-		OrdemServicoFormInput,
-		unknown,
-		OrdemServicoFormData
-	>({
+	const form = useForm<OrdemServicoFormInput, unknown, OrdemServicoFormData>({
 		resolver: zodResolver(ordemServicoFormSchema),
 		defaultValues: {
 			orcamento: 0,
@@ -282,9 +279,7 @@ export default function OrdemServicoDetalhePage({
 	}
 
 	function onInvalid(erros: FieldErrors<OrdemServicoFormInput>) {
-		const mensagens = listarErrosFormularioOs(
-			erros as Record<string, unknown>,
-		);
+		const mensagens = listarErrosFormularioOs(erros as Record<string, unknown>);
 		toast.error("Não foi possível salvar a ordem de serviço", {
 			description:
 				mensagens.length > 0
@@ -398,104 +393,111 @@ export default function OrdemServicoDetalhePage({
 					</div>
 				</div>
 
-				<Tabs defaultValue="dados">
-					<TabsList>
-						<TabsTrigger value="dados">Dados</TabsTrigger>
-						<TabsTrigger value="itens">Itens</TabsTrigger>
-						<TabsTrigger value="servico">Serviço</TabsTrigger>
-						<TabsTrigger value="eventos">Eventos</TabsTrigger>
-						<TabsTrigger value="faturamento">Faturamento</TabsTrigger>
-					</TabsList>
+				<BlocoErrorBoundary
+					titulo="Erro no detalhe da ordem de serviço"
+					variante="painel"
+				>
+					<Tabs defaultValue="dados">
+						<TabsList>
+							<TabsTrigger value="dados">Dados</TabsTrigger>
+							<TabsTrigger value="itens">Itens</TabsTrigger>
+							<TabsTrigger value="servico">Serviço</TabsTrigger>
+							<TabsTrigger value="eventos">Eventos</TabsTrigger>
+							<TabsTrigger value="faturamento">Faturamento</TabsTrigger>
+						</TabsList>
 
-					<TabsContent value="dados" className="mt-4">
-						<form onSubmit={form.handleSubmit(onSalvar, onInvalid)}>
-							<OrdemServicoForm
-								form={form}
-								opcoesClientes={opcoesClientes}
-								opcoesObjetos={(objetosLista ?? []).map((item) => ({
-									value: item.id,
-									label: item.descricao ?? item.id,
-								}))}
-								opcoesAreas={(areasLista ?? []).map((item) => ({
-									value: item.id,
-									label: item.descricao ?? item.id,
-								}))}
-								opcoesTiposProblema={(tiposProblemaLista ?? []).map((item) => ({
-									value: item.id,
-									label: item.descricao ?? item.id,
-								}))}
-								opcoesAtendentes={opcoesUsuarios}
+						<TabsContent value="dados" className="mt-4">
+							<form onSubmit={form.handleSubmit(onSalvar, onInvalid)}>
+								<OrdemServicoForm
+									form={form}
+									opcoesClientes={opcoesClientes}
+									opcoesObjetos={(objetosLista ?? []).map((item) => ({
+										value: item.id,
+										label: item.descricao ?? item.id,
+									}))}
+									opcoesAreas={(areasLista ?? []).map((item) => ({
+										value: item.id,
+										label: item.descricao ?? item.id,
+									}))}
+									opcoesTiposProblema={(tiposProblemaLista ?? []).map(
+										(item) => ({
+											value: item.id,
+											label: item.descricao ?? item.id,
+										}),
+									)}
+									opcoesAtendentes={opcoesUsuarios}
+									opcoesTecnicos={opcoesUsuarios}
+									opcoesCondicoes={(condicoesLista ?? []).map((item) => ({
+										value: item.id,
+										label: item.descricao ?? item.id,
+									}))}
+									opcoesTiposDocumento={(tiposDocLista ?? []).map((item) => ({
+										value: item.id,
+										label: item.descricao ?? item.id,
+									}))}
+									camposextras={config?.camposextras ?? os.camposextras}
+									mostrarVeiculoEquipamento={mostrarVeiculo}
+									mostrarArea={mostrarArea}
+									mostrarObjeto={mostrarObjeto}
+									mostrarTipoProblema={mostrarTipoProblema}
+									desabilitado={bloqueada}
+								/>
+							</form>
+						</TabsContent>
+
+						<TabsContent value="itens" className="mt-4">
+							<AbaItensOs
+								ordemServicoId={id}
+								idempresa={empresa.id}
+								tipoItem="P"
+								desabilitado={bloqueada}
+								tecnicoObrigatorio={config?.tecnicoobrigatorio === 1}
 								opcoesTecnicos={opcoesUsuarios}
-								opcoesCondicoes={(condicoesLista ?? []).map((item) => ({
-									value: item.id,
-									label: item.descricao ?? item.id,
-								}))}
+							/>
+						</TabsContent>
+
+						<TabsContent value="servico" className="mt-4">
+							<AbaItensOs
+								ordemServicoId={id}
+								idempresa={empresa.id}
+								tipoItem="S"
+								desabilitado={bloqueada}
+								tecnicoObrigatorio={config?.tecnicoobrigatorio === 1}
+								opcoesTecnicos={opcoesUsuarios}
+							/>
+						</TabsContent>
+
+						<TabsContent value="eventos" className="mt-4">
+							<AbaEventosOs
+								ordemServicoId={id}
+								idempresa={empresa.id}
+								statusAtual={os.status}
+								tipos={tipos}
+								opcoesTecnicosUsuarios={opcoesUsuarios}
+								desabilitado={bloqueada}
+							/>
+						</TabsContent>
+
+						<TabsContent value="faturamento" className="mt-4">
+							<AbaFaturamentoOs
+								ordemServicoId={id}
+								idempresa={empresa.id}
+								os={os}
 								opcoesTiposDocumento={(tiposDocLista ?? []).map((item) => ({
 									value: item.id,
 									label: item.descricao ?? item.id,
 								}))}
-								camposextras={config?.camposextras ?? os.camposextras}
-								mostrarVeiculoEquipamento={mostrarVeiculo}
-								mostrarArea={mostrarArea}
-								mostrarObjeto={mostrarObjeto}
-								mostrarTipoProblema={mostrarTipoProblema}
+								opcoesSeriesNfe={(seriesNfe ?? []).map((serie) => ({
+									value: serie.id,
+									label:
+										serie.descricao?.trim() ||
+										`Série ${serie.serie}${serie.padrao ? " (padrão)" : ""}`,
+								}))}
 								desabilitado={bloqueada}
 							/>
-						</form>
-					</TabsContent>
-
-					<TabsContent value="itens" className="mt-4">
-						<AbaItensOs
-							ordemServicoId={id}
-							idempresa={empresa.id}
-							tipoItem="P"
-							desabilitado={bloqueada}
-							tecnicoObrigatorio={config?.tecnicoobrigatorio === 1}
-							opcoesTecnicos={opcoesUsuarios}
-						/>
-					</TabsContent>
-
-					<TabsContent value="servico" className="mt-4">
-						<AbaItensOs
-							ordemServicoId={id}
-							idempresa={empresa.id}
-							tipoItem="S"
-							desabilitado={bloqueada}
-							tecnicoObrigatorio={config?.tecnicoobrigatorio === 1}
-							opcoesTecnicos={opcoesUsuarios}
-						/>
-					</TabsContent>
-
-					<TabsContent value="eventos" className="mt-4">
-						<AbaEventosOs
-							ordemServicoId={id}
-							idempresa={empresa.id}
-							statusAtual={os.status}
-							tipos={tipos}
-							opcoesTecnicosUsuarios={opcoesUsuarios}
-							desabilitado={bloqueada}
-						/>
-					</TabsContent>
-
-					<TabsContent value="faturamento" className="mt-4">
-						<AbaFaturamentoOs
-							ordemServicoId={id}
-							idempresa={empresa.id}
-							os={os}
-							opcoesTiposDocumento={(tiposDocLista ?? []).map((item) => ({
-								value: item.id,
-								label: item.descricao ?? item.id,
-							}))}
-							opcoesSeriesNfe={(seriesNfe ?? []).map((serie) => ({
-								value: serie.id,
-								label:
-									serie.descricao?.trim() ||
-									`Série ${serie.serie}${serie.padrao ? " (padrão)" : ""}`,
-							}))}
-							desabilitado={bloqueada}
-						/>
-					</TabsContent>
-				</Tabs>
+						</TabsContent>
+					</Tabs>
+				</BlocoErrorBoundary>
 			</div>
 
 			<AlertDialog

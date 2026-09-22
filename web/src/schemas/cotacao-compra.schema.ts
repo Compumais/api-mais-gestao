@@ -26,9 +26,7 @@ export const cotacaoCompraFormSchema = z.object({
 	titulo: z.string().min(1, "Título é obrigatório").max(120),
 	observacao: z.string().optional().nullable(),
 	validade: z.string().optional().nullable(),
-	itens: z
-		.array(cotacaoCompraItemSchema)
-		.min(1, "Inclua ao menos um produto"),
+	itens: z.array(cotacaoCompraItemSchema).min(1, "Inclua ao menos um produto"),
 });
 
 export type CotacaoCompraFormData = z.infer<typeof cotacaoCompraFormSchema>;

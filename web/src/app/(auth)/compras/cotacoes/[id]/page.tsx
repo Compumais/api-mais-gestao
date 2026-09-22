@@ -150,7 +150,9 @@ export default function DetalheCotacaoPage() {
 				)}
 
 				{data.observacao && (
-					<p className="px-4 text-sm text-muted-foreground">{data.observacao}</p>
+					<p className="px-4 text-sm text-muted-foreground">
+						{data.observacao}
+					</p>
 				)}
 
 				<div className="mx-4 rounded-lg border bg-card">

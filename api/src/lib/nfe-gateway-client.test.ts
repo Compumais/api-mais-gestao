@@ -22,7 +22,9 @@ describe("formatarErroConexaoGateway", () => {
 			new Error("This operation was aborted"),
 		);
 
-		expect(mensagem).toBe("Tempo esgotado ao aguardar resposta do gateway NF-e.");
+		expect(mensagem).toBe(
+			"Tempo esgotado ao aguardar resposta do gateway NF-e.",
+		);
 	});
 
 	it("deve preservar mensagens de erro do gateway", () => {
@@ -40,7 +42,9 @@ describe("chamarNfeGateway", () => {
 		const fetchOriginal = globalThis.fetch;
 		globalThis.fetch = vi.fn().mockRejectedValue(new TypeError("fetch failed"));
 
-		const { consultarDistribuicaoDfeGateway } = await import("./nfe-gateway-client.js");
+		const { consultarDistribuicaoDfeGateway } = await import(
+			"./nfe-gateway-client.js"
+		);
 		const resposta = await consultarDistribuicaoDfeGateway({
 			configJson: {},
 			pfxBase64: "abc",
@@ -49,7 +53,9 @@ describe("chamarNfeGateway", () => {
 		});
 
 		expect(resposta.sucesso).toBe(false);
-		expect(resposta.erro).toContain("Não foi possível conectar ao gateway NF-e");
+		expect(resposta.erro).toContain(
+			"Não foi possível conectar ao gateway NF-e",
+		);
 		expect(resposta.erro).toContain("127.0.0.1:8088");
 
 		globalThis.fetch = fetchOriginal;

@@ -6,10 +6,13 @@ import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
 const criarOperacaoFiscalBodySchema = z.looseObject({
 	idempresa: z.string(),
-	nome: z.string().max(40).optional()
+	nome: z.string().max(40).optional(),
 });
 
-export async function criarOperacaoFiscal(request: FastifyRequest, reply: FastifyReply) {
+export async function criarOperacaoFiscal(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());

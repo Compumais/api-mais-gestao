@@ -1,10 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import { gerarSintegraService } from "@/service/sintegra/gerar-sintegra.service.js";
-import {
-	httpErroInterno,
-	httpNaoAutorizado,
-} from "@/util/http-util.js";
+import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
 const gerarSintegraBodySchema = z.object({
 	idempresa: z.string().uuid(),

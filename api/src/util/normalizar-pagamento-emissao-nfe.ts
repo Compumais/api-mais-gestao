@@ -20,7 +20,12 @@ export function normalizarPagamentoEmissaoNfe(
 	const formas =
 		pagamento?.formas?.length && pagamento.formas.length > 0
 			? pagamento.formas
-			: [{ tPag: forcarSemPagamento ? TPAG_SEM_PAGAMENTO : "01", vPag: valorNota }];
+			: [
+					{
+						tPag: forcarSemPagamento ? TPAG_SEM_PAGAMENTO : "01",
+						vPag: valorNota,
+					},
+				];
 
 	return {
 		formas: formas.map((forma) => {

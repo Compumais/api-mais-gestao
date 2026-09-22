@@ -21,7 +21,11 @@ export const inventariofiscal = pgTable(
 		idproduto: text(),
 		codigoproduto: varchar({ length: 20 }).notNull(),
 		quantidade: numeric({ precision: 18, scale: 6, mode: "string" }).notNull(),
-		valorunitario: numeric({ precision: 15, scale: 6, mode: "string" }).notNull(),
+		valorunitario: numeric({
+			precision: 15,
+			scale: 6,
+			mode: "string",
+		}).notNull(),
 		valortotal: numeric({ precision: 15, scale: 2, mode: "string" }).notNull(),
 		codigoposse: varchar({ length: 1 }).default("1").notNull(),
 		cnpjpossuidor: varchar({ length: 18 }),

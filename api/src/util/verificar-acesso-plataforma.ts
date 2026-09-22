@@ -46,8 +46,7 @@ export async function verificarUsuarioPodeAcessarPlataforma(
 		if (proprietario && proprietario.ativo === false) {
 			return {
 				permitido: false,
-				motivo:
-					"Acesso bloqueado: o proprietário da empresa está inativo",
+				motivo: "Acesso bloqueado: o proprietário da empresa está inativo",
 				code: "OWNER_INACTIVE",
 			};
 		}

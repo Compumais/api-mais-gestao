@@ -27,8 +27,7 @@ export function montarHtmlDanfce(dados: DadosDanfce, qrSvg?: string): string {
 		: "";
 	const corpo = partes
 		.map(
-			(parte, idx) =>
-				`${blocoPre(parte)}${idx < partes.length - 1 ? qr : ""}`,
+			(parte, idx) => `${blocoPre(parte)}${idx < partes.length - 1 ? qr : ""}`,
 		)
 		.join("");
 

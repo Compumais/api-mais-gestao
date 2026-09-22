@@ -25,7 +25,9 @@ type CriarFatorConversaoParametros = {
 export async function criarFatorConversaoService({
 	dadosFatorConversao,
 	idusuario,
-}: CriarFatorConversaoParametros): Promise<HttpResponse<FatorConversao | null>> {
+}: CriarFatorConversaoParametros): Promise<
+	HttpResponse<FatorConversao | null>
+> {
 	if (!dadosFatorConversao.idempresa) {
 		return httpProibido();
 	}

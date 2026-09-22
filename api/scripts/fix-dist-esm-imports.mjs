@@ -5,8 +5,7 @@ import { fileURLToPath } from "node:url";
 const rootDir = dirname(fileURLToPath(import.meta.url));
 const distDir = join(rootDir, "../dist");
 
-const importPattern =
-	/(from|export \* from) (['"])(\.\.?\/[^'"]+?)\2/g;
+const importPattern = /(from|export \* from) (['"])(\.\.?\/[^'"]+?)\2/g;
 
 function corrigirImports(conteudo) {
 	return conteudo.replace(importPattern, (match, keyword, quote, path) => {

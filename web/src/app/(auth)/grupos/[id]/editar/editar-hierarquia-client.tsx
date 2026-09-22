@@ -9,9 +9,9 @@ type EditarHierarquiaClientProps = {
 	id: string;
 };
 
-function mapHierarquiaToForm(data: Awaited<
-	ReturnType<typeof hierarquiasService.buscar>
->): Partial<HierarquiaFormData> {
+function mapHierarquiaToForm(
+	data: Awaited<ReturnType<typeof hierarquiasService.buscar>>,
+): Partial<HierarquiaFormData> {
 	return {
 		codigo: data.codigo ?? "",
 		nome: data.nome ?? "",

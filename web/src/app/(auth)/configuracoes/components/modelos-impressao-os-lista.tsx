@@ -133,7 +133,12 @@ export function ModelosImpressaoOsLista({
 								</Button>
 								{!modelo.sistema && (
 									<>
-										<Button asChild variant="outline" size="sm" className="gap-1.5">
+										<Button
+											asChild
+											variant="outline"
+											size="sm"
+											className="gap-1.5"
+										>
 											<Link
 												href={`/configuracoes/modelos-impressao/${modelo.id}`}
 											>

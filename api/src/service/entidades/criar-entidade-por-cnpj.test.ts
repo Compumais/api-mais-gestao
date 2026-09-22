@@ -80,13 +80,13 @@ describe("criarEntidadePorCnpjService", () => {
 	});
 
 	it("deve criar entidade PJ com sucesso", async () => {
-		vi.mocked(consultarCnpjEntidade.obterConsultaCnpjEntidade).mockResolvedValue(
-			{
-				success: true,
-				status: 200,
-				body: consultaMock,
-			},
-		);
+		vi.mocked(
+			consultarCnpjEntidade.obterConsultaCnpjEntidade,
+		).mockResolvedValue({
+			success: true,
+			status: 200,
+			body: consultaMock,
+		});
 		vi.mocked(entidadeRepository.buscarEntidadePorCnpj).mockResolvedValue(
 			undefined,
 		);
@@ -122,19 +122,19 @@ describe("criarEntidadePorCnpjService", () => {
 	});
 
 	it("deve retornar 422 quando situação cadastral não for Ativa", async () => {
-		vi.mocked(consultarCnpjEntidade.obterConsultaCnpjEntidade).mockResolvedValue(
-			{
-				success: true,
-				status: 200,
-				body: {
-					...consultaMock,
-					extras: {
-						...consultaMock.extras,
-						situacaoCadastral: "Baixada",
-					},
+		vi.mocked(
+			consultarCnpjEntidade.obterConsultaCnpjEntidade,
+		).mockResolvedValue({
+			success: true,
+			status: 200,
+			body: {
+				...consultaMock,
+				extras: {
+					...consultaMock.extras,
+					situacaoCadastral: "Baixada",
 				},
 			},
-		);
+		});
 
 		const resultado = await criarEntidadePorCnpjService({
 			cnpj: "10579611000190",
@@ -151,13 +151,13 @@ describe("criarEntidadePorCnpjService", () => {
 	});
 
 	it("deve retornar 409 quando CNPJ já estiver cadastrado", async () => {
-		vi.mocked(consultarCnpjEntidade.obterConsultaCnpjEntidade).mockResolvedValue(
-			{
-				success: true,
-				status: 200,
-				body: consultaMock,
-			},
-		);
+		vi.mocked(
+			consultarCnpjEntidade.obterConsultaCnpjEntidade,
+		).mockResolvedValue({
+			success: true,
+			status: 200,
+			body: consultaMock,
+		});
 		vi.mocked(entidadeRepository.buscarEntidadePorCnpj).mockResolvedValue(
 			entidadeMock,
 		);

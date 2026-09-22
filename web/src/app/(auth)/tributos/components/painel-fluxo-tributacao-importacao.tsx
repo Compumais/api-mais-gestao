@@ -72,9 +72,9 @@ export function PainelFluxoTributacaoImportacao({
 					no cadastro do produto.
 				</p>
 				<p className="mt-2">
-					<strong>CFOP do critério:</strong> deve ser o CFOP do XML do fornecedor
-					(ex.: 5102, 6102), não o CFOP operacional de entrada (1xxx/2xxx) usado
-					no estoque.
+					<strong>CFOP do critério:</strong> deve ser o CFOP do XML do
+					fornecedor (ex.: 5102, 6102), não o CFOP operacional de entrada
+					(1xxx/2xxx) usado no estoque.
 				</p>
 				<p className="mt-2">
 					<strong>Critérios:</strong> CFOP é obrigatório; CST, CSOSN, NCM e UF

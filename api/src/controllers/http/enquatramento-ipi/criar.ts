@@ -8,10 +8,13 @@ const criarEnquatramentoIpiBodySchema = z.object({
 	idempresa: z.string(),
 	codigo: z.string().max(20),
 	descricao: z.string().max(100),
-	grupocst: z.string().max(20)
+	grupocst: z.string().max(20),
 });
 
-export async function criarEnquatramentoIpi(request: FastifyRequest, reply: FastifyReply) {
+export async function criarEnquatramentoIpi(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
@@ -23,7 +26,7 @@ export async function criarEnquatramentoIpi(request: FastifyRequest, reply: Fast
 			id: uuidv4(),
 			...dadosValidados,
 			datacadastro: new Date().toISOString(),
-		dataultimaalteracao: new Date().toISOString(),
+			dataultimaalteracao: new Date().toISOString(),
 		};
 
 		const resultado = await criarEnquatramentoIpiService({

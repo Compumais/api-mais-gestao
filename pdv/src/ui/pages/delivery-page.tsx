@@ -124,7 +124,9 @@ export function DeliveryPage() {
 
 	async function buscarClientes(termo: string) {
 		try {
-			setClientes(await pdvInvoke<ClientePdv[]>("buscarClientesPdv", termo, 20));
+			setClientes(
+				await pdvInvoke<ClientePdv[]>("buscarClientesPdv", termo, 20),
+			);
 		} catch {
 			setClientes([]);
 		}

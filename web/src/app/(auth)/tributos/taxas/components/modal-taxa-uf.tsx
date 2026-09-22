@@ -26,14 +26,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import {
-	type TaxaUfFormData,
-	taxaUfFormSchema,
-} from "@/schemas/taxauf.schema";
-import {
-	type TaxaUf,
-	taxaUfService,
-} from "@/services/taxauf.service";
+import { type TaxaUfFormData, taxaUfFormSchema } from "@/schemas/taxauf.schema";
+import { type TaxaUf, taxaUfService } from "@/services/taxauf.service";
 import { UFS_BRASIL } from "@/util/ufs-brasil";
 
 type ModalTaxaUfProps = {
@@ -103,7 +97,9 @@ function mapFormParaPayload(dados: TaxaUfFormData, idempresa: string) {
 
 	for (const uf of UFS_BRASIL) {
 		const chave = `uf_${uf.toLowerCase()}`;
-		payload[chave] = textoOuNulo(dados[chave as keyof TaxaUfFormData] as string);
+		payload[chave] = textoOuNulo(
+			dados[chave as keyof TaxaUfFormData] as string,
+		);
 	}
 
 	return payload;
@@ -138,7 +134,9 @@ export function ModalTaxaUf({
 				return taxaUfService.atualizar(registro.id, idempresa, payload);
 			}
 
-			return taxaUfService.criar(payload as Parameters<typeof taxaUfService.criar>[0]);
+			return taxaUfService.criar(
+				payload as Parameters<typeof taxaUfService.criar>[0],
+			);
 		},
 		onSuccess: () => {
 			reset(VALORES_PADRAO);
@@ -155,9 +153,7 @@ export function ModalTaxaUf({
 		<Dialog open={aberto} onOpenChange={(open) => !open && onFechar()}>
 			<DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
 				<DialogHeader>
-					<DialogTitle>
-						{isEdicao ? "Editar taxa" : "Nova taxa"}
-					</DialogTitle>
+					<DialogTitle>{isEdicao ? "Editar taxa" : "Nova taxa"}</DialogTitle>
 					<p className="text-muted-foreground text-sm">
 						Configure alíquotas de ICMS por UF para uso no ECF/PDV e vínculo com
 						produtos.
@@ -182,7 +178,10 @@ export function ModalTaxaUf({
 								/>
 							</Field>
 
-							<Field className="md:col-span-2" data-invalid={!!formState.errors.descricao}>
+							<Field
+								className="md:col-span-2"
+								data-invalid={!!formState.errors.descricao}
+							>
 								<FieldLabel htmlFor="descricao">Descrição *</FieldLabel>
 								<Input
 									id="descricao"
@@ -246,10 +245,13 @@ export function ModalTaxaUf({
 						</div>
 
 						<div className="space-y-2">
-							<h3 className="text-sm font-semibold">Alíquota ICMS por UF (%)</h3>
+							<h3 className="text-sm font-semibold">
+								Alíquota ICMS por UF (%)
+							</h3>
 							<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
 								{UFS_BRASIL.map((uf) => {
-									const campo = `uf_${uf.toLowerCase()}` as keyof TaxaUfFormData;
+									const campo =
+										`uf_${uf.toLowerCase()}` as keyof TaxaUfFormData;
 									return (
 										<Field key={uf}>
 											<FieldLabel htmlFor={campo}>{uf}</FieldLabel>

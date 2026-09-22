@@ -1,8 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import {
-	ORDENAR_TIPOS_DOCUMENTO_FINANCEIRO_CAMPOS,
-} from "@/repositories/tipo-documento-financeiro-repositories.js";
+import { ORDENAR_TIPOS_DOCUMENTO_FINANCEIRO_CAMPOS } from "@/repositories/tipo-documento-financeiro-repositories.js";
 import { listarTipoDocumentoFinanceirosService } from "@/service/tipo-documento-financeiro/listar-tipo-documento-financeiros.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
@@ -30,7 +28,9 @@ export async function listarTipoDocumentoFinanceiros(
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
 		}
 
-		const query = listarTipoDocumentoFinanceirosQuerySchema.parse(request.query);
+		const query = listarTipoDocumentoFinanceirosQuerySchema.parse(
+			request.query,
+		);
 
 		const resultado = await listarTipoDocumentoFinanceirosService({
 			idusuario: request.user.id,

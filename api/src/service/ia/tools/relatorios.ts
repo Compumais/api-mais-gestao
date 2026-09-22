@@ -108,9 +108,7 @@ export const toolsRelatorios: DefinicaoTool[] = [
 				return {
 					ok: false,
 					resumo:
-						error instanceof Error
-							? error.message
-							: "Falha ao gerar relatório",
+						error instanceof Error ? error.message : "Falha ao gerar relatório",
 				};
 			}
 		},

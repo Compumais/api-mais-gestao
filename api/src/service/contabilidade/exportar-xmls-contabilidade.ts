@@ -4,11 +4,7 @@ import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-reposit
 import { listarNotasParaExportacaoXmlContabilidade } from "@/repositories/nota-fiscal-repositories.js";
 import { montarArquivosXmlContabilidade } from "@/service/contabilidade/montar-arquivos-xml-contabilidade.js";
 import { compactarXmlsFiscais } from "@/util/compactar-xmls-fiscais.js";
-import {
-	httpBadRequest,
-	httpOk,
-	httpProibido,
-} from "@/util/http-util.js";
+import { httpBadRequest, httpOk, httpProibido } from "@/util/http-util.js";
 
 export type ExportarXmlsContabilidadeParametros = {
 	idusuario: string;
@@ -55,7 +51,8 @@ async function montarNomeArquivoZip(
 	dataFim: string,
 ): Promise<string> {
 	const empresa = await buscarEmpresaPorId(idempresa);
-	const identificador = empresa?.cnpj?.replace(/\D/g, "") || idempresa.slice(0, 8);
+	const identificador =
+		empresa?.cnpj?.replace(/\D/g, "") || idempresa.slice(0, 8);
 	return `xmls-fiscais-${identificador}-${dataInicio}-${dataFim}.zip`;
 }
 
@@ -90,9 +87,7 @@ export async function exportarXmlsContabilidadeService({
 	const arquivos = await montarArquivosXmlContabilidade(notas);
 
 	if (arquivos.length === 0) {
-		return httpBadRequest(
-			"Nenhum XML encontrado para o período informado",
-		);
+		return httpBadRequest("Nenhum XML encontrado para o período informado");
 	}
 
 	const content = await compactarXmlsFiscais(arquivos);

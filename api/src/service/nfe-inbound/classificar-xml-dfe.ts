@@ -1,7 +1,8 @@
 import { XMLParser } from "fast-xml-parser";
 import type {
-	MetadadosDocumentoInbound,StatusManifestacaoInbound, 
-	TipoDocumentoInbound
+	MetadadosDocumentoInbound,
+	StatusManifestacaoInbound,
+	TipoDocumentoInbound,
 } from "@/model/nfe-inbound-model.js";
 
 export type DocumentoXmlClassificado = {
@@ -39,7 +40,9 @@ function detectarTipoDocumento(xml: string): TipoDocumentoInbound | null {
 	return null;
 }
 
-function mapearTpEventoParaStatus(tpEvento?: string): StatusManifestacaoInbound {
+function mapearTpEventoParaStatus(
+	tpEvento?: string,
+): StatusManifestacaoInbound {
 	switch (tpEvento) {
 		case "210200":
 			return "confirmada";
@@ -127,7 +130,10 @@ export function classificarXmlDfe(xml: string): DocumentoXmlClassificado {
 		};
 	}
 
-	const evento = (conteudo.evento ?? conteudo.retEvento) as Record<string, unknown>;
+	const evento = (conteudo.evento ?? conteudo.retEvento) as Record<
+		string,
+		unknown
+	>;
 	const infEvento = (evento?.infEvento ?? {}) as Record<string, unknown>;
 	const chavenfe = paraStr(infEvento.chNFe) ?? extrairChaveDoXml(xml) ?? "";
 	const tpEvento = paraStr(infEvento.tpEvento);

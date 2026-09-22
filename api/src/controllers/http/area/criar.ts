@@ -7,7 +7,7 @@ import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 const criarAreaBodySchema = z.object({
 	idempresa: z.string(),
 	descricao: z.string().max(50).optional(),
-	inativo: z.number().int().optional()
+	inativo: z.number().int().optional(),
 });
 
 export async function criarArea(request: FastifyRequest, reply: FastifyReply) {
@@ -22,9 +22,9 @@ export async function criarArea(request: FastifyRequest, reply: FastifyReply) {
 			id: uuidv4(),
 			...dadosValidados,
 			datacadastro: new Date().toISOString(),
-		dataultimaalteracao: new Date().toISOString(),
-		idusuariocadastro: request.user.id,
-		idultimousuarioalteracao: request.user.id,
+			dataultimaalteracao: new Date().toISOString(),
+			idusuariocadastro: request.user.id,
+			idultimousuarioalteracao: request.user.id,
 		};
 
 		const resultado = await criarAreaService({

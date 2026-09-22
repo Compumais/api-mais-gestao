@@ -73,9 +73,7 @@ export function CelulaCfopEntradaImportacao({
 					const cfopSelecionado = cfops.find((c) => c.id === novoValor);
 					onChange(novoValor, cfopSelecionado?.codigo ?? undefined);
 				}}
-				placeholder={
-					isLoading ? "Carregando..." : "Selecione CFOP de entrada"
-				}
+				placeholder={isLoading ? "Carregando..." : "Selecione CFOP de entrada"}
 				searchPlaceholder="Buscar CFOP..."
 				emptyMessage="Nenhum CFOP encontrado"
 				disabled={disabled || isLoading}

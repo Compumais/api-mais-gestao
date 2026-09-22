@@ -2,7 +2,7 @@
 
 import { IconArrowLeft, IconArrowRight } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
-import Image from "next/image"
+import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { MarkdownContent } from "@/components/markdown-content";
@@ -13,7 +13,11 @@ export default function ArticlePage() {
 	const params = useParams<{ slug: string }>();
 	const slug = params.slug;
 
-	const { data: post, isLoading, isError } = useQuery({
+	const {
+		data: post,
+		isLoading,
+		isError,
+	} = useQuery({
 		queryKey: ["ajuda-post", slug],
 		queryFn: () => ajudaService.buscarPorSlug(slug),
 		enabled: Boolean(slug),

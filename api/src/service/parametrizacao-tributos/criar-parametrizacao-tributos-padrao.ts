@@ -39,7 +39,9 @@ export async function criarParametrizacaoTributosPadraoService(
 	const criados = await criarParametrizacaoTributosEmLote(faltantes);
 
 	if (criados.length !== faltantes.length) {
-		throw new Error("Erro ao criar parametrização tributária padrão da empresa");
+		throw new Error(
+			"Erro ao criar parametrização tributária padrão da empresa",
+		);
 	}
 
 	return criados;

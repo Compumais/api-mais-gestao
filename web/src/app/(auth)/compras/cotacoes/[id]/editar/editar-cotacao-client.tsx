@@ -19,7 +19,11 @@ export function EditarCotacaoClient({ id }: { id: string }) {
 	}
 
 	if (!data) {
-		return <p className="py-8 text-center text-muted-foreground">Cotação não encontrada.</p>;
+		return (
+			<p className="py-8 text-center text-muted-foreground">
+				Cotação não encontrada.
+			</p>
+		);
 	}
 
 	return (
@@ -32,7 +36,8 @@ export function EditarCotacaoClient({ id }: { id: string }) {
 				validade: data.validade,
 				itens: (data.itens ?? []).map((item) => ({
 					idproduto: item.idproduto,
-					descricao: item.descricao ?? item.nomeproduto ?? item.descricaoproduto,
+					descricao:
+						item.descricao ?? item.nomeproduto ?? item.descricaoproduto,
 					quantidade: item.quantidade,
 					unidademedida: item.unidademedida,
 					nomeproduto: item.nomeproduto ?? item.descricao ?? undefined,

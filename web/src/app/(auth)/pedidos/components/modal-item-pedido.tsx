@@ -19,7 +19,10 @@ import {
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { MoneyInput } from "@/components/ui/money-input";
-import type { PedidoDavItem, PedidoDavItemRastro } from "@/services/dav.service";
+import type {
+	PedidoDavItem,
+	PedidoDavItemRastro,
+} from "@/services/dav.service";
 import { produtosService } from "@/services/produtos.service";
 
 type DadosItemPedido = {
@@ -168,8 +171,7 @@ export function ModalItemPedido({
 			setBusca(formatarLabelProduto(produto));
 			setPreco(normalizarPrecoProduto(produto.preco));
 			setUnidademedida(produto.unidademedida ?? undefined);
-			const controla =
-				produto.controlalote === 1;
+			const controla = produto.controlalote === 1;
 			setControlaLote(controla);
 			setRastros([]);
 		} finally {
@@ -231,7 +233,9 @@ export function ModalItemPedido({
 			<DialogContent className="max-w-2xl gap-4 overflow-x-hidden sm:max-w-2xl">
 				<DialogHeader>
 					<DialogTitle>
-						{itemParaEditar ? "Editar item do pedido" : "Adicionar item ao pedido"}
+						{itemParaEditar
+							? "Editar item do pedido"
+							: "Adicionar item ao pedido"}
 					</DialogTitle>
 				</DialogHeader>
 

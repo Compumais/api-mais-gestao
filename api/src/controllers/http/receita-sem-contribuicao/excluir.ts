@@ -7,13 +7,18 @@ const excluirReceitaSemContribuicaoParamsSchema = z.object({
 	id: z.string(),
 });
 
-export async function excluirReceitaSemContribuicao(request: FastifyRequest, reply: FastifyReply) {
+export async function excluirReceitaSemContribuicao(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
 		}
 
-		const { id } = excluirReceitaSemContribuicaoParamsSchema.parse(request.params);
+		const { id } = excluirReceitaSemContribuicaoParamsSchema.parse(
+			request.params,
+		);
 
 		const resultado = await excluirReceitaSemContribuicaoService({
 			receitaSemContribuicaoId: id,

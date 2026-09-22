@@ -1,7 +1,8 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import type { NovaVendaPdvGourmet } from "@/model/venda-pdv-gourmet-model.js";
-import { atualizarVendaPdvGourmetService } from "@/service/venda-pdv-gourmet/atualizar-venda-pdv-gourmet.js";import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
+import { atualizarVendaPdvGourmetService } from "@/service/venda-pdv-gourmet/atualizar-venda-pdv-gourmet.js";
+import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
 const atualizarVendaPdvGourmetParamsSchema = z.object({
 	id: z.string(),
@@ -39,14 +40,17 @@ export async function atualizarVendaPdvGourmet(
 		}
 
 		const { id } = atualizarVendaPdvGourmetParamsSchema.parse(request.params);
-		const dadosValidados = atualizarVendaPdvGourmetBodySchema.parse(request.body);
+		const dadosValidados = atualizarVendaPdvGourmetBodySchema.parse(
+			request.body,
+		);
 		const dados = Object.fromEntries(
 			Object.entries(dadosValidados).filter(
 				(entry): entry is [string, string | number] => entry[1] !== undefined,
 			),
 		) as Partial<NovaVendaPdvGourmet>;
 
-		const resultado = await atualizarVendaPdvGourmetService({			vendaPdvGourmetId: id,
+		const resultado = await atualizarVendaPdvGourmetService({
+			vendaPdvGourmetId: id,
 			idusuario: request.user.id,
 			dados,
 		});

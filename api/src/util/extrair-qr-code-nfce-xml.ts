@@ -14,7 +14,9 @@ function extrairConteudoTag(xml: string, tag: string): string | null {
 	return match[1].trim() || null;
 }
 
-export function extrairQrCodeNfceXml(xml: string | null | undefined): QrCodeNfceXml {
+export function extrairQrCodeNfceXml(
+	xml: string | null | undefined,
+): QrCodeNfceXml {
 	if (!xml?.trim()) {
 		return { qrCode: null, urlChave: null };
 	}
@@ -24,6 +26,6 @@ export function extrairQrCodeNfceXml(xml: string | null | undefined): QrCodeNfce
 
 	return {
 		qrCode,
-		urlChave: urlChave ?? (qrCode ? qrCode.split("?")[0] ?? null : null),
+		urlChave: urlChave ?? (qrCode ? (qrCode.split("?")[0] ?? null) : null),
 	};
 }

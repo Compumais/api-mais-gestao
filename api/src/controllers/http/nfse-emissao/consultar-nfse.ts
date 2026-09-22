@@ -4,28 +4,28 @@ import { consultarNfseService } from "@/service/nfse-emissao/consultar-nfse.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
 export async function consultarNfse(
-    request: FastifyRequest,
-    reply: FastifyReply,
+	request: FastifyRequest,
+	reply: FastifyReply,
 ) {
-    try {
-        if (!request.user) {
-            return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
-        }
+	try {
+		if (!request.user) {
+			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
+		}
 
-        const { id } = z.object({ id: z.string().uuid() }).parse(request.params);
+		const { id } = z.object({ id: z.string().uuid() }).parse(request.params);
 
-        const resultado = await consultarNfseService({
-            idusuario: request.user.id,
-            idnotafiscal: id,
-        });
+		const resultado = await consultarNfseService({
+			idusuario: request.user.id,
+			idnotafiscal: id,
+		});
 
-        if (!resultado.success) {
-            return reply.status(resultado.status).send(resultado);
-        }
+		if (!resultado.success) {
+			return reply.status(resultado.status).send(resultado);
+		}
 
-        return reply.status(resultado.status).send(resultado.body);
-    } catch (error) {
-        console.error(error);
-        return reply.status(httpErroInterno().status).send(httpErroInterno());
-    }
+		return reply.status(resultado.status).send(resultado.body);
+	} catch (error) {
+		console.error(error);
+		return reply.status(httpErroInterno().status).send(httpErroInterno());
+	}
 }

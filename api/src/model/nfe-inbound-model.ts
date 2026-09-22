@@ -1,7 +1,4 @@
-export type TipoDocumentoInbound =
-	| "resNFe"
-	| "procNFe"
-	| "procEventoNFe";
+export type TipoDocumentoInbound = "resNFe" | "procNFe" | "procEventoNFe";
 
 export type StatusManifestacaoInbound =
 	| "sem_manifestacao"

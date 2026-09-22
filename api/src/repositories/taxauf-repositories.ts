@@ -6,10 +6,7 @@ export type TaxaUf = typeof taxauf.$inferSelect;
 export type NovaTaxaUf = typeof taxauf.$inferInsert;
 
 export async function buscarTaxaUfPorId(id: string) {
-	const [registro] = await db
-		.select()
-		.from(taxauf)
-		.where(eq(taxauf.id, id));
+	const [registro] = await db.select().from(taxauf).where(eq(taxauf.id, id));
 
 	return registro;
 }
@@ -64,7 +61,10 @@ export async function atualizarTaxaUf(id: string, dados: Partial<NovaTaxaUf>) {
 }
 
 export async function excluirTaxaUf(id: string) {
-	const [registro] = await db.delete(taxauf).where(eq(taxauf.id, id)).returning();
+	const [registro] = await db
+		.delete(taxauf)
+		.where(eq(taxauf.id, id))
+		.returning();
 
 	return registro;
 }

@@ -40,7 +40,9 @@ export async function aplicarTributacaoItensEmissaoNfe(params: {
 	totaisFiscais: TotaisFiscaisEmissaoNfe;
 	pendencias: string[];
 }> {
-	const itensEnriquecidos = await enriquecerItensEmissaoComProduto(params.itens);
+	const itensEnriquecidos = await enriquecerItensEmissaoComProduto(
+		params.itens,
+	);
 	const itensTributacao = recalcularIcmsStItensEmissao(
 		normalizarGtinItensEmissao(
 			normalizarItensEmissaoNfe(params.crt, itensEnriquecidos),

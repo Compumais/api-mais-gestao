@@ -4,6 +4,7 @@ import { IconArrowLeft } from "@tabler/icons-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { PageContainer } from "@/app/(auth)/components/page-container";
+import { BlocoErrorBoundary } from "@/components/bloco-error-boundary";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FormImportarChaveNotaFiscalCompra } from "../components/form-importar-chave";
@@ -32,10 +33,20 @@ export default function ImportarNotaFiscalCompraPage() {
 							<TabsTrigger value="xml">Importar XML</TabsTrigger>
 						</TabsList>
 						<TabsContent value="chave">
-							<FormImportarChaveNotaFiscalCompra />
+							<BlocoErrorBoundary
+								titulo="Erro na importação por chave"
+								variante="painel"
+							>
+								<FormImportarChaveNotaFiscalCompra />
+							</BlocoErrorBoundary>
 						</TabsContent>
 						<TabsContent value="xml">
-							<FormImportarXmlNotaFiscalCompra />
+							<BlocoErrorBoundary
+								titulo="Erro na importação de XML"
+								variante="painel"
+							>
+								<FormImportarXmlNotaFiscalCompra />
+							</BlocoErrorBoundary>
 						</TabsContent>
 					</Tabs>
 				</div>

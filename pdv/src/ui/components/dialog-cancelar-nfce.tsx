@@ -68,8 +68,8 @@ export function DialogCancelarNfce({
 			>
 				<h2 className="text-lg font-semibold">Cancelar NFC-e</h2>
 				<p className="text-sm text-muted-foreground">
-					Cancela a NFC-e autorizada na SEFAZ (prazo de 24 horas após a emissão).
-					A numeração não fica disponível para reuso.
+					Cancela a NFC-e autorizada na SEFAZ (prazo de 24 horas após a
+					emissão). A numeração não fica disponível para reuso.
 				</p>
 				<textarea
 					autoFocus

@@ -156,10 +156,7 @@ export function LocalizarProdutoDialog({
 								Boolean(eanXml) && Boolean(eanProduto) && eanProduto !== eanXml;
 
 							return (
-								<div
-									key={produto.id}
-									className="rounded-md border p-3 text-sm"
-								>
+								<div key={produto.id} className="rounded-md border p-3 text-sm">
 									<p className="font-medium">{produto.nome ?? "-"}</p>
 									<p className="text-muted-foreground">
 										Cód: {produto.codigo ?? "-"} | EAN: {produto.ean ?? "-"}

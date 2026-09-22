@@ -3,14 +3,15 @@ import type { FastifySchema } from "fastify";
 export const criarPlanoContasContaContabilSchema: FastifySchema = {
 	tags: ["planos-contas-conta-contabil"],
 	summary: "Criar plano contas conta contábil",
-	description: "Cria um novo registro de plano contas conta contábil na empresa do usuário autenticado.",
+	description:
+		"Cria um novo registro de plano contas conta contábil na empresa do usuário autenticado.",
 	security: [{ bearerAuth: [] }],
 	body: {
 		type: "object",
 		properties: {
 			idempresa: { type: "string", description: "ID da empresa" },
 			idplanocontas: { type: "string" },
-			idcontacontabil: { type: "string" }
+			idcontacontabil: { type: "string" },
 		},
 		required: ["idempresa"],
 	},
@@ -51,7 +52,8 @@ export const criarPlanoContasContaContabilSchema: FastifySchema = {
 export const buscarPlanoContasContaContabilSchema: FastifySchema = {
 	tags: ["planos-contas-conta-contabil"],
 	summary: "Buscar plano contas conta contábil por ID",
-	description: "Retorna os dados de um registro de plano contas conta contábil.",
+	description:
+		"Retorna os dados de um registro de plano contas conta contábil.",
 	security: [{ bearerAuth: [] }],
 	params: {
 		type: "object",
@@ -120,7 +122,10 @@ export const listarPlanoContasContaContabilsSchema: FastifySchema = {
 		200: {
 			type: "object",
 			properties: {
-				data: { type: "array", items: { type: "object", additionalProperties: true } },
+				data: {
+					type: "array",
+					items: { type: "object", additionalProperties: true },
+				},
 				paginacao: {
 					type: "object",
 					properties: {

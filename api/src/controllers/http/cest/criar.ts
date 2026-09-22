@@ -9,7 +9,7 @@ const criarCestBodySchema = z.object({
 	descricao: z.string(),
 	descricaoncm: z.string(),
 	codigo: z.string().max(10),
-	inativo: z.number().int().optional()
+	inativo: z.number().int().optional(),
 });
 
 export async function criarCest(request: FastifyRequest, reply: FastifyReply) {

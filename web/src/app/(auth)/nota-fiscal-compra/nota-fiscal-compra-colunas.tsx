@@ -158,9 +158,7 @@ function criarHeaderColuna(
 	const filtroAtivo = valorFiltro.trim() !== "";
 	const ordenacaoCampo = COLUNA_PARA_ORDENAR_NF_COMPRA[def.id] ?? def.id;
 	const ordenacao: OrdenacaoColunaTabela =
-		opcoes.ordenarPor === ordenacaoCampo && opcoes.ordem
-			? opcoes.ordem
-			: false;
+		opcoes.ordenarPor === ordenacaoCampo && opcoes.ordem ? opcoes.ordem : false;
 
 	return (
 		<CabecalhoColunaTabela
@@ -293,9 +291,7 @@ export function criarColunasNotaFiscalCompra(
 					accessorKey: "emissao",
 					header,
 					meta,
-					cell: ({ row }) => (
-						<div>{formatDate(row.getValue("emissao"))}</div>
-					),
+					cell: ({ row }) => <div>{formatDate(row.getValue("emissao"))}</div>,
 				});
 				break;
 			case "entradasaida":

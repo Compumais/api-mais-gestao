@@ -43,7 +43,8 @@ export async function atualizarMovimentoEstoqueService({
 }: AtualizarMovimentoEstoqueParametros): Promise<
 	HttpResponse<MovimentoEstoque | null>
 > {
-	const registroExistente = await buscarMovimentoEstoquePorId(movimentoEstoqueId);
+	const registroExistente =
+		await buscarMovimentoEstoquePorId(movimentoEstoqueId);
 
 	if (!registroExistente) {
 		return httpNaoEncontrado();
@@ -69,4 +70,3 @@ export async function atualizarMovimentoEstoqueService({
 
 	return httpOk<MovimentoEstoque>(registroAtualizado);
 }
-

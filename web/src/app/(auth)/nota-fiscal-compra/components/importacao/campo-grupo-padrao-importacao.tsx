@@ -82,7 +82,10 @@ export function CampoGrupoPadraoImportacao({
 					onValueChange={(valor) => aplicarGrupo(valor)}
 					disabled={carregandoGrupos || isPending}
 				>
-					<SelectTrigger id="grupo-padrao-importacao" className="w-full max-w-md">
+					<SelectTrigger
+						id="grupo-padrao-importacao"
+						className="w-full max-w-md"
+					>
 						<SelectValue
 							placeholder={
 								carregandoGrupos
@@ -94,7 +97,9 @@ export function CampoGrupoPadraoImportacao({
 					<SelectContent position="popper" className="z-[200]">
 						{grupos.length === 0 ? (
 							<SelectItem value="__vazio" disabled>
-								{erroGrupos ? "Erro ao carregar grupos" : "Nenhum grupo cadastrado"}
+								{erroGrupos
+									? "Erro ao carregar grupos"
+									: "Nenhum grupo cadastrado"}
 							</SelectItem>
 						) : (
 							grupos.map((grupo) => (
@@ -106,8 +111,8 @@ export function CampoGrupoPadraoImportacao({
 					</SelectContent>
 				</Select>
 				<p className="mt-2 text-xs text-muted-foreground">
-					Ao definir o grupo padrão, ele será repassado automaticamente para todos
-					os itens desta nota em revisão.
+					Ao definir o grupo padrão, ele será repassado automaticamente para
+					todos os itens desta nota em revisão.
 				</p>
 			</Field>
 			<DialogCriarGrupoRapido

@@ -2,10 +2,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod/v4";
 import { buscarVendasPorHoraService } from "@/service/dashboard/buscar-analytics-dashboard.js";
 import { httpNaoAutorizado } from "@/util/http-util.js";
-import {
-	paramsPeriodoDeQuery,
-	queryPeriodoSchema,
-} from "./query-periodo.js";
+import { paramsPeriodoDeQuery, queryPeriodoSchema } from "./query-periodo.js";
 
 export async function buscarVendasPorHora(
 	request: FastifyRequest,

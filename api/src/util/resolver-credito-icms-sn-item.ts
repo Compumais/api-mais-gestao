@@ -6,9 +6,12 @@ export type CreditoIcmsSnItem = {
 	pendencia?: string;
 };
 
-function paraNumero(valor: string | number | null | undefined): number | undefined {
+function paraNumero(
+	valor: string | number | null | undefined,
+): number | undefined {
 	if (valor == null || valor === "") return undefined;
-	const numero = typeof valor === "number" ? valor : Number.parseFloat(String(valor));
+	const numero =
+		typeof valor === "number" ? valor : Number.parseFloat(String(valor));
 	return Number.isFinite(numero) ? numero : undefined;
 }
 
@@ -34,9 +37,7 @@ export function resolverCreditoIcmsSnItem({
 		return {};
 	}
 
-	const aliquota =
-		pCredSN ??
-		paraNumero(aliquotaIcmsInterna);
+	const aliquota = pCredSN ?? paraNumero(aliquotaIcmsInterna);
 
 	if (aliquota == null || aliquota <= 0) {
 		return {
@@ -47,7 +48,9 @@ export function resolverCreditoIcmsSnItem({
 
 	const valorCredito =
 		vCredICMSSN ??
-		(valorProduto > 0 ? Math.round((valorProduto * aliquota) / 100 * 100) / 100 : 0);
+		(valorProduto > 0
+			? Math.round(((valorProduto * aliquota) / 100) * 100) / 100
+			: 0);
 
 	return {
 		pCredSN: Math.round(aliquota * 10000) / 10000,

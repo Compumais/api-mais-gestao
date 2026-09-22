@@ -1,5 +1,8 @@
 import { v4 as uuidv4 } from "uuid";
-import type { StatusImportacaoInbound, StatusManifestacaoInbound } from "@/model/nfe-inbound-model.js";
+import type {
+	StatusImportacaoInbound,
+	StatusManifestacaoInbound,
+} from "@/model/nfe-inbound-model.js";
 import {
 	atualizarStatusManifestacaoPorChave,
 	buscarNfeInboundDocumentoPorChave,

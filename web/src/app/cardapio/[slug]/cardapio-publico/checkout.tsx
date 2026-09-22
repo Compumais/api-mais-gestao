@@ -217,8 +217,7 @@ export function CardapioPublicoCheckout({
 					.map((campo) => {
 						if (
 							campo.condicao &&
-							(respostas[campo.condicao.campoid] ?? "") !==
-								campo.condicao.valor
+							(respostas[campo.condicao.campoid] ?? "") !== campo.condicao.valor
 						) {
 							return null;
 						}
@@ -317,10 +316,7 @@ export function CardapioPublicoCheckout({
 													</SelectTrigger>
 													<SelectContent>
 														{data.bairrosentrega.map((bairro) => (
-															<SelectItem
-																key={bairro.nome}
-																value={bairro.nome}
-															>
+															<SelectItem key={bairro.nome} value={bairro.nome}>
 																{bairro.nome} · {formatarMoeda(bairro.taxa)}
 															</SelectItem>
 														))}

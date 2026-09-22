@@ -32,4 +32,3 @@ export async function buscarMovimentoEstoqueService({
 
 	return httpOk<MovimentoEstoque>(registro);
 }
-

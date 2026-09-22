@@ -107,10 +107,8 @@ async function reservarNovoNumeroDps(params: {
 	numeroUsadoAnteriormente: number;
 }) {
 	let serieRegistro =
-		(await buscarNfseSeriePorNumeroSerie(
-			params.idempresa,
-			params.serieNota,
-		)) ?? (await buscarNfseSeriePadrao(params.idempresa));
+		(await buscarNfseSeriePorNumeroSerie(params.idempresa, params.serieNota)) ??
+		(await buscarNfseSeriePadrao(params.idempresa));
 
 	if (!serieRegistro) {
 		return null;
@@ -130,7 +128,9 @@ async function reservarNovoNumeroDps(params: {
 export async function retransmitirNfseService({
 	idusuario,
 	idnotafiscal,
-}: RetransmitirNfseParametros): Promise<HttpResponse<ResultadoRetransmissaoNfse>> {
+}: RetransmitirNfseParametros): Promise<
+	HttpResponse<ResultadoRetransmissaoNfse>
+> {
 	const nota = await buscarNotaFiscalPorId(idnotafiscal);
 
 	if (!nota) {
@@ -183,9 +183,7 @@ export async function retransmitirNfseService({
 	const numeroAnterior = Number(
 		payloadOriginal.rps.numero || nota.numeronotafiscal || 0,
 	);
-	const serieNota = String(
-		payloadOriginal.rps.serie || nota.serie || "1",
-	);
+	const serieNota = String(payloadOriginal.rps.serie || nota.serie || "1");
 
 	const reserva = await reservarNovoNumeroDps({
 		idempresa: nota.idempresa,
@@ -221,18 +219,15 @@ export async function retransmitirNfseService({
 		payloadNfse,
 	});
 
-	const autorizada =
-		resposta.sucesso === true && Boolean(resposta.numeroNfse);
+	const autorizada = resposta.sucesso === true && Boolean(resposta.numeroNfse);
 	const modoDps =
 		resposta.modo === "dps" ||
-		String(resposta.versaolayout ?? "").toLowerCase().includes("dps") ||
-		isLayoutNfseDps(
-			String(credenciais.configJson.versaolayout ?? ""),
-		);
+		String(resposta.versaolayout ?? "")
+			.toLowerCase()
+			.includes("dps") ||
+		isLayoutNfseDps(String(credenciais.configJson.versaolayout ?? ""));
 	const pendenteDps =
-		resposta.sucesso === true &&
-		!autorizada &&
-		Boolean(resposta.protocolo);
+		resposta.sucesso === true && !autorizada && Boolean(resposta.protocolo);
 	const status = autorizada
 		? NFE_STATUS.AUTORIZADA
 		: pendenteDps

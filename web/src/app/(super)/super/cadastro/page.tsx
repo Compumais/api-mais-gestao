@@ -86,7 +86,8 @@ export default function SuperCadastroPage() {
 			try {
 				setBuscandoCep(true);
 				ultimoCepBuscado.current = cepLimpo;
-				const endereco = await localidadesService.buscarEnderecoPorCep(cepLimpo);
+				const endereco =
+					await localidadesService.buscarEnderecoPorCep(cepLimpo);
 				setEmpresaForm((s) => ({
 					...s,
 					endereco: endereco.endereco || s.endereco,

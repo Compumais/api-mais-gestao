@@ -188,9 +188,7 @@ export default function NotaFiscalCompraPage() {
 				...(filtrosColuna.entradasaida
 					? { entradasaida: filtrosColuna.entradasaida }
 					: {}),
-				...(filtrosColuna.chavenfe
-					? { chavenfe: filtrosColuna.chavenfe }
-					: {}),
+				...(filtrosColuna.chavenfe ? { chavenfe: filtrosColuna.chavenfe } : {}),
 				...(filtrosColuna.status
 					? { status: Number(filtrosColuna.status) }
 					: {}),
@@ -348,10 +346,7 @@ export default function NotaFiscalCompraPage() {
 							</p>
 						</div>
 					) : mostrarSkeleton ? (
-						<TableSkeleton
-							rows={10}
-							columns={colunasVisiveis.length || 8}
-						>
+						<TableSkeleton rows={10} columns={colunasVisiveis.length || 8}>
 							{colunasVisiveis.map((coluna) => (
 								<TableHead key={coluna.id}>{rotuloColuna(coluna)}</TableHead>
 							))}
@@ -363,8 +358,7 @@ export default function NotaFiscalCompraPage() {
 									{table.getHeaderGroups().map((headerGroup) => (
 										<TableRow key={headerGroup.id}>
 											{headerGroup.headers.map((header) => {
-												const isRightAligned =
-													header.id === "valortotalnota";
+												const isRightAligned = header.id === "valortotalnota";
 												return (
 													<TableHead
 														key={header.id}
@@ -492,8 +486,8 @@ export default function NotaFiscalCompraPage() {
 							Cancelar e apagar nota de compra?
 						</AlertDialogTitle>
 						<AlertDialogDescription>
-							O estoque de entrada será estornado, os títulos a pagar sem baixa e
-							os custos vinculados à nota serão removidos, e a nota será
+							O estoque de entrada será estornado, os títulos a pagar sem baixa
+							e os custos vinculados à nota serão removidos, e a nota será
 							excluída permanentemente. Esta ação não pode ser desfeita.
 						</AlertDialogDescription>
 					</AlertDialogHeader>

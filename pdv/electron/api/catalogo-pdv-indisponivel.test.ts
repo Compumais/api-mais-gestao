@@ -4,7 +4,10 @@ import { ApiError, isCatalogoPdvIndisponivel } from "./client";
 
 describe("isCatalogoPdvIndisponivel", () => {
 	it("trata 404 como endpoint ausente", () => {
-		assert.equal(isCatalogoPdvIndisponivel(new ApiError("HTTP 404", 404)), true);
+		assert.equal(
+			isCatalogoPdvIndisponivel(new ApiError("HTTP 404", 404)),
+			true,
+		);
 	});
 
 	it("trata colisão Fastify /produtos/:id com catalogo-pdv", () => {

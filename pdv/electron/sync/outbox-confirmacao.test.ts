@@ -21,8 +21,7 @@ describe("confirmação da venda PDV", () => {
 		assert.throws(
 			() => validarConfirmacaoVenda({ id: "remoto-1" }, "local-1"),
 			(err) =>
-				err instanceof ApiError &&
-				err.code === "VENDA_PDV_NAO_CONFIRMADA",
+				err instanceof ApiError && err.code === "VENDA_PDV_NAO_CONFIRMADA",
 		);
 		assert.throws(() =>
 			validarConfirmacaoVenda(

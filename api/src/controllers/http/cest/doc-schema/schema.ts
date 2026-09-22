@@ -3,7 +3,8 @@ import type { FastifySchema } from "fastify";
 export const criarCestSchema: FastifySchema = {
 	tags: ["cests"],
 	summary: "Criar CEST",
-	description: "Cria um novo registro de CEST na empresa do usuário autenticado.",
+	description:
+		"Cria um novo registro de CEST na empresa do usuário autenticado.",
 	security: [{ bearerAuth: [] }],
 	body: {
 		type: "object",
@@ -11,7 +12,7 @@ export const criarCestSchema: FastifySchema = {
 			idempresa: { type: "string", description: "ID da empresa" },
 			descricao: { type: "string" },
 			codigo: { type: "string" },
-			inativo: { type: "string" }
+			inativo: { type: "string" },
 		},
 		required: ["idempresa"],
 	},
@@ -111,7 +112,10 @@ export const listarCestsSchema: FastifySchema = {
 		type: "object",
 		properties: {
 			idempresa: { type: "string", description: "ID da empresa" },
-			descricao: { type: "string", description: "Filtro opcional por descricao" },
+			descricao: {
+				type: "string",
+				description: "Filtro opcional por descricao",
+			},
 			inativo: { type: "number", description: "Filtro opcional por inativo" },
 			page: { type: "number", default: 1 },
 			limit: { type: "number", default: 10 },
@@ -122,7 +126,10 @@ export const listarCestsSchema: FastifySchema = {
 		200: {
 			type: "object",
 			properties: {
-				data: { type: "array", items: { type: "object", additionalProperties: true } },
+				data: {
+					type: "array",
+					items: { type: "object", additionalProperties: true },
+				},
 				paginacao: {
 					type: "object",
 					properties: {

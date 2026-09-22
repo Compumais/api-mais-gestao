@@ -50,9 +50,9 @@ export function ModalConfirmacaoProducao({
 
 				<div className="space-y-4 py-2">
 					<p className="text-sm text-muted-foreground">
-						Você está prestes a emitir uma <strong>Nota Fiscal Eletrônica com
-						validade fiscal real</strong>. Essa ação é irreversível e a nota será
-						transmitida para a SEFAZ.
+						Você está prestes a emitir uma{" "}
+						<strong>Nota Fiscal Eletrônica com validade fiscal real</strong>.
+						Essa ação é irreversível e a nota será transmitida para a SEFAZ.
 					</p>
 
 					<div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
@@ -69,9 +69,12 @@ export function ModalConfirmacaoProducao({
 							checked={confirmado}
 							onCheckedChange={(v) => setConfirmado(v === true)}
 						/>
-						<Label htmlFor="confirmar-producao" className="text-sm cursor-pointer">
-							Confirmo que esta NF-e possui validade fiscal real e os dados estão
-							corretos
+						<Label
+							htmlFor="confirmar-producao"
+							className="text-sm cursor-pointer"
+						>
+							Confirmo que esta NF-e possui validade fiscal real e os dados
+							estão corretos
 						</Label>
 					</div>
 				</div>

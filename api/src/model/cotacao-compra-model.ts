@@ -3,7 +3,8 @@ import type * as schema from "@/repositories/schema.js";
 export type CotacaoCompra = typeof schema.cotacaocompra.$inferSelect;
 export type NovaCotacaoCompra = typeof schema.cotacaocompra.$inferInsert;
 export type CotacaoCompraItem = typeof schema.cotacaocompraitem.$inferSelect;
-export type NovoCotacaoCompraItem = typeof schema.cotacaocompraitem.$inferInsert;
+export type NovoCotacaoCompraItem =
+	typeof schema.cotacaocompraitem.$inferInsert;
 export type CotacaoCompraProposta =
 	typeof schema.cotacaocompraproposta.$inferSelect;
 export type NovaCotacaoCompraProposta =

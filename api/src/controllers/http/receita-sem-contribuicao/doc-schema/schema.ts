@@ -3,14 +3,15 @@ import type { FastifySchema } from "fastify";
 export const criarReceitaSemContribuicaoSchema: FastifySchema = {
 	tags: ["receitas-sem-contribuicao"],
 	summary: "Criar receita sem contribuição",
-	description: "Cria um novo registro de receita sem contribuição na empresa do usuário autenticado.",
+	description:
+		"Cria um novo registro de receita sem contribuição na empresa do usuário autenticado.",
 	security: [{ bearerAuth: [] }],
 	body: {
 		type: "object",
 		properties: {
 			idempresa: { type: "string", description: "ID da empresa" },
 			codigo: { type: "string" },
-			descricao: { type: "string" }
+			descricao: { type: "string" },
 		},
 		required: ["idempresa"],
 	},
@@ -110,7 +111,10 @@ export const listarReceitaSemContribuicaosSchema: FastifySchema = {
 		type: "object",
 		properties: {
 			idempresa: { type: "string", description: "ID da empresa" },
-			descricao: { type: "string", description: "Filtro opcional por descricao" },
+			descricao: {
+				type: "string",
+				description: "Filtro opcional por descricao",
+			},
 			page: { type: "number", default: 1 },
 			limit: { type: "number", default: 10 },
 		},
@@ -120,7 +124,10 @@ export const listarReceitaSemContribuicaosSchema: FastifySchema = {
 		200: {
 			type: "object",
 			properties: {
-				data: { type: "array", items: { type: "object", additionalProperties: true } },
+				data: {
+					type: "array",
+					items: { type: "object", additionalProperties: true },
+				},
 				paginacao: {
 					type: "object",
 					properties: {

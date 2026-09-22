@@ -19,9 +19,7 @@ export async function buscarMovimentoEstoque(
 		}
 
 		const idusuario = request.user.id;
-		const { id } = buscarMovimentoEstoqueParamsSchema.parse(
-			request.params,
-		);
+		const { id } = buscarMovimentoEstoqueParamsSchema.parse(request.params);
 
 		const resultado = await buscarMovimentoEstoqueService({
 			movimentoEstoqueId: id,
@@ -48,4 +46,3 @@ export async function buscarMovimentoEstoque(
 		});
 	}
 }
-

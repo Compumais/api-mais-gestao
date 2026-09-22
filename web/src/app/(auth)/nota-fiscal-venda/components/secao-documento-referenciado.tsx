@@ -23,7 +23,10 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { NFE_STATUS } from "@/constants/nfe-status";
 import type { DocumentoReferenciadoResolvido } from "@/services/nfe-emissao.service";
-import { listarNfesEmitidas, resolverReferenciaEmissao } from "@/services/nfe-emissao.service";
+import {
+	listarNfesEmitidas,
+	resolverReferenciaEmissao,
+} from "@/services/nfe-emissao.service";
 import { notaFiscalService } from "@/services/nota-fiscal.service";
 import {
 	LABEL_TIPO_DEVOLUCAO,
@@ -41,12 +44,16 @@ interface SecaoDocumentoReferenciadoProps {
 		chaveNfe?: string;
 	};
 	notaReferenciadaInicial?: string;
-	onChange: (valor: {
-		tipoDevolucao?: TipoDevolucaoNfe;
-		idnotafiscalReferenciada?: string;
-		chaveNfe?: string;
-		xml?: string;
-	} | undefined) => void;
+	onChange: (
+		valor:
+			| {
+					tipoDevolucao?: TipoDevolucaoNfe;
+					idnotafiscalReferenciada?: string;
+					chaveNfe?: string;
+					xml?: string;
+			  }
+			| undefined,
+	) => void;
 	onResolvido?: (dados: DocumentoReferenciadoResolvido) => void;
 }
 
@@ -174,7 +181,9 @@ export function SecaoDocumentoReferenciado({
 				<Link2 className="size-4" />
 				{LABEL_TIPO_DEVOLUCAO[tipoDevolucao]} — documento referenciado
 			</FieldLegend>
-			<FieldDescription className="mb-3">{descricaoReferencia}</FieldDescription>
+			<FieldDescription className="mb-3">
+				{descricaoReferencia}
+			</FieldDescription>
 
 			<div className="mb-4 flex flex-wrap gap-2">
 				<Button
@@ -215,7 +224,9 @@ export function SecaoDocumentoReferenciado({
 						}}
 					>
 						<SelectTrigger>
-							<SelectValue placeholder={`Selecione a ${labelNota.toLowerCase()}...`} />
+							<SelectValue
+								placeholder={`Selecione a ${labelNota.toLowerCase()}...`}
+							/>
 						</SelectTrigger>
 						<SelectContent>
 							{notasDisponiveis.map((nota) => (

@@ -12,11 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { CardapioPublicoProduto } from "@/services/cardapio-publico.service";
-import {
-	formatarMoeda,
-	type ItemSacola,
-	precoPizza,
-} from "./tipos";
+import { formatarMoeda, type ItemSacola, precoPizza } from "./tipos";
 
 export function ProdutoDetalhe({
 	produto,
@@ -86,7 +82,10 @@ export function ProdutoDetalhe({
 			) : null}
 			<div className="mt-4">
 				<Label>Observação</Label>
-				<Textarea value={obs} onChange={(event) => setObs(event.target.value)} />
+				<Textarea
+					value={obs}
+					onChange={(event) => setObs(event.target.value)}
+				/>
 			</div>
 			<div className="mt-4 flex items-center justify-between">
 				<div className="flex items-center gap-3">

@@ -1,5 +1,8 @@
 import { v4 as uuidv4 } from "uuid";
-import type { GrupoGourmet, NovoGrupoGourmet } from "@/model/grupo-gourmet-model.js";
+import type {
+	GrupoGourmet,
+	NovoGrupoGourmet,
+} from "@/model/grupo-gourmet-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {

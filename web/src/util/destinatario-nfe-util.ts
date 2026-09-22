@@ -85,9 +85,7 @@ export function formatarInscricaoEstadualDestinatario(
 	return "Não informada";
 }
 
-export function formatarDocumentoDestinatario(
-	cnpjcpf?: string | null,
-): string {
+export function formatarDocumentoDestinatario(cnpjcpf?: string | null): string {
 	if (!cnpjcpf?.trim()) return "—";
 	return maskCpfCnpj(cnpjcpf);
 }
@@ -121,9 +119,7 @@ export function montarCamposDestinatarioNfe(dados: DadosDestinatarioNfe) {
 
 	return [
 		{ label: "Nome / Razão Social", valor: nomeExibicao },
-		...(nomeFantasia
-			? [{ label: "Nome Fantasia", valor: nomeFantasia }]
-			: []),
+		...(nomeFantasia ? [{ label: "Nome Fantasia", valor: nomeFantasia }] : []),
 		{
 			label: "CNPJ / CPF",
 			valor: formatarDocumentoDestinatario(dados.cnpjcpf),
@@ -150,7 +146,9 @@ export function montarCamposDestinatarioNfe(dados: DadosDestinatarioNfe) {
 		...(dados.telefone?.trim()
 			? [{ label: "Telefone", valor: maskPhone(dados.telefone) }]
 			: []),
-		...(endereco ? [{ label: "Endereço", valor: endereco, fullWidth: true }] : []),
+		...(endereco
+			? [{ label: "Endereço", valor: endereco, fullWidth: true }]
+			: []),
 	] as Array<{
 		label: string;
 		valor: string;

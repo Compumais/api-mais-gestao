@@ -533,9 +533,7 @@ export default function NovaEmpresaPage() {
 												{...register("complemento")}
 											/>
 											<FieldError
-												errors={
-													errors.complemento ? [errors.complemento] : []
-												}
+												errors={errors.complemento ? [errors.complemento] : []}
 											/>
 										</Field>
 

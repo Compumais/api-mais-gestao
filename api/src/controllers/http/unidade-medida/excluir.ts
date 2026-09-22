@@ -7,7 +7,10 @@ const excluirUnidadeMedidaParamsSchema = z.object({
 	id: z.string(),
 });
 
-export async function excluirUnidadeMedida(request: FastifyRequest, reply: FastifyReply) {
+export async function excluirUnidadeMedida(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());

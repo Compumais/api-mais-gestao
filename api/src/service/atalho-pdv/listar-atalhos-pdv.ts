@@ -16,7 +16,9 @@ type ListarAtalhosPdvResposta = {
 export async function listarAtalhosPdvService({
 	idusuario,
 	idempresa,
-}: ListarAtalhosPdvParametros): Promise<HttpResponse<ListarAtalhosPdvResposta>> {
+}: ListarAtalhosPdvParametros): Promise<
+	HttpResponse<ListarAtalhosPdvResposta>
+> {
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
 		idusuario,
 		idempresa,

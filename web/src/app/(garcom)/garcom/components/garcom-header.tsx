@@ -33,7 +33,9 @@ export function GarcomHeader({
 					<LogoMaisGestao className="h-7" />
 				</Link>
 				<div className="min-w-0">
-					<h1 className="truncate text-sm font-semibold sm:text-base">{titulo}</h1>
+					<h1 className="truncate text-sm font-semibold sm:text-base">
+						{titulo}
+					</h1>
 					{empresa && (
 						<p className="truncate text-xs text-muted-foreground">
 							{empresa.nome}

@@ -35,7 +35,10 @@ export type ResultadoTratamentoErroSefaz = {
 	mensagem: string;
 };
 
-export function tratarErroSefazDfe(cStat?: string, xMotivo?: string): ResultadoTratamentoErroSefaz {
+export function tratarErroSefazDfe(
+	cStat?: string,
+	xMotivo?: string,
+): ResultadoTratamentoErroSefaz {
 	const motivo = xMotivo ?? "Erro desconhecido na Distribuição DF-e";
 
 	switch (cStat) {

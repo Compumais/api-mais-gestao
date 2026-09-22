@@ -120,9 +120,7 @@ export const condicaoPagamentoService = {
 		await api.delete(`/condicoes-pagamento/${id}`);
 	},
 
-	async buscarProximoCodigo(
-		idempresa: string,
-	): Promise<{ codigo: string }> {
+	async buscarProximoCodigo(idempresa: string): Promise<{ codigo: string }> {
 		const { data } = await api.get<{ codigo: string }>(
 			"/condicoes-pagamento/proximo-codigo",
 			{ params: { idempresa } },

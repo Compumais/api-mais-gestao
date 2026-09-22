@@ -39,9 +39,7 @@ export default function GerarSintegraPage() {
 	const [dataFim, setDataFim] = useState(periodoPadrao.dataFim);
 	const [finalidade, setFinalidade] = useState<"1" | "2" | "3" | "5">("1");
 	const [incluirInventario, setIncluirInventario] = useState(false);
-	const [dataInventario, setDataInventario] = useState(
-		periodoPadrao.dataFim,
-	);
+	const [dataInventario, setDataInventario] = useState(periodoPadrao.dataFim);
 	const [alertas, setAlertas] = useState<string[]>([]);
 
 	const gerarMutation = useMutation({
@@ -108,115 +106,117 @@ export default function GerarSintegraPage() {
 				</div>
 
 				<div className="px-4">
-			<Card className="max-w-xl">
-				<CardHeader>
-					<CardTitle>Parâmetros de geração</CardTitle>
-					<CardDescription>
-						Informe o período de movimentação fiscal e as opções do arquivo.
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<FieldGroup className="gap-4">
-						<div className="grid gap-4 md:grid-cols-2">
-							<Field>
-								<FieldLabel htmlFor="dataInicio">Data inicial</FieldLabel>
-								<Input
-									id="dataInicio"
-									type="date"
-									value={dataInicio}
-									onChange={(event) => setDataInicio(event.target.value)}
-								/>
-							</Field>
-							<Field>
-								<FieldLabel htmlFor="dataFim">Data final</FieldLabel>
-								<Input
-									id="dataFim"
-									type="date"
-									value={dataFim}
-									onChange={(event) => setDataFim(event.target.value)}
-								/>
-							</Field>
-						</div>
+					<Card className="max-w-xl">
+						<CardHeader>
+							<CardTitle>Parâmetros de geração</CardTitle>
+							<CardDescription>
+								Informe o período de movimentação fiscal e as opções do arquivo.
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
+							<FieldGroup className="gap-4">
+								<div className="grid gap-4 md:grid-cols-2">
+									<Field>
+										<FieldLabel htmlFor="dataInicio">Data inicial</FieldLabel>
+										<Input
+											id="dataInicio"
+											type="date"
+											value={dataInicio}
+											onChange={(event) => setDataInicio(event.target.value)}
+										/>
+									</Field>
+									<Field>
+										<FieldLabel htmlFor="dataFim">Data final</FieldLabel>
+										<Input
+											id="dataFim"
+											type="date"
+											value={dataFim}
+											onChange={(event) => setDataFim(event.target.value)}
+										/>
+									</Field>
+								</div>
 
-						<Field>
-							<FieldLabel>Finalidade do arquivo</FieldLabel>
-							<Select
-								value={finalidade}
-								onValueChange={(valor) =>
-									setFinalidade(valor as "1" | "2" | "3" | "5")
-								}
-							>
-								<SelectTrigger>
-									<SelectValue placeholder="Selecione a finalidade" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="1">1 - Normal</SelectItem>
-									<SelectItem value="2">2 - Retificação total</SelectItem>
-									<SelectItem value="3">3 - Retificação aditiva</SelectItem>
-									<SelectItem value="5">5 - Desfazimento</SelectItem>
-								</SelectContent>
-							</Select>
-						</Field>
+								<Field>
+									<FieldLabel>Finalidade do arquivo</FieldLabel>
+									<Select
+										value={finalidade}
+										onValueChange={(valor) =>
+											setFinalidade(valor as "1" | "2" | "3" | "5")
+										}
+									>
+										<SelectTrigger>
+											<SelectValue placeholder="Selecione a finalidade" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="1">1 - Normal</SelectItem>
+											<SelectItem value="2">2 - Retificação total</SelectItem>
+											<SelectItem value="3">3 - Retificação aditiva</SelectItem>
+											<SelectItem value="5">5 - Desfazimento</SelectItem>
+										</SelectContent>
+									</Select>
+								</Field>
 
-						<div className="flex items-center gap-2">
-							<Checkbox
-								id="incluirInventario"
-								checked={incluirInventario}
-								onCheckedChange={(checked) =>
-									setIncluirInventario(checked === true)
-								}
-							/>
-							<FieldLabel htmlFor="incluirInventario">
-								Incluir inventário fiscal (registro 74)
-							</FieldLabel>
-						</div>
+								<div className="flex items-center gap-2">
+									<Checkbox
+										id="incluirInventario"
+										checked={incluirInventario}
+										onCheckedChange={(checked) =>
+											setIncluirInventario(checked === true)
+										}
+									/>
+									<FieldLabel htmlFor="incluirInventario">
+										Incluir inventário fiscal (registro 74)
+									</FieldLabel>
+								</div>
 
-						{incluirInventario && (
-							<Field>
-								<FieldLabel htmlFor="dataInventario">
-									Data-base do inventário
-								</FieldLabel>
-								<Input
-									id="dataInventario"
-									type="date"
-									value={dataInventario}
-									onChange={(event) => setDataInventario(event.target.value)}
-								/>
-							</Field>
-						)}
+								{incluirInventario && (
+									<Field>
+										<FieldLabel htmlFor="dataInventario">
+											Data-base do inventário
+										</FieldLabel>
+										<Input
+											id="dataInventario"
+											type="date"
+											value={dataInventario}
+											onChange={(event) =>
+												setDataInventario(event.target.value)
+											}
+										/>
+									</Field>
+								)}
 
-						<Button
-							onClick={() => gerarMutation.mutate()}
-							disabled={gerarMutation.isPending}
-						>
-							<DownloadIcon className="mr-2 h-4 w-4" />
-							{gerarMutation.isPending ? "Gerando..." : "Gerar SINTEGRA"}
-						</Button>
-					</FieldGroup>
-				</CardContent>
-			</Card>
+								<Button
+									onClick={() => gerarMutation.mutate()}
+									disabled={gerarMutation.isPending}
+								>
+									<DownloadIcon className="mr-2 h-4 w-4" />
+									{gerarMutation.isPending ? "Gerando..." : "Gerar SINTEGRA"}
+								</Button>
+							</FieldGroup>
+						</CardContent>
+					</Card>
 				</div>
 
-			{alertas.length > 0 && (
-				<div className="px-4">
-				<Card className="border-amber-500/40">
-					<CardHeader>
-						<CardTitle>Alertas fiscais</CardTitle>
-						<CardDescription>
-							Revise os pontos abaixo antes de transmitir o arquivo ao PVA/SIGAF
-							MG.
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
-							{alertas.map((alerta) => (
-								<li key={alerta}>{alerta}</li>
-							))}
-						</ul>
-					</CardContent>
-				</Card>
-				</div>
-			)}
+				{alertas.length > 0 && (
+					<div className="px-4">
+						<Card className="border-amber-500/40">
+							<CardHeader>
+								<CardTitle>Alertas fiscais</CardTitle>
+								<CardDescription>
+									Revise os pontos abaixo antes de transmitir o arquivo ao
+									PVA/SIGAF MG.
+								</CardDescription>
+							</CardHeader>
+							<CardContent>
+								<ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
+									{alertas.map((alerta) => (
+										<li key={alerta}>{alerta}</li>
+									))}
+								</ul>
+							</CardContent>
+						</Card>
+					</div>
+				)}
 			</div>
 		</PageContainer>
 	);

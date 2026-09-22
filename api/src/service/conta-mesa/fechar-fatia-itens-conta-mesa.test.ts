@@ -147,7 +147,9 @@ describe("fecharFatiaItensContaMesaService", () => {
 	});
 
 	it("marca todos os itens pagos sem fechar a mesa", async () => {
-		vi.mocked(contaMesaItemRepository.contarItensPendentes).mockResolvedValue(0);
+		vi.mocked(contaMesaItemRepository.contarItensPendentes).mockResolvedValue(
+			0,
+		);
 		vi.mocked(contaMesaRepository.atualizarContaMesa).mockResolvedValue(
 			contaBase,
 		);
@@ -179,7 +181,9 @@ describe("fecharFatiaItensContaMesaService", () => {
 	});
 
 	it("mantém a conta aberta em fatia parcial", async () => {
-		vi.mocked(contaMesaItemRepository.contarItensPendentes).mockResolvedValue(1);
+		vi.mocked(contaMesaItemRepository.contarItensPendentes).mockResolvedValue(
+			1,
+		);
 		vi.mocked(contaMesaRepository.atualizarContaMesa).mockResolvedValue(
 			contaBase,
 		);
@@ -202,7 +206,9 @@ describe("fecharFatiaItensContaMesaService", () => {
 	});
 
 	it("normaliza campos de pagamento vazios antes de criar a venda", async () => {
-		vi.mocked(contaMesaItemRepository.contarItensPendentes).mockResolvedValue(1);
+		vi.mocked(contaMesaItemRepository.contarItensPendentes).mockResolvedValue(
+			1,
+		);
 
 		await fecharFatiaItensContaMesaService({
 			contaMesaId: "conta-1",

@@ -30,7 +30,9 @@ export function validarDadosSintegra({
 	const alertas: string[] = [];
 
 	if (!contribuinte) {
-		erros.push("Configuração fiscal da empresa não encontrada (empresafiscal).");
+		erros.push(
+			"Configuração fiscal da empresa não encontrada (empresafiscal).",
+		);
 		return { erros, alertas };
 	}
 
@@ -89,7 +91,10 @@ export function validarDadosSintegra({
 	}
 
 	for (const item of inventario) {
-		if (parseNumero(item.quantidade) <= 0 || parseNumero(item.valorTotal) <= 0) {
+		if (
+			parseNumero(item.quantidade) <= 0 ||
+			parseNumero(item.valorTotal) <= 0
+		) {
 			alertas.push(
 				`Item de inventário ${item.codigoProduto} com quantidade ou valor inválido.`,
 			);
@@ -112,7 +117,10 @@ export function validarDadosSintegra({
 	return { erros, alertas };
 }
 
-export function validarPeriodo(dataInicio: string, dataFim: string): string | null {
+export function validarPeriodo(
+	dataInicio: string,
+	dataFim: string,
+): string | null {
 	const inicio = new Date(dataInicio);
 	const fim = new Date(dataFim);
 

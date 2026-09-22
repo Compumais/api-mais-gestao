@@ -13,11 +13,11 @@ import {
 } from "@/constants/empresa-constants";
 import { type Empresa, empresasService } from "@/services/empresas.service";
 
-export type { Empresa };
 export {
 	EMPRESA_FORCAR_PRIMEIRA_KEY,
 	EMPRESA_SELECIONADA_KEY,
 } from "@/constants/empresa-constants";
+export type { Empresa };
 
 interface CriarEmpresa {
 	nome: string;

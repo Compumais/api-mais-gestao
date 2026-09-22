@@ -52,8 +52,8 @@ describe("montarSnapshotEmissaoNfe", () => {
 		expect(snapshot.emissao?.totais?.desconto).toBe(4);
 		expect(snapshot.emissao?.informarEnderecoEntregaManual).toBe(false);
 		expect(snapshot.emissao?.enderecoEntregaResolvido).toEqual(endereco);
-		expect(extrairDadosEmissaoNfeSalvos(snapshot)?.enderecoEntregaResolvido).toEqual(
-			endereco,
-		);
+		expect(
+			extrairDadosEmissaoNfeSalvos(snapshot)?.enderecoEntregaResolvido,
+		).toEqual(endereco);
 	});
 });

@@ -7,13 +7,18 @@ const excluirIntegracaoContabilConfiguracaoParamsSchema = z.object({
 	id: z.string(),
 });
 
-export async function excluirIntegracaoContabilConfiguracao(request: FastifyRequest, reply: FastifyReply) {
+export async function excluirIntegracaoContabilConfiguracao(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
 		}
 
-		const { id } = excluirIntegracaoContabilConfiguracaoParamsSchema.parse(request.params);
+		const { id } = excluirIntegracaoContabilConfiguracaoParamsSchema.parse(
+			request.params,
+		);
 
 		const resultado = await excluirIntegracaoContabilConfiguracaoService({
 			integracaoContabilConfiguracaoId: id,

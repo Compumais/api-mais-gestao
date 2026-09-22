@@ -145,7 +145,11 @@ export const notafiscalitem = pgTable(
 		observacaorebaixa: text(),
 		origem: smallint(),
 		pautapreco: smallint(),
-		percentualicmsaproveitamento: numeric({ precision: 7, scale: 4, mode: "string" }),
+		percentualicmsaproveitamento: numeric({
+			precision: 7,
+			scale: 4,
+			mode: "string",
+		}),
 		percentualreducaoicms: numeric({ precision: 9, scale: 6, mode: "string" }),
 		pesobrutoveiculo: varchar({ length: 9 }),
 		pesoliquidoveiculo: varchar({ length: 9 }),

@@ -1,10 +1,15 @@
 import type { HttpResponse } from "@/model/http-model.js";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	atualizarPedidoCardapioDelivery,
 	buscarPedidoCardapioPorId,
 } from "@/repositories/cardapio-delivery-repositories.js";
-import { httpBadRequest, httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import {
+	httpBadRequest,
+	httpNaoEncontrado,
+	httpOk,
+	httpProibido,
+} from "@/util/http-util.js";
 
 type AckPedidoCardapioParametros = {
 	id: string;
@@ -22,7 +27,9 @@ export async function ackPedidoCardapioDeliveryService({
 	sucesso,
 	idcontamensalocal,
 	mensagemerro,
-}: AckPedidoCardapioParametros): Promise<HttpResponse<{ id: string; status: string }>> {
+}: AckPedidoCardapioParametros): Promise<
+	HttpResponse<{ id: string; status: string }>
+> {
 	const pertence = await verificarUsuarioPertenceEmpresa(idusuario, idempresa);
 	if (!pertence) return httpProibido();
 

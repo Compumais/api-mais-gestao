@@ -21,11 +21,7 @@ import {
 	agoraBrasiliaIsoOffset,
 	hojeBrasiliaIsoDate,
 } from "@/util/data-hora-brasilia.js";
-import {
-	httpBadRequest,
-	httpOk,
-	httpProibido,
-} from "@/util/http-util.js";
+import { httpBadRequest, httpOk, httpProibido } from "@/util/http-util.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
 
 type RegistrarInutilizacaoNumeracaoNfceParametros = {
@@ -158,10 +154,7 @@ export async function registrarInutilizacaoNumeracaoNfceService({
 
 	const vendaVinculada =
 		await buscarVendaPdvGourmetPorNotaFiscalNfce(idnotafiscal);
-	if (
-		vendaVinculada &&
-		(!idvenda || vendaVinculada.id === idvenda)
-	) {
+	if (vendaVinculada && (!idvenda || vendaVinculada.id === idvenda)) {
 		await atualizarVendaPdvGourmet(vendaVinculada.id, {
 			idnotafiscalnfce: null,
 		});

@@ -1,7 +1,4 @@
-import {
-	JOBS_DISPONIVEIS,
-	type NomeJobManual,
-} from "@/worker/agendador.js";
+import { JOBS_DISPONIVEIS, type NomeJobManual } from "@/worker/agendador.js";
 
 const nomeJob = process.argv[2] as NomeJobManual | undefined;
 

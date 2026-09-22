@@ -14,7 +14,9 @@ type EditarUnidadeMedidaClientProps = {
 	id: string;
 };
 
-export function EditarUnidadeMedidaClient({ id }: EditarUnidadeMedidaClientProps) {
+export function EditarUnidadeMedidaClient({
+	id,
+}: EditarUnidadeMedidaClientProps) {
 	const router = useRouter();
 
 	const { data, isLoading } = useQuery({

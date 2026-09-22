@@ -89,7 +89,8 @@ export function AbrirMesaDialog({
 				numeromesa: dados.numeromesa,
 				status: STATUS_MESA.ABERTO,
 				numeropessoas:
-					dados.numeropessoas !== undefined && !Number.isNaN(dados.numeropessoas)
+					dados.numeropessoas !== undefined &&
+					!Number.isNaN(dados.numeropessoas)
 						? dados.numeropessoas
 						: 1,
 				observacao: dados.observacao || undefined,
@@ -142,9 +143,7 @@ export function AbrirMesaDialog({
 							<FieldError>{errors.numeromesa?.message}</FieldError>
 						</Field>
 						<Field>
-							<FieldLabel htmlFor="numeropessoas">
-								Número de pessoas
-							</FieldLabel>
+							<FieldLabel htmlFor="numeropessoas">Número de pessoas</FieldLabel>
 							<Input
 								id="numeropessoas"
 								type="number"
@@ -155,7 +154,9 @@ export function AbrirMesaDialog({
 							<FieldError>{errors.numeropessoas?.message}</FieldError>
 						</Field>
 						<Field>
-							<FieldLabel htmlFor="observacao">Observação (opcional)</FieldLabel>
+							<FieldLabel htmlFor="observacao">
+								Observação (opcional)
+							</FieldLabel>
 							<Textarea
 								id="observacao"
 								placeholder="Observações da mesa"

@@ -5,11 +5,8 @@ import { aplicarGrupoPadraoRascunhoImportacao } from "./aplicar-grupo-padrao-ras
 import { atualizarNotaFiscal } from "./atualizar.js";
 import { atualizarNotaFiscalCompra } from "./atualizar-compra.js";
 import {
-
 	atualizarItemRascunhoImportacao,
-
 	atualizarRascunhoImportacao,
-
 } from "./atualizar-rascunho.js";
 import { baixarXmlNotaFiscal } from "./baixar-xml.js";
 import { buscarNotaFiscal } from "./buscar.js";
@@ -142,5 +139,3 @@ export async function notasFiscaisRotas(app: FastifyInstance) {
 		handler: excluirNotaFiscal,
 	});
 }
-
-

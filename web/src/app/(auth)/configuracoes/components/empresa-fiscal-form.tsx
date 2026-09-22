@@ -262,9 +262,7 @@ export function EmpresaFiscalForm({ idempresa }: EmpresaFiscalFormProps) {
 							</Field>
 
 							<Field data-invalid={!!errors.indperfil}>
-								<FieldLabel htmlFor="indperfil">
-									Perfil EFD ICMS/IPI
-								</FieldLabel>
+								<FieldLabel htmlFor="indperfil">Perfil EFD ICMS/IPI</FieldLabel>
 								<Select
 									value={String(form.watch("indperfil") ?? "A")}
 									onValueChange={(v) =>

@@ -11,10 +11,13 @@ const atualizarDepartamentoParamsSchema = z.object({
 const atualizarDepartamentoBodySchema = z.object({
 	codigo: z.string().max(20).optional(),
 	descricao: z.string().max(12).optional(),
-	inativo: z.number().int().optional()
+	inativo: z.number().int().optional(),
 });
 
-export async function atualizarDepartamento(request: FastifyRequest, reply: FastifyReply) {
+export async function atualizarDepartamento(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());

@@ -8,7 +8,9 @@ import {
 } from "@/repositories/schema.js";
 import { db } from "./connection";
 
-export async function criarMovimentoEstoque(dadosMovimentoEstoque: NovoMovimentoEstoque) {
+export async function criarMovimentoEstoque(
+	dadosMovimentoEstoque: NovoMovimentoEstoque,
+) {
 	const [registro] = await db
 		.insert(movimentoestoque)
 		.values(dadosMovimentoEstoque)
@@ -26,7 +28,9 @@ export async function buscarMovimentoEstoquePorId(id: number) {
 	return registro;
 }
 
-export async function listarMovimentosEstoquePorDocumento(idnotafiscal: string) {
+export async function listarMovimentosEstoquePorDocumento(
+	idnotafiscal: string,
+) {
 	return db
 		.select()
 		.from(movimentoestoque)
@@ -40,7 +44,9 @@ export async function listarMovimentosEstoquePorIdOriginal(idoriginal: string) {
 		.where(eq(movimentoestoque.idoriginal, idoriginal));
 }
 
-export async function excluirMovimentosEstoquePorIdOriginal(idoriginal: string) {
+export async function excluirMovimentosEstoquePorIdOriginal(
+	idoriginal: string,
+) {
 	const removidos = await db
 		.delete(movimentoestoque)
 		.where(eq(movimentoestoque.idoriginal, idoriginal))
@@ -249,4 +255,3 @@ export async function listarHistoricoMovimentosProduto({
 		total: totalCount[0]?.value ?? 0,
 	};
 }
-

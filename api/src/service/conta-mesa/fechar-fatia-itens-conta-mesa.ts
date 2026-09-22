@@ -18,9 +18,7 @@ import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-reposit
 import { excluirVendaPdvGourmet } from "@/repositories/venda-pdv-gourmet-repositories.js";
 import { criarVendaPdvItem } from "@/repositories/venda-pdv-item-repositories.js";
 import { criarVendaPdvGourmetService } from "@/service/venda-pdv-gourmet/criar-venda-pdv-gourmet.js";
-import type {
-	PagamentoErpVendaPdv,
-} from "@/service/venda-pdv-gourmet/gerar-contas-receber-venda-pdv.js";
+import type { PagamentoErpVendaPdv } from "@/service/venda-pdv-gourmet/gerar-contas-receber-venda-pdv.js";
 import {
 	arredondarMoeda,
 	calcularPrecoTotalItem,
@@ -73,7 +71,10 @@ export type FecharFatiaItensContaMesaResultado = {
 	conta: ContaMesa | null;
 };
 
-function calcularTroco(total: number, pagamento: FecharFatiaItensPagamento): number {
+function calcularTroco(
+	total: number,
+	pagamento: FecharFatiaItensPagamento,
+): number {
 	const pago =
 		parseValorMonetario(pagamento.valordinheiro) +
 		parseValorMonetario(pagamento.valorcartaocredito) +
@@ -296,12 +297,8 @@ export async function fecharFatiaItensContaMesaService({
 		);
 
 		const dadosContaAtualizacao = {
-			desconto: todosItensPagos
-				? "0.00"
-				: descontoRestante.toFixed(2),
-			valortaxaservico: todosItensPagos
-				? "0.00"
-				: taxaRestante.toFixed(2),
+			desconto: todosItensPagos ? "0.00" : descontoRestante.toFixed(2),
+			valortaxaservico: todosItensPagos ? "0.00" : taxaRestante.toFixed(2),
 			valorcouverartistico: todosItensPagos
 				? "0.00"
 				: couvertRestante.toFixed(2),

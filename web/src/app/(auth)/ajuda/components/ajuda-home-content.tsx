@@ -6,10 +6,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { formatDataCivilBrasilia } from "@/lib/date";
-import {
-	type AjudaPostPublico,
-	ajudaService,
-} from "@/services/ajuda.service";
+import { type AjudaPostPublico, ajudaService } from "@/services/ajuda.service";
 
 function filtrarPosts(posts: AjudaPostPublico[], query: string) {
 	const termo = query.trim().toLowerCase();
@@ -44,7 +41,10 @@ function PostCard({ post }: { post: AjudaPostPublico }) {
 				</div>
 			) : (
 				<div className="flex aspect-[16/9] items-center justify-center border-b bg-primary/5">
-					<IconFileText className="size-10 text-primary/60" aria-hidden="true" />
+					<IconFileText
+						className="size-10 text-primary/60"
+						aria-hidden="true"
+					/>
 				</div>
 			)}
 			<div className="p-5">
@@ -108,10 +108,7 @@ export function AjudaHomeContent() {
 		() => filtrarPosts(posts, searchQuery),
 		[posts, searchQuery],
 	);
-	const populares = useMemo(
-		() => [...filtrados].slice(0, 6),
-		[filtrados],
-	);
+	const populares = useMemo(() => [...filtrados].slice(0, 6), [filtrados]);
 
 	return (
 		<>

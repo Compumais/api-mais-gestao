@@ -7,16 +7,26 @@ const atualizarIntegracaoContabilConfiguracaoParamsSchema = z.object({
 	id: z.string(),
 });
 
-const atualizarIntegracaoContabilConfiguracaoBodySchema = z.record(z.string(), z.unknown());
+const atualizarIntegracaoContabilConfiguracaoBodySchema = z.record(
+	z.string(),
+	z.unknown(),
+);
 
-export async function atualizarIntegracaoContabilConfiguracao(request: FastifyRequest, reply: FastifyReply) {
+export async function atualizarIntegracaoContabilConfiguracao(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
 		}
 
-		const { id } = atualizarIntegracaoContabilConfiguracaoParamsSchema.parse(request.params);
-		const dados = atualizarIntegracaoContabilConfiguracaoBodySchema.parse(request.body);
+		const { id } = atualizarIntegracaoContabilConfiguracaoParamsSchema.parse(
+			request.params,
+		);
+		const dados = atualizarIntegracaoContabilConfiguracaoBodySchema.parse(
+			request.body,
+		);
 
 		const resultado = await atualizarIntegracaoContabilConfiguracaoService({
 			integracaoContabilConfiguracaoId: id,

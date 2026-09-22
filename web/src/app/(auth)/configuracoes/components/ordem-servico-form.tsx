@@ -316,7 +316,9 @@ export function OrdemServicoConfigForm({
 										render={({ field }) => (
 											<Combobox
 												options={opcoesCfop}
-												value={typeof field.value === "string" ? field.value : ""}
+												value={
+													typeof field.value === "string" ? field.value : ""
+												}
 												onChange={(value) => field.onChange(value || null)}
 												placeholder="Selecione"
 												searchPlaceholder="Buscar CFOP..."

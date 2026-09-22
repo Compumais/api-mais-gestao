@@ -144,9 +144,7 @@ export default function ProducoesPage() {
 				limit: pagination.pageSize,
 				...(filtrosColuna.nome ? { nome: filtrosColuna.nome } : {}),
 				...(filtrosColuna.codigo ? { codigo: filtrosColuna.codigo } : {}),
-				...(filtrosColuna.datahora
-					? { datahora: filtrosColuna.datahora }
-					: {}),
+				...(filtrosColuna.datahora ? { datahora: filtrosColuna.datahora } : {}),
 				...(filtrosColuna.origem !== ""
 					? { origem: Number(filtrosColuna.origem) }
 					: {}),

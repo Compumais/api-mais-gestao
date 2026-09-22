@@ -42,8 +42,7 @@ export async function excluirNotaFiscalService({
 		return httpProibido();
 	}
 
-	const ehCompra =
-		registro.tipoorigem === 0 || registro.tipoorigem === null;
+	const ehCompra = registro.tipoorigem === 0 || registro.tipoorigem === null;
 	const ehRascunho = registro.status === STATUS_RASCUNHO_IMPORTACAO;
 	const ehCancelada = registro.status === STATUS_NF_COMPRA_CANCELADA;
 

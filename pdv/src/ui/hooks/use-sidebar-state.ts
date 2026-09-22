@@ -15,9 +15,7 @@ export function useSidebarState() {
 	useEffect(() => {
 		function sincronizar(event: Event) {
 			const detalhe = (event as CustomEvent<boolean>).detail;
-			setRecolhidaLocal(
-				typeof detalhe === "boolean" ? detalhe : lerEstado(),
-			);
+			setRecolhidaLocal(typeof detalhe === "boolean" ? detalhe : lerEstado());
 		}
 		window.addEventListener(EVENT_NAME, sincronizar);
 		return () => window.removeEventListener(EVENT_NAME, sincronizar);

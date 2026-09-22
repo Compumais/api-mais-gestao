@@ -1,4 +1,7 @@
-import type { MeioPagamentoPdv, MeiosPagamentoNfceConfig } from "@/util/nfce-config-padrao.js";
+import type {
+	MeioPagamentoPdv,
+	MeiosPagamentoNfceConfig,
+} from "@/util/nfce-config-padrao.js";
 import {
 	extrairPagamentosResumo,
 	type PagamentosRegistro,

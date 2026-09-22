@@ -51,7 +51,10 @@ function gerarRelatorioTXT(
 	relatorio += `Data de Emissao: ${new Date().toLocaleDateString("pt-BR")}\n\n`;
 
 	relatorio += "-".repeat(90) + "\n";
-	relatorio += "RECEITA TOTAL".padEnd(64) + formatCurrency(dados.totalReceitas).padStart(26) + "\n";
+	relatorio +=
+		"RECEITA TOTAL".padEnd(64) +
+		formatCurrency(dados.totalReceitas).padStart(26) +
+		"\n";
 	relatorio += "-".repeat(90) + "\n";
 	for (const item of dados.receitas) {
 		const label = `${item.codigo ? `${item.codigo} - ` : ""}${item.nome ?? "-"}`;
@@ -63,7 +66,10 @@ function gerarRelatorioTXT(
 
 	relatorio += "\n";
 	relatorio += "-".repeat(90) + "\n";
-	relatorio += "DESPESA TOTAL".padEnd(64) + formatCurrency(dados.totalDespesas).padStart(26) + "\n";
+	relatorio +=
+		"DESPESA TOTAL".padEnd(64) +
+		formatCurrency(dados.totalDespesas).padStart(26) +
+		"\n";
 	relatorio += "-".repeat(90) + "\n";
 	for (const item of dados.despesas) {
 		const label = `${item.codigo ? `${item.codigo} - ` : ""}${item.nome ?? "-"}`;

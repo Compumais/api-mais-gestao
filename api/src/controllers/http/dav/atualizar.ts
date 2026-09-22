@@ -8,10 +8,13 @@ const atualizarDavParamsSchema = z.object({
 });
 
 const atualizarDavBodySchema = z.looseObject({
-	codigo: z.number().int().optional()
+	codigo: z.number().int().optional(),
 });
 
-export async function atualizarDav(request: FastifyRequest, reply: FastifyReply) {
+export async function atualizarDav(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());

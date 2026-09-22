@@ -144,8 +144,12 @@ export default function CapturaSefazPage() {
 					`Sincronização concluída: nenhum documento novo.${detalheSefaz}`,
 				);
 			}
-			void queryClient.invalidateQueries({ queryKey: ["nfe-inbound-sync-status"] });
-			void queryClient.invalidateQueries({ queryKey: ["nfe-inbound-documentos"] });
+			void queryClient.invalidateQueries({
+				queryKey: ["nfe-inbound-sync-status"],
+			});
+			void queryClient.invalidateQueries({
+				queryKey: ["nfe-inbound-documentos"],
+			});
 		},
 		onError: (error: Error) => {
 			toast.error(error.message || "Erro ao sincronizar com a SEFAZ");
@@ -157,7 +161,9 @@ export default function CapturaSefazPage() {
 			importarDocumentoNfeInbound(idempresa, idDocumento),
 		onSuccess: (resultado) => {
 			toast.success("Rascunho de importação criado.");
-			void queryClient.invalidateQueries({ queryKey: ["nfe-inbound-documentos"] });
+			void queryClient.invalidateQueries({
+				queryKey: ["nfe-inbound-documentos"],
+			});
 			router.push(resultado.urlRascunho);
 		},
 		onError: (error: Error) => {
@@ -176,8 +182,12 @@ export default function CapturaSefazPage() {
 			manifestarCienciaNfeInbound(idempresa, idDocumento),
 		onSuccess: () => {
 			toast.success("Ciência da operação enviada. Sincronização em andamento.");
-			void queryClient.invalidateQueries({ queryKey: ["nfe-inbound-sync-status"] });
-			void queryClient.invalidateQueries({ queryKey: ["nfe-inbound-documentos"] });
+			void queryClient.invalidateQueries({
+				queryKey: ["nfe-inbound-sync-status"],
+			});
+			void queryClient.invalidateQueries({
+				queryKey: ["nfe-inbound-documentos"],
+			});
 		},
 		onError: (error: Error) => {
 			toast.error(error.message || "Erro ao manifestar ciência");
@@ -204,10 +214,12 @@ export default function CapturaSefazPage() {
 			<div className="flex flex-col gap-4 p-4 md:p-6">
 				<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 					<div>
-						<h1 className="text-2xl font-semibold tracking-tight">Captura SEFAZ</h1>
+						<h1 className="text-2xl font-semibold tracking-tight">
+							Captura SEFAZ
+						</h1>
 						<p className="text-muted-foreground text-sm">
-							Sincronize NF-e de entrada destinadas ao CNPJ da empresa via Distribuição
-							DF-e.
+							Sincronize NF-e de entrada destinadas ao CNPJ da empresa via
+							Distribuição DF-e.
 						</p>
 					</div>
 					<Button
@@ -229,14 +241,18 @@ export default function CapturaSefazPage() {
 					</CardHeader>
 					<CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 						<div>
-							<p className="text-muted-foreground text-sm">Última sincronização</p>
+							<p className="text-muted-foreground text-sm">
+								Última sincronização
+							</p>
 							<p className="font-medium">
 								{formatarData(syncStatus?.ultimosync)}
 							</p>
 						</div>
 						<div>
 							<p className="text-muted-foreground text-sm">Último NSU</p>
-							<p className="font-mono text-sm">{syncStatus?.ultimonsu ?? "-"}</p>
+							<p className="font-mono text-sm">
+								{syncStatus?.ultimonsu ?? "-"}
+							</p>
 						</div>
 						<div>
 							<p className="text-muted-foreground text-sm">Max NSU</p>
@@ -248,7 +264,7 @@ export default function CapturaSefazPage() {
 								{syncStatus?.sincronizando
 									? "Sincronizando..."
 									: syncStatus?.proximotentativa &&
-										  new Date(syncStatus.proximotentativa) > new Date()
+											new Date(syncStatus.proximotentativa) > new Date()
 										? `Backoff até ${formatarData(syncStatus.proximotentativa)}`
 										: "Pronto"}
 							</p>
@@ -260,7 +276,8 @@ export default function CapturaSefazPage() {
 					<CardHeader>
 						<CardTitle>Documentos recebidos</CardTitle>
 						<CardDescription>
-							{documentosQuery.data?.paginacao.total ?? 0} documento(s) capturado(s)
+							{documentosQuery.data?.paginacao.total ?? 0} documento(s)
+							capturado(s)
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
@@ -268,8 +285,8 @@ export default function CapturaSefazPage() {
 							<p className="text-muted-foreground text-sm">Carregando...</p>
 						) : documentos.length === 0 ? (
 							<p className="text-muted-foreground text-sm">
-								Nenhum documento recebido. Clique em Sincronizar para consultar a
-								SEFAZ.
+								Nenhum documento recebido. Clique em Sincronizar para consultar
+								a SEFAZ.
 							</p>
 						) : (
 							<div className="overflow-x-auto">
@@ -307,8 +324,9 @@ export default function CapturaSefazPage() {
 												</TableCell>
 												<TableCell>
 													<Badge variant="secondary">
-														{LABEL_STATUS_MANIFESTACAO[doc.statusmanifestacao] ??
-															doc.statusmanifestacao}
+														{LABEL_STATUS_MANIFESTACAO[
+															doc.statusmanifestacao
+														] ?? doc.statusmanifestacao}
 													</Badge>
 												</TableCell>
 												<TableCell>
@@ -325,8 +343,9 @@ export default function CapturaSefazPage() {
 														{doc.jaImportada ||
 														doc.statusimportacao === "importado"
 															? "Já importada"
-															: (LABEL_STATUS_IMPORTACAO[doc.statusimportacao] ??
-																doc.statusimportacao)}
+															: (LABEL_STATUS_IMPORTACAO[
+																	doc.statusimportacao
+																] ?? doc.statusimportacao)}
 													</Badge>
 												</TableCell>
 												<TableCell className="text-right">

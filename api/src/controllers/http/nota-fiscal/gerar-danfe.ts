@@ -30,10 +30,7 @@ export async function gerarDanfeNotaFiscal(
 		const { filename, pdf } = resultado.body;
 
 		reply.header("Content-Type", "application/pdf");
-		reply.header(
-			"Content-Disposition",
-			`inline; filename="${filename}"`,
-		);
+		reply.header("Content-Disposition", `inline; filename="${filename}"`);
 
 		return reply.status(200).send(pdf);
 	} catch (error) {

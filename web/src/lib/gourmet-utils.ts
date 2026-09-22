@@ -105,9 +105,10 @@ export function pagamentoCobreTotal(pago: number, total: number): boolean {
 	return arredondarMoeda(pago) >= arredondarMoeda(total);
 }
 
-export function formatCurrency(value: string | number | null | undefined): string {
-	const num =
-		typeof value === "string" ? parseValor(value) : (value ?? 0);
+export function formatCurrency(
+	value: string | number | null | undefined,
+): string {
+	const num = typeof value === "string" ? parseValor(value) : (value ?? 0);
 	return new Intl.NumberFormat("pt-BR", {
 		style: "currency",
 		currency: "BRL",
@@ -145,7 +146,10 @@ export function calcularTotalPago(pagamentos: PagamentosFechar): number {
 	);
 }
 
-export function calcularTroco(total: number, pagamentos: PagamentosFechar): number {
+export function calcularTroco(
+	total: number,
+	pagamentos: PagamentosFechar,
+): number {
 	const pago = calcularTotalPago(pagamentos);
 	return Math.max(0, pago - total);
 }
@@ -262,7 +266,9 @@ export function calcularTotalFatiaSelecionada(
 	const restoIds = itensPendentes
 		.filter((item) => !idsSet.has(item.id))
 		.map((item) => item.id);
-	const grupos = restoIds.length ? [idsSelecionados, restoIds] : [idsSelecionados];
+	const grupos = restoIds.length
+		? [idsSelecionados, restoIds]
+		: [idsSelecionados];
 	return partirPorItensFatia(itensParaRateio, grupos, totais);
 }
 
@@ -393,12 +399,10 @@ export function pagamentoPdvExigeCliente(
 export function extrairPagamentosErpForm(
 	pagamentos: PagamentoParcialPdv[],
 ): { idtipodocumentofinanceiro: string; valor: string }[] {
-	return pagamentos
-		.filter(isPagamentoErpPdv)
-		.map((p) => ({
-			idtipodocumentofinanceiro: p.idtipodocumentofinanceiro,
-			valor: p.valor.toFixed(2),
-		}));
+	return pagamentos.filter(isPagamentoErpPdv).map((p) => ({
+		idtipodocumentofinanceiro: p.idtipodocumentofinanceiro,
+		valor: p.valor.toFixed(2),
+	}));
 }
 
 export interface CupomItemLinha {
@@ -442,14 +446,16 @@ export interface ConfirmacaoVendaPdvResult {
 }
 
 export function buildCupomNfceInfo(
-	emissao: {
-		emitida?: boolean;
-		idnotafiscal?: string;
-		chave?: string;
-		protocolo?: string;
-		qrCode?: string;
-		urlChave?: string;
-	} | undefined,
+	emissao:
+		| {
+				emitida?: boolean;
+				idnotafiscal?: string;
+				chave?: string;
+				protocolo?: string;
+				qrCode?: string;
+				urlChave?: string;
+		  }
+		| undefined,
 	ambiente?: number | null,
 ): CupomNfceInfo | undefined {
 	if (!emissao?.emitida || !emissao.chave || !emissao.idnotafiscal) {
@@ -466,7 +472,10 @@ export function buildCupomNfceInfo(
 	};
 }
 
-export function montarUrlImagemQrCodeNfce(conteudo: string, tamanho = 180): string {
+export function montarUrlImagemQrCodeNfce(
+	conteudo: string,
+	tamanho = 180,
+): string {
 	return `https://api.qrserver.com/v1/create-qr-code/?size=${tamanho}x${tamanho}&data=${encodeURIComponent(conteudo)}`;
 }
 
@@ -476,7 +485,11 @@ export const MEIOS_PAGAMENTO_PDV: Array<{
 	campo: keyof PagamentosFechar;
 }> = [
 	{ id: "dinheiro", label: "Dinheiro", campo: "valordinheiro" },
-	{ id: "cartao_credito", label: "Cartão Crédito", campo: "valorcartaocredito" },
+	{
+		id: "cartao_credito",
+		label: "Cartão Crédito",
+		campo: "valorcartaocredito",
+	},
 	{ id: "cartao_debito", label: "Cartão Débito", campo: "valorcartaodebito" },
 	{ id: "pix", label: "PIX", campo: "valorpix" },
 	{ id: "prepago", label: "Pré-pago", campo: "valorprepago" },
@@ -563,7 +576,9 @@ export function vendaPagamentosToFecharContaForm(
 	};
 }
 
-export function totalPagamentosParciais(pagamentos: PagamentoParcialPdv[]): number {
+export function totalPagamentosParciais(
+	pagamentos: PagamentoParcialPdv[],
+): number {
 	return arredondarMoeda(pagamentos.reduce((acc, p) => acc + p.valor, 0));
 }
 

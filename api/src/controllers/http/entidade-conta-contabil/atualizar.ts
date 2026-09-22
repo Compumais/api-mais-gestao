@@ -10,16 +10,21 @@ const atualizarEntidadeContaContabilParamsSchema = z.object({
 
 const atualizarEntidadeContaContabilBodySchema = z.object({
 	idcontacontabil: z.string().optional(),
-	identidade: z.string().optional()
+	identidade: z.string().optional(),
 });
 
-export async function atualizarEntidadeContaContabil(request: FastifyRequest, reply: FastifyReply) {
+export async function atualizarEntidadeContaContabil(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
 		}
 
-		const { id } = atualizarEntidadeContaContabilParamsSchema.parse(request.params);
+		const { id } = atualizarEntidadeContaContabilParamsSchema.parse(
+			request.params,
+		);
 		const dados = removerUndefined(
 			atualizarEntidadeContaContabilBodySchema.parse(request.body),
 		);

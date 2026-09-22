@@ -7,7 +7,10 @@ const excluirOperacaoFiscalParamsSchema = z.object({
 	id: z.string(),
 });
 
-export async function excluirOperacaoFiscal(request: FastifyRequest, reply: FastifyReply) {
+export async function excluirOperacaoFiscal(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());

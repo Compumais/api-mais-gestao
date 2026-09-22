@@ -3,13 +3,14 @@ import type { FastifySchema } from "fastify";
 export const criarIntegracaoContabilConfiguracaoSchema: FastifySchema = {
 	tags: ["integracoes-contabil-configuracao"],
 	summary: "Criar integração contábil configuração",
-	description: "Cria um novo registro de integração contábil configuração na empresa do usuário autenticado.",
+	description:
+		"Cria um novo registro de integração contábil configuração na empresa do usuário autenticado.",
 	security: [{ bearerAuth: [] }],
 	body: {
 		type: "object",
 		properties: {
 			idempresa: { type: "string", description: "ID da empresa" },
-			"...": { type: "string", description: "Demais campos da entidade" }
+			"...": { type: "string", description: "Demais campos da entidade" },
 		},
 		required: ["idempresa"],
 	},
@@ -50,7 +51,8 @@ export const criarIntegracaoContabilConfiguracaoSchema: FastifySchema = {
 export const buscarIntegracaoContabilConfiguracaoSchema: FastifySchema = {
 	tags: ["integracoes-contabil-configuracao"],
 	summary: "Buscar integração contábil configuração por ID",
-	description: "Retorna os dados de um registro de integração contábil configuração.",
+	description:
+		"Retorna os dados de um registro de integração contábil configuração.",
 	security: [{ bearerAuth: [] }],
 	params: {
 		type: "object",
@@ -103,7 +105,8 @@ export const buscarIntegracaoContabilConfiguracaoSchema: FastifySchema = {
 export const listarIntegracaoContabilConfiguracaosSchema: FastifySchema = {
 	tags: ["integracoes-contabil-configuracao"],
 	summary: "Listar integrações contábil configuração",
-	description: "Lista registros de integrações contábil configuração com paginação.",
+	description:
+		"Lista registros de integrações contábil configuração com paginação.",
 	security: [{ bearerAuth: [] }],
 	querystring: {
 		type: "object",
@@ -119,7 +122,10 @@ export const listarIntegracaoContabilConfiguracaosSchema: FastifySchema = {
 		200: {
 			type: "object",
 			properties: {
-				data: { type: "array", items: { type: "object", additionalProperties: true } },
+				data: {
+					type: "array",
+					items: { type: "object", additionalProperties: true },
+				},
 				paginacao: {
 					type: "object",
 					properties: {

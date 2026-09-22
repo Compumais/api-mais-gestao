@@ -28,8 +28,9 @@ async function popularParametrizacaoTributosPadraoEmpresas() {
 				);
 			}
 
-			const regrasCriadas =
-				await criarParametrizacaoTributosPadraoService(empresa.id);
+			const regrasCriadas = await criarParametrizacaoTributosPadraoService(
+				empresa.id,
+			);
 
 			if (regrasCriadas.length > 0) {
 				console.log(

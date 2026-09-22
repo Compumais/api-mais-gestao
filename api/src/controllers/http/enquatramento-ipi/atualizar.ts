@@ -11,10 +11,13 @@ const atualizarEnquatramentoIpiParamsSchema = z.object({
 const atualizarEnquatramentoIpiBodySchema = z.object({
 	codigo: z.string().max(20).optional(),
 	descricao: z.string().max(100).optional(),
-	grupocst: z.string().max(20).optional()
+	grupocst: z.string().max(20).optional(),
 });
 
-export async function atualizarEnquatramentoIpi(request: FastifyRequest, reply: FastifyReply) {
+export async function atualizarEnquatramentoIpi(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());

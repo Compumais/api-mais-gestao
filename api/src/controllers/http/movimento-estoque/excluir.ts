@@ -19,9 +19,7 @@ export async function excluirMovimentoEstoque(
 		}
 
 		const idusuario = request.user.id;
-		const { id } = excluirMovimentoEstoqueParamsSchema.parse(
-			request.params,
-		);
+		const { id } = excluirMovimentoEstoqueParamsSchema.parse(request.params);
 
 		const resultado = await excluirMovimentoEstoqueService({
 			movimentoEstoqueId: id,
@@ -48,4 +46,3 @@ export async function excluirMovimentoEstoque(
 		});
 	}
 }
-

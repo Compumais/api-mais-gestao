@@ -76,7 +76,11 @@ describe("moverPlanoContasService", () => {
 
 		const [id, destino, codigos] = vi.mocked(
 			planoContasRepository.moverPlanoContasComCodigos,
-		).mock.calls[0] as [string, string | null, { id: string; codigo: string }[]];
+		).mock.calls[0] as [
+			string,
+			string | null,
+			{ id: string; codigo: string }[],
+		];
 
 		expect(id).toBe("b");
 		expect(destino).toBe("d");
@@ -101,7 +105,11 @@ describe("moverPlanoContasService", () => {
 
 		const [, destino, codigos] = vi.mocked(
 			planoContasRepository.moverPlanoContasComCodigos,
-		).mock.calls[0] as [string, string | null, { id: string; codigo: string }[]];
+		).mock.calls[0] as [
+			string,
+			string | null,
+			{ id: string; codigo: string }[],
+		];
 
 		expect(destino).toBeNull();
 		// b vai para o fim das raízes (1=a, 2=d, 3=b) e c acompanha

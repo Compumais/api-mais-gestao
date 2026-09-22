@@ -266,9 +266,7 @@ export function MovimentacoesTable({
 								<DropdownMenuCheckboxItem
 									key={column.id}
 									checked={column.getIsVisible()}
-									onCheckedChange={(value) =>
-										column.toggleVisibility(!!value)
-									}
+									onCheckedChange={(value) => column.toggleVisibility(!!value)}
 								>
 									{rotuloColuna(column)}
 								</DropdownMenuCheckboxItem>

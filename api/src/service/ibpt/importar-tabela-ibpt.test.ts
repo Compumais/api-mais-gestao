@@ -149,7 +149,7 @@ describe("importarTabelaIbptService", () => {
 			],
 		});
 		substituirAliquotasIbptPorUf.mockRejectedValue(
-			new Error("Failed query: insert into \"ibpt_aliquota\" values ($1)"),
+			new Error('Failed query: insert into "ibpt_aliquota" values ($1)'),
 		);
 
 		const resultado = await importarTabelaIbptService({ uf: "MG" });
@@ -158,7 +158,8 @@ describe("importarTabelaIbptService", () => {
 			success: false,
 			status: 400,
 			code: "BAD_REQUEST_ERROR",
-			error: "Falha ao gravar a tabela IBPT no banco. Tente sincronizar novamente.",
+			error:
+				"Falha ao gravar a tabela IBPT no banco. Tente sincronizar novamente.",
 		});
 	});
 });

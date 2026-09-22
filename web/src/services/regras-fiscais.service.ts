@@ -75,7 +75,9 @@ export const regrasFiscaisService = {
 	},
 
 	async validar(id: string): Promise<RegraFiscal> {
-		const { data } = await api.post<RegraFiscal>(`/regras-fiscais/${id}/validar`);
+		const { data } = await api.post<RegraFiscal>(
+			`/regras-fiscais/${id}/validar`,
+		);
 		return data;
 	},
 

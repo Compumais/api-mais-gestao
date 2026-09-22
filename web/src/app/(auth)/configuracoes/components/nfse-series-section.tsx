@@ -14,7 +14,10 @@ interface NfseSeriesSectionProps {
 	series: NfseSerie[];
 }
 
-export function NfseSeriesSection({ idempresa, series }: NfseSeriesSectionProps) {
+export function NfseSeriesSection({
+	idempresa,
+	series,
+}: NfseSeriesSectionProps) {
 	const queryClient = useQueryClient();
 	const [novaSerie, setNovaSerie] = useState("");
 	const [proximoNumero, setProximoNumero] = useState("1");
@@ -171,7 +174,9 @@ export function NfseSeriesSection({ idempresa, series }: NfseSeriesSectionProps)
 											<span>
 												Série {s.serie} — próximo nº {s.numeroproximo}
 											</span>
-											{s.padrao ? <Badge variant="secondary">Padrão</Badge> : null}
+											{s.padrao ? (
+												<Badge variant="secondary">Padrão</Badge>
+											) : null}
 										</div>
 										<div className="flex flex-wrap gap-2">
 											{!s.padrao ? (

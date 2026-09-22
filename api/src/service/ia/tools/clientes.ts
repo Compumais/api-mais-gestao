@@ -119,7 +119,13 @@ export const toolsClientes: DefinicaoTool[] = [
 		mutavel: false,
 		schema: z.object({
 			busca: z.string().optional().describe("Nome ou trecho para filtrar"),
-			limit: z.number().int().min(1).max(50).optional().describe("Limite (máx 50)"),
+			limit: z
+				.number()
+				.int()
+				.min(1)
+				.max(50)
+				.optional()
+				.describe("Limite (máx 50)"),
 		}),
 		executar: async (ctx, args) => {
 			const { busca, limit } = args as { busca?: string; limit?: number };
@@ -133,7 +139,11 @@ export const toolsClientes: DefinicaoTool[] = [
 			});
 			return httpParaResultadoTool(resultado, (body) => {
 				const pagina = body as {
-					data?: Array<{ id: string; nome: string | null; cnpjcpf: string | null }>;
+					data?: Array<{
+						id: string;
+						nome: string | null;
+						cnpjcpf: string | null;
+					}>;
 					paginacao?: { total: number };
 				};
 				const itens = pagina.data ?? [];

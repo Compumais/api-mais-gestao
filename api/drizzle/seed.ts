@@ -164,7 +164,9 @@ async function seed() {
 
 		console.log("\n✅ Seed concluído com sucesso!");
 		console.log("\n📋 Resumo:");
-		console.log(`  - ${UNIDADES_MEDIDA_PADRAO.length} unidades de medida padrão`);
+		console.log(
+			`  - ${UNIDADES_MEDIDA_PADRAO.length} unidades de medida padrão`,
+		);
 		console.log(`  - ${BANCOS_PADRAO.length} bancos padrão`);
 		console.log(`  - CEST globais (arquivo oficial)`);
 		console.log(`  - Serviços NFS-e LC 116 (arquivo oficial)`);

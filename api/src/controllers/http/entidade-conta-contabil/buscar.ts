@@ -7,13 +7,18 @@ const buscarEntidadeContaContabilParamsSchema = z.object({
 	id: z.string(),
 });
 
-export async function buscarEntidadeContaContabil(request: FastifyRequest, reply: FastifyReply) {
+export async function buscarEntidadeContaContabil(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
 		}
 
-		const { id } = buscarEntidadeContaContabilParamsSchema.parse(request.params);
+		const { id } = buscarEntidadeContaContabilParamsSchema.parse(
+			request.params,
+		);
 
 		const resultado = await buscarEntidadeContaContabilService({
 			entidadeContaContabilId: id,

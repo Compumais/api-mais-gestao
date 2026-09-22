@@ -121,7 +121,10 @@ export function AjudaPostForm({
 			}
 		}
 
-		form.setValue("descricao", novo, { shouldValidate: true, shouldDirty: true });
+		form.setValue("descricao", novo, {
+			shouldValidate: true,
+			shouldDirty: true,
+		});
 	}
 
 	async function onCapaChange(fileList: FileList | null) {
@@ -131,7 +134,9 @@ export function AjudaPostForm({
 			const dataUrl = await lerArquivoComoDataUrl(file);
 			form.setValue("capa", dataUrl, { shouldValidate: true });
 		} catch (erro) {
-			toast.error(erro instanceof Error ? erro.message : "Erro ao carregar capa");
+			toast.error(
+				erro instanceof Error ? erro.message : "Erro ao carregar capa",
+			);
 		}
 	}
 

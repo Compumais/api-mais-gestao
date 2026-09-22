@@ -20,7 +20,9 @@ export function montarRegistro74(item: InventarioSintegra): string {
 		formatarDecimal(item.quantidade, 13, 3),
 		formatarDecimal(item.valorTotal, 13, 2),
 		item.codigoPosse,
-		possePropria ? formatarNumerico("0", 14) : formatarCnpjCpf(item.cnpjPossuidor),
+		possePropria
+			? formatarNumerico("0", 14)
+			: formatarCnpjCpf(item.cnpjPossuidor),
 		possePropria
 			? formatarAlfanumerico("", 14)
 			: formatarInscricaoEstadual(item.inscricaoEstadualPossuidor),

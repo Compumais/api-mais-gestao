@@ -115,10 +115,7 @@ export const fichaProducaoService = {
 		await api.delete(`/fichas-producao/${id}`);
 	},
 
-	async produzir(
-		id: string,
-		quantidade: string,
-	): Promise<ResultadoProducao> {
+	async produzir(id: string, quantidade: string): Promise<ResultadoProducao> {
 		const { data } = await api.post<ResultadoProducao>(
 			`/fichas-producao/${id}/produzir`,
 			{ quantidade },

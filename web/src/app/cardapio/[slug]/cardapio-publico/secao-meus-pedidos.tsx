@@ -67,8 +67,13 @@ export function SecaoMeusPedidos({
 				</p>
 			) : null}
 
-			{!carregando && telefone.replace(/\D/g, "").length >= 10 && pedidos.length === 0 ? (
-				<p className="mt-4 rounded-xl border border-dashed bg-white p-4 text-sm font-medium" style={{ borderColor: "#d4d4d4", color: "#404040" }}>
+			{!carregando &&
+			telefone.replace(/\D/g, "").length >= 10 &&
+			pedidos.length === 0 ? (
+				<p
+					className="mt-4 rounded-xl border border-dashed bg-white p-4 text-sm font-medium"
+					style={{ borderColor: "#d4d4d4", color: "#404040" }}
+				>
 					Nenhum pedido encontrado para este telefone.
 				</p>
 			) : null}
@@ -86,14 +91,22 @@ export function SecaoMeusPedidos({
 									<p className="text-sm font-bold">
 										#{pedido.protocolo} · {rotuloStatus(pedido.status)}
 									</p>
-									<p className="mt-0.5 text-xs font-medium" style={{ color: "#404040" }}>
+									<p
+										className="mt-0.5 text-xs font-medium"
+										style={{ color: "#404040" }}
+									>
 										{formatarDataPedido(pedido.criadoem)} ·{" "}
 										{pedido.modalidade === "retirada" ? "Retirada" : "Entrega"}
 									</p>
 								</div>
-								<p className="text-sm font-bold">{formatarMoeda(pedido.total)}</p>
+								<p className="text-sm font-bold">
+									{formatarMoeda(pedido.total)}
+								</p>
 							</div>
-							<p className="mt-2 line-clamp-2 text-xs font-medium" style={{ color: "#404040" }}>
+							<p
+								className="mt-2 line-clamp-2 text-xs font-medium"
+								style={{ color: "#404040" }}
+							>
 								{pedido.itens
 									.map((item) => `${item.quantidade}x ${item.nomeproduto}`)
 									.join(" · ")}

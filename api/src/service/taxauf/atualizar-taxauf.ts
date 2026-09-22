@@ -47,11 +47,7 @@ export async function atualizarTaxaUfService({
 	}
 
 	if (dados.codigo) {
-		const duplicado = await buscarTaxaUfDuplicada(
-			idempresa,
-			dados.codigo,
-			id,
-		);
+		const duplicado = await buscarTaxaUfDuplicada(idempresa, dados.codigo, id);
 
 		if (duplicado) {
 			return httpRecursoExistente();

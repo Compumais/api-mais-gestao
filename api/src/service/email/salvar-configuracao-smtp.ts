@@ -6,15 +6,9 @@ import {
 	criarConfiguracaoEmailSmtp,
 } from "@/repositories/configuracao-email-smtp-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
-import type {
-	ConfiguracaoEmailSmtpPublica,
-} from "@/service/email/buscar-configuracao-smtp.js";
+import type { ConfiguracaoEmailSmtpPublica } from "@/service/email/buscar-configuracao-smtp.js";
 import { criptografarTexto } from "@/util/criptografia-certificado.js";
-import {
-	httpBadRequest,
-	httpOk,
-	httpProibido,
-} from "@/util/http-util.js";
+import { httpBadRequest, httpOk, httpProibido } from "@/util/http-util.js";
 
 type SalvarConfiguracaoSmtpParametros = {
 	idusuario: string;

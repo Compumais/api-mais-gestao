@@ -2,7 +2,9 @@ import { eq, sql } from "drizzle-orm";
 import * as schema from "../../drizzle/schema.js";
 import { db } from "./connection.js";
 
-export async function buscarProximoCodigoProduto(idempresa: string): Promise<number> {
+export async function buscarProximoCodigoProduto(
+	idempresa: string,
+): Promise<number> {
 	const [resultado] = await db
 		.select({
 			proximo: sql<number>`COALESCE(MAX(${schema.produtos.codigo}), 0) + 1`,
@@ -26,7 +28,9 @@ export async function buscarProximoCodigoContaCorrente(
 	return Number(resultado?.proximo ?? 1);
 }
 
-export async function buscarProximoCodigoDav(idempresa: string): Promise<number> {
+export async function buscarProximoCodigoDav(
+	idempresa: string,
+): Promise<number> {
 	const [resultado] = await db
 		.select({
 			proximo: sql<number>`COALESCE(MAX(${schema.dav.codigo}), 0) + 1`,
@@ -77,7 +81,9 @@ export async function buscarProximoCodigoHierarquia(
 	return buscarProximoCodigoVarcharNumerico(schema.hierarquia, idempresa);
 }
 
-export async function buscarProximoCodigoBanco(idempresa: string): Promise<string> {
+export async function buscarProximoCodigoBanco(
+	idempresa: string,
+): Promise<string> {
 	return buscarProximoCodigoVarcharNumerico(schema.banco, idempresa);
 }
 
@@ -90,5 +96,8 @@ export async function buscarProximoCodigoUnidadeMedida(
 export async function buscarProximoCodigoCondicaoPagamento(
 	idempresa: string,
 ): Promise<string> {
-	return buscarProximoCodigoVarcharNumerico(schema.condicaopagamento, idempresa);
+	return buscarProximoCodigoVarcharNumerico(
+		schema.condicaopagamento,
+		idempresa,
+	);
 }

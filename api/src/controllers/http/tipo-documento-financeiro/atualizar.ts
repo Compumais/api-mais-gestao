@@ -19,13 +19,18 @@ const atualizarTipoDocumentoFinanceiroBodySchema = z.object({
 	integracaixabanco: z.coerce.number().int().min(0).max(1).optional(),
 });
 
-export async function atualizarTipoDocumentoFinanceiro(request: FastifyRequest, reply: FastifyReply) {
+export async function atualizarTipoDocumentoFinanceiro(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
 		}
 
-		const { id } = atualizarTipoDocumentoFinanceiroParamsSchema.parse(request.params);
+		const { id } = atualizarTipoDocumentoFinanceiroParamsSchema.parse(
+			request.params,
+		);
 		const dados = removerUndefined(
 			atualizarTipoDocumentoFinanceiroBodySchema.parse(request.body),
 		);

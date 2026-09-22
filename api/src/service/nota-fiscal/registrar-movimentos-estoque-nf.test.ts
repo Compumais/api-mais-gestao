@@ -118,7 +118,9 @@ describe("registrarMovimentosEstoqueNf", () => {
 			],
 		});
 
-		expect(produtosRepository.buscarProdutoPorId).toHaveBeenCalledWith("prod-1");
+		expect(produtosRepository.buscarProdutoPorId).toHaveBeenCalledWith(
+			"prod-1",
+		);
 		expect(registrarMovimento.registrarMovimentoEstoque).toHaveBeenCalledWith(
 			expect.objectContaining({
 				tipoestoque: TIPO_ESTOQUE.AMBOS,

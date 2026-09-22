@@ -36,10 +36,7 @@ export async function criarTaxaUfService({
 		return httpProibido();
 	}
 
-	const duplicado = await buscarTaxaUfDuplicada(
-		dados.idempresa,
-		dados.codigo,
-	);
+	const duplicado = await buscarTaxaUfDuplicada(dados.idempresa, dados.codigo);
 
 	if (duplicado) {
 		return httpRecursoExistente();

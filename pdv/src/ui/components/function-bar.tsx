@@ -1,5 +1,5 @@
-import { useEffect } from "react";
 import type { ComponentType } from "react";
+import { useEffect } from "react";
 import { teclaCorresponde } from "@/lib/teclas-funcao";
 import { cn } from "@/lib/utils";
 
@@ -23,8 +23,7 @@ const variantClasses: Record<
 	destructive:
 		"border border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20",
 	success: "bg-success text-success-foreground hover:bg-success/88",
-	outline:
-		"border border-border bg-background text-foreground hover:bg-muted",
+	outline: "border border-border bg-background text-foreground hover:bg-muted",
 };
 
 /** Barra inferior estilo Uniplus: botões com atalho (F-key) em cima e rótulo embaixo. */

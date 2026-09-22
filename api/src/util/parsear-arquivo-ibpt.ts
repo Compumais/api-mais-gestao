@@ -96,9 +96,7 @@ function mapearRegistroGenerico(
 	const ncm = normalizarNcm(item.codigo ?? item.Codigo ?? item.ncm ?? item.NCM);
 	if (ncm.length !== 8) return null;
 
-	const chave = String(
-		item.chave ?? item.Chave ?? meta.chave ?? "",
-	).trim();
+	const chave = String(item.chave ?? item.Chave ?? meta.chave ?? "").trim();
 	if (!chave) return null;
 
 	return {
@@ -126,14 +124,13 @@ function mapearRegistroGenerico(
 		fonte: String(
 			item.fonte ?? item.Fonte ?? meta.fonte ?? "IBPT/empresometro.com.br",
 		).trim(),
-		versao: String(item.versao ?? item.Versao ?? meta.versao ?? "").trim() ||
+		versao:
+			String(item.versao ?? item.Versao ?? meta.versao ?? "").trim() ||
 			undefined,
-		vigenciaInicio: String(
-			item.vigenciaInicio ??
-				item.VigenciaInicio ??
-				item.vigenciainicio ??
-				"",
-		).trim() || undefined,
+		vigenciaInicio:
+			String(
+				item.vigenciaInicio ?? item.VigenciaInicio ?? item.vigenciainicio ?? "",
+			).trim() || undefined,
 		vigenciaFim:
 			String(
 				item.vigenciaFim ?? item.VigenciaFim ?? item.vigenciafim ?? "",
@@ -186,9 +183,7 @@ export function parsearArquivoIbpt(
 	}
 
 	const objeto = payload as Record<string, unknown>;
-	const uf = String(
-		ufInformada ?? objeto.uf ?? objeto.UF ?? objeto.Uf ?? "",
-	)
+	const uf = String(ufInformada ?? objeto.uf ?? objeto.UF ?? objeto.Uf ?? "")
 		.trim()
 		.toUpperCase();
 
@@ -230,7 +225,9 @@ export function parsearArquivoIbpt(
 	};
 }
 
-export function origemProdutoEhImportado(origem: number | null | undefined): boolean {
+export function origemProdutoEhImportado(
+	origem: number | null | undefined,
+): boolean {
 	return origem === 6 || origem === 7;
 }
 

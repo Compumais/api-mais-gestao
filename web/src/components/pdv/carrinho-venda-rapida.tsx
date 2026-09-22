@@ -74,10 +74,7 @@ export function CarrinhoVendaRapida({
 										variant="outline"
 										size="icon-sm"
 										onClick={() =>
-											onAtualizarQuantidade(
-												index,
-												Math.max(0.001, qty - 1),
-											)
+											onAtualizarQuantidade(index, Math.max(0.001, qty - 1))
 										}
 										disabled={qty <= 1}
 									>

@@ -144,7 +144,7 @@ describe("DANFE NFC-e", () => {
 		assert.match(texto, /4949 7532/);
 		assert.match(texto, /CONSUMIDOR/);
 		assert.match(texto, /CNPJ: 99\.999\.999\/0001-91/);
-		assert.match(texto, /NFC-e n\. 000000102  Serie 010/);
+		assert.match(texto, /NFC-e n\. 000000102 {2}Serie 010/);
 		assert.match(texto, /Protocolo de autorizacao:/);
 		assert.match(texto, /131 2600007770 40/);
 		assert.match(texto, /18\/08\/2026 14:17:14/);

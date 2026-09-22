@@ -50,7 +50,9 @@ describe("atualizarUnidadeMedidaService", () => {
 		if (!resultado.success) {
 			expect(resultado.status).toBe(403);
 		}
-		expect(unidadeMedidaRepository.atualizarUnidadeMedida).not.toHaveBeenCalled();
+		expect(
+			unidadeMedidaRepository.atualizarUnidadeMedida,
+		).not.toHaveBeenCalled();
 	});
 
 	it("deve atualizar unidade da empresa quando usuário pertence à empresa", async () => {
@@ -60,10 +62,12 @@ describe("atualizarUnidadeMedidaService", () => {
 		vi.mocked(
 			entidadeRepository.verificarUsuarioPertenceEmpresa,
 		).mockResolvedValue(true);
-		vi.mocked(unidadeMedidaRepository.atualizarUnidadeMedida).mockResolvedValue({
-			...unidadeEmpresaMock,
-			nome: "Caixa Atualizada",
-		});
+		vi.mocked(unidadeMedidaRepository.atualizarUnidadeMedida).mockResolvedValue(
+			{
+				...unidadeEmpresaMock,
+				nome: "Caixa Atualizada",
+			},
+		);
 
 		const resultado = await atualizarUnidadeMedidaService({
 			unidadeMedidaId: "empresa-1",

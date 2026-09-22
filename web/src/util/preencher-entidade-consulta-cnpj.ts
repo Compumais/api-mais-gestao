@@ -1,4 +1,8 @@
-import type { FieldValues, UseFormGetValues, UseFormSetValue } from "react-hook-form";
+import type {
+	FieldValues,
+	UseFormGetValues,
+	UseFormSetValue,
+} from "react-hook-form";
 import { maskCep, maskCpfCnpj, maskPhone } from "@/lib/masks";
 import type { ConsultaCnpjEntidadeResposta } from "@/services/entidades.service";
 import { inferirIndIeDestEntidade } from "@/util/destinatario-nfe-util";

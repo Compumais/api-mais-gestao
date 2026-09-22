@@ -84,11 +84,7 @@ export function ModalItemCotacao({
 
 		if (itemParaEditar) {
 			setIdproduto(itemParaEditar.idproduto ?? "");
-			setBusca(
-				itemParaEditar.nomeproduto ||
-					itemParaEditar.descricao ||
-					"",
-			);
+			setBusca(itemParaEditar.nomeproduto || itemParaEditar.descricao || "");
 			setQuantidade(itemParaEditar.quantidade);
 			setUnidademedida(itemParaEditar.unidademedida ?? null);
 			setNomeproduto(

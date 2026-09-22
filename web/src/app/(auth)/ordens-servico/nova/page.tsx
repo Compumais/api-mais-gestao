@@ -10,6 +10,7 @@ import { useMemo } from "react";
 import type { FieldErrors } from "react-hook-form";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { BlocoErrorBoundary } from "@/components/bloco-error-boundary";
 import { Button } from "@/components/ui/button";
 import { ORDEM_SERVICO_CAMPOS_EXTRA } from "@/constants/ordem-servico-status";
 import { useEmpresa } from "@/hooks/use-empresa";
@@ -133,11 +134,7 @@ export default function NovaOrdemServicoPage() {
 	const mostrarTipoProblema = config?.usatipoproblema !== 0;
 	const mostrarVeiculo = config?.usadadosveiculo !== 0;
 
-	const form = useForm<
-		OrdemServicoFormInput,
-		unknown,
-		OrdemServicoFormData
-	>({
+	const form = useForm<OrdemServicoFormInput, unknown, OrdemServicoFormData>({
 		resolver: zodResolver(ordemServicoFormSchema),
 		defaultValues: defaultsForm(),
 	});
@@ -225,11 +222,7 @@ export default function NovaOrdemServicoPage() {
 			}
 		}
 
-		if (
-			mostrarObjeto &&
-			config?.pedirprimeiroobjeto === 1 &&
-			!dados.idobjeto
-		) {
+		if (mostrarObjeto && config?.pedirprimeiroobjeto === 1 && !dados.idobjeto) {
 			toast.error("Selecione o objeto da ordem de serviço");
 			return;
 		}
@@ -263,9 +256,7 @@ export default function NovaOrdemServicoPage() {
 	}
 
 	function onInvalid(erros: FieldErrors<OrdemServicoFormInput>) {
-		const mensagens = listarErrosFormularioOs(
-			erros as Record<string, unknown>,
-		);
+		const mensagens = listarErrosFormularioOs(erros as Record<string, unknown>);
 		toast.error("Não foi possível criar a ordem de serviço", {
 			description:
 				mensagens.length > 0
@@ -307,37 +298,42 @@ export default function NovaOrdemServicoPage() {
 				</div>
 
 				<div aria-live="polite">
-					<OrdemServicoForm
-						form={form}
-						opcoesClientes={opcoesClientes}
-						opcoesObjetos={(objetosLista ?? []).map((item) => ({
-							value: item.id,
-							label: item.descricao ?? item.id,
-						}))}
-						opcoesAreas={(areasLista ?? []).map((item) => ({
-							value: item.id,
-							label: item.descricao ?? item.id,
-						}))}
-						opcoesTiposProblema={(tiposProblemaLista ?? []).map((item) => ({
-							value: item.id,
-							label: item.descricao ?? item.id,
-						}))}
-						opcoesAtendentes={opcoesUsuarios}
-						opcoesTecnicos={opcoesUsuarios}
-						opcoesCondicoes={(condicoesLista ?? []).map((item) => ({
-							value: item.id,
-							label: item.descricao ?? item.id,
-						}))}
-						opcoesTiposDocumento={(tiposDocLista ?? []).map((item) => ({
-							value: item.id,
-							label: item.descricao ?? item.id,
-						}))}
-						camposextras={config?.camposextras}
-						mostrarVeiculoEquipamento={mostrarVeiculo}
-						mostrarArea={mostrarArea}
-						mostrarObjeto={mostrarObjeto}
-						mostrarTipoProblema={mostrarTipoProblema}
-					/>
+					<BlocoErrorBoundary
+						titulo="Erro no formulário da ordem de serviço"
+						variante="painel"
+					>
+						<OrdemServicoForm
+							form={form}
+							opcoesClientes={opcoesClientes}
+							opcoesObjetos={(objetosLista ?? []).map((item) => ({
+								value: item.id,
+								label: item.descricao ?? item.id,
+							}))}
+							opcoesAreas={(areasLista ?? []).map((item) => ({
+								value: item.id,
+								label: item.descricao ?? item.id,
+							}))}
+							opcoesTiposProblema={(tiposProblemaLista ?? []).map((item) => ({
+								value: item.id,
+								label: item.descricao ?? item.id,
+							}))}
+							opcoesAtendentes={opcoesUsuarios}
+							opcoesTecnicos={opcoesUsuarios}
+							opcoesCondicoes={(condicoesLista ?? []).map((item) => ({
+								value: item.id,
+								label: item.descricao ?? item.id,
+							}))}
+							opcoesTiposDocumento={(tiposDocLista ?? []).map((item) => ({
+								value: item.id,
+								label: item.descricao ?? item.id,
+							}))}
+							camposextras={config?.camposextras}
+							mostrarVeiculoEquipamento={mostrarVeiculo}
+							mostrarArea={mostrarArea}
+							mostrarObjeto={mostrarObjeto}
+							mostrarTipoProblema={mostrarTipoProblema}
+						/>
+					</BlocoErrorBoundary>
 				</div>
 
 				<div className="flex gap-2 self-end">

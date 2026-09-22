@@ -182,9 +182,8 @@ export async function listarProdutosCardapioPublico(idempresa: string) {
 		.orderBy(grupogourmet.nome, produtos.descricao);
 
 	return rows
-		.filter(
-			(row): row is typeof row & { idgrupogourmet: string } =>
-				Boolean(row.idgrupogourmet),
+		.filter((row): row is typeof row & { idgrupogourmet: string } =>
+			Boolean(row.idgrupogourmet),
 		)
 		.map((row) => ({
 			id: row.id,

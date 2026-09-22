@@ -18,9 +18,7 @@ export function httpNaoAutorizado() {
 	};
 }
 
-export function httpNaoEncontrado(
-	error?: string,
-): HttpResponse<never> {
+export function httpNaoEncontrado(error?: string): HttpResponse<never> {
 	return {
 		success: false as const,
 		status: 404,
@@ -109,9 +107,7 @@ export function httpBadRequest(
 	},
 ): HttpResponse<never> {
 	const errorMessage =
-		typeof error === "string"
-			? error
-			: error?.error || "Requisição inválida";
+		typeof error === "string" ? error : error?.error || "Requisição inválida";
 
 	return {
 		success: false as const,

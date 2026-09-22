@@ -159,7 +159,10 @@ export const registrarCustosNfSchema: FastifySchema = {
 		required: ["idempresa", "itens"],
 	},
 	response: {
-		201: { type: "array", items: { type: "object", additionalProperties: true } },
+		201: {
+			type: "array",
+			items: { type: "object", additionalProperties: true },
+		},
 		400: respostaErro,
 		401: respostaErro,
 		403: respostaErro,

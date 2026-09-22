@@ -22,7 +22,9 @@ export async function atualizarVendaPdvItemService({
 	vendaPdvItemId,
 	idusuario,
 	dados,
-}: AtualizarVendaPdvItemParametros): Promise<HttpResponse<VendaPdvItem | null>> {
+}: AtualizarVendaPdvItemParametros): Promise<
+	HttpResponse<VendaPdvItem | null>
+> {
 	const registroExistente = await buscarVendaPdvItemPorId(vendaPdvItemId);
 
 	if (!registroExistente) {

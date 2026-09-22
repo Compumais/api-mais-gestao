@@ -9,7 +9,12 @@ import {
 	montarPayloadGatewayEmissao,
 } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
 import { arquivarXmlNotaFiscal } from "@/service/nota-fiscal/arquivar-xml-nota-fiscal.js";
-import { httpBadRequest, httpErro, httpOk, httpProibido } from "@/util/http-util.js";
+import {
+	httpBadRequest,
+	httpErro,
+	httpOk,
+	httpProibido,
+} from "@/util/http-util.js";
 
 const TIPO_ORIGEM_EMISSAO_VENDA = 1;
 const STATUS_AUTORIZADA = 100;
@@ -93,7 +98,7 @@ export async function emitirNfeHomologacaoTesteService({
 			valortotalnota: "1.00",
 			totalproduto: "1.00",
 			arquivoxmlassinado: resposta.xmlEnviado ?? null,
-			arquivoxmlautorizada: autorizada ? resposta.xmlRetorno ?? null : null,
+			arquivoxmlautorizada: autorizada ? (resposta.xmlRetorno ?? null) : null,
 			mensagemtransmissaonfe: resposta.xMotivo ?? null,
 			codigostatusprotocolonfe: resposta.cStat ? Number(resposta.cStat) : null,
 		},

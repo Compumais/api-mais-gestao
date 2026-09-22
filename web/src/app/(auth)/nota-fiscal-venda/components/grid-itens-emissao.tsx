@@ -192,7 +192,11 @@ export function GridItensEmissao({
 									<Input
 										value={item.unidade}
 										onChange={(e) =>
-											atualizarItem(index, "unidade", e.target.value.toUpperCase())
+											atualizarItem(
+												index,
+												"unidade",
+												e.target.value.toUpperCase(),
+											)
 										}
 										className="h-8 text-sm text-center px-1"
 										maxLength={6}

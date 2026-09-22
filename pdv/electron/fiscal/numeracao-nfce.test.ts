@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
 	classificarConflitosNumeracao,
-	resolverProximoNumeroMonotonico,
 	type NfceNumeracaoResumo,
+	resolverProximoNumeroMonotonico,
 } from "./numeracao-nfce";
 
 describe("resolverProximoNumeroMonotonico", () => {
@@ -53,7 +53,9 @@ describe("resolverProximoNumeroMonotonico", () => {
 });
 
 describe("classificarConflitosNumeracao", () => {
-	const base = (parcial: Partial<NfceNumeracaoResumo>): NfceNumeracaoResumo => ({
+	const base = (
+		parcial: Partial<NfceNumeracaoResumo>,
+	): NfceNumeracaoResumo => ({
 		id: parcial.id ?? "a",
 		idvenda: parcial.idvenda ?? "v",
 		serie: parcial.serie ?? 1,

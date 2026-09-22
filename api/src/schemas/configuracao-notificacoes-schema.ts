@@ -59,7 +59,8 @@ export const configuracaoNotificacoesSchema = z
 			ctx.addIssue({
 				code: "custom",
 				path: ["notificacoesEmail", "relatoriosAutomaticos", "frequencia"],
-				message: "Frequência é obrigatória quando relatórios automáticos estão habilitados",
+				message:
+					"Frequência é obrigatória quando relatórios automáticos estão habilitados",
 			});
 		}
 
@@ -83,7 +84,8 @@ export const configuracaoNotificacoesSchema = z
 				ctx.addIssue({
 					code: "custom",
 					path: ["alertasFinanceiros", "saldoBaixo", "valorMinimo"],
-					message: "Valor mínimo deve ser maior que zero quando o alerta está habilitado",
+					message:
+						"Valor mínimo deve ser maior que zero quando o alerta está habilitado",
 				});
 			}
 		}

@@ -33,7 +33,9 @@ type ParametrosBase = {
 export async function listarCertificadosDigitaisService({
 	idempresa,
 	idusuario,
-}: ParametrosBase): Promise<HttpResponse<{ data: CertificadoDigitalResumo[] }>> {
+}: ParametrosBase): Promise<
+	HttpResponse<{ data: CertificadoDigitalResumo[] }>
+> {
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
 		idusuario,
 		idempresa,
@@ -59,7 +61,9 @@ export async function criarCertificadoDigitalService({
 	apelido,
 	senha,
 	arquivopfxBase64,
-}: CriarCertificadoParametros): Promise<HttpResponse<CertificadoDigitalResumo | null>> {
+}: CriarCertificadoParametros): Promise<
+	HttpResponse<CertificadoDigitalResumo | null>
+> {
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
 		idusuario,
 		idempresa,
@@ -85,12 +89,16 @@ export async function criarCertificadoDigitalService({
 	});
 
 	if (!info.sucesso || !info.cnpj) {
-		return httpBadRequest(info.erro ?? "Não foi possível validar o certificado");
+		return httpBadRequest(
+			info.erro ?? "Não foi possível validar o certificado",
+		);
 	}
 
 	const cnpjEmpresa = normalizarCnpj(empresa.cnpj);
 	if (info.cnpj !== cnpjEmpresa) {
-		return httpBadRequest("CNPJ do certificado não corresponde ao CNPJ da empresa");
+		return httpBadRequest(
+			"CNPJ do certificado não corresponde ao CNPJ da empresa",
+		);
 	}
 
 	const agora = new Date().toISOString();
@@ -117,8 +125,11 @@ export async function criarCertificadoDigitalService({
 		return httpErro();
 	}
 
-	const { arquivopfxcriptografado: _pfx, senhacriptografada: _senha, ...resumo } =
-		registro;
+	const {
+		arquivopfxcriptografado: _pfx,
+		senhacriptografada: _senha,
+		...resumo
+	} = registro;
 
 	return httpCriacao<CertificadoDigitalResumo>(resumo);
 }

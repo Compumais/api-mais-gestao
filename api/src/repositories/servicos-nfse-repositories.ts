@@ -18,10 +18,7 @@ export async function listarServicosNfse({
 }: ListarServicosNfseParametros) {
 	const where = [
 		isNull(schema.servicosnfse.idempresa),
-		or(
-			eq(schema.servicosnfse.inativo, 0),
-			isNull(schema.servicosnfse.inativo),
-		),
+		or(eq(schema.servicosnfse.inativo, 0), isNull(schema.servicosnfse.inativo)),
 	];
 
 	if (q) {
@@ -38,10 +35,7 @@ export async function listarServicosNfse({
 	const filtro = and(...where);
 
 	const [totalCount, servicos] = await Promise.all([
-		db
-			.select({ value: count() })
-			.from(schema.servicosnfse)
-			.where(filtro),
+		db.select({ value: count() }).from(schema.servicosnfse).where(filtro),
 		db
 			.select()
 			.from(schema.servicosnfse)

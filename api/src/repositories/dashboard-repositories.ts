@@ -612,7 +612,10 @@ async function somarMovimentacoesPorTipo(
 		FROM contacorrentelancamento ccl
 		JOIN contacorrente cc ON cc.id = ccl.idcontacorrente
 		WHERE cc.idempresa = ${idempresa}
-			AND TRIM(ccl.tipo) IN (${sql.join(tipos.map((t) => sql`${t}`), sql`, `)})
+			AND TRIM(ccl.tipo) IN (${sql.join(
+				tipos.map((t) => sql`${t}`),
+				sql`, `,
+			)})
 			AND (ccl.datahora AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
 			AND (ccl.datahora AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
 	`);
@@ -629,18 +632,22 @@ export async function buscarFinanceiroResumo({
 }): Promise<FinanceiroResumo> {
 	const { dataInicioStr, dataFimStr } = obterIntervaloDias(dias);
 
-	const [totalReceitas, totalDespesas, lancamentosFinanceiro, lancamentosBancarios] =
-		await Promise.all([
-			somarMovimentacoesPorTipo(idempresa, ["E", "C"], dataInicioStr, dataFimStr),
-			somarMovimentacoesPorTipo(idempresa, ["S", "D"], dataInicioStr, dataFimStr),
-			db.execute(sql`
+	const [
+		totalReceitas,
+		totalDespesas,
+		lancamentosFinanceiro,
+		lancamentosBancarios,
+	] = await Promise.all([
+		somarMovimentacoesPorTipo(idempresa, ["E", "C"], dataInicioStr, dataFimStr),
+		somarMovimentacoesPorTipo(idempresa, ["S", "D"], dataInicioStr, dataFimStr),
+		db.execute(sql`
 				SELECT COUNT(*)::int as total
 				FROM financeiro
 				WHERE idempresa = ${idempresa}
 					AND registro >= ${dataInicioStr}::date
 					AND registro <= ${dataFimStr}::date
 			`),
-			db.execute(sql`
+		db.execute(sql`
 				SELECT COUNT(*)::int as total
 				FROM contacorrentelancamento ccl
 				JOIN contacorrente cc ON cc.id = ccl.idcontacorrente
@@ -648,7 +655,7 @@ export async function buscarFinanceiroResumo({
 					AND (ccl.datahora AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
 					AND (ccl.datahora AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
 			`),
-		]);
+	]);
 
 	const countFin = (lancamentosFinanceiro.rows || lancamentosFinanceiro) as {
 		total: number;
@@ -991,7 +998,10 @@ async function buscarMovimentacoesPlanoContasPorMes(
 		JOIN contacorrente cc ON cc.id = ccl.idcontacorrente
 		LEFT JOIN planocontas pc ON pc.id = ccl.idplanocontas
 		WHERE cc.idempresa = ${idempresa}
-			AND TRIM(ccl.tipo) IN (${sql.join(tipos.map((t) => sql`${t}`), sql`, `)})
+			AND TRIM(ccl.tipo) IN (${sql.join(
+				tipos.map((t) => sql`${t}`),
+				sql`, `,
+			)})
 			AND ccl.idplanocontas IS NOT NULL
 			AND (ccl.datahora AT TIME ZONE 'UTC') >= (${dataInicioStr}::timestamp AT TIME ZONE 'America/Sao_Paulo')
 			AND (ccl.datahora AT TIME ZONE 'UTC') < ((${dataFimStr}::date + interval '1 day') AT TIME ZONE 'America/Sao_Paulo')
@@ -1186,44 +1196,47 @@ export async function buscarComparativo({
 	let saldoAcumuladoAnoAnterior = 0;
 	let saldoAcumuladoAnoAtual = 0;
 
-	const meses: ComparativoMensalItem[] = Array.from({ length: 12 }, (_, index) => {
-		const mes = index + 1;
-		const atual = evolucaoAtual.find((item) => item.mes === mes) ?? {
-			mes,
-			receitas: 0,
-			despesas: 0,
-			saldo: 0,
-		};
-		const anterior = evolucaoAnterior.find((item) => item.mes === mes) ?? {
-			mes,
-			receitas: 0,
-			despesas: 0,
-			saldo: 0,
-		};
+	const meses: ComparativoMensalItem[] = Array.from(
+		{ length: 12 },
+		(_, index) => {
+			const mes = index + 1;
+			const atual = evolucaoAtual.find((item) => item.mes === mes) ?? {
+				mes,
+				receitas: 0,
+				despesas: 0,
+				saldo: 0,
+			};
+			const anterior = evolucaoAnterior.find((item) => item.mes === mes) ?? {
+				mes,
+				receitas: 0,
+				despesas: 0,
+				saldo: 0,
+			};
 
-		saldoAcumuladoAnoAnterior += anterior.saldo;
-		saldoAcumuladoAnoAtual += atual.saldo;
+			saldoAcumuladoAnoAnterior += anterior.saldo;
+			saldoAcumuladoAnoAtual += atual.saldo;
 
-		const variacaoReceitaPercentual =
-			anterior.receitas > 0
-				? ((atual.receitas - anterior.receitas) / anterior.receitas) * 100
-				: atual.receitas > 0
-					? 100
-					: 0;
+			const variacaoReceitaPercentual =
+				anterior.receitas > 0
+					? ((atual.receitas - anterior.receitas) / anterior.receitas) * 100
+					: atual.receitas > 0
+						? 100
+						: 0;
 
-		return {
-			mes,
-			receitaAnoAnterior: anterior.receitas,
-			despesaAnoAnterior: anterior.despesas,
-			receitaAnoAtual: atual.receitas,
-			despesaAnoAtual: atual.despesas,
-			saldoAnoAnterior: anterior.saldo,
-			saldoAnoAtual: atual.saldo,
-			saldoAcumuladoAnoAnterior,
-			saldoAcumuladoAnoAtual,
-			variacaoReceitaPercentual,
-		};
-	});
+			return {
+				mes,
+				receitaAnoAnterior: anterior.receitas,
+				despesaAnoAnterior: anterior.despesas,
+				receitaAnoAtual: atual.receitas,
+				despesaAnoAtual: atual.despesas,
+				saldoAnoAnterior: anterior.saldo,
+				saldoAnoAtual: atual.saldo,
+				saldoAcumuladoAnoAnterior,
+				saldoAcumuladoAnoAtual,
+				variacaoReceitaPercentual,
+			};
+		},
+	);
 
 	return {
 		anoAtual: ano,
@@ -1237,8 +1250,14 @@ export async function buscarComparativo({
 				(acc, item) => acc + item.despesaAnoAnterior,
 				0,
 			),
-			receitaAnoAtual: meses.reduce((acc, item) => acc + item.receitaAnoAtual, 0),
-			despesaAnoAtual: meses.reduce((acc, item) => acc + item.despesaAnoAtual, 0),
+			receitaAnoAtual: meses.reduce(
+				(acc, item) => acc + item.receitaAnoAtual,
+				0,
+			),
+			despesaAnoAtual: meses.reduce(
+				(acc, item) => acc + item.despesaAnoAtual,
+				0,
+			),
 		},
 		meses,
 	};

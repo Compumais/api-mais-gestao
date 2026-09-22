@@ -3,7 +3,8 @@ import type { FastifySchema } from "fastify";
 export const criarCfopPadraoSchema: FastifySchema = {
 	tags: ["cfops-padrao"],
 	summary: "Criar CFOP padrão",
-	description: "Cria um novo registro de CFOP padrão na empresa do usuário autenticado.",
+	description:
+		"Cria um novo registro de CFOP padrão na empresa do usuário autenticado.",
 	security: [{ bearerAuth: [] }],
 	body: {
 		type: "object",
@@ -11,7 +12,7 @@ export const criarCfopPadraoSchema: FastifySchema = {
 			idempresa: { type: "string", description: "ID da empresa" },
 			nome: { type: "string" },
 			codigo: { type: "string" },
-			inativo: { type: "string" }
+			inativo: { type: "string" },
 		},
 		required: ["idempresa"],
 	},
@@ -122,7 +123,10 @@ export const listarCfopPadraosSchema: FastifySchema = {
 		200: {
 			type: "object",
 			properties: {
-				data: { type: "array", items: { type: "object", additionalProperties: true } },
+				data: {
+					type: "array",
+					items: { type: "object", additionalProperties: true },
+				},
 				paginacao: {
 					type: "object",
 					properties: {

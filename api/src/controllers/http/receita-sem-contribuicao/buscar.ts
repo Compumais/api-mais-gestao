@@ -7,13 +7,18 @@ const buscarReceitaSemContribuicaoParamsSchema = z.object({
 	id: z.string(),
 });
 
-export async function buscarReceitaSemContribuicao(request: FastifyRequest, reply: FastifyReply) {
+export async function buscarReceitaSemContribuicao(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
 		}
 
-		const { id } = buscarReceitaSemContribuicaoParamsSchema.parse(request.params);
+		const { id } = buscarReceitaSemContribuicaoParamsSchema.parse(
+			request.params,
+		);
 
 		const resultado = await buscarReceitaSemContribuicaoService({
 			receitaSemContribuicaoId: id,

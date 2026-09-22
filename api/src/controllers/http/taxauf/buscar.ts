@@ -7,7 +7,10 @@ const buscarTaxaUfQuerySchema = z.object({
 	idempresa: z.string(),
 });
 
-export async function buscarTaxaUf(request: FastifyRequest, reply: FastifyReply) {
+export async function buscarTaxaUf(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());

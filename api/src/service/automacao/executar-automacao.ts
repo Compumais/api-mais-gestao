@@ -23,11 +23,7 @@ import {
 	type ResultadoFuncaoAutomacao,
 } from "@/service/automacao/funcoes/envio-fiscal-contabilidade.js";
 import { criarNotificacaoAgendadaService } from "@/service/notificacoes/criar-notificacao-agendada.js";
-import {
-	httpNaoEncontrado,
-	httpOk,
-	httpProibido,
-} from "@/util/http-util.js";
+import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
 
 const RETRY_PENDENCIA_MS = 6 * 60 * 60 * 1000;
 
@@ -162,9 +158,7 @@ export async function executarAutomacaoAgora(
 		await atualizarAutomacao(automacao.id, {
 			ultimaexecucao: new Date().toISOString(),
 			statusultima: "falha",
-			proximaexecucao: new Date(
-				Date.now() + RETRY_PENDENCIA_MS,
-			).toISOString(),
+			proximaexecucao: new Date(Date.now() + RETRY_PENDENCIA_MS).toISOString(),
 			atualizadoem: new Date().toISOString(),
 		});
 		throw erro;

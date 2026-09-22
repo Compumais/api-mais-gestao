@@ -37,7 +37,9 @@ export function montarRegistro10({
 	]);
 }
 
-export function montarRegistro11(contribuinte: DadosContribuinteSintegra): string {
+export function montarRegistro11(
+	contribuinte: DadosContribuinteSintegra,
+): string {
 	return montarLinha([
 		"11",
 		formatarAlfanumerico(contribuinte.logradouro, 34),

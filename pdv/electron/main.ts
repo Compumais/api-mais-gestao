@@ -15,13 +15,13 @@ import {
 import { iniciarSyncPeriodico, processarOutbox } from "./sync/outbox";
 import { iniciarPollerCardapioDelivery } from "./sync/pedidos-cardapio";
 import {
-	iniciarReconciliacaoNfcePeriodica,
-	reconciliarNfce,
-} from "./sync/reconciliar-nfce";
-import {
 	registrarEsquemaImagemLocal,
 	registrarProtocoloImagemLocal,
 } from "./sync/protocolo-imagens";
+import {
+	iniciarReconciliacaoNfcePeriodica,
+	reconciliarNfce,
+} from "./sync/reconciliar-nfce";
 import { verificarEAtualizarPdv } from "./update/verificar-update";
 
 registrarEsquemaImagemLocal();

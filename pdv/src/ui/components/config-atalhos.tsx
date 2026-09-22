@@ -79,7 +79,10 @@ export function ConfigAtalhos({
 			const result = await pdvInvoke<{
 				quantidade: number;
 				nuvem: boolean;
-			}>("salvarAtalhos", proxima.map((p) => p.id));
+			}>(
+				"salvarAtalhos",
+				proxima.map((p) => p.id),
+			);
 			setAtalhos(proxima);
 			onMensagem(
 				result.nuvem
@@ -192,7 +195,9 @@ export function ConfigAtalhos({
 										{idx + 1}
 									</span>
 									<div className="min-w-0 flex-1">
-										<p className="truncate text-sm font-medium">{p.descricao}</p>
+										<p className="truncate text-sm font-medium">
+											{p.descricao}
+										</p>
 										<p className="text-xs text-muted-foreground">
 											{money(p.preco)}
 											{p.unidademedida ? ` · ${p.unidademedida}` : ""}

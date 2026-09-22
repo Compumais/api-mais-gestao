@@ -48,9 +48,7 @@ export function EditorCamposPersonalizadosOs({
 }: EditorCamposPersonalizadosOsProps) {
 	function atualizarCampo(id: string, patch: Partial<CampoPersonalizadoOs>) {
 		onCamposChange(
-			campos.map((campo) =>
-				campo.id === id ? { ...campo, ...patch } : campo,
-			),
+			campos.map((campo) => (campo.id === id ? { ...campo, ...patch } : campo)),
 		);
 	}
 
@@ -78,7 +76,9 @@ export function EditorCamposPersonalizadosOs({
 						variant="outline"
 						size="sm"
 						className="gap-1.5"
-						onClick={() => onCamposChange([...campos, novoCampoPersonalizado()])}
+						onClick={() =>
+							onCamposChange([...campos, novoCampoPersonalizado()])
+						}
 					>
 						<Plus className="h-3.5 w-3.5" aria-hidden="true" />
 						Adicionar campo
@@ -175,7 +175,8 @@ export function EditorCamposPersonalizadosOs({
 									/>
 								</div>
 
-								{(campo.tipo === "textoFixo" || campo.tipo === "observacao") && (
+								{(campo.tipo === "textoFixo" ||
+									campo.tipo === "observacao") && (
 									<div className="space-y-1">
 										<Label>
 											{campo.tipo === "textoFixo" ? "Texto" : "Observação"}

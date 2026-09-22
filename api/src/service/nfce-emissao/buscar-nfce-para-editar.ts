@@ -71,7 +71,10 @@ export async function buscarNfceParaEditarService({
 		return httpProibido();
 	}
 
-	const resolvido = await resolverVendaPorNotaFiscalNfce(idnotafiscal, idempresa);
+	const resolvido = await resolverVendaPorNotaFiscalNfce(
+		idnotafiscal,
+		idempresa,
+	);
 	if (!resolvido) {
 		return httpNaoEncontrado();
 	}

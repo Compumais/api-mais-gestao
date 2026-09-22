@@ -70,7 +70,9 @@ export async function listarItensPedidoCompraEnriquecidos(
 			total: schema.pedidocompraitem.total,
 			idcotacaoitem: schema.pedidocompraitem.idcotacaoitem,
 			codigoproduto: schema.produtos.codigo,
-			nomeproduto: sql<string | null>`coalesce(${schema.pedidocompraitem.descricao}, ${schema.produtos.descricao}, ${schema.produtos.nome})`,
+			nomeproduto: sql<
+				string | null
+			>`coalesce(${schema.pedidocompraitem.descricao}, ${schema.produtos.descricao}, ${schema.produtos.nome})`,
 			descricaoproduto: schema.produtos.descricao,
 		})
 		.from(schema.pedidocompraitem)

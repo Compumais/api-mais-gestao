@@ -25,7 +25,8 @@ export const gerarSintegraSchema: FastifySchema = {
 			finalidade: {
 				type: "string",
 				enum: ["1", "2", "3", "5"],
-				description: "1=Normal, 2=Retificação total, 3=Retificação aditiva, 5=Desfazimento",
+				description:
+					"1=Normal, 2=Retificação total, 3=Retificação aditiva, 5=Desfazimento",
 			},
 			incluirInventario: {
 				type: "boolean",

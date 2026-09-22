@@ -40,7 +40,8 @@ export function montarRegistros90({
 		].join("");
 
 		for (const par of lote) {
-			conteudo += formatarNumerico(par.tipo, 2) + formatarNumerico(par.quantidade, 8);
+			conteudo +=
+				formatarNumerico(par.tipo, 2) + formatarNumerico(par.quantidade, 8);
 		}
 
 		conteudo = conteudo.padEnd(125, " ");
@@ -56,7 +57,9 @@ export function montarRegistros90({
 				formatarInscricaoEstadual(inscricaoEstadual),
 				formatarNumerico("99", 2),
 				formatarNumerico(totalGeral, 8),
-			].join("").padEnd(125, " ") + "1";
+			]
+				.join("")
+				.padEnd(125, " ") + "1";
 		linhas.push(montarLinha([conteudo]));
 	}
 

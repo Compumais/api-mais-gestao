@@ -1,4 +1,9 @@
-import type { certificadodigital, empresafiscal, nfeconfiguracao, nfeserie } from "@/repositories/schema.js";
+import type {
+	certificadodigital,
+	empresafiscal,
+	nfeconfiguracao,
+	nfeserie,
+} from "@/repositories/schema.js";
 
 export type EmpresaFiscal = typeof empresafiscal.$inferSelect;
 export type NovaEmpresaFiscal = typeof empresafiscal.$inferInsert;

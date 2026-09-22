@@ -7,7 +7,10 @@ const buscarEnquatramentoIpiParamsSchema = z.object({
 	id: z.string(),
 });
 
-export async function buscarEnquatramentoIpi(request: FastifyRequest, reply: FastifyReply) {
+export async function buscarEnquatramentoIpi(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());

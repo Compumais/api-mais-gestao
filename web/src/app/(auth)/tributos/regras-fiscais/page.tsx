@@ -41,7 +41,8 @@ const VALORES_PADRAO: RegraFiscalFormData = {
 	vigenciainicio: "2006-01-01",
 	vigenciafim: "",
 	condicoesJson: '{"escopo":"operacao"}',
-	resultadoJson: '{"st_aplicavel":null,"difal_aplicavel":null,"fcp_aplicavel":null}',
+	resultadoJson:
+		'{"st_aplicavel":null,"difal_aplicavel":null,"fcp_aplicavel":null}',
 	fontesJson: '[{"orgao":"","url":"","tipo":""}]',
 };
 
@@ -58,7 +59,9 @@ export default function RegrasFiscaisPage() {
 	const [pagina, setPagina] = useState(1);
 	const [busca, setBusca] = useState("");
 	const [dialogAberto, setDialogAberto] = useState(false);
-	const [registroEdicao, setRegistroEdicao] = useState<RegraFiscal | null>(null);
+	const [registroEdicao, setRegistroEdicao] = useState<RegraFiscal | null>(
+		null,
+	);
 
 	const form = useForm<RegraFiscalFormData>({
 		resolver: zodResolver(
@@ -305,7 +308,10 @@ export default function RegrasFiscaisPage() {
 							</div>
 							<div className="space-y-1">
 								<Label htmlFor="vigenciainicio">Vigência início</Label>
-								<Input id="vigenciainicio" {...form.register("vigenciainicio")} />
+								<Input
+									id="vigenciainicio"
+									{...form.register("vigenciainicio")}
+								/>
 							</div>
 						</div>
 						<div className="space-y-1">
@@ -314,15 +320,27 @@ export default function RegrasFiscaisPage() {
 						</div>
 						<div className="space-y-1">
 							<Label htmlFor="condicoesJson">Condições (JSON)</Label>
-							<Textarea id="condicoesJson" rows={5} {...form.register("condicoesJson")} />
+							<Textarea
+								id="condicoesJson"
+								rows={5}
+								{...form.register("condicoesJson")}
+							/>
 						</div>
 						<div className="space-y-1">
 							<Label htmlFor="resultadoJson">Resultado (JSON)</Label>
-							<Textarea id="resultadoJson" rows={4} {...form.register("resultadoJson")} />
+							<Textarea
+								id="resultadoJson"
+								rows={4}
+								{...form.register("resultadoJson")}
+							/>
 						</div>
 						<div className="space-y-1">
 							<Label htmlFor="fontesJson">Fontes oficiais (JSON)</Label>
-							<Textarea id="fontesJson" rows={4} {...form.register("fontesJson")} />
+							<Textarea
+								id="fontesJson"
+								rows={4}
+								{...form.register("fontesJson")}
+							/>
 						</div>
 						<Button type="submit" disabled={salvarMutation.isPending}>
 							Salvar

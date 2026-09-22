@@ -4,7 +4,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { authClient } from "@/lib/auth-client";
-import { limparSessaoFrontend, marcarSessaoFrontend } from "@/lib/auth-session-cookie";
+import {
+	limparSessaoFrontend,
+	marcarSessaoFrontend,
+} from "@/lib/auth-session-cookie";
 import {
 	extractSessionTokenFromLoginResponse,
 	getSessionToken,

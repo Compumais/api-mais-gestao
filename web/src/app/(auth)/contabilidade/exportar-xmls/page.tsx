@@ -12,11 +12,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import {
-	Field,
-	FieldGroup,
-	FieldLabel,
-} from "@/components/ui/field";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useEmpresa } from "@/hooks/use-empresa";
 import { inicioFimMesBrasilia } from "@/lib/date";
@@ -78,11 +74,11 @@ export default function ExportarXmlsContabilidadePage() {
 				<div className="px-4">
 					<h1 className="text-2xl font-bold">Exportar XMLs fiscais</h1>
 					<p className="mt-1 text-sm text-muted-foreground">
-						Baixe um arquivo ZIP com os XMLs de NF-e de venda e NFC-e da
-						empresa no período informado, organizados nas pastas{" "}
+						Baixe um arquivo ZIP com os XMLs de NF-e de venda e NFC-e da empresa
+						no período informado, organizados nas pastas{" "}
 						<code className="text-xs">nfe/</code> e{" "}
-						<code className="text-xs">nfce/</code>. Notas canceladas ficam
-						em <code className="text-xs">nfe/canceladas</code> e{" "}
+						<code className="text-xs">nfce/</code>. Notas canceladas ficam em{" "}
+						<code className="text-xs">nfe/canceladas</code> e{" "}
 						<code className="text-xs">nfce/canceladas</code>.
 					</p>
 				</div>
@@ -124,9 +120,7 @@ export default function ExportarXmlsContabilidadePage() {
 									className="w-full sm:w-auto"
 								>
 									<DownloadIcon className="h-4 w-4" />
-									{exportarMutation.isPending
-										? "Gerando ZIP..."
-										: "Baixar ZIP"}
+									{exportarMutation.isPending ? "Gerando ZIP..." : "Baixar ZIP"}
 								</Button>
 							</FieldGroup>
 						</CardContent>

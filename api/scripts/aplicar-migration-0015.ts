@@ -5,7 +5,10 @@ import pg from "pg";
 
 dotenv.config({ path: path.resolve(import.meta.dirname, "../.env") });
 
-const sqlPath = path.resolve(import.meta.dirname, "../drizzle/0015_integracao_vendas_plano_contas.sql");
+const sqlPath = path.resolve(
+	import.meta.dirname,
+	"../drizzle/0015_integracao_vendas_plano_contas.sql",
+);
 
 async function main() {
 	const client = new pg.Client({

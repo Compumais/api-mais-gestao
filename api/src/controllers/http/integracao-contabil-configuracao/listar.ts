@@ -9,13 +9,18 @@ const listarIntegracaoContabilConfiguracaosQuerySchema = z.object({
 	limit: z.coerce.number().min(1).max(100).optional().default(10),
 });
 
-export async function listarIntegracaoContabilConfiguracaos(request: FastifyRequest, reply: FastifyReply) {
+export async function listarIntegracaoContabilConfiguracaos(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
 		}
 
-		const query = listarIntegracaoContabilConfiguracaosQuerySchema.parse(request.query);
+		const query = listarIntegracaoContabilConfiguracaosQuerySchema.parse(
+			request.query,
+		);
 
 		const resultado = await listarIntegracaoContabilConfiguracaosService({
 			idusuario: request.user.id,

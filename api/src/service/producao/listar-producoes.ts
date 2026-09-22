@@ -7,11 +7,7 @@ import {
 	listarRegistrosProducao,
 	type OrdenarProducoesCampo,
 } from "@/repositories/registro-producao-repositories.js";
-import {
-	httpNaoEncontrado,
-	httpOk,
-	httpProibido,
-} from "@/util/http-util.js";
+import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
 
 type ListarProducoesParametros = {
 	idusuario: string;

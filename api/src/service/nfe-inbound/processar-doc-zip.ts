@@ -3,7 +3,10 @@ import { gunzipSync } from "node:zlib";
 export class ErroProcessamentoDocZip extends Error {
 	constructor(
 		message: string,
-		public readonly codigo: "gzip_invalido" | "base64_invalido" | "xml_invalido",
+		public readonly codigo:
+			| "gzip_invalido"
+			| "base64_invalido"
+			| "xml_invalido",
 	) {
 		super(message);
 		this.name = "ErroProcessamentoDocZip";
@@ -23,7 +26,10 @@ export function processarDocZip(contentBase64: string): string {
 	}
 
 	if (compressed.length === 0) {
-		throw new ErroProcessamentoDocZip("docZip vazio após decode", "base64_invalido");
+		throw new ErroProcessamentoDocZip(
+			"docZip vazio após decode",
+			"base64_invalido",
+		);
 	}
 
 	let xmlBuffer: Buffer;

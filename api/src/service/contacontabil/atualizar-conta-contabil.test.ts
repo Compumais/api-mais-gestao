@@ -45,9 +45,9 @@ describe("atualizarContaContabilService", () => {
 	});
 
 	it("rejeita código reduzido já usado por outra conta da empresa", async () => {
-		vi.mocked(contaContabilRepository.buscarContaContabilPorId).mockResolvedValue(
-			criarConta(),
-		);
+		vi.mocked(
+			contaContabilRepository.buscarContaContabilPorId,
+		).mockResolvedValue(criarConta());
 		vi.mocked(
 			entidadeRepository.verificarUsuarioPertenceEmpresa,
 		).mockResolvedValue(true);
@@ -65,14 +65,16 @@ describe("atualizarContaContabilService", () => {
 		if (!resultado.success) {
 			expect(resultado.status).toBe(409);
 		}
-		expect(contaContabilRepository.atualizarContaContabil).not.toHaveBeenCalled();
+		expect(
+			contaContabilRepository.atualizarContaContabil,
+		).not.toHaveBeenCalled();
 	});
 
 	it("atualiza o código reduzido quando está livre", async () => {
 		const atualizada = criarConta({ codigoreduzido: "20" });
-		vi.mocked(contaContabilRepository.buscarContaContabilPorId).mockResolvedValue(
-			criarConta(),
-		);
+		vi.mocked(
+			contaContabilRepository.buscarContaContabilPorId,
+		).mockResolvedValue(criarConta());
 		vi.mocked(
 			entidadeRepository.verificarUsuarioPertenceEmpresa,
 		).mockResolvedValue(true);
@@ -98,9 +100,9 @@ describe("atualizarContaContabilService", () => {
 
 	it("permite limpar o código reduzido", async () => {
 		const atualizada = criarConta({ codigoreduzido: null });
-		vi.mocked(contaContabilRepository.buscarContaContabilPorId).mockResolvedValue(
-			criarConta(),
-		);
+		vi.mocked(
+			contaContabilRepository.buscarContaContabilPorId,
+		).mockResolvedValue(criarConta());
 		vi.mocked(
 			entidadeRepository.verificarUsuarioPertenceEmpresa,
 		).mockResolvedValue(true);

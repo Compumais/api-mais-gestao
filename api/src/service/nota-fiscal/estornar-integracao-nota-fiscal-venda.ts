@@ -1,6 +1,9 @@
 import { v4 as uuidv4 } from "uuid";
 import type { HttpResponse } from "@/model/http-model.js";
-import { atualizarDav, listarDavsPorNotaFiscal } from "@/repositories/dav-repositories.js";
+import {
+	atualizarDav,
+	listarDavsPorNotaFiscal,
+} from "@/repositories/dav-repositories.js";
 import {
 	atualizarFinanceiro,
 	buscarFinanceirosPorOrigem,
@@ -71,7 +74,8 @@ export async function estornarIntegracaoNotaFiscalVendaService({
 
 		const qtdSaida = parseFloat(movimento.quantidadesaida ?? "0");
 		const sentidoEstorno = qtdSaida > 0 ? "entrada" : "saida";
-		const quantidade = qtdSaida > 0 ? movimento.quantidadesaida : movimento.quantidadeentrada;
+		const quantidade =
+			qtdSaida > 0 ? movimento.quantidadesaida : movimento.quantidadeentrada;
 
 		if (!movimento.idproduto || !quantidade) continue;
 

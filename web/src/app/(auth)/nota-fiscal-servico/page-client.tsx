@@ -372,10 +372,7 @@ export default function NotaFiscalServicoPage() {
 
 				<div className="mx-4 rounded-lg border bg-card">
 					{mostrarSkeleton ? (
-						<TableSkeleton
-							rows={8}
-							columns={colunasVisiveis.length || 7}
-						>
+						<TableSkeleton rows={8} columns={colunasVisiveis.length || 7}>
 							{colunasVisiveis.map((coluna) => (
 								<TableHead key={coluna.id}>{rotuloColuna(coluna)}</TableHead>
 							))}

@@ -41,8 +41,7 @@ export async function buscarProdutoParaNF(
 			});
 		}
 
-		let produtos: Awaited<ReturnType<typeof buscarProdutosParaVinculoNf>> =
-			[];
+		let produtos: Awaited<ReturnType<typeof buscarProdutosParaVinculoNf>> = [];
 
 		if (query.codigo !== undefined || query.ean !== undefined) {
 			produtos = await buscarProdutosParaVinculoNf({
@@ -72,8 +71,6 @@ export async function buscarProdutoParaNF(
 				details: error.issues,
 			});
 		}
-		return reply
-			.status(httpErroInterno().status)
-			.send(httpErroInterno());
+		return reply.status(httpErroInterno().status).send(httpErroInterno());
 	}
 }

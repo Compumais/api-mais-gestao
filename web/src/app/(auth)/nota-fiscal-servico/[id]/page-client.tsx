@@ -287,8 +287,7 @@ export default function DetalheNfsePage() {
 									variant="destructive"
 									onClick={() => cancelarMutation.mutate()}
 									disabled={
-										cancelarMutation.isPending ||
-										motivoCancelamento.length < 15
+										cancelarMutation.isPending || motivoCancelamento.length < 15
 									}
 								>
 									Cancelar NFS-e

@@ -4,11 +4,7 @@ import { listarLotesPorDavItens } from "@/repositories/dav-item-lote-repositorie
 import { listarItensPorDav } from "@/repositories/dav-item-repositories.js";
 import { buscarDavPorId } from "@/repositories/dav-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
-import {
-	httpBadRequest,
-	httpOk,
-	httpProibido,
-} from "@/util/http-util.js";
+import { httpBadRequest, httpOk, httpProibido } from "@/util/http-util.js";
 
 export type DavItemComRastros = DavItem & {
 	rastros: Array<{

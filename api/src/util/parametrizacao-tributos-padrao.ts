@@ -1,7 +1,9 @@
 import { v4 as uuidv4 } from "uuid";
 import { listarCfops } from "@/repositories/cfop-repositories.js";
 import type { NovaParametrizacaoTributos } from "@/repositories/parametrizacao-tributos-repositories.js";
-import conteudoParametrizacaoPadrao from "../data/parametrizacao-tributos-padrao.json" with { type: "json" };
+import conteudoParametrizacaoPadrao from "../data/parametrizacao-tributos-padrao.json" with {
+	type: "json",
+};
 
 type RegraParametrizacaoPadraoJson = {
 	codigocfopentrada: string;
@@ -21,8 +23,9 @@ type ParametrizacaoPadraoArquivo = {
 	regras: RegraParametrizacaoPadraoJson[];
 };
 
-const regrasPadrao = (conteudoParametrizacaoPadrao as ParametrizacaoPadraoArquivo)
-	.regras;
+const regrasPadrao = (
+	conteudoParametrizacaoPadrao as ParametrizacaoPadraoArquivo
+).regras;
 
 function normalizarCodigo(codigo: string | null | undefined): string {
 	return (codigo ?? "").replace(/\D/g, "");

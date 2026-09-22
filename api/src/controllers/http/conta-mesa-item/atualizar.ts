@@ -1,7 +1,8 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import type { NovoContaMesaItem } from "@/model/conta-mesa-item-model.js";
-import { atualizarContaMesaItemService } from "@/service/conta-mesa-item/atualizar-conta-mesa-item.js";import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
+import { atualizarContaMesaItemService } from "@/service/conta-mesa-item/atualizar-conta-mesa-item.js";
+import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
 const atualizarContaMesaItemParamsSchema = z.object({
 	id: z.string(),
@@ -39,7 +40,8 @@ export async function atualizarContaMesaItem(
 			),
 		) as Partial<NovoContaMesaItem>;
 
-		const resultado = await atualizarContaMesaItemService({			contaMesaItemId: id,
+		const resultado = await atualizarContaMesaItemService({
+			contaMesaItemId: id,
 			idusuario: request.user.id,
 			dados,
 		});

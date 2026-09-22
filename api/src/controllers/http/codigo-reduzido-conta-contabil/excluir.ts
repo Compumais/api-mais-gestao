@@ -7,13 +7,18 @@ const excluirCodigoReduzidoContaContabilParamsSchema = z.object({
 	id: z.string(),
 });
 
-export async function excluirCodigoReduzidoContaContabil(request: FastifyRequest, reply: FastifyReply) {
+export async function excluirCodigoReduzidoContaContabil(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
 		}
 
-		const { id } = excluirCodigoReduzidoContaContabilParamsSchema.parse(request.params);
+		const { id } = excluirCodigoReduzidoContaContabilParamsSchema.parse(
+			request.params,
+		);
 
 		const resultado = await excluirCodigoReduzidoContaContabilService({
 			codigoReduzidoContaContabilId: id,

@@ -1,4 +1,14 @@
-import { and, asc, count, desc, eq, ilike, or, type SQL, sql } from "drizzle-orm";
+import {
+	and,
+	asc,
+	count,
+	desc,
+	eq,
+	ilike,
+	or,
+	type SQL,
+	sql,
+} from "drizzle-orm";
 import type { NovoFichaProducaoItem } from "@/model/ficha-producao-item-model.js";
 import type { NovaFichaProducao } from "@/model/ficha-producao-model.js";
 import {
@@ -40,16 +50,11 @@ function adicionarFiltroTexto(
 }
 
 export async function criarFichaProducao(dados: NovaFichaProducao) {
-	const [registro] = await db
-		.insert(fichaproducao)
-		.values(dados)
-		.returning();
+	const [registro] = await db.insert(fichaproducao).values(dados).returning();
 	return registro;
 }
 
-export async function criarFichaProducaoItens(
-	itens: NovoFichaProducaoItem[],
-) {
+export async function criarFichaProducaoItens(itens: NovoFichaProducaoItem[]) {
 	if (itens.length === 0) return [];
 	return db.insert(fichaproducaoitem).values(itens).returning();
 }
@@ -59,10 +64,7 @@ export async function criarFichaProducaoComItens(
 	itens: NovoFichaProducaoItem[],
 ) {
 	return db.transaction(async (tx) => {
-		const [ficha] = await tx
-			.insert(fichaproducao)
-			.values(dados)
-			.returning();
+		const [ficha] = await tx.insert(fichaproducao).values(dados).returning();
 		if (!ficha) return null;
 
 		const itensCriados =
@@ -216,11 +218,7 @@ export async function listarFichasProducao({
 		);
 	}
 
-	adicionarFiltroTexto(
-		where,
-		sql`CAST(${produtos.codigo} AS TEXT)`,
-		codigo,
-	);
+	adicionarFiltroTexto(where, sql`CAST(${produtos.codigo} AS TEXT)`, codigo);
 	adicionarFiltroTexto(where, produtos.nome, nome);
 
 	const filtro = and(...where);

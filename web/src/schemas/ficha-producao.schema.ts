@@ -21,14 +21,11 @@ export const fichaProducaoFormSchema = z
 		ativo: z.boolean().optional(),
 		itens: z.array(itemSchema).min(1, "Informe ao menos um componente"),
 	})
-	.refine(
-		(data) => data.permiteproducaomassa || data.producaonavenda,
-		{
-			message:
-				"Marque ao menos uma opção: produzir em massa ou produzir na venda",
-			path: ["permiteproducaomassa"],
-		},
-	)
+	.refine((data) => data.permiteproducaomassa || data.producaonavenda, {
+		message:
+			"Marque ao menos uma opção: produzir em massa ou produzir na venda",
+		path: ["permiteproducaomassa"],
+	})
 	.refine(
 		(data) =>
 			!data.itens.some((item) => item.idproduto === data.idprodutoacabado),

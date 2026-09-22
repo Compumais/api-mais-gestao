@@ -35,7 +35,9 @@ export function calcularDigitoVerificadorChaveNfe(chave43: string): number {
 	return dv >= 10 ? 0 : dv;
 }
 
-export function decodificarChaveNfe(chave: string): ChaveNfeDecodificada | null {
+export function decodificarChaveNfe(
+	chave: string,
+): ChaveNfeDecodificada | null {
 	if (!/^\d{44}$/.test(chave)) {
 		return null;
 	}
@@ -66,13 +68,16 @@ export type ResultadoValidacaoEstruturaChaveNfe =
 	| { ok: true; decodificada: ChaveNfeDecodificada }
 	| { ok: false; mensagem: string };
 
-export function validarEstruturaChaveNfe(chave: string): ResultadoValidacaoEstruturaChaveNfe {
+export function validarEstruturaChaveNfe(
+	chave: string,
+): ResultadoValidacaoEstruturaChaveNfe {
 	const decodificada = decodificarChaveNfe(chave);
 
 	if (!decodificada) {
 		return {
 			ok: false,
-			mensagem: "Chave NF-e com formato inválido (esperado 44 dígitos numéricos)",
+			mensagem:
+				"Chave NF-e com formato inválido (esperado 44 dígitos numéricos)",
 		};
 	}
 

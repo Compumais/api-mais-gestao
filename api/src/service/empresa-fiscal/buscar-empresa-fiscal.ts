@@ -99,7 +99,10 @@ function hidratarFiscalComEmpresa(
 			derivarRegimeTributarioDoCrt(crt),
 		crt,
 		indicadorie: inteiroOuNulo(fiscal.indicadorie) ?? 1,
-		indperfil: fiscal.indperfil === "B" || fiscal.indperfil === "C" ? fiscal.indperfil : "A",
+		indperfil:
+			fiscal.indperfil === "B" || fiscal.indperfil === "C"
+				? fiscal.indperfil
+				: "A",
 		indativ: inteiroOuNulo(fiscal.indativ) ?? 1,
 	};
 }

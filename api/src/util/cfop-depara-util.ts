@@ -29,9 +29,7 @@ export function obterFlagsCreditoItemImportacao(
 	const temSt = !!tributacao.icmsst && parseFloat(tributacao.icmsst) > 0;
 
 	return {
-		gerarcreditoipi:
-			config.permiteCreditoIpi && temIpi ? 1 : 0,
-		gerarcreditoicmsst:
-			config.permiteCreditoIcms && temSt ? 1 : 0,
+		gerarcreditoipi: config.permiteCreditoIpi && temIpi ? 1 : 0,
+		gerarcreditoicmsst: config.permiteCreditoIcms && temSt ? 1 : 0,
 	};
 }

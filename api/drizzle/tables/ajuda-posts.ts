@@ -18,7 +18,10 @@ export const ajudaposts = pgTable(
 		subtitulo: text("subtitulo"),
 		descricao: text("descricao").notNull(),
 		capa: text("capa"),
-		imagens: jsonb("imagens").$type<string[]>().default(sql`'[]'::jsonb`).notNull(),
+		imagens: jsonb("imagens")
+			.$type<string[]>()
+			.default(sql`'[]'::jsonb`)
+			.notNull(),
 		slug: text("slug").notNull(),
 		publicado: boolean("publicado").default(true).notNull(),
 		autorid: text("autorid").notNull(),

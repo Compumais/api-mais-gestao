@@ -2,10 +2,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod/v4";
 import { buscarTopProdutosAvancadoService } from "@/service/dashboard/buscar-analytics-dashboard.js";
 import { httpNaoAutorizado } from "@/util/http-util.js";
-import {
-	paramsPeriodoDeQuery,
-	queryPeriodoSchema,
-} from "./query-periodo.js";
+import { paramsPeriodoDeQuery, queryPeriodoSchema } from "./query-periodo.js";
 
 const querySchema = queryPeriodoSchema.extend({
 	ordenacao: z

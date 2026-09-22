@@ -42,7 +42,8 @@ export function DialogRelatorioFiscal({
 					</p>
 					<p>
 						CFOP {relatorio.decisao.cfop ?? "—"} · CSOSN{" "}
-						{relatorio.decisao.csosn ?? "—"} · CST {relatorio.decisao.cst ?? "—"}
+						{relatorio.decisao.csosn ?? "—"} · CST{" "}
+						{relatorio.decisao.cst ?? "—"}
 					</p>
 					<ul className="list-disc space-y-1 pl-4">
 						{relatorio.validacoes

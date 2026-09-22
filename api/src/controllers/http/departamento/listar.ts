@@ -11,7 +11,10 @@ const listarDepartamentosQuerySchema = z.object({
 	limit: z.coerce.number().min(1).max(100).optional().default(10),
 });
 
-export async function listarDepartamentos(request: FastifyRequest, reply: FastifyReply) {
+export async function listarDepartamentos(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());

@@ -45,9 +45,7 @@ export default function EditarModeloImpressaoOsPage({
 	if (!empresa) {
 		return (
 			<PageContainer>
-				<div className="p-6 text-muted-foreground">
-					Selecione uma empresa.
-				</div>
+				<div className="p-6 text-muted-foreground">Selecione uma empresa.</div>
 			</PageContainer>
 		);
 	}
@@ -89,8 +87,7 @@ export default function EditarModeloImpressaoOsPage({
 			toast.success("Modelo atualizado");
 		} catch (erro) {
 			toast.error("Erro ao salvar", {
-				description:
-					erro instanceof Error ? erro.message : "Erro desconhecido",
+				description: erro instanceof Error ? erro.message : "Erro desconhecido",
 			});
 		}
 	}

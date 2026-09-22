@@ -64,8 +64,7 @@ export function CampoPlanoContasDespesa({
 		enabled: !!empresa,
 	});
 
-	const planosSaida =
-		data?.data.filter((plano) => plano.inativo !== 1) ?? [];
+	const planosSaida = data?.data.filter((plano) => plano.inativo !== 1) ?? [];
 
 	return (
 		<>
@@ -199,7 +198,11 @@ export function CampoFormaPagamentoCompra({
 	const { localStorageEmpresa: empresa } = useEmpresa();
 	const [dialogAberto, setDialogAberto] = useState(false);
 
-	const { data: formas = [], isLoading, refetch } = useQuery({
+	const {
+		data: formas = [],
+		isLoading,
+		refetch,
+	} = useQuery({
 		queryKey: ["tipos-documento-financeiro", empresa?.id, "compra"],
 		queryFn: async () => {
 			if (!empresa) throw new Error("Empresa não selecionada");
@@ -249,9 +252,7 @@ export function CampoFormaPagamentoCompra({
 						{formas.map((forma) => (
 							<SelectItem key={forma.id} value={forma.id}>
 								{forma.descricao}
-								{forma.formapagamentonfe
-									? ` (${forma.formapagamentonfe})`
-									: ""}
+								{forma.formapagamentonfe ? ` (${forma.formapagamentonfe})` : ""}
 							</SelectItem>
 						))}
 					</SelectContent>

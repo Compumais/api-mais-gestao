@@ -86,6 +86,10 @@ export type TipoCampoPersonalizadoOs = z.infer<
 	typeof tipoCampoPersonalizadoOsSchema
 >;
 export type CampoPersonalizadoOs = z.infer<typeof campoPersonalizadoOsSchema>;
-export type BlocoModeloImpressaoOs = z.infer<typeof blocoModeloImpressaoOsSchema>;
+export type BlocoModeloImpressaoOs = z.infer<
+	typeof blocoModeloImpressaoOsSchema
+>;
 export type LayoutModeloImpressaoOs = BlocoModeloImpressaoOs[];
-export type ModeloImpressaoOsFormData = z.infer<typeof modeloImpressaoOsFormSchema>;
+export type ModeloImpressaoOsFormData = z.infer<
+	typeof modeloImpressaoOsFormSchema
+>;

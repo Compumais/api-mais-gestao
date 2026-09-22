@@ -342,7 +342,9 @@ export const notaFiscalService = {
 		return data;
 	},
 
-	async criar(payload: CriarNotaFiscalPayload): Promise<CriarNotaFiscalResponse> {
+	async criar(
+		payload: CriarNotaFiscalPayload,
+	): Promise<CriarNotaFiscalResponse> {
 		const { data } = await api.post<CriarNotaFiscalResponse>(
 			"/notas-fiscais",
 			payload,

@@ -14,9 +14,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import {
-	contaCorrenteLancamentoService,
-} from "@/services/conta-corrente-lancamento.service";
+import { contaCorrenteLancamentoService } from "@/services/conta-corrente-lancamento.service";
 import type { PlanoContas } from "@/services/plano-contas.service";
 import {
 	classeStatusImportacaoOfx,
@@ -313,8 +311,7 @@ export function TabelaImportacaoOfx({
 													size="sm"
 													onClick={() => handleRealizarLancamento(linha)}
 													disabled={
-														acaoDesabilitada ||
-														!linha.idplanocontasSelecionado
+														acaoDesabilitada || !linha.idplanocontasSelecionado
 													}
 												>
 													{processando
@@ -338,8 +335,7 @@ export function TabelaImportacaoOfx({
 													size="sm"
 													onClick={() => handleAtualizar(linha)}
 													disabled={
-														acaoDesabilitada ||
-														!linha.idplanocontasSelecionado
+														acaoDesabilitada || !linha.idplanocontasSelecionado
 													}
 												>
 													{processando ? "Processando..." : "Atualizar"}

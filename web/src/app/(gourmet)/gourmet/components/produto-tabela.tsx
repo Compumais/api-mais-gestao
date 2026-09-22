@@ -133,10 +133,7 @@ export function ProdutoTabela({
 											<TableCell className="font-medium">
 												{produto.nome}
 												{bloqueado && (
-													<Badge
-														variant="destructive"
-														className="ml-2 text-xs"
-													>
+													<Badge variant="destructive" className="ml-2 text-xs">
 														Sem estoque
 													</Badge>
 												)}

@@ -141,8 +141,7 @@ export async function consultarNfseService({
 		| "EMISSAO"
 		| "CANCELAMENTO"
 		| "CANCELAMENTO_POR_SUBSTITUICAO" = "EMISSAO";
-	let protocolo =
-		emissaoSalva?.protocolo?.trim() || protocoloMensagem || null;
+	let protocolo = emissaoSalva?.protocolo?.trim() || protocoloMensagem || null;
 
 	if (
 		nota.status === NFE_STATUS.AUTORIZADA &&
@@ -165,10 +164,7 @@ export async function consultarNfseService({
 	) {
 		tipoIntegracao = "CANCELAMENTO_POR_SUBSTITUICAO";
 		protocolo = protocoloSubstituicao;
-	} else if (
-		nota.status === NFE_STATUS.AUTORIZADA &&
-		protocoloCancelamento
-	) {
+	} else if (nota.status === NFE_STATUS.AUTORIZADA && protocoloCancelamento) {
 		tipoIntegracao = "CANCELAMENTO";
 		protocolo = protocoloCancelamento;
 	}
@@ -367,8 +363,7 @@ export async function consultarNfseService({
 	}
 
 	let integracao: ResultadoConsultaNfse["integracao"];
-	const acabouDeAutorizar =
-		Boolean(resposta.numeroNfse) && !estavaAutorizada;
+	const acabouDeAutorizar = Boolean(resposta.numeroNfse) && !estavaAutorizada;
 
 	if (acabouDeAutorizar && (emissaoSalva?.gerarFinanceiro ?? true)) {
 		const resultadoIntegracao = await integrarNfseAutorizadaService({

@@ -66,9 +66,19 @@ export function useDashboardVendasPorDiaSemana() {
 export function useDashboardTopProdutosAvancado(ordenacao: RankingOrdenacao) {
 	const { empresaId, params, enabled } = usePeriodoQueryParams();
 	return useQuery({
-		queryKey: ["dashboard", "top-produtos-avancado", empresaId, params, ordenacao],
+		queryKey: [
+			"dashboard",
+			"top-produtos-avancado",
+			empresaId,
+			params,
+			ordenacao,
+		],
 		queryFn: () =>
-			dashboardService.buscarTopProdutosAvancado({ ...params, ordenacao, limit: 10 }),
+			dashboardService.buscarTopProdutosAvancado({
+				...params,
+				ordenacao,
+				limit: 10,
+			}),
 		enabled,
 	});
 }

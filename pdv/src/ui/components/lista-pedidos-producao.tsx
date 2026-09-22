@@ -122,9 +122,7 @@ export function ListaPedidosProducao({
 										: pedido.origem}
 								</span>
 								<Badge
-									variant={
-										pedido.status === "pendente" ? "warning" : "success"
-									}
+									variant={pedido.status === "pendente" ? "warning" : "success"}
 								>
 									{pedido.status === "pendente" ? "Pendente" : "Entregue"}
 								</Badge>

@@ -19,13 +19,13 @@ type SalvarContabilidadeParametros = {
 	ativo?: boolean;
 };
 
-function normalizarEmails(emails: string[] | null | undefined): string[] | null {
+function normalizarEmails(
+	emails: string[] | null | undefined,
+): string[] | null {
 	if (!emails?.length) return null;
 	const unicos = [
 		...new Set(
-			emails
-				.map((e) => e.trim().toLowerCase())
-				.filter((e) => e.includes("@")),
+			emails.map((e) => e.trim().toLowerCase()).filter((e) => e.includes("@")),
 		),
 	];
 	return unicos.length > 0 ? unicos : null;

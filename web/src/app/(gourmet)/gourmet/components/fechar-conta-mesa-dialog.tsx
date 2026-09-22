@@ -56,7 +56,12 @@ export function FecharContaMesaDialog({
 			setTaxaServico(conta.valortaxaservico ?? "");
 			setCouvert(conta.valorcouverartistico ?? "");
 		}
-	}, [open, conta?.desconto, conta?.valortaxaservico, conta?.valorcouverartistico]);
+	}, [
+		open,
+		conta?.desconto,
+		conta?.valortaxaservico,
+		conta?.valorcouverartistico,
+	]);
 
 	const itensPendentes = useMemo(
 		() => filtrarItensPendentesContaMesa(itens),
@@ -87,7 +92,9 @@ export function FecharContaMesaDialog({
 
 	const toggleItem = (id: string) => {
 		setIdsSelecionados((atual) =>
-			atual.includes(id) ? atual.filter((itemId) => itemId !== id) : [...atual, id],
+			atual.includes(id)
+				? atual.filter((itemId) => itemId !== id)
+				: [...atual, id],
 		);
 	};
 
@@ -96,7 +103,9 @@ export function FecharContaMesaDialog({
 	};
 
 	const handleConfirmarVenda = async (pagamento: FecharContaFormData) => {
-		const itensFatia = itens.filter((item) => idsSelecionados.includes(item.id));
+		const itensFatia = itens.filter((item) =>
+			idsSelecionados.includes(item.id),
+		);
 		return onConfirmarFatia(idsSelecionados, itensFatia, pagamento);
 	};
 

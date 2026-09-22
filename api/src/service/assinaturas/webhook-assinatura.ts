@@ -39,10 +39,7 @@ export async function processarWebhookAsaas(evento: AsaasWebhookEvent) {
 		statusAsaas === "EXPIRED"
 	) {
 		statusLocal = "CANCELED";
-	} else if (
-		eventoNome.includes("OVERDUE") ||
-		statusAsaas === "OVERDUE"
-	) {
+	} else if (eventoNome.includes("OVERDUE") || statusAsaas === "OVERDUE") {
 		statusLocal = "OVERDUE";
 	} else if (statusAsaas === "ACTIVE" || eventoNome.includes("CREATED")) {
 		statusLocal = "ACTIVE";

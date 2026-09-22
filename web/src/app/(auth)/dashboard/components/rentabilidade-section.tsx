@@ -82,18 +82,18 @@ export function RentabilidadeSection() {
 			</div>
 
 			<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-				{(Object.keys(QUADRANTE_LABEL) as Array<keyof typeof QUADRANTE_LABEL>).map(
-					(key) => (
-						<Card key={key}>
-							<CardHeader>
-								<CardDescription>{QUADRANTE_LABEL[key]}</CardDescription>
-								<CardTitle className="text-2xl tabular-nums">
-									{contagem[key]}
-								</CardTitle>
-							</CardHeader>
-						</Card>
-					),
-				)}
+				{(
+					Object.keys(QUADRANTE_LABEL) as Array<keyof typeof QUADRANTE_LABEL>
+				).map((key) => (
+					<Card key={key}>
+						<CardHeader>
+							<CardDescription>{QUADRANTE_LABEL[key]}</CardDescription>
+							<CardTitle className="text-2xl tabular-nums">
+								{contagem[key]}
+							</CardTitle>
+						</CardHeader>
+					</Card>
+				))}
 			</div>
 
 			<Card>

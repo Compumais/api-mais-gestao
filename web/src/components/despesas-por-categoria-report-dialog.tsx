@@ -35,7 +35,8 @@ export function DespesasPorCategoriaReportDialog({
 	onOpenChange,
 }: DespesasPorCategoriaReportDialogProps) {
 	const { empresa } = useEmpresa();
-	const { inicio: dataInicioPadrao, fim: dataFimPadrao } = inicioFimMesBrasilia();
+	const { inicio: dataInicioPadrao, fim: dataFimPadrao } =
+		inicioFimMesBrasilia();
 
 	const [dataInicio, setDataInicio] = useState(dataInicioPadrao);
 	const [dataFim, setDataFim] = useState(dataFimPadrao);

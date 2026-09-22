@@ -159,9 +159,7 @@ export function TipoProblemaForm(props: TipoProblemaFormProps) {
 								aria-invalid={!!errors.descricao}
 								{...register("descricao")}
 							/>
-							<FieldError
-								errors={errors.descricao ? [errors.descricao] : []}
-							/>
+							<FieldError errors={errors.descricao ? [errors.descricao] : []} />
 						</Field>
 
 						<Field>

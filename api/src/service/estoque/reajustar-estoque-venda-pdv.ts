@@ -1,7 +1,11 @@
 import { listarMovimentosEstoquePorIdOriginal } from "@/repositories/movimento-estoque-repositories.js";
 import type { ItemBaixaEstoqueVenda } from "@/service/estoque/baixa-estoque-venda.js";
 import { registrarMovimentoEstoque } from "@/service/estoque/registrar-movimento-estoque.js";
-import { TIPO_DOCUMENTO_ESTOQUE, TIPO_ESTOQUE, type TipoEstoque } from "@/util/tipo-estoque.js";
+import {
+	TIPO_DOCUMENTO_ESTOQUE,
+	TIPO_ESTOQUE,
+	type TipoEstoque,
+} from "@/util/tipo-estoque.js";
 
 type ReajustarEstoqueVendaPdvParametros = {
 	idempresa: string;
@@ -55,7 +59,9 @@ export async function reajustarEstoqueVendaPdv({
 		if (qty <= 0) continue;
 
 		const precoUnit = Number.parseFloat(item.precounitario);
-		const valorTotal = (qty * (Number.isNaN(precoUnit) ? 0 : precoUnit)).toFixed(2);
+		const valorTotal = (
+			qty * (Number.isNaN(precoUnit) ? 0 : precoUnit)
+		).toFixed(2);
 
 		const movimento = await registrarMovimentoEstoque({
 			idempresa,

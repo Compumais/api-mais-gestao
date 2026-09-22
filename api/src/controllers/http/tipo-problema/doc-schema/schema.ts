@@ -3,7 +3,8 @@ import type { FastifySchema } from "fastify";
 export const criarTipoProblemaSchema: FastifySchema = {
 	tags: ["tipos-problema"],
 	summary: "Criar tipo de problema",
-	description: "Cria um novo registro de tipo de problema na empresa do usuário autenticado.",
+	description:
+		"Cria um novo registro de tipo de problema na empresa do usuário autenticado.",
 	security: [{ bearerAuth: [] }],
 	body: {
 		type: "object",
@@ -114,7 +115,10 @@ export const listarTipoProblemasSchema: FastifySchema = {
 		type: "object",
 		properties: {
 			idempresa: { type: "string", description: "ID da empresa" },
-			descricao: { type: "string", description: "Filtro opcional por descricao" },
+			descricao: {
+				type: "string",
+				description: "Filtro opcional por descricao",
+			},
 			codigo: { type: "string", description: "Filtro opcional por codigo" },
 			inativo: { type: "number", description: "Filtro opcional por inativo" },
 			ordenarPor: {
@@ -136,7 +140,10 @@ export const listarTipoProblemasSchema: FastifySchema = {
 		200: {
 			type: "object",
 			properties: {
-				data: { type: "array", items: { type: "object", additionalProperties: true } },
+				data: {
+					type: "array",
+					items: { type: "object", additionalProperties: true },
+				},
 				paginacao: {
 					type: "object",
 					properties: {

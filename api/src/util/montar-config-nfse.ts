@@ -15,9 +15,7 @@ export function montarConfigJsonNfseGateway({
 	const urlsOperacao = nfseConfiguracao.urlsoperacao ?? null;
 	const urlsWsdl =
 		urlsOperacao &&
-		(urlsOperacao.emissao ||
-			urlsOperacao.consulta ||
-			urlsOperacao.cancelamento)
+		(urlsOperacao.emissao || urlsOperacao.consulta || urlsOperacao.cancelamento)
 			? {
 					emissao: urlsOperacao.emissao ?? undefined,
 					consulta: urlsOperacao.consulta ?? undefined,

@@ -19,7 +19,8 @@ type ModelosImpressaoPedidoListaProps = {
 export function ModelosImpressaoPedidoLista({
 	idempresa,
 }: ModelosImpressaoPedidoListaProps) {
-	const { data: modelos = [], isLoading } = useModelosImpressaoPedido(idempresa);
+	const { data: modelos = [], isLoading } =
+		useModelosImpressaoPedido(idempresa);
 	const excluir = useExcluirModeloImpressaoPedido(idempresa);
 	const duplicar = useDuplicarModeloImpressaoPedido(idempresa);
 	const definirPrimario = useDefinirPrimarioModeloImpressaoPedido(idempresa);

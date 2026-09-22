@@ -49,7 +49,10 @@ function nomeItemLivre(item: ItemCotacaoCompraInput) {
 export async function validarItensCotacao(
 	idempresa: string,
 	itens: ItemCotacaoCompraInput[],
-): Promise<HttpResponse<NovoCotacaoCompraItem[]> | { success: true; itens: NovoCotacaoCompraItem[] }> {
+): Promise<
+	| HttpResponse<NovoCotacaoCompraItem[]>
+	| { success: true; itens: NovoCotacaoCompraItem[] }
+> {
 	if (!itens || itens.length === 0) {
 		return httpBadRequest("Informe ao menos um produto na cotação");
 	}
@@ -76,7 +79,9 @@ export async function validarItensCotacao(
 
 			const produto = await buscarProdutoPorId(idproduto);
 			if (!produto || produto.idempresa !== idempresa) {
-				return httpBadRequest(`Produto não encontrado na empresa (item ${i + 1})`);
+				return httpBadRequest(
+					`Produto não encontrado na empresa (item ${i + 1})`,
+				);
 			}
 
 			normalizados.push({
@@ -84,10 +89,7 @@ export async function validarItensCotacao(
 				idcotacao: "",
 				idproduto,
 				descricao:
-					descricaoInformada ||
-					produto.descricao ||
-					produto.nome ||
-					null,
+					descricaoInformada || produto.descricao || produto.nome || null,
 				quantidade: qtd.toFixed(6),
 				unidademedida: item.unidademedida ?? produto.unidademedida ?? null,
 				observacao: item.observacao ?? null,

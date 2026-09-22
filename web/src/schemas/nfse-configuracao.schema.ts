@@ -13,7 +13,10 @@ export const nfseConfiguracaoSchema = z.object({
 	ambiente: z.coerce.number().int().min(1).max(2),
 	provedor: z.string().min(1),
 	codigomunicipioibge: z.string().optional().nullable(),
-	versaolayout: z.enum(["2.02", "dps-1.01"]).or(z.string().min(1)).default("2.02"),
+	versaolayout: z
+		.enum(["2.02", "dps-1.01"])
+		.or(z.string().min(1))
+		.default("2.02"),
 	urlwsdl: z.string().optional().nullable(),
 	urlsoperacao: urlsOperacaoSchema,
 	usarlotesincrono: z.boolean().default(true),

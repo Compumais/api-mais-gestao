@@ -93,7 +93,9 @@ function gerarIdTemporario(
 
 export function parsearOfx(conteudoOfx: string): TransacaoOfx[] {
 	const conteudoNormalizado = conteudoOfx.replace(/\r\n/g, "\n");
-	const blocos = conteudoNormalizado.match(/<STMTTRN>[\s\S]*?(?=<STMTTRN>|<\/BANKTRANLIST>|<\/STMTTRNRS>|<\/OFX>|$)/gi);
+	const blocos = conteudoNormalizado.match(
+		/<STMTTRN>[\s\S]*?(?=<STMTTRN>|<\/BANKTRANLIST>|<\/STMTTRNRS>|<\/OFX>|$)/gi,
+	);
 
 	if (!blocos || blocos.length === 0) {
 		throw new Error("Nenhuma transação encontrada no arquivo OFX");

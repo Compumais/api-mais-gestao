@@ -16,10 +16,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { useEmpresa } from "@/hooks/use-empresa";
-import {
-	type TaxaUf,
-	taxaUfService,
-} from "@/services/taxauf.service";
+import { type TaxaUf, taxaUfService } from "@/services/taxauf.service";
 import { ModalTaxaUf } from "./components/modal-taxa-uf";
 
 export default function TaxasPage() {

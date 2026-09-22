@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
-	ID_UNIDADE_KG_SISTEMA,
 	devePedirPeso,
 	digitosDeKg,
 	formatarQuantidade,
+	ID_UNIDADE_KG_SISTEMA,
 	kgDeDigitos,
 	produtoEhKg,
 	resolverSiglaUnidade,
@@ -12,10 +12,7 @@ import {
 
 describe("produtoEhKg", () => {
 	it("reconhece a unidade de sistema KG / Quilograma", () => {
-		assert.equal(
-			produtoEhKg({ idunidademedida: ID_UNIDADE_KG_SISTEMA }),
-			true,
-		);
+		assert.equal(produtoEhKg({ idunidademedida: ID_UNIDADE_KG_SISTEMA }), true);
 		assert.equal(
 			produtoEhKg({
 				idunidademedida: ID_UNIDADE_KG_SISTEMA.toUpperCase(),
@@ -45,10 +42,7 @@ describe("produtoEhKg", () => {
 describe("resolverSiglaUnidade", () => {
 	it("preenche KG a partir do cadastro de unidades", () => {
 		const mapa = new Map([
-			[
-				ID_UNIDADE_KG_SISTEMA,
-				{ codigo: "KG", nome: "Quilograma" },
-			],
+			[ID_UNIDADE_KG_SISTEMA, { codigo: "KG", nome: "Quilograma" }],
 		]);
 		assert.equal(
 			resolverSiglaUnidade(

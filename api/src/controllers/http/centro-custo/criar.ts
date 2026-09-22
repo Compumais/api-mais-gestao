@@ -11,10 +11,13 @@ const criarCentroCustoBodySchema = z.object({
 	codigoreduzido: z.string().max(20).optional(),
 	inativo: z.number().int().optional(),
 	obrigatorio: z.number().int().optional(),
-	idcentrocustopai: z.string().optional()
+	idcentrocustopai: z.string().optional(),
 });
 
-export async function criarCentroCusto(request: FastifyRequest, reply: FastifyReply) {
+export async function criarCentroCusto(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
@@ -26,10 +29,10 @@ export async function criarCentroCusto(request: FastifyRequest, reply: FastifyRe
 			id: uuidv4(),
 			...dadosValidados,
 			currenttimemillis: Date.now(),
-		datacadastro: new Date().toISOString().split("T")[0],
-		dataultimaalteracao: new Date().toISOString().split("T")[0],
-		idusuariocadastro: request.user.id,
-		idultimousuarioalteracao: request.user.id,
+			datacadastro: new Date().toISOString().split("T")[0],
+			dataultimaalteracao: new Date().toISOString().split("T")[0],
+			idusuariocadastro: request.user.id,
+			idultimousuarioalteracao: request.user.id,
 		};
 
 		const resultado = await criarCentroCustoService({

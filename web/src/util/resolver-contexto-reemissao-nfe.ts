@@ -83,9 +83,7 @@ export function resolverContextoReemissaoNfe(notaFiscal: NotaReemissao): {
 		frete: paraNumero(notaFiscal.frete ?? emissao?.totais?.frete),
 		seguro: paraNumero(notaFiscal.seguro ?? emissao?.totais?.seguro),
 		desconto: paraNumero(
-			emissao?.totais
-				? emissao.totais.desconto
-				: notaFiscal.descontosubtotal,
+			emissao?.totais ? emissao.totais.desconto : notaFiscal.descontosubtotal,
 		),
 		outrasDespesas: paraNumero(
 			notaFiscal.outrasdespesas ?? emissao?.totais?.outrasDespesas,

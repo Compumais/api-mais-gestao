@@ -37,9 +37,7 @@ export function itemEmissaoRequerCest(item: ItemPayloadNfe): boolean {
 	return baseSt > 0 || valorSt > 0;
 }
 
-export function validarCestItensEmissaoNfe(
-	itens: ItemPayloadNfe[],
-): string[] {
+export function validarCestItensEmissaoNfe(itens: ItemPayloadNfe[]): string[] {
 	const pendencias: string[] = [];
 
 	for (const [index, item] of itens.entries()) {

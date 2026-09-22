@@ -158,11 +158,7 @@ export async function listarEstoqueGestaoPorProdutos({
 		where.push(filtroBuscaProduto(busca) as SQL);
 	}
 
-	adicionarFiltroTexto(
-		where,
-		sql`${produtos.codigo}::text`,
-		codigoproduto,
-	);
+	adicionarFiltroTexto(where, sql`${produtos.codigo}::text`, codigoproduto);
 	adicionarFiltroTexto(where, produtos.nome, nomeproduto);
 	adicionarFiltroTexto(where, expressaoNcm, ncm);
 	adicionarFiltroTexto(where, expressaoUnidade, unidademedida);

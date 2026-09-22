@@ -1,10 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import { exportarXmlsContabilidadeService } from "@/service/contabilidade/exportar-xmls-contabilidade.js";
-import {
-	httpErroInterno,
-	httpNaoAutorizado,
-} from "@/util/http-util.js";
+import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
 const exportarXmlsContabilidadeBodySchema = z.object({
 	idempresa: z.string().uuid(),

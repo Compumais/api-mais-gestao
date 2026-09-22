@@ -28,13 +28,15 @@ describe("sincronizarEmpresaNfeInboundService", () => {
 		});
 		vi.mocked(nfeInboundRepo.tentarMarcarSincronizando).mockResolvedValue(true);
 		vi.mocked(nfeInboundRepo.liberarSincronizando).mockResolvedValue();
-		vi.mocked(nfeInboundRepo.buscarNfeInboundDocumentoPorChave).mockResolvedValue(
-			undefined,
-		);
+		vi.mocked(
+			nfeInboundRepo.buscarNfeInboundDocumentoPorChave,
+		).mockResolvedValue(undefined);
 		vi.mocked(nfeInboundRepo.upsertNfeInboundDocumento).mockResolvedValue({
 			id: "doc-1",
 		} as never);
-		vi.mocked(nfeInboundRepo.atualizarEmpresaNfeSync).mockResolvedValue({} as never);
+		vi.mocked(nfeInboundRepo.atualizarEmpresaNfeSync).mockResolvedValue(
+			{} as never,
+		);
 
 		vi.mocked(consultarDistribuicao.consultarDistribuicaoDfe)
 			.mockResolvedValueOnce({
@@ -56,7 +58,9 @@ describe("sincronizarEmpresaNfeInboundService", () => {
 			idempresa: "emp-1",
 		});
 
-		expect(consultarDistribuicao.consultarDistribuicaoDfe).toHaveBeenCalledTimes(2);
+		expect(
+			consultarDistribuicao.consultarDistribuicaoDfe,
+		).toHaveBeenCalledTimes(2);
 		expect(resultado.quantidadeXml).toBe(1);
 		expect(resultado.nsuFinal).toBe("000000000000002");
 	});
@@ -74,7 +78,9 @@ describe("sincronizarEmpresaNfeInboundService", () => {
 		});
 		vi.mocked(nfeInboundRepo.tentarMarcarSincronizando).mockResolvedValue(true);
 		vi.mocked(nfeInboundRepo.liberarSincronizando).mockResolvedValue();
-		vi.mocked(nfeInboundRepo.atualizarEmpresaNfeSync).mockResolvedValue({} as never);
+		vi.mocked(nfeInboundRepo.atualizarEmpresaNfeSync).mockResolvedValue(
+			{} as never,
+		);
 
 		vi.mocked(consultarDistribuicao.consultarDistribuicaoDfe).mockRejectedValue(
 			Object.assign(new Error("Consumo indevido"), {
@@ -108,9 +114,13 @@ describe("sincronizarEmpresaNfeInboundService", () => {
 		});
 		vi.mocked(nfeInboundRepo.tentarMarcarSincronizando).mockResolvedValue(true);
 		vi.mocked(nfeInboundRepo.liberarSincronizando).mockResolvedValue();
-		vi.mocked(nfeInboundRepo.atualizarEmpresaNfeSync).mockResolvedValue({} as never);
+		vi.mocked(nfeInboundRepo.atualizarEmpresaNfeSync).mockResolvedValue(
+			{} as never,
+		);
 
-		vi.mocked(consultarDistribuicao.consultarDistribuicaoDfe).mockResolvedValueOnce({
+		vi.mocked(
+			consultarDistribuicao.consultarDistribuicaoDfe,
+		).mockResolvedValueOnce({
 			cStat: "137",
 			xMotivo: "Nenhum documento localizado",
 			ultNSU: "000000000000000",

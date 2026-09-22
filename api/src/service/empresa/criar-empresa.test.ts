@@ -16,7 +16,9 @@ vi.mock("../cfop/criar-cfops-padrao.js");
 vi.mock("../taxauf/criar-taxas-padrao.js");
 vi.mock("../parametrizacao-tributos/criar-parametrizacao-tributos-padrao.js");
 vi.mock("../fator-conversao/criar-fatores-conversao-padrao.js");
-vi.mock("../tipo-documento-financeiro/criar-tipos-documento-financeiro-padrao.js");
+vi.mock(
+	"../tipo-documento-financeiro/criar-tipos-documento-financeiro-padrao.js",
+);
 vi.mock("../planos/buscar-plano-efetivo.js");
 vi.mock("@/repositories/conta-corrente-repositories.js", () => ({
 	criarContaCorrenteCaixaPadrao: vi.fn().mockResolvedValue({ id: "caixa-1" }),
@@ -154,7 +156,7 @@ describe("criarEmpresaService", () => {
 		if (!resultado.success) {
 			expect(resultado.status).toBe(409);
 			expect(resultado.error).toBe(
-				'Já existe uma empresa cadastrada com este CNPJ (“Empresa Teste”). A razão social pode se repetir; o conflito é no CNPJ.',
+				"Já existe uma empresa cadastrada com este CNPJ (“Empresa Teste”). A razão social pode se repetir; o conflito é no CNPJ.",
 			);
 			expect(resultado.code).toBe("RESOURCE_ALREADY_EXISTS");
 		}

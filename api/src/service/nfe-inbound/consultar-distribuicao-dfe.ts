@@ -68,15 +68,27 @@ export async function consultarDistribuicaoDfe({
 	const tratamento = tratarErroSefazDfe(resposta.cStat, resposta.xMotivo);
 
 	if (tratamento.acao === "parar_certificado") {
-		throw new ErroConsultaDistribuicaoDfe(tratamento.mensagem, "CERTIFICADO", resposta.cStat);
+		throw new ErroConsultaDistribuicaoDfe(
+			tratamento.mensagem,
+			"CERTIFICADO",
+			resposta.cStat,
+		);
 	}
 
 	if (tratamento.acao === "parar_backoff") {
-		throw new ErroConsultaDistribuicaoDfe(tratamento.mensagem, "BACKOFF", resposta.cStat);
+		throw new ErroConsultaDistribuicaoDfe(
+			tratamento.mensagem,
+			"BACKOFF",
+			resposta.cStat,
+		);
 	}
 
 	if (tratamento.acao === "erro") {
-		throw new ErroConsultaDistribuicaoDfe(tratamento.mensagem, "SEFAZ", resposta.cStat);
+		throw new ErroConsultaDistribuicaoDfe(
+			tratamento.mensagem,
+			"SEFAZ",
+			resposta.cStat,
+		);
 	}
 
 	return {

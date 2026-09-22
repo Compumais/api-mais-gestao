@@ -35,7 +35,9 @@ export function itemTemIndicativoSt(tributacao: {
 	icmsst?: string | null | undefined;
 	situacaotributaria?: string | null | undefined;
 }): boolean {
-	const stValor = Number.parseFloat(String(tributacao.icmsst ?? "0").replace(",", "."));
+	const stValor = Number.parseFloat(
+		String(tributacao.icmsst ?? "0").replace(",", "."),
+	);
 	if (Number.isFinite(stValor) && stValor > 0) return true;
 
 	const sit = String(tributacao.situacaotributaria ?? "").replace(/\D/g, "");
@@ -56,7 +58,9 @@ export function itemTemIndicativoTributado(tributacao: {
 	if (CST_TRIBUTADO.has(sit.padStart(2, "0").slice(-2))) return true;
 	if (CSOSN_TRIBUTADO.has(sit)) return true;
 
-	const icms = Number.parseFloat(String(tributacao.icms ?? "0").replace(",", "."));
+	const icms = Number.parseFloat(
+		String(tributacao.icms ?? "0").replace(",", "."),
+	);
 	return Number.isFinite(icms) && icms > 0;
 }
 

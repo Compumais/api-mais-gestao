@@ -9,13 +9,18 @@ const listarCodigoReduzidoContaContabilsQuerySchema = z.object({
 	limit: z.coerce.number().min(1).max(100).optional().default(10),
 });
 
-export async function listarCodigoReduzidoContaContabils(request: FastifyRequest, reply: FastifyReply) {
+export async function listarCodigoReduzidoContaContabils(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
 		}
 
-		const query = listarCodigoReduzidoContaContabilsQuerySchema.parse(request.query);
+		const query = listarCodigoReduzidoContaContabilsQuerySchema.parse(
+			request.query,
+		);
 
 		const resultado = await listarCodigoReduzidoContaContabilsService({
 			idusuario: request.user.id,

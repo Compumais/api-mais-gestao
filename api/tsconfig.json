@@ -9,10 +9,7 @@
 		"module": "ESNext",
 		"moduleResolution": "bundler",
 		"target": "esnext",
-		"types": [
-			"node",
-			"vitest/globals"
-		],
+		"types": ["node", "vitest/globals"],
 		// For nodejs:
 		// "lib": ["esnext"],
 		// "types": ["node"],
@@ -41,21 +38,10 @@
 		"skipLibCheck": true,
 		"resolveJsonModule": true,
 		"paths": {
-			"*": [
-				"./*"
-			],
-			"@/*": [
-				"./src/*"
-			]
+			"*": ["./*"],
+			"@/*": ["./src/*"]
 		}
 	},
-	"include": [
-		"src",
-		"drizzle"
-	],
-	"exclude": [
-		"node_modules",
-		"dist",
-		"**/*.test.ts"
-	]
+	"include": ["src", "drizzle"],
+	"exclude": ["node_modules", "dist", "**/*.test.ts"]
 }

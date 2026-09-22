@@ -78,14 +78,12 @@ export function FichaProducaoForm(props: FichaProducaoFormProps) {
 		if (!isEdicao || !props.valoresIniciais) return;
 		form.reset({
 			idprodutoacabado: props.valoresIniciais.idprodutoacabado ?? "",
-			permiteproducaomassa:
-				props.valoresIniciais.permiteproducaomassa ?? true,
+			permiteproducaomassa: props.valoresIniciais.permiteproducaomassa ?? true,
 			producaonavenda: props.valoresIniciais.producaonavenda ?? false,
 			observacao: props.valoresIniciais.observacao ?? "",
 			ativo: props.valoresIniciais.ativo ?? true,
 			itens:
-				props.valoresIniciais.itens &&
-				props.valoresIniciais.itens.length > 0
+				props.valoresIniciais.itens && props.valoresIniciais.itens.length > 0
 					? props.valoresIniciais.itens
 					: [{ idproduto: "", quantidade: "1" }],
 		});
@@ -251,9 +249,7 @@ export function FichaProducaoForm(props: FichaProducaoFormProps) {
 					<label className="flex items-center gap-2 text-sm">
 						<Checkbox
 							checked={watch("ativo") ?? true}
-							onCheckedChange={(checked) =>
-								setValue("ativo", checked === true)
-							}
+							onCheckedChange={(checked) => setValue("ativo", checked === true)}
 						/>
 						Ficha ativa
 					</label>

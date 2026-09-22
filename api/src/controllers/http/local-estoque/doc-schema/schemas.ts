@@ -42,7 +42,8 @@ const respostaErroPadrao = {
 export const criarLocalEstoqueSchema: FastifySchema = {
 	tags: ["locais-estoque"],
 	summary: "Criar local de estoque",
-	description: "Cria um novo local de estoque na empresa do usuário autenticado",
+	description:
+		"Cria um novo local de estoque na empresa do usuário autenticado",
 	security: [{ bearerAuth: [] }],
 	body: {
 		type: "object",

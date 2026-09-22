@@ -48,9 +48,9 @@ function escapeHtml(valor: string) {
 		.replace(/"/g, "&quot;");
 }
 
-function colunaEfetiva(
-	bloco: { coluna?: ColunaBlocoModeloImpressao },
-): ColunaBlocoModeloImpressao {
+function colunaEfetiva(bloco: {
+	coluna?: ColunaBlocoModeloImpressao;
+}): ColunaBlocoModeloImpressao {
 	return bloco.coluna ?? "cheia";
 }
 
@@ -60,7 +60,11 @@ function montarEnderecoCompleto(cliente?: DadosClienteImpressao | null) {
 		.filter(Boolean)
 		.join(", ");
 	const cidadeUf = [cliente.cidade, cliente.uf].filter(Boolean).join("/");
-	const linha2 = [cliente.bairro, cidadeUf, cliente.cep ? `CEP ${cliente.cep}` : ""]
+	const linha2 = [
+		cliente.bairro,
+		cidadeUf,
+		cliente.cep ? `CEP ${cliente.cep}` : "",
+	]
 		.filter(Boolean)
 		.join(" — ");
 	return [linha1, linha2].filter(Boolean).join(". ");

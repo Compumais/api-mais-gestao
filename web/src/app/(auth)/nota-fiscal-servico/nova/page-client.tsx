@@ -6,6 +6,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
+import {
+	BlocoErrorBoundary,
+	BlocoErrorBoundarySlot,
+} from "@/components/bloco-error-boundary";
 import type { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -276,7 +280,14 @@ export default function NovaNfsePage() {
 					</p>
 				</header>
 
-				{origemId && carregandoOrigem ? (
+				<BlocoErrorBoundary
+					titulo="Erro no formulário da NFS-e"
+					variante="painel"
+				>
+					<BlocoErrorBoundarySlot
+						render={() => (
+							<>
+								{origemId && carregandoOrigem ? (
 					<p className="text-muted-foreground text-sm">
 						Carregando dados da nota de origem...
 					</p>
@@ -470,7 +481,11 @@ export default function NovaNfsePage() {
 							</Button>
 						</div>
 					</FieldGroup>
-				</form>
+								</form>
+							</>
+						)}
+					/>
+				</BlocoErrorBoundary>
 			</main>
 		</PageContainer>
 	);

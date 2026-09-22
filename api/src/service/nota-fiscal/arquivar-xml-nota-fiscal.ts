@@ -1,10 +1,7 @@
 import { createHash } from "node:crypto";
 import { v4 as uuidv4 } from "uuid";
 import { arquivarNotaFiscalXmlSeNaoExistir } from "@/repositories/nota-fiscal-xml-repositories.js";
-import {
-	salvarXmlEventoEmDisco,
-	type TipoXmlNfe,
-} from "@/util/xml-storage.js";
+import { salvarXmlEventoEmDisco, type TipoXmlNfe } from "@/util/xml-storage.js";
 
 export type ArquivarXmlNotaFiscalParametros = {
 	idnotafiscal: string;

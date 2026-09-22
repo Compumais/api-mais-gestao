@@ -12,7 +12,10 @@ const criarHierarquiaBodySchema = z.looseObject({
 	icone: hierarquiaIconeSchema,
 });
 
-export async function criarHierarquia(request: FastifyRequest, reply: FastifyReply) {
+export async function criarHierarquia(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());

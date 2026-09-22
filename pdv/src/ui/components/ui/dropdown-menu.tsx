@@ -47,7 +47,10 @@ function DropdownMenuLabel({
 	return (
 		<DropdownMenuPrimitive.Label
 			data-slot="dropdown-menu-label"
-			className={cn("px-2 py-1.5 text-xs font-medium text-muted-foreground", className)}
+			className={cn(
+				"px-2 py-1.5 text-xs font-medium text-muted-foreground",
+				className,
+			)}
 			{...props}
 		/>
 	);
@@ -187,15 +190,15 @@ function DropdownMenuSubContent({
 
 export {
 	DropdownMenu,
-	DropdownMenuTrigger,
-	DropdownMenuContent,
-	DropdownMenuLabel,
-	DropdownMenuItem,
 	DropdownMenuCheckboxItem,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuLabel,
 	DropdownMenuRadioGroup,
 	DropdownMenuRadioItem,
 	DropdownMenuSeparator,
 	DropdownMenuSub,
-	DropdownMenuSubTrigger,
 	DropdownMenuSubContent,
+	DropdownMenuSubTrigger,
+	DropdownMenuTrigger,
 };

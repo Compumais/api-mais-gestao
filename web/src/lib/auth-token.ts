@@ -46,7 +46,9 @@ function extrairTokenDeSessao(session: unknown): string | null {
 	return typeof token === "string" && token.length > 0 ? token : null;
 }
 
-export function extractSessionTokenFromLoginResponse(data: unknown): string | null {
+export function extractSessionTokenFromLoginResponse(
+	data: unknown,
+): string | null {
 	if (!data || typeof data !== "object") return null;
 
 	const record = data as Record<string, unknown>;

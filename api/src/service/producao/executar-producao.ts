@@ -167,15 +167,11 @@ export async function executarProducaoService({
 		!ignorarFlagMassa &&
 		ficha.permiteproducaomassa !== 1
 	) {
-		return httpBadRequest(
-			"Esta ficha não permite produção em massa",
-		);
+		return httpBadRequest("Esta ficha não permite produção em massa");
 	}
 
 	if (origem === ORIGEM_PRODUCAO.VENDA && ficha.producaonavenda !== 1) {
-		return httpBadRequest(
-			"Esta ficha não permite produção na venda",
-		);
+		return httpBadRequest("Esta ficha não permite produção na venda");
 	}
 
 	const qtdProduzir = parseQtd(quantidade);
@@ -358,9 +354,7 @@ export async function executarProducaoService({
 			idoriginal: idoriginal,
 		};
 
-		return origem === ORIGEM_PRODUCAO.MASSA
-			? httpCriacao(body)
-			: httpOk(body);
+		return origem === ORIGEM_PRODUCAO.MASSA ? httpCriacao(body) : httpOk(body);
 	} catch (erro) {
 		console.error("[producao] Falha ao executar produção:", erro);
 		const mensagem =

@@ -16,45 +16,53 @@ describe("validar-cest-item-emissao-nfe", () => {
 	});
 
 	it("identifica operação ST por CST/CSOSN ou valores", () => {
-		expect(itemEmissaoRequerCest({
-			descricao: "x",
-			ncm: "1",
-			cfop: "5405",
-			unidade: "UN",
-			quantidade: 1,
-			valorUnitario: 1,
-			cst: "10",
-		})).toBe(true);
+		expect(
+			itemEmissaoRequerCest({
+				descricao: "x",
+				ncm: "1",
+				cfop: "5405",
+				unidade: "UN",
+				quantidade: 1,
+				valorUnitario: 1,
+				cst: "10",
+			}),
+		).toBe(true);
 
-		expect(itemEmissaoRequerCest({
-			descricao: "x",
-			ncm: "1",
-			cfop: "5102",
-			unidade: "UN",
-			quantidade: 1,
-			valorUnitario: 1,
-			csosn: "202",
-		})).toBe(true);
+		expect(
+			itemEmissaoRequerCest({
+				descricao: "x",
+				ncm: "1",
+				cfop: "5102",
+				unidade: "UN",
+				quantidade: 1,
+				valorUnitario: 1,
+				csosn: "202",
+			}),
+		).toBe(true);
 
-		expect(itemEmissaoRequerCest({
-			descricao: "x",
-			ncm: "1",
-			cfop: "5102",
-			unidade: "UN",
-			quantidade: 1,
-			valorUnitario: 1,
-			valorIcmsSt: 5,
-		})).toBe(true);
+		expect(
+			itemEmissaoRequerCest({
+				descricao: "x",
+				ncm: "1",
+				cfop: "5102",
+				unidade: "UN",
+				quantidade: 1,
+				valorUnitario: 1,
+				valorIcmsSt: 5,
+			}),
+		).toBe(true);
 
-		expect(itemEmissaoRequerCest({
-			descricao: "x",
-			ncm: "1",
-			cfop: "5102",
-			unidade: "UN",
-			quantidade: 1,
-			valorUnitario: 1,
-			cst: "00",
-		})).toBe(false);
+		expect(
+			itemEmissaoRequerCest({
+				descricao: "x",
+				ncm: "1",
+				cfop: "5102",
+				unidade: "UN",
+				quantidade: 1,
+				valorUnitario: 1,
+				cst: "00",
+			}),
+		).toBe(false);
 	});
 
 	it("exige CEST em item ST e aceita quando preenchido", () => {

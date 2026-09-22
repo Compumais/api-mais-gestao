@@ -121,8 +121,7 @@ async function loopOpenAI(params: {
 				.json()
 				.catch(() => ({ error: { message: "Erro desconhecido" } }));
 			throw new Error(
-				error.error?.message ||
-					`Erro ao chamar OpenAI: ${response.statusText}`,
+				error.error?.message || `Erro ao chamar OpenAI: ${response.statusText}`,
 			);
 		}
 
@@ -354,8 +353,7 @@ async function loopGemini(params: {
 
 		const texto = parts
 			.filter(
-				(p): p is { text: string } =>
-					"text" in p && typeof p.text === "string",
+				(p): p is { text: string } => "text" in p && typeof p.text === "string",
 			)
 			.map((p) => p.text)
 			.join("\n")
@@ -429,8 +427,10 @@ function chaveDoProvedor(
 	integracoes: IntegracoesUsuario,
 	provedor: ProvedorIa,
 ): string | undefined {
-	if (provedor === "openai") return integracoes.openaiApiKey?.trim() || undefined;
-	if (provedor === "gemini") return integracoes.geminiApiKey?.trim() || undefined;
+	if (provedor === "openai")
+		return integracoes.openaiApiKey?.trim() || undefined;
+	if (provedor === "gemini")
+		return integracoes.geminiApiKey?.trim() || undefined;
 	return integracoes.openrouterApiKey?.trim() || undefined;
 }
 
@@ -518,9 +518,11 @@ export async function chatComAtenaService({
 		// Fallback auto: se preferência auto e falhou o provedor atual, tenta o outro
 		const preferido = integracoes.provedorPreferido ?? "auto";
 		if (preferido === "auto") {
-			const alternativos: ProvedorIa[] = ["gemini", "openai", "openrouter"].filter(
-				(p) => p !== provedor,
-			) as ProvedorIa[];
+			const alternativos: ProvedorIa[] = [
+				"gemini",
+				"openai",
+				"openrouter",
+			].filter((p) => p !== provedor) as ProvedorIa[];
 
 			for (const alt of alternativos) {
 				const altKey = chaveDoProvedor(integracoes, alt);

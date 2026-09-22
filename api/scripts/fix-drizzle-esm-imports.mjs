@@ -9,13 +9,16 @@ const importPattern = /(from|export \* from) (['"])(\.\/[^'"]+)\2/g;
 
 async function processFile(filePath) {
 	const content = await readFile(filePath, "utf8");
-	const updated = content.replace(importPattern, (match, keyword, quote, path) => {
-		if (path.endsWith(".js")) {
-			return match;
-		}
+	const updated = content.replace(
+		importPattern,
+		(match, keyword, quote, path) => {
+			if (path.endsWith(".js")) {
+				return match;
+			}
 
-		return `${keyword} ${quote}${path}.js${quote}`;
-	});
+			return `${keyword} ${quote}${path}.js${quote}`;
+		},
+	);
 
 	if (updated !== content) {
 		await writeFile(filePath, updated, "utf8");

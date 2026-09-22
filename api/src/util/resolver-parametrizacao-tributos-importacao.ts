@@ -35,7 +35,8 @@ export function aplicarParametrizacaoTributosImportacao(
 		regra,
 		sugestao: {
 			idcfopsaida: regra.idcfopsaidanfe ?? undefined,
-			idcfopsaidanfce: regra.idcfopsaidanfce ?? regra.idcfopsaidanfe ?? undefined,
+			idcfopsaidanfce:
+				regra.idcfopsaidanfce ?? regra.idcfopsaidanfe ?? undefined,
 			cfopvendaecf: codigoCfopParaInteiro(cfopNfe) ?? undefined,
 			situacaotributaria,
 			situacaotributariasn,

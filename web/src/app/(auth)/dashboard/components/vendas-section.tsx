@@ -53,15 +53,7 @@ import {
 } from "@/lib/dashboard-periodo";
 import type { RankingOrdenacao } from "@/services/dashboard.service";
 
-const DIAS_SEMANA = [
-	"Dom",
-	"Seg",
-	"Ter",
-	"Qua",
-	"Qui",
-	"Sex",
-	"Sáb",
-];
+const DIAS_SEMANA = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
 const chartConfig = {
 	total: { label: "Total", color: "var(--chart-1)" },
@@ -86,9 +78,7 @@ export function VendasSection() {
 	}
 
 	const itensPorVenda =
-		kpis.quantidadeVendas > 0
-			? kpis.itensVendidos / kpis.quantidadeVendas
-			: 0;
+		kpis.quantidadeVendas > 0 ? kpis.itensVendidos / kpis.quantidadeVendas : 0;
 	const valorMedioItem =
 		kpis.itensVendidos > 0 ? kpis.faturamento / kpis.itensVendidos : 0;
 

@@ -22,7 +22,10 @@ type CacheEntry<T> = {
 const municipiosCache = new Map<string, CacheEntry<BrasilApiMunicipio[]>>();
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
-function obterDoCache<T>(cache: Map<string, CacheEntry<T>>, chave: string): T | null {
+function obterDoCache<T>(
+	cache: Map<string, CacheEntry<T>>,
+	chave: string,
+): T | null {
 	const entrada = cache.get(chave);
 	if (!entrada) return null;
 	if (Date.now() > entrada.expiresAt) {

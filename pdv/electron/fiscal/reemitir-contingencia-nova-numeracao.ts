@@ -13,13 +13,13 @@ import {
 	obterSessao,
 	obterVenda,
 } from "../db/repos";
-import { emitirContingencia } from "./contingencia";
-import { classificarConflitosNumeracao } from "./numeracao-nfce";
 import { aplicarNfceRetaguardaNaVendaLocal } from "../sync/nfce-retaguarda";
 import {
 	marcarConflitosNumeracaoNfceLocal,
 	sincronizarFiscalPdv,
 } from "../sync/outbox";
+import { emitirContingencia } from "./contingencia";
+import { classificarConflitosNumeracao } from "./numeracao-nfce";
 
 /**
  * Reemite NFC-e de contingência órfã (conflito de numeração) com novo nNF.
@@ -112,11 +112,7 @@ export async function reemitirContingenciaComNovaNumeracao(params: {
 		});
 
 		// Registra inutilização do nNF abandonado na retaguarda (aparece em /nfce)
-		if (
-			numeroAnterior >= 1 &&
-			serieAnterior >= 1 &&
-			(await pingApi())
-		) {
+		if (numeroAnterior >= 1 && serieAnterior >= 1 && (await pingApi())) {
 			try {
 				const sessao = await obterSessao();
 				if (sessao.idempresa) {

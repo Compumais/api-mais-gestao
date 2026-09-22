@@ -8,10 +8,13 @@ const criarMotivoRebaixaBodySchema = z.object({
 	idempresa: z.string(),
 	codigo: z.string().max(6).optional(),
 	nome: z.string().max(50).optional(),
-	inativo: z.number().int().optional()
+	inativo: z.number().int().optional(),
 });
 
-export async function criarMotivoRebaixa(request: FastifyRequest, reply: FastifyReply) {
+export async function criarMotivoRebaixa(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());

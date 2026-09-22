@@ -45,8 +45,7 @@ async function montarDadosClienteImpressao(
 			const { data: municipios } =
 				await localidadesService.listarMunicipios(uf);
 			cidade =
-				municipios.find((m) => m.idcidade === entidade.idcidade)?.nome ??
-				null;
+				municipios.find((m) => m.idcidade === entidade.idcidade)?.nome ?? null;
 		} catch {
 			cidade = null;
 		}

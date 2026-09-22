@@ -3,14 +3,15 @@ import type { FastifySchema } from "fastify";
 export const criarDavSchema: FastifySchema = {
 	tags: ["davs"],
 	summary: "Criar DAV",
-	description: "Cria um novo registro de DAV na empresa do usuário autenticado.",
+	description:
+		"Cria um novo registro de DAV na empresa do usuário autenticado.",
 	security: [{ bearerAuth: [] }],
 	body: {
 		type: "object",
 		properties: {
 			idempresa: { type: "string", description: "ID da empresa" },
 			codigo: { type: "string" },
-			"...": { type: "string", description: "Demais campos da entidade" }
+			"...": { type: "string", description: "Demais campos da entidade" },
 		},
 		required: ["idempresa"],
 	},
@@ -123,7 +124,8 @@ export const listarDavsSchema: FastifySchema = {
 			idcliente: { type: "string", description: "ID do cliente" },
 			status: {
 				type: "number",
-				description: "Status do DAV (0=Aberto, 1=Fechado, 2=Caixa, 3=Cancelado)",
+				description:
+					"Status do DAV (0=Aberto, 1=Fechado, 2=Caixa, 3=Cancelado)",
 			},
 			faturado: {
 				type: "string",
@@ -146,7 +148,10 @@ export const listarDavsSchema: FastifySchema = {
 		200: {
 			type: "object",
 			properties: {
-				data: { type: "array", items: { type: "object", additionalProperties: true } },
+				data: {
+					type: "array",
+					items: { type: "object", additionalProperties: true },
+				},
 				paginacao: {
 					type: "object",
 					properties: {

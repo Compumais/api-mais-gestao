@@ -175,8 +175,6 @@ describe("campoTributacaoAusenteOuInvalido", () => {
 
 describe("contrato CFOP do XML", () => {
 	it("regra 1102 não casa com critério 5102 (só na camada CFOP)", () => {
-		expect(normalizarCodigoCfop("1102")).not.toBe(
-			normalizarCodigoCfop("5102"),
-		);
+		expect(normalizarCodigoCfop("1102")).not.toBe(normalizarCodigoCfop("5102"));
 	});
 });

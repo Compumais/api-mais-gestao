@@ -107,7 +107,10 @@ async function aplicarDeltaSaldo(
 		dadosAtualizacao.quantidade = formatarQuantidade(atualOperacional + delta);
 	}
 
-	if (tipoestoque === TIPO_ESTOQUE.FISCAL || tipoestoque === TIPO_ESTOQUE.AMBOS) {
+	if (
+		tipoestoque === TIPO_ESTOQUE.FISCAL ||
+		tipoestoque === TIPO_ESTOQUE.AMBOS
+	) {
 		dadosAtualizacao.quantidadefiscal = formatarQuantidade(atualFiscal + delta);
 	}
 

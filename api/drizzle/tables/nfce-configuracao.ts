@@ -1,39 +1,25 @@
 import { sql } from "drizzle-orm";
 
 import {
-
 	boolean,
-
 	foreignKey,
-
 	jsonb,
-
 	pgTable,
-
 	smallint,
-
 	text,
-
 	timestamp,
-
 	uniqueIndex,
-
 	varchar,
-
 } from "drizzle-orm/pg-core";
 
 import { certificadodigital } from "./certificado-digital.js";
 
 import { empresa } from "./empresas.js";
 
-
-
 export const nfceconfiguracao = pgTable(
-
 	"nfceconfiguracao",
 
 	{
-
 		id: text().primaryKey().notNull(),
 
 		idempresa: text().notNull(),
@@ -67,7 +53,6 @@ export const nfceconfiguracao = pgTable(
 		meiospagamentonfce: jsonb("meiospagamentonfce")
 
 			.$type<{
-
 				dinheiro: boolean;
 
 				cartao: boolean;
@@ -75,13 +60,10 @@ export const nfceconfiguracao = pgTable(
 				pix: boolean;
 
 				prepago: boolean;
-
 			}>()
 
 			.default(
-
 				sql`'{"dinheiro":true,"cartao":true,"pix":true,"prepago":false}'::jsonb`,
-
 			)
 
 			.notNull(),
@@ -97,21 +79,17 @@ export const nfceconfiguracao = pgTable(
 			.notNull(),
 
 		atualizadoem: timestamp({ precision: 3, mode: "string" }).notNull(),
-
 	},
 
 	(table) => [
-
 		uniqueIndex("nfceconfiguracao_idempresa_key").on(table.idempresa),
 
 		foreignKey({
-
 			columns: [table.idempresa],
 
 			foreignColumns: [empresa.id],
 
 			name: "nfceconfiguracao_idempresa_fkey",
-
 		})
 
 			.onUpdate("cascade")
@@ -119,20 +97,15 @@ export const nfceconfiguracao = pgTable(
 			.onDelete("cascade"),
 
 		foreignKey({
-
 			columns: [table.idcertificadoativo],
 
 			foreignColumns: [certificadodigital.id],
 
 			name: "nfceconfiguracao_idcertificadoativo_fkey",
-
 		})
 
 			.onUpdate("cascade")
 
 			.onDelete("set null"),
-
 	],
-
 );
-

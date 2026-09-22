@@ -42,8 +42,9 @@ export async function criarFechamentoCaixa(
 		}
 
 		const idusuario = request.user.id;
-		const dadosFechamentoCaixa =
-			criarFechamentoCaixaBodySchema.parse(request.body);
+		const dadosFechamentoCaixa = criarFechamentoCaixaBodySchema.parse(
+			request.body,
+		);
 
 		const resultado = await criarFechamentoCaixaService({
 			dadosFechamentoCaixa,

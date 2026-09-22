@@ -18,7 +18,9 @@ export function extrairDuplicatasNFe(
 
 	for (const dup of lista) {
 		const registro = dup as Record<string, unknown>;
-		const vencimento = registro.dVenc ? String(registro.dVenc).trim() : undefined;
+		const vencimento = registro.dVenc
+			? String(registro.dVenc).trim()
+			: undefined;
 		const valor = registro.vDup ? String(registro.vDup).trim() : undefined;
 		const numero = registro.nDup ? String(registro.nDup).trim() : undefined;
 

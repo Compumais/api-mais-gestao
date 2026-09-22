@@ -7,16 +7,21 @@ import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 const criarPlanoContasContaContabilBodySchema = z.object({
 	idempresa: z.string(),
 	idcontacontabil: z.string().optional(),
-	idplanocontas: z.string().optional()
+	idplanocontas: z.string().optional(),
 });
 
-export async function criarPlanoContasContaContabil(request: FastifyRequest, reply: FastifyReply) {
+export async function criarPlanoContasContaContabil(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
 		}
 
-		const dadosValidados = criarPlanoContasContaContabilBodySchema.parse(request.body);
+		const dadosValidados = criarPlanoContasContaContabilBodySchema.parse(
+			request.body,
+		);
 
 		const dadosPlanoContasContaContabil = {
 			id: uuidv4(),

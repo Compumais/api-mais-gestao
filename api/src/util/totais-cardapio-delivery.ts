@@ -1,8 +1,11 @@
 import type { BairroEntrega } from "@/model/cardapio-delivery-tipos.js";
 
-export function numberFromDecimal(valor: string | number | null | undefined): number {
+export function numberFromDecimal(
+	valor: string | number | null | undefined,
+): number {
 	if (valor == null || valor === "") return 0;
-	const n = typeof valor === "number" ? valor : Number(String(valor).replace(",", "."));
+	const n =
+		typeof valor === "number" ? valor : Number(String(valor).replace(",", "."));
 	return Number.isFinite(n) ? n : 0;
 }
 
@@ -52,7 +55,8 @@ export function montarPixCopiaCola(params: {
 	const nome = params.nome.trim().slice(0, 25) || "MAIS GESTAO";
 	const cidade = params.cidade.trim().slice(0, 15) || "SAO PAULO";
 	const valor = arredondarDinheiro(params.valor).toFixed(2);
-	const txid = params.txid.replace(/[^A-Za-z0-9]/g, "").slice(0, 25) || "PEDIDO";
+	const txid =
+		params.txid.replace(/[^A-Za-z0-9]/g, "").slice(0, 25) || "PEDIDO";
 
 	function campo(id: string, valorCampo: string): string {
 		const tam = String(valorCampo.length).padStart(2, "0");

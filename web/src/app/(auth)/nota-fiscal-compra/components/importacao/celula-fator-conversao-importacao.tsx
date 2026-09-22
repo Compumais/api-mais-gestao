@@ -114,9 +114,7 @@ export function CelulaFatorConversaoImportacao({
 			>
 				<SelectTrigger className="h-8 w-full min-w-[10rem] text-xs">
 					<SelectValue
-						placeholder={
-							isLoading ? "Carregando..." : "Selecione o fator"
-						}
+						placeholder={isLoading ? "Carregando..." : "Selecione o fator"}
 					/>
 				</SelectTrigger>
 				<SelectContent position="popper" className="z-[200]">

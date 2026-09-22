@@ -56,9 +56,7 @@ export function normalizarIeParaNfe(
 	return digitos || undefined;
 }
 
-export function montarIeEmitenteNfe(
-	inscricaoestadual?: string | null,
-): string {
+export function montarIeEmitenteNfe(inscricaoestadual?: string | null): string {
 	const texto = inscricaoestadual?.trim() ?? "";
 	if (!texto) return "";
 

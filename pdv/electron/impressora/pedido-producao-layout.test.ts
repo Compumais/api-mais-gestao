@@ -36,8 +36,7 @@ describe("layout pedido de produção", () => {
 	});
 
 	it("não corta descrição longa no cupom de produção", () => {
-		const descricao =
-			"X-TUDO ESPECIAL COM BACON CHEDDAR OVO E SALADA COMPLETA";
+		const descricao = "X-TUDO ESPECIAL COM BACON CHEDDAR OVO E SALADA COMPLETA";
 		const linhas = montarLinhasPedidoProducao({
 			origem: "Mesa 1",
 			itens: [

@@ -121,7 +121,8 @@ export function CabecalhoNfImportacao({
 					<div>
 						<span className="text-muted-foreground">Número / Série</span>
 						<p className="font-medium">
-							{nota.numero ?? nota.numeronotafiscal ?? "-"} / {nota.serie ?? "-"}
+							{nota.numero ?? nota.numeronotafiscal ?? "-"} /{" "}
+							{nota.serie ?? "-"}
 						</p>
 					</div>
 					<div>
@@ -162,7 +163,9 @@ export function CabecalhoNfImportacao({
 					</div>
 					<div className="sm:col-span-2">
 						<span className="text-muted-foreground">Chave NF-e</span>
-						<p className="font-medium break-all text-xs">{nota.chavenfe ?? "-"}</p>
+						<p className="font-medium break-all text-xs">
+							{nota.chavenfe ?? "-"}
+						</p>
 					</div>
 					<div>
 						<span className="text-muted-foreground">Fornecedor (XML)</span>
@@ -191,16 +194,21 @@ export function CabecalhoNfImportacao({
 					</div>
 					{natOpXml && (
 						<div className="sm:col-span-2">
-							<span className="text-muted-foreground">Natureza da operação (XML)</span>
+							<span className="text-muted-foreground">
+								Natureza da operação (XML)
+							</span>
 							<p className="font-medium">{natOpXml}</p>
 						</div>
 					)}
 					{cfopXmlOperacao ? (
 						<div className="sm:col-span-2">
-							<span className="text-muted-foreground">CFOP do XML (emitente)</span>
+							<span className="text-muted-foreground">
+								CFOP do XML (emitente)
+							</span>
 							<p className="font-mono text-sm">{cfopXmlOperacao}</p>
 							<p className="text-xs text-muted-foreground">
-								Referência histórica — selecione o CFOP de entrada da operação ao lado.
+								Referência histórica — selecione o CFOP de entrada da operação
+								ao lado.
 							</p>
 						</div>
 					) : null}
@@ -217,7 +225,9 @@ export function CabecalhoNfImportacao({
 					/>
 
 					<div className="rounded-md border p-3">
-						<h3 className="text-sm font-semibold mb-2">Tributos da nota (XML)</h3>
+						<h3 className="text-sm font-semibold mb-2">
+							Tributos da nota (XML)
+						</h3>
 						<div className="grid grid-cols-2 gap-2 text-sm">
 							<div>
 								<span className="text-muted-foreground">Base ICMS</span>
@@ -236,8 +246,7 @@ export function CabecalhoNfImportacao({
 									<span className="text-muted-foreground">IPI Devolvido</span>
 									<p>
 										{formatCurrency(
-											ipiDevolvidoXml ??
-												nota.dadosimportacao?.ipiDevolvidoXml,
+											ipiDevolvidoXml ?? nota.dadosimportacao?.ipiDevolvidoXml,
 										)}
 									</p>
 								</div>

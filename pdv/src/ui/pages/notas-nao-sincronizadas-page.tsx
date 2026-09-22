@@ -3,7 +3,7 @@ import { AlertTriangle, FileWarning, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { pdvInvoke } from "@/lib/pdv-api";
-import { type StatusContext } from "@/lib/pdv-types";
+import type { StatusContext } from "@/lib/pdv-types";
 import { money } from "@/lib/utils";
 import { secundarioDesconectado } from "@/ui/components/aviso-secundario";
 import { FunctionBar } from "@/ui/components/function-bar";
@@ -351,8 +351,8 @@ export function NotasNaoSincronizadasPage() {
 					<div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-950 dark:text-amber-100">
 						<AlertTriangle className="mt-0.5 size-4 shrink-0" />
 						<p>
-							No PDV secundário a sincronização com a retaguarda é feita no
-							PDV principal. Abra o principal para enviar as notas pendentes.
+							No PDV secundário a sincronização com a retaguarda é feita no PDV
+							principal. Abra o principal para enviar as notas pendentes.
 						</p>
 					</div>
 				) : (
@@ -381,11 +381,17 @@ export function NotasNaoSincronizadasPage() {
 							<TableRow>
 								<TableHead className="h-9 font-semibold">Data</TableHead>
 								<TableHead className="h-9 font-semibold">Origem</TableHead>
-								<TableHead className="h-9 text-right font-semibold">Total</TableHead>
+								<TableHead className="h-9 text-right font-semibold">
+									Total
+								</TableHead>
 								<TableHead className="h-9 font-semibold">Sync</TableHead>
-								<TableHead className="h-9 font-semibold">Status NFC-e</TableHead>
+								<TableHead className="h-9 font-semibold">
+									Status NFC-e
+								</TableHead>
 								<TableHead className="h-9 font-semibold">Numeração</TableHead>
-								<TableHead className="h-9 text-right font-semibold">Ações</TableHead>
+								<TableHead className="h-9 text-right font-semibold">
+									Ações
+								</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
@@ -408,84 +414,82 @@ export function NotasNaoSincronizadasPage() {
 								vendas.map((venda) => {
 									const numeracao = rotuloNumeracaoNfce(venda);
 									return (
-									<TableRow key={venda.id} className="hover:bg-muted/40">
-										<TableCell className="whitespace-nowrap py-1.5 text-xs">
-											{dayjs(venda.criadoem).format("DD/MM/YY HH:mm")}
-										</TableCell>
-										<TableCell className="py-1.5 text-xs">
-											{rotuloOrigem(venda.origem)}
-										</TableCell>
-										<TableCell className="py-1.5 text-right text-sm font-semibold tabular-nums">
-											{money(venda.valortotal)}
-										</TableCell>
-										<TableCell className="py-1.5">
-											<Badge
-												variant={badgeSync(venda.sync_status)}
-												className={classeBadgeSync(venda.sync_status)}
-											>
-												{venda.sync_status}
-											</Badge>
-										</TableCell>
-										<TableCell className="py-1.5">
-											<Badge
-												variant={badgeNfce(venda.nfce_status)}
-												className={classeBadgeNfce(venda.nfce_status)}
-											>
-												{rotuloNfce(venda.nfce_status)}
-											</Badge>
-											{venda.nfce_data_contingencia ? (
-												<div className="mt-1 text-xs text-muted-foreground">
-													dhCont{" "}
-													{dayjs(venda.nfce_data_contingencia).format(
-														"DD/MM/YY HH:mm:ss",
-													)}
-												</div>
-											) : null}
-											{(venda.nfce_ultimo_erro ||
-												venda.outbox_ultimo_erro) ? (
-												<div
-													className="mt-1 max-w-72 truncate text-xs text-destructive"
-													title={
-														venda.nfce_ultimo_erro ??
-														venda.outbox_ultimo_erro ??
-														""
-													}
+										<TableRow key={venda.id} className="hover:bg-muted/40">
+											<TableCell className="whitespace-nowrap py-1.5 text-xs">
+												{dayjs(venda.criadoem).format("DD/MM/YY HH:mm")}
+											</TableCell>
+											<TableCell className="py-1.5 text-xs">
+												{rotuloOrigem(venda.origem)}
+											</TableCell>
+											<TableCell className="py-1.5 text-right text-sm font-semibold tabular-nums">
+												{money(venda.valortotal)}
+											</TableCell>
+											<TableCell className="py-1.5">
+												<Badge
+													variant={badgeSync(venda.sync_status)}
+													className={classeBadgeSync(venda.sync_status)}
 												>
-													{venda.nfce_ultimo_erro ??
-														venda.outbox_ultimo_erro}
-												</div>
-											) : null}
-										</TableCell>
-										<TableCell className="py-1.5">
-											{numeracao ? (
-												<span className="font-mono text-sm tabular-nums">
-													{numeracao}
-												</span>
-											) : (
-												<span className="text-sm text-muted-foreground">—</span>
-											)}
-											{venda.outbox_tentativas ? (
-												<div className="text-xs text-muted-foreground">
-													{venda.outbox_tentativas} tentativa(s)
-												</div>
-											) : null}
-										</TableCell>
-										<TableCell className="py-1.5 text-right">
-											{venda.nfce_status === "conflito_numeracao" &&
-											!secundario ? (
-												<Button
-													size="sm"
-													variant="outline"
-													disabled={ocupado}
-													onClick={() =>
-														void reemitirNovaNumeracao(venda.id)
-													}
+													{venda.sync_status}
+												</Badge>
+											</TableCell>
+											<TableCell className="py-1.5">
+												<Badge
+													variant={badgeNfce(venda.nfce_status)}
+													className={classeBadgeNfce(venda.nfce_status)}
 												>
-													Nova numeração
-												</Button>
-											) : null}
-										</TableCell>
-									</TableRow>
+													{rotuloNfce(venda.nfce_status)}
+												</Badge>
+												{venda.nfce_data_contingencia ? (
+													<div className="mt-1 text-xs text-muted-foreground">
+														dhCont{" "}
+														{dayjs(venda.nfce_data_contingencia).format(
+															"DD/MM/YY HH:mm:ss",
+														)}
+													</div>
+												) : null}
+												{venda.nfce_ultimo_erro || venda.outbox_ultimo_erro ? (
+													<div
+														className="mt-1 max-w-72 truncate text-xs text-destructive"
+														title={
+															venda.nfce_ultimo_erro ??
+															venda.outbox_ultimo_erro ??
+															""
+														}
+													>
+														{venda.nfce_ultimo_erro ?? venda.outbox_ultimo_erro}
+													</div>
+												) : null}
+											</TableCell>
+											<TableCell className="py-1.5">
+												{numeracao ? (
+													<span className="font-mono text-sm tabular-nums">
+														{numeracao}
+													</span>
+												) : (
+													<span className="text-sm text-muted-foreground">
+														—
+													</span>
+												)}
+												{venda.outbox_tentativas ? (
+													<div className="text-xs text-muted-foreground">
+														{venda.outbox_tentativas} tentativa(s)
+													</div>
+												) : null}
+											</TableCell>
+											<TableCell className="py-1.5 text-right">
+												{venda.nfce_status === "conflito_numeracao" &&
+												!secundario ? (
+													<Button
+														size="sm"
+														variant="outline"
+														disabled={ocupado}
+														onClick={() => void reemitirNovaNumeracao(venda.id)}
+													>
+														Nova numeração
+													</Button>
+												) : null}
+											</TableCell>
+										</TableRow>
 									);
 								})
 							)}

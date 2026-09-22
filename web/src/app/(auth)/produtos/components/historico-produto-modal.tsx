@@ -85,9 +85,7 @@ function rotuloDocumento(movimento: MovimentoEstoqueGestao) {
 	}
 
 	if (movimento.numeropdv != null) {
-		const local = movimento.idvendalocal
-			? ` · ${movimento.idvendalocal}`
-			: "";
+		const local = movimento.idvendalocal ? ` · ${movimento.idvendalocal}` : "";
 		return `PDV ${movimento.numeropdv}${local}`;
 	}
 
@@ -224,10 +222,7 @@ export function HistoricoProdutoModal({
 												<div className="flex flex-col gap-1">
 													<span>{rotuloDocumento(movimento)}</span>
 													{movimento.cancelado === 1 ? (
-														<Badge
-															variant="outline"
-															className="w-fit text-xs"
-														>
+														<Badge variant="outline" className="w-fit text-xs">
 															Cancelado
 														</Badge>
 													) : null}

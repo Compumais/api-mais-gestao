@@ -71,7 +71,8 @@ export async function atualizarCotacaoCompraService({
 
 	const atualizada = await atualizarCotacaoCompra(id, {
 		titulo: dados.titulo?.trim() ?? cotacao.titulo,
-		observacao: dados.observacao !== undefined ? dados.observacao : cotacao.observacao,
+		observacao:
+			dados.observacao !== undefined ? dados.observacao : cotacao.observacao,
 		validade: dados.validade !== undefined ? dados.validade : cotacao.validade,
 		currenttimemillis: Date.now(),
 	});

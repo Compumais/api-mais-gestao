@@ -88,8 +88,8 @@ export function useLayoutMenu() {
 	const queryClient = useQueryClient();
 	const { data: preferencias, isPending } = usePreferenciasUiUsuario();
 	const atualizar = useAtualizarPreferenciasUiUsuario();
-	const [layoutLocal, setLayoutLocal] = useState<LayoutMenuUsuario | null>(
-		() => lerLayoutMenuStorage(),
+	const [layoutLocal, setLayoutLocal] = useState<LayoutMenuUsuario | null>(() =>
+		lerLayoutMenuStorage(),
 	);
 
 	const layoutMenuServidor = preferencias?.layoutMenu;

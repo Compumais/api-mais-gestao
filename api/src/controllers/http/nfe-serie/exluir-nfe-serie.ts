@@ -4,8 +4,8 @@ import { excluirNfeSerieService } from "@/service/nfe-serie/nfe-serie.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
 const queryEmpresaSchema = z.object({
-    idempresa: z.string().uuid(),
-    modelo: z.string().max(2).optional(),
+	idempresa: z.string().uuid(),
+	modelo: z.string().max(2).optional(),
 });
 
 export async function excluirNfeSerie(

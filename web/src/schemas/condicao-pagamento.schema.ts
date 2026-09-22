@@ -43,11 +43,14 @@ export const condicaoPagamentoFormSchema = z.object({
 	inativo: z.boolean(),
 });
 
-export type CondicaoPagamentoFormData = z.output<typeof condicaoPagamentoFormSchema>;
+export type CondicaoPagamentoFormData = z.output<
+	typeof condicaoPagamentoFormSchema
+>;
 
 export function formatarEscopoCondicaoPagamento(escopo: number | null) {
 	if (escopo === ESCOPO_CONDICAO_PAGAMENTO.VENDAS) return "Vendas";
 	if (escopo === ESCOPO_CONDICAO_PAGAMENTO.COMPRAS) return "Compras";
-	if (escopo === ESCOPO_CONDICAO_PAGAMENTO.COMPRA_E_VENDA) return "Compra e venda";
+	if (escopo === ESCOPO_CONDICAO_PAGAMENTO.COMPRA_E_VENDA)
+		return "Compra e venda";
 	return "-";
 }

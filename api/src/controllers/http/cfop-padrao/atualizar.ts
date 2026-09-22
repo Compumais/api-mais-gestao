@@ -12,10 +12,13 @@ const atualizarCfopPadraoBodySchema = z.object({
 	finalidade: z.string().max(1024).optional(),
 	nome: z.string().max(1024).optional(),
 	codigo: z.string().max(20).optional(),
-	inativo: z.number().int().optional()
+	inativo: z.number().int().optional(),
 });
 
-export async function atualizarCfopPadrao(request: FastifyRequest, reply: FastifyReply) {
+export async function atualizarCfopPadrao(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());

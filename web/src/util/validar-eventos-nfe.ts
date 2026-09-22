@@ -53,17 +53,17 @@ export function notaPodeSerCancelada(
 	return { permitido: true };
 }
 
-export function notaPodeSerInutilizada(
-	nota: NotaFiscalEmitida,
-): { permitido: boolean; motivo?: string } {
+export function notaPodeSerInutilizada(nota: NotaFiscalEmitida): {
+	permitido: boolean;
+	motivo?: string;
+} {
 	if (
 		nota.status !== NFE_STATUS.PENDENTE &&
 		nota.status !== NFE_STATUS.REJEITADA
 	) {
 		return {
 			permitido: false,
-			motivo:
-				"Inutilização permitida apenas para NF-e pendente ou rejeitada",
+			motivo: "Inutilização permitida apenas para NF-e pendente ou rejeitada",
 		};
 	}
 

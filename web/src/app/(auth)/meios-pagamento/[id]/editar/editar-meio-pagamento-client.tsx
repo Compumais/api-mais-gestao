@@ -9,7 +9,9 @@ type EditarMeioPagamentoClientProps = {
 	id: string;
 };
 
-export function EditarMeioPagamentoClient({ id }: EditarMeioPagamentoClientProps) {
+export function EditarMeioPagamentoClient({
+	id,
+}: EditarMeioPagamentoClientProps) {
 	const { data, isLoading } = useQuery({
 		queryKey: ["meio-pagamento", id],
 		queryFn: async () => {
@@ -28,7 +30,9 @@ export function EditarMeioPagamentoClient({ id }: EditarMeioPagamentoClientProps
 	if (!data) {
 		return (
 			<div className="flex items-center justify-center py-8">
-				<p className="text-muted-foreground">Meio de pagamento não encontrado.</p>
+				<p className="text-muted-foreground">
+					Meio de pagamento não encontrado.
+				</p>
 			</div>
 		);
 	}

@@ -101,9 +101,7 @@ export function AbaFaturamentoOs({
 
 	async function confirmarContasReceber() {
 		try {
-			const valorInformado = parseFloat(
-				String(valorForma).replace(",", "."),
-			);
+			const valorInformado = parseFloat(String(valorForma).replace(",", "."));
 			const resultado = await gerarCr.mutateAsync({
 				idempresa,
 				formasPagamento: idTipoDoc

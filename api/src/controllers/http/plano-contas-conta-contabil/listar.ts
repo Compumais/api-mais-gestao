@@ -9,13 +9,18 @@ const listarPlanoContasContaContabilsQuerySchema = z.object({
 	limit: z.coerce.number().min(1).max(100).optional().default(10),
 });
 
-export async function listarPlanoContasContaContabils(request: FastifyRequest, reply: FastifyReply) {
+export async function listarPlanoContasContaContabils(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
 		}
 
-		const query = listarPlanoContasContaContabilsQuerySchema.parse(request.query);
+		const query = listarPlanoContasContaContabilsQuerySchema.parse(
+			request.query,
+		);
 
 		const resultado = await listarPlanoContasContaContabilsService({
 			idusuario: request.user.id,

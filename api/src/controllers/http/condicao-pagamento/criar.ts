@@ -14,7 +14,10 @@ const criarCondicaoPagamentoBodySchema = z.looseObject({
 	inativo: z.coerce.number().int().optional(),
 });
 
-export async function criarCondicaoPagamento(request: FastifyRequest, reply: FastifyReply) {
+export async function criarCondicaoPagamento(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());

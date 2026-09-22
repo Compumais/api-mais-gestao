@@ -41,7 +41,8 @@ export async function contratarModuloService(params: {
 }) {
 	const usuario = await buscarUsuarioPorId(params.idusuario);
 	if (!usuario) throw new Error("Usuário não encontrado");
-	if (!usuario.plano) throw new Error("Contrate um plano antes de adicionar módulos");
+	if (!usuario.plano)
+		throw new Error("Contrate um plano antes de adicionar módulos");
 
 	const modulo = await buscarModuloSaasPorCodigo(params.codigoModulo);
 	if (!modulo?.ativo) throw new Error("Módulo inválido");

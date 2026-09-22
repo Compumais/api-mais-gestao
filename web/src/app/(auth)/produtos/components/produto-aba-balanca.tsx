@@ -46,9 +46,7 @@ export function ProdutoAbaBalanca({
 								id="exportaBalanca"
 								type="button"
 								checked={!!field.value}
-								onCheckedChange={(checked) =>
-									field.onChange(checked === true)
-								}
+								onCheckedChange={(checked) => field.onChange(checked === true)}
 							/>
 						)}
 					/>

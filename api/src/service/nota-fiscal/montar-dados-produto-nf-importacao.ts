@@ -71,8 +71,7 @@ export function montarDadosProdutoNfImportacao(
 		preco: dados.precoVenda,
 		fatorconversao: dados.fatorConversao,
 		origem: trib.origem,
-		situacaotributariaentrada:
-			truncarTexto(situacaoEntrada, 3) ?? undefined,
+		situacaotributariaentrada: truncarTexto(situacaoEntrada, 3) ?? undefined,
 		cstpisentrada: truncarTexto(trib.cstpis, 2) ?? undefined,
 		cstcofinsentrada: truncarTexto(trib.cstcofins, 2) ?? undefined,
 		cstipientrada: truncarTexto(trib.cstipi, 3) ?? undefined,

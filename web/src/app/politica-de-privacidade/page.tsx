@@ -1,10 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LegalDocumentLayout } from "@/components/legal-document-layout";
-import {
-	LEGAL_CONTACT,
-	LEGAL_LAST_UPDATED,
-} from "@/constants/legal-contact";
+import { LEGAL_CONTACT, LEGAL_LAST_UPDATED } from "@/constants/legal-contact";
 
 export const metadata: Metadata = {
 	title: "Política de Privacidade | Mais Gestão",
@@ -32,9 +29,9 @@ export default function PoliticaDePrivacidadePage() {
 				<h2>1. Introdução</h2>
 				<p>
 					Esta Política de Privacidade descreve como a plataforma Mais Gestão
-					trata dados pessoais no contexto de prestação do serviço SaaS de gestão
-					financeira empresarial, em conformidade com a Lei Geral de Proteção de
-					Dados (LGPD — Lei nº 13.709/2018).
+					trata dados pessoais no contexto de prestação do serviço SaaS de
+					gestão financeira empresarial, em conformidade com a Lei Geral de
+					Proteção de Dados (LGPD — Lei nº 13.709/2018).
 				</p>
 			</section>
 
@@ -103,45 +100,45 @@ export default function PoliticaDePrivacidadePage() {
 						seus usuários.
 					</li>
 				</ul>
-				<p>
-					Não comercializamos dados pessoais dos usuários.
-				</p>
+				<p>Não comercializamos dados pessoais dos usuários.</p>
 			</section>
 
 			<section>
 				<h2>6. Armazenamento e retenção</h2>
 				<p>
-					Os dados são mantidos pelo tempo necessário para cumprir as finalidades
-					descritas nesta Política, respeitando prazos legais e contratuais.
-					Após o encerramento da conta, informações podem ser mantidas pelo
-					periodo exigido por lei ou para resguardar direitos legítimos.
+					Os dados são mantidos pelo tempo necessário para cumprir as
+					finalidades descritas nesta Política, respeitando prazos legais e
+					contratuais. Após o encerramento da conta, informações podem ser
+					mantidas pelo periodo exigido por lei ou para resguardar direitos
+					legítimos.
 				</p>
 			</section>
 
 			<section>
 				<h2>7. Direitos do titular</h2>
-				<p>
-					Nos termos da LGPD, você pode solicitar, quando aplicável:
-				</p>
+				<p>Nos termos da LGPD, você pode solicitar, quando aplicável:</p>
 				<ul>
 					<li>confirmação da existência de tratamento;</li>
 					<li>acesso, correção ou atualização de dados;</li>
 					<li>anonimização, bloqueio ou eliminação de dados desnecessários;</li>
-					<li>portabilidade, revogação de consentimento e informações sobre compartilhamento.</li>
+					<li>
+						portabilidade, revogação de consentimento e informações sobre
+						compartilhamento.
+					</li>
 				</ul>
 				<p>
-					Solicitações podem ser feitas pelos canais de contato indicados ao final
-					desta Política.
+					Solicitações podem ser feitas pelos canais de contato indicados ao
+					final desta Política.
 				</p>
 			</section>
 
 			<section>
 				<h2>8. Cookies e tecnologias similares</h2>
 				<p>
-					Utilizamos cookies e tecnologias similares para autenticação, preferências
-					de sessão e funcionamento adequado da plataforma. Você pode gerenciar
-					cookies nas configurações do seu navegador, ciente de que algumas
-					funcionalidades podem ser afetadas.
+					Utilizamos cookies e tecnologias similares para autenticação,
+					preferências de sessão e funcionamento adequado da plataforma. Você
+					pode gerenciar cookies nas configurações do seu navegador, ciente de
+					que algumas funcionalidades podem ser afetadas.
 				</p>
 			</section>
 
@@ -149,10 +146,10 @@ export default function PoliticaDePrivacidadePage() {
 				<h2>9. Segurança da informação</h2>
 				<p>
 					Adotamos medidas técnicas e organizacionais compatíveis com a natureza
-					do serviço para proteger dados pessoais contra acessos não autorizados,
-					perda ou uso indevido. Nenhum sistema é totalmente imune a riscos, por
-					isso recomendamos que cada usuário também adote boas práticas de
-					segurança.
+					do serviço para proteger dados pessoais contra acessos não
+					autorizados, perda ou uso indevido. Nenhum sistema é totalmente imune
+					a riscos, por isso recomendamos que cada usuário também adote boas
+					práticas de segurança.
 				</p>
 			</section>
 
@@ -160,8 +157,8 @@ export default function PoliticaDePrivacidadePage() {
 				<h2>10. Alterações desta Política</h2>
 				<p>
 					Esta Política pode ser atualizada periodicamente. A data da última
-					revisão será indicada no topo desta página. Alterações relevantes serão
-					comunicadas por meios adequados, quando necessário.
+					revisão será indicada no topo desta página. Alterações relevantes
+					serão comunicadas por meios adequados, quando necessário.
 				</p>
 			</section>
 

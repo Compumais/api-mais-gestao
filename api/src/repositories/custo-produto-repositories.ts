@@ -1,7 +1,12 @@
 import { and, count, desc, eq } from "drizzle-orm";
 import type { NovoCustoProduto } from "@/model/custo-produto-model";
 import type { NovoProduto } from "@/model/produto-model";
-import { custoproduto, notafiscal, produtos, usuarios } from "@/repositories/schema.js";
+import {
+	custoproduto,
+	notafiscal,
+	produtos,
+	usuarios,
+} from "@/repositories/schema.js";
 import { db } from "./connection";
 
 export async function criarCustoProduto(dados: NovoCustoProduto) {

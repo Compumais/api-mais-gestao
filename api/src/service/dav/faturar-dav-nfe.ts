@@ -1,5 +1,8 @@
 import type { HttpResponse } from "@/model/http-model.js";
-import { atualizarDav, buscarDavPorId } from "@/repositories/dav-repositories.js";
+import {
+	atualizarDav,
+	buscarDavPorId,
+} from "@/repositories/dav-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { buscarTipoDocumentoFinanceiroPorId } from "@/repositories/tipo-documento-financeiro-repositories.js";
 import { montarItensEmissaoDav } from "@/service/dav/montar-itens-emissao-dav.js";
@@ -111,7 +114,9 @@ export async function faturarDavNfeService({
 	);
 	const desconto = parseFloat(dav.descontosubtotal ?? dav.desconto ?? "0");
 
-	let pagamento: { formas: Array<{ tPag: string; vPag: number; indPag?: number }> } | undefined;
+	let pagamento:
+		| { formas: Array<{ tPag: string; vPag: number; indPag?: number }> }
+		| undefined;
 
 	if (dav.idtipodocumentofinanceiro) {
 		const tipoDoc = await buscarTipoDocumentoFinanceiroPorId(
@@ -154,7 +159,9 @@ export async function faturarDavNfeService({
 		...(desconto > 0 ? { totais: { desconto } } : {}),
 		...(pagamento ? { pagamento } : {}),
 		...(informacoesAdicionais ? { informacoesAdicionais } : {}),
-		...(dav.idcondicaopagamento ? { idcondicaopagto: dav.idcondicaopagamento } : {}),
+		...(dav.idcondicaopagamento
+			? { idcondicaopagto: dav.idcondicaopagamento }
+			: {}),
 		...(dav.idlocalestoque ? { idlocalestoque: dav.idlocalestoque } : {}),
 		...(dav.idtipodocumentofinanceiro
 			? { idtipodocumento: dav.idtipodocumentofinanceiro }

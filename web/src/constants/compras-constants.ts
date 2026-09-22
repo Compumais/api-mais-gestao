@@ -1,6 +1,9 @@
 export const STATUS_COTACAO_COMPRA: Record<
 	string,
-	{ label: string; variant: "outline" | "secondary" | "default" | "destructive" }
+	{
+		label: string;
+		variant: "outline" | "secondary" | "default" | "destructive";
+	}
 > = {
 	R: { label: "Rascunho", variant: "outline" },
 	A: { label: "Aberta", variant: "default" },
@@ -10,7 +13,10 @@ export const STATUS_COTACAO_COMPRA: Record<
 
 export const STATUS_PEDIDO_COMPRA: Record<
 	string,
-	{ label: string; variant: "outline" | "secondary" | "default" | "destructive" }
+	{
+		label: string;
+		variant: "outline" | "secondary" | "default" | "destructive";
+	}
 > = {
 	A: { label: "Aberto", variant: "default" },
 	C: { label: "Cancelado", variant: "destructive" },

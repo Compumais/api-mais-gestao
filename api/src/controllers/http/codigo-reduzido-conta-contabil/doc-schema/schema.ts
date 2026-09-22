@@ -3,12 +3,13 @@ import type { FastifySchema } from "fastify";
 export const criarCodigoReduzidoContaContabilSchema: FastifySchema = {
 	tags: ["codigos-reduzidos-conta-contabil"],
 	summary: "Criar código reduzido conta contábil",
-	description: "Cria um novo registro de código reduzido conta contábil na empresa do usuário autenticado.",
+	description:
+		"Cria um novo registro de código reduzido conta contábil na empresa do usuário autenticado.",
 	security: [{ bearerAuth: [] }],
 	body: {
 		type: "object",
 		properties: {
-			idempresa: { type: "string", description: "ID da empresa" }
+			idempresa: { type: "string", description: "ID da empresa" },
 		},
 		required: ["idempresa"],
 	},
@@ -49,7 +50,8 @@ export const criarCodigoReduzidoContaContabilSchema: FastifySchema = {
 export const buscarCodigoReduzidoContaContabilSchema: FastifySchema = {
 	tags: ["codigos-reduzidos-conta-contabil"],
 	summary: "Buscar código reduzido conta contábil por ID",
-	description: "Retorna os dados de um registro de código reduzido conta contábil.",
+	description:
+		"Retorna os dados de um registro de código reduzido conta contábil.",
 	security: [{ bearerAuth: [] }],
 	params: {
 		type: "object",
@@ -102,7 +104,8 @@ export const buscarCodigoReduzidoContaContabilSchema: FastifySchema = {
 export const listarCodigoReduzidoContaContabilsSchema: FastifySchema = {
 	tags: ["codigos-reduzidos-conta-contabil"],
 	summary: "Listar códigos reduzidos conta contábil",
-	description: "Lista registros de códigos reduzidos conta contábil com paginação.",
+	description:
+		"Lista registros de códigos reduzidos conta contábil com paginação.",
 	security: [{ bearerAuth: [] }],
 	querystring: {
 		type: "object",
@@ -118,7 +121,10 @@ export const listarCodigoReduzidoContaContabilsSchema: FastifySchema = {
 		200: {
 			type: "object",
 			properties: {
-				data: { type: "array", items: { type: "object", additionalProperties: true } },
+				data: {
+					type: "array",
+					items: { type: "object", additionalProperties: true },
+				},
 				paginacao: {
 					type: "object",
 					properties: {

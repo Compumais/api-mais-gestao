@@ -158,9 +158,7 @@ export default function AuditoriaPage() {
 				...(filtrosColuna.nomeusuario
 					? { nomeusuario: filtrosColuna.nomeusuario }
 					: {}),
-				...(filtrosColuna.criadoem
-					? { criadoem: filtrosColuna.criadoem }
-					: {}),
+				...(filtrosColuna.criadoem ? { criadoem: filtrosColuna.criadoem } : {}),
 				...(filtrosColuna.idrecurso
 					? { idrecurso: filtrosColuna.idrecurso }
 					: {}),
@@ -264,14 +262,13 @@ export default function AuditoriaPage() {
 							</p>
 						</div>
 					) : mostrarSkeleton ? (
-						<TableSkeleton
-							rows={10}
-							columns={colunasVisiveis.length || 5}
-						>
+						<TableSkeleton rows={10} columns={colunasVisiveis.length || 5}>
 							{colunasVisiveis.map((coluna) => (
 								<TableHead
 									key={coluna.id}
-									className={coluna.id === "acoes" ? "w-36 text-end" : undefined}
+									className={
+										coluna.id === "acoes" ? "w-36 text-end" : undefined
+									}
 								>
 									{rotuloColuna(coluna)}
 								</TableHead>
@@ -285,9 +282,7 @@ export default function AuditoriaPage() {
 										<TableRow key={headerGroup.id}>
 											{headerGroup.headers.map((header) => (
 												<TableHead
-													className={
-														header.id === "acoes" ? "text-right" : ""
-													}
+													className={header.id === "acoes" ? "text-right" : ""}
 													key={header.id}
 												>
 													{header.isPlaceholder

@@ -6,12 +6,12 @@ import type {
 } from "@/model/cardapio-delivery-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
 import {
+	buscarCardapioDeliveryPorSlug,
 	buscarPedidoCardapioPorClientOrderId,
 	buscarProdutosCardapioPorIds,
 	criarPedidoCardapioDelivery,
 	protocoloCardapioExiste,
 } from "@/repositories/cardapio-delivery-repositories.js";
-import { buscarCardapioDeliveryPorSlug } from "@/repositories/cardapio-delivery-repositories.js";
 import { buscarTipoDocumentoFinanceiroPorId } from "@/repositories/tipo-documento-financeiro-repositories.js";
 import { avaliarHorarioCardapio } from "@/util/avaliar-horario-cardapio.js";
 import { gerarProtocoloCardapio } from "@/util/cardapio-delivery-identidade.js";
@@ -152,7 +152,9 @@ export async function criarPedidoCardapioPublicoService(
 	}
 
 	const modalidadeRaw = (
-		valorCampo(mapa, "modalidade", campos) || mapa.modalidade || "delivery"
+		valorCampo(mapa, "modalidade", campos) ||
+		mapa.modalidade ||
+		"delivery"
 	).toLowerCase();
 	const modalidade =
 		modalidadeRaw === "retirada" || modalidadeRaw === "pickup"
@@ -166,10 +168,7 @@ export async function criarPedidoCardapioPublicoService(
 		return httpBadRequest("Esta loja não está aceitando retirada");
 	}
 
-	const endereco =
-		mapa.endereco ||
-		valorCampo(mapa, "endereco", campos) ||
-		"";
+	const endereco = mapa.endereco || valorCampo(mapa, "endereco", campos) || "";
 	const numero = mapa.numero || "";
 	const bairro = mapa.bairro || "";
 	const complemento = mapa.complemento || "";
@@ -200,8 +199,8 @@ export async function criarPedidoCardapioPublicoService(
 	const ids = [
 		...new Set(
 			params.itens.flatMap((item) =>
-				[item.idproduto, item.idprodutomeio].filter(
-					(id): id is string => Boolean(id),
+				[item.idproduto, item.idprodutomeio].filter((id): id is string =>
+					Boolean(id),
 				),
 			),
 		),

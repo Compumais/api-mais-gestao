@@ -7,16 +7,26 @@ const atualizarCodigoReduzidoContaContabilParamsSchema = z.object({
 	id: z.string(),
 });
 
-const atualizarCodigoReduzidoContaContabilBodySchema = z.record(z.string(), z.unknown());
+const atualizarCodigoReduzidoContaContabilBodySchema = z.record(
+	z.string(),
+	z.unknown(),
+);
 
-export async function atualizarCodigoReduzidoContaContabil(request: FastifyRequest, reply: FastifyReply) {
+export async function atualizarCodigoReduzidoContaContabil(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
 		}
 
-		const { id } = atualizarCodigoReduzidoContaContabilParamsSchema.parse(request.params);
-		const dados = atualizarCodigoReduzidoContaContabilBodySchema.parse(request.body);
+		const { id } = atualizarCodigoReduzidoContaContabilParamsSchema.parse(
+			request.params,
+		);
+		const dados = atualizarCodigoReduzidoContaContabilBodySchema.parse(
+			request.body,
+		);
 
 		const resultado = await atualizarCodigoReduzidoContaContabilService({
 			codigoReduzidoContaContabilId: id,

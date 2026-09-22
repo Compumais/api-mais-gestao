@@ -137,9 +137,7 @@ function nomeExibicao(emitente: EmitenteDanfce): string {
 }
 
 function linhasEnderecoEmitente(emitente: EmitenteDanfce): string[] {
-	const rua = [emitente.logradouro, emitente.numero]
-		.filter(Boolean)
-		.join(", ");
+	const rua = [emitente.logradouro, emitente.numero].filter(Boolean).join(", ");
 	const comComplemento = [rua, emitente.complemento]
 		.filter(Boolean)
 		.join(" - ");

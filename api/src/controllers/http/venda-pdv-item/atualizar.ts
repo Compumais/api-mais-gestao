@@ -1,7 +1,8 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import type { NovoVendaPdvItem } from "@/model/venda-pdv-item-model.js";
-import { atualizarVendaPdvItemService } from "@/service/venda-pdv-item/atualizar-venda-pdv-item.js";import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
+import { atualizarVendaPdvItemService } from "@/service/venda-pdv-item/atualizar-venda-pdv-item.js";
+import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
 const atualizarVendaPdvItemParamsSchema = z.object({
 	id: z.string(),
@@ -36,7 +37,8 @@ export async function atualizarVendaPdvItem(
 			),
 		) as Partial<NovoVendaPdvItem>;
 
-		const resultado = await atualizarVendaPdvItemService({			vendaPdvItemId: id,
+		const resultado = await atualizarVendaPdvItemService({
+			vendaPdvItemId: id,
 			idusuario: request.user.id,
 			dados,
 		});

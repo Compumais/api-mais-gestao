@@ -1,7 +1,7 @@
 import { Plus, ShoppingBag } from "lucide-react";
 import { useEffect, useState } from "react";
-import { resolverSrcImagemProduto } from "@/lib/produto-imagem";
 import type { ProdutoLocal } from "@/lib/pdv-types";
+import { resolverSrcImagemProduto } from "@/lib/produto-imagem";
 import { cn, money } from "@/lib/utils";
 
 type ProdutoCardProps = {
@@ -101,9 +101,7 @@ export function ProdutoCard({
 				<div
 					className={cn(
 						"mt-1 min-h-4 truncate text-[11px]",
-						destaque
-							? "text-primary-foreground/70"
-							: "text-muted-foreground",
+						destaque ? "text-primary-foreground/70" : "text-muted-foreground",
 					)}
 				>
 					{produto.codigo != null

@@ -3,45 +3,44 @@ import z from "zod";
 import { substituirNfseService } from "@/service/nfse-emissao/substituir-nfse.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
-
 export async function substituirNfse(
-    request: FastifyRequest,
-    reply: FastifyReply,
+	request: FastifyRequest,
+	reply: FastifyReply,
 ) {
-    try {
-        if (!request.user) {
-            return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
-        }
+	try {
+		if (!request.user) {
+			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
+		}
 
-        const { id } = z.object({ id: z.string().uuid() }).parse(request.params);
-        const body = z
-            .object({
-                idnotafiscalsubstituta: z.string().uuid(),
-                motivo: z.string().min(15).max(255),
-            })
-            .parse(request.body);
+		const { id } = z.object({ id: z.string().uuid() }).parse(request.params);
+		const body = z
+			.object({
+				idnotafiscalsubstituta: z.string().uuid(),
+				motivo: z.string().min(15).max(255),
+			})
+			.parse(request.body);
 
-        const resultado = await substituirNfseService({
-            idusuario: request.user.id,
-            idnotafiscal: id,
-            idnotafiscalsubstituta: body.idnotafiscalsubstituta,
-            motivo: body.motivo,
-        });
+		const resultado = await substituirNfseService({
+			idusuario: request.user.id,
+			idnotafiscal: id,
+			idnotafiscalsubstituta: body.idnotafiscalsubstituta,
+			motivo: body.motivo,
+		});
 
-        if (!resultado.success) {
-            return reply.status(resultado.status).send(resultado);
-        }
+		if (!resultado.success) {
+			return reply.status(resultado.status).send(resultado);
+		}
 
-        return reply.status(resultado.status).send(resultado.body);
-    } catch (error) {
-        console.error(error);
-        if (error instanceof z.ZodError) {
-            return reply.status(400).send({
-                error: "Erro de validação",
-                code: "VALIDATION_ERROR",
-                details: error.issues,
-            });
-        }
-        return reply.status(httpErroInterno().status).send(httpErroInterno());
-    }
+		return reply.status(resultado.status).send(resultado.body);
+	} catch (error) {
+		console.error(error);
+		if (error instanceof z.ZodError) {
+			return reply.status(400).send({
+				error: "Erro de validação",
+				code: "VALIDATION_ERROR",
+				details: error.issues,
+			});
+		}
+		return reply.status(httpErroInterno().status).send(httpErroInterno());
+	}
 }

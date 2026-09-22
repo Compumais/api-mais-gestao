@@ -97,7 +97,11 @@ export type VendaPorDiaSemanaItem = {
 	quantidade: number;
 };
 
-export type RankingOrdenacao = "faturamento" | "quantidade" | "lucro" | "margem";
+export type RankingOrdenacao =
+	| "faturamento"
+	| "quantidade"
+	| "lucro"
+	| "margem";
 
 export type TopProdutoAvancado = {
 	idproduto: string;
@@ -232,12 +236,7 @@ export type ClientesAnalytics = {
 	recorrentes: TopClienteAnalytics[];
 };
 
-export type SegmentoRfm =
-	| "vip"
-	| "fieis"
-	| "risco"
-	| "inativos"
-	| "novos";
+export type SegmentoRfm = "vip" | "fieis" | "risco" | "inativos" | "novos";
 
 export type ClienteRfmItem = {
 	identidade: string;
@@ -717,11 +716,22 @@ async function agingFinanceiro(
 			result,
 		).map((row) => [
 			row.faixa,
-			{ faixa: row.faixa, quantidade: row.quantidade, valor: toNumber(row.valor) },
+			{
+				faixa: row.faixa,
+				quantidade: row.quantidade,
+				valor: toNumber(row.valor),
+			},
 		]),
 	);
 
-	const faixas = ["a_vencer", "1_30", "31_60", "61_90", "90_mais", "sem_vencimento"];
+	const faixas = [
+		"a_vencer",
+		"1_30",
+		"31_60",
+		"61_90",
+		"90_mais",
+		"sem_vencimento",
+	];
 	return faixas.map(
 		(faixa) => mapa.get(faixa) ?? { faixa, quantidade: 0, valor: 0 },
 	);
@@ -772,7 +782,11 @@ export async function buscarExecutivoDashboard({
 			periodoAnterior.dataInicioStr,
 			periodoAnterior.dataFimStr,
 		),
-		somarFaturamento(idempresa, periodoYoY.dataInicioStr, periodoYoY.dataFimStr),
+		somarFaturamento(
+			idempresa,
+			periodoYoY.dataInicioStr,
+			periodoYoY.dataFimStr,
+		),
 		somarCmv(idempresa, dataInicioStr, dataFimStr),
 		somarCmv(
 			idempresa,
@@ -837,8 +851,7 @@ export async function buscarExecutivoDashboard({
 	};
 	const kpiLucroLiquido = {
 		...montarKpiComVariacao(lucroLiquido, lucroLiquidoAnt, lucroLiquidoYoY),
-		margemLiquidaPct:
-			receitas > 0 ? (lucroLiquido / receitas) * 100 : null,
+		margemLiquidaPct: receitas > 0 ? (lucroLiquido / receitas) * 100 : null,
 	};
 
 	return {
@@ -940,11 +953,15 @@ export async function buscarVendasPorHora({
 		]),
 	);
 
-	return Array.from({ length: 24 }, (_, hora) => mapa.get(hora) ?? {
-		hora,
-		total: 0,
-		quantidade: 0,
-	});
+	return Array.from(
+		{ length: 24 },
+		(_, hora) =>
+			mapa.get(hora) ?? {
+				hora,
+				total: 0,
+				quantidade: 0,
+			},
+	);
 }
 
 export async function buscarVendasPorDiaSemana({
@@ -980,11 +997,15 @@ export async function buscarVendasPorDiaSemana({
 		]),
 	);
 
-	return Array.from({ length: 7 }, (_, diaSemana) => mapa.get(diaSemana) ?? {
-		diaSemana,
-		total: 0,
-		quantidade: 0,
-	});
+	return Array.from(
+		{ length: 7 },
+		(_, diaSemana) =>
+			mapa.get(diaSemana) ?? {
+				diaSemana,
+				total: 0,
+				quantidade: 0,
+			},
+	);
 }
 
 export async function buscarTopProdutosAvancado({
@@ -1337,8 +1358,14 @@ export async function buscarDreAvancado({
 		despesasRows,
 	);
 
-	const receitaTotal = receitas.reduce((acc, row) => acc + toNumber(row.total), 0);
-	const despesaTotal = despesas.reduce((acc, row) => acc + toNumber(row.total), 0);
+	const receitaTotal = receitas.reduce(
+		(acc, row) => acc + toNumber(row.total),
+		0,
+	);
+	const despesaTotal = despesas.reduce(
+		(acc, row) => acc + toNumber(row.total),
+		0,
+	);
 	const resultado = receitaTotal - despesaTotal;
 
 	const pct = (valor: number): number | null =>
@@ -1552,9 +1579,7 @@ export async function buscarRentabilidade({
 	});
 
 	const medianaVolume = mediana(produtos.map((i) => i.vendas));
-	const medianaMargem = mediana(
-		produtos.map((i) => i.margemPct ?? 0),
-	);
+	const medianaMargem = mediana(produtos.map((i) => i.margemPct ?? 0));
 
 	return {
 		dimensao,
@@ -1720,7 +1745,11 @@ export async function buscarClientesRfm({
 
 	const clientes: ClienteRfmItem[] = base.map((c) => {
 		let segmento: SegmentoRfm;
-		if (c.recenciaDias <= 30 && c.frequencia >= medFreq && c.monetario >= medMon) {
+		if (
+			c.recenciaDias <= 30 &&
+			c.frequencia >= medFreq &&
+			c.monetario >= medMon
+		) {
 			segmento = "vip";
 		} else if (c.recenciaDias <= 60 && c.frequencia >= medFreq) {
 			segmento = "fieis";
@@ -1800,9 +1829,10 @@ export async function buscarInsights({
 
 	if (saude.valorVencidoReceber > 0) {
 		insights.push({
-			severidade: saude.valorVencidoReceber > saude.contasReceberAberto * 0.3
-				? "critico"
-				: "atencao",
+			severidade:
+				saude.valorVencidoReceber > saude.contasReceberAberto * 0.3
+					? "critico"
+					: "atencao",
 			mensagem: `Há R$ ${saude.valorVencidoReceber.toFixed(2)} em contas a receber vencidas.`,
 			tabAlvo: "financeiro",
 			codigo: "RECEBER_VENCIDO",
@@ -1812,7 +1842,8 @@ export async function buscarInsights({
 	if (executivo.caixa.saldoProjetado < 0) {
 		insights.push({
 			severidade: "critico",
-			mensagem: "Saldo de caixa projetado para os próximos 30 dias está negativo.",
+			mensagem:
+				"Saldo de caixa projetado para os próximos 30 dias está negativo.",
 			tabAlvo: "fluxo-caixa",
 			codigo: "CAIXA_NEGATIVO",
 		});

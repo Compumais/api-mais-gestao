@@ -21,11 +21,7 @@ export function preencherEmpresaConsultaCnpj<T extends FieldValues>({
 	}
 
 	if (entidade.cnpjcpf) {
-		setValue(
-			"cnpj" as never,
-			maskCpfCnpj(entidade.cnpjcpf) as never,
-			opcoes,
-		);
+		setValue("cnpj" as never, maskCpfCnpj(entidade.cnpjcpf) as never, opcoes);
 	}
 
 	if (entidade.email) {

@@ -1,7 +1,7 @@
 import type { PedidoCardapioDelivery } from "@/model/cardapio-delivery-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { listarPedidosCardapioPendentes } from "@/repositories/cardapio-delivery-repositories.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { httpOk, httpProibido } from "@/util/http-util.js";
 import { numberFromDecimal } from "@/util/totais-cardapio-delivery.js";
 
@@ -42,14 +42,16 @@ function mapear(pedido: PedidoCardapioDelivery): PedidoCardapioPendentePdv {
 		nomecliente: pedido.nomecliente,
 		telefone: pedido.telefone,
 		documento: pedido.documento,
-		endereco: [pedido.endereco, pedido.numero].filter(Boolean).join(", ") || null,
+		endereco:
+			[pedido.endereco, pedido.numero].filter(Boolean).join(", ") || null,
 		bairro: pedido.bairro,
 		complemento: pedido.complemento,
 		referencia: pedido.referencia,
 		valorentrega: numberFromDecimal(pedido.valorentrega),
-		obs: [pedido.observacao, pedido.nomemeiopagamento]
-			.filter(Boolean)
-			.join(" | ") || null,
+		obs:
+			[pedido.observacao, pedido.nomemeiopagamento]
+				.filter(Boolean)
+				.join(" | ") || null,
 		nomemeiopagamento: pedido.nomemeiopagamento,
 		itens: (pedido.itens ?? []).map((item) => ({
 			idproduto: item.idproduto,

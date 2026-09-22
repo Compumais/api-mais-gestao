@@ -47,9 +47,7 @@ export type ComposicaoPrecoResultados = {
 	percentualMargemPrecoMinimo: number;
 };
 
-export function parseNumeroComposicao(
-	valor?: string | number | null,
-): number {
+export function parseNumeroComposicao(valor?: string | number | null): number {
 	if (valor === null || valor === undefined || valor === "") {
 		return 0;
 	}
@@ -168,10 +166,7 @@ export function calcularComposicaoPreco(
 	};
 }
 
-export function formatarNumeroComposicao(
-	valor: number,
-	casas = 2,
-): string {
+export function formatarNumeroComposicao(valor: number, casas = 2): string {
 	if (!Number.isFinite(valor)) {
 		return "0,00";
 	}

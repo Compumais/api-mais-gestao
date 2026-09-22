@@ -1,16 +1,15 @@
 import { v4 as uuidv4 } from "uuid";
-import type { CustoProduto, NovoCustoProduto } from "@/model/custo-produto-model.js";
+import type {
+	CustoProduto,
+	NovoCustoProduto,
+} from "@/model/custo-produto-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
 import {
 	criarCustoProduto,
 	excluirCustoProduto,
 } from "@/repositories/custo-produto-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
-import {
-	httpCriacao,
-	httpErro,
-	httpErroInterno,
-} from "@/util/http-util.js";
+import { httpCriacao, httpErro, httpErroInterno } from "@/util/http-util.js";
 import { validarAcessoProduto } from "./validar-acesso-produto.js";
 
 type CriarCustoProdutoParametros = {

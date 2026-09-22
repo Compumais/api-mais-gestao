@@ -1,18 +1,15 @@
 const LIMITE_INTEGER_POSTGRES = 2_147_483_647;
 const LIMITE_SMALLINT_POSTGRES = 32_767;
 
-export function inteiroValidoParaPostgres(
-	valor?: number,
-): number | undefined {
+export function inteiroValidoParaPostgres(valor?: number): number | undefined {
 	if (valor === undefined || Number.isNaN(valor)) return undefined;
 	if (!Number.isInteger(valor)) return undefined;
-	if (valor < -2_147_483_648 || valor > LIMITE_INTEGER_POSTGRES) return undefined;
+	if (valor < -2_147_483_648 || valor > LIMITE_INTEGER_POSTGRES)
+		return undefined;
 	return valor;
 }
 
-export function smallintValidoParaPostgres(
-	valor?: number,
-): number | undefined {
+export function smallintValidoParaPostgres(valor?: number): number | undefined {
 	if (valor === undefined || Number.isNaN(valor)) return undefined;
 	const inteiro = Math.trunc(valor);
 	if (inteiro < -32_768 || inteiro > LIMITE_SMALLINT_POSTGRES) return undefined;
@@ -111,7 +108,10 @@ export function extrairMensagemErroBanco(erro: unknown): string {
 		return "Referência inválida (plano de contas, condição de pagamento ou produto)";
 	}
 
-	if (mensagem.includes("duplicate key") || mensagem.includes("unique constraint")) {
+	if (
+		mensagem.includes("duplicate key") ||
+		mensagem.includes("unique constraint")
+	) {
 		return "Nota fiscal já importada (chave NF-e duplicada)";
 	}
 

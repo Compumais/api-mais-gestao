@@ -88,18 +88,20 @@ export function CamposIntegracaoNfVenda({
 		staleTime: 0,
 	});
 
-	const { data: condicoesPagamento, isLoading: carregandoCondicoes } = useQuery({
-		queryKey: ["condicoes-pagamento", variante, empresa?.id],
-		queryFn: async () => {
-			if (!empresa) throw new Error("Empresa não selecionada");
-			return condicaoPagamentoService.listarTodos({
-				idempresa: empresa.id,
-				inativo: 0,
-			});
+	const { data: condicoesPagamento, isLoading: carregandoCondicoes } = useQuery(
+		{
+			queryKey: ["condicoes-pagamento", variante, empresa?.id],
+			queryFn: async () => {
+				if (!empresa) throw new Error("Empresa não selecionada");
+				return condicaoPagamentoService.listarTodos({
+					idempresa: empresa.id,
+					inativo: 0,
+				});
+			},
+			enabled: !!empresa,
+			staleTime: 0,
 		},
-		enabled: !!empresa,
-		staleTime: 0,
-	});
+	);
 
 	const { data: planosContas, isLoading: carregandoPlanos } = useQuery({
 		queryKey: ["plano-contas", "receitas", empresa?.id],
@@ -129,9 +131,12 @@ export function CamposIntegracaoNfVenda({
 		enabled: !!empresa,
 	});
 
-	const tiposAtivos = tiposDocumento?.filter((tipo) => tipo.inativo !== 1) ?? [];
+	const tiposAtivos =
+		tiposDocumento?.filter((tipo) => tipo.inativo !== 1) ?? [];
 
-	const tipoSelecionado = tiposAtivos.find((tipo) => tipo.id === idtipodocumento);
+	const tipoSelecionado = tiposAtivos.find(
+		(tipo) => tipo.id === idtipodocumento,
+	);
 	const exigeCondicaoPagamento = tipoSelecionado?.aprazo === 1;
 
 	const condicoesVenda =
@@ -210,11 +215,13 @@ export function CamposIntegracaoNfVenda({
 					))}
 				</SelectContent>
 			</Select>
-			{variante === "pedido" && tiposAtivos.length === 0 && !carregandoTipos && (
-				<p className="text-xs text-muted-foreground">
-					Cadastre em Meios de pagamento → Formas ERP (NF-e).
-				</p>
-			)}
+			{variante === "pedido" &&
+				tiposAtivos.length === 0 &&
+				!carregandoTipos && (
+					<p className="text-xs text-muted-foreground">
+						Cadastre em Meios de pagamento → Formas ERP (NF-e).
+					</p>
+				)}
 		</Field>
 	);
 
@@ -230,10 +237,7 @@ export function CamposIntegracaoNfVenda({
 					onIdcondicaopagtoChange(selected === "none" ? "" : selected)
 				}
 				disabled={
-					desabilitado ||
-					carregandoCondicoes ||
-					!empresa ||
-					!gerarFinanceiro
+					desabilitado || carregandoCondicoes || !empresa || !gerarFinanceiro
 				}
 			>
 				<SelectTrigger id="idcondicaopagto">
@@ -291,7 +295,9 @@ export function CamposIntegracaoNfVenda({
 			)}
 
 			<Field>
-				<FieldLabel htmlFor="idplanocontas">Plano de contas (receita)</FieldLabel>
+				<FieldLabel htmlFor="idplanocontas">
+					Plano de contas (receita)
+				</FieldLabel>
 				<Combobox
 					options={planosReceita.map((plano) => ({
 						value: plano.id,
@@ -306,7 +312,9 @@ export function CamposIntegracaoNfVenda({
 					}
 					searchPlaceholder="Buscar plano de contas..."
 					emptyMessage="Nenhum plano de contas de receita encontrado."
-					disabled={desabilitado || carregandoPlanos || !empresa || !gerarFinanceiro}
+					disabled={
+						desabilitado || carregandoPlanos || !empresa || !gerarFinanceiro
+					}
 				/>
 			</Field>
 
@@ -317,14 +325,14 @@ export function CamposIntegracaoNfVenda({
 					onValueChange={(selected) =>
 						onIdlocalestoqueChange(selected === "none" ? "" : selected)
 					}
-					disabled={desabilitado || carregandoLocais || !empresa || !gerarEstoque}
+					disabled={
+						desabilitado || carregandoLocais || !empresa || !gerarEstoque
+					}
 				>
 					<SelectTrigger id="idlocalestoque">
 						<SelectValue
 							placeholder={
-								carregandoLocais
-									? "Carregando locais..."
-									: "Padrão da empresa"
+								carregandoLocais ? "Carregando locais..." : "Padrão da empresa"
 							}
 						/>
 					</SelectTrigger>

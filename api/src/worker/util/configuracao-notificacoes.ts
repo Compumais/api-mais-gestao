@@ -33,13 +33,15 @@ export function normalizarConfiguracaoNotificacoes(
 				dados.alertasFinanceiros?.transferenciasAcimaValor,
 			),
 			conciliacoesPendentes: mesclarSecao(
-				CONFIGURACAO_NOTIFICACOES_PADRAO.alertasFinanceiros.conciliacoesPendentes,
+				CONFIGURACAO_NOTIFICACOES_PADRAO.alertasFinanceiros
+					.conciliacoesPendentes,
 				dados.alertasFinanceiros?.conciliacoesPendentes,
 			),
 		},
 		notificacoesEmail: {
 			relatoriosAutomaticos: mesclarSecao(
-				CONFIGURACAO_NOTIFICACOES_PADRAO.notificacoesEmail.relatoriosAutomaticos,
+				CONFIGURACAO_NOTIFICACOES_PADRAO.notificacoesEmail
+					.relatoriosAutomaticos,
 				dados.notificacoesEmail?.relatoriosAutomaticos,
 			),
 			resumoMovimentacoes: mesclarSecao(

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { marcarBootPendente } from "@/lib/boot-state";
 import { pdvInvoke } from "@/lib/pdv-api";
+import { LogoMaisGestao } from "@/ui/components/logo-mais-gestao";
 import {
 	SelectNumeroPdv,
 	type TerminalPdvOpcao,
@@ -13,7 +14,6 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/ui/components/ui/card";
-import { LogoMaisGestao } from "@/ui/components/logo-mais-gestao";
 import { Input } from "@/ui/components/ui/input";
 import { Label } from "@/ui/components/ui/label";
 import { Select } from "@/ui/components/ui/select";
@@ -421,8 +421,8 @@ export function LoginPage() {
 												) : (
 													<p className="text-xs text-muted-foreground">
 														Depois de informar o IP, busque os números no
-														principal para escolher um PDV livre (evita
-														conflito com o nº do principal).
+														principal para escolher um PDV livre (evita conflito
+														com o nº do principal).
 													</p>
 												)}
 												<p className="text-xs text-muted-foreground">
@@ -523,7 +523,11 @@ export function LoginPage() {
 									<p className="text-sm text-primary">{okConexao}</p>
 								)}
 								{erro && <p className="text-sm text-destructive">{erro}</p>}
-								<Button className="pdv-touch w-full" size="lg" disabled={loading}>
+								<Button
+									className="pdv-touch w-full"
+									size="lg"
+									disabled={loading}
+								>
 									{loading ? "Entrando..." : "Entrar"}
 								</Button>
 							</form>

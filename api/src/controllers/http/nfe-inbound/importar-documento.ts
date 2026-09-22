@@ -1,10 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import { importPurchaseInvoiceService } from "@/service/nfe-inbound/import-purchase-invoice.js";
-import {
-	httpErroInterno,
-	httpNaoAutorizado,
-} from "@/util/http-util.js";
+import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
 const paramsSchema = z.object({
 	id: z.string().uuid(),

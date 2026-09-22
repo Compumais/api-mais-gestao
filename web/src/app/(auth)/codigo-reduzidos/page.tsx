@@ -182,7 +182,9 @@ export default function CodigosReduzidosPage() {
 		string,
 		ConfigFiltroColunaCodigosReduzidos
 	> => {
-		const texto = (placeholder?: string): ConfigFiltroColunaCodigosReduzidos => ({
+		const texto = (
+			placeholder?: string,
+		): ConfigFiltroColunaCodigosReduzidos => ({
 			tipo: "texto",
 			placeholder,
 		});
@@ -292,7 +294,9 @@ export default function CodigosReduzidosPage() {
 							<DropdownMenuContent align="end">
 								<DropdownMenuItem onClick={() => handleEdit(conta)}>
 									<IconPencil className="size-4" />
-									{temCodigoReduzido(conta) ? "Editar código" : "Vincular código"}
+									{temCodigoReduzido(conta)
+										? "Editar código"
+										: "Vincular código"}
 								</DropdownMenuItem>
 								{temCodigoReduzido(conta) ? (
 									<>

@@ -1,19 +1,12 @@
 import { api } from "@/lib/axios";
 
 import {
-
 	type CertificadoDigitalResumo,
-
 	type NfeSerie,
-
 	nfeConfiguracaoService,
-
 } from "@/services/nfe-configuracao.service";
 
-
-
 export interface NfceConfiguracao {
-
 	id: string;
 
 	idempresa: string;
@@ -44,52 +37,32 @@ export interface NfceConfiguracao {
 		prepago: boolean;
 	};
 	ultimaidserie?: string | null;
-
 }
-
-
 
 export type { CertificadoDigitalResumo, NfeSerie };
 
-
-
 export const nfceConfiguracaoService = {
-
 	async buscar(idempresa: string): Promise<NfceConfiguracao> {
-
 		const { data } = await api.get<NfceConfiguracao>(
-
 			`/empresas/${idempresa}/nfce-configuracao`,
-
 		);
 
 		return data;
-
 	},
 
-
-
 	async atualizar(
-
 		idempresa: string,
 
 		dados: Partial<NfceConfiguracao>,
-
 	): Promise<NfceConfiguracao> {
-
 		const { data } = await api.put<NfceConfiguracao>(
-
 			`/empresas/${idempresa}/nfce-configuracao`,
 
 			dados,
-
 		);
 
 		return data;
-
 	},
-
-
 
 	listarCertificados: nfeConfiguracaoService.listarCertificados,
 
@@ -98,8 +71,6 @@ export const nfceConfiguracaoService = {
 	ativarCertificado: nfeConfiguracaoService.ativarCertificado,
 
 	excluirCertificado: nfeConfiguracaoService.excluirCertificado,
-
-
 
 	async listarSeries(idempresa: string): Promise<NfeSerie[]> {
 		return nfeConfiguracaoService.listarSeries(idempresa, "65");
@@ -119,4 +90,3 @@ export const nfceConfiguracaoService = {
 	atualizarSerie: nfeConfiguracaoService.atualizarSerie,
 	excluirSerie: nfeConfiguracaoService.excluirSerie,
 };
-

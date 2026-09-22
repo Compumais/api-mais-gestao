@@ -15,10 +15,7 @@ export type PagamentosVendaPdvMapeados = {
 	valortotal: string;
 };
 
-function somarValoresMonetarios(
-	atual: string,
-	adicional: number,
-): string {
+function somarValoresMonetarios(atual: string, adicional: number): string {
 	return formatarValorMonetario(parseValorMonetario(atual) + adicional);
 }
 

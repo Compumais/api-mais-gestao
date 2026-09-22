@@ -92,7 +92,8 @@ export function FormImportarChaveNotaFiscalCompra() {
 		},
 	});
 
-	const { handleSubmit, setValue, watch, register, formState, getValues } = form;
+	const { handleSubmit, setValue, watch, register, formState, getValues } =
+		form;
 	const idplanocontas = watch("idplanocontas");
 	const idcondicaopagto = watch("idcondicaopagto");
 	const idtipodocumento = watch("idtipodocumento");
@@ -149,7 +150,9 @@ export function FormImportarChaveNotaFiscalCompra() {
 					.filter((item) => item.severidade === "erro")
 					.map((item) => item.mensagem)
 					.join(" ");
-				toast.warning(`Pré-consulta: ${erros || "inconsistências encontradas"}`);
+				toast.warning(
+					`Pré-consulta: ${erros || "inconsistências encontradas"}`,
+				);
 			} else {
 				toast.info(partes.join(" · "));
 			}
@@ -180,8 +183,7 @@ export function FormImportarChaveNotaFiscalCompra() {
 		);
 	}
 
-	const notaAutorizadaNaSefaz =
-		ultimoErro?.consultaSituacao?.cStat === "100";
+	const notaAutorizadaNaSefaz = ultimoErro?.consultaSituacao?.cStat === "100";
 
 	return (
 		<form
@@ -192,9 +194,9 @@ export function FormImportarChaveNotaFiscalCompra() {
 				<h2 className="text-lg font-semibold">Chave de acesso NF-e</h2>
 				<p className="text-sm text-muted-foreground">
 					Informe a chave de 44 dígitos da NF-e de compra. O sistema consultará
-					a SEFAZ com o certificado da empresa e criará um rascunho para revisão.
-					Se você já recebeu o XML do fornecedor, anexe-o abaixo para validar
-					CNPJ e ambiente antes da consulta — ou use a aba{" "}
+					a SEFAZ com o certificado da empresa e criará um rascunho para
+					revisão. Se você já recebeu o XML do fornecedor, anexe-o abaixo para
+					validar CNPJ e ambiente antes da consulta — ou use a aba{" "}
 					<Link
 						href="/nota-fiscal-compra/importar?tab=xml"
 						className="text-primary underline-offset-4 hover:underline"
@@ -253,7 +255,9 @@ export function FormImportarChaveNotaFiscalCompra() {
 							{diagnosticando ? "Diagnosticando..." : "Diagnosticar chave"}
 						</Button>
 						{nomeArquivoXml ? (
-							<span className="text-sm text-muted-foreground">{nomeArquivoXml}</span>
+							<span className="text-sm text-muted-foreground">
+								{nomeArquivoXml}
+							</span>
 						) : (
 							<span className="text-sm text-muted-foreground">
 								Compara destinatário e ambiente antes de consultar a SEFAZ

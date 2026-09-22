@@ -28,7 +28,9 @@ export type ResultadoMovimentosEstoqueNf = {
 	avisos: string[];
 };
 
-async function resolverCustoUnitarioProduto(idproduto: string): Promise<string> {
+async function resolverCustoUnitarioProduto(
+	idproduto: string,
+): Promise<string> {
 	const produto = await buscarProdutoPorId(idproduto);
 	if (!produto) return "0";
 
@@ -67,7 +69,9 @@ export async function registrarMovimentosEstoqueNf({
 
 	for (const item of itens) {
 		if (!item.idproduto) {
-			avisos.push(`Item ${item.iditem}: sem produto vinculado, estoque ignorado`);
+			avisos.push(
+				`Item ${item.iditem}: sem produto vinculado, estoque ignorado`,
+			);
 			continue;
 		}
 
@@ -77,7 +81,8 @@ export async function registrarMovimentosEstoqueNf({
 		let custoUnitario = Number.parseFloat(item.custoUnitario) || 0;
 		if (custoUnitario <= 0) {
 			custoUnitario =
-				Number.parseFloat(await resolverCustoUnitarioProduto(item.idproduto)) || 0;
+				Number.parseFloat(await resolverCustoUnitarioProduto(item.idproduto)) ||
+				0;
 		}
 
 		const custoTotal = (qtd * custoUnitario).toFixed(2);

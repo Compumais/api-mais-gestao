@@ -13,15 +13,14 @@ import { cn } from "@/lib/utils";
 
 export type CampoPaleta = { value: string; label: string };
 
-type PaletaBlocosImpressaoProps<T extends string, B extends { id: string }> =
-	{
-		tipos: readonly T[];
-		labels: Record<T, string>;
-		camposPorTipo: Partial<Record<T, readonly CampoPaleta[]>>;
-		criarBloco: (tipo: T, campos?: string[]) => B;
-		onAdicionar: (bloco: B) => void;
-		somenteLeitura?: boolean;
-	};
+type PaletaBlocosImpressaoProps<T extends string, B extends { id: string }> = {
+	tipos: readonly T[];
+	labels: Record<T, string>;
+	camposPorTipo: Partial<Record<T, readonly CampoPaleta[]>>;
+	criarBloco: (tipo: T, campos?: string[]) => B;
+	onAdicionar: (bloco: B) => void;
+	somenteLeitura?: boolean;
+};
 
 function ItemPaletaSimples<T extends string, B extends { id: string }>({
 	tipo,
@@ -87,7 +86,12 @@ function ItemPaletaComCampos<T extends string, B extends { id: string }>({
 	}
 
 	function adicionarComTodos() {
-		onAdicionar(criarBloco(tipo, campos.map((c) => c.value)));
+		onAdicionar(
+			criarBloco(
+				tipo,
+				campos.map((c) => c.value),
+			),
+		);
 	}
 
 	function adicionarComSelecionados() {
@@ -174,7 +178,10 @@ function ItemPaletaComCampos<T extends string, B extends { id: string }>({
 	);
 }
 
-export function PaletaBlocosImpressao<T extends string, B extends { id: string }>({
+export function PaletaBlocosImpressao<
+	T extends string,
+	B extends { id: string },
+>({
 	tipos,
 	labels,
 	camposPorTipo,
@@ -186,8 +193,8 @@ export function PaletaBlocosImpressao<T extends string, B extends { id: string }
 		<div className="rounded-lg border p-3 space-y-2 h-fit">
 			<p className="text-sm font-medium">Blocos</p>
 			<p className="text-xs text-muted-foreground">
-				Use + para adicionar com todas as informações ou o menu para escolher
-				os campos.
+				Use + para adicionar com todas as informações ou o menu para escolher os
+				campos.
 			</p>
 			<div className="flex flex-col gap-1.5">
 				{tipos.map((tipo) => {

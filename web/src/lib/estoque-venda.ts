@@ -45,9 +45,7 @@ function notificarAvisos(resultado: ResultadoBaixaEstoqueVenda) {
 	}
 
 	if (avaliacao.falhaNfce) {
-		toast.error(
-			`Falha na NFC-e: ${obterMotivoFalhaNfceResultado(resultado)}`,
-		);
+		toast.error(`Falha na NFC-e: ${obterMotivoFalhaNfceResultado(resultado)}`);
 	}
 
 	for (const aviso of avaliacao.outrosAvisos) {

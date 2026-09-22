@@ -22,11 +22,7 @@ export function layoutModeloCompletoPedido(): LayoutModeloImpressaoPedido {
 	return [
 		bloco("cabecalhoEmpresa"),
 		bloco("titulo", { titulo: "Pedido" }),
-		bloco(
-			"dadosPedido",
-			{ campos: ["codigo", "status", "data"] },
-			"esquerda",
-		),
+		bloco("dadosPedido", { campos: ["codigo", "status", "data"] }, "esquerda"),
 		bloco("cliente", { campos: [...CAMPOS_CLIENTE_PADRAO] }, "direita"),
 		bloco("itens"),
 		bloco("totais"),
@@ -40,11 +36,7 @@ export function layoutModeloResumidoPedido(): LayoutModeloImpressaoPedido {
 	return [
 		bloco("cabecalhoEmpresa"),
 		bloco("titulo", { titulo: "Pedido" }),
-		bloco(
-			"dadosPedido",
-			{ campos: ["codigo", "status", "data"] },
-			"esquerda",
-		),
+		bloco("dadosPedido", { campos: ["codigo", "status", "data"] }, "esquerda"),
 		bloco("cliente", { campos: [...CAMPOS_CLIENTE_PADRAO] }, "direita"),
 		bloco("totais"),
 		bloco("assinaturas"),

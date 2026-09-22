@@ -7,16 +7,21 @@ import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 const criarReceitaSemContribuicaoBodySchema = z.object({
 	idempresa: z.string(),
 	codigo: z.string().max(16).optional(),
-	descricao: z.string().max(100).optional()
+	descricao: z.string().max(100).optional(),
 });
 
-export async function criarReceitaSemContribuicao(request: FastifyRequest, reply: FastifyReply) {
+export async function criarReceitaSemContribuicao(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
 		}
 
-		const dadosValidados = criarReceitaSemContribuicaoBodySchema.parse(request.body);
+		const dadosValidados = criarReceitaSemContribuicaoBodySchema.parse(
+			request.body,
+		);
 
 		const dadosReceitaSemContribuicao = {
 			id: uuidv4(),

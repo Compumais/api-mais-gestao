@@ -24,17 +24,17 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { formatarQuantidade, labelProdutoCotacao } from "@/constants/compras-constants";
+import {
+	formatarQuantidade,
+	labelProdutoCotacao,
+} from "@/constants/compras-constants";
 import { useEmpresa } from "@/hooks/use-empresa";
 import {
 	type CotacaoCompraFormData,
 	cotacaoCompraFormSchema,
 } from "@/schemas/cotacao-compra.schema";
 import { cotacoesCompraService } from "@/services/cotacoes-compra.service";
-import {
-	type ItemCotacaoLocal,
-	ModalItemCotacao,
-} from "./modal-item-cotacao";
+import { type ItemCotacaoLocal, ModalItemCotacao } from "./modal-item-cotacao";
 
 type CotacaoFormProps = {
 	modo?: "criar" | "editar";
@@ -213,7 +213,9 @@ export function CotacaoCompraForm(props: CotacaoFormProps) {
 						<TableBody>
 							{itens.length ? (
 								itens.map((item, index) => (
-									<TableRow key={`${item.idproduto || item.descricao}-${index}`}>
+									<TableRow
+										key={`${item.idproduto || item.descricao}-${index}`}
+									>
 										<TableCell>
 											<button
 												type="button"
@@ -262,7 +264,11 @@ export function CotacaoCompraForm(props: CotacaoFormProps) {
 					</Table>
 
 					<div className="mt-6 flex justify-end gap-2">
-						<Button type="button" variant="outline" onClick={() => router.back()}>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => router.back()}
+						>
 							Cancelar
 						</Button>
 						<Button type="submit" disabled={isPending}>

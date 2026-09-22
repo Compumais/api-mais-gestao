@@ -85,11 +85,15 @@ function tributacaoItemVazia(
 
 export function reidratarTributosRascunhoImportacao(
 	nota: NotaFiscal,
-	itens: Array<NotaFiscalItem & { dadosimportacao: DadosImportacaoItem | null }>,
+	itens: Array<
+		NotaFiscalItem & { dadosimportacao: DadosImportacaoItem | null }
+	>,
 	xml: string,
 ): {
 	nota: NotaFiscal;
-	itens: Array<NotaFiscalItem & { dadosimportacao: DadosImportacaoItem | null }>;
+	itens: Array<
+		NotaFiscalItem & { dadosimportacao: DadosImportacaoItem | null }
+	>;
 } {
 	let dadosXml: NFeXmlParsed;
 
@@ -102,15 +106,16 @@ export function reidratarTributosRascunhoImportacao(
 	const notaReidratada: NotaFiscal = {
 		...nota,
 		chavenfe: mesclarTributo(nota.chavenfe, dadosXml.chavenfe) ?? nota.chavenfe,
-		baseicms:
-			mesclarTributo(nota.baseicms, dadosXml.baseicms) ?? nota.baseicms,
+		baseicms: mesclarTributo(nota.baseicms, dadosXml.baseicms) ?? nota.baseicms,
 		icms: mesclarTributo(nota.icms, dadosXml.icms) ?? nota.icms,
 		ipi: mesclarTributo(nota.ipi, dadosXml.ipi) ?? nota.ipi,
 		pis: mesclarTributo(nota.pis, dadosXml.pis) ?? nota.pis,
 		cofins: mesclarTributo(nota.cofins, dadosXml.cofins) ?? nota.cofins,
 		baseicmssubstituicao:
-			mesclarTributo(nota.baseicmssubstituicao, dadosXml.baseicmssubstituicao) ??
-			nota.baseicmssubstituicao,
+			mesclarTributo(
+				nota.baseicmssubstituicao,
+				dadosXml.baseicmssubstituicao,
+			) ?? nota.baseicmssubstituicao,
 		icmssubstituicao:
 			mesclarTributo(nota.icmssubstituicao, dadosXml.icmssubstituicao) ??
 			nota.icmssubstituicao,
@@ -121,10 +126,13 @@ export function reidratarTributosRascunhoImportacao(
 			mesclarTributo(nota.icmsfundopobrezast, dadosXml.icmsfundopobrezast) ??
 			nota.icmsfundopobrezast,
 		basecalculoicmsdifal:
-			mesclarTributo(nota.basecalculoicmsdifal, dadosXml.basecalculoicmsdifal) ??
-			nota.basecalculoicmsdifal,
+			mesclarTributo(
+				nota.basecalculoicmsdifal,
+				dadosXml.basecalculoicmsdifal,
+			) ?? nota.basecalculoicmsdifal,
 		icmsdestino:
-			mesclarTributo(nota.icmsdestino, dadosXml.icmsdestino) ?? nota.icmsdestino,
+			mesclarTributo(nota.icmsdestino, dadosXml.icmsdestino) ??
+			nota.icmsdestino,
 		icmsremetente:
 			mesclarTributo(nota.icmsremetente, dadosXml.icmsremetente) ??
 			nota.icmsremetente,
@@ -149,11 +157,9 @@ export function reidratarTributosRascunhoImportacao(
 								situacaotributaria:
 									dadosAtuais.tributacao.situacaotributaria ??
 									tributacaoXml.situacaotributaria,
-								cstpis:
-									dadosAtuais.tributacao.cstpis ?? tributacaoXml.cstpis,
+								cstpis: dadosAtuais.tributacao.cstpis ?? tributacaoXml.cstpis,
 								cstcofins:
-									dadosAtuais.tributacao.cstcofins ??
-									tributacaoXml.cstcofins,
+									dadosAtuais.tributacao.cstcofins ?? tributacaoXml.cstcofins,
 								baseicms:
 									mesclarTributo(
 										dadosAtuais.tributacao.baseicms,
@@ -188,8 +194,7 @@ export function reidratarTributosRascunhoImportacao(
 										dadosAtuais.tributacao.ipi,
 										tributacaoXml.ipi,
 									) ?? dadosAtuais.tributacao.ipi,
-								origem:
-									dadosAtuais.tributacao.origem ?? tributacaoXml.origem,
+								origem: dadosAtuais.tributacao.origem ?? tributacaoXml.origem,
 							},
 				}
 			: {
@@ -200,7 +205,8 @@ export function reidratarTributosRascunhoImportacao(
 					quantidadeXml: itemXml.quantidade ?? "0",
 					quantidadeEstoque: item.quantidade ?? itemXml.quantidade ?? "0",
 					precounitarioXml: itemXml.precounitario ?? "0",
-					precounitarioEstoque: item.precounitario ?? itemXml.precounitario ?? "0",
+					precounitarioEstoque:
+						item.precounitario ?? itemXml.precounitario ?? "0",
 					cfopXml: itemXml.cfop,
 					ncmXml: itemXml.ncm,
 					tributacao: tributacaoXml,
@@ -233,8 +239,10 @@ export function reidratarTributosRascunhoImportacao(
 				mesclarTributo(item.valoricmsst, itemXml.icmsst) ?? item.valoricmsst,
 			aliquotaicmsst: item.aliquotaicmsst ?? itemXml.aliquotaicmsst ?? null,
 			basefcp: mesclarTributo(item.basefcp, itemXml.basefcp) ?? item.basefcp,
-			valorfcp: mesclarTributo(item.valorfcp, itemXml.valorfcp) ?? item.valorfcp,
-			valorfcpst: mesclarTributo(item.valorfcpst, itemXml.fcpst) ?? item.valorfcpst,
+			valorfcp:
+				mesclarTributo(item.valorfcp, itemXml.valorfcp) ?? item.valorfcp,
+			valorfcpst:
+				mesclarTributo(item.valorfcpst, itemXml.fcpst) ?? item.valorfcpst,
 			cest: item.cest ?? itemXml.cest?.replace(/\D/g, "").slice(0, 7) ?? null,
 			dadosimportacao,
 		};

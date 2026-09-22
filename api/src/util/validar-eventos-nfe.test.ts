@@ -86,9 +86,12 @@ describe("validar-eventos-nfe", () => {
 
 	it("calcula prazo de cancelamento pela data de autorização", () => {
 		expect(
-			notaEstaDentroPrazoCancelamentoNfe({
-				datahoraemissao: "2026-06-23T10:00:00.000Z",
-			}, new Date("2026-06-23T20:00:00.000Z")),
+			notaEstaDentroPrazoCancelamentoNfe(
+				{
+					datahoraemissao: "2026-06-23T10:00:00.000Z",
+				},
+				new Date("2026-06-23T20:00:00.000Z"),
+			),
 		).toBe(true);
 	});
 

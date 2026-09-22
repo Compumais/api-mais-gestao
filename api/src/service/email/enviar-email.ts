@@ -3,11 +3,7 @@ import type { HttpResponse } from "@/model/http-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { buscarConfiguracaoSmtpAtivaInterna } from "@/service/email/buscar-configuracao-smtp.js";
 import { descriptografarTexto } from "@/util/criptografia-certificado.js";
-import {
-	httpBadRequest,
-	httpOk,
-	httpProibido,
-} from "@/util/http-util.js";
+import { httpBadRequest, httpOk, httpProibido } from "@/util/http-util.js";
 
 export type AnexoEmail = {
 	filename: string;
@@ -140,18 +136,15 @@ export async function enviarEmailService({
 
 		return httpOk({
 			messageId: info.messageId,
-			aceito: Array.isArray(info.accepted)
-				? info.accepted.map(String)
-				: [],
+			aceito: Array.isArray(info.accepted) ? info.accepted.map(String) : [],
 		});
 	} catch (erro) {
 		console.error("Erro ao enviar e-mail SMTP:", erro);
 		const mensagemBruta =
 			erro instanceof Error ? erro.message : "Falha ao enviar e-mail";
-		const mensagem =
-			/wrong version number|ESOCKET/i.test(mensagemBruta)
-				? "Falha de TLS no SMTP. Use porta 587 com STARTTLS ou 465 com SSL. Verifique host/porta e a opção de conexão segura."
-				: mensagemBruta;
+		const mensagem = /wrong version number|ESOCKET/i.test(mensagemBruta)
+			? "Falha de TLS no SMTP. Use porta 587 com STARTTLS ou 465 com SSL. Verifique host/porta e a opção de conexão segura."
+			: mensagemBruta;
 		return httpBadRequest(`Falha no envio SMTP: ${mensagem}`);
 	}
 }

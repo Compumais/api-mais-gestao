@@ -6,10 +6,13 @@ import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
 const criarLocalRetiradaBodySchema = z.object({
 	idempresa: z.string(),
-	descricao: z.string().max(60).optional()
+	descricao: z.string().max(60).optional(),
 });
 
-export async function criarLocalRetirada(request: FastifyRequest, reply: FastifyReply) {
+export async function criarLocalRetirada(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());

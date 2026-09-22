@@ -177,9 +177,7 @@ export function CarrinhoComanda({
 						size="lg"
 						variant={todosItensPagos ? "default" : "secondary"}
 						onClick={onFinalizarVenda}
-						disabled={
-							isUpdating || isFinalizando || !todosItensPagos
-						}
+						disabled={isUpdating || isFinalizando || !todosItensPagos}
 					>
 						{isFinalizando ? "Finalizando..." : "Finalizar venda"}
 					</Button>

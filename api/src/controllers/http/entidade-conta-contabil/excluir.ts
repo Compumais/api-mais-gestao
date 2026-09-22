@@ -7,13 +7,18 @@ const excluirEntidadeContaContabilParamsSchema = z.object({
 	id: z.string(),
 });
 
-export async function excluirEntidadeContaContabil(request: FastifyRequest, reply: FastifyReply) {
+export async function excluirEntidadeContaContabil(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
 		}
 
-		const { id } = excluirEntidadeContaContabilParamsSchema.parse(request.params);
+		const { id } = excluirEntidadeContaContabilParamsSchema.parse(
+			request.params,
+		);
 
 		const resultado = await excluirEntidadeContaContabilService({
 			entidadeContaContabilId: id,

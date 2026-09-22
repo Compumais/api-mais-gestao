@@ -3,7 +3,9 @@ type CondicaoParcelas = {
 	prazos?: string | null;
 };
 
-export function parsePrazosCondicaoPagamento(prazosStr?: string | null): number[] {
+export function parsePrazosCondicaoPagamento(
+	prazosStr?: string | null,
+): number[] {
 	const prazos = (prazosStr ?? "0")
 		.split(",")
 		.map((p) => parseInt(p.trim(), 10))

@@ -55,7 +55,9 @@ export async function abrirCotacaoCompraService({
 
 	const itens = await listarItensCotacaoCompraEnriquecidos(id);
 	if (itens.length === 0) {
-		return httpBadRequest("Inclua ao menos um produto antes de abrir a cotação");
+		return httpBadRequest(
+			"Inclua ao menos um produto antes de abrir a cotação",
+		);
 	}
 
 	const tokenpublico = cotacao.tokenpublico ?? uuidv4();

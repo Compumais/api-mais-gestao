@@ -5,7 +5,10 @@ import { criarTaxaUfService } from "@/service/taxauf/criar-taxauf.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 import { taxaUfBodySchema } from "@/util/taxauf-body-schema.js";
 
-export async function criarTaxaUf(request: FastifyRequest, reply: FastifyReply) {
+export async function criarTaxaUf(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());

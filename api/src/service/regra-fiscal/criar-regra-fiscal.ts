@@ -1,5 +1,8 @@
 import type { HttpResponse } from "@/model/http-model.js";
-import type { FontesRegraFiscal, StatusRegraFiscal } from "@/model/regra-fiscal-model.js";
+import type {
+	FontesRegraFiscal,
+	StatusRegraFiscal,
+} from "@/model/regra-fiscal-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	buscarRegraFiscalPorRuleId,

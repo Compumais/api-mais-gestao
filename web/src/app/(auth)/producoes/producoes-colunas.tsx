@@ -122,9 +122,7 @@ function criarHeaderColuna(
 	const filtroAtivo = valorFiltro.trim() !== "";
 	const ordenacaoCampo = COLUNA_PARA_ORDENAR_PRODUCAO[def.id] ?? def.id;
 	const ordenacao: OrdenacaoColunaTabela =
-		opcoes.ordenarPor === ordenacaoCampo && opcoes.ordem
-			? opcoes.ordem
-			: false;
+		opcoes.ordenarPor === ordenacaoCampo && opcoes.ordem ? opcoes.ordem : false;
 
 	return (
 		<CabecalhoColunaTabela

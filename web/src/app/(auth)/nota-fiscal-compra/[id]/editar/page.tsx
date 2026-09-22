@@ -9,6 +9,10 @@ import { useEffect } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { PageContainer } from "@/app/(auth)/components/page-container";
+import {
+	BlocoErrorBoundary,
+	BlocoErrorBoundarySlot,
+} from "@/components/bloco-error-boundary";
 import { TableSkeleton } from "@/components/table-skeleton";
 import { Button } from "@/components/ui/button";
 import {
@@ -219,10 +223,16 @@ export default function EditarNotaFiscalCompraPage() {
 					</div>
 				</div>
 
-				<form
-					className="mx-4 flex flex-col gap-6"
-					onSubmit={handleSubmit((dados) => salvar(dados))}
+				<BlocoErrorBoundary
+					titulo="Erro no formulário de edição da NF de compra"
+					variante="painel"
 				>
+					<BlocoErrorBoundarySlot
+						render={() => (
+							<form
+								className="mx-4 flex flex-col gap-6"
+								onSubmit={handleSubmit((dados) => salvar(dados))}
+							>
 					<section className="rounded-lg border bg-card p-4">
 						<h2 className="mb-4 text-lg font-semibold">Cabeçalho</h2>
 						<FieldGroup className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -328,7 +338,9 @@ export default function EditarNotaFiscalCompraPage() {
 										/>
 									</Field>
 									<Field>
-										<FieldLabel htmlFor={`itens.${index}.cfop`}>CFOP</FieldLabel>
+										<FieldLabel htmlFor={`itens.${index}.cfop`}>
+											CFOP
+										</FieldLabel>
 										<Input
 											id={`itens.${index}.cfop`}
 											{...register(`itens.${index}.cfop`)}
@@ -363,7 +375,10 @@ export default function EditarNotaFiscalCompraPage() {
 							{isPending ? "Salvando..." : "Salvar alterações"}
 						</Button>
 					</div>
-				</form>
+							</form>
+						)}
+					/>
+				</BlocoErrorBoundary>
 			</div>
 		</PageContainer>
 	);

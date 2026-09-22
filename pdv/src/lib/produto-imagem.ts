@@ -12,7 +12,9 @@ function urlCacheProduto(referencia: string): string | null {
 	}
 }
 
-function primeiraUrl(...candidatos: Array<string | null | undefined>): string | null {
+function primeiraUrl(
+	...candidatos: Array<string | null | undefined>
+): string | null {
 	for (const c of candidatos) {
 		if (!c) continue;
 		const v = c.trim();

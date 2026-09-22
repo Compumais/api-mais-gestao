@@ -7,13 +7,18 @@ const buscarPlanoContasContaContabilParamsSchema = z.object({
 	id: z.string(),
 });
 
-export async function buscarPlanoContasContaContabil(request: FastifyRequest, reply: FastifyReply) {
+export async function buscarPlanoContasContaContabil(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
 		}
 
-		const { id } = buscarPlanoContasContaContabilParamsSchema.parse(request.params);
+		const { id } = buscarPlanoContasContaContabilParamsSchema.parse(
+			request.params,
+		);
 
 		const resultado = await buscarPlanoContasContaContabilService({
 			planoContasContaContabilId: id,

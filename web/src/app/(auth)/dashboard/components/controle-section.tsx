@@ -117,7 +117,9 @@ export function ControleSection() {
 											{mes}
 										</TableHead>
 									))}
-									<TableHead className="text-right min-w-[100px]">Total</TableHead>
+									<TableHead className="text-right min-w-[100px]">
+										Total
+									</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
@@ -169,7 +171,10 @@ export function ControleSection() {
 										className={`text-right tabular-nums ${(data?.saldoLiquidoMensal ?? []).reduce((a, b) => a + b, 0) >= 0 ? "text-green-600" : "text-destructive"}`}
 									>
 										{formatCurrency(
-											(data?.saldoLiquidoMensal ?? []).reduce((a, b) => a + b, 0),
+											(data?.saldoLiquidoMensal ?? []).reduce(
+												(a, b) => a + b,
+												0,
+											),
 										)}
 									</TableCell>
 								</TableRow>

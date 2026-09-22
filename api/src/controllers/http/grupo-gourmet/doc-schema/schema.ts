@@ -18,7 +18,8 @@ const respostasErro = {
 export const criarGrupoGourmetSchema: FastifySchema = {
 	tags: ["grupos-gourmet"],
 	summary: "Criar grupo gourmet",
-	description: "Cria um grupo gourmet para cardápio de mesa/balcão e impressão por setor.",
+	description:
+		"Cria um grupo gourmet para cardápio de mesa/balcão e impressão por setor.",
 	security: [{ bearerAuth: [] }],
 	body: {
 		type: "object",
@@ -71,7 +72,10 @@ export const listarGruposGourmetSchema: FastifySchema = {
 		200: {
 			type: "object",
 			properties: {
-				data: { type: "array", items: { type: "object", additionalProperties: true } },
+				data: {
+					type: "array",
+					items: { type: "object", additionalProperties: true },
+				},
 				paginacao: {
 					type: "object",
 					properties: {

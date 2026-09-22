@@ -32,7 +32,8 @@ export const criarRegraFiscalBodySchema = z.object({
 	idempresa: z.string().uuid().nullable().optional(),
 });
 
-export const atualizarRegraFiscalBodySchema = criarRegraFiscalBodySchema.partial();
+export const atualizarRegraFiscalBodySchema =
+	criarRegraFiscalBodySchema.partial();
 
 export const rollbackRegraFiscalBodySchema = z.object({
 	versao: z.number().int().positive(),

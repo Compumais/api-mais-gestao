@@ -9,10 +9,13 @@ const atualizarAreaParamsSchema = z.object({
 
 const atualizarAreaBodySchema = z.object({
 	descricao: z.string().max(50).optional(),
-	inativo: z.number().int().optional()
+	inativo: z.number().int().optional(),
 });
 
-export async function atualizarArea(request: FastifyRequest, reply: FastifyReply) {
+export async function atualizarArea(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());

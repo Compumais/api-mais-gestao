@@ -103,9 +103,7 @@ export const contasCorrentesService = {
 		await api.delete(`/contas-correntes/${id}`);
 	},
 
-	async buscarProximoCodigo(
-		idempresa: string,
-	): Promise<{ codigo: number }> {
+	async buscarProximoCodigo(idempresa: string): Promise<{ codigo: number }> {
 		const { data } = await api.get<{ codigo: number }>(
 			"/contas-correntes/proximo-codigo",
 			{ params: { idempresa } },

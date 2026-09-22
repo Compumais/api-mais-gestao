@@ -15,7 +15,8 @@ const statusVariants: Record<number, string> = {
 	[NFE_STATUS.PENDENTE]: "bg-gray-100 text-gray-700 border-gray-300",
 	[NFE_STATUS.AUTORIZADA]: "bg-green-100 text-green-800 border-green-300",
 	[NFE_STATUS.CANCELADA]: "bg-orange-100 text-orange-800 border-orange-300",
-	[NFE_STATUS.CANCELADA_FORA_PRAZO]: "bg-orange-100 text-orange-800 border-orange-300",
+	[NFE_STATUS.CANCELADA_FORA_PRAZO]:
+		"bg-orange-100 text-orange-800 border-orange-300",
 	[NFE_STATUS.REJEITADA]: "bg-red-100 text-red-800 border-red-300",
 	[NFE_STATUS.INUTILIZADA]: "bg-gray-100 text-gray-700 border-gray-300",
 	[NFE_STATUS.DENEGADA]: "bg-purple-100 text-purple-800 border-purple-300",

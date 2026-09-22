@@ -43,11 +43,16 @@ export async function manifestarCienciaOperacaoService({
 	});
 
 	if (!resposta.sucesso) {
-		return httpBadRequest(resposta.xMotivo ?? resposta.erro ?? "Falha na manifestação");
+		return httpBadRequest(
+			resposta.xMotivo ?? resposta.erro ?? "Falha na manifestação",
+		);
 	}
 
 	const agora = new Date().toISOString();
-	const documento = await buscarNfeInboundDocumentoPorChave(idempresa, chavenfe);
+	const documento = await buscarNfeInboundDocumentoPorChave(
+		idempresa,
+		chavenfe,
+	);
 
 	if (documento) {
 		await atualizarNfeInboundDocumento(documento.id, {

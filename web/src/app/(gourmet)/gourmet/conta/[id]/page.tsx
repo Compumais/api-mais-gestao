@@ -241,9 +241,7 @@ export default function ContaMesaPage() {
 	if (conta.status !== STATUS_MESA.ABERTO) {
 		return (
 			<div className="flex flex-1 flex-col items-center justify-center gap-4">
-				<p className="text-muted-foreground">
-					Esta mesa não está mais aberta.
-				</p>
+				<p className="text-muted-foreground">Esta mesa não está mais aberta.</p>
 			</div>
 		);
 	}

@@ -62,9 +62,7 @@ export const bancosService = {
 		await api.delete(`/bancos/${id}`);
 	},
 
-	async buscarProximoCodigo(
-		idempresa: string,
-	): Promise<{ codigo: string }> {
+	async buscarProximoCodigo(idempresa: string): Promise<{ codigo: string }> {
 		const { data } = await api.get<{ codigo: string }>(
 			"/bancos/proximo-codigo",
 			{ params: { idempresa } },

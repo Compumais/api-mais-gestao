@@ -29,9 +29,7 @@ describe("complementarBaixaFiscalVendaPdv", () => {
 		const resultado = await complementarBaixaFiscalVendaPdv({
 			idempresa: "emp-1",
 			idvenda: "venda-1",
-			itens: [
-				{ idproduto: "prod-1", quantidade: "2", precounitario: "5" },
-			],
+			itens: [{ idproduto: "prod-1", quantidade: "2", precounitario: "5" }],
 		});
 
 		expect(resultado.movimentosRegistrados).toBe(1);
@@ -59,9 +57,7 @@ describe("complementarBaixaFiscalVendaPdv", () => {
 		const resultado = await complementarBaixaFiscalVendaPdv({
 			idempresa: "emp-1",
 			idvenda: "venda-1",
-			itens: [
-				{ idproduto: "prod-1", quantidade: "2", precounitario: "5" },
-			],
+			itens: [{ idproduto: "prod-1", quantidade: "2", precounitario: "5" }],
 		});
 
 		expect(resultado.movimentosRegistrados).toBe(1);

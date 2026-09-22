@@ -16,8 +16,8 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
 	type CardapioPublicoProduto,
-	type MeuPedidoCardapio,
 	cardapioPublicoService,
+	type MeuPedidoCardapio,
 	urlMidiaCardapio,
 } from "@/services/cardapio-publico.service";
 import { CardapioPublicoCheckout } from "./cardapio-publico/checkout";
@@ -41,9 +41,8 @@ export function CardapioPublicoClient({ slug }: { slug: string }) {
 	const [grupoAtivo, setGrupoAtivo] = useState<string | null>(null);
 	const [busca, setBusca] = useState("");
 	const [sacola, setSacola] = useState<ItemSacola[]>([]);
-	const [produtoAberto, setProdutoAberto] = useState<CardapioPublicoProduto | null>(
-		null,
-	);
+	const [produtoAberto, setProdutoAberto] =
+		useState<CardapioPublicoProduto | null>(null);
 	const [view, setView] = useState<"menu" | "checkout" | "sucesso">("menu");
 	const [nome, setNome] = useState("");
 	const [telefone, setTelefone] = useState("");
@@ -303,7 +302,9 @@ export function CardapioPublicoClient({ slug }: { slug: string }) {
 			<main className="flex min-h-svh items-center justify-center bg-neutral-100 p-6">
 				<section className="max-w-md rounded-xl border border-neutral-200 bg-white p-6 text-center">
 					<h1 className="text-xl font-bold text-neutral-950">{data.nome}</h1>
-					<p className="mt-2 text-sm text-neutral-700">{data.mensagemhorario}</p>
+					<p className="mt-2 text-sm text-neutral-700">
+						{data.mensagemhorario}
+					</p>
 				</section>
 			</main>
 		);

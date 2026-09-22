@@ -22,7 +22,11 @@ function obterCnpjBase(documento: string): string {
 }
 
 function formatarAmbiente(ambiente: number): string {
-	return ambiente === 1 ? "Produção" : ambiente === 2 ? "Homologação" : String(ambiente);
+	return ambiente === 1
+		? "Produção"
+		: ambiente === 2
+			? "Homologação"
+			: String(ambiente);
 }
 
 export function validarPreConsultaChaveNfe({
@@ -95,10 +99,7 @@ export function validarPreConsultaChaveNfe({
 			});
 		}
 
-		if (
-			metadadosXml.tpAmb !== null &&
-			metadadosXml.tpAmb !== ambienteEmpresa
-		) {
+		if (metadadosXml.tpAmb !== null && metadadosXml.tpAmb !== ambienteEmpresa) {
 			inconsistencias.push({
 				codigo: "AMBIENTE_DIVERGENTE",
 				mensagem: `O XML foi autorizado em ${formatarAmbiente(metadadosXml.tpAmb)}, mas a configuração NF-e da empresa está em ${formatarAmbiente(ambienteEmpresa)}. Ajuste o ambiente em Configurações NF-e antes de consultar a SEFAZ.`,
@@ -106,7 +107,10 @@ export function validarPreConsultaChaveNfe({
 			});
 		}
 
-		if (metadadosXml.cStatAutorizacao && metadadosXml.cStatAutorizacao !== "100") {
+		if (
+			metadadosXml.cStatAutorizacao &&
+			metadadosXml.cStatAutorizacao !== "100"
+		) {
 			inconsistencias.push({
 				codigo: "NAO_AUTORIZADA",
 				mensagem: `O XML indica cStat ${metadadosXml.cStatAutorizacao} (não autorizada). Notas não autorizadas não estão disponíveis na Distribuição DF-e.`,

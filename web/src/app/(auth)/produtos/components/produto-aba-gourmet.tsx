@@ -74,9 +74,7 @@ export function ProdutoAbaGourmet({
 							<Checkbox
 								id="espizza"
 								checked={!!field.value}
-								onCheckedChange={(checked) =>
-									field.onChange(checked === true)
-								}
+								onCheckedChange={(checked) => field.onChange(checked === true)}
 							/>
 						)}
 					/>
@@ -102,9 +100,7 @@ export function ProdutoAbaGourmet({
 							<Checkbox
 								id="enviamobile"
 								checked={!!field.value}
-								onCheckedChange={(checked) =>
-									field.onChange(checked === true)
-								}
+								onCheckedChange={(checked) => field.onChange(checked === true)}
 							/>
 						)}
 					/>
@@ -113,8 +109,8 @@ export function ProdutoAbaGourmet({
 					</Label>
 				</div>
 				<p className="text-sm text-muted-foreground">
-					Produtos marcados aparecem na tela do garçom, desde que o grupo
-					também esteja habilitado.
+					Produtos marcados aparecem na tela do garçom, desde que o grupo também
+					esteja habilitado.
 				</p>
 			</div>
 
@@ -132,9 +128,7 @@ export function ProdutoAbaGourmet({
 							<Checkbox
 								id="exibircardapiodelivery"
 								checked={!!field.value}
-								onCheckedChange={(checked) =>
-									field.onChange(checked === true)
-								}
+								onCheckedChange={(checked) => field.onChange(checked === true)}
 							/>
 						)}
 					/>

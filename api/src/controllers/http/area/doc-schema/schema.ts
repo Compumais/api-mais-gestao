@@ -3,14 +3,15 @@ import type { FastifySchema } from "fastify";
 export const criarAreaSchema: FastifySchema = {
 	tags: ["areas"],
 	summary: "Criar área",
-	description: "Cria um novo registro de área na empresa do usuário autenticado.",
+	description:
+		"Cria um novo registro de área na empresa do usuário autenticado.",
 	security: [{ bearerAuth: [] }],
 	body: {
 		type: "object",
 		properties: {
 			idempresa: { type: "string", description: "ID da empresa" },
 			descricao: { type: "string" },
-			inativo: { type: "string" }
+			inativo: { type: "string" },
 		},
 		required: ["idempresa"],
 	},
@@ -110,7 +111,10 @@ export const listarAreasSchema: FastifySchema = {
 		type: "object",
 		properties: {
 			idempresa: { type: "string", description: "ID da empresa" },
-			descricao: { type: "string", description: "Filtro opcional por descricao" },
+			descricao: {
+				type: "string",
+				description: "Filtro opcional por descricao",
+			},
 			inativo: { type: "number", description: "Filtro opcional por inativo" },
 			page: { type: "number", default: 1 },
 			limit: { type: "number", default: 10 },
@@ -121,7 +125,10 @@ export const listarAreasSchema: FastifySchema = {
 		200: {
 			type: "object",
 			properties: {
-				data: { type: "array", items: { type: "object", additionalProperties: true } },
+				data: {
+					type: "array",
+					items: { type: "object", additionalProperties: true },
+				},
 				paginacao: {
 					type: "object",
 					properties: {

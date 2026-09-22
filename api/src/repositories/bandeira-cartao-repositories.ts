@@ -1,12 +1,4 @@
-import {
-	and,
-	asc,
-	count,
-	desc,
-	eq,
-	ilike,
-	type SQL,
-} from "drizzle-orm";
+import { and, asc, count, desc, eq, ilike, type SQL } from "drizzle-orm";
 import type { NovaBandeiraCartao } from "@/model/bandeira-cartao-model";
 import { bandeiracartao } from "@/repositories/schema.js";
 import { filtroRegistroAtivo } from "@/util/filtro-registro-ativo.js";

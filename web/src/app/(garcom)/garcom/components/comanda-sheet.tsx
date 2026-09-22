@@ -109,10 +109,7 @@ export function ComandaSheet({
 												size="icon-sm"
 												className="h-9 w-9"
 												onClick={() =>
-													onAtualizarQuantidade(
-														item,
-														Math.max(0.001, qty - 1),
-													)
+													onAtualizarQuantidade(item, Math.max(0.001, qty - 1))
 												}
 												disabled={isUpdating || qty <= 1}
 											>
@@ -125,9 +122,7 @@ export function ComandaSheet({
 												variant="outline"
 												size="icon-sm"
 												className="h-9 w-9"
-												onClick={() =>
-													onAtualizarQuantidade(item, qty + 1)
-												}
+												onClick={() => onAtualizarQuantidade(item, qty + 1)}
 												disabled={isUpdating}
 											>
 												<IconPlus className="size-4" />

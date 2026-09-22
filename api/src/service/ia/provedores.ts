@@ -48,13 +48,16 @@ function chaveValida(valor: string | null | undefined): string | undefined {
 export function resolverProvedor(
 	integracoes: IntegracoesUsuario,
 ): { provedor: ProvedorIa; apiKey: string; modelo: string } | null {
-	const preferido = (integracoes.provedorPreferido ?? "auto") as ProvedorPreferido;
+	const preferido = (integracoes.provedorPreferido ??
+		"auto") as ProvedorPreferido;
 	const openai = chaveValida(integracoes.openaiApiKey);
 	const gemini = chaveValida(integracoes.geminiApiKey);
 	const openrouter = chaveValida(integracoes.openrouterApiKey);
 
-	const modeloOpenai = chaveValida(integracoes.modeloOpenai) ?? MODELOS_OPENAI[0];
-	const modeloGemini = chaveValida(integracoes.modeloGemini) ?? MODELOS_GEMINI[0];
+	const modeloOpenai =
+		chaveValida(integracoes.modeloOpenai) ?? MODELOS_OPENAI[0];
+	const modeloGemini =
+		chaveValida(integracoes.modeloGemini) ?? MODELOS_GEMINI[0];
 	const modeloOpenrouter =
 		chaveValida(integracoes.modeloOpenrouter) ?? MODELOS_OPENROUTER[0];
 
@@ -187,10 +190,9 @@ export async function testarConexaoIa(params: {
 		}
 
 		if (params.provedor === "gemini") {
-			const candidatos = [
-				params.modelo?.trim(),
-				...MODELOS_GEMINI,
-			].filter((m, i, arr): m is string => Boolean(m) && arr.indexOf(m) === i);
+			const candidatos = [params.modelo?.trim(), ...MODELOS_GEMINI].filter(
+				(m, i, arr): m is string => Boolean(m) && arr.indexOf(m) === i,
+			);
 
 			let ultimoErro = "Falha ao chamar Gemini.";
 			for (const modelo of candidatos) {

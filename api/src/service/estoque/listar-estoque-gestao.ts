@@ -63,7 +63,12 @@ export async function listarSaldosEstoqueGestaoService({
 }: ListarSaldosEstoqueGestaoParametros): Promise<
 	HttpResponse<{
 		data: SaldoEstoqueComDivergencia[];
-		paginacao: { page: number; limit: number; total: number; totalPages: number };
+		paginacao: {
+			page: number;
+			limit: number;
+			total: number;
+			totalPages: number;
+		};
 	}>
 > {
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(

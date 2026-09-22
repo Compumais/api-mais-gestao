@@ -5,11 +5,7 @@ import {
 	atualizarSaldoEstoque,
 	buscarSaldoEstoquePorId,
 } from "@/repositories/saldo-estoque-repositories.js";
-import {
-	httpNaoEncontrado,
-	httpOk,
-	httpProibido,
-} from "@/util/http-util.js";
+import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
 
 type AtualizarSaldoEstoqueParametros = {
 	saldoEstoqueId: number;
@@ -35,7 +31,9 @@ export async function atualizarSaldoEstoqueService({
 	saldoEstoqueId,
 	idusuario,
 	dados,
-}: AtualizarSaldoEstoqueParametros): Promise<HttpResponse<SaldoEstoque | null>> {
+}: AtualizarSaldoEstoqueParametros): Promise<
+	HttpResponse<SaldoEstoque | null>
+> {
 	const registroExistente = await buscarSaldoEstoquePorId(saldoEstoqueId);
 
 	if (!registroExistente) {

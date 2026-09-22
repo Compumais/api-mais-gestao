@@ -1,14 +1,4 @@
-import {
-	and,
-	count,
-	desc,
-	eq,
-	ilike,
-	isNull,
-	ne,
-	or,
-	sql,
-} from "drizzle-orm";
+import { and, count, desc, eq, ilike, isNull, ne, or, sql } from "drizzle-orm";
 import { parametrizacaotributos } from "@/repositories/schema.js";
 import {
 	normalizarCodigoCfop,
@@ -141,7 +131,9 @@ export async function verificarEmpresaPossuiParametrizacaoTributos(
 	return (resultado?.value ?? 0) > 0;
 }
 
-export async function criarParametrizacaoTributos(dados: NovaParametrizacaoTributos) {
+export async function criarParametrizacaoTributos(
+	dados: NovaParametrizacaoTributos,
+) {
 	const [registro] = await db
 		.insert(parametrizacaotributos)
 		.values(dados)
@@ -225,10 +217,16 @@ export async function buscarParametrizacaoTributosDuplicada(
 				),
 		ncm
 			? eq(parametrizacaotributos.ncm, ncm)
-			: or(isNull(parametrizacaotributos.ncm), eq(parametrizacaotributos.ncm, "")),
+			: or(
+					isNull(parametrizacaotributos.ncm),
+					eq(parametrizacaotributos.ncm, ""),
+				),
 		uf
 			? eq(parametrizacaotributos.uf, uf)
-			: or(isNull(parametrizacaotributos.uf), eq(parametrizacaotributos.uf, "")),
+			: or(
+					isNull(parametrizacaotributos.uf),
+					eq(parametrizacaotributos.uf, ""),
+				),
 	];
 
 	if (excluirId) {

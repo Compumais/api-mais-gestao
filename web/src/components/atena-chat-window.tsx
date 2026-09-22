@@ -54,7 +54,9 @@ export function AtenaChatWindow() {
 	const chatMutation = useMutation({
 		mutationFn: async (mensagem: string) => {
 			if (!localStorageEmpresa?.id) {
-				throw new Error("Selecione uma empresa antes de conversar com a Atena.");
+				throw new Error(
+					"Selecione uma empresa antes de conversar com a Atena.",
+				);
 			}
 
 			const historico = mensagens.map((msg) => ({

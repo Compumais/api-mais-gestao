@@ -113,7 +113,9 @@ export async function atualizarNotaFiscalCompraService({
 	}
 
 	if (nota.status === STATUS_NF_COMPRA_CANCELADA) {
-		return httpBadRequest("Nota fiscal de compra cancelada não pode ser editada");
+		return httpBadRequest(
+			"Nota fiscal de compra cancelada não pode ser editada",
+		);
 	}
 
 	const itensAtuais = await listarItensPorNotaFiscal(notaFiscalId);
@@ -161,13 +163,15 @@ export async function atualizarNotaFiscalCompraService({
 			const itemAtualizado = await atualizarItemNotaFiscal(itemDados.id, {
 				descricao: itemDados.descricao ?? undefined,
 				quantidade: numeroOpcionalOuNulo(itemDados.quantidade) ?? undefined,
-				precounitario: numeroOpcionalOuNulo(itemDados.precounitario) ?? undefined,
+				precounitario:
+					numeroOpcionalOuNulo(itemDados.precounitario) ?? undefined,
 				total: numeroOpcionalOuNulo(itemDados.total) ?? undefined,
 				idcfop: idOpcionalOuNulo(itemDados.idcfop) ?? undefined,
 				cfop: itemDados.cfop ?? undefined,
 				idncm: idOpcionalOuNulo(itemDados.idncm) ?? undefined,
 				ncm: itemDados.ncm ?? undefined,
-				idunidademedida: idOpcionalOuNulo(itemDados.idunidademedida) ?? undefined,
+				idunidademedida:
+					idOpcionalOuNulo(itemDados.idunidademedida) ?? undefined,
 				unidade: itemDados.unidade ?? undefined,
 				idproduto: idOpcionalOuNulo(itemDados.idproduto) ?? undefined,
 				desconto: numeroOpcionalOuNulo(itemDados.desconto) ?? undefined,
@@ -224,8 +228,7 @@ export async function atualizarNotaFiscalCompraService({
 						iditem: item.id,
 						idproduto: item.idproduto as string,
 						quantidade: item.quantidade ?? "0",
-						custoUnitario:
-							item.custoaquisicao ?? item.precounitario ?? "0",
+						custoUnitario: item.custoaquisicao ?? item.precounitario ?? "0",
 					}));
 
 				const resultadoEstoque = await registrarMovimentosEstoqueNf({
@@ -242,9 +245,7 @@ export async function atualizarNotaFiscalCompraService({
 			const dadosImportacao =
 				(notaAtualizada.dadosimportacao as DadosImportacaoNota | null) ?? {};
 			const valorTotal =
-				notaAtualizada.valortotalnota ??
-				notaAtualizada.totalproduto ??
-				"0";
+				notaAtualizada.valortotalnota ?? notaAtualizada.totalproduto ?? "0";
 
 			if (
 				notaAtualizada.idcondicaopagto ||
@@ -301,10 +302,14 @@ export async function atualizarNotaFiscalCompraService({
 			},
 		});
 	} catch (erro) {
-		console.error("Erro ao registrar auditoria de atualização NF compra:", erro);
+		console.error(
+			"Erro ao registrar auditoria de atualização NF compra:",
+			erro,
+		);
 	}
 
-	const notaFinal = (await buscarNotaFiscalPorId(notaFiscalId)) ?? notaAtualizada;
+	const notaFinal =
+		(await buscarNotaFiscalPorId(notaFiscalId)) ?? notaAtualizada;
 
 	return httpOk({
 		notaFiscal: notaFinal,

@@ -1,13 +1,7 @@
 "use client";
 
 import * as React from "react";
-import {
-	Area,
-	AreaChart,
-	CartesianGrid,
-	XAxis,
-	YAxis,
-} from "recharts";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import {
 	Card,
@@ -38,10 +32,7 @@ export function FluxoCaixaSection() {
 	);
 	const [horizonte, setHorizonte] = React.useState("30");
 
-	const { data, isLoading } = useDashboardFluxoCaixa(
-		modo,
-		Number(horizonte),
-	);
+	const { data, isLoading } = useDashboardFluxoCaixa(modo, Number(horizonte));
 
 	if (isLoading || !data) {
 		return (

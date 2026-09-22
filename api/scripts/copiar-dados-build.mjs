@@ -6,10 +6,7 @@ const rootDir = dirname(fileURLToPath(import.meta.url));
 const origemCfop = join(rootDir, "../src/data/cfop-padrao.json");
 const origemTaxa = join(rootDir, "../src/data/taxauf-padrao.json");
 const origemCest = join(rootDir, "../drizzle/seeds/cest-seed.data.json");
-const origemPdvVersion = join(
-	rootDir,
-	"../src/data/pdv-updates/version.json",
-);
+const origemPdvVersion = join(rootDir, "../src/data/pdv-updates/version.json");
 const destinoDir = join(rootDir, "../dist/src/data");
 const destinoPdvUpdatesDir = join(destinoDir, "pdv-updates");
 const destinoCfop = join(destinoDir, "cfop-padrao.json");

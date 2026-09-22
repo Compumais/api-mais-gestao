@@ -94,10 +94,7 @@ export async function gerarArquivoSintegra(
 	}
 
 	for (const nota of notasReg50) {
-		if (
-			parseNumero(nota.baseIcmsSt) > 0 ||
-			parseNumero(nota.valorIcmsSt) > 0
-		) {
+		if (parseNumero(nota.baseIcmsSt) > 0 || parseNumero(nota.valorIcmsSt) > 0) {
 			linhas.push(montarRegistro53(nota));
 			contador.incrementar("53");
 		}
@@ -138,7 +135,10 @@ export async function gerarArquivoSintegra(
 
 	const codigosProdutos = [
 		...new Set(
-			[...itens, ...inventario.map((item) => ({ codigoProduto: item.codigoProduto }))]
+			[
+				...itens,
+				...inventario.map((item) => ({ codigoProduto: item.codigoProduto })),
+			]
 				.map((item) => item.codigoProduto)
 				.filter(Boolean) as string[],
 		),
@@ -159,8 +159,7 @@ export async function gerarArquivoSintegra(
 		contador.incrementar("75");
 	}
 
-	const totalGeral =
-		contador.totalGeral() + 1;
+	const totalGeral = contador.totalGeral() + 1;
 	const registros90 = montarRegistros90({
 		cnpj: contribuinte.cnpj,
 		inscricaoEstadual: contribuinte.inscricaoEstadual,

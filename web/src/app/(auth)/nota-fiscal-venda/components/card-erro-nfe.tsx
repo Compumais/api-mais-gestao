@@ -36,11 +36,17 @@ export function CardErroNfe({
 						<p className="text-sm font-mono text-red-800">{codigo}</p>
 					</div>
 				)}
-				<div className={codigo != null && codigo !== "" ? undefined : "sm:col-span-2"}>
+				<div
+					className={
+						codigo != null && codigo !== "" ? undefined : "sm:col-span-2"
+					}
+				>
 					<p className="text-xs text-red-600 font-medium uppercase tracking-wide">
 						Motivo
 					</p>
-					<p className="text-sm text-red-800 whitespace-pre-wrap">{motivo || "—"}</p>
+					<p className="text-sm text-red-800 whitespace-pre-wrap">
+						{motivo || "—"}
+					</p>
 				</div>
 			</div>
 

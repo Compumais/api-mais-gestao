@@ -5,11 +5,7 @@ import {
 	atualizarLocalEstoque,
 	buscarLocalEstoquePorId,
 } from "@/repositories/local-estoque-repositories.js";
-import {
-	httpNaoEncontrado,
-	httpOk,
-	httpProibido,
-} from "@/util/http-util.js";
+import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
 
 type AtualizarLocalEstoqueParametros = {
 	localEstoqueId: string;
@@ -27,7 +23,9 @@ export async function atualizarLocalEstoqueService({
 	localEstoqueId,
 	idusuario,
 	dados,
-}: AtualizarLocalEstoqueParametros): Promise<HttpResponse<LocalEstoque | null>> {
+}: AtualizarLocalEstoqueParametros): Promise<
+	HttpResponse<LocalEstoque | null>
+> {
 	const registroExistente = await buscarLocalEstoquePorId(localEstoqueId);
 
 	if (!registroExistente) {

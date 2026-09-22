@@ -5,5 +5,4 @@ export const NFE_CONFIG_PADRAO = {
 	verproc: "MaisGestao 1.0.0",
 } as const;
 
-export const NFE_CONFIG_PADRAO_LABEL =
-	`NF-e ${NFE_CONFIG_PADRAO.versaoleiaute} · ${NFE_CONFIG_PADRAO.schema} · ${NFE_CONFIG_PADRAO.verproc}`;
+export const NFE_CONFIG_PADRAO_LABEL = `NF-e ${NFE_CONFIG_PADRAO.versaoleiaute} · ${NFE_CONFIG_PADRAO.schema} · ${NFE_CONFIG_PADRAO.verproc}`;

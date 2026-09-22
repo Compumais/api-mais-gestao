@@ -7,7 +7,10 @@ const buscarDepartamentoParamsSchema = z.object({
 	id: z.string(),
 });
 
-export async function buscarDepartamento(request: FastifyRequest, reply: FastifyReply) {
+export async function buscarDepartamento(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());

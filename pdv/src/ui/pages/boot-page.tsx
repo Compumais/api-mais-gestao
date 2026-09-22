@@ -195,13 +195,13 @@ export function BootPage() {
 					</span>
 				</div>
 				<div className="max-h-72 space-y-2 overflow-auto p-5 font-mono text-sm">
-				{mensagens.map((m) => (
-					<div key={m.id} className="flex items-start gap-2">
-						<span className="text-cyan-300">›</span>
-						<span className="text-sidebar-foreground/85">{m.texto}</span>
-					</div>
-				))}
-				{erro && <div className="text-red-200">Erro: {erro}</div>}
+					{mensagens.map((m) => (
+						<div key={m.id} className="flex items-start gap-2">
+							<span className="text-cyan-300">›</span>
+							<span className="text-sidebar-foreground/85">{m.texto}</span>
+						</div>
+					))}
+					{erro && <div className="text-red-200">Erro: {erro}</div>}
 				</div>
 			</div>
 			{erro && (

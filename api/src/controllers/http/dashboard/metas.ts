@@ -34,10 +34,7 @@ const atualizarMetaBodySchema = z.object({
 	tipo: tipoMetaSchema.optional(),
 	periodoInicio: z.string().optional(),
 	periodoFim: z.string().optional(),
-	valorMeta: z
-		.union([z.string(), z.number()])
-		.transform(String)
-		.optional(),
+	valorMeta: z.union([z.string(), z.number()]).transform(String).optional(),
 });
 
 const paramsIdSchema = z.object({

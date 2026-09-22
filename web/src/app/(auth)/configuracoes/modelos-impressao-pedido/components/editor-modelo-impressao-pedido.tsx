@@ -139,7 +139,9 @@ function BlocoSortable({
 				<span className="block">
 					{LABELS_BLOCO_MODELO_IMPRESSAO_PEDIDO[bloco.tipo]}
 				</span>
-				<span className="block text-xs text-muted-foreground">{rotuloColuna}</span>
+				<span className="block text-xs text-muted-foreground">
+					{rotuloColuna}
+				</span>
 			</button>
 			<Button
 				type="button"
@@ -298,9 +300,7 @@ export function EditorModeloImpressaoPedido({
 											onSelect={() => setBlocoSelecionadoId(bloco.id)}
 											onRemove={() => {
 												if (somenteLeitura) return;
-												onLayoutChange(
-													layout.filter((b) => b.id !== bloco.id),
-												);
+												onLayoutChange(layout.filter((b) => b.id !== bloco.id));
 												if (blocoSelecionadoId === bloco.id) {
 													setBlocoSelecionadoId(null);
 												}
@@ -399,9 +399,9 @@ export function EditorModeloImpressaoPedido({
 										className="flex items-center gap-2 text-sm"
 									>
 										<Checkbox
-											checked={(
-												blocoSelecionado.props?.campos ?? []
-											).includes(campo.value)}
+											checked={(blocoSelecionado.props?.campos ?? []).includes(
+												campo.value,
+											)}
 											onCheckedChange={() =>
 												toggleCampo(
 													campo.value,

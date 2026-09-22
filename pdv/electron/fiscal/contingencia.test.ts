@@ -1,9 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import {
-	formatarDataNfe,
-	xmlContingenciaEhLegado,
-} from "./contingencia";
+import { formatarDataNfe, xmlContingenciaEhLegado } from "./contingencia";
 
 describe("contingência NFC-e local", () => {
 	it("formata o instante no timezone do estabelecimento com offset real", () => {

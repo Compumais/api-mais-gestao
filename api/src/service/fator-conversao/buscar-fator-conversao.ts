@@ -12,7 +12,9 @@ type BuscarFatorConversaoParametros = {
 export async function buscarFatorConversaoService({
 	fatorConversaoId,
 	idusuario,
-}: BuscarFatorConversaoParametros): Promise<HttpResponse<FatorConversao | null>> {
+}: BuscarFatorConversaoParametros): Promise<
+	HttpResponse<FatorConversao | null>
+> {
 	const registro = await buscarFatorConversaoPorId(fatorConversaoId);
 
 	if (!registro) {

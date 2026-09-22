@@ -112,7 +112,10 @@ export default function CotacaoPublicaPage() {
 						<h2 className="text-lg font-semibold">Seus dados</h2>
 						<div className="grid gap-4 md:grid-cols-2">
 							<div>
-								<label className="mb-1 block text-sm font-medium" htmlFor="nome">
+								<label
+									className="mb-1 block text-sm font-medium"
+									htmlFor="nome"
+								>
 									Nome *
 								</label>
 								<Input

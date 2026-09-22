@@ -486,9 +486,7 @@ export function BalcaoPage() {
 				<Topbar
 					title={gourmet ? "Balcão" : "PDV"}
 					subtitle={
-						gourmet
-							? "Venda rápida"
-							: (status?.sessao.nomeempresa ?? "Venda")
+						gourmet ? "Venda rápida" : (status?.sessao.nomeempresa ?? "Venda")
 					}
 					center={
 						<BarcodeInput
@@ -529,97 +527,41 @@ export function BalcaoPage() {
 					<AvisoSecundario status={status} />
 
 					{modoCatalogo === "busca" ? (
-							<div className="flex min-h-0 flex-1 flex-col gap-2">
-								<h2 className="shrink-0 text-base font-semibold">
-									Resultados para “{buscaProdutos.termo}”
+						<div className="flex min-h-0 flex-1 flex-col gap-2">
+							<h2 className="shrink-0 text-base font-semibold">
+								Resultados para “{buscaProdutos.termo}”
+							</h2>
+							<div className="grid flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(10.5rem,1fr))] gap-3 overflow-auto p-0.5">
+								{buscaProdutos.produtos.map((produto) => (
+									<ProdutoCard
+										key={produto.id}
+										produto={produto}
+										disabled={loading}
+										onClick={() => adicionarProdutoSimples(produto)}
+									/>
+								))}
+								{buscaProdutos.buscando ? (
+									<p className="col-span-full text-sm text-muted-foreground">
+										Buscando produtos…
+									</p>
+								) : buscaProdutos.termo.length < 2 ? (
+									<p className="col-span-full text-sm text-muted-foreground">
+										Digite ao menos dois caracteres para pesquisar.
+									</p>
+								) : buscaProdutos.produtos.length === 0 ? (
+									<p className="col-span-full text-sm text-muted-foreground">
+										Nenhum produto encontrado.
+									</p>
+								) : null}
+							</div>
+						</div>
+					) : modoCatalogo === "grupos" ? (
+						<div className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto">
+							<div className="shrink-0">
+								<h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+									{gourmet ? "Categorias gourmet" : "Categorias"}
 								</h2>
-								<div className="grid flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(10.5rem,1fr))] gap-3 overflow-auto p-0.5">
-									{buscaProdutos.produtos.map((produto) => (
-										<ProdutoCard
-											key={produto.id}
-											produto={produto}
-											disabled={loading}
-											onClick={() => adicionarProdutoSimples(produto)}
-										/>
-									))}
-									{buscaProdutos.buscando ? (
-										<p className="col-span-full text-sm text-muted-foreground">
-											Buscando produtos…
-										</p>
-									) : buscaProdutos.termo.length < 2 ? (
-										<p className="col-span-full text-sm text-muted-foreground">
-											Digite ao menos dois caracteres para pesquisar.
-										</p>
-									) : buscaProdutos.produtos.length === 0 ? (
-										<p className="col-span-full text-sm text-muted-foreground">
-											Nenhum produto encontrado.
-										</p>
-									) : null}
-								</div>
-							</div>
-						) : modoCatalogo === "grupos" ? (
-							<div className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto">
-								<div className="shrink-0">
-									<h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-										{gourmet ? "Categorias gourmet" : "Categorias"}
-									</h2>
-									<div className="flex gap-2 overflow-x-auto p-0.5 pb-2">
-										{grupos.map((g) => (
-											<GrupoGourmetCard
-												key={g.id}
-												grupo={g}
-												disabled={carregandoProdutos}
-												onClick={() => void abrirGrupo(g)}
-											/>
-										))}
-										{grupos.length === 0 &&
-											(gourmet || atalhos.length === 0) && (
-												<p className="py-3 text-sm text-muted-foreground">
-													Nenhum grupo ou atalho sincronizado ainda. Bipe o
-													produto normalmente.
-												</p>
-											)}
-									</div>
-								</div>
-								{!gourmet && atalhos.length > 0 && (
-									<div className="min-h-0">
-										<h2 className="mb-2 text-base font-semibold">
-											Acesso rápido
-										</h2>
-										<div className="grid auto-rows-min grid-cols-[repeat(auto-fill,minmax(10.5rem,1fr))] gap-3">
-											{atalhos.map((p) => (
-												<ProdutoCard
-													key={`atalho-${p.id}`}
-													produto={p}
-													destaque
-													onClick={() => adicionarProdutoSimples(p)}
-												/>
-											))}
-										</div>
-									</div>
-								)}
-							</div>
-						) : (
-							<>
-								<div className="flex shrink-0 items-end justify-between gap-3">
-									<div className="min-w-0">
-										<p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-											Categoria
-										</p>
-										<h2 className="truncate text-base font-semibold">
-											{grupoAtivo?.nome ?? "Produtos"}
-										</h2>
-									</div>
-									<Button
-										variant="ghost"
-										size="sm"
-										onClick={() => setGrupoAtivo(null)}
-									>
-										<ArrowLeft className="size-4" />
-										Categorias
-									</Button>
-								</div>
-								<div className="flex shrink-0 gap-2 overflow-x-auto p-0.5 pb-2">
+								<div className="flex gap-2 overflow-x-auto p-0.5 pb-2">
 									{grupos.map((g) => (
 										<GrupoGourmetCard
 											key={g.id}
@@ -628,29 +570,84 @@ export function BalcaoPage() {
 											onClick={() => void abrirGrupo(g)}
 										/>
 									))}
-								</div>
-								<div className="grid flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(10.5rem,1fr))] gap-3 overflow-auto p-0.5">
-									{carregandoProdutos ? (
-										<p className="col-span-full text-sm text-muted-foreground">
-											Carregando produtos…
+									{grupos.length === 0 && (gourmet || atalhos.length === 0) && (
+										<p className="py-3 text-sm text-muted-foreground">
+											Nenhum grupo ou atalho sincronizado ainda. Bipe o produto
+											normalmente.
 										</p>
-									) : (
-										produtos.map((p) => (
+									)}
+								</div>
+							</div>
+							{!gourmet && atalhos.length > 0 && (
+								<div className="min-h-0">
+									<h2 className="mb-2 text-base font-semibold">
+										Acesso rápido
+									</h2>
+									<div className="grid auto-rows-min grid-cols-[repeat(auto-fill,minmax(10.5rem,1fr))] gap-3">
+										{atalhos.map((p) => (
 											<ProdutoCard
-												key={p.id}
+												key={`atalho-${p.id}`}
 												produto={p}
+												destaque
 												onClick={() => adicionarProdutoSimples(p)}
 											/>
-										))
-									)}
-									{!carregandoProdutos && produtos.length === 0 && (
-										<p className="col-span-full text-sm text-muted-foreground">
-											Sem produtos neste grupo.
-										</p>
-									)}
+										))}
+									</div>
 								</div>
-							</>
-						)}
+							)}
+						</div>
+					) : (
+						<>
+							<div className="flex shrink-0 items-end justify-between gap-3">
+								<div className="min-w-0">
+									<p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+										Categoria
+									</p>
+									<h2 className="truncate text-base font-semibold">
+										{grupoAtivo?.nome ?? "Produtos"}
+									</h2>
+								</div>
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={() => setGrupoAtivo(null)}
+								>
+									<ArrowLeft className="size-4" />
+									Categorias
+								</Button>
+							</div>
+							<div className="flex shrink-0 gap-2 overflow-x-auto p-0.5 pb-2">
+								{grupos.map((g) => (
+									<GrupoGourmetCard
+										key={g.id}
+										grupo={g}
+										disabled={carregandoProdutos}
+										onClick={() => void abrirGrupo(g)}
+									/>
+								))}
+							</div>
+							<div className="grid flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(10.5rem,1fr))] gap-3 overflow-auto p-0.5">
+								{carregandoProdutos ? (
+									<p className="col-span-full text-sm text-muted-foreground">
+										Carregando produtos…
+									</p>
+								) : (
+									produtos.map((p) => (
+										<ProdutoCard
+											key={p.id}
+											produto={p}
+											onClick={() => adicionarProdutoSimples(p)}
+										/>
+									))
+								)}
+								{!carregandoProdutos && produtos.length === 0 && (
+									<p className="col-span-full text-sm text-muted-foreground">
+										Sem produtos neste grupo.
+									</p>
+								)}
+							</div>
+						</>
+					)}
 				</section>
 
 				<aside className="pdv-surface flex min-h-0 flex-col overflow-hidden">
@@ -778,7 +775,9 @@ export function BalcaoPage() {
 							>
 								<Tag className="size-4" />
 								Desconto
-								<span className="text-[10px] opacity-65">{teclas.desconto}</span>
+								<span className="text-[10px] opacity-65">
+									{teclas.desconto}
+								</span>
 							</Button>
 							{status?.moduloGourmet ? (
 								<Button

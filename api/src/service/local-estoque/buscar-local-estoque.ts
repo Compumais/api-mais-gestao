@@ -1,9 +1,7 @@
 import type { HttpResponse } from "@/model/http-model.js";
 import type { LocalEstoque } from "@/model/local-estoque-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
-import {
-	buscarLocalEstoquePorId,
-} from "@/repositories/local-estoque-repositories.js";
+import { buscarLocalEstoquePorId } from "@/repositories/local-estoque-repositories.js";
 import { httpNaoEncontrado, httpOk, httpProibido } from "@/util/http-util.js";
 
 type BuscarLocalEstoqueParametros = {

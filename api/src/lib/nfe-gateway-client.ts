@@ -182,7 +182,8 @@ async function chamarNfeGateway<T extends NfeGatewayRespostaBase>(
 		const corpo = (await lerCorpoRespostaGateway(resposta)) as T;
 
 		if (!resposta.ok && corpo.sucesso !== true) {
-			const erroGateway = corpo.erro ?? `Gateway retornou HTTP ${resposta.status}`;
+			const erroGateway =
+				corpo.erro ?? `Gateway retornou HTTP ${resposta.status}`;
 			const erro =
 				resposta.status === 401
 					? "Falha de autenticação com o gateway NF-e. Verifique se NFE_GATEWAY_SECRET é o mesmo na API e no container Docker (api_Nfe/nfe-gateway/.env)."
@@ -307,7 +308,10 @@ export async function consultarDistribuicaoDfeGateway(payload: {
 	ultNSU: string;
 	cUFAutor?: number;
 }): Promise<NfeGatewayDistDfeResposta> {
-	return chamarNfeGateway<NfeGatewayDistDfeResposta>("/sefaz/dist-dfe", payload);
+	return chamarNfeGateway<NfeGatewayDistDfeResposta>(
+		"/sefaz/dist-dfe",
+		payload,
+	);
 }
 
 export async function consultarDistribuicaoDfePorChaveGateway(payload: {
@@ -317,7 +321,10 @@ export async function consultarDistribuicaoDfePorChaveGateway(payload: {
 	chaveNfe: string;
 	cUFAutor?: number;
 }): Promise<NfeGatewayDistDfeResposta> {
-	return chamarNfeGateway<NfeGatewayDistDfeResposta>("/sefaz/dist-dfe/chave", payload);
+	return chamarNfeGateway<NfeGatewayDistDfeResposta>(
+		"/sefaz/dist-dfe/chave",
+		payload,
+	);
 }
 
 export async function consultarSituacaoChaveSefazGateway(payload: {

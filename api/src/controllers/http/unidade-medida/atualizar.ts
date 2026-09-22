@@ -9,10 +9,13 @@ const atualizarUnidadeMedidaParamsSchema = z.object({
 
 const atualizarUnidadeMedidaBodySchema = z.object({
 	codigo: z.string().max(6).optional(),
-	nome: z.string().max(50).optional()
+	nome: z.string().max(50).optional(),
 });
 
-export async function atualizarUnidadeMedida(request: FastifyRequest, reply: FastifyReply) {
+export async function atualizarUnidadeMedida(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());

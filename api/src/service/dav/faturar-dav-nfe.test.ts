@@ -20,9 +20,9 @@ vi.mock("@/service/nfe-emissao/emitir-nfe-venda.js");
 describe("faturarDavNfeService", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		vi.mocked(entidadeRepository.verificarUsuarioPertenceEmpresa).mockResolvedValue(
-			true,
-		);
+		vi.mocked(
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(true);
 	});
 
 	it("deve bloquear pedido já faturado", async () => {

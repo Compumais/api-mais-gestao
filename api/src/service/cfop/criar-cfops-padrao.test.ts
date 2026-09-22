@@ -38,9 +38,7 @@ describe("criarCfopsPadraoService", () => {
 		vi.mocked(cfopRepository.verificarEmpresaPossuiCfops).mockResolvedValue(
 			false,
 		);
-		vi.mocked(cfopRepository.criarCfopsEmLote).mockResolvedValue(
-			cfopsMontados,
-		);
+		vi.mocked(cfopRepository.criarCfopsEmLote).mockResolvedValue(cfopsMontados);
 
 		const resultado = await criarCfopsPadraoService(idempresa);
 

@@ -150,7 +150,9 @@ describe("executarProducaoService", () => {
 		// Farinha 5 * 2 = 10; Açúcar 1 * 3 = 3; total 13 / 10 = 1.3
 		expect(resultado.body?.custototal).toBe("13.0000000000");
 		expect(resultado.body?.custounitario).toBe("1.3000000000");
-		expect(registrarMovimento.registrarMovimentoEstoque).toHaveBeenCalledTimes(3);
+		expect(registrarMovimento.registrarMovimentoEstoque).toHaveBeenCalledTimes(
+			3,
+		);
 	});
 
 	it("rejeita produção em massa quando flag não está ativa", async () => {

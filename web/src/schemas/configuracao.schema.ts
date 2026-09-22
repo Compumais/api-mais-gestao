@@ -45,7 +45,8 @@ export const configuracaoNotificacoesSchema = z
 			ctx.addIssue({
 				code: "custom",
 				path: ["notificacoesEmail", "relatoriosAutomaticos", "frequencia"],
-				message: "Frequência é obrigatória quando relatórios automáticos estão habilitados",
+				message:
+					"Frequência é obrigatória quando relatórios automáticos estão habilitados",
 			});
 		}
 

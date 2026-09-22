@@ -576,8 +576,14 @@ export function CardapioDeliveryForm({ inicial }: Props) {
 					</Button>
 				</div>
 				{campos.fields.map((campo, index) => (
-					<div key={campo.id} className="grid gap-3 rounded-md border p-3 md:grid-cols-4">
-						<Input placeholder="Rótulo" {...register(`camposfinalizacao.${index}.rotulo`)} />
+					<div
+						key={campo.id}
+						className="grid gap-3 rounded-md border p-3 md:grid-cols-4"
+					>
+						<Input
+							placeholder="Rótulo"
+							{...register(`camposfinalizacao.${index}.rotulo`)}
+						/>
 						<Select
 							value={watch(`camposfinalizacao.${index}.tipo`)}
 							onValueChange={(value) =>

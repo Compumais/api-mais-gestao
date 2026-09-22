@@ -51,7 +51,10 @@ export function validarTotaisNfe(params: {
 	}
 
 	const informados = params.totaisInformados;
-	if (informados?.vProd != null && informados.vProd !== calculado.totalProdutos) {
+	if (
+		informados?.vProd != null &&
+		informados.vProd !== calculado.totalProdutos
+	) {
 		validacoes.push({
 			status: "INCONSISTENCIA",
 			code: "TOTAL_DIVERGENTE",

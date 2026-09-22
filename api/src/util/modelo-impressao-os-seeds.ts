@@ -50,11 +50,7 @@ export function layoutModeloResumidoOs(): LayoutModeloImpressaoOs {
 	return [
 		bloco("cabecalhoEmpresa"),
 		bloco("titulo", { titulo: "Ordem de Serviço" }),
-		bloco(
-			"dadosOs",
-			{ campos: ["codigo", "status", "dataos"] },
-			"esquerda",
-		),
+		bloco("dadosOs", { campos: ["codigo", "status", "dataos"] }, "esquerda"),
 		bloco("cliente", { campos: [...CAMPOS_CLIENTE_PADRAO] }, "direita"),
 		bloco("totais"),
 		bloco("assinaturas"),

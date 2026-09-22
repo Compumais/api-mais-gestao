@@ -5,25 +5,30 @@ import { criarCodigoReduzidoContaContabilService } from "@/service/codigo-reduzi
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
 const criarCodigoReduzidoContaContabilBodySchema = z.object({
-	idempresa: z.string()
+	idempresa: z.string(),
 });
 
-export async function criarCodigoReduzidoContaContabil(request: FastifyRequest, reply: FastifyReply) {
+export async function criarCodigoReduzidoContaContabil(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
 		}
 
-		const dadosValidados = criarCodigoReduzidoContaContabilBodySchema.parse(request.body);
+		const dadosValidados = criarCodigoReduzidoContaContabilBodySchema.parse(
+			request.body,
+		);
 
 		const dadosCodigoReduzidoContaContabil = {
 			id: uuidv4(),
 			...dadosValidados,
 			currenttimemillis: Date.now(),
-		datacadastro: new Date().toISOString().split("T")[0],
-		dataultimaalteracao: new Date().toISOString().split("T")[0],
-		idusuariocadastro: request.user.id,
-		idultimousuarioalteracao: request.user.id,
+			datacadastro: new Date().toISOString().split("T")[0],
+			dataultimaalteracao: new Date().toISOString().split("T")[0],
+			idusuariocadastro: request.user.id,
+			idultimousuarioalteracao: request.user.id,
 		};
 
 		const resultado = await criarCodigoReduzidoContaContabilService({

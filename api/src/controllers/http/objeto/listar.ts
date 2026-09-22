@@ -11,7 +11,10 @@ const listarObjetosQuerySchema = z.object({
 	limit: z.coerce.number().min(1).max(100).optional().default(10),
 });
 
-export async function listarObjetos(request: FastifyRequest, reply: FastifyReply) {
+export async function listarObjetos(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());

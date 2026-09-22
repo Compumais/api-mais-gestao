@@ -46,10 +46,9 @@ export function asApiDecimal(
 }
 
 async function baseUrl(): Promise<string> {
-	return (await getConfig("api_url", "https://apimaisgestao.compumais.com")).replace(
-		/\/$/,
-		"",
-	);
+	return (
+		await getConfig("api_url", "https://apimaisgestao.compumais.com")
+	).replace(/\/$/, "");
 }
 
 function mensagemErroApi(json: unknown, status: number): string {
@@ -207,7 +206,10 @@ export async function baixarImagemProduto(
 			signal: controller.signal,
 		});
 		if (!resposta.ok) {
-			throw new ApiError(`Falha ao baixar imagem: HTTP ${resposta.status}`, resposta.status);
+			throw new ApiError(
+				`Falha ao baixar imagem: HTTP ${resposta.status}`,
+				resposta.status,
+			);
 		}
 		const tipo = resposta.headers.get("content-type")?.split(";")[0] ?? "";
 		if (!["image/jpeg", "image/png", "image/webp"].includes(tipo)) {
@@ -240,7 +242,10 @@ export async function baixarImagemGrupoGourmet(
 		headers: { Authorization: `Bearer ${token}` },
 	});
 	if (!resposta.ok) {
-		throw new ApiError(`Falha ao baixar imagem: HTTP ${resposta.status}`, resposta.status);
+		throw new ApiError(
+			`Falha ao baixar imagem: HTTP ${resposta.status}`,
+			resposta.status,
+		);
 	}
 	const tipo = resposta.headers.get("content-type")?.split(";")[0] ?? "";
 	if (!["image/jpeg", "image/png", "image/webp"].includes(tipo)) {

@@ -31,7 +31,9 @@ export async function listarMetas({
 		.orderBy(desc(schema.metasDashboard.criadoem));
 }
 
-export async function buscarMetaPorId(id: string): Promise<MetaDashboard | undefined> {
+export async function buscarMetaPorId(
+	id: string,
+): Promise<MetaDashboard | undefined> {
 	const [meta] = await db
 		.select()
 		.from(schema.metasDashboard)

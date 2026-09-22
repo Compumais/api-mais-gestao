@@ -80,7 +80,8 @@ export function calcularCustoContabilItem(
 	const icmsst = paraNumero(tributacao?.icmsst);
 	const fcpst = paraNumero(tributacao?.fcpst);
 
-	const custoTotal = base + frete + seguro + outras - desconto + ipi + icmsst + fcpst;
+	const custoTotal =
+		base + frete + seguro + outras - desconto + ipi + icmsst + fcpst;
 	return formatarMoeda(custoTotal / qtd);
 }
 

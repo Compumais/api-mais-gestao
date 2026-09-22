@@ -360,7 +360,13 @@ function chavePagamento(venda: VendaListagem): string {
 	if (partes.length > 1) return "MISTO";
 	if (partes.length === 1) return partes[0];
 	const meio = String(venda.meio_pagamento ?? "").toUpperCase();
-	if (meio === "MISTO" || meio === "CARTAO" || meio === "PIX" || meio === "DINHEIRO" || meio === "OUTROS") {
+	if (
+		meio === "MISTO" ||
+		meio === "CARTAO" ||
+		meio === "PIX" ||
+		meio === "DINHEIRO" ||
+		meio === "OUTROS"
+	) {
 		return meio;
 	}
 	return "OUTROS";
@@ -510,9 +516,7 @@ function criarHeaderColuna(
 	const filtroAtivo = valorFiltro.trim() !== "";
 	const ordenacaoCampo = COLUNA_PARA_ORDENAR_VENDAS[def.id] ?? def.id;
 	const ordenacao: OrdenacaoColunaTabela =
-		opcoes.ordenarPor === ordenacaoCampo && opcoes.ordem
-			? opcoes.ordem
-			: false;
+		opcoes.ordenarPor === ordenacaoCampo && opcoes.ordem ? opcoes.ordem : false;
 
 	return (
 		<CabecalhoColunaTabela
@@ -575,9 +579,7 @@ export function criarColunasVendas(
 									opcoes.onReemitirNovaNumeracao ? (
 										<DropdownMenuItem
 											disabled={ocupado}
-											onClick={() =>
-												opcoes.onReemitirNovaNumeracao?.(v.id)
-											}
+											onClick={() => opcoes.onReemitirNovaNumeracao?.(v.id)}
 										>
 											Reemitir com nova numeração
 										</DropdownMenuItem>
@@ -606,9 +608,7 @@ export function criarColunasVendas(
 											Cancelar venda
 										</DropdownMenuItem>
 									) : null}
-									<DropdownMenuItem
-										onClick={() => opcoes.onReimprimir(v.id)}
-									>
+									<DropdownMenuItem onClick={() => opcoes.onReimprimir(v.id)}>
 										Reimprimir
 									</DropdownMenuItem>
 								</DropdownMenuContent>
@@ -639,7 +639,9 @@ export function criarColunasVendas(
 								variant="ghost"
 								aria-expanded={expandido}
 								aria-label={
-									expandido ? "Recolher produtos da venda" : "Expandir produtos da venda"
+									expandido
+										? "Recolher produtos da venda"
+										: "Expandir produtos da venda"
 								}
 								disabled={carregando}
 								onClick={() => opcoes.onToggleExpandir(id)}
@@ -708,7 +710,9 @@ export function criarColunasVendas(
 					header,
 					meta,
 					cell: ({ row }) => (
-						<span className="font-medium">{money(row.original.valortotal)}</span>
+						<span className="font-medium">
+							{money(row.original.valortotal)}
+						</span>
 					),
 				});
 				break;
@@ -750,7 +754,9 @@ export function criarColunasVendas(
 					cell: ({ row }) => {
 						const numeracao = rotuloNumeracaoNfce(row.original);
 						return numeracao ? (
-							<span className="font-mono text-sm tabular-nums">{numeracao}</span>
+							<span className="font-mono text-sm tabular-nums">
+								{numeracao}
+							</span>
 						) : (
 							<span className="text-sm text-muted-foreground">—</span>
 						);

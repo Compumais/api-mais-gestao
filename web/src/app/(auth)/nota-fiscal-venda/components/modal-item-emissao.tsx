@@ -32,8 +32,12 @@ import type { ItemNfe } from "@/schemas/nfe-emissao.schema";
 import { cestService } from "@/services/cest.service";
 import { produtosService } from "@/services/produtos.service";
 import { taxaUfService } from "@/services/taxauf.service";
-import { OPCOES_CSOSN, OPCOES_CST_ICMS, OPCOES_CST_PIS_COFINS } from "@/util/cst-produto-util";
 import { cstSemIcmsProprio } from "@/util/calcular-totais-fiscais-emissao-nfe";
+import {
+	OPCOES_CSOSN,
+	OPCOES_CST_ICMS,
+	OPCOES_CST_PIS_COFINS,
+} from "@/util/cst-produto-util";
 import {
 	codigoCfopPorId,
 	empresaUsaCsosn,
@@ -390,7 +394,8 @@ export function ModalItemEmissao({
 
 	function handleConfirmar() {
 		const bruto = Math.round(totalItem * 100) / 100;
-		const descontoInformado = Math.round(Math.max(0, item.desconto ?? 0) * 100) / 100;
+		const descontoInformado =
+			Math.round(Math.max(0, item.desconto ?? 0) * 100) / 100;
 		if (descontoInformado > bruto + 0.001) {
 			toast.error("O desconto do item não pode ser maior que o valor bruto.");
 			return;

@@ -9,10 +9,13 @@ const criarCfopPadraoBodySchema = z.object({
 	finalidade: z.string().max(1024),
 	nome: z.string().max(1024),
 	codigo: z.string().max(20),
-	inativo: z.number().int().optional()
+	inativo: z.number().int().optional(),
 });
 
-export async function criarCfopPadrao(request: FastifyRequest, reply: FastifyReply) {
+export async function criarCfopPadrao(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());

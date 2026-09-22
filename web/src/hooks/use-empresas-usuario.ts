@@ -7,7 +7,9 @@ import { empresasService } from "@/services/empresas.service";
 
 export const EMPRESAS_USUARIO_QUERY_KEY = "empresas-usuario";
 
-export async function buscarEmpresasUsuario(userId: string): Promise<Empresa[]> {
+export async function buscarEmpresasUsuario(
+	userId: string,
+): Promise<Empresa[]> {
 	const { data } = await empresasService.listar({
 		idusuario: userId,
 		idproprietario: userId,

@@ -26,14 +26,18 @@ describe("registrarVendaDashboardNfVenda", () => {
 		});
 
 		expect(resultado.criada).toBe(false);
-		expect(vendaPdvRepository.criarVendaPdvGourmetComItens).not.toHaveBeenCalled();
+		expect(
+			vendaPdvRepository.criarVendaPdvGourmetComItens,
+		).not.toHaveBeenCalled();
 	});
 
 	it("deve criar venda e itens para NF-e autorizada", async () => {
-		vi.mocked(vendaPdvRepository.buscarVendaPdvGourmetPorNotaFiscalNfce).mockResolvedValue(
-			undefined,
-		);
-		vi.mocked(vendaPdvRepository.criarVendaPdvGourmetComItens).mockResolvedValue({
+		vi.mocked(
+			vendaPdvRepository.buscarVendaPdvGourmetPorNotaFiscalNfce,
+		).mockResolvedValue(undefined);
+		vi.mocked(
+			vendaPdvRepository.criarVendaPdvGourmetComItens,
+		).mockResolvedValue({
 			id: "venda-1",
 		} as never);
 
@@ -60,7 +64,9 @@ describe("registrarVendaDashboardNfVenda", () => {
 
 		expect(resultado.criada).toBe(true);
 		expect(resultado.idvenda).toBeTruthy();
-		expect(vendaPdvRepository.criarVendaPdvGourmetComItens).toHaveBeenCalledWith(
+		expect(
+			vendaPdvRepository.criarVendaPdvGourmetComItens,
+		).toHaveBeenCalledWith(
 			expect.objectContaining({
 				idempresa: "emp-1",
 				idnotafiscalnfce: "nf-1",
@@ -77,7 +83,9 @@ describe("registrarVendaDashboardNfVenda", () => {
 	});
 
 	it("deve ser idempotente quando venda já existe", async () => {
-		vi.mocked(vendaPdvRepository.buscarVendaPdvGourmetPorNotaFiscalNfce).mockResolvedValue({
+		vi.mocked(
+			vendaPdvRepository.buscarVendaPdvGourmetPorNotaFiscalNfce,
+		).mockResolvedValue({
 			id: "venda-existente",
 		} as never);
 
@@ -94,17 +102,23 @@ describe("registrarVendaDashboardNfVenda", () => {
 
 		expect(resultado.criada).toBe(false);
 		expect(resultado.idvenda).toBe("venda-existente");
-		expect(vendaPdvRepository.criarVendaPdvGourmetComItens).not.toHaveBeenCalled();
+		expect(
+			vendaPdvRepository.criarVendaPdvGourmetComItens,
+		).not.toHaveBeenCalled();
 	});
 
 	it("deve mapear formas de pagamento por tipo documento", async () => {
-		vi.mocked(vendaPdvRepository.buscarVendaPdvGourmetPorNotaFiscalNfce).mockResolvedValue(
-			undefined,
-		);
-		vi.mocked(vendaPdvRepository.criarVendaPdvGourmetComItens).mockResolvedValue({
+		vi.mocked(
+			vendaPdvRepository.buscarVendaPdvGourmetPorNotaFiscalNfce,
+		).mockResolvedValue(undefined);
+		vi.mocked(
+			vendaPdvRepository.criarVendaPdvGourmetComItens,
+		).mockResolvedValue({
 			id: "venda-1",
 		} as never);
-		vi.mocked(tipoDocumentoRepository.buscarTipoDocumentoFinanceiroPorId).mockResolvedValue({
+		vi.mocked(
+			tipoDocumentoRepository.buscarTipoDocumentoFinanceiroPorId,
+		).mockResolvedValue({
 			formapagamentonfe: "17",
 		} as never);
 
@@ -127,7 +141,9 @@ describe("registrarVendaDashboardNfVenda", () => {
 			idusuario: "user-1",
 		});
 
-		expect(vendaPdvRepository.criarVendaPdvGourmetComItens).toHaveBeenCalledWith(
+		expect(
+			vendaPdvRepository.criarVendaPdvGourmetComItens,
+		).toHaveBeenCalledWith(
 			expect.objectContaining({
 				valorpix: "80.00",
 			}),

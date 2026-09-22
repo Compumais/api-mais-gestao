@@ -25,7 +25,9 @@ describe("buscarConfiguracaoService", () => {
 			integracao: {},
 			relatorios: {},
 			impressao: {},
-		} as Awaited<ReturnType<typeof configuracaoRepositories.criarConfiguracao>>);
+		} as Awaited<
+			ReturnType<typeof configuracaoRepositories.criarConfiguracao>
+		>);
 
 		const resultado = await buscarConfiguracaoService({
 			idempresa: "emp-1",

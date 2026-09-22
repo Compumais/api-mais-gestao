@@ -9,16 +9,21 @@ const atualizarReceitaSemContribuicaoParamsSchema = z.object({
 
 const atualizarReceitaSemContribuicaoBodySchema = z.object({
 	codigo: z.string().max(16).optional(),
-	descricao: z.string().max(100).optional()
+	descricao: z.string().max(100).optional(),
 });
 
-export async function atualizarReceitaSemContribuicao(request: FastifyRequest, reply: FastifyReply) {
+export async function atualizarReceitaSemContribuicao(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
 		}
 
-		const { id } = atualizarReceitaSemContribuicaoParamsSchema.parse(request.params);
+		const { id } = atualizarReceitaSemContribuicaoParamsSchema.parse(
+			request.params,
+		);
 		const dados = atualizarReceitaSemContribuicaoBodySchema.parse(request.body);
 
 		const resultado = await atualizarReceitaSemContribuicaoService({

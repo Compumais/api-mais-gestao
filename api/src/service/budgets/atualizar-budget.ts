@@ -68,10 +68,7 @@ export async function atualizarBudgetService({
 	if (dados.idplanocontas) {
 		const planoContas = await buscarPlanoContasPorId(dados.idplanocontas);
 
-		if (
-			!planoContas ||
-			planoContas.idempresa !== budgetExistente.idempresa
-		) {
+		if (!planoContas || planoContas.idempresa !== budgetExistente.idempresa) {
 			return httpBadRequest("Plano de contas inválido");
 		}
 	}

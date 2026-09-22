@@ -194,7 +194,8 @@ export const listarFinanceirosSchema: FastifySchema = {
 			tipodocumentodescricao: {
 				type: "string",
 				nullable: true,
-				description: "Filtro por descrição do tipo de documento (busca parcial)",
+				description:
+					"Filtro por descrição do tipo de documento (busca parcial)",
 			},
 			emissaoInicio: {
 				type: "string",

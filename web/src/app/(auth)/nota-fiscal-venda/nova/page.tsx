@@ -23,6 +23,10 @@ import {
 } from "react-hook-form";
 import { toast } from "sonner";
 import {
+	BlocoErrorBoundary,
+	BlocoErrorBoundarySlot,
+} from "@/components/bloco-error-boundary";
+import {
 	AlertDialog,
 	AlertDialogAction,
 	AlertDialogCancel,
@@ -2143,8 +2147,15 @@ export default function NovaEmissaoNfePage() {
 				</div>
 			</div>
 
-			{/* ── Conteúdo rolável ────────────────────────────────────────────── */}
-			<div className="flex-1 max-w-3xl mx-auto w-full px-4 sm:px-6 py-6 pb-24 space-y-0">
+			<BlocoErrorBoundary
+				titulo="Erro no formulário da NF-e"
+				variante="painel"
+			>
+				<BlocoErrorBoundarySlot
+					render={() => (
+						<>
+							{/* ── Conteúdo rolável ────────────────────────────────────────────── */}
+							<div className="flex-1 max-w-3xl mx-auto w-full px-4 sm:px-6 py-6 pb-24 space-y-0">
 				{(pedidoId || isLotePedidos) && (
 					<div
 						className={`mb-6 rounded-lg border p-4 text-sm space-y-2 ${
@@ -3061,9 +3072,11 @@ export default function NovaEmissaoNfePage() {
 									/>
 									{distribuicaoDescontos.descontoItens > 0 && (
 										<p className="text-xs text-muted-foreground">
-											Itens: {formatarMoeda(distribuicaoDescontos.descontoItens)}
+											Itens:{" "}
+											{formatarMoeda(distribuicaoDescontos.descontoItens)}
 											{" · "}
-											Total: {formatarMoeda(distribuicaoDescontos.descontoTotal)}
+											Total:{" "}
+											{formatarMoeda(distribuicaoDescontos.descontoTotal)}
 										</p>
 									)}
 									{errors.totais?.desconto && (
@@ -3193,12 +3206,20 @@ export default function NovaEmissaoNfePage() {
 								{informarEnderecoEntregaManual && (
 									<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
 										<Field data-invalid={!!errors.enderecoEntrega?.cep}>
-											<FieldLabel htmlFor="endereco-entrega-cep">CEP</FieldLabel>
+											<FieldLabel htmlFor="endereco-entrega-cep">
+												CEP
+											</FieldLabel>
 											<Input
 												id="endereco-entrega-cep"
 												{...form.register("enderecoEntrega.cep")}
 											/>
-											<FieldError errors={errors.enderecoEntrega?.cep ? [errors.enderecoEntrega.cep] : []} />
+											<FieldError
+												errors={
+													errors.enderecoEntrega?.cep
+														? [errors.enderecoEntrega.cep]
+														: []
+												}
+											/>
 										</Field>
 										<Field data-invalid={!!errors.enderecoEntrega?.logradouro}>
 											<FieldLabel htmlFor="endereco-entrega-logradouro">
@@ -3561,9 +3582,13 @@ export default function NovaEmissaoNfePage() {
 							<Send className="h-4 w-4" />
 							{isPending ? "Emitindo..." : "Emitir NF-e"}
 						</Button>
-					</div>
-				</div>
-			</div>
+								</div>
+							</div>
+							</div>
+						</>
+					)}
+				/>
+			</BlocoErrorBoundary>
 
 			<ModalItemEmissao
 				open={modalItemAberto}

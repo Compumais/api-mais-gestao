@@ -5,9 +5,9 @@ describe("verificarPodeGerenciarUsuarios", () => {
 	it("permite admin e proprietario", () => {
 		expect(verificarPodeGerenciarUsuarios(["admin"])).toBe(true);
 		expect(verificarPodeGerenciarUsuarios(["proprietario"])).toBe(true);
-		expect(
-			verificarPodeGerenciarUsuarios(["usuario", "proprietario"]),
-		).toBe(true);
+		expect(verificarPodeGerenciarUsuarios(["usuario", "proprietario"])).toBe(
+			true,
+		);
 	});
 
 	it("nega perfis sem permissao de gestao", () => {

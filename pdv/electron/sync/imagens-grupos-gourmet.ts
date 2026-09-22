@@ -1,4 +1,11 @@
-import { access, mkdir, readdir, rename, rm, writeFile } from "node:fs/promises";
+import {
+	access,
+	mkdir,
+	readdir,
+	rename,
+	rm,
+	writeFile,
+} from "node:fs/promises";
 import { join } from "node:path";
 import { app } from "electron";
 import { baixarImagemGrupoGourmet } from "../api/client";
@@ -22,7 +29,9 @@ function diretorio(): string {
 
 async function cacheExistente(id: string): Promise<string | null> {
 	try {
-		const nome = (await readdir(diretorio())).find((item) => item.startsWith(`${id}-`));
+		const nome = (await readdir(diretorio())).find((item) =>
+			item.startsWith(`${id}-`),
+		);
 		return nome ? urlImagemLocal("grupo-gourmet", nome) : null;
 	} catch {
 		return null;
@@ -48,7 +57,10 @@ export async function sincronizarImagensGruposGourmet<T extends Grupo>(
 			}
 			const token = new URL(referencia, "http://local").searchParams.get("v");
 			if (!token || !/^[0-9a-f-]{36}$/i.test(token)) {
-				resultado.push({ ...grupo, caminhoimagem: grupo.caminhoimagem ?? null });
+				resultado.push({
+					...grupo,
+					caminhoimagem: grupo.caminhoimagem ?? null,
+				});
 				continue;
 			}
 			let nome = "";
@@ -80,7 +92,10 @@ export async function sincronizarImagensGruposGourmet<T extends Grupo>(
 				caminhoimagem: urlImagemLocal("grupo-gourmet", nome),
 			});
 		} catch {
-			resultado.push({ ...grupo, caminhoimagem: await cacheExistente(grupo.id) });
+			resultado.push({
+				...grupo,
+				caminhoimagem: await cacheExistente(grupo.id),
+			});
 		}
 	}
 	return resultado;

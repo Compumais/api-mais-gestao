@@ -1,8 +1,5 @@
 import { sql } from "drizzle-orm";
-import {
-	type TipoPlano,
-	VALORES_PLANOS,
-} from "@/constants/planos.js";
+import { type TipoPlano, VALORES_PLANOS } from "@/constants/planos.js";
 import * as schema from "../../drizzle/schema.js";
 import { db } from "./connection.js";
 

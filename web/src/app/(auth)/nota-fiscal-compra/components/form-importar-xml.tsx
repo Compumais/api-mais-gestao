@@ -8,9 +8,7 @@ import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-	FieldGroup,
-} from "@/components/ui/field";
+import { FieldGroup } from "@/components/ui/field";
 import { useEmpresa } from "@/hooks/use-empresa";
 import {
 	type ImportarXmlNfFormData,
@@ -98,9 +96,8 @@ export function FormImportarXmlNotaFiscalCompra() {
 			<FieldGroup>
 				<h2 className="text-lg font-semibold">Arquivo XML NF-e</h2>
 				<p className="text-sm text-muted-foreground">
-					Selecione o arquivo XML da nota fiscal de compra (modelo 55). Os
-					dados serão extraídos automaticamente: emitente, itens, impostos e
-					totais.
+					Selecione o arquivo XML da nota fiscal de compra (modelo 55). Os dados
+					serão extraídos automaticamente: emitente, itens, impostos e totais.
 				</p>
 
 				<input

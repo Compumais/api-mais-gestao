@@ -12,19 +12,20 @@ const atualizarCestBodySchema = z.object({
 	descricao: z.string().optional(),
 	descricaoncm: z.string().optional(),
 	codigo: z.string().max(10).optional(),
-	inativo: z.number().int().optional()
+	inativo: z.number().int().optional(),
 });
 
-export async function atualizarCest(request: FastifyRequest, reply: FastifyReply) {
+export async function atualizarCest(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
 		}
 
 		const { id } = atualizarCestParamsSchema.parse(request.params);
-		const dados = removerUndefined(
-			atualizarCestBodySchema.parse(request.body),
-		);
+		const dados = removerUndefined(atualizarCestBodySchema.parse(request.body));
 
 		const resultado = await atualizarCestService({
 			cestId: id,

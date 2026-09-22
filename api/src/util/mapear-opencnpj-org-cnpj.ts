@@ -127,8 +127,7 @@ export function mapearOpenCnpjOrgParaOpenCnpjDados(
 
 	return {
 		cnpj,
-		situacaoCadastral:
-			textoOuNulo(dados.situacao_cadastral) ?? "DESCONHECIDA",
+		situacaoCadastral: textoOuNulo(dados.situacao_cadastral) ?? "DESCONHECIDA",
 		dataSituacaoCadastral: textoOuNulo(dados.data_situacao_cadastral),
 		motivoSituacaoCadastral: motivoSituacao(dados.motivo_situacao_cadastral),
 		razaoSocial: textoOuNulo(dados.razao_social) ?? "",

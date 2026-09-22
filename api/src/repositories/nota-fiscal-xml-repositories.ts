@@ -15,10 +15,7 @@ export async function buscarNotaFiscalXmlPorNota(idnotafiscal: string) {
 }
 
 export async function criarNotaFiscalXml(dados: NovaNotaFiscalXml) {
-	const [registro] = await db
-		.insert(notafiscalxml)
-		.values(dados)
-		.returning();
+	const [registro] = await db.insert(notafiscalxml).values(dados).returning();
 
 	return registro;
 }
@@ -46,7 +43,9 @@ export async function atualizarNotaFiscalXml(
 	return registro;
 }
 
-export async function arquivarNotaFiscalXmlSeNaoExistir(dados: NovaNotaFiscalXml) {
+export async function arquivarNotaFiscalXmlSeNaoExistir(
+	dados: NovaNotaFiscalXml,
+) {
 	const existente = await buscarNotaFiscalXmlPorNota(dados.idnotafiscal);
 
 	if (existente) {

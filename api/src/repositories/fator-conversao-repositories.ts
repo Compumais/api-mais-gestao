@@ -1,13 +1,4 @@
-import {
-	and,
-	asc,
-	count,
-	desc,
-	eq,
-	ilike,
-	type SQL,
-	sql,
-} from "drizzle-orm";
+import { and, asc, count, desc, eq, ilike, type SQL, sql } from "drizzle-orm";
 import type { NovoFatorConversao } from "@/model/fator-conversao-model.js";
 import { fatorconversao } from "@/repositories/schema.js";
 import { db } from "./connection";
@@ -53,10 +44,7 @@ export async function verificarEmpresaPossuiFatoresConversao(
 }
 
 export async function criarFatorConversao(dados: NovoFatorConversao) {
-	const [registro] = await db
-		.insert(fatorconversao)
-		.values(dados)
-		.returning();
+	const [registro] = await db.insert(fatorconversao).values(dados).returning();
 
 	return registro;
 }

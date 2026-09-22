@@ -46,11 +46,16 @@ export function resolverContribuinteIcms(params: {
 	return params.indIEDest === 1;
 }
 
-function classificarTipoPorCfop(cfop: string, finNFe?: number | null): TipoOperacaoFiscal {
+function classificarTipoPorCfop(
+	cfop: string,
+	finNFe?: number | null,
+): TipoOperacaoFiscal {
 	if (finNFe === 4) return "devolucao";
 
 	const codigo = cfop.replace(/\D/g, "").slice(-3);
-	if (["201", "202", "203", "204", "210", "211", "220", "221"].includes(codigo)) {
+	if (
+		["201", "202", "203", "204", "210", "211", "220", "221"].includes(codigo)
+	) {
 		return "devolucao";
 	}
 	if (["152", "155", "156", "157"].includes(codigo)) return "transferencia";
@@ -58,10 +63,14 @@ function classificarTipoPorCfop(cfop: string, finNFe?: number | null): TipoOpera
 	if (["401", "402", "403", "404", "411", "412"].includes(codigo)) {
 		return "industrializacao";
 	}
-	if (["901", "904", "905", "906", "915", "916", "917", "949"].includes(codigo)) {
+	if (
+		["901", "904", "905", "906", "915", "916", "917", "949"].includes(codigo)
+	) {
 		return "remessa";
 	}
-	if (["101", "102", "103", "104", "111", "112", "113", "114"].includes(codigo)) {
+	if (
+		["101", "102", "103", "104", "111", "112", "113", "114"].includes(codigo)
+	) {
 		return "venda";
 	}
 	return "outra";

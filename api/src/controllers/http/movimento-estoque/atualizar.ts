@@ -44,9 +44,7 @@ export async function atualizarMovimentoEstoque(
 		}
 
 		const idusuario = request.user.id;
-		const { id } = atualizarMovimentoEstoqueParamsSchema.parse(
-			request.params,
-		);
+		const { id } = atualizarMovimentoEstoqueParamsSchema.parse(request.params);
 		const dados = atualizarMovimentoEstoqueBodySchema.parse(request.body);
 
 		const resultado = await atualizarMovimentoEstoqueService({
@@ -75,4 +73,3 @@ export async function atualizarMovimentoEstoque(
 		});
 	}
 }
-

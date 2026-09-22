@@ -14,10 +14,7 @@ export async function executarProcessarAutomacoes(
 
 	for (const automacao of vencidas) {
 		try {
-			const resultado = await executarAutomacaoAgora(
-				automacao,
-				contexto.agora,
-			);
+			const resultado = await executarAutomacaoAgora(automacao, contexto.agora);
 			processadas += 1;
 			if (
 				resultado.status === "aguardando_correcao" ||

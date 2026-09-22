@@ -7,9 +7,9 @@ import {
 describe("resolverCreditoIcmsSnItem", () => {
 	it("não exige crédito para CSOSN 102", () => {
 		expect(csosnExigeCreditoSn("102")).toBe(false);
-		expect(resolverCreditoIcmsSnItem({ csosn: "102", valorProduto: 100 })).toEqual(
-			{},
-		);
+		expect(
+			resolverCreditoIcmsSnItem({ csosn: "102", valorProduto: 100 }),
+		).toEqual({});
 	});
 
 	it("calcula pCredSN e vCredICMSSN para CSOSN 101", () => {

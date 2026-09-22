@@ -88,7 +88,9 @@ export default function CfopDeParaPage() {
 		<main className="px-4 space-y-6">
 			<header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 				<div>
-					<h1 className="text-2xl font-bold">Mapeamento CFOP entrada → saída</h1>
+					<h1 className="text-2xl font-bold">
+						Mapeamento CFOP entrada → saída
+					</h1>
 					<p className="text-muted-foreground text-sm">
 						Converte o CFOP da NF de compra no CFOP de saída do produto na
 						importação.

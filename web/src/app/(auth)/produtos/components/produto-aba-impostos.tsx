@@ -289,9 +289,7 @@ export function ProdutoAbaImpostos({
 												</SelectItem>
 											</SelectContent>
 										</Select>
-										<FieldError
-											errors={errors.origem ? [errors.origem] : []}
-										/>
+										<FieldError errors={errors.origem ? [errors.origem] : []} />
 									</Field>
 								)}
 							/>
@@ -317,9 +315,7 @@ export function ProdutoAbaImpostos({
 											searchPlaceholder="Buscar CEST..."
 											emptyMessage="Nenhum CEST encontrado"
 										/>
-										<FieldError
-											errors={errors.idcest ? [errors.idcest] : []}
-										/>
+										<FieldError errors={errors.idcest ? [errors.idcest] : []} />
 									</Field>
 								)}
 							/>
@@ -488,9 +484,7 @@ export function ProdutoAbaImpostos({
 					className="space-y-6 data-[state=inactive]:hidden"
 				>
 					<section className="space-y-4">
-						<h3 className="text-base font-semibold">
-							ICMS contribuinte (NFe)
-						</h3>
+						<h3 className="text-base font-semibold">ICMS contribuinte (NFe)</h3>
 						<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 							<Controller
 								name="situacaotributaria"
@@ -626,7 +620,9 @@ export function ProdutoAbaImpostos({
 					className="space-y-4 data-[state=inactive]:hidden"
 				>
 					<section className="space-y-4">
-						<h3 className="text-base font-semibold">Fundo de Combate à Pobreza</h3>
+						<h3 className="text-base font-semibold">
+							Fundo de Combate à Pobreza
+						</h3>
 						<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 							<CampoPercentual
 								id="aliquotafcpnf"
@@ -847,9 +843,7 @@ export function ProdutoAbaImpostos({
 								/>
 								<FieldError
 									errors={
-										errors.classtributariaibs
-											? [errors.classtributariaibs]
-											: []
+										errors.classtributariaibs ? [errors.classtributariaibs] : []
 									}
 								/>
 							</Field>

@@ -93,8 +93,7 @@ export async function listarDavs({
 
 	if (faturado === true) {
 		where.push(
-			or(isNotNull(dav.idnotafiscal), isNotNull(dav.idnfce)) ??
-				sql`false`,
+			or(isNotNull(dav.idnotafiscal), isNotNull(dav.idnfce)) ?? sql`false`,
 		);
 	} else if (faturado === false) {
 		where.push(and(isNull(dav.idnotafiscal), isNull(dav.idnfce)) ?? sql`true`);

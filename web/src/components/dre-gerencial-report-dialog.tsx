@@ -35,7 +35,8 @@ export function DreGerencialReportDialog({
 	onOpenChange,
 }: DreGerencialReportDialogProps) {
 	const { empresa } = useEmpresa();
-	const { inicio: dataInicioPadrao, fim: dataFimPadrao } = inicioFimMesBrasilia();
+	const { inicio: dataInicioPadrao, fim: dataFimPadrao } =
+		inicioFimMesBrasilia();
 
 	const [dataInicio, setDataInicio] = useState(dataInicioPadrao);
 	const [dataFim, setDataFim] = useState(dataFimPadrao);
@@ -116,7 +117,9 @@ export function DreGerencialReportDialog({
 						/>
 					</Field>
 					<Field>
-						<FieldLabel htmlFor="dre-formato">Formato do Relatório *</FieldLabel>
+						<FieldLabel htmlFor="dre-formato">
+							Formato do Relatório *
+						</FieldLabel>
 						<Select
 							value={formato}
 							onValueChange={(v) => setFormato(v as "pdf" | "txt" | "html")}

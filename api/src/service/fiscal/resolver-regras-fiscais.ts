@@ -44,7 +44,12 @@ function valorCondicaoIgual(
 ): boolean {
 	if (esperado == null) return true;
 	if (typeof esperado === "string") {
-		return esperado.trim().toUpperCase() === String(atual ?? "").trim().toUpperCase();
+		return (
+			esperado.trim().toUpperCase() ===
+			String(atual ?? "")
+				.trim()
+				.toUpperCase()
+		);
 	}
 	return esperado === atual;
 }
@@ -62,7 +67,10 @@ export function regraCasaComContexto(
 	if (!valorCondicaoIgual(condicoes.ncm, ctx.ncm)) return false;
 	if (!valorCondicaoIgual(condicoes.cest, ctx.cest)) return false;
 	if (condicoes.crt != null && condicoes.crt !== ctx.crt) return false;
-	if (condicoes.regime_tributario === "SN" && ![1, 2, 4].includes(ctx.crt ?? 0)) {
+	if (
+		condicoes.regime_tributario === "SN" &&
+		![1, 2, 4].includes(ctx.crt ?? 0)
+	) {
 		return false;
 	}
 	if (condicoes.regime_tributario === "NORMAL" && ctx.crt !== 3) return false;

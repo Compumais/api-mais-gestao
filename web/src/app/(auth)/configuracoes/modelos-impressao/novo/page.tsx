@@ -47,8 +47,7 @@ export default function NovoModeloImpressaoOsPage() {
 			router.push(`/configuracoes/modelos-impressao/${criado.id}`);
 		} catch (erro) {
 			toast.error("Erro ao salvar modelo", {
-				description:
-					erro instanceof Error ? erro.message : "Erro desconhecido",
+				description: erro instanceof Error ? erro.message : "Erro desconhecido",
 			});
 		}
 	}

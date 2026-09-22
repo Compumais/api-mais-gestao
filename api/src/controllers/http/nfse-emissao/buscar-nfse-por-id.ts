@@ -4,28 +4,28 @@ import { buscarNotaFiscalService } from "@/service/nota-fiscal/buscar-nota-fisca
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
 export async function buscarNfsePorId(
-    request: FastifyRequest,
-    reply: FastifyReply,
+	request: FastifyRequest,
+	reply: FastifyReply,
 ) {
-    try {
-        if (!request.user) {
-            return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
-        }
+	try {
+		if (!request.user) {
+			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
+		}
 
-        const { id } = z.object({ id: z.string().uuid() }).parse(request.params);
+		const { id } = z.object({ id: z.string().uuid() }).parse(request.params);
 
-        const resultado = await buscarNotaFiscalService({
-            idusuario: request.user.id,
-            notaFiscalId: id,
-        });
+		const resultado = await buscarNotaFiscalService({
+			idusuario: request.user.id,
+			notaFiscalId: id,
+		});
 
-        if (!resultado.success) {
-            return reply.status(resultado.status).send(resultado);
-        }
+		if (!resultado.success) {
+			return reply.status(resultado.status).send(resultado);
+		}
 
-        return reply.status(resultado.status).send(resultado.body);
-    } catch (error) {
-        console.error(error);
-        return reply.status(httpErroInterno().status).send(httpErroInterno());
-    }
+		return reply.status(resultado.status).send(resultado.body);
+	} catch (error) {
+		console.error(error);
+		return reply.status(httpErroInterno().status).send(httpErroInterno());
+	}
 }

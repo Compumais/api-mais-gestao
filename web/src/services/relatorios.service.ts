@@ -14,7 +14,8 @@ export interface GerarRelatorioContasParams {
 	formato: "pdf" | "txt" | "html";
 }
 
-export interface GerarRelatorioFiscalParams extends GerarRelatorioContasParams {}
+export interface GerarRelatorioFiscalParams
+	extends GerarRelatorioContasParams {}
 
 export interface GerarRelatorioCentroCustosParams {
 	idempresa: string;

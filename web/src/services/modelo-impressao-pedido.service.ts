@@ -25,10 +25,7 @@ export const modeloImpressaoPedidoService = {
 		return data;
 	},
 
-	async buscar(
-		idempresa: string,
-		id: string,
-	): Promise<ModeloImpressaoPedido> {
+	async buscar(idempresa: string, id: string): Promise<ModeloImpressaoPedido> {
 		const { data } = await api.get<ModeloImpressaoPedido>(
 			`/empresas/${idempresa}/modelos-impressao-pedido/${id}`,
 		);

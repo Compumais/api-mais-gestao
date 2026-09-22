@@ -89,7 +89,7 @@ export function NfseConfiguracaoForm({ idempresa }: NfseConfiguracaoFormProps) {
 			return nfseConfiguracaoService.atualizar(idempresa, {
 				...dados,
 				urlwsdl: modoDps
-					? (dados.urlwsdl?.trim() || BETHA_DPS_WSDL)
+					? dados.urlwsdl?.trim() || BETHA_DPS_WSDL
 					: dados.urlwsdl,
 				usarlotesincrono: modoDps ? false : dados.usarlotesincrono,
 				urlsoperacao,
@@ -106,8 +106,7 @@ export function NfseConfiguracaoForm({ idempresa }: NfseConfiguracaoFormProps) {
 
 	const provedorAtual = form.watch("provedor");
 	const layoutAtual = form.watch("versaolayout");
-	const modoDps =
-		provedorAtual === "betha" && isLayoutNfseDps(layoutAtual);
+	const modoDps = provedorAtual === "betha" && isLayoutNfseDps(layoutAtual);
 
 	if (isLoading) {
 		return <p className="text-muted-foreground">Carregando...</p>;
@@ -212,9 +211,12 @@ export function NfseConfiguracaoForm({ idempresa }: NfseConfiguracaoFormProps) {
 
 					{provedorAtual === "betha" && !modoDps ? (
 						<div className="space-y-3 rounded-md border p-4">
-							<p className="text-sm font-medium">URLs WSDL por operação (Betha)</p>
+							<p className="text-sm font-medium">
+								URLs WSDL por operação (Betha)
+							</p>
 							<p className="text-muted-foreground text-xs">
-								Homologação: https://e-gov.betha.com.br/e-nota-contribuinte-test-ws/
+								Homologação:
+								https://e-gov.betha.com.br/e-nota-contribuinte-test-ws/
 								gerarNfse?wsdl
 							</p>
 							<Field>

@@ -70,7 +70,9 @@ export async function enviarPropostaCotacaoCompraService({
 	}
 
 	if (precosPorItem.size !== itensCotacao.length) {
-		return httpBadRequest("A proposta contém itens que não pertencem à cotação");
+		return httpBadRequest(
+			"A proposta contém itens que não pertencem à cotação",
+		);
 	}
 
 	const existente = await buscarPropostaPorCotacaoETelefone(

@@ -8,9 +8,7 @@ function boolParaSN(valor: boolean | null | undefined): string | null {
 	return null;
 }
 
-function montarTelefone(
-	ddd: string | null | undefined,
-): string | null {
+function montarTelefone(ddd: string | null | undefined): string | null {
 	if (!ddd) return null;
 	const limpo = ddd.trim();
 	return limpo || null;
@@ -38,8 +36,7 @@ export function mapearBrasilApiParaOpenCnpjDados(
 		cnpj: normalizarCnpj(dados.cnpj),
 		situacaoCadastral: dados.descricao_situacao_cadastral ?? "DESCONHECIDA",
 		dataSituacaoCadastral: dados.data_situacao_cadastral ?? null,
-		motivoSituacaoCadastral:
-			dados.descricao_motivo_situacao_cadastral ?? null,
+		motivoSituacaoCadastral: dados.descricao_motivo_situacao_cadastral ?? null,
 		razaoSocial: dados.razao_social ?? "",
 		nomeFantasia: dados.nome_fantasia ?? null,
 		dataInicioAtividades: dados.data_inicio_atividade ?? null,

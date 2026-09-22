@@ -7,12 +7,12 @@ import type {
 	NovoCardapioDelivery,
 } from "@/model/cardapio-delivery-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	atualizarCardapioDelivery,
 	buscarCardapioDeliveryPorEmpresa,
 	slugCardapioEmUso,
 } from "@/repositories/cardapio-delivery-repositories.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { criarAuditoriaService } from "@/service/auditoria/criar-auditoria.js";
 import { garantirCardapioDeliveryService } from "@/service/cardapio-delivery/garantir-cardapio-delivery.js";
 import { gerarSlugCardapio } from "@/util/cardapio-delivery-identidade.js";
@@ -49,7 +49,8 @@ type AtualizarCardapioDeliveryParametros = {
 
 function decimal(valor: string | number | undefined): string | undefined {
 	if (valor === undefined) return undefined;
-	const n = typeof valor === "number" ? valor : Number(String(valor).replace(",", "."));
+	const n =
+		typeof valor === "number" ? valor : Number(String(valor).replace(",", "."));
 	if (!Number.isFinite(n) || n < 0) return undefined;
 	return n.toFixed(2);
 }

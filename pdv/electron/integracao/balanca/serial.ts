@@ -1,5 +1,8 @@
-import { type ChildProcessWithoutNullStreams, spawn } from "node:child_process";
-import { execFile } from "node:child_process";
+import {
+	type ChildProcessWithoutNullStreams,
+	execFile,
+	spawn,
+} from "node:child_process";
 import {
 	closeSync,
 	createReadStream,

@@ -16,6 +16,7 @@ import {
 	DASHBOARD_TABS_COMPLETAS,
 	type DashboardTab,
 } from "@/lib/dashboard-periodo";
+import { BlocoErrorBoundary } from "@/components/bloco-error-boundary";
 import { PageContainer } from "../components/page-container";
 import { AlertasSection } from "./components/alertas-section";
 import { ClientesSection } from "./components/clientes-section";
@@ -106,17 +107,76 @@ function DashboardShell() {
 					</ToggleGroup>
 				</div>
 
-				{tab === "visao-geral" && <VisaoGeralSection />}
-				{tab === "vendas" && <VendasSection />}
-				{tab === "clientes" && <ClientesSection />}
-				{tab === "financeiro" && <FinanceiroSection />}
-				{tab === "fluxo-caixa" && <FluxoCaixaSection />}
-				{tab === "rentabilidade" && <RentabilidadeSection />}
-				{tab === "dre" && <DreSection />}
-				{tab === "metas" && <MetasSection />}
-				{tab === "comparativo" && <ComparativoSection />}
-				{tab === "alertas" && <AlertasSection />}
-				{tab === "controle" && <ControleSection />}
+				{tab === "visao-geral" && (
+					<BlocoErrorBoundary titulo="Erro na visão geral" variante="compacto">
+						<VisaoGeralSection />
+					</BlocoErrorBoundary>
+				)}
+				{tab === "vendas" && (
+					<BlocoErrorBoundary titulo="Erro na seção de vendas" variante="compacto">
+						<VendasSection />
+					</BlocoErrorBoundary>
+				)}
+				{tab === "clientes" && (
+					<BlocoErrorBoundary
+						titulo="Erro na seção de clientes"
+						variante="compacto"
+					>
+						<ClientesSection />
+					</BlocoErrorBoundary>
+				)}
+				{tab === "financeiro" && (
+					<BlocoErrorBoundary
+						titulo="Erro na seção financeira"
+						variante="compacto"
+					>
+						<FinanceiroSection />
+					</BlocoErrorBoundary>
+				)}
+				{tab === "fluxo-caixa" && (
+					<BlocoErrorBoundary titulo="Erro no fluxo de caixa" variante="compacto">
+						<FluxoCaixaSection />
+					</BlocoErrorBoundary>
+				)}
+				{tab === "rentabilidade" && (
+					<BlocoErrorBoundary
+						titulo="Erro na seção de rentabilidade"
+						variante="compacto"
+					>
+						<RentabilidadeSection />
+					</BlocoErrorBoundary>
+				)}
+				{tab === "dre" && (
+					<BlocoErrorBoundary titulo="Erro na seção de DRE" variante="compacto">
+						<DreSection />
+					</BlocoErrorBoundary>
+				)}
+				{tab === "metas" && (
+					<BlocoErrorBoundary titulo="Erro na seção de metas" variante="compacto">
+						<MetasSection />
+					</BlocoErrorBoundary>
+				)}
+				{tab === "comparativo" && (
+					<BlocoErrorBoundary
+						titulo="Erro na seção comparativa"
+						variante="compacto"
+					>
+						<ComparativoSection />
+					</BlocoErrorBoundary>
+				)}
+				{tab === "alertas" && (
+					<BlocoErrorBoundary titulo="Erro na seção de alertas" variante="compacto">
+						<AlertasSection />
+					</BlocoErrorBoundary>
+				)}
+				{tab === "controle" && (
+					<BlocoErrorBoundary
+						titulo="Erro na seção de controle"
+						variante="compacto"
+					>
+						<ControleSection />
+					</BlocoErrorBoundary>
+				)}
 			</div>
 		</PageContainer>
 	);

@@ -29,13 +29,17 @@ describe("manifestarCienciaOperacaoService", () => {
 			xMotivo: "Evento registrado",
 			protocolo: "123",
 		});
-		vi.mocked(nfeInboundRepo.buscarNfeInboundDocumentoPorChave).mockResolvedValue({
+		vi.mocked(
+			nfeInboundRepo.buscarNfeInboundDocumentoPorChave,
+		).mockResolvedValue({
 			id: "doc-1",
 		} as never);
 		vi.mocked(nfeInboundRepo.atualizarNfeInboundDocumento).mockResolvedValue(
 			{} as never,
 		);
-		vi.mocked(syncService.sincronizarEmpresaNfeInboundService).mockResolvedValue({
+		vi.mocked(
+			syncService.sincronizarEmpresaNfeInboundService,
+		).mockResolvedValue({
 			idempresa: "emp-1",
 			nsuInicial: "0",
 			nsuFinal: "1",
@@ -52,7 +56,9 @@ describe("manifestarCienciaOperacaoService", () => {
 
 		expect(resultado.success).toBe(true);
 		expect(gateway.manifestarCienciaOperacaoGateway).toHaveBeenCalled();
-		expect(syncService.sincronizarEmpresaNfeInboundService).toHaveBeenCalledWith({
+		expect(
+			syncService.sincronizarEmpresaNfeInboundService,
+		).toHaveBeenCalledWith({
 			idempresa: "emp-1",
 		});
 	});

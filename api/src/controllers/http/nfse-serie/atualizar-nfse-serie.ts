@@ -4,18 +4,17 @@ import { atualizarNfseSerieService } from "@/service/nfse-serie/nfse-serie.js";
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
 const criarBodySchema = z.object({
-    idempresa: z.string().uuid(),
-    serie: z.string().min(1).max(5),
-    numeroproximo: z.number().int().min(1).optional(),
-    padrao: z.boolean().optional(),
-    ativo: z.boolean().optional(),
+	idempresa: z.string().uuid(),
+	serie: z.string().min(1).max(5),
+	numeroproximo: z.number().int().min(1).optional(),
+	padrao: z.boolean().optional(),
+	ativo: z.boolean().optional(),
 });
 
 const atualizarBodySchema = criarBodySchema
-    .omit({ idempresa: true })
-    .partial()
-    .extend({ idempresa: z.string().uuid()
-});
+	.omit({ idempresa: true })
+	.partial()
+	.extend({ idempresa: z.string().uuid() });
 
 export async function atualizarNfseSerie(
 	request: FastifyRequest,

@@ -130,7 +130,10 @@ export async function cancelarNotaFiscalCompraService({
 		try {
 			await recalcularCustoProdutoAposRemocaoNota(idproduto);
 		} catch (erro) {
-			console.error("Erro ao recalcular custo do produto após cancelar NF:", erro);
+			console.error(
+				"Erro ao recalcular custo do produto após cancelar NF:",
+				erro,
+			);
 			avisos.push(
 				`Não foi possível recalcular o custo do produto ${idproduto} após remover a nota`,
 			);
@@ -184,7 +187,10 @@ export async function cancelarNotaFiscalCompraService({
 			},
 		});
 	} catch (erro) {
-		console.error("Erro ao registrar auditoria de cancelamento NF compra:", erro);
+		console.error(
+			"Erro ao registrar auditoria de cancelamento NF compra:",
+			erro,
+		);
 	}
 
 	return httpOk({

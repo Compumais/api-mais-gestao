@@ -48,10 +48,10 @@ export async function testarIaService({
 		if (!modelo) {
 			modelo =
 				provedor === "openai"
-					? i.modeloOpenai ?? undefined
+					? (i.modeloOpenai ?? undefined)
 					: provedor === "gemini"
-						? i.modeloGemini ?? undefined
-						: i.modeloOpenrouter ?? undefined;
+						? (i.modeloGemini ?? undefined)
+						: (i.modeloOpenrouter ?? undefined);
 		}
 	}
 

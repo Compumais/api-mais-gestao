@@ -4,15 +4,18 @@ import * as preparar from "@/service/nfe-emissao/preparar-payload-emissao-nfe-ve
 import { previewDanfeNfeVendaService } from "./preview-danfe-nfe-venda.js";
 
 vi.mock("@/lib/nfe-gateway-client.js");
-vi.mock("@/service/nfe-emissao/preparar-payload-emissao-nfe-venda.js", async () => {
-	const atual = await vi.importActual<
-		typeof import("@/service/nfe-emissao/preparar-payload-emissao-nfe-venda.js")
-	>("@/service/nfe-emissao/preparar-payload-emissao-nfe-venda.js");
-	return {
-		...atual,
-		prepararPayloadEmissaoNfeVenda: vi.fn(),
-	};
-});
+vi.mock(
+	"@/service/nfe-emissao/preparar-payload-emissao-nfe-venda.js",
+	async () => {
+		const atual = await vi.importActual<
+			typeof import("@/service/nfe-emissao/preparar-payload-emissao-nfe-venda.js")
+		>("@/service/nfe-emissao/preparar-payload-emissao-nfe-venda.js");
+		return {
+			...atual,
+			prepararPayloadEmissaoNfeVenda: vi.fn(),
+		};
+	},
+);
 
 const paramsBase = {
 	idusuario: "user-1",

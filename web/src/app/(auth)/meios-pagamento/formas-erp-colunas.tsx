@@ -21,12 +21,11 @@ export const FORMAS_NFE = [
 
 export type DestinoFinanceiroForma = "caixa" | "recebivel" | "contas_receber";
 
-export const FORMAS_NFE_OPCOES_FILTRO: OpcaoFiltroColunaTabela[] = FORMAS_NFE.map(
-	(forma) => ({
+export const FORMAS_NFE_OPCOES_FILTRO: OpcaoFiltroColunaTabela[] =
+	FORMAS_NFE.map((forma) => ({
 		value: forma.codigo,
 		label: `${forma.codigo} — ${forma.descricao}`,
-	}),
-);
+	}));
 
 export const DESTINO_OPCOES_FILTRO: OpcaoFiltroColunaTabela[] = [
 	{ value: "caixa", label: "Caixa (à vista)" },
@@ -139,9 +138,7 @@ function criarHeaderColuna(
 	const filtroAtivo = valorFiltro.trim() !== "";
 	const ordenacaoCampo = def.id === "destino" ? "aprazo" : def.id;
 	const ordenacao: OrdenacaoColunaTabela =
-		opcoes.ordenarPor === ordenacaoCampo && opcoes.ordem
-			? opcoes.ordem
-			: false;
+		opcoes.ordenarPor === ordenacaoCampo && opcoes.ordem ? opcoes.ordem : false;
 
 	return (
 		<CabecalhoColunaTabela
@@ -196,9 +193,7 @@ export function criarColunasFormasErp(
 					accessorKey: "formapagamentonfe",
 					header,
 					meta,
-					cell: ({ row }) => (
-						<div>{row.original.formapagamentonfe ?? "—"}</div>
-					),
+					cell: ({ row }) => <div>{row.original.formapagamentonfe ?? "—"}</div>,
 				});
 				break;
 			case "destino":
@@ -209,9 +204,7 @@ export function criarColunasFormasErp(
 					cell: ({ row }) => {
 						const destino = destinoDaForma(row.original);
 						return (
-							<Badge
-								variant={destino === "caixa" ? "secondary" : "default"}
-							>
+							<Badge variant={destino === "caixa" ? "secondary" : "default"}>
 								{rotuloDestino(destino)}
 							</Badge>
 						);

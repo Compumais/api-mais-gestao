@@ -44,7 +44,8 @@ export default function ComparativoCotacaoPage() {
 		if (!data) return;
 		const iniciais: Record<string, string> = {};
 		for (const item of data.itens) {
-			const menor = item.propostas.find((p) => p.menorpreco) ?? item.propostas[0];
+			const menor =
+				item.propostas.find((p) => p.menorpreco) ?? item.propostas[0];
 			if (menor) iniciais[item.idcotacaoitem] = menor.idproposta;
 		}
 		setSelecoes(iniciais);
@@ -103,7 +104,8 @@ export default function ComparativoCotacaoPage() {
 	}
 
 	const podeGerar =
-		data.cotacao.status === "A" && data.itens.some((i) => i.propostas.length > 0);
+		data.cotacao.status === "A" &&
+		data.itens.some((i) => i.propostas.length > 0);
 
 	return (
 		<PageContainer>
@@ -171,9 +173,7 @@ export default function ComparativoCotacaoPage() {
 												<TableCell
 													key={f.id}
 													className={`min-w-36 text-right ${
-														menor
-															? "bg-emerald-50 dark:bg-emerald-950/40"
-															: ""
+														menor ? "bg-emerald-50 dark:bg-emerald-950/40" : ""
 													}`}
 												>
 													{proposta ? (

@@ -339,10 +339,7 @@ export default function TiposProblemaPage() {
 							</p>
 						</div>
 					) : mostrarSkeleton ? (
-						<TableSkeleton
-							columns={colunasVisiveis.length || 4}
-							rows={10}
-						>
+						<TableSkeleton columns={colunasVisiveis.length || 4} rows={10}>
 							{colunasVisiveis.map((coluna) => (
 								<TableHead
 									key={coluna.id}

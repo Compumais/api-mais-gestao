@@ -271,7 +271,9 @@ export function BlocoLotesItemNfe({
 					<Button
 						type="button"
 						size="sm"
-						disabled={!numeroNovo.trim() || criarLote.isPending || !item.idproduto}
+						disabled={
+							!numeroNovo.trim() || criarLote.isPending || !item.idproduto
+						}
 						onClick={() => criarLote.mutate()}
 					>
 						{criarLote.isPending ? "Salvando..." : "Salvar"}
@@ -281,8 +283,8 @@ export function BlocoLotesItemNfe({
 
 			{rastros.length === 0 ? (
 				<p className="text-sm text-muted-foreground">
-					Selecione um lote, crie um novo ou use Sugerir FEFO. A soma deve fechar
-					com a quantidade do item.
+					Selecione um lote, crie um novo ou use Sugerir FEFO. A soma deve
+					fechar com a quantidade do item.
 				</p>
 			) : (
 				<div className="space-y-2">
@@ -318,7 +320,9 @@ export function BlocoLotesItemNfe({
 								/>
 							</div>
 							<div className="space-y-1">
-								<span className="text-xs text-muted-foreground">Fabricação</span>
+								<span className="text-xs text-muted-foreground">
+									Fabricação
+								</span>
 								<Input
 									type="date"
 									value={rastro.dFab ?? ""}
@@ -355,8 +359,9 @@ export function BlocoLotesItemNfe({
 			<p
 				className={`text-xs ${fecha ? "text-muted-foreground" : "text-destructive"}`}
 			>
-				Soma dos lotes: {soma.toLocaleString("pt-BR", { maximumFractionDigits: 6 })}{" "}
-				/ {item.quantidade.toLocaleString("pt-BR", { maximumFractionDigits: 6 })}
+				Soma dos lotes:{" "}
+				{soma.toLocaleString("pt-BR", { maximumFractionDigits: 6 })} /{" "}
+				{item.quantidade.toLocaleString("pt-BR", { maximumFractionDigits: 6 })}
 			</p>
 		</div>
 	);

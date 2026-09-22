@@ -82,7 +82,8 @@ export function ContasReceberReportDialog({
 		gerarRelatorioMutation.mutate();
 	};
 
-	const { inicio: dataInicioPadrao, fim: dataFimPadrao } = inicioFimMesBrasilia();
+	const { inicio: dataInicioPadrao, fim: dataFimPadrao } =
+		inicioFimMesBrasilia();
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>

@@ -34,10 +34,7 @@ describe("normalizar-ie-nfe", () => {
 
 	it("remove IE do destinatário em homologação", () => {
 		expect(
-			ajustarDestinatarioAmbienteNfe(
-				{ ie: "1234567890", indIEDest: 1 },
-				2,
-			),
+			ajustarDestinatarioAmbienteNfe({ ie: "1234567890", indIEDest: 1 }, 2),
 		).toEqual({ ie: undefined, indIEDest: 9 });
 	});
 

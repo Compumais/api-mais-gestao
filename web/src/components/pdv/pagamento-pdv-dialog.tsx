@@ -28,11 +28,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import {
-	Field,
-	FieldGroup,
-	FieldLabel,
-} from "@/components/ui/field";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { MoneyInput } from "@/components/ui/money-input";
 import {
 	Select,
@@ -137,9 +133,8 @@ export function PagamentoPdvDialog({
 }: PagamentoPdvDialogProps) {
 	const [passo, setPasso] = useState<PassoPagamento>("selecao");
 	const [pagamentos, setPagamentos] = useState<PagamentoParcialPdv[]>([]);
-	const [meioSelecionado, setMeioSelecionado] = useState<MeioPagamentoPdv | null>(
-		null,
-	);
+	const [meioSelecionado, setMeioSelecionado] =
+		useState<MeioPagamentoPdv | null>(null);
 	const [formaErpSelecionada, setFormaErpSelecionada] =
 		useState<TipoDocumentoFinanceiro | null>(null);
 	const [identidade, setIdentidade] = useState("");
@@ -396,7 +391,9 @@ export function PagamentoPdvDialog({
 				couvert: couvertNum,
 			}),
 			...(identidade.trim() ? { identidade: identidade.trim() } : {}),
-			...(idcondicaopagto.trim() ? { idcondicaopagto: idcondicaopagto.trim() } : {}),
+			...(idcondicaopagto.trim()
+				? { idcondicaopagto: idcondicaopagto.trim() }
+				: {}),
 			...(extrairPagamentosErpForm(pagamentosFinais).length > 0
 				? { pagamentosErp: extrairPagamentosErpForm(pagamentosFinais) }
 				: {}),
@@ -414,8 +411,7 @@ export function PagamentoPdvDialog({
 							quantidade: item.quantidade,
 							precounitario: item.precounitario,
 							pago:
-								itemContaMesaEstaPago(item) ||
-								idsPagosNestafatia.has(item.id),
+								itemContaMesaEstaPago(item) || idsPagosNestafatia.has(item.id),
 						}))
 					: itens;
 
@@ -758,7 +754,8 @@ export function PagamentoPdvDialog({
 										disabled={processando}
 									/>
 									<p className="text-xs text-muted-foreground">
-										Obrigatório para gerar contas a receber do pagamento a prazo.
+										Obrigatório para gerar contas a receber do pagamento a
+										prazo.
 									</p>
 								</Field>
 								<Field>
@@ -789,48 +786,58 @@ export function PagamentoPdvDialog({
 						)}
 
 						{!modoFatiaItens && (
-							<Collapsible open={ajustesAbertos} onOpenChange={setAjustesAbertos}>
-							<CollapsibleTrigger asChild>
-								<Button type="button" variant="ghost" className="w-full">
-									{ajustesAbertos ? "Ocultar ajustes" : "Desconto, taxa e couvert"}
-								</Button>
-							</CollapsibleTrigger>
-							<CollapsibleContent>
-								<FieldGroup className="mt-2 gap-3">
-									<Field>
-										<FieldLabel>Desconto</FieldLabel>
-										<MoneyInput
-											value={desconto}
-											onChange={setDesconto}
-											placeholder="R$ 0,00"
-										/>
-									</Field>
-									<Field>
-										<FieldLabel>Taxa de serviço</FieldLabel>
-										<MoneyInput
-											value={taxaServico}
-											onChange={setTaxaServico}
-											placeholder="R$ 0,00"
-										/>
-									</Field>
-									<Field>
-										<FieldLabel>Couvert artístico</FieldLabel>
-										<MoneyInput
-											value={couvert}
-											onChange={setCouvert}
-											placeholder="R$ 0,00"
-										/>
-									</Field>
-								</FieldGroup>
-							</CollapsibleContent>
-						</Collapsible>
+							<Collapsible
+								open={ajustesAbertos}
+								onOpenChange={setAjustesAbertos}
+							>
+								<CollapsibleTrigger asChild>
+									<Button type="button" variant="ghost" className="w-full">
+										{ajustesAbertos
+											? "Ocultar ajustes"
+											: "Desconto, taxa e couvert"}
+									</Button>
+								</CollapsibleTrigger>
+								<CollapsibleContent>
+									<FieldGroup className="mt-2 gap-3">
+										<Field>
+											<FieldLabel>Desconto</FieldLabel>
+											<MoneyInput
+												value={desconto}
+												onChange={setDesconto}
+												placeholder="R$ 0,00"
+											/>
+										</Field>
+										<Field>
+											<FieldLabel>Taxa de serviço</FieldLabel>
+											<MoneyInput
+												value={taxaServico}
+												onChange={setTaxaServico}
+												placeholder="R$ 0,00"
+											/>
+										</Field>
+										<Field>
+											<FieldLabel>Couvert artístico</FieldLabel>
+											<MoneyInput
+												value={couvert}
+												onChange={setCouvert}
+												placeholder="R$ 0,00"
+											/>
+										</Field>
+									</FieldGroup>
+								</CollapsibleContent>
+							</Collapsible>
 						)}
 
 						{modoFatiaItens && (
-							<Collapsible open={ajustesAbertos} onOpenChange={setAjustesAbertos}>
+							<Collapsible
+								open={ajustesAbertos}
+								onOpenChange={setAjustesAbertos}
+							>
 								<CollapsibleTrigger asChild>
 									<Button type="button" variant="ghost" className="w-full">
-										{ajustesAbertos ? "Ocultar ajustes" : "Desconto, taxa e couvert"}
+										{ajustesAbertos
+											? "Ocultar ajustes"
+											: "Desconto, taxa e couvert"}
 									</Button>
 								</CollapsibleTrigger>
 								<CollapsibleContent>

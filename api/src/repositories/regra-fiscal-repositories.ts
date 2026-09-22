@@ -5,7 +5,11 @@ import type {
 	ResultadoRegraFiscal,
 	StatusRegraFiscal,
 } from "@/model/regra-fiscal-model.js";
-import { auditoriafiscalnfe, regrafiscal, regrafiscalhistorico } from "@/repositories/schema.js";
+import {
+	auditoriafiscalnfe,
+	regrafiscal,
+	regrafiscalhistorico,
+} from "@/repositories/schema.js";
 import { db } from "./connection";
 
 export type RegraFiscal = typeof regrafiscal.$inferSelect;
@@ -163,16 +167,12 @@ export async function vincularAuditoriaFiscalNfeNota(
 	return registro;
 }
 
-export function condicoesRegraFiscal(
-	valor: unknown,
-): CondicoesRegraFiscal {
+export function condicoesRegraFiscal(valor: unknown): CondicoesRegraFiscal {
 	if (!valor || typeof valor !== "object") return {};
 	return valor as CondicoesRegraFiscal;
 }
 
-export function resultadoRegraFiscal(
-	valor: unknown,
-): ResultadoRegraFiscal {
+export function resultadoRegraFiscal(valor: unknown): ResultadoRegraFiscal {
 	if (!valor || typeof valor !== "object") return {};
 	return valor as ResultadoRegraFiscal;
 }

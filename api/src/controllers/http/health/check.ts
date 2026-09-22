@@ -16,7 +16,8 @@ async function pingDatabase(): Promise<{
 	} catch (error) {
 		return {
 			status: "error",
-			error: error instanceof Error ? error.message : "Falha ao conectar no banco",
+			error:
+				error instanceof Error ? error.message : "Falha ao conectar no banco",
 		};
 	}
 }

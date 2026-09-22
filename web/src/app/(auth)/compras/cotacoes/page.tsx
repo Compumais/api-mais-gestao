@@ -181,9 +181,7 @@ export default function CotacoesCompraPage() {
 								{(cotacao.status === "A" || cotacao.status === "E") && (
 									<DropdownMenuItem
 										onClick={() =>
-											router.push(
-												`/compras/cotacoes/${cotacao.id}/comparativo`,
-											)
+											router.push(`/compras/cotacoes/${cotacao.id}/comparativo`)
 										}
 									>
 										<IconChartBar className="size-4" />

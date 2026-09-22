@@ -26,7 +26,9 @@ export async function listarCfopDeParaService({
 	idusuario,
 	page = 1,
 	limit = 10,
-}: ListarCfopDeParaParametros): Promise<HttpResponse<ListarCfopDeParaResposta>> {
+}: ListarCfopDeParaParametros): Promise<
+	HttpResponse<ListarCfopDeParaResposta>
+> {
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
 		idusuario,
 		idempresa,

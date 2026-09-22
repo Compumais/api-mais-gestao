@@ -741,8 +741,7 @@ export async function prepararPayloadEmissaoNfeVenda(
 	const ideEmissao = resolverIdeEmissaoNfe({
 		ufEmitente: empresaFiscal.uf,
 		ufDestinatario: destinatario?.estado,
-		ufLocalEntrega:
-			localEntregaNormalizado?.uf ?? enderecoEntregaResolvido?.uf,
+		ufLocalEntrega: localEntregaNormalizado?.uf ?? enderecoEntregaResolvido?.uf,
 		paisDestinatario: destinatario?.pais,
 		indPres:
 			indPres ??

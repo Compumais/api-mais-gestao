@@ -23,9 +23,7 @@ export function resolverBaseIcmsTaxaUf(
 	valorProduto: number,
 ): number {
 	const percentualBase =
-		taxa.baseicms != null && taxa.baseicms !== ""
-			? Number(taxa.baseicms)
-			: 100;
+		taxa.baseicms != null && taxa.baseicms !== "" ? Number(taxa.baseicms) : 100;
 
 	const fator = Number.isFinite(percentualBase) ? percentualBase / 100 : 1;
 	return round2(valorProduto * fator);

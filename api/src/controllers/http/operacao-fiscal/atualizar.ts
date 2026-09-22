@@ -8,10 +8,13 @@ const atualizarOperacaoFiscalParamsSchema = z.object({
 });
 
 const atualizarOperacaoFiscalBodySchema = z.looseObject({
-	nome: z.string().max(40).optional()
+	nome: z.string().max(40).optional(),
 });
 
-export async function atualizarOperacaoFiscal(request: FastifyRequest, reply: FastifyReply) {
+export async function atualizarOperacaoFiscal(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());

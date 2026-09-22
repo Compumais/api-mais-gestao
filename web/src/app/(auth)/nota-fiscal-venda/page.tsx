@@ -180,9 +180,7 @@ export default function NotaFiscalVendaPage() {
 				...(filtrosColuna.status
 					? { status: Number(filtrosColuna.status) }
 					: {}),
-				...(filtrosColuna.chavenfe
-					? { chavenfe: filtrosColuna.chavenfe }
-					: {}),
+				...(filtrosColuna.chavenfe ? { chavenfe: filtrosColuna.chavenfe } : {}),
 				...(ordenarPor ? { ordenarPor } : {}),
 				...(ordem ? { ordem } : {}),
 			});
@@ -359,10 +357,7 @@ export default function NotaFiscalVendaPage() {
 							</p>
 						</div>
 					) : mostrarSkeleton ? (
-						<TableSkeleton
-							rows={10}
-							columns={colunasVisiveis.length || 7}
-						>
+						<TableSkeleton rows={10} columns={colunasVisiveis.length || 7}>
 							{colunasVisiveis.map((coluna) => (
 								<TableHead key={coluna.id}>{rotuloColuna(coluna)}</TableHead>
 							))}

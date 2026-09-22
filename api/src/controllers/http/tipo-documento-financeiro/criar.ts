@@ -17,13 +17,18 @@ const criarTipoDocumentoFinanceiroBodySchema = z.object({
 	currenttimemillis: z.coerce.number().int().optional(),
 });
 
-export async function criarTipoDocumentoFinanceiro(request: FastifyRequest, reply: FastifyReply) {
+export async function criarTipoDocumentoFinanceiro(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
 		}
 
-		const dadosValidados = criarTipoDocumentoFinanceiroBodySchema.parse(request.body);
+		const dadosValidados = criarTipoDocumentoFinanceiroBodySchema.parse(
+			request.body,
+		);
 
 		const dadosTipoDocumentoFinanceiro = {
 			id: uuidv4(),

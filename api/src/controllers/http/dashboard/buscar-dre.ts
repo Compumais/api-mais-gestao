@@ -8,10 +8,7 @@ const querySchema = z.object({
 	ano: z.coerce.number().min(2000).max(2100).optional(),
 });
 
-export async function buscarDre(
-	request: FastifyRequest,
-	reply: FastifyReply,
-) {
+export async function buscarDre(request: FastifyRequest, reply: FastifyReply) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());

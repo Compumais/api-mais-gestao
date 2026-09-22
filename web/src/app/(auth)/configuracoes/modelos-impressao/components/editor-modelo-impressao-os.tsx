@@ -122,7 +122,8 @@ function BlocoSortable({
 
 	const coluna = bloco.coluna ?? "cheia";
 	const rotuloColuna =
-		OPCOES_COLUNA_BLOCO.find((o) => o.value === coluna)?.label ?? "Largura total";
+		OPCOES_COLUNA_BLOCO.find((o) => o.value === coluna)?.label ??
+		"Largura total";
 	const qtdCamposPersonalizados =
 		bloco.tipo === "personalizado"
 			? (bloco.props?.camposPersonalizados?.length ?? 0)
@@ -150,7 +151,9 @@ function BlocoSortable({
 				className="flex-1 text-left text-sm"
 				onClick={onSelect}
 			>
-				<span className="block">{LABELS_BLOCO_MODELO_IMPRESSAO_OS[bloco.tipo]}</span>
+				<span className="block">
+					{LABELS_BLOCO_MODELO_IMPRESSAO_OS[bloco.tipo]}
+				</span>
 				<span className="block text-xs text-muted-foreground">
 					{bloco.tipo === "personalizado"
 						? `${qtdCamposPersonalizados} campo${qtdCamposPersonalizados === 1 ? "" : "s"} · ${rotuloColuna}`
@@ -208,13 +211,8 @@ export function EditorModeloImpressaoOs({
 		[layout, blocoSelecionadoId],
 	);
 
-	function atualizarBloco(
-		id: string,
-		patch: Partial<BlocoModeloImpressaoOs>,
-	) {
-		onLayoutChange(
-			layout.map((b) => (b.id === id ? { ...b, ...patch } : b)),
-		);
+	function atualizarBloco(id: string, patch: Partial<BlocoModeloImpressaoOs>) {
+		onLayoutChange(layout.map((b) => (b.id === id ? { ...b, ...patch } : b)));
 	}
 
 	function onDragEnd(event: DragEndEvent) {
@@ -317,9 +315,7 @@ export function EditorModeloImpressaoOs({
 											onSelect={() => setBlocoSelecionadoId(bloco.id)}
 											onRemove={() => {
 												if (somenteLeitura) return;
-												onLayoutChange(
-													layout.filter((b) => b.id !== bloco.id),
-												);
+												onLayoutChange(layout.filter((b) => b.id !== bloco.id));
 												if (blocoSelecionadoId === bloco.id) {
 													setBlocoSelecionadoId(null);
 												}
@@ -418,9 +414,9 @@ export function EditorModeloImpressaoOs({
 										className="flex items-center gap-2 text-sm"
 									>
 										<Checkbox
-											checked={(
-												blocoSelecionado.props?.campos ?? []
-											).includes(campo.value)}
+											checked={(blocoSelecionado.props?.campos ?? []).includes(
+												campo.value,
+											)}
 											onCheckedChange={() =>
 												toggleCampo(
 													campo.value,
@@ -462,9 +458,9 @@ export function EditorModeloImpressaoOs({
 										className="flex items-center gap-2 text-sm"
 									>
 										<Checkbox
-											checked={(
-												blocoSelecionado.props?.campos ?? []
-											).includes(campo.value)}
+											checked={(blocoSelecionado.props?.campos ?? []).includes(
+												campo.value,
+											)}
 											onCheckedChange={() =>
 												toggleCampo(
 													campo.value,

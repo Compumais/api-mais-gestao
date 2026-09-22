@@ -39,7 +39,9 @@ export async function gerarPedidosCotacaoCompraService({
 	id,
 	idusuario,
 	itens,
-}: GerarPedidosParametros): Promise<HttpResponse<{ data: PedidoCompraCompleto[] }>> {
+}: GerarPedidosParametros): Promise<
+	HttpResponse<{ data: PedidoCompraCompleto[] }>
+> {
 	const cotacao = await buscarCotacaoCompraPorId(id);
 	if (!cotacao) {
 		return httpNaoEncontrado();
@@ -75,7 +77,10 @@ export async function gerarPedidosCotacaoCompraService({
 
 	const itemPorId = new Map(itensCotacao.map((item) => [item.id, item]));
 	const precoPorChave = new Map(
-		precos.map((preco) => [`${preco.idproposta}:${preco.idcotacaoitem}`, preco]),
+		precos.map((preco) => [
+			`${preco.idproposta}:${preco.idcotacaoitem}`,
+			preco,
+		]),
 	);
 
 	const itensPorProposta = new Map<

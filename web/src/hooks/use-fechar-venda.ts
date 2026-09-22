@@ -132,9 +132,7 @@ export function useFecharVenda() {
 				valorprepago: parseValor(pagamento.valorprepago).toFixed(2),
 				valortroco: valortroco.toFixed(2),
 				valortotal: valortotal.toFixed(2),
-				...(pagamento.identidade
-					? { identidade: pagamento.identidade }
-					: {}),
+				...(pagamento.identidade ? { identidade: pagamento.identidade } : {}),
 				...(pagamento.idcondicaopagto
 					? { idcondicaopagto: pagamento.idcondicaopagto }
 					: {}),
@@ -176,7 +174,9 @@ export function useFecharVenda() {
 			queryClient.invalidateQueries({
 				queryKey: ["conta-mesa-itens", variables.idcontamesa],
 			});
-			queryClient.invalidateQueries({ queryKey: ["nfce", variables.idempresa] });
+			queryClient.invalidateQueries({
+				queryKey: ["nfce", variables.idempresa],
+			});
 			if (resultado.baixa?.emissaoNfce?.emitida) {
 				toast.success("Conta fechada e NFC-e emitida!");
 			} else if (!resultado.baixa?.deveEmitirNfce) {
@@ -256,7 +256,9 @@ export function useFecharVenda() {
 					"Todos os itens foram pagos. Finalize a venda para encerrar a mesa.",
 				);
 			} else {
-				toast.success("Fatia recebida. Selecione os próximos itens para pagar.");
+				toast.success(
+					"Fatia recebida. Selecione os próximos itens para pagar.",
+				);
 			}
 		},
 		onError: (error: Error) => {
@@ -266,10 +268,7 @@ export function useFecharVenda() {
 	});
 
 	const finalizarMesaContaMutation = useMutation({
-		mutationFn: async ({
-			userId,
-			idcontamesa,
-		}: FinalizarMesaContaParams) => {
+		mutationFn: async ({ userId, idcontamesa }: FinalizarMesaContaParams) => {
 			return contaMesaService.atualizar(idcontamesa, {
 				status: STATUS_MESA.FECHADO,
 				valorpendente: "0",
@@ -330,9 +329,7 @@ export function useFecharVenda() {
 				valorprepago: parseValor(pagamento.valorprepago).toFixed(2),
 				valortroco: valortroco.toFixed(2),
 				valortotal: valortotal.toFixed(2),
-				...(pagamento.identidade
-					? { identidade: pagamento.identidade }
-					: {}),
+				...(pagamento.identidade ? { identidade: pagamento.identidade } : {}),
 				...(pagamento.idcondicaopagto
 					? { idcondicaopagto: pagamento.idcondicaopagto }
 					: {}),
@@ -368,7 +365,9 @@ export function useFecharVenda() {
 			return { venda, baixa };
 		},
 		onSuccess: (resultado, variables) => {
-			queryClient.invalidateQueries({ queryKey: ["nfce", variables.idempresa] });
+			queryClient.invalidateQueries({
+				queryKey: ["nfce", variables.idempresa],
+			});
 			if (resultado.baixa?.emissaoNfce?.emitida) {
 				toast.success("Venda finalizada e NFC-e emitida!");
 			} else if (!resultado.baixa?.deveEmitirNfce) {

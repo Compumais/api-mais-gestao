@@ -30,8 +30,12 @@ export const nfeinbounddocumento = pgTable(
 		dataemissao: timestamp({ precision: 3, mode: "string" }),
 		valortotal: numeric({ precision: 15, scale: 2, mode: "string" }),
 		xml: text(),
-		statusmanifestacao: varchar({ length: 30 }).default("sem_manifestacao").notNull(),
-		statusimportacao: varchar({ length: 30 }).default("aguardando_xml").notNull(),
+		statusmanifestacao: varchar({ length: 30 })
+			.default("sem_manifestacao")
+			.notNull(),
+		statusimportacao: varchar({ length: 30 })
+			.default("aguardando_xml")
+			.notNull(),
 		idrascunho: text(),
 		criadoem: timestamp({ precision: 3, mode: "string" })
 			.default(sql`CURRENT_TIMESTAMP`)
@@ -47,7 +51,9 @@ export const nfeinbounddocumento = pgTable(
 			table.idempresa,
 			table.criadoem,
 		),
-		index("nfeinbounddocumento_statusimportacao_idx").on(table.statusimportacao),
+		index("nfeinbounddocumento_statusimportacao_idx").on(
+			table.statusimportacao,
+		),
 		foreignKey({
 			columns: [table.idempresa],
 			foreignColumns: [empresa.id],

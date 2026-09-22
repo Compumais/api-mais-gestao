@@ -89,7 +89,8 @@ export function AbrirMesaGarcomDialog({
 				numeromesa: dados.numeromesa,
 				status: STATUS_MESA.ABERTO,
 				numeropessoas:
-					dados.numeropessoas !== undefined && !Number.isNaN(dados.numeropessoas)
+					dados.numeropessoas !== undefined &&
+					!Number.isNaN(dados.numeropessoas)
 						? dados.numeropessoas
 						: 1,
 				observacao: dados.observacao || undefined,

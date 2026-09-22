@@ -6,7 +6,12 @@ import {
 	carregarContextoEmissaoNfe,
 	montarPayloadGatewayEmissao,
 } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
-import { httpBadRequest, httpErro, httpOk, httpProibido } from "@/util/http-util.js";
+import {
+	httpBadRequest,
+	httpErro,
+	httpOk,
+	httpProibido,
+} from "@/util/http-util.js";
 
 const parser = new XMLParser({
 	ignoreAttributes: false,

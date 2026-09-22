@@ -1,7 +1,9 @@
 import { v4 as uuidv4 } from "uuid";
 import type { NovaTaxaUf } from "@/repositories/taxauf-repositories.js";
 import { UFS_BRASIL } from "@/util/ufs-brasil.js";
-import conteudoTaxaPadrao from "../data/taxauf-padrao.json" with { type: "json" };
+import conteudoTaxaPadrao from "../data/taxauf-padrao.json" with {
+	type: "json",
+};
 
 type TaxaPadraoJson = {
 	ID_CTI: string;

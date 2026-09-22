@@ -8,7 +8,9 @@ type EditarFatorConversaoClientProps = {
 	id: string;
 };
 
-export function EditarFatorConversaoClient({ id }: EditarFatorConversaoClientProps) {
+export function EditarFatorConversaoClient({
+	id,
+}: EditarFatorConversaoClientProps) {
 	const { data, isLoading } = useQuery({
 		queryKey: ["fator-conversao", id],
 		queryFn: () => fatorConversaoService.buscar(id),
@@ -25,7 +27,9 @@ export function EditarFatorConversaoClient({ id }: EditarFatorConversaoClientPro
 	if (!data) {
 		return (
 			<div className="flex items-center justify-center py-8">
-				<p className="text-muted-foreground">Fator de conversão não encontrado.</p>
+				<p className="text-muted-foreground">
+					Fator de conversão não encontrado.
+				</p>
 			</div>
 		);
 	}

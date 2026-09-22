@@ -15,7 +15,11 @@ import {
 	Wifi,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate, useOutletContext, useSearchParams } from "react-router-dom";
+import {
+	useNavigate,
+	useOutletContext,
+	useSearchParams,
+} from "react-router-dom";
 import { pdvInvoke } from "@/lib/pdv-api";
 import {
 	type LeituraCodigoBarras,
@@ -346,9 +350,7 @@ export function ConfigPage() {
 			}
 			try {
 				setStatusLan(await pdvInvoke<StatusLan>("statusLan"));
-				setConexoesQrPos(
-					await pdvInvoke<ConexaoQrPos[]>("conexoesQrPos"),
-				);
+				setConexoesQrPos(await pdvInvoke<ConexaoQrPos[]>("conexoesQrPos"));
 			} catch {
 				setStatusLan(null);
 				setConexoesQrPos([]);
@@ -433,7 +435,7 @@ export function ConfigPage() {
 				emitir_nfce: config.emitir_nfce ?? "1",
 				tema: config.tema ?? "light",
 				pix_chave: config.pix_chave ?? "",
-												taxa_servico_percentual: config.taxa_servico_percentual ?? "10",
+				taxa_servico_percentual: config.taxa_servico_percentual ?? "10",
 				couvert_valor: config.couvert_valor ?? "0",
 				taxa_entrega_padrao: config.taxa_entrega_padrao ?? "0",
 				bairros_entrega: config.bairros_entrega ?? "[]",
@@ -526,9 +528,7 @@ export function ConfigPage() {
 			}
 			try {
 				setStatusLan(await pdvInvoke<StatusLan>("statusLan"));
-				setConexoesQrPos(
-					await pdvInvoke<ConexaoQrPos[]>("conexoesQrPos"),
-				);
+				setConexoesQrPos(await pdvInvoke<ConexaoQrPos[]>("conexoesQrPos"));
 			} catch {
 				setStatusLan(null);
 				setConexoesQrPos([]);
@@ -688,9 +688,7 @@ export function ConfigPage() {
 			const lan = await pdvInvoke<StatusLan>("reiniciarLan");
 			setStatusLan(lan);
 			setConexoesQrPos(
-				lan.ouvindo
-					? await pdvInvoke<ConexaoQrPos[]>("conexoesQrPos")
-					: [],
+				lan.ouvindo ? await pdvInvoke<ConexaoQrPos[]>("conexoesQrPos") : [],
 			);
 			setMsg(
 				lan.ouvindo
@@ -1186,10 +1184,7 @@ export function ConfigPage() {
 															: "1"
 													}
 													onChange={(e) =>
-														set(
-															"modal_abrir_mesa_habilitado",
-															e.target.value,
-														)
+														set("modal_abrir_mesa_habilitado", e.target.value)
 													}
 												>
 													<option value="1">Habilitado</option>
@@ -1197,8 +1192,8 @@ export function ConfigPage() {
 												</Select>
 												<p className="text-xs text-muted-foreground">
 													Desabilitado: ao tocar em uma{" "}
-													{rotulo.singular.toLowerCase()} livre ou ocupada,
-													abre a conta direto, sem pedir nome ou confirmação.
+													{rotulo.singular.toLowerCase()} livre ou ocupada, abre
+													a conta direto, sem pedir nome ou confirmação.
 												</p>
 											</div>
 										</>
@@ -1326,10 +1321,7 @@ export function ConfigPage() {
 																: "1"
 														}
 														onChange={(e) =>
-															set(
-																"senha_gerencial_habilitada",
-																e.target.value,
-															)
+															set("senha_gerencial_habilitada", e.target.value)
 														}
 													>
 														<option value="1">Habilitada</option>
@@ -1634,8 +1626,8 @@ export function ConfigPage() {
 														</option>
 													</Select>
 													<p className="text-xs text-muted-foreground">
-														Quantidade na linha: um item com 6 unidades sai
-														como &quot;6 Pastel de carne&quot;. Uma linha por
+														Quantidade na linha: um item com 6 unidades sai como
+														&quot;6 Pastel de carne&quot;. Uma linha por
 														unidade: o mesmo item sai 6 vezes como &quot;1
 														Pastel de carne&quot;. Itens com quantidade
 														fracionada (ex.: 1,5 kg) continuam numa linha.
@@ -1650,8 +1642,7 @@ export function ConfigPage() {
 														<Select
 															id="impressao_producao_imprimir_grupo"
 															value={
-																config.impressao_producao_imprimir_grupo ===
-																"0"
+																config.impressao_producao_imprimir_grupo === "0"
 																	? "0"
 																	: "1"
 															}
@@ -1667,8 +1658,8 @@ export function ConfigPage() {
 														</Select>
 														<p className="text-xs text-muted-foreground">
 															Habilitado: no cupom único, cada setor aparece
-															como cabeçalho (ex.: COZINHA). Desabilitado:
-															só a lista de itens.
+															como cabeçalho (ex.: COZINHA). Desabilitado: só a
+															lista de itens.
 														</p>
 													</div>
 												) : null}
@@ -2081,10 +2072,10 @@ export function ConfigPage() {
 									<p className="sm:col-span-2 text-xs text-muted-foreground">
 										A receptora lê este arquivo: comanda presente = saída
 										bloqueada; ausente = liberada. O número vai ao XML com zeros
-										à esquerda conforme as casas (1, 01 ou 001). Com &quot;ignorar
-										dígito verificador&quot;, o último dígito é removido antes
-										(ex.: 1015 → 101 → 0101 com 4 casas). Pasta padrão da IHM:
-										C:\Tecnibra\IHM Receptora\Comandas.xml
+										à esquerda conforme as casas (1, 01 ou 001). Com
+										&quot;ignorar dígito verificador&quot;, o último dígito é
+										removido antes (ex.: 1015 → 101 → 0101 com 4 casas). Pasta
+										padrão da IHM: C:\Tecnibra\IHM Receptora\Comandas.xml
 										{statusTecnibra
 											? ` — ${statusTecnibra.commandCount} pendente(s)${
 													statusTecnibra.lastError
@@ -2635,9 +2626,8 @@ export function ConfigPage() {
 															Conectar maquininha POS
 														</p>
 														<p className="text-xs text-muted-foreground">
-															No POS, toque em “Ler QR do PDV” e depois
-															entre com seu usuário. O QR não contém senha
-															nem token.
+															No POS, toque em “Ler QR do PDV” e depois entre
+															com seu usuário. O QR não contém senha nem token.
 														</p>
 													</div>
 												</div>
@@ -2781,9 +2771,7 @@ export function ConfigPage() {
 									</div>
 									{statusUpdate?.artifact ? (
 										<div className="space-y-1 sm:col-span-2">
-											<p className="text-xs text-muted-foreground">
-												Artefato
-											</p>
+											<p className="text-xs text-muted-foreground">Artefato</p>
 											<p className="text-sm break-all">
 												{statusUpdate.artifact}
 											</p>

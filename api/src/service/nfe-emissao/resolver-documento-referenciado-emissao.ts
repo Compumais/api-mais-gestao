@@ -12,11 +12,7 @@ import {
 	type TipoDevolucaoNfe,
 } from "@/util/cfop-devolucao-emissao-nfe.js";
 import { extrairTributacaoItemEmissaoNfe } from "@/util/dados-emissao-nfe-nota.js";
-import {
-	httpBadRequest,
-	httpNaoEncontrado,
-	httpOk,
-} from "@/util/http-util.js";
+import { httpBadRequest, httpNaoEncontrado, httpOk } from "@/util/http-util.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
 import { parseNFeXml } from "@/util/nfe-xml-parser.js";
 import { STATUS_RASCUNHO_IMPORTACAO } from "@/util/nota-fiscal-constants.js";
@@ -100,10 +96,21 @@ function mapearTributacaoItemReferencia(item: {
 
 function mapearTributacaoItemReferenciaDevolucaoCompra(
 	item: Parameters<typeof mapearTributacaoItemReferencia>[0],
-): Pick<ItemSugeridoDevolucao, "valorIpiDevol" | "baseIcms" | "aliquotaIcms" | "valorIcms" | "baseIcmsSt" | "valorIcmsSt" | "valorFcpSt"> {
+): Pick<
+	ItemSugeridoDevolucao,
+	| "valorIpiDevol"
+	| "baseIcms"
+	| "aliquotaIcms"
+	| "valorIcms"
+	| "baseIcmsSt"
+	| "valorIcmsSt"
+	| "valorFcpSt"
+> {
 	const base = mapearTributacaoItemReferencia(item);
 	const { valorIpi, ...resto } = base;
-	const tributacaoEmissao = extrairTributacaoItemEmissaoNfe(item.dadosimportacao);
+	const tributacaoEmissao = extrairTributacaoItemEmissaoNfe(
+		item.dadosimportacao,
+	);
 	const paraNumero = (valor?: string | null) => {
 		if (valor == null || valor === "") return undefined;
 		const numero = Number(valor);
@@ -119,10 +126,11 @@ function mapearTributacaoItemReferenciaDevolucaoCompra(
 	};
 }
 
-export type ResolverDocumentoReferenciadoResposta = DocumentoReferenciadoEmissao & {
-	iddestinatarioSugerido?: string;
-	itensSugeridos?: ItemSugeridoDevolucao[];
-};
+export type ResolverDocumentoReferenciadoResposta =
+	DocumentoReferenciadoEmissao & {
+		iddestinatarioSugerido?: string;
+		itensSugeridos?: ItemSugeridoDevolucao[];
+	};
 
 function sanitizarChaveNfe(chave?: string | null): string | null {
 	const digitos = chave?.replace(/\D/g, "") ?? "";
@@ -136,13 +144,19 @@ async function resolverCfopDevolucaoCompraItem(
 	uf?: string | null,
 ): Promise<string | undefined> {
 	if (idcfopEntrada) {
-		const dePara = await buscarCfopSaidaPorEntrada(idempresa, idcfopEntrada, uf ?? undefined);
+		const dePara = await buscarCfopSaidaPorEntrada(
+			idempresa,
+			idcfopEntrada,
+			uf ?? undefined,
+		);
 		if (dePara?.codigosaida) {
 			return dePara.codigosaida.replace(/\D/g, "");
 		}
 	}
 
-	const inferido = cfopEntrada ? inferirCodigoCfopDevolucaoSaida(cfopEntrada) : null;
+	const inferido = cfopEntrada
+		? inferirCodigoCfopDevolucaoSaida(cfopEntrada)
+		: null;
 	if (!inferido) return undefined;
 
 	const cfop = await buscarCfopPorCodigo(idempresa, inferido);
@@ -153,7 +167,9 @@ async function resolverCfopDevolucaoVendaItem(
 	idempresa: string,
 	cfopSaida?: string | null,
 ): Promise<string | undefined> {
-	const inferido = cfopSaida ? inferirCodigoCfopDevolucaoEntrada(cfopSaida) : null;
+	const inferido = cfopSaida
+		? inferirCodigoCfopDevolucaoEntrada(cfopSaida)
+		: null;
 	if (!inferido) return undefined;
 
 	const cfop = await buscarCfopPorCodigo(idempresa, inferido);
@@ -175,7 +191,9 @@ async function montarItensSugeridosDevolucaoCompra(
 					item.cfop,
 					item.idcfop ?? undefined,
 					nota?.estado ?? undefined,
-				)) ?? item.cfop?.replace(/\D/g, "") ?? "5202";
+				)) ??
+				item.cfop?.replace(/\D/g, "") ??
+				"5202";
 
 			return {
 				idproduto: item.idproduto ?? undefined,
@@ -190,7 +208,9 @@ async function montarItensSugeridosDevolucaoCompra(
 				cstpis: item.cstpis ?? undefined,
 				cstcofins: item.cstcofins ?? undefined,
 				...mapearTributacaoItemReferenciaDevolucaoCompra(
-					item as Parameters<typeof mapearTributacaoItemReferenciaDevolucaoCompra>[0],
+					item as Parameters<
+						typeof mapearTributacaoItemReferenciaDevolucaoCompra
+					>[0],
 				),
 			};
 		}),
@@ -265,7 +285,9 @@ export async function resolverDocumentoReferenciadoEmissao(
 		}
 
 		if (nota.status === STATUS_RASCUNHO_IMPORTACAO) {
-			return httpBadRequest("Finalize a nota de referência antes de utilizá-la");
+			return httpBadRequest(
+				"Finalize a nota de referência antes de utilizá-la",
+			);
 		}
 
 		if (tipoDevolucao === "venda" && nota.status !== NFE_STATUS.AUTORIZADA) {

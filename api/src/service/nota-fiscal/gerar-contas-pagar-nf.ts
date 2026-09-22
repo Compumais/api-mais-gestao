@@ -148,9 +148,7 @@ export async function gerarContasPagarNfService({
 		undefined;
 
 	const duplicatasValidas =
-		duplicatas?.filter(
-			(dup) => dup.valor && parseFloat(dup.valor) > 0,
-		) ?? [];
+		duplicatas?.filter((dup) => dup.valor && parseFloat(dup.valor) > 0) ?? [];
 
 	if (duplicatasValidas.length > 0) {
 		const parcelasGeradas = await gerarParcelasPorDuplicatas(

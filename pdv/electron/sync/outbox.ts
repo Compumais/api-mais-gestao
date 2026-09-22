@@ -87,8 +87,8 @@ import {
 	classificarConflitosNumeracao,
 	resolverProximoNumeroMonotonico,
 } from "../fiscal/numeracao-nfce";
-import { sincronizarImagensProdutos } from "./imagens-produtos";
 import { sincronizarImagensGruposGourmet } from "./imagens-grupos-gourmet";
+import { sincronizarImagensProdutos } from "./imagens-produtos";
 import { atualizarCacheTerminaisPdv } from "./terminais-pdv";
 
 export type DetalheCicloOutbox = {
@@ -260,9 +260,7 @@ async function puxarCatalogoDaEmpresa(idempresa: string): Promise<{
 			if (!grupos.length) {
 				break;
 			}
-			await upsertGruposGourmet(
-				await sincronizarImagensGruposGourmet(grupos),
-			);
+			await upsertGruposGourmet(await sincronizarImagensGruposGourmet(grupos));
 			totalGruposGourmet += grupos.length;
 			if (grupos.length < 100 || page >= 10_000) {
 				break;
@@ -301,7 +299,9 @@ async function puxarCatalogoDaEmpresa(idempresa: string): Promise<{
 			const sigla = unidade?.codigo?.trim() || unidade?.nome?.trim() || null;
 			return { ...p, unidademedida: sigla };
 		});
-		await upsertProdutos(await sincronizarImagensProdutos(produtosNormalizados));
+		await upsertProdutos(
+			await sincronizarImagensProdutos(produtosNormalizados),
+		);
 		for (const p of produtos) {
 			idsSincronizados.push(p.id);
 		}

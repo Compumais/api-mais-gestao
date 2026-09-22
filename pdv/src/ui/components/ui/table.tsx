@@ -3,7 +3,10 @@ import { cn } from "@/lib/utils";
 
 function Table({ className, ...props }: React.ComponentProps<"table">) {
 	return (
-		<div data-slot="table-container" className="relative w-full overflow-x-auto">
+		<div
+			data-slot="table-container"
+			className="relative w-full overflow-x-auto"
+		>
 			<table
 				data-slot="table"
 				className={cn("w-full caption-bottom text-sm", className)}
@@ -69,4 +72,4 @@ function TableCell({ className, ...props }: React.ComponentProps<"td">) {
 	);
 }
 
-export { Table, TableHeader, TableBody, TableHead, TableRow, TableCell };
+export { Table, TableBody, TableCell, TableHead, TableHeader, TableRow };

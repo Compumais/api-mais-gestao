@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-	CHAVE_NFE,
-} from "@/service/nfe-inbound/__fixtures__/xml-dfe.fixtures.js";
+import { CHAVE_NFE } from "@/service/nfe-inbound/__fixtures__/xml-dfe.fixtures.js";
 import { validarPreConsultaChaveNfe } from "@/service/nfe-inbound/validar-pre-consulta-chave-nfe.js";
 import { calcularDigitoVerificadorChaveNfe } from "@/util/decodificar-chave-nfe.js";
 
@@ -53,7 +51,10 @@ describe("validarPreConsultaChaveNfe", () => {
 	});
 
 	it("deve detectar ambiente divergente no XML", () => {
-		const xmlHomolog = XML_COM_DESTINATARIO.replace("<tpAmb>1</tpAmb>", "<tpAmb>2</tpAmb>");
+		const xmlHomolog = XML_COM_DESTINATARIO.replace(
+			"<tpAmb>1</tpAmb>",
+			"<tpAmb>2</tpAmb>",
+		);
 
 		const resultado = validarPreConsultaChaveNfe({
 			chave: CHAVE_NFE,
@@ -64,7 +65,9 @@ describe("validarPreConsultaChaveNfe", () => {
 
 		expect(resultado.ok).toBe(false);
 		expect(
-			resultado.inconsistencias.some((item) => item.codigo === "AMBIENTE_DIVERGENTE"),
+			resultado.inconsistencias.some(
+				(item) => item.codigo === "AMBIENTE_DIVERGENTE",
+			),
 		).toBe(true);
 	});
 

@@ -18,7 +18,9 @@ export function ResumoTomadorNfse({ nota }: ResumoTomadorNfseProps) {
 	});
 
 	if (isLoading) {
-		return <p className="text-sm text-muted-foreground">Carregando tomador...</p>;
+		return (
+			<p className="text-sm text-muted-foreground">Carregando tomador...</p>
+		);
 	}
 
 	if (entidade) {

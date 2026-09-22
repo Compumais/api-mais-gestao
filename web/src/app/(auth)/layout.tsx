@@ -2,6 +2,7 @@
 
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppTopbar } from "@/components/app-topbar";
+import { BlocoErrorBoundary } from "@/components/bloco-error-boundary";
 import { NavAbasAbertasBar } from "@/components/nav-abas-abertas-bar";
 import { NavAbasKeepAlive } from "@/components/nav-abas-keep-alive";
 import { ProtectedRoute } from "@/components/protected-route";
@@ -21,7 +22,11 @@ import {
 
 function SearchDialogWrapper() {
 	const { open, setOpen } = useSearchDialog();
-	return <SearchDialog open={open} onOpenChange={setOpen} />;
+	return (
+		<BlocoErrorBoundary titulo="Erro na pesquisa" variante="compacto">
+			<SearchDialog open={open} onOpenChange={setOpen} />
+		</BlocoErrorBoundary>
+	);
 }
 
 function LayoutComum({ children }: { children: React.ReactNode }) {
@@ -86,9 +91,7 @@ function AuthLayoutShell({ children }: { children: React.ReactNode }) {
 	const shell = (() => {
 		// Evita flash do menu lateral para quem usa topbar enquanto preferências carregam.
 		if (isLoading) {
-			return (
-				<div className="min-h-svh bg-background" aria-busy="true" />
-			);
+			return <div className="min-h-svh bg-background" aria-busy="true" />;
 		}
 		if (layoutMenu === "topbar") {
 			return <LayoutTopbar>{children}</LayoutTopbar>;

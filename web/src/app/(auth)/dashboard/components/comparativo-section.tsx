@@ -24,10 +24,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { useDashboardComparativoFlexivel } from "@/hooks/dashboard/use-dashboard-queries";
-import {
-	formatCurrency,
-	formatPercent,
-} from "@/lib/dashboard-periodo";
+import { formatCurrency, formatPercent } from "@/lib/dashboard-periodo";
 import { cn } from "@/lib/utils";
 import type { ComparativoFlexivelModo } from "@/services/dashboard.service";
 
@@ -58,7 +55,9 @@ export function ComparativoSection() {
 					<SelectContent>
 						<SelectItem value="ano_x_ano">Ano × Ano</SelectItem>
 						<SelectItem value="mes_x_anterior">Mês × Mês anterior</SelectItem>
-						<SelectItem value="mes_x_yoy">Mês × Mesmo mês ano anterior</SelectItem>
+						<SelectItem value="mes_x_yoy">
+							Mês × Mesmo mês ano anterior
+						</SelectItem>
 						<SelectItem value="personalizado">Período personalizado</SelectItem>
 					</SelectContent>
 				</Select>

@@ -9,8 +9,7 @@ const imagemDataUrlSchema = z
 		(valor) =>
 			valor.startsWith("data:image/") && valor.length <= IMAGEM_MAX_LENGTH,
 		{
-			message:
-				"Imagem inválida ou muito grande. Use uma imagem de até 500 KB.",
+			message: "Imagem inválida ou muito grande. Use uma imagem de até 500 KB.",
 		},
 	);
 

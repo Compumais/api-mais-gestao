@@ -7,13 +7,18 @@ const excluirPlanoContasContaContabilParamsSchema = z.object({
 	id: z.string(),
 });
 
-export async function excluirPlanoContasContaContabil(request: FastifyRequest, reply: FastifyReply) {
+export async function excluirPlanoContasContaContabil(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
 		}
 
-		const { id } = excluirPlanoContasContaContabilParamsSchema.parse(request.params);
+		const { id } = excluirPlanoContasContaContabilParamsSchema.parse(
+			request.params,
+		);
 
 		const resultado = await excluirPlanoContasContaContabilService({
 			planoContasContaContabilId: id,

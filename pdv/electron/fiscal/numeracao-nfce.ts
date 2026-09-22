@@ -73,7 +73,11 @@ export function classificarConflitosNumeracao(
 ): ConflitoNumeracaoNfce[] {
 	const porChave = new Map<string, NfceNumeracaoResumo[]>();
 	for (const r of registros) {
-		if (!Number.isFinite(r.serie) || !Number.isFinite(r.numero) || r.numero < 1) {
+		if (
+			!Number.isFinite(r.serie) ||
+			!Number.isFinite(r.numero) ||
+			r.numero < 1
+		) {
 			continue;
 		}
 		const key = `${r.serie}:${r.numero}`;

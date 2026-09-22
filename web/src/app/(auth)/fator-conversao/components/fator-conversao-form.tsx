@@ -70,24 +70,29 @@ export function FatorConversaoForm(props: FatorConversaoFormProps) {
 		},
 	});
 
-	const { mutate: atualizarFator, isPending: isPendingAtualizar } = useMutation({
-		mutationFn: async (
-			dados: Parameters<typeof fatorConversaoService.atualizar>[1],
-		) => {
-			if (!isEdicao || !props.fatorConversaoId) {
-				throw new Error("ID do fator de conversão é obrigatório para editar");
-			}
-			return await fatorConversaoService.atualizar(props.fatorConversaoId, dados);
+	const { mutate: atualizarFator, isPending: isPendingAtualizar } = useMutation(
+		{
+			mutationFn: async (
+				dados: Parameters<typeof fatorConversaoService.atualizar>[1],
+			) => {
+				if (!isEdicao || !props.fatorConversaoId) {
+					throw new Error("ID do fator de conversão é obrigatório para editar");
+				}
+				return await fatorConversaoService.atualizar(
+					props.fatorConversaoId,
+					dados,
+				);
+			},
+			onSuccess: () => {
+				queryClient.invalidateQueries({ queryKey: ["fatores-conversao"] });
+				toast.success("Fator de conversão atualizado com sucesso!");
+				router.push("/fator-conversao");
+			},
+			onError: (error: Error) => {
+				toast.error(error.message || "Erro ao atualizar fator de conversão");
+			},
 		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["fatores-conversao"] });
-			toast.success("Fator de conversão atualizado com sucesso!");
-			router.push("/fator-conversao");
-		},
-		onError: (error: Error) => {
-			toast.error(error.message || "Erro ao atualizar fator de conversão");
-		},
-	});
+	);
 
 	const onSubmit = (data: FatorConversaoFormData) => {
 		if (!empresa) {

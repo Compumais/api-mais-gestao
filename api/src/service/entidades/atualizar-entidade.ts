@@ -104,11 +104,13 @@ export async function atualizarEntidadeService({
 	};
 
 	if (dados.nome !== undefined) payloadUpdate.nome = dadosSanitizados.nome;
-	if (dados.cnpjcpf !== undefined) payloadUpdate.cnpjcpf = dadosSanitizados.cnpjcpf;
+	if (dados.cnpjcpf !== undefined)
+		payloadUpdate.cnpjcpf = dadosSanitizados.cnpjcpf;
 	if (dados.razaosocial !== undefined) {
 		payloadUpdate.razaosocial = dadosSanitizados.razaosocial;
 	}
-	if (dados.tipopessoa !== undefined) payloadUpdate.tipopessoa = dados.tipopessoa;
+	if (dados.tipopessoa !== undefined)
+		payloadUpdate.tipopessoa = dados.tipopessoa;
 	if (dados.inscricaoestadual !== undefined) {
 		payloadUpdate.inscricaoestadual = dadosSanitizados.inscricaoestadual;
 	}
@@ -126,7 +128,8 @@ export async function atualizarEntidadeService({
 	if (dados.complemento !== undefined) {
 		payloadUpdate.complemento = dadosSanitizados.complemento;
 	}
-	if (dados.bairro !== undefined) payloadUpdate.bairro = dadosSanitizados.bairro;
+	if (dados.bairro !== undefined)
+		payloadUpdate.bairro = dadosSanitizados.bairro;
 	if (dados.idcidade !== undefined) {
 		payloadUpdate.idcidade = dadosSanitizados.idcidade;
 	}
@@ -143,7 +146,8 @@ export async function atualizarEntidadeService({
 	}
 	if (dados.pais !== undefined) payloadUpdate.pais = dadosSanitizados.pais;
 	if (dados.cliente !== undefined) payloadUpdate.cliente = dados.cliente;
-	if (dados.fornecedor !== undefined) payloadUpdate.fornecedor = dados.fornecedor;
+	if (dados.fornecedor !== undefined)
+		payloadUpdate.fornecedor = dados.fornecedor;
 	if (dados.transportador !== undefined) {
 		payloadUpdate.transportador = dados.transportador;
 	}

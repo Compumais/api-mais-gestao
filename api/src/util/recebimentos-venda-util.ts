@@ -16,9 +16,7 @@ export function adicionarDias(dataBase: Date, dias: number): string {
 	return formatarDataIso(data);
 }
 
-export function parseValorMonetario(
-	valor: string | null | undefined,
-): number {
+export function parseValorMonetario(valor: string | null | undefined): number {
 	if (!valor) {
 		return 0;
 	}

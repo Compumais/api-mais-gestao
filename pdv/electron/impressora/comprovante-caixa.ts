@@ -1,8 +1,8 @@
+import { formatarLinhaItemVendidoTurno } from "../db/itens-vendidos-turno";
 import type {
 	ConferenciaCaixa,
 	ResumoTurnoCaixa,
 } from "../db/resumo-turno-caixa";
-import { formatarLinhaItemVendidoTurno } from "../db/itens-vendidos-turno";
 
 export type DadosComprovanteFechamentoCaixa = {
 	nomeempresa?: string | null;

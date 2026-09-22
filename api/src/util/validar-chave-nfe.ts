@@ -2,7 +2,9 @@ export function normalizarChaveNfe(chave: string): string {
 	return chave.replace(/\D/g, "");
 }
 
-export function validarChaveNfe(chave: string): { ok: true; chave: string } | { ok: false; mensagem: string } {
+export function validarChaveNfe(
+	chave: string,
+): { ok: true; chave: string } | { ok: false; mensagem: string } {
 	const normalizada = normalizarChaveNfe(chave);
 
 	if (normalizada.length !== 44) {

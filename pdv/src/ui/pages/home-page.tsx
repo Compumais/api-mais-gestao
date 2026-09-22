@@ -8,8 +8,8 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
-import type { LeituraComandaNormalizada } from "@/lib/comanda-scanner";
 import { marcarBootPendente } from "@/lib/boot-state";
+import type { LeituraComandaNormalizada } from "@/lib/comanda-scanner";
 import { pdvInvoke } from "@/lib/pdv-api";
 import {
 	type MesaConsulta,
@@ -19,11 +19,11 @@ import {
 	type StatusContext,
 } from "@/lib/pdv-types";
 import { cn, money } from "@/lib/utils";
+import { AlertasOperacionaisPdv } from "@/ui/components/alertas-operacionais-pdv";
 import {
 	AvisoSecundario,
 	secundarioDesconectado,
 } from "@/ui/components/aviso-secundario";
-import { AlertasOperacionaisPdv } from "@/ui/components/alertas-operacionais-pdv";
 import { DialogFecharCaixa } from "@/ui/components/dialog-fechar-caixa";
 import { FunctionBar } from "@/ui/components/function-bar";
 import { SideNav } from "@/ui/components/side-nav";
@@ -159,21 +159,18 @@ export function HomePage() {
 		return () => clearInterval(id);
 	}, []);
 
-	const mesasVisiveis = useMemo(
-		() => {
-			const termo = novaNumero.trim().toLocaleLowerCase("pt-BR");
-			return mesas.filter((mesa) => {
-				if (apenasAbertas && mesa.status !== "ocupada") return false;
-				if (filtro !== "todos" && mesa.statusAtividade !== filtro) return false;
-				if (!termo) return true;
-				return (
-					String(mesa.numero).includes(termo) ||
-					mesa.nomecliente?.toLocaleLowerCase("pt-BR").includes(termo)
-				);
-			});
-		},
-		[apenasAbertas, filtro, mesas, novaNumero],
-	);
+	const mesasVisiveis = useMemo(() => {
+		const termo = novaNumero.trim().toLocaleLowerCase("pt-BR");
+		return mesas.filter((mesa) => {
+			if (apenasAbertas && mesa.status !== "ocupada") return false;
+			if (filtro !== "todos" && mesa.statusAtividade !== filtro) return false;
+			if (!termo) return true;
+			return (
+				String(mesa.numero).includes(termo) ||
+				mesa.nomecliente?.toLocaleLowerCase("pt-BR").includes(termo)
+			);
+		});
+	}, [apenasAbertas, filtro, mesas, novaNumero]);
 
 	const livres = mesas.filter((m) => m.status === "livre").length;
 	const ocupadas = mesas.length - livres;
@@ -360,91 +357,91 @@ export function HomePage() {
 				/>
 				<div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2.5 overflow-hidden p-2.5">
 					<div className="pdv-surface flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden p-3">
-					<div className="flex flex-wrap items-center gap-2">
-						{(
-							[
-								["todos", "Todas", LayoutGrid, mesas.length],
-								["livre", "Livres", Circle, livres],
-								["consumindo", "Consumindo", UtensilsCrossed, consumindo],
-								["ociosa", "Ociosas", Clock3, ociosas],
-							] as const
-						).map(([valor, label, Icon, quantidade]) => (
-							<Button
-								key={valor}
-								size="sm"
-								variant={filtro === valor ? "default" : "outline"}
-								className="gap-2"
-								onClick={() => setFiltro(valor)}
-							>
-								<Icon className="size-4" />
-								{label}
-								<span className="rounded-full bg-black/10 px-1.5 text-[10px]">
-									{quantidade}
-								</span>
-							</Button>
-						))}
-						<label className="ml-1 flex min-h-8 items-center gap-2 rounded-md px-2 text-xs font-medium text-muted-foreground hover:bg-muted">
-							<input
-								type="checkbox"
-								className="size-4 accent-primary"
-								checked={apenasAbertas}
-								onChange={(e) => void alternarFiltroAbertas(e.target.checked)}
-							/>
-							Apenas abertas
-						</label>
-						<Button
-							size="sm"
-							className="ml-auto gap-2"
-							disabled={loading || bloqueado || !podeAbrirNumero}
-							onClick={() => void abrirNova()}
-						>
-							<Plus className="size-4" />
-							Abrir {rotulo.singular.toLowerCase()}
-						</Button>
-					</div>
-
-					<AvisoSecundario status={status} />
-					<AlertasOperacionaisPdv status={status} />
-					{msg && <p className="text-sm text-muted-foreground">{msg}</p>}
-
-					<div className="grid flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-3 overflow-auto p-0.5">
-						{mesasVisiveis.map((mesa) => {
-							const Icon = iconeStatus(mesa.statusAtividade);
-							return (
-								<button
-									key={mesa.numero}
-									type="button"
-									onClick={() => solicitarAbertura(mesa)}
-									className={cn(
-										"group relative flex h-28 flex-col items-center justify-center gap-1 overflow-hidden rounded-xl text-center ring-1 transition hover:-translate-y-0.5 hover:shadow-md hover:brightness-105",
-										classeMesa(mesa.statusAtividade),
-									)}
+						<div className="flex flex-wrap items-center gap-2">
+							{(
+								[
+									["todos", "Todas", LayoutGrid, mesas.length],
+									["livre", "Livres", Circle, livres],
+									["consumindo", "Consumindo", UtensilsCrossed, consumindo],
+									["ociosa", "Ociosas", Clock3, ociosas],
+								] as const
+							).map(([valor, label, Icon, quantidade]) => (
+								<Button
+									key={valor}
+									size="sm"
+									variant={filtro === valor ? "default" : "outline"}
+									className="gap-2"
+									onClick={() => setFiltro(valor)}
 								>
-									<Icon className="size-5 opacity-80" />
-									<span className="text-xl font-bold tabular-nums">
-										{String(mesa.numero).padStart(2, "0")}
+									<Icon className="size-4" />
+									{label}
+									<span className="rounded-full bg-black/10 px-1.5 text-[10px]">
+										{quantidade}
 									</span>
-									<span className="text-[11px]">
-										{mesa.status === "ocupada"
-											? mesa.nomecliente || rotuloStatus(mesa.statusAtividade)
-											: "Livre"}
-									</span>
-									{mesa.status === "ocupada" && (
-										<span className="text-xs font-semibold">
-											{money(mesa.valortotal)}
+								</Button>
+							))}
+							<label className="ml-1 flex min-h-8 items-center gap-2 rounded-md px-2 text-xs font-medium text-muted-foreground hover:bg-muted">
+								<input
+									type="checkbox"
+									className="size-4 accent-primary"
+									checked={apenasAbertas}
+									onChange={(e) => void alternarFiltroAbertas(e.target.checked)}
+								/>
+								Apenas abertas
+							</label>
+							<Button
+								size="sm"
+								className="ml-auto gap-2"
+								disabled={loading || bloqueado || !podeAbrirNumero}
+								onClick={() => void abrirNova()}
+							>
+								<Plus className="size-4" />
+								Abrir {rotulo.singular.toLowerCase()}
+							</Button>
+						</div>
+
+						<AvisoSecundario status={status} />
+						<AlertasOperacionaisPdv status={status} />
+						{msg && <p className="text-sm text-muted-foreground">{msg}</p>}
+
+						<div className="grid flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-3 overflow-auto p-0.5">
+							{mesasVisiveis.map((mesa) => {
+								const Icon = iconeStatus(mesa.statusAtividade);
+								return (
+									<button
+										key={mesa.numero}
+										type="button"
+										onClick={() => solicitarAbertura(mesa)}
+										className={cn(
+											"group relative flex h-28 flex-col items-center justify-center gap-1 overflow-hidden rounded-xl text-center ring-1 transition hover:-translate-y-0.5 hover:shadow-md hover:brightness-105",
+											classeMesa(mesa.statusAtividade),
+										)}
+									>
+										<Icon className="size-5 opacity-80" />
+										<span className="text-xl font-bold tabular-nums">
+											{String(mesa.numero).padStart(2, "0")}
 										</span>
-									)}
-								</button>
-							);
-						})}
-						{mesasVisiveis.length === 0 && (
-							<p className="col-span-full text-sm text-muted-foreground">
-								{apenasAbertas
-									? `Nenhuma ${rotulo.singular.toLowerCase()} aberta neste filtro.`
-									: `Nenhuma ${rotulo.singular.toLowerCase()} encontrada neste filtro.`}
-							</p>
-						)}
-					</div>
+										<span className="text-[11px]">
+											{mesa.status === "ocupada"
+												? mesa.nomecliente || rotuloStatus(mesa.statusAtividade)
+												: "Livre"}
+										</span>
+										{mesa.status === "ocupada" && (
+											<span className="text-xs font-semibold">
+												{money(mesa.valortotal)}
+											</span>
+										)}
+									</button>
+								);
+							})}
+							{mesasVisiveis.length === 0 && (
+								<p className="col-span-full text-sm text-muted-foreground">
+									{apenasAbertas
+										? `Nenhuma ${rotulo.singular.toLowerCase()} aberta neste filtro.`
+										: `Nenhuma ${rotulo.singular.toLowerCase()} encontrada neste filtro.`}
+								</p>
+							)}
+						</div>
 					</div>
 				</div>
 			</div>

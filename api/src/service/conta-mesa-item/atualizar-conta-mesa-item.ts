@@ -24,7 +24,9 @@ export async function atualizarContaMesaItemService({
 	contaMesaItemId,
 	idusuario,
 	dados,
-}: AtualizarContaMesaItemParametros): Promise<HttpResponse<ContaMesaItem | null>> {
+}: AtualizarContaMesaItemParametros): Promise<
+	HttpResponse<ContaMesaItem | null>
+> {
 	const registroExistente = await buscarContaMesaItemPorId(contaMesaItemId);
 
 	if (!registroExistente) {

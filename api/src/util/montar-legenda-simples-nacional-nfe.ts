@@ -19,7 +19,9 @@ function resolverCsosnItem(item: ItemLegendaSimplesNfe): string {
 	return "";
 }
 
-export function empresaUsaSimplesNacional(crt: number | null | undefined): boolean {
+export function empresaUsaSimplesNacional(
+	crt: number | null | undefined,
+): boolean {
 	return crt === 1 || crt === 2 || crt === 4;
 }
 
@@ -44,7 +46,9 @@ export function montarLegendaSimplesNacionalNfe(params: {
 		}
 	}
 
-	return temCreditoSn ? LEGENDA_SIMPLES_COM_CREDITO : LEGENDA_SIMPLES_SEM_CREDITO_ICMS;
+	return temCreditoSn
+		? LEGENDA_SIMPLES_COM_CREDITO
+		: LEGENDA_SIMPLES_SEM_CREDITO_ICMS;
 }
 
 export function textoJaContemLegendaSimples(texto?: string | null): boolean {

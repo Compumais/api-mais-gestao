@@ -7,25 +7,30 @@ import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 const criarEntidadeContaContabilBodySchema = z.object({
 	idempresa: z.string(),
 	idcontacontabil: z.string(),
-	identidade: z.string()
+	identidade: z.string(),
 });
 
-export async function criarEntidadeContaContabil(request: FastifyRequest, reply: FastifyReply) {
+export async function criarEntidadeContaContabil(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
 		}
 
-		const dadosValidados = criarEntidadeContaContabilBodySchema.parse(request.body);
+		const dadosValidados = criarEntidadeContaContabilBodySchema.parse(
+			request.body,
+		);
 
 		const dadosEntidadeContaContabil = {
 			id: uuidv4(),
 			...dadosValidados,
 			currenttimemillis: Date.now(),
-		datacadastro: new Date().toISOString().split("T")[0],
-		dataultimaalteracao: new Date().toISOString().split("T")[0],
-		idusuariocadastro: request.user.id,
-		idultimousuarioalteracao: request.user.id,
+			datacadastro: new Date().toISOString().split("T")[0],
+			dataultimaalteracao: new Date().toISOString().split("T")[0],
+			idusuariocadastro: request.user.id,
+			idultimousuarioalteracao: request.user.id,
 		};
 
 		const resultado = await criarEntidadeContaContabilService({

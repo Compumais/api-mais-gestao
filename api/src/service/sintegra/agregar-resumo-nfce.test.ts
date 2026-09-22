@@ -6,9 +6,9 @@ import {
 
 describe("classificarValoresSemIcms", () => {
 	it("coloca o total em Outras quando não há base de ICMS (Simples/CSOSN 102)", () => {
-		expect(
-			classificarValoresSemIcms({ valorTotal: 214, baseIcms: 0 }),
-		).toEqual({ valorIsento: 0, valorOutras: 214 });
+		expect(classificarValoresSemIcms({ valorTotal: 214, baseIcms: 0 })).toEqual(
+			{ valorIsento: 0, valorOutras: 214 },
+		);
 	});
 
 	it("mantém o remanescente em Outras quando há base parcial", () => {

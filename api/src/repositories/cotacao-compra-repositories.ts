@@ -1,13 +1,4 @@
-import {
-	and,
-	asc,
-	count,
-	desc,
-	eq,
-	ilike,
-	max,
-	sql,
-} from "drizzle-orm";
+import { and, asc, count, desc, eq, ilike, max, sql } from "drizzle-orm";
 import type {
 	NovaCotacaoCompra,
 	NovaCotacaoCompraProposta,
@@ -27,7 +18,9 @@ const camposItemEnriquecido = {
 	observacao: schema.cotacaocompraitem.observacao,
 	ordem: schema.cotacaocompraitem.ordem,
 	codigoproduto: schema.produtos.codigo,
-	nomeproduto: sql<string | null>`coalesce(${schema.cotacaocompraitem.descricao}, ${schema.produtos.descricao}, ${schema.produtos.nome})`,
+	nomeproduto: sql<
+		string | null
+	>`coalesce(${schema.cotacaocompraitem.descricao}, ${schema.produtos.descricao}, ${schema.produtos.nome})`,
 	descricaoproduto: schema.produtos.descricao,
 };
 
@@ -85,7 +78,10 @@ export async function listarItensCotacaoCompraEnriquecidos(idcotacao: string) {
 			eq(schema.cotacaocompraitem.idproduto, schema.produtos.id),
 		)
 		.where(eq(schema.cotacaocompraitem.idcotacao, idcotacao))
-		.orderBy(asc(schema.cotacaocompraitem.ordem), asc(schema.cotacaocompraitem.id));
+		.orderBy(
+			asc(schema.cotacaocompraitem.ordem),
+			asc(schema.cotacaocompraitem.id),
+		);
 }
 
 export async function contarPropostasCotacao(idcotacao: string) {

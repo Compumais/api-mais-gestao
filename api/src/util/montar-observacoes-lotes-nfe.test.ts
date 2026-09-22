@@ -40,16 +40,13 @@ describe("montarSecaoObservacoesLotesNfe", () => {
 
 describe("anexarRastrosInformacoesAdicionaisNfe", () => {
 	it("preserva texto do usuário e anexa seção de lotes", () => {
-		const resultado = anexarRastrosInformacoesAdicionaisNfe(
-			"Pedido 123",
-			[
-				{
-					codigoProduto: "10",
-					descricao: "Produto A",
-					rastros: [{ nLote: "L001", qLote: 1 }],
-				},
-			],
-		);
+		const resultado = anexarRastrosInformacoesAdicionaisNfe("Pedido 123", [
+			{
+				codigoProduto: "10",
+				descricao: "Produto A",
+				rastros: [{ nLote: "L001", qLote: 1 }],
+			},
+		]);
 
 		expect(resultado).toBe(
 			"Pedido 123\n\n--- Lotes ---\n10 - Produto A: Lote L001, Qtd 1",

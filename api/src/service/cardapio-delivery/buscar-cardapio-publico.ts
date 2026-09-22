@@ -1,12 +1,12 @@
 import type { CardapioDelivery } from "@/model/cardapio-delivery-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
-import { buscarEmpresaPorId } from "@/repositories/empresa-repositories.js";
 import {
 	buscarCardapioDeliveryPorSlug,
 	listarGruposGourmetCardapio,
 	listarIdsMaisPedidosCardapio,
 	listarProdutosCardapioPublico,
 } from "@/repositories/cardapio-delivery-repositories.js";
+import { buscarEmpresaPorId } from "@/repositories/empresa-repositories.js";
 import { buscarTipoDocumentoFinanceiroPorId } from "@/repositories/tipo-documento-financeiro-repositories.js";
 import { avaliarHorarioCardapio } from "@/util/avaliar-horario-cardapio.js";
 import { httpNaoEncontrado, httpOk } from "@/util/http-util.js";

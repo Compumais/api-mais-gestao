@@ -11,10 +11,7 @@ export function resolverStatusPersistenciaEmissao(resposta: {
 	protocolo?: string | null;
 	erroTransmissao?: string | null;
 }): number {
-	if (
-		cStatIndicaAutorizacao(resposta.cStat) ||
-		Boolean(resposta.protocolo?.trim())
-	) {
+	if (cStatIndicaAutorizacao(resposta.cStat) || resposta.protocolo?.trim()) {
 		return NFE_STATUS.AUTORIZADA;
 	}
 

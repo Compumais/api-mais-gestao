@@ -20,9 +20,7 @@ async function downloadBlob(
 	}
 	const rawContentType = response.headers["content-type"];
 	const contentType =
-		typeof rawContentType === "string"
-			? rawContentType
-			: "application/zip";
+		typeof rawContentType === "string" ? rawContentType : "application/zip";
 	const blob = new Blob([response.data], { type: contentType });
 	const blobUrl = window.URL.createObjectURL(blob);
 	const link = document.createElement("a");

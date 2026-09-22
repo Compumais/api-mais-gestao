@@ -1,12 +1,9 @@
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
 import type { NetworkInterfaceInfo } from "node:os";
+import { describe, it } from "node:test";
 import { extrairIpsRotaPadraoWindows, filtrarIpsLan } from "./ips";
 
-function ipv4(
-	address: string,
-	internal = false,
-): NetworkInterfaceInfo {
+function ipv4(address: string, internal = false): NetworkInterfaceInfo {
 	return {
 		address,
 		netmask: "255.255.255.0",

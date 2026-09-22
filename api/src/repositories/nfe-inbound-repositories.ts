@@ -246,10 +246,7 @@ export async function listarNfeInboundDocumentos({
 	const where = and(...conditions);
 
 	const [totalCount, documentos] = await Promise.all([
-		db
-			.select({ value: count() })
-			.from(schema.nfeinbounddocumento)
-			.where(where),
+		db.select({ value: count() }).from(schema.nfeinbounddocumento).where(where),
 		db
 			.select()
 			.from(schema.nfeinbounddocumento)
@@ -288,7 +285,10 @@ export async function liberarNfeInboundDocumentoParaReimportacao(
 	idempresa: string,
 	chavenfe: string,
 ): Promise<NfeInboundDocumentoRow | undefined> {
-	const documento = await buscarNfeInboundDocumentoPorChave(idempresa, chavenfe);
+	const documento = await buscarNfeInboundDocumentoPorChave(
+		idempresa,
+		chavenfe,
+	);
 
 	if (!documento) {
 		return undefined;

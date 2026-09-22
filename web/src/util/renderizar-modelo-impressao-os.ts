@@ -64,9 +64,9 @@ function escapeHtml(valor: string) {
 		.replace(/"/g, "&quot;");
 }
 
-function colunaEfetiva(
-	bloco: { coluna?: ColunaBlocoModeloImpressao },
-): ColunaBlocoModeloImpressao {
+function colunaEfetiva(bloco: {
+	coluna?: ColunaBlocoModeloImpressao;
+}): ColunaBlocoModeloImpressao {
 	return bloco.coluna ?? "cheia";
 }
 
@@ -76,7 +76,11 @@ function montarEnderecoCompleto(cliente?: DadosClienteImpressao | null) {
 		.filter(Boolean)
 		.join(", ");
 	const cidadeUf = [cliente.cidade, cliente.uf].filter(Boolean).join("/");
-	const linha2 = [cliente.bairro, cidadeUf, cliente.cep ? `CEP ${cliente.cep}` : ""]
+	const linha2 = [
+		cliente.bairro,
+		cidadeUf,
+		cliente.cep ? `CEP ${cliente.cep}` : "",
+	]
 		.filter(Boolean)
 		.join(" — ");
 	return [linha1, linha2].filter(Boolean).join(". ");
@@ -92,7 +96,9 @@ function valorCampoOs(
 			return ordem.codigo != null ? String(ordem.codigo) : "—";
 		case "status": {
 			const info = obterStatusPadraoPorNumero(ordem.status ?? undefined);
-			return info?.descricao ?? (ordem.status != null ? String(ordem.status) : "—");
+			return (
+				info?.descricao ?? (ordem.status != null ? String(ordem.status) : "—")
+			);
 		}
 		case "dataos":
 			return formatarData(ordem.dataos);
@@ -103,17 +109,9 @@ function valorCampoOs(
 		case "orcamento":
 			return ordem.orcamento === 1 ? "Sim" : "Não";
 		case "nomecliente":
-			return (
-				cliente?.nome?.trim() ||
-				ordem.nomecliente?.trim() ||
-				"—"
-			);
+			return cliente?.nome?.trim() || ordem.nomecliente?.trim() || "—";
 		case "cnpjcpfcliente":
-			return (
-				cliente?.cnpjcpf?.trim() ||
-				ordem.cnpjcpfcliente?.trim() ||
-				"—"
-			);
+			return cliente?.cnpjcpf?.trim() || ordem.cnpjcpfcliente?.trim() || "—";
 		case "enderecocompleto": {
 			const endereco = montarEnderecoCompleto(cliente);
 			return endereco || "—";
@@ -330,9 +328,7 @@ function renderizarBlocoOs(
 			`;
 		case "servicoRealizado": {
 			const servicos = itens.filter(
-				(item) =>
-					item.tipoproduto === "S" &&
-					item.cancelado !== 1,
+				(item) => item.tipoproduto === "S" && item.cancelado !== 1,
 			);
 			const linhas =
 				servicos.length === 0
@@ -340,9 +336,7 @@ function renderizarBlocoOs(
 					: servicos
 							.map((item) => {
 								const tecnico =
-									item.nometecnico?.trim() ||
-									tecnicoResponsavel?.trim() ||
-									"—";
+									item.nometecnico?.trim() || tecnicoResponsavel?.trim() || "—";
 								return `
 							<tr>
 								<td>${escapeHtml(tecnico)}</td>
@@ -493,9 +487,7 @@ export function renderizarHtmlModeloImpressaoOs(
 			flushFaixa();
 			partes.push(html);
 		} else {
-			faixaCols.push(
-				`<div class="col-bloco col-${col}">${html}</div>`,
-			);
+			faixaCols.push(`<div class="col-bloco col-${col}">${html}</div>`);
 		}
 	}
 	flushFaixa();
@@ -617,95 +609,96 @@ export function imprimirHtmlModeloOs(htmlInterno: string, titulo: string) {
 	return true;
 }
 
-export const DADOS_AMOSTRA_MODELO_IMPRESSAO_OS: DadosPreviewModeloImpressaoOs = {
-	empresa: {
-		id: "amostra",
-		idproprietario: "amostra",
-		nome: "Empresa Exemplo Ltda",
-		cnpj: "12.345.678/0001-90",
-		telefone: "(11) 3333-4444",
-		email: "contato@exemplo.com",
-		endereco: "Rua das Flores",
-		numero: "100",
-		bairro: "Centro",
-		cep: "01000-000",
-	},
-	ordem: {
-		id: "amostra",
-		idempresa: "amostra",
-		codigo: 1234,
-		status: 1,
-		nomecliente: "Cliente Demonstração",
-		cnpjcpfcliente: "123.456.789-00",
-		dataos: new Date().toISOString(),
-		agendamento: new Date().toISOString(),
-		previsaoconclusao: new Date().toISOString(),
-		problemadescrito: "Equipamento não liga após queda de energia.",
-		laudotecnico: "Fonte danificada. Substituição realizada.",
-		observacao: "Garantia de 90 dias no serviço.",
-		marca: "Genérica",
-		modelo: "X100",
-		placa: "ABC1D23",
-		renavam: "12345678901",
-		valor: "450.00",
-		valorprodutos: "200.00",
-		valorservicos: "250.00",
-		descontosubtotal: "0",
-		orcamento: 0,
-	},
-	tecnicoResponsavel: "João Técnico",
-	cliente: {
-		nome: "Cliente Demonstração",
-		cnpjcpf: "12.345.678/0001-90",
-		inscricaoestadual: "123.456.789.012",
-		telefone: "(11) 98888-7777",
-		email: "cliente@exemplo.com",
-		endereco: "Av. Paulista",
-		numero: "1000",
-		complemento: "Sala 12",
-		bairro: "Bela Vista",
-		cep: "01310-100",
-		cidade: "São Paulo",
-		uf: "SP",
-	},
-	itens: [
-		{
-			id: "1",
-			idempresa: "amostra",
-			idordemservico: "amostra",
-			idproduto: null,
-			nomeproduto: "Fonte 500W",
-			codigorproduto: "P001",
-			quantidade: "1",
-			preco: "200.00",
-			total: "200.00",
-			idtecnico: null,
-			nometecnico: null,
-			idcfop: null,
-			unidademedida: "UN",
-			observacao: null,
-			contador: 1,
-			cancelado: 0,
-			tipoproduto: "P",
+export const DADOS_AMOSTRA_MODELO_IMPRESSAO_OS: DadosPreviewModeloImpressaoOs =
+	{
+		empresa: {
+			id: "amostra",
+			idproprietario: "amostra",
+			nome: "Empresa Exemplo Ltda",
+			cnpj: "12.345.678/0001-90",
+			telefone: "(11) 3333-4444",
+			email: "contato@exemplo.com",
+			endereco: "Rua das Flores",
+			numero: "100",
+			bairro: "Centro",
+			cep: "01000-000",
 		},
-		{
-			id: "2",
+		ordem: {
+			id: "amostra",
 			idempresa: "amostra",
-			idordemservico: "amostra",
-			idproduto: null,
-			nomeproduto: "Mão de obra",
-			codigorproduto: "S001",
-			quantidade: "1",
-			preco: "250.00",
-			total: "250.00",
-			idtecnico: "tec-1",
-			nometecnico: "João Técnico",
-			idcfop: null,
-			unidademedida: "UN",
-			observacao: null,
-			contador: 2,
-			cancelado: 0,
-			tipoproduto: "S",
+			codigo: 1234,
+			status: 1,
+			nomecliente: "Cliente Demonstração",
+			cnpjcpfcliente: "123.456.789-00",
+			dataos: new Date().toISOString(),
+			agendamento: new Date().toISOString(),
+			previsaoconclusao: new Date().toISOString(),
+			problemadescrito: "Equipamento não liga após queda de energia.",
+			laudotecnico: "Fonte danificada. Substituição realizada.",
+			observacao: "Garantia de 90 dias no serviço.",
+			marca: "Genérica",
+			modelo: "X100",
+			placa: "ABC1D23",
+			renavam: "12345678901",
+			valor: "450.00",
+			valorprodutos: "200.00",
+			valorservicos: "250.00",
+			descontosubtotal: "0",
+			orcamento: 0,
 		},
-	],
-};
+		tecnicoResponsavel: "João Técnico",
+		cliente: {
+			nome: "Cliente Demonstração",
+			cnpjcpf: "12.345.678/0001-90",
+			inscricaoestadual: "123.456.789.012",
+			telefone: "(11) 98888-7777",
+			email: "cliente@exemplo.com",
+			endereco: "Av. Paulista",
+			numero: "1000",
+			complemento: "Sala 12",
+			bairro: "Bela Vista",
+			cep: "01310-100",
+			cidade: "São Paulo",
+			uf: "SP",
+		},
+		itens: [
+			{
+				id: "1",
+				idempresa: "amostra",
+				idordemservico: "amostra",
+				idproduto: null,
+				nomeproduto: "Fonte 500W",
+				codigorproduto: "P001",
+				quantidade: "1",
+				preco: "200.00",
+				total: "200.00",
+				idtecnico: null,
+				nometecnico: null,
+				idcfop: null,
+				unidademedida: "UN",
+				observacao: null,
+				contador: 1,
+				cancelado: 0,
+				tipoproduto: "P",
+			},
+			{
+				id: "2",
+				idempresa: "amostra",
+				idordemservico: "amostra",
+				idproduto: null,
+				nomeproduto: "Mão de obra",
+				codigorproduto: "S001",
+				quantidade: "1",
+				preco: "250.00",
+				total: "250.00",
+				idtecnico: "tec-1",
+				nometecnico: "João Técnico",
+				idcfop: null,
+				unidademedida: "UN",
+				observacao: null,
+				contador: 2,
+				cancelado: 0,
+				tipoproduto: "S",
+			},
+		],
+	};

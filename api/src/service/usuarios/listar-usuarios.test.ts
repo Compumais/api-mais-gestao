@@ -37,7 +37,9 @@ describe("listarUsuariosService", () => {
 		});
 
 		expect(resultado.success).toBe(true);
-		expect(resultado.body?.data).toEqual([{ id: "user-1", nome: "Ana Técnica" }]);
+		expect(resultado.body?.data).toEqual([
+			{ id: "user-1", nome: "Ana Técnica" },
+		]);
 		expect(usuariosRepositories.listarUsuariosPorEmpresa).toHaveBeenCalledWith(
 			expect.objectContaining({
 				idempresa: "emp-1",
@@ -80,6 +82,8 @@ describe("listarUsuariosService", () => {
 
 		expect(resultado.success).toBe(true);
 		expect(resultado.body?.data).toEqual([]);
-		expect(usuariosRepositories.listarUsuariosPorEmpresa).not.toHaveBeenCalled();
+		expect(
+			usuariosRepositories.listarUsuariosPorEmpresa,
+		).not.toHaveBeenCalled();
 	});
 });

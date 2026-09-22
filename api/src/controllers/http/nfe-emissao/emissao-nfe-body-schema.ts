@@ -237,8 +237,9 @@ export function refinarEmissaoNfeBody(
 	}
 }
 
-export const emitirNfeBodySchema =
-	emitirNfeCamposSchema.superRefine(refinarEmissaoNfeBody);
+export const emitirNfeBodySchema = emitirNfeCamposSchema.superRefine(
+	refinarEmissaoNfeBody,
+);
 
 export type EmitirNfeBody = z.infer<typeof emitirNfeBodySchema>;
 

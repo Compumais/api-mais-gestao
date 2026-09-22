@@ -1,5 +1,10 @@
 import type { Empresa } from "@/model/empresa-model.js";
-import type { CertificadoDigitalResumo, EmpresaFiscal, NfeConfiguracao, NfeSerie } from "@/model/nfe-emissao-model.js";
+import type {
+	CertificadoDigitalResumo,
+	EmpresaFiscal,
+	NfeConfiguracao,
+	NfeSerie,
+} from "@/model/nfe-emissao-model.js";
 import { normalizarCnpj } from "@/util/criptografia-certificado.js";
 
 export type PendenciaPreRequisitoNfe = {

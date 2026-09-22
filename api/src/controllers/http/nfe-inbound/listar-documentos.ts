@@ -1,10 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import { listarDocumentosNfeInboundService } from "@/service/nfe-inbound/listar-documentos-nfe-inbound.js";
-import {
-	httpErroInterno,
-	httpNaoAutorizado,
-} from "@/util/http-util.js";
+import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
 const querySchema = z.object({
 	idempresa: z.string().uuid(),
@@ -46,7 +43,9 @@ export async function listarDocumentosNfeInbound(
 		const resultado = await listarDocumentosNfeInboundService({
 			idempresa: query.idempresa,
 			idusuario: request.user.id,
-			...(query.statusimportacao && { statusimportacao: query.statusimportacao }),
+			...(query.statusimportacao && {
+				statusimportacao: query.statusimportacao,
+			}),
 			...(query.statusmanifestacao && {
 				statusmanifestacao: query.statusmanifestacao,
 			}),

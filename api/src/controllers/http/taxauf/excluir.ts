@@ -7,7 +7,10 @@ const excluirTaxaUfQuerySchema = z.object({
 	idempresa: z.string(),
 });
 
-export async function excluirTaxaUf(request: FastifyRequest, reply: FastifyReply) {
+export async function excluirTaxaUf(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());

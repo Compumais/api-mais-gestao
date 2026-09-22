@@ -10,11 +10,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import {
-	Field,
-	FieldGroup,
-	FieldLabel,
-} from "@/components/ui/field";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { MoneyInput } from "@/components/ui/money-input";
 import { useCaixaPdv } from "@/hooks/use-caixa-pdv";
 
@@ -23,7 +19,10 @@ interface AbrirCaixaDialogProps {
 	onOpenChange: (open: boolean) => void;
 }
 
-export function AbrirCaixaDialog({ open, onOpenChange }: AbrirCaixaDialogProps) {
+export function AbrirCaixaDialog({
+	open,
+	onOpenChange,
+}: AbrirCaixaDialogProps) {
 	const { abrirCaixa, isAbrindo, numeropdv } = useCaixaPdv();
 	const [suprimento, setSuprimento] = useState("");
 

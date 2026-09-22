@@ -158,7 +158,8 @@ export async function cancelarNfseService({
 		dadosimportacao: {
 			...(emissaoSalva ?? {}),
 			...(modoDps ? { modo: "dps" as const } : {}),
-			protocoloCancelamento: resposta.protocolo ?? emissaoSalva?.protocoloCancelamento ?? null,
+			protocoloCancelamento:
+				resposta.protocolo ?? emissaoSalva?.protocoloCancelamento ?? null,
 		} as unknown as Record<string, unknown>,
 	});
 

@@ -65,7 +65,9 @@ export async function montarItensEmissaoDav(
 	opcoes: MontarItensEmissaoDavOpcoes = {},
 ): Promise<{ itens: ItemPayloadNfe[]; pendencias: string[] }> {
 	const itensDav = await listarItensPorDav(iddav);
-	const lotesDav = await listarLotesPorDavItens(itensDav.map((item) => item.id));
+	const lotesDav = await listarLotesPorDavItens(
+		itensDav.map((item) => item.id),
+	);
 	const lotesPorItem = new Map<string, typeof lotesDav>();
 	for (const lote of lotesDav) {
 		const atuais = lotesPorItem.get(lote.iddavitem) ?? [];

@@ -189,4 +189,3 @@ export async function lerImagemGrupoGourmetDaEmpresa(params: {
 		"IMAGEM_NAO_ENCONTRADA",
 	);
 }
-

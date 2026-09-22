@@ -68,9 +68,7 @@ export function NavAbasAbertasBar({
 		<div
 			className={cn(
 				"flex items-center gap-1",
-				isHeader
-					? "min-w-0 flex-1"
-					: "h-9 shrink-0 px-1.5 sm:px-2",
+				isHeader ? "min-w-0 flex-1" : "h-9 shrink-0 px-1.5 sm:px-2",
 				isTopbar && "border-t border-primary-foreground/15 bg-black/20",
 				variante === "sidebar" && "border-b bg-muted/60",
 			)}

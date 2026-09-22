@@ -5,16 +5,21 @@ import { criarIntegracaoContabilConfiguracaoService } from "@/service/integracao
 import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
 const criarIntegracaoContabilConfiguracaoBodySchema = z.looseObject({
-	idempresa: z.string()
+	idempresa: z.string(),
 });
 
-export async function criarIntegracaoContabilConfiguracao(request: FastifyRequest, reply: FastifyReply) {
+export async function criarIntegracaoContabilConfiguracao(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
 		}
 
-		const dadosValidados = criarIntegracaoContabilConfiguracaoBodySchema.parse(request.body);
+		const dadosValidados = criarIntegracaoContabilConfiguracaoBodySchema.parse(
+			request.body,
+		);
 
 		const dadosIntegracaoContabilConfiguracao = {
 			id: uuidv4(),

@@ -40,7 +40,9 @@ export async function buscarDadosVendasService({
 	idusuario,
 	idempresa,
 	dias = 90,
-}: ParametrosBase & { dias?: number }): Promise<HttpResponse<DadosVendasResumo>> {
+}: ParametrosBase & { dias?: number }): Promise<
+	HttpResponse<DadosVendasResumo>
+> {
 	const empresaId = await resolverEmpresaId(idusuario, idempresa);
 
 	if (!empresaId) {
@@ -74,7 +76,9 @@ export async function buscarTopProdutosService({
 	idusuario,
 	idempresa,
 	dias = 90,
-}: ParametrosBase & { dias?: number }): Promise<HttpResponse<TopProdutoItem[]>> {
+}: ParametrosBase & { dias?: number }): Promise<
+	HttpResponse<TopProdutoItem[]>
+> {
 	const empresaId = await resolverEmpresaId(idusuario, idempresa);
 
 	if (!empresaId) {

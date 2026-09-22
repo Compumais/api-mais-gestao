@@ -20,9 +20,9 @@ vi.mock("@/service/estoque/registrar-movimento-estoque.js");
 describe("cancelarVendaNaoFiscalPdvService", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		vi.mocked(entidadeRepository.verificarUsuarioPertenceEmpresa).mockResolvedValue(
-			true,
-		);
+		vi.mocked(
+			entidadeRepository.verificarUsuarioPertenceEmpresa,
+		).mockResolvedValue(true);
 		vi.mocked(auditoriaService.criarAuditoriaService).mockResolvedValue({
 			success: true,
 			status: 201,
@@ -49,7 +49,9 @@ describe("cancelarVendaNaoFiscalPdvService", () => {
 
 		expect(resultado.success).toBe(false);
 		expect(resultado.status).toBe(400);
-		expect(financeiroRepository.buscarFinanceirosPorOrigem).not.toHaveBeenCalled();
+		expect(
+			financeiroRepository.buscarFinanceirosPorOrigem,
+		).not.toHaveBeenCalled();
 	});
 
 	it("estorna estoque e cancela títulos de venda não fiscal", async () => {
@@ -58,7 +60,9 @@ describe("cancelarVendaNaoFiscalPdvService", () => {
 			idempresa: "emp-1",
 			idnotafiscalnfce: null,
 		} as never);
-		vi.mocked(financeiroRepository.buscarFinanceirosPorOrigem).mockResolvedValue([
+		vi.mocked(
+			financeiroRepository.buscarFinanceirosPorOrigem,
+		).mockResolvedValue([
 			{
 				id: "fin-1",
 				status: "A",
@@ -67,7 +71,9 @@ describe("cancelarVendaNaoFiscalPdvService", () => {
 				documento: "PDV 1",
 			},
 		] as never);
-		vi.mocked(movimentoRepository.listarMovimentosEstoquePorIdOriginal).mockResolvedValue([
+		vi.mocked(
+			movimentoRepository.listarMovimentosEstoquePorIdOriginal,
+		).mockResolvedValue([
 			{
 				id: 10,
 				cancelado: 0,
@@ -94,12 +100,18 @@ describe("cancelarVendaNaoFiscalPdvService", () => {
 			titulosCancelados: 1,
 			movimentosEstornados: 1,
 		});
-		expect(financeiroRepository.atualizarFinanceiro).toHaveBeenCalledWith("fin-1", {
-			status: "C",
-		});
-		expect(movimentoRepository.atualizarMovimentoEstoque).toHaveBeenCalledWith(10, {
-			cancelado: 1,
-		});
+		expect(financeiroRepository.atualizarFinanceiro).toHaveBeenCalledWith(
+			"fin-1",
+			{
+				status: "C",
+			},
+		);
+		expect(movimentoRepository.atualizarMovimentoEstoque).toHaveBeenCalledWith(
+			10,
+			{
+				cancelado: 1,
+			},
+		);
 		expect(estoqueService.registrarMovimentoEstoque).toHaveBeenCalled();
 	});
 });

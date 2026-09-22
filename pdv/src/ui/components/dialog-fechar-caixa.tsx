@@ -1,7 +1,10 @@
-import { useEffect, useState } from "react";
 import { Printer } from "lucide-react";
+import { useEffect, useState } from "react";
 import { pdvInvoke } from "@/lib/pdv-api";
-import type { ItemVendidoTurnoAgrupado, ResumoTurnoCaixa } from "@/lib/pdv-types";
+import type {
+	ItemVendidoTurnoAgrupado,
+	ResumoTurnoCaixa,
+} from "@/lib/pdv-types";
 import { centavosToNumber, money } from "@/lib/utils";
 import { NumericKeypad } from "@/ui/components/numeric-keypad";
 import { Button } from "@/ui/components/ui/button";
@@ -65,9 +68,9 @@ export function DialogFecharCaixa({
 }) {
 	const [etapa, setEtapa] = useState<Etapa>("conferencia");
 	const [resumo, setResumo] = useState<ResumoTurnoCaixa | null>(null);
-	const [itensVendidos, setItensVendidos] = useState<ItemVendidoTurnoAgrupado[]>(
-		[],
-	);
+	const [itensVendidos, setItensVendidos] = useState<
+		ItemVendidoTurnoAgrupado[]
+	>([]);
 	const [metaImpressao, setMetaImpressao] = useState<{
 		nomeempresa: string | null;
 		username: string | null;
@@ -81,10 +84,7 @@ export function DialogFecharCaixa({
 	const [digitos, setDigitos] = useState("0");
 	const [observacao, setObservacao] = useState("");
 
-	useEscapeFechaModal(
-		aberto && !enviando && etapa === "conferencia",
-		onFechar,
-	);
+	useEscapeFechaModal(aberto && !enviando && etapa === "conferencia", onFechar);
 
 	useEffect(() => {
 		if (!aberto) {

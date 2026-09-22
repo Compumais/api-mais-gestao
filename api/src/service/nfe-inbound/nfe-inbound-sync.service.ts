@@ -92,7 +92,10 @@ export async function sincronizarEmpresaNfeInboundService({
 	let xMotivoSefaz: string | undefined;
 
 	try {
-		while (iteracoes < MAX_ITERACOES_PAGINACAO && quantidadeXml < MAX_DOCZIP_POR_EXECUCAO) {
+		while (
+			iteracoes < MAX_ITERACOES_PAGINACAO &&
+			quantidadeXml < MAX_DOCZIP_POR_EXECUCAO
+		) {
 			iteracoes += 1;
 
 			let resultadoDistribuicao: ResultadoConsultaDistribuicaoDfe;
@@ -224,7 +227,9 @@ export async function sincronizarEmpresaNfeInboundService({
 	};
 }
 
-export async function obterIdUsuarioAutoImport(idempresa: string): Promise<string | undefined> {
+export async function obterIdUsuarioAutoImport(
+	idempresa: string,
+): Promise<string | undefined> {
 	const empresa = await buscarEmpresaPorId(idempresa);
 	return empresa?.idproprietario;
 }

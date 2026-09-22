@@ -49,7 +49,9 @@ export function ModalFaturarNfePedido({
 	const [gerarEstoque, setGerarEstoque] = useState(true);
 	const [confirmadoProducao, setConfirmadoProducao] = useState(false);
 
-	const seriesAtivas = series.filter((serie) => serie.ativo && serie.modelo === "55");
+	const seriesAtivas = series.filter(
+		(serie) => serie.ativo && serie.modelo === "55",
+	);
 
 	function handleClose() {
 		setConfirmadoProducao(false);
@@ -92,7 +94,9 @@ export function ModalFaturarNfePedido({
 								<SelectValue placeholder="Série padrão da configuração" />
 							</SelectTrigger>
 							<SelectContent>
-								<SelectItem value="padrao">Série padrão da configuração</SelectItem>
+								<SelectItem value="padrao">
+									Série padrão da configuração
+								</SelectItem>
 								{seriesAtivas.map((serie) => (
 									<SelectItem key={serie.id} value={serie.id}>
 										Série {serie.serie}
@@ -108,9 +112,7 @@ export function ModalFaturarNfePedido({
 							<Checkbox
 								id="gerarEstoque-pedido"
 								checked={gerarEstoque}
-								onCheckedChange={(checked) =>
-									setGerarEstoque(checked === true)
-								}
+								onCheckedChange={(checked) => setGerarEstoque(checked === true)}
 							/>
 							<Label htmlFor="gerarEstoque-pedido">
 								Baixar estoque automaticamente
@@ -164,9 +166,7 @@ export function ModalFaturarNfePedido({
 					</Button>
 					<Button
 						onClick={handleConfirmar}
-						disabled={
-							carregando || (ambienteProducao && !confirmadoProducao)
-						}
+						disabled={carregando || (ambienteProducao && !confirmadoProducao)}
 					>
 						{carregando ? "Faturando..." : "Faturar NF-e"}
 					</Button>

@@ -143,9 +143,7 @@ export function UnidadeMedidaForm(props: UnidadeMedidaFormProps) {
 								id="codigo"
 								placeholder="Ex: UN"
 								aria-invalid={!!errors.codigo}
-								aria-describedby={
-									errors.codigo ? "codigo-error" : undefined
-								}
+								aria-describedby={errors.codigo ? "codigo-error" : undefined}
 								{...register("codigo")}
 							/>
 							<p className="text-sm text-muted-foreground">

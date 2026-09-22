@@ -67,7 +67,9 @@ describe("configuração e tipos de evento OS", () => {
 		});
 
 		expect(resultado.success).toBe(true);
-		expect(configRepositories.atualizarConfiguracaoOrdemServico).toHaveBeenCalledWith(
+		expect(
+			configRepositories.atualizarConfiguracaoOrdemServico,
+		).toHaveBeenCalledWith(
 			"emp-1",
 			expect.objectContaining({
 				usaarea: 0,

@@ -1,5 +1,6 @@
 import { ArrowDown, ArrowUp, ArrowUpDown, Filter } from "lucide-react";
 import { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/ui/components/ui/button";
 import {
 	DropdownMenu,
@@ -12,7 +13,6 @@ import {
 	DropdownMenuTrigger,
 } from "@/ui/components/ui/dropdown-menu";
 import { Input } from "@/ui/components/ui/input";
-import { cn } from "@/lib/utils";
 
 export type TipoFiltroColunaTabela =
 	| "nenhum"

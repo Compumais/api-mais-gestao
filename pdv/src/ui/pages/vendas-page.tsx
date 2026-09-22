@@ -618,7 +618,10 @@ export function VendasPage() {
 								{table.getHeaderGroups().map((headerGroup) => (
 									<TableRow key={headerGroup.id}>
 										{headerGroup.headers.map((header) => (
-											<TableHead key={header.id} className="h-9 py-1 font-semibold">
+											<TableHead
+												key={header.id}
+												className="h-9 py-1 font-semibold"
+											>
 												{header.isPlaceholder
 													? null
 													: flexRender(

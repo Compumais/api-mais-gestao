@@ -38,7 +38,10 @@ export function LoginPageClient() {
 		empresasLoading,
 	]);
 
-	if (isLoading || (isAuthenticated && (empresasLoading || !empresasCarregadas))) {
+	if (
+		isLoading ||
+		(isAuthenticated && (empresasLoading || !empresasCarregadas))
+	) {
 		return (
 			<div className="bg-muted flex min-h-svh flex-col items-center justify-center p-6 md:p-10">
 				<div className="flex flex-col items-center gap-4">

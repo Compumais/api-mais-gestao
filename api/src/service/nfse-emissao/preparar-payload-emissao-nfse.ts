@@ -216,8 +216,7 @@ export async function prepararPayloadEmissaoNfse(
 
 	const crt = empresaFiscal.crt ?? 3;
 	// DPS opSimpNac: 1=não, 2=MEI, 3=ME/EPP — CRT 1/2=SN, 4=MEI
-	const opSimpNac =
-		crt === 1 || crt === 2 ? "3" : crt === 4 ? "2" : "1";
+	const opSimpNac = crt === 1 || crt === 2 ? "3" : crt === 4 ? "2" : "1";
 	const optanteSimplesNacional =
 		crt === 1 || crt === 2 ? "1" : crt === 4 ? "mei" : "2";
 
@@ -267,7 +266,9 @@ export async function prepararPayloadEmissaoNfse(
 		servico: {
 			...params.servico,
 			itemListaServico: itemListaNormalizado,
-			codigoTributacaoNacional: layoutDps ? cTribNac : params.servico.codigoTributacaoNacional,
+			codigoTributacaoNacional: layoutDps
+				? cTribNac
+				: params.servico.codigoTributacaoNacional,
 			codigoNbs: layoutDps ? codigoNbs : params.servico.codigoNbs,
 			valores: {
 				...params.servico.valores,

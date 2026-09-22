@@ -19,8 +19,7 @@ export function rotaNavEstaAtiva(
 	const [path, navQuery] = url.split("?");
 	if (!path || path === "#") return false;
 
-	const pathCorresponde =
-		pathname === path || pathname.startsWith(`${path}/`);
+	const pathCorresponde = pathname === path || pathname.startsWith(`${path}/`);
 	if (!pathCorresponde) return false;
 
 	const searchNorm = search.startsWith("?") ? search.slice(1) : search;

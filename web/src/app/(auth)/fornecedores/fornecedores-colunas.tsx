@@ -63,7 +63,8 @@ export const filtrosColunaFornecedoresVazios: FiltrosColunaFornecedoresState = {
 	criadoem: "",
 };
 
-export type CampoFiltroColunaFornecedores = keyof FiltrosColunaFornecedoresState;
+export type CampoFiltroColunaFornecedores =
+	keyof FiltrosColunaFornecedoresState;
 
 export const COLUNA_PARA_CAMPO_FILTRO_FORNECEDOR: Record<
 	string,
@@ -109,7 +110,11 @@ const DEFINICOES_COLUNAS: DefinicaoColunaFornecedor[] = [
 	{ id: "endereco", label: "Endereço", visivelPadrao: true },
 	{ id: "tipopessoa", label: "Tipo de pessoa", visivelPadrao: false },
 	{ id: "indiedest", label: "Indicador IE", visivelPadrao: false },
-	{ id: "inscricaoestadual", label: "Inscrição estadual", visivelPadrao: false },
+	{
+		id: "inscricaoestadual",
+		label: "Inscrição estadual",
+		visivelPadrao: false,
+	},
 	{ id: "rg", label: "RG", visivelPadrao: false },
 	{ id: "email", label: "E-mail", visivelPadrao: false },
 	{ id: "telefone", label: "Telefone", visivelPadrao: false },
@@ -281,9 +286,7 @@ export function criarColunasFornecedores(
 					accessorKey: "inscricaoestadual",
 					header,
 					meta,
-					cell: ({ row }) => (
-						<div>{row.original.inscricaoestadual ?? "-"}</div>
-					),
+					cell: ({ row }) => <div>{row.original.inscricaoestadual ?? "-"}</div>,
 				});
 				break;
 			case "rg":

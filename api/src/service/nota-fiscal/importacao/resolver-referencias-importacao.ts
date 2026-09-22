@@ -55,7 +55,10 @@ export async function resolverCfopEntradaPorCfopXml(
 	const codigoEntradaSugerido = sugerirCodigoCfopEntradaPorCfopXml(codigoSaida);
 	if (!codigoEntradaSugerido) return null;
 
-	const cfopEntrada = await buscarCfopPorCodigo(idempresa, codigoEntradaSugerido);
+	const cfopEntrada = await buscarCfopPorCodigo(
+		idempresa,
+		codigoEntradaSugerido,
+	);
 	if (!cfopEntrada?.id || !cfopEntrada.codigo) return null;
 	if (!isCfopEntrada(cfopEntrada.codigo)) return null;
 
@@ -116,7 +119,10 @@ export async function resolverCfopSaidaDeEntrada(
 		);
 
 		if (dePara?.idcfopsaida) {
-			return { id: dePara.idcfopsaida, codigo: dePara.codigosaida ?? undefined };
+			return {
+				id: dePara.idcfopsaida,
+				codigo: dePara.codigosaida ?? undefined,
+			};
 		}
 	}
 

@@ -130,9 +130,7 @@ export async function diagnosticarChaveNfeService({
 				sefaz = {
 					consultado: false,
 					xMotivo:
-						erro instanceof Error
-							? erro.message
-							: "Falha ao consultar SEFAZ",
+						erro instanceof Error ? erro.message : "Falha ao consultar SEFAZ",
 				};
 			}
 		}

@@ -12,6 +12,9 @@ describe("normalizarObservacaoPedido", () => {
 
 	it("corta no limite", () => {
 		const texto = "a".repeat(LIMITE_OBSERVACAO_PEDIDO + 10);
-		assert.equal(normalizarObservacaoPedido(texto)?.length, LIMITE_OBSERVACAO_PEDIDO);
+		assert.equal(
+			normalizarObservacaoPedido(texto)?.length,
+			LIMITE_OBSERVACAO_PEDIDO,
+		);
 	});
 });

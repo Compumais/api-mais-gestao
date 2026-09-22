@@ -1,5 +1,8 @@
 import { v4 as uuidv4 } from "uuid";
-import type { CotacaoCompra, CotacaoCompraCompleta } from "@/model/cotacao-compra-model.js";
+import type {
+	CotacaoCompra,
+	CotacaoCompraCompleta,
+} from "@/model/cotacao-compra-model.js";
 import { STATUS_COTACAO_COMPRA } from "@/model/cotacao-compra-model.js";
 import type { HttpResponse } from "@/model/http-model.js";
 import {

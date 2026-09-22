@@ -74,7 +74,9 @@ export function DialogCriarFormaPagamentoRapido({
 		},
 		onError: (erro) => {
 			toast.error(
-				erro instanceof Error ? erro.message : "Erro ao criar forma de pagamento",
+				erro instanceof Error
+					? erro.message
+					: "Erro ao criar forma de pagamento",
 			);
 		},
 	});

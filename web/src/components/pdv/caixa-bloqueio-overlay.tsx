@@ -26,10 +26,7 @@ export function CaixaBloqueioOverlay() {
 				</Button>
 			</div>
 
-			<AbrirCaixaDialog
-				open={dialogAberto}
-				onOpenChange={setDialogAberto}
-			/>
+			<AbrirCaixaDialog open={dialogAberto} onOpenChange={setDialogAberto} />
 		</>
 	);
 }

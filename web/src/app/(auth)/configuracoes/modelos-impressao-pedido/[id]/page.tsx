@@ -87,8 +87,7 @@ export default function EditarModeloImpressaoPedidoPage({
 			toast.success("Modelo atualizado");
 		} catch (erro) {
 			toast.error("Erro ao salvar", {
-				description:
-					erro instanceof Error ? erro.message : "Erro desconhecido",
+				description: erro instanceof Error ? erro.message : "Erro desconhecido",
 			});
 		}
 	}

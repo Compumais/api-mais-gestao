@@ -1,12 +1,12 @@
 import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { v4 as uuidv4 } from "uuid";
-import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	atualizarCardapioDelivery,
 	buscarCardapioDeliveryPorEmpresa,
 	buscarCardapioDeliveryPorSlug,
 } from "@/repositories/cardapio-delivery-repositories.js";
+import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import {
 	ErroImagemProduto,
 	TAMANHO_MAXIMO_IMAGEM_PRODUTO,
@@ -70,11 +70,7 @@ async function obterCardapioAutorizado(idempresa: string, idusuario: string) {
 	}
 	const cardapio = await buscarCardapioDeliveryPorEmpresa(idempresa);
 	if (!cardapio) {
-		throw new ErroImagemProduto(
-			"Cardápio não encontrado",
-			404,
-			"NOT_FOUND",
-		);
+		throw new ErroImagemProduto("Cardápio não encontrado", 404, "NOT_FOUND");
 	}
 	return cardapio;
 }

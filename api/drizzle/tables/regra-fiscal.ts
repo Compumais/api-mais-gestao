@@ -103,7 +103,9 @@ export const auditoriafiscalnfe = pgTable(
 		id: text().primaryKey().notNull(),
 		idnotafiscal: text("id_nota_fiscal"),
 		idempresa: text().notNull(),
-		classificacaofinal: varchar("classificacao_final", { length: 60 }).notNull(),
+		classificacaofinal: varchar("classificacao_final", {
+			length: 60,
+		}).notNull(),
 		nivelconfianca: varchar("nivel_confianca", { length: 30 }).notNull(),
 		permitirtransmissao: boolean("permitir_transmissao").notNull(),
 		relatorio: jsonb().notNull(),

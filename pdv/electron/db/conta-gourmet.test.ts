@@ -10,18 +10,12 @@ import {
 	recalcularTotaisConta,
 	valorRestante,
 } from "./conta-gourmet";
-import {
-	hashSenhaGerencial,
-	senhaGerencialConfere,
-} from "./senha-gerencial";
+import { hashSenhaGerencial, senhaGerencialConfere } from "./senha-gerencial";
 
 describe("recalcularTotaisConta", () => {
 	it("aplica 10% + couvert 2 pessoas + desconto", () => {
 		const totais = recalcularTotaisConta(
-			[
-				{ precototal: 40 },
-				{ precototal: 60 },
-			],
+			[{ precototal: 40 }, { precototal: 60 }],
 			{
 				numeropessoas: 2,
 				taxaAtiva: true,

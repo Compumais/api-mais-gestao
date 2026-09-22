@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-	resolverProvedor,
-	sanitizarSchemaGemini,
-} from "./provedores.js";
+import { resolverProvedor, sanitizarSchemaGemini } from "./provedores.js";
 
 describe("resolverProvedor", () => {
 	it("prioriza Gemini no modo auto quando ambas existem", () => {

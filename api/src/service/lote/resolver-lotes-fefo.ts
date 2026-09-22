@@ -109,7 +109,11 @@ export async function resolverLotesFefo(params: {
 	const somaLotes = lotes.reduce(
 		(acc, lote) =>
 			acc +
-			saldoDisponivelLoteFefo(lote.quantidade, lote.quantidadefiscal, tipoSaldo),
+			saldoDisponivelLoteFefo(
+				lote.quantidade,
+				lote.quantidadefiscal,
+				tipoSaldo,
+			),
 		0,
 	);
 	const saldoOrfao = Math.max(0, Number((saldoProduto - somaLotes).toFixed(6)));

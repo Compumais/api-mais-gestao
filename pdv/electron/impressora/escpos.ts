@@ -3,8 +3,8 @@ import { getConfig } from "../db/database";
 import { obterVenda } from "../db/repos";
 import {
 	type DadosComprovanteFechamentoCaixa,
-	montarTextoComprovanteFechamentoCaixa,
 	type DadosItensVendidosTurno,
+	montarTextoComprovanteFechamentoCaixa,
 	montarTextoItensVendidosTurno,
 } from "./comprovante-caixa";
 import { linhasPagamentoCupom } from "./cupom-pagamentos";

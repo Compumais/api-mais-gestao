@@ -11,10 +11,7 @@ import { CarrinhoVendaRapida } from "@/components/pdv/carrinho-venda-rapida";
 import { PagamentoPdvDialog } from "@/components/pdv/pagamento-pdv-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	NFE_AMBIENTE_LABELS,
-	obterLabelStatus,
-} from "@/constants/nfe-status";
+import { NFE_AMBIENTE_LABELS, obterLabelStatus } from "@/constants/nfe-status";
 import { useAuth } from "@/hooks/use-auth";
 import { useCaixaPdv } from "@/hooks/use-caixa-pdv";
 import { useEmpresa } from "@/hooks/use-empresa";
@@ -64,8 +61,7 @@ export function EditarNfcePdv() {
 				idempresa: empresa!.id,
 				idnotafiscal: editarNfceId!,
 			}),
-		enabled:
-			!!editarNfceId && !!empresa?.id && isAuthenticated && !authLoading,
+		enabled: !!editarNfceId && !!empresa?.id && isAuthenticated && !authLoading,
 		retry: 1,
 	});
 
@@ -248,17 +244,13 @@ export function EditarNfcePdv() {
 	const numeroNfce =
 		dadosEdicao?.nota.numeronotafiscal && dadosEdicao.nota.serie
 			? `${dadosEdicao.nota.numeronotafiscal}/${dadosEdicao.nota.serie}`
-			: dadosEdicao?.nota.numeronotafiscal ?? "—";
+			: (dadosEdicao?.nota.numeronotafiscal ?? "—");
 
 	if (!editarNfceId) {
 		return null;
 	}
 
-	if (
-		authLoading ||
-		carregandoEdicao ||
-		(!carrinhoCarregado && !erroEdicao)
-	) {
+	if (authLoading || carregandoEdicao || (!carrinhoCarregado && !erroEdicao)) {
 		return (
 			<div className="flex flex-1 items-center justify-center p-8">
 				<p className="text-muted-foreground">Carregando NFC-e para edição...</p>
@@ -275,7 +267,11 @@ export function EditarNfcePdv() {
 						: "Não foi possível carregar a NFC-e para edição"}
 				</p>
 				<div className="flex flex-wrap gap-2">
-					<Button type="button" variant="outline" onClick={() => recarregarEdicao()}>
+					<Button
+						type="button"
+						variant="outline"
+						onClick={() => recarregarEdicao()}
+					>
 						Tentar novamente
 					</Button>
 					<Button type="button" asChild>

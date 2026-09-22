@@ -7,13 +7,18 @@ const buscarTipoDocumentoFinanceiroParamsSchema = z.object({
 	id: z.string(),
 });
 
-export async function buscarTipoDocumentoFinanceiro(request: FastifyRequest, reply: FastifyReply) {
+export async function buscarTipoDocumentoFinanceiro(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
 		}
 
-		const { id } = buscarTipoDocumentoFinanceiroParamsSchema.parse(request.params);
+		const { id } = buscarTipoDocumentoFinanceiroParamsSchema.parse(
+			request.params,
+		);
 
 		const resultado = await buscarTipoDocumentoFinanceiroService({
 			tipoDocumentoFinanceiroId: id,

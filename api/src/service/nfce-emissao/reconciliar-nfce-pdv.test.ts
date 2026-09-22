@@ -75,9 +75,9 @@ describe("reconciliarNfcePdvService", () => {
 			resultado: await executar(),
 		}));
 		vi.mocked(reconciliacaoRepository.listarDeltaNfcePdv).mockResolvedValue([]);
-		vi.mocked(
-			notaRepository.buscarNotaFiscalNfcePorVendaPdv,
-		).mockResolvedValue(undefined);
+		vi.mocked(notaRepository.buscarNotaFiscalNfcePorVendaPdv).mockResolvedValue(
+			undefined,
+		);
 	});
 
 	it("rejeita terminal PDV ausente ou inativo antes de adquirir o lock", async () => {
@@ -261,9 +261,9 @@ describe("reconciliarNfcePdvService", () => {
 		vi.mocked(
 			reconciliacaoRepository.buscarVendaParaReconciliacaoNfce,
 		).mockResolvedValue(vendaSemNota as never);
-		vi.mocked(
-			notaRepository.buscarNotaFiscalNfcePorVendaPdv,
-		).mockResolvedValue(notaRejeitada as never);
+		vi.mocked(notaRepository.buscarNotaFiscalNfcePorVendaPdv).mockResolvedValue(
+			notaRejeitada as never,
+		);
 		vi.mocked(notaRepository.buscarNotaFiscalPorId).mockResolvedValue(
 			notaRejeitada as never,
 		);
@@ -283,9 +283,10 @@ describe("reconciliarNfcePdvService", () => {
 			],
 		});
 
-		expect(
-			notaRepository.buscarNotaFiscalNfcePorVendaPdv,
-		).toHaveBeenCalledWith(parametrosBase.idempresa, vendaSemNota.id);
+		expect(notaRepository.buscarNotaFiscalNfcePorVendaPdv).toHaveBeenCalledWith(
+			parametrosBase.idempresa,
+			vendaSemNota.id,
+		);
 		expect(vendaRepository.atualizarVendaPdvGourmet).toHaveBeenCalledWith(
 			vendaSemNota.id,
 			{ idnotafiscalnfce: notaRejeitada.id },

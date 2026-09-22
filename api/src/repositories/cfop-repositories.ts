@@ -14,8 +14,9 @@ function filtroTipoMovimentoCfop(tipomovimento: TipoMovimentoCfop) {
 		tipomovimento === "E" ? DIGITOS_CFOP_ENTRADA : DIGITOS_CFOP_SAIDA;
 
 	return or(
-		...digitos.map((digito) =>
-			sql`left(regexp_replace(${cfop.codigo}, '[^0-9]', '', 'g'), 1) = ${digito}`,
+		...digitos.map(
+			(digito) =>
+				sql`left(regexp_replace(${cfop.codigo}, '[^0-9]', '', 'g'), 1) = ${digito}`,
 		),
 	);
 }
@@ -26,10 +27,7 @@ export async function buscarCfopPorId(id: string) {
 	return registro;
 }
 
-export async function buscarCfopPorCodigo(
-	idempresa: string,
-	codigo: string,
-) {
+export async function buscarCfopPorCodigo(idempresa: string, codigo: string) {
 	const codigoNormalizado = codigo.replace(/\D/g, "");
 
 	const [registro] = await db
@@ -72,7 +70,11 @@ export async function criarCfopsEmLote(dadosCfops: NovoCFOP[]) {
 
 	const registrosCriados = [];
 
-	for (let indice = 0; indice < dadosCfops.length; indice += TAMANHO_LOTE_CFOP) {
+	for (
+		let indice = 0;
+		indice < dadosCfops.length;
+		indice += TAMANHO_LOTE_CFOP
+	) {
 		const lote = dadosCfops.slice(indice, indice + TAMANHO_LOTE_CFOP);
 		const registros = await db.insert(cfop).values(lote).returning();
 		registrosCriados.push(...registros);

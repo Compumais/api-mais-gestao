@@ -51,7 +51,10 @@ export async function baixarXmlNfeInbound(
 
 		const nomeArquivo = `${documento.chavenfe}.xml`;
 		reply.header("Content-Type", "application/xml; charset=utf-8");
-		reply.header("Content-Disposition", `attachment; filename="${nomeArquivo}"`);
+		reply.header(
+			"Content-Disposition",
+			`attachment; filename="${nomeArquivo}"`,
+		);
 
 		return reply.status(200).send(documento.xml);
 	} catch (error) {

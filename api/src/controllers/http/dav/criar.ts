@@ -6,7 +6,7 @@ import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
 const criarDavBodySchema = z.looseObject({
 	idempresa: z.string(),
-	codigo: z.number().int().optional()
+	codigo: z.number().int().optional(),
 });
 
 export async function criarDav(request: FastifyRequest, reply: FastifyReply) {

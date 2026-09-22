@@ -2,7 +2,11 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-export type TipoXmlNfe = "assinado" | "autorizado" | "cancelado" | "inutilizado";
+export type TipoXmlNfe =
+	| "assinado"
+	| "autorizado"
+	| "cancelado"
+	| "inutilizado";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 
@@ -34,7 +38,12 @@ export async function salvarXmlEmDisco(
 	const caminho = montarCaminhoXml(idempresa, chave, tipo);
 	const raiz = obterDiretorioRaizStorage();
 	const caminhoCompleto = join(raiz, caminho);
-	const diretorio = join(raiz, idempresa, new Date().getFullYear().toString(), String(new Date().getMonth() + 1).padStart(2, "0"));
+	const diretorio = join(
+		raiz,
+		idempresa,
+		new Date().getFullYear().toString(),
+		String(new Date().getMonth() + 1).padStart(2, "0"),
+	);
 
 	await mkdir(diretorio, { recursive: true });
 	await writeFile(caminhoCompleto, conteudoXml, "utf8");
@@ -49,7 +58,12 @@ export async function salvarXmlEventoEmDisco(
 	conteudoXml: string,
 ): Promise<string> {
 	const identificadorSanitizado = identificador.replace(/[^\w.-]/g, "_");
-	return salvarXmlEmDisco(idempresa, identificadorSanitizado, tipo, conteudoXml);
+	return salvarXmlEmDisco(
+		idempresa,
+		identificadorSanitizado,
+		tipo,
+		conteudoXml,
+	);
 }
 
 export function obterCaminhoCompletoXml(caminho: string): string {

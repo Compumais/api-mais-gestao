@@ -336,9 +336,7 @@ export function BandeirasCartaoTab() {
 								<DropdownMenuCheckboxItem
 									key={column.id}
 									checked={column.getIsVisible()}
-									onCheckedChange={(value) =>
-										column.toggleVisibility(!!value)
-									}
+									onCheckedChange={(value) => column.toggleVisibility(!!value)}
 								>
 									{rotuloColuna(column)}
 								</DropdownMenuCheckboxItem>
@@ -358,9 +356,7 @@ export function BandeirasCartaoTab() {
 						{colunasVisiveis.map((coluna) => (
 							<TableHead
 								key={coluna.id}
-								className={
-									coluna.id === "acoes" ? "w-12 text-end" : undefined
-								}
+								className={coluna.id === "acoes" ? "w-12 text-end" : undefined}
 							>
 								{rotuloColuna(coluna)}
 							</TableHead>
@@ -450,8 +446,7 @@ export function BandeirasCartaoTab() {
 								</div>
 								<div className="text-sm text-muted-foreground">
 									Página {pagination.pageIndex + 1} de{" "}
-									{data.paginacao.totalPages} ({data.paginacao.total}{" "}
-									registros)
+									{data.paginacao.totalPages} ({data.paginacao.total} registros)
 								</div>
 								<div className="flex gap-2">
 									<Button

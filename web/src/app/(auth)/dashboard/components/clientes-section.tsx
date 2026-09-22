@@ -28,10 +28,7 @@ import {
 	useDashboardClientes,
 	useDashboardClientesRfm,
 } from "@/hooks/dashboard/use-dashboard-queries";
-import {
-	formatCurrency,
-	formatNumber,
-} from "@/lib/dashboard-periodo";
+import { formatCurrency, formatNumber } from "@/lib/dashboard-periodo";
 
 const chartConfig = {
 	total: { label: "Clientes", color: "var(--chart-1)" },
@@ -76,10 +73,7 @@ export function ClientesSection() {
 					titulo="Clientes atendidos"
 					valor={formatNumber(data.clientesAtendidos)}
 				/>
-				<KpiCard
-					titulo="Novos"
-					valor={formatNumber(data.clientesNovos)}
-				/>
+				<KpiCard titulo="Novos" valor={formatNumber(data.clientesNovos)} />
 				<KpiCard
 					titulo="Recorrentes"
 					valor={formatNumber(data.clientesRecorrentes)}

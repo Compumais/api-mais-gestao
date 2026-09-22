@@ -3,14 +3,15 @@ import type { FastifySchema } from "fastify";
 export const criarEntidadeContaContabilSchema: FastifySchema = {
 	tags: ["entidades-conta-contabil"],
 	summary: "Criar entidade conta contábil",
-	description: "Cria um novo registro de entidade conta contábil na empresa do usuário autenticado.",
+	description:
+		"Cria um novo registro de entidade conta contábil na empresa do usuário autenticado.",
 	security: [{ bearerAuth: [] }],
 	body: {
 		type: "object",
 		properties: {
 			idempresa: { type: "string", description: "ID da empresa" },
 			identidade: { type: "string" },
-			idcontacontabil: { type: "string" }
+			idcontacontabil: { type: "string" },
 		},
 		required: ["idempresa"],
 	},
@@ -120,7 +121,10 @@ export const listarEntidadeContaContabilsSchema: FastifySchema = {
 		200: {
 			type: "object",
 			properties: {
-				data: { type: "array", items: { type: "object", additionalProperties: true } },
+				data: {
+					type: "array",
+					items: { type: "object", additionalProperties: true },
+				},
 				paginacao: {
 					type: "object",
 					properties: {

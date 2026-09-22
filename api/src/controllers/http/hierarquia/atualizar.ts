@@ -14,7 +14,10 @@ const atualizarHierarquiaBodySchema = z.looseObject({
 	icone: hierarquiaIconeSchema,
 });
 
-export async function atualizarHierarquia(request: FastifyRequest, reply: FastifyReply) {
+export async function atualizarHierarquia(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());

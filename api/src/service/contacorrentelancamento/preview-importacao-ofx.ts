@@ -1,7 +1,5 @@
 import type { HttpResponse } from "@/model/http-model.js";
-import {
-	buscarLancamentosExistentesPorChaves,
-} from "@/repositories/conta-corrente-lancamento-repositories.js";
+import { buscarLancamentosExistentesPorChaves } from "@/repositories/conta-corrente-lancamento-repositories.js";
 import { verificarContaCorrentePertenceEmpresa } from "@/repositories/conta-corrente-repositories.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { montarChaveLancamentoExistente } from "@/util/chave-lancamento-conta-corrente.js";

@@ -19,7 +19,10 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import type { OrdemServicoFormData, OrdemServicoFormInput } from "@/schemas/ordem-servico.schema";
+import type {
+	OrdemServicoFormData,
+	OrdemServicoFormInput,
+} from "@/schemas/ordem-servico.schema";
 import type { CampoExtraOrdemServico } from "@/services/ordem-servico.service";
 import { camposExtrasAtivos } from "@/util/ordem-servico-ui";
 

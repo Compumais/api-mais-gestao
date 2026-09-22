@@ -34,9 +34,7 @@ export function montarIdentificacaoFinanceiroNf({
 	const parcelaTexto =
 		totalParcelas > 1 ? ` Parc. ${parcela}/${totalParcelas}` : "";
 	const entidadeTexto =
-		tipo === "venda"
-			? nomeCliente?.trim()
-			: nomeFornecedor?.trim();
+		tipo === "venda" ? nomeCliente?.trim() : nomeFornecedor?.trim();
 	const rotuloNf = tipo === "venda" ? "NF Venda" : "NF Compra";
 	const pedidosTexto =
 		codigosPedidos && codigosPedidos.length > 0

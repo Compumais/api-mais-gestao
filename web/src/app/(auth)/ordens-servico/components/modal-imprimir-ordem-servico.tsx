@@ -117,10 +117,7 @@ export function ModalImprimirOrdemServico({
 			modeloSelecionado.layout,
 			dadosPreview,
 		);
-		const ok = imprimirHtmlModeloOs(
-			html,
-			`OS ${ordem.codigo ?? ordem.id}`,
-		);
+		const ok = imprimirHtmlModeloOs(html, `OS ${ordem.codigo ?? ordem.id}`);
 		if (!ok) {
 			toast.error("Não foi possível abrir a janela de impressão", {
 				description: "Verifique se o bloqueador de pop-ups está desativado.",
@@ -144,8 +141,8 @@ export function ModalImprimirOrdemServico({
 							</p>
 						) : modelos.length === 0 ? (
 							<p className="text-sm text-muted-foreground">
-								Nenhum modelo disponível. Cadastre em Configurações → Modelos
-								de impressão.
+								Nenhum modelo disponível. Cadastre em Configurações → Modelos de
+								impressão.
 							</p>
 						) : (
 							<Select value={modeloId} onValueChange={setModeloId}>

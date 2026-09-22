@@ -86,9 +86,13 @@ export const cardapioDeliveryService = {
 		idempresa: string,
 		dados: AtualizarCardapioDeliveryData,
 	): Promise<CardapioDelivery> {
-		const { data } = await api.put<CardapioDelivery>("/cardapio-delivery", dados, {
-			params: { idempresa },
-		});
+		const { data } = await api.put<CardapioDelivery>(
+			"/cardapio-delivery",
+			dados,
+			{
+				params: { idempresa },
+			},
+		);
 		return data;
 	},
 

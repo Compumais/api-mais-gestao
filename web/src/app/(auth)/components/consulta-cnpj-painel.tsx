@@ -14,7 +14,9 @@ type ConsultaCnpjPainelProps = {
 	jaCadastrada?: { id: string } | null;
 };
 
-function obterVarianteSituacao(situacao: string): "default" | "secondary" | "destructive" {
+function obterVarianteSituacao(
+	situacao: string,
+): "default" | "secondary" | "destructive" {
 	const normalizada = situacao.trim().toLowerCase();
 
 	if (normalizada === "ativa") {
@@ -91,10 +93,7 @@ export function ConsultaCnpjPainel({
 						<p className="font-medium mb-2">CNAEs</p>
 						<ul className="space-y-1">
 							{extras.cnaes.map((cnae) => (
-								<li
-									key={cnae.cnae}
-									className="text-muted-foreground"
-								>
+								<li key={cnae.cnae} className="text-muted-foreground">
 									<span className="font-mono text-foreground">{cnae.cnae}</span>
 									{" — "}
 									{cnae.descricao}
@@ -116,7 +115,9 @@ export function ConsultaCnpjPainel({
 										"text-muted-foreground",
 									)}
 								>
-									<p className="text-foreground font-medium">{socio.nomeSocio}</p>
+									<p className="text-foreground font-medium">
+										{socio.nomeSocio}
+									</p>
 									<p>{socio.descricao}</p>
 									{socio.dataEntradaSociedade ? (
 										<p>Entrada: {socio.dataEntradaSociedade}</p>

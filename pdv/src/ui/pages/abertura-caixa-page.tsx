@@ -55,8 +55,8 @@ export function AberturaCaixaPage() {
 						</p>
 						<h1 className="mt-2 text-3xl font-bold">Abertura de caixa</h1>
 						<p className="mt-3 max-w-md text-sm leading-6 text-sidebar-foreground/75">
-					Turno de {status?.sessao.username ?? "operador"}. Informe o suprimento
-					inicial para começar a operar.
+							Turno de {status?.sessao.username ?? "operador"}. Informe o
+							suprimento inicial para começar a operar.
 						</p>
 					</div>
 					<p className="text-xs text-sidebar-foreground/55">
@@ -64,52 +64,54 @@ export function AberturaCaixaPage() {
 					</p>
 				</div>
 				<div className="space-y-4 p-5 sm:p-7">
-				{status?.caixaOutroOperador ? (
-					<p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-center text-xs text-amber-900">
-						Há um caixa aberto
-						{status.caixaOutroOperador.username
-							? ` por ${status.caixaOutroOperador.username}`
-							: " por outro operador"}
-						. Esse turno não vale para você — abra o seu para vender.
-					</p>
-				) : null}
-				<div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-4 text-center dark:border-blue-900 dark:bg-blue-950/30">
-					<p className="text-xs font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-300">
-						Suprimento inicial
-					</p>
-					<div className="text-4xl font-black tabular-nums text-primary">
-						{money(centavosToNumber(digitos))}
+					{status?.caixaOutroOperador ? (
+						<p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-center text-xs text-amber-900">
+							Há um caixa aberto
+							{status.caixaOutroOperador.username
+								? ` por ${status.caixaOutroOperador.username}`
+								: " por outro operador"}
+							. Esse turno não vale para você — abra o seu para vender.
+						</p>
+					) : null}
+					<div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-4 text-center dark:border-blue-900 dark:bg-blue-950/30">
+						<p className="text-xs font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-300">
+							Suprimento inicial
+						</p>
+						<div className="text-4xl font-black tabular-nums text-primary">
+							{money(centavosToNumber(digitos))}
+						</div>
 					</div>
-				</div>
-				<NumericKeypad
-					digits={digitos}
-					onChange={setDigitos}
-					disabled={loading}
-					capturarSobreInput
-					onEnter={() => {
-						if (!loading) void confirmar();
-					}}
-				/>
-				<p className="text-center text-xs text-muted-foreground">
-					Digite o valor e pressione Enter para confirmar.
-				</p>
-				{erro && <p className="text-center text-sm text-destructive">{erro}</p>}
-				<Button
-					size="xl"
-					className="pdv-touch w-full"
-					disabled={loading}
-					onClick={() => void confirmar()}
-				>
-					{loading ? "Abrindo..." : "Confirmar abertura"}
-				</Button>
-				<Button
-					variant="ghost"
-					className="pdv-touch w-full"
-					disabled={loading}
-					onClick={() => void sair()}
-				>
-					Sair
-				</Button>
+					<NumericKeypad
+						digits={digitos}
+						onChange={setDigitos}
+						disabled={loading}
+						capturarSobreInput
+						onEnter={() => {
+							if (!loading) void confirmar();
+						}}
+					/>
+					<p className="text-center text-xs text-muted-foreground">
+						Digite o valor e pressione Enter para confirmar.
+					</p>
+					{erro && (
+						<p className="text-center text-sm text-destructive">{erro}</p>
+					)}
+					<Button
+						size="xl"
+						className="pdv-touch w-full"
+						disabled={loading}
+						onClick={() => void confirmar()}
+					>
+						{loading ? "Abrindo..." : "Confirmar abertura"}
+					</Button>
+					<Button
+						variant="ghost"
+						className="pdv-touch w-full"
+						disabled={loading}
+						onClick={() => void sair()}
+					>
+						Sair
+					</Button>
 				</div>
 			</div>
 		</div>

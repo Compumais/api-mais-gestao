@@ -4,7 +4,10 @@ import {
 	buscarNotaFiscalPorId,
 	listarItensPorNotaFiscal,
 } from "@/repositories/nota-fiscal-repositories.js";
-import type { EnderecoEntregaPayloadNfe, LocalEntregaPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
+import type {
+	EnderecoEntregaPayloadNfe,
+	LocalEntregaPayloadNfe,
+} from "@/service/nfe-emissao/contexto-emissao-nfe.js";
 import {
 	emitirNfeVendaService,
 	type ResultadoEmissaoNfeVenda,
@@ -155,8 +158,7 @@ export async function transmitirNfeVendaService({
 		transporte: {
 			modFrete: nota.tipofrete ?? emissaoSalva?.transporte?.modFrete ?? 9,
 		},
-		informarEnderecoEntregaManual:
-			emissaoSalva?.informarEnderecoEntregaManual,
+		informarEnderecoEntregaManual: emissaoSalva?.informarEnderecoEntregaManual,
 		enderecoEntrega: emissaoSalva?.enderecoEntrega as
 			| EnderecoEntregaPayloadNfe
 			| undefined,

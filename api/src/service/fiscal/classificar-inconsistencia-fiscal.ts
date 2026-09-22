@@ -36,15 +36,22 @@ export function classificacaoFinalFiscal(params: {
 	const tipo = classificarInconsistenciaFiscal(params.validacoes);
 
 	if (tipo === "BUG_DE_SISTEMA") return "BUG_DE_SISTEMA";
-	if (tipo === "ALTERACAO_LEGISLATIVA") return "ALTERACAO_LEGISLATIVA_DETECTADA";
+	if (tipo === "ALTERACAO_LEGISLATIVA")
+		return "ALTERACAO_LEGISLATIVA_DETECTADA";
 	if (temInconsistencia) {
-		if (tipo === "ERRO_DE_CADASTRO" || tipo === "ERRO_DE_PARAMETRIZACAO_FISCAL") {
+		if (
+			tipo === "ERRO_DE_CADASTRO" ||
+			tipo === "ERRO_DE_PARAMETRIZACAO_FISCAL"
+		) {
 			return "ERRO_DE_CONFIGURACAO";
 		}
 		return "REVISAO_FISCAL_NECESSARIA";
 	}
 
-	if ((params.exigeSt && !params.stConfirmada) || (params.exigeDifal && !params.difalConfirmado)) {
+	if (
+		(params.exigeSt && !params.stConfirmada) ||
+		(params.exigeDifal && !params.difalConfirmado)
+	) {
 		return "REGRA_FISCAL_NAO_CONFIRMADA";
 	}
 

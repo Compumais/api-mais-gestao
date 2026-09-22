@@ -28,8 +28,6 @@ describe("formatarRecursoAuditoria", () => {
 	});
 
 	it("formata recursos com espaços", () => {
-		expect(formatarRecursoAuditoria("Plano de Contas")).toBe(
-			"Plano De Contas",
-		);
+		expect(formatarRecursoAuditoria("Plano de Contas")).toBe("Plano De Contas");
 	});
 });

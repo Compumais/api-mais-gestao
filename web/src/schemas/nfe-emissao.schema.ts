@@ -21,7 +21,10 @@ export const itemNfeSchema = z.object({
 	valorUnitario: z.coerce
 		.number({ error: "Valor inválido" })
 		.positive("Valor deve ser positivo"),
-	desconto: z.coerce.number().min(0, "Desconto não pode ser negativo").optional(),
+	desconto: z.coerce
+		.number()
+		.min(0, "Desconto não pode ser negativo")
+		.optional(),
 	cst: z.string().optional(),
 	csosn: z.string().optional(),
 	orig: z.number().default(0),
@@ -99,9 +102,7 @@ export const enderecoEntregaNfeSchema = z.object({
 	numero: z.string().min(1, "Informe o número").max(60),
 	complemento: z.string().max(60).optional(),
 	bairro: z.string().min(2, "Informe o bairro").max(60),
-	codigoMunicipio: z
-		.string()
-		.regex(/^\d{7}$/, "Selecione o município"),
+	codigoMunicipio: z.string().regex(/^\d{7}$/, "Selecione o município"),
 	municipio: z.string().min(2, "Informe o município").max(60),
 	uf: z.string().length(2, "Selecione a UF"),
 	cep: z
@@ -165,58 +166,60 @@ export const formaPagamentoIntegracaoSchema = z.object({
 	indPag: z.number().int().optional(),
 });
 
-export const emissaoNfeFormSchema = z.object({
-	idempresa: z.string().uuid(),
-	idnotafiscal: z.string().uuid().optional(),
-	iddestinatario: z.string().uuid().optional(),
-	idserienfe: z.string().uuid().optional(),
-	confirmarProducao: z.boolean().default(false),
-	natOp: z.string().max(60).optional(),
-	indPres: z.coerce
-		.number()
-		.int()
-		.refine((valor) => isIndPresNfeValido(valor), "indPres inválido")
-		.default(1),
-	itens: z.array(itemNfeSchema).min(1, "Informe ao menos um item"),
-	totais: totaisNfeSchema.optional(),
-	totaisInformados: totaisInformadosNfeSchema,
-	pagamento: pagamentoNfeSchema.optional(),
-	transporte: transporteNfeSchema.optional(),
-	informarEnderecoEntregaManual: z.boolean().optional().default(false),
-	enderecoEntrega: enderecoEntregaNfeSchema.optional(),
-	localEntrega: localEntregaNfeSchema.optional(),
-	informacoesAdicionais: z.string().max(2000).optional(),
-	documentoReferenciado: documentoReferenciadoSchema,
-	idplanocontas: z.string().uuid().optional(),
-	idcondicaopagto: z.string().uuid().optional(),
-	idlocalestoque: z.string().uuid().optional(),
-	idtipodocumento: z.string().uuid().optional(),
-	formasPagamento: z.array(formaPagamentoIntegracaoSchema).optional(),
-	gerarFinanceiro: z.boolean().optional().default(true),
-	gerarEstoque: z.boolean().optional().default(true),
-	iddav: z.string().uuid().optional(),
-	iddavs: z.array(z.string().uuid()).min(1).optional(),
-	codigosPedidos: z.array(z.number().int()).optional(),
-}).superRefine((dados, ctx) => {
-	const distribuicao = distribuirDescontosEmissaoNfe(
-		dados.itens,
-		dados.totais?.desconto ?? 0,
-	);
-	for (const erro of distribuicao.erros) {
-		ctx.addIssue({
-			code: "custom",
-			message: erro.mensagem,
-			path: erro.caminho,
-		});
-	}
-	if (dados.informarEnderecoEntregaManual && !dados.enderecoEntrega) {
-		ctx.addIssue({
-			code: "custom",
-			message: "Informe o endereço completo de entrega",
-			path: ["enderecoEntrega"],
-		});
-	}
-});
+export const emissaoNfeFormSchema = z
+	.object({
+		idempresa: z.string().uuid(),
+		idnotafiscal: z.string().uuid().optional(),
+		iddestinatario: z.string().uuid().optional(),
+		idserienfe: z.string().uuid().optional(),
+		confirmarProducao: z.boolean().default(false),
+		natOp: z.string().max(60).optional(),
+		indPres: z.coerce
+			.number()
+			.int()
+			.refine((valor) => isIndPresNfeValido(valor), "indPres inválido")
+			.default(1),
+		itens: z.array(itemNfeSchema).min(1, "Informe ao menos um item"),
+		totais: totaisNfeSchema.optional(),
+		totaisInformados: totaisInformadosNfeSchema,
+		pagamento: pagamentoNfeSchema.optional(),
+		transporte: transporteNfeSchema.optional(),
+		informarEnderecoEntregaManual: z.boolean().optional().default(false),
+		enderecoEntrega: enderecoEntregaNfeSchema.optional(),
+		localEntrega: localEntregaNfeSchema.optional(),
+		informacoesAdicionais: z.string().max(2000).optional(),
+		documentoReferenciado: documentoReferenciadoSchema,
+		idplanocontas: z.string().uuid().optional(),
+		idcondicaopagto: z.string().uuid().optional(),
+		idlocalestoque: z.string().uuid().optional(),
+		idtipodocumento: z.string().uuid().optional(),
+		formasPagamento: z.array(formaPagamentoIntegracaoSchema).optional(),
+		gerarFinanceiro: z.boolean().optional().default(true),
+		gerarEstoque: z.boolean().optional().default(true),
+		iddav: z.string().uuid().optional(),
+		iddavs: z.array(z.string().uuid()).min(1).optional(),
+		codigosPedidos: z.array(z.number().int()).optional(),
+	})
+	.superRefine((dados, ctx) => {
+		const distribuicao = distribuirDescontosEmissaoNfe(
+			dados.itens,
+			dados.totais?.desconto ?? 0,
+		);
+		for (const erro of distribuicao.erros) {
+			ctx.addIssue({
+				code: "custom",
+				message: erro.mensagem,
+				path: erro.caminho,
+			});
+		}
+		if (dados.informarEnderecoEntregaManual && !dados.enderecoEntrega) {
+			ctx.addIssue({
+				code: "custom",
+				message: "Informe o endereço completo de entrega",
+				path: ["enderecoEntrega"],
+			});
+		}
+	});
 
 export type EmissaoNfeFormData = z.infer<typeof emissaoNfeFormSchema>;
 export type ItemNfe = z.infer<typeof itemNfeSchema>;

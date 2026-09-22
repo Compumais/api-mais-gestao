@@ -5,7 +5,11 @@ import {
 	buscarMovimentoEstoquePorId,
 	excluirMovimentoEstoque,
 } from "@/repositories/movimento-estoque-repositories.js";
-import { httpNaoEncontrado, httpProibido, httpSemConteudo } from "@/util/http-util.js";
+import {
+	httpNaoEncontrado,
+	httpProibido,
+	httpSemConteudo,
+} from "@/util/http-util.js";
 
 type ExcluirMovimentoEstoqueParametros = {
 	movimentoEstoqueId: number;
@@ -18,7 +22,8 @@ export async function excluirMovimentoEstoqueService({
 }: ExcluirMovimentoEstoqueParametros): Promise<
 	HttpResponse<MovimentoEstoque | null>
 > {
-	const registroExistente = await buscarMovimentoEstoquePorId(movimentoEstoqueId);
+	const registroExistente =
+		await buscarMovimentoEstoquePorId(movimentoEstoqueId);
 
 	if (!registroExistente) {
 		return httpNaoEncontrado();
@@ -41,4 +46,3 @@ export async function excluirMovimentoEstoqueService({
 
 	return httpSemConteudo();
 }
-

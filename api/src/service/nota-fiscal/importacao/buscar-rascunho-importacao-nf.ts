@@ -5,7 +5,10 @@ import type {
 } from "@/model/nota-fiscal-importacao-model.js";
 import type { NotaFiscalItem } from "@/model/nota-fiscal-item-model.js";
 import type { NotaFiscal } from "@/model/nota-fiscal-model.js";
-import { buscarEntidadePorId, verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import {
+	buscarEntidadePorId,
+	verificarUsuarioPertenceEmpresa,
+} from "@/repositories/entidade-repositories.js";
 import {
 	buscarNotaFiscalRascunhoPorId,
 	listarItensPorNotaFiscal,
@@ -53,7 +56,8 @@ export async function buscarRascunhoImportacaoNfService({
 
 	const itensComDados = itens.map((item) => ({
 		...item,
-		dadosimportacao: (item.dadosimportacao as DadosImportacaoItem | null) ?? null,
+		dadosimportacao:
+			(item.dadosimportacao as DadosImportacaoItem | null) ?? null,
 	}));
 
 	const { nota: notaComTributos, itens: itensComTributos } =

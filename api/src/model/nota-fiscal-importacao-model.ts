@@ -122,12 +122,14 @@ export type DadosImportacaoNota = {
 	idgrupoPadrao?: string | undefined;
 	finalizadoEm?: string | undefined;
 	versao?: number | undefined;
-	xmlArquivado?: {
-		chavenfe?: string | undefined;
-		protocolonfe?: string | undefined;
-		hashsha256?: string | undefined;
-		tamanhobytes?: number | undefined;
-	} | undefined;
+	xmlArquivado?:
+		| {
+				chavenfe?: string | undefined;
+				protocolonfe?: string | undefined;
+				hashsha256?: string | undefined;
+				tamanhobytes?: number | undefined;
+		  }
+		| undefined;
 };
 
 export type FornecedorSugeridoImportacao = {

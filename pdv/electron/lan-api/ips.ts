@@ -1,8 +1,8 @@
 import { execFileSync } from "node:child_process";
 import {
-	networkInterfaces,
 	type NetworkInterfaceInfo,
 	type NetworkInterfaceInfoIPv4,
+	networkInterfaces,
 } from "node:os";
 
 const INTERFACE_VIRTUAL =

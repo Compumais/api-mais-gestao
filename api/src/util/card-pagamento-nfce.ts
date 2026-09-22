@@ -21,7 +21,9 @@ export type CardPagamentoNfce = {
 	cAut?: string;
 };
 
-export function normalizarTPag(tPag: string | number | null | undefined): string {
+export function normalizarTPag(
+	tPag: string | number | null | undefined,
+): string {
 	const digits = String(tPag ?? "")
 		.replace(/\D/g, "")
 		.slice(-2);
@@ -29,7 +31,9 @@ export function normalizarTPag(tPag: string | number | null | undefined): string
 	return digits.padStart(2, "0");
 }
 
-export function exigeGrupoCard(tPag: string | number | null | undefined): boolean {
+export function exigeGrupoCard(
+	tPag: string | number | null | undefined,
+): boolean {
 	return TPAGS_COM_GRUPO_CARD.has(normalizarTPag(tPag));
 }
 

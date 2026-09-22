@@ -18,10 +18,7 @@ import {
 	custoProdutoService,
 	type EntradaHistoricoComposicao,
 } from "@/services/custo-produto.service";
-import {
-	type Produto,
-	produtosService,
-} from "@/services/produtos.service";
+import { type Produto, produtosService } from "@/services/produtos.service";
 import { parseNumeroComposicao } from "@/util/calcular-composicao-preco";
 
 type ModalComposicaoPrecoProdutoProps = {
@@ -106,7 +103,11 @@ export function ModalComposicaoPrecoProduto({
 		}
 
 		return bases;
-	}, [detalhe?.custoaquisicao, produto.custoaquisicao, ultimoCusto?.precocompra]);
+	}, [
+		detalhe?.custoaquisicao,
+		produto.custoaquisicao,
+		ultimoCusto?.precocompra,
+	]);
 
 	const temST = parseNumeroComposicao(ultimoCusto?.icmsst) > 0;
 

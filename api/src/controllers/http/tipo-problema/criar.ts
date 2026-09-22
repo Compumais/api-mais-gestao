@@ -11,7 +11,10 @@ const criarTipoProblemaBodySchema = z.object({
 	inativo: z.coerce.number().int().min(0).max(1).optional(),
 });
 
-export async function criarTipoProblema(request: FastifyRequest, reply: FastifyReply) {
+export async function criarTipoProblema(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());

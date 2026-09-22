@@ -80,7 +80,10 @@ export const fatorConversaoService = {
 	},
 
 	async criar(dados: CriarFatorConversaoData): Promise<FatorConversao> {
-		const { data } = await api.post<FatorConversao>("/fatores-conversao", dados);
+		const { data } = await api.post<FatorConversao>(
+			"/fatores-conversao",
+			dados,
+		);
 		return data;
 	},
 

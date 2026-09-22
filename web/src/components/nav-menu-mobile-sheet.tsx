@@ -20,10 +20,7 @@ import type { NavItem } from "@/constants/nav-constants";
 import { type NavSecaoTopbar, useNavFiltrada } from "@/hooks/use-nav-filtrada";
 import { NavFixadosProvider } from "@/hooks/use-nav-fixados";
 import { useSearchDialog } from "@/hooks/use-search-dialog";
-import {
-	itemNavTemRotaAtiva,
-	rotaNavEstaAtiva,
-} from "@/lib/nav-rota-ativa";
+import { itemNavTemRotaAtiva, rotaNavEstaAtiva } from "@/lib/nav-rota-ativa";
 import { cn } from "@/lib/utils";
 import { LogoMaisGestao } from "./logo-mais-gestao";
 import { NavFixados } from "./nav-fixados";
@@ -156,11 +153,7 @@ function NavMenuMobileContent({ onNavigate }: { onNavigate: () => void }) {
 	const searchParams = useSearchParams();
 	const search = searchParams.toString();
 	const { setOpen: setSearchOpen } = useSearchDialog();
-	const {
-		isGarcomUser,
-		secoesTopbar,
-		itensNavFixaveis,
-	} = useNavFiltrada();
+	const { isGarcomUser, secoesTopbar, itensNavFixaveis } = useNavFiltrada();
 
 	return (
 		<div className="flex-1 overflow-y-auto px-2">
@@ -210,7 +203,10 @@ export function NavMenuMobileSheet({
 
 	return (
 		<Sheet open={open} onOpenChange={onOpenChange}>
-			<SheetContent side="left" className="flex w-[min(100vw-2rem,18rem)] flex-col p-0">
+			<SheetContent
+				side="left"
+				className="flex w-[min(100vw-2rem,18rem)] flex-col p-0"
+			>
 				<SheetHeader className="border-b px-4 py-3 text-left">
 					<div>
 						<SheetTitle className="sr-only">Mais Gestão</SheetTitle>

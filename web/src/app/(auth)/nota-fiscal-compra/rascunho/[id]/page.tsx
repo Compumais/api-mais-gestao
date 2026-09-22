@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { PageContainer } from "@/app/(auth)/components/page-container";
+import { BlocoErrorBoundary } from "@/components/bloco-error-boundary";
 import { TableSkeleton } from "@/components/table-skeleton";
 import { Button } from "@/components/ui/button";
 import { TableCell } from "@/components/ui/table";
@@ -57,67 +58,80 @@ export default function RascunhoImportacaoPage() {
 				</div>
 
 				<div className="mx-4 flex flex-col gap-4">
-					{isLoading ? (
-						<TableSkeleton rows={5} columns={8}>
-							<TableCell>Item</TableCell>
-						</TableSkeleton>
-					) : isError || !data ? (
-						<p className="text-destructive">Rascunho não encontrado ou indisponível.</p>
-					) : (
-						<>
-							<CabecalhoNfImportacao
-								idempresa={empresa.id}
-								idRascunho={idRascunho}
-								nota={data.nota}
-								fornecedor={data.fornecedor}
-								quantidadeItens={data.itens.length}
-								cfopXmlOperacao={
-									data.nota.dadosimportacao?.cfopOperacaoXml ??
-									data.itens[0]?.dadosimportacao?.cfopXml ??
-									undefined
-								}
-								natOpXml={data.nota.dadosimportacao?.natOpXml}
-								finNFe={data.nota.dadosimportacao?.finNFe}
-								ipiDevolvidoXml={data.nota.dadosimportacao?.ipiDevolvidoXml}
-							/>
-
-							<section className="rounded-lg border bg-card p-4">
-								<h2 className="text-lg font-semibold mb-2">Itens da nota</h2>
-								<p className="text-sm text-muted-foreground mb-4">
-									Vincule produtos existentes, cadastre os pendentes em massa ou
-									revise o CFOP de entrada pré-sugerido pela planilha (CFOP do
-									XML → entrada). O CFOP do cabeçalho deve ser escolhido
-									manualmente.{" "}
-									<span className="inline-flex flex-wrap gap-x-2 gap-y-1">
-										<span className="text-green-700 dark:text-green-400">Verde: vinculado</span>
-										<span>·</span>
-										<span className="text-red-700 dark:text-red-400">Vermelho: pendente</span>
-										<span>·</span>
-										<span className="text-amber-700 dark:text-amber-400">Amarelo: novo</span>
-									</span>
-								</p>
-								<div className="mb-4">
-									<CampoGrupoPadraoImportacao
-										idempresa={empresa.id}
-										idRascunho={idRascunho}
-										idgrupoPadrao={data.nota.dadosimportacao?.idgrupoPadrao}
-									/>
-								</div>
-								<GridItensImportacao
+					<BlocoErrorBoundary
+						titulo="Erro na revisão da importação"
+						variante="painel"
+					>
+						{isLoading ? (
+							<TableSkeleton rows={5} columns={8}>
+								<TableCell>Item</TableCell>
+							</TableSkeleton>
+						) : isError || !data ? (
+							<p className="text-destructive">
+								Rascunho não encontrado ou indisponível.
+							</p>
+						) : (
+							<>
+								<CabecalhoNfImportacao
 									idempresa={empresa.id}
 									idRascunho={idRascunho}
-									itens={data.itens}
-									idgrupoPadrao={data.nota.dadosimportacao?.idgrupoPadrao}
+									nota={data.nota}
+									fornecedor={data.fornecedor}
+									quantidadeItens={data.itens.length}
+									cfopXmlOperacao={
+										data.nota.dadosimportacao?.cfopOperacaoXml ??
+										data.itens[0]?.dadosimportacao?.cfopXml ??
+										undefined
+									}
+									natOpXml={data.nota.dadosimportacao?.natOpXml}
+									finNFe={data.nota.dadosimportacao?.finNFe}
+									ipiDevolvidoXml={data.nota.dadosimportacao?.ipiDevolvidoXml}
 								/>
-							</section>
 
-							<BarraFinalizarImportacao
-								idempresa={empresa.id}
-								idRascunho={idRascunho}
-								dados={data}
-							/>
-						</>
-					)}
+								<section className="rounded-lg border bg-card p-4">
+									<h2 className="text-lg font-semibold mb-2">Itens da nota</h2>
+									<p className="text-sm text-muted-foreground mb-4">
+										Vincule produtos existentes, cadastre os pendentes em massa
+										ou revise o CFOP de entrada pré-sugerido pela planilha
+										(CFOP do XML → entrada). O CFOP do cabeçalho deve ser
+										escolhido manualmente.{" "}
+										<span className="inline-flex flex-wrap gap-x-2 gap-y-1">
+											<span className="text-green-700 dark:text-green-400">
+												Verde: vinculado
+											</span>
+											<span>·</span>
+											<span className="text-red-700 dark:text-red-400">
+												Vermelho: pendente
+											</span>
+											<span>·</span>
+											<span className="text-amber-700 dark:text-amber-400">
+												Amarelo: novo
+											</span>
+										</span>
+									</p>
+									<div className="mb-4">
+										<CampoGrupoPadraoImportacao
+											idempresa={empresa.id}
+											idRascunho={idRascunho}
+											idgrupoPadrao={data.nota.dadosimportacao?.idgrupoPadrao}
+										/>
+									</div>
+									<GridItensImportacao
+										idempresa={empresa.id}
+										idRascunho={idRascunho}
+										itens={data.itens}
+										idgrupoPadrao={data.nota.dadosimportacao?.idgrupoPadrao}
+									/>
+								</section>
+
+								<BarraFinalizarImportacao
+									idempresa={empresa.id}
+									idRascunho={idRascunho}
+									dados={data}
+								/>
+							</>
+						)}
+					</BlocoErrorBoundary>
 				</div>
 			</div>
 		</PageContainer>

@@ -123,8 +123,16 @@ export async function listarContasContabeis({
 	where.push(eq(schema.contacontabil.idempresa, idempresa));
 
 	adicionarFiltroTexto(where, schema.contacontabil.descricao, descricao);
-	adicionarFiltroTexto(where, schema.contacontabil.codigoreduzido, codigoreduzido);
-	adicionarFiltroTexto(where, schema.contacontabil.codigoextenso, codigoextenso);
+	adicionarFiltroTexto(
+		where,
+		schema.contacontabil.codigoreduzido,
+		codigoreduzido,
+	);
+	adicionarFiltroTexto(
+		where,
+		schema.contacontabil.codigoextenso,
+		codigoextenso,
+	);
 
 	if (q?.trim()) {
 		const termo = `%${q.trim()}%`;
@@ -141,7 +149,9 @@ export async function listarContasContabeis({
 	}
 
 	if (tipocontacontabil?.trim()) {
-		where.push(eq(schema.contacontabil.tipocontacontabil, tipocontacontabil.trim()));
+		where.push(
+			eq(schema.contacontabil.tipocontacontabil, tipocontacontabil.trim()),
+		);
 	}
 
 	if (inativo === 0 || inativo === 1) {

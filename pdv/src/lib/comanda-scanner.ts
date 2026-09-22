@@ -24,9 +24,7 @@ export function normalizarLeituraComanda(
 
 	return {
 		codigoOriginal,
-		codigoConsulta: valida
-			? codigoOriginal.slice(0, -1)
-			: codigoOriginal,
+		codigoConsulta: valida ? codigoOriginal.slice(0, -1) : codigoOriginal,
 		valida,
 		removeuDigitoVerificador: valida,
 	};

@@ -127,11 +127,7 @@ export const criarEntidadeSchema = z
 			});
 		}
 
-		if (
-			data.indiedest !== 1 &&
-			data.indiedest !== 2 &&
-			data.indiedest !== 9
-		) {
+		if (data.indiedest !== 1 && data.indiedest !== 2 && data.indiedest !== 9) {
 			ctx.addIssue({
 				code: "custom",
 				path: ["indiedest"],
@@ -139,7 +135,11 @@ export const criarEntidadeSchema = z
 			});
 		}
 
-		if (data.tipopessoa === 0 && data.indiedest != null && data.indiedest !== 9) {
+		if (
+			data.tipopessoa === 0 &&
+			data.indiedest != null &&
+			data.indiedest !== 9
+		) {
 			ctx.addIssue({
 				code: "custom",
 				path: ["indiedest"],
@@ -166,7 +166,9 @@ export const criarEntidadeSchema = z
 			});
 		}
 
-		if (!validarFormatoInscricaoEstadual(data.inscricaoestadual, data.indiedest)) {
+		if (
+			!validarFormatoInscricaoEstadual(data.inscricaoestadual, data.indiedest)
+		) {
 			ctx.addIssue({
 				code: "custom",
 				path: ["inscricaoestadual"],

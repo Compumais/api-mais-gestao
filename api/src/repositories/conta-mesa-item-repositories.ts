@@ -12,7 +12,9 @@ export async function buscarContaMesaItemPorId(id: string) {
 	return registro;
 }
 
-export async function criarContaMesaItem(dadosContaMesaItem: NovoContaMesaItem) {
+export async function criarContaMesaItem(
+	dadosContaMesaItem: NovoContaMesaItem,
+) {
 	const [registro] = await db
 		.insert(contamesaitem)
 		.values(dadosContaMesaItem)
@@ -122,8 +124,5 @@ export async function buscarItensPorIds(ids: string[]) {
 		return [];
 	}
 
-	return db
-		.select()
-		.from(contamesaitem)
-		.where(inArray(contamesaitem.id, ids));
+	return db.select().from(contamesaitem).where(inArray(contamesaitem.id, ids));
 }

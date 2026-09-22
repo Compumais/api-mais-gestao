@@ -1,12 +1,11 @@
 import type { HttpResponse } from "@/model/http-model.js";
-import type { NovoSaldoEstoque, SaldoEstoque } from "@/model/saldo-estoque-model.js";
+import type {
+	NovoSaldoEstoque,
+	SaldoEstoque,
+} from "@/model/saldo-estoque-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { criarSaldoEstoque } from "@/repositories/saldo-estoque-repositories.js";
-import {
-	httpCriacao,
-	httpErro,
-	httpProibido,
-} from "@/util/http-util.js";
+import { httpCriacao, httpErro, httpProibido } from "@/util/http-util.js";
 
 type CriarSaldoEstoqueParametros = {
 	dadosSaldoEstoque: NovoSaldoEstoque;

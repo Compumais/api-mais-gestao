@@ -51,7 +51,9 @@ export async function emissaoRequerDocumentoReferenciado(
 	idempresa: string,
 	cfops: string[],
 ): Promise<boolean> {
-	const codigos = [...new Set(cfops.map((c) => c.replace(/\D/g, "")).filter(Boolean))];
+	const codigos = [
+		...new Set(cfops.map((c) => c.replace(/\D/g, "")).filter(Boolean)),
+	];
 	for (const codigo of codigos) {
 		if (await cfopExigeDocumentoReferenciado(idempresa, codigo)) {
 			return true;
@@ -84,12 +86,20 @@ export async function resolverTipoDevolucaoEmissao(
 }
 
 /** Converte CFOP de entrada (1xxx/2xxx) para saída de devolução de compra. */
-export function inferirCodigoCfopDevolucaoSaida(codigoEntrada: string): string | null {
+export function inferirCodigoCfopDevolucaoSaida(
+	codigoEntrada: string,
+): string | null {
 	const digitos = codigoEntrada.replace(/\D/g, "");
 	if (digitos.length < 4) return null;
 
 	const prefixo =
-		digitos[0] === "1" ? "5" : digitos[0] === "2" ? "6" : digitos[0] === "3" ? "7" : null;
+		digitos[0] === "1"
+			? "5"
+			: digitos[0] === "2"
+				? "6"
+				: digitos[0] === "3"
+					? "7"
+					: null;
 
 	if (!prefixo) return null;
 
@@ -97,7 +107,9 @@ export function inferirCodigoCfopDevolucaoSaida(codigoEntrada: string): string |
 }
 
 /** Converte CFOP de saída de venda (5xxx/6xxx) para entrada de devolução de venda. */
-export function inferirCodigoCfopDevolucaoEntrada(codigoSaida: string): string | null {
+export function inferirCodigoCfopDevolucaoEntrada(
+	codigoSaida: string,
+): string | null {
 	const digitos = codigoSaida.replace(/\D/g, "");
 	if (digitos.length < 4) return null;
 

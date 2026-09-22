@@ -5,10 +5,16 @@ import type {
 	DuplicataImportacaoNf,
 	FornecedorSugeridoImportacao,
 } from "@/model/nota-fiscal-importacao-model.js";
-import type { NotaFiscalItem, NovoNotaFiscalItem } from "@/model/nota-fiscal-item-model.js";
+import type {
+	NotaFiscalItem,
+	NovoNotaFiscalItem,
+} from "@/model/nota-fiscal-item-model.js";
 import type { NotaFiscal, NovaNotaFiscal } from "@/model/nota-fiscal-model.js";
 import { buscarCfopPorId } from "@/repositories/cfop-repositories.js";
-import { buscarEntidadePorCnpj, verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
+import {
+	buscarEntidadePorCnpj,
+	verificarUsuarioPertenceEmpresa,
+} from "@/repositories/entidade-repositories.js";
 import { criarNotaFiscalComItens } from "@/repositories/nota-fiscal-repositories.js";
 import { resolverTipoprodutoPorCfopEntrada } from "@/service/nota-fiscal/montar-dados-produto-nf-importacao.js";
 import { buscarProdutoParaNf } from "@/service/nota-fiscal/vincular-ou-criar-produto.js";
@@ -261,9 +267,12 @@ async function executarCriarRascunhoImportacaoNf({
 	const fornecedor: FornecedorSugeridoImportacao = {
 		id: entidadeFornecedor?.id,
 		cnpj: dadosXml.cnpjemissor,
-		razaosocial: dadosXml.razaosocial ?? entidadeFornecedor?.razaosocial ?? undefined,
+		razaosocial:
+			dadosXml.razaosocial ?? entidadeFornecedor?.razaosocial ?? undefined,
 		inscricaoestadual:
-			dadosXml.inscricaoestadual ?? entidadeFornecedor?.inscricaoestadual ?? undefined,
+			dadosXml.inscricaoestadual ??
+			entidadeFornecedor?.inscricaoestadual ??
+			undefined,
 		encontrado: !!entidadeFornecedor,
 	};
 

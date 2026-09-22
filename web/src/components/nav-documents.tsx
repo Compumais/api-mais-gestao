@@ -20,10 +20,7 @@ import {
 	SidebarMenuSubButton,
 	SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
-import {
-	itemNavTemRotaAtiva,
-	rotaNavEstaAtiva,
-} from "@/lib/nav-rota-ativa";
+import { itemNavTemRotaAtiva, rotaNavEstaAtiva } from "@/lib/nav-rota-ativa";
 
 type NavDocumentsItem = {
 	title: string;
@@ -89,7 +86,8 @@ export function NavDocuments({
 						);
 					}
 
-					const aberto = item.isActive || itemNavTemRotaAtiva(pathname, search, item);
+					const aberto =
+						item.isActive || itemNavTemRotaAtiva(pathname, search, item);
 
 					return (
 						<Collapsible
@@ -111,7 +109,11 @@ export function NavDocuments({
 										<SidebarMenuSub>
 											{item.items.map((subItem) => {
 												const isPlaceholder = subItem.url === "#";
-												const ativo = rotaNavEstaAtiva(pathname, search, subItem.url);
+												const ativo = rotaNavEstaAtiva(
+													pathname,
+													search,
+													subItem.url,
+												);
 												return (
 													<SidebarMenuSubItem key={subItem.title}>
 														{isPlaceholder ? (

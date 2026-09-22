@@ -68,4 +68,6 @@ export const cardapioDeliveryFormSchema = z.object({
 	idmeiospagamento: z.array(z.string()),
 });
 
-export type CardapioDeliveryFormData = z.infer<typeof cardapioDeliveryFormSchema>;
+export type CardapioDeliveryFormData = z.infer<
+	typeof cardapioDeliveryFormSchema
+>;

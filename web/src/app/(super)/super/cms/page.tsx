@@ -40,7 +40,9 @@ export default function SuperCmsPage() {
 			adminService.atualizarAjudaPost(id, { publicado }),
 		onSuccess: (_data, vars) => {
 			invalidar();
-			toast.success(vars.publicado ? "Postagem publicada" : "Postagem ocultada");
+			toast.success(
+				vars.publicado ? "Postagem publicada" : "Postagem ocultada",
+			);
 		},
 		onError: () => toast.error("Erro ao alterar status"),
 	});
@@ -138,9 +140,7 @@ export default function SuperCmsPage() {
 											title="Excluir"
 											onClick={() => {
 												if (
-													window.confirm(
-														`Excluir a postagem "${post.titulo}"?`,
-													)
+													window.confirm(`Excluir a postagem "${post.titulo}"?`)
 												) {
 													excluirMutation.mutate(post.id);
 												}

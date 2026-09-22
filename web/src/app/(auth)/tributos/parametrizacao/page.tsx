@@ -156,7 +156,9 @@ export default function ParametrizacaoTributosPage() {
 	const [pagina, setPagina] = useState(1);
 	const [busca, setBusca] = useState("");
 	const [dialogFormularioAberto, setDialogFormularioAberto] = useState(false);
-	const [modoFormulario, setModoFormulario] = useState<"novo" | "edicao">("novo");
+	const [modoFormulario, setModoFormulario] = useState<"novo" | "edicao">(
+		"novo",
+	);
 	const [registroEdicao, setRegistroEdicao] =
 		useState<ParametrizacaoTributos | null>(null);
 	const [excluirDialogAberto, setExcluirDialogAberto] = useState(false);
@@ -460,7 +462,9 @@ export default function ParametrizacaoTributosPage() {
 			>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>Excluir regra de parametrização?</AlertDialogTitle>
+						<AlertDialogTitle>
+							Excluir regra de parametrização?
+						</AlertDialogTitle>
 						<AlertDialogDescription>
 							Deseja realmente excluir esta regra
 							{registroExclusao?.codigocfopentrada

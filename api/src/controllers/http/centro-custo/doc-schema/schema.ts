@@ -3,14 +3,15 @@ import type { FastifySchema } from "fastify";
 export const criarCentroCustoSchema: FastifySchema = {
 	tags: ["centros-custo"],
 	summary: "Criar centro de custo",
-	description: "Cria um novo registro de centro de custo na empresa do usuário autenticado.",
+	description:
+		"Cria um novo registro de centro de custo na empresa do usuário autenticado.",
 	security: [{ bearerAuth: [] }],
 	body: {
 		type: "object",
 		properties: {
 			idempresa: { type: "string", description: "ID da empresa" },
 			nome: { type: "string" },
-			inativo: { type: "string" }
+			inativo: { type: "string" },
 		},
 		required: ["idempresa"],
 	},
@@ -121,7 +122,10 @@ export const listarCentroCustosSchema: FastifySchema = {
 		200: {
 			type: "object",
 			properties: {
-				data: { type: "array", items: { type: "object", additionalProperties: true } },
+				data: {
+					type: "array",
+					items: { type: "object", additionalProperties: true },
+				},
 				paginacao: {
 					type: "object",
 					properties: {

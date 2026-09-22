@@ -7,10 +7,13 @@ import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 const criarUnidadeMedidaBodySchema = z.object({
 	idempresa: z.string(),
 	codigo: z.string().max(6).optional(),
-	nome: z.string().max(50).optional()
+	nome: z.string().max(50).optional(),
 });
 
-export async function criarUnidadeMedida(request: FastifyRequest, reply: FastifyReply) {
+export async function criarUnidadeMedida(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());

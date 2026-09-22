@@ -41,9 +41,7 @@ export async function criarMovimentoEstoque(
 		}
 
 		const idusuario = request.user.id;
-		const dadosValidados = criarMovimentoEstoqueBodySchema.parse(
-			request.body,
-		);
+		const dadosValidados = criarMovimentoEstoqueBodySchema.parse(request.body);
 
 		const resultado = await criarMovimentoEstoqueService({
 			dadosMovimentoEstoque: {
@@ -82,4 +80,3 @@ export async function criarMovimentoEstoque(
 		});
 	}
 }
-

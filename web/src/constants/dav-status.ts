@@ -50,8 +50,6 @@ export function pedidoPodeEmitirNfce(pedido: {
 	return true;
 }
 
-export function pedidoEhOrigemPos(pedido: {
-	extra1?: string | null;
-}): boolean {
+export function pedidoEhOrigemPos(pedido: { extra1?: string | null }): boolean {
 	return (pedido.extra1 ?? "").trim().toUpperCase() === "POS";
 }

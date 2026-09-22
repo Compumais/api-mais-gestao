@@ -101,7 +101,11 @@ export type VendaPorDiaSemanaItem = {
 	quantidade: number;
 };
 
-export type RankingOrdenacao = "faturamento" | "quantidade" | "lucro" | "margem";
+export type RankingOrdenacao =
+	| "faturamento"
+	| "quantidade"
+	| "lucro"
+	| "margem";
 
 export type TopProdutoAvancado = {
 	idproduto: string;
@@ -472,7 +476,10 @@ export const dashboardService = {
 	},
 
 	async buscarTopProdutosAvancado(
-		params?: BuscarPeriodoParams & { ordenacao?: RankingOrdenacao; limit?: number },
+		params?: BuscarPeriodoParams & {
+			ordenacao?: RankingOrdenacao;
+			limit?: number;
+		},
 	) {
 		const { data } = await api.get<TopProdutoAvancado[]>(
 			"/dashboard/top-produtos-avancado",
@@ -503,21 +510,22 @@ export const dashboardService = {
 			horizonteDias?: number;
 		},
 	) {
-		const { data } = await api.get<FluxoCaixaResposta>("/dashboard/fluxo-caixa", {
-			params,
-		});
+		const { data } = await api.get<FluxoCaixaResposta>(
+			"/dashboard/fluxo-caixa",
+			{
+				params,
+			},
+		);
 		return data;
 	},
 
-	async buscarDreAvancado(
-		params?: {
-			idempresa?: string;
-			granularidade?: "ano" | "trimestre" | "mes";
-			ano?: number;
-			mes?: number;
-			trimestre?: number;
-		},
-	) {
+	async buscarDreAvancado(params?: {
+		idempresa?: string;
+		granularidade?: "ano" | "trimestre" | "mes";
+		ano?: number;
+		mes?: number;
+		trimestre?: number;
+	}) {
 		const { data } = await api.get<DreAvancadoResposta>(
 			"/dashboard/dre-avancado",
 			{ params },
@@ -603,7 +611,10 @@ export const dashboardService = {
 			valorMeta?: string | number;
 		},
 	) {
-		const { data } = await api.put<MetaDashboard>(`/dashboard/metas/${id}`, body);
+		const { data } = await api.put<MetaDashboard>(
+			`/dashboard/metas/${id}`,
+			body,
+		);
 		return data;
 	},
 

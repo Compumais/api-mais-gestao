@@ -182,9 +182,7 @@ export default function MeiosPagamentoPage() {
 				...(filtrosColuna.descricao
 					? { descricao: filtrosColuna.descricao }
 					: {}),
-				...(filtrosColuna.parcelas
-					? { parcelas: filtrosColuna.parcelas }
-					: {}),
+				...(filtrosColuna.parcelas ? { parcelas: filtrosColuna.parcelas } : {}),
 				...(filtrosColuna.prazos ? { prazos: filtrosColuna.prazos } : {}),
 				...(filtrosColuna.escopo !== ""
 					? { escopo: Number(filtrosColuna.escopo) }
@@ -389,10 +387,7 @@ export default function MeiosPagamentoPage() {
 									</p>
 								</div>
 							) : mostrarSkeleton ? (
-								<TableSkeleton
-									columns={colunasVisiveis.length || 7}
-									rows={10}
-								>
+								<TableSkeleton columns={colunasVisiveis.length || 7} rows={10}>
 									{colunasVisiveis.map((coluna) => (
 										<TableHead
 											key={coluna.id}

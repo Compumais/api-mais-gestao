@@ -12,10 +12,7 @@ import { Button } from "@/components/ui/button";
 import { type NavSecaoTopbar, useNavFiltrada } from "@/hooks/use-nav-filtrada";
 import { NavFixadosProvider } from "@/hooks/use-nav-fixados";
 import { useSearchDialog } from "@/hooks/use-search-dialog";
-import {
-	itemNavTemRotaAtiva,
-	rotaNavEstaAtiva,
-} from "@/lib/nav-rota-ativa";
+import { itemNavTemRotaAtiva, rotaNavEstaAtiva } from "@/lib/nav-rota-ativa";
 import { cn } from "@/lib/utils";
 
 function secaoTemRotaAtiva(

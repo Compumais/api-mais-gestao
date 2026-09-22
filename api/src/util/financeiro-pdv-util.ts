@@ -24,15 +24,10 @@ export function montarIdentificacaoFinanceiroPdv({
 		totalParcelas > 1 ? ` Parc. ${parcela}/${totalParcelas}` : "";
 	const entidadeTexto = nomeCliente?.trim();
 
-	const documento = truncarTexto(
-		`PDV ${numeropdv}${parcelaTexto}`.trim(),
-		60,
-	);
+	const documento = truncarTexto(`PDV ${numeropdv}${parcelaTexto}`.trim(), 60);
 
 	const emitente = truncarTexto(
-		entidadeTexto
-			? `PDV ${numeropdv} - ${entidadeTexto}`
-			: `PDV ${numeropdv}`,
+		entidadeTexto ? `PDV ${numeropdv} - ${entidadeTexto}` : `PDV ${numeropdv}`,
 		60,
 	);
 

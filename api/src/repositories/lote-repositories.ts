@@ -4,7 +4,11 @@ import { lote } from "@/repositories/schema.js";
 import { db } from "./connection.js";
 
 export async function buscarLotePorId(id: string) {
-	const [registro] = await db.select().from(lote).where(eq(lote.id, id)).limit(1);
+	const [registro] = await db
+		.select()
+		.from(lote)
+		.where(eq(lote.id, id))
+		.limit(1);
 
 	return registro;
 }

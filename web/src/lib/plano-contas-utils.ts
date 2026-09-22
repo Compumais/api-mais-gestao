@@ -47,9 +47,9 @@ export function compararCodigoPlanoContas(
 	return codigoA!.localeCompare(codigoB!);
 }
 
-export function ordenarPlanoContasPorCodigo<T extends { codigo: string | null }>(
-	itens: T[],
-): T[] {
+export function ordenarPlanoContasPorCodigo<
+	T extends { codigo: string | null },
+>(itens: T[]): T[] {
 	return [...itens].sort((a, b) =>
 		compararCodigoPlanoContas(a.codigo, b.codigo),
 	);

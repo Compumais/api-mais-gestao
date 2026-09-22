@@ -884,8 +884,7 @@ async function despachar(
 				quantidade: Number(i.quantidade ?? 1),
 				precounitario: i.precounitario != null ? Number(i.precounitario) : null,
 				observacao: i.observacao != null ? String(i.observacao) : null,
-				idprodutomeio:
-					i.idprodutomeio != null ? String(i.idprodutomeio) : null,
+				idprodutomeio: i.idprodutomeio != null ? String(i.idprodutomeio) : null,
 			};
 		});
 		const result = await localApi.ingestPedidoDelivery({

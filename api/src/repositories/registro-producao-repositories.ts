@@ -29,8 +29,7 @@ export const ORDENAR_PRODUCOES_CAMPOS = [
 	"custototal",
 ] as const;
 
-export type OrdenarProducoesCampo =
-	(typeof ORDENAR_PRODUCOES_CAMPOS)[number];
+export type OrdenarProducoesCampo = (typeof ORDENAR_PRODUCOES_CAMPOS)[number];
 
 const COLUNAS_ORDENACAO = {
 	datahora: registroproducao.datahora,
@@ -52,10 +51,7 @@ function adicionarFiltroTexto(
 	}
 }
 
-function filtroDataDia(
-	coluna: typeof registroproducao.datahora,
-	data: string,
-) {
+function filtroDataDia(coluna: typeof registroproducao.datahora, data: string) {
 	return and(
 		gte(coluna, `${data}T00:00:00.000`),
 		lte(coluna, `${data}T23:59:59.999`),
@@ -165,11 +161,7 @@ export async function listarRegistrosProducao({
 	}
 
 	adicionarFiltroTexto(where, produtos.nome, nome);
-	adicionarFiltroTexto(
-		where,
-		sql`CAST(${produtos.codigo} AS TEXT)`,
-		codigo,
-	);
+	adicionarFiltroTexto(where, sql`CAST(${produtos.codigo} AS TEXT)`, codigo);
 
 	if (datahora?.trim()) {
 		const condicao = filtroDataDia(registroproducao.datahora, datahora.trim());

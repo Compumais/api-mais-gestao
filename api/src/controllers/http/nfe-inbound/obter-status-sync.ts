@@ -1,10 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import { obterStatusSyncNfeInboundService } from "@/service/nfe-inbound/listar-documentos-nfe-inbound.js";
-import {
-	httpErroInterno,
-	httpNaoAutorizado,
-} from "@/util/http-util.js";
+import { httpErroInterno, httpNaoAutorizado } from "@/util/http-util.js";
 
 const querySchema = z.object({
 	idempresa: z.string().uuid(),

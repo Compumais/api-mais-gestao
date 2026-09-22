@@ -71,7 +71,9 @@ async function main() {
 					console.log(
 						`    - id=${registro.id} codigo=${registro.codigo} nome=${registro.nome}`,
 					);
-					console.log(`      valor_csv=${String(registro.valor_csv).slice(0, 120)}`);
+					console.log(
+						`      valor_csv=${String(registro.valor_csv).slice(0, 120)}`,
+					);
 				}
 			}
 		}

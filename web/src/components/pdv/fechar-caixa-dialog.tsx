@@ -10,11 +10,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import {
-	Field,
-	FieldGroup,
-	FieldLabel,
-} from "@/components/ui/field";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { MoneyInput } from "@/components/ui/money-input";
 import { Textarea } from "@/components/ui/textarea";
 import type { ResumoTurnoCaixa } from "@/hooks/use-caixa-pdv";
@@ -90,7 +86,9 @@ export function FecharCaixaDialog({
 					<div className="space-y-4">
 						<div className="rounded-lg border bg-muted/40 p-4 text-sm space-y-2">
 							<div className="flex justify-between">
-								<span className="text-muted-foreground">Suprimento inicial (dinheiro)</span>
+								<span className="text-muted-foreground">
+									Suprimento inicial (dinheiro)
+								</span>
 								<span className="font-medium">
 									{formatCurrency(resumo.suprimento.toFixed(2))}
 								</span>
@@ -107,20 +105,30 @@ export function FecharCaixaDialog({
 							</div>
 							<div className="space-y-1 border-t pt-2 pl-2">
 								<div className="flex justify-between">
-									<span className="text-muted-foreground">↳ Dinheiro (líquido)</span>
-									<span>{formatCurrency(resumo.pagamentos.dinheiro.toFixed(2))}</span>
+									<span className="text-muted-foreground">
+										↳ Dinheiro (líquido)
+									</span>
+									<span>
+										{formatCurrency(resumo.pagamentos.dinheiro.toFixed(2))}
+									</span>
 								</div>
 								<div className="flex justify-between">
 									<span className="text-muted-foreground">↳ Cartão</span>
-									<span>{formatCurrency(resumo.pagamentos.cartao.toFixed(2))}</span>
+									<span>
+										{formatCurrency(resumo.pagamentos.cartao.toFixed(2))}
+									</span>
 								</div>
 								<div className="flex justify-between">
 									<span className="text-muted-foreground">↳ PIX</span>
-									<span>{formatCurrency(resumo.pagamentos.pix.toFixed(2))}</span>
+									<span>
+										{formatCurrency(resumo.pagamentos.pix.toFixed(2))}
+									</span>
 								</div>
 								<div className="flex justify-between">
 									<span className="text-muted-foreground">↳ Pré-pago</span>
-									<span>{formatCurrency(resumo.pagamentos.prepago.toFixed(2))}</span>
+									<span>
+										{formatCurrency(resumo.pagamentos.prepago.toFixed(2))}
+									</span>
 								</div>
 							</div>
 							<div className="flex justify-between border-t pt-2">
@@ -132,9 +140,10 @@ export function FecharCaixaDialog({
 						</div>
 
 						<p className="text-xs text-muted-foreground">
-							O total vendido soma todas as formas de pagamento. O saldo em dinheiro
-							é o suprimento inicial mais as vendas recebidas em espécie (já
-							descontado o troco). Informe abaixo apenas a contagem física da gaveta.
+							O total vendido soma todas as formas de pagamento. O saldo em
+							dinheiro é o suprimento inicial mais as vendas recebidas em
+							espécie (já descontado o troco). Informe abaixo apenas a contagem
+							física da gaveta.
 						</p>
 
 						<Field>

@@ -133,8 +133,7 @@ export function montarCamposAlteracaoEmMassa(
 	if (dados.idgrupo.alterar) campos.idgrupo = dados.idgrupo.valor || null;
 	if (dados.idgrupogourmet.alterar) {
 		const valor = dados.idgrupogourmet.valor;
-		campos.idgrupogourmet =
-			valor && valor !== "none" ? valor : null;
+		campos.idgrupogourmet = valor && valor !== "none" ? valor : null;
 	}
 	if (dados.espizza.alterar) campos.espizza = dados.espizza.valor;
 	if (dados.idunidademedida.alterar) {

@@ -2,14 +2,11 @@ import { eq } from "drizzle-orm";
 import { configuracaoemailsmtp } from "@/repositories/schema.js";
 import { db } from "./connection";
 
-export type ConfiguracaoEmailSmtp =
-	typeof configuracaoemailsmtp.$inferSelect;
+export type ConfiguracaoEmailSmtp = typeof configuracaoemailsmtp.$inferSelect;
 export type NovaConfiguracaoEmailSmtp =
 	typeof configuracaoemailsmtp.$inferInsert;
 
-export async function buscarConfiguracaoEmailSmtpPorEmpresa(
-	idempresa: string,
-) {
+export async function buscarConfiguracaoEmailSmtpPorEmpresa(idempresa: string) {
 	const [registro] = await db
 		.select()
 		.from(configuracaoemailsmtp)

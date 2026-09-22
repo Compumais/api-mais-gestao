@@ -9,7 +9,9 @@ import {
 } from "@/repositories/informativos-repositories.js";
 import { httpNaoEncontrado, httpOk } from "@/util/http-util.js";
 
-export async function listarInformativosAdminService(): Promise<HttpResponse<unknown>> {
+export async function listarInformativosAdminService(): Promise<
+	HttpResponse<unknown>
+> {
 	const informativos = await listarInformativos();
 	return httpOk({ informativos });
 }
@@ -48,7 +50,9 @@ export async function excluirInformativoAdminService(
 	return httpOk({ sucesso: true });
 }
 
-export async function listarInformativosPublicosService(): Promise<HttpResponse<unknown>> {
+export async function listarInformativosPublicosService(): Promise<
+	HttpResponse<unknown>
+> {
 	const informativos = await listarInformativosPublicados();
 	return httpOk({ informativos });
 }

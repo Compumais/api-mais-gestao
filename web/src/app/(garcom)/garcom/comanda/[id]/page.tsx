@@ -166,7 +166,11 @@ export default function GarcomComandaPage() {
 	if (isLoadingConta) {
 		return (
 			<>
-				<GarcomHeader titulo="Carregando..." voltarHref="/garcom" voltarLabel="Mesas" />
+				<GarcomHeader
+					titulo="Carregando..."
+					voltarHref="/garcom"
+					voltarLabel="Mesas"
+				/>
 				<div className="flex flex-1 items-center justify-center">
 					<p className="text-muted-foreground">Carregando comanda...</p>
 				</div>
@@ -177,7 +181,11 @@ export default function GarcomComandaPage() {
 	if (!conta) {
 		return (
 			<>
-				<GarcomHeader titulo="Comanda" voltarHref="/garcom" voltarLabel="Mesas" />
+				<GarcomHeader
+					titulo="Comanda"
+					voltarHref="/garcom"
+					voltarLabel="Mesas"
+				/>
 				<div className="flex flex-1 items-center justify-center">
 					<p className="text-muted-foreground">Comanda não encontrada</p>
 				</div>
@@ -226,9 +234,7 @@ export default function GarcomComandaPage() {
 						className="h-12 w-full justify-between text-base"
 						onClick={() => setComandaAberta(true)}
 					>
-						<span>
-							Comanda ({itens.length})
-						</span>
+						<span>Comanda ({itens.length})</span>
 						<span className="font-bold text-primary">
 							{formatCurrency(subtotal)}
 						</span>

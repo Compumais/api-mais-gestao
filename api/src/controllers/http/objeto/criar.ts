@@ -8,10 +8,13 @@ const criarObjetoBodySchema = z.object({
 	idempresa: z.string(),
 	codigo: z.string().max(20).optional(),
 	descricao: z.string().max(100).optional(),
-	inativo: z.number().int().optional()
+	inativo: z.number().int().optional(),
 });
 
-export async function criarObjeto(request: FastifyRequest, reply: FastifyReply) {
+export async function criarObjeto(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());

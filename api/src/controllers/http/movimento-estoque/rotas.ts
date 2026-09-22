@@ -31,4 +31,3 @@ export async function movimentosEstoqueRotas(app: FastifyInstance) {
 		handler: excluirMovimentoEstoque,
 	});
 }
-

@@ -19,7 +19,9 @@ function normalizarDocumento(valor: string | null): string | null {
 	return valor.replace(/\D/g, "");
 }
 
-export function extrairMetadadosXmlNfeConsulta(xml: string): MetadadosXmlNfeConsulta {
+export function extrairMetadadosXmlNfeConsulta(
+	xml: string,
+): MetadadosXmlNfeConsulta {
 	const parser = new XMLParser({
 		ignoreAttributes: false,
 		removeNSPrefix: true,
@@ -41,7 +43,9 @@ export function extrairMetadadosXmlNfeConsulta(xml: string): MetadadosXmlNfeCons
 	}
 
 	const nfeProc = documento.nfeProc as Record<string, unknown> | undefined;
-	const nfe = (nfeProc?.NFe ?? documento.NFe) as Record<string, unknown> | undefined;
+	const nfe = (nfeProc?.NFe ?? documento.NFe) as
+		| Record<string, unknown>
+		| undefined;
 	const infNFe = nfe?.infNFe as Record<string, unknown> | undefined;
 	const ide = infNFe?.ide as Record<string, unknown> | undefined;
 	const dest = infNFe?.dest as Record<string, unknown> | undefined;
@@ -59,9 +63,7 @@ export function extrairMetadadosXmlNfeConsulta(xml: string): MetadadosXmlNfeCons
 		tpAmbRaw !== undefined && tpAmbRaw !== null ? Number(tpAmbRaw) : null;
 
 	return {
-		chavenfe: normalizarDocumento(
-			paraStr(infProt?.chNFe) ?? chaveDoAttr,
-		),
+		chavenfe: normalizarDocumento(paraStr(infProt?.chNFe) ?? chaveDoAttr),
 		tpAmb: Number.isFinite(tpAmb) ? tpAmb : null,
 		cnpjDestinatario: normalizarDocumento(paraStr(dest?.CNPJ)),
 		cpfDestinatario: normalizarDocumento(paraStr(dest?.CPF)),

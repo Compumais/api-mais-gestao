@@ -37,7 +37,9 @@ export function distribuirDescontosEmissaoNfe(
 	itens: ItemDescontoEmissao[],
 	descontoGlobalInformado = 0,
 ): DistribuicaoDescontoEmissao {
-	const descontoGlobalPedido = round2(Math.max(0, descontoGlobalInformado || 0));
+	const descontoGlobalPedido = round2(
+		Math.max(0, descontoGlobalInformado || 0),
+	);
 	const erros: ErroDescontoEmissao[] = [];
 	const bases = itens.map((item, index) => {
 		const bruto = round2(

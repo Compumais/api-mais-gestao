@@ -1,6 +1,5 @@
 /** Unidade global KG (api/drizzle/0016_unidades_medida_globais.sql). */
-export const ID_UNIDADE_KG_SISTEMA =
-	"a0000001-0000-4000-8000-000000000002";
+export const ID_UNIDADE_KG_SISTEMA = "a0000001-0000-4000-8000-000000000002";
 
 const CODIGOS_KG = new Set([
 	"kg",

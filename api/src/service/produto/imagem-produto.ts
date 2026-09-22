@@ -448,4 +448,3 @@ export async function lerImagemProdutoDaEmpresa(params: {
 		"IMAGEM_NAO_ENCONTRADA",
 	);
 }
-

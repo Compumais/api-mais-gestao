@@ -47,7 +47,11 @@ export async function manifestarCienciaNfeInbound(
 		if (documento.tipodocumento !== "resNFe") {
 			return reply
 				.status(httpBadRequest().status)
-				.send(httpBadRequest("Manifestação disponível apenas para resumos (resNFe)"));
+				.send(
+					httpBadRequest(
+						"Manifestação disponível apenas para resumos (resNFe)",
+					),
+				);
 		}
 
 		const resultado = await manifestarCienciaOperacaoService({

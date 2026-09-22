@@ -200,9 +200,7 @@ export function partirPorItens(
 			);
 			const taxa = arredondarMoeda(totais.valortaxaservico - accTaxa);
 			const couvert = arredondarMoeda(totais.valorcouvert - accCouvert);
-			const entrega = arredondarMoeda(
-				(totais.valorentrega || 0) - accEntrega,
-			);
+			const entrega = arredondarMoeda((totais.valorentrega || 0) - accEntrega);
 			const total = arredondarMoeda(totais.valortotal - accTotal);
 			fatias.push({
 				ids,
@@ -239,7 +237,9 @@ export function partirPorItens(
 }
 
 export function valorRestante(total: number, pago: number): number {
-	return arredondarMoeda(Math.max(0, arredondarMoeda(total) - arredondarMoeda(pago)));
+	return arredondarMoeda(
+		Math.max(0, arredondarMoeda(total) - arredondarMoeda(pago)),
+	);
 }
 
 /** Item marcado como pago (pagamento parcial por itens). */

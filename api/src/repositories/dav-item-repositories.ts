@@ -4,10 +4,7 @@ import { davitem } from "@/repositories/schema.js";
 import { db } from "./connection.js";
 
 export async function buscarDavItemPorId(id: string) {
-	const [registro] = await db
-		.select()
-		.from(davitem)
-		.where(eq(davitem.id, id));
+	const [registro] = await db.select().from(davitem).where(eq(davitem.id, id));
 
 	return registro;
 }
@@ -30,7 +27,10 @@ export async function criarDavItem(dados: NovoDavItem) {
 	return registro;
 }
 
-export async function atualizarDavItem(id: string, dados: Partial<NovoDavItem>) {
+export async function atualizarDavItem(
+	id: string,
+	dados: Partial<NovoDavItem>,
+) {
 	const [registro] = await db
 		.update(davitem)
 		.set(dados)

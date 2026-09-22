@@ -9,17 +9,24 @@ const atualizarPlanoContasContaContabilParamsSchema = z.object({
 
 const atualizarPlanoContasContaContabilBodySchema = z.object({
 	idcontacontabil: z.string().optional(),
-	idplanocontas: z.string().optional()
+	idplanocontas: z.string().optional(),
 });
 
-export async function atualizarPlanoContasContaContabil(request: FastifyRequest, reply: FastifyReply) {
+export async function atualizarPlanoContasContaContabil(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());
 		}
 
-		const { id } = atualizarPlanoContasContaContabilParamsSchema.parse(request.params);
-		const dados = atualizarPlanoContasContaContabilBodySchema.parse(request.body);
+		const { id } = atualizarPlanoContasContaContabilParamsSchema.parse(
+			request.params,
+		);
+		const dados = atualizarPlanoContasContaContabilBodySchema.parse(
+			request.body,
+		);
 
 		const resultado = await atualizarPlanoContasContaContabilService({
 			planoContasContaContabilId: id,

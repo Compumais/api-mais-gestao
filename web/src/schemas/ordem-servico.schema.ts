@@ -18,10 +18,7 @@ const idUsuarioOpcional = z.preprocess(
 	z.string().min(1).nullable(),
 );
 
-const idUsuarioOpcionalOuVazio = z.union([
-	z.literal(""),
-	z.string().min(1),
-]);
+const idUsuarioOpcionalOuVazio = z.union([z.literal(""), z.string().min(1)]);
 
 const textoOpcional = z.preprocess(
 	(valor) => (valor === "" || valor === undefined ? null : valor),

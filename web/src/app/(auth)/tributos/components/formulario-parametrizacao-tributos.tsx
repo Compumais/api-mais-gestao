@@ -15,10 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { OPCOES_TIPO_PRODUTO } from "@/constants/tipo-produto";
 import type { ParametrizacaoTributosFormData } from "@/schemas/parametrizacao-tributos.schema";
-import {
-	OPCOES_CSOSN,
-	OPCOES_CST_ICMS,
-} from "@/util/cst-produto-util";
+import { OPCOES_CSOSN, OPCOES_CST_ICMS } from "@/util/cst-produto-util";
 
 type FormularioParametrizacaoTributosProps = {
 	form: UseFormReturn<ParametrizacaoTributosFormData>;
@@ -197,8 +194,8 @@ export function FormularioParametrizacaoTributos({
 						/>
 						<p className="text-muted-foreground text-xs -mt-2 md:col-span-3">
 							Tipo SPED 0200 aplicado ao produto na finalização da NF de
-							entrada. Sem valor (ou sem match de regra), usa 00 —
-							mercadoria para revenda.
+							entrada. Sem valor (ou sem match de regra), usa 00 — mercadoria
+							para revenda.
 						</p>
 					</div>
 
@@ -271,7 +268,9 @@ export function FormularioParametrizacaoTributos({
 						/>
 
 						<Field data-invalid={!!errors.taxaicmsnfe}>
-							<FieldLabel htmlFor="taxaicmsnfe">Alíquota ICMS NFe (%)</FieldLabel>
+							<FieldLabel htmlFor="taxaicmsnfe">
+								Alíquota ICMS NFe (%)
+							</FieldLabel>
 							<Input
 								id="taxaicmsnfe"
 								placeholder="Ex.: 18"
@@ -365,7 +364,9 @@ export function FormularioParametrizacaoTributos({
 						</Field>
 
 						<Field data-invalid={!!errors.aliquotacofins}>
-							<FieldLabel htmlFor="aliquotacofins">Alíquota COFINS (%)</FieldLabel>
+							<FieldLabel htmlFor="aliquotacofins">
+								Alíquota COFINS (%)
+							</FieldLabel>
 							<Input
 								id="aliquotacofins"
 								placeholder="Ex.: 7,6"

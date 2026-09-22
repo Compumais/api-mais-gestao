@@ -112,7 +112,9 @@ export function ConfigDeliveryTab({
 								<Select
 									id="impressora_pedido_tipo_delivery"
 									value={config.impressora_pedido_tipo ?? ""}
-									onChange={(e) => set("impressora_pedido_tipo", e.target.value)}
+									onChange={(e) =>
+										set("impressora_pedido_tipo", e.target.value)
+									}
 								>
 									<option value="">Usar a primeira impressora dos itens</option>
 									<option value="sistema">Sistema (USB / Windows)</option>

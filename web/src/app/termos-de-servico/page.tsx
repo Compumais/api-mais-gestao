@@ -1,10 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LegalDocumentLayout } from "@/components/legal-document-layout";
-import {
-	LEGAL_CONTACT,
-	LEGAL_LAST_UPDATED,
-} from "@/constants/legal-contact";
+import { LEGAL_CONTACT, LEGAL_LAST_UPDATED } from "@/constants/legal-contact";
 
 export const metadata: Metadata = {
 	title: "Termos de Serviço | Mais Gestão",
@@ -33,9 +30,9 @@ export default function TermosDeServicoPage() {
 				<p>
 					Estes Termos de Serviço regulam o uso da plataforma Mais Gestão,
 					solução SaaS destinada à gestão financeira de empresas, incluindo
-					funcionalidades como controle de contas a pagar e receber, movimentações
-					bancárias, relatórios e demais recursos disponibilizados conforme o
-					plano contratado.
+					funcionalidades como controle de contas a pagar e receber,
+					movimentações bancárias, relatórios e demais recursos disponibilizados
+					conforme o plano contratado.
 				</p>
 				<p>
 					Ao criar uma conta ou utilizar a plataforma, você declara ter lido,
@@ -52,8 +49,8 @@ export default function TermosDeServicoPage() {
 					representa.
 				</p>
 				<p>
-					Você é responsável pela confidencialidade de suas credenciais de acesso
-					e por todas as atividades realizadas em sua conta.
+					Você é responsável pela confidencialidade de suas credenciais de
+					acesso e por todas as atividades realizadas em sua conta.
 				</p>
 			</section>
 
@@ -77,8 +74,9 @@ export default function TermosDeServicoPage() {
 				<h2>4. Planos, pagamento e disponibilidade</h2>
 				<p>
 					Recursos, limites e condições comerciais podem variar conforme o plano
-					contratado. Valores, periodicidade e formas de pagamento são informados
-					no momento da contratação ou na área de assinatura da plataforma.
+					contratado. Valores, periodicidade e formas de pagamento são
+					informados no momento da contratação ou na área de assinatura da
+					plataforma.
 				</p>
 				<p>
 					Buscamos manter o serviço disponível de forma contínua, porém podem
@@ -122,7 +120,8 @@ export default function TermosDeServicoPage() {
 				<p>
 					O Mais Gestão é uma ferramenta de apoio à gestão financeira. Decisões
 					empresariais, fiscais, contábeis ou financeiras tomadas com base nas
-					informações da plataforma são de responsabilidade exclusiva do usuário.
+					informações da plataforma são de responsabilidade exclusiva do
+					usuário.
 				</p>
 				<p>
 					Na extensão permitida pela lei, não nos responsabilizamos por danos
@@ -154,9 +153,7 @@ export default function TermosDeServicoPage() {
 
 			<section>
 				<h2>10. Contato</h2>
-				<p>
-					Para dúvidas sobre estes Termos, entre em contato:
-				</p>
+				<p>Para dúvidas sobre estes Termos, entre em contato:</p>
 				<ul>
 					<li>
 						E-mail:{" "}

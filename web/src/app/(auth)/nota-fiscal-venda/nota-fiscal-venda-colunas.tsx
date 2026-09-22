@@ -148,9 +148,7 @@ function criarHeaderColuna(
 	const filtroAtivo = valorFiltro.trim() !== "";
 	const ordenacaoCampo = COLUNA_PARA_ORDENAR_NF_PRODUTO[def.id] ?? def.id;
 	const ordenacao: OrdenacaoColunaTabela =
-		opcoes.ordenarPor === ordenacaoCampo && opcoes.ordem
-			? opcoes.ordem
-			: false;
+		opcoes.ordenarPor === ordenacaoCampo && opcoes.ordem ? opcoes.ordem : false;
 
 	return (
 		<CabecalhoColunaTabela
@@ -173,10 +171,8 @@ function renderAcoesPadrao(
 	opcoes: OpcoesColunasNotaFiscalProduto,
 ) {
 	const podeTransmitir =
-		nota.status === NFE_STATUS.PENDENTE ||
-		nota.status === NFE_STATUS.REJEITADA;
-	const podeDevolver =
-		nota.status === NFE_STATUS.AUTORIZADA && !!nota.chavenfe;
+		nota.status === NFE_STATUS.PENDENTE || nota.status === NFE_STATUS.REJEITADA;
+	const podeDevolver = nota.status === NFE_STATUS.AUTORIZADA && !!nota.chavenfe;
 	const podeClonar =
 		nota.status === NFE_STATUS.AUTORIZADA ||
 		nota.status === NFE_STATUS.CANCELADA ||
@@ -333,9 +329,7 @@ export function criarColunasNotaFiscalProduto(
 					cell: ({ row }) => {
 						const amb = row.getValue("tipoambientenfe") as number | null;
 						if (!amb)
-							return (
-								<span className="text-muted-foreground text-sm">—</span>
-							);
+							return <span className="text-muted-foreground text-sm">—</span>;
 						return (
 							<span
 								className={
@@ -394,9 +388,7 @@ export function criarColunasNotaFiscalProduto(
 					cell: ({ row }) => {
 						const chave = row.getValue("chavenfe") as string | null;
 						if (!chave)
-							return (
-								<span className="text-muted-foreground text-sm">—</span>
-							);
+							return <span className="text-muted-foreground text-sm">—</span>;
 						return (
 							<span
 								className="font-mono text-xs text-muted-foreground"

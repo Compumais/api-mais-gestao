@@ -1,13 +1,4 @@
-import {
-	and,
-	asc,
-	count,
-	desc,
-	eq,
-	ilike,
-	type SQL,
-	sql,
-} from "drizzle-orm";
+import { and, asc, count, desc, eq, ilike, type SQL, sql } from "drizzle-orm";
 import type { NovoCondicaoPagamento } from "@/model/condicao-pagamento-model";
 import { condicaopagamento } from "@/repositories/schema.js";
 import { filtroRegistroAtivo } from "@/util/filtro-registro-ativo.js";

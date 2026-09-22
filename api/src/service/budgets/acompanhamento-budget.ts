@@ -112,8 +112,7 @@ export async function acompanhamentoBudgetService({
 		const limite = arredondar(acumulado.limite);
 		const realizado = arredondar(realizadoPorConta.get(idplanocontas) ?? 0);
 		const saldo = arredondar(limite - realizado);
-		const percentual =
-			limite > 0 ? arredondar((realizado / limite) * 100) : 0;
+		const percentual = limite > 0 ? arredondar((realizado / limite) * 100) : 0;
 
 		data.push({
 			idplanocontas,

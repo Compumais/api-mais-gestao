@@ -9,10 +9,7 @@ export async function buscarNcmPorId(id: string) {
 	return ncm;
 }
 
-export async function buscarNcmPorCodigo(
-	idempresa: string,
-	codigo: string,
-) {
+export async function buscarNcmPorCodigo(idempresa: string, codigo: string) {
 	const codigoNormalizado = codigo.replace(/\D/g, "");
 
 	const [ncm] = await db

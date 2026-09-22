@@ -32,11 +32,11 @@ import { decodificarChaveNfe } from "@/util/decodificar-chave-nfe.js";
 import { httpBadRequest, httpCriacao, httpProibido } from "@/util/http-util.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
 import { parseNFeXml } from "@/util/nfe-xml-parser.js";
-import { normalizarCodigoStatusNfe } from "@/util/resolver-status-emissao-nfe.js";
 import {
 	formatarValorMonetario,
 	parseValorMonetario,
 } from "@/util/recebimentos-venda-util.js";
+import { normalizarCodigoStatusNfe } from "@/util/resolver-status-emissao-nfe.js";
 
 export type TransmitirNfceContingenciaParametros = {
 	idusuario: string;
@@ -192,7 +192,9 @@ async function processarTransmissaoNota(
 
 	const credenciais = await montarCredenciaisGatewayNfce(nota.idempresa);
 	if (!credenciais.ok) {
-		const motivo = credenciais.pendencias.map((item) => item.mensagem).join("; ");
+		const motivo = credenciais.pendencias
+			.map((item) => item.mensagem)
+			.join("; ");
 		await atualizarNotaFiscal(nota.id, {
 			status: NFE_STATUS.PENDENTE,
 			mensagemtransmissaonfe: motivo,
@@ -316,8 +318,7 @@ async function processarTransmissaoNota(
 	if (!transmissao.cStat || transmissao.cStat === "204") {
 		const reconciliada = await reconciliarNfceAutorizadaSefaz({
 			...nota,
-			arquivoxmlassinado:
-				transmissao.xmlAssinado ?? nota.arquivoxmlassinado,
+			arquivoxmlassinado: transmissao.xmlAssinado ?? nota.arquivoxmlassinado,
 		});
 		if (reconciliada) {
 			return {
@@ -342,8 +343,7 @@ async function processarTransmissaoNota(
 		(pendente ? "Transmissão inconclusiva" : "NFC-e rejeitada pela SEFAZ");
 	await atualizarNotaFiscal(nota.id, {
 		status: pendente ? NFE_STATUS.PENDENTE : NFE_STATUS.REJEITADA,
-		arquivoxmlassinado:
-			transmissao.xmlAssinado ?? nota.arquivoxmlassinado,
+		arquivoxmlassinado: transmissao.xmlAssinado ?? nota.arquivoxmlassinado,
 		mensagemtransmissaonfe: motivo,
 		codigostatusprotocolonfe: normalizarCodigoStatusNfe(cStat),
 		dadosimportacao: {
@@ -466,10 +466,7 @@ export async function transmitirNfceContingenciaService({
 				});
 			}
 			const hashPersistido = dadosImportacaoNota(existente).xmlSha256;
-			if (
-				typeof hashPersistido === "string" &&
-				hashPersistido !== hash
-			) {
+			if (typeof hashPersistido === "string" && hashPersistido !== hash) {
 				return httpBadRequest(
 					"Conflito de hash: a chave já foi registrada com outro XML",
 					{ code: "NFCE_CONTINGENCIA_HASH_DIVERGENTE" },
@@ -482,9 +479,7 @@ export async function transmitirNfceContingenciaService({
 	if (venda?.idempresa === idempresa && venda.idnotafiscalnfce) {
 		const notaVenda = await buscarNotaFiscalPorId(venda.idnotafiscalnfce);
 		if (notaVenda) {
-			if (
-				normalizarChave(notaVenda.chavenfe ?? undefined) !== chaveNorm
-			) {
+			if (normalizarChave(notaVenda.chavenfe ?? undefined) !== chaveNorm) {
 				return httpBadRequest(
 					"Venda já vinculada a NFC-e com identidade fiscal divergente",
 				);
@@ -518,7 +513,9 @@ export async function transmitirNfceContingenciaService({
 		numeroFinal,
 	);
 	if (existentePorNumero?.modelo === "65") {
-		const chaveExistente = normalizarChave(existentePorNumero.chavenfe ?? undefined);
+		const chaveExistente = normalizarChave(
+			existentePorNumero.chavenfe ?? undefined,
+		);
 		if (chaveExistente && chaveNorm && chaveExistente !== chaveNorm) {
 			return httpBadRequest(
 				`NFC-e série ${serieFinal} número ${numeroFinal} já utilizada (chave ${chaveExistente})`,
@@ -526,8 +523,7 @@ export async function transmitirNfceContingenciaService({
 			);
 		}
 		if (chaveExistente && chaveNorm && chaveExistente === chaveNorm) {
-			const hashPersistido =
-				dadosImportacaoNota(existentePorNumero).xmlSha256;
+			const hashPersistido = dadosImportacaoNota(existentePorNumero).xmlSha256;
 			if (typeof hashPersistido === "string" && hashPersistido !== hash) {
 				return httpBadRequest(
 					"Conflito de hash: série/número já registrados com outro XML",

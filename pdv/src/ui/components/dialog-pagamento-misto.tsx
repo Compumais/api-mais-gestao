@@ -270,7 +270,8 @@ export function DialogPagamentoMisto({
 	}
 
 	async function abrirPainelAjuste(tipo: "desconto" | "acrescimo") {
-		const permitido = tipo === "desconto" ? permitirDesconto : permitirAcrescimo;
+		const permitido =
+			tipo === "desconto" ? permitirDesconto : permitirAcrescimo;
 		if (!permitido || ocupado) return;
 		if (lancamentos.length) {
 			setErro(
@@ -296,7 +297,8 @@ export function DialogPagamentoMisto({
 	}
 
 	async function aplicarAjuste(tipo: "desconto" | "acrescimo") {
-		const permitido = tipo === "desconto" ? permitirDesconto : permitirAcrescimo;
+		const permitido =
+			tipo === "desconto" ? permitirDesconto : permitirAcrescimo;
 		if (!permitido || ocupado) return;
 		if (lancamentos.length) {
 			setErro(
@@ -633,7 +635,9 @@ export function DialogPagamentoMisto({
 					</div>
 					<div className="grid grid-cols-2 gap-2 text-center sm:flex">
 						<div className="min-w-28 rounded-lg border border-white/10 bg-white/10 px-3 py-2">
-							<div className="text-[11px] text-sidebar-foreground/65">Total</div>
+							<div className="text-[11px] text-sidebar-foreground/65">
+								Total
+							</div>
 							<div className="text-lg font-bold">{money(totalLiquido)}</div>
 							{descontoAplicado > 0 || acrescimoAplicado > 0 ? (
 								<div className="text-[10px] text-sidebar-foreground/60">
@@ -643,9 +647,7 @@ export function DialogPagamentoMisto({
 						</div>
 						{descontoAplicado > 0 ? (
 							<div className="min-w-28 rounded-lg border border-emerald-300/30 bg-emerald-400/15 px-3 py-2">
-								<div className="text-[11px] text-emerald-100/80">
-									Desconto
-								</div>
+								<div className="text-[11px] text-emerald-100/80">Desconto</div>
 								<div className="text-lg font-bold text-emerald-200">
 									-{money(descontoAplicado)}
 								</div>
@@ -653,9 +655,7 @@ export function DialogPagamentoMisto({
 						) : null}
 						{acrescimoAplicado > 0 ? (
 							<div className="min-w-28 rounded-lg border border-orange-300/30 bg-orange-400/15 px-3 py-2">
-								<div className="text-[11px] text-orange-100/80">
-									Acréscimo
-								</div>
+								<div className="text-[11px] text-orange-100/80">Acréscimo</div>
 								<div className="text-lg font-bold text-orange-200">
 									+{money(acrescimoAplicado)}
 								</div>
@@ -668,7 +668,9 @@ export function DialogPagamentoMisto({
 									: "min-w-28 rounded-lg border border-blue-300/40 bg-blue-400/20 px-3 py-2"
 							}
 						>
-							<div className="text-[11px] text-sidebar-foreground/70">Restante</div>
+							<div className="text-[11px] text-sidebar-foreground/70">
+								Restante
+							</div>
 							<div
 								className={
 									restante > 0

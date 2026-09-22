@@ -3,7 +3,8 @@ import type { FastifySchema } from "fastify";
 export const criarCondicaoPagamentoSchema: FastifySchema = {
 	tags: ["condicoes-pagamento"],
 	summary: "Criar condição de pagamento",
-	description: "Cria um novo registro de condição de pagamento na empresa do usuário autenticado.",
+	description:
+		"Cria um novo registro de condição de pagamento na empresa do usuário autenticado.",
 	security: [{ bearerAuth: [] }],
 	body: {
 		type: "object",
@@ -15,7 +16,7 @@ export const criarCondicaoPagamentoSchema: FastifySchema = {
 			prazos: { type: "string" },
 			escopo: { type: "number" },
 			inativo: { type: "number" },
-			"...": { type: "string", description: "Demais campos da entidade" }
+			"...": { type: "string", description: "Demais campos da entidade" },
 		},
 		required: ["idempresa"],
 	},
@@ -116,7 +117,10 @@ export const listarCondicaoPagamentosSchema: FastifySchema = {
 		properties: {
 			idempresa: { type: "string", description: "ID da empresa" },
 			codigo: { type: "string" },
-			descricao: { type: "string", description: "Filtro opcional por descricao" },
+			descricao: {
+				type: "string",
+				description: "Filtro opcional por descricao",
+			},
 			parcelas: { type: "string" },
 			prazos: { type: "string" },
 			escopo: { type: "number" },
@@ -132,7 +136,10 @@ export const listarCondicaoPagamentosSchema: FastifySchema = {
 		200: {
 			type: "object",
 			properties: {
-				data: { type: "array", items: { type: "object", additionalProperties: true } },
+				data: {
+					type: "array",
+					items: { type: "object", additionalProperties: true },
+				},
 				paginacao: {
 					type: "object",
 					properties: {

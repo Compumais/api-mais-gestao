@@ -32,9 +32,7 @@ export function useSaldosEstoque(idempresa: string | undefined) {
 		const map: Record<string, number> = {};
 		for (const saldo of data ?? []) {
 			if (saldo.codigoproduto) {
-				map[saldo.codigoproduto] = Number.parseFloat(
-					saldo.quantidade ?? "0",
-				);
+				map[saldo.codigoproduto] = Number.parseFloat(saldo.quantidade ?? "0");
 			}
 		}
 		return map;

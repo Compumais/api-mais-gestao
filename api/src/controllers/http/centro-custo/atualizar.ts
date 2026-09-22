@@ -14,10 +14,13 @@ const atualizarCentroCustoBodySchema = z.object({
 	codigoreduzido: z.string().max(20).optional(),
 	inativo: z.number().int().optional(),
 	obrigatorio: z.number().int().optional(),
-	idcentrocustopai: z.string().optional()
+	idcentrocustopai: z.string().optional(),
 });
 
-export async function atualizarCentroCusto(request: FastifyRequest, reply: FastifyReply) {
+export async function atualizarCentroCusto(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());

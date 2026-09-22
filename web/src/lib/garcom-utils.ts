@@ -8,7 +8,9 @@ export interface GrupoProdutos {
 	produtos: Produto[];
 }
 
-export function filtrarHierarquiasGarcom(hierarquias: Hierarquia[]): Hierarquia[] {
+export function filtrarHierarquiasGarcom(
+	hierarquias: Hierarquia[],
+): Hierarquia[] {
 	return hierarquias.filter((h) => h.enviamobile === 1);
 }
 
@@ -17,10 +19,7 @@ export function filtrarProdutosGarcom(
 	gruposIds: Set<string>,
 ): Produto[] {
 	return produtos.filter(
-		(p) =>
-			p.idgrupo != null &&
-			gruposIds.has(p.idgrupo) &&
-			p.enviamobile === 1,
+		(p) => p.idgrupo != null && gruposIds.has(p.idgrupo) && p.enviamobile === 1,
 	);
 }
 

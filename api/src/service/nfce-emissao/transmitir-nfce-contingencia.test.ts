@@ -6,8 +6,8 @@ import * as nfeSerieRepository from "@/repositories/nfe-serie-repositories.js";
 import * as notaRepository from "@/repositories/nota-fiscal-repositories.js";
 import * as vendaRepository from "@/repositories/venda-pdv-gourmet-repositories.js";
 import * as xmlService from "@/service/nota-fiscal/arquivar-xml-nota-fiscal.js";
-import * as credenciaisService from "./montar-credenciais-gateway-nfce.js";
 import { NFE_STATUS } from "@/util/nfe-status.js";
+import * as credenciaisService from "./montar-credenciais-gateway-nfce.js";
 import { transmitirNfceContingenciaService } from "./transmitir-nfce-contingencia.js";
 
 vi.mock("@/repositories/entidade-repositories.js");
@@ -48,7 +48,7 @@ const xmlContingenciaCompleto = xmlContingencia
 	)
 	.replace(
 		"<total>",
-		"<det nItem=\"1\"><prod><NCM>12345678</NCM><CFOP>5102</CFOP></prod><imposto><ICMS /></imposto></det><transp><modFrete>9</modFrete></transp><pag><detPag><tPag>01</tPag><vPag>18.00</vPag></detPag></pag><total>",
+		'<det nItem="1"><prod><NCM>12345678</NCM><CFOP>5102</CFOP></prod><imposto><ICMS /></imposto></det><transp><modFrete>9</modFrete></transp><pag><detPag><tPag>01</tPag><vPag>18.00</vPag></detPag></pag><total>',
 	);
 
 describe("transmitirNfceContingenciaService", () => {
@@ -80,7 +80,9 @@ describe("transmitirNfceContingenciaService", () => {
 		vi.mocked(
 			notaRepository.registrarNotaFiscalContingenciaPdv,
 		).mockImplementation(async (nota) => nota as never);
-		vi.mocked(credenciaisService.montarCredenciaisGatewayNfce).mockResolvedValue({
+		vi.mocked(
+			credenciaisService.montarCredenciaisGatewayNfce,
+		).mockResolvedValue({
 			ok: true,
 			configJson: { tpAmb: 2, cnpj },
 			pfxBase64: "pfx",

@@ -135,7 +135,9 @@ export function intervaloExibido(params: DashboardPeriodoParams) {
 			return `${formatDateOnlyDisplay(mes.inicio)} – ${formatDateOnlyDisplay(hoje)}`;
 		}
 		case "mes_anterior": {
-			const mesAnt = inicioFimMesDe(adicionarDiasIso(`${hoje.slice(0, 7)}-01`, -1));
+			const mesAnt = inicioFimMesDe(
+				adicionarDiasIso(`${hoje.slice(0, 7)}-01`, -1),
+			);
 			return `${formatDateOnlyDisplay(mesAnt.inicio)} – ${formatDateOnlyDisplay(mesAnt.fim)}`;
 		}
 		case "ano_atual":

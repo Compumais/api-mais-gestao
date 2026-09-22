@@ -42,7 +42,8 @@ const respostaErroPadrao = {
 export const criarMovimentoEstoqueSchema: FastifySchema = {
 	tags: ["movimentos-estoque"],
 	summary: "Criar movimento de estoque",
-	description: "Cria um novo registro de movimento de estoque na empresa do usuário autenticado.",
+	description:
+		"Cria um novo registro de movimento de estoque na empresa do usuário autenticado.",
 	security: [{ bearerAuth: [] }],
 	body: {
 		type: "object",
@@ -186,4 +187,3 @@ export const excluirMovimentoEstoqueSchema: FastifySchema = {
 		...respostaErroPadrao,
 	},
 };
-

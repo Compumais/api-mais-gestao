@@ -85,9 +85,7 @@ export function partirPorItens(
 			const desconto = arredondarMoeda(totais.valordesconto - accDesconto);
 			const taxa = arredondarMoeda(totais.valortaxaservico - accTaxa);
 			const couvert = arredondarMoeda(totais.valorcouvert - accCouvert);
-			const entrega = arredondarMoeda(
-				(totais.valorentrega || 0) - accEntrega,
-			);
+			const entrega = arredondarMoeda((totais.valorentrega || 0) - accEntrega);
 			const total = arredondarMoeda(totais.valortotal - accTotal);
 			fatias.push({
 				ids,

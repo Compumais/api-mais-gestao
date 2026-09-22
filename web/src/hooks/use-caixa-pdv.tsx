@@ -20,7 +20,10 @@ import {
 	STATUS_CAIXA,
 	somarPagamentosResumo,
 } from "@/lib/gourmet-utils";
-import { type ContaMesa, contaMesaService } from "@/services/conta-mesa.service";
+import {
+	type ContaMesa,
+	contaMesaService,
+} from "@/services/conta-mesa.service";
 import type { FechamentoCaixa } from "@/services/fechamento-caixa.service";
 import { fechamentoCaixaService } from "@/services/fechamento-caixa.service";
 import type { VendaPdvGourmet } from "@/services/venda-pdv-gourmet.service";
@@ -39,7 +42,10 @@ export interface ResumoTurnoCaixa {
 	saldoCaixaFisico: number;
 }
 
-async function somarItensVenda(idempresa: string, idvenda: string): Promise<number> {
+async function somarItensVenda(
+	idempresa: string,
+	idvenda: string,
+): Promise<number> {
 	let total = 0;
 	let page = 1;
 	const limit = 100;
@@ -332,7 +338,9 @@ export function CaixaPdvProvider({ children }: { children: ReactNode }) {
 	);
 
 	return (
-		<CaixaPdvContext.Provider value={value}>{children}</CaixaPdvContext.Provider>
+		<CaixaPdvContext.Provider value={value}>
+			{children}
+		</CaixaPdvContext.Provider>
 	);
 }
 

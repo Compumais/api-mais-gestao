@@ -23,15 +23,15 @@ vi.mock("@/repositories/connection.js", () => ({
 describe("gerarContasReceberNfService", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		vi.mocked(financeiroRepository.buscarFinanceirosPorOrigem).mockResolvedValue(
-			[],
-		);
+		vi.mocked(
+			financeiroRepository.buscarFinanceirosPorOrigem,
+		).mockResolvedValue([]);
 	});
 
 	it("deve ser idempotente quando já existem títulos", async () => {
-		vi.mocked(financeiroRepository.buscarFinanceirosPorOrigem).mockResolvedValue([
-			{ id: "fin-1" } as never,
-		]);
+		vi.mocked(
+			financeiroRepository.buscarFinanceirosPorOrigem,
+		).mockResolvedValue([{ id: "fin-1" } as never]);
 
 		const resultado = await gerarContasReceberNfService({
 			idempresa: "emp-1",
@@ -47,13 +47,13 @@ describe("gerarContasReceberNfService", () => {
 	});
 
 	it("deve gerar parcelas por condição de pagamento", async () => {
-		vi.mocked(condicaoPagamentoRepository.buscarCondicaoPagamentoPorId).mockResolvedValue(
-			{
-				id: "cond-1",
-				parcelas: 2,
-				prazos: "0,30",
-			} as never,
-		);
+		vi.mocked(
+			condicaoPagamentoRepository.buscarCondicaoPagamentoPorId,
+		).mockResolvedValue({
+			id: "cond-1",
+			parcelas: 2,
+			prazos: "0,30",
+		} as never);
 		vi.mocked(financeiroRepository.criarFinanceiro).mockResolvedValue({
 			id: "fin-novo",
 		} as never);
@@ -74,13 +74,13 @@ describe("gerarContasReceberNfService", () => {
 	});
 
 	it("deve respeitar parcelas da condição mesmo com prazos excedentes", async () => {
-		vi.mocked(condicaoPagamentoRepository.buscarCondicaoPagamentoPorId).mockResolvedValue(
-			{
-				id: "cond-1",
-				parcelas: 3,
-				prazos: "0,30,60,90",
-			} as never,
-		);
+		vi.mocked(
+			condicaoPagamentoRepository.buscarCondicaoPagamentoPorId,
+		).mockResolvedValue({
+			id: "cond-1",
+			parcelas: 3,
+			prazos: "0,30,60,90",
+		} as never);
 		vi.mocked(financeiroRepository.criarFinanceiro).mockResolvedValue({
 			id: "fin-novo",
 		} as never);
@@ -101,22 +101,22 @@ describe("gerarContasReceberNfService", () => {
 	});
 
 	it("deve priorizar condição parcelada em vez de forma de pagamento única", async () => {
-		vi.mocked(condicaoPagamentoRepository.buscarCondicaoPagamentoPorId).mockResolvedValue(
-			{
-				id: "cond-1",
-				parcelas: 3,
-				prazos: "30,60,90",
-			} as never,
-		);
-		vi.mocked(tipoDocumentoRepository.buscarTipoDocumentoFinanceiroPorId).mockResolvedValue(
-			{
-				id: "tipo-1",
-				aprazo: 1,
-				integracaixabanco: 0,
-				prazodias: 30,
-				idplanocontas: "plano-1",
-			} as never,
-		);
+		vi.mocked(
+			condicaoPagamentoRepository.buscarCondicaoPagamentoPorId,
+		).mockResolvedValue({
+			id: "cond-1",
+			parcelas: 3,
+			prazos: "30,60,90",
+		} as never);
+		vi.mocked(
+			tipoDocumentoRepository.buscarTipoDocumentoFinanceiroPorId,
+		).mockResolvedValue({
+			id: "tipo-1",
+			aprazo: 1,
+			integracaixabanco: 0,
+			prazodias: 30,
+			idplanocontas: "plano-1",
+		} as never);
 		vi.mocked(financeiroRepository.criarFinanceiro).mockResolvedValue({
 			id: "fin-novo",
 		} as never);
@@ -141,15 +141,15 @@ describe("gerarContasReceberNfService", () => {
 	});
 
 	it("deve gerar título a prazo por forma de pagamento", async () => {
-		vi.mocked(tipoDocumentoRepository.buscarTipoDocumentoFinanceiroPorId).mockResolvedValue(
-			{
-				id: "tipo-1",
-				aprazo: 1,
-				integracaixabanco: 0,
-				prazodias: 30,
-				idplanocontas: "plano-1",
-			} as never,
-		);
+		vi.mocked(
+			tipoDocumentoRepository.buscarTipoDocumentoFinanceiroPorId,
+		).mockResolvedValue({
+			id: "tipo-1",
+			aprazo: 1,
+			integracaixabanco: 0,
+			prazodias: 30,
+			idplanocontas: "plano-1",
+		} as never);
 		vi.mocked(financeiroRepository.criarFinanceiro).mockResolvedValue({
 			id: "fin-novo",
 		} as never);

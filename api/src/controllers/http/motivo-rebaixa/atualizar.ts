@@ -10,10 +10,13 @@ const atualizarMotivoRebaixaParamsSchema = z.object({
 const atualizarMotivoRebaixaBodySchema = z.object({
 	codigo: z.string().max(6).optional(),
 	nome: z.string().max(50).optional(),
-	inativo: z.number().int().optional()
+	inativo: z.number().int().optional(),
 });
 
-export async function atualizarMotivoRebaixa(request: FastifyRequest, reply: FastifyReply) {
+export async function atualizarMotivoRebaixa(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());

@@ -58,7 +58,9 @@ export async function atualizarConfiguracaoService({
 	if (configuracao?.notificacoes) {
 		return httpOk({
 			...configuracao,
-			notificacoes: normalizarConfiguracaoNotificacoes(configuracao.notificacoes),
+			notificacoes: normalizarConfiguracaoNotificacoes(
+				configuracao.notificacoes,
+			),
 		});
 	}
 

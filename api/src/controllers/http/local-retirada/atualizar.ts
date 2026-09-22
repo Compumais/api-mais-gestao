@@ -8,10 +8,13 @@ const atualizarLocalRetiradaParamsSchema = z.object({
 });
 
 const atualizarLocalRetiradaBodySchema = z.object({
-	descricao: z.string().max(60).optional()
+	descricao: z.string().max(60).optional(),
 });
 
-export async function atualizarLocalRetirada(request: FastifyRequest, reply: FastifyReply) {
+export async function atualizarLocalRetirada(
+	request: FastifyRequest,
+	reply: FastifyReply,
+) {
 	try {
 		if (!request.user) {
 			return reply.status(httpNaoAutorizado().status).send(httpNaoAutorizado());

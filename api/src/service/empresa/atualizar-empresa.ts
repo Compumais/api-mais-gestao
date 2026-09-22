@@ -37,7 +37,9 @@ export async function atualizarEmpresaService({
 	let regimetributario: string | null | undefined;
 
 	if (dados.regimetributario !== undefined) {
-		const regimeNormalizado = normalizarRegimeTributario(dados.regimetributario);
+		const regimeNormalizado = normalizarRegimeTributario(
+			dados.regimetributario,
+		);
 
 		if (
 			dados.regimetributario !== null &&

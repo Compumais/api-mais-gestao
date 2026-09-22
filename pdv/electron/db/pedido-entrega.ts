@@ -1,17 +1,13 @@
 import {
 	arredondarMoeda,
-	recalcularTotaisConta,
 	type ItemGourmet,
+	recalcularTotaisConta,
 	type TotaisContaGourmet,
 } from "./conta-gourmet";
 
 export type ModalidadePedido = "mesa" | "delivery" | "retirada";
 
-export type StatusEntrega =
-	| "recebido"
-	| "producao"
-	| "saiu"
-	| "entregue";
+export type StatusEntrega = "recebido" | "producao" | "saiu" | "entregue";
 
 export type BairroEntrega = {
 	bairro: string;
@@ -37,7 +33,9 @@ export function gerarSenhaChamada(seq: number): string {
 	return String(n).padStart(3, "0").slice(-4);
 }
 
-export function parseBairrosEntrega(raw: string | null | undefined): BairroEntrega[] {
+export function parseBairrosEntrega(
+	raw: string | null | undefined,
+): BairroEntrega[] {
 	if (!raw?.trim()) return [];
 	try {
 		const parsed = JSON.parse(raw) as unknown;
@@ -99,12 +97,7 @@ export function proximoStatusEntrega(
 		return ordem[idx + 1] ?? null;
 	}
 	if (modalidade === "delivery") {
-		const ordem: StatusEntrega[] = [
-			"recebido",
-			"producao",
-			"saiu",
-			"entregue",
-		];
+		const ordem: StatusEntrega[] = ["recebido", "producao", "saiu", "entregue"];
 		const idx = ordem.indexOf(status);
 		if (idx < 0 || idx >= ordem.length - 1) return null;
 		return ordem[idx + 1] ?? null;

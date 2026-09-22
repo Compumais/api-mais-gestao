@@ -10,13 +10,13 @@ import {
 	upsertMeiosPagamento,
 	upsertProdutos,
 } from "../db/repos";
-import { sincronizarImagensProdutos } from "../sync/imagens-produtos";
 import { sincronizarImagensGruposGourmet } from "../sync/imagens-grupos-gourmet";
+import { sincronizarImagensProdutos } from "../sync/imagens-produtos";
 import {
+	buscarTerminaisRemoto,
 	handshakePrincipal,
 	NumeroPdvDuplicadoError,
 	PrincipalOfflineError,
-	buscarTerminaisRemoto,
 	pingIdentidade,
 	puxarCatalogoRemoto,
 	puxarConfigNegocioRemota,

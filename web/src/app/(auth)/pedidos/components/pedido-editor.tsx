@@ -20,6 +20,10 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { CamposIntegracaoNfVenda } from "@/app/(auth)/nota-fiscal-venda/components/campos-integracao-nf-venda";
 import {
+	BlocoErrorBoundary,
+	BlocoErrorBoundarySlot,
+} from "@/components/bloco-error-boundary";
+import {
 	AlertDialog,
 	AlertDialogAction,
 	AlertDialogCancel,
@@ -83,7 +87,8 @@ function calcularTotalItens(itens: PedidoDavItem[]) {
 		const preco = parseFloat(item.preco ?? "0");
 		const total = parseFloat(item.total ?? "0");
 		if (Number.isFinite(total) && total > 0) return acc + total;
-		if (Number.isFinite(qtd) && Number.isFinite(preco)) return acc + qtd * preco;
+		if (Number.isFinite(qtd) && Number.isFinite(preco))
+			return acc + qtd * preco;
 		return acc;
 	}, 0);
 }
@@ -180,7 +185,9 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 		for (const produto of produtosLista ?? []) {
 			mapa.set(
 				produto.id,
-				produto.descricao?.trim() || produto.nome || String(produto.codigo ?? ""),
+				produto.descricao?.trim() ||
+					produto.nome ||
+					String(produto.codigo ?? ""),
 			);
 		}
 		return mapa;
@@ -225,7 +232,9 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 			cnpjcpfcliente: cliente?.cnpjcpf ?? pedido.cnpjcpfcliente,
 			observacao: observacao.trim() || pedido.observacao,
 			descontosubtotal:
-				descontoNumero > 0 ? descontoNumero.toFixed(2) : pedido.descontosubtotal,
+				descontoNumero > 0
+					? descontoNumero.toFixed(2)
+					: pedido.descontosubtotal,
 			valor: totalPedido.toFixed(2),
 		};
 	}, [
@@ -335,9 +344,7 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 
 			void queryClient.invalidateQueries({ queryKey: ["pedidos"] });
 			if (resultado.pedido) {
-				toast.success(
-					opcoes?.concluir ? "Pedido concluído" : "Pedido salvo",
-				);
+				toast.success(opcoes?.concluir ? "Pedido concluído" : "Pedido salvo");
 				router.push(
 					opcoes?.concluir
 						? `/pedidos/${resultado.pedido.id}?imprimir=1`
@@ -731,9 +738,16 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 					</div>
 				</div>
 
-				<FieldGroup>
-					<FieldSet>
-						<FieldLegend>Dados do pedido</FieldLegend>
+				<BlocoErrorBoundary
+					titulo="Erro no formulário do pedido"
+					variante="painel"
+				>
+					<BlocoErrorBoundarySlot
+						render={() => (
+							<>
+								<FieldGroup>
+									<FieldSet>
+										<FieldLegend>Dados do pedido</FieldLegend>
 						<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 							<Field>
 								<FieldLabel htmlFor="cliente-pedido">Cliente</FieldLabel>
@@ -850,8 +864,7 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 									itens.map((item) => {
 										const qtd = parseFloat(item.quantidade ?? "0");
 										const preco = parseFloat(item.preco ?? "0");
-										const total =
-											parseFloat(item.total ?? "0") || qtd * preco;
+										const total = parseFloat(item.total ?? "0") || qtd * preco;
 
 										return (
 											<TableRow key={item.id}>
@@ -920,6 +933,10 @@ export function PedidoEditor({ pedidoId }: PedidoEditorProps) {
 						</div>
 					</div>
 				</div>
+							</>
+						)}
+					/>
+				</BlocoErrorBoundary>
 			</div>
 
 			<ModalItemPedido

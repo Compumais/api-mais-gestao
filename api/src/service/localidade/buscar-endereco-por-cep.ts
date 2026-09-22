@@ -48,7 +48,8 @@ export async function buscarEnderecoPorCepService(
 			bairro: resultado.neighborhood?.trim() || null,
 			cidade: resultado.city?.trim() || null,
 			estado: estado?.nome ?? resultado.state?.trim() ?? null,
-			idestado: estado?.idestado ?? resultado.state?.trim().toUpperCase() ?? null,
+			idestado:
+				estado?.idestado ?? resultado.state?.trim().toUpperCase() ?? null,
 			idcidade,
 		};
 

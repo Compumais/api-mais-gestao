@@ -81,7 +81,9 @@ export function notaEstaDentroPrazoCancelamentoNfe(
 ): boolean {
 	const dataAutorizacao = obterDataReferenciaAutorizacaoNfe(nota);
 	if (!dataAutorizacao) return false;
-	return agora.getTime() - dataAutorizacao.getTime() <= PRAZO_CANCELAMENTO_NFE_MS;
+	return (
+		agora.getTime() - dataAutorizacao.getTime() <= PRAZO_CANCELAMENTO_NFE_MS
+	);
 }
 
 export function validarCancelamentoNfe(
@@ -90,7 +92,10 @@ export function validarCancelamentoNfe(
 	agora = new Date(),
 ): { ok: true } | { ok: false; mensagem: string } {
 	if (nota.tipoorigem !== 1) {
-		return { ok: false, mensagem: "Somente NF-e de saída podem ser canceladas" };
+		return {
+			ok: false,
+			mensagem: "Somente NF-e de saída podem ser canceladas",
+		};
 	}
 
 	if (nota.status !== NFE_STATUS.AUTORIZADA) {

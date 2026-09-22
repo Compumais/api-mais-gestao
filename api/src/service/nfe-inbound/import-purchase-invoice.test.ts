@@ -17,7 +17,9 @@ describe("importPurchaseInvoiceService", () => {
 	});
 
 	it("deve criar rascunho para procNFe disponível", async () => {
-		vi.mocked(entidadeRepo.verificarUsuarioPertenceEmpresa).mockResolvedValue(true);
+		vi.mocked(entidadeRepo.verificarUsuarioPertenceEmpresa).mockResolvedValue(
+			true,
+		);
 		vi.mocked(nfeInboundRepo.buscarNfeInboundDocumentoPorId).mockResolvedValue({
 			id: "doc-1",
 			idempresa: "emp-1",
@@ -29,11 +31,13 @@ describe("importPurchaseInvoiceService", () => {
 		vi.mocked(notaFiscalRepo.buscarNotaFiscalPorChaveNfe).mockResolvedValue(
 			undefined,
 		);
-		vi.mocked(criarRascunho.criarRascunhoImportacaoNfService).mockResolvedValue({
-			success: true,
-			status: 200,
-			body: { idRascunho: "rascunho-1" },
-		} as never);
+		vi.mocked(criarRascunho.criarRascunhoImportacaoNfService).mockResolvedValue(
+			{
+				success: true,
+				status: 200,
+				body: { idRascunho: "rascunho-1" },
+			} as never,
+		);
 		vi.mocked(nfeInboundRepo.atualizarNfeInboundDocumento).mockResolvedValue(
 			{} as never,
 		);
@@ -50,7 +54,9 @@ describe("importPurchaseInvoiceService", () => {
 	});
 
 	it("deve bloquear duplicidade quando NF já importada", async () => {
-		vi.mocked(entidadeRepo.verificarUsuarioPertenceEmpresa).mockResolvedValue(true);
+		vi.mocked(entidadeRepo.verificarUsuarioPertenceEmpresa).mockResolvedValue(
+			true,
+		);
 		vi.mocked(nfeInboundRepo.buscarNfeInboundDocumentoPorId).mockResolvedValue({
 			id: "doc-1",
 			idempresa: "emp-1",
@@ -82,7 +88,9 @@ describe("importPurchaseInvoiceService", () => {
 	});
 
 	it("deve recriar rascunho quando idrascunho aponta para nota inexistente", async () => {
-		vi.mocked(entidadeRepo.verificarUsuarioPertenceEmpresa).mockResolvedValue(true);
+		vi.mocked(entidadeRepo.verificarUsuarioPertenceEmpresa).mockResolvedValue(
+			true,
+		);
 		vi.mocked(nfeInboundRepo.buscarNfeInboundDocumentoPorId).mockResolvedValue({
 			id: "doc-1",
 			idempresa: "emp-1",
@@ -97,11 +105,13 @@ describe("importPurchaseInvoiceService", () => {
 		vi.mocked(notaFiscalRepo.buscarNotaFiscalPorChaveNfe).mockResolvedValue(
 			undefined,
 		);
-		vi.mocked(criarRascunho.criarRascunhoImportacaoNfService).mockResolvedValue({
-			success: true,
-			status: 200,
-			body: { idRascunho: "rascunho-novo" },
-		} as never);
+		vi.mocked(criarRascunho.criarRascunhoImportacaoNfService).mockResolvedValue(
+			{
+				success: true,
+				status: 200,
+				body: { idRascunho: "rascunho-novo" },
+			} as never,
+		);
 		vi.mocked(nfeInboundRepo.atualizarNfeInboundDocumento).mockResolvedValue(
 			{} as never,
 		);
@@ -124,7 +134,9 @@ describe("importPurchaseInvoiceService", () => {
 	});
 
 	it("deve permitir reimportar quando a NF anterior está cancelada", async () => {
-		vi.mocked(entidadeRepo.verificarUsuarioPertenceEmpresa).mockResolvedValue(true);
+		vi.mocked(entidadeRepo.verificarUsuarioPertenceEmpresa).mockResolvedValue(
+			true,
+		);
 		vi.mocked(nfeInboundRepo.buscarNfeInboundDocumentoPorId).mockResolvedValue({
 			id: "doc-1",
 			idempresa: "emp-1",
@@ -137,11 +149,13 @@ describe("importPurchaseInvoiceService", () => {
 		vi.mocked(notaFiscalRepo.buscarNotaFiscalPorChaveNfe).mockResolvedValue(
 			undefined,
 		);
-		vi.mocked(criarRascunho.criarRascunhoImportacaoNfService).mockResolvedValue({
-			success: true,
-			status: 200,
-			body: { idRascunho: "rascunho-1" },
-		} as never);
+		vi.mocked(criarRascunho.criarRascunhoImportacaoNfService).mockResolvedValue(
+			{
+				success: true,
+				status: 200,
+				body: { idRascunho: "rascunho-1" },
+			} as never,
+		);
 		vi.mocked(nfeInboundRepo.atualizarNfeInboundDocumento).mockResolvedValue(
 			{} as never,
 		);

@@ -46,7 +46,8 @@ export function ModalImprimirPedido({
 	pedido,
 	itens,
 }: ModalImprimirPedidoProps) {
-	const { data: modelos = [], isLoading } = useModelosImpressaoPedido(idempresa);
+	const { data: modelos = [], isLoading } =
+		useModelosImpressaoPedido(idempresa);
 	const [modeloId, setModeloId] = useState<string>("");
 
 	const { data: cliente } = useQuery({
@@ -124,8 +125,8 @@ export function ModalImprimirPedido({
 							</p>
 						) : modelos.length === 0 ? (
 							<p className="text-sm text-muted-foreground">
-								Nenhum modelo disponível. Cadastre em Configurações → Modelos
-								de impressão.
+								Nenhum modelo disponível. Cadastre em Configurações → Modelos de
+								impressão.
 							</p>
 						) : (
 							<Select value={modeloId} onValueChange={setModeloId}>

@@ -50,7 +50,9 @@ export function formatarQuantidadeItemTurno(qtd: number): string {
 	return arred.toFixed(3).replace(/\.?0+$/, "");
 }
 
-export function formatarLinhaItemVendidoTurno(item: ItemVendidoTurnoAgrupado): string {
+export function formatarLinhaItemVendidoTurno(
+	item: ItemVendidoTurnoAgrupado,
+): string {
 	const qtd = formatarQuantidadeItemTurno(item.quantidade);
 	return `${qtd}X ${item.descricao.trim().toUpperCase()}`;
 }

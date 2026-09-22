@@ -54,7 +54,9 @@ export function montarMensagemConsultaChaveSefaz({
 	if (cStatSituacao === "100") {
 		return [
 			`[${cStatDfe ?? "DF-e"}] NF-e autorizada na SEFAZ (situação 100), mas o XML não está disponível na Distribuição DF-e para o CNPJ e ambiente (${ambiente}) consultados.`,
-			consultaSituacao?.xMotivo ? `Motivo SEFAZ: ${consultaSituacao.xMotivo}` : "",
+			consultaSituacao?.xMotivo
+				? `Motivo SEFAZ: ${consultaSituacao.xMotivo}`
+				: "",
 			"Importe pelo XML do fornecedor na aba Importar XML.",
 		]
 			.filter(Boolean)
@@ -82,5 +84,10 @@ export function montarMensagemConsultaChaveSefaz({
 }
 
 export function deveConsultarSituacaoFallback(cStatDfe?: string): boolean {
-	return cStatDfe === "137" || cStatDfe === "217" || cStatDfe === "632" || cStatDfe === "640";
+	return (
+		cStatDfe === "137" ||
+		cStatDfe === "217" ||
+		cStatDfe === "632" ||
+		cStatDfe === "640"
+	);
 }

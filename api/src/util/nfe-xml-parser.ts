@@ -1,5 +1,8 @@
 import { XMLParser } from "fast-xml-parser";
-import { inteiroValidoParaPostgres, normalizarCodigoBarras } from "@/util/texto-util.js";
+import {
+	inteiroValidoParaPostgres,
+	normalizarCodigoBarras,
+} from "@/util/texto-util.js";
 
 export type ItemNFeXml = {
 	codigoproduto?: number | undefined;
@@ -171,7 +174,9 @@ function valorIcmsTotOuSomaItens(
 	itens: ItemNFeXml[],
 	campoItem: CampoTributoItem,
 ): string | undefined {
-	return valorIcmsTot(icmsTot, campoTot) ?? somarTributosItens(itens, campoItem);
+	return (
+		valorIcmsTot(icmsTot, campoTot) ?? somarTributosItens(itens, campoItem)
+	);
 }
 
 function toNumber(valor: unknown): number | undefined {
@@ -230,10 +235,23 @@ function extrairIcmsItem(imposto: Record<string, unknown>): {
 	if (!icmsContainer) return {};
 
 	const grupos = [
-		"ICMS00", "ICMS10", "ICMS20", "ICMS30", "ICMS40",
-		"ICMS41", "ICMS50", "ICMS51", "ICMS60", "ICMS70", "ICMS90",
-		"ICMSSN101", "ICMSSN102", "ICMSSN201", "ICMSSN202",
-		"ICMSSN500", "ICMSSN900",
+		"ICMS00",
+		"ICMS10",
+		"ICMS20",
+		"ICMS30",
+		"ICMS40",
+		"ICMS41",
+		"ICMS50",
+		"ICMS51",
+		"ICMS60",
+		"ICMS70",
+		"ICMS90",
+		"ICMSSN101",
+		"ICMSSN102",
+		"ICMSSN201",
+		"ICMSSN202",
+		"ICMSSN500",
+		"ICMSSN900",
 	];
 
 	for (const grupo of grupos) {
@@ -296,9 +314,7 @@ function extrairCofinsItem(imposto: Record<string, unknown>): {
 
 	const grupos = ["COFINSAliq", "COFINSQtde", "COFINSNT", "COFINSOutr"];
 	for (const grupo of grupos) {
-		const dados = cofinsContainer[grupo] as
-			| Record<string, unknown>
-			| undefined;
+		const dados = cofinsContainer[grupo] as Record<string, unknown> | undefined;
 		if (dados) {
 			return {
 				cstcofins: paraStr(dados.CST),
@@ -469,7 +485,7 @@ export function parseNFeXml(xmlString: string): NFeXmlParsed {
 		const eanBruto = paraStr(prod.cEAN);
 		const ean =
 			eanBruto && eanBruto !== "SEM GTIN"
-				? normalizarCodigoBarras(eanBruto) ?? undefined
+				? (normalizarCodigoBarras(eanBruto) ?? undefined)
 				: undefined;
 
 		const codigoStr = paraStr(prod.cProd);
@@ -571,7 +587,12 @@ export function parseNFeXml(xmlString: string): NFeXmlParsed {
 			"baseicmsst",
 		),
 		icmssubstituicao: valorIcmsTotOuSomaItens(icmsTot, "vST", itens, "icmsst"),
-		icmsfundopobreza: valorIcmsTotOuSomaItens(icmsTot, "vFCP", itens, "valorfcp"),
+		icmsfundopobreza: valorIcmsTotOuSomaItens(
+			icmsTot,
+			"vFCP",
+			itens,
+			"valorfcp",
+		),
 		icmsfundopobrezast: paraStr(icmsTot?.vFCPST),
 		basecalculoicmsdifal: paraStr(icmsTot?.vBCUFDest),
 		icmsdestino: paraStr(icmsTot?.vICMSUFDest),

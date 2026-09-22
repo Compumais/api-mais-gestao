@@ -272,7 +272,9 @@ export function AjusteEstoqueDialog({
 						<Label>Aplicar em</Label>
 						<Select
 							value={tipoestoque}
-							onValueChange={(v) => atualizarTipoEstoque(v as TipoEstoqueAjuste)}
+							onValueChange={(v) =>
+								atualizarTipoEstoque(v as TipoEstoqueAjuste)
+							}
 						>
 							<SelectTrigger>
 								<SelectValue />

@@ -3,13 +3,14 @@ import type { FastifySchema } from "fastify";
 export const criarOperacaoFiscalSchema: FastifySchema = {
 	tags: ["operacoes-fiscais"],
 	summary: "Criar operação fiscal",
-	description: "Cria um novo registro de operação fiscal na empresa do usuário autenticado.",
+	description:
+		"Cria um novo registro de operação fiscal na empresa do usuário autenticado.",
 	security: [{ bearerAuth: [] }],
 	body: {
 		type: "object",
 		properties: {
 			idempresa: { type: "string", description: "ID da empresa" },
-			nome: { type: "string" }
+			nome: { type: "string" },
 		},
 		required: ["idempresa"],
 	},
@@ -119,7 +120,10 @@ export const listarOperacaoFiscalsSchema: FastifySchema = {
 		200: {
 			type: "object",
 			properties: {
-				data: { type: "array", items: { type: "object", additionalProperties: true } },
+				data: {
+					type: "array",
+					items: { type: "object", additionalProperties: true },
+				},
 				paginacao: {
 					type: "object",
 					properties: {

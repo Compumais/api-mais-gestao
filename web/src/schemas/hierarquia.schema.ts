@@ -8,14 +8,8 @@ export const hierarquiaFormSchema = z.object({
 		.string()
 		.max(30, "Código deve ter no máximo 30 caracteres")
 		.optional(),
-	nome: z
-		.string()
-		.max(40, "Nome deve ter no máximo 40 caracteres")
-		.optional(),
-	ncm: z
-		.string()
-		.max(10, "NCM deve ter no máximo 10 caracteres")
-		.optional(),
+	nome: z.string().max(40, "Nome deve ter no máximo 40 caracteres").optional(),
+	ncm: z.string().max(10, "NCM deve ter no máximo 10 caracteres").optional(),
 	classe: z.enum(["0", "1", "2", "3"]).optional(),
 	origem: z.enum(["0", "1", "2"]).optional(),
 	comissao: z
@@ -42,8 +36,7 @@ export const hierarquiaFormSchema = z.object({
 				);
 			},
 			{
-				message:
-					"Foto inválida ou muito grande. Use uma imagem de até 500 KB.",
+				message: "Foto inválida ou muito grande. Use uma imagem de até 500 KB.",
 			},
 		),
 });

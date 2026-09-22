@@ -1,10 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as nfeInboundRepo from "@/repositories/nfe-inbound-repositories.js";
 import * as notaFiscalRepo from "@/repositories/nota-fiscal-repositories.js";
-import {
-	XML_PROC_NFE,
-	XML_RES_NFE,
-} from "./__fixtures__/xml-dfe.fixtures.js";
+import { XML_PROC_NFE, XML_RES_NFE } from "./__fixtures__/xml-dfe.fixtures.js";
 import { classificarXmlDfe } from "./classificar-xml-dfe.js";
 import { persistirDocumentoInbound } from "./persistir-documento-inbound.js";
 
@@ -17,7 +14,9 @@ describe("persistirDocumentoInbound - duplicidade", () => {
 	});
 
 	it("não deve regredir procNFe para resNFe", async () => {
-		vi.mocked(nfeInboundRepo.buscarNfeInboundDocumentoPorChave).mockResolvedValue({
+		vi.mocked(
+			nfeInboundRepo.buscarNfeInboundDocumentoPorChave,
+		).mockResolvedValue({
 			id: "doc-existente",
 			tipodocumento: "procNFe",
 			idrascunho: null,
@@ -36,9 +35,9 @@ describe("persistirDocumentoInbound - duplicidade", () => {
 	});
 
 	it("deve fazer upsert para novo procNFe", async () => {
-		vi.mocked(nfeInboundRepo.buscarNfeInboundDocumentoPorChave).mockResolvedValue(
-			undefined,
-		);
+		vi.mocked(
+			nfeInboundRepo.buscarNfeInboundDocumentoPorChave,
+		).mockResolvedValue(undefined);
 		vi.mocked(notaFiscalRepo.buscarNotaFiscalPorChaveNfe).mockResolvedValue(
 			undefined,
 		);
@@ -63,9 +62,9 @@ describe("persistirDocumentoInbound - duplicidade", () => {
 	});
 
 	it("deve marcar como importado quando NF já existe no sistema", async () => {
-		vi.mocked(nfeInboundRepo.buscarNfeInboundDocumentoPorChave).mockResolvedValue(
-			undefined,
-		);
+		vi.mocked(
+			nfeInboundRepo.buscarNfeInboundDocumentoPorChave,
+		).mockResolvedValue(undefined);
 		vi.mocked(notaFiscalRepo.buscarNotaFiscalPorChaveNfe).mockResolvedValue({
 			id: "nf-1",
 			status: 1,

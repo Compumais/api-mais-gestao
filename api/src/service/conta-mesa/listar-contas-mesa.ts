@@ -30,7 +30,9 @@ export async function listarContasMesaService({
 	status,
 	page = 1,
 	limit = 10,
-}: ListarContasMesaParametros): Promise<HttpResponse<ListarContasMesaResposta>> {
+}: ListarContasMesaParametros): Promise<
+	HttpResponse<ListarContasMesaResposta>
+> {
 	const usuarioPertenceEmpresa = await verificarUsuarioPertenceEmpresa(
 		idusuario,
 		idempresa,

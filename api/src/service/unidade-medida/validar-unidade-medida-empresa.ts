@@ -1,7 +1,9 @@
 import type { UnidadeMedida } from "@/model/unidade-medida-model.js";
 import { buscarUnidadeMedidaPorId } from "@/repositories/unidade-medida-repositories.js";
 
-export function isUnidadeMedidaGlobal(unidade: Pick<UnidadeMedida, "idempresa">) {
+export function isUnidadeMedidaGlobal(
+	unidade: Pick<UnidadeMedida, "idempresa">,
+) {
 	return unidade.idempresa === null;
 }
 

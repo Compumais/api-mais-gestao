@@ -1,5 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
+import { buscarCardapioDeliveryPorSlug } from "@/repositories/cardapio-delivery-repositories.js";
 import { buscarCardapioPublicoService } from "@/service/cardapio-delivery/buscar-cardapio-publico.js";
 import { criarPedidoCardapioPublicoService } from "@/service/cardapio-delivery/criar-pedido-cardapio-publico.js";
 import { listarMeusPedidosCardapioPublicoService } from "@/service/cardapio-delivery/listar-meus-pedidos-cardapio-publico.js";
@@ -8,7 +9,6 @@ import {
 	ErroImagemProduto,
 	lerImagemProdutoDaEmpresa,
 } from "@/service/produto/imagem-produto.js";
-import { buscarCardapioDeliveryPorSlug } from "@/repositories/cardapio-delivery-repositories.js";
 import { httpErroInterno } from "@/util/http-util.js";
 
 const slugParams = z.object({ slug: z.string().min(2).max(80) });

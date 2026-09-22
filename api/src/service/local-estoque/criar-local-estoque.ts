@@ -1,12 +1,11 @@
 import type { HttpResponse } from "@/model/http-model.js";
-import type { LocalEstoque, NovoLocalEstoque } from "@/model/local-estoque-model.js";
+import type {
+	LocalEstoque,
+	NovoLocalEstoque,
+} from "@/model/local-estoque-model.js";
 import { verificarUsuarioPertenceEmpresa } from "@/repositories/entidade-repositories.js";
 import { criarLocalEstoque } from "@/repositories/local-estoque-repositories.js";
-import {
-	httpCriacao,
-	httpErro,
-	httpProibido,
-} from "@/util/http-util.js";
+import { httpCriacao, httpErro, httpProibido } from "@/util/http-util.js";
 
 type CriarLocalEstoqueParametros = {
 	dadosLocalEstoque: NovoLocalEstoque;
