@@ -10,6 +10,7 @@ import { sessaoTemGourmet } from "../db/acesso";
 import { getAllConfig, getConfig } from "../db/database";
 import { lancamentosDeBody } from "../db/pagamento";
 import {
+	buscarProdutoPorEan,
 	buscarProdutoPorId,
 	listarGruposGourmetLocal,
 	obterSessao,
@@ -524,6 +525,32 @@ async function despachar(
 		};
 	}
 
+	const produtoEanMatch = path.match(/^\/pos\/produtos\/ean\/([^/]+)$/);
+	if (method === "GET" && produtoEanMatch) {
+		const ean = decodeURIComponent(produtoEanMatch[1]).trim();
+		if (!ean) {
+			return { status: 400, body: { error: "EAN ausente" } };
+		}
+		const produto = await buscarProdutoPorEan(ean);
+		if (!produto) {
+			return { status: 404, body: { error: "Produto não encontrado" } };
+		}
+		return {
+			status: 200,
+			body: {
+				produto: {
+					id: produto.id,
+					descricao: produto.descricao,
+					preco: produto.preco,
+					unidademedida: produto.unidademedida,
+					idunidademedida: produto.idunidademedida,
+					ean: produto.ean,
+					codigo: produto.codigo,
+				},
+			},
+		};
+	}
+
 	if (method === "GET" && path === "/pos/mesas") {
 		return { status: 200, body: { data: await localApi.listarMesas() } };
 	}
@@ -609,6 +636,8 @@ async function despachar(
 					: body.obsPedido != null
 						? String(body.obsPedido)
 						: null,
+				body.mesaFisica != null ? String(body.mesaFisica) : null,
+				body.localizacao != null ? String(body.localizacao) : null,
 			),
 		};
 	}

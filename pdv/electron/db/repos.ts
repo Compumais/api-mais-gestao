@@ -268,6 +268,8 @@ export type PedidoFilaLocal = {
 	quantidade: number;
 	observacao: string | null;
 	observacao_pedido: string | null;
+	mesa_fisica: string | null;
+	localizacao: string | null;
 	status: string;
 	criadoem: string;
 	entregueem: string | null;
@@ -2701,10 +2703,21 @@ export async function atualizarNomeClienteConta(
 	return atualizada;
 }
 
+function normalizarTextoPedidoCurto(
+	valor: string | null | undefined,
+	limite = 80,
+): string | null {
+	const texto = valor?.trim() || "";
+	if (!texto) return null;
+	return texto.slice(0, limite);
+}
+
 export async function enviarPedidoConta(params: {
 	idconta: string;
 	clientOrderId: string;
 	observacaoPedido?: string | null;
+	mesaFisica?: string | null;
+	localizacao?: string | null;
 	itens: Array<{
 		idproduto: string;
 		quantidade: number;
@@ -2715,6 +2728,8 @@ export async function enviarPedidoConta(params: {
 	ContaMesaLocal & {
 		pedidoNovo: boolean;
 		observacaoPedido: string | null;
+		mesaFisica: string | null;
+		localizacao: string | null;
 		itensProducao: Array<{
 			idproduto: string;
 			descricao: string;
@@ -2731,6 +2746,8 @@ export async function enviarPedidoConta(params: {
 		throw new Error("Pedido sem itens");
 	}
 	const observacaoPedido = params.observacaoPedido?.trim() || null;
+	const mesaFisica = normalizarTextoPedidoCurto(params.mesaFisica, 40);
+	const localizacao = normalizarTextoPedidoCurto(params.localizacao, 80);
 	const existente = await queryOne<{ id: string }>(
 		"SELECT id FROM pedido_fila WHERE client_order_id = $1 LIMIT 1",
 		[clientOrderId],
@@ -2744,6 +2761,8 @@ export async function enviarPedidoConta(params: {
 			...conta,
 			pedidoNovo: false,
 			observacaoPedido,
+			mesaFisica,
+			localizacao,
 			itensProducao: [],
 		};
 	}
@@ -2852,8 +2871,8 @@ export async function enviarPedidoConta(params: {
 				`INSERT INTO pedido_fila (
 					id, client_order_id, idconta, numero_mesa, nomecliente,
 					idproduto, descricao, quantidade, observacao, observacao_pedido,
-					status, criadoem
-				) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pendente', $11)`,
+					mesa_fisica, localizacao, status, criadoem
+				) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'pendente', $13)`,
 				[
 					uuidv4(),
 					clientOrderId,
@@ -2865,6 +2884,8 @@ export async function enviarPedidoConta(params: {
 					item.quantidade,
 					item.observacao,
 					observacaoPedido,
+					mesaFisica,
+					localizacao,
 					agora,
 				],
 				client,
@@ -2897,6 +2918,8 @@ export async function enviarPedidoConta(params: {
 		...atualizada,
 		pedidoNovo,
 		observacaoPedido,
+		mesaFisica,
+		localizacao,
 		itensProducao: pedidoNovo ? itensResolvidos : [],
 	};
 }
@@ -2910,7 +2933,8 @@ export async function listarPedidosFila(
 	if (pendentes) {
 		return query<PedidoFilaLocal>(
 			`SELECT id, client_order_id, idconta, numero_mesa, nomecliente, idproduto,
-				descricao, quantidade, observacao, observacao_pedido, status, criadoem, entregueem
+				descricao, quantidade, observacao, observacao_pedido, mesa_fisica, localizacao,
+				status, criadoem, entregueem
 			 FROM pedido_fila
 			 WHERE criadoem >= $1 AND status = 'pendente'
 			 ORDER BY criadoem`,
@@ -2919,7 +2943,8 @@ export async function listarPedidosFila(
 	}
 	return query<PedidoFilaLocal>(
 		`SELECT id, client_order_id, idconta, numero_mesa, nomecliente, idproduto,
-			descricao, quantidade, observacao, observacao_pedido, status, criadoem, entregueem
+			descricao, quantidade, observacao, observacao_pedido, mesa_fisica, localizacao,
+			status, criadoem, entregueem
 		 FROM pedido_fila
 		 WHERE criadoem >= $1
 		 ORDER BY criadoem`,
@@ -4388,7 +4413,9 @@ export async function atualizarDadosEntrega(
 	return atualizada;
 }
 
-export function rotuloOrigemConta(conta: ContaMesaLocal): string {
+export async function rotuloOrigemConta(
+	conta: ContaMesaLocal,
+): Promise<string> {
 	if (ehModalidadeEntrega(conta.modalidade)) {
 		return rotuloProducaoEntrega({
 			modalidade: conta.modalidade,
@@ -4396,7 +4423,12 @@ export function rotuloOrigemConta(conta: ContaMesaLocal): string {
 			protocolo: conta.orderidintegracao,
 		});
 	}
-	return `Mesa ${conta.numero_mesa}`;
+	const modelo =
+		(await getConfig("modelo_atendimento", "mesa")) === "comanda"
+			? "comanda"
+			: "mesa";
+	const nome = modelo === "comanda" ? "Comanda" : "Mesa";
+	return `${nome} ${conta.numero_mesa}`;
 }
 
 async function resolverProdutoIngest(codigoOuId: string): Promise<{

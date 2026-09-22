@@ -86,6 +86,8 @@ export function montarLinhasPedidoProducao(params: {
 	origem: string;
 	cliente?: string | null;
 	observacaoPedido?: string | null;
+	mesaFisica?: string | null;
+	localizacao?: string | null;
 	itens: ItemPedidoProducaoLayout[];
 	reimpressao?: boolean;
 	agruparPorGrupo?: boolean;
@@ -106,6 +108,12 @@ export function montarLinhasPedidoProducao(params: {
 	}
 	linhas.push("================================");
 	linhas.push(params.origem);
+	if (params.mesaFisica?.trim()) {
+		linhas.push(`Mesa: ${params.mesaFisica.trim()}`);
+	}
+	if (params.localizacao?.trim()) {
+		linhas.push(`Local: ${params.localizacao.trim()}`);
+	}
 	if (params.cliente?.trim()) {
 		linhas.push(`Cliente: ${params.cliente.trim()}`);
 	}

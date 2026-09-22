@@ -437,13 +437,14 @@ export function CardapioPublicoClient({ slug }: { slug: string }) {
 									pedidos={meusPedidos}
 									carregando={carregandoMeusPedidos}
 									telefone={telefoneConsulta}
-									onTelefone={setTelefoneConsulta}
-									onBuscar={() => {
-										const digitos = telefoneConsulta.replace(/\D/g, "");
+									onConfirmarTelefone={(valor) => {
+										const digitos = valor.replace(/\D/g, "");
 										if (digitos.length < 10) {
 											toast.error("Informe um telefone com DDD");
 											return;
 										}
+										cardapioPublicoService.salvarTelefoneCookie(slug, digitos);
+										setTelefoneConsulta(digitos);
 										setTelefone(digitos);
 										void refetchMeusPedidos();
 									}}

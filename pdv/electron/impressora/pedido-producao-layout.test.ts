@@ -169,4 +169,18 @@ describe("layout pedido de produção", () => {
 		assert.ok(linhas.some((l) => l === ">> BEBIDAS"));
 		assert.ok(linhas.some((l) => l === "3  Suco"));
 	});
+
+	it("imprime mesa física e localização no cupom de produção", () => {
+		const linhas = montarLinhasPedidoProducao({
+			origem: "Comanda 7",
+			mesaFisica: "12",
+			localizacao: "Terraço",
+			itens: [{ quantidade: 1, descricao: "Pastel" }],
+			tamanhoFonte: "media",
+			agora: new Date("2026-09-02T12:00:00.000Z"),
+		});
+		assert.ok(linhas.some((l) => l === "Comanda 7"));
+		assert.ok(linhas.some((l) => l === "Mesa: 12"));
+		assert.ok(linhas.some((l) => l === "Local: Terraço"));
+	});
 });

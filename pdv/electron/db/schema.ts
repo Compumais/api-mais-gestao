@@ -190,6 +190,8 @@ CREATE TABLE IF NOT EXISTS pedido_fila (
 	quantidade DOUBLE PRECISION NOT NULL,
 	observacao TEXT,
 	observacao_pedido TEXT,
+	mesa_fisica TEXT,
+	localizacao TEXT,
 	status TEXT NOT NULL DEFAULT 'pendente',
 	criadoem TEXT NOT NULL,
 	entregueem TEXT
