@@ -86,7 +86,6 @@ import {
 	contarNfcePendentesTransmissao,
 	contarOutboxFalhasPermanentes,
 	contarOutboxPendentes,
-	contarPedidosEntregaNovos,
 	criarVendaRapida,
 	empresasDoUsuarioCache,
 	enfileirarOutbox,
@@ -2269,7 +2268,9 @@ export const localApi = {
 			await garantirOperacaoSecundario();
 			return remoto.contarPedidosEntregaNovosRemoto();
 		}
-		return (await contarPedidosEntregaNovos()) + pedidosDeliveryNaoVistos();
+		// Badge do menu: só pedidos cujo alerta ainda não foi visto.
+		// Não soma WhatsApp nem o SQL de status "recebido" (isso duplicava o contador).
+		return pedidosDeliveryNaoVistos();
 	},
 
 	async marcarPedidosDeliveryVistos() {
