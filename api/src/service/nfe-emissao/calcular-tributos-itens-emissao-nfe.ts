@@ -18,6 +18,7 @@ import {
 	httpOk,
 	httpProibido,
 } from "@/util/http-util.js";
+import { validarIbsCbsItensEmissao } from "@/util/ibs-cbs-emissao-nfe.js";
 import { normalizarGtinItensEmissao } from "@/util/normalizar-gtin-item-emissao-nfe.js";
 import { normalizarItensEmissaoNfe } from "@/util/normalizar-tributacao-item-emissao-nfe.js";
 
@@ -48,13 +49,22 @@ export async function aplicarTributacaoItensEmissaoNfe(params: {
 	);
 	const { itens, pendencias } =
 		await aplicarCreditoIcmsSnItensEmissao(itensTributacao);
+	const pendenciasIbsCbs = validarIbsCbsItensEmissao(
+		itens,
+		"nfe",
+		params.crt,
+	);
 	const totaisFiscais = calcularTotaisFiscaisEmissaoNfe(
 		params.crt,
 		itens,
 		params.totais ?? {},
 	);
 
-	return { itens, totaisFiscais, pendencias };
+	return {
+		itens,
+		totaisFiscais,
+		pendencias: [...pendencias, ...pendenciasIbsCbs],
+	};
 }
 
 export async function calcularTributosItensEmissaoNfeService(params: {

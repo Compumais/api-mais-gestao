@@ -1,6 +1,9 @@
 import { z } from "zod";
 import type { NovoProduto } from "@/model/produto-model.js";
-import { camposImpostosProdutoSchema } from "@/util/campos-impostos-produto.js";
+import {
+	camposImpostosProdutoSchema,
+	refinirCamposIbsCbsProduto,
+} from "@/util/campos-impostos-produto.js";
 import { camposServicoProdutoSchema } from "@/util/campos-servico-produto.js";
 
 export const LIMITE_ALTERACAO_EM_MASSA_PRODUTOS = 500;
@@ -44,7 +47,12 @@ export const camposAlteracaoEmMassaProdutoSchema = z
 	.refine(
 		(campos) => Object.values(campos).some((valor) => valor !== undefined),
 		{ message: "Selecione ao menos um campo para alterar" },
-	);
+	)
+	.superRefine((campos, ctx) => {
+		if (campos.cstibs !== undefined || campos.classtributariaibs !== undefined) {
+			refinirCamposIbsCbsProduto(campos, ctx);
+		}
+	});
 
 export type CamposAlteracaoEmMassaProduto = z.infer<
 	typeof camposAlteracaoEmMassaProdutoSchema
