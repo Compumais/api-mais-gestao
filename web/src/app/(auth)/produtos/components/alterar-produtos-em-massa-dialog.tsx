@@ -640,6 +640,135 @@ export function AlterarProdutosEmMassaDialog({
 						</section>
 
 						<section className="space-y-3">
+							<div className="flex items-center gap-2">
+								<Checkbox
+									id="alterar-ibs-cbs"
+									checked={valores.cstibs?.alterar ?? false}
+									onCheckedChange={(checked) => {
+										const ativo = checked === true;
+										setValue("cstibs.alterar", ativo);
+										setValue("classtributariaibs.alterar", ativo);
+										setValue("aliquotaiibs.alterar", ativo);
+										setValue("aliquotacbs.alterar", ativo);
+										if (!ativo) {
+											setValue("cstibs.valor", null);
+											setValue("classtributariaibs.valor", null);
+											setValue("aliquotaiibs.valor", "");
+											setValue("aliquotacbs.valor", "");
+										}
+									}}
+								/>
+								<Label htmlFor="alterar-ibs-cbs" className="font-semibold">
+									IBS / CBS (reforma tributária)
+								</Label>
+							</div>
+							<p className="text-xs text-muted-foreground">
+								Marque para definir CST, classificação e alíquotas (preenchidas
+								automaticamente pela classificação).
+							</p>
+							<fieldset
+								disabled={!(valores.cstibs?.alterar ?? false)}
+								className="space-y-3 disabled:opacity-50"
+							>
+								<div className="space-y-1.5">
+									<Label htmlFor="massa-cstibs">CST IBS/CBS</Label>
+									<Controller
+										name="cstibs.valor"
+										control={control}
+										render={({ field }) => (
+											<Combobox
+												options={opcoesCstIbs}
+												value={field.value ?? ""}
+												onChange={(valor) => {
+													field.onChange(valor || null);
+													setValue("classtributariaibs.valor", null);
+													setValue("aliquotaiibs.valor", "");
+													setValue("aliquotacbs.valor", "");
+												}}
+												allowEmpty
+												emptyLabel="Nenhum"
+												placeholder="Selecione o CST IBS/CBS"
+												searchPlaceholder="Buscar CST..."
+												emptyMessage="Nenhum CST encontrado"
+											/>
+										)}
+									/>
+								</div>
+								<div className="space-y-1.5">
+									<Label htmlFor="massa-classtributariaibs">
+										Classificação tributária
+									</Label>
+									<Controller
+										name="classtributariaibs.valor"
+										control={control}
+										render={({ field }) => (
+											<Combobox
+												options={opcoesClassificacaoIbs}
+												value={field.value ?? ""}
+												onChange={(valor) => {
+													const codigo = valor || null;
+													field.onChange(codigo);
+													const classificacao = classificacoesIbs.find(
+														(item) => item.codigo === codigo,
+													);
+													if (!classificacao) {
+														setValue("aliquotaiibs.valor", "");
+														setValue("aliquotacbs.valor", "");
+														return;
+													}
+													setValue(
+														"aliquotaiibs.valor",
+														classificacao.aliquotaiibs,
+													);
+													setValue(
+														"aliquotacbs.valor",
+														classificacao.aliquotacbs,
+													);
+												}}
+												allowEmpty
+												emptyLabel="Nenhuma"
+												placeholder={
+													!cstIbsValor
+														? "Selecione o CST primeiro"
+														: "Selecione a classificação"
+												}
+												disabled={!cstIbsValor}
+												searchPlaceholder="Buscar classificação..."
+												emptyMessage="Nenhuma classificação para este CST"
+											/>
+										)}
+									/>
+								</div>
+								<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+									<div className="space-y-1.5">
+										<Label htmlFor="massa-aliquotaiibs">
+											Alíquota IBS (%)
+										</Label>
+										<Input
+											id="massa-aliquotaiibs"
+											placeholder="Automático"
+											readOnly
+											className="bg-muted"
+											{...register("aliquotaiibs.valor")}
+										/>
+									</div>
+									<div className="space-y-1.5">
+										<Label htmlFor="massa-aliquotacbs">
+											Alíquota CBS (%)
+										</Label>
+										<Input
+											id="massa-aliquotacbs"
+											placeholder="Automático"
+											readOnly
+											className="bg-muted"
+											{...register("aliquotacbs.valor")}
+										/>
+									</div>
+								</div>
+							</fieldset>
+						</section>
+
+						<section className="space-y-3">
 							<h3 className="text-sm font-semibold">Impostos</h3>
 							<LinhaCampo
 								id="percentualmva"
@@ -965,119 +1094,6 @@ export function AlterarProdutosEmMassaDialog({
 											onChange={field.onChange}
 										/>
 									)}
-								/>
-							</LinhaCampo>
-						</section>
-
-						<section className="space-y-3">
-							<h3 className="text-sm font-semibold">IBS / CBS</h3>
-							<LinhaCampo
-								id="cstibs"
-								label="CST IBS/CBS"
-								alterar={valores.cstibs?.alterar ?? false}
-								onAlterar={(alterar) => setValue("cstibs.alterar", alterar)}
-							>
-								<Controller
-									name="cstibs.valor"
-									control={control}
-									render={({ field }) => (
-										<Combobox
-											options={opcoesCstIbs}
-											value={field.value ?? ""}
-											onChange={(valor) => {
-												field.onChange(valor || null);
-												setValue("classtributariaibs.valor", null);
-												setValue("aliquotaiibs.valor", "");
-												setValue("aliquotacbs.valor", "");
-											}}
-											allowEmpty
-											emptyLabel="Nenhum"
-											placeholder="Selecione o CST IBS/CBS"
-											searchPlaceholder="Buscar CST..."
-											emptyMessage="Nenhum CST encontrado"
-										/>
-									)}
-								/>
-							</LinhaCampo>
-							<LinhaCampo
-								id="classtributariaibs"
-								label="Classificação tributária"
-								alterar={valores.classtributariaibs?.alterar ?? false}
-								onAlterar={(alterar) =>
-									setValue("classtributariaibs.alterar", alterar)
-								}
-							>
-								<Controller
-									name="classtributariaibs.valor"
-									control={control}
-									render={({ field }) => (
-										<Combobox
-											options={opcoesClassificacaoIbs}
-											value={field.value ?? ""}
-											onChange={(valor) => {
-												const codigo = valor || null;
-												field.onChange(codigo);
-												const classificacao = classificacoesIbs.find(
-													(item) => item.codigo === codigo,
-												);
-												if (!classificacao) {
-													setValue("aliquotaiibs.valor", "");
-													setValue("aliquotacbs.valor", "");
-													return;
-												}
-												setValue(
-													"aliquotaiibs.valor",
-													classificacao.aliquotaiibs,
-												);
-												setValue(
-													"aliquotacbs.valor",
-													classificacao.aliquotacbs,
-												);
-												setValue("aliquotaiibs.alterar", true);
-												setValue("aliquotacbs.alterar", true);
-											}}
-											allowEmpty
-											emptyLabel="Nenhuma"
-											placeholder={
-												!cstIbsValor
-													? "Selecione o CST primeiro"
-													: "Selecione a classificação"
-											}
-											disabled={!cstIbsValor}
-											searchPlaceholder="Buscar classificação..."
-											emptyMessage="Nenhuma classificação para este CST"
-										/>
-									)}
-								/>
-							</LinhaCampo>
-							<LinhaCampo
-								id="aliquotaiibs"
-								label="Alíquota IBS (%)"
-								alterar={valores.aliquotaiibs?.alterar ?? false}
-								onAlterar={(alterar) =>
-									setValue("aliquotaiibs.alterar", alterar)
-								}
-							>
-								<Input
-									id="aliquotaiibs"
-									placeholder="Ex.: 0,10"
-									inputMode="decimal"
-									{...register("aliquotaiibs.valor")}
-								/>
-							</LinhaCampo>
-							<LinhaCampo
-								id="aliquotacbs"
-								label="Alíquota CBS (%)"
-								alterar={valores.aliquotacbs?.alterar ?? false}
-								onAlterar={(alterar) =>
-									setValue("aliquotacbs.alterar", alterar)
-								}
-							>
-								<Input
-									id="aliquotacbs"
-									placeholder="Ex.: 0,90"
-									inputMode="decimal"
-									{...register("aliquotacbs.valor")}
 								/>
 							</LinhaCampo>
 						</section>
