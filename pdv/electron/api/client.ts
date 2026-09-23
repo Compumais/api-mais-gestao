@@ -78,6 +78,10 @@ export function isEmpresaAcessoNegado(err: unknown): boolean {
 	return /EMPRESA_ACESSO_NEGADO|não pertence à empresa/i.test(err.message);
 }
 
+export function isNaoAutorizado(err: unknown): boolean {
+	return err instanceof ApiError && err.status === 401;
+}
+
 /**
  * `/produtos/catalogo-pdv` colide com `GET /produtos/:id` quando a rota estática
  * ainda não existe na API: Fastify interpreta "catalogo-pdv" como params.id e

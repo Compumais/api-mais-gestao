@@ -121,7 +121,7 @@ app.whenReady().then(async () => {
 	try {
 		await initDb();
 		void processarOutbox();
-		void reconciliarNfce();
+		void reconciliarNfce().catch(() => undefined);
 		pararSyncNfce = iniciarReconciliacaoNfcePeriodica(60_000, 5_000).parar;
 		pararPollerCardapio = iniciarPollerCardapioDelivery();
 		await restartLanServer();

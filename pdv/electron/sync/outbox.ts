@@ -17,6 +17,7 @@ import {
 	criarVendaPdv,
 	extrairNfceDaBaixa,
 	isEmpresaAcessoNegado,
+	isNaoAutorizado,
 	listarAtalhosRemotos,
 	listarBandeirasCartao,
 	listarClientes,
@@ -219,6 +220,9 @@ export async function pullCatalogo(): Promise<{
 				usuarios: 0,
 				acessoNegado: true,
 			};
+		}
+		if (isNaoAutorizado(err)) {
+			throw new Error("Sessão expirada. Faça login novamente.");
 		}
 		throw err;
 	}
