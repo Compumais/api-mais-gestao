@@ -367,19 +367,19 @@ final class NfeEmissaoService
 					}
 					$mk->tagICMS((object) $tagIcms40);
 				} else {
-					$temBaseInformada = array_key_exists('baseIcms', $item)
-						&& $item['baseIcms'] !== null
-						&& $item['baseIcms'] !== '';
-					$vBC     = $temBaseInformada ? (float) $item['baseIcms'] : $vProdLiquido;
-					$pICMS   = (float) ($item['aliquotaIcms'] ?? 0);
-					$vICMS   = array_key_exists('valorIcms', $item)
+					$vBC = self::resolverBaseIcmsItem($item, $vProdLiquido);
+					$pICMS = (float) ($item['aliquotaIcms'] ?? 0);
+					$vICMS = array_key_exists('valorIcms', $item)
+						&& $item['valorIcms'] !== null
+						&& $item['valorIcms'] !== ''
 						? round((float) $item['valorIcms'], 2)
 						: round($vBC * $pICMS / 100, 2);
 					if ($pICMS <= 0 && $vBC > 0 && $vICMS > 0) {
 						$pICMS = round($vICMS / $vBC * 100, 4);
 					}
-					$vIcmsTotal += $vICMS;
-					$vBcTotal += $vBC;
+					// Arredonda por item antes de acumular (evita rejeição 531: BC total ≠ Σ itens).
+					$vBcTotal = round($vBcTotal + $vBC, 2);
+					$vIcmsTotal = round($vIcmsTotal + $vICMS, 2);
 					$mk->tagICMS((object) [
 						'item'  => $nItem,
 						'orig'  => $orig,
@@ -1106,6 +1106,26 @@ final class NfeEmissaoService
 		}
 
 		return $texto === '' ? $legenda : rtrim($texto, " .;") . '. ' . $legenda;
+	}
+
+	/**
+	 * Resolve vBC do ICMS por item (2 casas).
+	 * Evita rejeição 531 quando baseIcms chega zerada/vazia e ao somar floats sem arredondar.
+	 *
+	 * @param array<string, mixed> $item
+	 */
+	public static function resolverBaseIcmsItem(array $item, float $vProdLiquido): float {
+		$temBase = array_key_exists('baseIcms', $item)
+			&& $item['baseIcms'] !== null
+			&& $item['baseIcms'] !== '';
+		if (!$temBase) {
+			return round($vProdLiquido, 2);
+		}
+		$baseInformada = round((float) $item['baseIcms'], 2);
+		if ($baseInformada <= 0) {
+			return round($vProdLiquido, 2);
+		}
+		return $baseInformada;
 	}
 
 	/**

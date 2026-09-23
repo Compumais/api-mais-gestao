@@ -1,5 +1,6 @@
 import 'package:estacao_balanca/features/balanca/balanca_leitura.dart';
 import 'package:estacao_balanca/features/balanca/balanca_service.dart';
+import 'package:estacao_balanca/features/balanca/porta_serial_info.dart';
 
 BalancaService createSerialBalanca({
   required String portaNome,
@@ -8,7 +9,11 @@ BalancaService createSerialBalanca({
   return _UnsupportedSerial();
 }
 
-List<String> listarPortasSerialSeguro() => const [];
+Future<List<String>> listarPortasSerialSeguro() async => const [];
+
+Future<List<PortaSerialInfo>> listarPortasSerialInfo() async => const [];
+
+bool plataformaUsaUsbOtg() => false;
 
 class _UnsupportedSerial implements BalancaService {
   @override

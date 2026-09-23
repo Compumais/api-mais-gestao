@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:estacao_balanca/core/lan_client.dart';
 import 'package:estacao_balanca/core/prefs.dart';
 import 'package:estacao_balanca/features/balanca/balanca_facade.dart';
+import 'package:estacao_balanca/features/balanca/porta_serial_info.dart';
 import 'package:estacao_balanca/features/balanca/serial_balanca_service.dart';
 import 'package:estacao_balanca/theme/mg_theme.dart';
 import 'package:estacao_balanca/widgets/mg_logo.dart';
@@ -21,11 +22,15 @@ class _ConfigPageState extends State<ConfigPage> {
   late final TextEditingController _portaCtrl;
   late final TextEditingController _baudCtrl;
   late bool _balancaLocal;
+  late bool _ignorarDigitoVerificador;
   late FontePeso _fonte;
-  List<String> _portas = [];
+  List<PortaSerialInfo> _portas = [];
   String? _diag;
   String? _testeMsg;
   bool _busy = false;
+  bool _carregandoPortas = false;
+
+  bool get _usbOtg => plataformaUsaUsbOtg();
 
   @override
   void initState() {
@@ -34,14 +39,22 @@ class _ConfigPageState extends State<ConfigPage> {
     _portaCtrl = TextEditingController(text: widget.prefs.portaSerial);
     _baudCtrl = TextEditingController(text: '${widget.prefs.baudRate}');
     _balancaLocal = widget.prefs.balancaLocalHabilitada;
+    _ignorarDigitoVerificador = widget.prefs.ignorarDigitoVerificador;
     _fonte = widget.prefs.fontePeso;
     _carregarPortas();
   }
 
   Future<void> _carregarPortas() async {
-    final portas = listarPortasSerialSeguro();
+    setState(() => _carregandoPortas = true);
+    final portas = await listarPortasSerialInfo();
     if (!mounted) return;
-    setState(() => _portas = portas);
+    setState(() {
+      _portas = portas;
+      _carregandoPortas = false;
+      if (_portaCtrl.text.isEmpty && portas.length == 1) {
+        _portaCtrl.text = portas.first.id;
+      }
+    });
   }
 
   @override
@@ -57,6 +70,7 @@ class _ConfigPageState extends State<ConfigPage> {
     await widget.prefs.setPortaSerial(_portaCtrl.text.trim());
     await widget.prefs.setBaudRate(int.tryParse(_baudCtrl.text) ?? 2400);
     await widget.prefs.setBalancaLocalHabilitada(_balancaLocal);
+    await widget.prefs.setIgnorarDigitoVerificador(_ignorarDigitoVerificador);
     await widget.prefs.setFontePeso(_fonte);
   }
 
@@ -121,6 +135,19 @@ class _ConfigPageState extends State<ConfigPage> {
           ),
           const SizedBox(height: 16),
           _section(
+            title: 'Leitor de comanda',
+            child: SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Ignorar dígito verificador'),
+              subtitle: const Text(
+                'Remove o último dígito do código lido (ex.: 1015 → 101)',
+              ),
+              value: _ignorarDigitoVerificador,
+              onChanged: (v) => setState(() => _ignorarDigitoVerificador = v),
+            ),
+          ),
+          const SizedBox(height: 16),
+          _section(
             title: 'Atalhos da estação',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -140,28 +167,36 @@ class _ConfigPageState extends State<ConfigPage> {
           ),
           const SizedBox(height: 16),
           _section(
-            title: 'Balança Prix (Prt3)',
+            title: _usbOtg ? 'Balança Prix (USB OTG / Prt3)' : 'Balança Prix (Prt3)',
             child: Column(
               children: [
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Balança local (serial/USB)'),
+                  title: Text(
+                    _usbOtg
+                        ? 'Balança local (USB OTG)'
+                        : 'Balança local (serial/USB)',
+                  ),
                   value: _balancaLocal,
                   onChanged: (v) => setState(() => _balancaLocal = v),
                 ),
                 DropdownButtonFormField<FontePeso>(
                   value: _fonte,
                   decoration: const InputDecoration(labelText: 'Fonte de peso'),
-                  items: const [
-                    DropdownMenuItem(
+                  items: [
+                    const DropdownMenuItem(
                       value: FontePeso.auto,
                       child: Text('Auto (local, senão PDV)'),
                     ),
                     DropdownMenuItem(
                       value: FontePeso.local,
-                      child: Text('Somente local (COM/USB)'),
+                      child: Text(
+                        _usbOtg
+                            ? 'Somente local (USB OTG)'
+                            : 'Somente local (COM/USB)',
+                      ),
                     ),
-                    DropdownMenuItem(
+                    const DropdownMenuItem(
                       value: FontePeso.pdv,
                       child: Text('Somente PDV'),
                     ),
@@ -174,16 +209,70 @@ class _ConfigPageState extends State<ConfigPage> {
                 TextField(
                   controller: _portaCtrl,
                   decoration: InputDecoration(
-                    labelText: 'Porta serial (ex.: COM3)',
-                    suffixIcon: PopupMenuButton<String>(
-                      icon: const Icon(Icons.list),
-                      onSelected: (p) => setState(() => _portaCtrl.text = p),
-                      itemBuilder: (_) => _portas
-                          .map((p) => PopupMenuItem(value: p, child: Text(p)))
-                          .toList(),
+                    labelText: _usbOtg
+                        ? 'Conversor USB-Serial (vid:pid)'
+                        : 'Porta serial (ex.: COM3)',
+                    hintText: _usbOtg
+                        ? 'Vazio = auto se houver só um'
+                        : null,
+                    suffixIcon: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          tooltip: 'Atualizar lista',
+                          onPressed:
+                              _carregandoPortas ? null : _carregarPortas,
+                          icon: _carregandoPortas
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.refresh),
+                        ),
+                        PopupMenuButton<String>(
+                          icon: const Icon(Icons.list),
+                          onSelected: (p) =>
+                              setState(() => _portaCtrl.text = p),
+                          itemBuilder: (_) {
+                            if (_portas.isEmpty) {
+                              return [
+                                PopupMenuItem(
+                                  enabled: false,
+                                  child: Text(
+                                    _usbOtg
+                                        ? 'Nenhum conversor USB encontrado'
+                                        : 'Nenhuma porta encontrada',
+                                  ),
+                                ),
+                              ];
+                            }
+                            return _portas
+                                .map(
+                                  (p) => PopupMenuItem(
+                                    value: p.id,
+                                    child: Text(p.label),
+                                  ),
+                                )
+                                .toList();
+                          },
+                        ),
+                      ],
                     ),
                   ),
                 ),
+                if (_usbOtg && _portas.isEmpty) ...[
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Conecte o conversor USB-Serial da balança via cabo OTG e toque em atualizar. Aceite a permissão USB quando o Android pedir.',
+                    style: TextStyle(
+                      color: MgColors.mutedForeground,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 12),
                 TextField(
                   controller: _baudCtrl,
@@ -223,9 +312,14 @@ class _ConfigPageState extends State<ConfigPage> {
           const SizedBox(height: 24),
           FilledButton(onPressed: _salvar, child: const Text('Salvar')),
           const SizedBox(height: 12),
-          const Text(
-            'Prix: C14=Prt3, C15=2400, 8N1.',
-            style: TextStyle(color: MgColors.mutedForeground, fontSize: 12),
+          Text(
+            _usbOtg
+                ? 'Prix: C14=Prt3, C15=2400, 8N1. Android: cabo OTG + conversor USB-Serial.'
+                : 'Prix: C14=Prt3, C15=2400, 8N1.',
+            style: const TextStyle(
+              color: MgColors.mutedForeground,
+              fontSize: 12,
+            ),
           ),
         ],
       ),
