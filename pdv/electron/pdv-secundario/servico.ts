@@ -9,6 +9,7 @@ import {
 	upsertGruposGourmet,
 	upsertMeiosPagamento,
 	upsertProdutos,
+	upsertUsuariosCache,
 } from "../db/repos";
 import { sincronizarImagensProdutos } from "../sync/imagens-produtos";
 import { sincronizarImagensGruposGourmet } from "../sync/imagens-grupos-gourmet";
@@ -153,6 +154,7 @@ export async function puxarDoPrincipal(): Promise<{
 	clientes: number;
 	bandeiras: number;
 	meiosPagamento: number;
+	usuarios: number;
 }> {
 	const host = await getConfig("pdv_principal_host", "");
 	const porta = await getConfig("pdv_principal_porta", "5050");
@@ -212,6 +214,40 @@ export async function puxarDoPrincipal(): Promise<{
 	if (catalogo.meiosPagamento?.length) {
 		await upsertMeiosPagamento(catalogo.meiosPagamento);
 	}
+	if (catalogo.usuarios?.length) {
+		await upsertUsuariosCache(
+			catalogo.usuarios.map((u) => ({
+				id: u.id,
+				email: u.email,
+				nome: u.nome,
+				passwordHash: u.password_hash,
+				limparHash: !u.password_hash,
+				perfil: u.perfil,
+				ativo: u.ativo !== 0,
+				empresas: (() => {
+					try {
+						const parsed = JSON.parse(u.empresas_json ?? "[]") as unknown;
+						if (!Array.isArray(parsed)) return [];
+						return parsed
+							.filter(
+								(e): e is { id: string; nome: string } =>
+									Boolean(
+										e &&
+											typeof e === "object" &&
+											typeof (e as { id?: unknown }).id === "string",
+									),
+							)
+							.map((e) => ({
+								id: e.id,
+								nome: typeof e.nome === "string" ? e.nome : e.id,
+							}));
+					} catch {
+						return [];
+					}
+				})(),
+			})),
+		);
+	}
 
 	const local = await getAllConfig();
 	const mesclada = mesclarConfigNegocio(local, remota);
@@ -240,6 +276,7 @@ export async function puxarDoPrincipal(): Promise<{
 		clientes: catalogo.clientes?.length ?? 0,
 		bandeiras: catalogo.bandeiras?.length ?? 0,
 		meiosPagamento: catalogo.meiosPagamento?.length ?? 0,
+		usuarios: catalogo.usuarios?.length ?? 0,
 	};
 }
 

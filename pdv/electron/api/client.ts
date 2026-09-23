@@ -270,7 +270,27 @@ export async function loginEmail(email: string, password: string) {
 		token,
 		userid: data.user?.id ?? null,
 		username: data.user?.name ?? data.user?.nome ?? data.user?.email ?? email,
+		email: data.user?.email ?? email,
 	};
+}
+
+export type CredencialPdvRemota = {
+	id: string;
+	email: string;
+	nome: string;
+	perfil: string[];
+	ativo: boolean;
+	passwordHash: string | null;
+	atualizadoem?: string;
+};
+
+/** Usuários + hashes scrypt da empresa para login offline no PDV. */
+export async function listarCredenciaisPdv(idempresa: string) {
+	const data = await request<{
+		data?: CredencialPdvRemota[];
+		idempresa?: string;
+	}>(`/usuarios/credenciais-pdv?idempresa=${encodeURIComponent(idempresa)}`);
+	return data.data ?? [];
 }
 
 export async function obterPerfilUsuario(): Promise<{ perfil: unknown }> {

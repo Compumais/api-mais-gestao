@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { pdvInvoke } from "@/lib/pdv-api";
+import { onWhatsappEvent, pdvInvoke } from "@/lib/pdv-api";
 import { Button } from "@/ui/components/ui/button";
 import {
 	Card,
@@ -74,7 +74,7 @@ export function ConfigDeliveryTab({
 		try {
 			const st = await pdvInvoke<StatusWhatsapp>("whatsapp.status");
 			setWaStatus(st);
-			if (st.status === "aguardando_qr") {
+			if (st.ultimoQr || st.status === "aguardando_qr") {
 				const qr = await pdvInvoke<{ svg: string | null }>("whatsapp.obterQr");
 				setWaSvg(qr.svg);
 			} else {
@@ -90,8 +90,17 @@ export function ConfigDeliveryTab({
 		void carregarWhatsapp();
 		const timer = setInterval(() => {
 			void carregarWhatsapp();
-		}, 3000);
-		return () => clearInterval(timer);
+		}, 2000);
+		const off = onWhatsappEvent((payload) => {
+			const p = payload as { tipo?: string };
+			if (p.tipo === "qr" || p.tipo === "status") {
+				void carregarWhatsapp();
+			}
+		});
+		return () => {
+			clearInterval(timer);
+			off();
+		};
 	}, []);
 
 	return (
@@ -170,7 +179,9 @@ export function ConfigDeliveryTab({
 							size="sm"
 							disabled={waLoading || waStatus?.indisponivel}
 							onClick={() => {
+								set("whatsapp_habilitado", "1");
 								setWaLoading(true);
+								setWaSvg(null);
 								void pdvInvoke("whatsapp.reconectar")
 									.then(() => carregarWhatsapp())
 									.finally(() => setWaLoading(false));
@@ -204,6 +215,10 @@ export function ConfigDeliveryTab({
 								dangerouslySetInnerHTML={{ __html: waSvg }}
 							/>
 						</div>
+					) : waLoading || waStatus?.status === "aguardando_qr" ? (
+						<p className="sm:col-span-2 text-sm text-muted-foreground">
+							Aguardando QR do WhatsApp…
+						</p>
 					) : null}
 
 					<div className="space-y-2 sm:col-span-2">

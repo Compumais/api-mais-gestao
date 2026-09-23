@@ -573,6 +573,25 @@ async function aplicarMigracoesLeves(database: Pool): Promise<void> {
 	);
 
 	await database.query(`
+		CREATE TABLE IF NOT EXISTS usuario_cache (
+			id TEXT PRIMARY KEY NOT NULL,
+			email TEXT NOT NULL,
+			nome TEXT NOT NULL,
+			password_hash TEXT,
+			perfil TEXT NOT NULL DEFAULT '[]',
+			ativo INTEGER NOT NULL DEFAULT 1,
+			empresas_json TEXT NOT NULL DEFAULT '[]',
+			atualizadoem TEXT NOT NULL
+		)
+	`);
+	await database.query(
+		`CREATE UNIQUE INDEX IF NOT EXISTS idx_usuario_cache_email ON usuario_cache (LOWER(email))`,
+	);
+	await database.query(
+		`CREATE INDEX IF NOT EXISTS idx_usuario_cache_nome ON usuario_cache (LOWER(nome))`,
+	);
+
+	await database.query(`
 		CREATE TABLE IF NOT EXISTS whatsapp_sessao (
 			id INTEGER PRIMARY KEY CHECK (id = 1),
 			status TEXT NOT NULL DEFAULT 'desconectado',

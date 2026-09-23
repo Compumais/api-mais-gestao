@@ -30,6 +30,30 @@ import { verificarEAtualizarPdv } from "./update/verificar-update";
 
 registrarEsquemaImagemLocal();
 
+function erroFechamentoWsBaileys(err: unknown): boolean {
+	const msg = err instanceof Error ? err.message : String(err ?? "");
+	return msg.includes("WebSocket was closed before the connection was established");
+}
+
+process.on("uncaughtException", (err) => {
+	if (erroFechamentoWsBaileys(err)) {
+		console.warn("[whatsapp]", err.message);
+		return;
+	}
+	console.error("[uncaughtException]", err);
+});
+
+process.on("unhandledRejection", (reason) => {
+	if (erroFechamentoWsBaileys(reason)) {
+		console.warn(
+			"[whatsapp]",
+			reason instanceof Error ? reason.message : String(reason),
+		);
+		return;
+	}
+	console.error("[unhandledRejection]", reason);
+});
+
 // Linux/dev: chrome-sandbox costuma exigir root+setuid; evita abort do Electron.
 if (
 	process.env.ELECTRON_DISABLE_SANDBOX === "1" ||
