@@ -541,7 +541,7 @@ final class NfeEmissaoService
 			throw new \RuntimeException('Erros ao montar XML: ' . implode('; ', $erros));
 		}
 
-		$xml = MontarIbsCbsItemNfe::injetarNoXml($xml, $emitente, $itens);
+		$xml = MontarIbsCbsItemNfe::injetarNoXml($xml, $emitente, $itens, $configJson);
 
 		$tools = SpedNfeFactory::criarTools($configJson, $pfxBase64, $senha);
 		$tools->model($mod);

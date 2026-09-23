@@ -9,6 +9,8 @@ namespace MaisGestao\NfeGateway\Fiscal;
  *
  * O sped-nfe local ainda não expõe tagIBSCBS; a injeção ocorre após Make::getXML().
  * Simples Nacional (CRT 1/2/4): não injeta (piloto não se aplica).
+ * Schema PL_009_V4 (e anteriores): não injeta — o XSD rejeita IBSCBS/IBSCBSTot.
+ * Somente PL_010b+ (NT 2025.002) aceita esses grupos na ordem correta.
  */
 final class MontarIbsCbsItemNfe
 {
@@ -18,11 +20,20 @@ final class MontarIbsCbsItemNfe
 	/**
 	 * @param array<string, mixed> $emitente
 	 * @param list<array<string, mixed>> $itens
+	 * @param array<string, mixed> $configJson config sped-nfe (schemes/schema)
 	 */
-	public static function injetarNoXml(string $xml, array $emitente, array $itens): string
-	{
+	public static function injetarNoXml(
+		string $xml,
+		array $emitente,
+		array $itens,
+		array $configJson = [],
+	): string {
 		$crt = (int) ($emitente['crt'] ?? 3);
 		if (in_array($crt, [1, 2, 4], true)) {
+			return $xml;
+		}
+
+		if (!self::schemaSuportaIbsCbs($configJson)) {
 			return $xml;
 		}
 
@@ -128,7 +139,8 @@ final class MontarIbsCbsItemNfe
 				$totais['vCBS'] += $vCbs;
 			}
 
-			$imposto->appendChild($ibsCbs);
+			// PL_010b: COFINS → COFINSST? → ICMSUFDest? → IS? → IBSCBS
+			self::inserirAposUltimoGrupoImposto($imposto, $ibsCbs);
 			$algumInjetado = true;
 		}
 
@@ -142,6 +154,48 @@ final class MontarIbsCbsItemNfe
 		}
 
 		return $resultado;
+	}
+
+	/**
+	 * PL_010b+ (NT 2025.002). PL_009_V4 rejeita IBSCBS no XSD.
+	 *
+	 * @param array<string, mixed> $configJson
+	 */
+	public static function schemaSuportaIbsCbs(array $configJson): bool
+	{
+		$schema = (string) ($configJson['schemes'] ?? $configJson['schema'] ?? '');
+		return (bool) preg_match('/PL_010/i', $schema);
+	}
+
+	/**
+	 * Insere IBSCBS após COFINS/COFINSST/ICMSUFDest/IS (ordem PL_010b).
+	 */
+	private static function inserirAposUltimoGrupoImposto(
+		\DOMElement $imposto,
+		\DOMElement $ibsCbs,
+	): void {
+		$ordemAposCofins = ['COFINSST', 'ICMSUFDest', 'IS'];
+		$ancoragem = null;
+		foreach ($imposto->childNodes as $filho) {
+			if (!$filho instanceof \DOMElement) {
+				continue;
+			}
+			$local = $filho->localName ?: $filho->nodeName;
+			if ($local === 'COFINS' || in_array($local, $ordemAposCofins, true)) {
+				$ancoragem = $filho;
+			}
+		}
+
+		if ($ancoragem !== null && $ancoragem->nextSibling !== null) {
+			$imposto->insertBefore($ibsCbs, $ancoragem->nextSibling);
+			return;
+		}
+		if ($ancoragem !== null) {
+			$imposto->appendChild($ibsCbs);
+			return;
+		}
+
+		$imposto->appendChild($ibsCbs);
 	}
 
 	/**
@@ -168,6 +222,26 @@ final class MontarIbsCbsItemNfe
 		$ibsTot->appendChild($dom->createElementNS($ns, 'vIBSMun', self::fmt2($totais['vIBSMun'])));
 		$ibsTot->appendChild($dom->createElementNS($ns, 'vIBS', self::fmt2($totais['vIBS'])));
 		$ibsTot->appendChild($dom->createElementNS($ns, 'vCBS', self::fmt2($totais['vCBS'])));
+
+		// PL_010b: ICMSTot → ISSQNtot? → retTrib? → ISTot? → IBSCBSTot → vNFTot?
+		$ancoragem = null;
+		foreach ($total->childNodes as $filho) {
+			if (!$filho instanceof \DOMElement) {
+				continue;
+			}
+			$local = $filho->localName ?: $filho->nodeName;
+			if (in_array($local, ['ICMSTot', 'ISSQNtot', 'retTrib', 'ISTot'], true)) {
+				$ancoragem = $filho;
+			}
+		}
+		if ($ancoragem !== null && $ancoragem->nextSibling !== null) {
+			$total->insertBefore($ibsTot, $ancoragem->nextSibling);
+			return;
+		}
+		if ($ancoragem !== null) {
+			$total->appendChild($ibsTot);
+			return;
+		}
 		$total->appendChild($ibsTot);
 	}
 
