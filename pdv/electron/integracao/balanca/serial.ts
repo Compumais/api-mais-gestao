@@ -32,7 +32,8 @@ export function normalizarNomePorta(porta: string): string {
 		.replace(/\/+$/g, "");
 }
 
-function traduzirErroPorta(porta: string, err: unknown): Error {
+/** .NET em pt-BR: UnauthorizedAccessException = "Acesso não autorizado à porta". */
+export function traduzirErroPorta(porta: string, err: unknown): Error {
 	const message = err instanceof Error ? err.message : String(err);
 	const lower = message.toLowerCase();
 	if (
@@ -42,10 +43,13 @@ function traduzirErroPorta(porta: string, err: unknown): Error {
 		lower.includes("eacces") ||
 		lower.includes("in use") ||
 		lower.includes("sharing violation") ||
-		lower.includes("unauthorized")
+		lower.includes("unauthorized") ||
+		lower.includes("não autoriz") ||
+		lower.includes("nao autoriz") ||
+		lower.includes("acesso negado")
 	) {
 		return new Error(
-			`Sem permissão para abrir ${porta}. Feche o programa que estiver usando a porta (teste da balança, HyperTerminal, outro PDV) e tente de novo.`,
+			`Sem permissão para abrir ${porta}. Feche o programa que estiver usando a porta (estação de pesagem, teste da balança ou outro PDV) e tente de novo.`,
 		);
 	}
 	if (
@@ -116,8 +120,14 @@ try {
         }
         'PURGE' {
           if (-not $port) { throw 'Porta fechada' }
-          $port.DiscardInBuffer()
-          $port.DiscardOutBuffer()
+          # DiscardInBuffer/DiscardOutBuffer disparam UnauthorizedAccessException
+          # ("Acesso não autorizado à porta") em conversores USB-serial. Só drena.
+          $n = 0
+          try { $n = $port.BytesToRead } catch { $n = 0 }
+          if ($n -gt 0) {
+            $buf = New-Object byte[] $n
+            [void]$port.Read($buf, 0, $n)
+          }
           Out-Line 'OK PURGE'
         }
         'CLOSE' {
@@ -305,17 +315,29 @@ async function abrirPortaWindows(
 	return {
 		path: nome,
 		async ler() {
-			const line = await sessao.comando("READ", 2000);
-			const b64 = line.startsWith("OK READ")
-				? line.slice("OK READ".length).trim()
-				: "";
-			return b64 ? Buffer.from(b64, "base64") : Buffer.alloc(0);
+			try {
+				const line = await sessao.comando("READ", 2000);
+				const b64 = line.startsWith("OK READ")
+					? line.slice("OK READ".length).trim()
+					: "";
+				return b64 ? Buffer.from(b64, "base64") : Buffer.alloc(0);
+			} catch (err) {
+				throw traduzirErroPorta(nome, err);
+			}
 		},
 		async escrever(dados) {
-			await sessao.comando(`WRITE ${dados.toString("base64")}`, 2000);
+			try {
+				await sessao.comando(`WRITE ${dados.toString("base64")}`, 2000);
+			} catch (err) {
+				throw traduzirErroPorta(nome, err);
+			}
 		},
 		async limpar() {
-			await sessao.comando("PURGE", 2000);
+			try {
+				await sessao.comando("PURGE", 2000);
+			} catch (err) {
+				throw traduzirErroPorta(nome, err);
+			}
 		},
 		async fechar() {
 			try {

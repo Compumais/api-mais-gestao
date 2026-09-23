@@ -185,7 +185,27 @@ async function lerPacote(
 	return partes.length > 0 ? Buffer.concat(partes) : Buffer.alloc(0);
 }
 
+function portaRecuperavel(err: unknown): boolean {
+	const mensagem = err instanceof Error ? err.message : String(err);
+	return /sem permissão para abrir|não autoriz|nao autoriz|acesso negado|unauthorized|porta fechada/i.test(
+		mensagem,
+	);
+}
+
 async function lerPesoDaPorta(
+	config: BalancaConfig,
+	timeoutMs: number,
+): Promise<number> {
+	try {
+		return await lerPesoNaPortaAberta(config, timeoutMs);
+	} catch (err) {
+		if (!portaRecuperavel(err)) throw err;
+		await fecharPortaAtual();
+		return lerPesoNaPortaAberta(config, timeoutMs);
+	}
+}
+
+async function lerPesoNaPortaAberta(
 	config: BalancaConfig,
 	timeoutMs: number,
 ): Promise<number> {
