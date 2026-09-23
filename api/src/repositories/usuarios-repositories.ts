@@ -186,6 +186,78 @@ export type ListarUsuariosParametros = {
 	limit?: number;
 };
 
+export type CredencialPdvUsuario = {
+	id: string;
+	email: string;
+	nome: string;
+	perfil: string[];
+	ativo: boolean;
+	passwordHash: string | null;
+	atualizadoem: Date;
+};
+
+/**
+ * Lista usuários da empresa com hash de senha (credential) para sync offline do PDV.
+ * Não pagina: o PDV precisa do conjunto completo para validar login local.
+ */
+export async function listarCredenciaisPdvPorEmpresa(
+	idempresa: string,
+): Promise<CredencialPdvUsuario[]> {
+	const usuariosEmpresa = await db
+		.select({ idusuario: schema.usuarioEmpresa.idusuario })
+		.from(schema.usuarioEmpresa)
+		.where(eq(schema.usuarioEmpresa.idempresa, idempresa));
+
+	const [empresaData] = await db
+		.select({ idproprietario: schema.empresa.idproprietario })
+		.from(schema.empresa)
+		.where(eq(schema.empresa.id, idempresa));
+
+	const idsUsuarios = new Set<string>();
+	for (const ue of usuariosEmpresa) {
+		idsUsuarios.add(ue.idusuario);
+	}
+	if (empresaData?.idproprietario) {
+		idsUsuarios.add(empresaData.idproprietario);
+	}
+
+	if (idsUsuarios.size === 0) {
+		return [];
+	}
+
+	const idsArray = Array.from(idsUsuarios);
+	const rows = await db
+		.select({
+			id: schema.usuarios.id,
+			email: schema.usuarios.email,
+			nome: schema.usuarios.nome,
+			perfil: schema.usuarios.perfil,
+			ativo: schema.usuarios.ativo,
+			atualizadoem: schema.usuarios.atualizadoem,
+			passwordHash: schema.contas.password,
+		})
+		.from(schema.usuarios)
+		.leftJoin(
+			schema.contas,
+			and(
+				eq(schema.contas.idusuario, schema.usuarios.id),
+				eq(schema.contas.idprovedor, "credential"),
+			),
+		)
+		.where(inArray(schema.usuarios.id, idsArray))
+		.orderBy(desc(schema.usuarios.criadoem));
+
+	return rows.map((row) => ({
+		id: row.id,
+		email: row.email,
+		nome: row.nome,
+		perfil: Array.isArray(row.perfil) ? row.perfil : [],
+		ativo: row.ativo,
+		passwordHash: row.passwordHash ?? null,
+		atualizadoem: row.atualizadoem,
+	}));
+}
+
 export async function listarUsuariosPorEmpresa({
 	idempresa,
 	nome,

@@ -20,6 +20,7 @@ import {
 	listarAtalhosRemotos,
 	listarBandeirasCartao,
 	listarClientes,
+	listarCredenciaisPdv,
 	listarGrupos,
 	listarGruposGourmet,
 	listarProdutos,
@@ -68,12 +69,14 @@ import {
 	reivindicarOutboxPendentes,
 	salvarAtalhos,
 	salvarSessao,
+	desativarUsuariosAusentesDaEmpresa,
 	upsertBandeirasCartao,
 	upsertClientes,
 	upsertGrupos,
 	upsertGruposGourmet,
 	upsertMeiosPagamento,
 	upsertProdutos,
+	upsertUsuariosCache,
 } from "../db/repos";
 import { calcularConferenciaCaixa } from "../db/resumo-turno-caixa";
 import { persistirMeiosPagamentoNfceConfig } from "../fiscal/avaliar-emissao-nfce-venda";
@@ -179,6 +182,7 @@ export async function pullCatalogo(): Promise<{
 	clientes: number;
 	bandeiras: number;
 	meiosPagamento: number;
+	usuarios: number;
 	acessoNegado?: boolean;
 }> {
 	const sessao = await obterSessao();
@@ -191,6 +195,7 @@ export async function pullCatalogo(): Promise<{
 			clientes: 0,
 			bandeiras: 0,
 			meiosPagamento: 0,
+			usuarios: 0,
 		};
 	}
 
@@ -211,6 +216,7 @@ export async function pullCatalogo(): Promise<{
 				clientes: 0,
 				bandeiras: 0,
 				meiosPagamento: 0,
+				usuarios: 0,
 				acessoNegado: true,
 			};
 		}
@@ -226,6 +232,7 @@ async function puxarCatalogoDaEmpresa(idempresa: string): Promise<{
 	clientes: number;
 	bandeiras: number;
 	meiosPagamento: number;
+	usuarios: number;
 }> {
 	let totalGrupos = 0;
 	{
@@ -432,6 +439,35 @@ async function puxarCatalogoDaEmpresa(idempresa: string): Promise<{
 		// cadastro de terminais opcional no pull
 	}
 
+	let totalUsuarios = 0;
+	try {
+		const sessao = await obterSessao();
+		const empresaSync = {
+			id: idempresa,
+			nome: sessao.nomeempresa?.trim() || idempresa,
+		};
+		const credenciais = await listarCredenciaisPdv(idempresa);
+		await upsertUsuariosCache(
+			credenciais.map((u) => ({
+				id: u.id,
+				email: u.email,
+				nome: u.nome,
+				passwordHash: u.passwordHash,
+				limparHash: !u.passwordHash,
+				perfil: u.perfil,
+				ativo: u.ativo,
+				empresa: empresaSync,
+			})),
+		);
+		await desativarUsuariosAusentesDaEmpresa(
+			idempresa,
+			credenciais.map((u) => u.id),
+		);
+		totalUsuarios = credenciais.length;
+	} catch {
+		// sync de usuários/credenciais opcional no pull
+	}
+
 	await execute(
 		`INSERT INTO sync_meta (chave, valor, atualizadoem) VALUES ('ultimo_pull', $1, $2)
 		 ON CONFLICT (chave) DO UPDATE SET valor = excluded.valor, atualizadoem = excluded.atualizadoem`,
@@ -446,6 +482,7 @@ async function puxarCatalogoDaEmpresa(idempresa: string): Promise<{
 		clientes: totalClientes,
 		bandeiras: totalBandeiras,
 		meiosPagamento: totalMeios,
+		usuarios: totalUsuarios,
 	};
 }
 

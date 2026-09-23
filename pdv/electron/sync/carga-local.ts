@@ -13,6 +13,7 @@ export type ResultadoCargaLocal = {
 	clientes: number;
 	bandeiras: number;
 	meiosPagamento: number;
+	usuarios: number;
 	acessoNegado?: boolean;
 	/** True quando reaproveitou uma carga já em andamento. */
 	reutilizado?: boolean;
@@ -64,6 +65,7 @@ async function realizarCargaLocal(): Promise<ResultadoCargaLocal> {
 		clientes: pull.clientes ?? 0,
 		bandeiras: pull.bandeiras ?? 0,
 		meiosPagamento: pull.meiosPagamento ?? 0,
+		usuarios: "usuarios" in pull ? (pull.usuarios ?? 0) : 0,
 		acessoNegado:
 			"acessoNegado" in pull ? Boolean(pull.acessoNegado) : undefined,
 	};

@@ -3,6 +3,7 @@ import { requirePerfil } from "../../middleware/require-perfil.js";
 import { verifyJwt } from "../../middleware/verify-jwt.js";
 import { atualizarUsuario } from "./atualizar-usuario.js";
 import { buscarUsuario } from "./buscar-usuario.js";
+import { listarCredenciaisPdv } from "./credenciais-pdv.js";
 import { criarUsuario } from "./criar-usuario.js";
 import { excluirUsuario } from "./excluir-usuario.js";
 import { listarUsuarios } from "./listar-usuarios.js";
@@ -15,6 +16,11 @@ export async function usuariosRotas(app: FastifyInstance) {
 			requirePerfil("proprietario", "admin", "financeiro", "usuario"),
 		],
 		handler: listarUsuarios,
+	});
+
+	/** Sync de credenciais para PDV offline — antes de /usuarios/:id. */
+	app.get("/usuarios/credenciais-pdv", {
+		handler: listarCredenciaisPdv,
 	});
 
 	app.get("/usuarios/:id", {

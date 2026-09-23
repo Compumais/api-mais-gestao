@@ -64,6 +64,15 @@ export type CatalogoPrincipal = {
 		formapagamentonfe?: string | null;
 		aprazo?: number | null;
 	}>;
+	usuarios?: Array<{
+		id: string;
+		email: string;
+		nome: string;
+		perfil?: string;
+		ativo?: number;
+		password_hash?: string | null;
+		empresas_json?: string;
+	}>;
 	atualizadoem?: string;
 };
 

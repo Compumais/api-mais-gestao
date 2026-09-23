@@ -474,13 +474,21 @@ async function despachar(
 	}
 
 	if (method === "POST" && path === "/pos/login") {
-		const email = String(body.email ?? "");
-		const password = String(body.password ?? "");
+		const email = String(
+			body.email ?? body.usuario ?? body.username ?? body.login ?? "",
+		).trim();
+		const password = String(body.password ?? body.senha ?? "");
 		const identificador = String(body.identificador ?? "").trim();
 		if (!identificador) {
 			return {
 				status: 400,
 				body: { error: "Identificador do POS ausente. Atualize o aplicativo." },
+			};
+		}
+		if (!email || !password) {
+			return {
+				status: 400,
+				body: { error: "Informe usuário e senha." },
 			};
 		}
 		const result = await localApi.login(email, password);
@@ -493,6 +501,11 @@ async function despachar(
 				userid: sessao.userid,
 				username: result.username,
 				empresas: result.empresas,
+				offline: Boolean(
+					result && typeof result === "object" && "offline" in result
+						? result.offline
+						: false,
+				),
 			},
 		};
 	}

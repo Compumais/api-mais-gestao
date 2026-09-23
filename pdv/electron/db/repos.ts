@@ -332,6 +332,246 @@ export async function limparSessao(): Promise<void> {
 	});
 }
 
+export type EmpresaUsuarioLocal = { id: string; nome: string };
+
+export type UsuarioCacheLocal = {
+	id: string;
+	email: string;
+	nome: string;
+	password_hash: string | null;
+	perfil: string;
+	ativo: number;
+	empresas_json: string;
+	atualizadoem: string;
+};
+
+export type UsuarioCacheUpsertInput = {
+	id: string;
+	email: string;
+	nome: string;
+	passwordHash?: string | null;
+	/** Se true e passwordHash for null/vazio, limpa o hash local. */
+	limparHash?: boolean;
+	perfil?: string[] | string | null;
+	ativo?: boolean | number;
+	empresa?: EmpresaUsuarioLocal | null;
+	empresas?: EmpresaUsuarioLocal[] | null;
+};
+
+function parseEmpresasJson(valor: string | null | undefined): EmpresaUsuarioLocal[] {
+	if (!valor?.trim()) return [];
+	try {
+		const parsed = JSON.parse(valor) as unknown;
+		if (!Array.isArray(parsed)) return [];
+		return parsed
+			.filter(
+				(item): item is EmpresaUsuarioLocal =>
+					Boolean(
+						item &&
+							typeof item === "object" &&
+							typeof (item as EmpresaUsuarioLocal).id === "string" &&
+							(item as EmpresaUsuarioLocal).id.trim(),
+					),
+			)
+			.map((item) => ({
+				id: item.id.trim(),
+				nome:
+					typeof item.nome === "string" && item.nome.trim()
+						? item.nome.trim()
+						: item.id.trim(),
+			}));
+	} catch {
+		return [];
+	}
+}
+
+function mesclarEmpresas(
+	atual: EmpresaUsuarioLocal[],
+	extras: EmpresaUsuarioLocal[],
+): EmpresaUsuarioLocal[] {
+	const mapa = new Map<string, EmpresaUsuarioLocal>();
+	for (const e of [...atual, ...extras]) {
+		if (!e.id.trim()) continue;
+		mapa.set(e.id, {
+			id: e.id,
+			nome: e.nome.trim() || e.id,
+		});
+	}
+	return [...mapa.values()].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+}
+
+function serializarPerfil(perfil: string[] | string | null | undefined): string {
+	if (Array.isArray(perfil)) return JSON.stringify(perfil);
+	if (typeof perfil === "string" && perfil.trim()) {
+		try {
+			const parsed = JSON.parse(perfil) as unknown;
+			if (Array.isArray(parsed)) return JSON.stringify(parsed);
+		} catch {
+			// string simples
+		}
+		return JSON.stringify(
+			perfil
+				.split(/[,\s]+/)
+				.map((p) => p.trim())
+				.filter(Boolean),
+		);
+	}
+	return "[]";
+}
+
+export async function upsertUsuariosCache(
+	usuarios: UsuarioCacheUpsertInput[],
+): Promise<void> {
+	if (!usuarios.length) return;
+	const agora = new Date().toISOString();
+	await withTransaction(async (client) => {
+		for (const u of usuarios) {
+			const email = u.email.trim().toLowerCase();
+			if (!u.id || !email) continue;
+			const existente = await queryOne<UsuarioCacheLocal>(
+				"SELECT * FROM usuario_cache WHERE id = $1",
+				[u.id],
+				client,
+			);
+			const empresasAtuais = parseEmpresasJson(existente?.empresas_json);
+			const extras: EmpresaUsuarioLocal[] = [];
+			if (u.empresa?.id) extras.push(u.empresa);
+			if (u.empresas?.length) extras.push(...u.empresas);
+			const empresas = mesclarEmpresas(empresasAtuais, extras);
+			const perfil = serializarPerfil(u.perfil ?? existente?.perfil ?? "[]");
+			const ativo =
+				u.ativo === undefined
+					? (existente?.ativo ?? 1)
+					: u.ativo === false || u.ativo === 0
+						? 0
+						: 1;
+			let passwordHash = existente?.password_hash ?? null;
+			if (u.limparHash) {
+				passwordHash = null;
+			} else if (typeof u.passwordHash === "string" && u.passwordHash.trim()) {
+				passwordHash = u.passwordHash.trim();
+			}
+
+			await execute(
+				`INSERT INTO usuario_cache (
+					id, email, nome, password_hash, perfil, ativo, empresas_json, atualizadoem
+				) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+				ON CONFLICT (id) DO UPDATE SET
+					email = excluded.email,
+					nome = excluded.nome,
+					password_hash = excluded.password_hash,
+					perfil = excluded.perfil,
+					ativo = excluded.ativo,
+					empresas_json = excluded.empresas_json,
+					atualizadoem = excluded.atualizadoem`,
+				[
+					u.id,
+					email,
+					u.nome.trim() || email,
+					passwordHash,
+					perfil,
+					ativo,
+					JSON.stringify(empresas),
+					agora,
+				],
+				client,
+			);
+		}
+	});
+}
+
+/**
+ * Remove a empresa dos usuários que não vieram no sync e desativa quem ficar sem empresas.
+ */
+export async function desativarUsuariosAusentesDaEmpresa(
+	idempresa: string,
+	idsPresentes: string[],
+): Promise<void> {
+	const presentes = new Set(idsPresentes.filter(Boolean));
+	const rows = await query<UsuarioCacheLocal>("SELECT * FROM usuario_cache");
+	const agora = new Date().toISOString();
+	await withTransaction(async (client) => {
+		for (const row of rows) {
+			if (presentes.has(row.id)) continue;
+			const empresas = parseEmpresasJson(row.empresas_json);
+			if (!empresas.some((e) => e.id === idempresa)) continue;
+			const restantes = empresas.filter((e) => e.id !== idempresa);
+			await execute(
+				`UPDATE usuario_cache
+				 SET empresas_json = $1, ativo = $2, atualizadoem = $3
+				 WHERE id = $4`,
+				[
+					JSON.stringify(restantes),
+					restantes.length > 0 ? row.ativo : 0,
+					agora,
+					row.id,
+				],
+				client,
+			);
+		}
+	});
+}
+
+export async function buscarUsuarioCachePorLogin(
+	login: string,
+): Promise<UsuarioCacheLocal | null> {
+	const termo = login.trim();
+	if (!termo) return null;
+	const porEmail = await queryOne<UsuarioCacheLocal>(
+		`SELECT * FROM usuario_cache
+		 WHERE LOWER(email) = LOWER($1) AND ativo = 1
+		 LIMIT 1`,
+		[termo],
+	);
+	if (porEmail) return porEmail;
+	return (
+		(await queryOne<UsuarioCacheLocal>(
+			`SELECT * FROM usuario_cache
+			 WHERE LOWER(nome) = LOWER($1) AND ativo = 1
+			 LIMIT 1`,
+			[termo],
+		)) ?? null
+	);
+}
+
+export async function buscarUsuarioCachePorId(
+	id: string,
+): Promise<UsuarioCacheLocal | null> {
+	const termo = id.trim();
+	if (!termo) return null;
+	return (
+		(await queryOne<UsuarioCacheLocal>(
+			`SELECT * FROM usuario_cache WHERE id = $1 AND ativo = 1 LIMIT 1`,
+			[termo],
+		)) ?? null
+	);
+}
+
+export function empresasDoUsuarioCache(
+	usuario: UsuarioCacheLocal,
+): EmpresaUsuarioLocal[] {
+	return parseEmpresasJson(usuario.empresas_json);
+}
+
+export async function listarUsuariosCacheLocal(): Promise<
+	Array<{
+		id: string;
+		email: string;
+		nome: string;
+		perfil: string;
+		ativo: number;
+		password_hash: string | null;
+		empresas_json: string;
+	}>
+> {
+	return query(
+		`SELECT id, email, nome, perfil, ativo, password_hash, empresas_json
+		 FROM usuario_cache
+		 WHERE ativo = 1
+		 ORDER BY nome`,
+	);
+}
+
 const PRODUTO_SELECT =
 	"id, descricao, preco, unidademedida, idunidademedida, ean, codigo, idgrupo, idgrupogourmet, espizza, imagem, caminhoimagem, imagemremota, ncm, cest, cfop, cst, csosn, origem, aliquotaicms, pis_cst, aliquotapis, cofins_cst, aliquotacofins";
 
@@ -973,6 +1213,15 @@ export async function listarCatalogoCarga(): Promise<{
 	clientes: ClienteLocal[];
 	bandeiras: BandeiraCartaoLocal[];
 	meiosPagamento: MeioPagamentoLocal[];
+	usuarios: Array<{
+		id: string;
+		email: string;
+		nome: string;
+		perfil: string;
+		ativo: number;
+		password_hash: string | null;
+		empresas_json: string;
+	}>;
 	atualizadoem: string;
 }> {
 	const grupos = await query<GrupoLocal>(
@@ -988,6 +1237,7 @@ export async function listarCatalogoCarga(): Promise<{
 	const clientes = await buscarClientesLocal("", 5000);
 	const bandeiras = await listarBandeirasCartaoLocal();
 	const meiosPagamento = await listarMeiosPagamentoLocal();
+	const usuarios = await listarUsuariosCacheLocal();
 	return {
 		grupos,
 		gruposGourmet,
@@ -996,6 +1246,7 @@ export async function listarCatalogoCarga(): Promise<{
 		clientes,
 		bandeiras,
 		meiosPagamento,
+		usuarios,
 		atualizadoem: new Date().toISOString(),
 	};
 }
@@ -1117,14 +1368,14 @@ export async function reivindicarOutboxPendentes(
 				FOR UPDATE SKIP LOCKED
 				LIMIT $2
 			 )
-			 UPDATE outbox AS o
+			 UPDATE outbox
 			 SET status = 'processando', worker_id = $3, bloqueado_ate = $4
 			 FROM candidatos
-			 WHERE o.id = candidatos.id
-			 RETURNING o.id, o.tipo, o.payload, o.status, o.tentativas,
-				o.ultimo_erro, o.idempotency_key, o.prioridade,
-				o.proxima_tentativa, o.classificacao_erro, o.bloqueado_ate,
-				o.worker_id, o.criadoem`,
+			 WHERE outbox.id = candidatos.id
+			 RETURNING outbox.id, outbox.tipo, outbox.payload, outbox.status, outbox.tentativas,
+				outbox.ultimo_erro, outbox.idempotency_key, outbox.prioridade,
+				outbox.proxima_tentativa, outbox.classificacao_erro, outbox.bloqueado_ate,
+				outbox.worker_id, outbox.criadoem`,
 			[agoraIso, limit, workerId, bloqueadoAte],
 			client,
 		);

@@ -16,6 +16,17 @@ CREATE TABLE IF NOT EXISTS sessao (
 	atualizadoem TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS usuario_cache (
+	id TEXT PRIMARY KEY NOT NULL,
+	email TEXT NOT NULL,
+	nome TEXT NOT NULL,
+	password_hash TEXT,
+	perfil TEXT NOT NULL DEFAULT '[]',
+	ativo INTEGER NOT NULL DEFAULT 1,
+	empresas_json TEXT NOT NULL DEFAULT '[]',
+	atualizadoem TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS grupo (
 	id TEXT PRIMARY KEY NOT NULL,
 	nome TEXT NOT NULL,
@@ -384,4 +395,6 @@ CREATE INDEX IF NOT EXISTS idx_cliente_pdv_nome ON cliente_pdv(nome);
 CREATE INDEX IF NOT EXISTS idx_whatsapp_conversa_telefone ON whatsapp_conversa(telefone_e164);
 CREATE INDEX IF NOT EXISTS idx_whatsapp_conversa_idconta ON whatsapp_conversa(idconta);
 CREATE INDEX IF NOT EXISTS idx_whatsapp_mensagem_conversa ON whatsapp_mensagem(idconversa, criadoem);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_usuario_cache_email ON usuario_cache (LOWER(email));
+CREATE INDEX IF NOT EXISTS idx_usuario_cache_nome ON usuario_cache (LOWER(nome));
 `;

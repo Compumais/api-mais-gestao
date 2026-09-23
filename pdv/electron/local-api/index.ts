@@ -68,6 +68,8 @@ import {
 	buscarProdutoPorCodigo,
 	buscarProdutoPorEan,
 	buscarProdutosLocal,
+	buscarUsuarioCachePorLogin,
+	buscarUsuarioCachePorId,
 	type ClienteVenda,
 	caixaAberto,
 	caixaAbertoOutroOperador,
@@ -82,6 +84,7 @@ import {
 	criarVendaRapida,
 	enfileirarOutbox,
 	enviarPedidoConta,
+	empresasDoUsuarioCache,
 	exigirSenhaGerencial,
 	fecharCaixa,
 	fecharContaMesa,
@@ -135,8 +138,11 @@ import {
 	senhaGerencialExigida,
 	transferirConta,
 	transferirItens,
+	upsertUsuariosCache,
 	validarSenhaGerencial,
 } from "../db/repos";
+import { verificarSenhaUsuario } from "../db/senha-usuario";
+import { v4 as uuidv4 } from "uuid";
 import { avaliarEmissaoNfceDaVenda } from "../fiscal/avaliar-emissao-nfce-venda";
 import { emitirOuContingencia } from "../fiscal/contingencia";
 import { exportarXmlsNfce as gravarXmlsNfcePeriodo } from "../fiscal/exportar-xml-nfce";
@@ -292,6 +298,34 @@ async function assertModuloGourmet(): Promise<void> {
 	if (!sessaoTemGourmet(sessao.modulogourmet)) {
 		throw new Error(ERRO_SEM_GOURMET);
 	}
+}
+
+async function loginOfflineLocal(login: string, password: string) {
+	const usuario = await buscarUsuarioCachePorLogin(login);
+	if (!usuario?.password_hash) {
+		return null;
+	}
+	const ok = await verificarSenhaUsuario(password, usuario.password_hash);
+	if (!ok) {
+		throw new Error("Usuário ou senha inválidos (modo offline).");
+	}
+	const empresas = empresasDoUsuarioCache(usuario);
+	const tokenOffline = `offline:${usuario.id}:${uuidv4()}`;
+	await lembrarEmpresaDaSessao();
+	await salvarSessao({
+		token: tokenOffline,
+		userid: usuario.id,
+		username: usuario.nome || usuario.email,
+		roles: usuario.perfil,
+		idempresa: null,
+		nomeempresa: null,
+		modulogourmet: null,
+	});
+	return {
+		username: usuario.nome || usuario.email,
+		empresas,
+		offline: true as const,
+	};
 }
 
 async function assertPodeSalvarConfig(
@@ -636,9 +670,10 @@ export const localApi = {
 
 	async login(email: string, password: string) {
 		const url = await apiBaseUrl();
+		const login = email.trim();
 		try {
 			await lembrarEmpresaDaSessao();
-			const result = await loginEmail(email, password);
+			const result = await loginEmail(login, password);
 			await salvarSessao({
 				token: result.token,
 				userid: result.userid,
@@ -650,11 +685,26 @@ export const localApi = {
 			});
 			await sincronizarRolesSessao(await obterSessao());
 			const empresas = await listarEmpresas(result.userid);
-			return { username: result.username, empresas };
+			if (result.userid) {
+				await upsertUsuariosCache([
+					{
+						id: result.userid,
+						email: result.email ?? login,
+						nome: result.username ?? login,
+						empresas,
+						ativo: true,
+					},
+				]).catch(() => undefined);
+			}
+			return { username: result.username, empresas, offline: false as const };
 		} catch (err) {
-			if (err instanceof ApiError && (err.status === 0 || err.status === 408)) {
+			const offlineRede =
+				err instanceof ApiError && (err.status === 0 || err.status === 408);
+			if (offlineRede) {
+				const local = await loginOfflineLocal(login, password);
+				if (local) return local;
 				throw new Error(
-					`Não foi possível conectar em ${url}. Verifique a URL e se a API está no ar.`,
+					`Não foi possível conectar em ${url}. Verifique a URL e se a API está no ar. Faça login online ao menos uma vez (com empresa selecionada) para habilitar o modo offline.`,
 				);
 			}
 			if (err instanceof ApiError) {
@@ -665,6 +715,16 @@ export const localApi = {
 	},
 
 	async selecionarEmpresa(idempresa: string, nomeempresa: string) {
+		const sessaoAtual = await obterSessao();
+		if (sessaoAtual.userid && sessaoAtual.token?.startsWith("offline:")) {
+			const local = await buscarUsuarioCachePorId(sessaoAtual.userid);
+			const empresas = local ? empresasDoUsuarioCache(local) : [];
+			if (!empresas.some((e) => e.id === idempresa)) {
+				throw new Error(
+					"Este usuário não tem acesso à empresa selecionada (modo offline).",
+				);
+			}
+		}
 		const backup = await arquivarSeTrocaEmpresa(idempresa, nomeempresa);
 		await salvarSessao({ idempresa, nomeempresa, modulogourmet: null });
 		await sincronizarModuloGourmet(await obterSessao());
@@ -676,6 +736,7 @@ export const localApi = {
 			clientes: 0,
 			bandeiras: 0,
 			meiosPagamento: 0,
+			usuarios: 0,
 		};
 		const pull = (await ehSecundario())
 			? await puxarDoPrincipal().catch(() => vazio)
@@ -689,6 +750,18 @@ export const localApi = {
 			throw new Error(
 				"Este usuário não tem acesso à empresa selecionada. Escolha outra empresa.",
 			);
+		}
+		if (sessaoAtual.userid) {
+			await upsertUsuariosCache([
+				{
+					id: sessaoAtual.userid,
+					email: sessaoAtual.username?.includes("@")
+						? sessaoAtual.username
+						: (sessaoAtual.username ?? sessaoAtual.userid),
+					nome: sessaoAtual.username ?? sessaoAtual.userid,
+					empresa: { id: idempresa, nome: nomeempresa },
+				},
+			]).catch(() => undefined);
 		}
 		void processarOutbox();
 		return { ok: true, pull, backup };
@@ -705,7 +778,34 @@ export const localApi = {
 		if (!sessao.token || !sessao.userid) {
 			throw new Error("Faça login para listar as empresas");
 		}
-		return listarEmpresas(sessao.userid);
+		try {
+			const empresas = await listarEmpresas(sessao.userid);
+			if (sessao.userid && empresas.length) {
+				await upsertUsuariosCache([
+					{
+						id: sessao.userid,
+						email: sessao.username?.includes("@")
+							? sessao.username
+							: (sessao.username ?? sessao.userid),
+						nome: sessao.username ?? sessao.userid,
+						empresas,
+					},
+				]).catch(() => undefined);
+			}
+			return empresas;
+		} catch (err) {
+			if (err instanceof ApiError && (err.status === 0 || err.status === 408)) {
+				const local =
+					(await buscarUsuarioCachePorId(sessao.userid)) ??
+					(await buscarUsuarioCachePorLogin(
+						sessao.username ?? sessao.userid,
+					));
+				if (local) {
+					return empresasDoUsuarioCache(local);
+				}
+			}
+			throw err;
+		}
 	},
 
 	async consumirAvisoBackupEmpresa() {
@@ -884,14 +984,15 @@ export const localApi = {
 		) {
 			await reiniciarTecnibra();
 		}
-		if (
-			resto.whatsapp_habilitado !== undefined ||
-			resto.whatsapp_msg_producao !== undefined ||
-			resto.whatsapp_msg_saiu !== undefined ||
-			resto.whatsapp_msg_retirada_pronta !== undefined ||
-			resto.whatsapp_msg_entregue !== undefined
-		) {
-			await reconectarWhatsapp().catch(() => undefined);
+		// Só religa o Baileys quando a flag muda. Templates não precisam
+		// derrubar a sessão (isso matava o QR no meio do pair-device).
+		if (resto.whatsapp_habilitado !== undefined) {
+			const ligado = resto.whatsapp_habilitado === "1";
+			if (ligado) {
+				await iniciarWhatsapp().catch(() => undefined);
+			} else {
+				await desconectarWhatsapp().catch(() => undefined);
+			}
 		}
 		if (
 			resto.sitef_habilitado !== undefined ||
@@ -945,12 +1046,18 @@ export const localApi = {
 		}
 		const sessao = isDbReady() ? await obterWhatsappSessao() : null;
 		const runtime = statusWhatsapp();
+		// Runtime tem prioridade no QR (atualiza antes do DB e sobrevive a closes transitórios).
+		const ultimoQr = runtime.ultimoQr ?? sessao?.ultimo_qr ?? null;
+		const status =
+			runtime.status === "aguardando_qr" || runtime.status === "conectado"
+				? runtime.status
+				: (sessao?.status ?? runtime.status);
 		return {
 			...runtime,
-			status: sessao?.status ?? runtime.status,
-			ultimoQr: sessao?.ultimo_qr ?? runtime.ultimoQr,
-			ultimoErro: sessao?.ultimo_erro ?? runtime.ultimoErro,
-			atualizadoem: sessao?.atualizadoem ?? runtime.atualizadoem,
+			status: ultimoQr && status !== "conectado" ? "aguardando_qr" : status,
+			ultimoQr,
+			ultimoErro: runtime.ultimoErro ?? sessao?.ultimo_erro ?? null,
+			atualizadoem: runtime.atualizadoem ?? sessao?.atualizadoem ?? null,
 			indisponivel: false,
 		};
 	},
@@ -1114,7 +1221,19 @@ export const localApi = {
 		if (!sessao.token || !sessao.userid) {
 			throw new Error("Sessão inválida");
 		}
-		return listarEmpresas(sessao.userid);
+		try {
+			return await listarEmpresas(sessao.userid);
+		} catch (err) {
+			if (err instanceof ApiError && (err.status === 0 || err.status === 408)) {
+				const local =
+					(await buscarUsuarioCachePorId(sessao.userid)) ??
+					(await buscarUsuarioCachePorLogin(
+						sessao.username ?? sessao.userid,
+					));
+				if (local) return empresasDoUsuarioCache(local);
+			}
+			throw err;
+		}
 	},
 
 	async catalogoCarga() {
