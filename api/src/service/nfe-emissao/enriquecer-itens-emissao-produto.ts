@@ -1,6 +1,7 @@
 import { buscarCestPorId } from "@/repositories/cest-repositories.js";
 import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
 import type { ItemPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
+import { buscarClassificacaoIbsCbs } from "@/util/catalogo-ibs-cbs.js";
 import { montarIbsCbsItemPayload } from "@/util/ibs-cbs-emissao-nfe.js";
 import {
 	cstPisCofinsAusenteOuInvalido,
@@ -199,11 +200,24 @@ function aplicarIbsCbsDoProduto(
 		return item;
 	}
 
+	const classificacao = produto.classtributariaibs
+		? buscarClassificacaoIbsCbs(produto.classtributariaibs)
+		: null;
+
+	const aliquotaIbsInformada = paraNumeroOpcional(produto.aliquotaiibs);
+	const aliquotaCbsInformada = paraNumeroOpcional(produto.aliquotacbs);
+	const aliquotaIbs =
+		aliquotaIbsInformada ??
+		(classificacao ? paraNumeroOpcional(classificacao.aliquotaiibs) : undefined);
+	const aliquotaCbs =
+		aliquotaCbsInformada ??
+		(classificacao ? paraNumeroOpcional(classificacao.aliquotacbs) : undefined);
+
 	const ibsCbs = montarIbsCbsItemPayload({
 		cst: produto.cstibs,
 		cClassTrib: produto.classtributariaibs,
-		aliquotaIbs: paraNumeroOpcional(produto.aliquotaiibs),
-		aliquotaCbs: paraNumeroOpcional(produto.aliquotacbs),
+		aliquotaIbs,
+		aliquotaCbs,
 	});
 
 	if (!ibsCbs) {

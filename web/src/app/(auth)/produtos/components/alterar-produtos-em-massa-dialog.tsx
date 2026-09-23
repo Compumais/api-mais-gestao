@@ -987,6 +987,8 @@ export function AlterarProdutosEmMassaDialog({
 											onChange={(valor) => {
 												field.onChange(valor || null);
 												setValue("classtributariaibs.valor", null);
+												setValue("aliquotaiibs.valor", "");
+												setValue("aliquotacbs.valor", "");
 											}}
 											allowEmpty
 											emptyLabel="Nenhum"
@@ -1012,7 +1014,28 @@ export function AlterarProdutosEmMassaDialog({
 										<Combobox
 											options={opcoesClassificacaoIbs}
 											value={field.value ?? ""}
-											onChange={(valor) => field.onChange(valor || null)}
+											onChange={(valor) => {
+												const codigo = valor || null;
+												field.onChange(codigo);
+												const classificacao = classificacoesIbs.find(
+													(item) => item.codigo === codigo,
+												);
+												if (!classificacao) {
+													setValue("aliquotaiibs.valor", "");
+													setValue("aliquotacbs.valor", "");
+													return;
+												}
+												setValue(
+													"aliquotaiibs.valor",
+													classificacao.aliquotaiibs,
+												);
+												setValue(
+													"aliquotacbs.valor",
+													classificacao.aliquotacbs,
+												);
+												setValue("aliquotaiibs.alterar", true);
+												setValue("aliquotacbs.alterar", true);
+											}}
 											allowEmpty
 											emptyLabel="Nenhuma"
 											placeholder={

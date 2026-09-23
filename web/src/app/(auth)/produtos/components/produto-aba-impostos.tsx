@@ -872,6 +872,14 @@ export function ProdutoAbaImpostos({
 													shouldDirty: true,
 													shouldValidate: true,
 												});
+												setValue("aliquotaiibs", null, {
+													shouldDirty: true,
+													shouldValidate: true,
+												});
+												setValue("aliquotacbs", null, {
+													shouldDirty: true,
+													shouldValidate: true,
+												});
 											}}
 											allowEmpty
 											emptyLabel="Nenhum"
@@ -901,7 +909,32 @@ export function ProdutoAbaImpostos({
 										<Combobox
 											options={opcoesClassificacaoIbs}
 											value={field.value ?? ""}
-											onChange={(valor) => field.onChange(valor || null)}
+											onChange={(valor) => {
+												const codigo = valor || null;
+												field.onChange(codigo);
+												const classificacao = classificacoesIbs.find(
+													(item) => item.codigo === codigo,
+												);
+												if (!classificacao) {
+													setValue("aliquotaiibs", null, {
+														shouldDirty: true,
+														shouldValidate: true,
+													});
+													setValue("aliquotacbs", null, {
+														shouldDirty: true,
+														shouldValidate: true,
+													});
+													return;
+												}
+												setValue("aliquotaiibs", classificacao.aliquotaiibs, {
+													shouldDirty: true,
+													shouldValidate: true,
+												});
+												setValue("aliquotacbs", classificacao.aliquotacbs, {
+													shouldDirty: true,
+													shouldValidate: true,
+												});
+											}}
 											allowEmpty
 											emptyLabel="Nenhuma"
 											placeholder={

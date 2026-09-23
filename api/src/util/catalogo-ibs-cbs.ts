@@ -81,6 +81,71 @@ const csts = (conteudoCst as ArquivoCst).cstibscbsdetalhada;
 const classificacoes = (conteudoClassificacao as ArquivoClassificacao)
 	.classificacaotributariaibscbs;
 
+/** Alíquotas de referência do período de transição (LC 214/2025 — 2026). */
+export const ALIQUOTA_PADRAO_TRANSICAO_IBS = 0.1;
+export const ALIQUOTA_PADRAO_TRANSICAO_CBS = 0.9;
+
+export type AliquotasSugeridasIbsCbs = {
+	aliquotaiibs: string;
+	aliquotacbs: string;
+};
+
+function formatarAliquota(valor: number): string {
+	return valor.toFixed(4);
+}
+
+function aplicarReducaoAliquota(base: number, percentualReducao: number): number {
+	const reducao = Math.min(Math.max(Number(percentualReducao) || 0, 0), 100);
+	return Math.round(base * (1 - reducao / 100) * 10_000) / 10_000;
+}
+
+/**
+ * Sugere alíquotas efetivas a partir do tipo/redução da classificação.
+ * tipoaliquota 3 = zero/isenção/não incidência.
+ */
+export function calcularAliquotasSugeridasIbsCbs(params: {
+	tipoaliquota?: number | null;
+	percentualreducaoibs?: number | null;
+	percentualreducaocbs?: number | null;
+}): AliquotasSugeridasIbsCbs {
+	const tipo = Number(params.tipoaliquota) || 0;
+	if (tipo === 3) {
+		return {
+			aliquotaiibs: formatarAliquota(0),
+			aliquotacbs: formatarAliquota(0),
+		};
+	}
+
+	return {
+		aliquotaiibs: formatarAliquota(
+			aplicarReducaoAliquota(
+				ALIQUOTA_PADRAO_TRANSICAO_IBS,
+				Number(params.percentualreducaoibs) || 0,
+			),
+		),
+		aliquotacbs: formatarAliquota(
+			aplicarReducaoAliquota(
+				ALIQUOTA_PADRAO_TRANSICAO_CBS,
+				Number(params.percentualreducaocbs) || 0,
+			),
+		),
+	};
+}
+
+export type ClassificacaoIbsCbsListItem = {
+	cst: string;
+	codigo: string;
+	nome: string;
+	descricao: string;
+	nfe: boolean;
+	nfce: boolean;
+	tipoaliquota: number;
+	percentualreducaoibs: number;
+	percentualreducaocbs: number;
+	aliquotaiibs: string;
+	aliquotacbs: string;
+};
+
 function normalizarCst(cst: string | number | null | undefined): string {
 	const digitos = String(cst ?? "").replace(/\D/g, "");
 	if (!digitos) {
@@ -174,36 +239,40 @@ export function listarCstIbsCbs(): Array<{
 
 export function listarClassificacoesIbsCbs(
 	filtro: ListarClassificacoesIbsCbsFiltro = {},
-): Array<{
-	cst: string;
-	codigo: string;
-	nome: string;
-	descricao: string;
-	nfe: boolean;
-	nfce: boolean;
-	percentualreducaoibs: number;
-	percentualreducaocbs: number;
-}> {
+): ClassificacaoIbsCbsListItem[] {
 	const cstFiltro = filtro.cst ? normalizarCst(filtro.cst) : null;
 	const documento = filtro.documento ?? "todos";
 	const somenteVigentes = filtro.somenteVigentes ?? true;
 	const hoje = dataHojeSaoPaulo();
 
 	return classificacoes
-		.map((item) => ({
-			cst: normalizarCst(item.cst),
-			codigo: normalizarCodigo(item.codigo),
-			nome: item.nome?.trim() || item.codigo,
-			descricao: item.descricao?.trim() || item.nome?.trim() || "",
-			nfe: item.nfe === 1,
-			nfce: item.nfce === 1,
-			percentualreducaoibs: Number(item.percentualreducaoibs) || 0,
-			percentualreducaocbs: Number(item.percentualreducaocbs) || 0,
-			datainiciovigencia: item.datainiciovigencia,
-			datafimvigencia: item.datafimvigencia,
-			nfeFlag: item.nfe,
-			nfceFlag: item.nfce,
-		}))
+		.map((item) => {
+			const percentualreducaoibs = Number(item.percentualreducaoibs) || 0;
+			const percentualreducaocbs = Number(item.percentualreducaocbs) || 0;
+			const tipoaliquota = Number(item.tipoaliquota) || 0;
+			const aliquotas = calcularAliquotasSugeridasIbsCbs({
+				tipoaliquota,
+				percentualreducaoibs,
+				percentualreducaocbs,
+			});
+			return {
+				cst: normalizarCst(item.cst),
+				codigo: normalizarCodigo(item.codigo),
+				nome: item.nome?.trim() || item.codigo,
+				descricao: item.descricao?.trim() || item.nome?.trim() || "",
+				nfe: item.nfe === 1,
+				nfce: item.nfce === 1,
+				tipoaliquota,
+				percentualreducaoibs,
+				percentualreducaocbs,
+				aliquotaiibs: aliquotas.aliquotaiibs,
+				aliquotacbs: aliquotas.aliquotacbs,
+				datainiciovigencia: item.datainiciovigencia,
+				datafimvigencia: item.datafimvigencia,
+				nfeFlag: item.nfe,
+				nfceFlag: item.nfce,
+			};
+		})
 		.filter((item) => {
 			if (cstFiltro && item.cst !== cstFiltro) {
 				return false;
@@ -228,7 +297,15 @@ export function listarClassificacoesIbsCbs(
 			}
 			return true;
 		})
-		.map(({ datainiciovigencia: _d, datafimvigencia: _f, nfeFlag: _n, nfceFlag: _c, ...rest }) => rest)
+		.map(
+			({
+				datainiciovigencia: _d,
+				datafimvigencia: _f,
+				nfeFlag: _n,
+				nfceFlag: _c,
+				...rest
+			}) => rest,
+		)
 		.sort((a, b) => a.codigo.localeCompare(b.codigo));
 }
 
@@ -243,39 +320,18 @@ export function buscarCstIbsCbs(cst?: string | null): {
 
 export function buscarClassificacaoIbsCbs(
 	codigo?: string | number | null,
-): {
-	cst: string;
-	codigo: string;
-	nome: string;
-	descricao: string;
-	nfe: boolean;
-	nfce: boolean;
-	percentualreducaoibs: number;
-	percentualreducaocbs: number;
-} | null {
+): ClassificacaoIbsCbsListItem | null {
 	const codigoNormalizado = normalizarClassTribIbsCbs(codigo);
 	if (!codigoNormalizado) {
 		return null;
 	}
 
-	const encontrada = classificacoes.find(
-		(item) => normalizarCodigo(item.codigo) === codigoNormalizado,
+	return (
+		listarClassificacoesIbsCbs({
+			documento: "todos",
+			somenteVigentes: false,
+		}).find((item) => item.codigo === codigoNormalizado) ?? null
 	);
-
-	if (!encontrada) {
-		return null;
-	}
-
-	return {
-		cst: normalizarCst(encontrada.cst),
-		codigo: codigoNormalizado,
-		nome: encontrada.nome?.trim() || codigoNormalizado,
-		descricao: encontrada.descricao?.trim() || encontrada.nome?.trim() || "",
-		nfe: encontrada.nfe === 1,
-		nfce: encontrada.nfce === 1,
-		percentualreducaoibs: Number(encontrada.percentualreducaoibs) || 0,
-		percentualreducaocbs: Number(encontrada.percentualreducaocbs) || 0,
-	};
 }
 
 export function validarCstEClassificacaoIbsCbs(
