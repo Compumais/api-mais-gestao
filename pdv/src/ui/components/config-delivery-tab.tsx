@@ -74,7 +74,7 @@ export function ConfigDeliveryTab({
 		try {
 			const st = await pdvInvoke<StatusWhatsapp>("whatsapp.status");
 			setWaStatus(st);
-			if (st.ultimoQr || st.status === "aguardando_qr") {
+			if (st.ultimoQr) {
 				const qr = await pdvInvoke<{ svg: string | null }>("whatsapp.obterQr");
 				setWaSvg(qr.svg);
 			} else {
@@ -205,14 +205,14 @@ export function ConfigDeliveryTab({
 						</Button>
 					</div>
 					{waSvg ? (
-						<div className="sm:col-span-2 rounded-md border bg-white p-4">
-							<p className="mb-2 text-sm text-muted-foreground">
+						<div className="sm:col-span-2 flex flex-col items-center gap-2 rounded-md border bg-white p-4 text-slate-950">
+							<p className="text-sm text-muted-foreground">
 								Escaneie o QR no WhatsApp do celular (Aparelhos conectados).
 							</p>
-							<div
-								className="mx-auto w-fit"
-								// QR SVG gerado localmente pelo PDV
-								dangerouslySetInnerHTML={{ __html: waSvg }}
+							<img
+								src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(waSvg)}`}
+								alt="QR Code WhatsApp"
+								className="size-56 max-h-[40vh] max-w-[40vh] bg-white"
 							/>
 						</div>
 					) : waLoading || waStatus?.status === "aguardando_qr" ? (

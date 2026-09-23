@@ -1071,7 +1071,15 @@ export const localApi = {
 		if (!qr) {
 			return { qr: null, svg: null, status: st.status };
 		}
-		return { qr, svg: svgQrCode(qr), status: st.status };
+		try {
+			return { qr, svg: svgQrCode(qr), status: st.status };
+		} catch (err) {
+			console.error(
+				"[whatsapp] falha ao gerar SVG do QR:",
+				err instanceof Error ? err.message : err,
+			);
+			return { qr, svg: null, status: st.status };
+		}
 	},
 
 	async "whatsapp.reconectar"() {
