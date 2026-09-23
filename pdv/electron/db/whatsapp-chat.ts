@@ -1,4 +1,8 @@
 import { v4 as uuidv4 } from "uuid";
+import {
+	sufixosBuscaTelefone,
+	variantesTelefoneE164,
+} from "../integracao/whatsapp/normalizar-telefone";
 import { execute, query, queryOne } from "./database";
 
 export type WhatsappSessaoStatus =
@@ -81,18 +85,30 @@ export async function atualizarWhatsappSessao(dados: {
 export async function buscarConversaPorTelefone(
 	telefoneE164: string,
 ): Promise<WhatsappConversaLocal | null> {
-	return queryOne<WhatsappConversaLocal>(
+	const exact = await queryOne<WhatsappConversaLocal>(
 		`SELECT * FROM whatsapp_conversa WHERE telefone_e164 = $1 LIMIT 1`,
 		[telefoneE164],
 	);
+	if (exact) return exact;
+	for (const variante of variantesTelefoneE164(telefoneE164)) {
+		if (variante === telefoneE164) continue;
+		const row = await queryOne<WhatsappConversaLocal>(
+			`SELECT * FROM whatsapp_conversa WHERE telefone_e164 = $1 LIMIT 1`,
+			[variante],
+		);
+		if (row) return row;
+	}
+	return null;
 }
 
 export async function buscarConversaPorConta(
 	idconta: string,
 ): Promise<WhatsappConversaLocal | null> {
-	return queryOne<WhatsappConversaLocal>(
-		`SELECT * FROM whatsapp_conversa WHERE idconta = $1 LIMIT 1`,
-		[idconta],
+	return (
+		(await queryOne<WhatsappConversaLocal>(
+			`SELECT * FROM whatsapp_conversa WHERE idconta = $1 LIMIT 1`,
+			[idconta],
+		)) ?? null
 	);
 }
 
@@ -100,14 +116,20 @@ export async function obterOuCriarConversa(params: {
 	telefoneE164: string;
 	idconta?: string | null;
 }): Promise<WhatsappConversaLocal> {
+	if (params.idconta) {
+		const porConta = await buscarConversaPorConta(params.idconta);
+		if (porConta) return porConta;
+	}
 	const existente = await buscarConversaPorTelefone(params.telefoneE164);
 	if (existente) {
 		if (params.idconta && existente.idconta !== params.idconta) {
-			await execute(
-				`UPDATE whatsapp_conversa SET idconta = $1 WHERE id = $2`,
-				[params.idconta, existente.id],
+			await execute(`UPDATE whatsapp_conversa SET idconta = $1 WHERE id = $2`, [
+				params.idconta,
+				existente.id,
+			]);
+			return (
+				(await buscarConversaPorTelefone(params.telefoneE164)) ?? existente
 			);
-			return (await buscarConversaPorTelefone(params.telefoneE164))!;
 		}
 		return existente;
 	}
@@ -196,10 +218,9 @@ export async function marcarConversaLida(idconversa: string): Promise<void> {
 		`UPDATE whatsapp_mensagem SET lida = 1 WHERE idconversa = $1 AND lida = 0`,
 		[idconversa],
 	);
-	await execute(
-		`UPDATE whatsapp_conversa SET nao_lidas = 0 WHERE id = $1`,
-		[idconversa],
-	);
+	await execute(`UPDATE whatsapp_conversa SET nao_lidas = 0 WHERE id = $1`, [
+		idconversa,
+	]);
 }
 
 export async function contarNaoLidasWhatsapp(): Promise<number> {
@@ -225,22 +246,29 @@ export async function naoLidasPorConta(): Promise<
 
 export async function buscarContaAbertaPorTelefone(
 	telefoneE164: string,
-): Promise<{ id: string; nomecliente: string | null; telefone: string | null } | null> {
-	const digitos = telefoneE164.replace(/\D/g, "");
-	const sufixo = digitos.slice(-11);
-	if (sufixo.length < 10) return null;
-	return queryOne<{
-		id: string;
-		nomecliente: string | null;
-		telefone: string | null;
-	}>(
-		`SELECT id, nomecliente, telefone
-		 FROM conta_mesa
-		 WHERE status = 'aberta'
-		   AND modalidade IN ('delivery', 'retirada')
-		   AND regexp_replace(COALESCE(telefone, ''), '[^0-9]', '', 'g') LIKE $1
-		 ORDER BY abertoem DESC
-		 LIMIT 1`,
-		[`%${sufixo}`],
-	);
+): Promise<{
+	id: string;
+	nomecliente: string | null;
+	telefone: string | null;
+} | null> {
+	const sufixos = sufixosBuscaTelefone(telefoneE164);
+	if (!sufixos.length) return null;
+	for (const sufixo of sufixos) {
+		const row = await queryOne<{
+			id: string;
+			nomecliente: string | null;
+			telefone: string | null;
+		}>(
+			`SELECT id, nomecliente, telefone
+			 FROM conta_mesa
+			 WHERE status = 'aberta'
+			   AND modalidade IN ('delivery', 'retirada')
+			   AND regexp_replace(COALESCE(telefone, ''), '[^0-9]', '', 'g') LIKE $1
+			 ORDER BY abertoem DESC
+			 LIMIT 1`,
+			[`%${sufixo}`],
+		);
+		if (row) return row;
+	}
+	return null;
 }

@@ -13,6 +13,23 @@ type Mensagem = {
 	criadoem: string;
 };
 
+function mesmoTelefoneChat(a?: string | null, b?: string | null): boolean {
+	const da = (a ?? "").replace(/\D/g, "");
+	const db = (b ?? "").replace(/\D/g, "");
+	if (!da || !db) return false;
+	if (da === db) return true;
+	const localA = da.replace(/^55/, "");
+	const localB = db.replace(/^55/, "");
+	const dddA = localA.slice(0, 2);
+	const dddB = localB.slice(0, 2);
+	return (
+		dddA.length === 2 &&
+		dddA === dddB &&
+		localA.slice(-8) === localB.slice(-8) &&
+		localA.slice(-8).length === 8
+	);
+}
+
 export function ChatWhatsappPedido({
 	aberto,
 	idconta,
@@ -64,12 +81,19 @@ export function ChatWhatsappPedido({
 	useEffect(() => {
 		if (!aberto) return;
 		return onWhatsappEvent((payload) => {
-			const evento = payload as { tipo?: string; idconta?: string | null };
-			if (evento.tipo === "mensagem" && evento.idconta === idconta) {
+			const evento = payload as {
+				tipo?: string;
+				idconta?: string | null;
+				telefone?: string | null;
+			};
+			if (evento.tipo !== "mensagem") return;
+			const mesmaConta = Boolean(evento.idconta) && evento.idconta === idconta;
+			const mesmoTel = mesmoTelefoneChat(evento.telefone, telefone);
+			if (mesmaConta || mesmoTel) {
 				void carregar();
 			}
 		});
-	}, [aberto, idconta]);
+	}, [aberto, idconta, telefone]);
 
 	useEffect(() => {
 		fimRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -103,9 +127,7 @@ export function ChatWhatsappPedido({
 				<header className="flex items-center gap-2 border-b px-4 py-3">
 					<MessageCircle className="size-5 text-primary" />
 					<div className="min-w-0 flex-1">
-						<p className="truncate font-semibold">
-							{nomecliente || "Cliente"}
-						</p>
+						<p className="truncate font-semibold">{nomecliente || "Cliente"}</p>
 						<p className="truncate text-xs text-muted-foreground">
 							{telefone || "Sem telefone"}
 						</p>

@@ -5,6 +5,7 @@ import { getConfig, isDbReady, setConfig } from "../../db/database";
 import {
 	atualizarWhatsappSessao,
 	buscarContaAbertaPorTelefone,
+	buscarConversaPorConta,
 	garantirWhatsappSessao,
 	obterOuCriarConversa,
 	registrarMensagemWhatsapp,
@@ -17,6 +18,7 @@ import {
 	registrarFalhaFilaWhatsapp,
 } from "./fila";
 import {
+	extrairTextoMensagemWhatsapp,
 	jidParaTelefone,
 	normalizarTelefoneE164,
 	telefoneParaJid,
@@ -42,6 +44,7 @@ type SockWs = {
 	isConnecting?: boolean;
 	isClosed?: boolean;
 	isClosing?: boolean;
+	on?: (event: string, listener: (...args: unknown[]) => void) => void;
 	socket?: {
 		readyState?: number;
 		terminate?: () => void;
@@ -52,7 +55,9 @@ type SockLike = {
 	sendMessage: (
 		jid: string,
 		content: { text: string },
-	) => Promise<{ key?: { id?: string | null } } | undefined>;
+	) => Promise<
+		{ key?: { id?: string | null; remoteJid?: string | null } } | undefined
+	>;
 	end: (error?: Error) => void;
 	ws?: SockWs;
 	ev: {
@@ -83,6 +88,45 @@ let statusRuntime: StatusWhatsappRuntime = {
 	conectado: false,
 	atualizadoem: null,
 };
+
+/** WhatsApp entrega inbound com JID @lid; o telefone vem em sender_pn. */
+const lidParaTelefone = new Map<string, string>();
+
+function chaveLid(jid: string): string {
+	return jid.split("@")[0]?.split(":")[0] ?? "";
+}
+
+function mapearLidParaTelefone(lidJid: string, phoneJidOuE164: string): void {
+	const lid = chaveLid(lidJid);
+	const telefone =
+		jidParaTelefone(phoneJidOuE164) ?? normalizarTelefoneE164(phoneJidOuE164);
+	if (lid && telefone) {
+		lidParaTelefone.set(lid, telefone);
+	}
+}
+
+function resolverTelefoneInbound(
+	jid: string,
+	alternativos: Array<string | null | undefined>,
+): string | null {
+	const direto = jidParaTelefone(jid);
+	if (direto) return direto;
+	if (jid.endsWith("@lid")) {
+		const mapeado = lidParaTelefone.get(chaveLid(jid));
+		if (mapeado) return mapeado;
+	}
+	for (const alt of alternativos) {
+		if (!alt) continue;
+		const telefone = jidParaTelefone(alt) ?? normalizarTelefoneE164(alt);
+		if (telefone) {
+			if (jid.endsWith("@lid")) {
+				mapearLidParaTelefone(jid, telefone);
+			}
+			return telefone;
+		}
+	}
+	return null;
+}
 
 function authDirPath(): string {
 	return join(app.getPath("userData"), "whatsapp-auth");
@@ -381,6 +425,17 @@ async function conectarSocket(): Promise<void> {
 		}
 		sock = socket;
 
+		socket.ws?.on?.("CB:message", (...args: unknown[]) => {
+			const node = (args[0] ?? {}) as {
+				attrs?: { from?: string; sender_pn?: string };
+			};
+			const from = node.attrs?.from ?? "";
+			const senderPn = node.attrs?.sender_pn ?? "";
+			if (from.endsWith("@lid") && senderPn) {
+				mapearLidParaTelefone(from, senderPn);
+			}
+		});
+
 		registrarListener(socket, "creds.update", () => {
 			void saveCreds();
 		});
@@ -453,50 +508,72 @@ async function conectarSocket(): Promise<void> {
 				messages?: Array<{
 					key?: {
 						remoteJid?: string | null;
+						remoteJidAlt?: string | null;
+						participant?: string | null;
+						participantAlt?: string | null;
 						fromMe?: boolean | null;
 						id?: string | null;
 					};
-					message?: {
-						conversation?: string;
-						extendedTextMessage?: { text?: string };
-					};
+					message?: Parameters<typeof extrairTextoMensagemWhatsapp>[0];
+					senderPn?: string | null;
+					verifiedBizName?: string | null;
 				}>;
 				type?: string;
 			};
-			if (payload.type !== "notify" || !payload.messages?.length) return;
+			const mensagens = payload.messages ?? [];
+			if (
+				(payload.type !== "notify" && payload.type !== "append") ||
+				!mensagens.length
+			) {
+				return;
+			}
 			void (async () => {
-				for (const msg of payload.messages) {
+				for (const msg of mensagens) {
 					if (msg.key?.fromMe) continue;
 					const jid = msg.key?.remoteJid ?? "";
 					if (!jid || jid.endsWith("@g.us") || jid === "status@broadcast") {
 						continue;
 					}
-					const telefone = jidParaTelefone(jid);
+					const telefone = resolverTelefoneInbound(jid, [
+						msg.key?.remoteJidAlt,
+						msg.key?.participantAlt,
+						msg.senderPn,
+						msg.key?.participant,
+					]);
 					if (!telefone) continue;
-					const texto =
-						msg.message?.conversation ||
-						msg.message?.extendedTextMessage?.text ||
-						"";
-					if (!texto.trim()) continue;
-					const conta = await buscarContaAbertaPorTelefone(telefone);
-					const conversa = await obterOuCriarConversa({
-						telefoneE164: telefone,
-						idconta: conta?.id ?? null,
-					});
-					await registrarMensagemWhatsapp({
-						idconversa: conversa.id,
-						direcao: "in",
-						corpo: texto.trim(),
-						waMessageId: msg.key?.id ?? null,
-						incrementarNaoLidas: true,
-					});
-					emitirEvento({
-						tipo: "mensagem",
-						idconversa: conversa.id,
-						idconta: conversa.idconta,
-						telefone,
-						direcao: "in",
-					});
+					const texto = extrairTextoMensagemWhatsapp(msg.message);
+					if (!texto) continue;
+					try {
+						const conta = await buscarContaAbertaPorTelefone(telefone);
+						let conversa = conta
+							? await buscarConversaPorConta(conta.id)
+							: null;
+						if (!conversa) {
+							conversa = await obterOuCriarConversa({
+								telefoneE164: telefone,
+								idconta: conta?.id ?? null,
+							});
+						}
+						await registrarMensagemWhatsapp({
+							idconversa: conversa.id,
+							direcao: "in",
+							corpo: texto,
+							waMessageId: msg.key?.id ?? null,
+							incrementarNaoLidas: true,
+						});
+						emitirEvento({
+							tipo: "mensagem",
+							idconversa: conversa.id,
+							idconta: conversa.idconta ?? conta?.id ?? null,
+							telefone,
+							direcao: "in",
+						});
+					} catch (err) {
+						console.error(
+							"[whatsapp] falha ao registrar inbound:",
+							err instanceof Error ? err.message : err,
+						);
+					}
 				}
 			})();
 		});
@@ -552,6 +629,10 @@ export async function enviarTextoWhatsapp(params: {
 	const resultado = await sock.sendMessage(telefoneParaJid(telefone), {
 		text: corpo,
 	});
+	const remoteJidEnvio = resultado?.key?.remoteJid ?? "";
+	if (remoteJidEnvio.endsWith("@lid")) {
+		mapearLidParaTelefone(remoteJidEnvio, telefone);
+	}
 	await registrarMensagemWhatsapp({
 		idconversa: conversa.id,
 		direcao: "out",
