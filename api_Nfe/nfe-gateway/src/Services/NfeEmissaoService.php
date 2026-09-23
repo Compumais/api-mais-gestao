@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MaisGestao\NfeGateway\Services;
 
+use MaisGestao\NfeGateway\Fiscal\MontarIbsCbsItemNfe;
 use MaisGestao\NfeGateway\Fiscal\MontarPisCofinsItemNfe;
 use MaisGestao\NfeGateway\Fiscal\MontarRastroItemNfe;
 use NFePHP\NFe\Complements;
@@ -539,6 +540,8 @@ final class NfeEmissaoService
 		if (!empty($erros)) {
 			throw new \RuntimeException('Erros ao montar XML: ' . implode('; ', $erros));
 		}
+
+		$xml = MontarIbsCbsItemNfe::injetarNoXml($xml, $emitente, $itens);
 
 		$tools = SpedNfeFactory::criarTools($configJson, $pfxBase64, $senha);
 		$tools->model($mod);

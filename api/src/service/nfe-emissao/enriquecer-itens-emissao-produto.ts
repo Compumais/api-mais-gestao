@@ -1,6 +1,8 @@
 import { buscarCestPorId } from "@/repositories/cest-repositories.js";
 import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
 import type { ItemPayloadNfe } from "@/service/nfe-emissao/contexto-emissao-nfe.js";
+import { buscarClassificacaoIbsCbs } from "@/util/catalogo-ibs-cbs.js";
+import { montarIbsCbsItemPayload } from "@/util/ibs-cbs-emissao-nfe.js";
 import {
 	cstPisCofinsAusenteOuInvalido,
 	normalizarCstPisCofins,
@@ -190,6 +192,52 @@ function aplicarCsosnStDoProduto(
 	return resultado;
 }
 
+function aplicarIbsCbsDoProduto(
+	item: ItemPayloadNfe,
+	produto: NonNullable<Awaited<ReturnType<typeof buscarProdutoPorId>>>,
+): ItemPayloadNfe {
+	if (item.ibsCbs?.cst && item.ibsCbs?.cClassTrib) {
+		return item;
+	}
+
+	const classificacao = produto.classtributariaibs
+		? buscarClassificacaoIbsCbs(produto.classtributariaibs)
+		: null;
+
+	const aliquotaIbsInformada = paraNumeroOpcional(produto.aliquotaiibs);
+	const aliquotaCbsInformada = paraNumeroOpcional(produto.aliquotacbs);
+	const aliquotaIbs =
+		aliquotaIbsInformada ??
+		(classificacao ? paraNumeroOpcional(classificacao.aliquotaiibs) : undefined);
+	const aliquotaCbs =
+		aliquotaCbsInformada ??
+		(classificacao ? paraNumeroOpcional(classificacao.aliquotacbs) : undefined);
+
+	const ibsCbs = montarIbsCbsItemPayload({
+		cst: produto.cstibs,
+		cClassTrib: produto.classtributariaibs,
+		aliquotaIbs,
+		aliquotaCbs,
+	});
+
+	if (!ibsCbs) {
+		return item;
+	}
+
+	return {
+		...item,
+		ibsCbs: {
+			...ibsCbs,
+			...(item.ibsCbs?.aliquotaIbs != null
+				? { aliquotaIbs: item.ibsCbs.aliquotaIbs }
+				: {}),
+			...(item.ibsCbs?.aliquotaCbs != null
+				? { aliquotaCbs: item.ibsCbs.aliquotaCbs }
+				: {}),
+		},
+	};
+}
+
 export async function enriquecerItensEmissaoComProduto(
 	itens: ItemPayloadNfe[],
 ): Promise<ItemPayloadNfe[]> {
@@ -223,6 +271,7 @@ export async function enriquecerItensEmissaoComProduto(
 
 			resultado = aplicarPisCofinsDoProduto(resultado, produto);
 			resultado = aplicarCsosnStDoProduto(resultado, produto);
+			resultado = aplicarIbsCbsDoProduto(resultado, produto);
 
 			if (!normalizarCodigoCest(resultado.cest)) {
 				const cestProduto = await resolverCestProduto(produto);

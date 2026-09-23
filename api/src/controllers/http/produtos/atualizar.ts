@@ -6,7 +6,7 @@ import { buscarProdutoPorId } from "@/repositories/produtos-repositories.js";
 import { atualizarProdutoService } from "@/service/produto/atualizar-produto.js";
 import { enriquecerCamposImpostosProduto } from "@/service/produto/enriquecer-campos-impostos-produto.js";
 import { sincronizarSaldoEstoqueProduto } from "@/service/produto/sincronizar-saldo-estoque-produto.js";
-import { camposImpostosProdutoSchema } from "@/util/campos-impostos-produto.js";
+import { camposImpostosProdutoSchema, refinirCamposIbsCbsProduto } from "@/util/campos-impostos-produto.js";
 import {
 	camposServicoProdutoSchema,
 	montarCamposServicoProduto,
@@ -81,6 +81,8 @@ const atualizarProdutoBodySchema = z.object({
 	estoque: z.number().min(0).optional(),
 	...camposImpostosProdutoSchema,
 	...camposServicoProdutoSchema,
+}).superRefine((dados, ctx) => {
+	refinirCamposIbsCbsProduto(dados, ctx);
 });
 
 export async function atualizarProduto(

@@ -1,4 +1,10 @@
 import { z } from "zod";
+import {
+	buscarCstIbsCbs,
+	normalizarClassTribIbsCbs,
+	normalizarCstIbsCbs,
+	validarCstEClassificacaoIbsCbs,
+} from "@/util/catalogo-ibs-cbs.js";
 import { normalizarCstPisCofins } from "@/util/montar-grupo-pis-cofins-item-nfe.js";
 
 /**
@@ -156,8 +162,8 @@ export const camposImpostosProdutoSchema = {
 		.nullable()
 		.transform((valor) => {
 			if (valor === undefined) return undefined;
-			const texto = valor?.trim();
-			return texto ? texto : null;
+			if (valor === null || valor.trim() === "") return null;
+			return normalizarCstIbsCbs(valor);
 		}),
 	classtributariaibs: z
 		.string()
@@ -166,12 +172,69 @@ export const camposImpostosProdutoSchema = {
 		.nullable()
 		.transform((valor) => {
 			if (valor === undefined) return undefined;
-			const texto = valor?.trim();
-			return texto ? texto : null;
+			if (valor === null || valor.trim() === "") return null;
+			return normalizarClassTribIbsCbs(valor);
 		}),
 	percentualmva: campoPercentualOpcional(),
 	...camposAliquotaProdutoSchema,
 };
+
+/** Valida consistência CST × cClassTrib no cadastro do produto. */
+export function refinirCamposIbsCbsProduto(
+	dados: {
+		cstibs?: string | null | undefined;
+		classtributariaibs?: string | null | undefined;
+	},
+	ctx: z.RefinementCtx,
+): void {
+	const cst = dados.cstibs;
+	const classificacao = dados.classtributariaibs;
+
+	if (
+		(cst === undefined || cst === null) &&
+		(classificacao === undefined || classificacao === null)
+	) {
+		return;
+	}
+
+	if (cst && !classificacao) {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			path: ["classtributariaibs"],
+			message: "Informe a classificação tributária IBS/CBS para o CST escolhido",
+		});
+		return;
+	}
+
+	if (classificacao && !cst) {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			path: ["cstibs"],
+			message: "Informe o CST IBS/CBS junto com a classificação tributária",
+		});
+		return;
+	}
+
+	if (cst && !buscarCstIbsCbs(cst)) {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			path: ["cstibs"],
+			message: `CST IBS/CBS inválido: ${cst}`,
+		});
+		return;
+	}
+
+	if (cst && classificacao) {
+		const validacao = validarCstEClassificacaoIbsCbs(cst, classificacao, "todos");
+		if (!validacao.ok) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				path: ["classtributariaibs"],
+				message: validacao.message,
+			});
+		}
+	}
+}
 
 export type CamposImpostosProduto = {
 	idcfopentrada?: string | null | undefined;

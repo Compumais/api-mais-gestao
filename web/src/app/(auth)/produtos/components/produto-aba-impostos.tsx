@@ -34,6 +34,7 @@ import {
 import { useEmpresa } from "@/hooks/use-empresa";
 import type { ProdutoFormData } from "@/schemas/produtos.schema";
 import { cestService } from "@/services/cest.service";
+import { ibsCbsService } from "@/services/ibscbs.service";
 import { produtosService } from "@/services/produtos.service";
 import { taxaUfService } from "@/services/taxauf.service";
 import {
@@ -163,6 +164,34 @@ export function ProdutoAbaImpostos({
 		},
 		enabled: !!empresa,
 	});
+
+	const cstIbsWatch = watch("cstibs");
+
+	const { data: cstsIbs = [], isLoading: carregandoCstIbs } = useQuery({
+		queryKey: ["ibscbs-cst"],
+		queryFn: () => ibsCbsService.listarCst(),
+	});
+
+	const { data: classificacoesIbs = [], isLoading: carregandoClassIbs } =
+		useQuery({
+			queryKey: ["ibscbs-classificacoes", cstIbsWatch ?? ""],
+			queryFn: () =>
+				ibsCbsService.listarClassificacoes({
+					cst: cstIbsWatch,
+					documento: "nfe",
+				}),
+			enabled: !!cstIbsWatch,
+		});
+
+	const opcoesCstIbs = cstsIbs.map((item) => ({
+		value: item.cst,
+		label: item.label,
+	}));
+
+	const opcoesClassificacaoIbs = classificacoesIbs.map((item) => ({
+		value: item.codigo,
+		label: `${item.codigo} - ${item.nome}`,
+	}));
 
 	const preencherTributacaoMutation = useMutation({
 		mutationFn: async () => {
@@ -827,36 +856,108 @@ export function ProdutoAbaImpostos({
 							</p>
 						</div>
 						<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-							<Field data-invalid={!!errors.cstibs}>
-								<FieldLabel htmlFor="cstibs">CST IBS/CBS</FieldLabel>
-								<Input
-									id="cstibs"
-									placeholder="Ex.: 000"
-									maxLength={3}
-									aria-invalid={!!errors.cstibs}
-									{...register("cstibs")}
-								/>
-								<FieldError errors={errors.cstibs ? [errors.cstibs] : []} />
-							</Field>
-							<Field data-invalid={!!errors.classtributariaibs}>
-								<FieldLabel htmlFor="classtributariaibs">
-									Classificação tributária
-								</FieldLabel>
-								<Input
-									id="classtributariaibs"
-									placeholder="Ex.: 000001"
-									maxLength={6}
-									aria-invalid={!!errors.classtributariaibs}
-									{...register("classtributariaibs")}
-								/>
-								<FieldError
-									errors={
-										errors.classtributariaibs
-											? [errors.classtributariaibs]
-											: []
-									}
-								/>
-							</Field>
+							<Controller
+								name="cstibs"
+								control={control}
+								render={({ field }) => (
+									<Field data-invalid={!!errors.cstibs}>
+										<FieldLabel htmlFor="cstibs">CST IBS/CBS</FieldLabel>
+										<Combobox
+											options={opcoesCstIbs}
+											value={field.value ?? ""}
+											onChange={(valor) => {
+												const novo = valor || null;
+												field.onChange(novo);
+												setValue("classtributariaibs", null, {
+													shouldDirty: true,
+													shouldValidate: true,
+												});
+												setValue("aliquotaiibs", null, {
+													shouldDirty: true,
+													shouldValidate: true,
+												});
+												setValue("aliquotacbs", null, {
+													shouldDirty: true,
+													shouldValidate: true,
+												});
+											}}
+											allowEmpty
+											emptyLabel="Nenhum"
+											placeholder={
+												carregandoCstIbs
+													? "Carregando..."
+													: "Selecione o CST IBS/CBS"
+											}
+											disabled={carregandoCstIbs}
+											searchPlaceholder="Buscar CST..."
+											emptyMessage="Nenhum CST encontrado"
+										/>
+										<FieldError
+											errors={errors.cstibs ? [errors.cstibs] : []}
+										/>
+									</Field>
+								)}
+							/>
+							<Controller
+								name="classtributariaibs"
+								control={control}
+								render={({ field }) => (
+									<Field data-invalid={!!errors.classtributariaibs}>
+										<FieldLabel htmlFor="classtributariaibs">
+											Classificação tributária
+										</FieldLabel>
+										<Combobox
+											options={opcoesClassificacaoIbs}
+											value={field.value ?? ""}
+											onChange={(valor) => {
+												const codigo = valor || null;
+												field.onChange(codigo);
+												const classificacao = classificacoesIbs.find(
+													(item) => item.codigo === codigo,
+												);
+												if (!classificacao) {
+													setValue("aliquotaiibs", null, {
+														shouldDirty: true,
+														shouldValidate: true,
+													});
+													setValue("aliquotacbs", null, {
+														shouldDirty: true,
+														shouldValidate: true,
+													});
+													return;
+												}
+												setValue("aliquotaiibs", classificacao.aliquotaiibs, {
+													shouldDirty: true,
+													shouldValidate: true,
+												});
+												setValue("aliquotacbs", classificacao.aliquotacbs, {
+													shouldDirty: true,
+													shouldValidate: true,
+												});
+											}}
+											allowEmpty
+											emptyLabel="Nenhuma"
+											placeholder={
+												!cstIbsWatch
+													? "Selecione o CST primeiro"
+													: carregandoClassIbs
+														? "Carregando..."
+														: "Selecione a classificação"
+											}
+											disabled={!cstIbsWatch || carregandoClassIbs}
+											searchPlaceholder="Buscar classificação..."
+											emptyMessage="Nenhuma classificação para este CST"
+										/>
+										<FieldError
+											errors={
+												errors.classtributariaibs
+													? [errors.classtributariaibs]
+													: []
+											}
+										/>
+									</Field>
+								)}
+							/>
 							<CampoPercentual
 								id="aliquotaiibs"
 								label="Alíquota IBS (%)"

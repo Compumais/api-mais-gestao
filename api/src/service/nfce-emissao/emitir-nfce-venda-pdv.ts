@@ -63,6 +63,7 @@ import {
 	resolverStatusPersistenciaEmissao,
 } from "@/util/resolver-status-emissao-nfe.js";
 import { validarCestItensEmissaoNfe } from "@/util/validar-cest-item-emissao-nfe.js";
+import { validarIbsCbsItensEmissao } from "@/util/ibs-cbs-emissao-nfe.js";
 
 export type EmitirNfceVendaPdvParametros = {
 	idusuario: string;
@@ -502,6 +503,21 @@ export async function emitirNfceVendaPdvService({
 			venda,
 			ambiente: nfceConfiguracao.ambiente,
 			mensagem: pendenciasCest.join("; "),
+		});
+	}
+
+	const pendenciasIbsCbs = validarIbsCbsItensEmissao(
+		itensNormalizados,
+		"nfce",
+		crt,
+	);
+	if (pendenciasIbsCbs.length > 0) {
+		return persistirFalhaPreValidacaoNfce({
+			idusuario,
+			idempresa,
+			venda,
+			ambiente: nfceConfiguracao.ambiente,
+			mensagem: pendenciasIbsCbs.join("; "),
 		});
 	}
 
