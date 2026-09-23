@@ -34,6 +34,15 @@ assertTrue(MontarIbsCbsItemNfe::normalizarCst('000') === '000', 'CST 000 permane
 assertTrue(MontarIbsCbsItemNfe::normalizarClassTrib('1') === '000001', 'cClassTrib 1 vira 000001');
 assertTrue(MontarIbsCbsItemNfe::normalizarClassTrib('000001') === '000001', 'cClassTrib 000001 permanece');
 
+assertTrue(
+	MontarIbsCbsItemNfe::schemaSuportaIbsCbs(['schemes' => 'PL_010b_NT2025_002_v1.30']),
+	'PL_010b suporta IBSCBS',
+);
+assertTrue(
+	!MontarIbsCbsItemNfe::schemaSuportaIbsCbs(['schemes' => 'PL_009_V4']),
+	'PL_009_V4 não suporta IBSCBS',
+);
+
 $xmlBase = <<<'XML'
 <?xml version="1.0" encoding="UTF-8"?>
 <NFe xmlns="http://www.portalfiscal.inf.br/nfe">
@@ -72,19 +81,34 @@ $itensLp = [[
 	],
 ]];
 
-$xmlLp = MontarIbsCbsItemNfe::injetarNoXml($xmlBase, ['crt' => 3], $itensLp);
-assertTrue(str_contains($xmlLp, '<IBSCBS>'), 'LP inclui grupo IBSCBS');
+$configPl009 = ['schemes' => 'PL_009_V4'];
+$configPl010 = ['schemes' => 'PL_010b_NT2025_002_v1.30'];
+
+$xmlPl009 = MontarIbsCbsItemNfe::injetarNoXml($xmlBase, ['crt' => 3], $itensLp, $configPl009);
+assertTrue(!str_contains($xmlPl009, '<IBSCBS>'), 'PL_009_V4 omite IBSCBS (XSD não aceita)');
+assertTrue(!str_contains($xmlPl009, '<IBSCBSTot>'), 'PL_009_V4 omite IBSCBSTot');
+
+$xmlLp = MontarIbsCbsItemNfe::injetarNoXml($xmlBase, ['crt' => 3], $itensLp, $configPl010);
+assertTrue(str_contains($xmlLp, '<IBSCBS>'), 'PL_010b LP inclui grupo IBSCBS');
 assertTrue(str_contains($xmlLp, '<CST>000</CST>'), 'LP com CST 000');
 assertTrue(str_contains($xmlLp, '<cClassTrib>000001</cClassTrib>'), 'LP com cClassTrib');
 assertTrue(str_contains($xmlLp, '<gIBSCBS>'), 'LP com gIBSCBS');
 assertTrue(str_contains($xmlLp, '<pIBSUF>0.1000</pIBSUF>'), 'LP com pIBSUF');
 assertTrue(str_contains($xmlLp, '<pCBS>0.9000</pCBS>'), 'LP com pCBS');
 assertTrue(str_contains($xmlLp, '<IBSCBSTot>'), 'LP inclui totais IBSCBS');
+assertTrue(
+	(bool) preg_match('/<\/COFINS>.*<IBSCBS>/s', $xmlLp),
+	'IBSCBS vem após COFINS',
+);
+assertTrue(
+	(bool) preg_match('/<\/ICMSTot>.*<IBSCBSTot>/s', $xmlLp),
+	'IBSCBSTot vem após ICMSTot',
+);
 
-$xmlSn = MontarIbsCbsItemNfe::injetarNoXml($xmlBase, ['crt' => 1], $itensLp);
+$xmlSn = MontarIbsCbsItemNfe::injetarNoXml($xmlBase, ['crt' => 1], $itensLp, $configPl010);
 assertTrue(!str_contains($xmlSn, '<IBSCBS>'), 'SN omite IBSCBS mesmo com dados no item');
 
-$xmlMei = MontarIbsCbsItemNfe::injetarNoXml($xmlBase, ['crt' => 4], $itensLp);
+$xmlMei = MontarIbsCbsItemNfe::injetarNoXml($xmlBase, ['crt' => 4], $itensLp, $configPl010);
 assertTrue(!str_contains($xmlMei, '<IBSCBS>'), 'MEI (CRT 4) omite IBSCBS');
 
 $itensCst410 = [[
@@ -95,7 +119,7 @@ $itensCst410 = [[
 		'cClassTrib' => '410001',
 	],
 ]];
-$xml410 = MontarIbsCbsItemNfe::injetarNoXml($xmlBase, ['crt' => 3], $itensCst410);
+$xml410 = MontarIbsCbsItemNfe::injetarNoXml($xmlBase, ['crt' => 3], $itensCst410, $configPl010);
 assertTrue(str_contains($xml410, '<CST>410</CST>'), 'CST 410 no XML');
 assertTrue(!str_contains($xml410, '<gIBSCBS>'), 'CST 410 sem gIBSCBS');
 
