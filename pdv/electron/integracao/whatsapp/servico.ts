@@ -439,8 +439,7 @@ async function conectarSocket(): Promise<void> {
 						void conectarSocket().catch(async (err) => {
 							await persistirStatus({
 								status: "erro",
-								ultimo_erro:
-									err instanceof Error ? err.message : String(err),
+								ultimo_erro: err instanceof Error ? err.message : String(err),
 							});
 						});
 					}, 3000);
@@ -588,8 +587,9 @@ export async function notificarStatusPedidoWhatsapp(params: {
 		tipo = "saiu";
 	} else if (params.statusEntrega === "entregue") {
 		// Retirada não tem "saiu"; o avanço producao→entregue sinaliza "pronto".
-		tipo =
-			params.modalidade === "retirada" ? "retirada_pronta" : "entregue";
+		tipo = params.modalidade === "retirada" ? "retirada_pronta" : "entregue";
+	} else if (params.statusEntrega === "cancelado") {
+		tipo = "cancelado";
 	}
 
 	if (!tipo) return;

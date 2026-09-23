@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { StatusPdv } from "@/lib/pdv-types";
+import { AlertaPedidoDelivery } from "@/ui/components/alerta-pedido-delivery";
 import { AlertasOperacionaisPdv } from "@/ui/components/alertas-operacionais-pdv";
 import { SideNav } from "@/ui/components/side-nav";
 
@@ -43,6 +44,7 @@ export function PdvShell({
 					/>
 				) : null}
 				<div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2 overflow-hidden p-2.5">
+					<AlertaPedidoDelivery />
 					<AlertasOperacionaisPdv
 						status={status}
 						esconderAtalhoVendas={esconderAtalhoAlertasVendas}

@@ -1,5 +1,6 @@
 import { mkdir } from "node:fs/promises";
 import { BrowserWindow, dialog, shell } from "electron";
+import { v4 as uuidv4 } from "uuid";
 import {
 	ApiError,
 	apiBaseUrl,
@@ -49,7 +50,10 @@ import {
 	pagamentosNativosParaApi,
 	totaisParaSync,
 } from "../db/pagamento";
-import { rotuloProducaoEntrega } from "../db/pedido-entrega";
+import {
+	ehModalidadeEntrega,
+	rotuloProducaoEntrega,
+} from "../db/pedido-entrega";
 import {
 	abrirCaixa,
 	abrirContaMesa,
@@ -68,8 +72,8 @@ import {
 	buscarProdutoPorCodigo,
 	buscarProdutoPorEan,
 	buscarProdutosLocal,
-	buscarUsuarioCachePorLogin,
 	buscarUsuarioCachePorId,
+	buscarUsuarioCachePorLogin,
 	type ClienteVenda,
 	caixaAberto,
 	caixaAbertoOutroOperador,
@@ -81,10 +85,11 @@ import {
 	contarNfcePendentesTransmissao,
 	contarOutboxFalhasPermanentes,
 	contarOutboxPendentes,
+	contarPedidosEntregaNovos,
 	criarVendaRapida,
+	empresasDoUsuarioCache,
 	enfileirarOutbox,
 	enviarPedidoConta,
-	empresasDoUsuarioCache,
 	exigirSenhaGerencial,
 	fecharCaixa,
 	fecharContaMesa,
@@ -107,7 +112,6 @@ import {
 	listarMeiosPagamentoLocal,
 	listarMesas,
 	listarPedidosEntrega,
-	contarPedidosEntregaNovos,
 	listarPedidosFila,
 	listarPizzasLocal,
 	listarProdutosPorGrupo,
@@ -142,7 +146,21 @@ import {
 	validarSenhaGerencial,
 } from "../db/repos";
 import { verificarSenhaUsuario } from "../db/senha-usuario";
-import { v4 as uuidv4 } from "uuid";
+import {
+	buscarConversaPorConta,
+	buscarConversaPorTelefone,
+	contarNaoLidasWhatsapp,
+	listarMensagensConversa,
+	marcarConversaLida,
+	naoLidasPorConta,
+	obterOuCriarConversa,
+	obterWhatsappSessao,
+} from "../db/whatsapp-chat";
+import {
+	avisarPedidoDeliveryNovo,
+	marcarPedidosDeliveryVistos,
+	pedidosDeliveryNaoVistos,
+} from "../delivery/alertas";
 import { avaliarEmissaoNfceDaVenda } from "../fiscal/avaliar-emissao-nfce-venda";
 import { emitirOuContingencia } from "../fiscal/contingencia";
 import { exportarXmlsNfce as gravarXmlsNfcePeriodo } from "../fiscal/exportar-xml-nfce";
@@ -164,6 +182,7 @@ import {
 	imprimirProducaoPedido,
 	rotuloOrigemMesa,
 } from "../impressora/producao";
+import { svgQrCode } from "../impressora/qr-svg";
 import {
 	configEtiquetaDeMapa,
 	montarLancamentoEtiqueta,
@@ -186,6 +205,7 @@ import {
 	statusTecnibra,
 	syncTecnibra,
 } from "../integracao/tecnibra/servico";
+import { normalizarTelefoneE164 } from "../integracao/whatsapp/normalizar-telefone";
 import {
 	desconectarWhatsapp,
 	enviarTextoWhatsapp,
@@ -194,18 +214,6 @@ import {
 	reconectarWhatsapp,
 	statusWhatsapp,
 } from "../integracao/whatsapp/servico";
-import { svgQrCode } from "../impressora/qr-svg";
-import {
-	buscarConversaPorConta,
-	buscarConversaPorTelefone,
-	contarNaoLidasWhatsapp,
-	listarMensagensConversa,
-	marcarConversaLida,
-	naoLidasPorConta,
-	obterOuCriarConversa,
-	obterWhatsappSessao,
-} from "../db/whatsapp-chat";
-import { normalizarTelefoneE164 } from "../integracao/whatsapp/normalizar-telefone";
 import { modalAbrirMesaHabilitado } from "../lan-api/config-pos";
 import { criarConexoesQrPos } from "../lan-api/qr-pos";
 import * as remoto from "../pdv-secundario/operacoes-remoto";
@@ -797,9 +805,7 @@ export const localApi = {
 			if (err instanceof ApiError && (err.status === 0 || err.status === 408)) {
 				const local =
 					(await buscarUsuarioCachePorId(sessao.userid)) ??
-					(await buscarUsuarioCachePorLogin(
-						sessao.username ?? sessao.userid,
-					));
+					(await buscarUsuarioCachePorLogin(sessao.username ?? sessao.userid));
 				if (local) {
 					return empresasDoUsuarioCache(local);
 				}
@@ -1155,7 +1161,10 @@ export const localApi = {
 		});
 	},
 
-	async "whatsapp.marcarLidas"(params: { idconta?: string; telefone?: string }) {
+	async "whatsapp.marcarLidas"(params: {
+		idconta?: string;
+		telefone?: string;
+	}) {
 		await assertModuloGourmet();
 		const telefone = normalizarTelefoneE164(params.telefone ?? "");
 		let conversa = params.idconta
@@ -1235,9 +1244,7 @@ export const localApi = {
 			if (err instanceof ApiError && (err.status === 0 || err.status === 408)) {
 				const local =
 					(await buscarUsuarioCachePorId(sessao.userid)) ??
-					(await buscarUsuarioCachePorLogin(
-						sessao.username ?? sessao.userid,
-					));
+					(await buscarUsuarioCachePorLogin(sessao.username ?? sessao.userid));
 				if (local) return empresasDoUsuarioCache(local);
 			}
 			throw err;
@@ -1906,7 +1913,20 @@ export const localApi = {
 			avisarTecnibra();
 			return result;
 		}
+		const conta = await obterContaMesa(idconta);
 		await cancelarContaMesaRepo(idconta);
+		if (conta && ehModalidadeEntrega(conta.modalidade)) {
+			void notificarStatusPedidoWhatsapp({
+				idconta: conta.id,
+				telefone: conta.telefone,
+				nomecliente: conta.nomecliente,
+				protocolo: conta.orderidintegracao ?? conta.senha_chamada,
+				modalidade: conta.modalidade,
+				statusEntrega: "cancelado",
+			}).catch(() => {
+				// WhatsApp não impede o cancelamento
+			});
+		}
 		avisarTecnibra();
 		return { ok: true as const };
 	},
@@ -2231,7 +2251,12 @@ export const localApi = {
 			await garantirOperacaoSecundario();
 			return remoto.contarPedidosEntregaNovosRemoto();
 		}
-		return contarPedidosEntregaNovos();
+		return (await contarPedidosEntregaNovos()) + pedidosDeliveryNaoVistos();
+	},
+
+	async marcarPedidosDeliveryVistos() {
+		marcarPedidosDeliveryVistos();
+		return { ok: true as const };
 	},
 
 	async abrirPedidoEntrega(params: {
@@ -2382,6 +2407,12 @@ export const localApi = {
 			}
 		}
 		if (result.action === "created") {
+			avisarPedidoDeliveryNovo({
+				id: result.conta.id,
+				modalidade: result.conta.modalidade,
+				senha: result.conta.senha_chamada,
+				nomecliente: result.conta.nomecliente,
+			});
 			void notificarStatusPedidoWhatsapp({
 				idconta: result.conta.id,
 				telefone: result.conta.telefone,

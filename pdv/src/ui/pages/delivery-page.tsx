@@ -8,10 +8,11 @@ import {
 	Plus,
 	RefreshCw,
 	Settings,
+	XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
-import { onWhatsappEvent, pdvInvoke } from "@/lib/pdv-api";
+import { onDeliveryEvent, onWhatsappEvent, pdvInvoke } from "@/lib/pdv-api";
 import type { StatusContext } from "@/lib/pdv-types";
 import { money } from "@/lib/utils";
 import { AvisoSecundario } from "@/ui/components/aviso-secundario";
@@ -99,14 +100,16 @@ export function DeliveryPage() {
 	const [idcliente, setIdcliente] = useState<string | null>(null);
 	const [chatConta, setChatConta] = useState<ContaEntrega | null>(null);
 	const [naoLidasMap, setNaoLidasMap] = useState<Record<string, number>>({});
+	const [cancelando, setCancelando] = useState<ContaEntrega | null>(null);
 
 	useEscapeFechaModal(abrir, () => setAbrir(false));
+	useEscapeFechaModal(Boolean(cancelando), () => setCancelando(null));
 
 	const carregarNaoLidas = useCallback(async () => {
 		try {
-			const rows = await pdvInvoke<Array<{ idconta: string; nao_lidas: number }>>(
-				"whatsapp.naoLidasPorConta",
-			);
+			const rows = await pdvInvoke<
+				Array<{ idconta: string; nao_lidas: number }>
+			>("whatsapp.naoLidasPorConta");
 			const mapa: Record<string, number> = {};
 			for (const row of rows) {
 				mapa[row.idconta] = Number(row.nao_lidas) || 0;
@@ -135,11 +138,19 @@ export function DeliveryPage() {
 	}, [filtro, carregarNaoLidas]);
 
 	useEffect(() => {
+		void pdvInvoke("marcarPedidosDeliveryVistos");
 		void carregar();
 		const timer = window.setInterval(() => {
 			void carregar();
 		}, 4000);
-		return () => window.clearInterval(timer);
+		const offDelivery = onDeliveryEvent(() => {
+			void pdvInvoke("marcarPedidosDeliveryVistos");
+			void carregar();
+		});
+		return () => {
+			window.clearInterval(timer);
+			offDelivery();
+		};
 	}, [carregar]);
 
 	useEffect(() => {
@@ -150,7 +161,9 @@ export function DeliveryPage() {
 
 	async function buscarClientes(termo: string) {
 		try {
-			setClientes(await pdvInvoke<ClientePdv[]>("buscarClientesPdv", termo, 20));
+			setClientes(
+				await pdvInvoke<ClientePdv[]>("buscarClientesPdv", termo, 20),
+			);
 		} catch {
 			setClientes([]);
 		}
@@ -209,6 +222,22 @@ export function DeliveryPage() {
 			await carregar();
 		} catch (err) {
 			setMsg(err instanceof Error ? err.message : "Erro ao atualizar status");
+		}
+	}
+
+	async function confirmarCancelarPedido() {
+		if (!cancelando) return;
+		const alvo = cancelando;
+		setCancelando(null);
+		setLoading(true);
+		setMsg("");
+		try {
+			await pdvInvoke("cancelarContaMesa", alvo.id);
+			await carregar();
+		} catch (err) {
+			setMsg(err instanceof Error ? err.message : "Falha ao cancelar pedido");
+		} finally {
+			setLoading(false);
 		}
 	}
 
@@ -390,6 +419,30 @@ export function DeliveryPage() {
 							</div>
 						</div>
 					) : null}
+					{cancelando ? (
+						<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-[2px]">
+							<div className="pdv-surface w-full max-w-md space-y-4 p-5">
+								<h2 className="text-lg font-semibold">Cancelar pedido</h2>
+								<p className="text-sm text-muted-foreground">
+									Cancelar o pedido #{cancelando.senha_chamada ?? "—"} de{" "}
+									{cancelando.nomecliente || "cliente sem nome"}? Os itens serão
+									desconsiderados. Esta ação não pode ser desfeita.
+								</p>
+								<div className="flex justify-end gap-2">
+									<Button variant="outline" onClick={() => setCancelando(null)}>
+										Voltar
+									</Button>
+									<Button
+										variant="destructive"
+										disabled={loading}
+										onClick={() => void confirmarCancelarPedido()}
+									>
+										Confirmar cancelamento
+									</Button>
+								</div>
+							</div>
+						</div>
+					) : null}
 				</>
 			}
 		>
@@ -545,6 +598,15 @@ export function DeliveryPage() {
 												onClick={() => void avancarStatus(p.id)}
 											>
 												Avançar
+											</Button>
+											<Button
+												size="sm"
+												variant="destructive"
+												disabled={loading || p.status_entrega === "entregue"}
+												onClick={() => setCancelando(p)}
+											>
+												<XCircle className="size-4" />
+												Cancelar
 											</Button>
 											<Button
 												size="sm"

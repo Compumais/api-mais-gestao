@@ -270,6 +270,17 @@ export function ConfigDeliveryTab({
 							}
 							onChange={(e) => set("whatsapp_msg_entregue", e.target.value)}
 						/>
+					</div>
+					<div className="space-y-2 sm:col-span-2">
+						<Label htmlFor="whatsapp_msg_cancelado">Msg. cancelado</Label>
+						<Input
+							id="whatsapp_msg_cancelado"
+							value={
+								config.whatsapp_msg_cancelado ??
+								"Olá {nome}, seu pedido #{protocolo} foi cancelado."
+							}
+							onChange={(e) => set("whatsapp_msg_cancelado", e.target.value)}
+						/>
 						<p className="text-xs text-muted-foreground">
 							Use {"{nome}"} e {"{protocolo}"} nos textos.
 						</p>
@@ -302,7 +313,9 @@ export function ConfigDeliveryTab({
 								<Select
 									id="impressora_pedido_tipo_delivery"
 									value={config.impressora_pedido_tipo ?? ""}
-									onChange={(e) => set("impressora_pedido_tipo", e.target.value)}
+									onChange={(e) =>
+										set("impressora_pedido_tipo", e.target.value)
+									}
 								>
 									<option value="">Usar a primeira impressora dos itens</option>
 									<option value="sistema">Sistema (USB / Windows)</option>
