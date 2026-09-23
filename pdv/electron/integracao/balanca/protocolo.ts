@@ -60,12 +60,69 @@ function framesStxEtx(buffer: string): string[] {
 	return frames;
 }
 
-function pesoDeFrameToledo(frame: string): number {
-	const limpo = frame.replace(/[^\d.,]/g, "");
-	if (/^\d{5,7}$/.test(limpo)) {
-		return kgDeDigitosFixos(limpo);
+function ultimoByte(texto: string, code: number): number {
+	for (let i = texto.length - 1; i >= 0; i--) {
+		if (texto.charCodeAt(i) === code) return i;
 	}
-	return kgDeTextoLivre(frame);
+	return -1;
+}
+
+/**
+ * Protocolo A da Toledo (ACBr): [STX][S1][PPPPPP][S2][TTTTTT][UUUUUU][CR][CS].
+ * O peso são os 6 bytes a partir do 3º caractere do quadro. Bit 3 de S2
+ * ligado usa 2 casas (divisor 100); senão, 3 casas (divisor 1000).
+ * Retorna null quando o buffer não é esse quadro.
+ */
+function pesoProtocoloA(texto: string): number | null {
+	if (texto.length <= 20) return null;
+	const stx = ultimoByte(texto, 0x02);
+	if (stx < 0 || texto.length - stx <= 20) return null;
+	if (stx + 8 >= texto.length) return null;
+	const s2 = texto.charCodeAt(stx + 8);
+	const divisor = (s2 & 0x08) !== 0 ? 100 : 1000;
+	const campo = texto.slice(stx + 2, stx + 8).trim();
+	if (!/^\d{4,6}$/.test(campo)) return null;
+	const n = Number(campo);
+	if (!Number.isFinite(n) || n <= 0) return 0;
+	return arredondarKg(n / divisor);
+}
+
+function pesoDeConteudoToledo(frame: string): number {
+	const corpo = frame.replace(/kg/gi, "").trim();
+	if (!corpo) return 0;
+	if (/[.,]/.test(corpo)) return kgDeTextoLivre(corpo);
+	const digitos = corpo.replace(/\D/g, "");
+	if (digitos.length >= 4 && digitos.length <= 7) {
+		return kgDeDigitosFixos(digitos);
+	}
+	return kgDeTextoLivre(corpo);
+}
+
+function pesoDeFrameToledo(frame: string): number {
+	return pesoDeConteudoToledo(frame);
+}
+
+/** Toledo como a ACBr: protocolo A, senão STX…ETX (B), senão STX…CR (C). */
+function interpretarToledo(texto: string): number {
+	const protocoloA = pesoProtocoloA(texto);
+	if (protocoloA !== null) return protocoloA;
+
+	const frames = framesStxEtx(texto);
+	if (frames.length) {
+		return pesoDeConteudoToledo(frames[frames.length - 1] ?? "");
+	}
+
+	const stx = ultimoByte(texto, 0x02);
+	if (stx >= 0) {
+		const cr = texto.indexOf("\r", stx + 1);
+		if (cr > stx) {
+			return pesoDeConteudoToledo(texto.slice(stx + 1, cr));
+		}
+	}
+
+	const linhas = texto.split(/[\r\n]+/).filter((l) => l.trim());
+	const ultima = linhas[linhas.length - 1] ?? texto;
+	return kgDeTextoLivre(ultima);
 }
 
 function pesoDeFrameFilizola(frame: string): number {
@@ -78,15 +135,19 @@ function pesoDeFrameFilizola(frame: string): number {
 
 /**
  * Extrai o último peso válido (kg) do fluxo serial da balança.
- * Toledo/Filizola em modo contínuo costumam mandar STX…ETX; o contínuo genérico
- * aceita ASCII com ponto ou vírgula.
+ * Toledo segue a ACBr (protocolos A, B e C). O quadro curto STX + dígitos + ETX
+ * do emulador continua válido. Filizola lê gramas; o contínuo aceita ASCII.
  */
 export function extrairPesoKg(
 	dados: string | Buffer,
 	protocolo: ProtocoloBalanca = "toledo",
 ): number {
 	const texto = typeof dados === "string" ? dados : dados.toString("latin1");
-	if (!texto.trim()) return 0;
+	if (!texto) return 0;
+
+	if (protocolo === "toledo") {
+		return interpretarToledo(texto);
+	}
 
 	const frames = framesStxEtx(texto);
 	if (frames.length) {
@@ -102,15 +163,22 @@ export function extrairPesoKg(
 	return kgDeTextoLivre(ultima);
 }
 
-/** Comando curto para pedir peso (Toledo P / ENQ). */
+const ENQ = Buffer.from([0x05]);
+
+/**
+ * Pedido de peso no mesmo comando da ACBr: ENQ (0x05) para Toledo e Filizola.
+ * Contínuo só escuta.
+ */
 export function comandoSolicitarPeso(
 	protocolo: ProtocoloBalanca,
 ): Buffer | null {
-	if (protocolo === "toledo") {
-		return Buffer.from("P\r");
-	}
-	if (protocolo === "filizola") {
-		return Buffer.from([0x05]);
+	if (protocolo === "toledo" || protocolo === "filizola") {
+		return ENQ;
 	}
 	return null;
+}
+
+/** O emulador de desenvolvimento respondia a `P` + CR, não ao ENQ. */
+export function comandoFallbackEmuladorToledo(): Buffer {
+	return Buffer.from("P\r");
 }
