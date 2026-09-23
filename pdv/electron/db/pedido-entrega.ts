@@ -152,6 +152,38 @@ export function mensagemErroCancelarPedidoEntrega(params: {
 	return null;
 }
 
+/** Gate único de cancelarContaMesa: mesa/comanda ou delivery/retirada. */
+export function mensagemErroCancelarConta(params: {
+	contaValida: boolean;
+	modalidade: string | null | undefined;
+	status: string | null | undefined;
+	statusEntrega: string | null | undefined;
+	valorpago: number;
+	numeroMesa: number;
+	rotuloAtendimento: string;
+}): string | null {
+	if (!params.contaValida || params.status !== "aberta") {
+		return "Conta inválida";
+	}
+	const modalidade = normalizarModalidade(params.modalidade);
+	if (ehModalidadeEntrega(modalidade)) {
+		return mensagemErroCancelarPedidoEntrega({
+			contaValida: true,
+			modalidade,
+			status: params.status,
+			statusEntrega: params.statusEntrega,
+			valorpago: params.valorpago,
+		});
+	}
+	if (params.valorpago > 0) {
+		return "Conta com pagamento parcial não pode ser cancelada. Finalize ou estorne os pagamentos.";
+	}
+	if (params.numeroMesa <= 0) {
+		return `${params.rotuloAtendimento} inválida para cancelamento`;
+	}
+	return null;
+}
+
 export function rotuloProducaoEntrega(params: {
 	modalidade: ModalidadePedido;
 	senhaChamada?: string | null;

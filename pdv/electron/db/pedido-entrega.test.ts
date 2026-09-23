@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
 	gerarSenhaChamada,
+	mensagemErroCancelarConta,
 	mensagemErroCancelarPedidoEntrega,
 	origemVendaPorModalidade,
 	parseBairrosEntrega,
@@ -140,6 +141,91 @@ describe("mensagemErroCancelarPedidoEntrega", () => {
 				valorpago: 10,
 			}) ?? "",
 			/pagamento/,
+		);
+	});
+});
+
+describe("mensagemErroCancelarConta", () => {
+	it("permite cancelar delivery/retirada abertos sem pagamento", () => {
+		assert.equal(
+			mensagemErroCancelarConta({
+				contaValida: true,
+				modalidade: "delivery",
+				status: "aberta",
+				statusEntrega: "producao",
+				valorpago: 0,
+				numeroMesa: 0,
+				rotuloAtendimento: "Mesa",
+			}),
+			null,
+		);
+		assert.equal(
+			mensagemErroCancelarConta({
+				contaValida: true,
+				modalidade: "retirada",
+				status: "aberta",
+				statusEntrega: "recebido",
+				valorpago: 0,
+				numeroMesa: 0,
+				rotuloAtendimento: "Mesa",
+			}),
+			null,
+		);
+	});
+
+	it("não recusa delivery com a mensagem de mesa/comanda", () => {
+		const recusa = mensagemErroCancelarConta({
+			contaValida: true,
+			modalidade: "delivery",
+			status: "aberta",
+			statusEntrega: "saiu",
+			valorpago: 0,
+			numeroMesa: 0,
+			rotuloAtendimento: "Mesa",
+		});
+		assert.equal(recusa, null);
+		assert.doesNotMatch(
+			String(recusa ?? ""),
+			/mesa\/comanda|apenas para mesa/i,
+		);
+	});
+
+	it("mantém recusa de mesa com pagamento e número inválido", () => {
+		assert.match(
+			mensagemErroCancelarConta({
+				contaValida: true,
+				modalidade: "mesa",
+				status: "aberta",
+				statusEntrega: null,
+				valorpago: 5,
+				numeroMesa: 3,
+				rotuloAtendimento: "Mesa",
+			}) ?? "",
+			/pagamento parcial/,
+		);
+		assert.match(
+			mensagemErroCancelarConta({
+				contaValida: true,
+				modalidade: "mesa",
+				status: "aberta",
+				statusEntrega: null,
+				valorpago: 0,
+				numeroMesa: 0,
+				rotuloAtendimento: "Comanda",
+			}) ?? "",
+			/Comanda inválida/,
+		);
+		assert.equal(
+			mensagemErroCancelarConta({
+				contaValida: true,
+				modalidade: "mesa",
+				status: "aberta",
+				statusEntrega: null,
+				valorpago: 0,
+				numeroMesa: 4,
+				rotuloAtendimento: "Mesa",
+			}),
+			null,
 		);
 	});
 });
