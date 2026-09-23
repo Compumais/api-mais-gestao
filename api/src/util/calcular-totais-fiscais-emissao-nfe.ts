@@ -99,7 +99,8 @@ function calcularIcmsItem(
 		return { base: 0, valor: 0 };
 	}
 
-	const base = round2(paraNumero(item.baseIcms) || liquido);
+	const baseInformada = round2(paraNumero(item.baseIcms));
+	const base = round2(baseInformada > 0 ? baseInformada : liquido);
 	const valor =
 		item.valorIcms !== undefined
 			? round2(paraNumero(item.valorIcms))
@@ -157,8 +158,9 @@ export function calcularTotaisFiscaisEmissaoNfe(
 		totalProdutos += vProd;
 
 		const icms = calcularIcmsItem(crt, item, liquido);
-		baseIcms += icms.base;
-		valorIcms += icms.valor;
+		// Arredonda por item antes de acumular (alinha ICMSTot à Σ dos itens).
+		baseIcms = round2(baseIcms + icms.base);
+		valorIcms = round2(valorIcms + icms.valor);
 
 		baseIcmsSt += paraNumero(item.baseIcmsSt);
 		valorIcmsSt += paraNumero(item.valorIcmsSt);
