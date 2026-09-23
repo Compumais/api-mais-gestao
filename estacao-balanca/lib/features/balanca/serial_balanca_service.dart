@@ -1,10 +1,11 @@
 import 'package:estacao_balanca/features/balanca/balanca_leitura.dart';
 import 'package:estacao_balanca/features/balanca/balanca_service.dart';
+import 'package:estacao_balanca/features/balanca/porta_serial_info.dart';
 import 'package:estacao_balanca/features/balanca/serial_balanca_stub.dart'
     if (dart.library.io) 'package:estacao_balanca/features/balanca/serial_balanca_io.dart'
     as serial;
 
-/// Balança Prix Prt3 via porta serial (Windows COM / serial nativo).
+/// Balança Prix Prt3 via serial desktop (COM) ou USB OTG no Android.
 class SerialBalancaService implements BalancaService {
   SerialBalancaService({
     required this.portaNome,
@@ -41,4 +42,10 @@ class SerialBalancaService implements BalancaService {
       _impl.lerPeso(timeout: timeout);
 }
 
-List<String> listarPortasSerialSeguro() => serial.listarPortasSerialSeguro();
+Future<List<String>> listarPortasSerialSeguro() =>
+    serial.listarPortasSerialSeguro();
+
+Future<List<PortaSerialInfo>> listarPortasSerialInfo() =>
+    serial.listarPortasSerialInfo();
+
+bool plataformaUsaUsbOtg() => serial.plataformaUsaUsbOtg();

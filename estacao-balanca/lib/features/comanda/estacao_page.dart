@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:estacao_balanca/core/comanda_codigo.dart';
 import 'package:estacao_balanca/core/lan_client.dart';
 import 'package:estacao_balanca/core/models.dart';
 import 'package:estacao_balanca/core/prefs.dart';
@@ -92,7 +93,10 @@ class _EstacaoPageState extends State<EstacaoPage> {
   }
 
   Future<void> _onScanComanda(String raw) async {
-    final digits = raw.replaceAll(RegExp(r'\D'), '');
+    final digits = normalizarCodigoComanda(
+      raw,
+      ignorarDigitoVerificador: widget.prefs.ignorarDigitoVerificador,
+    );
     final numero = int.tryParse(digits);
     _scanCtrl.clear();
     if (numero == null || numero <= 0 || _busy) {

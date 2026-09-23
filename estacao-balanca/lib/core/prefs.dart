@@ -66,6 +66,12 @@ class AppPrefs {
   Future<void> setFontePeso(FontePeso v) =>
       _prefs.setString('fontePeso', v.name);
 
+  /// Remove o último dígito (DV) do código lido no leitor de comanda.
+  bool get ignorarDigitoVerificador =>
+      _prefs.getBool('ignorarDigitoVerificador') ?? false;
+  Future<void> setIgnorarDigitoVerificador(bool v) =>
+      _prefs.setBool('ignorarDigitoVerificador', v);
+
   List<String> get atalhoIds =>
       _prefs.getStringList(_atalhosKey) ?? const <String>[];
 

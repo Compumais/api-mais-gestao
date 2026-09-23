@@ -1,29 +1,31 @@
+/// Stub: USB OTG só existe no Android. Evita puxar `usb_serial` no Windows.
+library;
+
 import 'package:estacao_balanca/features/balanca/balanca_leitura.dart';
 import 'package:estacao_balanca/features/balanca/balanca_service.dart';
 import 'package:estacao_balanca/features/balanca/porta_serial_info.dart';
 
-BalancaService createSerialBalanca({
+BalancaService createAndroidUsbBalanca({
   required String portaNome,
   int baudRate = 2400,
 }) {
-  return _UnsupportedSerial();
+  return _AndroidUsbIndisponivel();
 }
 
-Future<List<String>> listarPortasSerialSeguro() async => const [];
+Future<List<PortaSerialInfo>> listarDispositivosUsbAndroid() async =>
+    const [];
 
-Future<List<PortaSerialInfo>> listarPortasSerialInfo() async => const [];
-
-bool plataformaUsaUsbOtg() => false;
-
-class _UnsupportedSerial implements BalancaService {
+class _AndroidUsbIndisponivel implements BalancaService {
   @override
   bool get conectado => false;
 
   @override
-  String get diagnostico => 'Serial não suportado nesta plataforma';
+  String get diagnostico => 'USB OTG indisponível neste build';
 
   @override
-  Future<void> conectar() async {}
+  Future<void> conectar() async {
+    throw StateError('USB OTG só é suportado no Android');
+  }
 
   @override
   Future<void> desconectar() async {}
@@ -36,8 +38,8 @@ class _UnsupportedSerial implements BalancaService {
     Duration timeout = const Duration(seconds: 3),
   }) async {
     return BalancaLeitura.estado(
-      BalancaEstado.desabilitada,
-      'Serial não suportado nesta plataforma',
+      BalancaEstado.erro,
+      'USB OTG só é suportado no Android',
     );
   }
 }
